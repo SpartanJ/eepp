@@ -75,10 +75,10 @@ void TileMapLayer::Update() {
 }
 
 void TileMapLayer::AllocateLayer() {
-	mTiles		= eeNewArray( GameObject**, mSize.Width() );
+	mTiles		= eeNewArray( GameObject**, mSize.width() );
 
 	for ( Int32 x = 0; x < mSize.x; x++ ) {
-		mTiles[x] = eeNewArray( GameObject*, mSize.Height() );
+		mTiles[x] = eeNewArray( GameObject*, mSize.height() );
 
 		for ( Int32 y = 0; y < mSize.y; y++ ) {
 			mTiles[x][y] = NULL;
@@ -139,11 +139,11 @@ const Vector2i& TileMapLayer::GetCurrentTile() const {
 }
 
 Vector2i TileMapLayer::GetTilePosFromPos( const Vector2f& Pos ) {
-	return Vector2i( ( (Int32)Pos.x + mOffset.x ) / mMap->TileSize().Width(), ( (Int32)Pos.y + mOffset.y ) / mMap->TileSize().Height() );
+	return Vector2i( ( (Int32)Pos.x + mOffset.x ) / mMap->TileSize().width(), ( (Int32)Pos.y + mOffset.y ) / mMap->TileSize().height() );
 }
 
 Vector2f TileMapLayer::GetPosFromTilePos( const Vector2i& TilePos ) {
-	return Vector2f( TilePos.x * mMap->TileSize().Width() + mOffset.x, TilePos.y * mMap->TileSize().Height() + mOffset.y );
+	return Vector2f( TilePos.x * mMap->TileSize().width() + mOffset.x, TilePos.y * mMap->TileSize().height() + mOffset.y );
 }
 
 }}

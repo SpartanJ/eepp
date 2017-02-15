@@ -601,15 +601,15 @@ void Texture::DrawEx( Float x, Float y, Float width, Float height, const Float &
 
 		if ( Angle != 0.f || Scale != 1.f ) {
 			if ( Center.OriginType == OriginPoint::OriginCenter ) {
-				Center = TmpR.Center();
+				Center = TmpR.center();
 			} else if ( Center.OriginType == OriginPoint::OriginTopLeft ) {
-				Center = TmpR.Pos();
+				Center = TmpR.pos();
 			} else {
-				Center += TmpR.Pos();
+				Center += TmpR.pos();
 			}
 
-			Q.Rotate( Angle, Center );
-			Q.Scale( Scale, Center );
+			Q.rotate( Angle, Center );
+			Q.scale( Scale, Center );
 		}
 
 		sBR->BatchQuadFree( Q[0].x, Q[0].y, Q[1].x, Q[1].y, Q[2].x, Q[2].y, Q[3].x, Q[3].y );
@@ -643,9 +643,9 @@ void Texture::DrawQuadEx( Quad2f Q, const Vector2f& Offset, const Float &Angle, 
 	sBR->QuadsSetColorFree( Color0, Color1, Color2, Color3 );
 
 	if ( Angle != 0 ||  Scale != 1.0f ) {
-		Vector2f QCenter( Q.GetCenter() );
-		Q.Rotate( Angle, QCenter );
-		Q.Scale( Scale, QCenter );
+		Vector2f QCenter( Q.getCenter() );
+		Q.rotate( Angle, QCenter );
+		Q.scale( Scale, QCenter );
 	}
 
 	if ( ClampMode() == CLAMP_REPEAT ) {
@@ -654,7 +654,7 @@ void Texture::DrawQuadEx( Quad2f Q, const Vector2f& Offset, const Float &Angle, 
 		sBR->QuadsSetSubsetFree( texSector.Left / w, texSector.Top / h, texSector.Left / w, texSector.Bottom / h, texSector.Right / w, texSector.Bottom / h, texSector.Right / w, texSector.Top / h );
 	}
 
-	Q.Move( Offset );
+	Q.move( Offset );
 
 	sBR->BatchQuadFreeEx( Q[0].x, Q[0].y, Q[1].x, Q[1].y, Q[2].x, Q[2].y, Q[3].x, Q[3].y );
 

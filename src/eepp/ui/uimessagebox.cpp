@@ -15,13 +15,13 @@ UIMessageBox::UIMessageBox( const UIMessageBox::CreateParams& Params ) :
 		UIPushButton::CreateParams ButtonParams;
 		ButtonParams.Parent( Container() );
 		ButtonParams.SizeSet( 90, 22 );
-		ButtonParams.PosSet( Container()->Size().Width() - 96, Container()->Size().Height() - ButtonParams.Size.Height() - 8 );
+		ButtonParams.PosSet( Container()->Size().width() - 96, Container()->Size().height() - ButtonParams.Size.height() - 8 );
 		ButtonParams.Flags = UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE;
 		mButtonOK = eeNew( UIPushButton, ( ButtonParams ) );
 		mButtonOK->Visible( true );
 		mButtonOK->Enabled( true );
 
-		ButtonParams.Pos.x = mButtonOK->Pos().x - mButtonOK->Size().Width() - 8;
+		ButtonParams.Pos.x = mButtonOK->Pos().x - mButtonOK->Size().width() - 8;
 		mButtonCancel = eeNew( UIPushButton, ( ButtonParams ) );
 		mButtonCancel->Visible( true );
 		mButtonCancel->Enabled( true );
@@ -30,19 +30,19 @@ UIMessageBox::UIMessageBox( const UIMessageBox::CreateParams& Params ) :
 	{
 		mButtonOK = Theme->CreatePushButton( Container(),
 								 Sizei( 90, 22 ),
-								 Vector2i( Container()->Size().Width() - 96, Container()->Size().Height() - 22 - 8 ),
+								 Vector2i( Container()->Size().width() - 96, Container()->Size().height() - 22 - 8 ),
 								 UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE );
 
 		mButtonCancel = Theme->CreatePushButton( Container(),
 								 mButtonOK->Size(),
-								 Vector2i( mButtonOK->Pos().x - mButtonOK->Size().Width() - 8, mButtonOK->Pos().y ),
+								 Vector2i( mButtonOK->Pos().x - mButtonOK->Size().width() - 8, mButtonOK->Pos().y ),
 								 mButtonOK->Flags() );
 	}
 
 	UITextBox::CreateParams TxtParams;
 	TxtParams.Parent( Container() );
 	TxtParams.Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM;
-	TxtParams.SizeSet( Container()->Size().Width(), mButtonOK->Pos().y  );
+	TxtParams.SizeSet( Container()->Size().width(), mButtonOK->Pos().y  );
 
 	mTextBox = eeNew( UITextBox, ( TxtParams ) );
 	mTextBox->Visible( true );
@@ -104,7 +104,7 @@ void UIMessageBox::SetTheme( UITheme * Theme ) {
 		}
 	}
 
-	mButtonOK->Pos( mButtonOK->Pos().x, Container()->Size().Height() - mButtonOK->Size().Height() - 8 );
+	mButtonOK->Pos( mButtonOK->Pos().x, Container()->Size().height() - mButtonOK->Size().height() - 8 );
 	mButtonCancel->Pos( mButtonCancel->Pos().x, mButtonOK->Pos().y );
 }
 
@@ -116,7 +116,7 @@ Uint32 UIMessageBox::OnMessage( const UIMessage * Msg ) {
 				Vector2i mousei( UIManager::instance()->GetMousePos() );
 				Vector2f mouse( mousei.x, mousei.y );
 
-				if ( Msg->Sender() == mButtonOK && mButtonOK->GetPolygon().PointInside( mouse ) ) {
+				if ( Msg->Sender() == mButtonOK && mButtonOK->GetPolygon().pointInside( mouse ) ) {
 					SendCommonEvent( UIEvent::EventMsgBoxConfirmClick );
 
 					CloseWindow();
@@ -145,17 +145,17 @@ UIPushButton * UIMessageBox::ButtonCancel() const {
 }
 
 void UIMessageBox::AutoSize() {
-	Sizei nSize( mTextBox->GetTextWidth() + 48, mTextBox->GetTextHeight() + mButtonOK->Size().Height() + mDecoSize.Height() + 8 );
+	Sizei nSize( mTextBox->GetTextWidth() + 48, mTextBox->GetTextHeight() + mButtonOK->Size().height() + mDecoSize.height() + 8 );
 
-	if ( !( nSize.Width() > Container()->Size().Width() ) ) {
-		nSize.x = Container()->Size().Width();
+	if ( !( nSize.width() > Container()->Size().width() ) ) {
+		nSize.x = Container()->Size().width();
 	}
 
-	if ( !( nSize.Height() > Container()->Size().Height() ) ) {
-		nSize.y = Container()->Size().Height();
+	if ( !( nSize.height() > Container()->Size().height() ) ) {
+		nSize.y = Container()->Size().height();
 	}
 
-	if ( nSize.x != Container()->Size().Width() || nSize.y != Container()->Size().Height() ) {
+	if ( nSize.x != Container()->Size().width() || nSize.y != Container()->Size().height() ) {
 		Size( nSize );
 
 		mMinWindowSize = nSize;

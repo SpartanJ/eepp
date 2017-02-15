@@ -489,7 +489,7 @@ void Window::SetCurrent() {
 
 void Window::Center() {
 	if ( Windowed() ) {
-		Position( mWindow.DesktopResolution.Width() / 2 - mWindow.WindowConfig.Width / 2, mWindow.DesktopResolution.Height() / 2 - mWindow.WindowConfig.Height / 2 );
+		Position( mWindow.DesktopResolution.width() / 2 - mWindow.WindowConfig.Width / 2, mWindow.DesktopResolution.height() / 2 - mWindow.WindowConfig.Height / 2 );
 	}
 }
 

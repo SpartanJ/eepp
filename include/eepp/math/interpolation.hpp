@@ -32,84 +32,84 @@ class EE_API Interpolation {
 		typedef cb::Callback0<void> OnStepCallback;
 
 		/** Add a new point */
-		void AddWaypoint( const Float Pos, const Float Time = 0 );
+		void addWaypoint( const Float Pos, const Float Time = 0 );
 
 		/** Edit a point */
-		bool EditWaypoint( const unsigned int& PointNum, const Float& NewPos, const Float NewTime = 0 );
+		bool editWaypoint( const unsigned int& PointNum, const Float& NewPos, const Float NewTime = 0 );
 
 		/** Erase a point */
-		bool EraseWaypoint( const unsigned int& PointNum );
+		bool eraseWaypoint( const unsigned int& PointNum );
 
 		/** Start the animation */
-		void Start( OnPathEndCallback PathEndCallback = OnPathEndCallback(), OnStepCallback StepCallback = OnStepCallback() );
+		void start( OnPathEndCallback PathEndCallback = OnPathEndCallback(), OnStepCallback StepCallback = OnStepCallback() );
 
 		/** Stop the animation */
-		void Stop();
+		void stop();
 
 		/** Sets a path end callback */
-		void SetPathEndCallback( OnPathEndCallback PathEndCallback );
+		void setPathEndCallback( OnPathEndCallback PathEndCallback );
 
 		/** Sets a step callback */
-		void SetStepCallback( OnStepCallback StepCallback );
+		void setStepCallback( OnStepCallback StepCallback );
 
 		/** Update the movement interpolation */
-		void Update( const Time& Elapsed );
+		void update( const Time& Elapsed );
 
 		/** Reset the class */
-		void Reset();
+		void reset();
 
 		/** @return The Current Position */
-		const Float& GetPos();
+		const Float& getPos();
 
 		/** @return The Current Real Position */
-		const Float& GetRealPos() const;
+		const Float& getRealPos() const;
 
 		/** @return If movement interpolation is a loop */
-		const bool&	Loop() const;
+		const bool&	loop() const;
 
 		/** Set if loop the movement interpolation */
-		void Loop( const bool& loop );
+		void loop( const bool& loop );
 
 		/** Clear all the points */
-		void ClearWaypoints();
+		void clearWaypoints();
 
 		/** @return If the animation ended */
-		const bool& Ended() const;
+		const bool& ended() const;
 
 		/** Set the current interpolation speed */
-		void Speed( const Float Speed );
+		void speed( const Float speed );
 
 		/** Get the current interpolation speed */
-		const Float& Speed() const;
+		const Float& speed() const;
 
 		/** @return If enabled */
-		const bool& Enabled() const;
+		const bool& enabled() const;
 
-		void Enabled( const bool& Enabled );
+		void enabled( const bool& enabled );
 
 		/** Instead if setting the time between every waypoing, this set a total time for all the movement interpolation. */
-		void SetTotalTime( const Time& TotTime );
+		void setTotalTime( const Time& TotTime );
 
 		/** @return the vector of points */
-		const std::vector<Point1d>& GetPoints() const;
+		const std::vector<Point1d>& getPoints() const;
 
 		/** @return The Current Node */
-		Point1d* GetCurrentActual() const;
+		Point1d* getCurrentActual() const;
 
 		/** @return The Next Node */
-		Point1d* GetCurrentNext() const;
+		Point1d* getCurrentNext() const;
 
 		/** @return The Current Position in the vector */
-		const unsigned int& GetCurrentPos() const;
+		const unsigned int& getCurrentPos() const;
 
 		/** @return The path end position */
-		const Float& GetEndPos();
+		const Float& getEndPos();
 
 		/** Set the type of interpolation to be used */
-		void Type( Ease::Interpolation InterpolationType );
+		void type( Ease::Interpolation InterpolationType );
 
 		/** @return The type of the interpolation */
-		const int& Type() const;
+		const int& type() const;
 	protected:
 		int mType;
 		bool mEnable;

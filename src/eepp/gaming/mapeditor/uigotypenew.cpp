@@ -26,13 +26,13 @@ UIGOTypeNew::UIGOTypeNew( cb::Callback2<void, std::string, Uint32> Cb ) :
 	mUIInput = mUITheme->CreateTextInput( mUIWindow->Container(), Sizei( 120, 22 ), Vector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE, true, 64 );
 
 	UIPushButton * OKButton = mUITheme->CreatePushButton( mUIWindow->Container(), Sizei( 80, 22 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->GetIconByName( "add" ) );
-	OKButton->Pos( mUIWindow->Container()->Size().Width() - OKButton->Size().Width() - 4, mUIWindow->Container()->Size().Height() - OKButton->Size().Height() - 4 );
+	OKButton->Pos( mUIWindow->Container()->Size().width() - OKButton->Size().width() - 4, mUIWindow->Container()->Size().height() - OKButton->Size().height() - 4 );
 	OKButton->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIGOTypeNew::OKClick ) );
 	mUIInput->AddEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UIGOTypeNew::OKClick ) );
 
 	OKButton->Text( "Add" );
 
-	UIPushButton * CancelButton = mUITheme->CreatePushButton( mUIWindow->Container(), OKButton->Size(), Vector2i( OKButton->Pos().x - OKButton->Size().Width() - 4, OKButton->Pos().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->GetIconByName( "cancel" ) );
+	UIPushButton * CancelButton = mUITheme->CreatePushButton( mUIWindow->Container(), OKButton->Size(), Vector2i( OKButton->Pos().x - OKButton->Size().width() - 4, OKButton->Pos().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->GetIconByName( "cancel" ) );
 	CancelButton->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIGOTypeNew::CancelClick ) );
 	CancelButton->Text( "Cancel" );
 

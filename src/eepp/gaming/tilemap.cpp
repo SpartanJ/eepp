@@ -119,7 +119,7 @@ void TileMap::CreateEmptyTile() {
 	//! I create a texture representing an empty tile to render instead of rendering with primitives because is a lot faster, at least with NVIDIA GPUs.
 	TextureFactory * TF = TextureFactory::instance();
 
-	std::string tileName( String::strFormated( "maptile-%dx%d-%ul", mTileSize.Width(), mTileSize.Height(), mGridLinesColor.getValue() ) );
+	std::string tileName( String::strFormated( "maptile-%dx%d-%ul", mTileSize.width(), mTileSize.height(), mGridLinesColor.getValue() ) );
 
 	Texture * Tex = TF->GetByName( tileName );
 
@@ -127,7 +127,7 @@ void TileMap::CreateEmptyTile() {
 		Uint32 x, y;
 		ColorA Col( mGridLinesColor );
 
-		Image Img( mTileSize.Width(), mTileSize.Height(), 4 );
+		Image Img( mTileSize.width(), mTileSize.height(), 4 );
 
 		Img.FillWithColor( ColorA( 0, 0, 0, 0 ) );
 
@@ -327,12 +327,12 @@ void TileMap::GetMouseOverTile() {
 	MapPos.x = eemin( MapPos.x, mPixelSize.x );
 	MapPos.y = eemin( MapPos.y, mPixelSize.y );
 
-	mMouseOverTile.x = MapPos.x / mTileSize.Width();
-	mMouseOverTile.y = MapPos.y / mTileSize.Height();
+	mMouseOverTile.x = MapPos.x / mTileSize.width();
+	mMouseOverTile.y = MapPos.y / mTileSize.height();
 
 	// Clamped pos
-	mMouseOverTileFinal.x = eemin( mMouseOverTile.x, mSize.Width()	- 1 );
-	mMouseOverTileFinal.y = eemin( mMouseOverTile.y, mSize.Height()	- 1 );
+	mMouseOverTileFinal.x = eemin( mMouseOverTile.x, mSize.width()	- 1 );
+	mMouseOverTileFinal.y = eemin( mMouseOverTile.y, mSize.height()	- 1 );
 	mMouseOverTileFinal.x = eemax( mMouseOverTileFinal.x, 0 );
 	mMouseOverTileFinal.y = eemax( mMouseOverTileFinal.y, 0 );
 
@@ -353,8 +353,8 @@ void TileMap::CalcTilesClip() {
 		if ( mStartTile.y < 0 )
 			mStartTile.y = 0;
 
-		mEndTile.x		= mStartTile.x + Math::RoundUp( (Float)mViewSize.x / ( (Float)mTileSize.x * mScale ) ) + 1 + mExtraTiles.x;
-		mEndTile.y		= mStartTile.y + Math::RoundUp( (Float)mViewSize.y / ( (Float)mTileSize.y * mScale ) ) + 1 + mExtraTiles.y;
+		mEndTile.x		= mStartTile.x + Math::roundUp( (Float)mViewSize.x / ( (Float)mTileSize.x * mScale ) ) + 1 + mExtraTiles.x;
+		mEndTile.y		= mStartTile.y + Math::roundUp( (Float)mViewSize.y / ( (Float)mTileSize.y * mScale ) ) + 1 + mExtraTiles.y;
 
 		if ( mEndTile.x > mSize.x )
 			mEndTile.x = mSize.x;
@@ -433,7 +433,7 @@ void TileMap::Scale( const Float& scale ) {
 }
 
 void TileMap::UpdateScreenAABB() {
-	mScreenAABB = eeAABB( -mOffset.x, -mOffset.y, -mOffset.x + mViewSize.Width(), -mOffset.y + mViewSize.Height() );
+	mScreenAABB = eeAABB( -mOffset.x, -mOffset.y, -mOffset.x + mViewSize.width(), -mOffset.y + mViewSize.height() );
 }
 
 const eeAABB& TileMap::GetViewAreaAABB() const {
@@ -634,7 +634,7 @@ GameObject * TileMap::CreateGameObject( const Uint32& Type, const Uint32& Flags,
 			GameObjectObject * tObject = NULL;
 
 			if ( GAMEOBJECT_TYPE_OBJECT == Type ) {
-				tObject = eeNew( GameObjectObject, ( DataId, ObjData.Poly.ToAABB(), Layer, Flags ) );
+				tObject = eeNew( GameObjectObject, ( DataId, ObjData.Poly.toAABB(), Layer, Flags ) );
 			} else if ( GAMEOBJECT_TYPE_POLYGON == Type ) {
 				tObject = eeNew( GameObjectPolygon, ( DataId, ObjData.Poly, Layer, Flags ) );
 			} else if ( GAMEOBJECT_TYPE_POLYLINE == Type ) {
@@ -979,7 +979,7 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 
 									IOS.read( (char*)&p, sizeof(Vector2if) );
 
-									tObjData.Poly.PushBack( Vector2f( p.x, p.y ) );
+									tObjData.Poly.pushBack( Vector2f( p.x, p.y ) );
 								}
 
 								mPolyObjs[ tOGOHdr.Id ] = tObjData;
@@ -1086,10 +1086,10 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 	MapHdr.Magic					= EE_MAP_MAGIC;
 	MapHdr.Flags					= mFlags;
 	MapHdr.MaxLayers				= mMaxLayers;
-	MapHdr.SizeX					= mSize.Width();
-	MapHdr.SizeY					= mSize.Height();
-	MapHdr.TileSizeX				= mTileSize.Width();
-	MapHdr.TileSizeY				= mTileSize.Height();
+	MapHdr.SizeX					= mSize.width();
+	MapHdr.SizeY					= mSize.height();
+	MapHdr.TileSizeX				= mTileSize.width();
+	MapHdr.TileSizeY				= mTileSize.height();
 	MapHdr.LayerCount				= mLayerCount;
 	MapHdr.PropertyCount			= mProperties.size();
 	MapHdr.TextureAtlasCount		= TextureAtlases.size();
@@ -1309,7 +1309,7 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 						String::strCopy( tObjObjHdr.Name, tObjObj->Name().c_str(), MAP_PROPERTY_SIZE );
 						String::strCopy( tObjObjHdr.Type, tObjObj->TypeName().c_str(), MAP_PROPERTY_SIZE );
 
-						tObjObjHdr.PointCount		= tPoly.Size();
+						tObjObjHdr.PointCount		= tPoly.size();
 						tObjObjHdr.PropertyCount	= tObjObjProp.size();
 
 						//! Writes the ObjObj header
@@ -1329,8 +1329,8 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 						}
 
 						//! Writes the polygon points
-						for ( Uint32 tPoint = 0; tPoint < tPoly.Size(); tPoint++ ) {
-							Vector2f pf( tPoly.GetAt( tPoint ) );
+						for ( Uint32 tPoint = 0; tPoint < tPoly.size(); tPoint++ ) {
+							Vector2f pf( tPoly.getAt( tPoint ) );
 							Vector2if p( pf.x, pf.y );	//! Convert it to Int32
 
 							IOS.write( (const char*)&p, sizeof(Vector2if) );

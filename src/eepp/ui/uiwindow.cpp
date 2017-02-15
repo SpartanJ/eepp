@@ -173,10 +173,10 @@ bool UIWindow::IsType( const Uint32& type ) const {
 }
 
 void UIWindow::ContainerPosChange( const UIEvent * Event ) {
-	Vector2i PosDiff = mContainer->Pos() - Vector2i( mBorderLeft->Size().Width(), mWindowDecoration->Size().Height() );
+	Vector2i PosDiff = mContainer->Pos() - Vector2i( mBorderLeft->Size().width(), mWindowDecoration->Size().height() );
 
 	if ( PosDiff.x != 0 || PosDiff.y != 0 ) {
-		mContainer->Pos( mBorderLeft->Size().Width(), mWindowDecoration->Size().Height() );
+		mContainer->Pos( mBorderLeft->Size().width(), mWindowDecoration->Size().height() );
 
 		Pos( mPos + PosDiff );
 	}
@@ -264,17 +264,17 @@ void UIWindow::GetMinWinSize() {
 
 	Sizei tSize;
 
-	tSize.x = mBorderLeft->Size().Width() + mBorderRight->Size().Width() - mButtonsPositionFixer.x;
-	tSize.y = mWindowDecoration->Size().Height() + mBorderBottom->Size().Height();
+	tSize.x = mBorderLeft->Size().width() + mBorderRight->Size().width() - mButtonsPositionFixer.x;
+	tSize.y = mWindowDecoration->Size().height() + mBorderBottom->Size().height();
 
 	if ( NULL != mButtonClose )
-		tSize.x += mButtonClose->Size().Width();
+		tSize.x += mButtonClose->Size().width();
 
 	if ( NULL != mButtonMaximize )
-		tSize.x += mButtonMaximize->Size().Width();
+		tSize.x += mButtonMaximize->Size().width();
 
 	if ( NULL != mButtonMinimize )
-		tSize.x += mButtonMinimize->Size().Width();
+		tSize.x += mButtonMinimize->Size().width();
 
 	if ( mMinWindowSize.x < tSize.x )
 		mMinWindowSize.x = tSize.x;
@@ -303,8 +303,8 @@ void UIWindow::Size( const Sizei& Size ) {
 	if ( NULL != mWindowDecoration ) {
 		Sizei size = Size;
 
-		size.x += mBorderLeft->Size().Width() + mBorderRight->Size().Width();
-		size.y += mWindowDecoration->Size().Height() + mBorderBottom->Size().Height();
+		size.x += mBorderLeft->Size().width() + mBorderRight->Size().width();
+		size.y += mWindowDecoration->Size().height() + mBorderBottom->Size().height();
 
 		UIComplexControl::Size( size );
 	} else {
@@ -322,67 +322,67 @@ const Sizei& UIWindow::Size() {
 
 void UIWindow::FixChildsSize() {
 	if ( NULL == mWindowDecoration ) {
-		mContainer->Size( mSize.Width(), mSize.Height() );
+		mContainer->Size( mSize.width(), mSize.height() );
 		return;
 	}
 
 	if ( mDecoAutoSize ) {
-		mDecoSize = Sizei( mSize.Width(), mWindowDecoration->GetSkinSize().Height() );
+		mDecoSize = Sizei( mSize.width(), mWindowDecoration->GetSkinSize().height() );
 	}
 
 	mWindowDecoration->Size( mDecoSize );
 
 	if ( mBorderAutoSize ) {
-		mBorderBottom->Size( mSize.Width(), mBorderBottom->GetSkinSize().Height() );
+		mBorderBottom->Size( mSize.width(), mBorderBottom->GetSkinSize().height() );
 	} else {
-		mBorderBottom->Size( mSize.Width(), mBorderSize.Height() );
+		mBorderBottom->Size( mSize.width(), mBorderSize.height() );
 	}
 
-	Uint32 BorderHeight = mSize.Height() - mDecoSize.Height() - mBorderBottom->Size().Height();
+	Uint32 BorderHeight = mSize.height() - mDecoSize.height() - mBorderBottom->Size().height();
 
 	if ( mBorderAutoSize ) {
-		mBorderLeft->Size( mBorderLeft->GetSkinSize().Width()	, BorderHeight );
-		mBorderRight->Size( mBorderRight->GetSkinSize().Width(), BorderHeight );
+		mBorderLeft->Size( mBorderLeft->GetSkinSize().width()	, BorderHeight );
+		mBorderRight->Size( mBorderRight->GetSkinSize().width(), BorderHeight );
 	} else {
-		mBorderLeft->Size( mBorderSize.Width(), BorderHeight );
-		mBorderRight->Size( mBorderSize.Width(), BorderHeight );
+		mBorderLeft->Size( mBorderSize.width(), BorderHeight );
+		mBorderRight->Size( mBorderSize.width(), BorderHeight );
 	}
 
-	mBorderLeft->Pos( 0, mWindowDecoration->Size().Height() );
-	mBorderRight->Pos( mSize.Width() - mBorderRight->Size().Width(), mWindowDecoration->Size().Height() );
-	mBorderBottom->Pos( 0, mSize.Height() - mBorderBottom->Size().Height() );
+	mBorderLeft->Pos( 0, mWindowDecoration->Size().height() );
+	mBorderRight->Pos( mSize.width() - mBorderRight->Size().width(), mWindowDecoration->Size().height() );
+	mBorderBottom->Pos( 0, mSize.height() - mBorderBottom->Size().height() );
 
-	mContainer->Pos( mBorderLeft->Size().Width(), mWindowDecoration->Size().Height() );
-	mContainer->Size( mSize.Width() - mBorderLeft->Size().Width() - mBorderRight->Size().Width(), mSize.Height() - mWindowDecoration->Size().Height() - mBorderBottom->Size().Height() );
+	mContainer->Pos( mBorderLeft->Size().width(), mWindowDecoration->Size().height() );
+	mContainer->Size( mSize.width() - mBorderLeft->Size().width() - mBorderRight->Size().width(), mSize.height() - mWindowDecoration->Size().height() - mBorderBottom->Size().height() );
 
 	Uint32 yPos;
 
 	if ( NULL != mButtonClose ) {
-		yPos = mWindowDecoration->Size().Height() / 2 - mButtonClose->Size().Height() / 2 + mButtonsPositionFixer.y;
+		yPos = mWindowDecoration->Size().height() / 2 - mButtonClose->Size().height() / 2 + mButtonsPositionFixer.y;
 
-		mButtonClose->Pos( mWindowDecoration->Size().Width() - mBorderRight->Size().Width() - mButtonClose->Size().Width() + mButtonsPositionFixer.x, yPos );
+		mButtonClose->Pos( mWindowDecoration->Size().width() - mBorderRight->Size().width() - mButtonClose->Size().width() + mButtonsPositionFixer.x, yPos );
 	}
 
 	if ( NULL != mButtonMaximize ) {
-		yPos = mWindowDecoration->Size().Height() / 2 - mButtonMaximize->Size().Height() / 2 + mButtonsPositionFixer.y;
+		yPos = mWindowDecoration->Size().height() / 2 - mButtonMaximize->Size().height() / 2 + mButtonsPositionFixer.y;
 
 		if ( NULL != mButtonClose ) {
-			mButtonMaximize->Pos( mButtonClose->Pos().x - mButtonsSeparation - mButtonMaximize->Size().Width(), yPos );
+			mButtonMaximize->Pos( mButtonClose->Pos().x - mButtonsSeparation - mButtonMaximize->Size().width(), yPos );
 		} else {
-			mButtonMaximize->Pos( mWindowDecoration->Size().Width() - mBorderRight->Size().Width() - mButtonMaximize->Size().Width() + mButtonsPositionFixer.x, yPos );
+			mButtonMaximize->Pos( mWindowDecoration->Size().width() - mBorderRight->Size().width() - mButtonMaximize->Size().width() + mButtonsPositionFixer.x, yPos );
 		}
 	}
 
 	if ( NULL != mButtonMinimize ) {
-		yPos = mWindowDecoration->Size().Height() / 2 - mButtonMinimize->Size().Height() / 2 + mButtonsPositionFixer.y;
+		yPos = mWindowDecoration->Size().height() / 2 - mButtonMinimize->Size().height() / 2 + mButtonsPositionFixer.y;
 
 		if ( NULL != mButtonMaximize ) {
-			mButtonMinimize->Pos( mButtonMaximize->Pos().x - mButtonsSeparation - mButtonMinimize->Size().Width(), yPos );
+			mButtonMinimize->Pos( mButtonMaximize->Pos().x - mButtonsSeparation - mButtonMinimize->Size().width(), yPos );
 		} else {
 			if ( NULL != mButtonClose ) {
-				mButtonMinimize->Pos( mButtonClose->Pos().x - mButtonsSeparation - mButtonMinimize->Size().Width(), yPos );
+				mButtonMinimize->Pos( mButtonClose->Pos().x - mButtonsSeparation - mButtonMinimize->Size().width(), yPos );
 			} else {
-				mButtonMinimize->Pos( mWindowDecoration->Size().Width() - mBorderRight->Size().Width() - mButtonMinimize->Size().Width() + mButtonsPositionFixer.x, yPos );
+				mButtonMinimize->Pos( mWindowDecoration->Size().width() - mBorderRight->Size().width() - mButtonMinimize->Size().width() + mButtonsPositionFixer.x, yPos );
 			}
 		}
 	}
@@ -450,14 +450,14 @@ void UIWindow::DecideResizeType( UIControl * Control ) {
 	WorldToControl( Pos );
 
 	if ( Control == this ) {
-		if ( Pos.x <= mBorderLeft->Size().Width() ) {
+		if ( Pos.x <= mBorderLeft->Size().width() ) {
 			TryResize( RESIZE_TOPLEFT );
-		} else if ( Pos.x >= ( mSize.Width() - mBorderRight->Size().Width() ) ) {
+		} else if ( Pos.x >= ( mSize.width() - mBorderRight->Size().width() ) ) {
 			TryResize( RESIZE_TOPRIGHT );
-		} else if ( Pos.y <= mBorderBottom->Size().Height() ) {
+		} else if ( Pos.y <= mBorderBottom->Size().height() ) {
 			if ( Pos.x < mMinCornerDistance ) {
 				TryResize( RESIZE_TOPLEFT );
-			} else if ( Pos.x > mSize.Width() - mMinCornerDistance ) {
+			} else if ( Pos.x > mSize.width() - mMinCornerDistance ) {
 				TryResize( RESIZE_TOPRIGHT );
 			} else {
 				TryResize( RESIZE_TOP );
@@ -466,19 +466,19 @@ void UIWindow::DecideResizeType( UIControl * Control ) {
 	} else if ( Control == mBorderBottom ) {
 		if ( Pos.x < mMinCornerDistance ) {
 			TryResize( RESIZE_LEFTBOTTOM );
-		} else if ( Pos.x > mSize.Width() - mMinCornerDistance ) {
+		} else if ( Pos.x > mSize.width() - mMinCornerDistance ) {
 			TryResize( RESIZE_RIGHTBOTTOM );
 		} else {
 			TryResize( RESIZE_BOTTOM );
 		}
 	} else if ( Control == mBorderLeft )  {
-		if ( Pos.y >= mSize.Height() - mMinCornerDistance ) {
+		if ( Pos.y >= mSize.height() - mMinCornerDistance ) {
 			TryResize( RESIZE_LEFTBOTTOM );
 		} else {
 			TryResize( RESIZE_LEFT );
 		}
 	} else if ( Control == mBorderRight ) {
-		if ( Pos.y >= mSize.Height() - mMinCornerDistance ) {
+		if ( Pos.y >= mSize.height() - mMinCornerDistance ) {
 			TryResize( RESIZE_RIGHTBOTTOM );
 		} else {
 			TryResize( RESIZE_RIGHT );
@@ -502,7 +502,7 @@ void UIWindow::TryResize( const UI_RESIZE_TYPE& Type ) {
 	{
 		case RESIZE_RIGHT:
 		{
-			mResizePos.x = mSize.Width() - Pos.x;
+			mResizePos.x = mSize.width() - Pos.x;
 			break;
 		}
 		case RESIZE_LEFT:
@@ -517,19 +517,19 @@ void UIWindow::TryResize( const UI_RESIZE_TYPE& Type ) {
 		}
 		case RESIZE_BOTTOM:
 		{
-			mResizePos.y = mSize.Height() - Pos.y;
+			mResizePos.y = mSize.height() - Pos.y;
 			break;
 		}
 		case RESIZE_RIGHTBOTTOM:
 		{
-			mResizePos.x = mSize.Width() - Pos.x;
-			mResizePos.y = mSize.Height() - Pos.y;
+			mResizePos.x = mSize.width() - Pos.x;
+			mResizePos.y = mSize.height() - Pos.y;
 			break;
 		}
 		case RESIZE_LEFTBOTTOM:
 		{
 			mResizePos.x = Pos.x;
-			mResizePos.y = mSize.Height() - Pos.y;
+			mResizePos.y = mSize.height() - Pos.y;
 			break;
 		}
 		case RESIZE_TOPLEFT:
@@ -541,7 +541,7 @@ void UIWindow::TryResize( const UI_RESIZE_TYPE& Type ) {
 		case RESIZE_TOPRIGHT:
 		{
 			mResizePos.y = Pos.y;
-			mResizePos.x = mSize.Width() - Pos.x;
+			mResizePos.x = mSize.width() - Pos.x;
 			break;
 		}
 		case RESIZE_NONE:
@@ -571,26 +571,26 @@ void UIWindow::UpdateResize() {
 	switch ( mResizeType ) {
 		case RESIZE_RIGHT:
 		{
-			InternalSize( Pos.x + mResizePos.x, mSize.Height() );
+			InternalSize( Pos.x + mResizePos.x, mSize.height() );
 			break;
 		}
 		case RESIZE_BOTTOM:
 		{
-			InternalSize( mSize.Width(), Pos.y + mResizePos.y );
+			InternalSize( mSize.width(), Pos.y + mResizePos.y );
 			break;
 		}
 		case RESIZE_LEFT:
 		{
 			Pos.x -= mResizePos.x;
 			UIControl::Pos( mPos.x + Pos.x, mPos.y );
-			InternalSize( mSize.Width() - Pos.x, mSize.Height() );
+			InternalSize( mSize.width() - Pos.x, mSize.height() );
 			break;
 		}
 		case RESIZE_TOP:
 		{
 			Pos.y -= mResizePos.y;
 			UIControl::Pos( mPos.x, mPos.y + Pos.y );
-			InternalSize( mSize.Width(), mSize.Height() - Pos.y );
+			InternalSize( mSize.width(), mSize.height() - Pos.y );
 			break;
 		}
 		case RESIZE_RIGHTBOTTOM:
@@ -603,7 +603,7 @@ void UIWindow::UpdateResize() {
 		{
 			Pos -= mResizePos;
 			UIControl::Pos( mPos.x + Pos.x, mPos.y + Pos.y );
-			InternalSize( mSize.Width() - Pos.x, mSize.Height() - Pos.y );
+			InternalSize( mSize.width() - Pos.x, mSize.height() - Pos.y );
 			break;
 		}
 		case RESIZE_TOPRIGHT:
@@ -611,7 +611,7 @@ void UIWindow::UpdateResize() {
 			Pos.y -= mResizePos.y;
 			Pos.x += mResizePos.x;
 			UIControl::Pos( mPos.x, mPos.y + Pos.y );
-			InternalSize( Pos.x, mSize.Height() - Pos.y );
+			InternalSize( Pos.x, mSize.height() - Pos.y );
 			break;
 		}
 		case RESIZE_LEFTBOTTOM:
@@ -619,7 +619,7 @@ void UIWindow::UpdateResize() {
 			Pos.x -= mResizePos.x;
 			Pos.y += mResizePos.y;
 			UIControl::Pos( mPos.x + Pos.x, mPos.y );
-			InternalSize( mSize.Width() - Pos.x, Pos.y );
+			InternalSize( mSize.width() - Pos.x, Pos.y );
 			break;
 		}
 		case RESIZE_NONE:
@@ -662,23 +662,23 @@ void UIWindow::Draw() {
 
 		Vector2i ShadowPos = mScreenPos + Vector2i( 0, 16 );
 
-		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y ), Sizef( mSize.Width(), mSize.Height() ) ), BeginC, BeginC, BeginC, BeginC );
+		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y ), Sizef( mSize.width(), mSize.height() ) ), BeginC, BeginC, BeginC, BeginC );
 
-		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y - SSize ), Sizef( mSize.Width(), SSize ) ), EndC, BeginC, BeginC, EndC );
+		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y - SSize ), Sizef( mSize.width(), SSize ) ), EndC, BeginC, BeginC, EndC );
 
-		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x - SSize, ShadowPos.y ), Sizef( SSize, mSize.Height() ) ), EndC, EndC, BeginC, BeginC );
+		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x - SSize, ShadowPos.y ), Sizef( SSize, mSize.height() ) ), EndC, EndC, BeginC, BeginC );
 
-		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x + mSize.Width(), ShadowPos.y ), Sizef( SSize, mSize.Height() ) ), BeginC, BeginC, EndC, EndC );
+		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x + mSize.width(), ShadowPos.y ), Sizef( SSize, mSize.height() ) ), BeginC, BeginC, EndC, EndC );
 
-		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y + mSize.Height() ), Sizef( mSize.Width(), SSize ) ), BeginC, EndC, EndC, BeginC );
+		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y + mSize.height() ), Sizef( mSize.width(), SSize ) ), BeginC, EndC, EndC, BeginC );
 
-		P.DrawTriangle( Triangle2f( Vector2f( ShadowPos.x + mSize.Width(), ShadowPos.y ), Vector2f( ShadowPos.x + mSize.Width(), ShadowPos.y - SSize ), Vector2f( ShadowPos.x + mSize.Width() + SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
+		P.DrawTriangle( Triangle2f( Vector2f( ShadowPos.x + mSize.width(), ShadowPos.y ), Vector2f( ShadowPos.x + mSize.width(), ShadowPos.y - SSize ), Vector2f( ShadowPos.x + mSize.width() + SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
 
 		P.DrawTriangle( Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y ), Vector2f( ShadowPos.x, ShadowPos.y - SSize ), Vector2f( ShadowPos.x - SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
 
-		P.DrawTriangle( Triangle2f( Vector2f( ShadowPos.x + mSize.Width(), ShadowPos.y + mSize.Height() ), Vector2f( ShadowPos.x + mSize.Width(), ShadowPos.y + mSize.Height() + SSize ), Vector2f( ShadowPos.x + mSize.Width() + SSize, ShadowPos.y + mSize.Height() ) ), BeginC, EndC, EndC );
+		P.DrawTriangle( Triangle2f( Vector2f( ShadowPos.x + mSize.width(), ShadowPos.y + mSize.height() ), Vector2f( ShadowPos.x + mSize.width(), ShadowPos.y + mSize.height() + SSize ), Vector2f( ShadowPos.x + mSize.width() + SSize, ShadowPos.y + mSize.height() ) ), BeginC, EndC, EndC );
 
-		P.DrawTriangle( Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y + mSize.Height() ), Vector2f( ShadowPos.x - SSize, ShadowPos.y + mSize.Height() ), Vector2f( ShadowPos.x, ShadowPos.y + mSize.Height() + SSize ) ), BeginC, EndC, EndC );
+		P.DrawTriangle( Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y + mSize.height() ), Vector2f( ShadowPos.x - SSize, ShadowPos.y + mSize.height() ), Vector2f( ShadowPos.x, ShadowPos.y + mSize.height() + SSize ) ), BeginC, EndC, EndC );
 
 		P.ForceDraw( true );
 	}
@@ -810,8 +810,8 @@ void UIWindow::Title( const String& Text ) {
 
 void UIWindow::FixTitleSize() {
 	if ( NULL != mWindowDecoration && NULL != mTitle ) {
-		mTitle->Size( mWindowDecoration->Size().Width() - mBorderLeft->Size().Width() - mBorderRight->Size().Width(), mWindowDecoration->Size().Height() );
-		mTitle->Pos( mBorderLeft->Size().Width(), 0 );
+		mTitle->Size( mWindowDecoration->Size().width() - mBorderLeft->Size().width() - mBorderRight->Size().width(), mWindowDecoration->Size().height() );
+		mTitle->Pos( mBorderLeft->Size().width(), 0 );
 	}
 }
 
@@ -922,14 +922,14 @@ void UIWindow::ResizeCursor() {
 	const UIControl * Control = Man->OverControl();
 
 	if ( Control == this ) {
-		if ( Pos.x <= mBorderLeft->Size().Width() ) {
+		if ( Pos.x <= mBorderLeft->Size().width() ) {
 			Man->SetCursor( EE_CURSOR_SIZENWSE ); // RESIZE_TOPLEFT
-		} else if ( Pos.x >= ( mSize.Width() - mBorderRight->Size().Width() ) ) {
+		} else if ( Pos.x >= ( mSize.width() - mBorderRight->Size().width() ) ) {
 			Man->SetCursor( EE_CURSOR_SIZENESW ); // RESIZE_TOPRIGHT
-		} else if ( Pos.y <= mBorderBottom->Size().Height() ) {
+		} else if ( Pos.y <= mBorderBottom->Size().height() ) {
 			if ( Pos.x < mMinCornerDistance ) {
 				Man->SetCursor( EE_CURSOR_SIZENWSE ); // RESIZE_TOPLEFT
-			} else if ( Pos.x > mSize.Width() - mMinCornerDistance ) {
+			} else if ( Pos.x > mSize.width() - mMinCornerDistance ) {
 				Man->SetCursor( EE_CURSOR_SIZENESW ); // RESIZE_TOPRIGHT
 			} else {
 				Man->SetCursor( EE_CURSOR_SIZENS ); // RESIZE_TOP
@@ -940,19 +940,19 @@ void UIWindow::ResizeCursor() {
 	} else if ( Control == mBorderBottom ) {
 		if ( Pos.x < mMinCornerDistance ) {
 			Man->SetCursor( EE_CURSOR_SIZENESW ); // RESIZE_LEFTBOTTOM
-		} else if ( Pos.x > mSize.Width() - mMinCornerDistance ) {
+		} else if ( Pos.x > mSize.width() - mMinCornerDistance ) {
 			Man->SetCursor( EE_CURSOR_SIZENWSE ); // RESIZE_RIGHTBOTTOM
 		} else {
 			Man->SetCursor( EE_CURSOR_SIZENS ); // RESIZE_BOTTOM
 		}
 	} else if ( Control == mBorderLeft )  {
-		if ( Pos.y >= mSize.Height() - mMinCornerDistance ) {
+		if ( Pos.y >= mSize.height() - mMinCornerDistance ) {
 			Man->SetCursor( EE_CURSOR_SIZENESW ); // RESIZE_LEFTBOTTOM
 		} else {
 			Man->SetCursor( EE_CURSOR_SIZEWE ); // RESIZE_LEFT
 		}
 	} else if ( Control == mBorderRight ) {
-		if ( Pos.y >= mSize.Height() - mMinCornerDistance ) {
+		if ( Pos.y >= mSize.height() - mMinCornerDistance ) {
 			Man->SetCursor( EE_CURSOR_SIZENWSE ); // RESIZE_RIGHTBOTTOM
 		} else {
 			Man->SetCursor( EE_CURSOR_SIZEWE ); // RESIZE_RIGHT

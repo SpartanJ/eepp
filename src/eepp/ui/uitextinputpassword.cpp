@@ -33,8 +33,8 @@ void UITextInputPassword::Draw() {
 				UIManager::instance()->ClipEnable(
 						mScreenPos.x + mPadding.Left,
 						mScreenPos.y + mPadding.Top,
-						mSize.Width() - mPadding.Left - mPadding.Right,
-						mSize.Height() - mPadding.Top - mPadding.Bottom
+						mSize.width() - mPadding.Left - mPadding.Right,
+						mSize.height() - mPadding.Top - mPadding.Bottom
 				);
 			}
 
@@ -72,8 +72,8 @@ void UITextInputPassword::AlignFix() {
 		if ( !mTextBuffer.SupportNewLine() ) {
 			if ( tX < 0.f )
 				mAlignOffset.x = -( mAlignOffset.x + ( tW - mAlignOffset.x ) );
-			else if ( tX > mSize.Width() - mPadding.Left - mPadding.Right )
-				mAlignOffset.x = mSize.Width() - mPadding.Left - mPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
+			else if ( tX > mSize.width() - mPadding.Left - mPadding.Right )
+				mAlignOffset.x = mSize.width() - mPadding.Left - mPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
 		}
 	}
 }

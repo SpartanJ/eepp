@@ -83,11 +83,11 @@ void TexturePacker::SetOptions( const Uint32& MaxWidth, const Uint32& MaxHeight,
 		mWidth 	= MaxWidth;
 		mHeight = MaxHeight;
 
-		if ( ForcePowOfTwo && !Math::IsPow2( mWidth ) )
-			mWidth = Math::NextPowOfTwo( mWidth );
+		if ( ForcePowOfTwo && !Math::isPow2( mWidth ) )
+			mWidth = Math::nextPowOfTwo( mWidth );
 
-		if ( ForcePowOfTwo && !Math::IsPow2( mHeight ) )
-			mHeight = Math::NextPowOfTwo( mHeight );
+		if ( ForcePowOfTwo && !Math::isPow2( mHeight ) )
+			mHeight = Math::nextPowOfTwo( mHeight );
 
 		mForcePowOfTwo 	= ForcePowOfTwo;
 		mAllowFlipping 	= AllowFlipping;

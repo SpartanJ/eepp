@@ -172,8 +172,8 @@ void Primitives::DrawArc( const Vector2f& p, const Float& radius, Uint32 segment
 			sBR->SetLineWidth( mLineWidth );
 
 			segmentsCount = Uint32( (Float)segmentsCount * (Float)eeabs( arcAngleA ) / 360 );
-			Float startAngle = Math::Radians(arcStartAngle);
-			Float theta = Math::Radians(arcAngleA) / Float(segmentsCount - 1);
+			Float startAngle = Math::radians(arcStartAngle);
+			Float theta = Math::radians(arcAngleA) / Float(segmentsCount - 1);
 			Float tangetialFactor = eetan(theta);
 			Float radialFactor = eecos(theta);
 			Float x = radius * eecos(startAngle);
@@ -227,9 +227,9 @@ void Primitives::DrawRectangle( const Rectf& R, const ColorA& TopLeft, const Col
 			sBR->QuadsBegin();
 			sBR->QuadsSetColorFree( TopLeft, BottomLeft, BottomRight, TopRight );
 
-			Sizef size = const_cast<Rectf*>(&R)->Size();
+			Sizef size = const_cast<Rectf*>(&R)->size();
 
-			sBR->BatchQuadEx( R.Left, R.Top, size.Width(), size.Height(), Angle, Scale );
+			sBR->BatchQuadEx( R.Left, R.Top, size.width(), size.height(), Angle, Scale );
 			break;
 		}
 		case DRAW_LINE:
@@ -241,10 +241,10 @@ void Primitives::DrawRectangle( const Rectf& R, const ColorA& TopLeft, const Col
 
 			if ( Scale != 1.0f || Angle != 0.0f ) {
 				Quad2f Q( R );
-				Sizef size = const_cast<Rectf*>(&R)->Size();
+				Sizef size = const_cast<Rectf*>(&R)->size();
 
-				Q.Scale( Scale );
-				Q.Rotate( Angle, Vector2f( R.Left + size.Width() * 0.5f, R.Top + size.Height() * 0.5f ) );
+				Q.scale( Scale );
+				Q.rotate( Angle, Vector2f( R.Left + size.width() * 0.5f, R.Top + size.height() * 0.5f ) );
 
 				sBR->BatchLineLoop( Q[0].x, Q[0].y, Q[1].x, Q[1].y );
 				sBR->LineLoopSetColorFree( BottomRight, TopRight );
@@ -271,14 +271,14 @@ void Primitives::DrawRoundedRectangle( const Rectf& R, const ColorA& TopLeft, co
 	sBR->SetBlendMode( mBlendMode );
 
 	unsigned int i;
-	Sizef size		= const_cast<Rectf*>( &R )->Size();
-	Float xscalediff	= size.Width()	* Scale.x - size.Width();
-	Float yscalediff	= size.Height()	* Scale.y - size.Height();
-	Vector2f Center( R.Left + size.Width() * 0.5f + xscalediff, R.Top + size.Height() * 0.5f + yscalediff );
-	Polygon2f Poly	= Polygon2f::CreateRoundedRectangle( R.Left - xscalediff, R.Top - yscalediff, size.Width() + xscalediff, size.Height() + yscalediff, Corners );
+	Sizef size		= const_cast<Rectf*>( &R )->size();
+	Float xscalediff	= size.width()	* Scale.x - size.width();
+	Float yscalediff	= size.height()	* Scale.y - size.height();
+	Vector2f Center( R.Left + size.width() * 0.5f + xscalediff, R.Top + size.height() * 0.5f + yscalediff );
+	Polygon2f Poly	= Polygon2f::createRoundedRectangle( R.Left - xscalediff, R.Top - yscalediff, size.width() + xscalediff, size.height() + yscalediff, Corners );
 	Vector2f poly;
 
-	Poly.Rotate( Angle, Center );
+	Poly.rotate( Angle, Center );
 
 	switch( mFillMode ) {
 		case DRAW_FILL:
@@ -288,7 +288,7 @@ void Primitives::DrawRoundedRectangle( const Rectf& R, const ColorA& TopLeft, co
 
 				sBR->BatchPolygon( Poly );
 			} else {
-				for ( i = 0; i < Poly.Size(); i++ ) {
+				for ( i = 0; i < Poly.size(); i++ ) {
 					poly = Poly[i];
 
 					if ( poly.x <= Center.x && poly.y <= Center.y )
@@ -316,11 +316,11 @@ void Primitives::DrawRoundedRectangle( const Rectf& R, const ColorA& TopLeft, co
 			sBR->LineLoopSetColor( TopLeft );
 
 			if ( TopLeft == BottomLeft && BottomLeft == BottomRight && BottomRight == TopRight ) {
-				for ( i = 0; i < Poly.Size(); i+=2 ) {
+				for ( i = 0; i < Poly.size(); i+=2 ) {
 					sBR->BatchLineLoop( Poly[i], Poly[i+1] );
 				}
 			} else {
-				for ( unsigned int i = 0; i < Poly.Size(); i++ ) {
+				for ( unsigned int i = 0; i < Poly.size(); i++ ) {
 					poly = Poly[i];
 
 					if ( poly.x <= Center.x && poly.y <= Center.y )
@@ -393,8 +393,8 @@ void Primitives::DrawPolygon( const Polygon2f& p ) {
 			sBR->LineLoopBegin();
 			sBR->LineLoopSetColor( mColor );
 
-			for ( Uint32 i = 0; i < p.Size(); i += 2 )
-				sBR->BatchLineLoop( p.X() + p[i].x, p.Y() + p[i].y, p.X() + p[i+1].x, p.Y() + p[i+1].y );
+			for ( Uint32 i = 0; i < p.size(); i += 2 )
+				sBR->BatchLineLoop( p.x() + p[i].x, p.y() + p[i].y, p.x() + p[i+1].x, p.y() + p[i+1].y );
 
 			break;
 		}

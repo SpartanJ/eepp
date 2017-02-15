@@ -25,12 +25,12 @@ void spriteCallback( Uint32 Event, Sprite * Sprite, void * UserData ) {
 	} else if ( Event == USER_SPRITE_EVENT ) {
 		// Create an interpolation to change the angle of the sprite
 		Interpolation * RotationInterpolation = reinterpret_cast<Interpolation*>( UserData );
-		RotationInterpolation->ClearWaypoints();
-		RotationInterpolation->AddWaypoint( Sprite->Angle() );
-		RotationInterpolation->AddWaypoint( Sprite->Angle() + 45.f );
-		RotationInterpolation->SetTotalTime( Milliseconds( 500 ) );
-		RotationInterpolation->Type( Ease::BounceOut ); // Set the easing effect used for the interpolation
-		RotationInterpolation->Start();
+		RotationInterpolation->clearWaypoints();
+		RotationInterpolation->addWaypoint( Sprite->Angle() );
+		RotationInterpolation->addWaypoint( Sprite->Angle() + 45.f );
+		RotationInterpolation->setTotalTime( Milliseconds( 500 ) );
+		RotationInterpolation->type( Ease::BounceOut ); // Set the easing effect used for the interpolation
+		RotationInterpolation->start();
 
 		// Scale the sprite
 		if ( Sprite->Scale().x < 3 ) {
@@ -60,12 +60,12 @@ void MainLoop()
 	}
 
 	// Update the angle interpolation
-	PlanetAngle.Update( win->Elapsed() );
-	RockAngle.Update( win->Elapsed() );
+	PlanetAngle.update( win->Elapsed() );
+	RockAngle.update( win->Elapsed() );
 
 	// Set the Planet and Rock angle from the interpolation
-	Planet->Angle( PlanetAngle.GetPos() );
-	Rock->Angle( RockAngle.GetPos() );
+	Planet->Angle( PlanetAngle.getPos() );
+	Rock->Angle( RockAngle.getPos() );
 
 	// Draw the static planet sprite
 	Planet->Draw();
@@ -142,18 +142,18 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// Set the sprites position to the screen center
 		Vector2i ScreenCenter( Engine::instance()->GetWidth() / 2, Engine::instance()->GetHeight() / 2 );
 
-		Planet->Position( ScreenCenter.x - Planet->GetAABB().Size().Width() / 2, ScreenCenter.y - Planet->GetAABB().Size().Height() / 2 );
+		Planet->Position( ScreenCenter.x - Planet->GetAABB().size().width() / 2, ScreenCenter.y - Planet->GetAABB().size().height() / 2 );
 
-		Rock->Position( ScreenCenter.x - Rock->GetAABB().Size().Width() / 2, ScreenCenter.y - Rock->GetAABB().Size().Height() / 2 );
+		Rock->Position( ScreenCenter.x - Rock->GetAABB().size().width() / 2, ScreenCenter.y - Rock->GetAABB().size().height() / 2 );
 
-		Blindy->Position( ScreenCenter.x - Blindy->GetAABB().Size().Width() / 2, ScreenCenter.y - Blindy->GetAABB().Size().Height() / 2 );
+		Blindy->Position( ScreenCenter.x - Blindy->GetAABB().size().width() / 2, ScreenCenter.y - Blindy->GetAABB().size().height() / 2 );
 
 		// Set the planet angle interpolation
-		PlanetAngle.AddWaypoint( 0 );
-		PlanetAngle.AddWaypoint( 360 );
-		PlanetAngle.SetTotalTime( Seconds( 10 ) );
-		PlanetAngle.Loop( true );
-		PlanetAngle.Start();
+		PlanetAngle.addWaypoint( 0 );
+		PlanetAngle.addWaypoint( 360 );
+		PlanetAngle.setTotalTime( Seconds( 10 ) );
+		PlanetAngle.loop( true );
+		PlanetAngle.start();
 
 		// Create a Event callback for the rock sprite
 		Rock->SetEventsCallback( cb::Make3( &spriteCallback ), &RockAngle );

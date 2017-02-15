@@ -32,7 +32,7 @@ RGB MapLight::ProcessVertex( const Float& PointX, const Float& PointY, const RGB
 
 	if ( mActive ) {
 		if ( mType == LIGHT_NORMAL )
-			VertexDist = eeabs( mPos.Distance( Vector2f( PointX, PointY ) ) );
+			VertexDist = eeabs( mPos.distance( Vector2f( PointX, PointY ) ) );
 		else {
 			Float XDist = eeabs(mPos.x - PointX) * 0.5f;
 			Float YDist = eeabs(mPos.y - PointY);
@@ -72,7 +72,7 @@ ColorA MapLight::ProcessVertex( const Float& PointX, const Float& PointY, const 
 
 	if ( mActive ) {
 		if ( mType == LIGHT_NORMAL )
-			VertexDist = eeabs( mPos.Distance( Vector2f( PointX, PointY ) ) );
+			VertexDist = eeabs( mPos.distance( Vector2f( PointX, PointY ) ) );
 		else {
 			Float XDist = eeabs(mPos.x - PointX) * 0.5f;
 			Float YDist = eeabs(mPos.y - PointY);

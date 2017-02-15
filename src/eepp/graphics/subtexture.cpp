@@ -29,7 +29,7 @@ SubTexture::SubTexture( const Uint32& TexId, const std::string& Name ) :
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->GetTexture( TexId ) ),
 	mSrcRect( Recti( 0, 0, NULL != mTexture ? mTexture->ImgWidth() : 0, NULL != mTexture ? mTexture->ImgHeight() : 0 ) ),
-	mDestSize( (Float)mSrcRect.Size().Width(), (Float)mSrcRect.Size().Height() ),
+	mDestSize( (Float)mSrcRect.size().width(), (Float)mSrcRect.size().height() ),
 	mOffset(0,0)
 {
 	CreateUnnamed();
@@ -318,7 +318,7 @@ bool SubTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 			else if ( 1 == Channels )
 				Channel = GL_ALPHA;
 
-			glTexSubImage2D( GL_TEXTURE_2D, 0, mSrcRect.Left, mSrcRect.Top, mSrcRect.Size().Width(), mSrcRect.Size().Height(), Channel, GL_UNSIGNED_BYTE, reinterpret_cast<const void *> ( &mPixels[0] ) );
+			glTexSubImage2D( GL_TEXTURE_2D, 0, mSrcRect.Left, mSrcRect.Top, mSrcRect.size().width(), mSrcRect.size().height(), Channel, GL_UNSIGNED_BYTE, reinterpret_cast<const void *> ( &mPixels[0] ) );
 		}
 
 		if ( !KeepData ) {
@@ -332,7 +332,7 @@ bool SubTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 }
 
 Sizei SubTexture::RealSize() {
-	return mSrcRect.Size();
+	return mSrcRect.size();
 }
 
 Sizei SubTexture::Size() {
@@ -355,11 +355,11 @@ bool SubTexture::SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& For
 
 	if ( NULL != mTexture ) {
 		if ( SAVE_TYPE_JPG != Format ) {
-			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, RealSize().Width(), RealSize().Height(), mTexture->Channels(), GetPixelsPtr() ) );
+			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, RealSize().width(), RealSize().height(), mTexture->Channels(), GetPixelsPtr() ) );
 		} else {
 			jpge::params params;
 			params.m_quality = Image::JpegQuality();
-			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), RealSize().Width(), RealSize().Height(), mTexture->Channels(), GetPixelsPtr(), params);
+			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), RealSize().width(), RealSize().height(), mTexture->Channels(), GetPixelsPtr(), params);
 		}
 	}
 
@@ -369,9 +369,9 @@ bool SubTexture::SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& For
 }
 
 void SubTexture::ResetDestSize() {
-	Sizei Size = mSrcRect.Size();
-	mDestSize.x	= (Float)Size.Width();
-	mDestSize.y = (Float)Size.Height();
+	Sizei Size = mSrcRect.size();
+	mDestSize.x	= (Float)Size.width();
+	mDestSize.y = (Float)Size.height();
 }
 
 }}

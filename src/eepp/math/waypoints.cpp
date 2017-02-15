@@ -22,7 +22,7 @@ Waypoints::Waypoints() :
 Waypoints::~Waypoints() {
 }
 
-void Waypoints::Start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback ) {
+void Waypoints::start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback ) {
 	mEnable				= true;
 	mOnPathEndCallback	= PathEndCallback;
 	mOnStepCallback		= StepCallback;
@@ -39,19 +39,19 @@ void Waypoints::Start( OnPathEndCallback PathEndCallback, OnStepCallback StepCal
 	}
 }
 
-void Waypoints::Stop() {
+void Waypoints::stop() {
 	mEnable = false;
 }
 
-void Waypoints::SetPathEndCallback( OnPathEndCallback PathEndCallback ) {
+void Waypoints::setPathEndCallback( OnPathEndCallback PathEndCallback ) {
 	mOnPathEndCallback = PathEndCallback;
 }
 
-void Waypoints::SetStepCallback( OnStepCallback StepCallback ) {
+void Waypoints::setStepCallback( OnStepCallback StepCallback ) {
 	mOnStepCallback = StepCallback;
 }
 
-void Waypoints::Reset() {
+void Waypoints::reset() {
 	mTotDist = 0.f;
 	mEnable = false;
 	mCurPoint = 0;
@@ -63,46 +63,46 @@ void Waypoints::Reset() {
 		mCurPos = mPoints[0].p;
 }
 
-void Waypoints::ClearWaypoints() {
-	Reset();
+void Waypoints::clearWaypoints() {
+	reset();
 	mPoints.clear();
 }
 
-void Waypoints::AddWaypoint( const Vector2f& Pos, const Float& Time ) {
+void Waypoints::addWaypoint( const Vector2f& Pos, const Float& Time ) {
 	mPoints.push_back( Waypoint(Pos, Time) );
 
 	if ( mPoints.size() >= 2 )
 	{
-		mTotDist += mPoints[ mPoints.size() - 1 ].p.Distance( mPoints[ mPoints.size() - 2 ].p );
+		mTotDist += mPoints[ mPoints.size() - 1 ].p.distance( mPoints[ mPoints.size() - 2 ].p );
 	}
 }
 
-bool Waypoints::EditWaypoint( const unsigned int& PointNum, const Vector2f& NewPos, const Float& NewTime  ) {
+bool Waypoints::editWaypoint( const unsigned int& PointNum, const Vector2f& NewPos, const Float& NewTime  ) {
 	if ( PointNum < mPoints.size() ) {
 		if ( 0 == PointNum )
-			mTotDist -= mPoints[ PointNum ].p.Distance( mPoints[ PointNum + 1 ].p );
+			mTotDist -= mPoints[ PointNum ].p.distance( mPoints[ PointNum + 1 ].p );
 		else
-			mTotDist -= mPoints[ PointNum ].p.Distance( mPoints[ PointNum - 1 ].p );
+			mTotDist -= mPoints[ PointNum ].p.distance( mPoints[ PointNum - 1 ].p );
 
 		mPoints[ PointNum ] = Waypoint( NewPos, NewTime );
 
 		if ( 0 == PointNum ) {
 			if ( PointNum + (unsigned int)1 < mPoints.size() )
-				mTotDist += mPoints[ PointNum ].p.Distance( mPoints[ PointNum + 1 ].p );
+				mTotDist += mPoints[ PointNum ].p.distance( mPoints[ PointNum + 1 ].p );
 		} else
-			mTotDist += mPoints[ PointNum ].p.Distance( mPoints[ PointNum - 1 ].p );
+			mTotDist += mPoints[ PointNum ].p.distance( mPoints[ PointNum - 1 ].p );
 
 		return true;
 	}
 	return false;
 }
 
-bool Waypoints::EraseWaypoint( const unsigned int& PointNum ) {
+bool Waypoints::eraseWaypoint( const unsigned int& PointNum ) {
 	if ( PointNum < mPoints.size() && !mEnable ) {
 		if ( 0 == PointNum )
-			mTotDist -= mPoints[ PointNum ].p.Distance( mPoints[ PointNum + 1 ].p );
+			mTotDist -= mPoints[ PointNum ].p.distance( mPoints[ PointNum + 1 ].p );
 		else
-			mTotDist -= mPoints[ PointNum ].p.Distance( mPoints[ PointNum - 1 ].p );
+			mTotDist -= mPoints[ PointNum ].p.distance( mPoints[ PointNum - 1 ].p );
 
 		mPoints.erase( mPoints.begin() + PointNum );
 
@@ -111,7 +111,7 @@ bool Waypoints::EraseWaypoint( const unsigned int& PointNum ) {
 	return false;
 }
 
-void Waypoints::Speed( const Float& Speed ) {
+void Waypoints::speed( const Float& Speed ) {
 	Float tdist = mTotDist;
 	mSpeed = Speed;
 	Float CurDist;
@@ -125,7 +125,7 @@ void Waypoints::Speed( const Float& Speed ) {
 		Float TotTime = tdist * ( 1000.f / mSpeed );
 
 		if ( mLoop ) {
-			CurDist = mPoints[ mPoints.size() - 1 ].p.Distance( mPoints[0].p );
+			CurDist = mPoints[ mPoints.size() - 1 ].p.distance( mPoints[0].p );
 			tdist += CurDist;
 
 			mPoints[ mPoints.size() - 1 ].t = CurDist * TotTime / tdist;
@@ -133,17 +133,17 @@ void Waypoints::Speed( const Float& Speed ) {
 		}
 
 		for ( unsigned int i = 0; i < mPoints.size() - 1; i++) {
-			CurDist = mPoints[i].p.Distance( mPoints[i + 1].p );
+			CurDist = mPoints[i].p.distance( mPoints[i + 1].p );
 			mPoints[i].t = CurDist * TotTime / tdist;
 		}
 	}
 }
 
-const Vector2f& Waypoints::GetPos() {
+const Vector2f& Waypoints::getPos() {
 	return mCurPos;
 }
 
-void Waypoints::Update( const Time& Elapsed ) {
+void Waypoints::update( const Time& Elapsed ) {
 	if ( mEnable && mPoints.size() > 1 && mCurPoint != mPoints.size() ) {
 		if ( mUpdate ) {
 			mCurTime = 0;
@@ -195,7 +195,7 @@ void Waypoints::Update( const Time& Elapsed ) {
 	}
 }
 
-void Waypoints::SetTotalTime( const Time& TotTime ) {
+void Waypoints::setTotalTime( const Time& TotTime ) {
 	unsigned int i;
 	Float tdist = mTotDist;
 
@@ -208,59 +208,59 @@ void Waypoints::SetTotalTime( const Time& TotTime ) {
 	}
 
 	if ( mLoop ) {
-		tdist += mPoints[ mPoints.size() - 1 ].p.Distance( mPoints[0].p );
-		mPoints[ mPoints.size() - 1 ].t = mPoints[ mPoints.size() - 1 ].p.Distance( mPoints[0].p ) * TotTime.asMilliseconds() / tdist;
+		tdist += mPoints[ mPoints.size() - 1 ].p.distance( mPoints[0].p );
+		mPoints[ mPoints.size() - 1 ].t = mPoints[ mPoints.size() - 1 ].p.distance( mPoints[0].p ) * TotTime.asMilliseconds() / tdist;
 	}
 
 	for (i = 0; i < mPoints.size() - 1; i++)
-		mPoints[i].t = mPoints[i].p.Distance( mPoints[i + 1].p ) * TotTime.asMilliseconds() / tdist;
+		mPoints[i].t = mPoints[i].p.distance( mPoints[i + 1].p ) * TotTime.asMilliseconds() / tdist;
 }
 
-void Waypoints::Type( Ease::Interpolation InterpolationType ) {
+void Waypoints::type( Ease::Interpolation InterpolationType ) {
 	mType = InterpolationType;
 }
 
-const int& Waypoints::Type() const {
+const int& Waypoints::type() const {
 	return mType;
 }
 
-bool Waypoints::Loop() const {
+bool Waypoints::loop() const {
 	return mLoop;
 }
 
-void Waypoints::Loop( const bool& loop ) {
+void Waypoints::loop( const bool& loop ) {
 	mLoop = loop;
 }
 
-bool Waypoints::Ended() const {
+bool Waypoints::ended() const {
 	return mEnded;
 }
 
-Waypoint * Waypoints::GetCurrentActual() const {
+Waypoint * Waypoints::getCurrentActual() const {
 	return mActP;
 }
 
-Waypoint * Waypoints::GetCurrentNext() const {
+Waypoint * Waypoints::getCurrentNext() const {
 	return mNexP;
 }
 
-const Uint32& Waypoints::GetCurrentPos() const {
+const Uint32& Waypoints::getCurrentPos() const {
 	return mCurPoint;
 }
 
-const std::vector<Waypoint>& Waypoints::GetWaypoints() const {
+const std::vector<Waypoint>& Waypoints::getWaypoints() const {
 	return mPoints;
 }
 
-const Float& Waypoints::Speed() const {
+const Float& Waypoints::speed() const {
 	return mSpeed;
 }
 
-const bool& Waypoints::Enabled() const {
+const bool& Waypoints::enabled() const {
 	return mEnable;
 }
 
-void Waypoints::Enabled( const bool& Enabled ) {
+void Waypoints::enabled( const bool& Enabled ) {
 	mEnable = Enabled;
 }
 

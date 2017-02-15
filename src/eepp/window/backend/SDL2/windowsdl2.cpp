@@ -122,8 +122,8 @@ bool WindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	#endif
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::UseDesktopResolution ) {
-		mWindow.WindowConfig.Width	= mWindow.DesktopResolution.Width();
-		mWindow.WindowConfig.Height	= mWindow.DesktopResolution.Height();
+		mWindow.WindowConfig.Width	= mWindow.DesktopResolution.width();
+		mWindow.WindowConfig.Height	= mWindow.DesktopResolution.height();
 	}
 
 	mWindow.Flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
@@ -340,7 +340,7 @@ void WindowSDL::ToggleFullscreen() {
 	if ( Windowed() ) {
 		Size( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, !Windowed() );
 	} else {
-		Size( mWindow.WindowSize.Width(), mWindow.WindowSize.Height(), !Windowed() );
+		Size( mWindow.WindowSize.width(), mWindow.WindowSize.height(), !Windowed() );
 	}
 
 	if ( WasMaximized ) {
@@ -374,8 +374,8 @@ bool WindowSDL::Visible() {
 
 void WindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( ( !Width || !Height ) ) {
-		Width	= mWindow.DesktopResolution.Width();
-		Height	= mWindow.DesktopResolution.Height();
+		Width	= mWindow.DesktopResolution.width();
+		Height	= mWindow.DesktopResolution.height();
 	}
 
 	if ( this->Windowed() == Windowed && Width == mWindow.WindowConfig.Width && Height == mWindow.WindowConfig.Height )
@@ -611,8 +611,8 @@ void WindowSDL::SetTextInputRect( Recti& rect ) {
 
 	r.x = rect.Left;
 	r.y = rect.Top;
-	r.w = rect.Size().Width();
-	r.h = rect.Size().Height();
+	r.w = rect.size().width();
+	r.h = rect.size().height();
 
 	SDL_SetTextInputRect( &r );
 

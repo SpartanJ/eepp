@@ -15,17 +15,17 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	mCurPath( Params.DefaultDirectory ),
 	mCDLFlags( Params.CDLFlags )
 {
-	if ( mSize.Width() < CDLG_MIN_WIDTH )
+	if ( mSize.width() < CDLG_MIN_WIDTH )
 		mSize.x = CDLG_MIN_WIDTH;
 
-	if ( mSize.Height() < CDLG_MIN_HEIGHT )
+	if ( mSize.height() < CDLG_MIN_HEIGHT )
 		mSize.y = CDLG_MIN_HEIGHT;
 
-	if ( mMinWindowSize.Width() < CDLG_MIN_WIDTH )
-		mMinWindowSize.Width( CDLG_MIN_WIDTH );
+	if ( mMinWindowSize.width() < CDLG_MIN_WIDTH )
+		mMinWindowSize.width( CDLG_MIN_WIDTH );
 
-	if ( mMinWindowSize.Height() < CDLG_MIN_HEIGHT )
-		mMinWindowSize.Height( CDLG_MIN_HEIGHT );
+	if ( mMinWindowSize.height() < CDLG_MIN_HEIGHT )
+		mMinWindowSize.height( CDLG_MIN_HEIGHT );
 
 	if ( AllowFolderSelect() ) {
 		Title( "Select a folder" );
@@ -45,16 +45,16 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	UIPushButton::CreateParams ButtonParams;
 	ButtonParams.Flags = UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE;
 	ButtonParams.Parent( Container() );
-	ButtonParams.PosSet( Container()->Size().Width() - 86, Container()->Size().Height() - 24 );
+	ButtonParams.PosSet( Container()->Size().width() - 86, Container()->Size().height() - 24 );
 	ButtonParams.SizeSet( 80, 22 );
 	mButtonCancel = eeNew( UIPushButton, ( ButtonParams ) );
 	mButtonCancel->Visible( true );
 	mButtonCancel->Enabled( true );
 	mButtonCancel->Text( "Cancel" );
-	mButtonCancel->Pos( Vector2i( mButtonCancel->Pos().x, Container()->Size().Height() - mButtonCancel->Size().Height() - 2 ) );
+	mButtonCancel->Pos( Vector2i( mButtonCancel->Pos().x, Container()->Size().height() - mButtonCancel->Size().height() - 2 ) );
 	mButtonCancel->UpdateAnchorsDistances();
 
-	ButtonParams.PosSet( mButtonCancel->Pos().x, mButtonCancel->Pos().y - mButtonCancel->Size().Height() );
+	ButtonParams.PosSet( mButtonCancel->Pos().x, mButtonCancel->Pos().y - mButtonCancel->Size().height() );
 	mButtonOpen = eeNew( UIPushButton, ( ButtonParams ) );
 	mButtonOpen->Visible( true );
 	mButtonOpen->Enabled( true );
@@ -68,14 +68,14 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	TInputParams.Parent( Container() );
 	TInputParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_VALIGN_CENTER | UI_TEXT_SELECTION_ENABLED;
 	TInputParams.PosSet( 70, 6 );
-	TInputParams.SizeSet( Container()->Size().Width() - TInputParams.Pos.x - 42, 22 );
+	TInputParams.SizeSet( Container()->Size().width() - TInputParams.Pos.x - 42, 22 );
 	mPath = eeNew( UITextInput, ( TInputParams ) );
 	mPath->AddEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UICommonDialog::OnPressEnter ) );
 	mPath->Visible( true );
 	mPath->Enabled( true );
 	mPath->Text( mCurPath );
 
-	ButtonParams.PosSet( TInputParams.Pos.x + TInputParams.Size.Width() + 6, TInputParams.Pos.y );
+	ButtonParams.PosSet( TInputParams.Pos.x + TInputParams.Size.width() + 6, TInputParams.Pos.y );
 	ButtonParams.SizeSet( 24, 22 );
 	ButtonParams.Flags |= UI_ANCHOR_TOP;
 	mButtonUp = eeNew( UIPushButton, ( ButtonParams ) );
@@ -85,13 +85,13 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 
 	UIListBox::CreateParams LBParams;
 	LBParams.Parent( Container() );
-	LBParams.PosSet( 6, mButtonUp->Pos().y + mButtonUp->Size().Height() + 4 );
-	LBParams.Size = Sizei( Container()->Size().Width() - 12,
-							Container()->Size().Height() -
-								mButtonUp->Size().Height() -
+	LBParams.PosSet( 6, mButtonUp->Pos().y + mButtonUp->Size().height() + 4 );
+	LBParams.Size = Sizei( Container()->Size().width() - 12,
+							Container()->Size().height() -
+								mButtonUp->Size().height() -
 								mButtonUp->Pos().y -
-								mButtonOpen->Size().Height() -
-								mButtonCancel->Size().Height() -
+								mButtonOpen->Size().height() -
+								mButtonCancel->Size().height() -
 								8
 						);
 
@@ -108,7 +108,7 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	mList->Visible( true );
 	mList->Enabled( true );
 
-	TxtBoxParams.PosSet( 6, Container()->Size().Height() - 54 );
+	TxtBoxParams.PosSet( 6, Container()->Size().height() - 54 );
 	TxtBoxParams.SizeSet( 74, 19 );
 	TxtBoxParams.Flags = UI_ANCHOR_LEFT | UI_VALIGN_CENTER;
 	TBox = eeNew( UITextBox, ( TxtBoxParams ) );
@@ -116,15 +116,15 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	TBox->Enabled( false );
 	TBox->Text( "File Name:" );
 
-	TxtBoxParams.PosSet( TBox->Pos().x, TBox->Pos().y + TBox->Size().Height()+ 6 );
+	TxtBoxParams.PosSet( TBox->Pos().x, TBox->Pos().y + TBox->Size().height()+ 6 );
 	UITextBox * TBox2 = eeNew( UITextBox, ( TxtBoxParams ) );
 	TBox2->Visible( true );
 	TBox2->Enabled( false );
 	TBox2->Text( "Files of type:" );
 
 	TInputParams.Flags &= ~UI_ANCHOR_TOP;
-	TInputParams.PosSet( TBox->Pos().x + TBox->Size().Width(), TBox->Pos().y );
-	TInputParams.SizeSet( Container()->Size().Width() - mButtonOpen->Size().Width() - TInputParams.Pos.x - 20, TInputParams.Size.Height() );
+	TInputParams.PosSet( TBox->Pos().x + TBox->Size().width(), TBox->Pos().y );
+	TInputParams.SizeSet( Container()->Size().width() - mButtonOpen->Size().width() - TInputParams.Pos.x - 20, TInputParams.Size.height() );
 	mFile = eeNew( UITextInput, ( TInputParams ) );
 	mFile->Visible( true );
 	mFile->Enabled( true );
@@ -132,8 +132,8 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 
 	UIDropDownList::CreateParams DDLParams;
 	DDLParams.Parent( Container() );
-	DDLParams.PosSet( TBox2->Pos().x + TBox2->Size().Width(), TBox2->Pos().y );
-	DDLParams.SizeSet( Container()->Size().Width() - mButtonCancel->Size().Width() - DDLParams.Pos.x - 20, 22 );
+	DDLParams.PosSet( TBox2->Pos().x + TBox2->Size().width(), TBox2->Pos().y );
+	DDLParams.SizeSet( Container()->Size().width() - mButtonCancel->Size().width() - DDLParams.Pos.x - 20, 22 );
 	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_AUTO_SIZE;
 	DDLParams.PopUpToMainControl = true;
 	mFiletype = eeNew( UIDropDownList, ( DDLParams ) );
@@ -220,7 +220,7 @@ void UICommonDialog::RefreshFolder() {
 	mList->AddListBoxItems( files );
 
 	if ( NULL != mList->VerticalScrollBar() ) {
-		mList->VerticalScrollBar()->ClickStep( 1.f / ( ( mList->Count() * mList->RowHeight() ) / (Float)mList->Size().Height() ) );
+		mList->VerticalScrollBar()->ClickStep( 1.f / ( ( mList->Count() * mList->RowHeight() ) / (Float)mList->Size().height() ) );
 	}
 }
 

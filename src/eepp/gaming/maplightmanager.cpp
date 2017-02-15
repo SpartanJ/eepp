@@ -49,7 +49,7 @@ void MapLightManager::UpdateByVertex() {
 	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
 		MapLight * Light = (*it);
 
-		if ( firstLight || VisibleArea.Intersect( Light->GetAABB() ) ) {
+		if ( firstLight || VisibleArea.intersect( Light->GetAABB() ) ) {
 			for ( Int32 x = start.x; x < end.x; x++ ) {
 				for ( Int32 y = start.y; y < end.y; y++ ) {
 					if ( firstLight ) {
@@ -63,20 +63,20 @@ void MapLightManager::UpdateByVertex() {
 
 					eeAABB TileAABB( Pos.x, Pos.y, Pos.x + TileSize.x, Pos.y + TileSize.y );
 
-					if ( TileAABB.Intersect( Light->GetAABB() ) ) {
+					if ( TileAABB.intersect( Light->GetAABB() ) ) {
 						if ( y > 0 )
 							mTileColors[x][y][0]->assign( *mTileColors[x][y - 1][1] );
 						else
 							mTileColors[x][y][0]->assign( Light->ProcessVertex( Pos.x, Pos.y, *(mTileColors[x][y][0]), *(mTileColors[x][y][0]) ) );
 
-						mTileColors[x][y][1]->assign( Light->ProcessVertex( Pos.x, Pos.y + TileSize.Height(), *(mTileColors[x][y][1]), *(mTileColors[x][y][1]) ) );
+						mTileColors[x][y][1]->assign( Light->ProcessVertex( Pos.x, Pos.y + TileSize.height(), *(mTileColors[x][y][1]), *(mTileColors[x][y][1]) ) );
 
-						mTileColors[x][y][2]->assign( Light->ProcessVertex( Pos.x + TileSize.Width(), Pos.y + TileSize.Height(), *(mTileColors[x][y][2]), *(mTileColors[x][y][2]) ) );
+						mTileColors[x][y][2]->assign( Light->ProcessVertex( Pos.x + TileSize.width(), Pos.y + TileSize.height(), *(mTileColors[x][y][2]), *(mTileColors[x][y][2]) ) );
 
 						if ( y > 0 )
 							mTileColors[x][y][3]->assign( *mTileColors[x][y - 1][2] );
 						else
-							mTileColors[x][y][3]->assign( Light->ProcessVertex( Pos.x + TileSize.Width(), Pos.y, *(mTileColors[x][y][3]), *(mTileColors[x][y][3]) ) );
+							mTileColors[x][y][3]->assign( Light->ProcessVertex( Pos.x + TileSize.width(), Pos.y, *(mTileColors[x][y][3]), *(mTileColors[x][y][3]) ) );
 					}
 				}
 			}
@@ -102,7 +102,7 @@ void MapLightManager::UpdateByTile() {
 	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
 		MapLight * Light = (*it);
 
-		if (  firstLight || VisibleArea.Intersect( Light->GetAABB() ) ) {
+		if (  firstLight || VisibleArea.intersect( Light->GetAABB() ) ) {
 			for ( Int32 x = start.x; x < end.x; x++ ) {
 				for ( Int32 y = start.y; y < end.y; y++ ) {
 					if ( firstLight ) {
@@ -116,8 +116,8 @@ void MapLightManager::UpdateByTile() {
 
 					eeAABB TileAABB( Pos.x, Pos.y, Pos.x + TileSize.x, Pos.y + TileSize.y );
 
-					if ( TileAABB.Intersect( Light->GetAABB() ) ) {
-						mTileColors[x][y][0]->assign( Light->ProcessVertex( Pos.x + HalfTileSize.Width(), Pos.y + HalfTileSize.Height(), *(mTileColors[x][y][0]), *(mTileColors[x][y][0]) ) );
+					if ( TileAABB.intersect( Light->GetAABB() ) ) {
+						mTileColors[x][y][0]->assign( Light->ProcessVertex( Pos.x + HalfTileSize.width(), Pos.y + HalfTileSize.height(), *(mTileColors[x][y][0]), *(mTileColors[x][y][0]) ) );
 					}
 				}
 			}
@@ -136,7 +136,7 @@ ColorA MapLightManager::GetColorFromPos( const Vector2f& Pos ) {
 	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
 		MapLight * Light = (*it);
 
-		if ( Light->GetAABB().Contains( Pos ) ) {
+		if ( Light->GetAABB().contains( Pos ) ) {
 			Col = Light->ProcessVertex( Pos, Col, Col );
 		}
 	}
@@ -159,7 +159,7 @@ void MapLightManager::RemoveLight( const Vector2f& OverPos ) {
 	for ( LightsList::reverse_iterator it = mLights.rbegin(); it != mLights.rend(); it++ ) {
 		MapLight * Light = (*it);
 
-		if ( Light->GetAABB().Contains( OverPos ) ) {
+		if ( Light->GetAABB().contains( OverPos ) ) {
 			mLights.remove( Light );
 			eeSAFE_DELETE( Light );
 			break;
@@ -187,10 +187,10 @@ const ColorA * MapLightManager::GetTileColor( const Vector2i& TilePos, const Uin
 
 void MapLightManager::AllocateColors() {
 	Sizei Size		= mMap->Size();
-	mTileColors		= eeNewArray( ColorA***, Size.Width() );
+	mTileColors		= eeNewArray( ColorA***, Size.width() );
 
 	for ( Int32 x = 0; x < Size.x; x++ ) {
-		mTileColors[x] = eeNewArray( ColorA**, Size.Height() );
+		mTileColors[x] = eeNewArray( ColorA**, Size.height() );
 
 		for ( Int32 y = 0; y < Size.y; y++ ) {
 			mTileColors[x][y] = eeNewArray( ColorA*, mNumVertex );
@@ -243,7 +243,7 @@ MapLight * MapLightManager::GetLightOver( const Vector2f& OverPos, MapLight * Li
 	for ( LightsList::reverse_iterator it = mLights.rbegin(); it != mLights.rend(); it++ ) {
 		MapLight * Light = (*it);
 
-		if ( Light->GetAABB().Contains( OverPos ) ) {
+		if ( Light->GetAABB().contains( OverPos ) ) {
 			if ( NULL == FirstLight ) {
 				FirstLight = Light;
 			}
@@ -268,7 +268,7 @@ MapLight * MapLightManager::GetLightOver( const Vector2f& OverPos, MapLight * Li
 		return FirstLight;
 	}
 
-	if ( NULL == PivotLight && NULL != LightCurrent && LightCurrent->GetAABB().Contains( OverPos ) ) {
+	if ( NULL == PivotLight && NULL != LightCurrent && LightCurrent->GetAABB().contains( OverPos ) ) {
 		return LightCurrent;
 	}
 

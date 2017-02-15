@@ -20,7 +20,7 @@ UIWinMenu::UIWinMenu( const UIWinMenu::CreateParams& Params ) :
 	if ( !(mFlags & UI_ANCHOR_RIGHT) )
 		mFlags |= UI_ANCHOR_RIGHT;
 
-	Size( Parent()->Size().Width(), mMenuHeight );
+	Size( Parent()->Size().width(), mMenuHeight );
 
 	UpdateAnchorsDistances();
 
@@ -78,9 +78,9 @@ void UIWinMenu::SetTheme( UITheme * Theme ) {
 	}
 
 	if ( 0 == mMenuHeight && NULL != GetSkin() && NULL != GetSkin()->GetSubTexture( UISkinState::StateNormal ) ) {
-		mMenuHeight = GetSkin()->GetSubTexture( UISkinState::StateNormal )->Size().Height();
+		mMenuHeight = GetSkin()->GetSubTexture( UISkinState::StateNormal )->Size().height();
 
-		Size( Parent()->Size().Width(), mMenuHeight );
+		Size( Parent()->Size().width(), mMenuHeight );
 
 		UpdateAnchorsDistances();
 	}
@@ -126,7 +126,7 @@ void UIWinMenu::RefreshButtons() {
 		SubTexture * subTexture = GetSkin()->GetSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != subTexture ) {
-			h = subTexture->Size().Height();
+			h = subTexture->Size().height();
 
 			if ( mButtons.begin() != mButtons.end() ) {
 				UISelectButton * tbut = mButtons.begin()->first;
@@ -135,7 +135,7 @@ void UIWinMenu::RefreshButtons() {
 					SubTexture * tSubTexture2 = tbut->GetSkin()->GetSubTexture( UISkinState::StateSelected );
 
 					if ( NULL != tSubTexture2 )  {
-						th = tSubTexture2->Size().Height();
+						th = tSubTexture2->Size().height();
 
 						switch ( VAlignGet( Flags() ) ) {
 							case UI_VALIGN_CENTER:
@@ -158,10 +158,10 @@ void UIWinMenu::RefreshButtons() {
 		UISelectButton * pbut	= it->first;
 		UITextBox * tbox		= pbut->TextBox();
 
-		pbut->Size( tbox->GetTextWidth() + mButtonMargin, Size().Height() );
+		pbut->Size( tbox->GetTextWidth() + mButtonMargin, Size().height() );
 		pbut->Pos( xpos, ycenter );
 
-		xpos += pbut->Size().Width() + mMarginBetweenButtons;
+		xpos += pbut->Size().width() + mMarginBetweenButtons;
 	}
 }
 
@@ -174,7 +174,7 @@ Uint32 UIWinMenu::OnMessage( const UIMessage * Msg ) {
 				UISelectButton * tbut	= reinterpret_cast<UISelectButton*> ( Msg->Sender() );
 				UIPopUpMenu * tpop		= GetMenuFromButton( tbut );
 
-				Vector2i pos( tbut->Pos().x, tbut->Pos().y + tbut->Size().Height() );
+				Vector2i pos( tbut->Pos().x, tbut->Pos().y + tbut->Size().height() );
 				tpop->Pos( pos );
 
 				if ( Msg->Msg() == UIMessage::MsgMouseEnter ) {

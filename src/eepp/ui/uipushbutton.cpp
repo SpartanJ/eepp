@@ -76,13 +76,13 @@ void UIPushButton::OnSizeChange() {
 	if ( NULL != mTextBox ) {
 		switch ( FontHAlignGet( Flags() ) ) {
 			case UI_HALIGN_LEFT:
-				mTextBox->Pos( mIcon->Pos().x + mIcon->Size().Width(), 0 );
-				mTextBox->Size( mSize.Width() - mIcon->Pos().x + mIcon->Size().Width(), mSize.Height() );
+				mTextBox->Pos( mIcon->Pos().x + mIcon->Size().width(), 0 );
+				mTextBox->Size( mSize.width() - mIcon->Pos().x + mIcon->Size().width(), mSize.height() );
 				break;
 			case UI_HALIGN_CENTER:
 				if ( NULL != mIcon->SubTexture() ) {
-					if ( mIcon->Pos().x + mIcon->Size().Width() >= mTextBox->AlignOffset().x ) {
-						mTextBox->Pos( mIcon->Pos().x + mIcon->Size().Width() + 1 - mTextBox->AlignOffset().x, mTextBox->Pos().y );
+					if ( mIcon->Pos().x + mIcon->Size().width() >= mTextBox->AlignOffset().x ) {
+						mTextBox->Pos( mIcon->Pos().x + mIcon->Size().width() + 1 - mTextBox->AlignOffset().x, mTextBox->Pos().y );
 					}
 				}
 
@@ -100,14 +100,14 @@ void UIPushButton::OnSizeChange() {
 		if ( NULL != mTextBox ) {
 			Recti P = MakePadding();
 
-			mSize.Height( mIcon->Size().Height()	+ P.Top		+ P.Bottom );
+			mSize.Height( mIcon->Size().height()	+ P.Top		+ P.Bottom );
 
 			if ( 0 == mTextBox->Text().size() ) {
-				mSize.Width	( mIcon->Size().Width()		+ P.Left	+ P.Right );
+				mSize.Width	( mIcon->Size().width()		+ P.Left	+ P.Right );
 
 				mIcon->Center();
 			} else {
-				mSize.Width( mIconSpace + mIcon->Pos().x + mIcon->Size().Width() + mTextBox->Size().Width() );
+				mSize.Width( mIconSpace + mIcon->Pos().x + mIcon->Size().width() + mTextBox->Size().width() );
 
 				if ( mSize.Height() < P.Top + P.Bottom + mTextBox->GetTextHeight() )
 					mSize.Height( P.Top + P.Bottom + mTextBox->GetTextHeight() );
@@ -137,7 +137,7 @@ void UIPushButton::DoAfterSetTheme() {
 	}
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mSize.Height( GetSkinSize().Height() );
+		mSize.height( GetSkinSize().height() );
 	}
 
 	AutoPadding();

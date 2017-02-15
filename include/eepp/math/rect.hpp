@@ -13,59 +13,59 @@ class tRECT {
 
 		tRECT( T left, T top, T right, T bottom );
 
-		tRECT( const Vector2<T>& Pos, const tSize<T>& Size );
+		tRECT( const Vector2<T>& pos, const tSize<T>& size );
 
 		tRECT();
 
-		tRECT<T> Copy();
+		tRECT<T> copy();
 
-		bool Intersect( const tRECT<T>& Rect );
+		bool intersect( const tRECT<T>& Rect );
 
-		bool Contains( const tRECT<T>& Rect );
+		bool contains( const tRECT<T>& Rect );
 
-		bool Contains( const Vector2<T>& Vect );
+		bool contains( const Vector2<T>& Vect );
 
-		void Merge( const tRECT<T>& Rect );
+		void merge( const tRECT<T>& Rect );
 
-		void Expand( const Vector2<T>& Vect );
+		void expand( const Vector2<T>& Vect );
 
-		T Area();
+		T area();
 
-		T MergedArea( const tRECT<T>& Rect );
+		T mergedArea( const tRECT<T>& Rect );
 
-		bool IntersectsSegment( const Vector2<T>& a, const Vector2<T>& b );
+		bool intersectsSegment( const Vector2<T>& a, const Vector2<T>& b );
 
 		/** Determine if a RECT and a Circle are intersecting
 		* @param pos Circle position
 		* @param radius Circle Radius
 		* @return True if are intersecting
 		*/
-		bool IntersectCircle( Vector2<T> pos, const T& radius );
+		bool intersectCircle( Vector2<T> pos, const T& radius );
 
 		/** Determine if a RECT ( representing a circle ) is intersecting another RECT ( also representing a circle ) */
-		bool IntersectCircles( const tRECT<T>& b );
+		bool intersectCircles( const tRECT<T>& b );
 
-		Vector2<T> ClampVector( const Vector2<T>& Vect );
+		Vector2<T> clampVector( const Vector2<T>& Vect );
 
-		Vector2<T> WrapVector( const Vector2<T>& Vect );
+		Vector2<T> wrapVector( const Vector2<T>& Vect );
 
-		Vector2<T> Pos();
+		Vector2<T> pos();
 
-		Vector2<T> Center();
+		Vector2<T> center();
 
-		tSize<T> Size();
+		tSize<T> size();
 
-		T Width();
+		T width();
 
-		T Height();
+		T height();
 
-		void Scale( T scale, const Vector2<T>& center );
+		void scale( T scale, const Vector2<T>& center );
 
-		void Scale( T scale );
+		void scale( T scale );
 
-		void Scale( Vector2<T> scale, const Vector2<T>& center );
+		void scale( Vector2<T> scale, const Vector2<T>& center );
 
-		void Scale( Vector2<T> scale );
+		void scale( Vector2<T> scale );
 };
 
 template <typename T>
@@ -140,7 +140,7 @@ tRECT<T>::tRECT(T left, T top, T right, T bottom) {
 }
 
 template <typename T>
-tRECT<T> tRECT<T>::Copy() {
+tRECT<T> tRECT<T>::copy() {
 	return tRECT<T>( Left, Top, Right, Bottom );
 }
 
@@ -148,55 +148,55 @@ template <typename T>
 tRECT<T>::tRECT( const Vector2<T>& Pos, const tSize<T>& Size ) {
 	Left = Pos.x;
 	Top = Pos.y;
-	Right = Left + Size.Width();
-	Bottom = Top + Size.Height();
+	Right = Left + Size.width();
+	Bottom = Top + Size.height();
 }
 
 template <typename T>
 tRECT<T>::tRECT() : Left(0), Right(0), Top(0), Bottom(0) {}
 
 template <typename T>
-bool tRECT<T>::Contains( const tRECT<T>& Rect ) {
+bool tRECT<T>::contains( const tRECT<T>& Rect ) {
 	return ( Left <= Rect.Left && Right >= Rect.Right && Top <= Rect.Top && Bottom >= Rect.Bottom );
 }
 
 template <typename T>
-bool tRECT<T>::Intersect( const tRECT<T>& Rect ) {
+bool tRECT<T>::intersect( const tRECT<T>& Rect ) {
 	return !( Left > Rect.Right || Right < Rect.Left || Top > Rect.Bottom || Bottom < Rect.Top );
 }
 
 template <typename T>
-bool tRECT<T>::Contains( const Vector2<T>& Vect ) {
+bool tRECT<T>::contains( const Vector2<T>& Vect ) {
 	return ( Left <= Vect.x && Right >= Vect.x && Top <= Vect.y && Bottom >= Vect.y );
 }
 
 template <typename T>
-Vector2<T> tRECT<T>::Pos() {
+Vector2<T> tRECT<T>::pos() {
 	return Vector2<T>( Left, Top );
 }
 
 template <typename T>
-Vector2<T> tRECT<T>::Center() {
+Vector2<T> tRECT<T>::center() {
 	return Vector2<T>( Left + ( ( Right - Left ) * 0.5 ), Top + ( ( Bottom - Top ) * 0.5 ) );
 }
 
 template <typename T>
-tSize<T> tRECT<T>::Size() {
+tSize<T> tRECT<T>::size() {
 	return tSize<T>( eeabs( Right - Left ), eeabs( Bottom - Top ) );
 }
 
 template <typename T>
-T tRECT<T>::Width() {
+T tRECT<T>::width() {
 	return eeabs( Right - Left );
 }
 
 template <typename T>
-T tRECT<T>::Height() {
+T tRECT<T>::height() {
 	return eeabs( Bottom - Top );
 }
 
 template <typename T>
-void tRECT<T>::Merge( const tRECT<T>& Rect ) {
+void tRECT<T>::merge( const tRECT<T>& Rect ) {
 	Left	= eemin( Left	, Rect.Left		);
 	Bottom	= eemin( Bottom	, Rect.Bottom	);
 	Right	= eemax( Right	, Rect.Right	);
@@ -204,7 +204,7 @@ void tRECT<T>::Merge( const tRECT<T>& Rect ) {
 }
 
 template <typename T>
-void tRECT<T>::Expand( const Vector2<T>& Vect ) {
+void tRECT<T>::expand( const Vector2<T>& Vect ) {
 	Left	= eemin( Left	, Vect.x	);
 	Bottom	= eemin( Bottom	, Vect.y	);
 	Right	= eemax( Right	, Vect.x	);
@@ -212,17 +212,17 @@ void tRECT<T>::Expand( const Vector2<T>& Vect ) {
 }
 
 template <typename T>
-T tRECT<T>::Area() {
+T tRECT<T>::area() {
 	return ( Right - Left ) * ( Bottom - Top );
 }
 
 template <typename T>
-T tRECT<T>::MergedArea( const tRECT<T>& Rect ) {
+T tRECT<T>::mergedArea( const tRECT<T>& Rect ) {
 	return ( eemax( Right, Rect.Right ) - eemin( Left, Rect.Left ) ) * ( eemin( Bottom, Rect.Bottom ) - eemax( Top, Rect.Top ) );
 }
 
 template <typename T>
-bool tRECT<T>::IntersectsSegment( const Vector2<T>& a, const Vector2<T>& b ) {
+bool tRECT<T>::intersectsSegment( const Vector2<T>& a, const Vector2<T>& b ) {
 	tRECT<T> seg_bb = tRECT<T>( eemin( a.x, b.x ), eemin( a.y, b.y ), eemax( a.x, b.x ), eemax( a.y, b.y ) );
 
 	if( Intersects( seg_bb ) ){
@@ -237,7 +237,7 @@ bool tRECT<T>::IntersectsSegment( const Vector2<T>& a, const Vector2<T>& b ) {
 }
 
 template <typename T>
-bool tRECT<T>::IntersectCircle( Vector2<T> pos, const T& radius ) {
+bool tRECT<T>::intersectCircle( Vector2<T> pos, const T& radius ) {
 	Vector2<T> tPos( pos );
 
 	if (tPos.x < Left)		tPos.x = Left;
@@ -245,14 +245,14 @@ bool tRECT<T>::IntersectCircle( Vector2<T> pos, const T& radius ) {
 	if (tPos.y < Top)		tPos.y = Top;
 	if (tPos.y > Bottom)	tPos.y = Bottom;
 
-	if ( pos.Distance( tPos ) < radius )
+	if ( pos.distance( tPos ) < radius )
 		return true;
 
 	return false;
 }
 
 template <typename T>
-bool tRECT<T>::IntersectCircles( const tRECT<T>& b ) {
+bool tRECT<T>::intersectCircles( const tRECT<T>& b ) {
 	Float ra = (Float)(Right - Left) * 0.5f;
 	Float rb = (Float)(b.Right - b.Left) * 0.5f;
 	Float dist = ra + rb;
@@ -266,7 +266,7 @@ bool tRECT<T>::IntersectCircles( const tRECT<T>& b ) {
 }
 
 template <typename T>
-Vector2<T> tRECT<T>::ClampVector( const Vector2<T>& Vect ) {
+Vector2<T> tRECT<T>::clampVector( const Vector2<T>& Vect ) {
 	T x = eemin( eemax( Left	, Vect.x ), Right	);
 	T y = eemin( eemax( Top		, Vect.y ), Bottom	);
 
@@ -274,7 +274,7 @@ Vector2<T> tRECT<T>::ClampVector( const Vector2<T>& Vect ) {
 }
 
 template <typename T>
-Vector2<T> tRECT<T>::WrapVector( const Vector2<T>& Vect ) {
+Vector2<T> tRECT<T>::wrapVector( const Vector2<T>& Vect ) {
 	T ix	= eeabs( Right - Left );
 	T modx	= eemod( Vect.x - Left, ix );
 	T x		= ( modx > 0 ) ? modx : modx + ix;
@@ -287,7 +287,7 @@ Vector2<T> tRECT<T>::WrapVector( const Vector2<T>& Vect ) {
 }
 
 template <typename T>
-void tRECT<T>::Scale( Vector2<T> scale, const Vector2<T>& center ) {
+void tRECT<T>::scale( Vector2<T> scale, const Vector2<T>& center ) {
 	if ( scale != 1.0f ) {
 		Left			= center.x	+	(	Left	-	center.x	)	*	scale.x;
 		Top				= center.y	+	(	Top		-	center.y	)	*	scale.y;
@@ -297,18 +297,18 @@ void tRECT<T>::Scale( Vector2<T> scale, const Vector2<T>& center ) {
 }
 
 template <typename T>
-void tRECT<T>::Scale( T scale, const Vector2<T>& center ) {
-	Scale( Vector2f( scale, scale ), center );
+void tRECT<T>::scale( T scale, const Vector2<T>& center ) {
+	scale( Vector2f( scale, scale ), center );
 }
 
 template <typename T>
-void tRECT<T>::Scale( T scale ) {
-	Scale( scale, Center() );
+void tRECT<T>::scale( T scale ) {
+	scale( scale, center() );
 }
 
 template <typename T>
-void tRECT<T>::Scale( Vector2<T> scale ) {
-	Scale( scale, Center() );
+void tRECT<T>::scale( Vector2<T> scale ) {
+	scale( scale, center() );
 }
 
 typedef tRECT<unsigned int>	Rectu;

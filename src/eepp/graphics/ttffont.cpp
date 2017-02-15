@@ -251,7 +251,7 @@ bool TTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Ui
 				TempGlyph.CurX + TempGlyph.CurW,
 				TempGlyph.CurY + TempGlyph.CurH
 			);
-			Sizei nGlyphS( nGlyphR.Size() );
+			Sizei nGlyphS( nGlyphR.size() );
 
 			if ( nGlyphS.x > 0 && nGlyphS.y > 0 ) {
 				Uint32 Pos			= 0;

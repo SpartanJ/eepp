@@ -49,7 +49,7 @@ void UIMenuSubMenu::SetTheme( UITheme * Theme ) {
 void UIMenuSubMenu::OnSizeChange() {
 	UIMenuItem::OnSizeChange();
 
-	mArrow->Pos( Parent()->Size().Width() - mArrow->Size().Width() - 1, 0 );
+	mArrow->Pos( Parent()->Size().width() - mArrow->Size().width() - 1, 0 );
 	mArrow->CenterVertical();
 }
 
@@ -103,7 +103,7 @@ void UIMenuSubMenu::ShowSubMenu() {
 
 	Vector2i Pos = this->Pos();
 	ControlToScreen( Pos );
-	Pos.x += mSize.Width() + reinterpret_cast<UIMenu*> ( Parent() )->Padding().Right;
+	Pos.x += mSize.width() + reinterpret_cast<UIMenu*> ( Parent() )->Padding().Right;
 
 	UIMenu::FixMenuPos( Pos, mSubMenu, reinterpret_cast<UIMenu*> ( Parent() ), this );
 

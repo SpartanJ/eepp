@@ -54,7 +54,7 @@ void TexturePackerNode::Validate( TexturePackerNode * n ) {
 	Recti r2;
 	GetRect( r1 );
 	n->GetRect( r2 );
-	eeASSERT( !r1.Intersect(r2) );
+	eeASSERT( !r1.intersect(r2) );
 }
 
 bool TexturePackerNode::Merge( const TexturePackerNode& n ) {

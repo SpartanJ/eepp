@@ -120,7 +120,7 @@ void UIMap::Update() {
 
 							mSelLight = NULL;
 						} else if ( NULL != mSelLight ) {
-							if ( mSelLight->GetAABB().Contains( mMap->GetMouseMapPosf() ) ) {
+							if ( mSelLight->GetAABB().contains( mMap->GetMouseMapPosf() ) ) {
 								mMap->GetLightManager()->RemoveLight( mSelLight );
 
 								eeSAFE_DELETE( mSelLight );
@@ -191,8 +191,8 @@ void UIMap::SelectPolyObj() {
 void UIMap::SelectPolyPoint() {
 	if ( NULL != mCurLayer && mCurLayer->Type() == MAP_LAYER_OBJECT && NULL != mSelObj ) {
 		if ( mSelObj->PointInside( mMap->GetMouseMapPosf() ) ) {
-			mSelPointIndex = mSelObj->GetPolygon().ClosestPoint( mMap->GetMouseMapPosf() );
-			SetPointRect( mSelObj->GetPolygon().GetAt( mSelPointIndex ) );
+			mSelPointIndex = mSelObj->GetPolygon().closestPoint( mMap->GetMouseMapPosf() );
+			SetPointRect( mSelObj->GetPolygon().getAt( mSelPointIndex ) );
 		}
 	}
 }
@@ -234,8 +234,8 @@ void UIMap::ManageObject( Uint32 Flags ) {
 					mObjRECTEditing = true;
 					mObjRECT		= Rectf( mp, Sizef(0,0) );
 				} else {
-					if ( mObjRECT.Pos().x < mp.x && mObjRECT.Pos().y < mp.y ) {
-						mObjRECT		= Rectf( mObjRECT.Pos(), Sizef( mp - mObjRECT.Pos() ) );
+					if ( mObjRECT.pos().x < mp.x && mObjRECT.pos().y < mp.y ) {
+						mObjRECT		= Rectf( mObjRECT.pos(), Sizef( mp - mObjRECT.pos() ) );
 					}
 				}
 			}
@@ -253,11 +253,11 @@ void UIMap::ManageObject( Uint32 Flags ) {
 		case INSERT_POLYGON:
 		{
 			if ( Flags & EE_BUTTON_LMASK ) {
-				mObjPoly.PushBack( GetMouseMapPos() );
+				mObjPoly.pushBack( GetMouseMapPos() );
 			} else if ( Flags & EE_BUTTON_RMASK ) {
 				mAddObjectCallback( ( INSERT_POLYGON == mEditingObjMode ) ? GAMEOBJECT_TYPE_POLYGON : GAMEOBJECT_TYPE_POLYLINE, mObjPoly );
 
-				mObjPoly.Clear();
+				mObjPoly.clear();
 			}
 
 			break;
@@ -282,7 +282,7 @@ void UIMap::ManageObject( Uint32 Flags ) {
 					mSelPoint = false;
 				}
 			} else if ( !( LPFlags & EE_BUTTON_LMASK  ) && ( PFlags & EE_BUTTON_LMASK ) ) {
-				if ( NULL != mSelObj && eeINDEX_NOT_FOUND != mSelPointIndex && mSelPointRect.Contains( mMap->GetMouseMapPosf() ) ) {
+				if ( NULL != mSelObj && eeINDEX_NOT_FOUND != mSelPointIndex && mSelPointRect.contains( mMap->GetMouseMapPosf() ) ) {
 					mSelPoint = true;
 				}
 			} else if ( ( PFlags & EE_BUTTON_LMASK ) ) {
@@ -372,7 +372,7 @@ void UIMap::MapDraw() {
 			eeAABB AB( mSelLight->GetAABB() );
 
 			mP.FillMode( DRAW_LINE );
-			mP.DrawRectangle( Rectf( Pos, AB.Size() ) );
+			mP.DrawRectangle( Rectf( Pos, AB.size() ) );
 		}
 	} else if ( EDITING_OBJECT == mEditingMode ) {
 		switch ( mEditingObjMode ) {
@@ -401,7 +401,7 @@ void UIMap::MapDraw() {
 				mP.DrawPolygon( mObjPoly );
 
 				Polygon2f polyN( mObjPoly );
-				polyN.PushBack( GetMouseMapPos() );
+				polyN.pushBack( GetMouseMapPos() );
 
 				mP.FillMode( DRAW_FILL );
 				mP.SetColor( ColorA( 100, 100, 100, 100 ) );
@@ -420,7 +420,7 @@ void UIMap::MapDraw() {
 				mP.DrawPolygon( mObjPoly );
 
 				Polygon2f polyN( mObjPoly );
-				polyN.PushBack( GetMouseMapPos() );
+				polyN.pushBack( GetMouseMapPos() );
 
 				mP.FillMode( DRAW_LINE );
 				mP.SetColor( ColorA( 255, 255, 0, 200 ) );
@@ -514,7 +514,7 @@ const bool& UIMap::ClampToTile() const {
 }
 
 void UIMap::EditingObjMode( EDITING_OBJ_MODE mode ) {
-	mObjPoly.Clear();
+	mObjPoly.clear();
 	mSelPointIndex = eeINDEX_NOT_FOUND;
 
 	mEditingObjMode = mode;

@@ -115,17 +115,17 @@ void UISprite::AutoAlign() {
 	SubTexture * tSubTexture = mSprite->GetCurrentSubTexture();
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.Width() / 2 - tSubTexture->Size().Width() / 2;
+		mAlignOffset.x = mSize.width() / 2 - tSubTexture->Size().width() / 2;
 	} else if ( FontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.Width() - tSubTexture->Size().Width();
+		mAlignOffset.x =  mSize.width() - tSubTexture->Size().width();
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.Height() / 2 - tSubTexture->Size().Height() / 2;
+		mAlignOffset.y = mSize.height() / 2 - tSubTexture->Size().height() / 2;
 	} else if ( FontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.Height() - tSubTexture->Size().Height();
+		mAlignOffset.y = mSize.height() - tSubTexture->Size().height();
 	} else {
 		mAlignOffset.y = 0;
 	}

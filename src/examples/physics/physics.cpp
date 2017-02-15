@@ -341,7 +341,7 @@ void Demo3Update() {
 
 		Body * body = mSpace->AddBody( Body::New( 1.0f, Moment::ForCircle(1.0f, 15.0f, 0.0f, cVectZero ) ) );
 		body->Pos( emitterInstance.position );
-		body->Vel( cVectNew( Math::Randf(-1,1), Math::Randf(-1,1) ) * (cpFloat)100 );
+		body->Vel( cVectNew( Math::randf(-1,1), Math::randf(-1,1) ) * (cpFloat)100 );
 
 		Shape *shape = mSpace->AddShape( ShapeCircle::New( body, 15.0f, cVectZero ) );
 		shape->CollisionType( BALL_TYPE );
@@ -502,8 +502,8 @@ void Demo4Create() {
 		cpFloat radius = 10.0f;
 
 		Body * body = mSpace->AddBody( Body::New( mass, Moment::ForCircle( mass, 0.0f, radius, cVectZero ) ) );
-		body->Pos( cVectNew( x + easing::LinearInterpolation( Math::Randf(), -150.0f, 150.0f, 1 ),
-							 y + easing::LinearInterpolation( Math::Randf(), -150.0f, 150.0f, 1 )
+		body->Pos( cVectNew( x + easing::linearInterpolation( Math::randf(), -150.0f, 150.0f, 1 ),
+							 y + easing::linearInterpolation( Math::randf(), -150.0f, 150.0f, 1 )
 					) );
 
 		Shape * shape = mSpace->AddShape( ShapeCircle::New( body, radius + STICK_SENSOR_THICKNESS, cVectZero ) );

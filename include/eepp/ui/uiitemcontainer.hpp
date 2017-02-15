@@ -62,7 +62,7 @@ UIControl * UIItemContainer<TContainer>::OverFind( const Vector2f& Point ) {
 	if ( mEnabled && mVisible && tParent->mItems.size() ) {
 		UpdateQuad();
 
-		if ( mPoly.PointInside( Point ) ) {
+		if ( mPoly.pointInside( Point ) ) {
 			WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
 
 			for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ ) {

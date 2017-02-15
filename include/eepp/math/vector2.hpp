@@ -21,7 +21,7 @@ class Vector2 {
 		Vector2(T X, T Y);
 
 		/** @return A copy of the Vector2 */
-		Vector2<T> Copy();
+		Vector2<T> copy();
 
 		/** @return The Dot product of the 2D vectors. */
 		T Dot( const Vector2<T>& V2 );
@@ -30,67 +30,67 @@ class Vector2 {
 		T Cross( const Vector2<T>& V2 );
 
 		/** @return The perpendicular vector */
-		Vector2<T> Perp();
+		Vector2<T> perp();
 
 		/** @return The reveser perpendicular vector */
-		Vector2<T> RPerp();
+		Vector2<T> rPerp();
 
 		/** Uses complex multiplication to rotate self by vec. Scaling will occur if self is not a unit vector. */
-		Vector2<T> Rotate( const Vector2<T>& V2 );
+		Vector2<T> rotate( const Vector2<T>& V2 );
 
-		/** Inverse of Vector2::Rotate */
-		Vector2<T> UnRotate( const Vector2<T>& V2 );
+		/** Inverse of Vector2::rotate */
+		Vector2<T> unrotate( const Vector2<T>& V2 );
 
 		/** @return The vector Length */
-		T Length();
+		T length();
 
 		/** @return The square of the length of the 2D vector. */
-		T LengthSq();
+		T lengthSq();
 
 		/** Normalize the vector */
-		void Normalize();
+		void normalize();
 
 		/** @return Clamp the vector to a magnitude length. */
-		void Clamp( T len );
+		void clamp( T len );
 
 		/** @return The unit length vector for the given angle (radians) */
-		Vector2<T> ForAngle( const T& a );
+		Vector2<T> forAngle( const T& a );
 
 		/** @return The angular direction vector is pointing in (radians). */
-		T ToAngle();
+		T toAngle();
 
 		/** Rotates the vector */
-		void Rotate( const T& Angle );
+		void rotate( const T& Angle );
 
 		/** Rotates the vector against a defined rotation center */
-		void Rotate( const T& Angle, const Vector2<T>& RotationCenter );
+		void rotate( const T& Angle, const Vector2<T>& RotationCenter );
 
 		/** @return The distance between two vectors */
-		T Distance( const Vector2<T>& Vec );
+		T distance( const Vector2<T>& Vec );
 
 		/** @return The square of the distance between two vectors */
-		T DistanceSq( const Vector2<T>& Vec );
+		T distanceSq( const Vector2<T>& Vec );
 
 		/** @return True if the distance between the two vectors is less than Dist */
-		bool Near( const Vector2<T>& Vec, T Dist );
+		bool near( const Vector2<T>& Vec, T Dist );
 
 		/** @return The spherical linear interpolation between two 2D vectors. */
-		Vector2<T> SphericalLerp( const Vector2<T>& Vec, T Time );
+		Vector2<T> sphericalLerp( const Vector2<T>& Vec, T Time );
 
 		/** Spherical linear interpolation between two vectors */
-		Vector2<T> SphericalLerpConst( const Vector2<T>& Vec, T Angle );
+		Vector2<T> sphericalLerpConst( const Vector2<T>& Vec, T Angle );
 
 		/** Performs a linear interpolation between two 2D vectors. */
-		Vector2<T> Lerp( const Vector2<T>& Vec, T Time );
+		Vector2<T> lerp( const Vector2<T>& Vec, T Time );
 
 		/**	@return A vector interpolated from self towards Vec with length Dist. */
-		Vector2<T> LerpConst( const Vector2<T>& Vec, T Dist );
+		Vector2<T> lerpConst( const Vector2<T>& Vec, T Dist );
 
 		/** Scales the vector position against another vector */
-		void Scale( const Vector2<T>& scale, const Vector2<T>& Center );
+		void scale( const Vector2<T>& scale, const Vector2<T>& Center );
 
 		/** Scales the vector position against another vector */
-		void Scale( const T& scale, const Vector2<T>& Center );
+		void scale( const T& scale, const Vector2<T>& Center );
 
 		T x;
 		T y;
@@ -106,19 +106,19 @@ template <typename T>
 const Vector2<T> Vector2<T>::Zero = Vector2<T>(0,0);
 
 template <typename T>
-Vector2<T> Vector2<T>::Lerp( const Vector2<T>& Vec, T Time ) {
+Vector2<T> Vector2<T>::lerp( const Vector2<T>& Vec, T Time ) {
 	return *this * ( 1 - Time ) + Vec * Time;
 }
 
 template <typename T>
-Vector2<T> Vector2<T>::LerpConst( const Vector2<T>& Vec, T Dist ) {
+Vector2<T> Vector2<T>::lerpConst( const Vector2<T>& Vec, T Dist ) {
 	Vector2<T> t( *this + ( Vec - *this ) );
-	t.Clamp( Dist );
+	t.clamp( Dist );
 	return t;
 }
 
 template <typename T>
-Vector2<T> Vector2<T>::SphericalLerp( const Vector2<T>& Vec, T Time ) {
+Vector2<T> Vector2<T>::sphericalLerp( const Vector2<T>& Vec, T Time ) {
 	T omega = eeacos( Dot( Vec ) );
 
 	if( omega ) {
@@ -131,9 +131,9 @@ Vector2<T> Vector2<T>::SphericalLerp( const Vector2<T>& Vec, T Time ) {
 }
 
 template <typename T>
-Vector2<T> Vector2<T>::SphericalLerpConst( const Vector2<T>& Vec, T Angle ) {
+Vector2<T> Vector2<T>::sphericalLerpConst( const Vector2<T>& Vec, T Angle ) {
 	T angle = eeacos( Dot( Vec ) );
-	return Lerp( Vec, ( ( Angle < angle ) ? Angle : angle ) / angle );
+	return lerp( Vec, ( ( Angle < angle ) ? Angle : angle ) / angle );
 }
 
 template <typename T>
@@ -273,19 +273,19 @@ T Vector2<T>::sinAng( const T& Ang ) {
 }
 
 template <typename T>
-void Vector2<T>::Rotate( const T& Angle ) {
+void Vector2<T>::rotate( const T& Angle ) {
 	T nx = x * cosAng(Angle) - y * sinAng(Angle);
 	y = y * cosAng(Angle) + x * sinAng(Angle);
 	x = nx;
 }
 
 template <typename T>
-void Vector2<T>::Rotate( const T& Angle, const Vector2<T>& RotationCenter ) {
+void Vector2<T>::rotate( const T& Angle, const Vector2<T>& RotationCenter ) {
 	if ( 1.f != Angle ) {
 		x -= RotationCenter.x;
 		y -= RotationCenter.y;
 
-		Rotate( Angle );
+		rotate( Angle );
 
 		x += RotationCenter.x;
 		y += RotationCenter.y;
@@ -293,7 +293,7 @@ void Vector2<T>::Rotate( const T& Angle, const Vector2<T>& RotationCenter ) {
 }
 
 template <typename T>
-void Vector2<T>::Scale( const Vector2<T>& scale, const Vector2<T>& Center ) {
+void Vector2<T>::scale( const Vector2<T>& scale, const Vector2<T>& Center ) {
 	if ( 1.f != scale ) {
 		if ( x < Center.x )
 			x = Center.x - eeabs( Center.x - x ) * scale.x;
@@ -308,8 +308,8 @@ void Vector2<T>::Scale( const Vector2<T>& scale, const Vector2<T>& Center ) {
 }
 
 template <typename T>
-void Vector2<T>::Scale( const T& scale, const Vector2<T>& Center ) {
-	Scale( Vector2<T>( scale, scale ), Center );
+void Vector2<T>::scale( const T& scale, const Vector2<T>& Center ) {
+	scale( Vector2<T>( scale, scale ), Center );
 }
 
 
@@ -324,37 +324,37 @@ T Vector2<T>::Cross( const Vector2<T>& V2 ) {
 }
 
 template <typename T>
-Vector2<T> Vector2<T>::Perp() {
+Vector2<T> Vector2<T>::perp() {
 	return Vector2<T>( -y, x );
 }
 
 template <typename T>
-Vector2<T> Vector2<T>::RPerp() {
+Vector2<T> Vector2<T>::rPerp() {
 	return Vector2<T>( y, -x );
 }
 
 template <typename T>
-Vector2<T> Vector2<T>::Rotate( const Vector2<T>& V2 ) {
+Vector2<T> Vector2<T>::rotate( const Vector2<T>& V2 ) {
 	return Vector2<T>( x * V2.x - y * V2.y ,  x * V2.y + y * V2.x );
 }
 
 template <typename T>
-Vector2<T> Vector2<T>::UnRotate( const Vector2<T>& V2 ) {
+Vector2<T> Vector2<T>::unrotate( const Vector2<T>& V2 ) {
 	return Vector2<T>( x * V2.x - y * V2.y ,  x * V2.x + y * V2.y );
 }
 
 template <typename T>
-T Vector2<T>::Length() {
+T Vector2<T>::length() {
 	return eesqrt( Dot( Vector2<T>( x , y ) ) );
 }
 
 template <typename T>
-T Vector2<T>::LengthSq() {
+T Vector2<T>::lengthSq() {
 	return Dot( Vector2<T>( x , y ) );
 }
 
 template <typename T>
-void Vector2<T>::Normalize() {
+void Vector2<T>::normalize() {
 	T s = eesqrt(x * x + y * y);
 	if (s == 0) {
 		x = 0;
@@ -366,29 +366,29 @@ void Vector2<T>::Normalize() {
 }
 
 template <typename T>
-Vector2<T> Vector2<T>::ForAngle( const T& a ) {
+Vector2<T> Vector2<T>::forAngle( const T& a ) {
 	return Vector2<T>( eecos(a), eesin(a) );
 }
 
 template <typename T>
-T Vector2<T>::ToAngle() {
+T Vector2<T>::toAngle() {
 	return eeatan2( y, x );
 }
 
 template <typename T>
-T Vector2<T>::Distance( const Vector2<T>& Vec ) {
+T Vector2<T>::distance( const Vector2<T>& Vec ) {
 	return  eesqrt( ( x - Vec.x ) * ( x - Vec.x ) + ( y - Vec.y ) * ( y - Vec.y ) );
 }
 
 template <typename T>
-T Vector2<T>::DistanceSq( const Vector2<T>& Vec ) {
-	return ( *this - Vec ).LengthSq();
+T Vector2<T>::distanceSq( const Vector2<T>& Vec ) {
+	return ( *this - Vec ).lengthSq();
 }
 
 template <typename T>
-void Vector2<T>::Clamp( T len ) {
+void Vector2<T>::clamp( T len ) {
 	if ( Dot( Vector2<T>( x, y ) ) > len * len ) {
-		Normalize();
+		normalize();
 
 		x *= len;
 		y *= len;
@@ -396,12 +396,12 @@ void Vector2<T>::Clamp( T len ) {
 }
 
 template <typename T>
-bool Vector2<T>::Near( const Vector2<T>& Vec, T Dist ) {
-	return 0 != ( DistanceSq( Vec ) < Dist * Dist );
+bool Vector2<T>::near( const Vector2<T>& Vec, T Dist ) {
+	return 0 != ( distanceSq( Vec ) < Dist * Dist );
 }
 
 template <typename T>
-Vector2<T> Vector2<T>::Copy() {
+Vector2<T> Vector2<T>::copy() {
 	return Vector2<T>( x, y );
 }
 

@@ -53,7 +53,7 @@ void UISkinComplex::Draw( const Float& X, const Float& Y, const Float& Width, co
 	if ( NULL != tSubTexture ) {
 		dls = tSubTexture->RealSize();
 
-		tSubTexture->Draw( X, Y + Height - dls.Height(), mTempColor );
+		tSubTexture->Draw( X, Y + Height - dls.height(), mTempColor );
 	}
 
 	tSubTexture = mSubTexture[ State ][ UpRight ];
@@ -63,7 +63,7 @@ void UISkinComplex::Draw( const Float& X, const Float& Y, const Float& Width, co
 	if ( NULL != tSubTexture ) {
 		urs = tSubTexture->RealSize();
 
-		tSubTexture->Draw( X + Width - urs.Width(), Y, mTempColor );
+		tSubTexture->Draw( X + Width - urs.width(), Y, mTempColor );
 	}
 
 	tSubTexture = mSubTexture[ State ][ DownRight ];
@@ -73,47 +73,47 @@ void UISkinComplex::Draw( const Float& X, const Float& Y, const Float& Width, co
 	if ( NULL != tSubTexture ) {
 		drs = tSubTexture->RealSize();
 
-		tSubTexture->Draw( X + Width - drs.Width(), Y + Height - drs.Height(), mTempColor );
+		tSubTexture->Draw( X + Width - drs.width(), Y + Height - drs.height(), mTempColor );
 	}
 
 	tSubTexture = mSubTexture[ State ][ Left ];
 
 	if ( NULL != tSubTexture ) {
-		tSubTexture->DestSize( Sizef( tSubTexture->DestSize().x, Height - uls.Height() - dls.Height() ) );
+		tSubTexture->DestSize( Sizef( tSubTexture->DestSize().x, Height - uls.height() - dls.height() ) );
 
-		tSubTexture->Draw( X, Y + uls.Height(), mTempColor );
+		tSubTexture->Draw( X, Y + uls.height(), mTempColor );
 
 		tSubTexture->ResetDestSize();
 
-		if ( uls.Width() == 0 )
-			uls.x = tSubTexture->RealSize().Width();
+		if ( uls.width() == 0 )
+			uls.x = tSubTexture->RealSize().width();
 	}
 
 	tSubTexture = mSubTexture[ State ][ Up ];
 
 	if ( NULL != tSubTexture ) {
-		tSubTexture->DestSize( Sizef( Width - uls.Width() - urs.Width(), tSubTexture->DestSize().y ) );
+		tSubTexture->DestSize( Sizef( Width - uls.width() - urs.width(), tSubTexture->DestSize().y ) );
 
-		tSubTexture->Draw( X + uls.Width(), Y, mTempColor );
+		tSubTexture->Draw( X + uls.width(), Y, mTempColor );
 
 		tSubTexture->ResetDestSize();
 
-		if ( urs.Height() == 0 )
-			urs.y = tSubTexture->RealSize().Height();
+		if ( urs.height() == 0 )
+			urs.y = tSubTexture->RealSize().height();
 
-		if ( uls.Height() == 0 )
-			uls.y = tSubTexture->RealSize().Height();
+		if ( uls.height() == 0 )
+			uls.y = tSubTexture->RealSize().height();
 	}
 
 	tSubTexture = mSubTexture[ State ][ Right ];
 
 	if ( NULL != tSubTexture ) {
-		if ( urs.Width() == 0 )
-			urs.x = tSubTexture->RealSize().Width();
+		if ( urs.width() == 0 )
+			urs.x = tSubTexture->RealSize().width();
 
-		tSubTexture->DestSize( Sizef( tSubTexture->DestSize().x, Height - urs.Height() - drs.Height() ) );
+		tSubTexture->DestSize( Sizef( tSubTexture->DestSize().x, Height - urs.height() - drs.height() ) );
 
-		tSubTexture->Draw( X + Width - tSubTexture->RealSize().Width(), Y + urs.Height(), mTempColor );
+		tSubTexture->Draw( X + Width - tSubTexture->RealSize().width(), Y + urs.height(), mTempColor );
 
 		tSubTexture->ResetDestSize();
 	}
@@ -121,22 +121,22 @@ void UISkinComplex::Draw( const Float& X, const Float& Y, const Float& Width, co
 	tSubTexture = mSubTexture[ State ][ Down ];
 
 	if ( NULL != tSubTexture ) {
-		tSubTexture->DestSize( Sizef( Width - dls.Width() - drs.Width(), tSubTexture->DestSize().y ) );
+		tSubTexture->DestSize( Sizef( Width - dls.width() - drs.width(), tSubTexture->DestSize().y ) );
 
-		tSubTexture->Draw( X + dls.Width(), Y + Height - tSubTexture->RealSize().Height(), mTempColor );
+		tSubTexture->Draw( X + dls.width(), Y + Height - tSubTexture->RealSize().height(), mTempColor );
 
 		tSubTexture->ResetDestSize();
 
-		if ( dls.Height() == 0 && drs.Height() == 0 )
-			dls.Height( tSubTexture->RealSize().Height() );
+		if ( dls.height() == 0 && drs.height() == 0 )
+			dls.height( tSubTexture->RealSize().height() );
 	}
 
 	tSubTexture = mSubTexture[ State ][ Center ];
 
 	if ( NULL != tSubTexture ) {
-		tSubTexture->DestSize( Sizef( Width - uls.Width() - urs.Width(), Height - uls.Height() - dls.Height() ) );
+		tSubTexture->DestSize( Sizef( Width - uls.width() - urs.width(), Height - uls.height() - dls.height() ) );
 
-		tSubTexture->Draw( X + uls.Width(), Y + uls.Height(), mTempColor );
+		tSubTexture->Draw( X + uls.width(), Y + uls.height(), mTempColor );
 
 		tSubTexture->ResetDestSize();
 	}

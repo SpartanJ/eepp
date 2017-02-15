@@ -84,48 +84,48 @@ class EE_API MTRand {
 		MTRand& operator=( const MTRand& o );
 
 		/** @return integer in [0,2^32-1] */
-		Uint32				Randi();
+		Uint32				randi();
 
 		/** @return integer in [0,n] for n < 2^32 */
-		Uint32				Randi( const Uint32 n );
+		Uint32				randi( const Uint32 n );
 
 		/** @return real number in [0,1] */
-		double			Rand();
+		double			rand();
 
 		/** @return real number in [0,n] */
-		double			Rand( const double n );
+		double			rand( const double n );
 
 		/** Set a new seed */
-		void				Seed( const Uint32 oneSeed );
+		void				seed( const Uint32 oneSeed );
 
 		/** Set the default seed */
-		void				Seed();
+		void				seed();
 
 		/** @return float number in [0,1] */
-		Float				Randf();
+		Float				randf();
 
 		/** @return float number in [0,n] */
-		Float				Randf( const Float n );
+		Float				randf( const Float n );
 
 		/** @return int number in [Min,Max] */
-		int				RandRange( int Min, int Max );
+		int				randRange( int Min, int Max );
 
 		/** @return float number in [Min,Max] */
-		Float				RandRange( Float Min, Float Max );
+		Float				randRange( Float Min, Float Max );
 
 		/** Save the state to an allocated array */
-		void 				Save( Uint32* saveArray ) const;
+		void 				save( Uint32* saveArray ) const;
 
 		/** Load state from an array */
-		void				Load( Uint32 *const loadArray );
+		void				load( Uint32 *const loadArray );
 	protected:
 		Uint32				mState[N];
 		Uint32 *			mNext;
 		int				mLeft;
 
-		void				Initialize( const Uint32 oneSeed );
+		void				initialize( const Uint32 oneSeed );
 
-		void				Reload();
+		void				reload();
 
 		Uint32				hiBit( const Uint32 u ) const;
 
@@ -133,11 +133,11 @@ class EE_API MTRand {
 
 		Uint32				loBits( const Uint32 u ) const;
 
-		Uint32				MixBits( const Uint32 u, const Uint32 v ) const;
+		Uint32				mixBits( const Uint32 u, const Uint32 v ) const;
 
-		Uint32				Magic( const Uint32 u ) const;
+		Uint32				magic( const Uint32 u ) const;
 
-		Uint32				Twist( const Uint32 m, const Uint32 s0, const Uint32 s1 ) const;
+		Uint32				twist( const Uint32 m, const Uint32 s0, const Uint32 s1 ) const;
 };
 
 }}

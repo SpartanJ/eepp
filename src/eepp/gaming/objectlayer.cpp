@@ -50,7 +50,7 @@ void MapObjectLayer::Draw( const Vector2f &Offset ) {
 			GameObject * Obj = (*it);
 
 			if ( Obj->Blocked() ) {
-				Tex->DrawEx( Obj->Pos().x, Obj->Pos().y, Obj->Size().Width(), Obj->Size().Height(), 0, Vector2f::One, Col, Col, Col, Col );
+				Tex->DrawEx( Obj->Pos().x, Obj->Pos().y, Obj->Size().width(), Obj->Size().height(), 0, Vector2f::One, Col, Col, Col, Col );
 			}
 		}
 	}
@@ -110,7 +110,7 @@ GameObject * MapObjectLayer::GetObjectOver( const Vector2i& pos, SEARCH_TYPE typ
 
 				Recti objR( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y );
 
-				if ( objR.Contains( pos ) )
+				if ( objR.contains( pos ) )
 					return tObj;
 			}
 		} else {
@@ -125,7 +125,7 @@ GameObject * MapObjectLayer::GetObjectOver( const Vector2i& pos, SEARCH_TYPE typ
 
 				Recti objR( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y );
 
-				if ( objR.Contains( pos ) )
+				if ( objR.contains( pos ) )
 					return tObj;
 			}
 		}

@@ -82,7 +82,7 @@ void EETest::Init() {
 		//InBuf.Start();
 		InBuf.SupportNewLine( true );
 
-		SetRandomSeed( static_cast<Uint32>( Sys::getSystemTime() * 1000 ) );
+		setRandomSeed( static_cast<Uint32>( Sys::getSystemTime() * 1000 ) );
 
 		LoadTextures();
 
@@ -99,17 +99,17 @@ void EETest::Init() {
 			}
 		}
 
-		WP.Type( Ease::QuarticInOut );
-		WP.AddWaypoint( Vector2f(0,0), 100 );
-		WP.AddWaypoint( Vector2f(800,0), 100 );
-		WP.AddWaypoint( Vector2f(0,0), 100 );
-		WP.AddWaypoint( Vector2f(1024,768), 100 );
-		WP.AddWaypoint( Vector2f(0,600), 100 );
-		WP.EditWaypoint( 2, Vector2f(800,600), 100 );
-		WP.EraseWaypoint( 3 );
-		WP.Loop(true);
-		WP.SetTotalTime( Milliseconds( 5000 ) );
-		WP.Start();
+		WP.type( Ease::QuarticInOut );
+		WP.addWaypoint( Vector2f(0,0), 100 );
+		WP.addWaypoint( Vector2f(800,0), 100 );
+		WP.addWaypoint( Vector2f(0,0), 100 );
+		WP.addWaypoint( Vector2f(1024,768), 100 );
+		WP.addWaypoint( Vector2f(0,600), 100 );
+		WP.editWaypoint( 2, Vector2f(800,600), 100 );
+		WP.eraseWaypoint( 3 );
+		WP.loop(true);
+		WP.setTotalTime( Milliseconds( 5000 ) );
+		WP.start();
 
 		Batch.AllocVertexs( 2048 );
 		Batch.SetBlendMode( ALPHA_BLENDONE );
@@ -119,12 +119,12 @@ void EETest::Init() {
 		if ( NULL != mFBO )
 			mFBO->ClearColor( ColorAf( 0, 0, 0, 0.5f ) );
 
-		Polygon2f Poly = Polygon2f::CreateRoundedRectangle( 0, 0, 256, 50 );
+		Polygon2f Poly = Polygon2f::createRoundedRectangle( 0, 0, 256, 50 );
 
 		mVBO = VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
 
 		if ( NULL != mVBO ) {
-			for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
+			for ( Uint32 i = 0; i < Poly.size(); i++ ) {
 				mVBO->AddVertex( Poly[i] );
 				mVBO->AddColor( ColorA( 100 + i, 255 - i, 150 + i, 200 ) );
 			}
@@ -291,7 +291,7 @@ void EETest::CreateUI() {
 	Child->Visible( true );
 	Child->Enabled( true );
 	Child->StartRotation( 0.f, 360.f, Milliseconds( 5000.f ) );
-	Child->RotationInterpolation()->Loop( true );
+	Child->RotationInterpolation()->loop( true );
 
 	Params.Background.Colors( ColorA( 0xFFFF0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xFFFF0077 ) );
 	Params.Parent( Child );
@@ -301,7 +301,7 @@ void EETest::CreateUI() {
 	Child2->Visible( true );
 	Child2->Enabled( true );
 	Child2->StartRotation( 0.f, 360.f, Milliseconds( 5000.f ) );
-	Child2->RotationInterpolation()->Loop( true );
+	Child2->RotationInterpolation()->loop( true );
 
 	mTheme->CreateSprite( eeNew( Sprite, ( "gn" ) ), C, Sizei(), Vector2i( 160, 100 ) );
 
@@ -771,7 +771,7 @@ void EETest::ButtonClick( const UIEvent * Event ) {
 		Gfx->Enabled( false );
 
 		Gfx->StartRotation( 0, 2500, Milliseconds( 2500 ) );
-		Gfx->StartMovement( Vector2i( Math::Randi( 0, mWindow->GetWidth() ), -64 ), Vector2i( Math::Randi( 0, mWindow->GetWidth() ), mWindow->GetHeight() + 64 ), Milliseconds( 2500 ) );
+		Gfx->StartMovement( Vector2i( Math::randi( 0, mWindow->GetWidth() ), -64 ), Vector2i( Math::randi( 0, mWindow->GetWidth() ), mWindow->GetHeight() + 64 ), Milliseconds( 2500 ) );
 		Gfx->CloseFadeOut( Milliseconds( 3500 ) );
 
 		mListBox->AddListBoxItem( "Test ListBox " + String::toStr( mListBox->Count() + 1 ) + " testing it right now!" );
@@ -894,9 +894,9 @@ void EETest::LoadTextures() {
 				ColorA C = Tex->GetPixel(x, y);
 
 				if ( C.r() > 200 && C.g() > 200 && C.b() > 200 )
-					Tex->SetPixel(x, y, ColorA( Math::Randi(0, 255), Math::Randi(0, 255), Math::Randi(0, 255), C.a() ) );
+					Tex->SetPixel(x, y, ColorA( Math::randi(0, 255), Math::randi(0, 255), Math::randi(0, 255), C.a() ) );
 				else
-					Tex->SetPixel(x, y, ColorA( Math::Randi(200, 255), Math::Randi(200, 255), Math::Randi(200, 255), C.a() ) );
+					Tex->SetPixel(x, y, ColorA( Math::randi(200, 255), Math::randi(200, 255), Math::randi(200, 255), C.a() ) );
 			}
 		}
 
@@ -992,7 +992,7 @@ void EETest::Screen2() {
 		Vector2f( aX + 32.f, aY + 32.f  ),
 		Vector2f( aX + 32.f, aY 		)
 	);
-	TmpQuad.Rotate( ang, Vector2f( aX + 16.f, aY + 16.f ) );
+	TmpQuad.rotate( ang, Vector2f( aX + 16.f, aY + 16.f ) );
 
 	for ( Uint32 z = 0; z < 16; z++ ) {
 		for ( Uint32 y = 0; y < 16; y++ ) {
@@ -1058,12 +1058,12 @@ void EETest::Screen2() {
 	#ifndef EE_GLES
 	CL1.RenderMode( RN_ISOMETRIC );
 
-	if ( CL1.GetAABB().IntersectCircle( Mousef, 80.f ) )
+	if ( CL1.GetAABB().intersectCircle( Mousef, 80.f ) )
 		CL1.Color( ColorA(255, 0, 0, 200) );
 	else
 		CL1.Color( ColorA(255, 255, 255, 200) );
 
-	if ( Polygon2f::IntersectQuad2( CL1.GetQuad() , CL2.GetQuad() ) ) {
+	if ( Polygon2f::intersectQuad2( CL1.GetQuad() , CL2.GetQuad() ) ) {
 		CL1.Color( ColorA(0, 255, 0, 255) );
 		CL2.Color( ColorA(0, 255, 0, 255) );
 	} else
@@ -1097,12 +1097,12 @@ void EETest::Screen2() {
 	Line2f Line3( Vector2f((Float)mWindow->GetWidth(), 0.f), Vector2f( 0.f, (Float)mWindow->GetHeight() ) );
 	Line2f Line4( Vector2f(Mousef.x - 80.f, Mousef.y + 80.f), Vector2f(Mousef.x + 80.f, Mousef.y - 80.f) );
 
-	if ( Line.Intersect( Line2 ) )
+	if ( Line.intersect( Line2 ) )
 		iL1 = true;
 	else
 		iL1 = false;
 
-	if ( Line3.Intersect( Line4 ) )
+	if ( Line3.intersect( Line4 ) )
 		iL2 = true;
 	else
 		iL2 = false;
@@ -1128,9 +1128,9 @@ void EETest::Screen2() {
 
 	TNP[3]->DrawQuadEx( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), Vector2f(), ang, Vector2f(scale,scale), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
 
-	WP.Update( et );
+	WP.update( et );
 	PR.SetColor( ColorA(0, 255, 0, 255) );
-	PR.DrawPoint( WP.GetPos(), 10.f );
+	PR.DrawPoint( WP.getPos(), 10.f );
 }
 
 void EETest::Screen3() {
@@ -1339,7 +1339,7 @@ void EETest::Input() {
 
 	if ( KM->AltPressed() && KM->IsKeyUp( KEY_RETURN ) ) {
 		if ( mWindow->Windowed() ) {
-			mWindow->Size( mWindow->GetDesktopResolution().Width(), mWindow->GetDesktopResolution().Height(), false );
+			mWindow->Size( mWindow->GetDesktopResolution().width(), mWindow->GetDesktopResolution().height(), false );
 		} else {
 			mWindow->ToggleFullscreen();
 		}
@@ -1538,11 +1538,11 @@ void EETest::ParticlesCallback( Particle * P, ParticleSystem * Me ) {
 	Float x, y, radio;
 	Vector2f MePos( Me->Position() );
 
-	radio = (Math::Randf(1.f, 1.2f) + sin( 20.0f / P->Id() )) * 24;
+	radio = (Math::randf(1.f, 1.2f) + sin( 20.0f / P->Id() )) * 24;
 	x = MePos.x + radio * cos( (Float)P->Id() );
 	y = MePos.y + radio * sin( (Float)P->Id() );
-	P->Reset(x, y, Math::Randf(-10.f, 10.f), Math::Randf(-10.f, 10.f), Math::Randf(-10.f, 10.f), Math::Randf(-10.f, 10.f));
-	P->Color( ColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + Math::Randf() * 0.3f );
+	P->Reset(x, y, Math::randf(-10.f, 10.f), Math::randf(-10.f, 10.f), Math::randf(-10.f, 10.f), Math::randf(-10.f, 10.f));
+	P->Color( ColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + Math::randf() * 0.3f );
 }
 
 void EETest::Particles() {
@@ -1552,8 +1552,8 @@ void EETest::Particles() {
 		PS[1].Position( Mousef );
 
 	PS[2].Position( HWidth, HHeight );
-	PS[3].Position(  Math::cosAng(Ang) * 220.f + HWidth + Math::Randf(0.f, 10.f),  Math::sinAng(Ang) * 220.f + HHeight + Math::Randf(0.f, 10.f) );
-	PS[4].Position( -Math::cosAng(Ang) * 220.f + HWidth + Math::Randf(0.f, 10.f), -Math::sinAng(Ang) * 220.f + HHeight + Math::Randf(0.f, 10.f) );
+	PS[3].Position(  Math::cosAng(Ang) * 220.f + HWidth + Math::randf(0.f, 10.f),  Math::sinAng(Ang) * 220.f + HHeight + Math::randf(0.f, 10.f) );
+	PS[4].Position( -Math::cosAng(Ang) * 220.f + HWidth + Math::randf(0.f, 10.f), -Math::sinAng(Ang) * 220.f + HHeight + Math::randf(0.f, 10.f) );
 
 	for ( Uint32 i = 0; i < PS.size(); i++ )
 		PS[i].Draw();
@@ -1754,7 +1754,7 @@ void EETest::Demo2Update() {
 
 		Body * body = mSpace->AddBody( Body::New( 1.0f, Moment::ForCircle(1.0f, 15.0f, 0.0f, cVectZero ) ) );
 		body->Pos( emitterInstance.position );
-		body->Vel( cVectNew( Math::Randf(-1,1), Math::Randf(-1,1) ) * (cpFloat)100 );
+		body->Vel( cVectNew( Math::randf(-1,1), Math::randf(-1,1) ) * (cpFloat)100 );
 
 		Shape *shape = mSpace->AddShape( ShapeCircle::New( body, 15.0f, cVectZero ) );
 		shape->CollisionType( BALL_TYPE );

@@ -105,7 +105,7 @@ void MainLoop()
 	if ( imp->IsKeyUp( KEY_F ) )
 	{
 		if ( win->Windowed() ) {
-			win->Size( win->GetDesktopResolution().Width(), win->GetDesktopResolution().Height(), false );
+			win->Size( win->GetDesktopResolution().width(), win->GetDesktopResolution().height(), false );
 		} else {
 			win->Size( 960, 640, true );
 			win->Center();
@@ -168,8 +168,8 @@ void MainLoop()
 
 			if ( d < 2.f ) {
 				if ( d < 0.03f ) {
-					vertices[i+1].x = Math::Randf( -1, 1 ) * aspectRatio;
-					vertices[i+1].y = Math::Randf( -1, 1 );
+					vertices[i+1].x = Math::randf( -1, 1 ) * aspectRatio;
+					vertices[i+1].y = Math::randf( -1, 1 );
 					velocities[i].x = 0;
 					velocities[i].y = 0;
 				} else {
@@ -259,8 +259,8 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		for (i = 0; i < ParticlesNum; i++ )
 		{
 			vertices[i]		= Vector3ff( 0, 0, 1.83 );
-			velocities[i]	= Vector3ff( (Math::Randf() * 2 - 1)*.05, (Math::Randf() * 2 - 1)*.05, .93 + Math::Randf()*.02 );
-			colors[i]		= ColorAf( Math::Randf() * 0.5, 0.1, 0.8, 0.5 );
+			velocities[i]	= Vector3ff( (Math::randf() * 2 - 1)*.05, (Math::randf() * 2 - 1)*.05, .93 + Math::randf()*.02 );
+			colors[i]		= ColorAf( Math::randf() * 0.5, 0.1, 0.8, 0.5 );
 		}
 
 		/** Optimized for ARM ( pre-cache sqrt ) */

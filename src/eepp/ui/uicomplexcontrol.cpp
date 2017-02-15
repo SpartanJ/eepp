@@ -40,12 +40,12 @@ void UIComplexControl::Update() {
 			Pos.x += UIThemeManager::instance()->CursorSize().x;
 			Pos.y += UIThemeManager::instance()->CursorSize().y;
 
-			if ( Pos.x + mTooltip->Size().Width() > UIManager::instance()->MainControl()->Size().Width() ) {
-				Pos.x = UIManager::instance()->GetMousePos().x - mTooltip->Size().Width();
+			if ( Pos.x + mTooltip->Size().width() > UIManager::instance()->MainControl()->Size().width() ) {
+				Pos.x = UIManager::instance()->GetMousePos().x - mTooltip->Size().width();
 			}
 
-			if ( Pos.y + mTooltip->Size().Height() > UIManager::instance()->MainControl()->Size().Height() ) {
-				Pos.y = UIManager::instance()->GetMousePos().y - mTooltip->Size().Height();
+			if ( Pos.y + mTooltip->Size().height() > UIManager::instance()->MainControl()->Size().height() ) {
+				Pos.y = UIManager::instance()->GetMousePos().y - mTooltip->Size().height();
 			}
 
 			if ( Time::Zero == UIThemeManager::instance()->TooltipTimeToShow() ) {
@@ -155,10 +155,10 @@ void UIComplexControl::OnParentSizeChange( const Vector2i& SizeChange ) {
 
 	if ( mFlags & UI_ANCHOR_RIGHT ) {
 		if ( NULL != mParentCtrl ) {
-			newSize.x = mParentCtrl->Size().Width() - mPos.x - mDistToBorder.Right;
+			newSize.x = mParentCtrl->Size().width() - mPos.x - mDistToBorder.Right;
 
-			if ( newSize.x < mMinControlSize.Width() )
-				newSize.x = mMinControlSize.Width();
+			if ( newSize.x < mMinControlSize.width() )
+				newSize.x = mMinControlSize.width();
 		}
 	}
 
@@ -172,8 +172,8 @@ void UIComplexControl::OnParentSizeChange( const Vector2i& SizeChange ) {
 		if ( NULL != mParentCtrl ) {
 			newSize.y = mParentCtrl->Size().y - mPos.y - mDistToBorder.Bottom;
 
-			if ( newSize.y < mMinControlSize.Height() )
-				newSize.y = mMinControlSize.Height();
+			if ( newSize.y < mMinControlSize.height() )
+				newSize.y = mMinControlSize.height();
 		}
 	}
 

@@ -158,16 +158,16 @@ bool UIMenu::CheckControlSize( UIControl * Control, const bool& Resize ) {
 	if ( Control->IsType( UI_TYPE_MENUITEM ) ) {
 		UIMenuItem * tItem = reinterpret_cast<UIMenuItem*> ( Control );
 
-		if ( NULL != tItem->Icon() && tItem->IconHorizontalMargin() + tItem->Icon()->Size().Width() > (Int32)mBiggestIcon ) {
-			mBiggestIcon = tItem->IconHorizontalMargin() + tItem->Icon()->Size().Width();
+		if ( NULL != tItem->Icon() && tItem->IconHorizontalMargin() + tItem->Icon()->Size().width() > (Int32)mBiggestIcon ) {
+			mBiggestIcon = tItem->IconHorizontalMargin() + tItem->Icon()->Size().width();
 		}
 
 		if ( mFlags & UI_AUTO_SIZE ) {
 			if ( Control->IsType( UI_TYPE_MENUSUBMENU ) ) {
 				UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( tItem );
 
-				if ( tMenu->TextBox()->GetTextWidth() + mBiggestIcon + tMenu->Arrow()->Size().Width() + mMinRightMargin > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
-					mMaxWidth = tMenu->TextBox()->GetTextWidth() + mBiggestIcon + mPadding.Left + mPadding.Right + tMenu->Arrow()->Size().Width() + mMinRightMargin;
+				if ( tMenu->TextBox()->GetTextWidth() + mBiggestIcon + tMenu->Arrow()->Size().width() + mMinRightMargin > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
+					mMaxWidth = tMenu->TextBox()->GetTextWidth() + mBiggestIcon + mPadding.Left + mPadding.Right + tMenu->Arrow()->Size().width() + mMinRightMargin;
 
 					if ( Resize ) {
 						ResizeControls();
@@ -214,9 +214,9 @@ Uint32 UIMenu::Add( UIControl * Control ) {
 
 void UIMenu::SetControlSize( UIControl * Control, const Uint32& Pos ) {
 	if ( Control->IsType( UI_TYPE_MENUITEM ) ) {
-		Control->Size( mSize.Width() - mPadding.Left - mPadding.Right, mRowHeight );
+		Control->Size( mSize.width() - mPadding.Left - mPadding.Right, mRowHeight );
 	} else {
-		Control->Size( mSize.Width() - mPadding.Left - mPadding.Right, Control->Size().Height() );
+		Control->Size( mSize.width() - mPadding.Left - mPadding.Right, Control->Size().height() );
 	}
 }
 
@@ -224,14 +224,14 @@ Uint32 UIMenu::AddSeparator() {
 	UISeparator::CreateParams Params;
 	Params.Parent( this );
 	Params.PosSet( mPadding.Left, mPadding.Top + mNextPosY );
-	Params.Size = Sizei( mSize.Width() - mPadding.Left - mPadding.Right, 3 );
+	Params.Size = Sizei( mSize.width() - mPadding.Left - mPadding.Right, 3 );
 
 	UISeparator * Control = eeNew( UISeparator, ( Params ) );
 
 	Control->Visible( true );
 	Control->Enabled( true );
 
-	mNextPosY += Control->Size().Height();
+	mNextPosY += Control->Size().height();
 
 	mItems.push_back( Control );
 
@@ -360,7 +360,7 @@ void UIMenu::OnSizeChange() {
 		mRowHeight = mFont->GetFontHeight() + 8;
 	}
 
-	if ( 0 != mMinWidth && mSize.Width() < (Int32)mMinWidth ) {
+	if ( 0 != mMinWidth && mSize.width() < (Int32)mMinWidth ) {
 		Size( mMinWidth, mNextPosY + mPadding.Top + mPadding.Bottom );
 	}
 }
@@ -395,7 +395,7 @@ void UIMenu::ReposControls() {
 	for ( i = 0; i < mItems.size(); i++ ) {
 		mItems[i]->Pos( mPadding.Left, mPadding.Top + mNextPosY );
 
-		mNextPosY += mItems[i]->Size().Height();
+		mNextPosY += mItems[i]->Size().height();
 	}
 
 	ResizeMe();
@@ -405,7 +405,7 @@ void UIMenu::ResizeMe() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		Size( mMaxWidth, mNextPosY + mPadding.Top + mPadding.Bottom );
 	} else {
-		Size( mSize.Width(), mNextPosY + mPadding.Top + mPadding.Bottom );
+		Size( mSize.width(), mNextPosY + mPadding.Top + mPadding.Bottom );
 	}
 }
 
@@ -560,14 +560,14 @@ const Recti& UIMenu::Padding() const {
 }
 
 void UIMenu::FixMenuPos( Vector2i& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {
-	eeAABB qScreen( 0.f, 0.f, UIManager::instance()->MainControl()->Size().Width(), UIManager::instance()->MainControl()->Size().Height() );
-	eeAABB qPos( Pos.x, Pos.y, Pos.x + Menu->Size().Width(), Pos.y + Menu->Size().Height() );
+	eeAABB qScreen( 0.f, 0.f, UIManager::instance()->MainControl()->Size().width(), UIManager::instance()->MainControl()->Size().height() );
+	eeAABB qPos( Pos.x, Pos.y, Pos.x + Menu->Size().width(), Pos.y + Menu->Size().height() );
 
 	if ( NULL != Parent && NULL != SubMenu ) {
 		Vector2i addToPos( 0, 0 );
 
 		if ( NULL != SubMenu ) {
-			addToPos.y = SubMenu->Size().Height();
+			addToPos.y = SubMenu->Size().height();
 		}
 
 		Vector2i sPos = SubMenu->Pos();
@@ -576,50 +576,50 @@ void UIMenu::FixMenuPos( Vector2i& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSu
 		Vector2i pPos = Parent->Pos();
 		Parent->ControlToScreen( pPos );
 
-		eeAABB qParent( pPos.x, pPos.y, pPos.x + Parent->Size().Width(), pPos.y + Parent->Size().Height() );
+		eeAABB qParent( pPos.x, pPos.y, pPos.x + Parent->Size().width(), pPos.y + Parent->Size().height() );
 
 		Pos.x		= qParent.Right;
 		Pos.y		= sPos.y;
 		qPos.Left	= Pos.x;
-		qPos.Right	= qPos.Left + Menu->Size().Width();
+		qPos.Right	= qPos.Left + Menu->Size().width();
 		qPos.Top	= Pos.y;
-		qPos.Bottom	= qPos.Top + Menu->Size().Height();
+		qPos.Bottom	= qPos.Top + Menu->Size().height();
 
-		if ( !qScreen.Contains( qPos ) ) {
-			Pos.y		= sPos.y + SubMenu->Size().Height() - Menu->Size().Height();
+		if ( !qScreen.contains( qPos ) ) {
+			Pos.y		= sPos.y + SubMenu->Size().height() - Menu->Size().height();
 			qPos.Top	= Pos.y;
-			qPos.Bottom	= qPos.Top + Menu->Size().Height();
+			qPos.Bottom	= qPos.Top + Menu->Size().height();
 
-			if ( !qScreen.Contains( qPos ) ) {
-				Pos.x 		= qParent.Left - Menu->Size().Width();
+			if ( !qScreen.contains( qPos ) ) {
+				Pos.x 		= qParent.Left - Menu->Size().width();
 				Pos.y 		= sPos.y;
 				qPos.Left	= Pos.x;
-				qPos.Right	= qPos.Left + Menu->Size().Width();
+				qPos.Right	= qPos.Left + Menu->Size().width();
 				qPos.Top	= Pos.y;
-				qPos.Bottom	= qPos.Top + Menu->Size().Height();
+				qPos.Bottom	= qPos.Top + Menu->Size().height();
 
-				if ( !qScreen.Contains( qPos ) ) {
-					Pos.y		= sPos.y + SubMenu->Size().Height() - Menu->Size().Height();
+				if ( !qScreen.contains( qPos ) ) {
+					Pos.y		= sPos.y + SubMenu->Size().height() - Menu->Size().height();
 					qPos.Top	= Pos.y;
-					qPos.Bottom	= qPos.Top + Menu->Size().Height();
+					qPos.Bottom	= qPos.Top + Menu->Size().height();
 				}
 			}
 		}
 	} else {
-		if ( !qScreen.Contains( qPos ) ) {
-			Pos.y		-= Menu->Size().Height();
-			qPos.Top	-= Menu->Size().Height();
-			qPos.Bottom	-= Menu->Size().Height();
+		if ( !qScreen.contains( qPos ) ) {
+			Pos.y		-= Menu->Size().height();
+			qPos.Top	-= Menu->Size().height();
+			qPos.Bottom	-= Menu->Size().height();
 
-			if ( !qScreen.Contains( qPos ) ) {
-				Pos.x		-= Menu->Size().Width();
-				qPos.Left	-= Menu->Size().Width();
-				qPos.Right	-= Menu->Size().Width();
+			if ( !qScreen.contains( qPos ) ) {
+				Pos.x		-= Menu->Size().width();
+				qPos.Left	-= Menu->Size().width();
+				qPos.Right	-= Menu->Size().width();
 
-				if ( !qScreen.Contains( qPos ) ) {
-					Pos.y		+= Menu->Size().Height();
-					qPos.Top	+= Menu->Size().Height();
-					qPos.Bottom	+= Menu->Size().Height();
+				if ( !qScreen.contains( qPos ) ) {
+					Pos.y		+= Menu->Size().height();
+					qPos.Top	+= Menu->Size().height();
+					qPos.Bottom	+= Menu->Size().height();
 				}
 			}
 		}

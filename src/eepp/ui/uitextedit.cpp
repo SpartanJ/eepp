@@ -51,15 +51,15 @@ UITextEdit::UITextEdit( UITextEdit::CreateParams& Params ) :
 
 	UIScrollBar::CreateParams ScrollBarP;
 	ScrollBarP.Parent( this );
-	ScrollBarP.PosSet( mSize.Width() - 15, 0 );
-	ScrollBarP.Size					= Sizei( 15, mSize.Height() );
+	ScrollBarP.PosSet( mSize.width() - 15, 0 );
+	ScrollBarP.Size					= Sizei( 15, mSize.height() );
 	ScrollBarP.Flags				= UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar	= true;
 	mVScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
 	mVScrollBar->Value( 1 );
 
-	ScrollBarP.PosSet( 0, mSize.Height() - 15 );
-	ScrollBarP.Size					= Sizei( mSize.Width() - mVScrollBar->Size().Width(), 15 );
+	ScrollBarP.PosSet( 0, mSize.height() - 15 );
+	ScrollBarP.Size					= Sizei( mSize.width() - mVScrollBar->Size().width(), 15 );
 	ScrollBarP.VerticalScrollBar	= false;
 	mHScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
 
@@ -97,11 +97,11 @@ void UITextEdit::SetTheme( UITheme * Theme ) {
 }
 
 void UITextEdit::OnSizeChange() {
-	mHScrollBar->Pos( 0, mSize.Height() - mHScrollBar->Size().Height() );
-	mVScrollBar->Pos( mSize.Width() - mVScrollBar->Size().Width(), 0 );
+	mHScrollBar->Pos( 0, mSize.height() - mHScrollBar->Size().height() );
+	mVScrollBar->Pos( mSize.width() - mVScrollBar->Size().width(), 0 );
 
-	mHScrollBar->Size( mSize.Width(), mHScrollBar->Size().Height() );
-	mVScrollBar->Size( mVScrollBar->Size().Width(), mSize.Height() );
+	mHScrollBar->Size( mSize.width(), mHScrollBar->Size().height() );
+	mVScrollBar->Size( mVScrollBar->Size().width(), mSize.height() );
 
 	mTextInput->Pos( mPadding.Left, mPadding.Top );
 
@@ -125,25 +125,25 @@ void UITextEdit::OnAlphaChange() {
 }
 
 void UITextEdit::FixScroll() {
-	int Width		= mSize.Width()		- mPadding.Left - mPadding.Right;
-	int Height	= mSize.Height()	- mPadding.Top	- mPadding.Bottom;
+	int Width		= mSize.width()		- mPadding.Left - mPadding.Right;
+	int Height	= mSize.height()	- mPadding.Top	- mPadding.Bottom;
 
 	if ( mHScrollBar->Visible() )
-		Height -= mHScrollBar->Size().Height();
+		Height -= mHScrollBar->Size().height();
 
 	int diff;
 	Float pos;
 
-	if ( mTextInput->Size().Height() - Height >= 0 ) {
-		diff = mTextInput->Size().Height() - Height;
+	if ( mTextInput->Size().height() - Height >= 0 ) {
+		diff = mTextInput->Size().height() - Height;
 
 		pos = diff * mVScrollBar->Value();
 
 		mTextInput->Pos( mTextInput->Pos().x, mPadding.Top - pos );
 	}
 
-	if ( mTextInput->Size().Width() - Width >= 0 ) {
-		diff = mTextInput->Size().Width() - Width;
+	if ( mTextInput->Size().width() - Width >= 0 ) {
+		diff = mTextInput->Size().width() - Width;
 
 		pos = diff * mHScrollBar->Value();
 
@@ -167,7 +167,7 @@ void UITextEdit::ScrollbarsSet() {
 		}
 		case UI_SCROLLBAR_AUTO:
 		{
-			if ( mTextInput->GetTextWidth() > mSize.Width() - mPadding.Left - mPadding.Right ) {
+			if ( mTextInput->GetTextWidth() > mSize.width() - mPadding.Left - mPadding.Right ) {
 				mHScrollBar->Visible( true );
 				mHScrollBar->Enabled( true );
 			} else {
@@ -196,9 +196,9 @@ void UITextEdit::ScrollbarsSet() {
 			int extraH = 0;
 
 			if ( mHScrollBar->Visible() )
-				extraH = mHScrollBar->Size().Height();
+				extraH = mHScrollBar->Size().height();
 
-			if ( mTextInput->GetTextHeight() > mSize.Height() - mPadding.Top - mPadding.Bottom - extraH ) {
+			if ( mTextInput->GetTextHeight() > mSize.height() - mPadding.Top - mPadding.Bottom - extraH ) {
 				mVScrollBar->Visible( true );
 				mVScrollBar->Enabled( true );
 			} else {
@@ -210,13 +210,13 @@ void UITextEdit::ScrollbarsSet() {
 	}
 
 	if ( !mVScrollBar->Visible() && mHScrollBar->Visible() ) {
-		mHScrollBar->Size( mSize.Width(), mHScrollBar->Size().Height() );
+		mHScrollBar->Size( mSize.width(), mHScrollBar->Size().height() );
 	} else {
-		mHScrollBar->Size( mSize.Width() - mVScrollBar->Size().Width(), mHScrollBar->Size().Height() );
+		mHScrollBar->Size( mSize.width() - mVScrollBar->Size().width(), mHScrollBar->Size().height() );
 	}
 
 	if ( UI_SCROLLBAR_AUTO == mHScrollBarMode && mVScrollBar->Visible() && !mHScrollBar->Visible() ) {
-		if ( mTextInput->GetTextWidth() > mSize.Width() - mPadding.Left - mPadding.Right - mVScrollBar->Size().Width() ) {
+		if ( mTextInput->GetTextWidth() > mSize.width() - mPadding.Left - mPadding.Right - mVScrollBar->Size().width() ) {
 			mHScrollBar->Visible( true );
 			mHScrollBar->Enabled( true );
 		}
@@ -269,8 +269,8 @@ void UITextEdit::Text( const String& Txt ) {
 }
 
 void UITextEdit::OnInputSizeChange( const UIEvent * Event ) {
-	int Width		= mSize.Width()		- mPadding.Left - mPadding.Right;
-	int Height	= mSize.Height()	- mPadding.Top	- mPadding.Bottom;
+	int Width		= mSize.width()		- mPadding.Left - mPadding.Right;
+	int Height	= mSize.height()	- mPadding.Top	- mPadding.Bottom;
 
 	if ( NULL != Event ) {
 		if ( Event->EventType() == UIEvent::EventOnPressEnter ) {
@@ -281,10 +281,10 @@ void UITextEdit::OnInputSizeChange( const UIEvent * Event ) {
 	ScrollbarsSet();
 
 	if ( mHScrollBar->Visible() )
-		Height	-= mHScrollBar->Size().Height();
+		Height	-= mHScrollBar->Size().height();
 
 	if ( mVScrollBar->Visible() )
-		Width	-= mVScrollBar->Size().Width();
+		Width	-= mVScrollBar->Size().width();
 
 	ShrinkText( Width );
 
@@ -293,14 +293,14 @@ void UITextEdit::OnInputSizeChange( const UIEvent * Event ) {
 		mVScrollBar->Enabled( false );
 	}
 
-	if ( mTextInput->Size().Width() < Width || mTextInput->Size().Height() < Height ) {
-		if ( mTextInput->Size().Width() < Width && mTextInput->Size().Height() < Height ) {
+	if ( mTextInput->Size().width() < Width || mTextInput->Size().height() < Height ) {
+		if ( mTextInput->Size().width() < Width && mTextInput->Size().height() < Height ) {
 			mTextInput->Size( Width, Height );
 		} else {
-			if ( mTextInput->Size().Width() < Width ) {
-				mTextInput->Size( Width, mTextInput->Size().Height() );
+			if ( mTextInput->Size().width() < Width ) {
+				mTextInput->Size( Width, mTextInput->Size().height() );
 			} else {
-				mTextInput->Size( mTextInput->Size().Width(), Height );
+				mTextInput->Size( mTextInput->Size().width(), Height );
 			}
 		}
 	}
@@ -328,14 +328,14 @@ void UITextEdit::OnCursorPosChange( const UIEvent * Event ) {
 }
 
 void UITextEdit::FixScrollToCursor() {
-	int Width		= mSize.Width()		- mPadding.Left - mPadding.Right;
-	int Height	= mSize.Height()	- mPadding.Top	- mPadding.Bottom;
+	int Width		= mSize.width()		- mPadding.Left - mPadding.Right;
+	int Height	= mSize.height()	- mPadding.Top	- mPadding.Bottom;
 
 	if ( mVScrollBar->Visible() )
-		Width -= mVScrollBar->Size().Width();
+		Width -= mVScrollBar->Size().width();
 
 	if ( mHScrollBar->Visible() )
-		Height -= mHScrollBar->Size().Height();
+		Height -= mHScrollBar->Size().height();
 
 	if ( FontHAlignGet( mTextInput->Flags() ) == UI_HALIGN_LEFT ) {
 		Uint32 NLPos	= 0;
@@ -364,8 +364,8 @@ void UITextEdit::FixScrollToCursor() {
 			mTextInput->Pos( mTextInput->Pos().x, mPadding.Top );
 		}
 
-		mHScrollBar->Value( tW / mTextInput->Size().Width() );
-		mVScrollBar->Value( tH / mTextInput->Size().Height() );
+		mHScrollBar->Value( tW / mTextInput->Size().width() );
+		mVScrollBar->Value( tH / mTextInput->Size().height() );
 
 		mSkipValueChange = false;
 	}

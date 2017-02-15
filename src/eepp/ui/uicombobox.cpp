@@ -47,14 +47,14 @@ void UIComboBox::CreateButton() {
 			SubTexture * tSubTexture = tComplex->GetSubTextureSide( UISkinState::StateNormal, UISkinComplex::Right );
 
 			if ( NULL != tSubTexture )
-				btnWidth = tSubTexture->RealSize().Width();
+				btnWidth = tSubTexture->RealSize().width();
 		}
 	}
 
 	UIControl::CreateParams Params;
 	Params.Parent( this ),
-	Params.Size = Sizei( btnWidth, mSize.Height() );
-	Params.PosSet( mSize.Width() - btnWidth, 0 );
+	Params.Size = Sizei( btnWidth, mSize.height() );
+	Params.PosSet( mSize.width() - btnWidth, 0 );
 	mButton = eeNew( UIControl, ( Params ) );
 	mButton->Visible( true );
 	mButton->Enabled( true );

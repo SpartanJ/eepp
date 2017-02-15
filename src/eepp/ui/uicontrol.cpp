@@ -115,7 +115,7 @@ Uint32 UIControl::OnMessage( const UIMessage * Msg ) {
 }
 
 bool UIControl::IsInside( const Vector2i& Pos ) const {
-	return ( Pos.x >= 0 && Pos.y >= 0 && Pos.x < mSize.Width() && Pos.y < mSize.Height() );
+	return ( Pos.x >= 0 && Pos.y >= 0 && Pos.x < mSize.width() && Pos.y < mSize.height() );
 }
 
 void UIControl::Pos( const Vector2i& Pos ) {
@@ -222,14 +222,14 @@ void UIControl::CenterHorizontal() {
 	UIControl * Ctrl = Parent();
 
 	if ( NULL != Ctrl )
-		Pos( Vector2i( ( Ctrl->Size().Width() / 2 ) - ( mSize.Width() / 2 ), mPos.y ) );
+		Pos( Vector2i( ( Ctrl->Size().width() / 2 ) - ( mSize.width() / 2 ), mPos.y ) );
 }
 
 void UIControl::CenterVertical(){
 	UIControl * Ctrl = Parent();
 
 	if ( NULL != Ctrl )
-		Pos( Vector2i( mPos.x, ( Ctrl->Size().Height() / 2 ) - ( mSize.Height() / 2 ) ) );
+		Pos( Vector2i( mPos.x, ( Ctrl->Size().height() / 2 ) - ( mSize.height() / 2 ) ) );
 }
 
 void UIControl::Center() {
@@ -252,7 +252,7 @@ void UIControl::Draw() {
 			BorderDraw();
 
 		if ( NULL != mSkinState )
-			mSkinState->Draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.Width(), (Float)mSize.Height(), 255 );
+			mSkinState->Draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.width(), (Float)mSize.height(), 255 );
 
 		if ( UIManager::instance()->HighlightFocus() && UIManager::instance()->FocusControl() == this ) {
 			Primitives P;
@@ -522,7 +522,7 @@ void UIControl::OnSizeChange() {
 }
 
 Rectf UIControl::GetRectf() {
-	return Rectf( mScreenPosf, Sizef( (Float)mSize.Width(), (Float)mSize.Height() ) );
+	return Rectf( mScreenPosf, Sizef( (Float)mSize.width(), (Float)mSize.height() ) );
 }
 
 void UIControl::BackgroundDraw() {
@@ -555,7 +555,7 @@ void UIControl::BorderDraw() {
 
 	//! @TODO: Check why was this +0.1f -0.1f?
 	if ( mFlags & UI_CLIP_ENABLE ) {
-		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.Width() - 0.1f, (Float)mSize.Height() - 0.1f ) );
+		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.width() - 0.1f, (Float)mSize.height() - 0.1f ) );
 
 		if ( mBackground->Corners() ) {
 			P.DrawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
@@ -610,9 +610,9 @@ void UIControl::InternalDraw() {
 void UIControl::ClipMe() {
 	if ( mFlags & UI_CLIP_ENABLE ) {
 		if ( mFlags & UI_BORDER )
-			UIManager::instance()->ClipEnable( mScreenPos.x, mScreenPos.y, mSize.Width(), mSize.Height() + 1 );
+			UIManager::instance()->ClipEnable( mScreenPos.x, mScreenPos.y, mSize.width(), mSize.height() + 1 );
 		else
-			UIManager::instance()->ClipEnable( mScreenPos.x, mScreenPos.y, mSize.Width(), mSize.Height() );
+			UIManager::instance()->ClipEnable( mScreenPos.x, mScreenPos.y, mSize.width(), mSize.height() );
 	}
 }
 
@@ -804,7 +804,7 @@ UIControl * UIControl::OverFind( const Vector2f& Point ) {
 	if ( mEnabled && mVisible ) {
 		UpdateQuad();
 
-		if ( mPoly.PointInside( Point ) ) {
+		if ( mPoly.pointInside( Point ) ) {
 			WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
 
 			UIControl * ChildLoop = mChildLast;
@@ -838,7 +838,7 @@ UIControl * UIControl::ChildGetAt( Vector2i CtrlPos, unsigned int RecursiveLevel
 		if ( !pLoop->Visible() )
 			continue;
 
-		if ( pLoop->Rect().Contains( CtrlPos ) ) {
+		if ( pLoop->Rect().contains( CtrlPos ) ) {
 			if ( RecursiveLevel )
 				Ctrl = ChildGetAt( CtrlPos - pLoop->Pos(), RecursiveLevel - 1 );
 
@@ -875,7 +875,7 @@ const Vector2f& UIControl::GetPolygonCenter() const {
 }
 
 void UIControl::UpdateQuad() {
-	mPoly 	= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mSize.Width(), mScreenPosf.y + mSize.Height() ) );
+	mPoly 	= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mSize.width(), mScreenPosf.y + mSize.height() ) );
 
 	UIControl * tParent = Parent();
 
@@ -883,8 +883,8 @@ void UIControl::UpdateQuad() {
 		if ( tParent->IsAnimated() ) {
 			UIControlAnim * tP = reinterpret_cast<UIControlAnim *> ( tParent );
 
-			mPoly.Rotate( tP->Angle(), tP->RotationCenter() );
-			mPoly.Scale( tP->Scale(), tP->ScaleCenter() );
+			mPoly.rotate( tP->Angle(), tP->RotationCenter() );
+			mPoly.scale( tP->Scale(), tP->ScaleCenter() );
 		}
 
 		tParent = tParent->Parent();
@@ -892,7 +892,7 @@ void UIControl::UpdateQuad() {
 }
 
 void UIControl::UpdateCenter() {
-	mCenter = Vector2f( mScreenPosf.x + (Float)mSize.Width() * 0.5f, mScreenPosf.y + (Float)mSize.Height() * 0.5f );
+	mCenter = Vector2f( mScreenPosf.x + (Float)mSize.width() * 0.5f, mScreenPosf.y + (Float)mSize.height() * 0.5f );
 }
 
 Time UIControl::Elapsed() {
@@ -1085,28 +1085,28 @@ Recti UIControl::MakePadding( bool PadLeft, bool PadRight, bool PadTop, bool Pad
 					tSubTexture = tComplex->GetSubTextureSide( UISkinState::StateNormal, UISkinComplex::Left );
 
 					if ( NULL != tSubTexture )
-						tPadding.Left = tSubTexture->RealSize().Width();
+						tPadding.Left = tSubTexture->RealSize().width();
 				}
 
 				if ( PadRight ) {
 					tSubTexture = tComplex->GetSubTextureSide( UISkinState::StateNormal, UISkinComplex::Right );
 
 					if ( NULL != tSubTexture )
-						tPadding.Right = tSubTexture->RealSize().Width();
+						tPadding.Right = tSubTexture->RealSize().width();
 				}
 
 				if ( PadTop ) {
 					tSubTexture = tComplex->GetSubTextureSide( UISkinState::StateNormal, UISkinComplex::Up );
 
 					if ( NULL != tSubTexture )
-						tPadding.Top = tSubTexture->RealSize().Height();
+						tPadding.Top = tSubTexture->RealSize().height();
 				}
 
 				if ( PadBottom ) {
 					tSubTexture = tComplex->GetSubTextureSide( UISkinState::StateNormal, UISkinComplex::Down );
 
 					if ( NULL != tSubTexture )
-						tPadding.Bottom = tSubTexture->RealSize().Height();
+						tPadding.Bottom = tSubTexture->RealSize().height();
 				}
 			}
 		}
@@ -1150,25 +1150,25 @@ Sizei UIControl::GetSkinSize( UISkin * Skin, const Uint32& State ) {
 			tSubTexture = SkinC->GetSubTextureSide( State, UISkinComplex::Up );
 
 			if ( NULL != tSubTexture ) {
-				tSize.y += tSubTexture->RealSize().Height();
+				tSize.y += tSubTexture->RealSize().height();
 			}
 
 			tSubTexture = SkinC->GetSubTextureSide( State, UISkinComplex::Down );
 
 			if ( NULL != tSubTexture ) {
-				tSize.y += tSubTexture->RealSize().Height();
+				tSize.y += tSubTexture->RealSize().height();
 			}
 
 			tSubTexture = SkinC->GetSubTextureSide( State, UISkinComplex::Left );
 
 			if ( NULL != tSubTexture ) {
-				tSize.x += tSubTexture->RealSize().Width();
+				tSize.x += tSubTexture->RealSize().width();
 			}
 
 			tSubTexture = SkinC->GetSubTextureSide( State, UISkinComplex::Right );
 
 			if ( NULL != tSubTexture ) {
-				tSize.x += tSubTexture->RealSize().Width();
+				tSize.x += tSubTexture->RealSize().width();
 			}
 		}
 	}
@@ -1254,14 +1254,14 @@ void UIControl::WorldToControl( Vector2i& pos ) const {
 			Center = tP->ScaleOriginPoint() * scale;
 			scale *= tP->Scale();
 
-			pPos.Scale( scale, pPos + Center );
+			pPos.scale( scale, pPos + Center );
 		}
 
 		Pos -= pPos;
 
 		if ( NULL != tP && 0.f != tP->Angle() ) {
 			Center = tP->RotationOriginPoint() * scale;
-			Pos.Rotate( -tP->Angle(), Center );
+			Pos.rotate( -tP->Angle(), Center );
 		}
 	}
 
@@ -1293,8 +1293,8 @@ void UIControl::ControlToWorld( Vector2i& pos ) const {
 			Vector2f CenterAngle( pPos.x + tP->mRotationOriginPoint.x, pPos.y + tP->mRotationOriginPoint.y );
 			Vector2f CenterScale( pPos.x + tP->mScaleOriginPoint.x, pPos.y + tP->mScaleOriginPoint.y );
 
-			Pos.Rotate( tP->Angle(), CenterAngle );
-			Pos.Scale( tP->Scale(), CenterScale );
+			Pos.rotate( tP->Angle(), CenterAngle );
+			Pos.scale( tP->Scale(), CenterScale );
 		}
 	}
 

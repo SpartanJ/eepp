@@ -29,7 +29,7 @@ UITabWidget::UITabWidget( UITabWidget::CreateParams& Params ) :
 	TabParams.Parent( this );
 	TabParams.PosSet( 0, 0 );
 	TabParams.Flags |= UI_CLIP_ENABLE | UI_ANCHOR_RIGHT;
-	TabParams.SizeSet( mSize.Width(), mTabWidgetHeight );
+	TabParams.SizeSet( mSize.width(), mTabWidgetHeight );
 
 	mTabContainer = eeNew( UIComplexControl, ( TabParams ) );
 	mTabContainer->Visible( true );
@@ -38,7 +38,7 @@ UITabWidget::UITabWidget( UITabWidget::CreateParams& Params ) :
 	UIComplexControl::CreateParams CtrlParams;
 	CtrlParams.Parent( this );
 	CtrlParams.PosSet( 0, mTabWidgetHeight );
-	CtrlParams.SizeSet( mSize.Width(), mSize.Height() - mTabWidgetHeight );
+	CtrlParams.SizeSet( mSize.width(), mSize.height() - mTabWidgetHeight );
 	CtrlParams.Flags |= UI_CLIP_ENABLE | UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT;
 
 	mCtrlContainer = eeNew( UIComplexControl, ( CtrlParams ) );
@@ -72,7 +72,7 @@ void UITabWidget::SetTheme( UITheme * Theme ) {
 		Sizei tSize1		= GetSkinSize( tSkin );
 		Sizei tSize2		= GetSkinSize( tSkin, UISkinState::StateSelected );
 
-		mTabWidgetHeight	= eemax( tSize1.Height(), tSize2.Height() );
+		mTabWidgetHeight	= eemax( tSize1.height(), tSize2.height() );
 
 		SeContainerSize();
 		OrderTabs();
@@ -86,9 +86,9 @@ void UITabWidget::DoAfterSetTheme() {
 }
 
 void UITabWidget::SeContainerSize() {
-	mTabContainer->Size( mSize.Width(), mTabWidgetHeight );
+	mTabContainer->Size( mSize.width(), mTabWidgetHeight );
 	mCtrlContainer->Pos( 0, mTabWidgetHeight );
-	mCtrlContainer->Size( mSize.Width(), mSize.Height() - mTabWidgetHeight );
+	mCtrlContainer->Size( mSize.width(), mSize.height() - mTabWidgetHeight );
 }
 
 void UITabWidget::Draw() {
@@ -97,7 +97,7 @@ void UITabWidget::Draw() {
 		if ( smooth ) GLi->LineSmooth( false );
 
 		Primitives P;
-		Vector2i p1( mPos.x, mPos.y + mTabContainer->Size().Height() + mLineBewowTabsYOffset );
+		Vector2i p1( mPos.x, mPos.y + mTabContainer->Size().height() + mLineBewowTabsYOffset );
 		Vector2i p2( mPos.x + mTabContainer->Pos().x, p1.y );
 
 		ControlToScreen( p1 );
@@ -107,8 +107,8 @@ void UITabWidget::Draw() {
 		P.SetColor( mLineBelowTabsColor );
 		P.DrawLine( Line2f( Vector2f( p1.x, p1.y ), Vector2f( p2.x, p2.y ) ) );
 
-		Vector2i p3( mPos.x + mTabContainer->Pos().x + mTabContainer->Size().Width(), mPos.y + mTabContainer->Size().Height() + mLineBewowTabsYOffset );
-		Vector2i p4( mPos.x + mSize.Width(), p3.y );
+		Vector2i p3( mPos.x + mTabContainer->Pos().x + mTabContainer->Size().width(), mPos.y + mTabContainer->Size().height() + mLineBewowTabsYOffset );
+		Vector2i p4( mPos.x + mSize.width(), p3.y );
 
 		ControlToScreen( p3 );
 		ControlToScreen( p4 );
@@ -124,7 +124,7 @@ void UITabWidget::SetTabContainerSize() {
 
 	if ( mTabs.size() > 0 ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			s += mTabs[i]->Size().Width() + mTabSeparation;
+			s += mTabs[i]->Size().width() + mTabSeparation;
 		}
 
 		s -= mTabSeparation;
@@ -141,7 +141,7 @@ void UITabWidget::SetTabContainerSize() {
 			mTabContainer->CenterHorizontal();
 			break;
 		case UI_HALIGN_RIGHT:
-			mTabContainer->Pos( mSize.Width() - mTabContainer->Size().Width(), 0 );
+			mTabContainer->Pos( mSize.width() - mTabContainer->Size().width(), 0 );
 			break;
 	}
 }
@@ -155,19 +155,19 @@ void UITabWidget::PosTabs() {
 		switch ( VA )
 		{
 			case UI_VALIGN_BOTTOM:
-				h = mTabWidgetHeight - mTabs[i]->Size().Height();
+				h = mTabWidgetHeight - mTabs[i]->Size().height();
 				break;
 			case UI_VALIGN_TOP:
 				h = 0;
 				break;
 			case UI_VALIGN_CENTER:
-				h = mTabWidgetHeight / 2 - mTabs[i]->Size().Height() / 2;
+				h = mTabWidgetHeight / 2 - mTabs[i]->Size().height() / 2;
 				break;
 		}
 
 		mTabs[i]->Pos( w, h );
 
-		w += mTabs[i]->Size().Width() + mTabSeparation;
+		w += mTabs[i]->Size().width() + mTabSeparation;
 	}
 }
 

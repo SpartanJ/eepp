@@ -45,7 +45,7 @@ void UIControlAnim::Draw() {
 			BorderDraw();
 
 		if ( NULL != mSkinState )
-			mSkinState->Draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.Width(), (Float)mSize.Height(), (Uint32)mAlpha );
+			mSkinState->Draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.width(), (Float)mSize.height(), (Uint32)mAlpha );
 
 		if ( UIManager::instance()->HighlightFocus() && UIManager::instance()->FocusControl() == this ) {
 			Primitives P;
@@ -187,19 +187,19 @@ void UIControlAnim::MatrixUnset() {
 void UIControlAnim::Update() {
 	UIDragable::Update();
 
-	if ( NULL != mMoveAnim && mMoveAnim->Enabled() ) {
-		mMoveAnim->Update( Elapsed() );
-		Pos( (int)mMoveAnim->GetPos().x, (int)mMoveAnim->GetPos().y );
+	if ( NULL != mMoveAnim && mMoveAnim->enabled() ) {
+		mMoveAnim->update( Elapsed() );
+		Pos( (int)mMoveAnim->getPos().x, (int)mMoveAnim->getPos().y );
 
-		if ( mMoveAnim->Ended() )
+		if ( mMoveAnim->ended() )
 			eeSAFE_DELETE( mMoveAnim );
 	}
 
-	if ( NULL != mAlphaAnim && mAlphaAnim->Enabled() ) {
-		mAlphaAnim->Update( Elapsed() );
-		Alpha( mAlphaAnim->GetRealPos() );
+	if ( NULL != mAlphaAnim && mAlphaAnim->enabled() ) {
+		mAlphaAnim->update( Elapsed() );
+		Alpha( mAlphaAnim->getRealPos() );
 
-		if ( mAlphaAnim->Ended() ) {
+		if ( mAlphaAnim->ended() ) {
 			if ( ( mControlFlags & UI_CTRL_FLAG_CLOSE_FO )  )
 				Close();
 
@@ -213,19 +213,19 @@ void UIControlAnim::Update() {
 		}
 	}
 
-	if ( NULL != mScaleAnim && mScaleAnim->Enabled() ) {
-		mScaleAnim->Update( Elapsed() );
-		Scale( mScaleAnim->GetPos() );
+	if ( NULL != mScaleAnim && mScaleAnim->enabled() ) {
+		mScaleAnim->update( Elapsed() );
+		Scale( mScaleAnim->getPos() );
 
-		if ( mScaleAnim->Ended() )
+		if ( mScaleAnim->ended() )
 			eeSAFE_DELETE( mScaleAnim );
 	}
 
-	if ( NULL != mAngleAnim && mAngleAnim->Enabled() ) {
-		mAngleAnim->Update( Elapsed() );
-		Angle( mAngleAnim->GetRealPos() );
+	if ( NULL != mAngleAnim && mAngleAnim->enabled() ) {
+		mAngleAnim->update( Elapsed() );
+		Angle( mAngleAnim->getRealPos() );
 
-		if ( mAngleAnim->Ended() )
+		if ( mAngleAnim->ended() )
 			eeSAFE_DELETE( mAngleAnim );
 	}
 }
@@ -235,19 +235,19 @@ bool UIControlAnim::FadingOut() {
 }
 
 bool UIControlAnim::Animating() {
-	return ( NULL != mAlphaAnim && mAlphaAnim->Enabled() ) || ( NULL != mAngleAnim && mAngleAnim->Enabled() ) || ( NULL != mScaleAnim && mScaleAnim->Enabled() ) || ( NULL != mMoveAnim && mMoveAnim->Enabled() );
+	return ( NULL != mAlphaAnim && mAlphaAnim->enabled() ) || ( NULL != mAngleAnim && mAngleAnim->enabled() ) || ( NULL != mScaleAnim && mScaleAnim->enabled() ) || ( NULL != mMoveAnim && mMoveAnim->enabled() );
 }
 
 Interpolation * UIControlAnim::StartAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds, const Ease::Interpolation& Type, Interpolation::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mAlphaAnim )
 		mAlphaAnim = eeNew( Interpolation, () );
 
-	mAlphaAnim->ClearWaypoints();
-	mAlphaAnim->AddWaypoint( From );
-	mAlphaAnim->AddWaypoint( To );
-	mAlphaAnim->SetTotalTime( TotalTime );
-	mAlphaAnim->Start( PathEndCallback );
-	mAlphaAnim->Type( Type );
+	mAlphaAnim->clearWaypoints();
+	mAlphaAnim->addWaypoint( From );
+	mAlphaAnim->addWaypoint( To );
+	mAlphaAnim->setTotalTime( TotalTime );
+	mAlphaAnim->start( PathEndCallback );
+	mAlphaAnim->type( Type );
 
 	Alpha( From );
 
@@ -273,12 +273,12 @@ Waypoints * UIControlAnim::StartScaleAnim( const Vector2f& From, const Vector2f&
 	if ( NULL == mScaleAnim )
 		mScaleAnim = eeNew( Waypoints, () );
 
-	mScaleAnim->ClearWaypoints();
-	mScaleAnim->AddWaypoint( From );
-	mScaleAnim->AddWaypoint( To );
-	mScaleAnim->SetTotalTime( TotalTime );
-	mScaleAnim->Start( PathEndCallback );
-	mScaleAnim->Type( Type );
+	mScaleAnim->clearWaypoints();
+	mScaleAnim->addWaypoint( From );
+	mScaleAnim->addWaypoint( To );
+	mScaleAnim->setTotalTime( TotalTime );
+	mScaleAnim->start( PathEndCallback );
+	mScaleAnim->type( Type );
 
 	Scale( From );
 
@@ -293,12 +293,12 @@ Waypoints * UIControlAnim::StartMovement( const Vector2i& From, const Vector2i& 
 	if ( NULL == mMoveAnim )
 		mMoveAnim = eeNew( Waypoints, () );
 
-	mMoveAnim->ClearWaypoints();
-	mMoveAnim->AddWaypoint( Vector2f( (Float)From.x, (Float)From.y ) );
-	mMoveAnim->AddWaypoint( Vector2f( (Float)To.x, (Float)To.y ) );
-	mMoveAnim->SetTotalTime( TotalTime );
-	mMoveAnim->Start( PathEndCallback );
-	mMoveAnim->Type( Type );
+	mMoveAnim->clearWaypoints();
+	mMoveAnim->addWaypoint( Vector2f( (Float)From.x, (Float)From.y ) );
+	mMoveAnim->addWaypoint( Vector2f( (Float)To.x, (Float)To.y ) );
+	mMoveAnim->setTotalTime( TotalTime );
+	mMoveAnim->start( PathEndCallback );
+	mMoveAnim->type( Type );
 
 	Pos( From );
 
@@ -309,12 +309,12 @@ Interpolation * UIControlAnim::StartRotation( const Float& From, const Float& To
 	if ( NULL == mAngleAnim )
 		mAngleAnim = eeNew( Interpolation, () );
 
-	mAngleAnim->ClearWaypoints();
-	mAngleAnim->AddWaypoint( From );
-	mAngleAnim->AddWaypoint( To );
-	mAngleAnim->SetTotalTime( TotalTime );
-	mAngleAnim->Start( PathEndCallback );
-	mAngleAnim->Type( Type );
+	mAngleAnim->clearWaypoints();
+	mAngleAnim->addWaypoint( From );
+	mAngleAnim->addWaypoint( To );
+	mAngleAnim->setTotalTime( TotalTime );
+	mAngleAnim->start( PathEndCallback );
+	mAngleAnim->type( Type );
 
 	Angle( From );
 
@@ -375,7 +375,7 @@ void UIControlAnim::BorderDraw() {
 
 	//! @TODO: Check why was this +0.1f -0.1f?
 	if ( mFlags & UI_CLIP_ENABLE ) {
-		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.Width() - 0.1f, (Float)mSize.Height() - 0.1f ) );
+		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.width() - 0.1f, (Float)mSize.height() - 0.1f ) );
 
 		if ( mBackground->Corners() ) {
 			P.DrawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
@@ -396,10 +396,10 @@ ColorA UIControlAnim::GetColor( const ColorA& Col ) {
 }
 
 void UIControlAnim::UpdateQuad() {
-	mPoly		= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mSize.Width(), mScreenPosf.y + mSize.Height() ) );
+	mPoly		= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mSize.width(), mScreenPosf.y + mSize.height() ) );
 
-	mPoly.Rotate( mAngle, RotationCenter() );
-	mPoly.Scale( mScale, ScaleCenter() );
+	mPoly.rotate( mAngle, RotationCenter() );
+	mPoly.scale( mScale, ScaleCenter() );
 
 	UIControl * tParent = Parent();
 
@@ -407,8 +407,8 @@ void UIControlAnim::UpdateQuad() {
 		if ( tParent->IsAnimated() ) {
 			UIControlAnim * tP = reinterpret_cast<UIControlAnim *> ( tParent );
 
-			mPoly.Rotate( tP->Angle(), tP->RotationCenter() );
-			mPoly.Scale( tP->Scale(), tP->ScaleCenter() );
+			mPoly.rotate( tP->Angle(), tP->RotationCenter() );
+			mPoly.scale( tP->Scale(), tP->ScaleCenter() );
 		}
 
 		tParent = tParent->Parent();

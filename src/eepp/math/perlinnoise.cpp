@@ -4,12 +4,12 @@
 namespace EE { namespace Math {
 
 PerlinNoise::PerlinNoise() {
-	Init();
+	init();
 }
 
 PerlinNoise::~PerlinNoise() {}
 
-void PerlinNoise::Init() {
+void PerlinNoise::init() {
 	mPersistence	= 0.25f;
 	mOctaves		= 4;
 	mFrequency		= 0.015f;
@@ -18,7 +18,7 @@ void PerlinNoise::Init() {
 	mAmpOctaveDep	= false;
 }
 
-Float PerlinNoise::PerlinNoise2D(Float x, Float y) {
+Float PerlinNoise::perlinNoise2D(Float x, Float y) {
 	Float total	= 0;
 	Float p		= mPersistence;
 	Float n		= static_cast<Float>( mOctaves - 1 );
@@ -35,13 +35,13 @@ Float PerlinNoise::PerlinNoise2D(Float x, Float y) {
 			amp *= p;
 		}
 
-		total = total + InterpolatedNoise2D( x * tmpFreq, y * tmpFreq ) * amp;
+		total = total + interpolatedNoise2D( x * tmpFreq, y * tmpFreq ) * amp;
 	}
 
 	return total;
 }
 
-Float PerlinNoise::Noise2D( Int32 x, Int32 y ) {
+Float PerlinNoise::noise2D( Int32 x, Int32 y ) {
 	Int32 n = x + y * 57;
 
 	n = ( n << 13 ) ^ n;
@@ -51,25 +51,25 @@ Float PerlinNoise::Noise2D( Int32 x, Int32 y ) {
 	return static_cast<Float>( 1.0 - static_cast<Float>( n ) / 1073741824.0);
 }
 
-Float PerlinNoise::SmoothedNoise2D(Float x, Float y) {
+Float PerlinNoise::smoothedNoise2D(Float x, Float y) {
 	register Int32	tx	= static_cast<Int32>( x );
 	register Int32	ty	= static_cast<Int32>( y );
 
-	Float corners = ( Noise2D( tx - 1, ty - 1	) + Noise2D( tx + 1, ty - 1	) + Noise2D( tx - 1	, ty + 1 ) + Noise2D( tx + 1, ty + 1 ) ) / 16;
-	Float sides   = ( Noise2D( tx - 1, ty		) + Noise2D( tx + 1, ty		) + Noise2D( tx		, ty - 1 ) + Noise2D( tx	, ty + 1 ) ) /  8;
-	Float center  = Noise2D( tx, ty ) / 4;
+	Float corners = ( noise2D( tx - 1, ty - 1	) + noise2D( tx + 1, ty - 1	) + noise2D( tx - 1	, ty + 1 ) + noise2D( tx + 1, ty + 1 ) ) / 16;
+	Float sides   = ( noise2D( tx - 1, ty		) + noise2D( tx + 1, ty		) + noise2D( tx		, ty - 1 ) + noise2D( tx	, ty + 1 ) ) /  8;
+	Float center  = noise2D( tx, ty ) / 4;
 
 	return corners + sides + center;
 }
 
-Float PerlinNoise::Interpolate( Float a, Float b, Float x ) {
+Float PerlinNoise::interpolate( Float a, Float b, Float x ) {
 	Float fac1 = 3 * eepow( 1 - x, 2	) - 2 * eepow( 1 - x, 3 );
 	Float fac2 = 3 * eepow( x, 2		) - 2 * eepow( x, 3		);
 
 	return a * fac1 + b * fac2; //add the weighted factors
 }
 
-Float PerlinNoise::InterpolatedNoise2D(Float x, Float y) {
+Float PerlinNoise::interpolatedNoise2D(Float x, Float y) {
 	Int32 eger_X = static_cast<Int32>( x );
 	Int32 eger_Y = static_cast<Int32>( y );
 
@@ -79,15 +79,15 @@ Float PerlinNoise::InterpolatedNoise2D(Float x, Float y) {
 	Float feger_X = static_cast<Float> ( eger_X );
 	Float feger_Y = static_cast<Float> ( eger_Y );
 
-	Float v1 = SmoothedNoise2D( feger_X		, feger_Y		);
-	Float v2 = SmoothedNoise2D( feger_X + 1.f	, feger_Y		);
-	Float v3 = SmoothedNoise2D( feger_X		, feger_Y + 1.f	);
-	Float v4 = SmoothedNoise2D( feger_X + 1.f	, feger_Y + 1.f	);
+	Float v1 = smoothedNoise2D( feger_X		, feger_Y		);
+	Float v2 = smoothedNoise2D( feger_X + 1.f	, feger_Y		);
+	Float v3 = smoothedNoise2D( feger_X		, feger_Y + 1.f	);
+	Float v4 = smoothedNoise2D( feger_X + 1.f	, feger_Y + 1.f	);
 
-	Float i1 = Interpolate( v1 , v2 , fractional_X );
-	Float i2 = Interpolate( v3 , v4 , fractional_X );
+	Float i1 = interpolate( v1 , v2 , fractional_X );
+	Float i2 = interpolate( v3 , v4 , fractional_X );
 
-	return Interpolate( i1 , i2 , fractional_Y );
+	return interpolate( i1 , i2 , fractional_Y );
 }
 
 }}

@@ -33,13 +33,13 @@ UIMapLayerNew::UIMapLayerNew( UIMap * Map, EE_LAYER_TYPE Type, NewLayerCb newLay
 	mUILayerName->Text( "Layer " + String::toStr( mUIMap->Map()->LayerCount() + 1 ) );
 
 	UIPushButton * OKButton = mTheme->CreatePushButton( mUIWindow->Container(), Sizei( 80, 22 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->GetIconByName( "add" ) );
-	OKButton->Pos( mUIWindow->Container()->Size().Width() - OKButton->Size().Width() - 4, mUIWindow->Container()->Size().Height() - OKButton->Size().Height() - 4 );
+	OKButton->Pos( mUIWindow->Container()->Size().width() - OKButton->Size().width() - 4, mUIWindow->Container()->Size().height() - OKButton->Size().height() - 4 );
 	OKButton->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIMapLayerNew::OKClick ) );
 	mUILayerName->AddEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UIMapLayerNew::OKClick ) );
 
 	OKButton->Text( "Add" );
 
-	UIPushButton * CancelButton = mTheme->CreatePushButton( mUIWindow->Container(), OKButton->Size(), Vector2i( OKButton->Pos().x - OKButton->Size().Width() - 4, OKButton->Pos().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->GetIconByName( "cancel" ) );
+	UIPushButton * CancelButton = mTheme->CreatePushButton( mUIWindow->Container(), OKButton->Size(), Vector2i( OKButton->Pos().x - OKButton->Size().width() - 4, OKButton->Pos().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->GetIconByName( "cancel" ) );
 	CancelButton->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIMapLayerNew::CancelClick ) );
 	CancelButton->Text( "Cancel" );
 

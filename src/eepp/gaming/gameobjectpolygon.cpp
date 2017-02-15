@@ -7,7 +7,7 @@ using namespace EE::Graphics;
 namespace EE { namespace Gaming {
 
 GameObjectPolygon::GameObjectPolygon( Uint32 DataId, Polygon2f poly, MapLayer * Layer, const Uint32& Flags ) :
-	GameObjectObject( DataId, poly.ToAABB(), Layer, Flags )
+	GameObjectObject( DataId, poly.toAABB(), Layer, Flags )
 {
 	mPoly = Polygon2f( poly );
 }
@@ -24,7 +24,7 @@ bool GameObjectPolygon::IsType( const Uint32& type ) {
 }
 
 Sizei GameObjectPolygon::Size() {
-	return Sizei( mRect.Size().x, mRect.Size().y );
+	return Sizei( mRect.size().x, mRect.size().y );
 }
 
 void GameObjectPolygon::Draw() {
@@ -42,14 +42,14 @@ void GameObjectPolygon::Draw() {
 }
 
 void GameObjectPolygon::SetPolygonPoint( Uint32 index, Vector2f p ) {
-	mPoly.SetAt( index, p );
-	mRect	= mPoly.ToAABB();
+	mPoly.setAt( index, p );
+	mRect	= mPoly.toAABB();
 	mPos	= Vector2f( mRect.Left, mRect.Top );
 }
 
 bool GameObjectPolygon::PointInside( const Vector2f& p ) {
 	if ( GameObjectObject::PointInside( p ) ) {
-		return mPoly.PointInside( p );
+		return mPoly.pointInside( p );
 	}
 
 	return false;

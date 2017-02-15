@@ -238,7 +238,7 @@ Quad2f Sprite::GetQuad() {
 		Vector2f Center;
 
 		if ( mOrigin.OriginType == OriginPoint::OriginCenter ) {
-			Center	= TmpR.Center();
+			Center	= TmpR.center();
 		} else if ( mOrigin.OriginType == OriginPoint::OriginTopLeft ) {
 			Center	= mPos;
 		} else {
@@ -267,8 +267,8 @@ Quad2f Sprite::GetQuad() {
 				break;
 		}
 
-		Q.Rotate( mAngle, Center );
-		Q.Scale( mScale, Center );
+		Q.rotate( mAngle, Center );
+		Q.scale( mScale, Center );
 
 		return Q;
 	}
@@ -282,21 +282,21 @@ eeAABB Sprite::GetAABB() {
 
 	if ( mFrames.size() && ( S = GetCurrentSubTexture() ) ) {
 		if ( mAngle != 0 || mEffect >= 4 ) {
-			return GetQuad().ToAABB();
+			return GetQuad().toAABB();
 		} else { // The method used if mAngle != 0 works for mAngle = 0, but i prefer to use the faster way
 			TmpR = Rectf( mPos.x, mPos.y, mPos.x + S->DestSize().x, mPos.y + S->DestSize().y );
 
 			Vector2f Center;
 
 			if ( mOrigin.OriginType == OriginPoint::OriginCenter ) {
-				Center	= TmpR.Center();
+				Center	= TmpR.center();
 			} else if ( mOrigin.OriginType == OriginPoint::OriginTopLeft ) {
 				Center	= mPos;
 			} else {
 				Center	= mPos + mOrigin;
 			}
 
-			TmpR.Scale( mScale, Center );
+			TmpR.scale( mScale, Center );
 		}
 	}
 

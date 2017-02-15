@@ -239,7 +239,7 @@ unsigned int TextureFactory::GetValidTextureSize( const unsigned int& Size ) {
 	if ( GLi->IsExtension( EEGL_ARB_texture_non_power_of_two ) )
 		return Size;
 	else
-		return Math::NextPowOfTwo(Size);
+		return Math::nextPowOfTwo(Size);
 }
 
 bool TextureFactory::SaveImage( const std::string& filepath, const EE_SAVE_TYPE& Format, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const unsigned char* data ) {

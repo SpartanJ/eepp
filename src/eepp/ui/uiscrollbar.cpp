@@ -101,13 +101,13 @@ void UIScrollBar::SetTheme( UITheme * Theme ) {
 
 			if ( NULL != tSubTexture ) {
 				if ( mSlider->IsVertical() ) {
-					mSlider->Size( tSubTexture->RealSize().Width() , mSize.Height() );
-					Size( tSubTexture->RealSize().Width() , mSize.Height() );
-					mMinControlSize.x = mSize.Width();
+					mSlider->Size( tSubTexture->RealSize().width() , mSize.height() );
+					Size( tSubTexture->RealSize().width() , mSize.height() );
+					mMinControlSize.x = mSize.width();
 				} else {
-					mSlider->Size( mSize.Width(), tSubTexture->RealSize().Height() );
-					Size( mSize.Width(), tSubTexture->RealSize().Height() );
-					mMinControlSize.y = mSize.Height();
+					mSlider->Size( mSize.width(), tSubTexture->RealSize().height() );
+					Size( mSize.width(), tSubTexture->RealSize().height() );
+					mMinControlSize.y = mSize.height();
 				}
 			}
 		}
@@ -128,17 +128,17 @@ void UIScrollBar::AdjustChilds() {
 	mBtnUp->Pos( 0, 0 );
 
 	if ( !IsVertical() ) {
-		mBtnDown->Pos( mSize.Width() - mBtnDown->Size().Width(), 0 );
-		mSlider->Size( mSize.Width() - mBtnDown->Size().Width() - mBtnUp->Size().Width(), mSlider->Size().Height() );
-		mSlider->Pos( mBtnUp->Size().Width(), 0 );
+		mBtnDown->Pos( mSize.width() - mBtnDown->Size().width(), 0 );
+		mSlider->Size( mSize.width() - mBtnDown->Size().width() - mBtnUp->Size().width(), mSlider->Size().height() );
+		mSlider->Pos( mBtnUp->Size().width(), 0 );
 
 		mBtnDown->CenterVertical();
 		mBtnUp->CenterVertical();
 		mSlider->CenterVertical();
 	} else {
-		mBtnDown->Pos( 0, mSize.Height() - mBtnDown->Size().Height() );
-		mSlider->Size( mSlider->Size().Width(), mSize.Height() - mBtnDown->Size().Height() - mBtnUp->Size().Height() );
-		mSlider->Pos( 0, mBtnUp->Size().Height() );
+		mBtnDown->Pos( 0, mSize.height() - mBtnDown->Size().height() );
+		mSlider->Size( mSlider->Size().width(), mSize.height() - mBtnDown->Size().height() - mBtnUp->Size().height() );
+		mSlider->Pos( 0, mBtnUp->Size().height() );
 
 		mBtnDown->CenterHorizontal();
 		mBtnUp->CenterHorizontal();

@@ -349,9 +349,9 @@ void BatchRenderer::BatchQuadFreeEx( const Float& x0, const Float& y0, const Flo
 	mQ.V[0].y = y0; mQ.V[1].y = y1; mQ.V[2].y = y2; mQ.V[3].y = y3;
 
 	if ( Angle != 0 ||  Scale != 1.0f ) {
-		QCenter = mQ.GetCenter();
-		mQ.Rotate( Angle, QCenter );
-		mQ.Scale( Scale, QCenter );
+		QCenter = mQ.getCenter();
+		mQ.rotate( Angle, QCenter );
+		mQ.scale( Scale, QCenter );
 	}
 
 	SetBlendMode( DM_QUADS, mForceBlendMode );
@@ -756,16 +756,16 @@ void BatchRenderer::PolygonSetColor( const ColorA& Color ) {
 }
 
 void BatchRenderer::BatchPolygon( const Polygon2f& Polygon ) {
-	if ( Polygon.Size() > mVertexSize )
+	if ( Polygon.size() > mVertexSize )
 		return;
 
 	SetBlendMode( DM_POLYGON, mForceBlendMode );
 
-	for ( Uint32 i = 0; i < Polygon.Size(); i++ ) {
+	for ( Uint32 i = 0; i < Polygon.size(); i++ ) {
 		mTVertex = &mVertex[ mNumVertex ];
 
-		mTVertex->pos.x = Polygon.X() + Polygon[i].x;
-		mTVertex->pos.y = Polygon.Y() + Polygon[i].y;
+		mTVertex->pos.x = Polygon.x() + Polygon[i].x;
+		mTVertex->pos.y = Polygon.y() + Polygon[i].y;
 		mTVertex->tex 	= mTexCoord[0];
 		mTVertex->color = mVerColor[0];
 

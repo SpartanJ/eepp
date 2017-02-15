@@ -72,7 +72,7 @@ void MainLoop()
 		Vector2f( aX + 32.f, aY + 32.f  ),
 		Vector2f( aX + 32.f, aY 		)
 	);
-	TmpQuad.Rotate( ang, Vector2f( aX + 16.f, aY + 16.f ) );
+	TmpQuad.rotate( ang, Vector2f( aX + 16.f, aY + 16.f ) );
 
 	// Begin drawing quads
 	Batch->QuadsBegin();
@@ -120,7 +120,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 	// Check if created
 	if ( win->Created() ) {
-		Polygon2f Poly( Polygon2f::CreateRoundedRectangle( 0, 0, 200, 50 ) );
+		Polygon2f Poly( Polygon2f::createRoundedRectangle( 0, 0, 200, 50 ) );
 
 		// Create the Vertex Buffer, the vertex buffer stores the vertex data in the GPU, making the rendering much faster
 		// In the case that Vertex Buffer Object is not supported by the GPU, it will fallback to a inmediate-mode vertex buffer
@@ -129,14 +129,14 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		// Add the vertex and vertex colors to the Vertex Buffer
 		if ( NULL != VBO && NULL != VBO2 ) {
-			for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
+			for ( Uint32 i = 0; i < Poly.size(); i++ ) {
 				VBO->AddVertex( Poly[i] );
 				VBO->AddColor( ColorA( 100 + i, 255 - i, 150 + i, 100 ) );
 			}
 
-			Poly.Rotate( 90, Poly.ToAABB().Center() );
+			Poly.rotate( 90, Poly.toAABB().center() );
 
-			for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
+			for ( Uint32 i = 0; i < Poly.size(); i++ ) {
 				VBO2->AddVertex( Poly[i] );
 				VBO2->AddColor( ColorA( 100 + i, 255 - i, 150 + i, 100 ) );
 			}

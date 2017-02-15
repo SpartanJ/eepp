@@ -55,7 +55,7 @@ void UIProgressBar::SetTheme( UITheme * Theme ) {
 	UIControl::SetThemeControl( Theme, "progressbar" );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Size( mSize.x, GetSkinSize().Height() );
+		Size( mSize.x, GetSkinSize().height() );
 	}
 
 	UISkin * tSkin = Theme->getByName( Theme->Abbr() + "_progressbar_filler" );
@@ -66,15 +66,15 @@ void UIProgressBar::SetTheme( UITheme * Theme ) {
 		if ( NULL != tSubTexture ) {
 			eeSAFE_DELETE( mParallax );
 
-			Float Height = (Float)GetSkinSize().Height();
+			Float Height = (Float)GetSkinSize().height();
 
 			if ( !mVerticalExpand )
-				Height = (Float)tSubTexture->RealSize().Height();
+				Height = (Float)tSubTexture->RealSize().height();
 
-			if ( Height > mSize.Height() )
-				Height = mSize.Height();
+			if ( Height > mSize.height() )
+				Height = mSize.height();
 
-			mParallax = eeNew( ScrollParallax, ( tSubTexture, Vector2f( mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top ), Sizef( ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ), mSpeed ) );
+			mParallax = eeNew( ScrollParallax, ( tSubTexture, Vector2f( mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top ), Sizef( ( ( mSize.width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ), mSpeed ) );
 		}
 	}
 }
@@ -89,15 +89,15 @@ Uint32 UIProgressBar::OnValueChange() {
 
 void UIProgressBar::OnSizeChange() {
 	if ( NULL != mParallax ) {
-		Float Height = (Float)mSize.Height();
+		Float Height = (Float)mSize.height();
 
 		if ( !mVerticalExpand && mParallax->SubTexture() )
-			Height = (Float)mParallax->SubTexture()->RealSize().Height();
+			Height = (Float)mParallax->SubTexture()->RealSize().height();
 
-		if ( Height > mSize.Height() )
-			Height = mSize.Height();
+		if ( Height > mSize.height() )
+			Height = mSize.height();
 
-		mParallax->Size( Sizef( ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ) );
+		mParallax->Size( Sizef( ( ( mSize.width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ) );
 	}
 
 	UpdateTextBox();

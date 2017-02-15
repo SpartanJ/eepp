@@ -25,10 +25,10 @@ UIDropDownList::UIDropDownList( UIDropDownList::CreateParams& Params ) :
 		UITheme * Theme = UIThemeManager::instance()->DefaultTheme();
 
 		if ( NULL != Theme ) {
-			mListBox = Theme->CreateListBox( NULL, Sizei( mSize.Width(), mMinNumVisibleItems * mSize.Height() ),Vector2i(), flags );
+			mListBox = Theme->CreateListBox( NULL, Sizei( mSize.width(), mMinNumVisibleItems * mSize.height() ),Vector2i(), flags );
 		} else {
 			UIListBox::CreateParams LBParams;
-			LBParams.Size 				= Sizei( mSize.Width(), mMinNumVisibleItems * mSize.Height() );
+			LBParams.Size 				= Sizei( mSize.width(), mMinNumVisibleItems * mSize.height() );
 			LBParams.Flags 				= flags;
 			LBParams.FontSelectedColor	= ColorA( 255, 255, 255, 255 );
 			mListBox = eeNew( UIListBox, ( LBParams ) );
@@ -74,7 +74,7 @@ void UIDropDownList::OnSizeChange() {
 
 void UIDropDownList::AutoSizeControl() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Size( mSize.x, GetSkinSize().Height() );
+		Size( mSize.x, GetSkinSize().height() );
 	}
 }
 
@@ -101,7 +101,7 @@ void UIDropDownList::ShowListBox() {
 
 		mListBox->ToFront();
 
-		Vector2i Pos( mPos.x, mPos.y + mSize.Height() );
+		Vector2i Pos( mPos.x, mPos.y + mSize.height() );
 
 		if ( mPopUpToMainControl ) {
 			Parent()->ControlToWorld( Pos );
@@ -115,24 +115,24 @@ void UIDropDownList::ShowListBox() {
 			Float sliderValue = mListBox->VerticalScrollBar()->Value();
 
 			if ( mMinNumVisibleItems < mListBox->Count() )
-				mListBox->Size( mSize.Width(), (Int32)( mMinNumVisibleItems * mListBox->RowHeight() ) + tPadding.Top + tPadding.Bottom );
+				mListBox->Size( mSize.width(), (Int32)( mMinNumVisibleItems * mListBox->RowHeight() ) + tPadding.Top + tPadding.Bottom );
 			else {
-				mListBox->Size( mSize.Width(), (Int32)( mListBox->Count() * mListBox->RowHeight() ) + tPadding.Top + tPadding.Bottom );
+				mListBox->Size( mSize.width(), (Int32)( mListBox->Count() * mListBox->RowHeight() ) + tPadding.Top + tPadding.Bottom );
 			}
 
 			mListBox->UpdateQuad();
 
-			Rectf aabb( mListBox->GetPolygon().ToAABB() );
+			Rectf aabb( mListBox->GetPolygon().toAABB() );
 			Recti aabbi( aabb.Left, aabb.Top, aabb.Right, aabb.Bottom );
 
-			if ( !UIManager::instance()->MainControl()->GetScreenRect().Contains( aabbi ) ) {
+			if ( !UIManager::instance()->MainControl()->GetScreenRect().contains( aabbi ) ) {
 				Pos = Vector2i( mPos.x, mPos.y );
 
 				if ( mPopUpToMainControl ) {
 					Parent()->ControlToWorld( Pos );
 				}
 
-				Pos.y -= mListBox->Size().Height();
+				Pos.y -= mListBox->Size().height();
 
 				mListBox->Pos( Pos );
 			}

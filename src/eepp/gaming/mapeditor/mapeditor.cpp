@@ -87,8 +87,8 @@ void MapEditor::CreateWinMenu() {
 	UIWinMenu * WinMenu = mTheme->CreateWinMenu( mUIContainer );
 
 	mTileBox = mTheme->CreateTextBox( "", mUIContainer, Sizei(), Vector2i(), UI_HALIGN_RIGHT | UI_VALIGN_CENTER | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
-	mTileBox->Size( 100, WinMenu->Size().Height() );
-	mTileBox->Pos( Vector2i( mUIContainer->Size().Width() - mTileBox->Size().Width(), 0 ) );
+	mTileBox->Size( 100, WinMenu->Size().height() );
+	mTileBox->Pos( Vector2i( mUIContainer->Size().width() - mTileBox->Size().width(), 0 ) );
 	mTileBox->UpdateAnchorsDistances();
 
 	UIPopUpMenu * PU1 = mTheme->CreatePopUpMenu( mUIContainer );
@@ -161,8 +161,8 @@ void MapEditor::CreateWinMenu() {
 
 	UIComplexControl::CreateParams Params;
 	Params.Parent( mUIContainer );
-	Params.PosSet( 0, WinMenu->Size().Height() );
-	Params.SizeSet( mUIContainer->Size().Width(), mUIContainer->Size().Height() - WinMenu->Size().Height() );
+	Params.PosSet( 0, WinMenu->Size().height() );
+	Params.SizeSet( mUIContainer->Size().width(), mUIContainer->Size().height() - WinMenu->Size().height() );
 	Params.Flags = UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_REPORT_SIZE_CHANGE_TO_CHILDS;
 	mWinContainer = eeNew( UIComplexControl, ( Params ) );
 	mWinContainer->Visible( true );
@@ -172,12 +172,12 @@ void MapEditor::CreateWinMenu() {
 void MapEditor::CreateETGMenu() {
 	Int32 Width = 200;
 	Int32 DistToBorder = 5;
-	Int32 ContPosX = mWinContainer->Size().Width() - Width - DistToBorder;
+	Int32 ContPosX = mWinContainer->Size().width() - Width - DistToBorder;
 	Int32 DistFromTopMenu = 4;
 
 	UIComplexControl::CreateParams CParams;
 	CParams.Parent( mWinContainer );
-	CParams.SizeSet( Sizei( Width + DistToBorder, mWinContainer->Size().Height() ) );
+	CParams.SizeSet( Sizei( Width + DistToBorder, mWinContainer->Size().height() ) );
 	CParams.Flags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 	mSubTextureCont = eeNew( UIComplexControl, ( CParams ) );
 	mSubTextureCont->Enabled( true );
@@ -187,7 +187,7 @@ void MapEditor::CreateETGMenu() {
 
 	mObjectCont = eeNew( UIComplexControl, ( CParams ) );
 
-	mTabWidget = mTheme->CreateTabWidget( mWinContainer, Sizei( Width + DistToBorder, mWinContainer->Size().Height() - DistFromTopMenu ), Vector2i( ContPosX, DistFromTopMenu ), UI_HALIGN_CENTER | UI_VALIGN_BOTTOM | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM );
+	mTabWidget = mTheme->CreateTabWidget( mWinContainer, Sizei( Width + DistToBorder, mWinContainer->Size().height() - DistFromTopMenu ), Vector2i( ContPosX, DistFromTopMenu ), UI_HALIGN_CENTER | UI_VALIGN_BOTTOM | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM );
 	mTabWidget->AddEventListener( UIEvent::EventOnTabSelected, cb::Make1( this, &MapEditor::OnTabSelected ) );
 	CreateTabs();
 
@@ -243,63 +243,63 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 
 	Txt = mTheme->CreateTextBox( "Add Game Object as...", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 4 ), TxtFlags );
 
-	mGOTypeList = mTheme->CreateDropDownList( mSubTextureCont, Sizei( Width - 26, 21 ), Vector2i( TAB_CONT_X_DIST, Txt->Pos().y + Txt->Size().Height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
+	mGOTypeList = mTheme->CreateDropDownList( mSubTextureCont, Sizei( Width - 26, 21 ), Vector2i( TAB_CONT_X_DIST, Txt->Pos().y + Txt->Size().height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mGOTypeList->AddEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::OnTypeChange ) );
 	FillGotyList();
 
-	mBtnGOTypeAdd = mTheme->CreatePushButton( mSubTextureCont, Sizei( 24, 21 ), Vector2i( mGOTypeList->Pos().x + mGOTypeList->Size().Width() + 2, mGOTypeList->Pos().y ), UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mTheme->GetIconByName( "add" ) );
+	mBtnGOTypeAdd = mTheme->CreatePushButton( mSubTextureCont, Sizei( 24, 21 ), Vector2i( mGOTypeList->Pos().x + mGOTypeList->Size().width() + 2, mGOTypeList->Pos().y ), UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mTheme->GetIconByName( "add" ) );
 	mBtnGOTypeAdd->TooltipText( "Adds a new game object type\nunknown by the map editor." );
 	mBtnGOTypeAdd->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::AddNewGOType ) );
 
 	if ( NULL == mBtnGOTypeAdd->Icon()->SubTexture() )
 		mBtnGOTypeAdd->Text( "..." );
 
-	Txt = mTheme->CreateTextBox( "Layers:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mGOTypeList->Pos().y + mGOTypeList->Size().Height() + 4 ), TxtFlags );
+	Txt = mTheme->CreateTextBox( "Layers:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mGOTypeList->Pos().y + mGOTypeList->Size().height() + 4 ), TxtFlags );
 
-	mLayerList = mTheme->CreateDropDownList( mSubTextureCont, Sizei( Width, 21 ), Vector2i( TAB_CONT_X_DIST, Txt->Pos().y + Txt->Size().Height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
+	mLayerList = mTheme->CreateDropDownList( mSubTextureCont, Sizei( Width, 21 ), Vector2i( TAB_CONT_X_DIST, Txt->Pos().y + Txt->Size().height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mLayerList->AddEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::OnLayerSelect ) );
 
-	Txt = mTheme->CreateTextBox( "Game Object Flags:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mLayerList->Pos().y + mLayerList->Size().Height() + 4 ), TxtFlags );
+	Txt = mTheme->CreateTextBox( "Game Object Flags:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mLayerList->Pos().y + mLayerList->Size().height() + 4 ), TxtFlags );
 
 	Uint32 ChkFlags = UI_CONTROL_DEFAULT_ALIGN | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
-	mChkMirrored = mTheme->CreateCheckBox( mSubTextureCont, Sizei(), Vector2i( TAB_CONT_X_DIST, Txt->Pos().y + Txt->Size().Height() + 4 ), ChkFlags );
+	mChkMirrored = mTheme->CreateCheckBox( mSubTextureCont, Sizei(), Vector2i( TAB_CONT_X_DIST, Txt->Pos().y + Txt->Size().height() + 4 ), ChkFlags );
 	mChkMirrored->Text( "Mirrored" );
 	mChkMirrored->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickMirrored ) );
 
-	mChkFliped = mTheme->CreateCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkMirrored->Pos().x + mChkMirrored->Size().Width() + 32, mChkMirrored->Pos().y ), ChkFlags );
+	mChkFliped = mTheme->CreateCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkMirrored->Pos().x + mChkMirrored->Size().width() + 32, mChkMirrored->Pos().y ), ChkFlags );
 	mChkFliped->Text( "Fliped" );
 	mChkFliped->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickFliped ) );
 
-	mChkBlocked = mTheme->CreateCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkMirrored->Pos().x, mChkMirrored->Pos().y + mChkMirrored->Size().Height() + 4 ), ChkFlags );
+	mChkBlocked = mTheme->CreateCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkMirrored->Pos().x, mChkMirrored->Pos().y + mChkMirrored->Size().height() + 4 ), ChkFlags );
 	mChkBlocked->Text( "Blocked" );
 	mChkBlocked->TooltipText( "Blocks the tile occupied by the sprite." );
 	mChkBlocked->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickBlocked ) );
 
-	mChkAnim = mTheme->CreateCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkFliped->Pos().x, mChkFliped->Pos().y + mChkFliped->Size().Height() + 4 ), ChkFlags );
+	mChkAnim = mTheme->CreateCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkFliped->Pos().x, mChkFliped->Pos().y + mChkFliped->Size().height() + 4 ), ChkFlags );
 	mChkAnim->Text( "Animated" );
 	mChkAnim->TooltipText( "Indicates if the Sprite is animated." );
 	mChkAnim->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickAnimated ) );
 
-	mChkRot90 = mTheme->CreateCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkBlocked->Pos().x, mChkBlocked->Pos().y + mChkBlocked->Size().Height() + 4 ), ChkFlags );
+	mChkRot90 = mTheme->CreateCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkBlocked->Pos().x, mChkBlocked->Pos().y + mChkBlocked->Size().height() + 4 ), ChkFlags );
 	mChkRot90->Text( String::fromUtf8( "Rotate 90º" ) );
 	mChkRot90->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickRot90 ) );
 
-	mChkAutoFix = mTheme->CreateCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkAnim->Pos().x, mChkAnim->Pos().y + mChkAnim->Size().Height() + 4 ), ChkFlags );
+	mChkAutoFix = mTheme->CreateCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkAnim->Pos().x, mChkAnim->Pos().y + mChkAnim->Size().height() + 4 ), ChkFlags );
 	mChkAutoFix->Text( "AutoFix TilePos" );
 	mChkAutoFix->TooltipText( "In a tiled layer if the sprite is moved,\nit will update the current tile position automatically." );
 	mChkAutoFix->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickAutoFix ) );
 
-	Txt = mTheme->CreateTextBox( "Game Object Data:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mChkRot90->Pos().y + mChkRot90->Size().Height() + 8 ), TxtFlags );
+	Txt = mTheme->CreateTextBox( "Game Object Data:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mChkRot90->Pos().y + mChkRot90->Size().height() + 8 ), TxtFlags );
 
-	mChkDI = mTheme->CreateCheckBox( mSubTextureCont, Sizei(), Vector2i( TAB_CONT_X_DIST, Txt->Pos().y + Txt->Size().Height() + 4 ), ChkFlags );
+	mChkDI = mTheme->CreateCheckBox( mSubTextureCont, Sizei(), Vector2i( TAB_CONT_X_DIST, Txt->Pos().y + Txt->Size().height() + 4 ), ChkFlags );
 	mChkDI->Text( "Add as DataId" );
 	mChkDI->TooltipText( "If the resource it's not a sprite,\nyou can reference it with a data id" );
 	mChkDI->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickDI ) );
 
 	UIComplexControl::CreateParams SGParams;
 	SGParams.Parent( mSubTextureCont );
-	SGParams.PosSet( Vector2i( TAB_CONT_X_DIST, mChkDI->Pos().y + mChkDI->Size().Height() + 8 ) );
+	SGParams.PosSet( Vector2i( TAB_CONT_X_DIST, mChkDI->Pos().y + mChkDI->Size().height() + 8 ) );
 	SGParams.SizeSet( Sizei( Width, 400 ) );
 	SGParams.Flags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 	mSGCont = eeNew( UIComplexControl, ( SGParams ) );
@@ -308,14 +308,14 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 
 	Txt = mTheme->CreateTextBox( "Texture Atlases:", mSGCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 0 ), TxtFlags );
 
-	mTextureAtlasesList = mTheme->CreateDropDownList( mSGCont, Sizei( Width, 21 ), Vector2i( 0, Txt->Pos().y +Txt->Size().Height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
+	mTextureAtlasesList = mTheme->CreateDropDownList( mSGCont, Sizei( Width, 21 ), Vector2i( 0, Txt->Pos().y +Txt->Size().height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mTextureAtlasesList->AddEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::OnTextureAtlasChange ) );
 
-	mSubTextureList = mTheme->CreateListBox( mSGCont, Sizei( Width, 156 ), Vector2i( 0, mTextureAtlasesList->Pos().y + mTextureAtlasesList->Size().Height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	mSubTextureList->Size( mSubTextureList->Size().Width(), mSubTextureList->RowHeight() * 9 + mSubTextureList->PaddingContainer().Top + mSubTextureList->PaddingContainer().Bottom );
+	mSubTextureList = mTheme->CreateListBox( mSGCont, Sizei( Width, 156 ), Vector2i( 0, mTextureAtlasesList->Pos().y + mTextureAtlasesList->Size().height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
+	mSubTextureList->Size( mSubTextureList->Size().width(), mSubTextureList->RowHeight() * 9 + mSubTextureList->PaddingContainer().Top + mSubTextureList->PaddingContainer().Bottom );
 	mSubTextureList->AddEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::OnSubTextureChange ) );
 
-	mGfxPreview = mTheme->CreateGfx( NULL, mSGCont, Sizei( Width, Width ), Vector2i( 0, mSubTextureList->Pos().y + mSubTextureList->Size().Height() + 4 ), UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_AUTO_FIT );
+	mGfxPreview = mTheme->CreateGfx( NULL, mSGCont, Sizei( Width, Width ), Vector2i( 0, mSubTextureList->Pos().y + mSubTextureList->Size().height() + 4 ), UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_AUTO_FIT );
 	mGfxPreview->Border( true );
 	mGfxPreview->Border()->Color( ColorA( 0, 0, 0, 200 ) );
 
@@ -330,13 +330,13 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 
 	Txt = mTheme->CreateTextBox( "DataId String:", mDICont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 0 ), TxtFlags );
 
-	mDataIdInput = mTheme->CreateTextInput( mDICont, Sizei( Width / 4 * 3, 21 ), Vector2i( TAB_CONT_X_DIST + 8, Txt->Pos().y + Txt->Size().Height() + 8 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE );
+	mDataIdInput = mTheme->CreateTextInput( mDICont, Sizei( Width / 4 * 3, 21 ), Vector2i( TAB_CONT_X_DIST + 8, Txt->Pos().y + Txt->Size().height() + 8 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE );
 
 	FillSGCombo();
 }
 
 void MapEditor::CreateLighContainer() {
-	UIPushButton * NewLightBut = mTheme->CreatePushButton( mLightCont, Sizei( mLightCont->Size().Width() - TAB_CONT_X_DIST * 2, 22 ), Vector2i( TAB_CONT_X_DIST, 0 ) );
+	UIPushButton * NewLightBut = mTheme->CreatePushButton( mLightCont, Sizei( mLightCont->Size().width() - TAB_CONT_X_DIST * 2, 22 ), Vector2i( TAB_CONT_X_DIST, 0 ) );
 	NewLightBut->Text( "New Light" );
 	NewLightBut->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::OnNewLight ) );
 
@@ -344,7 +344,7 @@ void MapEditor::CreateLighContainer() {
 
 	UIComplexControl::CreateParams ComParams;
 	ComParams.Parent( mLightCont );
-	ComParams.PosSet( Txt->Pos().x, Txt->Pos().y + Txt->Size().Height() + 4 );
+	ComParams.PosSet( Txt->Pos().x, Txt->Pos().y + Txt->Size().height() + 4 );
 	ComParams.SizeSet( 58, 64 );
 	ComParams.Background.Color( ColorA(255,255,255,255) );
 	ComParams.Border.Color( ColorA( 100, 100, 100, 200 ) );
@@ -353,51 +353,51 @@ void MapEditor::CreateLighContainer() {
 	mUIBaseColor->Visible( true );
 	mUIBaseColor->Enabled( true );
 
-	Txt = mTheme->CreateTextBox( "R:", mLightCont, Sizei(), Vector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIBaseColor->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	mUIRedSlider = mTheme->CreateSlider( mLightCont, Sizei( 100, 20 ), Vector2i( Txt->Pos().x + Txt->Size().Width(), Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+	Txt = mTheme->CreateTextBox( "R:", mLightCont, Sizei(), Vector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().width() + 4, mUIBaseColor->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIRedSlider = mTheme->CreateSlider( mLightCont, Sizei( 100, 20 ), Vector2i( Txt->Pos().x + Txt->Size().width(), Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUIRedSlider->MaxValue( 255 );
 	mUIRedSlider->Value( 255 );
 	mUIRedSlider->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnRedChange ) );
 
-	mUIRedTxt = mTheme->CreateTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIRedSlider->Pos().x + mUIRedSlider->Size().Width() + 4, mUIRedSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIRedTxt = mTheme->CreateTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIRedSlider->Pos().x + mUIRedSlider->Size().width() + 4, mUIRedSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	Txt = mTheme->CreateTextBox( "G:", mLightCont, Sizei(), Vector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIRedSlider->Pos().y + mUIRedSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	Txt = mTheme->CreateTextBox( "G:", mLightCont, Sizei(), Vector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().width() + 4, mUIRedSlider->Pos().y + mUIRedSlider->Size().height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	mUIGreenSlider = mTheme->CreateSlider( mLightCont, Sizei( 100, 20 ), Vector2i( mUIRedSlider->Pos().x, Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUIGreenSlider->MaxValue( 255 );
 	mUIGreenSlider->Value( 255 );
 	mUIGreenSlider->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnGreenChange ) );
 
-	mUIGreenTxt = mTheme->CreateTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIGreenSlider->Pos().x + mUIGreenSlider->Size().Width() + 4, mUIGreenSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIGreenTxt = mTheme->CreateTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIGreenSlider->Pos().x + mUIGreenSlider->Size().width() + 4, mUIGreenSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	Txt = mTheme->CreateTextBox( "B:", mLightCont, Sizei(), Vector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIGreenSlider->Pos().y + mUIGreenSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	Txt = mTheme->CreateTextBox( "B:", mLightCont, Sizei(), Vector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().width() + 4, mUIGreenSlider->Pos().y + mUIGreenSlider->Size().height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	mUIBlueSlider = mTheme->CreateSlider( mLightCont, Sizei( 100, 20 ), Vector2i( mUIRedSlider->Pos().x, Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUIBlueSlider->MaxValue( 255 );
 	mUIBlueSlider->Value( 255 );
 	mUIBlueSlider->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnBlueChange ) );
 
-	mUIBlueTxt = mTheme->CreateTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIBlueSlider->Pos().x + mUIBlueSlider->Size().Width() + 4, mUIBlueSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIBlueTxt = mTheme->CreateTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIBlueSlider->Pos().x + mUIBlueSlider->Size().width() + 4, mUIBlueSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	Txt = mTheme->CreateTextBox( "Light Radius:", mLightCont, Sizei(), Vector2i( TAB_CONT_X_DIST, mUIBlueTxt->Pos().y + mUIBlueTxt->Size().Height() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	Txt = mTheme->CreateTextBox( "Light Radius:", mLightCont, Sizei(), Vector2i( TAB_CONT_X_DIST, mUIBlueTxt->Pos().y + mUIBlueTxt->Size().height() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	mLightRadius = mTheme->CreateSpinBox( mLightCont, Sizei( 100, 22 ), Vector2i( Txt->Pos().x, Txt->Pos().y + Txt->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED, 100, false );
+	mLightRadius = mTheme->CreateSpinBox( mLightCont, Sizei( 100, 22 ), Vector2i( Txt->Pos().x, Txt->Pos().y + Txt->Size().height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED, 100, false );
 	mLightRadius->MaxValue( 2000 );
 	mLightRadius->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnLightRadiusChangeVal ) );
 
-	mLightTypeChk = mTheme->CreateCheckBox( mLightCont, Sizei(), Vector2i( mLightRadius->Pos().x, mLightRadius->Pos().y + mLightRadius->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+	mLightTypeChk = mTheme->CreateCheckBox( mLightCont, Sizei(), Vector2i( mLightRadius->Pos().x, mLightRadius->Pos().y + mLightRadius->Size().height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mLightTypeChk->Text( "Isometric Light" );
 	mLightTypeChk->Active( false );
 	mLightTypeChk->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnLightTypeChange ) );
 }
 
 UISelectButton * MapEditor::AddObjContButton( String text, Uint32 mode ) {
-	UISelectButton * Button = mTheme->CreateSelectButton( mObjectCont, Sizei( mObjectCont->Size().Width() - TAB_CONT_X_DIST * 2, 22 ), Vector2i( TAB_CONT_X_DIST, mLastSelButtonY ) );
+	UISelectButton * Button = mTheme->CreateSelectButton( mObjectCont, Sizei( mObjectCont->Size().width() - TAB_CONT_X_DIST * 2, 22 ), Vector2i( TAB_CONT_X_DIST, mLastSelButtonY ) );
 
 	Button->Text( text );
 	Button->Data( mode );
 
 	Button->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::OnObjectModeSel ) );
 
-	mLastSelButtonY += Button->Size().Height() + 4;
+	mLastSelButtonY += Button->Size().height() + 4;
 
 	mObjContButton.push_back( Button );
 
@@ -411,7 +411,7 @@ void MapEditor::CreateObjectsContainer() {
 	AddObjContButton( "Insert Polygon", UIMap::INSERT_POLYGON );
 	UISelectButton * Button = AddObjContButton( "Insert Polyline", UIMap::INSERT_POLYLINE );
 
-	Int32 nextY = Button->Pos().y + Button->Size().Height() + 4;
+	Int32 nextY = Button->Pos().y + Button->Size().height() + 4;
 
 	Uint32 ChkFlags = UI_CONTROL_DEFAULT_ALIGN | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
@@ -447,7 +447,7 @@ void MapEditor::CreateUIMap() {
 		SubTexture * tTex = HScrollSkin->GetSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tTex ) {
-			ScrollH = tTex->Size().Height();
+			ScrollH = tTex->Size().height();
 		}
 	}
 
@@ -455,14 +455,14 @@ void MapEditor::CreateUIMap() {
 		SubTexture * tTex = VScrollSkin->GetSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tTex ) {
-			ScrollV = tTex->Size().Height();
+			ScrollV = tTex->Size().height();
 		}
 	}
 
 	UIComplexControl::CreateParams Params;
 	Params.Parent( mWinContainer );
 	Params.PosSet( 0, 0 );
-	Params.SizeSet( mWinContainer->Size().Width() - 225 - ScrollV, mWinContainer->Size().Height() - ScrollH );
+	Params.SizeSet( mWinContainer->Size().width() - 225 - ScrollV, mWinContainer->Size().height() - ScrollH );
 
 	Params.Flags |= UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT;
 	mUIMap = eeNew( UIMap, ( Params, mTheme ) );
@@ -479,10 +479,10 @@ void MapEditor::CreateUIMap() {
 	mUIMap->SetUpdateScrollCb( cb::Make0( this, &MapEditor::UpdateScroll ) );
 	mUIMap->SetTileBox( mTileBox );
 
-	mMapHScroll = mTheme->CreateScrollBar( mWinContainer, Sizei( Params.Size.Width(), ScrollH ), Vector2i( 0, mWinContainer->Size().Height() - ScrollH ), UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_AUTO_SIZE );
+	mMapHScroll = mTheme->CreateScrollBar( mWinContainer, Sizei( Params.Size.width(), ScrollH ), Vector2i( 0, mWinContainer->Size().height() - ScrollH ), UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_AUTO_SIZE );
 	mMapHScroll->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnScrollMapH ) );
 
-	mMapVScroll = mTheme->CreateScrollBar( mWinContainer, Sizei( ScrollV, Params.Size.Height() ), Vector2i( Params.Size.Width() + ScrollV, 0 ), UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_AUTO_SIZE , true );
+	mMapVScroll = mTheme->CreateScrollBar( mWinContainer, Sizei( ScrollV, Params.Size.height() ), Vector2i( Params.Size.width() + ScrollV, 0 ), UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_AUTO_SIZE , true );
 	mMapVScroll->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnScrollMapV ) );
 
 	MapCreated();
@@ -499,14 +499,14 @@ void MapEditor::OnAddObject( Uint32 Type, Polygon2f poly ) {
 		return;
 	}
 
-	if ( poly.Size() < 3 ) {
+	if ( poly.size() < 3 ) {
 		return;
 	}
 
 	MapObjectLayer * OL = static_cast<MapObjectLayer*> ( mCurLayer );
 
 	if ( GAMEOBJECT_TYPE_OBJECT == Type ) {
-		OL->AddGameObject( eeNew( GameObjectObject, ( mUIMap->Map()->GetNewObjectId(), poly.ToAABB(), mCurLayer ) ) );
+		OL->AddGameObject( eeNew( GameObjectObject, ( mUIMap->Map()->GetNewObjectId(), poly.toAABB(), mCurLayer ) ) );
 	} else if ( GAMEOBJECT_TYPE_POLYGON == Type ) {
 		OL->AddGameObject( eeNew( GameObjectPolygon, ( mUIMap->Map()->GetNewObjectId(), poly, mCurLayer ) ) );
 	} else if ( GAMEOBJECT_TYPE_POLYLINE == Type ) {
@@ -807,10 +807,10 @@ void MapEditor::OnMapSizeChange( const UIEvent *Event ) {
 
 	mMapHScroll->MinValue( 0 );
 	mMapHScroll->MaxValue( v.x );
-	mMapHScroll->ClickStep( mUIMap->Map()->TileSize().Width() * mUIMap->Map()->Scale() );
+	mMapHScroll->ClickStep( mUIMap->Map()->TileSize().width() * mUIMap->Map()->Scale() );
 	mMapVScroll->MinValue( 0 );
 	mMapVScroll->MaxValue( v.y );
-	mMapVScroll->ClickStep( mUIMap->Map()->TileSize().Height() * mUIMap->Map()->Scale() );
+	mMapVScroll->ClickStep( mUIMap->Map()->TileSize().height() * mUIMap->Map()->Scale() );
 }
 
 void MapEditor::OnScrollMapH( const UIEvent * Event ) {

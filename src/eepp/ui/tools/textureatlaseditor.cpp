@@ -39,68 +39,68 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	Uint32 Flags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_CLIP_ENABLE | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED;
 	Uint32 InitY = 230;
 
-	CreateTxtBox( Vector2i( mUIContainer->Size().Width() - 205, 30 ), "SubTexture List:" );
+	CreateTxtBox( Vector2i( mUIContainer->Size().width() - 205, 30 ), "SubTexture List:" );
 
-	mSubTextureList = mTheme->CreateListBox( mUIContainer, Sizei( 200, 156 ), Vector2i( mUIContainer->Size().Width() - 205, 50 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	mSubTextureList->Size( mSubTextureList->Size().Width(), mSubTextureList->RowHeight() * 9 + mSubTextureList->PaddingContainer().Top + mSubTextureList->PaddingContainer().Bottom );
+	mSubTextureList = mTheme->CreateListBox( mUIContainer, Sizei( 200, 156 ), Vector2i( mUIContainer->Size().width() - 205, 50 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
+	mSubTextureList->Size( mSubTextureList->Size().width(), mSubTextureList->RowHeight() * 9 + mSubTextureList->PaddingContainer().Top + mSubTextureList->PaddingContainer().Bottom );
 	mSubTextureList->AddEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &TextureAtlasEditor::OnSubTextureChange ) );
 
-	CreateTxtBox( Vector2i( mUIContainer->Size().Width() - 205, InitY ), "Current SubTexture:" );
+	CreateTxtBox( Vector2i( mUIContainer->Size().width() - 205, InitY ), "Current SubTexture:" );
 
 	InitY +=30;
 
 	mSpinOffX = mTheme->CreateSpinBox( mUIContainer, Sizei( 100, 22 ), Vector2i(), Flags, 0, false );
 	mSpinOffX->MinValue( -32000 );
 	mSpinOffX->MaxValue( 32000 );
-	mSpinOffX->Pos( mUIContainer->Size().Width() - mSpinOffX->Size().Width() - 10, InitY );
+	mSpinOffX->Pos( mUIContainer->Size().width() - mSpinOffX->Size().width() - 10, InitY );
 	mSpinOffX->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::OnOffXChange ) );
 
 	TxtBox = CreateTxtBox( Vector2i(), "Offset X:" );
-	TxtBox->Pos( mSpinOffX->Pos().x - 10 - TxtBox->Size().Width(), InitY );
+	TxtBox->Pos( mSpinOffX->Pos().x - 10 - TxtBox->Size().width(), InitY );
 
 	InitY +=30;
 
 	mSpinOffY = mTheme->CreateSpinBox( mUIContainer, Sizei( 100, 22 ), Vector2i(), Flags, 0, false );
 	mSpinOffY->MinValue( -32000 );
 	mSpinOffY->MaxValue( 32000 );
-	mSpinOffY->Pos( mUIContainer->Size().Width() - mSpinOffY->Size().Width() - 10, InitY );
+	mSpinOffY->Pos( mUIContainer->Size().width() - mSpinOffY->Size().width() - 10, InitY );
 	mSpinOffY->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::OnOffYChange ) );
 	TxtBox = CreateTxtBox( Vector2i(), "Offset Y:" );
-	TxtBox->Pos( mSpinOffY->Pos().x - 10 - TxtBox->Size().Width(), InitY );
+	TxtBox->Pos( mSpinOffY->Pos().x - 10 - TxtBox->Size().width(), InitY );
 
 	InitY +=30;
 
 	mSpinDestW = mTheme->CreateSpinBox( mUIContainer, Sizei( 100, 22 ), Vector2i(), Flags, 0, false );
 	mSpinDestW->MaxValue( 32000 );
-	mSpinDestW->Pos( mUIContainer->Size().Width() - mSpinDestW->Size().Width() - 10, InitY );
+	mSpinDestW->Pos( mUIContainer->Size().width() - mSpinDestW->Size().width() - 10, InitY );
 	mSpinDestW->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::OnDestWChange ) );
 	TxtBox = CreateTxtBox( Vector2i(), "Dest. Width:" );
-	TxtBox->Pos( mSpinDestW->Pos().x - 10 - TxtBox->Size().Width(), InitY );
+	TxtBox->Pos( mSpinDestW->Pos().x - 10 - TxtBox->Size().width(), InitY );
 
 	InitY +=30;
 
 	mSpinDestH = mTheme->CreateSpinBox( mUIContainer, Sizei( 100, 22 ), Vector2i(), Flags, 0, false );
 	mSpinDestH->MaxValue( 32000 );
-	mSpinDestH->Pos( mUIContainer->Size().Width() - mSpinDestH->Size().Width() - 10, InitY );
+	mSpinDestH->Pos( mUIContainer->Size().width() - mSpinDestH->Size().width() - 10, InitY );
 	mSpinDestH->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::OnDestHChange ) );
 	TxtBox = CreateTxtBox( Vector2i(), "Dest. Height:" );
-	TxtBox->Pos( mSpinDestH->Pos().x - 10 - TxtBox->Size().Width(), InitY );
+	TxtBox->Pos( mSpinDestH->Pos().x - 10 - TxtBox->Size().width(), InitY );
 
 	Uint32 ButFlags = UI_CONTROL_ALIGN_CENTER | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_AUTO_SIZE;
 
-	UIPushButton * ResetButton = mTheme->CreatePushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( mUIContainer->Size().Width() - 120 - 5 , mSpinDestH->Pos().y + mSpinDestH->Size().Height() + 8 ), ButFlags );
+	UIPushButton * ResetButton = mTheme->CreatePushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( mUIContainer->Size().width() - 120 - 5 , mSpinDestH->Pos().y + mSpinDestH->Size().height() + 8 ), ButFlags );
 	ResetButton->Text( "Reset Dest. Size" );
 	ResetButton->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::OnResetDestSize ) );
 
-	UIPushButton * ResetOffsetButton = mTheme->CreatePushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( ResetButton->Pos().x, ResetButton->Pos().y + ResetButton->Size().Height() + 8 ), ButFlags );
+	UIPushButton * ResetOffsetButton = mTheme->CreatePushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( ResetButton->Pos().x, ResetButton->Pos().y + ResetButton->Size().height() + 8 ), ButFlags );
 	ResetOffsetButton->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::OnResetOffset ) );
 	ResetOffsetButton->Text( "Reset Offset" );
 
-	UIPushButton * CenterOffsetButton = mTheme->CreatePushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( ResetOffsetButton->Pos().x, ResetOffsetButton->Pos().y + ResetOffsetButton->Size().Height() + 8 ), ButFlags );
+	UIPushButton * CenterOffsetButton = mTheme->CreatePushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( ResetOffsetButton->Pos().x, ResetOffsetButton->Pos().y + ResetOffsetButton->Size().height() + 8 ), ButFlags );
 	CenterOffsetButton->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::OnCenterOffset ) );
 	CenterOffsetButton->Text( "Centered Offset" );
 
-	UIPushButton * HBOffsetButton = mTheme->CreatePushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( CenterOffsetButton->Pos().x, CenterOffsetButton->Pos().y + CenterOffsetButton->Size().Height() + 8 ), ButFlags );
+	UIPushButton * HBOffsetButton = mTheme->CreatePushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( CenterOffsetButton->Pos().x, CenterOffsetButton->Pos().y + CenterOffsetButton->Size().height() + 8 ), ButFlags );
 	HBOffsetButton->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::OnHBOffset ) );
 	HBOffsetButton->Text( "Half-Bottom Offset" );
 
@@ -111,7 +111,7 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	UIComplexControl::CreateParams Params;
 	Params.Parent( mUIContainer );
-	Params.PosSet( 0, mWinMenu->Size().Height() );
+	Params.PosSet( 0, mWinMenu->Size().height() );
 	Params.SizeSet( 800, 600 );
 	Params.Background.Color( ColorA( 0, 0, 0, 50 ) );
 	Params.Flags |= UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT | UI_CLIP_ENABLE | UI_BORDER | UI_FILL_BACKGROUND;
@@ -139,8 +139,8 @@ void TextureAtlasEditor::OnResetDestSize( const UIEvent * Event ) {
 
 		mCurSubTexture->ResetDestSize();
 
-		mSpinDestW->Value( RealSize.Width() );
-		mSpinDestH->Value( RealSize.Height() );
+		mSpinDestW->Value( RealSize.width() );
+		mSpinDestH->Value( RealSize.height() );
 	}
 }
 

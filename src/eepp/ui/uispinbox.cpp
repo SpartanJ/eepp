@@ -92,16 +92,16 @@ void UISpinBox::SetTheme( UITheme * Theme ) {
 	}
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mSize.Height( mInput->GetSkinSize().Height() );
+		mSize.height( mInput->GetSkinSize().height() );
 	}
 
 	AdjustChilds();
 }
 
 void UISpinBox::AdjustChilds() {
-	mPushUp->Pos( mSize.Width() - mPushUp->Size().Width(), 0 );
-	mPushDown->Pos( mSize.Width() - mPushDown->Size().Width(), mPushUp->Size().Height() );
-	mInput->Size( mSize.Width() - mPushUp->Size().Width(), mSize.Height() );
+	mPushUp->Pos( mSize.width() - mPushUp->Size().width(), 0 );
+	mPushDown->Pos( mSize.width() - mPushDown->Size().width(), mPushUp->Size().height() );
+	mInput->Size( mSize.width() - mPushUp->Size().width(), mSize.height() );
 }
 
 void UISpinBox::Padding( const Recti& padding ) {

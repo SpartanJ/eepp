@@ -12,7 +12,7 @@ GameObjectObject::GameObjectObject( Uint32 DataId, const Rectf& rect, MapLayer *
 	GameObject( Flags, Layer ),
 	mRect( rect ),
 	mPoly( rect ),
-	mPos( mRect.Pos() ),
+	mPos( mRect.pos() ),
 	mDataId( DataId ),
 	mSelected( false )
 {
@@ -30,7 +30,7 @@ bool GameObjectObject::IsType( const Uint32& type ) {
 }
 
 Sizei GameObjectObject::Size() {
-	Sizef size( mRect.Size() );
+	Sizef size( mRect.size() );
 	return Sizei( size.x, size.y );
 }
 
@@ -53,7 +53,7 @@ Vector2f GameObjectObject::Pos() const {
 }
 
 void GameObjectObject::Pos( Vector2f pos ) {
-	mPoly.Move( pos - mPos );
+	mPoly.move( pos - mPos );
 	mPos	= pos;
 	mRect	= Rectf( pos, Sizef( Size().x, Size().y ) );
 }
@@ -62,33 +62,33 @@ void GameObjectObject::SetPolygonPoint( Uint32 index, Vector2f p ) {
 	switch ( index ) {
 		case 0:
 		{
-			mPoly.SetAt( 1, Vector2f( p.x, mPoly[1].y ) );
-			mPoly.SetAt( 3, Vector2f( mPoly[3].x, p.y ) );
+			mPoly.setAt( 1, Vector2f( p.x, mPoly[1].y ) );
+			mPoly.setAt( 3, Vector2f( mPoly[3].x, p.y ) );
 			break;
 		}
 		case 1:
 		{
-			mPoly.SetAt( 0, Vector2f( p.x, mPoly[0].y ) );
-			mPoly.SetAt( 2, Vector2f( mPoly[2].x, p.y ) );
+			mPoly.setAt( 0, Vector2f( p.x, mPoly[0].y ) );
+			mPoly.setAt( 2, Vector2f( mPoly[2].x, p.y ) );
 			break;
 		}
 		case 2:
 		{
-			mPoly.SetAt( 3, Vector2f( p.x, mPoly[3].y ) );
-			mPoly.SetAt( 1, Vector2f( mPoly[1].x, p.y ) );
+			mPoly.setAt( 3, Vector2f( p.x, mPoly[3].y ) );
+			mPoly.setAt( 1, Vector2f( mPoly[1].x, p.y ) );
 			break;
 		}
 		case 3:
 		default:
 		{
-			mPoly.SetAt( 2, Vector2f( p.x, mPoly[2].y ) );
-			mPoly.SetAt( 0, Vector2f( mPoly[0].x, p.y ) );
+			mPoly.setAt( 2, Vector2f( p.x, mPoly[2].y ) );
+			mPoly.setAt( 0, Vector2f( mPoly[0].x, p.y ) );
 			break;
 		}
 	}
 
-	mPoly.SetAt( index, p );
-	mRect	= mPoly.ToAABB();
+	mPoly.setAt( index, p );
+	mRect	= mPoly.toAABB();
 	mPos	= Vector2f( mRect.Left, mRect.Top );
 	mPoly	= mRect;
 }
@@ -146,7 +146,7 @@ Polygon2f& GameObjectObject::GetPolygon() {
 }
 
 bool GameObjectObject::PointInside( const Vector2f& p ) {
-	return mRect.Contains( p );
+	return mRect.contains( p );
 }
 
 void GameObjectObject::SetProperties( const PropertiesMap& prop ) {

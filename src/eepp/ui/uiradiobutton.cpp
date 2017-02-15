@@ -82,7 +82,7 @@ void UIRadioButton::AutoSize() {
 		mActiveButton->CenterVertical();
 		mInactiveButton->CenterVertical();
 
-		mSize.Width( (int)mTextCache->GetTextWidth() + mActiveButton->Size().Width() );
+		mSize.width( (int)mTextCache->GetTextWidth() + mActiveButton->Size().width() );
 	}
 }
 
@@ -207,7 +207,7 @@ const bool& UIRadioButton::IsActive() const {
 
 void UIRadioButton::Padding( const Recti& padding ) {
 	mPadding = padding;
-	mPadding.Left = mPadding.Left + mActiveButton->Size().Width();
+	mPadding.Left = mPadding.Left + mActiveButton->Size().width();
 }
 
 UIControlAnim * UIRadioButton::ActiveButton() const {
