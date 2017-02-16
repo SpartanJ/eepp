@@ -18,90 +18,90 @@ UIRadioButton::UIRadioButton( const UITextBox::CreateParams& Params ) :
 	ButtonParams.Size = Sizei( 16, 16 );
 
 	mActiveButton 	= eeNew( UIControlAnim, ( ButtonParams ) );
-	mActiveButton->Visible( false );
-	mActiveButton->Enabled( true );
+	mActiveButton->visible( false );
+	mActiveButton->enabled( true );
 
 	mInactiveButton = eeNew( UIControlAnim, ( ButtonParams ) );
-	mInactiveButton->Visible( true );
-	mInactiveButton->Enabled( true );
+	mInactiveButton->visible( true );
+	mInactiveButton->enabled( true );
 
-	Padding( Recti(0,0,0,0) );
+	padding( Recti(0,0,0,0) );
 
-	AutoActivate();
+	autoActivate();
 
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UIRadioButton::~UIRadioButton() {
 }
 
-Uint32 UIRadioButton::Type() const {
+Uint32 UIRadioButton::getType() const {
 	return UI_TYPE_RADIOBUTTON;
 }
 
-bool UIRadioButton::IsType( const Uint32& type ) const {
-	return UIRadioButton::Type() == type ? true : UITextBox::IsType( type );
+bool UIRadioButton::isType( const Uint32& type ) const {
+	return UIRadioButton::getType() == type ? true : UITextBox::isType( type );
 }
 
-void UIRadioButton::SetTheme( UITheme * Theme ) {
-	UIControl::SetThemeControl( Theme, "radiobutton" );
+void UIRadioButton::setTheme( UITheme * Theme ) {
+	UIControl::setThemeControl( Theme, "radiobutton" );
 
-	mActiveButton->SetThemeControl	( Theme, "radiobutton_active" );
-	mInactiveButton->SetThemeControl( Theme, "radiobutton_inactive" );
+	mActiveButton->setThemeControl	( Theme, "radiobutton_active" );
+	mInactiveButton->setThemeControl( Theme, "radiobutton_inactive" );
 
 	SubTexture * tSubTexture = NULL;
-	UISkin * tSkin = mActiveButton->GetSkin();
+	UISkin * tSkin = mActiveButton->getSkin();
 
 	if ( tSkin ) {
-		tSubTexture = tSkin->GetSubTexture( UISkinState::StateNormal );
+		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mActiveButton->Size( tSubTexture->realSize() );
-			mActiveButton->CenterVertical();
+			mActiveButton->size( tSubTexture->realSize() );
+			mActiveButton->centerVertical();
 		}
 	}
 
-	tSkin = mInactiveButton->GetSkin();
+	tSkin = mInactiveButton->getSkin();
 
 	if ( NULL != tSkin ) {
-		tSubTexture = tSkin->GetSubTexture( UISkinState::StateNormal );
+		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mInactiveButton->Size( tSubTexture->realSize() );
-			mInactiveButton->CenterVertical();
+			mInactiveButton->size( tSubTexture->realSize() );
+			mInactiveButton->centerVertical();
 		}
 	}
 
-	Padding( Recti(0,0,0,0) );
+	padding( Recti(0,0,0,0) );
 }
 
-void UIRadioButton::AutoSize() {
-	UITextBox::AutoSize();
+void UIRadioButton::autoSize() {
+	UITextBox::autoSize();
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mActiveButton->CenterVertical();
-		mInactiveButton->CenterVertical();
+		mActiveButton->centerVertical();
+		mInactiveButton->centerVertical();
 
-		mSize.width( (int)mTextCache->getTextWidth() + mActiveButton->Size().width() );
+		mSize.width( (int)mTextCache->getTextWidth() + mActiveButton->size().width() );
 	}
 }
 
-void UIRadioButton::OnSizeChange() {
-	UITextBox::OnSizeChange();
+void UIRadioButton::onSizeChange() {
+	UITextBox::onSizeChange();
 
-	mActiveButton->CenterVertical();
-	mInactiveButton->CenterVertical();
+	mActiveButton->centerVertical();
+	mInactiveButton->centerVertical();
 }
 
-Uint32 UIRadioButton::OnMessage( const UIMessage * Msg ) {
-	switch ( Msg->Msg() ) {
+Uint32 UIRadioButton::onMessage( const UIMessage * Msg ) {
+	switch ( Msg->getMsg() ) {
 		case UIMessage::MsgClick: {
-			if ( Msg->Flags() & EE_BUTTON_LMASK ) {
-				SwitchState();
+			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
+				switchState();
 			}
 
-			if ( Msg->Sender() == mActiveButton || Msg->Sender() == mInactiveButton ) {
-				SendMouseEvent( UIEvent::EventMouseClick, UIManager::instance()->GetMousePos(), UIManager::instance()->PressTrigger() );
+			if ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) {
+				sendMouseEvent( UIEvent::EventMouseClick, UIManager::instance()->getMousePos(), UIManager::instance()->pressTrigger() );
 			}
 
 			return 1;
@@ -111,130 +111,130 @@ Uint32 UIRadioButton::OnMessage( const UIMessage * Msg ) {
 	return 0;
 }
 
-void UIRadioButton::SwitchState() {
-	Active( !mActive );
+void UIRadioButton::switchState() {
+	active( !mActive );
 }
 
-void UIRadioButton::Active( const bool& active ) {
+void UIRadioButton::active( const bool& active ) {
 	if ( !active ) {
-		if ( CheckActives() ) {
-			mActiveButton->Visible( false );
-			mInactiveButton->Visible( true );
+		if ( checkActives() ) {
+			mActiveButton->visible( false );
+			mInactiveButton->visible( true );
 
 			mActive = false;
 
-			OnValueChange();
+			onValueChange();
 		}
 	} else {
-		mActiveButton->Visible( true );
-		mInactiveButton->Visible( false );
+		mActiveButton->visible( true );
+		mInactiveButton->visible( false );
 
 		mActive = true;
 
-		OnValueChange();
+		onValueChange();
 	}
 
 	if ( active && NULL != mParentCtrl ) {
-		UIControl * tChild = mParentCtrl->ChildGetFirst();
+		UIControl * tChild = mParentCtrl->childGetFirst();
 
 		while ( NULL != tChild ) {
-			if ( tChild->IsType( UI_TYPE_RADIOBUTTON ) ) {
+			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
 				if ( tChild != this ) {
 					UIRadioButton * tRB = reinterpret_cast<UIRadioButton*> ( tChild );
 
-					if ( tRB->Active() )
-						tRB->Active( false );
+					if ( tRB->active() )
+						tRB->active( false );
 				}
 			}
 
-			tChild = tChild->NextGet();
+			tChild = tChild->nextGet();
 		}
 	}
 }
 
-bool UIRadioButton::CheckActives() {
+bool UIRadioButton::checkActives() {
 	if ( NULL != mParentCtrl ) {
-		UIControl * tChild = mParentCtrl->ChildGetFirst();
+		UIControl * tChild = mParentCtrl->childGetFirst();
 
 		while ( NULL != tChild ) {
-			if ( tChild->IsType( UI_TYPE_RADIOBUTTON ) ) {
+			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
 				if ( tChild != this ) {
 					UIRadioButton * tRB = reinterpret_cast<UIRadioButton*> ( tChild );
 
-					if ( tRB->Active() )
+					if ( tRB->active() )
 						return true;
 				}
 			}
 
-			tChild = tChild->NextGet();
+			tChild = tChild->nextGet();
 		}
 	}
 
 	return false;
 }
 
-void UIRadioButton::AutoActivate() {
+void UIRadioButton::autoActivate() {
 	eeASSERT( NULL != mParentCtrl );
 
 	if ( NULL != mParentCtrl ) {
-		UIControl * tChild = mParentCtrl->ChildGetFirst();
+		UIControl * tChild = mParentCtrl->childGetFirst();
 
 		while ( NULL != tChild ) {
-			if ( tChild->IsType( UI_TYPE_RADIOBUTTON ) ) {
+			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
 				if ( tChild != this ) {
 					UIRadioButton * tRB = reinterpret_cast<UIRadioButton*> ( tChild );
 
-					if ( tRB->Active() ) {
+					if ( tRB->active() ) {
 						return;
 					}
 				}
 			}
 
-			tChild = tChild->NextGet();
+			tChild = tChild->nextGet();
 		}
 	}
 
-	Active( true );
+	active( true );
 }
 
-const bool& UIRadioButton::Active() const {
+const bool& UIRadioButton::active() const {
 	return mActive;
 }
 
-const bool& UIRadioButton::IsActive() const {
-	return Active();
+const bool& UIRadioButton::isActive() const {
+	return active();
 }
 
-void UIRadioButton::Padding( const Recti& padding ) {
+void UIRadioButton::padding( const Recti& padding ) {
 	mPadding = padding;
-	mPadding.Left = mPadding.Left + mActiveButton->Size().width();
+	mPadding.Left = mPadding.Left + mActiveButton->size().width();
 }
 
-UIControlAnim * UIRadioButton::ActiveButton() const {
+UIControlAnim * UIRadioButton::activeButton() const {
 	return mActiveButton;
 }
 
-UIControlAnim * UIRadioButton::InactiveButton() const {
+UIControlAnim * UIRadioButton::inactiveButton() const {
 	return mInactiveButton;
 }
 
-Uint32 UIRadioButton::OnKeyDown( const UIEventKey& Event ) {
-	if ( Event.KeyCode() == KEY_SPACE ) {
+Uint32 UIRadioButton::onKeyDown( const UIEventKey& Event ) {
+	if ( Event.getKeyCode() == KEY_SPACE ) {
 		if ( Sys::getTicks() - mLastTick > 250 ) {
 			mLastTick = Sys::getTicks();
 
-			Active( true );
+			active( true );
 		}
 	}
 
-	return UITextBox::OnKeyDown( Event );
+	return UITextBox::onKeyDown( Event );
 }
 
-void UIRadioButton::OnAlphaChange() {
-	UITextBox::OnAlphaChange();
+void UIRadioButton::onAlphaChange() {
+	UITextBox::onAlphaChange();
 	
-	mActiveButton->Alpha( mAlpha );
-	mInactiveButton->Alpha( mAlpha );
+	mActiveButton->alpha( mAlpha );
+	mInactiveButton->alpha( mAlpha );
 }
 
 }}

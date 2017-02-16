@@ -42,61 +42,61 @@ class EE_API UIWindow : public UIComplexControl {
 
 		virtual ~UIWindow();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void Size( const Sizei& Size );
+		virtual void size( const Sizei& size );
 
-		void Size( const Int32& Width, const Int32& Height );
+		void size( const Int32& Width, const Int32& Height );
 
-		const Sizei& Size();
+		const Sizei& size();
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		virtual Uint32 OnMessage( const UIMessage *Msg );
+		virtual Uint32 onMessage( const UIMessage *Msg );
 
-		UIControlAnim * Container() const;
+		UIControlAnim * getContainer() const;
 
-		UIComplexControl * ButtonClose() const;
+		UIComplexControl * getButtonClose() const;
 
-		UIComplexControl * ButtonMaximize() const;
+		UIComplexControl * getButtonMaximize() const;
 
-		UIComplexControl * ButtonMinimize() const;
+		UIComplexControl * getButtonMinimize() const;
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual bool Show();
+		virtual bool show();
 
 		virtual bool Hide();
 
-		virtual void Update();
+		virtual void update();
 
 		virtual void CloseWindow();
 
-		virtual void Close();
+		virtual void close();
 
-		void BaseAlpha( const Uint8& Alpha );
+		void baseAlpha( const Uint8& alpha );
 
-		const Uint8& BaseAlpha() const;
+		const Uint8& baseAlpha() const;
 
-		void Title( const String& Text );
+		void title( const String& Text );
 
-		String Title() const;
+		String title() const;
 
-		UITextBox * TitleTextBox() const;
+		UITextBox * titleTextBox() const;
 
-		bool AddShortcut( const Uint32& KeyCode, const Uint32& Mod, UIPushButton * Button );
+		bool addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIPushButton * Button );
 
-		bool RemoveShortcut( const Uint32& KeyCode, const Uint32& Mod );
+		bool removeShortcut( const Uint32& KeyCode, const Uint32& Mod );
 
-		bool IsModal();
+		bool isModal();
 
-		UIControlAnim * GetModalControl() const;
+		UIControlAnim * getModalControl() const;
 
-		void Maximize();
+		void maximize();
 
-		bool IsMaximixable();
+		bool isMaximixable();
 	protected:
 		class KeyboardShortcut {
 			public:
@@ -167,53 +167,53 @@ class EE_API UIWindow : public UIComplexControl {
 		bool				mDecoAutoSize;
 		bool				mBorderAutoSize;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 
-		virtual Uint32 OnKeyDown( const UIEventKey &Event );
+		virtual Uint32 onKeyDown( const UIEventKey &Event );
 
-		void ButtonCloseClick( const UIEvent * Event );
+		void buttonCloseClick( const UIEvent * Event );
 
-		void ButtonMaximizeClick( const UIEvent * Event );
+		void buttonMaximizeClick( const UIEvent * Event );
 
-		void ButtonMinimizeClick( const UIEvent * Event );
+		void buttonMinimizeClick( const UIEvent * Event );
 
-		void ContainerPosChange( const UIEvent * Event );
+		void containerPosChange( const UIEvent * Event );
 
-		void FixChildsSize();
+		void fixChildsSize();
 
-		void DoResize ( const UIMessage * Msg );
+		void doResize ( const UIMessage * Msg );
 
-		void DecideResizeType( UIControl * Control );
+		void decideResizeType( UIControl * Control );
 
-		void TryResize( const UI_RESIZE_TYPE& Type );
+		void tryResize( const UI_RESIZE_TYPE& getType );
 
-		void EndResize();
+		void endResize();
 
-		void UpdateResize();
+		void updateResize();
 
-		void InternalSize( Sizei Size );
+		void internalSize( Sizei size );
 
-		void InternalSize( const Int32& w, const Int32& h );
+		void internalSize( const Int32& w, const Int32& h );
 
-		void GetMinWinSize();
+		void getMinWinSize();
 
-		void FixTitleSize();
+		void fixTitleSize();
 
-		Uint32 OnMouseDoubleClick( const Vector2i &Pos, const Uint32 Flags );
+		Uint32 onMouseDoubleClick( const Vector2i &position, const Uint32 flags );
 
-		void CheckShortcuts( const Uint32& KeyCode, const Uint32& Mod );
+		void checkShortcuts( const Uint32& KeyCode, const Uint32& Mod );
 
-		KeyboardShortcuts::iterator ExistsShortcut( const Uint32& KeyCode, const Uint32& Mod );
+		KeyboardShortcuts::iterator existsShortcut( const Uint32& KeyCode, const Uint32& Mod );
 
-		void CreateModalControl();
+		void createModalControl();
 
-		void EnableByModal();
+		void enableByModal();
 
-		void DisableByModal();
+		void disableByModal();
 
-		void ResizeCursor();
+		void resizeCursor();
 };
 
 }}

@@ -10,23 +10,23 @@ class UITextInputPassword : public UITextInput
 	public:
 		UITextInputPassword( const UITextInput::CreateParams& Params );
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual const String& Text();
+		virtual const String& text();
 
-		virtual void Text( const String& text );
+		virtual void text( const String& text );
 
-		TextCache * GetPassCache() const;
+		TextCache * getPassCache() const;
 	protected:
 		TextCache *	mPassCache;
 
-		void AlignFix();
+		void alignFix();
 
-		void AutoAlign();
+		void autoAlign();
 
-		void UpdateText();
+		void updateText();
 
-		void UpdatePass( const String& pass );
+		void updatePass( const String& pass );
 };
 
 }}

@@ -23,36 +23,36 @@ UITextBox::UITextBox( const UITextBox::CreateParams& Params ) :
 	mTextCache->shadowColor( mFontShadowColor );
 
 	if ( NULL == Params.Font ) {
-		if ( NULL != UIThemeManager::instance()->DefaultFont() )
-			mTextCache->font( UIThemeManager::instance()->DefaultFont() );
+		if ( NULL != UIThemeManager::instance()->defaultFont() )
+			mTextCache->font( UIThemeManager::instance()->defaultFont() );
 		else
 			eePRINTL( "UITextBox::UITextBox : Created a UI TextBox without a defined font." );
 	}
 
-	AutoAlign();
+	autoAlign();
 }
 
 UITextBox::~UITextBox() {
 	eeSAFE_DELETE( mTextCache );
 }
 
-Uint32 UITextBox::Type() const {
+Uint32 UITextBox::getType() const {
 	return UI_TYPE_TEXTBOX;
 }
 
-bool UITextBox::IsType( const Uint32& type ) const {
-	return UITextBox::Type() == type ? true : UIComplexControl::IsType( type );
+bool UITextBox::isType( const Uint32& type ) const {
+	return UITextBox::getType() == type ? true : UIComplexControl::isType( type );
 }
 
-void UITextBox::Draw() {
+void UITextBox::draw() {
 	if ( mVisible && 0.f != mAlpha ) {
-		UIControlAnim::Draw();
+		UIControlAnim::draw();
 
-		DrawSelection();
+		drawSelection();
 
 		if ( mTextCache->getTextWidth() ) {
 			if ( mFlags & UI_CLIP_ENABLE ) {
-				UIManager::instance()->ClipEnable(
+				UIManager::instance()->clipEnable(
 						mScreenPos.x + mPadding.Left,
 						mScreenPos.y + mPadding.Top,
 						mSize.width() - mPadding.Left - mPadding.Right,
@@ -60,38 +60,38 @@ void UITextBox::Draw() {
 				);
 			}
 
-			mTextCache->flags( Flags() );
-			mTextCache->draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, Vector2f::One, 0.f, Blend() );
+			mTextCache->flags( flags() );
+			mTextCache->draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, Vector2f::One, 0.f, blend() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {
-				UIManager::instance()->ClipDisable();
+				UIManager::instance()->clipDisable();
 			}
 		}
 	}
 }
 
-Graphics::Font * UITextBox::Font() const {
+Graphics::Font * UITextBox::font() const {
 	return mTextCache->font();
 }
 
-void UITextBox::Font( Graphics::Font * font ) {
+void UITextBox::font( Graphics::Font * font ) {
 	if ( mTextCache->font() != font ) {
 		mTextCache->font( font );
-		AutoShrink();
-		AutoSize();
-		AutoAlign();
-		OnFontChanged();
+		autoShrink();
+		autoSize();
+		autoAlign();
+		onFontChanged();
 	}
 }
 
-const String& UITextBox::Text() {
+const String& UITextBox::text() {
 	if ( mFlags & UI_AUTO_SHRINK_TEXT )
 		return mString;
 
 	return mTextCache->text();
 }
 
-void UITextBox::Text( const String& text ) {
+void UITextBox::text( const String& text ) {
 	if ( mFlags & UI_AUTO_SHRINK_TEXT ) {
 		mString = text;
 		mTextCache->text( mString );
@@ -99,55 +99,55 @@ void UITextBox::Text( const String& text ) {
 		mTextCache->text( text );
 	}
 
-	AutoShrink();
-	AutoSize();
-	AutoAlign();
-	OnTextChanged();
+	autoShrink();
+	autoSize();
+	autoAlign();
+	onTextChanged();
 }
 
-const ColorA& UITextBox::Color() const {
+const ColorA& UITextBox::color() const {
 	return mFontColor;
 }
 
-void UITextBox::Color( const ColorA& color ) {
+void UITextBox::color( const ColorA& color ) {
 	mFontColor = color;
 	mTextCache->color( color );
 
-	Alpha( color.a() );
+	alpha( color.a() );
 }
 
-const ColorA& UITextBox::ShadowColor() const {
+const ColorA& UITextBox::shadowColor() const {
 	return mFontShadowColor;
 }
 
-void UITextBox::ShadowColor( const ColorA& color ) {
+void UITextBox::shadowColor( const ColorA& color ) {
 	mFontShadowColor = color;
 	mTextCache->shadowColor( mFontColor );
 }
 
-const ColorA& UITextBox::SelectionBackColor() const {
+const ColorA& UITextBox::selectionBackColor() const {
 	return mFontSelectionBackColor;
 }
 
-void UITextBox::SelectionBackColor( const ColorA& color ) {
+void UITextBox::selectionBackColor( const ColorA& color ) {
 	mFontSelectionBackColor = color;
 }
 
-void UITextBox::Alpha( const Float& alpha ) {
-	UIControlAnim::Alpha( alpha );
+void UITextBox::alpha( const Float& alpha ) {
+	UIControlAnim::alpha( alpha );
 	mFontColor.Alpha = (Uint8)alpha;
 	mFontShadowColor.Alpha = (Uint8)alpha;
 
 	mTextCache->alpha( mFontColor.Alpha );
 }
 
-void UITextBox::AutoShrink() {
+void UITextBox::autoShrink() {
 	if ( mFlags & UI_AUTO_SHRINK_TEXT ) {
-		ShrinkText( mSize.width() );
+		shrinkText( mSize.width() );
 	}
 }
 
-void UITextBox::ShrinkText( const Uint32& MaxWidth ) {
+void UITextBox::shrinkText( const Uint32& MaxWidth ) {
 	if ( mFlags & UI_AUTO_SHRINK_TEXT ) {
 		mTextCache->text( mString );
 	}
@@ -155,15 +155,15 @@ void UITextBox::ShrinkText( const Uint32& MaxWidth ) {
 	mTextCache->font()->shrinkText( mTextCache->text(), MaxWidth );
 }
 
-void UITextBox::AutoSize() {
+void UITextBox::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		mSize.width( (int)mTextCache->getTextWidth() );
 		mSize.height( (int)mTextCache->getTextHeight() );
 	}
 }
 
-void UITextBox::AutoAlign() {
-	switch ( FontHAlignGet( Flags() ) ) {
+void UITextBox::autoAlign() {
+	switch ( FontHAlignGet( flags() ) ) {
 		case UI_HALIGN_CENTER:
 			mAlignOffset.x = (Float)( (Int32)( mSize.x - mTextCache->getTextWidth() ) / 2 );
 			break;
@@ -175,7 +175,7 @@ void UITextBox::AutoAlign() {
 			break;
 	}
 
-	switch ( FontVAlignGet( Flags() ) ) {
+	switch ( FontVAlignGet( flags() ) ) {
 		case UI_VALIGN_CENTER:
 			mAlignOffset.y = (Float)( ( (Int32)( mSize.y - mTextCache->getTextHeight() ) ) / 2 ) - 1;
 			break;
@@ -188,71 +188,71 @@ void UITextBox::AutoAlign() {
 	}
 }
 
-Uint32 UITextBox::OnFocusLoss() {
-	SelCurInit( -1 );
-	SelCurEnd( -1 );
+Uint32 UITextBox::onFocusLoss() {
+	selCurInit( -1 );
+	selCurEnd( -1 );
 
 	return 1;
 }
 
-void UITextBox::OnSizeChange() {
-	AutoShrink();
-	AutoSize();
-	AutoAlign();
+void UITextBox::onSizeChange() {
+	autoShrink();
+	autoSize();
+	autoAlign();
 
-	UIControlAnim::OnSizeChange();
+	UIControlAnim::onSizeChange();
 
 	mTextCache->cache();
 }
 
-void UITextBox::OnTextChanged() {
-	SendCommonEvent( UIEvent::EventOnTextChanged );
+void UITextBox::onTextChanged() {
+	sendCommonEvent( UIEvent::EventOnTextChanged );
 }
 
-void UITextBox::OnFontChanged() {
-	SendCommonEvent( UIEvent::EventOnFontChanged );
+void UITextBox::onFontChanged() {
+	sendCommonEvent( UIEvent::EventOnFontChanged );
 }
 
-void UITextBox::Padding( const Recti& padding ) {
+void UITextBox::padding( const Recti& padding ) {
 	mPadding = padding;
 }
 
-const Recti& UITextBox::Padding() const {
+const Recti& UITextBox::padding() const {
 	return mPadding;
 }
 
-void UITextBox::SetTheme( UITheme * Theme ) {
-	UIControlAnim::SetTheme( Theme );
+void UITextBox::setTheme( UITheme * Theme ) {
+	UIControlAnim::setTheme( Theme );
 
-	if ( NULL == mTextCache->font() && NULL != Theme->Font() ) {
-		mTextCache->font( Theme->Font() );
+	if ( NULL == mTextCache->font() && NULL != Theme->font() ) {
+		mTextCache->font( Theme->font() );
 	}
 }
 
-TextCache * UITextBox::GetTextCache() {
+TextCache * UITextBox::getTextCache() {
 	return mTextCache;
 }
 
-Float UITextBox::GetTextWidth() {
+Float UITextBox::getTextWidth() {
 	return mTextCache->getTextWidth();
 }
 
-Float UITextBox::GetTextHeight() {
+Float UITextBox::getTextHeight() {
 	return mTextCache->getTextHeight();
 }
 
-const int& UITextBox::GetNumLines() const {
+const int& UITextBox::getNumLines() const {
 	return mTextCache->getNumLines();
 }
 
-const Vector2f& UITextBox::AlignOffset() const {
+const Vector2f& UITextBox::alignOffset() const {
 	return mAlignOffset;
 }
 
-Uint32 UITextBox::OnMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
-	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
+Uint32 UITextBox::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
+	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		Vector2i controlPos( Pos );
-		WorldToControl( controlPos );
+		worldToControl( controlPos );
 
 		Int32 curPos = mTextCache->font()->findClosestCursorPosFromPoint( mTextCache->text(), controlPos );
 
@@ -261,21 +261,21 @@ Uint32 UITextBox::OnMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) 
 
 			mTextCache->font()->selectSubStringFromCursor( mTextCache->text(), curPos, tSelCurInit, tSelCurEnd );
 
-			SelCurInit( tSelCurInit );
-			SelCurEnd( tSelCurEnd );
+			selCurInit( tSelCurInit );
+			selCurEnd( tSelCurEnd );
 
 			mControlFlags &= ~UI_CTRL_FLAG_SELECTING;
 		}
 	}
 
-	return UIComplexControl::OnMouseDoubleClick( Pos, Flags );
+	return UIComplexControl::onMouseDoubleClick( Pos, Flags );
 }
 
-Uint32 UITextBox::OnMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
-	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
-		if ( SelCurInit() == SelCurEnd() ) {
-			SelCurInit( -1 );
-			SelCurEnd( -1 );
+Uint32 UITextBox::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
+		if ( selCurInit() == selCurEnd() ) {
+			selCurInit( -1 );
+			selCurEnd( -1 );
 		}
 
 		mControlFlags &= ~UI_CTRL_FLAG_SELECTING;
@@ -284,32 +284,32 @@ Uint32 UITextBox::OnMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	return 1;
 }
 
-Uint32 UITextBox::OnMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
-	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
+Uint32 UITextBox::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
+	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		Vector2i controlPos( Pos );
-		WorldToControl( controlPos );
+		worldToControl( controlPos );
 
 		Int32 curPos = mTextCache->font()->findClosestCursorPosFromPoint( mTextCache->text(), controlPos );
 
 		if ( -1 != curPos ) {
-			if ( -1 == SelCurInit() || !( mControlFlags & UI_CTRL_FLAG_SELECTING ) ) {
-				SelCurInit( curPos );
-				SelCurEnd( curPos );
+			if ( -1 == selCurInit() || !( mControlFlags & UI_CTRL_FLAG_SELECTING ) ) {
+				selCurInit( curPos );
+				selCurEnd( curPos );
 			} else {
-				SelCurEnd( curPos );
+				selCurEnd( curPos );
 			}
 		}
 
 		mControlFlags |= UI_CTRL_FLAG_SELECTING;
 	}
 
-	return UIComplexControl::OnMouseDown( Pos, Flags );
+	return UIComplexControl::onMouseDown( Pos, Flags );
 }
 
-void UITextBox::DrawSelection() {
-	if ( SelCurInit() != SelCurEnd() ) {
-		Int32 init		= eemin( SelCurInit(), SelCurEnd() );
-		Int32 end		= eemax( SelCurInit(), SelCurEnd() );
+void UITextBox::drawSelection() {
+	if ( selCurInit() != selCurEnd() ) {
+		Int32 init		= eemin( selCurInit(), selCurEnd() );
+		Int32 end		= eemax( selCurInit(), selCurEnd() );
 
 		if ( init < 0 && end > (Int32)mTextCache->text().size() ) {
 			return;
@@ -342,23 +342,23 @@ void UITextBox::DrawSelection() {
 	}
 }
 
-bool UITextBox::IsTextSelectionEnabled() const {
+bool UITextBox::isTextSelectionEnabled() const {
 	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
 }
 
-void UITextBox::SelCurInit( const Int32& init ) {
+void UITextBox::selCurInit( const Int32& init ) {
 	mSelCurInit = init;
 }
 
-void UITextBox::SelCurEnd( const Int32& end ) {
+void UITextBox::selCurEnd( const Int32& end ) {
 	mSelCurEnd = end;
 }
 
-Int32 UITextBox::SelCurInit() {
+Int32 UITextBox::selCurInit() {
 	return mSelCurInit;
 }
 
-Int32 UITextBox::SelCurEnd() {
+Int32 UITextBox::selCurEnd() {
 	return mSelCurEnd;
 }
 

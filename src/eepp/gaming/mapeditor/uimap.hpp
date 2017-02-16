@@ -39,9 +39,9 @@ class EE_API UIMap : public UIComplexControl {
 
 		virtual ~UIMap();
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual void Update();
+		virtual void update();
 
 		TileMap * Map() const;
 
@@ -131,17 +131,17 @@ class EE_API UIMap : public UIComplexControl {
 
 		UpdateScrollCb		mUpdateScrollCb;
 
-		virtual Uint32 OnMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const UIMessage * Msg );
 
-		virtual Uint32 OnMouseMove( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseMove( const Vector2i& position, const Uint32 flags );
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		virtual void UpdateScreenPos();
+		virtual void updateScreenPos();
 
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 
-		virtual Uint32 OnDrag( const Vector2i& Pos );
+		virtual Uint32 OnDrag( const Vector2i& position );
 
 		void ObjItemClick( const UIEvent * Event );
 
@@ -149,7 +149,7 @@ class EE_API UIMap : public UIComplexControl {
 
 		void TryToSelectLight();
 
-		void ManageObject( Uint32 Flags );
+		void ManageObject( Uint32 flags );
 
 		Vector2f GetMouseMapPos();
 
@@ -159,7 +159,7 @@ class EE_API UIMap : public UIComplexControl {
 
 		void SetPointRect( Vector2f p );
 
-		void DragPoly( Uint32 Flags, Uint32 PFlags );
+		void DragPoly( Uint32 flags, Uint32 PFlags );
 };
 
 }}}

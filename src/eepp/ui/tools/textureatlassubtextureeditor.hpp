@@ -16,15 +16,15 @@ class EE_API TextureAtlasSubTextureEditor : public UIComplexControl {
 
 		virtual ~TextureAtlasSubTextureEditor();
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual void Update();
+		virtual void update();
 
-		Graphics::SubTexture * SubTexture() const;
+		Graphics::SubTexture * subTexture() const;
 
-		void SubTexture( Graphics::SubTexture * subTexture );
+		void subTexture( Graphics::SubTexture * subTexture );
 
-		UIGfx * Gfx() const;
+		UIGfx * getGfx() const;
 	protected:
 		UITheme *				mTheme;
 		UIGfx *				mGfx;
@@ -32,9 +32,9 @@ class EE_API TextureAtlasSubTextureEditor : public UIComplexControl {
 		Vector2i				mUICenter;
 		TextureAtlasEditor *	mEditor;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		void GetCenter();
+		void getCenter();
 };
 
 }}}

@@ -27,149 +27,149 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	if ( mMinWindowSize.height() < CDLG_MIN_HEIGHT )
 		mMinWindowSize.height( CDLG_MIN_HEIGHT );
 
-	if ( AllowFolderSelect() ) {
-		Title( "Select a folder" );
+	if ( allowFolderSelect() ) {
+		title( "Select a folder" );
 	} else {
-		Title( "Select a file" );
+		title( "Select a file" );
 	}
 
 	UITextBox::CreateParams TxtBoxParams;
-	TxtBoxParams.Parent( Container() );
+	TxtBoxParams.Parent( getContainer() );
 	TxtBoxParams.PosSet( 6, 13 );
 	TxtBoxParams.Flags |= UI_AUTO_SIZE;
 	UITextBox * TBox = eeNew( UITextBox, ( TxtBoxParams ) );
-	TBox->Visible( true );
-	TBox->Enabled( false );
-	TBox->Text( "Look in:" );
+	TBox->visible( true );
+	TBox->enabled( false );
+	TBox->text( "Look in:" );
 
 	UIPushButton::CreateParams ButtonParams;
 	ButtonParams.Flags = UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE;
-	ButtonParams.Parent( Container() );
-	ButtonParams.PosSet( Container()->Size().width() - 86, Container()->Size().height() - 24 );
+	ButtonParams.Parent( getContainer() );
+	ButtonParams.PosSet( getContainer()->size().width() - 86, getContainer()->size().height() - 24 );
 	ButtonParams.SizeSet( 80, 22 );
 	mButtonCancel = eeNew( UIPushButton, ( ButtonParams ) );
-	mButtonCancel->Visible( true );
-	mButtonCancel->Enabled( true );
-	mButtonCancel->Text( "Cancel" );
-	mButtonCancel->Pos( Vector2i( mButtonCancel->Pos().x, Container()->Size().height() - mButtonCancel->Size().height() - 2 ) );
-	mButtonCancel->UpdateAnchorsDistances();
+	mButtonCancel->visible( true );
+	mButtonCancel->enabled( true );
+	mButtonCancel->text( "Cancel" );
+	mButtonCancel->position( Vector2i( mButtonCancel->position().x, getContainer()->size().height() - mButtonCancel->size().height() - 2 ) );
+	mButtonCancel->updateAnchorsDistances();
 
-	ButtonParams.PosSet( mButtonCancel->Pos().x, mButtonCancel->Pos().y - mButtonCancel->Size().height() );
+	ButtonParams.PosSet( mButtonCancel->position().x, mButtonCancel->position().y - mButtonCancel->size().height() );
 	mButtonOpen = eeNew( UIPushButton, ( ButtonParams ) );
-	mButtonOpen->Visible( true );
-	mButtonOpen->Enabled( true );
+	mButtonOpen->visible( true );
+	mButtonOpen->enabled( true );
 
-	if ( IsSaveDialog() )
-		mButtonOpen->Text( "Save" );
+	if ( isSaveDialog() )
+		mButtonOpen->text( "Save" );
 	else
-		mButtonOpen->Text( "Open" );
+		mButtonOpen->text( "Open" );
 
 	UITextInput::CreateParams TInputParams;
-	TInputParams.Parent( Container() );
+	TInputParams.Parent( getContainer() );
 	TInputParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_VALIGN_CENTER | UI_TEXT_SELECTION_ENABLED;
 	TInputParams.PosSet( 70, 6 );
-	TInputParams.SizeSet( Container()->Size().width() - TInputParams.Pos.x - 42, 22 );
+	TInputParams.SizeSet( getContainer()->size().width() - TInputParams.Pos.x - 42, 22 );
 	mPath = eeNew( UITextInput, ( TInputParams ) );
-	mPath->AddEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UICommonDialog::OnPressEnter ) );
-	mPath->Visible( true );
-	mPath->Enabled( true );
-	mPath->Text( mCurPath );
+	mPath->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UICommonDialog::onPressEnter ) );
+	mPath->visible( true );
+	mPath->enabled( true );
+	mPath->text( mCurPath );
 
 	ButtonParams.PosSet( TInputParams.Pos.x + TInputParams.Size.width() + 6, TInputParams.Pos.y );
 	ButtonParams.SizeSet( 24, 22 );
 	ButtonParams.Flags |= UI_ANCHOR_TOP;
 	mButtonUp = eeNew( UIPushButton, ( ButtonParams ) );
-	mButtonUp->Visible( true );
-	mButtonUp->Enabled( true );
-	mButtonUp->Text( "Up" );
+	mButtonUp->visible( true );
+	mButtonUp->enabled( true );
+	mButtonUp->text( "Up" );
 
 	UIListBox::CreateParams LBParams;
-	LBParams.Parent( Container() );
-	LBParams.PosSet( 6, mButtonUp->Pos().y + mButtonUp->Size().height() + 4 );
-	LBParams.Size = Sizei( Container()->Size().width() - 12,
-							Container()->Size().height() -
-								mButtonUp->Size().height() -
-								mButtonUp->Pos().y -
-								mButtonOpen->Size().height() -
-								mButtonCancel->Size().height() -
+	LBParams.Parent( getContainer() );
+	LBParams.PosSet( 6, mButtonUp->position().y + mButtonUp->size().height() + 4 );
+	LBParams.Size = Sizei( getContainer()->size().width() - 12,
+							getContainer()->size().height() -
+								mButtonUp->size().height() -
+								mButtonUp->position().y -
+								mButtonOpen->size().height() -
+								mButtonCancel->size().height() -
 								8
 						);
 
 	LBParams.Flags = UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_CLIP_ENABLE;
 	LBParams.FontSelectedColor = ColorA( 255, 255, 255, 255 );
 
-	if ( NULL != UIThemeManager::instance()->DefaultTheme() ) {
-		UITheme * Theme = UIThemeManager::instance()->DefaultTheme();
+	if ( NULL != UIThemeManager::instance()->defaultTheme() ) {
+		UITheme * Theme = UIThemeManager::instance()->defaultTheme();
 
-		LBParams.FontSelectedColor = Theme->FontSelectedColor();
+		LBParams.FontSelectedColor = Theme->fontSelectedColor();
 	}
 
 	mList = eeNew( UIListBox, ( LBParams ) );
-	mList->Visible( true );
-	mList->Enabled( true );
+	mList->visible( true );
+	mList->enabled( true );
 
-	TxtBoxParams.PosSet( 6, Container()->Size().height() - 54 );
+	TxtBoxParams.PosSet( 6, getContainer()->size().height() - 54 );
 	TxtBoxParams.SizeSet( 74, 19 );
 	TxtBoxParams.Flags = UI_ANCHOR_LEFT | UI_VALIGN_CENTER;
 	TBox = eeNew( UITextBox, ( TxtBoxParams ) );
-	TBox->Visible( true );
-	TBox->Enabled( false );
-	TBox->Text( "File Name:" );
+	TBox->visible( true );
+	TBox->enabled( false );
+	TBox->text( "File Name:" );
 
-	TxtBoxParams.PosSet( TBox->Pos().x, TBox->Pos().y + TBox->Size().height()+ 6 );
+	TxtBoxParams.PosSet( TBox->position().x, TBox->position().y + TBox->size().height()+ 6 );
 	UITextBox * TBox2 = eeNew( UITextBox, ( TxtBoxParams ) );
-	TBox2->Visible( true );
-	TBox2->Enabled( false );
-	TBox2->Text( "Files of type:" );
+	TBox2->visible( true );
+	TBox2->enabled( false );
+	TBox2->text( "Files of type:" );
 
 	TInputParams.Flags &= ~UI_ANCHOR_TOP;
-	TInputParams.PosSet( TBox->Pos().x + TBox->Size().width(), TBox->Pos().y );
-	TInputParams.SizeSet( Container()->Size().width() - mButtonOpen->Size().width() - TInputParams.Pos.x - 20, TInputParams.Size.height() );
+	TInputParams.PosSet( TBox->position().x + TBox->size().width(), TBox->position().y );
+	TInputParams.SizeSet( getContainer()->size().width() - mButtonOpen->size().width() - TInputParams.Pos.x - 20, TInputParams.Size.height() );
 	mFile = eeNew( UITextInput, ( TInputParams ) );
-	mFile->Visible( true );
-	mFile->Enabled( true );
-	mFile->AddEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UICommonDialog::OnPressFileEnter ) );
+	mFile->visible( true );
+	mFile->enabled( true );
+	mFile->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UICommonDialog::onPressFileEnter ) );
 
 	UIDropDownList::CreateParams DDLParams;
-	DDLParams.Parent( Container() );
-	DDLParams.PosSet( TBox2->Pos().x + TBox2->Size().width(), TBox2->Pos().y );
-	DDLParams.SizeSet( Container()->Size().width() - mButtonCancel->Size().width() - DDLParams.Pos.x - 20, 22 );
+	DDLParams.Parent( getContainer() );
+	DDLParams.PosSet( TBox2->position().x + TBox2->size().width(), TBox2->position().y );
+	DDLParams.SizeSet( getContainer()->size().width() - mButtonCancel->size().width() - DDLParams.Pos.x - 20, 22 );
 	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_AUTO_SIZE;
 	DDLParams.PopUpToMainControl = true;
 	mFiletype = eeNew( UIDropDownList, ( DDLParams ) );
-	mFiletype->Visible( true );
-	mFiletype->Enabled( true );
-	mFiletype->ListBox()->AddListBoxItem( Params.DefaultFilePattern );
-	mFiletype->ListBox()->SetSelected(0);
+	mFiletype->visible( true );
+	mFiletype->enabled( true );
+	mFiletype->getListBox()->addListBoxItem( Params.DefaultFilePattern );
+	mFiletype->getListBox()->setSelected(0);
 
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 
-	RefreshFolder();
+	refreshFolder();
 }
 
 UICommonDialog::~UICommonDialog() {
 }
 
-Uint32 UICommonDialog::Type() const {
+Uint32 UICommonDialog::getType() const {
 	return UI_TYPE_COMMONDIALOG;
 }
 
-bool UICommonDialog::IsType( const Uint32& type ) const {
-	return UICommonDialog::Type() == type ? true : UIWindow::IsType( type );
+bool UICommonDialog::isType( const Uint32& type ) const {
+	return UICommonDialog::getType() == type ? true : UIWindow::isType( type );
 }
 
-void UICommonDialog::SetTheme( UITheme * Theme ) {
-	UIWindow::SetTheme( Theme );
+void UICommonDialog::setTheme( UITheme * Theme ) {
+	UIWindow::setTheme( Theme );
 
-	SubTexture * Icon = Theme->GetIconByName( "go-up" );
+	SubTexture * Icon = Theme->getIconByName( "go-up" );
 
 	if ( NULL != Icon ) {
-		mButtonUp->Text( "" );
-		mButtonUp->Icon( Icon );
+		mButtonUp->text( "" );
+		mButtonUp->icon( Icon );
 	}
 }
 
-void UICommonDialog::RefreshFolder() {
+void UICommonDialog::refreshFolder() {
 	std::vector<String>			flist = FileSystem::filesGetInPath( String( mCurPath ) );
 	std::vector<String>			files;
 	std::vector<String>			folders;
@@ -177,15 +177,15 @@ void UICommonDialog::RefreshFolder() {
 	bool						accepted;
 	Uint32 i, z;
 
-	if ( "*" != mFiletype->Text() ) {
-		patterns = String::split( mFiletype->Text().toUtf8(), ';' );
+	if ( "*" != mFiletype->text() ) {
+		patterns = String::split( mFiletype->text().toUtf8(), ';' );
 
 		for ( i = 0; i < patterns.size(); i++ )
 			patterns[i] = FileSystem::fileExtension( patterns[i] );
 	}
 
 	for ( i = 0; i < flist.size(); i++ ) {
-		if ( FoldersFirst() && FileSystem::isDirectory( mCurPath + flist[i] ) ) {
+		if ( foldersFirst() && FileSystem::isDirectory( mCurPath + flist[i] ) ) {
 			folders.push_back( flist[i] );
 		} else {
 			accepted = false;
@@ -206,66 +206,66 @@ void UICommonDialog::RefreshFolder() {
 		}
 	}
 
-	if ( SortAlphabetically() ) {
+	if ( sortAlphabetically() ) {
 		std::sort( folders.begin(), folders.end() );
 		std::sort( files.begin(), files.end() );
 	}
 
-	mList->Clear();
+	mList->clear();
 
-	if ( FoldersFirst() ) {
-		mList->AddListBoxItems( folders );
+	if ( foldersFirst() ) {
+		mList->addListBoxItems( folders );
 	}
 
-	mList->AddListBoxItems( files );
+	mList->addListBoxItems( files );
 
-	if ( NULL != mList->VerticalScrollBar() ) {
-		mList->VerticalScrollBar()->ClickStep( 1.f / ( ( mList->Count() * mList->RowHeight() ) / (Float)mList->Size().height() ) );
+	if ( NULL != mList->verticalScrollBar() ) {
+		mList->verticalScrollBar()->clickStep( 1.f / ( ( mList->count() * mList->rowHeight() ) / (Float)mList->size().height() ) );
 	}
 }
 
-void UICommonDialog::OpenSaveClick() {
-	if ( IsSaveDialog() ) {
-		Save();
+void UICommonDialog::openSaveClick() {
+	if ( isSaveDialog() ) {
+		save();
 	} else {
-		Open();
+		open();
 	}
 }
 
-void UICommonDialog::OnPressFileEnter( const UIEvent * Event ) {
-	OpenSaveClick();
+void UICommonDialog::onPressFileEnter( const UIEvent * Event ) {
+	openSaveClick();
 }
 
-void UICommonDialog::DisableButtons() {
-	mButtonOpen->Enabled( false );
-	mButtonCancel->Enabled( false );
-	mButtonUp->Enabled( false );
+void UICommonDialog::disableButtons() {
+	mButtonOpen->enabled( false );
+	mButtonCancel->enabled( false );
+	mButtonUp->enabled( false );
 
 	if ( NULL != mButtonClose )
-		mButtonClose->Enabled( false );
+		mButtonClose->enabled( false );
 
 	if ( NULL != mButtonMinimize )
-		mButtonMinimize->Enabled( false );
+		mButtonMinimize->enabled( false );
 
 	if ( NULL != mButtonMaximize )
-		mButtonMaximize->Enabled( false );
+		mButtonMaximize->enabled( false );
 }
 
-Uint32 UICommonDialog::OnMessage( const UIMessage * Msg ) {
-	switch ( Msg->Msg() ) {
+Uint32 UICommonDialog::onMessage( const UIMessage * Msg ) {
+	switch ( Msg->getMsg() ) {
 		case UIMessage::MsgClick:
 		{
-			if ( Msg->Flags() & EE_BUTTON_LMASK ) {
-				if ( Msg->Sender() == mButtonOpen ) {
-					OpenSaveClick();
-				} else if ( Msg->Sender() == mButtonCancel ) {
-					DisableButtons();
+			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
+				if ( Msg->getSender() == mButtonOpen ) {
+					openSaveClick();
+				} else if ( Msg->getSender() == mButtonCancel ) {
+					disableButtons();
 
 					CloseWindow();
-				} else if ( Msg->Sender() == mButtonUp ) {
+				} else if ( Msg->getSender() == mButtonUp ) {
 					mCurPath = FileSystem::removeLastFolderFromPath( mCurPath );
-					mPath->Text( mCurPath );
-					RefreshFolder();
+					mPath->text( mCurPath );
+					refreshFolder();
 				}
 			}
 
@@ -273,16 +273,16 @@ Uint32 UICommonDialog::OnMessage( const UIMessage * Msg ) {
 		}
 		case UIMessage::MsgDoubleClick:
 		{
-			if ( Msg->Flags() & EE_BUTTON_LMASK ) {
-				if ( Msg->Sender()->IsType( UI_TYPE_LISTBOXITEM ) ) {
-					std::string newPath = mCurPath + mList->GetItemSelectedText();
+			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
+				if ( Msg->getSender()->isType( UI_TYPE_LISTBOXITEM ) ) {
+					std::string newPath = mCurPath + mList->getItemSelectedText();
 
 					if ( FileSystem::isDirectory( newPath ) ) {
 						mCurPath = newPath + FileSystem::getOSlash();
-						mPath->Text( mCurPath );
-						RefreshFolder();
+						mPath->text( mCurPath );
+						refreshFolder();
 					} else {
-						Open();
+						open();
 					}
 				}
 			}
@@ -291,163 +291,163 @@ Uint32 UICommonDialog::OnMessage( const UIMessage * Msg ) {
 		}
 		case UIMessage::MsgSelected:
 		{
-			if ( Msg->Sender() == mList ) {
-				if ( !IsSaveDialog() ) {
-					if ( AllowFolderSelect() ) {
-						mFile->Text( mList->GetItemSelectedText() );
+			if ( Msg->getSender() == mList ) {
+				if ( !isSaveDialog() ) {
+					if ( allowFolderSelect() ) {
+						mFile->text( mList->getItemSelectedText() );
 					} else {
-						if ( !FileSystem::isDirectory( GetTempFullPath() ) ) {
-							mFile->Text( mList->GetItemSelectedText() );
+						if ( !FileSystem::isDirectory( getTempFullPath() ) ) {
+							mFile->text( mList->getItemSelectedText() );
 						}
 					}
 				} else {
-					if ( !FileSystem::isDirectory( GetTempFullPath() ) ) {
-						mFile->Text( mList->GetItemSelectedText() );
+					if ( !FileSystem::isDirectory( getTempFullPath() ) ) {
+						mFile->text( mList->getItemSelectedText() );
 					}
 				}
-			} else if ( Msg->Sender() == mFiletype ) {
-				RefreshFolder();
+			} else if ( Msg->getSender() == mFiletype ) {
+				refreshFolder();
 			}
 
 			break;
 		}
 	}
 
-	return UIWindow::OnMessage( Msg );
+	return UIWindow::onMessage( Msg );
 }
 
-void UICommonDialog::Save() {
-	SendCommonEvent( UIEvent::EventSaveFile );
+void UICommonDialog::save() {
+	sendCommonEvent( UIEvent::EventSaveFile );
 
-	DisableButtons();
+	disableButtons();
 
 	CloseWindow();
 }
 
-void UICommonDialog::Open() {
-	if ( "" != mList->GetItemSelectedText() || AllowFolderSelect() ) {
-		if ( !AllowFolderSelect() ) {
-			if ( FileSystem::isDirectory( GetFullPath() ) )
+void UICommonDialog::open() {
+	if ( "" != mList->getItemSelectedText() || allowFolderSelect() ) {
+		if ( !allowFolderSelect() ) {
+			if ( FileSystem::isDirectory( getFullPath() ) )
 				return;
 		} else {
-			if ( !FileSystem::isDirectory( GetFullPath() ) && !FileSystem::isDirectory( GetCurPath() ) )
+			if ( !FileSystem::isDirectory( getFullPath() ) && !FileSystem::isDirectory( getCurPath() ) )
 				return;
 		}
 
-		SendCommonEvent( UIEvent::EventOpenFile );
+		sendCommonEvent( UIEvent::EventOpenFile );
 
-		DisableButtons();
+		disableButtons();
 
 		CloseWindow();
 	}
 }
 
-void UICommonDialog::OnPressEnter( const UIEvent * Event ) {
-	if ( FileSystem::isDirectory( mPath->Text() ) ) {
-		std::string tpath = mPath->Text();
+void UICommonDialog::onPressEnter( const UIEvent * Event ) {
+	if ( FileSystem::isDirectory( mPath->text() ) ) {
+		std::string tpath = mPath->text();
 		FileSystem::dirPathAddSlashAtEnd( tpath );
-		mPath->Text( tpath );
-		mCurPath = mPath->Text();
-		RefreshFolder();
+		mPath->text( tpath );
+		mCurPath = mPath->text();
+		refreshFolder();
 	}
 }
 
-void UICommonDialog::AddFilePattern( std::string pattern, bool select ) {
-	Uint32 index = mFiletype->ListBox()->AddListBoxItem( pattern );
+void UICommonDialog::addFilePattern( std::string pattern, bool select ) {
+	Uint32 index = mFiletype->getListBox()->addListBoxItem( pattern );
 
 	if ( select ) {
-		mFiletype->ListBox()->SetSelected( index );
+		mFiletype->getListBox()->setSelected( index );
 
-		RefreshFolder();
+		refreshFolder();
 	}
 }
 
-bool UICommonDialog::IsSaveDialog() {
+bool UICommonDialog::isSaveDialog() {
 	return 0 != ( mCDLFlags & CDL_FLAG_SAVE_DIALOG );
 }
 
-bool UICommonDialog::SortAlphabetically() {
+bool UICommonDialog::sortAlphabetically() {
 	return 0 != ( mCDLFlags & CDL_FLAG_SORT_ALPHABETICALLY );
 }
 
-bool UICommonDialog::FoldersFirst() {
+bool UICommonDialog::foldersFirst() {
 	return 0 != ( mCDLFlags & CDL_FLAG_FOLDERS_FISRT );
 }
 
-bool UICommonDialog::AllowFolderSelect() {
+bool UICommonDialog::allowFolderSelect() {
 	return 0 != ( mCDLFlags & CDL_FLAG_ALLOW_FOLDER_SELECT );
 }
 
-void UICommonDialog::SortAlphabetically( const bool& sortAlphabetically ) {
+void UICommonDialog::sortAlphabetically( const bool& sortAlphabetically ) {
 	BitOp::setBitFlagValue( &mCDLFlags, CDL_FLAG_SORT_ALPHABETICALLY, sortAlphabetically ? 1 : 0 );
-	RefreshFolder();
+	refreshFolder();
 }
 
-void UICommonDialog::FoldersFirst( const bool& foldersFirst ) {
+void UICommonDialog::foldersFirst( const bool& foldersFirst ) {
 	BitOp::setBitFlagValue( &mCDLFlags, CDL_FLAG_FOLDERS_FISRT , foldersFirst ? 1 : 0 );
-	RefreshFolder();
+	refreshFolder();
 }
 
-void UICommonDialog::AllowFolderSelect( const bool& allowFolderSelect ) {
+void UICommonDialog::allowFolderSelect( const bool& allowFolderSelect ) {
 	BitOp::setBitFlagValue( &mCDLFlags, CDL_FLAG_ALLOW_FOLDER_SELECT, allowFolderSelect ? 1 : 0 );
 }
 
-std::string UICommonDialog::GetFullPath() {
+std::string UICommonDialog::getFullPath() {
 	std::string tPath = mCurPath;
 
 	FileSystem::dirPathAddSlashAtEnd( tPath );
 
-	tPath += GetCurFile();
+	tPath += getCurFile();
 
 	return tPath;
 }
 
-std::string	UICommonDialog::GetTempFullPath() {
+std::string	UICommonDialog::getTempFullPath() {
 	std::string tPath = mCurPath;
 
 	FileSystem::dirPathAddSlashAtEnd( tPath );
 
-	tPath += mList->GetItemSelectedText().toUtf8();
+	tPath += mList->getItemSelectedText().toUtf8();
 
 	return tPath;
 }
 
-std::string UICommonDialog::GetCurPath() const {
+std::string UICommonDialog::getCurPath() const {
 	return mCurPath;
 }
 
-std::string UICommonDialog::GetCurFile() const {
+std::string UICommonDialog::getCurFile() const {
 	if ( mCDLFlags & CDL_FLAG_SAVE_DIALOG )
-		return mFile->Text();
+		return mFile->text();
 
-	return mList->GetItemSelectedText().toUtf8();
+	return mList->getItemSelectedText().toUtf8();
 }
 
-UIPushButton *	UICommonDialog::GetButtonOpen() const {
+UIPushButton *	UICommonDialog::getButtonOpen() const {
 	return mButtonOpen;
 }
 
-UIPushButton *	UICommonDialog::GetButtonCancel() const {
+UIPushButton *	UICommonDialog::getButtonCancel() const {
 	return mButtonCancel;
 }
 
-UIPushButton *	UICommonDialog::GetButtonUp() const {
+UIPushButton *	UICommonDialog::getButtonUp() const {
 	return mButtonUp;
 }
 
-UIListBox * UICommonDialog::GetList() const {
+UIListBox * UICommonDialog::getList() const {
 	return mList;
 }
 
-UITextInput * UICommonDialog::GetPathInput() const {
+UITextInput * UICommonDialog::getPathInput() const {
 	return mPath;
 }
 
-UITextInput * UICommonDialog::GetFileInput() const {
+UITextInput * UICommonDialog::getFileInput() const {
 	return mFile;
 }
 
-UIDropDownList * UICommonDialog::GetFiletypeList() const {
+UIDropDownList * UICommonDialog::getFiletypeList() const {
 	return mFiletype;
 }
 

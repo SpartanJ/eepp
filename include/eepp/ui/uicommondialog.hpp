@@ -34,55 +34,55 @@ class EE_API UICommonDialog : public UIWindow {
 
 		virtual ~UICommonDialog();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void		SetTheme( UITheme * Theme );
+		virtual void		setTheme( UITheme * Theme );
 
-		void				RefreshFolder();
+		void				refreshFolder();
 
-		virtual Uint32		OnMessage( const UIMessage *Msg );
+		virtual Uint32		onMessage( const UIMessage *Msg );
 
-		virtual void		Open();
+		virtual void		open();
 
-		virtual void		Save();
+		virtual void		save();
 
-		std::string			GetCurPath() const;
+		std::string			getCurPath() const;
 
-		std::string			GetCurFile() const;
+		std::string			getCurFile() const;
 
-		std::string			GetFullPath();
+		std::string			getFullPath();
 
-		UIPushButton *		GetButtonOpen() const;
+		UIPushButton *		getButtonOpen() const;
 
-		UIPushButton *		GetButtonCancel() const;
+		UIPushButton *		getButtonCancel() const;
 
-		UIPushButton *		GetButtonUp() const;
+		UIPushButton *		getButtonUp() const;
 
-		UIListBox *		GetList() const;
+		UIListBox *		getList() const;
 
-		UITextInput *		GetPathInput() const;
+		UITextInput *		getPathInput() const;
 
-		UITextInput *		GetFileInput() const;
+		UITextInput *		getFileInput() const;
 
-		UIDropDownList *	GetFiletypeList() const;
+		UIDropDownList *	getFiletypeList() const;
 
-		void				AddFilePattern( std::string pattern, bool select = false );
+		void				addFilePattern( std::string pattern, bool select = false );
 
-		bool				IsSaveDialog();
+		bool				isSaveDialog();
 
-		bool				SortAlphabetically();
+		bool				sortAlphabetically();
 
-		bool				FoldersFirst();
+		bool				foldersFirst();
 
-		bool				AllowFolderSelect();
+		bool				allowFolderSelect();
 
-		void				SortAlphabetically( const bool& sortAlphabetically );
+		void				sortAlphabetically( const bool& sortAlphabetically );
 
-		void				FoldersFirst( const bool& foldersFirst );
+		void				foldersFirst( const bool& foldersFirst );
 
-		void				AllowFolderSelect( const bool& allowFolderSelect );
+		void				allowFolderSelect( const bool& allowFolderSelect );
 	protected:
 		std::string			mCurPath;
 		UIPushButton *		mButtonOpen;
@@ -94,15 +94,15 @@ class EE_API UICommonDialog : public UIWindow {
 		UIDropDownList *	mFiletype;
 		Uint32				mCDLFlags;
 
-		void OnPressEnter( const UIEvent * Event );
+		void onPressEnter( const UIEvent * Event );
 
-		void OnPressFileEnter( const UIEvent * Event );
+		void onPressFileEnter( const UIEvent * Event );
 
-		void OpenSaveClick();
+		void openSaveClick();
 
-		std::string			GetTempFullPath();
+		std::string			getTempFullPath();
 
-		void DisableButtons();
+		void disableButtons();
 };
 
 }}

@@ -16,16 +16,16 @@ class EE_API UITextBox : public UIComplexControl {
 					FontShadowColor( 255, 255, 255, 150 ),
 					FontSelectionBackColor( 150, 150, 150, 150 )
 				{
-					UITheme * Theme = UIThemeManager::instance()->DefaultTheme();
+					UITheme * Theme = UIThemeManager::instance()->defaultTheme();
 
 					if ( NULL != Theme ) {
-						Font			= Theme->Font();
-						FontColor		= Theme->FontColor();
-						FontShadowColor	= Theme->FontShadowColor();
+						Font			= Theme->font();
+						FontColor		= Theme->fontColor();
+						FontShadowColor	= Theme->fontShadowColor();
 					}
 
 					if ( NULL == Font )
-						Font = UIThemeManager::instance()->DefaultFont();
+						Font = UIThemeManager::instance()->defaultFont();
 				}
 
 				inline ~CreateParams() {}
@@ -40,57 +40,57 @@ class EE_API UITextBox : public UIComplexControl {
 
 		virtual ~UITextBox();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual void Alpha( const Float& alpha );
+		virtual void alpha( const Float& alpha );
 
-		Graphics::Font * Font() const;
+		Graphics::Font * font() const;
 
-		void Font( Graphics::Font * font );
+		void font( Graphics::Font * font );
 
-		virtual const String& Text();
+		virtual const String& text();
 
-		virtual void Text( const String& text );
+		virtual void text( const String& text );
 
-		const ColorA& Color() const;
+		const ColorA& color() const;
 
-		void Color( const ColorA& color );
+		void color( const ColorA& color );
 
-		const ColorA& ShadowColor() const;
+		const ColorA& shadowColor() const;
 
-		void ShadowColor( const ColorA& color );
+		void shadowColor( const ColorA& color );
 
-		const ColorA& SelectionBackColor() const;
+		const ColorA& selectionBackColor() const;
 
-		void SelectionBackColor( const ColorA& color );
+		void selectionBackColor( const ColorA& color );
 
-		virtual void OnTextChanged();
+		virtual void onTextChanged();
 
-		virtual void OnFontChanged();
+		virtual void onFontChanged();
 
-		virtual void Padding( const Recti& padding );
+		virtual void padding( const Recti& padding );
 
-		const Recti& Padding() const;
+		const Recti& padding() const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		TextCache * GetTextCache();
+		TextCache * getTextCache();
 
-		Float GetTextWidth();
+		Float getTextWidth();
 
-		Float GetTextHeight();
+		Float getTextHeight();
 
-		const int& GetNumLines() const;
+		const int& getNumLines() const;
 
-		const Vector2f& AlignOffset() const;
+		const Vector2f& alignOffset() const;
 
-		virtual void ShrinkText( const Uint32& MaxWidth );
+		virtual void shrinkText( const Uint32& MaxWidth );
 
-		bool IsTextSelectionEnabled() const;
+		bool isTextSelectionEnabled() const;
 	protected:
 		TextCache *	mTextCache;
 		String			mString;
@@ -102,31 +102,31 @@ class EE_API UITextBox : public UIComplexControl {
 		Int32			mSelCurInit;
 		Int32			mSelCurEnd;
 
-		virtual void DrawSelection();
+		virtual void drawSelection();
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		virtual void AutoShrink();
+		virtual void autoShrink();
 
-		virtual void AutoSize();
+		virtual void autoSize();
 
-		virtual void AutoAlign();
+		virtual void autoAlign();
 
-		virtual Uint32 OnFocusLoss();
+		virtual Uint32 onFocusLoss();
 
-		virtual Uint32 OnMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnMouseClick( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnMouseDown( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32 flags );
 
-		virtual void SelCurInit( const Int32& init );
+		virtual void selCurInit( const Int32& init );
 
-		virtual void SelCurEnd( const Int32& end );
+		virtual void selCurEnd( const Int32& end );
 
-		virtual Int32 SelCurInit();
+		virtual Int32 selCurInit();
 
-		virtual Int32 SelCurEnd();
+		virtual Int32 selCurEnd();
 
 };
 

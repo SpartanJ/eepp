@@ -32,27 +32,27 @@ class EE_API UISprite : public UIComplexControl {
 
 		virtual ~UISprite();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual void Alpha( const Float& alpha );
+		virtual void alpha( const Float& alpha );
 
-		Graphics::Sprite * Sprite() const;
+		Graphics::Sprite * sprite() const;
 
-		void Sprite( Graphics::Sprite * sprite );
+		void sprite( Graphics::Sprite * sprite );
 
-		ColorA Color() const;
+		ColorA color() const;
 
-		void Color( const ColorA& color );
+		void color( const ColorA& color );
 
-		const EE_RENDER_MODE& RenderMode() const;
+		const EE_RENDER_MODE& renderMode() const;
 
-		void RenderMode( const EE_RENDER_MODE& render );
+		void renderMode( const EE_RENDER_MODE& render );
 
-		const Vector2i& AlignOffset() const;
+		const Vector2i& alignOffset() const;
 	protected:
 		Graphics::Sprite * 	mSprite;
 		EE_RENDER_MODE 		mRender;
@@ -60,15 +60,15 @@ class EE_API UISprite : public UIComplexControl {
 		SubTexture *		mSubTextureLast;
 		bool				mDealloc;
 
-		void UpdateSize();
+		void updateSize();
 
-		void AutoAlign();
+		void autoAlign();
 
-		void CheckSubTextureUpdate();
+		void checkSubTextureUpdate();
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		Uint32 DealloSprite();
+		Uint32 deallocSprite();
 };
 
 }}

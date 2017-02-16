@@ -12,7 +12,7 @@ const char * UISkinStatesNames[] = {
 	"mdown"
 };
 
-const char * UISkin::GetSkinStateName( const Uint32& State ) {
+const char * UISkin::getSkinStateName( const Uint32& State ) {
 	return UISkinStatesNames[ State ];
 }
 
@@ -34,7 +34,7 @@ UISkin::UISkin( const std::string& Name, const Uint32& Type ) :
 UISkin::~UISkin() {
 }
 
-void UISkin::SetColor( const Uint32& State, const ColorA& Color ) {
+void UISkin::setColor( const Uint32& State, const ColorA& Color ) {
 	eeASSERT ( State < UISkinState::StateCount );
 
 	BitOp::writeBitKey( &mColorDefault, State, 0 );
@@ -42,7 +42,7 @@ void UISkin::SetColor( const Uint32& State, const ColorA& Color ) {
 	mColor[ State ] = Color;
 }
 
-const ColorA& UISkin::GetColor( const Uint32& State ) const {
+const ColorA& UISkin::getColor( const Uint32& State ) const {
 	eeASSERT ( State < UISkinState::StateCount );
 
 	return mColor[ State ];
@@ -61,24 +61,24 @@ const Uint32& UISkin::getId() const {
 	return mNameHash;
 }
 
-void UISkin::SetSkins() {
+void UISkin::setSkins() {
 	for ( Int32 i = 0; i < UISkinState::StateCount; i++ )
-		SetSkin( i );
+		setSkin( i );
 }
 
-UITheme * UISkin::Theme() const {
+UITheme * UISkin::theme() const {
 	return mTheme;
 }
 
-void UISkin::Theme( UITheme * theme ) {
+void UISkin::theme( UITheme * theme ) {
 	mTheme = theme;
 }
 
-const Uint32& UISkin::GetType() const {
+const Uint32& UISkin::getType() const {
 	return mType;
 }
 
-bool UISkin::GetColorDefault( const Uint32& State ) {
+bool UISkin::getColorDefault( const Uint32& State ) {
 	return BitOp::readBitKey( &mColorDefault, State );
 }
 

@@ -20,23 +20,23 @@ class EE_API UISkin {
 			SkinTypeCount
 		};
 
-		static const char * GetSkinStateName( const Uint32& State );
+		static const char * getSkinStateName( const Uint32& State );
 
 		UISkin( const std::string& getName, const Uint32& Type );
 
 		virtual ~UISkin();
 
-		virtual void Draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State ) = 0;
+		virtual void draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State ) = 0;
 
-		virtual void SetSkin( const Uint32& State ) = 0;
+		virtual void setSkin( const Uint32& State ) = 0;
 
-		virtual SubTexture * GetSubTexture( const Uint32& State ) const = 0;
+		virtual SubTexture * getSubTexture( const Uint32& State ) const = 0;
 
-		virtual void SetColor( const Uint32& State, const ColorA& Color );
+		virtual void setColor( const Uint32& State, const ColorA& Color );
 
-		virtual const ColorA& GetColor( const Uint32& State ) const;
+		virtual const ColorA& getColor( const Uint32& State ) const;
 
-		virtual void SetSkins();
+		virtual void setSkins();
 
 		const std::string& getName() const;
 
@@ -44,13 +44,13 @@ class EE_API UISkin {
 
 		const Uint32& getId() const;
 
-		UITheme * Theme() const;
+		UITheme * theme() const;
 
-		void Theme( UITheme * theme );
+		void theme( UITheme * theme );
 
-		virtual UISkin * Copy() = 0;
+		virtual UISkin * copy() = 0;
 
-		const Uint32& GetType() const;
+		const Uint32& getType() const;
 	protected:
 		friend class UIControl;
 		friend class UISkinState;
@@ -62,13 +62,13 @@ class EE_API UISkin {
 		ColorA 	mColor[ UISkinState::StateCount ];
 		UITheme * 	mTheme;
 
-		void StateBack( const Uint32& State );
+		void stateBack( const Uint32& State );
 
-		void SetPrevState();
+		void setPrevState();
 
-		bool GetColorDefault( const Uint32& State );
+		bool getColorDefault( const Uint32& State );
 
-		virtual void StateNormalToState( const Uint32& State ) = 0;
+		virtual void stateNormalToState( const Uint32& State ) = 0;
 };
 
 }}

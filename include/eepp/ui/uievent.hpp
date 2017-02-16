@@ -54,13 +54,13 @@ class EE_API UIEvent {
 			EventForceDWord = eeINDEX_NOT_FOUND
 		};
 
-		UIEvent( UIControl * Ctrl, const Uint32& EventType = EventForceDWord );
+		UIEvent( UIControl * control, const Uint32& eventType = EventForceDWord );
 
 		~UIEvent();
 
-		UIControl * Ctrl() const;
+		UIControl * getControl() const;
 
-		const Uint32& EventType() const;
+		const Uint32& getEventType() const;
 	protected:
 		UIControl	* 	mCtrl;
 		Uint32 			mEventType;

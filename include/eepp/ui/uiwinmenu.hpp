@@ -24,18 +24,18 @@ class EE_API UIWinMenu : public UIComplexControl {
 					MenuHeight(0),
 					FirstButtonMargin(1)
 				{
-					UITheme * Theme = UIThemeManager::instance()->DefaultTheme();
+					UITheme * Theme = UIThemeManager::instance()->defaultTheme();
 
 					if ( NULL != Theme ) {
-						Font				= Theme->Font();
-						FontColor			= Theme->FontColor();
-						FontShadowColor		= Theme->FontShadowColor();
-						FontOverColor		= Theme->FontOverColor();
-						FontSelectedColor	= Theme->FontSelectedColor();
+						Font				= Theme->font();
+						FontColor			= Theme->fontColor();
+						FontShadowColor		= Theme->fontShadowColor();
+						FontOverColor		= Theme->fontOverColor();
+						FontSelectedColor	= Theme->fontSelectedColor();
 					}
 
 					if ( NULL == Font )
-						Font = UIThemeManager::instance()->DefaultFont();
+						Font = UIThemeManager::instance()->defaultFont();
 				}
 
 				Graphics::Font * 	Font;
@@ -53,33 +53,33 @@ class EE_API UIWinMenu : public UIComplexControl {
 
 		virtual ~UIWinMenu();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		void AddMenuButton( const String& ButtonText, UIPopUpMenu * Menu );
+		void addMenuButton( const String& ButtonText, UIPopUpMenu * Menu );
 
-		void RemoveMenuButton( const String& ButtonText );
+		void removeMenuButton( const String& ButtonText );
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		void FontColor( const ColorA& Color );
+		void fontColor( const ColorA& Color );
 
-		const ColorA& FontColor() const;
+		const ColorA& fontColor() const;
 
-		void FontOverColor( const ColorA& Color );
+		void fontOverColor( const ColorA& Color );
 
-		const ColorA& FontOverColor() const;
+		const ColorA& fontOverColor() const;
 
-		void FontSelectedColor( const ColorA& Color );
+		void fontSelectedColor( const ColorA& Color );
 
-		const ColorA& FontSelectedColor() const;
+		const ColorA& fontSelectedColor() const;
 
-		Graphics::Font * Font() const;
+		Graphics::Font * font() const;
 
-		UISelectButton * GetButton( const String& ButtonText );
+		UISelectButton * getButton( const String& ButtonText );
 
-		UIPopUpMenu * GetPopUpMenu( const String& ButtonText );
+		UIPopUpMenu * getPopUpMenu( const String& ButtonText );
 	protected:
 		typedef std::list< std::pair< UISelectButton *, UIPopUpMenu * > > WinMenuList;
 
@@ -95,21 +95,21 @@ class EE_API UIWinMenu : public UIComplexControl {
 		Uint32			mMenuHeight;
 		WinMenuList		mButtons;
 
-		void RefreshButtons();
+		void refreshButtons();
 
-		virtual Uint32 OnMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const UIMessage * Msg );
 
-		virtual void OnComplexControlFocusLoss();
+		virtual void onComplexControlFocusLoss();
 
-		UIPopUpMenu * GetMenuFromButton( UISelectButton * Button );
+		UIPopUpMenu * getMenuFromButton( UISelectButton * Button );
 
-		bool IsPopUpMenuChild( UIControl * Ctrl );
+		bool isPopUpMenuChild( UIControl * Ctrl );
 
-		void OnMenuFocusLoss( const UIEvent * Event );
+		void onMenuFocusLoss( const UIEvent * Event );
 
-		void UnselectButtons();
+		void unselectButtons();
 
-		void DestroyMenues();
+		void destroyMenues();
 };
 
 }}

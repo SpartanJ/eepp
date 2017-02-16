@@ -17,43 +17,43 @@ UITextInput::UITextInput( const UITextInput::CreateParams& Params ) :
 	mTextBuffer.start();
 	mTextBuffer.active( false );
 	mTextBuffer.supportFreeEditing( Params.SupportFreeEditing );
-	mTextBuffer.textSelectionEnabled( IsTextSelectionEnabled() );
+	mTextBuffer.textSelectionEnabled( isTextSelectionEnabled() );
 	mTextBuffer.maxLength( Params.MaxLength );
-	mTextBuffer.setReturnCallback( cb::Make0( this, &UITextInput::PrivOnPressEnter ) );
+	mTextBuffer.setReturnCallback( cb::Make0( this, &UITextInput::privOnPressEnter ) );
 
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UITextInput::~UITextInput() {
 }
 
-Uint32 UITextInput::Type() const {
+Uint32 UITextInput::getType() const {
 	return UI_TYPE_TEXTINPUT;
 }
 
-bool UITextInput::IsType( const Uint32& type ) const {
-	return UITextInput::Type() == type ? true : UITextBox::IsType( type );
+bool UITextInput::isType( const Uint32& type ) const {
+	return UITextInput::getType() == type ? true : UITextBox::isType( type );
 }
 
-void UITextInput::Update() {
-	if ( IsMouseOverMeOrChilds() ) {
-		UIManager::instance()->SetCursor( EE_CURSOR_IBEAM );
+void UITextInput::update() {
+	if ( isMouseOverMeOrChilds() ) {
+		UIManager::instance()->setCursor( EE_CURSOR_IBEAM );
 	}
 
-	UITextBox::Update();
+	UITextBox::update();
 
 	if ( mTextBuffer.changedSinceLastUpdate() ) {
 		Vector2f offSet = mAlignOffset;
 
-		UITextBox::Text( mTextBuffer.buffer() );
+		UITextBox::text( mTextBuffer.buffer() );
 
-		UpdateText();
+		updateText();
 
 		mAlignOffset = offSet;
 
-		ResetWaitCursor();
+		resetWaitCursor();
 
-		AlignFix();
+		alignFix();
 
 		mCursorPos = mTextBuffer.curPos();
 
@@ -63,19 +63,19 @@ void UITextInput::Update() {
 	}
 
 	if ( mCursorPos != mTextBuffer.curPos() ) {
-		AlignFix();
+		alignFix();
 		mCursorPos = mTextBuffer.curPos();
-		OnCursorPosChange();
+		onCursorPosChange();
 	}
 }
 
-void UITextInput::OnCursorPosChange() {
-	SendCommonEvent( UIEvent::EventOnCursorPosChange );
+void UITextInput::onCursorPosChange() {
+	sendCommonEvent( UIEvent::EventOnCursorPosChange );
 }
 
-void UITextInput::DrawWaitingCursor() {
+void UITextInput::drawWaitingCursor() {
 	if ( mVisible && mTextBuffer.active() && mTextBuffer.supportFreeEditing() ) {
-		mWaitCursorTime += UIManager::instance()->Elapsed().asMilliseconds();
+		mWaitCursorTime += UIManager::instance()->elapsed().asMilliseconds();
 
 		if ( mShowingWait ) {
 			bool disableSmooth = mShowingWait && GLi->isLineSmooth();
@@ -105,49 +105,49 @@ void UITextInput::DrawWaitingCursor() {
 	}
 }
 
-void UITextInput::Draw() {
-	UITextBox::Draw();
+void UITextInput::draw() {
+	UITextBox::draw();
 
-	DrawWaitingCursor();
+	drawWaitingCursor();
 }
 
-Uint32 UITextInput::OnFocus() {
-	UIControlAnim::OnFocus();
+Uint32 UITextInput::onFocus() {
+	UIControlAnim::onFocus();
 
 	if ( mAllowEditing ) {
 		mTextBuffer.active( true );
 
-		ResetWaitCursor();
+		resetWaitCursor();
 	}
 
 	return 1;
 }
 
-Uint32 UITextInput::OnFocusLoss() {
+Uint32 UITextInput::onFocusLoss() {
 	mTextBuffer.active( false );
-	return UITextBox::OnFocusLoss();
+	return UITextBox::onFocusLoss();
 }
 
-Uint32 UITextInput::OnPressEnter() {
-	SendCommonEvent( UIEvent::EventOnPressEnter );
+Uint32 UITextInput::onPressEnter() {
+	sendCommonEvent( UIEvent::EventOnPressEnter );
 	return 0;
 }
 
-void UITextInput::PrivOnPressEnter() {
-	OnPressEnter();
+void UITextInput::privOnPressEnter() {
+	onPressEnter();
 }
 
-void UITextInput::PushIgnoredChar( const Uint32& ch ) {
+void UITextInput::pushIgnoredChar( const Uint32& ch ) {
 	mTextBuffer.pushIgnoredChar( ch );
 }
 
-void UITextInput::ResetWaitCursor() {
+void UITextInput::resetWaitCursor() {
 	mShowingWait = true;
 	mWaitCursorTime = 0.f;
 }
 
-void UITextInput::AlignFix() {
-	if ( FontHAlignGet( Flags() ) == UI_HALIGN_LEFT ) {
+void UITextInput::alignFix() {
+	if ( FontHAlignGet( flags() ) == UI_HALIGN_LEFT ) {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
 
@@ -168,105 +168,105 @@ void UITextInput::AlignFix() {
 	}
 }
 
-void UITextInput::SetTheme( UITheme * Theme ) {
-	UIControl::SetThemeControl( Theme, "textinput" );
+void UITextInput::setTheme( UITheme * Theme ) {
+	UIControl::setThemeControl( Theme, "textinput" );
 
-	AutoPadding();
-	AutoSize();
+	autoPadding();
+	autoSize();
 }
 
-void UITextInput::AutoSize() {
+void UITextInput::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Size( mSize.x, GetSkinSize().height() );
+		size( mSize.x, getSkinSize().height() );
 	}
 }
 
-void UITextInput::AutoPadding() {
+void UITextInput::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mPadding = MakePadding( true, true, false, false );
+		mPadding = makePadding( true, true, false, false );
 	}
 }
 
-InputTextBuffer * UITextInput::GetInputTextBuffer() {
+InputTextBuffer * UITextInput::getInputTextBuffer() {
 	return &mTextBuffer;
 }
 
-void UITextInput::AllowEditing( const bool& allow ) {
+void UITextInput::allowEditing( const bool& allow ) {
 	mAllowEditing = allow;
 
 	if ( !mAllowEditing && mTextBuffer.active() )
 		mTextBuffer.active( false );
 }
 
-const bool& UITextInput::AllowEditing() const {
+const bool& UITextInput::allowEditing() const {
 	return mAllowEditing;
 }
 
-void UITextInput::Text( const String& text ) {
-	UITextBox::Text( text );
+void UITextInput::text( const String& text ) {
+	UITextBox::text( text );
 
 	mTextBuffer.buffer( text );
 
 	mTextBuffer.cursorToEnd();
 }
 
-const String& UITextInput::Text() {
-	return UITextBox::Text();
+const String& UITextInput::text() {
+	return UITextBox::text();
 }
 
-void UITextInput::ShrinkText( const Uint32& MaxWidth ) {
+void UITextInput::shrinkText( const Uint32& MaxWidth ) {
 	mTextCache->text( mTextBuffer.buffer() );
 
-	UITextBox::ShrinkText( MaxWidth );
+	UITextBox::shrinkText( MaxWidth );
 
 	mTextBuffer.buffer( mTextCache->text() );
 
-	AlignFix();
+	alignFix();
 }
 
-void UITextInput::UpdateText() {
+void UITextInput::updateText() {
 }
 
-Uint32 UITextInput::OnMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTON_LMASK ) {
 		Vector2i controlPos( Pos );
-		WorldToControl( controlPos );
+		worldToControl( controlPos );
 
 		Int32 curPos = mTextCache->font()->findClosestCursorPosFromPoint( mTextCache->text(), controlPos );
 
 		if ( -1 != curPos ) {
 			mTextBuffer.curPos( curPos );
-			ResetWaitCursor();
+			resetWaitCursor();
 		}
 	}
 
-	return UITextBox::OnMouseClick( Pos, Flags );
+	return UITextBox::onMouseClick( Pos, Flags );
 }
 
-Uint32 UITextInput::OnMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
-	UITextBox::OnMouseDoubleClick( Pos, Flags );
+Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
+	UITextBox::onMouseDoubleClick( Pos, Flags );
 
-	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && SelCurEnd() != -1 ) {
-		mTextBuffer.curPos( SelCurEnd() );
-		ResetWaitCursor();
+	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && selCurEnd() != -1 ) {
+		mTextBuffer.curPos( selCurEnd() );
+		resetWaitCursor();
 	}
 
 	return 1;
 }
 
-Uint32 UITextInput::OnMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	UIControl::OnMouseExit( Pos, Flags );
+Uint32 UITextInput::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
+	UIControl::onMouseExit( Pos, Flags );
 
-	UIManager::instance()->SetCursor( EE_CURSOR_ARROW );
+	UIManager::instance()->setCursor( EE_CURSOR_ARROW );
 
 	return 1;
 }
 
-void UITextInput::SelCurInit( const Int32& init ) {
+void UITextInput::selCurInit( const Int32& init ) {
 	mTextBuffer.selCurInit( init );
 }
 
-void UITextInput::SelCurEnd( const Int32& end ) {
+void UITextInput::selCurEnd( const Int32& end ) {
 	mTextBuffer.selCurEnd( end );
 
 	if ( mTextBuffer.selCurEnd() != mTextBuffer.selCurInit() ) {
@@ -274,11 +274,11 @@ void UITextInput::SelCurEnd( const Int32& end ) {
 	}
 }
 
-Int32 UITextInput::SelCurInit() {
+Int32 UITextInput::selCurInit() {
 	return mTextBuffer.selCurInit();
 }
 
-Int32 UITextInput::SelCurEnd() {
+Int32 UITextInput::selCurEnd() {
 	return mTextBuffer.selCurEnd();
 }
 

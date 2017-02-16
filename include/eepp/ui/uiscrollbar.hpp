@@ -25,53 +25,53 @@ class EE_API UIScrollBar : public UIComplexControl {
 
 		virtual ~UIScrollBar();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void Value( Float Val );
+		virtual void value( Float Val );
 
-		const Float& Value() const;
+		const Float& value() const;
 
-		virtual void MinValue( const Float& MinVal );
+		virtual void minValue( const Float& MinVal );
 
-		const Float& MinValue() const;
+		const Float& minValue() const;
 
-		virtual void MaxValue( const Float& MaxVal );
+		virtual void maxValue( const Float& MaxVal );
 
-		const Float& MaxValue() const;
+		const Float& maxValue() const;
 
-		virtual void ClickStep( const Float& step );
+		virtual void clickStep( const Float& step );
 
-		const Float& ClickStep() const;
+		const Float& clickStep() const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		const bool& IsVertical() const;
+		const bool& isVertical() const;
 
-		virtual void Update();
+		virtual void update();
 
-		UISlider * Slider() const;
+		UISlider * getSlider() const;
 
-		UIControlAnim * ButtonUp() const;
+		UIControlAnim * getButtonUp() const;
 
-		UIControlAnim * ButtonDown() const;
+		UIControlAnim * getButtonDown() const;
 	protected:
 		UISlider * 		mSlider;
 		UIControlAnim *	mBtnUp;
 		UIControlAnim * 	mBtnDown;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		void AdjustChilds();
+		void adjustChilds();
 
-		void OnValueChangeCb( const UIEvent * Event );
+		void onValueChangeCb( const UIEvent * Event );
 
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 
-		virtual Uint32 OnMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const UIMessage * Msg );
 
-		void ManageClick( const Uint32& Flags );
+		void manageClick( const Uint32& flags );
 };
 
 }}

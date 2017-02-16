@@ -11,11 +11,11 @@ class EE_API UISeparator : public UIControlAnim {
 		
 		virtual ~UISeparator();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 	protected:
 };
 

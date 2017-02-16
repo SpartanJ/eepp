@@ -13,75 +13,75 @@ class EE_API UIControlAnim : public UIDragable {
 
 		virtual ~UIControlAnim();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void Update();
+		virtual void update();
 
-		const Float& Angle() const;
+		const Float& angle() const;
 
-		void Angle( const Float& angle );
+		void angle( const Float& angle );
 
-		void Angle( const Float& angle, const OriginPoint& center );
+		void angle( const Float& angle, const OriginPoint& center );
 
-		const OriginPoint& RotationOriginPoint() const;
+		const OriginPoint& rotationOriginPoint() const;
 
-		void RotationOriginPoint( const OriginPoint& center );
+		void rotationOriginPoint( const OriginPoint& center );
 
-		Vector2f RotationCenter();
+		Vector2f rotationCenter();
 
-		const Vector2f& Scale() const;
+		const Vector2f& scale() const;
 
-		void Scale( const Vector2f& scale );
+		void scale( const Vector2f& scale );
 
-		void Scale( const Vector2f& scale, const OriginPoint& center );
+		void scale( const Vector2f& scale, const OriginPoint& center );
 
-		void Scale( const Float& scale , const OriginPoint & center = OriginPoint::OriginCenter );
+		void scale( const Float& scale , const OriginPoint & center = OriginPoint::OriginCenter );
 
-		const OriginPoint& ScaleOriginPoint() const;
+		const OriginPoint& scaleOriginPoint() const;
 
-		void ScaleOriginPoint( const OriginPoint& center );
+		void scaleOriginPoint( const OriginPoint& center );
 
-		Vector2f ScaleCenter();
+		Vector2f scaleCenter();
 
-		const Float& Alpha() const;
+		const Float& alpha() const;
 
-		virtual void Alpha( const Float& alpha );
+		virtual void alpha( const Float& alpha );
 
-		virtual void AlphaChilds( const Float& alpha );
+		virtual void alphaChilds( const Float& alpha );
 
-		bool Animating();
+		bool isAnimating();
 
-		Interpolation * StartAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
+		Interpolation * startAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& alphaChilds = true, const Ease::Interpolation& getType = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
 
-		Waypoints * StartScaleAnim( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
+		Waypoints * startScaleAnim( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& getType = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
 
-		Waypoints * StartScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
+		Waypoints * startScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& getType = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
 
-		Waypoints * StartMovement( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, Waypoints::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
+		Waypoints * startMovement( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& getType = Ease::Linear, Waypoints::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
 
-		Interpolation * StartRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
+		Interpolation * startRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& getType = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
 
-		Interpolation * CreateFadeIn( const Time& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
+		Interpolation * createFadeIn( const Time& Time, const bool& alphaChilds = true, const Ease::Interpolation& getType = Ease::Linear );
 
-		Interpolation * CreateFadeOut( const Time& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
+		Interpolation * createFadeOut( const Time& Time, const bool& alphaChilds = true, const Ease::Interpolation& getType = Ease::Linear );
 
-		Interpolation * CloseFadeOut( const Time& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
+		Interpolation * closeFadeOut( const Time& Time, const bool& alphaChilds = true, const Ease::Interpolation& getType = Ease::Linear );
 
-		Interpolation * DisableFadeOut( const Time & Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
+		Interpolation * disableFadeOut( const Time & Time, const bool& alphaChilds = true, const Ease::Interpolation& getType = Ease::Linear );
 
-		Interpolation * RotationInterpolation();
+		Interpolation * rotationInterpolation();
 
-		Waypoints * ScaleInterpolation();
+		Waypoints * scaleInterpolation();
 
-		Interpolation * AlphaInterpolation();
+		Interpolation * alphaInterpolation();
 
-		Waypoints * MovementInterpolation();
+		Waypoints * movementInterpolation();
 
-		virtual void Draw();
+		virtual void draw();
 
-		bool FadingOut();
+		bool isFadingOut();
 	protected:
 		friend class UIManager;
 		friend class UIControl;
@@ -97,27 +97,27 @@ class EE_API UIControlAnim : public UIDragable {
 		Interpolation * 	mAlphaAnim;
 		Waypoints * 		mMoveAnim;
 
-		virtual void BackgroundDraw();
+		virtual void backgroundDraw();
 
-		virtual void BorderDraw();
+		virtual void borderDraw();
 
-		ColorA GetColor( const ColorA& Col );
+		ColorA getColor( const ColorA& Col );
 
-		virtual void UpdateQuad();
+		virtual void updateQuad();
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		virtual void OnAngleChange();
+		virtual void onAngleChange();
 
-		virtual void OnScaleChange();
+		virtual void onScaleChange();
 
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 
-		virtual void MatrixSet();
+		virtual void matrixSet();
 
-		virtual void MatrixUnset();
+		virtual void matrixUnset();
 
-		void UpdateOriginPoint();
+		void updateOriginPoint();
 };
 
 }}

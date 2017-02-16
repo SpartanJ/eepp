@@ -11,25 +11,25 @@ class EE_API UIComboBox : public UIDropDownList {
 
 		virtual ~UIComboBox();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 	protected:
 		UIControl * mButton;
 
-		void OnButtonClick( const UIEvent * Event );
+		void onButtonClick( const UIEvent * Event );
 
-		void OnButtonEnter( const UIEvent * Event );
+		void onButtonEnter( const UIEvent * Event );
 
-		void OnButtonExit( const UIEvent * Event );
+		void onButtonExit( const UIEvent * Event );
 
-		Uint32 OnMouseClick( const Vector2i& Pos, const Uint32 Flags );
+		Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
 
-		void CreateButton();
+		void createButton();
 
-		virtual void OnControlClear( const UIEvent *Event );
+		virtual void onControlClear( const UIEvent *Event );
 };
 
 }}

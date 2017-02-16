@@ -28,43 +28,43 @@ class EE_API UISpinBox : public UIComplexControl {
 
 		virtual ~UISpinBox();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		virtual void Padding( const Recti& padding );
+		virtual void padding( const Recti& padding );
 
-		const Recti& Padding() const;
+		const Recti& padding() const;
 
-		virtual void ClickStep( const Float& step );
+		virtual void clickStep( const Float& step );
 
-		const Float& ClickStep() const;
+		const Float& clickStep() const;
 
-		virtual Uint32 OnMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const UIMessage * Msg );
 
-		void AddValue( const Float& value );
+		void addValue( const Float& value );
 
-		virtual void MinValue( const Float& MinVal );
+		virtual void minValue( const Float& MinVal );
 
-		const Float& MinValue() const;
+		const Float& minValue() const;
 
-		virtual void MaxValue( const Float& MaxVal );
+		virtual void maxValue( const Float& MaxVal );
 
-		const Float& MaxValue() const;
+		const Float& maxValue() const;
 
-		virtual void Value( const Float& Val );
+		virtual void value( const Float& Val );
 
-		const Float& Value() const;
+		const Float& value() const;
 
-		virtual void Update();
+		virtual void update();
 
-		UIControlAnim * ButtonPushUp() const;
+		UIControlAnim * getButtonPushUp() const;
 
-		UIControlAnim * ButtonPushDown() const;
+		UIControlAnim * getButtonPushDown() const;
 
-		UITextInput * TextInput() const;
+		UITextInput * getTextInput() const;
 	protected:
 		UITextInput * 		mInput;
 		UIControlAnim * 	mPushUp;
@@ -74,11 +74,11 @@ class EE_API UISpinBox : public UIComplexControl {
 		Float				mValue;
 		Float				mClickStep;
 
-		void AdjustChilds();
+		void adjustChilds();
 
-		void InternalValue( const Float& Val, const bool& Force = false );
+		void internalValue( const Float& Val, const bool& Force = false );
 		
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 };
 
 }}

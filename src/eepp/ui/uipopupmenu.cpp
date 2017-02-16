@@ -6,42 +6,42 @@ namespace EE { namespace UI {
 UIPopUpMenu::UIPopUpMenu( UIPopUpMenu::CreateParams Params ) :
 	UIMenu( Params )
 {
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UIPopUpMenu::~UIPopUpMenu() {
-	OnClose();
+	onClose();
 }
 
-Uint32 UIPopUpMenu::Type() const {
+Uint32 UIPopUpMenu::getType() const {
 	return UI_TYPE_POPUPMENU;
 }
 
-bool UIPopUpMenu::IsType( const Uint32& type ) const {
-	return UIPopUpMenu::Type() == type ? true : UIMenu::IsType( type );
+bool UIPopUpMenu::isType( const Uint32& type ) const {
+	return UIPopUpMenu::getType() == type ? true : UIMenu::isType( type );
 }
 
-void UIPopUpMenu::SetTheme( UITheme * Theme ) {
-	UIControl::SetThemeControl( Theme, "popupmenu" );
-	DoAfterSetTheme();
+void UIPopUpMenu::setTheme( UITheme * Theme ) {
+	UIControl::setThemeControl( Theme, "popupmenu" );
+	doAftersetTheme();
 }
 
-bool UIPopUpMenu::Show() {
-	if ( !Visible() || 0.f == mAlpha ) {
+bool UIPopUpMenu::show() {
+	if ( !visible() || 0.f == mAlpha ) {
 		#ifdef EE_PLATFORM_TOUCH
 		mTE.Restart();
 		#endif
 
-		Enabled( true );
-		Visible( true );
+		enabled( true );
+		visible( true );
 
-		ToFront();
+		toFront();
 
-		if ( UIThemeManager::instance()->DefaultEffectsEnabled() ) {
-			StartAlphaAnim( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->ControlsFadeInTime() );
+		if ( UIThemeManager::instance()->defaultEffectsEnabled() ) {
+			startAlphaAnim( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->controlsFadeInTime() );
 		}
 
-		SetFocus();
+		setFocus();
 
 		return true;
 	}
@@ -49,20 +49,20 @@ bool UIPopUpMenu::Show() {
 	return false;
 }
 
-bool UIPopUpMenu::Hide() {
-	if ( Visible() ) {
-		if ( !FadingOut() ) {
+bool UIPopUpMenu::hide() {
+	if ( visible() ) {
+		if ( !isFadingOut() ) {
 			if ( NULL != mItemSelected )
-				mItemSelected->SetSkinState( UISkinState::StateNormal );
+				mItemSelected->setSkinState( UISkinState::StateNormal );
 
 			mItemSelected		= NULL;
 			mItemSelectedIndex	= eeINDEX_NOT_FOUND;
 
-			if ( UIThemeManager::instance()->DefaultEffectsEnabled() ) {
-				DisableFadeOut( UIThemeManager::instance()->ControlsFadeOutTime() );
+			if ( UIThemeManager::instance()->defaultEffectsEnabled() ) {
+				disableFadeOut( UIThemeManager::instance()->controlsFadeOutTime() );
 			} else {
-				Enabled( false );
-				Visible( false );
+				enabled( false );
+				visible( false );
 			}
 		}
 
@@ -72,26 +72,26 @@ bool UIPopUpMenu::Hide() {
 	return false;
 }
 
-void UIPopUpMenu::OnComplexControlFocusLoss() {
-	Hide();
+void UIPopUpMenu::onComplexControlFocusLoss() {
+	hide();
 
-	UIMenu::OnComplexControlFocusLoss();
+	UIMenu::onComplexControlFocusLoss();
 }
 
-Uint32 UIPopUpMenu::OnMessage( const UIMessage * Msg ) {
-	switch ( Msg->Msg() ) {
+Uint32 UIPopUpMenu::onMessage( const UIMessage * Msg ) {
+	switch ( Msg->getMsg() ) {
 		case UIMessage::MsgMouseUp:
 		{
 			#ifdef EE_PLATFORM_TOUCH
 			if ( mTE.Elapsed().AsMilliseconds() > 250.f ) {
 			#endif
-				if ( !Msg->Sender()->IsType( UI_TYPE_MENUSUBMENU ) && ( Msg->Flags() & EE_BUTTONS_LRM ) ) {
-					SendCommonEvent( UIEvent::EventOnHideByClick );
+				if ( !Msg->getSender()->isType( UI_TYPE_MENUSUBMENU ) && ( Msg->getFlags() & EE_BUTTONS_LRM ) ) {
+					sendCommonEvent( UIEvent::EventOnHideByClick );
 
-					if ( Visible() )
-						UIManager::instance()->MainControl()->SetFocus();
+					if ( visible() )
+						UIManager::instance()->mainControl()->setFocus();
 
-					Hide();
+					hide();
 				}
 			#ifdef EE_PLATFORM_TOUCH
 			}
@@ -99,7 +99,7 @@ Uint32 UIPopUpMenu::OnMessage( const UIMessage * Msg ) {
 		}
 	}
 
-	return UIMenu::OnMessage( Msg );
+	return UIMenu::onMessage( Msg );
 }
 
 }}

@@ -29,17 +29,17 @@ class EE_API UIMessageBox : public UIWindow {
 
 		virtual ~UIMessageBox();
 
-		virtual Uint32		OnMessage( const UIMessage * Msg );
+		virtual Uint32		onMessage( const UIMessage * Msg );
 
-		virtual void		SetTheme( UITheme * Theme );
+		virtual void		setTheme( UITheme * Theme );
 
-		UITextBox *		TextBox() const;
+		UITextBox *		getTextBox() const;
 
-		UIPushButton *		ButtonOK() const;
+		UIPushButton *		getButtonOK() const;
 
-		UIPushButton *		ButtonCancel() const;
+		UIPushButton *		getButtonCancel() const;
 
-		virtual bool		Show();
+		virtual bool		show();
 	protected:
 		UI_MSGBOX_TYPE		mMsgBoxType;
 		UITextBox *		mTextBox;
@@ -47,9 +47,9 @@ class EE_API UIMessageBox : public UIWindow {
 		UIPushButton *		mButtonCancel;
 		Uint32				mCloseWithKey;
 
-		void				AutoSize();
+		void				autoSize();
 
-		virtual Uint32 OnKeyUp( const UIEventKey& Event );
+		virtual Uint32 onKeyUp( const UIEventKey& Event );
 };
 
 }}

@@ -11,54 +11,54 @@ UISelectButton::UISelectButton( const UIPushButton::CreateParams& Params ) :
 UISelectButton::~UISelectButton() {
 }
 
-Uint32 UISelectButton::Type() const {
+Uint32 UISelectButton::getType() const {
 	return UI_TYPE_SELECTBUTTON;
 }
 
-bool UISelectButton::IsType( const Uint32& type ) const {
-	return UISelectButton::Type() == type ? true : UIPushButton::IsType( type );
+bool UISelectButton::isType( const Uint32& type ) const {
+	return UISelectButton::getType() == type ? true : UIPushButton::isType( type );
 }
 
-void UISelectButton::Select() {
-	bool wasSelected = Selected();
+void UISelectButton::select() {
+	bool wasSelected = selected();
 
-	SetSkinState( UISkinState::StateSelected );
+	setSkinState( UISkinState::StateSelected );
 
 	mControlFlags |= UI_CTRL_FLAG_SELECTED;
 
 	if ( !wasSelected ) {
 		UIMessage tMsg( this, UIMessage::MsgSelected, 0 );
-		MessagePost( &tMsg );
+		messagePost( &tMsg );
 	}
 }
 
-void UISelectButton::Unselect() {
+void UISelectButton::unselect() {
 	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
 		mControlFlags &= ~UI_CTRL_FLAG_SELECTED;
 
-	SetSkinState( UISkinState::StateNormal );
+	setSkinState( UISkinState::StateNormal );
 }
 
-bool UISelectButton::Selected() const {
+bool UISelectButton::selected() const {
 	return 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
 }
 
-void UISelectButton::OnStateChange() {
-	if ( mSkinState->GetState() != UISkinState::StateSelected && Selected() ) {
-		if ( mSkinState->StateExists( UISkinState::StateSelected ) ) {
-			SetSkinState( UISkinState::StateSelected );
+void UISelectButton::onStateChange() {
+	if ( mSkinState->getState() != UISkinState::StateSelected && selected() ) {
+		if ( mSkinState->stateExists( UISkinState::StateSelected ) ) {
+			setSkinState( UISkinState::StateSelected );
 		}
 	}
 
-	if ( Parent()->Type() & UI_TYPE_WINMENU ) {
-		UIWinMenu * Menu = reinterpret_cast<UIWinMenu*> ( Parent() );
+	if ( parent()->getType() & UI_TYPE_WINMENU ) {
+		UIWinMenu * Menu = reinterpret_cast<UIWinMenu*> ( parent() );
 
-		if ( mSkinState->GetState() == UISkinState::StateSelected ) {
-			TextBox()->Color( Menu->FontSelectedColor() );
-		} else if ( mSkinState->GetState() == UISkinState::StateMouseEnter ) {
-			TextBox()->Color( Menu->FontOverColor() );
+		if ( mSkinState->getState() == UISkinState::StateSelected ) {
+			getTextBox()->color( Menu->fontSelectedColor() );
+		} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
+			getTextBox()->color( Menu->fontOverColor() );
 		} else {
-			TextBox()->Color( Menu->FontColor() );
+			getTextBox()->color( Menu->fontColor() );
 		}
 	}
 }

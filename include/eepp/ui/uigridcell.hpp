@@ -14,36 +14,36 @@ class EE_API UIGridCell : public UIComplexControl {
 
 		virtual ~UIGridCell();
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		void Cell( const Uint32& CollumnIndex, UIControl * Ctrl );
+		void cell( const Uint32& CollumnIndex, UIControl * Ctrl );
 
-		UIControl * Cell( const Uint32& CollumnIndex ) const;
+		UIControl * cell( const Uint32& CollumnIndex ) const;
 
-		virtual void Update();
+		virtual void update();
 
-		bool Selected() const;
+		bool isSelected() const;
 
-		void Unselect();
+		void unselect();
 
-		void Select();
+		void select();
 
-		virtual Uint32 OnMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const UIMessage * Msg );
 
-		void AutoSize();
+		void autoSize();
 	protected:
 		friend class UIItemContainer<UIGenericGrid>;
 		friend class UIGenericGrid;
 
 		std::vector<UIControl*> mCells;
 
-		UIGenericGrid * GridParent() const;
+		UIGenericGrid * gridParent() const;
 
-		void FixCell();
+		void fixCell();
 
-		virtual Uint32 OnMouseExit( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseExit( const Vector2i& position, const Uint32 flags );
 
-		virtual void OnStateChange();
+		virtual void onStateChange();
 };
 
 }}

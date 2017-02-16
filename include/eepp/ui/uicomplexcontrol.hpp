@@ -41,35 +41,35 @@ class EE_API UIComplexControl : public UIControlAnim {
 
 		virtual ~UIComplexControl();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void Update();
+		virtual void update();
 
-		virtual void Size( const Sizei &Size );
+		virtual void size( const Sizei &size );
 
-		void Size( const Int32& Width, const Int32& Height );
+		void size( const Int32& Width, const Int32& Height );
 
-		const Sizei& Size();
+		const Sizei& size();
 
-		UITooltip * Tooltip();
+		UITooltip * getTooltip();
 
-		void TooltipRemove();
+		void tooltipRemove();
 
-		void TooltipText( const String& Text );
+		void tooltipText( const String& Text );
 
-		String TooltipText();
+		String tooltipText();
 
-		void UpdateAnchorsDistances();
+		void updateAnchorsDistances();
 	protected:
 		UITooltip *	mTooltip;
 		Sizei			mMinControlSize;
 		Recti			mDistToBorder;
 
-		void CreateTooltip();
+		void createTooltip();
 
-		virtual void OnParentSizeChange( const Vector2i& SizeChange );
+		virtual void onParentSizeChange( const Vector2i& SizeChange );
 };
 
 }}

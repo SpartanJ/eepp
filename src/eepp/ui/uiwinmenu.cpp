@@ -20,26 +20,26 @@ UIWinMenu::UIWinMenu( const UIWinMenu::CreateParams& Params ) :
 	if ( !(mFlags & UI_ANCHOR_RIGHT) )
 		mFlags |= UI_ANCHOR_RIGHT;
 
-	Size( Parent()->Size().width(), mMenuHeight );
+	size( parent()->size().width(), mMenuHeight );
 
-	UpdateAnchorsDistances();
+	updateAnchorsDistances();
 
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UIWinMenu::~UIWinMenu() {
-	DestroyMenues();
+	destroyMenues();
 }
 
-Uint32 UIWinMenu::Type() const {
+Uint32 UIWinMenu::getType() const {
 	return UI_TYPE_WINMENU;
 }
 
-bool UIWinMenu::IsType( const Uint32& type ) const {
-	return UIWinMenu::Type() == type ? true : UIComplexControl::IsType( type );
+bool UIWinMenu::isType( const Uint32& type ) const {
+	return UIWinMenu::getType() == type ? true : UIComplexControl::isType( type );
 }
 
-void UIWinMenu::AddMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
+void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	eeASSERT( NULL != Menu );
 
 	UISelectButton::CreateParams ButtonParams;
@@ -55,41 +55,41 @@ void UIWinMenu::AddMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	ButtonParams.FontOverColor		= mFontOverColor;
 
 	UISelectButton * Button = eeNew( UISelectButton, ( ButtonParams ) );
-	Button->Text( ButtonText );
-	Button->Visible( true );
-	Button->Enabled( true );
-	Button->SetThemeControl( mSkinState->GetSkin()->Theme(), "winmenubutton" );
+	Button->text( ButtonText );
+	Button->visible( true );
+	Button->enabled( true );
+	Button->setThemeControl( mSkinState->getSkin()->theme(), "winmenubutton" );
 
-	Menu->Visible( false );
-	Menu->Enabled( false );
-	Menu->Parent( Parent() );
-	Menu->AddEventListener( UIEvent::EventOnComplexControlFocusLoss, cb::Make1( this, &UIWinMenu::OnMenuFocusLoss ) );
+	Menu->visible( false );
+	Menu->enabled( false );
+	Menu->parent( parent() );
+	Menu->addEventListener( UIEvent::EventOnComplexControlFocusLoss, cb::Make1( this, &UIWinMenu::onMenuFocusLoss ) );
 
 	mButtons.push_back( std::make_pair( Button, Menu ) );
 
-	RefreshButtons();
+	refreshButtons();
 }
 
-void UIWinMenu::SetTheme( UITheme * Theme ) {
-	UIComplexControl::SetThemeControl( Theme, "winmenu" );
+void UIWinMenu::setTheme( UITheme * Theme ) {
+	UIComplexControl::setThemeControl( Theme, "winmenu" );
 
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
-		it->first->SetThemeControl( Theme, "winmenubutton" );
+		it->first->setThemeControl( Theme, "winmenubutton" );
 	}
 
-	if ( 0 == mMenuHeight && NULL != GetSkin() && NULL != GetSkin()->GetSubTexture( UISkinState::StateNormal ) ) {
-		mMenuHeight = GetSkin()->GetSubTexture( UISkinState::StateNormal )->size().height();
+	if ( 0 == mMenuHeight && NULL != getSkin() && NULL != getSkin()->getSubTexture( UISkinState::StateNormal ) ) {
+		mMenuHeight = getSkin()->getSubTexture( UISkinState::StateNormal )->size().height();
 
-		Size( Parent()->Size().width(), mMenuHeight );
+		size( parent()->size().width(), mMenuHeight );
 
-		UpdateAnchorsDistances();
+		updateAnchorsDistances();
 	}
 }
 
-void UIWinMenu::RemoveMenuButton( const String& ButtonText ) {
+void UIWinMenu::removeMenuButton( const String& ButtonText ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
-		if ( it->first->Text() == ButtonText ) {
-			it->second->Close();
+		if ( it->first->text() == ButtonText ) {
+			it->second->close();
 
 			mButtons.erase( it );
 
@@ -98,9 +98,9 @@ void UIWinMenu::RemoveMenuButton( const String& ButtonText ) {
 	}
 }
 
-UISelectButton * UIWinMenu::GetButton( const String& ButtonText ) {
+UISelectButton * UIWinMenu::getButton( const String& ButtonText ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
-		if ( it->first->Text() == ButtonText ) {
+		if ( it->first->text() == ButtonText ) {
 			return it->first;
 		}
 	}
@@ -108,9 +108,9 @@ UISelectButton * UIWinMenu::GetButton( const String& ButtonText ) {
 	return NULL;
 }
 
-UIPopUpMenu * UIWinMenu::GetPopUpMenu( const String& ButtonText ) {
+UIPopUpMenu * UIWinMenu::getPopUpMenu( const String& ButtonText ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
-		if ( it->first->Text() == ButtonText ) {
+		if ( it->first->text() == ButtonText ) {
 			return it->second;
 		}
 	}
@@ -118,12 +118,12 @@ UIPopUpMenu * UIWinMenu::GetPopUpMenu( const String& ButtonText ) {
 	return NULL;
 }
 
-void UIWinMenu::RefreshButtons() {
+void UIWinMenu::refreshButtons() {
 	Uint32 xpos = mFirstButtonMargin;
 	Int32 h = 0, th = 0, ycenter = 0;
 
-	if ( NULL != GetSkin() ) {
-		SubTexture * subTexture = GetSkin()->GetSubTexture( UISkinState::StateNormal );
+	if ( NULL != getSkin() ) {
+		SubTexture * subTexture = getSkin()->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != subTexture ) {
 			h = subTexture->size().height();
@@ -131,13 +131,13 @@ void UIWinMenu::RefreshButtons() {
 			if ( mButtons.begin() != mButtons.end() ) {
 				UISelectButton * tbut = mButtons.begin()->first;
 
-				if ( NULL != tbut->GetSkin() ) {
-					SubTexture * tSubTexture2 = tbut->GetSkin()->GetSubTexture( UISkinState::StateSelected );
+				if ( NULL != tbut->getSkin() ) {
+					SubTexture * tSubTexture2 = tbut->getSkin()->getSubTexture( UISkinState::StateSelected );
 
 					if ( NULL != tSubTexture2 )  {
 						th = tSubTexture2->size().height();
 
-						switch ( VAlignGet( Flags() ) ) {
+						switch ( VAlignGet( flags() ) ) {
 							case UI_VALIGN_CENTER:
 								ycenter = ( h - th ) / 2;
 								break;
@@ -156,40 +156,40 @@ void UIWinMenu::RefreshButtons() {
 
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
 		UISelectButton * pbut	= it->first;
-		UITextBox * tbox		= pbut->TextBox();
+		UITextBox * tbox		= pbut->getTextBox();
 
-		pbut->Size( tbox->GetTextWidth() + mButtonMargin, Size().height() );
-		pbut->Pos( xpos, ycenter );
+		pbut->size( tbox->getTextWidth() + mButtonMargin, size().height() );
+		pbut->position( xpos, ycenter );
 
-		xpos += pbut->Size().width() + mMarginBetweenButtons;
+		xpos += pbut->size().width() + mMarginBetweenButtons;
 	}
 }
 
-Uint32 UIWinMenu::OnMessage( const UIMessage * Msg ) {
-	switch ( Msg->Msg() ) {
+Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
+	switch ( Msg->getMsg() ) {
 		case UIMessage::MsgMouseUp:
 		case UIMessage::MsgMouseEnter:
 		{
-			if ( Msg->Sender()->IsType( UI_TYPE_SELECTBUTTON ) ) {
-				UISelectButton * tbut	= reinterpret_cast<UISelectButton*> ( Msg->Sender() );
-				UIPopUpMenu * tpop		= GetMenuFromButton( tbut );
+			if ( Msg->getSender()->isType( UI_TYPE_SELECTBUTTON ) ) {
+				UISelectButton * tbut	= reinterpret_cast<UISelectButton*> ( Msg->getSender() );
+				UIPopUpMenu * tpop		= getMenuFromButton( tbut );
 
-				Vector2i pos( tbut->Pos().x, tbut->Pos().y + tbut->Size().height() );
-				tpop->Pos( pos );
+				Vector2i pos( tbut->position().x, tbut->position().y + tbut->size().height() );
+				tpop->position( pos );
 
-				if ( Msg->Msg() == UIMessage::MsgMouseEnter ) {
+				if ( Msg->getMsg() == UIMessage::MsgMouseEnter ) {
 					if ( NULL != mCurrentMenu ) {
 						mCurrentMenu = tpop;
 
-						tbut->Select();
-						tpop->Show();
+						tbut->select();
+						tpop->show();
 					}
 				} else {
-					if ( Msg->Flags() & EE_BUTTON_LMASK ) {
+					if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 						mCurrentMenu = tpop;
 
-						tbut->Select();
-						tpop->Show();
+						tbut->select();
+						tpop->show();
 					}
 				}
 
@@ -201,8 +201,8 @@ Uint32 UIWinMenu::OnMessage( const UIMessage * Msg ) {
 		case UIMessage::MsgSelected:
 		{
 			for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
-				if ( it->first != Msg->Sender() ) {
-					it->first->Unselect();
+				if ( it->first != Msg->getSender() ) {
+					it->first->unselect();
 				}
 			}
 
@@ -210,10 +210,10 @@ Uint32 UIWinMenu::OnMessage( const UIMessage * Msg ) {
 		}
 		case UIMessage::MsgFocusLoss:
 		{
-			UIControl * FocusCtrl = UIManager::instance()->FocusControl();
+			UIControl * FocusCtrl = UIManager::instance()->focusControl();
 
-			if ( !IsParentOf( FocusCtrl ) && !IsPopUpMenuChild( FocusCtrl ) ) {
-				OnComplexControlFocusLoss();
+			if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
+				onComplexControlFocusLoss();
 			}
 
 			return 1;
@@ -223,13 +223,13 @@ Uint32 UIWinMenu::OnMessage( const UIMessage * Msg ) {
 	return 0;
 }
 
-void UIWinMenu::UnselectButtons() {
+void UIWinMenu::unselectButtons() {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
-		it->first->Unselect();
+		it->first->unselect();
 	}
 }
 
-UIPopUpMenu * UIWinMenu::GetMenuFromButton( UISelectButton * Button ) {
+UIPopUpMenu * UIWinMenu::getMenuFromButton( UISelectButton * Button ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
 		if ( it->first == Button ) {
 			return it->second;
@@ -239,9 +239,9 @@ UIPopUpMenu * UIWinMenu::GetMenuFromButton( UISelectButton * Button ) {
 	return NULL;
 }
 
-bool UIWinMenu::IsPopUpMenuChild( UIControl * Ctrl ) {
+bool UIWinMenu::isPopUpMenuChild( UIControl * Ctrl ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
-		if ( it->second == Ctrl || it->second->IsParentOf( Ctrl ) ) {
+		if ( it->second == Ctrl || it->second->isParentOf( Ctrl ) ) {
 			return true;
 		}
 	}
@@ -249,59 +249,59 @@ bool UIWinMenu::IsPopUpMenuChild( UIControl * Ctrl ) {
 	return false;
 }
 
-void UIWinMenu::OnMenuFocusLoss( const UIEvent * Event ) {
-	UIControl * FocusCtrl = UIManager::instance()->FocusControl();
+void UIWinMenu::onMenuFocusLoss( const UIEvent * Event ) {
+	UIControl * FocusCtrl = UIManager::instance()->focusControl();
 
-	if ( !IsParentOf( FocusCtrl ) && !IsPopUpMenuChild( FocusCtrl ) ) {
-		OnComplexControlFocusLoss();
+	if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
+		onComplexControlFocusLoss();
 	}
 }
 
-void UIWinMenu::OnComplexControlFocusLoss() {
-	UIComplexControl::OnComplexControlFocusLoss();
+void UIWinMenu::onComplexControlFocusLoss() {
+	UIComplexControl::onComplexControlFocusLoss();
 
 	if ( NULL != mCurrentMenu ) {
-		mCurrentMenu->Hide();
+		mCurrentMenu->hide();
 
 		mCurrentMenu = NULL;
 	}
 
-	UnselectButtons();
+	unselectButtons();
 }
 
 
-void UIWinMenu::FontColor( const ColorA& Color ) {
+void UIWinMenu::fontColor( const ColorA& Color ) {
 	mFontColor = Color;
 }
 
-const ColorA& UIWinMenu::FontColor() const {
+const ColorA& UIWinMenu::fontColor() const {
 	return mFontColor;
 }
 
-void UIWinMenu::FontOverColor( const ColorA& Color ) {
+void UIWinMenu::fontOverColor( const ColorA& Color ) {
 	mFontOverColor = Color;
 }
 
-const ColorA& UIWinMenu::FontOverColor() const {
+const ColorA& UIWinMenu::fontOverColor() const {
 	return mFontOverColor;
 }
 
-void UIWinMenu::FontSelectedColor( const ColorA& Color ) {
+void UIWinMenu::fontSelectedColor( const ColorA& Color ) {
 	mFontSelectedColor = Color;
 }
 
-const ColorA& UIWinMenu::FontSelectedColor() const {
+const ColorA& UIWinMenu::fontSelectedColor() const {
 	return mFontSelectedColor;
 }
 
-Graphics::Font * UIWinMenu::Font() const {
+Graphics::Font * UIWinMenu::font() const {
 	return mFont;
 }
 
-void UIWinMenu::DestroyMenues() {
-	if ( !UIManager::instance()->IsShootingDown() ) {
+void UIWinMenu::destroyMenues() {
+	if ( !UIManager::instance()->isShootingDown() ) {
 		for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
-			it->second->Close();
+			it->second->close();
 		}
 	}
 }

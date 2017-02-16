@@ -11,29 +11,29 @@ class EE_API UIMenuCheckBox : public UIMenuItem {
 
 		virtual ~UIMenuCheckBox();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		const bool& Active() const;
+		const bool& active() const;
 
-		const bool& IsActive() const;
+		const bool& isActive() const;
 
-		void Active( const bool& active );
+		void active( const bool& active );
 
-		void SwitchActive();
+		void switchActive();
 
-		virtual bool InheritsFrom( const Uint32 Type );
+		virtual bool inheritsFrom( const Uint32 getType );
 	protected:
 		bool		mActive;
 		UISkin *	mSkinActive;
 		UISkin *	mSkinInactive;
 
-		virtual Uint32 OnMouseUp( const Vector2i &Pos, const Uint32 Flags );
+		virtual Uint32 onMouseUp( const Vector2i &position, const Uint32 flags );
 
-		virtual void OnStateChange();
+		virtual void onStateChange();
 };
 
 }}

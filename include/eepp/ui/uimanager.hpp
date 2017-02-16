@@ -15,90 +15,90 @@ class EE_API UIManager {
 	public:
 		~UIManager();
 
-		UIWindow * MainControl() const;
+		UIWindow * mainControl() const;
 
-		UIControl * FocusControl() const;
+		UIControl * focusControl() const;
 
-		void FocusControl( UIControl * Ctrl );
+		void focusControl( UIControl * Ctrl );
 
-		UIControl * OverControl() const;
+		UIControl * overControl() const;
 
-		void OverControl( UIControl * Ctrl );
+		void overControl( UIControl * Ctrl );
 
-		void Init( Uint32 Flags = 0, EE::Window::Window * window = NULL );
+		void init( Uint32 Flags = 0, EE::Window::Window * window = NULL );
 
-		void Shutdown();
+		void shutdown();
 
-		void Update();
+		void update();
 
-		void Draw();
+		void draw();
 
-		const Time& Elapsed() const;
+		const Time& elapsed() const;
 
-		void ResizeControl( EE::Window::Window * win );
+		void resizeControl( EE::Window::Window * win );
 
-		void SendMsg( UIControl * Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
+		void sendMsg( UIControl * Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
 
-		Vector2i GetMousePos();
+		Vector2i getMousePos();
 
-		Input * GetInput() const;
+		Input * getInput() const;
 
-		const Uint32& PressTrigger() const;
+		const Uint32& pressTrigger() const;
 
-		const Uint32& LastPressTrigger() const;
+		const Uint32& lastPressTrigger() const;
 
-		void ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
+		void clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
 
-		void ClipDisable();
+		void clipDisable();
 
-		void SendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
+		void sendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
 
-		void SendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
+		void sendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
 
-		void HighlightFocus( bool Highlight );
+		void highlightFocus( bool Highlight );
 
-		bool HighlightFocus() const;
+		bool highlightFocus() const;
 
-		void HighlightFocusColor( const ColorA& Color );
+		void highlightFocusColor( const ColorA& Color );
 
-		const ColorA& HighlightFocusColor() const;
+		const ColorA& highlightFocusColor() const;
 
-		void HighlightOver( bool Highlight );
+		void highlightOver( bool Highlight );
 
-		bool HighlightOver() const;
+		bool highlightOver() const;
 
-		void HighlightOverColor( const ColorA& Color );
+		void highlightOverColor( const ColorA& Color );
 
-		const ColorA& HighlightOverColor() const;
+		const ColorA& highlightOverColor() const;
 
-		void SendMouseClick( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
+		void sendMouseClick( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
 
-		void SendMouseUp( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
+		void sendMouseUp( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
 
-		void SendMouseDown( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
+		void sendMouseDown( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
 
-		EE::Window::Window * GetWindow() const;
+		EE::Window::Window * getWindow() const;
 
 		/** Control where the mouse click started to be down */
-		UIControl * DownControl() const;
+		UIControl * downControl() const;
 
-		UIControl * LossFocusControl() const;
+		UIControl * lossFocusControl() const;
 
-		const bool& IsShootingDown() const;
+		const bool& isShootingDown() const;
 
 		/** @return The position of the mouse when the event MouseDown was fired last time.
 		**	Useful to compare the mouse position of the MouseClick event */
-		const Vector2i& GetMouseDownPos() const;
+		const Vector2i& getMouseDownPos() const;
 
-		void SetControlDragging( bool dragging );
+		void setControlDragging( bool dragging );
 
-		const bool& IsControlDragging() const;
+		const bool& isControlDragging() const;
 
-		void UseGlobalCursors( const bool& use );
+		void useGlobalCursors( const bool& use );
 
-		const bool& UseGlobalCursors();
+		const bool& useGlobalCursors();
 
-		void SetCursor( EE_CURSOR_TYPE cursor );
+		void setCursor( EE_CURSOR_TYPE cursor );
 	protected:
 		friend class UIControl;
 		friend class UIWindow;
@@ -130,23 +130,23 @@ class EE_API UIManager {
 
 		UIManager();
 
-		void				InputCallback( InputEvent * Event );
+		void				inputCallback( InputEvent * Event );
 
-		void				CheckTabPress( const Uint32& KeyCode );
+		void				checkTabPress( const Uint32& KeyCode );
 
-		void				SetActiveWindow( UIWindow * window );
+		void				setActiveWindow( UIWindow * window );
 
-		void				SetFocusLastWindow( UIWindow * window  );
+		void				setFocusLastWindow( UIWindow * window  );
 
-		void				WindowAdd( UIWindow * win );
+		void				windowAdd( UIWindow * win );
 
-		void				WindowRemove( UIWindow * win );
+		void				windowRemove( UIWindow * win );
 
-		bool				WindowExists( UIWindow * win );
+		bool				windowExists( UIWindow * win );
 
-		void				AddToCloseQueue( UIControl * Ctrl );
+		void				addToCloseQueue( UIControl * Ctrl );
 
-		void				CheckClose();
+		void				checkClose();
 };
 
 }}

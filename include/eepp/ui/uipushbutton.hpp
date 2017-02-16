@@ -22,17 +22,17 @@ class EE_API UIPushButton : public UIComplexControl {
 					IconAutoMargin( true ),
 					IconMinSize( 0, 0 )
 				{
-					UITheme * Theme = UIThemeManager::instance()->DefaultTheme();
+					UITheme * Theme = UIThemeManager::instance()->defaultTheme();
 
 					if ( NULL != Theme ) {
-						Font			= Theme->Font();
-						FontColor		= Theme->FontColor();
-						FontShadowColor	= Theme->FontShadowColor();
-						FontOverColor	= Theme->FontOverColor();
+						Font			= Theme->font();
+						FontColor		= Theme->fontColor();
+						FontShadowColor	= Theme->fontShadowColor();
+						FontOverColor	= Theme->fontOverColor();
 					}
 
 					if ( NULL == Font )
-						Font = UIThemeManager::instance()->DefaultFont();
+						Font = UIThemeManager::instance()->defaultFont();
 				}
 
 				inline ~CreateParams() {}
@@ -58,37 +58,37 @@ class EE_API UIPushButton : public UIComplexControl {
 
 		virtual ~UIPushButton();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		virtual void Icon( SubTexture * Icon );
+		virtual void icon( SubTexture * icon );
 
-		virtual UIGfx * Icon() const;
+		virtual UIGfx * icon() const;
 
-		virtual void Text( const String& text );
+		virtual void text( const String& text );
 
-		virtual const String& Text();
+		virtual const String& text();
 
-		void Padding( const Recti& padding );
+		void padding( const Recti& padding );
 
-		const Recti& Padding() const;
+		const Recti& padding() const;
 
-		void IconHorizontalMargin( Int32 margin );
+		void iconHorizontalMargin( Int32 margin );
 
-		const Int32& IconHorizontalMargin() const;
+		const Int32& iconHorizontalMargin() const;
 
-		UITextBox * TextBox() const;
+		UITextBox * getTextBox() const;
 
-		const ColorA& FontColor() const;
+		const ColorA& fontColor() const;
 
-		void FontColor( const ColorA& color );
+		void fontColor( const ColorA& color );
 
-		const ColorA& FontOverColor() const;
+		const ColorA& fontOverColor() const;
 
-		void FontOverColor( const ColorA& color );
+		void fontOverColor( const ColorA& color );
 	protected:
 		ColorA		mFontColor;
 		ColorA		mFontOverColor;
@@ -96,19 +96,19 @@ class EE_API UIPushButton : public UIComplexControl {
 		UITextBox * 	mTextBox;
 		Int32			mIconSpace;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		void AutoPadding();
+		void autoPadding();
 
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 
-		virtual void OnStateChange();
+		virtual void onStateChange();
 
-		virtual void DoAfterSetTheme();
+		virtual void doAftersetTheme();
 
-		virtual Uint32 OnKeyDown( const UIEventKey& Event );
+		virtual Uint32 onKeyDown( const UIEventKey& Event );
 
-		virtual Uint32 OnKeyUp( const UIEventKey& Event );
+		virtual Uint32 onKeyUp( const UIEventKey& Event );
 };
 
 }}

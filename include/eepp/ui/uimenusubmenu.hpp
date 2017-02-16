@@ -28,21 +28,21 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
 		virtual ~UIMenuSubMenu();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		void SubMenu( UIMenu * SubMenu );
+		void subMenu( UIMenu * subMenu );
 
-		UIMenu * SubMenu() const;
+		UIMenu * subMenu() const;
 
-		UIGfx * Arrow() const;
+		UIGfx * getArrow() const;
 
-		void ShowSubMenu();
+		void showSubMenu();
 
-		virtual bool InheritsFrom( const Uint32 Type );
+		virtual bool inheritsFrom( const Uint32 getType );
 	protected:
 		UIMenu *	mSubMenu;
 		UISkin *	mSkinArrow;
@@ -52,17 +52,17 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 		Uint32		mCbId;
 		Uint32		mCbId2;
 
-		virtual Uint32 OnMouseExit( const Vector2i &Pos, const Uint32 Flags );
+		virtual Uint32 onMouseExit( const Vector2i &position, const Uint32 flags );
 
-		virtual Uint32 OnMouseMove( const Vector2i &Pos, const Uint32 Flags );
+		virtual Uint32 onMouseMove( const Vector2i &position, const Uint32 flags );
 
-		virtual void OnStateChange();
+		virtual void onStateChange();
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		void OnSubMenuFocusLoss( const UIEvent * Event );
+		void onSubMenuFocusLoss( const UIEvent * Event );
 
-		void OnHideByClick( const UIEvent * Event );
+		void onHideByClick( const UIEvent * Event );
 };
 
 }}

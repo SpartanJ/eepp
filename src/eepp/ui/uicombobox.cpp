@@ -7,44 +7,44 @@ UIComboBox::UIComboBox( UIComboBox::CreateParams& Params ) :
 	UIDropDownList( Params ),
 	mButton( NULL )
 {
-	AllowEditing( true );
+	allowEditing( true );
 
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UIComboBox::~UIComboBox() {
 }
 
-Uint32 UIComboBox::Type() const {
+Uint32 UIComboBox::getType() const {
 	return UI_TYPE_COMBOBOX;
 }
 
-bool UIComboBox::IsType( const Uint32& type ) const {
-	return UIComboBox::Type() == type ? true : UIDropDownList::IsType( type );
+bool UIComboBox::isType( const Uint32& type ) const {
+	return UIComboBox::getType() == type ? true : UIDropDownList::isType( type );
 }
 
-void UIComboBox::SetTheme( UITheme * Theme ) {
-	UIControl::SetThemeControl( Theme, "combobox" );
+void UIComboBox::setTheme( UITheme * Theme ) {
+	UIControl::setThemeControl( Theme, "combobox" );
 
-	AutoSizeControl();
+	autoSizeControl();
 
-	CreateButton();
+	createButton();
 
-	AutoPadding();
+	autoPadding();
 
-	OnSizeChange();
+	onSizeChange();
 }
 
-void UIComboBox::CreateButton() {
+void UIComboBox::createButton() {
 	eeSAFE_DELETE( mButton );
 
 	Int32 btnWidth = 0;
 
-	if ( NULL != mSkinState && NULL != mSkinState->GetSkin() ) {
-		if ( mSkinState->GetSkin()->GetType() == UISkin::SkinComplex ) {
-			UISkinComplex * tComplex = reinterpret_cast<UISkinComplex*> ( mSkinState->GetSkin() );
+	if ( NULL != mSkinState && NULL != mSkinState->getSkin() ) {
+		if ( mSkinState->getSkin()->getType() == UISkin::SkinComplex ) {
+			UISkinComplex * tComplex = reinterpret_cast<UISkinComplex*> ( mSkinState->getSkin() );
 
-			SubTexture * tSubTexture = tComplex->GetSubTextureSide( UISkinState::StateNormal, UISkinComplex::Right );
+			SubTexture * tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Right );
 
 			if ( NULL != tSubTexture )
 				btnWidth = tSubTexture->realSize().width();
@@ -56,42 +56,42 @@ void UIComboBox::CreateButton() {
 	Params.Size = Sizei( btnWidth, mSize.height() );
 	Params.PosSet( mSize.width() - btnWidth, 0 );
 	mButton = eeNew( UIControl, ( Params ) );
-	mButton->Visible( true );
-	mButton->Enabled( true );
-	mButton->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIComboBox::OnButtonClick ) );
-	mButton->AddEventListener( UIEvent::EventMouseEnter, cb::Make1( this, &UIComboBox::OnButtonEnter ) );
-	mButton->AddEventListener( UIEvent::EventMouseExit, cb::Make1( this, &UIComboBox::OnButtonExit ) );
+	mButton->visible( true );
+	mButton->enabled( true );
+	mButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIComboBox::onButtonClick ) );
+	mButton->addEventListener( UIEvent::EventMouseEnter, cb::Make1( this, &UIComboBox::onButtonEnter ) );
+	mButton->addEventListener( UIEvent::EventMouseExit, cb::Make1( this, &UIComboBox::onButtonExit ) );
 }
 
-void UIComboBox::OnButtonClick( const UIEvent * Event ) {
+void UIComboBox::onButtonClick( const UIEvent * Event ) {
 	const UIEventMouse * MEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
-	if ( MEvent->Flags() & EE_BUTTON_LMASK ) {
-		ShowListBox();
+	if ( MEvent->getFlags() & EE_BUTTON_LMASK ) {
+		showListBox();
 	}
 }
 
-void UIComboBox::OnButtonEnter( const UIEvent * Event ) {
-	SetSkinState( UISkinState::StateMouseEnter );
+void UIComboBox::onButtonEnter( const UIEvent * Event ) {
+	setSkinState( UISkinState::StateMouseEnter );
 }
 
-void UIComboBox::OnButtonExit( const UIEvent * Event ) {
-	SetSkinState( UISkinState::StateMouseExit );
+void UIComboBox::onButtonExit( const UIEvent * Event ) {
+	setSkinState( UISkinState::StateMouseExit );
 }
 
-Uint32 UIComboBox::OnMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UIComboBox::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTON_LMASK ) {
-		UITextInput::OnMouseClick( Pos, Flags );
+		UITextInput::onMouseClick( Pos, Flags );
 
-		if ( mListBox->Visible() ) {
-			Hide();
+		if ( mListBox->visible() ) {
+			hide();
 		}
 	}
 
 	return 1;
 }
 
-void UIComboBox::OnControlClear( const UIEvent *Event ) {
+void UIComboBox::onControlClear( const UIEvent *Event ) {
 }
 
 }}

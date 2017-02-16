@@ -28,40 +28,40 @@ class EE_API UIGfx : public UIComplexControl {
 
 		virtual ~UIGfx();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual void Alpha( const Float& alpha );
+		virtual void alpha( const Float& alpha );
 
-		Graphics::SubTexture * SubTexture() const;
+		Graphics::SubTexture * subTexture() const;
 
-		void SubTexture( Graphics::SubTexture * subTexture );
+		void subTexture( Graphics::SubTexture * subTexture );
 
-		const ColorA& Color() const;
+		const ColorA& color() const;
 
-		void Color( const ColorA& color );
+		void color( const ColorA& col );
 
-		const EE_RENDER_MODE& RenderMode() const;
+		const EE_RENDER_MODE& renderMode() const;
 
-		void RenderMode( const EE_RENDER_MODE& render );
+		void renderMode( const EE_RENDER_MODE& render );
 
-		const Vector2i& AlignOffset() const;
+		const Vector2i& alignOffset() const;
 	protected:
 		Graphics::SubTexture * 	mSubTexture;
 		ColorA					mColor;
 		EE_RENDER_MODE			mRender;
 		Vector2i				mAlignOffset;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		void AutoSize();
+		void autoSize();
 
-		void AutoAlign();
+		void autoAlign();
 
-		void DrawSubTexture();
+		void drawSubTexture();
 };
 
 }}

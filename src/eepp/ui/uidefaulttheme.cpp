@@ -9,16 +9,16 @@
 
 namespace EE { namespace UI {
 
-UIDefaultTheme::UIDefaultTheme( const std::string& Name, const std::string& Abbr, Graphics::Font * DefaultFont ) :
-	UITheme( Name, Abbr, DefaultFont )
+UIdefaultTheme::UIdefaultTheme( const std::string& Name, const std::string& Abbr, Graphics::Font * defaultFont ) :
+	UITheme( Name, Abbr, defaultFont )
 {
-	FontColor( ColorA( 230, 230, 230, 255 ) );
-	FontOverColor( ColorA( 255, 255, 255, 255 ) );
-	FontSelectedColor( ColorA( 255, 255, 255, 255 ) );
-	FontShadowColor( ColorA( 50, 50, 50, 150 ) );
+	fontColor( ColorA( 230, 230, 230, 255 ) );
+	fontOverColor( ColorA( 255, 255, 255, 255 ) );
+	fontSelectedColor( ColorA( 255, 255, 255, 255 ) );
+	fontShadowColor( ColorA( 50, 50, 50, 150 ) );
 }
 
-UIPopUpMenu * UIDefaultTheme::CreatePopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 RowHeight, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
+UIPopUpMenu * UIdefaultTheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 RowHeight, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	UIPopUpMenu::CreateParams MenuParams;
 	MenuParams.Parent( Parent );
 	MenuParams.PosSet( Pos );
@@ -30,7 +30,7 @@ UIPopUpMenu * UIDefaultTheme::CreatePopUpMenu( UIControl * Parent, const Sizei& 
 	MenuParams.MinSpaceForIcons = MinSpaceForIcons;
 	MenuParams.MinRightMargin = MinRightMargin;
 
-	if ( UseDefaultThemeValues() ) {
+	if ( useDefaultThemeValues() ) {
 		MenuParams.MinWidth = 100;
 		MenuParams.MinSpaceForIcons = 24;
 		MenuParams.MinRightMargin = 8;
@@ -40,7 +40,7 @@ UIPopUpMenu * UIDefaultTheme::CreatePopUpMenu( UIControl * Parent, const Sizei& 
 	return eeNew( UIPopUpMenu, ( MenuParams ) );
 }
 
-UIProgressBar * UIDefaultTheme::CreateProgressBar( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool DisplayPercent, bool VerticalExpand, Vector2f MovementSpeed, Rectf FillerMargin ) {
+UIProgressBar * UIdefaultTheme::createProgressBar( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool DisplayPercent, bool VerticalExpand, Vector2f MovementSpeed, Rectf FillerMargin ) {
 	UIProgressBar::CreateParams PBParams;
 	PBParams.Parent( Parent );
 	PBParams.PosSet( Pos );
@@ -51,7 +51,7 @@ UIProgressBar * UIDefaultTheme::CreateProgressBar( UIControl * Parent, const Siz
 	PBParams.MovementSpeed = MovementSpeed;
 	PBParams.FillerMargin = FillerMargin;
 
-	if ( UseDefaultThemeValues() ) {
+	if ( useDefaultThemeValues() ) {
 		PBParams.Flags |= UI_AUTO_SIZE;
 		PBParams.DisplayPercent = true;
 		PBParams.VerticalExpand = true;
@@ -60,12 +60,12 @@ UIProgressBar * UIDefaultTheme::CreateProgressBar( UIControl * Parent, const Siz
 	}
 
 	UIProgressBar * Ctrl = eeNew( UIProgressBar, ( PBParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UIWinMenu * UIDefaultTheme::CreateWinMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MarginBetweenButtons, Uint32 ButtonMargin, Uint32 MenuHeight, Uint32 FirstButtonMargin ) {
+UIWinMenu * UIdefaultTheme::createWinMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MarginBetweenButtons, Uint32 ButtonMargin, Uint32 MenuHeight, Uint32 FirstButtonMargin ) {
 	UIWinMenu::CreateParams WinMenuParams;
 	WinMenuParams.Parent( Parent );
 	WinMenuParams.PosSet( Pos );
@@ -76,17 +76,17 @@ UIWinMenu * UIDefaultTheme::CreateWinMenu( UIControl * Parent, const Sizei& Size
 	WinMenuParams.MenuHeight = MenuHeight;
 	WinMenuParams.FirstButtonMargin = FirstButtonMargin;
 
-	if ( UseDefaultThemeValues() ) {
+	if ( useDefaultThemeValues() ) {
 		WinMenuParams.ButtonMargin = 12;
 	}
 
 	UIWinMenu * Ctrl = eeNew( UIWinMenu, ( WinMenuParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UIWindow * UIDefaultTheme::CreateWindow( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
+UIWindow * UIdefaultTheme::createWindow( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
 	UIWindow::CreateParams WinParams;
 	WinParams.Parent( Parent );
 	WinParams.PosSet( Pos );
@@ -96,7 +96,7 @@ UIWindow * UIDefaultTheme::CreateWindow( UIControl * Parent, const Sizei& Size, 
 	WinParams.MinWindowSize = MinWindowSize;
 	WinParams.BaseAlpha = BaseAlpha;
 
-	if ( UseDefaultThemeValues() ) {
+	if ( useDefaultThemeValues() ) {
 		WinParams.Flags |= UI_DRAW_SHADOW;
 		WinParams.WinFlags |= UI_WIN_DRAW_SHADOW;
 		WinParams.ButtonsPositionFixer.x = -2;
@@ -106,7 +106,7 @@ UIWindow * UIDefaultTheme::CreateWindow( UIControl * Parent, const Sizei& Size, 
 	return eeNew( UIWindow, ( WinParams ) );
 }
 
-UICommonDialog * UIDefaultTheme::CreateCommonDialog( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
+UICommonDialog * UIdefaultTheme::createCommonDialog( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
 	UICommonDialog::CreateParams DLGParams;
 	DLGParams.Parent( Parent );
 	DLGParams.PosSet( Pos );
@@ -119,7 +119,7 @@ UICommonDialog * UIDefaultTheme::CreateCommonDialog( UIControl * Parent, const S
 	DLGParams.DefaultFilePattern = DefaultFilePattern;
 	DLGParams.CDLFlags = CDLFlags;
 
-	if ( UseDefaultThemeValues() ) {
+	if ( useDefaultThemeValues() ) {
 		DLGParams.Flags |= UI_DRAW_SHADOW;
 		DLGParams.WinFlags |= UI_WIN_DRAW_SHADOW;
 		DLGParams.ButtonsPositionFixer.x = -2;
@@ -129,7 +129,7 @@ UICommonDialog * UIDefaultTheme::CreateCommonDialog( UIControl * Parent, const S
 	return eeNew( UICommonDialog, ( DLGParams ) );
 }
 
-UIMessageBox * UIDefaultTheme::CreateMessageBox( UI_MSGBOX_TYPE Type, const String& Message, Uint32 WinFlags, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
+UIMessageBox * UIdefaultTheme::createMessageBox( UI_MSGBOX_TYPE Type, const String& Message, Uint32 WinFlags, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
 	UIMessageBox::CreateParams MsgBoxParams;
 	MsgBoxParams.Parent( Parent );
 	MsgBoxParams.PosSet( Pos );
@@ -141,7 +141,7 @@ UIMessageBox * UIDefaultTheme::CreateMessageBox( UI_MSGBOX_TYPE Type, const Stri
 	MsgBoxParams.Type = Type;
 	MsgBoxParams.Message = Message;
 
-	if ( UseDefaultThemeValues() ) {
+	if ( useDefaultThemeValues() ) {
 		MsgBoxParams.Flags |= UI_DRAW_SHADOW;
 		MsgBoxParams.WinFlags |= UI_WIN_DRAW_SHADOW;
 		MsgBoxParams.ButtonsPositionFixer.x = -2;
@@ -151,7 +151,7 @@ UIMessageBox * UIDefaultTheme::CreateMessageBox( UI_MSGBOX_TYPE Type, const Stri
 	return eeNew( UIMessageBox, ( MsgBoxParams ) );
 }
 
-UIComboBox * UIDefaultTheme::CreateComboBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
+UIComboBox * UIdefaultTheme::createComboBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
 	UIComboBox::CreateParams ComboParams;
 	ComboParams.Parent( Parent );
 	ComboParams.PosSet( Pos );
@@ -161,17 +161,17 @@ UIComboBox * UIDefaultTheme::CreateComboBox( UIControl * Parent, const Sizei& Si
 	ComboParams.PopUpToMainControl = PopUpToMainControl;
 	ComboParams.ListBox = ListBox;
 
-	if ( UseDefaultThemeValues() ) {
+	if ( useDefaultThemeValues() ) {
 		ComboParams.Flags |= UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED;
 	}
 
 	UIComboBox * Ctrl = eeNew( UIComboBox, ( ComboParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UIDropDownList * UIDefaultTheme::CreateDropDownList( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
+UIDropDownList * UIdefaultTheme::createDropDownList( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
 	UIDropDownList::CreateParams DDLParams;
 	DDLParams.Parent( Parent );
 	DDLParams.PosSet( Pos );
@@ -181,17 +181,17 @@ UIDropDownList * UIDefaultTheme::CreateDropDownList( UIControl * Parent, const S
 	DDLParams.PopUpToMainControl = PopUpToMainControl;
 	DDLParams.ListBox = ListBox;
 
-	if ( UseDefaultThemeValues() ) {
+	if ( useDefaultThemeValues() ) {
 		DDLParams.Flags |= UI_AUTO_SIZE;
 	}
 
 	UIDropDownList * Ctrl = eeNew( UIDropDownList, ( DDLParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UITabWidget * UIDefaultTheme::CreateTabWidget( UIControl *Parent, const Sizei &Size, const Vector2i &Pos, const Uint32 &Flags, const bool &TabsClosable, const bool &SpecialBorderTabs, const Int32 &TabSeparation, const Uint32 &MaxTextLength, const Uint32 &TabWidgetHeight, const Uint32 &TabTextAlign, const Uint32 &MinTabWidth, const Uint32 &MaxTabWidth ) {
+UITabWidget * UIdefaultTheme::createTabWidget( UIControl *Parent, const Sizei &Size, const Vector2i &Pos, const Uint32 &Flags, const bool &TabsClosable, const bool &SpecialBorderTabs, const Int32 &TabSeparation, const Uint32 &MaxTextLength, const Uint32 &TabWidgetHeight, const Uint32 &TabTextAlign, const Uint32 &MinTabWidth, const Uint32 &MaxTabWidth ) {
 	UITabWidget::CreateParams TabWidgetParams;
 	TabWidgetParams.Parent( Parent );
 	TabWidgetParams.PosSet( Pos );
@@ -206,7 +206,7 @@ UITabWidget * UIDefaultTheme::CreateTabWidget( UIControl *Parent, const Sizei &S
 	TabWidgetParams.MinTabWidth = MinTabWidth;
 	TabWidgetParams.MaxTabWidth = MaxTabWidth;
 
-	if ( UseDefaultThemeValues() ) {
+	if ( useDefaultThemeValues() ) {
 		TabWidgetParams.TabSeparation = -1;
 		TabWidgetParams.FontSelectedColor = ColorA( 255, 255, 255, 255 );
 		TabWidgetParams.DrawLineBelowTabs = true;
@@ -215,27 +215,27 @@ UITabWidget * UIDefaultTheme::CreateTabWidget( UIControl *Parent, const Sizei &S
 	}
 
 	UITabWidget * Ctrl = eeNew( UITabWidget, ( TabWidgetParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UITooltip * UIDefaultTheme::CreateTooltip( UIControl * TooltipOf, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
+UITooltip * UIdefaultTheme::createTooltip( UIControl * TooltipOf, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
 	UITooltip::CreateParams TooltipParams;
 	TooltipParams.Parent( Parent );
 	TooltipParams.PosSet( Pos );
 	TooltipParams.SizeSet( Size );
 	TooltipParams.Flags = Flags;
 
-	if ( UseDefaultThemeValues() ) {
+	if ( useDefaultThemeValues() ) {
 		TooltipParams.Flags &= ~UI_AUTO_PADDING;
 		TooltipParams.FontColor = ColorA( 0, 0, 0, 255 );
 		TooltipParams.Padding = Recti( 4, 6, 4, 6 );
 	}
 
 	UITooltip * Ctrl = eeNew( UITooltip, ( TooltipParams, TooltipOf ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 

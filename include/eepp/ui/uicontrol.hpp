@@ -74,172 +74,172 @@ class EE_API UIControl {
 
 		virtual ~UIControl();
 
-		void ScreenToControl( Vector2i& Pos ) const;
+		void screenToControl( Vector2i& position ) const;
 
-		void ControlToScreen( Vector2i& Pos ) const;
+		void controlToScreen( Vector2i& position ) const;
 
-		void WorldToControl( Vector2i& pos ) const;
+		void worldToControl( Vector2i& pos ) const;
 
-		void ControlToWorld( Vector2i& pos ) const;
+		void controlToWorld( Vector2i& pos ) const;
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void MessagePost( const UIMessage * Msg );
+		virtual void messagePost( const UIMessage * Msg );
 
-		bool IsInside( const Vector2i& Pos ) const;
+		bool isInside( const Vector2i& position ) const;
 
-		void Pos( const Vector2i& Pos );
+		void position( const Vector2i& position );
 
-		void Pos( const Int32& x, const Int32& y );
+		void position( const Int32& x, const Int32& y );
 
-		const Vector2i& Pos() const;
+		const Vector2i& position() const;
 
-		virtual void Size( const Sizei& Size );
+		virtual void size( const Sizei& size );
 
-		void Size( const Int32& Width, const Int32& Height );
+		void size( const Int32& Width, const Int32& Height );
 
-		const Sizei& Size();
+		const Sizei& size();
 
-		Recti Rect() const;
+		Recti getRect() const;
 
-		void Visible( const bool& visible );
+		void visible( const bool& visible );
 
-		bool Visible() const;
+		bool visible() const;
 
-		bool Hided() const;
+		bool isHided() const;
 
-		void Enabled( const bool& enabled );
+		void enabled( const bool& enabled );
 
-		bool Enabled() const;
+		bool enabled() const;
 
-		bool Disabled() const;
+		bool isDisabled() const;
 
-		UIControl * Parent() const;
+		UIControl * parent() const;
 
-		void Parent( UIControl * parent );
+		void parent( UIControl * parent );
 
-		void CenterHorizontal();
+		void centerHorizontal();
 
-		void CenterVertical();
+		void centerVertical();
 
-		void Center();
+		void center();
 
-		virtual void Close();
+		virtual void close();
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual void Update();
+		virtual void update();
 
-		Uint32 HAlign() const;
+		Uint32 hAlign() const;
 
-		void HAlign( Uint32 halign );
+		void hAlign( Uint32 halign );
 
-		Uint32 VAlign() const;
+		Uint32 vAlign() const;
 
-		void VAlign( Uint32 valign );
+		void vAlign( Uint32 valign );
 
-		void FillBackground( bool enabled );
+		void fillBackground( bool enabled );
 
-		void Border( bool enabled );
+		void border( bool enabled );
 
-		UIControl * NextGet() const;
+		UIControl * nextGet() const;
 
-		UIControl * PrevGet() const;
+		UIControl * prevGet() const;
 
-		UIControl * NextGetLoop() const;
+		UIControl * nextGetLoop() const;
 
-		void Data( const UintPtr& data );
+		void data( const UintPtr& data );
 
-		const UintPtr& Data() const;
+		const UintPtr& data() const;
 
-		UIControl * ChildGetAt( Vector2i CtrlPos, unsigned int RecursiveLevel = 0 );
+		UIControl * childGetAt( Vector2i CtrlPos, unsigned int RecursiveLevel = 0 );
 
-		const Uint32& Flags() const;
+		const Uint32& flags() const;
 
-		void Flags( const Uint32& flags );
+		void flags( const Uint32& flags );
 
-		void Blend( const EE_BLEND_MODE& blend );
+		void blend( const EE_BLEND_MODE& blend );
 
-		EE_BLEND_MODE Blend();
+		EE_BLEND_MODE blend();
 
-		void ToFront();
+		void toFront();
 
-		void ToBack();
+		void toBack();
 
-		void ToPos( const Uint32& Pos );
+		void toPos( const Uint32& position );
 
-		const Uint32& ControlFlags() const;
+		const Uint32& controlFlags() const;
 
 		/** Use it at your own risk */
-		void ControlFlags( const Uint32& Flags );
+		void controlFlags( const Uint32& flags );
 
-		Uint32 IsAnimated();
+		Uint32 isAnimated();
 
-		Uint32 IsDragable();
+		Uint32 isDragable();
 
-		Uint32 IsComplex();
+		Uint32 isComplex();
 
-		Uint32 IsClipped();
+		Uint32 isClipped();
 
-		Uint32 AddEventListener( const Uint32& EventType, const UIEventCallback& Callback );
+		Uint32 addEventListener( const Uint32& EventType, const UIEventCallback& Callback );
 
-		void RemoveEventListener( const Uint32& CallbackId );
+		void removeEventListener( const Uint32& CallbackId );
 
-		UIBackground * Background();
+		UIBackground * background();
 
-		UIBorder * Border();
+		UIBorder * border();
 
-		void SetThemeByName( const std::string& Theme );
+		void setThemeByName( const std::string& Theme );
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		void SetThemeControl( UITheme * Theme, const std::string& ControlName );
+		void setThemeControl( UITheme * Theme, const std::string& ControlName );
 
-		void SetThemeToChilds( UITheme * Theme );
+		void setThemeToChilds( UITheme * Theme );
 
-		UISkin * GetSkin();
+		UISkin * getSkin();
 
-		void SetSkinFromTheme( UITheme * Theme, const std::string& ControlName );
+		void setSkinFromTheme( UITheme * Theme, const std::string& ControlName );
 
-		virtual void SetSkin( const UISkin& Skin );
+		virtual void setSkin( const UISkin& Skin );
 
-		UIControl * ChildGetFirst() const;
+		UIControl * childGetFirst() const;
 
-		UIControl * ChildGetLast() const;
+		UIControl * childGetLast() const;
 
-		bool IsMouseOver();
+		bool isMouseOver();
 
-		bool IsMouseOverMeOrChilds();
+		bool isMouseOverMeOrChilds();
 
-		Polygon2f &GetPolygon();
+		Polygon2f &getPolygon();
 
-		const Vector2f& GetPolygonCenter() const;
+		const Vector2f& getPolygonCenter() const;
 
-		void SetSkinState( const Uint32& State );
+		void setSkinState( const Uint32& State );
 
-		bool HasFocus() const;
+		bool hasFocus() const;
 
-		virtual void SetFocus();
+		virtual void setFocus();
 
-		bool IsParentOf( UIControl * Ctrl );
+		bool isParentOf( UIControl * Ctrl );
 
-		void SendEvent( const UIEvent * Event );
+		void sendEvent( const UIEvent * Event );
 
-		void SendMouseEvent( const Uint32& Event, const Vector2i& Pos, const Uint32& Flags );
+		void sendMouseEvent( const Uint32& Event, const Vector2i& position, const Uint32& flags );
 
-		void SendCommonEvent( const Uint32& Event );
+		void sendCommonEvent( const Uint32& Event );
 
-		Sizei GetSkinSize();
+		Sizei getSkinSize();
 
-		UIControl * NextComplexControl();
+		UIControl * nextComplexControl();
 
-		void ApplyDefaultTheme();
+		void applyDefaultTheme();
 
-		Recti GetScreenRect();
+		Recti getScreenRect();
 
-		void ChildsCloseAll();
+		void childsCloseAll();
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
 		friend class UIManager;
@@ -275,117 +275,117 @@ class EE_API UIControl {
 		bool			mVisible;
 		bool			mEnabled;
 
-		virtual Uint32 OnMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const UIMessage * Msg );
 
-		virtual Uint32 OnKeyDown( const UIEventKey& Event );
+		virtual Uint32 onKeyDown( const UIEventKey& Event );
 
-		virtual Uint32 OnKeyUp( const UIEventKey& Event );
+		virtual Uint32 onKeyUp( const UIEventKey& Event );
 
-		virtual Uint32 OnMouseMove( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseMove( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnMouseDown( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnMouseClick( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnMouseUp( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnMouseEnter( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseEnter( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnMouseExit( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseExit( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnFocus();
+		virtual Uint32 onFocus();
 
-		virtual Uint32 OnFocusLoss();
+		virtual Uint32 onFocusLoss();
 
-		virtual void OnClose();
+		virtual void onClose();
 
-		virtual Uint32 OnValueChange();
+		virtual Uint32 onValueChange();
 
-		virtual void OnVisibleChange();
+		virtual void onVisibleChange();
 
-		virtual void OnEnabledChange();
+		virtual void onEnabledChange();
 
-		virtual void OnPosChange();
+		virtual void onPositionChange();
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		virtual void OnParentSizeChange( const Vector2i& SizeChange );
+		virtual void onParentSizeChange( const Vector2i& SizeChange );
 
-		virtual void OnStateChange();
+		virtual void onStateChange();
 		
-		virtual void OnComplexControlFocusLoss();
+		virtual void onComplexControlFocusLoss();
 
-		virtual void BackgroundDraw();
+		virtual void backgroundDraw();
 
-		virtual void BorderDraw();
+		virtual void borderDraw();
 
-		virtual void UpdateQuad();
+		virtual void updateQuad();
 
-		virtual void UpdateCenter();
+		virtual void updateCenter();
 
-		virtual void MatrixSet();
+		virtual void matrixSet();
 
-		virtual void MatrixUnset();
+		virtual void matrixUnset();
 
-		virtual void DrawChilds();
+		virtual void drawChilds();
 
-		virtual void DoAfterSetTheme();
+		virtual void doAftersetTheme();
 
-		virtual UIControl * OverFind( const Vector2f& Point );
+		virtual UIControl * overFind( const Vector2f& Point );
 
-		void ClipMe();
+		void clipMe();
 
-		void CheckClose();
+		void checkClose();
 
-		void InternalDraw();
+		void internalDraw();
 
-		void ChildDeleteAll();
+		void childDeleteAll();
 
-		void ChildAdd( UIControl * ChildCtrl );
+		void childAdd( UIControl * ChildCtrl );
 
-		void ChildAddAt( UIControl * ChildCtrl, Uint32 Pos );
+		void childAddAt( UIControl * ChildCtrl, Uint32 position );
 
-		void ChildRemove( UIControl * ChildCtrl );
+		void childRemove( UIControl * ChildCtrl );
 
-		bool IsChild( UIControl * ChildCtrl ) const;
+		bool isChild( UIControl * ChildCtrl ) const;
 
-		bool InParentTreeOf( UIControl * Child ) const;
+		bool inParentTreeOf( UIControl * Child ) const;
 
-		Uint32 ChildCount() const;
+		Uint32 childCount() const;
 
-		UIControl * ChildAt( Uint32 Index ) const;
+		UIControl * childAt( Uint32 Index ) const;
 
-		UIControl * ChildPrev( UIControl * Ctrl, bool Loop = false ) const;
+		UIControl * childPrev( UIControl * Ctrl, bool Loop = false ) const;
 
-		UIControl * ChildNext( UIControl * Ctrl, bool Loop = false ) const;
+		UIControl * childNext( UIControl * Ctrl, bool Loop = false ) const;
 
-		void ClipDisable();
+		void clipDisable();
 
-		void ClipTo();
+		void clipTo();
 
-		void SetPrevSkinState();
+		void setPrevSkinState();
 
-		virtual void UpdateScreenPos();
+		virtual void updateScreenPos();
 
-		void UpdateChildsScreenPos();
+		void updateChildsScreenPos();
 
-		void WriteCtrlFlag( const Uint32& Flag, const Uint32& Val );
+		void writeCtrlFlag( const Uint32& Flag, const Uint32& Val );
 
-		void WriteFlag( const Uint32& Flag, const Uint32& Val );
+		void writeFlag( const Uint32& Flag, const Uint32& Val );
 
-		void SendParentSizeChange( const Vector2i& SizeChange );
+		void sendParentSizeChange( const Vector2i& SizeChange );
 
-		Time Elapsed();
+		Time elapsed();
 
-		Recti MakePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
+		Recti makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
 
-		void SafeDeleteSkinState();
+		void safeDeleteSkinState();
 
-		Sizei GetSkinSize( UISkin * Skin, const Uint32& State = UISkinState::StateNormal );
+		Sizei getSkinSize( UISkin * Skin, const Uint32& State = UISkinState::StateNormal );
 
-		Rectf GetRectf();
+		Rectf getRectf();
 };
 
 }}

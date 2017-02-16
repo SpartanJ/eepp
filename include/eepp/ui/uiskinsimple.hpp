@@ -12,20 +12,20 @@ class EE_API UISkinSimple : public UISkin {
 
 		virtual ~UISkinSimple();
 
-		virtual void Draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State );
+		virtual void draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State );
 
-		void SetSkin( const Uint32& State );
+		void setSkin( const Uint32& State );
 
-		SubTexture * GetSubTexture( const Uint32& State ) const;
+		SubTexture * getSubTexture( const Uint32& State ) const;
 
-		UISkinSimple * Copy( const std::string& NewName, const bool& CopyColorsState = true );
+		UISkinSimple * copy( const std::string& NewName, const bool& CopyColorsState = true );
 
-		virtual UISkin * Copy();
+		virtual UISkin * copy();
 	protected:
 		SubTexture * 	mSubTexture[ UISkinState::StateCount ];
 		ColorA		mTempColor;
 
-		void StateNormalToState( const Uint32& State );
+		void stateNormalToState( const Uint32& State );
 };
 
 }}

@@ -28,15 +28,15 @@ class EE_API UIMessage {
 			MsgForceDWord = eeINDEX_NOT_FOUND
 		};
 
-		UIMessage( UIControl * Ctrl, const Uint32& Msg, const Uint32& Flags = MsgForceDWord );
+		UIMessage( UIControl * Ctrl, const Uint32& getMsg, const Uint32& getFlags = MsgForceDWord );
 
 		~UIMessage();
 
-		UIControl * Sender() const;
+		UIControl * getSender() const;
 
-		const Uint32& Msg() const;
+		const Uint32& getMsg() const;
 
-		const Uint32& Flags() const;
+		const Uint32& getFlags() const;
 	private:
 		UIControl *	mCtrl;
 		Uint32			mMsg;

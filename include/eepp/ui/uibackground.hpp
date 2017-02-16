@@ -8,25 +8,26 @@ namespace EE { namespace UI {
 class EE_API UIBackground {
 	public:
 		UIBackground();
-		UIBackground( const ColorA& Color, const unsigned int& Corners = 0, const EE_BLEND_MODE& BlendMode = ALPHA_NORMAL );
+		UIBackground( const ColorA& color, const unsigned int& corners = 0, const EE_BLEND_MODE& BlendMode = ALPHA_NORMAL );
 		UIBackground( const UIBackground& Back );
-		UIBackground( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor, const unsigned int& Corners, const EE_BLEND_MODE& BlendMode );
+		UIBackground( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor, const unsigned int& corners, const EE_BLEND_MODE& BlendMode );
 
-		ColorA& Color( const unsigned int& index = 0 );
+		ColorA& color( const unsigned int& index = 0 );
 
-		void Color( const ColorA& Col );
+		void color( const ColorA& Col );
 
-		const std::vector<ColorA>& Colors();
+		const std::vector<ColorA>& colors();
 
-		void Colors( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor );
+		void colors( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor );
 
-		void ColorsTo( const ColorA& Color );
+		void colorsTo( const ColorA& color );
 
-		const EE_BLEND_MODE& Blend() const;
-		void Blend( const EE_BLEND_MODE& blend );
+		const EE_BLEND_MODE& blend() const;
 
-		const unsigned int& Corners() const;
-		void Corners( const unsigned int& corners );
+		void blend( const EE_BLEND_MODE& blend );
+
+		const unsigned int& corners() const;
+		void corners( const unsigned int& corners );
 	protected:
 		std::vector<ColorA>	mColor;
 

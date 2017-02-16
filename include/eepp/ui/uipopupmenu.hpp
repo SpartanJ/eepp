@@ -11,19 +11,19 @@ class EE_API UIPopUpMenu : public UIMenu {
 
 		virtual ~UIPopUpMenu();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		virtual bool Show();
+		virtual bool show();
 
-		virtual bool Hide();
+		virtual bool hide();
 	protected:
-		virtual void OnComplexControlFocusLoss();
+		virtual void onComplexControlFocusLoss();
 
-		virtual Uint32 OnMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const UIMessage * Msg );
 
 		#ifdef EE_PLATFORM_TOUCH
 		Clock mTE;

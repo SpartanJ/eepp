@@ -29,43 +29,43 @@ class EE_API UISlider : public UIComplexControl {
 
 		virtual ~UISlider();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		virtual void Value( Float Val );
+		virtual void value( Float Val );
 
-		const Float& Value() const;
+		const Float& value() const;
 
-		virtual void MinValue( const Float& MinVal );
+		virtual void minValue( const Float& MinVal );
 
-		const Float& MinValue() const;
+		const Float& minValue() const;
 
-		virtual void MaxValue( const Float& MaxVal );
+		virtual void maxValue( const Float& MaxVal );
 
-		const Float& MaxValue() const;
+		const Float& maxValue() const;
 
-		virtual void ClickStep( const Float& step );
+		virtual void clickStep( const Float& step );
 
-		const Float& ClickStep() const;
+		const Float& clickStep() const;
 
-		const bool& IsVertical() const;
+		const bool& isVertical() const;
 
-		virtual void Update();
+		virtual void update();
 
-		UIControl * GetBackSlider() const;
+		UIControl * getBackSlider() const;
 
-		UIDragable * GetSliderButton() const;
+		UIDragable * getSliderButton() const;
 
-		void AdjustChilds();
+		void adjustChilds();
 
-		const bool& AllowHalfSliderOut() const;
+		const bool& allowHalfSliderOut() const;
 
-		const bool& ExpandBackground() const;
+		const bool& expandBackground() const;
 
-		void ManageClick( const Uint32& Flags );
+		void manageClick( const Uint32& flags );
 	protected:
 		friend class Private::UISliderButton;
 
@@ -83,13 +83,13 @@ class EE_API UISlider : public UIComplexControl {
 
 		Uint32				mLastTickMove;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		void FixSliderPos();
+		void fixSliderPos();
 
-		virtual Uint32 OnKeyDown( const UIEventKey &Event );
+		virtual Uint32 onKeyDown( const UIEventKey &Event );
 		
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 };
 
 }}

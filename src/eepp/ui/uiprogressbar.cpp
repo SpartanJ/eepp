@@ -19,27 +19,27 @@ UIProgressBar::UIProgressBar( const UIProgressBar::CreateParams& Params ) :
 	TxtBoxParams.PosSet( 0, 0 );
 
 	mTextBox = eeNew( UITextBox, ( TxtBoxParams ) );
-	mTextBox->Enabled( false );
+	mTextBox->enabled( false );
 
-	UpdateTextBox();
+	updateTextBox();
 
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UIProgressBar::~UIProgressBar() {
 	eeSAFE_DELETE( mParallax );
 }
 
-Uint32 UIProgressBar::Type() const {
+Uint32 UIProgressBar::getType() const {
 	return UI_TYPE_PROGRESSBAR;
 }
 
-bool UIProgressBar::IsType( const Uint32& type ) const {
-	return UIProgressBar::Type() == type ? true : UIComplexControl::IsType( type );
+bool UIProgressBar::isType( const Uint32& type ) const {
+	return UIProgressBar::getType() == type ? true : UIComplexControl::isType( type );
 }
 
-void UIProgressBar::Draw() {
-	UIControlAnim::Draw();
+void UIProgressBar::draw() {
+	UIControlAnim::draw();
 
 	if ( NULL != mParallax && 0.f != mAlpha ) {
 		ColorA C( mParallax->color() );
@@ -51,22 +51,22 @@ void UIProgressBar::Draw() {
 	}
 }
 
-void UIProgressBar::SetTheme( UITheme * Theme ) {
-	UIControl::SetThemeControl( Theme, "progressbar" );
+void UIProgressBar::setTheme( UITheme * Theme ) {
+	UIControl::setThemeControl( Theme, "progressbar" );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Size( mSize.x, GetSkinSize().height() );
+		size( mSize.x, getSkinSize().height() );
 	}
 
-	UISkin * tSkin = Theme->getByName( Theme->Abbr() + "_progressbar_filler" );
+	UISkin * tSkin = Theme->getByName( Theme->abbr() + "_progressbar_filler" );
 
 	if ( tSkin ) {
-		SubTexture * tSubTexture = tSkin->GetSubTexture( UISkinState::StateNormal );
+		SubTexture * tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
 			eeSAFE_DELETE( mParallax );
 
-			Float Height = (Float)GetSkinSize().height();
+			Float Height = (Float)getSkinSize().height();
 
 			if ( !mVerticalExpand )
 				Height = (Float)tSubTexture->realSize().height();
@@ -79,15 +79,15 @@ void UIProgressBar::SetTheme( UITheme * Theme ) {
 	}
 }
 
-Uint32 UIProgressBar::OnValueChange() {
-	UIControlAnim::OnValueChange();
+Uint32 UIProgressBar::onValueChange() {
+	UIControlAnim::onValueChange();
 
-	OnSizeChange();
+	onSizeChange();
 
 	return 1;
 }
 
-void UIProgressBar::OnSizeChange() {
+void UIProgressBar::onSizeChange() {
 	if ( NULL != mParallax ) {
 		Float Height = (Float)mSize.height();
 
@@ -100,89 +100,89 @@ void UIProgressBar::OnSizeChange() {
 		mParallax->size( Sizef( ( ( mSize.width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ) );
 	}
 
-	UpdateTextBox();
+	updateTextBox();
 }
 
-void UIProgressBar::Progress( Float Val ) {
+void UIProgressBar::progress( Float Val ) {
 	mProgress = Val;
 
-	OnValueChange();
-	UpdateTextBox();
+	onValueChange();
+	updateTextBox();
 }
 
-const Float& UIProgressBar::Progress() const {
+const Float& UIProgressBar::progress() const {
 	return mProgress;
 }
 
-void UIProgressBar::TotalSteps( const Float& Steps ) {
+void UIProgressBar::totalSteps( const Float& Steps ) {
 	mTotalSteps = Steps;
 
-	OnSizeChange();
-	UpdateTextBox();
+	onSizeChange();
+	updateTextBox();
 }
 
-const Float& UIProgressBar::TotalSteps() const {
+const Float& UIProgressBar::totalSteps() const {
 	return mTotalSteps;
 }
 
-void UIProgressBar::MovementSpeed( const Vector2f& Speed ) {
+void UIProgressBar::movementSpeed( const Vector2f& Speed ) {
 	mSpeed = Speed;
 
 	if ( NULL != mParallax )
 		mParallax->speed( mSpeed );
 }
 
-const Vector2f& UIProgressBar::MovementSpeed() const {
+const Vector2f& UIProgressBar::movementSpeed() const {
 	return mSpeed;
 }
 
-void UIProgressBar::VerticalExpand( const bool& VerticalExpand ) {
+void UIProgressBar::verticalExpand( const bool& VerticalExpand ) {
 	if ( VerticalExpand != mVerticalExpand ) {
 		mVerticalExpand = VerticalExpand;
 
-		OnSizeChange();
+		onSizeChange();
 	}
 }
 
-const bool& UIProgressBar::VerticalExpand() const {
+const bool& UIProgressBar::verticalExpand() const {
 	return mVerticalExpand;
 }
 
-void UIProgressBar::FillerMargin( const Rectf& margin ) {
+void UIProgressBar::fillerMargin( const Rectf& margin ) {
 	mFillerMargin = margin;
 
-	OnPosChange();
-	OnSizeChange();
+	onPositionChange();
+	onSizeChange();
 }
 
-const Rectf& UIProgressBar::FillerMargin() const {
+const Rectf& UIProgressBar::fillerMargin() const {
 	return mFillerMargin;
 }
 
-void UIProgressBar::DisplayPercent( const bool& DisplayPercent ) {
+void UIProgressBar::displayPercent( const bool& DisplayPercent ) {
 	mDisplayPercent = DisplayPercent;
 
-	UpdateTextBox();
+	updateTextBox();
 }
 
-const bool& UIProgressBar::DisplayPercent() const {
+const bool& UIProgressBar::displayPercent() const {
 	return mDisplayPercent;
 }
 
-void UIProgressBar::UpdateTextBox() {
-	mTextBox->Visible( mDisplayPercent );
-	mTextBox->Size( mSize );
-	mTextBox->Text( String::toStr( (Int32)( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
+void UIProgressBar::updateTextBox() {
+	mTextBox->visible( mDisplayPercent );
+	mTextBox->size( mSize );
+	mTextBox->text( String::toStr( (Int32)( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
 }
 
-UITextBox * UIProgressBar::TextBox() const {
+UITextBox * UIProgressBar::getTextBox() const {
 	return mTextBox;
 }
 
-void UIProgressBar::OnAlphaChange() {
-	UIControlAnim::OnAlphaChange();
+void UIProgressBar::onAlphaChange() {
+	UIControlAnim::onAlphaChange();
 	
-	mTextBox->Alpha( mAlpha );
+	mTextBox->alpha( mAlpha );
 }
 
 }}

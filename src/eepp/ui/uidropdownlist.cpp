@@ -9,9 +9,9 @@ UIDropDownList::UIDropDownList( UIDropDownList::CreateParams& Params ) :
 	mMinNumVisibleItems( Params.MinNumVisibleItems ),
 	mPopUpToMainControl( Params.PopUpToMainControl )
 {
-	AllowEditing( false );
+	allowEditing( false );
 
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 
 	if ( NULL == mListBox ) {
 		Uint32 flags = UI_CLIP_ENABLE | UI_AUTO_PADDING;
@@ -22,10 +22,10 @@ UIDropDownList::UIDropDownList( UIDropDownList::CreateParams& Params ) :
 		if ( Params.Flags & UI_TEXT_SELECTION_ENABLED )
 			flags |= UI_TEXT_SELECTION_ENABLED;
 
-		UITheme * Theme = UIThemeManager::instance()->DefaultTheme();
+		UITheme * Theme = UIThemeManager::instance()->defaultTheme();
 
 		if ( NULL != Theme ) {
-			mListBox = Theme->CreateListBox( NULL, Sizei( mSize.width(), mMinNumVisibleItems * mSize.height() ),Vector2i(), flags );
+			mListBox = Theme->createListBox( NULL, Sizei( mSize.width(), mMinNumVisibleItems * mSize.height() ),Vector2i(), flags );
 		} else {
 			UIListBox::CreateParams LBParams;
 			LBParams.Size 				= Sizei( mSize.width(), mMinNumVisibleItems * mSize.height() );
@@ -35,195 +35,195 @@ UIDropDownList::UIDropDownList( UIDropDownList::CreateParams& Params ) :
 		}
 	}
 
-	mListBox->Enabled( false );
-	mListBox->Visible( false );
+	mListBox->enabled( false );
+	mListBox->visible( false );
 
-	mListBox->AddEventListener( UIEvent::EventOnComplexControlFocusLoss, cb::Make1( this, &UIDropDownList::OnListBoxFocusLoss ) );
-	mListBox->AddEventListener( UIEvent::EventOnItemSelected	, cb::Make1( this, &UIDropDownList::OnItemSelected ) );
-	mListBox->AddEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &UIDropDownList::OnItemClicked ) );
-	mListBox->AddEventListener( UIEvent::EventOnItemKeyDown, cb::Make1( this, &UIDropDownList::OnItemKeyDown ) );
-	mListBox->AddEventListener( UIEvent::EventKeyDown		, cb::Make1( this, &UIDropDownList::OnItemKeyDown ) );
-	mListBox->AddEventListener( UIEvent::EventOnControlClear, cb::Make1( this, &UIDropDownList::OnControlClear ) );
+	mListBox->addEventListener( UIEvent::EventOnComplexControlFocusLoss, cb::Make1( this, &UIDropDownList::onListBoxFocusLoss ) );
+	mListBox->addEventListener( UIEvent::EventOnItemSelected	, cb::Make1( this, &UIDropDownList::onItemSelected ) );
+	mListBox->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &UIDropDownList::onItemClicked ) );
+	mListBox->addEventListener( UIEvent::EventOnItemKeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
+	mListBox->addEventListener( UIEvent::EventKeyDown		, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
+	mListBox->addEventListener( UIEvent::EventOnControlClear, cb::Make1( this, &UIDropDownList::onControlClear ) );
 }
 
 UIDropDownList::~UIDropDownList() {
-	DestroyListBox();
+	destroyListBox();
 }
 
-Uint32 UIDropDownList::Type() const {
+Uint32 UIDropDownList::getType() const {
 	return UI_TYPE_DROPDOWNLIST;
 }
 
-bool UIDropDownList::IsType( const Uint32& type ) const {
-	return UIDropDownList::Type() == type ? true : UITextInput::IsType( type );
+bool UIDropDownList::isType( const Uint32& type ) const {
+	return UIDropDownList::getType() == type ? true : UITextInput::isType( type );
 }
 
-void UIDropDownList::SetTheme( UITheme * Theme ) {
-	UIControl::SetThemeControl( Theme, "dropdownlist" );
+void UIDropDownList::setTheme( UITheme * Theme ) {
+	UIControl::setThemeControl( Theme, "dropdownlist" );
 
-	AutoSizeControl();
+	autoSizeControl();
 
-	AutoPadding();
+	autoPadding();
 
-	OnSizeChange();
+	onSizeChange();
 }
 
-void UIDropDownList::OnSizeChange() {
-	UIComplexControl::OnSizeChange();
+void UIDropDownList::onSizeChange() {
+	UIComplexControl::onSizeChange();
 }
 
-void UIDropDownList::AutoSizeControl() {
+void UIDropDownList::autoSizeControl() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Size( mSize.x, GetSkinSize().height() );
+		size( mSize.x, getSkinSize().height() );
 	}
 }
 
-void UIDropDownList::AutoSize() {
+void UIDropDownList::autoSize() {
 }
 
-UIListBox * UIDropDownList::ListBox() const {
+UIListBox * UIDropDownList::getListBox() const {
 	return mListBox;
 }
 
-Uint32 UIDropDownList::OnMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTON_LMASK )
-		ShowListBox();
+		showListBox();
 
 	return 1;
 }
 
-void UIDropDownList::ShowListBox() {
-	if ( !mListBox->Visible() ) {
+void UIDropDownList::showListBox() {
+	if ( !mListBox->visible() ) {
 		if ( !mPopUpToMainControl )
-			mListBox->Parent( Parent() );
+			mListBox->parent( parent() );
 		else
-			mListBox->Parent( UIManager::instance()->MainControl() );
+			mListBox->parent( UIManager::instance()->mainControl() );
 
-		mListBox->ToFront();
+		mListBox->toFront();
 
 		Vector2i Pos( mPos.x, mPos.y + mSize.height() );
 
 		if ( mPopUpToMainControl ) {
-			Parent()->ControlToWorld( Pos );
+			parent()->controlToWorld( Pos );
 		}
 
-		mListBox->Pos( Pos );
+		mListBox->position( Pos );
 
-		if ( mListBox->Count() ) {
-			Recti tPadding = mListBox->PaddingContainer();
+		if ( mListBox->count() ) {
+			Recti tPadding = mListBox->paddingContainer();
 
-			Float sliderValue = mListBox->VerticalScrollBar()->Value();
+			Float sliderValue = mListBox->verticalScrollBar()->value();
 
-			if ( mMinNumVisibleItems < mListBox->Count() )
-				mListBox->Size( mSize.width(), (Int32)( mMinNumVisibleItems * mListBox->RowHeight() ) + tPadding.Top + tPadding.Bottom );
+			if ( mMinNumVisibleItems < mListBox->count() )
+				mListBox->size( mSize.width(), (Int32)( mMinNumVisibleItems * mListBox->rowHeight() ) + tPadding.Top + tPadding.Bottom );
 			else {
-				mListBox->Size( mSize.width(), (Int32)( mListBox->Count() * mListBox->RowHeight() ) + tPadding.Top + tPadding.Bottom );
+				mListBox->size( mSize.width(), (Int32)( mListBox->count() * mListBox->rowHeight() ) + tPadding.Top + tPadding.Bottom );
 			}
 
-			mListBox->UpdateQuad();
+			mListBox->updateQuad();
 
-			Rectf aabb( mListBox->GetPolygon().toAABB() );
+			Rectf aabb( mListBox->getPolygon().toAABB() );
 			Recti aabbi( aabb.Left, aabb.Top, aabb.Right, aabb.Bottom );
 
-			if ( !UIManager::instance()->MainControl()->GetScreenRect().contains( aabbi ) ) {
+			if ( !UIManager::instance()->mainControl()->getScreenRect().contains( aabbi ) ) {
 				Pos = Vector2i( mPos.x, mPos.y );
 
 				if ( mPopUpToMainControl ) {
-					Parent()->ControlToWorld( Pos );
+					parent()->controlToWorld( Pos );
 				}
 
-				Pos.y -= mListBox->Size().height();
+				Pos.y -= mListBox->size().height();
 
-				mListBox->Pos( Pos );
+				mListBox->position( Pos );
 			}
 
-			mListBox->VerticalScrollBar()->Value( sliderValue );
+			mListBox->verticalScrollBar()->value( sliderValue );
 
-			Show();
+			show();
 
-			mListBox->SetFocus();
+			mListBox->setFocus();
 		}
 	} else {
-		Hide();
+		hide();
 	}
 }
 
-void UIDropDownList::OnControlClear( const UIEvent * Event ) {
-	Text( "" );
+void UIDropDownList::onControlClear( const UIEvent * Event ) {
+	text( "" );
 }
 
-void UIDropDownList::OnItemKeyDown( const UIEvent * Event ) {
+void UIDropDownList::onItemKeyDown( const UIEvent * Event ) {
 	const UIEventKey * KEvent = reinterpret_cast<const UIEventKey*> ( Event );
 
-	if ( KEvent->KeyCode() == KEY_RETURN )
-		OnItemClicked( Event );
+	if ( KEvent->getKeyCode() == KEY_RETURN )
+		onItemClicked( Event );
 }
 
-void UIDropDownList::OnListBoxFocusLoss( const UIEvent * Event ) {
-	if ( UIManager::instance()->FocusControl() != this && !IsChild( UIManager::instance()->FocusControl() ) ) {
-		Hide();
+void UIDropDownList::onListBoxFocusLoss( const UIEvent * Event ) {
+	if ( UIManager::instance()->focusControl() != this && !isChild( UIManager::instance()->focusControl() ) ) {
+		hide();
 	}
 }
 
-void UIDropDownList::OnItemClicked( const UIEvent * Event ) {
-	Hide();
-	SetFocus();
+void UIDropDownList::onItemClicked( const UIEvent * Event ) {
+	hide();
+	setFocus();
 }
 
-void UIDropDownList::OnItemSelected( const UIEvent * Event ) {
-	Text( mListBox->GetItemSelectedText() );
+void UIDropDownList::onItemSelected( const UIEvent * Event ) {
+	text( mListBox->getItemSelectedText() );
 
-	UIMessage Msg( this, UIMessage::MsgSelected, mListBox->GetItemSelectedIndex() );
-	MessagePost( &Msg );
+	UIMessage Msg( this, UIMessage::MsgSelected, mListBox->getItemSelectedIndex() );
+	messagePost( &Msg );
 
-	SendCommonEvent( UIEvent::EventOnItemSelected );
+	sendCommonEvent( UIEvent::EventOnItemSelected );
 }
 
-void UIDropDownList::Show() {
-	mListBox->Enabled( true );
-	mListBox->Visible( true );
+void UIDropDownList::show() {
+	mListBox->enabled( true );
+	mListBox->visible( true );
 
-	if ( UIThemeManager::instance()->DefaultEffectsEnabled() ) {
-		mListBox->StartAlphaAnim( 255.f == mListBox->Alpha() ? 0.f : mListBox->Alpha(), 255.f, UIThemeManager::instance()->ControlsFadeInTime() );
+	if ( UIThemeManager::instance()->defaultEffectsEnabled() ) {
+		mListBox->startAlphaAnim( 255.f == mListBox->alpha() ? 0.f : mListBox->alpha(), 255.f, UIThemeManager::instance()->controlsFadeInTime() );
 	}
 }
 
-void UIDropDownList::Hide() {
-	if ( UIThemeManager::instance()->DefaultEffectsEnabled() ) {
-		mListBox->DisableFadeOut( UIThemeManager::instance()->ControlsFadeOutTime() );
+void UIDropDownList::hide() {
+	if ( UIThemeManager::instance()->defaultEffectsEnabled() ) {
+		mListBox->disableFadeOut( UIThemeManager::instance()->controlsFadeOutTime() );
 	} else {
-		mListBox->Enabled( false );
-		mListBox->Visible( false );
+		mListBox->enabled( false );
+		mListBox->visible( false );
 	}
 }
 
-void UIDropDownList::Update() {
+void UIDropDownList::update() {
 	if ( mEnabled && mVisible ) {
-		if ( IsMouseOver() ) {
-			Uint32 Flags 			= UIManager::instance()->GetInput()->clickTrigger();
+		if ( isMouseOver() ) {
+			Uint32 Flags 			= UIManager::instance()->getInput()->clickTrigger();
 
 			if ( Flags & EE_BUTTONS_WUWD ) {
 				if ( Flags & EE_BUTTON_WUMASK ) {
-					mListBox->SelectPrev();
+					mListBox->selectPrev();
 				} else if ( Flags & EE_BUTTON_WDMASK ) {
-					mListBox->SelectNext();
+					mListBox->selectNext();
 				}
 			}
 		}
 	}
 
-	UITextInput::Update();
+	UITextInput::update();
 }
 
-Uint32 UIDropDownList::OnKeyDown( const UIEventKey &Event ) {
-	mListBox->OnKeyDown( Event );
+Uint32 UIDropDownList::onKeyDown( const UIEventKey &Event ) {
+	mListBox->onKeyDown( Event );
 
-	return UITextInput::OnKeyDown( Event );
+	return UITextInput::onKeyDown( Event );
 }
 
-void UIDropDownList::DestroyListBox() {
-	if ( !UIManager::instance()->IsShootingDown() ) {
-		mListBox->Close();
+void UIDropDownList::destroyListBox() {
+	if ( !UIManager::instance()->isShootingDown() ) {
+		mListBox->close();
 	}
 }
 

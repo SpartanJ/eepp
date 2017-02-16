@@ -6,25 +6,25 @@ namespace EE { namespace UI {
 UISeparator::UISeparator( UIControlAnim::CreateParams Params ) :
 	UIControlAnim( Params )
 {
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UISeparator::~UISeparator() {
 }
 
-Uint32 UISeparator::Type() const {
+Uint32 UISeparator::getType() const {
 	return UI_TYPE_SEPARATOR;
 }
 
-bool UISeparator::IsType( const Uint32& type ) const {
-	return UISeparator::Type() == type ? true : UIControlAnim::IsType( type );
+bool UISeparator::isType( const Uint32& type ) const {
+	return UISeparator::getType() == type ? true : UIControlAnim::isType( type );
 }
 
-void UISeparator::SetTheme( UITheme * Theme ) {
-	UIControl::SetThemeControl( Theme, "separator" );
+void UISeparator::setTheme( UITheme * Theme ) {
+	UIControl::setThemeControl( Theme, "separator" );
 	
-	if ( NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->GetSubTexture( UISkinState::StateNormal ) ) {
-		Size( mSize.width(), mSkinState->GetSkin()->GetSubTexture( UISkinState::StateNormal )->realSize().height() );
+	if ( NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getSubTexture( UISkinState::StateNormal ) ) {
+		size( mSize.width(), mSkinState->getSkin()->getSubTexture( UISkinState::StateNormal )->realSize().height() );
 	}
 }
 

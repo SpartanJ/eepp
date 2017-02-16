@@ -23,13 +23,13 @@ UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 	mIcon = eeNew( UIGfx, ( GfxParams ) );
 
 	if ( Params.IconMinSize.x != 0 && Params.IconMinSize.y != 0 ) {
-		mIcon->Size( Params.IconMinSize );
+		mIcon->size( Params.IconMinSize );
 	}
 
-	mIcon->Visible( true );
-	mIcon->Enabled( false );
+	mIcon->visible( true );
+	mIcon->enabled( false );
 
-	Icon( Params.Icon );
+	icon( Params.Icon );
 
 	UITextBox::CreateParams TxtParams = Params;
 	TxtParams.Parent( this );
@@ -42,47 +42,47 @@ UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 		TxtParams.Flags &= ~UI_CLIP_ENABLE;
 
 	mTextBox = eeNew( UITextBox, ( TxtParams ) );
-	mTextBox->Visible( true );
-	mTextBox->Enabled( false );
+	mTextBox->visible( true );
+	mTextBox->enabled( false );
 
 	if ( Params.IconAutoMargin )
 		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
 
-	OnSizeChange();
+	onSizeChange();
 
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UIPushButton::~UIPushButton() {
 }
 
-Uint32 UIPushButton::Type() const {
+Uint32 UIPushButton::getType() const {
 	return UI_TYPE_PUSHBUTTON;
 }
 
-bool UIPushButton::IsType( const Uint32& type ) const {
-	return UIPushButton::Type() == type ? true : UIComplexControl::IsType( type );
+bool UIPushButton::isType( const Uint32& type ) const {
+	return UIPushButton::getType() == type ? true : UIComplexControl::isType( type );
 }
 
-void UIPushButton::OnSizeChange() {
+void UIPushButton::onSizeChange() {
 	if ( NULL != mTextBox ) {
-		mTextBox->Size( mSize );
-		mTextBox->Pos( 0, 0 );
+		mTextBox->size( mSize );
+		mTextBox->position( 0, 0 );
 	}
 
-	mIcon->Pos( mIconSpace, 0 );
-	mIcon->CenterVertical();
+	mIcon->position( mIconSpace, 0 );
+	mIcon->centerVertical();
 
 	if ( NULL != mTextBox ) {
-		switch ( FontHAlignGet( Flags() ) ) {
+		switch ( FontHAlignGet( flags() ) ) {
 			case UI_HALIGN_LEFT:
-				mTextBox->Pos( mIcon->Pos().x + mIcon->Size().width(), 0 );
-				mTextBox->Size( mSize.width() - mIcon->Pos().x + mIcon->Size().width(), mSize.height() );
+				mTextBox->position( mIcon->position().x + mIcon->size().width(), 0 );
+				mTextBox->size( mSize.width() - mIcon->position().x + mIcon->size().width(), mSize.height() );
 				break;
 			case UI_HALIGN_CENTER:
-				if ( NULL != mIcon->SubTexture() ) {
-					if ( mIcon->Pos().x + mIcon->Size().width() >= mTextBox->AlignOffset().x ) {
-						mTextBox->Pos( mIcon->Pos().x + mIcon->Size().width() + 1 - mTextBox->AlignOffset().x, mTextBox->Pos().y );
+				if ( NULL != mIcon->subTexture() ) {
+					if ( mIcon->position().x + mIcon->size().width() >= mTextBox->alignOffset().x ) {
+						mTextBox->position( mIcon->position().x + mIcon->size().width() + 1 - mTextBox->alignOffset().x, mTextBox->position().y );
 					}
 				}
 
@@ -90,8 +90,8 @@ void UIPushButton::OnSizeChange() {
 		}
 	}
 
-	if ( NULL != mTextBox && 0 == mTextBox->Text().size() ) {
-		mIcon->Center();
+	if ( NULL != mTextBox && 0 == mTextBox->text().size() ) {
+		mIcon->center();
 	}
 
 	/** Auto Size only for height? May be set another flag to this... */
@@ -100,14 +100,14 @@ void UIPushButton::OnSizeChange() {
 		if ( NULL != mTextBox ) {
 			Recti P = MakePadding();
 
-			mSize.Height( mIcon->Size().height()	+ P.Top		+ P.Bottom );
+			mSize.Height( mIcon->size().height()	+ P.Top		+ P.Bottom );
 
 			if ( 0 == mTextBox->Text().size() ) {
-				mSize.Width	( mIcon->Size().width()		+ P.Left	+ P.Right );
+				mSize.Width	( mIcon->size().width()		+ P.Left	+ P.Right );
 
 				mIcon->Center();
 			} else {
-				mSize.Width( mIconSpace + mIcon->Pos().x + mIcon->Size().width() + mTextBox->Size().width() );
+				mSize.Width( mIconSpace + mIcon->position(.x + mIcon->size().width() + mTextBox->size().width() );
 
 				if ( mSize.Height() < P.Top + P.Bottom + mTextBox->GetTextHeight() )
 					mSize.Height( P.Top + P.Bottom + mTextBox->GetTextHeight() );
@@ -121,127 +121,127 @@ void UIPushButton::OnSizeChange() {
 	*/
 }
 
-void UIPushButton::SetTheme( UITheme * Theme ) {
-	UIControl::SetThemeControl( Theme, "button" );
+void UIPushButton::setTheme( UITheme * Theme ) {
+	UIControl::setThemeControl( Theme, "button" );
 
-	DoAfterSetTheme();
+	doAftersetTheme();
 }
 
-void UIPushButton::DoAfterSetTheme() {
-	if ( NULL != mTextBox && NULL == mTextBox->Font() && NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->Theme() && NULL != mSkinState->GetSkin()->Theme()->Font() )
-		mTextBox->Font( mSkinState->GetSkin()->Theme()->Font() );
+void UIPushButton::doAftersetTheme() {
+	if ( NULL != mTextBox && NULL == mTextBox->font() && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->theme() && NULL != mSkinState->getSkin()->theme()->font() )
+		mTextBox->font( mSkinState->getSkin()->theme()->font() );
 
 	if ( mControlFlags & UI_CTRL_FLAG_FREE_USE ) {
-		Recti RMargin = MakePadding( true, false, false, false, true );
+		Recti RMargin = makePadding( true, false, false, false, true );
 		mIconSpace = RMargin.Left;
 	}
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mSize.height( GetSkinSize().height() );
+		mSize.height( getSkinSize().height() );
 	}
 
-	AutoPadding();
+	autoPadding();
 
-	OnSizeChange();
+	onSizeChange();
 }
 
-void UIPushButton::AutoPadding() {
+void UIPushButton::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		Padding( MakePadding( true, false, true, false ) );
+		padding( makePadding( true, false, true, false ) );
 	}
 }
 
-void UIPushButton::Icon( SubTexture * Icon ) {
-	mIcon->SubTexture( Icon );
-	OnSizeChange();
+void UIPushButton::icon( SubTexture * Icon ) {
+	mIcon->subTexture( Icon );
+	onSizeChange();
 }
 
-UIGfx * UIPushButton::Icon() const {
+UIGfx * UIPushButton::icon() const {
 	return mIcon;
 }
 
-void UIPushButton::Text( const String& text ) {
-	mTextBox->Text( text );
-	OnSizeChange();
+void UIPushButton::text( const String& text ) {
+	mTextBox->text( text );
+	onSizeChange();
 }
 
-const String& UIPushButton::Text() {
-	return mTextBox->Text();
+const String& UIPushButton::text() {
+	return mTextBox->text();
 }
 
-void UIPushButton::Padding( const Recti& padding ) {
-	mTextBox->Padding( padding );
+void UIPushButton::padding( const Recti& padding ) {
+	mTextBox->padding( padding );
 }
 
-const Recti& UIPushButton::Padding() const {
-	return mTextBox->Padding();
+const Recti& UIPushButton::padding() const {
+	return mTextBox->padding();
 }
 
-void UIPushButton::IconHorizontalMargin( Int32 margin ) {
+void UIPushButton::iconHorizontalMargin( Int32 margin ) {
 	mIconSpace = margin;
-	OnSizeChange();
+	onSizeChange();
 }
 
-const Int32& UIPushButton::IconHorizontalMargin() const {
+const Int32& UIPushButton::iconHorizontalMargin() const {
 	return mIconSpace;
 }
 
-UITextBox * UIPushButton::TextBox() const {
+UITextBox * UIPushButton::getTextBox() const {
 	return mTextBox;
 }
 
-void UIPushButton::OnAlphaChange() {
-	UIControlAnim::OnAlphaChange();
+void UIPushButton::onAlphaChange() {
+	UIControlAnim::onAlphaChange();
 
-	mIcon->Alpha( mAlpha );
-	mTextBox->Alpha( mAlpha );
+	mIcon->alpha( mAlpha );
+	mTextBox->alpha( mAlpha );
 }
 
-void UIPushButton::OnStateChange() {
-	if ( mSkinState->GetState() == UISkinState::StateMouseEnter ) {
-		mTextBox->Color( mFontOverColor );
+void UIPushButton::onStateChange() {
+	if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
+		mTextBox->color( mFontOverColor );
 	} else {
-		mTextBox->Color( mFontColor );
+		mTextBox->color( mFontColor );
 	}
 
-	mTextBox->Alpha( mAlpha );
+	mTextBox->alpha( mAlpha );
 }
 
-Uint32 UIPushButton::OnKeyDown( const UIEventKey& Event ) {
-	if ( Event.KeyCode() == KEY_RETURN ) {
+Uint32 UIPushButton::onKeyDown( const UIEventKey& Event ) {
+	if ( Event.getKeyCode() == KEY_RETURN ) {
 		UIMessage Msg( this, UIMessage::MsgClick, EE_BUTTON_LMASK );
-		MessagePost( &Msg );
-		OnMouseClick( Vector2i(0,0), EE_BUTTON_LMASK );
+		messagePost( &Msg );
+		onMouseClick( Vector2i(0,0), EE_BUTTON_LMASK );
 
-		SetSkinState( UISkinState::StateMouseDown );
+		setSkinState( UISkinState::StateMouseDown );
 	}
 
-	return UIComplexControl::OnKeyDown( Event );
+	return UIComplexControl::onKeyDown( Event );
 }
 
-Uint32 UIPushButton::OnKeyUp( const UIEventKey& Event ) {
-	if ( Event.KeyCode() == KEY_RETURN ) {
-		SetPrevSkinState();
+Uint32 UIPushButton::onKeyUp( const UIEventKey& Event ) {
+	if ( Event.getKeyCode() == KEY_RETURN ) {
+		setPrevSkinState();
 	}
 
-	return UIComplexControl::OnKeyUp( Event );
+	return UIComplexControl::onKeyUp( Event );
 }
-const ColorA& UIPushButton::FontColor() const {
+const ColorA& UIPushButton::fontColor() const {
 	return mFontColor;
 }
 
-void UIPushButton::FontColor( const ColorA& color ) {
+void UIPushButton::fontColor( const ColorA& color ) {
 	mFontColor = color;
-	OnStateChange();
+	onStateChange();
 }
 
-const ColorA& UIPushButton::FontOverColor() const {
+const ColorA& UIPushButton::fontOverColor() const {
 	return mFontOverColor;
 }
 
-void UIPushButton::FontOverColor( const ColorA& color ) {
+void UIPushButton::fontOverColor( const ColorA& color ) {
 	mFontOverColor = color;
-	OnStateChange();
+	onStateChange();
 }
 
 }}

@@ -19,16 +19,16 @@ class EE_API UITooltip : public UIControlAnim {
 					FontColor( 0, 0, 0, 255 ),
 					FontShadowColor( 255, 255, 255, 150 )
 				{
-					UITheme * Theme = UIThemeManager::instance()->DefaultTheme();
+					UITheme * Theme = UIThemeManager::instance()->defaultTheme();
 
 					if ( NULL != Theme ) {
-						Font			= Theme->Font();
-						FontColor		= Theme->FontColor();
-						FontShadowColor	= Theme->FontShadowColor();
+						Font			= Theme->font();
+						FontColor		= Theme->fontColor();
+						FontShadowColor	= Theme->fontShadowColor();
 					}
 
 					if ( NULL == Font )
-						Font = UIThemeManager::instance()->DefaultFont();
+						Font = UIThemeManager::instance()->defaultFont();
 				}
 
 				inline ~CreateParams() {}
@@ -43,59 +43,59 @@ class EE_API UITooltip : public UIControlAnim {
 
 		virtual ~UITooltip();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		void Show();
+		void show();
 
-		void Hide();
+		void hide();
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual void Alpha( const Float& alpha );
+		virtual void alpha( const Float& alpha );
 
-		Graphics::Font * Font() const;
+		Graphics::Font * font() const;
 
-		void Font( Graphics::Font * font );
+		void font( Graphics::Font * font );
 
-		virtual const String& Text();
+		virtual const String& text();
 
-		virtual void Text( const String& text );
+		virtual void text( const String& text );
 
-		const ColorA& Color() const;
+		const ColorA& color() const;
 
-		void Color( const ColorA& color );
+		void color( const ColorA& color );
 
-		const ColorA& ShadowColor() const;
+		const ColorA& shadowColor() const;
 
-		void ShadowColor( const ColorA& color );
+		void shadowColor( const ColorA& color );
 
-		virtual void OnTextChanged();
+		virtual void onTextChanged();
 
-		virtual void OnFontChanged();
+		virtual void onFontChanged();
 
-		virtual void Padding( const Recti& padding );
+		virtual void padding( const Recti& padding );
 
-		const Recti& Padding() const;
+		const Recti& padding() const;
 
-		TextCache * GetTextCache();
+		TextCache * getTextCache();
 
-		Float GetTextWidth();
+		Float getTextWidth();
 
-		Float GetTextHeight();
+		Float getTextHeight();
 
-		const int& GetNumLines() const;
+		const int& getNumLines() const;
 
-		const Vector2f& AlignOffset() const;
+		const Vector2f& alignOffset() const;
 
-		void TooltipTime( const Time& Time );
+		void tooltipTime( const Time& Time );
 
-		void TooltipTimeAdd( const Time & Time );
+		void tooltipTimeAdd( const Time & Time );
 
-		const Time & TooltipTime() const;
+		const Time & tooltipTime() const;
 	protected:
 		TextCache *	mTextCache;
 		ColorA 		mFontColor;
@@ -105,13 +105,13 @@ class EE_API UITooltip : public UIControlAnim {
 		Time			mTooltipTime;
 		UIControl *	mTooltipOf;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		virtual void AutoSize();
+		virtual void autoSize();
 
-		virtual void AutoAlign();
+		virtual void autoAlign();
 
-		virtual void AutoPadding();
+		virtual void autoPadding();
 };
 
 }}

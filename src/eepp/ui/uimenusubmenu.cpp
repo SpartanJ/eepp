@@ -19,136 +19,136 @@ UIMenuSubMenu::UIMenuSubMenu( UIMenuSubMenu::CreateParams& Params ) :
 	GfxParams.SubTexture = NULL;
 	GfxParams.Flags = UI_AUTO_SIZE;
 	mArrow = eeNew( UIGfx, ( GfxParams ) );
-	mArrow->Visible( true );
-	mArrow->Enabled( false );
+	mArrow->visible( true );
+	mArrow->enabled( false );
 
-	SubMenu( Params.SubMenu );
+	subMenu( Params.SubMenu );
 
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UIMenuSubMenu::~UIMenuSubMenu() {
 }
 
-Uint32 UIMenuSubMenu::Type() const {
+Uint32 UIMenuSubMenu::getType() const {
 	return UI_TYPE_MENUSUBMENU;
 }
 
-bool UIMenuSubMenu::IsType( const Uint32& type ) const {
-	return UIMenuSubMenu::Type() == type ? true : UIMenuItem::IsType( type );
+bool UIMenuSubMenu::isType( const Uint32& type ) const {
+	return UIMenuSubMenu::getType() == type ? true : UIMenuItem::isType( type );
 }
 
-void UIMenuSubMenu::SetTheme( UITheme * Theme ) {
-	UIMenuItem::SetTheme( Theme );
+void UIMenuSubMenu::setTheme( UITheme * Theme ) {
+	UIMenuItem::setTheme( Theme );
 
-	mSkinArrow		= Theme->getByName( Theme->Abbr() + "_" + "menuarrow" );
+	mSkinArrow		= Theme->getByName( Theme->abbr() + "_" + "menuarrow" );
 
-	OnStateChange();
+	onStateChange();
 }
 
-void UIMenuSubMenu::OnSizeChange() {
-	UIMenuItem::OnSizeChange();
+void UIMenuSubMenu::onSizeChange() {
+	UIMenuItem::onSizeChange();
 
-	mArrow->Pos( Parent()->Size().width() - mArrow->Size().width() - 1, 0 );
-	mArrow->CenterVertical();
+	mArrow->position( parent()->size().width() - mArrow->size().width() - 1, 0 );
+	mArrow->centerVertical();
 }
 
-void UIMenuSubMenu::OnStateChange() {
-	UIMenuItem::OnStateChange();
+void UIMenuSubMenu::onStateChange() {
+	UIMenuItem::onStateChange();
 
 	if ( NULL != mSkinArrow ) {
-		if ( mSkinState->GetState() == UISkinState::StateSelected )
-			mArrow->SubTexture( mSkinArrow->GetSubTexture( UISkinState::StateMouseEnter ) );
+		if ( mSkinState->getState() == UISkinState::StateSelected )
+			mArrow->subTexture( mSkinArrow->getSubTexture( UISkinState::StateMouseEnter ) );
 		else
-			mArrow->SubTexture( mSkinArrow->GetSubTexture( UISkinState::StateNormal ) );
+			mArrow->subTexture( mSkinArrow->getSubTexture( UISkinState::StateNormal ) );
 
-		OnSizeChange();
+		onSizeChange();
 	}
 }
 
-void UIMenuSubMenu::SubMenu( UIMenu * SubMenu ) {
+void UIMenuSubMenu::subMenu( UIMenu * SubMenu ) {
 	if ( NULL != mSubMenu && mSubMenu != SubMenu ) {
-		mSubMenu->RemoveEventListener( mCbId );
-		mSubMenu->RemoveEventListener( mCbId2 );
+		mSubMenu->removeEventListener( mCbId );
+		mSubMenu->removeEventListener( mCbId2 );
 	}
 
 	mSubMenu = SubMenu;
 
 	if ( NULL != mSubMenu ) {
-		mCbId	= mSubMenu->AddEventListener( UIEvent::EventOnEnabledChange, cb::Make1( this, &UIMenuSubMenu::OnSubMenuFocusLoss ) );
-		mCbId2	= mSubMenu->AddEventListener( UIEvent::EventOnHideByClick, cb::Make1( this, &UIMenuSubMenu::OnHideByClick ) );
+		mCbId	= mSubMenu->addEventListener( UIEvent::EventOnEnabledChange, cb::Make1( this, &UIMenuSubMenu::onSubMenuFocusLoss ) );
+		mCbId2	= mSubMenu->addEventListener( UIEvent::EventOnHideByClick, cb::Make1( this, &UIMenuSubMenu::onHideByClick ) );
 	}
 }
 
-UIMenu * UIMenuSubMenu::SubMenu() const {
+UIMenu * UIMenuSubMenu::subMenu() const {
 	return mSubMenu;
 }
 
-Uint32 UIMenuSubMenu::OnMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
-	UIMenuItem::OnMouseMove( Pos, Flags );
+Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
+	UIMenuItem::onMouseMove( Pos, Flags );
 
-	if ( NULL != mSubMenu && !mSubMenu->Visible() ) {
-		mTimeOver += UIManager::instance()->Elapsed().asMilliseconds();
+	if ( NULL != mSubMenu && !mSubMenu->visible() ) {
+		mTimeOver += UIManager::instance()->elapsed().asMilliseconds();
 
 		if ( mTimeOver >= mMaxTime ) {
-			ShowSubMenu();
+			showSubMenu();
 		}
 	}
 
 	return 1;
 }
 
-void UIMenuSubMenu::ShowSubMenu() {
-	mSubMenu->Parent( Parent()->Parent() );
+void UIMenuSubMenu::showSubMenu() {
+	mSubMenu->parent( parent()->parent() );
 
-	Vector2i Pos = this->Pos();
-	ControlToScreen( Pos );
-	Pos.x += mSize.width() + reinterpret_cast<UIMenu*> ( Parent() )->Padding().Right;
+	Vector2i Pos = this->position();
+	controlToScreen( Pos );
+	Pos.x += mSize.width() + reinterpret_cast<UIMenu*> ( parent() )->Padding().Right;
 
-	UIMenu::FixMenuPos( Pos, mSubMenu, reinterpret_cast<UIMenu*> ( Parent() ), this );
+	UIMenu::FixMenuPos( Pos, mSubMenu, reinterpret_cast<UIMenu*> ( parent() ), this );
 
-	mSubMenu->Parent()->WorldToControl( Pos );
-	mSubMenu->Pos( Pos );
+	mSubMenu->parent()->worldToControl( Pos );
+	mSubMenu->position( Pos );
 
-	if ( !mSubMenu->Visible() ) {
-		mSubMenu->Show();
+	if ( !mSubMenu->visible() ) {
+		mSubMenu->show();
 	}
 }
 
-Uint32 UIMenuSubMenu::OnMouseExit( const Vector2i &Pos, const Uint32 Flags ) {
-	UIMenuItem::OnMouseExit( Pos, Flags );
+Uint32 UIMenuSubMenu::onMouseExit( const Vector2i &Pos, const Uint32 Flags ) {
+	UIMenuItem::onMouseExit( Pos, Flags );
 
 	mTimeOver = 0;
 
 	return 1;
 }
 
-UIGfx * UIMenuSubMenu::Arrow() const {
+UIGfx * UIMenuSubMenu::getArrow() const {
 	return mArrow;
 }
 
-void UIMenuSubMenu::OnSubMenuFocusLoss( const UIEvent * Event ) {
-	UIControl * FocusCtrl = UIManager::instance()->FocusControl();
+void UIMenuSubMenu::onSubMenuFocusLoss( const UIEvent * Event ) {
+	UIControl * FocusCtrl = UIManager::instance()->focusControl();
 
-	if ( Parent() != FocusCtrl && !Parent()->IsParentOf( FocusCtrl ) ) {
-		Parent()->SetFocus();
+	if ( parent() != FocusCtrl && !parent()->isParentOf( FocusCtrl ) ) {
+		parent()->setFocus();
 	}
 
 	if ( mSubMenu->mClickHide ) {
-		reinterpret_cast<UIMenu *>( Parent() )->Hide();
+		reinterpret_cast<UIMenu *>( parent() )->hide();
 
 		mSubMenu->mClickHide = false;
 	}
 }
 
-void UIMenuSubMenu::OnHideByClick( const UIEvent * Event ) {
-	UIMenu * tMenu = reinterpret_cast<UIMenu *>( Parent() );
+void UIMenuSubMenu::onHideByClick( const UIEvent * Event ) {
+	UIMenu * tMenu = reinterpret_cast<UIMenu *>( parent() );
 
 	tMenu->mClickHide = true;
-	tMenu->Hide();
+	tMenu->hide();
 }
 
-bool UIMenuSubMenu::InheritsFrom( const Uint32 Type ) {
+bool UIMenuSubMenu::inheritsFrom( const Uint32 Type ) {
 	if ( Type == UI_TYPE_MENUITEM )
 		return true;
 

@@ -7,147 +7,147 @@ namespace EE { namespace UI {
 UIGridCell::UIGridCell( UIGridCell::CreateParams& Params ) :
 	UIComplexControl( Params )
 {
-	mCells.resize( GridParent()->CollumnsCount(), NULL );
+	mCells.resize( gridParent()->getCollumnsCount(), NULL );
 
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UIGridCell::~UIGridCell() {
-	if ( UIManager::instance()->FocusControl() == this )
-		mParentCtrl->SetFocus();
+	if ( UIManager::instance()->focusControl() == this )
+		mParentCtrl->setFocus();
 
-	if ( UIManager::instance()->OverControl() == this )
-		UIManager::instance()->OverControl( mParentCtrl );
+	if ( UIManager::instance()->overControl() == this )
+		UIManager::instance()->overControl( mParentCtrl );
 }
 
-void UIGridCell::SetTheme( UITheme * Theme ) {
-	UIControl::SetThemeControl( Theme, "gridcell" );
+void UIGridCell::setTheme( UITheme * Theme ) {
+	UIControl::setThemeControl( Theme, "gridcell" );
 }
 
-UIGenericGrid * UIGridCell::GridParent() const {
-	return reinterpret_cast<UIGenericGrid*> ( mParentCtrl->Parent() );
+UIGenericGrid * UIGridCell::gridParent() const {
+	return reinterpret_cast<UIGenericGrid*> ( mParentCtrl->parent() );
 }
 
-void UIGridCell::Cell( const Uint32& CollumnIndex, UIControl * Ctrl ) {
-	eeASSERT( CollumnIndex < GridParent()->CollumnsCount() );
+void UIGridCell::cell( const Uint32& CollumnIndex, UIControl * Ctrl ) {
+	eeASSERT( CollumnIndex < gridParent()->getCollumnsCount() );
 
-	UIGenericGrid * P = GridParent();
+	UIGenericGrid * P = gridParent();
 
 	mCells[ CollumnIndex ] = Ctrl;
 
-	if ( Ctrl->Parent() != this )
-		Ctrl->Parent( this );
+	if ( Ctrl->parent() != this )
+		Ctrl->parent( this );
 
-	Ctrl->Pos		( P->GetCellPos( CollumnIndex )		, 0					);
-	Ctrl->Size		( P->CollumnWidth( CollumnIndex )	, P->RowHeight()	);
+	Ctrl->position		( P->getCellPosition( CollumnIndex )		, 0					);
+	Ctrl->size		( P->collumnWidth( CollumnIndex )	, P->rowHeight()	);
 
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 }
 
-UIControl * UIGridCell::Cell( const Uint32& CollumnIndex ) const {
-	eeASSERT( CollumnIndex < GridParent()->CollumnsCount() );
+UIControl * UIGridCell::cell( const Uint32& CollumnIndex ) const {
+	eeASSERT( CollumnIndex < gridParent()->getCollumnsCount() );
 
 	return mCells[ CollumnIndex ];
 }
 
-void UIGridCell::FixCell() {
-	AutoSize();
+void UIGridCell::fixCell() {
+	autoSize();
 
-	UIGenericGrid * P = GridParent();
+	UIGenericGrid * P = gridParent();
 
 	for ( Uint32 i = 0; i < mCells.size(); i++ ) {
-		mCells[i]->Pos		( P->GetCellPos( i )	, 0					);
-		mCells[i]->Size		( P->CollumnWidth( i )	, P->RowHeight()	);
+		mCells[i]->position	( P->getCellPosition( i )	, 0					);
+		mCells[i]->size		( P->collumnWidth( i )	, P->rowHeight()	);
 	}
 }
 
-void UIGridCell::Update() {
+void UIGridCell::update() {
 	if ( mEnabled && mVisible ) {
-		UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( Parent()->Parent() );
-		Uint32 Flags				= UIManager::instance()->GetInput()->clickTrigger();
+		UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( parent()->parent() );
+		Uint32 Flags				= UIManager::instance()->getInput()->clickTrigger();
 
-		if ( NULL != MyParent && MyParent->Alpha() != mAlpha ) {
-			Alpha( MyParent->Alpha() );
+		if ( NULL != MyParent && MyParent->alpha() != mAlpha ) {
+			alpha( MyParent->alpha() );
 
 			for ( Uint32 i = 0; i < mCells.size(); i++ ) {
-				if ( NULL != mCells[i] && mCells[i]->IsAnimated() ) {
-					reinterpret_cast<UIControlAnim*>( mCells[i] )->Alpha( MyParent->Alpha() );
+				if ( NULL != mCells[i] && mCells[i]->isAnimated() ) {
+					reinterpret_cast<UIControlAnim*>( mCells[i] )->alpha( MyParent->alpha() );
 				}
 			}
 		}
 
-		if ( IsMouseOverMeOrChilds() ) {
-			if ( ( Flags & EE_BUTTONS_WUWD ) && MyParent->VerticalScrollBar()->Visible() ) {
-				MyParent->VerticalScrollBar()->Slider()->ManageClick( Flags );
+		if ( isMouseOverMeOrChilds() ) {
+			if ( ( Flags & EE_BUTTONS_WUWD ) && MyParent->verticalScrollBar()->visible() ) {
+				MyParent->verticalScrollBar()->getSlider()->manageClick( Flags );
 			}
 		}
 	}
 
-	UIComplexControl::Update();
+	UIComplexControl::update();
 }
 
-void UIGridCell::Select() {
-	UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( Parent()->Parent() );
+void UIGridCell::select() {
+	UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( parent()->parent() );
 
-	if ( MyParent->GetItemSelected() != this ) {
-		if ( NULL != MyParent->GetItemSelected() )
-			MyParent->GetItemSelected()->Unselect();
+	if ( MyParent->getItemSelected() != this ) {
+		if ( NULL != MyParent->getItemSelected() )
+			MyParent->getItemSelected()->unselect();
 
 		bool wasSelected = 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
 
-		SetSkinState( UISkinState::StateSelected );
+		setSkinState( UISkinState::StateSelected );
 
 		mControlFlags |= UI_CTRL_FLAG_SELECTED;
 
-		MyParent->mSelected = MyParent->GetItemIndex( this );
+		MyParent->mSelected = MyParent->getItemIndex( this );
 
 		if ( !wasSelected ) {
-			MyParent->OnSelected();
+			MyParent->onSelected();
 		}
 	}
 }
 
-void UIGridCell::Unselect() {
+void UIGridCell::unselect() {
 	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
 		mControlFlags &= ~UI_CTRL_FLAG_SELECTED;
 
-	SetSkinState( UISkinState::StateNormal );
+	setSkinState( UISkinState::StateNormal );
 }
 
-bool UIGridCell::Selected() const {
+bool UIGridCell::isSelected() const {
 	return 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
 }
 
-Uint32 UIGridCell::OnMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	UIControl::OnMouseExit( Pos, Flags );
+Uint32 UIGridCell::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
+	UIControl::onMouseExit( Pos, Flags );
 
 	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
-		SetSkinState( UISkinState::StateSelected );
+		setSkinState( UISkinState::StateSelected );
 
 	return 1;
 }
 
-Uint32 UIGridCell::OnMessage( const UIMessage * Msg ) {
-	switch( Msg->Msg() ) {
+Uint32 UIGridCell::onMessage( const UIMessage * Msg ) {
+	switch( Msg->getMsg() ) {
 		case UIMessage::MsgMouseEnter:
 		{
-			OnMouseEnter( Vector2i(), Msg->Flags() );
+			onMouseEnter( Vector2i(), Msg->getFlags() );
 			break;
 		}
 		case UIMessage::MsgMouseExit:
 		{
-			OnMouseExit( Vector2i(), Msg->Flags() );
+			onMouseExit( Vector2i(), Msg->getFlags() );
 			break;
 		}
 		case UIMessage::MsgClick:
 		{
-			if ( Msg->Flags() & EE_BUTTONS_LRM ) {
-				Select();
+			if ( Msg->getFlags() & EE_BUTTONS_LRM ) {
+				select();
 
-				UIMessage tMsg( this, UIMessage::MsgCellClicked, Msg->Flags() );
+				UIMessage tMsg( this, UIMessage::MsgCellClicked, Msg->getFlags() );
 
-				MessagePost( &tMsg );
+				messagePost( &tMsg );
 
 				return 1;
 			}
@@ -157,15 +157,15 @@ Uint32 UIGridCell::OnMessage( const UIMessage * Msg ) {
 	return 0;
 }
 
-void UIGridCell::AutoSize() {
-	UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( Parent()->Parent() );
+void UIGridCell::autoSize() {
+	UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( parent()->parent() );
 
-	Size( MyParent->mTotalWidth, MyParent->mRowHeight );
+	size( MyParent->mTotalWidth, MyParent->mRowHeight );
 }
 
-void UIGridCell::OnStateChange() {
-	if ( Selected() && mSkinState->GetState() != UISkinState::StateSelected ) {
-		SetSkinState( UISkinState::StateSelected );
+void UIGridCell::onStateChange() {
+	if ( isSelected() && mSkinState->getState() != UISkinState::StateSelected ) {
+		setSkinState( UISkinState::StateSelected );
 	}
 }
 

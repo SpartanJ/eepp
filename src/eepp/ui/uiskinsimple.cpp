@@ -9,13 +9,13 @@ UISkinSimple::UISkinSimple( const std::string& Name ) :
 	for ( Int32 i = 0; i < UISkinState::StateCount; i++ )
 		mSubTexture[ i ] = NULL;
 
-	SetSkins();
+	setSkins();
 }
 
 UISkinSimple::~UISkinSimple() {
 }
 
-void UISkinSimple::Draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State ) {
+void UISkinSimple::draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State ) {
 	if ( 0 == Alpha )
 		return;
 
@@ -35,26 +35,26 @@ void UISkinSimple::Draw( const Float& X, const Float& Y, const Float& Width, con
 	}
 }
 
-void UISkinSimple::SetSkin( const Uint32& State ) {
+void UISkinSimple::setSkin( const Uint32& State ) {
 	eeASSERT ( State < UISkinState::StateCount );
 
-	std::string Name( mName + "_" + UISkin::GetSkinStateName( State ) );
+	std::string Name( mName + "_" + UISkin::getSkinStateName( State ) );
 
 	mSubTexture[ State ] = TextureAtlasManager::instance()->getSubTextureByName( Name );
 }
 
-SubTexture * UISkinSimple::GetSubTexture( const Uint32& State ) const {
+SubTexture * UISkinSimple::getSubTexture( const Uint32& State ) const {
 	eeASSERT ( State < UISkinState::StateCount );
 
 	return mSubTexture[ State ];
 }
 
-void UISkinSimple::StateNormalToState( const Uint32& State ) {
+void UISkinSimple::stateNormalToState( const Uint32& State ) {
 	if ( NULL == mSubTexture[ State ] )
 		mSubTexture[ State ] = mSubTexture[ UISkinState::StateNormal ];
 }
 
-UISkinSimple * UISkinSimple::Copy( const std::string& NewName, const bool& CopyColorsState ) {
+UISkinSimple * UISkinSimple::copy( const std::string& NewName, const bool& CopyColorsState ) {
 	UISkinSimple * SkinS = eeNew( UISkinSimple, ( NewName ) );
 
 	if ( CopyColorsState ) {
@@ -68,8 +68,8 @@ UISkinSimple * UISkinSimple::Copy( const std::string& NewName, const bool& CopyC
 	return SkinS;
 }
 
-UISkin * UISkinSimple::Copy() {
-	return Copy( mName, true );
+UISkin * UISkinSimple::copy() {
+	return copy( mName, true );
 }
 
 }}

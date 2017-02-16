@@ -32,8 +32,8 @@ UITabWidget::UITabWidget( UITabWidget::CreateParams& Params ) :
 	TabParams.SizeSet( mSize.width(), mTabWidgetHeight );
 
 	mTabContainer = eeNew( UIComplexControl, ( TabParams ) );
-	mTabContainer->Visible( true );
-	mTabContainer->Enabled( true );
+	mTabContainer->visible( true );
+	mTabContainer->enabled( true );
 
 	UIComplexControl::CreateParams CtrlParams;
 	CtrlParams.Parent( this );
@@ -42,76 +42,76 @@ UITabWidget::UITabWidget( UITabWidget::CreateParams& Params ) :
 	CtrlParams.Flags |= UI_CLIP_ENABLE | UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT;
 
 	mCtrlContainer = eeNew( UIComplexControl, ( CtrlParams ) );
-	mCtrlContainer->Visible( true );
-	mCtrlContainer->Enabled( true );
+	mCtrlContainer->visible( true );
+	mCtrlContainer->enabled( true );
 
-	OnSizeChange();
+	onSizeChange();
 
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UITabWidget::~UITabWidget() {
 }
 
-Uint32 UITabWidget::Type() const {
+Uint32 UITabWidget::getType() const {
 	return UI_TYPE_TABWIDGET;
 }
 
-bool UITabWidget::IsType( const Uint32& type ) const {
-	return UITabWidget::Type() == type ? true : UIComplexControl::IsType( type );
+bool UITabWidget::isType( const Uint32& type ) const {
+	return UITabWidget::getType() == type ? true : UIComplexControl::isType( type );
 }
 
-void UITabWidget::SetTheme( UITheme * Theme ) {
-	mTabContainer->SetThemeControl( Theme, "tabwidget" );
+void UITabWidget::setTheme( UITheme * Theme ) {
+	mTabContainer->setThemeControl( Theme, "tabwidget" );
 
-	mCtrlContainer->SetThemeControl( Theme, "tabcontainer" );
+	mCtrlContainer->setThemeControl( Theme, "tabcontainer" );
 
 	if ( 0 == mTabWidgetHeight ) {
-		UISkin * tSkin		= Theme->getByName( Theme->Abbr() + "_" + "tab" );
+		UISkin * tSkin		= Theme->getByName( Theme->abbr() + "_" + "tab" );
 
-		Sizei tSize1		= GetSkinSize( tSkin );
-		Sizei tSize2		= GetSkinSize( tSkin, UISkinState::StateSelected );
+		Sizei tSize1		= getSkinSize( tSkin );
+		Sizei tSize2		= getSkinSize( tSkin, UISkinState::StateSelected );
 
 		mTabWidgetHeight	= eemax( tSize1.height(), tSize2.height() );
 
-		SeContainerSize();
-		OrderTabs();
+		seContainerSize();
+		orderTabs();
 	}
 
-	DoAfterSetTheme();
+	doAftersetTheme();
 }
 
-void UITabWidget::DoAfterSetTheme() {
-	OnSizeChange();
+void UITabWidget::doAftersetTheme() {
+	onSizeChange();
 }
 
-void UITabWidget::SeContainerSize() {
-	mTabContainer->Size( mSize.width(), mTabWidgetHeight );
-	mCtrlContainer->Pos( 0, mTabWidgetHeight );
-	mCtrlContainer->Size( mSize.width(), mSize.height() - mTabWidgetHeight );
+void UITabWidget::seContainerSize() {
+	mTabContainer->size( mSize.width(), mTabWidgetHeight );
+	mCtrlContainer->position( 0, mTabWidgetHeight );
+	mCtrlContainer->size( mSize.width(), mSize.height() - mTabWidgetHeight );
 }
 
-void UITabWidget::Draw() {
+void UITabWidget::draw() {
 	if ( mDrawLineBelowTabs ) {
 		bool smooth = GLi->isLineSmooth();
 		if ( smooth ) GLi->lineSmooth( false );
 
 		Primitives P;
-		Vector2i p1( mPos.x, mPos.y + mTabContainer->Size().height() + mLineBewowTabsYOffset );
-		Vector2i p2( mPos.x + mTabContainer->Pos().x, p1.y );
+		Vector2i p1( mPos.x, mPos.y + mTabContainer->size().height() + mLineBewowTabsYOffset );
+		Vector2i p2( mPos.x + mTabContainer->position().x, p1.y );
 
-		ControlToScreen( p1 );
-		ControlToScreen( p2 );
+		controlToScreen( p1 );
+		controlToScreen( p2 );
 
 		P.lineWidth( 1 );
 		P.setColor( mLineBelowTabsColor );
 		P.drawLine( Line2f( Vector2f( p1.x, p1.y ), Vector2f( p2.x, p2.y ) ) );
 
-		Vector2i p3( mPos.x + mTabContainer->Pos().x + mTabContainer->Size().width(), mPos.y + mTabContainer->Size().height() + mLineBewowTabsYOffset );
+		Vector2i p3( mPos.x + mTabContainer->position().x + mTabContainer->size().width(), mPos.y + mTabContainer->size().height() + mLineBewowTabsYOffset );
 		Vector2i p4( mPos.x + mSize.width(), p3.y );
 
-		ControlToScreen( p3 );
-		ControlToScreen( p4 );
+		controlToScreen( p3 );
+		controlToScreen( p4 );
 
 		P.drawLine( Line2f( Vector2f( p3.x, p3.y ), Vector2f( p4.x, p4.y ) ) );
 
@@ -119,34 +119,34 @@ void UITabWidget::Draw() {
 	}
 }
 
-void UITabWidget::SetTabContainerSize() {
+void UITabWidget::setTabContainerSize() {
 	Uint32 s = 0;
 
 	if ( mTabs.size() > 0 ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			s += mTabs[i]->Size().width() + mTabSeparation;
+			s += mTabs[i]->size().width() + mTabSeparation;
 		}
 
 		s -= mTabSeparation;
 	}
 
-	mTabContainer->Size( s, mTabWidgetHeight );
+	mTabContainer->size( s, mTabWidgetHeight );
 
 	switch ( HAlignGet( mFlags ) )
 	{
 		case UI_HALIGN_LEFT:
-			mTabContainer->Pos( 0, 0 );
+			mTabContainer->position( 0, 0 );
 			break;
 		case UI_HALIGN_CENTER:
-			mTabContainer->CenterHorizontal();
+			mTabContainer->centerHorizontal();
 			break;
 		case UI_HALIGN_RIGHT:
-			mTabContainer->Pos( mSize.width() - mTabContainer->Size().width(), 0 );
+			mTabContainer->position( mSize.width() - mTabContainer->size().width(), 0 );
 			break;
 	}
 }
 
-void UITabWidget::PosTabs() {
+void UITabWidget::posTabs() {
 	Uint32 w	= 0;
 	Uint32 h	= 0;
 	Uint32 VA	= VAlignGet( mFlags );
@@ -155,43 +155,43 @@ void UITabWidget::PosTabs() {
 		switch ( VA )
 		{
 			case UI_VALIGN_BOTTOM:
-				h = mTabWidgetHeight - mTabs[i]->Size().height();
+				h = mTabWidgetHeight - mTabs[i]->size().height();
 				break;
 			case UI_VALIGN_TOP:
 				h = 0;
 				break;
 			case UI_VALIGN_CENTER:
-				h = mTabWidgetHeight / 2 - mTabs[i]->Size().height() / 2;
+				h = mTabWidgetHeight / 2 - mTabs[i]->size().height() / 2;
 				break;
 		}
 
-		mTabs[i]->Pos( w, h );
+		mTabs[i]->position( w, h );
 
-		w += mTabs[i]->Size().width() + mTabSeparation;
+		w += mTabs[i]->size().width() + mTabSeparation;
 	}
 }
 
-void UITabWidget::ZOrderTabs() {
+void UITabWidget::zorderTabs() {
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-		mTabs[i]->ToBack();
+		mTabs[i]->toBack();
 	}
 
 	if ( NULL != mTabSelected ) {
-		mTabSelected->ToFront();
+		mTabSelected->toFront();
 	}
 }
 
-void UITabWidget::OrderTabs() {
-	ApplyThemeToTabs();
+void UITabWidget::orderTabs() {
+	applyThemeToTabs();
 
-	ZOrderTabs();
+	zorderTabs();
 
-	SetTabContainerSize();
+	setTabContainerSize();
 
-	PosTabs();
+	posTabs();
 }
 
-UITab * UITabWidget::CreateTab( const String& Text, UIControl * CtrlOwned, SubTexture * Icon ) {
+UITab * UITabWidget::createTab( const String& Text, UIControl * CtrlOwned, SubTexture * Icon ) {
 	UITab::CreateParams Params;
 	Params.Parent( mTabContainer );
 	Params.Font 			= mFont;
@@ -203,46 +203,46 @@ UITab * UITabWidget::CreateTab( const String& Text, UIControl * CtrlOwned, SubTe
 
 	UITab * tCtrl 	= eeNew( UITab, ( Params, CtrlOwned ) );
 
-	tCtrl->Text( Text );
-	tCtrl->Visible( true );
-	tCtrl->Enabled( true );
+	tCtrl->text( Text );
+	tCtrl->visible( true );
+	tCtrl->enabled( true );
 
-	CtrlOwned->Parent( mCtrlContainer );
-	CtrlOwned->Visible( false );
-	CtrlOwned->Enabled( true );
+	CtrlOwned->parent( mCtrlContainer );
+	CtrlOwned->visible( false );
+	CtrlOwned->enabled( true );
 
 	return tCtrl;
 }
 
-Uint32 UITabWidget::Add( const String& Text, UIControl * CtrlOwned, SubTexture * Icon ) {
-	return Add( CreateTab( Text, CtrlOwned, Icon ) );
+Uint32 UITabWidget::add( const String& Text, UIControl * CtrlOwned, SubTexture * Icon ) {
+	return add( createTab( Text, CtrlOwned, Icon ) );
 }
 
-Uint32 UITabWidget::Add( UITab * Tab ) {
-	Tab->Parent( mTabContainer );
+Uint32 UITabWidget::add( UITab * Tab ) {
+	Tab->parent( mTabContainer );
 
 	mTabs.push_back( Tab );
 
 	if ( NULL == mTabSelected ) {
-		SetTabSelected( Tab );
+		setTabSelected( Tab );
 	} else {
-		OrderTabs();
+		orderTabs();
 	}
 
 	return mTabs.size() - 1;
 }
 
-UITab * UITabWidget::GetTab( const Uint32& Index ) {
+UITab * UITabWidget::getTab( const Uint32& Index ) {
 	eeASSERT( Index < mTabs.size() );
 	return mTabs[ Index ];
 }
 
-UITab * UITabWidget::GetTab( const String& Text ) {
+UITab * UITabWidget::getTab( const String& Text ) {
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-		if ( mTabs[i]->IsType( UI_TYPE_TAB ) ) {
+		if ( mTabs[i]->isType( UI_TYPE_TAB ) ) {
 			UITab * tTab = reinterpret_cast<UITab*>( mTabs[i] );
 
-			if ( tTab->Text() == Text )
+			if ( tTab->text() == Text )
 				return tTab;
 		}
 	}
@@ -250,7 +250,7 @@ UITab * UITabWidget::GetTab( const String& Text ) {
 	return NULL;
 }
 
-Uint32 UITabWidget::GetTabIndex( UITab * Tab ) {
+Uint32 UITabWidget::getTabIndex( UITab * Tab ) {
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
 		if ( mTabs[i] == Tab )
 			return i;
@@ -259,15 +259,15 @@ Uint32 UITabWidget::GetTabIndex( UITab * Tab ) {
 	return eeINDEX_NOT_FOUND;
 }
 
-Uint32 UITabWidget::Count() const {
+Uint32 UITabWidget::count() const {
 	return mTabs.size();
 }
 
-void UITabWidget::Remove( const Uint32& Index ) {
+void UITabWidget::remove( const Uint32& Index ) {
 	eeASSERT( Index < mTabs.size() );
 
 	if ( mTabs[ Index ] == mTabSelected ) {
-		mTabSelected->CtrlOwned()->Visible( false );
+		mTabSelected->ctrlOwned()->visible( false );
 	}
 
 	eeSAFE_DELETE( mTabs[ Index ] );
@@ -279,12 +279,12 @@ void UITabWidget::Remove( const Uint32& Index ) {
 	if ( Index == mTabSelectedIndex ) {
 		if ( mTabs.size() > 0 ) {
 			if ( mTabSelectedIndex < mTabs.size() ) {
-				SetTabSelected( mTabs[ mTabSelectedIndex ] );
+				setTabSelected( mTabs[ mTabSelectedIndex ] );
 			} else {
 				if ( mTabSelectedIndex > 0 && mTabSelectedIndex - 1 < mTabs.size() ) {
-					SetTabSelected( mTabs[ mTabSelectedIndex - 1 ] );
+					setTabSelected( mTabs[ mTabSelectedIndex - 1 ] );
 				} else {
-					SetTabSelected( mTabs[ 0 ] );
+					setTabSelected( mTabs[ 0 ] );
 				}
 			}
 		} else {
@@ -293,14 +293,14 @@ void UITabWidget::Remove( const Uint32& Index ) {
 		}
 	}
 
-	OrderTabs();
+	orderTabs();
 }
 
-void UITabWidget::Remove( UITab * Tab ) {
-	Remove( GetTabIndex( Tab ) );
+void UITabWidget::remove( UITab * Tab ) {
+	remove( getTabIndex( Tab ) );
 }
 
-void UITabWidget::RemoveAll() {
+void UITabWidget::removeAll() {
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
 		eeSAFE_DELETE( mTabs[ i ] );
 	}
@@ -310,98 +310,98 @@ void UITabWidget::RemoveAll() {
 	mTabSelected		= NULL;
 	mTabSelectedIndex	= eeINDEX_NOT_FOUND;
 
-	OrderTabs();
+	orderTabs();
 }
 
-void UITabWidget::Insert( const String& Text, UIControl * CtrlOwned, SubTexture * Icon, const Uint32& Index ) {
-	Insert( CreateTab( Text, CtrlOwned, Icon ), Index );
+void UITabWidget::insert( const String& Text, UIControl * CtrlOwned, SubTexture * Icon, const Uint32& Index ) {
+	insert( createTab( Text, CtrlOwned, Icon ), Index );
 }
 
-void UITabWidget::Insert( UITab * Tab, const Uint32& Index ) {
+void UITabWidget::insert( UITab * Tab, const Uint32& Index ) {
 	mTabs.insert( mTabs.begin() + Index, Tab );
 
-	ChildAddAt( Tab, Index );
+	childAddAt( Tab, Index );
 
-	OrderTabs();
+	orderTabs();
 }
 
-void UITabWidget::SetTabSelected( UITab * Tab ) {
+void UITabWidget::setTabSelected( UITab * Tab ) {
 	if ( Tab == mTabSelected ) {
 		return;
 	}
 
 	if ( NULL != mTabSelected ) {
-		mTabSelected->Unselect();
-		mTabSelected->CtrlOwned()->Visible( false );
+		mTabSelected->unselect();
+		mTabSelected->ctrlOwned()->visible( false );
 	}
 
 	if ( NULL != Tab ) {
-		Tab->Select();
+		Tab->select();
 	} else {
 		return;
 	}
 
-	Uint32 TabIndex		= GetTabIndex( Tab );
+	Uint32 TabIndex		= getTabIndex( Tab );
 
 	if ( eeINDEX_NOT_FOUND != TabIndex ) {
 		mTabSelected		= Tab;
 		mTabSelectedIndex	= TabIndex;
 
-		mTabSelected->CtrlOwned()->Visible( true );
-		mTabSelected->CtrlOwned()->Size( mCtrlContainer->Size() );
-		mTabSelected->CtrlOwned()->Pos( 0, 0 );
+		mTabSelected->ctrlOwned()->visible( true );
+		mTabSelected->ctrlOwned()->size( mCtrlContainer->size() );
+		mTabSelected->ctrlOwned()->position( 0, 0 );
 
-		OrderTabs();
+		orderTabs();
 
-		SendCommonEvent( UIEvent::EventOnTabSelected );
+		sendCommonEvent( UIEvent::EventOnTabSelected );
 	}
 }
 
-void UITabWidget::SelectPrev() {
+void UITabWidget::selectPrev() {
 	if ( eeINDEX_NOT_FOUND != mTabSelectedIndex && mTabSelectedIndex > 0 ) {
-		SetTabSelected( GetTab( mTabSelectedIndex - 1 ) );
+		setTabSelected( getTab( mTabSelectedIndex - 1 ) );
 	}
 }
 
-void UITabWidget::SelectNext() {
+void UITabWidget::selectNext() {
 	if ( mTabSelectedIndex + 1 < mTabs.size() ) {
-		SetTabSelected( GetTab( mTabSelectedIndex + 1 ) );
+		setTabSelected( getTab( mTabSelectedIndex + 1 ) );
 	}
 }
 
-UITab * UITabWidget::GetSelectedTab() const {
+UITab * UITabWidget::getSelectedTab() const {
 	return mTabSelected;
 }
 
-Uint32 UITabWidget::GetSelectedTabIndex() const {
+Uint32 UITabWidget::getSelectedTabIndex() const {
 	return mTabSelectedIndex;
 }
 
-void UITabWidget::OnSizeChange() {
-	SeContainerSize();
-	SetTabContainerSize();
-	PosTabs();
+void UITabWidget::onSizeChange() {
+	seContainerSize();
+	setTabContainerSize();
+	posTabs();
 
 	if ( NULL != mTabSelected ) {
-		mTabSelected->CtrlOwned()->Size( mCtrlContainer->Size() );
+		mTabSelected->ctrlOwned()->size( mCtrlContainer->size() );
 	}
 
-	UIControl::OnSizeChange();
+	UIControl::onSizeChange();
 }
 
-void UITabWidget::ApplyThemeToTabs() {
+void UITabWidget::applyThemeToTabs() {
 	if ( mSpecialBorderTabs ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			mTabs[ i ]->ApplyDefaultTheme();
+			mTabs[ i ]->applyDefaultTheme();
 		}
 	}
 }
 
-UIComplexControl * UITabWidget::TabContainer() const {
+UIComplexControl * UITabWidget::getTabContainer() const {
 	return mTabContainer;
 }
 
-UIComplexControl * UITabWidget::ControlContainer() const {
+UIComplexControl * UITabWidget::getControlContainer() const {
 	return mCtrlContainer;
 }
 

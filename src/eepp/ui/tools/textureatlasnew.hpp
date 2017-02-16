@@ -28,19 +28,19 @@ class EE_API TextureAtlasNew {
 		UIPushButton *		mSetPathButton;
 		UIDropDownList *	mSaveFileType;
 
-		void WindowClose( const UIEvent * Event );
+		void windowClose( const UIEvent * Event );
 
-		void CancelClick( const UIEvent * Event );
+		void cancelClick( const UIEvent * Event );
 
-		void OKClick( const UIEvent * Event );
+		void okClick( const UIEvent * Event );
 
-		UITextBox * CreateTxtBox( Vector2i Pos, const String& Text );
+		UITextBox * createTxtBox( Vector2i Pos, const String& Text );
 
-		void OnDialogFolderSelect( const UIEvent * Event );
+		void onDialogFolderSelect( const UIEvent * Event );
 
-		void OnSelectFolder( const UIEvent * Event );
+		void onSelectFolder( const UIEvent * Event );
 
-		void TextureAtlasSave( const UIEvent * Event );
+		void textureAtlasSave( const UIEvent * Event );
 };
 
 }}}

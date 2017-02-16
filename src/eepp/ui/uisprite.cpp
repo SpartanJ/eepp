@@ -13,102 +13,102 @@ UISprite::UISprite( const UISprite::CreateParams& Params ) :
 	if ( Params.DealloSprite )
 		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
 
-	if ( ( Flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) {
+	if ( ( flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) {
 		if ( NULL != mSprite && NULL != mSprite->getCurrentSubTexture() ) {
-			Size( mSprite->getCurrentSubTexture()->size() );
+			size( mSprite->getCurrentSubTexture()->size() );
 		}
 	}
 }
 
 UISprite::~UISprite() {
-	if ( DealloSprite() )
+	if ( deallocSprite() )
 		eeSAFE_DELETE( mSprite );
 }
 
-Uint32 UISprite::Type() const {
+Uint32 UISprite::getType() const {
 	return UI_TYPE_SPRITE;
 }
 
-bool UISprite::IsType( const Uint32& type ) const {
-	return UISprite::Type() == type ? true : UIComplexControl::IsType( type );
+bool UISprite::isType( const Uint32& type ) const {
+	return UISprite::getType() == type ? true : UIComplexControl::isType( type );
 }
 
-Uint32 UISprite::DealloSprite() {
+Uint32 UISprite::deallocSprite() {
 	return mControlFlags & UI_CTRL_FLAG_FREE_USE;
 }
 
-void UISprite::Sprite( Graphics::Sprite * sprite ) {
-	if ( DealloSprite() )
+void UISprite::sprite( Graphics::Sprite * sprite ) {
+	if ( deallocSprite() )
 		eeSAFE_DELETE( mSprite );
 
 	mSprite = sprite;
 	
-	UpdateSize();
+	updateSize();
 }
 
-void UISprite::Draw() {
-	UIControlAnim::Draw();
+void UISprite::draw() {
+	UIControlAnim::draw();
 
 	if ( mVisible ) {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
-			CheckSubTextureUpdate();
+			checkSubTextureUpdate();
 			mSprite->position( (Float)( mScreenPos.x + mAlignOffset.x ), (Float)( mScreenPos.y + mAlignOffset.y ) );
-			mSprite->draw( Blend(), mRender );
+			mSprite->draw( blend(), mRender );
 		}
 	}
 }
 
-void UISprite::CheckSubTextureUpdate() {
+void UISprite::checkSubTextureUpdate() {
 	if ( NULL != mSprite && NULL != mSprite->getCurrentSubTexture() && mSprite->getCurrentSubTexture() != mSubTextureLast ) {
-		UpdateSize();
-		AutoAlign();
+		updateSize();
+		autoAlign();
 		mSubTextureLast = mSprite->getCurrentSubTexture();
 	}
 }
 
-void UISprite::Alpha( const Float& alpha ) {
-	UIControlAnim::Alpha( alpha );
+void UISprite::alpha( const Float& alpha ) {
+	UIControlAnim::alpha( alpha );
 	
 	if ( NULL != mSprite )
 		mSprite->alpha( alpha );
 }
 
-Graphics::Sprite * UISprite::Sprite() const {
+Graphics::Sprite * UISprite::sprite() const {
 	return mSprite;
 }
 
-ColorA UISprite::Color() const {
+ColorA UISprite::color() const {
 	if ( NULL != mSprite )
 		return mSprite->color();
 
 	return ColorA();
 }
 
-void UISprite::Color( const ColorA& color ) {
+void UISprite::color( const ColorA& color ) {
 	if ( NULL != mSprite )
 		mSprite->color( color );
 	
-	Alpha( color.a() );
+	alpha( color.a() );
 }
 
-const EE_RENDER_MODE& UISprite::RenderMode() const {
+const EE_RENDER_MODE& UISprite::renderMode() const {
 	return mRender;
 }
 
-void UISprite::RenderMode( const EE_RENDER_MODE& render ) {
+void UISprite::renderMode( const EE_RENDER_MODE& render ) {
 	mRender = render;
 }
 
-void UISprite::UpdateSize() {
-	if ( Flags() & UI_AUTO_SIZE ) {
+void UISprite::updateSize() {
+	if ( flags() & UI_AUTO_SIZE ) {
 		if ( NULL != mSprite ) {
 			if ( NULL != mSprite->getCurrentSubTexture() && mSprite->getCurrentSubTexture()->size() != mSize )
-				Size( mSprite->getCurrentSubTexture()->size() );
+				size( mSprite->getCurrentSubTexture()->size() );
 		}
 	}
 }
 
-void UISprite::AutoAlign() {
+void UISprite::autoAlign() {
 	if ( NULL == mSprite || NULL == mSprite->getCurrentSubTexture() )
 		return;
 
@@ -131,12 +131,12 @@ void UISprite::AutoAlign() {
 	}
 }
 
-const Vector2i& UISprite::AlignOffset() const {
+const Vector2i& UISprite::alignOffset() const {
 	return mAlignOffset;
 }
 
-void UISprite::OnSizeChange() {
-	AutoAlign();
+void UISprite::onSizeChange() {
+	autoAlign();
 }
 
 }}

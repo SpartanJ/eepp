@@ -40,67 +40,67 @@ class EE_API UIGenericGrid : public UIComplexControl {
 
 		~UIGenericGrid();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		void Add( UIGridCell * Cell );
+		void add( UIGridCell * Cell );
 
-		void Remove( UIGridCell * Cell );
+		void remove( UIGridCell * Cell );
 
-		void Remove( std::vector<Uint32> ItemsIndex );
+		void remove( std::vector<Uint32> ItemsIndex );
 
-		void Remove( Uint32 ItemIndex );
+		void remove( Uint32 ItemIndex );
 
-		void CollumnWidth( const Uint32& CollumnIndex, const Uint32& CollumnWidth );
+		void collumnWidth( const Uint32& CollumnIndex, const Uint32& collumnWidth );
 
-		Uint32 Count() const;
+		Uint32 getCount() const;
 
-		const Uint32& CollumnsCount() const;
+		const Uint32& getCollumnsCount() const;
 
-		const Uint32& CollumnWidth( const Uint32& CollumnIndex ) const;
+		const Uint32& collumnWidth( const Uint32& CollumnIndex ) const;
 
-		void RowHeight( const Uint32& height );
+		void rowHeight( const Uint32& height );
 
-		const Uint32& RowHeight() const;
+		const Uint32& rowHeight() const;
 
-		UIGridCell * GetCell( const Uint32& CellIndex ) const;
+		UIGridCell * getCell( const Uint32& CellIndex ) const;
 
-		void VerticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+		void verticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
 
-		const UI_SCROLLBAR_MODE& VerticalScrollMode();
+		const UI_SCROLLBAR_MODE& verticalScrollMode();
 
-		void HorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+		void horizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
 
-		const UI_SCROLLBAR_MODE& HorizontalScrollMode();
+		const UI_SCROLLBAR_MODE& horizontalScrollMode();
 
-		Uint32 GetCellPos( const Uint32& CollumnIndex );
+		Uint32 getCellPosition( const Uint32& CollumnIndex );
 
-		UIScrollBar * VerticalScrollBar() const;
+		UIScrollBar * verticalScrollBar() const;
 
-		UIScrollBar * HorizontalScrollBar() const;
+		UIScrollBar * horizontalScrollBar() const;
 
-		Uint32 GetItemIndex( UIGridCell * Item );
+		Uint32 getItemIndex( UIGridCell * Item );
 
-		UIGridCell * GetItemSelected();
+		UIGridCell * getItemSelected();
 
-		Uint32 GetItemSelectedIndex() const;
+		Uint32 getItemSelectedIndex() const;
 
-		Uint32 OnMessage( const UIMessage * Msg );
+		Uint32 onMessage( const UIMessage * Msg );
 
-		UIItemContainer<UIGenericGrid> * Container() const;
+		UIItemContainer<UIGenericGrid> * getContainer() const;
 
-		virtual void Update();
+		virtual void update();
 
-		bool TouchDragEnable() const;
+		bool touchDragEnable() const;
 
-		void TouchDragEnable( const bool& enable );
+		void touchDragEnable( const bool& enable );
 
-		bool TouchDragging() const;
+		bool touchDragging() const;
 
-		void TouchDragging( const bool& dragging );
+		void touchDragging( const bool& dragging );
 	protected:
 		friend class UIItemContainer<UIGenericGrid>;
 		friend class UIGridCell;
@@ -132,31 +132,31 @@ class EE_API UIGenericGrid : public UIComplexControl {
 
 		bool						mCollWidthAssigned;
 
-		void UpdateCells();
+		void updateCells();
 
-		void UpdateCollumnsPos();
+		void updateCollumnsPos();
 
-		void AutoPadding();
+		void autoPadding();
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 
-		void ContainerResize();
+		void containerResize();
 
-		void OnScrollValueChange( const UIEvent * Event );
+		void onScrollValueChange( const UIEvent * Event );
 
-		void SetDefaultCollumnsWidth();
+		void setDefaultCollumnsWidth();
 
-		void UpdateScroll( bool FromScrollChange = false );
+		void updateScroll( bool FromScrollChange = false );
 
-		void UpdateSize();
+		void updateSize();
 
-		virtual Uint32 OnSelected();
+		virtual Uint32 onSelected();
 
-		void UpdateVScroll();
+		void updateVScroll();
 
-		void UpdateHScroll();
+		void updateHScroll();
 };
 
 }}

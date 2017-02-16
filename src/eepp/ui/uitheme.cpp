@@ -114,15 +114,15 @@ static void LoadThemeElements( std::list<std::string>& UI_THEME_ELEMENTS, std::l
 		UI_THEME_ICONS.push_back( "document-save-as" );
 }
 
-void UITheme::AddThemeElement( const std::string& Element ) {
+void UITheme::addThemeElement( const std::string& Element ) {
 	mUIElements.push_back( Element );
 }
 
-void UITheme::AddThemeIcon( const std::string& Icon ) {
+void UITheme::addThemeIcon( const std::string& Icon ) {
 	mUIIcons.push_back( Icon );
 }
 
-UITheme * UITheme::LoadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtlas * TextureAtlas ) {
+UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtlas * TextureAtlas ) {
 	eeASSERT( NULL != tTheme && NULL != TextureAtlas );
 
 	/** Themes use nearest filter by default, force the filter to the textures. */
@@ -140,14 +140,14 @@ UITheme * UITheme::LoadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 	std::vector<std::string> 	ElemFound;
 	std::vector<Uint32> 		ElemType;
 
-	tTheme->TextureAtlas( TextureAtlas );
+	tTheme->getTextureAtlas( TextureAtlas );
 
 	for ( std::list<std::string>::iterator it = tTheme->mUIElements.begin() ; it != tTheme->mUIElements.end(); it++ ) {
 		Uint32 IsComplex = 0;
 
-		Element = std::string( tTheme->Abbr() + "_" + *it );
+		Element = std::string( tTheme->abbr() + "_" + *it );
 
-		Found 	= SearchFilesInAtlas( TextureAtlas, Element, IsComplex );
+		Found 	= searchFilesInAtlas( TextureAtlas, Element, IsComplex );
 
 		if ( Found ) {
 			ElemFound.push_back( Element );
@@ -167,7 +167,7 @@ UITheme * UITheme::LoadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 	return tTheme;
 }
 
-UITheme * UITheme::LoadFromPath( UITheme * tTheme, const std::string& Path, const std::string ImgExt ) {
+UITheme * UITheme::loadFromPath( UITheme * tTheme, const std::string& Path, const std::string ImgExt ) {
 	Clock TE;
 
 	LoadThemeElements( tTheme->mUIElements, tTheme->mUIIcons );
@@ -186,16 +186,16 @@ UITheme * UITheme::LoadFromPath( UITheme * tTheme, const std::string& Path, cons
 	std::vector<std::string> 	ElemFound;
 	std::vector<Uint32> 		ElemType;
 
-	Graphics::TextureAtlas * tSG = eeNew( Graphics::TextureAtlas, ( tTheme->Abbr() ) );
+	Graphics::TextureAtlas * tSG = eeNew( Graphics::TextureAtlas, ( tTheme->abbr() ) );
 
-	tTheme->TextureAtlas( tSG );
+	tTheme->getTextureAtlas( tSG );
 
 	for ( std::list<std::string>::iterator it = tTheme->mUIElements.begin() ; it != tTheme->mUIElements.end(); it++ ) {
 		Uint32 IsComplex = 0;
 
-		Element = tTheme->Abbr() + "_" + *it;
+		Element = tTheme->abbr() + "_" + *it;
 
-		Found 	= SearchFilesOfElement( tSG, RPath, Element, IsComplex, ImgExt );
+		Found 	= searchFilesOfElement( tSG, RPath, Element, IsComplex, ImgExt );
 
 		if ( Found ) {
 			ElemFound.push_back( Element );
@@ -205,7 +205,7 @@ UITheme * UITheme::LoadFromPath( UITheme * tTheme, const std::string& Path, cons
 
 	// Load the icons from path.
 	for ( std::list<std::string>::iterator it = tTheme->mUIIcons.begin() ; it != tTheme->mUIIcons.end(); it++ ) {
-		ElemName	= tTheme->Abbr() + "_icon_" + *it;
+		ElemName	= tTheme->abbr() + "_icon_" + *it;
 		Element		= RPath + ElemName + "." + ImgExt;
 
 		if ( FileSystem::fileExists( Element ) ) {
@@ -230,15 +230,15 @@ UITheme * UITheme::LoadFromPath( UITheme * tTheme, const std::string& Path, cons
 	return tTheme;
 }
 
-UITheme * UITheme::LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt ) {
-	return LoadFromPath( eeNew( UITheme, ( Name, NameAbbr ) ), Path, ImgExt );
+UITheme * UITheme::loadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt ) {
+	return loadFromPath( eeNew( UITheme, ( Name, NameAbbr ) ), Path, ImgExt );
 }
 
-UITheme * UITheme::LoadFromTextureAtlas( Graphics::TextureAtlas * TextureAtlas, const std::string& Name, const std::string NameAbbr ) {
-	return LoadFromTextureAtlas( eeNew( UITheme, ( Name, NameAbbr ) ), TextureAtlas );
+UITheme * UITheme::loadFromTextureAtlas( Graphics::TextureAtlas * TextureAtlas, const std::string& Name, const std::string NameAbbr ) {
+	return loadFromTextureAtlas( eeNew( UITheme, ( Name, NameAbbr ) ), TextureAtlas );
 }
 
-bool UITheme::SearchFilesInAtlas( Graphics::TextureAtlas * SG, std::string Element, Uint32& IsComplex ) {
+bool UITheme::searchFilesInAtlas( Graphics::TextureAtlas * SG, std::string Element, Uint32& IsComplex ) {
 	bool Found = false;
 	Uint32 i = 0, s = 0;
 	std::string ElemName;
@@ -247,7 +247,7 @@ bool UITheme::SearchFilesInAtlas( Graphics::TextureAtlas * SG, std::string Eleme
 	// Search Complex Skin
 	for ( i = 0; i < UISkinState::StateCount; i++ ) {
 		for ( s = 0; s < UISkinComplex::SideCount; s++ ) {
-			ElemName = Element + "_" + UISkin::GetSkinStateName( i ) + "_" + UISkinComplex::GetSideSuffix( s );
+			ElemName = Element + "_" + UISkin::getSkinStateName( i ) + "_" + UISkinComplex::GetSideSuffix( s );
 
 			if ( SG->getByName( ElemName ) ) {
 				IsComplex = 1;
@@ -264,7 +264,7 @@ bool UITheme::SearchFilesInAtlas( Graphics::TextureAtlas * SG, std::string Eleme
 	// Search Simple Skin
 	if ( !IsComplex ) {
 		for ( i = 0; i < UISkinState::StateCount; i++ ) {
-			ElemName = Element + "_" + UISkin::GetSkinStateName( i );
+			ElemName = Element + "_" + UISkin::getSkinStateName( i );
 
 			if ( SG->getByName( ElemName ) ) {
 				Found = true;
@@ -276,7 +276,7 @@ bool UITheme::SearchFilesInAtlas( Graphics::TextureAtlas * SG, std::string Eleme
 	return Found;
 }
 
-bool UITheme::SearchFilesOfElement( Graphics::TextureAtlas * SG, const std::string& Path, std::string Element, Uint32& IsComplex, const std::string ImgExt ) {
+bool UITheme::searchFilesOfElement( Graphics::TextureAtlas * SG, const std::string& Path, std::string Element, Uint32& IsComplex, const std::string ImgExt ) {
 	bool Found = false;
 	Uint32 i = 0, s = 0;
 	std::string ElemPath;
@@ -287,7 +287,7 @@ bool UITheme::SearchFilesOfElement( Graphics::TextureAtlas * SG, const std::stri
 	// Search Complex Skin
 	for ( i = 0; i < UISkinState::StateCount; i++ ) {
 		for ( s = 0; s < UISkinComplex::SideCount; s++ ) {
-			ElemName = Element + "_" + UISkin::GetSkinStateName( i ) + "_" + UISkinComplex::GetSideSuffix( s );
+			ElemName = Element + "_" + UISkin::getSkinStateName( i ) + "_" + UISkinComplex::GetSideSuffix( s );
 			ElemPath = Path + ElemName;
 			ElemFullPath = ElemPath + "." + ImgExt;
 
@@ -304,7 +304,7 @@ bool UITheme::SearchFilesOfElement( Graphics::TextureAtlas * SG, const std::stri
 	// Seach Simple Skin
 	if ( !IsComplex ) {
 		for ( i = 0; i < UISkinState::StateCount; i++ ) {
-			ElemName = Element + "_" + UISkin::GetSkinStateName( i );
+			ElemName = Element + "_" + UISkin::getSkinStateName( i );
 			ElemPath = Path + ElemName;
 			ElemFullPath = ElemPath + "." + ImgExt;
 
@@ -319,18 +319,18 @@ bool UITheme::SearchFilesOfElement( Graphics::TextureAtlas * SG, const std::stri
 	return Found;
 }
 
-UITheme::UITheme( const std::string& Name, const std::string& Abbr, Graphics::Font * DefaultFont ) :
+UITheme::UITheme( const std::string& Name, const std::string& Abbr, Graphics::Font * defaultFont ) :
 	ResourceManager<UISkin> ( false ),
 	mName( Name ),
 	mNameHash( String::hash( mName ) ),
 	mAbbr( Abbr ),
 	mTextureAtlas( NULL ),
-	mFont( DefaultFont ),
+	mFont( defaultFont ),
 	mFontColor( 0, 0, 0, 255 ),
 	mFontShadowColor( 255, 255, 255, 200 ),
 	mFontOverColor( 0, 0, 0, 255 ),
 	mFontSelectedColor( 0, 0, 0, 255 ),
-	mUseDefaultThemeValues( true )
+	mUsedefaultThemeValues( true )
 {
 }
 
@@ -351,80 +351,80 @@ const Uint32& UITheme::getId() const {
 	return mNameHash;
 }
 
-const std::string& UITheme::Abbr() const {
+const std::string& UITheme::abbr() const {
 	return mAbbr;
 }
 
 UISkin * UITheme::add( UISkin * Resource ) {
-	Resource->Theme( this );
+	Resource->theme( this );
 
 	return ResourceManager<UISkin>::add( Resource );
 }
 
-void UITheme::Font( Graphics::Font * Font ) {
+void UITheme::font( Graphics::Font * Font ) {
 	mFont = Font;
 }
 
-Graphics::Font * UITheme::Font() const {
+Graphics::Font * UITheme::font() const {
 	return mFont;
 }
 
-const ColorA& UITheme::FontColor() const {
+const ColorA& UITheme::fontColor() const {
 	return mFontColor;
 }
 
-const ColorA& UITheme::FontShadowColor() const {
+const ColorA& UITheme::fontShadowColor() const {
 	return mFontShadowColor;
 }
 
-const ColorA& UITheme::FontOverColor() const {
+const ColorA& UITheme::fontOverColor() const {
 	return mFontOverColor;
 }
 
-const ColorA& UITheme::FontSelectedColor() const {
+const ColorA& UITheme::fontSelectedColor() const {
 	return mFontSelectedColor;
 }
 
-void UITheme::FontColor( const ColorA& Color ) {
+void UITheme::fontColor( const ColorA& Color ) {
 	mFontColor = Color;
 }
 
-void UITheme::FontShadowColor( const ColorA& Color ) {
+void UITheme::fontShadowColor( const ColorA& Color ) {
 	mFontShadowColor = Color;
 }
 
-void UITheme::FontOverColor( const ColorA& Color ) {
+void UITheme::fontOverColor( const ColorA& Color ) {
 	mFontOverColor = Color;
 }
 
-void UITheme::FontSelectedColor( const ColorA& Color ) {
+void UITheme::fontSelectedColor( const ColorA& Color ) {
 	mFontSelectedColor = Color;
 }
 
-void UITheme::UseDefaultThemeValues( const bool& Use ) {
-	mUseDefaultThemeValues = Use;
+void UITheme::useDefaultThemeValues( const bool& Use ) {
+	mUsedefaultThemeValues = Use;
 }
 
-const bool& UITheme::UseDefaultThemeValues() const {
-	return mUseDefaultThemeValues;
+const bool& UITheme::useDefaultThemeValues() const {
+	return mUsedefaultThemeValues;
 }
 
-Graphics::TextureAtlas * UITheme::TextureAtlas() const {
+Graphics::TextureAtlas * UITheme::getTextureAtlas() const {
 	return mTextureAtlas;
 }
 
-void UITheme::TextureAtlas( Graphics::TextureAtlas * SG ) {
+void UITheme::getTextureAtlas( Graphics::TextureAtlas * SG ) {
 	mTextureAtlas = SG;
 }
 
-SubTexture * UITheme::GetIconByName( const std::string& name ) {
+SubTexture * UITheme::getIconByName( const std::string& name ) {
 	if ( NULL != mTextureAtlas )
 		return mTextureAtlas->getByName( mAbbr + "_icon_" + name );
 
 	return NULL;
 }
 
-UIGfx * UITheme::CreateGfx( SubTexture * SubTexture, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, ColorA SubTextureColor, EE_RENDER_MODE SubTextureRender ) {
+UIGfx * UITheme::createGfx( SubTexture * SubTexture, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, ColorA SubTextureColor, EE_RENDER_MODE SubTextureRender ) {
 	UIGfx::CreateParams GfxParams;
 	GfxParams.Parent( Parent );
 	GfxParams.PosSet( Pos );
@@ -434,12 +434,12 @@ UIGfx * UITheme::CreateGfx( SubTexture * SubTexture, UIControl * Parent, const S
 	GfxParams.SubTextureColor = SubTextureColor;
 	GfxParams.SubTextureRender = SubTextureRender;
 	UIGfx * Gfx = eeNew( UIGfx, ( GfxParams ) );
-	Gfx->Visible( true );
-	Gfx->Enabled( true );
+	Gfx->visible( true );
+	Gfx->enabled( true );
 	return Gfx;
 }
 
-UISprite * UITheme::CreateSprite( Sprite * Sprite, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool DealloSprite, EE_RENDER_MODE SpriteRender ) {
+UISprite * UITheme::createSprite( Sprite * Sprite, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool DealloSprite, EE_RENDER_MODE SpriteRender ) {
 	UISprite::CreateParams SpriteParams;
 	SpriteParams.Parent( Parent );
 	SpriteParams.PosSet( Pos );
@@ -449,61 +449,61 @@ UISprite * UITheme::CreateSprite( Sprite * Sprite, UIControl * Parent, const Siz
 	SpriteParams.SpriteRender = SpriteRender;
 	SpriteParams.DealloSprite = DealloSprite;
 	UISprite * Spr = eeNew( UISprite, ( SpriteParams ) );
-	Spr->Visible( true );
-	Spr->Enabled( true );
+	Spr->visible( true );
+	Spr->enabled( true );
 	return Spr;
 }
 
-UICheckBox * UITheme::CreateCheckBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
+UICheckBox * UITheme::createCheckBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
 	UICheckBox::CreateParams CheckBoxParams;
 	CheckBoxParams.Parent( Parent );
 	CheckBoxParams.PosSet( Pos );
 	CheckBoxParams.SizeSet( Size );
 	CheckBoxParams.Flags = Flags;
 	UICheckBox * Ctrl = eeNew( UICheckBox, ( CheckBoxParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UIRadioButton * UITheme::CreateRadioButton( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
+UIRadioButton * UITheme::createRadioButton( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
 	UIRadioButton::CreateParams RadioButtonParams;
 	RadioButtonParams.Parent( Parent );
 	RadioButtonParams.PosSet( Pos );
 	RadioButtonParams.SizeSet( Size );
 	RadioButtonParams.Flags = Flags;
 	UIRadioButton * Ctrl = eeNew( UIRadioButton, ( RadioButtonParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UITextBox * UITheme::CreateTextBox( const String& Text, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
+UITextBox * UITheme::createTextBox( const String& Text, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
 	UITextBox::CreateParams TextBoxParams;
 	TextBoxParams.Parent( Parent );
 	TextBoxParams.PosSet( Pos );
 	TextBoxParams.SizeSet( Size );
 	TextBoxParams.Flags = Flags;
 	UITextBox * Ctrl = eeNew( UITextBox, ( TextBoxParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( false );
-	Ctrl->Text( Text );
+	Ctrl->visible( true );
+	Ctrl->enabled( false );
+	Ctrl->text( Text );
 	return Ctrl;
 }
 
-UITooltip * UITheme::CreateTooltip( UIControl * TooltipOf, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
+UITooltip * UITheme::createTooltip( UIControl * TooltipOf, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
 	UITooltip::CreateParams TooltipParams;
 	TooltipParams.Parent( Parent );
 	TooltipParams.PosSet( Pos );
 	TooltipParams.SizeSet( Size );
 	TooltipParams.Flags = Flags;
 	UITooltip * Ctrl = eeNew( UITooltip, ( TooltipParams, TooltipOf ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UITextEdit * UITheme::CreateTextEdit( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, UI_SCROLLBAR_MODE HScrollBar, UI_SCROLLBAR_MODE VScrollBar, bool WordWrap ) {
+UITextEdit * UITheme::createTextEdit( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, UI_SCROLLBAR_MODE HScrollBar, UI_SCROLLBAR_MODE VScrollBar, bool WordWrap ) {
 	UITextEdit::CreateParams TextEditParams;
 	TextEditParams.Parent( Parent );
 	TextEditParams.PosSet( Pos );
@@ -513,12 +513,12 @@ UITextEdit * UITheme::CreateTextEdit( UIControl * Parent, const Sizei& Size, con
 	TextEditParams.VScrollBar = VScrollBar;
 	TextEditParams.WordWrap = WordWrap;
 	UITextEdit * Ctrl = eeNew( UITextEdit, ( TextEditParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UITextInput * UITheme::CreateTextInput( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool SupportFreeEditing, Uint32 MaxLength ) {
+UITextInput * UITheme::createTextInput( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool SupportFreeEditing, Uint32 MaxLength ) {
 	UITextInput::CreateParams TextInputParams;
 	TextInputParams.Parent( Parent );
 	TextInputParams.PosSet( Pos );
@@ -527,12 +527,12 @@ UITextInput * UITheme::CreateTextInput( UIControl * Parent, const Sizei& Size, c
 	TextInputParams.SupportFreeEditing = SupportFreeEditing;
 	TextInputParams.MaxLength = MaxLength;
 	UITextInput * Ctrl = eeNew( UITextInput, ( TextInputParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UITextInputPassword * UITheme::CreateTextInputPassword( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool SupportFreeEditing, Uint32 MaxLength ) {
+UITextInputPassword * UITheme::createTextInputPassword( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool SupportFreeEditing, Uint32 MaxLength ) {
 	UITextInput::CreateParams TextInputParams;
 	TextInputParams.Parent( Parent );
 	TextInputParams.PosSet( Pos );
@@ -541,12 +541,12 @@ UITextInputPassword * UITheme::CreateTextInputPassword( UIControl * Parent, cons
 	TextInputParams.SupportFreeEditing = SupportFreeEditing;
 	TextInputParams.MaxLength = MaxLength;
 	UITextInputPassword * Ctrl = eeNew( UITextInputPassword, ( TextInputParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UISpinBox * UITheme::CreateSpinBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Float DefaultValue, bool AllowDotsInNumbers ) {
+UISpinBox * UITheme::createSpinBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Float DefaultValue, bool AllowDotsInNumbers ) {
 	UISpinBox::CreateParams SpinBoxParams;
 	SpinBoxParams.Parent( Parent );
 	SpinBoxParams.PosSet( Pos );
@@ -555,12 +555,12 @@ UISpinBox * UITheme::CreateSpinBox( UIControl * Parent, const Sizei& Size, const
 	SpinBoxParams.DefaultValue = DefaultValue;
 	SpinBoxParams.AllowDotsInNumbers = AllowDotsInNumbers;
 	UISpinBox * Ctrl = eeNew( UISpinBox, ( SpinBoxParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UIScrollBar * UITheme::CreateScrollBar( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool VerticalScrollBar ) {
+UIScrollBar * UITheme::createScrollBar( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool VerticalScrollBar ) {
 	UIScrollBar::CreateParams ScrollBarParams;
 	ScrollBarParams.Parent( Parent );
 	ScrollBarParams.PosSet( Pos );
@@ -568,12 +568,12 @@ UIScrollBar * UITheme::CreateScrollBar( UIControl * Parent, const Sizei& Size, c
 	ScrollBarParams.Flags = Flags;
 	ScrollBarParams.VerticalScrollBar = VerticalScrollBar;
 	UIScrollBar * Ctrl = eeNew( UIScrollBar, ( ScrollBarParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UISlider * UITheme::CreateSlider( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool VerticalSlider, bool AllowHalfSliderOut, bool ExpandBackground ) {
+UISlider * UITheme::createSlider( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool VerticalSlider, bool AllowHalfSliderOut, bool ExpandBackground ) {
 	UISlider::CreateParams SliderParams;
 	SliderParams.Parent( Parent );
 	SliderParams.PosSet( Pos );
@@ -583,12 +583,12 @@ UISlider * UITheme::CreateSlider( UIControl * Parent, const Sizei& Size, const V
 	SliderParams.AllowHalfSliderOut = AllowHalfSliderOut;
 	SliderParams.ExpandBackground = ExpandBackground;
 	UISlider * Ctrl = eeNew( UISlider, ( SliderParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UIComboBox * UITheme::CreateComboBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
+UIComboBox * UITheme::createComboBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
 	UIComboBox::CreateParams ComboParams;
 	ComboParams.Parent( Parent );
 	ComboParams.PosSet( Pos );
@@ -598,12 +598,12 @@ UIComboBox * UITheme::CreateComboBox( UIControl * Parent, const Sizei& Size, con
 	ComboParams.PopUpToMainControl = PopUpToMainControl;
 	ComboParams.ListBox = ListBox;
 	UIComboBox * Ctrl = eeNew( UIComboBox, ( ComboParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UIDropDownList * UITheme::CreateDropDownList( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
+UIDropDownList * UITheme::createDropDownList( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
 	UIDropDownList::CreateParams DDLParams;
 	DDLParams.Parent( Parent );
 	DDLParams.PosSet( Pos );
@@ -613,12 +613,12 @@ UIDropDownList * UITheme::CreateDropDownList( UIControl * Parent, const Sizei& S
 	DDLParams.PopUpToMainControl = PopUpToMainControl;
 	DDLParams.ListBox = ListBox;
 	UIDropDownList * Ctrl = eeNew( UIDropDownList, ( DDLParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UIListBox * UITheme::CreateListBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool SmoothScroll, Uint32 RowHeight, UI_SCROLLBAR_MODE VScrollMode, UI_SCROLLBAR_MODE HScrollMode, Recti PaddingContainer ) {
+UIListBox * UITheme::createListBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool SmoothScroll, Uint32 RowHeight, UI_SCROLLBAR_MODE VScrollMode, UI_SCROLLBAR_MODE HScrollMode, Recti PaddingContainer ) {
 	UIListBox::CreateParams LBParams;
 	LBParams.Parent( Parent );
 	LBParams.PosSet( Pos );
@@ -630,12 +630,12 @@ UIListBox * UITheme::CreateListBox( UIControl * Parent, const Sizei& Size, const
 	LBParams.HScrollMode = HScrollMode;
 	LBParams.PaddingContainer = PaddingContainer;
 	UIListBox * Ctrl = eeNew( UIListBox, ( LBParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UIMenu * UITheme::CreateMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 RowHeight, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
+UIMenu * UITheme::createMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 RowHeight, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	UIMenu::CreateParams MenuParams;
 	MenuParams.Parent( Parent );
 	MenuParams.PosSet( Pos );
@@ -648,12 +648,12 @@ UIMenu * UITheme::CreateMenu( UIControl * Parent, const Sizei& Size, const Vecto
 	MenuParams.MinRightMargin = MinRightMargin;
 
 	UIMenu * Ctrl = eeNew( UIMenu, ( MenuParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UIPopUpMenu * UITheme::CreatePopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 RowHeight, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
+UIPopUpMenu * UITheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 RowHeight, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	UIPopUpMenu::CreateParams MenuParams;
 	MenuParams.Parent( Parent );
 	MenuParams.PosSet( Pos );
@@ -667,7 +667,7 @@ UIPopUpMenu * UITheme::CreatePopUpMenu( UIControl * Parent, const Sizei& Size, c
 	return eeNew( UIPopUpMenu, ( MenuParams ) );
 }
 
-UIProgressBar * UITheme::CreateProgressBar( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool DisplayPercent, bool VerticalExpand, Vector2f MovementSpeed, Rectf FillerMargin ) {
+UIProgressBar * UITheme::createProgressBar( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool DisplayPercent, bool VerticalExpand, Vector2f MovementSpeed, Rectf FillerMargin ) {
 	UIProgressBar::CreateParams PBParams;
 	PBParams.Parent( Parent );
 	PBParams.PosSet( Pos );
@@ -679,12 +679,12 @@ UIProgressBar * UITheme::CreateProgressBar( UIControl * Parent, const Sizei& Siz
 	PBParams.FillerMargin = FillerMargin;
 
 	UIProgressBar * Ctrl = eeNew( UIProgressBar, ( PBParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UIPushButton * UITheme::CreatePushButton( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, SubTexture * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
+UIPushButton * UITheme::createPushButton( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, SubTexture * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
 	UIPushButton::CreateParams ButtonParams;
 	ButtonParams.Parent( Parent );
 	ButtonParams.PosSet( Pos );
@@ -698,12 +698,12 @@ UIPushButton * UITheme::CreatePushButton( UIControl * Parent, const Sizei& Size,
 		ButtonParams.SetIcon( Icon );
 
 	UIPushButton * Ctrl = eeNew( UIPushButton, ( ButtonParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UISelectButton * UITheme::CreateSelectButton( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, SubTexture * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
+UISelectButton * UITheme::createSelectButton( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, SubTexture * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
 	UIPushButton::CreateParams ButtonParams;
 	ButtonParams.Parent( Parent );
 	ButtonParams.PosSet( Pos );
@@ -717,12 +717,12 @@ UISelectButton * UITheme::CreateSelectButton( UIControl * Parent, const Sizei& S
 		ButtonParams.SetIcon( Icon );
 
 	UISelectButton * Ctrl = eeNew( UISelectButton, ( ButtonParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UIWinMenu * UITheme::CreateWinMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MarginBetweenButtons, Uint32 ButtonMargin, Uint32 MenuHeight, Uint32 FirstButtonMargin ) {
+UIWinMenu * UITheme::createWinMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MarginBetweenButtons, Uint32 ButtonMargin, Uint32 MenuHeight, Uint32 FirstButtonMargin ) {
 	UIWinMenu::CreateParams WinMenuParams;
 	WinMenuParams.Parent( Parent );
 	WinMenuParams.PosSet( Pos );
@@ -734,12 +734,12 @@ UIWinMenu * UITheme::CreateWinMenu( UIControl * Parent, const Sizei& Size, const
 	WinMenuParams.FirstButtonMargin = FirstButtonMargin;
 
 	UIWinMenu * Ctrl = eeNew( UIWinMenu, ( WinMenuParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 
-UIWindow * UITheme::CreateWindow( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
+UIWindow * UITheme::createWindow( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
 	UIWindow::CreateParams WinParams;
 	WinParams.Parent( Parent );
 	WinParams.PosSet( Pos );
@@ -751,7 +751,7 @@ UIWindow * UITheme::CreateWindow( UIControl * Parent, const Sizei& Size, const V
 	return eeNew( UIWindow, ( WinParams ) );
 }
 
-UICommonDialog * UITheme::CreateCommonDialog( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
+UICommonDialog * UITheme::createCommonDialog( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
 	UICommonDialog::CreateParams DLGParams;
 	DLGParams.Parent( Parent );
 	DLGParams.PosSet( Pos );
@@ -766,7 +766,7 @@ UICommonDialog * UITheme::CreateCommonDialog( UIControl * Parent, const Sizei& S
 	return eeNew( UICommonDialog, ( DLGParams ) );
 }
 
-UIMessageBox * UITheme::CreateMessageBox( UI_MSGBOX_TYPE Type, const String& Message, Uint32 WinFlags, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
+UIMessageBox * UITheme::createMessageBox( UI_MSGBOX_TYPE Type, const String& Message, Uint32 WinFlags, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
 	UIMessageBox::CreateParams MsgBoxParams;
 	MsgBoxParams.Parent( Parent );
 	MsgBoxParams.PosSet( Pos );
@@ -780,7 +780,7 @@ UIMessageBox * UITheme::CreateMessageBox( UI_MSGBOX_TYPE Type, const String& Mes
 	return eeNew( UIMessageBox, ( MsgBoxParams ) );
 }
 
-UITabWidget * UITheme::CreateTabWidget( UIControl *Parent, const Sizei &Size, const Vector2i &Pos, const Uint32 &Flags, const bool &TabsClosable, const bool &SpecialBorderTabs, const Int32 &TabSeparation, const Uint32 &MaxTextLength, const Uint32 &TabWidgetHeight, const Uint32 &TabTextAlign, const Uint32 &MinTabWidth, const Uint32 &MaxTabWidth ) {
+UITabWidget * UITheme::createTabWidget( UIControl *Parent, const Sizei &Size, const Vector2i &Pos, const Uint32 &Flags, const bool &TabsClosable, const bool &SpecialBorderTabs, const Int32 &TabSeparation, const Uint32 &MaxTextLength, const Uint32 &TabWidgetHeight, const Uint32 &TabTextAlign, const Uint32 &MinTabWidth, const Uint32 &MaxTabWidth ) {
 	UITabWidget::CreateParams TabWidgetParams;
 	TabWidgetParams.Parent( Parent );
 	TabWidgetParams.PosSet( Pos );
@@ -796,8 +796,8 @@ UITabWidget * UITheme::CreateTabWidget( UIControl *Parent, const Sizei &Size, co
 	TabWidgetParams.MaxTabWidth = MaxTabWidth;
 
 	UITabWidget * Ctrl = eeNew( UITabWidget, ( TabWidgetParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->visible( true );
+	Ctrl->enabled( true );
 	return Ctrl;
 }
 

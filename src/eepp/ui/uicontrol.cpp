@@ -26,12 +26,12 @@ UIControl::UIControl( const CreateParams& Params ) :
 	mVisible( false ),
 	mEnabled( false )
 {
-	if ( NULL == mParentCtrl && NULL != UIManager::instance()->MainControl() ) {
-		mParentCtrl = UIManager::instance()->MainControl();
+	if ( NULL == mParentCtrl && NULL != UIManager::instance()->mainControl() ) {
+		mParentCtrl = UIManager::instance()->mainControl();
 	}
 
 	if ( NULL != mParentCtrl )
-		mParentCtrl->ChildAdd( this );
+		mParentCtrl->childAdd( this );
 
 	if ( mFlags & UI_FILL_BACKGROUND )
 		mBackground = eeNew( UIBackground, ( Params.Background ) );
@@ -39,392 +39,392 @@ UIControl::UIControl( const CreateParams& Params ) :
 	if ( mFlags & UI_BORDER )
 		mBorder = eeNew( UIBorder, ( Params.Border ) );
 
-	UpdateScreenPos();
-	UpdateQuad();
+	updateScreenPos();
+	updateQuad();
 }
 
 UIControl::~UIControl() {
-	SafeDeleteSkinState();
+	safeDeleteSkinState();
 	eeSAFE_DELETE( mBackground );
 	eeSAFE_DELETE( mBorder );
 
-	ChildDeleteAll();
+	childDeleteAll();
 
 	if ( NULL != mParentCtrl )
-		mParentCtrl->ChildRemove( this );
+		mParentCtrl->childRemove( this );
 
-	if ( UIManager::instance()->FocusControl() == this && UIManager::instance()->MainControl() != this ) {
-		UIManager::instance()->FocusControl( UIManager::instance()->MainControl() );
+	if ( UIManager::instance()->focusControl() == this && UIManager::instance()->mainControl() != this ) {
+		UIManager::instance()->focusControl( UIManager::instance()->mainControl() );
 	}
 
-	if ( UIManager::instance()->OverControl() == this && UIManager::instance()->MainControl() != this ) {
-		UIManager::instance()->OverControl( UIManager::instance()->MainControl() );
+	if ( UIManager::instance()->overControl() == this && UIManager::instance()->mainControl() != this ) {
+		UIManager::instance()->overControl( UIManager::instance()->mainControl() );
 	}
 }
 
-void UIControl::ScreenToControl( Vector2i& Pos ) const {
+void UIControl::screenToControl( Vector2i& Pos ) const {
 	UIControl * ParentLoop = mParentCtrl;
 
 	Pos.x -= mPos.x;
 	Pos.y -= mPos.y;
 
 	while ( NULL != ParentLoop ) {
-		const Vector2i& ParentPos = ParentLoop->Pos();
+		const Vector2i& ParentPos = ParentLoop->position();
 
 		Pos.x -= ParentPos.x;
 		Pos.y -= ParentPos.y;
 
-		ParentLoop = ParentLoop->Parent();
+		ParentLoop = ParentLoop->parent();
 	}
 }
 
-void UIControl::ControlToScreen( Vector2i& Pos ) const {
+void UIControl::controlToScreen( Vector2i& Pos ) const {
 	UIControl * ParentLoop = mParentCtrl;
 
 	while ( NULL != ParentLoop ) {
-		const Vector2i& ParentPos = ParentLoop->Pos();
+		const Vector2i& ParentPos = ParentLoop->position();
 
 		Pos.x += ParentPos.x;
 		Pos.y += ParentPos.y;
 
-		ParentLoop = ParentLoop->Parent();
+		ParentLoop = ParentLoop->parent();
 	}
 }
 
-Uint32 UIControl::Type() const {
+Uint32 UIControl::getType() const {
 	return UI_TYPE_CONTROL;
 }
 
-bool UIControl::IsType( const Uint32& type ) const {
-	return UIControl::Type() == type;
+bool UIControl::isType( const Uint32& type ) const {
+	return UIControl::getType() == type;
 }
 
-void UIControl::MessagePost( const UIMessage * Msg ) {
+void UIControl::messagePost( const UIMessage * Msg ) {
 	UIControl * Ctrl = this;
 
 	while( NULL != Ctrl ) {
-		if ( Ctrl->OnMessage( Msg ) )
+		if ( Ctrl->onMessage( Msg ) )
 			break;
 
-		Ctrl = Ctrl->Parent();
+		Ctrl = Ctrl->parent();
 	}
 }
 
-Uint32 UIControl::OnMessage( const UIMessage * Msg ) {
+Uint32 UIControl::onMessage( const UIMessage * Msg ) {
 	return 0;
 }
 
-bool UIControl::IsInside( const Vector2i& Pos ) const {
+bool UIControl::isInside( const Vector2i& Pos ) const {
 	return ( Pos.x >= 0 && Pos.y >= 0 && Pos.x < mSize.width() && Pos.y < mSize.height() );
 }
 
-void UIControl::Pos( const Vector2i& Pos ) {
+void UIControl::position( const Vector2i& Pos ) {
 	mPos = Pos;
 
-	OnPosChange();
+	onPositionChange();
 }
 
-void UIControl::Pos( const Int32& x, const Int32& y ) {
+void UIControl::position( const Int32& x, const Int32& y ) {
 	mPos = Vector2i( x, y );
 
-	OnPosChange();
+	onPositionChange();
 }
 
-const Vector2i& UIControl::Pos() const {
+const Vector2i& UIControl::position() const {
 	return mPos;
 }
 
-void UIControl::Size( const Sizei& Size ) {
+void UIControl::size( const Sizei& Size ) {
 	if ( Size != mSize ) {
 		Vector2i sizeChange( Size.x - mSize.x, Size.y - mSize.y );
 
 		mSize = Size;
 
-		OnSizeChange();
+		onSizeChange();
 
 		if ( mFlags & UI_REPORT_SIZE_CHANGE_TO_CHILDS ) {
-			SendParentSizeChange( sizeChange );
+			sendParentSizeChange( sizeChange );
 		}
 	}
 }
 
-void UIControl::Size( const Int32& Width, const Int32& Height ) {
-	Size( Sizei( Width, Height ) );
+void UIControl::size( const Int32& Width, const Int32& Height ) {
+	size( Sizei( Width, Height ) );
 }
 
-Recti UIControl::Rect() const {
+Recti UIControl::getRect() const {
 	return Recti( mPos, mSize );
 }
 
-const Sizei& UIControl::Size() {
+const Sizei& UIControl::size() {
 	return mSize;
 }
 
-void UIControl::Visible( const bool& visible ) {
+void UIControl::visible( const bool& visible ) {
 	mVisible = visible;
-	OnVisibleChange();
+	onVisibleChange();
 }
 
-bool UIControl::Visible() const {
+bool UIControl::visible() const {
 	return mVisible;
 }
 
-bool UIControl::Hided() const {
+bool UIControl::isHided() const {
 	return !mVisible;
 }
 
-void UIControl::Enabled( const bool& enabled ) {
+void UIControl::enabled( const bool& enabled ) {
 	mEnabled = enabled;
-	OnEnabledChange();
+	onEnabledChange();
 }
 
-bool UIControl::Enabled() const {
+bool UIControl::enabled() const {
 	return mEnabled;
 }
 
-bool UIControl::Disabled() const {
+bool UIControl::isDisabled() const {
 	return !mEnabled;
 }
 
-UIControl * UIControl::Parent() const {
+UIControl * UIControl::parent() const {
 	return mParentCtrl;
 }
 
-void UIControl::Parent( UIControl * parent ) {
+void UIControl::parent( UIControl * parent ) {
 	if ( parent == mParentCtrl )
 		return;
 
 	if ( NULL != mParentCtrl )
-		mParentCtrl->ChildRemove( this );
+		mParentCtrl->childRemove( this );
 
 	mParentCtrl = parent;
 
 	if ( NULL != mParentCtrl )
-		mParentCtrl->ChildAdd( this );
+		mParentCtrl->childAdd( this );
 }
 
-bool UIControl::IsParentOf( UIControl * Ctrl ) {
+bool UIControl::isParentOf( UIControl * Ctrl ) {
 	eeASSERT( NULL != Ctrl );
 
-	UIControl * tParent = Ctrl->Parent();
+	UIControl * tParent = Ctrl->parent();
 
 	while ( NULL != tParent ) {
 		if ( this == tParent )
 			return true;
 
-		tParent = tParent->Parent();
+		tParent = tParent->parent();
 	}
 
 	return false;
 }
 
-void UIControl::CenterHorizontal() {
-	UIControl * Ctrl = Parent();
+void UIControl::centerHorizontal() {
+	UIControl * Ctrl = parent();
 
 	if ( NULL != Ctrl )
-		Pos( Vector2i( ( Ctrl->Size().width() / 2 ) - ( mSize.width() / 2 ), mPos.y ) );
+		position( Vector2i( ( Ctrl->size().width() / 2 ) - ( mSize.width() / 2 ), mPos.y ) );
 }
 
-void UIControl::CenterVertical(){
-	UIControl * Ctrl = Parent();
+void UIControl::centerVertical(){
+	UIControl * Ctrl = parent();
 
 	if ( NULL != Ctrl )
-		Pos( Vector2i( mPos.x, ( Ctrl->Size().height() / 2 ) - ( mSize.height() / 2 ) ) );
+		position( Vector2i( mPos.x, ( Ctrl->size().height() / 2 ) - ( mSize.height() / 2 ) ) );
 }
 
-void UIControl::Center() {
-	CenterHorizontal();
-	CenterVertical();
+void UIControl::center() {
+	centerHorizontal();
+	centerVertical();
 }
 
-void UIControl::Close() {
+void UIControl::close() {
 	mControlFlags |= UI_CTRL_FLAG_CLOSE;
 
-	UIManager::instance()->AddToCloseQueue( this );
+	UIManager::instance()->addToCloseQueue( this );
 }
 
-void UIControl::Draw() {
+void UIControl::draw() {
 	if ( mVisible ) {
 		if ( mFlags & UI_FILL_BACKGROUND )
-			BackgroundDraw();
+			backgroundDraw();
 
 		if ( mFlags & UI_BORDER )
-			BorderDraw();
+			borderDraw();
 
 		if ( NULL != mSkinState )
-			mSkinState->Draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.width(), (Float)mSize.height(), 255 );
+			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.width(), (Float)mSize.height(), 255 );
 
-		if ( UIManager::instance()->HighlightFocus() && UIManager::instance()->FocusControl() == this ) {
+		if ( UIManager::instance()->highlightFocus() && UIManager::instance()->focusControl() == this ) {
 			Primitives P;
 			P.fillMode( DRAW_LINE );
-			P.blendMode( Blend() );
-			P.setColor( UIManager::instance()->HighlightFocusColor() );
-			P.drawRectangle( GetRectf() );
+			P.blendMode( blend() );
+			P.setColor( UIManager::instance()->highlightFocusColor() );
+			P.drawRectangle( getRectf() );
 		}
 
-		if ( UIManager::instance()->HighlightOver() && UIManager::instance()->OverControl() == this ) {
+		if ( UIManager::instance()->highlightOver() && UIManager::instance()->overControl() == this ) {
 			Primitives P;
 			P.fillMode( DRAW_LINE );
-			P.blendMode( Blend() );
-			P.setColor( UIManager::instance()->HighlightOverColor() );
-			P.drawRectangle( GetRectf() );
+			P.blendMode( blend() );
+			P.setColor( UIManager::instance()->highlightOverColor() );
+			P.drawRectangle( getRectf() );
 		}
 	}
 }
 
-void UIControl::Update() {
+void UIControl::update() {
 	UIControl * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
-		ChildLoop->Update();
+		ChildLoop->update();
 		ChildLoop = ChildLoop->mNext;
 	}
 
 	if ( mControlFlags & UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD )
-		WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
+		writeCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
 }
 
-void UIControl::SendMouseEvent( const Uint32& Event, const Vector2i& Pos, const Uint32& Flags ) {
+void UIControl::sendMouseEvent( const Uint32& Event, const Vector2i& Pos, const Uint32& Flags ) {
 	UIEventMouse MouseEvent( this, Event, Pos, Flags );
-	SendEvent( &MouseEvent );
+	sendEvent( &MouseEvent );
 }
 
-void UIControl::SendCommonEvent( const Uint32& Event ) {
+void UIControl::sendCommonEvent( const Uint32& Event ) {
 	UIEvent CommonEvent( this, Event );
-	SendEvent( &CommonEvent );
+	sendEvent( &CommonEvent );
 }
 
-Uint32 UIControl::OnKeyDown( const UIEventKey& Event ) {
-	SendEvent( &Event );
+Uint32 UIControl::onKeyDown( const UIEventKey& Event ) {
+	sendEvent( &Event );
 	return 0;
 }
 
-Uint32 UIControl::OnKeyUp( const UIEventKey& Event ) {
-	SendEvent( &Event );
+Uint32 UIControl::onKeyUp( const UIEventKey& Event ) {
+	sendEvent( &Event );
 	return 0;
 }
 
-Uint32 UIControl::OnMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
-	SendMouseEvent( UIEvent::EventMouseMove, Pos, Flags );
+Uint32 UIControl::onMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
+	sendMouseEvent( UIEvent::EventMouseMove, Pos, Flags );
 	return 1;
 }
 
-Uint32 UIControl::OnMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
-	SendMouseEvent( UIEvent::EventMouseDown, Pos, Flags );
+Uint32 UIControl::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
+	sendMouseEvent( UIEvent::EventMouseDown, Pos, Flags );
 
-	SetSkinState( UISkinState::StateMouseDown );
-
-	return 1;
-}
-
-Uint32 UIControl::OnMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
-	SendMouseEvent( UIEvent::EventMouseUp, Pos, Flags );
-
-	SetPrevSkinState();
+	setSkinState( UISkinState::StateMouseDown );
 
 	return 1;
 }
 
-Uint32 UIControl::OnMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
-	SendMouseEvent( UIEvent::EventMouseClick, Pos, Flags );
+Uint32 UIControl::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
+	sendMouseEvent( UIEvent::EventMouseUp, Pos, Flags );
+
+	setPrevSkinState();
+
 	return 1;
 }
 
-bool UIControl::IsMouseOver() {
+Uint32 UIControl::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+	sendMouseEvent( UIEvent::EventMouseClick, Pos, Flags );
+	return 1;
+}
+
+bool UIControl::isMouseOver() {
 	return 0 != ( mControlFlags & UI_CTRL_FLAG_MOUSEOVER );
 }
 
-bool UIControl::IsMouseOverMeOrChilds() {
+bool UIControl::isMouseOverMeOrChilds() {
 	return 0 != ( mControlFlags & UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD );
 }
 
-Uint32 UIControl::OnMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
-	SendMouseEvent( UIEvent::EventMouseDoubleClick, Pos, Flags );
+Uint32 UIControl::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
+	sendMouseEvent( UIEvent::EventMouseDoubleClick, Pos, Flags );
 	return 1;
 }
 
-Uint32 UIControl::OnMouseEnter( const Vector2i& Pos, const Uint32 Flags ) {
-	WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER, 1 );
+Uint32 UIControl::onMouseEnter( const Vector2i& Pos, const Uint32 Flags ) {
+	writeCtrlFlag( UI_CTRL_FLAG_MOUSEOVER, 1 );
 
-	SendMouseEvent( UIEvent::EventMouseEnter, Pos, Flags );
+	sendMouseEvent( UIEvent::EventMouseEnter, Pos, Flags );
 
-	SetSkinState( UISkinState::StateMouseEnter );
-
-	return 1;
-}
-
-Uint32 UIControl::OnMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER, 0 );
-
-	SendMouseEvent( UIEvent::EventMouseExit, Pos, Flags );
-
-	SetSkinState( UISkinState::StateMouseExit );
+	setSkinState( UISkinState::StateMouseEnter );
 
 	return 1;
 }
 
-Uint32 UIControl::OnFocus() {
+Uint32 UIControl::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
+	writeCtrlFlag( UI_CTRL_FLAG_MOUSEOVER, 0 );
+
+	sendMouseEvent( UIEvent::EventMouseExit, Pos, Flags );
+
+	setSkinState( UISkinState::StateMouseExit );
+
+	return 1;
+}
+
+Uint32 UIControl::onFocus() {
 	mControlFlags |= UI_CTRL_FLAG_HAS_FOCUS;
 
-	SendCommonEvent( UIEvent::EventOnFocus );
+	sendCommonEvent( UIEvent::EventOnFocus );
 
-	SetSkinState( UISkinState::StateFocus );
+	setSkinState( UISkinState::StateFocus );
 
 	return 1;
 }
 
-Uint32 UIControl::OnFocusLoss() {
+Uint32 UIControl::onFocusLoss() {
 	mControlFlags &= ~UI_CTRL_FLAG_HAS_FOCUS;
 
-	SendCommonEvent( UIEvent::EventOnFocusLoss );
+	sendCommonEvent( UIEvent::EventOnFocusLoss );
 
 	return 1;
 }
 
-void UIControl::OnComplexControlFocusLoss() {
-	SendCommonEvent( UIEvent::EventOnComplexControlFocusLoss );
+void UIControl::onComplexControlFocusLoss() {
+	sendCommonEvent( UIEvent::EventOnComplexControlFocusLoss );
 }
 
-bool UIControl::HasFocus() const {
+bool UIControl::hasFocus() const {
 	return 0 != ( mControlFlags & UI_CTRL_FLAG_HAS_FOCUS );
 }
 
-Uint32 UIControl::OnValueChange() {
-	SendCommonEvent( UIEvent::EventOnValueChange );
+Uint32 UIControl::onValueChange() {
+	sendCommonEvent( UIEvent::EventOnValueChange );
 
 	return 1;
 }
 
-void UIControl::OnClose() {
-	SendCommonEvent( UIEvent::EventOnClose );
+void UIControl::onClose() {
+	sendCommonEvent( UIEvent::EventOnClose );
 }
 
-Uint32 UIControl::HAlign() const {
+Uint32 UIControl::hAlign() const {
 	return mFlags & UI_HALIGN_MASK;
 }
 
-void UIControl::HAlign( Uint32 halign ) {
+void UIControl::hAlign( Uint32 halign ) {
 	mFlags |= halign & UI_HALIGN_MASK;
 }
 
-Uint32 UIControl::VAlign() const {
+Uint32 UIControl::vAlign() const {
 	return mFlags & UI_VALIGN_MASK;
 }
 
-void UIControl::VAlign( Uint32 valign ) {
+void UIControl::vAlign( Uint32 valign ) {
 	mFlags |= valign & UI_VALIGN_MASK;
 }
 
-void UIControl::FillBackground( bool enabled ) {
-	WriteFlag( UI_FILL_BACKGROUND, enabled ? 1 : 0 );
+void UIControl::fillBackground( bool enabled ) {
+	writeFlag( UI_FILL_BACKGROUND, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBackground ) {
 		mBackground = eeNew( UIBackground, () );
 	}
 }
 
-void UIControl::Border( bool enabled ) {
-	WriteFlag( UI_BORDER, enabled ? 1 : 0 );
+void UIControl::border( bool enabled ) {
+	writeFlag( UI_BORDER, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBorder ) {
 		mBorder = eeNew( UIBorder, () );
@@ -435,205 +435,205 @@ void UIControl::Border( bool enabled ) {
 	}
 }
 
-UIControl * UIControl::NextGet() const {
+UIControl * UIControl::nextGet() const {
 	return mNext;
 }
 
-UIControl * UIControl::PrevGet() const {
+UIControl * UIControl::prevGet() const {
 	return mPrev;
 }
 
-UIControl * UIControl::NextGetLoop() const {
+UIControl * UIControl::nextGetLoop() const {
 	if ( NULL == mNext )
-		return Parent()->ChildGetFirst();
+		return parent()->childGetFirst();
 	else
 		return mNext;
 }
 
-void UIControl::Data(const UintPtr& data ) {
+void UIControl::data(const UintPtr& data ) {
 	mData = data;
 }
 
-const UintPtr& UIControl::Data() const {
+const UintPtr& UIControl::data() const {
 	return mData;
 }
 
-const Uint32& UIControl::Flags() const {
+const Uint32& UIControl::flags() const {
 	return mFlags;
 }
 
-void UIControl::Flags( const Uint32& flags ) {
+void UIControl::flags( const Uint32& flags ) {
 	mFlags |= flags;
 }
 
-void UIControl::Blend( const EE_BLEND_MODE& blend ) {
+void UIControl::blend( const EE_BLEND_MODE& blend ) {
 	mBlend = static_cast<Uint16> ( blend );
 }
 
-EE_BLEND_MODE UIControl::Blend() {
+EE_BLEND_MODE UIControl::blend() {
 	return static_cast<EE_BLEND_MODE> ( mBlend );
 }
 
-void UIControl::ToFront() {
+void UIControl::toFront() {
 	if ( NULL != mParentCtrl ) {
-		mParentCtrl->ChildRemove( this );
-		mParentCtrl->ChildAdd( this );
+		mParentCtrl->childRemove( this );
+		mParentCtrl->childAdd( this );
 	}
 }
 
-void UIControl::ToBack() {
+void UIControl::toBack() {
 	if ( NULL != mParentCtrl ) {
-		mParentCtrl->ChildAddAt( this, 0 );
+		mParentCtrl->childAddAt( this, 0 );
 	}
 }
 
-void UIControl::ToPos( const Uint32& Pos ) {
+void UIControl::toPos( const Uint32& Pos ) {
 	if ( NULL != mParentCtrl ) {
-		mParentCtrl->ChildAddAt( this, Pos );
+		mParentCtrl->childAddAt( this, Pos );
 	}
 }
 
-void UIControl::OnVisibleChange() {
-	SendCommonEvent( UIEvent::EventOnVisibleChange );
+void UIControl::onVisibleChange() {
+	sendCommonEvent( UIEvent::EventOnVisibleChange );
 }
 
-void UIControl::OnEnabledChange() {
-	if ( !Enabled() && NULL != UIManager::instance()->FocusControl() ) {
-		if ( IsChild( UIManager::instance()->FocusControl() ) ) {
-			UIManager::instance()->FocusControl( NULL );
+void UIControl::onEnabledChange() {
+	if ( !enabled() && NULL != UIManager::instance()->focusControl() ) {
+		if ( isChild( UIManager::instance()->focusControl() ) ) {
+			UIManager::instance()->focusControl( NULL );
 		}
 	}
 
-	SendCommonEvent( UIEvent::EventOnEnabledChange );
+	sendCommonEvent( UIEvent::EventOnEnabledChange );
 }
 
-void UIControl::OnPosChange() {
-	UpdateScreenPos();
+void UIControl::onPositionChange() {
+	updateScreenPos();
 
-	UpdateChildsScreenPos();
+	updateChildsScreenPos();
 
-	SendCommonEvent( UIEvent::EventOnPosChange );
+	sendCommonEvent( UIEvent::EventOnPosChange );
 }
 
-void UIControl::OnSizeChange() {
-	UpdateCenter();
+void UIControl::onSizeChange() {
+	updateCenter();
 
-	SendCommonEvent( UIEvent::EventOnSizeChange );
+	sendCommonEvent( UIEvent::EventOnSizeChange );
 }
 
-Rectf UIControl::GetRectf() {
+Rectf UIControl::getRectf() {
 	return Rectf( mScreenPosf, Sizef( (Float)mSize.width(), (Float)mSize.height() ) );
 }
 
-void UIControl::BackgroundDraw() {
+void UIControl::backgroundDraw() {
 	Primitives P;
-	Rectf R = GetRectf();
-	P.blendMode( mBackground->Blend() );
-	P.setColor( mBackground->Color() );
+	Rectf R = getRectf();
+	P.blendMode( mBackground->blend() );
+	P.setColor( mBackground->color() );
 
-	if ( 4 == mBackground->Colors().size() ) {
-		if ( mBackground->Corners() ) {
-			P.drawRoundedRectangle( R, mBackground->Colors()[0], mBackground->Colors()[1], mBackground->Colors()[2], mBackground->Colors()[3], mBackground->Corners() );
+	if ( 4 == mBackground->colors().size() ) {
+		if ( mBackground->corners() ) {
+			P.drawRoundedRectangle( R, mBackground->colors()[0], mBackground->colors()[1], mBackground->colors()[2], mBackground->colors()[3], mBackground->corners() );
 		} else {
-			P.drawRectangle( R, mBackground->Colors()[0], mBackground->Colors()[1], mBackground->Colors()[2], mBackground->Colors()[3] );
+			P.drawRectangle( R, mBackground->colors()[0], mBackground->colors()[1], mBackground->colors()[2], mBackground->colors()[3] );
 		}
 	} else {
-		if ( mBackground->Corners() ) {
-			P.drawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->Corners() );
+		if ( mBackground->corners() ) {
+			P.drawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->corners() );
 		} else {
 			P.drawRectangle( R );
 		}
 	}
 }
 
-void UIControl::BorderDraw() {
+void UIControl::borderDraw() {
 	Primitives P;
 	P.fillMode( DRAW_LINE );
-	P.blendMode( Blend() );
-	P.lineWidth( (Float)mBorder->Width() );
-	P.setColor( mBorder->Color() );
+	P.blendMode( blend() );
+	P.lineWidth( (Float)mBorder->width() );
+	P.setColor( mBorder->color() );
 
 	//! @TODO: Check why was this +0.1f -0.1f?
 	if ( mFlags & UI_CLIP_ENABLE ) {
 		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.width() - 0.1f, (Float)mSize.height() - 0.1f ) );
 
-		if ( mBackground->Corners() ) {
-			P.drawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
+		if ( mBackground->corners() ) {
+			P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->corners() );
 		} else {
 			P.drawRectangle( R );
 		}
 	} else {
-		if ( mBackground->Corners() ) {
-			P.drawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
+		if ( mBackground->corners() ) {
+			P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->corners() );
 		} else {
-			P.drawRectangle( GetRectf() );
+			P.drawRectangle( getRectf() );
 		}
 	}
 }
 
-const Uint32& UIControl::ControlFlags() const {
+const Uint32& UIControl::controlFlags() const {
 	return mControlFlags;
 }
 
-void UIControl::ControlFlags( const Uint32& Flags ) {
+void UIControl::controlFlags( const Uint32& Flags ) {
 	mControlFlags = Flags;
 }
 
-void UIControl::DrawChilds() {
+void UIControl::drawChilds() {
 	UIControl * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->mVisible ) {
-			ChildLoop->InternalDraw();
+			ChildLoop->internalDraw();
 		}
 
 		ChildLoop = ChildLoop->mNext;
 	}
 }
 
-void UIControl::InternalDraw() {
+void UIControl::internalDraw() {
 	if ( mVisible ) {
-		MatrixSet();
+		matrixSet();
 
-		ClipMe();
+		clipMe();
 
-		Draw();
+		draw();
 
-		DrawChilds();
+		drawChilds();
 
-		ClipDisable();
+		clipDisable();
 
-		MatrixUnset();
+		matrixUnset();
 	}
 }
 
-void UIControl::ClipMe() {
+void UIControl::clipMe() {
 	if ( mFlags & UI_CLIP_ENABLE ) {
 		if ( mFlags & UI_BORDER )
-			UIManager::instance()->ClipEnable( mScreenPos.x, mScreenPos.y, mSize.width(), mSize.height() + 1 );
+			UIManager::instance()->clipEnable( mScreenPos.x, mScreenPos.y, mSize.width(), mSize.height() + 1 );
 		else
-			UIManager::instance()->ClipEnable( mScreenPos.x, mScreenPos.y, mSize.width(), mSize.height() );
+			UIManager::instance()->clipEnable( mScreenPos.x, mScreenPos.y, mSize.width(), mSize.height() );
 	}
 }
 
-void UIControl::ClipDisable() {
+void UIControl::clipDisable() {
 	if ( mFlags & UI_CLIP_ENABLE )
-		UIManager::instance()->ClipDisable();
+		UIManager::instance()->clipDisable();
 }
 
-void UIControl::MatrixSet() {
+void UIControl::matrixSet() {
 }
 
-void UIControl::MatrixUnset() {
+void UIControl::matrixUnset() {
 }
 
-void UIControl::ChildDeleteAll() {
+void UIControl::childDeleteAll() {
 	while( NULL != mChild ) {
 		eeDelete( mChild );
 	}
 }
 
-void UIControl::ChildAdd( UIControl * ChildCtrl ) {
+void UIControl::childAdd( UIControl * ChildCtrl ) {
 	if ( NULL == mChild ) {
 		mChild 		= ChildCtrl;
 		mChildLast 	= ChildCtrl;
@@ -645,14 +645,14 @@ void UIControl::ChildAdd( UIControl * ChildCtrl ) {
 	}
 }
 
-void UIControl::ChildAddAt( UIControl * ChildCtrl, Uint32 Pos ) {
+void UIControl::childAddAt( UIControl * ChildCtrl, Uint32 Pos ) {
 	eeASSERT( NULL != ChildCtrl );
 
 	UIControl * ChildLoop = mChild;
 	
-	ChildCtrl->Parent( this );
+	ChildCtrl->parent( this );
 
-	ChildRemove( ChildCtrl );
+	childRemove( ChildCtrl );
 	ChildCtrl->mParentCtrl = this;
 	
 	if ( ChildLoop == NULL ) {
@@ -691,7 +691,7 @@ void UIControl::ChildAddAt( UIControl * ChildCtrl, Uint32 Pos ) {
 	}
 }
 
-void UIControl::ChildRemove( UIControl * ChildCtrl ) {
+void UIControl::childRemove( UIControl * ChildCtrl ) {
 	if ( ChildCtrl == mChild ) {
 		mChild 			= mChild->mNext;
 
@@ -718,16 +718,16 @@ void UIControl::ChildRemove( UIControl * ChildCtrl ) {
 	}
 }
 
-void UIControl::ChildsCloseAll() {
+void UIControl::childsCloseAll() {
 	UIControl * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
-		ChildLoop->Close();
+		ChildLoop->close();
 		ChildLoop = ChildLoop->mNext;
 	}
 }
 
-bool UIControl::IsChild( UIControl * ChildCtrl ) const {
+bool UIControl::isChild( UIControl * ChildCtrl ) const {
 	UIControl * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
@@ -740,7 +740,7 @@ bool UIControl::IsChild( UIControl * ChildCtrl ) const {
 	return false;
 }
 
-bool UIControl::InParentTreeOf( UIControl * Child ) const {
+bool UIControl::inParentTreeOf( UIControl * Child ) const {
 	UIControl * ParentLoop = Child->mParentCtrl;
 
 	while ( NULL != ParentLoop ) {
@@ -753,7 +753,7 @@ bool UIControl::InParentTreeOf( UIControl * Child ) const {
 	return false;
 }
 
-Uint32 UIControl::ChildCount() const {
+Uint32 UIControl::childCount() const {
 	UIControl * ChildLoop = mChild;
 	Uint32 Count = 0;
 
@@ -765,7 +765,7 @@ Uint32 UIControl::ChildCount() const {
 	return Count;
 }
 
-UIControl * UIControl::ChildAt( Uint32 Index ) const {
+UIControl * UIControl::childAt( Uint32 Index ) const {
 	UIControl * ChildLoop = mChild;
 
 	while( NULL != ChildLoop && Index ) {
@@ -776,41 +776,41 @@ UIControl * UIControl::ChildAt( Uint32 Index ) const {
 	return ChildLoop;
 }
 
-UIControl * UIControl::ChildPrev( UIControl * Ctrl, bool Loop ) const {
+UIControl * UIControl::childPrev( UIControl * Ctrl, bool Loop ) const {
 	if ( Loop && Ctrl == mChild && NULL != mChild->mNext )
 		return mChildLast;
 
 	return Ctrl->mPrev;
 }
 
-UIControl * UIControl::ChildNext( UIControl * Ctrl, bool Loop ) const {
+UIControl * UIControl::childNext( UIControl * Ctrl, bool Loop ) const {
 	if ( NULL == Ctrl->mNext && Loop )
 		return mChild;
 
 	return Ctrl->mNext;
 }
 
-UIControl * UIControl::ChildGetFirst() const {
+UIControl * UIControl::childGetFirst() const {
 	return mChild;
 }
 
-UIControl * UIControl::ChildGetLast() const {
+UIControl * UIControl::childGetLast() const {
 	return mChildLast;
 }
 
-UIControl * UIControl::OverFind( const Vector2f& Point ) {
+UIControl * UIControl::overFind( const Vector2f& Point ) {
 	UIControl * pOver = NULL;
 
 	if ( mEnabled && mVisible ) {
-		UpdateQuad();
+		updateQuad();
 
 		if ( mPoly.pointInside( Point ) ) {
-			WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
+			writeCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
 
 			UIControl * ChildLoop = mChildLast;
 
 			while ( NULL != ChildLoop ) {
-				UIControl * ChildOver = ChildLoop->OverFind( Point );
+				UIControl * ChildOver = ChildLoop->overFind( Point );
 
 				if ( NULL != ChildOver ) {
 					pOver = ChildOver;
@@ -830,17 +830,17 @@ UIControl * UIControl::OverFind( const Vector2f& Point ) {
 	return pOver;
 }
 
-UIControl * UIControl::ChildGetAt( Vector2i CtrlPos, unsigned int RecursiveLevel ) {
+UIControl * UIControl::childGetAt( Vector2i CtrlPos, unsigned int RecursiveLevel ) {
 	UIControl * Ctrl = NULL;
 
 	for( UIControl * pLoop = mChild; NULL != pLoop && NULL == Ctrl; pLoop = pLoop->mNext )
 	{
-		if ( !pLoop->Visible() )
+		if ( !pLoop->visible() )
 			continue;
 
-		if ( pLoop->Rect().contains( CtrlPos ) ) {
+		if ( pLoop->getRect().contains( CtrlPos ) ) {
 			if ( RecursiveLevel )
-				Ctrl = ChildGetAt( CtrlPos - pLoop->Pos(), RecursiveLevel - 1 );
+				Ctrl = childGetAt( CtrlPos - pLoop->position(), RecursiveLevel - 1 );
 
 			if ( NULL == Ctrl )
 				Ctrl = pLoop;
@@ -850,56 +850,56 @@ UIControl * UIControl::ChildGetAt( Vector2i CtrlPos, unsigned int RecursiveLevel
 	return Ctrl;
 }
 
-Uint32 UIControl::IsAnimated() {
+Uint32 UIControl::isAnimated() {
 	return mControlFlags & UI_CTRL_FLAG_ANIM;
 }
 
-Uint32 UIControl::IsDragable() {
+Uint32 UIControl::isDragable() {
 	return mControlFlags & UI_CTRL_FLAG_DRAGABLE;
 }
 
-Uint32 UIControl::IsComplex() {
+Uint32 UIControl::isComplex() {
 	return mControlFlags & UI_CTRL_FLAG_COMPLEX;
 }
 
-Uint32 UIControl::IsClipped() {
+Uint32 UIControl::isClipped() {
 	return mFlags & UI_CLIP_ENABLE;
 }
 
-Polygon2f& UIControl::GetPolygon() {
+Polygon2f& UIControl::getPolygon() {
 	return mPoly;
 }
 
-const Vector2f& UIControl::GetPolygonCenter() const {
+const Vector2f& UIControl::getPolygonCenter() const {
 	return mCenter;
 }
 
-void UIControl::UpdateQuad() {
+void UIControl::updateQuad() {
 	mPoly 	= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mSize.width(), mScreenPosf.y + mSize.height() ) );
 
-	UIControl * tParent = Parent();
+	UIControl * tParent = parent();
 
 	while ( tParent ) {
-		if ( tParent->IsAnimated() ) {
+		if ( tParent->isAnimated() ) {
 			UIControlAnim * tP = reinterpret_cast<UIControlAnim *> ( tParent );
 
-			mPoly.rotate( tP->Angle(), tP->RotationCenter() );
-			mPoly.scale( tP->Scale(), tP->ScaleCenter() );
+			mPoly.rotate( tP->angle(), tP->rotationCenter() );
+			mPoly.scale( tP->scale(), tP->scaleCenter() );
 		}
 
-		tParent = tParent->Parent();
+		tParent = tParent->parent();
 	};
 }
 
-void UIControl::UpdateCenter() {
+void UIControl::updateCenter() {
 	mCenter = Vector2f( mScreenPosf.x + (Float)mSize.width() * 0.5f, mScreenPosf.y + (Float)mSize.height() * 0.5f );
 }
 
-Time UIControl::Elapsed() {
-	return UIManager::instance()->Elapsed();
+Time UIControl::elapsed() {
+	return UIManager::instance()->elapsed();
 }
 
-Uint32 UIControl::AddEventListener( const Uint32& EventType, const UIEventCallback& Callback ) {
+Uint32 UIControl::addEventListener( const Uint32& EventType, const UIEventCallback& Callback ) {
 	mNumCallBacks++;
 
 	mEvents[ EventType ][ mNumCallBacks ] = Callback;
@@ -907,7 +907,7 @@ Uint32 UIControl::AddEventListener( const Uint32& EventType, const UIEventCallba
 	return mNumCallBacks;
 }
 
-void UIControl::RemoveEventListener( const Uint32& CallbackId ) {
+void UIControl::removeEventListener( const Uint32& CallbackId ) {
 	UIEventsMap::iterator it;
 
 	for ( it = mEvents.begin(); it != mEvents.end(); ++it ) {
@@ -918,9 +918,9 @@ void UIControl::RemoveEventListener( const Uint32& CallbackId ) {
 	}
 }
 
-void UIControl::SendEvent( const UIEvent * Event ) {
-	if ( 0 != mEvents.count( Event->EventType() ) ) {
-		std::map<Uint32, UIEventCallback>			event = mEvents[ Event->EventType() ];
+void UIControl::sendEvent( const UIEvent * Event ) {
+	if ( 0 != mEvents.count( Event->getEventType() ) ) {
+		std::map<Uint32, UIEventCallback>			event = mEvents[ Event->getEventType() ];
 		std::map<Uint32, UIEventCallback>::iterator it;
 
 		if ( event.begin() != event.end() ) {
@@ -930,25 +930,25 @@ void UIControl::SendEvent( const UIEvent * Event ) {
 	}
 }
 
-UIBackground * UIControl::Background() {
+UIBackground * UIControl::background() {
 	return mBackground;
 }
 
-UIBorder * UIControl::Border() {
+UIBorder * UIControl::border() {
 	return mBorder;
 }
 
-void UIControl::SetThemeByName( const std::string& Theme ) {
-	SetTheme( UIThemeManager::instance()->getByName( Theme ) );
+void UIControl::setThemeByName( const std::string& Theme ) {
+	setTheme( UIThemeManager::instance()->getByName( Theme ) );
 }
 
-void UIControl::SetTheme( UITheme * Theme ) {
-	SetThemeControl( Theme, "control" );
+void UIControl::setTheme( UITheme * Theme ) {
+	setThemeControl( Theme, "control" );
 }
 
-void UIControl::SafeDeleteSkinState() {
+void UIControl::safeDeleteSkinState() {
 	if ( NULL != mSkinState && ( mControlFlags & UI_CTRL_FLAG_SKIN_OWNER ) ) {
-		UISkin * tSkin = mSkinState->GetSkin();
+		UISkin * tSkin = mSkinState->getSkin();
 
 		eeSAFE_DELETE( tSkin );
 	}
@@ -956,105 +956,105 @@ void UIControl::SafeDeleteSkinState() {
 	eeSAFE_DELETE( mSkinState );
 }
 
-void UIControl::SetThemeControl( UITheme * Theme, const std::string& ControlName ) {
+void UIControl::setThemeControl( UITheme * Theme, const std::string& ControlName ) {
 	if ( NULL != Theme ) {
-		UISkin * tSkin = Theme->getByName( Theme->Abbr() + "_" + ControlName );
+		UISkin * tSkin = Theme->getByName( Theme->abbr() + "_" + ControlName );
 
 		if ( NULL != tSkin ) {
 			Uint32 InitialState = UISkinState::StateNormal;
 
 			if ( NULL != mSkinState ) {
-				InitialState = mSkinState->GetState();
+				InitialState = mSkinState->getState();
 			}
 
-			SafeDeleteSkinState();
+			safeDeleteSkinState();
 
 			mSkinState = eeNew( UISkinState, ( tSkin ) );
-			mSkinState->SetState( InitialState );
+			mSkinState->setState( InitialState );
 		}
 	}
 }
 
-void UIControl::SetSkinFromTheme( UITheme * Theme, const std::string& ControlName ) {
-	SetThemeControl( Theme, ControlName );
+void UIControl::setSkinFromTheme( UITheme * Theme, const std::string& ControlName ) {
+	setThemeControl( Theme, ControlName );
 }
 
-void UIControl::SetSkin( const UISkin& Skin ) {
-	SafeDeleteSkinState();
+void UIControl::setSkin( const UISkin& Skin ) {
+	safeDeleteSkinState();
 
-	WriteCtrlFlag( UI_CTRL_FLAG_SKIN_OWNER, 1 );
+	writeCtrlFlag( UI_CTRL_FLAG_SKIN_OWNER, 1 );
 
-	UISkin * SkinCopy = const_cast<UISkin*>( &Skin )->Copy();
+	UISkin * SkinCopy = const_cast<UISkin*>( &Skin )->copy();
 
 	mSkinState = eeNew( UISkinState, ( SkinCopy ) );
 
-	DoAfterSetTheme();
+	doAftersetTheme();
 }
 
-void UIControl::OnStateChange() {
+void UIControl::onStateChange() {
 }
 
-void UIControl::SetSkinState( const Uint32& State ) {
+void UIControl::setSkinState( const Uint32& State ) {
 	if ( NULL != mSkinState ) {
-		mSkinState->SetState( State );
+		mSkinState->setState( State );
 
-		OnStateChange();
+		onStateChange();
 	}
 }
 
-void UIControl::SetPrevSkinState() {
+void UIControl::setPrevSkinState() {
 	if ( NULL != mSkinState ) {
-		mSkinState->SetPrevState();
+		mSkinState->setPrevState();
 
-		OnStateChange();
+		onStateChange();
 	}
 }
 
-void UIControl::SetThemeToChilds( UITheme * Theme ) {
+void UIControl::setThemeToChilds( UITheme * Theme ) {
 	UIControl * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
-		ChildLoop->SetThemeToChilds( Theme );
-		ChildLoop->SetTheme( Theme );	// First set the theme to childs to let the father override the childs forced themes
+		ChildLoop->setThemeToChilds( Theme );
+		ChildLoop->setTheme( Theme );	// First set the theme to childs to let the father override the childs forced themes
 
 		ChildLoop = ChildLoop->mNext;
 	}
 }
 
-void UIControl::UpdateChildsScreenPos() {
+void UIControl::updateChildsScreenPos() {
 	UIControl * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
-		ChildLoop->UpdateScreenPos();
-		ChildLoop->UpdateChildsScreenPos();
+		ChildLoop->updateScreenPos();
+		ChildLoop->updateChildsScreenPos();
 
 		ChildLoop = ChildLoop->mNext;
 	}
 }
 
-void UIControl::UpdateScreenPos() {
+void UIControl::updateScreenPos() {
 	Vector2i Pos( mPos );
 
-	ControlToScreen( Pos );
+	controlToScreen( Pos );
 
 	mScreenPos = Pos;
 	mScreenPosf = Vector2f( Pos.x, Pos.y );
 
-	UpdateCenter();
+	updateCenter();
 }
 
-UISkin * UIControl::GetSkin() {
+UISkin * UIControl::getSkin() {
 	if ( NULL != mSkinState )
-		return mSkinState->GetSkin();
+		return mSkinState->getSkin();
 
 	return NULL;
 }
 
-void UIControl::WriteCtrlFlag( const Uint32& Flag, const Uint32& Val ) {
+void UIControl::writeCtrlFlag( const Uint32& Flag, const Uint32& Val ) {
 	BitOp::setBitFlagValue( &mControlFlags, Flag, Val );
 }
 
-void UIControl::WriteFlag( const Uint32& Flag, const Uint32& Val ) {
+void UIControl::writeFlag( const Uint32& Flag, const Uint32& Val ) {
 	if ( Val )
 		mFlags |= Flag;
 	else {
@@ -1063,47 +1063,47 @@ void UIControl::WriteFlag( const Uint32& Flag, const Uint32& Val ) {
 	}
 }
 
-void UIControl::ApplyDefaultTheme() {
-	UIThemeManager::instance()->ApplyDefaultTheme( this );
+void UIControl::applyDefaultTheme() {
+	UIThemeManager::instance()->applyDefaultTheme( this );
 }
 
-Recti UIControl::GetScreenRect() {
+Recti UIControl::getScreenRect() {
 	return Recti( mScreenPos, mSize );
 }
 
-Recti UIControl::MakePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom, bool SkipFlags ) {
+Recti UIControl::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom, bool SkipFlags ) {
 	Recti tPadding( 0, 0, 0, 0 );
 
 	if ( mFlags & UI_AUTO_PADDING || SkipFlags ) {
-		if ( NULL != mSkinState && NULL != mSkinState->GetSkin() ) {
-			if ( mSkinState->GetSkin()->GetType() == UISkin::SkinComplex ) {
-				UISkinComplex * tComplex = reinterpret_cast<UISkinComplex*> ( mSkinState->GetSkin() );
+		if ( NULL != mSkinState && NULL != mSkinState->getSkin() ) {
+			if ( mSkinState->getSkin()->getType() == UISkin::SkinComplex ) {
+				UISkinComplex * tComplex = reinterpret_cast<UISkinComplex*> ( mSkinState->getSkin() );
 
 				SubTexture * tSubTexture = NULL;
 
 				if ( PadLeft ) {
-					tSubTexture = tComplex->GetSubTextureSide( UISkinState::StateNormal, UISkinComplex::Left );
+					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Left );
 
 					if ( NULL != tSubTexture )
 						tPadding.Left = tSubTexture->realSize().width();
 				}
 
 				if ( PadRight ) {
-					tSubTexture = tComplex->GetSubTextureSide( UISkinState::StateNormal, UISkinComplex::Right );
+					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Right );
 
 					if ( NULL != tSubTexture )
 						tPadding.Right = tSubTexture->realSize().width();
 				}
 
 				if ( PadTop ) {
-					tSubTexture = tComplex->GetSubTextureSide( UISkinState::StateNormal, UISkinComplex::Up );
+					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Up );
 
 					if ( NULL != tSubTexture )
 						tPadding.Top = tSubTexture->realSize().height();
 				}
 
 				if ( PadBottom ) {
-					tSubTexture = tComplex->GetSubTextureSide( UISkinState::StateNormal, UISkinComplex::Down );
+					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Down );
 
 					if ( NULL != tSubTexture )
 						tPadding.Bottom = tSubTexture->realSize().height();
@@ -1115,57 +1115,57 @@ Recti UIControl::MakePadding( bool PadLeft, bool PadRight, bool PadTop, bool Pad
 	return tPadding;
 }
 
-void UIControl::SetFocus() {
-	UIManager::instance()->FocusControl( this );
+void UIControl::setFocus() {
+	UIManager::instance()->focusControl( this );
 }
 
-void UIControl::SendParentSizeChange( const Vector2i& SizeChange ) {
+void UIControl::sendParentSizeChange( const Vector2i& SizeChange ) {
 	if ( mFlags & UI_REPORT_SIZE_CHANGE_TO_CHILDS )	{
 		UIControl * ChildLoop = mChild;
 
 		while( NULL != ChildLoop ) {
-			ChildLoop->OnParentSizeChange( SizeChange );
+			ChildLoop->onParentSizeChange( SizeChange );
 			ChildLoop = ChildLoop->mNext;
 		}
 	}
 }
 
-void UIControl::OnParentSizeChange( const Vector2i& SizeChange ) {
-	SendCommonEvent( UIEvent::EventOnParentSizeChange );
+void UIControl::onParentSizeChange( const Vector2i& SizeChange ) {
+	sendCommonEvent( UIEvent::EventOnParentSizeChange );
 }
 
-Sizei UIControl::GetSkinSize( UISkin * Skin, const Uint32& State ) {
+Sizei UIControl::getSkinSize( UISkin * Skin, const Uint32& State ) {
 	Sizei		tSize;
 
 	if ( NULL != Skin ) {
-		SubTexture * tSubTexture = Skin->GetSubTexture( State );
+		SubTexture * tSubTexture = Skin->getSubTexture( State );
 
 		if ( NULL != tSubTexture ) {
 			tSize = tSubTexture->realSize();
 		}
 
-		if ( Skin->GetType() == UISkin::SkinComplex ) {
+		if ( Skin->getType() == UISkin::SkinComplex ) {
 			UISkinComplex * SkinC = reinterpret_cast<UISkinComplex*> ( Skin );
 
-			tSubTexture = SkinC->GetSubTextureSide( State, UISkinComplex::Up );
+			tSubTexture = SkinC->getSubTextureSide( State, UISkinComplex::Up );
 
 			if ( NULL != tSubTexture ) {
 				tSize.y += tSubTexture->realSize().height();
 			}
 
-			tSubTexture = SkinC->GetSubTextureSide( State, UISkinComplex::Down );
+			tSubTexture = SkinC->getSubTextureSide( State, UISkinComplex::Down );
 
 			if ( NULL != tSubTexture ) {
 				tSize.y += tSubTexture->realSize().height();
 			}
 
-			tSubTexture = SkinC->GetSubTextureSide( State, UISkinComplex::Left );
+			tSubTexture = SkinC->getSubTextureSide( State, UISkinComplex::Left );
 
 			if ( NULL != tSubTexture ) {
 				tSize.x += tSubTexture->realSize().width();
 			}
 
-			tSubTexture = SkinC->GetSubTextureSide( State, UISkinComplex::Right );
+			tSubTexture = SkinC->getSubTextureSide( State, UISkinComplex::Right );
 
 			if ( NULL != tSubTexture ) {
 				tSize.x += tSubTexture->realSize().width();
@@ -1176,20 +1176,20 @@ Sizei UIControl::GetSkinSize( UISkin * Skin, const Uint32& State ) {
 	return tSize;
 }
 
-Sizei UIControl::GetSkinSize() {
-	return GetSkinSize( GetSkin(), UISkinState::StateNormal );
+Sizei UIControl::getSkinSize() {
+	return getSkinSize( getSkin(), UISkinState::StateNormal );
 }
 
-UIControl * UIControl::NextComplexControl() {
+UIControl * UIControl::nextComplexControl() {
 	UIControl * Found		= NULL;
 	UIControl * ChildLoop	= mChild;
 
 	while( NULL != ChildLoop ) {
-		if ( ChildLoop->Visible() && ChildLoop->Enabled() ) {
-			if ( ChildLoop->IsComplex() ) {
+		if ( ChildLoop->visible() && ChildLoop->enabled() ) {
+			if ( ChildLoop->isComplex() ) {
 				return ChildLoop;
 			} else {
-				Found = ChildLoop->NextComplexControl();
+				Found = ChildLoop->nextComplexControl();
 
 				if ( NULL != Found ) {
 					return Found;
@@ -1201,20 +1201,20 @@ UIControl * UIControl::NextComplexControl() {
 	}
 
 	if ( NULL != mNext ) {
-		if ( mNext->Visible() && mNext->Enabled() && mNext->IsComplex() ) {
+		if ( mNext->visible() && mNext->enabled() && mNext->isComplex() ) {
 			return mNext;
 		} else {
-			return mNext->NextComplexControl();
+			return mNext->nextComplexControl();
 		}
 	} else {
 		ChildLoop = mParentCtrl;
 
 		while ( NULL != ChildLoop ) {
 			if ( NULL != ChildLoop->mNext ) {
-				if ( ChildLoop->mNext->Visible() && ChildLoop->mNext->Enabled() && ChildLoop->mNext->IsComplex() ) {
+				if ( ChildLoop->mNext->visible() && ChildLoop->mNext->enabled() && ChildLoop->mNext->isComplex() ) {
 					return ChildLoop->mNext;
 				} else {
-					return ChildLoop->mNext->NextComplexControl();
+					return ChildLoop->mNext->nextComplexControl();
 				}
 			}
 
@@ -1222,13 +1222,13 @@ UIControl * UIControl::NextComplexControl() {
 		}
 	}
 
-	return UIManager::instance()->MainControl();
+	return UIManager::instance()->mainControl();
 }
 
-void UIControl::DoAfterSetTheme() {
+void UIControl::doAftersetTheme() {
 }
 
-void UIControl::WorldToControl( Vector2i& pos ) const {
+void UIControl::worldToControl( Vector2i& pos ) const {
 	Vector2f Pos( pos.x, pos.y );
 
 	std::list<UIControl*> parents;
@@ -1237,7 +1237,7 @@ void UIControl::WorldToControl( Vector2i& pos ) const {
 
 	while ( NULL != ParentLoop ) {
 		parents.push_front( ParentLoop );
-		ParentLoop = ParentLoop->Parent();
+		ParentLoop = ParentLoop->parent();
 	}
 
 	parents.push_back( const_cast<UIControl*>( reinterpret_cast<const UIControl*>( this ) ) );
@@ -1246,29 +1246,29 @@ void UIControl::WorldToControl( Vector2i& pos ) const {
 
 	for ( std::list<UIControl*>::iterator it = parents.begin(); it != parents.end(); it++ ) {
 		UIControl * tParent	= (*it);
-		UIControlAnim * tP		= tParent->IsAnimated() ? reinterpret_cast<UIControlAnim *> ( tParent ) : NULL;
+		UIControlAnim * tP		= tParent->isAnimated() ? reinterpret_cast<UIControlAnim *> ( tParent ) : NULL;
 		Vector2f pPos			( tParent->mPos.x * scale.x			, tParent->mPos.y * scale.y			);
 		Vector2f Center;
 
-		if ( NULL != tP && 1.f != tP->Scale() ) {
-			Center = tP->ScaleOriginPoint() * scale;
-			scale *= tP->Scale();
+		if ( NULL != tP && 1.f != tP->scale() ) {
+			Center = tP->scaleOriginPoint() * scale;
+			scale *= tP->scale();
 
 			pPos.scale( scale, pPos + Center );
 		}
 
 		Pos -= pPos;
 
-		if ( NULL != tP && 0.f != tP->Angle() ) {
-			Center = tP->RotationOriginPoint() * scale;
-			Pos.rotate( -tP->Angle(), Center );
+		if ( NULL != tP && 0.f != tP->angle() ) {
+			Center = tP->rotationOriginPoint() * scale;
+			Pos.rotate( -tP->angle(), Center );
 		}
 	}
 
 	pos = Vector2i( Pos.x / scale.x, Pos.y / scale.y );
 }
 
-void UIControl::ControlToWorld( Vector2i& pos ) const {
+void UIControl::controlToWorld( Vector2i& pos ) const {
 	Vector2f Pos( pos.x, pos.y );
 
 	std::list<UIControl*> parents;
@@ -1277,14 +1277,14 @@ void UIControl::ControlToWorld( Vector2i& pos ) const {
 
 	while ( NULL != ParentLoop ) {
 		parents.push_back( ParentLoop );
-		ParentLoop = ParentLoop->Parent();
+		ParentLoop = ParentLoop->parent();
 	}
 
 	parents.push_front( const_cast<UIControl*>( reinterpret_cast<const UIControl*>( this ) ) );
 
 	for ( std::list<UIControl*>::iterator it = parents.begin(); it != parents.end(); it++ ) {
 		UIControl * tParent	= (*it);
-		UIControlAnim * tP		= tParent->IsAnimated() ? reinterpret_cast<UIControlAnim *> ( tParent ) : NULL;
+		UIControlAnim * tP		= tParent->isAnimated() ? reinterpret_cast<UIControlAnim *> ( tParent ) : NULL;
 		Vector2f pPos			( tParent->mPos.x					, tParent->mPos.y					);
 
 		Pos += pPos;
@@ -1293,8 +1293,8 @@ void UIControl::ControlToWorld( Vector2i& pos ) const {
 			Vector2f CenterAngle( pPos.x + tP->mRotationOriginPoint.x, pPos.y + tP->mRotationOriginPoint.y );
 			Vector2f CenterScale( pPos.x + tP->mScaleOriginPoint.x, pPos.y + tP->mScaleOriginPoint.y );
 
-			Pos.rotate( tP->Angle(), CenterAngle );
-			Pos.scale( tP->Scale(), CenterScale );
+			Pos.rotate( tP->angle(), CenterAngle );
+			Pos.scale( tP->scale(), CenterScale );
 		}
 	}
 

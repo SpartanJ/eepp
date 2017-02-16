@@ -29,47 +29,47 @@ class EE_API UIDropDownList : public UITextInput {
 
 		virtual ~UIDropDownList();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		UIListBox * ListBox() const;
+		UIListBox * getListBox() const;
 
-		virtual void Update();
+		virtual void update();
 	protected:
 		UIListBox *	mListBox;
 		Uint32			mMinNumVisibleItems;
 		bool			mPopUpToMainControl;
 
-		void ShowListBox();
+		void showListBox();
 
-		void OnListBoxFocusLoss( const UIEvent * Event );
+		void onListBoxFocusLoss( const UIEvent * Event );
 
-		virtual void OnItemSelected( const UIEvent * Event );
+		virtual void onItemSelected( const UIEvent * Event );
 
-		virtual void Show();
+		virtual void show();
 
-		virtual void Hide();
+		virtual void hide();
 
-		Uint32 OnMouseClick( const Vector2i& Pos, const Uint32 Flags );
+		Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
 
-		virtual void OnItemClicked( const UIEvent * Event );
+		virtual void onItemClicked( const UIEvent * Event );
 
-		virtual void OnItemKeyDown( const UIEvent * Event );
+		virtual void onItemKeyDown( const UIEvent * Event );
 
-		virtual void OnControlClear( const UIEvent * Event );
+		virtual void onControlClear( const UIEvent * Event );
 
-		Uint32 OnKeyDown( const UIEventKey &Event );
+		Uint32 onKeyDown( const UIEventKey &Event );
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		virtual void AutoSize();
+		virtual void autoSize();
 
-		virtual void AutoSizeControl();
+		virtual void autoSizeControl();
 
-		void DestroyListBox();
+		void destroyListBox();
 };
 
 }}

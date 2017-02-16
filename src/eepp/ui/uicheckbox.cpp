@@ -16,92 +16,92 @@ UICheckBox::UICheckBox( const UITextBox::CreateParams& Params ) :
 	ButtonParams.Size = Sizei( 16, 16 );
 
 	mActiveButton 	= eeNew( UIControlAnim, ( ButtonParams ) );
-	mActiveButton->Visible( false );
-	mActiveButton->Enabled( true );
+	mActiveButton->visible( false );
+	mActiveButton->enabled( true );
 
 	mInactiveButton = eeNew( UIControlAnim, ( ButtonParams ) );
-	mInactiveButton->Visible( true );
-	mInactiveButton->Enabled( true );
+	mInactiveButton->visible( true );
+	mInactiveButton->enabled( true );
 
-	Padding( Recti(0,0,0,0) );
+	padding( Recti(0,0,0,0) );
 
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UICheckBox::~UICheckBox() {
 }
 
-Uint32 UICheckBox::Type() const {
+Uint32 UICheckBox::getType() const {
 	return UI_TYPE_CHECKBOX;
 }
 
-bool UICheckBox::IsType( const Uint32& type ) const {
-	return UICheckBox::Type() == type ? true : UITextBox::IsType( type );
+bool UICheckBox::isType( const Uint32& type ) const {
+	return UICheckBox::getType() == type ? true : UITextBox::isType( type );
 }
 
-void UICheckBox::SetTheme( UITheme * Theme ) {
-	UIControl::SetThemeControl( Theme, "checkbox" );
+void UICheckBox::setTheme( UITheme * Theme ) {
+	UIControl::setThemeControl( Theme, "checkbox" );
 
-	mActiveButton->SetThemeControl	( Theme, "checkbox_active" );
-	mInactiveButton->SetThemeControl( Theme, "checkbox_inactive" );
+	mActiveButton->setThemeControl	( Theme, "checkbox_active" );
+	mInactiveButton->setThemeControl( Theme, "checkbox_inactive" );
 
-	DoAfterSetTheme();
+	doAftersetTheme();
 }
 
-void UICheckBox::DoAfterSetTheme() {
+void UICheckBox::doAftersetTheme() {
 	SubTexture * tSubTexture = NULL;
-	UISkin * tSkin = mActiveButton->GetSkin();
+	UISkin * tSkin = mActiveButton->getSkin();
 
 	if ( tSkin ) {
-		tSubTexture = tSkin->GetSubTexture( UISkinState::StateNormal );
+		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mActiveButton->Size( tSubTexture->realSize() );
-			mActiveButton->CenterVertical();
+			mActiveButton->size( tSubTexture->realSize() );
+			mActiveButton->centerVertical();
 		}
 	}
 
-	tSkin = mInactiveButton->GetSkin();
+	tSkin = mInactiveButton->getSkin();
 
 	if ( NULL != tSkin ) {
-		tSubTexture = tSkin->GetSubTexture( UISkinState::StateNormal );
+		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mInactiveButton->Size( tSubTexture->realSize() );
-			mInactiveButton->CenterVertical();
+			mInactiveButton->size( tSubTexture->realSize() );
+			mInactiveButton->centerVertical();
 		}
 	}
 
-	Padding( Recti(0,0,0,0) );
+	padding( Recti(0,0,0,0) );
 }
 
-void UICheckBox::AutoSize() {
-	UITextBox::AutoSize();
+void UICheckBox::autoSize() {
+	UITextBox::autoSize();
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mActiveButton->CenterVertical();
-		mInactiveButton->CenterVertical();
+		mActiveButton->centerVertical();
+		mInactiveButton->centerVertical();
 
-		mSize.width( (int)mTextCache->getTextWidth() + mActiveButton->Size().width() );
+		mSize.width( (int)mTextCache->getTextWidth() + mActiveButton->size().width() );
 	}
 }
 
-void UICheckBox::OnSizeChange() {
-	UITextBox::OnSizeChange();
+void UICheckBox::onSizeChange() {
+	UITextBox::onSizeChange();
 
-	mActiveButton->CenterVertical();
-	mInactiveButton->CenterVertical();
+	mActiveButton->centerVertical();
+	mInactiveButton->centerVertical();
 }
 
-Uint32 UICheckBox::OnMessage( const UIMessage * Msg ) {
-	switch ( Msg->Msg() ) {
+Uint32 UICheckBox::onMessage( const UIMessage * Msg ) {
+	switch ( Msg->getMsg() ) {
 		case UIMessage::MsgClick: {
-			if ( Msg->Flags() & EE_BUTTON_LMASK ) {
-				SwitchState();
+			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
+				switchState();
 			}
 
-			if ( Msg->Sender() == mActiveButton || Msg->Sender() == mInactiveButton ) {
-				SendMouseEvent( UIEvent::EventMouseClick, UIManager::instance()->GetMousePos(), UIManager::instance()->PressTrigger() );
+			if ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) {
+				sendMouseEvent( UIEvent::EventMouseClick, UIManager::instance()->getMousePos(), UIManager::instance()->pressTrigger() );
 			}
 
 			return 1;
@@ -111,66 +111,66 @@ Uint32 UICheckBox::OnMessage( const UIMessage * Msg ) {
 	return 0;
 }
 
-void UICheckBox::SwitchState() {
-	Active( !mActive );
+void UICheckBox::switchState() {
+	active( !mActive );
 }
 
-void UICheckBox::Active( const bool& active ) {
+void UICheckBox::active( const bool& active ) {
 	if ( !active ) {
-		mActiveButton->Visible( false );
-		mInactiveButton->Visible( true );
+		mActiveButton->visible( false );
+		mInactiveButton->visible( true );
 
 		mActive = false;
 	} else {
-		mActiveButton->Visible( true );
-		mInactiveButton->Visible( false );
+		mActiveButton->visible( true );
+		mInactiveButton->visible( false );
 
 		mActive = true;
 	}
 
-	OnValueChange();
+	onValueChange();
 }
 
-const bool& UICheckBox::Active() const {
+const bool& UICheckBox::active() const {
 	return mActive;
 }
 
-const bool& UICheckBox::IsActive() const {
-	return Active();
+const bool& UICheckBox::isActive() const {
+	return active();
 }
 
-void UICheckBox::Padding( const Recti& padding ) {
+void UICheckBox::padding( const Recti& padding ) {
 	mPadding = padding;
-	mPadding.Left = mPadding.Left + mActiveButton->Size().width();
+	mPadding.Left = mPadding.Left + mActiveButton->size().width();
 }
 
-UIControlAnim * UICheckBox::ActiveButton() const {
+UIControlAnim * UICheckBox::activeButton() const {
 	return mActiveButton;
 }
 
-UIControlAnim * UICheckBox::InactiveButton() const {
+UIControlAnim * UICheckBox::inactiveButton() const {
 	return mInactiveButton;
 }
 
-Uint32 UICheckBox::OnKeyDown( const UIEventKey& Event ) {
-	UITextBox::OnKeyDown( Event );
+Uint32 UICheckBox::onKeyDown( const UIEventKey& Event ) {
+	UITextBox::onKeyDown( Event );
 
-	if ( Event.KeyCode() == KEY_SPACE ) {
+	if ( Event.getKeyCode() == KEY_SPACE ) {
 		if ( Sys::getTicks() - mLastTick > 250 ) {
 			mLastTick = Sys::getTicks();
 
-			Active( !mActive );
+			active( !mActive );
 		}
 	}
 
 	return 1;
 }
 
-void UICheckBox::OnAlphaChange() {
-	UITextBox::OnAlphaChange();
+void UICheckBox::onAlphaChange() {
+	UITextBox::onAlphaChange();
 	
-	mActiveButton->Alpha( mAlpha );
-	mInactiveButton->Alpha( mAlpha );
+	mActiveButton->alpha( mAlpha );
+	mInactiveButton->alpha( mAlpha );
 }
 
 }}

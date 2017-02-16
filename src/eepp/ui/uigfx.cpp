@@ -10,44 +10,44 @@ UIGfx::UIGfx( const UIGfx::CreateParams& Params ) :
 	mRender( Params.SubTextureRender ),
 	mAlignOffset(0,0)
 {
-	if ( NULL != mSubTexture && ( ( Flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) )
-		Size( mSubTexture->size() );
+	if ( NULL != mSubTexture && ( ( flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) )
+		size( mSubTexture->size() );
 
 	mColor.Alpha = (Uint8)mAlpha;
 
-	AutoSize();
+	autoSize();
 }
 
 UIGfx::~UIGfx() {
 }
 
-Uint32 UIGfx::Type() const {
+Uint32 UIGfx::getType() const {
 	return UI_TYPE_GFX;
 }
 
-bool UIGfx::IsType( const Uint32& type ) const {
-	return UIGfx::Type() == type ? true : UIComplexControl::IsType( type );
+bool UIGfx::isType( const Uint32& type ) const {
+	return UIGfx::getType() == type ? true : UIComplexControl::isType( type );
 }
 
-void UIGfx::SubTexture( Graphics::SubTexture * subTexture ) {
+void UIGfx::subTexture( Graphics::SubTexture * subTexture ) {
 	mSubTexture = subTexture;
 
-	AutoSize();
-	AutoAlign();
+	autoSize();
+	autoAlign();
 }
 
-void UIGfx::AutoSize() {
+void UIGfx::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mSubTexture ) {
-			Size( mSubTexture->size() );
+			size( mSubTexture->size() );
 		} else {
-			Size( Sizei( 0, 0 ) );
+			size( Sizei( 0, 0 ) );
 		}
 	}
 }
 
-void UIGfx::Draw() {
-	UIControlAnim::Draw();
+void UIGfx::draw() {
+	UIControlAnim::draw();
 
 	if ( mVisible ) {
 		if ( NULL != mSubTexture && 0.f != mAlpha ) {
@@ -58,7 +58,7 @@ void UIGfx::Draw() {
 				mSubTexture->offset( Vector2i( 0, 0 ) );
 				mSubTexture->destSize( Vector2f( mSize.x, mSize.y ) );
 
-				DrawSubTexture();
+				drawSubTexture();
 
 				mSubTexture->destSize( oDestSize );
 				mSubTexture->offset( oOff );
@@ -74,58 +74,58 @@ void UIGfx::Draw() {
 
 					mSubTexture->destSize( Sizef( oDestSize.x * Scale1, oDestSize.y * Scale1 ) );
 
-					AutoAlign();
+					autoAlign();
 
-					DrawSubTexture();
+					drawSubTexture();
 
 					mSubTexture->destSize( oDestSize );
 
-					AutoAlign();
+					autoAlign();
 				} else {
-					DrawSubTexture();
+					drawSubTexture();
 				}
 
 				mSubTexture->offset( oOff );
 			} else {
-				AutoAlign();
+				autoAlign();
 
-				DrawSubTexture();
+				drawSubTexture();
 			}
 		}
 	}
 }
 
-void UIGfx::DrawSubTexture() {
-	mSubTexture->draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, mColor, 0.f, Vector2f::One, Blend(), mRender );
+void UIGfx::drawSubTexture() {
+	mSubTexture->draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, mColor, 0.f, Vector2f::One, blend(), mRender );
 }
 
-void UIGfx::Alpha( const Float& alpha ) {
-	UIControlAnim::Alpha( alpha );
+void UIGfx::alpha( const Float& alpha ) {
+	UIControlAnim::alpha( alpha );
 	mColor.Alpha = (Uint8)alpha;
 }
 
-Graphics::SubTexture * UIGfx::SubTexture() const {
+Graphics::SubTexture * UIGfx::subTexture() const {
 	return mSubTexture;
 }
 
-const ColorA& UIGfx::Color() const {
+const ColorA& UIGfx::color() const {
 	return mColor;
 }
 
-void UIGfx::Color( const ColorA& color ) {
-	mColor = color;
-	Alpha( color.a() );
+void UIGfx::color( const ColorA& col ) {
+	mColor = col;
+	alpha( col.a() );
 }
 
-const EE_RENDER_MODE& UIGfx::RenderMode() const {
+const EE_RENDER_MODE& UIGfx::renderMode() const {
 	return mRender;
 }
 
-void UIGfx::RenderMode( const EE_RENDER_MODE& render ) {
+void UIGfx::renderMode( const EE_RENDER_MODE& render ) {
 	mRender = render;
 }
 
-void UIGfx::AutoAlign() {
+void UIGfx::autoAlign() {
 	if ( NULL == mSubTexture )
 		return;
 
@@ -146,13 +146,13 @@ void UIGfx::AutoAlign() {
 	}
 }
 
-void UIGfx::OnSizeChange() {
-	AutoSize();
-	AutoAlign();
-	UIControlAnim::OnSizeChange();
+void UIGfx::onSizeChange() {
+	autoSize();
+	autoAlign();
+	UIControlAnim::onSizeChange();
 }
 
-const Vector2i& UIGfx::AlignOffset() const {
+const Vector2i& UIGfx::alignOffset() const {
 	return mAlignOffset;
 }
 

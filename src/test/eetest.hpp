@@ -7,45 +7,45 @@ namespace Demo_Test {
 
 class UITest : public UIControlAnim {
 	public:
-		UITest( UIControlAnim::CreateParams& Params ) : UIControlAnim( Params ) 	{ mOldColor = mBackground->Colors(); }
+		UITest( UIControlAnim::CreateParams& Params ) : UIControlAnim( Params ) 	{ mOldColor = mBackground->colors(); }
 
-		virtual Uint32 OnMouseEnter( const Vector2i& Pos, const Uint32 Flags )	{
+		virtual Uint32 onMouseEnter( const Vector2i& Pos, const Uint32 Flags )	{
 			if ( 4 == mOldColor.size() ) {
-				mBackground->Colors( ColorA( mOldColor[0].r(), mOldColor[0].g(), mOldColor[0].b(), 200 ),
+				mBackground->colors( ColorA( mOldColor[0].r(), mOldColor[0].g(), mOldColor[0].b(), 200 ),
 									ColorA( mOldColor[1].r(), mOldColor[1].g(), mOldColor[1].b(), 200 ),
 									ColorA( mOldColor[2].r(), mOldColor[2].g(), mOldColor[2].b(), 200 ),
 									ColorA( mOldColor[3].r(), mOldColor[3].g(), mOldColor[3].b(), 200 )
 								);
 			} else {
-				mBackground->Color( ColorA( mOldColor[0].r(), mOldColor[0].g(), mOldColor[0].b(), 200 ) );
+				mBackground->color( ColorA( mOldColor[0].r(), mOldColor[0].g(), mOldColor[0].b(), 200 ) );
 			}
 
 			return 1;
 		}
 
-		virtual Uint32 OnMouseExit( const Vector2i& Pos, const Uint32 Flags )	{
+		virtual Uint32 onMouseExit( const Vector2i& Pos, const Uint32 Flags )	{
 			if ( 4 == mOldColor.size() ) {
-				mBackground->Colors( mOldColor[0], mOldColor[1], mOldColor[2], mOldColor[3] );
+				mBackground->colors( mOldColor[0], mOldColor[1], mOldColor[2], mOldColor[3] );
 			} else {
-				mBackground->Color( mOldColor[0] );
+				mBackground->color( mOldColor[0] );
 			}
 
 			return 1;
 		}
 
-		virtual Uint32 OnMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
-			UIDragable::OnMouseUp( Pos, Flags );
+		virtual Uint32 onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
+			UIDragable::onMouseUp( Pos, Flags );
 
 			if ( Engine::instance()->getCurrentWindow()->getInput()->mouseWheelUp() )
-				Scale( Scale() + 0.1f );
+				scale( scale() + 0.1f );
 			else if ( Engine::instance()->getCurrentWindow()->getInput()->mouseWheelDown() )
-				Scale( Scale() - 0.1f );
+				scale( scale() - 0.1f );
 
 			return 1;
 		}
 
-		virtual Uint32 OnFocus() {
-			ToFront();
+		virtual Uint32 onFocus() {
+			toFront();
 
 			return 1;
 		}

@@ -30,18 +30,18 @@ class EE_API UITabWidget : public UIComplexControl {
 				{
 					Flags = ( UI_VALIGN_BOTTOM | UI_HALIGN_LEFT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
 
-					UITheme * Theme = UIThemeManager::instance()->DefaultTheme();
+					UITheme * Theme = UIThemeManager::instance()->defaultTheme();
 
 					if ( NULL != Theme ) {
-						Font				= Theme->Font();
-						FontColor			= Theme->FontColor();
-						FontShadowColor		= Theme->FontShadowColor();
-						FontOverColor		= Theme->FontOverColor();
-						FontSelectedColor	= Theme->FontSelectedColor();
+						Font				= Theme->font();
+						FontColor			= Theme->fontColor();
+						FontShadowColor		= Theme->fontShadowColor();
+						FontOverColor		= Theme->fontOverColor();
+						FontSelectedColor	= Theme->fontSelectedColor();
 					}
 
 					if ( NULL == Font )
-						Font = UIThemeManager::instance()->DefaultFont();
+						Font = UIThemeManager::instance()->defaultFont();
 				}
 
 				inline ~CreateParams() {}
@@ -69,43 +69,43 @@ class EE_API UITabWidget : public UIComplexControl {
 
 		virtual ~UITabWidget();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		Uint32 Add( const String& Text, UIControl * CtrlOwned, SubTexture * Icon = NULL );
+		Uint32 add( const String& Text, UIControl * CtrlOwned, SubTexture * Icon = NULL );
 
-		Uint32 Add( UITab * Tab );
+		Uint32 add( UITab * Tab );
 
-		UITab * GetTab( const Uint32& Index );
+		UITab * getTab( const Uint32& Index );
 
-		UITab * GetTab( const String& Text );
+		UITab * getTab( const String& Text );
 
-		Uint32 GetTabIndex( UITab * Tab );
+		Uint32 getTabIndex( UITab * Tab );
 
-		Uint32 Count() const;
+		Uint32 count() const;
 
-		void Remove( const Uint32& Index );
+		void remove( const Uint32& Index );
 
-		void Remove( UITab * Tab );
+		void remove( UITab * Tab );
 
-		void RemoveAll();
+		void removeAll();
 
-		void Insert( const String& Text, UIControl * CtrlOwned, SubTexture * Icon, const Uint32& Index );
+		void insert( const String& Text, UIControl * CtrlOwned, SubTexture * Icon, const Uint32& Index );
 
-		void Insert( UITab * Tab, const Uint32& Index );
+		void insert( UITab * Tab, const Uint32& Index );
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		UITab * GetSelectedTab() const;
+		UITab * getSelectedTab() const;
 
-		Uint32 GetSelectedTabIndex() const;
+		Uint32 getSelectedTabIndex() const;
 
-		UIComplexControl * TabContainer() const;
+		UIComplexControl * getTabContainer() const;
 
-		UIComplexControl * ControlContainer() const;
+		UIComplexControl * getControlContainer() const;
 
-		virtual void Draw();
+		virtual void draw();
 	protected:
 		friend class UITab;
 
@@ -131,29 +131,29 @@ class EE_API UITabWidget : public UIComplexControl {
 		UITab *				mTabSelected;
 		Uint32					mTabSelectedIndex;
 
-		void DoAfterSetTheme();
+		void doAftersetTheme();
 
-		UITab * CreateTab( const String& Text, UIControl * CtrlOwned, SubTexture * Icon );
+		UITab * createTab( const String& Text, UIControl * CtrlOwned, SubTexture * Icon );
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		void SetTabSelected( UITab * Tab );
+		void setTabSelected( UITab * Tab );
 
-		void SetTabContainerSize();
+		void setTabContainerSize();
 
-		void SeContainerSize();
+		void seContainerSize();
 
-		void PosTabs();
+		void posTabs();
 
-		void ZOrderTabs();
+		void zorderTabs();
 
-		void OrderTabs();
+		void orderTabs();
 
-		void SelectPrev();
+		void selectPrev();
 
-		void SelectNext();
+		void selectNext();
 
-		void ApplyThemeToTabs();
+		void applyThemeToTabs();
 };
 
 }}

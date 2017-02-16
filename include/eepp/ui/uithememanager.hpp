@@ -14,62 +14,62 @@ class EE_API UIThemeManager : public ResourceManager<UITheme> {
 	public:
 		virtual ~UIThemeManager();
 
-		void DefaultFont( Font * Font );
+		void defaultFont( Font * Font );
 
-		Font * DefaultFont() const;
+		Font * defaultFont() const;
 
-		void SetTheme( const std::string& Theme );
+		void setTheme( const std::string& Theme );
 
-		void SetTheme( UITheme * Theme );
+		void setTheme( UITheme * Theme );
 
-		void DefaultTheme( UITheme * Theme );
+		void defaultTheme( UITheme * Theme );
 
-		void DefaultTheme( const std::string& Theme );
+		void defaultTheme( const std::string& Theme );
 
-		UITheme * DefaultTheme() const;
+		UITheme * defaultTheme() const;
 
-		void ApplyDefaultTheme( UIControl * Control );
+		void applyDefaultTheme( UIControl * Control );
 
-		void AutoApplyDefaultTheme( const bool& apply );
+		void autoApplyDefaultTheme( const bool& apply );
 
-		const bool& AutoApplyDefaultTheme() const;
+		const bool& autoApplyDefaultTheme() const;
 
-		void DefaultEffectsEnabled( const bool& Enabled );
+		void defaultEffectsEnabled( const bool& Enabled );
 
-		const bool& DefaultEffectsEnabled() const;
+		const bool& defaultEffectsEnabled() const;
 
-		const Time& ControlsFadeInTime() const;
+		const Time& controlsFadeInTime() const;
 
-		void ControlsFadeInTime( const Time & Time );
+		void controlsFadeInTime( const Time & Time );
 
-		const Time& ControlsFadeOutTime() const;
+		const Time& controlsFadeOutTime() const;
 
-		void ControlsFadeOutTime( const Time& Time );
+		void controlsFadeOutTime( const Time& Time );
 
-		void TooltipTimeToShow( const Time & Time );
+		void tooltipTimeToShow( const Time & Time );
 
-		const Time& TooltipTimeToShow() const;
+		const Time& tooltipTimeToShow() const;
 
-		void TooltipFollowMouse( const bool& Follow );
+		void tooltipFollowMouse( const bool& Follow );
 
-		const bool& TooltipFollowMouse() const;
+		const bool& tooltipFollowMouse() const;
 
-		void CursorSize( const Sizei& Size );
+		void cursorSize( const Sizei& Size );
 
-		const Sizei& CursorSize() const;
+		const Sizei& cursorSize() const;
 	protected:
 		Font * 			mFont;
 		UITheme * 			mThemeDefault;
-		bool				mAutoApplyDefaultTheme;
+		bool				mautoApplyDefaultTheme;
 
 		bool				mEnableDefaultEffects;
 		Time				mFadeInTime;
 		Time				mFadeOutTime;
 
-		Time				mTooltipTimeToShow;
-		bool				mTooltipFollowMouse;
+		Time				mtooltipTimeToShow;
+		bool				mtooltipFollowMouse;
 
-		Sizei				mCursorSize;
+		Sizei				mcursorSize;
 
 		UIThemeManager();
 };

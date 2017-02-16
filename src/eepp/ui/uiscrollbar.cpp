@@ -14,10 +14,10 @@ UIScrollBar::UIScrollBar( const UIScrollBar::CreateParams& Params ) :
 	mBtnDown	= eeNew( UIControlAnim, ( CParams ) );
 	mBtnUp		= eeNew( UIControlAnim, ( CParams ) );
 
-	mBtnDown->Visible( true );
-	mBtnDown->Enabled( true );
-	mBtnUp->Visible( true );
-	mBtnUp->Enabled( true );
+	mBtnDown->visible( true );
+	mBtnDown->enabled( true );
+	mBtnUp->visible( true );
+	mBtnUp->enabled( true );
 
 	UISlider::CreateParams SParams;
 	SParams.Background = Params.Background;
@@ -32,146 +32,146 @@ UIScrollBar::UIScrollBar( const UIScrollBar::CreateParams& Params ) :
 	SParams.ExpandBackground = true;
 
 	mSlider		= eeNew( UISlider, ( SParams ) );
-	mSlider->Visible( true );
-	mSlider->Enabled( true );
+	mSlider->visible( true );
+	mSlider->enabled( true );
 
-	mSlider->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIScrollBar::OnValueChangeCb ) );
+	mSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
 
-	AdjustChilds();
+	adjustChilds();
 
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UIScrollBar::~UIScrollBar() {
 }
 
-Uint32 UIScrollBar::Type() const {
+Uint32 UIScrollBar::getType() const {
 	return UI_TYPE_SCROLLBAR;
 }
 
-bool UIScrollBar::IsType( const Uint32& type ) const {
-	return UIScrollBar::Type() == type ? true : UIComplexControl::IsType( type );
+bool UIScrollBar::isType( const Uint32& type ) const {
+	return UIScrollBar::getType() == type ? true : UIComplexControl::isType( type );
 }
 
-void UIScrollBar::SetTheme( UITheme * Theme ) {
-	if ( !IsVertical() ) {
-		UIControl::SetThemeControl( Theme, "hscrollbar" );
-		mSlider->SetThemeControl( Theme, "hscrollbar_slider" );
-		mSlider->GetBackSlider()->SetThemeControl( Theme, "hscrollbar_bg" );
-		mSlider->GetSliderButton()->SetThemeControl( Theme, "hscrollbar_button" );
-		mBtnUp->SetThemeControl( Theme, "hscrollbar_btnup" );
-		mBtnDown->SetThemeControl( Theme, "hscrollbar_btndown" );
+void UIScrollBar::setTheme( UITheme * Theme ) {
+	if ( !isVertical() ) {
+		UIControl::setThemeControl( Theme, "hscrollbar" );
+		mSlider->setThemeControl( Theme, "hscrollbar_slider" );
+		mSlider->getBackSlider()->setThemeControl( Theme, "hscrollbar_bg" );
+		mSlider->getSliderButton()->setThemeControl( Theme, "hscrollbar_button" );
+		mBtnUp->setThemeControl( Theme, "hscrollbar_btnup" );
+		mBtnDown->setThemeControl( Theme, "hscrollbar_btndown" );
 	} else {
-		UIControl::SetThemeControl( Theme, "vscrollbar" );
-		mSlider->SetThemeControl( Theme, "vscrollbar_slider" );
-		mSlider->GetBackSlider()->SetThemeControl( Theme, "vscrollbar_bg" );
-		mSlider->GetSliderButton()->SetThemeControl( Theme, "vscrollbar_button" );
-		mBtnUp->SetThemeControl( Theme, "vscrollbar_btnup" );
-		mBtnDown->SetThemeControl( Theme, "vscrollbar_btndown" );
+		UIControl::setThemeControl( Theme, "vscrollbar" );
+		mSlider->setThemeControl( Theme, "vscrollbar_slider" );
+		mSlider->getBackSlider()->setThemeControl( Theme, "vscrollbar_bg" );
+		mSlider->getSliderButton()->setThemeControl( Theme, "vscrollbar_button" );
+		mBtnUp->setThemeControl( Theme, "vscrollbar_btnup" );
+		mBtnDown->setThemeControl( Theme, "vscrollbar_btndown" );
 	}
 
 	SubTexture * tSubTexture = NULL;
 	UISkin * tSkin = NULL;
 
-	tSkin = mBtnUp->GetSkin();
+	tSkin = mBtnUp->getSkin();
 
 	if ( NULL != tSkin ) {
-		tSubTexture = tSkin->GetSubTexture( UISkinState::StateNormal );
+		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mBtnUp->Size( tSubTexture->realSize() );
+			mBtnUp->size( tSubTexture->realSize() );
 		}
 	}
 
-	tSkin = mBtnDown->GetSkin();
+	tSkin = mBtnDown->getSkin();
 
 	if ( NULL != tSkin ) {
-		tSubTexture = tSkin->GetSubTexture( UISkinState::StateNormal );
+		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mBtnDown->Size( tSubTexture->realSize() );
+			mBtnDown->size( tSubTexture->realSize() );
 		}
 	}
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		tSkin = mSlider->GetBackSlider()->GetSkin();
+		tSkin = mSlider->getBackSlider()->getSkin();
 
 		if ( NULL != tSkin ) {
-			tSubTexture = tSkin->GetSubTexture( UISkinState::StateNormal );
+			tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 			if ( NULL != tSubTexture ) {
-				if ( mSlider->IsVertical() ) {
-					mSlider->Size( tSubTexture->realSize().width() , mSize.height() );
-					Size( tSubTexture->realSize().width() , mSize.height() );
+				if ( mSlider->isVertical() ) {
+					mSlider->size( tSubTexture->realSize().width() , mSize.height() );
+					size( tSubTexture->realSize().width() , mSize.height() );
 					mMinControlSize.x = mSize.width();
 				} else {
-					mSlider->Size( mSize.width(), tSubTexture->realSize().height() );
-					Size( mSize.width(), tSubTexture->realSize().height() );
+					mSlider->size( mSize.width(), tSubTexture->realSize().height() );
+					size( mSize.width(), tSubTexture->realSize().height() );
 					mMinControlSize.y = mSize.height();
 				}
 			}
 		}
 	}
 
-	AdjustChilds();
+	adjustChilds();
 
-	mSlider->AdjustChilds();
+	mSlider->adjustChilds();
 }
 
-void UIScrollBar::OnSizeChange() {
-	AdjustChilds();
-	mSlider->AdjustChilds();
-	UIComplexControl::OnSizeChange();
+void UIScrollBar::onSizeChange() {
+	adjustChilds();
+	mSlider->adjustChilds();
+	UIComplexControl::onSizeChange();
 }
 
-void UIScrollBar::AdjustChilds() {
-	mBtnUp->Pos( 0, 0 );
+void UIScrollBar::adjustChilds() {
+	mBtnUp->position( 0, 0 );
 
-	if ( !IsVertical() ) {
-		mBtnDown->Pos( mSize.width() - mBtnDown->Size().width(), 0 );
-		mSlider->Size( mSize.width() - mBtnDown->Size().width() - mBtnUp->Size().width(), mSlider->Size().height() );
-		mSlider->Pos( mBtnUp->Size().width(), 0 );
+	if ( !isVertical() ) {
+		mBtnDown->position( mSize.width() - mBtnDown->size().width(), 0 );
+		mSlider->size( mSize.width() - mBtnDown->size().width() - mBtnUp->size().width(), mSlider->size().height() );
+		mSlider->position( mBtnUp->size().width(), 0 );
 
-		mBtnDown->CenterVertical();
-		mBtnUp->CenterVertical();
-		mSlider->CenterVertical();
+		mBtnDown->centerVertical();
+		mBtnUp->centerVertical();
+		mSlider->centerVertical();
 	} else {
-		mBtnDown->Pos( 0, mSize.height() - mBtnDown->Size().height() );
-		mSlider->Size( mSlider->Size().width(), mSize.height() - mBtnDown->Size().height() - mBtnUp->Size().height() );
-		mSlider->Pos( 0, mBtnUp->Size().height() );
+		mBtnDown->position( 0, mSize.height() - mBtnDown->size().height() );
+		mSlider->size( mSlider->size().width(), mSize.height() - mBtnDown->size().height() - mBtnUp->size().height() );
+		mSlider->position( 0, mBtnUp->size().height() );
 
-		mBtnDown->CenterHorizontal();
-		mBtnUp->CenterHorizontal();
-		mSlider->CenterHorizontal();
+		mBtnDown->centerHorizontal();
+		mBtnUp->centerHorizontal();
+		mSlider->centerHorizontal();
 	}
 }
 
-void UIScrollBar::Update() {
-	UIControlAnim::Update();
+void UIScrollBar::update() {
+	UIControlAnim::update();
 
-	if ( mBtnUp->IsMouseOver() || mBtnDown->IsMouseOver() ) {
-		ManageClick( UIManager::instance()->GetInput()->clickTrigger() );
+	if ( mBtnUp->isMouseOver() || mBtnDown->isMouseOver() ) {
+		manageClick( UIManager::instance()->getInput()->clickTrigger() );
 	}
 }
 
-void UIScrollBar::ManageClick( const Uint32& Flags ) {
+void UIScrollBar::manageClick( const Uint32& Flags ) {
 	if ( Flags & EE_BUTTONS_WUWD ) {
 		if ( Flags & EE_BUTTON_WUMASK )
-			mSlider->Value( Value() + ClickStep() );
+			mSlider->value( value() + clickStep() );
 		else
-			mSlider->Value( Value() - ClickStep() );
+			mSlider->value( value() - clickStep() );
 	}
 }
 
-Uint32 UIScrollBar::OnMessage( const UIMessage * Msg ) {
-	switch ( Msg->Msg() ) {
+Uint32 UIScrollBar::onMessage( const UIMessage * Msg ) {
+	switch ( Msg->getMsg() ) {
 		case UIMessage::MsgClick:
 		{
-			if ( Msg->Flags() & EE_BUTTON_LMASK ) {
-				if ( Msg->Sender() == mBtnUp ) {
-					mSlider->Value( Value() - ClickStep() );
-				} else if ( Msg->Sender() == mBtnDown ) {
-					mSlider->Value( Value() + ClickStep() );
+			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
+				if ( Msg->getSender() == mBtnUp ) {
+					mSlider->value( value() - clickStep() );
+				} else if ( Msg->getSender() == mBtnDown ) {
+					mSlider->value( value() + clickStep() );
 				}
 			}
 
@@ -182,64 +182,64 @@ Uint32 UIScrollBar::OnMessage( const UIMessage * Msg ) {
 	return 0;
 }
 
-void UIScrollBar::Value( Float Val ) {
-	mSlider->Value( Val );
+void UIScrollBar::value( Float Val ) {
+	mSlider->value( Val );
 }
 
-const Float& UIScrollBar::Value() const {
-	return mSlider->Value();
+const Float& UIScrollBar::value() const {
+	return mSlider->value();
 }
 
-void UIScrollBar::MinValue( const Float& MinVal ) {
-	mSlider->MinValue( MinVal );
+void UIScrollBar::minValue( const Float& MinVal ) {
+	mSlider->minValue( MinVal );
 }
 
-const Float& UIScrollBar::MinValue() const {
-	return mSlider->MinValue();
+const Float& UIScrollBar::minValue() const {
+	return mSlider->minValue();
 }
 
-void UIScrollBar::MaxValue( const Float& MaxVal ) {
-	mSlider->MaxValue( MaxVal );
+void UIScrollBar::maxValue( const Float& MaxVal ) {
+	mSlider->maxValue( MaxVal );
 }
 
-const Float& UIScrollBar::MaxValue() const {
-	return mSlider->MaxValue();
+const Float& UIScrollBar::maxValue() const {
+	return mSlider->maxValue();
 }
 
-void UIScrollBar::ClickStep( const Float& step ) {
-	mSlider->ClickStep( step );
+void UIScrollBar::clickStep( const Float& step ) {
+	mSlider->clickStep( step );
 }
 
-const Float& UIScrollBar::ClickStep() const {
-	return mSlider->ClickStep();
+const Float& UIScrollBar::clickStep() const {
+	return mSlider->clickStep();
 }
 
-const bool& UIScrollBar::IsVertical() const {
-	return mSlider->IsVertical();
+const bool& UIScrollBar::isVertical() const {
+	return mSlider->isVertical();
 }
 
-void UIScrollBar::OnValueChangeCb( const UIEvent * Event ) {
-	OnValueChange();
+void UIScrollBar::onValueChangeCb( const UIEvent * Event ) {
+	onValueChange();
 }
 
-UISlider * UIScrollBar::Slider() const {
+UISlider * UIScrollBar::getSlider() const {
 	return mSlider;
 }
 
-UIControlAnim * UIScrollBar::ButtonUp() const {
+UIControlAnim * UIScrollBar::getButtonUp() const {
 	return mBtnUp;
 }
 
-UIControlAnim * UIScrollBar::ButtonDown() const {
+UIControlAnim * UIScrollBar::getButtonDown() const {
 	return mBtnDown;
 }
 
-void UIScrollBar::OnAlphaChange() {
-	UIControlAnim::OnAlphaChange();
+void UIScrollBar::onAlphaChange() {
+	UIControlAnim::onAlphaChange();
 	
-	mSlider->Alpha( mAlpha );
-	mBtnUp->Alpha( mAlpha );
-	mBtnDown->Alpha( mAlpha );
+	mSlider->alpha( mAlpha );
+	mBtnUp->alpha( mAlpha );
+	mBtnDown->alpha( mAlpha );
 }
 
 }}

@@ -11,7 +11,7 @@ class EE_API UISliderButton : public UIControlAnim {
 
 		virtual ~UISliderButton();
 	protected:
-		virtual void OnPosChange();
+		virtual void onPositionChange();
 };
 
 }}}

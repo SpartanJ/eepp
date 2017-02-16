@@ -9,38 +9,38 @@ class EE_API UIDragable : public UIControl {
 	public:
 		UIDragable( const UIControl::CreateParams& Params );
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		bool Dragging() const;
-		void Dragging( const bool& dragging );
+		bool dragging() const;
+		void dragging( const bool& dragging );
 
-		const Vector2i& DragPoint() const;
-		void DragPoint( const Vector2i& Point );
+		const Vector2i& dragPoint() const;
+		void dragPoint( const Vector2i& Point );
 
-		virtual void Update();
+		virtual void update();
 
-		bool DragEnable() const;
-		void DragEnable( const bool& enable );
+		bool dragEnable() const;
+		void dragEnable( const bool& enable );
 
-		void DragButton( const Uint32& Button );
-		const Uint32& DragButton() const;
+		void dragButton( const Uint32& Button );
+		const Uint32& dragButton() const;
 	protected:
 		virtual ~UIDragable();
 
 		Vector2i 	mDragPoint;
 		Uint32 		mDragButton;
 
-		virtual Uint32 OnMouseDown( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnMouseUp( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnDrag( const Vector2i& Pos );
+		virtual Uint32 OnDrag( const Vector2i& position );
 
-		virtual Uint32 OnDragStart( const Vector2i& Pos );
+		virtual Uint32 OnDragStart( const Vector2i& position );
 
-		virtual Uint32 OnDragEnd( const Vector2i& Pos );
+		virtual Uint32 OnDragEnd( const Vector2i& position );
 };
 
 }}

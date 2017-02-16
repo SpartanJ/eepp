@@ -22,15 +22,15 @@ class EE_API TextureAtlasEditor {
 
 		virtual ~TextureAtlasEditor();
 
-		UISpinBox *			SpinOffX() const { return mSpinOffX; }
+		UISpinBox *			spinOffX() const { return mSpinOffX; }
 
-		UISpinBox *			SpinOffY() const { return mSpinOffY; }
+		UISpinBox *			spinOffY() const { return mSpinOffY; }
 	protected:
 		class UITGEUpdater : public UIControl
 		{
 			public:
 				UITGEUpdater( const CreateParams& Params, TextureAtlasEditor * TGEditor ) : UIControl( Params ), mTGEditor( TGEditor ) {}
-				virtual void Update() { mTGEditor->Update(); }
+				virtual void update() { mTGEditor->update(); }
 			protected:
 				TextureAtlasEditor * mTGEditor;
 		};
@@ -52,49 +52,49 @@ class EE_API TextureAtlasEditor {
 		TextureAtlasSubTextureEditor * mSubTextureEditor;
 		UITGEUpdater *			mTGEU;
 
-		void WindowClose( const UIEvent * Event );
+		void windowClose( const UIEvent * Event );
 
-		void CreateTGEditor();
+		void createTGEditor();
 
-		void CreateWinMenu();
+		void createWinMenu();
 
-		void FileMenuClick( const UIEvent * Event );
+		void fileMenuClick( const UIEvent * Event );
 
-		void OnTextureAtlasCreate( TexturePacker * TexPacker );
+		void onTextureAtlasCreate( TexturePacker * TexPacker );
 
-		void OpenTextureAtlas( const UIEvent * Event );
+		void openTextureAtlas( const UIEvent * Event );
 
-		void SaveTextureAtlas( const UIEvent * Event );
+		void saveTextureAtlas( const UIEvent * Event );
 
-		void OnTextureAtlasClose( const UIEvent * Event );
+		void onTextureAtlasClose( const UIEvent * Event );
 
-		void OnSubTextureChange( const UIEvent * Event );
+		void onSubTextureChange( const UIEvent * Event );
 
-		UITextBox * CreateTxtBox( Vector2i Pos, const String& Text );
+		UITextBox * createTextBox( Vector2i Pos, const String& Text );
 
-		void UpdateControls();
+		void updateControls();
 
-		void FillSubTextureList();
+		void fillSubTextureList();
 
-		void OnOffXChange( const UIEvent * Event );
+		void onOffXChange( const UIEvent * Event );
 
-		void OnOffYChange( const UIEvent * Event );
+		void onOffYChange( const UIEvent * Event );
 
-		void OnDestWChange( const UIEvent * Event );
+		void onDestWChange( const UIEvent * Event );
 
-		void OnDestHChange( const UIEvent * Event );
+		void onDestHChange( const UIEvent * Event );
 
-		void OnResetDestSize( const UIEvent * Event );
+		void onResetDestSize( const UIEvent * Event );
 
-		void OnResetOffset( const UIEvent * Event );
+		void onResetOffset( const UIEvent * Event );
 
-		void OnCenterOffset( const UIEvent * Event );
+		void onCenterOffset( const UIEvent * Event );
 
-		void OnHBOffset( const UIEvent * Event );
+		void onHBOffset( const UIEvent * Event );
 
-		void OnTextureAtlasLoaded( TextureAtlasLoader * TGLoader );
+		void onTextureAtlasLoaded( TextureAtlasLoader * TGLoader );
 
-		void Update();
+		void update();
 };
 
 }}}

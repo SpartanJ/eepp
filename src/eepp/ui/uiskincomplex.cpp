@@ -20,14 +20,14 @@ UISkinComplex::UISkinComplex( const std::string& Name ) :
 		for ( Int32 y = 0; y < SideCount; y++ )
 			mSubTexture[ x ][ y ] = NULL;
 
-	SetSkins();
+	setSkins();
 }
 
 UISkinComplex::~UISkinComplex() {
 
 }
 
-void UISkinComplex::Draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State ) {
+void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State ) {
 	if ( 0 == Alpha )
 		return;
 
@@ -142,31 +142,31 @@ void UISkinComplex::Draw( const Float& X, const Float& Y, const Float& Width, co
 	}
 }
 
-void UISkinComplex::SetSkin( const Uint32& State ) {
+void UISkinComplex::setSkin( const Uint32& State ) {
 	eeASSERT ( State < UISkinState::StateCount );
 
 	for ( Uint32 Side = 0; Side < SideCount; Side++ ) {
 
-		SubTexture * SubTexture = TextureAtlasManager::instance()->getSubTextureByName( std::string( mName + "_" + UISkin::GetSkinStateName( State ) + "_" + SideSuffix[ Side ] ) );
+		SubTexture * SubTexture = TextureAtlasManager::instance()->getSubTextureByName( std::string( mName + "_" + UISkin::getSkinStateName( State ) + "_" + SideSuffix[ Side ] ) );
 
 		if ( NULL != SubTexture )
 			mSubTexture[ State ][ Side ] = SubTexture;
 	}
 }
 
-SubTexture * UISkinComplex::GetSubTexture( const Uint32& State ) const {
+SubTexture * UISkinComplex::getSubTexture( const Uint32& State ) const {
 	eeASSERT ( State < UISkinState::StateCount );
 
 	return mSubTexture[ State ][ Center ];
 }
 
-SubTexture * UISkinComplex::GetSubTextureSide( const Uint32& State, const Uint32& Side ) {
+SubTexture * UISkinComplex::getSubTextureSide( const Uint32& State, const Uint32& Side ) {
 	eeASSERT ( State < UISkinState::StateCount && Side < UISkinComplex::SideCount );
 
 	return mSubTexture[ State ][ Side ];
 }
 
-void UISkinComplex::StateNormalToState( const Uint32& State ) {
+void UISkinComplex::stateNormalToState( const Uint32& State ) {
 	if ( NULL == mSubTexture[ State ][ 0 ] ) {
 		for ( Uint32 Side = 0; Side < SideCount; Side++ ) {
 			mSubTexture[ State ][ Side ] = mSubTexture[ UISkinState::StateNormal ][ Side ];
@@ -174,7 +174,7 @@ void UISkinComplex::StateNormalToState( const Uint32& State ) {
 	}
 }
 
-UISkinComplex * UISkinComplex::Copy( const std::string& NewName, const bool& CopyColorsState ) {
+UISkinComplex * UISkinComplex::copy( const std::string& NewName, const bool& CopyColorsState ) {
 	UISkinComplex * SkinC = eeNew( UISkinComplex, ( NewName ) );
 
 	if ( CopyColorsState ) {
@@ -188,8 +188,8 @@ UISkinComplex * UISkinComplex::Copy( const std::string& NewName, const bool& Cop
 	return SkinC;
 }
 
-UISkin * UISkinComplex::Copy() {
-	return Copy( mName, true );
+UISkin * UISkinComplex::copy() {
+	return copy( mName, true );
 }
 
 }}

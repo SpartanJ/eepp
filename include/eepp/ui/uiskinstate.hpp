@@ -23,17 +23,17 @@ class EE_API UISkinState {
 
 		~UISkinState();
 
-		const Uint32& GetState() const;
+		const Uint32& getState() const;
 
-		void SetState( const Uint32& State );
+		void setState( const Uint32& State );
 
-		UISkin * GetSkin() const;
+		UISkin * getSkin() const;
 
-		void Draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha );
+		void draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha );
 
-		bool StateExists( const Uint32& State );
+		bool stateExists( const Uint32& State );
 
-		const Uint32& GetPrevState() const;
+		const Uint32& getPrevState() const;
 	protected:
 		friend class UIControl;
 
@@ -41,13 +41,13 @@ class EE_API UISkinState {
 		Uint32 		mCurState;
 		Uint32		mLastState;
 
-		void StateBack( const Uint32& State );
+		void stateBack( const Uint32& State );
 
-		void SetPrevState();
+		void setPrevState();
 
-		void SetStateTypeSimple( const Uint32& State );
+		void setStateTypeSimple( const Uint32& State );
 
-		void SetStateTypeDefault( const Uint32& State );
+		void setStateTypeDefault( const Uint32& State );
 };
 
 }}

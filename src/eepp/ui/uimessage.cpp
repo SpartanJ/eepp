@@ -14,15 +14,15 @@ UIMessage::~UIMessage()
 {
 }
 
-UIControl * UIMessage::Sender() const {
+UIControl * UIMessage::getSender() const {
 	return mCtrl;
 }
 
-const Uint32& UIMessage::Msg() const {
+const Uint32& UIMessage::getMsg() const {
 	return mMsg;
 }
 
-const Uint32& UIMessage::Flags() const {
+const Uint32& UIMessage::getFlags() const {
 	return mFlags;
 }
 

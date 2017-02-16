@@ -14,27 +14,27 @@ class EE_API UIListBoxItem : public UITextBox {
 
 		virtual ~UIListBoxItem();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		virtual void Update();
+		virtual void update();
 
-		bool Selected() const;
+		bool isSelected() const;
 
-		void Unselect();
+		void unselect();
 
-		void Select();
+		void select();
 	protected:
 		friend class UIItemContainer<UIListBox>;
 
-		virtual void OnStateChange();
+		virtual void onStateChange();
 
-		virtual Uint32 OnMouseClick( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnMouseExit( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseExit( const Vector2i& position, const Uint32 flags );
 };
 
 }}

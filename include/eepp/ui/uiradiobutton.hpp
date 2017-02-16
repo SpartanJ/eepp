@@ -12,44 +12,44 @@ class EE_API UIRadioButton : public UITextBox {
 
 		virtual ~UIRadioButton();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		const bool& IsActive() const;
+		const bool& isActive() const;
 
-		void Active( const bool& active );
+		void active( const bool& active );
 
-		const bool& Active() const;
+		const bool& active() const;
 
-		virtual void Padding( const Recti& padding );
+		virtual void padding( const Recti& padding );
 
-		UIControlAnim * ActiveButton() const;
+		UIControlAnim * activeButton() const;
 
-		UIControlAnim * InactiveButton() const;
+		UIControlAnim * inactiveButton() const;
 	protected:
 		UIControlAnim *	mActiveButton;
 		UIControlAnim *	mInactiveButton;
 		bool				mActive;
 		Uint32				mLastTick;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		void SwitchState();
+		void switchState();
 
-		void AutoActivate();
+		void autoActivate();
 
-		bool CheckActives();
+		bool checkActives();
 
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 
-		virtual Uint32 OnKeyDown( const UIEventKey& Event );
+		virtual Uint32 onKeyDown( const UIEventKey& Event );
 
-		virtual Uint32 OnMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const UIMessage * Msg );
 
-		virtual void AutoSize();
+		virtual void autoSize();
 };
 
 }}

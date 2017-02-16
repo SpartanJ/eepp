@@ -30,12 +30,12 @@ UIManager::UIManager() :
 }
 
 UIManager::~UIManager() {
-	Shutdown();
+	shutdown();
 }
 
-void UIManager::Init( Uint32 Flags, EE::Window::Window * window ) {
+void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 	if ( mInit )
-		Shutdown();
+		shutdown();
 
 	mWindow		= window;
 	mFlags		= Flags;
@@ -59,19 +59,19 @@ void UIManager::Init( Uint32 Flags, EE::Window::Window * window ) {
 	Params.DecorationAutoSize = false;
 
 	mControl		= eeNew( UIWindow, ( Params ) );
-	mControl->Visible( true );
-	mControl->Enabled( true );
-	mControl->Container()->Enabled( false );
-	mControl->Container()->Visible( false );
+	mControl->visible( true );
+	mControl->enabled( true );
+	mControl->getContainer()->enabled( false );
+	mControl->getContainer()->visible( false );
 
 	mFocusControl	= mControl;
 	mOverControl	= mControl;
 
-	mCbId = mKM->pushCallback( cb::Make1( this, &UIManager::InputCallback ) );
-	mResizeCb = mWindow->pushResizeCallback( cb::Make1( this, &UIManager::ResizeControl ) );
+	mCbId = mKM->pushCallback( cb::Make1( this, &UIManager::inputCallback ) );
+	mResizeCb = mWindow->pushResizeCallback( cb::Make1( this, &UIManager::resizeControl ) );
 }
 
-void UIManager::Shutdown() {
+void UIManager::shutdown() {
 	if ( mInit ) {
 		if ( -1 != mCbId &&
 			NULL != Engine::existsSingleton() &&
@@ -97,114 +97,114 @@ void UIManager::Shutdown() {
 	UIThemeManager::destroySingleton();
 }
 
-void UIManager::InputCallback( InputEvent * Event ) {
+void UIManager::inputCallback( InputEvent * Event ) {
 	switch( Event->Type ) {
 		case InputEvent::KeyUp:
-			SendKeyUp( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
+			sendKeyUp( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
 			break;
 		case InputEvent::KeyDown:
-			SendKeyDown( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
+			sendKeyDown( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
 
-			CheckTabPress( Event->key.keysym.sym );
+			checkTabPress( Event->key.keysym.sym );
 			break;
 	}
 }
 
-void UIManager::ResizeControl( EE::Window::Window * win ) {
-	mControl->Size( mWindow->getWidth(), mWindow->getHeight() );
-	SendMsg( mControl, UIMessage::MsgWindowResize );
+void UIManager::resizeControl( EE::Window::Window * win ) {
+	mControl->size( mWindow->getWidth(), mWindow->getHeight() );
+	sendMsg( mControl, UIMessage::MsgWindowResize );
 
 	std::list<UIWindow*>::iterator it;
 
 	for ( it = mWindowsList.begin(); it != mWindowsList.end(); it++ ) {
-		SendMsg( *it, UIMessage::MsgWindowResize );
+		sendMsg( *it, UIMessage::MsgWindowResize );
 	}
 }
 
-void UIManager::SendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
+void UIManager::sendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
 	UIEventKey	KeyEvent	= UIEventKey( mFocusControl, UIEvent::EventKeyUp, KeyCode, Char, Mod );
 	UIControl * CtrlLoop	= mFocusControl;
 
 	while( NULL != CtrlLoop ) {
-		if ( CtrlLoop->Enabled() && CtrlLoop->OnKeyUp( KeyEvent ) )
+		if ( CtrlLoop->enabled() && CtrlLoop->onKeyUp( KeyEvent ) )
 			break;
 
-		CtrlLoop = CtrlLoop->Parent();
+		CtrlLoop = CtrlLoop->parent();
 	}
 }
 
-void UIManager::SendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
+void UIManager::sendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
 	UIEventKey	KeyEvent	= UIEventKey( mFocusControl, UIEvent::EventKeyDown, KeyCode, Char, Mod );
 	UIControl * CtrlLoop	= mFocusControl;
 
 	while( NULL != CtrlLoop ) {
-		if ( CtrlLoop->Enabled() && CtrlLoop->OnKeyDown( KeyEvent ) )
+		if ( CtrlLoop->enabled() && CtrlLoop->onKeyDown( KeyEvent ) )
 			break;
 
-		CtrlLoop = CtrlLoop->Parent();
+		CtrlLoop = CtrlLoop->parent();
 	}
 }
 
-UIControl * UIManager::FocusControl() const {
+UIControl * UIManager::focusControl() const {
 	return mFocusControl;
 }
 
-UIControl * UIManager::LossFocusControl() const {
+UIControl * UIManager::lossFocusControl() const {
 	return mLossFocusControl;
 }
 
-void UIManager::FocusControl( UIControl * Ctrl ) {
+void UIManager::focusControl( UIControl * Ctrl ) {
 	if ( NULL != mFocusControl && NULL != Ctrl && Ctrl != mFocusControl ) {
 		mLossFocusControl = mFocusControl;
 
 		mFocusControl = Ctrl;
 
-		mLossFocusControl->OnFocusLoss();
-		SendMsg( mLossFocusControl, UIMessage::MsgFocusLoss );
+		mLossFocusControl->onFocusLoss();
+		sendMsg( mLossFocusControl, UIMessage::MsgFocusLoss );
 
-		mFocusControl->OnFocus();
-		SendMsg( mFocusControl, UIMessage::MsgFocus );
+		mFocusControl->onFocus();
+		sendMsg( mFocusControl, UIMessage::MsgFocus );
 	}
 }
 
-UIControl * UIManager::OverControl() const {
+UIControl * UIManager::overControl() const {
 	return mOverControl;
 }
 
-void UIManager::OverControl( UIControl * Ctrl ) {
+void UIManager::overControl( UIControl * Ctrl ) {
 	mOverControl = Ctrl;
 }
 
-void UIManager::SendMsg( UIControl * Ctrl, const Uint32& Msg, const Uint32& Flags ) {
+void UIManager::sendMsg( UIControl * Ctrl, const Uint32& Msg, const Uint32& Flags ) {
 	UIMessage tMsg( Ctrl, Msg, Flags );
 
-	Ctrl->MessagePost( &tMsg );
+	Ctrl->messagePost( &tMsg );
 }
 
-void UIManager::Update() {
+void UIManager::update() {
 	mElapsed = mWindow->elapsed();
 
-	bool wasDraggingControl = IsControlDragging();
+	bool wasDraggingControl = isControlDragging();
 
-	mControl->Update();
+	mControl->update();
 
-	UIControl * pOver = mControl->OverFind( mKM->getMousePosf() );
+	UIControl * pOver = mControl->overFind( mKM->getMousePosf() );
 
 	if ( pOver != mOverControl ) {
 		if ( NULL != mOverControl ) {
-			SendMsg( mOverControl, UIMessage::MsgMouseExit );
-			mOverControl->OnMouseExit( mKM->getMousePos(), 0 );
+			sendMsg( mOverControl, UIMessage::MsgMouseExit );
+			mOverControl->onMouseExit( mKM->getMousePos(), 0 );
 		}
 
 		mOverControl = pOver;
 
 		if ( NULL != mOverControl ) {
-			SendMsg( mOverControl, UIMessage::MsgMouseEnter );
-			mOverControl->OnMouseEnter( mKM->getMousePos(), 0 );
+			sendMsg( mOverControl, UIMessage::MsgMouseEnter );
+			mOverControl->onMouseEnter( mKM->getMousePos(), 0 );
 		}
 	} else {
 		if ( NULL != mOverControl )
-			mOverControl->OnMouseMove( mKM->getMousePos(), mKM->pressTrigger() );
+			mOverControl->onMouseMove( mKM->getMousePos(), mKM->pressTrigger() );
 	}
 
 	if ( mKM->pressTrigger() ) {
@@ -212,8 +212,8 @@ void UIManager::Update() {
 			FocusControl( mOverControl );*/
 
 		if ( NULL != mOverControl ) {
-			mOverControl->OnMouseDown( mKM->getMousePos(), mKM->pressTrigger() );
-			SendMsg( mOverControl, UIMessage::MsgMouseDown, mKM->pressTrigger() );
+			mOverControl->onMouseDown( mKM->getMousePos(), mKM->pressTrigger() );
+			sendMsg( mOverControl, UIMessage::MsgMouseDown, mKM->pressTrigger() );
 		}
 
 		if ( !mFirstPress ) {
@@ -228,18 +228,18 @@ void UIManager::Update() {
 		if ( NULL != mFocusControl ) {
 			if ( !wasDraggingControl ) {
 				if ( mOverControl != mFocusControl )
-					FocusControl( mOverControl );
+					focusControl( mOverControl );
 
-				mFocusControl->OnMouseUp( mKM->getMousePos(), mKM->releaseTrigger() );
-				SendMsg( mFocusControl, UIMessage::MsgMouseUp, mKM->releaseTrigger() );
+				mFocusControl->onMouseUp( mKM->getMousePos(), mKM->releaseTrigger() );
+				sendMsg( mFocusControl, UIMessage::MsgMouseUp, mKM->releaseTrigger() );
 
 				if ( mKM->clickTrigger() ) { // mDownControl == mOverControl &&
-					SendMsg( mFocusControl, UIMessage::MsgClick, mKM->clickTrigger() );
-					mFocusControl->OnMouseClick( mKM->getMousePos(), mKM->clickTrigger() );
+					sendMsg( mFocusControl, UIMessage::MsgClick, mKM->clickTrigger() );
+					mFocusControl->onMouseClick( mKM->getMousePos(), mKM->clickTrigger() );
 
 					if ( mKM->doubleClickTrigger() ) {
-						SendMsg( mFocusControl, UIMessage::MsgDoubleClick, mKM->doubleClickTrigger() );
-						mFocusControl->OnMouseDoubleClick( mKM->getMousePos(), mKM->doubleClickTrigger() );
+						sendMsg( mFocusControl, UIMessage::MsgDoubleClick, mKM->doubleClickTrigger() );
+						mFocusControl->onMouseDoubleClick( mKM->getMousePos(), mKM->doubleClickTrigger() );
 					}
 				}
 			}
@@ -248,121 +248,121 @@ void UIManager::Update() {
 		mFirstPress = false;
 	}
 
-	CheckClose();
+	checkClose();
 }
 
-UIControl * UIManager::DownControl() const {
+UIControl * UIManager::downControl() const {
 	return mDownControl;
 }
 
-void UIManager::Draw() {
+void UIManager::draw() {
 	GlobalBatchRenderer::instance()->draw();
-	mControl->InternalDraw();
+	mControl->internalDraw();
 	GlobalBatchRenderer::instance()->draw();
 }
 
-UIWindow * UIManager::MainControl() const {
+UIWindow * UIManager::mainControl() const {
 	return mControl;
 }
 
-const Time& UIManager::Elapsed() const {
+const Time& UIManager::elapsed() const {
 	return mElapsed;
 }
 
-Vector2i UIManager::GetMousePos() {
+Vector2i UIManager::getMousePos() {
 	return mKM->getMousePos();
 }
 
-Input * UIManager::GetInput() const {
+Input * UIManager::getInput() const {
 	return mKM;
 }
 
-const Uint32& UIManager::PressTrigger() const {
+const Uint32& UIManager::pressTrigger() const {
 	return mKM->pressTrigger();
 }
 
-const Uint32& UIManager::LastPressTrigger() const {
+const Uint32& UIManager::lastPressTrigger() const {
 	return mKM->lastPressTrigger();
 }
 
-void UIManager::ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
+void UIManager::clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
 	mWindow->clipPlaneEnable( x, y, Width, Height );
 }
 
-void UIManager::ClipDisable() {
+void UIManager::clipDisable() {
 	mWindow->clipPlaneDisable();
 }
 
-void UIManager::HighlightFocus( bool Highlight ) {
+void UIManager::highlightFocus( bool Highlight ) {
 	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_FOCUS, Highlight ? 1 : 0 );
 }
 
-bool UIManager::HighlightFocus() const {
+bool UIManager::highlightFocus() const {
 	return 0 != ( mFlags & UI_MANAGER_HIGHLIGHT_FOCUS );
 }
 
-void UIManager::HighlightFocusColor( const ColorA& Color ) {
+void UIManager::highlightFocusColor( const ColorA& Color ) {
 	mHighlightFocusColor = Color;
 }
 
-const ColorA& UIManager::HighlightFocusColor() const {
+const ColorA& UIManager::highlightFocusColor() const {
 	return mHighlightFocusColor;
 }
 
-void UIManager::HighlightOver( bool Highlight ) {
+void UIManager::highlightOver( bool Highlight ) {
 	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_OVER, Highlight ? 1 : 0 );
 }
 
-bool UIManager::HighlightOver() const {
+bool UIManager::highlightOver() const {
 	return 0 != ( mFlags & UI_MANAGER_HIGHLIGHT_OVER );
 }
 
-void UIManager::HighlightOverColor( const ColorA& Color ) {
+void UIManager::highlightOverColor( const ColorA& Color ) {
 	mHighlightOverColor = Color;
 }
 
-const ColorA& UIManager::HighlightOverColor() const {
+const ColorA& UIManager::highlightOverColor() const {
 	return mHighlightOverColor;
 }
 
-void UIManager::CheckTabPress( const Uint32& KeyCode ) {
+void UIManager::checkTabPress( const Uint32& KeyCode ) {
 	eeASSERT( NULL != mFocusControl );
 
 	if ( KeyCode == KEY_TAB ) {
-		UIControl * Ctrl = mFocusControl->NextComplexControl();
+		UIControl * Ctrl = mFocusControl->nextComplexControl();
 
 		if ( NULL != Ctrl )
-			Ctrl->SetFocus();
+			Ctrl->setFocus();
 	}
 }
 
-void UIManager::SendMouseClick( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
-	SendMsg( ToCtrl, UIMessage::MsgClick, Flags );
-	ToCtrl->OnMouseClick( Pos, Flags );
+void UIManager::sendMouseClick( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
+	sendMsg( ToCtrl, UIMessage::MsgClick, Flags );
+	ToCtrl->onMouseClick( Pos, Flags );
 }
 
-void UIManager::SendMouseUp( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
-	SendMsg( ToCtrl, UIMessage::MsgMouseUp, Flags );
-	ToCtrl->OnMouseUp( Pos, Flags );
+void UIManager::sendMouseUp( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
+	sendMsg( ToCtrl, UIMessage::MsgMouseUp, Flags );
+	ToCtrl->onMouseUp( Pos, Flags );
 }
 
-void UIManager::SendMouseDown( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
-	SendMsg( ToCtrl, UIMessage::MsgMouseDown, Flags );
-	ToCtrl->OnMouseDown( Pos, Flags );
+void UIManager::sendMouseDown( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
+	sendMsg( ToCtrl, UIMessage::MsgMouseDown, Flags );
+	ToCtrl->onMouseDown( Pos, Flags );
 }
 
-EE::Window::Window * UIManager::GetWindow() const {
+EE::Window::Window * UIManager::getWindow() const {
 	return mWindow;
 }
 
-void UIManager::SetFocusLastWindow( UIWindow * window ) {
+void UIManager::setFocusLastWindow( UIWindow * window ) {
 	if ( !mWindowsList.empty() && window != mWindowsList.front() ) {
-		FocusControl( mWindowsList.front() );
+		focusControl( mWindowsList.front() );
 	}
 }
 
-void UIManager::WindowAdd( UIWindow * win ) {
-	if ( !WindowExists( win ) ) {
+void UIManager::windowAdd( UIWindow * win ) {
+	if ( !windowExists( win ) ) {
 		mWindowsList.push_front( win );
 	} else {
 		//! Send to front
@@ -371,25 +371,25 @@ void UIManager::WindowAdd( UIWindow * win ) {
 	}
 }
 
-void UIManager::WindowRemove( UIWindow * win ) {
-	if ( WindowExists( win ) ) {
+void UIManager::windowRemove( UIWindow * win ) {
+	if ( windowExists( win ) ) {
 		mWindowsList.remove( win );
 	}
 }
 
-bool UIManager::WindowExists( UIWindow * win ) {
+bool UIManager::windowExists( UIWindow * win ) {
 	return mWindowsList.end() != std::find( mWindowsList.begin(), mWindowsList.end(), win );
 }
 
-const bool& UIManager::IsShootingDown() const {
+const bool& UIManager::isShootingDown() const {
 	return mShootingDown;
 }
 
-const Vector2i &UIManager::GetMouseDownPos() const {
+const Vector2i &UIManager::getMouseDownPos() const {
 	return mMouseDownPos;
 }
 
-void UIManager::AddToCloseQueue( UIControl * Ctrl ) {
+void UIManager::addToCloseQueue( UIControl * Ctrl ) {
 	eeASSERT( NULL != Ctrl );
 
 	std::list<UIControl*>::iterator it;
@@ -398,7 +398,7 @@ void UIManager::AddToCloseQueue( UIControl * Ctrl ) {
 	for ( it = mCloseList.begin(); it != mCloseList.end(); it++ ) {
 		itCtrl = *it;
 
-		if ( NULL != itCtrl && itCtrl->IsParentOf( Ctrl ) ) {
+		if ( NULL != itCtrl && itCtrl->isParentOf( Ctrl ) ) {
 			// If a parent will be removed, means that the control
 			// that we are trying to queue will be removed by the father
 			// so we skip it
@@ -411,7 +411,7 @@ void UIManager::AddToCloseQueue( UIControl * Ctrl ) {
 	for ( it = mCloseList.begin(); it != mCloseList.end(); it++ ) {
 		itCtrl = *it;
 
-		if ( NULL != itCtrl && Ctrl->IsParentOf( itCtrl ) ) {
+		if ( NULL != itCtrl && Ctrl->isParentOf( itCtrl ) ) {
 			// if the control added is parent of another control already added,
 			// we remove the already added control because it will be deleted
 			// by its parent
@@ -432,7 +432,7 @@ void UIManager::AddToCloseQueue( UIControl * Ctrl ) {
 	mCloseList.push_back( Ctrl );
 }
 
-void UIManager::CheckClose() {
+void UIManager::checkClose() {
 	if ( !mCloseList.empty() ) {
 		for ( std::list<UIControl*>::iterator it = mCloseList.begin(); it != mCloseList.end(); it++ ) {
 			eeDelete( *it );
@@ -442,23 +442,23 @@ void UIManager::CheckClose() {
 	}
 }
 
-void UIManager::SetControlDragging( bool dragging ) {
+void UIManager::setControlDragging( bool dragging ) {
 	mControlDragging = dragging;
 }
 
-const bool& UIManager::IsControlDragging() const {
+const bool& UIManager::isControlDragging() const {
 	return mControlDragging;
 }
 
-void UIManager::UseGlobalCursors( const bool& use ) {
+void UIManager::useGlobalCursors( const bool& use ) {
 	mUseGlobalCursors = use;
 }
 
-const bool& UIManager::UseGlobalCursors() {
+const bool& UIManager::useGlobalCursors() {
 	return mUseGlobalCursors;
 }
 
-void UIManager::SetCursor( EE_CURSOR_TYPE cursor ) {
+void UIManager::setCursor( EE_CURSOR_TYPE cursor ) {
 	if ( mUseGlobalCursors ) {
 		mWindow->getCursorManager()->set( cursor );
 	}

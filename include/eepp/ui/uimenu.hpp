@@ -26,18 +26,18 @@ class EE_API UIMenu : public UIComplexControl {
 					FontOverColor( 0, 0, 0, 255 ),
 					FontSelectedColor( 0, 0, 0, 255 )
 				{
-					UITheme * Theme = UIThemeManager::instance()->DefaultTheme();
+					UITheme * Theme = UIThemeManager::instance()->defaultTheme();
 
 					if ( NULL != Theme ) {
-						Font				= Theme->Font();
-						FontColor			= Theme->FontColor();
-						FontShadowColor		= Theme->FontShadowColor();
-						FontOverColor		= Theme->FontOverColor();
-						FontSelectedColor	= Theme->FontSelectedColor();
+						Font				= Theme->font();
+						FontColor			= Theme->fontColor();
+						FontShadowColor		= Theme->fontShadowColor();
+						FontOverColor		= Theme->fontOverColor();
+						FontSelectedColor	= Theme->fontSelectedColor();
 					}
 
 					if ( NULL == Font )
-						Font = UIThemeManager::instance()->DefaultFont();
+						Font = UIThemeManager::instance()->defaultFont();
 				}
 
 				inline ~CreateParams() {}
@@ -55,15 +55,15 @@ class EE_API UIMenu : public UIComplexControl {
 
 		};
 
-		static void FixMenuPos( Vector2i& Pos, UIMenu * Menu, UIMenu * Parent = NULL, UIMenuSubMenu * SubMenu = NULL );
+		static void FixMenuPos( Vector2i& position, UIMenu * Menu, UIMenu * parent = NULL, UIMenuSubMenu * SubMenu = NULL );
 
 		UIMenu( UIMenu::CreateParams& Params );
 
 		virtual ~UIMenu();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
 		Uint32 Add( const String& Text, SubTexture * Icon = NULL );
 
@@ -93,11 +93,11 @@ class EE_API UIMenu : public UIComplexControl {
 
 		void Insert( UIControl * Control, const Uint32& Index );
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		virtual bool Show();
+		virtual bool show();
 
-		virtual bool Hide();
+		virtual bool hide();
 
 		const Recti& Padding() const;
 	protected:
@@ -124,13 +124,13 @@ class EE_API UIMenu : public UIComplexControl {
 		bool				mClickHide;
 		Uint32				mLastTickMove;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
 		void AutoPadding();
 
-		virtual Uint32 OnMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const UIMessage * Msg );
 
-		void SetControlSize( UIControl * Control, const Uint32& Pos );
+		void SetControlSize( UIControl * Control, const Uint32& position );
 		
 		void ResizeControls();
 		
@@ -144,7 +144,7 @@ class EE_API UIMenu : public UIComplexControl {
 
 		UIMenuSubMenu * CreateSubMenu( const String& Text, SubTexture * Icon, UIMenu * SubMenu );
 		
-		void DoAfterSetTheme();
+		void doAftersetTheme();
 
 		bool CheckControlSize( UIControl * Control, const bool& Resize = true );
 
@@ -152,7 +152,7 @@ class EE_API UIMenu : public UIComplexControl {
 
 		void SetItemSelected( UIControl * Item );
 
-		virtual Uint32 OnKeyDown( const UIEventKey& Event );
+		virtual Uint32 onKeyDown( const UIEventKey& Event );
 
 		void PrevSel();
 

@@ -30,29 +30,29 @@ class EE_API UITextInput : public UITextBox {
 
 		virtual ~UITextInput();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void Update();
+		virtual void update();
 
-		virtual void Draw();
+		virtual void draw();
 
-		void PushIgnoredChar( const Uint32& ch );
+		void pushIgnoredChar( const Uint32& ch );
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		InputTextBuffer * GetInputTextBuffer();
+		InputTextBuffer * getInputTextBuffer();
 
-		void AllowEditing( const bool& allow );
+		void allowEditing( const bool& allow );
 
-		const bool& AllowEditing() const;
+		const bool& allowEditing() const;
 
-		virtual const String& Text();
+		virtual const String& text();
 
-		virtual void Text( const String& text );
+		virtual void text( const String& text );
 
-		virtual void ShrinkText( const Uint32& MaxWidth );
+		virtual void shrinkText( const Uint32& MaxWidth );
 	protected:
 		InputTextBuffer	mTextBuffer;
 		Float				mWaitCursorTime;
@@ -61,41 +61,41 @@ class EE_API UITextInput : public UITextBox {
 		bool				mAllowEditing;
 		bool				mShowingWait;
 
-		void ResetWaitCursor();
+		void resetWaitCursor();
 
-		virtual void AlignFix();
+		virtual void alignFix();
 
-		virtual void AutoSize();
+		virtual void autoSize();
 
-		void PrivOnPressEnter();
+		void privOnPressEnter();
 
-		void AutoPadding();
+		void autoPadding();
 
-		virtual Uint32 OnMouseClick( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnMouseExit( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseExit( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnFocus();
+		virtual Uint32 onFocus();
 
-		virtual Uint32 OnFocusLoss();
+		virtual Uint32 onFocusLoss();
 
-		virtual Uint32 OnPressEnter();
+		virtual Uint32 onPressEnter();
 
-		virtual void OnCursorPosChange();
+		virtual void onCursorPosChange();
 
-		void DrawWaitingCursor();
+		void drawWaitingCursor();
 
-		virtual void UpdateText();
+		virtual void updateText();
 
-		virtual void SelCurInit( const Int32& init );
+		virtual void selCurInit( const Int32& init );
 
-		virtual void SelCurEnd( const Int32& end );
+		virtual void selCurEnd( const Int32& end );
 
-		virtual Int32 SelCurInit();
+		virtual Int32 selCurInit();
 
-		virtual Int32 SelCurEnd();
+		virtual Int32 selCurEnd();
 };
 
 }}

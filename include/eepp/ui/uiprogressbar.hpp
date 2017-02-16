@@ -31,39 +31,39 @@ class EE_API UIProgressBar : public UIComplexControl {
 
 		virtual ~UIProgressBar();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		virtual void Progress( Float Val );
+		virtual void progress( Float Val );
 
-		const Float& Progress() const;
+		const Float& progress() const;
 
-		virtual void TotalSteps( const Float& Steps );
+		virtual void totalSteps( const Float& Steps );
 
-		const Float& TotalSteps() const;
+		const Float& totalSteps() const;
 
-		virtual void Draw();
+		virtual void draw();
 
-		void MovementSpeed( const Vector2f& Speed );
+		void movementSpeed( const Vector2f& Speed );
 
-		const Vector2f& MovementSpeed() const;
+		const Vector2f& movementSpeed() const;
 
-		void VerticalExpand( const bool& VerticalExpand );
+		void verticalExpand( const bool& verticalExpand );
 
-		const bool& VerticalExpand() const;
+		const bool& verticalExpand() const;
 
-		void FillerMargin( const Rectf& margin );
+		void fillerMargin( const Rectf& margin );
 
-		const Rectf& FillerMargin() const;
+		const Rectf& fillerMargin() const;
 
-		void DisplayPercent( const bool& DisplayPercent );
+		void displayPercent( const bool& displayPercent );
 
-		const bool& DisplayPercent() const;
+		const bool& displayPercent() const;
 		
-		UITextBox * TextBox() const;
+		UITextBox * getTextBox() const;
 		
 	protected:
 		bool				mVerticalExpand;
@@ -78,13 +78,13 @@ class EE_API UIProgressBar : public UIComplexControl {
 
 		UITextBox * 		mTextBox;
 
-		virtual Uint32 OnValueChange();
+		virtual Uint32 onValueChange();
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 		
-		void UpdateTextBox();
+		void updateTextBox();
 		
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 };
 
 }}
