@@ -3,35 +3,35 @@
 CP_NAMESPACE_BEGIN
 
 RatchetJoint::RatchetJoint( Body * a, Body * b, cpFloat phase, cpFloat ratchet ) {
-	mConstraint = cpRatchetJointNew( a->GetBody(), b->GetBody(), phase, ratchet );
-	SetData();
+	mConstraint = cpRatchetJointNew( a->getBody(), b->getBody(), phase, ratchet );
+	setData();
 }
 
-cpFloat RatchetJoint::Angle() {
+cpFloat RatchetJoint::angle() {
 	return cpRatchetJointGetAngle( mConstraint );
 }
 
-void RatchetJoint::Angle( const cpFloat& angle ) {
+void RatchetJoint::angle( const cpFloat& angle ) {
 	cpRatchetJointSetAngle( mConstraint, angle );
 }
 
-cpFloat RatchetJoint::Phase() {
+cpFloat RatchetJoint::phase() {
 	return cpRatchetJointGetPhase( mConstraint );
 }
 
-void RatchetJoint::Phase( const cpFloat& phase ) {
+void RatchetJoint::phase( const cpFloat& phase ) {
 	cpRatchetJointSetPhase( mConstraint, phase );
 }
 
-cpFloat RatchetJoint::Ratchet() {
+cpFloat RatchetJoint::ratchet() {
 	return cpRatchetJointGetRatchet( mConstraint );
 }
 
-void RatchetJoint::Ratchet( const cpFloat& ratchet ) {
+void RatchetJoint::ratchet( const cpFloat& ratchet ) {
 	cpRatchetJointSetRatchet( mConstraint, ratchet );
 }
 
-void RatchetJoint::Draw() {
+void RatchetJoint::draw() {
 	// Not implemented
 }
 

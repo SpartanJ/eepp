@@ -9,19 +9,19 @@ class CP_API RatchetJoint : public Constraint {
 	public:
 		RatchetJoint( Body * a, Body * b, cpFloat phase, cpFloat ratchet );
 
-		cpFloat Angle();
+		cpFloat angle();
 
-		void Angle( const cpFloat& angle );
+		void angle( const cpFloat& angle );
 
-		cpFloat Phase();
+		cpFloat phase();
 
-		void Phase( const cpFloat& phase );
+		void phase( const cpFloat& phase );
 
-		cpFloat Ratchet();
+		cpFloat ratchet();
 
-		void Ratchet( const cpFloat& ratchet );
+		void ratchet( const cpFloat& ratchet );
 
-		virtual void Draw();
+		virtual void draw();
 };
 
 CP_NAMESPACE_END

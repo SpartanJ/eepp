@@ -18,42 +18,42 @@ ShapePoly * ShapePoly::New( Physics::Body * body, cpFloat width, cpFloat height 
 }
 
 ShapePoly::ShapePoly( Physics::Body * body, int numVerts, cVect *verts, cVect offset ) {
-	mShape = cpPolyShapeNew( body->GetBody(), numVerts, casttocpv( verts ), tocpv( offset ) );
-	SetData();
+	mShape = cpPolyShapeNew( body->getBody(), numVerts, casttocpv( verts ), tocpv( offset ) );
+	setData();
 }
 
 ShapePoly::ShapePoly( Physics::Body * body, cpFloat width, cpFloat height ) :
 	Shape()
 {
-	mShape = cpBoxShapeNew( body->GetBody(), width, height );
-	SetData();
+	mShape = cpBoxShapeNew( body->getBody(), width, height );
+	setData();
 }
 
-bool ShapePoly::Validate( const cVect * verts, const int numVerts ) {
+bool ShapePoly::validate( const cVect * verts, const int numVerts ) {
 	return 0 != cpPolyValidate( constcasttocpv( verts ),  numVerts );
 }
 
-int ShapePoly::GetNumVerts() {
+int ShapePoly::getNumVerts() {
 	return cpPolyShapeGetNumVerts( mShape );
 }
 
-cVect ShapePoly::GetVert( int idx ) {
+cVect ShapePoly::getVert( int idx ) {
 	return tovect( cpPolyShapeGetVert( mShape, idx ) );
 }
 
-void ShapePoly::SetVerts( int numVerts, cVect *verts, cVect offset ) {
+void ShapePoly::setVerts( int numVerts, cVect *verts, cVect offset ) {
 	cpPolyShapeSetVerts( mShape, numVerts, casttocpv( verts ), tocpv( offset ) );
 }
 
-void ShapePoly::Recenter( int numVerts, cVect *verts ) {
+void ShapePoly::recenter( int numVerts, cVect *verts ) {
 	cpRecenterPoly( numVerts, casttocpv( verts ) );
 }
 
-cVect ShapePoly::Centroid( int numVerts, const cVect * verts ) {
+cVect ShapePoly::centroid( int numVerts, const cVect * verts ) {
 	return tovect( cpCentroidForPoly( numVerts, constcasttocpv( verts ) ) );
 }
 
-void ShapePoly::Draw( Space * space ) {
+void ShapePoly::draw( Space * space ) {
 	#ifdef PHYSICS_RENDERER_ENABLED
 	cpPolyShape * poly = (cpPolyShape*)mShape;
 
@@ -61,7 +61,7 @@ void ShapePoly::Draw( Space * space ) {
 
 	BR->setTexture( NULL );
 
-	ColorA Col = ColorForShape( (cpShape *)poly, space->GetSpace() );
+	ColorA Col = colorForShape( (cpShape *)poly, space->getSpace() );
 
 	if( !poly->CP_PRIVATE(shape).sensor ){
 		if ( 4 != poly->CP_PRIVATE(numVerts) ) {
@@ -85,13 +85,13 @@ void ShapePoly::Draw( Space * space ) {
 	#endif
 }
 
-void ShapePoly::DrawBorder( Space *space ) {
+void ShapePoly::drawBorder( Space *space ) {
 #ifdef PHYSICS_RENDERER_ENABLED
 	cpPolyShape * poly = (cpPolyShape*)mShape;
 
 	BatchRenderer * BR = GlobalBatchRenderer::instance();
 
-	ColorA Col = ColorForShape( (cpShape *)poly, space->GetSpace() );
+	ColorA Col = colorForShape( (cpShape *)poly, space->getSpace() );
 
 	BR->lineLoopBegin();
 	BR->lineLoopSetColor( Col );

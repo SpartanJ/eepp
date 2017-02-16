@@ -16,47 +16,47 @@ ShapeSegment * ShapeSegment::New( Physics::Body * body, cVect a, cVect b, cpFloa
 }
 
 ShapeSegment::ShapeSegment( Physics::Body * body, cVect a, cVect b, cpFloat radius ) {
-	mShape = cpSegmentShapeNew( body->GetBody(), tocpv( a ), tocpv( b ), radius );
-	SetData();
+	mShape = cpSegmentShapeNew( body->getBody(), tocpv( a ), tocpv( b ), radius );
+	setData();
 }
 
-cVect ShapeSegment::A() {
+cVect ShapeSegment::a() {
 	return tovect( cpSegmentShapeGetA( mShape ) );
 }
 
-cVect ShapeSegment::B() {
+cVect ShapeSegment::b() {
 	return tovect( cpSegmentShapeGetB( mShape ) );
 }
 
-cVect ShapeSegment::Normal() {
+cVect ShapeSegment::normal() {
 	return tovect( cpSegmentShapeGetNormal( mShape ) );
 }
 
-cpFloat ShapeSegment::Radius() {
+cpFloat ShapeSegment::radius() {
 	return cpSegmentShapeGetRadius( mShape );
 }
 
-void ShapeSegment::Radius( const cpFloat& radius ) {
+void ShapeSegment::radius( const cpFloat& radius ) {
 	cpSegmentShapeSetRadius( mShape, radius );
 }
 
-void ShapeSegment::Endpoints( const cVect& a, const cVect& b ) {
+void ShapeSegment::endpoints( const cVect& a, const cVect& b ) {
 	cpSegmentShapeSetEndpoints( mShape, tocpv( a ), tocpv( b ) );
 }
 
-bool ShapeSegment::Query( cVect a, cVect b, cpSegmentQueryInfo * info ) {
+bool ShapeSegment::query( cVect a, cVect b, cpSegmentQueryInfo * info ) {
 	return 0 != cpShapeSegmentQuery( mShape, tocpv( a ), tocpv( b ), info );
 }
 
-cVect ShapeSegment::QueryHitPoint( const cVect start, const cVect end, const cpSegmentQueryInfo info ) {
+cVect ShapeSegment::queryHitPoint( const cVect start, const cVect end, const cpSegmentQueryInfo info ) {
 	return tovect( cpSegmentQueryHitPoint( tocpv( start ), tocpv( end ), info ) );
 }
 
-cpFloat ShapeSegment::QueryHitDist( const cVect start, const cVect end, const cpSegmentQueryInfo info ) {
+cpFloat ShapeSegment::queryHitDist( const cVect start, const cVect end, const cpSegmentQueryInfo info ) {
 	return cpSegmentQueryHitDist( tocpv( start ), tocpv( end ), info );
 }
 
-void ShapeSegment::Draw( Space * space ) {
+void ShapeSegment::draw( Space * space ) {
 	#ifdef PHYSICS_RENDERER_ENABLED
 	static const float pillVAR[] = {
 		 0.0000f,  1.0000f, 1.0f,
@@ -116,7 +116,7 @@ void ShapeSegment::Draw( Space * space ) {
 		GLi->vertexPointer( 3, GL_FLOAT, 0, pillVAR, pillVAR_count * sizeof(float) * 3 );
 
 		if( !seg->CP_PRIVATE(shape).sensor ) {
-			ColorA C = ColorForShape( mShape, space->GetSpace() );
+			ColorA C = colorForShape( mShape, space->getSpace() );
 
 			tcolors.assign( tcolors.size(), C );
 

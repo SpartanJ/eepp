@@ -1577,44 +1577,44 @@ void EETest::CreateJointAndBody() {
 void EETest::Demo1Create() {
 	CreateJointAndBody();
 
-	Shape::ResetShapeIdCounter();
+	Shape::resetShapeIdCounter();
 
 	mSpace = Physics::Space::New();
-	mSpace->Gravity( cVectNew( 0, 100 ) );
-	mSpace->SleepTimeThreshold( 0.5f );
+	mSpace->gravity( cVectNew( 0, 100 ) );
+	mSpace->sleepTimeThreshold( 0.5f );
 
-	Body *body, *statiBody = mSpace->StatiBody();
+	Body *body, *statiBody = mSpace->staticBody();
 	Shape * shape;
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, mWindow->getHeight() ), cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
+	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( 0, mWindow->getHeight() ), cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
-	shape->Layers( NOT_GRABABLE_MASK );
+	shape->layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( mWindow->getWidth(), 0 ), cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
+	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( mWindow->getWidth(), 0 ), cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
-	shape->Layers( NOT_GRABABLE_MASK );
+	shape->layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( 0, mWindow->getHeight() ), 0.0f ) );
+	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( 0, mWindow->getHeight() ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
-	shape->Layers( NOT_GRABABLE_MASK );
+	shape->layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( mWindow->getWidth(), 0 ), 0.0f ) );
+	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( mWindow->getWidth(), 0 ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
-	shape->Layers( NOT_GRABABLE_MASK );
+	shape->layers( NOT_GRABABLE_MASK );
 
 	Float hw = mWindow->getWidth() / 2;
 
 	for(int i=0; i<14; i++){
 		for(int j=0; j<=i; j++){
-			body = mSpace->AddBody( Body::New( 1.0f, Moment::ForBox( 1.0f, 30.0f, 30.0f ) ) );
-			body->Pos( cVectNew( hw + j * 32 - i * 16, 100 + i * 32 ) );
+			body = mSpace->addBody( Body::New( 1.0f, Moment::forBox( 1.0f, 30.0f, 30.0f ) ) );
+			body->pos( cVectNew( hw + j * 32 - i * 16, 100 + i * 32 ) );
 
 			//shape = mSpace->AddShape( ShapePolySprite::New( body, 30.f, 30.f, mBoxSprite ) );
-			shape = mSpace->AddShape( ShapePoly::New( body, 30.f, 30.f ) );
+			shape = mSpace->addShape( ShapePoly::New( body, 30.f, 30.f ) );
 			shape->e( 0.0f );
 			shape->u( 0.8f );
 		}
@@ -1622,11 +1622,11 @@ void EETest::Demo1Create() {
 
 	cpFloat radius = 15.0f;
 
-	body = mSpace->AddBody( Body::New( 10.0f, Moment::ForCircle( 10.0f, 0.0f, radius, cVectZero ) ) );
-	body->Pos( cVectNew( hw, mWindow->getHeight() - radius - 5 ) );
+	body = mSpace->addBody( Body::New( 10.0f, Moment::forCircle( 10.0f, 0.0f, radius, cVectZero ) ) );
+	body->pos( cVectNew( hw, mWindow->getHeight() - radius - 5 ) );
 
 	//shape = mSpace->AddShape( ShapeCircleSprite::New( body, radius, cVectZero, mCircleSprite ) );
-	shape = mSpace->AddShape( ShapeCircle::New( body, radius, cVectZero ) );
+	shape = mSpace->addShape( ShapeCircle::New( body, radius, cVectZero ) );
 	shape->e( 0.0f );
 	shape->u( 0.9f );
 }
@@ -1653,9 +1653,9 @@ void EETest::Demo1Destroy() {
 
 cpBool EETest::blockerBegin( Arbiter *arb, Space *space, void *unused ) {
 	Shape * a, * b;
-	arb->GetShapes( &a, &b );
+	arb->getShapes( &a, &b );
 
-	Emitter *emitter = (Emitter *) a->Data();
+	Emitter *emitter = (Emitter *) a->data();
 
 	emitter->blocked++;
 
@@ -1664,9 +1664,9 @@ cpBool EETest::blockerBegin( Arbiter *arb, Space *space, void *unused ) {
 
 void EETest::blockerSeparate( Arbiter *arb, Space * space, void *unused ) {
 	Shape * a, * b;
-	arb->GetShapes( &a, &b );
+	arb->getShapes( &a, &b );
 
-	Emitter *emitter = (Emitter *) a->Data();
+	Emitter *emitter = (Emitter *) a->data();
 
 	emitter->blocked--;
 }
@@ -1675,8 +1675,8 @@ void EETest::postStepRemove( Space *space, void * tshape, void * unused ) {
 	Shape * shape = reinterpret_cast<Shape*>( tshape );
 
 	#ifndef EE_PLATFORM_TOUCH
-	if ( NULL != mMouseJoint && ( mMouseJoint->A() == shape->Body() || mMouseJoint->B() == shape->Body() ) ) {
-		mSpace->RemoveConstraint( mMouseJoint );
+	if ( NULL != mMouseJoint && ( mMouseJoint->a() == shape->body() || mMouseJoint->b() == shape->body() ) ) {
+		mSpace->removeConstraint( mMouseJoint );
 		eeSAFE_DELETE( mMouseJoint );
 	}
 	#else
@@ -1688,20 +1688,20 @@ void EETest::postStepRemove( Space *space, void * tshape, void * unused ) {
 	}
 	#endif
 
-	mSpace->RemoveBody( shape->Body() );
-	mSpace->RemoveShape( shape );
+	mSpace->removeBody( shape->body() );
+	mSpace->removeShape( shape );
 	Shape::Free( shape, true );
 }
 
 cpBool EETest::catcherBarBegin(Arbiter *arb, Physics::Space *space, void *unused) {
 	Shape * a, * b;
-	arb->GetShapes( &a, &b );
+	arb->getShapes( &a, &b );
 
-	Emitter *emitter = (Emitter *) a->Data();
+	Emitter *emitter = (Emitter *) a->data();
 
 	emitter->queue++;
 
-	mSpace->AddPostStepCallback( cb::Make3( this, &EETest::postStepRemove ), b, NULL );
+	mSpace->addPostStepCallback( cb::Make3( this, &EETest::postStepRemove ), b, NULL );
 
 	return cpFalse;
 }
@@ -1709,55 +1709,55 @@ cpBool EETest::catcherBarBegin(Arbiter *arb, Physics::Space *space, void *unused
 void EETest::Demo2Create() {
 	CreateJointAndBody();
 
-	Shape::ResetShapeIdCounter();
+	Shape::resetShapeIdCounter();
 
 	mSpace = Physics::Space::New();
-	mSpace->Iterations( 10 );
-	mSpace->Gravity( cVectNew( 0, 100 ) );
+	mSpace->iterations( 10 );
+	mSpace->gravity( cVectNew( 0, 100 ) );
 
-	Body * statiBody = mSpace->StatiBody();
+	Body * statiBody = mSpace->staticBody();
 	Shape * shape;
 
 	emitterInstance.queue = 5;
 	emitterInstance.blocked = 0;
 	emitterInstance.position = cVectNew( mWindow->getWidth() / 2 , 150);
 
-	shape = mSpace->AddShape( ShapeCircle::New( statiBody, 15.0f, emitterInstance.position ) );
+	shape = mSpace->addShape( ShapeCircle::New( statiBody, 15.0f, emitterInstance.position ) );
 	shape->Sensor( 1 );
-	shape->CollisionType( BLOCKING_SENSOR_TYPE );
-	shape->Data( &emitterInstance );
+	shape->collisionType( BLOCKING_SENSOR_TYPE );
+	shape->data( &emitterInstance );
 
 	// Create our catch sensor to requeue the balls when they reach the bottom of the screen
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew(-4000, 600), cVectNew(4000, 600), 15.0f ) );
+	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew(-4000, 600), cVectNew(4000, 600), 15.0f ) );
 	shape->Sensor( 1 );
-	shape->CollisionType( CATCH_SENSOR_TYPE );
-	shape->Data( &emitterInstance );
+	shape->collisionType( CATCH_SENSOR_TYPE );
+	shape->data( &emitterInstance );
 
-	Space::cCollisionHandler handler;
+	Space::CollisionHandler handler;
 	handler.a			= BLOCKING_SENSOR_TYPE;
 	handler.b			= BALL_TYPE;
 	handler.begin		= cb::Make3( this, &EETest::blockerBegin );
 	handler.separate	= cb::Make3( this, &EETest::blockerSeparate );
-	mSpace->AddCollisionHandler( handler );
+	mSpace->addCollisionHandler( handler );
 
 	handler.Reset(); // Reset all the values and the callbacks ( set the callbacks as !IsSet()
 
 	handler.a			= CATCH_SENSOR_TYPE;
 	handler.b			= BALL_TYPE;
 	handler.begin		= cb::Make3( this, &EETest::catcherBarBegin );
-	mSpace->AddCollisionHandler( handler );
+	mSpace->addCollisionHandler( handler );
 }
 
 void EETest::Demo2Update() {
 	if( !emitterInstance.blocked && emitterInstance.queue ){
 		emitterInstance.queue--;
 
-		Body * body = mSpace->AddBody( Body::New( 1.0f, Moment::ForCircle(1.0f, 15.0f, 0.0f, cVectZero ) ) );
-		body->Pos( emitterInstance.position );
-		body->Vel( cVectNew( Math::randf(-1,1), Math::randf(-1,1) ) * (cpFloat)100 );
+		Body * body = mSpace->addBody( Body::New( 1.0f, Moment::forCircle(1.0f, 15.0f, 0.0f, cVectZero ) ) );
+		body->pos( emitterInstance.position );
+		body->vel( cVectNew( Math::randf(-1,1), Math::randf(-1,1) ) * (cpFloat)100 );
 
-		Shape *shape = mSpace->AddShape( ShapeCircle::New( body, 15.0f, cVectZero ) );
-		shape->CollisionType( BALL_TYPE );
+		Shape *shape = mSpace->addShape( ShapeCircle::New( body, 15.0f, cVectZero ) );
+		shape->collisionType( BALL_TYPE );
 	}
 }
 
@@ -1780,7 +1780,7 @@ void EETest::ChangeDemo( Uint32 num ) {
 void EETest::PhysicsCreate() {
 	PhysicsManager::createSingleton();
 	PhysicsManager * PM = PhysicsManager::instance();
-	PhysicsManager::DrawSpaceOptions * DSO = PM->GetDrawOptions();
+	PhysicsManager::DrawSpaceOptions * DSO = PM->getDrawOptions();
 
 	DSO->DrawBBs			= false;
 	DSO->DrawShapes			= true;
@@ -1809,25 +1809,25 @@ void EETest::PhysicsUpdate() {
 	#ifndef EE_PLATFORM_TOUCH
 	mMousePoint = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
 	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
-	mMouseBody->Pos( newPoint );
-	mMouseBody->Vel( ( newPoint - mMousePoint_last ) * (cpFloat)mWindow->FPS() );
+	mMouseBody->pos( newPoint );
+	mMouseBody->vel( ( newPoint - mMousePoint_last ) * (cpFloat)mWindow->FPS() );
 	mMousePoint_last = newPoint;
 
 	if ( KM->mouseLeftPressed() ) {
 		if ( NULL == mMouseJoint ) {
 			cVect point = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
 
-			Shape * shape = mSpace->PointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
+			Shape * shape = mSpace->pointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
 
 			if( NULL != shape ){
-				mMouseJoint = eeNew( PivotJoint, ( mMouseBody, shape->Body(), cVectZero, shape->Body()->World2Local( point ) ) );
+				mMouseJoint = eeNew( PivotJoint, ( mMouseBody, shape->body(), cVectZero, shape->body()->world2Local( point ) ) );
 
-				mMouseJoint->MaxForce( 50000.0f );
-				mSpace->AddConstraint( mMouseJoint );
+				mMouseJoint->maxForce( 50000.0f );
+				mSpace->addConstraint( mMouseJoint );
 			}
 		}
 	} else if ( NULL != mMouseJoint ) {
-		mSpace->RemoveConstraint( mMouseJoint );
+		mSpace->removeConstraint( mMouseJoint );
 		eeSAFE_DELETE( mMouseJoint );
 	}
 	#else
@@ -1860,8 +1860,8 @@ void EETest::PhysicsUpdate() {
 	#endif
 
 	mDemo[ mCurDemo ].update();
-	mSpace->Update();
-	mSpace->Draw();
+	mSpace->update();
+	mSpace->draw();
 }
 
 void EETest::PhysicsDestroy() {

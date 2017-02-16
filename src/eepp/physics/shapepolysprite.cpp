@@ -19,7 +19,7 @@ ShapePolySprite::ShapePolySprite( Physics::Body * body, int numVerts, cVect *ver
 	mSprite( Sprite ),
 	mSpriteAutoDelete( AutoDeleteSprite )
 {
-	OffsetSet( Centroid( numVerts, verts ) );
+	offsetSet( centroid( numVerts, verts ) );
 }
 
 ShapePolySprite::ShapePolySprite( Physics::Body * body, cpFloat width, cpFloat height, Sprite * Sprite, bool AutoDeleteSprite ) :
@@ -28,7 +28,7 @@ ShapePolySprite::ShapePolySprite( Physics::Body * body, cpFloat width, cpFloat h
 	mSpriteAutoDelete( AutoDeleteSprite )
 {
 	mSprite->size( Sizef( width, height ) );
-	OffsetSet( cVectNew( width / 2, height / 2 ) );
+	offsetSet( cVectNew( width / 2, height / 2 ) );
 }
 
 ShapePolySprite::~ShapePolySprite() {
@@ -36,22 +36,22 @@ ShapePolySprite::~ShapePolySprite() {
 		eeSAFE_DELETE( mSprite );
 }
 
-void ShapePolySprite::Draw( Space * space ) {
-	cVect Pos = Body()->Pos();
+void ShapePolySprite::draw( Space * space ) {
+	cVect Pos = body()->pos();
 
 	mSprite->offset( mOffset );
 	mSprite->position( Pos.x, Pos.y );
-	mSprite->angle( Body()->AngleDeg() );
+	mSprite->angle( body()->angleDeg() );
 	mSprite->draw();
 }
 
-void ShapePolySprite::OffsetSet( cVect center ) {
+void ShapePolySprite::offsetSet( cVect center ) {
 	cVect myCenter = cVectNew( ( mSprite->size().x / 2 ), ( mSprite->size().y / 2 ) );
 
 	mOffset = Vector2i(  (Int32)( -myCenter.x + ( center.x - myCenter.x ) ) , (Int32)( -myCenter.y + ( center.y - myCenter.y ) ) );
 }
 
-Sprite * ShapePolySprite::GetSprite() const {
+Sprite * ShapePolySprite::getSprite() const {
 	return mSprite;
 }
 

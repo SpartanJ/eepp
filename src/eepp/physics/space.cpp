@@ -24,8 +24,8 @@ Space::Space() :
 	mSpace->data = (void*)this;
 	mStatiBody = cpNew( Body, ( mSpace->staticBody ) );
 
-	PhysicsManager::instance()->RemoveBodyFree( mStatiBody );
-	PhysicsManager::instance()->AddSpace( this );
+	PhysicsManager::instance()->removeBodyFree( mStatiBody );
+	PhysicsManager::instance()->addSpace( this );
 }
 
 Space::~Space() {	
@@ -47,198 +47,198 @@ Space::~Space() {
 
 	cpSAFE_DELETE( mStatiBody );
 
-	PhysicsManager::instance()->RemoveSpace( this );
+	PhysicsManager::instance()->removeSpace( this );
 }
 
-void Space::Data( void * data ) {
+void Space::data( void * data ) {
 	mData = data;
 }
 
-void * Space::Data() const {
+void * Space::data() const {
 	return mData;
 }
 
-void Space::Step( const cpFloat& dt ) {
+void Space::step( const cpFloat& dt ) {
 	cpSpaceStep( mSpace, dt );
 }
 
-void Space::Update() {
+void Space::update() {
 	#ifdef PHYSICS_RENDERER_ENABLED
-	Step( Window::Engine::instance()->elapsed().asSeconds() );
+	step( Window::Engine::instance()->elapsed().asSeconds() );
 	#else
 	Step( 1 / 60 );
 	#endif
 }
 
-const int& Space::Iterations() const {
+const int& Space::iterations() const {
 	return mSpace->iterations;
 }
 
-void Space::Iterations( const int& iterations ) {
+void Space::iterations( const int& iterations ) {
 	mSpace->iterations = iterations;
 }
 
-cVect Space::Gravity() const {
+cVect Space::gravity() const {
 	return tovect( mSpace->gravity );
 }
 
-void Space::Gravity( const cVect& gravity ) {
+void Space::gravity( const cVect& gravity ) {
 	mSpace->gravity = tocpv( gravity );
 }
 
-const cpFloat& Space::Damping() const {
+const cpFloat& Space::damping() const {
 	return mSpace->damping;
 }
 
-void Space::Damping( const cpFloat& damping ) {
+void Space::damping( const cpFloat& damping ) {
 	mSpace->damping = damping;
 }
 
-const cpFloat& Space::IdleSpeedThreshold() const {
+const cpFloat& Space::idleSpeedThreshold() const {
 	return mSpace->idleSpeedThreshold;
 }
 
-void Space::IdleSpeedThreshold( const cpFloat& idleSpeedThreshold ) {
+void Space::idleSpeedThreshold( const cpFloat& idleSpeedThreshold ) {
 	mSpace->idleSpeedThreshold = idleSpeedThreshold;
 }
 
-const cpFloat& Space::SleepTimeThreshold() const {
+const cpFloat& Space::sleepTimeThreshold() const {
 	return mSpace->sleepTimeThreshold;
 }
 
-void Space::SleepTimeThreshold( const cpFloat& sleepTimeThreshold ) {
+void Space::sleepTimeThreshold( const cpFloat& sleepTimeThreshold ) {
 	mSpace->sleepTimeThreshold = sleepTimeThreshold;
 }
 
-void Space::CollisionSlop( cpFloat slop ) {
+void Space::collisionSlop( cpFloat slop ) {
 	mSpace->collisionSlop = slop;
 }
 
-cpFloat Space::CollisionSlop() const {
+cpFloat Space::collisionSlop() const {
 	return mSpace->collisionSlop;
 }
 
-void Space::CollisionBias( cpFloat bias ) {
+void Space::collisionBias( cpFloat bias ) {
 	mSpace->collisionBias = bias;
 }
 
-cpFloat Space::CollisionBias() const {
+cpFloat Space::collisionBias() const {
 	return mSpace->collisionBias;
 }
 
-cpTimestamp Space::CollisionPersistence() {
+cpTimestamp Space::collisionPersistence() {
 	return cpSpaceGetCollisionPersistence( mSpace );
 }
 
-void Space::CollisionPersistence( cpTimestamp value ) {
+void Space::collisionPersistence( cpTimestamp value ) {
 	cpSpaceSetCollisionPersistence( mSpace, value );
 }
 
-bool Space::EnableContactGraph() {
+bool Space::enableContactGraph() {
 	return cpTrue == cpSpaceGetEnableContactGraph( mSpace );
 }
 
-void Space::EnableContactGraph( bool value ) {
+void Space::enableContactGraph( bool value ) {
 	cpSpaceSetEnableContactGraph( mSpace, value );
 }
 
-Body * Space::StatiBody() const {
+Body * Space::staticBody() const {
 	return mStatiBody;
 }
 
-bool Space::Contains( Shape * shape ) {
-	return cpTrue == cpSpaceContainsShape( mSpace, shape->GetShape() );
+bool Space::contains( Shape * shape ) {
+	return cpTrue == cpSpaceContainsShape( mSpace, shape->getShape() );
 }
 
-bool Space::Contains( Body * body ) {
-	return cpTrue == cpSpaceContainsBody( mSpace, body->GetBody() );
+bool Space::contains( Body * body ) {
+	return cpTrue == cpSpaceContainsBody( mSpace, body->getBody() );
 }
 
-bool Space::Contains( Constraint * constraint ) {
-	return cpTrue == cpSpaceContainsConstraint( mSpace, constraint->GetConstraint() );
+bool Space::contains( Constraint * constraint ) {
+	return cpTrue == cpSpaceContainsConstraint( mSpace, constraint->getConstraint() );
 }
 
-Shape * Space::AddShape( Shape * shape ) {
-	cpSpaceAddShape( mSpace, shape->GetShape() );
+Shape * Space::addShape( Shape * shape ) {
+	cpSpaceAddShape( mSpace, shape->getShape() );
 
 	mShapes.push_back( shape );
 
-	PhysicsManager::instance()->RemoveShapeFree( shape );
+	PhysicsManager::instance()->removeShapeFree( shape );
 
 	return shape;
 }
 
-Shape * Space::AddStatiShape( Shape * shape ) {
-	cpSpaceAddStaticShape( mSpace, shape->GetShape() );
+Shape * Space::addStaticShape( Shape * shape ) {
+	cpSpaceAddStaticShape( mSpace, shape->getShape() );
 
 	mShapes.push_back( shape );
 
-	PhysicsManager::instance()->RemoveShapeFree( shape );
+	PhysicsManager::instance()->removeShapeFree( shape );
 
 	return shape;
 }
 
-Body * Space::AddBody( Body * body ) {
-	cpSpaceAddBody( mSpace, body->GetBody() );
+Body * Space::addBody( Body * body ) {
+	cpSpaceAddBody( mSpace, body->getBody() );
 
 	mBodys.push_back( body );
 
-	PhysicsManager::instance()->RemoveBodyFree( body );
+	PhysicsManager::instance()->removeBodyFree( body );
 
 	return body;
 }
 
-Constraint * Space::AddConstraint( Constraint * constraint ) {
-	cpSpaceAddConstraint( mSpace, constraint->GetConstraint() );
+Constraint * Space::addConstraint( Constraint * constraint ) {
+	cpSpaceAddConstraint( mSpace, constraint->getConstraint() );
 
 	mConstraints.push_back( constraint );
 
-	PhysicsManager::instance()->RemoveConstraintFree( constraint );
+	PhysicsManager::instance()->removeConstraintFree( constraint );
 
 	return constraint;
 }
 
-void Space::RemoveShape( Shape * shape ) {
+void Space::removeShape( Shape * shape ) {
 	if ( NULL != shape ) {
-		cpSpaceRemoveShape( mSpace, shape->GetShape() );
+		cpSpaceRemoveShape( mSpace, shape->getShape() );
 
 		mShapes.remove( shape );
 
-		PhysicsManager::instance()->AddShapeFree( shape );
+		PhysicsManager::instance()->addShapeFree( shape );
 	}
 }
 
-void Space::RemoveStatiShape( Shape * shape ) {
+void Space::removeStatiShape( Shape * shape ) {
 	if ( NULL != shape ) {
-		cpSpaceRemoveStaticShape( mSpace, shape->GetShape() );
+		cpSpaceRemoveStaticShape( mSpace, shape->getShape() );
 
 		mShapes.remove( shape );
 
-		PhysicsManager::instance()->AddShapeFree( shape );
+		PhysicsManager::instance()->addShapeFree( shape );
 	}
 }
 
-void Space::RemoveBody( Body * body ) {
+void Space::removeBody( Body * body ) {
 	if ( NULL != body ) {
-		cpSpaceRemoveBody( mSpace, body->GetBody() );
+		cpSpaceRemoveBody( mSpace, body->getBody() );
 
 		mBodys.remove( body );
 
-		PhysicsManager::instance()->RemoveBodyFree( body );
+		PhysicsManager::instance()->removeBodyFree( body );
 	}
 }
 
-void Space::RemoveConstraint( Constraint * constraint ) {
+void Space::removeConstraint( Constraint * constraint ) {
 	if ( NULL != constraint ) {
-		cpSpaceRemoveConstraint( mSpace, constraint->GetConstraint() );
+		cpSpaceRemoveConstraint( mSpace, constraint->getConstraint() );
 
 		mConstraints.remove( constraint );
 
-		PhysicsManager::instance()->AddConstraintFree( constraint );
+		PhysicsManager::instance()->addConstraintFree( constraint );
 	}
 }
 
-Shape * Space::PointQueryFirst( cVect point, cpLayers layers, cpGroup group ) {
+Shape * Space::pointQueryFirst( cVect point, cpLayers layers, cpGroup group ) {
 	cpShape * shape = cpSpacePointQueryFirst( mSpace, tocpv( point ), layers, group );
 
 	if ( NULL != shape ) {
@@ -248,7 +248,7 @@ Shape * Space::PointQueryFirst( cVect point, cpLayers layers, cpGroup group ) {
 	return NULL;
 }
 
-Shape * Space::SegmentQueryFirst( cVect start, cVect end, cpLayers layers, cpGroup group, cpSegmentQueryInfo * out ) {
+Shape * Space::segmentQueryFirst( cVect start, cVect end, cpLayers layers, cpGroup group, cpSegmentQueryInfo * out ) {
 	cpShape * shape = cpSpaceSegmentQueryFirst( mSpace, tocpv( start ), tocpv( end ), layers, group, out );
 
 	if ( NULL != shape ) {
@@ -258,39 +258,39 @@ Shape * Space::SegmentQueryFirst( cVect start, cVect end, cpLayers layers, cpGro
 	return NULL;
 }
 
-cpSpace * Space::GetSpace() const {
+cpSpace * Space::getSpace() const {
 	return mSpace;
 }
 
-void Space::ActivateShapesTouchingShape( Shape * shape ) {
-	cpSpaceActivateShapesTouchingShape( mSpace, shape->GetShape() );
+void Space::activateShapesTouchingShape( Shape * shape ) {
+	cpSpaceActivateShapesTouchingShape( mSpace, shape->getShape() );
 }
 
 #ifdef PHYSICS_RENDERER_ENABLED
 static void drawObject( cpShape * shape, cpSpace * space ) {
-	reinterpret_cast<Shape*> ( shape->data )->Draw( reinterpret_cast<Space*>( space->data ) );
+	reinterpret_cast<Shape*> ( shape->data )->draw( reinterpret_cast<Space*>( space->data ) );
 }
 
 static void drawObjectBorder( cpShape * shape, cpSpace * space ) {
-	reinterpret_cast<Shape*> ( shape->data )->DrawBorder( reinterpret_cast<Space*>( space->data ) );
+	reinterpret_cast<Shape*> ( shape->data )->drawBorder( reinterpret_cast<Space*>( space->data ) );
 }
 
 static void drawBB( cpShape *shape, void * unused ) {
-	reinterpret_cast<Shape*> ( shape->data )->DrawBB();
+	reinterpret_cast<Shape*> ( shape->data )->drawBB();
 }
 
 static void drawConstraint( cpConstraint *constraint ) {
-	reinterpret_cast<Constraint*> ( constraint->data )->Draw();
+	reinterpret_cast<Constraint*> ( constraint->data )->draw();
 }
 #endif
 
-void Space::Draw() {
+void Space::draw() {
 	#ifdef PHYSICS_RENDERER_ENABLED
 
 	BatchRenderer * BR = GlobalBatchRenderer::instance();
 	BR->setBlendMode( ALPHA_NORMAL );
 
-	PhysicsManager::DrawSpaceOptions * options = PhysicsManager::instance()->GetDrawOptions();
+	PhysicsManager::DrawSpaceOptions * options = PhysicsManager::instance()->getDrawOptions();
 
 	cpFloat lw = BR->getLineWidth();
 	cpFloat ps = BR->getPointSize();
@@ -368,60 +368,60 @@ static cpBool RecieverCollisionBeginFunc( cpArbiter * arb, cpSpace * space, void
 	Space * tspace = reinterpret_cast<Space*>( space->data );
 	Arbiter tarb( arb );
 
-	return tspace->OnCollisionBegin( &tarb, data );
+	return tspace->onCollisionBegin( &tarb, data );
 }
 
 static cpBool RecieverCollisionPreSolveFunc( cpArbiter * arb, cpSpace * space, void * data ) {
 	Space * tspace = reinterpret_cast<Space*>( space->data );
 	Arbiter tarb( arb );
 
-	return tspace->OnCollisionPreSolve( &tarb, data );
+	return tspace->onCollisionPreSolve( &tarb, data );
 }
 
 static void RecieverCollisionPostSolve( cpArbiter * arb, cpSpace * space, void * data ) {
 	Space * tspace = reinterpret_cast<Space*>( space->data );
 	Arbiter tarb( arb );
 
-	tspace->OnCollisionPostSolve( &tarb, data );
+	tspace->onCollisionPostSolve( &tarb, data );
 }
 
 static void RecieverCollisionSeparateFunc( cpArbiter * arb, cpSpace * space, void * data ) {
 	Space * tspace = reinterpret_cast<Space*>( space->data );
 	Arbiter tarb( arb );
 
-	tspace->OnCollisionSeparate( &tarb, data );
+	tspace->onCollisionSeparate( &tarb, data );
 }
 
 static void RecieverPostStepCallback( cpSpace * space, void * obj, void * data ) {
 	Space * tspace = reinterpret_cast<Space*>( space->data );
 
-	tspace->OnPostStepCallback( obj, data );
+	tspace->onPostStepCallback( obj, data );
 }
 
 static void RecieverBBQueryFunc( cpShape * shape, void * data ) {
-	Space::cBBQuery * query = reinterpret_cast<Space::cBBQuery*>( data );
+	Space::BBQuery * query = reinterpret_cast<Space::BBQuery*>( data );
 
-	query->Space->OnBBQuery( reinterpret_cast<Shape*>( shape->data ), query );
+	query->Space->onBBQuery( reinterpret_cast<Shape*>( shape->data ), query );
 }
 
 static void RecieverSegmentQueryFunc( cpShape *shape, cpFloat t, cpVect n, void * data ) {
-	Space::cSegmentQuery * query = reinterpret_cast<Space::cSegmentQuery*>( data );
+	Space::SegmentQuery * query = reinterpret_cast<Space::SegmentQuery*>( data );
 
-	query->Space->OnSegmentQuery( reinterpret_cast<Shape*>( shape->data ), t, tovect( n ), query );
+	query->Space->onSegmentQuery( reinterpret_cast<Shape*>( shape->data ), t, tovect( n ), query );
 }
 
 static void RecieverPointQueryFunc( cpShape * shape, void * data ) {
-	Space::cPointQuery * query = reinterpret_cast<Space::cPointQuery*>( data );
+	Space::PointQuery * query = reinterpret_cast<Space::PointQuery*>( data );
 
-	query->Space->OnPointQuery( reinterpret_cast<Shape*>( shape->data ), query );
+	query->Space->onPointQuery( reinterpret_cast<Shape*>( shape->data ), query );
 }
 
-cpBool Space::OnCollisionBegin( Arbiter * arb, void * data ) {
+cpBool Space::onCollisionBegin( Arbiter * arb, void * data ) {
 	cpHashValue hash = (cpHashValue)data;
 
 	//if ( NULL != data ) {
-		std::map< cpHashValue, cCollisionHandler >::iterator it = mCollisions.find( hash );
-		cCollisionHandler handler = static_cast<cCollisionHandler>( it->second );
+		std::map< cpHashValue, CollisionHandler >::iterator it = mCollisions.find( hash );
+		CollisionHandler handler = static_cast<CollisionHandler>( it->second );
 
 		if ( it != mCollisions.end() && handler.begin.IsSet() ) {
 			return handler.begin( arb, this, handler.data );
@@ -435,12 +435,12 @@ cpBool Space::OnCollisionBegin( Arbiter * arb, void * data ) {
 	return 1;
 }
 
-cpBool Space::OnCollisionPreSolve( Arbiter * arb, void * data ) {
+cpBool Space::onCollisionPreSolve( Arbiter * arb, void * data ) {
 	cpHashValue hash = (cpHashValue)data;
 
 	//if ( NULL != data ) {
-		std::map< cpHashValue, cCollisionHandler >::iterator it = mCollisions.find( hash );
-		cCollisionHandler handler = static_cast<cCollisionHandler>( it->second );
+		std::map< cpHashValue, CollisionHandler >::iterator it = mCollisions.find( hash );
+		CollisionHandler handler = static_cast<CollisionHandler>( it->second );
 
 		if ( it != mCollisions.end() && handler.preSolve.IsSet() ) {
 			return handler.preSolve( arb, this, handler.data );
@@ -454,12 +454,12 @@ cpBool Space::OnCollisionPreSolve( Arbiter * arb, void * data ) {
 	return 1;
 }
 
-void Space::OnCollisionPostSolve( Arbiter * arb, void * data ) {
+void Space::onCollisionPostSolve( Arbiter * arb, void * data ) {
 	cpHashValue hash = (cpHashValue)data;
 
 	//if ( NULL != data ) {
-		std::map< cpHashValue, cCollisionHandler >::iterator it = mCollisions.find( hash );
-		cCollisionHandler handler = static_cast<cCollisionHandler>( it->second );
+		std::map< cpHashValue, CollisionHandler >::iterator it = mCollisions.find( hash );
+		CollisionHandler handler = static_cast<CollisionHandler>( it->second );
 
 		if ( it != mCollisions.end() && handler.postSolve.IsSet() ) {
 			handler.postSolve( arb, this, handler.data );
@@ -472,12 +472,12 @@ void Space::OnCollisionPostSolve( Arbiter * arb, void * data ) {
 	}
 }
 
-void Space::OnCollisionSeparate( Arbiter * arb, void * data ) {
+void Space::onCollisionSeparate( Arbiter * arb, void * data ) {
 	cpHashValue hash = (cpHashValue)data;
 
 	//if ( NULL != data ) {
-		std::map< cpHashValue, cCollisionHandler >::iterator it = mCollisions.find( hash );
-		cCollisionHandler handler = static_cast<cCollisionHandler>( it->second );
+		std::map< cpHashValue, CollisionHandler >::iterator it = mCollisions.find( hash );
+		CollisionHandler handler = static_cast<CollisionHandler>( it->second );
 
 		if ( it != mCollisions.end() && handler.separate.IsSet() ) {
 			handler.separate( arb, this, handler.data );
@@ -490,8 +490,8 @@ void Space::OnCollisionSeparate( Arbiter * arb, void * data ) {
 	}
 }
 
-void Space::OnPostStepCallback( void * obj, void * data ) {
-	cPostStepCallback * Cb = reinterpret_cast<cPostStepCallback *> ( data );
+void Space::onPostStepCallback( void * obj, void * data ) {
+	PostStepCallbackCont * Cb = reinterpret_cast<PostStepCallbackCont *> ( data );
 
 	if ( Cb->Callback.IsSet() ) {
 		Cb->Callback( this, obj, Cb->Data );
@@ -501,25 +501,25 @@ void Space::OnPostStepCallback( void * obj, void * data ) {
 	cpSAFE_DELETE( Cb );
 }
 
-void Space::OnBBQuery( Shape * shape, cBBQuery * query ) {
+void Space::onBBQuery( Shape * shape, BBQuery * query ) {
 	if ( query->Func.IsSet() ) {
 		query->Func( shape, query->Data );
 	}
 }
 
-void Space::OnSegmentQuery( Shape * shape, cpFloat t, cVect n , cSegmentQuery * query ) {
+void Space::onSegmentQuery( Shape * shape, cpFloat t, cVect n , SegmentQuery * query ) {
 	if ( query->Func.IsSet() ) {
 		query->Func( shape, t, n, query->Data );
 	}
 }
 
-void Space::OnPointQuery( Shape * shape, cPointQuery * query ) {
+void Space::onPointQuery( Shape * shape, PointQuery * query ) {
 	if ( query->Func.IsSet() ) {
 		query->Func( shape, query->Data );
 	}
 }
 
-void Space::AddCollisionHandler( const cCollisionHandler& handler ) {
+void Space::addCollisionHandler( const CollisionHandler& handler ) {
 	cpHashValue hash = CP_HASH_PAIR( handler.a, handler.b );
 
 	cpCollisionBeginFunc		f1 = ( handler.begin.IsSet() )		?	&RecieverCollisionBeginFunc		: NULL;
@@ -533,13 +533,13 @@ void Space::AddCollisionHandler( const cCollisionHandler& handler ) {
 	mCollisions[ hash ] = handler;
 }
 
-void Space::RemoveCollisionHandler( cpCollisionType a, cpCollisionType b ) {
+void Space::removeCollisionHandler( cpCollisionType a, cpCollisionType b ) {
 	cpSpaceRemoveCollisionHandler( mSpace, a, b );
 
 	mCollisions.erase( CP_HASH_PAIR( a, b ) );
 }
 
-void Space::SetDefaultCollisionHandler( const cCollisionHandler& handler ) {
+void Space::setDefaultCollisionHandler( const CollisionHandler& handler ) {
 	cpCollisionBeginFunc		f1 = ( handler.begin.IsSet() )		?	&RecieverCollisionBeginFunc		: NULL;
 	cpCollisionPreSolveFunc		f2 = ( handler.preSolve.IsSet() )	?	&RecieverCollisionPreSolveFunc	: NULL;
 	cpCollisionPostSolveFunc	f3 = ( handler.postSolve.IsSet() )	?	&RecieverCollisionPostSolve		: NULL;
@@ -550,8 +550,8 @@ void Space::SetDefaultCollisionHandler( const cCollisionHandler& handler ) {
 	mCollisionsDefault	= handler;
 }
 
-void Space::AddPostStepCallback( PostStepCallback postStep, void * obj, void * data ) {
-	cPostStepCallback * PostStepCb	= cpNew( cPostStepCallback, () );
+void Space::addPostStepCallback(PostStepCallback postStep, void * obj, void * data ) {
+	PostStepCallbackCont * PostStepCb	= cpNew( PostStepCallbackCont, () );
 	PostStepCb->Callback			= postStep,
 	PostStepCb->Data				= data;
 
@@ -559,8 +559,8 @@ void Space::AddPostStepCallback( PostStepCallback postStep, void * obj, void * d
 	mPostStepCallbacks.push_back( PostStepCb );	
 }
 
-void Space::BBQuery( cBB bb, cpLayers layers, cpGroup group, BBQueryFunc func, void * data ) {
-	cBBQuery tBBQuery;
+void Space::bbQuery( cBB bb, cpLayers layers, cpGroup group, BBQueryFunc func, void * data ) {
+	BBQuery tBBQuery;
 	tBBQuery.Space	= this;
 	tBBQuery.Data	= data;
 	tBBQuery.Func	= func;
@@ -568,8 +568,8 @@ void Space::BBQuery( cBB bb, cpLayers layers, cpGroup group, BBQueryFunc func, v
 	cpSpaceBBQuery( mSpace, tocpbb( bb ), layers, group, &RecieverBBQueryFunc, reinterpret_cast<void*>( &tBBQuery ) );
 }
 
-void Space::SegmentQuery( cVect start, cVect end, cpLayers layers, cpGroup group, SegmentQueryFunc func, void * data ) {
-	cSegmentQuery tSegmentQuery;
+void Space::segmentQuery( cVect start, cVect end, cpLayers layers, cpGroup group, SegmentQueryFunc func, void * data ) {
+	SegmentQuery tSegmentQuery;
 
 	tSegmentQuery.Space	= this;
 	tSegmentQuery.Data	= data;
@@ -578,8 +578,8 @@ void Space::SegmentQuery( cVect start, cVect end, cpLayers layers, cpGroup group
 	cpSpaceSegmentQuery( mSpace, tocpv( start ), tocpv( end ), layers, group, &RecieverSegmentQueryFunc, reinterpret_cast<void*>( &tSegmentQuery ) );
 }
 
-void Space::PointQuery( cVect point, cpLayers layers, cpGroup group, PointQueryFunc func, void * data ) {
-	cPointQuery tPointQuery;
+void Space::pointQuery( cVect point, cpLayers layers, cpGroup group, PointQueryFunc func, void * data ) {
+	PointQuery tPointQuery;
 	tPointQuery.Space	= this;
 	tPointQuery.Data	= data;
 	tPointQuery.Func	= func;
@@ -587,33 +587,33 @@ void Space::PointQuery( cVect point, cpLayers layers, cpGroup group, PointQueryF
 	cpSpacePointQuery( mSpace, tocpv( point ), layers, group, &RecieverPointQueryFunc, reinterpret_cast<void*>( &tPointQuery ) );
 }
 
-void Space::ReindexShape( Shape * shape ) {
-	cpSpaceReindexShape( mSpace, shape->GetShape() );
+void Space::reindexShape( Shape * shape ) {
+	cpSpaceReindexShape( mSpace, shape->getShape() );
 }
 
-void Space::ReindexShapesForBody( Body *body ) {
-	cpSpaceReindexShapesForBody( mSpace, body->GetBody() );
+void Space::reindexShapesForBody( Body *body ) {
+	cpSpaceReindexShapesForBody( mSpace, body->getBody() );
 }
 
-void Space::ReindexStatic() {
+void Space::reindexStatic() {
 	cpSpaceReindexStatic( mSpace );
 }
 
-void Space::UseSpatialHash( cpFloat dim, int count ) {
+void Space::useSpatialHash( cpFloat dim, int count ) {
 	cpSpaceUseSpatialHash( mSpace, dim, count );
 }
 
 static void SpaceBodyIteratorFunc( cpBody * body, void *data ) {
 	Space::BodyIterator * it = reinterpret_cast<Space::BodyIterator *> ( data );
-	it->Space->OnEachBody( reinterpret_cast<Body*>( body->data ), it );
+	it->Space->onEachBody( reinterpret_cast<Body*>( body->data ), it );
 }
 
-void Space::EachBody( BodyIteratorFunc Func, void * data ) {
+void Space::eachBody( BodyIteratorFunc Func, void * data ) {
 	BodyIterator it( this, data, Func );
 	cpSpaceEachBody( mSpace, &SpaceBodyIteratorFunc, (void*)&it );
 }
 
-void Space::OnEachBody( Body * Body, BodyIterator * it ) {
+void Space::onEachBody( Body * Body, BodyIterator * it ) {
 	if ( it->Func.IsSet() ) {
 		it->Func( it->Space, Body, it->Data );
 	}
@@ -621,26 +621,26 @@ void Space::OnEachBody( Body * Body, BodyIterator * it ) {
 
 static void SpaceShapeIteratorFunc ( cpShape * shape, void * data ) {
 	Space::ShapeIterator * it = reinterpret_cast<Space::ShapeIterator *> ( data );
-	it->Space->OnEachShape( reinterpret_cast<Shape*>( shape->data ), it );
+	it->Space->onEachShape( reinterpret_cast<Shape*>( shape->data ), it );
 }
 
-void Space::EachShape( ShapeIteratorFunc Func, void * data ) {
+void Space::eachShape( ShapeIteratorFunc Func, void * data ) {
 	ShapeIterator it( this, data, Func );
 	cpSpaceEachShape( mSpace, &SpaceShapeIteratorFunc, (void*)&it );
 }
 
-void Space::OnEachShape( Shape * Shape, ShapeIterator * it ) {
+void Space::onEachShape( Shape * Shape, ShapeIterator * it ) {
 	if ( it->Func.IsSet() ) {
 		it->Func( it->Space, Shape, it->Data );
 	}
 }
 
-void Space::ConvertBodyToDynamic( Body * body, cpFloat mass, cpFloat moment ) {
-	cpSpaceConvertBodyToDynamic( mSpace, body->GetBody(), mass, moment );
+void Space::convertBodyToDynamic( Body * body, cpFloat mass, cpFloat moment ) {
+	cpSpaceConvertBodyToDynamic( mSpace, body->getBody(), mass, moment );
 }
 
-void Space::ConvertBodyToStatic(Body * body ) {
-	cpSpaceConvertBodyToStatic( mSpace, body->GetBody() );
+void Space::convertBodyToStatic(Body * body ) {
+	cpSpaceConvertBodyToStatic( mSpace, body->getBody() );
 }
 
 CP_NAMESPACE_END

@@ -20,18 +20,18 @@ class CP_API ShapeCircleSprite : public ShapeCircle {
 
 		virtual ~ShapeCircleSprite();
 
-		virtual void Draw( Space * space );
+		virtual void draw( Space * space );
 
-		virtual void Radius( const cpFloat& radius );
+		virtual void radius( const cpFloat& radius );
 
-		virtual void Offset( const cVect &offset );
+		virtual void offset( const cVect &offset );
 
-		Sprite * GetSprite() const;
+		Sprite * getSprite() const;
 	protected:
 		Sprite *	mSprite;
 		bool		mSpriteAutoDelete;
 
-		void OffsetSet();
+		void offsetSet();
 };
 
 CP_NAMESPACE_END

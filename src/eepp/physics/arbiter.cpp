@@ -6,19 +6,19 @@ Arbiter::Arbiter( cpArbiter * arbiter ) {
 	mArbiter = arbiter;
 }
 
-cVect Arbiter::TotalImpulse() {
+cVect Arbiter::totalImpulse() {
 	return tovect( cpArbiterTotalImpulse( mArbiter ) );
 }
 
-cVect Arbiter::TotalImpulseWithFriction() {
+cVect Arbiter::totalImpulseWithFriction() {
 	return tovect( cpArbiterTotalImpulseWithFriction( mArbiter ) );
 }
 
-void Arbiter::Ignore() {
+void Arbiter::ignore() {
 	return cpArbiterIgnore( mArbiter );
 }
 
-void Arbiter::GetShapes( Shape ** a, Shape ** b ) {
+void Arbiter::getShapes( Shape ** a, Shape ** b ) {
 	cpShape * tA;
 	cpShape * tB;
 
@@ -35,7 +35,7 @@ void Arbiter::GetShapes( Shape ** a, Shape ** b ) {
 		*b = NULL;
 }
 
-void Arbiter::GetBodies( Body ** a, Body ** b) {
+void Arbiter::getBodies( Body ** a, Body ** b) {
 	cpBody * tA;
 	cpBody * tB;
 
@@ -52,67 +52,67 @@ void Arbiter::GetBodies( Body ** a, Body ** b) {
 		*b = NULL;
 }
 
-bool Arbiter::IsFirstContact() {
+bool Arbiter::isFirstContact() {
 	return 0 != cpArbiterIsFirstContact( mArbiter );
 }
 
-int Arbiter::GetCount() {
+int Arbiter::getCount() {
 	return cpArbiterGetCount( mArbiter );
 }
 
-cVect Arbiter::GetNormal( int i ) {
+cVect Arbiter::getNormal( int i ) {
 	return tovect( cpArbiterGetNormal( mArbiter, i ) );
 }
 
-cVect Arbiter::GetPoint( int i ) {
+cVect Arbiter::getPoint( int i ) {
 	return tovect( cpArbiterGetPoint( mArbiter, i ) );
 }
 
-cpFloat Arbiter::GetDepth( int i ) {
+cpFloat Arbiter::getDepth( int i ) {
 	return cpArbiterGetDepth( mArbiter, i );
 }
 
-cpContactPointSet Arbiter::ContactPointSet() {
+cpContactPointSet Arbiter::contactPointSet() {
 	return cpArbiterGetContactPointSet( mArbiter );
 }
 
-void Arbiter::ContactPointSet( cpContactPointSet * contact ) {
+void Arbiter::contactPointSet( cpContactPointSet * contact ) {
 	cpArbiterSetContactPointSet( mArbiter, contact );
 }
 
-cpArbiter *	Arbiter::GetArbiter() const {
+cpArbiter *	Arbiter::getArbiter() const {
 	return mArbiter;
 }
 
-cpFloat Arbiter::Elasticity() {
+cpFloat Arbiter::elasticity() {
 	return cpArbiterGetElasticity( mArbiter);
 }
 
-void Arbiter::Elasticity( cpFloat value ) {
+void Arbiter::elasticity( cpFloat value ) {
 	cpArbiterSetElasticity( mArbiter, value );
 }
 
-cpFloat Arbiter::Friction() {
+cpFloat Arbiter::friction() {
 	return cpArbiterGetFriction( mArbiter );
 }
 
-void Arbiter::Friction( cpFloat value ) {
+void Arbiter::friction( cpFloat value ) {
 	cpArbiterSetFriction( mArbiter, value );
 }
 
-cVect Arbiter::SurfaceVelocity() {
+cVect Arbiter::surfaceVelocity() {
 	return tovect( cpArbiterGetSurfaceVelocity( mArbiter ) );
 }
 
-void Arbiter::SurfaceVelocity( cVect value ) {
+void Arbiter::surfaceVelocity( cVect value ) {
 	cpArbiterSetSurfaceVelocity( mArbiter, tocpv( value ) );
 }
 
-void Arbiter::UserData( cpDataPointer value ) {
+void Arbiter::userData( cpDataPointer value ) {
 	cpArbiterSetUserData( mArbiter, value );
 }
 
-cpDataPointer Arbiter::UserData() const {
+cpDataPointer Arbiter::userData() const {
 	return cpArbiterGetUserData( mArbiter );
 }
 

@@ -15,33 +15,33 @@ ShapeCircle * ShapeCircle::New( Physics::Body * body, cpFloat radius, cVect offs
 }
 
 ShapeCircle::ShapeCircle( Physics::Body * body, cpFloat radius, cVect offset ) {
-	mShape	= cpCircleShapeNew( body->GetBody(), radius, tocpv( offset ) );
-	SetData();
+	mShape	= cpCircleShapeNew( body->getBody(), radius, tocpv( offset ) );
+	setData();
 }
 
-cVect ShapeCircle::Offset() {
+cVect ShapeCircle::offset() {
 	return tovect( cpCircleShapeGetOffset( mShape ) );
 }
 
-void ShapeCircle::Offset( const cVect &offset ) {
+void ShapeCircle::offset( const cVect &offset ) {
 	cpCircleShapeSetOffset( mShape, tocpv( offset ) );
 }
 
-cpFloat ShapeCircle::Radius() {
+cpFloat ShapeCircle::radius() {
 	return cpCircleShapeGetRadius( mShape );
 }
 
-void ShapeCircle::Radius( const cpFloat& radius ) {
+void ShapeCircle::radius( const cpFloat& radius ) {
 	cpCircleShapeSetRadius( mShape, radius );
 }
 
 
-void ShapeCircle::Draw( Space * space ) {
+void ShapeCircle::draw( Space * space ) {
 	#ifdef PHYSICS_RENDERER_ENABLED
 	Primitives p;
 
 	cpCircleShape * cs = (cpCircleShape*)mShape;
-	p.setColor( ColorForShape( mShape, space->GetSpace() ) );
+	p.setColor( colorForShape( mShape, space->getSpace() ) );
 
 	p.drawCircle( Vector2f( cs->CP_PRIVATE(tc).x, cs->CP_PRIVATE(tc).y ), cs->CP_PRIVATE(r) );
 	#endif

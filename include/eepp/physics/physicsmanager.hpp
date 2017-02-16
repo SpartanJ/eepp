@@ -43,11 +43,11 @@ class CP_API PhysicsManager {
 		***	This is a lazy deallocation for the lazy programmers. It is disabled by default.
 		*** To work properly set as active before allocating anything, activate it just after the singleton instantiation.
 		*/
-		void MemoryManager( bool MemoryManager );
+		void memoryManager( bool memoryManager );
 
-		const bool& MemoryManager() const;
+		const bool& memoryManager() const;
 
-		PhysicsManager::DrawSpaceOptions * GetDrawOptions();
+		PhysicsManager::DrawSpaceOptions * getDrawOptions();
 	protected:
 		DrawSpaceOptions	mOptions;
 
@@ -64,21 +64,21 @@ class CP_API PhysicsManager {
 
 		PhysicsManager();
 
-		void AddBodyFree( Body * body );
+		void addBodyFree( Body * body );
 
-		void RemoveBodyFree( Body * body );
+		void removeBodyFree( Body * body );
 
-		void AddShapeFree( Shape * shape );
+		void addShapeFree( Shape * shape );
 
-		void RemoveShapeFree( Shape * shape );
+		void removeShapeFree( Shape * shape );
 
-		void AddConstraintFree( Constraint * constraint );
+		void addConstraintFree( Constraint * constraint );
 
-		void RemoveConstraintFree( Constraint * constraint );
+		void removeConstraintFree( Constraint * constraint );
 
-		void AddSpace( Space * space );
+		void addSpace( Space * space );
 
-		void RemoveSpace( Space * space );
+		void removeSpace( Space * space );
 };
 
 CP_NAMESPACE_END

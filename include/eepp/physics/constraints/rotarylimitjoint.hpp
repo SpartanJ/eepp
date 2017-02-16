@@ -9,15 +9,15 @@ class CP_API RotaryLimitJoint : public Constraint {
 	public:
 		RotaryLimitJoint( Body * a, Body * b, cpFloat min, cpFloat max );
 
-		cpFloat Min();
+		cpFloat min();
 
-		void Min( const cpFloat& min );
+		void min( const cpFloat& min );
 
-		cpFloat Max();
+		cpFloat max();
 
-		void Max( const cpFloat& max );
+		void max( const cpFloat& max );
 
-		virtual void Draw();
+		virtual void draw();
 };
 
 CP_NAMESPACE_END

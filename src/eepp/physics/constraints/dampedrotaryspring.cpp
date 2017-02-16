@@ -3,35 +3,35 @@
 CP_NAMESPACE_BEGIN
 
 DampedRotarySpring::DampedRotarySpring( Body * a, Body * b, cpFloat restAngle, cpFloat stiffness, cpFloat damping ) {
-	mConstraint = cpDampedRotarySpringNew( a->GetBody(), b->GetBody(), restAngle, stiffness, damping );
-	SetData();
+	mConstraint = cpDampedRotarySpringNew( a->getBody(), b->getBody(), restAngle, stiffness, damping );
+	setData();
 }
 
-cpFloat DampedRotarySpring::RestAngle() {
+cpFloat DampedRotarySpring::restAngle() {
 	return cpDampedRotarySpringGetRestAngle( mConstraint );
 }
 
-void DampedRotarySpring::RestAngle( const cpFloat& restangle ) {
+void DampedRotarySpring::restAngle( const cpFloat& restangle ) {
 	cpDampedRotarySpringSetRestAngle( mConstraint, restangle );
 }
 
-cpFloat DampedRotarySpring::Stiffness() {
+cpFloat DampedRotarySpring::stiffness() {
 	return cpDampedRotarySpringGetStiffness( mConstraint );
 }
 
-void DampedRotarySpring::Stiffness( const cpFloat& stiffness ) {
+void DampedRotarySpring::stiffness( const cpFloat& stiffness ) {
 	cpDampedRotarySpringSetStiffness( mConstraint, stiffness );
 }
 
-cpFloat DampedRotarySpring::Damping() {
+cpFloat DampedRotarySpring::damping() {
 	return cpDampedRotarySpringGetDamping( mConstraint );
 }
 
-void DampedRotarySpring::Damping( const cpFloat& damping ) {
+void DampedRotarySpring::damping( const cpFloat& damping ) {
 	cpDampedRotarySpringSetDamping( mConstraint, damping );
 }
 
-void DampedRotarySpring::Draw() {
+void DampedRotarySpring::draw() {
 	// Not implemented
 }
 

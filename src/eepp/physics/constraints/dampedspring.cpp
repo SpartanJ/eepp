@@ -15,51 +15,51 @@ DampedSpring::DampedSpring( Body * a, Body * b, cVect anchr1, cVect anchr2, cpFl
 	: mDrawPointSize( 5.f )
 #endif
 {
-	mConstraint = cpDampedSpringNew( a->GetBody(), b->GetBody(), tocpv( anchr1 ), tocpv( anchr2 ), restLength, stiffness, damping );
-	SetData();
+	mConstraint = cpDampedSpringNew( a->getBody(), b->getBody(), tocpv( anchr1 ), tocpv( anchr2 ), restLength, stiffness, damping );
+	setData();
 }
 
-cVect DampedSpring::Anchr1() {
+cVect DampedSpring::anchr1() {
 	return tovect( cpDampedSpringGetAnchr1( mConstraint ) );
 }
 
-void DampedSpring::Anchr1( const cVect& anchr1 ) {
+void DampedSpring::anchr1( const cVect& anchr1 ) {
 	cpDampedSpringSetAnchr1( mConstraint, tocpv( anchr1 ) );
 }
 
-cVect DampedSpring::Anchr2() {
+cVect DampedSpring::anchr2() {
 	return tovect( cpDampedSpringGetAnchr2( mConstraint ) );
 }
 
-void DampedSpring::Anchr2( const cVect& anchr2 ) {
+void DampedSpring::anchr2( const cVect& anchr2 ) {
 	cpDampedSpringSetAnchr2( mConstraint, tocpv( anchr2 ) );
 }
 
-cpFloat DampedSpring::RestLength() {
+cpFloat DampedSpring::restLength() {
 	return cpDampedSpringGetRestLength( mConstraint );
 }
 
-void DampedSpring::RestLength( const cpFloat& restlength ) {
+void DampedSpring::restLength( const cpFloat& restlength ) {
 	cpDampedSpringSetRestLength( mConstraint, restlength );
 }
 
-cpFloat DampedSpring::Stiffness() {
+cpFloat DampedSpring::stiffness() {
 	return cpDampedSpringGetStiffness( mConstraint );
 }
 
-void DampedSpring::Stiffness( const cpFloat& stiffness ) {
+void DampedSpring::stiffness( const cpFloat& stiffness ) {
 	cpDampedSpringSetStiffness( mConstraint, stiffness );
 }
 
-cpFloat DampedSpring::Damping() {
+cpFloat DampedSpring::damping() {
 	return cpDampedSpringGetDamping( mConstraint );
 }
 
-void DampedSpring::Damping( const cpFloat& damping ) {
+void DampedSpring::damping( const cpFloat& damping ) {
 	cpDampedSpringSetDamping( mConstraint, damping );
 }
 
-void DampedSpring::Draw() {
+void DampedSpring::draw() {
 	#ifdef PHYSICS_RENDERER_ENABLED
 	static const float springVAR[] = {
 		0.00f, 0.0f,
@@ -135,11 +135,11 @@ void DampedSpring::Draw() {
 
 
 #ifdef PHYSICS_RENDERER_ENABLED
-cpFloat DampedSpring::DrawPointSize() {
+cpFloat DampedSpring::drawPointSize() {
 	return mDrawPointSize;
 }
 
-void DampedSpring::DrawPointSize( const cpFloat& size ) {
+void DampedSpring::drawPointSize( const cpFloat& size ) {
 	mDrawPointSize = size;
 }
 #endif

@@ -14,31 +14,31 @@ class CP_API Constraint {
 
 		virtual ~Constraint();
 
-		cpConstraint * GetConstraint() const;
+		cpConstraint * getConstraint() const;
 
-		Body * A();
+		Body * a();
 
-		Body * B();
+		Body * b();
 
-		cpFloat MaxForce();
+		cpFloat maxForce();
 
-		void MaxForce( const cpFloat& maxforce );
+		void maxForce( const cpFloat& maxforce );
 
-		cpFloat MaxBias();
+		cpFloat maxBias();
 
-		void MaxBias( const cpFloat& maxbias );
+		void maxBias( const cpFloat& maxbias );
 
-		virtual void Draw();
+		virtual void draw();
 
-		cpFloat ErrorBias();
+		cpFloat errorBias();
 
-		void ErrorBias( cpFloat value );
+		void errorBias( cpFloat value );
 
-		void Data( void * data );
+		void data( void * data );
 
-		void * Data() const;
+		void * data() const;
 
-		cpFloat Impulse();
+		cpFloat impulse();
 	protected:
 		cpConstraint *		mConstraint;
 
@@ -46,7 +46,7 @@ class CP_API Constraint {
 
 		Constraint();
 
-		void SetData();
+		void setData();
 };
 
 CP_NAMESPACE_END

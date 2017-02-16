@@ -13,21 +13,21 @@ class Space;
 
 class CP_API Shape {
 	public:
-		static void ResetShapeIdCounter();
+		static void resetShapeIdCounter();
 
 		static void Free( Shape * shape, bool DeleteBody = false );
 
-		cpShape * GetShape() const;
+		cpShape * getShape() const;
 
 		virtual ~Shape();
 
-		Physics::Body * Body() const;
+		Physics::Body * body() const;
 
-		void Body( Physics::Body * body );
+		void body( Physics::Body * body );
 
-		cBB BB() const;
+		cBB bb() const;
 
-		void BB( const cBB& bb );
+		void bb( const cBB& bb );
 
 		bool Sensor();
 
@@ -37,64 +37,64 @@ class CP_API Shape {
 
 		void e( const cpFloat& e );
 
-		cpFloat Elasticity() const;
+		cpFloat elasticity() const;
 
-		void Elasticity( const cpFloat& e );
+		void elasticity( const cpFloat& e );
 
 		cpFloat u() const;
 
 		void u( const cpFloat& u );
 
-		cpFloat Friction() const;
+		cpFloat friction() const;
 
-		void Friction( const cpFloat& u );
+		void friction( const cpFloat& u );
 
-		cVect SurfaceVel() const;
+		cVect surfaceVel() const;
 
-		void SurfaceVel( const cVect& vel );
+		void surfaceVel( const cVect& vel );
 
-		cpCollisionType CollisionType()	 const;
+		cpCollisionType collisionType()	 const;
 
-		void CollisionType( const cpCollisionType& type );
+		void collisionType( const cpCollisionType& type );
 
-		cpGroup Group() const;
+		cpGroup group() const;
 
-		void Group( const cpGroup& group );
+		void group( const cpGroup& group );
 
-		cpLayers Layers() const;
+		cpLayers layers() const;
 
-		void Layers( const cpLayers& layers );
+		void layers( const cpLayers& layers );
 
-		cBB CacheBB();
+		cBB cacheBB();
 
-		cBB Update( cVect pos, cVect rot );
+		cBB update( cVect pos, cVect rot );
 
-		bool PointQuery( cVect p );
+		bool pointQuery( cVect p );
 
-		cpShapeType Type() const;
+		cpShapeType type() const;
 
-		ShapePoly * GetAsPoly();
+		ShapePoly * getAsPoly();
 
-		ShapeCircle * GetAsCircle();
+		ShapeCircle * getAsCircle();
 
-		ShapeSegment * GetAsSegment();
+		ShapeSegment * getAsSegment();
 
-		virtual void Draw( Space * space );
+		virtual void draw( Space * space );
 
-		virtual void DrawBorder( Space * space );
+		virtual void drawBorder( Space * space );
 
-		virtual void DrawBB();
+		virtual void drawBB();
 
-		void * Data() const;
+		void * data() const;
 
-		void Data( void * data );
+		void data( void * data );
 	protected:
 		Shape();
 
 		cpShape *		mShape;
 		void *			mData;
 
-		void SetData();
+		void setData();
 };
 
 CP_NAMESPACE_END

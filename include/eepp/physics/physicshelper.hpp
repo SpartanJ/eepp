@@ -78,7 +78,7 @@ typedef cpBB					cBB;
 
 #ifdef PHYSICS_RENDERER_ENABLED
 
-inline ColorA ColorFromPointer(void *ptr) {
+inline ColorA colorFromPointer(void *ptr) {
 	unsigned long val = (long)ptr;
 
 	// hash the pointer up nicely
@@ -104,7 +104,7 @@ inline ColorA ColorFromPointer(void *ptr) {
 	return ColorA(r, g, b, 255);
 }
 
-inline ColorA ColorForShape( cpShape *shape, cpSpace *space ) {
+inline ColorA colorForShape( cpShape *shape, cpSpace *space ) {
 	cpBody *body = shape->body;
 	int nc;
 
@@ -120,7 +120,7 @@ inline ColorA ColorForShape( cpShape *shape, cpSpace *space ) {
 		}
 	}
 
-	return ColorFromPointer( shape );
+	return colorFromPointer( shape );
 }
 
 #endif

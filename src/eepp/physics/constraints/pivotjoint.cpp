@@ -12,8 +12,8 @@ PivotJoint::PivotJoint( Body * a, Body * b, cVect pivot )
 	: mDrawPointSize( 10.f )
 #endif
 {
-	mConstraint = cpPivotJointNew( a->GetBody(), b->GetBody(), tocpv( pivot ) );
-	SetData();
+	mConstraint = cpPivotJointNew( a->getBody(), b->getBody(), tocpv( pivot ) );
+	setData();
 }
 
 PivotJoint::PivotJoint( Body * a, Body * b, cVect anchr1, cVect anchr2 )
@@ -21,27 +21,27 @@ PivotJoint::PivotJoint( Body * a, Body * b, cVect anchr1, cVect anchr2 )
 	: mDrawPointSize( 10.f )
 #endif
 {
-	mConstraint = cpPivotJointNew2( a->GetBody(), b->GetBody(), tocpv( anchr1 ), tocpv( anchr2 ) );
-	SetData();
+	mConstraint = cpPivotJointNew2( a->getBody(), b->getBody(), tocpv( anchr1 ), tocpv( anchr2 ) );
+	setData();
 }
 
-cVect PivotJoint::Anchr1() {
+cVect PivotJoint::anchr1() {
 	return tovect( cpPivotJointGetAnchr1( mConstraint ) );
 }
 
-void PivotJoint::Anchr1( const cVect& anchr1 ) {
+void PivotJoint::anchr1( const cVect& anchr1 ) {
 	cpPivotJointSetAnchr1( mConstraint, tocpv( anchr1 ) );
 }
 
-cVect PivotJoint::Anchr2() {
+cVect PivotJoint::anchr2() {
 	return tovect( cpPivotJointGetAnchr2( mConstraint ) );
 }
 
-void PivotJoint::Anchr2( const cVect& anchr2 ) {
+void PivotJoint::anchr2( const cVect& anchr2 ) {
 	cpPivotJointSetAnchr2( mConstraint, tocpv( anchr2 ) );
 }
 
-void PivotJoint::Draw() {
+void PivotJoint::draw() {
 	#ifdef PHYSICS_RENDERER_ENABLED
 	if ( mDrawPointSize <= 0 )
 		return;
@@ -66,11 +66,11 @@ void PivotJoint::Draw() {
 }
 
 #ifdef PHYSICS_RENDERER_ENABLED
-cpFloat PivotJoint::DrawPointSize() {
+cpFloat PivotJoint::drawPointSize() {
 	return mDrawPointSize;
 }
 
-void PivotJoint::DrawPointSize( const cpFloat& size ) {
+void PivotJoint::drawPointSize( const cpFloat& size ) {
 	mDrawPointSize = size;
 }
 #endif

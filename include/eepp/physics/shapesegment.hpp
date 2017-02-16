@@ -11,25 +11,25 @@ class CP_API ShapeSegment : public Shape {
 
 		ShapeSegment( Physics::Body * body, cVect a, cVect b, cpFloat radius );
 
-		cVect A();
+		cVect a();
 
-		cVect B();
+		cVect b();
 
-		cVect Normal();
+		cVect normal();
 
-		cpFloat Radius();
+		cpFloat radius();
 
-		void Radius( const cpFloat& radius );
+		void radius( const cpFloat& radius );
 
-		void Endpoints( const cVect& a, const cVect& b );
+		void endpoints( const cVect& a, const cVect& b );
 
-		bool Query( cVect a, cVect b, cpSegmentQueryInfo * info );
+		bool query( cVect a, cVect b, cpSegmentQueryInfo * info );
 
-		static cVect QueryHitPoint( const cVect start, const cVect end, const cpSegmentQueryInfo info );
+		static cVect queryHitPoint( const cVect start, const cVect end, const cpSegmentQueryInfo info );
 
-		static cpFloat QueryHitDist( const cVect start, const cVect end, const cpSegmentQueryInfo info );
+		static cpFloat queryHitDist( const cVect start, const cVect end, const cpSegmentQueryInfo info );
 
-		virtual void Draw( Space * space );
+		virtual void draw( Space * space );
 };
 
 CP_NAMESPACE_END

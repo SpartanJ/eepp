@@ -11,13 +11,13 @@ using namespace EE::Graphics;
 
 CP_NAMESPACE_BEGIN
 
-void Shape::ResetShapeIdCounter() {
+void Shape::resetShapeIdCounter() {
 	cpResetShapeIdCounter();
 }
 
 void Shape::Free( Shape * shape, bool DeleteBody ) {
 	if ( DeleteBody ) {
-		Physics::Body * b = shape->Body();
+		Physics::Body * b = shape->body();
 		cpSAFE_DELETE( b );
 	}
 
@@ -32,43 +32,43 @@ Shape::Shape() :
 Shape::~Shape() {
 	cpShapeFree( mShape );
 
-	PhysicsManager::instance()->RemoveShapeFree( this );
+	PhysicsManager::instance()->removeShapeFree( this );
 }
 
-void Shape::SetData() {
+void Shape::setData() {
 	mShape->data	= (void*)this;
-	PhysicsManager::instance()->AddShapeFree( this );
+	PhysicsManager::instance()->addShapeFree( this );
 }
 
-cpShape * Shape::GetShape() const {
+cpShape * Shape::getShape() const {
 	return mShape;
 }
 
-cBB Shape::CacheBB() {
+cBB Shape::cacheBB() {
 	return tocbb( cpShapeCacheBB( mShape ) );
 }
 
-cBB Shape::Update( cVect pos, cVect rot ) {
+cBB Shape::update( cVect pos, cVect rot ) {
 	return tocbb( cpShapeUpdate( mShape, tocpv( pos ), tocpv( rot ) ) );
 }
 
-bool Shape::PointQuery( cVect p ) {
+bool Shape::pointQuery( cVect p ) {
 	return 0 != cpShapePointQuery( mShape, tocpv( p ) );
 }
 
-Physics::Body * Shape::Body() const {
+Physics::Body * Shape::body() const {
 	return reinterpret_cast<Physics::Body*>( mShape->body->data );
 }
 
-void Shape::Body( Physics::Body * body ) {
-	mShape->body = body->GetBody();
+void Shape::body( Physics::Body * body ) {
+	mShape->body = body->getBody();
 }
 
-cBB Shape::BB() const {
+cBB Shape::bb() const {
 	return tocbb( mShape->bb );
 }
 
-void Shape::BB( const cBB& bb ) {
+void Shape::bb( const cBB& bb ) {
 	mShape->bb = tocpbb( bb );
 }
 
@@ -88,11 +88,11 @@ void Shape::e( const cpFloat& e ) {
 	mShape->e = e;
 }
 
-cpFloat Shape::Elasticity() const {
+cpFloat Shape::elasticity() const {
 	return e();
 }
 
-void Shape::Elasticity( const cpFloat& e ) {
+void Shape::elasticity( const cpFloat& e ) {
 	this->e( e );
 }
 
@@ -104,69 +104,69 @@ void Shape::u( const cpFloat& u ) {
 	mShape->u = u;
 }
 
-cpFloat Shape::Friction() const {
+cpFloat Shape::friction() const {
 	return u();
 }
 
-void Shape::Friction( const cpFloat& u ) {
+void Shape::friction( const cpFloat& u ) {
 	this->u( u );
 }
 
-cVect Shape::SurfaceVel() const {
+cVect Shape::surfaceVel() const {
 	return tovect( mShape->surface_v );
 }
 
-void Shape::SurfaceVel( const cVect& vel ) {
+void Shape::surfaceVel( const cVect& vel ) {
 	mShape->surface_v = tocpv( vel );
 }
 
-cpCollisionType Shape::CollisionType()	 const {
+cpCollisionType Shape::collisionType()	 const {
 	return mShape->collision_type;
 }
 
-void Shape::CollisionType( const cpCollisionType& type ) {
+void Shape::collisionType( const cpCollisionType& type ) {
 	mShape->collision_type = type;
 }
 
-cpGroup Shape::Group() const {
+cpGroup Shape::group() const {
 	return mShape->group;
 }
 
-void Shape::Group( const cpGroup& group ) {
+void Shape::group( const cpGroup& group ) {
 	mShape->group = group;
 }
 
-cpLayers Shape::Layers() const {
+cpLayers Shape::layers() const {
 	return mShape->layers;
 }
 
-void Shape::Layers( const cpLayers& layers ) {
+void Shape::layers( const cpLayers& layers ) {
 	mShape->layers = layers;
 }
 
-cpShapeType Shape::Type() const {
+cpShapeType Shape::type() const {
 	return mShape->CP_PRIVATE(klass)->type;
 }
 
-ShapePoly * Shape::GetAsPoly() {
-	eeASSERT( Type() == CP_POLY_SHAPE );
+ShapePoly * Shape::getAsPoly() {
+	eeASSERT( type() == CP_POLY_SHAPE );
 
 	return reinterpret_cast<ShapePoly*>( this );
 }
 
-ShapeCircle * Shape::GetAsCircle() {
-	eeASSERT( Type() == CP_CIRCLE_SHAPE );
+ShapeCircle * Shape::getAsCircle() {
+	eeASSERT( type() == CP_CIRCLE_SHAPE );
 
 	return reinterpret_cast<ShapeCircle*>( this );
 }
 
-ShapeSegment * Shape::GetAsSegment() {
-	eeASSERT( Type() == CP_SEGMENT_SHAPE );
+ShapeSegment * Shape::getAsSegment() {
+	eeASSERT( type() == CP_SEGMENT_SHAPE );
 
 	return reinterpret_cast<ShapeSegment*>( this );
 }
 
-void Shape::DrawBB() {
+void Shape::drawBB() {
 	#ifdef PHYSICS_RENDERER_ENABLED
 	Primitives P;
 	P.setColor( ColorA( 76, 128, 76, 255 ) );
@@ -178,18 +178,18 @@ void Shape::DrawBB() {
 	#endif
 }
 
-void * Shape::Data() const {
+void * Shape::data() const {
 	return mData;
 }
 
-void Shape::Data( void * data ) {
+void Shape::data( void * data ) {
 	mData = data;
 }
 
-void Shape::Draw( Space * space ) {
+void Shape::draw( Space * space ) {
 }
 
-void Shape::DrawBorder( Space * space ) {
+void Shape::drawBorder( Space * space ) {
 }
 
 CP_NAMESPACE_END

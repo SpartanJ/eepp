@@ -3,19 +3,19 @@
 CP_NAMESPACE_BEGIN
 
 SimpleMotor::SimpleMotor( Body * a, Body * b, cpFloat rate ) {
-	mConstraint = cpSimpleMotorNew( a->GetBody(), b->GetBody(), rate );
-	SetData();
+	mConstraint = cpSimpleMotorNew( a->getBody(), b->getBody(), rate );
+	setData();
 }
 
-cpFloat SimpleMotor::Rate() {
+cpFloat SimpleMotor::rate() {
 	return cpSimpleMotorGetRate( mConstraint );
 }
 
-void SimpleMotor::Rate( const cpFloat& rate ) {
+void SimpleMotor::rate( const cpFloat& rate ) {
 	cpSimpleMotorSetRate( mConstraint, rate );
 }
 
-void SimpleMotor::Draw() {
+void SimpleMotor::draw() {
 	// Not implemented
 }
 

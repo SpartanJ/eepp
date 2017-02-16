@@ -15,7 +15,7 @@ ShapeCircleSprite::ShapeCircleSprite( Physics::Body * body, cpFloat radius, cVec
 	mSprite( Sprite ),
 	mSpriteAutoDelete( AutoDeleteSprite )
 {
-	OffsetSet();
+	offsetSet();
 }
 
 ShapeCircleSprite::~ShapeCircleSprite() {
@@ -23,31 +23,31 @@ ShapeCircleSprite::~ShapeCircleSprite() {
 		eeSAFE_DELETE( mSprite );
 }
 
-void ShapeCircleSprite::Draw( Space * space ) {
-	cVect Pos = Body()->Pos();
+void ShapeCircleSprite::draw( Space * space ) {
+	cVect Pos = body()->pos();
 
 	mSprite->position( Pos.x, Pos.y );
-	mSprite->angle( Body()->AngleDeg() );
+	mSprite->angle( body()->angleDeg() );
 	mSprite->draw();
 }
 
-void ShapeCircleSprite::OffsetSet() {
-	mSprite->size( Sizef( ShapeCircle::Radius() * 2, ShapeCircle::Radius() * 2 ) );
-	mSprite->offset( Vector2i( -ShapeCircle::Radius() + ShapeCircle::Offset().x, -ShapeCircle::Radius() + ShapeCircle::Offset().y ) );
+void ShapeCircleSprite::offsetSet() {
+	mSprite->size( Sizef( ShapeCircle::radius() * 2, ShapeCircle::radius() * 2 ) );
+	mSprite->offset( Vector2i( -ShapeCircle::radius() + ShapeCircle::offset().x, -ShapeCircle::radius() + ShapeCircle::offset().y ) );
 }
 
-Sprite * ShapeCircleSprite::GetSprite() const {
+Sprite * ShapeCircleSprite::getSprite() const {
 	return mSprite;
 }
 
-void ShapeCircleSprite::Radius( const cpFloat& radius ) {
-	ShapeCircle::Radius( radius );
-	OffsetSet();
+void ShapeCircleSprite::radius( const cpFloat& radius ) {
+	ShapeCircle::radius( radius );
+	offsetSet();
 }
 
-void ShapeCircleSprite::Offset( const cVect &offset ) {
-	ShapeCircle::Offset( offset );
-	OffsetSet();
+void ShapeCircleSprite::offset( const cVect &offset ) {
+	ShapeCircle::offset( offset );
+	offsetSet();
 }
 
 CP_NAMESPACE_END

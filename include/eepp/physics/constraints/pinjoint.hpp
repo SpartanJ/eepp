@@ -9,24 +9,24 @@ class CP_API PinJoint : public Constraint {
 	public:
 		PinJoint( Body * a, Body * b, cVect anchr1, cVect anchr2 );
 
-		cVect Anchr1();
+		cVect anchr1();
 
-		void Anchr1( const cVect& anchr1 );
+		void anchr1( const cVect& anchr1 );
 
-		cVect Anchr2();
+		cVect anchr2();
 
-		void Anchr2( const cVect& anchr2 );
+		void anchr2( const cVect& anchr2 );
 
-		cpFloat Dist();
+		cpFloat dist();
 
-		void Dist( const cpFloat& dist );
+		void dist( const cpFloat& dist );
 
-		virtual void Draw();
+		virtual void draw();
 
 #ifdef PHYSICS_RENDERER_ENABLED
-		cpFloat DrawPointSize();
+		cpFloat drawPointSize();
 
-		virtual void DrawPointSize( const cpFloat& size );
+		virtual void drawPointSize( const cpFloat& size );
 	protected:
 		cpFloat mDrawPointSize;
 #endif

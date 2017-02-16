@@ -72,109 +72,109 @@ class CP_API Body {
 
 		virtual ~Body();
 
-		void Activate();
+		void activate();
 
-		void ActivateStatic( Body *body, Shape * filter );
+		void activateStatic( Body *body, Shape * filter );
 
-		void Sleep();
+		void sleep();
 
-		void SleepWithGroup( Body * Group );
+		void sleepWithGroup( Body * Group );
 
-		bool IsSleeping();
+		bool isSleeping();
 
-		bool IsStatic();
+		bool isStatic();
 
-		bool IsRogue();
+		bool isRogue();
 
-		cpBody * GetBody() const;
+		cpBody * getBody() const;
 
-		cpFloat Mass() const;
+		cpFloat mass() const;
 
-		void Mass( const cpFloat& mass );
+		void mass( const cpFloat& mass );
 
-		cpFloat Moment() const;
+		cpFloat moment() const;
 
-		void Moment( const cpFloat& i );
+		void moment( const cpFloat& i );
 
-		cVect Pos() const;
+		cVect pos() const;
 
-		void Pos( const cVect& pos );
+		void pos( const cVect& pos );
 
-		cVect Vel() const;
+		cVect vel() const;
 
-		void Vel( const cVect& vel );
+		void vel( const cVect& vel );
 
-		cVect Force() const;
+		cVect force() const;
 
-		void Force( const cVect& force );
+		void force( const cVect& force );
 
-		cpFloat Angle() const;
+		cpFloat angle() const;
 
-		void Angle( const cpFloat& rads );
+		void angle( const cpFloat& rads );
 
-		cpFloat AngleDeg();
+		cpFloat angleDeg();
 
-		void AngleDeg( const cpFloat& angle );
+		void angleDeg( const cpFloat& angle );
 
-		cpFloat AngVel() const;
+		cpFloat angVel() const;
 
-		void AngVel( const cpFloat& angVel );
+		void angVel( const cpFloat& angVel );
 
-		cpFloat Torque() const;
+		cpFloat torque() const;
 
-		void Torque( const cpFloat& torque );
+		void torque( const cpFloat& torque );
 
-		cVect Rot() const;
+		cVect rot() const;
 
-		cpFloat VelLimit() const;
+		cpFloat velLimit() const;
 
-		void VelLimit( const cpFloat& speed );
+		void velLimit( const cpFloat& speed );
 
-		cpFloat AngVelLimit() const;
+		cpFloat angVelLimit() const;
 
-		void AngVelLimit( const cpFloat& speed );
+		void angVelLimit( const cpFloat& speed );
 
-		void UpdateVelocity( cVect gravity, cpFloat damping, cpFloat dt );
+		void updateVelocity( cVect gravity, cpFloat damping, cpFloat dt );
 
-		void UpdatePosition( cpFloat dt );
+		void updatePosition( cpFloat dt );
 
-		cVect Local2World( const cVect v );
+		cVect local2World( const cVect v );
 
-		cVect World2Local( const cVect v );
+		cVect world2Local( const cVect v );
 
-		void ApplyImpulse( const cVect j, const cVect r );
+		void applyImpulse( const cVect j, const cVect r );
 
-		void ResetForces();
+		void resetForces();
 
-		void ApplyForce( const cVect f, const cVect r );
+		void applyForce( const cVect f, const cVect r );
 
-		cpFloat KineticEnergy();
+		cpFloat kineticEnergy();
 
-		void * Data() const;
+		void * data() const;
 
-		void Data( void * data );
+		void data( void * data );
 
-		void EachShape( ShapeIteratorFunc Func, void * data );
+		void eachShape( ShapeIteratorFunc Func, void * data );
 
-		virtual void OnEachShape( Shape * Shape, ShapeIterator * it );
+		virtual void onEachShape( Shape * Shape, ShapeIterator * it );
 
-		void EachConstraint( ConstraintIteratorFunc Func, void * data );
+		void eachConstraint( ConstraintIteratorFunc Func, void * data );
 
-		virtual void OnEachConstraint( Constraint * Constraint, ConstraintIterator * it );
+		virtual void onEachConstraint( Constraint * Constraint, ConstraintIterator * it );
 
-		void EachArbiter( ArbiterIteratorFunc Func, void * data );
+		void eachArbiter( ArbiterIteratorFunc Func, void * data );
 
-		virtual void OnEachArbiter( Arbiter * Arbiter, ArbiterIterator * it );
+		virtual void onEachArbiter( Arbiter * Arbiter, ArbiterIterator * it );
 
-		void VelocityFunc( BodyVelocityFunc func );
+		void velocityFunc( BodyVelocityFunc func );
 
-		void PositionFunc( BodyPositionFunc func );
+		void positionFunc( BodyPositionFunc func );
 	protected:
 		friend class Space;
 
-		static void BodyVelocityFuncWrapper( cpBody *body, cpVect gravity, cpFloat damping, cpFloat dt );
+		static void bodyVelocityFuncWrapper( cpBody *body, cpVect gravity, cpFloat damping, cpFloat dt );
 
-		static void BodyPositionFuncWrapper( cpBody* body, cpFloat dt );
+		static void bodyPositionFuncWrapper( cpBody* body, cpFloat dt );
 
 		cpBody *				mBody;
 		void *					mData;
@@ -183,7 +183,7 @@ class CP_API Body {
 
 		BodyPositionFunc		mPositionFunc;
 
-		void SetData();
+		void setData();
 };
 
 CP_NAMESPACE_END
