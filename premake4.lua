@@ -147,11 +147,11 @@ newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
 newoption { trigger = "use-frameworks", description = "In Mac OS X it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link agains SDL2.framework." }
 newoption { 
 	trigger = "with-backend", 
-	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.\n\t\t\tIt's possible to build with more than one backend support.\n\t\t\t\tUse comma to separate the backends to build ( you can't mix SDL and SDL2, you'll get random crashes ).\n\t\t\t\tExample: --with-backend=SDL2+SFML",
+	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
 	allowed = {
-		{ "SDL",    "SDL 1.2" },
 		{ "SDL2",  "SDL2 (default and recommended)" },
-		{ "SFML",  "SFML2 ( SFML 1.6 not supported )" }
+		{ "SFML",  "SFML2 ( SFML 1.6 not supported )" },
+		{ "SDL2,SFML", "SDL2+SFML" }
 	}
 }
 
@@ -492,6 +492,7 @@ function add_static_links()
 	links { "haikuttf-static" }
 	
 	if _OPTIONS["with-static-freetype"] or not os_findlib("freetype") then
+		print("Enabled static freetype")
 		links { "freetype-static" }
 	end
 	
@@ -530,14 +531,6 @@ function add_sdl2()
 	else
 		insert_static_backend( "SDL2" )
 	end
-end
-
-function add_sdl()
-	print("Using SDL backend");
-	--- SDL is LGPL. It can't be build as static library
-	table.insert( link_list, get_backend_link_name( "SDL" ) )
-	files { "src/eepp/window/backend/SDL/*.cpp" }
-	defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_1_2" }
 end
 
 function add_sfml()
@@ -605,7 +598,7 @@ function set_ios_config()
 	end
 end
 
-function backend_is( name )
+function backend_is( name, libname )
 	if not _OPTIONS["with-backend"] then
 		_OPTIONS["with-backend"] = "SDL2"
 	end
@@ -616,7 +609,7 @@ function backend_is( name )
 	
 	local backend_sel = table.contains( backends, name )
 
-	local ret_val = os_findlib( name ) and backend_sel
+	local ret_val = os_findlib( libname ) and backend_sel
 
 	if os.is_real("mingw32") or os.is_real("emscripten") then
 		ret_val = backend_sel
@@ -630,25 +623,21 @@ function backend_is( name )
 end
 
 function select_backend()	
-	if backend_is( "SDL2" ) then
+	if backend_is("SDL2", "SDL2") then
+		print("Selected SDL2")
 		add_sdl2()
 	end
-	
-	if backend_is( "SDL" ) then
-		add_sdl()
-	end
 
-	if backend_is( "SFML" ) then
+	if backend_is("SFML", "sfml-window") then
+		print("Selected SFML")
 		add_sfml()
 	end
-	
+
 	-- If the selected backend is not present, try to find one present
 	if not backend_selected then
-		if os_findlib("SDL") then
-			add_sdl()
-		elseif os_findlib("SDL2") then
+		if os_findlib("SDL2", "SDL2") then
 			add_sdl2()
-		elseif os_findlib("SFML") then
+		elseif os_findlib("SFML", "sfml-window") then
 			add_sfml()
 		else
 			print("ERROR: Couldnt find any backend. Forced SDL2.")
@@ -659,6 +648,7 @@ end
 
 function check_ssl_support()
 	if _OPTIONS["with-ssl"] then
+		print("Enabled SSL support")
 		if os.is("windows") then
 			table.insert( link_list, get_backend_link_name( "libssl" ) )
 			table.insert( link_list, get_backend_link_name( "libcrypto" ) )
@@ -720,6 +710,7 @@ function build_eepp( build_name )
 	end
 	
 	if _OPTIONS["with-libsndfile"] then
+		print("Enabled libsndfile")
 		defines { "EE_LIBSNDFILE_ENABLED" }
 		
 		if os.is("windows") then

@@ -447,7 +447,7 @@ void MapEditor::CreateUIMap() {
 		SubTexture * tTex = HScrollSkin->GetSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tTex ) {
-			ScrollH = tTex->Size().height();
+			ScrollH = tTex->size().height();
 		}
 	}
 
@@ -455,7 +455,7 @@ void MapEditor::CreateUIMap() {
 		SubTexture * tTex = VScrollSkin->GetSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tTex ) {
-			ScrollV = tTex->Size().height();
+			ScrollV = tTex->size().height();
 		}
 	}
 
@@ -719,11 +719,11 @@ void MapEditor::FillSGCombo() {
 	std::vector<String> items;
 
 	Uint32 Restricted1 = String::hash( std::string( "global" ) );
-	Uint32 Restricted2 = String::hash( mTheme->TextureAtlas()->Name() );
+	Uint32 Restricted2 = String::hash( mTheme->TextureAtlas()->getName() );
 
 	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
-		if ( (*it)->Id() != Restricted1 && (*it)->Id() != Restricted2 )
-			items.push_back( (*it)->Name() );
+		if ( (*it)->getId() != Restricted1 && (*it)->getId() != Restricted2 )
+			items.push_back( (*it)->getName() );
 	}
 
 	if ( items.size() ) {
@@ -746,7 +746,7 @@ void MapEditor::FillSubTextureList() {
 		std::vector<String> items;
 
 		for ( std::list<SubTexture*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
-				items.push_back( (*it)->Name() );
+				items.push_back( (*it)->getName() );
 		}
 
 		if ( items.size() ) {
@@ -1135,7 +1135,7 @@ void MapEditor::TextureAtlasOpen( const UIEvent * Event ) {
 	if ( NULL == SG ) {
 		TextureAtlasLoader tgl( CDL->GetFullPath() );
 
-		if ( tgl.IsLoaded() ) {
+		if ( tgl.isLoaded() ) {
 			mTextureAtlasesList->ListBox()->AddListBoxItem( sgname );
 		}
 	} else {
@@ -1195,7 +1195,7 @@ GameObject * MapEditor::CreateGameObject() {
 
 		if ( mChkAnim->Active() ) {
 
-			Sprite * tAnimSprite = eeNew( Sprite, ( String::removeNumbersAtEnd( mGfxPreview->SubTexture()->Name() ) ) );
+			Sprite * tAnimSprite = eeNew( Sprite, ( String::removeNumbersAtEnd( mGfxPreview->SubTexture()->getName() ) ) );
 			tObj = eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, tAnimSprite ) );
 
 		} else {

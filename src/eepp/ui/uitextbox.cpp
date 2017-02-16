@@ -18,13 +18,13 @@ UITextBox::UITextBox( const UITextBox::CreateParams& Params ) :
 	mSelCurEnd( -1 )
 {
 	mTextCache = eeNew( TextCache, () );
-	mTextCache->Font( Params.Font );
-	mTextCache->Color( mFontColor );
-	mTextCache->ShadowColor( mFontShadowColor );
+	mTextCache->font( Params.Font );
+	mTextCache->color( mFontColor );
+	mTextCache->shadowColor( mFontShadowColor );
 
 	if ( NULL == Params.Font ) {
 		if ( NULL != UIThemeManager::instance()->DefaultFont() )
-			mTextCache->Font( UIThemeManager::instance()->DefaultFont() );
+			mTextCache->font( UIThemeManager::instance()->DefaultFont() );
 		else
 			eePRINTL( "UITextBox::UITextBox : Created a UI TextBox without a defined font." );
 	}
@@ -50,7 +50,7 @@ void UITextBox::Draw() {
 
 		DrawSelection();
 
-		if ( mTextCache->GetTextWidth() ) {
+		if ( mTextCache->getTextWidth() ) {
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				UIManager::instance()->ClipEnable(
 						mScreenPos.x + mPadding.Left,
@@ -60,8 +60,8 @@ void UITextBox::Draw() {
 				);
 			}
 
-			mTextCache->Flags( Flags() );
-			mTextCache->Draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, Vector2f::One, 0.f, Blend() );
+			mTextCache->flags( Flags() );
+			mTextCache->draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, Vector2f::One, 0.f, Blend() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				UIManager::instance()->ClipDisable();
@@ -71,12 +71,12 @@ void UITextBox::Draw() {
 }
 
 Graphics::Font * UITextBox::Font() const {
-	return mTextCache->Font();
+	return mTextCache->font();
 }
 
 void UITextBox::Font( Graphics::Font * font ) {
-	if ( mTextCache->Font() != font ) {
-		mTextCache->Font( font );
+	if ( mTextCache->font() != font ) {
+		mTextCache->font( font );
 		AutoShrink();
 		AutoSize();
 		AutoAlign();
@@ -88,15 +88,15 @@ const String& UITextBox::Text() {
 	if ( mFlags & UI_AUTO_SHRINK_TEXT )
 		return mString;
 
-	return mTextCache->Text();
+	return mTextCache->text();
 }
 
 void UITextBox::Text( const String& text ) {
 	if ( mFlags & UI_AUTO_SHRINK_TEXT ) {
 		mString = text;
-		mTextCache->Text( mString );
+		mTextCache->text( mString );
 	} else {
-		mTextCache->Text( text );
+		mTextCache->text( text );
 	}
 
 	AutoShrink();
@@ -111,7 +111,7 @@ const ColorA& UITextBox::Color() const {
 
 void UITextBox::Color( const ColorA& color ) {
 	mFontColor = color;
-	mTextCache->Color( color );
+	mTextCache->color( color );
 
 	Alpha( color.a() );
 }
@@ -122,7 +122,7 @@ const ColorA& UITextBox::ShadowColor() const {
 
 void UITextBox::ShadowColor( const ColorA& color ) {
 	mFontShadowColor = color;
-	mTextCache->ShadowColor( mFontColor );
+	mTextCache->shadowColor( mFontColor );
 }
 
 const ColorA& UITextBox::SelectionBackColor() const {
@@ -138,7 +138,7 @@ void UITextBox::Alpha( const Float& alpha ) {
 	mFontColor.Alpha = (Uint8)alpha;
 	mFontShadowColor.Alpha = (Uint8)alpha;
 
-	mTextCache->Alpha( mFontColor.Alpha );
+	mTextCache->alpha( mFontColor.Alpha );
 }
 
 void UITextBox::AutoShrink() {
@@ -149,26 +149,26 @@ void UITextBox::AutoShrink() {
 
 void UITextBox::ShrinkText( const Uint32& MaxWidth ) {
 	if ( mFlags & UI_AUTO_SHRINK_TEXT ) {
-		mTextCache->Text( mString );
+		mTextCache->text( mString );
 	}
 
-	mTextCache->Font()->ShrinkText( mTextCache->Text(), MaxWidth );
+	mTextCache->font()->shrinkText( mTextCache->text(), MaxWidth );
 }
 
 void UITextBox::AutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mSize.width( (int)mTextCache->GetTextWidth() );
-		mSize.height( (int)mTextCache->GetTextHeight() );
+		mSize.width( (int)mTextCache->getTextWidth() );
+		mSize.height( (int)mTextCache->getTextHeight() );
 	}
 }
 
 void UITextBox::AutoAlign() {
 	switch ( FontHAlignGet( Flags() ) ) {
 		case UI_HALIGN_CENTER:
-			mAlignOffset.x = (Float)( (Int32)( mSize.x - mTextCache->GetTextWidth() ) / 2 );
+			mAlignOffset.x = (Float)( (Int32)( mSize.x - mTextCache->getTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
-			mAlignOffset.x = ( (Float)mSize.x - (Float)mTextCache->GetTextWidth() );
+			mAlignOffset.x = ( (Float)mSize.x - (Float)mTextCache->getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
 			mAlignOffset.x = 0.f;
@@ -177,10 +177,10 @@ void UITextBox::AutoAlign() {
 
 	switch ( FontVAlignGet( Flags() ) ) {
 		case UI_VALIGN_CENTER:
-			mAlignOffset.y = (Float)( ( (Int32)( mSize.y - mTextCache->GetTextHeight() ) ) / 2 ) - 1;
+			mAlignOffset.y = (Float)( ( (Int32)( mSize.y - mTextCache->getTextHeight() ) ) / 2 ) - 1;
 			break;
 		case UI_VALIGN_BOTTOM:
-			mAlignOffset.y = ( (Float)mSize.y - (Float)mTextCache->GetTextHeight() );
+			mAlignOffset.y = ( (Float)mSize.y - (Float)mTextCache->getTextHeight() );
 			break;
 		case UI_VALIGN_TOP:
 			mAlignOffset.y = 0.f;
@@ -202,7 +202,7 @@ void UITextBox::OnSizeChange() {
 
 	UIControlAnim::OnSizeChange();
 
-	mTextCache->Cache();
+	mTextCache->cache();
 }
 
 void UITextBox::OnTextChanged() {
@@ -224,8 +224,8 @@ const Recti& UITextBox::Padding() const {
 void UITextBox::SetTheme( UITheme * Theme ) {
 	UIControlAnim::SetTheme( Theme );
 
-	if ( NULL == mTextCache->Font() && NULL != Theme->Font() ) {
-		mTextCache->Font( Theme->Font() );
+	if ( NULL == mTextCache->font() && NULL != Theme->Font() ) {
+		mTextCache->font( Theme->Font() );
 	}
 }
 
@@ -234,15 +234,15 @@ TextCache * UITextBox::GetTextCache() {
 }
 
 Float UITextBox::GetTextWidth() {
-	return mTextCache->GetTextWidth();
+	return mTextCache->getTextWidth();
 }
 
 Float UITextBox::GetTextHeight() {
-	return mTextCache->GetTextHeight();
+	return mTextCache->getTextHeight();
 }
 
 const int& UITextBox::GetNumLines() const {
-	return mTextCache->GetNumLines();
+	return mTextCache->getNumLines();
 }
 
 const Vector2f& UITextBox::AlignOffset() const {
@@ -254,12 +254,12 @@ Uint32 UITextBox::OnMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) 
 		Vector2i controlPos( Pos );
 		WorldToControl( controlPos );
 
-		Int32 curPos = mTextCache->Font()->FindClosestCursorPosFromPoint( mTextCache->Text(), controlPos );
+		Int32 curPos = mTextCache->font()->findClosestCursorPosFromPoint( mTextCache->text(), controlPos );
 
 		if ( -1 != curPos ) {
 			Int32 tSelCurInit, tSelCurEnd;
 
-			mTextCache->Font()->SelectSubStringFromCursor( mTextCache->Text(), curPos, tSelCurInit, tSelCurEnd );
+			mTextCache->font()->selectSubStringFromCursor( mTextCache->text(), curPos, tSelCurInit, tSelCurEnd );
 
 			SelCurInit( tSelCurInit );
 			SelCurEnd( tSelCurEnd );
@@ -289,7 +289,7 @@ Uint32 UITextBox::OnMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 		Vector2i controlPos( Pos );
 		WorldToControl( controlPos );
 
-		Int32 curPos = mTextCache->Font()->FindClosestCursorPosFromPoint( mTextCache->Text(), controlPos );
+		Int32 curPos = mTextCache->font()->findClosestCursorPosFromPoint( mTextCache->text(), controlPos );
 
 		if ( -1 != curPos ) {
 			if ( -1 == SelCurInit() || !( mControlFlags & UI_CTRL_FLAG_SELECTING ) ) {
@@ -311,7 +311,7 @@ void UITextBox::DrawSelection() {
 		Int32 init		= eemin( SelCurInit(), SelCurEnd() );
 		Int32 end		= eemax( SelCurInit(), SelCurEnd() );
 
-		if ( init < 0 && end > (Int32)mTextCache->Text().size() ) {
+		if ( init < 0 && end > (Int32)mTextCache->text().size() ) {
 			return;
 		}
 
@@ -319,22 +319,22 @@ void UITextBox::DrawSelection() {
 		Vector2i initPos, endPos;
 
 		Primitives P;
-		P.SetColor( mFontSelectionBackColor );
+		P.setColor( mFontSelectionBackColor );
 
 		do {
-			initPos	= mTextCache->Font()->GetCursorPos( mTextCache->Text(), init );
-			lastEnd = mTextCache->Text().find_first_of( '\n', init );
+			initPos	= mTextCache->font()->getCursorPos( mTextCache->text(), init );
+			lastEnd = mTextCache->text().find_first_of( '\n', init );
 
 			if ( lastEnd < end && -1 != lastEnd ) {
-				endPos	= mTextCache->Font()->GetCursorPos( mTextCache->Text(), lastEnd );
+				endPos	= mTextCache->font()->getCursorPos( mTextCache->text(), lastEnd );
 				init	= lastEnd + 1;
 			} else {
-				endPos	= mTextCache->Font()->GetCursorPos( mTextCache->Text(), end );
+				endPos	= mTextCache->font()->getCursorPos( mTextCache->text(), end );
 				lastEnd = end;
 			}
 
-			P.DrawRectangle( Rectf( mScreenPos.x + initPos.x + mAlignOffset.x + mPadding.Left,
-									  mScreenPos.y + initPos.y - mTextCache->Font()->GetFontHeight() + mAlignOffset.y + mPadding.Top,
+			P.drawRectangle( Rectf( mScreenPos.x + initPos.x + mAlignOffset.x + mPadding.Left,
+									  mScreenPos.y + initPos.y - mTextCache->font()->getFontHeight() + mAlignOffset.y + mPadding.Top,
 									  mScreenPos.x + endPos.x + mAlignOffset.x + mPadding.Left,
 									  mScreenPos.y + endPos.y + mAlignOffset.y + mPadding.Top )
 			);

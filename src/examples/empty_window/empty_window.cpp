@@ -19,7 +19,7 @@ void MainLoop()
 	Primitives p;
 
 	// Change the color
-	p.SetColor( ColorA( 0, 255, 0, 150 ) );
+	p.setColor( ColorA( 0, 255, 0, 150 ) );
 
 	// Update the input
 	win->getInput()->update();
@@ -45,19 +45,19 @@ void MainLoop()
 	Vector2f winCenter( win->getWidth() * 0.5f, win->getHeight() * 0.5f );
 
 
-	GLi->Enable(GL_STENCIL_TEST);
-	GLi->StencilMask(0xFF);
-	GLi->StencilFunc(GL_NEVER, 1, 0xFF);
-	GLi->StencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
+	GLi->enable(GL_STENCIL_TEST);
+	GLi->stencilMask(0xFF);
+	GLi->stencilFunc(GL_NEVER, 1, 0xFF);
+	GLi->stencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
 
-	p.DrawCircle( winCenter, 150, 40 );
+	p.drawCircle( winCenter, 150, 40 );
 
-	GLi->StencilFunc(GL_EQUAL, 0, 0xFF);
+	GLi->stencilFunc(GL_EQUAL, 0, 0xFF);
 
 	// Draw a circle
-	p.DrawArc( winCenter, 200, 40, circ, circ2 );
+	p.drawArc( winCenter, 200, 40, circ, circ2 );
 
-	GLi->Disable(GL_STENCIL_TEST);
+	GLi->disable(GL_STENCIL_TEST);
 
 /*
 	GLi->Enable(GL_STENCIL_TEST);
@@ -95,7 +95,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// Set window background color
 		win->backColor( RGB( 50, 50, 50 ) );
 
-		GLi->PolygonMode( );
+		GLi->polygonMode( );
 
 		// Set the MainLoop function and run it
 		// This is the application loop, it will loop until the window is closed.

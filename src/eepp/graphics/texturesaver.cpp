@@ -10,12 +10,12 @@ TextureSaver::TextureSaver( int textureBind ) :
 	glGetIntegerv( GL_TEXTURE_BINDING_2D, &mTextureBinded );
 
 	if ( mTextureToBind > 0 && mTextureBinded != mTextureToBind )
-		GLi->BindTexture( GL_TEXTURE_2D, mTextureToBind );
+		GLi->bindTexture( GL_TEXTURE_2D, mTextureToBind );
 }
 
 TextureSaver::~TextureSaver() {
 	if ( mTextureBinded != mTextureToBind )
-		GLi->BindTexture( GL_TEXTURE_2D, mTextureBinded );
+		GLi->bindTexture( GL_TEXTURE_2D, mTextureBinded );
 }
 
 }}} 

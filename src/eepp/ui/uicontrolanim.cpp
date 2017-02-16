@@ -49,18 +49,18 @@ void UIControlAnim::Draw() {
 
 		if ( UIManager::instance()->HighlightFocus() && UIManager::instance()->FocusControl() == this ) {
 			Primitives P;
-			P.FillMode( DRAW_LINE );
-			P.BlendMode( Blend() );
-			P.SetColor( UIManager::instance()->HighlightFocusColor() );
-			P.DrawRectangle( GetRectf() );
+			P.fillMode( DRAW_LINE );
+			P.blendMode( Blend() );
+			P.setColor( UIManager::instance()->HighlightFocusColor() );
+			P.drawRectangle( GetRectf() );
 		}
 
 		if ( UIManager::instance()->HighlightOver() && UIManager::instance()->OverControl() == this ) {
 			Primitives P;
-			P.FillMode( DRAW_LINE );
-			P.BlendMode( Blend() );
-			P.SetColor( UIManager::instance()->HighlightOverColor() );
-			P.DrawRectangle( GetRectf() );
+			P.fillMode( DRAW_LINE );
+			P.blendMode( Blend() );
+			P.setColor( UIManager::instance()->HighlightOverColor() );
+			P.drawRectangle( GetRectf() );
 		}
 	}
 }
@@ -160,27 +160,27 @@ void UIControlAnim::AlphaChilds( const Float &alpha ) {
 
 void UIControlAnim::MatrixSet() {
 	if ( mScale != 1.f || mAngle != 0.f ) {
-		GlobalBatchRenderer::instance()->Draw();
+		GlobalBatchRenderer::instance()->draw();
 
-		GLi->PushMatrix();
+		GLi->pushMatrix();
 
 		Vector2f scaleCenter = ScaleCenter();
-		GLi->Translatef( scaleCenter.x , scaleCenter.y, 0.f );
-		GLi->Scalef( mScale.x, mScale.y, 1.0f );
-		GLi->Translatef( -scaleCenter.x, -scaleCenter.y, 0.f );
+		GLi->translatef( scaleCenter.x , scaleCenter.y, 0.f );
+		GLi->scalef( mScale.x, mScale.y, 1.0f );
+		GLi->translatef( -scaleCenter.x, -scaleCenter.y, 0.f );
 
 		Vector2f rotationCenter = RotationCenter();
-		GLi->Translatef( rotationCenter.x , rotationCenter.y, 0.f );
-		GLi->Rotatef( mAngle, 0.0f, 0.0f, 1.0f );
-		GLi->Translatef( -rotationCenter.x, -rotationCenter.y, 0.f );
+		GLi->translatef( rotationCenter.x , rotationCenter.y, 0.f );
+		GLi->rotatef( mAngle, 0.0f, 0.0f, 1.0f );
+		GLi->translatef( -rotationCenter.x, -rotationCenter.y, 0.f );
 	}
 }
 
 void UIControlAnim::MatrixUnset() {
 	if ( mScale != 1.f || mAngle != 0.f ) {
-		GlobalBatchRenderer::instance()->Draw();
+		GlobalBatchRenderer::instance()->draw();
 
-		GLi->PopMatrix();
+		GLi->popMatrix();
 	}
 }
 
@@ -348,45 +348,45 @@ Interpolation * UIControlAnim::DisableFadeOut( const Time& Time, const bool& Alp
 void UIControlAnim::BackgroundDraw() {
 	Primitives P;
 	Rectf R = GetRectf();
-	P.BlendMode( mBackground->Blend() );
-	P.SetColor( GetColor( mBackground->Color() ) );
+	P.blendMode( mBackground->Blend() );
+	P.setColor( GetColor( mBackground->Color() ) );
 
 	if ( 4 == mBackground->Colors().size() ) {
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( R, GetColor( mBackground->Colors()[0] ), GetColor( mBackground->Colors()[1] ), GetColor( mBackground->Colors()[2] ), GetColor( mBackground->Colors()[3] ), mBackground->Corners() );
+			P.drawRoundedRectangle( R, GetColor( mBackground->Colors()[0] ), GetColor( mBackground->Colors()[1] ), GetColor( mBackground->Colors()[2] ), GetColor( mBackground->Colors()[3] ), mBackground->Corners() );
 		} else {
-			P.DrawRectangle( R, GetColor( mBackground->Colors()[0] ), GetColor( mBackground->Colors()[1] ), GetColor( mBackground->Colors()[2] ), GetColor( mBackground->Colors()[3] ) );
+			P.drawRectangle( R, GetColor( mBackground->Colors()[0] ), GetColor( mBackground->Colors()[1] ), GetColor( mBackground->Colors()[2] ), GetColor( mBackground->Colors()[3] ) );
 		}
 	} else {
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->Corners() );
+			P.drawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->Corners() );
 		} else {
-			P.DrawRectangle( R );
+			P.drawRectangle( R );
 		}
 	}
 }
 
 void UIControlAnim::BorderDraw() {
 	Primitives P;
-	P.FillMode( DRAW_LINE );
-	P.BlendMode( Blend() );
-	P.LineWidth( (Float)mBorder->Width() );
-	P.SetColor( GetColor( mBorder->Color() ) );
+	P.fillMode( DRAW_LINE );
+	P.blendMode( Blend() );
+	P.lineWidth( (Float)mBorder->Width() );
+	P.setColor( GetColor( mBorder->Color() ) );
 
 	//! @TODO: Check why was this +0.1f -0.1f?
 	if ( mFlags & UI_CLIP_ENABLE ) {
 		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.width() - 0.1f, (Float)mSize.height() - 0.1f ) );
 
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
+			P.drawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
 		} else {
-			P.DrawRectangle( R );
+			P.drawRectangle( R );
 		}
 	} else {
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
+			P.drawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
 		} else {
-			P.DrawRectangle( GetRectf() );
+			P.drawRectangle( GetRectf() );
 		}
 	}
 }

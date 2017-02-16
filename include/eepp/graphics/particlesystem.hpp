@@ -53,7 +53,7 @@ class EE_API ParticleSystem {
 		* @param Speed The speed on x axis (used for NoFx)
 		* @param Acc The acceleration of the particle (used for NoFx)
 		*/
-		void Create(
+		void create(
 			const EE_PARTICLE_EFFECT& Effect,
 			const Uint32& NumParticles,
 			const Uint32& TexId,
@@ -61,95 +61,95 @@ class EE_API ParticleSystem {
 			const Float& PartSize = 16.0f,
 			const bool& AnimLoop = false,
 			const Uint32& NumLoops = 1,
-			const ColorAf& Color = ColorAf( 1.0f, 1.0f, 1.0f, 1.0f ),
+			const ColorAf& color = ColorAf( 1.0f, 1.0f, 1.0f, 1.0f ),
 			const Vector2f& Pos2 = Vector2f( 0, 0 ),
-			const Float& AlphaDecay = 0.01f,
-			const Vector2f& Speed = Vector2f( 0.1f, 0.1f ),
+			const Float& alphaDecay = 0.01f,
+			const Vector2f& speed = Vector2f( 0.1f, 0.1f ),
 			const Vector2f& Acc = Vector2f( 0.1f, 0.1f )
 		);
 
 		/** Draw the particles effect */
-		void Draw();
+		void draw();
 
 		/** Update the particles effect
 		* @param Time The time transcurred between the last update.
 		*/
-		void Update(const Time &time );
+		void update(const Time& time);
 
 		/** Update the particles effect taking the elapsed time from Engine */
-		void Update();
+		void update();
 
 		/** Stop using the effect but wait to end the animation */
-		void End();
+		void end();
 
 		/** Start using the effect and reset it */
-		void ReUse();
+		void reuse();
 
 		/** Stop immediately the effect */
-		void Kill();
+		void kill();
 
 		/** Change the default time modifier. Default 0.01f */
-		void Time( const Float& time );
+		void time( const Float& time );
 
 		/** Get the time modifier */
-		Float Time() const;
+		Float time() const;
 
 		/** Set if the effect it's in use */
-		void Using( const bool& inuse );
+		void setUsing( const bool& inuse );
 
 		/** @return It's used or no */
-		bool Using() const;
+		bool isUsing() const;
 
 		/** Update the effect position */
-		void Position( const Float& x, const Float& y );
+		void position( const Float& x, const Float& y );
 
 		/** Update the effect position */
-		void Position( const Vector2f& Pos );
+		void position( const Vector2f& Pos );
 
 		/** @return The effect position */
-		const Vector2f& Position() const;
+		const Vector2f& position() const;
 
 		/** Update the effect position 2 */
-		void Position2( const Float& x, const Float& y );
+		void position2( const Float& x, const Float& y );
 
 		/** Update the effect position 2 */
-		void Position2( const Vector2f& Pos );
+		void position2( const Vector2f& Pos );
 
 		/** @return The effect position 2 */
-		const Vector2f& Position2() const;
+		const Vector2f& position2() const;
 
 		/** Set a callback function for the reset effect of the particles. \n The reset it's where do you create the effect for every single particle. */
-		void SetCallbackReset( const ParticleCallback& pc );
+		void setCallbackReset( const ParticleCallback& pc );
 
 		/** @return The effect blend mode */
-		const EE_BLEND_MODE& BlendMode() const;
+		const EE_BLEND_MODE& blendMode() const;
 
 		/** Set the effect blend mode */
-		void BlendMode( const EE_BLEND_MODE& mode );
+		void blendMode( const EE_BLEND_MODE& mode );
 
 		/** @return The color of the effect */
-		const ColorAf& Color() const;
+		const ColorAf& color() const;
 
 		/** Set the color of the effect */
-		void Color( const ColorAf& Col );
+		void color( const ColorAf& Col );
 
 		/** @return The alpha decay of the effect */
-		const Float& AlphaDecay() const;
+		const Float& alphaDecay() const;
 
 		/** Set the alpha decay of the effect */
-		void AlphaDecay( const Float& Decay );
+		void alphaDecay( const Float& Decay );
 
 		/** @return The Speed of the effect */
-		const Vector2f& Speed() const;
+		const Vector2f& speed() const;
 
 		/** Set the Speed of the effect */
-		void Speed( const Vector2f& speed );
+		void speed( const Vector2f& speed );
 
 		/** @return The Acceleration of the effect */
-		const Vector2f& Acceleration() const;
+		const Vector2f& acceleration() const;
 
 		/** Set The Acceleration of the effect */
-		void Acceleration( const Vector2f& acc );
+		void acceleration( const Vector2f& acc );
 	private:
 		Particle *			mParticle;
 		Uint32				mPCount;
@@ -178,9 +178,9 @@ class EE_API ParticleSystem {
 		bool				mUsed;
 		bool				mPointsSup;
 
-		void Begin();
+		void begin();
 
-		virtual void Reset( Particle * P );
+		virtual void reset( Particle * P );
 
 		ParticleCallback mPC;
 };

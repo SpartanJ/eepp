@@ -232,22 +232,22 @@ void TextureLoader::start() {
 	mTE.restart();
 
 	if ( TEX_LT_PATH == mLoadType )
-		LoadFromPath();
+		loadFromPath();
 	else if ( TEX_LT_MEM == mLoadType )
-		LoadFromMemory();
+		loadFromMemory();
 	else if ( TEX_LT_PACK == mLoadType )
-		LoadFromPack();
+		loadFromPack();
 	else if ( TEX_LT_STREAM == mLoadType )
-		LoadFromStream();
+		loadFromStream();
 
 	mTexLoaded = true;
 
 	if ( !mThreaded || ( Engine::instance()->isSharedGLContextEnabled() && Engine::instance()->getCurrentWindow()->isThreadedGLContext() ) ) {
-		LoadFromPixels();
+		loadFromPixels();
 	}
 }
 
-void TextureLoader::LoadFile() {
+void TextureLoader::loadFile() {
 	IOStreamFile fs( mFilepath , std::ios::in | std::ios::binary );
 
 	mSize		= FileSystem::fileSize( mFilepath );
@@ -255,24 +255,24 @@ void TextureLoader::LoadFile() {
 	fs.read( reinterpret_cast<char*> ( mPixels ), mSize );
 }
 
-void TextureLoader::LoadFromPath() {
+void TextureLoader::loadFromPath() {
 	if ( FileSystem::fileExists( mFilepath ) ) {
 		mImgType = stbi_test( mFilepath.c_str() );
 
-		if ( STBI_dds == mImgType && GLi->IsExtension( EEGL_EXT_texture_compression_s3tc ) ) {
-			LoadFile();
+		if ( STBI_dds == mImgType && GLi->isExtension( EEGL_EXT_texture_compression_s3tc ) ) {
+			loadFile();
 			mDirectUpload = true;
 			stbi__dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed );
 		} else if ( STBI_pvr == mImgType &&
 					stbi__pvr_info_from_path( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed ) &&
-					( !mIsCompressed || GLi->IsExtension( EEGL_IMG_texture_compression_pvrtc ) ) )
+					( !mIsCompressed || GLi->isExtension( EEGL_IMG_texture_compression_pvrtc ) ) )
 		{
 			// If the PVR is valid, and the pvrtc extension is present or it's not compressed ( so it doesn't need the extension )
 			// means that it can be uploaded directly to the GPU.
-			LoadFile();
+			loadFile();
 			mDirectUpload = true;
-		} else if ( STBI_pkm == mImgType && GLi->IsExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
-			LoadFile();
+		} else if ( STBI_pkm == mImgType && GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
+			loadFile();
 			mIsCompressed =  mDirectUpload = true;
 			stbi__pkm_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels );
 		} else {
@@ -300,38 +300,38 @@ void TextureLoader::LoadFromPath() {
 		if ( NULL != mPack ) {
 			mLoadType = TEX_LT_PACK;
 
-			LoadFromPack();
+			loadFromPack();
 		}
 	}
 }
 
-void TextureLoader::LoadFromPack() {
+void TextureLoader::loadFromPack() {
 	SafeDataPointer PData;
 
 	if ( NULL != mPack && mPack->isOpen() && mPack->extractFileToMemory( mFilepath, PData ) ) {
 		mImagePtr	= PData.Data;
 		mSize		= PData.DataSize;
 
-		LoadFromMemory();
+		loadFromMemory();
 	}
 }
 
-void TextureLoader::LoadFromMemory() {
+void TextureLoader::loadFromMemory() {
 	mImgType = stbi_test_from_memory( mImagePtr, mSize );
 
-	if ( STBI_dds == mImgType && GLi->IsExtension( EEGL_EXT_texture_compression_s3tc ) ) {
+	if ( STBI_dds == mImgType && GLi->isExtension( EEGL_EXT_texture_compression_s3tc ) ) {
 		mPixels = (Uint8*) eeMalloc( mSize );
 		memcpy( mPixels, mImagePtr, mSize );
 		stbi__dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed );
 		mDirectUpload = true;
 	} else if ( STBI_pvr == mImgType &&
 				stbi__pvr_info_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed ) &&
-				( !mIsCompressed || GLi->IsExtension( EEGL_IMG_texture_compression_pvrtc ) ) )
+				( !mIsCompressed || GLi->isExtension( EEGL_IMG_texture_compression_pvrtc ) ) )
 	{
 		mPixels = (Uint8*) eeMalloc( mSize );
 		memcpy( mPixels, mImagePtr, mSize );
 		mDirectUpload = true;
-	} else if ( STBI_pkm == mImgType && GLi->IsExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
+	} else if ( STBI_pkm == mImgType && GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
 		mPixels = (Uint8*) eeMalloc( mSize );
 		memcpy( mPixels, mImagePtr, mSize );
 		stbi__pkm_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels );
@@ -353,7 +353,7 @@ void TextureLoader::LoadFromMemory() {
 	}
 }
 
-void TextureLoader::LoadFromStream() {
+void TextureLoader::loadFromStream() {
 	if ( mStream->isOpen() ) {
 		mSize = mStream->getSize();
 
@@ -364,7 +364,7 @@ void TextureLoader::LoadFromStream() {
 
 		mImgType = stbi_test_from_callbacks( &callbacks, mStream );
 
-		if ( STBI_dds == mImgType && GLi->IsExtension( EEGL_EXT_texture_compression_s3tc ) ) {
+		if ( STBI_dds == mImgType && GLi->isExtension( EEGL_EXT_texture_compression_s3tc ) ) {
 			mSize	= mStream->getSize();
 			mPixels	= (Uint8*) eeMalloc( mSize );
 			mStream->seek( 0 );
@@ -375,7 +375,7 @@ void TextureLoader::LoadFromStream() {
 			mDirectUpload = true;
 		} else if ( STBI_pvr == mImgType &&
 					stbi__pvr_info_from_callbacks( &callbacks, mStream, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed ) &&
-					( !mIsCompressed || GLi->IsExtension( EEGL_IMG_texture_compression_pvrtc ) ) )
+					( !mIsCompressed || GLi->isExtension( EEGL_IMG_texture_compression_pvrtc ) ) )
 		{
 			mSize	= mStream->getSize();
 			mPixels	= (Uint8*) eeMalloc( mSize );
@@ -383,7 +383,7 @@ void TextureLoader::LoadFromStream() {
 			mStream->read( reinterpret_cast<char*> ( mPixels ), mSize );
 			mStream->seek( 0 );
 			mDirectUpload = true;
-		} else if ( STBI_pkm == mImgType && GLi->IsExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
+		} else if ( STBI_pkm == mImgType && GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
 			mSize	= mStream->getSize();
 			mPixels	= (Uint8*) eeMalloc( mSize );
 			mStream->seek( 0 );
@@ -411,7 +411,7 @@ void TextureLoader::LoadFromStream() {
 	}
 }
 
-void TextureLoader::LoadFromPixels() {
+void TextureLoader::loadFromPixels() {
 	if ( !mLoaded && mTexLoaded ) {
 		Uint32 tTexId = 0;
 
@@ -450,9 +450,9 @@ void TextureLoader::LoadFromPixels() {
 
 					Image * tImg = eeNew ( Image, ( mPixels, mImgWidth, mImgHeight, mChannels ) );
 
-					tImg->CreateMaskFromColor( ColorA( mColorKey->r(), mColorKey->g(), mColorKey->b(), 255 ), 0 );
+					tImg->createMaskFromColor( ColorA( mColorKey->r(), mColorKey->g(), mColorKey->b(), 255 ), 0 );
 
-					tImg->AvoidFreeImage( true  );
+					tImg->avoidFreeImage( true  );
 
 					eeSAFE_DELETE( tImg );
 				}
@@ -460,7 +460,7 @@ void TextureLoader::LoadFromPixels() {
 				tTexId = SOIL_create_OGL_texture( mPixels, &width, &height, mChannels, SOIL_CREATE_NEW_ID, flags );
 			}
 
-			GLi->BindTexture( GL_TEXTURE_2D, PreviousTexture );
+			GLi->bindTexture( GL_TEXTURE_2D, PreviousTexture );
 
 			if ( ( mThreaded || ForceGLThreaded ) &&
 				 ( ForceGLThreaded || Engine::instance()->isSharedGLContextEnabled() ) &&
@@ -494,7 +494,7 @@ void TextureLoader::LoadFromPixels() {
 					}
 				}
 
-				mTexId = TextureFactory::instance()->PushTexture( mFilepath, tTexId, width, height, mImgWidth, mImgHeight, mMipmap, mChannels, mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
+				mTexId = TextureFactory::instance()->pushTexture( mFilepath, tTexId, width, height, mImgWidth, mImgHeight, mMipmap, mChannels, mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
 
 				eePRINTL( "Texture %s loaded in %4.3f ms.", mFilepath.c_str(), mTE.elapsed().asMilliseconds() );
 			} else {
@@ -528,33 +528,33 @@ void TextureLoader::LoadFromPixels() {
 
 void TextureLoader::update() {
 	if ( !( Engine::instance()->isSharedGLContextEnabled() && Engine::instance()->getCurrentWindow()->isThreadedGLContext() ) ) {
-		LoadFromPixels();
+		loadFromPixels();
 	}
 }
 
-const Uint32& TextureLoader::Id() const {
+const Uint32& TextureLoader::getId() const {
 	return mTexId;
 }
 
-void TextureLoader::SetColorKey( RGB Color ) {
+void TextureLoader::setColorKey( RGB Color ) {
 	eeSAFE_DELETE( mColorKey );
 	mColorKey = eeNew( RGB, ( Color.r(), Color.g(), Color.b() ) );
 }
 
-const std::string& TextureLoader::Filepath() const {
+const std::string& TextureLoader::filepath() const {
 	return mFilepath;
 }
 
-Texture * TextureLoader::GetTexture() const {
+Texture * TextureLoader::getTexture() const {
 	if ( 0 != mTexId )
-		return TextureFactory::instance()->GetTexture( mTexId );
+		return TextureFactory::instance()->getTexture( mTexId );
 
 	return NULL;
 }
 
 void TextureLoader::unload() {
 	if ( mLoaded ) {
-		TextureFactory::instance()->Remove( mTexId );
+		TextureFactory::instance()->remove( mTexId );
 
 		reset();
 	}

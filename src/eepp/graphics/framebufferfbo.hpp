@@ -15,26 +15,26 @@ class EE_API FrameBufferFBO : public FrameBuffer {
 
 		FrameBufferFBO( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false, EE::Window::Window * window = NULL );
 
-		void Bind();
+		void bind();
 
-		void Unbind();
+		void unbind();
 
-		void Reload();
+		void reload();
 
-		static bool IsSupported();
+		static bool isSupported();
 	protected:
 		Int32 		mFrameBuffer;
 		Uint32 		mDepthBuffer;
 		Int32		mLastFB;
 		Int32		mLastRB;
 
-		bool Create( const Uint32& Width, const Uint32& Height );
+		bool create( const Uint32& Width, const Uint32& Height );
 
-		bool Create( const Uint32& Width, const Uint32& Height, bool DepthBuffer );
+		bool create( const Uint32& Width, const Uint32& Height, bool DepthBuffer );
 
-		void BindFrameBuffer();
+		void bindFrameBuffer();
 
-		void BindRenderBuffer();
+		void bindRenderBuffer();
 };
 
 }}

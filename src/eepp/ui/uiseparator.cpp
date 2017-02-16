@@ -24,7 +24,7 @@ void UISeparator::SetTheme( UITheme * Theme ) {
 	UIControl::SetThemeControl( Theme, "separator" );
 	
 	if ( NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->GetSubTexture( UISkinState::StateNormal ) ) {
-		Size( mSize.width(), mSkinState->GetSkin()->GetSubTexture( UISkinState::StateNormal )->RealSize().height() );
+		Size( mSize.width(), mSkinState->GetSkin()->GetSubTexture( UISkinState::StateNormal )->realSize().height() );
 	}
 }
 

@@ -20,10 +20,10 @@ TileMapLayer::~TileMapLayer() {
 }
 
 void TileMapLayer::Draw( const Vector2f& Offset ) {
-	GlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->draw();
 
-	GLi->PushMatrix();
-	GLi->Translatef( mOffset.x, mOffset.y, 0.0f );
+	GLi->pushMatrix();
+	GLi->translatef( mOffset.x, mOffset.y, 0.0f );
 
 	Vector2i start = mMap->StartTile();
 	Vector2i end = mMap->EndTile();
@@ -46,16 +46,16 @@ void TileMapLayer::Draw( const Vector2f& Offset ) {
 			for ( Int32 y = start.y; y < end.y; y++ ) {
 				if ( NULL != mTiles[x][y] ) {
 					if ( mTiles[x][y]->Blocked() ) {
-						Tex->Draw( x * mMap->TileSize().x, y * mMap->TileSize().y, 0 , Vector2f::One, ColorA( 255, 0, 0, 200 ) );
+						Tex->draw( x * mMap->TileSize().x, y * mMap->TileSize().y, 0 , Vector2f::One, ColorA( 255, 0, 0, 200 ) );
 					}
 				}
 			}
 		}
 	}
 
-	GlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->draw();
 
-	GLi->PopMatrix();
+	GLi->popMatrix();
 }
 
 void TileMapLayer::Update() {

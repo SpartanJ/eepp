@@ -34,9 +34,9 @@ TextureAtlasSubTextureEditor::~TextureAtlasSubTextureEditor() {
 
 void TextureAtlasSubTextureEditor::Draw() {
 	Primitives P;
-	P.SetColor( ColorA( 255, 0, 0, mAlpha ) );
-	P.DrawLine( Line2f( Vector2f( mScreenPos.x, mScreenPos.y + mUICenter.y ), Vector2f( mScreenPos.x + mSize.width(), mScreenPos.y + mUICenter.y ) ) );
-	P.DrawLine( Line2f( Vector2f( mScreenPos.x + mUICenter.x, mScreenPos.y ), Vector2f( mScreenPos.x + mUICenter.x, mScreenPos.y + mSize.height() ) ) );
+	P.setColor( ColorA( 255, 0, 0, mAlpha ) );
+	P.drawLine( Line2f( Vector2f( mScreenPos.x, mScreenPos.y + mUICenter.y ), Vector2f( mScreenPos.x + mSize.width(), mScreenPos.y + mUICenter.y ) ) );
+	P.drawLine( Line2f( Vector2f( mScreenPos.x + mUICenter.x, mScreenPos.y ), Vector2f( mScreenPos.x + mUICenter.x, mScreenPos.y + mSize.height() ) ) );
 
 	UIComplexControl::Draw();
 }
@@ -49,10 +49,10 @@ void TextureAtlasSubTextureEditor::Update() {
 	if ( NULL != mGfx->SubTexture() && mDrag->DragEnable() && mDrag->Dragging() && Pos != mDrag->Pos() ) {
 		Vector2i Diff = -( Pos - mDrag->Pos() );
 
-		mGfx->SubTexture()->Offset( Vector2i( mGfx->SubTexture()->Offset().x + Diff.x, mGfx->SubTexture()->Offset().y + Diff.y ) );
+		mGfx->SubTexture()->offset( Vector2i( mGfx->SubTexture()->offset().x + Diff.x, mGfx->SubTexture()->offset().y + Diff.y ) );
 
-		mEditor->SpinOffX()->Value( mGfx->SubTexture()->Offset().x );
-		mEditor->SpinOffY()->Value( mGfx->SubTexture()->Offset().y );
+		mEditor->SpinOffX()->Value( mGfx->SubTexture()->offset().x );
+		mEditor->SpinOffY()->Value( mGfx->SubTexture()->offset().y );
 	}
 
 	mGfx->Pos( mUICenter );

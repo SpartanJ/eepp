@@ -93,8 +93,8 @@ void UITabWidget::SeContainerSize() {
 
 void UITabWidget::Draw() {
 	if ( mDrawLineBelowTabs ) {
-		bool smooth = GLi->IsLineSmooth();
-		if ( smooth ) GLi->LineSmooth( false );
+		bool smooth = GLi->isLineSmooth();
+		if ( smooth ) GLi->lineSmooth( false );
 
 		Primitives P;
 		Vector2i p1( mPos.x, mPos.y + mTabContainer->Size().height() + mLineBewowTabsYOffset );
@@ -103,9 +103,9 @@ void UITabWidget::Draw() {
 		ControlToScreen( p1 );
 		ControlToScreen( p2 );
 
-		P.LineWidth( 1 );
-		P.SetColor( mLineBelowTabsColor );
-		P.DrawLine( Line2f( Vector2f( p1.x, p1.y ), Vector2f( p2.x, p2.y ) ) );
+		P.lineWidth( 1 );
+		P.setColor( mLineBelowTabsColor );
+		P.drawLine( Line2f( Vector2f( p1.x, p1.y ), Vector2f( p2.x, p2.y ) ) );
 
 		Vector2i p3( mPos.x + mTabContainer->Pos().x + mTabContainer->Size().width(), mPos.y + mTabContainer->Size().height() + mLineBewowTabsYOffset );
 		Vector2i p4( mPos.x + mSize.width(), p3.y );
@@ -113,9 +113,9 @@ void UITabWidget::Draw() {
 		ControlToScreen( p3 );
 		ControlToScreen( p4 );
 
-		P.DrawLine( Line2f( Vector2f( p3.x, p3.y ), Vector2f( p4.x, p4.y ) ) );
+		P.drawLine( Line2f( Vector2f( p3.x, p3.y ), Vector2f( p4.x, p4.y ) ) );
 
-		if ( smooth ) GLi->LineSmooth( true );
+		if ( smooth ) GLi->lineSmooth( true );
 	}
 }
 

@@ -78,7 +78,7 @@ void TextureFontLoader::update() {
 		}
 
 		if ( mTexLoaded && !mFontLoaded ) {
-			LoadFont();
+			loadFont();
 		}
 
 		if ( mFontLoaded ) {
@@ -87,42 +87,42 @@ void TextureFontLoader::update() {
 	}
 }
 
-const std::string& TextureFontLoader::Id() const {
+const std::string& TextureFontLoader::getId() const {
 	return mFontName;
 }
 
-void TextureFontLoader::LoadFromPath() {
-	mFont->Load( mTexLoader->Id(), mFilepath );
+void TextureFontLoader::loadFromPath() {
+	mFont->load( mTexLoader->getId(), mFilepath );
 }
 
-void TextureFontLoader::LoadFromMemory() {
-	mFont->LoadFromMemory( mTexLoader->Id(), mData, mDataSize );
+void TextureFontLoader::loadFromMemory() {
+	mFont->loadFromMemory( mTexLoader->getId(), mData, mDataSize );
 }
 
-void TextureFontLoader::LoadFromPack() {
-	mFont->LoadFromPack( mTexLoader->Id(), mPack, mFilepath );
+void TextureFontLoader::loadFromPack() {
+	mFont->loadFromPack( mTexLoader->getId(), mPack, mFilepath );
 }
 
-void TextureFontLoader::LoadFromTex() {
-	mFont->Load( mTexLoader->Id(), mStartChar, mSpacing, mTexColumns, mTexRows, mNumChars );
+void TextureFontLoader::loadFromTex() {
+	mFont->load( mTexLoader->getId(), mStartChar, mSpacing, mTexColumns, mTexRows, mNumChars );
 }
 
-void TextureFontLoader::LoadFont() {
+void TextureFontLoader::loadFont() {
 	mFont = TextureFont::New( mFontName );
 
 	if ( TEF_LT_PATH == mLoadType )
-		LoadFromPath();
+		loadFromPath();
 	else if ( TEF_LT_MEM == mLoadType )
-		LoadFromMemory();
+		loadFromMemory();
 	else if ( TEF_LT_PACK == mLoadType )
-		LoadFromPack();
+		loadFromPack();
 	else if ( TEF_LT_TEX == mLoadType )
-		LoadFromTex();
+		loadFromTex();
 
 	mFontLoaded = true;
 }
 
-Graphics::Font * TextureFontLoader::Font() const {
+Graphics::Font * TextureFontLoader::getFont() const {
 	return mFont;
 }
 

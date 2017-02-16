@@ -256,9 +256,9 @@ UIControl * UIManager::DownControl() const {
 }
 
 void UIManager::Draw() {
-	GlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->draw();
 	mControl->InternalDraw();
-	GlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->draw();
 }
 
 UIWindow * UIManager::MainControl() const {

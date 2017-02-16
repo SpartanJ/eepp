@@ -12,11 +12,11 @@ FrameBufferManager::~FrameBufferManager()
 {
 }
 
-void FrameBufferManager::Reload() {
+void FrameBufferManager::reload() {
 	std::list<FrameBuffer*>::iterator it;
 
 	for ( it = mResources.begin(); it != mResources.end(); it++ )
-		(*it)->Reload();
+		(*it)->reload();
 }
 
 }}}

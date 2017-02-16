@@ -28,45 +28,45 @@ TextCache::TextCache( Graphics::Font * font, const String& text, ColorA FontColo
 	mVertexNumCached(0),
 	mCachedCoords(false)
 {
-	Cache();
-	UpdateCoords();
-	Color( FontColor );
-	ShadowColor( FontShadowColor );
+	cache();
+	updateCoords();
+	color( FontColor );
+	shadowColor( FontShadowColor );
 }
 
 TextCache::~TextCache() {
 }
 
-void TextCache::Create( Graphics::Font * font, const String& text, ColorA FontColor, ColorA FontShadowColor ) {
+void TextCache::create( Graphics::Font * font, const String& text, ColorA FontColor, ColorA FontShadowColor ) {
 	mFont = font;
 	mText = text;
-	UpdateCoords();
-	Color( FontColor );
-	ShadowColor( FontShadowColor );
-	Cache();
+	updateCoords();
+	color( FontColor );
+	shadowColor( FontShadowColor );
+	cache();
 }
 
-Graphics::Font * TextCache::Font() const {
+Graphics::Font * TextCache::font() const {
 	return mFont;
 }
 
-void TextCache::Font( Graphics::Font * font ) {
+void TextCache::font( Graphics::Font * font ) {
 	mFont = font;
-	Cache();
+	cache();
 }
 
-String& TextCache::Text() {
+String& TextCache::text() {
 	return mText;
 }
 
-void TextCache::UpdateCoords() {
-	Uint32 size = (Uint32)mText.size() * GLi->QuadVertexs();
+void TextCache::updateCoords() {
+	Uint32 size = (Uint32)mText.size() * GLi->quadVertexs();
 	
 	mRenderCoords.resize( size );
 	mColors.resize( size, mFontColor );
 }
 
-void TextCache::Text( const String& text ) {
+void TextCache::text( const String& text ) {
 	bool needUpdate = false;
 
 	if ( mText.size() != text.size() )
@@ -75,32 +75,32 @@ void TextCache::Text( const String& text ) {
 	mText = text;
 
 	if ( needUpdate )
-		UpdateCoords();
+		updateCoords();
 
-	Cache();
+	cache();
 }
 
-const ColorA& TextCache::Color() const {
+const ColorA& TextCache::color() const {
 	return mFontColor;
 }
 
-void TextCache::Alpha( const Uint8& alpha ) {
+void TextCache::alpha( const Uint8& alpha ) {
 	std::size_t s = mColors.size();
 	for ( Uint32 i = 0; i < s; i++ ) {
 		mColors[ i ].Alpha = alpha;
 	}
 }
 
-void TextCache::Color( const ColorA& color ) {
+void TextCache::color( const ColorA& color ) {
 	if ( mFontColor != color ) {
 		mFontColor = color;
 
-		mColors.assign( mText.size() * GLi->QuadVertexs(), mFontColor );
+		mColors.assign( mText.size() * GLi->quadVertexs(), mFontColor );
 	}
 }
 
-void TextCache::Color( const ColorA& color, Uint32 from, Uint32 to ) {
-	std::vector<ColorA> colors( GLi->QuadVertexs(), color );
+void TextCache::color( const ColorA& color, Uint32 from, Uint32 to ) {
+	std::vector<ColorA> colors( GLi->quadVertexs(), color );
 	std::size_t s = mText.size();
 
 	if ( to >= s ) {
@@ -112,7 +112,7 @@ void TextCache::Color( const ColorA& color, Uint32 from, Uint32 to ) {
 		Int32 rpos	= from;
 		Int32 lpos	= 0;
 		Uint32 i;
-		Uint32 qsize = sizeof(ColorA) * GLi->QuadVertexs();
+		Uint32 qsize = sizeof(ColorA) * GLi->quadVertexs();
 		String::StringBaseType curChar;
 
 		// New lines and tabs are not rendered, and not counted as a color
@@ -139,30 +139,30 @@ void TextCache::Color( const ColorA& color, Uint32 from, Uint32 to ) {
 				}
 			}
 
-			memcpy( &(mColors[ lpos * GLi->QuadVertexs() ]), &colors[0], qsize );
+			memcpy( &(mColors[ lpos * GLi->quadVertexs() ]), &colors[0], qsize );
 		}
 	}
 }
 
-const ColorA& TextCache::ShadowColor() const {
+const ColorA& TextCache::shadowColor() const {
 	return mFontShadowColor;
 }
 
-void TextCache::ShadowColor(const ColorA& color) {
+void TextCache::shadowColor(const ColorA& color) {
 	mFontShadowColor = color;
 }
 
-std::vector<eeVertexCoords>& TextCache::VertextCoords() {
+std::vector<eeVertexCoords>& TextCache::vertextCoords() {
 	return mRenderCoords;
 }
 
-std::vector<ColorA>& TextCache::Colors() {
+std::vector<ColorA>& TextCache::colors() {
 	return mColors;
 }
 
-void TextCache::Cache() {
+void TextCache::cache() {
 	if ( NULL != mFont && mText.size() ) {
-		mFont->CacheWidth( mText, mLinesWidth, mCachedWidth, mNumLines, mLargestLineCharCount );
+		mFont->cacheWidth( mText, mLinesWidth, mCachedWidth, mNumLines, mLargestLineCharCount );
 	}else {
 		mCachedWidth = 0;
 	}
@@ -170,66 +170,66 @@ void TextCache::Cache() {
 	mCachedCoords = false;
 }
 
-Float TextCache::GetTextWidth() {
-	return ( mFlags & FONT_DRAW_VERTICAL ) ? (Float)mFont->GetFontHeight() * (Float)mNumLines : mCachedWidth;
+Float TextCache::getTextWidth() {
+	return ( mFlags & FONT_DRAW_VERTICAL ) ? (Float)mFont->getFontHeight() * (Float)mNumLines : mCachedWidth;
 }
 
-Float TextCache::GetTextHeight() {
-	return ( mFlags & FONT_DRAW_VERTICAL ) ? mLargestLineCharCount * (Float)mFont->GetFontHeight() : (Float)mFont->GetFontHeight() * (Float)mNumLines;
+Float TextCache::getTextHeight() {
+	return ( mFlags & FONT_DRAW_VERTICAL ) ? mLargestLineCharCount * (Float)mFont->getFontHeight() : (Float)mFont->getFontHeight() * (Float)mNumLines;
 }
 
-const int& TextCache::GetNumLines() const {
+const int& TextCache::getNumLines() const {
 	return mNumLines;
 }
 
-const std::vector<Float>& TextCache::LinesWidth() {
+const std::vector<Float>& TextCache::linesWidth() {
 	return mLinesWidth;
 }
 
-void TextCache::Draw( const Float& X, const Float& Y, const Vector2f& Scale, const Float& Angle, EE_BLEND_MODE Effect ) {
+void TextCache::draw( const Float& X, const Float& Y, const Vector2f& Scale, const Float& Angle, EE_BLEND_MODE Effect ) {
 	if ( NULL != mFont ) {
-		GlobalBatchRenderer::instance()->Draw();
+		GlobalBatchRenderer::instance()->draw();
 
 		if ( Angle != 0.0f || Scale != 1.0f ) {
-			mFont->Draw( *this, X, Y, mFlags, Scale, Angle, Effect );
+			mFont->draw( *this, X, Y, mFlags, Scale, Angle, Effect );
 		} else {
-			GLi->Translatef( X, Y, 0.f );
+			GLi->translatef( X, Y, 0.f );
 	
-			mFont->Draw( *this, 0, 0, mFlags, Scale, Angle, Effect );
+			mFont->draw( *this, 0, 0, mFlags, Scale, Angle, Effect );
 	
-			GLi->Translatef( -X, -Y, 0.f );
+			GLi->translatef( -X, -Y, 0.f );
 		}
 	}
 }
 
-const bool& TextCache::CachedCoords() const {
+const bool& TextCache::cachedCoords() const {
 	return mCachedCoords;
 }
 
-void TextCache::CachedCoords( const bool& cached ) {
+void TextCache::cachedCoords( const bool& cached ) {
 	mCachedCoords = cached;
 }
 
-const unsigned int& TextCache::CachedVerts() const {
+const unsigned int& TextCache::cachedVerts() const {
 	return mVertexNumCached;
 }
 
-void TextCache::CachedVerts( const unsigned int& num ) {
+void TextCache::cachedVerts( const unsigned int& num ) {
 	mVertexNumCached = num;
 }
 
-void TextCache::Flags( const Uint32& flags ) {
+void TextCache::flags( const Uint32& flags ) {
 	if ( mFlags != flags ) {
 		mFlags = flags;
 		mCachedCoords = false;
 
 		if ( ( mFlags & FONT_DRAW_VERTICAL ) != ( flags & FONT_DRAW_VERTICAL ) ) {
-			Cache();
+			cache();
 		}
 	}
 }
 
-const Uint32& TextCache::Flags() const {
+const Uint32& TextCache::flags() const {
 	return mFlags;
 }
 

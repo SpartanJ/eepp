@@ -79,7 +79,7 @@ Console::Console( Font* Font, const bool& MakeDefaultCommands, const bool& Attac
 		mWindow = Engine::instance()->getCurrentWindow();
 	}
 
-	Create( Font, MakeDefaultCommands, AttachToLog, MaxLogLines, TextureId );
+	create( Font, MakeDefaultCommands, AttachToLog, MaxLogLines, TextureId );
 }
 
 Console::~Console() {
@@ -99,17 +99,17 @@ Console::~Console() {
 	}
 }
 
-void Console::Create( Font* Font, const bool& MakeDefaultCommands, const bool& AttachToLog, const unsigned int& MaxLogLines, const Uint32& TextureId ) {
+void Console::create( Font* Font, const bool& MakeDefaultCommands, const bool& AttachToLog, const unsigned int& MaxLogLines, const Uint32& TextureId ) {
 	if ( NULL == mWindow ) {
 		mWindow = Engine::instance()->getCurrentWindow();
 	}
 
 	mFont = Font;
 
-	mFontSize = (Float)( mFont->GetFontSize() * 1.25 );
+	mFontSize = (Float)( mFont->getFontSize() * 1.25 );
 
-	if ( mFont->GetFontHeight() < mFontSize && ( mFont->GetFontHeight() != mFont->GetFontSize() || mFont->GetLineSkip() != (Int32)mFont->GetFontHeight() ) )
-		mFontSize = mFont->GetFontHeight();
+	if ( mFont->getFontHeight() < mFontSize && ( mFont->getFontHeight() != mFont->getFontSize() || mFont->getLineSkip() != (Int32)mFont->getFontHeight() ) )
+		mFontSize = mFont->getFontHeight();
 
 	if ( TextureId > 0 )
 		mTexId = TextureId;
@@ -120,7 +120,7 @@ void Console::Create( Font* Font, const bool& MakeDefaultCommands, const bool& A
 	mEnabled = true;
 
 	if ( MakeDefaultCommands )
-		CreateDefaultCommands();
+		createDefaultCommands();
 
 	mWidth = (Float) mWindow->getWidth();
 	mHeight = (Float) mWindow->getHeight();
@@ -129,52 +129,52 @@ void Console::Create( Font* Font, const bool& MakeDefaultCommands, const bool& A
 	if ( NULL != Engine::existsSingleton() &&
 		Engine::instance()->existsWindow( mWindow ) )
 	{
-		mMyCallback = mWindow->getInput()->pushCallback( cb::Make1( this, &Console::PrivInputCallback ) );
-		mVidCb = mWindow->pushResizeCallback( cb::Make1( this, &Console::PrivVideoResize )  );
+		mMyCallback = mWindow->getInput()->pushCallback( cb::Make1( this, &Console::privInputCallback ) );
+		mVidCb = mWindow->pushResizeCallback( cb::Make1( this, &Console::privVideoResize )  );
 	}
 
-	mTBuf->setReturnCallback( cb::Make0( this, &Console::ProcessLine ) );
+	mTBuf->setReturnCallback( cb::Make0( this, &Console::processLine ) );
 	mTBuf->start();
 	mTBuf->supportNewLine( false );
 	mTBuf->active( false );
-	IgnoreCharOnPrompt( KEY_TAB );
+	ignoreCharOnPrompt( KEY_TAB );
 
 	mCon.ConModif = 0;
 
-	CmdGetLog();
+	cmdGetLog();
 
 	if ( AttachToLog ) {
 		Log::instance()->addLogReader( this );
 	}
 }
 
-void Console::AddCommand( const String& Command, ConsoleCallback CB ) {
+void Console::addCommand( const String& Command, ConsoleCallback CB ) {
 	if ( !(mCallbacks.count( Command ) > 0) )
 		mCallbacks[Command] = CB;
 }
 
-void Console::Draw() {
+void Console::draw() {
 	if ( mEnabled && NULL != mFont ) {
-		ColorA OldColor( mFont->Color() );
+		ColorA OldColor( mFont->color() );
 
-		Fade();
+		fade();
 
 		if ( mY > 0.0f ) {
 			if ( mTexId == 0 ) {
-				mPri.SetColor( ColorA( mConColor.r(), mConColor.g(), mConColor.b(), static_cast<Uint8>(mA) ) );
-				mPri.DrawRectangle( Rectf( Vector2f( 0.0f, 0.0f ), Sizef( mWidth, mY ) ) );
+				mPri.setColor( ColorA( mConColor.r(), mConColor.g(), mConColor.b(), static_cast<Uint8>(mA) ) );
+				mPri.drawRectangle( Rectf( Vector2f( 0.0f, 0.0f ), Sizef( mWidth, mY ) ) );
 			} else {
 				ColorA C( mConColor.r(), mConColor.g(), mConColor.b(), static_cast<Uint8>(mA) );
 
-				Texture * Tex = TextureFactory::instance()->GetTexture( mTexId );
+				Texture * Tex = TextureFactory::instance()->getTexture( mTexId );
 
 				if ( NULL != Tex )
-					Tex->DrawEx( 0.0f, 0.0f, mWidth, mY, 0.0f, Vector2f::One, C, C, C, C );
+					Tex->drawEx( 0.0f, 0.0f, mWidth, mY, 0.0f, Vector2f::One, C, C, C, C );
 			}
-			mPri.SetColor( ColorA( mConLineColor.r(), mConLineColor.g(), mConLineColor.b(), static_cast<Uint8>(mA) ) );
-			mPri.DrawRectangle( Rectf( Vector2f( 0.0f, mY ), Sizef( mWidth, 4.0f ) ) );
+			mPri.setColor( ColorA( mConLineColor.r(), mConLineColor.g(), mConLineColor.b(), static_cast<Uint8>(mA) ) );
+			mPri.drawRectangle( Rectf( Vector2f( 0.0f, mY ), Sizef( mWidth, 4.0f ) ) );
 
-			Int32 linesInScreen = LinesInScreen();
+			Int32 linesInScreen = this->linesInScreen();
 
 			if ( static_cast<Int32>( mCmdLog.size() ) > linesInScreen )
 				mEx = (Uint32) ( mCmdLog.size() - linesInScreen );
@@ -188,13 +188,13 @@ void Console::Draw() {
 			mCon.ConMin = mEx;
 			mCon.ConMax = (int)mCmdLog.size() - 1;
 
-			mFont->Color( ColorA ( mFontColor.r(), mFontColor.g(), mFontColor.b(), static_cast<Uint8>(mA) ) );
+			mFont->color( ColorA ( mFontColor.r(), mFontColor.g(), mFontColor.b(), static_cast<Uint8>(mA) ) );
 
 			for (int i = mCon.ConMax - mCon.ConModif; i >= mCon.ConMin - mCon.ConModif; i-- ) {
 				if ( i < static_cast<Int16>( mCmdLog.size() ) && i >= 0 ) {
 					CurY = mTempY + mY + mCurHeight - Pos * mFontSize - mFontSize * 2;
 
-					mFont->Draw( mCmdLog[i], mFontSize, CurY );
+					mFont->draw( mCmdLog[i], mFontSize, CurY );
 
 					Pos++;
 				}
@@ -202,33 +202,33 @@ void Console::Draw() {
 
 			CurY = mTempY + mY + mCurHeight - mFontSize - 1;
 
-			mFont->Color( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mA) ) );
-			mFont->SetText( "> " + mTBuf->buffer() );
-			mFont->Draw( mFontSize, CurY );
+			mFont->color( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mA) ) );
+			mFont->setText( "> " + mTBuf->buffer() );
+			mFont->draw( mFontSize, CurY );
 
-			mFont->Color( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mCurAlpha) ) );
+			mFont->color( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mCurAlpha) ) );
 
 			if ( (unsigned int)mTBuf->curPos() == mTBuf->buffer().size() ) {
-				mFont->Draw( "_", mFontSize + mFont->GetTextWidth() , CurY );
+				mFont->draw( "_", mFontSize + mFont->getTextWidth() , CurY );
 			} else {
-				mFont->SetText( "> " + mTBuf->buffer().substr( 0, mTBuf->curPos() ) );
-				mFont->Draw( "_", mFontSize + mFont->GetTextWidth() , CurY );
+				mFont->setText( "> " + mTBuf->buffer().substr( 0, mTBuf->curPos() ) );
+				mFont->draw( "_", mFontSize + mFont->getTextWidth() , CurY );
 			}
 
-			mFont->Color( OldColor );
+			mFont->color( OldColor );
 		}
 	}
 
 	if ( mShowFps && NULL != mFont ) {
-		ColorA OldColor1( mFont->Color() );
-		mFont->Color( ColorA () );
-		mFont->SetText( "FPS: " + String::toStr( mWindow->FPS() ) );
-		mFont->Draw( mWindow->getWidth() - mFont->GetTextWidth() - 15, 6 );
-		mFont->Color( OldColor1 );
+		ColorA OldColor1( mFont->color() );
+		mFont->color( ColorA () );
+		mFont->setText( "FPS: " + String::toStr( mWindow->FPS() ) );
+		mFont->draw( mWindow->getWidth() - mFont->getTextWidth() - 15, 6 );
+		mFont->color( OldColor1 );
 	}
 }
 
-void Console::FadeIn() {
+void Console::fadeIn() {
 	if (!mFading) {
 		mFading = true;
 		mFadeIn = true;
@@ -238,7 +238,7 @@ void Console::FadeIn() {
 	}
 }
 
-void Console::FadeOut() {
+void Console::fadeOut() {
 	if (!mFading) {
 		mFading = true;
 		mFadeOut = true;
@@ -279,7 +279,7 @@ static std::vector< String > SplitCommandParams( String str ) {
 	return rparams;
 }
 
-void Console::ProcessLine() {
+void Console::processLine() {
 	String str = mTBuf->buffer();
 	std::vector < String > params = SplitCommandParams( str );
 
@@ -290,37 +290,37 @@ void Console::ProcessLine() {
 		mLastCommands.pop_front();
 
 	if ( str.size() > 0 ) {
-		PrivPushText( "> " + str );
+		privPushText( "> " + str );
 
 		if ( mCallbacks.find( params[0] ) != mCallbacks.end() ) {
 			mCallbacks[ params[0] ]( params );
 		} else {
-			PrivPushText( "Unknown Command: '" + params[0] + "'" );
+			privPushText( "Unknown Command: '" + params[0] + "'" );
 		}
 	}
 	mTBuf->clear();
 }
 
-void Console::PrivPushText( const String& str ) {
+void Console::privPushText( const String& str ) {
 	mCmdLog.push_back( str );
 
 	if ( mCmdLog.size() >= mMaxLogLines )
 		mCmdLog.pop_front();
 }
 
-void Console::PushText( const String& str ) {
+void Console::pushText( const String& str ) {
 	if ( std::string::npos != str.find_first_of( '\n' ) ) {
 		std::vector<String> Strings = String::split( String( str ) );
 
 		for ( Uint32 i = 0; i < Strings.size(); i++ ) {
-			PrivPushText( Strings[i] );
+			privPushText( Strings[i] );
 		}
 	} else {
-		PrivPushText( str );
+		privPushText( str );
 	}
 }
 
-void Console::PushText( const char * format, ... ) {
+void Console::pushText( const char * format, ... ) {
 	int n, size = 256;
 	std::string tstr( size, '\0' );
 
@@ -334,7 +334,7 @@ void Console::PushText( const char * format, ... ) {
 		if ( n > -1 && n < size ) {
 			tstr.resize( n );
 
-			PushText( tstr );
+			pushText( tstr );
 
 			va_end( args );
 
@@ -350,14 +350,14 @@ void Console::PushText( const char * format, ... ) {
 	}
 }
 
-void Console::Toggle() {
+void Console::toggle() {
 	if ( mVisible )
-		FadeOut();
+		fadeOut();
 	else
-		FadeIn();
+		fadeIn();
 }
 
-void Console::Fade() {
+void Console::fade() {
 	if (mCurSide) {
 		mCurAlpha -= 255.f * mWindow->elapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
 		if ( mCurAlpha <= 0.0f ) {
@@ -405,7 +405,7 @@ void Console::Fade() {
 	if ( mA < 0.0f ) mA = 0.0f;
 }
 
-String Console::GetLastCommonSubStr( std::list<String>& cmds ) {
+String Console::getLastCommonSubStr( std::list<String>& cmds ) {
 	String lastCommon( mTBuf->buffer() );
 	String strTry( lastCommon );
 
@@ -442,7 +442,7 @@ String Console::GetLastCommonSubStr( std::list<String>& cmds ) {
 	return lastCommon;
 }
 
-void Console::PrintCommandsStartingWith( const String& start ) {
+void Console::printCommandsStartingWith( const String& start ) {
 	std::list<String> cmds;
 	std::map < String, ConsoleCallback >::iterator it;
 
@@ -453,14 +453,14 @@ void Console::PrintCommandsStartingWith( const String& start ) {
 	}
 
 	if ( cmds.size() > 1 ) {
-		PrivPushText( "> " + mTBuf->buffer() );
+		privPushText( "> " + mTBuf->buffer() );
 
 		std::list<String>::iterator ite;
 
 		for ( ite = cmds.begin(); ite != cmds.end(); ite++ )
-			PrivPushText( (*ite) );
+			privPushText( (*ite) );
 
-		String newStr( GetLastCommonSubStr( cmds ) );
+		String newStr( getLastCommonSubStr( cmds ) );
 
 		if ( newStr != mTBuf->buffer() ) {
 			mTBuf->buffer( newStr );
@@ -472,7 +472,7 @@ void Console::PrintCommandsStartingWith( const String& start ) {
 	}
 }
 
-void Console::PrivVideoResize( EE::Window::Window * win ) {
+void Console::privVideoResize( EE::Window::Window * win ) {
 	mWidth		= (Float) mWindow->getWidth();
 	mHeight		= (Float) mWindow->getHeight();
 
@@ -486,7 +486,7 @@ void Console::PrivVideoResize( EE::Window::Window * win ) {
 	}
 }
 
-void Console::GetFilesFrom( std::string txt, const Uint32& curPos ) {
+void Console::getFilesFrom( std::string txt, const Uint32& curPos ) {
 	static char OSSlash = FileSystem::getOSlash().at(0);
 	size_t pos;
 
@@ -561,8 +561,8 @@ void Console::GetFilesFrom( std::string txt, const Uint32& curPos ) {
 				mTBuf->buffer( mTBuf->buffer().substr( 0, pos + 1 ) + files[lasti] + slash );
 				mTBuf->cursorToEnd();
 			} else if ( count > 1 ) {
-				PrivPushText( "Directory file list:" );
-				PushText( res );
+				privPushText( "Directory file list:" );
+				pushText( res );
 
 				mTBuf->buffer( mTBuf->buffer().substr( 0, pos + 1 ) + file );
 				mTBuf->cursorToEnd();
@@ -571,11 +571,11 @@ void Console::GetFilesFrom( std::string txt, const Uint32& curPos ) {
 	}
 }
 
-Int32 Console::LinesInScreen() {
+Int32 Console::linesInScreen() {
 	return static_cast<Int32> ( (mCurHeight / mFontSize) - 1 );
 }
 
-void Console::PrivInputCallback( InputEvent * Event ) {
+void Console::privInputCallback( InputEvent * Event ) {
 	Uint8 etype = Event->Type;
 
 	if ( mVisible ) {
@@ -585,8 +585,8 @@ void Console::PrivInputCallback( InputEvent * Event ) {
 
 		if ( InputEvent::KeyDown == etype ) {
 			if ( ( KeyCode == KEY_TAB ) && (unsigned int)mTBuf->curPos() == mTBuf->buffer().size() ) {
-				PrintCommandsStartingWith( mTBuf->buffer() );
-				GetFilesFrom( mTBuf->buffer().toUtf8(), mTBuf->curPos() );
+				printCommandsStartingWith( mTBuf->buffer() );
+				getFilesFrom( mTBuf->buffer().toUtf8(), mTBuf->curPos() );
 			}
 
 			if ( KeyMod & KEYMOD_SHIFT ) {
@@ -601,7 +601,7 @@ void Console::PrivInputCallback( InputEvent * Event ) {
 				}
 
 				if ( KeyCode == KEY_HOME ) {
-					if ( static_cast<Int32>( mCmdLog.size() ) > LinesInScreen() )
+					if ( static_cast<Int32>( mCmdLog.size() ) > linesInScreen() )
 						mCon.ConModif = mCon.ConMin;
 				}
 
@@ -610,15 +610,15 @@ void Console::PrivInputCallback( InputEvent * Event ) {
 				}
 
 				if ( KeyCode == KEY_PAGEUP ) {
-					if ( mCon.ConMin - mCon.ConModif - LinesInScreen() / 2 > 0 )
-						mCon.ConModif+=LinesInScreen() / 2;
+					if ( mCon.ConMin - mCon.ConModif - linesInScreen() / 2 > 0 )
+						mCon.ConModif+=linesInScreen() / 2;
 					else
 						mCon.ConModif = mCon.ConMin;
 				}
 
 				if ( KeyCode == KEY_PAGEDOWN ) {
-					if ( mCon.ConModif - LinesInScreen() / 2 > 0 )
-						mCon.ConModif-=LinesInScreen() / 2;
+					if ( mCon.ConModif - linesInScreen() / 2 > 0 )
+						mCon.ConModif-=linesInScreen() / 2;
 					else
 						mCon.ConModif = 0;
 				}
@@ -663,27 +663,27 @@ void Console::PrivInputCallback( InputEvent * Event ) {
 	}
 }
 
-void Console::CreateDefaultCommands() {
-	AddCommand( "clear", cb::Make1( this, &Console::CmdClear) );
-	AddCommand( "quit", cb::Make1( this, &Console::CmdQuit) );
-	AddCommand( "maximize", cb::Make1( this, &Console::CmdMaximize) );
-	AddCommand( "minimize", cb::Make1( this, &Console::CmdMinimize) );
-	AddCommand( "cmdlist", cb::Make1( this, &Console::CmdCmdList) );
-	AddCommand( "help", cb::Make1( this, &Console::CmdCmdList) );
-	AddCommand( "showcursor", cb::Make1( this, &Console::CmdShowCursor) );
-	AddCommand( "setfpslimit", cb::Make1( this, &Console::CmdFrameLimit) );
-	AddCommand( "getlog", cb::Make1( this, &Console::CmdGetLog) );
-	AddCommand( "setgamma", cb::Make1( this, &Console::CmdSetGamma) );
-	AddCommand( "setvolume", cb::Make1( this, &Console::CmdSetVolume) );
-	AddCommand( "getgpuextensions", cb::Make1( this, &Console::CmdGetGpuExtensions) );
-	AddCommand( "dir", cb::Make1( this, &Console::CmdDir) );
-	AddCommand( "ls", cb::Make1( this, &Console::CmdDir) );
-	AddCommand( "showfps", cb::Make1( this, &Console::CmdShowFps) );
-	AddCommand( "gettexturememory", cb::Make1( this, &Console::CmdGetTextureMemory) );
-	AddCommand( "hide", cb::Make1( this, &Console::CmdHideConsole ) );
+void Console::createDefaultCommands() {
+	addCommand( "clear", cb::Make1( this, &Console::cmdClear) );
+	addCommand( "quit", cb::Make1( this, &Console::cmdQuit) );
+	addCommand( "maximize", cb::Make1( this, &Console::cmdMaximize) );
+	addCommand( "minimize", cb::Make1( this, &Console::cmdMinimize) );
+	addCommand( "cmdlist", cb::Make1( this, &Console::cmdCmdList) );
+	addCommand( "help", cb::Make1( this, &Console::cmdCmdList) );
+	addCommand( "showcursor", cb::Make1( this, &Console::cmdShowCursor) );
+	addCommand( "setfpslimit", cb::Make1( this, &Console::cmdFrameLimit) );
+	addCommand( "getlog", cb::Make1( this, &Console::cmdGetLog) );
+	addCommand( "setgamma", cb::Make1( this, &Console::cmdSetGamma) );
+	addCommand( "setvolume", cb::Make1( this, &Console::cmdSetVolume) );
+	addCommand( "getgpuextensions", cb::Make1( this, &Console::cmdGetGpuExtensions) );
+	addCommand( "dir", cb::Make1( this, &Console::cmdDir) );
+	addCommand( "ls", cb::Make1( this, &Console::cmdDir) );
+	addCommand( "showfps", cb::Make1( this, &Console::cmdShowFps) );
+	addCommand( "gettexturememory", cb::Make1( this, &Console::cmdGetTextureMemory) );
+	addCommand( "hide", cb::Make1( this, &Console::cmdHideConsole ) );
 }
 
-void Console::CmdClear	() {
+void Console::cmdClear	() {
 	Uint16 CutLines;
 	if ( mExpand ) {
 		CutLines = (Uint16)( mHeight / mFontSize );
@@ -692,41 +692,41 @@ void Console::CmdClear	() {
 	}
 
 	for (Uint16 i = 0; i < CutLines; i++ )
-		PrivPushText( "" );
+		privPushText( "" );
 }
 
-void Console::CmdClear	( const std::vector < String >& params ) {
-	CmdClear();
+void Console::cmdClear	( const std::vector < String >& params ) {
+	cmdClear();
 }
 
-void Console::CmdMaximize ( const std::vector < String >& params ) {
+void Console::cmdMaximize ( const std::vector < String >& params ) {
 	mExpand = true;
 	mY = mHeight;
-	PrivPushText( "Console Maximized" );
+	privPushText( "Console Maximized" );
 }
 
-void Console::CmdMinimize ( const std::vector < String >& params ) {
+void Console::cmdMinimize ( const std::vector < String >& params ) {
 	mExpand = false;
 	mY = mHeightMin;
-	PrivPushText( "Console Minimized" );
+	privPushText( "Console Minimized" );
 }
 
-void Console::CmdQuit ( const std::vector < String >& params ) {
+void Console::cmdQuit ( const std::vector < String >& params ) {
 	mWindow->close();
 }
 
-void Console::CmdGetTextureMemory ( const std::vector < String >& params ) {
-	PrivPushText( "Total texture memory used: " + FileSystem::sizeToString( TextureFactory::instance()->MemorySize() ) );
+void Console::cmdGetTextureMemory ( const std::vector < String >& params ) {
+	privPushText( "Total texture memory used: " + FileSystem::sizeToString( TextureFactory::instance()->memorySize() ) );
 }
 
-void Console::CmdCmdList ( const std::vector < String >& params ) {
+void Console::cmdCmdList ( const std::vector < String >& params ) {
 	std::map < String, ConsoleCallback >::iterator itr;
 	for (itr = mCallbacks.begin(); itr != mCallbacks.end(); itr++) {
-		PrivPushText( "\t" + itr->first );
+		privPushText( "\t" + itr->first );
 	}
 }
 
-void Console::CmdShowCursor ( const std::vector < String >& params ) {
+void Console::cmdShowCursor ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
@@ -735,13 +735,13 @@ void Console::CmdShowCursor ( const std::vector < String >& params ) {
 		if ( Res && ( tInt == 0 || tInt == 1 ) ) {
 			mWindow->getCursorManager()->visible( 0 != tInt );
 		} else
-			PrivPushText( "Valid parameters are 0 or 1." );
+			privPushText( "Valid parameters are 0 or 1." );
 	} else {
-		PrivPushText( "No parameters. Valid parameters are 0 ( hide ) or 1 ( show )." );
+		privPushText( "No parameters. Valid parameters are 0 ( hide ) or 1 ( show )." );
 	}
 }
 
-void Console::CmdFrameLimit ( const std::vector < String >& params ) {
+void Console::cmdFrameLimit ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
@@ -753,34 +753,34 @@ void Console::CmdFrameLimit ( const std::vector < String >& params ) {
 		}
 	}
 
-	PrivPushText( "Valid parameters are between 0 and 10000 (0 = no limit)." );
+	privPushText( "Valid parameters are between 0 and 10000 (0 = no limit)." );
 }
 
-void Console::CmdGetLog() {
+void Console::cmdGetLog() {
 	std::vector < String > tvec = String::split( String( String::toStr( Log::instance()->buffer() ) ) );
 	if ( tvec.size() > 0 ) {
 		for ( unsigned int i = 0; i < tvec.size(); i++ )
-			PrivPushText( tvec[i] );
+			privPushText( tvec[i] );
 	}
 }
 
-void Console::CmdGetLog( const std::vector < String >& params ) {
-	CmdGetLog();
+void Console::cmdGetLog( const std::vector < String >& params ) {
+	cmdGetLog();
 }
 
-void Console::CmdGetGpuExtensions() {
-	std::vector < String > tvec = String::split( String( GLi->GetExtensions() ), ' ' );
+void Console::cmdGetGpuExtensions() {
+	std::vector < String > tvec = String::split( String( GLi->getExtensions() ), ' ' );
 	if ( tvec.size() > 0 ) {
 		for ( unsigned int i = 0; i < tvec.size(); i++ )
-			PrivPushText( tvec[i] );
+			privPushText( tvec[i] );
 	}
 }
 
-void Console::CmdGetGpuExtensions( const std::vector < String >& params ) {
-	CmdGetGpuExtensions();
+void Console::cmdGetGpuExtensions( const std::vector < String >& params ) {
+	cmdGetGpuExtensions();
 }
 
-void Console::CmdSetGamma( const std::vector < String >& params ) {
+void Console::cmdSetGamma( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Float tFloat = 0.f;
 
@@ -792,10 +792,10 @@ void Console::CmdSetGamma( const std::vector < String >& params ) {
 		}
 	}
 
-	PrivPushText( "Valid parameters are between 0.1 and 10." );
+	privPushText( "Valid parameters are between 0.1 and 10." );
 }
 
-void Console::CmdSetVolume( const std::vector < String >& params ) {
+void Console::cmdSetVolume( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Float tFloat = 0.f;
 
@@ -807,10 +807,10 @@ void Console::CmdSetVolume( const std::vector < String >& params ) {
 		}
 	}
 
-	PrivPushText( "Valid parameters are between 0 and 100." );
+	privPushText( "Valid parameters are between 0 and 100." );
 }
 
-void Console::CmdDir( const std::vector < String >& params ) {
+void Console::cmdDir( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		String Slash( FileSystem::getOSlash() );
 		String myPath = params[1];
@@ -826,7 +826,7 @@ void Console::CmdDir( const std::vector < String >& params ) {
 			std::vector<String> mFiles = FileSystem::filesGetInPath( myPath );
 			std::sort( mFiles.begin(), mFiles.end() );
 
-			PrivPushText( "Directory: " + myPath );
+			privPushText( "Directory: " + myPath );
 
 			if ( myOrder == "ff" ) {
 				std::vector<String> mFolders;
@@ -841,33 +841,33 @@ void Console::CmdDir( const std::vector < String >& params ) {
 				}
 
 				if ( mFolders.size() )
-					PrivPushText( "Folders: " );
+					privPushText( "Folders: " );
 
 				for ( i = 0; i < mFolders.size(); i++ )
-					PrivPushText( "	" + mFolders[i] );
+					privPushText( "	" + mFolders[i] );
 
 				if ( mFolders.size() )
-					PrivPushText( "Files: " );
+					privPushText( "Files: " );
 
 				for ( i = 0; i < mFile.size(); i++ )
-					PrivPushText( "	" + mFile[i] );
+					privPushText( "	" + mFile[i] );
 
 			} else {
 				for ( i = 0; i < mFiles.size(); i++ )
-					PrivPushText( "	" + mFiles[i] );
+					privPushText( "	" + mFiles[i] );
 			}
 		} else {
 			if ( myPath == "help" )
-				PrivPushText( "You can use a third parameter to show folders first, the parameter is ff." );
+				privPushText( "You can use a third parameter to show folders first, the parameter is ff." );
 			else
-				PrivPushText( "Path \"" + myPath + "\" is not a directory." );
+				privPushText( "Path \"" + myPath + "\" is not a directory." );
 		}
 	} else {
-		PrivPushText( "Expected a path to list. Example of usage: ls /home" );
+		privPushText( "Expected a path to list. Example of usage: ls /home" );
 	}
 }
 
-void Console::CmdShowFps( const std::vector < String >& params ) {
+void Console::cmdShowFps( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
@@ -879,30 +879,30 @@ void Console::CmdShowFps( const std::vector < String >& params ) {
 		}
 	}
 
-	PrivPushText( "Valid parameters are 0 ( hide ) or 1 ( show )." );
+	privPushText( "Valid parameters are 0 ( hide ) or 1 ( show )." );
 }
 
-void Console::CmdHideConsole( const std::vector < String >& params ) {
-	FadeOut();
+void Console::cmdHideConsole( const std::vector < String >& params ) {
+	fadeOut();
 }
 
-void Console::IgnoreCharOnPrompt( const Uint32& ch ) {
+void Console::ignoreCharOnPrompt( const Uint32& ch ) {
 	mTBuf->pushIgnoredChar( ch );
 }
 
-const bool& Console::IsShowingFps() const {
+const bool& Console::isShowingFps() const {
 	return mShowFps;
 }
 
-void Console::ShowFps( const bool& Show ) {
+void Console::showFps( const bool& Show ) {
 	mShowFps = Show;
 }
 
-void Console::WriteLog( const std::string& Text ) {
+void Console::writeLog( const std::string& Text ) {
 	std::vector<String> Strings = String::split( String( Text ) );
 
 	for ( Uint32 i = 0; i < Strings.size(); i++ ) {
-		PrivPushText( Strings[i] );
+		privPushText( Strings[i] );
 	}
 }
 

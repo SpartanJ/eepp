@@ -42,12 +42,12 @@ void UIProgressBar::Draw() {
 	UIControlAnim::Draw();
 
 	if ( NULL != mParallax && 0.f != mAlpha ) {
-		ColorA C( mParallax->Color() );
+		ColorA C( mParallax->color() );
 		C.Alpha = (Uint8)mAlpha;
 
-		mParallax->Color( C );
-		mParallax->Position( Vector2f( mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top ) );
-		mParallax->Draw();
+		mParallax->color( C );
+		mParallax->position( Vector2f( mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top ) );
+		mParallax->draw();
 	}
 }
 
@@ -69,7 +69,7 @@ void UIProgressBar::SetTheme( UITheme * Theme ) {
 			Float Height = (Float)GetSkinSize().height();
 
 			if ( !mVerticalExpand )
-				Height = (Float)tSubTexture->RealSize().height();
+				Height = (Float)tSubTexture->realSize().height();
 
 			if ( Height > mSize.height() )
 				Height = mSize.height();
@@ -91,13 +91,13 @@ void UIProgressBar::OnSizeChange() {
 	if ( NULL != mParallax ) {
 		Float Height = (Float)mSize.height();
 
-		if ( !mVerticalExpand && mParallax->SubTexture() )
-			Height = (Float)mParallax->SubTexture()->RealSize().height();
+		if ( !mVerticalExpand && mParallax->subTexture() )
+			Height = (Float)mParallax->subTexture()->realSize().height();
 
 		if ( Height > mSize.height() )
 			Height = mSize.height();
 
-		mParallax->Size( Sizef( ( ( mSize.width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ) );
+		mParallax->size( Sizef( ( ( mSize.width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ) );
 	}
 
 	UpdateTextBox();
@@ -129,7 +129,7 @@ void UIProgressBar::MovementSpeed( const Vector2f& Speed ) {
 	mSpeed = Speed;
 
 	if ( NULL != mParallax )
-		mParallax->Speed( mSpeed );
+		mParallax->speed( mSpeed );
 }
 
 const Vector2f& UIProgressBar::MovementSpeed() const {

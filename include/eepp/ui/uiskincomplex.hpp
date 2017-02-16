@@ -23,7 +23,7 @@ class EE_API UISkinComplex : public UISkin {
 			SideCount
 		};
 
-		UISkinComplex( const std::string& Name );
+		UISkinComplex( const std::string& getName );
 
 		virtual ~UISkinComplex();
 

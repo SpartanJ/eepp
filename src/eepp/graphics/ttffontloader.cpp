@@ -18,7 +18,7 @@ TTFFontLoader::TTFFontLoader( const std::string& FontName, const std::string& Fi
 	mAddPixelSeparator( AddPixelSeparator ),
 	mFontLoaded( false )
 {
-	Create();
+	create();
 }
 
 TTFFontLoader::TTFFontLoader( const std::string& FontName, Pack * Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) :
@@ -36,7 +36,7 @@ TTFFontLoader::TTFFontLoader( const std::string& FontName, Pack * Pack, const st
 	mPack( Pack ),
 	mFontLoaded( false )
 {
-	Create();
+	create();
 }
 
 TTFFontLoader::TTFFontLoader( const std::string& FontName, Uint8* TTFData, const unsigned int& TTFDataSize, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) :
@@ -54,27 +54,27 @@ TTFFontLoader::TTFFontLoader( const std::string& FontName, Uint8* TTFData, const
 	mDataSize( TTFDataSize ),
 	mFontLoaded( false )
 {
-	Create();
+	create();
 }
 
 TTFFontLoader::~TTFFontLoader() {
 }
 
-void TTFFontLoader::Create() {
+void TTFFontLoader::create() {
 	mFont = TTFFont::New( mFontName );
 }
 
 void TTFFontLoader::start() {
 	ObjectLoader::start();
 
-	mFont->ThreadedLoading( mThreaded );
+	mFont->threadedLoading( mThreaded );
 
 	if ( TTF_LT_PATH == mLoadType )
-		LoadFromPath();
+		loadFromPath();
 	else if ( TTF_LT_MEM == mLoadType )
-		LoadFromMemory();
+		loadFromMemory();
 	else if ( TTF_LT_PACK == mLoadType )
-		LoadFromPack();
+		loadFromPack();
 
 	mFontLoaded = true;
 
@@ -84,35 +84,35 @@ void TTFFontLoader::start() {
 
 void TTFFontLoader::update() {
 	if ( !mLoaded && mFontLoaded ) {
-		mFont->UpdateLoading();
+		mFont->updateLoading();
 
 		setLoaded();
 	}
 }
 
-const std::string& TTFFontLoader::Id() const {
+const std::string& TTFFontLoader::getId() const {
 	return mFontName;
 }
 
-void TTFFontLoader::LoadFromPath() {
-	mFont->Load( mFilepath, mSize, mStyle, mNumCharsToGen, mFontColor, mOutlineSize, mOutlineColor, mAddPixelSeparator );
+void TTFFontLoader::loadFromPath() {
+	mFont->load( mFilepath, mSize, mStyle, mNumCharsToGen, mFontColor, mOutlineSize, mOutlineColor, mAddPixelSeparator );
 }
 
-void TTFFontLoader::LoadFromMemory() {
-	mFont->LoadFromMemory( mData, mDataSize, mSize, mStyle, mNumCharsToGen, mFontColor, mOutlineSize, mOutlineColor, mAddPixelSeparator );
+void TTFFontLoader::loadFromMemory() {
+	mFont->loadFromMemory( mData, mDataSize, mSize, mStyle, mNumCharsToGen, mFontColor, mOutlineSize, mOutlineColor, mAddPixelSeparator );
 }
 
-void TTFFontLoader::LoadFromPack() {
-	mFont->LoadFromPack( mPack, mFilepath, mSize, mStyle, mNumCharsToGen, mFontColor, mOutlineSize, mOutlineColor, mAddPixelSeparator );
+void TTFFontLoader::loadFromPack() {
+	mFont->loadFromPack( mPack, mFilepath, mSize, mStyle, mNumCharsToGen, mFontColor, mOutlineSize, mOutlineColor, mAddPixelSeparator );
 }
 
-Graphics::Font * TTFFontLoader::Font() const {
+Graphics::Font * TTFFontLoader::getFont() const {
 	return mFont;
 }
 
 void TTFFontLoader::unload() {
 	if ( mLoaded ) {
-		TextureFactory::instance()->Remove( mFont->GetTexId() );
+		TextureFactory::instance()->remove( mFont->getTexId() );
 
 		FontManager::instance()->remove( mFont );
 

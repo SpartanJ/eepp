@@ -14,21 +14,17 @@
 #include <eepp/physics/physicsmanager.hpp>
 #include <eepp/network/ssl/sslsocket.hpp>
 #include <eepp/window/backend.hpp>
-#include <eepp/window/backend/SDL/backendsdl.hpp>
 #include <eepp/window/backend/SDL2/backendsdl2.hpp>
 #include <eepp/window/backend/SFML/backendsfml.hpp>
 #include <eepp/graphics/renderer/gl.hpp>
 
-#define BACKEND_SDL			1
-#define BACKEND_SDL2		2
-#define BACKEND_SFML		3
+#define BACKEND_SDL2		1
+#define BACKEND_SFML		2
 
 #ifndef DEFAULT_BACKEND
 
 #if defined( EE_BACKEND_SDL2 )
 #define DEFAULT_BACKEND		BACKEND_SDL2
-#elif defined( EE_BACKEND_SDL_1_2 )
-#define DEFAULT_BACKEND		BACKEND_SDL
 #elif defined( EE_BACKEND_SFML_ACTIVE )
 #define DEFAULT_BACKEND		BACKEND_SFML
 #endif
@@ -94,14 +90,6 @@ void Engine::destroy() {
 	mWindow = NULL;
 }
 
-Backend::WindowBackend * Engine::createSDLBackend( const WindowSettings &Settings ) {
-#if defined( EE_SDL_VERSION_1_2 )
-	return eeNew( Backend::SDL::WindowBackendSDL, () );
-#else
-	return NULL;
-#endif
-}
-
 Backend::WindowBackend * Engine::createSDL2Backend( const WindowSettings &Settings ) {
 #if defined( EE_SDL_VERSION_2 )
 	return eeNew( Backend::SDL2::WindowBackendSDL2, () );
@@ -113,18 +101,6 @@ Backend::WindowBackend * Engine::createSDL2Backend( const WindowSettings &Settin
 Backend::WindowBackend * Engine::createSFMLBackend( const WindowSettings &Settings ) {
 #if defined( EE_BACKEND_SFML_ACTIVE )
 	return eeNew( Backend::SFML::WindowBackendSFML, () );
-#else
-	return NULL;
-#endif
-}
-
-EE::Window::Window * Engine::createSDLWindow( const WindowSettings& Settings, const ContextSettings& Context ) {
-#if defined( EE_SDL_VERSION_1_2 )
-	if ( NULL == mBackend ) {
-		mBackend	= createSDLBackend( Settings );
-	}
-
-	return eeNew( Backend::SDL::WindowSDL, ( Settings, Context ) );
 #else
 	return NULL;
 #endif
@@ -146,7 +122,7 @@ EE::Window::Window * Engine::createSFMLWindow( const WindowSettings& Settings, c
 #if defined( EE_BACKEND_SFML_ACTIVE )
 
 	if ( NULL == mBackend ) {
-		mBackend	= CreateSFMLBackend( Settings );
+		mBackend	= createSFMLBackend( Settings );
 	}
 
 	return eeNew( Backend::SFML::WindowSFML, ( Settings, Context ) );
@@ -156,12 +132,10 @@ EE::Window::Window * Engine::createSFMLWindow( const WindowSettings& Settings, c
 }
 
 EE::Window::Window * Engine::createDefaultWindow( const WindowSettings& Settings, const ContextSettings& Context ) {
-#if DEFAULT_BACKEND == BACKEND_SDL
-	return createSDLWindow( Settings, Context );
-#elif DEFAULT_BACKEND == BACKEND_SDL2
+#if DEFAULT_BACKEND == BACKEND_SDL2
 	return createSDL2Window( Settings, Context );
 #elif DEFAULT_BACKEND == BACKEND_SFML
-	return CreateSFMLWindow( Settings, Context );
+	return createSFMLWindow( Settings, Context );
 #endif
 }
 
@@ -175,7 +149,6 @@ EE::Window::Window * Engine::createWindow( WindowSettings Settings, ContextSetti
 	}
 
 	switch ( Settings.Backend ) {
-		case WindowBackend::SDL:		window = createSDLWindow( Settings, Context );		break;
 		case WindowBackend::SDL2:		window = createSDL2Window( Settings, Context );		break;
 		case WindowBackend::SFML:		window = createSFMLWindow( Settings, Context );		break;
 		case WindowBackend::Default:
@@ -259,9 +232,7 @@ const Uint32& Engine::getHeight() const {
 }
 
 Uint32 Engine::getDefaultBackend() const {
-#if DEFAULT_BACKEND == BACKEND_SDL
-	return WindowBackend::SDL;
-#elif DEFAULT_BACKEND == BACKEND_SDL2
+#if DEFAULT_BACKEND == BACKEND_SDL2
 	return WindowBackend::SDL2;
 #elif DEFAULT_BACKEND == BACKEND_SFML
 	return WindowBackend::SFML;
@@ -285,7 +256,6 @@ WindowSettings Engine::createWindowSettings( IniFile * ini, std::string iniKeyNa
 	String::toLowerInPlace( Backend );
 
 	if ( "sdl2" == Backend )		WinBackend	= WindowBackend::SDL2;
-	else if ( "sdl" == Backend )	WinBackend	= WindowBackend::SDL;
 	else if ( "sfml" == Backend )	WinBackend	= WindowBackend::SFML;
 
 	Uint32 Style = WindowStyle::Titlebar;
@@ -300,13 +270,6 @@ WindowSettings Engine::createWindowSettings( IniFile * ini, std::string iniKeyNa
 	std::string Caption	= ini->getValue( iniKeyName, "WinCaption", "" );
 
 	WindowSettings WinSettings( Width, Height, Caption, Style, WinBackend, BitColor, Icon );
-
-	#if EE_PLATFORM == EE_PLATFORM_IOS
-	//! @TODO: Check if SDL2 default win settings are being forced ( it wasn't working fine some time ago )
-	WinSettings.Width	= 960;
-	WinSettings.Height	= 640;
-	WinSettings.Style	= WindowStyle::NoBorder;
-	#endif
 
 	return WinSettings;
 }

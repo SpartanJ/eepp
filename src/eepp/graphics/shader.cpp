@@ -9,11 +9,11 @@ namespace EE { namespace Graphics {
 
 bool Shader::sEnsure = true;
 
-void Shader::Ensure( bool ensure ) {
+void Shader::ensure( bool ensure ) {
 	sEnsure = ensure;
 }
 
-bool Shader::Ensure() {
+bool Shader::ensure() {
 	return sEnsure;
 }
 
@@ -31,7 +31,7 @@ Shader::Shader( const Uint32& Type, const std::string& Filename ) {
 
 		FileSystem::fileGet( Filename, PData );
 
-		SetSource( (const char*)PData.Data, PData.DataSize );
+		setSource( (const char*)PData.Data, PData.DataSize );
 	} else {
 		std::string tPath = Filename;
 		Pack * tPack = NULL;
@@ -41,21 +41,21 @@ Shader::Shader( const Uint32& Type, const std::string& Filename ) {
 
 			tPack->extractFileToMemory( tPath, PData );
 
-			SetSource( reinterpret_cast<char*> ( PData.Data ), PData.DataSize );
+			setSource( reinterpret_cast<char*> ( PData.Data ), PData.DataSize );
 		} else {
 			eePRINTL( "Couldn't open shader object: %s", Filename.c_str() );
 		}
 	}
 
-	Compile();
+	compile();
 }
 
 Shader::Shader( const Uint32& Type, const char * Data, const Uint32& DataSize ) {
 	Init( Type );
 
-	SetSource( Data, DataSize );
+	setSource( Data, DataSize );
 
-	Compile();
+	compile();
 }
 
 Shader::Shader( const Uint32& Type, Pack * Pack, const std::string& Filename ) {
@@ -68,18 +68,18 @@ Shader::Shader( const Uint32& Type, Pack * Pack, const std::string& Filename ) {
 	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( Filename ) ) {
 		Pack->extractFileToMemory( Filename, PData );
 
-		SetSource( reinterpret_cast<char*> ( PData.Data ), PData.DataSize );
+		setSource( reinterpret_cast<char*> ( PData.Data ), PData.DataSize );
 	}
 
-	Compile();
+	compile();
 }
 
 Shader::Shader( const Uint32& Type, const char ** Data, const Uint32& NumLines ) {
 	Init( Type );
 
-	SetSource( Data, NumLines );
+	setSource( Data, NumLines );
 
-	Compile();
+	compile();
 }
 
 Shader::~Shader() {
@@ -99,17 +99,17 @@ void Shader::Init( const Uint32& Type ) {
 	#endif
 }
 
-void Shader::Reload() {
+void Shader::reload() {
 	Init( mType );
 
-	Shader::Ensure( false );
-	SetSource( mSource );
-	Shader::Ensure( true );
+	Shader::ensure( false );
+	setSource( mSource );
+	Shader::ensure( true );
 
-	Compile();
+	compile();
 }
 
-std::string Shader::GetName() {
+std::string Shader::getName() {
 	std::string name;
 
 	if ( mFilename.size() ) {
@@ -121,25 +121,25 @@ std::string Shader::GetName() {
 	return name;
 }
 
-void Shader::EnsureVersion() {
+void Shader::ensureVersion() {
 	#ifdef EE_GL3_ENABLED
-	if ( Shader::Ensure() && ( GLi->Version() == GLv_3 || GLi->Version() == GLv_3CP || GLi->Version() == GLv_ES2 ) ) {
-		eePRINTL( "Shader %s converted to programmable pipeline automatically.", GetName().c_str() );
+	if ( Shader::ensure() && ( GLi->version() == GLv_3 || GLi->version() == GLv_3CP || GLi->version() == GLv_ES2 ) ) {
+		eePRINTL( "Shader %s converted to programmable pipeline automatically.", getName().c_str() );
 
 		if ( GL_VERTEX_SHADER == mType ) {
 			if ( mSource.find( "ftransform" ) != std::string::npos || mSource.find("dgl_Vertex") == std::string::npos ) {
-				if ( GLi->Version() == GLv_3 ) {
-					mSource = GLi->GetRendererGL3()->GetBaseVertexShader();
-				} else if ( GLi->Version() == GLv_3CP ) {
-					mSource = GLi->GetRendererGL3CP()->GetBaseVertexShader();
+				if ( GLi->version() == GLv_3 ) {
+					mSource = GLi->getRendererGL3()->getBaseVertexShader();
+				} else if ( GLi->version() == GLv_3CP ) {
+					mSource = GLi->getRendererGL3CP()->getBaseVertexShader();
 				} else {
-					mSource = GLi->GetRendererGLES2()->GetBaseVertexShader();
+					mSource = GLi->getRendererGLES2()->getBaseVertexShader();
 				}
 			}
 		} else {
 			if ( mSource.find( "gl_FragColor" ) != std::string::npos ) {
 				#ifndef EE_GLES
-				if ( GLi->Version() != GLv_3CP )
+				if ( GLi->version() != GLv_3CP )
 				#else
 				if ( true )
 				#endif
@@ -158,7 +158,7 @@ void Shader::EnsureVersion() {
 				String::replaceAll( mSource, "gl_Color"		, "dgl_Color"		);
 				String::replaceAll( mSource, "gl_TexCoord"	, "dgl_TexCoord"	);
 
-				if ( GLi->Version() == GLv_3CP ) {
+				if ( GLi->version() == GLv_3CP ) {
 					#ifndef EE_GLES
 					String::replaceAll( mSource, "gl_FragColor"	, "dgl_FragColor"	);
 					#endif
@@ -167,7 +167,7 @@ void Shader::EnsureVersion() {
 		}
 	}
 
-	if ( GLi->Version() == GLv_3CP ) {
+	if ( GLi->version() == GLv_3CP ) {
 		#ifndef EE_GLES
 		String::replaceAll( mSource, "texture2D"	, "texture"	);
 		#endif
@@ -175,15 +175,15 @@ void Shader::EnsureVersion() {
 	#endif
 }
 
-void Shader::SetSource( const std::string& Source ) {
-	if ( IsCompiled() ) {
-		eePRINTL( "Shader %s report: can't set source for compiled shaders", GetName().c_str() );
+void Shader::setSource( const std::string& Source ) {
+	if ( isCompiled() ) {
+		eePRINTL( "Shader %s report: can't set source for compiled shaders", getName().c_str() );
 		return;
 	}
 
 	mSource = Source;
 
-	EnsureVersion();
+	ensureVersion();
 
 	#ifdef EE_SHADERS_SUPPORTED
 	const char * src = reinterpret_cast<const char *> ( &mSource[0] );
@@ -192,62 +192,62 @@ void Shader::SetSource( const std::string& Source ) {
 	#endif
 }
 
-void Shader::SetSource( const char** Data, const Uint32& NumLines ) {
+void Shader::setSource( const char** Data, const Uint32& NumLines ) {
 	std::string tstr;
 
 	for ( Uint32 i = 0; i < NumLines; i++ ) {
 		tstr += std::string( Data[i] );
 	}
 
-	SetSource( tstr );
+	setSource( tstr );
 }
 
-void Shader::SetSource( const char * Data, const Uint32& DataSize ) {
+void Shader::setSource( const char * Data, const Uint32& DataSize ) {
 	std::string _dst( DataSize, 0 );
 
 	memcpy( reinterpret_cast<void*>( &_dst[0] ), reinterpret_cast<const void*>( &Data[0] ), DataSize );
 
-	SetSource( _dst );
+	setSource( _dst );
 }
 
-void Shader::SetSource( const std::vector<Uint8>& Source ) {
+void Shader::setSource( const std::vector<Uint8>& Source ) {
 	std::string _dst( Source.size(), 0 );
 
 	memcpy( reinterpret_cast<void*>( &_dst[0] ), reinterpret_cast<const void*>( &Source[0] ), Source.size() );
 
-	SetSource( _dst );
+	setSource( _dst );
 }
 
-bool Shader::Compile() {
-	if ( IsCompiled() ) {
-		eePRINTL( "Shader %s report: can't compile a shader twice", GetName().c_str() );
+bool Shader::compile() {
+	if ( isCompiled() ) {
+		eePRINTL( "Shader %s report: can't compile a shader twice", getName().c_str() );
 		return false;
 	}
 
 	#ifdef EE_SHADERS_SUPPORTED
 
-	glCompileShader( GetId() );
+	glCompileShader( getId() );
 	mCompiled = true;
 
 	int Compiled;
-	glGetShaderiv( GetId(), GL_COMPILE_STATUS, &Compiled );
+	glGetShaderiv( getId(), GL_COMPILE_STATUS, &Compiled );
 	mValid = 0 != Compiled;
 
 	if ( !mValid ) {
 		int logsize = 0, logarraysize = 0;
-		glGetShaderiv( GetId(), GL_INFO_LOG_LENGTH, &logarraysize );
+		glGetShaderiv( getId(), GL_INFO_LOG_LENGTH, &logarraysize );
 
 		if ( logarraysize > 0 ) {
 			mCompileLog.resize( logarraysize - 1 );
 
-			glGetShaderInfoLog( GetId(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mCompileLog[0] ) );
+			glGetShaderInfoLog( getId(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mCompileLog[0] ) );
 		}
 
-		eePRINTL( "Couldn't compile shader %s. Log follows:\n", GetName().c_str() );
+		eePRINTL( "Couldn't compile shader %s. Log follows:\n", getName().c_str() );
 		eePRINTL( mCompileLog.c_str() );
 		eePRINTL( mSource.c_str() );
 	} else {
-		eePRINTL( "Shader %s compiled succesfully", GetName().c_str() );
+		eePRINTL( "Shader %s compiled succesfully", getName().c_str() );
 	}
 
 	#endif
@@ -255,23 +255,23 @@ bool Shader::Compile() {
 	return mValid;
 }
 
-bool Shader::IsValid() const {
+bool Shader::isValid() const {
 	return mValid;
 }
 
-bool Shader::IsCompiled() const {
+bool Shader::isCompiled() const {
 	return mCompiled;
 }
 
-std::string Shader::CompileLog() const {
+std::string Shader::compileLog() const {
 	return mCompileLog;
 }
 
-Uint32 Shader::GetType() const {
+Uint32 Shader::getType() const {
 	return mType;
 }
 
-Uint32 Shader::GetId() const {
+Uint32 Shader::getId() const {
 	return mGLId;
 }
 

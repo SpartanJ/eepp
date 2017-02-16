@@ -5,30 +5,30 @@ namespace EE { namespace Graphics {
 TextureAtlas::TextureAtlas( const std::string& name ) :
 	ResourceManager<SubTexture> ( true )
 {
-	Name( name );
+	setName( name );
 }
 
 TextureAtlas::~TextureAtlas() {
 }
 
-const std::string& TextureAtlas::Name() const {
+const std::string& TextureAtlas::getName() const {
 	return mName;
 }
 
-void TextureAtlas::Name( const std::string& name ) {
+void TextureAtlas::setName( const std::string& name ) {
 	mName = name;
 	mId = String::hash( mName );
 }
 
-const std::string& TextureAtlas::Path() const {
+const std::string& TextureAtlas::path() const {
 	return mPath;
 }
 
-void TextureAtlas::Path( const std::string& path ) {
+void TextureAtlas::path( const std::string& path ) {
 	mPath = path;
 }
 
-const Uint32& TextureAtlas::Id() const {
+const Uint32& TextureAtlas::getId() const {
 	return mId;
 }
 
@@ -56,16 +56,16 @@ Uint32 TextureAtlas::count() {
 	return ResourceManager<SubTexture>::count();
 }
 
-void TextureAtlas::SetTextures( std::vector<Texture*> textures ) {
+void TextureAtlas::setTextures( std::vector<Texture*> textures ) {
 	mTextures = textures;
 }
 
-Texture * TextureAtlas::GetTexture( const Uint32& texnum ) const {
+Texture * TextureAtlas::getTexture( const Uint32& texnum ) const {
 	eeASSERT( texnum < mTextures.size() );
 	return mTextures[ texnum ];
 }
 
-Uint32 TextureAtlas::GetTexturesCount() {
+Uint32 TextureAtlas::getTexturesCount() {
 	return mTextures.size();
 }
 

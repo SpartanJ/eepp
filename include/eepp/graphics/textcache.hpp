@@ -19,72 +19,72 @@ class EE_API TextCache {
 		~TextCache();
 
 		/** Create a text from a font */
-		void Create( Graphics::Font * font, const String& text = "", ColorA FontColor = ColorA(255,255,255,255), ColorA FontShadowColor = ColorA(0,0,0,255) );
+		void create( Graphics::Font * font, const String& text = "", ColorA FontColor = ColorA(255,255,255,255), ColorA FontShadowColor = ColorA(0,0,0,255) );
 
 		/** @return The font used for the text cache */
-		Graphics::Font * Font() const;
+		Graphics::Font * font() const;
 
 		/** Change the font used for the text cache */
-		void Font( Graphics::Font * font );
+		void font( Graphics::Font * font );
 
 		/** @return The text cached */
-		String& Text();
+		String& text();
 
 		/** Set the text to be cached */
-		void Text( const String& text );
+		void text( const String& text );
 
 		/** @return The cached text width */
-		Float GetTextWidth();
+		Float getTextWidth();
 
 		/** @return The cached text height */
-		Float GetTextHeight();
+		Float getTextHeight();
 
 		/** @return Every cached text line width */
-		const std::vector<Float>& LinesWidth();
+		const std::vector<Float>& linesWidth();
 
 		/** @return The vertex coordinates cached */
-		std::vector<eeVertexCoords>& VertextCoords();
+		std::vector<eeVertexCoords>& vertextCoords();
 
 		/** @return The text colors cached */
-		std::vector<ColorA>& Colors();
+		std::vector<ColorA>& colors();
 
 		/** Draw the cached text on screen */
-		void Draw( const Float& X, const Float& Y, const Vector2f& Scale = Vector2f::One, const Float& Angle = 0, EE_BLEND_MODE Effect = ALPHA_NORMAL );
+		void draw( const Float& X, const Float& Y, const Vector2f& Scale = Vector2f::One, const Float& Angle = 0, EE_BLEND_MODE Effect = ALPHA_NORMAL );
 
 		/** @return The Font Color */
-		const ColorA& Color() const;
+		const ColorA& color() const;
 
 		/** Set the color of the string rendered */
-		void Color(const ColorA& color);
+		void color(const ColorA& color);
 
 		/** @see Set the alpha of each individual character.
 		**	This doesn't break any custom color per-character setted. */
-		void Alpha( const Uint8& alpha );
+		void alpha( const Uint8& alpha );
 
 		/** Set the color of the substring
 		* @param color The color
 		* @param from The first char to change the color
 		* @param to The last char to change the color
 		*/
-		void Color(const ColorA& color, Uint32 from, Uint32 to );
+		void color(const ColorA& color, Uint32 from, Uint32 to );
 
 		/** @return The Shadow Font Color */
-		const ColorA& ShadowColor() const;
+		const ColorA& shadowColor() const;
 
 		/** Set the shadow color of the string rendered */
-		void ShadowColor(const ColorA& color);
+		void shadowColor(const ColorA& color);
 
 		/** @return The number of lines that the cached text contains */
-		const int& GetNumLines() const;
+		const int& getNumLines() const;
 
 		/** Set the font draw flags */
-		void Flags( const Uint32& flags );
+		void flags( const Uint32& flags );
 
 		/** @return The font draw flags */
-		const Uint32& Flags() const;
+		const Uint32& flags() const;
 
 		/** Force to cache the width of the current text */
-		void Cache();
+		void cache();
 	protected:
 		friend class Font;
 
@@ -107,15 +107,15 @@ class EE_API TextCache {
 		std::vector<eeVertexCoords>	mRenderCoords;
 		std::vector<ColorA>		mColors;
 
-		void UpdateCoords();
+		void updateCoords();
 
-		const bool& CachedCoords() const;
+		const bool& cachedCoords() const;
 
-		void CachedCoords( const bool& cached );
+		void cachedCoords( const bool& cached );
 		
-		const unsigned int& CachedVerts() const;
+		const unsigned int& cachedVerts() const;
 
-		void CachedVerts( const unsigned int& num );
+		void cachedVerts( const unsigned int& num );
 };
 
 }}

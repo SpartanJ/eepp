@@ -42,8 +42,8 @@ void Thread::terminate() {
 	}
 }
 
-Uint32 Thread::Id() {
-	return mThreadImpl->id();
+Uint32 Thread::getId() {
+	return mThreadImpl->getId();
 }
 
 void Thread::run() {

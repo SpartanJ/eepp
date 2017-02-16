@@ -92,7 +92,7 @@ void UISlider::AdjustChilds() {
 		tSubTexture = tSkin->GetSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mSlider->Size( tSubTexture->RealSize() );
+			mSlider->Size( tSubTexture->realSize() );
 
 			if ( !mVertical )
 				mSlider->CenterVertical();
@@ -113,7 +113,7 @@ void UISlider::AdjustChilds() {
 				if ( mExpandBackground )
 					Height = mSize.height();
 				else
-					Height = tSubTexture->RealSize().height();
+					Height = tSubTexture->realSize().height();
 
 				if ( mAllowHalfSliderOut )
 					mBackSlider->Size( Sizei( mSize.width() - mSlider->Size().width(), Height ) );
@@ -125,7 +125,7 @@ void UISlider::AdjustChilds() {
 				if ( mExpandBackground )
 					Width = mSize.width();
 				else
-					Width = tSubTexture->RealSize().width();
+					Width = tSubTexture->realSize().width();
 
 				if ( mAllowHalfSliderOut )
 					mBackSlider->Size( Sizei( Width, mSize.height() - mSlider->Size().height() ) );

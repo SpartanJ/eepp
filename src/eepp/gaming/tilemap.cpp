@@ -121,7 +121,7 @@ void TileMap::CreateEmptyTile() {
 
 	std::string tileName( String::strFormated( "maptile-%dx%d-%ul", mTileSize.width(), mTileSize.height(), mGridLinesColor.getValue() ) );
 
-	Texture * Tex = TF->GetByName( tileName );
+	Texture * Tex = TF->getByName( tileName );
 
 	if ( NULL == Tex ) {
 		Uint32 x, y;
@@ -129,23 +129,23 @@ void TileMap::CreateEmptyTile() {
 
 		Image Img( mTileSize.width(), mTileSize.height(), 4 );
 
-		Img.FillWithColor( ColorA( 0, 0, 0, 0 ) );
+		Img.fillWithColor( ColorA( 0, 0, 0, 0 ) );
 
-		for ( x = 0; x < Img.Width(); x++ ) {
-			Img.SetPixel( x, 0, Col );
-			Img.SetPixel( x, mTileSize.y - 1, Col );
+		for ( x = 0; x < Img.width(); x++ ) {
+			Img.setPixel( x, 0, Col );
+			Img.setPixel( x, mTileSize.y - 1, Col );
 		}
 
-		for ( y = 0; y < Img.Height(); y++ ) {
-			Img.SetPixel( 0, y, Col );
-			Img.SetPixel( mTileSize.x - 1, y, Col );
+		for ( y = 0; y < Img.height(); y++ ) {
+			Img.setPixel( 0, y, Col );
+			Img.setPixel( mTileSize.x - 1, y, Col );
 		}
 
-		Uint32 TileTexId = TF->LoadFromPixels(
-			Img.GetPixelsPtr(),
-			Img.Width(),
-			Img.Height(),
-			Img.Channels(),
+		Uint32 TileTexId = TF->loadFromPixels(
+			Img.getPixelsPtr(),
+			Img.width(),
+			Img.height(),
+			Img.channels(),
 			true,
 			CLAMP_TO_EDGE,
 			false,
@@ -153,7 +153,7 @@ void TileMap::CreateEmptyTile() {
 			tileName
 		);
 
-		mTileTex = TF->GetTexture( TileTexId );
+		mTileTex = TF->getTexture( TileTexId );
 	} else {
 		mTileTex = Tex;
 	}
@@ -211,7 +211,7 @@ MapLayer* TileMap::GetLayer( const std::string& name ) {
 }
 
 void TileMap::Draw() {
-	GlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->draw();
 
 	if ( ClipedArea() ) {
 		mWindow->clipEnable( mScreenPos.x, mScreenPos.y, mViewSize.x, mViewSize.y );
@@ -222,17 +222,17 @@ void TileMap::Draw() {
 
 		Uint8 Alpha = static_cast<Uint8>( (Float)mBackColor.a() * ( (Float)mBackAlpha / 255.f ) );
 
-		P.SetColor( ColorA( mBackColor.r(), mBackColor.g(), mBackColor.b(), Alpha ) );
-		P.DrawRectangle( Rectf( Vector2f( mScreenPos.x, mScreenPos.y ), Sizef( mViewSize.x, mViewSize.y ) ), 0.f, Vector2f::One );
-		P.SetColor( ColorA( 255, 255, 255, 255 ) );
+		P.setColor( ColorA( mBackColor.r(), mBackColor.g(), mBackColor.b(), Alpha ) );
+		P.drawRectangle( Rectf( Vector2f( mScreenPos.x, mScreenPos.y ), Sizef( mViewSize.x, mViewSize.y ) ), 0.f, Vector2f::One );
+		P.setColor( ColorA( 255, 255, 255, 255 ) );
 	}
 
 	float oldM[16];
-	GLi->GetCurrentMatrix( GL_MODELVIEW_MATRIX, oldM );
-	GLi->LoadIdentity();
-	GLi->PushMatrix();
-	GLi->Translatef( (Float)static_cast<Int32>( mScreenPos.x + mOffset.x ), (Float)static_cast<Int32>( mScreenPos.y + mOffset.y ), 0 );
-	GLi->Scalef( mScale, mScale, 0 );
+	GLi->getCurrentMatrix( GL_MODELVIEW_MATRIX, oldM );
+	GLi->loadIdentity();
+	GLi->pushMatrix();
+	GLi->translatef( (Float)static_cast<Int32>( mScreenPos.x + mOffset.x ), (Float)static_cast<Int32>( mScreenPos.y + mOffset.y ), 0 );
+	GLi->scalef( mScale, mScale, 0 );
 
 	GridDraw();
 
@@ -246,10 +246,10 @@ void TileMap::Draw() {
 	if ( mDrawCb.IsSet() )
 		mDrawCb();
 
-	GlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->draw();
 
-	GLi->PopMatrix();
-	GLi->LoadMatrixf( oldM );
+	GLi->popMatrix();
+	GLi->loadMatrixf( oldM );
 
 	if ( ClipedArea() ) {
 		mWindow->clipDisable();
@@ -260,7 +260,7 @@ void TileMap::MouseOverDraw() {
 	if ( !DrawTileOver() || NULL == mTileTex )
 		return;
 
-	mTileTex->Draw( mMouseOverTileFinal.x * mTileSize.x, mMouseOverTileFinal.y * mTileSize.y, 0, Vector2f::One, mTileOverColor );
+	mTileTex->draw( mMouseOverTileFinal.x * mTileSize.x, mMouseOverTileFinal.y * mTileSize.y, 0, Vector2f::One, mTileOverColor );
 }
 
 void TileMap::GridDraw() {
@@ -270,7 +270,7 @@ void TileMap::GridDraw() {
 	if ( 0 == mSize.x || 0 == mSize.y || NULL == mTileTex )
 		return;
 
-	GlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->draw();
 
 	Vector2i start = StartTile();
 	Vector2i end = EndTile();
@@ -295,20 +295,20 @@ void TileMap::GridDraw() {
 
 					TileTexCol0.Alpha = TileTexCol1.Alpha = TileTexCol2.Alpha = TileTexCol3.Alpha	= mBackAlpha;
 
-					mTileTex->DrawEx( tx, ty, 0, 0, 0, Vector2f::One, TileTexCol0, TileTexCol1, TileTexCol2, TileTexCol3 );
+					mTileTex->drawEx( tx, ty, 0, 0, 0, Vector2f::One, TileTexCol0, TileTexCol1, TileTexCol2, TileTexCol3 );
 				} else {
 					TileTexCol			= *mLightManager->GetTileColor( TPos );
 					TileTexCol.Alpha	= mBackAlpha;
 
-					mTileTex->Draw( tx, ty, 0, Vector2f::One, TileTexCol );
+					mTileTex->draw( tx, ty, 0, Vector2f::One, TileTexCol );
 				}
 			} else {
-				mTileTex->Draw( tx, ty, 0, Vector2f::One, TileTexCol );
+				mTileTex->draw( tx, ty, 0, Vector2f::One, TileTexCol );
 			}
 		}
 	}
 
-	GlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->draw();
 }
 
 const bool& TileMap::IsMouseOver() const {
@@ -655,7 +655,7 @@ GameObject * TileMap::CreateGameObject( const Uint32& Type, const Uint32& Flags,
 				return mCreateGOCb( Type, Flags, Layer, DataId );
 			} else {
 				GameObjectVirtual * tVirtual;
-				SubTexture * tIsSubTexture = TextureAtlasManager::instance()->GetSubTextureById( DataId );
+				SubTexture * tIsSubTexture = TextureAtlasManager::instance()->getSubTextureById( DataId );
 
 				if ( NULL != tIsSubTexture ) {
 					tVirtual = eeNew( GameObjectVirtual, ( tIsSubTexture, Layer, Flags, Type ) );
@@ -840,7 +840,7 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 					if ( NULL == TextureAtlasManager::instance()->getByName( sgname ) ) {
 						TextureAtlasLoader * tgl = eeNew( TextureAtlasLoader, () );
 
-						tgl->Load( Sys::getProcessPath() + TextureAtlases[i] );
+						tgl->load( Sys::getProcessPath() + TextureAtlases[i] );
 
 						eeSAFE_DELETE( tgl );
 					}
@@ -1379,11 +1379,11 @@ std::vector<std::string> TileMap::GetTextureAtlases() {
 
 	//! Ugly ugly ugly, but i don't see another way
 	Uint32 Restricted1 = String::hash( std::string( "global" ) );
-	Uint32 Restricted2 = String::hash( UI::UIThemeManager::instance()->DefaultTheme()->TextureAtlas()->Name() );
+	Uint32 Restricted2 = String::hash( UI::UIThemeManager::instance()->DefaultTheme()->TextureAtlas()->getName() );
 
 	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
-		if ( (*it)->Id() != Restricted1 && (*it)->Id() != Restricted2 )
-			items.push_back( (*it)->Path() );
+		if ( (*it)->getId() != Restricted1 && (*it)->getId() != Restricted2 )
+			items.push_back( (*it)->path() );
 	}
 
 	return items;

@@ -14,8 +14,8 @@ UISprite::UISprite( const UISprite::CreateParams& Params ) :
 		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
 
 	if ( ( Flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) {
-		if ( NULL != mSprite && NULL != mSprite->GetCurrentSubTexture() ) {
-			Size( mSprite->GetCurrentSubTexture()->Size() );
+		if ( NULL != mSprite && NULL != mSprite->getCurrentSubTexture() ) {
+			Size( mSprite->getCurrentSubTexture()->size() );
 		}
 	}
 }
@@ -52,17 +52,17 @@ void UISprite::Draw() {
 	if ( mVisible ) {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
 			CheckSubTextureUpdate();
-			mSprite->Position( (Float)( mScreenPos.x + mAlignOffset.x ), (Float)( mScreenPos.y + mAlignOffset.y ) );
-			mSprite->Draw( Blend(), mRender );
+			mSprite->position( (Float)( mScreenPos.x + mAlignOffset.x ), (Float)( mScreenPos.y + mAlignOffset.y ) );
+			mSprite->draw( Blend(), mRender );
 		}
 	}
 }
 
 void UISprite::CheckSubTextureUpdate() {
-	if ( NULL != mSprite && NULL != mSprite->GetCurrentSubTexture() && mSprite->GetCurrentSubTexture() != mSubTextureLast ) {
+	if ( NULL != mSprite && NULL != mSprite->getCurrentSubTexture() && mSprite->getCurrentSubTexture() != mSubTextureLast ) {
 		UpdateSize();
 		AutoAlign();
-		mSubTextureLast = mSprite->GetCurrentSubTexture();
+		mSubTextureLast = mSprite->getCurrentSubTexture();
 	}
 }
 
@@ -70,7 +70,7 @@ void UISprite::Alpha( const Float& alpha ) {
 	UIControlAnim::Alpha( alpha );
 	
 	if ( NULL != mSprite )
-		mSprite->Alpha( alpha );
+		mSprite->alpha( alpha );
 }
 
 Graphics::Sprite * UISprite::Sprite() const {
@@ -79,14 +79,14 @@ Graphics::Sprite * UISprite::Sprite() const {
 
 ColorA UISprite::Color() const {
 	if ( NULL != mSprite )
-		return mSprite->Color();
+		return mSprite->color();
 
 	return ColorA();
 }
 
 void UISprite::Color( const ColorA& color ) {
 	if ( NULL != mSprite )
-		mSprite->Color( color );
+		mSprite->color( color );
 	
 	Alpha( color.a() );
 }
@@ -102,30 +102,30 @@ void UISprite::RenderMode( const EE_RENDER_MODE& render ) {
 void UISprite::UpdateSize() {
 	if ( Flags() & UI_AUTO_SIZE ) {
 		if ( NULL != mSprite ) {
-			if ( NULL != mSprite->GetCurrentSubTexture() && mSprite->GetCurrentSubTexture()->Size() != mSize )
-				Size( mSprite->GetCurrentSubTexture()->Size() );
+			if ( NULL != mSprite->getCurrentSubTexture() && mSprite->getCurrentSubTexture()->size() != mSize )
+				Size( mSprite->getCurrentSubTexture()->size() );
 		}
 	}
 }
 
 void UISprite::AutoAlign() {
-	if ( NULL == mSprite || NULL == mSprite->GetCurrentSubTexture() )
+	if ( NULL == mSprite || NULL == mSprite->getCurrentSubTexture() )
 		return;
 
-	SubTexture * tSubTexture = mSprite->GetCurrentSubTexture();
+	SubTexture * tSubTexture = mSprite->getCurrentSubTexture();
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.width() / 2 - tSubTexture->Size().width() / 2;
+		mAlignOffset.x = mSize.width() / 2 - tSubTexture->size().width() / 2;
 	} else if ( FontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.width() - tSubTexture->Size().width();
+		mAlignOffset.x =  mSize.width() - tSubTexture->size().width();
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.height() / 2 - tSubTexture->Size().height() / 2;
+		mAlignOffset.y = mSize.height() / 2 - tSubTexture->size().height() / 2;
 	} else if ( FontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.height() - tSubTexture->Size().height();
+		mAlignOffset.y = mSize.height() - tSubTexture->size().height();
 	} else {
 		mAlignOffset.y = 0;
 	}

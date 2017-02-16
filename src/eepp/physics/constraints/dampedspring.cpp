@@ -90,25 +90,25 @@ void DampedSpring::Draw() {
 	cVect a = tovect( cpvadd(body_a->p, cpvrotate(spring->anchr1, body_a->rot)) );
 	cVect b = tovect( cpvadd(body_b->p, cpvrotate(spring->anchr2, body_b->rot)) );
 
-	GLi->PointSize( mDrawPointSize );
+	GLi->pointSize( mDrawPointSize );
 
 	BatchRenderer * BR = GlobalBatchRenderer::instance();
-	BR->SetTexture( NULL );
-	BR->PointsBegin();
-	BR->BatchPoint( a.x, a.y );
-	BR->BatchPoint( b.x, b.y );
-	BR->Draw();
+	BR->setTexture( NULL );
+	BR->pointsBegin();
+	BR->batchPoint( a.x, a.y );
+	BR->batchPoint( b.x, b.y );
+	BR->draw();
 
 	cVect delta = b - a;
 
-	GLi->Disable( GL_TEXTURE_2D );
-	GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
+	GLi->disable( GL_TEXTURE_2D );
+	GLi->disableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	std::vector<ColorA> tcolors( springVAR_count * 4, ColorA( 0, 255, 0, 255 ) );
-	GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), springVAR_count * 4 );
-	GLi->VertexPointer( 2, GL_FLOAT, 0, springVAR, springVAR_count * sizeof(float) * 2 );
+	GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), springVAR_count * 4 );
+	GLi->vertexPointer( 2, GL_FLOAT, 0, springVAR, springVAR_count * sizeof(float) * 2 );
 
-	GLi->PushMatrix();
+	GLi->pushMatrix();
 
 	float x = a.x;
 	float y = a.y;
@@ -122,14 +122,14 @@ void DampedSpring::Draw() {
 		0.0f	, 0.0f		, 1.0f, 0.0f,
 		 x		, y			, 0.0f, 1.0f,
 	};
-	GLi->MultMatrixf( matrix );
+	GLi->multMatrixf( matrix );
 
-	GLi->DrawArrays( GL_LINE_STRIP, 0, springVAR_count );
+	GLi->drawArrays( GL_LINE_STRIP, 0, springVAR_count );
 
-	GLi->PopMatrix();
+	GLi->popMatrix();
 
-	GLi->Enable( GL_TEXTURE_2D );
-	GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
+	GLi->enable( GL_TEXTURE_2D );
+	GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
 	#endif
 }
 

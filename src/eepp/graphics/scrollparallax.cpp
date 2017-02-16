@@ -13,34 +13,34 @@ ScrollParallax::~ScrollParallax()
 {}
 
 ScrollParallax::ScrollParallax( Graphics::SubTexture * SubTexture, const Vector2f& Position, const Sizef& Size, const Vector2f& Speed, const ColorA& Color, const EE_BLEND_MODE& Blend ) {
-	Create( SubTexture, Position, Size, Speed, Color, Blend );
+	create( SubTexture, Position, Size, Speed, Color, Blend );
 }
 
-Graphics::SubTexture * ScrollParallax::SubTexture() const {
+Graphics::SubTexture * ScrollParallax::subTexture() const {
 	return mSubTexture;
 }
 
-void ScrollParallax::SubTexture( Graphics::SubTexture * subTexture ) {
+void ScrollParallax::subTexture( Graphics::SubTexture * subTexture ) {
 	mSubTexture = subTexture;
 
-	SetSubTexture();
+	setSubTexture();
 }
 
-void ScrollParallax::SetSubTexture() {
+void ScrollParallax::setSubTexture() {
 	if ( NULL != mSubTexture ) {
-		mRect		= mSubTexture->SrcRect();
-		mRealSize	= Vector2f( (Float)mSubTexture->RealSize().width(), (Float)mSubTexture->RealSize().height() );
+		mRect		= mSubTexture->srcRect();
+		mRealSize	= Vector2f( (Float)mSubTexture->realSize().width(), (Float)mSubTexture->realSize().height() );
 
-		mTiles.x	= ( (Int32)mSize.width() / mSubTexture->RealSize().width() ) + 1;
-		mTiles.y	= ( (Int32)mSize.height() / mSubTexture->RealSize().height() ) + 1;
+		mTiles.x	= ( (Int32)mSize.width() / mSubTexture->realSize().width() ) + 1;
+		mTiles.y	= ( (Int32)mSize.height() / mSubTexture->realSize().height() ) + 1;
 	}
 }
 
-void ScrollParallax::SetAABB() {
+void ScrollParallax::setAABB() {
 	mAABB		= Rectf( mInitPos.x, mInitPos.y, mInitPos.x + mSize.width(), mInitPos.y + mSize.height() );
 }
 
-bool ScrollParallax::Create( Graphics::SubTexture * SubTexture, const Vector2f& Position, const Sizef& Size, const Vector2f& Speed, const ColorA& Color, const EE_BLEND_MODE& Blend ) {
+bool ScrollParallax::create( Graphics::SubTexture * SubTexture, const Vector2f& Position, const Sizef& Size, const Vector2f& Speed, const ColorA& Color, const EE_BLEND_MODE& Blend ) {
 	mSubTexture		= SubTexture;
 	mPos		= Position;
 	mSize 		= Size;
@@ -49,38 +49,38 @@ bool ScrollParallax::Create( Graphics::SubTexture * SubTexture, const Vector2f& 
 	mColor		= Color;
 	mBlend		= Blend;
 
-	SetAABB();
-	SetSubTexture();
+	setAABB();
+	setSubTexture();
 
 	return true;
 }
 
-void ScrollParallax::Size( const Sizef& size ) {
+void ScrollParallax::size( const Sizef& size ) {
 	mSize = size;
 
-	SetSubTexture();
-	SetAABB();
+	setSubTexture();
+	setAABB();
 }
 
-void ScrollParallax::Position( const Vector2f& Pos ) {
+void ScrollParallax::position( const Vector2f& Pos ) {
 	Vector2f Diff = mPos - mInitPos;
 
 	mInitPos = Pos;
 
 	mPos = Pos + Diff;
 
-	SetAABB();
+	setAABB();
 }
 
-const Sizef& ScrollParallax::Size() const {
+const Sizef& ScrollParallax::size() const {
 	return mSize;
 }
 
-const Vector2f& ScrollParallax::Position() const {
+const Vector2f& ScrollParallax::position() const {
 	return mInitPos;
 }
 
-void ScrollParallax::Draw() {
+void ScrollParallax::draw() {
 	if ( NULL != mSubTexture && mAABB.Left != mAABB.Right && mAABB.Top != mAABB.Bottom && 0 != mColor.Alpha ) {
 		mPos += mSpeed * (Float)mElapsed.elapsed().asSeconds();
 
@@ -125,11 +125,11 @@ void ScrollParallax::Draw() {
 						Rect.Bottom -= (Int32)( ( Pos.y + mRealSize.height() ) - mAABB.Bottom );
 					}
 
-					mSubTexture->SrcRect( Rect );
-					mSubTexture->ResetDestSize();
+					mSubTexture->srcRect( Rect );
+					mSubTexture->resetDestSize();
 
 					if ( !( Rect.Right == 0 || Rect.Bottom == 0 ) )
-						mSubTexture->Draw( AABB.Left, AABB.Top, mColor, 0.f, Vector2f::One, mBlend );
+						mSubTexture->draw( AABB.Left, AABB.Top, mColor, 0.f, Vector2f::One, mBlend );
 				}
 
 				Pos.x += mRealSize.width();
@@ -143,16 +143,16 @@ void ScrollParallax::Draw() {
 			Pos.y += mRealSize.height();
 		}
 
-		mSubTexture->SrcRect( mRect );
-		mSubTexture->ResetDestSize();
+		mSubTexture->srcRect( mRect );
+		mSubTexture->resetDestSize();
 	}
 }
 
-void ScrollParallax::Speed( const Vector2f& speed ) {
+void ScrollParallax::speed( const Vector2f& speed ) {
 	mSpeed = speed;
 }
 
-const Vector2f& ScrollParallax::Speed() const {
+const Vector2f& ScrollParallax::speed() const {
 	return mSpeed;
 }
 

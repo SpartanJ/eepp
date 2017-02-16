@@ -32,13 +32,13 @@ void GameObjectPolygon::Draw() {
 	Int32 colFill	= 100 + selAdd;
 
 	Primitives P;
-	P.FillMode( DRAW_FILL );
-	P.SetColor( ColorA( colFill, colFill, colFill, colFill ) );
-	P.DrawPolygon( mPoly );
+	P.fillMode( DRAW_FILL );
+	P.setColor( ColorA( colFill, colFill, colFill, colFill ) );
+	P.drawPolygon( mPoly );
 
-	P.FillMode( DRAW_LINE );
-	P.SetColor( ColorA( 255, 255, 0, 200 ) );
-	P.DrawPolygon( mPoly );
+	P.fillMode( DRAW_LINE );
+	P.setColor( ColorA( 255, 255, 0, 200 ) );
+	P.drawPolygon( mPoly );
 }
 
 void GameObjectPolygon::SetPolygonPoint( Uint32 index, Vector2f p ) {

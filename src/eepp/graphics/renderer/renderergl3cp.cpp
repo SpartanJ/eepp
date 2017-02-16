@@ -87,7 +87,7 @@ RendererGL3CP::~RendererGL3CP() {
 		}
 	}
 
-	DeleteVertexArrays( 1, &mVAO );
+	deleteVertexArrays( 1, &mVAO );
 
 	eeSAFE_DELETE( mStack );
 
@@ -96,19 +96,19 @@ RendererGL3CP::~RendererGL3CP() {
 	#endif
 }
 
-EEGL_version RendererGL3CP::Version() {
+EEGL_version RendererGL3CP::version() {
 	return GLv_3CP;
 }
 
-std::string RendererGL3CP::VersionStr() {
+std::string RendererGL3CP::versionStr() {
 	return "OpenGL 3 Core Profile";
 }
 
-void RendererGL3CP::Init() {
+void RendererGL3CP::init() {
 	if ( !mLoaded ) {
 		Uint32 i;
 
-		cGL::Init();
+		cGL::init();
 
 		std::string vs( EEGL3CP_SHADER_BASE_VS );
 		std::string fs( EEGL3CP_SHADER_BASE_FS );
@@ -133,51 +133,51 @@ void RendererGL3CP::Init() {
 			mTextureUnitsStates[i]	= 0;
 		}
 
-		Shader::Ensure( false );
+		Shader::ensure( false );
 
 		mShaders[ EEGL3CP_SHADER_BASE ]			= ShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
-		mShaders[ EEGL3CP_SHADER_BASE ]->SetReloadCb( cb::Make1( this, &RendererGL3CP::ReloadShader ) );
+		mShaders[ EEGL3CP_SHADER_BASE ]->setReloadCb( cb::Make1( this, &RendererGL3CP::reloadShader ) );
 
-		Shader::Ensure( true );
+		Shader::ensure( true );
 	} else {
 		mCurShader = NULL;
 
-		mShaders[ EEGL3CP_SHADER_BASE ]->Reload();
+		mShaders[ EEGL3CP_SHADER_BASE ]->reload();
 	}
 
-	GenVertexArrays( 1, &mVAO );
-	BindVertexArray( mVAO );
+	genVertexArrays( 1, &mVAO );
+	bindVertexArray( mVAO );
 
 	glGenBuffersARB( EEGL_ARRAY_STATES_COUNT+5, &mVBO[0] );
 
-	AllocateBuffers( mVBOSizeAlloc );
+	allocateBuffers( mVBOSizeAlloc );
 
-	ClientActiveTexture( GL_TEXTURE0 );
+	clientActiveTexture( GL_TEXTURE0 );
 
-	SetShader( mShaders[ EEGL3CP_SHADER_BASE ] );
+	setShader( mShaders[ EEGL3CP_SHADER_BASE ] );
 
 	mLoaded = true;
 }
 
-unsigned int RendererGL3CP::BaseShaderId() {
-	return mCurShader->Handler();
+unsigned int RendererGL3CP::baseShaderId() {
+	return mCurShader->getHandler();
 }
 
-void RendererGL3CP::ReloadCurrentShader() {
-	ReloadShader( mCurShader );
+void RendererGL3CP::reloadCurrentShader() {
+	reloadShader( mCurShader );
 }
 
-void RendererGL3CP::ReloadShader( ShaderProgram * Shader ) {
+void RendererGL3CP::reloadShader( ShaderProgram * Shader ) {
 	mCurShader = NULL;
 
-	SetShader( Shader );
+	setShader( Shader );
 }
 
-void RendererGL3CP::SetShader( const EEGL3CP_SHADERS& Shader ) {
-	SetShader( mShaders[ Shader ] );
+void RendererGL3CP::setShader( const EEGL3CP_SHADERS& Shader ) {
+	setShader( mShaders[ Shader ] );
 }
 
-void RendererGL3CP::SetShader( ShaderProgram * Shader ) {
+void RendererGL3CP::setShader( ShaderProgram * Shader ) {
 	if ( NULL == Shader ) {
 		Shader = mShaders[ EEGL3CP_SHADER_BASE ];
 	}
@@ -186,78 +186,78 @@ void RendererGL3CP::SetShader( ShaderProgram * Shader ) {
 		return;
 	}
 
-	DisableClientState( GL_VERTEX_ARRAY );
-	DisableClientState( GL_TEXTURE_COORD_ARRAY );
-	DisableClientState( GL_COLOR_ARRAY );
+	disableClientState( GL_VERTEX_ARRAY );
+	disableClientState( GL_TEXTURE_COORD_ARRAY );
+	disableClientState( GL_COLOR_ARRAY );
 
 	mShaderPrev				= mCurShader;
 	mCurShader				= Shader;
-	mProjectionMatrix_id	= mCurShader->UniformLocation( "dgl_ProjectionMatrix" );
-	mModelViewMatrix_id		= mCurShader->UniformLocation( "dgl_ModelViewMatrix" );
-	mTexActiveLoc			= mCurShader->UniformLocation( "dgl_TexActive" );
-	mPointSpriteLoc			= mCurShader->UniformLocation( "dgl_PointSpriteActive" );
-	mClippingEnabledLoc		= mCurShader->UniformLocation( "dgl_ClippingEnabled" );
+	mProjectionMatrix_id	= mCurShader->uniformLocation( "dgl_ProjectionMatrix" );
+	mModelViewMatrix_id		= mCurShader->uniformLocation( "dgl_ModelViewMatrix" );
+	mTexActiveLoc			= mCurShader->uniformLocation( "dgl_TexActive" );
+	mPointSpriteLoc			= mCurShader->uniformLocation( "dgl_PointSpriteActive" );
+	mClippingEnabledLoc		= mCurShader->uniformLocation( "dgl_ClippingEnabled" );
 	mCurActiveTex			= 0;
 
 	Uint32 i;
 
 	for ( i = 0; i < EEGL_ARRAY_STATES_COUNT; i++ ) {
-		mAttribsLoc[ i ] = mCurShader->AttributeLocation( EEGL3CP_STATES_NAME[ i ] );
+		mAttribsLoc[ i ] = mCurShader->attributeLocation( EEGL3CP_STATES_NAME[ i ] );
 	}
 
 	for ( i = 0; i < EE_MAX_PLANES; i++ ) {
-		mPlanes[ i ] = mCurShader->UniformLocation( EEGL3CP_PLANES_NAME[ i ] );
+		mPlanes[ i ] = mCurShader->uniformLocation( EEGL3CP_PLANES_NAME[ i ] );
 	}
 
 	for ( i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
-		mTextureUnits[ i ] = mCurShader->AttributeLocation( EEGL3CP_TEXTUREUNIT_NAMES[ i ] );
+		mTextureUnits[ i ] = mCurShader->attributeLocation( EEGL3CP_TEXTUREUNIT_NAMES[ i ] );
 	}
 
-	glUseProgram( mCurShader->Handler() );
+	glUseProgram( mCurShader->getHandler() );
 
 	if ( -1 != mAttribsLoc[ EEGL_VERTEX_ARRAY ] )
-		EnableClientState( GL_VERTEX_ARRAY );
+		enableClientState( GL_VERTEX_ARRAY );
 
 	if ( -1 != mAttribsLoc[ EEGL_COLOR_ARRAY ] )
-		EnableClientState( GL_COLOR_ARRAY );
+		enableClientState( GL_COLOR_ARRAY );
 
 	if ( -1 != mTextureUnits[ mCurActiveTex ] )
-		EnableClientState( GL_TEXTURE_COORD_ARRAY );
+		enableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	unsigned int CM = mCurrentMode;
 
-	MatrixMode( GL_PROJECTION );
-	UpdateMatrix();
-	MatrixMode( GL_MODELVIEW );
-	UpdateMatrix();
-	MatrixMode( CM );
+	matrixMode( GL_PROJECTION );
+	updateMatrix();
+	matrixMode( GL_MODELVIEW );
+	updateMatrix();
+	matrixMode( CM );
 
 	if ( -1 != mTexActiveLoc ) {
-		mCurShader->SetUniform( mTexActiveLoc, 1 );
+		mCurShader->setUniform( mTexActiveLoc, 1 );
 	}
 
-	mCurShader->SetUniform( mClippingEnabledLoc, 0 );
+	mCurShader->setUniform( mClippingEnabledLoc, 0 );
 
 	for ( i = 0; i < EE_MAX_PLANES; i++ ) {
 		if ( -1 != mPlanes[ i ] ) {
-			mCurShader->SetUniform( EEGL3CP_PLANES_ENABLED_NAME[ i ], 0 );
+			mCurShader->setUniform( EEGL3CP_PLANES_ENABLED_NAME[ i ], 0 );
 		}
 	}
 
 	if ( -1 != mPointSpriteLoc ) {
-		mCurShader->SetUniform( mPointSpriteLoc, 0 );
+		mCurShader->setUniform( mPointSpriteLoc, 0 );
 	}
 }
 
-void RendererGL3CP::Enable( unsigned int cap ) {
+void RendererGL3CP::enable( unsigned int cap ) {
 	switch ( cap ) {
 		case GL_TEXTURE_2D:
 		{
 			if ( 0 == mTexActive ) {
 				mTexActive = 1;
 
-				mCurShader->SetUniform( mTexActiveLoc, mTexActive );
-				mCurShader->SetUniform( mTextureUnits[ mCurActiveTex ], mCurActiveTex );
+				mCurShader->setUniform( mTexActiveLoc, mTexActive );
+				mCurShader->setUniform( mTextureUnits[ mCurActiveTex ], mCurActiveTex );
 			}
 
 			return;
@@ -274,32 +274,32 @@ void RendererGL3CP::Enable( unsigned int cap ) {
 			if ( 0 == mPlanesStates[ plane ] ) {
 				mPlanesStates[ plane ] = 1;
 
-				PlaneStateCheck( true );
+				planeStateCheck( true );
 
-				mCurShader->SetUniform( EEGL3CP_PLANES_ENABLED_NAME[ plane ], 1 );
+				mCurShader->setUniform( EEGL3CP_PLANES_ENABLED_NAME[ plane ], 1 );
 			}
 
 			return;
 		}
 		case GL_POINT_SPRITE:
 		{
-			mCurShader->SetUniform( mPointSpriteLoc, 1 );
+			mCurShader->setUniform( mPointSpriteLoc, 1 );
 
 			return;
 		}
 	}
 
-	cGL::Enable( cap );
+	cGL::enable( cap );
 }
 
-void RendererGL3CP::Disable ( unsigned int cap ) {
+void RendererGL3CP::disable ( unsigned int cap ) {
 	switch ( cap ) {
 		case GL_TEXTURE_2D:
 		{
 			if ( 1 == mTexActive ) {
 				mTexActive = 0;
 
-				mCurShader->SetUniform( mTexActiveLoc, mTexActive );
+				mCurShader->setUniform( mTexActiveLoc, mTexActive );
 			}
 			return;
 		}
@@ -315,25 +315,25 @@ void RendererGL3CP::Disable ( unsigned int cap ) {
 			if ( 1 == mPlanesStates[ plane ] ) {
 				mPlanesStates[ plane ] = 0;
 
-				PlaneStateCheck( false );
+				planeStateCheck( false );
 
-				mCurShader->SetUniform( EEGL3CP_PLANES_ENABLED_NAME[ plane ], 0 );
+				mCurShader->setUniform( EEGL3CP_PLANES_ENABLED_NAME[ plane ], 0 );
 			}
 
 			return;
 		}
 		case GL_POINT_SPRITE:
 		{
-			mCurShader->SetUniform( mPointSpriteLoc, 0 );
+			mCurShader->setUniform( mPointSpriteLoc, 0 );
 
 			return;
 		}
 	}
 
-	cGL::Disable( cap );
+	cGL::disable( cap );
 }
 
-void RendererGL3CP::EnableClientState( unsigned int array ) {
+void RendererGL3CP::enableClientState( unsigned int array ) {
 	int state;
 
 	if ( GL_TEXTURE_COORD_ARRAY == array ) {
@@ -353,7 +353,7 @@ void RendererGL3CP::EnableClientState( unsigned int array ) {
 	}
 }
 
-void RendererGL3CP::DisableClientState( unsigned int array ) {
+void RendererGL3CP::disableClientState( unsigned int array ) {
 	int state;
 
 	if ( GL_TEXTURE_COORD_ARRAY == array ) {
@@ -373,7 +373,7 @@ void RendererGL3CP::DisableClientState( unsigned int array ) {
 	}
 }
 
-void RendererGL3CP::VertexPointer ( int size, unsigned int type, int stride, const void * pointer, unsigned int allocate ) {
+void RendererGL3CP::vertexPointer ( int size, unsigned int type, int stride, const void * pointer, unsigned int allocate ) {
 	const int index = mAttribsLoc[ EEGL_VERTEX_ARRAY ];
 
 	#ifdef EE_DEBUG
@@ -381,10 +381,10 @@ void RendererGL3CP::VertexPointer ( int size, unsigned int type, int stride, con
 	#endif
 
 	if ( -1 != index ) {
-		BindVertexArray( mVAO );
+		bindVertexArray( mVAO );
 
 		if ( allocate > mVBOSizeAlloc ) {
-			AllocateBuffers( allocate );
+			allocateBuffers( allocate );
 		}
 
 		glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_VERTEX_ARRAY ]			);
@@ -404,7 +404,7 @@ void RendererGL3CP::VertexPointer ( int size, unsigned int type, int stride, con
 	}
 }
 
-void RendererGL3CP::ColorPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) {
+void RendererGL3CP::colorPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) {
 	const int index = mAttribsLoc[ EEGL_COLOR_ARRAY ];
 
 	#ifdef EE_DEBUG
@@ -412,10 +412,10 @@ void RendererGL3CP::ColorPointer ( int size, unsigned int type, int stride, cons
 	#endif
 
 	if ( -1 != index ) {
-		BindVertexArray( mVAO );
+		bindVertexArray( mVAO );
 
 		if ( allocate > mVBOSizeAlloc ) {
-			AllocateBuffers( allocate );
+			allocateBuffers( allocate );
 		}
 
 		glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_COLOR_ARRAY ]				);
@@ -435,7 +435,7 @@ void RendererGL3CP::ColorPointer ( int size, unsigned int type, int stride, cons
 	}
 }
 
-void RendererGL3CP::TexCoordPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) {
+void RendererGL3CP::texCoordPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) {
 	const int index = mTextureUnits[ mCurActiveTex ];
 
 	#ifdef EE_DEBUG
@@ -443,10 +443,10 @@ void RendererGL3CP::TexCoordPointer ( int size, unsigned int type, int stride, c
 	#endif
 
 	if ( -1 != index ) {
-		BindVertexArray( mVAO );
+		bindVertexArray( mVAO );
 
 		if ( allocate > mVBOSizeAlloc ) {
-			AllocateBuffers( allocate );
+			allocateBuffers( allocate );
 		}
 
 		glBindBufferARB( GL_ARRAY_BUFFER, mCurTexCoordArray );
@@ -462,7 +462,7 @@ void RendererGL3CP::TexCoordPointer ( int size, unsigned int type, int stride, c
 	}
 }
 
-int RendererGL3CP::GetStateIndex( const Uint32& State ) {
+int RendererGL3CP::getStateIndex( const Uint32& State ) {
 	eeASSERT( State < EEGL_ARRAY_STATES_COUNT );
 
 	if ( EEGL_TEXTURE_COORD_ARRAY == State )
@@ -471,13 +471,13 @@ int RendererGL3CP::GetStateIndex( const Uint32& State ) {
 	return mAttribsLoc[ State ];
 }
 
-void RendererGL3CP::PlaneStateCheck( bool tryEnable ) {
+void RendererGL3CP::planeStateCheck( bool tryEnable ) {
 	int i;
 
 	if (  tryEnable  ) {
 		for ( i = 0; i < EE_MAX_PLANES; i++ ) {
 			if ( 0 != mPlanesStates[ i ] ) {
-				mCurShader->SetUniform( mClippingEnabledLoc, 1 );
+				mCurShader->setUniform( mClippingEnabledLoc, 1 );
 				return;
 			}
 		}
@@ -488,16 +488,16 @@ void RendererGL3CP::PlaneStateCheck( bool tryEnable ) {
 			}
 		}
 
-		mCurShader->SetUniform( mClippingEnabledLoc, 0 );
+		mCurShader->setUniform( mClippingEnabledLoc, 0 );
 	}
 }
 
-void RendererGL3CP::UpdateMatrix() {
+void RendererGL3CP::updateMatrix() {
 	switch ( mCurrentMode ) {
 		case GL_PROJECTION:
 		{
 			if ( -1 != mProjectionMatrix_id ) {
-				mCurShader->SetUniformMatrix( mProjectionMatrix_id, &mStack->mProjectionMatrix.top()[0][0] );
+				mCurShader->setUniformMatrix( mProjectionMatrix_id, &mStack->mProjectionMatrix.top()[0][0] );
 			}
 
 			break;
@@ -505,7 +505,7 @@ void RendererGL3CP::UpdateMatrix() {
 		case GL_MODELVIEW:
 		{
 			if ( -1 != mModelViewMatrix_id ) {
-				mCurShader->SetUniformMatrix( mModelViewMatrix_id, &mStack->mModelViewMatrix.top()[0][0] );
+				mCurShader->setUniformMatrix( mModelViewMatrix_id, &mStack->mModelViewMatrix.top()[0][0] );
 			}
 
 			break;
@@ -513,67 +513,67 @@ void RendererGL3CP::UpdateMatrix() {
 	}
 }
 
-void RendererGL3CP::PushMatrix() {
+void RendererGL3CP::pushMatrix() {
 	mStack->mCurMatrix->push( mStack->mCurMatrix->top() );
-	UpdateMatrix();
+	updateMatrix();
 }
 
-void RendererGL3CP::PopMatrix() {
+void RendererGL3CP::popMatrix() {
 	mStack->mCurMatrix->pop();
-	UpdateMatrix();
+	updateMatrix();
 }
 
-void RendererGL3CP::LoadIdentity() {
+void RendererGL3CP::loadIdentity() {
 	mStack->mCurMatrix->top() = glm::mat4(1.0);
-	UpdateMatrix();
+	updateMatrix();
 }
 
-void RendererGL3CP::MultMatrixf ( const float * m ) {
+void RendererGL3CP::multMatrixf ( const float * m ) {
 	mStack->mCurMatrix->top() *= toGLMmat4( m );
-	UpdateMatrix();
+	updateMatrix();
 }
 
-void RendererGL3CP::Translatef( float x, float y, float z ) {
+void RendererGL3CP::translatef( float x, float y, float z ) {
 	mStack->mCurMatrix->top() *= glm::translate( glm::vec3( x, y, z ) );
-	UpdateMatrix();
+	updateMatrix();
 }
 
-void RendererGL3CP::Rotatef( float angle, float x, float y, float z ) {
+void RendererGL3CP::rotatef( float angle, float x, float y, float z ) {
 	mStack->mCurMatrix->top() *= glm::rotate( angle, glm::vec3( x, y, z ) );
-	UpdateMatrix();
+	updateMatrix();
 }
 
-void RendererGL3CP::Scalef( float x, float y, float z ) {
+void RendererGL3CP::scalef( float x, float y, float z ) {
 	mStack->mCurMatrix->top() *= glm::scale( glm::vec3( x, y, z ) );
-	UpdateMatrix();
+	updateMatrix();
 }
 
-void RendererGL3CP::Ortho( float left, float right, float bottom, float top, float zNear, float zFar ) {
+void RendererGL3CP::ortho( float left, float right, float bottom, float top, float zNear, float zFar ) {
 	mStack->mCurMatrix->top() *= glm::ortho( left, right, bottom, top , zNear, zFar );
-	UpdateMatrix();
+	updateMatrix();
 }
 
-void RendererGL3CP::LookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ ) {
+void RendererGL3CP::lookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ ) {
 	mStack->mCurMatrix->top() *= glm::lookAt( glm::vec3(eyeX, eyeY, eyeZ), glm::vec3(centerX, centerY, centerZ), glm::vec3(upX, upY, upZ) );
-	UpdateMatrix();
+	updateMatrix();
 }
 
-void RendererGL3CP::Perspective ( float fovy, float aspect, float zNear, float zFar ) {
+void RendererGL3CP::perspective ( float fovy, float aspect, float zNear, float zFar ) {
 	mStack->mCurMatrix->top() *= glm::perspective( fovy, aspect, zNear, zFar );
-	UpdateMatrix();
+	updateMatrix();
 }
 
-void RendererGL3CP::LoadMatrixf( const float * m ) {
+void RendererGL3CP::loadMatrixf( const float * m ) {
 	mStack->mCurMatrix->top() = toGLMmat4( m );
-	UpdateMatrix();
+	updateMatrix();
 }
 
-void RendererGL3CP::Frustum( float left, float right, float bottom, float top, float near_val, float far_val ) {
+void RendererGL3CP::frustum( float left, float right, float bottom, float top, float near_val, float far_val ) {
 	mStack->mCurMatrix->top() *= glm::frustum( left, right, bottom, top, near_val, far_val );
-	UpdateMatrix();
+	updateMatrix();
 }
 
-void RendererGL3CP::GetCurrentMatrix( unsigned int mode, float * m ) {
+void RendererGL3CP::getCurrentMatrix( unsigned int mode, float * m ) {
 	switch ( mode ) {
 		case GL_PROJECTION:
 		case GL_PROJECTION_MATRIX:
@@ -590,11 +590,11 @@ void RendererGL3CP::GetCurrentMatrix( unsigned int mode, float * m ) {
 	}
 }
 
-unsigned int RendererGL3CP::GetCurrentMatrixMode() {
+unsigned int RendererGL3CP::getCurrentMatrixMode() {
 	return mCurrentMode;
 }
 
-void RendererGL3CP::MatrixMode(unsigned int mode) {
+void RendererGL3CP::matrixMode(unsigned int mode) {
 	mCurrentMode = mode;
 
 	switch ( mCurrentMode ) {
@@ -613,7 +613,7 @@ void RendererGL3CP::MatrixMode(unsigned int mode) {
 	}
 }
 
-void RendererGL3CP::Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
+void RendererGL3CP::clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	float tX = (float)x;
 	float tY = (float)y;
 	float tW = (float)Width;
@@ -631,10 +631,10 @@ void RendererGL3CP::Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int
 	vclip_top		= vclip_top		* invMV;
 	vclip_bottom	= vclip_bottom	* invMV;
 
-	GLi->Enable(GL_CLIP_PLANE0);
-	GLi->Enable(GL_CLIP_PLANE1);
-	GLi->Enable(GL_CLIP_PLANE2);
-	GLi->Enable(GL_CLIP_PLANE3);
+	GLi->enable(GL_CLIP_PLANE0);
+	GLi->enable(GL_CLIP_PLANE1);
+	GLi->enable(GL_CLIP_PLANE2);
+	GLi->enable(GL_CLIP_PLANE3);
 
 	glUniform4fv( mPlanes[0], 1, static_cast<const float*>( &vclip_left[0]	)	);
 	glUniform4fv( mPlanes[1], 1, static_cast<const float*>( &vclip_right[0]	)	);
@@ -646,31 +646,31 @@ void RendererGL3CP::Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int
 	}
 }
 
-void RendererGL3CP::Clip2DPlaneDisable() {
+void RendererGL3CP::clip2DPlaneDisable() {
 	if ( ! mPlanesClipped.empty() ) { // This should always be true
 		mPlanesClipped.pop_back();
 	}
 
 	if ( mPlanesClipped.empty() ) {
-		GLi->Disable(GL_CLIP_PLANE0);
-		GLi->Disable(GL_CLIP_PLANE1);
-		GLi->Disable(GL_CLIP_PLANE2);
-		GLi->Disable(GL_CLIP_PLANE3);
+		GLi->disable(GL_CLIP_PLANE0);
+		GLi->disable(GL_CLIP_PLANE1);
+		GLi->disable(GL_CLIP_PLANE2);
+		GLi->disable(GL_CLIP_PLANE3);
 	} else {
 		Rectf R( mPlanesClipped.back() );
 		mPushClip = false;
-		Clip2DPlaneEnable( R.Left, R.Top, R.Right, R.Bottom );
+		clip2DPlaneEnable( R.Left, R.Top, R.Right, R.Bottom );
 		mPushClip = true;
 	}
 }
 
-void RendererGL3CP::PointSize( float size ) {
-	mCurShader->SetUniform( "dgl_PointSize", size );
+void RendererGL3CP::pointSize( float size ) {
+	mCurShader->setUniform( "dgl_PointSize", size );
 
 	mPointSize = size;
 }
 
-void RendererGL3CP::ClipPlane( unsigned int plane, const double * equation ) {
+void RendererGL3CP::clipPlane( unsigned int plane, const double * equation ) {
 	Int32 nplane	= plane - GL_CLIP_PLANE0;
 	Int32 location;
 
@@ -679,7 +679,7 @@ void RendererGL3CP::ClipPlane( unsigned int plane, const double * equation ) {
 	} else {
 		std::string planeNum( "dgl_ClipPlane[" + String::toStr( nplane ) + "]" );
 
-		location = glGetUniformLocation( mCurShader->Handler(), (GLchar*)&planeNum[0] );
+		location = glGetUniformLocation( mCurShader->getHandler(), (GLchar*)&planeNum[0] );
 	}
 
 	glm::vec4 teq( equation[0], equation[1], equation[2], equation[3] );
@@ -689,11 +689,11 @@ void RendererGL3CP::ClipPlane( unsigned int plane, const double * equation ) {
 	glUniform4f( location, (float)teq[0], (float)teq[1], (float)teq[2], (float)teq[3] );
 }
 
-float RendererGL3CP::PointSize() {
+float RendererGL3CP::pointSize() {
 	return mPointSize;
 }
 
-void RendererGL3CP::ClientActiveTexture( unsigned int texture ) {
+void RendererGL3CP::clientActiveTexture( unsigned int texture ) {
 	mCurActiveTex = texture - GL_TEXTURE0;
 
 	if ( mCurActiveTex >= EE_MAX_TEXTURE_UNITS )
@@ -708,15 +708,15 @@ void RendererGL3CP::ClientActiveTexture( unsigned int texture ) {
 	}
 }
 
-void RendererGL3CP::TexEnvi( unsigned int target, unsigned int pname, int param ) {
+void RendererGL3CP::texEnvi( unsigned int target, unsigned int pname, int param ) {
 	//! @TODO: Implement TexEnvi
 }
 
-std::string RendererGL3CP::GetBaseVertexShader() {
+std::string RendererGL3CP::getBaseVertexShader() {
 	return mBaseVertexShader;
 }
 
-int RendererGL3CP::Project( float objx, float objy, float objz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *winx, float *winy, float *winz ) {
+int RendererGL3CP::project( float objx, float objy, float objz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *winx, float *winy, float *winz ) {
 	glm::vec3 tv3( glm::project( glm::vec3( objx, objy, objz ), toGLMmat4( modelMatrix ), toGLMmat4( projMatrix ), glm::vec4( viewport[0], viewport[1], viewport[2], viewport[3] ) ) );
 
 	if ( NULL != winx )
@@ -731,7 +731,7 @@ int RendererGL3CP::Project( float objx, float objy, float objz, const float mode
 	return GL_TRUE;
 }
 
-int RendererGL3CP::UnProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz ) {
+int RendererGL3CP::unProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz ) {
 	glm::vec3 tv3( glm::unProject( glm::vec3( winx, winy, winz ), toGLMmat4( modelMatrix ), toGLMmat4( projMatrix ), glm::vec4( viewport[0], viewport[1], viewport[2], viewport[3] ) ) );
 
 	if ( NULL != objx )
@@ -746,11 +746,11 @@ int RendererGL3CP::UnProject( float winx, float winy, float winz, const float mo
 	return GL_TRUE;
 }
 
-void RendererGL3CP::BindGlobalVAO() {
-	BindVertexArray( mVAO );
+void RendererGL3CP::bindGlobalVAO() {
+	bindVertexArray( mVAO );
 }
 
-void RendererGL3CP::AllocateBuffers( const Uint32& size ) {
+void RendererGL3CP::allocateBuffers( const Uint32& size ) {
 	if ( mVBOSizeAlloc != size )
 		Log::instance()->write( "Allocating new VBO buffers size: " + String::toStr( size ) );
 

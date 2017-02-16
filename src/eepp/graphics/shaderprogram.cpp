@@ -34,18 +34,18 @@ ShaderProgram::ShaderProgram( const std::string& name ) :
 	mHandler(0),
 	mId(0)
 {
-	AddToManager( name );
-	Init();
+	addToManager( name );
+	init();
 }
 
 ShaderProgram::ShaderProgram( const std::vector<Shader*>& Shaders, const std::string& name ) :
 	mHandler(0),
 	mId(0)
 {
-	AddToManager( name );
-	Init();
+	addToManager( name );
+	init();
 
-	AddShaders( Shaders );
+	addShaders( Shaders );
 
 	Link();
 }
@@ -54,20 +54,20 @@ ShaderProgram::ShaderProgram( const std::string& VertexShaderFile, const std::st
 	mHandler(0),
 	mId(0)
 {
-	AddToManager( name );
-	Init();
+	addToManager( name );
+	init();
 
 	VertexShader * vs = eeNew( VertexShader, ( VertexShaderFile ) );
 	FragmentShader * fs = eeNew( FragmentShader, ( FragmentShaderFile ) );
 
-	if ( !vs->IsValid() || !fs->IsValid() ) {
+	if ( !vs->isValid() || !fs->isValid() ) {
 		eeSAFE_DELETE( vs );
 		eeSAFE_DELETE( fs );
 		return;
 	}
 
-	AddShader( vs );
-	AddShader( fs );
+	addShader( vs );
+	addShader( fs );
 
 	Link();
 }
@@ -76,21 +76,21 @@ ShaderProgram::ShaderProgram( Pack * Pack, const std::string& VertexShaderPath, 
 	mHandler(0),
 	mId(0)
 {
-	AddToManager( name );
-	Init();
+	addToManager( name );
+	init();
 
 	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( VertexShaderPath ) && -1 != Pack->exists( FragmentShaderPath ) ) {
 		VertexShader * vs = eeNew( VertexShader, ( Pack, VertexShaderPath ) );
 		FragmentShader * fs = eeNew( FragmentShader, ( Pack, FragmentShaderPath ) );
 
-		if ( !vs->IsValid() || !fs->IsValid() ) {
+		if ( !vs->isValid() || !fs->isValid() ) {
 			eeSAFE_DELETE( vs );
 			eeSAFE_DELETE( fs );
 			return;
 		}
 
-		AddShader( vs );
-		AddShader( fs );
+		addShader( vs );
+		addShader( fs );
 
 		Link();
 	}
@@ -100,20 +100,20 @@ ShaderProgram::ShaderProgram( const char * VertexShaderData, const Uint32& Verte
 	mHandler(0),
 	mId(0)
 {
-	AddToManager( name );
-	Init();
+	addToManager( name );
+	init();
 
 	VertexShader * vs = eeNew( VertexShader, ( VertexShaderData, VertexShaderDataSize ) );
 	FragmentShader * fs = eeNew( FragmentShader, ( FragmentShaderData, FragmentShaderDataSize ) );
 
-	if ( !vs->IsValid() || !fs->IsValid() ) {
+	if ( !vs->isValid() || !fs->isValid() ) {
 		eeSAFE_DELETE( vs );
 		eeSAFE_DELETE( fs );
 		return;
 	}
 
-	AddShader( vs );
-	AddShader( fs );
+	addShader( vs );
+	addShader( fs );
 
 	Link();
 }
@@ -122,28 +122,28 @@ ShaderProgram::ShaderProgram( const char ** VertexShaderData, const Uint32& NumL
 	mHandler(0),
 	mId(0)
 {
-	AddToManager( name );
-	Init();
+	addToManager( name );
+	init();
 
 	VertexShader * vs = eeNew( VertexShader, ( VertexShaderData, NumLinesVS ) );
 	FragmentShader * fs = eeNew( FragmentShader, ( FragmentShaderData, NumLinesFS ) );
 
-	if ( !vs->IsValid() || !fs->IsValid() ) {
+	if ( !vs->isValid() || !fs->isValid() ) {
 		eeSAFE_DELETE( vs );
 		eeSAFE_DELETE( fs );
 		return;
 	}
 
-	AddShader( vs );
-	AddShader( fs );
+	addShader( vs );
+	addShader( fs );
 
 	Link();
 }
 
 ShaderProgram::~ShaderProgram() {
-	if ( Handler() > 0 ) {
+	if ( getHandler() > 0 ) {
 		#ifdef EE_SHADERS_SUPPORTED
-		glDeleteProgram( Handler() );
+		glDeleteProgram( getHandler() );
 		#endif
 	}
 
@@ -154,22 +154,22 @@ ShaderProgram::~ShaderProgram() {
 		eeSAFE_DELETE( mShaders[i] );
 
 	if ( !ShaderProgramManager::instance()->isDestroying() ) {
-		RemoveFromManager();
+		removeFromManager();
 	}
 }
 
-void ShaderProgram::AddToManager( const std::string& name ) {
-	Name( name );
+void ShaderProgram::addToManager( const std::string& name ) {
+	setName( name );
 
 	ShaderProgramManager::instance()->add( this );
 }
 
-void ShaderProgram::RemoveFromManager() {
+void ShaderProgram::removeFromManager() {
 	ShaderProgramManager::instance()->remove( this, false );
 }
 
-void ShaderProgram::Init() {
-	if ( GLi->ShadersSupported() && 0 == Handler() ) {
+void ShaderProgram::init() {
+	if ( GLi->shadersSupported() && 0 == getHandler() ) {
 		#ifdef EE_SHADERS_SUPPORTED
 		mHandler = glCreateProgram();
 		#endif
@@ -181,18 +181,18 @@ void ShaderProgram::Init() {
 	}
 }
 
-void ShaderProgram::Reload() {
+void ShaderProgram::reload() {
 	mHandler = 0;
 
-	Init();
+	init();
 
 	std::vector<Shader*> tmpShader = mShaders;
 
 	mShaders.clear();
 
 	for ( unsigned int i = 0; i < tmpShader.size(); i++ ) {
-		tmpShader[i]->Reload();
-		AddShader( tmpShader[i] );
+		tmpShader[i]->reload();
+		addShader( tmpShader[i] );
 	}
 
 	Link();
@@ -202,41 +202,41 @@ void ShaderProgram::Reload() {
 	}
 }
 
-void ShaderProgram::AddShader( Shader* Shader ) {
-	if ( !Shader->IsValid() ) {
+void ShaderProgram::addShader( Shader* Shader ) {
+	if ( !Shader->isValid() ) {
 		eePRINTL( "ShaderProgram::AddShader() %s: Cannot add invalid shader", mName.c_str() );
 		return;
 	}
 
-	if ( 0 != Handler() ) {
+	if ( 0 != getHandler() ) {
 		#ifdef EE_SHADERS_SUPPORTED
-		glAttachShader( Handler(), Shader->GetId() );
+		glAttachShader( getHandler(), Shader->getId() );
 		#endif
 
 		mShaders.push_back( Shader );
 	}
 }
 
-void ShaderProgram::AddShaders( const std::vector<Shader*>& Shaders ) {
+void ShaderProgram::addShaders( const std::vector<Shader*>& Shaders ) {
 	for ( Uint32 i = 0; i < Shaders.size(); i++ )
-		AddShader( Shaders[i] );
+		addShader( Shaders[i] );
 }
 
 bool ShaderProgram::Link() {
 	#ifdef EE_SHADERS_SUPPORTED
-	glLinkProgram( Handler() );
+	glLinkProgram( getHandler() );
 
 	Int32 linked;
-	glGetProgramiv( Handler(), GL_LINK_STATUS, &linked );
+	glGetProgramiv( getHandler(), GL_LINK_STATUS, &linked );
 	mValid = 0 != linked;
 
 	int logsize = 0, logarraysize = 0;
-	glGetProgramiv( Handler(), GL_INFO_LOG_LENGTH, &logarraysize );
+	glGetProgramiv( getHandler(), GL_INFO_LOG_LENGTH, &logarraysize );
 
 	if ( logarraysize > 0 ) {
 		mLinkLog.resize( logarraysize );
 
-		glGetProgramInfoLog( Handler(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mLinkLog[0] ) );
+		glGetProgramInfoLog( getHandler(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mLinkLog[0] ) );
 
 		mLinkLog.resize( logsize );
 	}
@@ -256,53 +256,53 @@ bool ShaderProgram::Link() {
 	return mValid;
 }
 
-void ShaderProgram::Bind() const {
-	GlobalBatchRenderer::instance()->Draw();
+void ShaderProgram::bind() const {
+	GlobalBatchRenderer::instance()->draw();
 
-	GLi->SetShader( const_cast<ShaderProgram*>( this ) );
+	GLi->setShader( const_cast<ShaderProgram*>( this ) );
 }
 
-void ShaderProgram::Unbind() const {
-	GlobalBatchRenderer::instance()->Draw();
+void ShaderProgram::unbind() const {
+	GlobalBatchRenderer::instance()->draw();
 
-	GLi->SetShader( NULL );
+	GLi->setShader( NULL );
 }
 
-Int32 ShaderProgram::UniformLocation( const std::string& Name ) {
+Int32 ShaderProgram::uniformLocation( const std::string& Name ) {
 	if ( !mValid )
 		return -1;
 
 	std::map<std::string, Int32>::iterator it = mUniformLocations.find( Name );
 	if ( it == mUniformLocations.end() ) {
 		#ifdef EE_SHADERS_SUPPORTED
-		Int32 Location = glGetUniformLocation( Handler(), Name.c_str() );
+		Int32 Location = glGetUniformLocation( getHandler(), Name.c_str() );
 		mUniformLocations[Name] = Location;
 		#endif
 	}
 	return mUniformLocations[Name];
 }
 
-Int32 ShaderProgram::AttributeLocation( const std::string& Name ) {
+Int32 ShaderProgram::attributeLocation( const std::string& Name ) {
 	if ( !mValid )
 		return -1;
 
 	std::map<std::string, Int32>::iterator it = mAttributeLocations.find( Name );
 	if ( it == mAttributeLocations.end() ) {
 		#ifdef EE_SHADERS_SUPPORTED
-		Int32 Location = glGetAttribLocation( Handler(), Name.c_str() );
+		Int32 Location = glGetAttribLocation( getHandler(), Name.c_str() );
 		mAttributeLocations[Name] = Location;
 		#endif
 	}
 	return mAttributeLocations[Name];
 }
 
-void ShaderProgram::InvalidateLocations() {
+void ShaderProgram::invalidateLocations() {
 	mUniformLocations.clear();
 	mAttributeLocations.clear();
 }
 
-bool ShaderProgram::SetUniform( const std::string& Name, float Value ) {
-	Int32 Location = UniformLocation( Name );
+bool ShaderProgram::setUniform( const std::string& Name, float Value ) {
+	Int32 Location = uniformLocation( Name );
 
 	if ( Location >= 0 ) {
 		#ifdef EE_SHADERS_SUPPORTED
@@ -313,8 +313,8 @@ bool ShaderProgram::SetUniform( const std::string& Name, float Value ) {
 	return ( Location >= 0 );
 }
 
-bool ShaderProgram::SetUniform( const std::string& Name, Vector2ff Value ) {
-	Int32 Location = UniformLocation( Name );
+bool ShaderProgram::setUniform( const std::string& Name, Vector2ff Value ) {
+	Int32 Location = uniformLocation( Name );
 
 	if ( Location >= 0 ) {
 		#ifdef EE_SHADERS_SUPPORTED
@@ -325,8 +325,8 @@ bool ShaderProgram::SetUniform( const std::string& Name, Vector2ff Value ) {
 	return ( Location >= 0 );
 }
 
-bool ShaderProgram::SetUniform( const std::string& Name, Vector3ff Value ) {
-	Int32 Location = UniformLocation( Name );
+bool ShaderProgram::setUniform( const std::string& Name, Vector3ff Value ) {
+	Int32 Location = uniformLocation( Name );
 
 	if ( Location >= 0 ) {
 		#ifdef EE_SHADERS_SUPPORTED
@@ -337,8 +337,8 @@ bool ShaderProgram::SetUniform( const std::string& Name, Vector3ff Value ) {
 	return ( Location >= 0 );
 }
 
-bool ShaderProgram::SetUniform( const std::string& Name, float x, float y, float z, float w ) {
-	Int32 Location = UniformLocation( Name );
+bool ShaderProgram::setUniform( const std::string& Name, float x, float y, float z, float w ) {
+	Int32 Location = uniformLocation( Name );
 
 	if ( Location >= 0 ) {
 		#ifdef EE_SHADERS_SUPPORTED
@@ -349,8 +349,8 @@ bool ShaderProgram::SetUniform( const std::string& Name, float x, float y, float
 	return ( Location >= 0 );
 }
 
-bool ShaderProgram::SetUniform( const std::string& Name, Int32 Value ) {
-	Int32 Location = UniformLocation( Name );
+bool ShaderProgram::setUniform( const std::string& Name, Int32 Value ) {
+	Int32 Location = uniformLocation( Name );
 
 	if ( Location >= 0 ) {
 		#ifdef EE_SHADERS_SUPPORTED
@@ -361,7 +361,7 @@ bool ShaderProgram::SetUniform( const std::string& Name, Int32 Value ) {
 	return ( Location >= 0 );
 }
 
-bool ShaderProgram::SetUniform( const Int32& Location, Int32 Value ) {
+bool ShaderProgram::setUniform( const Int32& Location, Int32 Value ) {
 	if ( -1 != Location ) {
 		#ifdef EE_SHADERS_SUPPORTED
 		glUniform1i( Location, Value );
@@ -373,7 +373,7 @@ bool ShaderProgram::SetUniform( const Int32& Location, Int32 Value ) {
 	return false;
 }
 
-bool ShaderProgram::SetUniform( const Int32& Location, float Value ) {
+bool ShaderProgram::setUniform( const Int32& Location, float Value ) {
 	if ( -1 != Location ) {
 		#ifdef EE_SHADERS_SUPPORTED
 		glUniform1f( Location, Value );
@@ -385,7 +385,7 @@ bool ShaderProgram::SetUniform( const Int32& Location, float Value ) {
 	return false;
 }
 
-bool ShaderProgram::SetUniform( const Int32& Location, Vector2ff Value ) {
+bool ShaderProgram::setUniform( const Int32& Location, Vector2ff Value ) {
 	if ( -1 != Location ) {
 		#ifdef EE_SHADERS_SUPPORTED
 		glUniform2fv( Location, 1, reinterpret_cast<float*>( &Value ) );
@@ -397,7 +397,7 @@ bool ShaderProgram::SetUniform( const Int32& Location, Vector2ff Value ) {
 	return false;
 }
 
-bool ShaderProgram::SetUniform( const Int32& Location, Vector3ff Value ) {
+bool ShaderProgram::setUniform( const Int32& Location, Vector3ff Value ) {
 	if ( -1 != Location ) {
 		#ifdef EE_SHADERS_SUPPORTED
 		glUniform3fv( Location, 1, reinterpret_cast<float*>( &Value ) );
@@ -409,7 +409,7 @@ bool ShaderProgram::SetUniform( const Int32& Location, Vector3ff Value ) {
 	return false;
 }
 
-bool ShaderProgram::SetUniform( const Int32& Location, float x, float y, float z, float w ) {
+bool ShaderProgram::setUniform( const Int32& Location, float x, float y, float z, float w ) {
 	if ( -1 != Location ) {
 		#ifdef EE_SHADERS_SUPPORTED
 		glUniform4f( Location, x, y, z, w );
@@ -421,7 +421,7 @@ bool ShaderProgram::SetUniform( const Int32& Location, float x, float y, float z
 	return false;
 }
 
-bool ShaderProgram::SetUniformMatrix( const Int32& Location, const float * Value ) {
+bool ShaderProgram::setUniformMatrix( const Int32& Location, const float * Value ) {
 	if ( -1 != Location ) {
 		#ifdef EE_SHADERS_SUPPORTED
 		glUniformMatrix4fv( Location, 1, false, Value );
@@ -433,8 +433,8 @@ bool ShaderProgram::SetUniformMatrix( const Int32& Location, const float * Value
 	return false;
 }
 
-bool ShaderProgram::SetUniformMatrix( const std::string Name, const float * Value ) {
-	Int32 Location = UniformLocation( Name );
+bool ShaderProgram::setUniformMatrix( const std::string Name, const float * Value ) {
+	Int32 Location = uniformLocation( Name );
 
 	if ( Location >= 0 ) {
 		#ifdef EE_SHADERS_SUPPORTED
@@ -445,40 +445,40 @@ bool ShaderProgram::SetUniformMatrix( const std::string Name, const float * Valu
 	return ( Location >= 0 );
 }
 
-const std::string& ShaderProgram::Name() const {
+const std::string& ShaderProgram::getName() const {
 	return mName;
 }
 
-void ShaderProgram::Name( const std::string& name ) {
+void ShaderProgram::setName( const std::string& name ) {
 	mName = name;
 	mId = String::hash( mName );
 
 	Uint32 NameCount = ShaderProgramManager::instance()->exists( mName );
 
 	if ( 0 != NameCount || 0 == name.size() ) {
-		Name( name + String::toStr( NameCount + 1 ) );
+		setName( name + String::toStr( NameCount + 1 ) );
 	}
 }
 
-void ShaderProgram::SetReloadCb( ShaderProgramReloadCb Cb ) {
+void ShaderProgram::setReloadCb( ShaderProgramReloadCb Cb ) {
 	mReloadCb = Cb;
 }
 
-void ShaderProgram::EnableVertexAttribArray( const std::string& Name ) {
-	EnableVertexAttribArray( AttributeLocation( Name ) );
+void ShaderProgram::enableVertexAttribArray( const std::string& Name ) {
+	enableVertexAttribArray( attributeLocation( Name ) );
 }
 
-void ShaderProgram::EnableVertexAttribArray( const Int32& Location ) {
+void ShaderProgram::enableVertexAttribArray( const Int32& Location ) {
 	#ifdef EE_SHADERS_SUPPORTED
 	glEnableVertexAttribArray( Location );
 	#endif
 }
 
-void ShaderProgram::DisableVertexAttribArray( const std::string& Name ) {
-	DisableVertexAttribArray( AttributeLocation( Name ) );
+void ShaderProgram::disableVertexAttribArray( const std::string& Name ) {
+	disableVertexAttribArray( attributeLocation( Name ) );
 }
 
-void ShaderProgram::DisableVertexAttribArray( const Int32& Location ) {
+void ShaderProgram::disableVertexAttribArray( const Int32& Location ) {
 	#ifdef EE_SHADERS_SUPPORTED
 	glDisableVertexAttribArray( Location );
 	#endif

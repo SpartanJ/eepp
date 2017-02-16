@@ -40,7 +40,7 @@ void GameObjectSubTextureEx::Draw() {
 				Vector2i Tile = reinterpret_cast<TileMapLayer*> ( mLayer )->GetCurrentTile();
 
 				if ( LM->IsByVertex() ) {
-					mSubTexture->Draw(
+					mSubTexture->draw(
 						mPos.x,
 						mPos.y,
 						mAngle,
@@ -53,31 +53,31 @@ void GameObjectSubTextureEx::Draw() {
 						mRender
 					);
 				} else {
-					mSubTexture->Draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), mAngle, mScale, mBlend, mRender );
+					mSubTexture->draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), mAngle, mScale, mBlend, mRender );
 				}
 			} else {
 				if ( LM->IsByVertex() ) {
-					mSubTexture->Draw(
+					mSubTexture->draw(
 						mPos.x,
 						mPos.y,
 						mAngle,
 						mScale,
 						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->DestSize().y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->DestSize().x, mPos.y + mSubTexture->DestSize().y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->DestSize().x, mPos.y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->destSize().y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->destSize().x, mPos.y + mSubTexture->destSize().y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->destSize().x, mPos.y ) ),
 						mBlend,
 						mRender
 					);
 				} else {
-					mSubTexture->Draw( mPos.x, mPos.y, LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ), mAngle, mScale, mBlend, mRender );
+					mSubTexture->draw( mPos.x, mPos.y, LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ), mAngle, mScale, mBlend, mRender );
 				}
 			}
 		} else {
 			if ( NULL != mVertexColors ) {
-				mSubTexture->Draw( mPos.x, mPos.y, mAngle, mScale, mVertexColors[0], mVertexColors[1], mVertexColors[2], mVertexColors[4], mBlend, mRender );
+				mSubTexture->draw( mPos.x, mPos.y, mAngle, mScale, mVertexColors[0], mVertexColors[1], mVertexColors[2], mVertexColors[4], mBlend, mRender );
 			} else {
-				mSubTexture->Draw( mPos.x, mPos.y, mColor, mAngle, mScale, mBlend, mRender );
+				mSubTexture->draw( mPos.x, mPos.y, mColor, mAngle, mScale, mBlend, mRender );
 			}
 		}
 	}

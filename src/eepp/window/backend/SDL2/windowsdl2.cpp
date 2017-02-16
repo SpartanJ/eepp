@@ -229,7 +229,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	if ( NULL == cGL::existsSingleton() ) {
 		cGL::createSingleton( mWindow.ContextConfig.Version );
-		cGL::instance()->Init();
+		cGL::instance()->init();
 	}
 
 	createPlatform();
@@ -504,11 +504,11 @@ bool WindowSDL::icon( const std::string& Path ) {
 
 	Image Img( Path );
 
-	if ( NULL != Img.GetPixelsPtr() ) {
-		const Uint8 * Ptr = Img.GetPixelsPtr();
-		x = Img.Width();
-		y = Img.Height();
-		c = Img.Channels();
+	if ( NULL != Img.getPixelsPtr() ) {
+		const Uint8 * Ptr = Img.getPixelsPtr();
+		x = Img.width();
+		y = Img.height();
+		c = Img.channels();
 
 		if ( ( x  % 8 ) == 0 && ( y % 8 ) == 0 ) {
 			Uint32 rmask, gmask, bmask, amask;

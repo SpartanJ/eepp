@@ -39,178 +39,178 @@ class EE_API cGL {
 
 		virtual ~cGL();
 
-		virtual void Init();
+		virtual void init();
 
 		/** @return The company responsible for this GL implementation. */
-		std::string GetVendor();
+		std::string getVendor();
 
 		/** @return The name of the renderer.\n This name is typically specific to a particular configuration of a hardware platform. */
-		std::string GetRenderer();
+		std::string getRenderer();
 
 		/** @return A GL version or release number. */
-		std::string GetVersion();
+		std::string getVersion();
 
 		/** @return The shading language version */
-		std::string GetShadingLanguageVersion();
+		std::string getShadingLanguageVersion();
 
 		/** @return If the extension passed is supported by the GPU */
-		bool IsExtension( const std::string& name );
+		bool isExtension( const std::string& name );
 
 		/** @return If the extension from the EEGL_extensions is present on the GPU. */
-		bool IsExtension( EEGL_extensions name );
+		bool isExtension( EEGL_extensions name );
 
-		bool PointSpriteSupported();
+		bool pointSpriteSupported();
 
-		bool ShadersSupported();
+		bool shadersSupported();
 
-		Uint32 GetTextureParamEnum( const EE_TEXTURE_PARAM& Type );
+		Uint32 getTextureParamEnum( const EE_TEXTURE_PARAM& Type );
 
-		Uint32 GetTextureFuncEnum( const EE_TEXTURE_FUNC& Type );
+		Uint32 getTextureFuncEnum( const EE_TEXTURE_FUNC& Type );
 
-		Uint32 GetTextureSourceEnum( const EE_TEXTURE_SOURCE& Type );
+		Uint32 getTextureSourceEnum( const EE_TEXTURE_SOURCE& Type );
 
-		Uint32 GetTextureOpEnum( const EE_TEXTURE_OP& Type );
+		Uint32 getTextureOpEnum( const EE_TEXTURE_OP& Type );
 
-		void Clear ( unsigned int mask );
+		void clear ( unsigned int mask );
 
-		void ClearColor ( float red, float green, float blue, float alpha );
+		void clearColor ( float red, float green, float blue, float alpha );
 
-		void Scissor ( int x, int y, int width, int height );
+		void scissor ( int x, int y, int width, int height );
 
-		void PolygonMode( unsigned int face, unsigned int mode );
+		void polygonMode( unsigned int face, unsigned int mode );
 
-		std::string GetExtensions();
+		std::string getExtensions();
 
-		const char * GetString( unsigned int name );
+		const char * getString( unsigned int name );
 
-		void DrawArrays ( unsigned int mode, int first, int count );
+		void drawArrays ( unsigned int mode, int first, int count );
 
-		void DrawElements( unsigned int mode, int count, unsigned int type, const void *indices );
+		void drawElements( unsigned int mode, int count, unsigned int type, const void *indices );
 
-		void BindTexture ( unsigned int target, unsigned int texture );
+		void bindTexture( unsigned int target, unsigned int texture );
 
-		void ActiveTexture( unsigned int texture );
+		void activeTexture( unsigned int texture );
 
-		void BlendFunc ( unsigned int sfactor, unsigned int dfactor );
+		void blendFunc( unsigned int sfactor, unsigned int dfactor );
 
-		void Viewport ( int x, int y, int width, int height );
+		void viewport( int x, int y, int width, int height );
 
-		void LineSmooth( const bool& Enable );
+		void lineSmooth( const bool& enable );
 
-		void LineWidth ( float width );
+		void lineWidth( float width );
 
 		/** Reapply the line smooth state */
-		void LineSmooth();
+		void lineSmooth();
 
-		bool IsLineSmooth();
+		bool isLineSmooth();
 
 		/** Set the polygon fill mode ( wireframe or filled ) */
-		void PolygonMode( const EE_FILL_MODE& Mode );
+		void polygonMode( const EE_FILL_MODE& Mode );
 
 		/** Reapply the polygon mode */
-		void PolygonMode();
+		void polygonMode();
 
-		void PixelStorei (unsigned int pname, int param);
+		void pixelStorei (unsigned int pname, int param);
 
-		RendererGL * GetRendererGL();
+		RendererGL * getRendererGL();
 
-		RendererGL3 * GetRendererGL3();
+		RendererGL3 * getRendererGL3();
 
-		RendererGL3CP * GetRendererGL3CP();
+		RendererGL3CP * getRendererGL3CP();
 
-		RendererGLES2 * GetRendererGLES2();
+		RendererGLES2 * getRendererGLES2();
 
-		virtual void PointSize( float size ) = 0;
+		virtual void pointSize( float size ) = 0;
 
-		virtual float PointSize() = 0;
+		virtual float pointSize() = 0;
 
-		virtual void ClientActiveTexture( unsigned int texture ) = 0;
+		virtual void clientActiveTexture( unsigned int texture ) = 0;
 
-		virtual void Disable ( unsigned int cap );
+		virtual void disable( unsigned int cap );
 
-		virtual void Enable( unsigned int cap );
+		virtual void enable( unsigned int cap );
 
-		virtual EEGL_version Version() = 0;
+		virtual EEGL_version version() = 0;
 
-		virtual std::string VersionStr() = 0;
+		virtual std::string versionStr() = 0;
 
-		virtual void PushMatrix() = 0;
+		virtual void pushMatrix() = 0;
 
-		virtual void PopMatrix() = 0;
+		virtual void popMatrix() = 0;
 
-		virtual void LoadIdentity() = 0;
+		virtual void loadIdentity() = 0;
 
-		virtual void Translatef( float x, float y, float z ) = 0;
+		virtual void translatef( float x, float y, float z ) = 0;
 
-		virtual void Rotatef( float angle, float x, float y, float z ) = 0;
+		virtual void rotatef( float angle, float x, float y, float z ) = 0;
 
-		virtual void Scalef( float x, float y, float z ) = 0;
+		virtual void scalef( float x, float y, float z ) = 0;
 
-		virtual void MatrixMode ( unsigned int mode ) = 0;
+		virtual void matrixMode ( unsigned int mode ) = 0;
 
-		virtual void Ortho ( float left, float right, float bottom, float top, float zNear, float zFar ) = 0;
+		virtual void ortho( float left, float right, float bottom, float top, float zNear, float zFar ) = 0;
 
-		virtual void LookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ ) = 0;
+		virtual void lookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ ) = 0;
 
-		virtual void Perspective ( float fovy, float aspect, float zNear, float zFar ) = 0;
+		virtual void perspective( float fovy, float aspect, float zNear, float zFar ) = 0;
 
-		virtual void EnableClientState( unsigned int array ) = 0;
+		virtual void enableClientState( unsigned int array ) = 0;
 
-		virtual void DisableClientState( unsigned int array ) = 0;
+		virtual void disableClientState( unsigned int array ) = 0;
 
-		virtual void VertexPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) = 0;
+		virtual void vertexPointer( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) = 0;
 
-		virtual void ColorPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) = 0;
+		virtual void colorPointer( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) = 0;
 
-		virtual void TexCoordPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) = 0;
+		virtual void texCoordPointer( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) = 0;
 
-		virtual void SetShader( ShaderProgram * Shader );
+		virtual void setShader( ShaderProgram * Shader );
 
-		virtual void Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) = 0;
+		virtual void clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) = 0;
 
-		virtual void Clip2DPlaneDisable() = 0;
+		virtual void clip2DPlaneDisable() = 0;
 
-		virtual void MultMatrixf ( const float *m ) = 0;
+		virtual void multMatrixf( const float *m ) = 0;
 
-		virtual void ClipPlane( unsigned int plane, const double *equation ) = 0;
+		virtual void clipPlane( unsigned int plane, const double *equation ) = 0;
 
-		virtual void TexEnvi( unsigned int target, unsigned int pname, int param ) = 0;
+		virtual void texEnvi( unsigned int target, unsigned int pname, int param ) = 0;
 
-		virtual void LoadMatrixf( const float *m ) = 0;
+		virtual void loadMatrixf( const float *m ) = 0;
 
-		virtual void Frustum( float left, float right, float bottom, float top, float near_val, float far_val ) = 0;
+		virtual void frustum( float left, float right, float bottom, float top, float near_val, float far_val ) = 0;
 
-		virtual void GetCurrentMatrix( unsigned int mode, float * m ) = 0;
+		virtual void getCurrentMatrix( unsigned int mode, float * m ) = 0;
 
-		virtual unsigned int GetCurrentMatrixMode() = 0;
+		virtual unsigned int getCurrentMatrixMode() = 0;
 
-		void GetViewport( int * viewport );
+		void getViewport( int * viewport );
 
-		virtual int Project( float objx, float objy, float objz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *winx, float *winy, float *winz ) = 0;
+		virtual int project( float objx, float objy, float objz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *winx, float *winy, float *winz ) = 0;
 
-		virtual int UnProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz ) = 0;
+		virtual int unProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz ) = 0;
 
-		Vector3f ProjectCurrent( const Vector3f& point );
+		Vector3f projectCurrent( const Vector3f& point );
 
-		Vector3f UnProjectCurrent( const Vector3f& point );
+		Vector3f unProjectCurrent( const Vector3f& point );
 
-		void StencilFunc( unsigned int func, int ref, unsigned int mask );
+		void stencilFunc( unsigned int func, int ref, unsigned int mask );
 
-		void StencilOp( unsigned int fail, unsigned int zfail, unsigned int zpass );
+		void stencilOp( unsigned int fail, unsigned int zfail, unsigned int zpass );
 
-		void StencilMask ( unsigned int mask );
+		void stencilMask( unsigned int mask );
 
-		void ColorMask ( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha );
+		void colorMask( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha );
 
-		void BindVertexArray ( unsigned int array );
+		void bindVertexArray( unsigned int array );
 
-		void DeleteVertexArrays ( int n, const unsigned int *arrays );
+		void deleteVertexArrays( int n, const unsigned int *arrays );
 
-		void GenVertexArrays ( int n, unsigned int *arrays );
+		void genVertexArrays( int n, unsigned int *arrays );
 
-		const bool& QuadsSupported() const;
+		const bool& quadsSupported() const;
 
-		const int& QuadVertexs() const;
+		const int& quadVertexs() const;
 	protected:
 		enum GLStateFlags {
 			GLSF_LINE_SMOOTH	= 0,
@@ -228,7 +228,7 @@ class EE_API cGL {
 
 		std::list<Rectf> mPlanesClipped;
 	private:
-		void WriteExtension( Uint8 Pos, Uint32 BitWrite );
+		void writeExtension( Uint8 Pos, Uint32 BitWrite );
 };
 
 extern EE_API cGL * GLi;

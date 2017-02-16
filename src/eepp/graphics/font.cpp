@@ -16,7 +16,7 @@ Font::Font( const Uint32& Type, const std::string& Name ) :
 	mDescent(0),
 	mTextCache( this )
 {
-	this->Name( Name );
+	this->setName( Name );
 	FontManager::instance()->add( this );
 }
 
@@ -28,87 +28,87 @@ Font::~Font() {
 	}
 }
 
-void Font::SetText( const String& Text ) {
-	mTextCache.Text( Text );
+void Font::setText( const String& Text ) {
+	mTextCache.text( Text );
 }
 
-const ColorA& Font::Color() const {
-	return mTextCache.Color();
+const ColorA& Font::color() const {
+	return mTextCache.color();
 }
 
-void Font::Color(const ColorA& Color) {
-	mTextCache.Color( Color );
+void Font::color(const ColorA& Color) {
+	mTextCache.color( Color );
 }
 
-const ColorA& Font::ShadowColor() const {
-	return mTextCache.ShadowColor();
+const ColorA& Font::shadowColor() const {
+	return mTextCache.shadowColor();
 }
 
-void Font::ShadowColor(const ColorA& Color) {
-	mTextCache.ShadowColor( Color );
+void Font::shadowColor(const ColorA& Color) {
+	mTextCache.shadowColor( Color );
 }
 
-int Font::GetNumLines() {
-	return mTextCache.GetNumLines();
+int Font::getNumLines() {
+	return mTextCache.getNumLines();
 }
 
-Float Font::GetTextWidth( const String& Text ) {
-	SetText( Text );
-	return mTextCache.GetTextWidth();
+Float Font::getTextWidth( const String& Text ) {
+	setText( Text );
+	return mTextCache.getTextWidth();
 }
 
-Float Font::GetTextWidth() {
-	return mTextCache.GetTextWidth();
+Float Font::getTextWidth() {
+	return mTextCache.getTextWidth();
 }
 
-Uint32 Font::GetFontSize() const {
+Uint32 Font::getFontSize() const {
 	return mSize;
 }
 
-Uint32 Font::GetFontHeight() const {
+Uint32 Font::getFontHeight() const {
 	return mHeight;
 }
 
-Int32 Font::GetLineSkip() const {
+Int32 Font::getLineSkip() const {
 	return mLineSkip;
 }
 
-Int32 Font::GetFontAscent() const {
+Int32 Font::getFontAscent() const {
 	return mAscent;
 }
 
-Int32 Font::GetFontDescent() const {
+Int32 Font::getFontDescent() const {
 	return mDescent;
 }
 
-String Font::GetText() {
-	return mTextCache.Text();
+String Font::getText() {
+	return mTextCache.text();
 }
 
-Float Font::GetTextHeight() {
-	return (Float)GetFontHeight() * (Float)GetNumLines();
+Float Font::getTextHeight() {
+	return (Float)getFontHeight() * (Float)getNumLines();
 }
 
-const std::vector<Float>& Font::GetLinesWidth() {
-	return mTextCache.LinesWidth();
+const std::vector<Float>& Font::getLinesWidth() {
+	return mTextCache.linesWidth();
 }
 
-void Font::Draw( const Float& X, const Float& Y, const Uint32& Flags, const Vector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect) {
-	Draw( mTextCache, X, Y, Flags, Scale, Angle, Effect );
+void Font::draw( const Float& X, const Float& Y, const Uint32& Flags, const Vector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect) {
+	draw( mTextCache, X, Y, Flags, Scale, Angle, Effect );
 }
 
-void Font::Draw( const String& Text, const Float& X, const Float& Y, const Uint32& Flags, const Vector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect ) {
-	mTextCache.Text( Text );
-	mTextCache.Flags( Flags );
-	mTextCache.Draw( X, Y, Scale, Angle, Effect );
+void Font::draw( const String& Text, const Float& X, const Float& Y, const Uint32& Flags, const Vector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect ) {
+	mTextCache.text( Text );
+	mTextCache.flags( Flags );
+	mTextCache.draw( X, Y, Scale, Angle, Effect );
 }
 
-void Font::Draw( TextCache& TextCache, const Float& X, const Float& Y, const Uint32& Flags, const Vector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect ) {
-	if ( !TextCache.Text().size() )
+void Font::draw( TextCache& TextCache, const Float& X, const Float& Y, const Uint32& Flags, const Vector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect ) {
+	if ( !TextCache.text().size() )
 		return;
 
-	GlobalBatchRenderer::instance()->Draw();
-	TextureFactory::instance()->Bind( mTexId );
+	GlobalBatchRenderer::instance()->draw();
+	TextureFactory::instance()->bind( mTexId );
 	BlendMode::SetMode( Effect );
 
 	if ( Flags & FONT_DRAW_SHADOW ) {
@@ -116,25 +116,25 @@ void Font::Draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 
 		f &= ~FONT_DRAW_SHADOW;
 
-		ColorA Col = TextCache.Color();
+		ColorA Col = TextCache.color();
 
-		SetText( TextCache.Text() );
+		setText( TextCache.text() );
 
 		if ( Col.a() != 255 ) {
-			ColorA ShadowColor = TextCache.ShadowColor();
+			ColorA ShadowColor = TextCache.shadowColor();
 
 			ShadowColor.Alpha = (Uint8)( (Float)ShadowColor.Alpha * ( (Float)Col.a() / (Float)255 ) );
 
-			Color( ShadowColor );
+			color( ShadowColor );
 		} else {
-			Color( TextCache.ShadowColor() );
+			color( TextCache.shadowColor() );
 		}
 
-		Draw( X + 1, Y + 1, f, Scale, Angle, Effect );
+		draw( X + 1, Y + 1, f, Scale, Angle, Effect );
 
-		mTextCache.Flags( Flags );
+		mTextCache.flags( Flags );
 
-		Color( Col );
+		color( Col );
 	}
 
 	Float cX = (Float) ( (Int32)X );
@@ -146,27 +146,27 @@ void Font::Draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 	unsigned int numvert = 0;
 
 	if ( Angle != 0.0f || Scale != 1.0f ) {
-		GLi->PushMatrix();
+		GLi->pushMatrix();
 
-		Vector2f Center( cX + TextCache.GetTextWidth() * 0.5f, cY + TextCache.GetTextHeight() * 0.5f );
-		GLi->Translatef( Center.x , Center.y, 0.f );
-		GLi->Rotatef( Angle, 0.0f, 0.0f, 1.0f );
-		GLi->Scalef( Scale.x, Scale.y, 1.0f );
-		GLi->Translatef( -Center.x + X, -Center.y + Y, 0.f );
+		Vector2f Center( cX + TextCache.getTextWidth() * 0.5f, cY + TextCache.getTextHeight() * 0.5f );
+		GLi->translatef( Center.x , Center.y, 0.f );
+		GLi->rotatef( Angle, 0.0f, 0.0f, 1.0f );
+		GLi->scalef( Scale.x, Scale.y, 1.0f );
+		GLi->translatef( -Center.x + X, -Center.y + Y, 0.f );
 	}
 
-	std::vector<eeVertexCoords>& RenderCoords = TextCache.VertextCoords();
-	std::vector<ColorA>& Colors = TextCache.Colors();
+	std::vector<eeVertexCoords>& RenderCoords = TextCache.vertextCoords();
+	std::vector<ColorA>& Colors = TextCache.colors();
 
-	if ( !TextCache.CachedCoords() ) {
+	if ( !TextCache.cachedCoords() ) {
 		if ( !( Flags & FONT_DRAW_VERTICAL ) ) {
 			switch ( FontHAlignGet( Flags ) ) {
 				case FONT_DRAW_CENTER:
-					nX = (Float)( (Int32)( ( TextCache.GetTextWidth() - TextCache.LinesWidth()[ Line ] ) * 0.5f ) );
+					nX = (Float)( (Int32)( ( TextCache.getTextWidth() - TextCache.linesWidth()[ Line ] ) * 0.5f ) );
 					Line++;
 					break;
 				case FONT_DRAW_RIGHT:
-					nX = TextCache.GetTextWidth() - TextCache.LinesWidth()[ Line ];
+					nX = TextCache.getTextWidth() - TextCache.linesWidth()[ Line ];
 					Line++;
 					break;
 			}
@@ -174,8 +174,8 @@ void Font::Draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 
 		Int32 tGlyphSize = (Int32)mGlyphs.size();
 
-		for ( unsigned int i = 0; i < TextCache.Text().size(); i++ ) {
-			Char = static_cast<Int32>( TextCache.Text().at(i) );
+		for ( unsigned int i = 0; i < TextCache.text().size(); i++ ) {
+			Char = static_cast<Int32>( TextCache.text().at(i) );
 
 			if ( Char < 0 && Char > -128 )
 				Char = 256 + Char;
@@ -187,7 +187,7 @@ void Font::Draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 					case '\v':
 					{
 						if ( Flags & FONT_DRAW_VERTICAL )
-							nY += GetFontHeight();
+							nY += getFontHeight();
 						else
 							nX += mGlyphs[ Char ].Advance;
 						break;
@@ -195,7 +195,7 @@ void Font::Draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 					case '\t':
 					{
 						if ( Flags & FONT_DRAW_VERTICAL )
-							nY += GetFontHeight() * 4;
+							nY += getFontHeight() * 4;
 						else
 							nX += mGlyphs[ Char ].Advance * 4;
 						break;
@@ -203,23 +203,23 @@ void Font::Draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 					case '\n':
 					{
 						if ( Flags & FONT_DRAW_VERTICAL ) {
-							nX += (GetFontHeight() * Scale.y);
+							nX += (getFontHeight() * Scale.y);
 							nY = 0;
 						} else {
-							if ( i + 1 < TextCache.Text().size() ) {
+							if ( i + 1 < TextCache.text().size() ) {
 								switch ( FontHAlignGet( Flags ) ) {
 									case FONT_DRAW_CENTER:
-										nX = (Float)( (Int32)( ( TextCache.GetTextWidth() - TextCache.LinesWidth()[ Line ] ) * 0.5f ) );
+										nX = (Float)( (Int32)( ( TextCache.getTextWidth() - TextCache.linesWidth()[ Line ] ) * 0.5f ) );
 										break;
 									case FONT_DRAW_RIGHT:
-										nX = TextCache.GetTextWidth() - TextCache.LinesWidth()[ Line ];
+										nX = TextCache.getTextWidth() - TextCache.linesWidth()[ Line ];
 										break;
 									default:
 										nX = 0;
 								}
 							}
 
-							nY += (GetFontHeight() * Scale.y);
+							nY += (getFontHeight() * Scale.y);
 							Line++;
 						}
 
@@ -227,7 +227,7 @@ void Font::Draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 					}
 					default:
 					{
-						if ( GLi->QuadsSupported() ) {
+						if ( GLi->quadsSupported() ) {
 							for ( Uint8 z = 0; z < 8; z+=2 ) {
 								RenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[z];
 								RenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ z + 1 ];
@@ -274,7 +274,7 @@ void Font::Draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 						}
 
 						if ( Flags & FONT_DRAW_VERTICAL )
-							nY += GetFontHeight();
+							nY += getFontHeight();
 						else
 							nX += mGlyphs[ Char ].Advance;
 					}
@@ -282,31 +282,31 @@ void Font::Draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 			}
 		}
 
-		TextCache.CachedCoords( true );
-		TextCache.CachedVerts( numvert );
+		TextCache.cachedCoords( true );
+		TextCache.cachedVerts( numvert );
 	} else {
-		numvert = TextCache.CachedVerts();
+		numvert = TextCache.cachedVerts();
 	}
 
 	Uint32 alloc	= numvert * sizeof(eeVertexCoords);
-	Uint32 allocC	= numvert * GLi->QuadVertexs();
+	Uint32 allocC	= numvert * GLi->quadVertexs();
 
-	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, 0						, reinterpret_cast<char*>( &Colors[0] )								, allocC	);
-	GLi->TexCoordPointer( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] )						, alloc		);
-	GLi->VertexPointer	( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] ) + sizeof(Float) * 2	, alloc		);
+	GLi->colorPointer	( 4, GL_UNSIGNED_BYTE	, 0						, reinterpret_cast<char*>( &Colors[0] )								, allocC	);
+	GLi->texCoordPointer( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] )						, alloc		);
+	GLi->vertexPointer	( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] ) + sizeof(Float) * 2	, alloc		);
 
-	if ( GLi->QuadsSupported() ) {
-		GLi->DrawArrays( GL_QUADS, 0, numvert );
+	if ( GLi->quadsSupported() ) {
+		GLi->drawArrays( GL_QUADS, 0, numvert );
 	} else {
-		GLi->DrawArrays( GL_TRIANGLES, 0, numvert );
+		GLi->drawArrays( GL_TRIANGLES, 0, numvert );
 	}
 
 	if ( Angle != 0.0f || Scale != 1.0f ) {
-		GLi->PopMatrix();
+		GLi->popMatrix();
 	}
 }
 
-void Font::CacheWidth( const String& Text, std::vector<Float>& LinesWidth, Float& CachedWidth, int& NumLines , int& LargestLineCharCount ) {
+void Font::cacheWidth( const String& Text, std::vector<Float>& LinesWidth, Float& CachedWidth, int& NumLines , int& LargestLineCharCount ) {
 	LinesWidth.clear();
 
 	Float Width = 0, MaxWidth = 0;
@@ -357,8 +357,8 @@ void Font::CacheWidth( const String& Text, std::vector<Float>& LinesWidth, Float
 	NumLines = Lines;
 }
 
-Int32 Font::FindClosestCursorPosFromPoint( const String& Text, const Vector2i& pos ) {
-	Float Width = 0, lWidth = 0, Height = GetFontHeight(), lHeight = 0;
+Int32 Font::findClosestCursorPosFromPoint( const String& Text, const Vector2i& pos ) {
+	Float Width = 0, lWidth = 0, Height = getFontHeight(), lHeight = 0;
 	Int32 CharID;
 	Int32 tGlyphSize = (Int32)mGlyphs.size();
 	std::size_t tSize = Text.size();
@@ -395,7 +395,7 @@ Int32 Font::FindClosestCursorPosFromPoint( const String& Text, const Vector2i& p
 
 			if ( CharID == '\n' ) {
 				lHeight = Height;
-				Height += GetFontHeight();
+				Height += getFontHeight();
 
 				if ( pos.x > Width && pos.y <= lHeight ) {
 					return i;
@@ -411,8 +411,8 @@ Int32 Font::FindClosestCursorPosFromPoint( const String& Text, const Vector2i& p
 	return -1;
 }
 
-Vector2i Font::GetCursorPos( const String& Text, const Uint32& Pos ) {
-	Float Width = 0, Height = GetFontHeight();
+Vector2i Font::getCursorPos( const String& Text, const Uint32& Pos ) {
+	Float Width = 0, Height = getFontHeight();
 	Int32 CharID;
 	Int32 tGlyphSize = mGlyphs.size();
 	std::size_t tSize = ( Pos < Text.size() ) ? Pos : Text.size();
@@ -429,7 +429,7 @@ Vector2i Font::GetCursorPos( const String& Text, const Uint32& Pos ) {
 
 			if ( CharID == '\n' ) {
 				Width = 0;
-				Height += GetFontHeight();
+				Height += getFontHeight();
 			}
 		}
 	}
@@ -449,7 +449,7 @@ static bool IsStopSelChar( Uint32 c ) {
 			'\'' == c;
 }
 
-void Font::SelectSubStringFromCursor( const String& Text, const Int32& CurPos, Int32& InitCur, Int32& EndCur ) {
+void Font::selectSubStringFromCursor( const String& Text, const Int32& CurPos, Int32& InitCur, Int32& EndCur ) {
 	InitCur	= 0;
 	EndCur	= Text.size();
 
@@ -476,11 +476,11 @@ void Font::SelectSubStringFromCursor( const String& Text, const Int32& CurPos, I
 	}
 }
 
-void Font::CacheWidth() {
-	mTextCache.Cache();
+void Font::cacheWidth() {
+	mTextCache.cache();
 }
 
-void Font::ShrinkText( std::string& Str, const Uint32& MaxWidth ) {
+void Font::shrinkText( std::string& Str, const Uint32& MaxWidth ) {
 	if ( !Str.size() )
 		return;
 
@@ -537,7 +537,7 @@ void Font::ShrinkText( std::string& Str, const Uint32& MaxWidth ) {
 	}
 }
 
-void Font::ShrinkText( String& Str, const Uint32& MaxWidth ) {
+void Font::shrinkText( String& Str, const Uint32& MaxWidth ) {
 	if ( !Str.size() )
 		return;
 
@@ -602,24 +602,24 @@ void Font::ShrinkText( String& Str, const Uint32& MaxWidth ) {
 	}
 }
 
-const Uint32& Font::GetTexId() const {
+const Uint32& Font::getTexId() const {
 	return mTexId;
 }
 
-const Uint32& Font::Type() const {
+const Uint32& Font::getType() const {
 	return mType;
 }
 
-const std::string& Font::Name() const {
+const std::string& Font::getName() const {
 	return mFontName;
 }
 
-void Font::Name( const std::string& name ) {
+void Font::setName( const std::string& name ) {
 	mFontName = name;
 	mFontHash = String::hash( mFontName );
 }
 
-const Uint32& Font::Id() {
+const Uint32& Font::getId() {
 	return mFontHash;
 }
 

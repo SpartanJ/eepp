@@ -129,9 +129,9 @@ void TextureAtlasNew::TextureAtlasSave( const UIEvent * Event ) {
 		if ( Res1 && Res2 ) {
 			Graphics::TexturePacker * TexturePacker = eeNew( Graphics::TexturePacker, ( w, h, false, b ) );
 
-			TexturePacker->AddTexturesPath( mTGPath->Text() );
+			TexturePacker->addTexturesPath( mTGPath->Text() );
 
-			TexturePacker->PackTextures();
+			TexturePacker->packTextures();
 
 			std::string ext = FileSystem::fileExtension( FPath, true );
 
@@ -145,7 +145,7 @@ void TextureAtlasNew::TextureAtlasSave( const UIEvent * Event ) {
 				FPath += "." + ext;
 			}
 
-			TexturePacker->Save( FPath, static_cast<EE_SAVE_TYPE> ( mSaveFileType->ListBox()->GetItemSelectedIndex() ) );
+			TexturePacker->save( FPath, static_cast<EE_SAVE_TYPE> ( mSaveFileType->ListBox()->GetItemSelectedIndex() ) );
 
 			if ( mNewTGCb.IsSet() )
 				mNewTGCb( TexturePacker );

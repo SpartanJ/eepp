@@ -57,10 +57,10 @@ class EE_API TextureFontLoader : public ObjectLoader {
 		void				unload();
 
 		/** @return The font name */
-		const std::string&	Id() const;
+		const std::string&	getId() const;
 
 		/** @return The instance of the font created after loading it. ( NULL if was not created yet ) */
-		Graphics::Font *				Font() const;
+		Graphics::Font *				getFont() const;
 	protected:
 		enum TEXTURE_FONT_LOAD_TYPE
 		{
@@ -97,11 +97,11 @@ class EE_API TextureFontLoader : public ObjectLoader {
 		bool				mTexLoaded;
 		bool				mFontLoaded;
 
-		void				LoadFont();
-		void 				LoadFromPath();
-		void				LoadFromMemory();
-		void				LoadFromPack();
-		void				LoadFromTex();
+		void				loadFont();
+		void 				loadFromPath();
+		void				loadFromMemory();
+		void				loadFromPack();
+		void				loadFromTex();
 };
 
 }}

@@ -39,7 +39,7 @@ void ThreadImpl::terminate() {
 	}
 }
 
-UintPtr ThreadImpl::id() {
+UintPtr ThreadImpl::getId() {
 	return (UintPtr)mThreadId;
 }
 

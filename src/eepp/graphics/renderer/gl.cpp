@@ -124,70 +124,70 @@ cGL::~cGL() {
 	GLi = NULL;
 }
 
-RendererGL * cGL::GetRendererGL() {
+RendererGL * cGL::getRendererGL() {
 	return reinterpret_cast<RendererGL*>( this );
 }
 
-RendererGL3 * cGL::GetRendererGL3() {
+RendererGL3 * cGL::getRendererGL3() {
 	return reinterpret_cast<RendererGL3*>( this );
 }
 
-RendererGL3CP * cGL::GetRendererGL3CP() {
+RendererGL3CP * cGL::getRendererGL3CP() {
 	return reinterpret_cast<RendererGL3CP*>( this );
 }
 
-RendererGLES2 * cGL::GetRendererGLES2() {
+RendererGLES2 * cGL::getRendererGLES2() {
 	return reinterpret_cast<RendererGLES2*>( this );
 }
 
-void cGL::WriteExtension( Uint8 Pos, Uint32 BitWrite ) {
+void cGL::writeExtension( Uint8 Pos, Uint32 BitWrite ) {
 	BitOp::writeBitKey( &mExtensions, Pos, BitWrite );
 }
 
-void cGL::Init() {
+void cGL::init() {
 	#ifdef EE_GLEW_AVAILABLE
 	glewExperimental = 1;
 
 	bool glewOn = ( GLEW_OK == glewInit() );
 
 	if ( glewOn ) {
-		WriteExtension( EEGL_ARB_texture_non_power_of_two	, GLEW_ARB_texture_non_power_of_two 				);
-		WriteExtension( EEGL_ARB_point_parameters			, GLEW_ARB_point_parameters 						);
-		WriteExtension( EEGL_ARB_point_sprite				, GLEW_ARB_point_sprite 							);
-		WriteExtension( EEGL_ARB_shading_language_100		, GLEW_ARB_shading_language_100 					);
-		WriteExtension( EEGL_ARB_shader_objects				, GLEW_ARB_shader_objects							);
-		WriteExtension( EEGL_ARB_vertex_shader				, GLEW_ARB_vertex_shader 							);
-		WriteExtension( EEGL_ARB_fragment_shader			, GLEW_ARB_fragment_shader 							);
-		WriteExtension( EEGL_EXT_framebuffer_object			, GLEW_EXT_framebuffer_object 						);
-		WriteExtension( EEGL_ARB_multitexture				, GLEW_ARB_multitexture 							);
-		WriteExtension( EEGL_EXT_texture_compression_s3tc	, GLEW_EXT_texture_compression_s3tc 				);
-		WriteExtension( EEGL_ARB_vertex_buffer_object		, GLEW_ARB_vertex_buffer_object						);
-		WriteExtension( EEGL_ARB_pixel_buffer_object		, GLEW_ARB_pixel_buffer_object						);
-		WriteExtension( EEGL_ARB_vertex_array_object		, GLEW_ARB_vertex_array_object 						);
-		WriteExtension( EEGL_EXT_blend_func_separate		, GLEW_EXT_blend_func_separate						);
+		writeExtension( EEGL_ARB_texture_non_power_of_two	, GLEW_ARB_texture_non_power_of_two 				);
+		writeExtension( EEGL_ARB_point_parameters			, GLEW_ARB_point_parameters 						);
+		writeExtension( EEGL_ARB_point_sprite				, GLEW_ARB_point_sprite 							);
+		writeExtension( EEGL_ARB_shading_language_100		, GLEW_ARB_shading_language_100 					);
+		writeExtension( EEGL_ARB_shader_objects				, GLEW_ARB_shader_objects							);
+		writeExtension( EEGL_ARB_vertex_shader				, GLEW_ARB_vertex_shader 							);
+		writeExtension( EEGL_ARB_fragment_shader			, GLEW_ARB_fragment_shader 							);
+		writeExtension( EEGL_EXT_framebuffer_object			, GLEW_EXT_framebuffer_object 						);
+		writeExtension( EEGL_ARB_multitexture				, GLEW_ARB_multitexture 							);
+		writeExtension( EEGL_EXT_texture_compression_s3tc	, GLEW_EXT_texture_compression_s3tc 				);
+		writeExtension( EEGL_ARB_vertex_buffer_object		, GLEW_ARB_vertex_buffer_object						);
+		writeExtension( EEGL_ARB_pixel_buffer_object		, GLEW_ARB_pixel_buffer_object						);
+		writeExtension( EEGL_ARB_vertex_array_object		, GLEW_ARB_vertex_array_object 						);
+		writeExtension( EEGL_EXT_blend_func_separate		, GLEW_EXT_blend_func_separate						);
 	}
 	else
 	#endif
 	{
-		WriteExtension( EEGL_ARB_texture_non_power_of_two	, IsExtension( "GL_ARB_texture_non_power_of_two" )	);
-		WriteExtension( EEGL_ARB_point_parameters			, IsExtension( "GL_ARB_point_parameters" )			);
-		WriteExtension( EEGL_ARB_point_sprite				, IsExtension( "GL_ARB_point_sprite" )				);
-		WriteExtension( EEGL_ARB_shading_language_100		, IsExtension( "GL_ARB_shading_language_100" )		);
-		WriteExtension( EEGL_ARB_shader_objects				, IsExtension( "GL_ARB_shader_objects" )			);
-		WriteExtension( EEGL_ARB_vertex_shader				, IsExtension( "GL_ARB_vertex_shader" ) 			);
-		WriteExtension( EEGL_ARB_fragment_shader			, IsExtension( "GL_ARB_fragment_shader" ) 			);
-		WriteExtension( EEGL_EXT_framebuffer_object			, IsExtension( "GL_EXT_framebuffer_object" ) 		);
-		WriteExtension( EEGL_ARB_multitexture				, IsExtension( "GL_ARB_multitexture" )				);
-		WriteExtension( EEGL_EXT_texture_compression_s3tc	, IsExtension( "GL_EXT_texture_compression_s3tc" )	);
-		WriteExtension( EEGL_ARB_vertex_buffer_object		, IsExtension( "GL_ARB_vertex_buffer_object" )		);
-		WriteExtension( EEGL_ARB_pixel_buffer_object		, IsExtension( "GL_ARB_pixel_buffer_object" )		);
-		WriteExtension( EEGL_ARB_vertex_array_object		, IsExtension( "GL_ARB_vertex_array_object" )		);
-		WriteExtension( EEGL_EXT_blend_func_separate		, IsExtension( "GL_EXT_blend_func_separate" )		);
+		writeExtension( EEGL_ARB_texture_non_power_of_two	, isExtension( "GL_ARB_texture_non_power_of_two" )	);
+		writeExtension( EEGL_ARB_point_parameters			, isExtension( "GL_ARB_point_parameters" )			);
+		writeExtension( EEGL_ARB_point_sprite				, isExtension( "GL_ARB_point_sprite" )				);
+		writeExtension( EEGL_ARB_shading_language_100		, isExtension( "GL_ARB_shading_language_100" )		);
+		writeExtension( EEGL_ARB_shader_objects				, isExtension( "GL_ARB_shader_objects" )			);
+		writeExtension( EEGL_ARB_vertex_shader				, isExtension( "GL_ARB_vertex_shader" ) 			);
+		writeExtension( EEGL_ARB_fragment_shader			, isExtension( "GL_ARB_fragment_shader" ) 			);
+		writeExtension( EEGL_EXT_framebuffer_object			, isExtension( "GL_EXT_framebuffer_object" ) 		);
+		writeExtension( EEGL_ARB_multitexture				, isExtension( "GL_ARB_multitexture" )				);
+		writeExtension( EEGL_EXT_texture_compression_s3tc	, isExtension( "GL_EXT_texture_compression_s3tc" )	);
+		writeExtension( EEGL_ARB_vertex_buffer_object		, isExtension( "GL_ARB_vertex_buffer_object" )		);
+		writeExtension( EEGL_ARB_pixel_buffer_object		, isExtension( "GL_ARB_pixel_buffer_object" )		);
+		writeExtension( EEGL_ARB_vertex_array_object		, isExtension( "GL_ARB_vertex_array_object" )		);
+		writeExtension( EEGL_EXT_blend_func_separate		, isExtension( "GL_EXT_blend_func_separate" )		);
 	}
 
 	// NVIDIA added support for GL_OES_compressed_ETC1_RGB8_texture in desktop GPUs
 	// GLEW doesn't return the correct result
-	WriteExtension( EEGL_OES_compressed_ETC1_RGB8_texture	, SOIL_GL_ExtensionSupported( "GL_OES_compressed_ETC1_RGB8_texture" )	);
+	writeExtension( EEGL_OES_compressed_ETC1_RGB8_texture	, SOIL_GL_ExtensionSupported( "GL_OES_compressed_ETC1_RGB8_texture" )	);
 
 	#ifdef EE_GLES
 
@@ -234,7 +234,7 @@ void cGL::Init() {
 	#endif
 }
 
-bool cGL::IsExtension( const std::string& name ) {
+bool cGL::isExtension( const std::string& name ) {
 #ifdef EE_GLEW_AVAILABLE
 	return 0 != glewIsSupported( name.c_str() );
 #else
@@ -242,27 +242,27 @@ bool cGL::IsExtension( const std::string& name ) {
 #endif
 }
 
-bool cGL::IsExtension( EEGL_extensions name ) {
+bool cGL::isExtension( EEGL_extensions name ) {
 	return 0 != ( mExtensions & ( 1 << name ) );
 }
 
-bool cGL::PointSpriteSupported() {
+bool cGL::pointSpriteSupported() {
 #ifdef EE_GLES
 	return true;
 #else
-	return IsExtension( EEGL_ARB_point_sprite );
+	return isExtension( EEGL_ARB_point_sprite );
 #endif
 }
 
-bool cGL::ShadersSupported() {
+bool cGL::shadersSupported() {
 #ifdef EE_GLES
 	return ( GLv_ES2 == Version() || GLv_3 == Version() || GLv_3CP == Version() );
 #else
-	return GLv_3CP == Version() || ( IsExtension( EEGL_ARB_shader_objects ) && IsExtension( EEGL_ARB_vertex_shader ) && IsExtension( EEGL_ARB_fragment_shader ) );
+	return GLv_3CP == version() || ( isExtension( EEGL_ARB_shader_objects ) && isExtension( EEGL_ARB_vertex_shader ) && isExtension( EEGL_ARB_fragment_shader ) );
 #endif
 }
 
-Uint32 cGL::GetTextureParamEnum( const EE_TEXTURE_PARAM& Type ) {
+Uint32 cGL::getTextureParamEnum( const EE_TEXTURE_PARAM& Type ) {
 	#ifndef EE_GLES
 	switch( Type ) {
 		case TEX_PARAM_COLOR_FUNC:			return GL_COMBINE_RGB_ARB;
@@ -287,7 +287,7 @@ Uint32 cGL::GetTextureParamEnum( const EE_TEXTURE_PARAM& Type ) {
 	return 0;
 }
 
-Uint32 cGL::GetTextureFuncEnum( const EE_TEXTURE_FUNC& Type ) {
+Uint32 cGL::getTextureFuncEnum( const EE_TEXTURE_FUNC& Type ) {
 	#ifndef EE_GLES2
 	switch( Type ) {
 		case TEX_FUNC_MODULATE:			return GL_MODULATE;
@@ -303,7 +303,7 @@ Uint32 cGL::GetTextureFuncEnum( const EE_TEXTURE_FUNC& Type ) {
 	return 0;
 }
 
-Uint32 cGL::GetTextureSourceEnum( const EE_TEXTURE_SOURCE& Type ) {
+Uint32 cGL::getTextureSourceEnum( const EE_TEXTURE_SOURCE& Type ) {
 	#ifndef EE_GLES2
 	switch ( Type ) {
 		case TEX_SRC_TEXTURE:	return GL_TEXTURE;
@@ -316,7 +316,7 @@ Uint32 cGL::GetTextureSourceEnum( const EE_TEXTURE_SOURCE& Type ) {
 	return 0;
 }
 
-Uint32 cGL::GetTextureOpEnum( const EE_TEXTURE_OP& Type ) {
+Uint32 cGL::getTextureOpEnum( const EE_TEXTURE_OP& Type ) {
 	#ifndef EE_GLES2
 	switch ( Type ) {
 		case TEX_OP_COLOR:				return GL_SRC_COLOR;
@@ -329,11 +329,11 @@ Uint32 cGL::GetTextureOpEnum( const EE_TEXTURE_OP& Type ) {
 	return 0;
 }
 
-std::string cGL::GetExtensions() {
+std::string cGL::getExtensions() {
 	std::string exts;
 
 	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
-	if ( GLv_3 == Version() || GLv_3CP == Version() ) {
+	if ( GLv_3 == version() || GLv_3CP == version() ) {
 		static pglGetStringiFunc eeglGetStringiFunc = NULL;
 
 		int num_exts = 0;
@@ -371,11 +371,11 @@ std::string cGL::GetExtensions() {
 	return exts;
 }
 
-void cGL::Viewport( int x, int y, int width, int height ) {
+void cGL::viewport( int x, int y, int width, int height ) {
 	glViewport( x, y, width, height );
 }
 
-void cGL::Disable ( unsigned int cap ) {
+void cGL::disable ( unsigned int cap ) {
 	switch ( cap )
 	{
 		case GL_BLEND:
@@ -393,7 +393,7 @@ void cGL::Disable ( unsigned int cap ) {
 	glDisable( cap );
 }
 
-void cGL::Enable( unsigned int cap ) {
+void cGL::enable( unsigned int cap ) {
 	switch ( cap )
 	{
 		case GL_BLEND:
@@ -411,83 +411,83 @@ void cGL::Enable( unsigned int cap ) {
 	glEnable( cap );
 }
 
-const char * cGL::GetString( unsigned int name ) {
+const char * cGL::getString( unsigned int name ) {
 	return (const char*)glGetString( name );
 }
 
-void cGL::Clear ( unsigned int mask ) {
+void cGL::clear ( unsigned int mask ) {
 	glClear( mask );
 }
 
-void cGL::ClearColor( float red, float green, float blue, float alpha ) {
+void cGL::clearColor( float red, float green, float blue, float alpha ) {
 	glClearColor( red, green, blue, alpha );
 }
 
-void cGL::Scissor ( int x, int y, int width, int height ) {
+void cGL::scissor ( int x, int y, int width, int height ) {
 	glScissor( x, y, width, height );
 }
 
-void cGL::PolygonMode( unsigned int face, unsigned int mode ) {
+void cGL::polygonMode( unsigned int face, unsigned int mode ) {
 	#ifndef EE_GLES
 	glPolygonMode( face, mode );
 	#endif
 }
 
-void cGL::DrawArrays (unsigned int mode, int first, int count) {
+void cGL::drawArrays (unsigned int mode, int first, int count) {
 	glDrawArrays( mode, first, count );
 }
 
-void cGL::DrawElements( unsigned int mode, int count, unsigned int type, const void *indices ) {
+void cGL::drawElements( unsigned int mode, int count, unsigned int type, const void *indices ) {
 	glDrawElements( mode, count, type, indices );
 }
 
-void cGL::BindTexture ( unsigned int target, unsigned int texture ) {
-	if ( GLv_3CP == Version() && 0 == texture ) return;
+void cGL::bindTexture ( unsigned int target, unsigned int texture ) {
+	if ( GLv_3CP == version() && 0 == texture ) return;
 	glBindTexture( target, texture );
 }
 
-void cGL::ActiveTexture( unsigned int texture ) {
+void cGL::activeTexture( unsigned int texture ) {
 	glActiveTexture( texture );
 }
 
-void cGL::BlendFunc ( unsigned int sfactor, unsigned int dfactor ) {
+void cGL::blendFunc ( unsigned int sfactor, unsigned int dfactor ) {
 	glBlendFunc( sfactor, dfactor );
 }
 
-void cGL::SetShader( ShaderProgram * Shader ) {
+void cGL::setShader( ShaderProgram * Shader ) {
 	#ifdef EE_SHADERS_SUPPORTED
 	if ( NULL != Shader ) {
-		glUseProgram( Shader->Handler() );
+		glUseProgram( Shader->getHandler() );
 	} else {
 		glUseProgram( 0 );
 	}
 	#endif
 }
 
-bool cGL::IsLineSmooth() {
+bool cGL::isLineSmooth() {
 	return BitOp::readBitKey( &mStateFlags, GLSF_LINE_SMOOTH );
 }
 
-void cGL::LineSmooth() {
-	LineSmooth( IsLineSmooth() );
+void cGL::lineSmooth() {
+	lineSmooth( isLineSmooth() );
 }
 
-void cGL::LineSmooth( const bool& Enable ) {
+void cGL::lineSmooth( const bool& Enable ) {
 	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	if ( Enable ) {
-		GLi->Enable( GL_LINE_SMOOTH );
+		GLi->enable( GL_LINE_SMOOTH );
 	} else {
-		GLi->Disable( GL_LINE_SMOOTH );
+		GLi->disable( GL_LINE_SMOOTH );
 	}
 
 	BitOp::writeBitKey( &mStateFlags, GLSF_LINE_SMOOTH, Enable ? 1 : 0 );
 	#endif
 }
 
-void cGL::LineWidth(float width) {
+void cGL::lineWidth(float width) {
 	if ( width != mLineWidth ) {
 		#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-		if ( GLv_3CP != Version() )
+		if ( GLv_3CP != version() )
 		#endif
 		{
 			glLineWidth( width );
@@ -497,30 +497,30 @@ void cGL::LineWidth(float width) {
 
 }
 
-void cGL::PolygonMode() {
+void cGL::polygonMode() {
 	EE_FILL_MODE Mode = DRAW_FILL;
 
 	if ( BitOp::readBitKey( &mStateFlags, GLSF_POLYGON_MODE ) )
 		Mode = DRAW_LINE;
 
-	PolygonMode( Mode );
+	polygonMode( Mode );
 }
 
-void cGL::PixelStorei(unsigned int pname, int param) {
+void cGL::pixelStorei(unsigned int pname, int param) {
 	glPixelStorei( pname, param );
 }
 
-void cGL::PolygonMode( const EE_FILL_MODE& Mode ) {
+void cGL::polygonMode( const EE_FILL_MODE& Mode ) {
 	if ( Mode == DRAW_FILL )
-		PolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+		polygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	else
-		PolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+		polygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
 	BitOp::writeBitKey( &mStateFlags, GLSF_POLYGON_MODE, Mode == DRAW_LINE ? 1 : 0 );
 }
 
-std::string cGL::GetVendor() {
-	const char * str = GetString( GL_VENDOR );
+std::string cGL::getVendor() {
+	const char * str = getString( GL_VENDOR );
 
 	if ( NULL != str )
 		return std::string( str );
@@ -528,8 +528,8 @@ std::string cGL::GetVendor() {
 	return std::string();
 }
 
-std::string cGL::GetRenderer() {
-	const char * str = GetString( GL_RENDERER );
+std::string cGL::getRenderer() {
+	const char * str = getString( GL_RENDERER );
 
 	if ( NULL != str )
 		return std::string( str );
@@ -537,8 +537,8 @@ std::string cGL::GetRenderer() {
 	return std::string();
 }
 
-std::string cGL::GetVersion() {
-	const char * str = GetString( GL_VERSION );
+std::string cGL::getVersion() {
+	const char * str = getString( GL_VERSION );
 
 	if ( NULL != str )
 		return std::string( str );
@@ -546,10 +546,10 @@ std::string cGL::GetVersion() {
 	return std::string();
 }
 
-std::string cGL::GetShadingLanguageVersion() {
-	if ( ShadersSupported() ) {
+std::string cGL::getShadingLanguageVersion() {
+	if ( shadersSupported() ) {
 		#ifdef GL_SHADING_LANGUAGE_VERSION
-			const char * str = GetString( GL_SHADING_LANGUAGE_VERSION );
+			const char * str = getString( GL_SHADING_LANGUAGE_VERSION );
 
 			if ( NULL != str )
 				return std::string( str );
@@ -559,71 +559,71 @@ std::string cGL::GetShadingLanguageVersion() {
 	return std::string( "Shaders not supported" );
 }
 
-void cGL::GetViewport( int * viewport ) {
+void cGL::getViewport( int * viewport ) {
 	glGetIntegerv( GL_VIEWPORT, viewport );
 }
 
-Vector3f cGL::ProjectCurrent( const Vector3f& point ) {
+Vector3f cGL::projectCurrent( const Vector3f& point ) {
 	float projMat[16];
-	GetCurrentMatrix( GL_PROJECTION_MATRIX, projMat );
+	getCurrentMatrix( GL_PROJECTION_MATRIX, projMat );
 
 	float modelMat[16];
-	GetCurrentMatrix( GL_MODELVIEW_MATRIX, modelMat );
+	getCurrentMatrix( GL_MODELVIEW_MATRIX, modelMat );
 
 	int viewPort[4];
-	GetViewport( viewPort );
+	getViewport( viewPort );
 
 	Vector3f fPoint( point );
 	fPoint.y = viewPort[3] - point.y;
 
 	Vector3<float> tv3;
 
-	Project( (float)fPoint.x, (float)fPoint.y, (float)fPoint.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
+	project( (float)fPoint.x, (float)fPoint.y, (float)fPoint.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
 
 	return Vector3f( tv3.x, tv3.y, tv3.z );
 }
 
-Vector3f cGL::UnProjectCurrent( const Vector3f& point ) {
+Vector3f cGL::unProjectCurrent( const Vector3f& point ) {
 	float projMat[16];
-	GetCurrentMatrix( GL_PROJECTION_MATRIX, projMat );
+	getCurrentMatrix( GL_PROJECTION_MATRIX, projMat );
 
 	float modelMat[16];
-	GetCurrentMatrix( GL_MODELVIEW_MATRIX, modelMat );
+	getCurrentMatrix( GL_MODELVIEW_MATRIX, modelMat );
 
 	int viewPort[4];
-	GetViewport( viewPort );
+	getViewport( viewPort );
 
 	Vector3f fPoint( point );
 	fPoint.y = viewPort[3] - point.y;
 
 	Vector3<float> tv3;
 
-	UnProject( (float)fPoint.x, (float)fPoint.y, (float)fPoint.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
+	unProject( (float)fPoint.x, (float)fPoint.y, (float)fPoint.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
 
 	return Vector3f( tv3.x, tv3.y, tv3.z );
 }
 
-void cGL::StencilFunc( unsigned int func, int ref, unsigned int mask ) {
+void cGL::stencilFunc( unsigned int func, int ref, unsigned int mask ) {
 	glStencilFunc( func, ref, mask );
 }
 
-void cGL::StencilOp( unsigned int fail, unsigned int zfail, unsigned int zpass ) {
+void cGL::stencilOp( unsigned int fail, unsigned int zfail, unsigned int zpass ) {
 	glStencilOp( fail, zfail, zpass );
 }
 
-void cGL::StencilMask ( unsigned int mask ) {
+void cGL::stencilMask ( unsigned int mask ) {
 	glStencilMask( mask );
 }
 
-void cGL::ColorMask ( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha ) {
+void cGL::colorMask ( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha ) {
 	glColorMask( red, green, blue, alpha );
 }
 
-const int& cGL::QuadVertexs() const {
+const int& cGL::quadVertexs() const {
 	return mQuadVertexs;
 }
 
-void cGL::BindVertexArray ( unsigned int array ) {
+void cGL::bindVertexArray ( unsigned int array ) {
 #if !defined( EE_GLES )
 	if ( mCurVAO != array ) {
 		glBindVertexArray( array );
@@ -633,19 +633,19 @@ void cGL::BindVertexArray ( unsigned int array ) {
 #endif
 }
 
-void cGL::DeleteVertexArrays ( int n, const unsigned int *arrays ) {
+void cGL::deleteVertexArrays ( int n, const unsigned int *arrays ) {
 #if !defined( EE_GLES )
 	glDeleteVertexArrays( n, arrays );
 #endif
 }
 
-void cGL::GenVertexArrays ( int n, unsigned int *arrays ) {
+void cGL::genVertexArrays ( int n, unsigned int *arrays ) {
 #if !defined( EE_GLES )
 	glGenVertexArrays( n, arrays );
 #endif
 }
 
-const bool& cGL::QuadsSupported() const {
+const bool& cGL::quadsSupported() const {
 	return mQuadsSupported;
 }
 

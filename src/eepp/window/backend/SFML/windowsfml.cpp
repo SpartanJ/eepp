@@ -30,13 +30,13 @@ WindowSFML::WindowSFML( WindowSettings Settings, ContextSettings Context ) :
 	mWinHandler( 0 ),
 	mVisible( false )
 {
-	Create( Settings, Context );
+	create( Settings, Context );
 }
 
 WindowSFML::~WindowSFML() {
 }
 
-bool WindowSFML::Create( WindowSettings Settings, ContextSettings Context ) {
+bool WindowSFML::create( WindowSettings Settings, ContextSettings Context ) {
 	if ( mWindow.Created )
 		return false;
 
@@ -70,45 +70,45 @@ bool WindowSFML::Create( WindowSettings Settings, ContextSettings Context ) {
 
 	if ( NULL == cGL::existsSingleton() ) {
 		cGL::createSingleton( mWindow.ContextConfig.Version );
-		cGL::instance()->Init();
+		cGL::instance()->init();
 	}
 
-	CreatePlatform();
+	createPlatform();
 
-	GetMainContext();
+	getMainContext();
 
-	CreateView();
+	createView();
 
-	Setup2D();
+	setup2D();
 
 	mWindow.Created = true;
 	mVisible = true;
 
 	if ( "" != mWindow.WindowConfig.Icon ) {
-		Icon( mWindow.WindowConfig.Icon );
+		icon( mWindow.WindowConfig.Icon );
 	}
 
 	/// Init the clipboard after the window creation
-	reinterpret_cast<ClipboardSFML*> ( mClipboard )->Init();
+	reinterpret_cast<ClipboardSFML*> ( mClipboard )->init();
 
 	/// Init the input after the window creation
-	reinterpret_cast<InputSFML*> ( mInput )->Init();
+	reinterpret_cast<InputSFML*> ( mInput )->init();
 
-	LogSuccessfulInit( GetVersion() );
+	logSuccessfulInit( getVersion() );
 
 	return true;
 }
 
-std::string WindowSFML::GetVersion() {
+std::string WindowSFML::getVersion() {
 	return std::string( "SFML 2" );
 }
 
-void WindowSFML::CreatePlatform() {
+void WindowSFML::createPlatform() {
 #if defined( EE_X11_PLATFORM )
-	if ( 0 != GetWindowHandler() ) {
-		mPlatform = eeNew( Platform::X11Impl, ( this, GetWindowHandler(), mSFMLWindow.getSystemHandle(), mSFMLWindow.getSystemHandle(), NULL, NULL ) );
+	if ( 0 != getWindowHandler() ) {
+		mPlatform = eeNew( Platform::X11Impl, ( this, getWindowHandler(), mSFMLWindow.getSystemHandle(), mSFMLWindow.getSystemHandle(), NULL, NULL ) );
 	} else {
-		Window::CreatePlatform();
+		Window::createPlatform();
 	}
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	mPlatform = eeNew( Platform::WinImpl, ( this, GetWindowHandler() ) );
@@ -119,59 +119,59 @@ void WindowSFML::CreatePlatform() {
 #endif
 }
 
-void WindowSFML::ToggleFullscreen() {
+void WindowSFML::toggleFullscreen() {
 }
 
-void WindowSFML::Caption( const std::string& Caption ) {
+void WindowSFML::caption( const std::string& Caption ) {
 	mWindow.WindowConfig.Caption = Caption;
 
 	mSFMLWindow.setTitle( Caption );
 }
 
-bool WindowSFML::Icon( const std::string& Path ) {
+bool WindowSFML::icon( const std::string& Path ) {
 	mWindow.WindowConfig.Icon 	= Path;
 
 	Image Img( Path );
 
-	mSFMLWindow.setIcon( Img.Width(), Img.Height(), Img.GetPixelsPtr() );
+	mSFMLWindow.setIcon( Img.width(), Img.height(), Img.getPixelsPtr() );
 
 	return true;
 }
 
-void WindowSFML::Hide() {
+void WindowSFML::hide() {
 	mSFMLWindow.setVisible( false );
 	mVisible = false;
 }
 
-void WindowSFML::Show() {
+void WindowSFML::show() {
 	mSFMLWindow.setVisible( true );
 	mVisible = true;
 }
 
-void WindowSFML::Position( Int16 Left, Int16 Top ) {
+void WindowSFML::position( Int16 Left, Int16 Top ) {
 	mSFMLWindow.setPosition( sf::Vector2i( Left, Top ) );
 }
 
-bool WindowSFML::Active() {
+bool WindowSFML::active() {
 	return reinterpret_cast<InputSFML*> ( mInput )->mWinActive;
 }
 
-bool WindowSFML::Visible() {
+bool WindowSFML::visible() {
 	return mVisible;
 }
 
-Vector2i WindowSFML::Position() {
+Vector2i WindowSFML::position() {
 	sf::Vector2i v( mSFMLWindow.getPosition() );
 	return Vector2i( v.x, v.y );
 }
 
-void WindowSFML::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
+void WindowSFML::size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( ( !Width || !Height ) ) {
-		Width	= mWindow.DesktopResolution.Width();
-		Height	= mWindow.DesktopResolution.Height();
+		Width	= mWindow.DesktopResolution.width();
+		Height	= mWindow.DesktopResolution.height();
 	}
 
-	if ( this->Windowed() == Windowed && Width == mWindow.WindowConfig.Width && Height == mWindow.WindowConfig.Height )
+	if ( this->isWindowed() == Windowed && Width == mWindow.WindowConfig.Width && Height == mWindow.WindowConfig.Height )
 		return;
 
 	sf::Vector2u v( Width, Height );
@@ -179,24 +179,24 @@ void WindowSFML::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	mSFMLWindow.setSize( v );
 }
 
-void WindowSFML::VideoResize( Uint32 Width, Uint32 Height ) {
+void WindowSFML::videoResize( Uint32 Width, Uint32 Height ) {
 	mWindow.WindowConfig.Width	= Width;
 	mWindow.WindowConfig.Height	= Height;
 
-	mDefaultView.SetView( 0, 0, Width, Height );
+	mDefaultView.setView( 0, 0, Width, Height );
 
-	Setup2D();
+	setup2D();
 
-	mCursorManager->Reload();
+	mCursorManager->reload();
 
-	SendVideoResizeCb();
+	sendVideoResizeCb();
 }
 
-void WindowSFML::SwapBuffers() {
+void WindowSFML::swapBuffers() {
 	mSFMLWindow.display();
 }
 
-std::vector<DisplayMode> WindowSFML::GetDisplayModes() const {
+std::vector<DisplayMode> WindowSFML::getDisplayModes() const {
 	std::vector<DisplayMode> result;
 
 	std::vector<sf::VideoMode> modes = sf::VideoMode::getFullscreenModes();
@@ -204,23 +204,23 @@ std::vector<DisplayMode> WindowSFML::GetDisplayModes() const {
 	for (std::size_t i = 0; i < modes.size(); ++i) {
 		sf::VideoMode mode = modes[i];
 
-		result.push_back( DisplayMode( mode.width, mode.height, 60, x ) );
+		result.push_back( DisplayMode( mode.width, mode.height, 60, 0 ) );
 	}
 
 	return result;
 }
 
-void WindowSFML::SetGamma( Float Red, Float Green, Float Blue ) {
+void WindowSFML::setGamma( Float Red, Float Green, Float Blue ) {
 }
 
-eeWindowContex WindowSFML::GetContext() const {
+eeWindowContex WindowSFML::getContext() const {
 	return 0;
 }
 
-void WindowSFML::GetMainContext() {
+void WindowSFML::getMainContext() {
 }
 
-eeWindowHandle	WindowSFML::GetWindowHandler() {
+eeWindowHandle	WindowSFML::getWindowHandler() {
 #if defined( EE_X11_PLATFORM )
 	if ( 0 == mWinHandler ) {
 		#ifdef EE_SUPPORT_EXCEPTIONS
@@ -244,10 +244,10 @@ eeWindowHandle	WindowSFML::GetWindowHandler() {
 #endif
 }
 
-void WindowSFML::SetDefaultContext() {
+void WindowSFML::setDefaultContext() {
 }
 
-sf::Window * WindowSFML::GetSFMLWindow() {
+sf::Window * WindowSFML::getSFMLWindow() {
 	return &mSFMLWindow;
 }
 

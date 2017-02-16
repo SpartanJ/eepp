@@ -366,78 +366,78 @@ void UIMap::AddLight( MapLight * Light ) {
 void UIMap::MapDraw() {
 	if ( EDITING_LIGHT == mEditingMode ) {
 		if ( NULL != mSelLight ) {
-			mP.SetColor( ColorA( 255, 0, 0, (Uint8)mAlpha ) );
+			mP.setColor( ColorA( 255, 0, 0, (Uint8)mAlpha ) );
 
 			Vector2f Pos( mSelLight->GetAABB().Left, mSelLight->GetAABB().Top );
 			eeAABB AB( mSelLight->GetAABB() );
 
-			mP.FillMode( DRAW_LINE );
-			mP.DrawRectangle( Rectf( Pos, AB.size() ) );
+			mP.fillMode( DRAW_LINE );
+			mP.drawRectangle( Rectf( Pos, AB.size() ) );
 		}
 	} else if ( EDITING_OBJECT == mEditingMode ) {
 		switch ( mEditingObjMode ) {
 			case INSERT_OBJECT:
 			{
 				if ( mObjRECTEditing ) {
-					mP.FillMode( DRAW_FILL );
-					mP.SetColor( ColorA( 100, 100, 100, 20 ) );
-					mP.DrawRectangle( mObjRECT );
+					mP.fillMode( DRAW_FILL );
+					mP.setColor( ColorA( 100, 100, 100, 20 ) );
+					mP.drawRectangle( mObjRECT );
 
-					mP.FillMode( DRAW_LINE );
-					mP.SetColor( ColorA( 255, 0, 0, 200 ) );
-					mP.DrawRectangle( mObjRECT );
+					mP.fillMode( DRAW_LINE );
+					mP.setColor( ColorA( 255, 0, 0, 200 ) );
+					mP.drawRectangle( mObjRECT );
 				}
 
 				break;
 			}
 			case INSERT_POLYGON:
 			{
-				mP.FillMode( DRAW_FILL );
-				mP.SetColor( ColorA( 50, 50, 50, 50 ) );
-				mP.DrawPolygon( mObjPoly );
+				mP.fillMode( DRAW_FILL );
+				mP.setColor( ColorA( 50, 50, 50, 50 ) );
+				mP.drawPolygon( mObjPoly );
 
-				mP.FillMode( DRAW_LINE );
-				mP.SetColor( ColorA( 255, 0, 0, 200 ) );
-				mP.DrawPolygon( mObjPoly );
+				mP.fillMode( DRAW_LINE );
+				mP.setColor( ColorA( 255, 0, 0, 200 ) );
+				mP.drawPolygon( mObjPoly );
 
 				Polygon2f polyN( mObjPoly );
 				polyN.pushBack( GetMouseMapPos() );
 
-				mP.FillMode( DRAW_FILL );
-				mP.SetColor( ColorA( 100, 100, 100, 100 ) );
-				mP.DrawPolygon( polyN );
+				mP.fillMode( DRAW_FILL );
+				mP.setColor( ColorA( 100, 100, 100, 100 ) );
+				mP.drawPolygon( polyN );
 
-				mP.FillMode( DRAW_LINE );
-				mP.SetColor( ColorA( 255, 255, 0, 200 ) );
-				mP.DrawPolygon( polyN );
+				mP.fillMode( DRAW_LINE );
+				mP.setColor( ColorA( 255, 255, 0, 200 ) );
+				mP.drawPolygon( polyN );
 
 				break;
 			}
 			case INSERT_POLYLINE:
 			{
-				mP.FillMode( DRAW_LINE );
-				mP.SetColor( ColorA( 255, 0, 0, 200 ) );
-				mP.DrawPolygon( mObjPoly );
+				mP.fillMode( DRAW_LINE );
+				mP.setColor( ColorA( 255, 0, 0, 200 ) );
+				mP.drawPolygon( mObjPoly );
 
 				Polygon2f polyN( mObjPoly );
 				polyN.pushBack( GetMouseMapPos() );
 
-				mP.FillMode( DRAW_LINE );
-				mP.SetColor( ColorA( 255, 255, 0, 200 ) );
-				mP.DrawPolygon( polyN );
+				mP.fillMode( DRAW_LINE );
+				mP.setColor( ColorA( 255, 255, 0, 200 ) );
+				mP.drawPolygon( polyN );
 
 				break;
 			}
 			case EDIT_POLYGONS:
 			{
 				if ( NULL != mSelObj && eeINDEX_NOT_FOUND != mSelPointIndex ) {
-					mP.SetColor( ColorA( 255, 255, 100, 100 ) );
+					mP.setColor( ColorA( 255, 255, 100, 100 ) );
 
-					mP.FillMode( DRAW_FILL );
-					mP.DrawRectangle( mSelPointRect );
+					mP.fillMode( DRAW_FILL );
+					mP.drawRectangle( mSelPointRect );
 
-					mP.FillMode( DRAW_LINE );
-					mP.DrawRectangle( mSelPointRect );
+					mP.fillMode( DRAW_LINE );
+					mP.drawRectangle( mSelPointRect );
 				}
 
 				break;

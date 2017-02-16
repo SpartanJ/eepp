@@ -48,16 +48,16 @@ const ColorA& UISkin::GetColor( const Uint32& State ) const {
 	return mColor[ State ];
 }
 
-const std::string& UISkin::Name() const {
+const std::string& UISkin::getName() const {
 	return mName;
 }
 
-void UISkin::Name( const std::string& name ) {
+void UISkin::setName( const std::string& name ) {
 	mName = name;
 	mNameHash = String::hash( mName );
 }
 
-const Uint32& UISkin::Id() const {
+const Uint32& UISkin::getId() const {
 	return mNameHash;
 }
 

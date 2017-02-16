@@ -34,7 +34,6 @@ namespace WindowStyle {
 namespace WindowBackend {
 	enum
 	{
-		SDL,
 		SDL2,
 		SFML,
 		Default

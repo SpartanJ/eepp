@@ -22,7 +22,7 @@ class EE_API UISkin {
 
 		static const char * GetSkinStateName( const Uint32& State );
 
-		UISkin( const std::string& Name, const Uint32& Type );
+		UISkin( const std::string& getName, const Uint32& Type );
 
 		virtual ~UISkin();
 
@@ -38,11 +38,11 @@ class EE_API UISkin {
 
 		virtual void SetSkins();
 
-		const std::string& Name() const;
+		const std::string& getName() const;
 
-		void Name( const std::string& name );
+		void setName( const std::string& name );
 
-		const Uint32& Id() const;
+		const Uint32& getId() const;
 
 		UITheme * Theme() const;
 

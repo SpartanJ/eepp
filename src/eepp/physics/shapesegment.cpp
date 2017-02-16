@@ -94,12 +94,12 @@ void ShapeSegment::Draw( Space * space ) {
 	cVect b = tovect( seg->CP_PRIVATE(tb) );
 
 	if ( seg->CP_PRIVATE(r) ) {
-		GLi->Disable( GL_TEXTURE_2D );
-		GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
+		GLi->disable( GL_TEXTURE_2D );
+		GLi->disableClientState( GL_TEXTURE_COORD_ARRAY );
 
 		std::vector<ColorA> tcolors( pillVAR_count * 4 );
 
-		GLi->PushMatrix();
+		GLi->pushMatrix();
 
 		cVect d = b - a;
 		cVect r = d * ( seg->CP_PRIVATE(r) / cpvlength( tocpv( d ) ) );
@@ -111,33 +111,33 @@ void ShapeSegment::Draw( Space * space ) {
 			(float)a.x	, (float)a.y, 0.0f, 1.0f,
 		};
 
-		GLi->MultMatrixf( matrix );
+		GLi->multMatrixf( matrix );
 
-		GLi->VertexPointer( 3, GL_FLOAT, 0, pillVAR, pillVAR_count * sizeof(float) * 3 );
+		GLi->vertexPointer( 3, GL_FLOAT, 0, pillVAR, pillVAR_count * sizeof(float) * 3 );
 
 		if( !seg->CP_PRIVATE(shape).sensor ) {
 			ColorA C = ColorForShape( mShape, space->GetSpace() );
 
 			tcolors.assign( tcolors.size(), C );
 
-			GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), pillVAR_count * 4 );
+			GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), pillVAR_count * 4 );
 
-			GLi->DrawArrays( GL_TRIANGLE_FAN, 0, pillVAR_count );
+			GLi->drawArrays( GL_TRIANGLE_FAN, 0, pillVAR_count );
 		}
 
 		tcolors.assign( tcolors.size(), ColorA( 102, 102, 102, 255 ) );
 
-		GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), pillVAR_count *  4 );
+		GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), pillVAR_count *  4 );
 
-		GLi->DrawArrays( GL_LINE_LOOP, 0, pillVAR_count );
+		GLi->drawArrays( GL_LINE_LOOP, 0, pillVAR_count );
 
-		GLi->PopMatrix();
+		GLi->popMatrix();
 
-		GLi->Enable( GL_TEXTURE_2D );
-		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
+		GLi->enable( GL_TEXTURE_2D );
+		GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
 	} else {
 		Primitives p;
-		p.DrawLine( Line2f( Vector2f( a.x, a.y ), Vector2f( b.x, b.y ) ) );
+		p.drawLine( Line2f( Vector2f( a.x, a.y ), Vector2f( b.x, b.y ) ) );
 	}
 	#endif
 }

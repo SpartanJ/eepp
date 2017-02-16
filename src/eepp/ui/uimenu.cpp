@@ -357,7 +357,7 @@ Uint32 UIMenu::OnMessage( const UIMessage * Msg ) {
 
 void UIMenu::OnSizeChange() {
 	if ( NULL != mFont && ( ( mFlags & UI_AUTO_SIZE ) || 0 == mRowHeight ) ) {
-		mRowHeight = mFont->GetFontHeight() + 8;
+		mRowHeight = mFont->getFontHeight() + 8;
 	}
 
 	if ( 0 != mMinWidth && mSize.width() < (Int32)mMinWidth ) {

@@ -126,8 +126,8 @@ UITheme * UITheme::LoadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 	eeASSERT( NULL != tTheme && NULL != TextureAtlas );
 
 	/** Themes use nearest filter by default, force the filter to the textures. */
-	for ( Uint32 tC = 0; tC < TextureAtlas->GetTexturesCount(); tC++ ) {
-		TextureAtlas->GetTexture( tC )->Filter( TEX_FILTER_NEAREST );
+	for ( Uint32 tC = 0; tC < TextureAtlas->getTexturesCount(); tC++ ) {
+		TextureAtlas->getTexture( tC )->filter( TEX_FILTER_NEAREST );
 	}
 
 	Clock TE;
@@ -209,7 +209,7 @@ UITheme * UITheme::LoadFromPath( UITheme * tTheme, const std::string& Path, cons
 		Element		= RPath + ElemName + "." + ImgExt;
 
 		if ( FileSystem::fileExists( Element ) ) {
-			tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->Load( Element ), ElemName ) ) );
+			tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->load( Element ), ElemName ) ) );
 		}
 	}
 
@@ -292,7 +292,7 @@ bool UITheme::SearchFilesOfElement( Graphics::TextureAtlas * SG, const std::stri
 			ElemFullPath = ElemPath + "." + ImgExt;
 
 			if ( FileSystem::fileExists( ElemFullPath ) ) {
-				SG->add( eeNew( SubTexture, ( TextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
+				SG->add( eeNew( SubTexture, ( TextureFactory::instance()->load( ElemFullPath ), ElemName ) ) );
 
 				IsComplex = 1;
 				Found = true;
@@ -309,7 +309,7 @@ bool UITheme::SearchFilesOfElement( Graphics::TextureAtlas * SG, const std::stri
 			ElemFullPath = ElemPath + "." + ImgExt;
 
 			if ( FileSystem::fileExists( ElemFullPath ) ) {
-				SG->add( eeNew( SubTexture, ( TextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
+				SG->add( eeNew( SubTexture, ( TextureFactory::instance()->load( ElemFullPath ), ElemName ) ) );
 
 				Found = true;
 			}
@@ -338,16 +338,16 @@ UITheme::~UITheme() {
 
 }
 
-const std::string& UITheme::Name() const {
+const std::string& UITheme::getName() const {
 	return mName;
 }
 
-void UITheme::Name( const std::string& name ) {
+void UITheme::setName( const std::string& name ) {
 	mName = name;
 	mNameHash = String::hash( mName );
 }
 
-const Uint32& UITheme::Id() const {
+const Uint32& UITheme::getId() const {
 	return mNameHash;
 }
 

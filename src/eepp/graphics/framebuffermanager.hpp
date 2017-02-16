@@ -12,7 +12,7 @@ class EE_API FrameBufferManager : public Container<FrameBuffer> {
 	public:
 		virtual ~FrameBufferManager();
 
-		void Reload();
+		void reload();
 	protected:
 		FrameBufferManager();
 };

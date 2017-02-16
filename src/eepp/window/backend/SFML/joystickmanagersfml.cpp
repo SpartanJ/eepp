@@ -18,25 +18,25 @@ JoystickManagerSFML::JoystickManagerSFML() :
 JoystickManagerSFML::~JoystickManagerSFML() {
 }
 
-void JoystickManagerSFML::Update() {
+void JoystickManagerSFML::update() {
 }
 
-void JoystickManagerSFML::Open() {
+void JoystickManagerSFML::open() {
 	mCount = sf::Joystick::Count;
 
 	for ( unsigned int i = 0; i < mCount; i++ )
-		Create(i);
+		create(i);
 
 	mInit = true;
 }
 
-void JoystickManagerSFML::Close() {
+void JoystickManagerSFML::close() {
 	mInit = false;
 }
 
-void JoystickManagerSFML::Create( const Uint32& index ) {
+void JoystickManagerSFML::create( const Uint32& index ) {
 	if ( NULL != mJoysticks[ index ] )
-		mJoysticks[ index ]->ReOpen();
+		mJoysticks[ index ]->reOpen();
 	else
 		mJoysticks[ index ] = eeNew( JoystickSFML, ( index ) );
 }

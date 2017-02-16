@@ -41,9 +41,9 @@ void ShapeCircle::Draw( Space * space ) {
 	Primitives p;
 
 	cpCircleShape * cs = (cpCircleShape*)mShape;
-	p.SetColor( ColorForShape( mShape, space->GetSpace() ) );
+	p.setColor( ColorForShape( mShape, space->GetSpace() ) );
 
-	p.DrawCircle( Vector2f( cs->CP_PRIVATE(tc).x, cs->CP_PRIVATE(tc).y ), cs->CP_PRIVATE(r) );
+	p.drawCircle( Vector2f( cs->CP_PRIVATE(tc).x, cs->CP_PRIVATE(tc).y ), cs->CP_PRIVATE(r) );
 	#endif
 }
 

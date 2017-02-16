@@ -152,7 +152,7 @@ Uint32 UIListBox::AddListBoxItem( const String& Text ) {
 	mItems.push_back( NULL );
 
 	if ( NULL != mFont ) {
-		Uint32 twidth = mFont->GetTextWidth( Text );
+		Uint32 twidth = mFont->getTextWidth( Text );
 
 		if ( twidth > mMaxTextWidth ) {
 			mMaxTextWidth = twidth;
@@ -305,13 +305,13 @@ void UIListBox::SetRowHeight() {
 		Uint32 FontSize = 12;
 
 		if ( NULL != UIThemeManager::instance()->DefaultFont() )
-			FontSize = UIThemeManager::instance()->DefaultFont()->GetFontHeight();
+			FontSize = UIThemeManager::instance()->DefaultFont()->getFontHeight();
 
 		if ( NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->Theme() && NULL != mSkinState->GetSkin()->Theme()->Font() )
-			FontSize = mSkinState->GetSkin()->Theme()->Font()->GetFontHeight();
+			FontSize = mSkinState->GetSkin()->Theme()->Font()->getFontHeight();
 
 		if ( NULL != mFont )
-			FontSize = mFont->GetFontHeight();
+			FontSize = mFont->getFontHeight();
 
 		mRowHeight = (Uint32)( FontSize + 4 );
 	}
@@ -332,7 +332,7 @@ void UIListBox::FindMaxWidth() {
 		if ( NULL != mItems[i] )
 			width = (Int32)mItems[i]->GetTextWidth();
 		else
-			width = mFont->GetTextWidth( mTexts[i] );
+			width = mFont->getTextWidth( mTexts[i] );
 
 		if ( width > (Int32)mMaxTextWidth )
 			mMaxTextWidth = (Uint32)width;

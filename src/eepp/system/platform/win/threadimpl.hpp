@@ -28,7 +28,7 @@ class ThreadImpl {
 		
 		void terminate();
 
-		UintPtr id();
+		UintPtr getId();
 	protected:
 		static unsigned int __stdcall entryPoint(void* userData);
 

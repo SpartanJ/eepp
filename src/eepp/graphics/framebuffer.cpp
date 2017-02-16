@@ -11,7 +11,7 @@ using namespace EE::Graphics::Private;
 namespace EE { namespace Graphics {
 
 FrameBuffer * FrameBuffer::New( const Uint32& Width, const Uint32& Height, bool DepthBuffer, EE::Window::Window * window ) {
-	if ( FrameBufferFBO::IsSupported() )
+	if ( FrameBufferFBO::isSupported() )
 		return eeNew( FrameBufferFBO, ( Width, Height, DepthBuffer, window ) );
 
 	return NULL;
@@ -40,60 +40,60 @@ FrameBuffer::~FrameBuffer() {
 	FrameBufferManager::instance()->remove( this );
 }
 
-Texture * FrameBuffer::GetTexture() const {
+Texture * FrameBuffer::getTexture() const {
 	return mTexture;
 }
 
-void FrameBuffer::ClearColor( ColorAf Color ) {
+void FrameBuffer::clearColor( ColorAf Color ) {
 	mClearColor = Color;
 }
 
-ColorAf FrameBuffer::ClearColor() const {
+ColorAf FrameBuffer::clearColor() const {
 	return mClearColor;
 }
 
-void FrameBuffer::Clear() {
-	GLi->ClearColor( mClearColor.r(), mClearColor.g(), mClearColor.b(), mClearColor.a() );
-	GLi->Clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+void FrameBuffer::clear() {
+	GLi->clearColor( mClearColor.r(), mClearColor.g(), mClearColor.b(), mClearColor.a() );
+	GLi->clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	mWindow->backColor( mWindow->backColor() );
 }
 
-void FrameBuffer::SetBufferView() {
+void FrameBuffer::setBufferView() {
 	mPrevView = mWindow->getView();
 
 	// Get the user projection matrix
-	GLi->GetCurrentMatrix( GL_PROJECTION_MATRIX, mProjMat );
+	GLi->getCurrentMatrix( GL_PROJECTION_MATRIX, mProjMat );
 
-	GLi->Viewport( 0, 0, mWidth, mHeight );
-	GLi->MatrixMode( GL_PROJECTION );
-	GLi->LoadIdentity();
-	GLi->Ortho( 0.0f, mWidth, 0.f, mHeight, -1000.0f, 1000.0f );
-	GLi->MatrixMode( GL_MODELVIEW );
-	GLi->LoadIdentity();
+	GLi->viewport( 0, 0, mWidth, mHeight );
+	GLi->matrixMode( GL_PROJECTION );
+	GLi->loadIdentity();
+	GLi->ortho( 0.0f, mWidth, 0.f, mHeight, -1000.0f, 1000.0f );
+	GLi->matrixMode( GL_MODELVIEW );
+	GLi->loadIdentity();
 }
 
-void FrameBuffer::RecoverView() {
-	GlobalBatchRenderer::instance()->Draw();
+void FrameBuffer::recoverView() {
+	GlobalBatchRenderer::instance()->draw();
 
 	mWindow->setView( mPrevView );
 
 	// Recover the user projection matrix
-	GLi->LoadIdentity();
-	GLi->MatrixMode( GL_PROJECTION );
-	GLi->LoadMatrixf( mProjMat );
-	GLi->MatrixMode( GL_MODELVIEW );
-	GLi->LoadIdentity();
+	GLi->loadIdentity();
+	GLi->matrixMode( GL_PROJECTION );
+	GLi->loadMatrixf( mProjMat );
+	GLi->matrixMode( GL_MODELVIEW );
+	GLi->loadIdentity();
 }
 
-const Int32& FrameBuffer::GetWidth() const {
+const Int32& FrameBuffer::getWidth() const {
 	return mWidth;
 }
 
-const Int32& FrameBuffer::GetHeight() const {
+const Int32& FrameBuffer::getHeight() const {
 	return mHeight;
 }
 
-const bool& FrameBuffer::HasDepthBuffer() const {
+const bool& FrameBuffer::hasDepthBuffer() const {
 	return mHasDepthBuffer;
 }
 

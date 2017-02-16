@@ -3,7 +3,7 @@
 namespace EE { namespace Graphics {
 
 Particle::Particle() {
-	Reset(0.f, 0.f, 0.f, 0.f, 0.f, 0.f);
+	reset(0.f, 0.f, 0.f, 0.f, 0.f, 0.f);
 }
 
 Particle::~Particle() {}
@@ -13,7 +13,7 @@ void Particle::Color(ColorAf Color, Float AlphaDecay) {
 	mAlphaDecay = AlphaDecay;
 }
 
-void Particle::Reset(const Float &x, const Float &y, const Float &xspeed, const Float &yspeed, const Float &xacc, const Float &yacc, const Float size) {
+void Particle::reset(const Float &x, const Float &y, const Float &xspeed, const Float &yspeed, const Float &xacc, const Float &yacc, const Float size) {
 	mX = x;
 	mY = y;
 	mXSpeed = xspeed;
@@ -25,7 +25,7 @@ void Particle::Reset(const Float &x, const Float &y, const Float &xspeed, const 
 	mAlphaDecay = 0.01f;
 }
 
-void Particle::Update(const Float &pTime) {
+void Particle::update(const Float &pTime) {
 	mX = mX + mXSpeed * pTime;
 	mY = mY + mYSpeed * pTime;
 	mXSpeed = mXSpeed + mXAcc * pTime;

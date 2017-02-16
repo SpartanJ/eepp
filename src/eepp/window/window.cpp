@@ -91,17 +91,17 @@ bool Window::isResizeable() const {
 }
 
 void Window::set2DProjection( const Uint32& Width, const Uint32& Height ) {
-	GLi->MatrixMode( GL_PROJECTION );
-	GLi->LoadIdentity();
+	GLi->matrixMode( GL_PROJECTION );
+	GLi->loadIdentity();
 
-	GLi->Ortho( 0.0f, Width, Height, 0.0f, -1000.0f, 1000.0f );
+	GLi->ortho( 0.0f, Width, Height, 0.0f, -1000.0f, 1000.0f );
 
-	GLi->MatrixMode( GL_MODELVIEW );
-	GLi->LoadIdentity();
+	GLi->matrixMode( GL_MODELVIEW );
+	GLi->loadIdentity();
 }
 
 void Window::setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix ) {
-	GLi->Viewport( x, getHeight() - ( y + Height ), Width, Height );
+	GLi->viewport( x, getHeight() - ( y + Height ), Width, Height );
 
 	if ( UpdateProjectionMatrix ) {
 		set2DProjection( Width, Height );
@@ -129,18 +129,18 @@ void Window::createView() {
 }
 
 void Window::setup2D( const bool& KeepView ) {
-	GLi->PixelStorei( GL_UNPACK_ALIGNMENT, 1 );
-	GLi->PixelStorei( GL_PACK_ALIGNMENT, 1 );
+	GLi->pixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+	GLi->pixelStorei( GL_PACK_ALIGNMENT, 1 );
 
 	backColor( mWindow.BackgroundColor );
 
-	GLi->LineSmooth();
+	GLi->lineSmooth();
 
-	GLi->Enable	( GL_TEXTURE_2D ); 						// Enable Textures
-	GLi->Disable( GL_DEPTH_TEST );
+	GLi->enable	( GL_TEXTURE_2D ); 						// Enable Textures
+	GLi->disable( GL_DEPTH_TEST );
 
-	if ( GLv_2 == GLi->Version() || GLv_ES1 == GLi->Version() ) {
-		GLi->Disable( GL_LIGHTING );
+	if ( GLv_2 == GLi->version() || GLv_ES1 == GLi->version() ) {
+		GLi->disable( GL_LIGHTING );
 	}
 
 	if ( !KeepView ) {
@@ -151,17 +151,17 @@ void Window::setup2D( const bool& KeepView ) {
 
 	BlendMode::SetMode( ALPHA_NORMAL, true );
 
-	if ( GLv_3 != GLi->Version() ) {
+	if ( GLv_3 != GLi->version() ) {
 		#if !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
-		GLi->TexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
-		GLi->TexEnvi( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
+		GLi->texEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
+		GLi->texEnvi( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
 		#endif
 	}
 
-	if ( GLv_2 == GLi->Version() || GLv_ES1 == GLi->Version() ) {
-		GLi->EnableClientState( GL_VERTEX_ARRAY );
-		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
-		GLi->EnableClientState( GL_COLOR_ARRAY );
+	if ( GLv_2 == GLi->version() || GLv_ES1 == GLi->version() ) {
+		GLi->enableClientState( GL_VERTEX_ARRAY );
+		GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
+		GLi->enableClientState( GL_COLOR_ARRAY );
 	}
 }
 
@@ -171,7 +171,7 @@ const WindowInfo * Window::getWindowInfo() const {
 
 void Window::backColor( const RGB& Color ) {
 	mWindow.BackgroundColor = Color;
-	GLi->ClearColor( static_cast<Float>( mWindow.BackgroundColor.r() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.g() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.b() ) / 255.0f, 255.0f );
+	GLi->clearColor( static_cast<Float>( mWindow.BackgroundColor.r() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.g() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.b() ) / 255.0f, 255.0f );
 }
 
 const RGB& Window::backColor() const {
@@ -179,7 +179,7 @@ const RGB& Window::backColor() const {
 }
 
 bool Window::takeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format ) {
-	GlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->draw();
 
 	bool CreateNewFile = false;
 	std::string File, Ext;
@@ -203,7 +203,7 @@ bool Window::takeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format ) 
 		if ( !FileSystem::isDirectory( filepath ) )
 			FileSystem::makeDir( filepath );
 
-		Ext = "." + Image::SaveTypeToExtension( Format );
+		Ext = "." + Image::saveTypeToExtension( Format );
 
 		while ( !find && FileNum < 10000 ) {
 			TmpPath = String::strFormated( "%s%05d%s", filepath.c_str(), FileNum, Ext.c_str() );
@@ -303,11 +303,11 @@ void Window::viewCheckUpdate() {
 }
 
 void Window::clear() {
-	GLi->Clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+	GLi->clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 }
 
 void Window::display( bool clear ) {
-	GlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->draw();
 
 	if ( mCurrentView->needUpdate() )
 		setView( *mCurrentView );
@@ -327,24 +327,24 @@ void Window::display( bool clear ) {
 }
 
 void Window::clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
-	GlobalBatchRenderer::instance()->Draw();
-	GLi->Scissor( x, getHeight() - ( y + Height ), Width, Height );
-	GLi->Enable( GL_SCISSOR_TEST );
+	GlobalBatchRenderer::instance()->draw();
+	GLi->scissor( x, getHeight() - ( y + Height ), Width, Height );
+	GLi->enable( GL_SCISSOR_TEST );
 }
 
 void Window::clipDisable() {
-	GlobalBatchRenderer::instance()->Draw();
-	GLi->Disable( GL_SCISSOR_TEST );
+	GlobalBatchRenderer::instance()->draw();
+	GLi->disable( GL_SCISSOR_TEST );
 }
 
 void Window::clipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
-	GlobalBatchRenderer::instance()->Draw();
-	GLi->Clip2DPlaneEnable( x, y, Width, Height );
+	GlobalBatchRenderer::instance()->draw();
+	GLi->clip2DPlaneEnable( x, y, Width, Height );
 }
 
 void Window::clipPlaneDisable() {
-	GlobalBatchRenderer::instance()->Draw();
-	GLi->Clip2DPlaneDisable();
+	GlobalBatchRenderer::instance()->draw();
+	GLi->clip2DPlaneDisable();
 }
 
 Clipboard * Window::getClipboard() const {
@@ -385,13 +385,13 @@ void Window::logSuccessfulInit(const std::string& BackendName , const std::strin
 							 "\n\tProcess Path: " + ( !ProcessPath.empty() ? ProcessPath : Sys::getProcessPath() ) +
 							 "\n\tDisk Free Space: " + String::toStr( FileSystem::sizeToString( Sys::getDiskFreeSpace( Sys::getProcessPath() ) ) ) +
 							 "\n\tWindow/Input Backend: " + BackendName +
-							 "\n\tGL Backend: " + GLi->VersionStr() +
-							 "\n\tGL Vendor: " + GLi->GetVendor() +
-							 "\n\tGL Renderer: " + GLi->GetRenderer() +
-							 "\n\tGL Version: " + GLi->GetVersion() +
-							 "\n\tGL Shading Language Version: " + GLi->GetShadingLanguageVersion() +
+							 "\n\tGL Backend: " + GLi->versionStr() +
+							 "\n\tGL Vendor: " + GLi->getVendor() +
+							 "\n\tGL Renderer: " + GLi->getRenderer() +
+							 "\n\tGL Version: " + GLi->getVersion() +
+							 "\n\tGL Shading Language Version: " + GLi->getShadingLanguageVersion() +
 							 "\n\tResolution: " + String::toStr( getWidth() ) + "x" + String::toStr( getHeight() ) +
-							 "\n\tGL extensions supported:\n\t\t" + GLi->GetExtensions()
+							 "\n\tGL extensions supported:\n\t\t" + GLi->getExtensions()
 	);
 
 	#ifndef EE_SILENT

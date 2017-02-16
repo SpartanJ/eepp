@@ -29,7 +29,7 @@ class EE_API TextureLoader : public ObjectLoader {
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		*/
-		TextureLoader( const std::string& Filepath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		TextureLoader( const std::string& filepath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a texture from memory
 		* @param ImagePtr The image data in memory just as if it were still in a file
@@ -67,7 +67,7 @@ class EE_API TextureLoader : public ObjectLoader {
 		virtual ~TextureLoader();
 
 		/** A color key can be set to be transparent in the texture. This must be set before the loading is done. */
-		void			SetColorKey( RGB Color );
+		void			setColorKey( RGB Color );
 
 		/** This must be called for the asynchronous mode to update the texture data to the GPU, the call must be done from the same thread that the GL context was created ( the main thread ).
 		** @see ObjectLoader::Update */
@@ -77,13 +77,13 @@ class EE_API TextureLoader : public ObjectLoader {
 		void			unload();
 
 		/** @return The file path to the texture ( if any ) */
-		const std::string&	Filepath() const;
+		const std::string&	filepath() const;
 
 		/** @return The texture internal id  */
-		const Uint32& 	Id() const;
+		const Uint32& 	getId() const;
 
 		/** @return The texture instance ( if it was loaded ). */
-		Texture *		GetTexture() const;
+		Texture *		getTexture() const;
 	protected:
 		Uint32			mLoadType; 	// From memory, from path, from pack
 		Uint8 * 		mPixels;	// Texture Info
@@ -118,12 +118,12 @@ class EE_API TextureLoader : public ObjectLoader {
 
 		Clock			mTE;
 
-		void			LoadFile();
-		void 			LoadFromPath();
-		void			LoadFromMemory();
-		void			LoadFromPack();
-		void 			LoadFromPixels();
-		void			LoadFromStream();
+		void			loadFile();
+		void 			loadFromPath();
+		void			loadFromMemory();
+		void			loadFromPack();
+		void 			loadFromPixels();
+		void			loadFromStream();
 };
 
 }}

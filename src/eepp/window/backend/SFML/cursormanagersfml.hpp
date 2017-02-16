@@ -13,25 +13,25 @@ class CursorManagerSFML : public CursorManager {
 	public:
 		CursorManagerSFML( EE::Window::Window * window );
 
-		Cursor * Create( Texture * tex, const Vector2i& hotspot, const std::string& name );
+		Cursor * create( Texture * tex, const Vector2i& hotspot, const std::string& name );
 
-		Cursor * Create( Image * img, const Vector2i& hotspot, const std::string& name );
+		Cursor * create( Image * img, const Vector2i& hotspot, const std::string& name );
 
-		Cursor * Create( const std::string& path, const Vector2i& hotspot, const std::string& name );
+		Cursor * create( const std::string& path, const Vector2i& hotspot, const std::string& name );
 
-		void Set( Cursor * cursor );
+		void set( Cursor * cursor );
 
-		void Set( EE_SYSTEM_CURSOR syscurid );
+		void set( EE_SYSTEM_CURSOR syscurid );
 
-		void Show();
+		void show();
 
-		void Hide();
+		void hide();
 
-		void Visible( bool visible );
+		void visible( bool visible );
 
-		void Remove( Cursor * cursor, bool Delete = false );
+		void remove( Cursor * cursor, bool Delete = false );
 
-		void Reload();
+		void reload();
 };
 
 }}}}

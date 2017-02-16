@@ -8,7 +8,7 @@ namespace EE { namespace UI {
 
 class EE_API UISkinSimple : public UISkin {
 	public:
-		UISkinSimple( const std::string& Name );
+		UISkinSimple( const std::string& getName );
 
 		virtual ~UISkinSimple();
 

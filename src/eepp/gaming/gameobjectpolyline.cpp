@@ -26,14 +26,14 @@ void GameObjectPolyline::Draw() {
 	Primitives P;
 
 	if ( mSelected ) {
-		P.FillMode( DRAW_FILL );
-		P.SetColor( ColorA( 150, 150, 150, 150 ) );
-		P.DrawPolygon( mPoly );
+		P.fillMode( DRAW_FILL );
+		P.setColor( ColorA( 150, 150, 150, 150 ) );
+		P.drawPolygon( mPoly );
 	}
 
-	P.FillMode( DRAW_LINE );
-	P.SetColor( ColorA( 255, 255, 0, 200 ) );
-	P.DrawPolygon( mPoly );
+	P.fillMode( DRAW_LINE );
+	P.setColor( ColorA( 255, 255, 0, 200 ) );
+	P.drawPolygon( mPoly );
 }
 
 GameObjectObject * GameObjectPolyline::Copy() {

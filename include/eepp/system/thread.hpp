@@ -107,7 +107,7 @@ class EE_API Thread : NonCopyable {
 		void			terminate();
 
 		/** @return The id of the thread */
-		Uint32			Id();
+		Uint32			getId();
 	protected:
 		Thread();
 	private:

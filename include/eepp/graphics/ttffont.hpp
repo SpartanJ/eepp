@@ -26,7 +26,7 @@ class EE_API TTFFont : public Font {
 		/** Creates an instance of a true type font */
 		static TTFFont * New( const std::string FontName );
 
-		/** The destructor will not unload the texture from memory. If you want that you'll have to remove it manually ( TextureFactory::instance()->Remove( MyFontInstance->GetTexId() ) ). */
+		/** The destructor will not unload the texture from memory. If you want that you'll have to remove it manually ( TextureFactory::instance()->remove( MyFontInstance->GetTexId() ) ). */
 		virtual ~TTFFont();
 
 		/** Loads a True Type Font from path
@@ -40,7 +40,7 @@ class EE_API TTFFont : public Font {
 		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		* @return If success
 		*/
-		bool Load( const std::string& Filepath, const unsigned int& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const RGB& FontColor = RGB(), const Uint8& OutlineSize = 0, const RGB& OutlineColor = RGB(0,0,0), const bool& AddPixelSeparator = true );
+		bool load( const std::string& Filepath, const unsigned int& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const RGB& FontColor = RGB(), const Uint8& OutlineSize = 0, const RGB& OutlineColor = RGB(0,0,0), const bool& AddPixelSeparator = true );
 
 		/** Loads a True Type Font from pack
 		* @param Pack Pointer to the pack instance
@@ -54,7 +54,7 @@ class EE_API TTFFont : public Font {
 		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		* @return If success
 		*/
-		bool LoadFromPack( Pack* Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const RGB& FontColor = RGB(), const Uint8& OutlineSize = 0, const RGB& OutlineColor = RGB(0,0,0), const bool& AddPixelSeparator = true  );
+		bool loadFromPack( Pack* Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const RGB& FontColor = RGB(), const Uint8& OutlineSize = 0, const RGB& OutlineColor = RGB(0,0,0), const bool& AddPixelSeparator = true  );
 
 		/** Loads a True Type Font from memory
 		* @param TTFData The pointer to the data
@@ -68,16 +68,16 @@ class EE_API TTFFont : public Font {
 		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		* @return If success
 		*/
-		bool LoadFromMemory( Uint8* TTFData, const unsigned int& TTFDataSize, const unsigned int& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const RGB& FontColor = RGB(), const Uint8& OutlineSize = 0, const RGB& OutlineColor = RGB(0,0,0), const bool& AddPixelSeparator = true );
+		bool loadFromMemory( Uint8* TTFData, const unsigned int& TTFDataSize, const unsigned int& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const RGB& FontColor = RGB(), const Uint8& OutlineSize = 0, const RGB& OutlineColor = RGB(0,0,0), const bool& AddPixelSeparator = true );
 
 		/** Save the texture generated from the TTF file to disk */
-		bool SaveTexture( const std::string& Filepath, const EE_SAVE_TYPE& Format = SAVE_TYPE_PNG );
+		bool saveTexture( const std::string& Filepath, const EE_SAVE_TYPE& Format = SAVE_TYPE_PNG );
 
 		/** Save the characters coordinates to use it later to load the Texture Font */
-		bool SaveCoordinates( const std::string& Filepath );
+		bool saveCoordinates( const std::string& Filepath );
 
 		/** Save the texture generated from the TTF file and the character coordinates. */
-		bool Save( const std::string& TexturePath, const std::string& CoordinatesDatPath, const EE_SAVE_TYPE& Format = SAVE_TYPE_PNG );
+		bool save( const std::string& TexturePath, const std::string& CoordinatesDatPath, const EE_SAVE_TYPE& Format = SAVE_TYPE_PNG );
 	protected:
 		friend class TTFFontLoader;
 
@@ -103,17 +103,17 @@ class EE_API TTFFont : public Font {
 
 		TTFFont( const std::string FontName );
 
-		bool ThreadedLoading() const;
+		bool threadedLoading() const;
 
-		void ThreadedLoading( const bool& isThreaded );
+		void threadedLoading( const bool& isThreaded );
 
-		void UpdateLoading();
+		void updateLoading();
 
 		bool iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, Uint8 OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator );
 
-		void MakeOutline( Uint8 *in, Uint8 *out, Int16 w, Int16 h, Int16 OutlineSize );
+		void makeOutline( Uint8 *in, Uint8 *out, Int16 w, Int16 h, Int16 OutlineSize );
 
-		void RebuildFromGlyphs();
+		void rebuildFromGlyphs();
 };
 
 }}

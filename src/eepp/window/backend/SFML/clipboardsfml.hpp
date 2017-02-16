@@ -12,17 +12,17 @@ class EE_API ClipboardSFML : public Clipboard {
 	public:
 		virtual ~ClipboardSFML();
 
-		std::string GetText();
+		std::string getText();
 
-		String GetWideText();
+		String getWideText();
 
-		void SetText( const std::string& Text );
+		void setText( const std::string& Text );
 	protected:
 		friend class WindowSFML;
 
 		ClipboardSFML( EE::Window::Window * window );
 
-		void Init();
+		void init();
 };
 
 }}}}

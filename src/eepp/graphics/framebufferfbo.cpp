@@ -7,8 +7,8 @@
 
 namespace EE { namespace Graphics {
 
-bool FrameBufferFBO::IsSupported() {
-	return 0 != GLi->IsExtension( EEGL_EXT_framebuffer_object );
+bool FrameBufferFBO::isSupported() {
+	return 0 != GLi->isExtension( EEGL_EXT_framebuffer_object );
 }
 
 FrameBufferFBO::FrameBufferFBO( EE::Window::Window * window ) :
@@ -26,18 +26,18 @@ FrameBufferFBO::FrameBufferFBO( const Uint32& Width, const Uint32& Height, bool 
 	mLastFB(0),
 	mLastRB(0)
 {
-	Create( Width, Height, DepthBuffer );
+	create( Width, Height, DepthBuffer );
 }
 
 FrameBufferFBO::~FrameBufferFBO() {
-	if ( !IsSupported() )
+	if ( !isSupported() )
 		return;
 
 	int curFB;
 	glGetIntegerv( GL_FRAMEBUFFER_BINDING, &curFB );
 
 	if ( curFB == mFrameBuffer )
-		Unbind();
+		unbind();
 
 	if ( mDepthBuffer ) {
 		unsigned int depthBuffer = static_cast<unsigned int>( mDepthBuffer );
@@ -50,12 +50,12 @@ FrameBufferFBO::~FrameBufferFBO() {
 	}
 }
 
-bool FrameBufferFBO::Create( const Uint32& Width, const Uint32& Height ) {
-	return Create( Width, Height, false );
+bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height ) {
+	return create( Width, Height, false );
 }
 
-bool FrameBufferFBO::Create( const Uint32& Width, const Uint32& Height, bool DepthBuffer ) {
-	if ( !IsSupported() )
+bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool DepthBuffer ) {
+	if ( !isSupported() )
 		return false;
 
 	if ( NULL == mWindow ) {
@@ -75,7 +75,7 @@ bool FrameBufferFBO::Create( const Uint32& Width, const Uint32& Height, bool Dep
 	if ( !mFrameBuffer)
 		return false;
 
-	BindFrameBuffer();
+	bindFrameBuffer();
 
 	if ( DepthBuffer ) {
 		unsigned int depth = 0;
@@ -87,7 +87,7 @@ bool FrameBufferFBO::Create( const Uint32& Width, const Uint32& Height, bool Dep
 		if ( !mDepthBuffer )
 			return false;
 
-		BindRenderBuffer();
+		bindRenderBuffer();
 
 		glRenderbufferStorageEXT( GL_RENDERBUFFER, GL_DEPTH_COMPONENT, Width, Height );
 
@@ -95,16 +95,16 @@ bool FrameBufferFBO::Create( const Uint32& Width, const Uint32& Height, bool Dep
 	}
 
 	if ( NULL == mTexture ) {
-		Uint32 TexId = TextureFactory::instance()->CreateEmptyTexture( Width, Height, 4, ColorA(0,0,0,0) );
+		Uint32 TexId = TextureFactory::instance()->createEmptyTexture( Width, Height, 4, ColorA(0,0,0,0) );
 
-		if ( TextureFactory::instance()->TextureIdExists( TexId ) ) {
-			mTexture = 	TextureFactory::instance()->GetTexture( TexId );
+		if ( TextureFactory::instance()->textureIdExists( TexId ) ) {
+			mTexture = 	TextureFactory::instance()->getTexture( TexId );
 		} else {
 			return false;
 		}
 	}
 
-	glFramebufferTexture2DEXT( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture->Handle(), 0 );
+	glFramebufferTexture2DEXT( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture->handle(), 0 );
 
 	if ( glCheckFramebufferStatusEXT( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE ) {
 		glBindFramebufferEXT( GL_FRAMEBUFFER, mLastFB );
@@ -117,20 +117,20 @@ bool FrameBufferFBO::Create( const Uint32& Width, const Uint32& Height, bool Dep
 	return true;
 }
 
-void FrameBufferFBO::Bind() {
+void FrameBufferFBO::bind() {
 	if ( mFrameBuffer ) {
-		GlobalBatchRenderer::instance()->Draw();
+		GlobalBatchRenderer::instance()->draw();
 
-		BindFrameBuffer();
-		BindRenderBuffer();
+		bindFrameBuffer();
+		bindRenderBuffer();
 
-		SetBufferView();
+		setBufferView();
 	}
 }
 
-void FrameBufferFBO::Unbind() {
+void FrameBufferFBO::unbind() {
 	if ( mFrameBuffer ) {
-		RecoverView();
+		recoverView();
 
 		if ( mDepthBuffer ) {
 			glBindFramebufferEXT( GL_FRAMEBUFFER, mLastRB );
@@ -140,11 +140,11 @@ void FrameBufferFBO::Unbind() {
 	}
 }
 
-void FrameBufferFBO::Reload() {
-	Create( mWidth, mHeight, mHasDepthBuffer );
+void FrameBufferFBO::reload() {
+	create( mWidth, mHeight, mHasDepthBuffer );
 }
 
-void FrameBufferFBO::BindFrameBuffer() {
+void FrameBufferFBO::bindFrameBuffer() {
 	int curFB;
 	glGetIntegerv( GL_FRAMEBUFFER_BINDING, &curFB );
 
@@ -153,7 +153,7 @@ void FrameBufferFBO::BindFrameBuffer() {
 	glBindFramebufferEXT( GL_FRAMEBUFFER, mFrameBuffer );
 }
 
-void FrameBufferFBO::BindRenderBuffer() {
+void FrameBufferFBO::bindRenderBuffer() {
 	if ( mDepthBuffer ) {
 		int curRB;
 		glGetIntegerv( GL_RENDERBUFFER_BINDING, &curRB );

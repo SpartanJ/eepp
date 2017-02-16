@@ -62,7 +62,7 @@ RendererGL::RendererGL() {
 RendererGL::~RendererGL() {
 }
 
-EEGL_version RendererGL::Version() {
+EEGL_version RendererGL::version() {
 	#ifndef EE_GLES1
 	return GLv_2;
 	#else
@@ -70,7 +70,7 @@ EEGL_version RendererGL::Version() {
 	#endif
 }
 
-std::string RendererGL::VersionStr() {
+std::string RendererGL::versionStr() {
 	#ifndef EE_GLES1
 	return "OpenGL 2";
 	#else
@@ -78,39 +78,39 @@ std::string RendererGL::VersionStr() {
 	#endif
 }
 
-void RendererGL::PushMatrix() {
+void RendererGL::pushMatrix() {
 	glPushMatrix();
 }
 
-void RendererGL::PopMatrix() {
+void RendererGL::popMatrix() {
 	glPopMatrix();
 }
 
-void RendererGL::LoadIdentity() {
+void RendererGL::loadIdentity() {
 	glLoadIdentity();
 }
 
-void RendererGL::Translatef( float x, float y, float z ) {
+void RendererGL::translatef( float x, float y, float z ) {
 	glTranslatef( x, y, z );
 }
 
-void RendererGL::Rotatef( float angle, float x, float y, float z ) {
+void RendererGL::rotatef( float angle, float x, float y, float z ) {
 	glRotatef( angle, x, y, z );
 }
 
-void RendererGL::Scalef( float x, float y, float z ) {
+void RendererGL::scalef( float x, float y, float z ) {
 	glScalef( x,y, z );
 }
 
-void RendererGL::MatrixMode(unsigned int mode) {
+void RendererGL::matrixMode(unsigned int mode) {
 	glMatrixMode( mode );
 }
 
-void RendererGL::Ortho( float left, float right, float bottom, float top, float zNear, float zFar ) {
+void RendererGL::ortho( float left, float right, float bottom, float top, float zNear, float zFar ) {
 	glOrtho( left, right, bottom, top, zNear, zFar );
 }
 
-void RendererGL::LookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ ) {
+void RendererGL::lookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ ) {
 	float m[16];
 	float x[3], y[3], z[3];
 	float mag;
@@ -187,7 +187,7 @@ void RendererGL::LookAt( float eyeX, float eyeY, float eyeZ, float centerX, floa
 	glTranslatef(-eyeX, -eyeY, -eyeZ);
 }
 
-void RendererGL::Perspective ( float fovy, float aspect, float zNear, float zFar ) {
+void RendererGL::perspective ( float fovy, float aspect, float zNear, float zFar ) {
 	double xmin, xmax, ymin, ymax;
 
 	ymax = zNear * eetan(fovy * EE_360_PI);
@@ -195,40 +195,40 @@ void RendererGL::Perspective ( float fovy, float aspect, float zNear, float zFar
 	xmin = ymin * aspect;
 	xmax = ymax * aspect;
 
-	Frustum( xmin, xmax, ymin, ymax, zNear, zFar );
+	frustum( xmin, xmax, ymin, ymax, zNear, zFar );
 }
 
-void RendererGL::EnableClientState( unsigned int array ) {
+void RendererGL::enableClientState( unsigned int array ) {
 	glEnableClientState( array );
 }
 
-void RendererGL::DisableClientState( unsigned int array ) {
+void RendererGL::disableClientState( unsigned int array ) {
 	glDisableClientState( array );
 }
 
-void RendererGL::VertexPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) {
+void RendererGL::vertexPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) {
 	glVertexPointer( size, type, stride, pointer );
 }
 
-void RendererGL::ColorPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) {
+void RendererGL::colorPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) {
 	glColorPointer( size, type, stride, pointer );
 }
 
-void RendererGL::TexCoordPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) {
+void RendererGL::texCoordPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) {
 	glTexCoordPointer( size, type, stride, pointer );
 }
 
-void RendererGL::ClientActiveTexture( unsigned int texture ) {
+void RendererGL::clientActiveTexture( unsigned int texture ) {
 	glClientActiveTexture( texture );
 }
 
-void RendererGL::PointSize( float size ) {
+void RendererGL::pointSize( float size ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	glPointSize( size );
 #endif
 }
 
-void RendererGL::Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
+void RendererGL::clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	double tX = (double)x;
 	double tY = (double)y;
 	double tW = (double)Width;
@@ -239,40 +239,40 @@ void RendererGL::Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32&
 	double clip_top[] 	= { 0.0	, 1.0	, 0.0, -tY 		};
 	double clip_bottom[] 	= { 0.0	, -1.0	, 0.0, tY + tH 	};
 
-	GLi->Enable(GL_CLIP_PLANE0);
-	GLi->Enable(GL_CLIP_PLANE1);
-	GLi->Enable(GL_CLIP_PLANE2);
-	GLi->Enable(GL_CLIP_PLANE3);
+	GLi->enable(GL_CLIP_PLANE0);
+	GLi->enable(GL_CLIP_PLANE1);
+	GLi->enable(GL_CLIP_PLANE2);
+	GLi->enable(GL_CLIP_PLANE3);
 
-	ClipPlane(GL_CLIP_PLANE0, clip_left);
-	ClipPlane(GL_CLIP_PLANE1, clip_right);
-	ClipPlane(GL_CLIP_PLANE2, clip_top);
-	ClipPlane(GL_CLIP_PLANE3, clip_bottom);
+	clipPlane(GL_CLIP_PLANE0, clip_left);
+	clipPlane(GL_CLIP_PLANE1, clip_right);
+	clipPlane(GL_CLIP_PLANE2, clip_top);
+	clipPlane(GL_CLIP_PLANE3, clip_bottom);
 
 	if ( mPushClip ) {
 		mPlanesClipped.push_back( Rectf( x, y, Width, Height ) );
 	}
 }
 
-void RendererGL::Clip2DPlaneDisable() {
+void RendererGL::clip2DPlaneDisable() {
 	if ( ! mPlanesClipped.empty() ) { // This should always be true
 		mPlanesClipped.pop_back();
 	}
 
 	if ( mPlanesClipped.empty() ) {
-		GLi->Disable(GL_CLIP_PLANE0);
-		GLi->Disable(GL_CLIP_PLANE1);
-		GLi->Disable(GL_CLIP_PLANE2);
-		GLi->Disable(GL_CLIP_PLANE3);
+		GLi->disable(GL_CLIP_PLANE0);
+		GLi->disable(GL_CLIP_PLANE1);
+		GLi->disable(GL_CLIP_PLANE2);
+		GLi->disable(GL_CLIP_PLANE3);
 	} else {
 		Rectf R( mPlanesClipped.back() );
 		mPushClip = false;
-		Clip2DPlaneEnable( R.Left, R.Top, R.Right, R.Bottom );
+		clip2DPlaneEnable( R.Left, R.Top, R.Right, R.Bottom );
 		mPushClip = true;
 	}
 }
 
-void RendererGL::ClipPlane( unsigned int plane, const double *equation ) {
+void RendererGL::clipPlane( unsigned int plane, const double *equation ) {
 #ifdef EE_GLES1
 	float clip[] 	= { (float)equation[0], (float)equation[1], (float)equation[2], (float)equation[3] };
 
@@ -282,19 +282,19 @@ void RendererGL::ClipPlane( unsigned int plane, const double *equation ) {
 #endif
 }
 
-void RendererGL::MultMatrixf ( const float *m ) {
+void RendererGL::multMatrixf ( const float *m ) {
 	glMultMatrixf( m );
 }
 
-void RendererGL::LoadMatrixf( const float *m ) {
+void RendererGL::loadMatrixf( const float *m ) {
 	glLoadMatrixf( m );
 }
 
-void RendererGL::TexEnvi( unsigned int target, unsigned int pname, int param ) {
+void RendererGL::texEnvi( unsigned int target, unsigned int pname, int param ) {
 	glTexEnvi( target, pname, param );
 }
 
-float RendererGL::PointSize() {
+float RendererGL::pointSize() {
 	float ps = 1;
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
@@ -304,15 +304,15 @@ float RendererGL::PointSize() {
 	return ps;
 }
 
-void RendererGL::Frustum( float left, float right, float bottom, float top, float near_val, float far_val ) {
+void RendererGL::frustum( float left, float right, float bottom, float top, float near_val, float far_val ) {
 	glFrustum( left, right, bottom, top, near_val, far_val );
 }
 
-void RendererGL::GetCurrentMatrix( unsigned int mode, float * m ) {
+void RendererGL::getCurrentMatrix( unsigned int mode, float * m ) {
 	glGetFloatv( mode, m );
 }
 
-unsigned int RendererGL::GetCurrentMatrixMode() {
+unsigned int RendererGL::getCurrentMatrixMode() {
 	int mode;
 
 	glGetIntegerv( GL_MATRIX_MODE, &mode );
@@ -394,7 +394,7 @@ static void __gluMultMatrixVecd( const float matrix[16], const float in[4], floa
 	}
 }
 
-int RendererGL::Project( float objx, float objy, float objz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *winx, float *winy, float *winz ) {
+int RendererGL::project( float objx, float objy, float objz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *winx, float *winy, float *winz ) {
 	float in[4];
 	float out[4];
 
@@ -423,7 +423,7 @@ int RendererGL::Project( float objx, float objy, float objz, const float modelMa
 	return GL_TRUE;
 }
 
-int RendererGL::UnProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz ) {
+int RendererGL::unProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz ) {
 	float finalMatrix[16];
 	float in[4];
 	float out[4];

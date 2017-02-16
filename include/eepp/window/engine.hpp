@@ -116,7 +116,7 @@ class EE_API Engine {
 		void enableSharedGLContext();
 
 		/** Disable the Shared GL Context
-		**	@see EnableSharedGLContext()
+		**	@see enableSharedGLContext()
 		*/
 		void disableSharedGLContext();
 
@@ -138,13 +138,9 @@ class EE_API Engine {
 
 		void destroy();
 
-		Backend::WindowBackend * createSDLBackend( const WindowSettings& Settings );
-
 		Backend::WindowBackend * createSDL2Backend( const WindowSettings& Settings );
 
 		Backend::WindowBackend * createSFMLBackend( const WindowSettings& Settings );
-
-		EE::Window::Window * createSDLWindow( const WindowSettings& Settings, const ContextSettings& Context );
 
 		EE::Window::Window * createSDL2Window( const WindowSettings& Settings, const ContextSettings& Context );
 

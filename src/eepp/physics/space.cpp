@@ -288,14 +288,14 @@ void Space::Draw() {
 	#ifdef PHYSICS_RENDERER_ENABLED
 
 	BatchRenderer * BR = GlobalBatchRenderer::instance();
-	BR->SetBlendMode( ALPHA_NORMAL );
+	BR->setBlendMode( ALPHA_NORMAL );
 
 	PhysicsManager::DrawSpaceOptions * options = PhysicsManager::instance()->GetDrawOptions();
 
-	cpFloat lw = BR->GetLineWidth();
-	cpFloat ps = BR->GetPointSize();
+	cpFloat lw = BR->getLineWidth();
+	cpFloat ps = BR->getPointSize();
 
-	BR->SetLineWidth( options->LineThickness );
+	BR->setLineWidth( options->LineThickness );
 
 	if ( options->DrawShapes ) {
 		cpSpatialIndexEach( mSpace->CP_PRIVATE(activeShapes), (cpSpatialIndexIteratorFunc)drawObject, mSpace );
@@ -307,12 +307,12 @@ void Space::Draw() {
 		cpSpatialIndexEach( mSpace->CP_PRIVATE(staticShapes), (cpSpatialIndexIteratorFunc)drawObjectBorder, mSpace );
 	}
 
-	BR->SetLineWidth( lw );
+	BR->setLineWidth( lw );
 
 	if ( options->DrawBBs ){
 		cpSpatialIndexEach( mSpace->CP_PRIVATE(activeShapes), (cpSpatialIndexIteratorFunc)drawBB, NULL );
 		cpSpatialIndexEach( mSpace->CP_PRIVATE(staticShapes), (cpSpatialIndexIteratorFunc)drawBB, NULL );
-		BR->Draw();
+		BR->draw();
 	}
 
 	cpArray * constraints = mSpace->CP_PRIVATE(constraints);
@@ -322,25 +322,25 @@ void Space::Draw() {
 	}
 
 	if ( options->BodyPointSize ) {
-		BR->SetPointSize( options->BodyPointSize );
-		BR->PointsBegin();
-		BR->PointSetColor( ColorA( 255, 255, 255, 255 ) );
+		BR->setPointSize( options->BodyPointSize );
+		BR->pointsBegin();
+		BR->pointSetColor( ColorA( 255, 255, 255, 255 ) );
 
 		cpArray * bodies = mSpace->CP_PRIVATE(bodies);
 
 		for( int i=0, count = bodies->num; i<count; i++ ) {
 			cpBody * body = (cpBody *)bodies->arr[i];
 
-			BR->BatchPoint( body->p.x, body->p.y );
+			BR->batchPoint( body->p.x, body->p.y );
 		}
 
-		BR->Draw();
+		BR->draw();
 	}
 
 	if ( options->CollisionPointSize ) {
-		BR->SetPointSize( options->CollisionPointSize );
-		BR->PointsBegin();
-		BR->PointSetColor( ColorA( 255, 0, 0, 255 ) );
+		BR->setPointSize( options->CollisionPointSize );
+		BR->pointsBegin();
+		BR->pointSetColor( ColorA( 255, 0, 0, 255 ) );
 
 		cpArray * arbiters = mSpace->CP_PRIVATE(arbiters);
 
@@ -349,15 +349,15 @@ void Space::Draw() {
 
 			for( int i=0; i< arb->CP_PRIVATE(numContacts); i++ ){
 				cVect v = tovect( arb->CP_PRIVATE(contacts)[i].CP_PRIVATE(p) );
-				BR->BatchPoint( v.x, v.y );
+				BR->batchPoint( v.x, v.y );
 			}
 		}
 
-		BR->Draw();
+		BR->draw();
 	}
 
-	BR->SetLineWidth( lw );
-	BR->SetPointSize( ps );
+	BR->setLineWidth( lw );
+	BR->setPointSize( ps );
 
 	#endif
 }

@@ -17,7 +17,7 @@ CursorManagerSFML::CursorManagerSFML( EE::Window::Window * window ) :
 {
 }
 
-Cursor * CursorManagerSFML::Create( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerSFML::create( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
 #if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN
 	return mWindow->getPlatform()->createMouseCursor( tex, hotspot, name );
 #else
@@ -25,7 +25,7 @@ Cursor * CursorManagerSFML::Create( Texture * tex, const Vector2i& hotspot, cons
 #endif
 }
 
-Cursor * CursorManagerSFML::Create( Image * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerSFML::create( Image * img, const Vector2i& hotspot, const std::string& name ) {
 #if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN
 	return mWindow->getPlatform()->createMouseCursor( img, hotspot, name );
 #else
@@ -33,7 +33,7 @@ Cursor * CursorManagerSFML::Create( Image * img, const Vector2i& hotspot, const 
 #endif
 }
 
-Cursor * CursorManagerSFML::Create( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerSFML::create( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 #if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN
 	return mWindow->getPlatform()->createMouseCursor( path, hotspot, name );
 #else
@@ -41,31 +41,31 @@ Cursor * CursorManagerSFML::Create( const std::string& path, const Vector2i& hot
 #endif
 }
 
-void CursorManagerSFML::Set( Cursor * cursor ) {
+void CursorManagerSFML::set( Cursor * cursor ) {
 	mWindow->getPlatform()->setMouseCursor( cursor );
 }
 
-void CursorManagerSFML::Set( EE_SYSTEM_CURSOR syscurid ) {
+void CursorManagerSFML::set( EE_SYSTEM_CURSOR syscurid ) {
 	mWindow->getPlatform()->setSystemMouseCursor( syscurid );
 }
 
-void CursorManagerSFML::Show() {
-	Visible( true );
+void CursorManagerSFML::show() {
+	visible( true );
 }
 
-void CursorManagerSFML::Hide() {
-	Visible( false );
+void CursorManagerSFML::hide() {
+	visible( false );
 }
 
-void CursorManagerSFML::Visible( bool visible ) {
+void CursorManagerSFML::visible( bool visible ) {
 	if ( visible ) {
-		reinterpret_cast<WindowSFML*>(mWindow)->GetSFMLWindow()->setMouseCursorVisible( true );
+		reinterpret_cast<WindowSFML*>(mWindow)->getSFMLWindow()->setMouseCursorVisible( true );
 
 		mWindow->getPlatform()->showMouseCursor();
 
 		mVisible = true;
 	} else {
-		reinterpret_cast<WindowSFML*>(mWindow)->GetSFMLWindow()->setMouseCursorVisible( false );
+		reinterpret_cast<WindowSFML*>(mWindow)->getSFMLWindow()->setMouseCursorVisible( false );
 
 		mWindow->getPlatform()->hideMouseCursor();
 
@@ -73,17 +73,17 @@ void CursorManagerSFML::Visible( bool visible ) {
 	}
 }
 
-void CursorManagerSFML::Remove( Cursor * cursor, bool Delete ) {
-	CursorManager::Remove( cursor, Delete );
+void CursorManagerSFML::remove( Cursor * cursor, bool Delete ) {
+	CursorManager::remove( cursor, Delete );
 }
 
-void CursorManagerSFML::Reload() {
+void CursorManagerSFML::reload() {
 	if ( mVisible ) {
-		Show();
+		show();
 
 		mWindow->getPlatform()->restoreCursor();
 	} else {
-		Hide();
+		hide();
 	}
 }
 

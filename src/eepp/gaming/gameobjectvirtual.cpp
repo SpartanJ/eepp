@@ -27,7 +27,7 @@ GameObjectVirtual::GameObjectVirtual( SubTexture * SubTexture, MapLayer * Layer,
 	mSubTexture( SubTexture )
 {
 	if ( NULL != SubTexture )
-		mDataId = SubTexture->Id();
+		mDataId = SubTexture->getId();
 }
 
 GameObjectVirtual::~GameObjectVirtual() {
@@ -47,7 +47,7 @@ Uint32 GameObjectVirtual::RealType() const {
 
 Sizei GameObjectVirtual::Size() {
 	if ( NULL != mSubTexture )
-		return mSubTexture->RealSize();
+		return mSubTexture->realSize();
 
 	if ( NULL != mLayer )
 		return mLayer->Map()->TileSize();
@@ -64,7 +64,7 @@ void GameObjectVirtual::Draw() {
 				Vector2i Tile = reinterpret_cast<TileMapLayer*> ( mLayer )->GetCurrentTile();
 
 				if ( LM->IsByVertex() ) {
-					mSubTexture->Draw(
+					mSubTexture->draw(
 						mPos.x,
 						mPos.y,
 						GetAngle(),
@@ -77,28 +77,28 @@ void GameObjectVirtual::Draw() {
 						RenderModeFromFlags()
 					);
 				} else {
-					mSubTexture->Draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
+					mSubTexture->draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
 				}
 			} else {
 				if ( LM->IsByVertex() ) {
-					mSubTexture->Draw(
+					mSubTexture->draw(
 						mPos.x,
 						mPos.y,
 						GetAngle(),
 						Vector2f::One,
 						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->DestSize().y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->DestSize().x, mPos.y + mSubTexture->DestSize().y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->DestSize().x, mPos.y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->destSize().y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->destSize().x, mPos.y + mSubTexture->destSize().y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->destSize().x, mPos.y ) ),
 						ALPHA_NORMAL,
 						RenderModeFromFlags()
 					);
 				} else {
-					mSubTexture->Draw( mPos.x, mPos.y, LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
+					mSubTexture->draw( mPos.x, mPos.y, LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
 				}
 			}
 		} else {
-			mSubTexture->Draw( mPos.x, mPos.y, ColorA(), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
+			mSubTexture->draw( mPos.x, mPos.y, ColorA(), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
 		}
 	} else {
 		Primitives P;
@@ -106,13 +106,13 @@ void GameObjectVirtual::Draw() {
 		ColorA C( mDataId );
 		C.Alpha = 255;
 
-		P.SetColor( C );
+		P.setColor( C );
 
 		if ( NULL != mLayer ) {
 			Sizei ts = mLayer->Map()->TileSize();
-			P.DrawRectangle( Rectf( Vector2f( mPos.x, mPos.y ), Sizef( ts.x ,ts.y ) ), 0, Vector2f::One );
+			P.drawRectangle( Rectf( Vector2f( mPos.x, mPos.y ), Sizef( ts.x ,ts.y ) ), 0, Vector2f::One );
 		} else {
-			P.DrawRectangle( Rectf( Vector2f( mPos.x, mPos.y ), Sizef( 32 ,32 ) ), 0, Vector2f::One );
+			P.drawRectangle( Rectf( Vector2f( mPos.x, mPos.y ), Sizef( 32 ,32 ) ), 0, Vector2f::One );
 		}
 	}
 }

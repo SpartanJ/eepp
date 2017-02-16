@@ -23,67 +23,67 @@ Primitives::Primitives() :
 Primitives::~Primitives() {
 }
 
-void Primitives::DrawPoint( const Vector2f& p, const Float& pointSize ) {
-	sBR->SetPointSize( pointSize );
+void Primitives::drawPoint( const Vector2f& p, const Float& pointSize ) {
+	sBR->setPointSize( pointSize );
 
-	sBR->SetTexture( NULL );
-	sBR->PointsBegin();
-	sBR->PointSetColor( mColor );
+	sBR->setTexture( NULL );
+	sBR->pointsBegin();
+	sBR->pointSetColor( mColor );
 
-	sBR->BatchPoint( p.x, p.y );
+	sBR->batchPoint( p.x, p.y );
 
-	DrawBatch();
+	drawBatch();
 }
 
-void Primitives::DrawLine( const Line2f& line ) {
-	sBR->SetLineWidth( mLineWidth );
+void Primitives::drawLine( const Line2f& line ) {
+	sBR->setLineWidth( mLineWidth );
 
-	sBR->SetTexture( NULL );
-	sBR->LinesBegin();
-	sBR->LinesSetColor( mColor );
+	sBR->setTexture( NULL );
+	sBR->linesBegin();
+	sBR->linesSetColor( mColor );
 
-	sBR->BatchLine( line.V[0].x, line.V[0].y, line.V[1].x, line.V[1].y );
+	sBR->batchLine( line.V[0].x, line.V[0].y, line.V[1].x, line.V[1].y );
 
-	DrawBatch();
+	drawBatch();
 }
 
-void Primitives::DrawTriangle( const Triangle2f& t, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 ) {
-	sBR->SetTexture( NULL );
-	sBR->SetBlendMode( mBlendMode );
+void Primitives::drawTriangle( const Triangle2f& t, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 ) {
+	sBR->setTexture( NULL );
+	sBR->setBlendMode( mBlendMode );
 
 	switch( mFillMode ) {
 		case DRAW_LINE:
 		{
-			sBR->SetLineWidth( mLineWidth );
+			sBR->setLineWidth( mLineWidth );
 
-			sBR->LineLoopBegin();
+			sBR->lineLoopBegin();
 
-			sBR->LineLoopSetColorFree( Color1, Color2 );
-			sBR->BatchLineLoop( t.V[0].x, t.V[0].y, t.V[1].x, t.V[1].y );
-			sBR->LineLoopSetColorFree( Color2, Color3 );
-			sBR->BatchLineLoop( t.V[1].x, t.V[1].y, t.V[2].x, t.V[2].y );
+			sBR->lineLoopSetColorFree( Color1, Color2 );
+			sBR->batchLineLoop( t.V[0].x, t.V[0].y, t.V[1].x, t.V[1].y );
+			sBR->lineLoopSetColorFree( Color2, Color3 );
+			sBR->batchLineLoop( t.V[1].x, t.V[1].y, t.V[2].x, t.V[2].y );
 			break;
 		}
 		default:
 		case DRAW_FILL:
 		{
-			sBR->TrianglesBegin();
+			sBR->trianglesBegin();
 
-			sBR->TrianglesSetColorFree( Color1, Color2, Color3 );
-			sBR->BatchTriangle( t.V[0].x, t.V[0].y, t.V[1].x, t.V[1].y, t.V[2].x, t.V[2].y );
+			sBR->trianglesSetColorFree( Color1, Color2, Color3 );
+			sBR->batchTriangle( t.V[0].x, t.V[0].y, t.V[1].x, t.V[1].y, t.V[2].x, t.V[2].y );
 
 			break;
 		}
 	}
 
-	DrawBatch();
+	drawBatch();
 }
 
-void Primitives::DrawTriangle( const Triangle2f& t ) {
-	DrawTriangle( t, mColor, mColor, mColor );
+void Primitives::drawTriangle( const Triangle2f& t ) {
+	drawTriangle( t, mColor, mColor, mColor );
 }
 
-void Primitives::DrawCircle( const Vector2f& p, const Float& radius, Uint32 segmentsCount ) {
+void Primitives::drawCircle( const Vector2f& p, const Float& radius, Uint32 segmentsCount ) {
 	if ( 0 == segmentsCount ) {
 		// Optimized circle rendering
 		static const float circleVAR[] = {
@@ -116,60 +116,60 @@ void Primitives::DrawCircle( const Vector2f& p, const Float& radius, Uint32 segm
 		};
 		static const int circleVAR_count = sizeof(circleVAR)/sizeof(float)/2;
 
-		GLi->Disable( GL_TEXTURE_2D );
+		GLi->disable( GL_TEXTURE_2D );
 
-		GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
+		GLi->disableClientState( GL_TEXTURE_COORD_ARRAY );
 
-		GLi->PushMatrix();
+		GLi->pushMatrix();
 
-		GLi->Translatef( p.x, p.y, 0.0f );
+		GLi->translatef( p.x, p.y, 0.0f );
 
-		GLi->Scalef( radius, radius, 1.0f);
+		GLi->scalef( radius, radius, 1.0f);
 
-		GLi->VertexPointer( 2, GL_FLOAT, 0, circleVAR, circleVAR_count * sizeof(float) * 2 );
+		GLi->vertexPointer( 2, GL_FLOAT, 0, circleVAR, circleVAR_count * sizeof(float) * 2 );
 
 		std::vector<ColorA> colors( circleVAR_count - 1 ,mColor );
 
-		GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, &colors[0], circleVAR_count * 4 );
+		GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, &colors[0], circleVAR_count * 4 );
 
 		switch( mFillMode ) {
 			case DRAW_LINE:
 			{
-				GLi->DrawArrays( GL_LINE_LOOP, 0, circleVAR_count - 1 );
+				GLi->drawArrays( GL_LINE_LOOP, 0, circleVAR_count - 1 );
 				break;
 			}
 			case DRAW_FILL:
 			{
-				GLi->DrawArrays( GL_TRIANGLE_FAN, 0, circleVAR_count - 1 );
+				GLi->drawArrays( GL_TRIANGLE_FAN, 0, circleVAR_count - 1 );
 				break;
 			}
 		}
 
-		GLi->PopMatrix();
+		GLi->popMatrix();
 
-		GLi->Enable( GL_TEXTURE_2D );
+		GLi->enable( GL_TEXTURE_2D );
 
-		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
+		GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
 
 		return;
 	}
 
-	DrawArc( p, radius, segmentsCount, 360 );
+	drawArc( p, radius, segmentsCount, 360 );
 }
 
-void Primitives::DrawArc( const Vector2f& p, const Float& radius, Uint32 segmentsCount, const Float& arcAngle, const Float& arcStartAngle ) {
+void Primitives::drawArc( const Vector2f& p, const Float& radius, Uint32 segmentsCount, const Float& arcAngle, const Float& arcStartAngle ) {
 	if(segmentsCount < 6) segmentsCount = 6;
 	segmentsCount = segmentsCount > 360 ? 360 : segmentsCount;
 
 	Float angle_shift =  360 / static_cast<Float>(segmentsCount);
 	Float arcAngleA = arcAngle > 360 ? arcAngle - 360 * std::floor( arcAngle / 360 ) : arcAngle;
 
-	sBR->SetTexture( NULL );
+	sBR->setTexture( NULL );
 
 	switch( mFillMode ) {
 		case DRAW_LINE:
 		{
-			sBR->SetLineWidth( mLineWidth );
+			sBR->setLineWidth( mLineWidth );
 
 			segmentsCount = Uint32( (Float)segmentsCount * (Float)eeabs( arcAngleA ) / 360 );
 			Float startAngle = Math::radians(arcStartAngle);
@@ -179,11 +179,11 @@ void Primitives::DrawArc( const Vector2f& p, const Float& radius, Uint32 segment
 			Float x = radius * eecos(startAngle);
 			Float y = radius * eesin(startAngle);
 
-			sBR->LineStripBegin();
-			sBR->LineStripSetColor( mColor );
+			sBR->lineStripBegin();
+			sBR->lineStripSetColor( mColor );
 
 			for( Uint32 ii = 0; ii < segmentsCount; ii++ ) {
-				sBR->BatchLineStrip(x + p.x, y + p.y);
+				sBR->batchLineStrip(x + p.x, y + p.y);
 
 				Float tx = -y;
 				Float ty = x;
@@ -199,13 +199,13 @@ void Primitives::DrawArc( const Vector2f& p, const Float& radius, Uint32 segment
 		}
 		case DRAW_FILL:
 		{
-			sBR->TriangleFanBegin();
-			sBR->TriangleFanSetColor( mColor );
+			sBR->triangleFanBegin();
+			sBR->triangleFanSetColor( mColor );
 
 			for( Float i = 0; i < arcAngleA; i+= angle_shift ) {
 				Float startAngle = arcStartAngle + i;
 
-				sBR->BatchTriangleFan( p.x , p.y,
+				sBR->batchTriangleFan( p.x , p.y,
 									   p.x + radius * Math::sinAng( startAngle ), p.y + radius * Math::cosAng( startAngle ),
 									   p.x + radius * Math::sinAng( startAngle + angle_shift ), p.y + radius * Math::cosAng( startAngle + angle_shift ) );
 			}
@@ -214,30 +214,30 @@ void Primitives::DrawArc( const Vector2f& p, const Float& radius, Uint32 segment
 		}
 	}
 
-	DrawBatch();
+	drawBatch();
 }
 
-void Primitives::DrawRectangle( const Rectf& R, const ColorA& TopLeft, const ColorA& BottomLeft, const ColorA& BottomRight, const ColorA& TopRight, const Float& Angle, const Vector2f& Scale ) {
-	sBR->SetTexture( NULL );
-	sBR->SetBlendMode( mBlendMode );
+void Primitives::drawRectangle( const Rectf& R, const ColorA& TopLeft, const ColorA& BottomLeft, const ColorA& BottomRight, const ColorA& TopRight, const Float& Angle, const Vector2f& Scale ) {
+	sBR->setTexture( NULL );
+	sBR->setBlendMode( mBlendMode );
 
 	switch( mFillMode ) {
 		case DRAW_FILL:
 		{
-			sBR->QuadsBegin();
-			sBR->QuadsSetColorFree( TopLeft, BottomLeft, BottomRight, TopRight );
+			sBR->quadsBegin();
+			sBR->quadsSetColorFree( TopLeft, BottomLeft, BottomRight, TopRight );
 
 			Sizef size = const_cast<Rectf*>(&R)->size();
 
-			sBR->BatchQuadEx( R.Left, R.Top, size.width(), size.height(), Angle, Scale );
+			sBR->batchQuadEx( R.Left, R.Top, size.width(), size.height(), Angle, Scale );
 			break;
 		}
 		case DRAW_LINE:
 		{
-			sBR->SetLineWidth( mLineWidth );
+			sBR->setLineWidth( mLineWidth );
 
-			sBR->LineLoopBegin();
-			sBR->LineLoopSetColorFree( TopLeft, BottomLeft );
+			sBR->lineLoopBegin();
+			sBR->lineLoopSetColorFree( TopLeft, BottomLeft );
 
 			if ( Scale != 1.0f || Angle != 0.0f ) {
 				Quad2f Q( R );
@@ -246,29 +246,29 @@ void Primitives::DrawRectangle( const Rectf& R, const ColorA& TopLeft, const Col
 				Q.scale( Scale );
 				Q.rotate( Angle, Vector2f( R.Left + size.width() * 0.5f, R.Top + size.height() * 0.5f ) );
 
-				sBR->BatchLineLoop( Q[0].x, Q[0].y, Q[1].x, Q[1].y );
-				sBR->LineLoopSetColorFree( BottomRight, TopRight );
-				sBR->BatchLineLoop( Q[2].x, Q[2].y, Q[3].x, Q[3].y );
+				sBR->batchLineLoop( Q[0].x, Q[0].y, Q[1].x, Q[1].y );
+				sBR->lineLoopSetColorFree( BottomRight, TopRight );
+				sBR->batchLineLoop( Q[2].x, Q[2].y, Q[3].x, Q[3].y );
 			} else {
-				sBR->BatchLineLoop( R.Left, R.Top, R.Left, R.Bottom );
-				sBR->LineLoopSetColorFree( BottomRight, TopRight );
-				sBR->BatchLineLoop( R.Right, R.Bottom, R.Right, R.Top );
+				sBR->batchLineLoop( R.Left, R.Top, R.Left, R.Bottom );
+				sBR->lineLoopSetColorFree( BottomRight, TopRight );
+				sBR->batchLineLoop( R.Right, R.Bottom, R.Right, R.Top );
 			}
 
 			break;
 		}
 	}
 
-	DrawBatch();
+	drawBatch();
 }
 
-void Primitives::DrawRectangle( const Rectf& R, const Float& Angle, const Vector2f& Scale ) {
-	DrawRectangle( R, mColor, mColor, mColor, mColor, Angle, Scale );
+void Primitives::drawRectangle( const Rectf& R, const Float& Angle, const Vector2f& Scale ) {
+	drawRectangle( R, mColor, mColor, mColor, mColor, Angle, Scale );
 }
 
-void Primitives::DrawRoundedRectangle( const Rectf& R, const ColorA& TopLeft, const ColorA& BottomLeft, const ColorA& BottomRight, const ColorA& TopRight, const Float& Angle, const Vector2f& Scale, const unsigned int& Corners ) {
-	sBR->SetTexture( NULL );
-	sBR->SetBlendMode( mBlendMode );
+void Primitives::drawRoundedRectangle( const Rectf& R, const ColorA& TopLeft, const ColorA& BottomLeft, const ColorA& BottomRight, const ColorA& TopRight, const Float& Angle, const Vector2f& Scale, const unsigned int& Corners ) {
+	sBR->setTexture( NULL );
+	sBR->setBlendMode( mBlendMode );
 
 	unsigned int i;
 	Sizef size		= const_cast<Rectf*>( &R )->size();
@@ -284,25 +284,25 @@ void Primitives::DrawRoundedRectangle( const Rectf& R, const ColorA& TopLeft, co
 		case DRAW_FILL:
 		{
 			if ( TopLeft == BottomLeft && BottomLeft == BottomRight && BottomRight == TopRight ) {
-				sBR->PolygonSetColor( TopLeft );
+				sBR->polygonSetColor( TopLeft );
 
-				sBR->BatchPolygon( Poly );
+				sBR->batchPolygon( Poly );
 			} else {
 				for ( i = 0; i < Poly.size(); i++ ) {
 					poly = Poly[i];
 
 					if ( poly.x <= Center.x && poly.y <= Center.y )
-						sBR->PolygonSetColor( TopLeft );
+						sBR->polygonSetColor( TopLeft );
 					else if ( poly.x <= Center.x && poly.y >= Center.y )
-						sBR->PolygonSetColor( BottomLeft );
+						sBR->polygonSetColor( BottomLeft );
 					else if ( poly.x > Center.x && poly.y > Center.y )
-						sBR->PolygonSetColor( BottomRight );
+						sBR->polygonSetColor( BottomRight );
 					else if ( poly.x > Center.x && poly.y < Center.y )
-						sBR->PolygonSetColor( TopRight );
+						sBR->polygonSetColor( TopRight );
 					else
-						sBR->PolygonSetColor( TopLeft );
+						sBR->polygonSetColor( TopLeft );
 
-					sBR->BatchPolygonByPoint( Poly[i] );
+					sBR->batchPolygonByPoint( Poly[i] );
 				}
 			}
 
@@ -310,31 +310,31 @@ void Primitives::DrawRoundedRectangle( const Rectf& R, const ColorA& TopLeft, co
 		}
 		case DRAW_LINE:
 		{
-			sBR->SetLineWidth( mLineWidth );
+			sBR->setLineWidth( mLineWidth );
 
-			sBR->LineLoopBegin();
-			sBR->LineLoopSetColor( TopLeft );
+			sBR->lineLoopBegin();
+			sBR->lineLoopSetColor( TopLeft );
 
 			if ( TopLeft == BottomLeft && BottomLeft == BottomRight && BottomRight == TopRight ) {
 				for ( i = 0; i < Poly.size(); i+=2 ) {
-					sBR->BatchLineLoop( Poly[i], Poly[i+1] );
+					sBR->batchLineLoop( Poly[i], Poly[i+1] );
 				}
 			} else {
 				for ( unsigned int i = 0; i < Poly.size(); i++ ) {
 					poly = Poly[i];
 
 					if ( poly.x <= Center.x && poly.y <= Center.y )
-						sBR->LineLoopSetColor( TopLeft );
+						sBR->lineLoopSetColor( TopLeft );
 					else if ( poly.x < Center.x && poly.y > Center.y )
-						sBR->LineLoopSetColor( BottomLeft );
+						sBR->lineLoopSetColor( BottomLeft );
 					else if ( poly.x > Center.x && poly.y > Center.y )
-						sBR->LineLoopSetColor( BottomRight );
+						sBR->lineLoopSetColor( BottomRight );
 					else if ( poly.x > Center.x && poly.y < Center.y )
-						sBR->LineLoopSetColor( TopRight );
+						sBR->lineLoopSetColor( TopRight );
 					else
-						sBR->LineLoopSetColor( TopLeft );
+						sBR->lineLoopSetColor( TopLeft );
 
-					sBR->BatchLineLoop( Poly[i] );
+					sBR->batchLineLoop( Poly[i] );
 				}
 			}
 
@@ -342,116 +342,116 @@ void Primitives::DrawRoundedRectangle( const Rectf& R, const ColorA& TopLeft, co
 		}
 	}
 
-	DrawBatch();
+	drawBatch();
 }
 
-void Primitives::DrawRoundedRectangle( const Rectf& R, const Float& Angle, const Vector2f& Scale, const unsigned int& Corners ) {
-	DrawRoundedRectangle( R, mColor, mColor, mColor, mColor, Angle, Scale, Corners );
+void Primitives::drawRoundedRectangle( const Rectf& R, const Float& Angle, const Vector2f& Scale, const unsigned int& Corners ) {
+	drawRoundedRectangle( R, mColor, mColor, mColor, mColor, Angle, Scale, Corners );
 }
 
-void Primitives::DrawQuad( const Quad2f& q, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const ColorA& Color4, const Float& OffsetX, const Float& OffsetY ) {
-	sBR->SetTexture( NULL );
-	sBR->SetBlendMode( mBlendMode );
+void Primitives::drawQuad( const Quad2f& q, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const ColorA& Color4, const Float& OffsetX, const Float& OffsetY ) {
+	sBR->setTexture( NULL );
+	sBR->setBlendMode( mBlendMode );
 
 	switch( mFillMode ) {
 		case DRAW_LINE:
 		{
-			sBR->SetLineWidth( mLineWidth );
+			sBR->setLineWidth( mLineWidth );
 
-			sBR->LineLoopBegin();
-			sBR->LineLoopSetColorFree( Color1, Color2 );
-			sBR->BatchLineLoop( OffsetX + q[0].x, OffsetY + q[0].y, OffsetX + q[1].x, OffsetY + q[1].y );
-			sBR->LineLoopSetColorFree( Color2, Color3 );
-			sBR->BatchLineLoop( OffsetX + q[2].x, OffsetY + q[2].y, OffsetX + q[3].x, OffsetY + q[3].y );
+			sBR->lineLoopBegin();
+			sBR->lineLoopSetColorFree( Color1, Color2 );
+			sBR->batchLineLoop( OffsetX + q[0].x, OffsetY + q[0].y, OffsetX + q[1].x, OffsetY + q[1].y );
+			sBR->lineLoopSetColorFree( Color2, Color3 );
+			sBR->batchLineLoop( OffsetX + q[2].x, OffsetY + q[2].y, OffsetX + q[3].x, OffsetY + q[3].y );
 			break;
 		}
 		case DRAW_FILL:
 		{
-			sBR->QuadsBegin();
-			sBR->QuadsSetColorFree( Color1, Color2, Color3, Color4 );
-			sBR->BatchQuadFree( OffsetX + q[0].x, OffsetY + q[0].y, OffsetX + q[1].x, OffsetY + q[1].y, OffsetX + q[2].x, OffsetY + q[2].y, OffsetX + q[3].x, OffsetY + q[3].y );
+			sBR->quadsBegin();
+			sBR->quadsSetColorFree( Color1, Color2, Color3, Color4 );
+			sBR->batchQuadFree( OffsetX + q[0].x, OffsetY + q[0].y, OffsetX + q[1].x, OffsetY + q[1].y, OffsetX + q[2].x, OffsetY + q[2].y, OffsetX + q[3].x, OffsetY + q[3].y );
 			break;
 		}
 	}
 
-	DrawBatch();
+	drawBatch();
 }
 
-void Primitives::DrawQuad( const Quad2f& q, const Float& OffsetX, const Float& OffsetY ) {
-	DrawQuad( q, mColor, mColor, mColor, mColor, OffsetX, OffsetY );
+void Primitives::drawQuad( const Quad2f& q, const Float& OffsetX, const Float& OffsetY ) {
+	drawQuad( q, mColor, mColor, mColor, mColor, OffsetX, OffsetY );
 }
 
-void Primitives::DrawPolygon( const Polygon2f& p ) {
-	sBR->SetTexture( NULL );
-	sBR->SetBlendMode( mBlendMode );
+void Primitives::drawPolygon( const Polygon2f& p ) {
+	sBR->setTexture( NULL );
+	sBR->setBlendMode( mBlendMode );
 
 	switch( mFillMode ) {
 		case DRAW_LINE:
 		{
-			sBR->SetLineWidth( mLineWidth );
+			sBR->setLineWidth( mLineWidth );
 
-			sBR->LineLoopBegin();
-			sBR->LineLoopSetColor( mColor );
+			sBR->lineLoopBegin();
+			sBR->lineLoopSetColor( mColor );
 
 			for ( Uint32 i = 0; i < p.size(); i += 2 )
-				sBR->BatchLineLoop( p.x() + p[i].x, p.y() + p[i].y, p.x() + p[i+1].x, p.y() + p[i+1].y );
+				sBR->batchLineLoop( p.x() + p[i].x, p.y() + p[i].y, p.x() + p[i+1].x, p.y() + p[i+1].y );
 
 			break;
 		}
 		case DRAW_FILL:
 		{
-			sBR->PolygonSetColor( mColor );
-			sBR->BatchPolygon( p );
+			sBR->polygonSetColor( mColor );
+			sBR->batchPolygon( p );
 			break;
 		}
 	}
 
-	DrawBatch();
+	drawBatch();
 }
 
-void Primitives::DrawBatch() {
+void Primitives::drawBatch() {
 	if ( mForceDraw )
-		sBR->Draw();
+		sBR->draw();
 	else
-		sBR->DrawOpt();
+		sBR->drawOpt();
 }
 
-void Primitives::ForceDraw( const bool& force ) {
+void Primitives::forceDraw( const bool& force ) {
 	mForceDraw = force;
 
 	if ( force )
-		DrawBatch();
+		drawBatch();
 }
 
-const bool& Primitives::ForceDraw() const {
+const bool& Primitives::forceDraw() const {
 	return mForceDraw;
 }
 
-void Primitives::SetColor( const ColorA& Color ) {
+void Primitives::setColor( const ColorA& Color ) {
 	mColor = Color;
 }
 
-void Primitives::FillMode( const EE_FILL_MODE& Mode ) {
+void Primitives::fillMode( const EE_FILL_MODE& Mode ) {
 	mFillMode = Mode;
 }
 
-const EE_FILL_MODE& Primitives::FillMode() const {
+const EE_FILL_MODE& Primitives::fillMode() const {
 	return mFillMode;
 }
 
-void Primitives::BlendMode( const EE_BLEND_MODE& Mode ) {
+void Primitives::blendMode( const EE_BLEND_MODE& Mode ) {
 	mBlendMode = Mode;
 }
 
-const EE_BLEND_MODE& Primitives::BlendMode() const {
+const EE_BLEND_MODE& Primitives::blendMode() const {
 	return mBlendMode;
 }
 
-void Primitives::LineWidth( const Float& width ) {
+void Primitives::lineWidth( const Float& width ) {
 	mLineWidth = width;
 }
 
-const Float& Primitives::LineWidth() const {
+const Float& Primitives::lineWidth() const {
 	return mLineWidth;
 }
 

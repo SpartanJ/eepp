@@ -56,7 +56,7 @@ void UIRadioButton::SetTheme( UITheme * Theme ) {
 		tSubTexture = tSkin->GetSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mActiveButton->Size( tSubTexture->RealSize() );
+			mActiveButton->Size( tSubTexture->realSize() );
 			mActiveButton->CenterVertical();
 		}
 	}
@@ -67,7 +67,7 @@ void UIRadioButton::SetTheme( UITheme * Theme ) {
 		tSubTexture = tSkin->GetSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mInactiveButton->Size( tSubTexture->RealSize() );
+			mInactiveButton->Size( tSubTexture->realSize() );
 			mInactiveButton->CenterVertical();
 		}
 	}
@@ -82,7 +82,7 @@ void UIRadioButton::AutoSize() {
 		mActiveButton->CenterVertical();
 		mInactiveButton->CenterVertical();
 
-		mSize.width( (int)mTextCache->GetTextWidth() + mActiveButton->Size().width() );
+		mSize.width( (int)mTextCache->getTextWidth() + mActiveButton->Size().width() );
 	}
 }
 

@@ -151,16 +151,16 @@ static unsigned char * resample_image( unsigned char* pSrc_image, int src_width,
 
 Uint32 Image::sJpegQuality = 85;
 
-Uint32 Image::JpegQuality() {
+Uint32 Image::jpegQuality() {
 	return sJpegQuality;
 }
 
-void Image::JpegQuality( Uint32 level ) {
+void Image::jpegQuality( Uint32 level ) {
 	level = eemin<Uint32>( level, 100 );
 	sJpegQuality = level;
 }
 
-std::string Image::SaveTypeToExtension( const Int32& Format ) {
+std::string Image::saveTypeToExtension( const Int32& Format ) {
 	switch( Format ) {
 		case SAVE_TYPE_TGA: return "tga";
 		case SAVE_TYPE_BMP: return "bmp";
@@ -175,7 +175,7 @@ std::string Image::SaveTypeToExtension( const Int32& Format ) {
 	return "";
 }
 
-EE_SAVE_TYPE Image::ExtensionToSaveType( const std::string& Extension ) {
+EE_SAVE_TYPE Image::extensionToSaveType( const std::string& Extension ) {
 	EE_SAVE_TYPE saveType = SAVE_TYPE_UNKNOWN;
 
 	if ( Extension == "tga" )		saveType = SAVE_TYPE_TGA;
@@ -187,7 +187,7 @@ EE_SAVE_TYPE Image::ExtensionToSaveType( const std::string& Extension ) {
 	return saveType;
 }
 
-EE_PIXEL_FORMAT Image::ChannelsToPixelFormat( const Uint32& channels ) {
+EE_PIXEL_FORMAT Image::channelsToPixelFormat( const Uint32& channels ) {
 	EE_PIXEL_FORMAT pf = PF_RGBA;;
 
 	if ( 3 == channels )
@@ -200,7 +200,7 @@ EE_PIXEL_FORMAT Image::ChannelsToPixelFormat( const Uint32& channels ) {
 	return pf;
 }
 
-bool Image::GetInfo( const std::string& path, int * width, int * height, int * channels ) {
+bool Image::getInfo( const std::string& path, int * width, int * height, int * channels ) {
 	bool res = stbi_info( path.c_str(), width, height, channels ) != 0;
 
 	if ( !res && PackManager::instance()->fallbackToPacks() ) {
@@ -219,11 +219,11 @@ bool Image::GetInfo( const std::string& path, int * width, int * height, int * c
 	return res;
 }
 
-bool Image::IsImage( const std::string& path ) {
+bool Image::isImage( const std::string& path ) {
 	return STBI_unknown != stbi_test( path.c_str() );
 }
 
-std::string Image::GetLastFailureReason() {
+std::string Image::getLastFailureReason() {
 	return std::string( stbi_failure_reason() );
 }
 
@@ -247,7 +247,7 @@ Image::Image( Graphics::Image * image ) :
 	mAvoidFree(image->mAvoidFree),
 	mLoadedFromStbi(image->mLoadedFromStbi)
 {
-	SetPixels( image->GetPixelsPtr() );
+	setPixels( image->getPixelsPtr() );
 }
 
 Image::Image( const Uint8* data, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels ) :
@@ -259,7 +259,7 @@ Image::Image( const Uint8* data, const unsigned int& Width, const unsigned int& 
 	mAvoidFree(false),
 	mLoadedFromStbi(false)
 {
-	SetPixels( data );
+	setPixels( data );
 }
 
 Image::Image( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const ColorA& DefaultColor, const bool& initWithDefaultColor ) :
@@ -314,7 +314,7 @@ Image::Image( std::string Path, const unsigned int& forceChannels ) :
 
 		mLoadedFromStbi = true;
 	} else if ( PackManager::instance()->fallbackToPacks() && NULL != ( tPack = PackManager::instance()->exists( Path ) ) ) {
-		LoadFromPack( tPack, Path );
+		loadFromPack( tPack, Path );
 	} else {
 		std::string reason = ".";
 
@@ -335,15 +335,15 @@ Image::Image( Pack * Pack, std::string FilePackPath, const unsigned int& forceCh
 	mAvoidFree(false),
 	mLoadedFromStbi(false)
 {
-	LoadFromPack( Pack, FilePackPath );
+	loadFromPack( Pack, FilePackPath );
 }
 
 Image::~Image() {
 	if ( !mAvoidFree )
-		ClearCache();
+		clearCache();
 }
 
-void Image::LoadFromPack( Pack * Pack, const std::string& FilePackPath ) {
+void Image::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( FilePackPath ) ) {
 		SafeDataPointer PData;
 
@@ -371,26 +371,26 @@ void Image::LoadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 	}
 }
 
-void Image::SetPixels( const Uint8* data ) {
+void Image::setPixels( const Uint8* data ) {
 	if ( data != NULL ) {
-		Allocate( mWidth * mHeight * mChannels, ColorA(0,0,0,0), false );
+		allocate( mWidth * mHeight * mChannels, ColorA(0,0,0,0), false );
 
 		memcpy( reinterpret_cast<void*>( &mPixels[0] ), reinterpret_cast<const void*> ( data ), mSize );
 	}
 }
 
-const Uint8* Image::GetPixelsPtr() {
+const Uint8* Image::getPixelsPtr() {
 	return reinterpret_cast<const Uint8*> (&mPixels[0]);
 }
 
-ColorA Image::GetPixel( const unsigned int& x, const unsigned int& y ) {
+ColorA Image::getPixel( const unsigned int& x, const unsigned int& y ) {
 	eeASSERT( !( mPixels == NULL || x > mWidth || y > mHeight ) );
 	ColorA dst;
 	memcpy( &dst, &mPixels[ ( ( x + y * mWidth ) * mChannels ) ], mChannels );
 	return dst;
 }
 
-void Image::SetPixel(const unsigned int& x, const unsigned int& y, const ColorA& Color) {
+void Image::setPixel(const unsigned int& x, const unsigned int& y, const ColorA& Color) {
 	eeASSERT( !( mPixels == NULL || x > mWidth || y > mHeight ) );
 	memcpy( &mPixels[ ( ( x + y * mWidth ) * mChannels ) ], &Color, mChannels );
 }
@@ -400,15 +400,15 @@ void Image::Create( const Uint32& Width, const Uint32& Height, const Uint32& Cha
 	mHeight 	= Height;
 	mChannels 	= Channels;
 
-	Allocate( mWidth * mHeight * mChannels, DefaultColor, initWithDefaultColor );
+	allocate( mWidth * mHeight * mChannels, DefaultColor, initWithDefaultColor );
 }
 
-Uint8* Image::GetPixels() const {
+Uint8* Image::getPixels() const {
 	return mPixels;
 }
 
-void Image::Allocate( const Uint32& size, ColorA DefaultColor, bool memsetData ) {
-	ClearCache();
+void Image::allocate( const Uint32& size, ColorA DefaultColor, bool memsetData ) {
+	clearCache();
 
 	mPixels = eeNewArray( unsigned char, size );
 	mSize 	= size;
@@ -418,15 +418,15 @@ void Image::Allocate( const Uint32& size, ColorA DefaultColor, bool memsetData )
 	}
 }
 
-unsigned int Image::MemSize() const {
+unsigned int Image::memSize() const {
 	return mSize;
 }
 
-Sizei Image::Size() {
+Sizei Image::getSize() {
 	return Sizei( mWidth, mHeight );
 }
 
-void Image::ClearCache() {
+void Image::clearCache() {
 	if ( mLoadedFromStbi ) {
 		if ( NULL != mPixels )
 			free( mPixels );
@@ -435,31 +435,31 @@ void Image::ClearCache() {
 	}
 }
 
-void Image::Width( const unsigned int& width ) {
+void Image::width( const unsigned int& width ) {
 	mWidth = width;
 }
 
-unsigned int Image::Width() const {
+unsigned int Image::width() const {
 	return mWidth;
 }
 
-void Image::Height( const unsigned int& height ) {
+void Image::height( const unsigned int& height ) {
 	mHeight = height;
 }
 
-unsigned int Image::Height() const {
+unsigned int Image::height() const {
 	return mHeight;
 }
 
-void Image::Channels( const unsigned int& channels ) {
+void Image::channels( const unsigned int& channels ) {
 	mChannels = channels;
 }
 
-unsigned int Image::Channels() const {
+unsigned int Image::channels() const {
 	return mChannels;
 }
 
-bool Image::SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format ) {
+bool Image::saveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format ) {
 	bool Res = false;
 
 	std::string fpath( FileSystem::fileRemoveFileName( filepath ));
@@ -469,18 +469,18 @@ bool Image::SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format 
 
 	if ( NULL != mPixels && 0 != mWidth && 0 != mHeight && 0 != mChannels ) {
 		if ( SAVE_TYPE_JPG != Format ) {
-			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, (Int32)mWidth, (Int32)mHeight, mChannels, GetPixelsPtr() ) );
+			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, (Int32)mWidth, (Int32)mHeight, mChannels, getPixelsPtr() ) );
 		} else {
 			jpge::params params;
-			params.m_quality = JpegQuality();
-			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), mWidth, mHeight, mChannels, GetPixelsPtr(), params);
+			params.m_quality = jpegQuality();
+			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), mWidth, mHeight, mChannels, getPixelsPtr(), params);
 		}
 	}
 
 	return Res;
 }
 
-void Image::ReplaceColor( const ColorA& ColorKey, const ColorA& NewColor ) {
+void Image::replaceColor( const ColorA& ColorKey, const ColorA& NewColor ) {
 	unsigned int Pos = 0;
 
 	if ( NULL == mPixels )
@@ -517,15 +517,15 @@ void Image::ReplaceColor( const ColorA& ColorKey, const ColorA& NewColor ) {
 	}
 }
 
-void Image::CreateMaskFromColor( const ColorA& ColorKey, Uint8 Alpha ) {
-	ReplaceColor( ColorKey, ColorA( ColorKey.r(), ColorKey.g(), ColorKey.b(), Alpha ) );
+void Image::createMaskFromColor( const ColorA& ColorKey, Uint8 Alpha ) {
+	replaceColor( ColorKey, ColorA( ColorKey.r(), ColorKey.g(), ColorKey.b(), Alpha ) );
 }
 
-void Image::CreateMaskFromColor( const RGB& ColorKey, Uint8 Alpha ) {
-	CreateMaskFromColor( ColorA( ColorKey.r(), ColorKey.g(), ColorKey.b(), 255 ), Alpha );
+void Image::createMaskFromColor( const RGB& ColorKey, Uint8 Alpha ) {
+	createMaskFromColor( ColorA( ColorKey.r(), ColorKey.g(), ColorKey.b(), 255 ), Alpha );
 }
 
-void Image::FillWithColor( const ColorA& Color ) {
+void Image::fillWithColor( const ColorA& Color ) {
 	if ( NULL == mPixels )
 		return;
 
@@ -546,22 +546,22 @@ void Image::FillWithColor( const ColorA& Color ) {
 	}
 }
 
-void Image::CopyImage( Graphics::Image * image, const Uint32& x, const Uint32& y ) {
-	if ( NULL != mPixels && NULL != image->GetPixels() && mWidth >= x + image->Width() && mHeight >= y + image->Height() ) {
-		unsigned int dWidth 	= image->Width();
-		unsigned int dHeight 	= image->Height();
+void Image::copyImage( Graphics::Image * image, const Uint32& x, const Uint32& y ) {
+	if ( NULL != mPixels && NULL != image->getPixels() && mWidth >= x + image->width() && mHeight >= y + image->height() ) {
+		unsigned int dWidth 	= image->width();
+		unsigned int dHeight 	= image->height();
 
-		if ( mChannels != image->Channels() ) {
+		if ( mChannels != image->channels() ) {
 			for ( unsigned int ty = 0; ty < dHeight; ty++ ) {
 				for ( unsigned int tx = 0; tx < dWidth; tx++ ) {
-					SetPixel( x + tx, y + ty, image->GetPixel( tx, ty ) );
+					setPixel( x + tx, y + ty, image->getPixel( tx, ty ) );
 				}
 			}
 		} else {
 			// Copy per row
 			for ( unsigned int ty = 0; ty < dHeight; ty++ ) {
 				Uint8 *			pDst	= &mPixels[ ( x + ( ( ty + y ) * mWidth ) ) * mChannels ];
-				const Uint8 *	pSrc	= &( ( image->GetPixelsPtr() )[ ( ty * dWidth ) * mChannels  ] );
+				const Uint8 *	pSrc	= &( ( image->getPixelsPtr() )[ ( ty * dWidth ) * mChannels  ] );
 
 				memcpy( pDst, pSrc, mChannels * dWidth );
 			}
@@ -569,13 +569,13 @@ void Image::CopyImage( Graphics::Image * image, const Uint32& x, const Uint32& y
 	}
 }
 
-void Image::Resize( const Uint32 &newWidth, const Uint32 &newHeight , EE_RESAMPLER_FILTER filter ) {
+void Image::resize( const Uint32 &newWidth, const Uint32 &newHeight , EE_RESAMPLER_FILTER filter ) {
 	if ( NULL != mPixels && mWidth != newWidth && mHeight != newHeight ) {
 
 		unsigned char * resampled = resample_image( mPixels, mWidth, mHeight, mChannels, newWidth, newHeight, filter );
 
 		if ( NULL != resampled ) {
-			ClearCache();
+			clearCache();
 
 			mPixels 	= resampled;
 			mWidth 		= newWidth;
@@ -584,17 +584,17 @@ void Image::Resize( const Uint32 &newWidth, const Uint32 &newHeight , EE_RESAMPL
 	}
 }
 
-void Image::Scale( const Float& scale , EE_RESAMPLER_FILTER filter ) {
+void Image::scale( const Float& scale , EE_RESAMPLER_FILTER filter ) {
 	if ( 1.f == scale )
 		return;
 
 	Int32 new_width 	= (Int32)( (Float)mWidth * scale );
 	Int32 new_height 	= (Int32)( (Float)mHeight * scale );
 
-	Resize( new_width, new_height, filter );
+	resize( new_width, new_height, filter );
 }
 
-Graphics::Image * Image::Thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, EE_RESAMPLER_FILTER filter ) {
+Graphics::Image * Image::thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, EE_RESAMPLER_FILTER filter ) {
 	if ( NULL != mPixels ) {
 		Float iScaleX 	= ( (Float)maxWidth / (Float)mWidth );
 		Float iScaleY 	= ( (Float)maxHeight / (Float)mHeight );
@@ -612,7 +612,7 @@ Graphics::Image * Image::Thumbnail( const Uint32& maxWidth, const Uint32& maxHei
 	return NULL;
 }
 
-Graphics::Image * Image::Crop( Recti rect ) {
+Graphics::Image * Image::crop( Recti rect ) {
 	if ( rect.Left >= 0 && rect.Right <= (Int32)mWidth && rect.Top >= 0 && rect.Bottom <= (Int32)mHeight ) {
 		Image * img = eeNew( Image, ( rect.size().width(), rect.size().height(), mChannels ) );
 
@@ -630,45 +630,45 @@ Graphics::Image * Image::Crop( Recti rect ) {
 	return NULL;
 }
 
-void Image::Flip() {
+void Image::flip() {
 	if ( NULL != mPixels ) {
 		Image tImg( mHeight, mWidth, mChannels );
 
 		for ( unsigned int y = 0; y < mHeight; y++ )
 			for ( unsigned int x = 0; x < mWidth; x++ )
-				tImg.SetPixel( y, x, GetPixel( x, mHeight - 1 - y ) );
+				tImg.setPixel( y, x, getPixel( x, mHeight - 1 - y ) );
 
-		ClearCache();
+		clearCache();
 
-		mPixels = tImg.GetPixels();
-		mWidth 	= tImg.Width();
-		mHeight = tImg.Height();
+		mPixels = tImg.getPixels();
+		mWidth 	= tImg.width();
+		mHeight = tImg.height();
 
-		tImg.AvoidFreeImage( true );
+		tImg.avoidFreeImage( true );
 	}
 }
 
-void Image::AvoidFreeImage( const bool& AvoidFree ) {
+void Image::avoidFreeImage( const bool& AvoidFree ) {
 	mAvoidFree = AvoidFree;
 }
 
-void Image::Blit( Graphics::Image * image, const Uint32& x, const Uint32& y ) {
-	if ( NULL != image && NULL != image->GetPixelsPtr() && x < mWidth && y < mHeight ) {
-		unsigned int dh = eemin( mHeight	, y	+ image->Height() );
-		unsigned int dw = eemin( mWidth	, x	+ image->Width() );
+void Image::blit( Graphics::Image * image, const Uint32& x, const Uint32& y ) {
+	if ( NULL != image && NULL != image->getPixelsPtr() && x < mWidth && y < mHeight ) {
+		unsigned int dh = eemin( mHeight	, y	+ image->height() );
+		unsigned int dw = eemin( mWidth	, x	+ image->width() );
 
 		for ( unsigned int ty = y; ty < dh; ty++ ) {
 			for ( unsigned int tx = x; tx < dw; tx++ ) {
-				ColorA ts( image->GetPixel( tx - x, ty - y ) );
-				ColorA td( GetPixel( tx, ty ) );
+				ColorA ts( image->getPixel( tx - x, ty - y ) );
+				ColorA td( getPixel( tx, ty ) );
 
-				SetPixel( tx, ty, Color::blend( ts, td ) );
+				setPixel( tx, ty, Color::blend( ts, td ) );
 			}
 		}
 	}
 }
 
-Graphics::Image * Image::Copy() {
+Graphics::Image * Image::copy() {
 	return eeNew( Graphics::Image, ( this ) );
 }
 
@@ -680,10 +680,10 @@ Graphics::Image &Image::operator =(const Image &right) {
 	mAvoidFree = right.mAvoidFree;
 	mLoadedFromStbi = right.mLoadedFromStbi;
 
-	ClearCache();
+	clearCache();
 
 	if ( NULL != right.mPixels ) {
-		SetPixels( right.mPixels );
+		setPixels( right.mPixels );
 	}
 
 	return *this;

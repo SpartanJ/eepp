@@ -23,7 +23,7 @@ class ThreadImpl {
 		
 		void terminate();
 
-		UintPtr id();
+		UintPtr getId();
 	protected:
 		static void *	entryPoint( void* userData );
 

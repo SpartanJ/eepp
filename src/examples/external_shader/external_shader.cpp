@@ -50,40 +50,40 @@ void videoResize( EE::Window::Window * w ) {
 	};
 
 	/// Load the our default projection
-	GLi->MatrixMode( GL_PROJECTION );
-	GLi->LoadMatrixf( perspectiveMatrix );
-	GLi->MatrixMode( GL_MODELVIEW );
+	GLi->matrixMode( GL_PROJECTION );
+	GLi->loadMatrixf( perspectiveMatrix );
+	GLi->matrixMode( GL_MODELVIEW );
 
 	/// eepp enables some client states by default, and textures by default
-	GLi->Disable( GL_TEXTURE_2D );
-	GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
+	GLi->disable( GL_TEXTURE_2D );
+	GLi->disableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	/// GL_VERTEX_ARRAY and GL_COLOR_ARRAY are needed, so we keep them enabled
-	GLi->EnableClientState( GL_VERTEX_ARRAY );
-	GLi->EnableClientState( GL_COLOR_ARRAY );
+	GLi->enableClientState( GL_VERTEX_ARRAY );
+	GLi->enableClientState( GL_COLOR_ARRAY );
 
 	/// Reset the default blend func ( by default eepp use ALPHA_NORMAL )
 	BlendMode::SetMode( ALPHA_BLENDONE );
 
 	/// Set the line width
-	GlobalBatchRenderer::instance()->SetLineWidth( 2 );
+	GlobalBatchRenderer::instance()->setLineWidth( 2 );
 
 	if ( ShadersSupported ) {
 		/// Rebind the Shader
-		shaderProgram->Bind();
+		shaderProgram->bind();
 
 		/// If you want to use the programmable-pipeline renderer you'll need to set up the projection and modelview matrix manually.
 		/// Or if you want to use another name to the projection matrix or the modelview matrix ( eepp programmable-pipeline use
 		/// dgl_ProjectionMatrix and dgl_ModelViewMatrix by default.
-		if ( GLv_2 == GLi->Version() ) {
-			shaderProgram->SetUniformMatrix( "dgl_ProjectionMatrix", perspectiveMatrix );
+		if ( GLv_2 == GLi->version() ) {
+			shaderProgram->setUniformMatrix( "dgl_ProjectionMatrix", perspectiveMatrix );
 
 			/// Get the identity matrix and set it to the modelview matrix
 			float modelMatrix[16];
-			GLi->LoadIdentity();
-			GLi->GetCurrentMatrix( GL_MODELVIEW_MATRIX, modelMatrix );
+			GLi->loadIdentity();
+			GLi->getCurrentMatrix( GL_MODELVIEW_MATRIX, modelMatrix );
 
-			shaderProgram->SetUniformMatrix( "dgl_ModelViewMatrix", modelMatrix );
+			shaderProgram->setUniformMatrix( "dgl_ModelViewMatrix", modelMatrix );
 		}
 	}
 }
@@ -186,13 +186,13 @@ void MainLoop()
 
 	/// VertexPointer assigns values by default to the attribute "dgl_Vertex"
 	/// TextureCoordPointer to "dgl_MultiTexCoord0"
-	GLi->VertexPointer( 3, GL_FLOAT, sizeof(Vector3ff), reinterpret_cast<char*> ( &vertices[0] ), ParticlesNum * sizeof(float) * 3 );
+	GLi->vertexPointer( 3, GL_FLOAT, sizeof(Vector3ff), reinterpret_cast<char*> ( &vertices[0] ), ParticlesNum * sizeof(float) * 3 );
 
 	/// ColorPointer to "dgl_FrontColor"
-	GLi->ColorPointer( 4, GL_FP, sizeof(ColorAf), reinterpret_cast<char*> ( &colors[0] ), ParticlesNum * sizeof(Float) * 4 );
+	GLi->colorPointer( 4, GL_FP, sizeof(ColorAf), reinterpret_cast<char*> ( &colors[0] ), ParticlesNum * sizeof(Float) * 4 );
 
 	/// Draw the lines
-	GLi->DrawArrays( DM_LINES, 0, ParticlesNum );
+	GLi->drawArrays( DM_LINES, 0, ParticlesNum );
 
 	/// Stop the simulation if the window is not visible
 	while ( !win->visible() ) {
@@ -210,14 +210,14 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	if ( win->created() )
 	{
 		/// This will work without shaders too
-		ShadersSupported = GLi->ShadersSupported();
+		ShadersSupported = GLi->shadersSupported();
 
 		imp = win->getInput();
 
 		/// We really don't need shaders for this, but the purpose of the example is to show how to work with external shaders
 		if ( ShadersSupported ) {
 			/// Disable the automatic shader conversion from fixed-pipeline to programmable-pipeline
-			Shader::Ensure( false );
+			Shader::ensure( false );
 
 			std::string fs( "#ifdef GL_ES\n\
 				precision highp float;\n\
@@ -240,7 +240,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 			/// Since fixed-pipeline OpenGL use gl_FrontColor for glColorPointer, we need to replace the color attribute
 			/// This is all to show how it works, in a real world scenario, you will choose to work fixed-pipeline or programmable-pipeline.
-			if ( GLi->Version() == GLv_2 ) {
+			if ( GLi->version() == GLv_2 ) {
 				String::replaceAll( fs, "gl_FragColor = dgl_Color", "gl_FragColor = gl_FrontColor" );
 			}
 

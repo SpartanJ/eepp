@@ -65,10 +65,10 @@ class EE_API TTFFontLoader : public ObjectLoader {
 		void				unload();
 
 		/** @return The font name. */
-		const std::string&	Id() const;
+		const std::string&	getId() const;
 
 		/** @return The font instance if already exists, otherwise returns NULL. */
-		Graphics::Font *	Font() const;
+		Graphics::Font *	getFont() const;
 	protected:
 		enum TTF_LOAD_TYPE
 		{
@@ -100,10 +100,10 @@ class EE_API TTFFontLoader : public ObjectLoader {
 	private:
 		bool				mFontLoaded;
 
-		void 				LoadFromPath();
-		void				LoadFromMemory();
-		void				LoadFromPack();
-		void 				Create();
+		void 				loadFromPath();
+		void				loadFromMemory();
+		void				loadFromPack();
+		void 				create();
 };
 
 }}

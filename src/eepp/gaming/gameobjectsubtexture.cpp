@@ -34,7 +34,7 @@ void GameObjectSubTexture::Draw() {
 				Vector2i Tile = reinterpret_cast<TileMapLayer*> ( mLayer )->GetCurrentTile();
 
 				if ( LM->IsByVertex() ) {
-					mSubTexture->Draw(
+					mSubTexture->draw(
 						mPos.x,
 						mPos.y,
 						GetAngle(),
@@ -47,28 +47,28 @@ void GameObjectSubTexture::Draw() {
 						RenderModeFromFlags()
 					);
 				} else {
-					mSubTexture->Draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
+					mSubTexture->draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
 				}
 			} else {
 				if ( LM->IsByVertex() ) {
-					mSubTexture->Draw(
+					mSubTexture->draw(
 						mPos.x,
 						mPos.y,
 						GetAngle(),
 						Vector2f::One,
 						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->DestSize().y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->DestSize().x, mPos.y + mSubTexture->DestSize().y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->DestSize().y, mPos.y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->destSize().y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->destSize().x, mPos.y + mSubTexture->destSize().y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->destSize().y, mPos.y ) ),
 						ALPHA_NORMAL,
 						RenderModeFromFlags()
 					);
 				} else {
-					mSubTexture->Draw( mPos.x, mPos.y, LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
+					mSubTexture->draw( mPos.x, mPos.y, LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
 				}
 			}
 		} else {
-			mSubTexture->Draw( mPos.x, mPos.y, ColorA(), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
+			mSubTexture->draw( mPos.x, mPos.y, ColorA(), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
 		}
 	}
 }
@@ -92,7 +92,7 @@ void GameObjectSubTexture::TilePos( Vector2i pos ) {
 
 Sizei GameObjectSubTexture::Size() {
 	if ( NULL != mSubTexture )
-		return mSubTexture->RealSize();
+		return mSubTexture->realSize();
 
 	return Sizei();
 }
@@ -106,11 +106,11 @@ void GameObjectSubTexture::SubTexture( Graphics::SubTexture * subTexture ) {
 }
 
 Uint32 GameObjectSubTexture::DataId() {
-	return mSubTexture->Id();
+	return mSubTexture->getId();
 }
 
 void GameObjectSubTexture::DataId( Uint32 Id ) {
-	SubTexture( TextureAtlasManager::instance()->GetSubTextureById( Id ) );
+	SubTexture( TextureAtlasManager::instance()->getSubTextureById( Id ) );
 }
 
 }}

@@ -53,15 +53,15 @@ void PivotJoint::Draw() {
 	cVect b				= tovect( cpvadd(body_b->p, cpvrotate(joint->anchr2, body_b->rot)) );
 	BatchRenderer * BR = GlobalBatchRenderer::instance();
 
-	cpFloat ps = BR->GetPointSize();
-	BR->SetTexture( NULL );
-	BR->SetPointSize( mDrawPointSize );
-	BR->PointsBegin();
-	BR->PointSetColor( ColorA( 128, 255, 128, 255 ) );
-	BR->BatchPoint( a.x, a.y );
-	BR->BatchPoint( b.x, b.y );
-	BR->Draw();
-	BR->SetPointSize( ps );
+	cpFloat ps = BR->getPointSize();
+	BR->setTexture( NULL );
+	BR->setPointSize( mDrawPointSize );
+	BR->pointsBegin();
+	BR->pointSetColor( ColorA( 128, 255, 128, 255 ) );
+	BR->batchPoint( a.x, a.y );
+	BR->batchPoint( b.x, b.y );
+	BR->draw();
+	BR->setPointSize( ps );
 	#endif
 }
 

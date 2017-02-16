@@ -64,7 +64,7 @@ void EETest::Init() {
 		mWindow->pushResizeCallback( cb::Make1( this, &EETest::OnWindowResize ) );
 
 		TF = TextureFactory::instance();
-		TF->Allocate(40);
+		TF->allocate(40);
 
 		Log		= Log::instance();
 		KM		= mWindow->getInput();
@@ -111,13 +111,13 @@ void EETest::Init() {
 		WP.setTotalTime( Milliseconds( 5000 ) );
 		WP.start();
 
-		Batch.AllocVertexs( 2048 );
-		Batch.SetBlendMode( ALPHA_BLENDONE );
+		Batch.allocVertexs( 2048 );
+		Batch.setBlendMode( ALPHA_BLENDONE );
 
 		mFBO = FrameBuffer::New( 256, 256, false );
 
 		if ( NULL != mFBO )
-			mFBO->ClearColor( ColorAf( 0, 0, 0, 0.5f ) );
+			mFBO->clearColor( ColorAf( 0, 0, 0, 0.5f ) );
 
 		Polygon2f Poly = Polygon2f::createRoundedRectangle( 0, 0, 256, 50 );
 
@@ -125,11 +125,11 @@ void EETest::Init() {
 
 		if ( NULL != mVBO ) {
 			for ( Uint32 i = 0; i < Poly.size(); i++ ) {
-				mVBO->AddVertex( Poly[i] );
-				mVBO->AddColor( ColorA( 100 + i, 255 - i, 150 + i, 200 ) );
+				mVBO->addVertex( Poly[i] );
+				mVBO->addColor( ColorA( 100 + i, 255 - i, 150 + i, 200 ) );
 			}
 
-			mVBO->Compile();
+			mVBO->compile();
 		}
 
 		PhysicsCreate();
@@ -155,12 +155,12 @@ void EETest::CreateUIThemeTextureAtlas() {
 
 	if ( !FileSystem::fileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
 		TexturePacker tp( 256, 256, true, 2 );
-		tp.AddTexturesPath( Path );
-		tp.PackTextures();
-		tp.Save( tgpath + ".png", SAVE_TYPE_PNG );
+		tp.addTexturesPath( Path );
+		tp.packTextures();
+		tp.save( tgpath + ".png", SAVE_TYPE_PNG );
 	} else {
 		TextureAtlasLoader tgl;
-		tgl.UpdateTextureAtlas( tgpath + EE_TEXTURE_ATLAS_EXTENSION, Path );
+		tgl.updateTextureAtlas( tgpath + EE_TEXTURE_ATLAS_EXTENSION, Path );
 	}
 }
 
@@ -168,7 +168,7 @@ void EETest::LoadFonts() {
 	mFTE.restart();
 
 	TextureLoader * tl = eeNew( TextureLoader, ( MyPath + "fonts/conchars.png" ) );
-	tl->SetColorKey( RGB(0,0,0) );
+	tl->setColorKey( RGB(0,0,0) );
 
 	mFontLoader.add( eeNew( TextureFontLoader, ( "conchars", tl, (unsigned int)32 ) ) );
 	mFontLoader.add( eeNew( TextureFontLoader, ( "ProggySquareSZ", eeNew( TextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
@@ -189,23 +189,23 @@ void EETest::OnFontLoaded( ResourceLoader * ObjLoaded ) {
 	eeASSERT( TTF != NULL );
 	eeASSERT( TTFB != NULL );
 
-	Con.Create( FF, true );
-	Con.IgnoreCharOnPrompt( 186 ); // 'º'
+	Con.create( FF, true );
+	Con.ignoreCharOnPrompt( 186 ); // 'º'
 
 	mBuda = String::fromUtf8( "El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde." );
 
 	CreateUI();
 
-	mEEText.Create( TTFB, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to see the PopUp Menu" );
-	mFBOText.Create( TTFB, "This is a VBO\nInside of a FBO" );
-	mFBOText.Color( ColorA(255,255,0,255), mFBOText.Text().find( "VBO" ), mFBOText.Text().find( "VBO" ) + 2 );
-	mFBOText.Color( ColorA(255,255,0,255), mFBOText.Text().find( "FBO" ), mFBOText.Text().find( "FBO" ) + 2 );
+	mEEText.create( TTFB, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to see the PopUp Menu" );
+	mFBOText.create( TTFB, "This is a VBO\nInside of a FBO" );
+	mFBOText.color( ColorA(255,255,0,255), mFBOText.text().find( "VBO" ), mFBOText.text().find( "VBO" ) + 2 );
+	mFBOText.color( ColorA(255,255,0,255), mFBOText.text().find( "FBO" ), mFBOText.text().find( "FBO" ) + 2 );
 
-	mInfoText.Create( FF, "", ColorA(255,255,255,150) );
+	mInfoText.create( FF, "", ColorA(255,255,255,150) );
 }
 
 void EETest::CreateShaders() {
-	mUseShaders = mUseShaders && GLi->ShadersSupported();
+	mUseShaders = mUseShaders && GLi->shadersSupported();
 
 	mShaderProgram = NULL;
 
@@ -558,7 +558,7 @@ void EETest::CreateUI() {
 #ifdef EE_PLATFORM_TOUCH
 	TextureAtlas * SG = GlobalTextureAtlas::instance();
 
-	Texture * butTex = TF->GetTexture( TF->Load( MyPath + "sprites/button-te_normal.png" ) );
+	Texture * butTex = TF->getTexture( TF->Load( MyPath + "sprites/button-te_normal.png" ) );
 
 	SG->Add( butTex->Id(), "button-te_normal" );
 	SG->Add( TF->Load( MyPath + "sprites/button-te_mdown.png" ), "button-te_mdown" );
@@ -678,10 +678,10 @@ void EETest::ItemClick( const UIEvent * Event ) {
 	} else if ( "Show Screen 6" == txt ) {
 		SetScreen( 5 );
 	} else if ( "Show Console" == txt ) {
-		Con.Toggle();
-		InBuf.active( !Con.Active() );
+		Con.toggle();
+		InBuf.active( !Con.active() );
 
-		if ( Con.Active() ) {
+		if ( Con.active() ) {
 			mWindow->startTextInput();
 		} else {
 			mWindow->stopTextInput();
@@ -797,10 +797,10 @@ void EETest::CmdSetPartsNum ( const std::vector < String >& params ) {
 		bool Res = String::fromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt >= 0 && tInt <= 100000 ) ) {
-			PS[2].Create( PSE_WormHole, tInt, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32, true );
-			Con.PushText( "Wormhole Particles Number Changed to: " + String::toStr(tInt) );
+			PS[2].create( PSE_WormHole, tInt, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32, true );
+			Con.pushText( "Wormhole Particles Number Changed to: " + String::toStr(tInt) );
 		} else
-			Con.PushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
+			Con.pushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
 	}
 }
 
@@ -842,8 +842,8 @@ void EETest::LoadTextures() {
 	TNP.resize(12);
 
 	for ( i = 0; i <= 6; i++ ) {
-		TN[i] = TF->Load( MyPath + "sprites/" + String::toStr(i+1) + ".png", (i+1) == 7 ? true : false, ( (i+1) == 4 ) ? CLAMP_REPEAT : CLAMP_TO_EDGE );
-		TNP[i] = TF->GetTexture( TN[i] );
+		TN[i] = TF->load( MyPath + "sprites/" + String::toStr(i+1) + ".png", (i+1) == 7 ? true : false, ( (i+1) == 4 ) ? CLAMP_REPEAT : CLAMP_TO_EDGE );
+		TNP[i] = TF->getTexture( TN[i] );
 	}
 
 	Tiles.resize(10);
@@ -856,15 +856,15 @@ void EETest::LoadTextures() {
 			Tiles[i] = SG->getByName( String::toStr( i+1 ) );
 		}
 
-		Tiles[6] = SG->add( TF->Load( MyPath + "sprites/objects/1.png" ), "7" );
+		Tiles[6] = SG->add( TF->load( MyPath + "sprites/objects/1.png" ), "7" );
 
 		#ifdef EE_GLES
 		Image tImg( MyPath + "sprites/objects/2.png", 4 );
 		tImg.CreateMaskFromColor( ColorA(0,0,0,255), 0 );
-		Tiles[7] = SG->Add( TF->LoadFromPixels( tImg.GetPixelsPtr(), tImg.Width(), tImg.Height(), tImg.Channels() ), "8" );
+		Tiles[7] = SG->Add( TF->loadFromPixels( tImg.GetPixelsPtr(), tImg.Width(), tImg.Height(), tImg.Channels() ), "8" );
 		#else
-		Tiles[7] = SG->add( TF->Load( MyPath + "sprites/objects/2.png" ), "8" );
-		Tiles[7]->GetTexture()->CreateMaskFromColor( ColorA(0,0,0,255), 0 );
+		Tiles[7] = SG->add( TF->load( MyPath + "sprites/objects/2.png" ), "8" );
+		Tiles[7]->getTexture()->createMaskFromColor( ColorA(0,0,0,255), 0 );
 		#endif
 	}
 
@@ -872,39 +872,39 @@ void EETest::LoadTextures() {
 
 	for ( Int32 my = 0; my < 4; my++ )
 		for( Int32 mx = 0; mx < 8; mx++ )
-			SP.AddFrame( TN[4], Sizef( 0, 0 ), Vector2i( 0, 0 ), Recti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
+			SP.addFrame( TN[4], Sizef( 0, 0 ), Vector2i( 0, 0 ), Recti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 
-	PS[0].SetCallbackReset( cb::Make2( this, &EETest::ParticlesCallback ) );
-	PS[0].Create( PSE_Callback, 500, TN[5], Vector2f( 0, 0 ), 16, true );
-	PS[1].Create( PSE_Heal, 250, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 16, true );
-	PS[2].Create( PSE_WormHole, PartsNum, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32, true );
-	PS[3].Create( PSE_Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
-	PS[4].Create( PSE_Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
+	PS[0].setCallbackReset( cb::Make2( this, &EETest::ParticlesCallback ) );
+	PS[0].create( PSE_Callback, 500, TN[5], Vector2f( 0, 0 ), 16, true );
+	PS[1].create( PSE_Heal, 250, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 16, true );
+	PS[2].create( PSE_WormHole, PartsNum, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32, true );
+	PS[3].create( PSE_Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
+	PS[4].create( PSE_Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
 
-	Con.AddCommand( "setparticlesnum", cb::Make1( this, &EETest::CmdSetPartsNum ) );
+	Con.addCommand( "setparticlesnum", cb::Make1( this, &EETest::CmdSetPartsNum ) );
 
 	Texture * Tex = TNP[2];
 
-	if ( NULL != Tex && Tex->Lock() ) {
-		w = (int)Tex->Width();
-		h = (int)Tex->Height();
+	if ( NULL != Tex && Tex->lock() ) {
+		w = (int)Tex->width();
+		h = (int)Tex->height();
 
 		for ( y = 0; y < h; y++) {
 			for ( x = 0; x < w; x++) {
-				ColorA C = Tex->GetPixel(x, y);
+				ColorA C = Tex->getPixel(x, y);
 
 				if ( C.r() > 200 && C.g() > 200 && C.b() > 200 )
-					Tex->SetPixel(x, y, ColorA( Math::randi(0, 255), Math::randi(0, 255), Math::randi(0, 255), C.a() ) );
+					Tex->setPixel(x, y, ColorA( Math::randi(0, 255), Math::randi(0, 255), Math::randi(0, 255), C.a() ) );
 				else
-					Tex->SetPixel(x, y, ColorA( Math::randi(200, 255), Math::randi(200, 255), Math::randi(200, 255), C.a() ) );
+					Tex->setPixel(x, y, ColorA( Math::randi(200, 255), Math::randi(200, 255), Math::randi(200, 255), C.a() ) );
 			}
 		}
 
-		Tex->Unlock(false, true);
+		Tex->unlock(false, true);
 	}
 
-	Cursor[0] = TF->Load( MyPath + "cursors/cursor.tga" );
-	CursorP[0] = TF->GetTexture( Cursor[0] );
+	Cursor[0] = TF->load( MyPath + "cursors/cursor.tga" );
+	CursorP[0] = TF->getTexture( Cursor[0] );
 
 	CursorManager * CurMan = mWindow->getCursorManager();
 	CurMan->visible( false );
@@ -913,17 +913,17 @@ void EETest::LoadTextures() {
 	CurMan->setGlobalCursor( EE_CURSOR_ARROW, CurMan->add( CurMan->create( CursorP[0], Vector2i( 1, 1 ), "cursor_special" ) ) );
 	CurMan->set( EE_CURSOR_ARROW );
 
-	CL1.AddFrame( TN[2] );
-	CL1.Position( 500, 400 );
-	CL1.Scale( 0.5f );
+	CL1.addFrame( TN[2] );
+	CL1.position( 500, 400 );
+	CL1.scale( 0.5f );
 
-	CL2.AddFrame(TN[0], Sizef(96, 96) );
-	CL2.Color( ColorA( 255, 255, 255, 255 ) );
+	CL2.addFrame(TN[0], Sizef(96, 96) );
+	CL2.color( ColorA( 255, 255, 255, 255 ) );
 
 	mTGL = eeNew( TextureAtlasLoader, ( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
 
-	mBlindy.AddFramesByPattern( "rn" );
-	mBlindy.Position( 320.f, 0.f );
+	mBlindy.addFramesByPattern( "rn" );
+	mBlindy.position( 320.f, 0.f );
 
 	mBoxSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( SubTexture, ( TN[3], "ilmare" ) ) ) ) );
 	mCircleSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( SubTexture, ( TN[1], "thecircle" ) ) ) ) );
@@ -955,7 +955,7 @@ void EETest::UpdateParticles() {
 		PSElapsed = cElapsed.elapsed();
 
 		for ( Uint8 i = 0; i < PS.size(); i++ )
-			PS[i].Update( PSElapsed );
+			PS[i].update( PSElapsed );
 	}
 }
 
@@ -966,23 +966,23 @@ void EETest::Screen1() {
 
 void EETest::Screen2() {
 	if ( mResLoad.isLoaded() ) {
-		Texture * TexLoaded = TF->GetByName( "1.jpg" );
+		Texture * TexLoaded = TF->getByName( "1.jpg" );
 
 		if ( NULL != TexLoaded )
-			TexLoaded->Draw( 0, 0 );
+			TexLoaded->draw( 0, 0 );
 	}
 
 	if ( KM->mouseLeftPressed() )
-		TNP[3]->DrawEx( 0.f, 0.f, (Float)mWindow->getWidth(), (Float)mWindow->getHeight() );
+		TNP[3]->drawEx( 0.f, 0.f, (Float)mWindow->getWidth(), (Float)mWindow->getHeight() );
 
-	Batch.SetTexture( TNP[2] );
-	Batch.QuadsBegin();
-	Batch.QuadsSetColor( ColorA(150,150,150,100) );
-	Batch.QuadsSetSubset( 0.0f, 0.0f, 0.5f, 0.5f );
+	Batch.setTexture( TNP[2] );
+	Batch.quadsBegin();
+	Batch.quadsSetColor( ColorA(150,150,150,100) );
+	Batch.quadsSetSubset( 0.0f, 0.0f, 0.5f, 0.5f );
 
-	Batch.BatchRotation( ang );
-	Batch.BatchScale( scale );
-	Batch.BatchCenter( Vector2f( HWidth, HHeight ) );
+	Batch.batchRotation( ang );
+	Batch.batchScale( scale );
+	Batch.batchCenter( Vector2f( HWidth, HHeight ) );
 
 	Float aX = HWidth - 256.f;
 	Float aY = HHeight - 256.f;
@@ -999,18 +999,18 @@ void EETest::Screen2() {
 			Float tmpx = (Float)z * 32.f;
 			Float tmpy = (Float)y * 32.f;
 
-			Batch.BatchQuadFree( TmpQuad[0].x + tmpx, TmpQuad[0].y + tmpy, TmpQuad[1].x + tmpx, TmpQuad[1].y + tmpy, TmpQuad[2].x + tmpx, TmpQuad[2].y + tmpy, TmpQuad[3].x + tmpx, TmpQuad[3].y + tmpy );
+			Batch.batchQuadFree( TmpQuad[0].x + tmpx, TmpQuad[0].y + tmpy, TmpQuad[1].x + tmpx, TmpQuad[1].y + tmpy, TmpQuad[2].x + tmpx, TmpQuad[2].y + tmpy, TmpQuad[3].x + tmpx, TmpQuad[3].y + tmpy );
 		}
 	}
 
-	Batch.Draw();
+	Batch.draw();
 
-	Batch.BatchRotation( 0.0f );
-	Batch.BatchScale( 1.0f );
-	Batch.BatchCenter( Vector2f( 0, 0 ) );
+	Batch.batchRotation( 0.0f );
+	Batch.batchScale( 1.0f );
+	Batch.batchCenter( Vector2f( 0, 0 ) );
 
-	Float PlanetX = HWidth  - TNP[6]->Width() * 0.5f;
-	Float PlanetY = HHeight - TNP[6]->Height() * 0.5f;
+	Float PlanetX = HWidth  - TNP[6]->width() * 0.5f;
+	Float PlanetY = HHeight - TNP[6]->height() * 0.5f;
 
 	ang+=et.asMilliseconds() * 0.1f;
 	ang = (ang>=360) ? 0 : ang;
@@ -1026,19 +1026,19 @@ void EETest::Screen2() {
 
 	if ( mUseShaders ) {
 		mBlurFactor = ( 1.5f * 0.01f ) - ( scale * 0.01f );
-		mShaderProgram->Bind();
-		mShaderProgram->SetUniform( "blurfactor" , (float)mBlurFactor );
+		mShaderProgram->bind();
+		mShaderProgram->setUniform( "blurfactor" , (float)mBlurFactor );
 	}
 
-	TNP[6]->DrawFast( PlanetX, PlanetY, ang, Vector2f(scale,scale));
+	TNP[6]->drawFast( PlanetX, PlanetY, ang, Vector2f(scale,scale));
 
 	if ( mUseShaders )
-		mShaderProgram->Unbind();
+		mShaderProgram->unbind();
 
-	TNP[3]->Draw( HWidth - 128, HHeight, 0, Vector2f::One, ColorA(255,255,255,150), ALPHA_NORMAL, RN_ISOMETRIC);
-	TNP[3]->Draw( HWidth - 128, HHeight - 128, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRIC);
-	TNP[3]->Draw( HWidth - 128, HHeight, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
-	TNP[3]->Draw( HWidth, HHeight, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
+	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, ColorA(255,255,255,150), ALPHA_NORMAL, RN_ISOMETRIC);
+	TNP[3]->draw( HWidth - 128, HHeight - 128, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRIC);
+	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
+	TNP[3]->draw( HWidth, HHeight, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
 
 	alpha = (!aside) ? alpha+et.asMilliseconds() * 0.1f : alpha-et.asMilliseconds() * 0.1f;
 	if (alpha>=255) {
@@ -1050,38 +1050,38 @@ void EETest::Screen2() {
 	}
 
 	ColorA Col(255,255,255,(int)alpha);
-	TNP[1]->DrawEx( (Float)mWindow->getWidth() - 128.f, (Float)mWindow->getHeight() - 128.f, 128.f, 128.f, ang, Vector2f::One, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
+	TNP[1]->drawEx( (Float)mWindow->getWidth() - 128.f, (Float)mWindow->getHeight() - 128.f, 128.f, 128.f, ang, Vector2f::One, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
 
-	SP.Position( alpha, alpha );
-	SP.Draw();
+	SP.position( alpha, alpha );
+	SP.draw();
 
 	#ifndef EE_GLES
-	CL1.RenderMode( RN_ISOMETRIC );
+	CL1.renderMode( RN_ISOMETRIC );
 
-	if ( CL1.GetAABB().intersectCircle( Mousef, 80.f ) )
-		CL1.Color( ColorA(255, 0, 0, 200) );
+	if ( CL1.getAABB().intersectCircle( Mousef, 80.f ) )
+		CL1.color( ColorA(255, 0, 0, 200) );
 	else
-		CL1.Color( ColorA(255, 255, 255, 200) );
+		CL1.color( ColorA(255, 255, 255, 200) );
 
-	if ( Polygon2f::intersectQuad2( CL1.GetQuad() , CL2.GetQuad() ) ) {
-		CL1.Color( ColorA(0, 255, 0, 255) );
-		CL2.Color( ColorA(0, 255, 0, 255) );
+	if ( Polygon2f::intersectQuad2( CL1.getQuad() , CL2.getQuad() ) ) {
+		CL1.color( ColorA(0, 255, 0, 255) );
+		CL2.color( ColorA(0, 255, 0, 255) );
 	} else
-		CL2.Color( ColorA(255, 255, 255, 255) );
+		CL2.color( ColorA(255, 255, 255, 255) );
 
-	CL1.Angle(ang);
-	CL1.Scale(scale * 0.5f);
+	CL1.angle(ang);
+	CL1.scale(scale * 0.5f);
 
-	CL2.Position( (Float)Mousef.x - 64.f, (Float)Mousef.y + 128.f );
-	CL2.Angle(-ang);
+	CL2.position( (Float)Mousef.x - 64.f, (Float)Mousef.y + 128.f );
+	CL2.angle(-ang);
 
-	CL1.Draw();
-	CL2.Draw();
+	CL1.draw();
+	CL2.draw();
 
-	PR.FillMode( DRAW_LINE );
-	PR.DrawRectangle( CL1.GetAABB() );
+	PR.fillMode( DRAW_LINE );
+	PR.drawRectangle( CL1.getAABB() );
 
-	PR.DrawQuad( CL1.GetQuad() );
+	PR.drawQuad( CL1.getQuad() );
 	#endif
 
 	Ang = Ang + mWindow->elapsed().asMilliseconds() * 0.1f;
@@ -1090,7 +1090,7 @@ void EETest::Screen2() {
 	if ( ShowParticles )
 		Particles();
 
-	PR.SetColor( ColorA(0, 255, 0, 50) );
+	PR.setColor( ColorA(0, 255, 0, 50) );
 
 	Line2f Line( Vector2f(0.f, 0.f), Vector2f( (Float)mWindow->getWidth(), (Float)mWindow->getHeight() ) );
 	Line2f Line2( Vector2f(Mousef.x - 80.f, Mousef.y - 80.f), Vector2f(Mousef.x + 80.f, Mousef.y + 80.f) );
@@ -1108,29 +1108,29 @@ void EETest::Screen2() {
 		iL2 = false;
 
 	if (iL1 && iL2)
-		PR.SetColor( ColorA(255, 0, 0, 255) );
+		PR.setColor( ColorA(255, 0, 0, 255) );
 	else if (iL1)
-		PR.SetColor( ColorA(0, 0, 255, 255) );
+		PR.setColor( ColorA(0, 0, 255, 255) );
 	else if (iL2)
-		PR.SetColor( ColorA(255, 255, 0, 255) );
+		PR.setColor( ColorA(255, 255, 0, 255) );
 
-	PR.FillMode( DRAW_LINE );
-	PR.DrawCircle( Vector2f( Mousef.x, Mousef.y ), 80.f, (Uint32)(Ang/3) );
-	PR.DrawTriangle( Triangle2f( Vector2f( Mousef.x, Mousef.y - 10.f ), Vector2f( Mousef.x - 10.f, Mousef.y + 10.f ), Vector2f( Mousef.x + 10.f, Mousef.y + 10.f ) ) );
-	PR.DrawLine( Line2f( Vector2f(Mousef.x - 80.f, Mousef.y - 80.f), Vector2f(Mousef.x + 80.f, Mousef.y + 80.f) ) );
-	PR.DrawLine( Line2f( Vector2f(Mousef.x - 80.f, Mousef.y + 80.f), Vector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) );
-	PR.DrawLine( Line2f( Vector2f((Float)mWindow->getWidth(), 0.f), Vector2f( 0.f, (Float)mWindow->getHeight() ) ) );
-	PR.FillMode( DRAW_FILL );
-	PR.DrawQuad( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
-	PR.FillMode( DRAW_LINE );
-	PR.DrawRectangle( Rectf( Vector2f( Mousef.x - 80.f, Mousef.y - 80.f ), Sizef( 160.f, 160.f ) ), 45.f );
-	PR.DrawLine( Line2f( Vector2f(0.f, 0.f), Vector2f( (Float)mWindow->getWidth(), (Float)mWindow->getHeight() ) ) );
+	PR.fillMode( DRAW_LINE );
+	PR.drawCircle( Vector2f( Mousef.x, Mousef.y ), 80.f, (Uint32)(Ang/3) );
+	PR.drawTriangle( Triangle2f( Vector2f( Mousef.x, Mousef.y - 10.f ), Vector2f( Mousef.x - 10.f, Mousef.y + 10.f ), Vector2f( Mousef.x + 10.f, Mousef.y + 10.f ) ) );
+	PR.drawLine( Line2f( Vector2f(Mousef.x - 80.f, Mousef.y - 80.f), Vector2f(Mousef.x + 80.f, Mousef.y + 80.f) ) );
+	PR.drawLine( Line2f( Vector2f(Mousef.x - 80.f, Mousef.y + 80.f), Vector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) );
+	PR.drawLine( Line2f( Vector2f((Float)mWindow->getWidth(), 0.f), Vector2f( 0.f, (Float)mWindow->getHeight() ) ) );
+	PR.fillMode( DRAW_FILL );
+	PR.drawQuad( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
+	PR.fillMode( DRAW_LINE );
+	PR.drawRectangle( Rectf( Vector2f( Mousef.x - 80.f, Mousef.y - 80.f ), Sizef( 160.f, 160.f ) ), 45.f );
+	PR.drawLine( Line2f( Vector2f(0.f, 0.f), Vector2f( (Float)mWindow->getWidth(), (Float)mWindow->getHeight() ) ) );
 
-	TNP[3]->DrawQuadEx( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), Vector2f(), ang, Vector2f(scale,scale), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
+	TNP[3]->drawQuadEx( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), Vector2f(), ang, Vector2f(scale,scale), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
 
 	WP.update( et );
-	PR.SetColor( ColorA(0, 255, 0, 255) );
-	PR.DrawPoint( WP.getPos(), 10.f );
+	PR.setColor( ColorA(0, 255, 0, 255) );
+	PR.drawPoint( WP.getPos(), 10.f );
 }
 
 void EETest::Screen3() {
@@ -1143,38 +1143,38 @@ void EETest::Screen3() {
 	}
 	AnimVal = (!AnimSide) ? AnimVal+et.asMilliseconds() * 0.1f : AnimVal-et.asMilliseconds() * 0.1f;
 
-	Batch.SetTexture( TNP[3] );
-	Batch.LineLoopBegin();
+	Batch.setTexture( TNP[3] );
+	Batch.lineLoopBegin();
 	for ( Float j = 0; j < 360; j++ ) {
-		Batch.BatchLineLoop( HWidth + 350 * Math::sinAng(j), HHeight + 350 * Math::cosAng(j), HWidth + AnimVal * Math::sinAng(j+1), HHeight + AnimVal * Math::cosAng(j+1) );
+		Batch.batchLineLoop( HWidth + 350 * Math::sinAng(j), HHeight + 350 * Math::cosAng(j), HWidth + AnimVal * Math::sinAng(j+1), HHeight + AnimVal * Math::cosAng(j+1) );
 	}
-	Batch.Draw();
+	Batch.draw();
 }
 
 void EETest::Screen4() {
 	if ( NULL != mFBO ) {
-		mFBO->Bind();
-		mFBO->Clear();
+		mFBO->bind();
+		mFBO->clear();
 	}
 
 	if ( NULL != mVBO ) {
-		mBlindy.Position( 128-16, 128-16 );
-		mBlindy.Draw();
+		mBlindy.position( 128-16, 128-16 );
+		mBlindy.draw();
 
-		mVBO->Bind();
-		mVBO->Draw();
-		mVBO->Unbind();
+		mVBO->bind();
+		mVBO->draw();
+		mVBO->unbind();
 
-		mFBOText.Flags( FONT_DRAW_CENTER );
-		mFBOText.Draw( 128.f - (Float)(Int32)( mFBOText.GetTextWidth() * 0.5f ), 25.f - (Float)(Int32)( mFBOText.GetTextHeight() * 0.5f ) );
+		mFBOText.flags( FONT_DRAW_CENTER );
+		mFBOText.draw( 128.f - (Float)(Int32)( mFBOText.getTextWidth() * 0.5f ), 25.f - (Float)(Int32)( mFBOText.getTextHeight() * 0.5f ) );
 	}
 
 	if ( NULL != mFBO ) {
-		mFBO->Unbind();
+		mFBO->unbind();
 
-		if ( NULL != mFBO->GetTexture() ) {
-			mFBO->GetTexture()->Draw( (Float)mWindow->getWidth() * 0.5f - (Float)mFBO->GetWidth() * 0.5f, (Float)mWindow->getHeight() * 0.5f - (Float)mFBO->GetHeight() * 0.5f, Ang );
-			GlobalBatchRenderer::instance()->Draw();
+		if ( NULL != mFBO->getTexture() ) {
+			mFBO->getTexture()->draw( (Float)mWindow->getWidth() * 0.5f - (Float)mFBO->getWidth() * 0.5f, (Float)mWindow->getHeight() * 0.5f - (Float)mFBO->getHeight() * 0.5f, Ang );
+			GlobalBatchRenderer::instance()->draw();
 		}
 	}
 }
@@ -1195,7 +1195,7 @@ void EETest::Render() {
 							et.asMilliseconds(),
 							(Int32)Mouse.x,
 							(Int32)Mouse.y,
-							FileSystem::sizeToString( TF->MemorySize() ).c_str(),
+							FileSystem::sizeToString( TF->memorySize() ).c_str(),
 							FileSystem::sizeToString( (Uint32)MemoryManager::getTotalMemoryUsage() ).c_str(),
 							FileSystem::sizeToString( (Uint32)MemoryManager::getPeakMemoryUsage() ).c_str()
 						);
@@ -1209,7 +1209,7 @@ void EETest::Render() {
 						);
 		#endif
 
-		mInfoText.Text( mInfo );
+		mInfoText.text( mInfo );
 	}
 
 	if ( !MultiViewportMode ) {
@@ -1239,50 +1239,50 @@ void EETest::Render() {
 	ColorA ColRR2( 100, 100, 100, 220 );
 	ColorA ColRR3( 100, 100, 100, 220 );
 
-	mEEText.Flags( FONT_DRAW_CENTER );
+	mEEText.flags( FONT_DRAW_CENTER );
 
-	PR.SetColor( ColorA(150, 150, 150, 220) );
-	PR.FillMode( DRAW_FILL );
-	PR.DrawRectangle(
+	PR.setColor( ColorA(150, 150, 150, 220) );
+	PR.fillMode( DRAW_FILL );
+	PR.drawRectangle(
 				Rectf(
 					Vector2f(
 						0.f,
-						(Float)mWindow->getHeight() - mEEText.GetTextHeight()
+						(Float)mWindow->getHeight() - mEEText.getTextHeight()
 					),
 					Vector2f(
-						mEEText.GetTextWidth(),
-						mEEText.GetTextHeight()
+						mEEText.getTextWidth(),
+						mEEText.getTextHeight()
 					)
 				),
 				ColRR1, ColRR2, ColRR3, ColRR4
 	);
 
-	mEEText.Draw( 0.f, (Float)mWindow->getHeight() - mEEText.GetTextHeight() );
+	mEEText.draw( 0.f, (Float)mWindow->getHeight() - mEEText.getTextHeight() );
 
-	mInfoText.Draw( 6.f, 6.f );
+	mInfoText.draw( 6.f, 6.f );
 
 	if ( InBuf.active() ) {
 		Uint32 NLPos = 0;
 		Uint32 LineNum = InBuf.getCurPosLinePos( NLPos );
 		if ( InBuf.curPos() == (int)InBuf.buffer().size() && !LineNum ) {
-			FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f );
+			FF2->draw( "_", 6.f + FF2->getTextWidth(), 180.f );
 		} else {
-			FF2->SetText( InBuf.buffer().substr( NLPos, InBuf.curPos() - NLPos ) );
-			FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f + (Float)LineNum * (Float)FF2->GetFontHeight() );
+			FF2->setText( InBuf.buffer().substr( NLPos, InBuf.curPos() - NLPos ) );
+			FF2->draw( "_", 6.f + FF2->getTextWidth(), 180.f + (Float)LineNum * (Float)FF2->getFontHeight() );
 		}
 
-		FF2->SetText( "FPS: " + String::toStr( mWindow->FPS() ) );
-		FF2->Draw( mWindow->getWidth() - FF2->GetTextWidth() - 15, 0 );
+		FF2->setText( "FPS: " + String::toStr( mWindow->FPS() ) );
+		FF2->draw( mWindow->getWidth() - FF2->getTextWidth() - 15, 0 );
 
-		FF2->SetText( InBuf.buffer() );
-		FF2->Draw( 6, 180, FONT_DRAW_SHADOW );
+		FF2->setText( InBuf.buffer() );
+		FF2->draw( 6, 180, FONT_DRAW_SHADOW );
 	}
 
 	UIManager::instance()->Draw();
 	UIManager::instance()->Update();
 
 
-	Con.Draw();
+	Con.draw();
 }
 
 void EETest::Input() {
@@ -1293,7 +1293,7 @@ void EETest::Input() {
 	Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
 
 	if ( KM->isKeyUp( KEY_F1 ) )
-		Graphics::ShaderProgramManager::instance()->Reload();
+		Graphics::ShaderProgramManager::instance()->reload();
 
 	if ( !mWindow->visible() ) {
 		mWasMinimized = true;
@@ -1329,13 +1329,13 @@ void EETest::Input() {
 	if ( KM->altPressed() && KM->isKeyUp( KEY_C ) )
 		mWindow->center();
 
-	if ( KM->altPressed() && KM->isKeyUp( KEY_M ) && !Con.Active() ) {
+	if ( KM->altPressed() && KM->isKeyUp( KEY_M ) && !Con.active() ) {
 		if ( !mWindow->isMaximized() )
 			mWindow->maximize();
 	}
 
 	if ( KM->isKeyUp(KEY_F4) )
-		TF->ReloadAllTextures();
+		TF->reloadAllTextures();
 
 	if ( KM->altPressed() && KM->isKeyUp( KEY_RETURN ) ) {
 		if ( mWindow->isWindowed() ) {
@@ -1358,8 +1358,8 @@ void EETest::Input() {
 		KM->grabInput(  !KM->grabInput() );
 
 	if ( KM->isKeyUp( KEY_F3 ) || KM->isKeyUp( KEY_WORLD_26 ) || KM->isKeyUp( KEY_BACKSLASH ) ) {
-		Con.Toggle();
-		InBuf.active( !Con.Active() );
+		Con.toggle();
+		InBuf.active( !Con.active() );
 	}
 
 	if ( KM->isKeyUp(KEY_1) && KM->controlPressed() )
@@ -1474,13 +1474,13 @@ void EETest::Input() {
 			break;
 		case 2:
 			if ( KM->isKeyUp(KEY_S) )
-				SP.SetRepeations(1);
+				SP.setRepetitions(1);
 
 			if ( KM->isKeyUp(KEY_A) )
-				SP.SetRepeations(-1);
+				SP.setRepetitions(-1);
 
 			if ( KM->isKeyUp(KEY_D) )
-				SP.ReverseAnim( !SP.ReverseAnim() );
+				SP.reverseAnim( !SP.reverseAnim() );
 
 			if ( KM->mouseRightPressed() )
 				DrawBack = true;
@@ -1536,27 +1536,27 @@ void EETest::Process() {
 
 void EETest::ParticlesCallback( Particle * P, ParticleSystem * Me ) {
 	Float x, y, radio;
-	Vector2f MePos( Me->Position() );
+	Vector2f MePos( Me->position() );
 
-	radio = (Math::randf(1.f, 1.2f) + sin( 20.0f / P->Id() )) * 24;
-	x = MePos.x + radio * cos( (Float)P->Id() );
-	y = MePos.y + radio * sin( (Float)P->Id() );
-	P->Reset(x, y, Math::randf(-10.f, 10.f), Math::randf(-10.f, 10.f), Math::randf(-10.f, 10.f), Math::randf(-10.f, 10.f));
+	radio = (Math::randf(1.f, 1.2f) + sin( 20.0f / P->id() )) * 24;
+	x = MePos.x + radio * cos( (Float)P->id() );
+	y = MePos.y + radio * sin( (Float)P->id() );
+	P->reset(x, y, Math::randf(-10.f, 10.f), Math::randf(-10.f, 10.f), Math::randf(-10.f, 10.f), Math::randf(-10.f, 10.f));
 	P->Color( ColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + Math::randf() * 0.3f );
 }
 
 void EETest::Particles() {
-	PS[0].Position( Mousef );
+	PS[0].position( Mousef );
 
 	if ( DrawBack )
-		PS[1].Position( Mousef );
+		PS[1].position( Mousef );
 
-	PS[2].Position( HWidth, HHeight );
-	PS[3].Position(  Math::cosAng(Ang) * 220.f + HWidth + Math::randf(0.f, 10.f),  Math::sinAng(Ang) * 220.f + HHeight + Math::randf(0.f, 10.f) );
-	PS[4].Position( -Math::cosAng(Ang) * 220.f + HWidth + Math::randf(0.f, 10.f), -Math::sinAng(Ang) * 220.f + HHeight + Math::randf(0.f, 10.f) );
+	PS[2].position( HWidth, HHeight );
+	PS[3].position(  Math::cosAng(Ang) * 220.f + HWidth + Math::randf(0.f, 10.f),  Math::sinAng(Ang) * 220.f + HHeight + Math::randf(0.f, 10.f) );
+	PS[4].position( -Math::cosAng(Ang) * 220.f + HWidth + Math::randf(0.f, 10.f), -Math::sinAng(Ang) * 220.f + HHeight + Math::randf(0.f, 10.f) );
 
 	for ( Uint32 i = 0; i < PS.size(); i++ )
-		PS[i].Draw();
+		PS[i].draw();
 }
 
 #define GRABABLE_MASK_BIT (1<<31)

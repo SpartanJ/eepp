@@ -13,13 +13,13 @@ class EE_API JoystickManagerSFML : public JoystickManager {
 		
 		virtual ~JoystickManagerSFML();
 		
-		void Update();
+		void update();
 
-		void Close();
+		void close();
 
-		void Open();
+		void open();
 	protected:
-		void Create( const Uint32& index );
+		void create( const Uint32& index );
 };
 
 }}}}

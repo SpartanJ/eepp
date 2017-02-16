@@ -654,7 +654,7 @@ void UIWindow::Draw() {
 
 	if ( mWinFlags & UI_WIN_DRAW_SHADOW ) {
 		Primitives P;
-		P.ForceDraw( false );
+		P.forceDraw( false );
 
 		ColorA BeginC( 0, 0, 0, 25 * ( Alpha() / (Float)255 ) );
 		ColorA EndC( 0, 0, 0, 0 );
@@ -662,25 +662,25 @@ void UIWindow::Draw() {
 
 		Vector2i ShadowPos = mScreenPos + Vector2i( 0, 16 );
 
-		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y ), Sizef( mSize.width(), mSize.height() ) ), BeginC, BeginC, BeginC, BeginC );
+		P.drawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y ), Sizef( mSize.width(), mSize.height() ) ), BeginC, BeginC, BeginC, BeginC );
 
-		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y - SSize ), Sizef( mSize.width(), SSize ) ), EndC, BeginC, BeginC, EndC );
+		P.drawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y - SSize ), Sizef( mSize.width(), SSize ) ), EndC, BeginC, BeginC, EndC );
 
-		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x - SSize, ShadowPos.y ), Sizef( SSize, mSize.height() ) ), EndC, EndC, BeginC, BeginC );
+		P.drawRectangle( Rectf( Vector2f( ShadowPos.x - SSize, ShadowPos.y ), Sizef( SSize, mSize.height() ) ), EndC, EndC, BeginC, BeginC );
 
-		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x + mSize.width(), ShadowPos.y ), Sizef( SSize, mSize.height() ) ), BeginC, BeginC, EndC, EndC );
+		P.drawRectangle( Rectf( Vector2f( ShadowPos.x + mSize.width(), ShadowPos.y ), Sizef( SSize, mSize.height() ) ), BeginC, BeginC, EndC, EndC );
 
-		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y + mSize.height() ), Sizef( mSize.width(), SSize ) ), BeginC, EndC, EndC, BeginC );
+		P.drawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y + mSize.height() ), Sizef( mSize.width(), SSize ) ), BeginC, EndC, EndC, BeginC );
 
-		P.DrawTriangle( Triangle2f( Vector2f( ShadowPos.x + mSize.width(), ShadowPos.y ), Vector2f( ShadowPos.x + mSize.width(), ShadowPos.y - SSize ), Vector2f( ShadowPos.x + mSize.width() + SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
+		P.drawTriangle( Triangle2f( Vector2f( ShadowPos.x + mSize.width(), ShadowPos.y ), Vector2f( ShadowPos.x + mSize.width(), ShadowPos.y - SSize ), Vector2f( ShadowPos.x + mSize.width() + SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
 
-		P.DrawTriangle( Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y ), Vector2f( ShadowPos.x, ShadowPos.y - SSize ), Vector2f( ShadowPos.x - SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
+		P.drawTriangle( Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y ), Vector2f( ShadowPos.x, ShadowPos.y - SSize ), Vector2f( ShadowPos.x - SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
 
-		P.DrawTriangle( Triangle2f( Vector2f( ShadowPos.x + mSize.width(), ShadowPos.y + mSize.height() ), Vector2f( ShadowPos.x + mSize.width(), ShadowPos.y + mSize.height() + SSize ), Vector2f( ShadowPos.x + mSize.width() + SSize, ShadowPos.y + mSize.height() ) ), BeginC, EndC, EndC );
+		P.drawTriangle( Triangle2f( Vector2f( ShadowPos.x + mSize.width(), ShadowPos.y + mSize.height() ), Vector2f( ShadowPos.x + mSize.width(), ShadowPos.y + mSize.height() + SSize ), Vector2f( ShadowPos.x + mSize.width() + SSize, ShadowPos.y + mSize.height() ) ), BeginC, EndC, EndC );
 
-		P.DrawTriangle( Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y + mSize.height() ), Vector2f( ShadowPos.x - SSize, ShadowPos.y + mSize.height() ), Vector2f( ShadowPos.x, ShadowPos.y + mSize.height() + SSize ) ), BeginC, EndC, EndC );
+		P.drawTriangle( Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y + mSize.height() ), Vector2f( ShadowPos.x - SSize, ShadowPos.y + mSize.height() ), Vector2f( ShadowPos.x, ShadowPos.y + mSize.height() + SSize ) ), BeginC, EndC, EndC );
 
-		P.ForceDraw( true );
+		P.forceDraw( true );
 	}
 }
 

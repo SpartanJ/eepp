@@ -26,20 +26,20 @@ TTFFont::~TTFFont() {
 	hkFontManager::instance()->Destroy();
 }
 
-bool TTFFont::LoadFromPack( Pack* Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) {
+bool TTFFont::loadFromPack( Pack* Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) {
 	bool Ret = false;
 	SafeDataPointer PData;
 
 	if ( Pack->isOpen() && Pack->extractFileToMemory( FilePackPath, PData ) ) {
 		mFilepath = FilePackPath;
 
-		Ret = LoadFromMemory( PData.Data, PData.DataSize, Size, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
+		Ret = loadFromMemory( PData.Data, PData.DataSize, Size, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
 	}
 
 	return Ret;
 }
 
-bool TTFFont::LoadFromMemory( Uint8* TTFData, const unsigned int& TTFDataSize, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) {
+bool TTFFont::loadFromMemory( Uint8* TTFData, const unsigned int& TTFDataSize, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) {
 	if ( !mFilepath.size() )
 		mFilepath = "from memory";
 
@@ -55,7 +55,7 @@ bool TTFFont::LoadFromMemory( Uint8* TTFData, const unsigned int& TTFDataSize, c
 	return iLoad( Size, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
 }
 
-bool TTFFont::Load( const std::string& Filepath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) {
+bool TTFFont::load( const std::string& Filepath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) {
 	mFilepath			= Filepath;
 
 	if ( FileSystem::fileExists( Filepath ) ) {
@@ -73,7 +73,7 @@ bool TTFFont::Load( const std::string& Filepath, const unsigned int& Size, EE_TT
 		Pack * tPack = PackManager::instance()->exists( mFilepath );
 
 		if ( NULL != tPack ) {
-			return LoadFromPack( tPack, mFilepath, Size, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
+			return loadFromPack( tPack, mFilepath, Size, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
 		}
 	}
 
@@ -188,13 +188,13 @@ bool TTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Ui
 				TempGlyph.MaxX = TempGlyph.MinX + GlyphRect.x;
 			}
 
-			Image out( TempOutGlyphSurface, GlyphRect.x, GlyphRect.y, 4 ); out.AvoidFreeImage( true );
-			Image in( TempGlyphSurface, mFont->Current()->Pixmap()->width, mFont->Current()->Pixmap()->rows, 4 ); in.AvoidFreeImage( true );
+			Image out( TempOutGlyphSurface, GlyphRect.x, GlyphRect.y, 4 ); out.avoidFreeImage( true );
+			Image in( TempGlyphSurface, mFont->Current()->Pixmap()->width, mFont->Current()->Pixmap()->rows, 4 ); in.avoidFreeImage( true );
 
-			Uint32 px = ( ( (Float)out.Width()	- (Float)in.Width() )		* 0.5f );
-			Uint32 py = ( ( (Float)out.Height()	- (Float)in.Height() )	* 0.5f );
+			Uint32 px = ( ( (Float)out.width()	- (Float)in.width() )		* 0.5f );
+			Uint32 py = ( ( (Float)out.height()	- (Float)in.height() )	* 0.5f );
 
-			out.Blit( &in, px, py );
+			out.blit( &in, px, py );
 
 			TexGlyph = reinterpret_cast<Uint32 *> ( TempOutGlyphSurface );
 		} else {
@@ -272,7 +272,7 @@ bool TTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Ui
 				}
 
 				// Create the outline
-				MakeOutline( alpha_init, alpha_final, nGlyphS.x, nGlyphS.y, OutlineSize );
+				makeOutline( alpha_init, alpha_final, nGlyphS.x, nGlyphS.y, OutlineSize );
 
 				for ( Int32 y = 0; y < nGlyphS.y; y++ ) {
 					for( Int32 x = 0; x < nGlyphS.x; x++) {
@@ -306,45 +306,45 @@ bool TTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Ui
 	mTexReady = true;
 
 	if ( !mThreadedLoading )
-		UpdateLoading();
+		updateLoading();
 
 	return true;
 }
 
-void TTFFont::UpdateLoading() {
+void TTFFont::updateLoading() {
 	if ( mTexReady && NULL != mPixels ) {
 		std::string name( FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( mFilepath ) ) );
 
-		mTexId = TextureFactory::instance()->LoadFromPixels( reinterpret_cast<unsigned char *> ( &mPixels[0] ), (Uint32)mTexWidth, (Uint32)mTexHeight, 4, false, CLAMP_TO_EDGE, false, false, name );
+		mTexId = TextureFactory::instance()->loadFromPixels( reinterpret_cast<unsigned char *> ( &mPixels[0] ), (Uint32)mTexWidth, (Uint32)mTexHeight, 4, false, CLAMP_TO_EDGE, false, false, name );
 
 		eeSAFE_DELETE_ARRAY( mPixels );
 
-		RebuildFromGlyphs();
+		rebuildFromGlyphs();
 
 		eePRINTL( "TTF Font %s loaded.", mFilepath.c_str() );
 	}
 }
 
-void TTFFont::RebuildFromGlyphs() {
+void TTFFont::rebuildFromGlyphs() {
 	Float Top, Bottom;
 	Rectf tR;
 
 	mTexCoords.resize( mNumChars );
 
-	Texture * Tex = TextureFactory::instance()->GetTexture( mTexId );
+	Texture * Tex = TextureFactory::instance()->getTexture( mTexId );
 
-	TextureFactory::instance()->Bind( Tex );
+	TextureFactory::instance()->bind( Tex );
 
 	eeGlyph tGlyph;
 
 	for (unsigned int i = 0; i < mNumChars; i++) {
 		tGlyph		= mGlyphs[i];
 
-		tR.Left		= (Float)tGlyph.CurX / Tex->Width();
-		tR.Top		= (Float)tGlyph.CurY / Tex->Height();
+		tR.Left		= (Float)tGlyph.CurX / Tex->width();
+		tR.Top		= (Float)tGlyph.CurY / Tex->height();
 
-		tR.Right	= (Float)(tGlyph.CurX + tGlyph.CurW) / Tex->Width();
-		tR.Bottom	= (Float)(tGlyph.CurY + tGlyph.CurH) / Tex->Height();
+		tR.Right	= (Float)(tGlyph.CurX + tGlyph.CurW) / Tex->width();
+		tR.Bottom	= (Float)(tGlyph.CurY + tGlyph.CurH) / Tex->height();
 
 		Top			= (Float)mHeight + mDescent	- tGlyph.GlyphH - tGlyph.MinY;
 		Bottom		= (Float)mHeight + mDescent	+ tGlyph.GlyphH - tGlyph.MaxY;
@@ -368,16 +368,16 @@ void TTFFont::RebuildFromGlyphs() {
 	}
 }
 
-bool TTFFont::SaveTexture( const std::string& Filepath, const EE_SAVE_TYPE& Format ) {
-	Texture* Tex = TextureFactory::instance()->GetTexture(mTexId);
+bool TTFFont::saveTexture( const std::string& Filepath, const EE_SAVE_TYPE& Format ) {
+	Texture* Tex = TextureFactory::instance()->getTexture(mTexId);
 
 	if ( Tex != NULL )
-		return Tex->SaveToFile( Filepath, Format );
+		return Tex->saveToFile( Filepath, Format );
 
 	return false;
 }
 
-bool TTFFont::SaveCoordinates( const std::string& Filepath ) {
+bool TTFFont::saveCoordinates( const std::string& Filepath ) {
 	IOStreamFile fs( Filepath, std::ios::out | std::ios::binary );
 
 	if ( fs.isOpen() ) {
@@ -398,7 +398,7 @@ bool TTFFont::SaveCoordinates( const std::string& Filepath ) {
 		// Write the glyphs
 		fs.write( reinterpret_cast<const char*> (&mGlyphs[0]), sizeof(eeGlyph) * mGlyphs.size() );
 
-		RebuildFromGlyphs();
+		rebuildFromGlyphs();
 
 		return true;
 	} else {
@@ -408,11 +408,11 @@ bool TTFFont::SaveCoordinates( const std::string& Filepath ) {
 	return false;
 }
 
-bool TTFFont::Save( const std::string& TexturePath, const std::string& CoordinatesDatPath, const EE_SAVE_TYPE& Format ) {
-	return SaveTexture(TexturePath, Format) && SaveCoordinates( CoordinatesDatPath );
+bool TTFFont::save( const std::string& TexturePath, const std::string& CoordinatesDatPath, const EE_SAVE_TYPE& Format ) {
+	return saveTexture(TexturePath, Format) && saveCoordinates( CoordinatesDatPath );
 }
 
-void TTFFont::MakeOutline( Uint8 *in, Uint8 *out, Int16 w, Int16 h , Int16 OutlineSize ) {
+void TTFFont::makeOutline( Uint8 *in, Uint8 *out, Int16 w, Int16 h , Int16 OutlineSize ) {
 	int y, x, s_y, s_x, get_y, get_x, index, pos;
 	Uint8 c;
 
@@ -441,11 +441,11 @@ void TTFFont::MakeOutline( Uint8 *in, Uint8 *out, Int16 w, Int16 h , Int16 Outli
 	}
 }
 
-bool TTFFont::ThreadedLoading() const {
+bool TTFFont::threadedLoading() const {
 	return mThreadedLoading;
 }
 
-void TTFFont::ThreadedLoading( const bool& isThreaded ) {
+void TTFFont::threadedLoading( const bool& isThreaded ) {
 	mThreadedLoading = isThreaded;
 }
 

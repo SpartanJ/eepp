@@ -256,18 +256,18 @@ void UIControl::Draw() {
 
 		if ( UIManager::instance()->HighlightFocus() && UIManager::instance()->FocusControl() == this ) {
 			Primitives P;
-			P.FillMode( DRAW_LINE );
-			P.BlendMode( Blend() );
-			P.SetColor( UIManager::instance()->HighlightFocusColor() );
-			P.DrawRectangle( GetRectf() );
+			P.fillMode( DRAW_LINE );
+			P.blendMode( Blend() );
+			P.setColor( UIManager::instance()->HighlightFocusColor() );
+			P.drawRectangle( GetRectf() );
 		}
 
 		if ( UIManager::instance()->HighlightOver() && UIManager::instance()->OverControl() == this ) {
 			Primitives P;
-			P.FillMode( DRAW_LINE );
-			P.BlendMode( Blend() );
-			P.SetColor( UIManager::instance()->HighlightOverColor() );
-			P.DrawRectangle( GetRectf() );
+			P.fillMode( DRAW_LINE );
+			P.blendMode( Blend() );
+			P.setColor( UIManager::instance()->HighlightOverColor() );
+			P.drawRectangle( GetRectf() );
 		}
 	}
 }
@@ -528,45 +528,45 @@ Rectf UIControl::GetRectf() {
 void UIControl::BackgroundDraw() {
 	Primitives P;
 	Rectf R = GetRectf();
-	P.BlendMode( mBackground->Blend() );
-	P.SetColor( mBackground->Color() );
+	P.blendMode( mBackground->Blend() );
+	P.setColor( mBackground->Color() );
 
 	if ( 4 == mBackground->Colors().size() ) {
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( R, mBackground->Colors()[0], mBackground->Colors()[1], mBackground->Colors()[2], mBackground->Colors()[3], mBackground->Corners() );
+			P.drawRoundedRectangle( R, mBackground->Colors()[0], mBackground->Colors()[1], mBackground->Colors()[2], mBackground->Colors()[3], mBackground->Corners() );
 		} else {
-			P.DrawRectangle( R, mBackground->Colors()[0], mBackground->Colors()[1], mBackground->Colors()[2], mBackground->Colors()[3] );
+			P.drawRectangle( R, mBackground->Colors()[0], mBackground->Colors()[1], mBackground->Colors()[2], mBackground->Colors()[3] );
 		}
 	} else {
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->Corners() );
+			P.drawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->Corners() );
 		} else {
-			P.DrawRectangle( R );
+			P.drawRectangle( R );
 		}
 	}
 }
 
 void UIControl::BorderDraw() {
 	Primitives P;
-	P.FillMode( DRAW_LINE );
-	P.BlendMode( Blend() );
-	P.LineWidth( (Float)mBorder->Width() );
-	P.SetColor( mBorder->Color() );
+	P.fillMode( DRAW_LINE );
+	P.blendMode( Blend() );
+	P.lineWidth( (Float)mBorder->Width() );
+	P.setColor( mBorder->Color() );
 
 	//! @TODO: Check why was this +0.1f -0.1f?
 	if ( mFlags & UI_CLIP_ENABLE ) {
 		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.width() - 0.1f, (Float)mSize.height() - 0.1f ) );
 
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
+			P.drawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
 		} else {
-			P.DrawRectangle( R );
+			P.drawRectangle( R );
 		}
 	} else {
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
+			P.drawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
 		} else {
-			P.DrawRectangle( GetRectf() );
+			P.drawRectangle( GetRectf() );
 		}
 	}
 }
@@ -1085,28 +1085,28 @@ Recti UIControl::MakePadding( bool PadLeft, bool PadRight, bool PadTop, bool Pad
 					tSubTexture = tComplex->GetSubTextureSide( UISkinState::StateNormal, UISkinComplex::Left );
 
 					if ( NULL != tSubTexture )
-						tPadding.Left = tSubTexture->RealSize().width();
+						tPadding.Left = tSubTexture->realSize().width();
 				}
 
 				if ( PadRight ) {
 					tSubTexture = tComplex->GetSubTextureSide( UISkinState::StateNormal, UISkinComplex::Right );
 
 					if ( NULL != tSubTexture )
-						tPadding.Right = tSubTexture->RealSize().width();
+						tPadding.Right = tSubTexture->realSize().width();
 				}
 
 				if ( PadTop ) {
 					tSubTexture = tComplex->GetSubTextureSide( UISkinState::StateNormal, UISkinComplex::Up );
 
 					if ( NULL != tSubTexture )
-						tPadding.Top = tSubTexture->RealSize().height();
+						tPadding.Top = tSubTexture->realSize().height();
 				}
 
 				if ( PadBottom ) {
 					tSubTexture = tComplex->GetSubTextureSide( UISkinState::StateNormal, UISkinComplex::Down );
 
 					if ( NULL != tSubTexture )
-						tPadding.Bottom = tSubTexture->RealSize().height();
+						tPadding.Bottom = tSubTexture->realSize().height();
 				}
 			}
 		}
@@ -1141,7 +1141,7 @@ Sizei UIControl::GetSkinSize( UISkin * Skin, const Uint32& State ) {
 		SubTexture * tSubTexture = Skin->GetSubTexture( State );
 
 		if ( NULL != tSubTexture ) {
-			tSize = tSubTexture->RealSize();
+			tSize = tSubTexture->realSize();
 		}
 
 		if ( Skin->GetType() == UISkin::SkinComplex ) {
@@ -1150,25 +1150,25 @@ Sizei UIControl::GetSkinSize( UISkin * Skin, const Uint32& State ) {
 			tSubTexture = SkinC->GetSubTextureSide( State, UISkinComplex::Up );
 
 			if ( NULL != tSubTexture ) {
-				tSize.y += tSubTexture->RealSize().height();
+				tSize.y += tSubTexture->realSize().height();
 			}
 
 			tSubTexture = SkinC->GetSubTextureSide( State, UISkinComplex::Down );
 
 			if ( NULL != tSubTexture ) {
-				tSize.y += tSubTexture->RealSize().height();
+				tSize.y += tSubTexture->realSize().height();
 			}
 
 			tSubTexture = SkinC->GetSubTextureSide( State, UISkinComplex::Left );
 
 			if ( NULL != tSubTexture ) {
-				tSize.x += tSubTexture->RealSize().width();
+				tSize.x += tSubTexture->realSize().width();
 			}
 
 			tSubTexture = SkinC->GetSubTextureSide( State, UISkinComplex::Right );
 
 			if ( NULL != tSubTexture ) {
-				tSize.x += tSubTexture->RealSize().width();
+				tSize.x += tSubTexture->realSize().width();
 			}
 		}
 	}

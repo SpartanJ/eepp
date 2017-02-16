@@ -12,7 +12,7 @@ class EE_API VertexBufferManager : public Container<VertexBuffer> {
 	public:
 		virtual ~VertexBufferManager();
 
-		void Reload();
+		void reload();
 	protected:
 		VertexBufferManager();
 };

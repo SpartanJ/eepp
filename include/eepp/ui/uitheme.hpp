@@ -52,23 +52,23 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		static UITheme * LoadFromPath( UITheme * tTheme, const std::string& Path, const std::string ImgExt = "png" );
 
-		static UITheme * LoadFromTextureAtlas( Graphics::TextureAtlas * TextureAtlas, const std::string& Name, const std::string NameAbbr );
+		static UITheme * LoadFromTextureAtlas( Graphics::TextureAtlas * TextureAtlas, const std::string& getName, const std::string NameAbbr );
 
-		static UITheme * LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt = "png" );
+		static UITheme * LoadFromPath( const std::string& Path, const std::string& getName, const std::string& NameAbbr, const std::string ImgExt = "png" );
 
 		void AddThemeElement( const std::string& Element );
 
 		void AddThemeIcon( const std::string& Icon );
 
-		UITheme( const std::string& Name, const std::string& Abbr, Graphics::Font * DefaultFont = NULL );
+		UITheme( const std::string& getName, const std::string& Abbr, Graphics::Font * DefaultFont = NULL );
 
 		virtual ~UITheme();
 
-		const std::string& Name() const;
+		const std::string& getName() const;
 
-		void Name( const std::string& name );
+		void setName( const std::string& name );
 
-		const Uint32& Id() const;
+		const Uint32& getId() const;
 
 		const std::string& Abbr() const;
 

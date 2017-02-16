@@ -30,12 +30,12 @@ void MapObjectLayer::DeallocateLayer() {
 }
 
 void MapObjectLayer::Draw( const Vector2f &Offset ) {
-	GlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->draw();
 
 	ObjList::iterator it;
 
-	GLi->PushMatrix();
-	GLi->Translatef( mOffset.x, mOffset.y, 0.0f );
+	GLi->pushMatrix();
+	GLi->translatef( mOffset.x, mOffset.y, 0.0f );
 
 	for ( it = mObjects.begin(); it != mObjects.end(); it++ ) {
 		(*it)->Draw();
@@ -50,14 +50,14 @@ void MapObjectLayer::Draw( const Vector2f &Offset ) {
 			GameObject * Obj = (*it);
 
 			if ( Obj->Blocked() ) {
-				Tex->DrawEx( Obj->Pos().x, Obj->Pos().y, Obj->Size().width(), Obj->Size().height(), 0, Vector2f::One, Col, Col, Col, Col );
+				Tex->drawEx( Obj->Pos().x, Obj->Pos().y, Obj->Size().width(), Obj->Size().height(), 0, Vector2f::One, Col, Col, Col, Col );
 			}
 		}
 	}
 
-	GlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->draw();
 
-	GLi->PopMatrix();
+	GLi->popMatrix();
 }
 
 void MapObjectLayer::Update() {

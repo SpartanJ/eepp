@@ -78,13 +78,13 @@ void UITextInput::DrawWaitingCursor() {
 		mWaitCursorTime += UIManager::instance()->Elapsed().asMilliseconds();
 
 		if ( mShowingWait ) {
-			bool disableSmooth = mShowingWait && GLi->IsLineSmooth();
+			bool disableSmooth = mShowingWait && GLi->isLineSmooth();
 
 			if ( disableSmooth )
-				GLi->LineSmooth( false );
+				GLi->lineSmooth( false );
 
 			Primitives P;
-			P.SetColor( mFontColor );
+			P.setColor( mFontColor );
 
 			Float CurPosX = mScreenPos.x + mAlignOffset.x + mCurPos.x + 1 + mPadding.Left;
 			Float CurPosY = mScreenPos.y + mAlignOffset.y + mCurPos.y		+ mPadding.Top;
@@ -92,10 +92,10 @@ void UITextInput::DrawWaitingCursor() {
 			if ( CurPosX > (Float)mScreenPos.x + (Float)mSize.x )
 				CurPosX = (Float)mScreenPos.x + (Float)mSize.x;
 
-			P.DrawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->Font()->GetFontHeight() ) ) );
+			P.drawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->font()->getFontHeight() ) ) );
 
 			if ( disableSmooth )
-				GLi->LineSmooth( true );
+				GLi->lineSmooth( true );
 		}
 
 		if ( mWaitCursorTime >= 500.f ) {
@@ -151,13 +151,13 @@ void UITextInput::AlignFix() {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
 
-		mTextCache->Font()->SetText( mTextBuffer.buffer().substr( NLPos, mTextBuffer.curPos() - NLPos ) );
+		mTextCache->font()->setText( mTextBuffer.buffer().substr( NLPos, mTextBuffer.curPos() - NLPos ) );
 
-		Float tW	= mTextCache->Font()->GetTextWidth();
+		Float tW	= mTextCache->font()->getTextWidth();
 		Float tX	= mAlignOffset.x + tW;
 
 		mCurPos.x	= tW;
-		mCurPos.y	= (Float)LineNum * (Float)mTextCache->Font()->GetFontHeight();
+		mCurPos.y	= (Float)LineNum * (Float)mTextCache->font()->getFontHeight();
 
 		if ( !mTextBuffer.supportNewLine() ) {
 			if ( tX < 0.f )
@@ -215,11 +215,11 @@ const String& UITextInput::Text() {
 }
 
 void UITextInput::ShrinkText( const Uint32& MaxWidth ) {
-	mTextCache->Text( mTextBuffer.buffer() );
+	mTextCache->text( mTextBuffer.buffer() );
 
 	UITextBox::ShrinkText( MaxWidth );
 
-	mTextBuffer.buffer( mTextCache->Text() );
+	mTextBuffer.buffer( mTextCache->text() );
 
 	AlignFix();
 }
@@ -232,7 +232,7 @@ Uint32 UITextInput::OnMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 		Vector2i controlPos( Pos );
 		WorldToControl( controlPos );
 
-		Int32 curPos = mTextCache->Font()->FindClosestCursorPosFromPoint( mTextCache->Text(), controlPos );
+		Int32 curPos = mTextCache->font()->findClosestCursorPosFromPoint( mTextCache->text(), controlPos );
 
 		if ( -1 != curPos ) {
 			mTextBuffer.curPos( curPos );

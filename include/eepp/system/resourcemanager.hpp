@@ -113,18 +113,18 @@ template <class T>
 T * ResourceManager<T>::add( T * Resource ) {
 	if ( NULL != Resource ) {
 		if ( mUniqueId ) {
-			Uint32 c = count( Resource->Id() );
+			Uint32 c = count( Resource->getId() );
 
 			if ( 0 == c ) {
 				mResources.push_back( Resource );
 
 				return Resource;
 			} else {
-				std::string RealName( Resource->Name() );
+				std::string RealName( Resource->getName() );
 
-				while ( count( Resource->Id() ) ) {
+				while ( count( Resource->getId() ) ) {
 					c++;
-					Resource->Name( RealName + String::toStr( c ) );
+					Resource->setName( RealName + String::toStr( c ) );
 				}
 
 				return add( Resource );
@@ -173,7 +173,7 @@ bool ResourceManager<T>::existsId( const Uint32& Id ) {
 	typename std::list<T*>::iterator it;
 
 	for ( it = mResources.begin() ; it != mResources.end(); it++ )
-		if ( (*it)->Id() == Id )
+		if ( (*it)->getId() == Id )
 			return true;
 
 	return false;
@@ -193,7 +193,7 @@ T * ResourceManager<T>::getById( const Uint32& id ) {
 	for ( it = mResources.rbegin(); it != mResources.rend(); it++ ) {
 		sp = (*it);
 
-		if ( id == sp->Id() )
+		if ( id == sp->getId() )
 			return sp;
 	}
 
@@ -209,7 +209,7 @@ void ResourceManager<T>::printNames() {
 	for ( it = mResources.rbegin(); it != mResources.rend(); it++ ) {
 		sp = (*it);
 
-		eePRINT( "'%s'\n", sp->Name().c_str() );
+		eePRINT( "'%s'\n", sp->getName().c_str() );
 	}
 }
 
@@ -224,7 +224,7 @@ Uint32 ResourceManager<T>::count( const Uint32& Id ) {
 	Uint32 Count = 0;
 
 	for ( it = mResources.begin() ; it != mResources.end(); it++ )
-		if ( (*it)->Id() == Id )
+		if ( (*it)->getId() == Id )
 			Count++;
 
 	return Count;

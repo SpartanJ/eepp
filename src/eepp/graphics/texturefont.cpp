@@ -20,8 +20,8 @@ TextureFont::TextureFont( const std::string FontName ) :
 TextureFont::~TextureFont() {
 }
 
-bool TextureFont::Load( const Uint32& TexId, const unsigned int& StartChar, const unsigned int& Spacing, const unsigned int& TexColumns, const unsigned int& TexRows, const Uint16& NumChars ) {
-	Texture * Tex = TextureFactory::instance()->GetTexture( TexId );
+bool TextureFont::load( const Uint32& TexId, const unsigned int& StartChar, const unsigned int& Spacing, const unsigned int& TexColumns, const unsigned int& TexRows, const Uint16& NumChars ) {
+	Texture * Tex = TextureFactory::instance()->getTexture( TexId );
 
 	mTexId = TexId;
 
@@ -34,8 +34,8 @@ bool TextureFont::Load( const Uint32& TexId, const unsigned int& StartChar, cons
 		mtX				= ( 1 / static_cast<Float>( mTexColumns ) );
 		mtY				= ( 1 / static_cast<Float>( mTexRows ) );
 
-		mFWidth			= (Float)( Tex->Width() / mTexColumns );
-		mFHeight		= (Float)( Tex->Height() / mTexRows );
+		mFWidth			= (Float)( Tex->width() / mTexColumns );
+		mFHeight		= (Float)( Tex->height() / mTexRows );
 		mHeight			= mSize = mLineSkip = (unsigned int)mFHeight;
 
 		if ( Spacing == 0 )
@@ -43,9 +43,9 @@ bool TextureFont::Load( const Uint32& TexId, const unsigned int& StartChar, cons
 		else
 			mSpacing = Spacing;
 
-		BuildFont();
+		buildFont();
 
-		eePRINTL( "Texture Font %s loaded.", Tex->Filepath().c_str() );
+		eePRINTL( "Texture Font %s loaded.", Tex->filepath().c_str() );
 
 		return true;
 	}
@@ -55,13 +55,13 @@ bool TextureFont::Load( const Uint32& TexId, const unsigned int& StartChar, cons
 	return false;
 }
 
-void TextureFont::BuildFont() {
+void TextureFont::buildFont() {
 	Float cX = 0, cY = 0;
 
 	mTexCoords.resize( mNumChars );
 	mGlyphs.resize( mNumChars );
 
-	TextureFactory::instance()->Bind( mTexId );
+	TextureFactory::instance()->bind( mTexId );
 
 	int c = 0;
 
@@ -99,26 +99,26 @@ void TextureFont::BuildFont() {
 	}
 }
 
-void TextureFont::BuildFromGlyphs() {
+void TextureFont::buildFromGlyphs() {
 	Float Top, Bottom;
 	Rectf tR;
 
 	mTexCoords.resize( mNumChars );
 
-	Texture * Tex = TextureFactory::instance()->GetTexture( mTexId );
+	Texture * Tex = TextureFactory::instance()->getTexture( mTexId );
 
-	TextureFactory::instance()->Bind( Tex );
+	TextureFactory::instance()->bind( Tex );
 
 	eeGlyph tGlyph;
 
 	for (unsigned int i = 0; i < mNumChars; i++) {
 		tGlyph		= mGlyphs[i];
 
-		tR.Left		= (Float)tGlyph.CurX / Tex->Width();
-		tR.Top		= (Float)tGlyph.CurY / Tex->Height();
+		tR.Left		= (Float)tGlyph.CurX / Tex->width();
+		tR.Top		= (Float)tGlyph.CurY / Tex->height();
 
-		tR.Right	= (Float)(tGlyph.CurX + tGlyph.CurW) / Tex->Width();
-		tR.Bottom	= (Float)(tGlyph.CurY + tGlyph.CurH) / Tex->Height();
+		tR.Right	= (Float)(tGlyph.CurX + tGlyph.CurW) / Tex->width();
+		tR.Bottom	= (Float)(tGlyph.CurY + tGlyph.CurH) / Tex->height();
 
 		Top = 		mHeight + mDescent 	- tGlyph.GlyphH - tGlyph.MinY;
 		Bottom = 	mHeight + mDescent 	+ tGlyph.GlyphH - tGlyph.MaxY;
@@ -142,43 +142,43 @@ void TextureFont::BuildFromGlyphs() {
 	}
 }
 
-bool TextureFont::Load( const Uint32& TexId, const std::string& CoordinatesDatPath ) {
+bool TextureFont::load( const Uint32& TexId, const std::string& CoordinatesDatPath ) {
 	if ( FileSystem::fileExists( CoordinatesDatPath ) ) {
 		IOStreamFile IOS( CoordinatesDatPath, std::ios::in | std::ios::binary );
 
-		return LoadFromStream( TexId, IOS );
+		return loadFromStream( TexId, IOS );
 	} else if ( PackManager::instance()->fallbackToPacks() ) {
 		std::string tPath( CoordinatesDatPath );
 
 		Pack * tPack = PackManager::instance()->exists( tPath );
 
 		if ( NULL != tPack ) {
-			return LoadFromPack( TexId, tPack, tPath );
+			return loadFromPack( TexId, tPack, tPath );
 		}
 	}
 
 	return false;
 }
 
-bool TextureFont::LoadFromPack( const Uint32& TexId, Pack* Pack, const std::string& FilePackPath ) {
+bool TextureFont::loadFromPack( const Uint32& TexId, Pack* Pack, const std::string& FilePackPath ) {
 	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( FilePackPath ) ) {
 		SafeDataPointer PData;
 
 		Pack->extractFileToMemory( FilePackPath, PData );
 
-		return LoadFromMemory( TexId, reinterpret_cast<const char*> ( PData.Data ), PData.DataSize );
+		return loadFromMemory( TexId, reinterpret_cast<const char*> ( PData.Data ), PData.DataSize );
 	}
 
 	return false;
 }
 
-bool TextureFont::LoadFromMemory( const Uint32& TexId, const char* CoordData, const Uint32& CoordDataSize ) {
+bool TextureFont::loadFromMemory( const Uint32& TexId, const char* CoordData, const Uint32& CoordDataSize ) {
 	IOStreamMemory IOS( CoordData, CoordDataSize );
 
-	return LoadFromStream( TexId, IOS );
+	return loadFromStream( TexId, IOS );
 }
 
-bool TextureFont::LoadFromStream( const Uint32& TexId, IOStream& IOS ) {
+bool TextureFont::loadFromStream( const Uint32& TexId, IOStream& IOS ) {
 	mTexId = TexId;
 
 	if ( mTexId > 0 ) {
@@ -203,7 +203,7 @@ bool TextureFont::LoadFromStream( const Uint32& TexId, IOStream& IOS ) {
 			// Read the glyphs
 			IOS.read( (char*)&mGlyphs[0], sizeof(eeGlyph) * mNumChars );
 
-			BuildFromGlyphs();
+			buildFromGlyphs();
 
 			mLoadedCoords = true;
 

@@ -15,32 +15,32 @@ TextureAtlasManager::TextureAtlasManager() :
 TextureAtlasManager::~TextureAtlasManager() {
 }
 
-TextureAtlas * TextureAtlasManager::Load( const std::string& TextureAtlasPath ) {
+TextureAtlas * TextureAtlasManager::load( const std::string& TextureAtlasPath ) {
 	TextureAtlasLoader loader( TextureAtlasPath );
 
-	return loader.GetTextureAtlas();
+	return loader.getTextureAtlas();
 }
 
-TextureAtlas * TextureAtlasManager::LoadFromStream( IOStream& IOS ) {
+TextureAtlas * TextureAtlasManager::loadFromStream( IOStream& IOS ) {
 	TextureAtlasLoader loader( IOS );
 
-	return loader.GetTextureAtlas();
+	return loader.getTextureAtlas();
 }
 
-TextureAtlas * TextureAtlasManager::LoadFromMemory( const Uint8* Data, const Uint32& DataSize, const std::string& TextureAtlasName ) {
+TextureAtlas * TextureAtlasManager::loadFromMemory( const Uint8* Data, const Uint32& DataSize, const std::string& TextureAtlasName ) {
 	TextureAtlasLoader loader( Data, DataSize, TextureAtlasName );
 
-	return loader.GetTextureAtlas();
+	return loader.getTextureAtlas();
 }
 
-TextureAtlas * TextureAtlasManager::LoadFromPack( Pack * Pack, const std::string& FilePackPath ) {
+TextureAtlas * TextureAtlasManager::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 	TextureAtlasLoader loader( Pack, FilePackPath );
 
-	return loader.GetTextureAtlas();
+	return loader.getTextureAtlas();
 }
 
-SubTexture * TextureAtlasManager::GetSubTextureByName( const std::string& Name ) {
-	SubTexture * tSubTexture = GetSubTextureById( String::hash( Name ) );
+SubTexture * TextureAtlasManager::getSubTextureByName( const std::string& Name ) {
+	SubTexture * tSubTexture = getSubTextureById( String::hash( Name ) );
 
 	if ( mWarnings ) {
 		eePRINTC( NULL == tSubTexture, "TextureAtlasManager::GetSubTextureByName SubTexture '%s' not found\n", Name.c_str() );
@@ -49,7 +49,7 @@ SubTexture * TextureAtlasManager::GetSubTextureByName( const std::string& Name )
 	return tSubTexture;
 }
 
-SubTexture * TextureAtlasManager::GetSubTextureById( const Uint32& Id ) {
+SubTexture * TextureAtlasManager::getSubTextureById( const Uint32& Id ) {
 	std::list<TextureAtlas*>::iterator it;
 
 	TextureAtlas * tSG = NULL;
@@ -67,43 +67,43 @@ SubTexture * TextureAtlasManager::GetSubTextureById( const Uint32& Id ) {
 	return NULL;
 }
 
-void TextureAtlasManager::PrintResources() {
+void TextureAtlasManager::printResources() {
 	std::list<TextureAtlas*>::iterator it;
 
 	for ( it = mResources.begin(); it != mResources.end(); it++ )
 		(*it)->printNames();
 }
 
-std::vector<SubTexture*> TextureAtlasManager::GetSubTexturesByPatternId( const Uint32& SubTextureId, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
+std::vector<SubTexture*> TextureAtlasManager::getSubTexturesByPatternId( const Uint32& SubTextureId, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
 	SubTexture * tSubTexture 	= NULL;
 	std::string tName;
 
 	if ( NULL == SearchInTextureAtlas )
-		tSubTexture = GetSubTextureById( SubTextureId );
+		tSubTexture = getSubTextureById( SubTextureId );
 	else
 		tSubTexture = SearchInTextureAtlas->getById( SubTextureId );
 
 	if ( NULL != tSubTexture ) {
 		if ( extension.size() )
-			tName = String::removeNumbersAtEnd( FileSystem::fileRemoveExtension( tSubTexture->Name() ) ) + extension;
+			tName = String::removeNumbersAtEnd( FileSystem::fileRemoveExtension( tSubTexture->getName() ) ) + extension;
 		else
-			tName = tSubTexture->Name();
+			tName = tSubTexture->getName();
 
-		return GetSubTexturesByPattern( String::removeNumbersAtEnd( tSubTexture->Name() ), "", SearchInTextureAtlas );
+		return getSubTexturesByPattern( String::removeNumbersAtEnd( tSubTexture->getName() ), "", SearchInTextureAtlas );
 	}
 
 	return std::vector<SubTexture*>();
 }
 
-void TextureAtlasManager::PrintWarnings( const bool& warn ) {
+void TextureAtlasManager::printWarnings( const bool& warn ) {
 	mWarnings = warn;
 }
 
-const bool& TextureAtlasManager::PrintWarnings() const {
+const bool& TextureAtlasManager::printWarnings() const {
 	return mWarnings;
 }
 
-std::vector<SubTexture*> TextureAtlasManager::GetSubTexturesByPattern( const std::string& name, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
+std::vector<SubTexture*> TextureAtlasManager::getSubTexturesByPattern( const std::string& name, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
 	std::vector<SubTexture*> 	SubTextures;
 	std::string 			search;
 	bool 					found 	= true;
@@ -121,7 +121,7 @@ std::vector<SubTexture*> TextureAtlasManager::GetSubTexturesByPattern( const std
 		search = String::strFormated( "%s%d%s", name.c_str(), i, realext.c_str() );
 
 		if ( NULL == SearchInTextureAtlas )
-			tSubTexture = GetSubTextureByName( search );
+			tSubTexture = getSubTextureByName( search );
 		else
 			tSubTexture = SearchInTextureAtlas->getByName( search );
 
@@ -138,7 +138,7 @@ std::vector<SubTexture*> TextureAtlasManager::GetSubTexturesByPattern( const std
 			search = String::strFormated( "%s%02d%s", name.c_str(), i, realext.c_str() );
 
 			if ( NULL == SearchInTextureAtlas )
-				tSubTexture = GetSubTextureByName( search );
+				tSubTexture = getSubTextureByName( search );
 			else
 				tSubTexture = SearchInTextureAtlas->getByName( search );
 
@@ -155,7 +155,7 @@ std::vector<SubTexture*> TextureAtlasManager::GetSubTexturesByPattern( const std
 				search = String::strFormated( "%s%03d%s", name.c_str(), i, realext.c_str() );
 
 				if ( NULL == SearchInTextureAtlas )
-					tSubTexture = GetSubTextureByName( search );
+					tSubTexture = getSubTextureByName( search );
 				else
 					tSubTexture = SearchInTextureAtlas->getByName( search );
 
@@ -171,7 +171,7 @@ std::vector<SubTexture*> TextureAtlasManager::GetSubTexturesByPattern( const std
 					search = String::strFormated( "%s%04d%s", name.c_str(), i, realext.c_str() );
 
 					if ( NULL == SearchInTextureAtlas )
-						tSubTexture = GetSubTextureByName( search );
+						tSubTexture = getSubTextureByName( search );
 					else
 						tSubTexture = SearchInTextureAtlas->getByName( search );
 
@@ -187,7 +187,7 @@ std::vector<SubTexture*> TextureAtlasManager::GetSubTexturesByPattern( const std
 						search = String::strFormated( "%s%05d%s", name.c_str(), i, realext.c_str() );
 
 						if ( NULL == SearchInTextureAtlas )
-							tSubTexture = GetSubTextureByName( search );
+							tSubTexture = getSubTextureByName( search );
 						else
 							tSubTexture = SearchInTextureAtlas->getByName( search );
 
@@ -203,7 +203,7 @@ std::vector<SubTexture*> TextureAtlasManager::GetSubTexturesByPattern( const std
 							search = String::strFormated( "%s%06d%s", name.c_str(), i, realext.c_str() );
 
 							if ( NULL == SearchInTextureAtlas )
-								tSubTexture = GetSubTextureByName( search );
+								tSubTexture = getSubTextureByName( search );
 							else
 								tSubTexture = SearchInTextureAtlas->getByName( search );
 
@@ -233,7 +233,7 @@ std::vector<SubTexture*> TextureAtlasManager::GetSubTexturesByPattern( const std
 
 			if ( found ) {
 				if ( NULL == SearchInTextureAtlas )
-					tSubTexture = GetSubTextureByName( search );
+					tSubTexture = getSubTextureByName( search );
 				else
 					tSubTexture = SearchInTextureAtlas->getByName( search );
 

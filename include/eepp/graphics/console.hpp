@@ -22,69 +22,69 @@ class EE_API Console : protected LogReaderInterface {
 		Console( EE::Window::Window * window = NULL );
 
 		/** Creates the console */
-		Console( Font* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const unsigned int& MaxLogLines = 1024, const Uint32& TextureId = 0, EE::Window::Window * window = NULL );
+		Console( Font* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const unsigned int& MaxLogLines = 1024, const Uint32& textureId = 0, EE::Window::Window * window = NULL );
 
 		~Console();
 
 		/** Set the Console Height when it's Minimized ( Not Maximized ) */
-		void ConsoleMinimizedHeight( const Float& MinHeight ) { mHeightMin = MinHeight; if (mVisible && !mExpand) mCurHeight = mHeightMin; }
+		void consoleMinimizedHeight( const Float& MinHeight ) { mHeightMin = MinHeight; if (mVisible && !mExpand) mCurHeight = mHeightMin; }
 
 		/** Get the Console Height when it's Minimized ( Not Maximized ) */
-		Float ConsoleMinimizedHeight() const { return mHeightMin; }
+		Float consoleMinimizedHeight() const { return mHeightMin; }
 
 		/** Set the Texture Id for the Background, 0 will disable texture background */
-		void TextureId( const Uint32& TexId ) { mTexId = TexId; }
+		void textureId( const Uint32& TexId ) { mTexId = TexId; }
 
 		/** Get the Background Texture Id */
-		Uint32 TextureId() const { return mTexId; }
+		Uint32 textureId() const { return mTexId; }
 
 		/** Set the Console Background Color */
-		void BackgroundColor( const ColorA& BackColor ) { mConColor = BackColor; }
+		void backgroundColor( const ColorA& BackColor ) { mConColor = BackColor; }
 
 		/** Get the Console Background Color */
-		const ColorA& BackgroundColor() const { return mConColor; }
+		const ColorA& backgroundColor() const { return mConColor; }
 
 		/** Set the Console Border Line Background Color */
-		void BackgroundLineColor( const ColorA& BackColor ) { mConLineColor = BackColor; }
+		void backgroundLineColor( const ColorA& BackColor ) { mConLineColor = BackColor; }
 
 		/** Get the Console Border Line Background Color */
-		const ColorA& BackgroundLineColor() const { return mConLineColor; }
+		const ColorA& backgroundLineColor() const { return mConLineColor; }
 
 		/** Set the Console Font Color */
-		void FontColor( const ColorA& FntColor ) { mFontColor = FntColor; }
+		void fontColor( const ColorA& FntColor ) { mFontColor = FntColor; }
 
 		/** Get the Console Font Color */
-		const ColorA& FontColor() const { return mFontColor; }
+		const ColorA& fontColor() const { return mFontColor; }
 
 		/** Set the Console Client Input ( Writeable Line ) Font Color */
-		void FontLineColor( const ColorA& FntColor ) { mFontLineColor = FntColor; }
+		void fontLineColor( const ColorA& FntColor ) { mFontLineColor = FntColor; }
 
 		/** Get the Console Client Input ( Writeable Line ) Font Color */
-		const ColorA& FontLineColor() const { return mFontLineColor; }
+		const ColorA& fontLineColor() const { return mFontLineColor; }
 
 		/** Toogle the console between visible and hided with Fade In or Fade Out effect. */
-		void Toggle();
+		void toggle();
 
 		/** Make visible the console */
-		void FadeIn();
+		void fadeIn();
 
 		/** Hide the console */
-		void FadeOut();
+		void fadeOut();
 
 		/** @return If Console Active ( Visible ) */
-		bool Active() const { return mVisible; }
+		bool active() const { return mVisible; }
 
 		/** Maximize or Minimize the Console */
-		void Expand(const bool& Exp) { mExpand = Exp; }
+		void expand(const bool& Exp) { mExpand = Exp; }
 
 		/** @return If console is maximized */
-		bool Expand() const { return mExpand; }
+		bool expand() const { return mExpand; }
 
 		/** Set the fade time */
-		void FadeSpeed( const Time& fadespeed ) { mFadeSpeed = fadespeed; }
+		void fadeSpeed( const Time& fadespeed ) { mFadeSpeed = fadespeed; }
 
 		/** @return The fading speed in ms */
-		const Time& FadeSpeed() const { return mFadeSpeed; }
+		const Time& fadeSpeed() const { return mFadeSpeed; }
 
 		/** @brief Creates the new console
 		* @param Font The Font pointer to class
@@ -93,34 +93,34 @@ class EE_API Console : protected LogReaderInterface {
 		* @param MaxLogLines Maximun number of lines stored on the console
 		* @param TextureId Background texture id ( 0 for no texture )
 		*/
-		void Create( Font* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const unsigned int& MaxLogLines = 1024, const Uint32& TextureId = 0 );
+		void create( Font* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const unsigned int& MaxLogLines = 1024, const Uint32& textureId = 0 );
 
 		/** Add Text to Console */
-		void PushText( const String& str );
+		void pushText( const String& str );
 
 		/** Add formated Text to console */
-		void PushText( const char* format, ... );
+		void pushText( const char* format, ... );
 
 		/** Adds a new Command
 		* @param Command The Command Name ( raise the event )
 		* @param CB The Callback for the Command
 		*/
-		void AddCommand( const String& Command, ConsoleCallback CB );
+		void addCommand( const String& Command, ConsoleCallback CB );
 
 		/** Draw the Console ( allways call it, visible or not ) */
-		void Draw();
+		void draw();
 
 		/** Set the line height ( distance between lines ) */
-		void SetLineHeight( const Float& LineHeight ) { mFontSize = LineHeight; }
+		void setLineHeight( const Float& LineHeight ) { mFontSize = LineHeight; }
 
 		/** Use this if you need to ignore some char to activate the console, for example '~'. A common char to activate a console. */
-		void IgnoreCharOnPrompt( const Uint32& ch );
+		void ignoreCharOnPrompt( const Uint32& ch );
 
 		/** @return If the console is rendering the FPS count. */
-		const bool& IsShowingFps() const;
+		const bool& isShowingFps() const;
 
 		/** Activate/Deactive fps rendering */
-		void ShowFps( const bool& Show );
+		void showFps( const bool& Show );
 	protected:
 		std::map < String, ConsoleCallback > mCallbacks;
 		std::deque < String > mCmdLog;
@@ -175,83 +175,83 @@ class EE_API Console : protected LogReaderInterface {
 		bool mShowFps;
 		bool mCurSide;
 
-		void CreateDefaultCommands();
+		void createDefaultCommands();
 
-		void Fade();
+		void fade();
 
 		/** Internal Callback for default command ( clear ) */
-		void CmdClear		( const std::vector < String >& params );
+		void cmdClear		( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( maximize ) */
-		void CmdMaximize	( const std::vector < String >& params );
+		void cmdMaximize	( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( minimize ) */
-		void CmdMinimize	( const std::vector < String >& params );
+		void cmdMinimize	( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( quit ) */
-		void CmdQuit		( const std::vector < String >& params );
+		void cmdQuit		( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( cmdlist ) */
-		void CmdCmdList		( const std::vector < String >& params );
+		void cmdCmdList		( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( showcursor ) */
-		void CmdShowCursor	( const std::vector < String >& params );
+		void cmdShowCursor	( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( setfpslimit ) */
-		void CmdFrameLimit	( const std::vector < String >& params );
+		void cmdFrameLimit	( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( getlog ) */
-		void CmdGetLog	( const std::vector < String >& params );
+		void cmdGetLog	( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( setgamma ) */
-		void CmdSetGamma( const std::vector < String >& params );
+		void cmdSetGamma( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( setvolume ) */
-		void CmdSetVolume( const std::vector < String >& params );
+		void cmdSetVolume( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( getgpuextensions ) */
-		void CmdGetGpuExtensions( const std::vector < String >& params );
+		void cmdGetGpuExtensions( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( dir and ls ) */
-		void CmdDir( const std::vector < String >& params );
+		void cmdDir( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( showfps ) */
-		void CmdShowFps( const std::vector < String >& params );
+		void cmdShowFps( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( gettexturememory ) */
-		void CmdGetTextureMemory( const std::vector < String >& params );
+		void cmdGetTextureMemory( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( hide ) */
-		void CmdHideConsole( const std::vector < String >& params );
+		void cmdHideConsole( const std::vector < String >& params );
 
 		/** The Default Commands Callbacks for the Console ( don't call it ) */
-		void PrivInputCallback( InputEvent * Event );
+		void privInputCallback( InputEvent * Event );
 
 		/** Clear the Console */
-		void CmdClear();
+		void cmdClear();
 
 		/** Add the current log to the console */
-		void CmdGetLog();
+		void cmdGetLog();
 
 		/** Add the GPU Extensions supported to the console */
-		void CmdGetGpuExtensions();
+		void cmdGetGpuExtensions();
 
 		/** Internal Callback to Process the new line ( when return pressed ) */
-		void ProcessLine();
+		void processLine();
 
-		void PrivPushText( const String& str );
+		void privPushText( const String& str );
 
-		void PrintCommandsStartingWith( const String& start );
+		void printCommandsStartingWith( const String& start );
 
-		void PrivVideoResize( EE::Window::Window * win );
+		void privVideoResize( EE::Window::Window * win );
 
-		void WriteLog( const std::string& Text );
+		void writeLog( const std::string& Text );
 
-		void GetFilesFrom( std::string txt, const Uint32& curPos );
+		void getFilesFrom( std::string txt, const Uint32& curPos );
 
-		Int32 LinesInScreen();
+		Int32 linesInScreen();
 
-		String GetLastCommonSubStr( std::list<String>& cmds );
+		String getLastCommonSubStr( std::list<String>& cmds );
 };
 
 }}

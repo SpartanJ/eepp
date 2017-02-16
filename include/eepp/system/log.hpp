@@ -13,7 +13,7 @@ namespace EE { namespace System {
 /** @brief The reader interface is useful if you want to keep track of what is write in the log, for example for a console. */
 class LogReaderInterface {
 	public:
-		virtual void WriteLog( const std::string& Text ) = 0;
+		virtual void writeLog( const std::string& Text ) = 0;
 };
 
 /** @brief Global log file. The engine will log everything in this file. */

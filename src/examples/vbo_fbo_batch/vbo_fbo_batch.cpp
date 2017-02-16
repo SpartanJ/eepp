@@ -29,29 +29,29 @@ void MainLoop()
 	}
 
 	// Bind the Frame Buffer, everything rendered from here will be rendered in the frame buffer
-	FBO->Bind();
+	FBO->bind();
 	{
 		// Bind the buffered data ( activate the buffer )
-		VBO->Bind();
+		VBO->bind();
 
 		// Draw the buffered data
-		VBO->Draw();
+		VBO->draw();
 
 		// Unbind the buffered data
-		VBO->Unbind();
+		VBO->unbind();
 
 		// Same as above
-		VBO2->Bind();
-		VBO2->Draw();
-		VBO2->Unbind();
+		VBO2->bind();
+		VBO2->draw();
+		VBO2->unbind();
 	}
 	// Unbind the frame buffer. Stops rendering to the frame buffer
-	FBO->Unbind();
+	FBO->unbind();
 
 	// Draw the frame buffer many times
 	for ( int y = 0; y < 5; y++ ) {
 		for ( int x = 0; x < 5; x++ ) {
-			FBO->GetTexture()->Draw( x * 200, y * 200, -ang, Vector2f::One, ColorA(255,255,255,100) );
+			FBO->getTexture()->draw( x * 200, y * 200, -ang, Vector2f::One, ColorA(255,255,255,100) );
 		}
 	}
 
@@ -59,9 +59,9 @@ void MainLoop()
 	Float HHeight	= win->getHeight() * 0.5f;
 
 	// The batch can be rotated, scale and moved
-	Batch->BatchRotation( ang );
-	Batch->BatchScale( scale );
-	Batch->BatchCenter( Vector2f( HWidth, HHeight ) );
+	Batch->batchRotation( ang );
+	Batch->batchScale( scale );
+	Batch->batchCenter( Vector2f( HWidth, HHeight ) );
 
 	// Create a quad to render
 	Float aX = HWidth - 256.f;
@@ -75,7 +75,7 @@ void MainLoop()
 	TmpQuad.rotate( ang, Vector2f( aX + 16.f, aY + 16.f ) );
 
 	// Begin drawing quads
-	Batch->QuadsBegin();
+	Batch->quadsBegin();
 
 	// Add some quads to the batch renderer
 	for ( Uint32 z = 0; z < 16; z++ ) {
@@ -84,13 +84,13 @@ void MainLoop()
 			Float tmpy = (Float)y * 32.f;
 
 			// Add the quad to the batch
-			Batch->QuadsSetColor( ColorA( z * 16, 255, 255, 150 ) );
-			Batch->BatchQuadFree( TmpQuad[0].x + tmpx, TmpQuad[0].y + tmpy, TmpQuad[1].x + tmpx, TmpQuad[1].y + tmpy, TmpQuad[2].x + tmpx, TmpQuad[2].y + tmpy, TmpQuad[3].x + tmpx, TmpQuad[3].y + tmpy );
+			Batch->quadsSetColor( ColorA( z * 16, 255, 255, 150 ) );
+			Batch->batchQuadFree( TmpQuad[0].x + tmpx, TmpQuad[0].y + tmpy, TmpQuad[1].x + tmpx, TmpQuad[1].y + tmpy, TmpQuad[2].x + tmpx, TmpQuad[2].y + tmpy, TmpQuad[3].x + tmpx, TmpQuad[3].y + tmpy );
 		}
 	}
 
 	// Draw the batched quads
-	Batch->Draw();
+	Batch->draw();
 
 	// Add the rotation angle
 	ang+=win->elapsed().asMilliseconds() * 0.1f;
@@ -130,20 +130,20 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// Add the vertex and vertex colors to the Vertex Buffer
 		if ( NULL != VBO && NULL != VBO2 ) {
 			for ( Uint32 i = 0; i < Poly.size(); i++ ) {
-				VBO->AddVertex( Poly[i] );
-				VBO->AddColor( ColorA( 100 + i, 255 - i, 150 + i, 100 ) );
+				VBO->addVertex( Poly[i] );
+				VBO->addColor( ColorA( 100 + i, 255 - i, 150 + i, 100 ) );
 			}
 
 			Poly.rotate( 90, Poly.toAABB().center() );
 
 			for ( Uint32 i = 0; i < Poly.size(); i++ ) {
-				VBO2->AddVertex( Poly[i] );
-				VBO2->AddColor( ColorA( 100 + i, 255 - i, 150 + i, 100 ) );
+				VBO2->addVertex( Poly[i] );
+				VBO2->addColor( ColorA( 100 + i, 255 - i, 150 + i, 100 ) );
 			}
 
 			// Compile the Vertex Buffer, this uploads the data to the GPU
-			VBO->Compile();
-			VBO2->Compile();
+			VBO->compile();
+			VBO2->compile();
 		}
 
 		// Create a new frame buffer. It will use Framebuffer Objects if available, otherwise it will try to fallback to PBuffers.

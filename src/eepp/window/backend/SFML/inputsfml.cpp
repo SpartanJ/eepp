@@ -20,14 +20,14 @@ InputSFML::InputSFML( EE::Window::Window * window ) :
 InputSFML::~InputSFML() {
 }
 
-void InputSFML::Update() {
+void InputSFML::update() {
 	sf::Event	event;
 	InputEvent 	EEEvent;
 
 	WindowSFML * win = reinterpret_cast<WindowSFML*>( mWindow );
-	sf::Window * window = win->GetSFMLWindow();
+	sf::Window * window = win->getSFMLWindow();
 
-	CleanStates();
+	cleanStates();
 
 	while ( window->pollEvent(event) )
 	{
@@ -50,7 +50,7 @@ void InputSFML::Update() {
 			case sf::Event::MouseButtonPressed:
 			{
 				EEEvent.Type = InputEvent::MouseButtonDown;
-				EEEvent.button.button = GetButton( event.mouseButton.button );
+				EEEvent.button.button = getButton( event.mouseButton.button );
 				EEEvent.button.x = event.mouseButton.x;
 				EEEvent.button.y = event.mouseButton.y;
 				break;
@@ -58,7 +58,7 @@ void InputSFML::Update() {
 			case sf::Event::MouseButtonReleased:
 			{
 				EEEvent.Type = InputEvent::MouseButtonUp;
-				EEEvent.button.button = GetButton( event.mouseButton.button );
+				EEEvent.button.button = getButton( event.mouseButton.button );
 				EEEvent.button.x = event.mouseButton.x;
 				EEEvent.button.y = event.mouseButton.y;
 				break;
@@ -66,7 +66,7 @@ void InputSFML::Update() {
 			case sf::Event::MouseMoved:
 			{
 				EEEvent.Type = InputEvent::MouseMotion;
-				Vector2i mp( win->GetInput()->GetMousePos() );
+				Vector2i mp( win->getInput()->getMousePos() );
 				EEEvent.motion.xrel = mp.x - event.mouseMove.x;
 				EEEvent.motion.yrel = mp.y - event.mouseMove.y;
 				EEEvent.motion.x = event.mouseMove.x;
@@ -90,7 +90,7 @@ void InputSFML::Update() {
 
 				EEEvent.Type = InputEvent::MouseButtonDown;
 				EEEvent.button.state = 1;
-				ProcessEvent( &EEEvent );
+				processEvent( &EEEvent );
 
 				EEEvent.Type = InputEvent::MouseButtonUp;
 				EEEvent.button.state = 0;
@@ -105,7 +105,7 @@ void InputSFML::Update() {
 				) {
 					EEEvent.Type = InputEvent::KeyDown;
 					EEEvent.key.keysym.sym = KeyCodesTable[ event.key.code ];
-					EEEvent.key.keysym.mod = SetMod( event.key );
+					EEEvent.key.keysym.mod = setMod( event.key );
 					EEEvent.key.keysym.unicode = 0;
 				} else {
 					EEEvent.Type = InputEvent::NoEvent;
@@ -117,7 +117,7 @@ void InputSFML::Update() {
 			{
 				EEEvent.Type = InputEvent::KeyUp;
 				EEEvent.key.keysym.sym = KeyCodesTable[ event.key.code ];
-				EEEvent.key.keysym.mod = SetMod( event.key );
+				EEEvent.key.keysym.mod = setMod( event.key );
 				EEEvent.key.keysym.unicode = 0;
 				break;
 			}
@@ -125,10 +125,10 @@ void InputSFML::Update() {
 			{
 				if ( KEY_TAB != event.text.unicode ) {
 					EEEvent.Type = InputEvent::TextInput;
-					EEEvent.text.timestamp = Sys::GetTicks();
+					EEEvent.text.timestamp = Sys::getTicks();
 					EEEvent.text.text = event.text.unicode;
 
-					ProcessEvent( &EEEvent );
+					processEvent( &EEEvent );
 				}
 
 				EEEvent.Type = InputEvent::KeyDown;
@@ -158,7 +158,7 @@ void InputSFML::Update() {
 			{
 				EEEvent.Type = InputEvent::NoEvent;
 
-				win->VideoResize( event.size.width, event.size.height );
+				win->videoResize( event.size.width, event.size.height );
 
 				break;
 			}
@@ -184,31 +184,31 @@ void InputSFML::Update() {
 		}
 
 		if ( InputEvent::NoEvent != EEEvent.Type ) {
-			ProcessEvent( &EEEvent );
+			processEvent( &EEEvent );
 		}
-   }
+	}
 }
 
-bool InputSFML::GrabInput() {
+bool InputSFML::grabInput() {
 	return false;
 }
 
-void InputSFML::GrabInput( const bool& Grab ) {
+void InputSFML::grabInput( const bool& Grab ) {
 }
 
-void InputSFML::InjectMousePos( const Uint16& x, const Uint16& y ) {
+void InputSFML::injectMousePos( const Uint16& x, const Uint16& y ) {
 	WindowSFML * win = reinterpret_cast<WindowSFML*>( mWindow );
-	sf::Window * window = win->GetSFMLWindow();
+	sf::Window * window = win->getSFMLWindow();
 	sf::Mouse::setPosition( sf::Vector2i( x, y ), *window );
 }
 
-void InputSFML::Init() {
-	InitializeTables();
+void InputSFML::init() {
+	initializeTables();
 
-	mJoystickManager->Open();
+	mJoystickManager->open();
 }
 
-Uint32 InputSFML::GetButton( const Uint32& sfmlBut ) {
+Uint32 InputSFML::getButton( const Uint32& sfmlBut ) {
 	switch ( sfmlBut ) {
 		case sf::Mouse::Left:		return EE_BUTTON_LEFT;
 		case sf::Mouse::Right:		return EE_BUTTON_RIGHT;
@@ -220,7 +220,7 @@ Uint32 InputSFML::GetButton( const Uint32& sfmlBut ) {
 	return EE_BUTTON_LEFT;
 }
 
-Uint32 InputSFML::SetMod( sf::Event::KeyEvent& key ) {
+Uint32 InputSFML::setMod( sf::Event::KeyEvent& key ) {
 	Uint32 Ret = 0;
 
 	if ( key.shift )		Ret |= KEYMOD_SHIFT;
@@ -231,7 +231,7 @@ Uint32 InputSFML::SetMod( sf::Event::KeyEvent& key ) {
 	return Ret;
 }
 
-void InputSFML::InitializeTables() {
+void InputSFML::initializeTables() {
 	if ( KeyCodesTableInit )
 		return;
 

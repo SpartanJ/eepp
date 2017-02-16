@@ -28,9 +28,9 @@ TexturePackerTex::TexturePackerTex( const std::string& Name ) :
 
 TexturePackerTex::TexturePackerTex( EE::Graphics::Image * Img , const std::string& Name ) :
 	mName( Name ),
-	mWidth( Img->Width() ),
-	mHeight( Img->Height() ),
-	mChannels( Img->Channels() ),
+	mWidth( Img->width() ),
+	mHeight( Img->height() ),
+	mChannels( Img->channels() ),
 	mX(0),
 	mY(0),
 	mLongestEdge(0),
@@ -46,7 +46,7 @@ TexturePackerTex::TexturePackerTex( EE::Graphics::Image * Img , const std::strin
 	mLoadedInfo 	= true;
 }
 
-void TexturePackerTex::Place( Int32 x, Int32 y, bool flipped ) {
+void TexturePackerTex::place( Int32 x, Int32 y, bool flipped ) {
 	if ( !mPlaced ) {
 		mX 			= x;
 		mY 			= y;
@@ -55,7 +55,7 @@ void TexturePackerTex::Place( Int32 x, Int32 y, bool flipped ) {
 	}
 }
 
-EE::Graphics::Image * TexturePackerTex::Image() const {
+EE::Graphics::Image * TexturePackerTex::getImage() const {
 	return mImg;
 }
 

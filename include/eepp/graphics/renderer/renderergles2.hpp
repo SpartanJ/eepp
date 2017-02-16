@@ -25,85 +25,85 @@ class EE_API RendererGLES2 : public cGL {
 
 		~RendererGLES2();
 
-		EEGL_version Version();
+		EEGL_version version();
 
-		std::string VersionStr();
+		std::string versionStr();
 
-		void Init();
+		void init();
 
-		void PointSize( float size );
+		void pointSize( float size );
 
-		float PointSize();
+		float pointSize();
 
-		void PushMatrix();
+		void pushMatrix();
 
-		void PopMatrix();
+		void popMatrix();
 
-		void LoadIdentity();
+		void loadIdentity();
 
-		void Disable ( unsigned int cap );
+		void disable ( unsigned int cap );
 
-		void Enable( unsigned int cap );
+		void enable( unsigned int cap );
 
-		void Translatef( float x, float y, float z );
+		void translatef( float x, float y, float z );
 
-		void Rotatef( float angle, float x, float y, float z );
+		void rotatef( float angle, float x, float y, float z );
 
-		void Scalef( float x, float y, float z );
+		void scalef( float x, float y, float z );
 
-		void MatrixMode (unsigned int mode);
+		void matrixMode (unsigned int mode);
 
-		void Ortho ( float left, float right, float bottom, float top, float zNear, float zFar );
+		void ortho ( float left, float right, float bottom, float top, float zNear, float zFar );
 
-		void LookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ );
+		void lookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ );
 
-		void Perspective ( float fovy, float aspect, float zNear, float zFar );
+		void perspective ( float fovy, float aspect, float zNear, float zFar );
 
-		void EnableClientState( unsigned int array );
+		void enableClientState( unsigned int array );
 
-		void DisableClientState( unsigned int array );
+		void disableClientState( unsigned int array );
 
-		void VertexPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate );
+		void vertexPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate );
 
-		void ColorPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate );
+		void colorPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate );
 
-		void TexCoordPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate );
+		void texCoordPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate );
 
-		void ClientActiveTexture( unsigned int texture );
+		void clientActiveTexture( unsigned int texture );
 
-		unsigned int BaseShaderId();
+		unsigned int baseShaderId();
 
-		void SetShader( ShaderProgram * Shader );
+		void setShader( ShaderProgram * Shader );
 
-		void SetShader( const EEGLES2_SHADERS& Shader );
+		void setShader( const EEGLES2_SHADERS& Shader );
 
-		int GetStateIndex( const Uint32& State );
+		int getStateIndex( const Uint32& State );
 
-		void Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
+		void clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
 
-		void Clip2DPlaneDisable();
+		void clip2DPlaneDisable();
 
-		void MultMatrixf ( const float *m );
+		void multMatrixf ( const float *m );
 
-		void ClipPlane( unsigned int plane, const double *equation );
+		void clipPlane( unsigned int plane, const double *equation );
 
-		void TexEnvi( unsigned int target, unsigned int pname, int param );
+		void texEnvi( unsigned int target, unsigned int pname, int param );
 
-		void LoadMatrixf( const float *m );
+		void loadMatrixf( const float *m );
 
-		void Frustum( float left, float right, float bottom, float top, float near_val, float far_val );
+		void frustum( float left, float right, float bottom, float top, float near_val, float far_val );
 
-		void GetCurrentMatrix( unsigned int mode, float * m );
+		void getCurrentMatrix( unsigned int mode, float * m );
 
-		unsigned int GetCurrentMatrixMode();
+		unsigned int getCurrentMatrixMode();
 
-		std::string GetBaseVertexShader();
+		std::string getBaseVertexShader();
 
-		int Project( float objx, float objy, float objz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *winx, float *winy, float *winz );
+		int project( float objx, float objy, float objz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *winx, float *winy, float *winz );
 
-		int UnProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz );
+		int unProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz );
 
-		void ReloadCurrentShader();
+		void reloadCurrentShader();
 	protected:
 		Private::MatrixStack *	mStack;
 		int					mProjectionMatrix_id;	// cpu-side hook to shader uniform
@@ -129,13 +129,13 @@ class EE_API RendererGLES2 : public cGL {
 		bool					mCurShaderLocal;
 		std::string				mBaseVertexShader;
 
-		void UpdateMatrix();
+		void updateMatrix();
 
-		void PlaneStateCheck( bool tryEnable );
+		void planeStateCheck( bool tryEnable );
 
-		void ReloadShader( ShaderProgram * Shader );
+		void reloadShader( ShaderProgram * Shader );
 
-		void CheckLocalShader();
+		void checkLocalShader();
 };
 
 }}

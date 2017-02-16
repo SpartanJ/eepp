@@ -15,19 +15,19 @@ class EE_API VertexBufferVBO : public VertexBuffer {
 
 		virtual ~VertexBufferVBO();
 
-		void Bind();
+		void bind();
 
-		void Draw();
+		void draw();
 
-		bool Compile();
+		bool compile();
 
-		void Update( const Uint32& Types, bool Indices );
+		void update( const Uint32& Types, bool Indices );
 
-		void Reload();
+		void reload();
 
-		void Unbind();
+		void unbind();
 
-		void Clear();
+		void clear();
 	protected:
 		bool mCompiled;
 		bool mBuffersSet;
@@ -36,7 +36,7 @@ class EE_API VertexBufferVBO : public VertexBuffer {
 		Uint32 mElementHandle;
 		Uint32 mArrayHandle[ VERTEX_FLAGS_COUNT ];
 
-		void SetVertexStates();
+		void setVertexStates();
 };
 
 }}

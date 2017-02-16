@@ -14,7 +14,7 @@ class EE_API ShaderProgramManager : public ResourceManager<ShaderProgram> {
 	public:
 		virtual ~ShaderProgramManager();
 
-		void Reload();
+		void reload();
 	protected:
 		ShaderProgramManager();
 };

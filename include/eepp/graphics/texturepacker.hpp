@@ -28,7 +28,7 @@
 
 /*! NOTE by Martin Lucas Golini
 **	This implementation is based on the John W. Ratcliff texture atlas implementation.
-** Implementation differ from the original, but i use the base texture atlas algorithm.
+** Implementation differs from the original, but i used the base texture atlas algorithm.
 */
 
 #include <eepp/graphics/base.hpp>
@@ -62,16 +62,16 @@ class EE_API TexturePacker {
 
 		/** Adds a image/texture from its path to the texture atlas.
 		*	@param TexturePath The image path. */
-		bool AddTexture( const std::string& TexturePath );
+		bool addTexture( const std::string& TexturePath );
 
 		/** Adds a image to the texture atlas. The image instance must remain in memory until the texture atlas is saved. */
-		bool AddImage( Image * Img, const std::string& Name );
+		bool addImage( Image * Img, const std::string& Name );
 
 		/** Adds a directory with images. It will try to add all the images inside that directory to the texture atlas.  */
-		bool AddTexturesPath( std::string TexturesPath );
+		bool addTexturesPath( std::string TexturesPath );
 
 		/** After adding all the images that will be used to create the texture atlas. Packing the textures will generate the texture atlas information ( it will fit the images inside the texture atlas, etc ). */
-		Int32 PackTextures();
+		Int32 packTextures();
 
 		/** @brief Save the texture atlas to a file, in the indicated format.
 		*	If PackTexture() has not been called, it will be called automatically by the function ( so you don't need to call it ).
@@ -79,10 +79,10 @@ class EE_API TexturePacker {
 		*	@param Format The image format of the new texture atlas.
 		*	@param SaveExtensions Indicates if the extensions of the image files must be saved. Usually you wan't to find the SubTextures by its name without extension, but this can be changed here.
 		*/
-		void Save( const std::string& Filepath, const EE_SAVE_TYPE& Format = SAVE_TYPE_PNG, const bool& SaveExtensions = false );
+		void save( const std::string& Filepath, const EE_SAVE_TYPE& Format = SAVE_TYPE_PNG, const bool& SaveExtensions = false );
 
 		/** Clear all the textures added */
-		void Close();
+		void close();
 
 		/** First of all you need to set at least the max dimensions of the texture atlas.
 		*	If the instance of the texture packer was created without indicating this data, this must be called before adding any texture or image.
@@ -92,16 +92,16 @@ class EE_API TexturePacker {
 		*	@param PixelBorder Indicates how many pixels will be added to separate one image to another in the texture atlas. Usefull to avoid artifacts when rendered scaled SubTextures. Use at least 1 pixel to separate images if you will scale any SubTexture.
 		*	@param AllowFlipping Indicates if the images can be flipped inside the texture atlas. This is not compatible with eepp ( since it can't flip the textures back to the original orientation ). So avoid it for eepp.
 		*/
-		void SetOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const bool& ForcePowOfTwo = true, const Uint32& PixelBorder = 0, const bool& AllowFlipping = false );
+		void setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const bool& ForcePowOfTwo = true, const Uint32& PixelBorder = 0, const bool& AllowFlipping = false );
 
 		/** @return The texture atlas to generate width. */
-		const Int32& Width() const;
+		const Int32& width() const;
 
 		/** @return The texture atlas to generate height */
-		const Int32& Height() const;
+		const Int32& height() const;
 
 		/** @return If the texture atlas has already been saved, returns the file path to the texture atlas. */
-		const std::string& GetFilepath() const;
+		const std::string& getFilepath() const;
 	protected:
 		enum PackStrategy {
 			PackBig,
@@ -129,47 +129,47 @@ class EE_API TexturePacker {
 		bool							mSaveExtensions;
 		EE_SAVE_TYPE					mFormat;
 
-		TexturePacker * 				GetChild() const;
+		TexturePacker * 				getChild() const;
 
-		TexturePacker * 				GetParent() const;
+		TexturePacker * 				getParent() const;
 
-		std::list<TexturePackerTex*> *	GetTexturePackPtr();
+		std::list<TexturePackerTex*> *	getTexturePackPtr();
 
-		void							ChildSave( const EE_SAVE_TYPE& Format );
+		void							childSave( const EE_SAVE_TYPE& Format );
 
-		void							SaveSubTextures();
+		void							saveSubTextures();
 
-		void 							NewFree( Int32 x, Int32 y, Int32 width, Int32 height );
+		void 							newFree( Int32 x, Int32 y, Int32 width, Int32 height );
 
-		bool 							MergeNodes();
+		bool 							mergeNodes();
 
-		void 							Validate();
+		void 							validate();
 
-		TexturePackerTex *				GetLonguestEdge();
+		TexturePackerTex *				getLonguestEdge();
 
-		TexturePackerTex *				GetShortestEdge();
+		TexturePackerTex *				getShortestEdge();
 
-		Int32							GetChildCount();
+		Int32							getChildCount();
 
-		const Int32&					GetWidth() const;
+		const Int32&					getWidth() const;
 
-		const Int32&					GetHeight() const;
+		const Int32&					getHeight() const;
 
-		const Int32&					GetPlacedCount() const;
+		const Int32&					getPlacedCount() const;
 
-		sTextureHdr						CreateTextureHdr( TexturePacker * Packer );
+		sTextureHdr						createTextureHdr( TexturePacker * Packer );
 
-		void							CreateSubTexturesHdr( TexturePacker * Packer, std::vector<sSubTextureHdr>& SubTextures );
+		void							createSubTexturesHdr( TexturePacker * Packer, std::vector<sSubTextureHdr>& SubTextures );
 
-		TexturePackerNode *			GetBestFit( TexturePackerTex * t, TexturePackerNode ** prevBestFit, Int32 * EdgeCount );
+		TexturePackerNode *				getBestFit( TexturePackerTex * t, TexturePackerNode ** prevBestFit, Int32 * EdgeCount );
 
-		void							InsertTexture( TexturePackerTex * t, TexturePackerNode * bestFit, Int32 edgeCount, TexturePackerNode * previousBestFit );
+		void							insertTexture( TexturePackerTex * t, TexturePackerNode * bestFit, Int32 edgeCount, TexturePackerNode * previousBestFit );
 
-		void							AddBorderToTextures( const Int32& BorderSize );
+		void							addBorderToTextures( const Int32& BorderSize );
 
-		void							CreateChild();
+		void							createChild();
 
-		bool							AddPackerTex( TexturePackerTex * TPack );
+		bool							addPackerTex( TexturePackerTex * TPack );
 };
 
 }}

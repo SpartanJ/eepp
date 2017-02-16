@@ -59,26 +59,26 @@ void ShapePoly::Draw( Space * space ) {
 
 	BatchRenderer * BR = GlobalBatchRenderer::instance();
 
-	BR->SetTexture( NULL );
+	BR->setTexture( NULL );
 
 	ColorA Col = ColorForShape( (cpShape *)poly, space->GetSpace() );
 
 	if( !poly->CP_PRIVATE(shape).sensor ){
 		if ( 4 != poly->CP_PRIVATE(numVerts) ) {
-			BR->PointsBegin();
-			BR->PolygonSetColor( Col );
+			BR->pointsBegin();
+			BR->polygonSetColor( Col );
 
 			for ( int i = 0; i < poly->CP_PRIVATE(numVerts); i++ ) {
-				BR->BatchPolygonByPoint( poly->CP_PRIVATE(tVerts)[i].x, poly->CP_PRIVATE(tVerts)[i].y );
+				BR->batchPolygonByPoint( poly->CP_PRIVATE(tVerts)[i].x, poly->CP_PRIVATE(tVerts)[i].y );
 			}
 		} else {
-			BR->QuadsBegin();
-			BR->QuadsSetColor( Col );
+			BR->quadsBegin();
+			BR->quadsSetColor( Col );
 
-			BR->BatchQuadFreeEx(poly->CP_PRIVATE(tVerts)[0].x, poly->CP_PRIVATE(tVerts)[0].y, poly->CP_PRIVATE(tVerts)[1].x, poly->CP_PRIVATE(tVerts)[1].y, poly->CP_PRIVATE(tVerts)[2].x, poly->CP_PRIVATE(tVerts)[2].y, poly->CP_PRIVATE(tVerts)[3].x, poly->CP_PRIVATE(tVerts)[3].y );
+			BR->batchQuadFreeEx(poly->CP_PRIVATE(tVerts)[0].x, poly->CP_PRIVATE(tVerts)[0].y, poly->CP_PRIVATE(tVerts)[1].x, poly->CP_PRIVATE(tVerts)[1].y, poly->CP_PRIVATE(tVerts)[2].x, poly->CP_PRIVATE(tVerts)[2].y, poly->CP_PRIVATE(tVerts)[3].x, poly->CP_PRIVATE(tVerts)[3].y );
 		}
 
-		BR->DrawOpt();
+		BR->drawOpt();
 	}
 
 
@@ -93,14 +93,14 @@ void ShapePoly::DrawBorder( Space *space ) {
 
 	ColorA Col = ColorForShape( (cpShape *)poly, space->GetSpace() );
 
-	BR->LineLoopBegin();
-	BR->LineLoopSetColor( Col );
+	BR->lineLoopBegin();
+	BR->lineLoopSetColor( Col );
 
 	for ( int i = 0; i < poly->CP_PRIVATE(numVerts); i++ ) {
-		BR->BatchLineLoop( poly->CP_PRIVATE(tVerts)[i].x, poly->CP_PRIVATE(tVerts)[i].y );
+		BR->batchLineLoop( poly->CP_PRIVATE(tVerts)[i].x, poly->CP_PRIVATE(tVerts)[i].y );
 	}
 
-	BR->Draw();
+	BR->draw();
 #endif
 }
 

@@ -23,15 +23,15 @@ void UISkinSimple::Draw( const Float& X, const Float& Y, const Float& Width, con
 	mTempColor		= mColor[ State ];
 
 	if ( NULL != tSubTexture ) {
-		tSubTexture->DestSize( Sizef( Width, Height ) );
+		tSubTexture->destSize( Sizef( Width, Height ) );
 
 		if ( mTempColor.Alpha != Alpha ) {
 			mTempColor.Alpha = (Uint8)( (Float)mTempColor.Alpha * ( (Float)Alpha / 255.f ) );
 		}
 
-		tSubTexture->Draw( X, Y, mTempColor );
+		tSubTexture->draw( X, Y, mTempColor );
 
-		tSubTexture->ResetDestSize();
+		tSubTexture->resetDestSize();
 	}
 }
 
@@ -40,7 +40,7 @@ void UISkinSimple::SetSkin( const Uint32& State ) {
 
 	std::string Name( mName + "_" + UISkin::GetSkinStateName( State ) );
 
-	mSubTexture[ State ] = TextureAtlasManager::instance()->GetSubTextureByName( Name );
+	mSubTexture[ State ] = TextureAtlasManager::instance()->getSubTextureByName( Name );
 }
 
 SubTexture * UISkinSimple::GetSubTexture( const Uint32& State ) const {

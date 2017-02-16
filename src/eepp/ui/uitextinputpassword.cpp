@@ -10,13 +10,13 @@ UITextInputPassword::UITextInputPassword( const UITextInput::CreateParams& Param
 	UITextInput( Params )
 {
 	mPassCache = eeNew( TextCache, () );
-	mPassCache->Font( Params.Font );
-	mPassCache->Color( mFontColor );
-	mPassCache->ShadowColor( mFontShadowColor );
+	mPassCache->font( Params.Font );
+	mPassCache->color( mFontColor );
+	mPassCache->shadowColor( mFontShadowColor );
 
 	if ( NULL == Params.Font ) {
 		if ( NULL != UIThemeManager::instance()->DefaultFont() )
-			mPassCache->Font( UIThemeManager::instance()->DefaultFont() );
+			mPassCache->font( UIThemeManager::instance()->DefaultFont() );
 		else
 			eePRINTL( "UITextInputPassword::UITextInputPassword : Created a UI TextInputPassword without a defined font." );
 	}
@@ -28,7 +28,7 @@ void UITextInputPassword::Draw() {
 	if ( mVisible && 0.f != mAlpha ) {
 		UIControlAnim::Draw();
 
-		if ( mPassCache->GetTextWidth() ) {
+		if ( mPassCache->getTextWidth() ) {
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				UIManager::instance()->ClipEnable(
 						mScreenPos.x + mPadding.Left,
@@ -38,8 +38,8 @@ void UITextInputPassword::Draw() {
 				);
 			}
 
-			mPassCache->Flags( Flags() );
-			mPassCache->Draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, Vector2f::One, 0.f, Blend() );
+			mPassCache->flags( Flags() );
+			mPassCache->draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, Vector2f::One, 0.f, Blend() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				UIManager::instance()->ClipDisable();
@@ -61,13 +61,13 @@ void UITextInputPassword::AlignFix() {
 		for ( size_t i = 0; i < curStr.size(); i++ )
 			pasStr += '*';
 
-		mPassCache->Font()->SetText( pasStr );
+		mPassCache->font()->setText( pasStr );
 
-		Float tW	= mPassCache->Font()->GetTextWidth();
+		Float tW	= mPassCache->font()->getTextWidth();
 		Float tX	= mAlignOffset.x + tW;
 
 		mCurPos.x	= tW;
-		mCurPos.y	= (Float)LineNum * (Float)mPassCache->Font()->GetFontHeight();
+		mCurPos.y	= (Float)LineNum * (Float)mPassCache->font()->getFontHeight();
 
 		if ( !mTextBuffer.supportNewLine() ) {
 			if ( tX < 0.f )
@@ -81,10 +81,10 @@ void UITextInputPassword::AlignFix() {
 void UITextInputPassword::AutoAlign() {
 	switch ( FontHAlignGet( Flags() ) ) {
 		case UI_HALIGN_CENTER:
-			mAlignOffset.x = (Float)( (Int32)( mSize.x - mPassCache->GetTextWidth() ) / 2 );
+			mAlignOffset.x = (Float)( (Int32)( mSize.x - mPassCache->getTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
-			mAlignOffset.x = ( (Float)mSize.x - (Float)mPassCache->GetTextWidth() );
+			mAlignOffset.x = ( (Float)mSize.x - (Float)mPassCache->getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
 			mAlignOffset.x = 0.f;
@@ -93,10 +93,10 @@ void UITextInputPassword::AutoAlign() {
 
 	switch ( FontVAlignGet( Flags() ) ) {
 		case UI_VALIGN_CENTER:
-			mAlignOffset.y = (Float)( ( (Int32)( mSize.y - mPassCache->GetTextHeight() ) ) / 2 ) - 1;
+			mAlignOffset.y = (Float)( ( (Int32)( mSize.y - mPassCache->getTextHeight() ) ) / 2 ) - 1;
 			break;
 		case UI_VALIGN_BOTTOM:
-			mAlignOffset.y = ( (Float)mSize.y - (Float)mPassCache->GetTextHeight() );
+			mAlignOffset.y = ( (Float)mSize.y - (Float)mPassCache->getTextHeight() );
 			break;
 		case UI_VALIGN_TOP:
 			mAlignOffset.y = 0.f;
@@ -105,11 +105,11 @@ void UITextInputPassword::AutoAlign() {
 }
 
 void UITextInputPassword::UpdateText() {
-	UpdatePass( mTextCache->Text() );
+	UpdatePass( mTextCache->text() );
 }
 
 void UITextInputPassword::UpdatePass( const String& pass ) {
-	mPassCache->Text().clear();
+	mPassCache->text().clear();
 
 	String newTxt;
 
@@ -117,7 +117,7 @@ void UITextInputPassword::UpdatePass( const String& pass ) {
 		newTxt += '*';
 	}
 
-	mPassCache->Text( newTxt );
+	mPassCache->text( newTxt );
 }
 
 void UITextInputPassword::Text( const String& text ) {

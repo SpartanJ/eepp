@@ -14,19 +14,19 @@ class EE_API VertexBufferOGL : public VertexBuffer {
 
 		virtual ~VertexBufferOGL();
 
-		void Bind();
+		void bind();
 
-		void Draw();
+		void draw();
 
-		bool Compile();
+		bool compile();
 
-		void Update( const Uint32& Types, bool Indices );
+		void update( const Uint32& Types, bool Indices );
 
-		void Reload();
+		void reload();
 
-		void Unbind();
+		void unbind();
 	protected:
-		void SetVertexStates();
+		void setVertexStates();
 
 };
 

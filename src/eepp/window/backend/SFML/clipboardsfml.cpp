@@ -13,17 +13,17 @@ ClipboardSFML::ClipboardSFML( EE::Window::Window * window ) :
 ClipboardSFML::~ClipboardSFML() {
 }
 
-void ClipboardSFML::Init() {
+void ClipboardSFML::init() {
 }
 
-void ClipboardSFML::SetText( const std::string& Text ) {
+void ClipboardSFML::setText( const std::string& Text ) {
 }
 
-std::string ClipboardSFML::GetText() {
+std::string ClipboardSFML::getText() {
 	return std::string();
 }
 
-String ClipboardSFML::GetWideText() {
+String ClipboardSFML::getWideText() {
 	return String();
 }
 
