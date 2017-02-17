@@ -14,9 +14,9 @@ UIProgressBar::UIProgressBar( const UIProgressBar::CreateParams& Params ) :
 {
 	UITextBox::CreateParams TxtBoxParams = Params;
 
-	TxtBoxParams.Parent( this );
+	TxtBoxParams.setParent( this );
 	TxtBoxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
-	TxtBoxParams.PosSet( 0, 0 );
+	TxtBoxParams.setPos( 0, 0 );
 
 	mTextBox = eeNew( UITextBox, ( TxtBoxParams ) );
 	mTextBox->enabled( false );

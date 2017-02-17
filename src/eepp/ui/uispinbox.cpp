@@ -11,8 +11,8 @@ UISpinBox::UISpinBox( const UISpinBox::CreateParams& Params ) :
 	mClickStep( 1.f )
 {
 	UITextInput::CreateParams InputParams( Params );
-	InputParams.PosSet( 0, 0 );
-	InputParams.Parent( this );
+	InputParams.setPos( 0, 0 );
+	InputParams.setParent( this );
 
 	if ( InputParams.Flags & UI_AUTO_SIZE )
 		InputParams.Flags &= ~UI_AUTO_SIZE;
@@ -25,7 +25,7 @@ UISpinBox::UISpinBox( const UISpinBox::CreateParams& Params ) :
 	mInput		= eeNew( UITextInput, ( InputParams ) );
 
 	UIControlAnim::CreateParams BtnParams( Params );
-	BtnParams.Parent( this );
+	BtnParams.setParent( this );
 	BtnParams.Size = Sizei( 16, 16 );
 
 	if ( BtnParams.Flags & UI_CLIP_ENABLE )

@@ -110,9 +110,9 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	createTGEditor();
 
 	UIComplexControl::CreateParams Params;
-	Params.Parent( mUIContainer );
-	Params.PosSet( 0, mWinMenu->size().height() );
-	Params.SizeSet( 800, 600 );
+	Params.setParent( mUIContainer );
+	Params.setPos( 0, mWinMenu->size().height() );
+	Params.setSize( 800, 600 );
 	Params.Background.color( ColorA( 0, 0, 0, 50 ) );
 	Params.Flags |= UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT | UI_CLIP_ENABLE | UI_BORDER | UI_FILL_BACKGROUND;
 	mSubTextureEditor = eeNew( TextureAtlasSubTextureEditor, ( Params, this ) );

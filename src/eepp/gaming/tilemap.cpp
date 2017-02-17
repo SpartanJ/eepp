@@ -1010,7 +1010,7 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 						tLightHdr = &( tLighsHdr[ i ] );
 
 						ColorA color( tLightHdr->Color );
-						RGB rgb( color.ToColor() );
+						RGB rgb( color.toColor() );
 
 						mLightManager->AddLight(
 							eeNew( MapLight, ( tLightHdr->Radius, tLightHdr->PosX, tLightHdr->PosY, rgb, (LIGHT_TYPE)tLightHdr->Type ) )

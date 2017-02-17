@@ -9,7 +9,7 @@ UIScrollBar::UIScrollBar( const UIScrollBar::CreateParams& Params ) :
 {
 	UIControlAnim::CreateParams CParams = Params;
 	CParams.Size = Sizei( 16, 16 );
-	CParams.Parent( this );
+	CParams.setParent( this );
 
 	mBtnDown	= eeNew( UIControlAnim, ( CParams ) );
 	mBtnUp		= eeNew( UIControlAnim, ( CParams ) );
@@ -24,7 +24,7 @@ UIScrollBar::UIScrollBar( const UIScrollBar::CreateParams& Params ) :
 	SParams.Blend = Params.Blend;
 	SParams.Border = Params.Border;
 	SParams.Flags = Params.Flags;
-	SParams.Parent( this );
+	SParams.setParent( this );
 	SParams.Pos = Params.Pos;
 	SParams.Size = Params.Size;
 	SParams.VerticalSlider = Params.VerticalScrollBar;

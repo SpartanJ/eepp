@@ -18,7 +18,7 @@ UISlider::UISlider( const UISlider::CreateParams& Params ) :
 	mOnPosChange( false )
 {
 	UIControl::CreateParams BgParams;
-	BgParams.Parent( this );
+	BgParams.setParent( this );
 
 	if ( !mVertical )
 		BgParams.Size = Sizei( mSize.width() - 16, 8 );
@@ -31,9 +31,9 @@ UISlider::UISlider( const UISlider::CreateParams& Params ) :
 	mBackSlider->center();
 
 	UIDragable::CreateParams SlideParams;
-	SlideParams.Parent( this );
+	SlideParams.setParent( this );
 	SlideParams.Size = Sizei( 16, 16 );
-	SlideParams.PosSet( Vector2i( 0, 0 ) );
+	SlideParams.setPos( Vector2i( 0, 0 ) );
 
 	mSlider = eeNew( Private::UISliderButton, ( SlideParams ) );
 	mSlider->enabled( true );

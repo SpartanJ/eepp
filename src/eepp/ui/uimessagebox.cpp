@@ -13,9 +13,9 @@ UIMessageBox::UIMessageBox( const UIMessageBox::CreateParams& Params ) :
 	if ( NULL == Theme )
 	{
 		UIPushButton::CreateParams ButtonParams;
-		ButtonParams.Parent( getContainer() );
-		ButtonParams.SizeSet( 90, 22 );
-		ButtonParams.PosSet( getContainer()->size().width() - 96, getContainer()->size().height() - ButtonParams.Size.height() - 8 );
+		ButtonParams.setParent( getContainer() );
+		ButtonParams.setSize( 90, 22 );
+		ButtonParams.setPos( getContainer()->size().width() - 96, getContainer()->size().height() - ButtonParams.Size.height() - 8 );
 		ButtonParams.Flags = UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE;
 		mButtonOK = eeNew( UIPushButton, ( ButtonParams ) );
 		mButtonOK->visible( true );
@@ -40,9 +40,9 @@ UIMessageBox::UIMessageBox( const UIMessageBox::CreateParams& Params ) :
 	}
 
 	UITextBox::CreateParams TxtParams;
-	TxtParams.Parent( getContainer() );
+	TxtParams.setParent( getContainer() );
 	TxtParams.Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM;
-	TxtParams.SizeSet( getContainer()->size().width(), mButtonOK->position().y  );
+	TxtParams.setSize( getContainer()->size().width(), mButtonOK->position().y  );
 
 	mTextBox = eeNew( UITextBox, ( TxtParams ) );
 	mTextBox->visible( true );

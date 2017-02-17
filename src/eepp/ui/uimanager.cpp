@@ -49,9 +49,9 @@ void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 	mInit			= true;
 
 	UIWindow::CreateParams Params;
-	Params.Parent( NULL );
-	Params.PosSet( 0, 0 );
-	Params.SizeSet( Engine::instance()->getWidth(), Engine::instance()->getHeight() );
+	Params.setParent( NULL );
+	Params.setPos( 0, 0 );
+	Params.setSize( Engine::instance()->getWidth(), Engine::instance()->getHeight() );
 	Params.Flags = UI_CONTROL_DEFAULT_FLAGS | UI_REPORT_SIZE_CHANGE_TO_CHILDS;
 	Params.WinFlags = UI_WIN_NO_BORDER | UI_WIN_RESIZEABLE;
 	Params.MinWindowSize = Sizei( 0, 0 );

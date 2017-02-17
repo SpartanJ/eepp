@@ -52,9 +52,9 @@ void UIComboBox::createButton() {
 	}
 
 	UIControl::CreateParams Params;
-	Params.Parent( this ),
+	Params.setParent( this ),
 	Params.Size = Sizei( btnWidth, mSize.height() );
-	Params.PosSet( mSize.width() - btnWidth, 0 );
+	Params.setPos( mSize.width() - btnWidth, 0 );
 	mButton = eeNew( UIControl, ( Params ) );
 	mButton->visible( true );
 	mButton->enabled( true );

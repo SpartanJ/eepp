@@ -55,11 +55,11 @@ class EE_API UIControl {
 
 				~CreateParams() {}
 
-				void PosSet( const Vector2i& pos )						{ Pos.x = pos.x; Pos.y = pos.y; }
-				void PosSet( const Int32& X, const Int32& Y )				{ Pos.x = X; Pos.y = Y; }
-				void Parent( UIControl * Ctrl )							{ ParentCtrl = Ctrl; }
-				void SizeSet( const Sizei& size )							{ Size.x = size.x; Size.y = size.y;	}
-				void SizeSet( const Int32& Width, const Int32& Height )		{ Size.x = Width; Size.y = Height;	}
+				void setPos( const Vector2i& pos )						{ Pos.x = pos.x; Pos.y = pos.y; }
+				void setPos( const Int32& X, const Int32& Y )				{ Pos.x = X; Pos.y = Y; }
+				void setParent( UIControl * Ctrl )							{ ParentCtrl = Ctrl; }
+				void setSize( const Sizei& size )							{ Size.x = size.x; Size.y = size.y;	}
+				void setSize( const Int32& Width, const Int32& Height )		{ Size.x = Width; Size.y = Height;	}
 
 				UIControl *		ParentCtrl;
 				Vector2i			Pos;

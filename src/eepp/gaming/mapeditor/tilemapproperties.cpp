@@ -31,9 +31,9 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 		UITextBox * Txt = mUITheme->createTextBox( "Map Base Color:", mUIWindow->getContainer(), Sizei(), Vector2i( 50, 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 		UIComplexControl::CreateParams ComParams;
-		ComParams.Parent( mUIWindow->getContainer() );
-		ComParams.PosSet( Txt->position().x, Txt->position().y + Txt->size().height() + 4 );
-		ComParams.SizeSet( 64, 64 );
+		ComParams.setParent( mUIWindow->getContainer() );
+		ComParams.setPos( Txt->position().x, Txt->position().y + Txt->size().height() + 4 );
+		ComParams.setSize( 64, 64 );
 		ComParams.Background.color( mMap->BaseColor() );
 		ComParams.Border.color( ColorA( 100, 100, 100, 200 ) );
 		ComParams.Flags |= UI_FILL_BACKGROUND | UI_BORDER;
@@ -81,9 +81,9 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	CancelButton->text( "Cancel" );
 
 	UIGenericGrid::CreateParams GridParams;
-	GridParams.Parent( mUIWindow->getContainer() );
-	GridParams.PosSet( 50, TxtBox->position().y + 20 );
-	GridParams.SizeSet( 400, 400 - DiffIfLights );
+	GridParams.setParent( mUIWindow->getContainer() );
+	GridParams.setPos( 50, TxtBox->position().y + 20 );
+	GridParams.setSize( 400, 400 - DiffIfLights );
 	GridParams.Flags = UI_AUTO_PADDING;
 	GridParams.RowHeight = 24;
 	GridParams.CollumnsCount = 5;
@@ -239,7 +239,7 @@ void TileMapProperties::CreateGridElems() {
 
 UIGridCell * TileMapProperties::CreateCell() {
 	UIGridCell::CreateParams CellParams;
-	CellParams.Parent( mGenGrid->getContainer() );
+	CellParams.setParent( mGenGrid->getContainer() );
 
 	UITextInput::CreateParams TxtInputParams;
 	TxtInputParams.Flags = UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED;

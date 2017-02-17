@@ -15,7 +15,7 @@ UIMenuSubMenu::UIMenuSubMenu( UIMenuSubMenu::CreateParams& Params ) :
 	mCbId2( 0 )
 {
 	UIGfx::CreateParams GfxParams;
-	GfxParams.Parent( this );
+	GfxParams.setParent( this );
 	GfxParams.SubTexture = NULL;
 	GfxParams.Flags = UI_AUTO_SIZE;
 	mArrow = eeNew( UIGfx, ( GfxParams ) );

@@ -95,7 +95,7 @@ void UIComplexControl::createTooltip() {
 		mTooltip->enabled( false );
 	} else {
 		UITooltip::CreateParams Params;
-		Params.Parent( UIManager::instance()->mainControl() );
+		Params.setParent( UIManager::instance()->mainControl() );
 		Params.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_PADDING | UI_AUTO_SIZE;
 		mTooltip = eeNew( UITooltip, ( Params, this ) );
 	}

@@ -51,9 +51,9 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 	CancelButton->text( "Cancel" );
 
 	UIGenericGrid::CreateParams GridParams;
-	GridParams.Parent( mUIWindow->getContainer() );
-	GridParams.PosSet( 50, TxtBox->position().y + TxtBox->size().height() );
-	GridParams.SizeSet( 400, 350 );
+	GridParams.setParent( mUIWindow->getContainer() );
+	GridParams.setPos( 50, TxtBox->position().y + TxtBox->size().height() );
+	GridParams.setSize( 400, 350 );
 	GridParams.Flags = UI_AUTO_PADDING;
 	GridParams.RowHeight = 24;
 	GridParams.CollumnsCount = 5;
@@ -178,7 +178,7 @@ void MapObjectProperties::CreateGridElems() {
 
 UIGridCell * MapObjectProperties::CreateCell() {
 	UIGridCell::CreateParams CellParams;
-	CellParams.Parent( mGenGrid->getContainer() );
+	CellParams.setParent( mGenGrid->getContainer() );
 
 	UITextInput::CreateParams TxtInputParams;
 	TxtInputParams.Flags = UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED;

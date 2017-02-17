@@ -160,9 +160,9 @@ void MapEditor::CreateWinMenu() {
 	PU6->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &MapEditor::MapMenuClick ) );
 
 	UIComplexControl::CreateParams Params;
-	Params.Parent( mUIContainer );
-	Params.PosSet( 0, WinMenu->size().height() );
-	Params.SizeSet( mUIContainer->size().width(), mUIContainer->size().height() - WinMenu->size().height() );
+	Params.setParent( mUIContainer );
+	Params.setPos( 0, WinMenu->size().height() );
+	Params.setSize( mUIContainer->size().width(), mUIContainer->size().height() - WinMenu->size().height() );
 	Params.Flags = UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_REPORT_SIZE_CHANGE_TO_CHILDS;
 	mWinContainer = eeNew( UIComplexControl, ( Params ) );
 	mWinContainer->visible( true );
@@ -176,8 +176,8 @@ void MapEditor::CreateETGMenu() {
 	Int32 DistFromTopMenu = 4;
 
 	UIComplexControl::CreateParams CParams;
-	CParams.Parent( mWinContainer );
-	CParams.SizeSet( Sizei( Width + DistToBorder, mWinContainer->size().height() ) );
+	CParams.setParent( mWinContainer );
+	CParams.setSize( Sizei( Width + DistToBorder, mWinContainer->size().height() ) );
 	CParams.Flags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 	mSubTextureCont = eeNew( UIComplexControl, ( CParams ) );
 	mSubTextureCont->enabled( true );
@@ -298,9 +298,9 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 	mChkDI->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickDI ) );
 
 	UIComplexControl::CreateParams SGParams;
-	SGParams.Parent( mSubTextureCont );
-	SGParams.PosSet( Vector2i( TAB_CONT_X_DIST, mChkDI->position().y + mChkDI->size().height() + 8 ) );
-	SGParams.SizeSet( Sizei( Width, 400 ) );
+	SGParams.setParent( mSubTextureCont );
+	SGParams.setPos( Vector2i( TAB_CONT_X_DIST, mChkDI->position().y + mChkDI->size().height() + 8 ) );
+	SGParams.setSize( Sizei( Width, 400 ) );
 	SGParams.Flags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 	mSGCont = eeNew( UIComplexControl, ( SGParams ) );
 	mSGCont->enabled( true );
@@ -320,9 +320,9 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 	mGfxPreview->border()->color( ColorA( 0, 0, 0, 200 ) );
 
 	UIComplexControl::CreateParams DIParams;
-	DIParams.Parent( mSubTextureCont );
-	DIParams.PosSet( SGParams.Pos );
-	DIParams.SizeSet( Sizei( Width, 400 ) );
+	DIParams.setParent( mSubTextureCont );
+	DIParams.setPos( SGParams.Pos );
+	DIParams.setSize( Sizei( Width, 400 ) );
 	DIParams.Flags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 	mDICont = eeNew( UIComplexControl, ( DIParams ) );
 	mDICont->enabled( false );
@@ -343,9 +343,9 @@ void MapEditor::CreateLighContainer() {
 	UITextBox * Txt = mTheme->createTextBox( "Light Color:", mLightCont, Sizei(), Vector2i( TAB_CONT_X_DIST, 32 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	UIComplexControl::CreateParams ComParams;
-	ComParams.Parent( mLightCont );
-	ComParams.PosSet( Txt->position().x, Txt->position().y + Txt->size().height() + 4 );
-	ComParams.SizeSet( 58, 64 );
+	ComParams.setParent( mLightCont );
+	ComParams.setPos( Txt->position().x, Txt->position().y + Txt->size().height() + 4 );
+	ComParams.setSize( 58, 64 );
 	ComParams.Background.color( ColorA(255,255,255,255) );
 	ComParams.Border.color( ColorA( 100, 100, 100, 200 ) );
 	ComParams.Flags |= UI_FILL_BACKGROUND | UI_BORDER;
@@ -460,9 +460,9 @@ void MapEditor::CreateUIMap() {
 	}
 
 	UIComplexControl::CreateParams Params;
-	Params.Parent( mWinContainer );
-	Params.PosSet( 0, 0 );
-	Params.SizeSet( mWinContainer->size().width() - 225 - ScrollV, mWinContainer->size().height() - ScrollH );
+	Params.setParent( mWinContainer );
+	Params.setPos( 0, 0 );
+	Params.setSize( mWinContainer->size().width() - 225 - ScrollV, mWinContainer->size().height() - ScrollH );
 
 	Params.Flags |= UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT;
 	mUIMap = eeNew( UIMap, ( Params, mTheme ) );
@@ -545,7 +545,7 @@ void MapEditor::OnNewLight( const UIEvent * Event ) {
 
 	if ( MEvent->getFlags() & EE_BUTTON_LMASK ) {
 		Vector2i Pos = mUIMap->Map()->GetMouseMapPos();
-		mUIMap->AddLight( eeNew( MapLight, ( mLightRadius->value(), Pos.x, Pos.y, mUIBaseColor->background()->color().ToColor(), mLightTypeChk->active() ? LIGHT_ISOMETRIC : LIGHT_NORMAL ) ) );
+		mUIMap->AddLight( eeNew( MapLight, ( mLightRadius->value(), Pos.x, Pos.y, mUIBaseColor->background()->color().toColor(), mLightTypeChk->active() ? LIGHT_ISOMETRIC : LIGHT_NORMAL ) ) );
 	}
 }
 

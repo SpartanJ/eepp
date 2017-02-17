@@ -111,9 +111,9 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	Txt = mTheme->createTextBox( "Map Base Color:", mUIWindow->getContainer(), Sizei(), Vector2i( Txt->position().x, mUIClipArea->position().y + mUIClipArea->size().height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	UIComplexControl::CreateParams ComParams;
-	ComParams.Parent( mUIWindow->getContainer() );
-	ComParams.PosSet( Txt->position().x, Txt->position().y + Txt->size().height() + 4 );
-	ComParams.SizeSet( 64, 64 );
+	ComParams.setParent( mUIWindow->getContainer() );
+	ComParams.setPos( Txt->position().x, Txt->position().y + Txt->size().height() + 4 );
+	ComParams.setSize( 64, 64 );
 	ComParams.Background.color( ColorA( 255, 255, 255, 255 ) );
 
 	if ( ResizeMap ) {

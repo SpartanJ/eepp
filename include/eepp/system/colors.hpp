@@ -180,7 +180,7 @@ class tColorA {
 			);
 		}
 
-		tColor<T> ToColor() {
+		tColor<T> toColor() {
 			return tColor<T>( Red, Green, Blue );
 		}
 };

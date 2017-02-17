@@ -11,8 +11,8 @@ UICheckBox::UICheckBox( const UITextBox::CreateParams& Params ) :
 {
 	UIControlAnim::CreateParams ButtonParams( Params );
 
-	ButtonParams.Parent( this );
-	ButtonParams.PosSet( Vector2i( 0, 0 ) );
+	ButtonParams.setParent( this );
+	ButtonParams.setPos( Vector2i( 0, 0 ) );
 	ButtonParams.Size = Sizei( 16, 16 );
 
 	mActiveButton 	= eeNew( UIControlAnim, ( ButtonParams ) );

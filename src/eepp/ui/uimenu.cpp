@@ -53,7 +53,7 @@ void UIMenu::doAftersetTheme() {
 
 UIMenuItem * UIMenu::CreateMenuItem( const String& Text, SubTexture * Icon ) {
 	UIMenuItem::CreateParams Params;
-	Params.Parent( this );
+	Params.setParent( this );
 	Params.Font 			= mFont;
 	Params.FontColor 		= mFontColor;
 	Params.FontShadowColor 	= mFontShadowColor;
@@ -86,7 +86,7 @@ Uint32 UIMenu::Add( const String& Text, SubTexture * Icon ) {
 
 UIMenuCheckBox * UIMenu::CreateMenuCheckBox( const String& Text, const bool &Active ) {
 	UIMenuCheckBox::CreateParams Params;
-	Params.Parent( this );
+	Params.setParent( this );
 	Params.Font 			= mFont;
 	Params.FontColor 		= mFontColor;
 	Params.FontShadowColor 	= mFontShadowColor;
@@ -122,7 +122,7 @@ Uint32 UIMenu::AddCheckBox( const String& Text, const bool& Active ) {
 
 UIMenuSubMenu * UIMenu::CreateSubMenu( const String& Text, SubTexture * Icon, UIMenu * SubMenu ) {
 	UIMenuSubMenu::CreateParams Params;
-	Params.Parent( this );
+	Params.setParent( this );
 	Params.Font 			= mFont;
 	Params.FontColor 		= mFontColor;
 	Params.FontShadowColor 	= mFontShadowColor;
@@ -222,8 +222,8 @@ void UIMenu::SetControlSize( UIControl * Control, const Uint32& Pos ) {
 
 Uint32 UIMenu::AddSeparator() {
 	UISeparator::CreateParams Params;
-	Params.Parent( this );
-	Params.PosSet( mPadding.Left, mPadding.Top + mNextPosY );
+	Params.setParent( this );
+	Params.setPos( mPadding.Left, mPadding.Top + mNextPosY );
 	Params.Size = Sizei( mSize.width() - mPadding.Left - mPadding.Right, 3 );
 
 	UISeparator * Control = eeNew( UISeparator, ( Params ) );

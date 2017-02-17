@@ -29,7 +29,7 @@ UITextEdit::UITextEdit( UITextEdit::CreateParams& Params ) :
 		extraFlags |= UI_ANCHOR_BOTTOM;
 
 	UITextInput::CreateParams TIParams;
-	TIParams.Parent( this );
+	TIParams.setParent( this );
 	TIParams.Size				= mSize;
 	TIParams.Flags				= UI_VALIGN_TOP | UI_HALIGN_LEFT | UI_TEXT_SELECTION_ENABLED | extraFlags;
 	TIParams.MaxLength			= 1024 * 1024 * 10;
@@ -50,15 +50,15 @@ UITextEdit::UITextEdit( UITextEdit::CreateParams& Params ) :
 	mTextInput->addEventListener( UIEvent::EventOnCursorPosChange	, cb::Make1( this, &UITextEdit::onCursorPosChange ) );
 
 	UIScrollBar::CreateParams ScrollBarP;
-	ScrollBarP.Parent( this );
-	ScrollBarP.PosSet( mSize.width() - 15, 0 );
+	ScrollBarP.setParent( this );
+	ScrollBarP.setPos( mSize.width() - 15, 0 );
 	ScrollBarP.Size					= Sizei( 15, mSize.height() );
 	ScrollBarP.Flags				= UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar	= true;
 	mVScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
 	mVScrollBar->value( 1 );
 
-	ScrollBarP.PosSet( 0, mSize.height() - 15 );
+	ScrollBarP.setPos( 0, mSize.height() - 15 );
 	ScrollBarP.Size					= Sizei( mSize.width() - mVScrollBar->size().width(), 15 );
 	ScrollBarP.VerticalScrollBar	= false;
 	mHScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );

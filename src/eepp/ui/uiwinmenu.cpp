@@ -43,7 +43,7 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	eeASSERT( NULL != Menu );
 
 	UISelectButton::CreateParams ButtonParams;
-	ButtonParams.Parent( this );
+	ButtonParams.setParent( this );
 	ButtonParams.Flags				= UI_HALIGN_CENTER | UI_VALIGN_CENTER;
 
 	if ( mFlags & UI_DRAW_SHADOW )

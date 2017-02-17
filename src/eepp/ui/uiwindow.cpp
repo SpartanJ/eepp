@@ -28,7 +28,7 @@ UIWindow::UIWindow( const UIWindow::CreateParams& Params ) :
 	UIManager::instance()->windowAdd( this );
 
 	UIComplexControl::CreateParams tcParams;
-	tcParams.Parent( this );
+	tcParams.setParent( this );
 	tcParams.Flags |= UI_REPORT_SIZE_CHANGE_TO_CHILDS;
 
 	mContainer		= eeNew( UIComplexControl, ( tcParams ) );
@@ -39,7 +39,7 @@ UIWindow::UIWindow( const UIWindow::CreateParams& Params ) :
 
 	if ( !( mWinFlags & UI_WIN_NO_BORDER ) ) {
 		UIControlAnim::CreateParams tParams;
-		tParams.Parent( this );
+		tParams.setParent( this );
 
 		mWindowDecoration = eeNew( UIControlAnim, ( tParams ) );
 		mWindowDecoration->visible( true );
@@ -61,7 +61,7 @@ UIWindow::UIWindow( const UIWindow::CreateParams& Params ) :
 			mContainer->dragEnable( true );
 
 		UIComplexControl::CreateParams ButtonParams;
-		ButtonParams.Parent( this );
+		ButtonParams.setParent( this );
 
 		if ( mWinFlags & UI_WIN_CLOSE_BUTTON ) {
 			mButtonClose = eeNew( UIComplexControl, ( ButtonParams ) );
@@ -788,7 +788,7 @@ const Uint8& UIWindow::baseAlpha() const {
 void UIWindow::title( const String& Text ) {
 	if ( NULL == mTitle ) {
 		UITextBox::CreateParams Params;
-		Params.Parent( this );
+		Params.setParent( this );
 		Params.Flags		= UI_CLIP_ENABLE | UI_VALIGN_CENTER;
 		Params.FontColor	= mTitleFontColor;
 

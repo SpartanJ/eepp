@@ -36,8 +36,8 @@ UIListBox::UIListBox( UIListBox::CreateParams& Params ) :
 		mFont = UIThemeManager::instance()->defaultFont();
 
 	UIControl::CreateParams CParams;
-	CParams.Parent( this );
-	CParams.PosSet( mPaddingContainer.Left, mPaddingContainer.Top );
+	CParams.setParent( this );
+	CParams.setPos( mPaddingContainer.Left, mPaddingContainer.Top );
 	CParams.Size = Sizei( mSize.width() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.height() - mPaddingContainer.Top - mPaddingContainer.Bottom );
 	CParams.Flags = Params.Flags;
 	mContainer = eeNew( UIItemContainer<UIListBox>, ( CParams ) );
@@ -48,15 +48,15 @@ UIListBox::UIListBox( UIListBox::CreateParams& Params ) :
 		mFlags &= ~UI_CLIP_ENABLE;
 
 	UIScrollBar::CreateParams ScrollBarP;
-	ScrollBarP.Parent( this );
+	ScrollBarP.setParent( this );
 	ScrollBarP.Size = Sizei( 15, mSize.height() );
-	ScrollBarP.PosSet( mSize.width() - 15, 0 );
+	ScrollBarP.setPos( mSize.width() - 15, 0 );
 	ScrollBarP.Flags = UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar = true;
 	mVScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
 
 	ScrollBarP.Size = Sizei( mSize.width() - mVScrollBar->size().width(), 15 );
-	ScrollBarP.PosSet( 0, mSize.height() - 15 );
+	ScrollBarP.setPos( 0, mSize.height() - 15 );
 	ScrollBarP.VerticalScrollBar = false;
 	mHScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
 
@@ -168,7 +168,7 @@ Uint32 UIListBox::addListBoxItem( const String& Text ) {
 
 UIListBoxItem * UIListBox::createListBoxItem( const String& Name ) {
 	UITextBox::CreateParams TextParams;
-	TextParams.Parent( mContainer );
+	TextParams.setParent( mContainer );
 	TextParams.Flags 		= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
 	TextParams.Font 		= mFont;
 	TextParams.FontColor 	= mFontColor;

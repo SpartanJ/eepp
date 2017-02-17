@@ -19,8 +19,8 @@ TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( const UIComplexContr
 	mGfx = mTheme->createGfx( NULL, this );
 
 	UIDragable::CreateParams DragParams;
-	DragParams.Parent( this );
-	DragParams.SizeSet( 500000, 500000 );
+	DragParams.setParent( this );
+	DragParams.setSize( 500000, 500000 );
 	mDrag = eeNew( UIDragable, ( DragParams ) );
 	mDrag->enabled( true );
 	mDrag->visible( true );

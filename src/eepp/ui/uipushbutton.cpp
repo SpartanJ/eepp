@@ -11,7 +11,7 @@ UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 	mIconSpace( Params.IconHorizontalMargin )
 {
 	UIGfx::CreateParams GfxParams;
-	GfxParams.Parent( this );
+	GfxParams.setParent( this );
 	GfxParams.SubTexture = Params.Icon;
 
 	if ( Params.IconMinSize.x != 0 && Params.IconMinSize.y != 0 ) {
@@ -32,7 +32,7 @@ UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 	icon( Params.Icon );
 
 	UITextBox::CreateParams TxtParams = Params;
-	TxtParams.Parent( this );
+	TxtParams.setParent( this );
 	TxtParams.Flags 			= HAlignGet( Params.Flags ) | VAlignGet( Params.Flags );
 	TxtParams.Font				= Params.Font;
 	TxtParams.FontColor 		= Params.FontColor;

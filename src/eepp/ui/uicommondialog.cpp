@@ -34,8 +34,8 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	}
 
 	UITextBox::CreateParams TxtBoxParams;
-	TxtBoxParams.Parent( getContainer() );
-	TxtBoxParams.PosSet( 6, 13 );
+	TxtBoxParams.setParent( getContainer() );
+	TxtBoxParams.setPos( 6, 13 );
 	TxtBoxParams.Flags |= UI_AUTO_SIZE;
 	UITextBox * TBox = eeNew( UITextBox, ( TxtBoxParams ) );
 	TBox->visible( true );
@@ -44,9 +44,9 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 
 	UIPushButton::CreateParams ButtonParams;
 	ButtonParams.Flags = UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE;
-	ButtonParams.Parent( getContainer() );
-	ButtonParams.PosSet( getContainer()->size().width() - 86, getContainer()->size().height() - 24 );
-	ButtonParams.SizeSet( 80, 22 );
+	ButtonParams.setParent( getContainer() );
+	ButtonParams.setPos( getContainer()->size().width() - 86, getContainer()->size().height() - 24 );
+	ButtonParams.setSize( 80, 22 );
 	mButtonCancel = eeNew( UIPushButton, ( ButtonParams ) );
 	mButtonCancel->visible( true );
 	mButtonCancel->enabled( true );
@@ -54,7 +54,7 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	mButtonCancel->position( Vector2i( mButtonCancel->position().x, getContainer()->size().height() - mButtonCancel->size().height() - 2 ) );
 	mButtonCancel->updateAnchorsDistances();
 
-	ButtonParams.PosSet( mButtonCancel->position().x, mButtonCancel->position().y - mButtonCancel->size().height() );
+	ButtonParams.setPos( mButtonCancel->position().x, mButtonCancel->position().y - mButtonCancel->size().height() );
 	mButtonOpen = eeNew( UIPushButton, ( ButtonParams ) );
 	mButtonOpen->visible( true );
 	mButtonOpen->enabled( true );
@@ -65,18 +65,18 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 		mButtonOpen->text( "Open" );
 
 	UITextInput::CreateParams TInputParams;
-	TInputParams.Parent( getContainer() );
+	TInputParams.setParent( getContainer() );
 	TInputParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_VALIGN_CENTER | UI_TEXT_SELECTION_ENABLED;
-	TInputParams.PosSet( 70, 6 );
-	TInputParams.SizeSet( getContainer()->size().width() - TInputParams.Pos.x - 42, 22 );
+	TInputParams.setPos( 70, 6 );
+	TInputParams.setSize( getContainer()->size().width() - TInputParams.Pos.x - 42, 22 );
 	mPath = eeNew( UITextInput, ( TInputParams ) );
 	mPath->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UICommonDialog::onPressEnter ) );
 	mPath->visible( true );
 	mPath->enabled( true );
 	mPath->text( mCurPath );
 
-	ButtonParams.PosSet( TInputParams.Pos.x + TInputParams.Size.width() + 6, TInputParams.Pos.y );
-	ButtonParams.SizeSet( 24, 22 );
+	ButtonParams.setPos( TInputParams.Pos.x + TInputParams.Size.width() + 6, TInputParams.Pos.y );
+	ButtonParams.setSize( 24, 22 );
 	ButtonParams.Flags |= UI_ANCHOR_TOP;
 	mButtonUp = eeNew( UIPushButton, ( ButtonParams ) );
 	mButtonUp->visible( true );
@@ -84,8 +84,8 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	mButtonUp->text( "Up" );
 
 	UIListBox::CreateParams LBParams;
-	LBParams.Parent( getContainer() );
-	LBParams.PosSet( 6, mButtonUp->position().y + mButtonUp->size().height() + 4 );
+	LBParams.setParent( getContainer() );
+	LBParams.setPos( 6, mButtonUp->position().y + mButtonUp->size().height() + 4 );
 	LBParams.Size = Sizei( getContainer()->size().width() - 12,
 							getContainer()->size().height() -
 								mButtonUp->size().height() -
@@ -108,32 +108,32 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	mList->visible( true );
 	mList->enabled( true );
 
-	TxtBoxParams.PosSet( 6, getContainer()->size().height() - 54 );
-	TxtBoxParams.SizeSet( 74, 19 );
+	TxtBoxParams.setPos( 6, getContainer()->size().height() - 54 );
+	TxtBoxParams.setSize( 74, 19 );
 	TxtBoxParams.Flags = UI_ANCHOR_LEFT | UI_VALIGN_CENTER;
 	TBox = eeNew( UITextBox, ( TxtBoxParams ) );
 	TBox->visible( true );
 	TBox->enabled( false );
 	TBox->text( "File Name:" );
 
-	TxtBoxParams.PosSet( TBox->position().x, TBox->position().y + TBox->size().height()+ 6 );
+	TxtBoxParams.setPos( TBox->position().x, TBox->position().y + TBox->size().height()+ 6 );
 	UITextBox * TBox2 = eeNew( UITextBox, ( TxtBoxParams ) );
 	TBox2->visible( true );
 	TBox2->enabled( false );
 	TBox2->text( "Files of type:" );
 
 	TInputParams.Flags &= ~UI_ANCHOR_TOP;
-	TInputParams.PosSet( TBox->position().x + TBox->size().width(), TBox->position().y );
-	TInputParams.SizeSet( getContainer()->size().width() - mButtonOpen->size().width() - TInputParams.Pos.x - 20, TInputParams.Size.height() );
+	TInputParams.setPos( TBox->position().x + TBox->size().width(), TBox->position().y );
+	TInputParams.setSize( getContainer()->size().width() - mButtonOpen->size().width() - TInputParams.Pos.x - 20, TInputParams.Size.height() );
 	mFile = eeNew( UITextInput, ( TInputParams ) );
 	mFile->visible( true );
 	mFile->enabled( true );
 	mFile->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UICommonDialog::onPressFileEnter ) );
 
 	UIDropDownList::CreateParams DDLParams;
-	DDLParams.Parent( getContainer() );
-	DDLParams.PosSet( TBox2->position().x + TBox2->size().width(), TBox2->position().y );
-	DDLParams.SizeSet( getContainer()->size().width() - mButtonCancel->size().width() - DDLParams.Pos.x - 20, 22 );
+	DDLParams.setParent( getContainer() );
+	DDLParams.setPos( TBox2->position().x + TBox2->size().width(), TBox2->position().y );
+	DDLParams.setSize( getContainer()->size().width() - mButtonCancel->size().width() - DDLParams.Pos.x - 20, 22 );
 	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_AUTO_SIZE;
 	DDLParams.PopUpToMainControl = true;
 	mFiletype = eeNew( UIDropDownList, ( DDLParams ) );

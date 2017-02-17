@@ -26,19 +26,19 @@ UITabWidget::UITabWidget( UITabWidget::CreateParams& Params ) :
 	mTabSelectedIndex( eeINDEX_NOT_FOUND )
 {
 	UIComplexControl::CreateParams TabParams;
-	TabParams.Parent( this );
-	TabParams.PosSet( 0, 0 );
+	TabParams.setParent( this );
+	TabParams.setPos( 0, 0 );
 	TabParams.Flags |= UI_CLIP_ENABLE | UI_ANCHOR_RIGHT;
-	TabParams.SizeSet( mSize.width(), mTabWidgetHeight );
+	TabParams.setSize( mSize.width(), mTabWidgetHeight );
 
 	mTabContainer = eeNew( UIComplexControl, ( TabParams ) );
 	mTabContainer->visible( true );
 	mTabContainer->enabled( true );
 
 	UIComplexControl::CreateParams CtrlParams;
-	CtrlParams.Parent( this );
-	CtrlParams.PosSet( 0, mTabWidgetHeight );
-	CtrlParams.SizeSet( mSize.width(), mSize.height() - mTabWidgetHeight );
+	CtrlParams.setParent( this );
+	CtrlParams.setPos( 0, mTabWidgetHeight );
+	CtrlParams.setSize( mSize.width(), mSize.height() - mTabWidgetHeight );
 	CtrlParams.Flags |= UI_CLIP_ENABLE | UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT;
 
 	mCtrlContainer = eeNew( UIComplexControl, ( CtrlParams ) );
@@ -193,7 +193,7 @@ void UITabWidget::orderTabs() {
 
 UITab * UITabWidget::createTab( const String& Text, UIControl * CtrlOwned, SubTexture * Icon ) {
 	UITab::CreateParams Params;
-	Params.Parent( mTabContainer );
+	Params.setParent( mTabContainer );
 	Params.Font 			= mFont;
 	Params.FontColor 		= mFontColor;
 	Params.FontShadowColor 	= mFontShadowColor;

@@ -20,9 +20,9 @@ UIdefaultTheme::UIdefaultTheme( const std::string& Name, const std::string& Abbr
 
 UIPopUpMenu * UIdefaultTheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 RowHeight, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	UIPopUpMenu::CreateParams MenuParams;
-	MenuParams.Parent( Parent );
-	MenuParams.PosSet( Pos );
-	MenuParams.SizeSet( Size );
+	MenuParams.setParent( Parent );
+	MenuParams.setPos( Pos );
+	MenuParams.setSize( Size );
 	MenuParams.Flags = Flags;
 	MenuParams.RowHeight = RowHeight;
 	MenuParams.PaddingContainer = PaddingContainer;
@@ -42,9 +42,9 @@ UIPopUpMenu * UIdefaultTheme::createPopUpMenu( UIControl * Parent, const Sizei& 
 
 UIProgressBar * UIdefaultTheme::createProgressBar( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool DisplayPercent, bool VerticalExpand, Vector2f MovementSpeed, Rectf FillerMargin ) {
 	UIProgressBar::CreateParams PBParams;
-	PBParams.Parent( Parent );
-	PBParams.PosSet( Pos );
-	PBParams.SizeSet( Size );
+	PBParams.setParent( Parent );
+	PBParams.setPos( Pos );
+	PBParams.setSize( Size );
 	PBParams.Flags = Flags;
 	PBParams.DisplayPercent = DisplayPercent;
 	PBParams.VerticalExpand = VerticalExpand;
@@ -67,9 +67,9 @@ UIProgressBar * UIdefaultTheme::createProgressBar( UIControl * Parent, const Siz
 
 UIWinMenu * UIdefaultTheme::createWinMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MarginBetweenButtons, Uint32 ButtonMargin, Uint32 MenuHeight, Uint32 FirstButtonMargin ) {
 	UIWinMenu::CreateParams WinMenuParams;
-	WinMenuParams.Parent( Parent );
-	WinMenuParams.PosSet( Pos );
-	WinMenuParams.SizeSet( Size );
+	WinMenuParams.setParent( Parent );
+	WinMenuParams.setPos( Pos );
+	WinMenuParams.setSize( Size );
 	WinMenuParams.Flags = Flags;
 	WinMenuParams.MarginBetweenButtons = MarginBetweenButtons;
 	WinMenuParams.ButtonMargin = ButtonMargin;
@@ -88,9 +88,9 @@ UIWinMenu * UIdefaultTheme::createWinMenu( UIControl * Parent, const Sizei& Size
 
 UIWindow * UIdefaultTheme::createWindow( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
 	UIWindow::CreateParams WinParams;
-	WinParams.Parent( Parent );
-	WinParams.PosSet( Pos );
-	WinParams.SizeSet( Size );
+	WinParams.setParent( Parent );
+	WinParams.setPos( Pos );
+	WinParams.setSize( Size );
 	WinParams.Flags = Flags;
 	WinParams.WinFlags = WinFlags;
 	WinParams.MinWindowSize = MinWindowSize;
@@ -108,9 +108,9 @@ UIWindow * UIdefaultTheme::createWindow( UIControl * Parent, const Sizei& Size, 
 
 UICommonDialog * UIdefaultTheme::createCommonDialog( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
 	UICommonDialog::CreateParams DLGParams;
-	DLGParams.Parent( Parent );
-	DLGParams.PosSet( Pos );
-	DLGParams.SizeSet( Size );
+	DLGParams.setParent( Parent );
+	DLGParams.setPos( Pos );
+	DLGParams.setSize( Size );
 	DLGParams.Flags = Flags;
 	DLGParams.WinFlags = WinFlags;
 	DLGParams.MinWindowSize = MinWindowSize;
@@ -131,9 +131,9 @@ UICommonDialog * UIdefaultTheme::createCommonDialog( UIControl * Parent, const S
 
 UIMessageBox * UIdefaultTheme::createMessageBox( UI_MSGBOX_TYPE Type, const String& Message, Uint32 WinFlags, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
 	UIMessageBox::CreateParams MsgBoxParams;
-	MsgBoxParams.Parent( Parent );
-	MsgBoxParams.PosSet( Pos );
-	MsgBoxParams.SizeSet( Size );
+	MsgBoxParams.setParent( Parent );
+	MsgBoxParams.setPos( Pos );
+	MsgBoxParams.setSize( Size );
 	MsgBoxParams.Flags = Flags;
 	MsgBoxParams.WinFlags = WinFlags;
 	MsgBoxParams.MinWindowSize = MinWindowSize;
@@ -153,9 +153,9 @@ UIMessageBox * UIdefaultTheme::createMessageBox( UI_MSGBOX_TYPE Type, const Stri
 
 UIComboBox * UIdefaultTheme::createComboBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
 	UIComboBox::CreateParams ComboParams;
-	ComboParams.Parent( Parent );
-	ComboParams.PosSet( Pos );
-	ComboParams.SizeSet( Size );
+	ComboParams.setParent( Parent );
+	ComboParams.setPos( Pos );
+	ComboParams.setSize( Size );
 	ComboParams.Flags = Flags;
 	ComboParams.MinNumVisibleItems = MinNumVisibleItems;
 	ComboParams.PopUpToMainControl = PopUpToMainControl;
@@ -173,9 +173,9 @@ UIComboBox * UIdefaultTheme::createComboBox( UIControl * Parent, const Sizei& Si
 
 UIDropDownList * UIdefaultTheme::createDropDownList( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
 	UIDropDownList::CreateParams DDLParams;
-	DDLParams.Parent( Parent );
-	DDLParams.PosSet( Pos );
-	DDLParams.SizeSet( Size );
+	DDLParams.setParent( Parent );
+	DDLParams.setPos( Pos );
+	DDLParams.setSize( Size );
 	DDLParams.Flags = Flags;
 	DDLParams.MinNumVisibleItems = MinNumVisibleItems;
 	DDLParams.PopUpToMainControl = PopUpToMainControl;
@@ -193,9 +193,9 @@ UIDropDownList * UIdefaultTheme::createDropDownList( UIControl * Parent, const S
 
 UITabWidget * UIdefaultTheme::createTabWidget( UIControl *Parent, const Sizei &Size, const Vector2i &Pos, const Uint32 &Flags, const bool &TabsClosable, const bool &SpecialBorderTabs, const Int32 &TabSeparation, const Uint32 &MaxTextLength, const Uint32 &TabWidgetHeight, const Uint32 &TabTextAlign, const Uint32 &MinTabWidth, const Uint32 &MaxTabWidth ) {
 	UITabWidget::CreateParams TabWidgetParams;
-	TabWidgetParams.Parent( Parent );
-	TabWidgetParams.PosSet( Pos );
-	TabWidgetParams.SizeSet( Size );
+	TabWidgetParams.setParent( Parent );
+	TabWidgetParams.setPos( Pos );
+	TabWidgetParams.setSize( Size );
 	TabWidgetParams.Flags = Flags;
 	TabWidgetParams.TabsClosable = TabsClosable;
 	TabWidgetParams.SpecialBorderTabs = SpecialBorderTabs;
@@ -222,9 +222,9 @@ UITabWidget * UIdefaultTheme::createTabWidget( UIControl *Parent, const Sizei &S
 
 UITooltip * UIdefaultTheme::createTooltip( UIControl * TooltipOf, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
 	UITooltip::CreateParams TooltipParams;
-	TooltipParams.Parent( Parent );
-	TooltipParams.PosSet( Pos );
-	TooltipParams.SizeSet( Size );
+	TooltipParams.setParent( Parent );
+	TooltipParams.setPos( Pos );
+	TooltipParams.setSize( Size );
 	TooltipParams.Flags = Flags;
 
 	if ( useDefaultThemeValues() ) {

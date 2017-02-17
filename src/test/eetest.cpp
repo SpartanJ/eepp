@@ -284,7 +284,7 @@ void EETest::CreateUI() {
 	Params.Flags &= ~UI_CLIP_ENABLE;
 	Params.Background.corners(0);
 	Params.Background.colors( ColorA( 0x00FF0077 ), ColorA( 0x00CC0077 ), ColorA( 0x00CC0077 ), ColorA( 0x00FF0077 ) );
-	Params.Parent( C );
+	Params.setParent( C );
 	Params.Size = Sizei( 50, 50 );
 	UITest * Child = eeNew( UITest, ( Params ) );
 	Child->position( 240, 130 );
@@ -294,7 +294,7 @@ void EETest::CreateUI() {
 	Child->rotationInterpolation()->loop( true );
 
 	Params.Background.colors( ColorA( 0xFFFF0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xFFFF0077 ) );
-	Params.Parent( Child );
+	Params.setParent( Child );
 	Params.Size = Sizei( 25, 25 );
 	UITest * Child2 = eeNew( UITest, ( Params ) );
 	Child2->position( 15, 15 );
@@ -306,8 +306,8 @@ void EETest::CreateUI() {
 	mTheme->createSprite( eeNew( Sprite, ( "gn" ) ), C, Sizei(), Vector2i( 160, 100 ) );
 
 	UITextBox::CreateParams TextParams;
-	TextParams.Parent( C );
-	TextParams.PosSet( 0, 0 );
+	TextParams.setParent( C );
+	TextParams.setPos( 0, 0 );
 	TextParams.Size = Sizei( 320, 240 );
 	TextParams.Flags = UI_VALIGN_TOP | UI_HALIGN_RIGHT;
 	UITextBox * Text = eeNew( UITextBox, ( TextParams ) );
@@ -316,8 +316,8 @@ void EETest::CreateUI() {
 	Text->text( "Turn around\nJust Turn Around\nAround!" );
 
 	UITextInput::CreateParams InputParams;
-	InputParams.Parent( C );
-	InputParams.PosSet( 20, 216 );
+	InputParams.setParent( C );
+	InputParams.setPos( 20, 216 );
 	InputParams.Size = Sizei( 200, 22 );
 	InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED;
 	UITextInput * Input = eeNew( UITextInput, ( InputParams ) );
@@ -325,9 +325,9 @@ void EETest::CreateUI() {
 	Input->enabled( true );
 
 	UIPushButton::CreateParams ButtonParams;
-	ButtonParams.Parent( C );
+	ButtonParams.setParent( C );
 	ButtonParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE;
-	ButtonParams.PosSet( 225, 216 );
+	ButtonParams.setPos( 225, 216 );
 	ButtonParams.Size = Sizei( 90, 0 );
 	ButtonParams.SetIcon( mTheme->getIconByName( "ok" ) );
 	UIPushButton * Button = eeNew( UIPushButton, ( ButtonParams ) );
@@ -337,7 +337,7 @@ void EETest::CreateUI() {
 	Button->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::ButtonClick ) );
 	Button->tooltipText( "Click and see what happens..." );
 
-	TextParams.PosSet( 130, 20 );
+	TextParams.setPos( 130, 20 );
 	TextParams.Size = Sizei( 80, 22 );
 	TextParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT;
 	UICheckBox * Checkbox = eeNew( UICheckBox, ( TextParams ) );
@@ -345,42 +345,42 @@ void EETest::CreateUI() {
 	Checkbox->text( "Check Me" );
 	Checkbox->enabled( true );
 
-	TextParams.PosSet( 130, 40 );
+	TextParams.setPos( 130, 40 );
 	UIRadioButton * RadioButton = eeNew( UIRadioButton, ( TextParams ) );
 	RadioButton->visible( true );
 	RadioButton->text( "Check Me" );
 	RadioButton->enabled( true );
 
-	TextParams.PosSet( 130, 60 );
+	TextParams.setPos( 130, 60 );
 	RadioButton = eeNew( UIRadioButton, ( TextParams ) );
 	RadioButton->visible( true );
 	RadioButton->text( "Check Me 2" );
 	RadioButton->enabled( true );
 
 	UISlider::CreateParams SliderParams;
-	SliderParams.Parent( C );
-	SliderParams.PosSet( 220, 80 );
+	SliderParams.setParent( C );
+	SliderParams.setPos( 220, 80 );
 	SliderParams.Size = Sizei( 80, 24 );
 	mSlider = eeNew( UISlider, ( SliderParams ) );
 	mSlider->visible( true );
 	mSlider->enabled( true );
 	mSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &EETest::OnSliderValueChange ) );
 
-	SliderParams.PosSet( 40, 110 );
+	SliderParams.setPos( 40, 110 );
 	SliderParams.Size = Sizei( 24, 80 );
 	SliderParams.VerticalSlider = true;
 	mSlider = eeNew( UISlider, ( SliderParams ) );
 	mSlider->visible( true );
 	mSlider->enabled( true );
 
-	SliderParams.PosSet( 60, 110 );
+	SliderParams.setPos( 60, 110 );
 	mSlider = eeNew( UISlider, ( SliderParams ) );
 	mSlider->visible( true );
 	mSlider->enabled( true );
 
 	UISpinBox::CreateParams SpinBoxParams;
-	SpinBoxParams.Parent( C );
-	SpinBoxParams.PosSet( 80, 150 );
+	SpinBoxParams.setParent( C );
+	SpinBoxParams.setPos( 80, 150 );
 	SpinBoxParams.Size = Sizei( 80, 24 );
 	SpinBoxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE;
 	SpinBoxParams.AllowDotsInNumbers = true;
@@ -389,8 +389,8 @@ void EETest::CreateUI() {
 	mSpinBox->enabled( true );
 
 	UIScrollBar::CreateParams ScrollBarP;
-	ScrollBarP.Parent( C );
-	ScrollBarP.PosSet( 0, 0 );
+	ScrollBarP.setParent( C );
+	ScrollBarP.setPos( 0, 0 );
 	ScrollBarP.Size = Sizei( 15, 240 );
 	ScrollBarP.Flags = UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar = true;
@@ -401,14 +401,14 @@ void EETest::CreateUI() {
 
 	mProgressBar = mTheme->createProgressBar( C, Sizei( 200, 20 ), Vector2i( 20, 190 ) );
 
-	TextParams.PosSet( 20, 5 );
+	TextParams.setPos( 20, 5 );
 	mTextBoxValue = eeNew( UITextBox, ( TextParams ) );
 	mTextBoxValue->visible( true );
 	OnValueChange( NULL );
 
 	UIListBox::CreateParams LBParams;
-	LBParams.Parent( C );
-	LBParams.PosSet( 325, 8 );
+	LBParams.setParent( C );
+	LBParams.setPos( 325, 8 );
 	LBParams.Size = Sizei( 200, 240-16 );
 	LBParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TOUCH_DRAG_ENABLED; // | UI_MULTI_SELECT
 	mListBox = eeNew( UIListBox, ( LBParams ) );
@@ -427,8 +427,8 @@ void EETest::CreateUI() {
 	}
 
 	UIDropDownList::CreateParams DDLParams;
-	DDLParams.Parent( C );
-	DDLParams.PosSet( 20, 55 );
+	DDLParams.setParent( C );
+	DDLParams.setPos( 20, 55 );
 	DDLParams.Size = Sizei( 100, 21 );
 	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_TOUCH_DRAG_ENABLED;
 	UIDropDownList * mDropDownList = eeNew( UIDropDownList, ( DDLParams ) );
@@ -449,8 +449,8 @@ void EETest::CreateUI() {
 	mDropDownList->getListBox()->setSelected( 0 );
 
 	UIComboBox::CreateParams ComboParams;
-	ComboParams.Parent( C );
-	ComboParams.PosSet( 20, 80 );
+	ComboParams.setParent( C );
+	ComboParams.setPos( 20, 80 );
 	ComboParams.Size = Sizei( 100, 1 );
 	ComboParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_AUTO_SIZE | UI_TOUCH_DRAG_ENABLED | UI_TEXT_SELECTION_ENABLED;
 	UIComboBox * mComboBox = eeNew( UIComboBox, ( ComboParams ) );
@@ -505,8 +505,8 @@ void EETest::CreateUI() {
 	UIManager::instance()->mainControl()->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::MainClick ) );
 
 	UITextEdit::CreateParams TEParams;
-	TEParams.Parent( C );
-	TEParams.PosSet( 5, 245 );
+	TEParams.setParent( C );
+	TEParams.setPos( 5, 245 );
 	TEParams.Size	= Sizei( 315, 130 );
 	TEParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_TEXT_SELECTION_ENABLED;
 	UITextEdit * TextEdit = eeNew( UITextEdit, ( TEParams ) );
@@ -515,9 +515,9 @@ void EETest::CreateUI() {
 	TextEdit->text( mBuda );
 
 	UIGenericGrid::CreateParams GridParams;
-	GridParams.Parent( C );
-	GridParams.PosSet( 325, 245 );
-	GridParams.SizeSet( 200, 130 );
+	GridParams.setParent( C );
+	GridParams.setPos( 325, 245 );
+	GridParams.setSize( 200, 130 );
 	GridParams.Flags = UI_AUTO_PADDING | UI_TOUCH_DRAG_ENABLED;
 	GridParams.RowHeight = 24;
 	GridParams.CollumnsCount = 3;
@@ -526,7 +526,7 @@ void EETest::CreateUI() {
 	mGenGrid->enabled( true );
 
 	UIGridCell::CreateParams CellParams;
-	CellParams.Parent( mGenGrid->getContainer() );
+	CellParams.setParent( mGenGrid->getContainer() );
 
 	UITextBox::CreateParams TxtBoxParams;
 	UITextInput::CreateParams TxtInputParams;
@@ -764,7 +764,7 @@ void EETest::ButtonClick( const UIEvent * Event ) {
 
 	if ( MouseEvent->getFlags() & EE_BUTTONS_LRM ) {
 		UIGfx::CreateParams GfxParams;
-		GfxParams.Parent( UIManager::instance()->mainControl() );
+		GfxParams.setParent( UIManager::instance()->mainControl() );
 		GfxParams.SubTexture = mTheme->getIconByName( "ok" );
 		UIGfx * Gfx = eeNew( UIGfx, ( GfxParams ) );
 		Gfx->visible( true );
