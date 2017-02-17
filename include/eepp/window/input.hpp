@@ -54,49 +54,49 @@ class EE_API Input {
 		void injectButtonRelease( const Uint32& Button );
 
 		/** @return If the Control Key is pressed */
-		bool controlPressed() const;
+		bool isControlPressed() const;
 
 		/** @return If the Shift Key is pressed */
-		bool shiftPressed() const;
+		bool isShiftPressed() const;
 
 		/** @return If the Alt Key is pressed */
-		bool altPressed() const;
+		bool isAltPressed() const;
 
 		/** @return If the Meta Key is pressed */
-		bool metaPressed() const;
+		bool isMetaPressed() const;
 
 		/** @return If mouse left button it's pressed */
-		bool mouseLeftPressed() const;
+		bool isMouseLeftPressed() const;
 
 		/** @return If mouse right button it's pressed */
-		bool mouseRightPressed() const;
+		bool isMouseRightPressed() const;
 
 		/** @return If mouse middle button it's pressed */
-		bool mouseMiddlePressed() const;
+		bool isMouseMiddlePressed() const;
 
 		/** @return If mouse left click was clicked */
-		bool mouseLeftClick() const;
+		bool mouseLeftClicked() const;
 
 		/** @return If mouse right click was clicked */
-		bool mouseRightClick() const;
+		bool mouseRightClicked() const;
 
 		/** @return If mouse middle button (scroll button) was clicked. */
-		bool mouseMiddleClick() const;
+		bool mouseMiddleClicked() const;
 
 		/** @return If mouse left click was double clicked */
-		bool mouseLeftDoubleClick() const;
+		bool mouseLeftDoubleClicked() const;
 
 		/** @return If mouse right click was double clicked */
-		bool mouseRightDoubleClick() const;
+		bool mouseRightDoubleClicked() const;
 
 		/** @return If mouse middle button (scroll button) was double clicked. */
-		bool mouseMiddleDoubleClick() const;
+		bool mouseMiddleDoubleClicked() const;
 
 		/** @return If mouse wheel up scrolled */
-		bool mouseWheelUp() const;
+		bool mouseWheelScrolledUp() const;
 
 		/** @return If mouse wheel down scrolled */
-		bool mouseWheelDown() const;
+		bool mouseWheelScrolledDown() const;
 
 		/** Push a new input callback.
 		* @return The Callback Id
@@ -118,20 +118,14 @@ class EE_API Input {
 		/** @return The mouse position over the current view */
 		Vector2i getMousePosFromView( const View& View );
 
-		/** @return The Mouse X axis position */
-		Uint16 mouseX() const;
-
-		/** @return The Mouse Y axis position */
-		Uint16 mouseY() const;
-
 		/** Set the mouse speed ( only affects grabed windows ) */
-		void mouseSpeed( const Float& Speed );
+		void setMouseSpeed( const Float& Speed );
 
 		/** @return The Mouse Speed */
-		const Float& mouseSpeed() const;
+		const Float& getMouseSpeed() const;
 
 		/** @return The bitflags of the last pressed trigger (before the current state of press trigger) */
-		const Uint32& lastPressTrigger() const;
+		const Uint32& getLastPressTrigger() const;
 
 		/** @return The current state as flags of the mouse press trigger
 			@brief 	Triggers are used mostly for the UI components. They are simple to manage.
@@ -139,22 +133,22 @@ class EE_API Input {
 			For Example The usage is simple, to know if the left mouse click is pressed you need to check against the left mouse flag mask
 					 if ( myInput->PressTrigger() & EE_BUTTON_LMASK ) ...
 		*/
-		const Uint32& pressTrigger() const;
+		const Uint32& getPressTrigger() const;
 
 		/** @return The current state as flags of the mouse release trigger */
-		const Uint32& releaseTrigger() const;
+		const Uint32& getReleaseTrigger() const;
 
 		/** @return The current state as flags of the mouse click trigger */
-		const Uint32& clickTrigger() const;
+		const Uint32& getClickTrigger() const;
 
 		/** @return The current state as flags of the mouse double click trigger */
-		const Uint32& doubleClickTrigger() const;
+		const Uint32& getDoubleClickTrigger() const;
 
 		/** @return The double click interval in milliseconds ( default 500 ms ) */
-		const Uint32& doubleClickInterval() const;
+		const Uint32& getDoubleClickInterval() const;
 
 		/** Set the double click interval in milliseconds */
-		void doubleClickInterval( const Uint32& Interval );
+		void setDoubleClickInterval( const Uint32& Interval );
 
 		/** Clean the keyboard and mouse states */
 		void cleanStates();

@@ -48,8 +48,8 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 
 	mComboWidth->getListBox()->addListBoxItems( Sizes );
 	mComboHeight->getListBox()->addListBoxItems( Sizes );
-	mComboWidth->getInputTextBuffer()->allowOnlyNumbers( true );
-	mComboHeight->getInputTextBuffer()->allowOnlyNumbers( true );
+	mComboWidth->getInputTextBuffer()->setAllowOnlyNumbers( true );
+	mComboHeight->getInputTextBuffer()->setAllowOnlyNumbers( true );
 	mComboWidth->getListBox()->setSelected( "512" );
 	mComboHeight->getListBox()->setSelected( "512" );
 

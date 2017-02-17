@@ -99,7 +99,7 @@ void UIMap::update() {
 		mMap->Update();
 
 		if ( mEnabled && mVisible && isMouseOver() ) {
-			Uint32 Flags 			= UIManager::instance()->getInput()->clickTrigger();
+			Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
 
 			if ( EDITING_LIGHT == mEditingMode ) {
 				if ( NULL != mSelLight ) {
@@ -134,7 +134,7 @@ void UIMap::update() {
 						}
 					}
 
-					Flags = UIManager::instance()->getInput()->pressTrigger();
+					Flags = UIManager::instance()->getInput()->getPressTrigger();
 
 					if ( Flags & EE_BUTTON_MMASK ) {
 						mSelLight->Position( mMap->GetMouseMapPosf() );
@@ -220,8 +220,8 @@ void UIMap::DragPoly( Uint32 Flags, Uint32 PFlags ) {
 }
 
 void UIMap::ManageObject( Uint32 Flags ) {
-	Uint32 PFlags	= UIManager::instance()->getInput()->pressTrigger();
-	Uint32 LPFlags	= UIManager::instance()->getInput()->lastPressTrigger();
+	Uint32 PFlags	= UIManager::instance()->getInput()->getPressTrigger();
+	Uint32 LPFlags	= UIManager::instance()->getInput()->getLastPressTrigger();
 
 	switch ( mEditingObjMode )
 	{

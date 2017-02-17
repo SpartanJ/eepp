@@ -2,7 +2,7 @@
 
 namespace EE { namespace Window {
 
-Uint32 eeConvertKeyCharacter( const Uint32& KeyCode, const Uint16& Unicode, const Uint32& Modifiers ) {
+Uint32 InputHelper::convertKeyCharacter( const Uint32& KeyCode, const Uint16& Unicode, const Uint32& Modifiers ) {
 	Uint32 value = 0;
 
 	if ( Unicode < 255 ) {

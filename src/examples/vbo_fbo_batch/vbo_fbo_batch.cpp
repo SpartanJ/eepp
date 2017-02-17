@@ -93,7 +93,7 @@ void MainLoop()
 	Batch->draw();
 
 	// Add the rotation angle
-	ang+=win->elapsed().asMilliseconds() * 0.1f;
+	ang+=win->getElapsed().asMilliseconds() * 0.1f;
 	ang = (ang>=360) ? 0 : ang;
 
 	// Change the scale value
@@ -104,7 +104,7 @@ void MainLoop()
 		side = false;
 		scale = 0.5f;
 	}
-	scale = (!side) ? scale+win->elapsed().asMilliseconds() * 0.00025f : scale-win->elapsed().asMilliseconds() * 0.00025f;
+	scale = (!side) ? scale+win->getElapsed().asMilliseconds() * 0.00025f : scale-win->getElapsed().asMilliseconds() * 0.00025f;
 
 	// Draw frame
 	win->display();
@@ -116,10 +116,10 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	win = Engine::instance()->createWindow( WindowSettings( 1024, 768, "eepp - VBO - FBO and Batch Rendering" ), ContextSettings( true ) );
 
 	// Set window background color
-	win->backColor( RGB( 50, 50, 50 ) );
+	win->setBackColor( RGB( 50, 50, 50 ) );
 
 	// Check if created
-	if ( win->created() ) {
+	if ( win->isOpen() ) {
 		Polygon2f Poly( Polygon2f::createRoundedRectangle( 0, 0, 200, 50 ) );
 
 		// Create the Vertex Buffer, the vertex buffer stores the vertex data in the GPU, making the rendering much faster

@@ -30,8 +30,8 @@ void MainLoop()
 		win->close();
 	}
 
-	circ += win->elapsed().asMilliseconds() * 0.5f * op;
-	circ2 += win->elapsed().asMilliseconds() * 0.75f;
+	circ += win->getElapsed().asMilliseconds() * 0.5f * op;
+	circ2 += win->getElapsed().asMilliseconds() * 0.75f;
 
 	if ( op == 1 && circ > 340 )
 	{
@@ -91,9 +91,9 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	win = Engine::instance()->createWindow( WindowSettings( 960, 640, "eepp - Empty Window" ), ContextSettings( true ) );
 
 	// Check if created
-	if ( win->created() ) {
+	if ( win->isOpen() ) {
 		// Set window background color
-		win->backColor( RGB( 50, 50, 50 ) );
+		win->setBackColor( RGB( 50, 50, 50 ) );
 
 		GLi->polygonMode( );
 

@@ -65,7 +65,7 @@ void UIGridCell::fixCell() {
 void UIGridCell::update() {
 	if ( mEnabled && mVisible ) {
 		UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( parent()->parent() );
-		Uint32 Flags				= UIManager::instance()->getInput()->clickTrigger();
+		Uint32 Flags				= UIManager::instance()->getInput()->getClickTrigger();
 
 		if ( NULL != MyParent && MyParent->alpha() != mAlpha ) {
 			alpha( MyParent->alpha() );

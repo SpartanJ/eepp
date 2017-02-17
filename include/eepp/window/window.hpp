@@ -160,10 +160,13 @@ class EE_API Window {
 		virtual void toggleFullscreen() = 0;
 		
 		/** Set the window caption */
-		virtual void caption( const std::string& caption ) = 0;
-		
+		virtual void setCaption( const std::string& setCaption ) = 0;
+
+		/** @return The caption of the titlebar */
+		virtual std::string getCaption();
+
 		/** Set the Window icon */
-		virtual bool icon( const std::string& Path ) = 0;
+		virtual bool setIcon( const std::string& Path ) = 0;
 
 		/** This will attempt to iconify/minimize the window. */
 		virtual void minimize();
@@ -184,32 +187,32 @@ class EE_API Window {
 		virtual void show();
 
 		/** This will attemp to move the window over the desktop to the position */
-		virtual void position( Int16 Left, Int16 Top );
+		virtual void setPosition( Int16 Left, Int16 Top );
 
 		/** @return The Current Window Position */
-		virtual Vector2i position();
+		virtual Vector2i getPosition();
 
 		/** Set as current context the default context ( the context used for the window creation ) */
 		virtual void setDefaultContext();
 
 		/** @return If the current window is active */
-		virtual bool active() = 0;
+		virtual bool isActive() = 0;
 
 		/** @return If the current window is visible */
-		virtual bool visible() = 0;
+		virtual bool isVisible() = 0;
 
 		/** Set the size of the window for a windowed window */
-		virtual void size( Uint32 Width, Uint32 Height );
-
-		/** @return The caption of the titlebar */
-		virtual std::string caption();
+		virtual void setSize( Uint32 Width, Uint32 Height );
 
 		/** Change the window size or the screen resolution
 		* @param Width New screen width
 		* @param Height New screen height
 		* @param Windowed Windowed or Fullscreen
 		*/
-		virtual void size( Uint32 Width, Uint32 Height, bool isWindowed ) = 0;
+		virtual void setSize( Uint32 Width, Uint32 Height, bool isWindowed ) = 0;
+
+		/** @return The window size */
+		virtual Sizei getSize();
 
 		/** @return The resolutions that support the video card */
 		virtual std::vector<DisplayMode> getDisplayModes() const = 0;
@@ -237,19 +240,16 @@ class EE_API Window {
 		virtual void display( bool clear = false );
 
 		/** @return The elapsed time for the last frame rendered */
-		virtual System::Time elapsed() const;
+		virtual System::Time getElapsed() const;
 
 		/** @return The current frames per second of the screen */
-		virtual Uint32 FPS() const;
+		virtual Uint32 getFPS() const;
 
 		/** @return If the screen is windowed */
 		virtual bool isWindowed() const;
 
 		/** @return If the main window is resizeable */
 		virtual bool isResizeable() const;
-
-		/** @return The window size */
-		virtual Sizei size();
 
 		/** @return The Window Width */
 		virtual const Uint32& getWidth() const;
@@ -261,13 +261,13 @@ class EE_API Window {
 		virtual const Sizei& getDesktopResolution();
 
 		/** Center the window to the desktop ( if windowed ) */
-		virtual void center();
+		virtual void centerToScreen();
 
 		/** @return If the aplication is running returns true ( If you Init correctly the window and is running ). */
 		bool isRunning() const;
 
 		/** @return If the window was created */
-		bool created() const;
+		bool isOpen() const;
 
 		/** Close the window if is running */
 		virtual void close();
@@ -293,10 +293,10 @@ class EE_API Window {
 		void setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix = true );
 
 		/** Set the window background color */
-		void backColor( const RGB& Color );
+		void setBackColor( const RGB& Color );
 
 		/** @return The background clear color */
-		const RGB& backColor() const;
+		const RGB& getBackColor() const;
 
 		/** Captures the window front buffer and saves it to disk. \n
 		* You have to call it before Display, and after render all the objects. \n
@@ -310,10 +310,10 @@ class EE_API Window {
 		const WindowInfo * getWindowInfo() const;
 
 		/** Set a frame per second limit. It's not 100 % accurate. */
-		void frameRateLimit( const Uint32& frameRateLimit );
+		void setFrameRateLimit( const Uint32& setFrameRateLimit );
 
 		/** Get a frame per second limit. */
-		Uint32 frameRateLimit();
+		Uint32 getFrameRateLimit();
 
 		/** Set the current Clipping area ( default the entire window, SCISSOR TEST ). */
 		void clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
@@ -450,14 +450,14 @@ class EE_API Window {
 	protected:
 		friend class Engine;
 
-		WindowInfo					mWindow;
-		Clipboard *				mClipboard;
-		Input *					mInput;
-		CursorManager *			mCursorManager;
-		Platform::PlatformImpl *	mPlatform;
-		View						mDefaultView;
-		const View *				mCurrentView;
-		Uint32						mNumCallBacks;
+		WindowInfo mWindow;
+		Clipboard *	mClipboard;
+		Input *	mInput;
+		CursorManager *	mCursorManager;
+		Platform::PlatformImpl * mPlatform;
+		View mDefaultView;
+		const View * mCurrentView;
+		Uint32 mNumCallBacks;
 		std::map<Uint32, WindowResizeCallback> mCallbacks;
 		
 		class FrameData {

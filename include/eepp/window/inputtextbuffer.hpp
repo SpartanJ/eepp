@@ -26,50 +26,50 @@ class EE_API InputTextBuffer {
 	public:
 		typedef cb::Callback0<void> EnterCallback;
 
-		InputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, EE::Window::Window * window = NULL, const Uint32& maxLength = INPUT_LENGHT_MAX );
+		InputTextBuffer( const bool& active, const bool& newLineEnabled, const bool& freeEditing, EE::Window::Window * window = NULL, const Uint32& maxLength = INPUT_LENGHT_MAX );
 
 		InputTextBuffer( EE::Window::Window * window = NULL );
 
 		~InputTextBuffer();
 
 		/** @return The current buffer */
-		String buffer() const;
+		String getBuffer() const;
 
 		/** Set a new current buffer */
-		void buffer( const String& str );
+		void setBuffer( const String& str );
 
 		/** @return If input buffer is active */
-		bool active() const;
+		bool isActive() const;
 
 		/** Set the state of the input buffer */
-		void active( const bool& active );
+		void setActive( const bool& active );
 
 		/** @return If new line is supported */
-		bool supportNewLine();
+		bool setSupportNewLine();
 
 		/** Support new line consist of allowing to add a new line when key return is pressed. */
-		void supportNewLine( const bool& supportNewLine );
+		void isNewLineEnabled( const bool& enabled );
 
 		/** @return If Free Editing is enabled */
-		bool supportFreeEditing() const;
+		bool isFreeEditingEnabled() const;
 
 		/** Free editing consist on the capability of moving the cursor position over the buffer, to write over the buffer, and not only after the last character. */
-		void supportFreeEditing( const bool& Support);
+		void setFreeEditing( const bool& enabled );
 
 		/** Block all the inserts, allow only numeric characters. */
-		void allowOnlyNumbers( const bool& onlynums, const bool& allowdots = false );
+		void setAllowOnlyNumbers( const bool& onlynums, const bool& allowdots = false );
 
 		/** @return If is only allowing numbers */
-		bool allowOnlyNumbers();
+		bool onlyNumbersAllowed();
 
 		/** @return If is only allowing numbers, it allow floating point numbers? */
-		bool allowDotsInNumbers();
+		bool dotsInNumbersAllowed();
 
 		/** @return If text selection feature is enabled */
-		bool textSelectionEnabled();
+		bool isTextSelectionEnabled();
 
 		/** Enable text selection */
-		void textSelectionEnabled( const bool& enabled );
+		void setTextSelectionEnabled( const bool& enabled );
 
 		/** Start the input buffer */
 		void start();
@@ -87,13 +87,13 @@ class EE_API InputTextBuffer {
 		bool changedSinceLastUpdate();
 
 		/** Set if changed since last update */
-		void changedSinceLastUpdate( const bool& Changed );
+		void setChangedSinceLastUpdate( const bool& Changed );
 
 		/** @return The Cursor Position (where is the cursor editing) */
-		int curPos() const;
+		int getCursorPos() const;
 
 		/** Set the cursor position */
-		void curPos( const Uint32& pos );
+		void setCursorPos( const Uint32& pos );
 
 		/** This function it's for helping the Font class to locate the cursor position for the correct rendering of it.
 		* @param LastNewLinePos This will return the position of the closest "\n" to the current Cursor Pos
@@ -131,16 +131,16 @@ class EE_API InputTextBuffer {
 		/** @return The selection cursor final position */
 		const Int32& selCurEnd() const;
 	protected:
-		EE::Window::Window *			mWindow;
-		String				mText;
-		Uint32				mFlags;
-		Uint32				mCallback;
-		int				mPromptPos;
-		EnterCallback		mEnterCall;
-		Uint32				mMaxLength;
+		EE::Window::Window * mWindow;
+		String mText;
+		Uint32 mFlags;
+		Uint32 mCallback;
+		int mPromptPos;
+		EnterCallback mEnterCall;
+		Uint32 mMaxLength;
 		std::vector<Uint32>	mIgnoredChars;
-		Int32				mSelCurInit;
-		Int32				mSelCurEnd;
+		Int32 mSelCurInit;
+		Int32 mSelCurEnd;
 
 		void autoPrompt( const bool& set );
 

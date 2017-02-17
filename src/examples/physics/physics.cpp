@@ -113,7 +113,7 @@ void Demo1Create() {
 
 	CreateJointAndBody();
 
-	mWindow->caption( "eepp - Physics - Logo Smash" );
+	mWindow->setCaption( "eepp - Physics - Logo Smash" );
 
 	mSpace = Physics::Space::New();
 	mSpace->iterations( 1 );
@@ -168,7 +168,7 @@ void Demo2Create() {
 
 	CreateJointAndBody();
 
-	mWindow->caption( "eepp - Physics - Pyramid Stack" );
+	mWindow->setCaption( "eepp - Physics - Pyramid Stack" );
 
 	Shape::resetShapeIdCounter();
 
@@ -294,7 +294,7 @@ void Demo3Create() {
 
 	CreateJointAndBody();
 
-	mWindow->caption( "eepp - Physics - Sensor" );
+	mWindow->setCaption( "eepp - Physics - Sensor" );
 
 	Shape::resetShapeIdCounter();
 
@@ -460,7 +460,7 @@ void Demo4Create() {
 
 	CreateJointAndBody();
 
-	mWindow->caption( "eepp - Physics - Sticky collisions using the Arbiter data pointer." );
+	mWindow->setCaption( "eepp - Physics - Sticky collisions using the Arbiter data pointer." );
 
 	mSpace = Space::New();
 	mSpace->iterations( 10 );
@@ -575,10 +575,10 @@ void PhysicsUpdate() {
 	mMousePoint = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
 	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
 	mMouseBody->pos( newPoint );
-	mMouseBody->vel( ( newPoint - mMousePoint_last ) * (cpFloat)mWindow->FPS() );
+	mMouseBody->vel( ( newPoint - mMousePoint_last ) * (cpFloat)mWindow->getFPS() );
 	mMousePoint_last = newPoint;
 
-	if ( KM->mouseLeftPressed() ) {
+	if ( KM->isMouseLeftPressed() ) {
 		if ( NULL == mMouseJoint ) {
 			cVect point = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
 
@@ -630,10 +630,10 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	mWindow = Engine::instance()->createWindow( WindowSettings( 1024, 768, "eepp - Physics" ), ContextSettings( true ) );
 
-	if ( mWindow->created() ) {
+	if ( mWindow->isOpen() ) {
 		KM = mWindow->getInput();
 
-		mWindow->backColor( RGB( 255, 255, 255 ) );
+		mWindow->setBackColor( RGB( 255, 255, 255 ) );
 
 		PhysicsCreate();
 

@@ -41,7 +41,7 @@ UISpinBox::UISpinBox( const UISpinBox::CreateParams& Params ) :
 	mPushDown->visible	( true );
 	mPushDown->enabled	( true );
 
-	mInput->getInputTextBuffer()->allowOnlyNumbers( true, Params.AllowDotsInNumbers );
+	mInput->getInputTextBuffer()->setAllowOnlyNumbers( true, Params.AllowDotsInNumbers );
 
 	internalValue( mValue, true );
 

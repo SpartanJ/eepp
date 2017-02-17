@@ -22,23 +22,23 @@ class EE_API WindowSFML : public Window {
 		
 		void toggleFullscreen();
 		
-		void caption( const std::string& caption );
+		void setCaption( const std::string& setCaption );
 
-		bool icon( const std::string& Path );
+		bool setIcon( const std::string& Path );
 
 		void hide();
 
 		void show();
 
-		void position( Int16 Left, Int16 Top );
+		void setPosition( Int16 Left, Int16 Top );
 
-		bool active();
+		bool isActive();
 
-		bool visible();
+		bool isVisible();
 
-		Vector2i position();
+		Vector2i getPosition();
 
-		void size( Uint32 Width, Uint32 Height, bool Windowed );
+		void setSize( Uint32 Width, Uint32 Height, bool Windowed );
 
 		std::vector<DisplayMode> getDisplayModes() const;
 

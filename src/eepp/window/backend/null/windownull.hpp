@@ -15,11 +15,11 @@ class EE_API WindowNull : public Window {
 		
 		void toggleFullscreen();
 		
-		void caption( const std::string& caption );
+		void setCaption( const std::string& setCaption );
 		
-		std::string caption();
+		std::string setCaption();
 
-		bool icon( const std::string& Path );
+		bool setIcon( const std::string& Path );
 
 		void minimize();
 
@@ -31,15 +31,15 @@ class EE_API WindowNull : public Window {
 
 		void show();
 
-		void position( Int16 Left, Int16 Top );
+		void setPosition( Int16 Left, Int16 Top );
 
-		bool active();
+		bool isActive();
 
-		bool visible();
+		bool isVisible();
 
-		Vector2i position();
+		Vector2i getPosition();
 
-		void size( Uint32 Width, Uint32 Height, bool isWindowed );
+		void setSize( Uint32 Width, Uint32 Height, bool isWindowed );
 
 		std::vector<DisplayMode> getDisplayModes() const;
 

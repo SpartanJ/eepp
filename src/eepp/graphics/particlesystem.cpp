@@ -363,7 +363,7 @@ void ParticleSystem::draw() {
 }
 
 void ParticleSystem::update() {
-	update( Engine::instance()->elapsed() );
+	update( Engine::instance()->getElapsed() );
 }
 
 void ParticleSystem::update( const System::Time& time ) {

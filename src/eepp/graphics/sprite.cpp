@@ -481,7 +481,7 @@ bool Sprite::addSubFrame(const Uint32& TexId, const unsigned int& NumFrame, cons
 }
 
 void Sprite::update() {
-	update( Engine::instance()->elapsed() );
+	update( Engine::instance()->getElapsed() );
 }
 
 void Sprite::update( const Time& ElapsedTime ) {

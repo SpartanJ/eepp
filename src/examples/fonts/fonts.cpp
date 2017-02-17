@@ -51,10 +51,10 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	win = Engine::instance()->createWindow( WindowSettings( 960, 640, "eepp - Fonts" ), ContextSettings( true ) );
 
 	// Set window background color
-	win->backColor( RGB(255,255,255) );
+	win->setBackColor( RGB(255,255,255) );
 
 	// Check if created
-	if ( win->created() ) {
+	if ( win->isOpen() ) {
 		// Get the application path
 		std::string AppPath = Sys::getProcessPath();
 

@@ -213,10 +213,10 @@ bool Engine::isRunning() const {
 	return NULL != mWindow;
 }
 
-Time Engine::elapsed() const {
+Time Engine::getElapsed() const {
 	eeASSERT( isRunning() );
 
-	return mWindow->elapsed();
+	return mWindow->getElapsed();
 }
 
 const Uint32& Engine::getWidth() const {

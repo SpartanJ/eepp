@@ -131,7 +131,7 @@ void UITab::update() {
 			UITabWidget * tTabW	= getTabWidget();
 
 			if ( NULL != tTabW ) {
-				Uint32 Flags 			= UIManager::instance()->getInput()->clickTrigger();
+				Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
 
 				if ( Flags & EE_BUTTONS_WUWD ) {
 					if ( Flags & EE_BUTTON_WUMASK ) {

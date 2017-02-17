@@ -135,8 +135,8 @@ void Console::create( Font* Font, const bool& MakeDefaultCommands, const bool& A
 
 	mTBuf->setReturnCallback( cb::Make0( this, &Console::processLine ) );
 	mTBuf->start();
-	mTBuf->supportNewLine( false );
-	mTBuf->active( false );
+	mTBuf->isNewLineEnabled( false );
+	mTBuf->setActive( false );
 	ignoreCharOnPrompt( KEY_TAB );
 
 	mCon.ConModif = 0;
@@ -203,15 +203,15 @@ void Console::draw() {
 			CurY = mTempY + mY + mCurHeight - mFontSize - 1;
 
 			mFont->color( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mA) ) );
-			mFont->setText( "> " + mTBuf->buffer() );
+			mFont->setText( "> " + mTBuf->getBuffer() );
 			mFont->draw( mFontSize, CurY );
 
 			mFont->color( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mCurAlpha) ) );
 
-			if ( (unsigned int)mTBuf->curPos() == mTBuf->buffer().size() ) {
+			if ( (unsigned int)mTBuf->getCursorPos() == mTBuf->getBuffer().size() ) {
 				mFont->draw( "_", mFontSize + mFont->getTextWidth() , CurY );
 			} else {
-				mFont->setText( "> " + mTBuf->buffer().substr( 0, mTBuf->curPos() ) );
+				mFont->setText( "> " + mTBuf->getBuffer().substr( 0, mTBuf->getCursorPos() ) );
 				mFont->draw( "_", mFontSize + mFont->getTextWidth() , CurY );
 			}
 
@@ -222,7 +222,7 @@ void Console::draw() {
 	if ( mShowFps && NULL != mFont ) {
 		ColorA OldColor1( mFont->color() );
 		mFont->color( ColorA () );
-		mFont->setText( "FPS: " + String::toStr( mWindow->FPS() ) );
+		mFont->setText( "FPS: " + String::toStr( mWindow->getFPS() ) );
 		mFont->draw( mWindow->getWidth() - mFont->getTextWidth() - 15, 6 );
 		mFont->color( OldColor1 );
 	}
@@ -234,7 +234,7 @@ void Console::fadeIn() {
 		mFadeIn = true;
 		mVisible = true;
 		mY = 0.0f;
-		mTBuf->active( true );
+		mTBuf->setActive( true );
 	}
 }
 
@@ -243,7 +243,7 @@ void Console::fadeOut() {
 		mFading = true;
 		mFadeOut = true;
 		mVisible = false;
-		mTBuf->active( false );
+		mTBuf->setActive( false );
 	}
 }
 
@@ -280,7 +280,7 @@ static std::vector< String > SplitCommandParams( String str ) {
 }
 
 void Console::processLine() {
-	String str = mTBuf->buffer();
+	String str = mTBuf->getBuffer();
 	std::vector < String > params = SplitCommandParams( str );
 
 	mLastCommands.push_back( str );
@@ -359,13 +359,13 @@ void Console::toggle() {
 
 void Console::fade() {
 	if (mCurSide) {
-		mCurAlpha -= 255.f * mWindow->elapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
+		mCurAlpha -= 255.f * mWindow->getElapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
 		if ( mCurAlpha <= 0.0f ) {
 			mCurAlpha = 0.0f;
 			mCurSide = !mCurSide;
 		}
 	} else {
-		mCurAlpha += 255.f * mWindow->elapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
+		mCurAlpha += 255.f * mWindow->getElapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
 		if ( mCurAlpha >= 255.f ) {
 			mCurAlpha = 255.f;
 			mCurSide = !mCurSide;
@@ -379,7 +379,7 @@ void Console::fade() {
 
 	if ( mFadeIn ) {
 		mFadeOut = false;
-		mY += mCurHeight * mWindow->elapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
+		mY += mCurHeight * mWindow->getElapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
 
 		mA = ( mY * mMaxAlpha / mCurHeight ) ;
 		if ( mY > mCurHeight ) {
@@ -391,7 +391,7 @@ void Console::fade() {
 
 	if ( mFadeOut ) {
 		mFadeIn = false;
-		mY -= mCurHeight * mWindow->elapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
+		mY -= mCurHeight * mWindow->getElapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
 
 		mA = ( mY * mMaxAlpha / mCurHeight ) ;
 		if ( mY <= 0.0f ) {
@@ -406,7 +406,7 @@ void Console::fade() {
 }
 
 String Console::getLastCommonSubStr( std::list<String>& cmds ) {
-	String lastCommon( mTBuf->buffer() );
+	String lastCommon( mTBuf->getBuffer() );
 	String strTry( lastCommon );
 
 	std::list<String>::iterator ite;
@@ -453,7 +453,7 @@ void Console::printCommandsStartingWith( const String& start ) {
 	}
 
 	if ( cmds.size() > 1 ) {
-		privPushText( "> " + mTBuf->buffer() );
+		privPushText( "> " + mTBuf->getBuffer() );
 
 		std::list<String>::iterator ite;
 
@@ -462,12 +462,12 @@ void Console::printCommandsStartingWith( const String& start ) {
 
 		String newStr( getLastCommonSubStr( cmds ) );
 
-		if ( newStr != mTBuf->buffer() ) {
-			mTBuf->buffer( newStr );
+		if ( newStr != mTBuf->getBuffer() ) {
+			mTBuf->setBuffer( newStr );
 			mTBuf->cursorToEnd();
 		}
 	} else if ( cmds.size() ) {
-		mTBuf->buffer( cmds.front() );
+		mTBuf->setBuffer( cmds.front() );
 		mTBuf->cursorToEnd();
 	}
 }
@@ -558,13 +558,13 @@ void Console::getFilesFrom( std::string txt, const Uint32& curPos ) {
 					slash = FileSystem::getOSlash();
 				}
 
-				mTBuf->buffer( mTBuf->buffer().substr( 0, pos + 1 ) + files[lasti] + slash );
+				mTBuf->setBuffer( mTBuf->getBuffer().substr( 0, pos + 1 ) + files[lasti] + slash );
 				mTBuf->cursorToEnd();
 			} else if ( count > 1 ) {
 				privPushText( "Directory file list:" );
 				pushText( res );
 
-				mTBuf->buffer( mTBuf->buffer().substr( 0, pos + 1 ) + file );
+				mTBuf->setBuffer( mTBuf->getBuffer().substr( 0, pos + 1 ) + file );
 				mTBuf->cursorToEnd();
 			}
 		}
@@ -584,9 +584,9 @@ void Console::privInputCallback( InputEvent * Event ) {
 		Uint32 Button	= Event->button.button;
 
 		if ( InputEvent::KeyDown == etype ) {
-			if ( ( KeyCode == KEY_TAB ) && (unsigned int)mTBuf->curPos() == mTBuf->buffer().size() ) {
-				printCommandsStartingWith( mTBuf->buffer() );
-				getFilesFrom( mTBuf->buffer().toUtf8(), mTBuf->curPos() );
+			if ( ( KeyCode == KEY_TAB ) && (unsigned int)mTBuf->getCursorPos() == mTBuf->getBuffer().size() ) {
+				printCommandsStartingWith( mTBuf->getBuffer() );
+				getFilesFrom( mTBuf->getBuffer().toUtf8(), mTBuf->getCursorPos() );
 			}
 
 			if ( KeyMod & KEYMOD_SHIFT ) {
@@ -634,9 +634,9 @@ void Console::privInputCallback( InputEvent * Event ) {
 
 					if ( KeyCode == KEY_UP || KeyCode == KEY_DOWN ) {
 						if ( mLastLogPos == static_cast<int>( mLastCommands.size() ) ) {
-							mTBuf->buffer( "" );
+							mTBuf->setBuffer( "" );
 						} else {
-							mTBuf->buffer( mLastCommands[mLastLogPos] );
+							mTBuf->setBuffer( mLastCommands[mLastLogPos] );
 							mTBuf->cursorToEnd();
 						}
 					}
@@ -748,7 +748,7 @@ void Console::cmdFrameLimit ( const std::vector < String >& params ) {
 		bool Res = String::fromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt >= 0 && tInt <= 10000 ) ) {
-			mWindow->frameRateLimit( tInt );
+			mWindow->setFrameRateLimit( tInt );
 			return;
 		}
 	}

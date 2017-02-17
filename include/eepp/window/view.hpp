@@ -29,10 +29,10 @@ class EE_API View {
 		void scale( const Vector2f& Factor );
 
 		/** @return The center position of the view */
-		Vector2i center() const;
+		Vector2i getCenter() const;
 
 		/** Set the center position of the view ( will move it if is needed ) */
-		void center( const Vector2i& center );
+		void setCenter( const Vector2i& center );
 
 		/** @return The current view ( Left = X, Right = Width, Top = Y, Bottom = Height ) */
 		Recti getView() const { return mView; }

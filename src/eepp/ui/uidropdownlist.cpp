@@ -200,7 +200,7 @@ void UIDropDownList::hide() {
 void UIDropDownList::update() {
 	if ( mEnabled && mVisible ) {
 		if ( isMouseOver() ) {
-			Uint32 Flags 			= UIManager::instance()->getInput()->clickTrigger();
+			Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
 
 			if ( Flags & EE_BUTTONS_WUWD ) {
 				if ( Flags & EE_BUTTON_WUMASK ) {

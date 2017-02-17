@@ -60,8 +60,8 @@ void MainLoop()
 	}
 
 	// Update the angle interpolation
-	PlanetAngle.update( win->elapsed() );
-	RockAngle.update( win->elapsed() );
+	PlanetAngle.update( win->getElapsed() );
+	RockAngle.update( win->getElapsed() );
 
 	// Set the Planet and Rock angle from the interpolation
 	Planet->angle( PlanetAngle.getPos() );
@@ -94,7 +94,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	win = Engine::instance()->createWindow( WindowSettings( 640, 480, "eepp - Sprites" ), ContextSettings( true ) );
 
 	// Check if created
-	if ( win->created() ) {
+	if ( win->isOpen() ) {
 		// Get the application path
 		std::string AppPath = Sys::getProcessPath();
 

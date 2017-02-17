@@ -38,11 +38,11 @@ void View::calcCenter() {
 	mCenter.y = ( ( mView.Top + mView.Bottom ) - mView.Top ) * 0.5f;
 }
 
-Vector2i View::center() const {
+Vector2i View::getCenter() const {
 	return Vector2i( (int)mCenter.x, (Int32)mCenter.y );
 }
 
-void View::center( const Vector2i& Center ) {
+void View::setCenter( const Vector2i& Center ) {
 	mCenter.x = (Float)Center.x;
 	mCenter.y = (Float)Center.y;
 	mView.Left = static_cast<int> ( mCenter.x - (Float)mView.Right * 0.5f );

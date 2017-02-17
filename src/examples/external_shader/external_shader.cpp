@@ -105,10 +105,10 @@ void MainLoop()
 	if ( imp->isKeyUp( KEY_F ) )
 	{
 		if ( win->isWindowed() ) {
-			win->size( win->getDesktopResolution().width(), win->getDesktopResolution().height(), false );
+			win->setSize( win->getDesktopResolution().width(), win->getDesktopResolution().height(), false );
 		} else {
-			win->size( 960, 640, true );
-			win->center();
+			win->setSize( 960, 640, true );
+			win->centerToScreen();
 		}
 	}
 
@@ -117,7 +117,7 @@ void MainLoop()
 	Float tratio	= tw / th;
 	Float touchX	= ( mf.x / tw - 1 ) * tratio;
 	Float touchY	= -( mf.y / th - 1 );
-	bool touch		= imp->mouseLeftPressed();
+	bool touch		= imp->isMouseLeftPressed();
 
 	for( Uint32 i = 0; i < ParticlesNum; i+=2 )
 	{
@@ -195,7 +195,7 @@ void MainLoop()
 	GLi->drawArrays( DM_LINES, 0, ParticlesNum );
 
 	/// Stop the simulation if the window is not visible
-	while ( !win->visible() ) {
+	while ( !win->isVisible() ) {
 		imp->update();	/// To get the real state of the window you need to update the window input
 		Sys::sleep( 100 ); /// Sleep 100 ms
 	}
@@ -207,7 +207,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	win = Engine::instance()->createWindow( WindowSettings( 960, 640, "eepp - External Shaders" ), ContextSettings( true ) );
 
-	if ( win->created() )
+	if ( win->isOpen() )
 	{
 		/// This will work without shaders too
 		ShadersSupported = GLi->shadersSupported();

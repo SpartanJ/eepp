@@ -25,7 +25,7 @@ bool InputFinger::wasDown() {
 	return was_down;
 }
 
-Vector2i InputFinger::pos() {
+Vector2i InputFinger::getPos() {
 	return Vector2i( x, y );
 }
 

@@ -179,7 +179,7 @@ void Input::processEvent( InputEvent * Event ) {
 		}
 		case InputEvent::VideoResize:
 		{
-			mWindow->size( Event->resize.w, Event->resize.h, mWindow->isWindowed() );
+			mWindow->setSize( Event->resize.w, Event->resize.h, mWindow->isWindowed() );
 			break;
 		}
 		case InputEvent::Quit:
@@ -279,14 +279,6 @@ Vector2i Input::getMousePosFromView( const View& View ) {
 	return Vector2i( RealMousePos.x - RView.Left, RealMousePos.y - RView.Top );
 }
 
-Uint16 Input::mouseX() const {
-	return mMousePos.x;
-}
-
-Uint16 Input::mouseY() const {
-	return mMousePos.y;
-}
-
 Uint32 Input::pushCallback( const InputCallback& cb ) {
 	mNumCallBacks++;
 	mCallbacks[ mNumCallBacks ] = cb;
@@ -302,99 +294,99 @@ void Input::injectMousePos( const Vector2i& Pos ) {
 	injectMousePos( Pos.x, Pos.y );
 }
 
-bool Input::controlPressed() const {
+bool Input::isControlPressed() const {
 	return ( mInputMod & KEYMOD_CTRL ) != 0;
 }
 
-bool Input::shiftPressed() const {
+bool Input::isShiftPressed() const {
 	return ( mInputMod & KEYMOD_SHIFT ) != 0;
 }
 
-bool Input::altPressed() const {
+bool Input::isAltPressed() const {
 	return ( mInputMod & KEYMOD_ALT ) != 0;
 }
 
-bool Input::metaPressed() const {
+bool Input::isMetaPressed() const {
 	return ( mInputMod & KEYMOD_META ) != 0;
 }
 
-bool Input::mouseLeftPressed() const {
+bool Input::isMouseLeftPressed() const {
 	return ( mPressTrigger & EE_BUTTON_LMASK ) != 0;
 }
 
-bool Input::mouseRightPressed() const {
+bool Input::isMouseRightPressed() const {
 	return ( mPressTrigger & EE_BUTTON_RMASK ) != 0;
 }
 
-bool Input::mouseMiddlePressed() const {
+bool Input::isMouseMiddlePressed() const {
 	return ( mPressTrigger & EE_BUTTON_MMASK ) != 0;
 }
 
-bool Input::mouseLeftClick() const {
+bool Input::mouseLeftClicked() const {
 	return ( mClickTrigger & EE_BUTTON_LMASK ) != 0;
 }
 
-bool Input::mouseRightClick() const {
+bool Input::mouseRightClicked() const {
 	return ( mClickTrigger & EE_BUTTON_RMASK ) != 0;
 }
 
-bool Input::mouseMiddleClick() const {
+bool Input::mouseMiddleClicked() const {
 	return ( mClickTrigger & EE_BUTTON_MMASK ) != 0;
 }
 
-bool Input::mouseLeftDoubleClick() const {
+bool Input::mouseLeftDoubleClicked() const {
 	return ( mDoubleClickTrigger & EE_BUTTON_LMASK ) != 0;
 }
 
-bool Input::mouseRightDoubleClick() const {
+bool Input::mouseRightDoubleClicked() const {
 	return ( mDoubleClickTrigger & EE_BUTTON_RMASK ) != 0;
 }
 
-bool Input::mouseMiddleDoubleClick() const {
+bool Input::mouseMiddleDoubleClicked() const {
 	return ( mDoubleClickTrigger & EE_BUTTON_MMASK ) != 0;
 }
 
-bool Input::mouseWheelUp() const {
+bool Input::mouseWheelScrolledUp() const {
 	return ( mReleaseTrigger & EE_BUTTON_WUMASK ) != 0;
 }
 
-bool Input::mouseWheelDown() const {
+bool Input::mouseWheelScrolledDown() const {
 	return ( mReleaseTrigger & EE_BUTTON_WDMASK ) != 0;
 }
 
-void Input::mouseSpeed( const Float& Speed ) {
+void Input::setMouseSpeed( const Float& Speed ) {
 	mMouseSpeed = Speed;
 }
 
-const Float& Input::mouseSpeed() const {
+const Float& Input::getMouseSpeed() const {
 	return mMouseSpeed;
 }
 
-const Uint32& Input::lastPressTrigger() const {
+const Uint32& Input::getLastPressTrigger() const {
 	return mLastPressTrigger;
 }
 
-const Uint32& Input::pressTrigger() const {
+const Uint32& Input::getPressTrigger() const {
 	return mPressTrigger;
 }
 
-const Uint32& Input::releaseTrigger() const {
+const Uint32& Input::getReleaseTrigger() const {
 	return mReleaseTrigger;
 }
 
-const Uint32& Input::clickTrigger() const {
+const Uint32& Input::getClickTrigger() const {
 	return mClickTrigger;
 }
 
-const Uint32& Input::doubleClickTrigger() const {
+const Uint32& Input::getDoubleClickTrigger() const {
 	return mDoubleClickTrigger;
 }
 
-const Uint32& Input::doubleClickInterval() const {
+const Uint32& Input::getDoubleClickInterval() const {
 	return mDoubleClickInterval;
 }
 
-void Input::doubleClickInterval( const Uint32& Interval ) {
+void Input::setDoubleClickInterval( const Uint32& Interval ) {
 	mDoubleClickInterval = Interval;
 }
 

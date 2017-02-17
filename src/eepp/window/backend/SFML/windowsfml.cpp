@@ -85,7 +85,7 @@ bool WindowSFML::create( WindowSettings Settings, ContextSettings Context ) {
 	mVisible = true;
 
 	if ( "" != mWindow.WindowConfig.Icon ) {
-		icon( mWindow.WindowConfig.Icon );
+		setIcon( mWindow.WindowConfig.Icon );
 	}
 
 	/// Init the clipboard after the window creation
@@ -122,13 +122,13 @@ void WindowSFML::createPlatform() {
 void WindowSFML::toggleFullscreen() {
 }
 
-void WindowSFML::caption( const std::string& Caption ) {
+void WindowSFML::setCaption( const std::string& Caption ) {
 	mWindow.WindowConfig.Caption = Caption;
 
 	mSFMLWindow.setTitle( Caption );
 }
 
-bool WindowSFML::icon( const std::string& Path ) {
+bool WindowSFML::setIcon( const std::string& Path ) {
 	mWindow.WindowConfig.Icon 	= Path;
 
 	Image Img( Path );
@@ -148,24 +148,24 @@ void WindowSFML::show() {
 	mVisible = true;
 }
 
-void WindowSFML::position( Int16 Left, Int16 Top ) {
+void WindowSFML::setPosition( Int16 Left, Int16 Top ) {
 	mSFMLWindow.setPosition( sf::Vector2i( Left, Top ) );
 }
 
-bool WindowSFML::active() {
+bool WindowSFML::isActive() {
 	return reinterpret_cast<InputSFML*> ( mInput )->mWinActive;
 }
 
-bool WindowSFML::visible() {
+bool WindowSFML::isVisible() {
 	return mVisible;
 }
 
-Vector2i WindowSFML::position() {
+Vector2i WindowSFML::getPosition() {
 	sf::Vector2i v( mSFMLWindow.getPosition() );
 	return Vector2i( v.x, v.y );
 }
 
-void WindowSFML::size( Uint32 Width, Uint32 Height, bool Windowed ) {
+void WindowSFML::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( ( !Width || !Height ) ) {
 		Width	= mWindow.DesktopResolution.width();
 		Height	= mWindow.DesktopResolution.height();

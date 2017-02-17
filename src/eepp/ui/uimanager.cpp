@@ -182,7 +182,7 @@ void UIManager::sendMsg( UIControl * Ctrl, const Uint32& Msg, const Uint32& Flag
 }
 
 void UIManager::update() {
-	mElapsed = mWindow->elapsed();
+	mElapsed = mWindow->getElapsed();
 
 	bool wasDraggingControl = isControlDragging();
 
@@ -204,16 +204,16 @@ void UIManager::update() {
 		}
 	} else {
 		if ( NULL != mOverControl )
-			mOverControl->onMouseMove( mKM->getMousePos(), mKM->pressTrigger() );
+			mOverControl->onMouseMove( mKM->getMousePos(), mKM->getPressTrigger() );
 	}
 
-	if ( mKM->pressTrigger() ) {
+	if ( mKM->getPressTrigger() ) {
 		/*if ( !wasDraggingControl && mOverControl != mFocusControl )
 			FocusControl( mOverControl );*/
 
 		if ( NULL != mOverControl ) {
-			mOverControl->onMouseDown( mKM->getMousePos(), mKM->pressTrigger() );
-			sendMsg( mOverControl, UIMessage::MsgMouseDown, mKM->pressTrigger() );
+			mOverControl->onMouseDown( mKM->getMousePos(), mKM->getPressTrigger() );
+			sendMsg( mOverControl, UIMessage::MsgMouseDown, mKM->getPressTrigger() );
 		}
 
 		if ( !mFirstPress ) {
@@ -224,22 +224,22 @@ void UIManager::update() {
 		}
 	}
 
-	if ( mKM->releaseTrigger() ) {
+	if ( mKM->getReleaseTrigger() ) {
 		if ( NULL != mFocusControl ) {
 			if ( !wasDraggingControl ) {
 				if ( mOverControl != mFocusControl )
 					focusControl( mOverControl );
 
-				mFocusControl->onMouseUp( mKM->getMousePos(), mKM->releaseTrigger() );
-				sendMsg( mFocusControl, UIMessage::MsgMouseUp, mKM->releaseTrigger() );
+				mFocusControl->onMouseUp( mKM->getMousePos(), mKM->getReleaseTrigger() );
+				sendMsg( mFocusControl, UIMessage::MsgMouseUp, mKM->getReleaseTrigger() );
 
-				if ( mKM->clickTrigger() ) { // mDownControl == mOverControl &&
-					sendMsg( mFocusControl, UIMessage::MsgClick, mKM->clickTrigger() );
-					mFocusControl->onMouseClick( mKM->getMousePos(), mKM->clickTrigger() );
+				if ( mKM->getClickTrigger() ) { // mDownControl == mOverControl &&
+					sendMsg( mFocusControl, UIMessage::MsgClick, mKM->getClickTrigger() );
+					mFocusControl->onMouseClick( mKM->getMousePos(), mKM->getClickTrigger() );
 
-					if ( mKM->doubleClickTrigger() ) {
-						sendMsg( mFocusControl, UIMessage::MsgDoubleClick, mKM->doubleClickTrigger() );
-						mFocusControl->onMouseDoubleClick( mKM->getMousePos(), mKM->doubleClickTrigger() );
+					if ( mKM->getDoubleClickTrigger() ) {
+						sendMsg( mFocusControl, UIMessage::MsgDoubleClick, mKM->getDoubleClickTrigger() );
+						mFocusControl->onMouseDoubleClick( mKM->getMousePos(), mKM->getDoubleClickTrigger() );
 					}
 				}
 			}
@@ -278,11 +278,11 @@ Input * UIManager::getInput() const {
 }
 
 const Uint32& UIManager::pressTrigger() const {
-	return mKM->pressTrigger();
+	return mKM->getPressTrigger();
 }
 
 const Uint32& UIManager::lastPressTrigger() const {
-	return mKM->lastPressTrigger();
+	return mKM->getLastPressTrigger();
 }
 
 void UIManager::clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {

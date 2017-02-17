@@ -57,10 +57,10 @@ void EETest::Init() {
 
 	mWindow = EE->createWindow( WinSettings, ConSettings );
 
-	if ( NULL != mWindow && mWindow->created() ) {
+	if ( NULL != mWindow && mWindow->isOpen() ) {
 		SetScreen( StartScreen );
 
-		mWindow->caption( "eepp - Test Application" );
+		mWindow->setCaption( "eepp - Test Application" );
 		mWindow->pushResizeCallback( cb::Make1( this, &EETest::OnWindowResize ) );
 
 		TF = TextureFactory::instance();
@@ -80,7 +80,7 @@ void EETest::Init() {
 		Scenes[5] = cb::Make0( this, &EETest::Screen5 );
 
 		//InBuf.Start();
-		InBuf.supportNewLine( true );
+		InBuf.isNewLineEnabled( true );
 
 		setRandomSeed( static_cast<Uint32>( Sys::getSystemTime() * 1000 ) );
 
@@ -244,7 +244,7 @@ void EETest::OnShowMenu( const UIEvent * Event ) {
 }
 
 void EETest::OnWindowResize(EE::Window::Window * win) {
-	Map.ViewSize( win->size() );
+	Map.ViewSize( win->getSize() );
 }
 
 void EETest::CreateUI() {
@@ -679,7 +679,7 @@ void EETest::ItemClick( const UIEvent * Event ) {
 		SetScreen( 5 );
 	} else if ( "Show Console" == txt ) {
 		Con.toggle();
-		InBuf.active( !Con.active() );
+		InBuf.setActive( !Con.active() );
 
 		if ( Con.active() ) {
 			mWindow->startTextInput();
@@ -782,9 +782,9 @@ void EETest::SetScreen( Uint32 num ) {
 	if ( NULL != mTerrainBut ) mTerrainBut->visible( 1 == num );
 
 	if ( 0 == num || 5 == num )
-		mWindow->backColor( RGB( 240, 240, 240 ) );
+		mWindow->setBackColor( RGB( 240, 240, 240 ) );
 	else
-		mWindow->backColor( RGB( 0, 0, 0 ) );
+		mWindow->setBackColor( RGB( 0, 0, 0 ) );
 
 	if ( num < 6 )
 		Screen = num;
@@ -934,7 +934,7 @@ void EETest::LoadTextures() {
 	Map.DrawGrid( false );
 	Map.ClipedArea( false );
 	Map.DrawBackground( false );
-	Map.ViewSize( mWindow->size() );
+	Map.ViewSize( mWindow->getSize() );
 
 	eePRINTL( "Map creation time: %4.3f ms.", TE.elapsed().asMilliseconds() );
 }
@@ -972,7 +972,7 @@ void EETest::Screen2() {
 			TexLoaded->draw( 0, 0 );
 	}
 
-	if ( KM->mouseLeftPressed() )
+	if ( KM->isMouseLeftPressed() )
 		TNP[3]->drawEx( 0.f, 0.f, (Float)mWindow->getWidth(), (Float)mWindow->getHeight() );
 
 	Batch.setTexture( TNP[2] );
@@ -1084,7 +1084,7 @@ void EETest::Screen2() {
 	PR.drawQuad( CL1.getQuad() );
 	#endif
 
-	Ang = Ang + mWindow->elapsed().asMilliseconds() * 0.1f;
+	Ang = Ang + mWindow->getElapsed().asMilliseconds() * 0.1f;
 	if (Ang > 360.f) Ang = 1.f;
 
 	if ( ShowParticles )
@@ -1191,7 +1191,7 @@ void EETest::Render() {
 		lasttick = Sys::getTicks();
 		#ifdef EE_DEBUG
 		mInfo = String::strFormated( "EE - FPS: %d Elapsed Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
-							mWindow->FPS(),
+							mWindow->getFPS(),
 							et.asMilliseconds(),
 							(Int32)Mouse.x,
 							(Int32)Mouse.y,
@@ -1261,20 +1261,20 @@ void EETest::Render() {
 
 	mInfoText.draw( 6.f, 6.f );
 
-	if ( InBuf.active() ) {
+	if ( InBuf.isActive() ) {
 		Uint32 NLPos = 0;
 		Uint32 LineNum = InBuf.getCurPosLinePos( NLPos );
-		if ( InBuf.curPos() == (int)InBuf.buffer().size() && !LineNum ) {
+		if ( InBuf.getCursorPos() == (int)InBuf.getBuffer().size() && !LineNum ) {
 			FF2->draw( "_", 6.f + FF2->getTextWidth(), 180.f );
 		} else {
-			FF2->setText( InBuf.buffer().substr( NLPos, InBuf.curPos() - NLPos ) );
+			FF2->setText( InBuf.getBuffer().substr( NLPos, InBuf.getCursorPos() - NLPos ) );
 			FF2->draw( "_", 6.f + FF2->getTextWidth(), 180.f + (Float)LineNum * (Float)FF2->getFontHeight() );
 		}
 
-		FF2->setText( "FPS: " + String::toStr( mWindow->FPS() ) );
+		FF2->setText( "FPS: " + String::toStr( mWindow->getFPS() ) );
 		FF2->draw( mWindow->getWidth() - FF2->getTextWidth() - 15, 0 );
 
-		FF2->setText( InBuf.buffer() );
+		FF2->setText( InBuf.getBuffer() );
 		FF2->draw( 6, 180, FONT_DRAW_SHADOW );
 	}
 
@@ -1295,17 +1295,17 @@ void EETest::Input() {
 	if ( KM->isKeyUp( KEY_F1 ) )
 		Graphics::ShaderProgramManager::instance()->reload();
 
-	if ( !mWindow->visible() ) {
+	if ( !mWindow->isVisible() ) {
 		mWasMinimized = true;
 
-		mWindow->frameRateLimit( 10 );
+		mWindow->setFrameRateLimit( 10 );
 
 		if ( mMusEnabled && Mus->state() == Sound::Playing )
 			Mus->pause();
 
 	} else {
-		if ( mLastFPSLimit != mWindow->frameRateLimit() && !mWasMinimized )
-			mLastFPSLimit = mWindow->frameRateLimit();
+		if ( mLastFPSLimit != mWindow->getFrameRateLimit() && !mWasMinimized )
+			mLastFPSLimit = mWindow->getFrameRateLimit();
 
 		if ( mWasMinimized ) {
 			mWasMinimized = false;
@@ -1314,7 +1314,7 @@ void EETest::Input() {
 				KM->grabInput( true );
 		}
 
-		mWindow->frameRateLimit( mLastFPSLimit );
+		mWindow->setFrameRateLimit( mLastFPSLimit );
 
 		if ( mMusEnabled && Mus->state() == Sound::Paused )
 			Mus->play();
@@ -1326,10 +1326,10 @@ void EETest::Input() {
 	if ( KM->isKeyUp( KEY_F1 ) )
 		MultiViewportMode = !MultiViewportMode;
 
-	if ( KM->altPressed() && KM->isKeyUp( KEY_C ) )
-		mWindow->center();
+	if ( KM->isAltPressed() && KM->isKeyUp( KEY_C ) )
+		mWindow->centerToScreen();
 
-	if ( KM->altPressed() && KM->isKeyUp( KEY_M ) && !Con.active() ) {
+	if ( KM->isAltPressed() && KM->isKeyUp( KEY_M ) && !Con.active() ) {
 		if ( !mWindow->isMaximized() )
 			mWindow->maximize();
 	}
@@ -1337,16 +1337,16 @@ void EETest::Input() {
 	if ( KM->isKeyUp(KEY_F4) )
 		TF->reloadAllTextures();
 
-	if ( KM->altPressed() && KM->isKeyUp( KEY_RETURN ) ) {
+	if ( KM->isAltPressed() && KM->isKeyUp( KEY_RETURN ) ) {
 		if ( mWindow->isWindowed() ) {
-			mWindow->size( mWindow->getDesktopResolution().width(), mWindow->getDesktopResolution().height(), false );
+			mWindow->setSize( mWindow->getDesktopResolution().width(), mWindow->getDesktopResolution().height(), false );
 		} else {
 			mWindow->toggleFullscreen();
 		}
 	}
 
 	if ( KM->grabInput() ) {
-		if ( KM->altPressed() && KM->isKeyDown( KEY_TAB ) ) {
+		if ( KM->isAltPressed() && KM->isKeyDown( KEY_TAB ) ) {
 			mWindow->minimize();
 
 			if ( KM->grabInput() )
@@ -1354,30 +1354,30 @@ void EETest::Input() {
 		}
 	}
 
-	if ( KM->controlPressed() && KM->isKeyUp(KEY_G) )
+	if ( KM->isControlPressed() && KM->isKeyUp(KEY_G) )
 		KM->grabInput(  !KM->grabInput() );
 
 	if ( KM->isKeyUp( KEY_F3 ) || KM->isKeyUp( KEY_WORLD_26 ) || KM->isKeyUp( KEY_BACKSLASH ) ) {
 		Con.toggle();
-		InBuf.active( !Con.active() );
+		InBuf.setActive( !Con.active() );
 	}
 
-	if ( KM->isKeyUp(KEY_1) && KM->controlPressed() )
+	if ( KM->isKeyUp(KEY_1) && KM->isControlPressed() )
 		SetScreen( 0 );
 
-	if ( KM->isKeyUp(KEY_2) && KM->controlPressed() )
+	if ( KM->isKeyUp(KEY_2) && KM->isControlPressed() )
 		SetScreen( 1 );
 
-	if ( KM->isKeyUp(KEY_3) && KM->controlPressed() )
+	if ( KM->isKeyUp(KEY_3) && KM->isControlPressed() )
 		SetScreen( 2 );
 
-	if ( KM->isKeyUp(KEY_4) && KM->controlPressed() )
+	if ( KM->isKeyUp(KEY_4) && KM->isControlPressed() )
 		SetScreen( 3 );
 
-	if ( KM->isKeyUp(KEY_5) && KM->controlPressed() )
+	if ( KM->isKeyUp(KEY_5) && KM->isControlPressed() )
 		SetScreen( 4 );
 
-	if ( KM->isKeyUp(KEY_6) && KM->controlPressed() )
+	if ( KM->isKeyUp(KEY_6) && KM->isControlPressed() )
 		SetScreen( 5 );
 
 	Joystick * Joy = JM->getJoystick(0);
@@ -1399,7 +1399,7 @@ void EETest::Input() {
 		Float aY = Joy->getAxis( AXIS_Y );
 
 		if ( 0 != aX || 0 != aY ) {
-			double rE = mWindow->elapsed().asMilliseconds();
+			double rE = mWindow->getElapsed().asMilliseconds();
 			mAxisX += aX * rE;
 			mAxisY += aY * rE;
 		}
@@ -1440,32 +1440,32 @@ void EETest::Input() {
 				Uint8 hat = Joy->getHat();
 
 				if ( HAT_LEFT == hat || HAT_LEFTDOWN == hat || HAT_LEFTUP == hat )
-					Map.Move( (mWindow->elapsed().asMilliseconds() * 0.2f), 0 );
+					Map.Move( (mWindow->getElapsed().asMilliseconds() * 0.2f), 0 );
 
 				if ( HAT_RIGHT == hat || HAT_RIGHTDOWN == hat || HAT_RIGHTUP == hat )
-					Map.Move( -mWindow->elapsed().asMilliseconds() * 0.2f, 0 );
+					Map.Move( -mWindow->getElapsed().asMilliseconds() * 0.2f, 0 );
 
 				if ( HAT_UP == hat || HAT_LEFTUP == hat || HAT_RIGHTUP == hat )
-					Map.Move( 0, (mWindow->elapsed().asMilliseconds() * 0.2f) );
+					Map.Move( 0, (mWindow->getElapsed().asMilliseconds() * 0.2f) );
 
 				if ( HAT_DOWN == hat || HAT_LEFTDOWN == hat || HAT_RIGHTDOWN == hat )
-					Map.Move( 0, -mWindow->elapsed().asMilliseconds() * 0.2f );
+					Map.Move( 0, -mWindow->getElapsed().asMilliseconds() * 0.2f );
 			}
 
 			if ( KM->isKeyDown(KEY_LEFT) ) {
-				Map.Move( mWindow->elapsed().asMilliseconds() * 0.2f, 0 );
+				Map.Move( mWindow->getElapsed().asMilliseconds() * 0.2f, 0 );
 			}
 
 			if ( KM->isKeyDown(KEY_RIGHT) ) {
-				Map.Move( -mWindow->elapsed().asMilliseconds() * 0.2f, 0 );
+				Map.Move( -mWindow->getElapsed().asMilliseconds() * 0.2f, 0 );
 			}
 
 			if ( KM->isKeyDown(KEY_UP) ) {
-				Map.Move( 0, mWindow->elapsed().asMilliseconds() * 0.2f );
+				Map.Move( 0, mWindow->getElapsed().asMilliseconds() * 0.2f );
 			}
 
 			if ( KM->isKeyDown(KEY_DOWN) ) {
-				Map.Move( 0, -mWindow->elapsed().asMilliseconds() * 0.2f );
+				Map.Move( 0, -mWindow->getElapsed().asMilliseconds() * 0.2f );
 			}
 
 			if ( KM->isKeyUp(KEY_F8) )
@@ -1482,7 +1482,7 @@ void EETest::Input() {
 			if ( KM->isKeyUp(KEY_D) )
 				SP.reverseAnim( !SP.reverseAnim() );
 
-			if ( KM->mouseRightPressed() )
+			if ( KM->isMouseRightPressed() )
 				DrawBack = true;
 			else
 				DrawBack = false;
@@ -1490,7 +1490,7 @@ void EETest::Input() {
 			if ( KM->isKeyUp( KEY_P ) )
 				SndMng.play( "mysound" );
 
-			if ( KM->controlPressed() && KM->isKeyUp(KEY_P) ) {
+			if ( KM->isControlPressed() && KM->isKeyUp(KEY_P) ) {
 				ShowParticles = !ShowParticles;
 			}
 
@@ -1501,7 +1501,7 @@ void EETest::Input() {
 void EETest::Update() {
 	mWindow->clear();
 
-	et = mWindow->elapsed();
+	et = mWindow->getElapsed();
 
 	Input();
 
@@ -1525,7 +1525,7 @@ void EETest::Update() {
 void EETest::Process() {
 	Init();
 
-	if ( NULL != mWindow && mWindow->created() ) {
+	if ( NULL != mWindow && mWindow->isOpen() ) {
 		TestInstance = this;
 
 		mWindow->runMainLoop( &MainLoop );
@@ -1810,10 +1810,10 @@ void EETest::PhysicsUpdate() {
 	mMousePoint = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
 	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
 	mMouseBody->pos( newPoint );
-	mMouseBody->vel( ( newPoint - mMousePoint_last ) * (cpFloat)mWindow->FPS() );
+	mMouseBody->vel( ( newPoint - mMousePoint_last ) * (cpFloat)mWindow->getFPS() );
 	mMousePoint_last = newPoint;
 
-	if ( KM->mouseLeftPressed() ) {
+	if ( KM->isMouseLeftPressed() ) {
 		if ( NULL == mMouseJoint ) {
 			cVect point = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
 

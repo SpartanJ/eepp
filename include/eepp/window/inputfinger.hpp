@@ -31,7 +31,7 @@ class InputFinger {
 		bool wasDown();
 
 		/** @return The current position of the finger */
-		Vector2i pos();
+		Vector2i getPos();
 	protected:
 		friend class Input;
 

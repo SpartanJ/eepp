@@ -236,7 +236,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	getMainContext();
 
-	caption( mWindow.WindowConfig.Caption );
+	setCaption( mWindow.WindowConfig.Caption );
 
 	createView();
 
@@ -245,7 +245,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	mWindow.Created = true;
 
 	if ( "" != mWindow.WindowConfig.Icon ) {
-		icon( mWindow.WindowConfig.Icon );
+		setIcon( mWindow.WindowConfig.Icon );
 	}
 
 	/// Init the clipboard after the window creation
@@ -338,9 +338,9 @@ void WindowSDL::toggleFullscreen() {
 	bool WasMaximized = mWindow.Maximized;
 
 	if ( isWindowed() ) {
-		size( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, !isWindowed() );
+		setSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, !isWindowed() );
 	} else {
-		size( mWindow.WindowSize.width(), mWindow.WindowSize.height(), !isWindowed() );
+		setSize( mWindow.WindowSize.width(), mWindow.WindowSize.height(), !isWindowed() );
 	}
 
 	if ( WasMaximized ) {
@@ -350,13 +350,13 @@ void WindowSDL::toggleFullscreen() {
 	getCursorManager()->reload();
 }
 
-void WindowSDL::caption( const std::string& Caption ) {
+void WindowSDL::setCaption( const std::string& Caption ) {
 	mWindow.WindowConfig.Caption = Caption;
 
 	SDL_SetWindowTitle( mSDLWindow, Caption.c_str() );
 }
 
-bool WindowSDL::active() {
+bool WindowSDL::isActive() {
 	Uint32 flags = 0;
 
 	flags = SDL_GetWindowFlags( mSDLWindow );
@@ -364,7 +364,7 @@ bool WindowSDL::active() {
 	return 0 != ( ( flags & SDL_WINDOW_INPUT_FOCUS ) && ( flags & SDL_WINDOW_MOUSE_FOCUS ) );
 }
 
-bool WindowSDL::visible() {
+bool WindowSDL::isVisible() {
 	Uint32 flags = 0;
 
 	flags = SDL_GetWindowFlags( mSDLWindow );
@@ -372,7 +372,7 @@ bool WindowSDL::visible() {
 	return 0 != ( ( flags & SDL_WINDOW_SHOWN ) && !( flags & SDL_WINDOW_MINIMIZED ) );
 }
 
-void WindowSDL::size( Uint32 Width, Uint32 Height, bool Windowed ) {
+void WindowSDL::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( ( !Width || !Height ) ) {
 		Width	= mWindow.DesktopResolution.width();
 		Height	= mWindow.DesktopResolution.height();
@@ -396,7 +396,7 @@ void WindowSDL::size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	}
 
 	if ( this->isWindowed() && !Windowed ) {
-		mWinPos = position();
+		mWinPos = getPosition();
 	} else {
 		SDL_SetWindowFullscreen( mSDLWindow, Windowed ? 0 : SDL_WINDOW_FULLSCREEN );
 	}
@@ -404,7 +404,7 @@ void WindowSDL::size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	SDL_SetWindowSize( mSDLWindow, Width, Height );
 
 	if ( this->isWindowed() && !Windowed ) {
-		mWinPos = position();
+		mWinPos = getPosition();
 
 		SetGLConfig();
 
@@ -412,7 +412,7 @@ void WindowSDL::size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	}
 
 	if ( !this->isWindowed() && Windowed ) {
-		position( mWinPos.x, mWinPos.y );
+		setPosition( mWinPos.x, mWinPos.y );
 	}
 
 	BitOp::setBitFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
@@ -489,7 +489,7 @@ eeWindowHandle	WindowSDL::getWindowHandler() {
 	return 0;
 }
 
-bool WindowSDL::icon( const std::string& Path ) {
+bool WindowSDL::setIcon( const std::string& Path ) {
 	int x, y, c;
 
 	if ( !mWindow.Created ) {
@@ -566,11 +566,11 @@ void WindowSDL::show() {
 	SDL_ShowWindow( mSDLWindow );
 }
 
-void WindowSDL::position( Int16 Left, Int16 Top ) {
+void WindowSDL::setPosition( Int16 Left, Int16 Top ) {
 	SDL_SetWindowPosition( mSDLWindow, Left, Top );
 }
 
-Vector2i WindowSDL::position() {
+Vector2i WindowSDL::getPosition() {
 	Vector2i p;
 
 	SDL_GetWindowPosition( mSDLWindow, &p.x, &p.y );

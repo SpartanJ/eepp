@@ -55,7 +55,7 @@ void UITextInputPassword::alignFix() {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
 
-		String curStr( mTextBuffer.buffer().substr( NLPos, mTextBuffer.curPos() - NLPos ) );
+		String curStr( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPos() - NLPos ) );
 		String pasStr;
 
 		for ( size_t i = 0; i < curStr.size(); i++ )
@@ -69,7 +69,7 @@ void UITextInputPassword::alignFix() {
 		mCurPos.x	= tW;
 		mCurPos.y	= (Float)LineNum * (Float)mPassCache->font()->getFontHeight();
 
-		if ( !mTextBuffer.supportNewLine() ) {
+		if ( !mTextBuffer.setSupportNewLine() ) {
 			if ( tX < 0.f )
 				mAlignOffset.x = -( mAlignOffset.x + ( tW - mAlignOffset.x ) );
 			else if ( tX > mSize.width() - mPadding.Left - mPadding.Right )

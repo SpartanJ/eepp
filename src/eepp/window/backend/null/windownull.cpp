@@ -21,14 +21,14 @@ bool WindowNull::create( WindowSettings Settings, ContextSettings Context ) {
 void WindowNull::toggleFullscreen() {
 }
 
-void WindowNull::caption( const std::string& Caption ) {
+void WindowNull::setCaption( const std::string& Caption ) {
 }
 
-std::string WindowNull::caption() {
+std::string WindowNull::setCaption() {
 	return std::string();
 }
 
-bool WindowNull::icon( const std::string& Path ) {
+bool WindowNull::setIcon( const std::string& Path ) {
 	return false;
 }
 
@@ -47,22 +47,22 @@ void WindowNull::raise() {
 void WindowNull::show() {
 }
 
-void WindowNull::position( Int16 Left, Int16 Top ) {
+void WindowNull::setPosition( Int16 Left, Int16 Top ) {
 }
 
-bool WindowNull::active() {
+bool WindowNull::isActive() {
 	return true;
 }
 
-bool WindowNull::visible() {
+bool WindowNull::isVisible() {
 	return true;
 }
 
-Vector2i WindowNull::position() {
+Vector2i WindowNull::getPosition() {
 	return Vector2i();
 }
 
-void WindowNull::size( Uint32 Width, Uint32 Height, bool Windowed ) {
+void WindowNull::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 }
 
 void WindowNull::swapBuffers() {

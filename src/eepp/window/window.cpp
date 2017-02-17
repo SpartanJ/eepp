@@ -62,7 +62,7 @@ Window::~Window() {
 	eeSAFE_DELETE( mPlatform );
 }
 
-Sizei Window::size() {
+Sizei Window::getSize() {
 	return Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 }
 
@@ -78,8 +78,8 @@ const Sizei& Window::getDesktopResolution() {
 	return mWindow.DesktopResolution;
 }
 
-void Window::size( Uint32 Width, Uint32 Height ) {
-	size( Width, Height, isWindowed() );
+void Window::setSize( Uint32 Width, Uint32 Height ) {
+	setSize( Width, Height, isWindowed() );
 }
 
 bool Window::isWindowed() const {
@@ -132,7 +132,7 @@ void Window::setup2D( const bool& KeepView ) {
 	GLi->pixelStorei( GL_UNPACK_ALIGNMENT, 1 );
 	GLi->pixelStorei( GL_PACK_ALIGNMENT, 1 );
 
-	backColor( mWindow.BackgroundColor );
+	setBackColor( mWindow.BackgroundColor );
 
 	GLi->lineSmooth();
 
@@ -169,12 +169,12 @@ const WindowInfo * Window::getWindowInfo() const {
 	return &mWindow;
 }
 
-void Window::backColor( const RGB& Color ) {
+void Window::setBackColor( const RGB& Color ) {
 	mWindow.BackgroundColor = Color;
 	GLi->clearColor( static_cast<Float>( mWindow.BackgroundColor.r() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.g() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.b() ) / 255.0f, 255.0f );
 }
 
-const RGB& Window::backColor() const {
+const RGB& Window::getBackColor() const {
 	return mWindow.BackgroundColor;
 }
 
@@ -232,7 +232,7 @@ bool Window::isRunning() const {
 	return mWindow.Created;
 }
 
-bool Window::created() const {
+bool Window::isOpen() const {
 	return mWindow.Created;
 }
 
@@ -240,19 +240,19 @@ void Window::close() {
 	mWindow.Created = false;
 }
 
-void Window::frameRateLimit( const Uint32& FrameRateLimit ) {
+void Window::setFrameRateLimit( const Uint32& FrameRateLimit ) {
 	mFrameData.FPS.Limit = (Float)FrameRateLimit;
 }
 
-Uint32 Window::frameRateLimit() {
+Uint32 Window::getFrameRateLimit() {
 	return static_cast<Uint32>( mFrameData.FPS.Limit );
 }
 
-Uint32 Window::FPS() const {
+Uint32 Window::getFPS() const {
 	return mFrameData.FPS.Current;
 }
 
-Time Window::elapsed() const {
+Time Window::getElapsed() const {
 	return mFrameData.ElapsedTime;
 }
 
@@ -405,7 +405,7 @@ void Window::logFailureInit( const std::string& ClassName, const std::string& Ba
 	eePRINTL( "Error on %s::Init. Backend %s failed to start.", ClassName.c_str(), BackendName.c_str() );
 }
 
-std::string Window::caption() {
+std::string Window::getCaption() {
 	return mWindow.WindowConfig.Caption;
 }
 
@@ -462,12 +462,12 @@ void Window::show() {
 		mPlatform->showWindow();
 }
 
-void Window::position( Int16 Left, Int16 Top ) {
+void Window::setPosition( Int16 Left, Int16 Top ) {
 	if ( NULL != mPlatform )
 		mPlatform->moveWindow( Left, Top );
 }
 
-Vector2i Window::position() {
+Vector2i Window::getPosition() {
 	if ( NULL != mPlatform )
 		return mPlatform->getPosition();
 
@@ -487,9 +487,9 @@ void Window::createPlatform() {
 void Window::setCurrent() {
 }
 
-void Window::center() {
+void Window::centerToScreen() {
 	if ( isWindowed() ) {
-		position( mWindow.DesktopResolution.width() / 2 - mWindow.WindowConfig.Width / 2, mWindow.DesktopResolution.height() / 2 - mWindow.WindowConfig.Height / 2 );
+		setPosition( mWindow.DesktopResolution.width() / 2 - mWindow.WindowConfig.Width / 2, mWindow.DesktopResolution.height() / 2 - mWindow.WindowConfig.Height / 2 );
 	}
 }
 
@@ -533,7 +533,7 @@ void Window::runMainLoop( void (*func)(), int fps ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	emscripten_set_main_loop(func, fps, 1);
 #else
-	frameRateLimit( fps );
+	setFrameRateLimit( fps );
 
 	while ( isRunning() ) {
 		func();

@@ -27,15 +27,15 @@ class EE_API WindowSDL : public Window {
 		
 		void toggleFullscreen();
 		
-		void caption( const std::string& caption );
+		void setCaption( const std::string& setCaption );
 
-		bool icon( const std::string& Path );
+		bool setIcon( const std::string& Path );
 
-		bool active();
+		bool isActive();
 
-		bool visible();
+		bool isVisible();
 
-		void size( Uint32 Width, Uint32 Height, bool isWindowed );
+		void setSize( Uint32 Width, Uint32 Height, bool isWindowed );
 
 		std::vector<DisplayMode> getDisplayModes() const;
 
@@ -53,9 +53,9 @@ class EE_API WindowSDL : public Window {
 
 		virtual void show();
 
-		virtual void position( Int16 Left, Int16 Top );
+		virtual void setPosition( Int16 Left, Int16 Top );
 
-		virtual Vector2i position();
+		virtual Vector2i getPosition();
 
 		const Sizei& getDesktopResolution();
 

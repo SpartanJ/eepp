@@ -36,9 +36,9 @@ class UITest : public UIControlAnim {
 		virtual Uint32 onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
 			UIDragable::onMouseUp( Pos, Flags );
 
-			if ( Engine::instance()->getCurrentWindow()->getInput()->mouseWheelUp() )
+			if ( Engine::instance()->getCurrentWindow()->getInput()->mouseWheelScrolledUp() )
 				scale( scale() + 0.1f );
-			else if ( Engine::instance()->getCurrentWindow()->getInput()->mouseWheelDown() )
+			else if ( Engine::instance()->getCurrentWindow()->getInput()->mouseWheelScrolledDown() )
 				scale( scale() - 0.1f );
 
 			return 1;
