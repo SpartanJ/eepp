@@ -60,7 +60,7 @@ TextureFontLoader::~TextureFontLoader() {
 void TextureFontLoader::start() {
 	ObjectLoader::start();
 
-	mTexLoader->threaded( false );
+	mTexLoader->setThreaded( false );
 
 	if ( !mThreaded ) {
 		update();

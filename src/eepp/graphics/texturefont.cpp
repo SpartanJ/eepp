@@ -147,7 +147,7 @@ bool TextureFont::load( const Uint32& TexId, const std::string& CoordinatesDatPa
 		IOStreamFile IOS( CoordinatesDatPath, std::ios::in | std::ios::binary );
 
 		return loadFromStream( TexId, IOS );
-	} else if ( PackManager::instance()->fallbackToPacks() ) {
+	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string tPath( CoordinatesDatPath );
 
 		Pack * tPack = PackManager::instance()->exists( tPath );

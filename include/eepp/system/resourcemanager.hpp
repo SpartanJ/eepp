@@ -41,13 +41,13 @@ class ResourceManager {
 		T * getById( const Uint32& Id );
 
 		/** @returns The number of resources added */
-		Uint32 count();
+		Uint32 getCount();
 
 		/** @returns The number of resources that where added with the indicated name. */
-		Uint32 count( const std::string& Name );
+		Uint32 setCount( const std::string& Name );
 
 		/** @returns The number of resources that where added with the indicated id. */
-		Uint32 count( const Uint32& Id );
+		Uint32 setCount( const Uint32& Id );
 
 		/** @returns If the resource name exists in the resources list. */
 		bool exists( const std::string& Name );
@@ -113,7 +113,7 @@ template <class T>
 T * ResourceManager<T>::add( T * Resource ) {
 	if ( NULL != Resource ) {
 		if ( mUniqueId ) {
-			Uint32 c = count( Resource->getId() );
+			Uint32 c = setCount( Resource->getId() );
 
 			if ( 0 == c ) {
 				mResources.push_back( Resource );
@@ -122,7 +122,7 @@ T * ResourceManager<T>::add( T * Resource ) {
 			} else {
 				std::string RealName( Resource->getName() );
 
-				while ( count( Resource->getId() ) ) {
+				while ( setCount( Resource->getId() ) ) {
 					c++;
 					Resource->setName( RealName + String::toStr( c ) );
 				}
@@ -214,12 +214,12 @@ void ResourceManager<T>::printNames() {
 }
 
 template <class T>
-Uint32 ResourceManager<T>::count() {
+Uint32 ResourceManager<T>::getCount() {
 	return (Uint32)mResources.size();
 }
 
 template <class T>
-Uint32 ResourceManager<T>::count( const Uint32& Id ) {
+Uint32 ResourceManager<T>::setCount( const Uint32& Id ) {
 	typename std::list<T*>::iterator it;
 	Uint32 Count = 0;
 
@@ -231,8 +231,8 @@ Uint32 ResourceManager<T>::count( const Uint32& Id ) {
 }
 
 template <class T>
-Uint32 ResourceManager<T>::count( const std::string& Name ) {
-	return count( String::hash( Name ) );
+Uint32 ResourceManager<T>::setCount( const std::string& Name ) {
+	return setCount( String::hash( Name ) );
 }
 
 }}

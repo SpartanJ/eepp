@@ -69,7 +69,7 @@ bool TTFFont::load( const std::string& Filepath, const unsigned int& Size, EE_TT
 		}
 
 		return iLoad( Size, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
-	} else if ( PackManager::instance()->fallbackToPacks() ) {
+	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		Pack * tPack = PackManager::instance()->exists( mFilepath );
 
 		if ( NULL != tPack ) {

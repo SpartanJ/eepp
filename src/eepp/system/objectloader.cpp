@@ -54,11 +54,11 @@ bool ObjectLoader::isLoading() {
 	return mLoading;
 }
 
-bool ObjectLoader::threaded() const {
+bool ObjectLoader::isThreaded() const {
 	return mThreaded;
 }
 
-void ObjectLoader::threaded( const bool& threaded ) {
+void ObjectLoader::setThreaded( const bool& threaded ) {
 	mThreaded = threaded;
 }
 

@@ -162,7 +162,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 			tTheme->add( eeNew( UISkinSimple, ( ElemFound[i] ) ) );
 	}
 
-	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from TextureAtlas )", TE.elapsed().asMilliseconds() );
+	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from TextureAtlas )", TE.getElapsed().asMilliseconds() );
 
 	return tTheme;
 }
@@ -213,7 +213,7 @@ UITheme * UITheme::loadFromPath( UITheme * tTheme, const std::string& Path, cons
 		}
 	}
 
-	if ( tSG->count() )
+	if ( tSG->getCount() )
 		TextureAtlasManager::instance()->add( tSG );
 	else
 		eeSAFE_DELETE( tSG );
@@ -225,7 +225,7 @@ UITheme * UITheme::loadFromPath( UITheme * tTheme, const std::string& Path, cons
 			tTheme->add( eeNew( UISkinSimple, ( ElemFound[i] ) ) );
 	}
 
-	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from path )", TE.elapsed().asMilliseconds() );
+	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from path )", TE.getElapsed().asMilliseconds() );
 
 	return tTheme;
 }

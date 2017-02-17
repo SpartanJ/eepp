@@ -25,7 +25,7 @@ bool Music::openFromPack( Pack* Pack, const std::string& FilePackPath ) {
 
 bool Music::openFromFile( const std::string& Filename ) {
 	if ( !FileSystem::fileExists( Filename ) ) {
-		if ( PackManager::instance()->fallbackToPacks() ) {
+		if ( PackManager::instance()->isFallbackToPacksActive() ) {
 			std::string tPath( Filename );
 
 			Pack * tPack = PackManager::instance()->exists( tPath );

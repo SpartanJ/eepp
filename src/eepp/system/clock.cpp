@@ -21,7 +21,7 @@ Time Clock::getElapsedTime() const {
 	return Microseconds( mClockImpl->getElapsedTime() );
 }
 
-Time Clock::elapsed() {
+Time Clock::getElapsed() {
 	Time r = getElapsedTime();
 	restart();
 	return r;

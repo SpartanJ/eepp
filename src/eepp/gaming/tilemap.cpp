@@ -1045,7 +1045,7 @@ bool TileMap::Load( const std::string& path ) {
 		IOStreamFile IOS( mPath, std::ios::in | std::ios::binary );
 
 		return LoadFromStream( IOS );
-	} else if ( PackManager::instance()->fallbackToPacks() ) {
+	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string tPath( path );
 		Pack * tPack = PackManager::instance()->exists( tPath ) ;
 

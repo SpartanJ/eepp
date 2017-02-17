@@ -87,7 +87,7 @@ bool IniFile::loadFromFile( const std::string& iniPath ) {
 		mIniReaded = false;
 
 		return true;
-	} else if ( PackManager::instance()->fallbackToPacks() ) {
+	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string tPath( iniPath );
 
 		Pack * tPack = PackManager::instance()->exists( tPath );

@@ -12,11 +12,11 @@ ThreadLocalImpl::~ThreadLocalImpl() {
 	pthread_key_delete(mKey);
 }
 
-void ThreadLocalImpl::value(void* val) {
+void ThreadLocalImpl::setValue(void* val) {
 	pthread_setspecific(mKey, val);
 }
 
-void* ThreadLocalImpl::value() const {
+void* ThreadLocalImpl::getValue() const {
 	return pthread_getspecific(mKey);
 }
 

@@ -22,9 +22,9 @@ class ThreadLocalImpl : NonCopyable {
 
 		~ThreadLocalImpl();
 
-		void value(void* val);
+		void setValue(void* val);
 
-		void* value() const;
+		void* getValue() const;
 	private :
 		DWORD mIndex;
 };

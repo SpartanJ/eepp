@@ -45,21 +45,21 @@ class EE_API ResourceLoader {
 		virtual bool	isLoading();
 
 		/** @returns If the resource loader is asynchronous */
-		bool			threaded() const;
+		bool			isThreaded() const;
 
 		/** @brief Sets if the resource loader is asynchronous.
 		**	This must be called before the load starts. */
-		void			threaded( const bool& threaded );
+		void			setThreaded( const bool& setThreaded );
 
 		/** @brief Clears the resources added to load that werent loaded, and delete the instances of the loaders.
 		**	@param ClearObjectsLoaded Sets if the objects loader that were already loaded must be also deleted ( it will not unload the loaded resources, but the instance of the object loader ). */
 		bool			clear( const bool& ClearObjectsLoaded = true );
 
 		/** @return The aproximate percent of progress ( between 0 and 100 ) */
-		Float			progress();
+		Float			getProgress();
 
 		/** @returns The number of resources added to load. */
-		Uint32			count() const;
+		Uint32			getCount() const;
 	protected:
 		bool			mLoaded;
 		bool			mLoading;

@@ -52,8 +52,8 @@ SubTexture * TextureAtlas::add( const Uint32& TexId, const Recti& SrcRect, const
 	return add( eeNew ( SubTexture, ( TexId, SrcRect, DestSize, Offset, Name ) ) );
 }
 
-Uint32 TextureAtlas::count() {
-	return ResourceManager<SubTexture>::count();
+Uint32 TextureAtlas::getCount() {
+	return ResourceManager<SubTexture>::getCount();
 }
 
 void TextureAtlas::setTextures( std::vector<Texture*> textures ) {

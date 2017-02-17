@@ -26,7 +26,7 @@ class EE_API PackManager : public Container<Pack> {
 		Pack * getPackByPath( std::string path );
 
 		/** @returns If the packs opened are being used as a fallback in case of a file wasn't found in the file system path. */
-		const bool& fallbackToPacks() const;
+		const bool& isFallbackToPacksActive() const;
 
 		/**	@brief Sets if the files that failed to be loaded from the file system should try to be loaded from the currently open packs.
 		**	For example if you try to load a texture from the file system a fails it will search the same path in the opened packs, and load it from there.
@@ -34,7 +34,7 @@ class EE_API PackManager : public Container<Pack> {
 		**			If the file is not in the file system, it will be searched in the opened packs, and loaded if is found.
 		**			In case that the process path is appended to the path... like Sys::GetProcessPath() + "mytexture.png", the process path will be removed from the file path.
 		*/
-		void fallbackToPacks( const bool& fallback );
+		void setFallbackToPacks( const bool& fallback );
 	protected:
 		bool	mFallback;
 

@@ -151,15 +151,15 @@ void Log::writef( const char* format, ... ) {
 	}
 }
 
-std::string Log::buffer() const {
+std::string Log::getBuffer() const {
 	return mData;
 }
 
-const bool& Log::consoleOutput() const {
+const bool& Log::isConsoleOutput() const {
 	return mConsoleOutput;
 }
 
-void Log::consoleOutput( const bool& output ) {
+void Log::setConsoleOutput( const bool& output ) {
 	bool OldOutput = mConsoleOutput;
 
 	mConsoleOutput = output;
@@ -172,11 +172,11 @@ void Log::consoleOutput( const bool& output ) {
 
 }
 
-const bool& Log::liveWrite() const {
+const bool& Log::isLiveWrite() const {
 	return mLiveWrite;
 }
 
-void Log::liveWrite( const bool& lw ) {
+void Log::setLiveWrite( const bool& lw ) {
 	mLiveWrite = lw;
 }
 

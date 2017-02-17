@@ -294,7 +294,7 @@ void TextureLoader::loadFromPath() {
 				}
 			}
 		}
-	} else if ( PackManager::instance()->fallbackToPacks() ) {
+	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		mPack = PackManager::instance()->exists( mFilepath );
 
 		if ( NULL != mPack ) {
@@ -496,7 +496,7 @@ void TextureLoader::loadFromPixels() {
 
 				mTexId = TextureFactory::instance()->pushTexture( mFilepath, tTexId, width, height, mImgWidth, mImgHeight, mMipmap, mChannels, mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
 
-				eePRINTL( "Texture %s loaded in %4.3f ms.", mFilepath.c_str(), mTE.elapsed().asMilliseconds() );
+				eePRINTL( "Texture %s loaded in %4.3f ms.", mFilepath.c_str(), mTE.getElapsed().asMilliseconds() );
 			} else {
 				eePRINTL( "Failed to create texture. Reason: %s", SOIL_last_result() );
 			}

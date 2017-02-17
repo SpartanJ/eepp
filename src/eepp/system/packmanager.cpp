@@ -46,11 +46,11 @@ Pack * PackManager::getPackByPath( std::string path ) {
 	return NULL;
 }
 
-const bool& PackManager::fallbackToPacks() const {
+const bool& PackManager::isFallbackToPacksActive() const {
 	return mFallback;
 }
 
-void PackManager::fallbackToPacks( const bool& fallback ) {
+void PackManager::setFallbackToPacks( const bool& fallback ) {
 	mFallback = fallback;
 }
 

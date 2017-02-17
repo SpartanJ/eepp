@@ -39,7 +39,7 @@ SoundBuffer::~SoundBuffer() {
 
 bool SoundBuffer::loadFromFile(const std::string& Filename) {
 	if ( !FileSystem::fileExists( Filename ) ) {
-		if ( PackManager::instance()->fallbackToPacks() ) {
+		if ( PackManager::instance()->isFallbackToPacksActive() ) {
 			std::string tPath( Filename );
 
 			Pack * tPack = PackManager::instance()->exists( tPath );

@@ -31,7 +31,7 @@ void eeREPORT_ASSERT( const char * File, int Line, const char * Exp ) {
 	if ( PrintDebugInLog ) {
 		Log::instance()->writef( "ASSERT: %s file:%s line:%d", Exp, File, Line );
 
-		if ( !Log::instance()->consoleOutput() )
+		if ( !Log::instance()->isConsoleOutput() )
 			printf( "ASSERT: %s file:%s line:%d", Exp, File, Line );
 	} else {
 		printf( "ASSERT: %s file:%s line:%d", Exp, File, Line );
@@ -57,7 +57,7 @@ static void print_buffer( std::string& buf, bool newLine ) {
 	#ifdef EE_COMPILER_MSVC
 		OutputDebugStringA( buf.c_str() );
 	#else
-		if ( PrintDebugInLog && Log::instance()->consoleOutput() ) {
+		if ( PrintDebugInLog && Log::instance()->isConsoleOutput() ) {
 			Log::instance()->write( buf, false );
 			return;
 		} else {

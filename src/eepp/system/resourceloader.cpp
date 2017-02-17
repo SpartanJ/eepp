@@ -26,15 +26,15 @@ void ResourceLoader::setThreads() {
 	}
 }
 
-bool ResourceLoader::threaded() const {
+bool ResourceLoader::isThreaded() const {
 	return mThreaded;
 }
 
-Uint32 ResourceLoader::count() const {
+Uint32 ResourceLoader::getCount() const {
 	return mObjs.size();
 }
 
-void ResourceLoader::threaded( const bool& threaded ) {
+void ResourceLoader::setThreaded( const bool& threaded ) {
 	if ( !mLoading ) {
 		mThreaded = threaded;
 	}
@@ -94,7 +94,7 @@ void ResourceLoader::load() {
 		Obj = (*it);
 
 		if ( NULL != Obj ) {
-			Obj->threaded( mThreaded );
+			Obj->setThreaded( mThreaded );
 
 			if ( !Obj->isLoaded() ) {
 				if ( !Obj->isLoading() ) {
@@ -171,7 +171,7 @@ void ResourceLoader::setLoaded() {
 	}
 }
 
-Float ResourceLoader::progress() {
+Float ResourceLoader::getProgress() {
 	return ( (Float)mObjsLoaded.size() / (Float)( mObjs.size() + mObjsLoaded.size() ) ) * 100.f;
 }
 

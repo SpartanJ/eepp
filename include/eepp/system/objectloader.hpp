@@ -52,11 +52,11 @@ class EE_API ObjectLoader : protected Thread {
 		virtual bool	isLoading();
 
 		/** @returns If the loader is asynchronous */
-		bool			threaded() const;
+		bool			isThreaded() const;
 
 		/** @brief Sets if the loader is asynchronous.
 		**	This must be called before the load starts. */
-		void			threaded( const bool& threaded );
+		void			setThreaded( const bool& setThreaded );
 
 		/** @return The object loader type */
 		const Uint32&	type() const;

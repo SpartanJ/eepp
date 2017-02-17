@@ -203,7 +203,7 @@ EE_PIXEL_FORMAT Image::channelsToPixelFormat( const Uint32& channels ) {
 bool Image::getInfo( const std::string& path, int * width, int * height, int * channels ) {
 	bool res = stbi_info( path.c_str(), width, height, channels ) != 0;
 
-	if ( !res && PackManager::instance()->fallbackToPacks() ) {
+	if ( !res && PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string npath( path );
 		Pack * tPack = PackManager::instance()->exists( npath );
 
@@ -313,7 +313,7 @@ Image::Image( std::string Path, const unsigned int& forceChannels ) :
 		mSize	= mWidth * mHeight * mChannels;
 
 		mLoadedFromStbi = true;
-	} else if ( PackManager::instance()->fallbackToPacks() && NULL != ( tPack = PackManager::instance()->exists( Path ) ) ) {
+	} else if ( PackManager::instance()->isFallbackToPacksActive() && NULL != ( tPack = PackManager::instance()->exists( Path ) ) ) {
 		loadFromPack( tPack, Path );
 	} else {
 		std::string reason = ".";

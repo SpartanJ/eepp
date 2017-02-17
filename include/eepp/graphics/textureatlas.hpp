@@ -65,7 +65,7 @@ class EE_API TextureAtlas : public ResourceManager<SubTexture> {
 		const Uint32& getId() const;
 		
 		/** @return The number of SubTextures inside the texture atlas. */
-		Uint32 count();
+		Uint32 getCount();
 
 		/** @return The texture that corresponds to the texture atlas.
 		* @param texnum The texture index. A texture atlas can use more than one texture, so it can be 0 to GetTexturesLoadedCount(). Usually a texture atlas corresponds to only one texture, so the texture index is 0.

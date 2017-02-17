@@ -36,7 +36,7 @@ Shader::Shader( const Uint32& Type, const std::string& Filename ) {
 		std::string tPath = Filename;
 		Pack * tPack = NULL;
 
-		if ( PackManager::instance()->fallbackToPacks() && NULL != ( tPack = PackManager::instance()->exists( tPath ) ) ) {
+		if ( PackManager::instance()->isFallbackToPacksActive() && NULL != ( tPack = PackManager::instance()->exists( tPath ) ) ) {
 			SafeDataPointer PData;
 
 			tPack->extractFileToMemory( tPath, PData );

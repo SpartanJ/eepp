@@ -11,8 +11,8 @@ namespace Demo_Test {
 void EETest::Init() {
 	EE = Engine::instance();
 
-	Log::instance()->liveWrite( true );
-	Log::instance()->consoleOutput( true );
+	Log::instance()->setLiveWrite( true );
+	Log::instance()->setConsoleOutput( true );
 
 	DrawBack 			= false;
 	MultiViewportMode 	= false;
@@ -184,7 +184,7 @@ void EETest::OnFontLoaded( ResourceLoader * ObjLoaded ) {
 	TTF		= FontManager::instance()->getByName( "arial" );
 	TTFB	= FontManager::instance()->getByName( "arialb" );
 
-	eePRINTL( "Fonts loading time: %4.3f ms.", mFTE.elapsed().asMilliseconds() );
+	eePRINTL( "Fonts loading time: %4.3f ms.", mFTE.getElapsed().asMilliseconds() );
 
 	eeASSERT( TTF != NULL );
 	eeASSERT( TTFB != NULL );
@@ -252,7 +252,7 @@ void EETest::CreateUI() {
 
 	CreateUIThemeTextureAtlas();
 
-	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.elapsed().asMilliseconds() );
+	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
 	UIManager::instance()->init(); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
@@ -573,7 +573,7 @@ void EETest::CreateUI() {
 
 	C = reinterpret_cast<UIControlAnim*> ( C->parent() );
 
-	eePRINTL( "CreateUI time: %4.3f ms.", TE.elapsed().asMilliseconds() );
+	eePRINTL( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 }
 
 void EETest::CreateMapEditor() {
@@ -928,7 +928,7 @@ void EETest::LoadTextures() {
 	mBoxSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( SubTexture, ( TN[3], "ilmare" ) ) ) ) );
 	mCircleSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( SubTexture, ( TN[1], "thecircle" ) ) ) ) );
 
-	eePRINTL( "Textures loading time: %4.3f ms.", TE.elapsed().asMilliseconds() );
+	eePRINTL( "Textures loading time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
 	Map.Load( MyPath + "maps/test.eem" );
 	Map.DrawGrid( false );
@@ -936,7 +936,7 @@ void EETest::LoadTextures() {
 	Map.DrawBackground( false );
 	Map.ViewSize( mWindow->getSize() );
 
-	eePRINTL( "Map creation time: %4.3f ms.", TE.elapsed().asMilliseconds() );
+	eePRINTL( "Map creation time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 }
 
 void EETest::run() {
@@ -952,7 +952,7 @@ void EETest::ParticlesThread() {
 
 void EETest::UpdateParticles() {
 	if ( MultiViewportMode || Screen == 2 ) {
-		PSElapsed = cElapsed.elapsed();
+		PSElapsed = cElapsed.getElapsed();
 
 		for ( Uint8 i = 0; i < PS.size(); i++ )
 			PS[i].update( PSElapsed );

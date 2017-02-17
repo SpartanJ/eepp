@@ -261,7 +261,7 @@ void Window::getElapsedTime() {
 		mFrameData.FrameElapsed = eeNew( Clock, () );
 	}
 
-	mFrameData.ElapsedTime = mFrameData.FrameElapsed->elapsed();
+	mFrameData.ElapsedTime = mFrameData.FrameElapsed->getElapsed();
 }
 
 void Window::calculateFps() {

@@ -3,22 +3,22 @@
 
 namespace EE { namespace System {
 
-ThreadLocal::ThreadLocal(void* val) :
+ThreadLocal::ThreadLocal(void* value) :
 	mImpl( eeNew( Private::ThreadLocalImpl, () ) )
 {
-	value( val );
+	setValue( value );
 }
 
 ThreadLocal::~ThreadLocal() {
 	eeSAFE_DELETE( mImpl );
 }
 
-void ThreadLocal::value(void* val) {
-	mImpl->value(val);
+void ThreadLocal::setValue(void* val) {
+	mImpl->setValue(val);
 }
 
-void* ThreadLocal::value() const {
-	return mImpl->value();
+void* ThreadLocal::getValue() const {
+	return mImpl->getValue();
 }
 
 }}

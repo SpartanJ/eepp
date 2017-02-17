@@ -89,7 +89,7 @@ void TextureAtlasLoader::update() {
 }
 
 void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
-	mRL.threaded( mThreaded );
+	mRL.setThreaded( mThreaded );
 
 	if ( IOS.isOpen() ) {
 		IOS.read( (char*)&mTexGrHdr, sizeof(sTextureAtlasHdr) );
@@ -124,11 +124,11 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 			}
 		}
 
-		if ( !mSkipResourceLoad || ( !mSkipResourceLoad && 0 == mRL.count() ) ) {
+		if ( !mSkipResourceLoad || ( !mSkipResourceLoad && 0 == mRL.getCount() ) ) {
 			mIsLoading = true;
 			mRL.load();
 
-			if ( !mThreaded || ( !mSkipResourceLoad && 0 == mRL.count() ) )
+			if ( !mThreaded || ( !mSkipResourceLoad && 0 == mRL.getCount() ) )
 				createSubTextures();
 		}
 	}
@@ -142,7 +142,7 @@ void TextureAtlasLoader::load( const std::string& TextureAtlasPath ) {
 		IOStreamFile IOS( mTextureAtlasPath, std::ios::in | std::ios::binary );
 
 		loadFromStream( IOS );
-	} else if ( PackManager::instance()->fallbackToPacks() ) {
+	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string tgPath( mTextureAtlasPath );
 
 		Pack * tPack = PackManager::instance()->exists( tgPath );

@@ -757,7 +757,7 @@ void Console::cmdFrameLimit ( const std::vector < String >& params ) {
 }
 
 void Console::cmdGetLog() {
-	std::vector < String > tvec = String::split( String( String::toStr( Log::instance()->buffer() ) ) );
+	std::vector < String > tvec = String::split( String( String::toStr( Log::instance()->getBuffer() ) ) );
 	if ( tvec.size() > 0 ) {
 		for ( unsigned int i = 0; i < tvec.size(); i++ )
 			privPushText( tvec[i] );

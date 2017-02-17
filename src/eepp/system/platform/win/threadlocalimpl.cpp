@@ -12,11 +12,11 @@ ThreadLocalImpl::~ThreadLocalImpl() {
 	TlsFree(mIndex);
 }
 
-void ThreadLocalImpl::value(void* val) {
+void ThreadLocalImpl::setValue(void* val) {
 	TlsSetValue(mIndex, val);
 }
 
-void* ThreadLocalImpl::value() const {
+void* ThreadLocalImpl::getValue() const {
 	return TlsGetValue(mIndex);
 }
 
