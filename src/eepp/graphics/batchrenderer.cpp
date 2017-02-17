@@ -756,16 +756,16 @@ void BatchRenderer::polygonSetColor( const ColorA& Color ) {
 }
 
 void BatchRenderer::batchPolygon( const Polygon2f& Polygon ) {
-	if ( Polygon.size() > mVertexSize )
+	if ( Polygon.getSize() > mVertexSize )
 		return;
 
 	setBlendMode( DM_POLYGON, mForceBlendMode );
 
-	for ( Uint32 i = 0; i < Polygon.size(); i++ ) {
+	for ( Uint32 i = 0; i < Polygon.getSize(); i++ ) {
 		mTVertex = &mVertex[ mNumVertex ];
 
-		mTVertex->pos.x = Polygon.x() + Polygon[i].x;
-		mTVertex->pos.y = Polygon.y() + Polygon[i].y;
+		mTVertex->pos.x = Polygon.getX() + Polygon[i].x;
+		mTVertex->pos.y = Polygon.getY() + Polygon[i].y;
 		mTVertex->tex 	= mTexCoord[0];
 		mTVertex->color = mVerColor[0];
 

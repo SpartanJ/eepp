@@ -111,7 +111,7 @@ bool Waypoints::eraseWaypoint( const unsigned int& PointNum ) {
 	return false;
 }
 
-void Waypoints::speed( const Float& Speed ) {
+void Waypoints::setSpeed( const Float& Speed ) {
 	Float tdist = mTotDist;
 	mSpeed = Speed;
 	Float CurDist;
@@ -216,19 +216,19 @@ void Waypoints::setTotalTime( const Time& TotTime ) {
 		mPoints[i].t = mPoints[i].p.distance( mPoints[i + 1].p ) * TotTime.asMilliseconds() / tdist;
 }
 
-void Waypoints::type( Ease::Interpolation InterpolationType ) {
+void Waypoints::setType( Ease::Interpolation InterpolationType ) {
 	mType = InterpolationType;
 }
 
-const int& Waypoints::type() const {
+const int& Waypoints::getType() const {
 	return mType;
 }
 
-bool Waypoints::loop() const {
+bool Waypoints::getLoop() const {
 	return mLoop;
 }
 
-void Waypoints::loop( const bool& loop ) {
+void Waypoints::setLoop( const bool& loop ) {
 	mLoop = loop;
 }
 
@@ -252,15 +252,15 @@ const std::vector<Waypoint>& Waypoints::getWaypoints() const {
 	return mPoints;
 }
 
-const Float& Waypoints::speed() const {
+const Float& Waypoints::getSpeed() const {
 	return mSpeed;
 }
 
-const bool& Waypoints::enabled() const {
+const bool& Waypoints::isEnabled() const {
 	return mEnable;
 }
 
-void Waypoints::enabled( const bool& Enabled ) {
+void Waypoints::setEnabled( const bool& Enabled ) {
 	mEnable = Enabled;
 }
 

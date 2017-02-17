@@ -69,14 +69,14 @@ void MapLightManager::UpdateByVertex() {
 						else
 							mTileColors[x][y][0]->assign( Light->ProcessVertex( Pos.x, Pos.y, *(mTileColors[x][y][0]), *(mTileColors[x][y][0]) ) );
 
-						mTileColors[x][y][1]->assign( Light->ProcessVertex( Pos.x, Pos.y + TileSize.height(), *(mTileColors[x][y][1]), *(mTileColors[x][y][1]) ) );
+						mTileColors[x][y][1]->assign( Light->ProcessVertex( Pos.x, Pos.y + TileSize.getHeight(), *(mTileColors[x][y][1]), *(mTileColors[x][y][1]) ) );
 
-						mTileColors[x][y][2]->assign( Light->ProcessVertex( Pos.x + TileSize.width(), Pos.y + TileSize.height(), *(mTileColors[x][y][2]), *(mTileColors[x][y][2]) ) );
+						mTileColors[x][y][2]->assign( Light->ProcessVertex( Pos.x + TileSize.getWidth(), Pos.y + TileSize.getHeight(), *(mTileColors[x][y][2]), *(mTileColors[x][y][2]) ) );
 
 						if ( y > 0 )
 							mTileColors[x][y][3]->assign( *mTileColors[x][y - 1][2] );
 						else
-							mTileColors[x][y][3]->assign( Light->ProcessVertex( Pos.x + TileSize.width(), Pos.y, *(mTileColors[x][y][3]), *(mTileColors[x][y][3]) ) );
+							mTileColors[x][y][3]->assign( Light->ProcessVertex( Pos.x + TileSize.getWidth(), Pos.y, *(mTileColors[x][y][3]), *(mTileColors[x][y][3]) ) );
 					}
 				}
 			}
@@ -117,7 +117,7 @@ void MapLightManager::UpdateByTile() {
 					eeAABB TileAABB( Pos.x, Pos.y, Pos.x + TileSize.x, Pos.y + TileSize.y );
 
 					if ( TileAABB.intersect( Light->GetAABB() ) ) {
-						mTileColors[x][y][0]->assign( Light->ProcessVertex( Pos.x + HalfTileSize.width(), Pos.y + HalfTileSize.height(), *(mTileColors[x][y][0]), *(mTileColors[x][y][0]) ) );
+						mTileColors[x][y][0]->assign( Light->ProcessVertex( Pos.x + HalfTileSize.getWidth(), Pos.y + HalfTileSize.getHeight(), *(mTileColors[x][y][0]), *(mTileColors[x][y][0]) ) );
 					}
 				}
 			}
@@ -187,10 +187,10 @@ const ColorA * MapLightManager::GetTileColor( const Vector2i& TilePos, const Uin
 
 void MapLightManager::AllocateColors() {
 	Sizei Size		= mMap->Size();
-	mTileColors		= eeNewArray( ColorA***, Size.width() );
+	mTileColors		= eeNewArray( ColorA***, Size.getWidth() );
 
 	for ( Int32 x = 0; x < Size.x; x++ ) {
-		mTileColors[x] = eeNewArray( ColorA**, Size.height() );
+		mTileColors[x] = eeNewArray( ColorA**, Size.getHeight() );
 
 		for ( Int32 y = 0; y < Size.y; y++ ) {
 			mTileColors[x][y] = eeNewArray( ColorA*, mNumVertex );

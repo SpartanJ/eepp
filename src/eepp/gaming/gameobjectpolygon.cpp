@@ -24,7 +24,7 @@ bool GameObjectPolygon::IsType( const Uint32& type ) {
 }
 
 Sizei GameObjectPolygon::Size() {
-	return Sizei( mRect.size().x, mRect.size().y );
+	return Sizei( mRect.getSize().x, mRect.getSize().y );
 }
 
 void GameObjectPolygon::Draw() {

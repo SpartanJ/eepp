@@ -197,7 +197,7 @@ void Interpolation::setTotalTime( const Time & TotTime ) {
 	}
 }
 
-void Interpolation::speed( const Float Speed ) {
+void Interpolation::setSpeed( const Float Speed ) {
 	Float tdist = mTotDist;
 	mSpeed = Speed;
 	Float CurDist;
@@ -225,19 +225,19 @@ void Interpolation::speed( const Float Speed ) {
 	}
 }
 
-void Interpolation::type( Ease::Interpolation InterpolationType ) {
+void Interpolation::setType( Ease::Interpolation InterpolationType ) {
 	mType = InterpolationType;
 }
 
-const int& Interpolation::type() const {
+const int& Interpolation::getType() const {
 	return mType;
 }
 
-const bool& Interpolation::loop() const {
+const bool& Interpolation::getLoop() const {
 	return mLoop;
 }
 
-void Interpolation::loop( const bool& loop ) {
+void Interpolation::setLoop( const bool& loop ) {
 	mLoop = loop;
 }
 
@@ -261,15 +261,15 @@ const std::vector<Point1d>& Interpolation::getPoints() const {
 	return mPoints;
 }
 
-const Float& Interpolation::speed() const {
+const Float& Interpolation::getSpeed() const {
 	return mSpeed;
 }
 
-const bool& Interpolation::enabled() const {
+const bool& Interpolation::isEnabled() const {
 	return mEnable;
 }
 
-void Interpolation::enabled( const bool& Enabled ) {
+void Interpolation::setEnabled( const bool& Enabled ) {
 	mEnable = Enabled;
 }
 

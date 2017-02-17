@@ -35,8 +35,8 @@ TextureAtlasSubTextureEditor::~TextureAtlasSubTextureEditor() {
 void TextureAtlasSubTextureEditor::draw() {
 	Primitives P;
 	P.setColor( ColorA( 255, 0, 0, mAlpha ) );
-	P.drawLine( Line2f( Vector2f( mScreenPos.x, mScreenPos.y + mUICenter.y ), Vector2f( mScreenPos.x + mSize.width(), mScreenPos.y + mUICenter.y ) ) );
-	P.drawLine( Line2f( Vector2f( mScreenPos.x + mUICenter.x, mScreenPos.y ), Vector2f( mScreenPos.x + mUICenter.x, mScreenPos.y + mSize.height() ) ) );
+	P.drawLine( Line2f( Vector2f( mScreenPos.x, mScreenPos.y + mUICenter.y ), Vector2f( mScreenPos.x + mSize.getWidth(), mScreenPos.y + mUICenter.y ) ) );
+	P.drawLine( Line2f( Vector2f( mScreenPos.x + mUICenter.x, mScreenPos.y ), Vector2f( mScreenPos.x + mUICenter.x, mScreenPos.y + mSize.getHeight() ) ) );
 
 	UIComplexControl::draw();
 }
@@ -75,7 +75,7 @@ UIGfx * TextureAtlasSubTextureEditor::getGfx() const {
 }
 
 void TextureAtlasSubTextureEditor::getCenter() {
-	mUICenter = Vector2i( mSize.width() / 2, mSize.height() / 2 );
+	mUICenter = Vector2i( mSize.getWidth() / 2, mSize.getHeight() / 2 );
 }
 
 }}}

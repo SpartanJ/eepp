@@ -167,8 +167,8 @@ Vector2i WindowSFML::getPosition() {
 
 void WindowSFML::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( ( !Width || !Height ) ) {
-		Width	= mWindow.DesktopResolution.width();
-		Height	= mWindow.DesktopResolution.height();
+		Width	= mWindow.DesktopResolution.getWidth();
+		Height	= mWindow.DesktopResolution.getHeight();
 	}
 
 	if ( this->isWindowed() == Windowed && Width == mWindow.WindowConfig.Width && Height == mWindow.WindowConfig.Height )

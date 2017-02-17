@@ -23,31 +23,31 @@ class EE_API PerlinNoise {
 		void init();
 
 		/** @return The noise value for the 2D coordinates */
-		Float perlinNoise2D(Float x, Float y);
+		Float getPerlinNoise2D(Float x, Float y);
 
-		void octaves( const int& octaves ) { mOctaves = octaves; }
+		void setOctaves( const int& octaves ) { mOctaves = octaves; }
 		
-		void persistence( const Float& pers)  { mPersistence = pers; }
+		void setPersistence( const Float& pers)  { mPersistence = pers; }
 
-		void frequency( const Float& freq ) { mFrequency = freq; }
+		void setFrequency( const Float& freq ) { mFrequency = freq; }
 
-		void amplitude( const Float& amp ) { mAmplitude = amp; }
+		void setAmplitude( const Float& amp ) { mAmplitude = amp; }
 		
-		void frequencyOctaveDep( const bool& dep ) { mFreqOctaveDep =  dep; }
+		void setFrequencyOctaveDep( const bool& dep ) { mFreqOctaveDep =  dep; }
 		
-		void amplitudeOctaveDep( const bool& dep ) { mAmpOctaveDep = dep; }
+		void setAmplitudeOctaveDep( const bool& dep ) { mAmpOctaveDep = dep; }
 
-		int octaves() const { return mOctaves; }
+		int getOctaves() const { return mOctaves; }
 		
-		Float persistence() const { return mPersistence; }
+		Float getPersistence() const { return mPersistence; }
 		
-		Float frequency() const { return mFrequency; }
+		Float getFrequency() const { return mFrequency; }
 		
-		Float amplitude() const { return mAmplitude; }
+		Float getAmplitude() const { return mAmplitude; }
 		
-		bool frequencyOctaveDep() const { return mFreqOctaveDep; }
+		bool getFrequencyOctaveDep() const { return mFreqOctaveDep; }
 		
-		bool amplitudeOctaveDep() const { return mAmpOctaveDep; }
+		bool getAmplitudeOctaveDep() const { return mAmpOctaveDep; }
 	protected:
 		Float noise2D(Int32 x, Int32 y);
 		

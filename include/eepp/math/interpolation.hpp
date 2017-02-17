@@ -65,10 +65,10 @@ class EE_API Interpolation {
 		const Float& getRealPos() const;
 
 		/** @return If movement interpolation is a loop */
-		const bool&	loop() const;
+		const bool&	getLoop() const;
 
 		/** Set if loop the movement interpolation */
-		void loop( const bool& loop );
+		void setLoop( const bool& loop );
 
 		/** Clear all the points */
 		void clearWaypoints();
@@ -77,15 +77,15 @@ class EE_API Interpolation {
 		const bool& ended() const;
 
 		/** Set the current interpolation speed */
-		void speed( const Float speed );
+		void setSpeed( const Float speed );
 
 		/** Get the current interpolation speed */
-		const Float& speed() const;
+		const Float& getSpeed() const;
 
 		/** @return If enabled */
-		const bool& enabled() const;
+		const bool& isEnabled() const;
 
-		void enabled( const bool& enabled );
+		void setEnabled( const bool& enabled );
 
 		/** Instead if setting the time between every waypoing, this set a total time for all the movement interpolation. */
 		void setTotalTime( const Time& TotTime );
@@ -106,10 +106,10 @@ class EE_API Interpolation {
 		const Float& getEndPos();
 
 		/** Set the type of interpolation to be used */
-		void type( Ease::Interpolation InterpolationType );
+		void setType( Ease::Interpolation InterpolationType );
 
 		/** @return The type of the interpolation */
-		const int& type() const;
+		const int& getType() const;
 	protected:
 		int mType;
 		bool mEnable;

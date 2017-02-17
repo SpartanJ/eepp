@@ -238,7 +238,7 @@ Quad2f Sprite::getQuad() {
 		Vector2f Center;
 
 		if ( mOrigin.OriginType == OriginPoint::OriginCenter ) {
-			Center	= TmpR.center();
+			Center	= TmpR.getCenter();
 		} else if ( mOrigin.OriginType == OriginPoint::OriginTopLeft ) {
 			Center	= mPos;
 		} else {
@@ -289,7 +289,7 @@ eeAABB Sprite::getAABB() {
 			Vector2f Center;
 
 			if ( mOrigin.OriginType == OriginPoint::OriginCenter ) {
-				Center	= TmpR.center();
+				Center	= TmpR.getCenter();
 			} else if ( mOrigin.OriginType == OriginPoint::OriginTopLeft ) {
 				Center	= mPos;
 			} else {

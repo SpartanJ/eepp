@@ -45,7 +45,7 @@ void UIControlAnim::draw() {
 			borderDraw();
 
 		if ( NULL != mSkinState )
-			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.width(), (Float)mSize.height(), (Uint32)mAlpha );
+			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.getWidth(), (Float)mSize.getHeight(), (Uint32)mAlpha );
 
 		if ( UIManager::instance()->highlightFocus() && UIManager::instance()->focusControl() == this ) {
 			Primitives P;
@@ -187,7 +187,7 @@ void UIControlAnim::matrixUnset() {
 void UIControlAnim::update() {
 	UIDragable::update();
 
-	if ( NULL != mMoveAnim && mMoveAnim->enabled() ) {
+	if ( NULL != mMoveAnim && mMoveAnim->isEnabled() ) {
 		mMoveAnim->update( elapsed() );
 		position( (int)mMoveAnim->getPos().x, (int)mMoveAnim->getPos().y );
 
@@ -195,7 +195,7 @@ void UIControlAnim::update() {
 			eeSAFE_DELETE( mMoveAnim );
 	}
 
-	if ( NULL != mAlphaAnim && mAlphaAnim->enabled() ) {
+	if ( NULL != mAlphaAnim && mAlphaAnim->isEnabled() ) {
 		mAlphaAnim->update( elapsed() );
 		alpha( mAlphaAnim->getRealPos() );
 
@@ -213,7 +213,7 @@ void UIControlAnim::update() {
 		}
 	}
 
-	if ( NULL != mScaleAnim && mScaleAnim->enabled() ) {
+	if ( NULL != mScaleAnim && mScaleAnim->isEnabled() ) {
 		mScaleAnim->update( elapsed() );
 		scale( mScaleAnim->getPos() );
 
@@ -221,7 +221,7 @@ void UIControlAnim::update() {
 			eeSAFE_DELETE( mScaleAnim );
 	}
 
-	if ( NULL != mAngleAnim && mAngleAnim->enabled() ) {
+	if ( NULL != mAngleAnim && mAngleAnim->isEnabled() ) {
 		mAngleAnim->update( elapsed() );
 		angle( mAngleAnim->getRealPos() );
 
@@ -235,7 +235,7 @@ bool UIControlAnim::isFadingOut() {
 }
 
 bool UIControlAnim::isAnimating() {
-	return ( NULL != mAlphaAnim && mAlphaAnim->enabled() ) || ( NULL != mAngleAnim && mAngleAnim->enabled() ) || ( NULL != mScaleAnim && mScaleAnim->enabled() ) || ( NULL != mMoveAnim && mMoveAnim->enabled() );
+	return ( NULL != mAlphaAnim && mAlphaAnim->isEnabled() ) || ( NULL != mAngleAnim && mAngleAnim->isEnabled() ) || ( NULL != mScaleAnim && mScaleAnim->isEnabled() ) || ( NULL != mMoveAnim && mMoveAnim->isEnabled() );
 }
 
 Interpolation * UIControlAnim::startAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds, const Ease::Interpolation& Type, Interpolation::OnPathEndCallback PathEndCallback ) {
@@ -247,7 +247,7 @@ Interpolation * UIControlAnim::startAlphaAnim( const Float& From, const Float& T
 	mAlphaAnim->addWaypoint( To );
 	mAlphaAnim->setTotalTime( TotalTime );
 	mAlphaAnim->start( PathEndCallback );
-	mAlphaAnim->type( Type );
+	mAlphaAnim->setType( Type );
 
 	alpha( From );
 
@@ -278,7 +278,7 @@ Waypoints * UIControlAnim::startScaleAnim( const Vector2f& From, const Vector2f&
 	mScaleAnim->addWaypoint( To );
 	mScaleAnim->setTotalTime( TotalTime );
 	mScaleAnim->start( PathEndCallback );
-	mScaleAnim->type( Type );
+	mScaleAnim->setType( Type );
 
 	scale( From );
 
@@ -298,7 +298,7 @@ Waypoints * UIControlAnim::startMovement( const Vector2i& From, const Vector2i& 
 	mMoveAnim->addWaypoint( Vector2f( (Float)To.x, (Float)To.y ) );
 	mMoveAnim->setTotalTime( TotalTime );
 	mMoveAnim->start( PathEndCallback );
-	mMoveAnim->type( Type );
+	mMoveAnim->setType( Type );
 
 	position( From );
 
@@ -314,7 +314,7 @@ Interpolation * UIControlAnim::startRotation( const Float& From, const Float& To
 	mAngleAnim->addWaypoint( To );
 	mAngleAnim->setTotalTime( TotalTime );
 	mAngleAnim->start( PathEndCallback );
-	mAngleAnim->type( Type );
+	mAngleAnim->setType( Type );
 
 	angle( From );
 
@@ -375,7 +375,7 @@ void UIControlAnim::borderDraw() {
 
 	//! @TODO: Check why was this +0.1f -0.1f?
 	if ( mFlags & UI_CLIP_ENABLE ) {
-		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.width() - 0.1f, (Float)mSize.height() - 0.1f ) );
+		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.getWidth() - 0.1f, (Float)mSize.getHeight() - 0.1f ) );
 
 		if ( mBackground->corners() ) {
 			P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->corners() );
@@ -396,7 +396,7 @@ ColorA UIControlAnim::getColor( const ColorA& Col ) {
 }
 
 void UIControlAnim::updateQuad() {
-	mPoly		= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mSize.width(), mScreenPosf.y + mSize.height() ) );
+	mPoly		= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mSize.getWidth(), mScreenPosf.y + mSize.getHeight() ) );
 
 	mPoly.rotate( mAngle, rotationCenter() );
 	mPoly.scale( mScale, scaleCenter() );

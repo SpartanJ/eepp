@@ -3,11 +3,11 @@
 namespace EE { namespace Math {
 
 MTRand::MTRand( const Uint32 oneSeed ) {
-	seed( oneSeed );
+	setSeed( oneSeed );
 }
 
 MTRand::MTRand() {
-	seed();
+	setSeed();
 }
 
 MTRand::MTRand( const MTRand& o ) {
@@ -57,13 +57,13 @@ void MTRand::reload() {
 	mLeft = N, mNext = mState;
 }
 
-void MTRand::seed( const Uint32 oneSeed ) {
+void MTRand::setSeed( const Uint32 oneSeed ) {
 	initialize( oneSeed );
 	reload();
 }
 
-void MTRand::seed() {
-	seed( 0xFEDCBA09 );
+void MTRand::setSeed() {
+	setSeed( 0xFEDCBA09 );
 }
 
 Uint32 MTRand::hiBit( const Uint32 u ) const {
@@ -90,7 +90,7 @@ Uint32 MTRand::twist( const Uint32 m, const Uint32 s0, const Uint32 s1 ) const {
 	return m ^ ( mixBits( s0, s1 )>>1 ) ^ magic(s1);
 }
 
-Uint32 MTRand::randi() {
+Uint32 MTRand::getRandi() {
 	if ( mLeft == 0 )
 		reload();
 
@@ -105,7 +105,7 @@ Uint32 MTRand::randi() {
 	return ( s1 ^ (s1 >> 18) );
 }
 
-Uint32 MTRand::randi( const Uint32 n ) {
+Uint32 MTRand::getRandi( const Uint32 n ) {
 	Uint32 used = n;
 	used |= used >> 1;
 	used |= used >> 2;
@@ -116,34 +116,34 @@ Uint32 MTRand::randi( const Uint32 n ) {
 	Uint32 i;
 
 	do {
-		i = randi() & used;
+		i = getRandi() & used;
 	} while ( i > n );
 
 	return i;
 }
 
-double MTRand::rand() {
-	return double( randi() ) * ( 1.0 / 4294967295.0 );
+double MTRand::getRand() {
+	return double( getRandi() ) * ( 1.0 / 4294967295.0 );
 }
 
-double MTRand::rand( const double n ) {
-	return rand() * n;
+double MTRand::getRand( const double n ) {
+	return getRand() * n;
 }
 
-Float	MTRand::randf() {
-	return (Float)rand();
+Float	MTRand::getRandf() {
+	return (Float)getRand();
 }
 
-Float	MTRand::randf( const Float n ) {
-	return (Float)rand(n);
+Float	MTRand::getRandf( const Float n ) {
+	return (Float)getRand(n);
 }
 
-int MTRand::randRange( int Min, int Max ) {
-	return Min + randi( Max - Min );
+int MTRand::getRandFromRange( int Min, int Max ) {
+	return Min + getRandi( Max - Min );
 }
 
-Float	MTRand::randRange( Float Min, Float Max ) {
-	return Min + randf( Max - Min );
+Float	MTRand::getRandFromRange( Float Min, Float Max ) {
+	return Min + getRandf( Max - Min );
 }
 
 MTRand& MTRand::operator=( const MTRand& o ) {

@@ -614,7 +614,7 @@ Graphics::Image * Image::thumbnail( const Uint32& maxWidth, const Uint32& maxHei
 
 Graphics::Image * Image::crop( Recti rect ) {
 	if ( rect.Left >= 0 && rect.Right <= (Int32)mWidth && rect.Top >= 0 && rect.Bottom <= (Int32)mHeight ) {
-		Image * img = eeNew( Image, ( rect.size().width(), rect.size().height(), mChannels ) );
+		Image * img = eeNew( Image, ( rect.getSize().getWidth(), rect.getSize().getHeight(), mChannels ) );
 
 		// Copy per row
 		for ( unsigned int ty = 0; ty < img->mHeight; ty++ ) {

@@ -234,8 +234,8 @@ void UIMap::ManageObject( Uint32 Flags ) {
 					mObjRECTEditing = true;
 					mObjRECT		= Rectf( mp, Sizef(0,0) );
 				} else {
-					if ( mObjRECT.pos().x < mp.x && mObjRECT.pos().y < mp.y ) {
-						mObjRECT		= Rectf( mObjRECT.pos(), Sizef( mp - mObjRECT.pos() ) );
+					if ( mObjRECT.getPosition().x < mp.x && mObjRECT.getPosition().y < mp.y ) {
+						mObjRECT		= Rectf( mObjRECT.getPosition(), Sizef( mp - mObjRECT.getPosition() ) );
 					}
 				}
 			}
@@ -372,7 +372,7 @@ void UIMap::MapDraw() {
 			eeAABB AB( mSelLight->GetAABB() );
 
 			mP.fillMode( DRAW_LINE );
-			mP.drawRectangle( Rectf( Pos, AB.size() ) );
+			mP.drawRectangle( Rectf( Pos, AB.getSize() ) );
 		}
 	} else if ( EDITING_OBJECT == mEditingMode ) {
 		switch ( mEditingObjMode ) {

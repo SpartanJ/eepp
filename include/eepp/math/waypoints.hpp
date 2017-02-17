@@ -66,10 +66,10 @@ class EE_API Waypoints {
 		const Vector2f& getPos();
 
 		/** @return If movement interpolation is a loop */
-		bool loop() const;
+		bool getLoop() const;
 
 		/** Set if loop the movement interpolation */
-		void loop( const bool& loop );
+		void setLoop( const bool& loop );
 
 		/** Clear all the waypoints */
 		void clearWaypoints();
@@ -93,22 +93,22 @@ class EE_API Waypoints {
 		const std::vector<Waypoint>& getWaypoints() const;
 
 		/** Set the current interpolation speed ( This will destroy the time of the interpolation and create one depending on the speed ) ( pixels per second ) */
-		void speed( const Float& speed );
+		void setSpeed( const Float& speed );
 
 		/** Get the current interpolation speed */
-		const Float& speed() const;
+		const Float& getSpeed() const;
 
 		/** @return If enabled */
-		const bool& enabled() const;
+		const bool& isEnabled() const;
 
 		/** Set it enabled or not */
-		void enabled( const bool& enabled );
+		void setEnabled( const bool& enabled );
 
 		/** Set the type of interpolation to be used */
-		void type( Ease::Interpolation InterpolationType );
+		void setType( Ease::Interpolation InterpolationType );
 
 		/** @return The type of the interpolation */
-		const int& type() const;
+		const int& getType() const;
 	protected:
 		int mType;
 		bool mEnable;

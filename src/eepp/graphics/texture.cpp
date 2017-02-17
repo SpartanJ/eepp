@@ -601,11 +601,11 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &
 
 		if ( Angle != 0.f || Scale != 1.f ) {
 			if ( Center.OriginType == OriginPoint::OriginCenter ) {
-				Center = TmpR.center();
+				Center = TmpR.getCenter();
 			} else if ( Center.OriginType == OriginPoint::OriginTopLeft ) {
-				Center = TmpR.pos();
+				Center = TmpR.getPosition();
 			} else {
-				Center += TmpR.pos();
+				Center += TmpR.getPosition();
 			}
 
 			Q.rotate( Angle, Center );

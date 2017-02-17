@@ -12,7 +12,7 @@ GameObjectObject::GameObjectObject( Uint32 DataId, const Rectf& rect, MapLayer *
 	GameObject( Flags, Layer ),
 	mRect( rect ),
 	mPoly( rect ),
-	mPos( mRect.pos() ),
+	mPos( mRect.getPosition() ),
 	mDataId( DataId ),
 	mSelected( false )
 {
@@ -30,7 +30,7 @@ bool GameObjectObject::IsType( const Uint32& type ) {
 }
 
 Sizei GameObjectObject::Size() {
-	Sizef size( mRect.size() );
+	Sizef size( mRect.getSize() );
 	return Sizei( size.x, size.y );
 }
 

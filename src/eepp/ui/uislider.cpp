@@ -21,9 +21,9 @@ UISlider::UISlider( const UISlider::CreateParams& Params ) :
 	BgParams.setParent( this );
 
 	if ( !mVertical )
-		BgParams.Size = Sizei( mSize.width() - 16, 8 );
+		BgParams.Size = Sizei( mSize.getWidth() - 16, 8 );
 	else
-		BgParams.Size = Sizei( 8, mSize.width() - 16 );
+		BgParams.Size = Sizei( 8, mSize.getWidth() - 16 );
 
 	mBackSlider = eeNew( UIControlAnim, ( BgParams ) );
 	mBackSlider->visible( true );
@@ -111,26 +111,26 @@ void UISlider::adjustChilds() {
 				Int32 Height;
 
 				if ( mExpandBackground )
-					Height = mSize.height();
+					Height = mSize.getHeight();
 				else
-					Height = tSubTexture->realSize().height();
+					Height = tSubTexture->realSize().getHeight();
 
 				if ( mAllowHalfSliderOut )
-					mBackSlider->size( Sizei( mSize.width() - mSlider->size().width(), Height ) );
+					mBackSlider->size( Sizei( mSize.getWidth() - mSlider->size().getWidth(), Height ) );
 				else
-					mBackSlider->size( Sizei( mSize.width(), Height ) );
+					mBackSlider->size( Sizei( mSize.getWidth(), Height ) );
 			} else {
 				Int32 Width;
 
 				if ( mExpandBackground )
-					Width = mSize.width();
+					Width = mSize.getWidth();
 				else
-					Width = tSubTexture->realSize().width();
+					Width = tSubTexture->realSize().getWidth();
 
 				if ( mAllowHalfSliderOut )
-					mBackSlider->size( Sizei( Width, mSize.height() - mSlider->size().height() ) );
+					mBackSlider->size( Sizei( Width, mSize.getHeight() - mSlider->size().getHeight() ) );
 				else
-					mBackSlider->size( Sizei( Width, mSize.height() ) );
+					mBackSlider->size( Sizei( Width, mSize.getHeight() ) );
 			}
 
 			mBackSlider->center();
@@ -149,19 +149,19 @@ void UISlider::fixSliderPos() {
 				mSlider->position( 0, 0 );
 
 			if ( mAllowHalfSliderOut ) {
-				if ( mSlider->position().x > mBackSlider->size().width() )
-					mSlider->position( mBackSlider->size().width(), 0 );
+				if ( mSlider->position().x > mBackSlider->size().getWidth() )
+					mSlider->position( mBackSlider->size().getWidth(), 0 );
 			} else {
-				if ( mSlider->position().x > mBackSlider->size().width() - mSlider->size().width() )
-					mSlider->position( mBackSlider->size().width() - mSlider->size().width(), 0 );
+				if ( mSlider->position().x > mBackSlider->size().getWidth() - mSlider->size().getWidth() )
+					mSlider->position( mBackSlider->size().getWidth() - mSlider->size().getWidth(), 0 );
 			}
 
 			mSlider->centerVertical();
 
 			if ( mAllowHalfSliderOut )
-				value( mMinValue + (Float)mSlider->position().x * ( mMaxValue - mMinValue ) / (Float)mBackSlider->size().width() );
+				value( mMinValue + (Float)mSlider->position().x * ( mMaxValue - mMinValue ) / (Float)mBackSlider->size().getWidth() );
 			else
-				value( mMinValue + (Float)mSlider->position().x * ( mMaxValue - mMinValue ) / ( (Float)mSize.width() - mSlider->size().width() ) );
+				value( mMinValue + (Float)mSlider->position().x * ( mMaxValue - mMinValue ) / ( (Float)mSize.getWidth() - mSlider->size().getWidth() ) );
 		} else {
 			mSlider->position( 0, mSlider->position().y );
 
@@ -169,19 +169,19 @@ void UISlider::fixSliderPos() {
 				mSlider->position( 0, 0 );
 
 			if ( mAllowHalfSliderOut ) {
-				if ( mSlider->position().y > mBackSlider->size().height() )
-					mSlider->position( 0, mBackSlider->size().height() );
+				if ( mSlider->position().y > mBackSlider->size().getHeight() )
+					mSlider->position( 0, mBackSlider->size().getHeight() );
 			} else {
-				if ( mSlider->position().y > mBackSlider->size().height() - mSlider->size().height() )
-					mSlider->position( 0, mBackSlider->size().height() - mSlider->size().height() );
+				if ( mSlider->position().y > mBackSlider->size().getHeight() - mSlider->size().getHeight() )
+					mSlider->position( 0, mBackSlider->size().getHeight() - mSlider->size().getHeight() );
 			}
 
 			mSlider->centerHorizontal();
 
 			if ( mAllowHalfSliderOut )
-				value( mMinValue + (Float)mSlider->position().y * ( mMaxValue - mMinValue ) / (Float)mBackSlider->size().height() );
+				value( mMinValue + (Float)mSlider->position().y * ( mMaxValue - mMinValue ) / (Float)mBackSlider->size().getHeight() );
 			else
-				value( mMinValue + (Float)mSlider->position().y * ( mMaxValue - mMinValue ) / ( (Float)mSize.height() - mSlider->size().height() ) );
+				value( mMinValue + (Float)mSlider->position().y * ( mMaxValue - mMinValue ) / ( (Float)mSize.getHeight() - mSlider->size().getHeight() ) );
 		}
 
 		mOnPosChange = false;
@@ -202,14 +202,14 @@ void UISlider::value( Float Val ) {
 
 			if ( !mVertical ) {
 				if ( mAllowHalfSliderOut )
-					mSlider->position( (Int32)( (Float)mBackSlider->size().width() * Percent ), mSlider->position().y );
+					mSlider->position( (Int32)( (Float)mBackSlider->size().getWidth() * Percent ), mSlider->position().y );
 				else
-					mSlider->position( (Int32)( ( (Float)mSize.width() - mSlider->size().width() ) * Percent ), mSlider->position().y );
+					mSlider->position( (Int32)( ( (Float)mSize.getWidth() - mSlider->size().getWidth() ) * Percent ), mSlider->position().y );
 			} else {
 				if ( mAllowHalfSliderOut )
-					mSlider->position( mSlider->position().x, (Int32)( (Float)mBackSlider->size().height() * Percent ) );
+					mSlider->position( mSlider->position().x, (Int32)( (Float)mBackSlider->size().getHeight() * Percent ) );
 				else
-					mSlider->position( mSlider->position().x, (Int32)( ( (Float)mSize.height() - mSlider->size().height() ) * Percent ) );
+					mSlider->position( mSlider->position().x, (Int32)( ( (Float)mSize.getHeight() - mSlider->size().getHeight() ) * Percent ) );
 			}
 
 			mOnPosChange = false;

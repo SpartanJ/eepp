@@ -76,13 +76,13 @@ void UIPushButton::onSizeChange() {
 	if ( NULL != mTextBox ) {
 		switch ( FontHAlignGet( flags() ) ) {
 			case UI_HALIGN_LEFT:
-				mTextBox->position( mIcon->position().x + mIcon->size().width(), 0 );
-				mTextBox->size( mSize.width() - mIcon->position().x + mIcon->size().width(), mSize.height() );
+				mTextBox->position( mIcon->position().x + mIcon->size().getWidth(), 0 );
+				mTextBox->size( mSize.getWidth() - mIcon->position().x + mIcon->size().getWidth(), mSize.getHeight() );
 				break;
 			case UI_HALIGN_CENTER:
 				if ( NULL != mIcon->subTexture() ) {
-					if ( mIcon->position().x + mIcon->size().width() >= mTextBox->alignOffset().x ) {
-						mTextBox->position( mIcon->position().x + mIcon->size().width() + 1 - mTextBox->alignOffset().x, mTextBox->position().y );
+					if ( mIcon->position().x + mIcon->size().getWidth() >= mTextBox->alignOffset().x ) {
+						mTextBox->position( mIcon->position().x + mIcon->size().getWidth() + 1 - mTextBox->alignOffset().x, mTextBox->position().y );
 					}
 				}
 
@@ -137,7 +137,7 @@ void UIPushButton::doAftersetTheme() {
 	}
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mSize.height( getSkinSize().height() );
+		mSize.setHeight( getSkinSize().getHeight() );
 	}
 
 	autoPadding();

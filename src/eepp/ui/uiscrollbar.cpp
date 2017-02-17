@@ -101,13 +101,13 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 
 			if ( NULL != tSubTexture ) {
 				if ( mSlider->isVertical() ) {
-					mSlider->size( tSubTexture->realSize().width() , mSize.height() );
-					size( tSubTexture->realSize().width() , mSize.height() );
-					mMinControlSize.x = mSize.width();
+					mSlider->size( tSubTexture->realSize().getWidth() , mSize.getHeight() );
+					size( tSubTexture->realSize().getWidth() , mSize.getHeight() );
+					mMinControlSize.x = mSize.getWidth();
 				} else {
-					mSlider->size( mSize.width(), tSubTexture->realSize().height() );
-					size( mSize.width(), tSubTexture->realSize().height() );
-					mMinControlSize.y = mSize.height();
+					mSlider->size( mSize.getWidth(), tSubTexture->realSize().getHeight() );
+					size( mSize.getWidth(), tSubTexture->realSize().getHeight() );
+					mMinControlSize.y = mSize.getHeight();
 				}
 			}
 		}
@@ -128,17 +128,17 @@ void UIScrollBar::adjustChilds() {
 	mBtnUp->position( 0, 0 );
 
 	if ( !isVertical() ) {
-		mBtnDown->position( mSize.width() - mBtnDown->size().width(), 0 );
-		mSlider->size( mSize.width() - mBtnDown->size().width() - mBtnUp->size().width(), mSlider->size().height() );
-		mSlider->position( mBtnUp->size().width(), 0 );
+		mBtnDown->position( mSize.getWidth() - mBtnDown->size().getWidth(), 0 );
+		mSlider->size( mSize.getWidth() - mBtnDown->size().getWidth() - mBtnUp->size().getWidth(), mSlider->size().getHeight() );
+		mSlider->position( mBtnUp->size().getWidth(), 0 );
 
 		mBtnDown->centerVertical();
 		mBtnUp->centerVertical();
 		mSlider->centerVertical();
 	} else {
-		mBtnDown->position( 0, mSize.height() - mBtnDown->size().height() );
-		mSlider->size( mSlider->size().width(), mSize.height() - mBtnDown->size().height() - mBtnUp->size().height() );
-		mSlider->position( 0, mBtnUp->size().height() );
+		mBtnDown->position( 0, mSize.getHeight() - mBtnDown->size().getHeight() );
+		mSlider->size( mSlider->size().getWidth(), mSize.getHeight() - mBtnDown->size().getHeight() - mBtnUp->size().getHeight() );
+		mSlider->position( 0, mBtnUp->size().getHeight() );
 
 		mBtnDown->centerHorizontal();
 		mBtnUp->centerHorizontal();

@@ -29,15 +29,15 @@ void ScrollParallax::subTexture( Graphics::SubTexture * subTexture ) {
 void ScrollParallax::setSubTexture() {
 	if ( NULL != mSubTexture ) {
 		mRect		= mSubTexture->srcRect();
-		mRealSize	= Vector2f( (Float)mSubTexture->realSize().width(), (Float)mSubTexture->realSize().height() );
+		mRealSize	= Vector2f( (Float)mSubTexture->realSize().getWidth(), (Float)mSubTexture->realSize().getHeight() );
 
-		mTiles.x	= ( (Int32)mSize.width() / mSubTexture->realSize().width() ) + 1;
-		mTiles.y	= ( (Int32)mSize.height() / mSubTexture->realSize().height() ) + 1;
+		mTiles.x	= ( (Int32)mSize.getWidth() / mSubTexture->realSize().getWidth() ) + 1;
+		mTiles.y	= ( (Int32)mSize.getHeight() / mSubTexture->realSize().getHeight() ) + 1;
 	}
 }
 
 void ScrollParallax::setAABB() {
-	mAABB		= Rectf( mInitPos.x, mInitPos.y, mInitPos.x + mSize.width(), mInitPos.y + mSize.height() );
+	mAABB		= Rectf( mInitPos.x, mInitPos.y, mInitPos.x + mSize.getWidth(), mInitPos.y + mSize.getHeight() );
 }
 
 bool ScrollParallax::create( Graphics::SubTexture * SubTexture, const Vector2f& Position, const Sizef& Size, const Vector2f& Speed, const ColorA& Color, const EE_BLEND_MODE& Blend ) {
@@ -84,10 +84,10 @@ void ScrollParallax::draw() {
 	if ( NULL != mSubTexture && mAABB.Left != mAABB.Right && mAABB.Top != mAABB.Bottom && 0 != mColor.Alpha ) {
 		mPos += mSpeed * (Float)mElapsed.getElapsed().asSeconds();
 
-		if ( mPos.x > mAABB.Left + mRealSize.width() || mPos.x < mAABB.Left - mRealSize.width() )
+		if ( mPos.x > mAABB.Left + mRealSize.getWidth() || mPos.x < mAABB.Left - mRealSize.getWidth() )
 			mPos.x = mAABB.Left;
 
-		if ( mPos.y > mAABB.Top + mRealSize.height() || mPos.y < mAABB.Top - mRealSize.height() )
+		if ( mPos.y > mAABB.Top + mRealSize.getHeight() || mPos.y < mAABB.Top - mRealSize.getHeight() )
 			mPos.y = mAABB.Top;
 
 		Vector2f Pos 	= mPos;
@@ -96,15 +96,15 @@ void ScrollParallax::draw() {
 		Pos.y = (Float)(Int32)Pos.y;
 
 		if ( mSpeed.x > 0.f )
-			Pos.x -= mRealSize.width();
+			Pos.x -= mRealSize.getWidth();
 
 		if ( mSpeed.y > 0.f )
-			Pos.y -= mRealSize.height();
+			Pos.y -= mRealSize.getHeight();
 
 		for ( Int32 y = -1; y < mTiles.y; y++ ) {
 			for ( Int32 x = -1; x < mTiles.x; x++ ) {
 				Recti Rect 	= mRect;
-				Rectf AABB( Pos.x, Pos.y, Pos.x + mRealSize.width(), Pos.y + mRealSize.height() );
+				Rectf AABB( Pos.x, Pos.y, Pos.x + mRealSize.getWidth(), Pos.y + mRealSize.getHeight() );
 
 				if ( AABB.intersect( mAABB ) ) {
 					if ( Pos.x < mAABB.Left ) {
@@ -112,8 +112,8 @@ void ScrollParallax::draw() {
 						AABB.Left = mAABB.Left;
 					}
 
-					if ( Pos.x + mRealSize.width() > mAABB.Right ) {
-						Rect.Right -= (Int32)( ( Pos.x + mRealSize.width() ) - mAABB.Right );
+					if ( Pos.x + mRealSize.getWidth() > mAABB.Right ) {
+						Rect.Right -= (Int32)( ( Pos.x + mRealSize.getWidth() ) - mAABB.Right );
 					}
 
 					if ( Pos.y < mAABB.Top ) {
@@ -121,8 +121,8 @@ void ScrollParallax::draw() {
 						AABB.Top = mAABB.Top;
 					}
 
-					if ( Pos.y + mRealSize.height() > mAABB.Bottom ) {
-						Rect.Bottom -= (Int32)( ( Pos.y + mRealSize.height() ) - mAABB.Bottom );
+					if ( Pos.y + mRealSize.getHeight() > mAABB.Bottom ) {
+						Rect.Bottom -= (Int32)( ( Pos.y + mRealSize.getHeight() ) - mAABB.Bottom );
 					}
 
 					mSubTexture->srcRect( Rect );
@@ -132,15 +132,15 @@ void ScrollParallax::draw() {
 						mSubTexture->draw( AABB.Left, AABB.Top, mColor, 0.f, Vector2f::One, mBlend );
 				}
 
-				Pos.x += mRealSize.width();
+				Pos.x += mRealSize.getWidth();
 			}
 
 			Pos.x = (Float)(Int32)mPos.x;
 
 			if ( mSpeed.x > 0.f )
-				Pos.x -= mRealSize.width();
+				Pos.x -= mRealSize.getWidth();
 
-			Pos.y += mRealSize.height();
+			Pos.y += mRealSize.getHeight();
 		}
 
 		mSubTexture->srcRect( mRect );

@@ -92,16 +92,16 @@ void UISpinBox::setTheme( UITheme * Theme ) {
 	}
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mSize.height( mInput->getSkinSize().height() );
+		mSize.setHeight( mInput->getSkinSize().getHeight() );
 	}
 
 	adjustChilds();
 }
 
 void UISpinBox::adjustChilds() {
-	mPushUp->position( mSize.width() - mPushUp->size().width(), 0 );
-	mPushDown->position( mSize.width() - mPushDown->size().width(), mPushUp->size().height() );
-	mInput->size( mSize.width() - mPushUp->size().width(), mSize.height() );
+	mPushUp->position( mSize.getWidth() - mPushUp->size().getWidth(), 0 );
+	mPushDown->position( mSize.getWidth() - mPushDown->size().getWidth(), mPushUp->size().getHeight() );
+	mInput->size( mSize.getWidth() - mPushUp->size().getWidth(), mSize.getHeight() );
 }
 
 void UISpinBox::padding( const Recti& padding ) {

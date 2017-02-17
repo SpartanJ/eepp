@@ -25,10 +25,10 @@ UIDropDownList::UIDropDownList( UIDropDownList::CreateParams& Params ) :
 		UITheme * Theme = UIThemeManager::instance()->defaultTheme();
 
 		if ( NULL != Theme ) {
-			mListBox = Theme->createListBox( NULL, Sizei( mSize.width(), mMinNumVisibleItems * mSize.height() ),Vector2i(), flags );
+			mListBox = Theme->createListBox( NULL, Sizei( mSize.getWidth(), mMinNumVisibleItems * mSize.getHeight() ),Vector2i(), flags );
 		} else {
 			UIListBox::CreateParams LBParams;
-			LBParams.Size 				= Sizei( mSize.width(), mMinNumVisibleItems * mSize.height() );
+			LBParams.Size 				= Sizei( mSize.getWidth(), mMinNumVisibleItems * mSize.getHeight() );
 			LBParams.Flags 				= flags;
 			LBParams.FontSelectedColor	= ColorA( 255, 255, 255, 255 );
 			mListBox = eeNew( UIListBox, ( LBParams ) );
@@ -74,7 +74,7 @@ void UIDropDownList::onSizeChange() {
 
 void UIDropDownList::autoSizeControl() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		size( mSize.x, getSkinSize().height() );
+		size( mSize.x, getSkinSize().getHeight() );
 	}
 }
 
@@ -101,7 +101,7 @@ void UIDropDownList::showListBox() {
 
 		mListBox->toFront();
 
-		Vector2i Pos( mPos.x, mPos.y + mSize.height() );
+		Vector2i Pos( mPos.x, mPos.y + mSize.getHeight() );
 
 		if ( mPopUpToMainControl ) {
 			parent()->controlToWorld( Pos );
@@ -115,9 +115,9 @@ void UIDropDownList::showListBox() {
 			Float sliderValue = mListBox->verticalScrollBar()->value();
 
 			if ( mMinNumVisibleItems < mListBox->count() )
-				mListBox->size( mSize.width(), (Int32)( mMinNumVisibleItems * mListBox->rowHeight() ) + tPadding.Top + tPadding.Bottom );
+				mListBox->size( mSize.getWidth(), (Int32)( mMinNumVisibleItems * mListBox->rowHeight() ) + tPadding.Top + tPadding.Bottom );
 			else {
-				mListBox->size( mSize.width(), (Int32)( mListBox->count() * mListBox->rowHeight() ) + tPadding.Top + tPadding.Bottom );
+				mListBox->size( mSize.getWidth(), (Int32)( mListBox->count() * mListBox->rowHeight() ) + tPadding.Top + tPadding.Bottom );
 			}
 
 			mListBox->updateQuad();
@@ -132,7 +132,7 @@ void UIDropDownList::showListBox() {
 					parent()->controlToWorld( Pos );
 				}
 
-				Pos.y -= mListBox->size().height();
+				Pos.y -= mListBox->size().getHeight();
 
 				mListBox->position( Pos );
 			}

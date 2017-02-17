@@ -84,34 +84,34 @@ class EE_API MTRand {
 		MTRand& operator=( const MTRand& o );
 
 		/** @return integer in [0,2^32-1] */
-		Uint32				randi();
+		Uint32				getRandi();
 
 		/** @return integer in [0,n] for n < 2^32 */
-		Uint32				randi( const Uint32 n );
+		Uint32				getRandi( const Uint32 n );
 
 		/** @return real number in [0,1] */
-		double			rand();
+		double				getRand();
 
 		/** @return real number in [0,n] */
-		double			rand( const double n );
+		double				getRand( const double n );
 
 		/** Set a new seed */
-		void				seed( const Uint32 oneSeed );
+		void				setSeed( const Uint32 oneSeed );
 
 		/** Set the default seed */
-		void				seed();
+		void				setSeed();
 
 		/** @return float number in [0,1] */
-		Float				randf();
+		Float				getRandf();
 
 		/** @return float number in [0,n] */
-		Float				randf( const Float n );
+		Float				getRandf( const Float n );
 
 		/** @return int number in [Min,Max] */
-		int				randRange( int Min, int Max );
+		int					getRandFromRange( int Min, int Max );
 
 		/** @return float number in [Min,Max] */
-		Float				randRange( Float Min, Float Max );
+		Float				getRandFromRange( Float Min, Float Max );
 
 		/** Save the state to an allocated array */
 		void 				save( Uint32* saveArray ) const;

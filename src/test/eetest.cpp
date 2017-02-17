@@ -99,7 +99,7 @@ void EETest::Init() {
 			}
 		}
 
-		WP.type( Ease::QuarticInOut );
+		WP.setType( Ease::QuarticInOut );
 		WP.addWaypoint( Vector2f(0,0), 100 );
 		WP.addWaypoint( Vector2f(800,0), 100 );
 		WP.addWaypoint( Vector2f(0,0), 100 );
@@ -107,7 +107,7 @@ void EETest::Init() {
 		WP.addWaypoint( Vector2f(0,600), 100 );
 		WP.editWaypoint( 2, Vector2f(800,600), 100 );
 		WP.eraseWaypoint( 3 );
-		WP.loop(true);
+		WP.setLoop(true);
 		WP.setTotalTime( Milliseconds( 5000 ) );
 		WP.start();
 
@@ -124,7 +124,7 @@ void EETest::Init() {
 		mVBO = VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
 
 		if ( NULL != mVBO ) {
-			for ( Uint32 i = 0; i < Poly.size(); i++ ) {
+			for ( Uint32 i = 0; i < Poly.getSize(); i++ ) {
 				mVBO->addVertex( Poly[i] );
 				mVBO->addColor( ColorA( 100 + i, 255 - i, 150 + i, 200 ) );
 			}
@@ -291,7 +291,7 @@ void EETest::CreateUI() {
 	Child->visible( true );
 	Child->enabled( true );
 	Child->startRotation( 0.f, 360.f, Milliseconds( 5000.f ) );
-	Child->rotationInterpolation()->loop( true );
+	Child->rotationInterpolation()->setLoop( true );
 
 	Params.Background.colors( ColorA( 0xFFFF0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xFFFF0077 ) );
 	Params.setParent( Child );
@@ -301,7 +301,7 @@ void EETest::CreateUI() {
 	Child2->visible( true );
 	Child2->enabled( true );
 	Child2->startRotation( 0.f, 360.f, Milliseconds( 5000.f ) );
-	Child2->rotationInterpolation()->loop( true );
+	Child2->rotationInterpolation()->setLoop( true );
 
 	mTheme->createSprite( eeNew( Sprite, ( "gn" ) ), C, Sizei(), Vector2i( 160, 100 ) );
 
@@ -1339,7 +1339,7 @@ void EETest::Input() {
 
 	if ( KM->isAltPressed() && KM->isKeyUp( KEY_RETURN ) ) {
 		if ( mWindow->isWindowed() ) {
-			mWindow->setSize( mWindow->getDesktopResolution().width(), mWindow->getDesktopResolution().height(), false );
+			mWindow->setSize( mWindow->getDesktopResolution().getWidth(), mWindow->getDesktopResolution().getHeight(), false );
 		} else {
 			mWindow->toggleFullscreen();
 		}

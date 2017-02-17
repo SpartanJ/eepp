@@ -20,7 +20,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	mUIWindow->addEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &TextureAtlasNew::windowClose ) );
 	mUIWindow->title( "New Texture Atlas" );
 
-	Int32 PosX = mUIWindow->getContainer()->size().width() - 110;
+	Int32 PosX = mUIWindow->getContainer()->size().getWidth() - 110;
 
 	createTxtBox( Vector2i( 10, 20 ), "Save File Format:" );
 	mSaveFileType = mTheme->createDropDownList( mUIWindow->getContainer(), Sizei( 100, 22 ), Vector2i( PosX, 20 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE );
@@ -57,19 +57,19 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	mPixelSpace = mTheme->createSpinBox( mUIWindow->getContainer(), Sizei( 100, 22 ), Vector2i( PosX, 110 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED, 0, false );
 
 	createTxtBox( Vector2i( 10, 140 ), "Texture Atlas Folder Path:" );
-	mTGPath = mTheme->createTextInput( mUIWindow->getContainer(), Sizei( mUIWindow->getContainer()->size().width() - 60, 22 ), Vector2i( 10, 160 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE , false, 512 );
+	mTGPath = mTheme->createTextInput( mUIWindow->getContainer(), Sizei( mUIWindow->getContainer()->size().getWidth() - 60, 22 ), Vector2i( 10, 160 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE , false, 512 );
 	mTGPath->allowEditing( false );
 
-	mSetPathButton = mTheme->createPushButton( mUIWindow->getContainer(), Sizei( 32, 32 ), Vector2i( mUIWindow->getContainer()->size().width() - 10 - 32, 160 ) );
+	mSetPathButton = mTheme->createPushButton( mUIWindow->getContainer(), Sizei( 32, 32 ), Vector2i( mUIWindow->getContainer()->size().getWidth() - 10 - 32, 160 ) );
 	mSetPathButton->text( "..." );
 	mSetPathButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasNew::onDialogFolderSelect ) );
 
 	UIPushButton * OKButton = mTheme->createPushButton( mUIWindow->getContainer(), Sizei( 80, 22 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->getIconByName( "ok" ) );
-	OKButton->position( mUIWindow->getContainer()->size().width() - OKButton->size().width() - 4, mUIWindow->getContainer()->size().height() - OKButton->size().height() - 4 );
+	OKButton->position( mUIWindow->getContainer()->size().getWidth() - OKButton->size().getWidth() - 4, mUIWindow->getContainer()->size().getHeight() - OKButton->size().getHeight() - 4 );
 	OKButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasNew::okClick ) );
 	OKButton->text( "OK" );
 
-	UIPushButton * CancelButton = mTheme->createPushButton( mUIWindow->getContainer(), OKButton->size(), Vector2i( OKButton->position().x - OKButton->size().width() - 4, OKButton->position().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->getIconByName( "cancel" ) );
+	UIPushButton * CancelButton = mTheme->createPushButton( mUIWindow->getContainer(), OKButton->size(), Vector2i( OKButton->position().x - OKButton->size().getWidth() - 4, OKButton->position().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->getIconByName( "cancel" ) );
 	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasNew::cancelClick ) );
 	CancelButton->text( "Cancel" );
 

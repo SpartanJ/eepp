@@ -105,7 +105,7 @@ void MainLoop()
 	if ( imp->isKeyUp( KEY_F ) )
 	{
 		if ( win->isWindowed() ) {
-			win->setSize( win->getDesktopResolution().width(), win->getDesktopResolution().height(), false );
+			win->setSize( win->getDesktopResolution().getWidth(), win->getDesktopResolution().getHeight(), false );
 		} else {
 			win->setSize( 960, 640, true );
 			win->centerToScreen();

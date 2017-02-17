@@ -50,7 +50,7 @@ void MapObjectLayer::Draw( const Vector2f &Offset ) {
 			GameObject * Obj = (*it);
 
 			if ( Obj->Blocked() ) {
-				Tex->drawEx( Obj->Pos().x, Obj->Pos().y, Obj->Size().width(), Obj->Size().height(), 0, Vector2f::One, Col, Col, Col, Col );
+				Tex->drawEx( Obj->Pos().x, Obj->Pos().y, Obj->Size().getWidth(), Obj->Size().getHeight(), 0, Vector2f::One, Col, Col, Col, Col );
 			}
 		}
 	}

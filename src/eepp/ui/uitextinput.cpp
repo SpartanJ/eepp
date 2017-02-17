@@ -162,8 +162,8 @@ void UITextInput::alignFix() {
 		if ( !mTextBuffer.setSupportNewLine() ) {
 			if ( tX < 0.f )
 				mAlignOffset.x = -( mAlignOffset.x + ( tW - mAlignOffset.x ) );
-			else if ( tX > mSize.width() - mPadding.Left - mPadding.Right )
-				mAlignOffset.x = mSize.width() - mPadding.Left - mPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
+			else if ( tX > mSize.getWidth() - mPadding.Left - mPadding.Right )
+				mAlignOffset.x = mSize.getWidth() - mPadding.Left - mPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
 		}
 	}
 }
@@ -177,7 +177,7 @@ void UITextInput::setTheme( UITheme * Theme ) {
 
 void UITextInput::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		size( mSize.x, getSkinSize().height() );
+		size( mSize.x, getSkinSize().getHeight() );
 	}
 }
 

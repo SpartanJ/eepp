@@ -130,17 +130,17 @@ void UIGfx::autoAlign() {
 		return;
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.width() / 2 - mSubTexture->destSize().x / 2;
+		mAlignOffset.x = mSize.getWidth() / 2 - mSubTexture->destSize().x / 2;
 	} else if ( FontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.width() - mSubTexture->destSize().x;
+		mAlignOffset.x =  mSize.getWidth() - mSubTexture->destSize().x;
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.height() / 2 - mSubTexture->destSize().y / 2;
+		mAlignOffset.y = mSize.getHeight() / 2 - mSubTexture->destSize().y / 2;
 	} else if ( FontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.height() - mSubTexture->destSize().y;
+		mAlignOffset.y = mSize.getHeight() - mSubTexture->destSize().y;
 	} else {
 		mAlignOffset.y = 0;
 	}

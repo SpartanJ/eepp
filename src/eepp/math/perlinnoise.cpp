@@ -18,7 +18,7 @@ void PerlinNoise::init() {
 	mAmpOctaveDep	= false;
 }
 
-Float PerlinNoise::perlinNoise2D(Float x, Float y) {
+Float PerlinNoise::getPerlinNoise2D(Float x, Float y) {
 	Float total	= 0;
 	Float p		= mPersistence;
 	Float n		= static_cast<Float>( mOctaves - 1 );

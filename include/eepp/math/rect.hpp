@@ -49,15 +49,15 @@ class tRECT {
 
 		Vector2<T> wrapVector( const Vector2<T>& Vect );
 
-		Vector2<T> pos();
+		Vector2<T> getPosition();
 
-		Vector2<T> center();
+		Vector2<T> getCenter();
 
-		tSize<T> size();
+		tSize<T> getSize();
 
-		T width();
+		T getWidth();
 
-		T height();
+		T getHeight();
 
 		void scale( T scale, const Vector2<T>& center );
 
@@ -148,8 +148,8 @@ template <typename T>
 tRECT<T>::tRECT( const Vector2<T>& Pos, const tSize<T>& Size ) {
 	Left = Pos.x;
 	Top = Pos.y;
-	Right = Left + Size.width();
-	Bottom = Top + Size.height();
+	Right = Left + Size.getWidth();
+	Bottom = Top + Size.getHeight();
 }
 
 template <typename T>
@@ -171,27 +171,27 @@ bool tRECT<T>::contains( const Vector2<T>& Vect ) {
 }
 
 template <typename T>
-Vector2<T> tRECT<T>::pos() {
+Vector2<T> tRECT<T>::getPosition() {
 	return Vector2<T>( Left, Top );
 }
 
 template <typename T>
-Vector2<T> tRECT<T>::center() {
+Vector2<T> tRECT<T>::getCenter() {
 	return Vector2<T>( Left + ( ( Right - Left ) * 0.5 ), Top + ( ( Bottom - Top ) * 0.5 ) );
 }
 
 template <typename T>
-tSize<T> tRECT<T>::size() {
+tSize<T> tRECT<T>::getSize() {
 	return tSize<T>( eeabs( Right - Left ), eeabs( Bottom - Top ) );
 }
 
 template <typename T>
-T tRECT<T>::width() {
+T tRECT<T>::getWidth() {
 	return eeabs( Right - Left );
 }
 
 template <typename T>
-T tRECT<T>::height() {
+T tRECT<T>::getHeight() {
 	return eeabs( Bottom - Top );
 }
 
@@ -303,12 +303,12 @@ void tRECT<T>::scale( T scale, const Vector2<T>& center ) {
 
 template <typename T>
 void tRECT<T>::scale( T scale ) {
-	scale( scale, center() );
+	scale( scale, getCenter() );
 }
 
 template <typename T>
 void tRECT<T>::scale( Vector2<T> scale ) {
-	scale( scale, center() );
+	scale( scale, getCenter() );
 }
 
 typedef tRECT<unsigned int>	Rectu;

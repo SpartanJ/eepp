@@ -115,7 +115,7 @@ Uint32 UIControl::onMessage( const UIMessage * Msg ) {
 }
 
 bool UIControl::isInside( const Vector2i& Pos ) const {
-	return ( Pos.x >= 0 && Pos.y >= 0 && Pos.x < mSize.width() && Pos.y < mSize.height() );
+	return ( Pos.x >= 0 && Pos.y >= 0 && Pos.x < mSize.getWidth() && Pos.y < mSize.getHeight() );
 }
 
 void UIControl::position( const Vector2i& Pos ) {
@@ -222,14 +222,14 @@ void UIControl::centerHorizontal() {
 	UIControl * Ctrl = parent();
 
 	if ( NULL != Ctrl )
-		position( Vector2i( ( Ctrl->size().width() / 2 ) - ( mSize.width() / 2 ), mPos.y ) );
+		position( Vector2i( ( Ctrl->size().getWidth() / 2 ) - ( mSize.getWidth() / 2 ), mPos.y ) );
 }
 
 void UIControl::centerVertical(){
 	UIControl * Ctrl = parent();
 
 	if ( NULL != Ctrl )
-		position( Vector2i( mPos.x, ( Ctrl->size().height() / 2 ) - ( mSize.height() / 2 ) ) );
+		position( Vector2i( mPos.x, ( Ctrl->size().getHeight() / 2 ) - ( mSize.getHeight() / 2 ) ) );
 }
 
 void UIControl::center() {
@@ -252,7 +252,7 @@ void UIControl::draw() {
 			borderDraw();
 
 		if ( NULL != mSkinState )
-			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.width(), (Float)mSize.height(), 255 );
+			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.getWidth(), (Float)mSize.getHeight(), 255 );
 
 		if ( UIManager::instance()->highlightFocus() && UIManager::instance()->focusControl() == this ) {
 			Primitives P;
@@ -522,7 +522,7 @@ void UIControl::onSizeChange() {
 }
 
 Rectf UIControl::getRectf() {
-	return Rectf( mScreenPosf, Sizef( (Float)mSize.width(), (Float)mSize.height() ) );
+	return Rectf( mScreenPosf, Sizef( (Float)mSize.getWidth(), (Float)mSize.getHeight() ) );
 }
 
 void UIControl::backgroundDraw() {
@@ -555,7 +555,7 @@ void UIControl::borderDraw() {
 
 	//! @TODO: Check why was this +0.1f -0.1f?
 	if ( mFlags & UI_CLIP_ENABLE ) {
-		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.width() - 0.1f, (Float)mSize.height() - 0.1f ) );
+		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.getWidth() - 0.1f, (Float)mSize.getHeight() - 0.1f ) );
 
 		if ( mBackground->corners() ) {
 			P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->corners() );
@@ -610,9 +610,9 @@ void UIControl::internalDraw() {
 void UIControl::clipMe() {
 	if ( mFlags & UI_CLIP_ENABLE ) {
 		if ( mFlags & UI_BORDER )
-			UIManager::instance()->clipEnable( mScreenPos.x, mScreenPos.y, mSize.width(), mSize.height() + 1 );
+			UIManager::instance()->clipEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() + 1 );
 		else
-			UIManager::instance()->clipEnable( mScreenPos.x, mScreenPos.y, mSize.width(), mSize.height() );
+			UIManager::instance()->clipEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
 	}
 }
 
@@ -875,7 +875,7 @@ const Vector2f& UIControl::getPolygonCenter() const {
 }
 
 void UIControl::updateQuad() {
-	mPoly 	= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mSize.width(), mScreenPosf.y + mSize.height() ) );
+	mPoly 	= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mSize.getWidth(), mScreenPosf.y + mSize.getHeight() ) );
 
 	UIControl * tParent = parent();
 
@@ -892,7 +892,7 @@ void UIControl::updateQuad() {
 }
 
 void UIControl::updateCenter() {
-	mCenter = Vector2f( mScreenPosf.x + (Float)mSize.width() * 0.5f, mScreenPosf.y + (Float)mSize.height() * 0.5f );
+	mCenter = Vector2f( mScreenPosf.x + (Float)mSize.getWidth() * 0.5f, mScreenPosf.y + (Float)mSize.getHeight() * 0.5f );
 }
 
 Time UIControl::elapsed() {
@@ -1085,28 +1085,28 @@ Recti UIControl::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool Pad
 					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Left );
 
 					if ( NULL != tSubTexture )
-						tPadding.Left = tSubTexture->realSize().width();
+						tPadding.Left = tSubTexture->realSize().getWidth();
 				}
 
 				if ( PadRight ) {
 					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Right );
 
 					if ( NULL != tSubTexture )
-						tPadding.Right = tSubTexture->realSize().width();
+						tPadding.Right = tSubTexture->realSize().getWidth();
 				}
 
 				if ( PadTop ) {
 					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Up );
 
 					if ( NULL != tSubTexture )
-						tPadding.Top = tSubTexture->realSize().height();
+						tPadding.Top = tSubTexture->realSize().getHeight();
 				}
 
 				if ( PadBottom ) {
 					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Down );
 
 					if ( NULL != tSubTexture )
-						tPadding.Bottom = tSubTexture->realSize().height();
+						tPadding.Bottom = tSubTexture->realSize().getHeight();
 				}
 			}
 		}
@@ -1150,25 +1150,25 @@ Sizei UIControl::getSkinSize( UISkin * Skin, const Uint32& State ) {
 			tSubTexture = SkinC->getSubTextureSide( State, UISkinComplex::Up );
 
 			if ( NULL != tSubTexture ) {
-				tSize.y += tSubTexture->realSize().height();
+				tSize.y += tSubTexture->realSize().getHeight();
 			}
 
 			tSubTexture = SkinC->getSubTextureSide( State, UISkinComplex::Down );
 
 			if ( NULL != tSubTexture ) {
-				tSize.y += tSubTexture->realSize().height();
+				tSize.y += tSubTexture->realSize().getHeight();
 			}
 
 			tSubTexture = SkinC->getSubTextureSide( State, UISkinComplex::Left );
 
 			if ( NULL != tSubTexture ) {
-				tSize.x += tSubTexture->realSize().width();
+				tSize.x += tSubTexture->realSize().getWidth();
 			}
 
 			tSubTexture = SkinC->getSubTextureSide( State, UISkinComplex::Right );
 
 			if ( NULL != tSubTexture ) {
-				tSize.x += tSubTexture->realSize().width();
+				tSize.x += tSubTexture->realSize().getWidth();
 			}
 		}
 	}

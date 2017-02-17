@@ -55,8 +55,8 @@ void UITextBox::draw() {
 				UIManager::instance()->clipEnable(
 						mScreenPos.x + mPadding.Left,
 						mScreenPos.y + mPadding.Top,
-						mSize.width() - mPadding.Left - mPadding.Right,
-						mSize.height() - mPadding.Top - mPadding.Bottom
+						mSize.getWidth() - mPadding.Left - mPadding.Right,
+						mSize.getHeight() - mPadding.Top - mPadding.Bottom
 				);
 			}
 
@@ -143,7 +143,7 @@ void UITextBox::alpha( const Float& alpha ) {
 
 void UITextBox::autoShrink() {
 	if ( mFlags & UI_AUTO_SHRINK_TEXT ) {
-		shrinkText( mSize.width() );
+		shrinkText( mSize.getWidth() );
 	}
 }
 
@@ -157,8 +157,8 @@ void UITextBox::shrinkText( const Uint32& MaxWidth ) {
 
 void UITextBox::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mSize.width( (int)mTextCache->getTextWidth() );
-		mSize.height( (int)mTextCache->getTextHeight() );
+		mSize.setWidth( (int)mTextCache->getTextWidth() );
+		mSize.setHeight( (int)mTextCache->getTextHeight() );
 	}
 }
 

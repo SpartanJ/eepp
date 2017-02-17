@@ -129,14 +129,14 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		// Add the vertex and vertex colors to the Vertex Buffer
 		if ( NULL != VBO && NULL != VBO2 ) {
-			for ( Uint32 i = 0; i < Poly.size(); i++ ) {
+			for ( Uint32 i = 0; i < Poly.getSize(); i++ ) {
 				VBO->addVertex( Poly[i] );
 				VBO->addColor( ColorA( 100 + i, 255 - i, 150 + i, 100 ) );
 			}
 
-			Poly.rotate( 90, Poly.toAABB().center() );
+			Poly.rotate( 90, Poly.toAABB().getCenter() );
 
-			for ( Uint32 i = 0; i < Poly.size(); i++ ) {
+			for ( Uint32 i = 0; i < Poly.getSize(); i++ ) {
 				VBO2->addVertex( Poly[i] );
 				VBO2->addColor( ColorA( 100 + i, 255 - i, 150 + i, 100 ) );
 			}

@@ -23,16 +23,16 @@ class tSize : public Vector2<T>
 		tSize( const Vector2<T>& Vec );
 
 		/** @return The size width */
-		const T& width() const;
+		const T& getWidth() const;
 
 		/** @return The size height */
-		const T& height() const;
+		const T& getHeight() const;
 
 		/** Set a new width */
-		void width( const T& width );
+		void setWidth( const T& width );
 
 		/** Set a new height */
-		void height( const T& height );
+		void setHeight( const T& height );
 };
 
 template <typename T>
@@ -49,7 +49,7 @@ tSize<T>::tSize( const T& Width, const T& Height ) :
 
 template <typename T>
 tSize<T>::tSize( const tSize<T>& Size ) :
-	Vector2<T>( Size.width(), Size.height() )
+	Vector2<T>( Size.getWidth(), Size.getHeight() )
 {
 }
 
@@ -60,22 +60,22 @@ tSize<T>::tSize( const Vector2<T>& Vec ) :
 }
 
 template <typename T>
-const T& tSize<T>::width() const {
+const T& tSize<T>::getWidth() const {
 	return this->x;
 }
 
 template <typename T>
-const T& tSize<T>::height() const {
+const T& tSize<T>::getHeight() const {
 	return this->y;
 }
 
 template <typename T>
-void tSize<T>::width( const T& width ) {
+void tSize<T>::setWidth( const T& width ) {
 	this->x = width;
 }
 
 template <typename T>
-void tSize<T>::height( const T& height ) {
+void tSize<T>::setHeight( const T& height ) {
 	this->y = height;
 }
 

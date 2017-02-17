@@ -60,28 +60,28 @@ class Polygon2 {
 		}
 
 		/** @return The number of vectors of the polygon */
-		std::size_t size() const;
+		std::size_t getSize() const;
 
 		/** @return The position of the polygon ( also known as the offset of the polygon ) */
-		Vector2<T> position() { return Vector2<T>(OffsetX, OffsetY); }
+		Vector2<T> getPosition() { return Vector2<T>(OffsetX, OffsetY); }
 
 		/** Move the polygon Vector2s, add to every point the distance specified  */
 		void move( Vector2<T> dist );
 
 		/** @return The X position of the polygon ( the X-axis Offset ) */
-		T x() const { return OffsetX; }
+		T getX() const { return OffsetX; }
 
 		/** @return The Y position of the polygon ( the Y-axis Offset ) */
-		T y() const { return OffsetY; }
+		T getY() const { return OffsetY; }
 
 		/** @return The position of the polygon  ( the offset )*/
-		void position( const Vector2<T>& V ) { OffsetX = V.x; OffsetY = V.y; }
+		void setPosition( const Vector2<T>& V ) { OffsetX = V.x; OffsetY = V.y; }
 
 		/** Set the new position of the x-axis ( the x-axis offset ) */
-		T x( const T& x ) { OffsetX = x; }
+		T setX( const T& x ) { OffsetX = x; }
 
 		/** Set the new position of the y-axis ( the y-axis offset ) */
-		T y( const T& y ) { OffsetY = y; }
+		T setY( const T& y ) { OffsetY = y; }
 
 		/** @return True if the polygons intersect */
 		bool intersect( const Polygon2<T>& p1 );
@@ -192,7 +192,7 @@ const Vector2<T>& Polygon2<T>::operator[] ( const Uint32& Pos ) const {
 }
 
 template <typename T>
-std::size_t Polygon2<T>::size() const {
+std::size_t Polygon2<T>::getSize() const {
 	return Vector.size();
 }
 
@@ -295,7 +295,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 template<typename T>
 bool Polygon2<T>::pointInside( const Vector2<T>& point ) {
 	int i, j, c = 0;
-	int nvert = (int)size();
+	int nvert = (int)getSize();
 
 	for ( i = 0, j = nvert - 1; i < nvert; j = i++ ) {
 		if ( ( ( Vector[i].y > point.y ) != ( Vector[j].y > point.y ) ) &&
@@ -313,19 +313,19 @@ template <typename T>
 bool Polygon2<T>::intersect( const Polygon2<T>& p1 ) {
 	T min0, max0, min1, max1, sOffset, t;
 	Vector2<T> vAxis, vOffset;
-	unsigned int i = 0, j = 0, n, size = this->size();
+	unsigned int i = 0, j = 0, n, size = this->getSize();
 
-	vOffset = Vector2<T>( x() - p1.x(), y() - p1.y() );
+	vOffset = Vector2<T>( getX() - p1.getX(), getY() - p1.getY() );
 
 	for (i = 0; i < size; i++) {
 		n = i + 1;
-		if ( n >= this->size() ) n = 0;
+		if ( n >= this->getSize() ) n = 0;
 
 		vAxis = Line2<T>( Vector[i], Vector[n] ).getNormal();
 
 		min0 = vAxis.Dot( Vector[0] );
 		max0 = min0;
-		for (j = 1; j < this->size(); j++) {
+		for (j = 1; j < this->getSize(); j++) {
 			t = vAxis.Dot( Vector[j] );
 			if (t < min0) min0 = t;
 			if (t > max0) max0 = t;
@@ -333,7 +333,7 @@ bool Polygon2<T>::intersect( const Polygon2<T>& p1 ) {
 
 		min1 = vAxis.Dot( p1[0] );
 		max1 = min1;
-		for (j = 1; j < p1.size(); j++) {
+		for (j = 1; j < p1.getSize(); j++) {
 			t = vAxis.Dot( p1[j] );
 			if (t < min1) min1 = t;
 			if (t > max1) max1 = t;
@@ -348,15 +348,15 @@ bool Polygon2<T>::intersect( const Polygon2<T>& p1 ) {
 		}
 	}
 
-	for (i = 0; i < p1.size(); i++) {
+	for (i = 0; i < p1.getSize(); i++) {
 		n = i + 1;
-		if ( n >= p1.size() ) n = 0;
+		if ( n >= p1.getSize() ) n = 0;
 
 		vAxis = Line2<T>( p1[i], p1[n] ).getNormal();
 
 		min0 = vAxis.Dot( Vector[0] );
 		max0 = min0;
-		for (j = 1; j < this->size(); j++) {
+		for (j = 1; j < this->getSize(); j++) {
 			t = vAxis.Dot( Vector[j] );
 			if (t < min0) min0 = t;
 			if (t > max0) max0 = t;
@@ -364,7 +364,7 @@ bool Polygon2<T>::intersect( const Polygon2<T>& p1 ) {
 
 		min1 = vAxis.Dot( p1[0] );
 		max1 = min1;
-		for (j = 1; j < p1.size(); j++) {
+		for (j = 1; j < p1.getSize(); j++) {
 			t = vAxis.Dot( p1[j] );
 			if (t < min1) min1 = t;
 			if (t > max1) max1 = t;
@@ -389,8 +389,8 @@ bool Polygon2<T>::intersectQuad2( const Quad2<T>& q0, const Quad2<T>& q1, const 
 	Polygon2<T> Tmp1 = Polygon2<T>( q0 );
 	Polygon2<T> Tmp2 = Polygon2<T>( q1 );
 
-	Tmp1.position( q0Pos );
-	Tmp1.position( q1Pos );
+	Tmp1.setPosition( q0Pos );
+	Tmp1.setPosition( q1Pos );
 
 	return Tmp1.intersect( Tmp2 );
 }

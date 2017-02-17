@@ -489,7 +489,7 @@ void Window::setCurrent() {
 
 void Window::centerToScreen() {
 	if ( isWindowed() ) {
-		setPosition( mWindow.DesktopResolution.width() / 2 - mWindow.WindowConfig.Width / 2, mWindow.DesktopResolution.height() / 2 - mWindow.WindowConfig.Height / 2 );
+		setPosition( mWindow.DesktopResolution.getWidth() / 2 - mWindow.WindowConfig.Width / 2, mWindow.DesktopResolution.getHeight() / 2 - mWindow.WindowConfig.Height / 2 );
 	}
 }
 

@@ -227,9 +227,9 @@ void Primitives::drawRectangle( const Rectf& R, const ColorA& TopLeft, const Col
 			sBR->quadsBegin();
 			sBR->quadsSetColorFree( TopLeft, BottomLeft, BottomRight, TopRight );
 
-			Sizef size = const_cast<Rectf*>(&R)->size();
+			Sizef size = const_cast<Rectf*>(&R)->getSize();
 
-			sBR->batchQuadEx( R.Left, R.Top, size.width(), size.height(), Angle, Scale );
+			sBR->batchQuadEx( R.Left, R.Top, size.getWidth(), size.getHeight(), Angle, Scale );
 			break;
 		}
 		case DRAW_LINE:
@@ -241,10 +241,10 @@ void Primitives::drawRectangle( const Rectf& R, const ColorA& TopLeft, const Col
 
 			if ( Scale != 1.0f || Angle != 0.0f ) {
 				Quad2f Q( R );
-				Sizef size = const_cast<Rectf*>(&R)->size();
+				Sizef size = const_cast<Rectf*>(&R)->getSize();
 
 				Q.scale( Scale );
-				Q.rotate( Angle, Vector2f( R.Left + size.width() * 0.5f, R.Top + size.height() * 0.5f ) );
+				Q.rotate( Angle, Vector2f( R.Left + size.getWidth() * 0.5f, R.Top + size.getHeight() * 0.5f ) );
 
 				sBR->batchLineLoop( Q[0].x, Q[0].y, Q[1].x, Q[1].y );
 				sBR->lineLoopSetColorFree( BottomRight, TopRight );
@@ -271,11 +271,11 @@ void Primitives::drawRoundedRectangle( const Rectf& R, const ColorA& TopLeft, co
 	sBR->setBlendMode( mBlendMode );
 
 	unsigned int i;
-	Sizef size		= const_cast<Rectf*>( &R )->size();
-	Float xscalediff	= size.width()	* Scale.x - size.width();
-	Float yscalediff	= size.height()	* Scale.y - size.height();
-	Vector2f Center( R.Left + size.width() * 0.5f + xscalediff, R.Top + size.height() * 0.5f + yscalediff );
-	Polygon2f Poly	= Polygon2f::createRoundedRectangle( R.Left - xscalediff, R.Top - yscalediff, size.width() + xscalediff, size.height() + yscalediff, Corners );
+	Sizef size		= const_cast<Rectf*>( &R )->getSize();
+	Float xscalediff	= size.getWidth()	* Scale.x - size.getWidth();
+	Float yscalediff	= size.getHeight()	* Scale.y - size.getHeight();
+	Vector2f Center( R.Left + size.getWidth() * 0.5f + xscalediff, R.Top + size.getHeight() * 0.5f + yscalediff );
+	Polygon2f Poly	= Polygon2f::createRoundedRectangle( R.Left - xscalediff, R.Top - yscalediff, size.getWidth() + xscalediff, size.getHeight() + yscalediff, Corners );
 	Vector2f poly;
 
 	Poly.rotate( Angle, Center );
@@ -288,7 +288,7 @@ void Primitives::drawRoundedRectangle( const Rectf& R, const ColorA& TopLeft, co
 
 				sBR->batchPolygon( Poly );
 			} else {
-				for ( i = 0; i < Poly.size(); i++ ) {
+				for ( i = 0; i < Poly.getSize(); i++ ) {
 					poly = Poly[i];
 
 					if ( poly.x <= Center.x && poly.y <= Center.y )
@@ -316,11 +316,11 @@ void Primitives::drawRoundedRectangle( const Rectf& R, const ColorA& TopLeft, co
 			sBR->lineLoopSetColor( TopLeft );
 
 			if ( TopLeft == BottomLeft && BottomLeft == BottomRight && BottomRight == TopRight ) {
-				for ( i = 0; i < Poly.size(); i+=2 ) {
+				for ( i = 0; i < Poly.getSize(); i+=2 ) {
 					sBR->batchLineLoop( Poly[i], Poly[i+1] );
 				}
 			} else {
-				for ( unsigned int i = 0; i < Poly.size(); i++ ) {
+				for ( unsigned int i = 0; i < Poly.getSize(); i++ ) {
 					poly = Poly[i];
 
 					if ( poly.x <= Center.x && poly.y <= Center.y )
@@ -393,8 +393,8 @@ void Primitives::drawPolygon( const Polygon2f& p ) {
 			sBR->lineLoopBegin();
 			sBR->lineLoopSetColor( mColor );
 
-			for ( Uint32 i = 0; i < p.size(); i += 2 )
-				sBR->batchLineLoop( p.x() + p[i].x, p.y() + p[i].y, p.x() + p[i+1].x, p.y() + p[i+1].y );
+			for ( Uint32 i = 0; i < p.getSize(); i += 2 )
+				sBR->batchLineLoop( p.getX() + p[i].x, p.getY() + p[i].y, p.getX() + p[i+1].x, p.getY() + p[i+1].y );
 
 			break;
 		}

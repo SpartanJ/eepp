@@ -29,7 +29,7 @@ void spriteCallback( Uint32 Event, Sprite * Sprite, void * UserData ) {
 		RotationInterpolation->addWaypoint( Sprite->angle() );
 		RotationInterpolation->addWaypoint( Sprite->angle() + 45.f );
 		RotationInterpolation->setTotalTime( Milliseconds( 500 ) );
-		RotationInterpolation->type( Ease::BounceOut ); // Set the easing effect used for the interpolation
+		RotationInterpolation->setType( Ease::BounceOut ); // Set the easing effect used for the interpolation
 		RotationInterpolation->start();
 
 		// Scale the sprite
@@ -142,17 +142,17 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// Set the sprites position to the screen center
 		Vector2i ScreenCenter( Engine::instance()->getWidth() / 2, Engine::instance()->getHeight() / 2 );
 
-		Planet->position( ScreenCenter.x - Planet->getAABB().size().width() / 2, ScreenCenter.y - Planet->getAABB().size().height() / 2 );
+		Planet->position( ScreenCenter.x - Planet->getAABB().getSize().getWidth() / 2, ScreenCenter.y - Planet->getAABB().getSize().getHeight() / 2 );
 
-		Rock->position( ScreenCenter.x - Rock->getAABB().size().width() / 2, ScreenCenter.y - Rock->getAABB().size().height() / 2 );
+		Rock->position( ScreenCenter.x - Rock->getAABB().getSize().getWidth() / 2, ScreenCenter.y - Rock->getAABB().getSize().getHeight() / 2 );
 
-		Blindy->position( ScreenCenter.x - Blindy->getAABB().size().width() / 2, ScreenCenter.y - Blindy->getAABB().size().height() / 2 );
+		Blindy->position( ScreenCenter.x - Blindy->getAABB().getSize().getWidth() / 2, ScreenCenter.y - Blindy->getAABB().getSize().getHeight() / 2 );
 
 		// Set the planet angle interpolation
 		PlanetAngle.addWaypoint( 0 );
 		PlanetAngle.addWaypoint( 360 );
 		PlanetAngle.setTotalTime( Seconds( 10 ) );
-		PlanetAngle.loop( true );
+		PlanetAngle.setLoop( true );
 		PlanetAngle.start();
 
 		// Create a Event callback for the rock sprite

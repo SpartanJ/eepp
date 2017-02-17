@@ -37,22 +37,22 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 	mUIInput2->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &MapObjectProperties::OKClick ) );
 
 	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
-	mUITheme->createTextBox( "Property Name", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50, mUIInput->position().y + mUIInput->size().height() + 12 ), TxtBoxFlags );
-	UITextBox * TxtBox = mUITheme->createTextBox( "Property Value", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50+192, mUIInput->position().y + mUIInput->size().height() + 12 ), TxtBoxFlags );
+	mUITheme->createTextBox( "Property Name", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50, mUIInput->position().y + mUIInput->size().getHeight() + 12 ), TxtBoxFlags );
+	UITextBox * TxtBox = mUITheme->createTextBox( "Property Value", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50+192, mUIInput->position().y + mUIInput->size().getHeight() + 12 ), TxtBoxFlags );
 
 	UIPushButton * OKButton = mUITheme->createPushButton( mUIWindow->getContainer(), Sizei( 80, 22 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->getIconByName( "ok" ) );
-	OKButton->position( mUIWindow->getContainer()->size().width() - OKButton->size().width() - 4, mUIWindow->getContainer()->size().height() - OKButton->size().height() - 4 );
+	OKButton->position( mUIWindow->getContainer()->size().getWidth() - OKButton->size().getWidth() - 4, mUIWindow->getContainer()->size().getHeight() - OKButton->size().getHeight() - 4 );
 	OKButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::OKClick ) );
 
 	OKButton->text( "OK" );
 
-	UIPushButton * CancelButton = mUITheme->createPushButton( mUIWindow->getContainer(), OKButton->size(), Vector2i( OKButton->position().x - OKButton->size().width() - 4, OKButton->position().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->getIconByName( "cancel" ) );
+	UIPushButton * CancelButton = mUITheme->createPushButton( mUIWindow->getContainer(), OKButton->size(), Vector2i( OKButton->position().x - OKButton->size().getWidth() - 4, OKButton->position().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->getIconByName( "cancel" ) );
 	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::CancelClick ) );
 	CancelButton->text( "Cancel" );
 
 	UIGenericGrid::CreateParams GridParams;
 	GridParams.setParent( mUIWindow->getContainer() );
-	GridParams.setPos( 50, TxtBox->position().y + TxtBox->size().height() );
+	GridParams.setPos( 50, TxtBox->position().y + TxtBox->size().getHeight() );
 	GridParams.setSize( 400, 350 );
 	GridParams.Flags = UI_AUTO_PADDING;
 	GridParams.RowHeight = 24;
@@ -66,7 +66,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 	mGenGrid->collumnWidth( 3, 175 );
 	mGenGrid->collumnWidth( 4, 10 );
 
-	Vector2i Pos( mGenGrid->position().x + mGenGrid->size().width() + 10, mGenGrid->position().y );
+	Vector2i Pos( mGenGrid->position().x + mGenGrid->size().getWidth() + 10, mGenGrid->position().y );
 
 	UIPushButton * AddButton = mUITheme->createPushButton( mUIWindow->getContainer(), Sizei(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->getIconByName( "add" ) );
 	AddButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::AddCellClick ) );
@@ -74,7 +74,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 	if ( NULL == AddButton->icon()->subTexture() )
 		AddButton->text( "+" );
 
-	Pos.y += AddButton->size().height() + 5;
+	Pos.y += AddButton->size().getHeight() + 5;
 
 	UIPushButton * RemoveButton = mUITheme->createPushButton( mUIWindow->getContainer(), Sizei(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->getIconByName( "remove" )  );
 	RemoveButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::RemoveCellClick ) );

@@ -31,7 +31,7 @@ UIGenericGrid::UIGenericGrid( const UIGenericGrid::CreateParams& Params ) :
 	UIComplexControl::CreateParams CParams;
 	CParams.setParent( this );
 	CParams.setPos( mPadding.Left, mPadding.Top );
-	CParams.Size = Sizei( mSize.width() - mPadding.Right - mPadding.Left, mSize.height() - mPadding.Top - mPadding.Bottom );
+	CParams.Size = Sizei( mSize.getWidth() - mPadding.Right - mPadding.Left, mSize.getHeight() - mPadding.Top - mPadding.Bottom );
 	CParams.Flags = Params.Flags;
 	mContainer = eeNew( UIItemContainer<UIGenericGrid> , ( CParams ) );
 	mContainer->visible( true );
@@ -42,14 +42,14 @@ UIGenericGrid::UIGenericGrid( const UIGenericGrid::CreateParams& Params ) :
 
 	UIScrollBar::CreateParams ScrollBarP;
 	ScrollBarP.setParent				( this );
-	ScrollBarP.setPos				( mSize.width() - 15, 0 );
+	ScrollBarP.setPos				( mSize.getWidth() - 15, 0 );
 	ScrollBarP.Flags				= UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar	= true;
-	ScrollBarP.Size					= Sizei( 15, mSize.height() );
+	ScrollBarP.Size					= Sizei( 15, mSize.getHeight() );
 	mVScrollBar						= eeNew( UIScrollBar, ( ScrollBarP ) );
 
-	ScrollBarP.setPos				( 0, mSize.height() - 15 );
-	ScrollBarP.Size					= Sizei( mSize.width() - mVScrollBar->size().width(), 15 );
+	ScrollBarP.setPos				( 0, mSize.getHeight() - 15 );
+	ScrollBarP.Size					= Sizei( mSize.getWidth() - mVScrollBar->size().getWidth(), 15 );
 	ScrollBarP.VerticalScrollBar	= false;
 	mHScrollBar						= eeNew( UIScrollBar, ( ScrollBarP ) );
 
@@ -85,7 +85,7 @@ void UIGenericGrid::setDefaultCollumnsWidth() {
 		return;
 
 	if ( mItemsNotVisible <= 0 ) {
-		Uint32 VisibleItems 	= mContainer->size().height() / mRowHeight;
+		Uint32 VisibleItems 	= mContainer->size().getHeight() / mRowHeight;
 		Int32 oItemsNotVisible 	= (Int32)mItems.size() - VisibleItems;
 
 		if ( oItemsNotVisible > 0 ) {
@@ -97,7 +97,7 @@ void UIGenericGrid::setDefaultCollumnsWidth() {
 		}
 	}
 
-	Uint32 CollumnWidh = mContainer->size().width() / mCollumnsCount;
+	Uint32 CollumnWidh = mContainer->size().getWidth() / mCollumnsCount;
 
 	for ( Uint32 i = 0; i < mCollumnsCount; i++ ) {
 		mCollumnsWidth[ i ] = CollumnWidh;
@@ -126,14 +126,14 @@ void UIGenericGrid::autoPadding() {
 }
 
 void UIGenericGrid::onSizeChange() {
-	mVScrollBar->position( mSize.width() - mVScrollBar->size().width(), 0 );
-	mVScrollBar->size( mVScrollBar->size().width(), mSize.height() );
+	mVScrollBar->position( mSize.getWidth() - mVScrollBar->size().getWidth(), 0 );
+	mVScrollBar->size( mVScrollBar->size().getWidth(), mSize.getHeight() );
 
-	mHScrollBar->position( 0, mSize.height() - mHScrollBar->size().height() );
-	mHScrollBar->size( mSize.width() - mVScrollBar->size().width(), mHScrollBar->size().height() );
+	mHScrollBar->position( 0, mSize.getHeight() - mHScrollBar->size().getHeight() );
+	mHScrollBar->size( mSize.getWidth() - mVScrollBar->size().getWidth(), mHScrollBar->size().getHeight() );
 
 	if ( mContainer->isClipped() && UI_SCROLLBAR_AUTO == mHScrollMode ) {
-		if ( (Int32)mTotalWidth <= mContainer->size().width() ) {
+		if ( (Int32)mTotalWidth <= mContainer->size().getWidth() ) {
 			mHScrollBar->visible( false );
 			mHScrollBar->enabled( false );
 			mHScrollInit = 0;
@@ -149,12 +149,12 @@ void UIGenericGrid::containerResize() {
 	mContainer->position( mPadding.Left, mPadding.Top );
 
 	if( mHScrollBar->visible() )
-		mContainer->size( mSize.width() - mPadding.Right, mSize.height() - mPadding.Top - mHScrollBar->size().height() );
+		mContainer->size( mSize.getWidth() - mPadding.Right, mSize.getHeight() - mPadding.Top - mHScrollBar->size().getHeight() );
 	else
-		mContainer->size( mSize.width() - mPadding.Right, mSize.height() - mPadding.Bottom - mPadding.Top );
+		mContainer->size( mSize.getWidth() - mPadding.Right, mSize.getHeight() - mPadding.Bottom - mPadding.Top );
 
 	if ( mVScrollBar->visible() )
-		mContainer->size( mContainer->size().width() - mVScrollBar->size().width(), mContainer->size().height() );
+		mContainer->size( mContainer->size().getWidth() - mVScrollBar->size().getWidth(), mContainer->size().getHeight() );
 
 	setDefaultCollumnsWidth();
 }
@@ -183,13 +183,13 @@ void UIGenericGrid::updateVScroll() {
 
 void UIGenericGrid::updateHScroll() {
 	if ( mContainer->isClipped() && ( UI_SCROLLBAR_AUTO == mHScrollMode || UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) ) {
-		if ( mContainer->size().width() < (Int32)mTotalWidth ) {
+		if ( mContainer->size().getWidth() < (Int32)mTotalWidth ) {
 				mHScrollBar->visible( true );
 				mHScrollBar->enabled( true );
 
 				containerResize();
 
-				Int32 ScrollH = mTotalWidth - mContainer->size().width();
+				Int32 ScrollH = mTotalWidth - mContainer->size().getWidth();
 
 				Int32 HScrolleable = (Uint32)( mHScrollBar->value() * ScrollH );
 
@@ -216,7 +216,7 @@ void UIGenericGrid::updateScroll( bool FromScrollChange ) {
 	Int32 ItemPos, ItemPosMax;
 	Int32 tHLastScroll 		= mHScrollInit;
 
-	Uint32 VisibleItems 	= mContainer->size().height() / mRowHeight;
+	Uint32 VisibleItems 	= mContainer->size().getHeight() / mRowHeight;
 	mItemsNotVisible 		= (Int32)mItems.size() - VisibleItems;
 	bool Clipped 			= 0 != mContainer->isClipped();
 
@@ -224,9 +224,9 @@ void UIGenericGrid::updateScroll( bool FromScrollChange ) {
 
 	updateHScroll();
 
-	VisibleItems 			= mContainer->size().height() / mRowHeight;
+	VisibleItems 			= mContainer->size().getHeight() / mRowHeight;
 	mItemsNotVisible 		= (Uint32)mItems.size() - VisibleItems;
-	Int32 Scrolleable 		= (Int32)mItems.size() * mRowHeight - mContainer->size().height();
+	Int32 Scrolleable 		= (Int32)mItems.size() * mRowHeight - mContainer->size().getHeight();
 	bool FirstVisible 		= false;
 
 	if ( Clipped && mSmoothScroll ) {
@@ -235,7 +235,7 @@ void UIGenericGrid::updateScroll( bool FromScrollChange ) {
 		else
 			RelPos		= 0;
 
-		RelPosMax 	= RelPos + mContainer->size().height() + mRowHeight;
+		RelPosMax 	= RelPos + mContainer->size().getHeight() + mRowHeight;
 
 		if ( ( FromScrollChange && eeINDEX_NOT_FOUND != mLastPos && mLastPos == RelPos ) && ( tHLastScroll == mHScrollInit ) )
 			return;
@@ -303,11 +303,11 @@ void UIGenericGrid::updateScroll( bool FromScrollChange ) {
 	}
 
 	if ( mHScrollBar->visible() && !mVScrollBar->visible() ) {
-		mHScrollBar->position( 0, mSize.height() - mHScrollBar->size().height() );
-		mHScrollBar->size( mSize.width(), mHScrollBar->size().height() );
+		mHScrollBar->position( 0, mSize.getHeight() - mHScrollBar->size().getHeight() );
+		mHScrollBar->size( mSize.getWidth(), mHScrollBar->size().getHeight() );
 	} else {
-		mHScrollBar->position( 0, mSize.height() - mHScrollBar->size().height() );
-		mHScrollBar->size( mSize.width() - mVScrollBar->size().width(), mHScrollBar->size().height() );
+		mHScrollBar->position( 0, mSize.getHeight() - mHScrollBar->size().getHeight() );
+		mHScrollBar->size( mSize.getWidth() - mVScrollBar->size().getWidth(), mHScrollBar->size().getHeight() );
 	}
 }
 

@@ -82,7 +82,7 @@ void UICheckBox::autoSize() {
 		mActiveButton->centerVertical();
 		mInactiveButton->centerVertical();
 
-		mSize.width( (int)mTextCache->getTextWidth() + mActiveButton->size().width() );
+		mSize.setWidth( (int)mTextCache->getTextWidth() + mActiveButton->size().getWidth() );
 	}
 }
 
@@ -141,7 +141,7 @@ const bool& UICheckBox::isActive() const {
 
 void UICheckBox::padding( const Recti& padding ) {
 	mPadding = padding;
-	mPadding.Left = mPadding.Left + mActiveButton->size().width();
+	mPadding.Left = mPadding.Left + mActiveButton->size().getWidth();
 }
 
 UIControlAnim * UICheckBox::activeButton() const {
