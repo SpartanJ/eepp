@@ -7,14 +7,18 @@
 namespace EE { namespace Audio {
 
 /** @brief Abstract base class for streamed audio sources */
-class EE_API SoundStream : private Thread, private Sound {
+class EE_API SoundStream : private Thread, public Sound {
 	public:
-		using Sound::pause;
-		using Sound::pitch;
-		using Sound::volume;
-		using Sound::position;
-		using Sound::minDistance;
-		using Sound::attenuation;
+		using Sound::setPitch;
+		using Sound::getPitch;
+		using Sound::setVolume;
+		using Sound::getVolume;
+		using Sound::setPosition;
+		using Sound::getPosition;
+		using Sound::setMinDistance;
+		using Sound::getMinDistance;
+		using Sound::setAttenuation;
+		using Sound::getAttenuation;
 		using Sound::setRelativeToListener;
 		using Sound::isRelativeToListener;
 
@@ -63,28 +67,24 @@ class EE_API SoundStream : private Thread, private Sound {
 		**	@return Current status */
 		Status 	getState() const;
 
-		/** @brief Get the current status of the stream (stopped, paused, playing)
-		**	@return Current status */
-		Status 	state() const ;
-
 		/**	@brief Get the current playing position of the stream
 		**	@return Current playing position, from the beginning of the stream. */
-		Time playingOffset() const;
+		Time getPlayingOffset() const;
 
 		/**	@brief Change the current playing position of the stream
 		**	The playing position can be changed when the stream is either paused or playing.
 		**	@param timeOffset New playing position, from the beginning of the stream. */
-		void playingOffset( const Time &timeOffset );
+		void setPlayingOffset( const Time &timeOffset );
 
 		/** Set the stream loop state. This parameter is disabled by default
 		* @param Loop True to play in loop, false to play once
 		*/
-		void loop( const bool& loop);
+		void setLoop( const bool& getLoop);
 
 		/** Tell whether or not the stream is looping
 		* @return True if the music is looping, false otherwise
 		*/
-		bool loop() const;
+		bool getLoop() const;
 	protected:
 		SoundStream();
 

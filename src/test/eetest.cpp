@@ -94,7 +94,7 @@ void EETest::Init() {
 			Mus = eeNew( Music, () );
 
 			if ( Mus->openFromFile( MyPath + "sounds/music.ogg" ) ) {
-				Mus->loop( true );
+				Mus->setLoop( true );
 				Mus->play();
 			}
 		}
@@ -1300,7 +1300,7 @@ void EETest::Input() {
 
 		mWindow->setFrameRateLimit( 10 );
 
-		if ( mMusEnabled && Mus->state() == Sound::Playing )
+		if ( mMusEnabled && Mus->getState() == Sound::Playing )
 			Mus->pause();
 
 	} else {
@@ -1316,7 +1316,7 @@ void EETest::Input() {
 
 		mWindow->setFrameRateLimit( mLastFPSLimit );
 
-		if ( mMusEnabled && Mus->state() == Sound::Paused )
+		if ( mMusEnabled && Mus->getState() == Sound::Paused )
 			Mus->play();
 	}
 

@@ -78,7 +78,7 @@ Sound::Status SoundStream::getState() const {
 	return status;
 }
 
-Time SoundStream::playingOffset() const {
+Time SoundStream::getPlayingOffset() const {
 	if ( mSampleRate && mChannelCount ) {
 		float secs = 0.f;
 
@@ -90,8 +90,8 @@ Time SoundStream::playingOffset() const {
 	return Time::Zero;
 }
 
-void SoundStream::playingOffset( const Time &timeOffset ) {
-	Status oldStatus = state();
+void SoundStream::setPlayingOffset( const Time &timeOffset ) {
+	Status oldStatus = getState();
 
 	// Stop the stream
 	stop();
@@ -114,11 +114,11 @@ void SoundStream::playingOffset( const Time &timeOffset ) {
 	}
 }
 
-void SoundStream::loop( const bool& Loop ) {
+void SoundStream::setLoop( const bool& Loop ) {
 	mLoop = Loop;
 }
 
-bool SoundStream::loop() const {
+bool SoundStream::getLoop() const {
 	return mLoop;
 }
 
@@ -260,10 +260,6 @@ void SoundStream::clearQueue() {
 	ALuint Buffer;
 	for ( ALint i = 0; i < NbQueued; ++i )
 		ALCheck( alSourceUnqueueBuffers( Sound::mSource, 1, &Buffer ) );
-}
-
-Sound::Status SoundStream::state() const {
-	return getState();
 }
 
 }}

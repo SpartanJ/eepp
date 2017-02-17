@@ -42,12 +42,12 @@ void PlayMusic() {
 	music.play();
 
 	// Loop while the music is playing
-	while ( music.state() == Sound::Playing ) {
+	while ( music.getState() == Sound::Playing ) {
 		// Leave some CPU time for other processes
 		Sys::sleep( 100 );
 
 		// Display the playing position
-		std::cout << "\rPlaying... " << music.playingOffset().asSeconds() << " sec   ";
+		std::cout << "\rPlaying... " << music.getPlayingOffset().asSeconds() << " sec   ";
 		std::cout << std::flush;
 	}
 

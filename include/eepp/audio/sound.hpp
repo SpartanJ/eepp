@@ -37,63 +37,60 @@ class EE_API Sound {
 		void stop();
 
 		/** Set the Sound Source Buffer */
-		void buffer( const SoundBuffer& buffer );
-
-		/** Set the Sound Loop State */
-		void loop( const bool& loop );
-
-		/** Set the Sound Pitch */
-		void pitch( const float& pitch );
-
-		/** Set the Sound Volume */
-		void volume( const float& volume );
-
-		/** Set the Sound Position. The default position is (0, 0, 0) */
-		void position( const float& X, const float& Y, const float& Z );
-
-		/** Set the Sound Position from a 3D Vector. The default position is (0, 0, 0) */
-		void position( const Vector3ff& position );
-
-		/** Set the minimum distance - closer than this distance, \n the listener will hear the sound at its maximum volume. \n The default minimum distance is 1.0. */
-		void minDistance( const float& minDistance );
-
-		/** Set the attenuation factor. \n The higher the attenuation, the more the sound will be attenuated with distance from listener. \n The default attenuation factor 1.0. */
-		void attenuation( const float& attenuation );
+		void setBuffer( const SoundBuffer& buffer );
 
 		/** Get the Sound Source Buffer */
-		const SoundBuffer* buffer() const;
+		const SoundBuffer* getBuffer() const;
+
+		/** Set the Sound Loop State */
+		void setLoop( const bool& loop );
 
 		/** Get the Sound Loop State */
-		bool loop() const;
+		bool getLoop() const;
+
+		/** Set the Sound Pitch */
+		void setPitch( const float& pitch );
 
 		/** Get the Sound Pitch */
-		float pitch() const;
+		float getPitch() const;
+
+		/** Set the Sound Volume */
+		void setVolume( const float& volume );
 
 		/** Get the Sound Volume */
-		float volume() const;
+		float getVolume() const;
+
+		/** Set the Sound Position. The default position is (0, 0, 0) */
+		void setPosition( const float& X, const float& Y, const float& Z );
+
+		/** Set the Sound Position from a 3D Vector. The default position is (0, 0, 0) */
+		void setPosition( const Vector3ff& position );
 
 		/** Get the Sound Position */
-		Vector3ff position() const;
+		Vector3ff getPosition() const;
+
+		/** Set the minimum distance - closer than this distance, \n the listener will hear the sound at its maximum volume. \n The default minimum distance is 1.0. */
+		void setMinDistance( const float& minDistance );
 
 		/** Get the Minimun Distance */
-		float minDistance() const;
+		float getMinDistance() const;
+
+		/** Set the attenuation factor. \n The higher the attenuation, the more the sound will be attenuated with distance from listener. \n The default attenuation factor 1.0. */
+		void setAttenuation( const float& attenuation );
 
 		/** Get the Sound Attenuation */
-		float attenuation() const;
+		float getAttenuation() const;
 
 		/** Get the Sound State */
 		Status getState() const;
 
-		/** Get the Sound State */
-		Status state() const;
-
 		/** Get the current playing position of the sound */
-		virtual Time playingOffset() const;
+		virtual Time getPlayingOffset() const;
 
 		/** Set the current playing position of the sound
 		* @param TimeOffset : New playing position
 		*/
-		virtual void playingOffset( const Time &TimeOffset );
+		virtual void setPlayingOffset( const Time &TimeOffset );
 
 		/** Assignment operator */
 		Sound& operator =(const Sound& Other);
@@ -117,7 +114,7 @@ class EE_API Sound {
 	private :
 		friend class SoundStream;
 
-		unsigned int			mSource; 	///< OpenAL source identifier
+		unsigned int mSource; 	///< OpenAL source identifier
 		const SoundBuffer *	mBuffer; 	///< Sound buffer bound to the source
 };
 

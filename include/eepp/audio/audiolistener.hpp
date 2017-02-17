@@ -11,28 +11,28 @@ class EE_API AudioListener {
 		/** Change the global volume of all the sounds. ( default 100  )
 		* @param Volume New global volume, in the range [0, 100]
 		*/
-		static void globalVolume( const float& Volume );
+		static void setGlobalVolume( const float& Volume );
 
 		/** Get the Global Volume */
-		static float globalVolume();
+		static float getGlobalVolume();
 
 		/** Change the position of the listener. \n The default position is (0, 0, 0) */
-		static void position( const float& X, const float& Y, const float& Z );
+		static void setPosition( const float& X, const float& Y, const float& Z );
 
 		/** Change the position of the listener from a 3D vector. */
-		static void position(const Vector3ff& position);
+		static void setPosition(const Vector3ff& setPosition);
 
 		/** Get the current position of the listener */
-		static Vector3ff position();
+		static Vector3ff getPosition();
 
 		/** Change the orientation of the listener (the point he must look at). \n The default target is (0, 0, -1). */
-		static void target( const float& X, const float& Y, const float& Z );
+		static void setDirection( const float& X, const float& Y, const float& Z );
 
 		/** Change the orientation of the listener from a 3D vector. */
-		static void target(const Vector3ff& target);
+		static void setDirection(const Vector3ff& setDirection);
 
 		/** Get the current orientation of the listener (the point he's looking at) */
-		static Vector3ff target();
+		static Vector3ff getDirection();
 };
 
 }}
