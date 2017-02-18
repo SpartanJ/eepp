@@ -12,7 +12,7 @@ UIComplexControl::UIComplexControl( const UIComplexControl::CreateParams& Params
 
 	updateAnchorsDistances();
 
-	tooltipText( Params.TooltipText );
+	setTooltipText( Params.TooltipText );
 }
 
 UIComplexControl::~UIComplexControl() {
@@ -29,7 +29,7 @@ bool UIComplexControl::isType( const Uint32& type ) const {
 
 void UIComplexControl::updateAnchorsDistances() {
 	if ( NULL != mParentCtrl ) {
-		mDistToBorder	= Recti( mPos.x, mPos.y, mParentCtrl->size().x - ( mPos.x + mSize.x ), mParentCtrl->size().y - ( mPos.y + mSize.y ) );
+		mDistToBorder	= Recti( mPos.x, mPos.y, mParentCtrl->getSize().x - ( mPos.x + mSize.x ), mParentCtrl->getSize().y - ( mPos.y + mSize.y ) );
 	}
 }
 
@@ -40,17 +40,17 @@ void UIComplexControl::update() {
 			Pos.x += UIThemeManager::instance()->cursorSize().x;
 			Pos.y += UIThemeManager::instance()->cursorSize().y;
 
-			if ( Pos.x + mTooltip->size().getWidth() > UIManager::instance()->mainControl()->size().getWidth() ) {
-				Pos.x = UIManager::instance()->getMousePos().x - mTooltip->size().getWidth();
+			if ( Pos.x + mTooltip->getSize().getWidth() > UIManager::instance()->mainControl()->getSize().getWidth() ) {
+				Pos.x = UIManager::instance()->getMousePos().x - mTooltip->getSize().getWidth();
 			}
 
-			if ( Pos.y + mTooltip->size().getHeight() > UIManager::instance()->mainControl()->size().getHeight() ) {
-				Pos.y = UIManager::instance()->getMousePos().y - mTooltip->size().getHeight();
+			if ( Pos.y + mTooltip->getSize().getHeight() > UIManager::instance()->mainControl()->getSize().getHeight() ) {
+				Pos.y = UIManager::instance()->getMousePos().y - mTooltip->getSize().getHeight();
 			}
 
 			if ( Time::Zero == UIThemeManager::instance()->tooltipTimeToShow() ) {
-				if ( !mTooltip->visible() || UIThemeManager::instance()->tooltipFollowMouse() )
-					mTooltip->position( Pos );
+				if ( !mTooltip->isVisible() || UIThemeManager::instance()->tooltipFollowMouse() )
+					mTooltip->setPosition( Pos );
 
 				mTooltip->show();
 			} else {
@@ -60,7 +60,7 @@ void UIComplexControl::update() {
 
 				if ( mTooltip->tooltipTime() >= UIThemeManager::instance()->tooltipTimeToShow() ) {
 					if ( mTooltip->tooltipTime().asMilliseconds() != -1.f ) {
-						mTooltip->position( Pos );
+						mTooltip->setPosition( Pos );
 
 						mTooltip->show();
 
@@ -70,12 +70,12 @@ void UIComplexControl::update() {
 			}
 
 			if ( UIThemeManager::instance()->tooltipFollowMouse() ) {
-				mTooltip->position( Pos );
+				mTooltip->setPosition( Pos );
 			}
 		} else {
 			mTooltip->tooltipTime( Milliseconds( 0.f ) );
 
-			if ( mTooltip->visible() )
+			if ( mTooltip->isVisible() )
 				mTooltip->hide();
 		}
 	}
@@ -91,8 +91,8 @@ void UIComplexControl::createTooltip() {
 
 	if ( NULL != tTheme ) {
 		mTooltip = tTheme->createTooltip( this, UIManager::instance()->mainControl() );
-		mTooltip->visible( false );
-		mTooltip->enabled( false );
+		mTooltip->setVisible( false );
+		mTooltip->setEnabled( false );
 	} else {
 		UITooltip::CreateParams Params;
 		Params.setParent( UIManager::instance()->mainControl() );
@@ -101,7 +101,7 @@ void UIComplexControl::createTooltip() {
 	}
 }
 
-void UIComplexControl::tooltipText( const String& Text ) {
+void UIComplexControl::setTooltipText( const String& Text ) {
 	if ( NULL == mTooltip ) {	// If the tooltip wasn't created it will avoid to create a new one if the string is ""
 		if ( Text.size() ) {
 			createTooltip();
@@ -113,7 +113,7 @@ void UIComplexControl::tooltipText( const String& Text ) {
 	}
 }
 
-String UIComplexControl::tooltipText() {
+String UIComplexControl::getTooltipText() {
 	if ( NULL != mTooltip )
 		return mTooltip->text();
 
@@ -124,7 +124,7 @@ void UIComplexControl::tooltipRemove() {
 	mTooltip = NULL;
 }
 
-void UIComplexControl::size( const Sizei &Size ) {
+void UIComplexControl::setSize( const Sizei &Size ) {
 	Sizei s( Size );
 
 	if ( s.x < mMinControlSize.x )
@@ -133,15 +133,15 @@ void UIComplexControl::size( const Sizei &Size ) {
 	if ( s.y < mMinControlSize.y )
 		s.y = mMinControlSize.y;
 
-	UIControlAnim::size( s );
+	UIControlAnim::setSize( s );
 }
 
-void UIComplexControl::size( const Int32& Width, const Int32& Height ) {
-	UIControlAnim::size( Width, Height );
+void UIComplexControl::setSize( const Int32& Width, const Int32& Height ) {
+	UIControlAnim::setSize( Width, Height );
 }
 
-const Sizei& UIComplexControl::size() {
-	return UIControlAnim::size();
+const Sizei& UIComplexControl::getSize() {
+	return UIControlAnim::getSize();
 }
 
 void UIComplexControl::onParentSizeChange( const Vector2i& SizeChange ) {
@@ -150,12 +150,12 @@ void UIComplexControl::onParentSizeChange( const Vector2i& SizeChange ) {
 	if ( mFlags & UI_ANCHOR_LEFT ) {
 		// Nothing ?
 	} else {
-		position( mPos.x += SizeChange.x, mPos.y );
+		setPosition( mPos.x += SizeChange.x, mPos.y );
 	}
 
 	if ( mFlags & UI_ANCHOR_RIGHT ) {
 		if ( NULL != mParentCtrl ) {
-			newSize.x = mParentCtrl->size().getWidth() - mPos.x - mDistToBorder.Right;
+			newSize.x = mParentCtrl->getSize().getWidth() - mPos.x - mDistToBorder.Right;
 
 			if ( newSize.x < mMinControlSize.getWidth() )
 				newSize.x = mMinControlSize.getWidth();
@@ -165,12 +165,12 @@ void UIComplexControl::onParentSizeChange( const Vector2i& SizeChange ) {
 	if ( mFlags & UI_ANCHOR_TOP ) {
 		// Nothing ?
 	} else {
-		position( mPos.x, mPos.y += SizeChange.y );
+		setPosition( mPos.x, mPos.y += SizeChange.y );
 	}
 
 	if ( mFlags & UI_ANCHOR_BOTTOM ) {
 		if ( NULL != mParentCtrl ) {
-			newSize.y = mParentCtrl->size().y - mPos.y - mDistToBorder.Bottom;
+			newSize.y = mParentCtrl->getSize().y - mPos.y - mDistToBorder.Bottom;
 
 			if ( newSize.y < mMinControlSize.getHeight() )
 				newSize.y = mMinControlSize.getHeight();
@@ -178,7 +178,7 @@ void UIComplexControl::onParentSizeChange( const Vector2i& SizeChange ) {
 	}
 
 	if ( newSize != mSize )
-		size( newSize );
+		setSize( newSize );
 
 	UIControlAnim::onParentSizeChange( SizeChange );
 }

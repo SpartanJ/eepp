@@ -147,7 +147,7 @@ void UITextInput::resetWaitCursor() {
 }
 
 void UITextInput::alignFix() {
-	if ( FontHAlignGet( flags() ) == UI_HALIGN_LEFT ) {
+	if ( FontHAlignGet( getFlags() ) == UI_HALIGN_LEFT ) {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
 
@@ -177,7 +177,7 @@ void UITextInput::setTheme( UITheme * Theme ) {
 
 void UITextInput::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		size( mSize.x, getSkinSize().getHeight() );
+		setSize( mSize.x, getSkinSize().getHeight() );
 	}
 }
 

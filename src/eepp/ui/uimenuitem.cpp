@@ -28,13 +28,13 @@ void UIMenuItem::setTheme( UITheme * Theme ) {
 Uint32 UIMenuItem::onMouseEnter( const Vector2i &Pos, const Uint32 Flags ) {
 	UIPushButton::onMouseEnter( Pos, Flags );
 
-	reinterpret_cast<UIMenu*> ( parent() )->SetItemSelected( this );
+	reinterpret_cast<UIMenu*> ( getParent() )->SetItemSelected( this );
 
 	return 1;
 }
 
 void UIMenuItem::onStateChange() {
-	UIMenu * tMenu = reinterpret_cast<UIMenu*> ( parent() );
+	UIMenu * tMenu = reinterpret_cast<UIMenu*> ( getParent() );
 
 	if ( mSkinState->getState() == UISkinState::StateSelected ) {
 		mTextBox->color( tMenu->mFontSelectedColor );

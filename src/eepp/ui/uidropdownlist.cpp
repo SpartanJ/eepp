@@ -35,8 +35,8 @@ UIDropDownList::UIDropDownList( UIDropDownList::CreateParams& Params ) :
 		}
 	}
 
-	mListBox->enabled( false );
-	mListBox->visible( false );
+	mListBox->setEnabled( false );
+	mListBox->setVisible( false );
 
 	mListBox->addEventListener( UIEvent::EventOnComplexControlFocusLoss, cb::Make1( this, &UIDropDownList::onListBoxFocusLoss ) );
 	mListBox->addEventListener( UIEvent::EventOnItemSelected	, cb::Make1( this, &UIDropDownList::onItemSelected ) );
@@ -74,7 +74,7 @@ void UIDropDownList::onSizeChange() {
 
 void UIDropDownList::autoSizeControl() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		size( mSize.x, getSkinSize().getHeight() );
+		setSize( mSize.x, getSkinSize().getHeight() );
 	}
 }
 
@@ -93,21 +93,21 @@ Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 }
 
 void UIDropDownList::showListBox() {
-	if ( !mListBox->visible() ) {
+	if ( !mListBox->isVisible() ) {
 		if ( !mPopUpToMainControl )
-			mListBox->parent( parent() );
+			mListBox->setParent( getParent() );
 		else
-			mListBox->parent( UIManager::instance()->mainControl() );
+			mListBox->setParent( UIManager::instance()->mainControl() );
 
 		mListBox->toFront();
 
 		Vector2i Pos( mPos.x, mPos.y + mSize.getHeight() );
 
 		if ( mPopUpToMainControl ) {
-			parent()->controlToWorld( Pos );
+			getParent()->controlToWorld( Pos );
 		}
 
-		mListBox->position( Pos );
+		mListBox->setPosition( Pos );
 
 		if ( mListBox->count() ) {
 			Recti tPadding = mListBox->paddingContainer();
@@ -115,9 +115,9 @@ void UIDropDownList::showListBox() {
 			Float sliderValue = mListBox->verticalScrollBar()->value();
 
 			if ( mMinNumVisibleItems < mListBox->count() )
-				mListBox->size( mSize.getWidth(), (Int32)( mMinNumVisibleItems * mListBox->rowHeight() ) + tPadding.Top + tPadding.Bottom );
+				mListBox->setSize( mSize.getWidth(), (Int32)( mMinNumVisibleItems * mListBox->rowHeight() ) + tPadding.Top + tPadding.Bottom );
 			else {
-				mListBox->size( mSize.getWidth(), (Int32)( mListBox->count() * mListBox->rowHeight() ) + tPadding.Top + tPadding.Bottom );
+				mListBox->setSize( mSize.getWidth(), (Int32)( mListBox->count() * mListBox->rowHeight() ) + tPadding.Top + tPadding.Bottom );
 			}
 
 			mListBox->updateQuad();
@@ -129,12 +129,12 @@ void UIDropDownList::showListBox() {
 				Pos = Vector2i( mPos.x, mPos.y );
 
 				if ( mPopUpToMainControl ) {
-					parent()->controlToWorld( Pos );
+					getParent()->controlToWorld( Pos );
 				}
 
-				Pos.y -= mListBox->size().getHeight();
+				Pos.y -= mListBox->getSize().getHeight();
 
-				mListBox->position( Pos );
+				mListBox->setPosition( Pos );
 			}
 
 			mListBox->verticalScrollBar()->value( sliderValue );
@@ -180,11 +180,11 @@ void UIDropDownList::onItemSelected( const UIEvent * Event ) {
 }
 
 void UIDropDownList::show() {
-	mListBox->enabled( true );
-	mListBox->visible( true );
+	mListBox->setEnabled( true );
+	mListBox->setVisible( true );
 
 	if ( UIThemeManager::instance()->defaultEffectsEnabled() ) {
-		mListBox->startAlphaAnim( 255.f == mListBox->alpha() ? 0.f : mListBox->alpha(), 255.f, UIThemeManager::instance()->controlsFadeInTime() );
+		mListBox->startAlphaAnim( 255.f == mListBox->getAlpha() ? 0.f : mListBox->getAlpha(), 255.f, UIThemeManager::instance()->controlsFadeInTime() );
 	}
 }
 
@@ -192,8 +192,8 @@ void UIDropDownList::hide() {
 	if ( UIThemeManager::instance()->defaultEffectsEnabled() ) {
 		mListBox->disableFadeOut( UIThemeManager::instance()->controlsFadeOutTime() );
 	} else {
-		mListBox->enabled( false );
-		mListBox->visible( false );
+		mListBox->setEnabled( false );
+		mListBox->setVisible( false );
 	}
 }
 

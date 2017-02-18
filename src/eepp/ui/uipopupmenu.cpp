@@ -27,13 +27,13 @@ void UIPopUpMenu::setTheme( UITheme * Theme ) {
 }
 
 bool UIPopUpMenu::show() {
-	if ( !visible() || 0.f == mAlpha ) {
+	if ( !isVisible() || 0.f == mAlpha ) {
 		#ifdef EE_PLATFORM_TOUCH
 		mTE.Restart();
 		#endif
 
-		enabled( true );
-		visible( true );
+		setEnabled( true );
+		setVisible( true );
 
 		toFront();
 
@@ -50,7 +50,7 @@ bool UIPopUpMenu::show() {
 }
 
 bool UIPopUpMenu::hide() {
-	if ( visible() ) {
+	if ( isVisible() ) {
 		if ( !isFadingOut() ) {
 			if ( NULL != mItemSelected )
 				mItemSelected->setSkinState( UISkinState::StateNormal );
@@ -61,8 +61,8 @@ bool UIPopUpMenu::hide() {
 			if ( UIThemeManager::instance()->defaultEffectsEnabled() ) {
 				disableFadeOut( UIThemeManager::instance()->controlsFadeOutTime() );
 			} else {
-				enabled( false );
-				visible( false );
+				setEnabled( false );
+				setVisible( false );
 			}
 		}
 
@@ -88,7 +88,7 @@ Uint32 UIPopUpMenu::onMessage( const UIMessage * Msg ) {
 				if ( !Msg->getSender()->isType( UI_TYPE_MENUSUBMENU ) && ( Msg->getFlags() & EE_BUTTONS_LRM ) ) {
 					sendCommonEvent( UIEvent::EventOnHideByClick );
 
-					if ( visible() )
+					if ( isVisible() )
 						UIManager::instance()->mainControl()->setFocus();
 
 					hide();

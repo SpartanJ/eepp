@@ -7,17 +7,17 @@ namespace Demo_Test {
 
 class UITest : public UIControlAnim {
 	public:
-		UITest( UIControlAnim::CreateParams& Params ) : UIControlAnim( Params ) 	{ mOldColor = mBackground->colors(); }
+		UITest( UIControlAnim::CreateParams& Params ) : UIControlAnim( Params ) 	{ mOldColor = mBackground->getColors(); }
 
 		virtual Uint32 onMouseEnter( const Vector2i& Pos, const Uint32 Flags )	{
 			if ( 4 == mOldColor.size() ) {
-				mBackground->colors( ColorA( mOldColor[0].r(), mOldColor[0].g(), mOldColor[0].b(), 200 ),
+				mBackground->setColors( ColorA( mOldColor[0].r(), mOldColor[0].g(), mOldColor[0].b(), 200 ),
 									ColorA( mOldColor[1].r(), mOldColor[1].g(), mOldColor[1].b(), 200 ),
 									ColorA( mOldColor[2].r(), mOldColor[2].g(), mOldColor[2].b(), 200 ),
 									ColorA( mOldColor[3].r(), mOldColor[3].g(), mOldColor[3].b(), 200 )
 								);
 			} else {
-				mBackground->color( ColorA( mOldColor[0].r(), mOldColor[0].g(), mOldColor[0].b(), 200 ) );
+				mBackground->setColor( ColorA( mOldColor[0].r(), mOldColor[0].g(), mOldColor[0].b(), 200 ) );
 			}
 
 			return 1;
@@ -25,9 +25,9 @@ class UITest : public UIControlAnim {
 
 		virtual Uint32 onMouseExit( const Vector2i& Pos, const Uint32 Flags )	{
 			if ( 4 == mOldColor.size() ) {
-				mBackground->colors( mOldColor[0], mOldColor[1], mOldColor[2], mOldColor[3] );
+				mBackground->setColors( mOldColor[0], mOldColor[1], mOldColor[2], mOldColor[3] );
 			} else {
-				mBackground->color( mOldColor[0] );
+				mBackground->setColor( mOldColor[0] );
 			}
 
 			return 1;
@@ -37,9 +37,9 @@ class UITest : public UIControlAnim {
 			UIDragable::onMouseUp( Pos, Flags );
 
 			if ( Engine::instance()->getCurrentWindow()->getInput()->mouseWheelScrolledUp() )
-				scale( scale() + 0.1f );
+				setScale( getScale() + 0.1f );
 			else if ( Engine::instance()->getCurrentWindow()->getInput()->mouseWheelScrolledDown() )
-				scale( scale() - 0.1f );
+				setScale( getScale() - 0.1f );
 
 			return 1;
 		}

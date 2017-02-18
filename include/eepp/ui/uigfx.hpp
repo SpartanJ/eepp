@@ -34,7 +34,7 @@ class EE_API UIGfx : public UIComplexControl {
 
 		virtual void draw();
 
-		virtual void alpha( const Float& alpha );
+		virtual void setAlpha( const Float& alpha );
 
 		Graphics::SubTexture * subTexture() const;
 

@@ -25,7 +25,7 @@ void UIGridCell::setTheme( UITheme * Theme ) {
 }
 
 UIGenericGrid * UIGridCell::gridParent() const {
-	return reinterpret_cast<UIGenericGrid*> ( mParentCtrl->parent() );
+	return reinterpret_cast<UIGenericGrid*> ( mParentCtrl->getParent() );
 }
 
 void UIGridCell::cell( const Uint32& CollumnIndex, UIControl * Ctrl ) {
@@ -35,14 +35,14 @@ void UIGridCell::cell( const Uint32& CollumnIndex, UIControl * Ctrl ) {
 
 	mCells[ CollumnIndex ] = Ctrl;
 
-	if ( Ctrl->parent() != this )
-		Ctrl->parent( this );
+	if ( Ctrl->getParent() != this )
+		Ctrl->setParent( this );
 
-	Ctrl->position		( P->getCellPosition( CollumnIndex )		, 0					);
-	Ctrl->size		( P->collumnWidth( CollumnIndex )	, P->rowHeight()	);
+	Ctrl->setPosition		( P->getCellPosition( CollumnIndex )		, 0					);
+	Ctrl->setSize		( P->collumnWidth( CollumnIndex )	, P->rowHeight()	);
 
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 }
 
 UIControl * UIGridCell::cell( const Uint32& CollumnIndex ) const {
@@ -57,28 +57,28 @@ void UIGridCell::fixCell() {
 	UIGenericGrid * P = gridParent();
 
 	for ( Uint32 i = 0; i < mCells.size(); i++ ) {
-		mCells[i]->position	( P->getCellPosition( i )	, 0					);
-		mCells[i]->size		( P->collumnWidth( i )	, P->rowHeight()	);
+		mCells[i]->setPosition	( P->getCellPosition( i )	, 0					);
+		mCells[i]->setSize		( P->collumnWidth( i )	, P->rowHeight()	);
 	}
 }
 
 void UIGridCell::update() {
 	if ( mEnabled && mVisible ) {
-		UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( parent()->parent() );
+		UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( getParent()->getParent() );
 		Uint32 Flags				= UIManager::instance()->getInput()->getClickTrigger();
 
-		if ( NULL != MyParent && MyParent->alpha() != mAlpha ) {
-			alpha( MyParent->alpha() );
+		if ( NULL != MyParent && MyParent->getAlpha() != mAlpha ) {
+			setAlpha( MyParent->getAlpha() );
 
 			for ( Uint32 i = 0; i < mCells.size(); i++ ) {
 				if ( NULL != mCells[i] && mCells[i]->isAnimated() ) {
-					reinterpret_cast<UIControlAnim*>( mCells[i] )->alpha( MyParent->alpha() );
+					reinterpret_cast<UIControlAnim*>( mCells[i] )->setAlpha( MyParent->getAlpha() );
 				}
 			}
 		}
 
 		if ( isMouseOverMeOrChilds() ) {
-			if ( ( Flags & EE_BUTTONS_WUWD ) && MyParent->verticalScrollBar()->visible() ) {
+			if ( ( Flags & EE_BUTTONS_WUWD ) && MyParent->verticalScrollBar()->isVisible() ) {
 				MyParent->verticalScrollBar()->getSlider()->manageClick( Flags );
 			}
 		}
@@ -88,7 +88,7 @@ void UIGridCell::update() {
 }
 
 void UIGridCell::select() {
-	UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( parent()->parent() );
+	UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( getParent()->getParent() );
 
 	if ( MyParent->getItemSelected() != this ) {
 		if ( NULL != MyParent->getItemSelected() )
@@ -158,9 +158,9 @@ Uint32 UIGridCell::onMessage( const UIMessage * Msg ) {
 }
 
 void UIGridCell::autoSize() {
-	UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( parent()->parent() );
+	UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( getParent()->getParent() );
 
-	size( MyParent->mTotalWidth, MyParent->mRowHeight );
+	setSize( MyParent->mTotalWidth, MyParent->mRowHeight );
 }
 
 void UIGridCell::onStateChange() {

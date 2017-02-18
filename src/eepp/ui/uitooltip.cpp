@@ -29,7 +29,7 @@ UITooltip::UITooltip( UITooltip::CreateParams& Params, UIControl * TooltipOf ) :
 	autoPadding();
 
 	if ( Params.ParentCtrl != UIManager::instance()->mainControl() )
-		parent( UIManager::instance()->mainControl() );
+		setParent( UIManager::instance()->mainControl() );
 
 	applyDefaultTheme();
 }
@@ -67,10 +67,10 @@ void UITooltip::autoPadding() {
 }
 
 void UITooltip::show() {
-	if ( !visible() || 0 == mAlpha ) {
+	if ( !isVisible() || 0 == mAlpha ) {
 		toFront();
 
-		visible( true );
+		setVisible( true );
 
 		if ( UIThemeManager::instance()->defaultEffectsEnabled() ) {
 			startAlphaAnim( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->controlsFadeInTime() );
@@ -79,11 +79,11 @@ void UITooltip::show() {
 }
 
 void UITooltip::hide() {
-	if ( visible() ) {
+	if ( isVisible() ) {
 		if ( UIThemeManager::instance()->defaultEffectsEnabled() ) {
 			disableFadeOut( UIThemeManager::instance()->controlsFadeOutTime() );
 		} else {
-			visible( false );
+			setVisible( false );
 		}
 	}
 }
@@ -93,8 +93,8 @@ void UITooltip::draw() {
 		UIControlAnim::draw();
 
 		if ( mTextCache->getTextWidth() ) {
-			mTextCache->setFlags( flags() );
-			mTextCache->draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, Vector2f::One, 0.f, blend() );
+			mTextCache->setFlags( getFlags() );
+			mTextCache->draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, Vector2f::One, 0.f, getBlendMode() );
 		}
 	}
 }
@@ -131,7 +131,7 @@ const ColorA& UITooltip::color() const {
 
 void UITooltip::color( const ColorA& color ) {
 	mFontColor = color;
-	alpha( color.a() );
+	setAlpha( color.a() );
 }
 
 const ColorA& UITooltip::shadowColor() const {
@@ -140,12 +140,12 @@ const ColorA& UITooltip::shadowColor() const {
 
 void UITooltip::shadowColor( const ColorA& color ) {
 	mFontShadowColor = color;
-	alpha( color.a() );
+	setAlpha( color.a() );
 	mTextCache->setShadowColor( mFontColor );
 }
 
-void UITooltip::alpha( const Float& alpha ) {
-	UIControlAnim::alpha( alpha );
+void UITooltip::setAlpha( const Float& alpha ) {
+	UIControlAnim::setAlpha( alpha );
 	mFontColor.Alpha = (Uint8)alpha;
 	mFontShadowColor.Alpha = (Uint8)alpha;
 
@@ -163,7 +163,7 @@ void UITooltip::autoAlign() {
 	Uint32 Width	= mSize.getWidth()		- mPadding.Left - mPadding.Right;
 	Uint32 Height	= mSize.getHeight()	- mPadding.Top	- mPadding.Bottom;
 
-	switch ( FontHAlignGet( flags() ) ) {
+	switch ( FontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mAlignOffset.x = mPadding.Left + (Float)( (Int32)( Width - mTextCache->getTextWidth() ) / 2 );
 			break;
@@ -175,7 +175,7 @@ void UITooltip::autoAlign() {
 			break;
 	}
 
-	switch ( FontVAlignGet( flags() ) ) {
+	switch ( FontVAlignGet( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
 			mAlignOffset.y = mPadding.Top + (Float)( ( (Int32)( Height - mTextCache->getTextHeight() ) ) / 2 );
 			break;

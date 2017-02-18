@@ -13,9 +13,9 @@ UISprite::UISprite( const UISprite::CreateParams& Params ) :
 	if ( Params.DealloSprite )
 		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
 
-	if ( ( flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) {
+	if ( ( getFlags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) {
 		if ( NULL != mSprite && NULL != mSprite->getCurrentSubTexture() ) {
-			size( mSprite->getCurrentSubTexture()->getSize() );
+			setSize( mSprite->getCurrentSubTexture()->getSize() );
 		}
 	}
 }
@@ -53,7 +53,7 @@ void UISprite::draw() {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
 			checkSubTextureUpdate();
 			mSprite->setPosition( (Float)( mScreenPos.x + mAlignOffset.x ), (Float)( mScreenPos.y + mAlignOffset.y ) );
-			mSprite->draw( blend(), mRender );
+			mSprite->draw( getBlendMode(), mRender );
 		}
 	}
 }
@@ -66,8 +66,8 @@ void UISprite::checkSubTextureUpdate() {
 	}
 }
 
-void UISprite::alpha( const Float& alpha ) {
-	UIControlAnim::alpha( alpha );
+void UISprite::setAlpha( const Float& alpha ) {
+	UIControlAnim::setAlpha( alpha );
 	
 	if ( NULL != mSprite )
 		mSprite->setAlpha( alpha );
@@ -88,7 +88,7 @@ void UISprite::color( const ColorA& color ) {
 	if ( NULL != mSprite )
 		mSprite->setColor( color );
 	
-	alpha( color.a() );
+	setAlpha( color.a() );
 }
 
 const EE_RENDER_MODE& UISprite::renderMode() const {
@@ -100,10 +100,10 @@ void UISprite::renderMode( const EE_RENDER_MODE& render ) {
 }
 
 void UISprite::updateSize() {
-	if ( flags() & UI_AUTO_SIZE ) {
+	if ( getFlags() & UI_AUTO_SIZE ) {
 		if ( NULL != mSprite ) {
 			if ( NULL != mSprite->getCurrentSubTexture() && mSprite->getCurrentSubTexture()->getSize() != mSize )
-				size( mSprite->getCurrentSubTexture()->getSize() );
+				setSize( mSprite->getCurrentSubTexture()->getSize() );
 		}
 	}
 }

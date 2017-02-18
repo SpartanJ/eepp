@@ -32,7 +32,7 @@ void UIListBoxItem::setTheme( UITheme * Theme ) {
 
 Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTONS_LRM ) {
-		reinterpret_cast<UIListBox*> ( parent()->parent() )->itemClicked( this );
+		reinterpret_cast<UIListBox*> ( getParent()->getParent() )->itemClicked( this );
 
 		select();
 	}
@@ -41,7 +41,7 @@ Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 }
 
 void UIListBoxItem::select() {
-	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( parent()->parent() );
+	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( getParent()->getParent() );
 
 	bool wasSelected = 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
 
@@ -77,11 +77,11 @@ void UIListBoxItem::update() {
 	UITextBox::update();
 
 	if ( mEnabled && mVisible ) {
-		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( parent()->parent() );
+		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( getParent()->getParent() );
 		Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
 
 		if ( isMouseOver() ) {
-			if ( Flags & EE_BUTTONS_WUWD && LBParent->verticalScrollBar()->visible() ) {
+			if ( Flags & EE_BUTTONS_WUWD && LBParent->verticalScrollBar()->isVisible() ) {
 				LBParent->verticalScrollBar()->getSlider()->manageClick( Flags );
 			}
 		}
@@ -109,7 +109,7 @@ bool UIListBoxItem::isSelected() const {
 }
 
 void UIListBoxItem::onStateChange() {
-	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( parent()->parent() );
+	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( getParent()->getParent() );
 
 	if ( isSelected() && mSkinState->getState() != UISkinState::StateSelected ) {
 		setSkinState( UISkinState::StateSelected );

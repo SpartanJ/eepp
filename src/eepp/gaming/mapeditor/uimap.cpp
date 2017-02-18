@@ -35,7 +35,7 @@ UIMap::UIMap( const UIComplexControl::CreateParams& Params, UITheme * Theme, Til
 	mMap->SetDrawCallback( cb::Make0( this, &UIMap::MapDraw ) );
 
 	mDragButton = EE_BUTTON_MMASK;
-	dragEnable( true );
+	setDragEnabled( true );
 
 	updateScreenPos();
 }
@@ -576,7 +576,7 @@ void UIMap::CreateObjPopUpMenu() {
 	if ( Menu->show() ) {
 		Vector2i Pos = UIManager::instance()->getInput()->getMousePos();
 		UIMenu::FixMenuPos( Pos , Menu );
-		Menu->position( Pos );
+		Menu->setPosition( Pos );
 	}
 }
 

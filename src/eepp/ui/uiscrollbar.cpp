@@ -14,10 +14,10 @@ UIScrollBar::UIScrollBar( const UIScrollBar::CreateParams& Params ) :
 	mBtnDown	= eeNew( UIControlAnim, ( CParams ) );
 	mBtnUp		= eeNew( UIControlAnim, ( CParams ) );
 
-	mBtnDown->visible( true );
-	mBtnDown->enabled( true );
-	mBtnUp->visible( true );
-	mBtnUp->enabled( true );
+	mBtnDown->setVisible( true );
+	mBtnDown->setEnabled( true );
+	mBtnUp->setVisible( true );
+	mBtnUp->setEnabled( true );
 
 	UISlider::CreateParams SParams;
 	SParams.Background = Params.Background;
@@ -32,8 +32,8 @@ UIScrollBar::UIScrollBar( const UIScrollBar::CreateParams& Params ) :
 	SParams.ExpandBackground = true;
 
 	mSlider		= eeNew( UISlider, ( SParams ) );
-	mSlider->visible( true );
-	mSlider->enabled( true );
+	mSlider->setVisible( true );
+	mSlider->setEnabled( true );
 
 	mSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
 
@@ -79,7 +79,7 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mBtnUp->size( tSubTexture->getRealSize() );
+			mBtnUp->setSize( tSubTexture->getRealSize() );
 		}
 	}
 
@@ -89,7 +89,7 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mBtnDown->size( tSubTexture->getRealSize() );
+			mBtnDown->setSize( tSubTexture->getRealSize() );
 		}
 	}
 
@@ -101,12 +101,12 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 
 			if ( NULL != tSubTexture ) {
 				if ( mSlider->isVertical() ) {
-					mSlider->size( tSubTexture->getRealSize().getWidth() , mSize.getHeight() );
-					size( tSubTexture->getRealSize().getWidth() , mSize.getHeight() );
+					mSlider->setSize( tSubTexture->getRealSize().getWidth() , mSize.getHeight() );
+					setSize( tSubTexture->getRealSize().getWidth() , mSize.getHeight() );
 					mMinControlSize.x = mSize.getWidth();
 				} else {
-					mSlider->size( mSize.getWidth(), tSubTexture->getRealSize().getHeight() );
-					size( mSize.getWidth(), tSubTexture->getRealSize().getHeight() );
+					mSlider->setSize( mSize.getWidth(), tSubTexture->getRealSize().getHeight() );
+					setSize( mSize.getWidth(), tSubTexture->getRealSize().getHeight() );
 					mMinControlSize.y = mSize.getHeight();
 				}
 			}
@@ -125,20 +125,20 @@ void UIScrollBar::onSizeChange() {
 }
 
 void UIScrollBar::adjustChilds() {
-	mBtnUp->position( 0, 0 );
+	mBtnUp->setPosition( 0, 0 );
 
 	if ( !isVertical() ) {
-		mBtnDown->position( mSize.getWidth() - mBtnDown->size().getWidth(), 0 );
-		mSlider->size( mSize.getWidth() - mBtnDown->size().getWidth() - mBtnUp->size().getWidth(), mSlider->size().getHeight() );
-		mSlider->position( mBtnUp->size().getWidth(), 0 );
+		mBtnDown->setPosition( mSize.getWidth() - mBtnDown->getSize().getWidth(), 0 );
+		mSlider->setSize( mSize.getWidth() - mBtnDown->getSize().getWidth() - mBtnUp->getSize().getWidth(), mSlider->getSize().getHeight() );
+		mSlider->setPosition( mBtnUp->getSize().getWidth(), 0 );
 
 		mBtnDown->centerVertical();
 		mBtnUp->centerVertical();
 		mSlider->centerVertical();
 	} else {
-		mBtnDown->position( 0, mSize.getHeight() - mBtnDown->size().getHeight() );
-		mSlider->size( mSlider->size().getWidth(), mSize.getHeight() - mBtnDown->size().getHeight() - mBtnUp->size().getHeight() );
-		mSlider->position( 0, mBtnUp->size().getHeight() );
+		mBtnDown->setPosition( 0, mSize.getHeight() - mBtnDown->getSize().getHeight() );
+		mSlider->setSize( mSlider->getSize().getWidth(), mSize.getHeight() - mBtnDown->getSize().getHeight() - mBtnUp->getSize().getHeight() );
+		mSlider->setPosition( 0, mBtnUp->getSize().getHeight() );
 
 		mBtnDown->centerHorizontal();
 		mBtnUp->centerHorizontal();
@@ -237,9 +237,9 @@ UIControlAnim * UIScrollBar::getButtonDown() const {
 void UIScrollBar::onAlphaChange() {
 	UIControlAnim::onAlphaChange();
 	
-	mSlider->alpha( mAlpha );
-	mBtnUp->alpha( mAlpha );
-	mBtnDown->alpha( mAlpha );
+	mSlider->setAlpha( mAlpha );
+	mBtnUp->setAlpha( mAlpha );
+	mBtnDown->setAlpha( mAlpha );
 }
 
 }}

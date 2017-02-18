@@ -47,19 +47,19 @@ class EE_API UIComplexControl : public UIControlAnim {
 
 		virtual void update();
 
-		virtual void size( const Sizei &size );
+		virtual void setSize( const Sizei &getSize );
 
-		void size( const Int32& Width, const Int32& Height );
+		void setSize( const Int32& Width, const Int32& Height );
 
-		const Sizei& size();
+		const Sizei& getSize();
 
 		UITooltip * getTooltip();
 
 		void tooltipRemove();
 
-		void tooltipText( const String& Text );
+		void setTooltipText( const String& Text );
 
-		String tooltipText();
+		String getTooltipText();
 
 		void updateAnchorsDistances();
 	protected:

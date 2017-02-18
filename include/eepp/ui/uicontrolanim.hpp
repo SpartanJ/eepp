@@ -19,37 +19,37 @@ class EE_API UIControlAnim : public UIDragable {
 
 		virtual void update();
 
-		const Float& angle() const;
+		const Float& getRotation() const;
 
-		void angle( const Float& angle );
+		void setRotation( const Float& angle );
 
-		void angle( const Float& angle, const OriginPoint& center );
+		void setRotation( const Float& angle, const OriginPoint& center );
 
-		const OriginPoint& rotationOriginPoint() const;
+		const OriginPoint& getRotationOriginPoint() const;
 
-		void rotationOriginPoint( const OriginPoint& center );
+		void setRotationOriginPoint( const OriginPoint& center );
 
-		Vector2f rotationCenter();
+		Vector2f getRotationCenter();
 
-		const Vector2f& scale() const;
+		const Vector2f& getScale() const;
 
-		void scale( const Vector2f& scale );
+		void setScale( const Vector2f& scale );
 
-		void scale( const Vector2f& scale, const OriginPoint& center );
+		void setScale( const Vector2f& scale, const OriginPoint& center );
 
-		void scale( const Float& scale , const OriginPoint & center = OriginPoint::OriginCenter );
+		void setScale( const Float& scale , const OriginPoint & center = OriginPoint::OriginCenter );
 
-		const OriginPoint& scaleOriginPoint() const;
+		const OriginPoint& getScaleOriginPoint() const;
 
-		void scaleOriginPoint( const OriginPoint& center );
+		void setScaleOriginPoint( const OriginPoint& center );
 
-		Vector2f scaleCenter();
+		Vector2f getScaleCenter();
 
-		const Float& alpha() const;
+		const Float& getAlpha() const;
 
-		virtual void alpha( const Float& alpha );
+		virtual void setAlpha( const Float& alpha );
 
-		virtual void alphaChilds( const Float& alpha );
+		virtual void setChildsAlpha( const Float& alpha );
 
 		bool isAnimating();
 
@@ -71,13 +71,13 @@ class EE_API UIControlAnim : public UIDragable {
 
 		Interpolation * disableFadeOut( const Time & Time, const bool& alphaChilds = true, const Ease::Interpolation& getType = Ease::Linear );
 
-		Interpolation * rotationInterpolation();
+		Interpolation * getRotationInterpolation();
 
-		Waypoints * scaleInterpolation();
+		Waypoints * getScaleInterpolation();
 
-		Interpolation * alphaInterpolation();
+		Interpolation * getAlphaInterpolation();
 
-		Waypoints * movementInterpolation();
+		Waypoints * getMovementInterpolation();
 
 		virtual void draw();
 

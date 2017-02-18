@@ -59,10 +59,10 @@ void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 	Params.DecorationAutoSize = false;
 
 	mControl		= eeNew( UIWindow, ( Params ) );
-	mControl->visible( true );
-	mControl->enabled( true );
-	mControl->getContainer()->enabled( false );
-	mControl->getContainer()->visible( false );
+	mControl->setVisible( true );
+	mControl->setEnabled( true );
+	mControl->getContainer()->setEnabled( false );
+	mControl->getContainer()->setVisible( false );
 
 	mFocusControl	= mControl;
 	mOverControl	= mControl;
@@ -111,7 +111,7 @@ void UIManager::inputCallback( InputEvent * Event ) {
 }
 
 void UIManager::resizeControl( EE::Window::Window * win ) {
-	mControl->size( mWindow->getWidth(), mWindow->getHeight() );
+	mControl->setSize( mWindow->getWidth(), mWindow->getHeight() );
 	sendMsg( mControl, UIMessage::MsgWindowResize );
 
 	std::list<UIWindow*>::iterator it;
@@ -126,10 +126,10 @@ void UIManager::sendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint
 	UIControl * CtrlLoop	= mFocusControl;
 
 	while( NULL != CtrlLoop ) {
-		if ( CtrlLoop->enabled() && CtrlLoop->onKeyUp( KeyEvent ) )
+		if ( CtrlLoop->isEnabled() && CtrlLoop->onKeyUp( KeyEvent ) )
 			break;
 
-		CtrlLoop = CtrlLoop->parent();
+		CtrlLoop = CtrlLoop->getParent();
 	}
 }
 
@@ -138,10 +138,10 @@ void UIManager::sendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Ui
 	UIControl * CtrlLoop	= mFocusControl;
 
 	while( NULL != CtrlLoop ) {
-		if ( CtrlLoop->enabled() && CtrlLoop->onKeyDown( KeyEvent ) )
+		if ( CtrlLoop->isEnabled() && CtrlLoop->onKeyDown( KeyEvent ) )
 			break;
 
-		CtrlLoop = CtrlLoop->parent();
+		CtrlLoop = CtrlLoop->getParent();
 	}
 }
 
@@ -329,7 +329,7 @@ void UIManager::checkTabPress( const Uint32& KeyCode ) {
 	eeASSERT( NULL != mFocusControl );
 
 	if ( KeyCode == KEY_TAB ) {
-		UIControl * Ctrl = mFocusControl->nextComplexControl();
+		UIControl * Ctrl = mFocusControl->getNextComplexControl();
 
 		if ( NULL != Ctrl )
 			Ctrl->setFocus();

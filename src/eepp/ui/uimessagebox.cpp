@@ -15,38 +15,38 @@ UIMessageBox::UIMessageBox( const UIMessageBox::CreateParams& Params ) :
 		UIPushButton::CreateParams ButtonParams;
 		ButtonParams.setParent( getContainer() );
 		ButtonParams.setSize( 90, 22 );
-		ButtonParams.setPos( getContainer()->size().getWidth() - 96, getContainer()->size().getHeight() - ButtonParams.Size.getHeight() - 8 );
+		ButtonParams.setPos( getContainer()->getSize().getWidth() - 96, getContainer()->getSize().getHeight() - ButtonParams.Size.getHeight() - 8 );
 		ButtonParams.Flags = UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE;
 		mButtonOK = eeNew( UIPushButton, ( ButtonParams ) );
-		mButtonOK->visible( true );
-		mButtonOK->enabled( true );
+		mButtonOK->setVisible( true );
+		mButtonOK->setEnabled( true );
 
-		ButtonParams.Pos.x = mButtonOK->position().x - mButtonOK->size().getWidth() - 8;
+		ButtonParams.Pos.x = mButtonOK->getPosition().x - mButtonOK->getSize().getWidth() - 8;
 		mButtonCancel = eeNew( UIPushButton, ( ButtonParams ) );
-		mButtonCancel->visible( true );
-		mButtonCancel->enabled( true );
+		mButtonCancel->setVisible( true );
+		mButtonCancel->setEnabled( true );
 	}
 	else
 	{
 		mButtonOK = Theme->createPushButton( getContainer(),
 								 Sizei( 90, 22 ),
-								 Vector2i( getContainer()->size().getWidth() - 96, getContainer()->size().getHeight() - 22 - 8 ),
+								 Vector2i( getContainer()->getSize().getWidth() - 96, getContainer()->getSize().getHeight() - 22 - 8 ),
 								 UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE );
 
 		mButtonCancel = Theme->createPushButton( getContainer(),
-								 mButtonOK->size(),
-								 Vector2i( mButtonOK->position().x - mButtonOK->size().getWidth() - 8, mButtonOK->position().y ),
-								 mButtonOK->flags() );
+								 mButtonOK->getSize(),
+								 Vector2i( mButtonOK->getPosition().x - mButtonOK->getSize().getWidth() - 8, mButtonOK->getPosition().y ),
+								 mButtonOK->getFlags() );
 	}
 
 	UITextBox::CreateParams TxtParams;
 	TxtParams.setParent( getContainer() );
 	TxtParams.Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM;
-	TxtParams.setSize( getContainer()->size().getWidth(), mButtonOK->position().y  );
+	TxtParams.setSize( getContainer()->getSize().getWidth(), mButtonOK->getPosition().y  );
 
 	mTextBox = eeNew( UITextBox, ( TxtParams ) );
-	mTextBox->visible( true );
-	mTextBox->enabled( true );
+	mTextBox->setVisible( true );
+	mTextBox->setEnabled( true );
 	mTextBox->text( Params.Message );
 
 	switch ( mMsgBoxType ) {
@@ -71,8 +71,8 @@ UIMessageBox::UIMessageBox( const UIMessageBox::CreateParams& Params ) :
 		case MSGBOX_OK:
 		{
 			mButtonOK->text( "OK" );
-			mButtonCancel->visible( false );
-			mButtonCancel->enabled( false );
+			mButtonCancel->setVisible( false );
+			mButtonCancel->setEnabled( false );
 			break;
 		}
 	}
@@ -104,8 +104,8 @@ void UIMessageBox::setTheme( UITheme * Theme ) {
 		}
 	}
 
-	mButtonOK->position( mButtonOK->position().x, getContainer()->size().getHeight() - mButtonOK->size().getHeight() - 8 );
-	mButtonCancel->position( mButtonCancel->position().x, mButtonOK->position().y );
+	mButtonOK->setPosition( mButtonOK->getPosition().x, getContainer()->getSize().getHeight() - mButtonOK->getSize().getHeight() - 8 );
+	mButtonCancel->setPosition( mButtonCancel->getPosition().x, mButtonOK->getPosition().y );
 }
 
 Uint32 UIMessageBox::onMessage( const UIMessage * Msg ) {
@@ -145,18 +145,18 @@ UIPushButton * UIMessageBox::getButtonCancel() const {
 }
 
 void UIMessageBox::autoSize() {
-	Sizei nSize( mTextBox->getTextWidth() + 48, mTextBox->getTextHeight() + mButtonOK->size().getHeight() + mDecoSize.getHeight() + 8 );
+	Sizei nSize( mTextBox->getTextWidth() + 48, mTextBox->getTextHeight() + mButtonOK->getSize().getHeight() + mDecoSize.getHeight() + 8 );
 
-	if ( !( nSize.getWidth() > getContainer()->size().getWidth() ) ) {
-		nSize.x = getContainer()->size().getWidth();
+	if ( !( nSize.getWidth() > getContainer()->getSize().getWidth() ) ) {
+		nSize.x = getContainer()->getSize().getWidth();
 	}
 
-	if ( !( nSize.getHeight() > getContainer()->size().getHeight() ) ) {
-		nSize.y = getContainer()->size().getHeight();
+	if ( !( nSize.getHeight() > getContainer()->getSize().getHeight() ) ) {
+		nSize.y = getContainer()->getSize().getHeight();
 	}
 
-	if ( nSize.x != getContainer()->size().getWidth() || nSize.y != getContainer()->size().getHeight() ) {
-		size( nSize );
+	if ( nSize.x != getContainer()->getSize().getWidth() || nSize.y != getContainer()->getSize().getHeight() ) {
+		setSize( nSize );
 
 		mMinWindowSize = nSize;
 	}

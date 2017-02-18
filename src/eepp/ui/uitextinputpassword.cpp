@@ -38,8 +38,8 @@ void UITextInputPassword::draw() {
 				);
 			}
 
-			mPassCache->setFlags( flags() );
-			mPassCache->draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, Vector2f::One, 0.f, blend() );
+			mPassCache->setFlags( getFlags() );
+			mPassCache->draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, Vector2f::One, 0.f, getBlendMode() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				UIManager::instance()->clipDisable();
@@ -51,7 +51,7 @@ void UITextInputPassword::draw() {
 }
 
 void UITextInputPassword::alignFix() {
-	if ( FontHAlignGet( flags() ) == UI_HALIGN_LEFT ) {
+	if ( FontHAlignGet( getFlags() ) == UI_HALIGN_LEFT ) {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
 
@@ -79,7 +79,7 @@ void UITextInputPassword::alignFix() {
 }
 
 void UITextInputPassword::autoAlign() {
-	switch ( FontHAlignGet( flags() ) ) {
+	switch ( FontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mAlignOffset.x = (Float)( (Int32)( mSize.x - mPassCache->getTextWidth() ) / 2 );
 			break;
@@ -91,7 +91,7 @@ void UITextInputPassword::autoAlign() {
 			break;
 	}
 
-	switch ( FontVAlignGet( flags() ) ) {
+	switch ( FontVAlignGet( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
 			mAlignOffset.y = (Float)( ( (Int32)( mSize.y - mPassCache->getTextHeight() ) ) / 2 ) - 1;
 			break;

@@ -69,12 +69,12 @@ void UIControl::screenToControl( Vector2i& Pos ) const {
 	Pos.y -= mPos.y;
 
 	while ( NULL != ParentLoop ) {
-		const Vector2i& ParentPos = ParentLoop->position();
+		const Vector2i& ParentPos = ParentLoop->getPosition();
 
 		Pos.x -= ParentPos.x;
 		Pos.y -= ParentPos.y;
 
-		ParentLoop = ParentLoop->parent();
+		ParentLoop = ParentLoop->getParent();
 	}
 }
 
@@ -82,12 +82,12 @@ void UIControl::controlToScreen( Vector2i& Pos ) const {
 	UIControl * ParentLoop = mParentCtrl;
 
 	while ( NULL != ParentLoop ) {
-		const Vector2i& ParentPos = ParentLoop->position();
+		const Vector2i& ParentPos = ParentLoop->getPosition();
 
 		Pos.x += ParentPos.x;
 		Pos.y += ParentPos.y;
 
-		ParentLoop = ParentLoop->parent();
+		ParentLoop = ParentLoop->getParent();
 	}
 }
 
@@ -106,7 +106,7 @@ void UIControl::messagePost( const UIMessage * Msg ) {
 		if ( Ctrl->onMessage( Msg ) )
 			break;
 
-		Ctrl = Ctrl->parent();
+		Ctrl = Ctrl->getParent();
 	}
 }
 
@@ -118,23 +118,23 @@ bool UIControl::isInside( const Vector2i& Pos ) const {
 	return ( Pos.x >= 0 && Pos.y >= 0 && Pos.x < mSize.getWidth() && Pos.y < mSize.getHeight() );
 }
 
-void UIControl::position( const Vector2i& Pos ) {
+void UIControl::setPosition( const Vector2i& Pos ) {
 	mPos = Pos;
 
 	onPositionChange();
 }
 
-void UIControl::position( const Int32& x, const Int32& y ) {
+void UIControl::setPosition( const Int32& x, const Int32& y ) {
 	mPos = Vector2i( x, y );
 
 	onPositionChange();
 }
 
-const Vector2i& UIControl::position() const {
+const Vector2i& UIControl::getPosition() const {
 	return mPos;
 }
 
-void UIControl::size( const Sizei& Size ) {
+void UIControl::setSize( const Sizei& Size ) {
 	if ( Size != mSize ) {
 		Vector2i sizeChange( Size.x - mSize.x, Size.y - mSize.y );
 
@@ -148,24 +148,24 @@ void UIControl::size( const Sizei& Size ) {
 	}
 }
 
-void UIControl::size( const Int32& Width, const Int32& Height ) {
-	size( Sizei( Width, Height ) );
+void UIControl::setSize( const Int32& Width, const Int32& Height ) {
+	setSize( Sizei( Width, Height ) );
 }
 
 Recti UIControl::getRect() const {
 	return Recti( mPos, mSize );
 }
 
-const Sizei& UIControl::size() {
+const Sizei& UIControl::getSize() {
 	return mSize;
 }
 
-void UIControl::visible( const bool& visible ) {
+void UIControl::setVisible( const bool& visible ) {
 	mVisible = visible;
 	onVisibleChange();
 }
 
-bool UIControl::visible() const {
+bool UIControl::isVisible() const {
 	return mVisible;
 }
 
@@ -173,12 +173,12 @@ bool UIControl::isHided() const {
 	return !mVisible;
 }
 
-void UIControl::enabled( const bool& enabled ) {
+void UIControl::setEnabled( const bool& enabled ) {
 	mEnabled = enabled;
 	onEnabledChange();
 }
 
-bool UIControl::enabled() const {
+bool UIControl::isEnabled() const {
 	return mEnabled;
 }
 
@@ -186,11 +186,11 @@ bool UIControl::isDisabled() const {
 	return !mEnabled;
 }
 
-UIControl * UIControl::parent() const {
+UIControl * UIControl::getParent() const {
 	return mParentCtrl;
 }
 
-void UIControl::parent( UIControl * parent ) {
+void UIControl::setParent( UIControl * parent ) {
 	if ( parent == mParentCtrl )
 		return;
 
@@ -206,30 +206,30 @@ void UIControl::parent( UIControl * parent ) {
 bool UIControl::isParentOf( UIControl * Ctrl ) {
 	eeASSERT( NULL != Ctrl );
 
-	UIControl * tParent = Ctrl->parent();
+	UIControl * tParent = Ctrl->getParent();
 
 	while ( NULL != tParent ) {
 		if ( this == tParent )
 			return true;
 
-		tParent = tParent->parent();
+		tParent = tParent->getParent();
 	}
 
 	return false;
 }
 
 void UIControl::centerHorizontal() {
-	UIControl * Ctrl = parent();
+	UIControl * Ctrl = getParent();
 
 	if ( NULL != Ctrl )
-		position( Vector2i( ( Ctrl->size().getWidth() / 2 ) - ( mSize.getWidth() / 2 ), mPos.y ) );
+		setPosition( Vector2i( ( Ctrl->getSize().getWidth() / 2 ) - ( mSize.getWidth() / 2 ), mPos.y ) );
 }
 
 void UIControl::centerVertical(){
-	UIControl * Ctrl = parent();
+	UIControl * Ctrl = getParent();
 
 	if ( NULL != Ctrl )
-		position( Vector2i( mPos.x, ( Ctrl->size().getHeight() / 2 ) - ( mSize.getHeight() / 2 ) ) );
+		setPosition( Vector2i( mPos.x, ( Ctrl->getSize().getHeight() / 2 ) - ( mSize.getHeight() / 2 ) ) );
 }
 
 void UIControl::center() {
@@ -257,7 +257,7 @@ void UIControl::draw() {
 		if ( UIManager::instance()->highlightFocus() && UIManager::instance()->focusControl() == this ) {
 			Primitives P;
 			P.setFillMode( DRAW_LINE );
-			P.setBlendMode( blend() );
+			P.setBlendMode( getBlendMode() );
 			P.setColor( UIManager::instance()->highlightFocusColor() );
 			P.drawRectangle( getRectf() );
 		}
@@ -265,7 +265,7 @@ void UIControl::draw() {
 		if ( UIManager::instance()->highlightOver() && UIManager::instance()->overControl() == this ) {
 			Primitives P;
 			P.setFillMode( DRAW_LINE );
-			P.setBlendMode( blend() );
+			P.setBlendMode( getBlendMode() );
 			P.setColor( UIManager::instance()->highlightOverColor() );
 			P.drawRectangle( getRectf() );
 		}
@@ -399,23 +399,23 @@ void UIControl::onClose() {
 	sendCommonEvent( UIEvent::EventOnClose );
 }
 
-Uint32 UIControl::hAlign() const {
+Uint32 UIControl::getHorizontalAlign() const {
 	return mFlags & UI_HALIGN_MASK;
 }
 
-void UIControl::hAlign( Uint32 halign ) {
+void UIControl::setHorizontalAlign( Uint32 halign ) {
 	mFlags |= halign & UI_HALIGN_MASK;
 }
 
-Uint32 UIControl::vAlign() const {
+Uint32 UIControl::getVerticalAlign() const {
 	return mFlags & UI_VALIGN_MASK;
 }
 
-void UIControl::vAlign( Uint32 valign ) {
+void UIControl::setVerticalAlign( Uint32 valign ) {
 	mFlags |= valign & UI_VALIGN_MASK;
 }
 
-void UIControl::fillBackground( bool enabled ) {
+void UIControl::setBackgroundFillEnabled( bool enabled ) {
 	writeFlag( UI_FILL_BACKGROUND, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBackground ) {
@@ -423,7 +423,7 @@ void UIControl::fillBackground( bool enabled ) {
 	}
 }
 
-void UIControl::border( bool enabled ) {
+void UIControl::setBorderEnabled( bool enabled ) {
 	writeFlag( UI_BORDER, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBorder ) {
@@ -435,42 +435,42 @@ void UIControl::border( bool enabled ) {
 	}
 }
 
-UIControl * UIControl::nextGet() const {
+UIControl * UIControl::getNextControl() const {
 	return mNext;
 }
 
-UIControl * UIControl::prevGet() const {
+UIControl * UIControl::getPrevControl() const {
 	return mPrev;
 }
 
-UIControl * UIControl::nextGetLoop() const {
+UIControl * UIControl::getNextControlLoop() const {
 	if ( NULL == mNext )
-		return parent()->childGetFirst();
+		return getParent()->getFirstChild();
 	else
 		return mNext;
 }
 
-void UIControl::data(const UintPtr& data ) {
+void UIControl::setData(const UintPtr& data ) {
 	mData = data;
 }
 
-const UintPtr& UIControl::data() const {
+const UintPtr& UIControl::getData() const {
 	return mData;
 }
 
-const Uint32& UIControl::flags() const {
+const Uint32& UIControl::getFlags() const {
 	return mFlags;
 }
 
-void UIControl::flags( const Uint32& flags ) {
+void UIControl::setFlags( const Uint32& flags ) {
 	mFlags |= flags;
 }
 
-void UIControl::blend( const EE_BLEND_MODE& blend ) {
+void UIControl::setBlendMode( const EE_BLEND_MODE& blend ) {
 	mBlend = static_cast<Uint16> ( blend );
 }
 
-EE_BLEND_MODE UIControl::blend() {
+EE_BLEND_MODE UIControl::getBlendMode() {
 	return static_cast<EE_BLEND_MODE> ( mBlend );
 }
 
@@ -487,7 +487,7 @@ void UIControl::toBack() {
 	}
 }
 
-void UIControl::toPos( const Uint32& Pos ) {
+void UIControl::toPosition( const Uint32& Pos ) {
 	if ( NULL != mParentCtrl ) {
 		mParentCtrl->childAddAt( this, Pos );
 	}
@@ -498,7 +498,7 @@ void UIControl::onVisibleChange() {
 }
 
 void UIControl::onEnabledChange() {
-	if ( !enabled() && NULL != UIManager::instance()->focusControl() ) {
+	if ( !isEnabled() && NULL != UIManager::instance()->focusControl() ) {
 		if ( isChild( UIManager::instance()->focusControl() ) ) {
 			UIManager::instance()->focusControl( NULL );
 		}
@@ -528,18 +528,18 @@ Rectf UIControl::getRectf() {
 void UIControl::backgroundDraw() {
 	Primitives P;
 	Rectf R = getRectf();
-	P.setBlendMode( mBackground->blend() );
-	P.setColor( mBackground->color() );
+	P.setBlendMode( mBackground->getBlendMode() );
+	P.setColor( mBackground->getColor() );
 
-	if ( 4 == mBackground->colors().size() ) {
-		if ( mBackground->corners() ) {
-			P.drawRoundedRectangle( R, mBackground->colors()[0], mBackground->colors()[1], mBackground->colors()[2], mBackground->colors()[3], mBackground->corners() );
+	if ( 4 == mBackground->getColors().size() ) {
+		if ( mBackground->getCorners() ) {
+			P.drawRoundedRectangle( R, mBackground->getColors()[0], mBackground->getColors()[1], mBackground->getColors()[2], mBackground->getColors()[3], mBackground->getCorners() );
 		} else {
-			P.drawRectangle( R, mBackground->colors()[0], mBackground->colors()[1], mBackground->colors()[2], mBackground->colors()[3] );
+			P.drawRectangle( R, mBackground->getColors()[0], mBackground->getColors()[1], mBackground->getColors()[2], mBackground->getColors()[3] );
 		}
 	} else {
-		if ( mBackground->corners() ) {
-			P.drawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->corners() );
+		if ( mBackground->getCorners() ) {
+			P.drawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->getCorners() );
 		} else {
 			P.drawRectangle( R );
 		}
@@ -549,33 +549,33 @@ void UIControl::backgroundDraw() {
 void UIControl::borderDraw() {
 	Primitives P;
 	P.setFillMode( DRAW_LINE );
-	P.setBlendMode( blend() );
-	P.setLineWidth( (Float)mBorder->width() );
-	P.setColor( mBorder->color() );
+	P.setBlendMode( getBlendMode() );
+	P.setLineWidth( (Float)mBorder->getWidth() );
+	P.setColor( mBorder->getColor() );
 
 	//! @TODO: Check why was this +0.1f -0.1f?
 	if ( mFlags & UI_CLIP_ENABLE ) {
 		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.getWidth() - 0.1f, (Float)mSize.getHeight() - 0.1f ) );
 
-		if ( mBackground->corners() ) {
-			P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->corners() );
+		if ( mBackground->getCorners() ) {
+			P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->getCorners() );
 		} else {
 			P.drawRectangle( R );
 		}
 	} else {
-		if ( mBackground->corners() ) {
-			P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->corners() );
+		if ( mBackground->getCorners() ) {
+			P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->getCorners() );
 		} else {
 			P.drawRectangle( getRectf() );
 		}
 	}
 }
 
-const Uint32& UIControl::controlFlags() const {
+const Uint32& UIControl::getControlFlags() const {
 	return mControlFlags;
 }
 
-void UIControl::controlFlags( const Uint32& Flags ) {
+void UIControl::setControlFlags( const Uint32& Flags ) {
 	mControlFlags = Flags;
 }
 
@@ -650,7 +650,7 @@ void UIControl::childAddAt( UIControl * ChildCtrl, Uint32 Pos ) {
 
 	UIControl * ChildLoop = mChild;
 	
-	ChildCtrl->parent( this );
+	ChildCtrl->setParent( this );
 
 	childRemove( ChildCtrl );
 	ChildCtrl->mParentCtrl = this;
@@ -790,11 +790,11 @@ UIControl * UIControl::childNext( UIControl * Ctrl, bool Loop ) const {
 	return Ctrl->mNext;
 }
 
-UIControl * UIControl::childGetFirst() const {
+UIControl * UIControl::getFirstChild() const {
 	return mChild;
 }
 
-UIControl * UIControl::childGetLast() const {
+UIControl * UIControl::getLastChild() const {
 	return mChildLast;
 }
 
@@ -835,12 +835,12 @@ UIControl * UIControl::childGetAt( Vector2i CtrlPos, unsigned int RecursiveLevel
 
 	for( UIControl * pLoop = mChild; NULL != pLoop && NULL == Ctrl; pLoop = pLoop->mNext )
 	{
-		if ( !pLoop->visible() )
+		if ( !pLoop->isVisible() )
 			continue;
 
 		if ( pLoop->getRect().contains( CtrlPos ) ) {
 			if ( RecursiveLevel )
-				Ctrl = childGetAt( CtrlPos - pLoop->position(), RecursiveLevel - 1 );
+				Ctrl = childGetAt( CtrlPos - pLoop->getPosition(), RecursiveLevel - 1 );
 
 			if ( NULL == Ctrl )
 				Ctrl = pLoop;
@@ -877,17 +877,17 @@ const Vector2f& UIControl::getPolygonCenter() const {
 void UIControl::updateQuad() {
 	mPoly 	= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mSize.getWidth(), mScreenPosf.y + mSize.getHeight() ) );
 
-	UIControl * tParent = parent();
+	UIControl * tParent = getParent();
 
 	while ( tParent ) {
 		if ( tParent->isAnimated() ) {
 			UIControlAnim * tP = reinterpret_cast<UIControlAnim *> ( tParent );
 
-			mPoly.rotate( tP->angle(), tP->rotationCenter() );
-			mPoly.scale( tP->scale(), tP->scaleCenter() );
+			mPoly.rotate( tP->getRotation(), tP->getRotationCenter() );
+			mPoly.scale( tP->getScale(), tP->getScaleCenter() );
 		}
 
-		tParent = tParent->parent();
+		tParent = tParent->getParent();
 	};
 }
 
@@ -930,11 +930,11 @@ void UIControl::sendEvent( const UIEvent * Event ) {
 	}
 }
 
-UIBackground * UIControl::background() {
+UIBackground * UIControl::getBackground() {
 	return mBackground;
 }
 
-UIBorder * UIControl::border() {
+UIBorder * UIControl::getBorder() {
 	return mBorder;
 }
 
@@ -1180,16 +1180,16 @@ Sizei UIControl::getSkinSize() {
 	return getSkinSize( getSkin(), UISkinState::StateNormal );
 }
 
-UIControl * UIControl::nextComplexControl() {
+UIControl * UIControl::getNextComplexControl() {
 	UIControl * Found		= NULL;
 	UIControl * ChildLoop	= mChild;
 
 	while( NULL != ChildLoop ) {
-		if ( ChildLoop->visible() && ChildLoop->enabled() ) {
+		if ( ChildLoop->isVisible() && ChildLoop->isEnabled() ) {
 			if ( ChildLoop->isComplex() ) {
 				return ChildLoop;
 			} else {
-				Found = ChildLoop->nextComplexControl();
+				Found = ChildLoop->getNextComplexControl();
 
 				if ( NULL != Found ) {
 					return Found;
@@ -1201,20 +1201,20 @@ UIControl * UIControl::nextComplexControl() {
 	}
 
 	if ( NULL != mNext ) {
-		if ( mNext->visible() && mNext->enabled() && mNext->isComplex() ) {
+		if ( mNext->isVisible() && mNext->isEnabled() && mNext->isComplex() ) {
 			return mNext;
 		} else {
-			return mNext->nextComplexControl();
+			return mNext->getNextComplexControl();
 		}
 	} else {
 		ChildLoop = mParentCtrl;
 
 		while ( NULL != ChildLoop ) {
 			if ( NULL != ChildLoop->mNext ) {
-				if ( ChildLoop->mNext->visible() && ChildLoop->mNext->enabled() && ChildLoop->mNext->isComplex() ) {
+				if ( ChildLoop->mNext->isVisible() && ChildLoop->mNext->isEnabled() && ChildLoop->mNext->isComplex() ) {
 					return ChildLoop->mNext;
 				} else {
-					return ChildLoop->mNext->nextComplexControl();
+					return ChildLoop->mNext->getNextComplexControl();
 				}
 			}
 
@@ -1237,7 +1237,7 @@ void UIControl::worldToControl( Vector2i& pos ) const {
 
 	while ( NULL != ParentLoop ) {
 		parents.push_front( ParentLoop );
-		ParentLoop = ParentLoop->parent();
+		ParentLoop = ParentLoop->getParent();
 	}
 
 	parents.push_back( const_cast<UIControl*>( reinterpret_cast<const UIControl*>( this ) ) );
@@ -1250,18 +1250,18 @@ void UIControl::worldToControl( Vector2i& pos ) const {
 		Vector2f pPos			( tParent->mPos.x * scale.x			, tParent->mPos.y * scale.y			);
 		Vector2f Center;
 
-		if ( NULL != tP && 1.f != tP->scale() ) {
-			Center = tP->scaleOriginPoint() * scale;
-			scale *= tP->scale();
+		if ( NULL != tP && 1.f != tP->getScale() ) {
+			Center = tP->getScaleOriginPoint() * scale;
+			scale *= tP->getScale();
 
 			pPos.scale( scale, pPos + Center );
 		}
 
 		Pos -= pPos;
 
-		if ( NULL != tP && 0.f != tP->angle() ) {
-			Center = tP->rotationOriginPoint() * scale;
-			Pos.rotate( -tP->angle(), Center );
+		if ( NULL != tP && 0.f != tP->getRotation() ) {
+			Center = tP->getRotationOriginPoint() * scale;
+			Pos.rotate( -tP->getRotation(), Center );
 		}
 	}
 
@@ -1277,7 +1277,7 @@ void UIControl::controlToWorld( Vector2i& pos ) const {
 
 	while ( NULL != ParentLoop ) {
 		parents.push_back( ParentLoop );
-		ParentLoop = ParentLoop->parent();
+		ParentLoop = ParentLoop->getParent();
 	}
 
 	parents.push_front( const_cast<UIControl*>( reinterpret_cast<const UIControl*>( this ) ) );
@@ -1293,8 +1293,8 @@ void UIControl::controlToWorld( Vector2i& pos ) const {
 			Vector2f CenterAngle( pPos.x + tP->mRotationOriginPoint.x, pPos.y + tP->mRotationOriginPoint.y );
 			Vector2f CenterScale( pPos.x + tP->mScaleOriginPoint.x, pPos.y + tP->mScaleOriginPoint.y );
 
-			Pos.rotate( tP->angle(), CenterAngle );
-			Pos.scale( tP->scale(), CenterScale );
+			Pos.rotate( tP->getRotation(), CenterAngle );
+			Pos.scale( tP->getScale(), CenterScale );
 		}
 	}
 

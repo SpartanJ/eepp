@@ -60,8 +60,8 @@ UIProgressBar * UIdefaultTheme::createProgressBar( UIControl * Parent, const Siz
 	}
 
 	UIProgressBar * Ctrl = eeNew( UIProgressBar, ( PBParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -81,8 +81,8 @@ UIWinMenu * UIdefaultTheme::createWinMenu( UIControl * Parent, const Sizei& Size
 	}
 
 	UIWinMenu * Ctrl = eeNew( UIWinMenu, ( WinMenuParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -166,8 +166,8 @@ UIComboBox * UIdefaultTheme::createComboBox( UIControl * Parent, const Sizei& Si
 	}
 
 	UIComboBox * Ctrl = eeNew( UIComboBox, ( ComboParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -186,8 +186,8 @@ UIDropDownList * UIdefaultTheme::createDropDownList( UIControl * Parent, const S
 	}
 
 	UIDropDownList * Ctrl = eeNew( UIDropDownList, ( DDLParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -215,8 +215,8 @@ UITabWidget * UIdefaultTheme::createTabWidget( UIControl *Parent, const Sizei &S
 	}
 
 	UITabWidget * Ctrl = eeNew( UITabWidget, ( TabWidgetParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -234,8 +234,8 @@ UITooltip * UIdefaultTheme::createTooltip( UIControl * TooltipOf, UIControl * Pa
 	}
 
 	UITooltip * Ctrl = eeNew( UITooltip, ( TooltipParams, TooltipOf ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 

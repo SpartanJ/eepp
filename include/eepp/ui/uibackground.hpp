@@ -12,27 +12,28 @@ class EE_API UIBackground {
 		UIBackground( const UIBackground& Back );
 		UIBackground( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor, const unsigned int& corners, const EE_BLEND_MODE& BlendMode );
 
-		ColorA& color( const unsigned int& index = 0 );
+		ColorA& getColor( const unsigned int& index = 0 );
 
-		void color( const ColorA& Col );
+		void setColor( const ColorA& Col );
 
-		const std::vector<ColorA>& colors();
+		const std::vector<ColorA>& getColors();
 
-		void colors( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor );
+		void setColors( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor );
 
-		void colorsTo( const ColorA& color );
+		void setColorsTo( const ColorA& color );
 
-		const EE_BLEND_MODE& blend() const;
+		const EE_BLEND_MODE& getBlendMode() const;
 
-		void blend( const EE_BLEND_MODE& blend );
+		void setBlendMode( const EE_BLEND_MODE& blend );
 
-		const unsigned int& corners() const;
-		void corners( const unsigned int& corners );
+		const unsigned int& getCorners() const;
+
+		void setCorners( const unsigned int& corners );
 	protected:
 		std::vector<ColorA>	mColor;
 
 		EE_BLEND_MODE		mBlendMode;
-		unsigned int					mCorners;
+		unsigned int		mCorners;
 };
 
 }}

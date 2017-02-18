@@ -60,7 +60,7 @@ class EE_API UICommonDialog : public UIWindow {
 
 		UIPushButton *		getButtonUp() const;
 
-		UIListBox *		getList() const;
+		UIListBox *			getList() const;
 
 		UITextInput *		getPathInput() const;
 

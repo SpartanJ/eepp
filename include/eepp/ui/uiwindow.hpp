@@ -46,11 +46,11 @@ class EE_API UIWindow : public UIComplexControl {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		virtual void size( const Sizei& size );
+		virtual void setSize( const Sizei& size );
 
-		void size( const Int32& Width, const Int32& Height );
+		void setSize( const Int32& Width, const Int32& Height );
 
-		const Sizei& size();
+		const Sizei& getSize();
 
 		virtual void setTheme( UITheme * Theme );
 
@@ -76,15 +76,15 @@ class EE_API UIWindow : public UIComplexControl {
 
 		virtual void close();
 
-		void baseAlpha( const Uint8& alpha );
+		void setBaseAlpha( const Uint8& alpha );
 
-		const Uint8& baseAlpha() const;
+		const Uint8& getBaseAlpha() const;
 
-		void title( const String& Text );
+		void setTitle( const String& Text );
 
-		String title() const;
+		String getTitle() const;
 
-		UITextBox * titleTextBox() const;
+		UITextBox * getTitleTextBox() const;
 
 		bool addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIPushButton * Button );
 
@@ -96,7 +96,7 @@ class EE_API UIWindow : public UIComplexControl {
 
 		void maximize();
 
-		bool isMaximixable();
+		bool isMaximizable();
 	protected:
 		class KeyboardShortcut {
 			public:

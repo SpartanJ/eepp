@@ -23,11 +23,11 @@ UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 	mIcon = eeNew( UIGfx, ( GfxParams ) );
 
 	if ( Params.IconMinSize.x != 0 && Params.IconMinSize.y != 0 ) {
-		mIcon->size( Params.IconMinSize );
+		mIcon->setSize( Params.IconMinSize );
 	}
 
-	mIcon->visible( true );
-	mIcon->enabled( false );
+	mIcon->setVisible( true );
+	mIcon->setEnabled( false );
 
 	icon( Params.Icon );
 
@@ -42,8 +42,8 @@ UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 		TxtParams.Flags &= ~UI_CLIP_ENABLE;
 
 	mTextBox = eeNew( UITextBox, ( TxtParams ) );
-	mTextBox->visible( true );
-	mTextBox->enabled( false );
+	mTextBox->setVisible( true );
+	mTextBox->setEnabled( false );
 
 	if ( Params.IconAutoMargin )
 		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
@@ -66,23 +66,23 @@ bool UIPushButton::isType( const Uint32& type ) const {
 
 void UIPushButton::onSizeChange() {
 	if ( NULL != mTextBox ) {
-		mTextBox->size( mSize );
-		mTextBox->position( 0, 0 );
+		mTextBox->setSize( mSize );
+		mTextBox->setPosition( 0, 0 );
 	}
 
-	mIcon->position( mIconSpace, 0 );
+	mIcon->setPosition( mIconSpace, 0 );
 	mIcon->centerVertical();
 
 	if ( NULL != mTextBox ) {
-		switch ( FontHAlignGet( flags() ) ) {
+		switch ( FontHAlignGet( getFlags() ) ) {
 			case UI_HALIGN_LEFT:
-				mTextBox->position( mIcon->position().x + mIcon->size().getWidth(), 0 );
-				mTextBox->size( mSize.getWidth() - mIcon->position().x + mIcon->size().getWidth(), mSize.getHeight() );
+				mTextBox->setPosition( mIcon->getPosition().x + mIcon->getSize().getWidth(), 0 );
+				mTextBox->setSize( mSize.getWidth() - mIcon->getPosition().x + mIcon->getSize().getWidth(), mSize.getHeight() );
 				break;
 			case UI_HALIGN_CENTER:
 				if ( NULL != mIcon->subTexture() ) {
-					if ( mIcon->position().x + mIcon->size().getWidth() >= mTextBox->alignOffset().x ) {
-						mTextBox->position( mIcon->position().x + mIcon->size().getWidth() + 1 - mTextBox->alignOffset().x, mTextBox->position().y );
+					if ( mIcon->getPosition().x + mIcon->getSize().getWidth() >= mTextBox->alignOffset().x ) {
+						mTextBox->setPosition( mIcon->getPosition().x + mIcon->getSize().getWidth() + 1 - mTextBox->alignOffset().x, mTextBox->getPosition().y );
 					}
 				}
 
@@ -193,8 +193,8 @@ UITextBox * UIPushButton::getTextBox() const {
 void UIPushButton::onAlphaChange() {
 	UIControlAnim::onAlphaChange();
 
-	mIcon->alpha( mAlpha );
-	mTextBox->alpha( mAlpha );
+	mIcon->setAlpha( mAlpha );
+	mTextBox->setAlpha( mAlpha );
 }
 
 void UIPushButton::onStateChange() {
@@ -204,7 +204,7 @@ void UIPushButton::onStateChange() {
 		mTextBox->color( mFontColor );
 	}
 
-	mTextBox->alpha( mAlpha );
+	mTextBox->setAlpha( mAlpha );
 }
 
 Uint32 UIPushButton::onKeyDown( const UIEventKey& Event ) {

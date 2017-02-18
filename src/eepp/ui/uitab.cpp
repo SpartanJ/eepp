@@ -23,8 +23,8 @@ bool UITab::isType( const Uint32& type ) const {
 }
 
 UITabWidget * UITab::getTabWidget() {
-	if ( parent()->parent()->isType( UI_TYPE_TABWIDGET ) ) {
-		return reinterpret_cast<UITabWidget*> ( parent()->parent() );
+	if ( getParent()->getParent()->isType( UI_TYPE_TABWIDGET ) ) {
+		return reinterpret_cast<UITabWidget*> ( getParent()->getParent() );
 	}
 
 	return NULL;
@@ -70,7 +70,7 @@ void UITab::onStateChange() {
 	UITabWidget * tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
-		size( mSize.getWidth(), getSkinSize( getSkin(), mSkinState->getState() ).getHeight() );
+		setSize( mSize.getWidth(), getSkinSize( getSkin(), mSkinState->getState() ).getHeight() );
 
 		if ( mSkinState->getState() == UISkinState::StateSelected ) {
 			mTextBox->color( tTabW->mFontSelectedColor );
@@ -115,7 +115,7 @@ void UITab::setRealSize() {
 			w = eemin( w, tTabW->mMaxTabWidth );
 		}
 
-		size( w, mSize.getHeight() );
+		setSize( w, mSize.getHeight() );
 	}
 }
 

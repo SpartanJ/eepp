@@ -18,12 +18,12 @@ UIRadioButton::UIRadioButton( const UITextBox::CreateParams& Params ) :
 	ButtonParams.Size = Sizei( 16, 16 );
 
 	mActiveButton 	= eeNew( UIControlAnim, ( ButtonParams ) );
-	mActiveButton->visible( false );
-	mActiveButton->enabled( true );
+	mActiveButton->setVisible( false );
+	mActiveButton->setEnabled( true );
 
 	mInactiveButton = eeNew( UIControlAnim, ( ButtonParams ) );
-	mInactiveButton->visible( true );
-	mInactiveButton->enabled( true );
+	mInactiveButton->setVisible( true );
+	mInactiveButton->setEnabled( true );
 
 	padding( Recti(0,0,0,0) );
 
@@ -56,7 +56,7 @@ void UIRadioButton::setTheme( UITheme * Theme ) {
 		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mActiveButton->size( tSubTexture->getRealSize() );
+			mActiveButton->setSize( tSubTexture->getRealSize() );
 			mActiveButton->centerVertical();
 		}
 	}
@@ -67,7 +67,7 @@ void UIRadioButton::setTheme( UITheme * Theme ) {
 		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mInactiveButton->size( tSubTexture->getRealSize() );
+			mInactiveButton->setSize( tSubTexture->getRealSize() );
 			mInactiveButton->centerVertical();
 		}
 	}
@@ -82,7 +82,7 @@ void UIRadioButton::autoSize() {
 		mActiveButton->centerVertical();
 		mInactiveButton->centerVertical();
 
-		mSize.setWidth( (int)mTextCache->getTextWidth() + mActiveButton->size().getWidth() );
+		mSize.setWidth( (int)mTextCache->getTextWidth() + mActiveButton->getSize().getWidth() );
 	}
 }
 
@@ -118,16 +118,16 @@ void UIRadioButton::switchState() {
 void UIRadioButton::active( const bool& active ) {
 	if ( !active ) {
 		if ( checkActives() ) {
-			mActiveButton->visible( false );
-			mInactiveButton->visible( true );
+			mActiveButton->setVisible( false );
+			mInactiveButton->setVisible( true );
 
 			mActive = false;
 
 			onValueChange();
 		}
 	} else {
-		mActiveButton->visible( true );
-		mInactiveButton->visible( false );
+		mActiveButton->setVisible( true );
+		mInactiveButton->setVisible( false );
 
 		mActive = true;
 
@@ -135,7 +135,7 @@ void UIRadioButton::active( const bool& active ) {
 	}
 
 	if ( active && NULL != mParentCtrl ) {
-		UIControl * tChild = mParentCtrl->childGetFirst();
+		UIControl * tChild = mParentCtrl->getFirstChild();
 
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
@@ -147,14 +147,14 @@ void UIRadioButton::active( const bool& active ) {
 				}
 			}
 
-			tChild = tChild->nextGet();
+			tChild = tChild->getNextControl();
 		}
 	}
 }
 
 bool UIRadioButton::checkActives() {
 	if ( NULL != mParentCtrl ) {
-		UIControl * tChild = mParentCtrl->childGetFirst();
+		UIControl * tChild = mParentCtrl->getFirstChild();
 
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
@@ -166,7 +166,7 @@ bool UIRadioButton::checkActives() {
 				}
 			}
 
-			tChild = tChild->nextGet();
+			tChild = tChild->getNextControl();
 		}
 	}
 
@@ -177,7 +177,7 @@ void UIRadioButton::autoActivate() {
 	eeASSERT( NULL != mParentCtrl );
 
 	if ( NULL != mParentCtrl ) {
-		UIControl * tChild = mParentCtrl->childGetFirst();
+		UIControl * tChild = mParentCtrl->getFirstChild();
 
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
@@ -190,7 +190,7 @@ void UIRadioButton::autoActivate() {
 				}
 			}
 
-			tChild = tChild->nextGet();
+			tChild = tChild->getNextControl();
 		}
 	}
 
@@ -207,7 +207,7 @@ const bool& UIRadioButton::isActive() const {
 
 void UIRadioButton::padding( const Recti& padding ) {
 	mPadding = padding;
-	mPadding.Left = mPadding.Left + mActiveButton->size().getWidth();
+	mPadding.Left = mPadding.Left + mActiveButton->getSize().getWidth();
 }
 
 UIControlAnim * UIRadioButton::activeButton() const {
@@ -233,8 +233,8 @@ Uint32 UIRadioButton::onKeyDown( const UIEventKey& Event ) {
 void UIRadioButton::onAlphaChange() {
 	UITextBox::onAlphaChange();
 	
-	mActiveButton->alpha( mAlpha );
-	mInactiveButton->alpha( mAlpha );
+	mActiveButton->setAlpha( mAlpha );
+	mInactiveButton->setAlpha( mAlpha );
 }
 
 }}

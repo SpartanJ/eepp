@@ -34,12 +34,12 @@ UISpinBox::UISpinBox( const UISpinBox::CreateParams& Params ) :
 	mPushUp		= eeNew( UIControlAnim, ( BtnParams ) );
 	mPushDown 	= eeNew( UIControlAnim, ( BtnParams ) );
 
-	mInput->visible		( true );
-	mInput->enabled		( true );
-	mPushUp->visible	( true );
-	mPushUp->enabled	( true );
-	mPushDown->visible	( true );
-	mPushDown->enabled	( true );
+	mInput->setVisible		( true );
+	mInput->setEnabled		( true );
+	mPushUp->setVisible	( true );
+	mPushUp->setEnabled	( true );
+	mPushDown->setVisible	( true );
+	mPushDown->setEnabled	( true );
 
 	mInput->getInputTextBuffer()->setAllowOnlyNumbers( true, Params.AllowDotsInNumbers );
 
@@ -77,7 +77,7 @@ void UISpinBox::setTheme( UITheme * Theme ) {
 		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mPushUp->size( tSubTexture->getRealSize() );
+			mPushUp->setSize( tSubTexture->getRealSize() );
 		}
 	}
 
@@ -87,7 +87,7 @@ void UISpinBox::setTheme( UITheme * Theme ) {
 		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mPushDown->size( tSubTexture->getRealSize() );
+			mPushDown->setSize( tSubTexture->getRealSize() );
 		}
 	}
 
@@ -99,9 +99,9 @@ void UISpinBox::setTheme( UITheme * Theme ) {
 }
 
 void UISpinBox::adjustChilds() {
-	mPushUp->position( mSize.getWidth() - mPushUp->size().getWidth(), 0 );
-	mPushDown->position( mSize.getWidth() - mPushDown->size().getWidth(), mPushUp->size().getHeight() );
-	mInput->size( mSize.getWidth() - mPushUp->size().getWidth(), mSize.getHeight() );
+	mPushUp->setPosition( mSize.getWidth() - mPushUp->getSize().getWidth(), 0 );
+	mPushDown->setPosition( mSize.getWidth() - mPushDown->getSize().getWidth(), mPushUp->getSize().getHeight() );
+	mInput->setSize( mSize.getWidth() - mPushUp->getSize().getWidth(), mSize.getHeight() );
 }
 
 void UISpinBox::padding( const Recti& padding ) {
@@ -241,9 +241,9 @@ UITextInput * UISpinBox::getTextInput() const {
 void UISpinBox::onAlphaChange() {
 	UIControlAnim::onAlphaChange();
 	
-	mInput->alpha( mAlpha );
-	mPushUp->alpha( mAlpha );
-	mPushDown->alpha( mAlpha );
+	mInput->setAlpha( mAlpha );
+	mPushUp->setAlpha( mAlpha );
+	mPushDown->setAlpha( mAlpha );
 }
 
 }}

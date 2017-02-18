@@ -434,8 +434,8 @@ UIGfx * UITheme::createGfx( SubTexture * SubTexture, UIControl * Parent, const S
 	GfxParams.SubTextureColor = SubTextureColor;
 	GfxParams.SubTextureRender = SubTextureRender;
 	UIGfx * Gfx = eeNew( UIGfx, ( GfxParams ) );
-	Gfx->visible( true );
-	Gfx->enabled( true );
+	Gfx->setVisible( true );
+	Gfx->setEnabled( true );
 	return Gfx;
 }
 
@@ -449,8 +449,8 @@ UISprite * UITheme::createSprite( Sprite * Sprite, UIControl * Parent, const Siz
 	SpriteParams.SpriteRender = SpriteRender;
 	SpriteParams.DealloSprite = DealloSprite;
 	UISprite * Spr = eeNew( UISprite, ( SpriteParams ) );
-	Spr->visible( true );
-	Spr->enabled( true );
+	Spr->setVisible( true );
+	Spr->setEnabled( true );
 	return Spr;
 }
 
@@ -461,8 +461,8 @@ UICheckBox * UITheme::createCheckBox( UIControl * Parent, const Sizei& Size, con
 	CheckBoxParams.setSize( Size );
 	CheckBoxParams.Flags = Flags;
 	UICheckBox * Ctrl = eeNew( UICheckBox, ( CheckBoxParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -473,8 +473,8 @@ UIRadioButton * UITheme::createRadioButton( UIControl * Parent, const Sizei& Siz
 	RadioButtonParams.setSize( Size );
 	RadioButtonParams.Flags = Flags;
 	UIRadioButton * Ctrl = eeNew( UIRadioButton, ( RadioButtonParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -485,8 +485,8 @@ UITextBox * UITheme::createTextBox( const String& Text, UIControl * Parent, cons
 	TextBoxParams.setSize( Size );
 	TextBoxParams.Flags = Flags;
 	UITextBox * Ctrl = eeNew( UITextBox, ( TextBoxParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( false );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( false );
 	Ctrl->text( Text );
 	return Ctrl;
 }
@@ -498,8 +498,8 @@ UITooltip * UITheme::createTooltip( UIControl * TooltipOf, UIControl * Parent, c
 	TooltipParams.setSize( Size );
 	TooltipParams.Flags = Flags;
 	UITooltip * Ctrl = eeNew( UITooltip, ( TooltipParams, TooltipOf ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -513,8 +513,8 @@ UITextEdit * UITheme::createTextEdit( UIControl * Parent, const Sizei& Size, con
 	TextEditParams.VScrollBar = VScrollBar;
 	TextEditParams.WordWrap = WordWrap;
 	UITextEdit * Ctrl = eeNew( UITextEdit, ( TextEditParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -527,8 +527,8 @@ UITextInput * UITheme::createTextInput( UIControl * Parent, const Sizei& Size, c
 	TextInputParams.SupportFreeEditing = SupportFreeEditing;
 	TextInputParams.MaxLength = MaxLength;
 	UITextInput * Ctrl = eeNew( UITextInput, ( TextInputParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -541,8 +541,8 @@ UITextInputPassword * UITheme::createTextInputPassword( UIControl * Parent, cons
 	TextInputParams.SupportFreeEditing = SupportFreeEditing;
 	TextInputParams.MaxLength = MaxLength;
 	UITextInputPassword * Ctrl = eeNew( UITextInputPassword, ( TextInputParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -555,8 +555,8 @@ UISpinBox * UITheme::createSpinBox( UIControl * Parent, const Sizei& Size, const
 	SpinBoxParams.DefaultValue = DefaultValue;
 	SpinBoxParams.AllowDotsInNumbers = AllowDotsInNumbers;
 	UISpinBox * Ctrl = eeNew( UISpinBox, ( SpinBoxParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -568,8 +568,8 @@ UIScrollBar * UITheme::createScrollBar( UIControl * Parent, const Sizei& Size, c
 	ScrollBarParams.Flags = Flags;
 	ScrollBarParams.VerticalScrollBar = VerticalScrollBar;
 	UIScrollBar * Ctrl = eeNew( UIScrollBar, ( ScrollBarParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -583,8 +583,8 @@ UISlider * UITheme::createSlider( UIControl * Parent, const Sizei& Size, const V
 	SliderParams.AllowHalfSliderOut = AllowHalfSliderOut;
 	SliderParams.ExpandBackground = ExpandBackground;
 	UISlider * Ctrl = eeNew( UISlider, ( SliderParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -598,8 +598,8 @@ UIComboBox * UITheme::createComboBox( UIControl * Parent, const Sizei& Size, con
 	ComboParams.PopUpToMainControl = PopUpToMainControl;
 	ComboParams.ListBox = ListBox;
 	UIComboBox * Ctrl = eeNew( UIComboBox, ( ComboParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -613,8 +613,8 @@ UIDropDownList * UITheme::createDropDownList( UIControl * Parent, const Sizei& S
 	DDLParams.PopUpToMainControl = PopUpToMainControl;
 	DDLParams.ListBox = ListBox;
 	UIDropDownList * Ctrl = eeNew( UIDropDownList, ( DDLParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -630,8 +630,8 @@ UIListBox * UITheme::createListBox( UIControl * Parent, const Sizei& Size, const
 	LBParams.HScrollMode = HScrollMode;
 	LBParams.PaddingContainer = PaddingContainer;
 	UIListBox * Ctrl = eeNew( UIListBox, ( LBParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -648,8 +648,8 @@ UIMenu * UITheme::createMenu( UIControl * Parent, const Sizei& Size, const Vecto
 	MenuParams.MinRightMargin = MinRightMargin;
 
 	UIMenu * Ctrl = eeNew( UIMenu, ( MenuParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -679,8 +679,8 @@ UIProgressBar * UITheme::createProgressBar( UIControl * Parent, const Sizei& Siz
 	PBParams.FillerMargin = FillerMargin;
 
 	UIProgressBar * Ctrl = eeNew( UIProgressBar, ( PBParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -698,8 +698,8 @@ UIPushButton * UITheme::createPushButton( UIControl * Parent, const Sizei& Size,
 		ButtonParams.SetIcon( Icon );
 
 	UIPushButton * Ctrl = eeNew( UIPushButton, ( ButtonParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -717,8 +717,8 @@ UISelectButton * UITheme::createSelectButton( UIControl * Parent, const Sizei& S
 		ButtonParams.SetIcon( Icon );
 
 	UISelectButton * Ctrl = eeNew( UISelectButton, ( ButtonParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -734,8 +734,8 @@ UIWinMenu * UITheme::createWinMenu( UIControl * Parent, const Sizei& Size, const
 	WinMenuParams.FirstButtonMargin = FirstButtonMargin;
 
 	UIWinMenu * Ctrl = eeNew( UIWinMenu, ( WinMenuParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 
@@ -796,8 +796,8 @@ UITabWidget * UITheme::createTabWidget( UIControl *Parent, const Sizei &Size, co
 	TabWidgetParams.MaxTabWidth = MaxTabWidth;
 
 	UITabWidget * Ctrl = eeNew( UITabWidget, ( TabWidgetParams ) );
-	Ctrl->visible( true );
-	Ctrl->enabled( true );
+	Ctrl->setVisible( true );
+	Ctrl->setEnabled( true );
 	return Ctrl;
 }
 

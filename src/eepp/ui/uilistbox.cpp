@@ -41,8 +41,8 @@ UIListBox::UIListBox( UIListBox::CreateParams& Params ) :
 	CParams.Size = Sizei( mSize.getWidth() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.getHeight() - mPaddingContainer.Top - mPaddingContainer.Bottom );
 	CParams.Flags = Params.Flags;
 	mContainer = eeNew( UIItemContainer<UIListBox>, ( CParams ) );
-	mContainer->visible( true );
-	mContainer->enabled( true );
+	mContainer->setVisible( true );
+	mContainer->setEnabled( true );
 
 	if ( mFlags & UI_CLIP_ENABLE )
 		mFlags &= ~UI_CLIP_ENABLE;
@@ -55,19 +55,19 @@ UIListBox::UIListBox( UIListBox::CreateParams& Params ) :
 	ScrollBarP.VerticalScrollBar = true;
 	mVScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
 
-	ScrollBarP.Size = Sizei( mSize.getWidth() - mVScrollBar->size().getWidth(), 15 );
+	ScrollBarP.Size = Sizei( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 15 );
 	ScrollBarP.setPos( 0, mSize.getHeight() - 15 );
 	ScrollBarP.VerticalScrollBar = false;
 	mHScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
 
 	if ( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) {
-		mHScrollBar->visible( true );
-		mHScrollBar->enabled( true );
+		mHScrollBar->setVisible( true );
+		mHScrollBar->setEnabled( true );
 	}
 
 	if ( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode ) {
-		mVScrollBar->visible( true );
-		mVScrollBar->enabled( true );
+		mVScrollBar->setVisible( true );
+		mVScrollBar->setEnabled( true );
 	}
 
 	mVScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIListBox::onScrollValueChange ) );
@@ -129,8 +129,8 @@ Uint32 UIListBox::addListBoxItem( UIListBoxItem * Item ) {
 	mItems.push_back( Item );
 	mTexts.push_back( Item->text() );
 
-	if ( Item->parent() != mContainer )
-		Item->parent( mContainer );
+	if ( Item->getParent() != mContainer )
+		Item->setParent( mContainer );
 
 
 	updateScroll();
@@ -279,16 +279,16 @@ void UIListBox::onHScrollValueChange( const UIEvent * Event ) {
 }
 
 void UIListBox::onSizeChange() {
-	mVScrollBar->position( mSize.getWidth() - mVScrollBar->size().getWidth() + mVScrollPadding.Left, mVScrollPadding.Top );
-	mVScrollBar->size( mVScrollBar->size().getWidth() + mVScrollPadding.Right, mSize.getHeight() + mVScrollPadding.Bottom );
+	mVScrollBar->setPosition( mSize.getWidth() - mVScrollBar->getSize().getWidth() + mVScrollPadding.Left, mVScrollPadding.Top );
+	mVScrollBar->setSize( mVScrollBar->getSize().getWidth() + mVScrollPadding.Right, mSize.getHeight() + mVScrollPadding.Bottom );
 
-	mHScrollBar->position( mHScrollPadding.Left, mSize.getHeight() - mHScrollBar->size().getHeight() + mHScrollPadding.Top );
-	mHScrollBar->size( mSize.getWidth() - mVScrollBar->size().getWidth() + mHScrollPadding.Right, mHScrollBar->size().getHeight() + mHScrollPadding.Bottom );
+	mHScrollBar->setPosition( mHScrollPadding.Left, mSize.getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
+	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
 
 	if ( mContainer->isClipped() && UI_SCROLLBAR_AUTO == mHScrollMode ) {
-		if ( (Int32)mMaxTextWidth <= mContainer->size().getWidth() ) {
-			mHScrollBar->visible( false );
-			mHScrollBar->enabled( false );
+		if ( (Int32)mMaxTextWidth <= mContainer->getSize().getWidth() ) {
+			mHScrollBar->setVisible( false );
+			mHScrollBar->setEnabled( false );
 			mHScrollInit = 0;
 		}
 	}
@@ -353,27 +353,27 @@ void UIListBox::itemUpdateSize( UIListBoxItem * Item ) {
 		if ( width > (Int32)mMaxTextWidth )
 			mMaxTextWidth = (Uint32)width;
 
-		if ( !mHScrollBar->visible() ) {
-			if ( width < mContainer->size().getWidth() )
-				width = mContainer->size().getWidth();
+		if ( !mHScrollBar->isVisible() ) {
+			if ( width < mContainer->getSize().getWidth() )
+				width = mContainer->getSize().getWidth();
 
 			if ( ( mItemsNotVisible > 0 && UI_SCROLLBAR_AUTO == mVScrollMode ) || UI_SCROLLBAR_ALWAYS_ON == mVScrollMode )
-				width -= mVScrollBar->size().getWidth();
+				width -= mVScrollBar->getSize().getWidth();
 		} else {
 			width = mMaxTextWidth;
 		}
 
-		Item->size( width, mRowHeight );
+		Item->setSize( width, mRowHeight );
 	}
 }
 
 void UIListBox::containerResize() {
-	mContainer->position( mPaddingContainer.Left, mPaddingContainer.Top );
+	mContainer->setPosition( mPaddingContainer.Left, mPaddingContainer.Top );
 
-	if( mHScrollBar->visible() )
-		mContainer->size( mSize.getWidth() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.getHeight() - mPaddingContainer.Top - mHScrollBar->size().getHeight() );
+	if( mHScrollBar->isVisible() )
+		mContainer->setSize( mSize.getWidth() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.getHeight() - mPaddingContainer.Top - mHScrollBar->getSize().getHeight() );
 	else
-		mContainer->size( mSize.getWidth() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.getHeight() - mPaddingContainer.Bottom - mPaddingContainer.Top );
+		mContainer->setSize( mSize.getWidth() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.getHeight() - mPaddingContainer.Bottom - mPaddingContainer.Top );
 }
 
 void UIListBox::createItemIndex( const Uint32& i ) {
@@ -401,54 +401,54 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 	Int32 ItemPos, ItemPosMax;
 	Int32 tHLastScroll 		= mHScrollInit;
 
-	Uint32 VisibleItems 	= mContainer->size().getHeight() / mRowHeight;
+	Uint32 VisibleItems 	= mContainer->getSize().getHeight() / mRowHeight;
 	mItemsNotVisible 		= (Int32)mItems.size() - VisibleItems;
 
-	bool wasScrollVisible 	= mVScrollBar->visible();
-	bool wasHScrollVisible 	= mHScrollBar->visible();
+	bool wasScrollVisible 	= mVScrollBar->isVisible();
+	bool wasHScrollVisible 	= mHScrollBar->isVisible();
 
 	bool Clipped 			= 0 != mContainer->isClipped();
 
 	if ( mItemsNotVisible <= 0 ) {
 		if ( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode ) {
-			mVScrollBar->visible( true );
-			mVScrollBar->enabled( true );
+			mVScrollBar->setVisible( true );
+			mVScrollBar->setEnabled( true );
 		} else {
-			mVScrollBar->visible( false );
-			mVScrollBar->enabled( false );
+			mVScrollBar->setVisible( false );
+			mVScrollBar->setEnabled( false );
 		}
 	} else {
 		if ( UI_SCROLLBAR_AUTO == mVScrollMode || UI_SCROLLBAR_ALWAYS_ON == mVScrollMode ) {
-			mVScrollBar->visible( true );
-			mVScrollBar->enabled( true );
+			mVScrollBar->setVisible( true );
+			mVScrollBar->setEnabled( true );
 		} else {
-			mVScrollBar->visible( false );
-			mVScrollBar->enabled( false );
+			mVScrollBar->setVisible( false );
+			mVScrollBar->setEnabled( false );
 		}
 	}
 
 	if ( Clipped && ( UI_SCROLLBAR_AUTO == mHScrollMode || UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) ) {
-		if ( ( mVScrollBar->visible() && mContainer->size().getWidth() - mVScrollBar->size().getWidth() < (Int32)mMaxTextWidth ) ||
-			( !mVScrollBar->visible() && mContainer->size().getWidth() < (Int32)mMaxTextWidth ) ) {
-				mHScrollBar->visible( true );
-				mHScrollBar->enabled( true );
+		if ( ( mVScrollBar->isVisible() && mContainer->getSize().getWidth() - mVScrollBar->getSize().getWidth() < (Int32)mMaxTextWidth ) ||
+			( !mVScrollBar->isVisible() && mContainer->getSize().getWidth() < (Int32)mMaxTextWidth ) ) {
+				mHScrollBar->setVisible( true );
+				mHScrollBar->setEnabled( true );
 
 				containerResize();
 
 				Int32 ScrollH;
 
-				if ( mVScrollBar->visible() )
-					ScrollH = mMaxTextWidth - mContainer->size().getWidth() + mVScrollBar->size().getWidth();
+				if ( mVScrollBar->isVisible() )
+					ScrollH = mMaxTextWidth - mContainer->getSize().getWidth() + mVScrollBar->getSize().getWidth();
 				else
-					ScrollH = mMaxTextWidth - mContainer->size().getWidth();
+					ScrollH = mMaxTextWidth - mContainer->getSize().getWidth();
 
 				Int32 HScrolleable = (Uint32)( mHScrollBar->value() * ScrollH );
 
 				mHScrollInit = -HScrolleable;
 		} else {
 			if ( UI_SCROLLBAR_AUTO == mHScrollMode ) {
-				mHScrollBar->visible( false );
-				mHScrollBar->enabled( false );
+				mHScrollBar->setVisible( false );
+				mHScrollBar->setEnabled( false );
 
 				mHScrollInit = 0;
 
@@ -457,11 +457,11 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 		}
 	}
 
-	VisibleItems 			= mContainer->size().getHeight() / mRowHeight;
+	VisibleItems 			= mContainer->getSize().getHeight() / mRowHeight;
 	mItemsNotVisible 		= (Uint32)mItems.size() - VisibleItems;
-	Int32 Scrolleable 		= (Int32)mItems.size() * mRowHeight - mContainer->size().getHeight();
-	bool isScrollVisible 	= mVScrollBar->visible();
-	bool isHScrollVisible 	= mHScrollBar->visible();
+	Int32 Scrolleable 		= (Int32)mItems.size() * mRowHeight - mContainer->getSize().getHeight();
+	bool isScrollVisible 	= mVScrollBar->isVisible();
+	bool isHScrollVisible 	= mHScrollBar->isVisible();
 	bool FirstVisible 		= false;
 
 	if ( Clipped && mSmoothScroll ) {
@@ -470,7 +470,7 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 		else
 			RelPos		= 0;
 
-		RelPosMax 	= RelPos + mContainer->size().getHeight() + mRowHeight;
+		RelPosMax 	= RelPos + mContainer->getSize().getHeight() + mRowHeight;
 
 		if ( ( FromScrollChange && eeINDEX_NOT_FOUND != mLastPos && mLastPos == RelPos ) && ( tHLastScroll == mHScrollInit ) )
 			return;
@@ -488,9 +488,9 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 					Item = mItems[i];
 				}
 
-				Item->position( mHScrollInit, ItemPos - RelPos );
-				Item->enabled( true );
-				Item->visible( true );
+				Item->setPosition( mHScrollInit, ItemPos - RelPos );
+				Item->setEnabled( true );
+				Item->setVisible( true );
 
 				if ( !FirstVisible ) {
 					mVisibleFirst = i;
@@ -532,12 +532,12 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 				}
 
 				if ( Clipped )
-					Item->position( mHScrollInit, ItemPos );
+					Item->setPosition( mHScrollInit, ItemPos );
 				else
-					Item->position( 0, ItemPos );
+					Item->setPosition( 0, ItemPos );
 
-				Item->enabled( true );
-				Item->visible( true );
+				Item->setEnabled( true );
+				Item->setVisible( true );
 
 				if ( !FirstVisible ) {
 					mVisibleFirst = i;
@@ -558,12 +558,12 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 	}
 	
 	
-	if ( mHScrollBar->visible() && !mVScrollBar->visible() ) {
-		mHScrollBar->position( mHScrollPadding.Left, mSize.getHeight() - mHScrollBar->size().getHeight() + mHScrollPadding.Top );
-		mHScrollBar->size( mSize.getWidth() + mHScrollPadding.Right, mHScrollBar->size().getHeight() + mHScrollPadding.Bottom );
+	if ( mHScrollBar->isVisible() && !mVScrollBar->isVisible() ) {
+		mHScrollBar->setPosition( mHScrollPadding.Left, mSize.getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
+		mHScrollBar->setSize( mSize.getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
 	} else {
-		mHScrollBar->position( mHScrollPadding.Left, mSize.getHeight() - mHScrollBar->size().getHeight() + mHScrollPadding.Top );
-		mHScrollBar->size( mSize.getWidth() - mVScrollBar->size().getWidth() + mHScrollPadding.Right, mHScrollBar->size().getHeight() + mHScrollPadding.Bottom );
+		mHScrollBar->setPosition( mHScrollPadding.Left, mSize.getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
+		mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
 	}
 }
 
@@ -795,7 +795,7 @@ void UIListBox::selectPrev() {
 			if ( NULL == mItems[ SelIndex ] )
 				createItemIndex( SelIndex );
 
-			if ( mItems[ SelIndex ]->position().y < 0 ) {
+			if ( mItems[ SelIndex ]->getPosition().y < 0 ) {
 				mVScrollBar->value( (Float)( SelIndex * mRowHeight ) / (Float)( ( mItems.size() - 1 ) * mRowHeight ) );
 
 				mItems[ SelIndex ]->setFocus();
@@ -817,7 +817,7 @@ void UIListBox::selectNext() {
 			if ( NULL == mItems[ SelIndex ] )
 				createItemIndex( SelIndex );
 
-			if ( mItems[ SelIndex ]->position().y + (Int32)rowHeight() > mContainer->size().getHeight() ) {
+			if ( mItems[ SelIndex ]->getPosition().y + (Int32)rowHeight() > mContainer->getSize().getHeight() ) {
 				mVScrollBar->value( (Float)( SelIndex * mRowHeight ) / (Float)( ( mItems.size() - 1 ) * mRowHeight ) );
 
 				mItems[ SelIndex ]->setFocus();
@@ -894,12 +894,12 @@ void UIListBox::onAlphaChange() {
 	if ( mItems.size() ) {
 		for ( Uint32 i = mVisibleFirst; i <= mVisibleLast; i++ ) {
 			if ( NULL != mItems[i] )
-				mItems[i]->alpha( mAlpha );
+				mItems[i]->setAlpha( mAlpha );
 		}
 	}
 
-	mVScrollBar->alpha( mAlpha );
-	mHScrollBar->alpha( mAlpha );
+	mVScrollBar->setAlpha( mAlpha );
+	mHScrollBar->setAlpha( mAlpha );
 }
 
 void UIListBox::verticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
@@ -919,12 +919,12 @@ void UIListBox::horizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 		mHScrollMode = Mode;
 
 		if ( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) {
-			mHScrollBar->visible( true );
-			mHScrollBar->enabled( true );
+			mHScrollBar->setVisible( true );
+			mHScrollBar->setEnabled( true );
 			containerResize();
 		} else if ( UI_SCROLLBAR_ALWAYS_OFF == mHScrollMode ) {
-			mHScrollBar->visible( false );
-			mHScrollBar->enabled( false );
+			mHScrollBar->setVisible( false );
+			mHScrollBar->setEnabled( false );
 			containerResize();
 		}
 

@@ -56,8 +56,8 @@ void UIComboBox::createButton() {
 	Params.Size = Sizei( btnWidth, mSize.getHeight() );
 	Params.setPos( mSize.getWidth() - btnWidth, 0 );
 	mButton = eeNew( UIControl, ( Params ) );
-	mButton->visible( true );
-	mButton->enabled( true );
+	mButton->setVisible( true );
+	mButton->setEnabled( true );
 	mButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIComboBox::onButtonClick ) );
 	mButton->addEventListener( UIEvent::EventMouseEnter, cb::Make1( this, &UIComboBox::onButtonEnter ) );
 	mButton->addEventListener( UIEvent::EventMouseExit, cb::Make1( this, &UIComboBox::onButtonExit ) );
@@ -83,7 +83,7 @@ Uint32 UIComboBox::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTON_LMASK ) {
 		UITextInput::onMouseClick( Pos, Flags );
 
-		if ( mListBox->visible() ) {
+		if ( mListBox->isVisible() ) {
 			hide();
 		}
 	}

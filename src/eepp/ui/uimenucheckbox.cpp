@@ -65,7 +65,7 @@ void UIMenuCheckBox::active( const bool& active ) {
 	}
 
 	if ( oActive != active ) {
-		UIMenu * Menu = reinterpret_cast<UIMenu*> ( parent() );
+		UIMenu * Menu = reinterpret_cast<UIMenu*> ( getParent() );
 
 		if ( !Menu->CheckControlSize( this ) ) {
 			if ( NULL != icon()->subTexture() ) {
@@ -84,7 +84,7 @@ void UIMenuCheckBox::switchActive() {
 Uint32 UIMenuCheckBox::onMouseUp( const Vector2i &Pos, const Uint32 Flags ) {
 	UIMenuItem::onMouseUp( Pos, Flags );
 
-	if ( parent()->visible() && ( Flags & EE_BUTTONS_LRM ) )
+	if ( getParent()->isVisible() && ( Flags & EE_BUTTONS_LRM ) )
 		switchActive();
 
 	return 1;

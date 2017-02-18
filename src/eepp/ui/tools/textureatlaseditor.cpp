@@ -39,85 +39,85 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	Uint32 Flags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_CLIP_ENABLE | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED;
 	Uint32 InitY = 230;
 
-	createTextBox( Vector2i( mUIContainer->size().getWidth() - 205, 30 ), "SubTexture List:" );
+	createTextBox( Vector2i( mUIContainer->getSize().getWidth() - 205, 30 ), "SubTexture List:" );
 
-	mSubTextureList = mTheme->createListBox( mUIContainer, Sizei( 200, 156 ), Vector2i( mUIContainer->size().getWidth() - 205, 50 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	mSubTextureList->size( mSubTextureList->size().getWidth(), mSubTextureList->rowHeight() * 9 + mSubTextureList->paddingContainer().Top + mSubTextureList->paddingContainer().Bottom );
+	mSubTextureList = mTheme->createListBox( mUIContainer, Sizei( 200, 156 ), Vector2i( mUIContainer->getSize().getWidth() - 205, 50 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
+	mSubTextureList->setSize( mSubTextureList->getSize().getWidth(), mSubTextureList->rowHeight() * 9 + mSubTextureList->paddingContainer().Top + mSubTextureList->paddingContainer().Bottom );
 	mSubTextureList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &TextureAtlasEditor::onSubTextureChange ) );
 
-	createTextBox( Vector2i( mUIContainer->size().getWidth() - 205, InitY ), "Current SubTexture:" );
+	createTextBox( Vector2i( mUIContainer->getSize().getWidth() - 205, InitY ), "Current SubTexture:" );
 
 	InitY +=30;
 
 	mSpinOffX = mTheme->createSpinBox( mUIContainer, Sizei( 100, 22 ), Vector2i(), Flags, 0, false );
 	mSpinOffX->minValue( -32000 );
 	mSpinOffX->maxValue( 32000 );
-	mSpinOffX->position( mUIContainer->size().getWidth() - mSpinOffX->size().getWidth() - 10, InitY );
+	mSpinOffX->setPosition( mUIContainer->getSize().getWidth() - mSpinOffX->getSize().getWidth() - 10, InitY );
 	mSpinOffX->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onOffXChange ) );
 
 	TxtBox = createTextBox( Vector2i(), "Offset X:" );
-	TxtBox->position( mSpinOffX->position().x - 10 - TxtBox->size().getWidth(), InitY );
+	TxtBox->setPosition( mSpinOffX->getPosition().x - 10 - TxtBox->getSize().getWidth(), InitY );
 
 	InitY +=30;
 
 	mSpinOffY = mTheme->createSpinBox( mUIContainer, Sizei( 100, 22 ), Vector2i(), Flags, 0, false );
 	mSpinOffY->minValue( -32000 );
 	mSpinOffY->maxValue( 32000 );
-	mSpinOffY->position( mUIContainer->size().getWidth() - mSpinOffY->size().getWidth() - 10, InitY );
+	mSpinOffY->setPosition( mUIContainer->getSize().getWidth() - mSpinOffY->getSize().getWidth() - 10, InitY );
 	mSpinOffY->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onOffYChange ) );
 	TxtBox = createTextBox( Vector2i(), "Offset Y:" );
-	TxtBox->position( mSpinOffY->position().x - 10 - TxtBox->size().getWidth(), InitY );
+	TxtBox->setPosition( mSpinOffY->getPosition().x - 10 - TxtBox->getSize().getWidth(), InitY );
 
 	InitY +=30;
 
 	mSpinDestW = mTheme->createSpinBox( mUIContainer, Sizei( 100, 22 ), Vector2i(), Flags, 0, false );
 	mSpinDestW->maxValue( 32000 );
-	mSpinDestW->position( mUIContainer->size().getWidth() - mSpinDestW->size().getWidth() - 10, InitY );
+	mSpinDestW->setPosition( mUIContainer->getSize().getWidth() - mSpinDestW->getSize().getWidth() - 10, InitY );
 	mSpinDestW->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onDestWChange ) );
 	TxtBox = createTextBox( Vector2i(), "Dest. Width:" );
-	TxtBox->position( mSpinDestW->position().x - 10 - TxtBox->size().getWidth(), InitY );
+	TxtBox->setPosition( mSpinDestW->getPosition().x - 10 - TxtBox->getSize().getWidth(), InitY );
 
 	InitY +=30;
 
 	mSpinDestH = mTheme->createSpinBox( mUIContainer, Sizei( 100, 22 ), Vector2i(), Flags, 0, false );
 	mSpinDestH->maxValue( 32000 );
-	mSpinDestH->position( mUIContainer->size().getWidth() - mSpinDestH->size().getWidth() - 10, InitY );
+	mSpinDestH->setPosition( mUIContainer->getSize().getWidth() - mSpinDestH->getSize().getWidth() - 10, InitY );
 	mSpinDestH->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onDestHChange ) );
 	TxtBox = createTextBox( Vector2i(), "Dest. Height:" );
-	TxtBox->position( mSpinDestH->position().x - 10 - TxtBox->size().getWidth(), InitY );
+	TxtBox->setPosition( mSpinDestH->getPosition().x - 10 - TxtBox->getSize().getWidth(), InitY );
 
 	Uint32 ButFlags = UI_CONTROL_ALIGN_CENTER | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_AUTO_SIZE;
 
-	UIPushButton * ResetButton = mTheme->createPushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( mUIContainer->size().getWidth() - 120 - 5 , mSpinDestH->position().y + mSpinDestH->size().getHeight() + 8 ), ButFlags );
+	UIPushButton * ResetButton = mTheme->createPushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( mUIContainer->getSize().getWidth() - 120 - 5 , mSpinDestH->getPosition().y + mSpinDestH->getSize().getHeight() + 8 ), ButFlags );
 	ResetButton->text( "Reset Dest. Size" );
 	ResetButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onResetDestSize ) );
 
-	UIPushButton * ResetOffsetButton = mTheme->createPushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( ResetButton->position().x, ResetButton->position().y + ResetButton->size().getHeight() + 8 ), ButFlags );
+	UIPushButton * ResetOffsetButton = mTheme->createPushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( ResetButton->getPosition().x, ResetButton->getPosition().y + ResetButton->getSize().getHeight() + 8 ), ButFlags );
 	ResetOffsetButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onResetOffset ) );
 	ResetOffsetButton->text( "Reset Offset" );
 
-	UIPushButton * CenterOffsetButton = mTheme->createPushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( ResetOffsetButton->position().x, ResetOffsetButton->position().y + ResetOffsetButton->size().getHeight() + 8 ), ButFlags );
+	UIPushButton * CenterOffsetButton = mTheme->createPushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( ResetOffsetButton->getPosition().x, ResetOffsetButton->getPosition().y + ResetOffsetButton->getSize().getHeight() + 8 ), ButFlags );
 	CenterOffsetButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onCenterOffset ) );
 	CenterOffsetButton->text( "Centered Offset" );
 
-	UIPushButton * HBOffsetButton = mTheme->createPushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( CenterOffsetButton->position().x, CenterOffsetButton->position().y + CenterOffsetButton->size().getHeight() + 8 ), ButFlags );
+	UIPushButton * HBOffsetButton = mTheme->createPushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( CenterOffsetButton->getPosition().x, CenterOffsetButton->getPosition().y + CenterOffsetButton->getSize().getHeight() + 8 ), ButFlags );
 	HBOffsetButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onHBOffset ) );
 	HBOffsetButton->text( "Half-Bottom Offset" );
 
-	mUIWindow->title( "Texture Atlas Editor" );
+	mUIWindow->setTitle( "Texture Atlas Editor" );
 	mUIWindow->addEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
 
 	createTGEditor();
 
 	UIComplexControl::CreateParams Params;
 	Params.setParent( mUIContainer );
-	Params.setPos( 0, mWinMenu->size().getHeight() );
+	Params.setPos( 0, mWinMenu->getSize().getHeight() );
 	Params.setSize( 800, 600 );
-	Params.Background.color( ColorA( 0, 0, 0, 50 ) );
+	Params.Background.setColor( ColorA( 0, 0, 0, 50 ) );
 	Params.Flags |= UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT | UI_CLIP_ENABLE | UI_BORDER | UI_FILL_BACKGROUND;
 	mSubTextureEditor = eeNew( TextureAtlasSubTextureEditor, ( Params, this ) );
-	mSubTextureEditor->visible( true );
-	mSubTextureEditor->enabled( true );
+	mSubTextureEditor->setVisible( true );
+	mSubTextureEditor->setEnabled( true );
 
 	mTGEU = eeNew( UITGEUpdater, ( UITGEUpdater::CreateParams(), this ) );
 }
@@ -242,7 +242,7 @@ void TextureAtlasEditor::fileMenuClick( const UIEvent * Event ) {
 	} else if ( "Open..." == txt ) {
 		UICommonDialog * TGDialog = mTheme->createCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, Sizei(), 255, UI_CDL_DEFAULT_FLAGS, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
 
-		TGDialog->title( "Open Texture Atlas" );
+		TGDialog->setTitle( "Open Texture Atlas" );
 		TGDialog->addEventListener( UIEvent::EventOpenFile, cb::Make1( this, &TextureAtlasEditor::openTextureAtlas ) );
 		TGDialog->center();
 		TGDialog->show();
@@ -254,7 +254,7 @@ void TextureAtlasEditor::fileMenuClick( const UIEvent * Event ) {
 		if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->isLoaded()  ) {
 			UIMessageBox * MsgBox = mTheme->createMessageBox( MSGBOX_OKCANCEL, "Do you really want to close the current texture atlas?\nAll changes will be lost." );
 			MsgBox->addEventListener( UIEvent::EventMsgBoxConfirmClick, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasClose ) );
-			MsgBox->title( "Close Texture Atlas?" );
+			MsgBox->setTitle( "Close Texture Atlas?" );
 			MsgBox->center();
 			MsgBox->show();
 		} else {

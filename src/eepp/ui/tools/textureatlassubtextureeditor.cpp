@@ -22,9 +22,9 @@ TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( const UIComplexContr
 	DragParams.setParent( this );
 	DragParams.setSize( 500000, 500000 );
 	mDrag = eeNew( UIDragable, ( DragParams ) );
-	mDrag->enabled( true );
-	mDrag->visible( true );
-	mDrag->dragEnable( true );
+	mDrag->setEnabled( true );
+	mDrag->setVisible( true );
+	mDrag->setDragEnabled( true );
 
 	getCenter();
 }
@@ -42,12 +42,12 @@ void TextureAtlasSubTextureEditor::draw() {
 }
 
 void TextureAtlasSubTextureEditor::update() {
-	Vector2i Pos = mDrag->position();
+	Vector2i Pos = mDrag->getPosition();
 
 	UIComplexControl::update();
 
-	if ( NULL != mGfx->subTexture() && mDrag->dragEnable() && mDrag->dragging() && Pos != mDrag->position() ) {
-		Vector2i Diff = -( Pos - mDrag->position() );
+	if ( NULL != mGfx->subTexture() && mDrag->isDragEnabled() && mDrag->isDragging() && Pos != mDrag->getPosition() ) {
+		Vector2i Diff = -( Pos - mDrag->getPosition() );
 
 		mGfx->subTexture()->setOffset( Vector2i( mGfx->subTexture()->getOffset().x + Diff.x, mGfx->subTexture()->getOffset().y + Diff.y ) );
 
@@ -55,7 +55,7 @@ void TextureAtlasSubTextureEditor::update() {
 		mEditor->spinOffY()->value( mGfx->subTexture()->getOffset().y );
 	}
 
-	mGfx->position( mUICenter );
+	mGfx->setPosition( mUICenter );
 }
 
 void TextureAtlasSubTextureEditor::onSizeChange() {

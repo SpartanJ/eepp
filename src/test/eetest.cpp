@@ -223,13 +223,13 @@ void EETest::OnWinMouseUp( const UIEvent * Event ) {
 	if ( Event->getControl()->isType( UI_TYPE_WINDOW ) ) {
 		CtrlAnim = reinterpret_cast<UIControlAnim*>( Event->getControl() );
 	} else {
-		CtrlAnim = reinterpret_cast<UIControlAnim*>( Event->getControl()->parent() );
+		CtrlAnim = reinterpret_cast<UIControlAnim*>( Event->getControl()->getParent() );
 	}
 
 	if ( MEvent->getFlags() & EE_BUTTON_WUMASK ) {
-		CtrlAnim->scale( CtrlAnim->scale() + 0.1f );
+		CtrlAnim->setScale( CtrlAnim->getScale() + 0.1f );
 	} else if ( MEvent->getFlags() & EE_BUTTON_WDMASK ) {
-		CtrlAnim->scale( CtrlAnim->scale() - 0.1f );
+		CtrlAnim->setScale( CtrlAnim->getScale() - 0.1f );
 	}
 }
 
@@ -239,7 +239,7 @@ void EETest::OnShowMenu( const UIEvent * Event ) {
 	if ( Menu->show() ) {
 		Vector2i Pos = Vector2i( (Int32)PB->getPolygon()[0].x, (Int32)PB->getPolygon()[0].y - 2 );
 		UIMenu::FixMenuPos( Pos , Menu );
-		Menu->position( Pos );
+		Menu->setPosition( Pos );
 	}
 }
 
@@ -269,39 +269,39 @@ void EETest::CreateUI() {
 
 	UIControl::CreateParams Params( UIManager::instance()->mainControl(), Vector2i(0,0), Sizei( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
-	Params.Border.width( 2 );
-	Params.Border.color( 0x979797CC );
-	Params.Background.colors( ColorA( 0xEDEDED66 ), ColorA( 0xEDEDEDCC ), ColorA( 0xEDEDEDCC ), ColorA( 0xEDEDED66 ) );
+	Params.Border.setWidth( 2 );
+	Params.Border.setColor( 0x979797CC );
+	Params.Background.setColors( ColorA( 0xEDEDED66 ), ColorA( 0xEDEDEDCC ), ColorA( 0xEDEDEDCC ), ColorA( 0xEDEDED66 ) );
 
 	UIWindow * tWin = mTheme->createWindow( NULL, Sizei( 530, 405 ), Vector2i( 320, 240 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DRAGABLE_CONTAINER , Sizei( 530, 405 ), 200 );
 	C = tWin->getContainer();
 
-	tWin->title( "Controls Test" );
+	tWin->setTitle( "Controls Test" );
 
 	tWin->addEventListener( UIEvent::EventMouseUp, cb::Make1( this, &EETest::OnWinMouseUp ) );
 	C->addEventListener( UIEvent::EventMouseUp, cb::Make1( this, &EETest::OnWinMouseUp ) );
 
 	Params.Flags &= ~UI_CLIP_ENABLE;
-	Params.Background.corners(0);
-	Params.Background.colors( ColorA( 0x00FF0077 ), ColorA( 0x00CC0077 ), ColorA( 0x00CC0077 ), ColorA( 0x00FF0077 ) );
+	Params.Background.setCorners(0);
+	Params.Background.setColors( ColorA( 0x00FF0077 ), ColorA( 0x00CC0077 ), ColorA( 0x00CC0077 ), ColorA( 0x00FF0077 ) );
 	Params.setParent( C );
 	Params.Size = Sizei( 50, 50 );
 	UITest * Child = eeNew( UITest, ( Params ) );
-	Child->position( 240, 130 );
-	Child->visible( true );
-	Child->enabled( true );
+	Child->setPosition( 240, 130 );
+	Child->setVisible( true );
+	Child->setEnabled( true );
 	Child->startRotation( 0.f, 360.f, Milliseconds( 5000.f ) );
-	Child->rotationInterpolation()->setLoop( true );
+	Child->getRotationInterpolation()->setLoop( true );
 
-	Params.Background.colors( ColorA( 0xFFFF0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xFFFF0077 ) );
+	Params.Background.setColors( ColorA( 0xFFFF0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xFFFF0077 ) );
 	Params.setParent( Child );
 	Params.Size = Sizei( 25, 25 );
 	UITest * Child2 = eeNew( UITest, ( Params ) );
-	Child2->position( 15, 15 );
-	Child2->visible( true );
-	Child2->enabled( true );
+	Child2->setPosition( 15, 15 );
+	Child2->setVisible( true );
+	Child2->setEnabled( true );
 	Child2->startRotation( 0.f, 360.f, Milliseconds( 5000.f ) );
-	Child2->rotationInterpolation()->setLoop( true );
+	Child2->getRotationInterpolation()->setLoop( true );
 
 	mTheme->createSprite( eeNew( Sprite, ( "gn" ) ), C, Sizei(), Vector2i( 160, 100 ) );
 
@@ -311,8 +311,8 @@ void EETest::CreateUI() {
 	TextParams.Size = Sizei( 320, 240 );
 	TextParams.Flags = UI_VALIGN_TOP | UI_HALIGN_RIGHT;
 	UITextBox * Text = eeNew( UITextBox, ( TextParams ) );
-	Text->visible( true );
-	Text->enabled( false );
+	Text->setVisible( true );
+	Text->setEnabled( false );
 	Text->text( "Turn around\nJust Turn Around\nAround!" );
 
 	UITextInput::CreateParams InputParams;
@@ -321,8 +321,8 @@ void EETest::CreateUI() {
 	InputParams.Size = Sizei( 200, 22 );
 	InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED;
 	UITextInput * Input = eeNew( UITextInput, ( InputParams ) );
-	Input->visible( true );
-	Input->enabled( true );
+	Input->setVisible( true );
+	Input->setEnabled( true );
 
 	UIPushButton::CreateParams ButtonParams;
 	ButtonParams.setParent( C );
@@ -331,52 +331,52 @@ void EETest::CreateUI() {
 	ButtonParams.Size = Sizei( 90, 0 );
 	ButtonParams.SetIcon( mTheme->getIconByName( "ok" ) );
 	UIPushButton * Button = eeNew( UIPushButton, ( ButtonParams ) );
-	Button->visible( true );
-	Button->enabled( true );
+	Button->setVisible( true );
+	Button->setEnabled( true );
 	Button->text( "Click Me" );
 	Button->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::ButtonClick ) );
-	Button->tooltipText( "Click and see what happens..." );
+	Button->setTooltipText( "Click and see what happens..." );
 
 	TextParams.setPos( 130, 20 );
 	TextParams.Size = Sizei( 80, 22 );
 	TextParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT;
 	UICheckBox * Checkbox = eeNew( UICheckBox, ( TextParams ) );
-	Checkbox->visible( true );
+	Checkbox->setVisible( true );
 	Checkbox->text( "Check Me" );
-	Checkbox->enabled( true );
+	Checkbox->setEnabled( true );
 
 	TextParams.setPos( 130, 40 );
 	UIRadioButton * RadioButton = eeNew( UIRadioButton, ( TextParams ) );
-	RadioButton->visible( true );
+	RadioButton->setVisible( true );
 	RadioButton->text( "Check Me" );
-	RadioButton->enabled( true );
+	RadioButton->setEnabled( true );
 
 	TextParams.setPos( 130, 60 );
 	RadioButton = eeNew( UIRadioButton, ( TextParams ) );
-	RadioButton->visible( true );
+	RadioButton->setVisible( true );
 	RadioButton->text( "Check Me 2" );
-	RadioButton->enabled( true );
+	RadioButton->setEnabled( true );
 
 	UISlider::CreateParams SliderParams;
 	SliderParams.setParent( C );
 	SliderParams.setPos( 220, 80 );
 	SliderParams.Size = Sizei( 80, 24 );
 	mSlider = eeNew( UISlider, ( SliderParams ) );
-	mSlider->visible( true );
-	mSlider->enabled( true );
+	mSlider->setVisible( true );
+	mSlider->setEnabled( true );
 	mSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &EETest::OnSliderValueChange ) );
 
 	SliderParams.setPos( 40, 110 );
 	SliderParams.Size = Sizei( 24, 80 );
 	SliderParams.VerticalSlider = true;
 	mSlider = eeNew( UISlider, ( SliderParams ) );
-	mSlider->visible( true );
-	mSlider->enabled( true );
+	mSlider->setVisible( true );
+	mSlider->setEnabled( true );
 
 	SliderParams.setPos( 60, 110 );
 	mSlider = eeNew( UISlider, ( SliderParams ) );
-	mSlider->visible( true );
-	mSlider->enabled( true );
+	mSlider->setVisible( true );
+	mSlider->setEnabled( true );
 
 	UISpinBox::CreateParams SpinBoxParams;
 	SpinBoxParams.setParent( C );
@@ -385,8 +385,8 @@ void EETest::CreateUI() {
 	SpinBoxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE;
 	SpinBoxParams.AllowDotsInNumbers = true;
 	UISpinBox * mSpinBox = eeNew( UISpinBox, ( SpinBoxParams ) );
-	mSpinBox->visible( true );
-	mSpinBox->enabled( true );
+	mSpinBox->setVisible( true );
+	mSpinBox->setEnabled( true );
 
 	UIScrollBar::CreateParams ScrollBarP;
 	ScrollBarP.setParent( C );
@@ -395,15 +395,15 @@ void EETest::CreateUI() {
 	ScrollBarP.Flags = UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar = true;
 	mScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
-	mScrollBar->visible( true );
-	mScrollBar->enabled( true );
+	mScrollBar->setVisible( true );
+	mScrollBar->setEnabled( true );
 	mScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &EETest::OnValueChange ) );
 
 	mProgressBar = mTheme->createProgressBar( C, Sizei( 200, 20 ), Vector2i( 20, 190 ) );
 
 	TextParams.setPos( 20, 5 );
 	mTextBoxValue = eeNew( UITextBox, ( TextParams ) );
-	mTextBoxValue->visible( true );
+	mTextBoxValue->setVisible( true );
 	OnValueChange( NULL );
 
 	UIListBox::CreateParams LBParams;
@@ -412,8 +412,8 @@ void EETest::CreateUI() {
 	LBParams.Size = Sizei( 200, 240-16 );
 	LBParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TOUCH_DRAG_ENABLED; // | UI_MULTI_SELECT
 	mListBox = eeNew( UIListBox, ( LBParams ) );
-	mListBox->visible( true );
-	mListBox->enabled( true );
+	mListBox->setVisible( true );
+	mListBox->setEnabled( true );
 
 	Int32 wsize = 100;
 
@@ -432,8 +432,8 @@ void EETest::CreateUI() {
 	DDLParams.Size = Sizei( 100, 21 );
 	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_TOUCH_DRAG_ENABLED;
 	UIDropDownList * mDropDownList = eeNew( UIDropDownList, ( DDLParams ) );
-	mDropDownList->visible( true );
-	mDropDownList->enabled( true );
+	mDropDownList->setVisible( true );
+	mDropDownList->setEnabled( true );
 
 	std::vector<String> combostrs;
 	combostrs.push_back( "Plane" );
@@ -454,8 +454,8 @@ void EETest::CreateUI() {
 	ComboParams.Size = Sizei( 100, 1 );
 	ComboParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_AUTO_SIZE | UI_TOUCH_DRAG_ENABLED | UI_TEXT_SELECTION_ENABLED;
 	UIComboBox * mComboBox = eeNew( UIComboBox, ( ComboParams ) );
-	mComboBox->visible( true );
-	mComboBox->enabled( true );
+	mComboBox->setVisible( true );
+	mComboBox->setEnabled( true );
 
 	mComboBox->getListBox()->addListBoxItems( combostrs );
 	mComboBox->getListBox()->setSelected( 0 );
@@ -510,8 +510,8 @@ void EETest::CreateUI() {
 	TEParams.Size	= Sizei( 315, 130 );
 	TEParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_TEXT_SELECTION_ENABLED;
 	UITextEdit * TextEdit = eeNew( UITextEdit, ( TEParams ) );
-	TextEdit->visible( true );
-	TextEdit->enabled( true );
+	TextEdit->setVisible( true );
+	TextEdit->setEnabled( true );
 	TextEdit->text( mBuda );
 
 	UIGenericGrid::CreateParams GridParams;
@@ -522,8 +522,8 @@ void EETest::CreateUI() {
 	GridParams.RowHeight = 24;
 	GridParams.CollumnsCount = 3;
 	UIGenericGrid * mGenGrid = eeNew( UIGenericGrid, ( GridParams ) );
-	mGenGrid->visible( true );
-	mGenGrid->enabled( true );
+	mGenGrid->setVisible( true );
+	mGenGrid->setEnabled( true );
 
 	UIGridCell::CreateParams CellParams;
 	CellParams.setParent( mGenGrid->getContainer() );
@@ -571,7 +571,7 @@ void EETest::CreateUI() {
 	mShowMenu->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::OnShowMenu ) );
 #endif
 
-	C = reinterpret_cast<UIControlAnim*> ( C->parent() );
+	C = reinterpret_cast<UIControlAnim*> ( C->getParent() );
 
 	eePRINTL( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 }
@@ -631,7 +631,7 @@ void EETest::CreateDecoratedWindow() {
 	mUIWindow = mTheme->createWindow( NULL, Sizei( 530, 350 ), Vector2i( 200, 50 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, Sizei( 100, 200 ) );
 
 	mUIWindow->addEventListener( UIEvent::EventOnWindowCloseClick, cb::Make1( this, &EETest::CloseClick ) );
-	mUIWindow->title( "Test Window" );
+	mUIWindow->setTitle( "Test Window" );
 	mUIWindow->toBack();
 
 	UIPushButton * Button = mTheme->createPushButton( mUIWindow->getContainer(), Sizei( 510, 22 ), Vector2i( 10, 28 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_ANCHOR_RIGHT );
@@ -689,17 +689,17 @@ void EETest::ItemClick( const UIEvent * Event ) {
 	} else if ( "Show Window" == txt ) {
 		UIMenuCheckBox * Chk = reinterpret_cast<UIMenuCheckBox*> ( Event->getControl() );
 
-		C->visible( true );
-		C->enabled( true );
+		C->setVisible( true );
+		C->setEnabled( true );
 
 		if ( Chk->active() ) {
-			if ( C->scale() == 1.f ) C->scale( 0.f );
-			C->startScaleAnim( C->scale(), Vector2f::One, Milliseconds( 500.f ), Ease::SineOut );
-			C->startAlphaAnim( C->alpha(), 255.f, Milliseconds( 500.f ) );
+			if ( C->getScale() == 1.f ) C->setScale( 0.f );
+			C->startScaleAnim( C->getScale(), Vector2f::One, Milliseconds( 500.f ), Ease::SineOut );
+			C->startAlphaAnim( C->getAlpha(), 255.f, Milliseconds( 500.f ) );
 			C->startRotation( 0, 360, Milliseconds( 500.f ), Ease::SineOut );
 		} else {
-			C->startScaleAnim( C->scale(), Vector2f::Zero, Milliseconds( 500.f ), Ease::SineIn );
-			C->startAlphaAnim( C->alpha(), 0.f, Milliseconds( 500.f ) );
+			C->startScaleAnim( C->getScale(), Vector2f::Zero, Milliseconds( 500.f ), Ease::SineIn );
+			C->startAlphaAnim( C->getAlpha(), 0.f, Milliseconds( 500.f ) );
 			C->startRotation( 0, 360, Milliseconds( 500.f ), Ease::SineIn );
 		}
 	} else if ( "Show Window 2" == txt ) {
@@ -732,7 +732,7 @@ void EETest::OnValueChange( const UIEvent * Event ) {
 void EETest::OnSliderValueChange( const UIEvent * Event ) {
 	UISlider * slider = static_cast<UISlider*>( Event->getControl() );
 
-	C->angle( slider->value() * 90.f );
+	C->setRotation( slider->value() * 90.f );
 }
 
 void EETest::QuitClick( const UIEvent * Event ) {
@@ -747,7 +747,7 @@ void EETest::ShowMenu() {
 	if ( Menu->show() ) {
 		Vector2i Pos = mWindow->getInput()->getMousePos();
 		UIMenu::FixMenuPos( Pos , Menu );
-		Menu->position( Pos );
+		Menu->setPosition( Pos );
 	}
 }
 
@@ -767,8 +767,8 @@ void EETest::ButtonClick( const UIEvent * Event ) {
 		GfxParams.setParent( UIManager::instance()->mainControl() );
 		GfxParams.SubTexture = mTheme->getIconByName( "ok" );
 		UIGfx * Gfx = eeNew( UIGfx, ( GfxParams ) );
-		Gfx->visible( true );
-		Gfx->enabled( false );
+		Gfx->setVisible( true );
+		Gfx->setEnabled( false );
 
 		Gfx->startRotation( 0, 2500, Milliseconds( 2500 ) );
 		Gfx->startMovement( Vector2i( Math::randi( 0, mWindow->getWidth() ), -64 ), Vector2i( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ), Milliseconds( 2500 ) );
@@ -779,7 +779,7 @@ void EETest::ButtonClick( const UIEvent * Event ) {
 }
 
 void EETest::SetScreen( Uint32 num ) {
-	if ( NULL != mTerrainBut ) mTerrainBut->visible( 1 == num );
+	if ( NULL != mTerrainBut ) mTerrainBut->setVisible( 1 == num );
 
 	if ( 0 == num || 5 == num )
 		mWindow->setBackColor( RGB( 240, 240, 240 ) );

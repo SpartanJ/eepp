@@ -19,8 +19,8 @@ UIMenuSubMenu::UIMenuSubMenu( UIMenuSubMenu::CreateParams& Params ) :
 	GfxParams.SubTexture = NULL;
 	GfxParams.Flags = UI_AUTO_SIZE;
 	mArrow = eeNew( UIGfx, ( GfxParams ) );
-	mArrow->visible( true );
-	mArrow->enabled( false );
+	mArrow->setVisible( true );
+	mArrow->setEnabled( false );
 
 	subMenu( Params.SubMenu );
 
@@ -49,7 +49,7 @@ void UIMenuSubMenu::setTheme( UITheme * Theme ) {
 void UIMenuSubMenu::onSizeChange() {
 	UIMenuItem::onSizeChange();
 
-	mArrow->position( parent()->size().getWidth() - mArrow->size().getWidth() - 1, 0 );
+	mArrow->setPosition( getParent()->getSize().getWidth() - mArrow->getSize().getWidth() - 1, 0 );
 	mArrow->centerVertical();
 }
 
@@ -87,7 +87,7 @@ UIMenu * UIMenuSubMenu::subMenu() const {
 Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
 	UIMenuItem::onMouseMove( Pos, Flags );
 
-	if ( NULL != mSubMenu && !mSubMenu->visible() ) {
+	if ( NULL != mSubMenu && !mSubMenu->isVisible() ) {
 		mTimeOver += UIManager::instance()->elapsed().asMilliseconds();
 
 		if ( mTimeOver >= mMaxTime ) {
@@ -99,18 +99,18 @@ Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
 }
 
 void UIMenuSubMenu::showSubMenu() {
-	mSubMenu->parent( parent()->parent() );
+	mSubMenu->setParent( getParent()->getParent() );
 
-	Vector2i Pos = this->position();
+	Vector2i Pos = this->getPosition();
 	controlToScreen( Pos );
-	Pos.x += mSize.getWidth() + reinterpret_cast<UIMenu*> ( parent() )->Padding().Right;
+	Pos.x += mSize.getWidth() + reinterpret_cast<UIMenu*> ( getParent() )->Padding().Right;
 
-	UIMenu::FixMenuPos( Pos, mSubMenu, reinterpret_cast<UIMenu*> ( parent() ), this );
+	UIMenu::FixMenuPos( Pos, mSubMenu, reinterpret_cast<UIMenu*> ( getParent() ), this );
 
-	mSubMenu->parent()->worldToControl( Pos );
-	mSubMenu->position( Pos );
+	mSubMenu->getParent()->worldToControl( Pos );
+	mSubMenu->setPosition( Pos );
 
-	if ( !mSubMenu->visible() ) {
+	if ( !mSubMenu->isVisible() ) {
 		mSubMenu->show();
 	}
 }
@@ -130,19 +130,19 @@ UIGfx * UIMenuSubMenu::getArrow() const {
 void UIMenuSubMenu::onSubMenuFocusLoss( const UIEvent * Event ) {
 	UIControl * FocusCtrl = UIManager::instance()->focusControl();
 
-	if ( parent() != FocusCtrl && !parent()->isParentOf( FocusCtrl ) ) {
-		parent()->setFocus();
+	if ( getParent() != FocusCtrl && !getParent()->isParentOf( FocusCtrl ) ) {
+		getParent()->setFocus();
 	}
 
 	if ( mSubMenu->mClickHide ) {
-		reinterpret_cast<UIMenu *>( parent() )->hide();
+		reinterpret_cast<UIMenu *>( getParent() )->hide();
 
 		mSubMenu->mClickHide = false;
 	}
 }
 
 void UIMenuSubMenu::onHideByClick( const UIEvent * Event ) {
-	UIMenu * tMenu = reinterpret_cast<UIMenu *>( parent() );
+	UIMenu * tMenu = reinterpret_cast<UIMenu *>( getParent() );
 
 	tMenu->mClickHide = true;
 	tMenu->hide();

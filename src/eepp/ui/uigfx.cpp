@@ -10,8 +10,8 @@ UIGfx::UIGfx( const UIGfx::CreateParams& Params ) :
 	mRender( Params.SubTextureRender ),
 	mAlignOffset(0,0)
 {
-	if ( NULL != mSubTexture && ( ( flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) )
-		size( mSubTexture->getSize() );
+	if ( NULL != mSubTexture && ( ( getFlags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) )
+		setSize( mSubTexture->getSize() );
 
 	mColor.Alpha = (Uint8)mAlpha;
 
@@ -39,9 +39,9 @@ void UIGfx::subTexture( Graphics::SubTexture * subTexture ) {
 void UIGfx::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mSubTexture ) {
-			size( mSubTexture->getSize() );
+			setSize( mSubTexture->getSize() );
 		} else {
-			size( Sizei( 0, 0 ) );
+			setSize( Sizei( 0, 0 ) );
 		}
 	}
 }
@@ -96,11 +96,11 @@ void UIGfx::draw() {
 }
 
 void UIGfx::drawSubTexture() {
-	mSubTexture->draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, mColor, 0.f, Vector2f::One, blend(), mRender );
+	mSubTexture->draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, mColor, 0.f, Vector2f::One, getBlendMode(), mRender );
 }
 
-void UIGfx::alpha( const Float& alpha ) {
-	UIControlAnim::alpha( alpha );
+void UIGfx::setAlpha( const Float& alpha ) {
+	UIControlAnim::setAlpha( alpha );
 	mColor.Alpha = (Uint8)alpha;
 }
 
@@ -114,7 +114,7 @@ const ColorA& UIGfx::color() const {
 
 void UIGfx::color( const ColorA& col ) {
 	mColor = col;
-	alpha( col.a() );
+	setAlpha( col.a() );
 }
 
 const EE_RENDER_MODE& UIGfx::renderMode() const {

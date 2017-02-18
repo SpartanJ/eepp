@@ -25,7 +25,7 @@ class EE_API UIComboBox : public UIDropDownList {
 
 		void onButtonExit( const UIEvent * Event );
 
-		Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
+		Uint32 onMouseClick( const Vector2i& setPosition, const Uint32 flags );
 
 		void createButton();
 

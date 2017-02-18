@@ -11,10 +11,10 @@ UIBackground::UIBackground() :
 
 UIBackground::UIBackground( const UIBackground& Back ) :
 	mBlendMode( ALPHA_NORMAL ),
-	mCorners( Back.corners() )
+	mCorners( Back.getCorners() )
 {
 	UIBackground * b = const_cast<UIBackground *> ( &Back ); // cheating
-	mColor = b->colors();
+	mColor = b->getColors();
 }
 
 UIBackground::UIBackground( const ColorA& Color, const unsigned int& Corners, const EE_BLEND_MODE& BlendMode ) :
@@ -28,22 +28,22 @@ UIBackground::UIBackground( const ColorA& TopLeftColor, const ColorA& BottomLeft
 	mBlendMode( BlendMode ),
 	mCorners( Corners )
 {
-	colors( TopLeftColor, BottomLeftColor, BottomRightColor, TopRightColor );
+	setColors( TopLeftColor, BottomLeftColor, BottomRightColor, TopRightColor );
 }
 
-ColorA& UIBackground::color( const unsigned int& index  ) {
+ColorA& UIBackground::getColor( const unsigned int& index  ) {
 	if ( index < mColor.size() )
 		return	mColor[ index ];
 
 	return mColor[ 0 ];
 }
 
-void UIBackground::colorsTo( const ColorA& Color ) {
+void UIBackground::setColorsTo( const ColorA& Color ) {
 	for ( unsigned int i = 0; i < mColor.size(); i++ )
 		mColor[i] = Color;
 }
 
-void UIBackground::colors( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor ) {
+void UIBackground::setColors( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor ) {
 	mColor[0] = TopLeftColor;
 
 	if ( mColor.size() < 2 )
@@ -62,27 +62,27 @@ void UIBackground::colors( const ColorA& TopLeftColor, const ColorA& BottomLeftC
 		mColor[3] = TopRightColor;
 }
 
-const std::vector<ColorA>& UIBackground::colors() {
+const std::vector<ColorA>& UIBackground::getColors() {
 	return	mColor;
 }
 
-void UIBackground::color( const ColorA& Col ) {
+void UIBackground::setColor( const ColorA& Col ) {
 	mColor[0] = Col;
 }
 
-const EE_BLEND_MODE& UIBackground::blend() const {
+const EE_BLEND_MODE& UIBackground::getBlendMode() const {
 	return mBlendMode;
 }
 
-void UIBackground::blend( const EE_BLEND_MODE& blend ) {
+void UIBackground::setBlendMode( const EE_BLEND_MODE& blend ) {
 	mBlendMode = blend;
 }
 
-const unsigned int& UIBackground::corners() const {
+const unsigned int& UIBackground::getCorners() const {
 	return mCorners;
 }
 
-void UIBackground::corners( const unsigned int& corners ) {
+void UIBackground::setCorners( const unsigned int& corners ) {
 	mCorners = corners;
 }
 

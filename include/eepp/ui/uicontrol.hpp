@@ -90,35 +90,35 @@ class EE_API UIControl {
 
 		bool isInside( const Vector2i& position ) const;
 
-		void position( const Vector2i& position );
+		void setPosition( const Vector2i& position );
 
-		void position( const Int32& x, const Int32& y );
+		void setPosition( const Int32& x, const Int32& y );
 
-		const Vector2i& position() const;
+		const Vector2i& getPosition() const;
 
-		virtual void size( const Sizei& size );
+		virtual void setSize( const Sizei& size );
 
-		void size( const Int32& Width, const Int32& Height );
+		void setSize( const Int32& Width, const Int32& Height );
 
-		const Sizei& size();
+		const Sizei& getSize();
 
 		Recti getRect() const;
 
-		void visible( const bool& visible );
+		void setVisible( const bool& visible );
 
-		bool visible() const;
+		bool isVisible() const;
 
 		bool isHided() const;
 
-		void enabled( const bool& enabled );
+		void setEnabled( const bool& enabled );
 
-		bool enabled() const;
+		bool isEnabled() const;
 
 		bool isDisabled() const;
 
-		UIControl * parent() const;
+		UIControl * getParent() const;
 
-		void parent( UIControl * parent );
+		void setParent( UIControl * parent );
 
 		void centerHorizontal();
 
@@ -132,48 +132,48 @@ class EE_API UIControl {
 
 		virtual void update();
 
-		Uint32 hAlign() const;
+		Uint32 getHorizontalAlign() const;
 
-		void hAlign( Uint32 halign );
+		void setHorizontalAlign( Uint32 halign );
 
-		Uint32 vAlign() const;
+		Uint32 getVerticalAlign() const;
 
-		void vAlign( Uint32 valign );
+		void setVerticalAlign( Uint32 valign );
 
-		void fillBackground( bool enabled );
+		void setBackgroundFillEnabled( bool enabled );
 
-		void border( bool enabled );
+		void setBorderEnabled( bool enabled );
 
-		UIControl * nextGet() const;
+		UIControl * getNextControl() const;
 
-		UIControl * prevGet() const;
+		UIControl * getPrevControl() const;
 
-		UIControl * nextGetLoop() const;
+		UIControl * getNextControlLoop() const;
 
-		void data( const UintPtr& data );
+		void setData( const UintPtr& data );
 
-		const UintPtr& data() const;
+		const UintPtr& getData() const;
 
 		UIControl * childGetAt( Vector2i CtrlPos, unsigned int RecursiveLevel = 0 );
 
-		const Uint32& flags() const;
+		const Uint32& getFlags() const;
 
-		void flags( const Uint32& flags );
+		void setFlags( const Uint32& flags );
 
-		void blend( const EE_BLEND_MODE& blend );
+		void setBlendMode( const EE_BLEND_MODE& blend );
 
-		EE_BLEND_MODE blend();
+		EE_BLEND_MODE getBlendMode();
 
 		void toFront();
 
 		void toBack();
 
-		void toPos( const Uint32& position );
+		void toPosition( const Uint32& position );
 
-		const Uint32& controlFlags() const;
+		const Uint32& getControlFlags() const;
 
 		/** Use it at your own risk */
-		void controlFlags( const Uint32& flags );
+		void setControlFlags( const Uint32& flags );
 
 		Uint32 isAnimated();
 
@@ -187,9 +187,9 @@ class EE_API UIControl {
 
 		void removeEventListener( const Uint32& CallbackId );
 
-		UIBackground * background();
+		UIBackground * getBackground();
 
-		UIBorder * border();
+		UIBorder * getBorder();
 
 		void setThemeByName( const std::string& Theme );
 
@@ -205,15 +205,15 @@ class EE_API UIControl {
 
 		virtual void setSkin( const UISkin& Skin );
 
-		UIControl * childGetFirst() const;
+		UIControl * getFirstChild() const;
 
-		UIControl * childGetLast() const;
+		UIControl * getLastChild() const;
 
 		bool isMouseOver();
 
 		bool isMouseOverMeOrChilds();
 
-		Polygon2f &getPolygon();
+		Polygon2f& getPolygon();
 
 		const Vector2f& getPolygonCenter() const;
 
@@ -233,7 +233,7 @@ class EE_API UIControl {
 
 		Sizei getSkinSize();
 
-		UIControl * nextComplexControl();
+		UIControl * getNextComplexControl();
 
 		void applyDefaultTheme();
 

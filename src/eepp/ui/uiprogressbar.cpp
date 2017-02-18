@@ -19,7 +19,7 @@ UIProgressBar::UIProgressBar( const UIProgressBar::CreateParams& Params ) :
 	TxtBoxParams.setPos( 0, 0 );
 
 	mTextBox = eeNew( UITextBox, ( TxtBoxParams ) );
-	mTextBox->enabled( false );
+	mTextBox->setEnabled( false );
 
 	updateTextBox();
 
@@ -55,7 +55,7 @@ void UIProgressBar::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "progressbar" );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		size( mSize.x, getSkinSize().getHeight() );
+		setSize( mSize.x, getSkinSize().getHeight() );
 	}
 
 	UISkin * tSkin = Theme->getByName( Theme->abbr() + "_progressbar_filler" );
@@ -170,8 +170,8 @@ const bool& UIProgressBar::displayPercent() const {
 }
 
 void UIProgressBar::updateTextBox() {
-	mTextBox->visible( mDisplayPercent );
-	mTextBox->size( mSize );
+	mTextBox->setVisible( mDisplayPercent );
+	mTextBox->setSize( mSize );
 	mTextBox->text( String::toStr( (Int32)( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
 }
 
@@ -182,7 +182,7 @@ UITextBox * UIProgressBar::getTextBox() const {
 void UIProgressBar::onAlphaChange() {
 	UIControlAnim::onAlphaChange();
 	
-	mTextBox->alpha( mAlpha );
+	mTextBox->setAlpha( mAlpha );
 }
 
 }}

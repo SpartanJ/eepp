@@ -55,7 +55,7 @@ class EE_API UITooltip : public UIControlAnim {
 
 		virtual void draw();
 
-		virtual void alpha( const Float& alpha );
+		virtual void setAlpha( const Float& alpha );
 
 		Graphics::Font * font() const;
 

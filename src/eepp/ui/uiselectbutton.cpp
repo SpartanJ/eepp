@@ -50,8 +50,8 @@ void UISelectButton::onStateChange() {
 		}
 	}
 
-	if ( parent()->getType() & UI_TYPE_WINMENU ) {
-		UIWinMenu * Menu = reinterpret_cast<UIWinMenu*> ( parent() );
+	if ( getParent()->getType() & UI_TYPE_WINMENU ) {
+		UIWinMenu * Menu = reinterpret_cast<UIWinMenu*> ( getParent() );
 
 		if ( mSkinState->getState() == UISkinState::StateSelected ) {
 			getTextBox()->color( Menu->fontSelectedColor() );

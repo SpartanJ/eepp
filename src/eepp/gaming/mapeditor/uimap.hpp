@@ -133,7 +133,7 @@ class EE_API UIMap : public UIComplexControl {
 
 		virtual Uint32 onMessage( const UIMessage * Msg );
 
-		virtual Uint32 onMouseMove( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseMove( const Vector2i& getPosition, const Uint32 flags );
 
 		virtual void onSizeChange();
 
@@ -141,7 +141,7 @@ class EE_API UIMap : public UIComplexControl {
 
 		virtual void onAlphaChange();
 
-		virtual Uint32 OnDrag( const Vector2i& position );
+		virtual Uint32 OnDrag( const Vector2i& getPosition );
 
 		void ObjItemClick( const UIEvent * Event );
 

@@ -32,7 +32,7 @@ UIItemContainer<TContainer>::~UIItemContainer()
 
 template<class TContainer>
 void UIItemContainer<TContainer>::update() {
-	TContainer * tParent = reinterpret_cast<TContainer*> ( parent() );
+	TContainer * tParent = reinterpret_cast<TContainer*> ( getParent() );
 
 	if ( tParent->mItems.size() ) {
 		for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ ) {
@@ -44,7 +44,7 @@ void UIItemContainer<TContainer>::update() {
 
 template<class TContainer>
 void UIItemContainer<TContainer>::drawChilds() {
-	TContainer * tParent = reinterpret_cast<TContainer*> ( parent() );
+	TContainer * tParent = reinterpret_cast<TContainer*> ( getParent() );
 
 	if ( tParent->mItems.size() ) {
 		for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ )
@@ -55,7 +55,7 @@ void UIItemContainer<TContainer>::drawChilds() {
 
 template<class TContainer>
 UIControl * UIItemContainer<TContainer>::overFind( const Vector2f& Point ) {
-	TContainer * tParent = reinterpret_cast<TContainer*> ( parent() );
+	TContainer * tParent = reinterpret_cast<TContainer*> ( getParent() );
 
 	UIControl * pOver = NULL;
 

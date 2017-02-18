@@ -60,8 +60,8 @@ void UITextBox::draw() {
 				);
 			}
 
-			mTextCache->setFlags( flags() );
-			mTextCache->draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, Vector2f::One, 0.f, blend() );
+			mTextCache->setFlags( getFlags() );
+			mTextCache->draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, Vector2f::One, 0.f, getBlendMode() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				UIManager::instance()->clipDisable();
@@ -113,7 +113,7 @@ void UITextBox::color( const ColorA& color ) {
 	mFontColor = color;
 	mTextCache->setColor( color );
 
-	alpha( color.a() );
+	setAlpha( color.a() );
 }
 
 const ColorA& UITextBox::shadowColor() const {
@@ -133,8 +133,8 @@ void UITextBox::selectionBackColor( const ColorA& color ) {
 	mFontSelectionBackColor = color;
 }
 
-void UITextBox::alpha( const Float& alpha ) {
-	UIControlAnim::alpha( alpha );
+void UITextBox::setAlpha( const Float& alpha ) {
+	UIControlAnim::setAlpha( alpha );
 	mFontColor.Alpha = (Uint8)alpha;
 	mFontShadowColor.Alpha = (Uint8)alpha;
 
@@ -163,7 +163,7 @@ void UITextBox::autoSize() {
 }
 
 void UITextBox::autoAlign() {
-	switch ( FontHAlignGet( flags() ) ) {
+	switch ( FontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mAlignOffset.x = (Float)( (Int32)( mSize.x - mTextCache->getTextWidth() ) / 2 );
 			break;
@@ -175,7 +175,7 @@ void UITextBox::autoAlign() {
 			break;
 	}
 
-	switch ( FontVAlignGet( flags() ) ) {
+	switch ( FontVAlignGet( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
 			mAlignOffset.y = (Float)( ( (Int32)( mSize.y - mTextCache->getTextHeight() ) ) / 2 ) - 1;
 			break;

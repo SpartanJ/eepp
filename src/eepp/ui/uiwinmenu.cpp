@@ -20,7 +20,7 @@ UIWinMenu::UIWinMenu( const UIWinMenu::CreateParams& Params ) :
 	if ( !(mFlags & UI_ANCHOR_RIGHT) )
 		mFlags |= UI_ANCHOR_RIGHT;
 
-	size( parent()->size().getWidth(), mMenuHeight );
+	setSize( getParent()->getSize().getWidth(), mMenuHeight );
 
 	updateAnchorsDistances();
 
@@ -56,13 +56,13 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 
 	UISelectButton * Button = eeNew( UISelectButton, ( ButtonParams ) );
 	Button->text( ButtonText );
-	Button->visible( true );
-	Button->enabled( true );
+	Button->setVisible( true );
+	Button->setEnabled( true );
 	Button->setThemeControl( mSkinState->getSkin()->theme(), "winmenubutton" );
 
-	Menu->visible( false );
-	Menu->enabled( false );
-	Menu->parent( parent() );
+	Menu->setVisible( false );
+	Menu->setEnabled( false );
+	Menu->setParent( getParent() );
 	Menu->addEventListener( UIEvent::EventOnComplexControlFocusLoss, cb::Make1( this, &UIWinMenu::onMenuFocusLoss ) );
 
 	mButtons.push_back( std::make_pair( Button, Menu ) );
@@ -80,7 +80,7 @@ void UIWinMenu::setTheme( UITheme * Theme ) {
 	if ( 0 == mMenuHeight && NULL != getSkin() && NULL != getSkin()->getSubTexture( UISkinState::StateNormal ) ) {
 		mMenuHeight = getSkin()->getSubTexture( UISkinState::StateNormal )->getSize().getHeight();
 
-		size( parent()->size().getWidth(), mMenuHeight );
+		setSize( getParent()->getSize().getWidth(), mMenuHeight );
 
 		updateAnchorsDistances();
 	}
@@ -137,7 +137,7 @@ void UIWinMenu::refreshButtons() {
 					if ( NULL != tSubTexture2 )  {
 						th = tSubTexture2->getSize().getHeight();
 
-						switch ( VAlignGet( flags() ) ) {
+						switch ( VAlignGet( getFlags() ) ) {
 							case UI_VALIGN_CENTER:
 								ycenter = ( h - th ) / 2;
 								break;
@@ -158,10 +158,10 @@ void UIWinMenu::refreshButtons() {
 		UISelectButton * pbut	= it->first;
 		UITextBox * tbox		= pbut->getTextBox();
 
-		pbut->size( tbox->getTextWidth() + mButtonMargin, size().getHeight() );
-		pbut->position( xpos, ycenter );
+		pbut->setSize( tbox->getTextWidth() + mButtonMargin, getSize().getHeight() );
+		pbut->setPosition( xpos, ycenter );
 
-		xpos += pbut->size().getWidth() + mMarginBetweenButtons;
+		xpos += pbut->getSize().getWidth() + mMarginBetweenButtons;
 	}
 }
 
@@ -174,8 +174,8 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 				UISelectButton * tbut	= reinterpret_cast<UISelectButton*> ( Msg->getSender() );
 				UIPopUpMenu * tpop		= getMenuFromButton( tbut );
 
-				Vector2i pos( tbut->position().x, tbut->position().y + tbut->size().getHeight() );
-				tpop->position( pos );
+				Vector2i pos( tbut->getPosition().x, tbut->getPosition().y + tbut->getSize().getHeight() );
+				tpop->setPosition( pos );
 
 				if ( Msg->getMsg() == UIMessage::MsgMouseEnter ) {
 					if ( NULL != mCurrentMenu ) {
