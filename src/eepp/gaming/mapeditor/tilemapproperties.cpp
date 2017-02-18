@@ -32,7 +32,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 
 		UIComplexControl::CreateParams ComParams;
 		ComParams.setParent( mUIWindow->getContainer() );
-		ComParams.setPos( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
+		ComParams.setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 		ComParams.setSize( 64, 64 );
 		ComParams.Background.setColor( mMap->BaseColor() );
 		ComParams.Border.setColor( ColorA( 100, 100, 100, 200 ) );
@@ -82,7 +82,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 
 	UIGenericGrid::CreateParams GridParams;
 	GridParams.setParent( mUIWindow->getContainer() );
-	GridParams.setPos( 50, TxtBox->getPosition().y + 20 );
+	GridParams.setPosition( 50, TxtBox->getPosition().y + 20 );
 	GridParams.setSize( 400, 400 - DiffIfLights );
 	GridParams.Flags = UI_AUTO_PADDING;
 	GridParams.RowHeight = 24;
@@ -125,7 +125,7 @@ void TileMapProperties::OnRedChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
 	Col.Red = (Uint8)mUIRedSlider->value();
 	mUIBaseColor->getBackground()->setColor( Col );
-	mUIRedTxt->text( String::toStr( (Int32)mUIRedSlider->value() ) );
+	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->value() ) );
 
 	ColorA MapCol = mMap->BaseColor();
 	MapCol.Red = Col.Red;
@@ -136,7 +136,7 @@ void TileMapProperties::OnGreenChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
 	Col.Green = (Uint8)mUIGreenSlider->value();
 	mUIBaseColor->getBackground()->setColor( Col );
-	mUIGreenTxt->text( String::toStr( (Uint32)mUIGreenSlider->value() ) );
+	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->value() ) );
 
 	ColorA MapCol = mMap->BaseColor();
 	MapCol.Green = Col.Green;
@@ -147,7 +147,7 @@ void TileMapProperties::OnBlueChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
 	Col.Blue = (Uint8)mUIBlueSlider->value();
 	mUIBaseColor->getBackground()->setColor( Col );
-	mUIBlueTxt->text( String::toStr( (Uint32)mUIBlueSlider->value() ) );
+	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->value() ) );
 
 	ColorA MapCol = mMap->BaseColor();
 	MapCol.Blue = Col.Blue;
@@ -164,8 +164,8 @@ void TileMapProperties::SaveProperties() {
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->cell( 1 ) );
 		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->cell( 3 ) );
 
-		if ( NULL != Cell && Input->text().size() && Input2->text().size() ) {
-			mMap->AddProperty(	Input->text(), Input2->text() );
+		if ( NULL != Cell && Input->getText().size() && Input2->getText().size() ) {
+			mMap->AddProperty(	Input->getText(), Input2->getText() );
 		}
 	}
 }
@@ -179,8 +179,8 @@ void TileMapProperties::LoadProperties() {
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->cell( 1 ) );
 		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->cell( 3 ) );
 
-		Input->text( it->first );
-		Input2->text( it->second );
+		Input->setText( it->first );
+		Input2->setText( it->second );
 
 		mGenGrid->add( Cell );
 	}

@@ -14,7 +14,7 @@ UIRadioButton::UIRadioButton( const UITextBox::CreateParams& Params ) :
 	UIControlAnim::CreateParams ButtonParams( Params );
 
 	ButtonParams.setParent( this );
-	ButtonParams.setPos( Vector2i( 0, 0 ) );
+	ButtonParams.setPosition( Vector2i( 0, 0 ) );
 	ButtonParams.Size = Sizei( 16, 16 );
 
 	mActiveButton 	= eeNew( UIControlAnim, ( ButtonParams ) );
@@ -25,7 +25,7 @@ UIRadioButton::UIRadioButton( const UITextBox::CreateParams& Params ) :
 	mInactiveButton->setVisible( true );
 	mInactiveButton->setEnabled( true );
 
-	padding( Recti(0,0,0,0) );
+	setPadding( Recti(0,0,0,0) );
 
 	autoActivate();
 
@@ -72,7 +72,7 @@ void UIRadioButton::setTheme( UITheme * Theme ) {
 		}
 	}
 
-	padding( Recti(0,0,0,0) );
+	setPadding( Recti(0,0,0,0) );
 }
 
 void UIRadioButton::autoSize() {
@@ -205,7 +205,7 @@ const bool& UIRadioButton::isActive() const {
 	return active();
 }
 
-void UIRadioButton::padding( const Recti& padding ) {
+void UIRadioButton::setPadding( const Recti& padding ) {
 	mPadding = padding;
 	mPadding.Left = mPadding.Left + mActiveButton->getSize().getWidth();
 }

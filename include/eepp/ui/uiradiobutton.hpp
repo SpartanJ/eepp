@@ -24,7 +24,7 @@ class EE_API UIRadioButton : public UITextBox {
 
 		const bool& active() const;
 
-		virtual void padding( const Recti& padding );
+		virtual void setPadding( const Recti& padding );
 
 		UIControlAnim * activeButton() const;
 

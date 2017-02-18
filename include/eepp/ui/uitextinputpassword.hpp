@@ -12,9 +12,9 @@ class UITextInputPassword : public UITextInput
 
 		virtual void draw();
 
-		virtual const String& text();
+		virtual const String& getText();
 
-		virtual void text( const String& text );
+		virtual void setText( const String& text );
 
 		TextCache * getPassCache() const;
 	protected:

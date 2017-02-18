@@ -88,7 +88,7 @@ void TextureAtlasNew::okClick( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*>( Event );
 
 	if ( MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-		std::string ext( mSaveFileType->text() );
+		std::string ext( mSaveFileType->getText() );
 		String::toLowerInPlace( ext );
 
 		UICommonDialog * TGDialog = mTheme->createCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, Sizei(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*." + ext );
@@ -122,14 +122,14 @@ void TextureAtlasNew::textureAtlasSave( const UIEvent * Event ) {
 
 	if ( !FileSystem::isDirectory( FPath ) ) {
 		Int32 w = 0, h = 0, b;
-		bool Res1 = String::fromString<Int32>( w, mComboWidth->text() );
-		bool Res2 = String::fromString<Int32>( h, mComboHeight->text() );
+		bool Res1 = String::fromString<Int32>( w, mComboWidth->getText() );
+		bool Res2 = String::fromString<Int32>( h, mComboHeight->getText() );
 		b = static_cast<Int32>( mPixelSpace->value() );
 
 		if ( Res1 && Res2 ) {
 			Graphics::TexturePacker * TexturePacker = eeNew( Graphics::TexturePacker, ( w, h, false, b ) );
 
-			TexturePacker->addTexturesPath( mTGPath->text() );
+			TexturePacker->addTexturesPath( mTGPath->getText() );
 
 			TexturePacker->packTextures();
 
@@ -138,7 +138,7 @@ void TextureAtlasNew::textureAtlasSave( const UIEvent * Event ) {
 			if ( !IsValidExtension( ext ) ) {
 				FPath = FileSystem::fileRemoveExtension( FPath );
 
-				ext = mSaveFileType->text();
+				ext = mSaveFileType->getText();
 
 				String::toLowerInPlace( ext );
 
@@ -198,7 +198,7 @@ void TextureAtlasNew::onSelectFolder( const UIEvent * Event ) {
 
 		//! All OK
 		if ( count ) {
-			mTGPath->text( FPath );
+			mTGPath->setText( FPath );
 		} else {
 			MsgBox = mTheme->createMessageBox( MSGBOX_OK, "The folder must contain at least one image!" );
 			MsgBox->setTitle( "Error" );

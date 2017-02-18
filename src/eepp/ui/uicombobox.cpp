@@ -54,7 +54,7 @@ void UIComboBox::createButton() {
 	UIControl::CreateParams Params;
 	Params.setParent( this ),
 	Params.Size = Sizei( btnWidth, mSize.getHeight() );
-	Params.setPos( mSize.getWidth() - btnWidth, 0 );
+	Params.setPosition( mSize.getWidth() - btnWidth, 0 );
 	mButton = eeNew( UIControl, ( Params ) );
 	mButton->setVisible( true );
 	mButton->setEnabled( true );
@@ -79,9 +79,9 @@ void UIComboBox::onButtonExit( const UIEvent * Event ) {
 	setSkinState( UISkinState::StateMouseExit );
 }
 
-Uint32 UIComboBox::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UIComboBox::onMouseClick( const Vector2i& position, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTON_LMASK ) {
-		UITextInput::onMouseClick( Pos, Flags );
+		UITextInput::onMouseClick( position, Flags );
 
 		if ( mListBox->isVisible() ) {
 			hide();

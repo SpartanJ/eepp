@@ -16,7 +16,7 @@ UIProgressBar::UIProgressBar( const UIProgressBar::CreateParams& Params ) :
 
 	TxtBoxParams.setParent( this );
 	TxtBoxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
-	TxtBoxParams.setPos( 0, 0 );
+	TxtBoxParams.setPosition( 0, 0 );
 
 	mTextBox = eeNew( UITextBox, ( TxtBoxParams ) );
 	mTextBox->setEnabled( false );
@@ -172,7 +172,7 @@ const bool& UIProgressBar::displayPercent() const {
 void UIProgressBar::updateTextBox() {
 	mTextBox->setVisible( mDisplayPercent );
 	mTextBox->setSize( mSize );
-	mTextBox->text( String::toStr( (Int32)( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
+	mTextBox->setText( String::toStr( (Int32)( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
 }
 
 UITextBox * UIProgressBar::getTextBox() const {

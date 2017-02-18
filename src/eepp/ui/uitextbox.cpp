@@ -70,11 +70,11 @@ void UITextBox::draw() {
 	}
 }
 
-Graphics::Font * UITextBox::font() const {
+Graphics::Font * UITextBox::getFont() const {
 	return mTextCache->getFont();
 }
 
-void UITextBox::font( Graphics::Font * font ) {
+void UITextBox::setFont( Graphics::Font * font ) {
 	if ( mTextCache->getFont() != font ) {
 		mTextCache->setFont( font );
 		autoShrink();
@@ -84,14 +84,14 @@ void UITextBox::font( Graphics::Font * font ) {
 	}
 }
 
-const String& UITextBox::text() {
+const String& UITextBox::getText() {
 	if ( mFlags & UI_AUTO_SHRINK_TEXT )
 		return mString;
 
 	return mTextCache->getText();
 }
 
-void UITextBox::text( const String& text ) {
+void UITextBox::setText( const String& text ) {
 	if ( mFlags & UI_AUTO_SHRINK_TEXT ) {
 		mString = text;
 		mTextCache->setText( mString );
@@ -105,31 +105,31 @@ void UITextBox::text( const String& text ) {
 	onTextChanged();
 }
 
-const ColorA& UITextBox::color() const {
+const ColorA& UITextBox::getColor() const {
 	return mFontColor;
 }
 
-void UITextBox::color( const ColorA& color ) {
+void UITextBox::setColor( const ColorA& color ) {
 	mFontColor = color;
 	mTextCache->setColor( color );
 
 	setAlpha( color.a() );
 }
 
-const ColorA& UITextBox::shadowColor() const {
+const ColorA& UITextBox::getShadowColor() const {
 	return mFontShadowColor;
 }
 
-void UITextBox::shadowColor( const ColorA& color ) {
+void UITextBox::setShadowColor( const ColorA& color ) {
 	mFontShadowColor = color;
 	mTextCache->setShadowColor( mFontColor );
 }
 
-const ColorA& UITextBox::selectionBackColor() const {
+const ColorA& UITextBox::getSelectionBackColor() const {
 	return mFontSelectionBackColor;
 }
 
-void UITextBox::selectionBackColor( const ColorA& color ) {
+void UITextBox::setSelectionBackColor( const ColorA& color ) {
 	mFontSelectionBackColor = color;
 }
 
@@ -213,11 +213,11 @@ void UITextBox::onFontChanged() {
 	sendCommonEvent( UIEvent::EventOnFontChanged );
 }
 
-void UITextBox::padding( const Recti& padding ) {
+void UITextBox::setPadding( const Recti& padding ) {
 	mPadding = padding;
 }
 
-const Recti& UITextBox::padding() const {
+const Recti& UITextBox::getPadding() const {
 	return mPadding;
 }
 

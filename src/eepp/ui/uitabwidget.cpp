@@ -27,7 +27,7 @@ UITabWidget::UITabWidget( UITabWidget::CreateParams& Params ) :
 {
 	UIComplexControl::CreateParams TabParams;
 	TabParams.setParent( this );
-	TabParams.setPos( 0, 0 );
+	TabParams.setPosition( 0, 0 );
 	TabParams.Flags |= UI_CLIP_ENABLE | UI_ANCHOR_RIGHT;
 	TabParams.setSize( mSize.getWidth(), mTabWidgetHeight );
 
@@ -37,7 +37,7 @@ UITabWidget::UITabWidget( UITabWidget::CreateParams& Params ) :
 
 	UIComplexControl::CreateParams CtrlParams;
 	CtrlParams.setParent( this );
-	CtrlParams.setPos( 0, mTabWidgetHeight );
+	CtrlParams.setPosition( 0, mTabWidgetHeight );
 	CtrlParams.setSize( mSize.getWidth(), mSize.getHeight() - mTabWidgetHeight );
 	CtrlParams.Flags |= UI_CLIP_ENABLE | UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT;
 

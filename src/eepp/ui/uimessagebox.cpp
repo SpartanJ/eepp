@@ -15,7 +15,7 @@ UIMessageBox::UIMessageBox( const UIMessageBox::CreateParams& Params ) :
 		UIPushButton::CreateParams ButtonParams;
 		ButtonParams.setParent( getContainer() );
 		ButtonParams.setSize( 90, 22 );
-		ButtonParams.setPos( getContainer()->getSize().getWidth() - 96, getContainer()->getSize().getHeight() - ButtonParams.Size.getHeight() - 8 );
+		ButtonParams.setPosition( getContainer()->getSize().getWidth() - 96, getContainer()->getSize().getHeight() - ButtonParams.Size.getHeight() - 8 );
 		ButtonParams.Flags = UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE;
 		mButtonOK = eeNew( UIPushButton, ( ButtonParams ) );
 		mButtonOK->setVisible( true );
@@ -47,7 +47,7 @@ UIMessageBox::UIMessageBox( const UIMessageBox::CreateParams& Params ) :
 	mTextBox = eeNew( UITextBox, ( TxtParams ) );
 	mTextBox->setVisible( true );
 	mTextBox->setEnabled( true );
-	mTextBox->text( Params.Message );
+	mTextBox->setText( Params.Message );
 
 	switch ( mMsgBoxType ) {
 		case MSGBOX_OKCANCEL:

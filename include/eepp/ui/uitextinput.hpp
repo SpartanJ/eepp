@@ -48,9 +48,9 @@ class EE_API UITextInput : public UITextBox {
 
 		const bool& allowEditing() const;
 
-		virtual const String& text();
+		virtual const String& getText();
 
-		virtual void text( const String& text );
+		virtual void setText( const String& text );
 
 		virtual void shrinkText( const Uint32& MaxWidth );
 	protected:

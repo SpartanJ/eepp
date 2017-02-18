@@ -33,7 +33,7 @@ UISlider::UISlider( const UISlider::CreateParams& Params ) :
 	UIDragable::CreateParams SlideParams;
 	SlideParams.setParent( this );
 	SlideParams.Size = Sizei( 16, 16 );
-	SlideParams.setPos( Vector2i( 0, 0 ) );
+	SlideParams.setPosition( Vector2i( 0, 0 ) );
 
 	mSlider = eeNew( Private::UISliderButton, ( SlideParams ) );
 	mSlider->setEnabled( true );

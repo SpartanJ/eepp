@@ -223,7 +223,7 @@ void UIMenu::SetControlSize( UIControl * Control, const Uint32& Pos ) {
 Uint32 UIMenu::AddSeparator() {
 	UISeparator::CreateParams Params;
 	Params.setParent( this );
-	Params.setPos( mPadding.Left, mPadding.Top + mNextPosY );
+	Params.setPosition( mPadding.Left, mPadding.Top + mNextPosY );
 	Params.Size = Sizei( mSize.getWidth() - mPadding.Left - mPadding.Right, 3 );
 
 	UISeparator * Control = eeNew( UISeparator, ( Params ) );

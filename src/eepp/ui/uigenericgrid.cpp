@@ -30,7 +30,7 @@ UIGenericGrid::UIGenericGrid( const UIGenericGrid::CreateParams& Params ) :
 
 	UIComplexControl::CreateParams CParams;
 	CParams.setParent( this );
-	CParams.setPos( mPadding.Left, mPadding.Top );
+	CParams.setPosition( mPadding.Left, mPadding.Top );
 	CParams.Size = Sizei( mSize.getWidth() - mPadding.Right - mPadding.Left, mSize.getHeight() - mPadding.Top - mPadding.Bottom );
 	CParams.Flags = Params.Flags;
 	mContainer = eeNew( UIItemContainer<UIGenericGrid> , ( CParams ) );
@@ -42,13 +42,13 @@ UIGenericGrid::UIGenericGrid( const UIGenericGrid::CreateParams& Params ) :
 
 	UIScrollBar::CreateParams ScrollBarP;
 	ScrollBarP.setParent				( this );
-	ScrollBarP.setPos				( mSize.getWidth() - 15, 0 );
+	ScrollBarP.setPosition				( mSize.getWidth() - 15, 0 );
 	ScrollBarP.Flags				= UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar	= true;
 	ScrollBarP.Size					= Sizei( 15, mSize.getHeight() );
 	mVScrollBar						= eeNew( UIScrollBar, ( ScrollBarP ) );
 
-	ScrollBarP.setPos				( 0, mSize.getHeight() - 15 );
+	ScrollBarP.setPosition				( 0, mSize.getHeight() - 15 );
 	ScrollBarP.Size					= Sizei( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 15 );
 	ScrollBarP.VerticalScrollBar	= false;
 	mHScrollBar						= eeNew( UIScrollBar, ( ScrollBarP ) );

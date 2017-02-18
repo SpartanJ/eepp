@@ -37,7 +37,7 @@ UIListBox::UIListBox( UIListBox::CreateParams& Params ) :
 
 	UIControl::CreateParams CParams;
 	CParams.setParent( this );
-	CParams.setPos( mPaddingContainer.Left, mPaddingContainer.Top );
+	CParams.setPosition( mPaddingContainer.Left, mPaddingContainer.Top );
 	CParams.Size = Sizei( mSize.getWidth() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.getHeight() - mPaddingContainer.Top - mPaddingContainer.Bottom );
 	CParams.Flags = Params.Flags;
 	mContainer = eeNew( UIItemContainer<UIListBox>, ( CParams ) );
@@ -50,13 +50,13 @@ UIListBox::UIListBox( UIListBox::CreateParams& Params ) :
 	UIScrollBar::CreateParams ScrollBarP;
 	ScrollBarP.setParent( this );
 	ScrollBarP.Size = Sizei( 15, mSize.getHeight() );
-	ScrollBarP.setPos( mSize.getWidth() - 15, 0 );
+	ScrollBarP.setPosition( mSize.getWidth() - 15, 0 );
 	ScrollBarP.Flags = UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar = true;
 	mVScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
 
 	ScrollBarP.Size = Sizei( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 15 );
-	ScrollBarP.setPos( 0, mSize.getHeight() - 15 );
+	ScrollBarP.setPosition( 0, mSize.getHeight() - 15 );
 	ScrollBarP.VerticalScrollBar = false;
 	mHScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
 
@@ -127,7 +127,7 @@ void UIListBox::addListBoxItems( std::vector<String> Texts ) {
 
 Uint32 UIListBox::addListBoxItem( UIListBoxItem * Item ) {
 	mItems.push_back( Item );
-	mTexts.push_back( Item->text() );
+	mTexts.push_back( Item->getText() );
 
 	if ( Item->getParent() != mContainer )
 		Item->setParent( mContainer );
@@ -173,7 +173,7 @@ UIListBoxItem * UIListBox::createListBoxItem( const String& Name ) {
 	TextParams.Font 		= mFont;
 	TextParams.FontColor 	= mFontColor;
 	UIListBoxItem * tItem 	= eeNew( UIListBoxItem, ( TextParams ) );
-	tItem->text( Name );
+	tItem->setText( Name );
 
 	return tItem;
 }
@@ -215,7 +215,7 @@ void UIListBox::removeListBoxItems( std::vector<Uint32> ItemsIndex ) {
 
 			if ( !erase ) {
 				ItemsCpy.push_back( mItems[i] );
-				mTexts.push_back( mItems[i]->text() );
+				mTexts.push_back( mItems[i]->getText() );
 			} else {
 				eeSAFE_DELETE( mItems[i] ); // doesn't call to mItems[i]->Close(); because is not checking for close.
 			}
@@ -252,7 +252,7 @@ Uint32 UIListBox::getListBoxItemIndex( const String& Name ) {
 	Uint32 size = (Uint32)mItems.size();
 
 	for ( Uint32 i = 0; i < size; i++ ) {
-		if ( Name == mItems[i]->text() )
+		if ( Name == mItems[i]->getText() )
 			return i;
 	}
 
@@ -673,7 +673,7 @@ void UIListBox::fontColor( const ColorA& Color ) {
 	mFontColor = Color;
 
 	for ( Uint32 i = 0; i < mItems.size(); i++ )
-		mItems[i]->color( mFontColor );
+		mItems[i]->setColor( mFontColor );
 }
 
 const ColorA& UIListBox::fontColor() const {
@@ -700,7 +700,7 @@ void UIListBox::font( Graphics::Font * Font ) {
 	mFont = Font;
 
 	for ( Uint32 i = 0; i < mItems.size(); i++ )
-		mItems[i]->font( mFont );
+		mItems[i]->setFont( mFont );
 
 	findMaxWidth();
 	updateListBoxItemsSize();

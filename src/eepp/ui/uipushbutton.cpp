@@ -90,7 +90,7 @@ void UIPushButton::onSizeChange() {
 		}
 	}
 
-	if ( NULL != mTextBox && 0 == mTextBox->text().size() ) {
+	if ( NULL != mTextBox && 0 == mTextBox->getText().size() ) {
 		mIcon->center();
 	}
 
@@ -128,8 +128,8 @@ void UIPushButton::setTheme( UITheme * Theme ) {
 }
 
 void UIPushButton::doAftersetTheme() {
-	if ( NULL != mTextBox && NULL == mTextBox->font() && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->theme() && NULL != mSkinState->getSkin()->theme()->font() )
-		mTextBox->font( mSkinState->getSkin()->theme()->font() );
+	if ( NULL != mTextBox && NULL == mTextBox->getFont() && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->theme() && NULL != mSkinState->getSkin()->theme()->font() )
+		mTextBox->setFont( mSkinState->getSkin()->theme()->font() );
 
 	if ( mControlFlags & UI_CTRL_FLAG_FREE_USE ) {
 		Recti RMargin = makePadding( true, false, false, false, true );
@@ -161,20 +161,20 @@ UIGfx * UIPushButton::icon() const {
 }
 
 void UIPushButton::text( const String& text ) {
-	mTextBox->text( text );
+	mTextBox->setText( text );
 	onSizeChange();
 }
 
 const String& UIPushButton::text() {
-	return mTextBox->text();
+	return mTextBox->getText();
 }
 
 void UIPushButton::padding( const Recti& padding ) {
-	mTextBox->padding( padding );
+	mTextBox->setPadding( padding );
 }
 
 const Recti& UIPushButton::padding() const {
-	return mTextBox->padding();
+	return mTextBox->getPadding();
 }
 
 void UIPushButton::iconHorizontalMargin( Int32 margin ) {
@@ -199,9 +199,9 @@ void UIPushButton::onAlphaChange() {
 
 void UIPushButton::onStateChange() {
 	if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-		mTextBox->color( mFontOverColor );
+		mTextBox->setColor( mFontOverColor );
 	} else {
-		mTextBox->color( mFontColor );
+		mTextBox->setColor( mFontColor );
 	}
 
 	mTextBox->setAlpha( mAlpha );

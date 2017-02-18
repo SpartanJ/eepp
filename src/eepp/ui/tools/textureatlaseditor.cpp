@@ -111,7 +111,7 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	UIComplexControl::CreateParams Params;
 	Params.setParent( mUIContainer );
-	Params.setPos( 0, mWinMenu->getSize().getHeight() );
+	Params.setPosition( 0, mWinMenu->getSize().getHeight() );
 	Params.setSize( 800, 600 );
 	Params.Background.setColor( ColorA( 0, 0, 0, 50 ) );
 	Params.Flags |= UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT | UI_CLIP_ENABLE | UI_BORDER | UI_FILL_BACKGROUND;

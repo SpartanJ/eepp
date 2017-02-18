@@ -35,17 +35,17 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 
 	UITextBox::CreateParams TxtBoxParams;
 	TxtBoxParams.setParent( getContainer() );
-	TxtBoxParams.setPos( 6, 13 );
+	TxtBoxParams.setPosition( 6, 13 );
 	TxtBoxParams.Flags |= UI_AUTO_SIZE;
 	UITextBox * TBox = eeNew( UITextBox, ( TxtBoxParams ) );
 	TBox->setVisible( true );
 	TBox->setEnabled( false );
-	TBox->text( "Look in:" );
+	TBox->setText( "Look in:" );
 
 	UIPushButton::CreateParams ButtonParams;
 	ButtonParams.Flags = UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE;
 	ButtonParams.setParent( getContainer() );
-	ButtonParams.setPos( getContainer()->getSize().getWidth() - 86, getContainer()->getSize().getHeight() - 24 );
+	ButtonParams.setPosition( getContainer()->getSize().getWidth() - 86, getContainer()->getSize().getHeight() - 24 );
 	ButtonParams.setSize( 80, 22 );
 	mButtonCancel = eeNew( UIPushButton, ( ButtonParams ) );
 	mButtonCancel->setVisible( true );
@@ -54,7 +54,7 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	mButtonCancel->setPosition( Vector2i( mButtonCancel->getPosition().x, getContainer()->getSize().getHeight() - mButtonCancel->getSize().getHeight() - 2 ) );
 	mButtonCancel->updateAnchorsDistances();
 
-	ButtonParams.setPos( mButtonCancel->getPosition().x, mButtonCancel->getPosition().y - mButtonCancel->getSize().getHeight() );
+	ButtonParams.setPosition( mButtonCancel->getPosition().x, mButtonCancel->getPosition().y - mButtonCancel->getSize().getHeight() );
 	mButtonOpen = eeNew( UIPushButton, ( ButtonParams ) );
 	mButtonOpen->setVisible( true );
 	mButtonOpen->setEnabled( true );
@@ -67,15 +67,15 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	UITextInput::CreateParams TInputParams;
 	TInputParams.setParent( getContainer() );
 	TInputParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_VALIGN_CENTER | UI_TEXT_SELECTION_ENABLED;
-	TInputParams.setPos( 70, 6 );
+	TInputParams.setPosition( 70, 6 );
 	TInputParams.setSize( getContainer()->getSize().getWidth() - TInputParams.Pos.x - 42, 22 );
 	mPath = eeNew( UITextInput, ( TInputParams ) );
 	mPath->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UICommonDialog::onPressEnter ) );
 	mPath->setVisible( true );
 	mPath->setEnabled( true );
-	mPath->text( mCurPath );
+	mPath->setText( mCurPath );
 
-	ButtonParams.setPos( TInputParams.Pos.x + TInputParams.Size.getWidth() + 6, TInputParams.Pos.y );
+	ButtonParams.setPosition( TInputParams.Pos.x + TInputParams.Size.getWidth() + 6, TInputParams.Pos.y );
 	ButtonParams.setSize( 24, 22 );
 	ButtonParams.Flags |= UI_ANCHOR_TOP;
 	mButtonUp = eeNew( UIPushButton, ( ButtonParams ) );
@@ -85,7 +85,7 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 
 	UIListBox::CreateParams LBParams;
 	LBParams.setParent( getContainer() );
-	LBParams.setPos( 6, mButtonUp->getPosition().y + mButtonUp->getSize().getHeight() + 4 );
+	LBParams.setPosition( 6, mButtonUp->getPosition().y + mButtonUp->getSize().getHeight() + 4 );
 	LBParams.Size = Sizei( getContainer()->getSize().getWidth() - 12,
 							getContainer()->getSize().getHeight() -
 								mButtonUp->getSize().getHeight() -
@@ -108,22 +108,22 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	mList->setVisible( true );
 	mList->setEnabled( true );
 
-	TxtBoxParams.setPos( 6, getContainer()->getSize().getHeight() - 54 );
+	TxtBoxParams.setPosition( 6, getContainer()->getSize().getHeight() - 54 );
 	TxtBoxParams.setSize( 74, 19 );
 	TxtBoxParams.Flags = UI_ANCHOR_LEFT | UI_VALIGN_CENTER;
 	TBox = eeNew( UITextBox, ( TxtBoxParams ) );
 	TBox->setVisible( true );
 	TBox->setEnabled( false );
-	TBox->text( "File Name:" );
+	TBox->setText( "File Name:" );
 
-	TxtBoxParams.setPos( TBox->getPosition().x, TBox->getPosition().y + TBox->getSize().getHeight()+ 6 );
+	TxtBoxParams.setPosition( TBox->getPosition().x, TBox->getPosition().y + TBox->getSize().getHeight()+ 6 );
 	UITextBox * TBox2 = eeNew( UITextBox, ( TxtBoxParams ) );
 	TBox2->setVisible( true );
 	TBox2->setEnabled( false );
-	TBox2->text( "Files of type:" );
+	TBox2->setText( "Files of type:" );
 
 	TInputParams.Flags &= ~UI_ANCHOR_TOP;
-	TInputParams.setPos( TBox->getPosition().x + TBox->getSize().getWidth(), TBox->getPosition().y );
+	TInputParams.setPosition( TBox->getPosition().x + TBox->getSize().getWidth(), TBox->getPosition().y );
 	TInputParams.setSize( getContainer()->getSize().getWidth() - mButtonOpen->getSize().getWidth() - TInputParams.Pos.x - 20, TInputParams.Size.getHeight() );
 	mFile = eeNew( UITextInput, ( TInputParams ) );
 	mFile->setVisible( true );
@@ -132,7 +132,7 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 
 	UIDropDownList::CreateParams DDLParams;
 	DDLParams.setParent( getContainer() );
-	DDLParams.setPos( TBox2->getPosition().x + TBox2->getSize().getWidth(), TBox2->getPosition().y );
+	DDLParams.setPosition( TBox2->getPosition().x + TBox2->getSize().getWidth(), TBox2->getPosition().y );
 	DDLParams.setSize( getContainer()->getSize().getWidth() - mButtonCancel->getSize().getWidth() - DDLParams.Pos.x - 20, 22 );
 	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_AUTO_SIZE;
 	DDLParams.PopUpToMainControl = true;
@@ -177,8 +177,8 @@ void UICommonDialog::refreshFolder() {
 	bool						accepted;
 	Uint32 i, z;
 
-	if ( "*" != mFiletype->text() ) {
-		patterns = String::split( mFiletype->text().toUtf8(), ';' );
+	if ( "*" != mFiletype->getText() ) {
+		patterns = String::split( mFiletype->getText().toUtf8(), ';' );
 
 		for ( i = 0; i < patterns.size(); i++ )
 			patterns[i] = FileSystem::fileExtension( patterns[i] );
@@ -264,7 +264,7 @@ Uint32 UICommonDialog::onMessage( const UIMessage * Msg ) {
 					CloseWindow();
 				} else if ( Msg->getSender() == mButtonUp ) {
 					mCurPath = FileSystem::removeLastFolderFromPath( mCurPath );
-					mPath->text( mCurPath );
+					mPath->setText( mCurPath );
 					refreshFolder();
 				}
 			}
@@ -279,7 +279,7 @@ Uint32 UICommonDialog::onMessage( const UIMessage * Msg ) {
 
 					if ( FileSystem::isDirectory( newPath ) ) {
 						mCurPath = newPath + FileSystem::getOSlash();
-						mPath->text( mCurPath );
+						mPath->setText( mCurPath );
 						refreshFolder();
 					} else {
 						open();
@@ -294,15 +294,15 @@ Uint32 UICommonDialog::onMessage( const UIMessage * Msg ) {
 			if ( Msg->getSender() == mList ) {
 				if ( !isSaveDialog() ) {
 					if ( allowFolderSelect() ) {
-						mFile->text( mList->getItemSelectedText() );
+						mFile->setText( mList->getItemSelectedText() );
 					} else {
 						if ( !FileSystem::isDirectory( getTempFullPath() ) ) {
-							mFile->text( mList->getItemSelectedText() );
+							mFile->setText( mList->getItemSelectedText() );
 						}
 					}
 				} else {
 					if ( !FileSystem::isDirectory( getTempFullPath() ) ) {
-						mFile->text( mList->getItemSelectedText() );
+						mFile->setText( mList->getItemSelectedText() );
 					}
 				}
 			} else if ( Msg->getSender() == mFiletype ) {
@@ -343,11 +343,11 @@ void UICommonDialog::open() {
 }
 
 void UICommonDialog::onPressEnter( const UIEvent * Event ) {
-	if ( FileSystem::isDirectory( mPath->text() ) ) {
-		std::string tpath = mPath->text();
+	if ( FileSystem::isDirectory( mPath->getText() ) ) {
+		std::string tpath = mPath->getText();
 		FileSystem::dirPathAddSlashAtEnd( tpath );
-		mPath->text( tpath );
-		mCurPath = mPath->text();
+		mPath->setText( tpath );
+		mCurPath = mPath->getText();
 		refreshFolder();
 	}
 }
@@ -418,7 +418,7 @@ std::string UICommonDialog::getCurPath() const {
 
 std::string UICommonDialog::getCurFile() const {
 	if ( mCDLFlags & CDL_FLAG_SAVE_DIALOG )
-		return mFile->text();
+		return mFile->getText();
 
 	return mList->getItemSelectedText().toUtf8();
 }

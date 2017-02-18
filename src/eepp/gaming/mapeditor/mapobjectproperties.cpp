@@ -28,12 +28,12 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 
 	UITextBox * Txt = mUITheme->createTextBox( "Object name:", mUIWindow->getContainer(), Sizei(), Vector2i( 50, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	mUIInput = mUITheme->createTextInput( mUIWindow->getContainer(), Sizei( 120, 22 ), Vector2i( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE, true, 64 );
-	mUIInput->text( mObj->Name() );
+	mUIInput->setText( mObj->Name() );
 	mUIInput->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &MapObjectProperties::OKClick ) );
 
 	UITextBox * Txt2 = mUITheme->createTextBox( "Object type:", mUIWindow->getContainer(), Sizei(), Vector2i( 50+192, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	mUIInput2 = mUITheme->createTextInput( mUIWindow->getContainer(), Sizei( 120, 22 ), Vector2i( Txt2->getPosition().x + DistFromTitle, Txt2->getPosition().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE, true, 64 );
-	mUIInput2->text( mObj->TypeName() );
+	mUIInput2->setText( mObj->TypeName() );
 	mUIInput2->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &MapObjectProperties::OKClick ) );
 
 	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
@@ -52,7 +52,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 
 	UIGenericGrid::CreateParams GridParams;
 	GridParams.setParent( mUIWindow->getContainer() );
-	GridParams.setPos( 50, TxtBox->getPosition().y + TxtBox->getSize().getHeight() );
+	GridParams.setPosition( 50, TxtBox->getPosition().y + TxtBox->getSize().getHeight() );
 	GridParams.setSize( 400, 350 );
 	GridParams.Flags = UI_AUTO_PADDING;
 	GridParams.RowHeight = 24;
@@ -100,8 +100,8 @@ void MapObjectProperties::SaveProperties() {
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->cell( 1 ) );
 		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->cell( 3 ) );
 
-		if ( NULL != Cell && Input->text().size() && Input2->text().size() ) {
-			mObj->AddProperty(	Input->text(), Input2->text() );
+		if ( NULL != Cell && Input->getText().size() && Input2->getText().size() ) {
+			mObj->AddProperty(	Input->getText(), Input2->getText() );
 		}
 	}
 }
@@ -115,8 +115,8 @@ void MapObjectProperties::LoadProperties() {
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->cell( 1 ) );
 		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->cell( 3 ) );
 
-		Input->text( it->first );
-		Input2->text( it->second );
+		Input->setText( it->first );
+		Input2->setText( it->second );
 
 		mGenGrid->add( Cell );
 	}
@@ -125,8 +125,8 @@ void MapObjectProperties::LoadProperties() {
 void MapObjectProperties::OKClick( const UIEvent * Event ) {
 	SaveProperties();
 
-	mObj->Name( mUIInput->text().toUtf8() );
-	mObj->TypeName( mUIInput2->text().toUtf8() );
+	mObj->Name( mUIInput->getText().toUtf8() );
+	mObj->TypeName( mUIInput2->getText().toUtf8() );
 
 	mUIWindow->CloseWindow();
 }

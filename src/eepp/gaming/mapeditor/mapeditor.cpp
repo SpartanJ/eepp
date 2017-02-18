@@ -161,7 +161,7 @@ void MapEditor::CreateWinMenu() {
 
 	UIComplexControl::CreateParams Params;
 	Params.setParent( mUIContainer );
-	Params.setPos( 0, WinMenu->getSize().getHeight() );
+	Params.setPosition( 0, WinMenu->getSize().getHeight() );
 	Params.setSize( mUIContainer->getSize().getWidth(), mUIContainer->getSize().getHeight() - WinMenu->getSize().getHeight() );
 	Params.Flags = UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_REPORT_SIZE_CHANGE_TO_CHILDS;
 	mWinContainer = eeNew( UIComplexControl, ( Params ) );
@@ -264,42 +264,42 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 	Uint32 ChkFlags = UI_CONTROL_DEFAULT_ALIGN | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
 	mChkMirrored = mTheme->createCheckBox( mSubTextureCont, Sizei(), Vector2i( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 ), ChkFlags );
-	mChkMirrored->text( "Mirrored" );
+	mChkMirrored->setText( "Mirrored" );
 	mChkMirrored->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickMirrored ) );
 
 	mChkFliped = mTheme->createCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkMirrored->getPosition().x + mChkMirrored->getSize().getWidth() + 32, mChkMirrored->getPosition().y ), ChkFlags );
-	mChkFliped->text( "Fliped" );
+	mChkFliped->setText( "Fliped" );
 	mChkFliped->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickFliped ) );
 
 	mChkBlocked = mTheme->createCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkMirrored->getPosition().x, mChkMirrored->getPosition().y + mChkMirrored->getSize().getHeight() + 4 ), ChkFlags );
-	mChkBlocked->text( "Blocked" );
+	mChkBlocked->setText( "Blocked" );
 	mChkBlocked->setTooltipText( "Blocks the tile occupied by the sprite." );
 	mChkBlocked->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickBlocked ) );
 
 	mChkAnim = mTheme->createCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkFliped->getPosition().x, mChkFliped->getPosition().y + mChkFliped->getSize().getHeight() + 4 ), ChkFlags );
-	mChkAnim->text( "Animated" );
+	mChkAnim->setText( "Animated" );
 	mChkAnim->setTooltipText( "Indicates if the Sprite is animated." );
 	mChkAnim->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickAnimated ) );
 
 	mChkRot90 = mTheme->createCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkBlocked->getPosition().x, mChkBlocked->getPosition().y + mChkBlocked->getSize().getHeight() + 4 ), ChkFlags );
-	mChkRot90->text( String::fromUtf8( "Rotate 90º" ) );
+	mChkRot90->setText( String::fromUtf8( "Rotate 90º" ) );
 	mChkRot90->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickRot90 ) );
 
 	mChkAutoFix = mTheme->createCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkAnim->getPosition().x, mChkAnim->getPosition().y + mChkAnim->getSize().getHeight() + 4 ), ChkFlags );
-	mChkAutoFix->text( "AutoFix TilePos" );
+	mChkAutoFix->setText( "AutoFix TilePos" );
 	mChkAutoFix->setTooltipText( "In a tiled layer if the sprite is moved,\nit will update the current tile position automatically." );
 	mChkAutoFix->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickAutoFix ) );
 
 	Txt = mTheme->createTextBox( "Game Object Data:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mChkRot90->getPosition().y + mChkRot90->getSize().getHeight() + 8 ), TxtFlags );
 
 	mChkDI = mTheme->createCheckBox( mSubTextureCont, Sizei(), Vector2i( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 ), ChkFlags );
-	mChkDI->text( "Add as DataId" );
+	mChkDI->setText( "Add as DataId" );
 	mChkDI->setTooltipText( "If the resource it's not a sprite,\nyou can reference it with a data id" );
 	mChkDI->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickDI ) );
 
 	UIComplexControl::CreateParams SGParams;
 	SGParams.setParent( mSubTextureCont );
-	SGParams.setPos( Vector2i( TAB_CONT_X_DIST, mChkDI->getPosition().y + mChkDI->getSize().getHeight() + 8 ) );
+	SGParams.setPosition( Vector2i( TAB_CONT_X_DIST, mChkDI->getPosition().y + mChkDI->getSize().getHeight() + 8 ) );
 	SGParams.setSize( Sizei( Width, 400 ) );
 	SGParams.Flags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 	mSGCont = eeNew( UIComplexControl, ( SGParams ) );
@@ -321,7 +321,7 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 
 	UIComplexControl::CreateParams DIParams;
 	DIParams.setParent( mSubTextureCont );
-	DIParams.setPos( SGParams.Pos );
+	DIParams.setPosition( SGParams.Pos );
 	DIParams.setSize( Sizei( Width, 400 ) );
 	DIParams.Flags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 	mDICont = eeNew( UIComplexControl, ( DIParams ) );
@@ -344,7 +344,7 @@ void MapEditor::CreateLighContainer() {
 
 	UIComplexControl::CreateParams ComParams;
 	ComParams.setParent( mLightCont );
-	ComParams.setPos( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
+	ComParams.setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 	ComParams.setSize( 58, 64 );
 	ComParams.Background.setColor( ColorA(255,255,255,255) );
 	ComParams.Border.setColor( ColorA( 100, 100, 100, 200 ) );
@@ -384,7 +384,7 @@ void MapEditor::CreateLighContainer() {
 	mLightRadius->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnLightRadiusChangeVal ) );
 
 	mLightTypeChk = mTheme->createCheckBox( mLightCont, Sizei(), Vector2i( mLightRadius->getPosition().x, mLightRadius->getPosition().y + mLightRadius->getSize().getHeight() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
-	mLightTypeChk->text( "Isometric Light" );
+	mLightTypeChk->setText( "Isometric Light" );
 	mLightTypeChk->active( false );
 	mLightTypeChk->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnLightTypeChange ) );
 }
@@ -416,7 +416,7 @@ void MapEditor::CreateObjectsContainer() {
 	Uint32 ChkFlags = UI_CONTROL_DEFAULT_ALIGN | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
 	mChkClampToTile = mTheme->createCheckBox( mObjectCont, Sizei(), Vector2i( 12, nextY ), ChkFlags );
-	mChkClampToTile->text( "Clamp Position to Tile" );
+	mChkClampToTile->setText( "Clamp Position to Tile" );
 	mChkClampToTile->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickClampToTile ) );
 	mChkClampToTile->active( true );
 }
@@ -461,7 +461,7 @@ void MapEditor::CreateUIMap() {
 
 	UIComplexControl::CreateParams Params;
 	Params.setParent( mWinContainer );
-	Params.setPos( 0, 0 );
+	Params.setPosition( 0, 0 );
 	Params.setSize( mWinContainer->getSize().getWidth() - 225 - ScrollV, mWinContainer->getSize().getHeight() - ScrollH );
 
 	Params.Flags |= UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT;
@@ -553,7 +553,7 @@ void MapEditor::OnRedChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
 	Col.Red = (Uint8)mUIRedSlider->value();
 	mUIBaseColor->getBackground()->setColor( Col );
-	mUIRedTxt->text( String::toStr( (Int32)mUIRedSlider->value() ) );
+	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->value() ) );
 
 	if ( NULL != mUIMap->GetSelectedLight() ) {
 		RGB lCol( mUIMap->GetSelectedLight()->Color() );
@@ -566,7 +566,7 @@ void MapEditor::OnGreenChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
 	Col.Green = (Uint8)mUIGreenSlider->value();
 	mUIBaseColor->getBackground()->setColor( Col );
-	mUIGreenTxt->text( String::toStr( (Uint32)mUIGreenSlider->value() ) );
+	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->value() ) );
 
 	if ( NULL != mUIMap->GetSelectedLight() ) {
 		RGB lCol( mUIMap->GetSelectedLight()->Color() );
@@ -579,7 +579,7 @@ void MapEditor::OnBlueChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
 	Col.Blue = (Uint8)mUIBlueSlider->value();
 	mUIBaseColor->getBackground()->setColor( Col );
-	mUIBlueTxt->text( String::toStr( (Uint32)mUIBlueSlider->value() ) );
+	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->value() ) );
 
 	if ( NULL != mUIMap->GetSelectedLight() ) {
 		RGB lCol( mUIMap->GetSelectedLight()->Color() );
@@ -645,17 +645,17 @@ void MapEditor::UpdateFlags() {
 }
 
 void MapEditor::OnTypeChange( const UIEvent * Event ) {
-	if ( mGOTypeList->text() == "SubTexture" )
+	if ( mGOTypeList->getText() == "SubTexture" )
 		mCurGOType = GAMEOBJECT_TYPE_SUBTEXTURE;
-	else if ( mGOTypeList->text() == "SubTextureEx" )
+	else if ( mGOTypeList->getText() == "SubTextureEx" )
 		mCurGOType = GAMEOBJECT_TYPE_SUBTEXTUREEX;
-	else if ( mGOTypeList->text() == "Sprite" )
+	else if ( mGOTypeList->getText() == "Sprite" )
 		mCurGOType = GAMEOBJECT_TYPE_SPRITE;
 	else
-		mCurGOType = String::hash( mGOTypeList->text().toUtf8() );
+		mCurGOType = String::hash( mGOTypeList->getText().toUtf8() );
 
-	if ( NULL != mChkAnim && NULL != mGOTypeList && mChkAnim->active() && mGOTypeList->text() != "Sprite" ) {
-		if ( mGOTypeList->text() == "SubTexture" || mGOTypeList->text() == "SubTextureEx" ) {
+	if ( NULL != mChkAnim && NULL != mGOTypeList && mChkAnim->active() && mGOTypeList->getText() != "Sprite" ) {
+		if ( mGOTypeList->getText() == "SubTexture" || mGOTypeList->getText() == "SubTextureEx" ) {
 			mChkAnim->active( false );
 		}
 	}
@@ -687,7 +687,7 @@ void MapEditor::ChkClickAutoFix( const UIEvent * Event ) {
 void MapEditor::ChkClickAnimated( const UIEvent * Event ) {
 	UpdateFlags();
 
-	if ( mChkAnim->active() && ( mGOTypeList->text() == "SubTexture" || mGOTypeList->text() == "SubTextureEx" ) ) {
+	if ( mChkAnim->active() && ( mGOTypeList->getText() == "SubTexture" || mGOTypeList->getText() == "SubTextureEx" ) ) {
 		mGOTypeList->getListBox()->setSelected( "Sprite" );
 	}
 }
@@ -701,7 +701,7 @@ void MapEditor::OnNewGOTypeAdded( std::string name, Uint32 hash ) {
 		for ( Uint32 i = 0; i < mGOTypeList->getListBox()->count(); i++ ) {
 			UIListBoxItem * Item = mGOTypeList->getListBox()->getItem(i);
 
-			if ( Item->text() == name )
+			if ( Item->getText() == name )
 				return;
 		}
 
@@ -737,7 +737,7 @@ void MapEditor::FillSGCombo() {
 
 void MapEditor::FillSubTextureList() {
 	TextureAtlasManager * SGM = TextureAtlasManager::instance();
-	mCurSG = SGM->getByName( mTextureAtlasesList->text() );
+	mCurSG = SGM->getByName( mTextureAtlasesList->getText() );
 	std::list<SubTexture*>& Res = mCurSG->getResources();
 
 	mSubTextureList->clear();
@@ -1160,7 +1160,7 @@ void MapEditor::OnLayerAdd( UIMapLayerNew * UILayer ) {
 }
 
 void MapEditor::OnLayerSelect( const UIEvent * Event ) {
-	MapLayer * tLayer = mUIMap->Map()->GetLayer( mLayerList->text() );
+	MapLayer * tLayer = mUIMap->Map()->GetLayer( mLayerList->getText() );
 
 	if ( NULL != tLayer ) {
 		mCurLayer = tLayer;
@@ -1208,7 +1208,7 @@ GameObject * MapEditor::CreateGameObject() {
 		//! Creates an empty game object. The client will interpret the GameObject Type, and instanciate the corresponding class.
 
 		if ( mChkDI->active() )
-			tObj = eeNew( GameObjectVirtual, ( String::hash( mDataIdInput->text().toUtf8() ), mCurLayer, mCurGOFlags, mCurGOType ) );
+			tObj = eeNew( GameObjectVirtual, ( String::hash( mDataIdInput->getText().toUtf8() ), mCurLayer, mCurGOFlags, mCurGOType ) );
 		else
 			tObj = eeNew( GameObjectVirtual, ( mGfxPreview->subTexture(), mCurLayer, mCurGOFlags, mCurGOType ) );
 	}

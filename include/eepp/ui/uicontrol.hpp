@@ -55,8 +55,8 @@ class EE_API UIControl {
 
 				~CreateParams() {}
 
-				void setPos( const Vector2i& pos )						{ Pos.x = pos.x; Pos.y = pos.y; }
-				void setPos( const Int32& X, const Int32& Y )				{ Pos.x = X; Pos.y = Y; }
+				void setPosition( const Vector2i& pos )						{ Pos.x = pos.x; Pos.y = pos.y; }
+				void setPosition( const Int32& X, const Int32& Y )				{ Pos.x = X; Pos.y = Y; }
 				void setParent( UIControl * Ctrl )							{ ParentCtrl = Ctrl; }
 				void setSize( const Sizei& size )							{ Size.x = size.x; Size.y = size.y;	}
 				void setSize( const Int32& Width, const Int32& Height )		{ Size.x = Width; Size.y = Height;	}

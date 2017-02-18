@@ -803,7 +803,7 @@ void UIWindow::setTitle( const String& Text ) {
 		mTitle->setVisible( true );
 	}
 
-	mTitle->text( Text );
+	mTitle->setText( Text );
 
 	fixTitleSize();
 }
@@ -817,7 +817,7 @@ void UIWindow::fixTitleSize() {
 
 String UIWindow::getTitle() const {
 	if ( NULL != mTitle )
-		return mTitle->text();
+		return mTitle->getText();
 
 	return String();
 }

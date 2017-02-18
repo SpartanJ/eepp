@@ -48,33 +48,33 @@ class EE_API UITextBox : public UIComplexControl {
 
 		virtual void setAlpha( const Float& alpha );
 
-		Graphics::Font * font() const;
+		Graphics::Font * getFont() const;
 
-		void font( Graphics::Font * font );
+		void setFont( Graphics::Font * font );
 
-		virtual const String& text();
+		virtual const String& getText();
 
-		virtual void text( const String& text );
+		virtual void setText( const String& text );
 
-		const ColorA& color() const;
+		const ColorA& getColor() const;
 
-		void color( const ColorA& color );
+		void setColor( const ColorA& color );
 
-		const ColorA& shadowColor() const;
+		const ColorA& getShadowColor() const;
 
-		void shadowColor( const ColorA& color );
+		void setShadowColor( const ColorA& color );
 
-		const ColorA& selectionBackColor() const;
+		const ColorA& getSelectionBackColor() const;
 
-		void selectionBackColor( const ColorA& color );
+		void setSelectionBackColor( const ColorA& color );
 
 		virtual void onTextChanged();
 
 		virtual void onFontChanged();
 
-		virtual void padding( const Recti& padding );
+		virtual void setPadding( const Recti& padding );
 
-		const Recti& padding() const;
+		const Recti& getPadding() const;
 
 		virtual void setTheme( UITheme * Theme );
 

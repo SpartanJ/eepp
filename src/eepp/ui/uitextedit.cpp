@@ -51,14 +51,14 @@ UITextEdit::UITextEdit( UITextEdit::CreateParams& Params ) :
 
 	UIScrollBar::CreateParams ScrollBarP;
 	ScrollBarP.setParent( this );
-	ScrollBarP.setPos( mSize.getWidth() - 15, 0 );
+	ScrollBarP.setPosition( mSize.getWidth() - 15, 0 );
 	ScrollBarP.Size					= Sizei( 15, mSize.getHeight() );
 	ScrollBarP.Flags				= UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar	= true;
 	mVScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
 	mVScrollBar->value( 1 );
 
-	ScrollBarP.setPos( 0, mSize.getHeight() - 15 );
+	ScrollBarP.setPosition( 0, mSize.getHeight() - 15 );
 	ScrollBarP.Size					= Sizei( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 15 );
 	ScrollBarP.VerticalScrollBar	= false;
 	mHScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
@@ -257,11 +257,11 @@ UIScrollBar * UITextEdit::getVScrollBar() const {
 }
 
 const String& UITextEdit::text() const {
-	return mTextInput->text();
+	return mTextInput->getText();
 }
 
 void UITextEdit::text( const String& Txt ) {
-	mTextInput->text( Txt );
+	mTextInput->setText( Txt );
 
 	onInputSizeChange();
 

@@ -11,7 +11,7 @@ UISpinBox::UISpinBox( const UISpinBox::CreateParams& Params ) :
 	mClickStep( 1.f )
 {
 	UITextInput::CreateParams InputParams( Params );
-	InputParams.setPos( 0, 0 );
+	InputParams.setPosition( 0, 0 );
 	InputParams.setParent( this );
 
 	if ( InputParams.Flags & UI_AUTO_SIZE )
@@ -105,11 +105,11 @@ void UISpinBox::adjustChilds() {
 }
 
 void UISpinBox::padding( const Recti& padding ) {
-	mInput->padding( padding );
+	mInput->setPadding( padding );
 }
 
 const Recti& UISpinBox::padding() const {
-	return mInput->padding();
+	return mInput->getPadding();
 }
 
 void UISpinBox::clickStep( const Float& step ) {
@@ -145,8 +145,8 @@ Uint32 UISpinBox::onMessage( const UIMessage * Msg ) {
 }
 
 void UISpinBox::addValue( const Float& value ) {
-	if ( !mInput->text().size() )
-		mInput->text( String::toStr( static_cast<Int32>( mMinValue ) ) );
+	if ( !mInput->getText().size() )
+		mInput->setText( String::toStr( static_cast<Int32>( mMinValue ) ) );
 
 	this->value( mValue + value );
 }
@@ -158,9 +158,9 @@ void UISpinBox::internalValue( const Float& Val, const bool& Force ) {
 			Float fValN 	= (Float)iValN;
 
 			if ( fValN == Val ) {
-				mInput->text( String::toStr( iValN ) );
+				mInput->setText( String::toStr( iValN ) );
 			} else {
-				mInput->text( String::toStr( Val ) );
+				mInput->setText( String::toStr( Val ) );
 			}
 
 			mValue = Val;
@@ -206,18 +206,18 @@ void UISpinBox::update() {
 	UIControlAnim::update();
 
 	if ( Changed ) {
-		if ( !mInput->text().size() ) {
+		if ( !mInput->getText().size() ) {
 			value( 0 );
 		} else {
 			Float Val = mValue;
 
-			if ( '.' == mInput->text()[ mInput->text().size() - 1 ] ) {
-				Uint32 pos = (Uint32)mInput->text().find_first_of( "." );
+			if ( '.' == mInput->getText()[ mInput->getText().size() - 1 ] ) {
+				Uint32 pos = (Uint32)mInput->getText().find_first_of( "." );
 
-				if ( pos != mInput->text().size() - 1 )
-					mInput->text( mInput->text().substr( 0, mInput->text().size() - 1 ) );
+				if ( pos != mInput->getText().size() - 1 )
+					mInput->setText( mInput->getText().substr( 0, mInput->getText().size() - 1 ) );
 			} else {
-				bool Res 	= String::fromString<Float>( Val, mInput->text() );
+				bool Res 	= String::fromString<Float>( Val, mInput->getText() );
 
 				if ( Res )
 					value( Val );

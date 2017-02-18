@@ -47,7 +47,7 @@ class EE_API UIComplexControl : public UIControlAnim {
 
 		virtual void update();
 
-		virtual void setSize( const Sizei &getSize );
+		virtual void setSize( const Sizei& size );
 
 		void setSize( const Int32& Width, const Int32& Height );
 

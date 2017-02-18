@@ -30,7 +30,7 @@ UIMapLayerNew::UIMapLayerNew( UIMap * Map, EE_LAYER_TYPE Type, NewLayerCb newLay
 	UITextBox * Txt = mTheme->createTextBox( "Layer Name", mUIWindow->getContainer(), Sizei(), Vector2i( 16, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	mUILayerName = mTheme->createTextInput( mUIWindow->getContainer(), Sizei( 120, 22 ), Vector2i( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE, true, 64 );
-	mUILayerName->text( "Layer " + String::toStr( mUIMap->Map()->LayerCount() + 1 ) );
+	mUILayerName->setText( "Layer " + String::toStr( mUIMap->Map()->LayerCount() + 1 ) );
 
 	UIPushButton * OKButton = mTheme->createPushButton( mUIWindow->getContainer(), Sizei( 80, 22 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->getIconByName( "add" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
@@ -64,8 +64,8 @@ void UIMapLayerNew::OnKeyUp( const UIEvent * Event ) {
 }
 
 void UIMapLayerNew::OKClick( const UIEvent * Event ) {
-	if ( mUILayerName->text().size() ) {
-		mLayer = mUIMap->Map()->AddLayer( mType, LAYER_FLAG_VISIBLE | LAYER_FLAG_LIGHTS_ENABLED, mUILayerName->text() );
+	if ( mUILayerName->getText().size() ) {
+		mLayer = mUIMap->Map()->AddLayer( mType, LAYER_FLAG_VISIBLE | LAYER_FLAG_LIGHTS_ENABLED, mUILayerName->getText() );
 
 		if ( mNewLayerCb.IsSet() )
 			mNewLayerCb( this );
@@ -91,7 +91,7 @@ UITextInput * UIMapLayerNew::UILayerName() const {
 }
 
 const String& UIMapLayerNew::Name() const {
-	return mUILayerName->text();
+	return mUILayerName->getText();
 }
 
 MapLayer * UIMapLayerNew::Layer() const {

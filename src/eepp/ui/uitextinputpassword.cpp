@@ -120,8 +120,8 @@ void UITextInputPassword::updatePass( const String& pass ) {
 	mPassCache->setText( newTxt );
 }
 
-void UITextInputPassword::text( const String& text ) {
-	UITextInput::text( text );
+void UITextInputPassword::setText( const String& text ) {
+	UITextInput::setText( text );
 
 	updatePass( text );
 }
@@ -130,8 +130,8 @@ TextCache *UITextInputPassword::getPassCache() const {
 	return mPassCache;
 }
 
-const String& UITextInputPassword::text() {
-	return UITextBox::text();
+const String& UITextInputPassword::getText() {
+	return UITextBox::getText();
 }
 
 

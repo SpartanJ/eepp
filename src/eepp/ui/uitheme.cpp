@@ -427,7 +427,7 @@ SubTexture * UITheme::getIconByName( const std::string& name ) {
 UIGfx * UITheme::createGfx( SubTexture * SubTexture, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, ColorA SubTextureColor, EE_RENDER_MODE SubTextureRender ) {
 	UIGfx::CreateParams GfxParams;
 	GfxParams.setParent( Parent );
-	GfxParams.setPos( Pos );
+	GfxParams.setPosition( Pos );
 	GfxParams.setSize( Size );
 	GfxParams.Flags = Flags;
 	GfxParams.SubTexture = SubTexture;
@@ -442,7 +442,7 @@ UIGfx * UITheme::createGfx( SubTexture * SubTexture, UIControl * Parent, const S
 UISprite * UITheme::createSprite( Sprite * Sprite, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool DealloSprite, EE_RENDER_MODE SpriteRender ) {
 	UISprite::CreateParams SpriteParams;
 	SpriteParams.setParent( Parent );
-	SpriteParams.setPos( Pos );
+	SpriteParams.setPosition( Pos );
 	SpriteParams.setSize( Size );
 	SpriteParams.Flags = Flags;
 	SpriteParams.Sprite = Sprite;
@@ -457,7 +457,7 @@ UISprite * UITheme::createSprite( Sprite * Sprite, UIControl * Parent, const Siz
 UICheckBox * UITheme::createCheckBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
 	UICheckBox::CreateParams CheckBoxParams;
 	CheckBoxParams.setParent( Parent );
-	CheckBoxParams.setPos( Pos );
+	CheckBoxParams.setPosition( Pos );
 	CheckBoxParams.setSize( Size );
 	CheckBoxParams.Flags = Flags;
 	UICheckBox * Ctrl = eeNew( UICheckBox, ( CheckBoxParams ) );
@@ -469,7 +469,7 @@ UICheckBox * UITheme::createCheckBox( UIControl * Parent, const Sizei& Size, con
 UIRadioButton * UITheme::createRadioButton( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
 	UIRadioButton::CreateParams RadioButtonParams;
 	RadioButtonParams.setParent( Parent );
-	RadioButtonParams.setPos( Pos );
+	RadioButtonParams.setPosition( Pos );
 	RadioButtonParams.setSize( Size );
 	RadioButtonParams.Flags = Flags;
 	UIRadioButton * Ctrl = eeNew( UIRadioButton, ( RadioButtonParams ) );
@@ -481,20 +481,20 @@ UIRadioButton * UITheme::createRadioButton( UIControl * Parent, const Sizei& Siz
 UITextBox * UITheme::createTextBox( const String& Text, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
 	UITextBox::CreateParams TextBoxParams;
 	TextBoxParams.setParent( Parent );
-	TextBoxParams.setPos( Pos );
+	TextBoxParams.setPosition( Pos );
 	TextBoxParams.setSize( Size );
 	TextBoxParams.Flags = Flags;
 	UITextBox * Ctrl = eeNew( UITextBox, ( TextBoxParams ) );
 	Ctrl->setVisible( true );
 	Ctrl->setEnabled( false );
-	Ctrl->text( Text );
+	Ctrl->setText( Text );
 	return Ctrl;
 }
 
 UITooltip * UITheme::createTooltip( UIControl * TooltipOf, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
 	UITooltip::CreateParams TooltipParams;
 	TooltipParams.setParent( Parent );
-	TooltipParams.setPos( Pos );
+	TooltipParams.setPosition( Pos );
 	TooltipParams.setSize( Size );
 	TooltipParams.Flags = Flags;
 	UITooltip * Ctrl = eeNew( UITooltip, ( TooltipParams, TooltipOf ) );
@@ -506,7 +506,7 @@ UITooltip * UITheme::createTooltip( UIControl * TooltipOf, UIControl * Parent, c
 UITextEdit * UITheme::createTextEdit( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, UI_SCROLLBAR_MODE HScrollBar, UI_SCROLLBAR_MODE VScrollBar, bool WordWrap ) {
 	UITextEdit::CreateParams TextEditParams;
 	TextEditParams.setParent( Parent );
-	TextEditParams.setPos( Pos );
+	TextEditParams.setPosition( Pos );
 	TextEditParams.setSize( Size );
 	TextEditParams.Flags = Flags;
 	TextEditParams.HScrollBar = HScrollBar;
@@ -521,7 +521,7 @@ UITextEdit * UITheme::createTextEdit( UIControl * Parent, const Sizei& Size, con
 UITextInput * UITheme::createTextInput( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool SupportFreeEditing, Uint32 MaxLength ) {
 	UITextInput::CreateParams TextInputParams;
 	TextInputParams.setParent( Parent );
-	TextInputParams.setPos( Pos );
+	TextInputParams.setPosition( Pos );
 	TextInputParams.setSize( Size );
 	TextInputParams.Flags = Flags;
 	TextInputParams.SupportFreeEditing = SupportFreeEditing;
@@ -535,7 +535,7 @@ UITextInput * UITheme::createTextInput( UIControl * Parent, const Sizei& Size, c
 UITextInputPassword * UITheme::createTextInputPassword( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool SupportFreeEditing, Uint32 MaxLength ) {
 	UITextInput::CreateParams TextInputParams;
 	TextInputParams.setParent( Parent );
-	TextInputParams.setPos( Pos );
+	TextInputParams.setPosition( Pos );
 	TextInputParams.setSize( Size );
 	TextInputParams.Flags = Flags;
 	TextInputParams.SupportFreeEditing = SupportFreeEditing;
@@ -549,7 +549,7 @@ UITextInputPassword * UITheme::createTextInputPassword( UIControl * Parent, cons
 UISpinBox * UITheme::createSpinBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Float DefaultValue, bool AllowDotsInNumbers ) {
 	UISpinBox::CreateParams SpinBoxParams;
 	SpinBoxParams.setParent( Parent );
-	SpinBoxParams.setPos( Pos );
+	SpinBoxParams.setPosition( Pos );
 	SpinBoxParams.setSize( Size );
 	SpinBoxParams.Flags = Flags;
 	SpinBoxParams.DefaultValue = DefaultValue;
@@ -563,7 +563,7 @@ UISpinBox * UITheme::createSpinBox( UIControl * Parent, const Sizei& Size, const
 UIScrollBar * UITheme::createScrollBar( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool VerticalScrollBar ) {
 	UIScrollBar::CreateParams ScrollBarParams;
 	ScrollBarParams.setParent( Parent );
-	ScrollBarParams.setPos( Pos );
+	ScrollBarParams.setPosition( Pos );
 	ScrollBarParams.setSize( Size );
 	ScrollBarParams.Flags = Flags;
 	ScrollBarParams.VerticalScrollBar = VerticalScrollBar;
@@ -576,7 +576,7 @@ UIScrollBar * UITheme::createScrollBar( UIControl * Parent, const Sizei& Size, c
 UISlider * UITheme::createSlider( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool VerticalSlider, bool AllowHalfSliderOut, bool ExpandBackground ) {
 	UISlider::CreateParams SliderParams;
 	SliderParams.setParent( Parent );
-	SliderParams.setPos( Pos );
+	SliderParams.setPosition( Pos );
 	SliderParams.setSize( Size );
 	SliderParams.Flags = Flags;
 	SliderParams.VerticalSlider = VerticalSlider;
@@ -591,7 +591,7 @@ UISlider * UITheme::createSlider( UIControl * Parent, const Sizei& Size, const V
 UIComboBox * UITheme::createComboBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
 	UIComboBox::CreateParams ComboParams;
 	ComboParams.setParent( Parent );
-	ComboParams.setPos( Pos );
+	ComboParams.setPosition( Pos );
 	ComboParams.setSize( Size );
 	ComboParams.Flags = Flags;
 	ComboParams.MinNumVisibleItems = MinNumVisibleItems;
@@ -606,7 +606,7 @@ UIComboBox * UITheme::createComboBox( UIControl * Parent, const Sizei& Size, con
 UIDropDownList * UITheme::createDropDownList( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
 	UIDropDownList::CreateParams DDLParams;
 	DDLParams.setParent( Parent );
-	DDLParams.setPos( Pos );
+	DDLParams.setPosition( Pos );
 	DDLParams.setSize( Size );
 	DDLParams.Flags = Flags;
 	DDLParams.MinNumVisibleItems = MinNumVisibleItems;
@@ -621,7 +621,7 @@ UIDropDownList * UITheme::createDropDownList( UIControl * Parent, const Sizei& S
 UIListBox * UITheme::createListBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool SmoothScroll, Uint32 RowHeight, UI_SCROLLBAR_MODE VScrollMode, UI_SCROLLBAR_MODE HScrollMode, Recti PaddingContainer ) {
 	UIListBox::CreateParams LBParams;
 	LBParams.setParent( Parent );
-	LBParams.setPos( Pos );
+	LBParams.setPosition( Pos );
 	LBParams.setSize( Size );
 	LBParams.Flags = Flags;
 	LBParams.SmoothScroll = SmoothScroll;
@@ -638,7 +638,7 @@ UIListBox * UITheme::createListBox( UIControl * Parent, const Sizei& Size, const
 UIMenu * UITheme::createMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 RowHeight, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	UIMenu::CreateParams MenuParams;
 	MenuParams.setParent( Parent );
-	MenuParams.setPos( Pos );
+	MenuParams.setPosition( Pos );
 	MenuParams.setSize( Size );
 	MenuParams.Flags = Flags;
 	MenuParams.RowHeight = RowHeight;
@@ -656,7 +656,7 @@ UIMenu * UITheme::createMenu( UIControl * Parent, const Sizei& Size, const Vecto
 UIPopUpMenu * UITheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 RowHeight, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	UIPopUpMenu::CreateParams MenuParams;
 	MenuParams.setParent( Parent );
-	MenuParams.setPos( Pos );
+	MenuParams.setPosition( Pos );
 	MenuParams.setSize( Size );
 	MenuParams.Flags = Flags;
 	MenuParams.RowHeight = RowHeight;
@@ -670,7 +670,7 @@ UIPopUpMenu * UITheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, c
 UIProgressBar * UITheme::createProgressBar( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool DisplayPercent, bool VerticalExpand, Vector2f MovementSpeed, Rectf FillerMargin ) {
 	UIProgressBar::CreateParams PBParams;
 	PBParams.setParent( Parent );
-	PBParams.setPos( Pos );
+	PBParams.setPosition( Pos );
 	PBParams.setSize( Size );
 	PBParams.Flags = Flags;
 	PBParams.DisplayPercent = DisplayPercent;
@@ -687,7 +687,7 @@ UIProgressBar * UITheme::createProgressBar( UIControl * Parent, const Sizei& Siz
 UIPushButton * UITheme::createPushButton( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, SubTexture * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
 	UIPushButton::CreateParams ButtonParams;
 	ButtonParams.setParent( Parent );
-	ButtonParams.setPos( Pos );
+	ButtonParams.setPosition( Pos );
 	ButtonParams.setSize( Size );
 	ButtonParams.Flags = Flags;
 	ButtonParams.Icon = Icon;
@@ -706,7 +706,7 @@ UIPushButton * UITheme::createPushButton( UIControl * Parent, const Sizei& Size,
 UISelectButton * UITheme::createSelectButton( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, SubTexture * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
 	UIPushButton::CreateParams ButtonParams;
 	ButtonParams.setParent( Parent );
-	ButtonParams.setPos( Pos );
+	ButtonParams.setPosition( Pos );
 	ButtonParams.setSize( Size );
 	ButtonParams.Flags = Flags;
 	ButtonParams.Icon = Icon;
@@ -725,7 +725,7 @@ UISelectButton * UITheme::createSelectButton( UIControl * Parent, const Sizei& S
 UIWinMenu * UITheme::createWinMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MarginBetweenButtons, Uint32 ButtonMargin, Uint32 MenuHeight, Uint32 FirstButtonMargin ) {
 	UIWinMenu::CreateParams WinMenuParams;
 	WinMenuParams.setParent( Parent );
-	WinMenuParams.setPos( Pos );
+	WinMenuParams.setPosition( Pos );
 	WinMenuParams.setSize( Size );
 	WinMenuParams.Flags = Flags;
 	WinMenuParams.MarginBetweenButtons = MarginBetweenButtons;
@@ -742,7 +742,7 @@ UIWinMenu * UITheme::createWinMenu( UIControl * Parent, const Sizei& Size, const
 UIWindow * UITheme::createWindow( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
 	UIWindow::CreateParams WinParams;
 	WinParams.setParent( Parent );
-	WinParams.setPos( Pos );
+	WinParams.setPosition( Pos );
 	WinParams.setSize( Size );
 	WinParams.Flags = Flags;
 	WinParams.WinFlags = WinFlags;
@@ -754,7 +754,7 @@ UIWindow * UITheme::createWindow( UIControl * Parent, const Sizei& Size, const V
 UICommonDialog * UITheme::createCommonDialog( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
 	UICommonDialog::CreateParams DLGParams;
 	DLGParams.setParent( Parent );
-	DLGParams.setPos( Pos );
+	DLGParams.setPosition( Pos );
 	DLGParams.setSize( Size );
 	DLGParams.Flags = Flags;
 	DLGParams.WinFlags = WinFlags;
@@ -769,7 +769,7 @@ UICommonDialog * UITheme::createCommonDialog( UIControl * Parent, const Sizei& S
 UIMessageBox * UITheme::createMessageBox( UI_MSGBOX_TYPE Type, const String& Message, Uint32 WinFlags, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
 	UIMessageBox::CreateParams MsgBoxParams;
 	MsgBoxParams.setParent( Parent );
-	MsgBoxParams.setPos( Pos );
+	MsgBoxParams.setPosition( Pos );
 	MsgBoxParams.setSize( Size );
 	MsgBoxParams.Flags = Flags;
 	MsgBoxParams.WinFlags = WinFlags;
@@ -783,7 +783,7 @@ UIMessageBox * UITheme::createMessageBox( UI_MSGBOX_TYPE Type, const String& Mes
 UITabWidget * UITheme::createTabWidget( UIControl *Parent, const Sizei &Size, const Vector2i &Pos, const Uint32 &Flags, const bool &TabsClosable, const bool &SpecialBorderTabs, const Int32 &TabSeparation, const Uint32 &MaxTextLength, const Uint32 &TabWidgetHeight, const Uint32 &TabTextAlign, const Uint32 &MinTabWidth, const Uint32 &MaxTabWidth ) {
 	UITabWidget::CreateParams TabWidgetParams;
 	TabWidgetParams.setParent( Parent );
-	TabWidgetParams.setPos( Pos );
+	TabWidgetParams.setPosition( Pos );
 	TabWidgetParams.setSize( Size );
 	TabWidgetParams.Flags = Flags;
 	TabWidgetParams.TabsClosable = TabsClosable;

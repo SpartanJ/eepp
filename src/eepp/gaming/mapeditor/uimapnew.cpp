@@ -77,7 +77,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	Txt = mTheme->createTextBox( "Map Flags:", mUIWindow->getContainer(), Sizei(), Vector2i( Txt->getPosition().x, mUIMapMaxLayers->getPosition().y + mUIMapMaxLayers->getSize().getHeight() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	mUILightsEnabled = mTheme->createCheckBox( mUIWindow->getContainer(), Sizei(), Vector2i( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + Txt->getSize().getHeight() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
-	mUILightsEnabled->text( "Lights Enabled" );
+	mUILightsEnabled->setText( "Lights Enabled" );
 	mUILightsEnabled->active( true );
 
 	if ( ResizeMap ) {
@@ -85,7 +85,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	}
 
 	mUILightsByVertex = mTheme->createCheckBox( mUIWindow->getContainer(), Sizei(), Vector2i( mUIWindow->getContainer()->getSize().getWidth() / 2, mUILightsEnabled->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
-	mUILightsByVertex->text( "Lights By Vertex" );
+	mUILightsByVertex->setText( "Lights By Vertex" );
 	mUILightsByVertex->active( true );
 
 	if ( ResizeMap ) {
@@ -93,7 +93,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	}
 
 	mUIClampBorders = mTheme->createCheckBox( mUIWindow->getContainer(), Sizei(), Vector2i( Txt->getPosition().x + DistFromTitle, mUILightsEnabled->getPosition().y + mUILightsEnabled->getSize().getHeight() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
-	mUIClampBorders->text( "Clamp Borders" );
+	mUIClampBorders->setText( "Clamp Borders" );
 	mUIClampBorders->active( true );
 
 	if ( ResizeMap ) {
@@ -101,7 +101,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	}
 
 	mUIClipArea = mTheme->createCheckBox( mUIWindow->getContainer(), Sizei(), Vector2i( mUIWindow->getContainer()->getSize().getWidth() / 2, mUIClampBorders->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
-	mUIClipArea->text( "Clip View Area" );
+	mUIClipArea->setText( "Clip View Area" );
 	mUIClipArea->active( true );
 
 	if ( ResizeMap ) {
@@ -112,7 +112,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 
 	UIComplexControl::CreateParams ComParams;
 	ComParams.setParent( mUIWindow->getContainer() );
-	ComParams.setPos( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
+	ComParams.setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 	ComParams.setSize( 64, 64 );
 	ComParams.Background.setColor( ColorA( 255, 255, 255, 255 ) );
 
@@ -186,21 +186,21 @@ void UIMapNew::OnRedChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
 	Col.Red = (Uint8)mUIRedSlider->value();
 	mUIBaseColor->getBackground()->setColor( Col );
-	mUIRedTxt->text( String::toStr( (Int32)mUIRedSlider->value() ) );
+	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->value() ) );
 }
 
 void UIMapNew::OnGreenChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
 	Col.Green = (Uint8)mUIGreenSlider->value();
 	mUIBaseColor->getBackground()->setColor( Col );
-	mUIGreenTxt->text( String::toStr( (Uint32)mUIGreenSlider->value() ) );
+	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->value() ) );
 }
 
 void UIMapNew::OnBlueChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
 	Col.Blue = (Uint8)mUIBlueSlider->value();
 	mUIBaseColor->getBackground()->setColor( Col );
-	mUIBlueTxt->text( String::toStr( (Uint32)mUIBlueSlider->value() ) );
+	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->value() ) );
 }
 
 void UIMapNew::OKClick( const UIEvent * Event ) {

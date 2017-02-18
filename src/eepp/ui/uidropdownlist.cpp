@@ -149,7 +149,7 @@ void UIDropDownList::showListBox() {
 }
 
 void UIDropDownList::onControlClear( const UIEvent * Event ) {
-	text( "" );
+	setText( "" );
 }
 
 void UIDropDownList::onItemKeyDown( const UIEvent * Event ) {
@@ -171,7 +171,7 @@ void UIDropDownList::onItemClicked( const UIEvent * Event ) {
 }
 
 void UIDropDownList::onItemSelected( const UIEvent * Event ) {
-	text( mListBox->getItemSelectedText() );
+	setText( mListBox->getItemSelectedText() );
 
 	UIMessage Msg( this, UIMessage::MsgSelected, mListBox->getItemSelectedIndex() );
 	messagePost( &Msg );

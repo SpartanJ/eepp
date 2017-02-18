@@ -12,7 +12,7 @@ UICheckBox::UICheckBox( const UITextBox::CreateParams& Params ) :
 	UIControlAnim::CreateParams ButtonParams( Params );
 
 	ButtonParams.setParent( this );
-	ButtonParams.setPos( Vector2i( 0, 0 ) );
+	ButtonParams.setPosition( Vector2i( 0, 0 ) );
 	ButtonParams.Size = Sizei( 16, 16 );
 
 	mActiveButton 	= eeNew( UIControlAnim, ( ButtonParams ) );
@@ -23,7 +23,7 @@ UICheckBox::UICheckBox( const UITextBox::CreateParams& Params ) :
 	mInactiveButton->setVisible( true );
 	mInactiveButton->setEnabled( true );
 
-	padding( Recti(0,0,0,0) );
+	setPadding( Recti(0,0,0,0) );
 
 	applyDefaultTheme();
 }
@@ -72,7 +72,7 @@ void UICheckBox::doAftersetTheme() {
 		}
 	}
 
-	padding( Recti(0,0,0,0) );
+	setPadding( Recti(0,0,0,0) );
 }
 
 void UICheckBox::autoSize() {
@@ -139,7 +139,7 @@ const bool& UICheckBox::isActive() const {
 	return active();
 }
 
-void UICheckBox::padding( const Recti& padding ) {
+void UICheckBox::setPadding( const Recti& padding ) {
 	mPadding = padding;
 	mPadding.Left = mPadding.Left + mActiveButton->getSize().getWidth();
 }

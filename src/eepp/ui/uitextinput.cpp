@@ -45,7 +45,7 @@ void UITextInput::update() {
 	if ( mTextBuffer.changedSinceLastUpdate() ) {
 		Vector2f offSet = mAlignOffset;
 
-		UITextBox::text( mTextBuffer.getBuffer() );
+		UITextBox::setText( mTextBuffer.getBuffer() );
 
 		updateText();
 
@@ -202,16 +202,16 @@ const bool& UITextInput::allowEditing() const {
 	return mAllowEditing;
 }
 
-void UITextInput::text( const String& text ) {
-	UITextBox::text( text );
+void UITextInput::setText( const String& text ) {
+	UITextBox::setText( text );
 
 	mTextBuffer.setBuffer( text );
 
 	mTextBuffer.cursorToEnd();
 }
 
-const String& UITextInput::text() {
-	return UITextBox::text();
+const String& UITextInput::getText() {
+	return UITextBox::getText();
 }
 
 void UITextInput::shrinkText( const Uint32& MaxWidth ) {

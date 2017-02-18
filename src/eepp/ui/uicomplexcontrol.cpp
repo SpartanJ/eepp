@@ -124,8 +124,8 @@ void UIComplexControl::tooltipRemove() {
 	mTooltip = NULL;
 }
 
-void UIComplexControl::setSize( const Sizei &Size ) {
-	Sizei s( Size );
+void UIComplexControl::setSize( const Sizei& size ) {
+	Sizei s( size );
 
 	if ( s.x < mMinControlSize.x )
 		s.x = mMinControlSize.x;

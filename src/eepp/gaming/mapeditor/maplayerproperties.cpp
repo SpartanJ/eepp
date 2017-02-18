@@ -29,7 +29,7 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 
 	UITextBox * Txt = mUITheme->createTextBox( "Layer name:", mUIWindow->getContainer(), Sizei(), Vector2i( 50, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	mUIInput = mUITheme->createTextInput( mUIWindow->getContainer(), Sizei( 120, 22 ), Vector2i( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE, true, 64 );
-	mUIInput->text( mLayer->Name() );
+	mUIInput->setText( mLayer->Name() );
 	mUIInput->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &MapLayerProperties::OKClick ) );
 
 	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
@@ -48,7 +48,7 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 
 	UIGenericGrid::CreateParams GridParams;
 	GridParams.setParent( mUIWindow->getContainer() );
-	GridParams.setPos( 50, TxtBox->getPosition().y + TxtBox->getSize().getHeight() );
+	GridParams.setPosition( 50, TxtBox->getPosition().y + TxtBox->getSize().getHeight() );
 	GridParams.setSize( 400, 350 );
 	GridParams.Flags = UI_AUTO_PADDING;
 	GridParams.RowHeight = 24;
@@ -96,8 +96,8 @@ void MapLayerProperties::SaveProperties() {
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->cell( 1 ) );
 		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->cell( 3 ) );
 
-		if ( NULL != Cell && Input->text().size() && Input2->text().size() ) {
-			mLayer->AddProperty(	Input->text(), Input2->text() );
+		if ( NULL != Cell && Input->getText().size() && Input2->getText().size() ) {
+			mLayer->AddProperty(	Input->getText(), Input2->getText() );
 		}
 	}
 }
@@ -111,8 +111,8 @@ void MapLayerProperties::LoadProperties() {
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->cell( 1 ) );
 		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->cell( 3 ) );
 
-		Input->text( it->first );
-		Input2->text( it->second );
+		Input->setText( it->first );
+		Input2->setText( it->second );
 
 		mGenGrid->add( Cell );
 	}
@@ -121,7 +121,7 @@ void MapLayerProperties::LoadProperties() {
 void MapLayerProperties::OKClick( const UIEvent * Event ) {
 	SaveProperties();
 
-	mLayer->Name( mUIInput->text().toUtf8() );
+	mLayer->Name( mUIInput->getText().toUtf8() );
 
 	if ( mRefreshCb.IsSet() ) {
 		mRefreshCb();
