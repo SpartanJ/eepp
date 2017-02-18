@@ -101,7 +101,7 @@ Uint32 UICheckBox::onMessage( const UIMessage * Msg ) {
 			}
 
 			if ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) {
-				sendMouseEvent( UIEvent::EventMouseClick, UIManager::instance()->getMousePos(), UIManager::instance()->pressTrigger() );
+				sendMouseEvent( UIEvent::EventMouseClick, UIManager::instance()->getMousePos(), UIManager::instance()->getPressTrigger() );
 			}
 
 			return 1;
@@ -112,10 +112,10 @@ Uint32 UICheckBox::onMessage( const UIMessage * Msg ) {
 }
 
 void UICheckBox::switchState() {
-	active( !mActive );
+	setActive( !mActive );
 }
 
-void UICheckBox::active( const bool& active ) {
+void UICheckBox::setActive( const bool& active ) {
 	if ( !active ) {
 		mActiveButton->setVisible( false );
 		mInactiveButton->setVisible( true );
@@ -131,12 +131,8 @@ void UICheckBox::active( const bool& active ) {
 	onValueChange();
 }
 
-const bool& UICheckBox::active() const {
-	return mActive;
-}
-
 const bool& UICheckBox::isActive() const {
-	return active();
+	return mActive;
 }
 
 void UICheckBox::setPadding( const Recti& padding ) {
@@ -144,11 +140,11 @@ void UICheckBox::setPadding( const Recti& padding ) {
 	mPadding.Left = mPadding.Left + mActiveButton->getSize().getWidth();
 }
 
-UIControlAnim * UICheckBox::activeButton() const {
+UIControlAnim * UICheckBox::getActiveButton() const {
 	return mActiveButton;
 }
 
-UIControlAnim * UICheckBox::inactiveButton() const {
+UIControlAnim * UICheckBox::getInactiveButton() const {
 	return mInactiveButton;
 }
 
@@ -159,7 +155,7 @@ Uint32 UICheckBox::onKeyDown( const UIEventKey& Event ) {
 		if ( Sys::getTicks() - mLastTick > 250 ) {
 			mLastTick = Sys::getTicks();
 
-			active( !mActive );
+			setActive( !mActive );
 		}
 	}
 

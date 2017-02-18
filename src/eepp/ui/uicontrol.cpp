@@ -26,8 +26,8 @@ UIControl::UIControl( const CreateParams& Params ) :
 	mVisible( false ),
 	mEnabled( false )
 {
-	if ( NULL == mParentCtrl && NULL != UIManager::instance()->mainControl() ) {
-		mParentCtrl = UIManager::instance()->mainControl();
+	if ( NULL == mParentCtrl && NULL != UIManager::instance()->getMainControl() ) {
+		mParentCtrl = UIManager::instance()->getMainControl();
 	}
 
 	if ( NULL != mParentCtrl )
@@ -53,12 +53,12 @@ UIControl::~UIControl() {
 	if ( NULL != mParentCtrl )
 		mParentCtrl->childRemove( this );
 
-	if ( UIManager::instance()->focusControl() == this && UIManager::instance()->mainControl() != this ) {
-		UIManager::instance()->focusControl( UIManager::instance()->mainControl() );
+	if ( UIManager::instance()->getFocusControl() == this && UIManager::instance()->getMainControl() != this ) {
+		UIManager::instance()->setFocusControl( UIManager::instance()->getMainControl() );
 	}
 
-	if ( UIManager::instance()->overControl() == this && UIManager::instance()->mainControl() != this ) {
-		UIManager::instance()->overControl( UIManager::instance()->mainControl() );
+	if ( UIManager::instance()->getOverControl() == this && UIManager::instance()->getMainControl() != this ) {
+		UIManager::instance()->setOverControl( UIManager::instance()->getMainControl() );
 	}
 }
 
@@ -254,19 +254,19 @@ void UIControl::draw() {
 		if ( NULL != mSkinState )
 			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.getWidth(), (Float)mSize.getHeight(), 255 );
 
-		if ( UIManager::instance()->highlightFocus() && UIManager::instance()->focusControl() == this ) {
+		if ( UIManager::instance()->getHighlightFocus() && UIManager::instance()->getFocusControl() == this ) {
 			Primitives P;
 			P.setFillMode( DRAW_LINE );
 			P.setBlendMode( getBlendMode() );
-			P.setColor( UIManager::instance()->highlightFocusColor() );
+			P.setColor( UIManager::instance()->getHighlightFocusColor() );
 			P.drawRectangle( getRectf() );
 		}
 
-		if ( UIManager::instance()->highlightOver() && UIManager::instance()->overControl() == this ) {
+		if ( UIManager::instance()->getHighlightOver() && UIManager::instance()->getOverControl() == this ) {
 			Primitives P;
 			P.setFillMode( DRAW_LINE );
 			P.setBlendMode( getBlendMode() );
-			P.setColor( UIManager::instance()->highlightOverColor() );
+			P.setColor( UIManager::instance()->getHighlightOverColor() );
 			P.drawRectangle( getRectf() );
 		}
 	}
@@ -498,9 +498,9 @@ void UIControl::onVisibleChange() {
 }
 
 void UIControl::onEnabledChange() {
-	if ( !isEnabled() && NULL != UIManager::instance()->focusControl() ) {
-		if ( isChild( UIManager::instance()->focusControl() ) ) {
-			UIManager::instance()->focusControl( NULL );
+	if ( !isEnabled() && NULL != UIManager::instance()->getFocusControl() ) {
+		if ( isChild( UIManager::instance()->getFocusControl() ) ) {
+			UIManager::instance()->setFocusControl( NULL );
 		}
 	}
 
@@ -896,7 +896,7 @@ void UIControl::updateCenter() {
 }
 
 Time UIControl::elapsed() {
-	return UIManager::instance()->elapsed();
+	return UIManager::instance()->getElapsed();
 }
 
 Uint32 UIControl::addEventListener( const Uint32& EventType, const UIEventCallback& Callback ) {
@@ -1116,7 +1116,7 @@ Recti UIControl::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool Pad
 }
 
 void UIControl::setFocus() {
-	UIManager::instance()->focusControl( this );
+	UIManager::instance()->setFocusControl( this );
 }
 
 void UIControl::sendParentSizeChange( const Vector2i& SizeChange ) {
@@ -1222,7 +1222,7 @@ UIControl * UIControl::getNextComplexControl() {
 		}
 	}
 
-	return UIManager::instance()->mainControl();
+	return UIManager::instance()->getMainControl();
 }
 
 void UIControl::doAftersetTheme() {

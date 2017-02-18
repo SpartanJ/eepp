@@ -89,7 +89,7 @@ Uint32 UIPopUpMenu::onMessage( const UIMessage * Msg ) {
 					sendCommonEvent( UIEvent::EventOnHideByClick );
 
 					if ( isVisible() )
-						UIManager::instance()->mainControl()->setFocus();
+						UIManager::instance()->getMainControl()->setFocus();
 
 					hide();
 				}

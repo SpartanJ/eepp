@@ -23,7 +23,7 @@ bool UIDragable::isType( const Uint32& type ) const {
 }
 
 Uint32 UIDragable::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
-	if ( !( UIManager::instance()->lastPressTrigger() & mDragButton ) && ( Flags & mDragButton ) && isDragEnabled() && !isDragging() ) {
+	if ( !( UIManager::instance()->getLastPressTrigger() & mDragButton ) && ( Flags & mDragButton ) && isDragEnabled() && !isDragging() ) {
 		setDragging( true );
 		mDragPoint = Pos;
 	}
@@ -56,7 +56,7 @@ void UIDragable::update() {
 		return;
 
 	if ( isDragging() ) {
-		if ( !( UIManager::instance()->pressTrigger() & mDragButton ) ) {
+		if ( !( UIManager::instance()->getPressTrigger() & mDragButton ) ) {
 			setDragging( false );
 			UIManager::instance()->setControlDragging( false );
 			return;

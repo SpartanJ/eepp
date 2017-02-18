@@ -36,7 +36,7 @@ void UIThemeManager::setTheme( const std::string& Theme ) {
 }
 
 void UIThemeManager::setTheme( UITheme * Theme ) {
-	UIControl * MainCtrl = UIManager::instance()->mainControl();
+	UIControl * MainCtrl = UIManager::instance()->getMainControl();
 
 	if ( NULL != MainCtrl ) {
 		MainCtrl->setThemeToChilds( Theme );

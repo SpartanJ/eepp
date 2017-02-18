@@ -47,19 +47,19 @@ void UIControlAnim::draw() {
 		if ( NULL != mSkinState )
 			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.getWidth(), (Float)mSize.getHeight(), (Uint32)mAlpha );
 
-		if ( UIManager::instance()->highlightFocus() && UIManager::instance()->focusControl() == this ) {
+		if ( UIManager::instance()->getHighlightFocus() && UIManager::instance()->getFocusControl() == this ) {
 			Primitives P;
 			P.setFillMode( DRAW_LINE );
 			P.setBlendMode( getBlendMode() );
-			P.setColor( UIManager::instance()->highlightFocusColor() );
+			P.setColor( UIManager::instance()->getHighlightFocusColor() );
 			P.drawRectangle( getRectf() );
 		}
 
-		if ( UIManager::instance()->highlightOver() && UIManager::instance()->overControl() == this ) {
+		if ( UIManager::instance()->getHighlightOver() && UIManager::instance()->getOverControl() == this ) {
 			Primitives P;
 			P.setFillMode( DRAW_LINE );
 			P.setBlendMode( getBlendMode() );
-			P.setColor( UIManager::instance()->highlightOverColor() );
+			P.setColor( UIManager::instance()->getHighlightOverColor() );
 			P.drawRectangle( getRectf() );
 		}
 	}

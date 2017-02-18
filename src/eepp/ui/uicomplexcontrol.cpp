@@ -40,11 +40,11 @@ void UIComplexControl::update() {
 			Pos.x += UIThemeManager::instance()->getCursorSize().x;
 			Pos.y += UIThemeManager::instance()->getCursorSize().y;
 
-			if ( Pos.x + mTooltip->getSize().getWidth() > UIManager::instance()->mainControl()->getSize().getWidth() ) {
+			if ( Pos.x + mTooltip->getSize().getWidth() > UIManager::instance()->getMainControl()->getSize().getWidth() ) {
 				Pos.x = UIManager::instance()->getMousePos().x - mTooltip->getSize().getWidth();
 			}
 
-			if ( Pos.y + mTooltip->getSize().getHeight() > UIManager::instance()->mainControl()->getSize().getHeight() ) {
+			if ( Pos.y + mTooltip->getSize().getHeight() > UIManager::instance()->getMainControl()->getSize().getHeight() ) {
 				Pos.y = UIManager::instance()->getMousePos().y - mTooltip->getSize().getHeight();
 			}
 
@@ -55,7 +55,7 @@ void UIComplexControl::update() {
 				mTooltip->show();
 			} else {
 				if ( -1.f != mTooltip->getTooltipTime().asMilliseconds() ) {
-					mTooltip->addTooltipTime( UIManager::instance()->elapsed() );
+					mTooltip->addTooltipTime( UIManager::instance()->getElapsed() );
 				}
 
 				if ( mTooltip->getTooltipTime() >= UIThemeManager::instance()->getTooltipTimeToShow() ) {
@@ -90,12 +90,12 @@ void UIComplexControl::createTooltip() {
 	UITheme * tTheme = UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL != tTheme ) {
-		mTooltip = tTheme->createTooltip( this, UIManager::instance()->mainControl() );
+		mTooltip = tTheme->createTooltip( this, UIManager::instance()->getMainControl() );
 		mTooltip->setVisible( false );
 		mTooltip->setEnabled( false );
 	} else {
 		UITooltip::CreateParams Params;
-		Params.setParent( UIManager::instance()->mainControl() );
+		Params.setParent( UIManager::instance()->getMainControl() );
 		Params.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_PADDING | UI_AUTO_SIZE;
 		mTooltip = eeNew( UITooltip, ( Params, this ) );
 	}

@@ -46,13 +46,13 @@ void TextureAtlasSubTextureEditor::update() {
 
 	UIComplexControl::update();
 
-	if ( NULL != mGfx->subTexture() && mDrag->isDragEnabled() && mDrag->isDragging() && Pos != mDrag->getPosition() ) {
+	if ( NULL != mGfx->getSubTexture() && mDrag->isDragEnabled() && mDrag->isDragging() && Pos != mDrag->getPosition() ) {
 		Vector2i Diff = -( Pos - mDrag->getPosition() );
 
-		mGfx->subTexture()->setOffset( Vector2i( mGfx->subTexture()->getOffset().x + Diff.x, mGfx->subTexture()->getOffset().y + Diff.y ) );
+		mGfx->getSubTexture()->setOffset( Vector2i( mGfx->getSubTexture()->getOffset().x + Diff.x, mGfx->getSubTexture()->getOffset().y + Diff.y ) );
 
-		mEditor->spinOffX()->setValue( mGfx->subTexture()->getOffset().x );
-		mEditor->spinOffY()->setValue( mGfx->subTexture()->getOffset().y );
+		mEditor->getSpinOffX()->setValue( mGfx->getSubTexture()->getOffset().x );
+		mEditor->getSpinOffY()->setValue( mGfx->getSubTexture()->getOffset().y );
 	}
 
 	mGfx->setPosition( mUICenter );
@@ -62,12 +62,12 @@ void TextureAtlasSubTextureEditor::onSizeChange() {
 	getCenter();
 }
 
-Graphics::SubTexture * TextureAtlasSubTextureEditor::subTexture() const {
-	return mGfx->subTexture();
+Graphics::SubTexture * TextureAtlasSubTextureEditor::getSubTexture() const {
+	return mGfx->getSubTexture();
 }
 
-void TextureAtlasSubTextureEditor::subTexture( Graphics::SubTexture * subTexture ) {
-	mGfx->subTexture( subTexture );
+void TextureAtlasSubTextureEditor::setSubTexture( Graphics::SubTexture * subTexture ) {
+	mGfx->setSubTexture( subTexture );
 }
 
 UIGfx * TextureAtlasSubTextureEditor::getGfx() const {

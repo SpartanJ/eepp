@@ -20,20 +20,18 @@ class EE_API UICheckBox : public UITextBox {
 
 		const bool& isActive() const;
 
-		void active( const bool& active );
-
-		const bool& active() const;
+		void setActive( const bool& active );
 
 		virtual void setPadding( const Recti& padding );
 
-		UIControlAnim * activeButton() const;
+		UIControlAnim * getActiveButton() const;
 
-		UIControlAnim * inactiveButton() const;
+		UIControlAnim * getInactiveButton() const;
 	protected:
 		UIControlAnim *	mActiveButton;
 		UIControlAnim *	mInactiveButton;
-		bool				mActive;
-		Uint32				mLastTick;
+		bool			mActive;
+		Uint32			mLastTick;
 
 		virtual void onSizeChange();
 

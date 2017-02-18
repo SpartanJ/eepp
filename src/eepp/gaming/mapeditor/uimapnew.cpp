@@ -78,34 +78,34 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 
 	mUILightsEnabled = mTheme->createCheckBox( mUIWindow->getContainer(), Sizei(), Vector2i( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + Txt->getSize().getHeight() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUILightsEnabled->setText( "Lights Enabled" );
-	mUILightsEnabled->active( true );
+	mUILightsEnabled->setActive( true );
 
 	if ( ResizeMap ) {
-		mUILightsEnabled->active( 0 != mUIMap->Map()->LightsEnabled() );
+		mUILightsEnabled->setActive( 0 != mUIMap->Map()->LightsEnabled() );
 	}
 
 	mUILightsByVertex = mTheme->createCheckBox( mUIWindow->getContainer(), Sizei(), Vector2i( mUIWindow->getContainer()->getSize().getWidth() / 2, mUILightsEnabled->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUILightsByVertex->setText( "Lights By Vertex" );
-	mUILightsByVertex->active( true );
+	mUILightsByVertex->setActive( true );
 
 	if ( ResizeMap ) {
-		mUILightsByVertex->active( 0 != mUIMap->Map()->LightsByVertex() );
+		mUILightsByVertex->setActive( 0 != mUIMap->Map()->LightsByVertex() );
 	}
 
 	mUIClampBorders = mTheme->createCheckBox( mUIWindow->getContainer(), Sizei(), Vector2i( Txt->getPosition().x + DistFromTitle, mUILightsEnabled->getPosition().y + mUILightsEnabled->getSize().getHeight() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUIClampBorders->setText( "Clamp Borders" );
-	mUIClampBorders->active( true );
+	mUIClampBorders->setActive( true );
 
 	if ( ResizeMap ) {
-		mUIClampBorders->active( 0 != mUIMap->Map()->ClampBorders() );
+		mUIClampBorders->setActive( 0 != mUIMap->Map()->ClampBorders() );
 	}
 
 	mUIClipArea = mTheme->createCheckBox( mUIWindow->getContainer(), Sizei(), Vector2i( mUIWindow->getContainer()->getSize().getWidth() / 2, mUIClampBorders->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUIClipArea->setText( "Clip View Area" );
-	mUIClipArea->active( true );
+	mUIClipArea->setActive( true );
 
 	if ( ResizeMap ) {
-		mUIClipArea->active( 0 != mUIMap->Map()->ClipedArea() );
+		mUIClipArea->setActive( 0 != mUIMap->Map()->ClipedArea() );
 	}
 
 	Txt = mTheme->createTextBox( "Map Base Color:", mUIWindow->getContainer(), Sizei(), Vector2i( Txt->getPosition().x, mUIClipArea->getPosition().y + mUIClipArea->getSize().getHeight() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
@@ -212,16 +212,16 @@ void UIMapNew::OKClick( const UIEvent * Event ) {
 
 	Uint32 Flags = MAP_EDITOR_DEFAULT_FLAGS;
 
-	if ( mUILightsEnabled->active() )
+	if ( mUILightsEnabled->isActive() )
 		Flags |= MAP_FLAG_LIGHTS_ENABLED;
 
-	if ( mUILightsByVertex->active() )
+	if ( mUILightsByVertex->isActive() )
 		Flags |= MAP_FLAG_LIGHTS_BYVERTEX;
 
-	if ( mUIClampBorders->active() )
+	if ( mUIClampBorders->isActive() )
 		Flags |= MAP_FLAG_CLAMP_BORDERS;
 
-	if ( mUIClipArea->active() )
+	if ( mUIClipArea->isActive() )
 		Flags |= MAP_FLAG_CLIP_AREA;
 
 	if ( w > 0 && h > 0 && tw > 0 && th > 0 && ml > 0 ) {

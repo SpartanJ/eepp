@@ -82,9 +82,9 @@ class EE_API UIListBox : public UIComplexControl {
 
 		bool isMultiSelect() const;
 
-		UIScrollBar * verticalScrollBar() const;
+		UIScrollBar * getVerticalScrollBar() const;
 
-		UIScrollBar * horizontalScrollBar() const;
+		UIScrollBar * getHorizontalScrollBar() const;
 
 		UIListBoxItem * getItem( const Uint32& Index ) const;
 
@@ -102,39 +102,35 @@ class EE_API UIListBox : public UIComplexControl {
 
 		std::list<UIListBoxItem *> getItemsSelected();
 
-		void fontColor( const ColorA& Color );
+		void setFontColor( const ColorA& Color );
 
-		const ColorA& fontColor() const;
+		const ColorA& getFontColor() const;
 
-		void fontOverColor( const ColorA& Color );
+		void setFontOverColor( const ColorA& Color );
 
-		const ColorA& fontOverColor() const;
+		const ColorA& getFontOverColor() const;
 
-		void fontSelectedColor( const ColorA& Color );
+		void setFontSelectedColor( const ColorA& Color );
 
-		const ColorA& fontSelectedColor() const;
+		const ColorA& getFontSelectedColor() const;
 
-		void font( Graphics::Font * font );
+		void setFont( Graphics::Font * font );
 
-		Graphics::Font * font() const;
+		Graphics::Font * getFont() const;
 
-		void paddingContainer( const Recti& Padding );
+		void setContainerPadding( const Recti& Padding );
 
-		const Recti& paddingContainer() const;
+		const Recti& getContainerPadding() const;
 
-		void smoothScroll( const bool& soft );
+		void setSmoothScroll( const bool& soft );
 
-		const bool& smoothScroll() const;
+		const bool& isSmoothScroll() const;
 
-		void scrollAlwaysVisible( const bool& visible );
+		void setRowHeight( const Uint32& height );
 
-		const bool& scrollAlwaysVisible() const;
+		const Uint32& getRowHeight() const;
 
-		void rowHeight( const Uint32& height );
-
-		const Uint32& rowHeight() const;
-
-		Uint32 count();
+		Uint32 getCount();
 
 		void setSelected( Uint32 Index );
 
@@ -144,23 +140,23 @@ class EE_API UIListBox : public UIComplexControl {
 
 		void selectNext();
 
-		void verticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+		void setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
 
-		const UI_SCROLLBAR_MODE& verticalScrollMode();
+		const UI_SCROLLBAR_MODE& getVerticalScrollMode();
 
-		void horizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+		void setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
 
-		const UI_SCROLLBAR_MODE& horizontalScrollMode();
+		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
 
 		virtual void update();
 
-		bool touchDragEnable() const;
+		bool isTouchDragEnabled() const;
 
-		void touchDragEnable( const bool& enable );
+		void setTouchDragEnabled( const bool& enable );
 
-		bool touchDragging() const;
+		bool isTouchDragging() const;
 
-		void touchDragging( const bool& dragging );
+		void setTouchDragging( const bool& dragging );
 	protected:
 		friend class UIListBoxItem;
 		friend class UIItemContainer<UIListBox>;

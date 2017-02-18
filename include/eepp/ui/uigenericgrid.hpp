@@ -54,33 +54,33 @@ class EE_API UIGenericGrid : public UIComplexControl {
 
 		void remove( Uint32 ItemIndex );
 
-		void collumnWidth( const Uint32& CollumnIndex, const Uint32& collumnWidth );
+		void setCollumnWidth( const Uint32& CollumnIndex, const Uint32& collumnWidth );
+
+		const Uint32& getCollumnWidth( const Uint32& CollumnIndex ) const;
 
 		Uint32 getCount() const;
 
 		const Uint32& getCollumnsCount() const;
 
-		const Uint32& collumnWidth( const Uint32& CollumnIndex ) const;
+		void setRowHeight( const Uint32& height );
 
-		void rowHeight( const Uint32& height );
-
-		const Uint32& rowHeight() const;
+		const Uint32& getRowHeight() const;
 
 		UIGridCell * getCell( const Uint32& CellIndex ) const;
 
-		void verticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+		void setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
 
-		const UI_SCROLLBAR_MODE& verticalScrollMode();
+		const UI_SCROLLBAR_MODE& getVerticalScrollMode();
 
-		void horizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+		void setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
 
-		const UI_SCROLLBAR_MODE& horizontalScrollMode();
+		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
 
 		Uint32 getCellPosition( const Uint32& CollumnIndex );
 
-		UIScrollBar * verticalScrollBar() const;
+		UIScrollBar * getVerticalScrollBar() const;
 
-		UIScrollBar * horizontalScrollBar() const;
+		UIScrollBar * getHorizontalScrollBar() const;
 
 		Uint32 getItemIndex( UIGridCell * Item );
 
@@ -94,13 +94,13 @@ class EE_API UIGenericGrid : public UIComplexControl {
 
 		virtual void update();
 
-		bool touchDragEnable() const;
+		bool isTouchDragEnabled() const;
 
-		void touchDragEnable( const bool& enable );
+		void setTouchDragEnabled( const bool& enable );
 
-		bool touchDragging() const;
+		bool isTouchDragging() const;
 
-		void touchDragging( const bool& dragging );
+		void setTouchDragging( const bool& dragging );
 	protected:
 		friend class UIItemContainer<UIGenericGrid>;
 		friend class UIGridCell;

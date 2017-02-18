@@ -342,7 +342,7 @@ Uint32 UIMenu::onMessage( const UIMessage * Msg ) {
 		}
 		case UIMessage::MsgFocusLoss:
 		{
-			UIControl * FocusCtrl = UIManager::instance()->focusControl();
+			UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
 
 			if ( this != FocusCtrl && !isParentOf( FocusCtrl ) && !isSubMenu( FocusCtrl ) ) {
 				onComplexControlFocusLoss();
@@ -560,7 +560,7 @@ const Recti& UIMenu::getPadding() const {
 }
 
 void UIMenu::fixMenuPos( Vector2i& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {
-	eeAABB qScreen( 0.f, 0.f, UIManager::instance()->mainControl()->getSize().getWidth(), UIManager::instance()->mainControl()->getSize().getHeight() );
+	eeAABB qScreen( 0.f, 0.f, UIManager::instance()->getMainControl()->getSize().getWidth(), UIManager::instance()->getMainControl()->getSize().getHeight() );
 	eeAABB qPos( Pos.x, Pos.y, Pos.x + Menu->getSize().getWidth(), Pos.y + Menu->getSize().getHeight() );
 
 	if ( NULL != Parent && NULL != SubMenu ) {

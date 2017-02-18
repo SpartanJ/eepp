@@ -25,11 +25,11 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	mTheme = UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL == mUIWindow ) {
-		mUIWindow = UIManager::instance()->mainControl();
+		mUIWindow = UIManager::instance()->getMainControl();
 		mUIWindow->setSkinFromTheme( mTheme, "winback" );
 	}
 
-	if ( UIManager::instance()->mainControl() == mUIWindow ) {
+	if ( UIManager::instance()->getMainControl() == mUIWindow ) {
 		mUIContainer = mUIWindow;
 	} else {
 		mUIContainer = mUIWindow->getContainer();
@@ -42,7 +42,7 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	createTextBox( Vector2i( mUIContainer->getSize().getWidth() - 205, 30 ), "SubTexture List:" );
 
 	mSubTextureList = mTheme->createListBox( mUIContainer, Sizei( 200, 156 ), Vector2i( mUIContainer->getSize().getWidth() - 205, 50 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	mSubTextureList->setSize( mSubTextureList->getSize().getWidth(), mSubTextureList->rowHeight() * 9 + mSubTextureList->paddingContainer().Top + mSubTextureList->paddingContainer().Bottom );
+	mSubTextureList->setSize( mSubTextureList->getSize().getWidth(), mSubTextureList->getRowHeight() * 9 + mSubTextureList->getContainerPadding().Top + mSubTextureList->getContainerPadding().Bottom );
 	mSubTextureList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &TextureAtlasEditor::onSubTextureChange ) );
 
 	createTextBox( Vector2i( mUIContainer->getSize().getWidth() - 205, InitY ), "Current SubTexture:" );
@@ -261,7 +261,7 @@ void TextureAtlasEditor::fileMenuClick( const UIEvent * Event ) {
 			onTextureAtlasClose( NULL );
 		}
 	} else if ( "Quit" == txt ) {
-		if ( mUIWindow == UIManager::instance()->mainControl() ) {
+		if ( mUIWindow == UIManager::instance()->getMainControl() ) {
 			UIManager::instance()->getWindow()->close();
 		} else {
 			mUIWindow->CloseWindow();
@@ -307,7 +307,7 @@ void TextureAtlasEditor::fillSubTextureList() {
 		mSubTextureList->setSelected( 0 );
 	}
 
-	mSubTextureList->verticalScrollBar()->setClickStep( 8.f / (Float)mSubTextureList->count() );
+	mSubTextureList->getVerticalScrollBar()->setClickStep( 8.f / (Float)mSubTextureList->getCount() );
 }
 
 void TextureAtlasEditor::onSubTextureChange( const UIEvent * Event ) {
@@ -315,7 +315,7 @@ void TextureAtlasEditor::onSubTextureChange( const UIEvent * Event ) {
 		mCurSubTexture = mTextureAtlasLoader->getTextureAtlas()->getByName( mSubTextureList->getItemSelectedText() );
 
 		if ( NULL != mCurSubTexture ) {
-			mSubTextureEditor->subTexture( mCurSubTexture );
+			mSubTextureEditor->setSubTexture( mCurSubTexture );
 			mSpinOffX->setValue( mCurSubTexture->getOffset().x );
 			mSpinOffY->setValue( mCurSubTexture->getOffset().y );
 			mSpinDestW->setValue( mCurSubTexture->getDestSize().x );
@@ -361,7 +361,7 @@ void TextureAtlasEditor::onTextureAtlasClose( const UIEvent * Event ) {
 	mSpinOffY->setValue( 0 );
 	mSpinDestW->setValue( 0 );
 	mSpinDestH->setValue( 0 );
-	mSubTextureEditor->subTexture( NULL );
+	mSubTextureEditor->setSubTexture( NULL );
 	mCurSubTexture = NULL;
 }
 

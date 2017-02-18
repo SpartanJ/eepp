@@ -9,8 +9,8 @@
 
 namespace EE { namespace UI {
 
-UIdefaultTheme::UIdefaultTheme( const std::string& Name, const std::string& Abbr, Graphics::Font * defaultFont ) :
-	UITheme( Name, Abbr, defaultFont )
+UIdefaultTheme::UIdefaultTheme( const std::string& name, const std::string& Abbr, Graphics::Font * defaultFont ) :
+	UITheme( name, Abbr, defaultFont )
 {
 	setFontColor( ColorA( 230, 230, 230, 255 ) );
 	setFontOverColor( ColorA( 255, 255, 255, 255 ) );

@@ -13,11 +13,11 @@ UIGridCell::UIGridCell( UIGridCell::CreateParams& Params ) :
 }
 
 UIGridCell::~UIGridCell() {
-	if ( UIManager::instance()->focusControl() == this )
+	if ( UIManager::instance()->getFocusControl() == this )
 		mParentCtrl->setFocus();
 
-	if ( UIManager::instance()->overControl() == this )
-		UIManager::instance()->overControl( mParentCtrl );
+	if ( UIManager::instance()->getOverControl() == this )
+		UIManager::instance()->setOverControl( mParentCtrl );
 }
 
 void UIGridCell::setTheme( UITheme * Theme ) {
@@ -28,7 +28,7 @@ UIGenericGrid * UIGridCell::gridParent() const {
 	return reinterpret_cast<UIGenericGrid*> ( mParentCtrl->getParent() );
 }
 
-void UIGridCell::cell( const Uint32& CollumnIndex, UIControl * Ctrl ) {
+void UIGridCell::setCell( const Uint32& CollumnIndex, UIControl * Ctrl ) {
 	eeASSERT( CollumnIndex < gridParent()->getCollumnsCount() );
 
 	UIGenericGrid * P = gridParent();
@@ -38,14 +38,14 @@ void UIGridCell::cell( const Uint32& CollumnIndex, UIControl * Ctrl ) {
 	if ( Ctrl->getParent() != this )
 		Ctrl->setParent( this );
 
-	Ctrl->setPosition		( P->getCellPosition( CollumnIndex )		, 0					);
-	Ctrl->setSize		( P->collumnWidth( CollumnIndex )	, P->rowHeight()	);
+	Ctrl->setPosition( P->getCellPosition( CollumnIndex ), 0 );
+	Ctrl->setSize( P->getCollumnWidth( CollumnIndex ), P->getRowHeight() );
 
 	Ctrl->setVisible( true );
 	Ctrl->setEnabled( true );
 }
 
-UIControl * UIGridCell::cell( const Uint32& CollumnIndex ) const {
+UIControl * UIGridCell::getCell( const Uint32& CollumnIndex ) const {
 	eeASSERT( CollumnIndex < gridParent()->getCollumnsCount() );
 
 	return mCells[ CollumnIndex ];
@@ -58,7 +58,7 @@ void UIGridCell::fixCell() {
 
 	for ( Uint32 i = 0; i < mCells.size(); i++ ) {
 		mCells[i]->setPosition	( P->getCellPosition( i )	, 0					);
-		mCells[i]->setSize		( P->collumnWidth( i )	, P->rowHeight()	);
+		mCells[i]->setSize		( P->getCollumnWidth( i )	, P->getRowHeight()	);
 	}
 }
 
@@ -78,8 +78,8 @@ void UIGridCell::update() {
 		}
 
 		if ( isMouseOverMeOrChilds() ) {
-			if ( ( Flags & EE_BUTTONS_WUWD ) && MyParent->verticalScrollBar()->isVisible() ) {
-				MyParent->verticalScrollBar()->getSlider()->manageClick( Flags );
+			if ( ( Flags & EE_BUTTONS_WUWD ) && MyParent->getVerticalScrollBar()->isVisible() ) {
+				MyParent->getVerticalScrollBar()->getSlider()->manageClick( Flags );
 			}
 		}
 	}

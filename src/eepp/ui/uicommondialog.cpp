@@ -27,7 +27,7 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	if ( mMinWindowSize.getHeight() < CDLG_MIN_HEIGHT )
 		mMinWindowSize.setHeight( CDLG_MIN_HEIGHT );
 
-	if ( allowFolderSelect() ) {
+	if ( getAllowFolderSelect() ) {
 		setTitle( "Select a folder" );
 	} else {
 		setTitle( "Select a file" );
@@ -185,7 +185,7 @@ void UICommonDialog::refreshFolder() {
 	}
 
 	for ( i = 0; i < flist.size(); i++ ) {
-		if ( foldersFirst() && FileSystem::isDirectory( mCurPath + flist[i] ) ) {
+		if ( getFoldersFirst() && FileSystem::isDirectory( mCurPath + flist[i] ) ) {
 			folders.push_back( flist[i] );
 		} else {
 			accepted = false;
@@ -206,21 +206,21 @@ void UICommonDialog::refreshFolder() {
 		}
 	}
 
-	if ( sortAlphabetically() ) {
+	if ( getSortAlphabetically() ) {
 		std::sort( folders.begin(), folders.end() );
 		std::sort( files.begin(), files.end() );
 	}
 
 	mList->clear();
 
-	if ( foldersFirst() ) {
+	if ( getFoldersFirst() ) {
 		mList->addListBoxItems( folders );
 	}
 
 	mList->addListBoxItems( files );
 
-	if ( NULL != mList->verticalScrollBar() ) {
-		mList->verticalScrollBar()->setClickStep( 1.f / ( ( mList->count() * mList->rowHeight() ) / (Float)mList->getSize().getHeight() ) );
+	if ( NULL != mList->getVerticalScrollBar() ) {
+		mList->getVerticalScrollBar()->setClickStep( 1.f / ( ( mList->getCount() * mList->getRowHeight() ) / (Float)mList->getSize().getHeight() ) );
 	}
 }
 
@@ -293,7 +293,7 @@ Uint32 UICommonDialog::onMessage( const UIMessage * Msg ) {
 		{
 			if ( Msg->getSender() == mList ) {
 				if ( !isSaveDialog() ) {
-					if ( allowFolderSelect() ) {
+					if ( getAllowFolderSelect() ) {
 						mFile->setText( mList->getItemSelectedText() );
 					} else {
 						if ( !FileSystem::isDirectory( getTempFullPath() ) ) {
@@ -325,8 +325,8 @@ void UICommonDialog::save() {
 }
 
 void UICommonDialog::open() {
-	if ( "" != mList->getItemSelectedText() || allowFolderSelect() ) {
-		if ( !allowFolderSelect() ) {
+	if ( "" != mList->getItemSelectedText() || getAllowFolderSelect() ) {
+		if ( !getAllowFolderSelect() ) {
 			if ( FileSystem::isDirectory( getFullPath() ) )
 				return;
 		} else {
@@ -366,29 +366,29 @@ bool UICommonDialog::isSaveDialog() {
 	return 0 != ( mCDLFlags & CDL_FLAG_SAVE_DIALOG );
 }
 
-bool UICommonDialog::sortAlphabetically() {
+bool UICommonDialog::getSortAlphabetically() {
 	return 0 != ( mCDLFlags & CDL_FLAG_SORT_ALPHABETICALLY );
 }
 
-bool UICommonDialog::foldersFirst() {
+bool UICommonDialog::getFoldersFirst() {
 	return 0 != ( mCDLFlags & CDL_FLAG_FOLDERS_FISRT );
 }
 
-bool UICommonDialog::allowFolderSelect() {
+bool UICommonDialog::getAllowFolderSelect() {
 	return 0 != ( mCDLFlags & CDL_FLAG_ALLOW_FOLDER_SELECT );
 }
 
-void UICommonDialog::sortAlphabetically( const bool& sortAlphabetically ) {
+void UICommonDialog::setSortAlphabetically( const bool& sortAlphabetically ) {
 	BitOp::setBitFlagValue( &mCDLFlags, CDL_FLAG_SORT_ALPHABETICALLY, sortAlphabetically ? 1 : 0 );
 	refreshFolder();
 }
 
-void UICommonDialog::foldersFirst( const bool& foldersFirst ) {
+void UICommonDialog::setFoldersFirst( const bool& foldersFirst ) {
 	BitOp::setBitFlagValue( &mCDLFlags, CDL_FLAG_FOLDERS_FISRT , foldersFirst ? 1 : 0 );
 	refreshFolder();
 }
 
-void UICommonDialog::allowFolderSelect( const bool& allowFolderSelect ) {
+void UICommonDialog::setAllowFolderSelect( const bool& allowFolderSelect ) {
 	BitOp::setBitFlagValue( &mCDLFlags, CDL_FLAG_ALLOW_FOLDER_SELECT, allowFolderSelect ? 1 : 0 );
 }
 

@@ -22,9 +22,9 @@ class EE_API TextureAtlasEditor {
 
 		virtual ~TextureAtlasEditor();
 
-		UISpinBox *			spinOffX() const { return mSpinOffX; }
+		UISpinBox *			getSpinOffX() const { return mSpinOffX; }
 
-		UISpinBox *			spinOffY() const { return mSpinOffY; }
+		UISpinBox *			getSpinOffY() const { return mSpinOffY; }
 	protected:
 		class UITGEUpdater : public UIControl
 		{
@@ -36,13 +36,13 @@ class EE_API TextureAtlasEditor {
 		};
 		friend class UITGEUpdater;
 
-		UIWindow *				mUIWindow;
+		UIWindow *			mUIWindow;
 		UIControl *			mUIContainer;
-		UITheme *				mTheme;
-		TGEditorCloseCb			mCloseCb;
+		UITheme *			mTheme;
+		TGEditorCloseCb		mCloseCb;
 		TexturePacker *		mTexturePacker;
-		TextureAtlasLoader *	mTextureAtlasLoader;
-		SubTexture *			mCurSubTexture;
+		TextureAtlasLoader *mTextureAtlasLoader;
+		SubTexture *		mCurSubTexture;
 		UISpinBox *			mSpinOffX;
 		UISpinBox *			mSpinOffY;
 		UISpinBox *			mSpinDestW;
@@ -50,7 +50,7 @@ class EE_API TextureAtlasEditor {
 		UIListBox *			mSubTextureList;
 		UIWinMenu *			mWinMenu;
 		TextureAtlasSubTextureEditor * mSubTextureEditor;
-		UITGEUpdater *			mTGEU;
+		UITGEUpdater *		mTGEU;
 
 		void windowClose( const UIEvent * Event );
 

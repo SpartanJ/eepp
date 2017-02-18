@@ -72,17 +72,17 @@ class EE_API UICommonDialog : public UIWindow {
 
 		bool				isSaveDialog();
 
-		bool				sortAlphabetically();
+		bool				getSortAlphabetically();
 
-		bool				foldersFirst();
+		bool				getFoldersFirst();
 
-		bool				allowFolderSelect();
+		bool				getAllowFolderSelect();
 
-		void				sortAlphabetically( const bool& sortAlphabetically );
+		void				setSortAlphabetically( const bool& sortAlphabetically );
 
-		void				foldersFirst( const bool& foldersFirst );
+		void				setFoldersFirst( const bool& foldersFirst );
 
-		void				allowFolderSelect( const bool& allowFolderSelect );
+		void				setAllowFolderSelect( const bool& allowFolderSelect );
 	protected:
 		std::string			mCurPath;
 		UIPushButton *		mButtonOpen;

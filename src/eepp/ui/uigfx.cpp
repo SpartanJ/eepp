@@ -29,7 +29,7 @@ bool UIGfx::isType( const Uint32& type ) const {
 	return UIGfx::getType() == type ? true : UIComplexControl::isType( type );
 }
 
-void UIGfx::subTexture( Graphics::SubTexture * subTexture ) {
+void UIGfx::setSubTexture( Graphics::SubTexture * subTexture ) {
 	mSubTexture = subTexture;
 
 	autoSize();
@@ -104,24 +104,24 @@ void UIGfx::setAlpha( const Float& alpha ) {
 	mColor.Alpha = (Uint8)alpha;
 }
 
-Graphics::SubTexture * UIGfx::subTexture() const {
+Graphics::SubTexture * UIGfx::getSubTexture() const {
 	return mSubTexture;
 }
 
-const ColorA& UIGfx::color() const {
+const ColorA& UIGfx::getColor() const {
 	return mColor;
 }
 
-void UIGfx::color( const ColorA& col ) {
+void UIGfx::serColor( const ColorA& col ) {
 	mColor = col;
 	setAlpha( col.a() );
 }
 
-const EE_RENDER_MODE& UIGfx::renderMode() const {
+const EE_RENDER_MODE& UIGfx::getRenderMode() const {
 	return mRender;
 }
 
-void UIGfx::renderMode( const EE_RENDER_MODE& render ) {
+void UIGfx::setRenderMode( const EE_RENDER_MODE& render ) {
 	mRender = render;
 }
 
@@ -152,7 +152,7 @@ void UIGfx::onSizeChange() {
 	UIControlAnim::onSizeChange();
 }
 
-const Vector2i& UIGfx::alignOffset() const {
+const Vector2i& UIGfx::getAlignOffset() const {
 	return mAlignOffset;
 }
 

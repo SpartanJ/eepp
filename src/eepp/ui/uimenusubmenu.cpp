@@ -58,9 +58,9 @@ void UIMenuSubMenu::onStateChange() {
 
 	if ( NULL != mSkinArrow ) {
 		if ( mSkinState->getState() == UISkinState::StateSelected )
-			mArrow->subTexture( mSkinArrow->getSubTexture( UISkinState::StateMouseEnter ) );
+			mArrow->setSubTexture( mSkinArrow->getSubTexture( UISkinState::StateMouseEnter ) );
 		else
-			mArrow->subTexture( mSkinArrow->getSubTexture( UISkinState::StateNormal ) );
+			mArrow->setSubTexture( mSkinArrow->getSubTexture( UISkinState::StateNormal ) );
 
 		onSizeChange();
 	}
@@ -88,7 +88,7 @@ Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
 	UIMenuItem::onMouseMove( Pos, Flags );
 
 	if ( NULL != mSubMenu && !mSubMenu->isVisible() ) {
-		mTimeOver += UIManager::instance()->elapsed().asMilliseconds();
+		mTimeOver += UIManager::instance()->getElapsed().asMilliseconds();
 
 		if ( mTimeOver >= mMaxTime ) {
 			showSubMenu();
@@ -128,7 +128,7 @@ UIGfx * UIMenuSubMenu::getArrow() const {
 }
 
 void UIMenuSubMenu::onSubMenuFocusLoss( const UIEvent * Event ) {
-	UIControl * FocusCtrl = UIManager::instance()->focusControl();
+	UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
 
 	if ( getParent() != FocusCtrl && !getParent()->isParentOf( FocusCtrl ) ) {
 		getParent()->setFocus();

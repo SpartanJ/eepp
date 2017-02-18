@@ -90,18 +90,18 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	mGenGrid = eeNew( UIGenericGrid, ( GridParams ) );
 	mGenGrid->setVisible( true );
 	mGenGrid->setEnabled( true );
-	mGenGrid->collumnWidth( 0, 10 );
-	mGenGrid->collumnWidth( 1, 175 );
-	mGenGrid->collumnWidth( 2, 10 );
-	mGenGrid->collumnWidth( 3, 175 );
-	mGenGrid->collumnWidth( 4, 10 );
+	mGenGrid->setCollumnWidth( 0, 10 );
+	mGenGrid->setCollumnWidth( 1, 175 );
+	mGenGrid->setCollumnWidth( 2, 10 );
+	mGenGrid->setCollumnWidth( 3, 175 );
+	mGenGrid->setCollumnWidth( 4, 10 );
 
 	Vector2i Pos( mGenGrid->getPosition().x + mGenGrid->getSize().getWidth() + 10, mGenGrid->getPosition().y );
 
 	UIPushButton * AddButton = mUITheme->createPushButton( mUIWindow->getContainer(), Sizei(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->getIconByName( "add" ) );
 	AddButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::AddCellClick ) );
 
-	if ( NULL == AddButton->getIcon()->subTexture() )
+	if ( NULL == AddButton->getIcon()->getSubTexture() )
 		AddButton->setText( "+" );
 
 	Pos.y += AddButton->getSize().getHeight() + 5;
@@ -109,7 +109,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	UIPushButton * RemoveButton = mUITheme->createPushButton( mUIWindow->getContainer(), Sizei(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->getIconByName( "remove" )  );
 	RemoveButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::RemoveCellClick ) );
 
-	if ( NULL == RemoveButton->getIcon()->subTexture() )
+	if ( NULL == RemoveButton->getIcon()->getSubTexture() )
 		RemoveButton->setText( "-" );
 
 	CreateGridElems();
@@ -161,8 +161,8 @@ void TileMapProperties::SaveProperties() {
 	for ( Uint32 i = 0; i < mGenGrid->getCount(); i++ ) {
 		UIGridCell * Cell = mGenGrid->getCell( i );
 
-		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->cell( 1 ) );
-		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->cell( 3 ) );
+		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->getCell( 1 ) );
+		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->getCell( 3 ) );
 
 		if ( NULL != Cell && Input->getText().size() && Input2->getText().size() ) {
 			mMap->AddProperty(	Input->getText(), Input2->getText() );
@@ -176,8 +176,8 @@ void TileMapProperties::LoadProperties() {
 	for ( TileMap::PropertiesMap::iterator it = Proper.begin(); it != Proper.end(); it++ ) {
 		UIGridCell * Cell = CreateCell();
 
-		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->cell( 1 ) );
-		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->cell( 3 ) );
+		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->getCell( 1 ) );
+		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->getCell( 3 ) );
 
 		Input->setText( it->first );
 		Input2->setText( it->second );
@@ -251,15 +251,15 @@ UIGridCell * TileMapProperties::CreateCell() {
 	UITextInput * TxtInput		= eeNew( UITextInput, ( TxtInputParams ) );
 	UITextInput * TxtInput2	= eeNew( UITextInput, ( TxtInputParams ) );
 
-	Cell->cell( 0, eeNew( UIComplexControl, ( CControl ) ) );
+	Cell->setCell( 0, eeNew( UIComplexControl, ( CControl ) ) );
 
-	Cell->cell( 1, TxtInput );
+	Cell->setCell( 1, TxtInput );
 
-	Cell->cell( 2, eeNew( UIComplexControl, ( CControl ) ) );
+	Cell->setCell( 2, eeNew( UIComplexControl, ( CControl ) ) );
 
-	Cell->cell( 3, TxtInput2 );
+	Cell->setCell( 3, TxtInput2 );
 
-	Cell->cell( 4, eeNew( UIComplexControl, ( CControl ) ) );
+	Cell->setCell( 4, eeNew( UIComplexControl, ( CControl ) ) );
 
 	return Cell;
 }

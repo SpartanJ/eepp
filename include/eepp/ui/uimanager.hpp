@@ -15,15 +15,15 @@ class EE_API UIManager {
 	public:
 		~UIManager();
 
-		UIWindow * mainControl() const;
+		UIWindow * getMainControl() const;
 
-		UIControl * focusControl() const;
+		UIControl * getFocusControl() const;
 
-		void focusControl( UIControl * Ctrl );
+		void setFocusControl( UIControl * Ctrl );
 
-		UIControl * overControl() const;
+		UIControl * getOverControl() const;
 
-		void overControl( UIControl * Ctrl );
+		void setOverControl( UIControl * Ctrl );
 
 		void init( Uint32 Flags = 0, EE::Window::Window * window = NULL );
 
@@ -33,7 +33,7 @@ class EE_API UIManager {
 
 		void draw();
 
-		const Time& elapsed() const;
+		const Time& getElapsed() const;
 
 		void resizeControl( EE::Window::Window * win );
 
@@ -43,9 +43,9 @@ class EE_API UIManager {
 
 		Input * getInput() const;
 
-		const Uint32& pressTrigger() const;
+		const Uint32& getPressTrigger() const;
 
-		const Uint32& lastPressTrigger() const;
+		const Uint32& getLastPressTrigger() const;
 
 		void clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
 
@@ -55,21 +55,21 @@ class EE_API UIManager {
 
 		void sendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
 
-		void highlightFocus( bool Highlight );
+		void setHighlightFocus( bool Highlight );
 
-		bool highlightFocus() const;
+		bool getHighlightFocus() const;
 
-		void highlightFocusColor( const ColorA& Color );
+		void setHighlightFocusColor( const ColorA& Color );
 
-		const ColorA& highlightFocusColor() const;
+		const ColorA& getHighlightFocusColor() const;
 
-		void highlightOver( bool Highlight );
+		void setHighlightOver( bool Highlight );
 
-		bool highlightOver() const;
+		bool getHighlightOver() const;
 
-		void highlightOverColor( const ColorA& Color );
+		void setHighlightOverColor( const ColorA& Color );
 
-		const ColorA& highlightOverColor() const;
+		const ColorA& getHighlightOverColor() const;
 
 		void sendMouseClick( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
 
@@ -80,9 +80,9 @@ class EE_API UIManager {
 		EE::Window::Window * getWindow() const;
 
 		/** Control where the mouse click started to be down */
-		UIControl * downControl() const;
+		UIControl * getDownControl() const;
 
-		UIControl * lossFocusControl() const;
+		UIControl * getLossFocusControl() const;
 
 		const bool& isShootingDown() const;
 
@@ -94,9 +94,9 @@ class EE_API UIManager {
 
 		const bool& isControlDragging() const;
 
-		void useGlobalCursors( const bool& use );
+		void setUseGlobalCursors( const bool& use );
 
-		const bool& useGlobalCursors();
+		const bool& getUseGlobalCursors();
 
 		void setCursor( EE_CURSOR_TYPE cursor );
 	protected:

@@ -20,14 +20,14 @@ class EE_API TextureAtlasSubTextureEditor : public UIComplexControl {
 
 		virtual void update();
 
-		Graphics::SubTexture * subTexture() const;
+		Graphics::SubTexture * getSubTexture() const;
 
-		void subTexture( Graphics::SubTexture * subTexture );
+		void setSubTexture( Graphics::SubTexture * subTexture );
 
 		UIGfx * getGfx() const;
 	protected:
 		UITheme *				mTheme;
-		UIGfx *				mGfx;
+		UIGfx *					mGfx;
 		UIDragable *			mDrag;
 		Vector2i				mUICenter;
 		TextureAtlasEditor *	mEditor;

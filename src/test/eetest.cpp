@@ -267,7 +267,7 @@ void EETest::createUI() {
 	UIThemeManager::instance()->setDefaultFont( TTF );
 	UIThemeManager::instance()->setDefaultTheme( "uitheme" );
 
-	UIControl::CreateParams Params( UIManager::instance()->mainControl(), Vector2i(0,0), Sizei( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
+	UIControl::CreateParams Params( UIManager::instance()->getMainControl(), Vector2i(0,0), Sizei( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
 	Params.Border.setWidth( 2 );
 	Params.Border.setColor( 0x979797CC );
@@ -502,7 +502,7 @@ void EETest::createUI() {
 
 	Menu->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &EETest::onItemClick ) );
 	Menu->getItem( "Quit" )->addEventListener( UIEvent::EventMouseUp, cb::Make1( this, &EETest::onQuitClick ) );
-	UIManager::instance()->mainControl()->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onMainClick ) );
+	UIManager::instance()->getMainControl()->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onMainClick ) );
 
 	UITextEdit::CreateParams TEParams;
 	TEParams.setParent( C );
@@ -544,16 +544,16 @@ void EETest::createUI() {
 
 		TxtBox->setText( "Test " + String::toStr( i+1 ) );
 
-		Cell->cell( 0, TxtBox );
-		Cell->cell( 1, TxtGfx );
-		Cell->cell( 2, TxtInput );
+		Cell->setCell( 0, TxtBox );
+		Cell->setCell( 1, TxtGfx );
+		Cell->setCell( 2, TxtInput );
 
 		mGenGrid->add( Cell );
 	}
 
-	mGenGrid->collumnWidth( 0, 50 );
-	mGenGrid->collumnWidth( 1, 24 );
-	mGenGrid->collumnWidth( 2, 100 );
+	mGenGrid->setCollumnWidth( 0, 50 );
+	mGenGrid->setCollumnWidth( 1, 24 );
+	mGenGrid->setCollumnWidth( 2, 100 );
 
 #ifdef EE_PLATFORM_TOUCH
 	TextureAtlas * SG = GlobalTextureAtlas::instance();
@@ -764,7 +764,7 @@ void EETest::onButtonClick( const UIEvent * Event ) {
 
 	if ( MouseEvent->getFlags() & EE_BUTTONS_LRM ) {
 		UIGfx::CreateParams GfxParams;
-		GfxParams.setParent( UIManager::instance()->mainControl() );
+		GfxParams.setParent( UIManager::instance()->getMainControl() );
 		GfxParams.SubTexture = mTheme->getIconByName( "ok" );
 		UIGfx * Gfx = eeNew( UIGfx, ( GfxParams ) );
 		Gfx->setVisible( true );
@@ -774,7 +774,7 @@ void EETest::onButtonClick( const UIEvent * Event ) {
 		Gfx->startMovement( Vector2i( Math::randi( 0, mWindow->getWidth() ), -64 ), Vector2i( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ), Milliseconds( 2500 ) );
 		Gfx->closeFadeOut( Milliseconds( 3500 ) );
 
-		mListBox->addListBoxItem( "Test ListBox " + String::toStr( mListBox->count() + 1 ) + " testing it right now!" );
+		mListBox->addListBoxItem( "Test ListBox " + String::toStr( mListBox->getCount() + 1 ) + " testing it right now!" );
 	}
 }
 

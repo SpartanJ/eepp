@@ -376,7 +376,7 @@ void UIGenericGrid::remove( Uint32 ItemIndex ) {
 	remove( std::vector<Uint32> ( 1, ItemIndex ) );
 }
 
-void UIGenericGrid::collumnWidth( const Uint32& CollumnIndex, const Uint32& CollumnWidth ) {
+void UIGenericGrid::setCollumnWidth( const Uint32& CollumnIndex, const Uint32& CollumnWidth ) {
 	eeASSERT( CollumnIndex < mCollumnsCount );
 
 	mCollWidthAssigned = true;
@@ -396,13 +396,13 @@ const Uint32& UIGenericGrid::getCollumnsCount() const {
 	return mCollumnsCount;
 }
 
-const Uint32& UIGenericGrid::collumnWidth( const Uint32& CollumnIndex ) const {
+const Uint32& UIGenericGrid::getCollumnWidth( const Uint32& CollumnIndex ) const {
 	eeASSERT( CollumnIndex < mCollumnsCount );
 
 	return mCollumnsWidth[ CollumnIndex ];
 }
 
-void UIGenericGrid::rowHeight( const Uint32& height ) {
+void UIGenericGrid::setRowHeight( const Uint32& height ) {
 	if ( mRowHeight != height ) {
 		mRowHeight = height;
 
@@ -412,7 +412,7 @@ void UIGenericGrid::rowHeight( const Uint32& height ) {
 	}
 }
 
-const Uint32& UIGenericGrid::rowHeight() const {
+const Uint32& UIGenericGrid::getRowHeight() const {
 	return mRowHeight;
 }
 
@@ -453,7 +453,7 @@ void UIGenericGrid::onAlphaChange() {
 	mHScrollBar->setAlpha( mAlpha );
 }
 
-void UIGenericGrid::verticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+void UIGenericGrid::setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	if ( Mode != mVScrollMode ) {
 		mVScrollMode = Mode;
 
@@ -461,11 +461,11 @@ void UIGenericGrid::verticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	}
 }
 
-const UI_SCROLLBAR_MODE& UIGenericGrid::verticalScrollMode() {
+const UI_SCROLLBAR_MODE& UIGenericGrid::getVerticalScrollMode() {
 	return mVScrollMode;
 }
 
-void UIGenericGrid::horizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+void UIGenericGrid::setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	if ( Mode != mHScrollMode ) {
 		mHScrollMode = Mode;
 
@@ -483,15 +483,15 @@ void UIGenericGrid::horizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	}
 }
 
-const UI_SCROLLBAR_MODE& UIGenericGrid::horizontalScrollMode() {
+const UI_SCROLLBAR_MODE& UIGenericGrid::getHorizontalScrollMode() {
 	return mHScrollMode;
 }
 
-UIScrollBar * UIGenericGrid::verticalScrollBar() const {
+UIScrollBar * UIGenericGrid::getVerticalScrollBar() const {
 	return mVScrollBar;
 }
 
-UIScrollBar * UIGenericGrid::horizontalScrollBar() const {
+UIScrollBar * UIGenericGrid::getHorizontalScrollBar() const {
 	return mHScrollBar;
 }
 
@@ -525,7 +525,7 @@ Uint32 UIGenericGrid::onMessage( const UIMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
 		case UIMessage::MsgFocusLoss:
 		{
-			UIControl * FocusCtrl = UIManager::instance()->focusControl();
+			UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
 
 			if ( this != FocusCtrl && !isParentOf( FocusCtrl ) ) {
 				onComplexControlFocusLoss();
@@ -542,27 +542,27 @@ UIItemContainer<UIGenericGrid> * UIGenericGrid::getContainer() const {
 	return mContainer;
 }
 
-bool UIGenericGrid::touchDragEnable() const {
+bool UIGenericGrid::isTouchDragEnabled() const {
 	return 0 != ( mFlags & UI_TOUCH_DRAG_ENABLED );
 }
 
-void UIGenericGrid::touchDragEnable( const bool& enable ) {
+void UIGenericGrid::setTouchDragEnabled( const bool& enable ) {
 	writeFlag( UI_TOUCH_DRAG_ENABLED, true == enable );
 }
 
-bool UIGenericGrid::touchDragging() const {
+bool UIGenericGrid::isTouchDragging() const {
 	return 0 != ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING );
 }
 
-void UIGenericGrid::touchDragging( const bool& dragging ) {
+void UIGenericGrid::setTouchDragging( const bool& dragging ) {
 	writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, true == dragging );
 }
 
 void UIGenericGrid::update() {
 	if ( mEnabled && mVisible ) {
 		if ( mFlags & UI_TOUCH_DRAG_ENABLED ) {
-			Uint32 Press	= UIManager::instance()->pressTrigger();
-			Uint32 LPress	= UIManager::instance()->lastPressTrigger();
+			Uint32 Press	= UIManager::instance()->getPressTrigger();
+			Uint32 LPress	= UIManager::instance()->getLastPressTrigger();
 
 			if ( ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING ) ) {
 				// Mouse Not Down

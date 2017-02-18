@@ -56,11 +56,11 @@ MapEditor::MapEditor( UIWindow * AttatchTo, const MapEditorCloseCb& callback ) :
 	}
 
 	if ( NULL == mUIWindow ) {
-		mUIWindow = UIManager::instance()->mainControl();
+		mUIWindow = UIManager::instance()->getMainControl();
 		mUIWindow->setSkinFromTheme( mTheme, "winback" );
 	}
 
-	if ( UIManager::instance()->mainControl() == mUIWindow ) {
+	if ( UIManager::instance()->getMainControl() == mUIWindow ) {
 		mUIContainer = mUIWindow;
 	} else {
 		mUIContainer = mUIWindow->getContainer();
@@ -251,7 +251,7 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 	mBtnGOTypeAdd->setTooltipText( "Adds a new game object type\nunknown by the map editor." );
 	mBtnGOTypeAdd->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::AddNewGOType ) );
 
-	if ( NULL == mBtnGOTypeAdd->getIcon()->subTexture() )
+	if ( NULL == mBtnGOTypeAdd->getIcon()->getSubTexture() )
 		mBtnGOTypeAdd->setText( "..." );
 
 	Txt = mTheme->createTextBox( "Layers:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mGOTypeList->getPosition().y + mGOTypeList->getSize().getHeight() + 4 ), TxtFlags );
@@ -312,7 +312,7 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 	mTextureAtlasesList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::OnTextureAtlasChange ) );
 
 	mSubTextureList = mTheme->createListBox( mSGCont, Sizei( Width, 156 ), Vector2i( 0, mTextureAtlasesList->getPosition().y + mTextureAtlasesList->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	mSubTextureList->setSize( mSubTextureList->getSize().getWidth(), mSubTextureList->rowHeight() * 9 + mSubTextureList->paddingContainer().Top + mSubTextureList->paddingContainer().Bottom );
+	mSubTextureList->setSize( mSubTextureList->getSize().getWidth(), mSubTextureList->getRowHeight() * 9 + mSubTextureList->getContainerPadding().Top + mSubTextureList->getContainerPadding().Bottom );
 	mSubTextureList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::OnSubTextureChange ) );
 
 	mGfxPreview = mTheme->createGfx( NULL, mSGCont, Sizei( Width, Width ), Vector2i( 0, mSubTextureList->getPosition().y + mSubTextureList->getSize().getHeight() + 4 ), UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_AUTO_FIT );
@@ -385,7 +385,7 @@ void MapEditor::CreateLighContainer() {
 
 	mLightTypeChk = mTheme->createCheckBox( mLightCont, Sizei(), Vector2i( mLightRadius->getPosition().x, mLightRadius->getPosition().y + mLightRadius->getSize().getHeight() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mLightTypeChk->setText( "Isometric Light" );
-	mLightTypeChk->active( false );
+	mLightTypeChk->setActive( false );
 	mLightTypeChk->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnLightTypeChange ) );
 }
 
@@ -418,7 +418,7 @@ void MapEditor::CreateObjectsContainer() {
 	mChkClampToTile = mTheme->createCheckBox( mObjectCont, Sizei(), Vector2i( 12, nextY ), ChkFlags );
 	mChkClampToTile->setText( "Clamp Position to Tile" );
 	mChkClampToTile->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickClampToTile ) );
-	mChkClampToTile->active( true );
+	mChkClampToTile->setActive( true );
 }
 
 void MapEditor::OnObjectModeSel( const UIEvent * Event ) {
@@ -516,7 +516,7 @@ void MapEditor::OnAddObject( Uint32 Type, Polygon2f poly ) {
 
 void MapEditor::OnLightTypeChange( const UIEvent * Event ) {
 	if ( NULL != mUIMap->GetSelectedLight() ) {
-		mUIMap->GetSelectedLight()->Type( mLightTypeChk->active() ? LIGHT_ISOMETRIC : LIGHT_NORMAL );
+		mUIMap->GetSelectedLight()->Type( mLightTypeChk->isActive() ? LIGHT_ISOMETRIC : LIGHT_NORMAL );
 	}
 }
 
@@ -537,7 +537,7 @@ void MapEditor::OnLightSelect( MapLight * Light ) {
 	mUIGreenSlider->setValue( Col.g() );
 	mUIBlueSlider->setValue( Col.b() );
 	mLightRadius->setValue( Light->Radius() );
-	mLightTypeChk->active( Light->Type() == LIGHT_ISOMETRIC ? true : false );
+	mLightTypeChk->setActive( Light->Type() == LIGHT_ISOMETRIC ? true : false );
 }
 
 void MapEditor::OnNewLight( const UIEvent * Event ) {
@@ -545,7 +545,7 @@ void MapEditor::OnNewLight( const UIEvent * Event ) {
 
 	if ( MEvent->getFlags() & EE_BUTTON_LMASK ) {
 		Vector2i Pos = mUIMap->Map()->GetMouseMapPos();
-		mUIMap->AddLight( eeNew( MapLight, ( mLightRadius->getValue(), Pos.x, Pos.y, mUIBaseColor->getBackground()->getColor().toColor(), mLightTypeChk->active() ? LIGHT_ISOMETRIC : LIGHT_NORMAL ) ) );
+		mUIMap->AddLight( eeNew( MapLight, ( mLightRadius->getValue(), Pos.x, Pos.y, mUIBaseColor->getBackground()->getColor().toColor(), mLightTypeChk->isActive() ? LIGHT_ISOMETRIC : LIGHT_NORMAL ) ) );
 	}
 }
 
@@ -589,7 +589,7 @@ void MapEditor::OnBlueChange( const UIEvent * Event ) {
 }
 
 void MapEditor::ChkClickDI( const UIEvent * Event ) {
-	if ( mChkDI->active() ) {
+	if ( mChkDI->isActive() ) {
 		mSGCont->setEnabled( false );
 		mSGCont->setVisible( false );
 		mDICont->setEnabled( true );
@@ -603,20 +603,20 @@ void MapEditor::ChkClickDI( const UIEvent * Event ) {
 }
 
 void MapEditor::ChkClickClampToTile( const UIEvent * Event ) {
-	mUIMap->ClampToTile( mChkClampToTile->active() );
+	mUIMap->ClampToTile( mChkClampToTile->isActive() );
 }
 
 void MapEditor::UpdateGfx() {
-	if ( mChkMirrored->active() && mChkFliped->active() )
-		mGfxPreview->renderMode( RN_FLIPMIRROR );
-	else if( mChkMirrored->active() )
-		mGfxPreview->renderMode( RN_MIRROR );
-	else if ( mChkFliped->active() )
-		mGfxPreview->renderMode( RN_FLIP );
+	if ( mChkMirrored->isActive() && mChkFliped->isActive() )
+		mGfxPreview->setRenderMode( RN_FLIPMIRROR );
+	else if( mChkMirrored->isActive() )
+		mGfxPreview->setRenderMode( RN_MIRROR );
+	else if ( mChkFliped->isActive() )
+		mGfxPreview->setRenderMode( RN_FLIP );
 	else
-		mGfxPreview->renderMode( RN_NORMAL );
+		mGfxPreview->setRenderMode( RN_NORMAL );
 
-	if ( mChkRot90->active() )
+	if ( mChkRot90->isActive() )
 		mGfxPreview->setRotation( 90 );
 	else
 		mGfxPreview->setRotation( 0 );
@@ -625,22 +625,22 @@ void MapEditor::UpdateGfx() {
 void MapEditor::UpdateFlags() {
 	mCurGOFlags = 0;
 
-	if ( mChkMirrored->active() )
+	if ( mChkMirrored->isActive() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_MIRRORED;
 
-	if ( mChkFliped->active() )
+	if ( mChkFliped->isActive() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_FLIPED;
 
-	if ( mChkBlocked->active() )
+	if ( mChkBlocked->isActive() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_BLOCKED;
 
-	if ( mChkAnim->active() )
+	if ( mChkAnim->isActive() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_ANIMATED;
 
-	if ( mChkRot90->active() )
+	if ( mChkRot90->isActive() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_ROTATE_90DEG;
 
-	if ( mChkAutoFix->active() )
+	if ( mChkAutoFix->isActive() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_AUTO_FIX_TILE_POS;
 }
 
@@ -654,9 +654,9 @@ void MapEditor::OnTypeChange( const UIEvent * Event ) {
 	else
 		mCurGOType = String::hash( mGOTypeList->getText().toUtf8() );
 
-	if ( NULL != mChkAnim && NULL != mGOTypeList && mChkAnim->active() && mGOTypeList->getText() != "Sprite" ) {
+	if ( NULL != mChkAnim && NULL != mGOTypeList && mChkAnim->isActive() && mGOTypeList->getText() != "Sprite" ) {
 		if ( mGOTypeList->getText() == "SubTexture" || mGOTypeList->getText() == "SubTextureEx" ) {
-			mChkAnim->active( false );
+			mChkAnim->setActive( false );
 		}
 	}
 }
@@ -687,7 +687,7 @@ void MapEditor::ChkClickAutoFix( const UIEvent * Event ) {
 void MapEditor::ChkClickAnimated( const UIEvent * Event ) {
 	UpdateFlags();
 
-	if ( mChkAnim->active() && ( mGOTypeList->getText() == "SubTexture" || mGOTypeList->getText() == "SubTextureEx" ) ) {
+	if ( mChkAnim->isActive() && ( mGOTypeList->getText() == "SubTexture" || mGOTypeList->getText() == "SubTextureEx" ) ) {
 		mGOTypeList->getListBox()->setSelected( "Sprite" );
 	}
 }
@@ -698,7 +698,7 @@ void MapEditor::AddNewGOType( const UIEvent * Event ) {
 
 void MapEditor::OnNewGOTypeAdded( std::string name, Uint32 hash ) {
 	if ( "" != name ) {
-		for ( Uint32 i = 0; i < mGOTypeList->getListBox()->count(); i++ ) {
+		for ( Uint32 i = 0; i < mGOTypeList->getListBox()->getCount(); i++ ) {
 			UIListBoxItem * Item = mGOTypeList->getListBox()->getItem(i);
 
 			if ( Item->getText() == name )
@@ -730,7 +730,7 @@ void MapEditor::FillSGCombo() {
 		mTextureAtlasesList->getListBox()->addListBoxItems( items );
 	}
 
-	if ( mTextureAtlasesList->getListBox()->count() && NULL == mTextureAtlasesList->getListBox()->getItemSelected() ) {
+	if ( mTextureAtlasesList->getListBox()->getCount() && NULL == mTextureAtlasesList->getListBox()->getItemSelected() ) {
 		mTextureAtlasesList->getListBox()->setSelected( 0 );
 	}
 }
@@ -757,7 +757,7 @@ void MapEditor::FillSubTextureList() {
 		}
 	}
 
-	mSubTextureList->verticalScrollBar()->setClickStep( 8.f / (Float)mSubTextureList->count() );
+	mSubTextureList->getVerticalScrollBar()->setClickStep( 8.f / (Float)mSubTextureList->getCount() );
 }
 
 void MapEditor::OnSubTextureChange( const UIEvent * Event ) {
@@ -765,7 +765,7 @@ void MapEditor::OnSubTextureChange( const UIEvent * Event ) {
 		SubTexture * tSubTexture = mCurSG->getByName( mSubTextureList->getItemSelectedText() );
 
 		if ( NULL != tSubTexture ) {
-			mGfxPreview->subTexture( tSubTexture );
+			mGfxPreview->setSubTexture( tSubTexture );
 		}
 	}
 }
@@ -908,7 +908,7 @@ void MapEditor::FileMenuClick( const UIEvent * Event ) {
 		MsgBox->center();
 		MsgBox->show();
 	} else if ( "Quit" == txt ) {
-		if ( mUIWindow == UIManager::instance()->mainControl() ) {
+		if ( mUIWindow == UIManager::instance()->getMainControl() ) {
 			UIManager::instance()->getWindow()->close();
 		} else {
 			mUIWindow->CloseWindow();
@@ -1146,7 +1146,7 @@ void MapEditor::TextureAtlasOpen( const UIEvent * Event ) {
 }
 
 void MapEditor::OnLayerAdd( UIMapLayerNew * UILayer ) {
-	bool SetSelected = ( 0 == mLayerList->getListBox()->count() ) ? true : false;
+	bool SetSelected = ( 0 == mLayerList->getListBox()->getCount() ) ? true : false;
 
 	mLayerList->getListBox()->addListBoxItem( UILayer->Name() );
 
@@ -1185,32 +1185,32 @@ GameObject * MapEditor::CreateGameObject() {
 
 	if ( GAMEOBJECT_TYPE_SUBTEXTURE == mCurGOType ) {
 
-		tObj = eeNew( GameObjectSubTexture, ( mCurGOFlags, mCurLayer, mGfxPreview->subTexture() ) );
+		tObj = eeNew( GameObjectSubTexture, ( mCurGOFlags, mCurLayer, mGfxPreview->getSubTexture() ) );
 
 	} else if ( GAMEOBJECT_TYPE_SUBTEXTUREEX == mCurGOType ) {
 
-		tObj = eeNew( GameObjectSubTextureEx, ( mCurGOFlags, mCurLayer, mGfxPreview->subTexture() ) );
+		tObj = eeNew( GameObjectSubTextureEx, ( mCurGOFlags, mCurLayer, mGfxPreview->getSubTexture() ) );
 
 	} else if ( GAMEOBJECT_TYPE_SPRITE == mCurGOType ) {
 
-		if ( mChkAnim->active() ) {
+		if ( mChkAnim->isActive() ) {
 
-			Sprite * tAnimSprite = eeNew( Sprite, ( String::removeNumbersAtEnd( mGfxPreview->subTexture()->getName() ) ) );
+			Sprite * tAnimSprite = eeNew( Sprite, ( String::removeNumbersAtEnd( mGfxPreview->getSubTexture()->getName() ) ) );
 			tObj = eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, tAnimSprite ) );
 
 		} else {
 
-			Sprite * tStatiSprite = eeNew( Sprite, ( mGfxPreview->subTexture() ) );
+			Sprite * tStatiSprite = eeNew( Sprite, ( mGfxPreview->getSubTexture() ) );
 			tObj = eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, tStatiSprite ) );
 
 		}
 	} else {
 		//! Creates an empty game object. The client will interpret the GameObject Type, and instanciate the corresponding class.
 
-		if ( mChkDI->active() )
+		if ( mChkDI->isActive() )
 			tObj = eeNew( GameObjectVirtual, ( String::hash( mDataIdInput->getText().toUtf8() ), mCurLayer, mCurGOFlags, mCurGOType ) );
 		else
-			tObj = eeNew( GameObjectVirtual, ( mGfxPreview->subTexture(), mCurLayer, mCurGOFlags, mCurGOType ) );
+			tObj = eeNew( GameObjectVirtual, ( mGfxPreview->getSubTexture(), mCurLayer, mCurGOFlags, mCurGOType ) );
 	}
 
 	return tObj;
@@ -1271,7 +1271,7 @@ void MapEditor::OnMapMouseClick( const UIEvent * Event ) {
 	const UIEventMouse * MEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( mSubTextureCont->isVisible() ) {
-		if ( NULL == mCurLayer || NULL == mGfxPreview->subTexture() || UIManager::instance()->downControl() != mUIMap ) {
+		if ( NULL == mCurLayer || NULL == mGfxPreview->getSubTexture() || UIManager::instance()->getDownControl() != mUIMap ) {
 			if ( NULL == mCurLayer )
 				CreateNoLayerAlert( "No layers found" );
 
@@ -1316,7 +1316,7 @@ void MapEditor::OnMapMouseDown( const UIEvent * Event ) {
 	const UIEventMouse * MEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( mSubTextureCont->isVisible() ) {
-		if ( NULL == mCurLayer || NULL == mGfxPreview->subTexture() || UIManager::instance()->downControl() != mUIMap )
+		if ( NULL == mCurLayer || NULL == mGfxPreview->getSubTexture() || UIManager::instance()->getDownControl() != mUIMap )
 			return;
 
 

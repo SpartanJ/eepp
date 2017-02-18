@@ -16,9 +16,9 @@ class EE_API UIGridCell : public UIComplexControl {
 
 		virtual void setTheme( UITheme * Theme );
 
-		void cell( const Uint32& CollumnIndex, UIControl * Ctrl );
+		void setCell( const Uint32& CollumnIndex, UIControl * Ctrl );
 
-		UIControl * cell( const Uint32& CollumnIndex ) const;
+		UIControl * getCell( const Uint32& CollumnIndex ) const;
 
 		virtual void update();
 

@@ -28,8 +28,8 @@ UITooltip::UITooltip( UITooltip::CreateParams& Params, UIControl * TooltipOf ) :
 
 	autoPadding();
 
-	if ( Params.ParentCtrl != UIManager::instance()->mainControl() )
-		setParent( UIManager::instance()->mainControl() );
+	if ( Params.ParentCtrl != UIManager::instance()->getMainControl() )
+		setParent( UIManager::instance()->getMainControl() );
 
 	applyDefaultTheme();
 }

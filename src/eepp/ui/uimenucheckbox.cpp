@@ -49,7 +49,7 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 			else
 				setIcon( mSkinActive->getSubTexture( UISkinState::StateNormal ) );
 		} else
-			mIcon->subTexture( NULL );
+			mIcon->setSubTexture( NULL );
 	} else {
 		if ( NULL != mSkinInactive )
 			if ( mSkinState->getState() == UISkinState::StateSelected )
@@ -57,14 +57,14 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 			else
 				setIcon( mSkinInactive->getSubTexture( UISkinState::StateNormal ) );
 		else
-			mIcon->subTexture( NULL );
+			mIcon->setSubTexture( NULL );
 	}
 
 	if ( oActive != active ) {
 		UIMenu * Menu = reinterpret_cast<UIMenu*> ( getParent() );
 
 		if ( !Menu->checkControlSize( this ) ) {
-			if ( NULL != getIcon()->subTexture() ) {
+			if ( NULL != getIcon()->getSubTexture() ) {
 				setPadding( Recti( 0, 0, 0, 0 ) );
 			}
 		}

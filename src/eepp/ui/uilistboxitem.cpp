@@ -11,11 +11,11 @@ UIListBoxItem::UIListBoxItem( const UITextBox::CreateParams& Params ) :
 }
 
 UIListBoxItem::~UIListBoxItem() {
-	if ( UIManager::instance()->focusControl() == this )
+	if ( UIManager::instance()->getFocusControl() == this )
 		mParentCtrl->setFocus();
 
-	if ( UIManager::instance()->overControl() == this )
-		UIManager::instance()->overControl( mParentCtrl );
+	if ( UIManager::instance()->getOverControl() == this )
+		UIManager::instance()->setOverControl( mParentCtrl );
 }
 
 Uint32 UIListBoxItem::getType() const {
@@ -81,8 +81,8 @@ void UIListBoxItem::update() {
 		Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
 
 		if ( isMouseOver() ) {
-			if ( Flags & EE_BUTTONS_WUWD && LBParent->verticalScrollBar()->isVisible() ) {
-				LBParent->verticalScrollBar()->getSlider()->manageClick( Flags );
+			if ( Flags & EE_BUTTONS_WUWD && LBParent->getVerticalScrollBar()->isVisible() ) {
+				LBParent->getVerticalScrollBar()->getSlider()->manageClick( Flags );
 			}
 		}
 	}
@@ -116,11 +116,11 @@ void UIListBoxItem::onStateChange() {
 	}
 
 	if ( mSkinState->getState() == UISkinState::StateSelected ) {
-		setColor( LBParent->fontSelectedColor() );
+		setColor( LBParent->getFontSelectedColor() );
 	} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-		setColor( LBParent->fontOverColor() );
+		setColor( LBParent->getFontOverColor() );
 	} else {
-		setColor( LBParent->fontColor() );
+		setColor( LBParent->getFontColor() );
 	}
 }
 

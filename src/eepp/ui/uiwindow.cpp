@@ -114,7 +114,7 @@ UIWindow::~UIWindow() {
 }
 
 void UIWindow::createModalControl() {
-	UIControl * Ctrl = UIManager::instance()->mainControl();
+	UIControl * Ctrl = UIManager::instance()->getMainControl();
 
 	if ( NULL == mModalCtrl ) {
 		mModalCtrl = eeNew( UIControlAnim, ( UIControlAnim::CreateParams( Ctrl , Vector2i(0,0), Ctrl->getSize(), UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) );
@@ -128,7 +128,7 @@ void UIWindow::createModalControl() {
 
 void UIWindow::enableByModal() {
 	if ( isModal() ) {
-		UIControl * CtrlChild = UIManager::instance()->mainControl()->getFirstChild();
+		UIControl * CtrlChild = UIManager::instance()->getMainControl()->getFirstChild();
 
 		while ( NULL != CtrlChild )
 		{
@@ -147,7 +147,7 @@ void UIWindow::enableByModal() {
 
 void UIWindow::disableByModal() {
 	if ( isModal() ) {
-		UIControl * CtrlChild = UIManager::instance()->mainControl()->getFirstChild();
+		UIControl * CtrlChild = UIManager::instance()->getMainControl()->getFirstChild();
 
 		while ( NULL != CtrlChild )
 		{
@@ -405,7 +405,7 @@ Uint32 UIWindow::onMessage( const UIMessage * Msg ) {
 		case UIMessage::MsgWindowResize:
 		{
 			if ( isModal() && NULL != mModalCtrl ) {
-				mModalCtrl->setSize( UIManager::instance()->mainControl()->getSize() );
+				mModalCtrl->setSize( UIManager::instance()->getMainControl()->getSize() );
 			}
 
 			break;
@@ -437,7 +437,7 @@ void UIWindow::doResize ( const UIMessage * Msg ) {
 	if (	!( mWinFlags & UI_WIN_RESIZEABLE ) ||
 			!( Msg->getFlags() & EE_BUTTON_LMASK ) ||
 			RESIZE_NONE != mResizeType ||
-			( UIManager::instance()->lastPressTrigger() & EE_BUTTON_LMASK )
+			( UIManager::instance()->getLastPressTrigger() & EE_BUTTON_LMASK )
 	)
 		return;
 
@@ -558,7 +558,7 @@ void UIWindow::updateResize() {
 	if ( RESIZE_NONE == mResizeType )
 		return;
 
-	if ( !( UIManager::instance()->pressTrigger() & EE_BUTTON_LMASK ) ) {
+	if ( !( UIManager::instance()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
 		endResize();
 		setDragEnabled( true );
 		return;
@@ -742,7 +742,7 @@ bool UIWindow::Hide() {
 			setVisible( false );
 		}
 
-		UIManager::instance()->mainControl()->setFocus();
+		UIManager::instance()->getMainControl()->setFocus();
 
 		if ( NULL != mModalCtrl ) {
 			mModalCtrl->setEnabled( false );
@@ -827,7 +827,7 @@ UITextBox * UIWindow::getTitleTextBox() const {
 }
 
 void UIWindow::maximize() {
-	UIControl * Ctrl = UIManager::instance()->mainControl();
+	UIControl * Ctrl = UIManager::instance()->getMainControl();
 
 	if ( Ctrl->getSize() == mSize ) {
 		setPosition( mNonMaxPos );
@@ -837,7 +837,7 @@ void UIWindow::maximize() {
 		mNonMaxSize = mSize;
 
 		setPosition( 0, 0 );
-		internalSize( UIManager::instance()->mainControl()->getSize() );
+		internalSize( UIManager::instance()->getMainControl()->getSize() );
 	}
 }
 
@@ -912,14 +912,14 @@ UIControlAnim * UIWindow::getModalControl() const {
 void UIWindow::resizeCursor() {
 	UIManager * Man = UIManager::instance();
 
-	if ( !isMouseOverMeOrChilds() || !Man->useGlobalCursors() || ( mWinFlags & UI_WIN_NO_BORDER ) || !( mWinFlags & UI_WIN_RESIZEABLE ) )
+	if ( !isMouseOverMeOrChilds() || !Man->getUseGlobalCursors() || ( mWinFlags & UI_WIN_NO_BORDER ) || !( mWinFlags & UI_WIN_RESIZEABLE ) )
 		return;
 
 	Vector2i Pos = Man->getMousePos();
 
 	worldToControl( Pos );
 
-	const UIControl * Control = Man->overControl();
+	const UIControl * Control = Man->getOverControl();
 
 	if ( Control == this ) {
 		if ( Pos.x <= mBorderLeft->getSize().getWidth() ) {
@@ -934,7 +934,7 @@ void UIWindow::resizeCursor() {
 			} else {
 				Man->setCursor( EE_CURSOR_SIZENS ); // RESIZE_TOP
 			}
-		} else if ( !( UIManager::instance()->pressTrigger() & EE_BUTTON_LMASK ) ) {
+		} else if ( !( UIManager::instance()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
 			Man->setCursor( EE_CURSOR_ARROW );
 		}
 	} else if ( Control == mBorderBottom ) {

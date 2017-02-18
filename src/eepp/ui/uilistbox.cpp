@@ -106,11 +106,11 @@ void UIListBox::autoPadding() {
 	}
 }
 
-UIScrollBar * UIListBox::verticalScrollBar() const {
+UIScrollBar * UIListBox::getVerticalScrollBar() const {
 	return mVScrollBar;
 }
 
-UIScrollBar * UIListBox::horizontalScrollBar() const {
+UIScrollBar * UIListBox::getHorizontalScrollBar() const {
 	return mHScrollBar;
 }
 
@@ -669,34 +669,34 @@ Uint32 UIListBox::getItemIndex( const String& Text ) {
 	return eeINDEX_NOT_FOUND;
 }
 
-void UIListBox::fontColor( const ColorA& Color ) {
+void UIListBox::setFontColor( const ColorA& Color ) {
 	mFontColor = Color;
 
 	for ( Uint32 i = 0; i < mItems.size(); i++ )
 		mItems[i]->setColor( mFontColor );
 }
 
-const ColorA& UIListBox::fontColor() const {
+const ColorA& UIListBox::getFontColor() const {
 	return mFontColor;
 }
 
-void UIListBox::fontOverColor( const ColorA& Color ) {
+void UIListBox::setFontOverColor( const ColorA& Color ) {
 	mFontOverColor = Color;
 }
 
-const ColorA& UIListBox::fontOverColor() const {
+const ColorA& UIListBox::getFontOverColor() const {
 	return mFontOverColor;
 }
 
-void UIListBox::fontSelectedColor( const ColorA& Color ) {
+void UIListBox::setFontSelectedColor( const ColorA& Color ) {
 	mFontSelectedColor = Color;
 }
 
-const ColorA& UIListBox::fontSelectedColor() const {
+const ColorA& UIListBox::getFontSelectedColor() const {
 	return mFontSelectedColor;
 }
 
-void UIListBox::font( Graphics::Font * Font ) {
+void UIListBox::setFont( Graphics::Font * Font ) {
 	mFont = Font;
 
 	for ( Uint32 i = 0; i < mItems.size(); i++ )
@@ -707,11 +707,11 @@ void UIListBox::font( Graphics::Font * Font ) {
 	updateScroll();
 }
 
-Graphics::Font * UIListBox::font() const {
+Graphics::Font * UIListBox::getFont() const {
 	return mFont;
 }
 
-void UIListBox::paddingContainer( const Recti& Padding ) {
+void UIListBox::setContainerPadding( const Recti& Padding ) {
 	if ( Padding != mPaddingContainer ) {
 		mPaddingContainer = Padding;
 
@@ -720,11 +720,11 @@ void UIListBox::paddingContainer( const Recti& Padding ) {
 	}
 }
 
-const Recti& UIListBox::paddingContainer() const {
+const Recti& UIListBox::getContainerPadding() const {
 	return mPaddingContainer;
 }
 
-void UIListBox::smoothScroll( const bool& soft ) {
+void UIListBox::setSmoothScroll( const bool& soft ) {
 	if ( soft != mSmoothScroll ) {
 		mSmoothScroll = soft;
 
@@ -732,11 +732,11 @@ void UIListBox::smoothScroll( const bool& soft ) {
 	}
 }
 
-const bool& UIListBox::smoothScroll() const {
+const bool& UIListBox::isSmoothScroll() const {
 	return mSmoothScroll;
 }
 
-void UIListBox::rowHeight( const Uint32& height ) {
+void UIListBox::setRowHeight( const Uint32& height ) {
 	if ( mRowHeight != height ) {
 		mRowHeight = height;
 
@@ -745,11 +745,11 @@ void UIListBox::rowHeight( const Uint32& height ) {
 	}
 }
 
-const Uint32& UIListBox::rowHeight() const {
+const Uint32& UIListBox::getRowHeight() const {
 	return mRowHeight;
 }
 
-Uint32 UIListBox::count() {
+Uint32 UIListBox::getCount() {
 	return (Uint32)mItems.size();
 }
 
@@ -817,7 +817,7 @@ void UIListBox::selectNext() {
 			if ( NULL == mItems[ SelIndex ] )
 				createItemIndex( SelIndex );
 
-			if ( mItems[ SelIndex ]->getPosition().y + (Int32)rowHeight() > mContainer->getSize().getHeight() ) {
+			if ( mItems[ SelIndex ]->getPosition().y + (Int32)getRowHeight() > mContainer->getSize().getHeight() ) {
 				mVScrollBar->setValue( (Float)( SelIndex * mRowHeight ) / (Float)( ( mItems.size() - 1 ) * mRowHeight ) );
 
 				mItems[ SelIndex ]->setFocus();
@@ -856,12 +856,12 @@ Uint32 UIListBox::onKeyDown( const UIEventKey &Event ) {
 		} else if ( KEY_END == Event.getKeyCode() ) {
 			mLastTickMove = Sys::getTicks();
 
-			if ( mSelected.front() != count() - 1 ) {
+			if ( mSelected.front() != getCount() - 1 ) {
 				mVScrollBar->setValue( 1 );
 
-				mItems[ count() - 1 ]->setFocus();
+				mItems[ getCount() - 1 ]->setFocus();
 
-				setSelected( count() - 1 );
+				setSelected( getCount() - 1 );
 			}
 		}
 	}
@@ -875,7 +875,7 @@ Uint32 UIListBox::onMessage( const UIMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
 		case UIMessage::MsgFocusLoss:
 		{
-			UIControl * FocusCtrl = UIManager::instance()->focusControl();
+			UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
 
 			if ( this != FocusCtrl && !isParentOf( FocusCtrl ) ) {
 				onComplexControlFocusLoss();
@@ -902,7 +902,7 @@ void UIListBox::onAlphaChange() {
 	mHScrollBar->setAlpha( mAlpha );
 }
 
-void UIListBox::verticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+void UIListBox::setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	if ( Mode != mVScrollMode ) {
 		mVScrollMode = Mode;
 
@@ -910,11 +910,11 @@ void UIListBox::verticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	}
 }
 
-const UI_SCROLLBAR_MODE& UIListBox::verticalScrollMode() {
+const UI_SCROLLBAR_MODE& UIListBox::getVerticalScrollMode() {
 	return mVScrollMode;
 }
 
-void UIListBox::horizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+void UIListBox::setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	if ( Mode != mHScrollMode ) {
 		mHScrollMode = Mode;
 
@@ -932,31 +932,31 @@ void UIListBox::horizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	}
 }
 
-const UI_SCROLLBAR_MODE& UIListBox::horizontalScrollMode() {
+const UI_SCROLLBAR_MODE& UIListBox::getHorizontalScrollMode() {
 	return mHScrollMode;
 }
 
-bool UIListBox::touchDragEnable() const {
+bool UIListBox::isTouchDragEnabled() const {
 	return 0 != ( mFlags & UI_TOUCH_DRAG_ENABLED );
 }
 
-void UIListBox::touchDragEnable( const bool& enable ) {
+void UIListBox::setTouchDragEnabled( const bool& enable ) {
 	writeFlag( UI_TOUCH_DRAG_ENABLED, true == enable );
 }
 
-bool UIListBox::touchDragging() const {
+bool UIListBox::isTouchDragging() const {
 	return 0 != ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING );
 }
 
-void UIListBox::touchDragging( const bool& dragging ) {
+void UIListBox::setTouchDragging( const bool& dragging ) {
 	writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, true == dragging );
 }
 
 void UIListBox::update() {
 	if ( mEnabled && mVisible ) {
 		if ( mFlags & UI_TOUCH_DRAG_ENABLED ) {
-			Uint32 Press	= UIManager::instance()->pressTrigger();
-			Uint32 LPress	= UIManager::instance()->lastPressTrigger();
+			Uint32 Press	= UIManager::instance()->getPressTrigger();
+			Uint32 LPress	= UIManager::instance()->getLastPressTrigger();
 
 			if ( ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING ) ) {
 				// Mouse Not Down

@@ -97,7 +97,7 @@ void UIDropDownList::showListBox() {
 		if ( !mPopUpToMainControl )
 			mListBox->setParent( getParent() );
 		else
-			mListBox->setParent( UIManager::instance()->mainControl() );
+			mListBox->setParent( UIManager::instance()->getMainControl() );
 
 		mListBox->toFront();
 
@@ -109,15 +109,15 @@ void UIDropDownList::showListBox() {
 
 		mListBox->setPosition( Pos );
 
-		if ( mListBox->count() ) {
-			Recti tPadding = mListBox->paddingContainer();
+		if ( mListBox->getCount() ) {
+			Recti tPadding = mListBox->getContainerPadding();
 
-			Float sliderValue = mListBox->verticalScrollBar()->getValue();
+			Float sliderValue = mListBox->getVerticalScrollBar()->getValue();
 
-			if ( mMinNumVisibleItems < mListBox->count() )
-				mListBox->setSize( mSize.getWidth(), (Int32)( mMinNumVisibleItems * mListBox->rowHeight() ) + tPadding.Top + tPadding.Bottom );
+			if ( mMinNumVisibleItems < mListBox->getCount() )
+				mListBox->setSize( mSize.getWidth(), (Int32)( mMinNumVisibleItems * mListBox->getRowHeight() ) + tPadding.Top + tPadding.Bottom );
 			else {
-				mListBox->setSize( mSize.getWidth(), (Int32)( mListBox->count() * mListBox->rowHeight() ) + tPadding.Top + tPadding.Bottom );
+				mListBox->setSize( mSize.getWidth(), (Int32)( mListBox->getCount() * mListBox->getRowHeight() ) + tPadding.Top + tPadding.Bottom );
 			}
 
 			mListBox->updateQuad();
@@ -125,7 +125,7 @@ void UIDropDownList::showListBox() {
 			Rectf aabb( mListBox->getPolygon().toAABB() );
 			Recti aabbi( aabb.Left, aabb.Top, aabb.Right, aabb.Bottom );
 
-			if ( !UIManager::instance()->mainControl()->getScreenRect().contains( aabbi ) ) {
+			if ( !UIManager::instance()->getMainControl()->getScreenRect().contains( aabbi ) ) {
 				Pos = Vector2i( mPos.x, mPos.y );
 
 				if ( mPopUpToMainControl ) {
@@ -137,7 +137,7 @@ void UIDropDownList::showListBox() {
 				mListBox->setPosition( Pos );
 			}
 
-			mListBox->verticalScrollBar()->setValue( sliderValue );
+			mListBox->getVerticalScrollBar()->setValue( sliderValue );
 
 			show();
 
@@ -160,7 +160,7 @@ void UIDropDownList::onItemKeyDown( const UIEvent * Event ) {
 }
 
 void UIDropDownList::onListBoxFocusLoss( const UIEvent * Event ) {
-	if ( UIManager::instance()->focusControl() != this && !isChild( UIManager::instance()->focusControl() ) ) {
+	if ( UIManager::instance()->getFocusControl() != this && !isChild( UIManager::instance()->getFocusControl() ) ) {
 		hide();
 	}
 }

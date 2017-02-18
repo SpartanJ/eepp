@@ -145,15 +145,15 @@ void UIManager::sendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Ui
 	}
 }
 
-UIControl * UIManager::focusControl() const {
+UIControl * UIManager::getFocusControl() const {
 	return mFocusControl;
 }
 
-UIControl * UIManager::lossFocusControl() const {
+UIControl * UIManager::getLossFocusControl() const {
 	return mLossFocusControl;
 }
 
-void UIManager::focusControl( UIControl * Ctrl ) {
+void UIManager::setFocusControl( UIControl * Ctrl ) {
 	if ( NULL != mFocusControl && NULL != Ctrl && Ctrl != mFocusControl ) {
 		mLossFocusControl = mFocusControl;
 
@@ -167,11 +167,11 @@ void UIManager::focusControl( UIControl * Ctrl ) {
 	}
 }
 
-UIControl * UIManager::overControl() const {
+UIControl * UIManager::getOverControl() const {
 	return mOverControl;
 }
 
-void UIManager::overControl( UIControl * Ctrl ) {
+void UIManager::setOverControl( UIControl * Ctrl ) {
 	mOverControl = Ctrl;
 }
 
@@ -228,7 +228,7 @@ void UIManager::update() {
 		if ( NULL != mFocusControl ) {
 			if ( !wasDraggingControl ) {
 				if ( mOverControl != mFocusControl )
-					focusControl( mOverControl );
+					setFocusControl( mOverControl );
 
 				mFocusControl->onMouseUp( mKM->getMousePos(), mKM->getReleaseTrigger() );
 				sendMsg( mFocusControl, UIMessage::MsgMouseUp, mKM->getReleaseTrigger() );
@@ -251,7 +251,7 @@ void UIManager::update() {
 	checkClose();
 }
 
-UIControl * UIManager::downControl() const {
+UIControl * UIManager::getDownControl() const {
 	return mDownControl;
 }
 
@@ -261,11 +261,11 @@ void UIManager::draw() {
 	GlobalBatchRenderer::instance()->draw();
 }
 
-UIWindow * UIManager::mainControl() const {
+UIWindow * UIManager::getMainControl() const {
 	return mControl;
 }
 
-const Time& UIManager::elapsed() const {
+const Time& UIManager::getElapsed() const {
 	return mElapsed;
 }
 
@@ -277,11 +277,11 @@ Input * UIManager::getInput() const {
 	return mKM;
 }
 
-const Uint32& UIManager::pressTrigger() const {
+const Uint32& UIManager::getPressTrigger() const {
 	return mKM->getPressTrigger();
 }
 
-const Uint32& UIManager::lastPressTrigger() const {
+const Uint32& UIManager::getLastPressTrigger() const {
 	return mKM->getLastPressTrigger();
 }
 
@@ -293,35 +293,35 @@ void UIManager::clipDisable() {
 	mWindow->clipPlaneDisable();
 }
 
-void UIManager::highlightFocus( bool Highlight ) {
+void UIManager::setHighlightFocus( bool Highlight ) {
 	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_FOCUS, Highlight ? 1 : 0 );
 }
 
-bool UIManager::highlightFocus() const {
+bool UIManager::getHighlightFocus() const {
 	return 0 != ( mFlags & UI_MANAGER_HIGHLIGHT_FOCUS );
 }
 
-void UIManager::highlightFocusColor( const ColorA& Color ) {
+void UIManager::setHighlightFocusColor( const ColorA& Color ) {
 	mHighlightFocusColor = Color;
 }
 
-const ColorA& UIManager::highlightFocusColor() const {
+const ColorA& UIManager::getHighlightFocusColor() const {
 	return mHighlightFocusColor;
 }
 
-void UIManager::highlightOver( bool Highlight ) {
+void UIManager::setHighlightOver( bool Highlight ) {
 	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_OVER, Highlight ? 1 : 0 );
 }
 
-bool UIManager::highlightOver() const {
+bool UIManager::getHighlightOver() const {
 	return 0 != ( mFlags & UI_MANAGER_HIGHLIGHT_OVER );
 }
 
-void UIManager::highlightOverColor( const ColorA& Color ) {
+void UIManager::setHighlightOverColor( const ColorA& Color ) {
 	mHighlightOverColor = Color;
 }
 
-const ColorA& UIManager::highlightOverColor() const {
+const ColorA& UIManager::getHighlightOverColor() const {
 	return mHighlightOverColor;
 }
 
@@ -357,7 +357,7 @@ EE::Window::Window * UIManager::getWindow() const {
 
 void UIManager::setFocusLastWindow( UIWindow * window ) {
 	if ( !mWindowsList.empty() && window != mWindowsList.front() ) {
-		focusControl( mWindowsList.front() );
+		setFocusControl( mWindowsList.front() );
 	}
 }
 
@@ -450,11 +450,11 @@ const bool& UIManager::isControlDragging() const {
 	return mControlDragging;
 }
 
-void UIManager::useGlobalCursors( const bool& use ) {
+void UIManager::setUseGlobalCursors( const bool& use ) {
 	mUseGlobalCursors = use;
 }
 
-const bool& UIManager::useGlobalCursors() {
+const bool& UIManager::getUseGlobalCursors() {
 	return mUseGlobalCursors;
 }
 

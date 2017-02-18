@@ -210,7 +210,7 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 		}
 		case UIMessage::MsgFocusLoss:
 		{
-			UIControl * FocusCtrl = UIManager::instance()->focusControl();
+			UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
 
 			if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
 				onComplexControlFocusLoss();
@@ -250,7 +250,7 @@ bool UIWinMenu::isPopUpMenuChild( UIControl * Ctrl ) {
 }
 
 void UIWinMenu::onMenuFocusLoss( const UIEvent * Event ) {
-	UIControl * FocusCtrl = UIManager::instance()->focusControl();
+	UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
 
 	if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
 		onComplexControlFocusLoss();
