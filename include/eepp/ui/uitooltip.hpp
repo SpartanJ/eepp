@@ -19,16 +19,16 @@ class EE_API UITooltip : public UIControlAnim {
 					FontColor( 0, 0, 0, 255 ),
 					FontShadowColor( 255, 255, 255, 150 )
 				{
-					UITheme * Theme = UIThemeManager::instance()->defaultTheme();
+					UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
 
 					if ( NULL != Theme ) {
-						Font			= Theme->font();
-						FontColor		= Theme->fontColor();
-						FontShadowColor	= Theme->fontShadowColor();
+						Font			= Theme->getFont();
+						FontColor		= Theme->getFontColor();
+						FontShadowColor	= Theme->getFontShadowColor();
 					}
 
 					if ( NULL == Font )
-						Font = UIThemeManager::instance()->defaultFont();
+						Font = UIThemeManager::instance()->getDefaultFont();
 				}
 
 				inline ~CreateParams() {}
@@ -57,29 +57,29 @@ class EE_API UITooltip : public UIControlAnim {
 
 		virtual void setAlpha( const Float& alpha );
 
-		Graphics::Font * font() const;
+		Graphics::Font * getFont() const;
 
-		void font( Graphics::Font * font );
+		void setFont( Graphics::Font * font );
 
-		virtual const String& text();
+		virtual const String& getText();
 
-		virtual void text( const String& text );
+		virtual void setText( const String& text );
 
-		const ColorA& color() const;
+		const ColorA& getColor() const;
 
-		void color( const ColorA& color );
+		void setColor( const ColorA& color );
 
-		const ColorA& shadowColor() const;
+		const ColorA& getShadowColor() const;
 
-		void shadowColor( const ColorA& color );
+		void setShadowColor( const ColorA& color );
 
 		virtual void onTextChanged();
 
 		virtual void onFontChanged();
 
-		virtual void padding( const Recti& padding );
+		virtual void setPadding( const Recti& padding );
 
-		const Recti& padding() const;
+		const Recti& getPadding() const;
 
 		TextCache * getTextCache();
 
@@ -89,13 +89,13 @@ class EE_API UITooltip : public UIControlAnim {
 
 		const int& getNumLines() const;
 
-		const Vector2f& alignOffset() const;
+		const Vector2f& getAlignOffset() const;
 
-		void tooltipTime( const Time& Time );
+		void setTooltipTime( const Time& Time );
 
-		void tooltipTimeAdd( const Time & Time );
+		void addTooltipTime( const Time & Time );
 
-		const Time & tooltipTime() const;
+		const Time & getTooltipTime() const;
 	protected:
 		TextCache *	mTextCache;
 		ColorA 		mFontColor;

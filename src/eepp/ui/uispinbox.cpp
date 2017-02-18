@@ -104,19 +104,19 @@ void UISpinBox::adjustChilds() {
 	mInput->setSize( mSize.getWidth() - mPushUp->getSize().getWidth(), mSize.getHeight() );
 }
 
-void UISpinBox::padding( const Recti& padding ) {
+void UISpinBox::setPadding( const Recti& padding ) {
 	mInput->setPadding( padding );
 }
 
-const Recti& UISpinBox::padding() const {
+const Recti& UISpinBox::getPadding() const {
 	return mInput->getPadding();
 }
 
-void UISpinBox::clickStep( const Float& step ) {
+void UISpinBox::setClickStep( const Float& step ) {
 	mClickStep = step;
 }
 
-const Float& UISpinBox::clickStep() const {
+const Float& UISpinBox::getClickStep() const {
 	return mClickStep;
 }
 
@@ -148,7 +148,7 @@ void UISpinBox::addValue( const Float& value ) {
 	if ( !mInput->getText().size() )
 		mInput->setText( String::toStr( static_cast<Int32>( mMinValue ) ) );
 
-	this->value( mValue + value );
+	this->setValue( mValue + value );
 }
 
 void UISpinBox::internalValue( const Float& Val, const bool& Force ) {
@@ -170,33 +170,33 @@ void UISpinBox::internalValue( const Float& Val, const bool& Force ) {
 	}
 }
 
-void UISpinBox::value( const Float& Val ) {
+void UISpinBox::setValue( const Float& Val ) {
 	internalValue( Val, false );
 }
 
-const Float& UISpinBox::value() const {
+const Float& UISpinBox::getValue() const {
 	return mValue;
 }
 
-void UISpinBox::minValue( const Float& MinVal ) {
+void UISpinBox::setMinValue( const Float& MinVal ) {
 	mMinValue = MinVal;
 
 	if ( mValue < mMinValue )
 		mValue = mMinValue;
 }
 
-const Float& UISpinBox::minValue() const {
+const Float& UISpinBox::getMinValue() const {
 	return mMinValue;
 }
 
-void UISpinBox::maxValue( const Float& MaxVal ) {
+void UISpinBox::setMaxValue( const Float& MaxVal ) {
 	mMaxValue = MaxVal;
 
 	if ( mValue > mMaxValue )
 		mValue = mMaxValue;
 }
 
-const Float& UISpinBox::maxValue() const {
+const Float& UISpinBox::getMaxValue() const {
 	return mMaxValue;
 }
 
@@ -207,7 +207,7 @@ void UISpinBox::update() {
 
 	if ( Changed ) {
 		if ( !mInput->getText().size() ) {
-			value( 0 );
+			setValue( 0 );
 		} else {
 			Float Val = mValue;
 
@@ -220,7 +220,7 @@ void UISpinBox::update() {
 				bool Res 	= String::fromString<Float>( Val, mInput->getText() );
 
 				if ( Res )
-					value( Val );
+					setValue( Val );
 			}
 		}
 	}

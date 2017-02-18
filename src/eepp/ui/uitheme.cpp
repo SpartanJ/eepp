@@ -145,7 +145,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 	for ( std::list<std::string>::iterator it = tTheme->mUIElements.begin() ; it != tTheme->mUIElements.end(); it++ ) {
 		Uint32 IsComplex = 0;
 
-		Element = std::string( tTheme->abbr() + "_" + *it );
+		Element = std::string( tTheme->getAbbr() + "_" + *it );
 
 		Found 	= searchFilesInAtlas( TextureAtlas, Element, IsComplex );
 
@@ -186,14 +186,14 @@ UITheme * UITheme::loadFromPath( UITheme * tTheme, const std::string& Path, cons
 	std::vector<std::string> 	ElemFound;
 	std::vector<Uint32> 		ElemType;
 
-	Graphics::TextureAtlas * tSG = eeNew( Graphics::TextureAtlas, ( tTheme->abbr() ) );
+	Graphics::TextureAtlas * tSG = eeNew( Graphics::TextureAtlas, ( tTheme->getAbbr() ) );
 
 	tTheme->getTextureAtlas( tSG );
 
 	for ( std::list<std::string>::iterator it = tTheme->mUIElements.begin() ; it != tTheme->mUIElements.end(); it++ ) {
 		Uint32 IsComplex = 0;
 
-		Element = tTheme->abbr() + "_" + *it;
+		Element = tTheme->getAbbr() + "_" + *it;
 
 		Found 	= searchFilesOfElement( tSG, RPath, Element, IsComplex, ImgExt );
 
@@ -205,7 +205,7 @@ UITheme * UITheme::loadFromPath( UITheme * tTheme, const std::string& Path, cons
 
 	// Load the icons from path.
 	for ( std::list<std::string>::iterator it = tTheme->mUIIcons.begin() ; it != tTheme->mUIIcons.end(); it++ ) {
-		ElemName	= tTheme->abbr() + "_icon_" + *it;
+		ElemName	= tTheme->getAbbr() + "_icon_" + *it;
 		Element		= RPath + ElemName + "." + ImgExt;
 
 		if ( FileSystem::fileExists( Element ) ) {
@@ -351,61 +351,61 @@ const Uint32& UITheme::getId() const {
 	return mNameHash;
 }
 
-const std::string& UITheme::abbr() const {
+const std::string& UITheme::getAbbr() const {
 	return mAbbr;
 }
 
 UISkin * UITheme::add( UISkin * Resource ) {
-	Resource->theme( this );
+	Resource->setTheme( this );
 
 	return ResourceManager<UISkin>::add( Resource );
 }
 
-void UITheme::font( Graphics::Font * Font ) {
+void UITheme::setFont( Graphics::Font * Font ) {
 	mFont = Font;
 }
 
-Graphics::Font * UITheme::font() const {
+Graphics::Font * UITheme::getFont() const {
 	return mFont;
 }
 
-const ColorA& UITheme::fontColor() const {
+const ColorA& UITheme::getFontColor() const {
 	return mFontColor;
 }
 
-const ColorA& UITheme::fontShadowColor() const {
+const ColorA& UITheme::getFontShadowColor() const {
 	return mFontShadowColor;
 }
 
-const ColorA& UITheme::fontOverColor() const {
+const ColorA& UITheme::getFontOverColor() const {
 	return mFontOverColor;
 }
 
-const ColorA& UITheme::fontSelectedColor() const {
+const ColorA& UITheme::getFontSelectedColor() const {
 	return mFontSelectedColor;
 }
 
-void UITheme::fontColor( const ColorA& Color ) {
+void UITheme::setFontColor( const ColorA& Color ) {
 	mFontColor = Color;
 }
 
-void UITheme::fontShadowColor( const ColorA& Color ) {
+void UITheme::setFontShadowColor( const ColorA& Color ) {
 	mFontShadowColor = Color;
 }
 
-void UITheme::fontOverColor( const ColorA& Color ) {
+void UITheme::setFontOverColor( const ColorA& Color ) {
 	mFontOverColor = Color;
 }
 
-void UITheme::fontSelectedColor( const ColorA& Color ) {
+void UITheme::setFontSelectedColor( const ColorA& Color ) {
 	mFontSelectedColor = Color;
 }
 
-void UITheme::useDefaultThemeValues( const bool& Use ) {
+void UITheme::setUseDefaultThemeValues( const bool& Use ) {
 	mUsedefaultThemeValues = Use;
 }
 
-const bool& UITheme::useDefaultThemeValues() const {
+const bool& UITheme::getUseDefaultThemeValues() const {
 	return mUsedefaultThemeValues;
 }
 
@@ -695,7 +695,7 @@ UIPushButton * UITheme::createPushButton( UIControl * Parent, const Sizei& Size,
 	ButtonParams.IconAutoMargin = IconAutoMargin;
 
 	if ( NULL != Icon )
-		ButtonParams.SetIcon( Icon );
+		ButtonParams.setIcon( Icon );
 
 	UIPushButton * Ctrl = eeNew( UIPushButton, ( ButtonParams ) );
 	Ctrl->setVisible( true );
@@ -714,7 +714,7 @@ UISelectButton * UITheme::createSelectButton( UIControl * Parent, const Sizei& S
 	ButtonParams.IconAutoMargin = IconAutoMargin;
 
 	if ( NULL != Icon )
-		ButtonParams.SetIcon( Icon );
+		ButtonParams.setIcon( Icon );
 
 	UISelectButton * Ctrl = eeNew( UISelectButton, ( ButtonParams ) );
 	Ctrl->setVisible( true );

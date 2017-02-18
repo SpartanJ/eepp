@@ -26,18 +26,18 @@ class EE_API UIMenu : public UIComplexControl {
 					FontOverColor( 0, 0, 0, 255 ),
 					FontSelectedColor( 0, 0, 0, 255 )
 				{
-					UITheme * Theme = UIThemeManager::instance()->defaultTheme();
+					UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
 
 					if ( NULL != Theme ) {
-						Font				= Theme->font();
-						FontColor			= Theme->fontColor();
-						FontShadowColor		= Theme->fontShadowColor();
-						FontOverColor		= Theme->fontOverColor();
-						FontSelectedColor	= Theme->fontSelectedColor();
+						Font				= Theme->getFont();
+						FontColor			= Theme->getFontColor();
+						FontShadowColor		= Theme->getFontShadowColor();
+						FontOverColor		= Theme->getFontOverColor();
+						FontSelectedColor	= Theme->getFontSelectedColor();
 					}
 
 					if ( NULL == Font )
-						Font = UIThemeManager::instance()->defaultFont();
+						Font = UIThemeManager::instance()->getDefaultFont();
 				}
 
 				inline ~CreateParams() {}
@@ -55,7 +55,7 @@ class EE_API UIMenu : public UIComplexControl {
 
 		};
 
-		static void FixMenuPos( Vector2i& position, UIMenu * Menu, UIMenu * parent = NULL, UIMenuSubMenu * SubMenu = NULL );
+		static void fixMenuPos( Vector2i& position, UIMenu * Menu, UIMenu * parent = NULL, UIMenuSubMenu * SubMenu = NULL );
 
 		UIMenu( UIMenu::CreateParams& Params );
 
@@ -65,33 +65,33 @@ class EE_API UIMenu : public UIComplexControl {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		Uint32 Add( const String& Text, SubTexture * Icon = NULL );
+		Uint32 add( const String& Text, SubTexture * Icon = NULL );
 
-		Uint32 Add( UIControl * Control );
+		Uint32 add( UIControl * Control );
 
-		Uint32 AddSeparator();
+		Uint32 addSeparator();
 
-		Uint32 AddCheckBox( const String& Text, const bool& Active = false );
+		Uint32 addCheckBox( const String& Text, const bool& Active = false );
 
-		Uint32 AddSubMenu( const String& Text, SubTexture * Icon = NULL, UIMenu * SubMenu = NULL );
+		Uint32 addSubMenu( const String& Text, SubTexture * Icon = NULL, UIMenu * SubMenu = NULL );
 
-		UIControl * GetItem( const Uint32& Index );
+		UIControl * getItem( const Uint32& Index );
 		
-		UIControl * GetItem( const String& Text );
+		UIControl * getItem( const String& Text );
 
-		Uint32 GetItemIndex( UIControl * Item );
+		Uint32 getItemIndex( UIControl * Item );
 
-		Uint32 Count() const;
+		Uint32 getCount() const;
 
-		void Remove( const Uint32& Index );
+		void remove( const Uint32& Index );
 
-		void Remove( UIControl * Ctrl );
+		void remove( UIControl * Ctrl );
 
-		void RemoveAll();
+		void removeAll();
 
-		void Insert( const String& Text, SubTexture * Icon, const Uint32& Index );
+		void insert( const String& Text, SubTexture * Icon, const Uint32& Index );
 
-		void Insert( UIControl * Control, const Uint32& Index );
+		void insert( UIControl * Control, const Uint32& Index );
 
 		virtual void setTheme( UITheme * Theme );
 
@@ -99,7 +99,7 @@ class EE_API UIMenu : public UIComplexControl {
 
 		virtual bool hide();
 
-		const Recti& Padding() const;
+		const Recti& getPadding() const;
 	protected:
 		friend class UIMenuItem;
 		friend class UIMenuCheckBox;
@@ -107,11 +107,11 @@ class EE_API UIMenu : public UIComplexControl {
 
 		std::deque<UIControl *> mItems;
 		Recti				mPadding;
-		Font * 			mFont;
-		ColorA 			mFontColor;
-		ColorA			mFontShadowColor;
-		ColorA 			mFontOverColor;
-		ColorA			mFontSelectedColor;
+		Font *				mFont;
+		ColorA				mFontColor;
+		ColorA				mFontShadowColor;
+		ColorA				mFontOverColor;
+		ColorA				mFontSelectedColor;
 		Uint32				mMinWidth;
 		Uint32				mMinSpaceForIcons;
 		Uint32				mMinRightMargin;
@@ -119,46 +119,46 @@ class EE_API UIMenu : public UIComplexControl {
 		Uint32				mRowHeight;
 		Uint32				mNextPosY;
 		Uint32				mBiggestIcon;
-		UIControl *		mItemSelected;
+		UIControl *			mItemSelected;
 		Uint32				mItemSelectedIndex;
 		bool				mClickHide;
 		Uint32				mLastTickMove;
 
 		virtual void onSizeChange();
 
-		void AutoPadding();
+		void autoPadding();
 
 		virtual Uint32 onMessage( const UIMessage * Msg );
 
-		void SetControlSize( UIControl * Control, const Uint32& position );
+		void setControlSize( UIControl * Control, const Uint32& position );
 		
-		void ResizeControls();
+		void resizeControls();
 		
-		void ReposControls();
+		void rePosControls();
 		
-		void ResizeMe();
+		void resizeMe();
 		
-		UIMenuItem * CreateMenuItem( const String& Text, SubTexture * Icon );
+		UIMenuItem * createMenuItem( const String& Text, SubTexture * Icon );
 
-		UIMenuCheckBox * CreateMenuCheckBox( const String& Text, const bool& Active );
+		UIMenuCheckBox * createMenuCheckBox( const String& Text, const bool& Active );
 
-		UIMenuSubMenu * CreateSubMenu( const String& Text, SubTexture * Icon, UIMenu * SubMenu );
+		UIMenuSubMenu * createSubMenu( const String& Text, SubTexture * Icon, UIMenu * SubMenu );
 		
 		void doAftersetTheme();
 
-		bool CheckControlSize( UIControl * Control, const bool& Resize = true );
+		bool checkControlSize( UIControl * Control, const bool& Resize = true );
 
-		bool IsSubMenu( UIControl * Ctrl );
+		bool isSubMenu( UIControl * Ctrl );
 
-		void SetItemSelected( UIControl * Item );
+		void setItemSelected( UIControl * Item );
 
 		virtual Uint32 onKeyDown( const UIEventKey& Event );
 
-		void PrevSel();
+		void prevSel();
 
-		void NextSel();
+		void nextSel();
 
-		void TrySelect( UIControl * Ctrl, bool Up );
+		void trySelect( UIControl * Ctrl, bool Up );
 };
 
 }}

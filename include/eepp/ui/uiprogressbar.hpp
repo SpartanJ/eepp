@@ -37,38 +37,38 @@ class EE_API UIProgressBar : public UIComplexControl {
 
 		virtual void setTheme( UITheme * Theme );
 
-		virtual void progress( Float Val );
+		virtual void setProgress( Float Val );
 
-		const Float& progress() const;
+		const Float& getProgress() const;
 
-		virtual void totalSteps( const Float& Steps );
+		virtual void setTotalSteps( const Float& Steps );
 
-		const Float& totalSteps() const;
+		const Float& getTotalSteps() const;
 
 		virtual void draw();
 
-		void movementSpeed( const Vector2f& Speed );
+		void setMovementSpeed( const Vector2f& Speed );
 
-		const Vector2f& movementSpeed() const;
+		const Vector2f& getMovementSpeed() const;
 
-		void verticalExpand( const bool& verticalExpand );
+		void setVerticalExpand( const bool& verticalExpand );
 
-		const bool& verticalExpand() const;
+		const bool& getVerticalExpand() const;
 
-		void fillerMargin( const Rectf& margin );
+		void setFillerMargin( const Rectf& margin );
 
-		const Rectf& fillerMargin() const;
+		const Rectf& getFillerMargin() const;
 
-		void displayPercent( const bool& displayPercent );
+		void setDisplayPercent( const bool& displayPercent );
 
-		const bool& displayPercent() const;
+		const bool& getDisplayPercent() const;
 		
 		UITextBox * getTextBox() const;
 		
 	protected:
 		bool				mVerticalExpand;
 		Vector2f			mSpeed;
-		Rectf 			mFillerMargin;
+		Rectf				mFillerMargin;
 		bool				mDisplayPercent;
 
 		Float				mProgress;

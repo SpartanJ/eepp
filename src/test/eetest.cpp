@@ -3,12 +3,12 @@
 Demo_Test::EETest * TestInstance = NULL;
 
 static void MainLoop() {
-	TestInstance->Update();
+	TestInstance->update();
 }
 
 namespace Demo_Test {
 
-void EETest::Init() {
+void EETest::init() {
 	EE = Engine::instance();
 
 	Log::instance()->setLiveWrite( true );
@@ -58,10 +58,10 @@ void EETest::Init() {
 	mWindow = EE->createWindow( WinSettings, ConSettings );
 
 	if ( NULL != mWindow && mWindow->isOpen() ) {
-		SetScreen( StartScreen );
+		setScreen( StartScreen );
 
 		mWindow->setCaption( "eepp - Test Application" );
-		mWindow->pushResizeCallback( cb::Make1( this, &EETest::OnWindowResize ) );
+		mWindow->pushResizeCallback( cb::Make1( this, &EETest::onWindowResize ) );
 
 		TF = TextureFactory::instance();
 		TF->allocate(40);
@@ -72,23 +72,23 @@ void EETest::Init() {
 
 		PS.resize(5);
 
-		Scenes[0] = cb::Make0( this, &EETest::PhysicsUpdate );
-		Scenes[1] = cb::Make0( this, &EETest::Screen1 );
-		Scenes[2] = cb::Make0( this, &EETest::Screen2 );
-		Scenes[3] = cb::Make0( this, &EETest::Screen3 );
-		Scenes[4] = cb::Make0( this, &EETest::Screen4 );
-		Scenes[5] = cb::Make0( this, &EETest::Screen5 );
+		Scenes[0] = cb::Make0( this, &EETest::physicsUpdate );
+		Scenes[1] = cb::Make0( this, &EETest::screen1 );
+		Scenes[2] = cb::Make0( this, &EETest::screen2 );
+		Scenes[3] = cb::Make0( this, &EETest::screen3 );
+		Scenes[4] = cb::Make0( this, &EETest::screen4 );
+		Scenes[5] = cb::Make0( this, &EETest::screen5 );
 
 		//InBuf.Start();
 		InBuf.isNewLineEnabled( true );
 
 		setRandomSeed( static_cast<Uint32>( Sys::getSystemTime() * 1000 ) );
 
-		LoadTextures();
+		loadTextures();
 
-		LoadFonts();
+		loadFonts();
 
-		CreateShaders();
+		createShaders();
 
 		if ( mMusEnabled ) {
 			Mus = eeNew( Music, () );
@@ -132,7 +132,7 @@ void EETest::Init() {
 			mVBO->compile();
 		}
 
-		PhysicsCreate();
+		physicsCreate();
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		launch();
@@ -145,7 +145,7 @@ void EETest::Init() {
 	}
 }
 
-void EETest::CreateUIThemeTextureAtlas() {
+void EETest::createUIThemeTextureAtlas() {
 	#if !defined( EE_DEBUG ) || defined( EE_GLES )
 	return;
 	#endif
@@ -164,7 +164,7 @@ void EETest::CreateUIThemeTextureAtlas() {
 	}
 }
 
-void EETest::LoadFonts() {
+void EETest::loadFonts() {
 	mFTE.restart();
 
 	TextureLoader * tl = eeNew( TextureLoader, ( MyPath + "fonts/conchars.png" ) );
@@ -175,10 +175,10 @@ void EETest::LoadFonts() {
 	mFontLoader.add( eeNew( TTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255) ) ) );
 	mFontLoader.add( eeNew( TTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255), 1, RGB(0,0,0), true ) ) );
 
-	mFontLoader.load( cb::Make1( this, &EETest::OnFontLoaded ) );
+	mFontLoader.load( cb::Make1( this, &EETest::onFontLoaded ) );
 }
 
-void EETest::OnFontLoaded( ResourceLoader * ObjLoaded ) {
+void EETest::onFontLoaded( ResourceLoader * ObjLoaded ) {
 	FF		= FontManager::instance()->getByName( "conchars" );
 	FF2		= FontManager::instance()->getByName( "ProggySquareSZ" );
 	TTF		= FontManager::instance()->getByName( "arial" );
@@ -194,7 +194,7 @@ void EETest::OnFontLoaded( ResourceLoader * ObjLoaded ) {
 
 	mBuda = String::fromUtf8( "El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde." );
 
-	CreateUI();
+	createUI();
 
 	mEEText.create( TTFB, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to see the PopUp Menu" );
 	mFBOText.create( TTFB, "This is a VBO\nInside of a FBO" );
@@ -204,7 +204,7 @@ void EETest::OnFontLoaded( ResourceLoader * ObjLoaded ) {
 	mInfoText.create( FF, "", ColorA(255,255,255,150) );
 }
 
-void EETest::CreateShaders() {
+void EETest::createShaders() {
 	mUseShaders = mUseShaders && GLi->shadersSupported();
 
 	mShaderProgram = NULL;
@@ -215,7 +215,7 @@ void EETest::CreateShaders() {
 	}
 }
 
-void EETest::OnWinMouseUp( const UIEvent * Event ) {
+void EETest::onWinMouseUp( const UIEvent * Event ) {
 	const UIEventMouse * MEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	UIControlAnim * CtrlAnim;
@@ -233,24 +233,24 @@ void EETest::OnWinMouseUp( const UIEvent * Event ) {
 	}
 }
 
-void EETest::OnShowMenu( const UIEvent * Event ) {
+void EETest::onShowMenu( const UIEvent * Event ) {
 	UIPushButton * PB = static_cast<UIPushButton*>( Event->getControl() );
 
 	if ( Menu->show() ) {
 		Vector2i Pos = Vector2i( (Int32)PB->getPolygon()[0].x, (Int32)PB->getPolygon()[0].y - 2 );
-		UIMenu::FixMenuPos( Pos , Menu );
+		UIMenu::fixMenuPos( Pos , Menu );
 		Menu->setPosition( Pos );
 	}
 }
 
-void EETest::OnWindowResize(EE::Window::Window * win) {
+void EETest::onWindowResize(EE::Window::Window * win) {
 	Map.ViewSize( win->getSize() );
 }
 
-void EETest::CreateUI() {
+void EETest::createUI() {
 	Clock TE;
 
-	CreateUIThemeTextureAtlas();
+	createUIThemeTextureAtlas();
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
@@ -263,9 +263,9 @@ void EETest::CreateUI() {
 	mTheme = UITheme::loadFromTextureAtlas( eeNew( UIdefaultTheme, ( "uitheme", "uitheme" ) ), TextureAtlasManager::instance()->getByName( "uitheme" ) );
 
 	UIThemeManager::instance()->add( mTheme );
-	UIThemeManager::instance()->defaultEffectsEnabled( true );
-	UIThemeManager::instance()->defaultFont( TTF );
-	UIThemeManager::instance()->defaultTheme( "uitheme" );
+	UIThemeManager::instance()->setDefaultEffectsEnabled( true );
+	UIThemeManager::instance()->setDefaultFont( TTF );
+	UIThemeManager::instance()->setDefaultTheme( "uitheme" );
 
 	UIControl::CreateParams Params( UIManager::instance()->mainControl(), Vector2i(0,0), Sizei( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
@@ -278,8 +278,8 @@ void EETest::CreateUI() {
 
 	tWin->setTitle( "Controls Test" );
 
-	tWin->addEventListener( UIEvent::EventMouseUp, cb::Make1( this, &EETest::OnWinMouseUp ) );
-	C->addEventListener( UIEvent::EventMouseUp, cb::Make1( this, &EETest::OnWinMouseUp ) );
+	tWin->addEventListener( UIEvent::EventMouseUp, cb::Make1( this, &EETest::onWinMouseUp ) );
+	C->addEventListener( UIEvent::EventMouseUp, cb::Make1( this, &EETest::onWinMouseUp ) );
 
 	Params.Flags &= ~UI_CLIP_ENABLE;
 	Params.Background.setCorners(0);
@@ -329,12 +329,12 @@ void EETest::CreateUI() {
 	ButtonParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE;
 	ButtonParams.setPosition( 225, 216 );
 	ButtonParams.Size = Sizei( 90, 0 );
-	ButtonParams.SetIcon( mTheme->getIconByName( "ok" ) );
+	ButtonParams.setIcon( mTheme->getIconByName( "ok" ) );
 	UIPushButton * Button = eeNew( UIPushButton, ( ButtonParams ) );
 	Button->setVisible( true );
 	Button->setEnabled( true );
-	Button->text( "Click Me" );
-	Button->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::ButtonClick ) );
+	Button->setText( "Click Me" );
+	Button->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 	Button->setTooltipText( "Click and see what happens..." );
 
 	TextParams.setPosition( 130, 20 );
@@ -364,7 +364,7 @@ void EETest::CreateUI() {
 	mSlider = eeNew( UISlider, ( SliderParams ) );
 	mSlider->setVisible( true );
 	mSlider->setEnabled( true );
-	mSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &EETest::OnSliderValueChange ) );
+	mSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &EETest::onSliderValueChange ) );
 
 	SliderParams.setPosition( 40, 110 );
 	SliderParams.Size = Sizei( 24, 80 );
@@ -397,14 +397,14 @@ void EETest::CreateUI() {
 	mScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
 	mScrollBar->setVisible( true );
 	mScrollBar->setEnabled( true );
-	mScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &EETest::OnValueChange ) );
+	mScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &EETest::onValueChange ) );
 
 	mProgressBar = mTheme->createProgressBar( C, Sizei( 200, 20 ), Vector2i( 20, 190 ) );
 
 	TextParams.setPosition( 20, 5 );
 	mTextBoxValue = eeNew( UITextBox, ( TextParams ) );
 	mTextBoxValue->setVisible( true );
-	OnValueChange( NULL );
+	onValueChange( NULL );
 
 	UIListBox::CreateParams LBParams;
 	LBParams.setParent( C );
@@ -461,48 +461,48 @@ void EETest::CreateUI() {
 	mComboBox->getListBox()->setSelected( 0 );
 
 	Menu = mTheme->createPopUpMenu();
-	Menu->Add( "New", mTheme->getIconByName( "document-new" ) );
+	Menu->add( "New", mTheme->getIconByName( "document-new" ) );
 
-	Menu->Add( "Open...", mTheme->getIconByName( "document-open" ) );
-	Menu->AddSeparator();
-	Menu->Add( "Map Editor" );
-	Menu->Add( "Texture Atlas Editor" );
-	Menu->AddSeparator();
-	Menu->Add( "Show Screen 1" );
-	Menu->Add( "Show Screen 2" );
-	Menu->Add( "Show Screen 3" );
-	Menu->Add( "Show Screen 4" );
-	Menu->Add( "Show Screen 5" );
-	Menu->Add( "Show Screen 6" );
-	Menu->AddSeparator();
-	Menu->Add( "Show Console" );
-	Menu->AddSeparator();
-	Menu->AddCheckBox( "Show Window" );
-	Menu->Add( "Show Window 2" );
-	Menu->AddCheckBox( "Multi Viewport" );
+	Menu->add( "Open...", mTheme->getIconByName( "document-open" ) );
+	Menu->addSeparator();
+	Menu->add( "Map Editor" );
+	Menu->add( "Texture Atlas Editor" );
+	Menu->addSeparator();
+	Menu->add( "Show Screen 1" );
+	Menu->add( "Show Screen 2" );
+	Menu->add( "Show Screen 3" );
+	Menu->add( "Show Screen 4" );
+	Menu->add( "Show Screen 5" );
+	Menu->add( "Show Screen 6" );
+	Menu->addSeparator();
+	Menu->add( "Show Console" );
+	Menu->addSeparator();
+	Menu->addCheckBox( "Show Window" );
+	Menu->add( "Show Window 2" );
+	Menu->addCheckBox( "Multi Viewport" );
 
 	UIPopUpMenu * Menu3 = mTheme->createPopUpMenu();
-	Menu3->Add( "Hello World 1" );
-	Menu3->Add( "Hello World 2" );
-	Menu3->Add( "Hello World 3" );
-	Menu3->Add( "Hello World 4" );
+	Menu3->add( "Hello World 1" );
+	Menu3->add( "Hello World 2" );
+	Menu3->add( "Hello World 3" );
+	Menu3->add( "Hello World 4" );
 
 	UIPopUpMenu * Menu2 = mTheme->createPopUpMenu();
-	Menu2->Add( "Test 1" );
-	Menu2->Add( "Test 2" );
-	Menu2->Add( "Test 3" );
-	Menu2->Add( "Test 4" );
-	Menu2->AddSubMenu( "Hello World", NULL, Menu3 );
+	Menu2->add( "Test 1" );
+	Menu2->add( "Test 2" );
+	Menu2->add( "Test 3" );
+	Menu2->add( "Test 4" );
+	Menu2->addSubMenu( "Hello World", NULL, Menu3 );
 
-	Menu->AddSeparator();
-	Menu->AddSubMenu( "Sub-Menu", NULL, Menu2 ) ;
+	Menu->addSeparator();
+	Menu->addSubMenu( "Sub-Menu", NULL, Menu2 ) ;
 
-	Menu->AddSeparator();
-	Menu->Add( "Quit" );
+	Menu->addSeparator();
+	Menu->add( "Quit" );
 
-	Menu->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &EETest::ItemClick ) );
-	Menu->GetItem( "Quit" )->addEventListener( UIEvent::EventMouseUp, cb::Make1( this, &EETest::QuitClick ) );
-	UIManager::instance()->mainControl()->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::MainClick ) );
+	Menu->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &EETest::onItemClick ) );
+	Menu->getItem( "Quit" )->addEventListener( UIEvent::EventMouseUp, cb::Make1( this, &EETest::onQuitClick ) );
+	UIManager::instance()->mainControl()->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onMainClick ) );
 
 	UITextEdit::CreateParams TEParams;
 	TEParams.setParent( C );
@@ -512,7 +512,7 @@ void EETest::CreateUI() {
 	UITextEdit * TextEdit = eeNew( UITextEdit, ( TEParams ) );
 	TextEdit->setVisible( true );
 	TextEdit->setEnabled( true );
-	TextEdit->text( mBuda );
+	TextEdit->setText( mBuda );
 
 	UIGenericGrid::CreateParams GridParams;
 	GridParams.setParent( C );
@@ -576,74 +576,74 @@ void EETest::CreateUI() {
 	eePRINTL( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 }
 
-void EETest::CreateMapEditor() {
+void EETest::createMapEditor() {
 	if ( NULL != mMapEditor )
 		return;
 
 	UIWindow * tWin = mTheme->createWindow( NULL, Sizei( 1024, 768 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, Sizei( 1024, 768 ) );
-	mMapEditor = eeNew( MapEditor, ( tWin, cb::Make0( this, &EETest::OnMapEditorClose ) ) );
+	mMapEditor = eeNew( MapEditor, ( tWin, cb::Make0( this, &EETest::onMapEditorClose ) ) );
 	tWin->center();
 	tWin->show();
 }
 
-void EETest::OnMapEditorClose() {
+void EETest::onMapEditorClose() {
 	mMapEditor = NULL;
 }
 
-void EETest::CreateETGEditor() {
+void EETest::createETGEditor() {
 	UIWindow * tWin = mTheme->createWindow( NULL, Sizei( 1024, 768 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, Sizei( 1024, 768 ) );
-	mETGEditor = eeNew ( Tools::TextureAtlasEditor, ( tWin, cb::Make0( this, &EETest::OnETGEditorClose ) ) );
+	mETGEditor = eeNew ( Tools::TextureAtlasEditor, ( tWin, cb::Make0( this, &EETest::onETGEditorClose ) ) );
 	tWin->center();
 	tWin->show();
 }
 
-void EETest::OnETGEditorClose() {
+void EETest::onETGEditorClose() {
 	mETGEditor = NULL;
 }
 
-void EETest::CreateCommonDialog() {
+void EETest::createCommonDialog() {
 	UICommonDialog * CDialog = mTheme->createCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON );
 	CDialog->addFilePattern( "*.hpp;*.cpp", true );
 	CDialog->center();
 	CDialog->show();
 }
 
-void EETest::CreateWinMenu() {
+void EETest::createWinMenu() {
 	UIWinMenu * WinMenu = mTheme->createWinMenu( mUIWindow->getContainer() );
 
 	UIPopUpMenu * PopMenu = mTheme->createPopUpMenu();
-	PopMenu->Add( "File" );
-	PopMenu->Add( "Open" );
-	PopMenu->Add( "Close" );
-	PopMenu->Add( "Quit" );
+	PopMenu->add( "File" );
+	PopMenu->add( "Open" );
+	PopMenu->add( "Close" );
+	PopMenu->add( "Quit" );
 
 	UIPopUpMenu * PopMenu2 = mTheme->createPopUpMenu();
-	PopMenu2->Add( "Bla" );
-	PopMenu2->Add( "Bla 2" );
-	PopMenu2->Add( "Bla 3" );
-	PopMenu2->Add( "Bla 4" );
+	PopMenu2->add( "Bla" );
+	PopMenu2->add( "Bla 2" );
+	PopMenu2->add( "Bla 3" );
+	PopMenu2->add( "Bla 4" );
 
 	WinMenu->addMenuButton( "File", PopMenu );
 	WinMenu->addMenuButton( "Edit", PopMenu2 );
 }
 
-void EETest::CreateDecoratedWindow() {
+void EETest::createDecoratedWindow() {
 	mUIWindow = mTheme->createWindow( NULL, Sizei( 530, 350 ), Vector2i( 200, 50 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, Sizei( 100, 200 ) );
 
-	mUIWindow->addEventListener( UIEvent::EventOnWindowCloseClick, cb::Make1( this, &EETest::CloseClick ) );
+	mUIWindow->addEventListener( UIEvent::EventOnWindowCloseClick, cb::Make1( this, &EETest::onCloseClick ) );
 	mUIWindow->setTitle( "Test Window" );
 	mUIWindow->toBack();
 
 	UIPushButton * Button = mTheme->createPushButton( mUIWindow->getContainer(), Sizei( 510, 22 ), Vector2i( 10, 28 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_ANCHOR_RIGHT );
-	Button->text( "Click Me" );
-	Button->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::ButtonClick ) );
+	Button->setText( "Click Me" );
+	Button->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 
 	mUIWindow->addShortcut( KEY_C, KEYMOD_ALT, Button );
 
 	UITabWidget * TabWidget = mTheme->createTabWidget( mUIWindow->getContainer(), Sizei( 510, 250 ), Vector2i( 10, 55 ), UI_HALIGN_CENTER | UI_VALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
 
 	UITextEdit * TEdit = mTheme->createTextEdit( TabWidget, Sizei(), Vector2i() );
-	TEdit->text( mBuda );
+	TEdit->setText( mBuda );
 	TabWidget->add( "TextEdit", TEdit );
 
 	UITextInput * Txt = mTheme->createTextInput( TabWidget, Sizei(), Vector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED );
@@ -652,31 +652,31 @@ void EETest::CreateDecoratedWindow() {
 
 	TabWidget->add( "TextBox", mTheme->createTextBox( mBuda, TabWidget, Sizei(), Vector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED ) );
 
-	CreateWinMenu();
+	createWinMenu();
 }
 
-void EETest::CloseClick( const UIEvent * Event ) {
+void EETest::onCloseClick( const UIEvent * Event ) {
 	mUIWindow = NULL;
 }
 
-void EETest::ItemClick( const UIEvent * Event ) {
+void EETest::onItemClick( const UIEvent * Event ) {
 	if ( !Event->getControl()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getControl() )->text();
+	const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getControl() )->getText();
 
 	if ( "Show Screen 1" == txt ) {
-		SetScreen( 0 );
+		setScreen( 0 );
 	} else if ( "Show Screen 2" == txt ) {
-		SetScreen( 1 );
+		setScreen( 1 );
 	} else if ( "Show Screen 3" == txt ) {
-		SetScreen( 2 );
+		setScreen( 2 );
 	} else if ( "Show Screen 4" == txt ) {
-		SetScreen( 3 );
+		setScreen( 3 );
 	} else if ( "Show Screen 5" == txt ) {
-		SetScreen( 4 );
+		setScreen( 4 );
 	} else if ( "Show Screen 6" == txt ) {
-		SetScreen( 5 );
+		setScreen( 5 );
 	} else if ( "Show Console" == txt ) {
 		Con.toggle();
 		InBuf.setActive( !Con.isActive() );
@@ -692,7 +692,7 @@ void EETest::ItemClick( const UIEvent * Event ) {
 		C->setVisible( true );
 		C->setEnabled( true );
 
-		if ( Chk->active() ) {
+		if ( Chk->isActive() ) {
 			if ( C->getScale() == 1.f ) C->setScale( 0.f );
 			C->startScaleAnim( C->getScale(), Vector2f::One, Milliseconds( 500.f ), Ease::SineOut );
 			C->startAlphaAnim( C->getAlpha(), 255.f, Milliseconds( 500.f ) );
@@ -704,38 +704,38 @@ void EETest::ItemClick( const UIEvent * Event ) {
 		}
 	} else if ( "Show Window 2" == txt ) {
 		if ( NULL == mUIWindow ) {
-			CreateDecoratedWindow();
+			createDecoratedWindow();
 		}
 
 		mUIWindow->show();
 	} else if ( "Map Editor" == txt ) {
-		CreateMapEditor();
+		createMapEditor();
 	} else if ( "Texture Atlas Editor" == txt ) {
-		CreateETGEditor();
+		createETGEditor();
 	} else if ( "Multi Viewport" == txt ) {
 		MultiViewportMode = !MultiViewportMode;
 	} else if ( "Open..." == txt ) {
-		CreateCommonDialog();
+		createCommonDialog();
 	} else if ( "New" == txt ) {
 		if ( 0 == Screen ) {
-			ChangeDemo( 0 );
+			changeDemo( 0 );
 		}
 	}
 }
 
-void EETest::OnValueChange( const UIEvent * Event ) {
-	mTextBoxValue->setText( "Scroll Value:\n" + String::toStr( mScrollBar->value() ) );
+void EETest::onValueChange( const UIEvent * Event ) {
+	mTextBoxValue->setText( "Scroll Value:\n" + String::toStr( mScrollBar->getValue() ) );
 
-	mProgressBar->progress( mScrollBar->value() * 100.f );
+	mProgressBar->setProgress( mScrollBar->getValue() * 100.f );
 }
 
-void EETest::OnSliderValueChange( const UIEvent * Event ) {
+void EETest::onSliderValueChange( const UIEvent * Event ) {
 	UISlider * slider = static_cast<UISlider*>( Event->getControl() );
 
-	C->setRotation( slider->value() * 90.f );
+	C->setRotation( slider->getValue() * 90.f );
 }
 
-void EETest::QuitClick( const UIEvent * Event ) {
+void EETest::onQuitClick( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
@@ -743,23 +743,23 @@ void EETest::QuitClick( const UIEvent * Event ) {
 	}
 }
 
-void EETest::ShowMenu() {
+void EETest::showMenu() {
 	if ( Menu->show() ) {
 		Vector2i Pos = mWindow->getInput()->getMousePos();
-		UIMenu::FixMenuPos( Pos , Menu );
+		UIMenu::fixMenuPos( Pos , Menu );
 		Menu->setPosition( Pos );
 	}
 }
 
-void EETest::MainClick( const UIEvent * Event ) {
+void EETest::onMainClick( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( MouseEvent->getFlags() & EE_BUTTON_RMASK ) {
-		ShowMenu();
+		showMenu();
 	}
 }
 
-void EETest::ButtonClick( const UIEvent * Event ) {
+void EETest::onButtonClick( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( MouseEvent->getFlags() & EE_BUTTONS_LRM ) {
@@ -778,7 +778,7 @@ void EETest::ButtonClick( const UIEvent * Event ) {
 	}
 }
 
-void EETest::SetScreen( Uint32 num ) {
+void EETest::setScreen( Uint32 num ) {
 	if ( NULL != mTerrainBut ) mTerrainBut->setVisible( 1 == num );
 
 	if ( 0 == num || 5 == num )
@@ -790,7 +790,7 @@ void EETest::SetScreen( Uint32 num ) {
 		Screen = num;
 }
 
-void EETest::CmdSetPartsNum ( const std::vector < String >& params ) {
+void EETest::cmdSetPartsNum ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
@@ -804,11 +804,11 @@ void EETest::CmdSetPartsNum ( const std::vector < String >& params ) {
 	}
 }
 
-void EETest::OnTextureLoaded( ResourceLoader * ResLoaded ) {
+void EETest::onTextureLoaded( ResourceLoader * ResLoaded ) {
 	SndMng.play( "mysound" );
 }
 
-void EETest::LoadTextures() {
+void EETest::loadTextures() {
 	Clock TE;
 
 	Uint32 i;
@@ -836,7 +836,7 @@ void EETest::LoadTextures() {
 
 	mResLoad.add( eeNew( SoundLoader, ( &SndMng, "mysound", MyPath + "sounds/sound.ogg" ) ) );
 
-	mResLoad.load( cb::Make1( this, &EETest::OnTextureLoaded ) );
+	mResLoad.load( cb::Make1( this, &EETest::onTextureLoaded ) );
 
 	TN.resize(12);
 	TNP.resize(12);
@@ -874,14 +874,14 @@ void EETest::LoadTextures() {
 		for( Int32 mx = 0; mx < 8; mx++ )
 			SP.addFrame( TN[4], Sizef( 0, 0 ), Vector2i( 0, 0 ), Recti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 
-	PS[0].setCallbackReset( cb::Make2( this, &EETest::ParticlesCallback ) );
+	PS[0].setCallbackReset( cb::Make2( this, &EETest::particlesCallback ) );
 	PS[0].create( PSE_Callback, 500, TN[5], Vector2f( 0, 0 ), 16, true );
 	PS[1].create( PSE_Heal, 250, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 16, true );
 	PS[2].create( PSE_WormHole, PartsNum, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32, true );
 	PS[3].create( PSE_Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
 	PS[4].create( PSE_Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
 
-	Con.addCommand( "setparticlesnum", cb::Make1( this, &EETest::CmdSetPartsNum ) );
+	Con.addCommand( "setparticlesnum", cb::Make1( this, &EETest::cmdSetPartsNum ) );
 
 	Texture * Tex = TNP[2];
 
@@ -940,17 +940,17 @@ void EETest::LoadTextures() {
 }
 
 void EETest::run() {
-	ParticlesThread();
+	particlesThread();
 }
 
-void EETest::ParticlesThread() {
+void EETest::particlesThread() {
 	while ( mWindow->isRunning() ) {
-		UpdateParticles();
+		updateParticles();
 		Sys::sleep(10);
 	}
 }
 
-void EETest::UpdateParticles() {
+void EETest::updateParticles() {
 	if ( MultiViewportMode || Screen == 2 ) {
 		PSElapsed = cElapsed.getElapsed();
 
@@ -959,12 +959,12 @@ void EETest::UpdateParticles() {
 	}
 }
 
-void EETest::Screen1() {
+void EETest::screen1() {
 	Map.Update();
 	Map.Draw();
 }
 
-void EETest::Screen2() {
+void EETest::screen2() {
 	if ( mResLoad.isLoaded() ) {
 		Texture * TexLoaded = TF->getByName( "1.jpg" );
 
@@ -1088,7 +1088,7 @@ void EETest::Screen2() {
 	if (Ang > 360.f) Ang = 1.f;
 
 	if ( ShowParticles )
-		Particles();
+		particles();
 
 	PR.setColor( ColorA(0, 255, 0, 50) );
 
@@ -1133,7 +1133,7 @@ void EETest::Screen2() {
 	PR.drawPoint( WP.getPos(), 10.f );
 }
 
-void EETest::Screen3() {
+void EETest::screen3() {
 	if (AnimVal>=300.0f) {
 		AnimVal = 300.0f;
 		AnimSide = true;
@@ -1151,7 +1151,7 @@ void EETest::Screen3() {
 	Batch.draw();
 }
 
-void EETest::Screen4() {
+void EETest::screen4() {
 	if ( NULL != mFBO ) {
 		mFBO->bind();
 		mFBO->clear();
@@ -1179,11 +1179,11 @@ void EETest::Screen4() {
 	}
 }
 
-void EETest::Screen5() {
+void EETest::screen5() {
 
 }
 
-void EETest::Render() {
+void EETest::render() {
 	HWidth = mWindow->getWidth() * 0.5f;
 	HHeight = mWindow->getHeight() * 0.5f;
 
@@ -1221,16 +1221,16 @@ void EETest::Render() {
 		mWindow->setView( Views[1] );
 		Mouse = KM->getMousePosFromView( Views[1] );
 		Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
-		Screen2();
+		screen2();
 
 		mWindow->setView( Views[0] );
 		Mouse = KM->getMousePosFromView( Views[0] );
 		Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
-		Screen1();
+		screen1();
 
 		mWindow->setView( mWindow->getDefaultView() );
 		mWindow->clipEnable( (Int32)HWidth - 320, (Int32)HHeight - 240, 640, 480 );
-		Screen3();
+		screen3();
 		mWindow->clipDisable();
 	}
 
@@ -1285,7 +1285,7 @@ void EETest::Render() {
 	Con.draw();
 }
 
-void EETest::Input() {
+void EETest::input() {
 	KM->update();
 	JM->update();
 
@@ -1363,22 +1363,22 @@ void EETest::Input() {
 	}
 
 	if ( KM->isKeyUp(KEY_1) && KM->isControlPressed() )
-		SetScreen( 0 );
+		setScreen( 0 );
 
 	if ( KM->isKeyUp(KEY_2) && KM->isControlPressed() )
-		SetScreen( 1 );
+		setScreen( 1 );
 
 	if ( KM->isKeyUp(KEY_3) && KM->isControlPressed() )
-		SetScreen( 2 );
+		setScreen( 2 );
 
 	if ( KM->isKeyUp(KEY_4) && KM->isControlPressed() )
-		SetScreen( 3 );
+		setScreen( 3 );
 
 	if ( KM->isKeyUp(KEY_5) && KM->isControlPressed() )
-		SetScreen( 4 );
+		setScreen( 4 );
 
 	if ( KM->isKeyUp(KEY_6) && KM->isControlPressed() )
-		SetScreen( 5 );
+		setScreen( 5 );
 
 	Joystick * Joy = JM->getJoystick(0);
 
@@ -1391,9 +1391,9 @@ void EETest::Input() {
 		if ( Joy->isButtonUp(2) )		KM->injectButtonRelease(EE_BUTTON_MIDDLE);
 		if ( Joy->isButtonUp(3) )		KM->injectButtonRelease(EE_BUTTON_WHEELUP);
 		if ( Joy->isButtonUp(7) )		KM->injectButtonRelease(EE_BUTTON_WHEELDOWN);
-		if ( Joy->isButtonUp(4) )		SetScreen( 0 );
-		if ( Joy->isButtonUp(5) )		SetScreen( 1 );
-		if ( Joy->isButtonUp(6) )		SetScreen( 2 );
+		if ( Joy->isButtonUp(4) )		setScreen( 0 );
+		if ( Joy->isButtonUp(5) )		setScreen( 1 );
+		if ( Joy->isButtonUp(6) )		setScreen( 2 );
 
 		Float aX = Joy->getAxis( AXIS_X );
 		Float aY = Joy->getAxis( AXIS_Y );
@@ -1426,15 +1426,15 @@ void EETest::Input() {
 	switch (Screen) {
 		case 0:
 			if ( KM->isKeyUp( KEY_R ) ) {
-				PhysicsDestroy();
-				PhysicsCreate();
+				physicsDestroy();
+				physicsCreate();
 			}
 
 			if ( KM->isKeyUp( KEY_1 ) )
-				ChangeDemo( 0 );
+				changeDemo( 0 );
 
 			if ( KM->isKeyUp( KEY_2 ) )
-				ChangeDemo( 1 );
+				changeDemo( 1 );
 		case 1:
 			if ( NULL != Joy ) {
 				Uint8 hat = Joy->getHat();
@@ -1498,17 +1498,17 @@ void EETest::Input() {
 	}
 }
 
-void EETest::Update() {
+void EETest::update() {
 	mWindow->clear();
 
 	et = mWindow->getElapsed();
 
-	Input();
+	input();
 
 	mResLoad.update();
 
 	if ( mFontLoader.isLoaded() ) {
-		Render();
+		render();
 	} else {
 		mFontLoader.update();
 	}
@@ -1522,8 +1522,8 @@ void EETest::Update() {
 	mWindow->display(false);
 }
 
-void EETest::Process() {
-	Init();
+void EETest::process() {
+	init();
 
 	if ( NULL != mWindow && mWindow->isOpen() ) {
 		TestInstance = this;
@@ -1531,10 +1531,10 @@ void EETest::Process() {
 		mWindow->runMainLoop( &MainLoop );
 	}
 
-	End();
+	end();
 }
 
-void EETest::ParticlesCallback( Particle * P, ParticleSystem * Me ) {
+void EETest::particlesCallback( Particle * P, ParticleSystem * Me ) {
 	Float x, y, radio;
 	Vector2f MePos( Me->getPosition() );
 
@@ -1545,7 +1545,7 @@ void EETest::ParticlesCallback( Particle * P, ParticleSystem * Me ) {
 	P->setColor( ColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + Math::randf() * 0.3f );
 }
 
-void EETest::Particles() {
+void EETest::particles() {
 	PS[0].setPosition( Mousef );
 
 	if ( DrawBack )
@@ -1562,7 +1562,7 @@ void EETest::Particles() {
 #define GRABABLE_MASK_BIT (1<<31)
 #define NOT_GRABABLE_MASK (~GRABABLE_MASK_BIT)
 
-void EETest::CreateJointAndBody() {
+void EETest::createJointAndBody() {
 	#ifndef EE_PLATFORM_TOUCH
 	mMouseJoint	= NULL;
 	mMouseBody	= Body::New( INFINITY, INFINITY );
@@ -1574,8 +1574,8 @@ void EETest::CreateJointAndBody() {
 	#endif
 }
 
-void EETest::Demo1Create() {
-	CreateJointAndBody();
+void EETest::demo1Create() {
+	createJointAndBody();
 
 	Shape::resetShapeIdCounter();
 
@@ -1631,11 +1631,11 @@ void EETest::Demo1Create() {
 	shape->u( 0.9f );
 }
 
-void EETest::Demo1Update() {
+void EETest::demo1Update() {
 
 }
 
-void EETest::DestroyBody() {
+void EETest::destroyBody() {
 	#ifndef EE_PLATFORM_TOUCH
 	eeSAFE_DELETE( mMouseBody );
 	#else
@@ -1645,8 +1645,8 @@ void EETest::DestroyBody() {
 	#endif
 }
 
-void EETest::Demo1Destroy() {
-	DestroyBody();
+void EETest::demo1Destroy() {
+	destroyBody();
 
 	eeSAFE_DELETE( mSpace );
 }
@@ -1706,8 +1706,8 @@ cpBool EETest::catcherBarBegin(Arbiter *arb, Physics::Space *space, void *unused
 	return cpFalse;
 }
 
-void EETest::Demo2Create() {
-	CreateJointAndBody();
+void EETest::demo2Create() {
+	createJointAndBody();
 
 	Shape::resetShapeIdCounter();
 
@@ -1748,7 +1748,7 @@ void EETest::Demo2Create() {
 	mSpace->addCollisionHandler( handler );
 }
 
-void EETest::Demo2Update() {
+void EETest::demo2Update() {
 	if( !emitterInstance.blocked && emitterInstance.queue ){
 		emitterInstance.queue--;
 
@@ -1761,12 +1761,12 @@ void EETest::Demo2Update() {
 	}
 }
 
-void EETest::Demo2Destroy() {
-	DestroyBody();
+void EETest::demo2Destroy() {
+	destroyBody();
 	eeSAFE_DELETE( mSpace );
 }
 
-void EETest::ChangeDemo( Uint32 num ) {
+void EETest::changeDemo( Uint32 num ) {
 	if ( num < mDemo.size() ) {
 		if ( eeINDEX_NOT_FOUND != mCurDemo )
 			mDemo[ mCurDemo ].destroy();
@@ -1777,7 +1777,7 @@ void EETest::ChangeDemo( Uint32 num ) {
 	}
 }
 
-void EETest::PhysicsCreate() {
+void EETest::physicsCreate() {
 	PhysicsManager::createSingleton();
 	PhysicsManager * PM = PhysicsManager::instance();
 	PhysicsManager::DrawSpaceOptions * DSO = PM->getDrawOptions();
@@ -1792,20 +1792,20 @@ void EETest::PhysicsCreate() {
 
 	physicDemo demo;
 
-	demo.init		= cb::Make0( this, &EETest::Demo1Create );
-	demo.update		= cb::Make0( this, &EETest::Demo1Update );
-	demo.destroy	= cb::Make0( this, &EETest::Demo1Destroy );
+	demo.init		= cb::Make0( this, &EETest::demo1Create );
+	demo.update		= cb::Make0( this, &EETest::demo1Update );
+	demo.destroy	= cb::Make0( this, &EETest::demo1Destroy );
 	mDemo.push_back( demo );
 
-	demo.init		= cb::Make0( this, &EETest::Demo2Create );
-	demo.update		= cb::Make0( this, &EETest::Demo2Update );
-	demo.destroy	= cb::Make0( this, &EETest::Demo2Destroy );
+	demo.init		= cb::Make0( this, &EETest::demo2Create );
+	demo.update		= cb::Make0( this, &EETest::demo2Update );
+	demo.destroy	= cb::Make0( this, &EETest::demo2Destroy );
 	mDemo.push_back( demo );
 
-	ChangeDemo( 0 );
+	changeDemo( 0 );
 }
 
-void EETest::PhysicsUpdate() {
+void EETest::physicsUpdate() {
 	#ifndef EE_PLATFORM_TOUCH
 	mMousePoint = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
 	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
@@ -1864,14 +1864,14 @@ void EETest::PhysicsUpdate() {
 	mSpace->draw();
 }
 
-void EETest::PhysicsDestroy() {
+void EETest::physicsDestroy() {
 	mDemo[ mCurDemo ].destroy();
 }
 
-void EETest::End() {
+void EETest::end() {
 	wait();
 
-	PhysicsDestroy();
+	physicsDestroy();
 
 	eeSAFE_DELETE( Mus );
 	eeSAFE_DELETE( mTGL );
@@ -1891,7 +1891,7 @@ void EETest::End() {
 EE_MAIN_FUNC int main (int argc, char * argv []) {
 	Demo_Test::EETest * Test = eeNew( Demo_Test::EETest, () );
 
-	Test->Process();
+	Test->process();
 
 	eeDelete( Test );
 

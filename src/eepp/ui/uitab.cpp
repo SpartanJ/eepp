@@ -39,7 +39,7 @@ void UITab::setTheme( UITheme * Theme ) {
 		if ( tTabW->mSpecialBorderTabs ) {
 			if ( 0 == tTabW->getTabIndex( this ) ) {
 				tabPos = "tab_left";
-			} else if ( tTabW->count() > 0 && ( tTabW->count() - 1 ) == tTabW->getTabIndex( this ) ) {
+			} else if ( tTabW->getCount() > 0 && ( tTabW->getCount() - 1 ) == tTabW->getTabIndex( this ) ) {
 				tabPos = "tab_right";
 			}
 		}
@@ -82,16 +82,16 @@ void UITab::onStateChange() {
 	}
 }
 
-const String& UITab::text() {
-	return UIPushButton::text();
+const String& UITab::getText() {
+	return UIPushButton::getText();
 }
 
-void UITab::text( const String &text ) {
+void UITab::setText( const String &text ) {
 	UITabWidget * tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
 		if ( text.size() > tTabW->mMaxTextLength ) {
-			UIPushButton::text( text.substr( 0, tTabW->mMaxTextLength ) );
+			UIPushButton::setText( text.substr( 0, tTabW->mMaxTextLength ) );
 
 			setRealSize();
 
@@ -99,7 +99,7 @@ void UITab::text( const String &text ) {
 		}
 	}
 
-	UIPushButton::text( text );
+	UIPushButton::setText( text );
 
 	setRealSize();
 }

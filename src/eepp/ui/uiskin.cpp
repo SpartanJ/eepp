@@ -66,11 +66,11 @@ void UISkin::setSkins() {
 		setSkin( i );
 }
 
-UITheme * UISkin::theme() const {
+UITheme * UISkin::getTheme() const {
 	return mTheme;
 }
 
-void UISkin::theme( UITheme * theme ) {
+void UISkin::setTheme( UITheme * theme ) {
 	mTheme = theme;
 }
 

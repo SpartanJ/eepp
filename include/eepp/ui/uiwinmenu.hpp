@@ -24,18 +24,18 @@ class EE_API UIWinMenu : public UIComplexControl {
 					MenuHeight(0),
 					FirstButtonMargin(1)
 				{
-					UITheme * Theme = UIThemeManager::instance()->defaultTheme();
+					UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
 
 					if ( NULL != Theme ) {
-						Font				= Theme->font();
-						FontColor			= Theme->fontColor();
-						FontShadowColor		= Theme->fontShadowColor();
-						FontOverColor		= Theme->fontOverColor();
-						FontSelectedColor	= Theme->fontSelectedColor();
+						Font				= Theme->getFont();
+						FontColor			= Theme->getFontColor();
+						FontShadowColor		= Theme->getFontShadowColor();
+						FontOverColor		= Theme->getFontOverColor();
+						FontSelectedColor	= Theme->getFontSelectedColor();
 					}
 
 					if ( NULL == Font )
-						Font = UIThemeManager::instance()->defaultFont();
+						Font = UIThemeManager::instance()->getDefaultFont();
 				}
 
 				Graphics::Font * 	Font;
@@ -63,19 +63,19 @@ class EE_API UIWinMenu : public UIComplexControl {
 
 		virtual void setTheme( UITheme * Theme );
 
-		void fontColor( const ColorA& Color );
+		void setFontColor( const ColorA& Color );
 
-		const ColorA& fontColor() const;
+		const ColorA& getFontColor() const;
 
-		void fontOverColor( const ColorA& Color );
+		void setFontOverColor( const ColorA& Color );
 
-		const ColorA& fontOverColor() const;
+		const ColorA& getFontOverColor() const;
 
-		void fontSelectedColor( const ColorA& Color );
+		void setFontSelectedColor( const ColorA& Color );
 
-		const ColorA& fontSelectedColor() const;
+		const ColorA& getFontSelectedColor() const;
 
-		Graphics::Font * font() const;
+		Graphics::Font * getFont() const;
 
 		UISelectButton * getButton( const String& ButtonText );
 

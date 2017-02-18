@@ -11,7 +11,7 @@ UIMapLayerNew::UIMapLayerNew( UIMap * Map, EE_LAYER_TYPE Type, NewLayerCb newLay
 	mUIWindow( NULL ),
 	mLayer( NULL )
 {
-	mTheme		= UIThemeManager::instance()->defaultTheme();
+	mTheme		= UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL == mTheme )
 		return;
@@ -37,11 +37,11 @@ UIMapLayerNew::UIMapLayerNew( UIMap * Map, EE_LAYER_TYPE Type, NewLayerCb newLay
 	OKButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIMapLayerNew::OKClick ) );
 	mUILayerName->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UIMapLayerNew::OKClick ) );
 
-	OKButton->text( "Add" );
+	OKButton->setText( "Add" );
 
 	UIPushButton * CancelButton = mTheme->createPushButton( mUIWindow->getContainer(), OKButton->getSize(), Vector2i( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->getIconByName( "cancel" ) );
 	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIMapLayerNew::CancelClick ) );
-	CancelButton->text( "Cancel" );
+	CancelButton->setText( "Cancel" );
 
 	mUIWindow->addEventListener( UIEvent::EventKeyUp, cb::Make1( this, &UIMapLayerNew::OnKeyUp ) );
 

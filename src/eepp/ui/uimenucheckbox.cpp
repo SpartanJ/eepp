@@ -26,40 +26,36 @@ bool UIMenuCheckBox::isType( const Uint32& type ) const {
 void UIMenuCheckBox::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "menuitem" );
 
-	mSkinActive		= Theme->getByName( Theme->abbr() + "_" + "menucheckbox_active" );
-	mSkinInactive	= Theme->getByName( Theme->abbr() + "_" + "menucheckbox_inactive" );
+	mSkinActive		= Theme->getByName( Theme->getAbbr() + "_" + "menucheckbox_active" );
+	mSkinInactive	= Theme->getByName( Theme->getAbbr() + "_" + "menucheckbox_inactive" );
 
-	active( mActive );
+	setActive( mActive );
 
 	doAftersetTheme();
 }
 
-const bool& UIMenuCheckBox::active() const {
+const bool& UIMenuCheckBox::isActive() const {
 	return mActive;
 }
 
-const bool& UIMenuCheckBox::isActive() const {
-	return active();
-}
-
-void UIMenuCheckBox::active( const bool& active ) {
+void UIMenuCheckBox::setActive( const bool& active ) {
 	bool oActive = mActive;
 	mActive = active;
 
 	if ( mActive ) {
 		if ( NULL != mSkinActive ) {
 			if ( mSkinState->getState() == UISkinState::StateSelected )
-				icon( mSkinActive->getSubTexture( UISkinState::StateMouseEnter ) );
+				setIcon( mSkinActive->getSubTexture( UISkinState::StateMouseEnter ) );
 			else
-				icon( mSkinActive->getSubTexture( UISkinState::StateNormal ) );
+				setIcon( mSkinActive->getSubTexture( UISkinState::StateNormal ) );
 		} else
 			mIcon->subTexture( NULL );
 	} else {
 		if ( NULL != mSkinInactive )
 			if ( mSkinState->getState() == UISkinState::StateSelected )
-				icon( mSkinInactive->getSubTexture( UISkinState::StateMouseEnter ) );
+				setIcon( mSkinInactive->getSubTexture( UISkinState::StateMouseEnter ) );
 			else
-				icon( mSkinInactive->getSubTexture( UISkinState::StateNormal ) );
+				setIcon( mSkinInactive->getSubTexture( UISkinState::StateNormal ) );
 		else
 			mIcon->subTexture( NULL );
 	}
@@ -67,9 +63,9 @@ void UIMenuCheckBox::active( const bool& active ) {
 	if ( oActive != active ) {
 		UIMenu * Menu = reinterpret_cast<UIMenu*> ( getParent() );
 
-		if ( !Menu->CheckControlSize( this ) ) {
-			if ( NULL != icon()->subTexture() ) {
-				padding( Recti( 0, 0, 0, 0 ) );
+		if ( !Menu->checkControlSize( this ) ) {
+			if ( NULL != getIcon()->subTexture() ) {
+				setPadding( Recti( 0, 0, 0, 0 ) );
 			}
 		}
 
@@ -78,7 +74,7 @@ void UIMenuCheckBox::active( const bool& active ) {
 }
 
 void UIMenuCheckBox::switchActive() {
-	active( !mActive );
+	setActive( !mActive );
 }
 
 Uint32 UIMenuCheckBox::onMouseUp( const Vector2i &Pos, const Uint32 Flags ) {
@@ -93,7 +89,7 @@ Uint32 UIMenuCheckBox::onMouseUp( const Vector2i &Pos, const Uint32 Flags ) {
 void UIMenuCheckBox::onStateChange() {
 	UIMenuItem::onStateChange();
 
-	active( mActive );
+	setActive( mActive );
 }
 
 bool UIMenuCheckBox::inheritsFrom( const Uint32 Type ) {

@@ -35,21 +35,21 @@ class EE_API UISlider : public UIComplexControl {
 
 		virtual void setTheme( UITheme * Theme );
 
-		virtual void value( Float Val );
+		virtual void setValue( Float Val );
 
-		const Float& value() const;
+		const Float& getValue() const;
 
-		virtual void minValue( const Float& MinVal );
+		virtual void setMinValue( const Float& MinVal );
 
-		const Float& minValue() const;
+		const Float& getMinValue() const;
 
-		virtual void maxValue( const Float& MaxVal );
+		virtual void setMaxValue( const Float& MaxVal );
 
-		const Float& maxValue() const;
+		const Float& getMaxValue() const;
 
-		virtual void clickStep( const Float& step );
+		virtual void setClickStep( const Float& step );
 
-		const Float& clickStep() const;
+		const Float& getClickStep() const;
 
 		const bool& isVertical() const;
 
@@ -61,9 +61,9 @@ class EE_API UISlider : public UIComplexControl {
 
 		void adjustChilds();
 
-		const bool& allowHalfSliderOut() const;
+		const bool& isHalfSliderOutAllowed() const;
 
-		const bool& expandBackground() const;
+		const bool& isBackgroundExpanded() const;
 
 		void manageClick( const Uint32& flags );
 	protected:
@@ -72,7 +72,7 @@ class EE_API UISlider : public UIComplexControl {
 		bool				mVertical;
 		bool				mAllowHalfSliderOut;
 		bool				mExpandBackground;
-		UIControlAnim *	mBackSlider;
+		UIControlAnim *		mBackSlider;
 		UIControlAnim * 	mSlider;
 		Float				mMinValue;
 		Float				mMaxValue;

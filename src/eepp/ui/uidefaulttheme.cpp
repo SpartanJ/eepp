@@ -12,10 +12,10 @@ namespace EE { namespace UI {
 UIdefaultTheme::UIdefaultTheme( const std::string& Name, const std::string& Abbr, Graphics::Font * defaultFont ) :
 	UITheme( Name, Abbr, defaultFont )
 {
-	fontColor( ColorA( 230, 230, 230, 255 ) );
-	fontOverColor( ColorA( 255, 255, 255, 255 ) );
-	fontSelectedColor( ColorA( 255, 255, 255, 255 ) );
-	fontShadowColor( ColorA( 50, 50, 50, 150 ) );
+	setFontColor( ColorA( 230, 230, 230, 255 ) );
+	setFontOverColor( ColorA( 255, 255, 255, 255 ) );
+	setFontSelectedColor( ColorA( 255, 255, 255, 255 ) );
+	setFontShadowColor( ColorA( 50, 50, 50, 150 ) );
 }
 
 UIPopUpMenu * UIdefaultTheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 RowHeight, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
@@ -30,7 +30,7 @@ UIPopUpMenu * UIdefaultTheme::createPopUpMenu( UIControl * Parent, const Sizei& 
 	MenuParams.MinSpaceForIcons = MinSpaceForIcons;
 	MenuParams.MinRightMargin = MinRightMargin;
 
-	if ( useDefaultThemeValues() ) {
+	if ( getUseDefaultThemeValues() ) {
 		MenuParams.MinWidth = 100;
 		MenuParams.MinSpaceForIcons = 24;
 		MenuParams.MinRightMargin = 8;
@@ -51,7 +51,7 @@ UIProgressBar * UIdefaultTheme::createProgressBar( UIControl * Parent, const Siz
 	PBParams.MovementSpeed = MovementSpeed;
 	PBParams.FillerMargin = FillerMargin;
 
-	if ( useDefaultThemeValues() ) {
+	if ( getUseDefaultThemeValues() ) {
 		PBParams.Flags |= UI_AUTO_SIZE;
 		PBParams.DisplayPercent = true;
 		PBParams.VerticalExpand = true;
@@ -76,7 +76,7 @@ UIWinMenu * UIdefaultTheme::createWinMenu( UIControl * Parent, const Sizei& Size
 	WinMenuParams.MenuHeight = MenuHeight;
 	WinMenuParams.FirstButtonMargin = FirstButtonMargin;
 
-	if ( useDefaultThemeValues() ) {
+	if ( getUseDefaultThemeValues() ) {
 		WinMenuParams.ButtonMargin = 12;
 	}
 
@@ -96,7 +96,7 @@ UIWindow * UIdefaultTheme::createWindow( UIControl * Parent, const Sizei& Size, 
 	WinParams.MinWindowSize = MinWindowSize;
 	WinParams.BaseAlpha = BaseAlpha;
 
-	if ( useDefaultThemeValues() ) {
+	if ( getUseDefaultThemeValues() ) {
 		WinParams.Flags |= UI_DRAW_SHADOW;
 		WinParams.WinFlags |= UI_WIN_DRAW_SHADOW;
 		WinParams.ButtonsPositionFixer.x = -2;
@@ -119,7 +119,7 @@ UICommonDialog * UIdefaultTheme::createCommonDialog( UIControl * Parent, const S
 	DLGParams.DefaultFilePattern = DefaultFilePattern;
 	DLGParams.CDLFlags = CDLFlags;
 
-	if ( useDefaultThemeValues() ) {
+	if ( getUseDefaultThemeValues() ) {
 		DLGParams.Flags |= UI_DRAW_SHADOW;
 		DLGParams.WinFlags |= UI_WIN_DRAW_SHADOW;
 		DLGParams.ButtonsPositionFixer.x = -2;
@@ -141,7 +141,7 @@ UIMessageBox * UIdefaultTheme::createMessageBox( UI_MSGBOX_TYPE Type, const Stri
 	MsgBoxParams.Type = Type;
 	MsgBoxParams.Message = Message;
 
-	if ( useDefaultThemeValues() ) {
+	if ( getUseDefaultThemeValues() ) {
 		MsgBoxParams.Flags |= UI_DRAW_SHADOW;
 		MsgBoxParams.WinFlags |= UI_WIN_DRAW_SHADOW;
 		MsgBoxParams.ButtonsPositionFixer.x = -2;
@@ -161,7 +161,7 @@ UIComboBox * UIdefaultTheme::createComboBox( UIControl * Parent, const Sizei& Si
 	ComboParams.PopUpToMainControl = PopUpToMainControl;
 	ComboParams.ListBox = ListBox;
 
-	if ( useDefaultThemeValues() ) {
+	if ( getUseDefaultThemeValues() ) {
 		ComboParams.Flags |= UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED;
 	}
 
@@ -181,7 +181,7 @@ UIDropDownList * UIdefaultTheme::createDropDownList( UIControl * Parent, const S
 	DDLParams.PopUpToMainControl = PopUpToMainControl;
 	DDLParams.ListBox = ListBox;
 
-	if ( useDefaultThemeValues() ) {
+	if ( getUseDefaultThemeValues() ) {
 		DDLParams.Flags |= UI_AUTO_SIZE;
 	}
 
@@ -206,7 +206,7 @@ UITabWidget * UIdefaultTheme::createTabWidget( UIControl *Parent, const Sizei &S
 	TabWidgetParams.MinTabWidth = MinTabWidth;
 	TabWidgetParams.MaxTabWidth = MaxTabWidth;
 
-	if ( useDefaultThemeValues() ) {
+	if ( getUseDefaultThemeValues() ) {
 		TabWidgetParams.TabSeparation = -1;
 		TabWidgetParams.FontSelectedColor = ColorA( 255, 255, 255, 255 );
 		TabWidgetParams.DrawLineBelowTabs = true;
@@ -227,7 +227,7 @@ UITooltip * UIdefaultTheme::createTooltip( UIControl * TooltipOf, UIControl * Pa
 	TooltipParams.setSize( Size );
 	TooltipParams.Flags = Flags;
 
-	if ( useDefaultThemeValues() ) {
+	if ( getUseDefaultThemeValues() ) {
 		TooltipParams.Flags &= ~UI_AUTO_PADDING;
 		TooltipParams.FontColor = ColorA( 0, 0, 0, 255 );
 		TooltipParams.Padding = Recti( 4, 6, 4, 6 );

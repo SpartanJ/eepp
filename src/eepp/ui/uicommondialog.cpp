@@ -50,7 +50,7 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	mButtonCancel = eeNew( UIPushButton, ( ButtonParams ) );
 	mButtonCancel->setVisible( true );
 	mButtonCancel->setEnabled( true );
-	mButtonCancel->text( "Cancel" );
+	mButtonCancel->setText( "Cancel" );
 	mButtonCancel->setPosition( Vector2i( mButtonCancel->getPosition().x, getContainer()->getSize().getHeight() - mButtonCancel->getSize().getHeight() - 2 ) );
 	mButtonCancel->updateAnchorsDistances();
 
@@ -60,9 +60,9 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	mButtonOpen->setEnabled( true );
 
 	if ( isSaveDialog() )
-		mButtonOpen->text( "Save" );
+		mButtonOpen->setText( "Save" );
 	else
-		mButtonOpen->text( "Open" );
+		mButtonOpen->setText( "Open" );
 
 	UITextInput::CreateParams TInputParams;
 	TInputParams.setParent( getContainer() );
@@ -81,7 +81,7 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	mButtonUp = eeNew( UIPushButton, ( ButtonParams ) );
 	mButtonUp->setVisible( true );
 	mButtonUp->setEnabled( true );
-	mButtonUp->text( "Up" );
+	mButtonUp->setText( "Up" );
 
 	UIListBox::CreateParams LBParams;
 	LBParams.setParent( getContainer() );
@@ -98,10 +98,10 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	LBParams.Flags = UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_CLIP_ENABLE;
 	LBParams.FontSelectedColor = ColorA( 255, 255, 255, 255 );
 
-	if ( NULL != UIThemeManager::instance()->defaultTheme() ) {
-		UITheme * Theme = UIThemeManager::instance()->defaultTheme();
+	if ( NULL != UIThemeManager::instance()->getDefaultTheme() ) {
+		UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
 
-		LBParams.FontSelectedColor = Theme->fontSelectedColor();
+		LBParams.FontSelectedColor = Theme->getFontSelectedColor();
 	}
 
 	mList = eeNew( UIListBox, ( LBParams ) );
@@ -164,8 +164,8 @@ void UICommonDialog::setTheme( UITheme * Theme ) {
 	SubTexture * Icon = Theme->getIconByName( "go-up" );
 
 	if ( NULL != Icon ) {
-		mButtonUp->text( "" );
-		mButtonUp->icon( Icon );
+		mButtonUp->setText( "" );
+		mButtonUp->setIcon( Icon );
 	}
 }
 
@@ -220,7 +220,7 @@ void UICommonDialog::refreshFolder() {
 	mList->addListBoxItems( files );
 
 	if ( NULL != mList->verticalScrollBar() ) {
-		mList->verticalScrollBar()->clickStep( 1.f / ( ( mList->count() * mList->rowHeight() ) / (Float)mList->getSize().getHeight() ) );
+		mList->verticalScrollBar()->setClickStep( 1.f / ( ( mList->count() * mList->rowHeight() ) / (Float)mList->getSize().getHeight() ) );
 	}
 }
 

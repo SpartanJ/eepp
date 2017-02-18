@@ -34,9 +34,9 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
 		virtual void setTheme( UITheme * Theme );
 
-		void subMenu( UIMenu * subMenu );
+		void setSubMenu( UIMenu * subMenu );
 
-		UIMenu * subMenu() const;
+		UIMenu * getSubMenu() const;
 
 		UIGfx * getArrow() const;
 

@@ -58,7 +58,7 @@ void UIProgressBar::setTheme( UITheme * Theme ) {
 		setSize( mSize.x, getSkinSize().getHeight() );
 	}
 
-	UISkin * tSkin = Theme->getByName( Theme->abbr() + "_progressbar_filler" );
+	UISkin * tSkin = Theme->getByName( Theme->getAbbr() + "_progressbar_filler" );
 
 	if ( tSkin ) {
 		SubTexture * tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
@@ -103,40 +103,40 @@ void UIProgressBar::onSizeChange() {
 	updateTextBox();
 }
 
-void UIProgressBar::progress( Float Val ) {
+void UIProgressBar::setProgress( Float Val ) {
 	mProgress = Val;
 
 	onValueChange();
 	updateTextBox();
 }
 
-const Float& UIProgressBar::progress() const {
+const Float& UIProgressBar::getProgress() const {
 	return mProgress;
 }
 
-void UIProgressBar::totalSteps( const Float& Steps ) {
+void UIProgressBar::setTotalSteps( const Float& Steps ) {
 	mTotalSteps = Steps;
 
 	onSizeChange();
 	updateTextBox();
 }
 
-const Float& UIProgressBar::totalSteps() const {
+const Float& UIProgressBar::getTotalSteps() const {
 	return mTotalSteps;
 }
 
-void UIProgressBar::movementSpeed( const Vector2f& Speed ) {
+void UIProgressBar::setMovementSpeed( const Vector2f& Speed ) {
 	mSpeed = Speed;
 
 	if ( NULL != mParallax )
 		mParallax->setSpeed( mSpeed );
 }
 
-const Vector2f& UIProgressBar::movementSpeed() const {
+const Vector2f& UIProgressBar::getMovementSpeed() const {
 	return mSpeed;
 }
 
-void UIProgressBar::verticalExpand( const bool& VerticalExpand ) {
+void UIProgressBar::setVerticalExpand( const bool& VerticalExpand ) {
 	if ( VerticalExpand != mVerticalExpand ) {
 		mVerticalExpand = VerticalExpand;
 
@@ -144,28 +144,28 @@ void UIProgressBar::verticalExpand( const bool& VerticalExpand ) {
 	}
 }
 
-const bool& UIProgressBar::verticalExpand() const {
+const bool& UIProgressBar::getVerticalExpand() const {
 	return mVerticalExpand;
 }
 
-void UIProgressBar::fillerMargin( const Rectf& margin ) {
+void UIProgressBar::setFillerMargin( const Rectf& margin ) {
 	mFillerMargin = margin;
 
 	onPositionChange();
 	onSizeChange();
 }
 
-const Rectf& UIProgressBar::fillerMargin() const {
+const Rectf& UIProgressBar::getFillerMargin() const {
 	return mFillerMargin;
 }
 
-void UIProgressBar::displayPercent( const bool& DisplayPercent ) {
+void UIProgressBar::setDisplayPercent( const bool& DisplayPercent ) {
 	mDisplayPercent = DisplayPercent;
 
 	updateTextBox();
 }
 
-const bool& UIProgressBar::displayPercent() const {
+const bool& UIProgressBar::getDisplayPercent() const {
 	return mDisplayPercent;
 }
 

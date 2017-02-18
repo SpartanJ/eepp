@@ -34,29 +34,29 @@ class EE_API UISpinBox : public UIComplexControl {
 
 		virtual void setTheme( UITheme * Theme );
 
-		virtual void padding( const Recti& padding );
+		virtual void setPadding( const Recti& padding );
 
-		const Recti& padding() const;
+		const Recti& getPadding() const;
 
-		virtual void clickStep( const Float& step );
+		virtual void setClickStep( const Float& step );
 
-		const Float& clickStep() const;
+		const Float& getClickStep() const;
 
 		virtual Uint32 onMessage( const UIMessage * Msg );
 
 		void addValue( const Float& value );
 
-		virtual void minValue( const Float& MinVal );
+		virtual void setMinValue( const Float& MinVal );
 
-		const Float& minValue() const;
+		const Float& getMinValue() const;
 
-		virtual void maxValue( const Float& MaxVal );
+		virtual void setMaxValue( const Float& MaxVal );
 
-		const Float& maxValue() const;
+		const Float& getMaxValue() const;
 
-		virtual void value( const Float& Val );
+		virtual void setValue( const Float& Val );
 
-		const Float& value() const;
+		const Float& getValue() const;
 
 		virtual void update();
 

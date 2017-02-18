@@ -9,7 +9,7 @@ UIDropDownList::UIDropDownList( UIDropDownList::CreateParams& Params ) :
 	mMinNumVisibleItems( Params.MinNumVisibleItems ),
 	mPopUpToMainControl( Params.PopUpToMainControl )
 {
-	allowEditing( false );
+	setAllowEditing( false );
 
 	applyDefaultTheme();
 
@@ -22,7 +22,7 @@ UIDropDownList::UIDropDownList( UIDropDownList::CreateParams& Params ) :
 		if ( Params.Flags & UI_TEXT_SELECTION_ENABLED )
 			flags |= UI_TEXT_SELECTION_ENABLED;
 
-		UITheme * Theme = UIThemeManager::instance()->defaultTheme();
+		UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
 
 		if ( NULL != Theme ) {
 			mListBox = Theme->createListBox( NULL, Sizei( mSize.getWidth(), mMinNumVisibleItems * mSize.getHeight() ),Vector2i(), flags );
@@ -112,7 +112,7 @@ void UIDropDownList::showListBox() {
 		if ( mListBox->count() ) {
 			Recti tPadding = mListBox->paddingContainer();
 
-			Float sliderValue = mListBox->verticalScrollBar()->value();
+			Float sliderValue = mListBox->verticalScrollBar()->getValue();
 
 			if ( mMinNumVisibleItems < mListBox->count() )
 				mListBox->setSize( mSize.getWidth(), (Int32)( mMinNumVisibleItems * mListBox->rowHeight() ) + tPadding.Top + tPadding.Bottom );
@@ -137,7 +137,7 @@ void UIDropDownList::showListBox() {
 				mListBox->setPosition( Pos );
 			}
 
-			mListBox->verticalScrollBar()->value( sliderValue );
+			mListBox->verticalScrollBar()->setValue( sliderValue );
 
 			show();
 
@@ -183,14 +183,14 @@ void UIDropDownList::show() {
 	mListBox->setEnabled( true );
 	mListBox->setVisible( true );
 
-	if ( UIThemeManager::instance()->defaultEffectsEnabled() ) {
-		mListBox->startAlphaAnim( 255.f == mListBox->getAlpha() ? 0.f : mListBox->getAlpha(), 255.f, UIThemeManager::instance()->controlsFadeInTime() );
+	if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
+		mListBox->startAlphaAnim( 255.f == mListBox->getAlpha() ? 0.f : mListBox->getAlpha(), 255.f, UIThemeManager::instance()->getControlsFadeInTime() );
 	}
 }
 
 void UIDropDownList::hide() {
-	if ( UIThemeManager::instance()->defaultEffectsEnabled() ) {
-		mListBox->disableFadeOut( UIThemeManager::instance()->controlsFadeOutTime() );
+	if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
+		mListBox->disableFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
 	} else {
 		mListBox->setEnabled( false );
 		mListBox->setVisible( false );

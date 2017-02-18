@@ -35,7 +35,7 @@ UIWindow::UIWindow( const UIWindow::CreateParams& Params ) :
 	mContainer->setEnabled( true );
 	mContainer->setVisible( true );
 	mContainer->setSize( mSize );
-	mContainer->addEventListener( UIEvent::EventOnPosChange, cb::Make1( this, &UIWindow::containerPosChange ) );
+	mContainer->addEventListener( UIEvent::EventOnPosChange, cb::Make1( this, &UIWindow::onContainerPosChange ) );
 
 	if ( !( mWinFlags & UI_WIN_NO_BORDER ) ) {
 		UIControlAnim::CreateParams tParams;
@@ -69,7 +69,7 @@ UIWindow::UIWindow( const UIWindow::CreateParams& Params ) :
 			mButtonClose->setEnabled( true );
 
 			if ( mWinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
-				mButtonClose->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::buttonCloseClick ) );
+				mButtonClose->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonCloseClick ) );
 			}
 		}
 
@@ -79,7 +79,7 @@ UIWindow::UIWindow( const UIWindow::CreateParams& Params ) :
 			mButtonMaximize->setEnabled( true );
 
 			if ( mWinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
-				mButtonMaximize->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::buttonMaximizeClick ) );
+				mButtonMaximize->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonMaximizeClick ) );
 			}
 		}
 
@@ -89,7 +89,7 @@ UIWindow::UIWindow( const UIWindow::CreateParams& Params ) :
 			mButtonMinimize->setEnabled( true );
 
 			if ( mWinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
-				mButtonMinimize->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::buttonMinimizeClick ) );
+				mButtonMinimize->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonMinimizeClick ) );
 			}
 		}
 
@@ -172,7 +172,7 @@ bool UIWindow::isType( const Uint32& type ) const {
 	return UIWindow::getType() == type ? true : UIComplexControl::isType( type );
 }
 
-void UIWindow::containerPosChange( const UIEvent * Event ) {
+void UIWindow::onContainerPosChange( const UIEvent * Event ) {
 	Vector2i PosDiff = mContainer->getPosition() - Vector2i( mBorderLeft->getSize().getWidth(), mWindowDecoration->getSize().getHeight() );
 
 	if ( PosDiff.x != 0 || PosDiff.y != 0 ) {
@@ -182,7 +182,7 @@ void UIWindow::containerPosChange( const UIEvent * Event ) {
 	}
 }
 
-void UIWindow::buttonCloseClick( const UIEvent * Event ) {
+void UIWindow::onButtonCloseClick( const UIEvent * Event ) {
 	CloseWindow();
 
 	sendCommonEvent( UIEvent::EventOnWindowCloseClick );
@@ -203,8 +203,8 @@ void UIWindow::CloseWindow() {
 		mModalCtrl = NULL;
 	}
 
-	if ( Time::Zero != UIThemeManager::instance()->controlsFadeOutTime() )
-		closeFadeOut( UIThemeManager::instance()->controlsFadeOutTime() );
+	if ( Time::Zero != UIThemeManager::instance()->getControlsFadeOutTime() )
+		closeFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
 	else
 		close();
 }
@@ -215,13 +215,13 @@ void UIWindow::close() {
 	enableByModal();
 }
 
-void UIWindow::buttonMaximizeClick( const UIEvent * Event ) {
+void UIWindow::onButtonMaximizeClick( const UIEvent * Event ) {
 	maximize();
 
 	sendCommonEvent( UIEvent::EventOnWindowMaximizeClick );
 }
 
-void UIWindow::buttonMinimizeClick( const UIEvent * Event ) {
+void UIWindow::onButtonMinimizeClick( const UIEvent * Event ) {
 	Hide();
 
 	sendCommonEvent( UIEvent::EventOnWindowMinimizeClick );
@@ -715,7 +715,7 @@ bool UIWindow::show() {
 
 		setFocus();
 
-		startAlphaAnim( mBaseAlpha == getAlpha() ? 0.f : mAlpha, mBaseAlpha, UIThemeManager::instance()->controlsFadeInTime() );
+		startAlphaAnim( mBaseAlpha == getAlpha() ? 0.f : mAlpha, mBaseAlpha, UIThemeManager::instance()->getControlsFadeInTime() );
 
 		if ( isModal() ) {
 			createModalControl();
@@ -735,8 +735,8 @@ bool UIWindow::show() {
 
 bool UIWindow::Hide() {
 	if ( isVisible() ) {
-		if ( UIThemeManager::instance()->defaultEffectsEnabled() ) {
-			disableFadeOut( UIThemeManager::instance()->controlsFadeOutTime() );
+		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
+			disableFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
 		} else {
 			setEnabled( false );
 			setVisible( false );
@@ -843,7 +843,7 @@ void UIWindow::maximize() {
 
 Uint32 UIWindow::onMouseDoubleClick( const Vector2i &Pos, const Uint32 Flags ) {
 	if ( ( mWinFlags & UI_WIN_RESIZEABLE ) && ( NULL != mButtonMaximize ) && ( Flags & EE_BUTTON_LMASK ) ) {
-		buttonMaximizeClick( NULL );
+		onButtonMaximizeClick( NULL );
 	}
 
 	return 1;

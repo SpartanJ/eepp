@@ -11,7 +11,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	mUIWindow( NULL ),
 	mNewTGCb( NewTGCb )
 {
-	mTheme		= UIThemeManager::instance()->defaultTheme();
+	mTheme		= UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL == mTheme )
 		return;
@@ -58,20 +58,20 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 
 	createTxtBox( Vector2i( 10, 140 ), "Texture Atlas Folder Path:" );
 	mTGPath = mTheme->createTextInput( mUIWindow->getContainer(), Sizei( mUIWindow->getContainer()->getSize().getWidth() - 60, 22 ), Vector2i( 10, 160 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE , false, 512 );
-	mTGPath->allowEditing( false );
+	mTGPath->setAllowEditing( false );
 
 	mSetPathButton = mTheme->createPushButton( mUIWindow->getContainer(), Sizei( 32, 32 ), Vector2i( mUIWindow->getContainer()->getSize().getWidth() - 10 - 32, 160 ) );
-	mSetPathButton->text( "..." );
+	mSetPathButton->setText( "..." );
 	mSetPathButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasNew::onDialogFolderSelect ) );
 
 	UIPushButton * OKButton = mTheme->createPushButton( mUIWindow->getContainer(), Sizei( 80, 22 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->getIconByName( "ok" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
 	OKButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasNew::okClick ) );
-	OKButton->text( "OK" );
+	OKButton->setText( "OK" );
 
 	UIPushButton * CancelButton = mTheme->createPushButton( mUIWindow->getContainer(), OKButton->getSize(), Vector2i( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->getIconByName( "cancel" ) );
 	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasNew::cancelClick ) );
-	CancelButton->text( "Cancel" );
+	CancelButton->setText( "Cancel" );
 
 	mUIWindow->center();
 	mUIWindow->show();
@@ -124,7 +124,7 @@ void TextureAtlasNew::textureAtlasSave( const UIEvent * Event ) {
 		Int32 w = 0, h = 0, b;
 		bool Res1 = String::fromString<Int32>( w, mComboWidth->getText() );
 		bool Res2 = String::fromString<Int32>( h, mComboHeight->getText() );
-		b = static_cast<Int32>( mPixelSpace->value() );
+		b = static_cast<Int32>( mPixelSpace->getValue() );
 
 		if ( Res1 && Res2 ) {
 			Graphics::TexturePacker * TexturePacker = eeNew( Graphics::TexturePacker, ( w, h, false, b ) );

@@ -112,10 +112,10 @@ Uint32 UIRadioButton::onMessage( const UIMessage * Msg ) {
 }
 
 void UIRadioButton::switchState() {
-	active( !mActive );
+	setActive( !mActive );
 }
 
-void UIRadioButton::active( const bool& active ) {
+void UIRadioButton::setActive( const bool& active ) {
 	if ( !active ) {
 		if ( checkActives() ) {
 			mActiveButton->setVisible( false );
@@ -142,8 +142,8 @@ void UIRadioButton::active( const bool& active ) {
 				if ( tChild != this ) {
 					UIRadioButton * tRB = reinterpret_cast<UIRadioButton*> ( tChild );
 
-					if ( tRB->active() )
-						tRB->active( false );
+					if ( tRB->isActive() )
+						tRB->setActive( false );
 				}
 			}
 
@@ -161,7 +161,7 @@ bool UIRadioButton::checkActives() {
 				if ( tChild != this ) {
 					UIRadioButton * tRB = reinterpret_cast<UIRadioButton*> ( tChild );
 
-					if ( tRB->active() )
+					if ( tRB->isActive() )
 						return true;
 				}
 			}
@@ -184,7 +184,7 @@ void UIRadioButton::autoActivate() {
 				if ( tChild != this ) {
 					UIRadioButton * tRB = reinterpret_cast<UIRadioButton*> ( tChild );
 
-					if ( tRB->active() ) {
+					if ( tRB->isActive() ) {
 						return;
 					}
 				}
@@ -194,15 +194,11 @@ void UIRadioButton::autoActivate() {
 		}
 	}
 
-	active( true );
-}
-
-const bool& UIRadioButton::active() const {
-	return mActive;
+	setActive( true );
 }
 
 const bool& UIRadioButton::isActive() const {
-	return active();
+	return mActive;
 }
 
 void UIRadioButton::setPadding( const Recti& padding ) {
@@ -210,11 +206,11 @@ void UIRadioButton::setPadding( const Recti& padding ) {
 	mPadding.Left = mPadding.Left + mActiveButton->getSize().getWidth();
 }
 
-UIControlAnim * UIRadioButton::activeButton() const {
+UIControlAnim * UIRadioButton::getActiveButton() const {
 	return mActiveButton;
 }
 
-UIControlAnim * UIRadioButton::inactiveButton() const {
+UIControlAnim * UIRadioButton::getInactiveButton() const {
 	return mInactiveButton;
 }
 
@@ -223,7 +219,7 @@ Uint32 UIRadioButton::onKeyDown( const UIEventKey& Event ) {
 		if ( Sys::getTicks() - mLastTick > 250 ) {
 			mLastTick = Sys::getTicks();
 
-			active( true );
+			setActive( true );
 		}
 	}
 

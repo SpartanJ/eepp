@@ -54,11 +54,11 @@ void UISelectButton::onStateChange() {
 		UIWinMenu * Menu = reinterpret_cast<UIWinMenu*> ( getParent() );
 
 		if ( mSkinState->getState() == UISkinState::StateSelected ) {
-			getTextBox()->setColor( Menu->fontSelectedColor() );
+			getTextBox()->setColor( Menu->getFontSelectedColor() );
 		} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-			getTextBox()->setColor( Menu->fontOverColor() );
+			getTextBox()->setColor( Menu->getFontOverColor() );
 		} else {
-			getTextBox()->setColor( Menu->fontColor() );
+			getTextBox()->setColor( Menu->getFontColor() );
 		}
 	}
 }

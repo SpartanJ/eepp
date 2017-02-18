@@ -70,33 +70,33 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		const Uint32& getId() const;
 
-		const std::string& abbr() const;
+		const std::string& getAbbr() const;
 
 		virtual UISkin * add( UISkin * Resource );
 
-		void font( Graphics::Font * font );
+		void setFont( Graphics::Font * setFont );
 
-		Graphics::Font * font() const;
+		Graphics::Font * getFont() const;
 
-		const ColorA& fontColor() const;
+		const ColorA& getFontColor() const;
 
-		const ColorA& fontShadowColor() const;
+		const ColorA& getFontShadowColor() const;
 
-		const ColorA& fontOverColor() const;
+		const ColorA& getFontOverColor() const;
 
-		const ColorA& fontSelectedColor() const;
+		const ColorA& getFontSelectedColor() const;
 
-		void fontColor( const ColorA& Color );
+		void setFontColor( const ColorA& Color );
 
-		void fontShadowColor( const ColorA& Color );
+		void setFontShadowColor( const ColorA& Color );
 
-		void fontOverColor( const ColorA& Color );
+		void setFontOverColor( const ColorA& Color );
 
-		void fontSelectedColor( const ColorA& Color );
+		void setFontSelectedColor( const ColorA& Color );
 
-		void useDefaultThemeValues( const bool& Use );
+		void setUseDefaultThemeValues( const bool& Use );
 
-		const bool& useDefaultThemeValues() const;
+		const bool& getUseDefaultThemeValues() const;
 
 		Graphics::TextureAtlas * getTextureAtlas() const;
 

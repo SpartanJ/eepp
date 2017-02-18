@@ -74,7 +74,7 @@ void UISlider::setTheme( UITheme * Theme ) {
 
 	adjustChilds();
 
-	value( mValue );
+	setValue( mValue );
 }
 
 void UISlider::onSizeChange() {
@@ -159,9 +159,9 @@ void UISlider::fixSliderPos() {
 			mSlider->centerVertical();
 
 			if ( mAllowHalfSliderOut )
-				value( mMinValue + (Float)mSlider->getPosition().x * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getWidth() );
+				setValue( mMinValue + (Float)mSlider->getPosition().x * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getWidth() );
 			else
-				value( mMinValue + (Float)mSlider->getPosition().x * ( mMaxValue - mMinValue ) / ( (Float)mSize.getWidth() - mSlider->getSize().getWidth() ) );
+				setValue( mMinValue + (Float)mSlider->getPosition().x * ( mMaxValue - mMinValue ) / ( (Float)mSize.getWidth() - mSlider->getSize().getWidth() ) );
 		} else {
 			mSlider->setPosition( 0, mSlider->getPosition().y );
 
@@ -179,16 +179,16 @@ void UISlider::fixSliderPos() {
 			mSlider->centerHorizontal();
 
 			if ( mAllowHalfSliderOut )
-				value( mMinValue + (Float)mSlider->getPosition().y * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getHeight() );
+				setValue( mMinValue + (Float)mSlider->getPosition().y * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getHeight() );
 			else
-				value( mMinValue + (Float)mSlider->getPosition().y * ( mMaxValue - mMinValue ) / ( (Float)mSize.getHeight() - mSlider->getSize().getHeight() ) );
+				setValue( mMinValue + (Float)mSlider->getPosition().y * ( mMaxValue - mMinValue ) / ( (Float)mSize.getHeight() - mSlider->getSize().getHeight() ) );
 		}
 
 		mOnPosChange = false;
 	}
 }
 
-void UISlider::value( Float Val ) {
+void UISlider::setValue( Float Val ) {
 	if ( Val < mMinValue ) Val = mMinValue;
 	if ( Val > mMaxValue ) Val = mMaxValue;
 
@@ -219,11 +219,11 @@ void UISlider::value( Float Val ) {
 	}
 }
 
-const Float& UISlider::value() const {
+const Float& UISlider::getValue() const {
 	return mValue;
 }
 
-void UISlider::minValue( const Float& MinVal ) {
+void UISlider::setMinValue( const Float& MinVal ) {
 	mMinValue = MinVal;
 
 	if ( mValue < mMinValue )
@@ -232,11 +232,11 @@ void UISlider::minValue( const Float& MinVal ) {
 	fixSliderPos();
 }
 
-const Float& UISlider::minValue() const {
+const Float& UISlider::getMinValue() const {
 	return mMinValue;
 }
 
-void UISlider::maxValue( const Float& MaxVal ) {
+void UISlider::setMaxValue( const Float& MaxVal ) {
 	mMaxValue = MaxVal;
 
 	if ( mValue > mMaxValue )
@@ -245,15 +245,15 @@ void UISlider::maxValue( const Float& MaxVal ) {
 	fixSliderPos();
 }
 
-const Float& UISlider::maxValue() const {
+const Float& UISlider::getMaxValue() const {
 	return mMaxValue;
 }
 
-void UISlider::clickStep( const Float& step ) {
+void UISlider::setClickStep( const Float& step ) {
 	mClickStep = step;
 }
 
-const Float& UISlider::clickStep() const {
+const Float& UISlider::getClickStep() const {
 	return mClickStep;
 }
 
@@ -274,19 +274,19 @@ Uint32 UISlider::onKeyDown( const UIEventKey &Event ) {
 		if ( Event.getKeyCode() == KEY_DOWN ) {
 			mLastTickMove = Sys::getTicks();
 
-			value( mValue + mClickStep );
+			setValue( mValue + mClickStep );
 		} else if ( Event.getKeyCode() == KEY_UP ) {
 			mLastTickMove = Sys::getTicks();
 
-			value( mValue - mClickStep );
+			setValue( mValue - mClickStep );
 		} else if ( Event.getKeyCode() == KEY_PAGEUP ) {
 			mLastTickMove = Sys::getTicks();
 
-			value( mMinValue );
+			setValue( mMinValue );
 		} else if ( Event.getKeyCode() == KEY_PAGEDOWN ) {
 			mLastTickMove = Sys::getTicks();
 
-			value( mMaxValue );
+			setValue( mMaxValue );
 		}
 	}
 
@@ -301,20 +301,20 @@ void UISlider::manageClick( const Uint32& Flags ) {
 		if ( Flags & EE_BUTTON_LMASK && !mSlider->isMouseOver()  ) {
 			if ( !mVertical ) {
 				if ( ControlPos.x < 0 )
-					value( mValue - mClickStep );
+					setValue( mValue - mClickStep );
 				else
-					value( mValue + mClickStep );
+					setValue( mValue + mClickStep );
 			} else {
 				if ( ControlPos.y < 0 )
-					value( mValue - mClickStep );
+					setValue( mValue - mClickStep );
 				else
-					value( mValue + mClickStep );
+					setValue( mValue + mClickStep );
 			}
 		} else if ( Flags & EE_BUTTONS_WUWD ) {
 			if ( Flags & EE_BUTTON_WUMASK )
-				value( mValue - mClickStep );
+				setValue( mValue - mClickStep );
 			else
-				value( mValue + mClickStep );
+				setValue( mValue + mClickStep );
 		}
 	}
 }
@@ -327,11 +327,11 @@ UIDragable * UISlider::getSliderButton() const {
 	return mSlider;
 }
 
-const bool& UISlider::allowHalfSliderOut() const {
+const bool& UISlider::isHalfSliderOutAllowed() const {
 	return mAllowHalfSliderOut;
 }
 
-const bool& UISlider::expandBackground() const {
+const bool& UISlider::isBackgroundExpanded() const {
 	return mExpandBackground;
 }
 

@@ -16,16 +16,16 @@ class EE_API UITextBox : public UIComplexControl {
 					FontShadowColor( 255, 255, 255, 150 ),
 					FontSelectionBackColor( 150, 150, 150, 150 )
 				{
-					UITheme * Theme = UIThemeManager::instance()->defaultTheme();
+					UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
 
 					if ( NULL != Theme ) {
-						Font			= Theme->font();
-						FontColor		= Theme->fontColor();
-						FontShadowColor	= Theme->fontShadowColor();
+						Font			= Theme->getFont();
+						FontColor		= Theme->getFontColor();
+						FontShadowColor	= Theme->getFontShadowColor();
 					}
 
 					if ( NULL == Font )
-						Font = UIThemeManager::instance()->defaultFont();
+						Font = UIThemeManager::instance()->getDefaultFont();
 				}
 
 				inline ~CreateParams() {}
@@ -68,10 +68,6 @@ class EE_API UITextBox : public UIComplexControl {
 
 		void setSelectionBackColor( const ColorA& color );
 
-		virtual void onTextChanged();
-
-		virtual void onFontChanged();
-
 		virtual void setPadding( const Recti& padding );
 
 		const Recti& getPadding() const;
@@ -111,6 +107,10 @@ class EE_API UITextBox : public UIComplexControl {
 		virtual void autoSize();
 
 		virtual void autoAlign();
+
+		virtual void onTextChanged();
+
+		virtual void onFontChanged();
 
 		virtual Uint32 onFocusLoss();
 

@@ -37,7 +37,7 @@ Uint32 UISprite::deallocSprite() {
 	return mControlFlags & UI_CTRL_FLAG_FREE_USE;
 }
 
-void UISprite::sprite( Graphics::Sprite * sprite ) {
+void UISprite::setSprite( Graphics::Sprite * sprite ) {
 	if ( deallocSprite() )
 		eeSAFE_DELETE( mSprite );
 
@@ -73,29 +73,29 @@ void UISprite::setAlpha( const Float& alpha ) {
 		mSprite->setAlpha( alpha );
 }
 
-Graphics::Sprite * UISprite::sprite() const {
+Graphics::Sprite * UISprite::getSprite() const {
 	return mSprite;
 }
 
-ColorA UISprite::color() const {
+ColorA UISprite::getColor() const {
 	if ( NULL != mSprite )
 		return mSprite->getColor();
 
 	return ColorA();
 }
 
-void UISprite::color( const ColorA& color ) {
+void UISprite::setColor( const ColorA& color ) {
 	if ( NULL != mSprite )
 		mSprite->setColor( color );
 	
 	setAlpha( color.a() );
 }
 
-const EE_RENDER_MODE& UISprite::renderMode() const {
+const EE_RENDER_MODE& UISprite::getRenderMode() const {
 	return mRender;
 }
 
-void UISprite::renderMode( const EE_RENDER_MODE& render ) {
+void UISprite::setRenderMode( const EE_RENDER_MODE& render ) {
 	mRender = render;
 }
 
@@ -131,7 +131,7 @@ void UISprite::autoAlign() {
 	}
 }
 
-const Vector2i& UISprite::alignOffset() const {
+const Vector2i& UISprite::getAlignOffset() const {
 	return mAlignOffset;
 }
 

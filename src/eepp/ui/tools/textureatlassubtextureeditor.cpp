@@ -10,11 +10,11 @@ TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( const UIComplexContr
 	mGfx( NULL ),
 	mEditor( Editor )
 {
-	if ( NULL == UIThemeManager::instance()->defaultTheme() ) {
+	if ( NULL == UIThemeManager::instance()->getDefaultTheme() ) {
 		return;
 	}
 
-	mTheme = UIThemeManager::instance()->defaultTheme();
+	mTheme = UIThemeManager::instance()->getDefaultTheme();
 
 	mGfx = mTheme->createGfx( NULL, this );
 
@@ -51,8 +51,8 @@ void TextureAtlasSubTextureEditor::update() {
 
 		mGfx->subTexture()->setOffset( Vector2i( mGfx->subTexture()->getOffset().x + Diff.x, mGfx->subTexture()->getOffset().y + Diff.y ) );
 
-		mEditor->spinOffX()->value( mGfx->subTexture()->getOffset().x );
-		mEditor->spinOffY()->value( mGfx->subTexture()->getOffset().y );
+		mEditor->spinOffX()->setValue( mGfx->subTexture()->getOffset().x );
+		mEditor->spinOffY()->setValue( mGfx->subTexture()->getOffset().y );
 	}
 
 	mGfx->setPosition( mUICenter );

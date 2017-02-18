@@ -67,7 +67,7 @@ void UITabWidget::setTheme( UITheme * Theme ) {
 	mCtrlContainer->setThemeControl( Theme, "tabcontainer" );
 
 	if ( 0 == mTabWidgetHeight ) {
-		UISkin * tSkin		= Theme->getByName( Theme->abbr() + "_" + "tab" );
+		UISkin * tSkin		= Theme->getByName( Theme->getAbbr() + "_" + "tab" );
 
 		Sizei tSize1		= getSkinSize( tSkin );
 		Sizei tSize2		= getSkinSize( tSkin, UISkinState::StateSelected );
@@ -203,7 +203,7 @@ UITab * UITabWidget::createTab( const String& Text, UIControl * CtrlOwned, SubTe
 
 	UITab * tCtrl 	= eeNew( UITab, ( Params, CtrlOwned ) );
 
-	tCtrl->text( Text );
+	tCtrl->setText( Text );
 	tCtrl->setVisible( true );
 	tCtrl->setEnabled( true );
 
@@ -242,7 +242,7 @@ UITab * UITabWidget::getTab( const String& Text ) {
 		if ( mTabs[i]->isType( UI_TYPE_TAB ) ) {
 			UITab * tTab = reinterpret_cast<UITab*>( mTabs[i] );
 
-			if ( tTab->text() == Text )
+			if ( tTab->getText() == Text )
 				return tTab;
 		}
 	}
@@ -259,7 +259,7 @@ Uint32 UITabWidget::getTabIndex( UITab * Tab ) {
 	return eeINDEX_NOT_FOUND;
 }
 
-Uint32 UITabWidget::count() const {
+Uint32 UITabWidget::getCount() const {
 	return mTabs.size();
 }
 

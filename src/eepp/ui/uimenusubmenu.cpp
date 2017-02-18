@@ -22,7 +22,7 @@ UIMenuSubMenu::UIMenuSubMenu( UIMenuSubMenu::CreateParams& Params ) :
 	mArrow->setVisible( true );
 	mArrow->setEnabled( false );
 
-	subMenu( Params.SubMenu );
+	setSubMenu( Params.SubMenu );
 
 	applyDefaultTheme();
 }
@@ -41,7 +41,7 @@ bool UIMenuSubMenu::isType( const Uint32& type ) const {
 void UIMenuSubMenu::setTheme( UITheme * Theme ) {
 	UIMenuItem::setTheme( Theme );
 
-	mSkinArrow		= Theme->getByName( Theme->abbr() + "_" + "menuarrow" );
+	mSkinArrow		= Theme->getByName( Theme->getAbbr() + "_" + "menuarrow" );
 
 	onStateChange();
 }
@@ -66,7 +66,7 @@ void UIMenuSubMenu::onStateChange() {
 	}
 }
 
-void UIMenuSubMenu::subMenu( UIMenu * SubMenu ) {
+void UIMenuSubMenu::setSubMenu( UIMenu * SubMenu ) {
 	if ( NULL != mSubMenu && mSubMenu != SubMenu ) {
 		mSubMenu->removeEventListener( mCbId );
 		mSubMenu->removeEventListener( mCbId2 );
@@ -80,7 +80,7 @@ void UIMenuSubMenu::subMenu( UIMenu * SubMenu ) {
 	}
 }
 
-UIMenu * UIMenuSubMenu::subMenu() const {
+UIMenu * UIMenuSubMenu::getSubMenu() const {
 	return mSubMenu;
 }
 
@@ -103,9 +103,9 @@ void UIMenuSubMenu::showSubMenu() {
 
 	Vector2i Pos = this->getPosition();
 	controlToScreen( Pos );
-	Pos.x += mSize.getWidth() + reinterpret_cast<UIMenu*> ( getParent() )->Padding().Right;
+	Pos.x += mSize.getWidth() + reinterpret_cast<UIMenu*> ( getParent() )->getPadding().Right;
 
-	UIMenu::FixMenuPos( Pos, mSubMenu, reinterpret_cast<UIMenu*> ( getParent() ), this );
+	UIMenu::fixMenuPos( Pos, mSubMenu, reinterpret_cast<UIMenu*> ( getParent() ), this );
 
 	mSubMenu->getParent()->worldToControl( Pos );
 	mSubMenu->setPosition( Pos );

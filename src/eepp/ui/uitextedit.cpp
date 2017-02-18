@@ -56,7 +56,7 @@ UITextEdit::UITextEdit( UITextEdit::CreateParams& Params ) :
 	ScrollBarP.Flags				= UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar	= true;
 	mVScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
-	mVScrollBar->value( 1 );
+	mVScrollBar->setValue( 1 );
 
 	ScrollBarP.setPosition( 0, mSize.getHeight() - 15 );
 	ScrollBarP.Size					= Sizei( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 15 );
@@ -137,7 +137,7 @@ void UITextEdit::fixScroll() {
 	if ( mTextInput->getSize().getHeight() - Height >= 0 ) {
 		diff = mTextInput->getSize().getHeight() - Height;
 
-		pos = diff * mVScrollBar->value();
+		pos = diff * mVScrollBar->getValue();
 
 		mTextInput->setPosition( mTextInput->getPosition().x, mPadding.Top - pos );
 	}
@@ -145,7 +145,7 @@ void UITextEdit::fixScroll() {
 	if ( mTextInput->getSize().getWidth() - Width >= 0 ) {
 		diff = mTextInput->getSize().getWidth() - Width;
 
-		pos = diff * mHScrollBar->value();
+		pos = diff * mHScrollBar->getValue();
 
 		mTextInput->setPosition( mPadding.Left - pos, mTextInput->getPosition().y );
 	}
@@ -256,11 +256,11 @@ UIScrollBar * UITextEdit::getVScrollBar() const {
 	return mVScrollBar;
 }
 
-const String& UITextEdit::text() const {
+const String& UITextEdit::getText() const {
 	return mTextInput->getText();
 }
 
-void UITextEdit::text( const String& Txt ) {
+void UITextEdit::setText( const String& Txt ) {
 	mTextInput->setText( Txt );
 
 	onInputSizeChange();
@@ -274,7 +274,7 @@ void UITextEdit::onInputSizeChange( const UIEvent * Event ) {
 
 	if ( NULL != Event ) {
 		if ( Event->getEventType() == UIEvent::EventOnPressEnter ) {
-			mHScrollBar->value( 0 );
+			mHScrollBar->setValue( 0 );
 		}
 	}
 
@@ -364,8 +364,8 @@ void UITextEdit::fixScrollToCursor() {
 			mTextInput->setPosition( mTextInput->getPosition().x, mPadding.Top );
 		}
 
-		mHScrollBar->value( tW / mTextInput->getSize().getWidth() );
-		mVScrollBar->value( tH / mTextInput->getSize().getHeight() );
+		mHScrollBar->setValue( tW / mTextInput->getSize().getWidth() );
+		mVScrollBar->setValue( tH / mTextInput->getSize().getHeight() );
 
 		mSkipValueChange = false;
 	}
@@ -388,12 +388,12 @@ void UITextEdit::update() {
 	}
 }
 
-void UITextEdit::allowEditing( const bool& allow ) {
-	mTextInput->allowEditing( allow );
+void UITextEdit::setAllowEditing( const bool& allow ) {
+	mTextInput->setAllowEditing( allow );
 }
 
-const bool& UITextEdit::allowEditing() const {
-	return mTextInput->allowEditing();
+const bool& UITextEdit::getAllowEditing() const {
+	return mTextInput->getAllowEditing();
 }
 
 }}

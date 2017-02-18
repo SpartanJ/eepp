@@ -30,18 +30,18 @@ class EE_API UITabWidget : public UIComplexControl {
 				{
 					Flags = ( UI_VALIGN_BOTTOM | UI_HALIGN_LEFT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
 
-					UITheme * Theme = UIThemeManager::instance()->defaultTheme();
+					UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
 
 					if ( NULL != Theme ) {
-						Font				= Theme->font();
-						FontColor			= Theme->fontColor();
-						FontShadowColor		= Theme->fontShadowColor();
-						FontOverColor		= Theme->fontOverColor();
-						FontSelectedColor	= Theme->fontSelectedColor();
+						Font				= Theme->getFont();
+						FontColor			= Theme->getFontColor();
+						FontShadowColor		= Theme->getFontShadowColor();
+						FontOverColor		= Theme->getFontOverColor();
+						FontSelectedColor	= Theme->getFontSelectedColor();
 					}
 
 					if ( NULL == Font )
-						Font = UIThemeManager::instance()->defaultFont();
+						Font = UIThemeManager::instance()->getDefaultFont();
 				}
 
 				inline ~CreateParams() {}
@@ -83,7 +83,7 @@ class EE_API UITabWidget : public UIComplexControl {
 
 		Uint32 getTabIndex( UITab * Tab );
 
-		Uint32 count() const;
+		Uint32 getCount() const;
 
 		void remove( const Uint32& Index );
 

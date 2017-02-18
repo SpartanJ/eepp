@@ -15,8 +15,8 @@ UITextInputPassword::UITextInputPassword( const UITextInput::CreateParams& Param
 	mPassCache->setShadowColor( mFontShadowColor );
 
 	if ( NULL == Params.Font ) {
-		if ( NULL != UIThemeManager::instance()->defaultFont() )
-			mPassCache->setFont( UIThemeManager::instance()->defaultFont() );
+		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
+			mPassCache->setFont( UIThemeManager::instance()->getDefaultFont() );
 		else
 			eePRINTL( "UITextInputPassword::UITextInputPassword : Created a UI TextInputPassword without a defined font." );
 	}

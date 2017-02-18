@@ -37,8 +37,8 @@ bool UIPopUpMenu::show() {
 
 		toFront();
 
-		if ( UIThemeManager::instance()->defaultEffectsEnabled() ) {
-			startAlphaAnim( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->controlsFadeInTime() );
+		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
+			startAlphaAnim( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->getControlsFadeInTime() );
 		}
 
 		setFocus();
@@ -58,8 +58,8 @@ bool UIPopUpMenu::hide() {
 			mItemSelected		= NULL;
 			mItemSelectedIndex	= eeINDEX_NOT_FOUND;
 
-			if ( UIThemeManager::instance()->defaultEffectsEnabled() ) {
-				disableFadeOut( UIThemeManager::instance()->controlsFadeOutTime() );
+			if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
+				disableFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
 			} else {
 				setEnabled( false );
 				setVisible( false );

@@ -33,7 +33,7 @@ class EE_API UIMessageBox : public UIWindow {
 
 		virtual void		setTheme( UITheme * Theme );
 
-		UITextBox *		getTextBox() const;
+		UITextBox *			getTextBox() const;
 
 		UIPushButton *		getButtonOK() const;
 

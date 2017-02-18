@@ -22,22 +22,22 @@ class EE_API UIPushButton : public UIComplexControl {
 					IconAutoMargin( true ),
 					IconMinSize( 0, 0 )
 				{
-					UITheme * Theme = UIThemeManager::instance()->defaultTheme();
+					UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
 
 					if ( NULL != Theme ) {
-						Font			= Theme->font();
-						FontColor		= Theme->fontColor();
-						FontShadowColor	= Theme->fontShadowColor();
-						FontOverColor	= Theme->fontOverColor();
+						Font			= Theme->getFont();
+						FontColor		= Theme->getFontColor();
+						FontShadowColor	= Theme->getFontShadowColor();
+						FontOverColor	= Theme->getFontOverColor();
 					}
 
 					if ( NULL == Font )
-						Font = UIThemeManager::instance()->defaultFont();
+						Font = UIThemeManager::instance()->getDefaultFont();
 				}
 
 				inline ~CreateParams() {}
 
-				inline void SetIcon( SubTexture * icon ) {
+				inline void setIcon( SubTexture * icon ) {
 					Icon = icon;
 
 					if ( !IconHorizontalMargin )
@@ -64,31 +64,31 @@ class EE_API UIPushButton : public UIComplexControl {
 
 		virtual void setTheme( UITheme * Theme );
 
-		virtual void icon( SubTexture * icon );
+		virtual void setIcon( SubTexture * icon );
 
-		virtual UIGfx * icon() const;
+		virtual UIGfx * getIcon() const;
 
-		virtual void text( const String& text );
+		virtual void setText( const String& text );
 
-		virtual const String& text();
+		virtual const String& getText();
 
-		void padding( const Recti& padding );
+		void setPadding( const Recti& padding );
 
-		const Recti& padding() const;
+		const Recti& getPadding() const;
 
-		void iconHorizontalMargin( Int32 margin );
+		void setIconHorizontalMargin( Int32 margin );
 
-		const Int32& iconHorizontalMargin() const;
+		const Int32& getIconHorizontalMargin() const;
 
 		UITextBox * getTextBox() const;
 
-		const ColorA& fontColor() const;
+		const ColorA& getFontColor() const;
 
-		void fontColor( const ColorA& color );
+		void setFontColor( const ColorA& color );
 
-		const ColorA& fontOverColor() const;
+		const ColorA& getFontOverColor() const;
 
-		void fontOverColor( const ColorA& color );
+		void setFontOverColor( const ColorA& color );
 	protected:
 		ColorA		mFontColor;
 		ColorA		mFontOverColor;

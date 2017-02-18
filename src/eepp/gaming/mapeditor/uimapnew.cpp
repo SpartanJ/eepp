@@ -12,7 +12,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	mNewMapCb( NewMapCb ),
 	mResizeMap( ResizeMap )
 {
-	mTheme		= UIThemeManager::instance()->defaultTheme();
+	mTheme		= UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL == mTheme )
 		return;
@@ -34,19 +34,19 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	Txt = mTheme->createTextBox( "Width:", mUIWindow->getContainer(), Sizei( 46, 24 ), Vector2i( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
 
 	mUIMapWidth = mTheme->createSpinBox( mUIWindow->getContainer(), Sizei( 53, 24 ), Vector2i( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_TEXT_SELECTION_ENABLED, 100, false );
-	mUIMapWidth->minValue(1);
+	mUIMapWidth->setMinValue(1);
 
 	if ( ResizeMap ) {
-		mUIMapWidth->value( mUIMap->Map()->Size().getWidth() );
+		mUIMapWidth->setValue( mUIMap->Map()->Size().getWidth() );
 	}
 
 	Txt = mTheme->createTextBox( "Height:", mUIWindow->getContainer(), Sizei( 46, 24 ), Vector2i( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
 
 	mUIMapHeight = mTheme->createSpinBox( mUIWindow->getContainer(), Sizei( 53, 24 ), Vector2i( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_TEXT_SELECTION_ENABLED, 100, false );
-	mUIMapHeight->minValue(1);
+	mUIMapHeight->setMinValue(1);
 
 	if ( ResizeMap ) {
-		mUIMapHeight->value( mUIMap->Map()->Size().getHeight() );
+		mUIMapHeight->setValue( mUIMap->Map()->Size().getHeight() );
 	}
 
 	Txt = mTheme->createTextBox( "Tile Size", mUIWindow->getContainer(), Sizei(), Vector2i( mUIWindow->getContainer()->getSize().getWidth() / 2, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
@@ -54,25 +54,25 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	Txt = mTheme->createTextBox( "Width:", mUIWindow->getContainer(), Sizei( 46, 24 ), Vector2i( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
 
 	mUIMapTWidth = mTheme->createSpinBox( mUIWindow->getContainer(), Sizei( 53, 24 ), Vector2i( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_TEXT_SELECTION_ENABLED, 32, false );
-	mUIMapTWidth->minValue(1);
+	mUIMapTWidth->setMinValue(1);
 
 	if ( ResizeMap ) {
-		mUIMapTWidth->value( mUIMap->Map()->TileSize().getWidth() );
+		mUIMapTWidth->setValue( mUIMap->Map()->TileSize().getWidth() );
 	}
 
 	Txt = mTheme->createTextBox( "Height:", mUIWindow->getContainer(), Sizei( 46, 24 ), Vector2i( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
 
 	mUIMapTHeight = mTheme->createSpinBox( mUIWindow->getContainer(), Sizei( 53, 24 ), Vector2i( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_TEXT_SELECTION_ENABLED, 32, false );
-	mUIMapTHeight->minValue(1);
+	mUIMapTHeight->setMinValue(1);
 
 	if ( ResizeMap ) {
-		mUIMapTHeight->value( mUIMap->Map()->TileSize().getHeight() );
+		mUIMapTHeight->setValue( mUIMap->Map()->TileSize().getHeight() );
 	}
 
 	Txt = mTheme->createTextBox( "Max Layers", mUIWindow->getContainer(), Sizei(), Vector2i( 16, mUIMapTHeight->getPosition().y + mUIMapTHeight->getSize().getHeight() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	mUIMapMaxLayers = mTheme->createSpinBox( mUIWindow->getContainer(), Sizei( 53, 24 ), Vector2i( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_TEXT_SELECTION_ENABLED, 8, false );
-	mUIMapMaxLayers->maxValue( 32 );
+	mUIMapMaxLayers->setMaxValue( 32 );
 
 	Txt = mTheme->createTextBox( "Map Flags:", mUIWindow->getContainer(), Sizei(), Vector2i( Txt->getPosition().x, mUIMapMaxLayers->getPosition().y + mUIMapMaxLayers->getSize().getHeight() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
@@ -129,51 +129,51 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	Txt = mTheme->createTextBox( "Red Color:", mUIWindow->getContainer(), Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	mUIRedSlider = mTheme->createSlider( mUIWindow->getContainer(), Sizei( 128, 20 ), Vector2i( Txt->getPosition().x + Txt->getSize().getWidth() + 16, Txt->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
-	mUIRedSlider->maxValue( 255 );
-	mUIRedSlider->value( 255 );
+	mUIRedSlider->setMaxValue( 255 );
+	mUIRedSlider->setValue( 255 );
 	mUIRedSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIMapNew::OnRedChange ) );
 
 	mUIRedTxt = mTheme->createTextBox( String::toStr( 255 ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	if ( ResizeMap ) {
-		mUIRedSlider->value( mUIMap->Map()->BaseColor().r() );
+		mUIRedSlider->setValue( mUIMap->Map()->BaseColor().r() );
 	}
 
 	Txt = mTheme->createTextBox( "Green Color:", mUIWindow->getContainer(), Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	mUIGreenSlider = mTheme->createSlider( mUIWindow->getContainer(), Sizei( 128, 20 ), Vector2i( mUIRedSlider->getPosition().x, Txt->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
-	mUIGreenSlider->maxValue( 255 );
-	mUIGreenSlider->value( 255 );
+	mUIGreenSlider->setMaxValue( 255 );
+	mUIGreenSlider->setValue( 255 );
 
 	mUIGreenSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIMapNew::OnGreenChange ) );
 
 	mUIGreenTxt = mTheme->createTextBox( String::toStr( 255 ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	if ( ResizeMap ) {
-		mUIGreenSlider->value( mUIMap->Map()->BaseColor().g() );
+		mUIGreenSlider->setValue( mUIMap->Map()->BaseColor().g() );
 	}
 
 	Txt = mTheme->createTextBox( "Blue Color:", mUIWindow->getContainer(), Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	mUIBlueSlider = mTheme->createSlider( mUIWindow->getContainer(), Sizei( 128, 20 ), Vector2i( mUIRedSlider->getPosition().x, Txt->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
-	mUIBlueSlider->maxValue( 255 );
-	mUIBlueSlider->value( 255 );
+	mUIBlueSlider->setMaxValue( 255 );
+	mUIBlueSlider->setValue( 255 );
 	mUIBlueSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIMapNew::OnBlueChange ) );
 
 	mUIBlueTxt = mTheme->createTextBox( String::toStr( 255 ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4, mUIBlueSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	if ( ResizeMap ) {
-		mUIBlueSlider->value( mUIMap->Map()->BaseColor().b() );
+		mUIBlueSlider->setValue( mUIMap->Map()->BaseColor().b() );
 	}
 
 	UIPushButton * OKButton = mTheme->createPushButton( mUIWindow->getContainer(), Sizei( 80, 22 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->getIconByName( "ok" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
 	OKButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIMapNew::OKClick ) );
-	OKButton->text( "OK" );
+	OKButton->setText( "OK" );
 
 	UIPushButton * CancelButton = mTheme->createPushButton( mUIWindow->getContainer(), OKButton->getSize(), Vector2i( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->getIconByName( "cancel" ) );
 	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIMapNew::CancelClick ) );
-	CancelButton->text( "Cancel" );
+	CancelButton->setText( "Cancel" );
 
 	mUIWindow->center();
 	mUIWindow->show();
@@ -184,31 +184,31 @@ UIMapNew::~UIMapNew() {
 
 void UIMapNew::OnRedChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
-	Col.Red = (Uint8)mUIRedSlider->value();
+	Col.Red = (Uint8)mUIRedSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
-	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->value() ) );
+	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
 }
 
 void UIMapNew::OnGreenChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
-	Col.Green = (Uint8)mUIGreenSlider->value();
+	Col.Green = (Uint8)mUIGreenSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
-	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->value() ) );
+	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
 }
 
 void UIMapNew::OnBlueChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
-	Col.Blue = (Uint8)mUIBlueSlider->value();
+	Col.Blue = (Uint8)mUIBlueSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
-	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->value() ) );
+	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
 }
 
 void UIMapNew::OKClick( const UIEvent * Event ) {
-	Int32 w = static_cast<Int32>( mUIMapWidth->value() );
-	Int32 h = static_cast<Int32>( mUIMapHeight->value() );
-	Int32 tw = static_cast<Int32>( mUIMapTWidth->value() );
-	Int32 th = static_cast<Int32>( mUIMapTHeight->value() );
-	Int32 ml = static_cast<Int32>( mUIMapMaxLayers->value() );
+	Int32 w = static_cast<Int32>( mUIMapWidth->getValue() );
+	Int32 h = static_cast<Int32>( mUIMapHeight->getValue() );
+	Int32 tw = static_cast<Int32>( mUIMapTWidth->getValue() );
+	Int32 th = static_cast<Int32>( mUIMapTHeight->getValue() );
+	Int32 ml = static_cast<Int32>( mUIMapMaxLayers->getValue() );
 
 	Uint32 Flags = MAP_EDITOR_DEFAULT_FLAGS;
 

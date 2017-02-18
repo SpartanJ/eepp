@@ -173,17 +173,17 @@ class EE_API UIWindow : public UIComplexControl {
 
 		virtual Uint32 onKeyDown( const UIEventKey &Event );
 
-		void buttonCloseClick( const UIEvent * Event );
+		void onButtonCloseClick( const UIEvent * Event );
 
-		void buttonMaximizeClick( const UIEvent * Event );
+		void onButtonMaximizeClick( const UIEvent * Event );
 
-		void buttonMinimizeClick( const UIEvent * Event );
+		void onButtonMinimizeClick( const UIEvent * Event );
 
-		void containerPosChange( const UIEvent * Event );
+		void onContainerPosChange( const UIEvent * Event );
 
 		void fixChildsSize();
 
-		void doResize ( const UIMessage * Msg );
+		void doResize( const UIMessage * Msg );
 
 		void decideResizeType( UIControl * Control );
 

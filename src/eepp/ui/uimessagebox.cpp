@@ -8,7 +8,7 @@ UIMessageBox::UIMessageBox( const UIMessageBox::CreateParams& Params ) :
 	mMsgBoxType( Params.Type ),
 	mCloseWithKey( Params.CloseWithKey )
 {
-	UITheme * Theme = UIThemeManager::instance()->defaultTheme();
+	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL == Theme )
 	{
@@ -52,25 +52,25 @@ UIMessageBox::UIMessageBox( const UIMessageBox::CreateParams& Params ) :
 	switch ( mMsgBoxType ) {
 		case MSGBOX_OKCANCEL:
 		{
-			mButtonOK->text( "OK" );
-			mButtonCancel->text( "Cancel" );
+			mButtonOK->setText( "OK" );
+			mButtonCancel->setText( "Cancel" );
 			break;
 		}
 		case MSGBOX_YESNO:
 		{
-			mButtonOK->text( "Yes" );
-			mButtonCancel->text( "No" );
+			mButtonOK->setText( "Yes" );
+			mButtonCancel->setText( "No" );
 			break;
 		}
 		case MSGBOX_RETRYCANCEL:
 		{
-			mButtonOK->text( "Retry" );
-			mButtonCancel->text( "Cancel" );
+			mButtonOK->setText( "Retry" );
+			mButtonCancel->setText( "Cancel" );
 			break;
 		}
 		case MSGBOX_OK:
 		{
-			mButtonOK->text( "OK" );
+			mButtonOK->setText( "OK" );
 			mButtonCancel->setVisible( false );
 			mButtonCancel->setEnabled( false );
 			break;
@@ -91,16 +91,16 @@ UIMessageBox::~UIMessageBox() {
 void UIMessageBox::setTheme( UITheme * Theme ) {
 	UIWindow::setTheme( Theme );
 
-	if ( "Retry" != mButtonOK->text() ) {
+	if ( "Retry" != mButtonOK->getText() ) {
 		SubTexture * OKIcon = Theme->getIconByName( "ok" );
 		SubTexture * CancelIcon = Theme->getIconByName( "cancel" );
 
 		if ( NULL != OKIcon ) {
-			mButtonOK->icon( OKIcon );
+			mButtonOK->setIcon( OKIcon );
 		}
 
 		if ( NULL != CancelIcon ) {
-			mButtonCancel->icon( CancelIcon );
+			mButtonCancel->setIcon( CancelIcon );
 		}
 	}
 

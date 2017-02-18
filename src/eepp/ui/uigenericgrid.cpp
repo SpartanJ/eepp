@@ -191,7 +191,7 @@ void UIGenericGrid::updateHScroll() {
 
 				Int32 ScrollH = mTotalWidth - mContainer->getSize().getWidth();
 
-				Int32 HScrolleable = (Uint32)( mHScrollBar->value() * ScrollH );
+				Int32 HScrolleable = (Uint32)( mHScrollBar->getValue() * ScrollH );
 
 				mHScrollInit = -HScrolleable;
 		} else {
@@ -231,7 +231,7 @@ void UIGenericGrid::updateScroll( bool FromScrollChange ) {
 
 	if ( Clipped && mSmoothScroll ) {
 		if ( Scrolleable >= 0 )
-			RelPos 		= (Uint32)( mVScrollBar->value() * Scrolleable );
+			RelPos 		= (Uint32)( mVScrollBar->getValue() * Scrolleable );
 		else
 			RelPos		= 0;
 
@@ -267,7 +267,7 @@ void UIGenericGrid::updateScroll( bool FromScrollChange ) {
 		RelPosMax		= (Uint32)mItems.size();
 
 		if ( mItemsNotVisible > 0 ) {
-			RelPos 				= (Uint32)( mVScrollBar->value() * mItemsNotVisible );
+			RelPos 				= (Uint32)( mVScrollBar->getValue() * mItemsNotVisible );
 			RelPosMax			= RelPos + VisibleItems;
 		}
 
@@ -577,7 +577,7 @@ void UIGenericGrid::update() {
 				if ( mTouchDragPoint != Pos ) {
 					Vector2i diff = -( mTouchDragPoint - Pos );
 
-					mVScrollBar->value( mVScrollBar->value() + ( -diff.y / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
+					mVScrollBar->setValue( mVScrollBar->getValue() + ( -diff.y / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
 					mTouchDragAcceleration += elapsed().asMilliseconds() * diff.y * mTouchDragDeceleration;
 
@@ -606,7 +606,7 @@ void UIGenericGrid::update() {
 
 				// Deaccelerate
 				if ( mTouchDragAcceleration > 0.01f || mTouchDragAcceleration < -0.01f ) {
-					mVScrollBar->value( mVScrollBar->value() + ( -mTouchDragAcceleration / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
+					mVScrollBar->setValue( mVScrollBar->getValue() + ( -mTouchDragAcceleration / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
 					mTouchDragAcceleration -= mTouchDragAcceleration * mTouchDragDeceleration * elapsed().asMilliseconds();
 				}

@@ -44,9 +44,9 @@ class EE_API UITextInput : public UITextBox {
 
 		InputTextBuffer * getInputTextBuffer();
 
-		void allowEditing( const bool& allow );
+		void setAllowEditing( const bool& allow );
 
-		const bool& allowEditing() const;
+		const bool& getAllowEditing() const;
 
 		virtual const String& getText();
 

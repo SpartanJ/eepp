@@ -29,7 +29,7 @@ UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 	mIcon->setVisible( true );
 	mIcon->setEnabled( false );
 
-	icon( Params.Icon );
+	setIcon( Params.Icon );
 
 	UITextBox::CreateParams TxtParams = Params;
 	TxtParams.setParent( this );
@@ -128,8 +128,8 @@ void UIPushButton::setTheme( UITheme * Theme ) {
 }
 
 void UIPushButton::doAftersetTheme() {
-	if ( NULL != mTextBox && NULL == mTextBox->getFont() && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->theme() && NULL != mSkinState->getSkin()->theme()->font() )
-		mTextBox->setFont( mSkinState->getSkin()->theme()->font() );
+	if ( NULL != mTextBox && NULL == mTextBox->getFont() && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFont() )
+		mTextBox->setFont( mSkinState->getSkin()->getTheme()->getFont() );
 
 	if ( mControlFlags & UI_CTRL_FLAG_FREE_USE ) {
 		Recti RMargin = makePadding( true, false, false, false, true );
@@ -147,42 +147,42 @@ void UIPushButton::doAftersetTheme() {
 
 void UIPushButton::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		padding( makePadding( true, false, true, false ) );
+		setPadding( makePadding( true, false, true, false ) );
 	}
 }
 
-void UIPushButton::icon( SubTexture * Icon ) {
+void UIPushButton::setIcon( SubTexture * Icon ) {
 	mIcon->subTexture( Icon );
 	onSizeChange();
 }
 
-UIGfx * UIPushButton::icon() const {
+UIGfx * UIPushButton::getIcon() const {
 	return mIcon;
 }
 
-void UIPushButton::text( const String& text ) {
+void UIPushButton::setText( const String& text ) {
 	mTextBox->setText( text );
 	onSizeChange();
 }
 
-const String& UIPushButton::text() {
+const String& UIPushButton::getText() {
 	return mTextBox->getText();
 }
 
-void UIPushButton::padding( const Recti& padding ) {
+void UIPushButton::setPadding( const Recti& padding ) {
 	mTextBox->setPadding( padding );
 }
 
-const Recti& UIPushButton::padding() const {
+const Recti& UIPushButton::getPadding() const {
 	return mTextBox->getPadding();
 }
 
-void UIPushButton::iconHorizontalMargin( Int32 margin ) {
+void UIPushButton::setIconHorizontalMargin( Int32 margin ) {
 	mIconSpace = margin;
 	onSizeChange();
 }
 
-const Int32& UIPushButton::iconHorizontalMargin() const {
+const Int32& UIPushButton::getIconHorizontalMargin() const {
 	return mIconSpace;
 }
 
@@ -226,20 +226,20 @@ Uint32 UIPushButton::onKeyUp( const UIEventKey& Event ) {
 
 	return UIComplexControl::onKeyUp( Event );
 }
-const ColorA& UIPushButton::fontColor() const {
+const ColorA& UIPushButton::getFontColor() const {
 	return mFontColor;
 }
 
-void UIPushButton::fontColor( const ColorA& color ) {
+void UIPushButton::setFontColor( const ColorA& color ) {
 	mFontColor = color;
 	onStateChange();
 }
 
-const ColorA& UIPushButton::fontOverColor() const {
+const ColorA& UIPushButton::getFontOverColor() const {
 	return mFontOverColor;
 }
 
-void UIPushButton::fontOverColor( const ColorA& color ) {
+void UIPushButton::setFontOverColor( const ColorA& color ) {
 	mFontOverColor = color;
 	onStateChange();
 }

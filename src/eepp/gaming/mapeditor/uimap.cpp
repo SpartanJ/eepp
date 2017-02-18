@@ -547,7 +547,7 @@ void UIMap::ObjItemClick( const UIEvent * Event ) {
 		return;
 
 	if ( NULL != mSelObj && NULL != mCurLayer && mCurLayer->Type() == MAP_LAYER_OBJECT && mSelObj->Layer() == mCurLayer ) {
-		const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getControl() )->text();
+		const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getControl() )->getText();
 
 		MapObjectLayer * tLayer = reinterpret_cast<MapObjectLayer*>( mCurLayer );
 
@@ -567,15 +567,15 @@ void UIMap::ObjItemClick( const UIEvent * Event ) {
 void UIMap::CreateObjPopUpMenu() {
 	UIPopUpMenu * Menu = mTheme->createPopUpMenu();
 
-	Menu->Add( "Duplicate Object" );
-	Menu->Add( "Remove Object" );
-	Menu->AddSeparator();
-	Menu->Add( "Object Properties..." );
+	Menu->add( "Duplicate Object" );
+	Menu->add( "Remove Object" );
+	Menu->addSeparator();
+	Menu->add( "Object Properties..." );
 	Menu->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &UIMap::ObjItemClick ) );
 
 	if ( Menu->show() ) {
 		Vector2i Pos = UIManager::instance()->getInput()->getMousePos();
-		UIMenu::FixMenuPos( Pos , Menu );
+		UIMenu::fixMenuPos( Pos , Menu );
 		Menu->setPosition( Pos );
 	}
 }

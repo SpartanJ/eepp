@@ -23,11 +23,11 @@ UIThemeManager::UIThemeManager() :
 UIThemeManager::~UIThemeManager() {
 }
 
-void UIThemeManager::defaultFont( Font * Font ) {
+void UIThemeManager::setDefaultFont( Font * Font ) {
 	mFont = Font;
 }
 
-Font * UIThemeManager::defaultFont() const {
+Font * UIThemeManager::getDefaultFont() const {
 	return mFont;
 }
 
@@ -44,15 +44,15 @@ void UIThemeManager::setTheme( UITheme * Theme ) {
 	}
 }
 
-void UIThemeManager::defaultTheme( UITheme * Theme ) {
+void UIThemeManager::setDefaultTheme( UITheme * Theme ) {
 	mThemeDefault = Theme;
 }
 
-void UIThemeManager::defaultTheme( const std::string& Theme ) {
-	defaultTheme( UIThemeManager::instance()->getByName( Theme ) );
+void UIThemeManager::setDefaultTheme( const std::string& Theme ) {
+	setDefaultTheme( UIThemeManager::instance()->getByName( Theme ) );
 }
 
-UITheme * UIThemeManager::defaultTheme() const {
+UITheme * UIThemeManager::getDefaultTheme() const {
 	return mThemeDefault;
 }
 
@@ -61,59 +61,59 @@ void UIThemeManager::applyDefaultTheme( UIControl * Control ) {
 		Control->setTheme( mThemeDefault );
 }
 
-void UIThemeManager::autoApplyDefaultTheme( const bool& apply ) {
+void UIThemeManager::setAutoApplyDefaultTheme( const bool& apply ) {
 	mautoApplyDefaultTheme = apply;
 }
 
-const bool& UIThemeManager::autoApplyDefaultTheme() const {
+const bool& UIThemeManager::getAutoApplyDefaultTheme() const {
 	return mautoApplyDefaultTheme;
 }
 
-void UIThemeManager::defaultEffectsEnabled( const bool& Enabled ) {
+void UIThemeManager::setDefaultEffectsEnabled( const bool& Enabled ) {
 	mEnableDefaultEffects = Enabled;
 }
 
-const bool& UIThemeManager::defaultEffectsEnabled() const {
+const bool& UIThemeManager::getDefaultEffectsEnabled() const {
 	return mEnableDefaultEffects;
 }
 
-const Time& UIThemeManager::controlsFadeInTime() const {
+const Time& UIThemeManager::getControlsFadeInTime() const {
 	return mFadeInTime;
 }
 
-void UIThemeManager::controlsFadeInTime( const Time& Time ) {
+void UIThemeManager::setControlsFadeInTime( const Time& Time ) {
 	mFadeInTime = Time;
 }
 
-const Time& UIThemeManager::controlsFadeOutTime() const {
+const Time& UIThemeManager::getControlsFadeOutTime() const {
 	return mFadeOutTime;
 }
 
-void UIThemeManager::controlsFadeOutTime( const Time& Time ) {
+void UIThemeManager::setControlsFadeOutTime( const Time& Time ) {
 	mFadeOutTime = Time;
 }
 
-void UIThemeManager::tooltipTimeToShow( const Time& Time ) {
+void UIThemeManager::setTooltipTimeToShow( const Time& Time ) {
 	mtooltipTimeToShow = Time;
 }
 
-const Time& UIThemeManager::tooltipTimeToShow() const {
+const Time& UIThemeManager::getTooltipTimeToShow() const {
 	return mtooltipTimeToShow;
 }
 
-void UIThemeManager::tooltipFollowMouse( const bool& Follow ) {
+void UIThemeManager::setTooltipFollowMouse( const bool& Follow ) {
 	mtooltipFollowMouse = Follow;
 }
 
-const bool& UIThemeManager::tooltipFollowMouse() const {
+const bool& UIThemeManager::getTooltipFollowMouse() const {
 	return mtooltipFollowMouse;
 }
 
-void UIThemeManager::cursorSize( const Sizei& Size ) {
+void UIThemeManager::setCursorSize( const Sizei& Size ) {
 	mcursorSize = Size;
 }
 
-const Sizei& UIThemeManager::cursorSize() const {
+const Sizei& UIThemeManager::getCursorSize() const {
 	return mcursorSize;
 }
 

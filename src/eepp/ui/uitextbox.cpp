@@ -23,8 +23,8 @@ UITextBox::UITextBox( const UITextBox::CreateParams& Params ) :
 	mTextCache->setShadowColor( mFontShadowColor );
 
 	if ( NULL == Params.Font ) {
-		if ( NULL != UIThemeManager::instance()->defaultFont() )
-			mTextCache->setFont( UIThemeManager::instance()->defaultFont() );
+		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
+			mTextCache->setFont( UIThemeManager::instance()->getDefaultFont() );
 		else
 			eePRINTL( "UITextBox::UITextBox : Created a UI TextBox without a defined font." );
 	}
@@ -224,8 +224,8 @@ const Recti& UITextBox::getPadding() const {
 void UITextBox::setTheme( UITheme * Theme ) {
 	UIControlAnim::setTheme( Theme );
 
-	if ( NULL == mTextCache->getFont() && NULL != Theme->font() ) {
-		mTextCache->setFont( Theme->font() );
+	if ( NULL == mTextCache->getFont() && NULL != Theme->getFont() ) {
+		mTextCache->setFont( Theme->getFont() );
 	}
 }
 

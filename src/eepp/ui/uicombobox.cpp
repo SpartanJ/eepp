@@ -7,7 +7,7 @@ UIComboBox::UIComboBox( UIComboBox::CreateParams& Params ) :
 	UIDropDownList( Params ),
 	mButton( NULL )
 {
-	allowEditing( true );
+	setAllowEditing( true );
 
 	applyDefaultTheme();
 }

@@ -958,7 +958,7 @@ void UIControl::safeDeleteSkinState() {
 
 void UIControl::setThemeControl( UITheme * Theme, const std::string& ControlName ) {
 	if ( NULL != Theme ) {
-		UISkin * tSkin = Theme->getByName( Theme->abbr() + "_" + ControlName );
+		UISkin * tSkin = Theme->getByName( Theme->getAbbr() + "_" + ControlName );
 
 		if ( NULL != tSkin ) {
 			Uint32 InitialState = UISkinState::StateNormal;
@@ -984,7 +984,7 @@ void UIControl::setSkin( const UISkin& Skin ) {
 
 	writeCtrlFlag( UI_CTRL_FLAG_SKIN_OWNER, 1 );
 
-	UISkin * SkinCopy = const_cast<UISkin*>( &Skin )->copy();
+	UISkin * SkinCopy = const_cast<UISkin*>( &Skin )->clone();
 
 	mSkinState = eeNew( UISkinState, ( SkinCopy ) );
 

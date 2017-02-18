@@ -34,11 +34,11 @@ void UIComplexControl::updateAnchorsDistances() {
 }
 
 void UIComplexControl::update() {
-	if ( mVisible && NULL != mTooltip && mTooltip->text().size() ) {
+	if ( mVisible && NULL != mTooltip && mTooltip->getText().size() ) {
 		if ( isMouseOverMeOrChilds() ) {
 			Vector2i Pos = UIManager::instance()->getMousePos();
-			Pos.x += UIThemeManager::instance()->cursorSize().x;
-			Pos.y += UIThemeManager::instance()->cursorSize().y;
+			Pos.x += UIThemeManager::instance()->getCursorSize().x;
+			Pos.y += UIThemeManager::instance()->getCursorSize().y;
 
 			if ( Pos.x + mTooltip->getSize().getWidth() > UIManager::instance()->mainControl()->getSize().getWidth() ) {
 				Pos.x = UIManager::instance()->getMousePos().x - mTooltip->getSize().getWidth();
@@ -48,32 +48,32 @@ void UIComplexControl::update() {
 				Pos.y = UIManager::instance()->getMousePos().y - mTooltip->getSize().getHeight();
 			}
 
-			if ( Time::Zero == UIThemeManager::instance()->tooltipTimeToShow() ) {
-				if ( !mTooltip->isVisible() || UIThemeManager::instance()->tooltipFollowMouse() )
+			if ( Time::Zero == UIThemeManager::instance()->getTooltipTimeToShow() ) {
+				if ( !mTooltip->isVisible() || UIThemeManager::instance()->getTooltipFollowMouse() )
 					mTooltip->setPosition( Pos );
 
 				mTooltip->show();
 			} else {
-				if ( -1.f != mTooltip->tooltipTime().asMilliseconds() ) {
-					mTooltip->tooltipTimeAdd( UIManager::instance()->elapsed() );
+				if ( -1.f != mTooltip->getTooltipTime().asMilliseconds() ) {
+					mTooltip->addTooltipTime( UIManager::instance()->elapsed() );
 				}
 
-				if ( mTooltip->tooltipTime() >= UIThemeManager::instance()->tooltipTimeToShow() ) {
-					if ( mTooltip->tooltipTime().asMilliseconds() != -1.f ) {
+				if ( mTooltip->getTooltipTime() >= UIThemeManager::instance()->getTooltipTimeToShow() ) {
+					if ( mTooltip->getTooltipTime().asMilliseconds() != -1.f ) {
 						mTooltip->setPosition( Pos );
 
 						mTooltip->show();
 
-						mTooltip->tooltipTime( Milliseconds( -1.f ) );
+						mTooltip->setTooltipTime( Milliseconds( -1.f ) );
 					}
 				}
 			}
 
-			if ( UIThemeManager::instance()->tooltipFollowMouse() ) {
+			if ( UIThemeManager::instance()->getTooltipFollowMouse() ) {
 				mTooltip->setPosition( Pos );
 			}
 		} else {
-			mTooltip->tooltipTime( Milliseconds( 0.f ) );
+			mTooltip->setTooltipTime( Milliseconds( 0.f ) );
 
 			if ( mTooltip->isVisible() )
 				mTooltip->hide();
@@ -87,7 +87,7 @@ void UIComplexControl::createTooltip() {
 	if ( NULL != mTooltip )
 		return;
 
-	UITheme * tTheme = UIThemeManager::instance()->defaultTheme();
+	UITheme * tTheme = UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL != tTheme ) {
 		mTooltip = tTheme->createTooltip( this, UIManager::instance()->mainControl() );
@@ -106,16 +106,16 @@ void UIComplexControl::setTooltipText( const String& Text ) {
 		if ( Text.size() ) {
 			createTooltip();
 
-			mTooltip->text( Text );
+			mTooltip->setText( Text );
 		}
 	} else { // but if it's created, i will allow it
-		mTooltip->text( Text );
+		mTooltip->setText( Text );
 	}
 }
 
 String UIComplexControl::getTooltipText() {
 	if ( NULL != mTooltip )
-		return mTooltip->text();
+		return mTooltip->getText();
 
 	return String();
 }

@@ -9,7 +9,7 @@ UIGOTypeNew::UIGOTypeNew( cb::Callback2<void, std::string, Uint32> Cb ) :
 	mUIInput( NULL ),
 	mCb( Cb )
 {
-	mUITheme		= UIThemeManager::instance()->defaultTheme();
+	mUITheme		= UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL == mUITheme )
 		return;
@@ -30,11 +30,11 @@ UIGOTypeNew::UIGOTypeNew( cb::Callback2<void, std::string, Uint32> Cb ) :
 	OKButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIGOTypeNew::OKClick ) );
 	mUIInput->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UIGOTypeNew::OKClick ) );
 
-	OKButton->text( "Add" );
+	OKButton->setText( "Add" );
 
 	UIPushButton * CancelButton = mUITheme->createPushButton( mUIWindow->getContainer(), OKButton->getSize(), Vector2i( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->getIconByName( "cancel" ) );
 	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIGOTypeNew::CancelClick ) );
-	CancelButton->text( "Cancel" );
+	CancelButton->setText( "Cancel" );
 
 	mUIWindow->center();
 	mUIWindow->show();

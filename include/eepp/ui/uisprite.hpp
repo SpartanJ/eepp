@@ -40,19 +40,19 @@ class EE_API UISprite : public UIComplexControl {
 
 		virtual void setAlpha( const Float& alpha );
 
-		Graphics::Sprite * sprite() const;
+		Graphics::Sprite * getSprite() const;
 
-		void sprite( Graphics::Sprite * sprite );
+		void setSprite( Graphics::Sprite * sprite );
 
-		ColorA color() const;
+		ColorA getColor() const;
 
-		void color( const ColorA& color );
+		void setColor( const ColorA& color );
 
-		const EE_RENDER_MODE& renderMode() const;
+		const EE_RENDER_MODE& getRenderMode() const;
 
-		void renderMode( const EE_RENDER_MODE& render );
+		void setRenderMode( const EE_RENDER_MODE& render );
 
-		const Vector2i& alignOffset() const;
+		const Vector2i& getAlignOffset() const;
 	protected:
 		Graphics::Sprite * 	mSprite;
 		EE_RENDER_MODE 		mRender;

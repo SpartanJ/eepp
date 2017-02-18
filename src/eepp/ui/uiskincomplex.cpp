@@ -174,7 +174,7 @@ void UISkinComplex::stateNormalToState( const Uint32& State ) {
 	}
 }
 
-UISkinComplex * UISkinComplex::copy( const std::string& NewName, const bool& CopyColorsState ) {
+UISkinComplex * UISkinComplex::clone( const std::string& NewName, const bool& CopyColorsState ) {
 	UISkinComplex * SkinC = eeNew( UISkinComplex, ( NewName ) );
 
 	if ( CopyColorsState ) {
@@ -188,8 +188,8 @@ UISkinComplex * UISkinComplex::copy( const std::string& NewName, const bool& Cop
 	return SkinC;
 }
 
-UISkin * UISkinComplex::copy() {
-	return copy( mName, true );
+UISkin * UISkinComplex::clone() {
+	return clone( mName, true );
 }
 
 }}

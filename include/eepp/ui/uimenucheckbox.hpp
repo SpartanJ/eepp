@@ -17,11 +17,9 @@ class EE_API UIMenuCheckBox : public UIMenuItem {
 
 		virtual void setTheme( UITheme * Theme );
 
-		const bool& active() const;
-
 		const bool& isActive() const;
 
-		void active( const bool& active );
+		void setActive( const bool& active );
 
 		void switchActive();
 

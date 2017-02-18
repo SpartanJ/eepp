@@ -28,7 +28,7 @@ void UIMenuItem::setTheme( UITheme * Theme ) {
 Uint32 UIMenuItem::onMouseEnter( const Vector2i &Pos, const Uint32 Flags ) {
 	UIPushButton::onMouseEnter( Pos, Flags );
 
-	reinterpret_cast<UIMenu*> ( getParent() )->SetItemSelected( this );
+	reinterpret_cast<UIMenu*> ( getParent() )->setItemSelected( this );
 
 	return 1;
 }

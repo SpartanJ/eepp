@@ -157,9 +157,9 @@ void UIScrollBar::update() {
 void UIScrollBar::manageClick( const Uint32& Flags ) {
 	if ( Flags & EE_BUTTONS_WUWD ) {
 		if ( Flags & EE_BUTTON_WUMASK )
-			mSlider->value( value() + clickStep() );
+			mSlider->setValue( getValue() + getClickStep() );
 		else
-			mSlider->value( value() - clickStep() );
+			mSlider->setValue( getValue() - getClickStep() );
 	}
 }
 
@@ -169,9 +169,9 @@ Uint32 UIScrollBar::onMessage( const UIMessage * Msg ) {
 		{
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender() == mBtnUp ) {
-					mSlider->value( value() - clickStep() );
+					mSlider->setValue( getValue() - getClickStep() );
 				} else if ( Msg->getSender() == mBtnDown ) {
-					mSlider->value( value() + clickStep() );
+					mSlider->setValue( getValue() + getClickStep() );
 				}
 			}
 
@@ -182,36 +182,36 @@ Uint32 UIScrollBar::onMessage( const UIMessage * Msg ) {
 	return 0;
 }
 
-void UIScrollBar::value( Float Val ) {
-	mSlider->value( Val );
+void UIScrollBar::setValue( Float Val ) {
+	mSlider->setValue( Val );
 }
 
-const Float& UIScrollBar::value() const {
-	return mSlider->value();
+const Float& UIScrollBar::getValue() const {
+	return mSlider->getValue();
 }
 
-void UIScrollBar::minValue( const Float& MinVal ) {
-	mSlider->minValue( MinVal );
+void UIScrollBar::setMinValue( const Float& MinVal ) {
+	mSlider->setMinValue( MinVal );
 }
 
-const Float& UIScrollBar::minValue() const {
-	return mSlider->minValue();
+const Float& UIScrollBar::getMinValue() const {
+	return mSlider->getMinValue();
 }
 
-void UIScrollBar::maxValue( const Float& MaxVal ) {
-	mSlider->maxValue( MaxVal );
+void UIScrollBar::setMaxValue( const Float& MaxVal ) {
+	mSlider->setMaxValue( MaxVal );
 }
 
-const Float& UIScrollBar::maxValue() const {
-	return mSlider->maxValue();
+const Float& UIScrollBar::getMaxValue() const {
+	return mSlider->getMaxValue();
 }
 
-void UIScrollBar::clickStep( const Float& step ) {
-	mSlider->clickStep( step );
+void UIScrollBar::setClickStep( const Float& step ) {
+	mSlider->setClickStep( step );
 }
 
-const Float& UIScrollBar::clickStep() const {
-	return mSlider->clickStep();
+const Float& UIScrollBar::getClickStep() const {
+	return mSlider->getClickStep();
 }
 
 const bool& UIScrollBar::isVertical() const {

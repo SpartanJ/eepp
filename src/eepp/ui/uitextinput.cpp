@@ -191,14 +191,14 @@ InputTextBuffer * UITextInput::getInputTextBuffer() {
 	return &mTextBuffer;
 }
 
-void UITextInput::allowEditing( const bool& allow ) {
+void UITextInput::setAllowEditing( const bool& allow ) {
 	mAllowEditing = allow;
 
 	if ( !mAllowEditing && mTextBuffer.isActive() )
 		mTextBuffer.setActive( false );
 }
 
-const bool& UITextInput::allowEditing() const {
+const bool& UITextInput::getAllowEditing() const {
 	return mAllowEditing;
 }
 

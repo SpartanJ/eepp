@@ -32,8 +32,8 @@ UIListBox::UIListBox( UIListBox::CreateParams& Params ) :
 	mTouchDragAcceleration(0),
 	mTouchDragDeceleration( Params.TouchDragDeceleration )
 {
-	if ( NULL == Params.Font && NULL != UIThemeManager::instance()->defaultFont() )
-		mFont = UIThemeManager::instance()->defaultFont();
+	if ( NULL == Params.Font && NULL != UIThemeManager::instance()->getDefaultFont() )
+		mFont = UIThemeManager::instance()->getDefaultFont();
 
 	UIControl::CreateParams CParams;
 	CParams.setParent( this );
@@ -92,8 +92,8 @@ bool UIListBox::isType( const Uint32& type ) const {
 void UIListBox::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "listbox" );
 
-	if ( NULL == mFont && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->theme() && NULL != mSkinState->getSkin()->theme()->font() )
-		mFont = mSkinState->getSkin()->theme()->font();
+	if ( NULL == mFont && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFont() )
+		mFont = mSkinState->getSkin()->getTheme()->getFont();
 
 	autoPadding();
 
@@ -233,7 +233,7 @@ void UIListBox::clear() {
 	mTexts.clear();
 	mItems.clear();
 	mSelected.clear();
-	mVScrollBar->value(0);
+	mVScrollBar->setValue(0);
 
 	updateScroll();
 	findMaxWidth();
@@ -304,11 +304,11 @@ void UIListBox::setRowHeight() {
 	if ( 0 == mRowHeight ) {
 		Uint32 FontSize = 12;
 
-		if ( NULL != UIThemeManager::instance()->defaultFont() )
-			FontSize = UIThemeManager::instance()->defaultFont()->getFontHeight();
+		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
+			FontSize = UIThemeManager::instance()->getDefaultFont()->getFontHeight();
 
-		if ( NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->theme() && NULL != mSkinState->getSkin()->theme()->font() )
-			FontSize = mSkinState->getSkin()->theme()->font()->getFontHeight();
+		if ( NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFont() )
+			FontSize = mSkinState->getSkin()->getTheme()->getFont()->getFontHeight();
 
 		if ( NULL != mFont )
 			FontSize = mFont->getFontHeight();
@@ -442,7 +442,7 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 				else
 					ScrollH = mMaxTextWidth - mContainer->getSize().getWidth();
 
-				Int32 HScrolleable = (Uint32)( mHScrollBar->value() * ScrollH );
+				Int32 HScrolleable = (Uint32)( mHScrollBar->getValue() * ScrollH );
 
 				mHScrollInit = -HScrolleable;
 		} else {
@@ -466,7 +466,7 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 
 	if ( Clipped && mSmoothScroll ) {
 		if ( Scrolleable >= 0 )
-			RelPos 		= (Uint32)( mVScrollBar->value() * Scrolleable );
+			RelPos 		= (Uint32)( mVScrollBar->getValue() * Scrolleable );
 		else
 			RelPos		= 0;
 
@@ -512,7 +512,7 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 		RelPosMax		= (Uint32)mItems.size();
 
 		if ( mItemsNotVisible > 0 ) {
-			RelPos 				= (Uint32)( mVScrollBar->value() * mItemsNotVisible );
+			RelPos 				= (Uint32)( mVScrollBar->getValue() * mItemsNotVisible );
 			RelPosMax			= RelPos + VisibleItems;
 		}
 
@@ -796,7 +796,7 @@ void UIListBox::selectPrev() {
 				createItemIndex( SelIndex );
 
 			if ( mItems[ SelIndex ]->getPosition().y < 0 ) {
-				mVScrollBar->value( (Float)( SelIndex * mRowHeight ) / (Float)( ( mItems.size() - 1 ) * mRowHeight ) );
+				mVScrollBar->setValue( (Float)( SelIndex * mRowHeight ) / (Float)( ( mItems.size() - 1 ) * mRowHeight ) );
 
 				mItems[ SelIndex ]->setFocus();
 			}
@@ -818,7 +818,7 @@ void UIListBox::selectNext() {
 				createItemIndex( SelIndex );
 
 			if ( mItems[ SelIndex ]->getPosition().y + (Int32)rowHeight() > mContainer->getSize().getHeight() ) {
-				mVScrollBar->value( (Float)( SelIndex * mRowHeight ) / (Float)( ( mItems.size() - 1 ) * mRowHeight ) );
+				mVScrollBar->setValue( (Float)( SelIndex * mRowHeight ) / (Float)( ( mItems.size() - 1 ) * mRowHeight ) );
 
 				mItems[ SelIndex ]->setFocus();
 			}
@@ -847,7 +847,7 @@ Uint32 UIListBox::onKeyDown( const UIEventKey &Event ) {
 			mLastTickMove = Sys::getTicks();
 
 			if ( mSelected.front() != 0 ) {
-				mVScrollBar->value( 0 );
+				mVScrollBar->setValue( 0 );
 
 				mItems[ 0 ]->setFocus();
 
@@ -857,7 +857,7 @@ Uint32 UIListBox::onKeyDown( const UIEventKey &Event ) {
 			mLastTickMove = Sys::getTicks();
 
 			if ( mSelected.front() != count() - 1 ) {
-				mVScrollBar->value( 1 );
+				mVScrollBar->setValue( 1 );
 
 				mItems[ count() - 1 ]->setFocus();
 
@@ -971,7 +971,7 @@ void UIListBox::update() {
 				if ( mTouchDragPoint != Pos ) {
 					Vector2i diff = -( mTouchDragPoint - Pos );
 
-					mVScrollBar->value( mVScrollBar->value() + ( -diff.y / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
+					mVScrollBar->setValue( mVScrollBar->getValue() + ( -diff.y / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
 					mTouchDragAcceleration += elapsed().asMilliseconds() * diff.y * mTouchDragDeceleration;
 
@@ -1000,7 +1000,7 @@ void UIListBox::update() {
 
 				// Deaccelerate
 				if ( mTouchDragAcceleration > 0.01f || mTouchDragAcceleration < -0.01f ) {
-					mVScrollBar->value( mVScrollBar->value() + ( -mTouchDragAcceleration / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
+					mVScrollBar->setValue( mVScrollBar->getValue() + ( -mTouchDragAcceleration / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
 					mTouchDragAcceleration -= mTouchDragAcceleration * mTouchDragDeceleration * elapsed().asMilliseconds();
 				}

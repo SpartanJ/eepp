@@ -44,11 +44,11 @@ class EE_API UISkin {
 
 		const Uint32& getId() const;
 
-		UITheme * theme() const;
+		UITheme * getTheme() const;
 
-		void theme( UITheme * theme );
+		void setTheme( UITheme * theme );
 
-		virtual UISkin * copy() = 0;
+		virtual UISkin * clone() = 0;
 
 		const Uint32& getType() const;
 	protected:

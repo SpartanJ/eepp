@@ -55,10 +55,10 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	ButtonParams.FontOverColor		= mFontOverColor;
 
 	UISelectButton * Button = eeNew( UISelectButton, ( ButtonParams ) );
-	Button->text( ButtonText );
+	Button->setText( ButtonText );
 	Button->setVisible( true );
 	Button->setEnabled( true );
-	Button->setThemeControl( mSkinState->getSkin()->theme(), "winmenubutton" );
+	Button->setThemeControl( mSkinState->getSkin()->getTheme(), "winmenubutton" );
 
 	Menu->setVisible( false );
 	Menu->setEnabled( false );
@@ -88,7 +88,7 @@ void UIWinMenu::setTheme( UITheme * Theme ) {
 
 void UIWinMenu::removeMenuButton( const String& ButtonText ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
-		if ( it->first->text() == ButtonText ) {
+		if ( it->first->getText() == ButtonText ) {
 			it->second->close();
 
 			mButtons.erase( it );
@@ -100,7 +100,7 @@ void UIWinMenu::removeMenuButton( const String& ButtonText ) {
 
 UISelectButton * UIWinMenu::getButton( const String& ButtonText ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
-		if ( it->first->text() == ButtonText ) {
+		if ( it->first->getText() == ButtonText ) {
 			return it->first;
 		}
 	}
@@ -110,7 +110,7 @@ UISelectButton * UIWinMenu::getButton( const String& ButtonText ) {
 
 UIPopUpMenu * UIWinMenu::getPopUpMenu( const String& ButtonText ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
-		if ( it->first->text() == ButtonText ) {
+		if ( it->first->getText() == ButtonText ) {
 			return it->second;
 		}
 	}
@@ -270,31 +270,31 @@ void UIWinMenu::onComplexControlFocusLoss() {
 }
 
 
-void UIWinMenu::fontColor( const ColorA& Color ) {
+void UIWinMenu::setFontColor( const ColorA& Color ) {
 	mFontColor = Color;
 }
 
-const ColorA& UIWinMenu::fontColor() const {
+const ColorA& UIWinMenu::getFontColor() const {
 	return mFontColor;
 }
 
-void UIWinMenu::fontOverColor( const ColorA& Color ) {
+void UIWinMenu::setFontOverColor( const ColorA& Color ) {
 	mFontOverColor = Color;
 }
 
-const ColorA& UIWinMenu::fontOverColor() const {
+const ColorA& UIWinMenu::getFontOverColor() const {
 	return mFontOverColor;
 }
 
-void UIWinMenu::fontSelectedColor( const ColorA& Color ) {
+void UIWinMenu::setFontSelectedColor( const ColorA& Color ) {
 	mFontSelectedColor = Color;
 }
 
-const ColorA& UIWinMenu::fontSelectedColor() const {
+const ColorA& UIWinMenu::getFontSelectedColor() const {
 	return mFontSelectedColor;
 }
 
-Graphics::Font * UIWinMenu::font() const {
+Graphics::Font * UIWinMenu::getFont() const {
 	return mFont;
 }
 

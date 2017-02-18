@@ -54,7 +54,7 @@ void UISkinSimple::stateNormalToState( const Uint32& State ) {
 		mSubTexture[ State ] = mSubTexture[ UISkinState::StateNormal ];
 }
 
-UISkinSimple * UISkinSimple::copy( const std::string& NewName, const bool& CopyColorsState ) {
+UISkinSimple * UISkinSimple::clone( const std::string& NewName, const bool& CopyColorsState ) {
 	UISkinSimple * SkinS = eeNew( UISkinSimple, ( NewName ) );
 
 	if ( CopyColorsState ) {
@@ -68,8 +68,8 @@ UISkinSimple * UISkinSimple::copy( const std::string& NewName, const bool& CopyC
 	return SkinS;
 }
 
-UISkin * UISkinSimple::copy() {
-	return copy( mName, true );
+UISkin * UISkinSimple::clone() {
+	return clone( mName, true );
 }
 
 }}

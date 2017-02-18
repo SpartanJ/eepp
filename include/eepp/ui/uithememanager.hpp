@@ -14,51 +14,51 @@ class EE_API UIThemeManager : public ResourceManager<UITheme> {
 	public:
 		virtual ~UIThemeManager();
 
-		void defaultFont( Font * Font );
+		void setDefaultFont( Font * Font );
 
-		Font * defaultFont() const;
+		Font * getDefaultFont() const;
 
 		void setTheme( const std::string& Theme );
 
 		void setTheme( UITheme * Theme );
 
-		void defaultTheme( UITheme * Theme );
+		void setDefaultTheme( UITheme * Theme );
 
-		void defaultTheme( const std::string& Theme );
+		void setDefaultTheme( const std::string& Theme );
 
-		UITheme * defaultTheme() const;
+		UITheme * getDefaultTheme() const;
 
 		void applyDefaultTheme( UIControl * Control );
 
-		void autoApplyDefaultTheme( const bool& apply );
+		void setAutoApplyDefaultTheme( const bool& apply );
 
-		const bool& autoApplyDefaultTheme() const;
+		const bool& getAutoApplyDefaultTheme() const;
 
-		void defaultEffectsEnabled( const bool& Enabled );
+		void setDefaultEffectsEnabled( const bool& Enabled );
 
-		const bool& defaultEffectsEnabled() const;
+		const bool& getDefaultEffectsEnabled() const;
 
-		const Time& controlsFadeInTime() const;
+		const Time& getControlsFadeInTime() const;
 
-		void controlsFadeInTime( const Time & Time );
+		void setControlsFadeInTime( const Time & Time );
 
-		const Time& controlsFadeOutTime() const;
+		const Time& getControlsFadeOutTime() const;
 
-		void controlsFadeOutTime( const Time& Time );
+		void setControlsFadeOutTime( const Time& Time );
 
-		void tooltipTimeToShow( const Time & Time );
+		void setTooltipTimeToShow( const Time & Time );
 
-		const Time& tooltipTimeToShow() const;
+		const Time& getTooltipTimeToShow() const;
 
-		void tooltipFollowMouse( const bool& Follow );
+		void setTooltipFollowMouse( const bool& Follow );
 
-		const bool& tooltipFollowMouse() const;
+		const bool& getTooltipFollowMouse() const;
 
-		void cursorSize( const Sizei& Size );
+		void setCursorSize( const Sizei& Size );
 
-		const Sizei& cursorSize() const;
+		const Sizei& getCursorSize() const;
 	protected:
-		Font * 			mFont;
+		Font *				mFont;
 		UITheme * 			mThemeDefault;
 		bool				mautoApplyDefaultTheme;
 

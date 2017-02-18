@@ -71,19 +71,19 @@ class EETest : private Thread {
 	public:
 		typedef cb::Callback0<void> SceneCb;
 
-		void Init();
-		void Update();
-		void End();
-		void Process();
-		void Render();
-		void Input();
-		void ParticlesCallback(Particle* P, ParticleSystem* Me);
+		void init();
+		void update();
+		void end();
+		void process();
+		void render();
+		void input();
+		void particlesCallback(Particle* P, ParticleSystem* Me);
 
-		void ParticlesThread();
-		void Particles();
-		void UpdateParticles();
-		void LoadTextures();
-		void CmdSetPartsNum ( const std::vector < String >& params );
+		void particlesThread();
+		void particles();
+		void updateParticles();
+		void loadTextures();
+		void cmdSetPartsNum ( const std::vector < String >& params );
 
 		Clock cElapsed;
 		Time PSElapsed;
@@ -138,11 +138,11 @@ class EETest : private Thread {
 
 		Uint8 Screen;
 		SceneCb Scenes[6];
-		void Screen1();
-		void Screen2();
-		void Screen3();
-		void Screen4();
-		void Screen5();
+		void screen1();
+		void screen2();
+		void screen3();
+		void screen4();
+		void screen5();
 
 		Zip * PakTest;
 
@@ -176,15 +176,15 @@ class EETest : private Thread {
 		String mBuda;
 
 		ResourceLoader mResLoad;
-		void OnTextureLoaded( ResourceLoader * ObjLoaded );
+		void onTextureLoaded( ResourceLoader * ObjLoaded );
 
-		void CreateUI();
-		void CreateShaders();
+		void createUI();
+		void createShaders();
 
-		void LoadFonts();
+		void loadFonts();
 
 		ResourceLoader mFontLoader;
-		void OnFontLoaded( ResourceLoader * ObjLoaded );
+		void onFontLoaded( ResourceLoader * ObjLoaded );
 
 		JoystickManager * JM;
 		Float mAxisX;
@@ -198,18 +198,18 @@ class EETest : private Thread {
 
 		Clock	mFTE;
 
-		void CreateCommonDialog();
-		void ItemClick( const UIEvent * Event );
-		void MainClick( const UIEvent * Event );
-		void QuitClick( const UIEvent * Event );
-		void CloseClick( const UIEvent * Event );
-		void ButtonClick( const UIEvent * Event );
-		void OnValueChange( const UIEvent * Event );
-		void OnSliderValueChange( const UIEvent * Event );
-		void OnWinMouseUp( const UIEvent * Event );
-		void CreateDecoratedWindow();
-		void CreateWinMenu();
-		void CreateUIThemeTextureAtlas();
+		void createCommonDialog();
+		void onItemClick( const UIEvent * Event );
+		void onMainClick( const UIEvent * Event );
+		void onQuitClick( const UIEvent * Event );
+		void onCloseClick( const UIEvent * Event );
+		void onButtonClick( const UIEvent * Event );
+		void onValueChange( const UIEvent * Event );
+		void onSliderValueChange( const UIEvent * Event );
+		void onWinMouseUp( const UIEvent * Event );
+		void createDecoratedWindow();
+		void createWinMenu();
+		void createUIThemeTextureAtlas();
 
 		UIControlAnim * C;
 		UIScrollBar * mScrollBar;
@@ -240,30 +240,30 @@ class EETest : private Thread {
 		Constraint * mMouseJoint[ EE_MAX_FINGERS ];
 		#endif
 
-		void PhysicsCreate();
-		void PhysicsUpdate();
-		void PhysicsDestroy();
+		void physicsCreate();
+		void physicsUpdate();
+		void physicsDestroy();
 
-		void SetScreen( Uint32 num );
+		void setScreen( Uint32 num );
 
 		cpBool blockerBegin( Arbiter *arb, Space *space, void *unused );
 		void blockerSeparate( Arbiter *arb, Space *space, void *unused );
 		void postStepRemove( Space *space, void * tshape, void *unused );
 		cpBool catcherBarBegin( Arbiter *arb, Space *space, void *unused );
 
-		void Demo1Create();
-		void Demo1Update();
-		void Demo1Destroy();
+		void demo1Create();
+		void demo1Update();
+		void demo1Destroy();
 
-		void Demo2Create();
-		void Demo2Update();
-		void Demo2Destroy();
+		void demo2Create();
+		void demo2Update();
+		void demo2Destroy();
 
-		void ShowMenu();
+		void showMenu();
 
 		Emitter emitterInstance;
 
-		void ChangeDemo( Uint32 num );
+		void changeDemo( Uint32 num );
 
 		struct physicDemo {
 			SceneCb init;
@@ -282,21 +282,21 @@ class EETest : private Thread {
 		UIPushButton *			mShowMenu;
 		UIPushButton *			mTerrainBut;
 
-		void CreateMapEditor();
+		void createMapEditor();
 
-		void OnMapEditorClose();
+		void onMapEditorClose();
 
-		void OnETGEditorClose();
+		void onETGEditorClose();
 
-		void CreateETGEditor();
+		void createETGEditor();
 
-		void CreateJointAndBody();
+		void createJointAndBody();
 
-		void DestroyBody();
+		void destroyBody();
 
-		void OnShowMenu( const UIEvent * Event );
+		void onShowMenu( const UIEvent * Event );
 
-		void OnWindowResize( EE::Window::Window * win );
+		void onWindowResize( EE::Window::Window * win );
 };
 
 }

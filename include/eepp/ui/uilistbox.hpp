@@ -25,17 +25,17 @@ class EE_API UIListBox : public UIComplexControl {
 					FontSelectedColor( 0, 0, 0, 255 ),
 					TouchDragDeceleration( 0.01f )
 				{
-					UITheme * Theme = UIThemeManager::instance()->defaultTheme();
+					UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
 
 					if ( NULL != Theme ) {
-						Font				= Theme->font();
-						FontColor			= Theme->fontColor();
-						FontOverColor		= Theme->fontOverColor();
-						FontSelectedColor	= Theme->fontSelectedColor();
+						Font				= Theme->getFont();
+						FontColor			= Theme->getFontColor();
+						FontOverColor		= Theme->getFontOverColor();
+						FontSelectedColor	= Theme->getFontSelectedColor();
 					}
 
 					if ( NULL == Font )
-						Font = UIThemeManager::instance()->defaultFont();
+						Font = UIThemeManager::instance()->getDefaultFont();
 				}
 
 				inline ~CreateParams() {}

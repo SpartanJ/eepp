@@ -35,9 +35,9 @@ class EE_API UITextEdit : public UIComplexControl {
 
 		virtual void setTheme( UITheme * Theme );
 
-		const String& text() const;
+		const String& getText() const;
 
-		void text( const String& Txt );
+		void setText( const String& Txt );
 
 		UITextInput * getTextInput() const;
 
@@ -47,9 +47,9 @@ class EE_API UITextEdit : public UIComplexControl {
 
 		virtual void update();
 
-		void allowEditing( const bool& allow );
+		void setAllowEditing( const bool& allow );
 
-		const bool& allowEditing() const;
+		const bool& getAllowEditing() const;
 	protected:
 		UITextInput *		mTextInput;
 		UIScrollBar *		mHScrollBar;

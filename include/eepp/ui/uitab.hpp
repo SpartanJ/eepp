@@ -21,9 +21,9 @@ class EE_API UITab : public UISelectButton {
 
 		virtual void setTheme( UITheme * Theme );
 
-		virtual const String& text();
+		virtual const String& getText();
 
-		virtual void text( const String& text );
+		virtual void setText( const String& text );
 
 		virtual void update();
 	protected:
