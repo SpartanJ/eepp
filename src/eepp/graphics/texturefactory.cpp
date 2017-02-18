@@ -104,13 +104,13 @@ Uint32 TextureFactory::findFreeSlot() {
 }
 
 void TextureFactory::bind( const Texture* Tex, const Uint32& TextureUnit ) {
-	if( NULL != Tex && mCurrentTexture[ TextureUnit ] != (Int32)Tex->handle() ) {
+	if( NULL != Tex && mCurrentTexture[ TextureUnit ] != (Int32)Tex->getHandle() ) {
 		if ( TextureUnit && GLi->isExtension( EEGL_ARB_multitexture ) )
 			setActiveTextureUnit( TextureUnit );
 
-		GLi->bindTexture( GL_TEXTURE_2D, Tex->handle() );
+		GLi->bindTexture( GL_TEXTURE_2D, Tex->getHandle() );
 
-		mCurrentTexture[ TextureUnit ] = Tex->handle();
+		mCurrentTexture[ TextureUnit ] = Tex->getHandle();
 
 		if ( TextureUnit && GLi->isExtension( EEGL_ARB_multitexture ) )
 			setActiveTextureUnit( 0 );
@@ -153,7 +153,7 @@ bool TextureFactory::remove( Uint32 TexId ) {
 void TextureFactory::removeReference( Texture * Tex ) {
 	mMemSize -= Tex->getMemSize();
 
-	int glTexId = Tex->handle();
+	int glTexId = Tex->getHandle();
 
 	mTextures[ Tex->getId() ] = NULL;
 
@@ -194,9 +194,9 @@ void TextureFactory::grabTextures() {
 	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
 		Texture* Tex = getTexture(i);
 
-		if ( Tex && !Tex->localCopy() ) {
+		if ( Tex && !Tex->hasLocalCopy() ) {
 			Tex->lock();
-			Tex->grabed(true);
+			Tex->setGrabed(true);
 		}
 	}
 }
@@ -205,10 +205,10 @@ void TextureFactory::ungrabTextures() {
 	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
 		Texture* Tex = getTexture(i);
 
-		if ( NULL != Tex && Tex->grabed() ) {
+		if ( NULL != Tex && Tex->isGrabed() ) {
 			Tex->reload();
 			Tex->unlock();
-			Tex->grabed(false);
+			Tex->setGrabed(false);
 		}
 	}
 }
@@ -256,7 +256,7 @@ bool TextureFactory::saveImage( const std::string& filepath, const EE_SAVE_TYPE&
 	return Res;
 }
 
-bool TextureFactory::textureIdExists( const Uint32& TexId ) {
+bool TextureFactory::existsId( const Uint32& TexId ) {
 	return ( TexId < mTextures.size() && TexId > 0 && NULL != mTextures[ TexId ] );
 }
 
@@ -283,7 +283,7 @@ Texture * TextureFactory::getByHash( const Uint32& Hash ) {
 	for ( Uint32 i = (Uint32)mTextures.size() - 1; i > 0; i-- ) {
 		tTex = mTextures[ i ];
 
-		if ( NULL != tTex && tTex->hashName() == Hash )
+		if ( NULL != tTex && tTex->getHashName() == Hash )
 			return mTextures[ i ];
 	}
 

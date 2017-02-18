@@ -341,7 +341,7 @@ void UITextEdit::fixScrollToCursor() {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum = mTextInput->getInputTextBuffer()->getCurPosLinePos( NLPos );
 
-		mTextInput->getTextCache()->font()->setText(
+		mTextInput->getTextCache()->getFont()->setText(
 			mTextInput->getInputTextBuffer()->getBuffer().substr(
 				NLPos, mTextInput->getInputTextBuffer()->getCursorPos() - NLPos
 			)
@@ -349,8 +349,8 @@ void UITextEdit::fixScrollToCursor() {
 
 		mSkipValueChange = true;
 
-		Float tW	= mTextInput->getTextCache()->font()->getTextWidth();
-		Float tH	= (Float)(LineNum + 1) * (Float)mTextInput->getTextCache()->font()->getFontHeight();
+		Float tW	= mTextInput->getTextCache()->getFont()->getTextWidth();
+		Float tH	= (Float)(LineNum + 1) * (Float)mTextInput->getTextCache()->getFont()->getFontHeight();
 
 		if ( tW > Width ) {
 			mTextInput->position( mPadding.Left + Width - tW, mTextInput->position().y );

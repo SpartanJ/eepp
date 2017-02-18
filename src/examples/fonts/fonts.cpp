@@ -112,15 +112,15 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		TxtCache = eeNew( TextCache, ( TTF2, Txt, ColorA(0,0,0,255) ) );
 
 		// Set the text cache to be centered
-		TxtCache->flags( FONT_DRAW_CENTER );
+		TxtCache->setFlags( FONT_DRAW_CENTER );
 
 		// Set the font color to a substring of the text
 		// To be able to set the color of the font, create the font as white
 		// Create a gradient
-		size_t size = TxtCache->text().size();
+		size_t size = TxtCache->getText().size();
 
 		for ( size_t i = 0; i < size; i++ ) {
-			TxtCache->color( ColorA(255*i/size,0,0,255), i, i+1 );
+			TxtCache->setColor( ColorA(255*i/size,0,0,255), i, i+1 );
 		}
 
 		// Application loop

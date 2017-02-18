@@ -10,13 +10,13 @@ UITextInputPassword::UITextInputPassword( const UITextInput::CreateParams& Param
 	UITextInput( Params )
 {
 	mPassCache = eeNew( TextCache, () );
-	mPassCache->font( Params.Font );
-	mPassCache->color( mFontColor );
-	mPassCache->shadowColor( mFontShadowColor );
+	mPassCache->setFont( Params.Font );
+	mPassCache->setColor( mFontColor );
+	mPassCache->setShadowColor( mFontShadowColor );
 
 	if ( NULL == Params.Font ) {
 		if ( NULL != UIThemeManager::instance()->defaultFont() )
-			mPassCache->font( UIThemeManager::instance()->defaultFont() );
+			mPassCache->setFont( UIThemeManager::instance()->defaultFont() );
 		else
 			eePRINTL( "UITextInputPassword::UITextInputPassword : Created a UI TextInputPassword without a defined font." );
 	}
@@ -38,7 +38,7 @@ void UITextInputPassword::draw() {
 				);
 			}
 
-			mPassCache->flags( flags() );
+			mPassCache->setFlags( flags() );
 			mPassCache->draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, Vector2f::One, 0.f, blend() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {
@@ -61,13 +61,13 @@ void UITextInputPassword::alignFix() {
 		for ( size_t i = 0; i < curStr.size(); i++ )
 			pasStr += '*';
 
-		mPassCache->font()->setText( pasStr );
+		mPassCache->getFont()->setText( pasStr );
 
-		Float tW	= mPassCache->font()->getTextWidth();
+		Float tW	= mPassCache->getFont()->getTextWidth();
 		Float tX	= mAlignOffset.x + tW;
 
 		mCurPos.x	= tW;
-		mCurPos.y	= (Float)LineNum * (Float)mPassCache->font()->getFontHeight();
+		mCurPos.y	= (Float)LineNum * (Float)mPassCache->getFont()->getFontHeight();
 
 		if ( !mTextBuffer.setSupportNewLine() ) {
 			if ( tX < 0.f )
@@ -105,11 +105,11 @@ void UITextInputPassword::autoAlign() {
 }
 
 void UITextInputPassword::updateText() {
-	updatePass( mTextCache->text() );
+	updatePass( mTextCache->getText() );
 }
 
 void UITextInputPassword::updatePass( const String& pass ) {
-	mPassCache->text().clear();
+	mPassCache->getText().clear();
 
 	String newTxt;
 
@@ -117,7 +117,7 @@ void UITextInputPassword::updatePass( const String& pass ) {
 		newTxt += '*';
 	}
 
-	mPassCache->text( newTxt );
+	mPassCache->setText( newTxt );
 }
 
 void UITextInputPassword::text( const String& text ) {

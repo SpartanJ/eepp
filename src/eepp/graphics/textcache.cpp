@@ -28,10 +28,10 @@ TextCache::TextCache( Graphics::Font * font, const String& text, ColorA FontColo
 	mVertexNumCached(0),
 	mCachedCoords(false)
 {
-	cache();
+	cacheWidth();
 	updateCoords();
-	color( FontColor );
-	shadowColor( FontShadowColor );
+	setColor( FontColor );
+	setShadowColor( FontShadowColor );
 }
 
 TextCache::~TextCache() {
@@ -41,21 +41,21 @@ void TextCache::create( Graphics::Font * font, const String& text, ColorA FontCo
 	mFont = font;
 	mText = text;
 	updateCoords();
-	color( FontColor );
-	shadowColor( FontShadowColor );
-	cache();
+	setColor( FontColor );
+	setShadowColor( FontShadowColor );
+	cacheWidth();
 }
 
-Graphics::Font * TextCache::font() const {
+Graphics::Font * TextCache::getFont() const {
 	return mFont;
 }
 
-void TextCache::font( Graphics::Font * font ) {
+void TextCache::setFont( Graphics::Font * font ) {
 	mFont = font;
-	cache();
+	cacheWidth();
 }
 
-String& TextCache::text() {
+String& TextCache::getText() {
 	return mText;
 }
 
@@ -66,7 +66,7 @@ void TextCache::updateCoords() {
 	mColors.resize( size, mFontColor );
 }
 
-void TextCache::text( const String& text ) {
+void TextCache::setText( const String& text ) {
 	bool needUpdate = false;
 
 	if ( mText.size() != text.size() )
@@ -77,21 +77,21 @@ void TextCache::text( const String& text ) {
 	if ( needUpdate )
 		updateCoords();
 
-	cache();
+	cacheWidth();
 }
 
-const ColorA& TextCache::color() const {
+const ColorA& TextCache::getColor() const {
 	return mFontColor;
 }
 
-void TextCache::alpha( const Uint8& alpha ) {
+void TextCache::setAlpha( const Uint8& alpha ) {
 	std::size_t s = mColors.size();
 	for ( Uint32 i = 0; i < s; i++ ) {
 		mColors[ i ].Alpha = alpha;
 	}
 }
 
-void TextCache::color( const ColorA& color ) {
+void TextCache::setColor( const ColorA& color ) {
 	if ( mFontColor != color ) {
 		mFontColor = color;
 
@@ -99,7 +99,7 @@ void TextCache::color( const ColorA& color ) {
 	}
 }
 
-void TextCache::color( const ColorA& color, Uint32 from, Uint32 to ) {
+void TextCache::setColor( const ColorA& color, Uint32 from, Uint32 to ) {
 	std::vector<ColorA> colors( GLi->quadVertexs(), color );
 	std::size_t s = mText.size();
 
@@ -144,23 +144,23 @@ void TextCache::color( const ColorA& color, Uint32 from, Uint32 to ) {
 	}
 }
 
-const ColorA& TextCache::shadowColor() const {
+const ColorA& TextCache::getShadowColor() const {
 	return mFontShadowColor;
 }
 
-void TextCache::shadowColor(const ColorA& color) {
+void TextCache::setShadowColor(const ColorA& color) {
 	mFontShadowColor = color;
 }
 
-std::vector<eeVertexCoords>& TextCache::vertextCoords() {
+std::vector<eeVertexCoords>& TextCache::getVertextCoords() {
 	return mRenderCoords;
 }
 
-std::vector<ColorA>& TextCache::colors() {
+std::vector<ColorA>& TextCache::getColors() {
 	return mColors;
 }
 
-void TextCache::cache() {
+void TextCache::cacheWidth() {
 	if ( NULL != mFont && mText.size() ) {
 		mFont->cacheWidth( mText, mLinesWidth, mCachedWidth, mNumLines, mLargestLineCharCount );
 	}else {
@@ -182,7 +182,7 @@ const int& TextCache::getNumLines() const {
 	return mNumLines;
 }
 
-const std::vector<Float>& TextCache::linesWidth() {
+const std::vector<Float>& TextCache::getLinesWidth() {
 	return mLinesWidth;
 }
 
@@ -218,18 +218,18 @@ void TextCache::cachedVerts( const unsigned int& num ) {
 	mVertexNumCached = num;
 }
 
-void TextCache::flags( const Uint32& flags ) {
+void TextCache::setFlags( const Uint32& flags ) {
 	if ( mFlags != flags ) {
 		mFlags = flags;
 		mCachedCoords = false;
 
 		if ( ( mFlags & FONT_DRAW_VERTICAL ) != ( flags & FONT_DRAW_VERTICAL ) ) {
-			cache();
+			cacheWidth();
 		}
 	}
 }
 
-const Uint32& TextCache::flags() const {
+const Uint32& TextCache::getFlags() const {
 	return mFlags;
 }
 

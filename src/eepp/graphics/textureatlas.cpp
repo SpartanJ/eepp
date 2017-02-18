@@ -20,11 +20,11 @@ void TextureAtlas::setName( const std::string& name ) {
 	mId = String::hash( mName );
 }
 
-const std::string& TextureAtlas::path() const {
+const std::string& TextureAtlas::getPath() const {
 	return mPath;
 }
 
-void TextureAtlas::path( const std::string& path ) {
+void TextureAtlas::setPath( const std::string& path ) {
 	mPath = path;
 }
 

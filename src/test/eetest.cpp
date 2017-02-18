@@ -198,8 +198,8 @@ void EETest::OnFontLoaded( ResourceLoader * ObjLoaded ) {
 
 	mEEText.create( TTFB, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to see the PopUp Menu" );
 	mFBOText.create( TTFB, "This is a VBO\nInside of a FBO" );
-	mFBOText.color( ColorA(255,255,0,255), mFBOText.text().find( "VBO" ), mFBOText.text().find( "VBO" ) + 2 );
-	mFBOText.color( ColorA(255,255,0,255), mFBOText.text().find( "FBO" ), mFBOText.text().find( "FBO" ) + 2 );
+	mFBOText.setColor( ColorA(255,255,0,255), mFBOText.getText().find( "VBO" ), mFBOText.getText().find( "VBO" ) + 2 );
+	mFBOText.setColor( ColorA(255,255,0,255), mFBOText.getText().find( "FBO" ), mFBOText.getText().find( "FBO" ) + 2 );
 
 	mInfoText.create( FF, "", ColorA(255,255,255,150) );
 }
@@ -1165,7 +1165,7 @@ void EETest::Screen4() {
 		mVBO->draw();
 		mVBO->unbind();
 
-		mFBOText.flags( FONT_DRAW_CENTER );
+		mFBOText.setFlags( FONT_DRAW_CENTER );
 		mFBOText.draw( 128.f - (Float)(Int32)( mFBOText.getTextWidth() * 0.5f ), 25.f - (Float)(Int32)( mFBOText.getTextHeight() * 0.5f ) );
 	}
 
@@ -1195,7 +1195,7 @@ void EETest::Render() {
 							et.asMilliseconds(),
 							(Int32)Mouse.x,
 							(Int32)Mouse.y,
-							FileSystem::sizeToString( TF->memorySize() ).c_str(),
+							FileSystem::sizeToString( TF->getTextureMemorySize() ).c_str(),
 							FileSystem::sizeToString( (Uint32)MemoryManager::getTotalMemoryUsage() ).c_str(),
 							FileSystem::sizeToString( (Uint32)MemoryManager::getPeakMemoryUsage() ).c_str()
 						);
@@ -1209,7 +1209,7 @@ void EETest::Render() {
 						);
 		#endif
 
-		mInfoText.text( mInfo );
+		mInfoText.setText( mInfo );
 	}
 
 	if ( !MultiViewportMode ) {
@@ -1239,7 +1239,7 @@ void EETest::Render() {
 	ColorA ColRR2( 100, 100, 100, 220 );
 	ColorA ColRR3( 100, 100, 100, 220 );
 
-	mEEText.flags( FONT_DRAW_CENTER );
+	mEEText.setFlags( FONT_DRAW_CENTER );
 
 	PR.setColor( ColorA(150, 150, 150, 220) );
 	PR.setFillMode( DRAW_FILL );

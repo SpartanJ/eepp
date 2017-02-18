@@ -12,37 +12,37 @@ namespace EE { namespace Graphics {
 class EE_API Texture : public Image, private NonCopyable {
 	public:
 		/** Set the OpenGL Texture Id (texture handle) */
-		void handle( const int& texture ) { mTexture = texture; }
+		void setHandle( const int& texture ) { mTexture = texture; }
 
 		/** @return The OpenGL Texture Id (texture handle) */
-		int handle() const { return mTexture; }
+		int getHandle() const { return mTexture; }
 
 		/** @return The hash of the filename */
-		const Uint32& hashName() const;
+		const Uint32& getHashName() const;
 
 		/** Set the Texture File Path */
-		void filepath( const std::string& filepath ) { mFilepath = filepath; }
+		void setFilepath( const std::string& filepath ) { mFilepath = filepath; }
 
 		/** @return The Texture File Path */
-		std::string filepath() const { return mFilepath; }
+		std::string getFilepath() const { return mFilepath; }
 
 		/** @return The Image Width */
-		unsigned int imgWidth() const { return mImgWidth; }
+		unsigned int getImageWidth() const { return mImgWidth; }
 
 		/** @return The Image Height */
-		unsigned int imgHeight() const { return mImgHeight; }
+		unsigned int getImageHeight() const { return mImgHeight; }
 
 		/** Set if the Texture use Mipmaps */
-		void mipmap( const bool& UseMipmap );
+		void setMipmap( const bool& UseMipmap );
 
 		/** @return If the texture use Mipmaps */
-		bool mipmap() const;
+		bool getMipmap() const;
 
 		/** Set the Texture Clamp Mode */
-		void clampMode( const EE_CLAMP_MODE& clampmode );
+		void setClampMode( const EE_CLAMP_MODE& clampmode );
 
 		/** @return The Texture Clamp Mode */
-		EE_CLAMP_MODE clampMode() const { return mClampMode; }
+		EE_CLAMP_MODE getClampMode() const { return mClampMode; }
 
 		/** Lock the Texture for direct access.
 		**	It is needed to have any read/write access to the texture. This feature is not supported in OpenGL ES. */
@@ -59,10 +59,10 @@ class EE_API Texture : public Image, private NonCopyable {
 		const Uint8* getPixelsPtr();
 
 		/** Set the Texture Filter Mode */
-		void filter( const EE_TEX_FILTER& filter );
+		void setFilter( const EE_TEX_FILTER& filter );
 
 		/** @return The texture filter used by the texture */
-		const EE_TEX_FILTER& filter() const;
+		const EE_TEX_FILTER& getFilter() const;
 
 		/** Save the Texture to a new File */
 		bool saveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format );
@@ -128,16 +128,16 @@ class EE_API Texture : public Image, private NonCopyable {
 		void flip();
 
 		/** @return If the Texture has a copy on the local memory */
-		bool localCopy();
+		bool hasLocalCopy();
 
 		/** Unload the Texture from Memory */
 		void deleteTexture();
 
 		/** Set if the Texture is Grabed */
-		void grabed( const bool& isGrabed );
+		void setGrabed( const bool& isGrabed );
 
 		/** @return If the texture is Grabed */
-		bool grabed() const;
+		bool isGrabed() const;
 
 		/** @return If the texture was compressed on load (DXT compression) */
 		bool isCompressed() const;
@@ -252,8 +252,8 @@ class EE_API Texture : public Image, private NonCopyable {
 		Uint32 			mTexId;
 		int 			mTexture;
 
-		unsigned int 			mImgWidth;
-		unsigned int 			mImgHeight;
+		unsigned int 	mImgWidth;
+		unsigned int 	mImgHeight;
 
 		Uint32			mFlags;
 

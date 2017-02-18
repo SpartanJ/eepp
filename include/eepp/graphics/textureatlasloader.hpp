@@ -90,10 +90,10 @@ class EE_API TextureAtlasLoader {
 		void					loadFromPack( Pack * Pack, const std::string& FilePackPath );
 
 		/** @return If the loader is threaded ( asynchronous ). */
-		bool					threaded() const;
+		bool					isThreaded() const;
 
 		/** If threaded is true sets the loader as asynchronous. This must be called before the loading is done. */
-		void					threaded( const bool& threaded );
+		void					setThreaded( const bool& threaded );
 
 		/** @return True if the texture atlas is loaded. */
 		const bool&				isLoaded() const;

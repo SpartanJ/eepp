@@ -11,7 +11,7 @@ UIGfx::UIGfx( const UIGfx::CreateParams& Params ) :
 	mAlignOffset(0,0)
 {
 	if ( NULL != mSubTexture && ( ( flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) )
-		size( mSubTexture->size() );
+		size( mSubTexture->getSize() );
 
 	mColor.Alpha = (Uint8)mAlpha;
 
@@ -39,7 +39,7 @@ void UIGfx::subTexture( Graphics::SubTexture * subTexture ) {
 void UIGfx::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mSubTexture ) {
-			size( mSubTexture->size() );
+			size( mSubTexture->getSize() );
 		} else {
 			size( Sizei( 0, 0 ) );
 		}
@@ -51,19 +51,19 @@ void UIGfx::draw() {
 
 	if ( mVisible ) {
 		if ( NULL != mSubTexture && 0.f != mAlpha ) {
-			Sizef oDestSize	= mSubTexture->destSize();
-			Vector2i oOff		= mSubTexture->offset();
+			Sizef oDestSize	= mSubTexture->getDestSize();
+			Vector2i oOff		= mSubTexture->getOffset();
 
 			if ( mFlags & UI_FIT_TO_CONTROL ) {
-				mSubTexture->offset( Vector2i( 0, 0 ) );
-				mSubTexture->destSize( Vector2f( mSize.x, mSize.y ) );
+				mSubTexture->setOffset( Vector2i( 0, 0 ) );
+				mSubTexture->setDestSize( Vector2f( mSize.x, mSize.y ) );
 
 				drawSubTexture();
 
-				mSubTexture->destSize( oDestSize );
-				mSubTexture->offset( oOff );
+				mSubTexture->setDestSize( oDestSize );
+				mSubTexture->setOffset( oOff );
 			} else if ( mFlags & UI_AUTO_FIT ) {
-				mSubTexture->offset( Vector2i( 0, 0 ) );
+				mSubTexture->setOffset( Vector2i( 0, 0 ) );
 
 				Float Scale1 = mSize.x / oDestSize.x;
 				Float Scale2 = mSize.y / oDestSize.y;
@@ -72,20 +72,20 @@ void UIGfx::draw() {
 					if ( Scale2 < Scale1 )
 						Scale1 = Scale2;
 
-					mSubTexture->destSize( Sizef( oDestSize.x * Scale1, oDestSize.y * Scale1 ) );
+					mSubTexture->setDestSize( Sizef( oDestSize.x * Scale1, oDestSize.y * Scale1 ) );
 
 					autoAlign();
 
 					drawSubTexture();
 
-					mSubTexture->destSize( oDestSize );
+					mSubTexture->setDestSize( oDestSize );
 
 					autoAlign();
 				} else {
 					drawSubTexture();
 				}
 
-				mSubTexture->offset( oOff );
+				mSubTexture->setOffset( oOff );
 			} else {
 				autoAlign();
 
@@ -130,17 +130,17 @@ void UIGfx::autoAlign() {
 		return;
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.getWidth() / 2 - mSubTexture->destSize().x / 2;
+		mAlignOffset.x = mSize.getWidth() / 2 - mSubTexture->getDestSize().x / 2;
 	} else if ( FontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.getWidth() - mSubTexture->destSize().x;
+		mAlignOffset.x =  mSize.getWidth() - mSubTexture->getDestSize().x;
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.getHeight() / 2 - mSubTexture->destSize().y / 2;
+		mAlignOffset.y = mSize.getHeight() / 2 - mSubTexture->getDestSize().y / 2;
 	} else if ( FontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.getHeight() - mSubTexture->destSize().y;
+		mAlignOffset.y = mSize.getHeight() - mSubTexture->getDestSize().y;
 	} else {
 		mAlignOffset.y = 0;
 	}

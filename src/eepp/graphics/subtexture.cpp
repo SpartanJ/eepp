@@ -28,7 +28,7 @@ SubTexture::SubTexture( const Uint32& TexId, const std::string& Name ) :
 	mId( String::hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
-	mSrcRect( Recti( 0, 0, NULL != mTexture ? mTexture->imgWidth() : 0, NULL != mTexture ? mTexture->imgHeight() : 0 ) ),
+	mSrcRect( Recti( 0, 0, NULL != mTexture ? mTexture->getImageWidth() : 0, NULL != mTexture ? mTexture->getImageHeight() : 0 ) ),
 	mDestSize( (Float)mSrcRect.getSize().getWidth(), (Float)mSrcRect.getSize().getHeight() ),
 	mOffset(0,0)
 {
@@ -99,20 +99,20 @@ void SubTexture::setName( const std::string& name ) {
 	mId = String::hash( mName );
 }
 
-const Uint32& SubTexture::texture() {
+const Uint32& SubTexture::getTextureId() {
 	return mTexId;
 }
 
-void SubTexture::texture( const Uint32& TexId ) {
+void SubTexture::setTextureId( const Uint32& TexId ) {
 	mTexId		= TexId;
 	mTexture	= TextureFactory::instance()->getTexture( TexId );
 }
 
-const Recti& SubTexture::srcRect() const {
+const Recti& SubTexture::getSrcRect() const {
 	return mSrcRect;
 }
 
-void SubTexture::srcRect( const Recti& Rect ) {
+void SubTexture::setSrcRect( const Recti& Rect ) {
 	mSrcRect = Rect;
 
 	if ( NULL != mPixels )
@@ -122,19 +122,19 @@ void SubTexture::srcRect( const Recti& Rect ) {
 		cacheAlphaMask();
 }
 
-const Sizef& SubTexture::destSize() const {
+const Sizef& SubTexture::getDestSize() const {
 	return mDestSize;
 }
 
-void SubTexture::destSize( const Sizef& destSize ) {
+void SubTexture::setDestSize( const Sizef& destSize ) {
 	mDestSize = destSize;
 }
 
-const Vector2i& SubTexture::offset() const {
+const Vector2i& SubTexture::getOffset() const {
 	return mOffset;
 }
 
-void SubTexture::offset( const Vector2i& offset ) {
+void SubTexture::setOffset( const Vector2i& offset ) {
 	mOffset = offset;
 }
 
@@ -240,7 +240,7 @@ void SubTexture::cacheColors() {
 }
 
 Uint8 SubTexture::getAlphaAt( const Int32& X, const Int32& Y ) {
-	if ( mTexture->localCopy() )
+	if ( mTexture->hasLocalCopy() )
 		return mTexture->getPixel( mSrcRect.Left + X, mSrcRect.Right + Y ).a();
 
 	if ( NULL != mAlpha )
@@ -255,7 +255,7 @@ Uint8 SubTexture::getAlphaAt( const Int32& X, const Int32& Y ) {
 }
 
 ColorA SubTexture::getColorAt( const Int32& X, const Int32& Y ) {
-	if ( mTexture->localCopy() )
+	if ( mTexture->hasLocalCopy() )
 		return mTexture->getPixel( mSrcRect.Left + X, mSrcRect.Right + Y );
 
 	if ( NULL != mPixels ) {
@@ -306,7 +306,7 @@ Uint8 * SubTexture::lock() {
 bool SubTexture::unlock( const bool& KeepData, const bool& Modified ) {
 	if ( NULL != mPixels  && NULL != mTexture ) {
 		if ( Modified ) {
-			TextureSaver saver( mTexture->handle() );
+			TextureSaver saver( mTexture->getHandle() );
 
 			Uint32 Channels = mTexture->getChannels();
 			Uint32 Channel = GL_RGBA;
@@ -331,11 +331,11 @@ bool SubTexture::unlock( const bool& KeepData, const bool& Modified ) {
 	return false;
 }
 
-Sizei SubTexture::realSize() {
+Sizei SubTexture::getRealSize() {
 	return mSrcRect.getSize();
 }
 
-Sizei SubTexture::size() {
+Sizei SubTexture::getSize() {
 	return Sizei( (Int32)mDestSize.x, (Int32)mDestSize.y );
 }
 
@@ -355,11 +355,11 @@ bool SubTexture::saveToFile(const std::string& filepath, const EE_SAVE_TYPE& For
 
 	if ( NULL != mTexture ) {
 		if ( SAVE_TYPE_JPG != Format ) {
-			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, realSize().getWidth(), realSize().getHeight(), mTexture->getChannels(), getPixelsPtr() ) );
+			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, getRealSize().getWidth(), getRealSize().getHeight(), mTexture->getChannels(), getPixelsPtr() ) );
 		} else {
 			jpge::params params;
 			params.m_quality = Image::jpegQuality();
-			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), realSize().getWidth(), realSize().getHeight(), mTexture->getChannels(), getPixelsPtr(), params);
+			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), getRealSize().getWidth(), getRealSize().getHeight(), mTexture->getChannels(), getPixelsPtr(), params);
 		}
 	}
 

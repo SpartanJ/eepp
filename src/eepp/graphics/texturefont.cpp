@@ -45,7 +45,7 @@ bool TextureFont::load( const Uint32& TexId, const unsigned int& StartChar, cons
 
 		buildFont();
 
-		eePRINTL( "Texture Font %s loaded.", Tex->filepath().c_str() );
+		eePRINTL( "Texture Font %s loaded.", Tex->getFilepath().c_str() );
 
 		return true;
 	}

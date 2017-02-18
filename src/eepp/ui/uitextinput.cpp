@@ -92,7 +92,7 @@ void UITextInput::drawWaitingCursor() {
 			if ( CurPosX > (Float)mScreenPos.x + (Float)mSize.x )
 				CurPosX = (Float)mScreenPos.x + (Float)mSize.x;
 
-			P.drawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->font()->getFontHeight() ) ) );
+			P.drawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->getFont()->getFontHeight() ) ) );
 
 			if ( disableSmooth )
 				GLi->lineSmooth( true );
@@ -151,13 +151,13 @@ void UITextInput::alignFix() {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
 
-		mTextCache->font()->setText( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPos() - NLPos ) );
+		mTextCache->getFont()->setText( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPos() - NLPos ) );
 
-		Float tW	= mTextCache->font()->getTextWidth();
+		Float tW	= mTextCache->getFont()->getTextWidth();
 		Float tX	= mAlignOffset.x + tW;
 
 		mCurPos.x	= tW;
-		mCurPos.y	= (Float)LineNum * (Float)mTextCache->font()->getFontHeight();
+		mCurPos.y	= (Float)LineNum * (Float)mTextCache->getFont()->getFontHeight();
 
 		if ( !mTextBuffer.setSupportNewLine() ) {
 			if ( tX < 0.f )
@@ -215,11 +215,11 @@ const String& UITextInput::text() {
 }
 
 void UITextInput::shrinkText( const Uint32& MaxWidth ) {
-	mTextCache->text( mTextBuffer.getBuffer() );
+	mTextCache->setText( mTextBuffer.getBuffer() );
 
 	UITextBox::shrinkText( MaxWidth );
 
-	mTextBuffer.setBuffer( mTextCache->text() );
+	mTextBuffer.setBuffer( mTextCache->getText() );
 
 	alignFix();
 }
@@ -232,7 +232,7 @@ Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 		Vector2i controlPos( Pos );
 		worldToControl( controlPos );
 
-		Int32 curPos = mTextCache->font()->findClosestCursorPosFromPoint( mTextCache->text(), controlPos );
+		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), controlPos );
 
 		if ( -1 != curPos ) {
 			mTextBuffer.setCursorPos( curPos );

@@ -182,7 +182,7 @@ bool Texture::unlock( const bool& KeepData, const bool& Modified ) {
 }
 
 const Uint8 * Texture::getPixelsPtr() {
-	if ( !localCopy() ) {
+	if ( !hasLocalCopy() ) {
 		lock();
 		unlock(true);
 	}
@@ -214,7 +214,7 @@ bool Texture::saveToFile( const std::string& filepath, const EE_SAVE_TYPE& Forma
 	return Res;
 }
 
-void Texture::filter(const EE_TEX_FILTER& filter) {
+void Texture::setFilter(const EE_TEX_FILTER& filter) {
 	if ( mFilter != filter ) {
 		iTextureFilter( filter );
 	}
@@ -235,7 +235,7 @@ void Texture::iTextureFilter( const EE_TEX_FILTER& filter ) {
 	}
 }
 
-const EE_TEX_FILTER& Texture::filter() const {
+const EE_TEX_FILTER& Texture::getFilter() const {
 	return mFilter;
 }
 
@@ -298,11 +298,11 @@ void Texture::flip() {
 	mImgHeight 	= mHeight;
 }
 
-bool Texture::localCopy() {
+bool Texture::hasLocalCopy() {
 	return ( mPixels != NULL );
 }
 
-void Texture::clampMode( const EE_CLAMP_MODE& clampmode ) {
+void Texture::setClampMode( const EE_CLAMP_MODE& clampmode ) {
 	if ( mClampMode != clampmode ) {
 		mClampMode = clampmode;
 		applyClampMode();
@@ -333,7 +333,7 @@ const Uint32& Texture::getId() const {
 }
 
 void Texture::reload()  {
-	if ( localCopy() ) {
+	if ( hasLocalCopy() ) {
 		Int32 width = (Int32)mWidth;
 		Int32 height = (Int32)mHeight;
 
@@ -343,7 +343,7 @@ void Texture::reload()  {
 		flags = (mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 
 		if ( ( mFlags & TEX_FLAG_COMPRESSED ) ) {
-			if ( grabed() )
+			if ( isGrabed() )
 				mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8 *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags | SOIL_FLAG_COMPRESS_TO_DXT );
 			else
 				glCompressedTexImage2D( mTexture, 0, mInternalFormat, width, height, 0, mSize, &mPixels[0] );
@@ -354,7 +354,7 @@ void Texture::reload()  {
 
 			mSize = mWidth * mHeight * mChannels;
 
-			if ( mipmap() ) {
+			if ( getMipmap() ) {
 				int w = mWidth;
 				int h = mHeight;
 
@@ -392,11 +392,11 @@ void Texture::update( Image *image, Uint32 x, Uint32 y ) {
 	update( image->getPixelsPtr(), image->getWidth(), image->getHeight(), x, y, channelsToPixelFormat( image->getChannels() ) );
 }
 
-const Uint32& Texture::hashName() const {
+const Uint32& Texture::getHashName() const {
 	return mId;
 }
 
-void Texture::mipmap( const bool& UseMipmap ) {
+void Texture::setMipmap( const bool& UseMipmap ) {
 	if ( mFlags & TEX_FLAG_MIPMAP ) {
 		if ( !UseMipmap )
 			mFlags &= ~TEX_FLAG_MIPMAP;
@@ -406,11 +406,11 @@ void Texture::mipmap( const bool& UseMipmap ) {
 	}
 }
 
-bool Texture::mipmap() const {
+bool Texture::getMipmap() const {
 	return mFlags & TEX_FLAG_MIPMAP;
 }
 
-void Texture::grabed( const bool& isGrabed ) {
+void Texture::setGrabed( const bool& isGrabed ) {
 	if ( mFlags & TEX_FLAG_GRABED ) {
 		if ( !isGrabed )
 			mFlags &= ~TEX_FLAG_GRABED;
@@ -420,7 +420,7 @@ void Texture::grabed( const bool& isGrabed ) {
 	}
 }
 
-bool Texture::grabed() const {
+bool Texture::isGrabed() const {
 	return 0 != ( mFlags & TEX_FLAG_GRABED );
 }
 
@@ -433,8 +433,8 @@ void Texture::draw( const Float &x, const Float &y, const Float &Angle, const Ve
 }
 
 void Texture::drawFast( const Float& x, const Float& y, const Float& Angle, const Vector2f& Scale, const ColorA& Color, const EE_BLEND_MODE &Blend, const Float &width, const Float &height ) {
-	Float w = 0.f != width	? width		: (Float)imgWidth();
-	Float h = 0.f != height	? height	: (Float)imgHeight();
+	Float w = 0.f != width	? width		: (Float)getImageWidth();
+	Float h = 0.f != height	? height	: (Float)getImageHeight();
 
 	sBR->setTexture( this );
 	sBR->setBlendMode( Blend );
@@ -442,7 +442,7 @@ void Texture::drawFast( const Float& x, const Float& y, const Float& Angle, cons
 	sBR->quadsBegin();
 	sBR->quadsSetColor( Color );
 
-	if ( clampMode() == CLAMP_REPEAT ) {
+	if ( getClampMode() == CLAMP_REPEAT ) {
 		sBR->quadsSetSubsetFree( 0, 0, 0, height / h, width / w, height / h, width / w, 0 );
 	}
 
@@ -454,8 +454,8 @@ void Texture::drawFast( const Float& x, const Float& y, const Float& Angle, cons
 void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &Angle, const Vector2f &Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, OriginPoint Center, const Recti& texSector ) {
 	bool renderSector	= true;
 	Recti Sector		= texSector;
-	Float w			= (Float)imgWidth();
-	Float h			= (Float)imgHeight();
+	Float w			= (Float)getImageWidth();
+	Float h			= (Float)getImageHeight();
 
 	if ( Sector.Right == 0 && Sector.Bottom == 0 ) {
 		Sector.Left		= 0;
@@ -478,7 +478,7 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &
 	sBR->quadsSetColorFree( Color0, Color1, Color2, Color3 );
 
 	if ( Effect <= RN_FLIPMIRROR ) {
-		if ( clampMode() == CLAMP_REPEAT ) {
+		if ( getClampMode() == CLAMP_REPEAT ) {
 			if ( Effect == RN_NORMAL ) {
 				if ( renderSector ) {
 					sBR->quadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
@@ -624,14 +624,14 @@ void Texture::drawQuad( const Quad2f& Q, const Vector2f& Offset, const Float &An
 
 void Texture::drawQuadEx( Quad2f Q, const Vector2f& Offset, const Float &Angle, const Vector2f &Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE &Blend, Recti texSector ) {
 	bool renderSector = true;
-	Float w =	(Float)imgWidth();
-	Float h = (Float)imgHeight();
+	Float w =	(Float)getImageWidth();
+	Float h = (Float)getImageHeight();
 
 	if ( texSector.Right == 0 && texSector.Bottom == 0 ) {
 		texSector.Left		= 0;
 		texSector.Top		= 0;
-		texSector.Right		= imgWidth();
-		texSector.Bottom	= imgHeight();
+		texSector.Right		= getImageWidth();
+		texSector.Bottom	= getImageHeight();
 	}
 
 	renderSector = !( texSector.Left == 0 && texSector.Top == 0 && texSector.Right == w && texSector.Bottom == h );
@@ -648,7 +648,7 @@ void Texture::drawQuadEx( Quad2f Q, const Vector2f& Offset, const Float &Angle, 
 		Q.scale( Scale, QCenter );
 	}
 
-	if ( clampMode() == CLAMP_REPEAT ) {
+	if ( getClampMode() == CLAMP_REPEAT ) {
 		sBR->quadsSetSubsetFree( 0, 0, 0, ( Q.V[0].y - Q.V[0].y ) / h, ( Q.V[0].x - Q.V[0].x ) / w, ( Q.V[0].y - Q.V[0].y ) / h, ( Q.V[0].x - Q.V[0].x ) / w, 0 );
 	} else if ( renderSector ) {
 		sBR->quadsSetSubsetFree( texSector.Left / w, texSector.Top / h, texSector.Left / w, texSector.Bottom / h, texSector.Right / w, texSector.Bottom / h, texSector.Right / w, texSector.Top / h );

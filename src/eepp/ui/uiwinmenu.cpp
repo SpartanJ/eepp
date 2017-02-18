@@ -78,7 +78,7 @@ void UIWinMenu::setTheme( UITheme * Theme ) {
 	}
 
 	if ( 0 == mMenuHeight && NULL != getSkin() && NULL != getSkin()->getSubTexture( UISkinState::StateNormal ) ) {
-		mMenuHeight = getSkin()->getSubTexture( UISkinState::StateNormal )->size().getHeight();
+		mMenuHeight = getSkin()->getSubTexture( UISkinState::StateNormal )->getSize().getHeight();
 
 		size( parent()->size().getWidth(), mMenuHeight );
 
@@ -126,7 +126,7 @@ void UIWinMenu::refreshButtons() {
 		SubTexture * subTexture = getSkin()->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != subTexture ) {
-			h = subTexture->size().getHeight();
+			h = subTexture->getSize().getHeight();
 
 			if ( mButtons.begin() != mButtons.end() ) {
 				UISelectButton * tbut = mButtons.begin()->first;
@@ -135,7 +135,7 @@ void UIWinMenu::refreshButtons() {
 					SubTexture * tSubTexture2 = tbut->getSkin()->getSubTexture( UISkinState::StateSelected );
 
 					if ( NULL != tSubTexture2 )  {
-						th = tSubTexture2->size().getHeight();
+						th = tSubTexture2->getSize().getHeight();
 
 						switch ( VAlignGet( flags() ) ) {
 							case UI_VALIGN_CENTER:

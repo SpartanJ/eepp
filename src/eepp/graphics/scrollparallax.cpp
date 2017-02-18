@@ -28,11 +28,11 @@ void ScrollParallax::setSubTexture( Graphics::SubTexture * subTexture ) {
 
 void ScrollParallax::setSubTexture() {
 	if ( NULL != mSubTexture ) {
-		mRect		= mSubTexture->srcRect();
-		mRealSize	= Vector2f( (Float)mSubTexture->realSize().getWidth(), (Float)mSubTexture->realSize().getHeight() );
+		mRect		= mSubTexture->getSrcRect();
+		mRealSize	= Vector2f( (Float)mSubTexture->getRealSize().getWidth(), (Float)mSubTexture->getRealSize().getHeight() );
 
-		mTiles.x	= ( (Int32)mSize.getWidth() / mSubTexture->realSize().getWidth() ) + 1;
-		mTiles.y	= ( (Int32)mSize.getHeight() / mSubTexture->realSize().getHeight() ) + 1;
+		mTiles.x	= ( (Int32)mSize.getWidth() / mSubTexture->getRealSize().getWidth() ) + 1;
+		mTiles.y	= ( (Int32)mSize.getHeight() / mSubTexture->getRealSize().getHeight() ) + 1;
 	}
 }
 
@@ -125,7 +125,7 @@ void ScrollParallax::draw() {
 						Rect.Bottom -= (Int32)( ( Pos.y + mRealSize.getHeight() ) - mAABB.Bottom );
 					}
 
-					mSubTexture->srcRect( Rect );
+					mSubTexture->setSrcRect( Rect );
 					mSubTexture->resetDestSize();
 
 					if ( !( Rect.Right == 0 || Rect.Bottom == 0 ) )
@@ -143,7 +143,7 @@ void ScrollParallax::draw() {
 			Pos.y += mRealSize.getHeight();
 		}
 
-		mSubTexture->srcRect( mRect );
+		mSubTexture->setSrcRect( mRect );
 		mSubTexture->resetDestSize();
 	}
 }

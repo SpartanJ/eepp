@@ -29,23 +29,23 @@ Font::~Font() {
 }
 
 void Font::setText( const String& Text ) {
-	mTextCache.text( Text );
+	mTextCache.setText( Text );
 }
 
 const ColorA& Font::getColor() const {
-	return mTextCache.color();
+	return mTextCache.getColor();
 }
 
 void Font::setColor(const ColorA& color) {
-	mTextCache.color( color );
+	mTextCache.setColor( color );
 }
 
 const ColorA& Font::getShadowColor() const {
-	return mTextCache.shadowColor();
+	return mTextCache.getShadowColor();
 }
 
 void Font::setShadowColor(const ColorA& color) {
-	mTextCache.shadowColor( color );
+	mTextCache.setShadowColor( color );
 }
 
 int Font::getNumLines() {
@@ -82,7 +82,7 @@ Int32 Font::getFontDescent() const {
 }
 
 String Font::getText() {
-	return mTextCache.text();
+	return mTextCache.getText();
 }
 
 Float Font::getTextHeight() {
@@ -90,7 +90,7 @@ Float Font::getTextHeight() {
 }
 
 const std::vector<Float>& Font::getLinesWidth() {
-	return mTextCache.linesWidth();
+	return mTextCache.getLinesWidth();
 }
 
 void Font::draw( const Float& X, const Float& Y, const Uint32& Flags, const Vector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect) {
@@ -98,13 +98,13 @@ void Font::draw( const Float& X, const Float& Y, const Uint32& Flags, const Vect
 }
 
 void Font::draw( const String& Text, const Float& X, const Float& Y, const Uint32& Flags, const Vector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect ) {
-	mTextCache.text( Text );
-	mTextCache.flags( Flags );
+	mTextCache.setText( Text );
+	mTextCache.setFlags( Flags );
 	mTextCache.draw( X, Y, Scale, Angle, Effect );
 }
 
 void Font::draw( TextCache& TextCache, const Float& X, const Float& Y, const Uint32& Flags, const Vector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect ) {
-	if ( !TextCache.text().size() )
+	if ( !TextCache.getText().size() )
 		return;
 
 	GlobalBatchRenderer::instance()->draw();
@@ -116,23 +116,23 @@ void Font::draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 
 		f &= ~FONT_DRAW_SHADOW;
 
-		ColorA Col = TextCache.color();
+		ColorA Col = TextCache.getColor();
 
-		setText( TextCache.text() );
+		setText( TextCache.getText() );
 
 		if ( Col.a() != 255 ) {
-			ColorA ShadowColor = TextCache.shadowColor();
+			ColorA ShadowColor = TextCache.getShadowColor();
 
 			ShadowColor.Alpha = (Uint8)( (Float)ShadowColor.Alpha * ( (Float)Col.a() / (Float)255 ) );
 
 			setColor( ShadowColor );
 		} else {
-			setColor( TextCache.shadowColor() );
+			setColor( TextCache.getShadowColor() );
 		}
 
 		draw( X + 1, Y + 1, f, Scale, Angle, Effect );
 
-		mTextCache.flags( Flags );
+		mTextCache.setFlags( Flags );
 
 		setColor( Col );
 	}
@@ -155,18 +155,18 @@ void Font::draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 		GLi->translatef( -Center.x + X, -Center.y + Y, 0.f );
 	}
 
-	std::vector<eeVertexCoords>& RenderCoords = TextCache.vertextCoords();
-	std::vector<ColorA>& Colors = TextCache.colors();
+	std::vector<eeVertexCoords>& RenderCoords = TextCache.getVertextCoords();
+	std::vector<ColorA>& Colors = TextCache.getColors();
 
 	if ( !TextCache.cachedCoords() ) {
 		if ( !( Flags & FONT_DRAW_VERTICAL ) ) {
 			switch ( FontHAlignGet( Flags ) ) {
 				case FONT_DRAW_CENTER:
-					nX = (Float)( (Int32)( ( TextCache.getTextWidth() - TextCache.linesWidth()[ Line ] ) * 0.5f ) );
+					nX = (Float)( (Int32)( ( TextCache.getTextWidth() - TextCache.getLinesWidth()[ Line ] ) * 0.5f ) );
 					Line++;
 					break;
 				case FONT_DRAW_RIGHT:
-					nX = TextCache.getTextWidth() - TextCache.linesWidth()[ Line ];
+					nX = TextCache.getTextWidth() - TextCache.getLinesWidth()[ Line ];
 					Line++;
 					break;
 			}
@@ -174,8 +174,8 @@ void Font::draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 
 		Int32 tGlyphSize = (Int32)mGlyphs.size();
 
-		for ( unsigned int i = 0; i < TextCache.text().size(); i++ ) {
-			Char = static_cast<Int32>( TextCache.text().at(i) );
+		for ( unsigned int i = 0; i < TextCache.getText().size(); i++ ) {
+			Char = static_cast<Int32>( TextCache.getText().at(i) );
 
 			if ( Char < 0 && Char > -128 )
 				Char = 256 + Char;
@@ -206,13 +206,13 @@ void Font::draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 							nX += (getFontHeight() * Scale.y);
 							nY = 0;
 						} else {
-							if ( i + 1 < TextCache.text().size() ) {
+							if ( i + 1 < TextCache.getText().size() ) {
 								switch ( FontHAlignGet( Flags ) ) {
 									case FONT_DRAW_CENTER:
-										nX = (Float)( (Int32)( ( TextCache.getTextWidth() - TextCache.linesWidth()[ Line ] ) * 0.5f ) );
+										nX = (Float)( (Int32)( ( TextCache.getTextWidth() - TextCache.getLinesWidth()[ Line ] ) * 0.5f ) );
 										break;
 									case FONT_DRAW_RIGHT:
-										nX = TextCache.getTextWidth() - TextCache.linesWidth()[ Line ];
+										nX = TextCache.getTextWidth() - TextCache.getLinesWidth()[ Line ];
 										break;
 									default:
 										nX = 0;
@@ -477,7 +477,7 @@ void Font::selectSubStringFromCursor( const String& Text, const Int32& CurPos, I
 }
 
 void Font::cacheWidth() {
-	mTextCache.cache();
+	mTextCache.cacheWidth();
 }
 
 void Font::shrinkText( std::string& Str, const Uint32& MaxWidth ) {

@@ -15,7 +15,7 @@ UISprite::UISprite( const UISprite::CreateParams& Params ) :
 
 	if ( ( flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) {
 		if ( NULL != mSprite && NULL != mSprite->getCurrentSubTexture() ) {
-			size( mSprite->getCurrentSubTexture()->size() );
+			size( mSprite->getCurrentSubTexture()->getSize() );
 		}
 	}
 }
@@ -102,8 +102,8 @@ void UISprite::renderMode( const EE_RENDER_MODE& render ) {
 void UISprite::updateSize() {
 	if ( flags() & UI_AUTO_SIZE ) {
 		if ( NULL != mSprite ) {
-			if ( NULL != mSprite->getCurrentSubTexture() && mSprite->getCurrentSubTexture()->size() != mSize )
-				size( mSprite->getCurrentSubTexture()->size() );
+			if ( NULL != mSprite->getCurrentSubTexture() && mSprite->getCurrentSubTexture()->getSize() != mSize )
+				size( mSprite->getCurrentSubTexture()->getSize() );
 		}
 	}
 }
@@ -115,17 +115,17 @@ void UISprite::autoAlign() {
 	SubTexture * tSubTexture = mSprite->getCurrentSubTexture();
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.getWidth() / 2 - tSubTexture->size().getWidth() / 2;
+		mAlignOffset.x = mSize.getWidth() / 2 - tSubTexture->getSize().getWidth() / 2;
 	} else if ( FontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.getWidth() - tSubTexture->size().getWidth();
+		mAlignOffset.x =  mSize.getWidth() - tSubTexture->getSize().getWidth();
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.getHeight() / 2 - tSubTexture->size().getHeight() / 2;
+		mAlignOffset.y = mSize.getHeight() / 2 - tSubTexture->getSize().getHeight() / 2;
 	} else if ( FontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.getHeight() - tSubTexture->size().getHeight();
+		mAlignOffset.y = mSize.getHeight() - tSubTexture->getSize().getHeight();
 	} else {
 		mAlignOffset.y = 0;
 	}

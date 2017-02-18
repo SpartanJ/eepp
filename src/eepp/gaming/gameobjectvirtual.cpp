@@ -47,7 +47,7 @@ Uint32 GameObjectVirtual::RealType() const {
 
 Sizei GameObjectVirtual::Size() {
 	if ( NULL != mSubTexture )
-		return mSubTexture->realSize();
+		return mSubTexture->getRealSize();
 
 	if ( NULL != mLayer )
 		return mLayer->Map()->TileSize();
@@ -87,9 +87,9 @@ void GameObjectVirtual::Draw() {
 						GetAngle(),
 						Vector2f::One,
 						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->destSize().y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->destSize().x, mPos.y + mSubTexture->destSize().y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->destSize().x, mPos.y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->getDestSize().y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->getDestSize().x, mPos.y + mSubTexture->getDestSize().y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->getDestSize().x, mPos.y ) ),
 						ALPHA_NORMAL,
 						RenderModeFromFlags()
 					);

@@ -77,7 +77,7 @@ void UISpinBox::setTheme( UITheme * Theme ) {
 		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mPushUp->size( tSubTexture->realSize() );
+			mPushUp->size( tSubTexture->getRealSize() );
 		}
 	}
 
@@ -87,7 +87,7 @@ void UISpinBox::setTheme( UITheme * Theme ) {
 		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mPushDown->size( tSubTexture->realSize() );
+			mPushDown->size( tSubTexture->getRealSize() );
 		}
 	}
 

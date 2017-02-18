@@ -447,7 +447,7 @@ void MapEditor::CreateUIMap() {
 		SubTexture * tTex = HScrollSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tTex ) {
-			ScrollH = tTex->size().getHeight();
+			ScrollH = tTex->getSize().getHeight();
 		}
 	}
 
@@ -455,7 +455,7 @@ void MapEditor::CreateUIMap() {
 		SubTexture * tTex = VScrollSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tTex ) {
-			ScrollV = tTex->size().getHeight();
+			ScrollV = tTex->getSize().getHeight();
 		}
 	}
 

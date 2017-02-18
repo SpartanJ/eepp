@@ -145,7 +145,7 @@ class EE_API TextureFactory : protected Mutex {
 		bool saveImage( const std::string& filepath, const EE_SAVE_TYPE& Format, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const unsigned char* data );
 
 		/** Determine if the TextureId passed exists */
-		bool textureIdExists( const Uint32& TexId );
+		bool existsId( const Uint32& TexId );
 
 		/** @return A pointer to the Texture */
 		Texture* getTexture( const Uint32& TexId );
@@ -160,7 +160,7 @@ class EE_API TextureFactory : protected Mutex {
 		void allocate( const unsigned int& size );
 
 		/** @return The memory used by the textures (in bytes) */
-		unsigned int memorySize() { return mMemSize; }
+		unsigned int getTextureMemorySize() { return mMemSize; }
 
 		/** It's possible to create textures outside the texture factory loader, but the library will need to know of this texture, so it's necessary to push the texture to the factory.
 		* @param Filepath The Texture path ( if exists )

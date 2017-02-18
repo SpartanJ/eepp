@@ -205,14 +205,14 @@ void TextureAtlasLoader::createSubTextures() {
 
 			TextureAtlas * tTextureAtlas = TextureAtlasManager::instance()->getByName( name );
 
-			if ( NULL != tTextureAtlas && tTextureAtlas->path() == etapath ) {
+			if ( NULL != tTextureAtlas && tTextureAtlas->getPath() == etapath ) {
 				mTextureAtlas = tTextureAtlas;
 
 				IsAlreadyLoaded = true;
 			} else {
 				mTextureAtlas = eeNew( TextureAtlas, ( name ) );
 
-				mTextureAtlas->path( etapath );
+				mTextureAtlas->setPath( etapath );
 
 				TextureAtlasManager::instance()->add( mTextureAtlas );
 			}
@@ -258,11 +258,11 @@ void TextureAtlasLoader::createSubTextures() {
 	}
 }
 
-bool TextureAtlasLoader::threaded() const {
+bool TextureAtlasLoader::isThreaded() const {
 	return mThreaded;
 }
 
-void TextureAtlasLoader::threaded( const bool& threaded ) {
+void TextureAtlasLoader::setThreaded( const bool& threaded ) {
 	mThreaded = threaded;
 }
 
@@ -297,10 +297,10 @@ bool TextureAtlasLoader::updateTextureAtlas() {
 			SubTexture * tSubTexture = mTextureAtlas->getById( tSh->ResourceID );
 
 			if ( NULL != tSubTexture ) {
-				tSh->OffsetX = tSubTexture->offset().x;
-				tSh->OffsetY = tSubTexture->offset().x;
-				tSh->DestWidth = (Int32)tSubTexture->destSize().x;
-				tSh->DestHeight = (Int32)tSubTexture->destSize().x;
+				tSh->OffsetX = tSubTexture->getOffset().x;
+				tSh->OffsetY = tSubTexture->getOffset().x;
+				tSh->DestWidth = (Int32)tSubTexture->getDestSize().x;
+				tSh->DestHeight = (Int32)tSubTexture->getDestSize().x;
 			}
 		}
 	}

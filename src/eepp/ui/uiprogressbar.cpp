@@ -69,7 +69,7 @@ void UIProgressBar::setTheme( UITheme * Theme ) {
 			Float Height = (Float)getSkinSize().getHeight();
 
 			if ( !mVerticalExpand )
-				Height = (Float)tSubTexture->realSize().getHeight();
+				Height = (Float)tSubTexture->getRealSize().getHeight();
 
 			if ( Height > mSize.getHeight() )
 				Height = mSize.getHeight();
@@ -92,7 +92,7 @@ void UIProgressBar::onSizeChange() {
 		Float Height = (Float)mSize.getHeight();
 
 		if ( !mVerticalExpand && mParallax->getSubTexture() )
-			Height = (Float)mParallax->getSubTexture()->realSize().getHeight();
+			Height = (Float)mParallax->getSubTexture()->getRealSize().getHeight();
 
 		if ( Height > mSize.getHeight() )
 			Height = mSize.getHeight();

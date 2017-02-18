@@ -79,7 +79,7 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mBtnUp->size( tSubTexture->realSize() );
+			mBtnUp->size( tSubTexture->getRealSize() );
 		}
 	}
 
@@ -89,7 +89,7 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mBtnDown->size( tSubTexture->realSize() );
+			mBtnDown->size( tSubTexture->getRealSize() );
 		}
 	}
 
@@ -101,12 +101,12 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 
 			if ( NULL != tSubTexture ) {
 				if ( mSlider->isVertical() ) {
-					mSlider->size( tSubTexture->realSize().getWidth() , mSize.getHeight() );
-					size( tSubTexture->realSize().getWidth() , mSize.getHeight() );
+					mSlider->size( tSubTexture->getRealSize().getWidth() , mSize.getHeight() );
+					size( tSubTexture->getRealSize().getWidth() , mSize.getHeight() );
 					mMinControlSize.x = mSize.getWidth();
 				} else {
-					mSlider->size( mSize.getWidth(), tSubTexture->realSize().getHeight() );
-					size( mSize.getWidth(), tSubTexture->realSize().getHeight() );
+					mSlider->size( mSize.getWidth(), tSubTexture->getRealSize().getHeight() );
+					size( mSize.getWidth(), tSubTexture->getRealSize().getHeight() );
 					mMinControlSize.y = mSize.getHeight();
 				}
 			}

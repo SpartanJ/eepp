@@ -97,14 +97,14 @@ bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool Dep
 	if ( NULL == mTexture ) {
 		Uint32 TexId = TextureFactory::instance()->createEmptyTexture( Width, Height, 4, ColorA(0,0,0,0) );
 
-		if ( TextureFactory::instance()->textureIdExists( TexId ) ) {
+		if ( TextureFactory::instance()->existsId( TexId ) ) {
 			mTexture = 	TextureFactory::instance()->getTexture( TexId );
 		} else {
 			return false;
 		}
 	}
 
-	glFramebufferTexture2DEXT( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture->handle(), 0 );
+	glFramebufferTexture2DEXT( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture->getHandle(), 0 );
 
 	if ( glCheckFramebufferStatusEXT( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE ) {
 		glBindFramebufferEXT( GL_FRAMEBUFFER, mLastFB );

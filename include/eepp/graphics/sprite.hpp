@@ -338,8 +338,8 @@ class EE_API Sprite {
 		/** Removes the current callback */
 		void clearCallback();
 
-		/** Creates a copy of the current sprite and return it */
-		Sprite * copy();
+		/** Creates a copy of the current sprite and returns it */
+		Sprite clone();
 
 		/** Update the sprite animation */
 		void update( const Time& ElapsedTime );
@@ -368,7 +368,7 @@ class EE_API Sprite {
 		ColorA			mColor;
 		ColorA *			mVertexColors;
 
-		int				mRepeations; //!< Number of repetions of the animation, default -1 that equals to loop.
+		int				mRepetitions; //!< Number of repetions of the animation, default -1 that equals to loop.
 
 		EE_BLEND_MODE		mBlend;
 		EE_RENDER_MODE		mEffect;

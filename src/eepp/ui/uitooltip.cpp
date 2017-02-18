@@ -15,13 +15,13 @@ UITooltip::UITooltip( UITooltip::CreateParams& Params, UIControl * TooltipOf ) :
 	mTooltipOf( TooltipOf )
 {
 	mTextCache = eeNew( TextCache, () );
-	mTextCache->font( Params.Font );
-	mTextCache->color( mFontColor );
-	mTextCache->shadowColor( mFontShadowColor );
+	mTextCache->setFont( Params.Font );
+	mTextCache->setColor( mFontColor );
+	mTextCache->setShadowColor( mFontShadowColor );
 
 	if ( NULL == Params.Font ) {
 		if ( NULL != UIThemeManager::instance()->defaultFont() )
-			mTextCache->font( UIThemeManager::instance()->defaultFont() );
+			mTextCache->setFont( UIThemeManager::instance()->defaultFont() );
 		else
 			eePRINTL( "UITooltip::UITextBox : Created a UI TextBox without a defined font." );
 	}
@@ -55,8 +55,8 @@ void UITooltip::setTheme( UITheme * Theme ) {
 
 	autoPadding();
 
-	if ( NULL == mTextCache->font() && NULL != Theme->font() ) {
-		mTextCache->font( Theme->font() );
+	if ( NULL == mTextCache->getFont() && NULL != Theme->font() ) {
+		mTextCache->setFont( Theme->font() );
 	}
 }
 
@@ -93,19 +93,19 @@ void UITooltip::draw() {
 		UIControlAnim::draw();
 
 		if ( mTextCache->getTextWidth() ) {
-			mTextCache->flags( flags() );
+			mTextCache->setFlags( flags() );
 			mTextCache->draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, Vector2f::One, 0.f, blend() );
 		}
 	}
 }
 
 Graphics::Font * UITooltip::font() const {
-	return mTextCache->font();
+	return mTextCache->getFont();
 }
 
 void UITooltip::font( Graphics::Font * font ) {
-	if ( mTextCache->font() != font ) {
-		mTextCache->font( font );
+	if ( mTextCache->getFont() != font ) {
+		mTextCache->setFont( font );
 		autoPadding();
 		autoSize();
 		autoAlign();
@@ -114,11 +114,11 @@ void UITooltip::font( Graphics::Font * font ) {
 }
 
 const String& UITooltip::text() {
-	return mTextCache->text();
+	return mTextCache->getText();
 }
 
 void UITooltip::text( const String& text ) {
-	mTextCache->text( text );
+	mTextCache->setText( text );
 	autoPadding();
 	autoSize();
 	autoAlign();
@@ -141,7 +141,7 @@ const ColorA& UITooltip::shadowColor() const {
 void UITooltip::shadowColor( const ColorA& color ) {
 	mFontShadowColor = color;
 	alpha( color.a() );
-	mTextCache->shadowColor( mFontColor );
+	mTextCache->setShadowColor( mFontColor );
 }
 
 void UITooltip::alpha( const Float& alpha ) {
@@ -149,7 +149,7 @@ void UITooltip::alpha( const Float& alpha ) {
 	mFontColor.Alpha = (Uint8)alpha;
 	mFontShadowColor.Alpha = (Uint8)alpha;
 
-	mTextCache->color( mFontColor );
+	mTextCache->setColor( mFontColor );
 }
 
 void UITooltip::autoSize() {
@@ -195,7 +195,7 @@ void UITooltip::onSizeChange() {
 
 	UIControlAnim::onSizeChange();
 
-	mTextCache->cache();
+	mTextCache->cacheWidth();
 }
 
 void UITooltip::onTextChanged() {

@@ -55,30 +55,30 @@ class EE_API SubTexture {
 		void setName( const std::string& name );
 
 		/** @return The Texture Id that holds the SubTexture. */
-		const Uint32& texture();
+		const Uint32& getTextureId();
 
 		/** Set the Texture Id that holds the SubTexture. */
-		void texture( const Uint32& TexId );
+		void setTextureId( const Uint32& TexId );
 
 		/** @return The Texture sector that represents the SubTexture */
-		const Recti& srcRect() const;
+		const Recti& getSrcRect() const;
 
 		/** Sets the Texture sector that represents the SubTexture */
-		void srcRect( const Recti& Rect );
+		void setSrcRect( const Recti& Rect );
 
 		/** @return The Destination Size of the SubTexture. */
-		const Sizef& destSize() const;
+		const Sizef& getDestSize() const;
 
 		/** Sets the Destination Size of the SubTexture.
 		*	The size can be different from the original size of the SubTexture.
 		*	For example if the SubTexture width is 32 pixels, by default the destination width is 32 pixels, but it can be changed to anything wanted. */
-		void destSize( const Sizef& destSize );
+		void setDestSize( const Sizef& destSize );
 
 		/** @return The SubTexture default offset. The offset is added to the position passed when is drawed. */
-		const Vector2i& offset() const;
+		const Vector2i& getOffset() const;
 
 		/** Set the SubTexture offset. */
-		void offset( const Vector2i& offset );
+		void setOffset( const Vector2i& offset );
 
 		void draw( const Float& X, const Float& Y, const ColorA& Color = ColorA(), const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter) );
 
@@ -129,10 +129,10 @@ class EE_API SubTexture {
 		bool unlock( const bool& KeepData = false, const bool& Modified = false );
 
 		/** @return The SubTexture size in the texture. This is the source rect size. */
-		Sizei realSize();
+		Sizei getRealSize();
 
 		/** @return This is the same as Destination Size but with the values rounded as integers. */
-		Sizei size();
+		Sizei getSize();
 
 		/** @return A pixel pointer to the texture loaded in memory ( downloaded from VRAM doing Lock()/Unlock() ). */
 		const Uint8* getPixelsPtr();

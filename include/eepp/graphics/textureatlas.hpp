@@ -56,10 +56,10 @@ class EE_API TextureAtlas : public ResourceManager<SubTexture> {
 		void setName( const std::string& name );
 
 		/** @return The texture atlas path. */
-		const std::string& path() const;
+		const std::string& getPath() const;
 
 		/** Sets the texture atlas path. */
-		void path( const std::string& path );
+		void setPath( const std::string& path );
 
 		/** @return The texture atlas Id. The Id is the String::Hash of the texture atlas name. */
 		const Uint32& getId() const;

@@ -1383,7 +1383,7 @@ std::vector<std::string> TileMap::GetTextureAtlases() {
 
 	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
 		if ( (*it)->getId() != Restricted1 && (*it)->getId() != Restricted2 )
-			items.push_back( (*it)->path() );
+			items.push_back( (*it)->getPath() );
 	}
 
 	return items;

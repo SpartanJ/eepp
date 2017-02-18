@@ -63,9 +63,9 @@ void GameObjectSubTextureEx::Draw() {
 						mAngle,
 						mScale,
 						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->destSize().y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->destSize().x, mPos.y + mSubTexture->destSize().y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->destSize().x, mPos.y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->getDestSize().y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->getDestSize().x, mPos.y + mSubTexture->getDestSize().y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->getDestSize().x, mPos.y ) ),
 						mBlend,
 						mRender
 					);

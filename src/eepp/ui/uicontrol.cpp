@@ -1085,28 +1085,28 @@ Recti UIControl::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool Pad
 					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Left );
 
 					if ( NULL != tSubTexture )
-						tPadding.Left = tSubTexture->realSize().getWidth();
+						tPadding.Left = tSubTexture->getRealSize().getWidth();
 				}
 
 				if ( PadRight ) {
 					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Right );
 
 					if ( NULL != tSubTexture )
-						tPadding.Right = tSubTexture->realSize().getWidth();
+						tPadding.Right = tSubTexture->getRealSize().getWidth();
 				}
 
 				if ( PadTop ) {
 					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Up );
 
 					if ( NULL != tSubTexture )
-						tPadding.Top = tSubTexture->realSize().getHeight();
+						tPadding.Top = tSubTexture->getRealSize().getHeight();
 				}
 
 				if ( PadBottom ) {
 					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Down );
 
 					if ( NULL != tSubTexture )
-						tPadding.Bottom = tSubTexture->realSize().getHeight();
+						tPadding.Bottom = tSubTexture->getRealSize().getHeight();
 				}
 			}
 		}
@@ -1141,7 +1141,7 @@ Sizei UIControl::getSkinSize( UISkin * Skin, const Uint32& State ) {
 		SubTexture * tSubTexture = Skin->getSubTexture( State );
 
 		if ( NULL != tSubTexture ) {
-			tSize = tSubTexture->realSize();
+			tSize = tSubTexture->getRealSize();
 		}
 
 		if ( Skin->getType() == UISkin::SkinComplex ) {
@@ -1150,25 +1150,25 @@ Sizei UIControl::getSkinSize( UISkin * Skin, const Uint32& State ) {
 			tSubTexture = SkinC->getSubTextureSide( State, UISkinComplex::Up );
 
 			if ( NULL != tSubTexture ) {
-				tSize.y += tSubTexture->realSize().getHeight();
+				tSize.y += tSubTexture->getRealSize().getHeight();
 			}
 
 			tSubTexture = SkinC->getSubTextureSide( State, UISkinComplex::Down );
 
 			if ( NULL != tSubTexture ) {
-				tSize.y += tSubTexture->realSize().getHeight();
+				tSize.y += tSubTexture->getRealSize().getHeight();
 			}
 
 			tSubTexture = SkinC->getSubTextureSide( State, UISkinComplex::Left );
 
 			if ( NULL != tSubTexture ) {
-				tSize.x += tSubTexture->realSize().getWidth();
+				tSize.x += tSubTexture->getRealSize().getWidth();
 			}
 
 			tSubTexture = SkinC->getSubTextureSide( State, UISkinComplex::Right );
 
 			if ( NULL != tSubTexture ) {
-				tSize.x += tSubTexture->realSize().getWidth();
+				tSize.x += tSubTexture->getRealSize().getWidth();
 			}
 		}
 	}

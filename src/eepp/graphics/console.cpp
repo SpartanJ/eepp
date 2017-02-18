@@ -716,7 +716,7 @@ void Console::cmdQuit ( const std::vector < String >& params ) {
 }
 
 void Console::cmdGetTextureMemory ( const std::vector < String >& params ) {
-	privPushText( "Total texture memory used: " + FileSystem::sizeToString( TextureFactory::instance()->memorySize() ) );
+	privPushText( "Total texture memory used: " + FileSystem::sizeToString( TextureFactory::instance()->getTextureMemorySize() ) );
 }
 
 void Console::cmdCmdList ( const std::vector < String >& params ) {
