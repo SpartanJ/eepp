@@ -167,7 +167,7 @@ void UITabWidget::posTabs() {
 
 		mTabs[i]->setPosition( w, h );
 
-		w += mTabs[i]->getSize().getHeight() + mTabSeparation;
+		w += mTabs[i]->getSize().getWidth() + mTabSeparation;
 	}
 }
 
