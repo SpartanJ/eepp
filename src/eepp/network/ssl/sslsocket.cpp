@@ -135,12 +135,4 @@ Socket::Status SSLSocket::receive(Packet& packet) {
 	return TcpSocket::receive( packet );
 }
 
-Socket::Status SSLSocket::tcpSend(const void* data, std::size_t size) {
-	return TcpSocket::send( data, size );
-}
-
-Socket::Status SSLSocket::tcpReceive(void* data, std::size_t size, std::size_t& received) {
-	return TcpSocket::receive( data, size, received );
-}
-
 }}}

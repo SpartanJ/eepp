@@ -41,10 +41,6 @@ class EE_API SSLSocket : public TcpSocket {
 		std::string				mHostName;
 		bool					mValidateCertificate;
 		bool					mValidateHostname;
-		
-		Status tcpSend(const void* data, std::size_t size);
-
-		Status tcpReceive(void* data, std::size_t size, std::size_t& received);
 };
 
 }}}
