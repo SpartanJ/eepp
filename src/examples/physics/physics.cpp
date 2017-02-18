@@ -25,7 +25,7 @@ Constraint * mMouseJoint;
 #define GRABABLE_MASK_BIT (1<<31)
 #define NOT_GRABABLE_MASK (~GRABABLE_MASK_BIT)
 
-void CreateJointAndBody() {
+void createJointAndBody() {
 	mMouseJoint	= NULL;
 	mMouseBody	= eeNew( Body, ( INFINITY, INFINITY ) );
 }
@@ -33,7 +33,7 @@ void CreateJointAndBody() {
 EE::Window::Window * mWindow;
 Input * KM;
 
-void DefaultDrawOptions() {
+void defaultDrawOptions() {
 	PhysicsManager::DrawSpaceOptions * DSO = PhysicsManager::instance()->getDrawOptions();
 	DSO->DrawBBs			= false;
 	DSO->DrawShapes			= true;
@@ -43,7 +43,7 @@ void DefaultDrawOptions() {
 	DSO->LineThickness		= 1;
 }
 
-void DestroyDemo() {
+void destroyDemo() {
 	eeSAFE_DELETE( mMouseBody );
 	eeSAFE_DELETE( mSpace );
 }
@@ -108,10 +108,10 @@ Shape * make_ball( cpFloat x, cpFloat y ) {
 
 static int bodyCount = 0;
 
-void Demo1Create() {
-	DefaultDrawOptions();
+void demo1Create() {
+	defaultDrawOptions();
 
-	CreateJointAndBody();
+	createJointAndBody();
 
 	mWindow->setCaption( "eepp - Physics - Logo Smash" );
 
@@ -156,17 +156,17 @@ void Demo1Create() {
 	bodyCount++;
 }
 
-void Demo1Update(){
+void demo1Update(){
 }
 
-void Demo1Destroy() {
-	DestroyDemo();
+void demo1Destroy() {
+	destroyDemo();
 }
 
-void Demo2Create() {
-	DefaultDrawOptions();
+void demo2Create() {
+	defaultDrawOptions();
 
-	CreateJointAndBody();
+	createJointAndBody();
 
 	mWindow->setCaption( "eepp - Physics - Pyramid Stack" );
 
@@ -222,11 +222,11 @@ void Demo2Create() {
 	shape->u( 0.9f );
 }
 
-void Demo2Update() {
+void demo2Update() {
 }
 
-void Demo2Destroy() {
-	DestroyDemo();
+void demo2Destroy() {
+	destroyDemo();
 }
 
 enum CollisionTypes {
@@ -289,10 +289,10 @@ cpBool catcherBarBegin(Arbiter *arb, Space *space, void *unused) {
 	return cpFalse;
 }
 
-void Demo3Create() {
-	DefaultDrawOptions();
+void demo3Create() {
+	defaultDrawOptions();
 
-	CreateJointAndBody();
+	createJointAndBody();
 
 	mWindow->setCaption( "eepp - Physics - Sensor" );
 
@@ -335,7 +335,7 @@ void Demo3Create() {
 	mSpace->addCollisionHandler( handler );
 }
 
-void Demo3Update() {
+void demo3Update() {
 	if( !emitterInstance.blocked && emitterInstance.queue ){
 		emitterInstance.queue--;
 
@@ -348,8 +348,8 @@ void Demo3Update() {
 	}
 }
 
-void Demo3Destroy() {
-	DestroyDemo();
+void demo3Destroy() {
+	destroyDemo();
 }
 
 enum {
@@ -358,13 +358,13 @@ enum {
 
 #define STICK_SENSOR_THICKNESS 2.5f
 
-void PostStepAddJoint(Space *space, void *key, void *data)
+void postStepAddJoint(Space *space, void *key, void *data)
 {
 	Constraint *joint = (Constraint *)key;
 	space->addConstraint( joint );
 }
 
-cpBool StickyPreSolve( Arbiter *arb, Space *space, void *data )
+cpBool stickyPreSolve( Arbiter *arb, Space *space, void *data )
 {
 	// We want to fudge the collisions a bit to allow shapes to overlap more.
 	// This simulates their squishy sticky surface, and more importantly
@@ -405,7 +405,7 @@ cpBool StickyPreSolve( Arbiter *arb, Space *space, void *data )
 		joint->maxForce( 3e3 );
 
 		// Schedule a post-step() callback to add the joint.
-		space->addPostStepCallback( cb::Make3( &PostStepAddJoint ), joint, NULL );
+		space->addPostStepCallback( cb::Make3( &postStepAddJoint ), joint, NULL );
 
 		// Store the joint on the arbiter so we can remove it later.
 		arb->userData(joint);
@@ -423,14 +423,14 @@ cpBool StickyPreSolve( Arbiter *arb, Space *space, void *data )
 	// * Track a joint for each contact point. (more complicated since you only get one data pointer).
 }
 
-void PostStepRemoveJoint(Space *space, void *key, void *data)
+void postStepRemoveJoint(Space *space, void *key, void *data)
 {
 	Constraint *joint = (Constraint *)key;
 	space->removeConstraint( joint );
 	Constraint::Free( joint );
 }
 
-void StickySeparate(Arbiter *arb, Space *space, void *data)
+void stickySeparate(Arbiter *arb, Space *space, void *data)
 {
 	Constraint *joint = (Constraint *)arb->userData();
 
@@ -441,7 +441,7 @@ void StickySeparate(Arbiter *arb, Space *space, void *data)
 		joint->maxForce( 0.0f );
 
 		// Perform the removal in a post-step() callback.
-		space->addPostStepCallback( cb::Make3( &PostStepRemoveJoint ), joint, NULL );
+		space->addPostStepCallback( cb::Make3( &postStepRemoveJoint ), joint, NULL );
 
 		// NULL out the reference to the joint.
 		// Not required, but it's a good practice.
@@ -449,7 +449,7 @@ void StickySeparate(Arbiter *arb, Space *space, void *data)
 	}
 }
 
-void Demo4Create() {
+void demo4Create() {
 	PhysicsManager::DrawSpaceOptions * DSO = PhysicsManager::instance()->getDrawOptions();
 	DSO->DrawBBs			= false;
 	DSO->DrawShapes			= true;
@@ -458,7 +458,7 @@ void Demo4Create() {
 	DSO->BodyPointSize		= 0;
 	DSO->LineThickness		= 0;
 
-	CreateJointAndBody();
+	createJointAndBody();
 
 	mWindow->setCaption( "eepp - Physics - Sticky collisions using the Arbiter data pointer." );
 
@@ -514,17 +514,17 @@ void Demo4Create() {
 	Space::CollisionHandler c;
 	c.a = COLLIDE_STICK_SENSOR;
 	c.b = COLLIDE_STICK_SENSOR;
-	c.preSolve = cb::Make3( &StickyPreSolve );
-	c.separate = cb::Make3( &StickySeparate );
+	c.preSolve = cb::Make3( &stickyPreSolve );
+	c.separate = cb::Make3( &stickySeparate );
 
 	mSpace->addCollisionHandler( c );
 }
 
-void Demo4Update() {
+void demo4Update() {
 }
 
-void Demo4Destroy() {
-	DestroyDemo();
+void demo4Destroy() {
+	destroyDemo();
 }
 
 void ChangeDemo( int num ) {
@@ -538,7 +538,7 @@ void ChangeDemo( int num ) {
 	}
 }
 
-void PhysicsCreate() {
+void physicsCreate() {
 	// Initialize the physics engine
 	PhysicsManager::createSingleton();
 
@@ -547,30 +547,30 @@ void PhysicsCreate() {
 	// Add the demos
 	physicDemo demo;
 
-	demo.init		= cb::Make0( &Demo1Create );
-	demo.update		= cb::Make0( &Demo1Update );
-	demo.destroy	= cb::Make0( &Demo1Destroy );
+	demo.init		= cb::Make0( &demo1Create );
+	demo.update		= cb::Make0( &demo1Update );
+	demo.destroy	= cb::Make0( &demo1Destroy );
 	mDemo.push_back( demo );
 
-	demo.init		= cb::Make0( &Demo2Create );
-	demo.update		= cb::Make0( &Demo2Update );
-	demo.destroy	= cb::Make0( &Demo2Destroy );
+	demo.init		= cb::Make0( &demo2Create );
+	demo.update		= cb::Make0( &demo2Update );
+	demo.destroy	= cb::Make0( &demo2Destroy );
 	mDemo.push_back( demo );
 
-	demo.init		= cb::Make0( &Demo3Create );
-	demo.update		= cb::Make0( &Demo3Update );
-	demo.destroy	= cb::Make0( &Demo3Destroy );
+	demo.init		= cb::Make0( &demo3Create );
+	demo.update		= cb::Make0( &demo3Update );
+	demo.destroy	= cb::Make0( &demo3Destroy );
 	mDemo.push_back( demo );
 
-	demo.init		= cb::Make0( &Demo4Create );
-	demo.update		= cb::Make0( &Demo4Update );
-	demo.destroy	= cb::Make0( &Demo4Destroy );
+	demo.init		= cb::Make0( &demo4Create );
+	demo.update		= cb::Make0( &demo4Update );
+	demo.destroy	= cb::Make0( &demo4Destroy );
 	mDemo.push_back( demo );
 
 	ChangeDemo( 0 );
 }
 
-void PhysicsUpdate() {
+void physicsUpdate() {
 	// Creates a joint to drag any grabable object on the scene
 	mMousePoint = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
 	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
@@ -601,11 +601,11 @@ void PhysicsUpdate() {
 	mSpace->draw();
 }
 
-void PhysicsDestroy() {
+void physicsDestroy() {
 	mDemo[ mCurDemo ].destroy();
 }
 
-void MainLoop()
+void mainLoop()
 {
 	mWindow->clear();
 
@@ -615,7 +615,7 @@ void MainLoop()
 		mWindow->close();
 	}
 
-	PhysicsUpdate();
+	physicsUpdate();
 
 	if ( KM->isKeyUp( KEY_LEFT ) || KM->isKeyUp( KEY_A ) ) {
 		ChangeDemo( mCurDemo - 1 );
@@ -635,11 +635,11 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		mWindow->setBackColor( RGB( 255, 255, 255 ) );
 
-		PhysicsCreate();
+		physicsCreate();
 
-		mWindow->runMainLoop( &MainLoop );
+		mWindow->runMainLoop( &mainLoop );
 
-		PhysicsDestroy();
+		physicsDestroy();
 	}
 
 	Engine::destroySingleton();

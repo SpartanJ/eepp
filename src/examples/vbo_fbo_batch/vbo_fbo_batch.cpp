@@ -14,7 +14,7 @@ BatchRenderer * Batch = eeNew( BatchRenderer, () );
 Float ang = 0, scale = 1;
 bool side = false;
 
-void MainLoop()
+void mainLoop()
 {
 	// Clear the screen buffer
 	win->clear();
@@ -150,7 +150,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		FBO = FrameBuffer::New( 200, 200 );
 
 		// Application loop
-		win->runMainLoop( &MainLoop );
+		win->runMainLoop( &mainLoop );
 
 		// Release the allocated objects ( VBOs and FBOs need to be released manually )
 		eeSAFE_DELETE( VBO );

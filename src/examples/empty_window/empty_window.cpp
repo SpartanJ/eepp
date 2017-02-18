@@ -10,7 +10,7 @@ EE::Window::Window * win = NULL;
 float circ = 0, circ2 = 0;
 int op = 1;
 
-void MainLoop()
+void mainLoop()
 {
 	// Clear the screen buffer
 	win->clear();
@@ -105,7 +105,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// {
 		//		MainLoop();
 		// }
-		win->runMainLoop( &MainLoop );
+		win->runMainLoop( &mainLoop );
 	}
 
 	// Destroy the engine instance. Destroys all the windows and engine singletons.

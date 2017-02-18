@@ -91,7 +91,7 @@ void videoResize( EE::Window::Window * w ) {
 }
 using namespace Demo_ExternalShader;
 
-void MainLoop()
+void mainLoop()
 {
 	win->clear();
 
@@ -272,7 +272,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		}
 		#endif
 
-		win->runMainLoop( &MainLoop );
+		win->runMainLoop( &mainLoop );
 
 		eeSAFE_DELETE_ARRAY( vertices );
 		eeSAFE_DELETE_ARRAY( velocities );

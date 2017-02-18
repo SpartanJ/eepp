@@ -4,7 +4,7 @@
 std::string AppPath = Sys::getProcessPath();
 
 /// Play a sound
-void PlaySound() {
+void playSound() {
 	// The sound manager class simplyfies the load of a SoundBuffer and the creation of the Sound
 	// It manages the sound playing, if the sound channel is already playing, it will open a new channel to play the sound
 	SoundManager SoundManager;
@@ -25,7 +25,7 @@ void PlaySound() {
 }
 
 /// Play a music
-void PlayMusic() {
+void playMusic() {
 	// Load an ogg music file
 	Music music;
 
@@ -58,10 +58,10 @@ void PlayMusic() {
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Play a sound
-	PlaySound();
+	playSound();
 
 	// Play a music
-	PlayMusic();
+	playMusic();
 
 	// Wait until the user presses 'enter' key
 	std::cout << "Press enter to exit..." << std::endl;

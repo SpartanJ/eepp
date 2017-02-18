@@ -6,9 +6,9 @@ TTFFont * TTFO			= NULL;
 TTFFont * TTF2			= NULL;
 TextureFont * TexF		= NULL;
 TextureFont * TexF2	= NULL;
-TextCache * TxtCache	= NULL;
+TextCache TxtCache;
 
-void MainLoop()
+void mainLoop()
 {
 	// Clear the screen buffer
 	win->clear();
@@ -36,7 +36,7 @@ void MainLoop()
 	TexF2->draw( win->getWidth() * 0.5f - TexF2->getTextWidth() * 0.5f, ( YPos += TexF->getTextHeight() + 24 ) );
 
 	// Draw the cached text
-	TxtCache->draw( 48, ( YPos += TexF2->getTextHeight() + 24 ) );
+	TxtCache.draw( 48, ( YPos += TexF2->getTextHeight() + 24 ) );
 
 	// Text rotated and scaled
 	TTF->draw( win->getWidth() * 0.5f - TTF->getTextWidth() * 0.5f, 512, FONT_DRAW_LEFT, Vector2f( 0.75f, 0.75f ), 12.5f );
@@ -109,25 +109,23 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		// Create a new text cache to draw on screen
 		// The cached text will
-		TxtCache = eeNew( TextCache, ( TTF2, Txt, ColorA(0,0,0,255) ) );
+		TxtCache.create( TTF2, Txt, ColorA(0,0,0,255) );
 
 		// Set the text cache to be centered
-		TxtCache->setFlags( FONT_DRAW_CENTER );
+		TxtCache.setFlags( FONT_DRAW_CENTER );
 
 		// Set the font color to a substring of the text
 		// To be able to set the color of the font, create the font as white
 		// Create a gradient
-		size_t size = TxtCache->getText().size();
+		size_t size = TxtCache.getText().size();
 
 		for ( size_t i = 0; i < size; i++ ) {
-			TxtCache->setColor( ColorA(255*i/size,0,0,255), i, i+1 );
+			TxtCache.setColor( ColorA(255*i/size,0,0,255), i, i+1 );
 		}
 
 		// Application loop
-		win->runMainLoop( &MainLoop );
+		win->runMainLoop( &mainLoop );
 	}
-
-	eeSAFE_DELETE( TxtCache );
 
 	// Destroy the engine instance. Destroys all the windows and engine singletons.
 	// Fonts are autoreleased by the engine

@@ -2,7 +2,7 @@
 
 Demo_Test::EETest * TestInstance = NULL;
 
-static void MainLoop() {
+static void mainLoop() {
 	TestInstance->update();
 }
 
@@ -1528,7 +1528,7 @@ void EETest::process() {
 	if ( NULL != mWindow && mWindow->isOpen() ) {
 		TestInstance = this;
 
-		mWindow->runMainLoop( &MainLoop );
+		mWindow->runMainLoop( &mainLoop );
 	}
 
 	end();
