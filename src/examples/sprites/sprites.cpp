@@ -26,15 +26,15 @@ void spriteCallback( Uint32 Event, Sprite * Sprite, void * UserData ) {
 		// Create an interpolation to change the angle of the sprite
 		Interpolation * RotationInterpolation = reinterpret_cast<Interpolation*>( UserData );
 		RotationInterpolation->clearWaypoints();
-		RotationInterpolation->addWaypoint( Sprite->angle() );
-		RotationInterpolation->addWaypoint( Sprite->angle() + 45.f );
+		RotationInterpolation->addWaypoint( Sprite->getRotation() );
+		RotationInterpolation->addWaypoint( Sprite->getRotation() + 45.f );
 		RotationInterpolation->setTotalTime( Milliseconds( 500 ) );
 		RotationInterpolation->setType( Ease::BounceOut ); // Set the easing effect used for the interpolation
 		RotationInterpolation->start();
 
 		// Scale the sprite
-		if ( Sprite->scale().x < 3 ) {
-			Sprite->scale( Sprite->scale() + 0.25f );
+		if ( Sprite->getScale().x < 3 ) {
+			Sprite->setScale( Sprite->getScale() + 0.25f );
 		}
 	}
 }
@@ -56,7 +56,7 @@ void MainLoop()
 	// Check if the D key was pressed
 	if ( win->getInput()->isKeyUp( KEY_D ) ) {
 		// Reverse the Rock animation
-		Rock->reverseAnim( !Rock->reverseAnim() );
+		Rock->setReverseAnimation( !Rock->getReverseAnimation() );
 	}
 
 	// Update the angle interpolation
@@ -64,8 +64,8 @@ void MainLoop()
 	RockAngle.update( win->getElapsed() );
 
 	// Set the Planet and Rock angle from the interpolation
-	Planet->angle( PlanetAngle.getPos() );
-	Rock->angle( RockAngle.getPos() );
+	Planet->setRotation( PlanetAngle.getPos() );
+	Rock->setRotation( RockAngle.getPos() );
 
 	// Draw the static planet sprite
 	Planet->draw();
@@ -128,25 +128,25 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		// Set the sprite animation speed, set in Frames per Second
 		// Sprites are auto-animated by default.
-		Rock->animSpeed( 32 );
+		Rock->setAnimationSpeed( 32 );
 
 		// Set the render mode of the sprite
-		Blindy->renderMode( RN_MIRROR );
+		Blindy->setRenderMode( RN_MIRROR );
 
 		// Set the Blend Mode of the sprite
-		Blindy->blendMode( ALPHA_BLENDONE );
+		Blindy->setBlendMode( ALPHA_BLENDONE );
 
 		// Set the primitive fill mode
-		P.fillMode( DRAW_LINE );
+		P.setFillMode( DRAW_LINE );
 
 		// Set the sprites position to the screen center
 		Vector2i ScreenCenter( Engine::instance()->getWidth() / 2, Engine::instance()->getHeight() / 2 );
 
-		Planet->position( ScreenCenter.x - Planet->getAABB().getSize().getWidth() / 2, ScreenCenter.y - Planet->getAABB().getSize().getHeight() / 2 );
+		Planet->setPosition( ScreenCenter.x - Planet->getAABB().getSize().getWidth() / 2, ScreenCenter.y - Planet->getAABB().getSize().getHeight() / 2 );
 
-		Rock->position( ScreenCenter.x - Rock->getAABB().getSize().getWidth() / 2, ScreenCenter.y - Rock->getAABB().getSize().getHeight() / 2 );
+		Rock->setPosition( ScreenCenter.x - Rock->getAABB().getSize().getWidth() / 2, ScreenCenter.y - Rock->getAABB().getSize().getHeight() / 2 );
 
-		Blindy->position( ScreenCenter.x - Blindy->getAABB().getSize().getWidth() / 2, ScreenCenter.y - Blindy->getAABB().getSize().getHeight() / 2 );
+		Blindy->setPosition( ScreenCenter.x - Blindy->getAABB().getSize().getWidth() / 2, ScreenCenter.y - Blindy->getAABB().getSize().getHeight() / 2 );
 
 		// Set the planet angle interpolation
 		PlanetAngle.addWaypoint( 0 );

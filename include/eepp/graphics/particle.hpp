@@ -12,8 +12,9 @@ class EE_API Particle{
 		Particle();
 		~Particle();
 		
-		void Color(ColorAf Color, Float alphaDecay);
-		ColorAf Color() const { return mColor; }
+		void setColor(ColorAf Color, Float alphaDecay);
+
+		const ColorAf& getColor() const { return mColor; }
 		
 		Float r() { return mColor.r(); }
 		Float g() { return mColor.g(); }
@@ -21,37 +22,48 @@ class EE_API Particle{
 		Float a() { return mColor.a(); }
 		
 		void reset(const Float &x, const Float &y, const Float &xspeed, const Float &yspeed, const Float &xacc, const Float &yacc, const Float size = 16);
+
 		void update(const Float &pTime);
 		
-		void X(const Float x) { mX = x; }
-		Float X() const { return mX; }
+		void setX(const Float& x) { mX = x; }
+
+		const Float& getX() const { return mX; }
 		
-		void Y(const Float y) { mY = y; }
-		Float Y() const { return mY; }
+		void setY(const Float& y) { mY = y; }
+
+		const Float& getY() const { return mY; }
 		
-		void xSpeed(const Float xspeed) { mXSpeed = xspeed; }
-		Float xSpeed() const { return mXSpeed; }
+		void setXSpeed(const Float xspeed) { mXSpeed = xspeed; }
+
+		const Float& getXSpeed() const { return mXSpeed; }
 		
-		void ySpeed(const Float yspeed) { mYSpeed = yspeed; }
-		Float ySpeed() const { return mYSpeed; }
+		void setYSpeed(const Float& yspeed) { mYSpeed = yspeed; }
+
+		const Float& getYSpeed() const { return mYSpeed; }
 		
-		void xAcc(const Float xacc) { mXAcc = xacc; }
-		Float xAcc() const { return mXAcc; }
+		void setXAcc(const Float& xacc) { mXAcc = xacc; }
+
+		const Float& getXAcc() const { return mXAcc; }
 		
-		void yAcc(const Float yacc) { mYAcc = yacc; }
-		Float yAcc() const { return mYAcc; }
+		void setYAcc(const Float& yacc) { mYAcc = yacc; }
+
+		const Float& getYAcc() const { return mYAcc; }
 		
-		void alphaDecay(const Float alphadecay) { mAlphaDecay = alphadecay; }
-		Float alphaDecay() const { return mAlphaDecay; }
+		void setAlphaDecay(const Float& alphadecay) { mAlphaDecay = alphadecay; }
+
+		const Float& getAlphaDecay() const { return mAlphaDecay; }
 		
-		void size(const Float size) { if (size>0) mSize = size; }
-		Float size() const { return mSize; }
+		void setSize(const Float& size) { if (size>0) mSize = size; }
+
+		const Float& getSize() const { return mSize; }
 		
-		void used(const bool used) { mUsed = used; }
-		bool used() const { return mUsed; }
+		void setUsed(const bool& used) { mUsed = used; }
+
+		bool isUsed() const { return mUsed; }
 		
-		void id(const Uint32 id) { mId = id; }
-		Uint32 id() const { return mId; }
+		void setId(const Uint32& id) { mId = id; }
+
+		const Uint32& getId() const { return mId; }
 	private:
 		Float mX, mY;
 		ColorAf mColor;

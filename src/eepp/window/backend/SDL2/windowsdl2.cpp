@@ -506,9 +506,9 @@ bool WindowSDL::setIcon( const std::string& Path ) {
 
 	if ( NULL != Img.getPixelsPtr() ) {
 		const Uint8 * Ptr = Img.getPixelsPtr();
-		x = Img.width();
-		y = Img.height();
-		c = Img.channels();
+		x = Img.getWidth();
+		y = Img.getHeight();
+		c = Img.getChannels();
 
 		if ( ( x  % 8 ) == 0 && ( y % 8 ) == 0 ) {
 			Uint32 rmask, gmask, bmask, amask;

@@ -26,12 +26,12 @@ void GameObjectPolyline::Draw() {
 	Primitives P;
 
 	if ( mSelected ) {
-		P.fillMode( DRAW_FILL );
+		P.setFillMode( DRAW_FILL );
 		P.setColor( ColorA( 150, 150, 150, 150 ) );
 		P.drawPolygon( mPoly );
 	}
 
-	P.fillMode( DRAW_LINE );
+	P.setFillMode( DRAW_LINE );
 	P.setColor( ColorA( 255, 255, 0, 200 ) );
 	P.drawPolygon( mPoly );
 }

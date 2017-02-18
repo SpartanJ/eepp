@@ -116,33 +116,36 @@ class EE_API Primitives {
 		/** Set the current color for drawing primitives */
 		void setColor( const ColorA& Color );
 
-		/** Forcing the draw, will force the batch renderer to draw the batched vertexs immediately ( active by default ). */
-		void forceDraw( const bool& force );
+		/** @return The color used to draw the primitives */
+		const ColorA& getColor();
 
-		const bool& forceDraw() const;
+		/** Forcing the draw, will force the batch renderer to draw the batched vertexs immediately ( active by default ). */
+		void setForceDraw( const bool& force );
+
+		const bool& getForceDraw() const;
 
 		/** Force to draw the batched vertexs. */
 		void drawBatch();
 
 		/** Set the fill mode used to draw primitives */
-		void fillMode( const EE_FILL_MODE& Mode );
+		void setFillMode( const EE_FILL_MODE& Mode );
 
 		/** @return The fill mode used to draw primitives */
-		const EE_FILL_MODE& fillMode() const;
+		const EE_FILL_MODE& getFillMode() const;
 
 		/** Set the blend mode used to draw primitives */
-		void blendMode( const EE_BLEND_MODE& Mode );
+		void setBlendMode( const EE_BLEND_MODE& Mode );
 
 		/** @return The blend mode used to draw primitives */
-		const EE_BLEND_MODE& blendMode() const;
+		const EE_BLEND_MODE& getBlendMode() const;
 
 		/** Set the line width to draw primitives */
-		void lineWidth( const Float& width );
+		void setLineWidth( const Float& width );
 
 		/** @return The line with to draw primitives */
-		const Float& lineWidth() const;
+		const Float& getLineWidth() const;
 	private:
-		ColorA				mColor;
+		ColorA					mColor;
 		EE_FILL_MODE			mFillMode;
 		EE_BLEND_MODE			mBlendMode;
 		Float					mLineWidth;

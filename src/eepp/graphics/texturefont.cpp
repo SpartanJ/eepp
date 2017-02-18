@@ -34,8 +34,8 @@ bool TextureFont::load( const Uint32& TexId, const unsigned int& StartChar, cons
 		mtX				= ( 1 / static_cast<Float>( mTexColumns ) );
 		mtY				= ( 1 / static_cast<Float>( mTexRows ) );
 
-		mFWidth			= (Float)( Tex->width() / mTexColumns );
-		mFHeight		= (Float)( Tex->height() / mTexRows );
+		mFWidth			= (Float)( Tex->getWidth() / mTexColumns );
+		mFHeight		= (Float)( Tex->getHeight() / mTexRows );
 		mHeight			= mSize = mLineSkip = (unsigned int)mFHeight;
 
 		if ( Spacing == 0 )
@@ -114,11 +114,11 @@ void TextureFont::buildFromGlyphs() {
 	for (unsigned int i = 0; i < mNumChars; i++) {
 		tGlyph		= mGlyphs[i];
 
-		tR.Left		= (Float)tGlyph.CurX / Tex->width();
-		tR.Top		= (Float)tGlyph.CurY / Tex->height();
+		tR.Left		= (Float)tGlyph.CurX / Tex->getWidth();
+		tR.Top		= (Float)tGlyph.CurY / Tex->getHeight();
 
-		tR.Right	= (Float)(tGlyph.CurX + tGlyph.CurW) / Tex->width();
-		tR.Bottom	= (Float)(tGlyph.CurY + tGlyph.CurH) / Tex->height();
+		tR.Right	= (Float)(tGlyph.CurX + tGlyph.CurW) / Tex->getWidth();
+		tR.Bottom	= (Float)(tGlyph.CurY + tGlyph.CurH) / Tex->getHeight();
 
 		Top = 		mHeight + mDescent 	- tGlyph.GlyphH - tGlyph.MinY;
 		Bottom = 	mHeight + mDescent 	+ tGlyph.GlyphH - tGlyph.MaxY;

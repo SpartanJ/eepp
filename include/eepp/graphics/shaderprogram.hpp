@@ -55,10 +55,10 @@ class EE_API ShaderProgram {
 		virtual void unbind() const;
 
 		/** @return The location of the location name */
-		Int32 uniformLocation( const std::string& getName );
+		Int32 getUniformLocation( const std::string& getName );
 
 		/** @return The location of the attribute name */
-		Int32 attributeLocation( const std::string& getName );
+		Int32 getAttributeLocation( const std::string& getName );
 
 		/** Clear the locations */
 		void invalidateLocations();

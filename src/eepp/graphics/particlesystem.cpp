@@ -82,8 +82,8 @@ void ParticleSystem::begin() {
 
 	for ( Uint32 i=0; i < mPCount; i++ ) {
 		P = &mParticle[i];
-		P->used(true);
-		P->id(i+1);
+		P->setUsed(true);
+		P->setId(i+1);
 
 		reset( P );
 	}
@@ -100,13 +100,13 @@ void ParticleSystem::reset( Particle * P ) {
 		case PSE_Nofx:
 		{
 			P->reset( mPos.x, mPos.y, mSpeed.x, mSpeed.y, mAcc.x, mAcc.y, mSize );
-			P->Color( mColor , mAlphaDecay );
+			P->setColor( mColor , mAlphaDecay );
 			break;
 		}
 		case PSE_BlueBall:
 		{
 			P->reset( mPos.x, mPos.y, -10, ( -1 * Math::randf() ), 0.01f, Math::randf(), mSize );
-			P->Color( ColorAf( 0.25f ,0.25f ,1 ,1 ), 0.1f + ( 0.1f * Math::randf() ) );
+			P->setColor( ColorAf( 0.25f ,0.25f ,1 ,1 ), 0.1f + ( 0.1f * Math::randf() ) );
 			break;
 		}
 		case PSE_Fire:
@@ -115,7 +115,7 @@ void ParticleSystem::reset( Particle * P ) {
 			y = ( mPos2.y - mPos.y + 1 ) * Math::randf() + mPos.y;
 
 			P->reset( x, y, Math::randf() - 0.5f, ( Math::randf() - 1.1f ) * 8.5f, 0.f, 0.05f, mSize );
-			P->Color( ColorAf( 1.f, 0.5f, 0.1f, ( Math::randf() * 0.5f ) ), Math::randf() * 0.4f + 0.01f );
+			P->setColor( ColorAf( 1.f, 0.5f, 0.1f, ( Math::randf() * 0.5f ) ), Math::randf() * 0.4f + 0.01f );
 			break;
 		}
 		case PSE_Smoke:
@@ -124,7 +124,7 @@ void ParticleSystem::reset( Particle * P ) {
 			y = ( mPos2.y - mPos.y + 1 ) * Math::randf() + mPos.y;
 
 			P->reset( x, y, -( Math::randf() / 3.f + 0.1f ), ( ( Math::randf() * 0.5f ) - 0.7f ) * 3, ( Math::randf() / 200.f ), ( Math::randf() - 0.5f ) / 200.f );
-			P->Color( ColorAf( 0.8f, 0.8f, 0.8f, 0.3f ), ( Math::randf() * 0.005f ) + 0.005f );
+			P->setColor( ColorAf( 0.8f, 0.8f, 0.8f, 0.3f ), ( Math::randf() * 0.005f ) + 0.005f );
 			break;
 		}
 		case PSE_Snow:
@@ -134,31 +134,31 @@ void ParticleSystem::reset( Particle * P ) {
 			w = ( Math::randf() + 0.3f ) * 4;
 
 			P->reset( x, y, Math::randf() - 0.5f, w, 0.f, 0.f, w * 3 );
-			P->Color( ColorAf( 1.f, 1.f, 1.f, 0.5f ), 0 );
+			P->setColor( ColorAf( 1.f, 1.f, 1.f, 0.5f ), 0 );
 			break;
 		}
 		case PSE_MagicFire:
 		{
 			P->reset( mPos.x + Math::randf() , mPos.y, -0.4f + Math::randf() * 0.8f, -0.5f - Math::randf() * 0.4f, 0.f, -( Math::randf() * 0.3f ) );
-			P->Color( ColorAf( 1.f, 0.5f, 0.1f, 0.7f + 0.2f * Math::randf() ), 0.01f + Math::randf() * 0.05f );
+			P->setColor( ColorAf( 1.f, 0.5f, 0.1f, 0.7f + 0.2f * Math::randf() ), 0.01f + Math::randf() * 0.05f );
 			break;
 		}
 		case PSE_LevelUp:
 		{
 			P->reset( mPos.x, mPos.y, Math::randf() * 1.5f - 0.75f, Math::randf() * 1.5f - 0.75f, Math::randf() * 4 - 2, Math::randf() * -4 + 2 );
-			P->Color( ColorAf( 1.f, 0.5f, 0.1f, 1.f ), 0.07f + Math::randf() * 0.01f );
+			P->setColor( ColorAf( 1.f, 0.5f, 0.1f, 1.f ), 0.07f + Math::randf() * 0.01f );
 			break;
 		}
 		case PSE_LevelUp2:
 		{
 			P->reset( mPos.x + Math::randf() * 32 - 16, mPos.y + Math::randf() * 64 - 32, Math::randf() - 0.5f, Math::randf() - 0.5f, Math::randf() - 0.5f, Math::randf() * -0.9f + 0.45f );
-			P->Color( ColorAf( 0.1f + Math::randf() * 0.1f, 0.1f + Math::randf() * 0.1f, 0.8f + Math::randf() * 0.3f, 1 ), 0.07f + Math::randf() * 0.01f );
+			P->setColor( ColorAf( 0.1f + Math::randf() * 0.1f, 0.1f + Math::randf() * 0.1f, 0.8f + Math::randf() * 0.3f, 1 ), 0.07f + Math::randf() * 0.01f );
 			break;
 		}
 		case PSE_Heal:
 		{
 			P->reset( mPos.x, mPos.y, Math::randf() * 1.4f - 0.7f, Math::randf() * -0.4f - 1.5f, Math::randf() - 0.5f, Math::randf() * -0.2f + 0.1f );
-			P->Color( ColorAf( 0.2f, 0.3f, 0.9f, 0.4f ), 0.01f + Math::randf() * 0.01f );
+			P->setColor( ColorAf( 0.2f, 0.3f, 0.9f, 0.4f ), 0.01f + Math::randf() * 0.01f );
 			break;
 		}
 		case PSE_WormHole:
@@ -175,12 +175,12 @@ void ParticleSystem::reset( Particle * P ) {
 			}
 
 			mProgression	= (int) Math::randf() * 10;
-			radio			= ( P->id() * 0.125f ) * mProgression;
-			x				= mPos.x + ( radio * eecos( (Float)P->id() ) );
-			y				= mPos.y + ( radio * eesin( (Float)P->id() ) );
+			radio			= ( P->getId() * 0.125f ) * mProgression;
+			x				= mPos.x + ( radio * eecos( (Float)P->getId() ) );
+			y				= mPos.y + ( radio * eesin( (Float)P->getId() ) );
 
 			P->reset( x, y, VarB[0], VarB[1], VarB[2], VarB[3] );
-			P->Color( ColorAf( 1.f, 0.6f, 0.3f, 1.f ), 0.02f + Math::randf() * 0.3f );
+			P->setColor( ColorAf( 1.f, 0.6f, 0.3f, 1.f ), 0.02f + Math::randf() * 0.3f );
 			break;
 		}
 		case PSE_Twirl:
@@ -195,65 +195,65 @@ void ParticleSystem::reset( Particle * P ) {
 			else if ( mProgression < -50 )
 				mDirection = 1;
 
-			q		= ( ( P->id() * 0.01f ) + mProgression ) * 2;
+			q		= ( ( P->getId() * 0.01f ) + mProgression ) * 2;
 			x		= mPos.x - w * eesin( q );
 			y		= mPos.y - z * eecos( q );
 
 			P->reset( x, y, 1, 1, 0, 0 );
-			P->Color( ColorAf( 1.f, 0.25f, 0.25f, 1 ), 0.6f + Math::randf() * 0.3f );
+			P->setColor( ColorAf( 1.f, 0.25f, 0.25f, 1 ), 0.6f + Math::randf() * 0.3f );
 			break;
 		}
 		case PSE_Flower:
 		{
-			radio	= eecos( 2 * ( (Float)P->id() * 0.1f ) ) * 50;
-			x		= mPos.x + radio * eecos( (Float)P->id() * 0.1f );
-			y		= mPos.y + radio * eesin( (Float)P->id() * 0.1f );
+			radio	= eecos( 2 * ( (Float)P->getId() * 0.1f ) ) * 50;
+			x		= mPos.x + radio * eecos( (Float)P->getId() * 0.1f );
+			y		= mPos.y + radio * eesin( (Float)P->getId() * 0.1f );
 
 			P->reset( x, y, 1, 1, 0, 0 );
-			P->Color( ColorAf( 1.f, 0.25f, 0.1f, 0.1f ), 0.3f + ( 0.2f * Math::randf()) + Math::randf() * 0.3f );
+			P->setColor( ColorAf( 1.f, 0.25f, 0.1f, 0.1f ), 0.3f + ( 0.2f * Math::randf()) + Math::randf() * 0.3f );
 			break;
 		}
 		case PSE_Galaxy:
 		{
-			radio	= ( Math::randf( 1.f, 1.2f ) + eesin( 20.f / (Float)P->id() ) ) * 60;
-			x		= mPos.x + radio * eecos( (Float)P->id() );
-			y		= mPos.y + radio * eesin( (Float)P->id() );
+			radio	= ( Math::randf( 1.f, 1.2f ) + eesin( 20.f / (Float)P->getId() ) ) * 60;
+			x		= mPos.x + radio * eecos( (Float)P->getId() );
+			y		= mPos.y + radio * eesin( (Float)P->getId() );
 
 			P->reset( x, y, 0, 0, 0, 0 );
-			P->Color( ColorAf( 0.2f, 0.2f, 0.6f + 0.4f * Math::randf(), 1.f ), Math::randf( 0.05f, 0.15f ) );
+			P->setColor( ColorAf( 0.2f, 0.2f, 0.6f + 0.4f * Math::randf(), 1.f ), Math::randf( 0.05f, 0.15f ) );
 			break;
 		}
 		case PSE_Heart:
 		{
-			q		= P->id() * 0.01f;
+			q		= P->getId() * 0.01f;
 			x		= mPos.x - 50 * eesin( q * 2 ) * eesqrt( eeabs( eecos( q ) ) );
 			y		= mPos.y - 50 * eecos( q * 2 ) * eesqrt( eeabs( eesin( q ) ) );
 
 			P->reset( x, y, 0.f, 0.f, 0.f, -( Math::randf() * 0.2f ) );
-			P->Color( ColorAf( 1.f, 0.5f, 0.2f, 0.6f + 0.2f * Math::randf() ), 0.01f + Math::randf() * 0.08f );
+			P->setColor( ColorAf( 1.f, 0.5f, 0.2f, 0.6f + 0.2f * Math::randf() ), 0.01f + Math::randf() * 0.08f );
 			break;
 		}
 		case PSE_BlueExplosion:
 		{
-			if ( P->id() == 0 )
+			if ( P->getId() == 0 )
 				mProgression += 10;
 
-			radio	= atan( static_cast<Float>( P->id() % 12 ) );
-			x		= mPos.x + ( radio * eecos( (Float)P->id() / mProgression ) * 30 );
-			y		= mPos.y + ( radio * eesin( (Float)P->id() / mProgression ) * 30 );
+			radio	= atan( static_cast<Float>( P->getId() % 12 ) );
+			x		= mPos.x + ( radio * eecos( (Float)P->getId() / mProgression ) * 30 );
+			y		= mPos.y + ( radio * eesin( (Float)P->getId() / mProgression ) * 30 );
 
-			P->reset(x, y, eecos( (Float)P->id() ), eesin( (Float)P->id() ), 0, 0 );
-			P->Color( ColorAf( 0.3f, 0.6f, 1.f, 1.f ), 0.03f );
+			P->reset(x, y, eecos( (Float)P->getId() ), eesin( (Float)P->getId() ), 0, 0 );
+			P->setColor( ColorAf( 0.3f, 0.6f, 1.f, 1.f ), 0.03f );
 			break;
 		}
 		case PSE_GP:
 		{
-			radio	= 50 + Math::randf() * 15 * eecos( (Float)P->id() * 3.5f );
-			x		= mPos.x + ( radio * eecos( (Float)P->id() * (Float)0.01428571428 ) );
-			y		= mPos.y + ( radio * eesin( (Float)P->id() * (Float)0.01428571428 ) );
+			radio	= 50 + Math::randf() * 15 * eecos( (Float)P->getId() * 3.5f );
+			x		= mPos.x + ( radio * eecos( (Float)P->getId() * (Float)0.01428571428 ) );
+			y		= mPos.y + ( radio * eesin( (Float)P->getId() * (Float)0.01428571428 ) );
 
 			P->reset( x, y, 0, 0, 0, 0 );
-			P->Color( ColorAf( 0.2f, 0.8f, 0.4f, 0.5f ), Math::randf() * 0.3f );
+			P->setColor( ColorAf( 0.2f, 0.8f, 0.4f, 0.5f ), Math::randf() * 0.3f );
 			break;
 		}
 		case PSE_BTwirl:
@@ -267,12 +267,12 @@ void ParticleSystem::reset( Particle * P ) {
 			else if ( mProgression < -50 )
 				mDirection = 1;
 
-			q		= ( P->id() * 0.01f + mProgression ) * 2;
+			q		= ( P->getId() * 0.01f + mProgression ) * 2;
 			x		= mPos.x + w * eesin( q );
 			y		= mPos.y - w * eecos( q );
 
 			P->reset( x, y, 1, 1, 0, 0 );
-			P->Color( ColorAf( 0.25f, 0.25f, 1.f, 1.f ), 0.1f + Math::randf() * 0.3f + Math::randf() * 0.3f );
+			P->setColor( ColorAf( 0.25f, 0.25f, 1.f, 1.f ), 0.1f + Math::randf() * 0.3f + Math::randf() * 0.3f );
 			break;
 		}
 		case PSE_BT:
@@ -286,22 +286,22 @@ void ParticleSystem::reset( Particle * P ) {
 			else if ( mProgression < -50 )
 				mDirection = 1;
 
-			q		= ( P->id() * 0.01f + mProgression ) * 2;
+			q		= ( P->getId() * 0.01f + mProgression ) * 2;
 			x		= mPos.x + w * eesin( q );
 			y		= mPos.y - w * eecos( q );
 
 			P->reset( x, y, -10, -1 * Math::randf(), 0, Math::randf() );
-			P->Color( ColorAf( 0.25f, 0.25f, 1.f, 1.f ), 0.1f + Math::randf() * 0.1f + Math::randf() * 0.3f );
+			P->setColor( ColorAf( 0.25f, 0.25f, 1.f, 1.f ), 0.1f + Math::randf() * 0.1f + Math::randf() * 0.3f );
 			break;
 		}
 		case PSE_Atomic:
 		{
-			radio	= 10 + eesin( 2 * ( (Float)P->id() * 0.1f ) ) * 50;
-			x		= mPos.x + radio * eecos( (Float)P->id() * 0.033333 );
-			y		= mPos.y + radio * eesin( (Float)P->id() * 0.033333 );
+			radio	= 10 + eesin( 2 * ( (Float)P->getId() * 0.1f ) ) * 50;
+			x		= mPos.x + radio * eecos( (Float)P->getId() * 0.033333 );
+			y		= mPos.y + radio * eesin( (Float)P->getId() * 0.033333 );
 
 			P->reset( x, y, 1, 1, 0, 0 );
-			P->Color( ColorAf( 0.4f, 0.25f, 1.f, 1.f ), 0.3f + Math::randf() * 0.2f + Math::randf() * 0.3f );
+			P->setColor( ColorAf( 0.4f, 0.25f, 1.f, 1.f ), 0.3f + Math::randf() * 0.2f + Math::randf() * 0.3f );
 			break;
 		}
 		case PSE_Callback:
@@ -322,7 +322,7 @@ void ParticleSystem::draw() {
 	TextureFactory * TF = TextureFactory::instance();
 
 	TF->bind( mTexId );
-	BlendMode::SetMode( mBlend );
+	BlendMode::setMode( mBlend );
 
 	if ( mPointsSup ) {
 		GLi->enable( GL_POINT_SPRITE );
@@ -352,9 +352,9 @@ void ParticleSystem::draw() {
 		for ( Uint32 i = 0; i < mPCount; i++ ) {
 			P = &mParticle[i];
 
-			if ( P->used() ) {
+			if ( P->isUsed() ) {
 				BR->quadsSetColor( ColorA( static_cast<Uint8> ( P->r() * 255 ), static_cast<Uint8> ( P->g() * 255 ), static_cast<Uint8>( P->b() * 255 ), static_cast<Uint8>( P->a() * 255 ) ) );
-				BR->batchQuad( P->X() - mHSize, P->Y() - mHSize, mSize, mSize );
+				BR->batchQuad( P->getX() - mHSize, P->getY() - mHSize, mSize, mSize );
 			}
 		}
 
@@ -375,14 +375,14 @@ void ParticleSystem::update( const System::Time& time ) {
 	for ( Uint32 i = 0; i < mPCount; i++ ) {
 		P = &mParticle[i];
 
-		if ( P->used() || P->a() > 0.f ) {
+		if ( P->isUsed() || P->a() > 0.f ) {
 			P->update( time.asMilliseconds() * mTime );
 
 			// If not alive
 			if ( P->a() <= 0.f ) {
 				if ( !mLoop ) { // If not loop
 					if ( mLoops == 1 ) { // If left only one loop
-						P->used(false);
+						P->setUsed(false);
 						mPLeft--;
 					} else { // more than one
 						if ( i == 0 )
@@ -411,39 +411,39 @@ void ParticleSystem::reuse() {
 	mLoops	= 0;
 
 	for ( Uint32 i = 0; i < mPCount; i++ )
-		mParticle[i].used( true );
+		mParticle[i].setUsed( true );
 }
 
 void ParticleSystem::kill() {
 	mUsed = false;
 }
 
-void ParticleSystem::position( const Vector2f& Pos ) {
+void ParticleSystem::setPosition( const Vector2f& Pos ) {
 	mPos2.x	= Pos.x + ( mPos2.x - mPos.x );
 	mPos2.y	= Pos.y + ( mPos2.y - mPos.y );
 	mPos.x	= Pos.x;
 	mPos.y	= Pos.y;
 }
 
-const Vector2f& ParticleSystem::position() const {
+const Vector2f& ParticleSystem::getPosition() const {
 	return mPos;
 }
 
-void ParticleSystem::position(const Float& x, const Float& y) {
-	position( Vector2f( x, y ) );
+void ParticleSystem::setPosition(const Float& x, const Float& y) {
+	setPosition( Vector2f( x, y ) );
 }
 
-void ParticleSystem::position2( const Vector2f& Pos ) {
+void ParticleSystem::setPosition2( const Vector2f& Pos ) {
 	mPos2.x = Pos.x + ( Pos.x - mPos.x );
 	mPos2.y = Pos.y + ( Pos.y - mPos.y );
 }
 
-const Vector2f& ParticleSystem::position2() const {
+const Vector2f& ParticleSystem::getPosition2() const {
 	return mPos2;
 }
 
-void ParticleSystem::position2( const Float& x, const Float& y ) {
-	position( Vector2f( x, y ) );
+void ParticleSystem::setPosition2( const Float& x, const Float& y ) {
+	setPosition( Vector2f( x, y ) );
 }
 
 void ParticleSystem::time( const Float& time ) {
@@ -462,43 +462,43 @@ bool ParticleSystem::isUsing() const {
 	return mUsed;
 }
 
-const EE_BLEND_MODE& ParticleSystem::blendMode() const {
+const EE_BLEND_MODE& ParticleSystem::getBlendMode() const {
 	return mBlend;
 }
 
-void ParticleSystem::blendMode( const EE_BLEND_MODE& mode ) {
+void ParticleSystem::setBlendMode( const EE_BLEND_MODE& mode ) {
 	mBlend = mode;
 }
 
-const ColorAf& ParticleSystem::color() const {
+const ColorAf& ParticleSystem::getColor() const {
 	return mColor;
 }
 
-void ParticleSystem::color( const ColorAf& Col ) {
+void ParticleSystem::setColor( const ColorAf& Col ) {
 	mColor = Col;
 }
 
-const Float& ParticleSystem::alphaDecay() const {
+const Float& ParticleSystem::getAlphaDecay() const {
 	return mAlphaDecay;
 }
 
-void ParticleSystem::alphaDecay( const Float& Decay ) {
+void ParticleSystem::setAlphaDecay( const Float& Decay ) {
 	mAlphaDecay = Decay;
 }
 
-const Vector2f& ParticleSystem::speed() const {
+const Vector2f& ParticleSystem::getSpeed() const {
 	return mSpeed;
 }
 
-void ParticleSystem::speed( const Vector2f& speed ) {
+void ParticleSystem::setSpeed( const Vector2f& speed ) {
 	mSpeed = speed;
 }
 
-const Vector2f& ParticleSystem::acceleration() const {
+const Vector2f& ParticleSystem::getAcceleration() const {
 	return mAcc;
 }
 
-void ParticleSystem::acceleration( const Vector2f& acc ) {
+void ParticleSystem::setAcceleration( const Vector2f& acc ) {
 	mAcc = acc;
 }
 

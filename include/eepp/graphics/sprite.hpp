@@ -52,35 +52,35 @@ class EE_API Sprite {
 		Sprite& operator =( const Sprite& Other );
 
 		/** Set the x axis position */
-		void x( const Float& x );
+		void setX( const Float& getX );
 
 		/** @return The x axis position */
-		Float x() const;
+		Float getX() const;
 
 		/** Set the y axis position */
-		void y( const Float& y );
+		void setY( const Float& y );
 
 		/** @return The y axis position */
-		Float y() const;
+		Float getY() const;
 
 		/** Set the Angle for the rendered sprite */
-		void angle( const Float& angle );
+		void setRotation( const Float& rotation );
 
 		/** @return The Angle for the rendered sprite */
-		Float angle() const;
+		Float getRotation() const;
 
 		/** Rotates the sprite. Adds the new angle to the current rotation. Same as:
 		**	@code sprite.Angle( sprite.Angle() + angle ); @endcode */
 		void rotate( const Float& angle );
 
 		/** Set the Scale for the rendered sprite */
-		void scale( const Float& scale );
+		void setScale( const Float& scale );
 
 		/** Set the Scale for the rendered sprite */
-		void scale( const Vector2f& scale );
+		void setScale( const Vector2f& scale );
 
 		/** @return The Scale for the rendered sprite */
-		const Vector2f& scale() const;
+		const Vector2f& getScale() const;
 
 		/**	@brief Set the local origin of the sprite
 		**	The origin of an object defines the center point for
@@ -88,85 +88,85 @@ class EE_API Sprite {
 		**	The coordinates of this point must be relative to the
 		**	top-left corner of the sprite.
 		**	The default origin point is the center of the sprite. */
-		void origin( const OriginPoint& origin );
+		void setOrigin( const OriginPoint& origin );
 
 		/** @return The local origin of the sprite */
-		const OriginPoint& origin() const;
+		const OriginPoint& getOrigin() const;
 
 		/** Set the Frame Number Sprite Size
 		* @param Size The new size
 		* @param FrameNum If the Frame Number is 0 it will use the Current Frame Number
 		* @param SubFrame If the Sub Frame Number is 0 it will use the Current Sub Frame Number
 		*/
-		void size( const Sizef& size, const unsigned int& FrameNum, const unsigned int& SubFrame );
+		void setSize( const Sizef& size, const unsigned int& FrameNum, const unsigned int& SubFrame );
 
 		/** Set the current SubTexture Size ( destination size ) */
-		void size( const Sizef& size );
+		void setSize( const Sizef& size );
 
 		/** @return the Frame Number Sprite Size
 		* @param FrameNum If the Frame Number is 0 it will use the Current Frame Number
 		* @param SubFrame If the Sub Frame Number is 0 it will use the Current Sub Frame Number
 		*/
-		Sizef size( const unsigned int& FrameNum, const unsigned int& SubFrame );
+		Sizef setSize( const unsigned int& FrameNum, const unsigned int& SubFrame );
 
 		/** @return The current Frame Size */
-		Sizef size();
+		Sizef getSize();
 
 		/** Set the sprite animation speed ( AnimSpeed equals to Animation Frames per Second ) */
-		void animSpeed( const Float& animSpeed );
+		void setAnimationSpeed( const Float& animSpeed );
 
 		/** @return The sprite animation speed ( AnimSpeed equals to Animation Frames per Second ) */
-		Float animSpeed() const;
+		Float getAnimationSpeed() const;
 
 		/** @return If the animation is paused */
-		bool animPaused() const;
+		bool isAnimationPaused() const;
 
 		/** Set the animation paused or not */
-		void animPaused( const bool& Pause );
+		void setAnimationPaused( const bool& Pause );
 
 		/** Set the sprite color */
-		void color( const ColorA& color);
+		void setColor( const ColorA& color);
 
 		/** @return The sprite color */
-		const ColorA& color() const;
+		const ColorA& getColor() const;
 
 		/** Set the sprite Color Alpha */
-		void alpha( const Uint8& alpha );
+		void setAlpha( const Uint8& alpha );
 
 		/** @return The sprite Color Alpha */
-		const Uint8& alpha() const;
+		const Uint8& getAlpha() const;
 
 		/** Set the Current Frame */
-		void currentFrame( unsigned int CurFrame );
+		void setCurrentFrame( unsigned int CurFrame );
 
 		/** @return The Current Frame */
-		const unsigned int& currentFrame() const;
+		const unsigned int& getCurrentFrame() const;
 
 		/** @return The Exact Current FrameData
 		* @return The Float fpoint of the current frame, the exact position of the interpolation.
 		*/
-		const Float& exactCurrentFrame() const;
+		const Float& getExactCurrentFrame() const;
 
 		/** Set the exact current FrameData */
-		void exactCurrentFrame( const Float& currentFrame );
+		void setExactCurrentFrame( const Float& currentFrame );
 
 		/** Set the Current Sub Frame */
-		void currentSubFrame( const unsigned int &CurSubFrame );
+		void setCurrentSubFrame( const unsigned int &CurSubFrame );
 
 		/** @return The Current Sub Frame */
-		const unsigned int& currentSubFrame() const;
+		const unsigned int& getCurrentSubFrame() const;
 
 		/** Set the Render Type */
-		void renderMode( const EE_RENDER_MODE& Effect );
+		void setRenderMode( const EE_RENDER_MODE& Effect );
 
 		/** @return The Render Type */
-		const EE_RENDER_MODE& renderMode() const;
+		const EE_RENDER_MODE& getRenderMode() const;
 
 		/** Set the Blend Mode */
-		void blendMode( const EE_BLEND_MODE& Blend );
+		void setBlendMode( const EE_BLEND_MODE& Blend );
 
 		/** @return The Blend Mode */
-		const EE_BLEND_MODE& blendMode() const;
+		const EE_BLEND_MODE& getBlendMode() const;
 
 		/** Reset the sprite as a new one. */
 		void reset();
@@ -175,13 +175,13 @@ class EE_API Sprite {
 		eeAABB getAABB();
 
 		/** Set the sprite position */
-		void position( const Float& x, const Float& y );
+		void setPosition( const Float& getX, const Float& y );
 
 		/** Set the sprite position from a Vector */
-		void position( const Vector2f& NewPos );
+		void setPosition( const Vector2f& NewPos );
 
 		/** @return The Position of the sprite */
-		const Vector2f position() const;
+		const Vector2f getPosition() const;
 
 		/** Update the colors of every vertex rendered of the sprite ( this will override the default color )
 		* @param Color0 The Left - Top vertex color
@@ -281,25 +281,25 @@ class EE_API Sprite {
 		void setRepetitions( const int& Repeations );
 
 		/** Set if the class auto-animate the sprite ( default it's active ) */
-		void autoAnimate( const bool& Autoanim );
+		void setAutoAnimate( const bool& Autoanim );
 
 		/** @return If the class is auto-animated */
-		bool autoAnimate() const;
+		bool getAutoAnimate() const;
 
 		/** @return The four vertex position of the Sprite */
 		Quad2f getQuad();
 
 		/** @return The Offset of the current frame */
-		Vector2i offset();
+		Vector2i getOffset();
 
 		/** Set the Offset of the current frame */
-		void offset( const Vector2i& offset );
+		void setOffset( const Vector2i& offset );
 
-		/** Reverse the animation from last frame to first mFrames. */
-		void reverseAnim( const bool& Reverse );
+		/** Reverse the animation from last frame to first frame. */
+		void setReverseAnimation( const bool& Reverse );
 
 		/** @return If the animation is reversed */
-		bool reverseAnim() const;
+		bool getReverseAnimation() const;
 
 		/** @return The current last frame */
 		unsigned int getEndFrame();
@@ -361,7 +361,7 @@ class EE_API Sprite {
 		Uint32				mFlags;
 		Vector2f			mPos;
 		OriginPoint		mOrigin;
-		Float				mAngle;
+		Float				mRotation;
 		Vector2f			mScale;
 		Float				mAnimSpeed;
 

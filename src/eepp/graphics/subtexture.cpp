@@ -206,7 +206,7 @@ void SubTexture::cacheAlphaMask() {
 void SubTexture::cacheColors() {
 	mTexture->lock();
 
-	Uint32 size =  ( mSrcRect.Right - mSrcRect.Left ) * ( mSrcRect.Bottom - mSrcRect.Top ) * mTexture->channels();
+	Uint32 size =  ( mSrcRect.Right - mSrcRect.Left ) * ( mSrcRect.Bottom - mSrcRect.Top ) * mTexture->getChannels();
 
 	eeSAFE_DELETE_ARRAY( mPixels );
 
@@ -216,7 +216,7 @@ void SubTexture::cacheColors() {
 	int rX = 0;
 	int rW = mSrcRect.Right - mSrcRect.Left;
 	ColorA tColor;
-	Uint32 Channels = mTexture->channels();
+	Uint32 Channels = mTexture->getChannels();
 	int Pos;
 
 	for ( int y = mSrcRect.Top; y < mSrcRect.Bottom; y++ ) {
@@ -247,7 +247,7 @@ Uint8 SubTexture::getAlphaAt( const Int32& X, const Int32& Y ) {
 		return mAlpha[ X + Y * ( mSrcRect.Right - mSrcRect.Left ) ];
 
 	if ( NULL != mPixels )
-		return mPixels[ ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * mTexture->channels() + 3 ];
+		return mPixels[ ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * mTexture->getChannels() + 3 ];
 
 	cacheAlphaMask();
 
@@ -259,7 +259,7 @@ ColorA SubTexture::getColorAt( const Int32& X, const Int32& Y ) {
 		return mTexture->getPixel( mSrcRect.Left + X, mSrcRect.Right + Y );
 
 	if ( NULL != mPixels ) {
-		Uint32 Channels = mTexture->channels();
+		Uint32 Channels = mTexture->getChannels();
 		unsigned int Pos = ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * Channels;
 
 		if ( 4 == Channels )
@@ -279,7 +279,7 @@ ColorA SubTexture::getColorAt( const Int32& X, const Int32& Y ) {
 
 void SubTexture::setColorAt( const Int32& X, const Int32& Y, const ColorA& Color ) {
 	if ( NULL != mPixels ) {
-		Uint32 Channels = mTexture->channels();
+		Uint32 Channels = mTexture->getChannels();
 		unsigned int Pos = ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * Channels;
 
 		if ( Channels >= 1 ) mPixels[ Pos ]		= Color.r();
@@ -308,7 +308,7 @@ bool SubTexture::unlock( const bool& KeepData, const bool& Modified ) {
 		if ( Modified ) {
 			TextureSaver saver( mTexture->handle() );
 
-			Uint32 Channels = mTexture->channels();
+			Uint32 Channels = mTexture->getChannels();
 			Uint32 Channel = GL_RGBA;
 
 			if ( 3 == Channels )
@@ -355,11 +355,11 @@ bool SubTexture::saveToFile(const std::string& filepath, const EE_SAVE_TYPE& For
 
 	if ( NULL != mTexture ) {
 		if ( SAVE_TYPE_JPG != Format ) {
-			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, realSize().getWidth(), realSize().getHeight(), mTexture->channels(), getPixelsPtr() ) );
+			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, realSize().getWidth(), realSize().getHeight(), mTexture->getChannels(), getPixelsPtr() ) );
 		} else {
 			jpge::params params;
 			params.m_quality = Image::jpegQuality();
-			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), realSize().getWidth(), realSize().getHeight(), mTexture->channels(), getPixelsPtr(), params);
+			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), realSize().getWidth(), realSize().getHeight(), mTexture->getChannels(), getPixelsPtr(), params);
 		}
 	}
 

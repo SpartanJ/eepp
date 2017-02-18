@@ -42,20 +42,20 @@ CursorX11::~CursorX11() {
 }
 
 void CursorX11::create() {
-	if ( NULL == mImage || 0 == mImage->memSize() )
+	if ( NULL == mImage || 0 == mImage->getMemSize() )
 		return;
 
 	XcursorImage * image;
 	unsigned int c, ix, iy;
 
-	image = XcursorImageCreate( mImage->width(), mImage->height() );
+	image = XcursorImageCreate( mImage->getWidth(), mImage->getHeight() );
 
 	if ( image == None )
 	  return;
 
 	c = 0;
-	for ( iy = 0; iy < mImage->height(); iy++ ) {
-		for ( ix = 0; ix < mImage->width(); ix++ ) {
+	for ( iy = 0; iy < mImage->getHeight(); iy++ ) {
+		for ( ix = 0; ix < mImage->getWidth(); ix++ ) {
 			ColorA C = mImage->getPixel( ix, iy );
 
 			image->pixels[c++] = ( C.a() << 24 ) | ( C.r() << 16 ) | ( C.g() <<8 ) | ( C.b() );

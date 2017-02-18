@@ -39,11 +39,11 @@ void GameObjectObject::Draw() {
 	Int32 colFill	= 100 + selAdd;
 
 	Primitives P;
-	P.fillMode( DRAW_FILL );
+	P.setFillMode( DRAW_FILL );
 	P.setColor( ColorA( colFill, colFill, colFill, colFill ) );
 	P.drawRectangle( mRect );
 
-	P.fillMode( DRAW_LINE );
+	P.setFillMode( DRAW_LINE );
 	P.setColor( ColorA( 255, 255, 0, 200 ) );
 	P.drawRectangle( mRect );
 }

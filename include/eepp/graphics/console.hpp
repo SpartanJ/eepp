@@ -27,40 +27,40 @@ class EE_API Console : protected LogReaderInterface {
 		~Console();
 
 		/** Set the Console Height when it's Minimized ( Not Maximized ) */
-		void consoleMinimizedHeight( const Float& MinHeight ) { mHeightMin = MinHeight; if (mVisible && !mExpand) mCurHeight = mHeightMin; }
+		void setConsoleMinimizedHeight( const Float& MinHeight ) { mHeightMin = MinHeight; if (mVisible && !mExpand) mCurHeight = mHeightMin; }
 
 		/** Get the Console Height when it's Minimized ( Not Maximized ) */
-		Float consoleMinimizedHeight() const { return mHeightMin; }
+		Float getConsoleMinimizedHeight() const { return mHeightMin; }
 
 		/** Set the Texture Id for the Background, 0 will disable texture background */
-		void textureId( const Uint32& TexId ) { mTexId = TexId; }
+		void setBackgroundTextureId( const Uint32& TexId ) { mTexId = TexId; }
 
 		/** Get the Background Texture Id */
-		Uint32 textureId() const { return mTexId; }
+		Uint32 getBackgroundTextureId() const { return mTexId; }
 
 		/** Set the Console Background Color */
-		void backgroundColor( const ColorA& BackColor ) { mConColor = BackColor; }
+		void setBackgroundColor( const ColorA& BackColor ) { mConColor = BackColor; }
 
 		/** Get the Console Background Color */
-		const ColorA& backgroundColor() const { return mConColor; }
+		const ColorA& getBackgroundColor() const { return mConColor; }
 
 		/** Set the Console Border Line Background Color */
-		void backgroundLineColor( const ColorA& BackColor ) { mConLineColor = BackColor; }
+		void setBackgroundLineColor( const ColorA& BackColor ) { mConLineColor = BackColor; }
 
 		/** Get the Console Border Line Background Color */
-		const ColorA& backgroundLineColor() const { return mConLineColor; }
+		const ColorA& getBackgroundLineColor() const { return mConLineColor; }
 
 		/** Set the Console Font Color */
-		void fontColor( const ColorA& FntColor ) { mFontColor = FntColor; }
+		void setFontColor( const ColorA& FntColor ) { mFontColor = FntColor; }
 
 		/** Get the Console Font Color */
-		const ColorA& fontColor() const { return mFontColor; }
+		const ColorA& getFontColor() const { return mFontColor; }
 
 		/** Set the Console Client Input ( Writeable Line ) Font Color */
-		void fontLineColor( const ColorA& FntColor ) { mFontLineColor = FntColor; }
+		void setFontLineColor( const ColorA& FntColor ) { mFontLineColor = FntColor; }
 
 		/** Get the Console Client Input ( Writeable Line ) Font Color */
-		const ColorA& fontLineColor() const { return mFontLineColor; }
+		const ColorA& getFontLineColor() const { return mFontLineColor; }
 
 		/** Toogle the console between visible and hided with Fade In or Fade Out effect. */
 		void toggle();
@@ -72,19 +72,19 @@ class EE_API Console : protected LogReaderInterface {
 		void fadeOut();
 
 		/** @return If Console Active ( Visible ) */
-		bool active() const { return mVisible; }
+		bool isActive() const { return mVisible; }
 
 		/** Maximize or Minimize the Console */
-		void expand(const bool& Exp) { mExpand = Exp; }
+		void setExpanded(const bool& Exp) { mExpand = Exp; }
 
 		/** @return If console is maximized */
-		bool expand() const { return mExpand; }
+		bool isExpanded() const { return mExpand; }
 
 		/** Set the fade time */
-		void fadeSpeed( const Time& fadespeed ) { mFadeSpeed = fadespeed; }
+		void setFadeSpeed( const Time& fadespeed ) { mFadeSpeed = fadespeed; }
 
 		/** @return The fading speed in ms */
-		const Time& fadeSpeed() const { return mFadeSpeed; }
+		const Time& getFadeSpeed() const { return mFadeSpeed; }
 
 		/** @brief Creates the new console
 		* @param Font The Font pointer to class

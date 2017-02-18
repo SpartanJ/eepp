@@ -11,7 +11,7 @@ GameObjectSprite::GameObjectSprite( const Uint32& Flags, MapLayer * Layer, Graph
 	mSprite( Sprite )
 {
 	if ( NULL != mSprite )
-		mSprite->renderMode( RenderModeFromFlags() );
+		mSprite->setRenderMode( RenderModeFromFlags() );
 
 	AssignTilePos();
 }
@@ -30,7 +30,7 @@ bool GameObjectSprite::IsType( const Uint32& type ) {
 
 void GameObjectSprite::Draw() {
 	if ( NULL != mSprite ) {
-		mSprite->angle( GetAngle() );
+		mSprite->setRotation( GetAngle() );
 
 		if ( mLayer->Map()->LightsEnabled() && mLayer->LightsEnabled() ) {
 			MapLightManager * LM = mLayer->Map()->GetLightManager();
@@ -46,7 +46,7 @@ void GameObjectSprite::Draw() {
 						*LM->GetTileColor( Tile, 3 )
 					);
 				} else {
-					mSprite->color( *LM->GetTileColor( Tile ) );
+					mSprite->setColor( *LM->GetTileColor( Tile ) );
 				}
 			} else {
 				if ( LM->IsByVertex() ) {
@@ -59,7 +59,7 @@ void GameObjectSprite::Draw() {
 						LM->GetColorFromPos( Q.V[3] )
 					);
 				} else {
-					mSprite->color( LM->GetColorFromPos( mSprite->position() ) );
+					mSprite->setColor( LM->GetColorFromPos( mSprite->getPosition() ) );
 				}
 			}
 		}
@@ -70,14 +70,14 @@ void GameObjectSprite::Draw() {
 
 Vector2f GameObjectSprite::Pos() const {
 	if ( NULL != mSprite )
-		return mSprite->position();
+		return mSprite->getPosition();
 
 	return Vector2f();
 }
 
 void GameObjectSprite::Pos( Vector2f pos ) {
 	if ( NULL != mSprite ) {
-		mSprite->position( pos );
+		mSprite->setPosition( pos );
 		GameObject::Pos( pos );
 	}
 }
@@ -104,12 +104,12 @@ Graphics::Sprite * GameObjectSprite::Sprite() const {
 void GameObjectSprite::Sprite( Graphics::Sprite * sprite ) {
 	eeSAFE_DELETE( mSprite );
 	mSprite = sprite;
-	mSprite->renderMode( RenderModeFromFlags() );
+	mSprite->setRenderMode( RenderModeFromFlags() );
 }
 
 void GameObjectSprite::FlagSet( const Uint32& Flag ) {
 	if ( NULL != mSprite )
-		mSprite->renderMode( RenderModeFromFlags() );
+		mSprite->setRenderMode( RenderModeFromFlags() );
 
 	GameObject::FlagSet( Flag );
 }

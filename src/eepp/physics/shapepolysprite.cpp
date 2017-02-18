@@ -27,7 +27,7 @@ ShapePolySprite::ShapePolySprite( Physics::Body * body, cpFloat width, cpFloat h
 	mSprite( Sprite ),
 	mSpriteAutoDelete( AutoDeleteSprite )
 {
-	mSprite->size( Sizef( width, height ) );
+	mSprite->setSize( Sizef( width, height ) );
 	offsetSet( cVectNew( width / 2, height / 2 ) );
 }
 
@@ -39,14 +39,14 @@ ShapePolySprite::~ShapePolySprite() {
 void ShapePolySprite::draw( Space * space ) {
 	cVect Pos = body()->pos();
 
-	mSprite->offset( mOffset );
-	mSprite->position( Pos.x, Pos.y );
-	mSprite->angle( body()->angleDeg() );
+	mSprite->setOffset( mOffset );
+	mSprite->setPosition( Pos.x, Pos.y );
+	mSprite->setRotation( body()->angleDeg() );
 	mSprite->draw();
 }
 
 void ShapePolySprite::offsetSet( cVect center ) {
-	cVect myCenter = cVectNew( ( mSprite->size().x / 2 ), ( mSprite->size().y / 2 ) );
+	cVect myCenter = cVectNew( ( mSprite->getSize().x / 2 ), ( mSprite->getSize().y / 2 ) );
 
 	mOffset = Vector2i(  (Int32)( -myCenter.x + ( center.x - myCenter.x ) ) , (Int32)( -myCenter.y + ( center.y - myCenter.y ) ) );
 }

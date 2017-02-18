@@ -191,8 +191,8 @@ bool TTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Ui
 			Image out( TempOutGlyphSurface, GlyphRect.x, GlyphRect.y, 4 ); out.avoidFreeImage( true );
 			Image in( TempGlyphSurface, mFont->Current()->Pixmap()->width, mFont->Current()->Pixmap()->rows, 4 ); in.avoidFreeImage( true );
 
-			Uint32 px = ( ( (Float)out.width()	- (Float)in.width() )		* 0.5f );
-			Uint32 py = ( ( (Float)out.height()	- (Float)in.height() )	* 0.5f );
+			Uint32 px = ( ( (Float)out.getWidth()	- (Float)in.getWidth() )		* 0.5f );
+			Uint32 py = ( ( (Float)out.getHeight()	- (Float)in.getHeight() )	* 0.5f );
 
 			out.blit( &in, px, py );
 
@@ -340,11 +340,11 @@ void TTFFont::rebuildFromGlyphs() {
 	for (unsigned int i = 0; i < mNumChars; i++) {
 		tGlyph		= mGlyphs[i];
 
-		tR.Left		= (Float)tGlyph.CurX / Tex->width();
-		tR.Top		= (Float)tGlyph.CurY / Tex->height();
+		tR.Left		= (Float)tGlyph.CurX / Tex->getWidth();
+		tR.Top		= (Float)tGlyph.CurY / Tex->getHeight();
 
-		tR.Right	= (Float)(tGlyph.CurX + tGlyph.CurW) / Tex->width();
-		tR.Bottom	= (Float)(tGlyph.CurY + tGlyph.CurH) / Tex->height();
+		tR.Right	= (Float)(tGlyph.CurX + tGlyph.CurW) / Tex->getWidth();
+		tR.Bottom	= (Float)(tGlyph.CurY + tGlyph.CurH) / Tex->getHeight();
 
 		Top			= (Float)mHeight + mDescent	- tGlyph.GlyphH - tGlyph.MinY;
 		Bottom		= (Float)mHeight + mDescent	+ tGlyph.GlyphH - tGlyph.MaxY;

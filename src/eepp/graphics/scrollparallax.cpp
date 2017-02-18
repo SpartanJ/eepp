@@ -16,11 +16,11 @@ ScrollParallax::ScrollParallax( Graphics::SubTexture * SubTexture, const Vector2
 	create( SubTexture, Position, Size, Speed, Color, Blend );
 }
 
-Graphics::SubTexture * ScrollParallax::subTexture() const {
+Graphics::SubTexture * ScrollParallax::getSubTexture() const {
 	return mSubTexture;
 }
 
-void ScrollParallax::subTexture( Graphics::SubTexture * subTexture ) {
+void ScrollParallax::setSubTexture( Graphics::SubTexture * subTexture ) {
 	mSubTexture = subTexture;
 
 	setSubTexture();
@@ -55,14 +55,14 @@ bool ScrollParallax::create( Graphics::SubTexture * SubTexture, const Vector2f& 
 	return true;
 }
 
-void ScrollParallax::size( const Sizef& size ) {
+void ScrollParallax::setSize( const Sizef& size ) {
 	mSize = size;
 
 	setSubTexture();
 	setAABB();
 }
 
-void ScrollParallax::position( const Vector2f& Pos ) {
+void ScrollParallax::setPosition( const Vector2f& Pos ) {
 	Vector2f Diff = mPos - mInitPos;
 
 	mInitPos = Pos;
@@ -72,11 +72,11 @@ void ScrollParallax::position( const Vector2f& Pos ) {
 	setAABB();
 }
 
-const Sizef& ScrollParallax::size() const {
+const Sizef& ScrollParallax::getSize() const {
 	return mSize;
 }
 
-const Vector2f& ScrollParallax::position() const {
+const Vector2f& ScrollParallax::getPosition() const {
 	return mInitPos;
 }
 
@@ -148,11 +148,11 @@ void ScrollParallax::draw() {
 	}
 }
 
-void ScrollParallax::speed( const Vector2f& speed ) {
+void ScrollParallax::setSpeed( const Vector2f& speed ) {
 	mSpeed = speed;
 }
 
-const Vector2f& ScrollParallax::speed() const {
+const Vector2f& ScrollParallax::getSpeed() const {
 	return mSpeed;
 }
 

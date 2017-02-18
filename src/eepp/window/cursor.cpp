@@ -10,7 +10,7 @@ Cursor::Cursor( Texture * tex, const Vector2i& hotspot, const std::string& name,
 	mWindow( window )
 {
 	if ( NULL != tex && tex->lock() ) {
-		mImage = eeNew( Graphics::Image, ( tex->getPixelsPtr(), tex->width(), tex->height(), tex->channels() ) );
+		mImage = eeNew( Graphics::Image, ( tex->getPixelsPtr(), tex->getWidth(), tex->getHeight(), tex->getChannels() ) );
 
 		tex->unlock();
 	} else {
@@ -25,8 +25,8 @@ Cursor::Cursor( Graphics::Image * img, const Vector2i& hotspot, const std::strin
 	mHotSpot( hotspot ),
 	mWindow( window )
 {
-	if ( img->memSize() ) {
-		mImage = eeNew( Graphics::Image, ( img->getPixelsPtr(), img->width(), img->height(), img->channels() ) );
+	if ( img->getMemSize() ) {
+		mImage = eeNew( Graphics::Image, ( img->getPixelsPtr(), img->getWidth(), img->getHeight(), img->getChannels() ) );
 	} else {
 		eePRINTL( "Cursor::Cursor: Error creating cursor from Image." );
 	}

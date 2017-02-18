@@ -256,16 +256,16 @@ void UIControl::draw() {
 
 		if ( UIManager::instance()->highlightFocus() && UIManager::instance()->focusControl() == this ) {
 			Primitives P;
-			P.fillMode( DRAW_LINE );
-			P.blendMode( blend() );
+			P.setFillMode( DRAW_LINE );
+			P.setBlendMode( blend() );
 			P.setColor( UIManager::instance()->highlightFocusColor() );
 			P.drawRectangle( getRectf() );
 		}
 
 		if ( UIManager::instance()->highlightOver() && UIManager::instance()->overControl() == this ) {
 			Primitives P;
-			P.fillMode( DRAW_LINE );
-			P.blendMode( blend() );
+			P.setFillMode( DRAW_LINE );
+			P.setBlendMode( blend() );
 			P.setColor( UIManager::instance()->highlightOverColor() );
 			P.drawRectangle( getRectf() );
 		}
@@ -528,7 +528,7 @@ Rectf UIControl::getRectf() {
 void UIControl::backgroundDraw() {
 	Primitives P;
 	Rectf R = getRectf();
-	P.blendMode( mBackground->blend() );
+	P.setBlendMode( mBackground->blend() );
 	P.setColor( mBackground->color() );
 
 	if ( 4 == mBackground->colors().size() ) {
@@ -548,9 +548,9 @@ void UIControl::backgroundDraw() {
 
 void UIControl::borderDraw() {
 	Primitives P;
-	P.fillMode( DRAW_LINE );
-	P.blendMode( blend() );
-	P.lineWidth( (Float)mBorder->width() );
+	P.setFillMode( DRAW_LINE );
+	P.setBlendMode( blend() );
+	P.setLineWidth( (Float)mBorder->width() );
 	P.setColor( mBorder->color() );
 
 	//! @TODO: Check why was this +0.1f -0.1f?

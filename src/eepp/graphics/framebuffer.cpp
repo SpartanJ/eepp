@@ -44,11 +44,11 @@ Texture * FrameBuffer::getTexture() const {
 	return mTexture;
 }
 
-void FrameBuffer::clearColor( ColorAf Color ) {
+void FrameBuffer::setClearColor( ColorAf Color ) {
 	mClearColor = Color;
 }
 
-ColorAf FrameBuffer::clearColor() const {
+ColorAf FrameBuffer::getClearColor() const {
 	return mClearColor;
 }
 

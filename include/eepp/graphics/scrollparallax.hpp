@@ -37,45 +37,45 @@ class EE_API ScrollParallax {
 		bool create( Graphics::SubTexture * subTexture, const Vector2f& position = Vector2f(), const Sizef& size = Sizef(), const Vector2f& speed = Vector2f(), const ColorA& color = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
 
 		/** Set the parallax texture color. */
-		void color( const ColorA& Color ) { mColor = Color; }
+		void setColor( const ColorA& Color ) { mColor = Color; }
 
 		/** Get the parallax texture color. */
-		ColorA color() const { return mColor; }
+		ColorA getColor() const { return mColor; }
 
 		/** Set the Blend Mode used. */
-		void blendMode( const EE_BLEND_MODE& Blend ) { mBlend = Blend; }
+		void setBlendMode( const EE_BLEND_MODE& Blend ) { mBlend = Blend; }
 
 		/** @return The Blend Mode used for the parallax. */
-		const EE_BLEND_MODE& blendMode() const { return mBlend; }
+		const EE_BLEND_MODE& getBlendMode() const { return mBlend; }
 
 		/** Draw the Scroll Parallax. */
 		void draw();
 		
 		/** Change the size of the current parallax
 		* @param size The new size */
-		void size( const Sizef& size );
+		void setSize( const Sizef& size );
 		
 		/** @return Size */
-		const Sizef& size() const;
+		const Sizef& getSize() const;
 		
 		/** Change the Parallax position
 		* @param Pos The new parallax position */
-		void position( const Vector2f& Pos );
+		void setPosition( const Vector2f& Pos );
 		
 		/** @return The parallax position */
-		const Vector2f& position() const;
+		const Vector2f& getPosition() const;
 		
 		/** @return The SubTexture used for the parallax.*/
-		Graphics::SubTexture * subTexture() const;
+		Graphics::SubTexture * getSubTexture() const;
 		
 		/** Set Change the SubTexture used for the parallax. */
-		void subTexture( Graphics::SubTexture * subTexture );
+		void setSubTexture( Graphics::SubTexture * subTexture );
 		
 		/** Set the parallax speed movement. */
-		void speed( const Vector2f& speed );
+		void setSpeed( const Vector2f& speed );
 		
 		/** @return The parallax movement speed. */
-		const Vector2f& speed() const;
+		const Vector2f& getSpeed() const;
 	private:
 		Graphics::SubTexture * 		mSubTexture;
 		EE_BLEND_MODE		mBlend;

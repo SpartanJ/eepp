@@ -151,7 +151,7 @@ bool TextureFactory::remove( Uint32 TexId ) {
 }
 
 void TextureFactory::removeReference( Texture * Tex ) {
-	mMemSize -= Tex->memSize();
+	mMemSize -= Tex->getMemSize();
 
 	int glTexId = Tex->handle();
 

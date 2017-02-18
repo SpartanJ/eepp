@@ -371,7 +371,7 @@ void UIMap::MapDraw() {
 			Vector2f Pos( mSelLight->GetAABB().Left, mSelLight->GetAABB().Top );
 			eeAABB AB( mSelLight->GetAABB() );
 
-			mP.fillMode( DRAW_LINE );
+			mP.setFillMode( DRAW_LINE );
 			mP.drawRectangle( Rectf( Pos, AB.getSize() ) );
 		}
 	} else if ( EDITING_OBJECT == mEditingMode ) {
@@ -379,11 +379,11 @@ void UIMap::MapDraw() {
 			case INSERT_OBJECT:
 			{
 				if ( mObjRECTEditing ) {
-					mP.fillMode( DRAW_FILL );
+					mP.setFillMode( DRAW_FILL );
 					mP.setColor( ColorA( 100, 100, 100, 20 ) );
 					mP.drawRectangle( mObjRECT );
 
-					mP.fillMode( DRAW_LINE );
+					mP.setFillMode( DRAW_LINE );
 					mP.setColor( ColorA( 255, 0, 0, 200 ) );
 					mP.drawRectangle( mObjRECT );
 				}
@@ -392,22 +392,22 @@ void UIMap::MapDraw() {
 			}
 			case INSERT_POLYGON:
 			{
-				mP.fillMode( DRAW_FILL );
+				mP.setFillMode( DRAW_FILL );
 				mP.setColor( ColorA( 50, 50, 50, 50 ) );
 				mP.drawPolygon( mObjPoly );
 
-				mP.fillMode( DRAW_LINE );
+				mP.setFillMode( DRAW_LINE );
 				mP.setColor( ColorA( 255, 0, 0, 200 ) );
 				mP.drawPolygon( mObjPoly );
 
 				Polygon2f polyN( mObjPoly );
 				polyN.pushBack( GetMouseMapPos() );
 
-				mP.fillMode( DRAW_FILL );
+				mP.setFillMode( DRAW_FILL );
 				mP.setColor( ColorA( 100, 100, 100, 100 ) );
 				mP.drawPolygon( polyN );
 
-				mP.fillMode( DRAW_LINE );
+				mP.setFillMode( DRAW_LINE );
 				mP.setColor( ColorA( 255, 255, 0, 200 ) );
 				mP.drawPolygon( polyN );
 
@@ -415,14 +415,14 @@ void UIMap::MapDraw() {
 			}
 			case INSERT_POLYLINE:
 			{
-				mP.fillMode( DRAW_LINE );
+				mP.setFillMode( DRAW_LINE );
 				mP.setColor( ColorA( 255, 0, 0, 200 ) );
 				mP.drawPolygon( mObjPoly );
 
 				Polygon2f polyN( mObjPoly );
 				polyN.pushBack( GetMouseMapPos() );
 
-				mP.fillMode( DRAW_LINE );
+				mP.setFillMode( DRAW_LINE );
 				mP.setColor( ColorA( 255, 255, 0, 200 ) );
 				mP.drawPolygon( polyN );
 
@@ -433,10 +433,10 @@ void UIMap::MapDraw() {
 				if ( NULL != mSelObj && eeINDEX_NOT_FOUND != mSelPointIndex ) {
 					mP.setColor( ColorA( 255, 255, 100, 100 ) );
 
-					mP.fillMode( DRAW_FILL );
+					mP.setFillMode( DRAW_FILL );
 					mP.drawRectangle( mSelPointRect );
 
-					mP.fillMode( DRAW_LINE );
+					mP.setFillMode( DRAW_LINE );
 					mP.drawRectangle( mSelPointRect );
 				}
 

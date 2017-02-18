@@ -117,7 +117,7 @@ void EETest::Init() {
 		mFBO = FrameBuffer::New( 256, 256, false );
 
 		if ( NULL != mFBO )
-			mFBO->clearColor( ColorAf( 0, 0, 0, 0.5f ) );
+			mFBO->setClearColor( ColorAf( 0, 0, 0, 0.5f ) );
 
 		Polygon2f Poly = Polygon2f::createRoundedRectangle( 0, 0, 256, 50 );
 
@@ -679,9 +679,9 @@ void EETest::ItemClick( const UIEvent * Event ) {
 		SetScreen( 5 );
 	} else if ( "Show Console" == txt ) {
 		Con.toggle();
-		InBuf.setActive( !Con.active() );
+		InBuf.setActive( !Con.isActive() );
 
-		if ( Con.active() ) {
+		if ( Con.isActive() ) {
 			mWindow->startTextInput();
 		} else {
 			mWindow->stopTextInput();
@@ -886,8 +886,8 @@ void EETest::LoadTextures() {
 	Texture * Tex = TNP[2];
 
 	if ( NULL != Tex && Tex->lock() ) {
-		w = (int)Tex->width();
-		h = (int)Tex->height();
+		w = (int)Tex->getWidth();
+		h = (int)Tex->getHeight();
 
 		for ( y = 0; y < h; y++) {
 			for ( x = 0; x < w; x++) {
@@ -914,16 +914,16 @@ void EETest::LoadTextures() {
 	CurMan->set( EE_CURSOR_ARROW );
 
 	CL1.addFrame( TN[2] );
-	CL1.position( 500, 400 );
-	CL1.scale( 0.5f );
+	CL1.setPosition( 500, 400 );
+	CL1.setScale( 0.5f );
 
 	CL2.addFrame(TN[0], Sizef(96, 96) );
-	CL2.color( ColorA( 255, 255, 255, 255 ) );
+	CL2.setColor( ColorA( 255, 255, 255, 255 ) );
 
 	mTGL = eeNew( TextureAtlasLoader, ( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
 
 	mBlindy.addFramesByPattern( "rn" );
-	mBlindy.position( 320.f, 0.f );
+	mBlindy.setPosition( 320.f, 0.f );
 
 	mBoxSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( SubTexture, ( TN[3], "ilmare" ) ) ) ) );
 	mCircleSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( SubTexture, ( TN[1], "thecircle" ) ) ) ) );
@@ -980,9 +980,9 @@ void EETest::Screen2() {
 	Batch.quadsSetColor( ColorA(150,150,150,100) );
 	Batch.quadsSetSubset( 0.0f, 0.0f, 0.5f, 0.5f );
 
-	Batch.batchRotation( ang );
-	Batch.batchScale( scale );
-	Batch.batchCenter( Vector2f( HWidth, HHeight ) );
+	Batch.setBatchRotation( ang );
+	Batch.setBatchScale( scale );
+	Batch.setBatchCenter( Vector2f( HWidth, HHeight ) );
 
 	Float aX = HWidth - 256.f;
 	Float aY = HHeight - 256.f;
@@ -1005,12 +1005,12 @@ void EETest::Screen2() {
 
 	Batch.draw();
 
-	Batch.batchRotation( 0.0f );
-	Batch.batchScale( 1.0f );
-	Batch.batchCenter( Vector2f( 0, 0 ) );
+	Batch.setBatchRotation( 0.0f );
+	Batch.setBatchScale( 1.0f );
+	Batch.setBatchCenter( Vector2f( 0, 0 ) );
 
-	Float PlanetX = HWidth  - TNP[6]->width() * 0.5f;
-	Float PlanetY = HHeight - TNP[6]->height() * 0.5f;
+	Float PlanetX = HWidth  - TNP[6]->getWidth() * 0.5f;
+	Float PlanetY = HHeight - TNP[6]->getHeight() * 0.5f;
 
 	ang+=et.asMilliseconds() * 0.1f;
 	ang = (ang>=360) ? 0 : ang;
@@ -1052,33 +1052,33 @@ void EETest::Screen2() {
 	ColorA Col(255,255,255,(int)alpha);
 	TNP[1]->drawEx( (Float)mWindow->getWidth() - 128.f, (Float)mWindow->getHeight() - 128.f, 128.f, 128.f, ang, Vector2f::One, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
 
-	SP.position( alpha, alpha );
+	SP.setPosition( alpha, alpha );
 	SP.draw();
 
 	#ifndef EE_GLES
-	CL1.renderMode( RN_ISOMETRIC );
+	CL1.setRenderMode( RN_ISOMETRIC );
 
 	if ( CL1.getAABB().intersectCircle( Mousef, 80.f ) )
-		CL1.color( ColorA(255, 0, 0, 200) );
+		CL1.setColor( ColorA(255, 0, 0, 200) );
 	else
-		CL1.color( ColorA(255, 255, 255, 200) );
+		CL1.setColor( ColorA(255, 255, 255, 200) );
 
 	if ( Polygon2f::intersectQuad2( CL1.getQuad() , CL2.getQuad() ) ) {
-		CL1.color( ColorA(0, 255, 0, 255) );
-		CL2.color( ColorA(0, 255, 0, 255) );
+		CL1.setColor( ColorA(0, 255, 0, 255) );
+		CL2.setColor( ColorA(0, 255, 0, 255) );
 	} else
-		CL2.color( ColorA(255, 255, 255, 255) );
+		CL2.setColor( ColorA(255, 255, 255, 255) );
 
-	CL1.angle(ang);
-	CL1.scale(scale * 0.5f);
+	CL1.setRotation(ang);
+	CL1.setScale(scale * 0.5f);
 
-	CL2.position( (Float)Mousef.x - 64.f, (Float)Mousef.y + 128.f );
-	CL2.angle(-ang);
+	CL2.setPosition( (Float)Mousef.x - 64.f, (Float)Mousef.y + 128.f );
+	CL2.setRotation(-ang);
 
 	CL1.draw();
 	CL2.draw();
 
-	PR.fillMode( DRAW_LINE );
+	PR.setFillMode( DRAW_LINE );
 	PR.drawRectangle( CL1.getAABB() );
 
 	PR.drawQuad( CL1.getQuad() );
@@ -1114,15 +1114,15 @@ void EETest::Screen2() {
 	else if (iL2)
 		PR.setColor( ColorA(255, 255, 0, 255) );
 
-	PR.fillMode( DRAW_LINE );
+	PR.setFillMode( DRAW_LINE );
 	PR.drawCircle( Vector2f( Mousef.x, Mousef.y ), 80.f, (Uint32)(Ang/3) );
 	PR.drawTriangle( Triangle2f( Vector2f( Mousef.x, Mousef.y - 10.f ), Vector2f( Mousef.x - 10.f, Mousef.y + 10.f ), Vector2f( Mousef.x + 10.f, Mousef.y + 10.f ) ) );
 	PR.drawLine( Line2f( Vector2f(Mousef.x - 80.f, Mousef.y - 80.f), Vector2f(Mousef.x + 80.f, Mousef.y + 80.f) ) );
 	PR.drawLine( Line2f( Vector2f(Mousef.x - 80.f, Mousef.y + 80.f), Vector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) );
 	PR.drawLine( Line2f( Vector2f((Float)mWindow->getWidth(), 0.f), Vector2f( 0.f, (Float)mWindow->getHeight() ) ) );
-	PR.fillMode( DRAW_FILL );
+	PR.setFillMode( DRAW_FILL );
 	PR.drawQuad( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
-	PR.fillMode( DRAW_LINE );
+	PR.setFillMode( DRAW_LINE );
 	PR.drawRectangle( Rectf( Vector2f( Mousef.x - 80.f, Mousef.y - 80.f ), Sizef( 160.f, 160.f ) ), 45.f );
 	PR.drawLine( Line2f( Vector2f(0.f, 0.f), Vector2f( (Float)mWindow->getWidth(), (Float)mWindow->getHeight() ) ) );
 
@@ -1158,7 +1158,7 @@ void EETest::Screen4() {
 	}
 
 	if ( NULL != mVBO ) {
-		mBlindy.position( 128-16, 128-16 );
+		mBlindy.setPosition( 128-16, 128-16 );
 		mBlindy.draw();
 
 		mVBO->bind();
@@ -1242,7 +1242,7 @@ void EETest::Render() {
 	mEEText.flags( FONT_DRAW_CENTER );
 
 	PR.setColor( ColorA(150, 150, 150, 220) );
-	PR.fillMode( DRAW_FILL );
+	PR.setFillMode( DRAW_FILL );
 	PR.drawRectangle(
 				Rectf(
 					Vector2f(
@@ -1329,7 +1329,7 @@ void EETest::Input() {
 	if ( KM->isAltPressed() && KM->isKeyUp( KEY_C ) )
 		mWindow->centerToScreen();
 
-	if ( KM->isAltPressed() && KM->isKeyUp( KEY_M ) && !Con.active() ) {
+	if ( KM->isAltPressed() && KM->isKeyUp( KEY_M ) && !Con.isActive() ) {
 		if ( !mWindow->isMaximized() )
 			mWindow->maximize();
 	}
@@ -1359,7 +1359,7 @@ void EETest::Input() {
 
 	if ( KM->isKeyUp( KEY_F3 ) || KM->isKeyUp( KEY_WORLD_26 ) || KM->isKeyUp( KEY_BACKSLASH ) ) {
 		Con.toggle();
-		InBuf.setActive( !Con.active() );
+		InBuf.setActive( !Con.isActive() );
 	}
 
 	if ( KM->isKeyUp(KEY_1) && KM->isControlPressed() )
@@ -1480,7 +1480,7 @@ void EETest::Input() {
 				SP.setRepetitions(-1);
 
 			if ( KM->isKeyUp(KEY_D) )
-				SP.reverseAnim( !SP.reverseAnim() );
+				SP.setReverseAnimation( !SP.getReverseAnimation() );
 
 			if ( KM->isMouseRightPressed() )
 				DrawBack = true;
@@ -1536,24 +1536,24 @@ void EETest::Process() {
 
 void EETest::ParticlesCallback( Particle * P, ParticleSystem * Me ) {
 	Float x, y, radio;
-	Vector2f MePos( Me->position() );
+	Vector2f MePos( Me->getPosition() );
 
-	radio = (Math::randf(1.f, 1.2f) + sin( 20.0f / P->id() )) * 24;
-	x = MePos.x + radio * cos( (Float)P->id() );
-	y = MePos.y + radio * sin( (Float)P->id() );
+	radio = (Math::randf(1.f, 1.2f) + sin( 20.0f / P->getId() )) * 24;
+	x = MePos.x + radio * cos( (Float)P->getId() );
+	y = MePos.y + radio * sin( (Float)P->getId() );
 	P->reset(x, y, Math::randf(-10.f, 10.f), Math::randf(-10.f, 10.f), Math::randf(-10.f, 10.f), Math::randf(-10.f, 10.f));
-	P->Color( ColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + Math::randf() * 0.3f );
+	P->setColor( ColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + Math::randf() * 0.3f );
 }
 
 void EETest::Particles() {
-	PS[0].position( Mousef );
+	PS[0].setPosition( Mousef );
 
 	if ( DrawBack )
-		PS[1].position( Mousef );
+		PS[1].setPosition( Mousef );
 
-	PS[2].position( HWidth, HHeight );
-	PS[3].position(  Math::cosAng(Ang) * 220.f + HWidth + Math::randf(0.f, 10.f),  Math::sinAng(Ang) * 220.f + HHeight + Math::randf(0.f, 10.f) );
-	PS[4].position( -Math::cosAng(Ang) * 220.f + HWidth + Math::randf(0.f, 10.f), -Math::sinAng(Ang) * 220.f + HHeight + Math::randf(0.f, 10.f) );
+	PS[2].setPosition( HWidth, HHeight );
+	PS[3].setPosition(  Math::cosAng(Ang) * 220.f + HWidth + Math::randf(0.f, 10.f),  Math::sinAng(Ang) * 220.f + HHeight + Math::randf(0.f, 10.f) );
+	PS[4].setPosition( -Math::cosAng(Ang) * 220.f + HWidth + Math::randf(0.f, 10.f), -Math::sinAng(Ang) * 220.f + HHeight + Math::randf(0.f, 10.f) );
 
 	for ( Uint32 i = 0; i < PS.size(); i++ )
 		PS[i].draw();
@@ -1565,11 +1565,11 @@ void EETest::Particles() {
 void EETest::CreateJointAndBody() {
 	#ifndef EE_PLATFORM_TOUCH
 	mMouseJoint	= NULL;
-	mMouseBody	= eeNew( Body, ( INFINITY, INFINITY ) );
+	mMouseBody	= Body::New( INFINITY, INFINITY );
 	#else
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
 		mMouseJoint[i] = NULL;
-		mMouseBody[i] = eeNew( Body, ( INFINITY, INFINITY ) );
+		mMouseBody[i] = Body::New( INFINITY, INFINITY );
 	}
 	#endif
 }

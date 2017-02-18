@@ -28,9 +28,9 @@ TexturePackerTex::TexturePackerTex( const std::string& Name ) :
 
 TexturePackerTex::TexturePackerTex( EE::Graphics::Image * Img , const std::string& Name ) :
 	mName( Name ),
-	mWidth( Img->width() ),
-	mHeight( Img->height() ),
-	mChannels( Img->channels() ),
+	mWidth( Img->getWidth() ),
+	mHeight( Img->getHeight() ),
+	mChannels( Img->getChannels() ),
 	mX(0),
 	mY(0),
 	mLongestEdge(0),

@@ -46,11 +46,11 @@ void CursorSDL::create() {
 		bmask = 0x00ff0000;
 		amask = 0xff000000;
 	#endif
-	SDL_Surface * TempGlyphSheet = SDL_CreateRGBSurface( SDL_SWSURFACE, mImage->width(), mImage->height(), mImage->channels() * 8, rmask, gmask, bmask, amask );
+	SDL_Surface * TempGlyphSheet = SDL_CreateRGBSurface( SDL_SWSURFACE, mImage->getWidth(), mImage->getHeight(), mImage->getChannels() * 8, rmask, gmask, bmask, amask );
 
 	SDL_LockSurface( TempGlyphSheet );
 
-	Uint32 ssize = TempGlyphSheet->w * TempGlyphSheet->h * mImage->channels();
+	Uint32 ssize = TempGlyphSheet->w * TempGlyphSheet->h * mImage->getChannels();
 
 	Uint8 * Ptr = mImage->getPixels();
 

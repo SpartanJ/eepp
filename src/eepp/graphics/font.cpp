@@ -32,20 +32,20 @@ void Font::setText( const String& Text ) {
 	mTextCache.text( Text );
 }
 
-const ColorA& Font::color() const {
+const ColorA& Font::getColor() const {
 	return mTextCache.color();
 }
 
-void Font::color(const ColorA& Color) {
-	mTextCache.color( Color );
+void Font::setColor(const ColorA& color) {
+	mTextCache.color( color );
 }
 
-const ColorA& Font::shadowColor() const {
+const ColorA& Font::getShadowColor() const {
 	return mTextCache.shadowColor();
 }
 
-void Font::shadowColor(const ColorA& Color) {
-	mTextCache.shadowColor( Color );
+void Font::setShadowColor(const ColorA& color) {
+	mTextCache.shadowColor( color );
 }
 
 int Font::getNumLines() {
@@ -109,7 +109,7 @@ void Font::draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 
 	GlobalBatchRenderer::instance()->draw();
 	TextureFactory::instance()->bind( mTexId );
-	BlendMode::SetMode( Effect );
+	BlendMode::setMode( Effect );
 
 	if ( Flags & FONT_DRAW_SHADOW ) {
 		Uint32 f = Flags;
@@ -125,16 +125,16 @@ void Font::draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 
 			ShadowColor.Alpha = (Uint8)( (Float)ShadowColor.Alpha * ( (Float)Col.a() / (Float)255 ) );
 
-			color( ShadowColor );
+			setColor( ShadowColor );
 		} else {
-			color( TextCache.shadowColor() );
+			setColor( TextCache.shadowColor() );
 		}
 
 		draw( X + 1, Y + 1, f, Scale, Angle, Effect );
 
 		mTextCache.flags( Flags );
 
-		color( Col );
+		setColor( Col );
 	}
 
 	Float cX = (Float) ( (Int32)X );

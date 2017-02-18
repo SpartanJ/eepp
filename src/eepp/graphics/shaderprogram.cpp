@@ -268,7 +268,7 @@ void ShaderProgram::unbind() const {
 	GLi->setShader( NULL );
 }
 
-Int32 ShaderProgram::uniformLocation( const std::string& Name ) {
+Int32 ShaderProgram::getUniformLocation( const std::string& Name ) {
 	if ( !mValid )
 		return -1;
 
@@ -282,7 +282,7 @@ Int32 ShaderProgram::uniformLocation( const std::string& Name ) {
 	return mUniformLocations[Name];
 }
 
-Int32 ShaderProgram::attributeLocation( const std::string& Name ) {
+Int32 ShaderProgram::getAttributeLocation( const std::string& Name ) {
 	if ( !mValid )
 		return -1;
 
@@ -302,7 +302,7 @@ void ShaderProgram::invalidateLocations() {
 }
 
 bool ShaderProgram::setUniform( const std::string& Name, float Value ) {
-	Int32 Location = uniformLocation( Name );
+	Int32 Location = getUniformLocation( Name );
 
 	if ( Location >= 0 ) {
 		#ifdef EE_SHADERS_SUPPORTED
@@ -314,7 +314,7 @@ bool ShaderProgram::setUniform( const std::string& Name, float Value ) {
 }
 
 bool ShaderProgram::setUniform( const std::string& Name, Vector2ff Value ) {
-	Int32 Location = uniformLocation( Name );
+	Int32 Location = getUniformLocation( Name );
 
 	if ( Location >= 0 ) {
 		#ifdef EE_SHADERS_SUPPORTED
@@ -326,7 +326,7 @@ bool ShaderProgram::setUniform( const std::string& Name, Vector2ff Value ) {
 }
 
 bool ShaderProgram::setUniform( const std::string& Name, Vector3ff Value ) {
-	Int32 Location = uniformLocation( Name );
+	Int32 Location = getUniformLocation( Name );
 
 	if ( Location >= 0 ) {
 		#ifdef EE_SHADERS_SUPPORTED
@@ -338,7 +338,7 @@ bool ShaderProgram::setUniform( const std::string& Name, Vector3ff Value ) {
 }
 
 bool ShaderProgram::setUniform( const std::string& Name, float x, float y, float z, float w ) {
-	Int32 Location = uniformLocation( Name );
+	Int32 Location = getUniformLocation( Name );
 
 	if ( Location >= 0 ) {
 		#ifdef EE_SHADERS_SUPPORTED
@@ -350,7 +350,7 @@ bool ShaderProgram::setUniform( const std::string& Name, float x, float y, float
 }
 
 bool ShaderProgram::setUniform( const std::string& Name, Int32 Value ) {
-	Int32 Location = uniformLocation( Name );
+	Int32 Location = getUniformLocation( Name );
 
 	if ( Location >= 0 ) {
 		#ifdef EE_SHADERS_SUPPORTED
@@ -434,7 +434,7 @@ bool ShaderProgram::setUniformMatrix( const Int32& Location, const float * Value
 }
 
 bool ShaderProgram::setUniformMatrix( const std::string Name, const float * Value ) {
-	Int32 Location = uniformLocation( Name );
+	Int32 Location = getUniformLocation( Name );
 
 	if ( Location >= 0 ) {
 		#ifdef EE_SHADERS_SUPPORTED
@@ -465,7 +465,7 @@ void ShaderProgram::setReloadCb( ShaderProgramReloadCb Cb ) {
 }
 
 void ShaderProgram::enableVertexAttribArray( const std::string& Name ) {
-	enableVertexAttribArray( attributeLocation( Name ) );
+	enableVertexAttribArray( getAttributeLocation( Name ) );
 }
 
 void ShaderProgram::enableVertexAttribArray( const Int32& Location ) {
@@ -475,7 +475,7 @@ void ShaderProgram::enableVertexAttribArray( const Int32& Location ) {
 }
 
 void ShaderProgram::disableVertexAttribArray( const std::string& Name ) {
-	disableVertexAttribArray( attributeLocation( Name ) );
+	disableVertexAttribArray( getAttributeLocation( Name ) );
 }
 
 void ShaderProgram::disableVertexAttribArray( const Int32& Location ) {

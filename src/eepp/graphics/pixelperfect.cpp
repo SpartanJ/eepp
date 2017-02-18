@@ -14,8 +14,8 @@ bool pixelPerfectCollide( Texture * Tex1, const unsigned int& x1, const unsigned
 		ax2 = ax1 + Tex1_SrcRECT.Right - Tex1_SrcRECT.Left - 1;
 		ay2 = ay1 + Tex1_SrcRECT.Bottom - Tex1_SrcRECT.Top - 1;
 	} else {
-		ax2 = ax1 + Tex1->width() - 1;
-		ay2 = ay1 + Tex1->height() - 1;
+		ax2 = ax1 + Tex1->getWidth() - 1;
+		ay2 = ay1 + Tex1->getHeight() - 1;
 	}
 
 	bx1 = x2;
@@ -24,8 +24,8 @@ bool pixelPerfectCollide( Texture * Tex1, const unsigned int& x1, const unsigned
 		bx2 = bx1 + Tex2_SrcRECT.Right - Tex2_SrcRECT.Left - 1;
 		by2 = by1 + Tex2_SrcRECT.Bottom - Tex2_SrcRECT.Top - 1;
 	} else {
-		bx2 = bx1 + Tex2->width() - 1;
-		by2 = by1 + Tex2->height() - 1;
+		bx2 = bx1 + Tex2->getWidth() - 1;
+		by2 = by1 + Tex2->getHeight() - 1;
 	}
 
 	if ( !(ax1 > bx2 || ax2 < bx1 || ay1 > by2 || ay2 < by1) ) {
@@ -77,8 +77,8 @@ bool pixelPerfectCollide( Texture * Tex, const unsigned int& x1, const unsigned 
 		ax2 = ax1 + Tex1_SrcRECT.Right - Tex1_SrcRECT.Left - 1;
 		ay2 = ay1 + Tex1_SrcRECT.Bottom - Tex1_SrcRECT.Top - 1;
 	} else {
-		ax2 = ax1 + Tex->width() - 1;
-		ay2 = ay1 + Tex->height() - 1;
+		ax2 = ax1 + Tex->getWidth() - 1;
+		ay2 = ay1 + Tex->getHeight() - 1;
 	}
 
 	if ( !( ax1 >= x2 && ax2 <= x2 && ay1 >= y2 && ay2 <= y2 ) ) {

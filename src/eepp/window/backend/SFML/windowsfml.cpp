@@ -133,7 +133,7 @@ bool WindowSFML::setIcon( const std::string& Path ) {
 
 	Image Img( Path );
 
-	mSFMLWindow.setIcon( Img.width(), Img.height(), Img.getPixelsPtr() );
+	mSFMLWindow.setIcon( Img.getWidth(), Img.getHeight(), Img.getPixelsPtr() );
 
 	return true;
 }

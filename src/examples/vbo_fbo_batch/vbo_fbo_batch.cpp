@@ -59,9 +59,9 @@ void MainLoop()
 	Float HHeight	= win->getHeight() * 0.5f;
 
 	// The batch can be rotated, scale and moved
-	Batch->batchRotation( ang );
-	Batch->batchScale( scale );
-	Batch->batchCenter( Vector2f( HWidth, HHeight ) );
+	Batch->setBatchRotation( ang );
+	Batch->setBatchScale( scale );
+	Batch->setBatchCenter( Vector2f( HWidth, HHeight ) );
 
 	// Create a quad to render
 	Float aX = HWidth - 256.f;

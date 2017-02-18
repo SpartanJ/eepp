@@ -6,7 +6,7 @@ namespace EE { namespace Graphics {
 
 EE_BLEND_MODE BlendMode::sLastBlend = ALPHA_NORMAL;
 
-void BlendMode::SetMode( const EE_BLEND_MODE& blend, bool force ) {
+void BlendMode::setMode( const EE_BLEND_MODE& blend, bool force ) {
 	if ( sLastBlend != blend || force ) {
 		if (blend == ALPHA_NONE) {
 			GLi->disable( GL_BLEND );
@@ -56,7 +56,7 @@ void BlendMode::SetMode( const EE_BLEND_MODE& blend, bool force ) {
 	}
 }
 
-void BlendMode::SetBlendFunc( const EE_BLEND_FUNC& SrcFactor, const EE_BLEND_FUNC& DestFactor ) {
+void BlendMode::setBlendFunc( const EE_BLEND_FUNC& SrcFactor, const EE_BLEND_FUNC& DestFactor ) {
 	GLi->enable( GL_BLEND );
 
 	GLi->blendFunc( (unsigned int)SrcFactor, (unsigned int)DestFactor );
@@ -64,7 +64,7 @@ void BlendMode::SetBlendFunc( const EE_BLEND_FUNC& SrcFactor, const EE_BLEND_FUN
 	sLastBlend = ALPHA_CUSTOM;
 }
 
-EE_BLEND_MODE BlendMode::GetPreBlendFunc() {
+EE_BLEND_MODE BlendMode::getPreBlendFunc() {
 	return sLastBlend;
 }
 

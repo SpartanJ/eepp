@@ -12,16 +12,16 @@ class EE_API BlendMode {
 		* @param SrcFactor Source Factor
 		* @param DestFactor Destination Factor
 		*/
-		static void SetBlendFunc( const EE_BLEND_FUNC& SrcFactor, const EE_BLEND_FUNC& DestFactor );
+		static void setBlendFunc( const EE_BLEND_FUNC& SrcFactor, const EE_BLEND_FUNC& DestFactor );
 
 		/** Set a Predefined Blend Function
 		* @param blend The Blend Mode
 		* @param force If force to apply the blend ( no matters if the last blend was the same blend )
 		*/
-		static void SetMode( const EE_BLEND_MODE& blend, bool force = false );
+		static void setMode( const EE_BLEND_MODE& blend, bool force = false );
 
 		/** @return The last used predefined blend func */
-		static EE_BLEND_MODE GetPreBlendFunc();
+		static EE_BLEND_MODE getPreBlendFunc();
 	protected:
 		static EE_BLEND_MODE sLastBlend;
 };

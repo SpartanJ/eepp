@@ -131,21 +131,21 @@ void TileMap::CreateEmptyTile() {
 
 		Img.fillWithColor( ColorA( 0, 0, 0, 0 ) );
 
-		for ( x = 0; x < Img.width(); x++ ) {
+		for ( x = 0; x < Img.getWidth(); x++ ) {
 			Img.setPixel( x, 0, Col );
 			Img.setPixel( x, mTileSize.y - 1, Col );
 		}
 
-		for ( y = 0; y < Img.height(); y++ ) {
+		for ( y = 0; y < Img.getHeight(); y++ ) {
 			Img.setPixel( 0, y, Col );
 			Img.setPixel( mTileSize.x - 1, y, Col );
 		}
 
 		Uint32 TileTexId = TF->loadFromPixels(
 			Img.getPixelsPtr(),
-			Img.width(),
-			Img.height(),
-			Img.channels(),
+			Img.getWidth(),
+			Img.getHeight(),
+			Img.getChannels(),
 			true,
 			CLAMP_TO_EDGE,
 			false,

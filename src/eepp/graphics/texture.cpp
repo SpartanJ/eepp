@@ -389,7 +389,7 @@ void Texture::update( const Uint8* pixels ) {
 }
 
 void Texture::update( Image *image, Uint32 x, Uint32 y ) {
-	update( image->getPixelsPtr(), image->width(), image->height(), x, y, channelsToPixelFormat( image->channels() ) );
+	update( image->getPixelsPtr(), image->getWidth(), image->getHeight(), x, y, channelsToPixelFormat( image->getChannels() ) );
 }
 
 const Uint32& Texture::hashName() const {
@@ -493,9 +493,9 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &
 					Int32 tmpX;
 
 					sBR->draw();
-					Vector2f oCenter( sBR->batchCenter() );
-					Float oAngle = sBR->batchRotation();
-					Vector2f oScale = sBR->batchScale();
+					Vector2f oCenter( sBR->getBatchCenter() );
+					Float oAngle = sBR->getBatchRotation();
+					Vector2f oScale = sBR->getBatchScale();
 
 					if ( Center.OriginType == OriginPoint::OriginCenter ) {
 						Center.x = x + width  * 0.5f;
@@ -508,9 +508,9 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &
 						Center.y += y;
 					}
 
-					sBR->batchCenter( Center );
-					sBR->batchRotation( Angle );
-					sBR->batchScale( Scale );
+					sBR->setBatchCenter( Center );
+					sBR->setBatchRotation( Angle );
+					sBR->setBatchScale( Scale );
 
 					for ( tmpY = 0; tmpY < tty; tmpY++ ) {
 						for ( tmpX = 0; tmpX < ttx; tmpX++ ) {
@@ -541,9 +541,9 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &
 					}
 
 					sBR->draw();
-					sBR->batchCenter( oCenter );
-					sBR->batchRotation( oAngle );
-					sBR->batchScale( oScale );
+					sBR->setBatchCenter( oCenter );
+					sBR->setBatchRotation( oAngle );
+					sBR->setBatchScale( oScale );
 
 					return;
 				} else {

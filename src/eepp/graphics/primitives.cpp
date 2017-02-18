@@ -416,14 +416,14 @@ void Primitives::drawBatch() {
 		sBR->drawOpt();
 }
 
-void Primitives::forceDraw( const bool& force ) {
+void Primitives::setForceDraw( const bool& force ) {
 	mForceDraw = force;
 
 	if ( force )
 		drawBatch();
 }
 
-const bool& Primitives::forceDraw() const {
+const bool& Primitives::getForceDraw() const {
 	return mForceDraw;
 }
 
@@ -431,27 +431,32 @@ void Primitives::setColor( const ColorA& Color ) {
 	mColor = Color;
 }
 
-void Primitives::fillMode( const EE_FILL_MODE& Mode ) {
+const ColorA& Primitives::getColor()
+{
+	return mColor;
+}
+
+void Primitives::setFillMode( const EE_FILL_MODE& Mode ) {
 	mFillMode = Mode;
 }
 
-const EE_FILL_MODE& Primitives::fillMode() const {
+const EE_FILL_MODE& Primitives::getFillMode() const {
 	return mFillMode;
 }
 
-void Primitives::blendMode( const EE_BLEND_MODE& Mode ) {
+void Primitives::setBlendMode( const EE_BLEND_MODE& Mode ) {
 	mBlendMode = Mode;
 }
 
-const EE_BLEND_MODE& Primitives::blendMode() const {
+const EE_BLEND_MODE& Primitives::getBlendMode() const {
 	return mBlendMode;
 }
 
-void Primitives::lineWidth( const Float& width ) {
+void Primitives::setLineWidth( const Float& width ) {
 	mLineWidth = width;
 }
 
-const Float& Primitives::lineWidth() const {
+const Float& Primitives::getLineWidth() const {
 	return mLineWidth;
 }
 

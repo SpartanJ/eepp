@@ -210,28 +210,28 @@ void RendererGLES2::setShader( ShaderProgram * Shader ) {
 
 	checkLocalShader();
 
-	mProjectionMatrix_id	= mCurShader->uniformLocation( "dgl_ProjectionMatrix" );
-	mModelViewMatrix_id		= mCurShader->uniformLocation( "dgl_ModelViewMatrix" );
-	mTexActiveLoc			= mCurShader->uniformLocation( "dgl_TexActive" );
-	mClippingEnabledLoc		= mCurShader->uniformLocation( "dgl_ClippingEnabled" );
+	mProjectionMatrix_id	= mCurShader->getUniformLocation( "dgl_ProjectionMatrix" );
+	mModelViewMatrix_id		= mCurShader->getUniformLocation( "dgl_ModelViewMatrix" );
+	mTexActiveLoc			= mCurShader->getUniformLocation( "dgl_TexActive" );
+	mClippingEnabledLoc		= mCurShader->getUniformLocation( "dgl_ClippingEnabled" );
 	mCurActiveTex			= 0;
 
 	Uint32 i;
 
 	for ( i = 0; i < EEGL_ARRAY_STATES_COUNT; i++ ) {
-		mAttribsLoc[ i ] = mCurShader->attributeLocation( EEGLES2_STATES_NAME[ i ] );
+		mAttribsLoc[ i ] = mCurShader->getAttributeLocation( EEGLES2_STATES_NAME[ i ] );
 	}
 
 	for ( i = 0; i < EE_MAX_PLANES; i++ ) {
 		if ( -1 != mClippingEnabledLoc ) {
-			mPlanes[ i ] = mCurShader->uniformLocation( EEGLES2_PLANES_NAMENABLED_NAME[ i ] );
+			mPlanes[ i ] = mCurShader->getUniformLocation( EEGLES2_PLANES_NAMENABLED_NAME[ i ] );
 		} else {
 			mPlanes[ i ] = -1;
 		}
 	}
 
 	for ( i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
-		mTextureUnits[ i ] = mCurShader->attributeLocation( EEGLES2_TEXTUREUNIT_NAMES[ i ] );
+		mTextureUnits[ i ] = mCurShader->getAttributeLocation( EEGLES2_TEXTUREUNIT_NAMES[ i ] );
 	}
 
 	glUseProgram( mCurShader->getHandler() );

@@ -100,28 +100,28 @@ class EE_API Image {
 		Uint8 * getPixels() const;
 
 		/** Set the image Width */
-		void width( const unsigned int& width );
+		void setWidth( const unsigned int& width );
 
 		/** @return The image Width */
-		unsigned int width() const;
+		unsigned int getWidth() const;
 
 		/** Set the image Height */
-		void height( const unsigned int& height );
+		void setHeight( const unsigned int& height );
 
 		/** @return The image Height */
-		unsigned int height() const;
+		unsigned int getHeight() const;
 
 		/** @return The number of channels used by the image */
-		unsigned int channels() const;
+		unsigned int getChannels() const;
 
 		/** Set the number of channels of the image */
-		void channels( const unsigned int& channels );
+		void setChannels( const unsigned int& setChannels );
 
 		/** Clears the current image cache if exists */
 		void clearCache();
 
 		/** @return The Image Size on Memory (in bytes) */
-		unsigned int memSize() const;
+		unsigned int getMemSize() const;
 
 		/** @return The image dimensions */
 		Sizei getSize();

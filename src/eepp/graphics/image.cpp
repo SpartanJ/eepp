@@ -418,7 +418,7 @@ void Image::allocate( const Uint32& size, ColorA DefaultColor, bool memsetData )
 	}
 }
 
-unsigned int Image::memSize() const {
+unsigned int Image::getMemSize() const {
 	return mSize;
 }
 
@@ -435,27 +435,27 @@ void Image::clearCache() {
 	}
 }
 
-void Image::width( const unsigned int& width ) {
+void Image::setWidth( const unsigned int& width ) {
 	mWidth = width;
 }
 
-unsigned int Image::width() const {
+unsigned int Image::getWidth() const {
 	return mWidth;
 }
 
-void Image::height( const unsigned int& height ) {
+void Image::setHeight( const unsigned int& height ) {
 	mHeight = height;
 }
 
-unsigned int Image::height() const {
+unsigned int Image::getHeight() const {
 	return mHeight;
 }
 
-void Image::channels( const unsigned int& channels ) {
+void Image::setChannels( const unsigned int& channels ) {
 	mChannels = channels;
 }
 
-unsigned int Image::channels() const {
+unsigned int Image::getChannels() const {
 	return mChannels;
 }
 
@@ -547,11 +547,11 @@ void Image::fillWithColor( const ColorA& Color ) {
 }
 
 void Image::copyImage( Graphics::Image * image, const Uint32& x, const Uint32& y ) {
-	if ( NULL != mPixels && NULL != image->getPixels() && mWidth >= x + image->width() && mHeight >= y + image->height() ) {
-		unsigned int dWidth 	= image->width();
-		unsigned int dHeight 	= image->height();
+	if ( NULL != mPixels && NULL != image->getPixels() && mWidth >= x + image->getWidth() && mHeight >= y + image->getHeight() ) {
+		unsigned int dWidth 	= image->getWidth();
+		unsigned int dHeight 	= image->getHeight();
 
-		if ( mChannels != image->channels() ) {
+		if ( mChannels != image->getChannels() ) {
 			for ( unsigned int ty = 0; ty < dHeight; ty++ ) {
 				for ( unsigned int tx = 0; tx < dWidth; tx++ ) {
 					setPixel( x + tx, y + ty, image->getPixel( tx, ty ) );
@@ -641,8 +641,8 @@ void Image::flip() {
 		clearCache();
 
 		mPixels = tImg.getPixels();
-		mWidth 	= tImg.width();
-		mHeight = tImg.height();
+		mWidth 	= tImg.getWidth();
+		mHeight = tImg.getHeight();
 
 		tImg.avoidFreeImage( true );
 	}
@@ -654,8 +654,8 @@ void Image::avoidFreeImage( const bool& AvoidFree ) {
 
 void Image::blit( Graphics::Image * image, const Uint32& x, const Uint32& y ) {
 	if ( NULL != image && NULL != image->getPixelsPtr() && x < mWidth && y < mHeight ) {
-		unsigned int dh = eemin( mHeight	, y	+ image->height() );
-		unsigned int dw = eemin( mWidth	, x	+ image->width() );
+		unsigned int dh = eemin( mHeight	, y	+ image->getHeight() );
+		unsigned int dw = eemin( mWidth	, x	+ image->getWidth() );
 
 		for ( unsigned int ty = y; ty < dh; ty++ ) {
 			for ( unsigned int tx = x; tx < dw; tx++ ) {

@@ -149,7 +149,7 @@ void Window::setup2D( const bool& KeepView ) {
 		mCurrentView->needUpdate();
 	}
 
-	BlendMode::SetMode( ALPHA_NORMAL, true );
+	BlendMode::setMode( ALPHA_NORMAL, true );
 
 	if ( GLv_3 != GLi->version() ) {
 		#if !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )

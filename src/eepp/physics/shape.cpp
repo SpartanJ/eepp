@@ -170,7 +170,7 @@ void Shape::drawBB() {
 	#ifdef PHYSICS_RENDERER_ENABLED
 	Primitives P;
 	P.setColor( ColorA( 76, 128, 76, 255 ) );
-	P.forceDraw( false );
+	P.setForceDraw( false );
 	P.drawLine( Line2f( Vector2f( mShape->bb.l, mShape->bb.t ), Vector2f( mShape->bb.r, mShape->bb.t ) ) );
 	P.drawLine( Line2f( Vector2f( mShape->bb.l, mShape->bb.t ), Vector2f( mShape->bb.l, mShape->bb.b ) ) );
 	P.drawLine( Line2f( Vector2f( mShape->bb.l, mShape->bb.b ), Vector2f( mShape->bb.r, mShape->bb.b ) ) );

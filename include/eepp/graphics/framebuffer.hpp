@@ -48,10 +48,10 @@ class EE_API FrameBuffer {
 		Texture * getTexture() const;
 
 		/** @brief Sets the frame buffer clear color. */
-		void clearColor( ColorAf Color );
+		void setClearColor( ColorAf Color );
 
 		/** @return The clear color used for the frame buffer. */
-		ColorAf clearColor() const;
+		ColorAf getClearColor() const;
 
 		/** @return The frame buffer width. */
 		const Int32& getWidth() const;

@@ -26,14 +26,14 @@ ShapeCircleSprite::~ShapeCircleSprite() {
 void ShapeCircleSprite::draw( Space * space ) {
 	cVect Pos = body()->pos();
 
-	mSprite->position( Pos.x, Pos.y );
-	mSprite->angle( body()->angleDeg() );
+	mSprite->setPosition( Pos.x, Pos.y );
+	mSprite->setRotation( body()->angleDeg() );
 	mSprite->draw();
 }
 
 void ShapeCircleSprite::offsetSet() {
-	mSprite->size( Sizef( ShapeCircle::radius() * 2, ShapeCircle::radius() * 2 ) );
-	mSprite->offset( Vector2i( -ShapeCircle::radius() + ShapeCircle::offset().x, -ShapeCircle::radius() + ShapeCircle::offset().y ) );
+	mSprite->setSize( Sizef( ShapeCircle::radius() * 2, ShapeCircle::radius() * 2 ) );
+	mSprite->setOffset( Vector2i( -ShapeCircle::radius() + ShapeCircle::offset().x, -ShapeCircle::radius() + ShapeCircle::offset().y ) );
 }
 
 Sprite * ShapeCircleSprite::getSprite() const {

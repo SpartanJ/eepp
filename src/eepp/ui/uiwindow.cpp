@@ -654,7 +654,7 @@ void UIWindow::draw() {
 
 	if ( mWinFlags & UI_WIN_DRAW_SHADOW ) {
 		Primitives P;
-		P.forceDraw( false );
+		P.setForceDraw( false );
 
 		ColorA BeginC( 0, 0, 0, 25 * ( alpha() / (Float)255 ) );
 		ColorA EndC( 0, 0, 0, 0 );
@@ -680,7 +680,7 @@ void UIWindow::draw() {
 
 		P.drawTriangle( Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y + mSize.getHeight() ), Vector2f( ShadowPos.x - SSize, ShadowPos.y + mSize.getHeight() ), Vector2f( ShadowPos.x, ShadowPos.y + mSize.getHeight() + SSize ) ), BeginC, EndC, EndC );
 
-		P.forceDraw( true );
+		P.setForceDraw( true );
 	}
 }
 

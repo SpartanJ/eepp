@@ -52,7 +52,7 @@ void UISprite::draw() {
 	if ( mVisible ) {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
 			checkSubTextureUpdate();
-			mSprite->position( (Float)( mScreenPos.x + mAlignOffset.x ), (Float)( mScreenPos.y + mAlignOffset.y ) );
+			mSprite->setPosition( (Float)( mScreenPos.x + mAlignOffset.x ), (Float)( mScreenPos.y + mAlignOffset.y ) );
 			mSprite->draw( blend(), mRender );
 		}
 	}
@@ -70,7 +70,7 @@ void UISprite::alpha( const Float& alpha ) {
 	UIControlAnim::alpha( alpha );
 	
 	if ( NULL != mSprite )
-		mSprite->alpha( alpha );
+		mSprite->setAlpha( alpha );
 }
 
 Graphics::Sprite * UISprite::sprite() const {
@@ -79,14 +79,14 @@ Graphics::Sprite * UISprite::sprite() const {
 
 ColorA UISprite::color() const {
 	if ( NULL != mSprite )
-		return mSprite->color();
+		return mSprite->getColor();
 
 	return ColorA();
 }
 
 void UISprite::color( const ColorA& color ) {
 	if ( NULL != mSprite )
-		mSprite->color( color );
+		mSprite->setColor( color );
 	
 	alpha( color.a() );
 }

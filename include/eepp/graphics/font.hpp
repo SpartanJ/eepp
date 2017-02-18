@@ -31,16 +31,16 @@ class EE_API Font {
 		virtual int getNumLines();
 
 		/** @return The Font Color */
-		const ColorA& color() const;
+		const ColorA& getColor() const;
 
 		/** Set the color of the string rendered */
-		void color(const ColorA& color);
+		void setColor(const ColorA& color);
 
 		/** @return The Shadow Font Color */
-		const ColorA& shadowColor() const;
+		const ColorA& getShadowColor() const;
 
 		/** Set the shadow color of the string rendered */
-		void shadowColor(const ColorA& color);
+		void setShadowColor(const ColorA& color);
 
 		/** @return The current font size */
 		Uint32 getFontSize() const;

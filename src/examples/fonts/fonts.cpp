@@ -98,8 +98,8 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		TexF2->setText( TTF->getText() );
 
 		// Set the font color
-		TTF2->color( RGB(0,0,0) );
-		TexF->color( RGB(0,0,0) );
+		TTF2->setColor( RGB(0,0,0) );
+		TexF->setColor( RGB(0,0,0) );
 
 		// Create a new text string
 		String Txt( "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." );

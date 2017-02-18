@@ -41,10 +41,10 @@ class EE_API BatchRenderer {
 		void setBlendMode( const EE_BLEND_MODE& Blend );
 
 		/** Set if every batch call have to be immediately rendered */
-		void batchForceRendering( const bool& force ) { mForceRendering = force; }
+		void setBatchForceRendering( const bool& force ) { mForceRendering = force; }
 
 		/** Get if the rendering is force on every batch call */
-		bool batchForceRendering() const { return mForceRendering; }
+		bool getBatchForceRendering() const { return mForceRendering; }
 
 		/** Force the batch rendering */
 		void draw();
@@ -53,31 +53,31 @@ class EE_API BatchRenderer {
 		void drawOpt();
 
 		/** Set the rotation of the rendered vertex. */
-		void batchRotation( const Float& Rotation ) { mRotation = Rotation; }
+		void setBatchRotation( const Float& Rotation ) { mRotation = Rotation; }
 
 		/** Get the rotation of the rendered vertex. */
-		Float batchRotation() const { return mRotation; }
+		Float getBatchRotation() const { return mRotation; }
 
 		/** Set the scale of the rendered vertex. */
-		void batchScale( const Vector2f& Scale ) { mScale = Scale; }
+		void setBatchScale( const Vector2f& Scale ) { mScale = Scale; }
 
 		/** Set the scale of the rendered vertex. */
-		void batchScale( const Float& Scale ) { mScale = Vector2f( Scale, Scale ); }
+		void setBatchScale( const Float& Scale ) { mScale = Vector2f( Scale, Scale ); }
 
 		/** Get the scale of the rendered vertex. */
-		Vector2f batchScale() const { return mScale; }
+		Vector2f getBatchScale() const { return mScale; }
 
 		/** The batch position */
-		void batchPosition( const Vector2f Pos ) { mPosition = Pos; }
+		void setBatchPosition( const Vector2f Pos ) { mPosition = Pos; }
 
 		/** @return The batch position */
-		Vector2f batchPosition() const { return mPosition; }
+		Vector2f getBatchPosition() const { return mPosition; }
 
 		/** This will set a center position for rotating and scaling the batched vertex. */
-		void batchCenter( const Vector2f Pos ) { mCenter = Pos; }
+		void setBatchCenter( const Vector2f Pos ) { mCenter = Pos; }
 
 		/** @return The batch center position */
-		Vector2f batchCenter() const { return mCenter; }
+		Vector2f getBatchCenter() const { return mCenter; }
 
 		/** Add to the batch a quad ( this will change your batch rendering method to DM_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
 		void batchQuadEx( Float x, Float y, Float width, Float height, Float angle = 0.0f, Vector2f scale = Vector2f::One, OriginPoint originPoint = OriginPoint(OriginPoint::OriginCenter) );
@@ -227,10 +227,10 @@ class EE_API BatchRenderer {
 		void batchPolygonByPoint( const Vector2f& Vector );
 
 		/** Foce the blending mode change, ignoring if it's the same that before ( so you can change the blend mode and restore it without problems ) */
-		void forceBlendModeChange( const bool& Force );
+		void setForceBlendModeChange( const bool& Force );
 
 		/** @return If the blending mode switch is forced */
-		const bool& forceBlendModeChange() const;
+		const bool& getForceBlendModeChange() const;
 	protected:
 		eeVertex *			mVertex;
 		unsigned int				mVertexSize;

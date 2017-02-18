@@ -101,55 +101,55 @@ class EE_API ParticleSystem {
 		bool isUsing() const;
 
 		/** Update the effect position */
-		void position( const Float& x, const Float& y );
+		void setPosition( const Float& x, const Float& y );
 
 		/** Update the effect position */
-		void position( const Vector2f& Pos );
+		void setPosition( const Vector2f& Pos );
 
 		/** @return The effect position */
-		const Vector2f& position() const;
+		const Vector2f& getPosition() const;
 
 		/** Update the effect position 2 */
-		void position2( const Float& x, const Float& y );
+		void setPosition2( const Float& x, const Float& y );
 
 		/** Update the effect position 2 */
-		void position2( const Vector2f& Pos );
+		void setPosition2( const Vector2f& Pos );
 
 		/** @return The effect position 2 */
-		const Vector2f& position2() const;
+		const Vector2f& getPosition2() const;
 
 		/** Set a callback function for the reset effect of the particles. \n The reset it's where do you create the effect for every single particle. */
 		void setCallbackReset( const ParticleCallback& pc );
 
 		/** @return The effect blend mode */
-		const EE_BLEND_MODE& blendMode() const;
+		const EE_BLEND_MODE& getBlendMode() const;
 
 		/** Set the effect blend mode */
-		void blendMode( const EE_BLEND_MODE& mode );
+		void setBlendMode( const EE_BLEND_MODE& mode );
 
 		/** @return The color of the effect */
-		const ColorAf& color() const;
+		const ColorAf& getColor() const;
 
 		/** Set the color of the effect */
-		void color( const ColorAf& Col );
+		void setColor( const ColorAf& Col );
 
 		/** @return The alpha decay of the effect */
-		const Float& alphaDecay() const;
+		const Float& getAlphaDecay() const;
 
 		/** Set the alpha decay of the effect */
-		void alphaDecay( const Float& Decay );
+		void setAlphaDecay( const Float& Decay );
 
 		/** @return The Speed of the effect */
-		const Vector2f& speed() const;
+		const Vector2f& getSpeed() const;
 
 		/** Set the Speed of the effect */
-		void speed( const Vector2f& speed );
+		void setSpeed( const Vector2f& speed );
 
 		/** @return The Acceleration of the effect */
-		const Vector2f& acceleration() const;
+		const Vector2f& getAcceleration() const;
 
 		/** Set The Acceleration of the effect */
-		void acceleration( const Vector2f& acc );
+		void setAcceleration( const Vector2f& acc );
 	private:
 		Particle *			mParticle;
 		Uint32				mPCount;

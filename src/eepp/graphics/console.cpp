@@ -155,7 +155,7 @@ void Console::addCommand( const String& Command, ConsoleCallback CB ) {
 
 void Console::draw() {
 	if ( mEnabled && NULL != mFont ) {
-		ColorA OldColor( mFont->color() );
+		ColorA OldColor( mFont->getColor() );
 
 		fade();
 
@@ -188,7 +188,7 @@ void Console::draw() {
 			mCon.ConMin = mEx;
 			mCon.ConMax = (int)mCmdLog.size() - 1;
 
-			mFont->color( ColorA ( mFontColor.r(), mFontColor.g(), mFontColor.b(), static_cast<Uint8>(mA) ) );
+			mFont->setColor( ColorA ( mFontColor.r(), mFontColor.g(), mFontColor.b(), static_cast<Uint8>(mA) ) );
 
 			for (int i = mCon.ConMax - mCon.ConModif; i >= mCon.ConMin - mCon.ConModif; i-- ) {
 				if ( i < static_cast<Int16>( mCmdLog.size() ) && i >= 0 ) {
@@ -202,11 +202,11 @@ void Console::draw() {
 
 			CurY = mTempY + mY + mCurHeight - mFontSize - 1;
 
-			mFont->color( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mA) ) );
+			mFont->setColor( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mA) ) );
 			mFont->setText( "> " + mTBuf->getBuffer() );
 			mFont->draw( mFontSize, CurY );
 
-			mFont->color( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mCurAlpha) ) );
+			mFont->setColor( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mCurAlpha) ) );
 
 			if ( (unsigned int)mTBuf->getCursorPos() == mTBuf->getBuffer().size() ) {
 				mFont->draw( "_", mFontSize + mFont->getTextWidth() , CurY );
@@ -215,16 +215,16 @@ void Console::draw() {
 				mFont->draw( "_", mFontSize + mFont->getTextWidth() , CurY );
 			}
 
-			mFont->color( OldColor );
+			mFont->setColor( OldColor );
 		}
 	}
 
 	if ( mShowFps && NULL != mFont ) {
-		ColorA OldColor1( mFont->color() );
-		mFont->color( ColorA () );
+		ColorA OldColor1( mFont->getColor() );
+		mFont->setColor( ColorA () );
 		mFont->setText( "FPS: " + String::toStr( mWindow->getFPS() ) );
 		mFont->draw( mWindow->getWidth() - mFont->getTextWidth() - 15, 6 );
-		mFont->color( OldColor1 );
+		mFont->setColor( OldColor1 );
 	}
 }
 

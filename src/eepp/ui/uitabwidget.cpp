@@ -103,7 +103,7 @@ void UITabWidget::draw() {
 		controlToScreen( p1 );
 		controlToScreen( p2 );
 
-		P.lineWidth( 1 );
+		P.setLineWidth( 1 );
 		P.setColor( mLineBelowTabsColor );
 		P.drawLine( Line2f( Vector2f( p1.x, p1.y ), Vector2f( p2.x, p2.y ) ) );
 

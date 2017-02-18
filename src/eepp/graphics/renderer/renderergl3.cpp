@@ -162,25 +162,25 @@ void RendererGL3::setShader( ShaderProgram * Shader ) {
 
 	mShaderPrev				= mCurShader;
 	mCurShader				= Shader;
-	mProjectionMatrix_id	= mCurShader->uniformLocation( "dgl_ProjectionMatrix" );
-	mModelViewMatrix_id		= mCurShader->uniformLocation( "dgl_ModelViewMatrix" );
-	mTexActiveLoc			= mCurShader->uniformLocation( "dgl_TexActive" );
-	mPointSpriteLoc			= mCurShader->uniformLocation( "dgl_PointSpriteActive" );
-	mClippingEnabledLoc		= mCurShader->uniformLocation( "dgl_ClippingEnabled" );
+	mProjectionMatrix_id	= mCurShader->getUniformLocation( "dgl_ProjectionMatrix" );
+	mModelViewMatrix_id		= mCurShader->getUniformLocation( "dgl_ModelViewMatrix" );
+	mTexActiveLoc			= mCurShader->getUniformLocation( "dgl_TexActive" );
+	mPointSpriteLoc			= mCurShader->getUniformLocation( "dgl_PointSpriteActive" );
+	mClippingEnabledLoc		= mCurShader->getUniformLocation( "dgl_ClippingEnabled" );
 	mCurActiveTex			= 0;
 
 	Uint32 i;
 
 	for ( i = 0; i < EEGL_ARRAY_STATES_COUNT; i++ ) {
-		mAttribsLoc[ i ] = mCurShader->attributeLocation( EEGL3_STATES_NAME[ i ] );
+		mAttribsLoc[ i ] = mCurShader->getAttributeLocation( EEGL3_STATES_NAME[ i ] );
 	}
 
 	for ( i = 0; i < EE_MAX_PLANES; i++ ) {
-		mPlanes[ i ] = mCurShader->uniformLocation( EEGL3_PLANES_NAME[ i ] );
+		mPlanes[ i ] = mCurShader->getUniformLocation( EEGL3_PLANES_NAME[ i ] );
 	}
 
 	for ( i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
-		mTextureUnits[ i ] = mCurShader->attributeLocation( EEGL3_TEXTUREUNIT_NAMES[ i ] );
+		mTextureUnits[ i ] = mCurShader->getAttributeLocation( EEGL3_TEXTUREUNIT_NAMES[ i ] );
 	}
 
 	glUseProgram( mCurShader->getHandler() );

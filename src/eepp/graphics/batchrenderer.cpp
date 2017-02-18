@@ -111,11 +111,11 @@ void BatchRenderer::flush() {
 
 	bool CreateMatrix = ( mRotation || mScale != 1.0f || mPosition.x || mPosition.y );
 
-	BlendMode::SetMode( mBlend );
+	BlendMode::setMode( mBlend );
 
 	if ( mCurrentMode == DM_POINTS && NULL != mTexture ) {
 		GLi->enable( GL_POINT_SPRITE );
-		GLi->pointSize( (float)mTexture->width() );
+		GLi->pointSize( (float)mTexture->getWidth() );
 	}
 
 	if ( CreateMatrix ) {
@@ -814,11 +814,11 @@ Float BatchRenderer::getPointSize() {
 	return GLi->pointSize();
 }
 
-void BatchRenderer::forceBlendModeChange( const bool& Force ) {
+void BatchRenderer::setForceBlendModeChange( const bool& Force ) {
 	mForceBlendMode = Force;
 }
 
-const bool& BatchRenderer::forceBlendModeChange() const {
+const bool& BatchRenderer::getForceBlendModeChange() const {
 	return mForceBlendMode;
 }
 

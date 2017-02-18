@@ -63,7 +63,7 @@ void videoResize( EE::Window::Window * w ) {
 	GLi->enableClientState( GL_COLOR_ARRAY );
 
 	/// Reset the default blend func ( by default eepp use ALPHA_NORMAL )
-	BlendMode::SetMode( ALPHA_BLENDONE );
+	BlendMode::setMode( ALPHA_BLENDONE );
 
 	/// Set the line width
 	GlobalBatchRenderer::instance()->setLineWidth( 2 );
