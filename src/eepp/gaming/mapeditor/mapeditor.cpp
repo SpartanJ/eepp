@@ -203,7 +203,7 @@ void MapEditor::CreateTabs() {
 	mTabWidget->add( "Sprites", mSubTextureCont );
 
 	if ( NULL != mUIMap && NULL != mUIMap->Map() ) {
-		if ( mUIMap->Map()->LightsEnabled() ) {
+		if ( mUIMap->Map()->getLightsEnabled() ) {
 			mTabWidget->add( "Lights", mLightCont );
 		}
 	}
@@ -215,13 +215,13 @@ void MapEditor::OnTabSelected( const UIEvent * Event ) {
 	if ( NULL != mUIMap ) {
 		switch ( mTabWidget->getSelectedTabIndex() ) {
 			case 0:
-				mUIMap->EditingDisabled();
+				mUIMap->editingDisable();
 				break;
 			case 1:
-				mUIMap->EditingLights( true );
+				mUIMap->setEditingLights( true );
 				break;
 			case 2:
-				mUIMap->EditingObjects( true );
+				mUIMap->setEditingObjects( true );
 				break;
 		}
 	}
@@ -433,7 +433,7 @@ void MapEditor::OnObjectModeSel( const UIEvent * Event ) {
 
 	Button->select();
 
-	mUIMap->EditingObjMode( (UIMap::EDITING_OBJ_MODE)Button->getData() );
+	mUIMap->setEditingObjMode( (UIMap::EDITING_OBJ_MODE)Button->getData() );
 }
 
 void MapEditor::CreateUIMap() {
@@ -472,12 +472,12 @@ void MapEditor::CreateUIMap() {
 	mUIMap->addEventListener( UIEvent::EventOnSizeChange, cb::Make1( this, &MapEditor::OnMapSizeChange ) );
 	mUIMap->addEventListener( UIEvent::EventMouseDown, cb::Make1( this, &MapEditor::OnMapMouseDown ) );
 	mUIMap->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::OnMapMouseClick ) );
-	mUIMap->SetLightSelectCb( cb::Make1( this, &MapEditor::OnLightSelect ) );
-	mUIMap->SetLightRadiusChangeCb( cb::Make1( this, &MapEditor::OnLightRadiusChange ) );
-	mUIMap->SetAddObjectCallback( cb::Make2( this, &MapEditor::OnAddObject ) );
-	mUIMap->SetAlertCb( cb::Make2( this, &MapEditor::CreateAlert ) );
-	mUIMap->SetUpdateScrollCb( cb::Make0( this, &MapEditor::UpdateScroll ) );
-	mUIMap->SetTileBox( mTileBox );
+	mUIMap->setLightSelectCb( cb::Make1( this, &MapEditor::OnLightSelect ) );
+	mUIMap->setLightRadiusChangeCb( cb::Make1( this, &MapEditor::OnLightRadiusChange ) );
+	mUIMap->setAddObjectCallback( cb::Make2( this, &MapEditor::OnAddObject ) );
+	mUIMap->setAlertCb( cb::Make2( this, &MapEditor::CreateAlert ) );
+	mUIMap->setUpdateScrollCb( cb::Make0( this, &MapEditor::UpdateScroll ) );
+	mUIMap->setTileBox( mTileBox );
 
 	mMapHScroll = mTheme->createScrollBar( mWinContainer, Sizei( Params.Size.getWidth(), ScrollH ), Vector2i( 0, mWinContainer->getSize().getHeight() - ScrollH ), UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_AUTO_SIZE );
 	mMapHScroll->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnScrollMapH ) );
@@ -494,7 +494,7 @@ void MapEditor::OnAddObject( Uint32 Type, Polygon2f poly ) {
 		return;
 	}
 
-	if ( mCurLayer->Type() != MAP_LAYER_OBJECT ) {
+	if ( mCurLayer->getType() != MAP_LAYER_OBJECT ) {
 		CreateAlert( "Wrong Layer", "Objects only can be added to an Object Layer" )->setFocus();
 		return;
 	}
@@ -506,46 +506,46 @@ void MapEditor::OnAddObject( Uint32 Type, Polygon2f poly ) {
 	MapObjectLayer * OL = static_cast<MapObjectLayer*> ( mCurLayer );
 
 	if ( GAMEOBJECT_TYPE_OBJECT == Type ) {
-		OL->AddGameObject( eeNew( GameObjectObject, ( mUIMap->Map()->GetNewObjectId(), poly.toAABB(), mCurLayer ) ) );
+		OL->addGameObject( eeNew( GameObjectObject, ( mUIMap->Map()->getNewObjectId(), poly.toAABB(), mCurLayer ) ) );
 	} else if ( GAMEOBJECT_TYPE_POLYGON == Type ) {
-		OL->AddGameObject( eeNew( GameObjectPolygon, ( mUIMap->Map()->GetNewObjectId(), poly, mCurLayer ) ) );
+		OL->addGameObject( eeNew( GameObjectPolygon, ( mUIMap->Map()->getNewObjectId(), poly, mCurLayer ) ) );
 	} else if ( GAMEOBJECT_TYPE_POLYLINE == Type ) {
-		OL->AddGameObject( eeNew( GameObjectPolyline, ( mUIMap->Map()->GetNewObjectId(), poly, mCurLayer ) ) );
+		OL->addGameObject( eeNew( GameObjectPolyline, ( mUIMap->Map()->getNewObjectId(), poly, mCurLayer ) ) );
 	}
 }
 
 void MapEditor::OnLightTypeChange( const UIEvent * Event ) {
-	if ( NULL != mUIMap->GetSelectedLight() ) {
-		mUIMap->GetSelectedLight()->Type( mLightTypeChk->isActive() ? LIGHT_ISOMETRIC : LIGHT_NORMAL );
+	if ( NULL != mUIMap->getSelectedLight() ) {
+		mUIMap->getSelectedLight()->setType( mLightTypeChk->isActive() ? LIGHT_ISOMETRIC : LIGHT_NORMAL );
 	}
 }
 
 void MapEditor::OnLightRadiusChangeVal( const UIEvent * Event ) {
-	if ( NULL != mUIMap->GetSelectedLight() ) {
-		mUIMap->GetSelectedLight()->Radius( mLightRadius->getValue() );
+	if ( NULL != mUIMap->getSelectedLight() ) {
+		mUIMap->getSelectedLight()->setRadius( mLightRadius->getValue() );
 	}
 }
 
 void MapEditor::OnLightRadiusChange( MapLight * Light ) {
-	mLightRadius->setValue( Light->Radius() );
+	mLightRadius->setValue( Light->getRadius() );
 }
 
 void MapEditor::OnLightSelect( MapLight * Light ) {
-	ColorA Col( Light->Color() );
+	ColorA Col( Light->getColor() );
 
 	mUIRedSlider->setValue( Col.r() );
 	mUIGreenSlider->setValue( Col.g() );
 	mUIBlueSlider->setValue( Col.b() );
-	mLightRadius->setValue( Light->Radius() );
-	mLightTypeChk->setActive( Light->Type() == LIGHT_ISOMETRIC ? true : false );
+	mLightRadius->setValue( Light->getRadius() );
+	mLightTypeChk->setActive( Light->getType() == LIGHT_ISOMETRIC ? true : false );
 }
 
 void MapEditor::OnNewLight( const UIEvent * Event ) {
 	const UIEventMouse * MEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( MEvent->getFlags() & EE_BUTTON_LMASK ) {
-		Vector2i Pos = mUIMap->Map()->GetMouseMapPos();
-		mUIMap->AddLight( eeNew( MapLight, ( mLightRadius->getValue(), Pos.x, Pos.y, mUIBaseColor->getBackground()->getColor().toColor(), mLightTypeChk->isActive() ? LIGHT_ISOMETRIC : LIGHT_NORMAL ) ) );
+		Vector2i Pos = mUIMap->Map()->getMouseMapPos();
+		mUIMap->addLight( eeNew( MapLight, ( mLightRadius->getValue(), Pos.x, Pos.y, mUIBaseColor->getBackground()->getColor().toColor(), mLightTypeChk->isActive() ? LIGHT_ISOMETRIC : LIGHT_NORMAL ) ) );
 	}
 }
 
@@ -555,10 +555,10 @@ void MapEditor::OnRedChange( const UIEvent * Event ) {
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
 
-	if ( NULL != mUIMap->GetSelectedLight() ) {
-		RGB lCol( mUIMap->GetSelectedLight()->Color() );
+	if ( NULL != mUIMap->getSelectedLight() ) {
+		RGB lCol( mUIMap->getSelectedLight()->getColor() );
 		lCol.Red = Col.r();
-		mUIMap->GetSelectedLight()->Color( lCol );
+		mUIMap->getSelectedLight()->setColor( lCol );
 	}
 }
 
@@ -568,10 +568,10 @@ void MapEditor::OnGreenChange( const UIEvent * Event ) {
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
 
-	if ( NULL != mUIMap->GetSelectedLight() ) {
-		RGB lCol( mUIMap->GetSelectedLight()->Color() );
+	if ( NULL != mUIMap->getSelectedLight() ) {
+		RGB lCol( mUIMap->getSelectedLight()->getColor() );
 		lCol.Green = Col.g();
-		mUIMap->GetSelectedLight()->Color( lCol );
+		mUIMap->getSelectedLight()->setColor( lCol );
 	}
 }
 
@@ -581,10 +581,10 @@ void MapEditor::OnBlueChange( const UIEvent * Event ) {
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
 
-	if ( NULL != mUIMap->GetSelectedLight() ) {
-		RGB lCol( mUIMap->GetSelectedLight()->Color() );
+	if ( NULL != mUIMap->getSelectedLight() ) {
+		RGB lCol( mUIMap->getSelectedLight()->getColor() );
 		lCol.Blue = Col.b();
-		mUIMap->GetSelectedLight()->Color( lCol );
+		mUIMap->getSelectedLight()->setColor( lCol );
 	}
 }
 
@@ -603,7 +603,7 @@ void MapEditor::ChkClickDI( const UIEvent * Event ) {
 }
 
 void MapEditor::ChkClickClampToTile( const UIEvent * Event ) {
-	mUIMap->ClampToTile( mChkClampToTile->isActive() );
+	mUIMap->setClampToTile( mChkClampToTile->isActive() );
 }
 
 void MapEditor::UpdateGfx() {
@@ -706,7 +706,7 @@ void MapEditor::OnNewGOTypeAdded( std::string name, Uint32 hash ) {
 		}
 
 		mGOTypeList->getListBox()->addListBoxItem( name );
-		mUIMap->Map()->AddVirtualObjectType( name );
+		mUIMap->Map()->addVirtualObjectType( name );
 	}
 }
 
@@ -779,7 +779,7 @@ void MapEditor::CreateNewMap() {
 }
 
 void MapEditor::CreateNewEmptyMap() {
-	mUIMap->Map()->Create( Sizei( 100, 100 ), 16, Sizei( 32, 32 ), MAP_EDITOR_DEFAULT_FLAGS | MAP_FLAG_LIGHTS_ENABLED, mUIMap->getSize() );
+	mUIMap->Map()->create( Sizei( 100, 100 ), 16, Sizei( 32, 32 ), MAP_EDITOR_DEFAULT_FLAGS | MAP_FLAG_LIGHTS_ENABLED, mUIMap->getSize() );
 }
 
 void MapEditor::MapCreated() {
@@ -794,7 +794,7 @@ void MapEditor::MapCreated() {
 	mMapVScroll->setValue( 0 );
 	OnMapSizeChange( NULL );
 
-	mUIMap->ClearLights();
+	mUIMap->clearLights();
 
 	CreateTabs();
 }
@@ -803,14 +803,14 @@ void MapEditor::OnMapSizeChange( const UIEvent *Event ) {
 	if ( mMouseScrolling )
 		return;
 
-	Vector2i v( mUIMap->Map()->GetMaxOffset() );
+	Vector2i v( mUIMap->Map()->getMaxOffset() );
 
 	mMapHScroll->setMinValue( 0 );
 	mMapHScroll->setMaxValue( v.x );
-	mMapHScroll->setClickStep( mUIMap->Map()->TileSize().getWidth() * mUIMap->Map()->Scale() );
+	mMapHScroll->setClickStep( mUIMap->Map()->getTileSize().getWidth() * mUIMap->Map()->getScale() );
 	mMapVScroll->setMinValue( 0 );
 	mMapVScroll->setMaxValue( v.y );
-	mMapVScroll->setClickStep( mUIMap->Map()->TileSize().getHeight() * mUIMap->Map()->Scale() );
+	mMapVScroll->setClickStep( mUIMap->Map()->getTileSize().getHeight() * mUIMap->Map()->getScale() );
 }
 
 void MapEditor::OnScrollMapH( const UIEvent * Event ) {
@@ -819,34 +819,34 @@ void MapEditor::OnScrollMapH( const UIEvent * Event ) {
 
 	UIScrollBar * Scr = reinterpret_cast<UIScrollBar*> ( Event->getControl() );
 
-	Vector2f Off = mUIMap->Map()->Offset();
+	Vector2f Off = mUIMap->Map()->getOffset();
 
 	Off.x = -Scr->getValue();
 
-	mUIMap->Map()->Offset( Off ) ;
+	mUIMap->Map()->setOffset( Off ) ;
 }
 
 void MapEditor::OnScrollMapV( const UIEvent * Event ) {
 	UIScrollBar * Scr = reinterpret_cast<UIScrollBar*> ( Event->getControl() );
 
-	Vector2f Off = mUIMap->Map()->Offset();
+	Vector2f Off = mUIMap->Map()->getOffset();
 
 	Off.y = -Scr->getValue();
 
-	mUIMap->Map()->Offset( Off ) ;
+	mUIMap->Map()->setOffset( Off ) ;
 }
 
 void MapEditor::UpdateScroll() {
 	mMouseScrolling = true;
-	mMapHScroll->setValue( -mUIMap->Map()->Offset().x );
-	mMapVScroll->setValue( -mUIMap->Map()->Offset().y );
+	mMapHScroll->setValue( -mUIMap->Map()->getOffset().x );
+	mMapVScroll->setValue( -mUIMap->Map()->getOffset().y );
 	mMouseScrolling = false;
 }
 
 void MapEditor::MapOpen( const UIEvent * Event ) {
 	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->getControl() );
 
-	if ( mUIMap->Map()->Load( CDL->getFullPath() ) ) {
+	if ( mUIMap->Map()->load( CDL->getFullPath() ) ) {
 		OnMapLoad();
 	}
 }
@@ -854,7 +854,7 @@ void MapEditor::MapOpen( const UIEvent * Event ) {
 void MapEditor::OnMapLoad() {
 	mCurLayer = NULL;
 
-	mUIMap->Map()->ViewSize( mUIMap->getSize() );
+	mUIMap->Map()->setViewSize( mUIMap->getSize() );
 
 	MapCreated();
 
@@ -872,7 +872,7 @@ void MapEditor::MapSave( const UIEvent * Event ) {
 		path += ".eem";
 	}
 
-	mUIMap->Map()->Save( path );
+	mUIMap->Map()->save( path );
 }
 
 void MapEditor::FileMenuClick( const UIEvent * Event ) {
@@ -898,8 +898,8 @@ void MapEditor::FileMenuClick( const UIEvent * Event ) {
 		TGDialog->center();
 		TGDialog->show();
 	} else if ( "Save" == txt ) {
-		if ( mUIMap->Map()->Path().size() ) {
-			mUIMap->Map()->Save( mUIMap->Map()->Path() );
+		if ( mUIMap->Map()->getPath().size() ) {
+			mUIMap->Map()->save( mUIMap->Map()->getPath() );
 		}
 	} else if ( "Close" == txt ) {
 		UIMessageBox * MsgBox = mTheme->createMessageBox( MSGBOX_OKCANCEL, "Do you really want to close the current map?\nAll changes will be lost." );
@@ -933,43 +933,43 @@ void MapEditor::ViewMenuClick( const UIEvent * Event ) {
 	const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getControl() )->getText();
 
 	if ( "Show Grid" == txt ) {
-		mUIMap->Map()->DrawGrid( reinterpret_cast<UIMenuCheckBox*> ( Event->getControl() )->isActive() );
+		mUIMap->Map()->setDrawGrid( reinterpret_cast<UIMenuCheckBox*> ( Event->getControl() )->isActive() );
 	} else if ( "Mark Tile Over" == txt ) {
-		mUIMap->Map()->DrawTileOver( reinterpret_cast<UIMenuCheckBox*> ( Event->getControl() )->isActive() );
+		mUIMap->Map()->setDrawTileOver( reinterpret_cast<UIMenuCheckBox*> ( Event->getControl() )->isActive() );
 	} else if ( "Show Blocked" == txt ) {
-		mUIMap->Map()->ShowBlocked( reinterpret_cast<UIMenuCheckBox*> ( Event->getControl() )->isActive() );
+		mUIMap->Map()->setShowBlocked( reinterpret_cast<UIMenuCheckBox*> ( Event->getControl() )->isActive() );
 	} else if ( "Zoom In" == txt ) {
 		ZoomIn();
 	} else if ( "Zoom Out" == txt ) {
 		ZoomOut();
 	} else if ( "Normal Size" == txt ) {
-		mUIMap->Map()->Scale( 1 );
+		mUIMap->Map()->setScale( 1 );
 	}
 }
 
 void MapEditor::ZoomIn() {
 	TileMap * Map = mUIMap->Map();
-	Float S = mUIMap->Map()->Scale();
+	Float S = mUIMap->Map()->getScale();
 
 	if ( S < 4 ) {
 		if ( 0.0625f == S ) {
-			Map->Scale( 0.125f );
+			Map->setScale( 0.125f );
 		} else if ( 0.125f == S ) {
-			Map->Scale( 0.25f );
+			Map->setScale( 0.25f );
 		} else if ( 0.25f == S ) {
-			Map->Scale( 0.5f );
+			Map->setScale( 0.5f );
 		} else if ( 0.5f == S ) {
-			Map->Scale( 0.75f );
+			Map->setScale( 0.75f );
 		} else if ( 0.75f == S ) {
-			Map->Scale( 1.0f );
+			Map->setScale( 1.0f );
 		} else if ( 1.0f == S ) {
-			Map->Scale( 1.5f );
+			Map->setScale( 1.5f );
 		} else if ( 1.5f == S ) {
-			Map->Scale( 2.0f );
+			Map->setScale( 2.0f );
 		} else if ( 2.0f == S ) {
-			Map->Scale( 3.0f );
+			Map->setScale( 3.0f );
 		} else if ( 3.0f == S ) {
-			Map->Scale( 4.0f );
+			Map->setScale( 4.0f );
 		}
 	}
 
@@ -978,27 +978,27 @@ void MapEditor::ZoomIn() {
 
 void MapEditor::ZoomOut() {
 	TileMap * Map = mUIMap->Map();
-	Float S = mUIMap->Map()->Scale();
+	Float S = mUIMap->Map()->getScale();
 
 	if ( S > 0.0625f ) {
 		if ( 0.125f == S ) {
-			Map->Scale( 0.0625f );
+			Map->setScale( 0.0625f );
 		} else if ( 0.25f == S ) {
-			Map->Scale( 0.125f );
+			Map->setScale( 0.125f );
 		} else if ( 0.5f == S ) {
-			Map->Scale( 0.25f );
+			Map->setScale( 0.25f );
 		} else if ( 0.75f == S ) {
-			Map->Scale( 0.5f );
+			Map->setScale( 0.5f );
 		} else if ( 1.0f == S ) {
-			Map->Scale( 0.75f );
+			Map->setScale( 0.75f );
 		} else if ( 1.5f == S ) {
-			Map->Scale( 1.0f );
+			Map->setScale( 1.0f );
 		} else if ( 2.0f == S ) {
-			Map->Scale( 1.5f );
+			Map->setScale( 1.5f );
 		} else if ( 3.0f == S ) {
-			Map->Scale( 2.0f );
+			Map->setScale( 2.0f );
 		} else if ( 4.0f == S ) {
-			Map->Scale( 3.0f );
+			Map->setScale( 3.0f );
 		}
 	}
 
@@ -1054,11 +1054,11 @@ void MapEditor::LayerMenuClick( const UIEvent * Event ) {
 		}
 	} else if ( "Lights Enabled" == txt ) {
 		if ( NULL != mCurLayer ) {
-			mCurLayer->LightsEnabled( !mCurLayer->LightsEnabled() );
+			mCurLayer->setLightsEnabled( !mCurLayer->getLightsEnabled() );
 		}
 	} else if ( "Visible" == txt ) {
 		if ( NULL != mCurLayer ) {
-			mCurLayer->Visible( !mCurLayer->Visible() );
+			mCurLayer->setVisible( !mCurLayer->isVisible() );
 		}
 	}
 }
@@ -1076,19 +1076,19 @@ UIMessageBox * MapEditor::CreateNoLayerAlert( const String title ) {
 }
 
 void MapEditor::MoveLayerUp() {
-	if ( mUIMap->Map()->MoveLayerUp( mCurLayer ) ) {
+	if ( mUIMap->Map()->moveLayerUp( mCurLayer ) ) {
 		RefreshLayersList();
 	}
 }
 
 void MapEditor::MoveLayerDown() {
-	if ( mUIMap->Map()->MoveLayerDown( mCurLayer ) ) {
+	if ( mUIMap->Map()->moveLayerDown( mCurLayer ) ) {
 		RefreshLayersList();
 	}
 }
 
 void MapEditor::RemoveLayer() {
-	if ( mUIMap->Map()->RemoveLayer( mCurLayer ) ) {
+	if ( mUIMap->Map()->removeLayer( mCurLayer ) ) {
 		mCurLayer = NULL;
 
 		RefreshLayersList();
@@ -1096,7 +1096,7 @@ void MapEditor::RemoveLayer() {
 }
 
 void MapEditor::RefreshGotyList() {
-	TileMap::GOTypesList& GOList = mUIMap->Map()->GetVirtualObjectTypes();
+	TileMap::GOTypesList& GOList = mUIMap->Map()->getVirtualObjectTypes();
 
 	for ( TileMap::GOTypesList::iterator it = GOList.begin(); it != GOList.end(); it++ ) {
 		mGOTypeList->getListBox()->addListBoxItem( (*it) );
@@ -1106,20 +1106,20 @@ void MapEditor::RefreshGotyList() {
 void MapEditor::RefreshLayersList() {
 	mLayerList->getListBox()->clear();
 
-	if ( mUIMap->Map()->LayerCount() ) {
+	if ( mUIMap->Map()->getLayerCount() ) {
 		std::vector<String> layers;
 
-		for ( Uint32 i = 0; i < mUIMap->Map()->LayerCount(); i++ ) {
-			layers.push_back( mUIMap->Map()->GetLayer(i)->Name() );
+		for ( Uint32 i = 0; i < mUIMap->Map()->getLayerCount(); i++ ) {
+			layers.push_back( mUIMap->Map()->getLayer(i)->getName() );
 		}
 
 		mLayerList->getListBox()->addListBoxItems( layers );
 	}
 
 	if ( NULL != mCurLayer ) {
-		mLayerList->getListBox()->setSelected( mCurLayer->Name() );
+		mLayerList->getListBox()->setSelected( mCurLayer->getName() );
 	} else {
-		if ( mUIMap->Map()->LayerCount() ) {
+		if ( mUIMap->Map()->getLayerCount() ) {
 			mLayerList->getListBox()->setSelected(0);
 		}
 	}
@@ -1148,28 +1148,28 @@ void MapEditor::TextureAtlasOpen( const UIEvent * Event ) {
 void MapEditor::OnLayerAdd( UIMapLayerNew * UILayer ) {
 	bool SetSelected = ( 0 == mLayerList->getListBox()->getCount() ) ? true : false;
 
-	mLayerList->getListBox()->addListBoxItem( UILayer->Name() );
+	mLayerList->getListBox()->addListBoxItem( UILayer->getName() );
 
 	if ( SetSelected ) {
-		mCurLayer = UILayer->Layer();
+		mCurLayer = UILayer->getLayer();
 
-		mUIMap->CurLayer( mCurLayer );
+		mUIMap->setCurLayer( mCurLayer );
 
 		mLayerList->getListBox()->setSelected(0);
 	}
 }
 
 void MapEditor::OnLayerSelect( const UIEvent * Event ) {
-	MapLayer * tLayer = mUIMap->Map()->GetLayer( mLayerList->getText() );
+	MapLayer * tLayer = mUIMap->Map()->getLayer( mLayerList->getText() );
 
 	if ( NULL != tLayer ) {
 		mCurLayer = tLayer;
 
-		mUIMap->CurLayer( mCurLayer );
+		mUIMap->setCurLayer( mCurLayer );
 
-		mLayerChkVisible->setActive( mCurLayer->Visible() );
+		mLayerChkVisible->setActive( mCurLayer->isVisible() );
 
-		mLayerChkLights->setActive( mCurLayer->LightsEnabled() );
+		mLayerChkLights->setActive( mCurLayer->getLightsEnabled() );
 	}
 }
 
@@ -1222,10 +1222,10 @@ void MapEditor::AddGameObjectToTile() {
 	GameObject * tObj	= CreateGameObject();
 
 	if ( NULL != tObj ) {
-		if ( tObj->Type() == GAMEOBJECT_TYPE_VIRTUAL )
-			reinterpret_cast<GameObjectVirtual*> ( tObj )->SetLayer( tLayer );
+		if ( tObj->getType() == GAMEOBJECT_TYPE_VIRTUAL )
+			reinterpret_cast<GameObjectVirtual*> ( tObj )->setLayer( tLayer );
 
-		tLayer->AddGameObject( tObj, tMap->GetMouseTilePos() );
+		tLayer->addGameObject( tObj, tMap->getMouseTilePos() );
 	}
 }
 
@@ -1233,7 +1233,7 @@ void MapEditor::RemoveGameObjectFromTile() {
 	TileMapLayer * tLayer = reinterpret_cast<TileMapLayer*> ( mCurLayer );
 	TileMap * tMap			= mUIMap->Map();
 
-	tLayer->RemoveGameObject( tMap->GetMouseTilePos() );
+	tLayer->removeGameObject( tMap->getMouseTilePos() );
 }
 
 void MapEditor::AddGameObject() {
@@ -1242,17 +1242,17 @@ void MapEditor::AddGameObject() {
 	GameObject * tObj	= CreateGameObject();
 
 	if ( NULL != tObj ) {
-		if ( tObj->Type() == GAMEOBJECT_TYPE_VIRTUAL )
-			reinterpret_cast<GameObjectVirtual*> ( tObj )->SetLayer( tLayer );
+		if ( tObj->getType() == GAMEOBJECT_TYPE_VIRTUAL )
+			reinterpret_cast<GameObjectVirtual*> ( tObj )->setLayer( tLayer );
 
-		Vector2i p( tMap->GetMouseMapPos() );
+		Vector2i p( tMap->getMouseMapPos() );
 
 		if ( UIManager::instance()->getInput()->isKeyDown( KEY_LCTRL ) ) {
-			p = tMap->GetMouseTilePosCoords();
+			p = tMap->getMouseTilePosCoords();
 		}
 
-		tObj->Pos( Vector2f( p.x, p.y ) );
-		tLayer->AddGameObject( tObj );
+		tObj->setPosition( Vector2f( p.x, p.y ) );
+		tLayer->addGameObject( tObj );
 	}
 }
 
@@ -1260,11 +1260,11 @@ void MapEditor::RemoveGameObject() {
 	MapObjectLayer * tLayer = reinterpret_cast<MapObjectLayer*> ( mCurLayer );
 	TileMap * tMap			= mUIMap->Map();
 
-	tLayer->RemoveGameObject( tMap->GetMouseMapPos() );
+	tLayer->removeGameObject( tMap->getMouseMapPos() );
 }
 
 GameObject * MapEditor::GetCurrentGOOver() {
-	return reinterpret_cast<TileMapLayer*>( mCurLayer )->GetGameObject( mUIMap->Map()->GetMouseTilePos() );
+	return reinterpret_cast<TileMapLayer*>( mCurLayer )->getGameObject( mUIMap->Map()->getMouseTilePos() );
 }
 
 void MapEditor::OnMapMouseClick( const UIEvent * Event ) {
@@ -1279,33 +1279,33 @@ void MapEditor::OnMapMouseClick( const UIEvent * Event ) {
 		}
 
 		if ( MEvent->getFlags() & EE_BUTTON_LMASK ) {
-			if ( mCurLayer->Type() == MAP_LAYER_OBJECT )
+			if ( mCurLayer->getType() == MAP_LAYER_OBJECT )
 				AddGameObject();
 		} else if ( MEvent->getFlags() & EE_BUTTON_RMASK ) {
-			if ( mCurLayer->Type() == MAP_LAYER_OBJECT )
+			if ( mCurLayer->getType() == MAP_LAYER_OBJECT )
 				RemoveGameObject();
 		} else if ( MEvent->getFlags() & EE_BUTTON_MMASK ) {
-			if ( mCurLayer->Type() == MAP_LAYER_TILED ) {
+			if ( mCurLayer->getType() == MAP_LAYER_TILED ) {
 				GameObject * tObj = GetCurrentGOOver();
 
 				if ( NULL != tObj ) {
-					tObj->Blocked( !tObj->Blocked() );
+					tObj->setBlocked( !tObj->isBlocked() );
 				}
 			}
 		} else if ( MEvent->getFlags() & EE_BUTTON_WUMASK ) {
-			if ( mCurLayer->Type() == MAP_LAYER_TILED ) {
+			if ( mCurLayer->getType() == MAP_LAYER_TILED ) {
 				GameObject * tObj = GetCurrentGOOver();
 
 				if ( NULL != tObj ) {
-					tObj->Mirrored( !tObj->Mirrored() );
+					tObj->setMirrored( !tObj->isMirrored() );
 				}
 			}
 		} else if ( MEvent->getFlags() & EE_BUTTON_WDMASK ) {
-			if ( mCurLayer->Type() == MAP_LAYER_TILED ) {
+			if ( mCurLayer->getType() == MAP_LAYER_TILED ) {
 				GameObject * tObj = GetCurrentGOOver();
 
 				if ( NULL != tObj ) {
-					tObj->Rotated( !tObj->Rotated() );
+					tObj->setRotated( !tObj->isRotated() );
 				}
 			}
 		}
@@ -1321,19 +1321,19 @@ void MapEditor::OnMapMouseDown( const UIEvent * Event ) {
 
 
 		if ( MEvent->getFlags() & EE_BUTTON_LMASK ) {
-			if ( mCurLayer->Type() == MAP_LAYER_TILED )
+			if ( mCurLayer->getType() == MAP_LAYER_TILED )
 				AddGameObjectToTile();
 		} else if ( MEvent->getFlags() & EE_BUTTON_RMASK ) {
-			if ( mCurLayer->Type() == MAP_LAYER_TILED )
+			if ( mCurLayer->getType() == MAP_LAYER_TILED )
 				RemoveGameObjectFromTile();
 		}
 	}
 }
 
 void MapEditor::SetViewOptions() {
-	mChkShowGrid->setActive( mUIMap->Map()->DrawGrid() ? true : false );
-	mChkMarkTileOver->setActive( mUIMap->Map()->DrawTileOver() ? true : false  );
-	mChkShowBlocked->setActive( mUIMap->Map()->ShowBlocked() ? true : false );
+	mChkShowGrid->setActive( mUIMap->Map()->getDrawGrid() ? true : false );
+	mChkMarkTileOver->setActive( mUIMap->Map()->getDrawTileOver() ? true : false  );
+	mChkShowBlocked->setActive( mUIMap->Map()->getShowBlocked() ? true : false );
 }
 
 }}

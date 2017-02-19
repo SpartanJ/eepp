@@ -14,15 +14,15 @@ GameObjectPolyline::GameObjectPolyline( Uint32 DataId, Polygon2f poly, MapLayer 
 GameObjectPolyline::~GameObjectPolyline() {
 }
 
-Uint32 GameObjectPolyline::Type() const {
+Uint32 GameObjectPolyline::getType() const {
 	return GAMEOBJECT_TYPE_POLYGON;
 }
 
-bool GameObjectPolyline::IsType( const Uint32& type ) {
-	return ( GameObjectPolyline::Type() == type ) ? true : GameObjectPolygon::IsType( type );
+bool GameObjectPolyline::isType( const Uint32& type ) {
+	return ( GameObjectPolyline::getType() == type ) ? true : GameObjectPolygon::isType( type );
 }
 
-void GameObjectPolyline::Draw() {
+void GameObjectPolyline::draw() {
 	Primitives P;
 
 	if ( mSelected ) {
@@ -36,7 +36,7 @@ void GameObjectPolyline::Draw() {
 	P.drawPolygon( mPoly );
 }
 
-GameObjectObject * GameObjectPolyline::Copy() {
+GameObjectObject * GameObjectPolyline::clone() {
 	return eeNew( GameObjectPolyline, ( mDataId, mPoly, mLayer, mFlags ) );
 }
 

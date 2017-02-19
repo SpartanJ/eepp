@@ -13,49 +13,49 @@ class EE_API MapLayer {
 
 		virtual ~MapLayer();
 
-		virtual void Draw( const Vector2f& Offset = Vector2f(0,0) ) = 0;
+		virtual void draw( const Vector2f& Offset = Vector2f(0,0) ) = 0;
 
-		virtual void Update() = 0;
+		virtual void update() = 0;
 
-		const Uint32& Flags() const;
+		const Uint32& getFlags() const;
 
-		Uint32 FlagGet( const Uint32& Flag );
+		Uint32 getFlag( const Uint32& Flag );
 
-		void FlagSet( const Uint32& Flag );
+		void setFlag( const Uint32& Flag );
 
-		void FlagClear( const Uint32& Flag );
+		void clearFlag( const Uint32& Flag );
 
-		const Uint32& Type() const;
+		const Uint32& getType() const;
 
-		TileMap * Map() const;
+		TileMap * getMap() const;
 
-		const Vector2f& Offset() const;
+		const Vector2f& getOffset() const;
 
-		void Offset( const Vector2f& offset );
+		void setOffset( const Vector2f& offset );
 
-		void Name( const std::string& name );
+		void setName( const std::string& name );
 
-		const std::string& Name() const;
+		const std::string& getName() const;
 
-		const Uint32& Id() const;
+		const Uint32& getId() const;
 
-		void AddProperty( std::string Text, std::string Value );
+		void addProperty( std::string Text, std::string Value );
 
-		void EditProperty( std::string Text, std::string Value );
+		void editProperty( std::string Text, std::string Value );
 
-		void RemoveProperty( std::string Text );
+		void removeProperty( std::string Text );
 
-		void ClearProperties();
+		void clearProperties();
 
-		PropertiesMap& GetProperties();
+		PropertiesMap& getProperties();
 
-		void Visible( const bool& visible );
+		void setVisible( const bool& visible );
 
-		bool Visible();
+		bool isVisible();
 
-		bool LightsEnabled();
+		bool getLightsEnabled();
 
-		void LightsEnabled( const bool& enabled );
+		void setLightsEnabled( const bool& enabled );
 	protected:
 		friend class TileMap;
 

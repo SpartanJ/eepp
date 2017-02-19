@@ -12,21 +12,21 @@ TileMapLayer::TileMapLayer( TileMap * map, Sizei size, Uint32 flags, std::string
 	MapLayer( map, MAP_LAYER_TILED, flags, name, offset ),
 	mSize( size )
 {
-	AllocateLayer();
+	allocateLayer();
 }
 
 TileMapLayer::~TileMapLayer() {
-	DeallocateLayer();
+	deallocateLayer();
 }
 
-void TileMapLayer::Draw( const Vector2f& Offset ) {
+void TileMapLayer::draw( const Vector2f& Offset ) {
 	GlobalBatchRenderer::instance()->draw();
 
 	GLi->pushMatrix();
 	GLi->translatef( mOffset.x, mOffset.y, 0.0f );
 
-	Vector2i start = mMap->StartTile();
-	Vector2i end = mMap->EndTile();
+	Vector2i start = mMap->getStartTile();
+	Vector2i end = mMap->getEndTile();
 
 	for ( Int32 x = start.x; x < end.x; x++ ) {
 		for ( Int32 y = start.y; y < end.y; y++ ) {
@@ -34,19 +34,19 @@ void TileMapLayer::Draw( const Vector2f& Offset ) {
 			mCurTile.y = y;
 
 			if ( NULL != mTiles[x][y] ) {
-				mTiles[x][y]->Draw();
+				mTiles[x][y]->draw();
 			}
 		}
 	}
 
-	Texture * Tex = mMap->GetBlankTileTexture();
+	Texture * Tex = mMap->getBlankTileTexture();
 
-	if ( mMap->ShowBlocked() && NULL != Tex ) {
+	if ( mMap->getShowBlocked() && NULL != Tex ) {
 		for ( Int32 x = start.x; x < end.x; x++ ) {
 			for ( Int32 y = start.y; y < end.y; y++ ) {
 				if ( NULL != mTiles[x][y] ) {
-					if ( mTiles[x][y]->Blocked() ) {
-						Tex->draw( x * mMap->TileSize().x, y * mMap->TileSize().y, 0 , Vector2f::One, ColorA( 255, 0, 0, 200 ) );
+					if ( mTiles[x][y]->isBlocked() ) {
+						Tex->draw( x * mMap->getTileSize().x, y * mMap->getTileSize().y, 0 , Vector2f::One, ColorA( 255, 0, 0, 200 ) );
 					}
 				}
 			}
@@ -58,9 +58,9 @@ void TileMapLayer::Draw( const Vector2f& Offset ) {
 	GLi->popMatrix();
 }
 
-void TileMapLayer::Update() {
-	Vector2i start = mMap->StartTile();
-	Vector2i end = mMap->EndTile();
+void TileMapLayer::update() {
+	Vector2i start = mMap->getStartTile();
+	Vector2i end = mMap->getEndTile();
 
 	for ( Int32 x = start.x; x < end.x; x++ ) {
 		for ( Int32 y = start.y; y < end.y; y++ ) {
@@ -68,13 +68,13 @@ void TileMapLayer::Update() {
 			mCurTile.y = y;
 
 			if ( NULL != mTiles[x][y] ) {
-				mTiles[x][y]->Update();
+				mTiles[x][y]->update();
 			}
 		}
 	}
 }
 
-void TileMapLayer::AllocateLayer() {
+void TileMapLayer::allocateLayer() {
 	mTiles		= eeNewArray( GameObject**, mSize.getWidth() );
 
 	for ( Int32 x = 0; x < mSize.x; x++ ) {
@@ -86,7 +86,7 @@ void TileMapLayer::AllocateLayer() {
 	}
 }
 
-void TileMapLayer::DeallocateLayer() {
+void TileMapLayer::deallocateLayer() {
 	for ( Int32 x = 0; x < mSize.x; x++ ) {
 		for ( Int32 y = 0; y < mSize.y; y++ ) {
 			eeSAFE_DELETE( mTiles[x][y] );
@@ -98,19 +98,19 @@ void TileMapLayer::DeallocateLayer() {
 	eeSAFE_DELETE_ARRAY( mTiles );
 }
 
-void TileMapLayer::AddGameObject( GameObject * obj, const Vector2i& TilePos ) {
+void TileMapLayer::addGameObject( GameObject * obj, const Vector2i& TilePos ) {
 	eeASSERT( TilePos.x >= 0 && TilePos.y >= 0 );
 
 	if ( TilePos.x < mSize.x && TilePos.y < mSize.y ) {
-		RemoveGameObject( TilePos );
+		removeGameObject( TilePos );
 
 		mTiles[ TilePos.x ][ TilePos.y ] = obj;
 
-		obj->Pos( Vector2f( TilePos.x * mMap->TileSize().x, TilePos.y * mMap->TileSize().y ) );
+		obj->setPosition( Vector2f( TilePos.x * mMap->getTileSize().x, TilePos.y * mMap->getTileSize().y ) );
 	}
 }
 
-void TileMapLayer::RemoveGameObject( const Vector2i& TilePos ) {
+void TileMapLayer::removeGameObject( const Vector2i& TilePos ) {
 	eeASSERT( TilePos.x >= 0 && TilePos.y >= 0 );
 
 	if ( TilePos.x < mSize.x && TilePos.y < mSize.y ) {
@@ -120,8 +120,8 @@ void TileMapLayer::RemoveGameObject( const Vector2i& TilePos ) {
 	}
 }
 
-void TileMapLayer::MoveTileObject( const Vector2i& FromPos, const Vector2i& ToPos ) {
-	RemoveGameObject( ToPos );
+void TileMapLayer::moveTileObject( const Vector2i& FromPos, const Vector2i& ToPos ) {
+	removeGameObject( ToPos );
 
 	GameObject * tObj = mTiles[ FromPos.x ][ FromPos.y ];
 
@@ -130,20 +130,20 @@ void TileMapLayer::MoveTileObject( const Vector2i& FromPos, const Vector2i& ToPo
 	mTiles[ ToPos.x ][ ToPos.y ] = tObj;
 }
 
-GameObject * TileMapLayer::GetGameObject( const Vector2i& TilePos ) {
+GameObject * TileMapLayer::getGameObject( const Vector2i& TilePos ) {
 	return mTiles[ TilePos.x ][ TilePos.y ];
 }
 
-const Vector2i& TileMapLayer::GetCurrentTile() const {
+const Vector2i& TileMapLayer::getCurrentTile() const {
 	return mCurTile;
 }
 
-Vector2i TileMapLayer::GetTilePosFromPos( const Vector2f& Pos ) {
-	return Vector2i( ( (Int32)Pos.x + mOffset.x ) / mMap->TileSize().getWidth(), ( (Int32)Pos.y + mOffset.y ) / mMap->TileSize().getHeight() );
+Vector2i TileMapLayer::getTilePosFromPos( const Vector2f& Pos ) {
+	return Vector2i( ( (Int32)Pos.x + mOffset.x ) / mMap->getTileSize().getWidth(), ( (Int32)Pos.y + mOffset.y ) / mMap->getTileSize().getHeight() );
 }
 
-Vector2f TileMapLayer::GetPosFromTilePos( const Vector2i& TilePos ) {
-	return Vector2f( TilePos.x * mMap->TileSize().getWidth() + mOffset.x, TilePos.y * mMap->TileSize().getHeight() + mOffset.y );
+Vector2f TileMapLayer::getPosFromTilePos( const Vector2i& TilePos ) {
+	return Vector2f( TilePos.x * mMap->getTileSize().getWidth() + mOffset.x, TilePos.y * mMap->getTileSize().getHeight() + mOffset.y );
 }
 
 }}

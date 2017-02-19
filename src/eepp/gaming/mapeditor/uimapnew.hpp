@@ -40,17 +40,17 @@ class EE_API UIMapNew {
 		Sizei				mNewSize;
 		bool				mResizeMap;
 
-		void WindowClose( const UIEvent * Event );
+		void onWindowClose( const UIEvent * Event );
 
-		void CancelClick( const UIEvent * Event );
+		void onCancelClick( const UIEvent * Event );
 
-		void OKClick( const UIEvent * Event );
+		void onOKClick( const UIEvent * Event );
 
-		void OnRedChange( const UIEvent * Event );
+		void onRedChange( const UIEvent * Event );
 
-		void OnGreenChange( const UIEvent * Event );
+		void onGreenChange( const UIEvent * Event );
 
-		void OnBlueChange( const UIEvent * Event );
+		void onBlueChange( const UIEvent * Event );
 };
 
 }}}

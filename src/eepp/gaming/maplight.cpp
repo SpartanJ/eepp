@@ -16,18 +16,18 @@ MapLight::~MapLight() {
 MapLight::MapLight( const Float& Radius, const Float& x, const Float& y, const RGB& Color, LIGHT_TYPE Type ) :
 	mActive( true )
 {
-	Create( Radius, x, y, Color, Type );
+	create( Radius, x, y, Color, Type );
 }
 
-void MapLight::Create( const Float& Radius, const Float& x, const Float& y, const RGB& Color, LIGHT_TYPE Type ) {
+void MapLight::create( const Float& Radius, const Float& x, const Float& y, const RGB& Color, LIGHT_TYPE Type ) {
 	mRadius	= Radius;
 	mColor	= Color;
 	mType	= Type;
 
-	UpdatePos( x, y );
+	updatePos( x, y );
 }
 
-RGB MapLight::ProcessVertex( const Float& PointX, const Float& PointY, const RGB& VertexColor, const RGB& BaseColor ) {
+RGB MapLight::processVertex( const Float& PointX, const Float& PointY, const RGB& VertexColor, const RGB& BaseColor ) {
 	Float VertexDist;
 
 	if ( mActive ) {
@@ -67,7 +67,7 @@ RGB MapLight::ProcessVertex( const Float& PointX, const Float& PointY, const RGB
 	return BaseColor;
 }
 
-ColorA MapLight::ProcessVertex( const Float& PointX, const Float& PointY, const ColorA& VertexColor, const ColorA& BaseColor ) {
+ColorA MapLight::processVertex( const Float& PointX, const Float& PointY, const ColorA& VertexColor, const ColorA& BaseColor ) {
 	Float VertexDist;
 
 	if ( mActive ) {
@@ -107,80 +107,80 @@ ColorA MapLight::ProcessVertex( const Float& PointX, const Float& PointY, const 
 	return BaseColor;
 }
 
-RGB MapLight::ProcessVertex( const Vector2f& Pos, const RGB& VertexColor, const RGB& BaseColor ) {
-	return ProcessVertex( Pos.x, Pos.y, VertexColor, BaseColor );
+RGB MapLight::processVertex( const Vector2f& Pos, const RGB& VertexColor, const RGB& BaseColor ) {
+	return processVertex( Pos.x, Pos.y, VertexColor, BaseColor );
 }
 
-ColorA MapLight::ProcessVertex( const Vector2f& Pos, const ColorA& VertexColor, const ColorA& BaseColor ) {
-	return ProcessVertex( Pos.x, Pos.y, VertexColor, BaseColor );
+ColorA MapLight::processVertex( const Vector2f& Pos, const ColorA& VertexColor, const ColorA& BaseColor ) {
+	return processVertex( Pos.x, Pos.y, VertexColor, BaseColor );
 }
 
-void MapLight::UpdatePos( const Float& x, const Float& y ) {
+void MapLight::updatePos( const Float& x, const Float& y ) {
 	mPos.x = x;
 	mPos.y = y;
-	UpdateAABB();
+	updateAABB();
 }
 
-void MapLight::Position( const Vector2f& newPos ) {
-	UpdatePos( newPos.x, newPos.y );
+void MapLight::setPosition( const Vector2f& newPos ) {
+	updatePos( newPos.x, newPos.y );
 }
 
-void MapLight::UpdatePos( const Vector2f& newPos ) {
-	UpdatePos( newPos.x, newPos.y );
+void MapLight::updatePos( const Vector2f& newPos ) {
+	updatePos( newPos.x, newPos.y );
 }
 
-void MapLight::Move( const Float& addtox, const Float& addtoy ) {
-	UpdatePos( mPos.x + addtox, mPos.y + addtoy );
+void MapLight::move( const Float& addtox, const Float& addtoy ) {
+	updatePos( mPos.x + addtox, mPos.y + addtoy );
 }
 
-eeAABB MapLight::GetAABB() const {
+eeAABB MapLight::getAABB() const {
 	return mAABB;
 }
 
-void MapLight::UpdateAABB() {
+void MapLight::updateAABB() {
 	if ( mType == LIGHT_NORMAL )
 		mAABB = eeAABB( mPos.x - mRadius, mPos.y - mRadius, mPos.x + mRadius, mPos.y + mRadius );
 	else
 		mAABB = eeAABB( mPos.x - mRadius, mPos.y - mRadius * 0.5f, mPos.x + mRadius, mPos.y + mRadius * 0.5f );
 }
 
-const Float& MapLight::Radius() const {
+const Float& MapLight::getRadius() const {
 	return mRadius;
 }
 
-void MapLight::Radius( const Float& radius ) {
+void MapLight::setRadius( const Float& radius ) {
 	if ( radius > 0 ) {
 		mRadius = radius;
-		UpdateAABB();
+		updateAABB();
 	}
 }
 
-const bool& MapLight::Active() const {
+const bool& MapLight::isActive() const {
 	return mActive;
 }
 
-void MapLight::Active( const bool& active ) {
+void MapLight::setActive( const bool& active ) {
 	mActive = active;
 }
 
-void MapLight::Color( const RGB& color ) {
+void MapLight::setColor( const RGB& color ) {
 	mColor = color;
 }
 
-const RGB& MapLight::Color() const {
+const RGB& MapLight::getColor() const {
 	return mColor;
 }
 
-void MapLight::Type( const LIGHT_TYPE& type ) {
+void MapLight::setType( const LIGHT_TYPE& type ) {
 	mType = type;
-	UpdateAABB();
+	updateAABB();
 }
 
-const LIGHT_TYPE& MapLight::Type() const {
+const LIGHT_TYPE& MapLight::getType() const {
 	return mType;
 }
 
-const Vector2f& MapLight::Position() const {
+const Vector2f& MapLight::getPosition() const {
 	return mPos;
 }
 

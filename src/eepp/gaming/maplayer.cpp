@@ -17,89 +17,89 @@ MapLayer::~MapLayer() {
 
 }
 
-const Uint32& MapLayer::Flags() const {
+const Uint32& MapLayer::getFlags() const {
 	return mFlags;
 }
 
-Uint32 MapLayer::FlagGet( const Uint32& Flag ) {
+Uint32 MapLayer::getFlag( const Uint32& Flag ) {
 	return mFlags & Flag;
 }
 
-void MapLayer::FlagSet( const Uint32& Flag ) {
+void MapLayer::setFlag( const Uint32& Flag ) {
 	if ( !( mFlags & Flag ) ) {
 		mFlags |= Flag;
 	}
 }
 
-void MapLayer::FlagClear( const Uint32& Flag ) {
+void MapLayer::clearFlag( const Uint32& Flag ) {
 	if ( mFlags & Flag ) {
 		mFlags &= ~Flag;
 	}
 }
 
-const Uint32& MapLayer::Type() const {
+const Uint32& MapLayer::getType() const {
 	return mType;
 }
 
-TileMap * MapLayer::Map() const {
+TileMap * MapLayer::getMap() const {
 	return mMap;
 }
 
-const Vector2f& MapLayer::Offset() const {
+const Vector2f& MapLayer::getOffset() const {
 	return mOffset;
 }
 
-void MapLayer::Offset( const Vector2f& offset ) {
+void MapLayer::setOffset( const Vector2f& offset ) {
 	mOffset = offset;
 }
 
-void MapLayer::Name( const std::string& name ) {
+void MapLayer::setName( const std::string& name ) {
 	mName		= name;
 	mNameHash	= String::hash( mName );
 }
 
-const std::string& MapLayer::Name() const {
+const std::string& MapLayer::getName() const {
 	return mName;
 }
 
-const Uint32& MapLayer::Id() const {
+const Uint32& MapLayer::getId() const {
 	return mNameHash;
 }
 
-void MapLayer::ClearProperties() {
+void MapLayer::clearProperties() {
 	mProperties.clear();
 }
 
-void MapLayer::AddProperty( std::string Text, std::string Value ) {
+void MapLayer::addProperty( std::string Text, std::string Value ) {
 	mProperties[ Text ] = Value;
 }
 
-void MapLayer::EditProperty( std::string Text, std::string Value ) {
+void MapLayer::editProperty( std::string Text, std::string Value ) {
 	mProperties[ Text ] = Value;
 }
 
-void MapLayer::RemoveProperty( std::string Text ) {
+void MapLayer::removeProperty( std::string Text ) {
 	mProperties.erase( Text );
 }
 
-MapLayer::PropertiesMap& MapLayer::GetProperties() {
+MapLayer::PropertiesMap& MapLayer::getProperties() {
 	return mProperties;
 }
 
-void MapLayer::Visible( const bool& visible ) {
-	visible ? FlagSet( LAYER_FLAG_VISIBLE ) : FlagClear( LAYER_FLAG_VISIBLE );
+void MapLayer::setVisible( const bool& visible ) {
+	visible ? setFlag( LAYER_FLAG_VISIBLE ) : clearFlag( LAYER_FLAG_VISIBLE );
 }
 
-bool MapLayer::Visible() {
-	return 0 != FlagGet( LAYER_FLAG_VISIBLE );
+bool MapLayer::isVisible() {
+	return 0 != getFlag( LAYER_FLAG_VISIBLE );
 }
 
-bool MapLayer::LightsEnabled() {
-	return 0 != FlagGet( LAYER_FLAG_LIGHTS_ENABLED );
+bool MapLayer::getLightsEnabled() {
+	return 0 != getFlag( LAYER_FLAG_LIGHTS_ENABLED );
 }
 
-void MapLayer::LightsEnabled( const bool& enabled ) {
-	enabled ? FlagSet( LAYER_FLAG_LIGHTS_ENABLED ) : FlagClear( LAYER_FLAG_LIGHTS_ENABLED );
+void MapLayer::setLightsEnabled( const bool& enabled ) {
+	enabled ? setFlag( LAYER_FLAG_LIGHTS_ENABLED ) : clearFlag( LAYER_FLAG_LIGHTS_ENABLED );
 }
 
 }}

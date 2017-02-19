@@ -17,13 +17,13 @@ class EE_API UIMapLayerNew {
 
 		virtual ~UIMapLayerNew();
 
-		const EE_LAYER_TYPE& Type() const;
+		const EE_LAYER_TYPE& getType() const;
 
-		UITextInput * UILayerName() const;
+		UITextInput * getUILayerName() const;
 
-		const String& Name() const;
+		const String& getName() const;
 
-		MapLayer * Layer() const;
+		MapLayer * getLayer() const;
 	protected:
 		UITheme *			mTheme;
 		UIMap *			mUIMap;
@@ -33,13 +33,13 @@ class EE_API UIMapLayerNew {
 		UITextInput *		mUILayerName;
 		MapLayer *			mLayer;
 
-		void WindowClose( const UIEvent * Event );
+		void onWindowClose( const UIEvent * Event );
 
-		void CancelClick( const UIEvent * Event );
+		void onCancelClick( const UIEvent * Event );
 
-		void OKClick( const UIEvent * Event );
+		void onOKClick( const UIEvent * Event );
 
-		void OnKeyUp( const UIEvent * Event );
+		void onOnKeyUp( const UIEvent * Event );
 };
 
 }}}

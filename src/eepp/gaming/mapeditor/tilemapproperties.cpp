@@ -19,13 +19,13 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 		return;
 
 	mUIWindow	= mUITheme->createWindow( NULL, Sizei( 500, 500 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL, Sizei( 500, 500 ) );
-	mUIWindow->addEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &TileMapProperties::WindowClose ) );
+	mUIWindow->addEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &TileMapProperties::onWindowClose ) );
 	mUIWindow->setTitle( "Map Properties" );
 
 
 	Uint32 DiffIfLights = 0;
 
-	if ( mMap->LightsEnabled() ) {
+	if ( mMap->getLightsEnabled() ) {
 		DiffIfLights = 100;
 
 		UITextBox * Txt = mUITheme->createTextBox( "Map Base Color:", mUIWindow->getContainer(), Sizei(), Vector2i( 50, 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
@@ -34,7 +34,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 		ComParams.setParent( mUIWindow->getContainer() );
 		ComParams.setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 		ComParams.setSize( 64, 64 );
-		ComParams.Background.setColor( mMap->BaseColor() );
+		ComParams.Background.setColor( mMap->getBaseColor() );
 		ComParams.Border.setColor( ColorA( 100, 100, 100, 200 ) );
 		ComParams.Flags |= UI_FILL_BACKGROUND | UI_BORDER;
 		mUIBaseColor = eeNew( UIComplexControl, ( ComParams ) );
@@ -44,26 +44,26 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 		Txt = mUITheme->createTextBox( "Red Color:", mUIWindow->getContainer(), Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 		mUIRedSlider = mUITheme->createSlider( mUIWindow->getContainer(), Sizei( 255, 20 ), Vector2i( Txt->getPosition().x + Txt->getSize().getWidth() + 16, Txt->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 		mUIRedSlider->setMaxValue( 255 );
-		mUIRedSlider->setValue( mMap->BaseColor().r() );
-		mUIRedSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TileMapProperties::OnRedChange ) );
+		mUIRedSlider->setValue( mMap->getBaseColor().r() );
+		mUIRedSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TileMapProperties::onRedChange ) );
 
-		mUIRedTxt = mUITheme->createTextBox( String::toStr( (Uint32)mMap->BaseColor().r() ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+		mUIRedTxt = mUITheme->createTextBox( String::toStr( (Uint32)mMap->getBaseColor().r() ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 		Txt = mUITheme->createTextBox( "Green Color:", mUIWindow->getContainer(), Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 		mUIGreenSlider = mUITheme->createSlider( mUIWindow->getContainer(), Sizei( 255, 20 ), Vector2i( mUIRedSlider->getPosition().x, Txt->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 		mUIGreenSlider->setMaxValue( 255 );
-		mUIGreenSlider->setValue( mMap->BaseColor().g() );
-		mUIGreenSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TileMapProperties::OnGreenChange ) );
+		mUIGreenSlider->setValue( mMap->getBaseColor().g() );
+		mUIGreenSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TileMapProperties::onGreenChange ) );
 
-		mUIGreenTxt = mUITheme->createTextBox( String::toStr( (Uint32)mMap->BaseColor().g() ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+		mUIGreenTxt = mUITheme->createTextBox( String::toStr( (Uint32)mMap->getBaseColor().g() ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 		Txt = mUITheme->createTextBox( "Blue Color:", mUIWindow->getContainer(), Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 		mUIBlueSlider = mUITheme->createSlider( mUIWindow->getContainer(), Sizei( 255, 20 ), Vector2i( mUIRedSlider->getPosition().x, Txt->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 		mUIBlueSlider->setMaxValue( 255 );
-		mUIBlueSlider->setValue( mMap->BaseColor().b() );
-		mUIBlueSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TileMapProperties::OnBlueChange ) );
+		mUIBlueSlider->setValue( mMap->getBaseColor().b() );
+		mUIBlueSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TileMapProperties::onBlueChange ) );
 
-		mUIBlueTxt = mUITheme->createTextBox( String::toStr( (Uint32)mMap->BaseColor().b() ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4, mUIBlueSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+		mUIBlueTxt = mUITheme->createTextBox( String::toStr( (Uint32)mMap->getBaseColor().b() ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4, mUIBlueSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	}
 
 	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
@@ -72,12 +72,12 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 
 	UIPushButton * OKButton = mUITheme->createPushButton( mUIWindow->getContainer(), Sizei( 80, 22 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->getIconByName( "ok" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
-	OKButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::OKClick ) );
+	OKButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::onOKClick ) );
 
 	OKButton->setText( "OK" );
 
 	UIPushButton * CancelButton = mUITheme->createPushButton( mUIWindow->getContainer(), OKButton->getSize(), Vector2i( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->getIconByName( "cancel" ) );
-	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::CancelClick ) );
+	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::onCancelClick ) );
 	CancelButton->setText( "Cancel" );
 
 	UIGenericGrid::CreateParams GridParams;
@@ -99,7 +99,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	Vector2i Pos( mGenGrid->getPosition().x + mGenGrid->getSize().getWidth() + 10, mGenGrid->getPosition().y );
 
 	UIPushButton * AddButton = mUITheme->createPushButton( mUIWindow->getContainer(), Sizei(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->getIconByName( "add" ) );
-	AddButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::AddCellClick ) );
+	AddButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::onAddCellClick ) );
 
 	if ( NULL == AddButton->getIcon()->getSubTexture() )
 		AddButton->setText( "+" );
@@ -107,12 +107,12 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	Pos.y += AddButton->getSize().getHeight() + 5;
 
 	UIPushButton * RemoveButton = mUITheme->createPushButton( mUIWindow->getContainer(), Sizei(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->getIconByName( "remove" )  );
-	RemoveButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::RemoveCellClick ) );
+	RemoveButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::onRemoveCellClick ) );
 
 	if ( NULL == RemoveButton->getIcon()->getSubTexture() )
 		RemoveButton->setText( "-" );
 
-	CreateGridElems();
+	createGridElems();
 
 	mUIWindow->center();
 	mUIWindow->show();
@@ -121,42 +121,42 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 TileMapProperties::~TileMapProperties() {
 }
 
-void TileMapProperties::OnRedChange( const UIEvent * Event ) {
+void TileMapProperties::onRedChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
 	Col.Red = (Uint8)mUIRedSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
 
-	ColorA MapCol = mMap->BaseColor();
+	ColorA MapCol = mMap->getBaseColor();
 	MapCol.Red = Col.Red;
-	mMap->BaseColor( MapCol );
+	mMap->setBaseColor( MapCol );
 }
 
-void TileMapProperties::OnGreenChange( const UIEvent * Event ) {
+void TileMapProperties::onGreenChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
 	Col.Green = (Uint8)mUIGreenSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
 
-	ColorA MapCol = mMap->BaseColor();
+	ColorA MapCol = mMap->getBaseColor();
 	MapCol.Green = Col.Green;
-	mMap->BaseColor( MapCol );
+	mMap->setBaseColor( MapCol );
 }
 
-void TileMapProperties::OnBlueChange( const UIEvent * Event ) {
+void TileMapProperties::onBlueChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
 	Col.Blue = (Uint8)mUIBlueSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
 
-	ColorA MapCol = mMap->BaseColor();
+	ColorA MapCol = mMap->getBaseColor();
 	MapCol.Blue = Col.Blue;
-	mMap->BaseColor( MapCol );
+	mMap->setBaseColor( MapCol );
 }
 
 
-void TileMapProperties::SaveProperties() {
-	mMap->ClearProperties();
+void TileMapProperties::saveProperties() {
+	mMap->clearProperties();
 
 	for ( Uint32 i = 0; i < mGenGrid->getCount(); i++ ) {
 		UIGridCell * Cell = mGenGrid->getCell( i );
@@ -165,16 +165,16 @@ void TileMapProperties::SaveProperties() {
 		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->getCell( 3 ) );
 
 		if ( NULL != Cell && Input->getText().size() && Input2->getText().size() ) {
-			mMap->AddProperty(	Input->getText(), Input2->getText() );
+			mMap->addProperty(	Input->getText(), Input2->getText() );
 		}
 	}
 }
 
-void TileMapProperties::LoadProperties() {
-	TileMap::PropertiesMap& Proper = mMap->GetProperties();
+void TileMapProperties::loadProperties() {
+	TileMap::PropertiesMap& Proper = mMap->getProperties();
 
 	for ( TileMap::PropertiesMap::iterator it = Proper.begin(); it != Proper.end(); it++ ) {
-		UIGridCell * Cell = CreateCell();
+		UIGridCell * Cell = createCell();
 
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->getCell( 1 ) );
 		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->getCell( 3 ) );
@@ -186,22 +186,22 @@ void TileMapProperties::LoadProperties() {
 	}
 }
 
-void TileMapProperties::OKClick( const UIEvent * Event ) {
-	SaveProperties();
+void TileMapProperties::onOKClick( const UIEvent * Event ) {
+	saveProperties();
 
 	mUIWindow->CloseWindow();
 }
 
-void TileMapProperties::CancelClick( const UIEvent * Event ) {
+void TileMapProperties::onCancelClick( const UIEvent * Event ) {
 	mUIWindow->CloseWindow();
 }
 
-void TileMapProperties::WindowClose( const UIEvent * Event ) {
+void TileMapProperties::onWindowClose( const UIEvent * Event ) {
 	eeDelete( this );
 }
 
-void TileMapProperties::AddCellClick( const UIEvent * Event ) {
-	mGenGrid->add( CreateCell() );
+void TileMapProperties::onAddCellClick( const UIEvent * Event ) {
+	mGenGrid->add( createCell() );
 
 	Uint32 Index = mGenGrid->getItemSelectedIndex();
 
@@ -210,7 +210,7 @@ void TileMapProperties::AddCellClick( const UIEvent * Event ) {
 	}
 }
 
-void TileMapProperties::RemoveCellClick( const UIEvent * Event ) {
+void TileMapProperties::onRemoveCellClick( const UIEvent * Event ) {
 	Uint32 Index = mGenGrid->getItemSelectedIndex();
 
 	if ( eeINDEX_NOT_FOUND != Index ) {
@@ -227,17 +227,17 @@ void TileMapProperties::RemoveCellClick( const UIEvent * Event ) {
 	}
 }
 
-void TileMapProperties::CreateGridElems() {
-	LoadProperties();
+void TileMapProperties::createGridElems() {
+	loadProperties();
 
 	if ( 0 == mGenGrid->getCount() ) {
-		AddCellClick( NULL );
+		onAddCellClick( NULL );
 	} else {
 		mGenGrid->getCell( 0 )->select();
 	}
 }
 
-UIGridCell * TileMapProperties::CreateCell() {
+UIGridCell * TileMapProperties::createCell() {
 	UIGridCell::CreateParams CellParams;
 	CellParams.setParent( mGenGrid->getContainer() );
 

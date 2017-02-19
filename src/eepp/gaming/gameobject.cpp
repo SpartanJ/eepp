@@ -13,99 +13,99 @@ GameObject::~GameObject()
 {
 }
 
-Uint32 GameObject::Type() const {
+Uint32 GameObject::getType() const {
 	return GAMEOBJECT_TYPE_BASE;
 }
 
-bool GameObject::IsType( const Uint32& type ) {
-	return type == GameObject::Type();
+bool GameObject::isType( const Uint32& type ) {
+	return type == GameObject::getType();
 }
 
-const Uint32& GameObject::Flags() const {
+const Uint32& GameObject::getFlags() const {
 	return mFlags;
 }
 
-Uint32 GameObject::FlagGet( const Uint32& Flag ) {
+Uint32 GameObject::getFlag( const Uint32& Flag ) {
 	return mFlags & Flag;
 }
 
-void GameObject::FlagSet( const Uint32& Flag ) {
+void GameObject::setFlag( const Uint32& Flag ) {
 	if ( !( mFlags & Flag ) ) {
 		mFlags |= Flag;
 	}
 }
 
-void GameObject::FlagClear( const Uint32& Flag ) {
+void GameObject::clearFlag( const Uint32& Flag ) {
 	if ( mFlags & Flag ) {
 		mFlags &= ~Flag;
 	}
 }
 
-Uint32 GameObject::Blocked() const {
+bool GameObject::isBlocked() const {
 	return mFlags & GObjFlags::GAMEOBJECT_BLOCKED;
 }
 
-void GameObject::Blocked( bool blocked ) {
-	blocked ? FlagSet( GObjFlags::GAMEOBJECT_BLOCKED ) : FlagClear( GObjFlags::GAMEOBJECT_BLOCKED );
+void GameObject::setBlocked( bool blocked ) {
+	blocked ? setFlag( GObjFlags::GAMEOBJECT_BLOCKED ) : clearFlag( GObjFlags::GAMEOBJECT_BLOCKED );
 }
 
-Uint32 GameObject::Rotated() const {
+bool GameObject::isRotated() const {
 	return mFlags & GObjFlags::GAMEOBJECT_ROTATE_90DEG;
 }
 
-void GameObject::Rotated( bool rotated ) {
-	rotated ? FlagSet( GObjFlags::GAMEOBJECT_ROTATE_90DEG ) : FlagClear( GObjFlags::GAMEOBJECT_ROTATE_90DEG );
+void GameObject::setRotated( bool rotated ) {
+	rotated ? setFlag( GObjFlags::GAMEOBJECT_ROTATE_90DEG ) : clearFlag( GObjFlags::GAMEOBJECT_ROTATE_90DEG );
 }
 
-Uint32 GameObject::Mirrored() const {
+bool GameObject::isMirrored() const {
 	return mFlags & GObjFlags::GAMEOBJECT_MIRRORED;
 }
 
-void GameObject::Mirrored( bool mirrored ) {
-	mirrored ? FlagSet( GObjFlags::GAMEOBJECT_MIRRORED ) : FlagClear( GObjFlags::GAMEOBJECT_MIRRORED );
+void GameObject::setMirrored( bool mirrored ) {
+	mirrored ? setFlag( GObjFlags::GAMEOBJECT_MIRRORED ) : clearFlag( GObjFlags::GAMEOBJECT_MIRRORED );
 }
 
-Uint32 GameObject::Fliped() const {
+bool GameObject::isFliped() const {
 	return mFlags & GObjFlags::GAMEOBJECT_FLIPED;
 }
 
-void GameObject::Fliped( bool fliped ) {
-	fliped ? FlagSet( GObjFlags::GAMEOBJECT_FLIPED ) : FlagClear( GObjFlags::GAMEOBJECT_FLIPED );
+void GameObject::setFliped( bool fliped ) {
+	fliped ? setFlag( GObjFlags::GAMEOBJECT_FLIPED ) : clearFlag( GObjFlags::GAMEOBJECT_FLIPED );
 }
 
-void GameObject::Draw() {
+void GameObject::draw() {
 }
 
-void GameObject::Update() {
+void GameObject::update() {
 }
 
-Vector2f GameObject::Pos() const {
+Vector2f GameObject::getPosition() const {
 	return Vector2f();
 }
 
-void GameObject::Pos( Vector2f pos ) {
-	AutoFixTilePos();
+void GameObject::setPosition( Vector2f pos ) {
+	autoFixTilePos();
 }
 
-Vector2i GameObject::TilePos() const {
+Vector2i GameObject::getTilePosition() const {
 	return Vector2i();
 }
 
-void GameObject::TilePos( Vector2i pos ) {
+void GameObject::setTilePosition( Vector2i pos ) {
 }
 
-Sizei GameObject::Size() {
+Sizei GameObject::getSize() {
 	return Sizei();
 }
 
-Uint32 GameObject::DataId() {
+Uint32 GameObject::getDataId() {
 	return 0;
 }
 
-void GameObject::DataId( Uint32 Id ){
+void GameObject::setDataId( Uint32 Id ){
 }
 
-EE_RENDER_MODE GameObject::RenderModeFromFlags() {
+EE_RENDER_MODE GameObject::getRenderModeFromFlags() {
 	EE_RENDER_MODE Render = RN_NORMAL;
 
 	if ( ( mFlags & GObjFlags::GAMEOBJECT_MIRRORED ) && ( mFlags & GObjFlags::GAMEOBJECT_FLIPED ) ) {
@@ -119,36 +119,36 @@ EE_RENDER_MODE GameObject::RenderModeFromFlags() {
 	return Render;
 }
 
-MapLayer * GameObject::Layer() const {
+MapLayer * GameObject::getLayer() const {
 	return mLayer;
 }
 
-void GameObject::AutoFixTilePos() {
-	if ( ( mFlags & GObjFlags::GAMEOBJECT_AUTO_FIX_TILE_POS ) && NULL != mLayer && mLayer->Type() == MAP_LAYER_TILED ) {
-		Vector2i CurPos = TilePos();
+void GameObject::autoFixTilePos() {
+	if ( ( mFlags & GObjFlags::GAMEOBJECT_AUTO_FIX_TILE_POS ) && NULL != mLayer && mLayer->getType() == MAP_LAYER_TILED ) {
+		Vector2i CurPos = getTilePosition();
 
-		AssignTilePos();
+		assignTilePos();
 
-		Vector2i NewPos = TilePos();
+		Vector2i NewPos = getTilePosition();
 
 		if ( CurPos != NewPos ) {
 			TileMapLayer * TLayer = static_cast<TileMapLayer *> ( mLayer );
 
-			if ( TLayer->GetGameObject( CurPos ) == this ) {
-				TLayer->MoveTileObject( CurPos, NewPos );
+			if ( TLayer->getGameObject( CurPos ) == this ) {
+				TLayer->moveTileObject( CurPos, NewPos );
 			}
 		}
 	}
 }
 
-void GameObject::AssignTilePos() {
+void GameObject::assignTilePos() {
 	TileMapLayer * TLayer = static_cast<TileMapLayer *> ( mLayer );
 
-	TilePos( TLayer->GetTilePosFromPos( Pos() ) );
+	setTilePosition( TLayer->getTilePosFromPos( getPosition() ) );
 }
 
-Float GameObject::GetAngle() {
-	return Rotated() ? 90 : 0;
+Float GameObject::getRotation() {
+	return isRotated() ? 90 : 0;
 }
 
 }}

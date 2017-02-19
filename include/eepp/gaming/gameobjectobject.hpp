@@ -18,55 +18,55 @@ class EE_API GameObjectObject : public GameObject {
 
 		virtual ~GameObjectObject();
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual Vector2f Pos() const;
+		virtual Vector2f getPosition() const;
 
-		virtual Sizei Size();
+		virtual Sizei getSize();
 
-		virtual void Pos( Vector2f pos );
+		virtual void setPosition( Vector2f pos );
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type );
+		virtual bool isType( const Uint32& type );
 
-		virtual Uint32 DataId();
+		virtual Uint32 getDataId();
 
-		virtual void DataId( Uint32 Id );
+		virtual void setDataId( Uint32 Id );
 
-		void AddProperty( std::string Text, std::string Value );
+		void addProperty( std::string Text, std::string Value );
 
-		void EditProperty( std::string Text, std::string Value );
+		void editProperty( std::string Text, std::string Value );
 
-		void RemoveProperty( std::string Text );
+		void removeProperty( std::string Text );
 
-		void SetProperties( const PropertiesMap& prop );
+		void setProperties( const PropertiesMap& prop );
 
-		void ClearProperties();
+		void clearProperties();
 
-		PropertiesMap& GetProperties();
+		PropertiesMap& getProperties();
 
-		Uint32 GetPropertyCount();
+		Uint32 getPropertyCount();
 
-		const std::string& Name() const;
+		const std::string& getName() const;
 
-		void Name( const std::string& name );
+		void setName( const std::string& name );
 
-		const std::string& TypeName() const;
+		const std::string& getTypeName() const;
 
-		void TypeName( const std::string& type );
+		void setTypeName( const std::string& type );
 
-		virtual bool PointInside( const Vector2f& p );
+		virtual bool pointInside( const Vector2f& p );
 
-		Polygon2f& GetPolygon();
+		Polygon2f& getPolygon();
 
-		const bool& Selected() const;
+		const bool& isSelected() const;
 
-		void Selected( const bool& sel );
+		void setSelected( const bool& sel );
 
-		virtual void SetPolygonPoint( Uint32 index, Vector2f p );
+		virtual void setPolygonPoint( Uint32 index, Vector2f p );
 
-		virtual GameObjectObject * Copy();
+		virtual GameObjectObject * clone();
 	protected:
 		Rectf			mRect;
 		Polygon2f		mPoly;

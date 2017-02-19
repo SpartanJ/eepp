@@ -11,55 +11,55 @@ GameObjectSprite::GameObjectSprite( const Uint32& Flags, MapLayer * Layer, Graph
 	mSprite( Sprite )
 {
 	if ( NULL != mSprite )
-		mSprite->setRenderMode( RenderModeFromFlags() );
+		mSprite->setRenderMode( getRenderModeFromFlags() );
 
-	AssignTilePos();
+	assignTilePos();
 }
 
 GameObjectSprite::~GameObjectSprite() {
 	eeSAFE_DELETE( mSprite );
 }
 
-Uint32 GameObjectSprite::Type() const {
+Uint32 GameObjectSprite::getType() const {
 	return GAMEOBJECT_TYPE_SPRITE;
 }
 
-bool GameObjectSprite::IsType( const Uint32& type ) {
-	return ( GameObjectSprite::Type() == type ) ? true : GameObject::IsType( type );
+bool GameObjectSprite::isType( const Uint32& type ) {
+	return ( GameObjectSprite::getType() == type ) ? true : GameObject::isType( type );
 }
 
-void GameObjectSprite::Draw() {
+void GameObjectSprite::draw() {
 	if ( NULL != mSprite ) {
-		mSprite->setRotation( GetAngle() );
+		mSprite->setRotation( getRotation() );
 
-		if ( mLayer->Map()->LightsEnabled() && mLayer->LightsEnabled() ) {
-			MapLightManager * LM = mLayer->Map()->GetLightManager();
+		if ( mLayer->getMap()->getLightsEnabled() && mLayer->getLightsEnabled() ) {
+			MapLightManager * LM = mLayer->getMap()->getLightManager();
 
-			if ( MAP_LAYER_TILED == mLayer->Type() ) {
-				Vector2i Tile = reinterpret_cast<TileMapLayer*> ( mLayer )->GetCurrentTile();
+			if ( MAP_LAYER_TILED == mLayer->getType() ) {
+				Vector2i Tile = reinterpret_cast<TileMapLayer*> ( mLayer )->getCurrentTile();
 
-				if ( LM->IsByVertex() ) {
+				if ( LM->isByVertex() ) {
 					mSprite->updateVertexColors(
-						*LM->GetTileColor( Tile, 0 ),
-						*LM->GetTileColor( Tile, 1 ),
-						*LM->GetTileColor( Tile, 2 ),
-						*LM->GetTileColor( Tile, 3 )
+						*LM->getTileColor( Tile, 0 ),
+						*LM->getTileColor( Tile, 1 ),
+						*LM->getTileColor( Tile, 2 ),
+						*LM->getTileColor( Tile, 3 )
 					);
 				} else {
-					mSprite->setColor( *LM->GetTileColor( Tile ) );
+					mSprite->setColor( *LM->getTileColor( Tile ) );
 				}
 			} else {
-				if ( LM->IsByVertex() ) {
+				if ( LM->isByVertex() ) {
 					Quad2f Q = mSprite->getQuad();
 
 					mSprite->updateVertexColors(
-						LM->GetColorFromPos( Q.V[0] ),
-						LM->GetColorFromPos( Q.V[1] ),
-						LM->GetColorFromPos( Q.V[2] ),
-						LM->GetColorFromPos( Q.V[3] )
+						LM->getColorFromPos( Q.V[0] ),
+						LM->getColorFromPos( Q.V[1] ),
+						LM->getColorFromPos( Q.V[2] ),
+						LM->getColorFromPos( Q.V[3] )
 					);
 				} else {
-					mSprite->setColor( LM->GetColorFromPos( mSprite->getPosition() ) );
+					mSprite->setColor( LM->getColorFromPos( mSprite->getPosition() ) );
 				}
 			}
 		}
@@ -68,57 +68,57 @@ void GameObjectSprite::Draw() {
 	}
 }
 
-Vector2f GameObjectSprite::Pos() const {
+Vector2f GameObjectSprite::getPosition() const {
 	if ( NULL != mSprite )
 		return mSprite->getPosition();
 
 	return Vector2f();
 }
 
-void GameObjectSprite::Pos( Vector2f pos ) {
+void GameObjectSprite::setPosition( Vector2f pos ) {
 	if ( NULL != mSprite ) {
 		mSprite->setPosition( pos );
-		GameObject::Pos( pos );
+		GameObject::setPosition( pos );
 	}
 }
 
-Vector2i GameObjectSprite::TilePos() const {
+Vector2i GameObjectSprite::getTilePosition() const {
 	return mTilePos;
 }
 
-void GameObjectSprite::TilePos( Vector2i pos ) {
+void GameObjectSprite::setTilePosition( Vector2i pos ) {
 	mTilePos = pos;
 }
 
-Sizei GameObjectSprite::Size() {
+Sizei GameObjectSprite::getSize() {
 	if ( NULL != mSprite )
 		return mSprite->getSubTexture(0)->getRealSize();
 
 	return Sizei();
 }
 
-Graphics::Sprite * GameObjectSprite::Sprite() const {
+Graphics::Sprite * GameObjectSprite::getSprite() const {
 	return mSprite;
 }
 
-void GameObjectSprite::Sprite( Graphics::Sprite * sprite ) {
+void GameObjectSprite::setSprite( Graphics::Sprite * sprite ) {
 	eeSAFE_DELETE( mSprite );
 	mSprite = sprite;
-	mSprite->setRenderMode( RenderModeFromFlags() );
+	mSprite->setRenderMode( getRenderModeFromFlags() );
 }
 
-void GameObjectSprite::FlagSet( const Uint32& Flag ) {
+void GameObjectSprite::setFlag( const Uint32& Flag ) {
 	if ( NULL != mSprite )
-		mSprite->setRenderMode( RenderModeFromFlags() );
+		mSprite->setRenderMode( getRenderModeFromFlags() );
 
-	GameObject::FlagSet( Flag );
+	GameObject::setFlag( Flag );
 }
 
-Uint32 GameObjectSprite::DataId() {
+Uint32 GameObjectSprite::getDataId() {
 	return mSprite->getSubTexture(0)->getId();
 }
 
-void GameObjectSprite::DataId( Uint32 Id ) {
+void GameObjectSprite::setDataId( Uint32 Id ) {
 	Graphics::Sprite * tSprite = NULL;
 
 	if ( mFlags & GObjFlags::GAMEOBJECT_ANIMATED ) {
@@ -129,13 +129,13 @@ void GameObjectSprite::DataId( Uint32 Id ) {
 			tSprite->createAnimation();
 			tSprite->addFrames( tSubTextureVec );
 
-			Sprite( tSprite );
+			setSprite( tSprite );
 		}
 	} else {
 		Graphics::SubTexture * tSubTexture = TextureAtlasManager::instance()->getSubTextureById( Id );
 
 		if ( NULL != tSubTexture ) {
-			Sprite( eeNew( Graphics::Sprite, ( tSubTexture ) ) );
+			setSprite( eeNew( Graphics::Sprite, ( tSubTexture ) ) );
 		}
 	}
 }

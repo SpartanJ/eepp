@@ -15,29 +15,29 @@ class EE_API GameObjectSubTexture : public GameObject {
 
 		virtual ~GameObjectSubTexture();
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual Vector2f Pos() const;
+		virtual Vector2f getPosition() const;
 
-		virtual void Pos( Vector2f pos );
+		virtual void setPosition( Vector2f pos );
 
-		virtual Vector2i TilePos() const;
+		virtual Vector2i getTilePosition() const;
 
-		virtual void TilePos( Vector2i pos );
+		virtual void setTilePosition( Vector2i pos );
 
-		virtual Sizei Size();
+		virtual Sizei getSize();
 
-		Graphics::SubTexture * SubTexture() const;
+		Graphics::SubTexture * getSubTexture() const;
 
-		void SubTexture( Graphics::SubTexture * subTexture );
+		void setSubTexture( Graphics::SubTexture * subTexture );
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type );
+		virtual bool isType( const Uint32& type );
 
-		virtual Uint32 DataId();
+		virtual Uint32 getDataId();
 
-		virtual void DataId( Uint32 Id );
+		virtual void setDataId( Uint32 Id );
 	protected:
 		Graphics::SubTexture *	mSubTexture;
 		Vector2f				mPos;

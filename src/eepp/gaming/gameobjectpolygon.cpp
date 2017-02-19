@@ -15,19 +15,19 @@ GameObjectPolygon::GameObjectPolygon( Uint32 DataId, Polygon2f poly, MapLayer * 
 GameObjectPolygon::~GameObjectPolygon() {
 }
 
-Uint32 GameObjectPolygon::Type() const {
+Uint32 GameObjectPolygon::getType() const {
 	return GAMEOBJECT_TYPE_POLYGON;
 }
 
-bool GameObjectPolygon::IsType( const Uint32& type ) {
-	return ( GameObjectPolygon::Type() == type ) ? true : GameObjectObject::IsType( type );
+bool GameObjectPolygon::isType( const Uint32& type ) {
+	return ( GameObjectPolygon::getType() == type ) ? true : GameObjectObject::isType( type );
 }
 
-Sizei GameObjectPolygon::Size() {
+Sizei GameObjectPolygon::getSize() {
 	return Sizei( mRect.getSize().x, mRect.getSize().y );
 }
 
-void GameObjectPolygon::Draw() {
+void GameObjectPolygon::draw() {
 	Int32 selAdd	= mSelected ? 50 : 0;
 	Int32 colFill	= 100 + selAdd;
 
@@ -41,21 +41,21 @@ void GameObjectPolygon::Draw() {
 	P.drawPolygon( mPoly );
 }
 
-void GameObjectPolygon::SetPolygonPoint( Uint32 index, Vector2f p ) {
+void GameObjectPolygon::setPolygonPoint( Uint32 index, Vector2f p ) {
 	mPoly.setAt( index, p );
 	mRect	= mPoly.toAABB();
 	mPos	= Vector2f( mRect.Left, mRect.Top );
 }
 
-bool GameObjectPolygon::PointInside( const Vector2f& p ) {
-	if ( GameObjectObject::PointInside( p ) ) {
+bool GameObjectPolygon::pointInside( const Vector2f& p ) {
+	if ( GameObjectObject::pointInside( p ) ) {
 		return mPoly.pointInside( p );
 	}
 
 	return false;
 }
 
-GameObjectObject * GameObjectPolygon::Copy() {
+GameObjectObject * GameObjectPolygon::clone() {
 	return eeNew( GameObjectPolygon, ( mDataId, mPoly, mLayer, mFlags ) );
 }
 

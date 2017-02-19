@@ -13,64 +13,64 @@ GameObjectSubTextureEx::GameObjectSubTextureEx( const Uint32& Flags, MapLayer * 
 	mColor( Color ),
 	mVertexColors( NULL )
 {
-	mRender = RenderModeFromFlags();
+	mRender = getRenderModeFromFlags();
 
 	if ( 0 == mAngle )
-		mAngle = GetAngle();
+		mAngle = getRotation();
 }
 
 GameObjectSubTextureEx::~GameObjectSubTextureEx()
 {
 }
 
-Uint32 GameObjectSubTextureEx::Type() const {
+Uint32 GameObjectSubTextureEx::getType() const {
 	return GAMEOBJECT_TYPE_SUBTEXTUREEX;
 }
 
-bool GameObjectSubTextureEx::IsType( const Uint32& type ) {
-	return ( GameObjectSubTextureEx::Type() == type ) ? true : GameObjectSubTexture::IsType( type );
+bool GameObjectSubTextureEx::isType( const Uint32& type ) {
+	return ( GameObjectSubTextureEx::getType() == type ) ? true : GameObjectSubTexture::isType( type );
 }
 
-void GameObjectSubTextureEx::Draw() {
+void GameObjectSubTextureEx::draw() {
 	if ( NULL != mSubTexture ) {
-		if ( mLayer->Map()->LightsEnabled() && mLayer->LightsEnabled() ) {
-			MapLightManager * LM = mLayer->Map()->GetLightManager();
+		if ( mLayer->getMap()->getLightsEnabled() && mLayer->getLightsEnabled() ) {
+			MapLightManager * LM = mLayer->getMap()->getLightManager();
 
-			if ( MAP_LAYER_TILED == mLayer->Type() ) {
-				Vector2i Tile = reinterpret_cast<TileMapLayer*> ( mLayer )->GetCurrentTile();
+			if ( MAP_LAYER_TILED == mLayer->getType() ) {
+				Vector2i Tile = reinterpret_cast<TileMapLayer*> ( mLayer )->getCurrentTile();
 
-				if ( LM->IsByVertex() ) {
+				if ( LM->isByVertex() ) {
 					mSubTexture->draw(
 						mPos.x,
 						mPos.y,
 						mAngle,
 						mScale,
-						*LM->GetTileColor( Tile, 0 ),
-						*LM->GetTileColor( Tile, 1 ),
-						*LM->GetTileColor( Tile, 2 ),
-						*LM->GetTileColor( Tile, 3 ),
+						*LM->getTileColor( Tile, 0 ),
+						*LM->getTileColor( Tile, 1 ),
+						*LM->getTileColor( Tile, 2 ),
+						*LM->getTileColor( Tile, 3 ),
 						mBlend,
 						mRender
 					);
 				} else {
-					mSubTexture->draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), mAngle, mScale, mBlend, mRender );
+					mSubTexture->draw( mPos.x, mPos.y, *LM->getTileColor( Tile ), mAngle, mScale, mBlend, mRender );
 				}
 			} else {
-				if ( LM->IsByVertex() ) {
+				if ( LM->isByVertex() ) {
 					mSubTexture->draw(
 						mPos.x,
 						mPos.y,
 						mAngle,
 						mScale,
-						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->getDestSize().y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->getDestSize().x, mPos.y + mSubTexture->getDestSize().y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->getDestSize().x, mPos.y ) ),
+						LM->getColorFromPos( Vector2f( mPos.x, mPos.y ) ),
+						LM->getColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->getDestSize().y ) ),
+						LM->getColorFromPos( Vector2f( mPos.x + mSubTexture->getDestSize().x, mPos.y + mSubTexture->getDestSize().y ) ),
+						LM->getColorFromPos( Vector2f( mPos.x + mSubTexture->getDestSize().x, mPos.y ) ),
 						mBlend,
 						mRender
 					);
 				} else {
-					mSubTexture->draw( mPos.x, mPos.y, LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ), mAngle, mScale, mBlend, mRender );
+					mSubTexture->draw( mPos.x, mPos.y, LM->getColorFromPos( Vector2f( mPos.x, mPos.y ) ), mAngle, mScale, mBlend, mRender );
 				}
 			}
 		} else {
@@ -83,10 +83,10 @@ void GameObjectSubTextureEx::Draw() {
 	}
 }
 
-void GameObjectSubTextureEx::FlagSet( const Uint32& Flag ) {
-	mRender = RenderModeFromFlags();
+void GameObjectSubTextureEx::setFlag( const Uint32& Flag ) {
+	mRender = getRenderModeFromFlags();
 
-	GameObject::FlagSet( Flag );
+	GameObject::setFlag( Flag );
 }
 
 }}

@@ -1,3 +1,4 @@
+../../src/eepp/gaming/mapobjectlayer.cpp
 ee.config
 ee.includes
 ../../../eeiv/src/capp.cpp
@@ -98,7 +99,6 @@ ee.includes
 ../../include/eepp/gaming/mapeditor/mapeditor.hpp
 ../../src/eepp/gaming/mapeditor/maplayerproperties.hpp
 ../../src/eepp/gaming/tilemaplayer.cpp
-../../src/eepp/gaming/objectlayer.cpp
 ../../src/eepp/gaming/tilemap.cpp
 ../../src/eepp/gaming/maplightmanager.cpp
 ../../src/eepp/gaming/maplight.cpp

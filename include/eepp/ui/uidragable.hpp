@@ -36,7 +36,7 @@ class EE_API UIDragable : public UIControl {
 
 		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnDrag( const Vector2i& position );
+		virtual Uint32 onDrag( const Vector2i& position );
 
 		virtual Uint32 OnDragStart( const Vector2i& position );
 

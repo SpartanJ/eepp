@@ -12,13 +12,13 @@ class EE_API GameObjectSubTextureEx : public GameObjectSubTexture {
 
 		virtual ~GameObjectSubTextureEx();
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type );
+		virtual bool isType( const Uint32& type );
 
-		virtual void FlagSet( const Uint32& Flag );
+		virtual void setFlag( const Uint32& Flag );
 	protected:
 		EE_BLEND_MODE		mBlend;
 		EE_RENDER_MODE		mRender;

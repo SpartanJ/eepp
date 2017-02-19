@@ -157,7 +157,7 @@ namespace cb
                     }
 
                     ///Returns true if the callback has been set, or false if the callback is not set and is invalid.
-                    bool IsSet() const
+					bool IsSet() const
                     {
                         return 0 != mCallback;
                     }
@@ -172,7 +172,7 @@ namespace cb
                     }
 
                     ///Invokes the callback. This function can sometimes be more convenient than the operator(), which does the same thing.
-                    R Call() const
+					R Call() const
                     {
                         if (mCallback)
                             return (*mCallback)();

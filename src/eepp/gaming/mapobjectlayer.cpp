@@ -16,20 +16,20 @@ MapObjectLayer::MapObjectLayer( TileMap * map, Uint32 flags, std::string name, V
 }
 
 MapObjectLayer::~MapObjectLayer() {
-	DeallocateLayer();
+	deallocateLayer();
 }
 
-void MapObjectLayer::AllocateLayer() {
+void MapObjectLayer::allocateLayer() {
 
 }
 
-void MapObjectLayer::DeallocateLayer() {
+void MapObjectLayer::deallocateLayer() {
 	for ( ObjList::iterator it = mObjects.begin(); it != mObjects.end(); it++ ) {
 		eeSAFE_DELETE( *it );
 	}
 }
 
-void MapObjectLayer::Draw( const Vector2f &Offset ) {
+void MapObjectLayer::draw( const Vector2f &Offset ) {
 	GlobalBatchRenderer::instance()->draw();
 
 	ObjList::iterator it;
@@ -38,19 +38,19 @@ void MapObjectLayer::Draw( const Vector2f &Offset ) {
 	GLi->translatef( mOffset.x, mOffset.y, 0.0f );
 
 	for ( it = mObjects.begin(); it != mObjects.end(); it++ ) {
-		(*it)->Draw();
+		(*it)->draw();
 	}
 
-	Texture * Tex = mMap->GetBlankTileTexture();
+	Texture * Tex = mMap->getBlankTileTexture();
 
-	if ( mMap->ShowBlocked() && NULL != Tex ) {
+	if ( mMap->getShowBlocked() && NULL != Tex ) {
 		ColorA Col( 255, 0, 0, 200 );
 
 		for ( it = mObjects.begin(); it != mObjects.end(); it++ ) {
 			GameObject * Obj = (*it);
 
-			if ( Obj->Blocked() ) {
-				Tex->drawEx( Obj->Pos().x, Obj->Pos().y, Obj->Size().getWidth(), Obj->Size().getHeight(), 0, Vector2f::One, Col, Col, Col, Col );
+			if ( Obj->isBlocked() ) {
+				Tex->drawEx( Obj->getPosition().x, Obj->getPosition().y, Obj->getSize().getWidth(), Obj->getSize().getHeight(), 0, Vector2f::One, Col, Col, Col, Col );
 			}
 		}
 	}
@@ -60,35 +60,35 @@ void MapObjectLayer::Draw( const Vector2f &Offset ) {
 	GLi->popMatrix();
 }
 
-void MapObjectLayer::Update() {
+void MapObjectLayer::update() {
 	for ( ObjList::iterator it = mObjects.begin(); it != mObjects.end(); it++ ) {
-		(*it)->Update();
+		(*it)->update();
 	}
 }
 
-Uint32 MapObjectLayer::GetObjectCount() const {
+Uint32 MapObjectLayer::getObjectCount() const {
 	return mObjects.size();
 }
 
-void MapObjectLayer::AddGameObject( GameObject * obj ) {
+void MapObjectLayer::addGameObject( GameObject * obj ) {
 	mObjects.push_back( obj );
 }
 
-void MapObjectLayer::RemoveGameObject( GameObject * obj ) {
+void MapObjectLayer::removeGameObject( GameObject * obj ) {
 	mObjects.remove( obj );
 
 	eeSAFE_DELETE( obj );
 }
 
-void MapObjectLayer::RemoveGameObject( const Vector2i& pos ) {
-	GameObject * tObj = GetObjectOver( pos, SEARCH_OBJECT );
+void MapObjectLayer::removeGameObject( const Vector2i& pos ) {
+	GameObject * tObj = getObjectOver( pos, SEARCH_OBJECT );
 
 	if ( NULL != tObj ) {
-		RemoveGameObject( tObj );
+		removeGameObject( tObj );
 	}
 }
 
-GameObject * MapObjectLayer::GetObjectOver( const Vector2i& pos, SEARCH_TYPE type ) {
+GameObject * MapObjectLayer::getObjectOver( const Vector2i& pos, SEARCH_TYPE type ) {
 	GameObject * tObj;
 	Vector2f tPos;
 	Sizei tSize;
@@ -97,16 +97,16 @@ GameObject * MapObjectLayer::GetObjectOver( const Vector2i& pos, SEARCH_TYPE typ
 		tObj = (*it);
 
 		if ( type & SEARCH_POLY ) {
-			if ( tObj->IsType( GAMEOBJECT_TYPE_OBJECT ) ) {
+			if ( tObj->isType( GAMEOBJECT_TYPE_OBJECT ) ) {
 				GameObjectObject * tObjObj = reinterpret_cast<GameObjectObject*> ( tObj );
 
-				if ( tObjObj->PointInside( Vector2f( pos.x, pos.y ) ) )
+				if ( tObjObj->pointInside( Vector2f( pos.x, pos.y ) ) )
 					return tObj;
 			}
 		} else if ( type & SEARCH_OBJECT ) {
-			if ( !tObj->IsType( GAMEOBJECT_TYPE_OBJECT ) ) {
-				tPos = tObj->Pos();
-				tSize = tObj->Size();
+			if ( !tObj->isType( GAMEOBJECT_TYPE_OBJECT ) ) {
+				tPos = tObj->getPosition();
+				tSize = tObj->getSize();
 
 				Recti objR( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y );
 
@@ -114,14 +114,14 @@ GameObject * MapObjectLayer::GetObjectOver( const Vector2i& pos, SEARCH_TYPE typ
 					return tObj;
 			}
 		} else {
-			if ( tObj->IsType( GAMEOBJECT_TYPE_OBJECT ) ) {
+			if ( tObj->isType( GAMEOBJECT_TYPE_OBJECT ) ) {
 				GameObjectObject * tObjObj = reinterpret_cast<GameObjectObject*> ( tObj );
 
-				if ( tObjObj->PointInside( Vector2f( pos.x, pos.y ) ) )
+				if ( tObjObj->pointInside( Vector2f( pos.x, pos.y ) ) )
 					return tObj;
 			} else {
-				tPos = tObj->Pos();
-				tSize = tObj->Size();
+				tPos = tObj->getPosition();
+				tSize = tObj->getSize();
 
 				Recti objR( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y );
 
@@ -134,7 +134,7 @@ GameObject * MapObjectLayer::GetObjectOver( const Vector2i& pos, SEARCH_TYPE typ
 	return NULL;
 }
 
-MapObjectLayer::ObjList& MapObjectLayer::GetObjectList() {
+MapObjectLayer::ObjList& MapObjectLayer::getObjectList() {
 	return mObjects;
 }
 

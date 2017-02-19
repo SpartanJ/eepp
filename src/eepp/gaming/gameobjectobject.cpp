@@ -21,20 +21,20 @@ GameObjectObject::GameObjectObject( Uint32 DataId, const Rectf& rect, MapLayer *
 GameObjectObject::~GameObjectObject() {
 }
 
-Uint32 GameObjectObject::Type() const {
+Uint32 GameObjectObject::getType() const {
 	return GAMEOBJECT_TYPE_OBJECT;
 }
 
-bool GameObjectObject::IsType( const Uint32& type ) {
-	return ( GameObjectObject::Type() == type ) ? true : GameObject::IsType( type );
+bool GameObjectObject::isType( const Uint32& type ) {
+	return ( GameObjectObject::getType() == type ) ? true : GameObject::isType( type );
 }
 
-Sizei GameObjectObject::Size() {
+Sizei GameObjectObject::getSize() {
 	Sizef size( mRect.getSize() );
 	return Sizei( size.x, size.y );
 }
 
-void GameObjectObject::Draw() {
+void GameObjectObject::draw() {
 	Int32 selAdd	= mSelected ? 50 : 0;
 	Int32 colFill	= 100 + selAdd;
 
@@ -48,17 +48,17 @@ void GameObjectObject::Draw() {
 	P.drawRectangle( mRect );
 }
 
-Vector2f GameObjectObject::Pos() const {
+Vector2f GameObjectObject::getPosition() const {
 	return mPos;
 }
 
-void GameObjectObject::Pos( Vector2f pos ) {
+void GameObjectObject::setPosition( Vector2f pos ) {
 	mPoly.move( pos - mPos );
 	mPos	= pos;
-	mRect	= Rectf( pos, Sizef( Size().x, Size().y ) );
+	mRect	= Rectf( pos, Sizef( getSize().x, getSize().y ) );
 }
 
-void GameObjectObject::SetPolygonPoint( Uint32 index, Vector2f p ) {
+void GameObjectObject::setPolygonPoint( Uint32 index, Vector2f p ) {
 	switch ( index ) {
 		case 0:
 		{
@@ -93,75 +93,75 @@ void GameObjectObject::SetPolygonPoint( Uint32 index, Vector2f p ) {
 	mPoly	= mRect;
 }
 
-Uint32 GameObjectObject::DataId() {
+Uint32 GameObjectObject::getDataId() {
 	return mDataId;
 }
 
-void GameObjectObject::DataId( Uint32 Id ) {
+void GameObjectObject::setDataId( Uint32 Id ) {
 	mDataId = Id;
 }
 
-void GameObjectObject::ClearProperties() {
+void GameObjectObject::clearProperties() {
 	mProperties.clear();
 }
 
-void GameObjectObject::AddProperty( std::string Text, std::string Value ) {
+void GameObjectObject::addProperty( std::string Text, std::string Value ) {
 	mProperties[ Text ] = Value;
 }
 
-void GameObjectObject::EditProperty( std::string Text, std::string Value ) {
+void GameObjectObject::editProperty( std::string Text, std::string Value ) {
 	mProperties[ Text ] = Value;
 }
 
-void GameObjectObject::RemoveProperty( std::string Text ) {
+void GameObjectObject::removeProperty( std::string Text ) {
 	mProperties.erase( Text );
 }
 
-GameObjectObject::PropertiesMap& GameObjectObject::GetProperties() {
+GameObjectObject::PropertiesMap& GameObjectObject::getProperties() {
 	return mProperties;
 }
 
-Uint32 GameObjectObject::GetPropertyCount() {
+Uint32 GameObjectObject::getPropertyCount() {
 	return mProperties.size();
 }
 
-const std::string& GameObjectObject::Name() const {
+const std::string& GameObjectObject::getName() const {
 	return mName;
 }
 
-void GameObjectObject::Name( const std::string& name ) {
+void GameObjectObject::setName( const std::string& name ) {
 	mName = name;
 }
 
-const std::string& GameObjectObject::TypeName() const {
+const std::string& GameObjectObject::getTypeName() const {
 	return mType;
 }
 
-void GameObjectObject::TypeName( const std::string& type ) {
+void GameObjectObject::setTypeName( const std::string& type ) {
 	mType = type;
 }
 
-Polygon2f& GameObjectObject::GetPolygon() {
+Polygon2f& GameObjectObject::getPolygon() {
 	return mPoly;
 }
 
-bool GameObjectObject::PointInside( const Vector2f& p ) {
+bool GameObjectObject::pointInside( const Vector2f& p ) {
 	return mRect.contains( p );
 }
 
-void GameObjectObject::SetProperties( const PropertiesMap& prop ) {
+void GameObjectObject::setProperties( const PropertiesMap& prop ) {
 	mProperties = prop;
 }
 
-const bool& GameObjectObject::Selected() const {
+const bool& GameObjectObject::isSelected() const {
 	return mSelected;
 }
 
-void GameObjectObject::Selected( const bool& sel ) {
+void GameObjectObject::setSelected( const bool& sel ) {
 	mSelected = sel;
 }
 
-GameObjectObject * GameObjectObject::Copy() {
+GameObjectObject * GameObjectObject::clone() {
 	return eeNew( GameObjectObject, ( mDataId, mRect, mLayer, mFlags ) );
 }
 

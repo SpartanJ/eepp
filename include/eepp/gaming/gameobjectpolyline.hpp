@@ -11,13 +11,13 @@ class EE_API GameObjectPolyline : public GameObjectPolygon {
 
 		virtual ~GameObjectPolyline();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type );
+		virtual bool isType( const Uint32& type );
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual GameObjectObject * Copy();
+		virtual GameObjectObject * clone();
 };
 
 }}

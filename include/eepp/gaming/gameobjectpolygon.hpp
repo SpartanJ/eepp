@@ -11,19 +11,19 @@ class EE_API GameObjectPolygon : public GameObjectObject {
 
 		virtual ~GameObjectPolygon();
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual Sizei Size();
+		virtual Sizei getSize();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type );
+		virtual bool isType( const Uint32& type );
 
-		virtual bool PointInside( const Vector2f& p );
+		virtual bool pointInside( const Vector2f& p );
 
-		virtual void SetPolygonPoint( Uint32 index, Vector2f p );
+		virtual void setPolygonPoint( Uint32 index, Vector2f p );
 
-		virtual GameObjectObject * Copy();
+		virtual GameObjectObject * clone();
 };
 
 }}

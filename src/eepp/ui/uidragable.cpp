@@ -65,7 +65,7 @@ void UIDragable::update() {
 		Vector2i Pos( UIManager::instance()->getMousePos() );
 
 		if ( mDragPoint != Pos ) {
-			if ( OnDrag( Pos ) ) {
+			if ( onDrag( Pos ) ) {
 				mPos += -( mDragPoint - Pos );
 
 				mDragPoint = Pos;
@@ -78,7 +78,7 @@ void UIDragable::update() {
 	}
 }
 
-Uint32 UIDragable::OnDrag( const Vector2i& Pos ) {
+Uint32 UIDragable::onDrag( const Vector2i& Pos ) {
 	return 1;
 }
 

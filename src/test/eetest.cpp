@@ -244,7 +244,7 @@ void EETest::onShowMenu( const UIEvent * Event ) {
 }
 
 void EETest::onWindowResize(EE::Window::Window * win) {
-	Map.ViewSize( win->getSize() );
+	Map.setViewSize( win->getSize() );
 }
 
 void EETest::createUI() {
@@ -930,11 +930,11 @@ void EETest::loadTextures() {
 
 	eePRINTL( "Textures loading time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	Map.Load( MyPath + "maps/test.eem" );
-	Map.DrawGrid( false );
-	Map.ClipedArea( false );
-	Map.DrawBackground( false );
-	Map.ViewSize( mWindow->getSize() );
+	Map.load( MyPath + "maps/test.eem" );
+	Map.setDrawGrid( false );
+	Map.setClipedArea( false );
+	Map.setDrawBackground( false );
+	Map.setViewSize( mWindow->getSize() );
 
 	eePRINTL( "Map creation time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 }
@@ -960,8 +960,8 @@ void EETest::updateParticles() {
 }
 
 void EETest::screen1() {
-	Map.Update();
-	Map.Draw();
+	Map.update();
+	Map.draw();
 }
 
 void EETest::screen2() {
@@ -1440,36 +1440,36 @@ void EETest::input() {
 				Uint8 hat = Joy->getHat();
 
 				if ( HAT_LEFT == hat || HAT_LEFTDOWN == hat || HAT_LEFTUP == hat )
-					Map.Move( (mWindow->getElapsed().asMilliseconds() * 0.2f), 0 );
+					Map.move( (mWindow->getElapsed().asMilliseconds() * 0.2f), 0 );
 
 				if ( HAT_RIGHT == hat || HAT_RIGHTDOWN == hat || HAT_RIGHTUP == hat )
-					Map.Move( -mWindow->getElapsed().asMilliseconds() * 0.2f, 0 );
+					Map.move( -mWindow->getElapsed().asMilliseconds() * 0.2f, 0 );
 
 				if ( HAT_UP == hat || HAT_LEFTUP == hat || HAT_RIGHTUP == hat )
-					Map.Move( 0, (mWindow->getElapsed().asMilliseconds() * 0.2f) );
+					Map.move( 0, (mWindow->getElapsed().asMilliseconds() * 0.2f) );
 
 				if ( HAT_DOWN == hat || HAT_LEFTDOWN == hat || HAT_RIGHTDOWN == hat )
-					Map.Move( 0, -mWindow->getElapsed().asMilliseconds() * 0.2f );
+					Map.move( 0, -mWindow->getElapsed().asMilliseconds() * 0.2f );
 			}
 
 			if ( KM->isKeyDown(KEY_LEFT) ) {
-				Map.Move( mWindow->getElapsed().asMilliseconds() * 0.2f, 0 );
+				Map.move( mWindow->getElapsed().asMilliseconds() * 0.2f, 0 );
 			}
 
 			if ( KM->isKeyDown(KEY_RIGHT) ) {
-				Map.Move( -mWindow->getElapsed().asMilliseconds() * 0.2f, 0 );
+				Map.move( -mWindow->getElapsed().asMilliseconds() * 0.2f, 0 );
 			}
 
 			if ( KM->isKeyDown(KEY_UP) ) {
-				Map.Move( 0, mWindow->getElapsed().asMilliseconds() * 0.2f );
+				Map.move( 0, mWindow->getElapsed().asMilliseconds() * 0.2f );
 			}
 
 			if ( KM->isKeyDown(KEY_DOWN) ) {
-				Map.Move( 0, -mWindow->getElapsed().asMilliseconds() * 0.2f );
+				Map.move( 0, -mWindow->getElapsed().asMilliseconds() * 0.2f );
 			}
 
 			if ( KM->isKeyUp(KEY_F8) )
-				Map.Reset();
+				Map.reset();
 
 			break;
 		case 2:

@@ -12,31 +12,31 @@ class MapLayer;
 
 class EE_API GameObjectVirtual : public GameObject {
 	public:
-		GameObjectVirtual( Uint32 DataId, MapLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const Vector2f& Pos = Vector2f() );
+		GameObjectVirtual( Uint32 getDataId, MapLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const Vector2f& Pos = Vector2f() );
 
 		GameObjectVirtual( SubTexture * SubTexture, MapLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const Vector2f& Pos = Vector2f() );
 
 		virtual ~GameObjectVirtual();
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual Vector2f Pos() const;
+		virtual Vector2f getPosition() const;
 
-		virtual Sizei Size();
+		virtual Sizei getSize();
 
-		virtual void Pos( Vector2f pos );
+		virtual void setPosition( Vector2f pos );
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type );
+		virtual bool isType( const Uint32& type );
 
-		virtual Uint32 RealType() const;
+		virtual Uint32 getRealType() const;
 
-		virtual Uint32 DataId();
+		virtual Uint32 getDataId();
 
-		virtual void DataId( Uint32 Id );
+		virtual void setDataId( Uint32 Id );
 
-		void SetLayer( MapLayer * Layer );
+		void setLayer( MapLayer * Layer );
 	protected:
 		Uint32		mType;
 		Uint32		mDataId;

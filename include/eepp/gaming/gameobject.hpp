@@ -16,64 +16,64 @@ class EE_API GameObject {
 
 		virtual ~GameObject();
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual void Update();
+		virtual void update();
 
-		virtual Vector2f Pos() const;
+		virtual Vector2f getPosition() const;
 
-		virtual void Pos( Vector2f pos );
+		virtual void setPosition( Vector2f pos );
 
-		virtual Vector2i TilePos() const;
+		virtual Vector2i getTilePosition() const;
 
-		virtual void TilePos( Vector2i pos );
+		virtual void setTilePosition( Vector2i pos );
 
-		virtual Sizei Size();
+		virtual Sizei getSize();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type );
+		virtual bool isType( const Uint32& type );
 
-		const Uint32& Flags() const;
+		const Uint32& getFlags() const;
 
-		Uint32 FlagGet( const Uint32& Flag );
+		Uint32 getFlag( const Uint32& Flag );
 
-		virtual void FlagSet( const Uint32& Flag );
+		virtual void setFlag( const Uint32& Flag );
 
-		void FlagClear( const Uint32& Flag );
+		void clearFlag( const Uint32& Flag );
 
-		Uint32 Blocked() const;
+		bool isBlocked() const;
 
-		void Blocked( bool blocked );
+		void setBlocked( bool blocked );
 
-		Uint32 Rotated() const;
+		bool isRotated() const;
 
-		void Rotated( bool rotated );
+		void setRotated( bool rotated );
 
-		Uint32 Mirrored() const;
+		bool isMirrored() const;
 
-		void Mirrored( bool mirrored );
+		void setMirrored( bool mirrored );
 
-		Uint32 Fliped() const;
+		bool isFliped() const;
 
-		void Fliped( bool fliped );
+		void setFliped( bool fliped );
 
-		virtual Uint32 DataId();
+		virtual Uint32 getDataId();
 
-		virtual void DataId( Uint32 Id );
+		virtual void setDataId( Uint32 Id );
 
-		MapLayer * Layer() const;
+		MapLayer * getLayer() const;
 	protected:
 		Uint32		mFlags;
 		MapLayer *	mLayer;
 
-		virtual EE_RENDER_MODE RenderModeFromFlags();
+		virtual EE_RENDER_MODE getRenderModeFromFlags();
 
-		void AutoFixTilePos();
+		void autoFixTilePos();
 
-		void AssignTilePos();
+		void assignTilePos();
 
-		Float GetAngle();
+		Float getRotation();
 };
 
 }}

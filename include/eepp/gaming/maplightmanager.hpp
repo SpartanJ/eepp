@@ -19,41 +19,41 @@ class EE_API MapLightManager {
 
 		virtual void Update();
 
-		void AddLight( MapLight * Light );
+		void addLight( MapLight * Light );
 
-		void RemoveLight( const Vector2f& OverPos );
+		void removeLight( const Vector2f& OverPos );
 
-		void RemoveLight( MapLight * Light );
+		void removeLight( MapLight * Light );
 
-		Uint32 Count();
+		Uint32 getCount();
 
-		const ColorA * GetTileColor( const Vector2i& TilePos );
+		const ColorA * getTileColor( const Vector2i& TilePos );
 
-		const ColorA * GetTileColor( const Vector2i& TilePos, const Uint32& Vertex );
+		const ColorA * getTileColor( const Vector2i& TilePos, const Uint32& Vertex );
 
-		ColorA GetColorFromPos( const Vector2f& Pos );
+		ColorA getColorFromPos( const Vector2f& Pos );
 
-		const bool& IsByVertex() const;
+		const bool& isByVertex() const;
 
-		LightsList& GetLights();
+		LightsList& getLights();
 
-		MapLight * GetLightOver( const Vector2f& OverPos, MapLight * LightCurrent = NULL );
+		MapLight * getLightOver( const Vector2f& OverPos, MapLight * LightCurrent = NULL );
 	protected:
-		TileMap *				mMap;
-		Int32				mNumVertex;
+		TileMap *		mMap;
+		Int32			mNumVertex;
 		ColorA****		mTileColors;
-		LightsList			mLights;
-		bool				mIsByVertex;
+		LightsList		mLights;
+		bool			mIsByVertex;
 
-		void AllocateColors();
+		void allocateColors();
 
-		void DeallocateColors();
+		void deallocateColors();
 
-		void DestroyLights();
+		void destroyLights();
 
-		virtual void UpdateByVertex();
+		virtual void updateByVertex();
 
-		virtual void UpdateByTile();
+		virtual void updateByTile();
 };
 
 }}

@@ -21,19 +21,19 @@ class EE_API MapObjectLayer : public MapLayer {
 
 		virtual ~MapObjectLayer();
 
-		virtual void Draw( const Vector2f &Offset = Vector2f(0,0) );
+		virtual void draw( const Vector2f &Offset = Vector2f(0,0) );
 
-		virtual void Update();
+		virtual void update();
 
-		virtual void AddGameObject( GameObject * obj );
+		virtual void addGameObject( GameObject * obj );
 
-		virtual void RemoveGameObject( GameObject * obj );
+		virtual void removeGameObject( GameObject * obj );
 
-		virtual void RemoveGameObject( const Vector2i& pos );
+		virtual void removeGameObject( const Vector2i& pos );
 
-		virtual GameObject * GetObjectOver( const Vector2i& pos, SEARCH_TYPE type = SEARCH_ALL );
+		virtual GameObject * getObjectOver( const Vector2i& pos, SEARCH_TYPE type = SEARCH_ALL );
 
-		virtual Uint32 GetObjectCount() const;
+		virtual Uint32 getObjectCount() const;
 	protected:
 		friend class TileMap;
 
@@ -41,11 +41,11 @@ class EE_API MapObjectLayer : public MapLayer {
 
 		MapObjectLayer( TileMap * map, Uint32 flags, std::string name = "", Vector2f offset = Vector2f(0,0) );
 
-		void AllocateLayer();
+		void allocateLayer();
 
-		void DeallocateLayer();
+		void deallocateLayer();
 
-		ObjList& GetObjectList();
+		ObjList& getObjectList();
 };
 
 }}

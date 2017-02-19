@@ -29,10 +29,10 @@ UIMap::UIMap( const UIComplexControl::CreateParams& Params, UITheme * Theme, Til
 		mMap = eeNew( TileMap, () );
 	}
 
-	mMap->BackColor( ColorA( 100, 100, 100, 100 ) );
-	mMap->GridLinesColor( ColorA( 150, 150, 150, 150 ) );
+	mMap->setBackColor( ColorA( 100, 100, 100, 100 ) );
+	mMap->setGridLinesColor( ColorA( 150, 150, 150, 150 ) );
 
-	mMap->SetDrawCallback( cb::Make0( this, &UIMap::MapDraw ) );
+	mMap->setDrawCallback( cb::Make0( this, &UIMap::mapDraw ) );
 
 	mDragButton = EE_BUTTON_MMASK;
 	setDragEnabled( true );
@@ -44,7 +44,7 @@ UIMap::~UIMap() {
 	eeSAFE_DELETE( mMap );
 }
 
-Uint32 UIMap::OnDrag( const Vector2i& Pos ) {
+Uint32 UIMap::onDrag( const Vector2i& Pos ) {
 
 	if (	( EDITING_OBJECT == mEditingMode && NULL != mSelObj ) ||
 			( EDITING_LIGHT == mEditingMode && NULL != mSelLight ) ) {
@@ -55,7 +55,7 @@ Uint32 UIMap::OnDrag( const Vector2i& Pos ) {
 	Vector2i nPos( -( mDragPoint - Pos ) );
 	Vector2f nPosf( nPos.x, nPos.y );
 
-	mMap->Move( nPosf );
+	mMap->move( nPosf );
 
 	mDragPoint = Pos;
 
@@ -66,7 +66,7 @@ Uint32 UIMap::OnDrag( const Vector2i& Pos ) {
 	return 0;
 }
 
-void UIMap::ReplaceMap( TileMap * newMap ) {
+void UIMap::replaceMap( TileMap * newMap ) {
 	eeSAFE_DELETE( mMap );
 	mMap = newMap;
 	updateScreenPos();
@@ -80,7 +80,7 @@ void UIMap::draw() {
 	UIComplexControl::draw();
 
 	if ( NULL != mMap ) {
-		mMap->Draw();
+		mMap->draw();
 	}
 }
 
@@ -88,7 +88,7 @@ void UIMap::updateScreenPos() {
 	UIComplexControl::updateScreenPos();
 
 	if ( NULL != mMap ) {
-		mMap->Position( mScreenPos );
+		mMap->setPosition( mScreenPos );
 	}
 }
 
@@ -96,7 +96,7 @@ void UIMap::update() {
 	UIComplexControl::update();
 
 	if ( NULL != mMap ) {
-		mMap->Update();
+		mMap->update();
 
 		if ( mEnabled && mVisible && isMouseOver() ) {
 			Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
@@ -105,23 +105,23 @@ void UIMap::update() {
 				if ( NULL != mSelLight ) {
 					if ( Flags & EE_BUTTONS_WUWD ) {
 						if ( Flags & EE_BUTTON_WUMASK ) {
-							mSelLight->Radius( mSelLight->Radius() + 10 );
+							mSelLight->setRadius( mSelLight->getRadius() + 10 );
 						} else if ( Flags & EE_BUTTON_WDMASK ) {
-							mSelLight->Radius( mSelLight->Radius() - 10 );
+							mSelLight->setRadius( mSelLight->getRadius() - 10 );
 						}
 
 						if ( mLightRadiusChangeCb.IsSet() )
 							mLightRadiusChangeCb( mSelLight );
 					} else if ( Flags & EE_BUTTON_RMASK ) {
 						if ( mSelLight == mAddLight ) {
-							mMap->GetLightManager()->RemoveLight( mAddLight );
+							mMap->getLightManager()->removeLight( mAddLight );
 
 							eeSAFE_DELETE( mAddLight );
 
 							mSelLight = NULL;
 						} else if ( NULL != mSelLight ) {
-							if ( mSelLight->GetAABB().contains( mMap->GetMouseMapPosf() ) ) {
-								mMap->GetLightManager()->RemoveLight( mSelLight );
+							if ( mSelLight->getAABB().contains( mMap->getMouseMapPosf() ) ) {
+								mMap->getLightManager()->removeLight( mSelLight );
 
 								eeSAFE_DELETE( mSelLight );
 							}
@@ -130,54 +130,54 @@ void UIMap::update() {
 						if ( mSelLight == mAddLight ) {
 							mAddLight = NULL;
 						} else {
-							TryToSelectLight();
+							tryToSelectLight();
 						}
 					}
 
 					Flags = UIManager::instance()->getInput()->getPressTrigger();
 
 					if ( Flags & EE_BUTTON_MMASK ) {
-						mSelLight->Position( mMap->GetMouseMapPosf() );
+						mSelLight->setPosition( mMap->getMouseMapPosf() );
 					}
 				} else {
 					if ( Flags & EE_BUTTON_LMASK ) {
-						TryToSelectLight();
+						tryToSelectLight();
 					}
 				}
 			} else if ( EDITING_OBJECT == mEditingMode ) {
-				ManageObject( Flags );
+				manageObject( Flags );
 			}
 		}
 	}
 }
 
-Vector2f UIMap::GetMouseMapPos() {
-	Vector2f mp( mMap->GetMouseMapPosf() );
+Vector2f UIMap::getMouseMapPos() {
+	Vector2f mp( mMap->getMouseMapPosf() );
 
 	if ( mClampToTile ) {
-		Vector2i mpc( mMap->GetTileCoords( mMap->GetMouseTilePos() + 1 ) );
+		Vector2i mpc( mMap->getTileCoords( mMap->getMouseTilePos() + 1 ) );
 		mp = Vector2f( mpc.x, mpc.y );
 	}
 
 	return mp;
 }
 
-void UIMap::SelectPolyObj() {
-	if ( NULL != mCurLayer && mCurLayer->Type() == MAP_LAYER_OBJECT ) {
+void UIMap::selectPolyObj() {
+	if ( NULL != mCurLayer && mCurLayer->getType() == MAP_LAYER_OBJECT ) {
 		MapObjectLayer * tLayer = reinterpret_cast<MapObjectLayer*>( mCurLayer );
 
-		GameObject * tObj = tLayer->GetObjectOver( mMap->GetMouseMapPos(), MapObjectLayer::SEARCH_POLY );
+		GameObject * tObj = tLayer->getObjectOver( mMap->getMouseMapPos(), MapObjectLayer::SEARCH_POLY );
 
 		if ( NULL != tObj ) {
 			if ( NULL != mSelObj ) {
-				mSelObj->Selected( false );
+				mSelObj->setSelected( false );
 			}
 
 			mSelObj = reinterpret_cast<GameObjectObject*>( tObj );
-			mSelObj->Selected( true );
+			mSelObj->setSelected( true );
 		} else {
 			if ( NULL != mSelObj ) {
-				mSelObj->Selected( false );
+				mSelObj->setSelected( false );
 				mSelObj = NULL;
 			}
 		}
@@ -188,28 +188,28 @@ void UIMap::SelectPolyObj() {
 	}
 }
 
-void UIMap::SelectPolyPoint() {
-	if ( NULL != mCurLayer && mCurLayer->Type() == MAP_LAYER_OBJECT && NULL != mSelObj ) {
-		if ( mSelObj->PointInside( mMap->GetMouseMapPosf() ) ) {
-			mSelPointIndex = mSelObj->GetPolygon().closestPoint( mMap->GetMouseMapPosf() );
-			SetPointRect( mSelObj->GetPolygon().getAt( mSelPointIndex ) );
+void UIMap::selectPolyPoint() {
+	if ( NULL != mCurLayer && mCurLayer->getType() == MAP_LAYER_OBJECT && NULL != mSelObj ) {
+		if ( mSelObj->pointInside( mMap->getMouseMapPosf() ) ) {
+			mSelPointIndex = mSelObj->getPolygon().closestPoint( mMap->getMouseMapPosf() );
+			setPointRect( mSelObj->getPolygon().getAt( mSelPointIndex ) );
 		}
 	}
 }
 
-void UIMap::DragPoly( Uint32 Flags, Uint32 PFlags ) {
+void UIMap::dragPoly( Uint32 Flags, Uint32 PFlags ) {
 	if ( ( PFlags & EE_BUTTON_MMASK ) && NULL != mSelObj ) {
-		if ( mSelObj->PointInside( mMap->GetMouseMapPosf() ) ) {
+		if ( mSelObj->pointInside( mMap->getMouseMapPosf() ) ) {
 			if ( !mObjDragging ) {
 				mObjDragging = true;
-				mObjDragDist = GetMouseMapPos() - mSelObj->Pos();
+				mObjDragDist = getMouseMapPos() - mSelObj->getPosition();
 			}
 		}
 
-		mSelObj->Pos( GetMouseMapPos() - mObjDragDist );
+		mSelObj->setPosition( getMouseMapPos() - mObjDragDist );
 
 		if ( EDIT_POLYGONS == mEditingObjMode ) {
-			SelectPolyPoint();
+			selectPolyPoint();
 		}
 	} else if ( Flags & EE_BUTTON_MMASK ) {
 		if ( mObjDragging ) {
@@ -219,7 +219,7 @@ void UIMap::DragPoly( Uint32 Flags, Uint32 PFlags ) {
 	}
 }
 
-void UIMap::ManageObject( Uint32 Flags ) {
+void UIMap::manageObject( Uint32 Flags ) {
 	Uint32 PFlags	= UIManager::instance()->getInput()->getPressTrigger();
 	Uint32 LPFlags	= UIManager::instance()->getInput()->getLastPressTrigger();
 
@@ -228,7 +228,7 @@ void UIMap::ManageObject( Uint32 Flags ) {
 		case INSERT_OBJECT:
 		{
 			if ( PFlags & EE_BUTTON_LMASK ) {
-				Vector2f mp( GetMouseMapPos() );
+				Vector2f mp( getMouseMapPos() );
 
 				if ( !mObjRECTEditing ) {
 					mObjRECTEditing = true;
@@ -253,7 +253,7 @@ void UIMap::ManageObject( Uint32 Flags ) {
 		case INSERT_POLYGON:
 		{
 			if ( Flags & EE_BUTTON_LMASK ) {
-				mObjPoly.pushBack( GetMouseMapPos() );
+				mObjPoly.pushBack( getMouseMapPos() );
 			} else if ( Flags & EE_BUTTON_RMASK ) {
 				mAddObjectCallback( ( INSERT_POLYGON == mEditingObjMode ) ? GAMEOBJECT_TYPE_POLYGON : GAMEOBJECT_TYPE_POLYLINE, mObjPoly );
 
@@ -265,9 +265,9 @@ void UIMap::ManageObject( Uint32 Flags ) {
 		case SELECT_OBJECTS:
 		{
 			if ( ( Flags & EE_BUTTON_LMASK ) ) {
-				SelectPolyObj();
+				selectPolyObj();
 			} else {
-				DragPoly( Flags, PFlags );
+				dragPoly( Flags, PFlags );
 			}
 
 			break;
@@ -276,22 +276,22 @@ void UIMap::ManageObject( Uint32 Flags ) {
 		{
 			if ( ( Flags & EE_BUTTON_LMASK ) ) {
 				if ( !mSelPoint ) {
-					SelectPolyObj();
-					SelectPolyPoint();
+					selectPolyObj();
+					selectPolyPoint();
 				} else {
 					mSelPoint = false;
 				}
 			} else if ( !( LPFlags & EE_BUTTON_LMASK  ) && ( PFlags & EE_BUTTON_LMASK ) ) {
-				if ( NULL != mSelObj && eeINDEX_NOT_FOUND != mSelPointIndex && mSelPointRect.contains( mMap->GetMouseMapPosf() ) ) {
+				if ( NULL != mSelObj && eeINDEX_NOT_FOUND != mSelPointIndex && mSelPointRect.contains( mMap->getMouseMapPosf() ) ) {
 					mSelPoint = true;
 				}
 			} else if ( ( PFlags & EE_BUTTON_LMASK ) ) {
 				if ( mSelPoint && NULL != mSelObj && eeINDEX_NOT_FOUND != mSelPointIndex ) {
-					mSelObj->SetPolygonPoint( mSelPointIndex, GetMouseMapPos() );
-					SetPointRect( GetMouseMapPos() );
+					mSelObj->setPolygonPoint( mSelPointIndex, getMouseMapPos() );
+					setPointRect( getMouseMapPos() );
 				}
 			} else {
-				DragPoly( Flags, PFlags );
+				dragPoly( Flags, PFlags );
 			}
 
 			break;
@@ -302,13 +302,13 @@ void UIMap::ManageObject( Uint32 Flags ) {
 	}
 }
 
-void UIMap::SetPointRect( Vector2f p ) {
+void UIMap::setPointRect( Vector2f p ) {
 	mSelPointRect = Rectf( Vector2f( p.x - 10, p.y - 10 ), Sizef( 20, 20 ) );
 }
 
-void UIMap::TryToSelectLight() {
+void UIMap::tryToSelectLight() {
 	MapLight * tLight = mSelLight;
-	mSelLight = mMap->GetLightManager()->GetLightOver( mMap->GetMouseMapPosf(), mSelLight );
+	mSelLight = mMap->getLightManager()->getLightOver( mMap->getMouseMapPosf(), mSelLight );
 
 	if ( NULL != mSelLight && mSelLight != tLight ) {
 		if ( mLightSelCb.IsSet() )
@@ -318,8 +318,8 @@ void UIMap::TryToSelectLight() {
 
 void UIMap::onSizeChange() {
 	if ( NULL != mMap ) {
-		mMap->Position( mScreenPos );
-		mMap->ViewSize( mSize );
+		mMap->setPosition( mScreenPos );
+		mMap->setViewSize( mSize );
 	}
 
 	UIComplexControl::onSizeChange();
@@ -328,12 +328,12 @@ void UIMap::onSizeChange() {
 Uint32 UIMap::onMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( NULL != mMap ) {
 		if ( EDITING_LIGHT == mEditingMode && NULL != mAddLight ) {
-			mAddLight->Position( mMap->GetMouseMapPosf() );
+			mAddLight->setPosition( mMap->getMouseMapPosf() );
 		}
 	}
 
 	if ( NULL != mTileBox ) {
-		Vector2i mp( mMap->GetMouseTilePos() );
+		Vector2i mp( mMap->getMouseTilePos() );
 
 		if ( mLastMouseTilePos != mp ) {
 			mLastMouseTilePos = mp;
@@ -344,10 +344,10 @@ Uint32 UIMap::onMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
 	return UIComplexControl::onMouseMove( Pos, Flags );
 }
 
-void UIMap::AddLight( MapLight * Light ) {
-	if ( NULL != mMap->GetLightManager() ) {
+void UIMap::addLight( MapLight * Light ) {
+	if ( NULL != mMap->getLightManager() ) {
 		if ( NULL != mAddLight ) {
-			mMap->GetLightManager()->RemoveLight( mAddLight );
+			mMap->getLightManager()->removeLight( mAddLight );
 
 			eeSAFE_DELETE( mAddLight );
 		}
@@ -356,20 +356,20 @@ void UIMap::AddLight( MapLight * Light ) {
 
 		mSelLight = Light;
 
-		mMap->GetLightManager()->AddLight( Light );
+		mMap->getLightManager()->addLight( Light );
 
 		if ( mLightSelCb.IsSet() )
 			mLightSelCb( mSelLight );
 	}
 }
 
-void UIMap::MapDraw() {
+void UIMap::mapDraw() {
 	if ( EDITING_LIGHT == mEditingMode ) {
 		if ( NULL != mSelLight ) {
 			mP.setColor( ColorA( 255, 0, 0, (Uint8)mAlpha ) );
 
-			Vector2f Pos( mSelLight->GetAABB().Left, mSelLight->GetAABB().Top );
-			eeAABB AB( mSelLight->GetAABB() );
+			Vector2f Pos( mSelLight->getAABB().Left, mSelLight->getAABB().Top );
+			eeAABB AB( mSelLight->getAABB() );
 
 			mP.setFillMode( DRAW_LINE );
 			mP.drawRectangle( Rectf( Pos, AB.getSize() ) );
@@ -401,7 +401,7 @@ void UIMap::MapDraw() {
 				mP.drawPolygon( mObjPoly );
 
 				Polygon2f polyN( mObjPoly );
-				polyN.pushBack( GetMouseMapPos() );
+				polyN.pushBack( getMouseMapPos() );
 
 				mP.setFillMode( DRAW_FILL );
 				mP.setColor( ColorA( 100, 100, 100, 100 ) );
@@ -420,7 +420,7 @@ void UIMap::MapDraw() {
 				mP.drawPolygon( mObjPoly );
 
 				Polygon2f polyN( mObjPoly );
-				polyN.pushBack( GetMouseMapPos() );
+				polyN.pushBack( getMouseMapPos() );
 
 				mP.setFillMode( DRAW_LINE );
 				mP.setColor( ColorA( 255, 255, 0, 200 ) );
@@ -446,53 +446,53 @@ void UIMap::MapDraw() {
 	}
 }
 
-void UIMap::EditingLights( const bool& editing ) {
+void UIMap::setEditingLights( const bool& editing ) {
 	mEditingMode = ( editing ) ? EDITING_LIGHT : 0;
 
-	if ( editing && NULL != mMap->GetLightManager() && NULL != mAddLight ) {
-		mMap->GetLightManager()->RemoveLight( mAddLight );
+	if ( editing && NULL != mMap->getLightManager() && NULL != mAddLight ) {
+		mMap->getLightManager()->removeLight( mAddLight );
 
 		mAddLight = NULL;
 	}
 }
 
-bool UIMap::EditingLights() {
+bool UIMap::isEditingLights() {
 	return EDITING_LIGHT == mEditingMode;
 }
 
-void UIMap::EditingObjects( const bool& editing ) {
+void UIMap::setEditingObjects( const bool& editing ) {
 	mEditingMode = ( editing ) ? EDITING_OBJECT : 0;
 }
 
-bool UIMap::EditingObjects() {
+bool UIMap::isEditingObjects() {
 	return EDITING_OBJECT == mEditingMode;
 }
 
-void UIMap::EditingDisabled() {
+void UIMap::editingDisable() {
 	mEditingMode = 0;
 }
 
-MapLight * UIMap::GetSelectedLight() {
+MapLight * UIMap::getSelectedLight() {
 	return mSelLight;
 }
 
-MapLight * UIMap::GetAddLight() {
+MapLight * UIMap::getAddLight() {
 	return mAddLight;
 }
 
-void UIMap::SetLightSelectCb( LightSelectCb Cb ) {
+void UIMap::setLightSelectCb( LightSelectCb Cb ) {
 	mLightSelCb = Cb;
 }
 
-void UIMap::SetLightRadiusChangeCb( LightRadiusChangeCb Cb ) {
+void UIMap::setLightRadiusChangeCb( LightRadiusChangeCb Cb ) {
 	mLightRadiusChangeCb = Cb;
 }
 
-void UIMap::SetAddObjectCallback( ObjAddCb Cb ) {
+void UIMap::setAddObjectCallback( ObjAddCb Cb ) {
 	mAddObjectCallback = Cb;
 }
 
-void UIMap::ClearLights() {
+void UIMap::clearLights() {
 	mSelLight = NULL;
 	mAddLight = NULL;
 }
@@ -501,62 +501,62 @@ void UIMap::onAlphaChange() {
 	UIComplexControl::onAlphaChange();
 
 	if ( NULL != mMap ) {
-		mMap->BackAlpha( (Uint8)mAlpha );
+		mMap->setBackAlpha( (Uint8)mAlpha );
 	}
 }
 
-void UIMap::ClampToTile( const bool& clamp ) {
+void UIMap::setClampToTile( const bool& clamp ) {
 	mClampToTile = clamp;
 }
 
-const bool& UIMap::ClampToTile() const {
+const bool& UIMap::getClampToTile() const {
 	return mClampToTile;
 }
 
-void UIMap::EditingObjMode( EDITING_OBJ_MODE mode ) {
+void UIMap::setEditingObjMode( EDITING_OBJ_MODE mode ) {
 	mObjPoly.clear();
 	mSelPointIndex = eeINDEX_NOT_FOUND;
 
 	mEditingObjMode = mode;
 }
 
-void UIMap::CurLayer( MapLayer * layer ) {
+void UIMap::setCurLayer( MapLayer * layer ) {
 	mCurLayer = layer;
 }
 
-void UIMap::SetAlertCb( AlertCb Cb ) {
+void UIMap::setAlertCb( AlertCb Cb ) {
 	mAlertCb = Cb;
 }
 
-void UIMap::SetUpdateScrollCb( UpdateScrollCb Cb ) {
+void UIMap::setUpdateScrollCb( UpdateScrollCb Cb ) {
 	mUpdateScrollCb = Cb;
 }
 
 Uint32 UIMap::onMessage( const UIMessage * Msg ) {
 	if ( Msg->getMsg() == UIMessage::MsgClick && Msg->getSender() == this && ( Msg->getFlags() & EE_BUTTON_RMASK ) ) {
-		if ( SELECT_OBJECTS == mEditingObjMode && NULL != mSelObj && mSelObj->PointInside( mMap->GetMouseMapPosf() ) ) {
-			CreateObjPopUpMenu();
+		if ( SELECT_OBJECTS == mEditingObjMode && NULL != mSelObj && mSelObj->pointInside( mMap->getMouseMapPosf() ) ) {
+			createObjPopUpMenu();
 		}
 	}
 
 	return 0;
 }
 
-void UIMap::ObjItemClick( const UIEvent * Event ) {
+void UIMap::objItemClick( const UIEvent * Event ) {
 	if ( !Event->getControl()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
-	if ( NULL != mSelObj && NULL != mCurLayer && mCurLayer->Type() == MAP_LAYER_OBJECT && mSelObj->Layer() == mCurLayer ) {
+	if ( NULL != mSelObj && NULL != mCurLayer && mCurLayer->getType() == MAP_LAYER_OBJECT && mSelObj->getLayer() == mCurLayer ) {
 		const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getControl() )->getText();
 
 		MapObjectLayer * tLayer = reinterpret_cast<MapObjectLayer*>( mCurLayer );
 
 		if ( "Duplicate Object" == txt ) {
-			tLayer->AddGameObject( mSelObj->Copy() );
+			tLayer->addGameObject( mSelObj->clone() );
 		} else if ( "Remove Object" == txt ) {
-			tLayer->RemoveGameObject( mSelObj );
+			tLayer->removeGameObject( mSelObj );
 
-			mSelObj->Selected( false );
+			mSelObj->setSelected( false );
 			mSelObj = NULL;
 		} else if ( "Object Properties..." == txt ) {
 			eeNew( MapObjectProperties, ( mSelObj ) );
@@ -564,14 +564,14 @@ void UIMap::ObjItemClick( const UIEvent * Event ) {
 	}
 }
 
-void UIMap::CreateObjPopUpMenu() {
+void UIMap::createObjPopUpMenu() {
 	UIPopUpMenu * Menu = mTheme->createPopUpMenu();
 
 	Menu->add( "Duplicate Object" );
 	Menu->add( "Remove Object" );
 	Menu->addSeparator();
 	Menu->add( "Object Properties..." );
-	Menu->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &UIMap::ObjItemClick ) );
+	Menu->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &UIMap::objItemClick ) );
 
 	if ( Menu->show() ) {
 		Vector2i Pos = UIManager::instance()->getInput()->getMousePos();
@@ -580,7 +580,7 @@ void UIMap::CreateObjPopUpMenu() {
 	}
 }
 
-void UIMap::SetTileBox( UITextBox * tilebox ) {
+void UIMap::setTileBox( UITextBox * tilebox ) {
 	mTileBox = tilebox;
 }
 

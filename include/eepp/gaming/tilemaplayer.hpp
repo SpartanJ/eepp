@@ -10,23 +10,23 @@ class EE_API TileMapLayer : public MapLayer {
 	public:
 		virtual ~TileMapLayer();
 
-		virtual void Draw( const Vector2f &Offset = Vector2f(0,0) );
+		virtual void draw( const Vector2f &Offset = Vector2f(0,0) );
 
-		virtual void Update();
+		virtual void update();
 
-		virtual void AddGameObject( GameObject * obj, const Vector2i& TilePos );
+		virtual void addGameObject( GameObject * obj, const Vector2i& TilePos );
 
-		virtual void RemoveGameObject( const Vector2i& TilePos );
+		virtual void removeGameObject( const Vector2i& TilePos );
 
-		virtual void MoveTileObject( const Vector2i& FromPos, const Vector2i& ToPos );
+		virtual void moveTileObject( const Vector2i& FromPos, const Vector2i& ToPos );
 
-		virtual GameObject * GetGameObject( const Vector2i& TilePos );
+		virtual GameObject * getGameObject( const Vector2i& TilePos );
 
-		const Vector2i& GetCurrentTile() const;
+		const Vector2i& getCurrentTile() const;
 
-		Vector2i GetTilePosFromPos( const Vector2f& Pos );
+		Vector2i getTilePosFromPos( const Vector2f& Pos );
 
-		Vector2f GetPosFromTilePos( const Vector2i& TilePos );
+		Vector2f getPosFromTilePos( const Vector2i& TilePos );
 	protected:
 		friend class TileMap;
 
@@ -36,9 +36,9 @@ class EE_API TileMapLayer : public MapLayer {
 
 		TileMapLayer( TileMap * map, Sizei size, Uint32 flags, std::string name = "", Vector2f offset = Vector2f(0,0) );
 
-		void AllocateLayer();
+		void allocateLayer();
 
-		void DeallocateLayer();
+		void deallocateLayer();
 };
 
 }}

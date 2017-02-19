@@ -21,39 +21,39 @@ class EE_API TileMapProperties {
 	protected:
 		UITheme *			mUITheme;
 		UIWindow *			mUIWindow;
-		UIGenericGrid *	mGenGrid;
-		TileMap *				mMap;
+		UIGenericGrid *		mGenGrid;
+		TileMap *			mMap;
 		UIComplexControl *	mUIBaseColor;
 		UISlider *			mUIRedSlider;
 		UISlider *			mUIGreenSlider;
 		UISlider *			mUIBlueSlider;
-		UITextBox *		mUIRedTxt;
-		UITextBox *		mUIGreenTxt;
-		UITextBox *		mUIBlueTxt;
+		UITextBox *			mUIRedTxt;
+		UITextBox *			mUIGreenTxt;
+		UITextBox *			mUIBlueTxt;
 
-		void WindowClose( const UIEvent * Event );
+		void onWindowClose( const UIEvent * Event );
 
-		void CancelClick( const UIEvent * Event );
+		void onCancelClick( const UIEvent * Event );
 
-		void OKClick( const UIEvent * Event );
+		void onOKClick( const UIEvent * Event );
 
-		void AddCellClick( const UIEvent * Event );
+		void onAddCellClick( const UIEvent * Event );
 
-		void RemoveCellClick( const UIEvent * Event );
+		void onRemoveCellClick( const UIEvent * Event );
 
-		void OnRedChange( const UIEvent * Event );
+		void onRedChange( const UIEvent * Event );
 
-		void OnGreenChange( const UIEvent * Event );
+		void onGreenChange( const UIEvent * Event );
 
-		void OnBlueChange( const UIEvent * Event );
+		void onBlueChange( const UIEvent * Event );
 
-		void CreateGridElems();
+		void createGridElems();
 
-		void SaveProperties();
+		void saveProperties();
 
-		void LoadProperties();
+		void loadProperties();
 
-		UIGridCell * CreateCell();
+		UIGridCell * createCell();
 };
 
 }}}

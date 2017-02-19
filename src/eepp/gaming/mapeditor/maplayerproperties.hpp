@@ -30,23 +30,23 @@ class EE_API MapLayerProperties {
 		UITextInput *		mUIInput;
 		RefreshLayerListCb	mRefreshCb;
 
-		void WindowClose( const UIEvent * Event );
+		void onWindowClose( const UIEvent * Event );
 
-		void CancelClick( const UIEvent * Event );
+		void onCancelClick( const UIEvent * Event );
 
-		void OKClick( const UIEvent * Event );
+		void onOKClick( const UIEvent * Event );
 
-		void AddCellClick( const UIEvent * Event );
+		void onAddCellClick( const UIEvent * Event );
 
-		void RemoveCellClick( const UIEvent * Event );
+		void onRemoveCellClick( const UIEvent * Event );
 
-		void CreateGridElems();
+		void createGridElems();
 
-		void SaveProperties();
+		void saveProperties();
 
-		void LoadProperties();
+		void loadProperties();
 
-		UIGridCell * CreateCell();
+		UIGridCell * createCell();
 };
 
 }}}

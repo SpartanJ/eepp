@@ -19,43 +19,43 @@ class EE_API MapLight {
 
 		virtual ~MapLight();
 
-		void Create( const Float& Radius, const Float& x, const Float& y, const RGB& Color = RGB(255,255,255), LIGHT_TYPE Type = LIGHT_NORMAL );
+		void create( const Float& Radius, const Float& x, const Float& y, const RGB& Color = RGB(255,255,255), LIGHT_TYPE Type = LIGHT_NORMAL );
 
-		virtual RGB ProcessVertex( const Float& PointX, const Float& PointY, const RGB& VertexColor, const RGB& BaseColor );
+		virtual RGB processVertex( const Float& PointX, const Float& PointY, const RGB& VertexColor, const RGB& BaseColor );
 
-		virtual ColorA ProcessVertex( const Float& PointX, const Float& PointY, const ColorA& VertexColor, const ColorA& BaseColor );
+		virtual ColorA processVertex( const Float& PointX, const Float& PointY, const ColorA& VertexColor, const ColorA& BaseColor );
 
-		RGB ProcessVertex( const Vector2f& Pos, const RGB& VertexColor, const RGB& BaseColor );
+		RGB processVertex( const Vector2f& Pos, const RGB& VertexColor, const RGB& BaseColor );
 
-		ColorA ProcessVertex( const Vector2f& Pos, const ColorA& VertexColor, const ColorA& BaseColor );
+		ColorA processVertex( const Vector2f& Pos, const ColorA& VertexColor, const ColorA& BaseColor );
 
-		void Move( const Float& addtox, const Float& addtoy );
+		void move( const Float& addtox, const Float& addtoy );
 
-		void UpdatePos( const Float& x, const Float& y );
+		void updatePos( const Float& x, const Float& y );
 
-		void UpdatePos( const Vector2f& newPos );
+		void updatePos( const Vector2f& newPos );
 
-		eeAABB GetAABB() const;
+		eeAABB getAABB() const;
 
-		const Float& Radius() const;
+		const Float& getRadius() const;
 
-		void Radius( const Float& radio );
+		void setRadius( const Float& radio );
 
-		const bool& Active() const;
+		const bool& isActive() const;
 
-		void Active( const bool& active );
+		void setActive( const bool& active );
 
-		void Color( const RGB& color );
+		void setColor( const RGB& color );
 
-		const RGB& Color() const;
+		const RGB& getColor() const;
 
-		void Type( const LIGHT_TYPE& type );
+		void setType( const LIGHT_TYPE& type );
 
-		const LIGHT_TYPE& Type() const;
+		const LIGHT_TYPE& getType() const;
 
-		const Vector2f& Position() const;
+		const Vector2f& getPosition() const;
 
-		void Position( const Vector2f& newPos );
+		void setPosition( const Vector2f& newPos );
 	protected:
 		Float		mRadius;
 		Vector2f	mPos;
@@ -64,7 +64,7 @@ class EE_API MapLight {
 		eeAABB		mAABB;
 		bool		mActive;
 
-		void UpdateAABB();
+		void updateAABB();
 };
 
 }}

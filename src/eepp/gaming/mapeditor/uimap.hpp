@@ -45,54 +45,54 @@ class EE_API UIMap : public UIComplexControl {
 
 		TileMap * Map() const;
 
-		void EditingLights( const bool& editing );
+		void setEditingLights( const bool& editing );
 
-		bool EditingLights();
+		bool isEditingLights();
 
-		void EditingObjects( const bool& editing );
+		void setEditingObjects( const bool& editing );
 
-		void EditingDisabled();
+		bool isEditingObjects();
 
-		bool EditingObjects();
+		void editingDisable();
 
-		MapLight * GetSelectedLight();
+		MapLight * getSelectedLight();
 
-		MapLight * GetAddLight();
+		MapLight * getAddLight();
 
-		void AddLight( MapLight * Light );
+		void addLight( MapLight * Light );
 
-		void SetLightSelectCb( LightSelectCb Cb );
+		void setLightSelectCb( LightSelectCb Cb );
 
-		void SetLightRadiusChangeCb( LightRadiusChangeCb Cb );
+		void setLightRadiusChangeCb( LightRadiusChangeCb Cb );
 
-		void SetAddObjectCallback( ObjAddCb Cb );
+		void setAddObjectCallback( ObjAddCb Cb );
 
-		void SetAlertCb( AlertCb Cb );
+		void setAlertCb( AlertCb Cb );
 
-		void SetUpdateScrollCb( UpdateScrollCb Cb );
+		void setUpdateScrollCb( UpdateScrollCb Cb );
 
-		void ClearLights();
+		void clearLights();
 
-		void ClampToTile( const bool& clamp );
+		void setClampToTile( const bool& clamp );
 
-		const bool& ClampToTile() const;
+		const bool& getClampToTile() const;
 
-		void EditingObjMode( EDITING_OBJ_MODE mode );
+		void setEditingObjMode( EDITING_OBJ_MODE mode );
 
-		void CurLayer( MapLayer * layer );
+		void setCurLayer( MapLayer * layer );
 
-		void CreateObjPopUpMenu();
+		void createObjPopUpMenu();
 
-		void SetTileBox( UITextBox * tilebox );
+		void setTileBox( UITextBox * tilebox );
 
-		void ReplaceMap( TileMap * newMap );
+		void replaceMap( TileMap * newMap );
 	protected:		
 		enum EDITING_MODE {
 			EDITING_LIGHT = 1,
 			EDITING_OBJECT
 		};
 
-		TileMap *				mMap;
+		TileMap *			mMap;
 		MapLayer *			mCurLayer;
 		Uint32				mEditingMode;
 		Primitives			mP;
@@ -126,7 +126,7 @@ class EE_API UIMap : public UIComplexControl {
 		Rectf				mSelPointRect;
 		bool				mSelPoint;
 
-		UITextBox *		mTileBox;
+		UITextBox *			mTileBox;
 		Vector2i			mLastMouseTilePos;
 
 		UpdateScrollCb		mUpdateScrollCb;
@@ -141,25 +141,25 @@ class EE_API UIMap : public UIComplexControl {
 
 		virtual void onAlphaChange();
 
-		virtual Uint32 OnDrag( const Vector2i& getPosition );
+		virtual Uint32 onDrag( const Vector2i& getPosition );
 
-		void ObjItemClick( const UIEvent * Event );
+		void objItemClick( const UIEvent * Event );
 
-		void MapDraw();
+		void mapDraw();
 
-		void TryToSelectLight();
+		void tryToSelectLight();
 
-		void ManageObject( Uint32 flags );
+		void manageObject( Uint32 flags );
 
-		Vector2f GetMouseMapPos();
+		Vector2f getMouseMapPos();
 
-		void SelectPolyObj();
+		void selectPolyObj();
 
-		void SelectPolyPoint();
+		void selectPolyPoint();
 
-		void SetPointRect( Vector2f p );
+		void setPointRect( Vector2f p );
 
-		void DragPoly( Uint32 flags, Uint32 PFlags );
+		void dragPoly( Uint32 flags, Uint32 PFlags );
 };
 
 }}}

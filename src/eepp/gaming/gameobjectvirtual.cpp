@@ -33,72 +33,72 @@ GameObjectVirtual::GameObjectVirtual( SubTexture * SubTexture, MapLayer * Layer,
 GameObjectVirtual::~GameObjectVirtual() {
 }
 
-Uint32 GameObjectVirtual::Type() const {
+Uint32 GameObjectVirtual::getType() const {
 	return GAMEOBJECT_TYPE_VIRTUAL;
 }
 
-bool GameObjectVirtual::IsType( const Uint32& type ) {
-	return ( GameObjectVirtual::Type() == type ) ? true : GameObject::IsType( type );
+bool GameObjectVirtual::isType( const Uint32& type ) {
+	return ( GameObjectVirtual::getType() == type ) ? true : GameObject::isType( type );
 }
 
-Uint32 GameObjectVirtual::RealType() const {
+Uint32 GameObjectVirtual::getRealType() const {
 	return mType;
 }
 
-Sizei GameObjectVirtual::Size() {
+Sizei GameObjectVirtual::getSize() {
 	if ( NULL != mSubTexture )
 		return mSubTexture->getRealSize();
 
 	if ( NULL != mLayer )
-		return mLayer->Map()->TileSize();
+		return mLayer->getMap()->getTileSize();
 
 	return Sizei( 32, 32 );
 }
 
-void GameObjectVirtual::Draw() {
+void GameObjectVirtual::draw() {
 	if ( NULL != mSubTexture ) {
-		if ( mLayer->Map()->LightsEnabled() && mLayer->LightsEnabled() ) {
-			MapLightManager * LM = mLayer->Map()->GetLightManager();
+		if ( mLayer->getMap()->getLightsEnabled() && mLayer->getLightsEnabled() ) {
+			MapLightManager * LM = mLayer->getMap()->getLightManager();
 
-			if ( MAP_LAYER_TILED == mLayer->Type() ) {
-				Vector2i Tile = reinterpret_cast<TileMapLayer*> ( mLayer )->GetCurrentTile();
+			if ( MAP_LAYER_TILED == mLayer->getType() ) {
+				Vector2i Tile = reinterpret_cast<TileMapLayer*> ( mLayer )->getCurrentTile();
 
-				if ( LM->IsByVertex() ) {
+				if ( LM->isByVertex() ) {
 					mSubTexture->draw(
 						mPos.x,
 						mPos.y,
-						GetAngle(),
+						getRotation(),
 						Vector2f::One,
-						*LM->GetTileColor( Tile, 0 ),
-						*LM->GetTileColor( Tile, 1 ),
-						*LM->GetTileColor( Tile, 2 ),
-						*LM->GetTileColor( Tile, 3 ),
+						*LM->getTileColor( Tile, 0 ),
+						*LM->getTileColor( Tile, 1 ),
+						*LM->getTileColor( Tile, 2 ),
+						*LM->getTileColor( Tile, 3 ),
 						ALPHA_NORMAL,
-						RenderModeFromFlags()
+						getRenderModeFromFlags()
 					);
 				} else {
-					mSubTexture->draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
+					mSubTexture->draw( mPos.x, mPos.y, *LM->getTileColor( Tile ), getRotation(), Vector2f::One, ALPHA_NORMAL, getRenderModeFromFlags() );
 				}
 			} else {
-				if ( LM->IsByVertex() ) {
+				if ( LM->isByVertex() ) {
 					mSubTexture->draw(
 						mPos.x,
 						mPos.y,
-						GetAngle(),
+						getRotation(),
 						Vector2f::One,
-						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->getDestSize().y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->getDestSize().x, mPos.y + mSubTexture->getDestSize().y ) ),
-						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->getDestSize().x, mPos.y ) ),
+						LM->getColorFromPos( Vector2f( mPos.x, mPos.y ) ),
+						LM->getColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->getDestSize().y ) ),
+						LM->getColorFromPos( Vector2f( mPos.x + mSubTexture->getDestSize().x, mPos.y + mSubTexture->getDestSize().y ) ),
+						LM->getColorFromPos( Vector2f( mPos.x + mSubTexture->getDestSize().x, mPos.y ) ),
 						ALPHA_NORMAL,
-						RenderModeFromFlags()
+						getRenderModeFromFlags()
 					);
 				} else {
-					mSubTexture->draw( mPos.x, mPos.y, LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
+					mSubTexture->draw( mPos.x, mPos.y, LM->getColorFromPos( Vector2f( mPos.x, mPos.y ) ), getRotation(), Vector2f::One, ALPHA_NORMAL, getRenderModeFromFlags() );
 				}
 			}
 		} else {
-			mSubTexture->draw( mPos.x, mPos.y, ColorA(), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
+			mSubTexture->draw( mPos.x, mPos.y, ColorA(), getRotation(), Vector2f::One, ALPHA_NORMAL, getRenderModeFromFlags() );
 		}
 	} else {
 		Primitives P;
@@ -109,7 +109,7 @@ void GameObjectVirtual::Draw() {
 		P.setColor( C );
 
 		if ( NULL != mLayer ) {
-			Sizei ts = mLayer->Map()->TileSize();
+			Sizei ts = mLayer->getMap()->getTileSize();
 			P.drawRectangle( Rectf( Vector2f( mPos.x, mPos.y ), Sizef( ts.x ,ts.y ) ), 0, Vector2f::One );
 		} else {
 			P.drawRectangle( Rectf( Vector2f( mPos.x, mPos.y ), Sizef( 32 ,32 ) ), 0, Vector2f::One );
@@ -117,23 +117,23 @@ void GameObjectVirtual::Draw() {
 	}
 }
 
-Vector2f GameObjectVirtual::Pos() const {
+Vector2f GameObjectVirtual::getPosition() const {
 	return mPos;
 }
 
-void GameObjectVirtual::Pos( Vector2f pos ) {
+void GameObjectVirtual::setPosition( Vector2f pos ) {
 	mPos = pos;
 }
 
-Uint32 GameObjectVirtual::DataId() {
+Uint32 GameObjectVirtual::getDataId() {
 	return mDataId;
 }
 
-void GameObjectVirtual::DataId( Uint32 Id ) {
+void GameObjectVirtual::setDataId( Uint32 Id ) {
 	mDataId = Id;
 }
 
-void GameObjectVirtual::SetLayer( MapLayer * Layer ) {
+void GameObjectVirtual::setLayer( MapLayer * Layer ) {
 	mLayer = Layer;
 }
 
