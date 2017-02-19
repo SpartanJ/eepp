@@ -82,7 +82,7 @@ class EE_API Image {
 		virtual ~Image();
 
 		/** Create an empty image data */
-		void Create( const Uint32& width, const Uint32& height, const Uint32& channels, const ColorA &DefaultColor = ColorA(0,0,0,0), const bool& initWithDefaultColor = true );
+		void create( const Uint32& width, const Uint32& height, const Uint32& channels, const ColorA &DefaultColor = ColorA(0,0,0,0), const bool& initWithDefaultColor = true );
 
 		/** Return the pixel color from the image. \n You must have a copy of the image on local memory. For that you need to Lock the image first. */
 		virtual ColorA getPixel(const unsigned int& x, const unsigned int& y);

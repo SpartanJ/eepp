@@ -271,7 +271,7 @@ Image::Image( const Uint32& Width, const Uint32& Height, const Uint32& Channels,
 	mAvoidFree(false),
 	mLoadedFromStbi(false)
 {
-	Create( Width, Height, Channels, DefaultColor, initWithDefaultColor );
+	create( Width, Height, Channels, DefaultColor, initWithDefaultColor );
 }
 
 Image::Image( Uint8* data, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels ) :
@@ -395,7 +395,7 @@ void Image::setPixel(const unsigned int& x, const unsigned int& y, const ColorA&
 	memcpy( &mPixels[ ( ( x + y * mWidth ) * mChannels ) ], &Color, mChannels );
 }
 
-void Image::Create( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const ColorA& DefaultColor, const bool& initWithDefaultColor ) {
+void Image::create( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const ColorA& DefaultColor, const bool& initWithDefaultColor ) {
 	mWidth 		= Width;
 	mHeight 	= Height;
 	mChannels 	= Channels;
@@ -577,9 +577,10 @@ void Image::resize( const Uint32 &newWidth, const Uint32 &newHeight , EE_RESAMPL
 		if ( NULL != resampled ) {
 			clearCache();
 
-			mPixels 	= resampled;
-			mWidth 		= newWidth;
-			mHeight 	= newHeight;
+			mPixels			= resampled;
+			mWidth			= newWidth;
+			mHeight			= newHeight;
+			mLoadedFromStbi	= false;
 		}
 	}
 }
@@ -643,6 +644,7 @@ void Image::flip() {
 		mPixels = tImg.getPixels();
 		mWidth 	= tImg.getWidth();
 		mHeight = tImg.getHeight();
+		mLoadedFromStbi = false;
 
 		tImg.avoidFreeImage( true );
 	}
