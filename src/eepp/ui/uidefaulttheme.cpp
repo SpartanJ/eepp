@@ -9,7 +9,7 @@
 
 namespace EE { namespace UI {
 
-UIdefaultTheme::UIdefaultTheme( const std::string& name, const std::string& Abbr, Graphics::Font * defaultFont ) :
+UIDefaultTheme::UIDefaultTheme( const std::string& name, const std::string& Abbr, Graphics::Font * defaultFont ) :
 	UITheme( name, Abbr, defaultFont )
 {
 	setFontColor( ColorA( 230, 230, 230, 255 ) );
@@ -18,7 +18,7 @@ UIdefaultTheme::UIdefaultTheme( const std::string& name, const std::string& Abbr
 	setFontShadowColor( ColorA( 50, 50, 50, 150 ) );
 }
 
-UIPopUpMenu * UIdefaultTheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 RowHeight, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
+UIPopUpMenu * UIDefaultTheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 RowHeight, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	UIPopUpMenu::CreateParams MenuParams;
 	MenuParams.setParent( Parent );
 	MenuParams.setPosition( Pos );
@@ -40,7 +40,7 @@ UIPopUpMenu * UIdefaultTheme::createPopUpMenu( UIControl * Parent, const Sizei& 
 	return eeNew( UIPopUpMenu, ( MenuParams ) );
 }
 
-UIProgressBar * UIdefaultTheme::createProgressBar( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool DisplayPercent, bool VerticalExpand, Vector2f MovementSpeed, Rectf FillerMargin ) {
+UIProgressBar * UIDefaultTheme::createProgressBar( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool DisplayPercent, bool VerticalExpand, Vector2f MovementSpeed, Rectf FillerMargin ) {
 	UIProgressBar::CreateParams PBParams;
 	PBParams.setParent( Parent );
 	PBParams.setPosition( Pos );
@@ -65,7 +65,7 @@ UIProgressBar * UIdefaultTheme::createProgressBar( UIControl * Parent, const Siz
 	return Ctrl;
 }
 
-UIWinMenu * UIdefaultTheme::createWinMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MarginBetweenButtons, Uint32 ButtonMargin, Uint32 MenuHeight, Uint32 FirstButtonMargin ) {
+UIWinMenu * UIDefaultTheme::createWinMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MarginBetweenButtons, Uint32 ButtonMargin, Uint32 MenuHeight, Uint32 FirstButtonMargin ) {
 	UIWinMenu::CreateParams WinMenuParams;
 	WinMenuParams.setParent( Parent );
 	WinMenuParams.setPosition( Pos );
@@ -86,7 +86,7 @@ UIWinMenu * UIdefaultTheme::createWinMenu( UIControl * Parent, const Sizei& Size
 	return Ctrl;
 }
 
-UIWindow * UIdefaultTheme::createWindow( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
+UIWindow * UIDefaultTheme::createWindow( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
 	UIWindow::CreateParams WinParams;
 	WinParams.setParent( Parent );
 	WinParams.setPosition( Pos );
@@ -106,7 +106,7 @@ UIWindow * UIdefaultTheme::createWindow( UIControl * Parent, const Sizei& Size, 
 	return eeNew( UIWindow, ( WinParams ) );
 }
 
-UICommonDialog * UIdefaultTheme::createCommonDialog( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
+UICommonDialog * UIDefaultTheme::createCommonDialog( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
 	UICommonDialog::CreateParams DLGParams;
 	DLGParams.setParent( Parent );
 	DLGParams.setPosition( Pos );
@@ -129,7 +129,7 @@ UICommonDialog * UIdefaultTheme::createCommonDialog( UIControl * Parent, const S
 	return eeNew( UICommonDialog, ( DLGParams ) );
 }
 
-UIMessageBox * UIdefaultTheme::createMessageBox( UI_MSGBOX_TYPE Type, const String& Message, Uint32 WinFlags, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
+UIMessageBox * UIDefaultTheme::createMessageBox( UI_MSGBOX_TYPE Type, const String& Message, Uint32 WinFlags, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
 	UIMessageBox::CreateParams MsgBoxParams;
 	MsgBoxParams.setParent( Parent );
 	MsgBoxParams.setPosition( Pos );
@@ -151,7 +151,7 @@ UIMessageBox * UIdefaultTheme::createMessageBox( UI_MSGBOX_TYPE Type, const Stri
 	return eeNew( UIMessageBox, ( MsgBoxParams ) );
 }
 
-UIComboBox * UIdefaultTheme::createComboBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
+UIComboBox * UIDefaultTheme::createComboBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
 	UIComboBox::CreateParams ComboParams;
 	ComboParams.setParent( Parent );
 	ComboParams.setPosition( Pos );
@@ -171,7 +171,7 @@ UIComboBox * UIdefaultTheme::createComboBox( UIControl * Parent, const Sizei& Si
 	return Ctrl;
 }
 
-UIDropDownList * UIdefaultTheme::createDropDownList( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
+UIDropDownList * UIDefaultTheme::createDropDownList( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
 	UIDropDownList::CreateParams DDLParams;
 	DDLParams.setParent( Parent );
 	DDLParams.setPosition( Pos );
@@ -191,7 +191,7 @@ UIDropDownList * UIdefaultTheme::createDropDownList( UIControl * Parent, const S
 	return Ctrl;
 }
 
-UITabWidget * UIdefaultTheme::createTabWidget( UIControl *Parent, const Sizei &Size, const Vector2i &Pos, const Uint32 &Flags, const bool &TabsClosable, const bool &SpecialBorderTabs, const Int32 &TabSeparation, const Uint32 &MaxTextLength, const Uint32 &TabWidgetHeight, const Uint32 &TabTextAlign, const Uint32 &MinTabWidth, const Uint32 &MaxTabWidth ) {
+UITabWidget * UIDefaultTheme::createTabWidget( UIControl *Parent, const Sizei &Size, const Vector2i &Pos, const Uint32 &Flags, const bool &TabsClosable, const bool &SpecialBorderTabs, const Int32 &TabSeparation, const Uint32 &MaxTextLength, const Uint32 &TabWidgetHeight, const Uint32 &TabTextAlign, const Uint32 &MinTabWidth, const Uint32 &MaxTabWidth ) {
 	UITabWidget::CreateParams TabWidgetParams;
 	TabWidgetParams.setParent( Parent );
 	TabWidgetParams.setPosition( Pos );
@@ -220,7 +220,7 @@ UITabWidget * UIdefaultTheme::createTabWidget( UIControl *Parent, const Sizei &S
 	return Ctrl;
 }
 
-UITooltip * UIdefaultTheme::createTooltip( UIControl * TooltipOf, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
+UITooltip * UIDefaultTheme::createTooltip( UIControl * TooltipOf, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
 	UITooltip::CreateParams TooltipParams;
 	TooltipParams.setParent( Parent );
 	TooltipParams.setPosition( Pos );

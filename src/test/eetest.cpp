@@ -260,7 +260,7 @@ void EETest::createUI() {
 
 	TextureAtlasLoader tgl( MyPath + "ui/uitheme" + EE_TEXTURE_ATLAS_EXTENSION );
 
-	mTheme = UITheme::loadFromTextureAtlas( eeNew( UIdefaultTheme, ( "uitheme", "uitheme" ) ), TextureAtlasManager::instance()->getByName( "uitheme" ) );
+	mTheme = UITheme::loadFromTextureAtlas( eeNew( UIDefaultTheme, ( "uitheme", "uitheme" ) ), TextureAtlasManager::instance()->getByName( "uitheme" ) );
 
 	UIThemeManager::instance()->add( mTheme );
 	UIThemeManager::instance()->setDefaultEffectsEnabled( true );
@@ -1514,7 +1514,7 @@ void EETest::update() {
 	}
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-	UpdateParticles();
+	updateParticles();
 #endif
 
 	if ( KM->isKeyUp(KEY_F12) ) mWindow->takeScreenshot( MyPath + "screenshots/" ); //After render and before Display
