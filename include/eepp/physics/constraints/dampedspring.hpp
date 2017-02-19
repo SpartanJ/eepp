@@ -9,32 +9,32 @@ class CP_API DampedSpring : public Constraint {
 	public:
 		DampedSpring( Body * a, Body * b, cVect anchr1, cVect anchr2, cpFloat restLength, cpFloat stiffness, cpFloat damping );
 
-		cVect anchr1();
+		cVect getAnchr1();
 
-		void anchr1( const cVect& anchr1 );
+		void setAnchr1( const cVect& anchr1 );
 
-		cVect anchr2();
+		cVect getAnchr2();
 
-		void anchr2( const cVect& anchr2 );
+		void setAnchr2( const cVect& anchr2 );
 
-		cpFloat restLength();
+		cpFloat getRestLength();
 
-		void restLength( const cpFloat& restlength );
+		void setRestLength( const cpFloat& restlength );
 
-		cpFloat stiffness();
+		cpFloat getStiffness();
 
-		void stiffness( const cpFloat& stiffness );
+		void setStiffness( const cpFloat& stiffness );
 
-		cpFloat damping();
+		cpFloat getDamping();
 
-		void damping( const cpFloat& damping );
+		void setDamping( const cpFloat& damping );
 
 		virtual void draw();
 
 #ifdef PHYSICS_RENDERER_ENABLED
-		cpFloat drawPointSize();
+		cpFloat getDrawPointSize();
 
-		virtual void drawPointSize( const cpFloat& size );
+		virtual void setDrawPointSize( const cpFloat& size );
 	protected:
 		cpFloat mDrawPointSize;
 #endif

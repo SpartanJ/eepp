@@ -20,27 +20,27 @@ ShapeSegment::ShapeSegment( Physics::Body * body, cVect a, cVect b, cpFloat radi
 	setData();
 }
 
-cVect ShapeSegment::a() {
+cVect ShapeSegment::getA() {
 	return tovect( cpSegmentShapeGetA( mShape ) );
 }
 
-cVect ShapeSegment::b() {
+cVect ShapeSegment::getB() {
 	return tovect( cpSegmentShapeGetB( mShape ) );
 }
 
-cVect ShapeSegment::normal() {
+cVect ShapeSegment::getNormal() {
 	return tovect( cpSegmentShapeGetNormal( mShape ) );
 }
 
-cpFloat ShapeSegment::radius() {
+cpFloat ShapeSegment::getRadius() {
 	return cpSegmentShapeGetRadius( mShape );
 }
 
-void ShapeSegment::radius( const cpFloat& radius ) {
+void ShapeSegment::setRadius( const cpFloat& radius ) {
 	cpSegmentShapeSetRadius( mShape, radius );
 }
 
-void ShapeSegment::endpoints( const cVect& a, const cVect& b ) {
+void ShapeSegment::setEndpoints( const cVect& a, const cVect& b ) {
 	cpSegmentShapeSetEndpoints( mShape, tocpv( a ), tocpv( b ) );
 }
 

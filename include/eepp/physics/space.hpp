@@ -130,43 +130,43 @@ class CP_API Space {
 
 		void update();
 
-		Body * staticBody() const;
+		Body * getStaticBody() const;
 
-		const int& iterations() const;
+		const int& getIterations() const;
 
-		void iterations( const int& iterations );
+		void setIterations( const int& iterations );
 
-		cVect gravity() const;
+		cVect getGravity() const;
 
-		void gravity( const cVect& gravity );
+		void setGravity( const cVect& gravity );
 
-		const cpFloat& damping() const;
+		const cpFloat& getDamping() const;
 
-		void damping( const cpFloat& damping );
+		void setDamping( const cpFloat& damping );
 
-		const cpFloat& idleSpeedThreshold() const;
+		const cpFloat& getIdleSpeedThreshold() const;
 
-		void idleSpeedThreshold( const cpFloat& idleSpeedThreshold );
+		void setIdleSpeedThreshold( const cpFloat& idleSpeedThreshold );
 
-		const cpFloat& sleepTimeThreshold() const;
+		const cpFloat& getSleepTimeThreshold() const;
 
-		void sleepTimeThreshold( const cpFloat& sleepTimeThreshold );
+		void setSleepTimeThreshold( const cpFloat& sleepTimeThreshold );
 
-		void collisionSlop( cpFloat slop );
+		void setCollisionSlop( cpFloat slop );
 
-		cpFloat collisionSlop() const;
+		cpFloat getCollisionSlop() const;
 
-		void collisionBias( cpFloat bias );
+		void setCollisionBias( cpFloat bias );
 
-		cpFloat collisionBias() const;
+		cpFloat getCollisionBias() const;
 
-		cpTimestamp collisionPersistence();
+		cpTimestamp getCollisionPersistence();
 
-		void collisionPersistence( cpTimestamp value );
+		void setCollisionPersistence( cpTimestamp value );
 
-		bool enableContactGraph();
+		bool getEnableContactGraph();
 
-		void enableContactGraph( bool value );
+		void setEnableContactGraph( bool value );
 
 		bool contains( Shape * shape );
 
@@ -230,9 +230,9 @@ class CP_API Space {
 
 		void pointQuery( cVect point, cpLayers layers, cpGroup group, PointQueryFunc func, void * data );
 
-		void data( void * data );
+		void setData( void * data );
 
-		void * data() const;
+		void * getData() const;
 
 		void reindexShape( Shape * shape );
 
@@ -262,7 +262,7 @@ class CP_API Space {
 		std::list<Constraint*>						mConstraints;
 		std::map< cpHashValue, CollisionHandler >	mCollisions;
 		CollisionHandler							mCollisionsDefault;
-		std::list< PostStepCallbackCont* >				mPostStepCallbacks;
+		std::list< PostStepCallbackCont* >			mPostStepCallbacks;
 };
 
 CP_NAMESPACE_END

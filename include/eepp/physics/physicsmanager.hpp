@@ -43,9 +43,9 @@ class CP_API PhysicsManager {
 		***	This is a lazy deallocation for the lazy programmers. It is disabled by default.
 		*** To work properly set as active before allocating anything, activate it just after the singleton instantiation.
 		*/
-		void memoryManager( bool memoryManager );
+		void setMemoryManager( bool memoryManager );
 
-		const bool& memoryManager() const;
+		const bool& isMemoryManagerEnabled() const;
 
 		PhysicsManager::DrawSpaceOptions * getDrawOptions();
 	protected:

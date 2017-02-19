@@ -11,13 +11,13 @@ class CP_API ShapeCircle : public Shape {
 
 		ShapeCircle( Physics::Body * body, cpFloat radius, cVect offset );
 
-		cVect offset();
+		cVect getOffset();
 
-		virtual void offset( const cVect& offset );
+		virtual void setOffset( const cVect& offset );
 
-		cpFloat radius();
+		cpFloat getRadius();
 
-		virtual void radius( const cpFloat& radius );
+		virtual void setRadius( const cpFloat& radius );
 
 		virtual void draw( Space * space );
 };

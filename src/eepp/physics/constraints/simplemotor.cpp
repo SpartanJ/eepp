@@ -7,11 +7,11 @@ SimpleMotor::SimpleMotor( Body * a, Body * b, cpFloat rate ) {
 	setData();
 }
 
-cpFloat SimpleMotor::rate() {
+cpFloat SimpleMotor::getRate() {
 	return cpSimpleMotorGetRate( mConstraint );
 }
 
-void SimpleMotor::rate( const cpFloat& rate ) {
+void SimpleMotor::setRate( const cpFloat& rate ) {
 	cpSimpleMotorSetRate( mConstraint, rate );
 }
 

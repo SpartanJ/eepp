@@ -31,27 +31,27 @@ class CP_API Arbiter {
 
 		cpFloat getDepth( int i );
 
-		cpContactPointSet contactPointSet();
+		cpContactPointSet getContactPointSet();
 
-		void contactPointSet( cpContactPointSet * contact );
+		void setContactPointSet( cpContactPointSet * contact );
 
 		cpArbiter *	getArbiter() const;
 
-		cpFloat elasticity();
+		cpFloat getElasticity();
 
-		void elasticity( cpFloat value );
+		void setElasticity( cpFloat value );
 
-		cpFloat friction();
+		cpFloat getFriction();
 
-		void friction( cpFloat value );
+		void setFriction( cpFloat value );
 
-		cVect surfaceVelocity();
+		cVect getSurfaceVelocity();
 
-		void surfaceVelocity( cVect value );
+		void setSurfaceVelocity( cVect value );
 
-		void userData( cpDataPointer value );
+		void setUserData( cpDataPointer value );
 
-		cpDataPointer userData() const;
+		cpDataPointer getUserData() const;
 	protected:
 		cpArbiter *		mArbiter;
 };

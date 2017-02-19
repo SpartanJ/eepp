@@ -7,27 +7,27 @@ DampedRotarySpring::DampedRotarySpring( Body * a, Body * b, cpFloat restAngle, c
 	setData();
 }
 
-cpFloat DampedRotarySpring::restAngle() {
+cpFloat DampedRotarySpring::getRestAngle() {
 	return cpDampedRotarySpringGetRestAngle( mConstraint );
 }
 
-void DampedRotarySpring::restAngle( const cpFloat& restangle ) {
+void DampedRotarySpring::setRestAngle( const cpFloat& restangle ) {
 	cpDampedRotarySpringSetRestAngle( mConstraint, restangle );
 }
 
-cpFloat DampedRotarySpring::stiffness() {
+cpFloat DampedRotarySpring::getStiffness() {
 	return cpDampedRotarySpringGetStiffness( mConstraint );
 }
 
-void DampedRotarySpring::stiffness( const cpFloat& stiffness ) {
+void DampedRotarySpring::setStiffness( const cpFloat& stiffness ) {
 	cpDampedRotarySpringSetStiffness( mConstraint, stiffness );
 }
 
-cpFloat DampedRotarySpring::damping() {
+cpFloat DampedRotarySpring::getDamping() {
 	return cpDampedRotarySpringGetDamping( mConstraint );
 }
 
-void DampedRotarySpring::damping( const cpFloat& damping ) {
+void DampedRotarySpring::setDamping( const cpFloat& damping ) {
 	cpDampedRotarySpringSetDamping( mConstraint, damping );
 }
 

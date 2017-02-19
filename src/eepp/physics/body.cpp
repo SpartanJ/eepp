@@ -88,95 +88,95 @@ cpBody * Body::getBody() const {
 	return mBody;
 }
 
-cpFloat Body::mass() const {
+cpFloat Body::getMass() const {
 	return cpBodyGetMass( mBody );
 }
 
-void Body::mass( const cpFloat& mass ) {
+void Body::setMass( const cpFloat& mass ) {
 	cpBodySetMass( mBody, mass );
 }
 
-cpFloat Body::moment() const {
+cpFloat Body::getMoment() const {
 	return cpBodyGetMoment( mBody );
 }
 
-void Body::moment( const cpFloat& i ) {
+void Body::setMoment( const cpFloat& i ) {
 	cpBodySetMoment( mBody, i );
 }
 
-cVect Body::pos() const {
+cVect Body::getPos() const {
 	return tovect( cpBodyGetPos( mBody ) );
 }
 
-void Body::pos( const cVect& pos ) {
+void Body::setPos( const cVect& pos ) {
 	cpBodySetPos( mBody, tocpv( pos ) );
 }
 
-cVect Body::vel() const {
+cVect Body::getVel() const {
 	return tovect( cpBodyGetVel( mBody ) );
 }
 
-void Body::vel( const cVect& vel ) {
+void Body::setVel( const cVect& vel ) {
 	cpBodySetVel( mBody, tocpv( vel ) );
 }
 
-cVect Body::force() const {
+cVect Body::getForce() const {
 	return tovect( cpBodyGetForce( mBody ) );
 }
 
-void Body::force( const cVect& force ) {
+void Body::setForce( const cVect& force ) {
 	cpBodySetForce( mBody, tocpv( force ) );
 }
 
-cpFloat Body::angle() const {
+cpFloat Body::getAngle() const {
 	return cpBodyGetAngle( mBody );
 }
 
-void Body::angle( const cpFloat& rads ) {
+void Body::setAngle( const cpFloat& rads ) {
 	cpBodySetAngle( mBody, rads );
 }
 
-cpFloat Body::angleDeg() {
+cpFloat Body::getAngleDeg() {
 	return cpDegrees( mBody->a );
 }
 
-void Body::angleDeg( const cpFloat& angle ) {
-	this->angle( cpRadians( angle ) );
+void Body::setAngleDeg( const cpFloat& angle ) {
+	this->setAngle( cpRadians( angle ) );
 }
 
-cpFloat Body::angVel() const {
+cpFloat Body::getAngVel() const {
 	return cpBodyGetAngVel( mBody );
 }
 
-void Body::angVel( const cpFloat& rotVel ) {
+void Body::setAngVel( const cpFloat& rotVel ) {
 	cpBodySetAngVel( mBody, rotVel );
 }
 
-cpFloat Body::torque() const {
+cpFloat Body::getTorque() const {
 	return cpBodyGetTorque( mBody );
 }
 
-void Body::torque( const cpFloat& torque ) {
+void Body::setTorque( const cpFloat& torque ) {
 	cpBodySetTorque( mBody, torque );
 }
 
-cVect Body::rot() const {
+cVect Body::getRot() const {
 	return tovect( cpBodyGetRot( mBody ) );
 }
 
-cpFloat Body::velLimit() const {
+cpFloat Body::getVelLimit() const {
 	return cpBodyGetVelLimit( mBody );
 }
 
-void Body::velLimit( const cpFloat& speed ) {
+void Body::setVelLimit( const cpFloat& speed ) {
 	cpBodySetVelLimit( mBody, speed );
 }
 
-cpFloat Body::angVelLimit() const {
+cpFloat Body::getAngVelLimit() const {
 	return cpBodyGetAngVelLimit( mBody );
 }
 
-void Body::angVelLimit( const cpFloat& speed ) {
+void Body::setAngVelLimit( const cpFloat& speed ) {
 	cpBodySetAngVelLimit( mBody, speed );
 }
 
@@ -240,11 +240,11 @@ cpFloat Body::kineticEnergy() {
 	return cpBodyKineticEnergy( mBody );
 }
 
-void * Body::data() const {
+void * Body::getData() const {
 	return mData;
 }
 
-void Body::data( void * data ) {
+void Body::setData( void * data ) {
 	mData = data;
 }
 

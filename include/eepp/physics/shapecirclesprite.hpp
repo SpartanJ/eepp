@@ -22,9 +22,9 @@ class CP_API ShapeCircleSprite : public ShapeCircle {
 
 		virtual void draw( Space * space );
 
-		virtual void radius( const cpFloat& radius );
+		virtual void setRadius( const cpFloat& radius );
 
-		virtual void offset( const cVect &offset );
+		virtual void setOffset( const cVect &offset );
 
 		Sprite * getSprite() const;
 	protected:

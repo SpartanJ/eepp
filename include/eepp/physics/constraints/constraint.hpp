@@ -16,29 +16,29 @@ class CP_API Constraint {
 
 		cpConstraint * getConstraint() const;
 
-		Body * a();
+		Body * getA();
 
-		Body * b();
+		Body * getB();
 
-		cpFloat maxForce();
+		cpFloat getMaxForce();
 
-		void maxForce( const cpFloat& maxforce );
+		void setMaxForce( const cpFloat& maxforce );
 
-		cpFloat maxBias();
+		cpFloat getMaxBias();
 
-		void maxBias( const cpFloat& maxbias );
+		void setMaxBias( const cpFloat& maxbias );
 
 		virtual void draw();
 
-		cpFloat errorBias();
+		cpFloat getErrorBias();
 
-		void errorBias( cpFloat value );
+		void setErrorBias( cpFloat value );
 
-		void data( void * data );
+		void setData( void * data );
 
-		void * data() const;
+		void * getData() const;
 
-		cpFloat impulse();
+		cpFloat getImpulse();
 	protected:
 		cpConstraint *		mConstraint;
 

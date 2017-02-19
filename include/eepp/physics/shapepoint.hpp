@@ -11,20 +11,20 @@ class CP_API ShapePoint : public Shape {
 
 		ShapePoint( Physics::Body * body, cpFloat radius, cVect offset );
 
-		cVect offset();
+		cVect getOffset();
 
-		virtual void offset( const cVect& offset );
+		virtual void setOffset( const cVect& offset );
 
-		cpFloat radius();
+		cpFloat getRadius();
 
-		virtual void radius( const cpFloat& radius );
+		virtual void setRadius( const cpFloat& radius );
 
 		virtual void draw( Space * space );
 
 		#ifdef PHYSICS_RENDERER_ENABLED
-		cpFloat drawRadius();
+		cpFloat getDrawRadius();
 
-		virtual void drawRadius( const cpFloat& radius );
+		virtual void setDrawRadius( const cpFloat& radius );
 	protected:
 		cpFloat mDrawRadius;
 		#endif

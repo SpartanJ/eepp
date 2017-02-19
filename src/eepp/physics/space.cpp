@@ -50,11 +50,11 @@ Space::~Space() {
 	PhysicsManager::instance()->removeSpace( this );
 }
 
-void Space::data( void * data ) {
+void Space::setData( void * data ) {
 	mData = data;
 }
 
-void * Space::data() const {
+void * Space::getData() const {
 	return mData;
 }
 
@@ -70,79 +70,79 @@ void Space::update() {
 	#endif
 }
 
-const int& Space::iterations() const {
+const int& Space::getIterations() const {
 	return mSpace->iterations;
 }
 
-void Space::iterations( const int& iterations ) {
+void Space::setIterations( const int& iterations ) {
 	mSpace->iterations = iterations;
 }
 
-cVect Space::gravity() const {
+cVect Space::getGravity() const {
 	return tovect( mSpace->gravity );
 }
 
-void Space::gravity( const cVect& gravity ) {
+void Space::setGravity( const cVect& gravity ) {
 	mSpace->gravity = tocpv( gravity );
 }
 
-const cpFloat& Space::damping() const {
+const cpFloat& Space::getDamping() const {
 	return mSpace->damping;
 }
 
-void Space::damping( const cpFloat& damping ) {
+void Space::setDamping( const cpFloat& damping ) {
 	mSpace->damping = damping;
 }
 
-const cpFloat& Space::idleSpeedThreshold() const {
+const cpFloat& Space::getIdleSpeedThreshold() const {
 	return mSpace->idleSpeedThreshold;
 }
 
-void Space::idleSpeedThreshold( const cpFloat& idleSpeedThreshold ) {
+void Space::setIdleSpeedThreshold( const cpFloat& idleSpeedThreshold ) {
 	mSpace->idleSpeedThreshold = idleSpeedThreshold;
 }
 
-const cpFloat& Space::sleepTimeThreshold() const {
+const cpFloat& Space::getSleepTimeThreshold() const {
 	return mSpace->sleepTimeThreshold;
 }
 
-void Space::sleepTimeThreshold( const cpFloat& sleepTimeThreshold ) {
+void Space::setSleepTimeThreshold( const cpFloat& sleepTimeThreshold ) {
 	mSpace->sleepTimeThreshold = sleepTimeThreshold;
 }
 
-void Space::collisionSlop( cpFloat slop ) {
+void Space::setCollisionSlop( cpFloat slop ) {
 	mSpace->collisionSlop = slop;
 }
 
-cpFloat Space::collisionSlop() const {
+cpFloat Space::getCollisionSlop() const {
 	return mSpace->collisionSlop;
 }
 
-void Space::collisionBias( cpFloat bias ) {
+void Space::setCollisionBias( cpFloat bias ) {
 	mSpace->collisionBias = bias;
 }
 
-cpFloat Space::collisionBias() const {
+cpFloat Space::getCollisionBias() const {
 	return mSpace->collisionBias;
 }
 
-cpTimestamp Space::collisionPersistence() {
+cpTimestamp Space::getCollisionPersistence() {
 	return cpSpaceGetCollisionPersistence( mSpace );
 }
 
-void Space::collisionPersistence( cpTimestamp value ) {
+void Space::setCollisionPersistence( cpTimestamp value ) {
 	cpSpaceSetCollisionPersistence( mSpace, value );
 }
 
-bool Space::enableContactGraph() {
+bool Space::getEnableContactGraph() {
 	return cpTrue == cpSpaceGetEnableContactGraph( mSpace );
 }
 
-void Space::enableContactGraph( bool value ) {
+void Space::setEnableContactGraph( bool value ) {
 	cpSpaceSetEnableContactGraph( mSpace, value );
 }
 
-Body * Space::staticBody() const {
+Body * Space::getStaticBody() const {
 	return mStatiBody;
 }
 

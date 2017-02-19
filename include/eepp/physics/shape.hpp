@@ -21,49 +21,49 @@ class CP_API Shape {
 
 		virtual ~Shape();
 
-		Physics::Body * body() const;
+		Physics::Body * getBody() const;
 
-		void body( Physics::Body * body );
+		void setBody( Physics::Body * body );
 
-		cBB bb() const;
+		cBB getBB() const;
 
-		void bb( const cBB& bb );
+		void setBB( const cBB& bb );
 
-		bool Sensor();
+		bool isSensor();
 
-		void Sensor( const bool& sensor );
+		void setSensor( const bool& sensor );
 
-		cpFloat e() const;
+		cpFloat getE() const;
 
-		void e( const cpFloat& e );
+		void setE( const cpFloat& e );
 
-		cpFloat elasticity() const;
+		cpFloat getElasticity() const;
 
-		void elasticity( const cpFloat& e );
+		void setElasticity( const cpFloat& e );
 
-		cpFloat u() const;
+		cpFloat getU() const;
 
-		void u( const cpFloat& u );
+		void setU( const cpFloat& u );
 
-		cpFloat friction() const;
+		cpFloat getFriction() const;
 
-		void friction( const cpFloat& u );
+		void setFriction( const cpFloat& u );
 
-		cVect surfaceVel() const;
+		cVect getSurfaceVel() const;
 
-		void surfaceVel( const cVect& vel );
+		void getSurfaceVel( const cVect& vel );
 
-		cpCollisionType collisionType()	 const;
+		cpCollisionType getCollisionType()	 const;
 
-		void collisionType( const cpCollisionType& type );
+		void setCollisionType( const cpCollisionType& type );
 
-		cpGroup group() const;
+		cpGroup getGroup() const;
 
-		void group( const cpGroup& group );
+		void setGroup( const cpGroup& group );
 
-		cpLayers layers() const;
+		cpLayers getLayers() const;
 
-		void layers( const cpLayers& layers );
+		void setLayers( const cpLayers& layers );
 
 		cBB cacheBB();
 
@@ -71,7 +71,7 @@ class CP_API Shape {
 
 		bool pointQuery( cVect p );
 
-		cpShapeType type() const;
+		cpShapeType getType() const;
 
 		ShapePoly * getAsPoly();
 
@@ -85,9 +85,9 @@ class CP_API Shape {
 
 		virtual void drawBB();
 
-		void * data() const;
+		void * getData() const;
 
-		void data( void * data );
+		void setData( void * data );
 	protected:
 		Shape();
 

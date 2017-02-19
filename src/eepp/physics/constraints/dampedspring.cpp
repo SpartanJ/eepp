@@ -19,43 +19,43 @@ DampedSpring::DampedSpring( Body * a, Body * b, cVect anchr1, cVect anchr2, cpFl
 	setData();
 }
 
-cVect DampedSpring::anchr1() {
+cVect DampedSpring::getAnchr1() {
 	return tovect( cpDampedSpringGetAnchr1( mConstraint ) );
 }
 
-void DampedSpring::anchr1( const cVect& anchr1 ) {
+void DampedSpring::setAnchr1( const cVect& anchr1 ) {
 	cpDampedSpringSetAnchr1( mConstraint, tocpv( anchr1 ) );
 }
 
-cVect DampedSpring::anchr2() {
+cVect DampedSpring::getAnchr2() {
 	return tovect( cpDampedSpringGetAnchr2( mConstraint ) );
 }
 
-void DampedSpring::anchr2( const cVect& anchr2 ) {
+void DampedSpring::setAnchr2( const cVect& anchr2 ) {
 	cpDampedSpringSetAnchr2( mConstraint, tocpv( anchr2 ) );
 }
 
-cpFloat DampedSpring::restLength() {
+cpFloat DampedSpring::getRestLength() {
 	return cpDampedSpringGetRestLength( mConstraint );
 }
 
-void DampedSpring::restLength( const cpFloat& restlength ) {
+void DampedSpring::setRestLength( const cpFloat& restlength ) {
 	cpDampedSpringSetRestLength( mConstraint, restlength );
 }
 
-cpFloat DampedSpring::stiffness() {
+cpFloat DampedSpring::getStiffness() {
 	return cpDampedSpringGetStiffness( mConstraint );
 }
 
-void DampedSpring::stiffness( const cpFloat& stiffness ) {
+void DampedSpring::setStiffness( const cpFloat& stiffness ) {
 	cpDampedSpringSetStiffness( mConstraint, stiffness );
 }
 
-cpFloat DampedSpring::damping() {
+cpFloat DampedSpring::getDamping() {
 	return cpDampedSpringGetDamping( mConstraint );
 }
 
-void DampedSpring::damping( const cpFloat& damping ) {
+void DampedSpring::setDamping( const cpFloat& damping ) {
 	cpDampedSpringSetDamping( mConstraint, damping );
 }
 
@@ -135,11 +135,11 @@ void DampedSpring::draw() {
 
 
 #ifdef PHYSICS_RENDERER_ENABLED
-cpFloat DampedSpring::drawPointSize() {
+cpFloat DampedSpring::getDrawPointSize() {
 	return mDrawPointSize;
 }
 
-void DampedSpring::drawPointSize( const cpFloat& size ) {
+void DampedSpring::setDrawPointSize( const cpFloat& size ) {
 	mDrawPointSize = size;
 }
 #endif

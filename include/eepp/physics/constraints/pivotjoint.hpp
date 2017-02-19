@@ -11,20 +11,20 @@ class CP_API PivotJoint : public Constraint {
 
 		PivotJoint( Body * a, Body * b, cVect anchr1, cVect anchr2 );
 
-		cVect anchr1();
+		cVect getAnchr1();
 
-		void anchr1( const cVect& anchr1 );
+		void setAnchr1( const cVect& anchr1 );
 
-		cVect anchr2();
+		cVect getAnchr2();
 
-		void anchr2( const cVect& anchr2 );
+		void setAnchr2( const cVect& anchr2 );
 
 		virtual void draw();
 
 #ifdef PHYSICS_RENDERER_ENABLED
-		cpFloat drawPointSize();
+		cpFloat getDrawPointSize();
 
-		virtual void drawPointSize( const cpFloat& size );
+		virtual void setDrawPointSize( const cpFloat& size );
 	protected:
 		cpFloat mDrawPointSize;
 #endif

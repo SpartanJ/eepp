@@ -40,11 +40,11 @@ PhysicsManager::DrawSpaceOptions * PhysicsManager::getDrawOptions() {
 	return &mOptions;
 }
 
-void PhysicsManager::memoryManager( bool MemoryManager ) {
+void PhysicsManager::setMemoryManager( bool MemoryManager ) {
 	mMemoryManager = MemoryManager;
 }
 
-const bool& PhysicsManager::memoryManager() const {
+const bool& PhysicsManager::isMemoryManagerEnabled() const {
 	return mMemoryManager;
 }
 

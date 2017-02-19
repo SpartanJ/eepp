@@ -7,19 +7,19 @@ GearJoint::GearJoint( Body * a, Body * b, cpFloat phase, cpFloat ratio ) {
 	setData();
 }
 
-cpFloat GearJoint::phase() {
+cpFloat GearJoint::getPhase() {
 	return cpGearJointGetPhase( mConstraint );
 }
 
-void GearJoint::phase( const cpFloat& phase ) {
+void GearJoint::setPhase( const cpFloat& phase ) {
 	cpGearJointSetPhase( mConstraint, phase );
 }
 
-cpFloat GearJoint::ratio() {
+cpFloat GearJoint::getRatio() {
 	return cpGearJointGetRatio( mConstraint );
 }
 
-void GearJoint::ratio( const cpFloat& ratio ) {
+void GearJoint::setRatio( const cpFloat& ratio ) {
 	cpGearJointSetRatio( mConstraint, ratio );
 }
 

@@ -17,7 +17,7 @@ void Shape::resetShapeIdCounter() {
 
 void Shape::Free( Shape * shape, bool DeleteBody ) {
 	if ( DeleteBody ) {
-		Physics::Body * b = shape->body();
+		Physics::Body * b = shape->getBody();
 		cpSAFE_DELETE( b );
 	}
 
@@ -56,112 +56,112 @@ bool Shape::pointQuery( cVect p ) {
 	return 0 != cpShapePointQuery( mShape, tocpv( p ) );
 }
 
-Physics::Body * Shape::body() const {
+Physics::Body * Shape::getBody() const {
 	return reinterpret_cast<Physics::Body*>( mShape->body->data );
 }
 
-void Shape::body( Physics::Body * body ) {
+void Shape::setBody( Physics::Body * body ) {
 	mShape->body = body->getBody();
 }
 
-cBB Shape::bb() const {
+cBB Shape::getBB() const {
 	return tocbb( mShape->bb );
 }
 
-void Shape::bb( const cBB& bb ) {
+void Shape::setBB( const cBB& bb ) {
 	mShape->bb = tocpbb( bb );
 }
 
-bool Shape::Sensor() {
+bool Shape::isSensor() {
 	return 0 != mShape->sensor;
 }
 
-void Shape::Sensor( const bool& sensor ) {
+void Shape::setSensor( const bool& sensor ) {
 	mShape->sensor = sensor ? 1 : 0;
 }
 
-cpFloat Shape::e() const {
+cpFloat Shape::getE() const {
 	return mShape->e;
 }
 
-void Shape::e( const cpFloat& e ) {
+void Shape::setE( const cpFloat& e ) {
 	mShape->e = e;
 }
 
-cpFloat Shape::elasticity() const {
-	return e();
+cpFloat Shape::getElasticity() const {
+	return getE();
 }
 
-void Shape::elasticity( const cpFloat& e ) {
-	this->e( e );
+void Shape::setElasticity( const cpFloat& e ) {
+	this->setE( e );
 }
 
-cpFloat Shape::u() const {
+cpFloat Shape::getU() const {
 	return mShape->u;
 }
 
-void Shape::u( const cpFloat& u ) {
+void Shape::setU( const cpFloat& u ) {
 	mShape->u = u;
 }
 
-cpFloat Shape::friction() const {
-	return u();
+cpFloat Shape::getFriction() const {
+	return getU();
 }
 
-void Shape::friction( const cpFloat& u ) {
-	this->u( u );
+void Shape::setFriction( const cpFloat& u ) {
+	this->setU( u );
 }
 
-cVect Shape::surfaceVel() const {
+cVect Shape::getSurfaceVel() const {
 	return tovect( mShape->surface_v );
 }
 
-void Shape::surfaceVel( const cVect& vel ) {
+void Shape::getSurfaceVel( const cVect& vel ) {
 	mShape->surface_v = tocpv( vel );
 }
 
-cpCollisionType Shape::collisionType()	 const {
+cpCollisionType Shape::getCollisionType()	 const {
 	return mShape->collision_type;
 }
 
-void Shape::collisionType( const cpCollisionType& type ) {
+void Shape::setCollisionType( const cpCollisionType& type ) {
 	mShape->collision_type = type;
 }
 
-cpGroup Shape::group() const {
+cpGroup Shape::getGroup() const {
 	return mShape->group;
 }
 
-void Shape::group( const cpGroup& group ) {
+void Shape::setGroup( const cpGroup& group ) {
 	mShape->group = group;
 }
 
-cpLayers Shape::layers() const {
+cpLayers Shape::getLayers() const {
 	return mShape->layers;
 }
 
-void Shape::layers( const cpLayers& layers ) {
+void Shape::setLayers( const cpLayers& layers ) {
 	mShape->layers = layers;
 }
 
-cpShapeType Shape::type() const {
+cpShapeType Shape::getType() const {
 	return mShape->CP_PRIVATE(klass)->type;
 }
 
 ShapePoly * Shape::getAsPoly() {
-	eeASSERT( type() == CP_POLY_SHAPE );
+	eeASSERT( getType() == CP_POLY_SHAPE );
 
 	return reinterpret_cast<ShapePoly*>( this );
 }
 
 ShapeCircle * Shape::getAsCircle() {
-	eeASSERT( type() == CP_CIRCLE_SHAPE );
+	eeASSERT( getType() == CP_CIRCLE_SHAPE );
 
 	return reinterpret_cast<ShapeCircle*>( this );
 }
 
 ShapeSegment * Shape::getAsSegment() {
-	eeASSERT( type() == CP_SEGMENT_SHAPE );
+	eeASSERT( getType() == CP_SEGMENT_SHAPE );
 
 	return reinterpret_cast<ShapeSegment*>( this );
 }
@@ -178,11 +178,11 @@ void Shape::drawBB() {
 	#endif
 }
 
-void * Shape::data() const {
+void * Shape::getData() const {
 	return mData;
 }
 
-void Shape::data( void * data ) {
+void Shape::setData( void * data ) {
 	mData = data;
 }
 

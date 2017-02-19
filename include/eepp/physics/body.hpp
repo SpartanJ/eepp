@@ -88,51 +88,51 @@ class CP_API Body {
 
 		cpBody * getBody() const;
 
-		cpFloat mass() const;
+		cpFloat getMass() const;
 
-		void mass( const cpFloat& mass );
+		void setMass( const cpFloat& mass );
 
-		cpFloat moment() const;
+		cpFloat getMoment() const;
 
-		void moment( const cpFloat& i );
+		void setMoment( const cpFloat& i );
 
-		cVect pos() const;
+		cVect getPos() const;
 
-		void pos( const cVect& pos );
+		void setPos( const cVect& pos );
 
-		cVect vel() const;
+		cVect getVel() const;
 
-		void vel( const cVect& vel );
+		void setVel( const cVect& vel );
 
-		cVect force() const;
+		cVect getForce() const;
 
-		void force( const cVect& force );
+		void setForce( const cVect& force );
 
-		cpFloat angle() const;
+		cpFloat getAngle() const;
 
-		void angle( const cpFloat& rads );
+		void setAngle( const cpFloat& rads );
 
-		cpFloat angleDeg();
+		cpFloat getAngleDeg();
 
-		void angleDeg( const cpFloat& angle );
+		void setAngleDeg( const cpFloat& angle );
 
-		cpFloat angVel() const;
+		cpFloat getAngVel() const;
 
-		void angVel( const cpFloat& angVel );
+		void setAngVel( const cpFloat& angVel );
 
-		cpFloat torque() const;
+		cpFloat getTorque() const;
 
-		void torque( const cpFloat& torque );
+		void setTorque( const cpFloat& torque );
 
-		cVect rot() const;
+		cVect getRot() const;
 
-		cpFloat velLimit() const;
+		cpFloat getVelLimit() const;
 
-		void velLimit( const cpFloat& speed );
+		void setVelLimit( const cpFloat& speed );
 
-		cpFloat angVelLimit() const;
+		cpFloat getAngVelLimit() const;
 
-		void angVelLimit( const cpFloat& speed );
+		void setAngVelLimit( const cpFloat& speed );
 
 		void updateVelocity( cVect gravity, cpFloat damping, cpFloat dt );
 
@@ -150,9 +150,9 @@ class CP_API Body {
 
 		cpFloat kineticEnergy();
 
-		void * data() const;
+		void * getData() const;
 
-		void data( void * data );
+		void setData( void * data );
 
 		void eachShape( ShapeIteratorFunc Func, void * data );
 

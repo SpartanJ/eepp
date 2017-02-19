@@ -25,19 +25,19 @@ PivotJoint::PivotJoint( Body * a, Body * b, cVect anchr1, cVect anchr2 )
 	setData();
 }
 
-cVect PivotJoint::anchr1() {
+cVect PivotJoint::getAnchr1() {
 	return tovect( cpPivotJointGetAnchr1( mConstraint ) );
 }
 
-void PivotJoint::anchr1( const cVect& anchr1 ) {
+void PivotJoint::setAnchr1( const cVect& anchr1 ) {
 	cpPivotJointSetAnchr1( mConstraint, tocpv( anchr1 ) );
 }
 
-cVect PivotJoint::anchr2() {
+cVect PivotJoint::getAnchr2() {
 	return tovect( cpPivotJointGetAnchr2( mConstraint ) );
 }
 
-void PivotJoint::anchr2( const cVect& anchr2 ) {
+void PivotJoint::setAnchr2( const cVect& anchr2 ) {
 	cpPivotJointSetAnchr2( mConstraint, tocpv( anchr2 ) );
 }
 
@@ -66,11 +66,11 @@ void PivotJoint::draw() {
 }
 
 #ifdef PHYSICS_RENDERER_ENABLED
-cpFloat PivotJoint::drawPointSize() {
+cpFloat PivotJoint::getDrawPointSize() {
 	return mDrawPointSize;
 }
 
-void PivotJoint::drawPointSize( const cpFloat& size ) {
+void PivotJoint::setDrawPointSize( const cpFloat& size ) {
 	mDrawPointSize = size;
 }
 #endif

@@ -16,35 +16,35 @@ SlideJoint::SlideJoint( Body * a, Body *b, cVect anchr1, cVect anchr2, cpFloat m
 	setData();
 }
 
-cVect SlideJoint::anchr1() {
+cVect SlideJoint::getAnchr1() {
 	return tovect( cpSlideJointGetAnchr1( mConstraint ) );
 }
 
-void SlideJoint::anchr1( const cVect& anchr1 ) {
+void SlideJoint::setAnchr1( const cVect& anchr1 ) {
 	cpSlideJointSetAnchr1( mConstraint, tocpv( anchr1 ) );
 }
 
-cVect SlideJoint::anchr2() {
+cVect SlideJoint::getAnchr2() {
 	return tovect( cpSlideJointGetAnchr2( mConstraint ) );
 }
 
-void SlideJoint::anchr2( const cVect& anchr2 ) {
+void SlideJoint::setAnchr2( const cVect& anchr2 ) {
 	cpSlideJointSetAnchr2( mConstraint, tocpv( anchr2 ) );
 }
 
-cpFloat SlideJoint::min() {
+cpFloat SlideJoint::getMin() {
 	return cpSlideJointGetMin( mConstraint );
 }
 
-void SlideJoint::min( const cpFloat& min ) {
+void SlideJoint::setMin( const cpFloat& min ) {
 	cpSlideJointSetMin( mConstraint, min );
 }
 
-cpFloat SlideJoint::max() {
+cpFloat SlideJoint::getMax() {
 	return cpSlideJointGetMax( mConstraint );
 }
 
-void SlideJoint::max( const cpFloat& max ) {
+void SlideJoint::setMax( const cpFloat& max ) {
 	cpSlideJointSetMax( mConstraint, max );
 }
 
@@ -77,11 +77,11 @@ void SlideJoint::draw() {
 }
 
 #ifdef PHYSICS_RENDERER_ENABLED
-cpFloat SlideJoint::drawPointSize() {
+cpFloat SlideJoint::getDrawPointSize() {
 	return mDrawPointSize;
 }
 
-void SlideJoint::drawPointSize( const cpFloat& size ) {
+void SlideJoint::setDrawPointSize( const cpFloat& size ) {
 	mDrawPointSize = size;
 }
 #endif

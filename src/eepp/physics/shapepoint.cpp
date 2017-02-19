@@ -23,19 +23,19 @@ ShapePoint::ShapePoint( Physics::Body * body, cpFloat radius, cVect offset )
 	setData();
 }
 
-cVect ShapePoint::offset() {
+cVect ShapePoint::getOffset() {
 	return tovect( cpCircleShapeGetOffset( mShape ) );
 }
 
-void ShapePoint::offset( const cVect &offset ) {
+void ShapePoint::setOffset( const cVect &offset ) {
 	cpCircleShapeSetOffset( mShape, tocpv( offset ) );
 }
 
-cpFloat ShapePoint::radius() {
+cpFloat ShapePoint::getRadius() {
 	return cpCircleShapeGetRadius( mShape );
 }
 
-void ShapePoint::radius( const cpFloat& radius ) {
+void ShapePoint::setRadius( const cpFloat& radius ) {
 	cpCircleShapeSetRadius( mShape, radius );
 }
 
@@ -58,11 +58,11 @@ void ShapePoint::draw( Space * space ) {
 }
 
 #ifdef PHYSICS_RENDERER_ENABLED
-cpFloat ShapePoint::drawRadius() {
+cpFloat ShapePoint::getDrawRadius() {
 	return mDrawRadius;
 }
 
-void ShapePoint::drawRadius( const cpFloat& radius ) {
+void ShapePoint::setDrawRadius( const cpFloat& radius ) {
 	mDrawRadius = radius;
 }
 #endif

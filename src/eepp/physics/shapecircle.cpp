@@ -19,19 +19,19 @@ ShapeCircle::ShapeCircle( Physics::Body * body, cpFloat radius, cVect offset ) {
 	setData();
 }
 
-cVect ShapeCircle::offset() {
+cVect ShapeCircle::getOffset() {
 	return tovect( cpCircleShapeGetOffset( mShape ) );
 }
 
-void ShapeCircle::offset( const cVect &offset ) {
+void ShapeCircle::setOffset( const cVect &offset ) {
 	cpCircleShapeSetOffset( mShape, tocpv( offset ) );
 }
 
-cpFloat ShapeCircle::radius() {
+cpFloat ShapeCircle::getRadius() {
 	return cpCircleShapeGetRadius( mShape );
 }
 
-void ShapeCircle::radius( const cpFloat& radius ) {
+void ShapeCircle::setRadius( const cpFloat& radius ) {
 	cpCircleShapeSetRadius( mShape, radius );
 }
 

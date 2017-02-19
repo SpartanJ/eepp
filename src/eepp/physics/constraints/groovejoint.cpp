@@ -16,27 +16,27 @@ GrooveJoint::GrooveJoint( Body * a, Body * b, cVect groove_a, cVect groove_b, cV
 	setData();
 }
 
-cVect GrooveJoint::anchr2() {
+cVect GrooveJoint::getAnchr2() {
 	return tovect( cpGrooveJointGetAnchr2( mConstraint ) );
 }
 
-void GrooveJoint::anchr2( const cVect& anchr2 ) {
+void GrooveJoint::setAnchr2( const cVect& anchr2 ) {
 	cpGrooveJointSetAnchr2( mConstraint, tocpv( anchr2 ) );
 }
 
-cVect GrooveJoint::grooveA() {
+cVect GrooveJoint::getGrooveA() {
 	return tovect( cpGrooveJointGetGrooveA( mConstraint ) );
 }
 
-void GrooveJoint::grooveA( const cVect& groove_a ) {
+void GrooveJoint::setGrooveA( const cVect& groove_a ) {
 	cpGrooveJointSetGrooveA( mConstraint, tocpv( groove_a ) );
 }
 
-cVect GrooveJoint::grooveB() {
+cVect GrooveJoint::getGrooveB() {
 	return tovect( cpGrooveJointGetGrooveB( mConstraint ) );
 }
 
-void GrooveJoint::grooveB( const cVect& groove_b ) {
+void GrooveJoint::setGrooveB( const cVect& groove_b ) {
 	cpGrooveJointSetGrooveB( mConstraint, tocpv( groove_b ) );
 }
 
@@ -69,11 +69,11 @@ void GrooveJoint::draw() {
 }
 
 #ifdef PHYSICS_RENDERER_ENABLED
-cpFloat GrooveJoint::drawPointSize() {
+cpFloat GrooveJoint::getDrawPointSize() {
 	return mDrawPointSize;
 }
 
-void GrooveJoint::drawPointSize( const cpFloat& size ) {
+void GrooveJoint::setDrawPointSize( const cpFloat& size ) {
 	mDrawPointSize = size;
 }
 #endif

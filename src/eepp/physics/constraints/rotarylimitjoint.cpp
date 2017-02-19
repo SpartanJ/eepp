@@ -7,19 +7,19 @@ RotaryLimitJoint::RotaryLimitJoint( Body * a, Body * b, cpFloat min, cpFloat max
 	setData();
 }
 
-cpFloat RotaryLimitJoint::min() {
+cpFloat RotaryLimitJoint::getMin() {
 	return cpRotaryLimitJointGetMin( mConstraint );
 }
 
-void RotaryLimitJoint::min( const cpFloat& min ) {
+void RotaryLimitJoint::setMin( const cpFloat& min ) {
 	cpRotaryLimitJointSetMin( mConstraint, min );
 }
 
-cpFloat RotaryLimitJoint::max() {
+cpFloat RotaryLimitJoint::getMax() {
 	return cpRotaryLimitJointGetMax( mConstraint );
 }
 
-void RotaryLimitJoint::max( const cpFloat& max ) {
+void RotaryLimitJoint::setMax( const cpFloat& max ) {
 	cpRotaryLimitJointSetMax( mConstraint, max );
 }
 

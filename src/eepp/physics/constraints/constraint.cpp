@@ -35,47 +35,47 @@ cpConstraint * Constraint::getConstraint() const {
 	return mConstraint;
 }
 
-Body * Constraint::a() {
+Body * Constraint::getA() {
 	return reinterpret_cast<Body*>( mConstraint->a->data );
 }
 
-Body * Constraint::b() {
+Body * Constraint::getB() {
 	return reinterpret_cast<Body*>( mConstraint->b->data );
 }
 
-cpFloat Constraint::maxForce() {
+cpFloat Constraint::getMaxForce() {
 	return mConstraint->maxForce;
 }
 
-void Constraint::maxForce( const cpFloat& maxforce ) {
+void Constraint::setMaxForce( const cpFloat& maxforce ) {
 	mConstraint->maxForce = maxforce;
 }
 
-cpFloat Constraint::maxBias() {
+cpFloat Constraint::getMaxBias() {
 	return mConstraint->maxBias;
 }
 
-void Constraint::maxBias( const cpFloat& maxbias ) {
+void Constraint::setMaxBias( const cpFloat& maxbias ) {
 	mConstraint->maxBias = maxbias;
 }
 
-cpFloat Constraint::errorBias() {
+cpFloat Constraint::getErrorBias() {
 	return cpConstraintGetErrorBias( mConstraint );
 }
 
-void Constraint::errorBias( cpFloat value ) {
+void Constraint::setErrorBias( cpFloat value ) {
 	cpConstraintSetErrorBias( mConstraint, value );
 }
 
-void Constraint::data( void * data ) {
+void Constraint::setData( void * data ) {
 	mData = data;
 }
 
-void * Constraint::data() const {
+void * Constraint::getData() const {
 	return mData;
 }
 
-cpFloat Constraint::impulse() {
+cpFloat Constraint::getImpulse() {
 	return cpConstraintGetImpulse( mConstraint );
 }
 

@@ -11,17 +11,17 @@ class CP_API ShapeSegment : public Shape {
 
 		ShapeSegment( Physics::Body * body, cVect a, cVect b, cpFloat radius );
 
-		cVect a();
+		cVect getA();
 
-		cVect b();
+		cVect getB();
 
-		cVect normal();
+		cVect getNormal();
 
-		cpFloat radius();
+		cpFloat getRadius();
 
-		void radius( const cpFloat& radius );
+		void setRadius( const cpFloat& radius );
 
-		void endpoints( const cVect& a, const cVect& b );
+		void setEndpoints( const cVect& a, const cVect& b );
 
 		bool query( cVect a, cVect b, cpSegmentQueryInfo * info );
 

@@ -16,27 +16,27 @@ PinJoint::PinJoint( Body * a, Body * b, cVect anchr1, cVect anchr2 )
 	setData();
 }
 
-cVect PinJoint::anchr1() {
+cVect PinJoint::getAnchr1() {
 	return tovect( cpPinJointGetAnchr1( mConstraint ) );
 }
 
-void PinJoint::anchr1( const cVect& anchr1 ) {
+void PinJoint::setAnchr1( const cVect& anchr1 ) {
 	cpPinJointSetAnchr1( mConstraint, tocpv( anchr1 ) );
 }
 
-cVect PinJoint::anchr2() {
+cVect PinJoint::getAnchr2() {
 	return tovect( cpPinJointGetAnchr2( mConstraint ) );
 }
 
-void PinJoint::anchr2( const cVect& anchr2 ) {
+void PinJoint::setAnchr2( const cVect& anchr2 ) {
 	cpPinJointSetAnchr2( mConstraint, tocpv( anchr2 ) );
 }
 
-cpFloat PinJoint::dist() {
+cpFloat PinJoint::getDist() {
 	return cpPinJointGetDist( mConstraint );
 }
 
-void PinJoint::dist( const cpFloat& dist ) {
+void PinJoint::setDist( const cpFloat& dist ) {
 	cpPinJointSetDist( mConstraint, dist );
 }
 
@@ -71,11 +71,11 @@ void PinJoint::draw() {
 }
 
 #ifdef PHYSICS_RENDERER_ENABLED
-cpFloat PinJoint::drawPointSize() {
+cpFloat PinJoint::getDrawPointSize() {
 	return mDrawPointSize;
 }
 
-void PinJoint::drawPointSize( const cpFloat& size ) {
+void PinJoint::setDrawPointSize( const cpFloat& size ) {
 	mDrawPointSize = size;
 }
 #endif

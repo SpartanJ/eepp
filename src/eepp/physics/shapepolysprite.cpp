@@ -37,11 +37,11 @@ ShapePolySprite::~ShapePolySprite() {
 }
 
 void ShapePolySprite::draw( Space * space ) {
-	cVect Pos = body()->pos();
+	cVect Pos = getBody()->getPos();
 
 	mSprite->setOffset( mOffset );
 	mSprite->setPosition( Pos.x, Pos.y );
-	mSprite->setRotation( body()->angleDeg() );
+	mSprite->setRotation( getBody()->getAngleDeg() );
 	mSprite->draw();
 }
 
