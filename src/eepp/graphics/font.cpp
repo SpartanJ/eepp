@@ -160,7 +160,7 @@ void Font::draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 
 	if ( !TextCache.cachedCoords() ) {
 		if ( !( Flags & FONT_DRAW_VERTICAL ) ) {
-			switch ( FontHAlignGet( Flags ) ) {
+			switch ( fontHAlignGet( Flags ) ) {
 				case FONT_DRAW_CENTER:
 					nX = (Float)( (Int32)( ( TextCache.getTextWidth() - TextCache.getLinesWidth()[ Line ] ) * 0.5f ) );
 					Line++;
@@ -207,7 +207,7 @@ void Font::draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 							nY = 0;
 						} else {
 							if ( i + 1 < TextCache.getText().size() ) {
-								switch ( FontHAlignGet( Flags ) ) {
+								switch ( fontHAlignGet( Flags ) ) {
 									case FONT_DRAW_CENTER:
 										nX = (Float)( (Int32)( ( TextCache.getTextWidth() - TextCache.getLinesWidth()[ Line ] ) * 0.5f ) );
 										break;

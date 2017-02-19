@@ -163,7 +163,7 @@ void UITooltip::autoAlign() {
 	Uint32 Width	= mSize.getWidth()		- mPadding.Left - mPadding.Right;
 	Uint32 Height	= mSize.getHeight()	- mPadding.Top	- mPadding.Bottom;
 
-	switch ( FontHAlignGet( getFlags() ) ) {
+	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mAlignOffset.x = mPadding.Left + (Float)( (Int32)( Width - mTextCache->getTextWidth() ) / 2 );
 			break;
@@ -175,7 +175,7 @@ void UITooltip::autoAlign() {
 			break;
 	}
 
-	switch ( FontVAlignGet( getFlags() ) ) {
+	switch ( fontVAlignGet( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
 			mAlignOffset.y = mPadding.Top + (Float)( ( (Int32)( Height - mTextCache->getTextHeight() ) ) / 2 );
 			break;

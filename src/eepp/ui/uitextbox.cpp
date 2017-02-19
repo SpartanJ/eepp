@@ -163,7 +163,7 @@ void UITextBox::autoSize() {
 }
 
 void UITextBox::autoAlign() {
-	switch ( FontHAlignGet( getFlags() ) ) {
+	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mAlignOffset.x = (Float)( (Int32)( mSize.x - mTextCache->getTextWidth() ) / 2 );
 			break;
@@ -175,7 +175,7 @@ void UITextBox::autoAlign() {
 			break;
 	}
 
-	switch ( FontVAlignGet( getFlags() ) ) {
+	switch ( fontVAlignGet( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
 			mAlignOffset.y = (Float)( ( (Int32)( mSize.y - mTextCache->getTextHeight() ) ) / 2 ) - 1;
 			break;

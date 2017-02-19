@@ -22,11 +22,11 @@ enum EE_FONT_VALIGN {
 	FONT_DRAW_VALIGN_MASK	= (3 << 2)
 };
 
-inline Uint32 FontHAlignGet( Uint32 Flags ) {
+inline Uint32 fontHAlignGet( Uint32 Flags ) {
 	return Flags & FONT_DRAW_HALIGN_MASK;
 }
 
-inline Uint32 FontVAlignGet( Uint32 Flags ) {
+inline Uint32 fontVAlignGet( Uint32 Flags ) {
 	return Flags & FONT_DRAW_VALIGN_MASK;
 }
 

@@ -337,7 +337,7 @@ void UITextEdit::fixScrollToCursor() {
 	if ( mHScrollBar->isVisible() )
 		Height -= mHScrollBar->getSize().getHeight();
 
-	if ( FontHAlignGet( mTextInput->getFlags() ) == UI_HALIGN_LEFT ) {
+	if ( fontHAlignGet( mTextInput->getFlags() ) == UI_HALIGN_LEFT ) {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum = mTextInput->getInputTextBuffer()->getCurPosLinePos( NLPos );
 

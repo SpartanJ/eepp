@@ -74,7 +74,7 @@ void UIPushButton::onSizeChange() {
 	mIcon->centerVertical();
 
 	if ( NULL != mTextBox ) {
-		switch ( FontHAlignGet( getFlags() ) ) {
+		switch ( fontHAlignGet( getFlags() ) ) {
 			case UI_HALIGN_LEFT:
 				mTextBox->setPosition( mIcon->getPosition().x + mIcon->getSize().getWidth(), 0 );
 				mTextBox->setSize( mSize.getWidth() - mIcon->getPosition().x + mIcon->getSize().getWidth(), mSize.getHeight() );
