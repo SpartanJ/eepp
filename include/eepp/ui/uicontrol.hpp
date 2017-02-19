@@ -377,7 +377,7 @@ class EE_API UIControl {
 
 		void sendParentSizeChange( const Vector2i& SizeChange );
 
-		Time elapsed();
+		Time getElapsed();
 
 		Recti makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
 

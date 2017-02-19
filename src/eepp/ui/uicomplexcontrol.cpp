@@ -55,7 +55,7 @@ void UIComplexControl::update() {
 				mTooltip->show();
 			} else {
 				if ( -1.f != mTooltip->getTooltipTime().asMilliseconds() ) {
-					mTooltip->addTooltipTime( UIManager::instance()->getElapsed() );
+					mTooltip->addTooltipTime( getElapsed() );
 				}
 
 				if ( mTooltip->getTooltipTime() >= UIThemeManager::instance()->getTooltipTimeToShow() ) {

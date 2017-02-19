@@ -48,8 +48,8 @@ static BITMAPINFO *get_bitmap_info( Image * bitmap ) {
 	bi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	bi->bmiHeader.biBitCount = 32;
 	bi->bmiHeader.biPlanes = 1;
-	bi->bmiHeader.biWidth = (int)bitmap->Width();
-	bi->bmiHeader.biHeight = -((int)bitmap->Height());
+	bi->bmiHeader.biWidth = (int)bitmap->getWidth();
+	bi->bmiHeader.biHeight = -((int)bitmap->getHeight());
 	bi->bmiHeader.biClrUsed = 256;
 	bi->bmiHeader.biCompression = BI_RGB;
 
@@ -70,8 +70,8 @@ static BYTE *get_dib_from_bitmap_32(Image *bitmap) {
 	BYTE *pixels;
 	BYTE *dst;
 
-	w = (int)bitmap->Width();
-	h = (int)bitmap->Height();
+	w = (int)bitmap->getWidth();
+	h = (int)bitmap->getHeight();
 	pitch = w * 4;
 
 	pixels = (BYTE *) eeMalloc(h * pitch);
@@ -82,7 +82,7 @@ static BYTE *get_dib_from_bitmap_32(Image *bitmap) {
 		dst = pixels + y * pitch;
 
 		for (x = 0; x < w; x++) {
-			ColorA C = bitmap->GetPixel( x, y );
+			ColorA C = bitmap->getPixel( x, y );
 
 			/* BGR */
 			dst[0] = C.b();
@@ -98,7 +98,7 @@ static BYTE *get_dib_from_bitmap_32(Image *bitmap) {
 }
 
 static void local_stretch_blit_to_hdc( Image *bitmap, HDC dc, int src_x, int src_y, int src_w, int src_h, int dest_x, int dest_y, int dest_w, int dest_h) {
-	const int bitmap_h = (const int)bitmap->Height();
+	const int bitmap_h = (const int)bitmap->getHeight();
 	const int bottom_up_src_y = bitmap_h - src_y - src_h;
 	BYTE *pixels;
 	BITMAPINFO *bi;
@@ -123,13 +123,13 @@ static void local_stretch_blit_to_hdc( Image *bitmap, HDC dc, int src_x, int src
 }
 
 static void local_draw_to_hdc( HDC dc, Image * bitmap, int x, int y ) {
-	int w = bitmap->Width();
-	int h = bitmap->Height();
+	int w = bitmap->getWidth();
+	int h = bitmap->getHeight();
 	local_stretch_blit_to_hdc(bitmap, dc, 0, 0, w, h, x, y, w, h);
 }
 
 void CursorWin::create() {
-	if ( NULL == mImage && mImage->MemSize() )
+	if ( NULL == mImage && mImage->getMemSize() )
 		return;
 
 	int x, y;
@@ -148,7 +148,7 @@ void CursorWin::create() {
 	sys_sm_cx = GetSystemMetrics(SM_CXCURSOR);
 	sys_sm_cy = GetSystemMetrics(SM_CYCURSOR);
 
-	if ( ( (int)mImage->Width() > sys_sm_cx ) || ( (int)mImage->Height() > sys_sm_cy ) ) {
+	if ( ( (int)mImage->getWidth() > sys_sm_cx ) || ( (int)mImage->getHeight() > sys_sm_cy ) ) {
 		return;
 	}
 
@@ -174,9 +174,9 @@ void CursorWin::create() {
 	local_draw_to_hdc( h_xor_dc, mImage, 0, 0 );
 
 	/* Make cursor background transparent */
-	for (y = 0; y < (int)mImage->Height(); y++) {
-		for (x = 0; x < (int)mImage->Width(); x++) {
-			ColorA C = mImage->GetPixel( x, y );
+	for (y = 0; y < (int)mImage->getHeight(); y++) {
+		for (x = 0; x < (int)mImage->getWidth(); x++) {
+			ColorA C = mImage->getPixel( x, y );
 
 			if ( C.a() != 0 ) {
 				/* Don't touch XOR value */

@@ -558,17 +558,17 @@ void EETest::createUI() {
 #ifdef EE_PLATFORM_TOUCH
 	TextureAtlas * SG = GlobalTextureAtlas::instance();
 
-	Texture * butTex = TF->getTexture( TF->Load( MyPath + "sprites/button-te_normal.png" ) );
+	Texture * butTex = TF->getTexture( TF->load( MyPath + "sprites/button-te_normal.png" ) );
 
-	SG->Add( butTex->Id(), "button-te_normal" );
-	SG->Add( TF->Load( MyPath + "sprites/button-te_mdown.png" ), "button-te_mdown" );
+	SG->Add( butTex->getId(), "button-te_normal" );
+	SG->Add( TF->load( MyPath + "sprites/button-te_mdown.png" ), "button-te_mdown" );
 
 	UISkinSimple nSkin( "button-te" );
 
-	mShowMenu = mTheme->CreatePushButton( NULL, butTex->size(), Vector2i( mWindow->GetWidth() - butTex->Width() - 20, mWindow->GetHeight() - butTex->Height() - 10 ), UI_CONTROL_ALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
-	mShowMenu->SetSkin( nSkin );
-	mShowMenu->Text( "Show Menu" );
-	mShowMenu->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::OnShowMenu ) );
+	mShowMenu = mTheme->createPushButton( NULL, butTex->getSize(), Vector2i( mWindow->getWidth() - butTex->getWidth() - 20, mWindow->getHeight() - butTex->getHeight() - 10 ), UI_CONTROL_ALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
+	mShowMenu->setSkin( nSkin );
+	mShowMenu->setText( "Show Menu" );
+	mShowMenu->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::OnShowMenu ) );
 #endif
 
 	C = reinterpret_cast<UIControlAnim*> ( C->getParent() );
@@ -861,7 +861,7 @@ void EETest::loadTextures() {
 		#ifdef EE_GLES
 		Image tImg( MyPath + "sprites/objects/2.png", 4 );
 		tImg.CreateMaskFromColor( ColorA(0,0,0,255), 0 );
-		Tiles[7] = SG->Add( TF->loadFromPixels( tImg.GetPixelsPtr(), tImg.Width(), tImg.Height(), tImg.Channels() ), "8" );
+		Tiles[7] = SG->Add( TF->loadFromPixels( tImg.getPixelsPtr(), tImg.getWidth(), tImg.getHeight(), tImg.getChannels() ), "8" );
 		#else
 		Tiles[7] = SG->add( TF->load( MyPath + "sprites/objects/2.png" ), "8" );
 		Tiles[7]->getTexture()->createMaskFromColor( ColorA(0,0,0,255), 0 );
@@ -907,8 +907,8 @@ void EETest::loadTextures() {
 	CursorP[0] = TF->getTexture( Cursor[0] );
 
 	CursorManager * CurMan = mWindow->getCursorManager();
-	CurMan->visible( false );
-	CurMan->visible( true );
+	CurMan->setVisible( false );
+	CurMan->setVisible( true );
 	CurMan->set( EE::Window::SYS_CURSOR_HAND );
 	CurMan->setGlobalCursor( EE_CURSOR_ARROW, CurMan->add( CurMan->create( CursorP[0], Vector2i( 1, 1 ), "cursor_special" ) ) );
 	CurMan->set( EE_CURSOR_ARROW );
@@ -1835,7 +1835,7 @@ void EETest::physicsUpdate() {
 		InputFinger * Finger = KM->GetFingerIndex(i);
 		mMousePoint[i] = cVectNew( Finger->x, Finger->y );
 		cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last[i] ), tocpv( mMousePoint[i] ), 0.25 ) );
-		mMouseBody[i]->Pos( newPoint );
+		mMouseBody[i]->setPosition( newPoint );
 		mMouseBody[i]->Vel( ( newPoint - mMousePoint_last[i] ) * (cpFloat)mWindow->FPS() );
 		mMousePoint_last[i] = newPoint;
 

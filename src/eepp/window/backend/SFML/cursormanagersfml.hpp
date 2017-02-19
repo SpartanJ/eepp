@@ -27,7 +27,7 @@ class CursorManagerSFML : public CursorManager {
 
 		void hide();
 
-		void visible( bool visible );
+		void setVisible( bool visible );
 
 		void remove( Cursor * cursor, bool Delete = false );
 

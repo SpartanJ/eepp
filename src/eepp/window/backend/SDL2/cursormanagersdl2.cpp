@@ -54,14 +54,14 @@ void CursorManagerSDL::set( EE_SYSTEM_CURSOR syscurid ) {
 }
 
 void CursorManagerSDL::show() {
-	visible( true );
+	setVisible( true );
 }
 
 void CursorManagerSDL::hide() {
-	visible( false );
+	setVisible( false );
 }
 
-void CursorManagerSDL::visible( bool visible ) {
+void CursorManagerSDL::setVisible( bool visible ) {
 	if ( visible ) {
 		SDL_ShowCursor( SDL_ENABLE );
 		mVisible = true;

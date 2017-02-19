@@ -50,14 +50,14 @@ void CursorManagerSFML::set( EE_SYSTEM_CURSOR syscurid ) {
 }
 
 void CursorManagerSFML::show() {
-	visible( true );
+	setVisible( true );
 }
 
 void CursorManagerSFML::hide() {
-	visible( false );
+	setVisible( false );
 }
 
-void CursorManagerSFML::visible( bool visible ) {
+void CursorManagerSFML::setVisible( bool visible ) {
 	if ( visible ) {
 		reinterpret_cast<WindowSFML*>(mWindow)->getSFMLWindow()->setMouseCursorVisible( true );
 

@@ -63,7 +63,7 @@ class EE_API String {
 	/** @return string hash */
 	static Uint32 hash( const std::string& str );
 
-	/** @return string hash. Note: String::Hash( std::string( "text" ) ) is != to String::Hash( String( "text" ) ) */
+	/** @return string hash. Note: String::hash( std::string( "text" ) ) is != to String::hash( String( "text" ) ) */
 	static Uint32 hash( const String& str );
 
 	/** @return If the value passed is a character */

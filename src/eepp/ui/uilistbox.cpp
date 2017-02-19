@@ -973,13 +973,13 @@ void UIListBox::update() {
 
 					mVScrollBar->setValue( mVScrollBar->getValue() + ( -diff.y / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
-					mTouchDragAcceleration += elapsed().asMilliseconds() * diff.y * mTouchDragDeceleration;
+					mTouchDragAcceleration += getElapsed().asMilliseconds() * diff.y * mTouchDragDeceleration;
 
 					mTouchDragPoint = Pos;
 
 					UIManager::instance()->setControlDragging( true );
 				} else {
-					mTouchDragAcceleration -= elapsed().asMilliseconds() * mTouchDragAcceleration * 0.01f;
+					mTouchDragAcceleration -= getElapsed().asMilliseconds() * mTouchDragAcceleration * 0.01f;
 				}
 			} else {
 				// Mouse Down
@@ -1002,7 +1002,7 @@ void UIListBox::update() {
 				if ( mTouchDragAcceleration > 0.01f || mTouchDragAcceleration < -0.01f ) {
 					mVScrollBar->setValue( mVScrollBar->getValue() + ( -mTouchDragAcceleration / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
-					mTouchDragAcceleration -= mTouchDragAcceleration * mTouchDragDeceleration * elapsed().asMilliseconds();
+					mTouchDragAcceleration -= mTouchDragAcceleration * mTouchDragDeceleration * getElapsed().asMilliseconds();
 				}
 			}
 		}

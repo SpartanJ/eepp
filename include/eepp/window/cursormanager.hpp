@@ -103,10 +103,10 @@ class EE_API CursorManager {
 		virtual void			reload() = 0;
 
 		/** Set to show/hide the cursor */
-		virtual void			visible( bool visible ) = 0;
+		virtual void			setVisible( bool visible ) = 0;
 
 		/** @return If the cursor is visible in the window */
-		virtual bool			visible();
+		virtual bool			getVisible();
 
 		/** @return A pointer to the curent cursor */
 		Cursor *				getCurrent() const;

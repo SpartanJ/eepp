@@ -91,14 +91,14 @@ class GObjFlags {
 };
 
 enum EE_GAMEOBJECT_TYPE {
-	GAMEOBJECT_TYPE_BASE			= 2088954976UL,	//String::Hash( "Base" )
-	GAMEOBJECT_TYPE_VIRTUAL			= 3708695628UL,	//String::Hash( "Virtual" )
-	GAMEOBJECT_TYPE_SUBTEXTURE		= 1772101792UL,	//String::Hash( "SubTexture" )
-	GAMEOBJECT_TYPE_SUBTEXTUREEX	= 1378537981UL,	//String::Hash( "SubTextureEx" )
-	GAMEOBJECT_TYPE_SPRITE			= 3517332124UL,	//String::Hash( "Sprite" )
-	GAMEOBJECT_TYPE_OBJECT			= 3343895260UL,	//String::Hash( "Object" )
-	GAMEOBJECT_TYPE_POLYGON			= 482716845UL,	//String::Hash( "Polygon" )
-	GAMEOBJECT_TYPE_POLYLINE		= 3044927249UL	//String::Hash( "Polyline" )
+	GAMEOBJECT_TYPE_BASE			= 2088954976UL,	//String::hash( "Base" )
+	GAMEOBJECT_TYPE_VIRTUAL			= 3708695628UL,	//String::hash( "Virtual" )
+	GAMEOBJECT_TYPE_SUBTEXTURE		= 1772101792UL,	//String::hash( "SubTexture" )
+	GAMEOBJECT_TYPE_SUBTEXTUREEX	= 1378537981UL,	//String::hash( "SubTextureEx" )
+	GAMEOBJECT_TYPE_SPRITE			= 3517332124UL,	//String::hash( "Sprite" )
+	GAMEOBJECT_TYPE_OBJECT			= 3343895260UL,	//String::hash( "Object" )
+	GAMEOBJECT_TYPE_POLYGON			= 482716845UL,	//String::hash( "Polygon" )
+	GAMEOBJECT_TYPE_POLYLINE		= 3044927249UL	//String::hash( "Polyline" )
 };
 
 enum EE_LAYER_TYPE {

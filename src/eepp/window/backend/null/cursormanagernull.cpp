@@ -32,7 +32,7 @@ void CursorManagerNull::show() {
 void CursorManagerNull::hide() {
 }
 
-void CursorManagerNull::visible( bool visible ) {
+void CursorManagerNull::setVisible( bool visible ) {
 }
 
 void CursorManagerNull::remove( Cursor * cursor, bool Delete ) {

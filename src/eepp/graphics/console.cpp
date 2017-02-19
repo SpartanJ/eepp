@@ -733,7 +733,7 @@ void Console::cmdShowCursor ( const std::vector < String >& params ) {
 		bool Res = String::fromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt == 0 || tInt == 1 ) ) {
-			mWindow->getCursorManager()->visible( 0 != tInt );
+			mWindow->getCursorManager()->setVisible( 0 != tInt );
 		} else
 			privPushText( "Valid parameters are 0 or 1." );
 	} else {

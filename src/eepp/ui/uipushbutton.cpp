@@ -98,24 +98,24 @@ void UIPushButton::onSizeChange() {
 	/**
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mTextBox ) {
-			Recti P = MakePadding();
+			Recti P = makePadding();
 
-			mSize.Height( mIcon->size().height()	+ P.Top		+ P.Bottom );
+			mSize.setHeight( mIcon->getSize().getHeight()	+ P.Top		+ P.Bottom );
 
-			if ( 0 == mTextBox->Text().size() ) {
-				mSize.Width	( mIcon->size().width()		+ P.Left	+ P.Right );
+			if ( 0 == mTextBox->getText().size() ) {
+				mSize.setWidth	( mIcon->getSize().getWidth()		+ P.Left	+ P.Right );
 
-				mIcon->Center();
+				mIcon->center();
 			} else {
-				mSize.Width( mIconSpace + mIcon->position(.x + mIcon->size().width() + mTextBox->size().width() );
+				mSize.setWidth( mIconSpace + mIcon->setPosition(.x + mIcon->getSize().getWidth() + mTextBox->getSize().getWidth() );
 
-				if ( mSize.Height() < P.Top + P.Bottom + mTextBox->GetTextHeight() )
-					mSize.Height( P.Top + P.Bottom + mTextBox->GetTextHeight() );
+				if ( mSize.getHeight() < P.Top + P.Bottom + mTextBox->getTextHeight() )
+					mSize.setHeight( P.Top + P.Bottom + mTextBox->getTextHeight() );
 			}
 		}
 	} else {
-		if ( NULL != mTextBox && 0 == mTextBox->Text().size() ) {
-			mIcon->Center();
+		if ( NULL != mTextBox && 0 == mTextBox->getText().size() ) {
+			mIcon->center();
 		}
 	}
 	*/

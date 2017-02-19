@@ -188,7 +188,7 @@ void UIControlAnim::update() {
 	UIDragable::update();
 
 	if ( NULL != mMoveAnim && mMoveAnim->isEnabled() ) {
-		mMoveAnim->update( elapsed() );
+		mMoveAnim->update( getElapsed() );
 		setPosition( (int)mMoveAnim->getPos().x, (int)mMoveAnim->getPos().y );
 
 		if ( mMoveAnim->ended() )
@@ -196,7 +196,7 @@ void UIControlAnim::update() {
 	}
 
 	if ( NULL != mAlphaAnim && mAlphaAnim->isEnabled() ) {
-		mAlphaAnim->update( elapsed() );
+		mAlphaAnim->update( getElapsed() );
 		setAlpha( mAlphaAnim->getRealPos() );
 
 		if ( mAlphaAnim->ended() ) {
@@ -214,7 +214,7 @@ void UIControlAnim::update() {
 	}
 
 	if ( NULL != mScaleAnim && mScaleAnim->isEnabled() ) {
-		mScaleAnim->update( elapsed() );
+		mScaleAnim->update( getElapsed() );
 		setScale( mScaleAnim->getPos() );
 
 		if ( mScaleAnim->ended() )
@@ -222,7 +222,7 @@ void UIControlAnim::update() {
 	}
 
 	if ( NULL != mAngleAnim && mAngleAnim->isEnabled() ) {
-		mAngleAnim->update( elapsed() );
+		mAngleAnim->update( getElapsed() );
 		setRotation( mAngleAnim->getRealPos() );
 
 		if ( mAngleAnim->ended() )

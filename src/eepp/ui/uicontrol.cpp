@@ -895,7 +895,7 @@ void UIControl::updateCenter() {
 	mCenter = Vector2f( mScreenPosf.x + (Float)mSize.getWidth() * 0.5f, mScreenPosf.y + (Float)mSize.getHeight() * 0.5f );
 }
 
-Time UIControl::elapsed() {
+Time UIControl::getElapsed() {
 	return UIManager::instance()->getElapsed();
 }
 

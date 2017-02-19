@@ -501,9 +501,9 @@ static std::string sGetProcessPath() {
 	size_t cb = sizeof(buf);
 	sysctl(mib, 4, buf, &cb, NULL, 0);
 
-	return FileSystem::FileRemoveFileName( std::string( buf ) );
+	return FileSystem::fileRemoveFileName( std::string( buf ) );
 #elif EE_PLATFORM == EE_PLATFORM_SOLARIS
-	return FileRemoveFileName( std::string( getexecname() ) );
+	return fileRemoveFileName( std::string( getexecname() ) );
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
 	image_info info;
 	int32 cookie = 0;
@@ -513,7 +513,7 @@ static std::string sGetProcessPath() {
 			break;
 	}
 
-	return FileSystem::FileRemoveFileName( std::string( info.name ) );
+	return FileSystem::fileRemoveFileName( std::string( info.name ) );
 #elif EE_PLATFORM == EE_PLATFORM_ANDROID
 	if ( NULL != Window::Engine::instance() && NULL != Window::Engine::instance()->getCurrentWindow() )
 		return Window::Engine::instance()->getCurrentWindow()->getExternalStoragePath();

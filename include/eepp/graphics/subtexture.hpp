@@ -45,7 +45,7 @@ class EE_API SubTexture {
 
 		virtual ~SubTexture();
 
-		/** @return The SubTexture Id. The Id is the String::Hash of the SubTexture name. */
+		/** @return The SubTexture Id. The Id is the String::hash of the SubTexture name. */
 		const Uint32& getId() const;
 
 		/** @return The SubTexture Name. */

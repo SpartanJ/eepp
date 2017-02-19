@@ -98,7 +98,7 @@ void CursorManager::set( EE_CURSOR_TYPE cursor ) {
 	}
 }
 
-bool CursorManager::visible() {
+bool CursorManager::getVisible() {
 	return mVisible;	
 }
 
