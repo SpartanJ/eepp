@@ -931,10 +931,18 @@ void UIControl::sendEvent( const UIEvent * Event ) {
 }
 
 UIBackground * UIControl::getBackground() {
+	if ( NULL == mBackground ) {
+		mBackground = eeNew( UIBackground, () );
+	}
+
 	return mBackground;
 }
 
 UIBorder * UIControl::getBorder() {
+	if ( NULL == mBorder ) {
+		mBorder = eeNew( UIBorder, () );
+	}
+
 	return mBorder;
 }
 

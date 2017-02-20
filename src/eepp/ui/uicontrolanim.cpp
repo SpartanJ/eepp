@@ -416,6 +416,8 @@ void UIControlAnim::updateQuad() {
 }
 
 void UIControlAnim::onSizeChange() {
+	UIDragable::onSizeChange();
+
 	updateOriginPoint();
 }
 
