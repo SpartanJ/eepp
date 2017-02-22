@@ -165,7 +165,7 @@ void UIComplexControl::onParentSizeChange( const Vector2i& SizeChange ) {
 
 	if ( mFlags & UI_ANCHOR_RIGHT ) {
 		if ( NULL != mParentCtrl ) {
-			newSize.x = mParentCtrl->getSize().getWidth() - mPos.x - mDistToBorder.Right;
+			newSize.x = mParentCtrl->getSize().getWidth() - mPos.x - pxToDpI( mDistToBorder.Right );
 
 			if ( newSize.x < mMinControlSize.getWidth() )
 				newSize.x = mMinControlSize.getWidth();
@@ -180,7 +180,7 @@ void UIComplexControl::onParentSizeChange( const Vector2i& SizeChange ) {
 
 	if ( mFlags & UI_ANCHOR_BOTTOM ) {
 		if ( NULL != mParentCtrl ) {
-			newSize.y = mParentCtrl->getSize().y - mPos.y - mDistToBorder.Bottom;
+			newSize.y = mParentCtrl->getSize().y - mPos.y - pxToDpI( mDistToBorder.Bottom );
 
 			if ( newSize.y < mMinControlSize.getHeight() )
 				newSize.y = mMinControlSize.getHeight();

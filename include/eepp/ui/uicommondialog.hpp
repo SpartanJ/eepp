@@ -88,7 +88,7 @@ class EE_API UICommonDialog : public UIWindow {
 		UIPushButton *		mButtonOpen;
 		UIPushButton *		mButtonCancel;
 		UIPushButton *		mButtonUp;
-		UIListBox *		mList;
+		UIListBox *			mList;
 		UITextInput *		mPath;
 		UITextInput *		mFile;
 		UIDropDownList *	mFiletype;

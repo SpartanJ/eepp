@@ -101,8 +101,8 @@ void UITextInput::drawWaitingCursor() {
 			Primitives P;
 			P.setColor( mFontColor );
 
-			Float CurPosX = mScreenPos.x + mAlignOffset.x + mCurPos.x + 1 + mPadding.Left;
-			Float CurPosY = mScreenPos.y + mAlignOffset.y + mCurPos.y		+ mPadding.Top;
+			Float CurPosX = mScreenPos.x + mAlignOffset.x + mCurPos.x + 1 + mRealPadding.Left;
+			Float CurPosY = mScreenPos.y + mAlignOffset.y + mCurPos.y + mRealPadding.Top;
 
 			if ( CurPosX > (Float)mScreenPos.x + (Float)mRealSize.x )
 				CurPosX = (Float)mScreenPos.x + (Float)mRealSize.x;
@@ -177,8 +177,8 @@ void UITextInput::alignFix() {
 		if ( !mTextBuffer.setSupportNewLine() ) {
 			if ( tX < 0.f )
 				mAlignOffset.x = -( mAlignOffset.x + ( tW - mAlignOffset.x ) );
-			else if ( tX > mRealSize.getWidth() - mPadding.Left - mPadding.Right )
-				mAlignOffset.x = mRealSize.getWidth() - mPadding.Left - mPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
+			else if ( tX > mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right )
+				mAlignOffset.x = mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
 		}
 	}
 }

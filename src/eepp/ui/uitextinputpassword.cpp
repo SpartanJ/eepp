@@ -31,15 +31,15 @@ void UITextInputPassword::draw() {
 		if ( mPassCache->getTextWidth() ) {
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				UIManager::instance()->clipEnable(
-						mScreenPos.x + mPadding.Left,
-						mScreenPos.y + mPadding.Top,
-						mSize.getWidth() - mPadding.Left - mPadding.Right,
-						mSize.getHeight() - mPadding.Top - mPadding.Bottom
+						mScreenPos.x + mRealPadding.Left,
+						mScreenPos.y + mRealPadding.Top,
+						mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+						mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
 				);
 			}
 
 			mPassCache->setFlags( getFlags() );
-			mPassCache->draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, Vector2f::One, 0.f, getBlendMode() );
+			mPassCache->draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mRealPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				UIManager::instance()->clipDisable();
@@ -72,8 +72,8 @@ void UITextInputPassword::alignFix() {
 		if ( !mTextBuffer.setSupportNewLine() ) {
 			if ( tX < 0.f )
 				mAlignOffset.x = -( mAlignOffset.x + ( tW - mAlignOffset.x ) );
-			else if ( tX > mSize.getWidth() - mPadding.Left - mPadding.Right )
-				mAlignOffset.x = mSize.getWidth() - mPadding.Left - mPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
+			else if ( tX > mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right )
+				mAlignOffset.x = mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
 		}
 	}
 }

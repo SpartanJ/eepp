@@ -289,7 +289,7 @@ void UIWindow::applyMinWinSize() {
 		setSize( mMinWindowSize );
 	} else if ( mSize.x < mMinWindowSize.x ) {
 		setSize( Sizei( mMinWindowSize.x, mSize.y ) );
-	} else {
+	} else if ( mSize.y < mMinWindowSize.y ) {
 		setSize( Sizei( mSize.x, mMinWindowSize.y ) );
 	}
 }
