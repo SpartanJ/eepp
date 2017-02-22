@@ -26,6 +26,8 @@ class EE_API UIGfx : public UIComplexControl {
 
 		UIGfx( const UIGfx::CreateParams& Params );
 
+		UIGfx();
+
 		virtual ~UIGfx();
 
 		virtual Uint32 getType() const;
@@ -42,7 +44,7 @@ class EE_API UIGfx : public UIComplexControl {
 
 		const ColorA& getColor() const;
 
-		void serColor( const ColorA& col );
+		void setColor( const ColorA& col );
 
 		const EE_RENDER_MODE& getRenderMode() const;
 

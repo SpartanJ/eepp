@@ -48,6 +48,49 @@ UISlider::UISlider( const UISlider::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
+UISlider::UISlider() :
+	UIComplexControl(),
+	mVertical( true ),
+	mAllowHalfSliderOut( false ),
+	mExpandBackground( false ),
+	mBackSlider( NULL ),
+	mSlider( NULL ),
+	mMinValue( 0.f ),
+	mMaxValue( 1.f ),
+	mValue( 0.f ),
+	mClickStep( 0.1f ),
+	mOnPosChange( false )
+{
+	Sizei bgSize;
+
+	if ( !mVertical )
+		bgSize = dpToPxI( Sizei( mSize.getWidth() - 16, 8 ) );
+	else
+		bgSize = dpToPxI( Sizei( 8, mSize.getWidth() - 16 ) );
+
+	mBackSlider = eeNew( UIControlAnim, () );
+	mBackSlider->setParent( this );
+	mBackSlider->setVisible( true );
+	mBackSlider->setEnabled( true );
+	mBackSlider->setSize( bgSize );
+	mBackSlider->center();
+
+	mSlider = eeNew( Private::UISliderButton, () );
+	mSlider->setParent( this );
+	mSlider->setEnabled( true );
+	mSlider->setVisible( true );
+	mSlider->setDragEnabled( true );
+	mSlider->setSize( dpToPxI( 16 ), dpToPxI( 16 ) );
+	mSlider->setPosition( 0, 0 );
+
+	if ( !mVertical )
+		mSlider->centerVertical();
+	else
+		mSlider->centerHorizontal();
+
+	applyDefaultTheme();
+}
+
 UISlider::~UISlider() {
 }
 
@@ -134,6 +177,8 @@ void UISlider::adjustChilds() {
 			}
 
 			mBackSlider->center();
+
+			fixSliderPos();
 		}
 	}
 }
@@ -172,8 +217,9 @@ void UISlider::fixSliderPos() {
 				if ( mSlider->getPosition().y > mBackSlider->getSize().getHeight() )
 					mSlider->setPosition( 0, mBackSlider->getSize().getHeight() );
 			} else {
-				if ( mSlider->getPosition().y > mBackSlider->getSize().getHeight() - mSlider->getSize().getHeight() )
+				if ( mSlider->getPosition().y > mBackSlider->getSize().getHeight() - mSlider->getSize().getHeight() ) {
 					mSlider->setPosition( 0, mBackSlider->getSize().getHeight() - mSlider->getSize().getHeight() );
+				}
 			}
 
 			mSlider->centerHorizontal();

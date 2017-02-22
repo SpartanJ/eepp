@@ -116,11 +116,11 @@ void UIListBoxItem::onStateChange() {
 	}
 
 	if ( mSkinState->getState() == UISkinState::StateSelected ) {
-		setColor( LBParent->getFontSelectedColor() );
+		setFontColor( LBParent->getFontSelectedColor() );
 	} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-		setColor( LBParent->getFontOverColor() );
+		setFontColor( LBParent->getFontOverColor() );
 	} else {
-		setColor( LBParent->getFontColor() );
+		setFontColor( LBParent->getFontColor() );
 	}
 }
 

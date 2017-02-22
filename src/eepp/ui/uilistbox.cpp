@@ -673,7 +673,7 @@ void UIListBox::setFontColor( const ColorA& Color ) {
 	mFontColor = Color;
 
 	for ( Uint32 i = 0; i < mItems.size(); i++ )
-		mItems[i]->setColor( mFontColor );
+		mItems[i]->setFontColor( mFontColor );
 }
 
 const ColorA& UIListBox::getFontColor() const {

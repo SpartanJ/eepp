@@ -9,6 +9,12 @@ UISliderButton::UISliderButton( const UIControlAnim::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
+UISliderButton::UISliderButton() :
+	UIControlAnim()
+{
+	applyDefaultTheme();
+}
+
 UISliderButton::~UISliderButton() {
 }
 

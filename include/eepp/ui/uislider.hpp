@@ -27,6 +27,8 @@ class EE_API UISlider : public UIComplexControl {
 
 		UISlider( const UISlider::CreateParams& Params );
 
+		UISlider();
+
 		virtual ~UISlider();
 
 		virtual Uint32 getType() const;
@@ -73,7 +75,7 @@ class EE_API UISlider : public UIComplexControl {
 		bool				mAllowHalfSliderOut;
 		bool				mExpandBackground;
 		UIControlAnim *		mBackSlider;
-		UIControlAnim * 	mSlider;
+		Private::UISliderButton * 	mSlider;
 		Float				mMinValue;
 		Float				mMaxValue;
 		Float				mValue;

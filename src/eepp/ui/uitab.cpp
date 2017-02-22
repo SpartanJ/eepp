@@ -73,11 +73,11 @@ void UITab::onStateChange() {
 		setSize( mSize.getWidth(), getSkinSize( getSkin(), mSkinState->getState() ).getHeight() );
 
 		if ( mSkinState->getState() == UISkinState::StateSelected ) {
-			mTextBox->setColor( tTabW->mFontSelectedColor );
+			mTextBox->setFontColor( tTabW->mFontSelectedColor );
 		} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-			mTextBox->setColor( tTabW->mFontOverColor );
+			mTextBox->setFontColor( tTabW->mFontOverColor );
 		} else {
-			mTextBox->setColor( tTabW->mFontColor );
+			mTextBox->setFontColor( tTabW->mFontColor );
 		}
 	}
 }

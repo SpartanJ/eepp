@@ -11,6 +11,8 @@ class EE_API UIControlAnim : public UIDragable {
 	public:
 		UIControlAnim( const CreateParams& Params );
 
+		UIControlAnim();
+
 		virtual ~UIControlAnim();
 
 		virtual Uint32 getType() const;

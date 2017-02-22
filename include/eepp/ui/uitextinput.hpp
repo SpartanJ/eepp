@@ -28,6 +28,8 @@ class EE_API UITextInput : public UITextBox {
 
 		UITextInput( const UITextInput::CreateParams& Params );
 
+		UITextInput();
+
 		virtual ~UITextInput();
 
 		virtual Uint32 getType() const;

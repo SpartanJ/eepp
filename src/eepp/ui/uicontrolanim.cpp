@@ -21,6 +21,21 @@ UIControlAnim::UIControlAnim( const CreateParams& Params ) :
 	updateOriginPoint();
 }
 
+UIControlAnim::UIControlAnim() :
+	UIDragable(),
+	mAngle(0.f),
+	mScale(1.f,1.f),
+	mAlpha(255.f),
+	mAngleAnim(NULL),
+	mScaleAnim(NULL),
+	mAlphaAnim(NULL),
+	mMoveAnim(NULL)
+{
+	mControlFlags |= UI_CTRL_FLAG_ANIM;
+
+	updateOriginPoint();
+}
+
 UIControlAnim::~UIControlAnim() {
 	eeSAFE_DELETE( mAlphaAnim );
 	eeSAFE_DELETE( mAngleAnim );

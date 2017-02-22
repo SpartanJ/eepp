@@ -32,6 +32,31 @@ UITextBox::UITextBox( const UITextBox::CreateParams& Params ) :
 	autoAlign();
 }
 
+UITextBox::UITextBox() :
+	UIComplexControl(),
+	mFontColor(),
+	mFontShadowColor(),
+	mFontSelectionBackColor(),
+	mAlignOffset( 0.f, 0.f ),
+	mSelCurInit( -1 ),
+	mSelCurEnd( -1 )
+{
+	mTextCache = eeNew( TextCache, () );
+
+	if ( NULL != UIThemeManager::instance()->getDefaultFont() ) {
+		mTextCache->setFont( UIThemeManager::instance()->getDefaultFont() );
+	} else {
+		eePRINTL( "UITextBox::UITextBox : Created a UI TextBox without a defined font." );
+	}
+
+	if ( NULL != UIThemeManager::instance()->getDefaultTheme() ) {
+		mTextCache->setColor( UIThemeManager::instance()->getDefaultTheme()->getFontColor() );
+		mTextCache->setShadowColor( UIThemeManager::instance()->getDefaultTheme()->getFontShadowColor() );
+	}
+
+	autoAlign();
+}
+
 UITextBox::~UITextBox() {
 	eeSAFE_DELETE( mTextCache );
 }
@@ -53,15 +78,15 @@ void UITextBox::draw() {
 		if ( mTextCache->getTextWidth() ) {
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				UIManager::instance()->clipEnable(
-						mScreenPos.x + mPadding.Left,
-						mScreenPos.y + mPadding.Top,
-						mSize.getWidth() - mPadding.Left - mPadding.Right,
-						mSize.getHeight() - mPadding.Top - mPadding.Bottom
+						mScreenPos.x + mRealPadding.Left,
+						mScreenPos.y + mRealPadding.Top,
+						mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+						mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
 				);
 			}
 
 			mTextCache->setFlags( getFlags() );
-			mTextCache->draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, Vector2f::One, 0.f, getBlendMode() );
+			mTextCache->draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mRealPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				UIManager::instance()->clipDisable();
@@ -105,22 +130,22 @@ void UITextBox::setText( const String& text ) {
 	onTextChanged();
 }
 
-const ColorA& UITextBox::getColor() const {
+const ColorA& UITextBox::getFontColor() const {
 	return mFontColor;
 }
 
-void UITextBox::setColor( const ColorA& color ) {
+void UITextBox::setFontColor( const ColorA& color ) {
 	mFontColor = color;
 	mTextCache->setColor( color );
 
 	setAlpha( color.a() );
 }
 
-const ColorA& UITextBox::getShadowColor() const {
+const ColorA& UITextBox::getFontShadowColor() const {
 	return mFontShadowColor;
 }
 
-void UITextBox::setShadowColor( const ColorA& color ) {
+void UITextBox::setFontShadowColor( const ColorA& color ) {
 	mFontShadowColor = color;
 	mTextCache->setShadowColor( mFontColor );
 }
@@ -157,8 +182,8 @@ void UITextBox::shrinkText( const Uint32& MaxWidth ) {
 
 void UITextBox::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mSize.setWidth( (int)mTextCache->getTextWidth() );
-		mSize.setHeight( (int)mTextCache->getTextHeight() );
+		setInternalWidth( (int)mTextCache->getTextWidth() );
+		setInternalHeight( (int)mTextCache->getTextHeight() );
 	}
 }
 
@@ -215,6 +240,7 @@ void UITextBox::onFontChanged() {
 
 void UITextBox::setPadding( const Recti& padding ) {
 	mPadding = padding;
+	mRealPadding = dpToPxI( padding );
 }
 
 const Recti& UITextBox::getPadding() const {
@@ -333,10 +359,10 @@ void UITextBox::drawSelection() {
 				lastEnd = end;
 			}
 
-			P.drawRectangle( Rectf( mScreenPos.x + initPos.x + mAlignOffset.x + mPadding.Left,
-									  mScreenPos.y + initPos.y - mTextCache->getFont()->getFontHeight() + mAlignOffset.y + mPadding.Top,
-									  mScreenPos.x + endPos.x + mAlignOffset.x + mPadding.Left,
-									  mScreenPos.y + endPos.y + mAlignOffset.y + mPadding.Top )
+			P.drawRectangle( Rectf( mScreenPos.x + initPos.x + mAlignOffset.x + mRealPadding.Left,
+									  mScreenPos.y + initPos.y - mTextCache->getFont()->getFontHeight() + mAlignOffset.y + mRealPadding.Top,
+									  mScreenPos.x + endPos.x + mAlignOffset.x + mRealPadding.Left,
+									  mScreenPos.y + endPos.y + mAlignOffset.y + mRealPadding.Top )
 			);
 		} while ( end != lastEnd );
 	}

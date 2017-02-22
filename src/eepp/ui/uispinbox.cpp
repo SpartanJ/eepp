@@ -92,7 +92,7 @@ void UISpinBox::setTheme( UITheme * Theme ) {
 	}
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mSize.setHeight( mInput->getSkinSize().getHeight() );
+		setInternalHeight( mInput->getSkinSize().getHeight() );
 	}
 
 	adjustChilds();

@@ -22,6 +22,8 @@ class UIManager;
 
 class EE_API UIControl {
 	public:
+		static Float PixelDensity;
+
 		typedef cb::Callback1<void, const UIEvent*> UIEventCallback;
 
 		class CreateParams {
@@ -72,6 +74,8 @@ class EE_API UIControl {
 
 		UIControl( const CreateParams& Params );
 
+		UIControl();
+
 		virtual ~UIControl();
 
 		void screenToControl( Vector2i& position ) const;
@@ -96,11 +100,15 @@ class EE_API UIControl {
 
 		const Vector2i& getPosition() const;
 
+		const Vector2i& getRealPosition() const;
+
 		virtual void setSize( const Sizei& size );
 
 		void setSize( const Int32& Width, const Int32& Height );
 
 		const Sizei& getSize();
+
+		const Sizei& getRealSize();
 
 		Recti getRect() const;
 
@@ -140,9 +148,9 @@ class EE_API UIControl {
 
 		void setVerticalAlign( Uint32 valign );
 
-		void setBackgroundFillEnabled( bool enabled );
+		UIBackground * setBackgroundFillEnabled( bool enabled );
 
-		void setBorderEnabled( bool enabled );
+		UIBorder * setBorderEnabled( bool enabled );
 
 		UIControl * getNextControl() const;
 
@@ -246,17 +254,19 @@ class EE_API UIControl {
 		friend class UIWindow;
 
 		Vector2i		mPos;
+		Vector2i		mRealPos;
 		Vector2i		mScreenPos;
 		Vector2f		mScreenPosf;
 		Sizei			mSize;
+		Sizei			mRealSize;
 
 		Uint32			mFlags;
 		UintPtr			mData;
 
-		UIControl *	mParentCtrl;
-		UIControl *	mChild;			//! Pointer to the first child of the control
+		UIControl *		mParentCtrl;
+		UIControl *		mChild;			//! Pointer to the first child of the control
 		UIControl * 	mChildLast;		//! Pointer to the last child added
-		UIControl *	mNext;			//! Pointer to the next child of the father
+		UIControl *		mNext;			//! Pointer to the next child of the father
 		UIControl * 	mPrev;			//! Pointer to the prev child of the father
 		UISkinState *	mSkinState;
 
@@ -267,7 +277,7 @@ class EE_API UIControl {
 		Uint16			mBlend;
 		Uint16			mNumCallBacks;
 
-		Polygon2f 	mPoly;
+		Polygon2f		mPoly;
 		Vector2f 		mCenter;
 
 		UIEventsMap		mEvents;
@@ -386,6 +396,42 @@ class EE_API UIControl {
 		Sizei getSkinSize( UISkin * Skin, const Uint32& State = UISkinState::StateNormal );
 
 		Rectf getRectf();
+
+		void setInternalPosition( const Vector2i& Pos );
+
+		void setInternalSize( const Sizei& size );
+
+		void setInternalWidth( const Int32& width );
+
+		void setInternalHeight( const Int32& height );
+
+		void setInternalPosX( const Int32& x );
+
+		void setInternalPosY( const Int32& y );
+
+		Float pxToDp( Float px );
+
+		Int32 pxToDpI( Float px );
+
+		Float dpToPx( Float dp );
+
+		Int32 dpToPxI( Float dp );
+
+		Sizei dpToPxI(Sizei size);
+
+		Sizei pxToDpI( Sizei size );
+
+		Recti dpToPxI( Recti size);
+
+		Recti pxToDpI( Recti size );
+
+		Sizef dpToPx( Sizef size);
+
+		Sizef pxToDp( Sizef size );
+
+		Sizei dpToPxI( Sizef size);
+
+		Sizei pxToDpI( Sizef size );
 };
 
 }}

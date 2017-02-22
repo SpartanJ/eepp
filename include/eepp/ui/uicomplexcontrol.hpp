@@ -39,6 +39,8 @@ class EE_API UIComplexControl : public UIControlAnim {
 
 		UIComplexControl( const UIComplexControl::CreateParams& Params );
 
+		UIComplexControl();
+
 		virtual ~UIComplexControl();
 
 		virtual Uint32 getType() const;

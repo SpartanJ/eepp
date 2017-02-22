@@ -11,6 +11,13 @@ UIDragable::UIDragable( const UIControl::CreateParams& Params ) :
 	mControlFlags |= UI_CTRL_FLAG_DRAGABLE;
 }
 
+UIDragable::UIDragable() :
+	UIControl(),
+	mDragButton( EE_BUTTON_LMASK )
+{
+	mControlFlags |= UI_CTRL_FLAG_DRAGABLE;
+}
+
 UIDragable::~UIDragable() {
 }
 

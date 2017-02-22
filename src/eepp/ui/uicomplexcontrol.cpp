@@ -15,6 +15,16 @@ UIComplexControl::UIComplexControl( const UIComplexControl::CreateParams& Params
 	setTooltipText( Params.TooltipText );
 }
 
+UIComplexControl::UIComplexControl() :
+	UIControlAnim(),
+	mTooltip( NULL ),
+	mMinControlSize()
+{
+	mControlFlags |= UI_CTRL_FLAG_COMPLEX;
+
+	updateAnchorsDistances();
+}
+
 UIComplexControl::~UIComplexControl() {
 	eeSAFE_DELETE( mTooltip );
 }
@@ -29,7 +39,7 @@ bool UIComplexControl::isType( const Uint32& type ) const {
 
 void UIComplexControl::updateAnchorsDistances() {
 	if ( NULL != mParentCtrl ) {
-		mDistToBorder	= Recti( mPos.x, mPos.y, mParentCtrl->getSize().x - ( mPos.x + mSize.x ), mParentCtrl->getSize().y - ( mPos.y + mSize.y ) );
+		mDistToBorder	= Recti( mPos.x, mPos.y, mParentCtrl->getRealSize().x - ( mPos.x + mSize.x ), mParentCtrl->getRealSize().y - ( mPos.y + mSize.y ) );
 	}
 }
 

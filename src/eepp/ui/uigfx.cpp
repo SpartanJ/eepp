@@ -18,6 +18,16 @@ UIGfx::UIGfx( const UIGfx::CreateParams& Params ) :
 	autoSize();
 }
 
+UIGfx::UIGfx() :
+	UIComplexControl(),
+	mSubTexture( NULL ),
+	mColor(),
+	mRender( RN_NORMAL ),
+	mAlignOffset(0,0)
+{
+	mFlags |= UI_FIT_TO_CONTROL;
+}
+
 UIGfx::~UIGfx() {
 }
 
@@ -33,6 +43,11 @@ void UIGfx::setSubTexture( Graphics::SubTexture * subTexture ) {
 	mSubTexture = subTexture;
 
 	autoSize();
+
+	if ( NULL != mSubTexture && mSize.x == 0 && mSize.y == 0 ) {
+		setSize( dpToPxI( mSubTexture->getDestSize() ) );
+	}
+
 	autoAlign();
 }
 
@@ -112,7 +127,7 @@ const ColorA& UIGfx::getColor() const {
 	return mColor;
 }
 
-void UIGfx::serColor( const ColorA& col ) {
+void UIGfx::setColor( const ColorA& col ) {
 	mColor = col;
 	setAlpha( col.a() );
 }
@@ -130,17 +145,17 @@ void UIGfx::autoAlign() {
 		return;
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.getWidth() / 2 - mSubTexture->getDestSize().x / 2;
+		mAlignOffset.x = mSize.getWidth() / 2 - dpToPxI( mSubTexture->getDestSize().x ) / 2;
 	} else if ( fontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.getWidth() - mSubTexture->getDestSize().x;
+		mAlignOffset.x =  mSize.getWidth() - dpToPxI( mSubTexture->getDestSize().x );
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.getHeight() / 2 - mSubTexture->getDestSize().y / 2;
+		mAlignOffset.y = mSize.getHeight() / 2 - dpToPxI( mSubTexture->getDestSize().y ) / 2;
 	} else if ( fontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.getHeight() - mSubTexture->getDestSize().y;
+		mAlignOffset.y = mSize.getHeight() - dpToPxI( mSubTexture->getDestSize().y );
 	} else {
 		mAlignOffset.y = 0;
 	}

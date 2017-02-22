@@ -100,17 +100,17 @@ void UIPushButton::onSizeChange() {
 		if ( NULL != mTextBox ) {
 			Recti P = makePadding();
 
-			mSize.setHeight( mIcon->getSize().getHeight()	+ P.Top		+ P.Bottom );
+			setInternalHeight( mIcon->getSize().getHeight()	+ P.Top		+ P.Bottom );
 
 			if ( 0 == mTextBox->getText().size() ) {
-				mSize.setWidth	( mIcon->getSize().getWidth()		+ P.Left	+ P.Right );
+				setInternalWidth( mIcon->getSize().getWidth()		+ P.Left	+ P.Right );
 
 				mIcon->center();
 			} else {
-				mSize.setWidth( mIconSpace + mIcon->setPosition(.x + mIcon->getSize().getWidth() + mTextBox->getSize().getWidth() );
+				setInternalWidth( mIconSpace + mIcon->setPosition(.x + mIcon->getSize().getWidth() + mTextBox->getSize().getWidth() );
 
 				if ( mSize.getHeight() < P.Top + P.Bottom + mTextBox->getTextHeight() )
-					mSize.setHeight( P.Top + P.Bottom + mTextBox->getTextHeight() );
+					setInternalHeight( P.Top + P.Bottom + mTextBox->getTextHeight() );
 			}
 		}
 	} else {
@@ -137,7 +137,7 @@ void UIPushButton::doAftersetTheme() {
 	}
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mSize.setHeight( getSkinSize().getHeight() );
+		setInternalHeight( getSkinSize().getHeight() );
 	}
 
 	autoPadding();
@@ -199,9 +199,9 @@ void UIPushButton::onAlphaChange() {
 
 void UIPushButton::onStateChange() {
 	if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-		mTextBox->setColor( mFontOverColor );
+		mTextBox->setFontColor( mFontOverColor );
 	} else {
-		mTextBox->setColor( mFontColor );
+		mTextBox->setFontColor( mFontColor );
 	}
 
 	mTextBox->setAlpha( mAlpha );

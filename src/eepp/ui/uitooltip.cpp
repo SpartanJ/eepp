@@ -154,8 +154,8 @@ void UITooltip::setAlpha( const Float& alpha ) {
 
 void UITooltip::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mSize.setWidth( (int)mTextCache->getTextWidth() + mPadding.Left + mPadding.Right );
-		mSize.setHeight( (int)mTextCache->getTextHeight() + mPadding.Top + mPadding.Bottom );
+		setInternalWidth( (int)mTextCache->getTextWidth() + mPadding.Left + mPadding.Right );
+		setInternalHeight( (int)mTextCache->getTextHeight() + mPadding.Top + mPadding.Bottom );
 	}
 }
 

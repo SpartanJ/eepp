@@ -7,6 +7,8 @@
 
 namespace EE { namespace UI {
 
+Float UIControl::PixelDensity = 1;
+
 UIControl::UIControl( const CreateParams& Params ) :
 	mPos( Params.Pos ),
 	mSize( Params.Size ),
@@ -41,6 +43,33 @@ UIControl::UIControl( const CreateParams& Params ) :
 
 	updateScreenPos();
 	updateQuad();
+}
+
+UIControl::UIControl() :
+	mPos(),
+	mSize(),
+	mFlags( UI_CONTROL_DEFAULT_FLAGS ),
+	mData( 0 ),
+	mParentCtrl( NULL ),
+	mChild( NULL ),
+	mChildLast( NULL ),
+	mNext( NULL ),
+	mPrev( NULL ),
+	mSkinState( NULL ),
+	mBackground( NULL ),
+	mBorder( NULL ),
+	mControlFlags( 0 ),
+	mBlend( ALPHA_NORMAL ),
+	mNumCallBacks( 0 ),
+	mVisible( false ),
+	mEnabled( false )
+{
+	if ( NULL == mParentCtrl && NULL != UIManager::instance()->getMainControl() ) {
+		mParentCtrl = UIManager::instance()->getMainControl();
+	}
+
+	if ( NULL != mParentCtrl )
+		mParentCtrl->childAdd( this );
 }
 
 UIControl::~UIControl() {
@@ -118,27 +147,38 @@ bool UIControl::isInside( const Vector2i& Pos ) const {
 	return ( Pos.x >= 0 && Pos.y >= 0 && Pos.x < mSize.getWidth() && Pos.y < mSize.getHeight() );
 }
 
-void UIControl::setPosition( const Vector2i& Pos ) {
+void UIControl::setInternalPosition( const Vector2i& Pos ) {
 	mPos = Pos;
+	mRealPos = Vector2i( Pos.x * PixelDensity, Pos.y * PixelDensity );
+}
 
+void UIControl::setPosition( const Vector2i& Pos ) {
+	setInternalPosition( Pos );
 	onPositionChange();
 }
 
 void UIControl::setPosition( const Int32& x, const Int32& y ) {
-	mPos = Vector2i( x, y );
-
-	onPositionChange();
+	setPosition( Vector2i( x, y ) );
 }
 
 const Vector2i& UIControl::getPosition() const {
 	return mPos;
 }
 
+const Vector2i &UIControl::getRealPosition() const {
+	return mRealPos;
+}
+
+void UIControl::setInternalSize( const Sizei& size ) {
+	mSize = size;
+	mRealSize = Sizei( size.x * PixelDensity, size.y * PixelDensity );
+}
+
 void UIControl::setSize( const Sizei& Size ) {
 	if ( Size != mSize ) {
 		Vector2i sizeChange( Size.x - mSize.x, Size.y - mSize.y );
 
-		mSize = Size;
+		setInternalSize( Size );
 
 		onSizeChange();
 
@@ -158,6 +198,26 @@ Recti UIControl::getRect() const {
 
 const Sizei& UIControl::getSize() {
 	return mSize;
+}
+
+const Sizei& UIControl::getRealSize() {
+	return mRealSize;
+}
+
+void UIControl::setInternalWidth( const Int32& width ) {
+	setInternalSize( Sizei( width, mSize.y ) );
+}
+
+void UIControl::setInternalHeight( const Int32& height ) {
+	setInternalSize( Sizei( mSize.x, height ) );
+}
+
+void UIControl::setInternalPosX( const Int32& x ) {
+	setInternalPosition( Vector2i( x, mPos.y ) );
+}
+
+void UIControl::setInternalPosY( const Int32& y ) {
+	setInternalPosition( Vector2i( mPos.x, y ) );
 }
 
 void UIControl::setVisible( const bool& visible ) {
@@ -415,15 +475,17 @@ void UIControl::setVerticalAlign( Uint32 valign ) {
 	mFlags |= valign & UI_VALIGN_MASK;
 }
 
-void UIControl::setBackgroundFillEnabled( bool enabled ) {
+UIBackground * UIControl::setBackgroundFillEnabled( bool enabled ) {
 	writeFlag( UI_FILL_BACKGROUND, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBackground ) {
 		mBackground = eeNew( UIBackground, () );
 	}
+
+	return mBackground;
 }
 
-void UIControl::setBorderEnabled( bool enabled ) {
+UIBorder * UIControl::setBorderEnabled( bool enabled ) {
 	writeFlag( UI_BORDER, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBorder ) {
@@ -433,6 +495,8 @@ void UIControl::setBorderEnabled( bool enabled ) {
 			mBackground = eeNew( UIBackground, () );
 		}
 	}
+
+	return mBorder;
 }
 
 UIControl * UIControl::getNextControl() const {
@@ -464,6 +528,13 @@ const Uint32& UIControl::getFlags() const {
 
 void UIControl::setFlags( const Uint32& flags ) {
 	mFlags |= flags;
+
+
+	if ( NULL == mBackground && ( mFlags & UI_FILL_BACKGROUND ) )
+		mBackground = eeNew( UIBackground, () );
+
+	if ( NULL == mBorder && ( mFlags & UI_BORDER ) )
+		mBorder = eeNew( UIBorder, () );
 }
 
 void UIControl::setBlendMode( const EE_BLEND_MODE& blend ) {
@@ -523,6 +594,54 @@ void UIControl::onSizeChange() {
 
 Rectf UIControl::getRectf() {
 	return Rectf( mScreenPosf, Sizef( (Float)mSize.getWidth(), (Float)mSize.getHeight() ) );
+}
+
+Float UIControl::dpToPx( Float dp ) {
+	return dp * 1;
+}
+
+Int32 UIControl::dpToPxI( Float dp ) {
+	return (Int32)dpToPx( dp );
+}
+
+Float UIControl::pxToDp( Float px ) {
+	return px / 1;
+}
+
+Int32 UIControl::pxToDpI( Float px ) {
+	return (Int32)pxToDp( px );
+}
+
+Sizei UIControl::dpToPxI( Sizei size ) {
+	return Sizei( dpToPxI( size.x ), dpToPxI( size.y ) );
+}
+
+Sizei UIControl::pxToDpI( Sizei size ) {
+	return Sizei( pxToDpI( size.x ), pxToDpI( size.y ) );
+}
+
+Recti UIControl::dpToPxI( Recti rect ) {
+	return rect * 1;
+}
+
+Recti UIControl::pxToDpI( Recti rect ) {
+	return rect / 1;
+}
+
+Sizef UIControl::dpToPx( Sizef size ) {
+	return size * 1.f;
+}
+
+Sizef UIControl::pxToDp( Sizef size ) {
+	return size * 1.f;
+}
+
+Sizei UIControl::dpToPxI( Sizef size ) {
+	return Sizei( dpToPxI( size.x ), dpToPxI( size.y ) );
+}
+
+Sizei UIControl::pxToDpI( Sizef size ) {
+	return Sizei( pxToDpI( size.x ), pxToDpI( size.y ) );
 }
 
 void UIControl::backgroundDraw() {

@@ -10,6 +10,8 @@ class EE_API UIRadioButton : public UITextBox {
 	public:
 		UIRadioButton( const UITextBox::CreateParams& Params );
 
+		UIRadioButton();
+
 		virtual ~UIRadioButton();
 
 		virtual Uint32 getType() const;
@@ -27,11 +29,16 @@ class EE_API UIRadioButton : public UITextBox {
 		UIControlAnim * getActiveButton() const;
 
 		UIControlAnim * getInactiveButton() const;
+
+		Int32 getTextSeparation() const;
+
+		void setTextSeparation(const Int32 & textSeparation);
 	protected:
 		UIControlAnim *	mActiveButton;
 		UIControlAnim *	mInactiveButton;
 		bool			mActive;
 		Uint32			mLastTick;
+		Int32			mTextSeparation;
 
 		virtual void onSizeChange();
 

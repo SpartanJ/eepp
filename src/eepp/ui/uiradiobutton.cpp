@@ -9,7 +9,8 @@ UIRadioButton::UIRadioButton( const UITextBox::CreateParams& Params ) :
 	UITextBox( Params ),
 	mActiveButton(NULL),
 	mInactiveButton(NULL),
-	mActive( false )
+	mActive( false ),
+	mTextSeparation( 4 )
 {
 	UIControlAnim::CreateParams ButtonParams( Params );
 
@@ -28,6 +29,32 @@ UIRadioButton::UIRadioButton( const UITextBox::CreateParams& Params ) :
 	setPadding( Recti(0,0,0,0) );
 
 	autoActivate();
+
+	applyDefaultTheme();
+}
+
+UIRadioButton::UIRadioButton() :
+	UITextBox(),
+	mActiveButton(NULL),
+	mInactiveButton(NULL),
+	mActive( false ),
+	mTextSeparation( dpToPxI( 4 ) )
+{
+	mActiveButton 	= eeNew( UIControlAnim, () );
+	mActiveButton->setVisible( false );
+	mActiveButton->setEnabled( true );
+	mActiveButton->setParent( this );
+	mActiveButton->setPosition( 0, 0 );
+	mActiveButton->setSize( dpToPxI( 16 ), dpToPxI( 16 ) );
+
+	mInactiveButton = eeNew( UIControlAnim, () );
+	mInactiveButton->setVisible( true );
+	mInactiveButton->setEnabled( true );
+	mInactiveButton->setParent( this );
+	mInactiveButton->setPosition( 0, 0 );
+	mInactiveButton->setSize( dpToPxI( 16 ), dpToPxI( 16 ) );
+
+	setPadding( Recti(0,0,0,0) );
 
 	applyDefaultTheme();
 }
@@ -56,7 +83,7 @@ void UIRadioButton::setTheme( UITheme * Theme ) {
 		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mActiveButton->setSize( tSubTexture->getRealSize() );
+			mActiveButton->setSize( dpToPxI( tSubTexture->getRealSize() ) );
 			mActiveButton->centerVertical();
 		}
 	}
@@ -67,7 +94,7 @@ void UIRadioButton::setTheme( UITheme * Theme ) {
 		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mInactiveButton->setSize( tSubTexture->getRealSize() );
+			mInactiveButton->setSize( dpToPxI( tSubTexture->getRealSize() ) );
 			mInactiveButton->centerVertical();
 		}
 	}
@@ -82,7 +109,7 @@ void UIRadioButton::autoSize() {
 		mActiveButton->centerVertical();
 		mInactiveButton->centerVertical();
 
-		mSize.setWidth( (int)mTextCache->getTextWidth() + mActiveButton->getSize().getWidth() );
+		setInternalWidth( (int)mTextCache->getTextWidth() + mActiveButton->getSize().getWidth() );
 	}
 }
 
@@ -202,8 +229,12 @@ const bool& UIRadioButton::isActive() const {
 }
 
 void UIRadioButton::setPadding( const Recti& padding ) {
-	mPadding = padding;
-	mPadding.Left = mPadding.Left + mActiveButton->getSize().getWidth();
+	UITextBox::setPadding( padding );
+
+	mActiveButton->setPosition( mPadding.Left, mActiveButton->getPosition().y );
+	mInactiveButton->setPosition( mPadding.Left, mInactiveButton->getPosition().y );
+
+	mRealPadding.Left = mActiveButton->getPosition().x + mActiveButton->getSize().getWidth() + dpToPxI( mTextSeparation  );
 }
 
 UIControlAnim * UIRadioButton::getActiveButton() const {
@@ -212,6 +243,16 @@ UIControlAnim * UIRadioButton::getActiveButton() const {
 
 UIControlAnim * UIRadioButton::getInactiveButton() const {
 	return mInactiveButton;
+}
+
+Int32 UIRadioButton::getTextSeparation() const {
+	return mTextSeparation;
+}
+
+void UIRadioButton::setTextSeparation(const Int32 & textSeparation) {
+	mTextSeparation = textSeparation;
+
+	setPadding( getPadding() );
 }
 
 Uint32 UIRadioButton::onKeyDown( const UIEventKey& Event ) {

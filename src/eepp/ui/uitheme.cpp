@@ -319,9 +319,9 @@ bool UITheme::searchFilesOfElement( Graphics::TextureAtlas * SG, const std::stri
 	return Found;
 }
 
-UITheme::UITheme( const std::string& Name, const std::string& Abbr, Graphics::Font * defaultFont ) :
+UITheme::UITheme(const std::string& name, const std::string& Abbr, Graphics::Font * defaultFont ) :
 	ResourceManager<UISkin> ( false ),
-	mName( Name ),
+	mName( name ),
 	mNameHash( String::hash( mName ) ),
 	mAbbr( Abbr ),
 	mTextureAtlas( NULL ),

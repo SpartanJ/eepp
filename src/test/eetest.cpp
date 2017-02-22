@@ -254,6 +254,8 @@ void EETest::createUI() {
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
+	UIControl::PixelDensity = 1;
+
 	UIManager::instance()->init(); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
 	//mTheme = UITheme::LoadFromPath( eeNew( UIdefaultTheme, ( "uitheme", "uitheme" ) ), MyPath + "uitheme/" );
@@ -266,7 +268,7 @@ void EETest::createUI() {
 	UIThemeManager::instance()->setDefaultEffectsEnabled( true );
 	UIThemeManager::instance()->setDefaultFont( TTF );
 	UIThemeManager::instance()->setDefaultTheme( "uitheme" );
-
+	/**/
 	UIControl::CreateParams Params( UIManager::instance()->getMainControl(), Vector2i(0,0), Sizei( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
 	Params.Border.setWidth( 2 );
@@ -574,6 +576,30 @@ void EETest::createUI() {
 	C = reinterpret_cast<UIControlAnim*> ( C->getParent() );
 
 	eePRINTL( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
+	/**/
+
+	UIRadioButton * ctrl = eeNew( UIRadioButton, () );
+	ctrl->setPosition( 100, 100 );
+	ctrl->setSize( 320, 32 );
+	ctrl->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
+	ctrl->setBorderEnabled( true )->setColor( 0x66666666 );
+	ctrl->setVisible( true );
+	ctrl->setEnabled( true );
+	ctrl->setText( "Happy TextBox :)" );
+	ctrl->setFontColor( 0x000000FF );
+
+	UIGfx * gfx = eeNew( UIGfx, () );
+	gfx->setPosition( 100, 132 );
+	gfx->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
+	gfx->setSubTexture( mTheme->getIconByName( "ok" ) );
+	gfx->setVisible( true );
+	gfx->setEnabled( true );
+
+	UISlider * slider = eeNew( UISlider, () );
+	slider->setPosition( 50, 100 );
+	slider->setSize( 32, 100 );
+	slider->setVisible( true );
+	slider->setEnabled( true );
 }
 
 void EETest::createMapEditor() {

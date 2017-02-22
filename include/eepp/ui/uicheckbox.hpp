@@ -10,6 +10,8 @@ class EE_API UICheckBox : public UITextBox {
 	public:
 		UICheckBox( const UITextBox::CreateParams& Params );
 
+		UICheckBox();
+
 		virtual ~UICheckBox();
 
 		virtual Uint32 getType() const;
@@ -27,11 +29,16 @@ class EE_API UICheckBox : public UITextBox {
 		UIControlAnim * getActiveButton() const;
 
 		UIControlAnim * getInactiveButton() const;
+
+		Int32 getTextSeparation() const;
+
+		void setTextSeparation(const Int32 & textSeparation);
 	protected:
 		UIControlAnim *	mActiveButton;
 		UIControlAnim *	mInactiveButton;
 		bool			mActive;
 		Uint32			mLastTick;
+		Int32			mTextSeparation;
 
 		virtual void onSizeChange();
 

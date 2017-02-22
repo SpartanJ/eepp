@@ -9,6 +9,8 @@ class EE_API UISliderButton : public UIControlAnim {
 	public:
 		UISliderButton( const UIControlAnim::CreateParams& Params );
 
+		UISliderButton();
+
 		virtual ~UISliderButton();
 	protected:
 		virtual void onPositionChange();

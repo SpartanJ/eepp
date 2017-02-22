@@ -58,7 +58,9 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	Button->setText( ButtonText );
 	Button->setVisible( true );
 	Button->setEnabled( true );
-	Button->setThemeControl( mSkinState->getSkin()->getTheme(), "winmenubutton" );
+
+	if ( NULL != mSkinState && NULL != mSkinState->getSkin() )
+		Button->setThemeControl( mSkinState->getSkin()->getTheme(), "winmenubutton" );
 
 	Menu->setVisible( false );
 	Menu->setEnabled( false );

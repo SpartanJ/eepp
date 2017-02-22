@@ -60,7 +60,7 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		void addThemeIcon( const std::string& Icon );
 
-		UITheme( const std::string& getName, const std::string& abbr, Graphics::Font * defaultFont = NULL );
+		UITheme( const std::string& name, const std::string& abbr, Graphics::Font * defaultFont = NULL );
 
 		virtual ~UITheme();
 

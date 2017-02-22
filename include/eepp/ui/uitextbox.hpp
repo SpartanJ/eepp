@@ -38,6 +38,8 @@ class EE_API UITextBox : public UIComplexControl {
 
 		UITextBox( const UITextBox::CreateParams& Params );
 
+		UITextBox();
+
 		virtual ~UITextBox();
 
 		virtual Uint32 getType() const;
@@ -56,13 +58,13 @@ class EE_API UITextBox : public UIComplexControl {
 
 		virtual void setText( const String& text );
 
-		const ColorA& getColor() const;
+		const ColorA& getFontColor() const;
 
-		void setColor( const ColorA& color );
+		void setFontColor( const ColorA& color );
 
-		const ColorA& getShadowColor() const;
+		const ColorA& getFontShadowColor() const;
 
-		void setShadowColor( const ColorA& color );
+		void setFontShadowColor( const ColorA& color );
 
 		const ColorA& getSelectionBackColor() const;
 
@@ -95,6 +97,7 @@ class EE_API UITextBox : public UIComplexControl {
 		ColorA		mFontSelectionBackColor;
 		Vector2f 		mAlignOffset;
 		Recti			mPadding;
+		Recti			mRealPadding;
 		Int32			mSelCurInit;
 		Int32			mSelCurEnd;
 

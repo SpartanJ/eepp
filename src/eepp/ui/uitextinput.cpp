@@ -24,6 +24,21 @@ UITextInput::UITextInput( const UITextInput::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
+UITextInput::UITextInput() :
+	UITextBox(),
+	mCursorPos(0),
+	mAllowEditing( true ),
+	mShowingWait( true )
+{
+	mTextBuffer.start();
+	mTextBuffer.setActive( false );
+	mTextBuffer.setFreeEditing( true );
+	mTextBuffer.setTextSelectionEnabled( isTextSelectionEnabled() );
+	mTextBuffer.setReturnCallback( cb::Make0( this, &UITextInput::privOnPressEnter ) );
+
+	applyDefaultTheme();
+}
+
 UITextInput::~UITextInput() {
 }
 

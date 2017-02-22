@@ -106,31 +106,49 @@ tRECT<T>& operator -=(tRECT<T>& R, T X) {
 	return R;
 }
 
-template <typename T>
-tRECT<T> operator *(const tRECT<T>& R, T X) {
-	return tRECT<T>(R.Left * X, R.Top * X, R.Right * X, R.Bottom * X);
+template <typename T, typename Y>
+tRECT<T> operator *(const tRECT<T>& R, Y X) {
+	return tRECT<T>((T)((Y)R.Left * X), (T)((Y)R.Top * X), (T)((Y)R.Right * X), (T)((Y)R.Bottom * X));
 }
 
-template <typename T>
-tRECT<T>& operator *=(tRECT<T>& R, T X) {
-	R.Left *= X;
-	R.Top *= X;
-	R.Right *= X;
-	R.Bottom *= X;
+template <typename T, typename Y>
+tRECT<T>& operator *=(tRECT<T>& R, Y X) {
+	R.Left = (T)((Y)R.Left * X );
+	R.Top = (T)((Y)R.Top * X );
+	R.Right = (T)((Y)R.Right * X );
+	R.Bottom = (T)((Y)R.Bottom * X );
 	return R;
 }
 
-template <typename T>
-tRECT<T> operator /(const tRECT<T>& R, T X) {
-	return tRECT<T>(R.Left / X, R.Top / X, R.Right / X, R.Bottom / X);
+template <typename T, typename Y>
+tRECT<T>& operator *(tRECT<T>& R, Y X) {
+	R.Left = (T)((Y)R.Left * X );
+	R.Top = (T)((Y)R.Top * X );
+	R.Right = (T)((Y)R.Right * X );
+	R.Bottom = (T)((Y)R.Bottom * X );
+	return R;
 }
 
-template <typename T>
-tRECT<T>& operator /=(tRECT<T>& R, T X) {
-	R.Left /= X;
-	R.Top /= X;
-	R.Right /= X;
-	R.Bottom /= X;
+template <typename T, typename Y>
+tRECT<T> operator /(const tRECT<T>& R, Y X) {
+	return tRECT<T>((T)((Y)R.Left / X), (T)((Y)R.Top / X), (T)((Y)R.Right / X), (T)((Y)R.Bottom / X));
+}
+
+template <typename T, typename Y>
+tRECT<T>& operator /=(tRECT<T>& R, Y X) {
+	R.Left = (T)((Y)R.Left / X );
+	R.Top = (T)((Y)R.Top / X );
+	R.Right = (T)((Y)R.Right / X );
+	R.Bottom = (T)((Y)R.Bottom / X );
+	return R;
+}
+
+template <typename T, typename Y>
+tRECT<T>& operator /(tRECT<T>& R, Y X) {
+	R.Left = (T)((Y)R.Left / X );
+	R.Top = (T)((Y)R.Top / X );
+	R.Right = (T)((Y)R.Right / X );
+	R.Bottom = (T)((Y)R.Bottom / X );
 	return R;
 }
 
