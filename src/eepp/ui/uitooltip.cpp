@@ -154,14 +154,16 @@ void UITooltip::setAlpha( const Float& alpha ) {
 
 void UITooltip::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		setInternalWidth( (int)mTextCache->getTextWidth() + mPadding.Left + mPadding.Right );
-		setInternalHeight( (int)mTextCache->getTextHeight() + mPadding.Top + mPadding.Bottom );
+		setPixelsSize(
+			(int)mTextCache->getTextWidth() + mPadding.Left + mPadding.Right,
+			(int)mTextCache->getTextHeight() + mPadding.Top + mPadding.Bottom
+		);
 	}
 }
 
 void UITooltip::autoAlign() {
-	Uint32 Width	= mSize.getWidth()		- mPadding.Left - mPadding.Right;
-	Uint32 Height	= mSize.getHeight()	- mPadding.Top	- mPadding.Bottom;
+	Uint32 Width	= mRealSize.getWidth()	- mPadding.Left - mPadding.Right;
+	Uint32 Height	= mRealSize.getHeight()	- mPadding.Top	- mPadding.Bottom;
 
 	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
