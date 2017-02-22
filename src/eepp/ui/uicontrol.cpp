@@ -4,14 +4,19 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/subtexture.hpp>
 #include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/window/engine.hpp>
 
 namespace EE { namespace UI {
 
-Float UIControl::PixelDensity = 1;
+Float UIControl::getPixelDensity() {
+	return Engine::instance()->getPixelDensity();
+}
 
 UIControl::UIControl( const CreateParams& Params ) :
 	mPos( Params.Pos ),
+	mRealPos( Params.Pos.x * getPixelDensity(), Params.Pos.y * getPixelDensity() ),
 	mSize( Params.Size ),
+	mRealSize( dpToPxI( Params.Size ) ),
 	mFlags( Params.Flags ),
 	mData( 0 ),
 	mParentCtrl( Params.ParentCtrl ),
@@ -94,11 +99,11 @@ UIControl::~UIControl() {
 void UIControl::screenToControl( Vector2i& Pos ) const {
 	UIControl * ParentLoop = mParentCtrl;
 
-	Pos.x -= mPos.x;
-	Pos.y -= mPos.y;
+	Pos.x -= mRealPos.x;
+	Pos.y -= mRealPos.y;
 
 	while ( NULL != ParentLoop ) {
-		const Vector2i& ParentPos = ParentLoop->getPosition();
+		const Vector2i& ParentPos = ParentLoop->getRealPosition();
 
 		Pos.x -= ParentPos.x;
 		Pos.y -= ParentPos.y;
@@ -111,7 +116,7 @@ void UIControl::controlToScreen( Vector2i& Pos ) const {
 	UIControl * ParentLoop = mParentCtrl;
 
 	while ( NULL != ParentLoop ) {
-		const Vector2i& ParentPos = ParentLoop->getPosition();
+		const Vector2i& ParentPos = ParentLoop->getRealPosition();
 
 		Pos.x += ParentPos.x;
 		Pos.y += ParentPos.y;
@@ -143,13 +148,9 @@ Uint32 UIControl::onMessage( const UIMessage * Msg ) {
 	return 0;
 }
 
-bool UIControl::isInside( const Vector2i& Pos ) const {
-	return ( Pos.x >= 0 && Pos.y >= 0 && Pos.x < mSize.getWidth() && Pos.y < mSize.getHeight() );
-}
-
 void UIControl::setInternalPosition( const Vector2i& Pos ) {
 	mPos = Pos;
-	mRealPos = Vector2i( Pos.x * PixelDensity, Pos.y * PixelDensity );
+	mRealPos = Vector2i( Pos.x * getPixelDensity(), Pos.y * getPixelDensity() );
 }
 
 void UIControl::setPosition( const Vector2i& Pos ) {
@@ -171,7 +172,7 @@ const Vector2i &UIControl::getRealPosition() const {
 
 void UIControl::setInternalSize( const Sizei& size ) {
 	mSize = size;
-	mRealSize = Sizei( size.x * PixelDensity, size.y * PixelDensity );
+	mRealSize = Sizei( size.x * getPixelDensity(), size.y * getPixelDensity() );
 }
 
 void UIControl::setSize( const Sizei& Size ) {
@@ -192,6 +193,14 @@ void UIControl::setSize( const Int32& Width, const Int32& Height ) {
 	setSize( Sizei( Width, Height ) );
 }
 
+void UIControl::setPixelsSize( const Sizei & size ) {
+	setSize( pxToDpI( size ) );
+}
+
+void UIControl::setPixelsSize( const Int32& x, const Int32& y ) {
+	setPixelsSize( Sizei( x, y ) );
+}
+
 Recti UIControl::getRect() const {
 	return Recti( mPos, mSize );
 }
@@ -205,11 +214,11 @@ const Sizei& UIControl::getRealSize() {
 }
 
 void UIControl::setInternalWidth( const Int32& width ) {
-	setInternalSize( Sizei( width, mSize.y ) );
+	setPixelsSize( Sizei( width, mRealSize.y ) );
 }
 
 void UIControl::setInternalHeight( const Int32& height ) {
-	setInternalSize( Sizei( mSize.x, height ) );
+	setPixelsSize( Sizei( mRealSize.x, height ) );
 }
 
 void UIControl::setInternalPosX( const Int32& x ) {
@@ -593,11 +602,11 @@ void UIControl::onSizeChange() {
 }
 
 Rectf UIControl::getRectf() {
-	return Rectf( mScreenPosf, Sizef( (Float)mSize.getWidth(), (Float)mSize.getHeight() ) );
+	return Rectf( mScreenPosf, Sizef( (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight() ) );
 }
 
 Float UIControl::dpToPx( Float dp ) {
-	return dp * 1;
+	return dp * getPixelDensity();
 }
 
 Int32 UIControl::dpToPxI( Float dp ) {
@@ -605,7 +614,7 @@ Int32 UIControl::dpToPxI( Float dp ) {
 }
 
 Float UIControl::pxToDp( Float px ) {
-	return px / 1;
+	return px / getPixelDensity();
 }
 
 Int32 UIControl::pxToDpI( Float px ) {
@@ -621,19 +630,27 @@ Sizei UIControl::pxToDpI( Sizei size ) {
 }
 
 Recti UIControl::dpToPxI( Recti rect ) {
-	return rect * 1;
+	return rect * getPixelDensity();
 }
 
 Recti UIControl::pxToDpI( Recti rect ) {
-	return rect / 1;
+	return rect / getPixelDensity();
+}
+
+Rectf UIControl::dpToPx( Rectf rect ) {
+	return rect * getPixelDensity();
+}
+
+Rectf UIControl::pxToDp( Rectf rect ) {
+	return rect / getPixelDensity();
 }
 
 Sizef UIControl::dpToPx( Sizef size ) {
-	return size * 1.f;
+	return size * getPixelDensity();
 }
 
 Sizef UIControl::pxToDp( Sizef size ) {
-	return size * 1.f;
+	return size * getPixelDensity();
 }
 
 Sizei UIControl::dpToPxI( Sizef size ) {
@@ -674,7 +691,7 @@ void UIControl::borderDraw() {
 
 	//! @TODO: Check why was this +0.1f -0.1f?
 	if ( mFlags & UI_CLIP_ENABLE ) {
-		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.getWidth() - 0.1f, (Float)mSize.getHeight() - 0.1f ) );
+		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mRealSize.getWidth() - 0.1f, (Float)mRealSize.getHeight() - 0.1f ) );
 
 		if ( mBackground->getCorners() ) {
 			P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->getCorners() );
@@ -729,9 +746,9 @@ void UIControl::internalDraw() {
 void UIControl::clipMe() {
 	if ( mFlags & UI_CLIP_ENABLE ) {
 		if ( mFlags & UI_BORDER )
-			UIManager::instance()->clipEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() + 1 );
+			UIManager::instance()->clipEnable( mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() + 1 );
 		else
-			UIManager::instance()->clipEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
+			UIManager::instance()->clipEnable( mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() );
 	}
 }
 
@@ -994,7 +1011,7 @@ const Vector2f& UIControl::getPolygonCenter() const {
 }
 
 void UIControl::updateQuad() {
-	mPoly 	= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mSize.getWidth(), mScreenPosf.y + mSize.getHeight() ) );
+	mPoly 	= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mRealSize.getWidth(), mScreenPosf.y + mRealSize.getHeight() ) );
 
 	UIControl * tParent = getParent();
 
@@ -1011,7 +1028,7 @@ void UIControl::updateQuad() {
 }
 
 void UIControl::updateCenter() {
-	mCenter = Vector2f( mScreenPosf.x + (Float)mSize.getWidth() * 0.5f, mScreenPosf.y + (Float)mSize.getHeight() * 0.5f );
+	mCenter = Vector2f( mScreenPosf.x + (Float)mRealSize.getWidth() * 0.5f, mScreenPosf.y + (Float)mRealSize.getHeight() * 0.5f );
 }
 
 Time UIControl::getElapsed() {
@@ -1160,7 +1177,7 @@ void UIControl::updateChildsScreenPos() {
 }
 
 void UIControl::updateScreenPos() {
-	Vector2i Pos( mPos );
+	Vector2i Pos( mRealPos );
 
 	controlToScreen( Pos );
 
@@ -1195,7 +1212,7 @@ void UIControl::applyDefaultTheme() {
 }
 
 Recti UIControl::getScreenRect() {
-	return Recti( mScreenPos, mSize );
+	return Recti( mScreenPos, mRealSize );
 }
 
 Recti UIControl::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom, bool SkipFlags ) {
@@ -1262,49 +1279,19 @@ void UIControl::onParentSizeChange( const Vector2i& SizeChange ) {
 }
 
 Sizei UIControl::getSkinSize( UISkin * Skin, const Uint32& State ) {
-	Sizei		tSize;
-
 	if ( NULL != Skin ) {
-		SubTexture * tSubTexture = Skin->getSubTexture( State );
-
-		if ( NULL != tSubTexture ) {
-			tSize = tSubTexture->getRealSize();
-		}
-
-		if ( Skin->getType() == UISkin::SkinComplex ) {
-			UISkinComplex * SkinC = reinterpret_cast<UISkinComplex*> ( Skin );
-
-			tSubTexture = SkinC->getSubTextureSide( State, UISkinComplex::Up );
-
-			if ( NULL != tSubTexture ) {
-				tSize.y += tSubTexture->getRealSize().getHeight();
-			}
-
-			tSubTexture = SkinC->getSubTextureSide( State, UISkinComplex::Down );
-
-			if ( NULL != tSubTexture ) {
-				tSize.y += tSubTexture->getRealSize().getHeight();
-			}
-
-			tSubTexture = SkinC->getSubTextureSide( State, UISkinComplex::Left );
-
-			if ( NULL != tSubTexture ) {
-				tSize.x += tSubTexture->getRealSize().getWidth();
-			}
-
-			tSubTexture = SkinC->getSubTextureSide( State, UISkinComplex::Right );
-
-			if ( NULL != tSubTexture ) {
-				tSize.x += tSubTexture->getRealSize().getWidth();
-			}
-		}
+		return Skin->getSize( State );
 	}
 
-	return tSize;
+	return Sizei::Zero;
 }
 
 Sizei UIControl::getSkinSize() {
-	return getSkinSize( getSkin(), UISkinState::StateNormal );
+	if ( NULL != getSkin() ) {
+		return getSkin()->getSize();
+	}
+
+	return Sizei::Zero;
 }
 
 UIControl * UIControl::getNextComplexControl() {
@@ -1374,7 +1361,7 @@ void UIControl::worldToControl( Vector2i& pos ) const {
 	for ( std::list<UIControl*>::iterator it = parents.begin(); it != parents.end(); it++ ) {
 		UIControl * tParent	= (*it);
 		UIControlAnim * tP		= tParent->isAnimated() ? reinterpret_cast<UIControlAnim *> ( tParent ) : NULL;
-		Vector2f pPos			( tParent->mPos.x * scale.x			, tParent->mPos.y * scale.y			);
+		Vector2f pPos			( tParent->mRealPos.x * scale.x			, tParent->mRealPos.y * scale.y			);
 		Vector2f Center;
 
 		if ( NULL != tP && 1.f != tP->getScale() ) {
@@ -1393,10 +1380,13 @@ void UIControl::worldToControl( Vector2i& pos ) const {
 	}
 
 	pos = Vector2i( Pos.x / scale.x, Pos.y / scale.y );
+
+	pos.x = (Int32)((Float)pos.x / getPixelDensity());
+	pos.y = (Int32)((Float)pos.y / getPixelDensity());
 }
 
 void UIControl::controlToWorld( Vector2i& pos ) const {
-	Vector2f Pos( pos.x, pos.y );
+	Vector2f Pos( (Float)pos.x * getPixelDensity(), (Float)pos.y * getPixelDensity() );
 
 	std::list<UIControl*> parents;
 
@@ -1412,7 +1402,7 @@ void UIControl::controlToWorld( Vector2i& pos ) const {
 	for ( std::list<UIControl*>::iterator it = parents.begin(); it != parents.end(); it++ ) {
 		UIControl * tParent	= (*it);
 		UIControlAnim * tP		= tParent->isAnimated() ? reinterpret_cast<UIControlAnim *> ( tParent ) : NULL;
-		Vector2f pPos			( tParent->mPos.x					, tParent->mPos.y					);
+		Vector2f pPos			( tParent->mRealPos.x					, tParent->mRealPos.y					);
 
 		Pos += pPos;
 

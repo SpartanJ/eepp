@@ -39,7 +39,7 @@ bool UIComplexControl::isType( const Uint32& type ) const {
 
 void UIComplexControl::updateAnchorsDistances() {
 	if ( NULL != mParentCtrl ) {
-		mDistToBorder	= Recti( mPos.x, mPos.y, mParentCtrl->getRealSize().x - ( mPos.x + mSize.x ), mParentCtrl->getRealSize().y - ( mPos.y + mSize.y ) );
+		mDistToBorder	= Recti( mRealPos.x, mRealPos.y, mParentCtrl->getRealSize().x - ( mRealPos.x + mRealSize.x ), mParentCtrl->getRealSize().y - ( mRealPos.y + mRealSize.y ) );
 	}
 }
 
@@ -50,17 +50,17 @@ void UIComplexControl::update() {
 			Pos.x += UIThemeManager::instance()->getCursorSize().x;
 			Pos.y += UIThemeManager::instance()->getCursorSize().y;
 
-			if ( Pos.x + mTooltip->getSize().getWidth() > UIManager::instance()->getMainControl()->getSize().getWidth() ) {
-				Pos.x = UIManager::instance()->getMousePos().x - mTooltip->getSize().getWidth();
+			if ( Pos.x + mTooltip->getRealSize().getWidth() > UIManager::instance()->getMainControl()->getRealSize().getWidth() ) {
+				Pos.x = UIManager::instance()->getMousePos().x - mTooltip->getRealSize().getWidth();
 			}
 
-			if ( Pos.y + mTooltip->getSize().getHeight() > UIManager::instance()->getMainControl()->getSize().getHeight() ) {
-				Pos.y = UIManager::instance()->getMousePos().y - mTooltip->getSize().getHeight();
+			if ( Pos.y + mTooltip->getRealSize().getHeight() > UIManager::instance()->getMainControl()->getRealSize().getHeight() ) {
+				Pos.y = UIManager::instance()->getMousePos().y - mTooltip->getRealSize().getHeight();
 			}
 
 			if ( Time::Zero == UIThemeManager::instance()->getTooltipTimeToShow() ) {
 				if ( !mTooltip->isVisible() || UIThemeManager::instance()->getTooltipFollowMouse() )
-					mTooltip->setPosition( Pos );
+					mTooltip->setPosition( pxToDpI( Pos ) );
 
 				mTooltip->show();
 			} else {
@@ -70,7 +70,7 @@ void UIComplexControl::update() {
 
 				if ( mTooltip->getTooltipTime() >= UIThemeManager::instance()->getTooltipTimeToShow() ) {
 					if ( mTooltip->getTooltipTime().asMilliseconds() != -1.f ) {
-						mTooltip->setPosition( Pos );
+						mTooltip->setPosition( pxToDpI( Pos ) );
 
 						mTooltip->show();
 
@@ -80,7 +80,7 @@ void UIComplexControl::update() {
 			}
 
 			if ( UIThemeManager::instance()->getTooltipFollowMouse() ) {
-				mTooltip->setPosition( Pos );
+				mTooltip->setPosition( pxToDpI( Pos ) );
 			}
 		} else {
 			mTooltip->setTooltipTime( Milliseconds( 0.f ) );

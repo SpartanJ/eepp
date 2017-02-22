@@ -69,13 +69,15 @@ void UITabWidget::setTheme( UITheme * Theme ) {
 	if ( 0 == mTabWidgetHeight ) {
 		UISkin * tSkin		= Theme->getByName( Theme->getAbbr() + "_" + "tab" );
 
-		Sizei tSize1		= getSkinSize( tSkin );
-		Sizei tSize2		= getSkinSize( tSkin, UISkinState::StateSelected );
+		if ( NULL != tSkin ) {
+			Sizei tSize1		= getSkinSize( tSkin );
+			Sizei tSize2		= getSkinSize( tSkin, UISkinState::StateSelected );
 
-		mTabWidgetHeight	= eemax( tSize1.getHeight(), tSize2.getHeight() );
+			mTabWidgetHeight	= pxToDpI( eemax( tSize1.getHeight(), tSize2.getHeight() ) );
 
-		seContainerSize();
-		orderTabs();
+			seContainerSize();
+			orderTabs();
+		}
 	}
 
 	doAftersetTheme();
@@ -97,8 +99,8 @@ void UITabWidget::draw() {
 		if ( smooth ) GLi->lineSmooth( false );
 
 		Primitives P;
-		Vector2i p1( mPos.x, mPos.y + mTabContainer->getSize().getHeight() + mLineBewowTabsYOffset );
-		Vector2i p2( mPos.x + mTabContainer->getPosition().x, p1.y );
+		Vector2i p1( mRealPos.x, mRealPos.y + mTabContainer->getRealSize().getHeight() + mLineBewowTabsYOffset );
+		Vector2i p2( mRealPos.x + mTabContainer->getRealPosition().x, p1.y );
 
 		controlToScreen( p1 );
 		controlToScreen( p2 );
@@ -107,8 +109,8 @@ void UITabWidget::draw() {
 		P.setColor( mLineBelowTabsColor );
 		P.drawLine( Line2f( Vector2f( p1.x, p1.y ), Vector2f( p2.x, p2.y ) ) );
 
-		Vector2i p3( mPos.x + mTabContainer->getPosition().x + mTabContainer->getSize().getWidth(), mPos.y + mTabContainer->getSize().getHeight() + mLineBewowTabsYOffset );
-		Vector2i p4( mPos.x + mSize.getWidth(), p3.y );
+		Vector2i p3( mRealPos.x + mTabContainer->getRealPosition().x + mTabContainer->getRealSize().getWidth(), mRealPos.y + mTabContainer->getRealSize().getHeight() + mLineBewowTabsYOffset );
+		Vector2i p4( mRealPos.x + mRealSize.getWidth(), p3.y );
 
 		controlToScreen( p3 );
 		controlToScreen( p4 );

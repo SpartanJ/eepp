@@ -70,45 +70,34 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 		mBtnDown->setThemeControl( Theme, "vscrollbar_btndown" );
 	}
 
-	SubTexture * tSubTexture = NULL;
 	UISkin * tSkin = NULL;
 
 	tSkin = mBtnUp->getSkin();
 
 	if ( NULL != tSkin ) {
-		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
-
-		if ( NULL != tSubTexture ) {
-			mBtnUp->setSize( tSubTexture->getRealSize() );
-		}
+		mBtnUp->setPixelsSize( tSkin->getSize() );
 	}
 
 	tSkin = mBtnDown->getSkin();
 
 	if ( NULL != tSkin ) {
-		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
-
-		if ( NULL != tSubTexture ) {
-			mBtnDown->setSize( tSubTexture->getRealSize() );
-		}
+		mBtnDown->setPixelsSize( tSkin->getSize() );
 	}
 
 	if ( mFlags & UI_AUTO_SIZE ) {
 		tSkin = mSlider->getBackSlider()->getSkin();
 
 		if ( NULL != tSkin ) {
-			tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
+			Sizei size = tSkin->getSize();
 
-			if ( NULL != tSubTexture ) {
-				if ( mSlider->isVertical() ) {
-					mSlider->setSize( tSubTexture->getRealSize().getWidth() , mSize.getHeight() );
-					setSize( tSubTexture->getRealSize().getWidth() , mSize.getHeight() );
-					mMinControlSize.x = mSize.getWidth();
-				} else {
-					mSlider->setSize( mSize.getWidth(), tSubTexture->getRealSize().getHeight() );
-					setSize( mSize.getWidth(), tSubTexture->getRealSize().getHeight() );
-					mMinControlSize.y = mSize.getHeight();
-				}
+			if ( mSlider->isVertical() ) {
+				mSlider->setPixelsSize( size.getWidth() , mRealSize.getHeight() );
+				setPixelsSize( size.getWidth() , mRealSize.getHeight() );
+				mMinControlSize.x = mSize.getWidth();
+			} else {
+				mSlider->setPixelsSize( mRealSize.getWidth(), size.getHeight() );
+				setPixelsSize( mRealSize.getWidth(), size.getHeight() );
+				mMinControlSize.y = mSize.getHeight();
 			}
 		}
 	}

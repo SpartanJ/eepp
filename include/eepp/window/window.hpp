@@ -44,14 +44,15 @@ namespace WindowBackend {
 class WindowSettings {
 	public:
 
-	inline WindowSettings( Uint32 width, Uint32 height, const std::string& caption = std::string(), Uint32 style = WindowStyle::Default, Uint32 backend = WindowBackend::Default, Uint32 bpp = 32, const std::string& icon = std::string() ) :
+	inline WindowSettings( Uint32 width, Uint32 height, const std::string& caption = std::string(), Uint32 style = WindowStyle::Default, Uint32 backend = WindowBackend::Default, Uint32 bpp = 32, const std::string& icon = std::string(), const Float& pixelDensity = 1 ) :
 		Style( style ),
 		Width( width ),
 		Height( height ),
 		BitsPerPixel( bpp ),
 		Icon( icon ),
 		Caption( caption ),
-		Backend( backend )
+		Backend( backend ),
+		PixelDensity( pixelDensity )
 	{}
 
 	inline WindowSettings() :
@@ -59,7 +60,8 @@ class WindowSettings {
 		Width( 800 ),
 		Height( 600 ),
 		BitsPerPixel( 32 ),
-		Backend( WindowBackend::Default )
+		Backend( WindowBackend::Default ),
+		PixelDensity( 1 )
 	{}
 
 	Uint32			Style;
@@ -69,6 +71,7 @@ class WindowSettings {
 	std::string		Icon;
 	std::string		Caption;
 	Uint32			Backend;
+	Float			PixelDensity;
 };
 
 /** @brief ContextSettings Small class that contains the renderer context information */

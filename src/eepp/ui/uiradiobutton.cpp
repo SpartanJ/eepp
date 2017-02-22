@@ -38,21 +38,21 @@ UIRadioButton::UIRadioButton() :
 	mActiveButton(NULL),
 	mInactiveButton(NULL),
 	mActive( false ),
-	mTextSeparation( dpToPxI( 4 ) )
+	mTextSeparation( 4 )
 {
 	mActiveButton 	= eeNew( UIControlAnim, () );
 	mActiveButton->setVisible( false );
 	mActiveButton->setEnabled( true );
 	mActiveButton->setParent( this );
 	mActiveButton->setPosition( 0, 0 );
-	mActiveButton->setSize( dpToPxI( 16 ), dpToPxI( 16 ) );
+	mActiveButton->setSize( 16, 16 );
 
 	mInactiveButton = eeNew( UIControlAnim, () );
 	mInactiveButton->setVisible( true );
 	mInactiveButton->setEnabled( true );
 	mInactiveButton->setParent( this );
 	mInactiveButton->setPosition( 0, 0 );
-	mInactiveButton->setSize( dpToPxI( 16 ), dpToPxI( 16 ) );
+	mInactiveButton->setSize( 16, 16 );
 
 	setPadding( Recti(0,0,0,0) );
 
@@ -83,7 +83,7 @@ void UIRadioButton::setTheme( UITheme * Theme ) {
 		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mActiveButton->setSize( dpToPxI( tSubTexture->getRealSize() ) );
+			mActiveButton->setPixelsSize( tSubTexture->getRealSize() );
 			mActiveButton->centerVertical();
 		}
 	}
@@ -94,7 +94,7 @@ void UIRadioButton::setTheme( UITheme * Theme ) {
 		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
-			mInactiveButton->setSize( dpToPxI( tSubTexture->getRealSize() ) );
+			mInactiveButton->setPixelsSize( tSubTexture->getRealSize() );
 			mInactiveButton->centerVertical();
 		}
 	}
@@ -103,13 +103,11 @@ void UIRadioButton::setTheme( UITheme * Theme ) {
 }
 
 void UIRadioButton::autoSize() {
-	UITextBox::autoSize();
-
 	if ( mFlags & UI_AUTO_SIZE ) {
 		mActiveButton->centerVertical();
 		mInactiveButton->centerVertical();
 
-		setInternalWidth( (int)mTextCache->getTextWidth() + mActiveButton->getSize().getWidth() );
+		setInternalWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() );
 	}
 }
 
@@ -234,7 +232,7 @@ void UIRadioButton::setPadding( const Recti& padding ) {
 	mActiveButton->setPosition( mPadding.Left, mActiveButton->getPosition().y );
 	mInactiveButton->setPosition( mPadding.Left, mInactiveButton->getPosition().y );
 
-	mRealPadding.Left = mActiveButton->getPosition().x + mActiveButton->getSize().getWidth() + dpToPxI( mTextSeparation  );
+	mRealPadding.Left = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + dpToPxI( mTextSeparation  );
 }
 
 UIControlAnim * UIRadioButton::getActiveButton() const {

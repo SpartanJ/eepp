@@ -23,8 +23,8 @@ bool UISeparator::isType( const Uint32& type ) const {
 void UISeparator::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "separator" );
 	
-	if ( NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getSubTexture( UISkinState::StateNormal ) ) {
-		setSize( mSize.getWidth(), mSkinState->getSkin()->getSubTexture( UISkinState::StateNormal )->getRealSize().getHeight() );
+	if ( NULL != getSkin() ) {
+		setPixelsSize( Sizei( mRealSize.getWidth(), getSkin()->getSize().getHeight() ) );
 	}
 }
 

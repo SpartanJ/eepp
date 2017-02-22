@@ -240,17 +240,17 @@ void UIWindow::setTheme( UITheme *Theme ) {
 
 		if ( NULL != mButtonClose ) {
 			mButtonClose->setThemeControl( Theme, "winclose" );
-			mButtonClose->setSize( mButtonClose->getSkinSize() );
+			mButtonClose->setPixelsSize( mButtonClose->getSkinSize() );
 		}
 
 		if ( NULL != mButtonMaximize ) {
 			mButtonMaximize->setThemeControl( Theme, "winmax" );
-			mButtonMaximize->setSize( mButtonMaximize->getSkinSize() );
+			mButtonMaximize->setPixelsSize( mButtonMaximize->getSkinSize() );
 		}
 
 		if ( NULL != mButtonMinimize ) {
 			mButtonMinimize->setThemeControl( Theme, "winmin" );
-			mButtonMinimize->setSize( mButtonMinimize->getSkinSize() );
+			mButtonMinimize->setPixelsSize( mButtonMinimize->getSkinSize() );
 		}
 
 		fixChildsSize();
@@ -326,26 +326,32 @@ void UIWindow::fixChildsSize() {
 		return;
 	}
 
+	Sizei decoSize = mDecoSize;
+
 	if ( mDecoAutoSize ) {
-		mDecoSize = Sizei( mSize.getWidth(), mWindowDecoration->getSkinSize().getHeight() );
+		decoSize = mDecoSize = Sizei( mRealSize.getWidth(), mWindowDecoration->getSkinSize().getHeight() );
+	} else {
+		decoSize = dpToPxI( mDecoSize );
 	}
 
-	mWindowDecoration->setSize( mDecoSize );
+	mWindowDecoration->setPixelsSize( mDecoSize );
 
 	if ( mBorderAutoSize ) {
-		mBorderBottom->setSize( mSize.getWidth(), mBorderBottom->getSkinSize().getHeight() );
+		mBorderBottom->setPixelsSize( Sizei( mRealSize.getWidth(), mBorderBottom->getSkinSize().getHeight() ) );
 	} else {
 		mBorderBottom->setSize( mSize.getWidth(), mBorderSize.getHeight() );
 	}
 
-	Uint32 BorderHeight = mSize.getHeight() - mDecoSize.getHeight() - mBorderBottom->getSize().getHeight();
+	Uint32 BorderHeight = mRealSize.getHeight() - decoSize.getHeight() - mBorderBottom->getRealSize().getHeight();
 
 	if ( mBorderAutoSize ) {
-		mBorderLeft->setSize( mBorderLeft->getSkinSize().getWidth()	, BorderHeight );
-		mBorderRight->setSize( mBorderRight->getSkinSize().getWidth(), BorderHeight );
+		mBorderLeft->setPixelsSize( Sizei( mBorderLeft->getSkinSize().getWidth(), BorderHeight ) );
+		mBorderRight->setPixelsSize( Sizei( mBorderRight->getSkinSize().getWidth(), BorderHeight ) );
 	} else {
-		mBorderLeft->setSize( mBorderSize.getWidth(), BorderHeight );
-		mBorderRight->setSize( mBorderSize.getWidth(), BorderHeight );
+		Sizei borderSize = dpToPxI( mBorderSize );
+
+		mBorderLeft->setSize( borderSize.getWidth(), BorderHeight );
+		mBorderRight->setSize( borderSize.getWidth(), BorderHeight );
 	}
 
 	mBorderLeft->setPosition( 0, mWindowDecoration->getSize().getHeight() );
@@ -644,7 +650,7 @@ void UIWindow::internalSize( Sizei Size ) {
 	}
 
 	if ( Size != mSize ) {
-		mSize = Size;
+		setInternalSize( Size );
 		onSizeChange();
 	}
 }

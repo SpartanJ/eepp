@@ -72,6 +72,8 @@ class EE_API UITextBox : public UIComplexControl {
 
 		virtual void setPadding( const Recti& padding );
 
+		virtual void setPixelsPadding( const Recti& padding );
+
 		const Recti& getPadding() const;
 
 		virtual void setTheme( UITheme * Theme );

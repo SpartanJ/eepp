@@ -22,13 +22,17 @@ class EE_API UISkin {
 
 		static const char * getSkinStateName( const Uint32& State );
 
-		UISkin( const std::string& getName, const Uint32& Type );
+		UISkin( const std::string& name, const Uint32& Type );
 
 		virtual ~UISkin();
 
 		virtual void draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State ) = 0;
 
 		virtual void setSkin( const Uint32& State ) = 0;
+
+		virtual Sizei getSize( const Uint32& state ) = 0;
+
+		virtual Sizei getSize();
 
 		virtual SubTexture * getSubTexture( const Uint32& State ) const = 0;
 

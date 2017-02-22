@@ -45,7 +45,7 @@ void UIGfx::setSubTexture( Graphics::SubTexture * subTexture ) {
 	autoSize();
 
 	if ( NULL != mSubTexture && mSize.x == 0 && mSize.y == 0 ) {
-		setSize( dpToPxI( mSubTexture->getDestSize() ) );
+		setPixelsSize( Sizei( mSubTexture->getDestSize().x, mSubTexture->getDestSize().y ) );
 	}
 
 	autoAlign();
@@ -54,7 +54,7 @@ void UIGfx::setSubTexture( Graphics::SubTexture * subTexture ) {
 void UIGfx::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mSubTexture ) {
-			setSize( mSubTexture->getSize() );
+			setPixelsSize( mSubTexture->getSize() );
 		} else {
 			setSize( Sizei( 0, 0 ) );
 		}
@@ -71,7 +71,9 @@ void UIGfx::draw() {
 
 			if ( mFlags & UI_FIT_TO_CONTROL ) {
 				mSubTexture->setOffset( Vector2i( 0, 0 ) );
-				mSubTexture->setDestSize( Vector2f( mSize.x, mSize.y ) );
+				mSubTexture->setDestSize( Vector2f( mRealSize.x, mRealSize.y ) );
+
+				autoAlign();
 
 				drawSubTexture();
 
@@ -80,8 +82,8 @@ void UIGfx::draw() {
 			} else if ( mFlags & UI_AUTO_FIT ) {
 				mSubTexture->setOffset( Vector2i( 0, 0 ) );
 
-				Float Scale1 = mSize.x / oDestSize.x;
-				Float Scale2 = mSize.y / oDestSize.y;
+				Float Scale1 = mRealSize.x / oDestSize.x;
+				Float Scale2 = mRealSize.y / oDestSize.y;
 
 				if ( Scale1 < 1 || Scale2 < 1 ) {
 					if ( Scale2 < Scale1 )
@@ -145,17 +147,17 @@ void UIGfx::autoAlign() {
 		return;
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.getWidth() / 2 - dpToPxI( mSubTexture->getDestSize().x ) / 2;
+		mAlignOffset.x = mRealSize.getWidth() / 2 - mSubTexture->getDestSize().x / 2;
 	} else if ( fontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.getWidth() - dpToPxI( mSubTexture->getDestSize().x );
+		mAlignOffset.x =  mRealSize.getWidth() - mSubTexture->getDestSize().x;
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.getHeight() / 2 - dpToPxI( mSubTexture->getDestSize().y ) / 2;
+		mAlignOffset.y = mRealSize.getHeight() / 2 - mSubTexture->getDestSize().y / 2;
 	} else if ( fontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.getHeight() - dpToPxI( mSubTexture->getDestSize().y );
+		mAlignOffset.y = mRealSize.getHeight() - mSubTexture->getDestSize().y;
 	} else {
 		mAlignOffset.y = 0;
 	}

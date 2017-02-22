@@ -60,7 +60,7 @@ void UIControlAnim::draw() {
 			borderDraw();
 
 		if ( NULL != mSkinState )
-			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.getWidth(), (Float)mSize.getHeight(), (Uint32)mAlpha );
+			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight(), (Uint32)mAlpha );
 
 		if ( UIManager::instance()->getHighlightFocus() && UIManager::instance()->getFocusControl() == this ) {
 			Primitives P;
@@ -89,7 +89,7 @@ const OriginPoint& UIControlAnim::getRotationOriginPoint() const {
 }
 
 void UIControlAnim::setRotationOriginPoint( const OriginPoint & center ) {
-	mRotationOriginPoint = center;
+	mRotationOriginPoint = dpToPx( center );
 	updateOriginPoint();
 }
 
@@ -126,7 +126,7 @@ const OriginPoint& UIControlAnim::getScaleOriginPoint() const {
 }
 
 void UIControlAnim::setScaleOriginPoint( const OriginPoint & center ) {
-	mScaleOriginPoint = center;
+	mScaleOriginPoint = dpToPx( center );
 	updateOriginPoint();
 }
 
@@ -390,7 +390,7 @@ void UIControlAnim::borderDraw() {
 
 	//! @TODO: Check why was this +0.1f -0.1f?
 	if ( mFlags & UI_CLIP_ENABLE ) {
-		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.getWidth() - 0.1f, (Float)mSize.getHeight() - 0.1f ) );
+		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mRealSize.getWidth() - 0.1f, (Float)mRealSize.getHeight() - 0.1f ) );
 
 		if ( mBackground->getCorners() ) {
 			P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->getCorners() );
@@ -411,7 +411,7 @@ ColorA UIControlAnim::getColor( const ColorA& Col ) {
 }
 
 void UIControlAnim::updateQuad() {
-	mPoly		= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mSize.getWidth(), mScreenPosf.y + mSize.getHeight() ) );
+	mPoly		= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mRealSize.getWidth(), mScreenPosf.y + mRealSize.getHeight() ) );
 
 	mPoly.rotate( mAngle, getRotationCenter() );
 	mPoly.scale( mScale, getScaleCenter() );
@@ -439,8 +439,8 @@ void UIControlAnim::onSizeChange() {
 void UIControlAnim::updateOriginPoint() {
 	switch ( mRotationOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter:
-			mRotationOriginPoint.x = mSize.x * 0.5f;
-			mRotationOriginPoint.y = mSize.y * 0.5f;
+			mRotationOriginPoint.x = mRealSize.x * 0.5f;
+			mRotationOriginPoint.y = mRealSize.y * 0.5f;
 			break;
 		case OriginPoint::OriginTopLeft:
 			mRotationOriginPoint.x = mRotationOriginPoint.y = 0;
@@ -450,8 +450,8 @@ void UIControlAnim::updateOriginPoint() {
 
 	switch ( mScaleOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter:
-			mScaleOriginPoint.x = mSize.x * 0.5f;
-			mScaleOriginPoint.y = mSize.y * 0.5f;
+			mScaleOriginPoint.x = mRealSize.x * 0.5f;
+			mScaleOriginPoint.y = mRealSize.y * 0.5f;
 			break;
 		case OriginPoint::OriginTopLeft:
 			mScaleOriginPoint.x = mScaleOriginPoint.y = 0;

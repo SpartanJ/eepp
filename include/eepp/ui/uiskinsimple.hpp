@@ -21,6 +21,8 @@ class EE_API UISkinSimple : public UISkin {
 		UISkinSimple * clone( const std::string& NewName, const bool& CopyColorsState = true );
 
 		virtual UISkin * clone();
+
+		Sizei getSize( const Uint32& state );
 	protected:
 		SubTexture * 	mSubTexture[ UISkinState::StateCount ];
 		ColorA		mTempColor;

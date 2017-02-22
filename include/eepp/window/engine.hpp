@@ -125,6 +125,10 @@ class EE_API Engine {
 
 		/** @return The id of the thread that was used to initialize the OpenGL Context. */
 		Uint32 getMainThreadId();
+
+		Float getPixelDensity() const;
+
+		void setPixelDensity( const Float & pixelDensity );
 	protected:
 		friend class Window;
 
@@ -133,6 +137,7 @@ class EE_API Engine {
 		EE::Window::Window *			mWindow;
 		bool				mSharedGLContext;
 		Uint32				mMainThreadId;
+		Float				mPixelDensity;
 
 		Engine();
 

@@ -70,7 +70,9 @@ void UITab::onStateChange() {
 	UITabWidget * tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
-		setSize( mSize.getWidth(), getSkinSize( getSkin(), mSkinState->getState() ).getHeight() );
+		Int32 skinSize = getSkin()->getSize( mSkinState->getState() ).getHeight();
+
+		setPixelsSize( mRealSize.getWidth(), skinSize );
 
 		if ( mSkinState->getState() == UISkinState::StateSelected ) {
 			mTextBox->setFontColor( tTabW->mFontSelectedColor );
@@ -93,7 +95,7 @@ void UITab::setText( const String &text ) {
 		if ( text.size() > tTabW->mMaxTextLength ) {
 			UIPushButton::setText( text.substr( 0, tTabW->mMaxTextLength ) );
 
-			setRealSize();
+			autoSize();
 
 			return;
 		}
@@ -101,12 +103,12 @@ void UITab::setText( const String &text ) {
 
 	UIPushButton::setText( text );
 
-	setRealSize();
+	autoSize();
 }
 
-void UITab::setRealSize() {
+void UITab::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Uint32 w = mTextBox->getTextWidth() + getSkinSize().getWidth();
+		Uint32 w = pxToDpI( mTextBox->getTextWidth() ) + getSkinSize().getWidth();
 
 		UITabWidget * tTabW = getTabWidget();
 

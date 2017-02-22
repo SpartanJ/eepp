@@ -226,6 +226,8 @@ class EETest : private Thread {
 		TextCache mFBOText;
 		TextCache mInfoText;
 
+		std::string mThemeName;
+
 		Space * mSpace;
 
 		#ifndef EE_PLATFORM_TOUCH

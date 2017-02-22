@@ -313,7 +313,7 @@ void UIListBox::setRowHeight() {
 		if ( NULL != mFont )
 			FontSize = mFont->getFontHeight();
 
-		mRowHeight = (Uint32)( FontSize + 4 );
+		mRowHeight = (Uint32)pxToDpI( FontSize + 4 );
 	}
 
 	if ( tOldRowHeight != mRowHeight ) {

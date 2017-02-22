@@ -18,13 +18,12 @@ UIDefaultTheme::UIDefaultTheme( const std::string& name, const std::string& Abbr
 	setFontShadowColor( ColorA( 50, 50, 50, 150 ) );
 }
 
-UIPopUpMenu * UIDefaultTheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 RowHeight, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
+UIPopUpMenu * UIDefaultTheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	UIPopUpMenu::CreateParams MenuParams;
 	MenuParams.setParent( Parent );
 	MenuParams.setPosition( Pos );
 	MenuParams.setSize( Size );
 	MenuParams.Flags = Flags;
-	MenuParams.RowHeight = RowHeight;
 	MenuParams.PaddingContainer = PaddingContainer;
 	MenuParams.MinWidth = MinWidth;
 	MenuParams.MinSpaceForIcons = MinSpaceForIcons;

@@ -16,7 +16,6 @@ class EE_API UIMenu : public UIComplexControl {
 			public:
 				inline CreateParams() :
 					UIComplexControl::CreateParams(),
-					RowHeight( 0 ),
 					PaddingContainer(),
 					MinWidth( 0 ),
 					MinSpaceForIcons( 0 ),
@@ -42,7 +41,6 @@ class EE_API UIMenu : public UIComplexControl {
 
 				inline ~CreateParams() {}
 
-				Uint32				RowHeight;
 				Recti				PaddingContainer;
 				Uint32				MinWidth;
 				Uint32				MinSpaceForIcons;
@@ -116,7 +114,6 @@ class EE_API UIMenu : public UIComplexControl {
 		Uint32				mMinSpaceForIcons;
 		Uint32				mMinRightMargin;
 		Uint32				mMaxWidth;
-		Uint32				mRowHeight;
 		Uint32				mNextPosY;
 		Uint32				mBiggestIcon;
 		UIControl *			mItemSelected;

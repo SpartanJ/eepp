@@ -71,9 +71,14 @@ void UIDragable::update() {
 
 		Vector2i Pos( UIManager::instance()->getMousePos() );
 
-		if ( mDragPoint != Pos ) {
+		if ( mDragPoint != Pos && ( abs( mDragPoint.x - Pos.x ) > getPixelDensity() || abs( mDragPoint.y - Pos.y ) > getPixelDensity() ) ) {
 			if ( onDrag( Pos ) ) {
-				mPos += -( mDragPoint - Pos );
+				Sizei dragDiff;
+
+				dragDiff.x = (Int32)( (Float)( mDragPoint.x - Pos.x ) / getPixelDensity() );
+				dragDiff.y = (Int32)( (Float)( mDragPoint.y - Pos.y ) / getPixelDensity() );
+
+				setInternalPosition( mPos - dragDiff );
 
 				mDragPoint = Pos;
 

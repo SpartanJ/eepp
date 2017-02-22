@@ -55,6 +55,11 @@ void EETest::init() {
 	WindowSettings WinSettings	= EE->createWindowSettings( &Ini );
 	ContextSettings ConSettings	= EE->createContextSettings( &Ini );
 
+	if ( !( WinSettings.Style & WindowStyle::Fullscreen ) && !( WinSettings.Style & WindowStyle::UseDesktopResolution ) ) {
+		WinSettings.Width *= WinSettings.PixelDensity;
+		WinSettings.Height *= WinSettings.PixelDensity;
+	}
+
 	mWindow = EE->createWindow( WinSettings, ConSettings );
 
 	if ( NULL != mWindow && mWindow->isOpen() ) {
@@ -150,8 +155,8 @@ void EETest::createUIThemeTextureAtlas() {
 	return;
 	#endif
 
-	std::string tgpath( MyPath + "ui/uitheme" );
-	std::string Path( MyPath + "ui/uitheme" );
+	std::string tgpath( MyPath + "ui/" + mThemeName );
+	std::string Path( MyPath + "ui/" + mThemeName );
 
 	if ( !FileSystem::fileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
 		TexturePacker tp( 256, 256, true, 2 );
@@ -250,24 +255,28 @@ void EETest::onWindowResize(EE::Window::Window * win) {
 void EETest::createUI() {
 	Clock TE;
 
+	mThemeName = "uitheme";
+
+	if ( Engine::instance()->getPixelDensity() == 2 ) {
+		mThemeName += "2x";
+	}
+
 	createUIThemeTextureAtlas();
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	UIControl::PixelDensity = 1;
-
 	UIManager::instance()->init(); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
-	//mTheme = UITheme::LoadFromPath( eeNew( UIdefaultTheme, ( "uitheme", "uitheme" ) ), MyPath + "uitheme/" );
+	//mTheme = UITheme::LoadFromPath( eeNew( UIdefaultTheme, ( mThemeName, mThemeName ) ), MyPath + mThemeName + "/" );
 
-	TextureAtlasLoader tgl( MyPath + "ui/uitheme" + EE_TEXTURE_ATLAS_EXTENSION );
+	TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
 
-	mTheme = UITheme::loadFromTextureAtlas( eeNew( UIDefaultTheme, ( "uitheme", "uitheme" ) ), TextureAtlasManager::instance()->getByName( "uitheme" ) );
+	mTheme = UITheme::loadFromTextureAtlas( eeNew( UIDefaultTheme, ( mThemeName, mThemeName ) ), TextureAtlasManager::instance()->getByName( mThemeName ) );
 
 	UIThemeManager::instance()->add( mTheme );
 	UIThemeManager::instance()->setDefaultEffectsEnabled( true );
 	UIThemeManager::instance()->setDefaultFont( TTF );
-	UIThemeManager::instance()->setDefaultTheme( "uitheme" );
+	UIThemeManager::instance()->setDefaultTheme( mThemeName );
 	/**/
 	UIControl::CreateParams Params( UIManager::instance()->getMainControl(), Vector2i(0,0), Sizei( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
@@ -585,11 +594,22 @@ void EETest::createUI() {
 	ctrl->setBorderEnabled( true )->setColor( 0x66666666 );
 	ctrl->setVisible( true );
 	ctrl->setEnabled( true );
-	ctrl->setText( "Happy TextBox :)" );
+	ctrl->setText( "Happy RadioButon :)" );
 	ctrl->setFontColor( 0x000000FF );
+
+	UICheckBox * cbox = eeNew( UICheckBox, () );
+	cbox->setPosition( 100, 164 );
+	cbox->setSize( 320, 32 );
+	cbox->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
+	cbox->setBorderEnabled( true )->setColor( 0x66666666 );
+	cbox->setVisible( true );
+	cbox->setEnabled( true );
+	cbox->setText( "Happy CheckBox :)" );
+	cbox->setFontColor( 0x000000FF );
 
 	UIGfx * gfx = eeNew( UIGfx, () );
 	gfx->setPosition( 100, 132 );
+	gfx->setSize( 16, 16 );
 	gfx->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	gfx->setSubTexture( mTheme->getIconByName( "ok" ) );
 	gfx->setVisible( true );
@@ -597,7 +617,7 @@ void EETest::createUI() {
 
 	UISlider * slider = eeNew( UISlider, () );
 	slider->setPosition( 50, 100 );
-	slider->setSize( 32, 100 );
+	slider->setSize( 16, 100 );
 	slider->setVisible( true );
 	slider->setEnabled( true );
 }
@@ -773,7 +793,7 @@ void EETest::showMenu() {
 	if ( Menu->show() ) {
 		Vector2i Pos = mWindow->getInput()->getMousePos();
 		UIMenu::fixMenuPos( Pos , Menu );
-		Menu->setPosition( Pos );
+		Menu->setPosition( Sizei( (Float)Pos.x / EE->getPixelDensity(), (Float)Pos.y / EE->getPixelDensity() ) );
 	}
 }
 

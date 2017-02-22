@@ -136,8 +136,8 @@ void UIPushButton::doAftersetTheme() {
 		mIconSpace = RMargin.Left;
 	}
 
-	if ( mFlags & UI_AUTO_SIZE ) {
-		setInternalHeight( getSkinSize().getHeight() );
+	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() ) {
+		setInternalHeight( getSkin()->getSize().getHeight() );
 	}
 
 	autoPadding();
@@ -147,7 +147,7 @@ void UIPushButton::doAftersetTheme() {
 
 void UIPushButton::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		setPadding( makePadding( true, false, true, false ) );
+		mTextBox->setPadding( makePadding( true, false, true, false ) );
 	}
 }
 

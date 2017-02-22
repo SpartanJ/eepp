@@ -16,9 +16,9 @@ const char * UISkin::getSkinStateName( const Uint32& State ) {
 	return UISkinStatesNames[ State ];
 }
 
-UISkin::UISkin( const std::string& Name, const Uint32& Type ) :
+UISkin::UISkin( const std::string& name, const Uint32& Type ) :
 	mType( Type ),
-	mName( Name ),
+	mName( name ),
 	mNameHash( String::hash( mName ) ),
 	mTheme(NULL)
 {
@@ -32,6 +32,10 @@ UISkin::UISkin( const std::string& Name, const Uint32& Type ) :
 }
 
 UISkin::~UISkin() {
+}
+
+Sizei UISkin::getSize() {
+	return getSize( UISkinState::StateNormal );
 }
 
 void UISkin::setColor( const Uint32& State, const ColorA& Color ) {

@@ -68,27 +68,18 @@ void UISpinBox::setTheme( UITheme * Theme ) {
 	mPushUp->setThemeControl		( Theme, "spinbox_btnup" );
 	mPushDown->setThemeControl	( Theme, "spinbox_btndown" );
 
-	SubTexture * tSubTexture = NULL;
 	UISkin * tSkin = NULL;
 
 	tSkin = mPushUp->getSkin();
 
 	if ( NULL != tSkin ) {
-		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
-
-		if ( NULL != tSubTexture ) {
-			mPushUp->setSize( tSubTexture->getRealSize() );
-		}
+		mPushUp->setPixelsSize( tSkin->getSize() );
 	}
 
 	tSkin = mPushDown->getSkin();
 
 	if ( NULL != tSkin ) {
-		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
-
-		if ( NULL != tSubTexture ) {
-			mPushDown->setSize( tSubTexture->getRealSize() );
-		}
+		mPushDown->setPixelsSize( tSkin->getSize() );
 	}
 
 	if ( mFlags & UI_AUTO_SIZE ) {

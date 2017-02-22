@@ -635,13 +635,12 @@ UIListBox * UITheme::createListBox( UIControl * Parent, const Sizei& Size, const
 	return Ctrl;
 }
 
-UIMenu * UITheme::createMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 RowHeight, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
+UIMenu * UITheme::createMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	UIMenu::CreateParams MenuParams;
 	MenuParams.setParent( Parent );
 	MenuParams.setPosition( Pos );
 	MenuParams.setSize( Size );
 	MenuParams.Flags = Flags;
-	MenuParams.RowHeight = RowHeight;
 	MenuParams.PaddingContainer = PaddingContainer;
 	MenuParams.MinWidth = MinWidth;
 	MenuParams.MinSpaceForIcons = MinSpaceForIcons;
@@ -653,13 +652,12 @@ UIMenu * UITheme::createMenu( UIControl * Parent, const Sizei& Size, const Vecto
 	return Ctrl;
 }
 
-UIPopUpMenu * UITheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 RowHeight, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
+UIPopUpMenu * UITheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	UIPopUpMenu::CreateParams MenuParams;
 	MenuParams.setParent( Parent );
 	MenuParams.setPosition( Pos );
 	MenuParams.setSize( Size );
 	MenuParams.Flags = Flags;
-	MenuParams.RowHeight = RowHeight;
 	MenuParams.PaddingContainer = PaddingContainer;
 	MenuParams.MinWidth = MinWidth;
 	MenuParams.MinSpaceForIcons = MinSpaceForIcons;

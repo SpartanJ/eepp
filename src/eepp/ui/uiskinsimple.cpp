@@ -72,4 +72,12 @@ UISkin * UISkinSimple::clone() {
 	return clone( mName, true );
 }
 
+Sizei UISkinSimple::getSize( const Uint32 & state ) {
+	if ( NULL != mSubTexture[ state ] ) {
+		return mSubTexture[ state ]->getRealSize();
+	}
+
+	return Sizei();
+}
+
 }}

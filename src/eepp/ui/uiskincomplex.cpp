@@ -21,6 +21,7 @@ UISkinComplex::UISkinComplex( const std::string& Name ) :
 			mSubTexture[ x ][ y ] = NULL;
 
 	setSkins();
+	cacheSize();
 }
 
 UISkinComplex::~UISkinComplex() {
@@ -190,6 +191,50 @@ UISkinComplex * UISkinComplex::clone( const std::string& NewName, const bool& Co
 
 UISkin * UISkinComplex::clone() {
 	return clone( mName, true );
+}
+
+Sizei UISkinComplex::getSize( const Uint32 & state ) {
+	return mSize[ state ];
+}
+
+void UISkinComplex::cacheSize() {
+	for ( Int32 state = UISkinState::StateNormal; state < UISkinState::StateCount; state++ ) {
+		Int32 w = 0;
+		Int32 h = 0;
+
+		SubTexture * tSubTexture = mSubTexture[ state ][ Center ];
+
+		if ( NULL != tSubTexture ) {
+			w += tSubTexture->getRealSize().x;
+			h += tSubTexture->getRealSize().y;
+		}
+
+		tSubTexture = mSubTexture[ state ][ Up ];
+
+		if ( NULL != tSubTexture ) {
+			h += tSubTexture->getRealSize().y;
+		}
+
+		tSubTexture = mSubTexture[ state ][ Down ];
+
+		if ( NULL != tSubTexture ) {
+			h += tSubTexture->getRealSize().y;
+		}
+
+		tSubTexture = mSubTexture[ state ][ Left ];
+
+		if ( NULL != tSubTexture ) {
+			w += tSubTexture->getRealSize().x;
+		}
+
+		tSubTexture = mSubTexture[ state ][ Right ];
+
+		if ( NULL != tSubTexture ) {
+			w += tSubTexture->getRealSize().x;
+		}
+
+		mSize[ state ] = Sizei( w, h );
+	}
 }
 
 }}

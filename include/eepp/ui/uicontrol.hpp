@@ -22,7 +22,7 @@ class UIManager;
 
 class EE_API UIControl {
 	public:
-		static Float PixelDensity;
+		static Float getPixelDensity();
 
 		typedef cb::Callback1<void, const UIEvent*> UIEventCallback;
 
@@ -92,8 +92,6 @@ class EE_API UIControl {
 
 		virtual void messagePost( const UIMessage * Msg );
 
-		bool isInside( const Vector2i& position ) const;
-
 		void setPosition( const Vector2i& position );
 
 		void setPosition( const Int32& x, const Int32& y );
@@ -105,6 +103,10 @@ class EE_API UIControl {
 		virtual void setSize( const Sizei& size );
 
 		void setSize( const Int32& Width, const Int32& Height );
+
+		void setPixelsSize( const Sizei& size );
+
+		void setPixelsSize( const Int32& x, const Int32& y );
 
 		const Sizei& getSize();
 
@@ -424,6 +426,10 @@ class EE_API UIControl {
 		Recti dpToPxI( Recti size);
 
 		Recti pxToDpI( Recti size );
+
+		Rectf dpToPx( Rectf size);
+
+		Rectf pxToDp( Rectf size );
 
 		Sizef dpToPx( Sizef size);
 

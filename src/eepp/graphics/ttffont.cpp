@@ -2,6 +2,7 @@
 #include <eepp/graphics/texture.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/helper/haikuttf/haikuttf.hpp>
+#include <eepp/window/engine.hpp>
 using namespace HaikuTTF;
 
 namespace EE { namespace Graphics {
@@ -45,14 +46,16 @@ bool TTFFont::loadFromMemory( Uint8* TTFData, const unsigned int& TTFDataSize, c
 
 	mLoadedFromMemory = true;
 
-	mFont = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, Size, 0, NumCharsToGen );
+	Int32 rSize = (Int32)((Float)Size * Window::Engine::instance()->getPixelDensity());
+
+	mFont = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, rSize, 0, NumCharsToGen );
 
 	if ( OutlineSize && OutlineFreetype == OutlineMethod ) {
-		mFontOutline = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, Size, 0, NumCharsToGen );
+		mFontOutline = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, rSize, 0, NumCharsToGen );
 		mFontOutline->Outline( OutlineSize );
 	}
 
-	return iLoad( Size, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
+	return iLoad( rSize, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
 }
 
 bool TTFFont::load( const std::string& Filepath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) {
@@ -61,14 +64,16 @@ bool TTFFont::load( const std::string& Filepath, const unsigned int& Size, EE_TT
 	if ( FileSystem::fileExists( Filepath ) ) {
 		mLoadedFromMemory	= false;
 
-		mFont = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), Size, 0, NumCharsToGen );
+		Int32 rSize = (Int32)((Float)Size * Window::Engine::instance()->getPixelDensity());
+
+		mFont = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), rSize, 0, NumCharsToGen );
 
 		if ( OutlineSize && OutlineFreetype == OutlineMethod ) {
-			mFontOutline = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), Size, 0, NumCharsToGen );
+			mFontOutline = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), rSize, 0, NumCharsToGen );
 			mFontOutline->Outline( OutlineSize );
 		}
 
-		return iLoad( Size, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
+		return iLoad( rSize, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		Pack * tPack = PackManager::instance()->exists( mFilepath );
 
@@ -107,7 +112,7 @@ bool TTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Ui
 
 	mFont->Style( Style );
 
-	mHeight 		= mFont->Height()+ OutTotal;
+	mHeight 		= mFont->Height() + OutTotal;
 	mLineSkip		= mFont->LineSkip();
 	mAscent			= mFont->Ascent();
 	mDescent		= mFont->Descent();

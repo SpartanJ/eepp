@@ -104,8 +104,8 @@ void UITextInput::drawWaitingCursor() {
 			Float CurPosX = mScreenPos.x + mAlignOffset.x + mCurPos.x + 1 + mPadding.Left;
 			Float CurPosY = mScreenPos.y + mAlignOffset.y + mCurPos.y		+ mPadding.Top;
 
-			if ( CurPosX > (Float)mScreenPos.x + (Float)mSize.x )
-				CurPosX = (Float)mScreenPos.x + (Float)mSize.x;
+			if ( CurPosX > (Float)mScreenPos.x + (Float)mRealSize.x )
+				CurPosX = (Float)mScreenPos.x + (Float)mRealSize.x;
 
 			P.drawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->getFont()->getFontHeight() ) ) );
 
@@ -177,8 +177,8 @@ void UITextInput::alignFix() {
 		if ( !mTextBuffer.setSupportNewLine() ) {
 			if ( tX < 0.f )
 				mAlignOffset.x = -( mAlignOffset.x + ( tW - mAlignOffset.x ) );
-			else if ( tX > mSize.getWidth() - mPadding.Left - mPadding.Right )
-				mAlignOffset.x = mSize.getWidth() - mPadding.Left - mPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
+			else if ( tX > mRealSize.getWidth() - mPadding.Left - mPadding.Right )
+				mAlignOffset.x = mRealSize.getWidth() - mPadding.Left - mPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
 		}
 	}
 }
@@ -192,13 +192,13 @@ void UITextInput::setTheme( UITheme * Theme ) {
 
 void UITextInput::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		setSize( mSize.x, getSkinSize().getHeight() );
+		setPixelsSize( mRealSize.x, getSkinSize().getHeight() );
 	}
 }
 
 void UITextInput::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mPadding = makePadding( true, true, false, false );
+		setPixelsPadding( makePadding( true, true, false, false ) );
 	}
 }
 

@@ -80,8 +80,8 @@ void UITextBox::draw() {
 				UIManager::instance()->clipEnable(
 						mScreenPos.x + mRealPadding.Left,
 						mScreenPos.y + mRealPadding.Top,
-						mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-						mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
+						mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+						mRealSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
 				);
 			}
 
@@ -182,18 +182,17 @@ void UITextBox::shrinkText( const Uint32& MaxWidth ) {
 
 void UITextBox::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		setInternalWidth( (int)mTextCache->getTextWidth() );
-		setInternalHeight( (int)mTextCache->getTextHeight() );
+		setPixelsSize( Sizei( (int)mTextCache->getTextWidth(), (int)mTextCache->getTextHeight() ) );
 	}
 }
 
 void UITextBox::autoAlign() {
 	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mAlignOffset.x = (Float)( (Int32)( mSize.x - mTextCache->getTextWidth() ) / 2 );
+			mAlignOffset.x = (Float)( (Int32)( mRealSize.x - mTextCache->getTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
-			mAlignOffset.x = ( (Float)mSize.x - (Float)mTextCache->getTextWidth() );
+			mAlignOffset.x = ( (Float)mRealSize.x - (Float)mTextCache->getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
 			mAlignOffset.x = 0.f;
@@ -202,10 +201,10 @@ void UITextBox::autoAlign() {
 
 	switch ( fontVAlignGet( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
-			mAlignOffset.y = (Float)( ( (Int32)( mSize.y - mTextCache->getTextHeight() ) ) / 2 ) - 1;
+			mAlignOffset.y = (Float)( ( (Int32)( mRealSize.y - mTextCache->getTextHeight() ) ) / 2 ) - 1;
 			break;
 		case UI_VALIGN_BOTTOM:
-			mAlignOffset.y = ( (Float)mSize.y - (Float)mTextCache->getTextHeight() );
+			mAlignOffset.y = ( (Float)mRealSize.y - (Float)mTextCache->getTextHeight() );
 			break;
 		case UI_VALIGN_TOP:
 			mAlignOffset.y = 0.f;
@@ -241,6 +240,11 @@ void UITextBox::onFontChanged() {
 void UITextBox::setPadding( const Recti& padding ) {
 	mPadding = padding;
 	mRealPadding = dpToPxI( padding );
+}
+
+void UITextBox::setPixelsPadding( const Recti& padding ) {
+	mPadding = pxToDpI( padding );
+	mRealPadding = padding;
 }
 
 const Recti& UITextBox::getPadding() const {
