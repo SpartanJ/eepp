@@ -246,6 +246,7 @@ Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTON_LMASK ) {
 		Vector2i controlPos( Pos );
 		worldToControl( controlPos );
+		controlPos = dpToPxI( controlPos );
 
 		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), controlPos );
 

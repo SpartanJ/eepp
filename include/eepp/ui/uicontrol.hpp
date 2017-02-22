@@ -96,6 +96,10 @@ class EE_API UIControl {
 
 		void setPosition( const Int32& x, const Int32& y );
 
+		void setPixelsPosition( const Vector2i& position );
+
+		void setPixelsPosition( const Int32& x, const Int32& y );
+
 		const Vector2i& getPosition() const;
 
 		const Vector2i& getRealPosition() const;
@@ -403,13 +407,11 @@ class EE_API UIControl {
 
 		void setInternalSize( const Sizei& size );
 
+		void setInternalPixelsSize( const Sizei& size );
+
 		void setInternalWidth( const Int32& width );
 
 		void setInternalHeight( const Int32& height );
-
-		void setInternalPosX( const Int32& x );
-
-		void setInternalPosY( const Int32& y );
 
 		Float pxToDp( Float px );
 
@@ -438,6 +440,10 @@ class EE_API UIControl {
 		Sizei dpToPxI( Sizef size);
 
 		Sizei pxToDpI( Sizef size );
+
+		Vector2i dpToPxI( Vector2i pos );
+
+		Vector2i pxToDpI( Vector2i pos );
 };
 
 }}

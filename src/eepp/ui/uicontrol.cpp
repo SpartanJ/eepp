@@ -162,6 +162,16 @@ void UIControl::setPosition( const Int32& x, const Int32& y ) {
 	setPosition( Vector2i( x, y ) );
 }
 
+void UIControl::setPixelsPosition( const Vector2i& Pos ) {
+	mPos = Vector2i( pxToDpI( Pos.x ), pxToDpI( Pos.y ) );
+	mRealPos = Pos;
+	onPositionChange();
+}
+
+void UIControl::setPixelsPosition( const Int32& x, const Int32& y ) {
+	setPixelsPosition( Vector2i( x, y ) );
+}
+
 const Vector2i& UIControl::getPosition() const {
 	return mPos;
 }
@@ -173,6 +183,11 @@ const Vector2i &UIControl::getRealPosition() const {
 void UIControl::setInternalSize( const Sizei& size ) {
 	mSize = size;
 	mRealSize = Sizei( size.x * getPixelDensity(), size.y * getPixelDensity() );
+}
+
+void UIControl::setInternalPixelsSize( const Sizei& size ) {
+	mSize = pxToDpI( size );
+	mRealSize = size;
 }
 
 void UIControl::setSize( const Sizei& Size ) {
@@ -219,14 +234,6 @@ void UIControl::setInternalWidth( const Int32& width ) {
 
 void UIControl::setInternalHeight( const Int32& height ) {
 	setPixelsSize( Sizei( mRealSize.x, height ) );
-}
-
-void UIControl::setInternalPosX( const Int32& x ) {
-	setInternalPosition( Vector2i( x, mPos.y ) );
-}
-
-void UIControl::setInternalPosY( const Int32& y ) {
-	setInternalPosition( Vector2i( mPos.x, y ) );
 }
 
 void UIControl::setVisible( const bool& visible ) {
@@ -659,6 +666,14 @@ Sizei UIControl::dpToPxI( Sizef size ) {
 
 Sizei UIControl::pxToDpI( Sizef size ) {
 	return Sizei( pxToDpI( size.x ), pxToDpI( size.y ) );
+}
+
+Vector2i UIControl::dpToPxI( Vector2i pos ) {
+	return Sizei( dpToPxI( pos.x ), dpToPxI( pos.y ) );
+}
+
+Vector2i UIControl::pxToDpI( Vector2i pos ) {
+	return Sizei( pxToDpI( pos.x ), pxToDpI( pos.y ) );
 }
 
 void UIControl::backgroundDraw() {
@@ -1379,10 +1394,8 @@ void UIControl::worldToControl( Vector2i& pos ) const {
 		}
 	}
 
-	pos = Vector2i( Pos.x / scale.x, Pos.y / scale.y );
-
-	pos.x = (Int32)((Float)pos.x / getPixelDensity());
-	pos.y = (Int32)((Float)pos.y / getPixelDensity());
+	Pos = Vector2f( Pos.x / scale.x, Pos.y / scale.y );
+	pos = Vector2i( Pos.x / getPixelDensity(), Pos.y / getPixelDensity() );
 }
 
 void UIControl::controlToWorld( Vector2i& pos ) const {

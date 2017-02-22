@@ -253,8 +253,9 @@ void UIWindow::setTheme( UITheme *Theme ) {
 			mButtonMinimize->setPixelsSize( mButtonMinimize->getSkinSize() );
 		}
 
-		fixChildsSize();
 		getMinWinSize();
+		applyMinWinSize();
+		fixChildsSize();
 	}
 }
 
@@ -281,6 +282,16 @@ void UIWindow::getMinWinSize() {
 
 	if ( mMinWindowSize.y < tSize.y )
 		mMinWindowSize.y = tSize.y;
+}
+
+void UIWindow::applyMinWinSize() {
+	if ( mSize.x < mMinWindowSize.x && mSize.y < mMinWindowSize.y ) {
+		setSize( mMinWindowSize );
+	} else if ( mSize.x < mMinWindowSize.x ) {
+		setSize( Sizei( mMinWindowSize.x, mSize.y ) );
+	} else {
+		setSize( Sizei( mSize.x, mMinWindowSize.y ) );
+	}
 }
 
 void UIWindow::onSizeChange() {
@@ -503,12 +514,14 @@ void UIWindow::tryResize( const UI_RESIZE_TYPE& Type ) {
 	worldToControl( Pos );
 	
 	mResizeType = Type;
-	
+
+	Pos = dpToPxI( Pos );
+
 	switch ( mResizeType )
 	{
 		case RESIZE_RIGHT:
 		{
-			mResizePos.x = mSize.getWidth() - Pos.x;
+			mResizePos.x = mRealSize.getWidth() - Pos.x;
 			break;
 		}
 		case RESIZE_LEFT:
@@ -523,19 +536,19 @@ void UIWindow::tryResize( const UI_RESIZE_TYPE& Type ) {
 		}
 		case RESIZE_BOTTOM:
 		{
-			mResizePos.y = mSize.getHeight() - Pos.y;
+			mResizePos.y = mRealSize.getHeight() - Pos.y;
 			break;
 		}
 		case RESIZE_RIGHTBOTTOM:
 		{
-			mResizePos.x = mSize.getWidth() - Pos.x;
-			mResizePos.y = mSize.getHeight() - Pos.y;
+			mResizePos.x = mRealSize.getWidth() - Pos.x;
+			mResizePos.y = mRealSize.getHeight() - Pos.y;
 			break;
 		}
 		case RESIZE_LEFTBOTTOM:
 		{
 			mResizePos.x = Pos.x;
-			mResizePos.y = mSize.getHeight() - Pos.y;
+			mResizePos.y = mRealSize.getHeight() - Pos.y;
 			break;
 		}
 		case RESIZE_TOPLEFT:
@@ -547,7 +560,7 @@ void UIWindow::tryResize( const UI_RESIZE_TYPE& Type ) {
 		case RESIZE_TOPRIGHT:
 		{
 			mResizePos.y = Pos.y;
-			mResizePos.x = mSize.getWidth() - Pos.x;
+			mResizePos.x = mRealSize.getWidth() - Pos.x;
 			break;
 		}
 		case RESIZE_NONE:
@@ -574,29 +587,31 @@ void UIWindow::updateResize() {
 
 	worldToControl( Pos );
 
+	Pos = dpToPxI( Pos );
+
 	switch ( mResizeType ) {
 		case RESIZE_RIGHT:
 		{
-			internalSize( Pos.x + mResizePos.x, mSize.getHeight() );
+			internalSize( Pos.x + mResizePos.x, mRealSize.getHeight() );
 			break;
 		}
 		case RESIZE_BOTTOM:
 		{
-			internalSize( mSize.getWidth(), Pos.y + mResizePos.y );
+			internalSize( mRealSize.getWidth(), Pos.y + mResizePos.y );
 			break;
 		}
 		case RESIZE_LEFT:
 		{
 			Pos.x -= mResizePos.x;
-			UIControl::setPosition( mPos.x + Pos.x, mPos.y );
-			internalSize( mSize.getWidth() - Pos.x, mSize.getHeight() );
+			UIControl::setPixelsPosition( mRealPos.x + Pos.x, mRealPos.y );
+			internalSize( mRealSize.getWidth() - Pos.x, mRealSize.getHeight() );
 			break;
 		}
 		case RESIZE_TOP:
 		{
 			Pos.y -= mResizePos.y;
-			UIControl::setPosition( mPos.x, mPos.y + Pos.y );
-			internalSize( mSize.getWidth(), mSize.getHeight() - Pos.y );
+			UIControl::setPixelsPosition( mRealPos.x, mRealPos.y + Pos.y );
+			internalSize( mRealSize.getWidth(), mRealSize.getHeight() - Pos.y );
 			break;
 		}
 		case RESIZE_RIGHTBOTTOM:
@@ -608,24 +623,24 @@ void UIWindow::updateResize() {
 		case RESIZE_TOPLEFT:
 		{
 			Pos -= mResizePos;
-			UIControl::setPosition( mPos.x + Pos.x, mPos.y + Pos.y );
-			internalSize( mSize.getWidth() - Pos.x, mSize.getHeight() - Pos.y );
+			UIControl::setPixelsPosition( mRealPos.x + Pos.x, mRealPos.y + Pos.y );
+			internalSize( mRealSize.getWidth() - Pos.x, mRealSize.getHeight() - Pos.y );
 			break;
 		}
 		case RESIZE_TOPRIGHT:
 		{
 			Pos.y -= mResizePos.y;
 			Pos.x += mResizePos.x;
-			UIControl::setPosition( mPos.x, mPos.y + Pos.y );
-			internalSize( Pos.x, mSize.getHeight() - Pos.y );
+			UIControl::setPixelsPosition( mRealPos.x, mRealPos.y + Pos.y );
+			internalSize( Pos.x, mRealSize.getHeight() - Pos.y );
 			break;
 		}
 		case RESIZE_LEFTBOTTOM:
 		{
 			Pos.x -= mResizePos.x;
 			Pos.y += mResizePos.y;
-			UIControl::setPosition( mPos.x + Pos.x, mPos.y );
-			internalSize( mSize.getWidth() - Pos.x, Pos.y );
+			UIControl::setPixelsPosition( mRealPos.x + Pos.x, mRealPos.y );
+			internalSize( mRealSize.getWidth() - Pos.x, Pos.y );
 			break;
 		}
 		case RESIZE_NONE:
@@ -639,18 +654,20 @@ void UIWindow::internalSize( const Int32& w, const Int32& h ) {
 }
 
 void UIWindow::internalSize( Sizei Size ) {
-	if ( Size.x < mMinWindowSize.x || Size.y < mMinWindowSize.y ) {
-		if ( Size.x < mMinWindowSize.x && Size.y < mMinWindowSize.y ) {
-			Size = mMinWindowSize;
-		} else if ( Size.x < mMinWindowSize.x ) {
-			Size.x = mMinWindowSize.x;
+	Sizei realMin = dpToPxI( mMinWindowSize );
+
+	if ( Size.x < realMin.x || Size.y < realMin.y ) {
+		if ( Size.x < realMin.x && Size.y < realMin.y ) {
+			Size = realMin;
+		} else if ( Size.x < realMin.x ) {
+			Size.x = realMin.x;
 		} else {
-			Size.y = mMinWindowSize.y;
+			Size.y = realMin.y;
 		}
 	}
 
-	if ( Size != mSize ) {
-		setInternalSize( Size );
+	if ( Size != mRealSize ) {
+		setInternalPixelsSize( Size );
 		onSizeChange();
 	}
 }
@@ -836,14 +853,14 @@ void UIWindow::maximize() {
 	UIControl * Ctrl = UIManager::instance()->getMainControl();
 
 	if ( Ctrl->getSize() == mSize ) {
-		setPosition( mNonMaxPos );
+		setPixelsPosition( mNonMaxPos );
 		internalSize( mNonMaxSize );
 	} else {
-		mNonMaxPos	= mPos;
-		mNonMaxSize = mSize;
+		mNonMaxPos	= mRealPos;
+		mNonMaxSize = mRealSize;
 
 		setPosition( 0, 0 );
-		internalSize( UIManager::instance()->getMainControl()->getSize() );
+		internalSize( UIManager::instance()->getMainControl()->getRealSize() );
 	}
 }
 

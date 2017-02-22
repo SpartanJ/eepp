@@ -214,6 +214,8 @@ class EE_API UIWindow : public UIComplexControl {
 		void disableByModal();
 
 		void resizeCursor();
+
+		void applyMinWinSize();
 };
 
 }}

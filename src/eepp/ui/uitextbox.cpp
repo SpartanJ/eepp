@@ -168,7 +168,7 @@ void UITextBox::setAlpha( const Float& alpha ) {
 
 void UITextBox::autoShrink() {
 	if ( mFlags & UI_AUTO_SHRINK_TEXT ) {
-		shrinkText( mSize.getWidth() );
+		shrinkText( mRealSize.getWidth() );
 	}
 }
 
@@ -283,6 +283,7 @@ Uint32 UITextBox::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) 
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		Vector2i controlPos( Pos );
 		worldToControl( controlPos );
+		controlPos = dpToPxI( controlPos );
 
 		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), controlPos );
 
@@ -318,6 +319,7 @@ Uint32 UITextBox::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		Vector2i controlPos( Pos );
 		worldToControl( controlPos );
+		controlPos = dpToPxI( controlPos );
 
 		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), controlPos );
 
