@@ -77,6 +77,8 @@ class EE_API UISpinBox : public UIComplexControl {
 		void adjustChilds();
 
 		void internalValue( const Float& Val, const bool& Force = false );
+
+		virtual void onSizeChange();
 		
 		virtual void onAlphaChange();
 };

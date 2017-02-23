@@ -385,7 +385,7 @@ void UIControlAnim::borderDraw() {
 	Primitives P;
 	P.setFillMode( DRAW_LINE );
 	P.setBlendMode( getBlendMode() );
-	P.setLineWidth( (Float)mBorder->getWidth() );
+	P.setLineWidth( dpToPx( mBorder->getWidth() ) );
 	P.setColor( getColor( mBorder->getColor() ) );
 
 	//! @TODO: Check why was this +0.1f -0.1f?

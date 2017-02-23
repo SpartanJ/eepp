@@ -779,7 +779,7 @@ void MapEditor::CreateNewMap() {
 }
 
 void MapEditor::CreateNewEmptyMap() {
-	mUIMap->Map()->create( Sizei( 100, 100 ), 16, Sizei( 32, 32 ), MAP_EDITOR_DEFAULT_FLAGS | MAP_FLAG_LIGHTS_ENABLED, mUIMap->getSize() );
+	mUIMap->Map()->create( Sizei( 100, 100 ), 16, Sizei( 32, 32 ), MAP_EDITOR_DEFAULT_FLAGS | MAP_FLAG_LIGHTS_ENABLED, mUIMap->getRealSize() );
 }
 
 void MapEditor::MapCreated() {
@@ -854,7 +854,7 @@ void MapEditor::MapOpen( const UIEvent * Event ) {
 void MapEditor::OnMapLoad() {
 	mCurLayer = NULL;
 
-	mUIMap->Map()->setViewSize( mUIMap->getSize() );
+	mUIMap->Map()->setViewSize( mUIMap->getRealSize() );
 
 	MapCreated();
 

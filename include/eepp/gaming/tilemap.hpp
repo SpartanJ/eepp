@@ -284,27 +284,27 @@ class EE_API TileMap {
 
 		virtual GameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags, MapLayer * Layer, const Uint32& DataId = 0 );
 
-		void			CalcTilesClip();
+		void			calcTilesClip();
 
-		void			Clamp();
+		void			clamp();
 
-		void			GetMouseOverTile();
+		void			getMouseOverTile();
 
-		void			GridDraw();
+		void			gridDraw();
 
-		void			MouseOverDraw();
+		void			mouseOverDraw();
 
-		void			DeleteLayers();
+		void			deleteLayers();
 
-		std::vector<std::string> GetTextureAtlases();
+		std::vector<std::string> getTextureAtlases();
 
-		void			CreateEmptyTile();
+		void			createEmptyTile();
 
-		void			UpdateScreenAABB();
+		void			updateScreenAABB();
 
-		void			CreateLightManager();
+		void			createLightManager();
 
-		virtual void	OnMapLoaded();
+		virtual void	onMapLoaded();
 };
 
 }}

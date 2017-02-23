@@ -47,12 +47,12 @@ TileMap::TileMap() :
 }
 
 TileMap::~TileMap() {
-	DeleteLayers();
+	deleteLayers();
 	disableForcedHeaders();
 }
 
 void TileMap::reset() {
-	DeleteLayers();
+	deleteLayers();
 
 	mWindow = NULL;
 	mLayers = NULL;
@@ -73,7 +73,7 @@ void TileMap::disableForcedHeaders() {
 	eeSAFE_DELETE( mForcedHeaders );
 }
 
-void TileMap::DeleteLayers() {
+void TileMap::deleteLayers() {
 	eeSAFE_DELETE( mLightManager );
 
 	for ( Uint32 i = 0; i < mLayerCount; i++ )
@@ -100,22 +100,22 @@ void TileMap::create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags
 	mLayers		= eeNewArray( MapLayer*, mMaxLayers );
 
 	if ( getLightsEnabled() )
-		CreateLightManager();
+		createLightManager();
 
 	for ( Uint32 i = 0; i < mMaxLayers; i++ )
 		mLayers[i] = NULL;
 
 	setViewSize( viewSize );
 
-	CreateEmptyTile();
+	createEmptyTile();
 }
 
-void TileMap::CreateLightManager() {
+void TileMap::createLightManager() {
 	eeSAFE_DELETE( mLightManager );
 	mLightManager = eeNew( MapLightManager, ( this, ( mFlags & MAP_FLAG_LIGHTS_BYVERTEX ) ? true : false ) );
 }
 
-void TileMap::CreateEmptyTile() {
+void TileMap::createEmptyTile() {
 	//! I create a texture representing an empty tile to render instead of rendering with primitives because is a lot faster, at least with NVIDIA GPUs.
 	TextureFactory * TF = TextureFactory::instance();
 
@@ -234,14 +234,14 @@ void TileMap::draw() {
 	GLi->translatef( (Float)static_cast<Int32>( mScreenPos.x + mOffset.x ), (Float)static_cast<Int32>( mScreenPos.y + mOffset.y ), 0 );
 	GLi->scalef( mScale, mScale, 0 );
 
-	GridDraw();
+	gridDraw();
 
 	for ( Uint32 i = 0; i < mLayerCount; i++ ) {
 		if ( mLayers[i]->isVisible() )
 			mLayers[i]->draw();
 	}
 
-	MouseOverDraw();
+	mouseOverDraw();
 
 	if ( mDrawCb.IsSet() )
 		mDrawCb();
@@ -256,14 +256,14 @@ void TileMap::draw() {
 	}
 }
 
-void TileMap::MouseOverDraw() {
+void TileMap::mouseOverDraw() {
 	if ( !getDrawTileOver() || NULL == mTileTex )
 		return;
 
 	mTileTex->draw( mMouseOverTileFinal.x * mTileSize.x, mMouseOverTileFinal.y * mTileSize.y, 0, Vector2f::One, mTileOverColor );
 }
 
-void TileMap::GridDraw() {
+void TileMap::gridDraw() {
 	if ( !getDrawGrid() )
 		return;
 
@@ -315,7 +315,7 @@ const bool& TileMap::isMouseOver() const {
 	return mMouseOver;
 }
 
-void TileMap::GetMouseOverTile() {
+void TileMap::getMouseOverTile() {
 	Vector2i mouse = mWindow->getInput()->getMousePos();
 
 	Vector2i MapPos( static_cast<Float>( mouse.x - mScreenPos.x - mOffset.x ) / mScale, static_cast<Float>( mouse.y - mScreenPos.y - mOffset.y ) / mScale );
@@ -339,7 +339,7 @@ void TileMap::GetMouseOverTile() {
 	mMouseMapPos = MapPos;
 }
 
-void TileMap::CalcTilesClip() {
+void TileMap::calcTilesClip() {
 	if ( mTileSize.x > 0 && mTileSize.y > 0 ) {
 		Vector2f ffoff( mOffset );
 		Vector2i foff( (Int32)ffoff.x, (Int32)ffoff.y );
@@ -364,7 +364,7 @@ void TileMap::CalcTilesClip() {
 	}
 }
 
-void TileMap::Clamp() {
+void TileMap::clamp() {
 	if ( !getClampBorders() )
 		return;
 
@@ -407,9 +407,9 @@ void TileMap::Clamp() {
 void TileMap::setOffset( const Vector2f& offset ) {
 	mOffset			= offset;
 
-	Clamp();
+	clamp();
 
-	CalcTilesClip();
+	calcTilesClip();
 }
 
 Vector2i TileMap::getMaxOffset() {
@@ -432,7 +432,7 @@ void TileMap::setScale( const Float& scale ) {
 	setOffset( mOffset );
 }
 
-void TileMap::UpdateScreenAABB() {
+void TileMap::updateScreenAABB() {
 	mScreenAABB = eeAABB( -mOffset.x, -mOffset.y, -mOffset.x + mViewSize.getWidth(), -mOffset.y + mViewSize.getHeight() );
 }
 
@@ -441,9 +441,9 @@ const eeAABB& TileMap::getViewAreaAABB() const {
 }
 
 void TileMap::update() {
-	GetMouseOverTile();
+	getMouseOverTile();
 
-	UpdateScreenAABB();
+	updateScreenAABB();
 
 	if ( NULL != mLightManager )
 		mLightManager->Update();
@@ -486,9 +486,9 @@ Vector2i TileMap::getTileCoords( const Vector2i& TilePos ) {
 void TileMap::setViewSize( const Sizei& viewSize ) {
 	mViewSize = viewSize;
 
-	Clamp();
+	clamp();
 
-	CalcTilesClip();
+	calcTilesClip();
 }
 
 const Vector2i& TileMap::getPosition() const {
@@ -999,7 +999,7 @@ bool TileMap::loadFromStream( IOStream& IOS ) {
 
 				//! Load the lights
 				if ( MapHdr.LightsCount ) {
-					CreateLightManager();
+					createLightManager();
 
 					sMapLightHdr * tLighsHdr = eeNewArray( sMapLightHdr, MapHdr.LightsCount );
 					sMapLightHdr * tLightHdr;
@@ -1023,7 +1023,7 @@ bool TileMap::loadFromStream( IOStream& IOS ) {
 				eeSAFE_DELETE_ARRAY( tLayersHdr );
 			}
 
-			OnMapLoaded();
+			onMapLoaded();
 
 			mPolyObjs.clear();
 
@@ -1081,7 +1081,7 @@ void TileMap::saveToStream( IOStream& IOS ) {
 	sMapHdr MapHdr;
 	MapLayer * tLayer;
 
-	std::vector<std::string> TextureAtlases = GetTextureAtlases();
+	std::vector<std::string> TextureAtlases = getTextureAtlases();
 
 	MapHdr.Magic					= EE_MAP_MAGIC;
 	MapHdr.Flags					= mFlags;
@@ -1371,7 +1371,7 @@ void TileMap::save( const std::string& path ) {
 	}
 }
 
-std::vector<std::string> TileMap::GetTextureAtlases() {
+std::vector<std::string> TileMap::getTextureAtlases() {
 	TextureAtlasManager * SGM = TextureAtlasManager::instance();
 	std::list<TextureAtlas*>& Res = SGM->getResources();
 
@@ -1427,7 +1427,7 @@ void * TileMap::getData() const {
 	return mData;
 }
 
-void TileMap::OnMapLoaded() {
+void TileMap::onMapLoaded() {
 }
 
 GameObject * TileMap::IsTypeInTilePos( const Uint32& Type, const Vector2i& TilePos ) {

@@ -161,6 +161,12 @@ void UISpinBox::internalValue( const Float& Val, const bool& Force ) {
 	}
 }
 
+void UISpinBox::onSizeChange() {
+	UIComplexControl::onSizeChange();
+
+	adjustChilds();
+}
+
 void UISpinBox::setValue( const Float& Val ) {
 	internalValue( Val, false );
 }

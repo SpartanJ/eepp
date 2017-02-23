@@ -31,8 +31,9 @@ UIMap::UIMap( const UIComplexControl::CreateParams& Params, UITheme * Theme, Til
 
 	mMap->setBackColor( ColorA( 100, 100, 100, 100 ) );
 	mMap->setGridLinesColor( ColorA( 150, 150, 150, 150 ) );
-
+	mMap->setScale( getPixelDensity() );
 	mMap->setDrawCallback( cb::Make0( this, &UIMap::mapDraw ) );
+	mMap->setViewSize( mRealSize );
 
 	mDragButton = EE_BUTTON_MMASK;
 	setDragEnabled( true );
@@ -319,7 +320,7 @@ void UIMap::tryToSelectLight() {
 void UIMap::onSizeChange() {
 	if ( NULL != mMap ) {
 		mMap->setPosition( mScreenPos );
-		mMap->setViewSize( mSize );
+		mMap->setViewSize( mRealSize );
 	}
 
 	UIComplexControl::onSizeChange();

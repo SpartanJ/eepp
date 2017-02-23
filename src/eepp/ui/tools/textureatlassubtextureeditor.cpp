@@ -35,8 +35,12 @@ TextureAtlasSubTextureEditor::~TextureAtlasSubTextureEditor() {
 void TextureAtlasSubTextureEditor::draw() {
 	Primitives P;
 	P.setColor( ColorA( 255, 0, 0, mAlpha ) );
-	P.drawLine( Line2f( Vector2f( mScreenPos.x, mScreenPos.y + mUICenter.y ), Vector2f( mScreenPos.x + mSize.getWidth(), mScreenPos.y + mUICenter.y ) ) );
-	P.drawLine( Line2f( Vector2f( mScreenPos.x + mUICenter.x, mScreenPos.y ), Vector2f( mScreenPos.x + mUICenter.x, mScreenPos.y + mSize.getHeight() ) ) );
+	P.setLineWidth( dpToPx( 1.f ) );
+
+	Vector2i uiCenterPx = dpToPxI( mUICenter );
+
+	P.drawLine( Line2f( Vector2f( mScreenPos.x, mScreenPos.y + uiCenterPx.y ), Vector2f( mScreenPos.x + mRealSize.getWidth(), mScreenPos.y + uiCenterPx.y ) ) );
+	P.drawLine( Line2f( Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y ), Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y + mRealSize.getHeight() ) ) );
 
 	UIComplexControl::draw();
 }
