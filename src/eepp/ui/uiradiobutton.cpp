@@ -107,7 +107,7 @@ void UIRadioButton::autoSize() {
 		mActiveButton->centerVertical();
 		mInactiveButton->centerVertical();
 
-		setInternalWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() );
+		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() );
 	}
 }
 

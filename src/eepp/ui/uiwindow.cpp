@@ -254,7 +254,6 @@ void UIWindow::setTheme( UITheme *Theme ) {
 		}
 
 		getMinWinSize();
-		applyMinWinSize();
 		fixChildsSize();
 	}
 }
@@ -332,6 +331,10 @@ const Sizei& UIWindow::getSize() {
 }
 
 void UIWindow::fixChildsSize() {
+	if ( mSize.getWidth() < mMinWindowSize.getWidth() || mSize.getHeight() < mMinWindowSize.getHeight() ) {
+		internalSize( eemin( mSize.getWidth(), mMinWindowSize.getWidth() ), eemin( mSize.getHeight(), mMinWindowSize.getHeight() ) );
+	}
+
 	if ( NULL == mWindowDecoration ) {
 		mContainer->setSize( mSize.getWidth(), mSize.getHeight() );
 		return;

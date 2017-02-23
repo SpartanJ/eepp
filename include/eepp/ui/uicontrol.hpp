@@ -407,11 +407,15 @@ class EE_API UIControl {
 
 		void setInternalSize( const Sizei& size );
 
-		void setInternalPixelsSize( const Sizei& size );
-
 		void setInternalWidth( const Int32& width );
 
 		void setInternalHeight( const Int32& height );
+
+		void setInternalPixelsSize( const Sizei& size );
+
+		void setInternalPixelsWidth( const Int32& width );
+
+		void setInternalPixelsHeight( const Int32& height );
 
 		Float pxToDp( Float px );
 

@@ -216,6 +216,22 @@ void UIControl::setPixelsSize( const Int32& x, const Int32& y ) {
 	setPixelsSize( Sizei( x, y ) );
 }
 
+void UIControl::setInternalWidth( const Int32& width ) {
+	setInternalSize( Sizei( width, mSize.getHeight() ) );
+}
+
+void UIControl::setInternalHeight( const Int32& height ) {
+	setInternalSize( Sizei( mSize.getWidth(), height ) );
+}
+
+void UIControl::setInternalPixelsWidth( const Int32& width ) {
+	setInternalPixelsSize( Sizei( width, mRealSize.y ) );
+}
+
+void UIControl::setInternalPixelsHeight( const Int32& height ) {
+	setInternalPixelsSize( Sizei( mRealSize.x, height ) );
+}
+
 Recti UIControl::getRect() const {
 	return Recti( mPos, mSize );
 }
@@ -226,14 +242,6 @@ const Sizei& UIControl::getSize() {
 
 const Sizei& UIControl::getRealSize() {
 	return mRealSize;
-}
-
-void UIControl::setInternalWidth( const Int32& width ) {
-	setPixelsSize( Sizei( width, mRealSize.y ) );
-}
-
-void UIControl::setInternalHeight( const Int32& height ) {
-	setPixelsSize( Sizei( mRealSize.x, height ) );
 }
 
 void UIControl::setVisible( const bool& visible ) {

@@ -15,11 +15,15 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	mCurPath( Params.DefaultDirectory ),
 	mCDLFlags( Params.CDLFlags )
 {
-	if ( mSize.getWidth() < CDLG_MIN_WIDTH )
+	if ( mSize.getWidth() < CDLG_MIN_WIDTH ) {
 		mSize.x = CDLG_MIN_WIDTH;
+		mRealSize.x = dpToPxI( CDLG_MIN_WIDTH );
+	}
 
-	if ( mSize.getHeight() < CDLG_MIN_HEIGHT )
+	if ( mSize.getHeight() < CDLG_MIN_HEIGHT ) {
 		mSize.y = CDLG_MIN_HEIGHT;
+		mRealSize.y = dpToPxI( CDLG_MIN_HEIGHT );
+	}
 
 	if ( mMinWindowSize.getWidth() < CDLG_MIN_WIDTH )
 		mMinWindowSize.setWidth( CDLG_MIN_WIDTH );
