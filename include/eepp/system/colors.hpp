@@ -191,8 +191,62 @@ const tColorA<T> tColorA<T>::Transparent = tColorA<T>(0,0,0,0);
 template <typename T>
 const tColorA<T> tColorA<T>::Black = tColorA<T>(0,0,0,255);
 
+class tColorAI : public tColorA<Uint8>
+{
+	public:
+		tColorAI() :
+			tColorA<Uint8>()
+		{}
+
+		tColorAI(Uint8 r, Uint8 g, Uint8 b, Uint8 a) :
+			tColorA<Uint8>(r,g,b,a)
+		{}
+
+		tColorAI( const tColor<Uint8>& Col ) :
+			tColorA<Uint8>( Col )
+		{}
+
+		tColorAI( const tColor<Uint8>& Col, Uint8 a ) :
+			tColorA<Uint8>( Col, a )
+		{}
+
+		tColorAI( const tColorA<Uint8>& Col ) :
+			tColorA<Uint8>( Col.Value )
+		{}
+
+		tColorAI( const Uint32& Col ) :
+			tColorA<Uint8>( Col )
+		{}
+
+		static inline tColorAI colorFromPointer(void *ptr) {
+			unsigned long val = (long)ptr;
+
+			// hash the pointer up nicely
+			val = (val+0x7ed55d16) + (val<<12);
+			val = (val^0xc761c23c) ^ (val>>19);
+			val = (val+0x165667b1) + (val<<5);
+			val = (val+0xd3a2646c) ^ (val<<9);
+			val = (val+0xfd7046c5) + (val<<3);
+			val = (val^0xb55a4f09) ^ (val>>16);
+
+			unsigned char r = (val>>0) & 0xFF;
+			unsigned char g = (val>>8) & 0xFF;
+			unsigned char b = (val>>16) & 0xFF;
+
+			unsigned char max = r>g ? (r>b ? r : b) : (g>b ? g : b);
+
+			const int mult = 127;
+			const int add = 63;
+			r = (r*mult)/max + add;
+			g = (g*mult)/max + add;
+			b = (b*mult)/max + add;
+
+			return tColorAI(r, g, b, 255);
+		}
+};
+
 typedef tColor<Float>		Colorf;
-typedef tColorA<Uint8> 		ColorA;
+typedef tColorAI			ColorA;
 typedef tColorA<Float>		ColorAf;
 typedef tColorA<float>		ColorAff;
 

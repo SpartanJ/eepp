@@ -71,6 +71,10 @@ class EE_API UIManager {
 
 		bool getDrawDebugData() const;
 
+		void setDrawBoxes( bool draw );
+
+		bool getDrawBoxes() const;
+
 		void setHighlightFocusColor( const ColorA& Color );
 
 		const ColorA& getHighlightFocusColor() const;

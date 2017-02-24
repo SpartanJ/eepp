@@ -110,41 +110,47 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 		mBtnDown->setPixelsSize( tSkin->getSize() );
 	}
 
-	if ( mFlags & UI_AUTO_SIZE ) {
-		tSkin = mSlider->getBackSlider()->getSkin();
-
-		if ( NULL != tSkin ) {
-			Sizei size = tSkin->getSize();
-
-			if ( mSlider->isVertical() ) {
-				mSlider->setPixelsSize( size.getWidth() , mRealSize.getHeight() );
-				setPixelsSize( size.getWidth() , mRealSize.getHeight() );
-				mMinControlSize.x = mSize.getWidth();
-			} else {
-				mSlider->setPixelsSize( mRealSize.getWidth(), size.getHeight() );
-				setPixelsSize( mRealSize.getWidth(), size.getHeight() );
-				mMinControlSize.y = mSize.getHeight();
-			}
-		}
-	}
-
 	adjustChilds();
 
 	mSlider->adjustChilds();
+}
+
+void UIScrollBar::autoSize() {
+	UISkin * tSkin = mSlider->getBackSlider()->getSkin();
+
+	if ( NULL != tSkin ) {
+		Sizei size = tSkin->getSize();
+
+		mMinControlSize = pxToDpI( size );
+
+		if ( mFlags & UI_AUTO_SIZE ) {
+			if ( mSlider->isVertical() ) {
+				mSlider->setPixelsSize( size.getWidth() , mRealSize.getHeight() );
+				setPixelsSize( size.getWidth(), mRealSize.getHeight() );
+			} else {
+				mSlider->setPixelsSize( mRealSize.getWidth(), size.getHeight() );
+				setPixelsSize( mRealSize.getWidth(), size.getHeight() );
+			}
+		}
+	}
 }
 
 void UIScrollBar::onSizeChange() {
 	adjustChilds();
+
 	mSlider->adjustChilds();
+
 	UIComplexControl::onSizeChange();
 }
 
 void UIScrollBar::adjustChilds() {
+	autoSize();
+
 	mBtnUp->setPosition( 0, 0 );
 
 	if ( !isVertical() ) {
 		mBtnDown->setPosition( mSize.getWidth() - mBtnDown->getSize().getWidth(), 0 );
-		mSlider->setSize( mSize.getWidth() - mBtnDown->getSize().getWidth() - mBtnUp->getSize().getWidth(), mSlider->getSize().getHeight() );
+		mSlider->setSize( mSize.getWidth() - mBtnDown->getSize().getWidth() - mBtnUp->getSize().getWidth(), mSize.getHeight() );
 		mSlider->setPosition( mBtnUp->getSize().getWidth(), 0 );
 
 		mBtnDown->centerVertical();
@@ -152,7 +158,7 @@ void UIScrollBar::adjustChilds() {
 		mSlider->centerVertical();
 	} else {
 		mBtnDown->setPosition( 0, mSize.getHeight() - mBtnDown->getSize().getHeight() );
-		mSlider->setSize( mSlider->getSize().getWidth(), mSize.getHeight() - mBtnDown->getSize().getHeight() - mBtnUp->getSize().getHeight() );
+		mSlider->setSize( mSize.getWidth(), mSize.getHeight() - mBtnDown->getSize().getHeight() - mBtnUp->getSize().getHeight() );
 		mSlider->setPosition( 0, mBtnUp->getSize().getHeight() );
 
 		mBtnDown->centerHorizontal();
@@ -229,6 +235,14 @@ const Float& UIScrollBar::getClickStep() const {
 	return mSlider->getClickStep();
 }
 
+Float UIScrollBar::getPageStep() const {
+	return mSlider->getPageStep();
+}
+
+void UIScrollBar::setPageStep(const Float& pageStep) {
+	mSlider->setPageStep( pageStep );
+}
+
 bool UIScrollBar::isVertical() const {
 	return mSlider->isVertical();
 }
@@ -248,6 +262,27 @@ UIControlAnim * UIScrollBar::getButtonUp() const {
 UIControlAnim * UIScrollBar::getButtonDown() const {
 	return mBtnDown;
 }
+
+bool UIScrollBar::getExpandBackground() const {
+	return mSlider->getExpandBackground();
+}
+
+void UIScrollBar::setExpandBackground( bool expandBackground ) {
+	mSlider->setExpandBackground( expandBackground );
+
+	adjustChilds();
+}
+
+UI_ORIENTATION UIScrollBar::getOrientation() const {
+	return mSlider->getOrientation();
+}
+
+void UIScrollBar::setOrientation( const UI_ORIENTATION & orientation ) {
+	mSlider->setOrientation( orientation );
+
+	applyDefaultTheme();
+}
+
 
 void UIScrollBar::onAlphaChange() {
 	UIControlAnim::onAlphaChange();

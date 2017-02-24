@@ -333,6 +333,14 @@ bool UIManager::getDrawDebugData() const {
 	return 0 != ( mFlags & UI_MANAGER_DRAW_DEBUG_DATA );
 }
 
+void UIManager::setDrawBoxes( bool draw ) {
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_DRAW_BOXES, draw ? 1 : 0 );
+}
+
+bool UIManager::getDrawBoxes() const {
+	return 0 != ( mFlags & UI_MANAGER_DRAW_BOXES );
+}
+
 void UIManager::setHighlightFocusColor( const ColorA& Color ) {
 	mHighlightFocusColor = Color;
 }

@@ -361,6 +361,17 @@ void UIControl::drawDebugData() {
 	}
 }
 
+void UIControl::drawBox() {
+	if ( UIManager::instance()->getDrawBoxes() ) {
+		Primitives P;
+		P.setFillMode( DRAW_LINE );
+		P.setBlendMode( getBlendMode() );
+		P.setColor( ColorA::colorFromPointer( this ) );
+		P.setLineWidth( dpToPxI( 1 ) );
+		P.drawRectangle( getRectf() );
+	}
+}
+
 void UIControl::draw() {
 	if ( mVisible ) {
 		if ( mFlags & UI_FILL_BACKGROUND )
@@ -372,11 +383,13 @@ void UIControl::draw() {
 		if ( NULL != mSkinState )
 			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight(), 255 );
 
+		drawDebugData();
+
+		drawBox();
+
 		drawHighlightFocus();
 
 		drawOverControl();
-
-		drawDebugData();
 	}
 }
 

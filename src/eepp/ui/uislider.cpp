@@ -15,6 +15,7 @@ UISlider::UISlider( const UISlider::CreateParams& Params ) :
 	mMaxValue( 1.f ),
 	mValue( 0.f ),
 	mClickStep( 0.1f ),
+	mPageStep(0),
 	mOnPosChange( false )
 {
 	UIControl::CreateParams BgParams;
@@ -59,6 +60,7 @@ UISlider::UISlider() :
 	mMaxValue( 1.f ),
 	mValue( 0.f ),
 	mClickStep( 0.1f ),
+	mPageStep(0),
 	mOnPosChange( false )
 {
 	Sizei bgSize;
@@ -131,12 +133,27 @@ void UISlider::adjustChilds() {
 	tSkin = mSlider->getSkin();
 
 	if ( NULL != tSkin ) {
-		mSlider->setPixelsSize( tSkin->getSize() );
+		if ( mPageStep == 0 ) {
+			mSlider->setPixelsSize( tSkin->getSize() );
+		} else {
+			Float percent = ( mPageStep / ( mMaxValue - mMinValue ) );
 
-		if ( UI_HORIZONTAL == mOrientation )
+			if ( UI_HORIZONTAL == mOrientation ) {
+				Int32 size = eemax( (Int32)( (Float)mRealSize.getWidth() * percent ), tSkin->getSize().getWidth() );
+
+				mSlider->setPixelsSize( size, tSkin->getSize().getHeight() );
+			} else {
+				Int32 size = eemax( (Int32)( (Float)mRealSize.getHeight() * percent ), tSkin->getSize().getHeight() );
+
+				mSlider->setPixelsSize( tSkin->getSize().getWidth(), size );
+			}
+		}
+
+		if ( UI_HORIZONTAL == mOrientation ) {
 			mSlider->centerVertical();
-		else
+		} else {
 			mSlider->centerHorizontal();
+		}
 	}
 
 	tSkin = mBackSlider->getSkin();
@@ -363,25 +380,14 @@ UI_ORIENTATION UISlider::getOrientation() const {
 void UISlider::setOrientation( const UI_ORIENTATION & orientation ) {
 	mOrientation = orientation;
 
-	Sizei bgSize;
-
-	if ( UI_HORIZONTAL == mOrientation )
-		bgSize = dpToPxI( Sizei( mSize.getWidth() - 16, 8 ) );
-	else
-		bgSize = dpToPxI( Sizei( 8, mSize.getHeight() - 16 ) );
-
-	mBackSlider->setSize( bgSize );
-
 	applyDefaultTheme();
 }
 
-bool UISlider::getAllowHalfSliderOut() const
-{
+bool UISlider::getAllowHalfSliderOut() const {
 	return mAllowHalfSliderOut;
 }
 
-void UISlider::setAllowHalfSliderOut( bool allowHalfSliderOut )
-{
+void UISlider::setAllowHalfSliderOut( bool allowHalfSliderOut ) {
 	mAllowHalfSliderOut = allowHalfSliderOut;
 
 	adjustChilds();
@@ -389,14 +395,24 @@ void UISlider::setAllowHalfSliderOut( bool allowHalfSliderOut )
 	setValue( mValue );
 }
 
-bool UISlider::getExpandBackground() const
-{
+bool UISlider::getExpandBackground() const {
 	return mExpandBackground;
 }
 
-void UISlider::setExpandBackground( bool expandBackground )
-{
+void UISlider::setExpandBackground( bool expandBackground ) {
 	mExpandBackground = expandBackground;
+
+	adjustChilds();
+
+	setValue( mValue );
+}
+
+Float UISlider::getPageStep() const {
+	return mPageStep;
+}
+
+void UISlider::setPageStep(const Float & pageStep) {
+	mPageStep = eemin( eemax( pageStep, mMinValue ), mMaxValue );
 
 	adjustChilds();
 
@@ -409,14 +425,6 @@ UIControl * UISlider::getBackSlider() const {
 
 UIDragable * UISlider::getSliderButton() const {
 	return mSlider;
-}
-
-const bool& UISlider::isHalfSliderOutAllowed() const {
-	return mAllowHalfSliderOut;
-}
-
-const bool& UISlider::isBackgroundExpanded() const {
-	return mExpandBackground;
 }
 
 void UISlider::onAlphaChange() {

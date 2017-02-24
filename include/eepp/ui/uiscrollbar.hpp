@@ -47,6 +47,10 @@ class EE_API UIScrollBar : public UIComplexControl {
 
 		const Float& getClickStep() const;
 
+		Float getPageStep() const;
+
+		void setPageStep( const Float& pageStep );
+
 		virtual void setTheme( UITheme * Theme );
 
 		bool isVertical() const;
@@ -58,12 +62,22 @@ class EE_API UIScrollBar : public UIComplexControl {
 		UIControlAnim * getButtonUp() const;
 
 		UIControlAnim * getButtonDown() const;
+
+		UI_ORIENTATION getOrientation() const;
+
+		void setOrientation( const UI_ORIENTATION & orientation );
+
+		bool getExpandBackground() const;
+
+		void setExpandBackground( bool expandBackground );
 	protected:
 		UISlider * 		mSlider;
 		UIControlAnim *	mBtnUp;
-		UIControlAnim * 	mBtnDown;
+		UIControlAnim * mBtnDown;
 
 		virtual void onSizeChange();
+
+		void autoSize();
 
 		void adjustChilds();
 

@@ -415,6 +415,8 @@ class EE_API UIControl {
 
 		void drawDebugData();
 
+		void drawBox();
+
 		void setInternalPosition( const Vector2i& Pos );
 
 		void setInternalSize( const Sizei& size );

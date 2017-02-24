@@ -60,7 +60,7 @@ class EE_API UIThemeManager : public ResourceManager<UITheme> {
 	protected:
 		Font *				mFont;
 		UITheme * 			mThemeDefault;
-		bool				mautoApplyDefaultTheme;
+		bool				mAutoApplyDefaultTheme;
 
 		bool				mEnableDefaultEffects;
 		Time				mFadeInTime;

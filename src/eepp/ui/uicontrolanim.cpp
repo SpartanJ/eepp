@@ -67,6 +67,8 @@ void UIControlAnim::draw() {
 		drawOverControl();
 
 		drawDebugData();
+
+		drawBox();
 	}
 }
 

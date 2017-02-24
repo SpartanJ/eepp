@@ -10,7 +10,7 @@ UIThemeManager::UIThemeManager() :
 	ResourceManager<UITheme>( true ),
 	mFont( NULL ),
 	mThemeDefault( NULL ),
-	mautoApplyDefaultTheme( true ),
+	mAutoApplyDefaultTheme( true ),
 	mEnableDefaultEffects( false ),
 	mFadeInTime( Milliseconds( 100.f ) ),
 	mFadeOutTime( Milliseconds ( 100.f ) ),
@@ -57,16 +57,16 @@ UITheme * UIThemeManager::getDefaultTheme() const {
 }
 
 void UIThemeManager::applyDefaultTheme( UIControl * Control ) {
-	if ( mautoApplyDefaultTheme && NULL != mThemeDefault && NULL != Control )
+	if ( mAutoApplyDefaultTheme && NULL != mThemeDefault && NULL != Control )
 		Control->setTheme( mThemeDefault );
 }
 
 void UIThemeManager::setAutoApplyDefaultTheme( const bool& apply ) {
-	mautoApplyDefaultTheme = apply;
+	mAutoApplyDefaultTheme = apply;
 }
 
 const bool& UIThemeManager::getAutoApplyDefaultTheme() const {
-	return mautoApplyDefaultTheme;
+	return mAutoApplyDefaultTheme;
 }
 
 void UIThemeManager::setDefaultEffectsEnabled( const bool& Enabled ) {

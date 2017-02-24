@@ -278,7 +278,7 @@ void EETest::createUI() {
 	UIThemeManager::instance()->setDefaultFont( TTF );
 	UIThemeManager::instance()->setDefaultTheme( mThemeName );
 
-	Int32 wsize = 100;
+	Int32 wsize = 15;
 	std::vector<String> str(wsize);
 
 	if ( wsize ) {
@@ -286,7 +286,7 @@ void EETest::createUI() {
 			str[i-1] = "Test ListBox " + String::toStr(i) + " testing it right now!";
 	}
 
-	/**/
+	/*
 	UIControl::CreateParams Params( UIManager::instance()->getMainControl(), Vector2i(0,0), Sizei( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
 	Params.Border.setWidth( 2 );
@@ -662,6 +662,20 @@ void EETest::createUI() {
 	listBox->setVisible( true );
 	listBox->setEnabled( true );
 	listBox->addListBoxItems( str );
+
+	UIScrollBar * scrollBar = eeNew( UIScrollBar, () );
+	scrollBar->setOrientation( UI_HORIZONTAL );
+	scrollBar->setPosition( 200, 150 );
+	scrollBar->setSize( 100, 0 );
+	scrollBar->setVisible( true );
+	scrollBar->setEnabled( true );
+
+	UIScrollBar * scrollBar2 = eeNew( UIScrollBar, () );
+	scrollBar2->setOrientation( UI_VERTICAL );
+	scrollBar2->setPosition( 200, 25 );
+	scrollBar2->setSize( 0, 100 );
+	scrollBar2->setVisible( true );
+	scrollBar2->setEnabled( true );
 }
 
 void EETest::createMapEditor() {

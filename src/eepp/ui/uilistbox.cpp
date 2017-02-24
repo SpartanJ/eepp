@@ -81,6 +81,13 @@ UIListBox::UIListBox( UIListBox::CreateParams& Params ) :
 
 UIListBox::UIListBox() :
 	UIComplexControl(),
+	mRowHeight(0),
+	mVScrollMode( UI_SCROLLBAR_AUTO ),
+	mHScrollMode( UI_SCROLLBAR_AUTO ),
+	mSmoothScroll( true ),
+	mPaddingContainer(),
+	mHScrollPadding(),
+	mVScrollPadding(),
 	mContainer( NULL ),
 	mVScrollBar( NULL ),
 	mHScrollBar( NULL ),
@@ -197,7 +204,6 @@ Uint32 UIListBox::addListBoxItem( UIListBoxItem * Item ) {
 	if ( Item->getParent() != mContainer )
 		Item->setParent( mContainer );
 
-
 	updateScroll();
 
 	Uint32 tMaxTextWidth = mMaxTextWidth;
@@ -209,6 +215,8 @@ Uint32 UIListBox::addListBoxItem( UIListBoxItem * Item ) {
 		updateScroll();
 	}
 
+	mVScrollBar->setPageStep( ( (Float)mContainer->getSize().getHeight() /(Float) mRowHeight ) / (Float)mItems.size() );
+
 	return (Uint32)(mItems.size() - 1);
 }
 
@@ -219,12 +227,14 @@ Uint32 UIListBox::addListBoxItem( const String& Text ) {
 	if ( NULL != mFont ) {
 		Uint32 twidth = mFont->getTextWidth( Text );
 
-		if ( twidth > mMaxTextWidth ) {
+		if ( twidth > (Uint32)dpToPxI( mMaxTextWidth ) ) {
 			mMaxTextWidth = (Uint32)pxToDpI( twidth );
 
 			updateListBoxItemsSize();
 		}
 	}
+
+	mVScrollBar->setPageStep( ( (Float)mContainer->getSize().getHeight() /(Float) mRowHeight ) / (Float)mItems.size() );
 
 	updateScroll();
 
@@ -399,7 +409,7 @@ void UIListBox::findMaxWidth() {
 		else
 			width = mFont->getTextWidth( mTexts[i] );
 
-		if ( width > (Int32)mMaxTextWidth )
+		if ( width > dpToPxI( mMaxTextWidth ) )
 			mMaxTextWidth = (Uint32)pxToDpI( width );
 	}
 }
@@ -415,7 +425,7 @@ void UIListBox::itemUpdateSize( UIListBoxItem * Item ) {
 	if ( NULL != Item ) {
 		Int32 width = (Int32)Item->getTextWidth();
 
-		if ( width > (Int32)mMaxTextWidth )
+		if ( width > dpToPxI( mMaxTextWidth ) )
 			mMaxTextWidth = (Uint32)pxToDpI( width );
 
 		if ( !mHScrollBar->isVisible() ) {
