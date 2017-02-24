@@ -49,7 +49,7 @@ class EE_API UIScrollBar : public UIComplexControl {
 
 		virtual void setTheme( UITheme * Theme );
 
-		const bool& isVertical() const;
+		bool isVertical() const;
 
 		virtual void update();
 

@@ -617,9 +617,19 @@ void EETest::createUI() {
 
 	UISlider * slider = eeNew( UISlider, () );
 	slider->setPosition( 50, 100 );
-	slider->setSize( 16, 100 );
+	slider->setSize( 100, 100 );
 	slider->setVisible( true );
 	slider->setEnabled( true );
+	slider->setOrientation( UI_HORIZONTAL );
+	slider->setAllowHalfSliderOut( true );
+
+	UISlider * slider2 = eeNew( UISlider, () );
+	slider2->setPosition( 50, 25 );
+	slider2->setSize( 100, 100 );
+	slider2->setVisible( true );
+	slider2->setEnabled( true );
+	slider2->setOrientation( UI_VERTICAL );
+	slider2->setAllowHalfSliderOut( true );
 
 	UITextInput * textInput = eeNew( UITextInput, () );
 	textInput->setPosition( 50, 210 );

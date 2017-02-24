@@ -229,7 +229,7 @@ const Float& UIScrollBar::getClickStep() const {
 	return mSlider->getClickStep();
 }
 
-const bool& UIScrollBar::isVertical() const {
+bool UIScrollBar::isVertical() const {
 	return mSlider->isVertical();
 }
 

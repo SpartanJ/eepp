@@ -53,7 +53,7 @@ class EE_API UISlider : public UIComplexControl {
 
 		const Float& getClickStep() const;
 
-		const bool& isVertical() const;
+		bool isVertical() const;
 
 		virtual void update();
 
@@ -68,10 +68,22 @@ class EE_API UISlider : public UIComplexControl {
 		const bool& isBackgroundExpanded() const;
 
 		void manageClick( const Uint32& flags );
+
+		UI_ORIENTATION getOrientation() const;
+
+		void setOrientation( const UI_ORIENTATION & orientation );
+
+		bool getAllowHalfSliderOut() const;
+
+		void setAllowHalfSliderOut( bool allowHalfSliderOut );
+
+		bool getExpandBackground() const;
+
+		void setExpandBackground( bool expandBackground );
 	protected:
 		friend class Private::UISliderButton;
 
-		bool				mVertical;
+		UI_ORIENTATION		mOrientation;
 		bool				mAllowHalfSliderOut;
 		bool				mExpandBackground;
 		UIControlAnim *		mBackSlider;
