@@ -46,6 +46,43 @@ UIDropDownList::UIDropDownList( UIDropDownList::CreateParams& Params ) :
 	mListBox->addEventListener( UIEvent::EventOnControlClear, cb::Make1( this, &UIDropDownList::onControlClear ) );
 }
 
+UIDropDownList::UIDropDownList() :
+	UITextInput(),
+	mListBox( NULL ),
+	mMinNumVisibleItems( 10 ),
+	mPopUpToMainControl( false )
+{
+	setFlags( UI_CLIP_ENABLE | UI_AUTO_SIZE | UI_AUTO_PADDING );
+
+	setAllowEditing( false );
+
+	applyDefaultTheme();
+
+	Uint32 flags = UI_CLIP_ENABLE | UI_AUTO_PADDING;
+
+	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
+
+	if ( NULL != Theme ) {
+		mListBox = Theme->createListBox( NULL, Sizei( mSize.getWidth(), mMinNumVisibleItems * mSize.getHeight() ),Vector2i(), flags );
+	} else {
+		UIListBox::CreateParams LBParams;
+		LBParams.Size 				= Sizei( mSize.getWidth(), mMinNumVisibleItems * mSize.getHeight() );
+		LBParams.Flags 				= flags;
+		LBParams.FontSelectedColor	= ColorA( 255, 255, 255, 255 );
+		mListBox = eeNew( UIListBox, ( LBParams ) );
+	}
+
+	mListBox->setEnabled( false );
+	mListBox->setVisible( false );
+
+	mListBox->addEventListener( UIEvent::EventOnComplexControlFocusLoss, cb::Make1( this, &UIDropDownList::onListBoxFocusLoss ) );
+	mListBox->addEventListener( UIEvent::EventOnItemSelected	, cb::Make1( this, &UIDropDownList::onItemSelected ) );
+	mListBox->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &UIDropDownList::onItemClicked ) );
+	mListBox->addEventListener( UIEvent::EventOnItemKeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
+	mListBox->addEventListener( UIEvent::EventKeyDown		, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
+	mListBox->addEventListener( UIEvent::EventOnControlClear, cb::Make1( this, &UIDropDownList::onControlClear ) );
+}
+
 UIDropDownList::~UIDropDownList() {
 	destroyListBox();
 }
@@ -70,10 +107,12 @@ void UIDropDownList::setTheme( UITheme * Theme ) {
 
 void UIDropDownList::onSizeChange() {
 	UIComplexControl::onSizeChange();
+
+	autoSizeControl();
 }
 
 void UIDropDownList::autoSizeControl() {
-	if ( mFlags & UI_AUTO_SIZE ) {
+	if ( mFlags & UI_AUTO_SIZE || 0 == mSize.getHeight() ) {
 		setPixelsSize( mRealSize.x, getSkinSize().getHeight() );
 	}
 }

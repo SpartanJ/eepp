@@ -285,12 +285,36 @@ const Uint32& UIManager::getLastPressTrigger() const {
 	return mKM->getLastPressTrigger();
 }
 
-void UIManager::clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
+void UIManager::clipPlaneEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
 	mWindow->clipPlaneEnable( x, y, Width, Height );
 }
 
-void UIManager::clipDisable() {
+void UIManager::clipPlaneDisable() {
 	mWindow->clipPlaneDisable();
+}
+
+void UIManager::clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
+	mWindow->clipEnable( x, y, Width, Height );
+}
+
+void UIManager::clipDisable() {
+	mWindow->clipDisable();
+}
+
+void UIManager::clipSmartEnable(UIControl * ctrl, const Int32 & x, const Int32 & y, const Uint32 & Width, const Uint32 & Height) {
+	if ( ctrl->isMeOrParentTreeRotated() ) {
+		clipPlaneEnable( x, y, Width, Height );
+	} else {
+		clipEnable( x, y, Width, Height );
+	}
+}
+
+void UIManager::clipSmartDisable(UIControl * ctrl) {
+	if ( ctrl->isMeOrParentTreeRotated() ) {
+		clipPlaneDisable();
+	} else {
+		clipDisable();
+	}
 }
 
 void UIManager::setHighlightFocus( bool Highlight ) {
@@ -299,6 +323,14 @@ void UIManager::setHighlightFocus( bool Highlight ) {
 
 bool UIManager::getHighlightFocus() const {
 	return 0 != ( mFlags & UI_MANAGER_HIGHLIGHT_FOCUS );
+}
+
+void UIManager::setDrawDebugData( bool debug ) {
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_DRAW_DEBUG_DATA, debug ? 1 : 0 );
+}
+
+bool UIManager::getDrawDebugData() const {
+	return 0 != ( mFlags & UI_MANAGER_DRAW_DEBUG_DATA );
 }
 
 void UIManager::setHighlightFocusColor( const ColorA& Color ) {

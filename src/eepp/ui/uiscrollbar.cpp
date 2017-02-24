@@ -42,6 +42,32 @@ UIScrollBar::UIScrollBar( const UIScrollBar::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
+UIScrollBar::UIScrollBar() :
+	UIComplexControl()
+{
+	mBtnDown	= eeNew( UIControlAnim, () );
+	mBtnUp		= eeNew( UIControlAnim, () );
+	mBtnUp->setParent( this );
+	mBtnUp->setVisible( true );
+	mBtnUp->setEnabled( true );
+	mBtnUp->setSize( 16, 16 );
+	mBtnDown->setParent( this );
+	mBtnDown->setVisible( true );
+	mBtnDown->setEnabled( true );
+	mBtnDown->setSize( 16, 16 );
+
+	mSlider		= eeNew( UISlider, () );
+	mSlider->setParent( this );
+	mSlider->setVisible( true );
+	mSlider->setEnabled( true );
+
+	mSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
+
+	adjustChilds();
+
+	applyDefaultTheme();
+}
+
 UIScrollBar::~UIScrollBar() {
 }
 

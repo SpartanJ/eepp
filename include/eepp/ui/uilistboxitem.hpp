@@ -12,6 +12,8 @@ class EE_API UIListBoxItem : public UITextBox {
 	public:
 		UIListBoxItem( const UITextBox::CreateParams& Params );
 
+		UIListBoxItem();
+
 		virtual ~UIListBoxItem();
 
 		virtual Uint32 getType() const;

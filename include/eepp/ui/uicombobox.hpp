@@ -9,6 +9,8 @@ class EE_API UIComboBox : public UIDropDownList {
 	public:
 		UIComboBox( UIComboBox::CreateParams& Params );
 
+		UIComboBox();
+
 		virtual ~UIComboBox();
 
 		virtual Uint32 getType() const;
@@ -30,6 +32,8 @@ class EE_API UIComboBox : public UIDropDownList {
 		void createButton();
 
 		virtual void onControlClear( const UIEvent *Event );
+
+		virtual void onSizeChange();
 };
 
 }}

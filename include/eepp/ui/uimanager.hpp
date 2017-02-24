@@ -47,9 +47,17 @@ class EE_API UIManager {
 
 		const Uint32& getLastPressTrigger() const;
 
+		void clipPlaneEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
+
+		void clipPlaneDisable();
+
 		void clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
 
 		void clipDisable();
+
+		void clipSmartEnable( UIControl * ctrl, const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
+
+		void clipSmartDisable( UIControl * ctrl );
 
 		void sendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
 
@@ -58,6 +66,10 @@ class EE_API UIManager {
 		void setHighlightFocus( bool Highlight );
 
 		bool getHighlightFocus() const;
+
+		void setDrawDebugData( bool debug );
+
+		bool getDrawDebugData() const;
 
 		void setHighlightFocusColor( const ColorA& Color );
 

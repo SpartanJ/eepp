@@ -23,6 +23,8 @@ class EE_API UIScrollBar : public UIComplexControl {
 
 		UIScrollBar( const UIScrollBar::CreateParams& Params );
 
+		UIScrollBar();
+
 		virtual ~UIScrollBar();
 
 		virtual Uint32 getType() const;

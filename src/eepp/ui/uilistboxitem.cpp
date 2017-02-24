@@ -10,6 +10,12 @@ UIListBoxItem::UIListBoxItem( const UITextBox::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
+UIListBoxItem::UIListBoxItem() :
+	UITextBox()
+{
+	applyDefaultTheme();
+}
+
 UIListBoxItem::~UIListBoxItem() {
 	if ( UIManager::instance()->getFocusControl() == this )
 		mParentCtrl->setFocus();

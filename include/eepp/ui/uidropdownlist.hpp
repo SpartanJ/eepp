@@ -27,6 +27,8 @@ class EE_API UIDropDownList : public UITextInput {
 
 		UIDropDownList( UIDropDownList::CreateParams& Params );
 
+		UIDropDownList();
+
 		virtual ~UIDropDownList();
 
 		virtual Uint32 getType() const;

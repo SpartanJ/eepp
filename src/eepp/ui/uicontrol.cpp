@@ -4,6 +4,7 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/subtexture.hpp>
 #include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/font.hpp>
 #include <eepp/window/engine.hpp>
 
 namespace EE { namespace UI {
@@ -327,6 +328,39 @@ void UIControl::close() {
 	UIManager::instance()->addToCloseQueue( this );
 }
 
+void UIControl::drawHighlightFocus() {
+	if ( UIManager::instance()->getHighlightFocus() && UIManager::instance()->getFocusControl() == this ) {
+		Primitives P;
+		P.setFillMode( DRAW_LINE );
+		P.setBlendMode( getBlendMode() );
+		P.setColor( UIManager::instance()->getHighlightFocusColor() );
+		P.setLineWidth( dpToPxI( 1 ) );
+		P.drawRectangle( getRectf() );
+	}
+}
+
+void UIControl::drawOverControl() {
+	if ( UIManager::instance()->getHighlightOver() && UIManager::instance()->getOverControl() == this ) {
+		Primitives P;
+		P.setFillMode( DRAW_LINE );
+		P.setBlendMode( getBlendMode() );
+		P.setColor( UIManager::instance()->getHighlightOverColor() );
+		P.setLineWidth( dpToPxI( 1 ) );
+		P.drawRectangle( getRectf() );
+	}
+}
+
+void UIControl::drawDebugData() {
+	Graphics::Font * font = UIThemeManager::instance()->getDefaultFont();
+
+	if ( UIManager::instance()->getDrawDebugData() && font != NULL ) {
+		String text( String::strFormated( "X: %d Y: %d\nW: %d H: %d", mRealPos.x, mRealPos.y, mRealSize.x, mRealSize.y ) );
+
+		font->setColor( ColorA( 255, 0, 255, 255 ) );
+		font->draw( text, mScreenPos.x, mScreenPos.y );
+	}
+}
+
 void UIControl::draw() {
 	if ( mVisible ) {
 		if ( mFlags & UI_FILL_BACKGROUND )
@@ -336,23 +370,13 @@ void UIControl::draw() {
 			borderDraw();
 
 		if ( NULL != mSkinState )
-			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.getWidth(), (Float)mSize.getHeight(), 255 );
+			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight(), 255 );
 
-		if ( UIManager::instance()->getHighlightFocus() && UIManager::instance()->getFocusControl() == this ) {
-			Primitives P;
-			P.setFillMode( DRAW_LINE );
-			P.setBlendMode( getBlendMode() );
-			P.setColor( UIManager::instance()->getHighlightFocusColor() );
-			P.drawRectangle( getRectf() );
-		}
+		drawHighlightFocus();
 
-		if ( UIManager::instance()->getHighlightOver() && UIManager::instance()->getOverControl() == this ) {
-			Primitives P;
-			P.setFillMode( DRAW_LINE );
-			P.setBlendMode( getBlendMode() );
-			P.setColor( UIManager::instance()->getHighlightOverColor() );
-			P.drawRectangle( getRectf() );
-		}
+		drawOverControl();
+
+		drawDebugData();
 	}
 }
 
@@ -559,6 +583,11 @@ void UIControl::setFlags( const Uint32& flags ) {
 
 	if ( NULL == mBorder && ( mFlags & UI_BORDER ) )
 		mBorder = eeNew( UIBorder, () );
+}
+
+void UIControl::unsetFlags(const Uint32 & flags) {
+	if ( mFlags & flags )
+		mFlags &= ~flags;
 }
 
 void UIControl::setBlendMode( const EE_BLEND_MODE& blend ) {
@@ -769,15 +798,15 @@ void UIControl::internalDraw() {
 void UIControl::clipMe() {
 	if ( mFlags & UI_CLIP_ENABLE ) {
 		if ( mFlags & UI_BORDER )
-			UIManager::instance()->clipEnable( mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() + 1 );
+			UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() + 1 );
 		else
-			UIManager::instance()->clipEnable( mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() );
+			UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() );
 	}
 }
 
 void UIControl::clipDisable() {
 	if ( mFlags & UI_CLIP_ENABLE )
-		UIManager::instance()->clipDisable();
+		UIManager::instance()->clipSmartDisable( this );
 }
 
 void UIControl::matrixSet() {
@@ -1023,6 +1052,23 @@ Uint32 UIControl::isComplex() {
 
 Uint32 UIControl::isClipped() {
 	return mFlags & UI_CLIP_ENABLE;
+}
+
+Uint32 UIControl::isRotated() {
+	return mControlFlags & UI_CTRL_FLAG_ROTATED;
+}
+
+bool UIControl::isMeOrParentTreeRotated() {
+	UIControl * Ctrl = this;
+
+	while( NULL != Ctrl ) {
+		if ( Ctrl->isRotated() )
+			return true;
+
+		Ctrl = Ctrl->getParent();
+	}
+
+	return false;
 }
 
 Polygon2f& UIControl::getPolygon() {

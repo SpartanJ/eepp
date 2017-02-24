@@ -62,21 +62,11 @@ void UIControlAnim::draw() {
 		if ( NULL != mSkinState )
 			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight(), (Uint32)mAlpha );
 
-		if ( UIManager::instance()->getHighlightFocus() && UIManager::instance()->getFocusControl() == this ) {
-			Primitives P;
-			P.setFillMode( DRAW_LINE );
-			P.setBlendMode( getBlendMode() );
-			P.setColor( UIManager::instance()->getHighlightFocusColor() );
-			P.drawRectangle( getRectf() );
-		}
+		drawHighlightFocus();
 
-		if ( UIManager::instance()->getHighlightOver() && UIManager::instance()->getOverControl() == this ) {
-			Primitives P;
-			P.setFillMode( DRAW_LINE );
-			P.setBlendMode( getBlendMode() );
-			P.setColor( UIManager::instance()->getHighlightOverColor() );
-			P.drawRectangle( getRectf() );
-		}
+		drawOverControl();
+
+		drawDebugData();
 	}
 }
 
@@ -103,6 +93,14 @@ Vector2f UIControlAnim::getRotationCenter() {
 
 void UIControlAnim::setRotation( const Float& angle ) {
 	mAngle = angle;
+
+	if ( mAngle != 0.f ) {
+		mControlFlags |= UI_CTRL_FLAG_ROTATED;
+	} else {
+		if ( mControlFlags & UI_CTRL_FLAG_ROTATED )
+			mControlFlags &= ~UI_CTRL_FLAG_ROTATED;
+	}
+
 	onAngleChange();
 }
 

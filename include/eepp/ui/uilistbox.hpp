@@ -56,6 +56,8 @@ class EE_API UIListBox : public UIComplexControl {
 
 		UIListBox( UIListBox::CreateParams& Params );
 
+		UIListBox();
+
 		virtual ~UIListBox();
 
 		virtual Uint32 getType() const;

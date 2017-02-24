@@ -174,6 +174,8 @@ class EE_API UIControl {
 
 		void setFlags( const Uint32& flags );
 
+		void unsetFlags( const Uint32& flags );
+
 		void setBlendMode( const EE_BLEND_MODE& blend );
 
 		EE_BLEND_MODE getBlendMode();
@@ -196,6 +198,10 @@ class EE_API UIControl {
 		Uint32 isComplex();
 
 		Uint32 isClipped();
+
+		Uint32 isRotated();
+
+		bool isMeOrParentTreeRotated();
 
 		Uint32 addEventListener( const Uint32& EventType, const UIEventCallback& Callback );
 
@@ -402,6 +408,12 @@ class EE_API UIControl {
 		Sizei getSkinSize( UISkin * Skin, const Uint32& State = UISkinState::StateNormal );
 
 		Rectf getRectf();
+
+		void drawHighlightFocus();
+
+		void drawOverControl();
+
+		void drawDebugData();
 
 		void setInternalPosition( const Vector2i& Pos );
 

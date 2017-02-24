@@ -78,6 +78,71 @@ UIListBox::UIListBox( UIListBox::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
+
+UIListBox::UIListBox() :
+	UIComplexControl(),
+	mContainer( NULL ),
+	mVScrollBar( NULL ),
+	mHScrollBar( NULL ),
+	mLastPos( eeINDEX_NOT_FOUND ),
+	mMaxTextWidth(0),
+	mHScrollInit(0),
+	mItemsNotVisible(0),
+	mLastTickMove(0),
+	mVisibleFirst(0),
+	mVisibleLast(0),
+	mTouchDragAcceleration(0)
+{
+	setFlags( UI_CLIP_ENABLE | UI_AUTO_PADDING );
+
+	if ( NULL != UIThemeManager::instance()->getDefaultFont() )
+		mFont = UIThemeManager::instance()->getDefaultFont();
+
+	UIControl::CreateParams CParams;
+	CParams.setParent( this );
+	CParams.setPosition( mPaddingContainer.Left, mPaddingContainer.Top );
+	CParams.Size = Sizei( mSize.getWidth() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.getHeight() - mPaddingContainer.Top - mPaddingContainer.Bottom );
+	CParams.Flags = mFlags;
+	mContainer = eeNew( UIItemContainer<UIListBox>, ( CParams ) );
+	mContainer->setVisible( true );
+	mContainer->setEnabled( true );
+
+	if ( mFlags & UI_CLIP_ENABLE )
+		mFlags &= ~UI_CLIP_ENABLE;
+
+	UIScrollBar::CreateParams ScrollBarP;
+	ScrollBarP.setParent( this );
+	ScrollBarP.Size = Sizei( 15, mSize.getHeight() );
+	ScrollBarP.setPosition( mSize.getWidth() - 15, 0 );
+	ScrollBarP.Flags = UI_AUTO_SIZE;
+	ScrollBarP.VerticalScrollBar = true;
+	mVScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
+
+	ScrollBarP.Size = Sizei( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 15 );
+	ScrollBarP.setPosition( 0, mSize.getHeight() - 15 );
+	ScrollBarP.VerticalScrollBar = false;
+	mHScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
+
+	if ( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) {
+		mHScrollBar->setVisible( true );
+		mHScrollBar->setEnabled( true );
+	}
+
+	if ( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode ) {
+		mVScrollBar->setVisible( true );
+		mVScrollBar->setEnabled( true );
+	}
+
+	mVScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIListBox::onScrollValueChange ) );
+	mHScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIListBox::onHScrollValueChange ) );
+
+	setSmoothScroll( true );
+
+	setRowHeight();
+
+	applyDefaultTheme();
+}
+
 UIListBox::~UIListBox() {
 }
 
@@ -155,7 +220,7 @@ Uint32 UIListBox::addListBoxItem( const String& Text ) {
 		Uint32 twidth = mFont->getTextWidth( Text );
 
 		if ( twidth > mMaxTextWidth ) {
-			mMaxTextWidth = twidth;
+			mMaxTextWidth = (Uint32)pxToDpI( twidth );
 
 			updateListBoxItemsSize();
 		}
@@ -335,7 +400,7 @@ void UIListBox::findMaxWidth() {
 			width = mFont->getTextWidth( mTexts[i] );
 
 		if ( width > (Int32)mMaxTextWidth )
-			mMaxTextWidth = (Uint32)width;
+			mMaxTextWidth = (Uint32)pxToDpI( width );
 	}
 }
 
@@ -351,7 +416,7 @@ void UIListBox::itemUpdateSize( UIListBoxItem * Item ) {
 		Int32 width = (Int32)Item->getTextWidth();
 
 		if ( width > (Int32)mMaxTextWidth )
-			mMaxTextWidth = (Uint32)width;
+			mMaxTextWidth = (Uint32)pxToDpI( width );
 
 		if ( !mHScrollBar->isVisible() ) {
 			if ( width < mContainer->getSize().getWidth() )

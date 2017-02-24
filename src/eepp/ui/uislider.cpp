@@ -23,7 +23,7 @@ UISlider::UISlider( const UISlider::CreateParams& Params ) :
 	if ( !mVertical )
 		BgParams.Size = Sizei( mSize.getWidth() - 16, 8 );
 	else
-		BgParams.Size = Sizei( 8, mSize.getWidth() - 16 );
+		BgParams.Size = Sizei( 8, mSize.getHeight() - 16 );
 
 	mBackSlider = eeNew( UIControlAnim, ( BgParams ) );
 	mBackSlider->setVisible( true );
@@ -66,7 +66,7 @@ UISlider::UISlider() :
 	if ( !mVertical )
 		bgSize = dpToPxI( Sizei( mSize.getWidth() - 16, 8 ) );
 	else
-		bgSize = dpToPxI( Sizei( 8, mSize.getWidth() - 16 ) );
+		bgSize = dpToPxI( Sizei( 8, mSize.getHeight() - 16 ) );
 
 	mBackSlider = eeNew( UIControlAnim, () );
 	mBackSlider->setParent( this );

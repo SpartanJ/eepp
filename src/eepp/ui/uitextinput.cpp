@@ -30,6 +30,8 @@ UITextInput::UITextInput() :
 	mAllowEditing( true ),
 	mShowingWait( true )
 {
+	setFlags( UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE );
+
 	mTextBuffer.start();
 	mTextBuffer.setActive( false );
 	mTextBuffer.setFreeEditing( true );
@@ -80,6 +82,8 @@ void UITextInput::update() {
 	if ( mCursorPos != mTextBuffer.getCursorPos() ) {
 		alignFix();
 		mCursorPos = mTextBuffer.getCursorPos();
+		mWaitCursorTime = 0.f;
+		mShowingWait = true;
 		onCursorPosChange();
 	}
 }
@@ -191,7 +195,7 @@ void UITextInput::setTheme( UITheme * Theme ) {
 }
 
 void UITextInput::autoSize() {
-	if ( mFlags & UI_AUTO_SIZE ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) || 0 == mSize.getHeight() ) {
 		setPixelsSize( mRealSize.x, getSkinSize().getHeight() );
 	}
 }

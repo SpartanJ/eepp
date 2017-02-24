@@ -277,6 +277,15 @@ void EETest::createUI() {
 	UIThemeManager::instance()->setDefaultEffectsEnabled( true );
 	UIThemeManager::instance()->setDefaultFont( TTF );
 	UIThemeManager::instance()->setDefaultTheme( mThemeName );
+
+	Int32 wsize = 100;
+	std::vector<String> str(wsize);
+
+	if ( wsize ) {
+		for ( Int32 i = 1; i <= wsize; i++ )
+			str[i-1] = "Test ListBox " + String::toStr(i) + " testing it right now!";
+	}
+
 	/**/
 	UIControl::CreateParams Params( UIManager::instance()->getMainControl(), Vector2i(0,0), Sizei( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
@@ -426,16 +435,7 @@ void EETest::createUI() {
 	mListBox->setVisible( true );
 	mListBox->setEnabled( true );
 
-	Int32 wsize = 100;
-
-	if ( wsize ) {
-		std::vector<String> str(wsize);
-
-		for ( Int32 i = 1; i <= wsize; i++ )
-			str[i-1] = "Test ListBox " + String::toStr(i) + " testing it right now!";
-
-		mListBox->addListBoxItems( str );
-	}
+	mListBox->addListBoxItems( str );
 
 	UIDropDownList::CreateParams DDLParams;
 	DDLParams.setParent( C );
@@ -620,6 +620,38 @@ void EETest::createUI() {
 	slider->setSize( 16, 100 );
 	slider->setVisible( true );
 	slider->setEnabled( true );
+
+	UITextInput * textInput = eeNew( UITextInput, () );
+	textInput->setPosition( 50, 210 );
+	textInput->setSize( 100, 0 );
+	textInput->setVisible( true );
+	textInput->setEnabled( true );
+
+	UIDropDownList * dropdownList = eeNew( UIDropDownList, () );
+	dropdownList->setPosition( 50, 250 );
+	dropdownList->setSize( 100, 0 );
+	dropdownList->setVisible( true );
+	dropdownList->setEnabled( true );
+	dropdownList->getListBox()->addListBoxItem( "Test 1" );
+	dropdownList->getListBox()->addListBoxItem( "Test 2" );
+	dropdownList->getListBox()->addListBoxItem( "Test 3" );
+
+	UIComboBox * comboBox = eeNew( UIComboBox, () );
+	comboBox->setPosition( 50, 280 );
+	comboBox->setSize( 100, 0 );
+	comboBox->setVisible( true );
+	comboBox->setEnabled( true );
+	comboBox->getListBox()->addListBoxItem( "Test 1" );
+	comboBox->getListBox()->addListBoxItem( "Test 2" );
+	comboBox->getListBox()->addListBoxItem( "Test 3" );
+	comboBox->getListBox()->setSelected( 0 );
+
+	UIListBox * listBox = eeNew( UIListBox, () );
+	listBox->setPosition( 50, 320 );
+	listBox->setSize( 100, 160 );
+	listBox->setVisible( true );
+	listBox->setEnabled( true );
+	listBox->addListBoxItems( str );
 }
 
 void EETest::createMapEditor() {

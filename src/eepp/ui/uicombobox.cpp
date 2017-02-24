@@ -12,6 +12,15 @@ UIComboBox::UIComboBox( UIComboBox::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
+UIComboBox::UIComboBox() :
+	UIDropDownList(),
+	mButton( NULL )
+{
+	setAllowEditing( true );
+
+	applyDefaultTheme();
+}
+
 UIComboBox::~UIComboBox() {
 }
 
@@ -28,16 +37,12 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 
 	autoSizeControl();
 
-	createButton();
-
 	autoPadding();
 
 	onSizeChange();
 }
 
 void UIComboBox::createButton() {
-	eeSAFE_DELETE( mButton );
-
 	Int32 btnWidth = 0;
 
 	if ( NULL != mSkinState && NULL != mSkinState->getSkin() ) {
@@ -51,16 +56,19 @@ void UIComboBox::createButton() {
 		}
 	}
 
-	UIControl::CreateParams Params;
-	Params.setParent( this ),
-	Params.Size = Sizei( btnWidth, mSize.getHeight() );
-	Params.setPosition( mSize.getWidth() - btnWidth, 0 );
-	mButton = eeNew( UIControl, ( Params ) );
-	mButton->setVisible( true );
-	mButton->setEnabled( true );
-	mButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIComboBox::onButtonClick ) );
-	mButton->addEventListener( UIEvent::EventMouseEnter, cb::Make1( this, &UIComboBox::onButtonEnter ) );
-	mButton->addEventListener( UIEvent::EventMouseExit, cb::Make1( this, &UIComboBox::onButtonExit ) );
+	if ( NULL == mButton ) {
+		mButton = eeNew( UIControl, () );
+		mButton->setParent( this );
+		mButton->setVisible( true );
+		mButton->setEnabled( true );
+		mButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIComboBox::onButtonClick ) );
+		mButton->addEventListener( UIEvent::EventMouseEnter, cb::Make1( this, &UIComboBox::onButtonEnter ) );
+		mButton->addEventListener( UIEvent::EventMouseExit, cb::Make1( this, &UIComboBox::onButtonExit ) );
+
+	}
+
+	mButton->setPixelsSize( btnWidth, mRealSize.getHeight() );
+	mButton->setPixelsPosition( mRealSize.getWidth() - btnWidth, 0 );
 }
 
 void UIComboBox::onButtonClick( const UIEvent * Event ) {
@@ -92,6 +100,12 @@ Uint32 UIComboBox::onMouseClick( const Vector2i& position, const Uint32 Flags ) 
 }
 
 void UIComboBox::onControlClear( const UIEvent *Event ) {
+}
+
+void UIComboBox::onSizeChange() {
+	UIDropDownList::onSizeChange();
+
+	createButton();
 }
 
 }}

@@ -10,6 +10,8 @@ class UIItemContainer : public UIControl {
 	public:
 		UIItemContainer( UIControl::CreateParams& Params );
 
+		UIItemContainer();
+
 		~UIItemContainer();
 
 		void update();
@@ -22,6 +24,12 @@ class UIItemContainer : public UIControl {
 template<class TContainer>
 UIItemContainer<TContainer>::UIItemContainer( UIControl::CreateParams& Params ) :
 	UIControl( Params )
+{
+}
+
+template<class TContainer>
+UIItemContainer<TContainer>::UIItemContainer() :
+	UIControl()
 {
 }
 
