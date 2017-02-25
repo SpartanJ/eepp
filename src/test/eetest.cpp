@@ -159,7 +159,7 @@ void EETest::createUIThemeTextureAtlas() {
 	std::string Path( MyPath + "ui/" + mThemeName );
 
 	if ( !FileSystem::fileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
-		TexturePacker tp( 512, 512, true, 2 );
+		TexturePacker tp( 512, 512, mThemeName.find_first_of( "2x" ) != std::string::npos ? PD_XHDPI : PD_MDPI, true, 2 );
 		tp.addTexturesPath( Path );
 		tp.packTextures();
 		tp.save( tgpath + ".png", SAVE_TYPE_PNG );
@@ -256,11 +256,11 @@ void EETest::createUI() {
 	Clock TE;
 
 	mThemeName = "uitheme";
-
-	if ( Engine::instance()->getPixelDensity() == 2 ) {
+/*
+	if ( PixelDensity::getPixelDensity() == 2 ) {
 		mThemeName += "2x";
 	}
-
+*/
 	createUIThemeTextureAtlas();
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
@@ -850,7 +850,7 @@ void EETest::showMenu() {
 	if ( Menu->show() ) {
 		Vector2i Pos = mWindow->getInput()->getMousePos();
 		UIMenu::fixMenuPos( Pos , Menu );
-		Menu->setPosition( Sizei( (Float)Pos.x / EE->getPixelDensity(), (Float)Pos.y / EE->getPixelDensity() ) );
+		Menu->setPosition( Sizei( (Float)Pos.x / PixelDensity::getPixelDensity(), (Float)Pos.y / PixelDensity::getPixelDensity() ) );
 	}
 }
 
@@ -912,6 +912,18 @@ void EETest::onTextureLoaded( ResourceLoader * ResLoaded ) {
 }
 
 void EETest::loadTextures() {
+	if ( !FileSystem::fileExists( MyPath + "atlases/bnb.eta" ) ) {
+		TexturePacker tp( 512, 512, PD_MDPI, true, 0 );
+		tp.addTexturesPath( MyPath + "atlases/bnb/" );
+		tp.save( MyPath + "atlases/bnb.png" );
+	}
+
+	if ( !FileSystem::fileExists( MyPath + "atlases/tiles.eta" ) ) {
+		TexturePacker tp( 256, 32, PD_MDPI, true, 0 );
+		tp.addTexturesPath( MyPath + "atlases/tiles/" );
+		tp.save( MyPath + "atlases/tiles.png" );
+	}
+
 	Clock TE;
 
 	Uint32 i;

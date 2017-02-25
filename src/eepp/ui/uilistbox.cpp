@@ -174,7 +174,7 @@ void UIListBox::setTheme( UITheme * Theme ) {
 
 void UIListBox::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mPaddingContainer = pxToDpI( makePadding() );
+		mPaddingContainer = PixelDensity::pxToDpI( makePadding() );
 	}
 }
 
@@ -388,7 +388,7 @@ void UIListBox::setRowHeight() {
 		if ( NULL != mFont )
 			FontSize = mFont->getFontHeight();
 
-		mRowHeight = (Uint32)pxToDpI( FontSize + 4 );
+		mRowHeight = (Uint32)PixelDensity::pxToDpI( FontSize + 4 );
 	}
 
 	if ( tOldRowHeight != mRowHeight ) {
@@ -527,9 +527,9 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 				Int32 ScrollH;
 
 				if ( mVScrollBar->isVisible() )
-					ScrollH = pxToDpI( mMaxTextWidth ) - mContainer->getSize().getWidth() + mVScrollBar->getSize().getWidth();
+					ScrollH = PixelDensity::pxToDpI( mMaxTextWidth ) - mContainer->getSize().getWidth() + mVScrollBar->getSize().getWidth();
 				else
-					ScrollH = pxToDpI( mMaxTextWidth ) - mContainer->getSize().getWidth();
+					ScrollH = PixelDensity::pxToDpI( mMaxTextWidth ) - mContainer->getSize().getWidth();
 
 				Int32 HScrolleable = (Uint32)( mHScrollBar->getValue() * ScrollH );
 

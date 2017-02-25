@@ -22,8 +22,6 @@ class UIManager;
 
 class EE_API UIControl {
 	public:
-		static Float getPixelDensity();
-
 		typedef cb::Callback1<void, const UIEvent*> UIEventCallback;
 
 		class CreateParams {
@@ -440,38 +438,6 @@ class EE_API UIControl {
 		void setInternalPixelsWidth( const Int32& width );
 
 		void setInternalPixelsHeight( const Int32& height );
-
-		Float pxToDp( Float px );
-
-		Int32 pxToDpI( Float px );
-
-		Float dpToPx( Float dp );
-
-		Int32 dpToPxI( Float dp );
-
-		Sizei dpToPxI(Sizei size);
-
-		Sizei pxToDpI( Sizei size );
-
-		Recti dpToPxI( Recti size);
-
-		Recti pxToDpI( Recti size );
-
-		Rectf dpToPx( Rectf size);
-
-		Rectf pxToDp( Rectf size );
-
-		Sizef dpToPx( Sizef size);
-
-		Sizef pxToDp( Sizef size );
-
-		Sizei dpToPxI( Sizef size);
-
-		Sizei pxToDpI( Sizef size );
-
-		Vector2i dpToPxI( Vector2i pos );
-
-		Vector2i pxToDpI( Vector2i pos );
 
 		UIControl * findIdHash( const Uint32& idHash );
 };

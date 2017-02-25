@@ -345,7 +345,7 @@ void UIWindow::fixChildsSize() {
 	if ( mDecoAutoSize ) {
 		decoSize = mDecoSize = Sizei( mRealSize.getWidth(), mWindowDecoration->getSkinSize().getHeight() );
 	} else {
-		decoSize = dpToPxI( mDecoSize );
+		decoSize = PixelDensity::dpToPxI( mDecoSize );
 	}
 
 	mWindowDecoration->setPixelsSize( mDecoSize );
@@ -362,7 +362,7 @@ void UIWindow::fixChildsSize() {
 		mBorderLeft->setPixelsSize( Sizei( mBorderLeft->getSkinSize().getWidth(), BorderHeight ) );
 		mBorderRight->setPixelsSize( Sizei( mBorderRight->getSkinSize().getWidth(), BorderHeight ) );
 	} else {
-		Sizei borderSize = dpToPxI( mBorderSize );
+		Sizei borderSize = PixelDensity::dpToPxI( mBorderSize );
 
 		mBorderLeft->setSize( borderSize.getWidth(), BorderHeight );
 		mBorderRight->setSize( borderSize.getWidth(), BorderHeight );
@@ -518,7 +518,7 @@ void UIWindow::tryResize( const UI_RESIZE_TYPE& Type ) {
 	
 	mResizeType = Type;
 
-	Pos = dpToPxI( Pos );
+	Pos = PixelDensity::dpToPxI( Pos );
 
 	switch ( mResizeType )
 	{
@@ -590,7 +590,7 @@ void UIWindow::updateResize() {
 
 	worldToControl( Pos );
 
-	Pos = dpToPxI( Pos );
+	Pos = PixelDensity::dpToPxI( Pos );
 
 	switch ( mResizeType ) {
 		case RESIZE_RIGHT:
@@ -657,7 +657,7 @@ void UIWindow::internalSize( const Int32& w, const Int32& h ) {
 }
 
 void UIWindow::internalSize( Sizei Size ) {
-	Sizei realMin = dpToPxI( mMinWindowSize );
+	Sizei realMin = PixelDensity::dpToPxI( mMinWindowSize );
 
 	if ( Size.x < realMin.x || Size.y < realMin.y ) {
 		if ( Size.x < realMin.x && Size.y < realMin.y ) {

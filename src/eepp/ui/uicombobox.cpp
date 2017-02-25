@@ -52,7 +52,7 @@ void UIComboBox::createButton() {
 			SubTexture * tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Right );
 
 			if ( NULL != tSubTexture )
-				btnWidth = tSubTexture->getRealSize().getWidth();
+				btnWidth = tSubTexture->getSize().getWidth();
 		}
 	}
 

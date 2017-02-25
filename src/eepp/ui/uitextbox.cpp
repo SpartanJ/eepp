@@ -240,11 +240,11 @@ void UITextBox::onFontChanged() {
 
 void UITextBox::setPadding( const Recti& padding ) {
 	mPadding = padding;
-	mRealPadding = dpToPxI( padding );
+	mRealPadding = PixelDensity::dpToPxI( padding );
 }
 
 void UITextBox::setPixelsPadding( const Recti& padding ) {
-	mPadding = pxToDpI( padding );
+	mPadding = PixelDensity::pxToDpI( padding );
 	mRealPadding = padding;
 }
 
@@ -284,7 +284,7 @@ Uint32 UITextBox::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) 
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		Vector2i controlPos( Pos );
 		worldToControl( controlPos );
-		controlPos = dpToPxI( controlPos );
+		controlPos = PixelDensity::dpToPxI( controlPos );
 
 		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), controlPos );
 
@@ -320,7 +320,7 @@ Uint32 UITextBox::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		Vector2i controlPos( Pos );
 		worldToControl( controlPos );
-		controlPos = dpToPxI( controlPos );
+		controlPos = PixelDensity::dpToPxI( controlPos );
 
 		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), controlPos );
 

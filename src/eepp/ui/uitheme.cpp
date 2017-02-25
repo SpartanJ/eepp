@@ -34,7 +34,7 @@
 
 namespace EE { namespace UI {
 
-static void LoadThemeElements( std::list<std::string>& UI_THEME_ELEMENTS, std::list<std::string>& UI_THEME_ICONS ) {
+static void loadThemeElements( std::list<std::string>& UI_THEME_ELEMENTS, std::list<std::string>& UI_THEME_ICONS ) {
 		UI_THEME_ELEMENTS.push_back( "control" );
 		UI_THEME_ELEMENTS.push_back( "button" );
 		UI_THEME_ELEMENTS.push_back( "textinput" );
@@ -132,7 +132,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 
 	Clock TE;
 
-	LoadThemeElements( tTheme->mUIElements, tTheme->mUIIcons );
+	loadThemeElements( tTheme->mUIElements, tTheme->mUIIcons );
 
 	Uint32 i;
 	bool Found;
@@ -170,7 +170,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 UITheme * UITheme::loadFromPath( UITheme * tTheme, const std::string& Path, const std::string ImgExt ) {
 	Clock TE;
 
-	LoadThemeElements( tTheme->mUIElements, tTheme->mUIIcons );
+	loadThemeElements( tTheme->mUIElements, tTheme->mUIIcons );
 
 	Uint32 i;
 	bool Found;
@@ -247,7 +247,7 @@ bool UITheme::searchFilesInAtlas( Graphics::TextureAtlas * SG, std::string Eleme
 	// Search Complex Skin
 	for ( i = 0; i < UISkinState::StateCount; i++ ) {
 		for ( s = 0; s < UISkinComplex::SideCount; s++ ) {
-			ElemName = Element + "_" + UISkin::getSkinStateName( i ) + "_" + UISkinComplex::GetSideSuffix( s );
+			ElemName = Element + "_" + UISkin::getSkinStateName( i ) + "_" + UISkinComplex::getSideSuffix( s );
 
 			if ( SG->getByName( ElemName ) ) {
 				IsComplex = 1;
@@ -287,7 +287,7 @@ bool UITheme::searchFilesOfElement( Graphics::TextureAtlas * SG, const std::stri
 	// Search Complex Skin
 	for ( i = 0; i < UISkinState::StateCount; i++ ) {
 		for ( s = 0; s < UISkinComplex::SideCount; s++ ) {
-			ElemName = Element + "_" + UISkin::getSkinStateName( i ) + "_" + UISkinComplex::GetSideSuffix( s );
+			ElemName = Element + "_" + UISkin::getSkinStateName( i ) + "_" + UISkinComplex::getSideSuffix( s );
 			ElemPath = Path + ElemName;
 			ElemFullPath = ElemPath + "." + ImgExt;
 

@@ -7,7 +7,7 @@ static const char SideSuffix[ UISkinComplex::SideCount ][4] = {
 	"ml", "mr","d","u","ul","ur","dl","dr","m"
 };
 
-std::string UISkinComplex::GetSideSuffix( const Uint32& Side ) {
+std::string UISkinComplex::getSideSuffix( const Uint32& Side ) {
 	eeASSERT( Side < UISkinComplex::SideCount );
 
 	return std::string( SideSuffix[ Side ] );
@@ -42,7 +42,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 	Sizei uls;
 
 	if ( NULL != tSubTexture ) {
-		uls = tSubTexture->getRealSize();
+		uls = tSubTexture->getSize();
 
 		tSubTexture->draw( X, Y, mTempColor );
 	}
@@ -52,7 +52,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 	Sizei dls;
 
 	if ( NULL != tSubTexture ) {
-		dls = tSubTexture->getRealSize();
+		dls = tSubTexture->getSize();
 
 		tSubTexture->draw( X, Y + Height - dls.getHeight(), mTempColor );
 	}
@@ -62,7 +62,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 	Sizei urs;
 
 	if ( NULL != tSubTexture ) {
-		urs = tSubTexture->getRealSize();
+		urs = tSubTexture->getSize();
 
 		tSubTexture->draw( X + Width - urs.getWidth(), Y, mTempColor );
 	}
@@ -72,7 +72,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 	Sizei drs;
 
 	if ( NULL != tSubTexture ) {
-		drs = tSubTexture->getRealSize();
+		drs = tSubTexture->getSize();
 
 		tSubTexture->draw( X + Width - drs.getWidth(), Y + Height - drs.getHeight(), mTempColor );
 	}
@@ -87,7 +87,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 		tSubTexture->resetDestSize();
 
 		if ( uls.getWidth() == 0 )
-			uls.x = tSubTexture->getRealSize().getWidth();
+			uls.x = tSubTexture->getSize().getWidth();
 	}
 
 	tSubTexture = mSubTexture[ State ][ Up ];
@@ -100,21 +100,21 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 		tSubTexture->resetDestSize();
 
 		if ( urs.getHeight() == 0 )
-			urs.y = tSubTexture->getRealSize().getHeight();
+			urs.y = tSubTexture->getSize().getHeight();
 
 		if ( uls.getHeight() == 0 )
-			uls.y = tSubTexture->getRealSize().getHeight();
+			uls.y = tSubTexture->getSize().getHeight();
 	}
 
 	tSubTexture = mSubTexture[ State ][ Right ];
 
 	if ( NULL != tSubTexture ) {
 		if ( urs.getWidth() == 0 )
-			urs.x = tSubTexture->getRealSize().getWidth();
+			urs.x = tSubTexture->getSize().getWidth();
 
 		tSubTexture->setDestSize( Sizef( tSubTexture->getDestSize().x, Height - urs.getHeight() - drs.getHeight() ) );
 
-		tSubTexture->draw( X + Width - tSubTexture->getRealSize().getWidth(), Y + urs.getHeight(), mTempColor );
+		tSubTexture->draw( X + Width - tSubTexture->getSize().getWidth(), Y + urs.getHeight(), mTempColor );
 
 		tSubTexture->resetDestSize();
 	}
@@ -124,12 +124,12 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 	if ( NULL != tSubTexture ) {
 		tSubTexture->setDestSize( Sizef( Width - dls.getWidth() - drs.getWidth(), tSubTexture->getDestSize().y ) );
 
-		tSubTexture->draw( X + dls.getWidth(), Y + Height - tSubTexture->getRealSize().getHeight(), mTempColor );
+		tSubTexture->draw( X + dls.getWidth(), Y + Height - tSubTexture->getSize().getHeight(), mTempColor );
 
 		tSubTexture->resetDestSize();
 
 		if ( dls.getHeight() == 0 && drs.getHeight() == 0 )
-			dls.setHeight( tSubTexture->getRealSize().getHeight() );
+			dls.setHeight( tSubTexture->getSize().getHeight() );
 	}
 
 	tSubTexture = mSubTexture[ State ][ Center ];
@@ -204,32 +204,32 @@ void UISkinComplex::cacheSize() {
 		SubTexture * tSubTexture = mSubTexture[ state ][ Center ];
 
 		if ( NULL != tSubTexture ) {
-			w += tSubTexture->getRealSize().x;
-			h += tSubTexture->getRealSize().y;
+			w += tSubTexture->getSize().x;
+			h += tSubTexture->getSize().y;
 		}
 
 		tSubTexture = mSubTexture[ state ][ Up ];
 
 		if ( NULL != tSubTexture ) {
-			h += tSubTexture->getRealSize().y;
+			h += tSubTexture->getSize().y;
 		}
 
 		tSubTexture = mSubTexture[ state ][ Down ];
 
 		if ( NULL != tSubTexture ) {
-			h += tSubTexture->getRealSize().y;
+			h += tSubTexture->getSize().y;
 		}
 
 		tSubTexture = mSubTexture[ state ][ Left ];
 
 		if ( NULL != tSubTexture ) {
-			w += tSubTexture->getRealSize().x;
+			w += tSubTexture->getSize().x;
 		}
 
 		tSubTexture = mSubTexture[ state ][ Right ];
 
 		if ( NULL != tSubTexture ) {
-			w += tSubTexture->getRealSize().x;
+			w += tSubTexture->getSize().x;
 		}
 
 		mSize[ state ] = Sizei( w, h );

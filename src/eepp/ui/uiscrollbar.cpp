@@ -121,7 +121,7 @@ void UIScrollBar::autoSize() {
 	if ( NULL != tSkin ) {
 		Sizei size = tSkin->getSize();
 
-		mMinControlSize = pxToDpI( size );
+		mMinControlSize = PixelDensity::pxToDpI( size );
 
 		if ( mFlags & UI_AUTO_SIZE ) {
 			if ( mSlider->isVertical() ) {

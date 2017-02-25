@@ -1,4 +1,8 @@
+../../include/eepp/graphics/font.hpp
 ../../src/eepp/gaming/mapobjectlayer.cpp
+../../src/eepp/graphics/globalbatchrenderer.cpp
+../../src/eepp/graphics/pixeldensity.cpp
+../../src/eepp/graphics/pixelperfect.cpp
 ee.config
 ee.includes
 ../../../eeiv/src/capp.cpp

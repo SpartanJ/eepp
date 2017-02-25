@@ -24,6 +24,7 @@ using namespace EE::Window;
 
 #include <eepp/graphics/renders.hpp>
 #include <eepp/graphics/fonthelper.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 using namespace EE::Graphics;
 
 #endif

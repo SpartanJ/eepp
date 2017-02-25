@@ -94,7 +94,7 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 	if ( IOS.isOpen() ) {
 		IOS.read( (char*)&mTexGrHdr, sizeof(sTextureAtlasHdr) );
 
-		if ( mTexGrHdr.Magic == EE_TEXTURE_ATLAS_MAGIC || mTexGrHdr.Magic == EE_TEXTURE_ATLAS_MAGIC_OLD ) {
+		if ( mTexGrHdr.Magic == EE_TEXTURE_ATLAS_MAGIC ) {
 			for ( Uint32 i = 0; i < mTexGrHdr.TextureCount; i++ ) {
 				sTextureHdr tTextureHdr;
 				sTempTexAtlas tTexAtlas;
@@ -232,6 +232,7 @@ void TextureAtlasLoader::createSubTextures() {
 
 					SubTexture * tSubTexture = eeNew( SubTexture, ( tTex->getId(), tRect, Sizef( (Float)tSh->DestWidth, (Float)tSh->DestHeight ), Vector2i( tSh->OffsetX, tSh->OffsetY ), SubTextureName ) );
 
+					tSubTexture->setPixelDensity( PixelDensity::toFloat( tSh->PixelDensity ) );
 					//if ( tSh->Flags & HDR_SUBTEXTURE_FLAG_FLIPED )
 						// Should rotate the sub texture, but.. sub texture rotation is not stored.
 
@@ -433,7 +434,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 		std::string tapath( FileSystem::fileRemoveExtension( TextureAtlasPath ) + "." + Image::saveTypeToExtension( mTexGrHdr.Format ) );
 
 		if ( 2 == NeedUpdate ) {
-			TexturePacker tp( mTexGrHdr.Width, mTexGrHdr.Height, 0 != ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_POW_OF_TWO ), mTexGrHdr.PixelBorder, mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_ALLOW_FLIPPING );
+			TexturePacker tp( mTexGrHdr.Width, mTexGrHdr.Height, PD_MDPI, 0 != ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_POW_OF_TWO ), mTexGrHdr.PixelBorder, mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_ALLOW_FLIPPING );
 
 			tp.addTexturesPath( ImagesPath );
 

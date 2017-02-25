@@ -73,7 +73,7 @@ void UITabWidget::setTheme( UITheme * Theme ) {
 			Sizei tSize1		= getSkinSize( tSkin );
 			Sizei tSize2		= getSkinSize( tSkin, UISkinState::StateSelected );
 
-			mTabWidgetHeight	= pxToDpI( eemax( tSize1.getHeight(), tSize2.getHeight() ) );
+			mTabWidgetHeight	= PixelDensity::pxToDpI( eemax( tSize1.getHeight(), tSize2.getHeight() ) );
 
 			seContainerSize();
 			orderTabs();

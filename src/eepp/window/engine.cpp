@@ -39,8 +39,7 @@ Engine::Engine() :
 	mBackend( NULL ),
 	mWindow( NULL ),
 	mSharedGLContext( false ),
-	mMainThreadId( 0 ),
-	mPixelDensity( 1 )
+	mMainThreadId( 0 )
 {
 	TextureAtlasManager::createSingleton();
 }
@@ -166,7 +165,7 @@ EE::Window::Window * Engine::createWindow( WindowSettings Settings, ContextSetti
 
 	mWindows.push_back( mWindow );
 
-	setPixelDensity( Settings.PixelDensity );
+	PixelDensity::setPixelDensity( Settings.PixelDensity );
 
 	return window;
 }
@@ -252,7 +251,7 @@ WindowSettings Engine::createWindowSettings( IniFile * ini, std::string iniKeyNa
 	int BitColor		= ini->getValueI( iniKeyName, "BitColor", 32);
 	bool Windowed		= ini->getValueB( iniKeyName, "Windowed", true );
 	bool Resizeable		= ini->getValueB( iniKeyName, "Resizeable", true );
-	float pixelDensity	= ini->getValueF( iniKeyName, "PixelDensity", getPixelDensity() );
+	float pixelDensity	= ini->getValueF( iniKeyName, "PixelDensity", PixelDensity::getPixelDensity() );
 
 	std::string Backend = ini->getValue( iniKeyName, "Backend", "" );
 	Uint32 WinBackend	= getDefaultBackend();
@@ -332,16 +331,6 @@ bool Engine::isSharedGLContextEnabled() {
 
 Uint32 Engine::getMainThreadId() {
 	return mMainThreadId;
-}
-
-Float Engine::getPixelDensity() const
-{
-	return mPixelDensity;
-}
-
-void Engine::setPixelDensity(const Float & pixelDensity)
-{
-	mPixelDensity = pixelDensity;
 }
 
 }}

@@ -149,7 +149,7 @@ bool UIMenu::checkControlSize( UIControl * Control, const bool& Resize ) {
 		}
 
 		if ( mFlags & UI_AUTO_SIZE ) {
-			Int32 textWidth = pxToDpI( tItem->getTextBox()->getTextWidth() );
+			Int32 textWidth = PixelDensity::pxToDpI( tItem->getTextBox()->getTextWidth() );
 
 			if ( Control->isType( UI_TYPE_MENUSUBMENU ) ) {
 				UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( tItem );
@@ -346,7 +346,7 @@ void UIMenu::onSizeChange() {
 
 void UIMenu::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mPadding = pxToDpI( makePadding() );
+		mPadding = PixelDensity::pxToDpI( makePadding() );
 	}
 }
 

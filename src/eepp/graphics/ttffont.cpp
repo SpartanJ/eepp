@@ -46,7 +46,7 @@ bool TTFFont::loadFromMemory( Uint8* TTFData, const unsigned int& TTFDataSize, c
 
 	mLoadedFromMemory = true;
 
-	Int32 rSize = (Int32)((Float)Size * Window::Engine::instance()->getPixelDensity());
+	Int32 rSize = (Int32)((Float)Size * PixelDensity::getPixelDensity());
 
 	mFont = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, rSize, 0, NumCharsToGen );
 
@@ -64,7 +64,7 @@ bool TTFFont::load( const std::string& Filepath, const unsigned int& Size, EE_TT
 	if ( FileSystem::fileExists( Filepath ) ) {
 		mLoadedFromMemory	= false;
 
-		Int32 rSize = (Int32)((Float)Size * Window::Engine::instance()->getPixelDensity());
+		Int32 rSize = (Int32)((Float)Size * PixelDensity::getPixelDensity());
 
 		mFont = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), rSize, 0, NumCharsToGen );
 

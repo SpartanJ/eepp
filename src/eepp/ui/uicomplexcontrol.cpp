@@ -60,7 +60,7 @@ void UIComplexControl::update() {
 
 			if ( Time::Zero == UIThemeManager::instance()->getTooltipTimeToShow() ) {
 				if ( !mTooltip->isVisible() || UIThemeManager::instance()->getTooltipFollowMouse() )
-					mTooltip->setPosition( pxToDpI( Pos ) );
+					mTooltip->setPosition( PixelDensity::pxToDpI( Pos ) );
 
 				mTooltip->show();
 			} else {
@@ -70,7 +70,7 @@ void UIComplexControl::update() {
 
 				if ( mTooltip->getTooltipTime() >= UIThemeManager::instance()->getTooltipTimeToShow() ) {
 					if ( mTooltip->getTooltipTime().asMilliseconds() != -1.f ) {
-						mTooltip->setPosition( pxToDpI( Pos ) );
+						mTooltip->setPosition( PixelDensity::pxToDpI( Pos ) );
 
 						mTooltip->show();
 
@@ -80,7 +80,7 @@ void UIComplexControl::update() {
 			}
 
 			if ( UIThemeManager::instance()->getTooltipFollowMouse() ) {
-				mTooltip->setPosition( pxToDpI( Pos ) );
+				mTooltip->setPosition( PixelDensity::pxToDpI( Pos ) );
 			}
 		} else {
 			mTooltip->setTooltipTime( Milliseconds( 0.f ) );
@@ -165,7 +165,7 @@ void UIComplexControl::onParentSizeChange( const Vector2i& SizeChange ) {
 
 	if ( mFlags & UI_ANCHOR_RIGHT ) {
 		if ( NULL != mParentCtrl ) {
-			newSize.x = mParentCtrl->getSize().getWidth() - mPos.x - pxToDpI( mDistToBorder.Right );
+			newSize.x = mParentCtrl->getSize().getWidth() - mPos.x - PixelDensity::pxToDpI( mDistToBorder.Right );
 
 			if ( newSize.x < mMinControlSize.getWidth() )
 				newSize.x = mMinControlSize.getWidth();
@@ -180,7 +180,7 @@ void UIComplexControl::onParentSizeChange( const Vector2i& SizeChange ) {
 
 	if ( mFlags & UI_ANCHOR_BOTTOM ) {
 		if ( NULL != mParentCtrl ) {
-			newSize.y = mParentCtrl->getSize().y - mPos.y - pxToDpI( mDistToBorder.Bottom );
+			newSize.y = mParentCtrl->getSize().y - mPos.y - PixelDensity::pxToDpI( mDistToBorder.Bottom );
 
 			if ( newSize.y < mMinControlSize.getHeight() )
 				newSize.y = mMinControlSize.getHeight();

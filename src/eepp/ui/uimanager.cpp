@@ -51,7 +51,7 @@ void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 	UIWindow::CreateParams Params;
 	Params.setParent( NULL );
 	Params.setPosition( 0, 0 );
-	Params.setSize( (Float)Engine::instance()->getWidth() / UIControl::getPixelDensity(), (Float)Engine::instance()->getHeight() / UIControl::getPixelDensity() );
+	Params.setSize( (Float)Engine::instance()->getWidth() / PixelDensity::getPixelDensity(), (Float)Engine::instance()->getHeight() / PixelDensity::getPixelDensity() );
 	Params.Flags = UI_CONTROL_DEFAULT_FLAGS | UI_REPORT_SIZE_CHANGE_TO_CHILDS;
 	Params.WinFlags = UI_WIN_NO_BORDER | UI_WIN_RESIZEABLE;
 	Params.MinWindowSize = Sizei( 0, 0 );
@@ -111,7 +111,7 @@ void UIManager::inputCallback( InputEvent * Event ) {
 }
 
 void UIManager::resizeControl( EE::Window::Window * win ) {
-	mControl->setSize( (Float)mWindow->getWidth() / UIControl::getPixelDensity(), (Float)mWindow->getHeight() / UIControl::getPixelDensity() );
+	mControl->setSize( (Float)mWindow->getWidth() / PixelDensity::getPixelDensity(), (Float)mWindow->getHeight() / PixelDensity::getPixelDensity() );
 	sendMsg( mControl, UIMessage::MsgWindowResize );
 
 	std::list<UIWindow*>::iterator it;

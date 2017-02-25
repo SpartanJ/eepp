@@ -3,3 +3,5 @@
 ../../src/examples/strobe
 ../../../eeiv/src
 .
+../../include/eepp/graphics
+../../src/eepp/graphics

@@ -135,9 +135,9 @@ void TextureAtlasEditor::onResetDestSize( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( NULL != mCurSubTexture && MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-		Sizei RealSize = mCurSubTexture->getRealSize();
-
 		mCurSubTexture->resetDestSize();
+
+		Sizei RealSize = mCurSubTexture->getSize();
 
 		mSpinDestW->setValue( RealSize.getWidth() );
 		mSpinDestH->setValue( RealSize.getHeight() );

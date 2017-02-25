@@ -70,7 +70,7 @@ void UIPushButton::onSizeChange() {
 		mTextBox->setPosition( 0, 0 );
 	}
 
-	mIcon->setPosition( pxToDpI( mIconSpace ), 0 );
+	mIcon->setPosition( PixelDensity::pxToDpI( mIconSpace ), 0 );
 	mIcon->centerVertical();
 
 	if ( NULL != mTextBox ) {

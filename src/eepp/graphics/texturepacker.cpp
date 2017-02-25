@@ -8,7 +8,7 @@
 
 namespace EE { namespace Graphics {
 
-TexturePacker::TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const bool& AllowFlipping ) :
+TexturePacker::TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const bool& AllowFlipping ) :
 	mLongestEdge(0),
 	mTotalArea(0),
 	mFreeList(NULL),
@@ -24,7 +24,7 @@ TexturePacker::TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, c
 	mForcePowOfTwo(true),
 	mPixelBorder(0)
 {
-	setOptions( MaxWidth, MaxHeight, ForcePowOfTwo, PixelBorder, AllowFlipping );
+	setOptions( MaxWidth, MaxHeight, PixelDensity, ForcePowOfTwo, PixelBorder, AllowFlipping );
 }
 
 TexturePacker::TexturePacker() :
@@ -78,7 +78,7 @@ void TexturePacker::close() {
 	eeSAFE_DELETE( mChild );
 }
 
-void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const bool& AllowFlipping ) {
+void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const bool& AllowFlipping ) {
 	if ( !mTextures.size() ) { // only can change the dimensions before adding any texture
 		mWidth 	= MaxWidth;
 		mHeight = MaxHeight;
@@ -92,6 +92,7 @@ void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight,
 		mForcePowOfTwo 	= ForcePowOfTwo;
 		mAllowFlipping 	= AllowFlipping;
 		mPixelBorder	= PixelBorder;
+		mPixelDensity = PixelDensity;
 	}
 }
 
@@ -341,7 +342,7 @@ void TexturePacker::insertTexture( TexturePackerTex * t, TexturePackerNode * bes
 }
 
 void TexturePacker::createChild() {
-	mChild = eeNew( TexturePacker, ( mWidth, mHeight, mForcePowOfTwo, mPixelBorder, mAllowFlipping ) );
+	mChild = eeNew( TexturePacker, ( mWidth, mHeight, mPixelDensity, mForcePowOfTwo, mPixelBorder, mAllowFlipping ) );
 
 	std::list<TexturePackerTex*>::iterator it;
 	std::list< std::list<TexturePackerTex*>::iterator > remove;
@@ -595,12 +596,16 @@ void TexturePacker::saveSubTextures() {
 	sTextureAtlasHdr TexGrHdr;
 
 	TexGrHdr.Magic 			= EE_TEXTURE_ATLAS_MAGIC;
+	TexGrHdr.Version		= 1000;
+	TexGrHdr.Date			= static_cast<Uint64>( Sys::getSystemTime() );
 	TexGrHdr.TextureCount 	= 1 + getChildCount();
 	TexGrHdr.Format			= mFormat;
 	TexGrHdr.Width			= mWidth;
 	TexGrHdr.Height			= mHeight;
 	TexGrHdr.PixelBorder	= mPixelBorder;
 	TexGrHdr.Flags			= 0;
+
+	memset( TexGrHdr.Reserved, 0, 16 );
 
 	if ( mAllowFlipping )
 		TexGrHdr.Flags |= HDR_TEXTURE_ATLAS_ALLOW_FLIPPING;
@@ -694,6 +699,7 @@ void TexturePacker::createSubTexturesHdr( TexturePacker * Packer, std::vector<sS
 			tSubTextureHdr.Y			= tTex->y();
 			tSubTextureHdr.Date			= FileSystem::fileGetModificationDate( tTex->name() );
 			tSubTextureHdr.Flags		= 0;
+			tSubTextureHdr.PixelDensity	= (Uint32)mPixelDensity;
 
 			if ( tTex->flipped() )
 				tSubTextureHdr.Flags |= HDR_SUBTEXTURE_FLAG_FLIPED;
@@ -770,14 +776,6 @@ const Int32& TexturePacker::getHeight() const {
 
 const Int32& TexturePacker::getPlacedCount() const {
 	return mPlacedCount;
-}
-
-const Int32& TexturePacker::width() const {
-	return mWidth;
-}
-
-const Int32& TexturePacker::height() const {
-	return mHeight;
 }
 
 }}

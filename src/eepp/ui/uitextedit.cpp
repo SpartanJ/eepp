@@ -103,7 +103,7 @@ void UITextEdit::onSizeChange() {
 	mHScrollBar->setSize( mSize.getWidth(), mHScrollBar->getSize().getHeight() );
 	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), mSize.getHeight() );
 
-	mTextInput->setPosition( pxToDpI( mPadding.Left ), pxToDpI( mPadding.Top ) );
+	mTextInput->setPosition( PixelDensity::pxToDpI( mPadding.Left ), PixelDensity::pxToDpI( mPadding.Top ) );
 
 	scrollbarsSet();
 

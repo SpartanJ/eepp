@@ -66,9 +66,9 @@ UISlider::UISlider() :
 	Sizei bgSize;
 
 	if ( UI_HORIZONTAL == mOrientation )
-		bgSize = dpToPxI( Sizei( mSize.getWidth() - 16, 8 ) );
+		bgSize = PixelDensity::dpToPxI( Sizei( mSize.getWidth() - 16, 8 ) );
 	else
-		bgSize = dpToPxI( Sizei( 8, mSize.getHeight() - 16 ) );
+		bgSize = PixelDensity::dpToPxI( Sizei( 8, mSize.getHeight() - 16 ) );
 
 	mBackSlider = eeNew( UIControlAnim, () );
 	mBackSlider->setParent( this );
@@ -82,7 +82,7 @@ UISlider::UISlider() :
 	mSlider->setEnabled( true );
 	mSlider->setVisible( true );
 	mSlider->setDragEnabled( true );
-	mSlider->setSize( dpToPxI( 16 ), dpToPxI( 16 ) );
+	mSlider->setSize( PixelDensity::dpToPxI( 16 ), PixelDensity::dpToPxI( 16 ) );
 	mSlider->setPosition( 0, 0 );
 
 	if ( UI_HORIZONTAL == mOrientation )

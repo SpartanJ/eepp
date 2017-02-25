@@ -35,9 +35,9 @@ TextureAtlasSubTextureEditor::~TextureAtlasSubTextureEditor() {
 void TextureAtlasSubTextureEditor::draw() {
 	Primitives P;
 	P.setColor( ColorA( 255, 0, 0, mAlpha ) );
-	P.setLineWidth( dpToPx( 1.f ) );
+	P.setLineWidth( PixelDensity::dpToPx( 1.f ) );
 
-	Vector2i uiCenterPx = dpToPxI( mUICenter );
+	Vector2i uiCenterPx = PixelDensity::dpToPxI( mUICenter );
 
 	P.drawLine( Line2f( Vector2f( mScreenPos.x, mScreenPos.y + uiCenterPx.y ), Vector2f( mScreenPos.x + mRealSize.getWidth(), mScreenPos.y + uiCenterPx.y ) ) );
 	P.drawLine( Line2f( Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y ), Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y + mRealSize.getHeight() ) ) );
@@ -46,12 +46,12 @@ void TextureAtlasSubTextureEditor::draw() {
 }
 
 void TextureAtlasSubTextureEditor::update() {
-	Vector2i Pos = mDrag->getPosition();
+	Vector2i Pos = mDrag->getRealPosition();
 
 	UIComplexControl::update();
 
-	if ( NULL != mGfx->getSubTexture() && mDrag->isDragEnabled() && mDrag->isDragging() && Pos != mDrag->getPosition() ) {
-		Vector2i Diff = -( Pos - mDrag->getPosition() );
+	if ( NULL != mGfx->getSubTexture() && mDrag->isDragEnabled() && mDrag->isDragging() && Pos != mDrag->getRealPosition() ) {
+		Vector2i Diff = -( Pos - mDrag->getRealPosition() );
 
 		mGfx->getSubTexture()->setOffset( Vector2i( mGfx->getSubTexture()->getOffset().x + Diff.x, mGfx->getSubTexture()->getOffset().y + Diff.y ) );
 

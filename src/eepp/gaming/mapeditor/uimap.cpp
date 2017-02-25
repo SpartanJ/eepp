@@ -31,7 +31,7 @@ UIMap::UIMap( const UIComplexControl::CreateParams& Params, UITheme * Theme, Til
 
 	mMap->setBackColor( ColorA( 100, 100, 100, 100 ) );
 	mMap->setGridLinesColor( ColorA( 150, 150, 150, 150 ) );
-	mMap->setScale( getPixelDensity() );
+	mMap->setScale( PixelDensity::getPixelDensity() );
 	mMap->setDrawCallback( cb::Make0( this, &UIMap::mapDraw ) );
 	mMap->setViewSize( mRealSize );
 

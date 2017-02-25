@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/renderer/gl.hpp>
 #include <eepp/graphics/blendmode.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/renderer/renderergl.hpp>
 #include <eepp/graphics/renderer/renderergl3.hpp>
 #include <eepp/graphics/renders.hpp>

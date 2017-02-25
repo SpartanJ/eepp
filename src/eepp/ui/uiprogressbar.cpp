@@ -45,7 +45,7 @@ void UIProgressBar::draw() {
 		ColorA C( mParallax->getColor() );
 		C.Alpha = (Uint8)mAlpha;
 
-		Rectf fillerMargin = dpToPx( mFillerMargin );
+		Rectf fillerMargin = PixelDensity::dpToPx( mFillerMargin );
 
 		mParallax->setColor( C );
 		mParallax->setPosition( Vector2f( mScreenPos.x + fillerMargin.Left, mScreenPos.y + fillerMargin.Top ) );
@@ -71,12 +71,12 @@ void UIProgressBar::setTheme( UITheme * Theme ) {
 			Float Height = (Float)getSkinSize().getHeight();
 
 			if ( !mVerticalExpand )
-				Height = (Float)tSubTexture->getRealSize().getHeight();
+				Height = (Float)tSubTexture->getSize().getHeight();
 
 			if ( Height > mRealSize.getHeight() )
 				Height = mRealSize.getHeight();
 
-			Rectf fillerMargin = dpToPx( mFillerMargin );
+			Rectf fillerMargin = PixelDensity::dpToPx( mFillerMargin );
 
 			mParallax = eeNew( ScrollParallax, ( tSubTexture, Vector2f( mScreenPos.x + fillerMargin.Left, mScreenPos.y + fillerMargin.Top ), Sizef( ( ( mRealSize.getWidth() - fillerMargin.Left - fillerMargin.Right ) * mProgress ) / mTotalSteps, Height - fillerMargin.Top - fillerMargin.Bottom ), mSpeed ) );
 		}
@@ -96,12 +96,12 @@ void UIProgressBar::onSizeChange() {
 		Float Height = (Float)mRealSize.getHeight();
 
 		if ( !mVerticalExpand && mParallax->getSubTexture() )
-			Height = (Float)mParallax->getSubTexture()->getRealSize().getHeight();
+			Height = (Float)mParallax->getSubTexture()->getSize().getHeight();
 
 		if ( Height > mRealSize.getHeight() )
 			Height = mRealSize.getHeight();
 
-		Rectf fillerMargin = dpToPx( mFillerMargin );
+		Rectf fillerMargin = PixelDensity::dpToPx( mFillerMargin );
 
 		mParallax->setSize( Sizef( ( ( mRealSize.getWidth() - fillerMargin.Left - fillerMargin.Right ) * mProgress ) / mTotalSteps, Height - fillerMargin.Top - fillerMargin.Bottom ) );
 	}

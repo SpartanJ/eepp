@@ -92,7 +92,7 @@ void GameObjectSprite::setTilePosition( Vector2i pos ) {
 
 Sizei GameObjectSprite::getSize() {
 	if ( NULL != mSprite )
-		return mSprite->getSubTexture(0)->getRealSize();
+		return mSprite->getSubTexture(0)->getSize();
 
 	return Sizei();
 }

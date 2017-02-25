@@ -108,7 +108,7 @@ void UITab::setText( const String &text ) {
 
 void UITab::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Uint32 w = pxToDpI( mTextBox->getTextWidth() ) + getSkinSize().getWidth();
+		Uint32 w = PixelDensity::pxToDpI( mTextBox->getTextWidth() ) + getSkinSize().getWidth();
 
 		UITabWidget * tTabW = getTabWidget();
 

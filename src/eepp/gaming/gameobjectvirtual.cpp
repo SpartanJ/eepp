@@ -47,7 +47,7 @@ Uint32 GameObjectVirtual::getRealType() const {
 
 Sizei GameObjectVirtual::getSize() {
 	if ( NULL != mSubTexture )
-		return mSubTexture->getRealSize();
+		return mSubTexture->getSize();
 
 	if ( NULL != mLayer )
 		return mLayer->getMap()->getTileSize();

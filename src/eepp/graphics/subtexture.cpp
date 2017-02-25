@@ -16,7 +16,8 @@ SubTexture::SubTexture() :
 	mTexture(NULL),
 	mSrcRect( Recti(0,0,0,0) ),
 	mDestSize(0,0),
-	mOffset(0,0)
+	mOffset(0,0),
+	mPixelDensity(1)
 {
 	createUnnamed();
 }
@@ -30,7 +31,8 @@ SubTexture::SubTexture( const Uint32& TexId, const std::string& Name ) :
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect( Recti( 0, 0, NULL != mTexture ? mTexture->getImageWidth() : 0, NULL != mTexture ? mTexture->getImageHeight() : 0 ) ),
 	mDestSize( (Float)mSrcRect.getSize().getWidth(), (Float)mSrcRect.getSize().getHeight() ),
-	mOffset(0,0)
+	mOffset(0,0),
+	mPixelDensity(1)
 {
 	createUnnamed();
 }
@@ -44,7 +46,8 @@ SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const std::st
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect( SrcRect ),
 	mDestSize( (Float)( mSrcRect.Right - mSrcRect.Left ), (Float)( mSrcRect.Bottom - mSrcRect.Top ) ),
-	mOffset(0,0)
+	mOffset(0,0),
+	mPixelDensity(1)
 {
 	createUnnamed();
 }
@@ -58,7 +61,8 @@ SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& 
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect(SrcRect),
 	mDestSize(DestSize),
-	mOffset(0,0)
+	mOffset(0,0),
+	mPixelDensity(1)
 {
 	createUnnamed();
 }
@@ -72,7 +76,8 @@ SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& 
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect(SrcRect),
 	mDestSize(DestSize),
-	mOffset(Offset)
+	mOffset(Offset),
+	mPixelDensity(1)
 {
 	createUnnamed();
 }
@@ -370,8 +375,17 @@ bool SubTexture::saveToFile(const std::string& filepath, const EE_SAVE_TYPE& For
 
 void SubTexture::resetDestSize() {
 	Sizei Size = mSrcRect.getSize();
-	mDestSize.x	= (Float)Size.getWidth();
-	mDestSize.y = (Float)Size.getHeight();
+	mDestSize.x	= (Float)Size.getWidth() / mPixelDensity  * PixelDensity::getPixelDensity();
+	mDestSize.y = (Float)Size.getHeight() / mPixelDensity * PixelDensity::getPixelDensity();
+}
+
+Float SubTexture::getPixelDensity() const {
+	return mPixelDensity;
+}
+
+void SubTexture::setPixelDensity( const Float & pixelDensity ) {
+	mPixelDensity = pixelDensity;
+	resetDestSize();
 }
 
 }}

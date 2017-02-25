@@ -131,7 +131,7 @@ void Font::draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 			setColor( TextCache.getShadowColor() );
 		}
 
-		Float pd = Window::Engine::instance()->getPixelDensity();
+		Float pd = PixelDensity::getPixelDensity();
 
 		draw( X + 1 * pd, Y + 1 * pd, f, Scale, Angle, Effect );
 

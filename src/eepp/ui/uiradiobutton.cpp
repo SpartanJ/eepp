@@ -223,7 +223,7 @@ void UIRadioButton::setPadding( const Recti& padding ) {
 	mActiveButton->setPosition( mPadding.Left, mActiveButton->getPosition().y );
 	mInactiveButton->setPosition( mPadding.Left, mInactiveButton->getPosition().y );
 
-	mRealPadding.Left = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + dpToPxI( mTextSeparation  );
+	mRealPadding.Left = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPxI( mTextSeparation  );
 }
 
 UIControlAnim * UIRadioButton::getActiveButton() const {

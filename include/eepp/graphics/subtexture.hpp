@@ -143,6 +143,10 @@ class EE_API SubTexture {
 
 		/** Sets the Destination Size as the Source Rect Size ( the real size of the SubTexture ). */
 		void resetDestSize();
+
+		Float getPixelDensity() const;
+
+		void setPixelDensity( const Float & pixelDensity );
 	protected:
 		Uint8 *		mPixels;
 		Uint8 *		mAlpha;
@@ -153,6 +157,7 @@ class EE_API SubTexture {
 		Recti		mSrcRect;
 		Sizef		mDestSize;
 		Vector2i	mOffset;
+		Float		mPixelDensity;
 
 		void createUnnamed();
 };

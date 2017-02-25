@@ -79,13 +79,13 @@ class EE_API ScrollParallax {
 	private:
 		Graphics::SubTexture * 		mSubTexture;
 		EE_BLEND_MODE		mBlend;
-		ColorA 			mColor;
+		ColorA				mColor;
 		Vector2f			mInitPos;
 		Vector2f			mPos;
 		Vector2f			mSpeed;
 		Sizef				mSize;
 		Recti				mRect;
-		Clock		mElapsed;
+		Clock				mElapsed;
 		Vector2i			mTiles;
 		Rectf				mAABB;
 		Sizef				mRealSize;

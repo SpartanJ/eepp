@@ -81,7 +81,7 @@ const OriginPoint& UIControlAnim::getRotationOriginPoint() const {
 }
 
 void UIControlAnim::setRotationOriginPoint( const OriginPoint & center ) {
-	mRotationOriginPoint = dpToPx( center );
+	mRotationOriginPoint = PixelDensity::dpToPx( center );
 	updateOriginPoint();
 }
 
@@ -126,7 +126,7 @@ const OriginPoint& UIControlAnim::getScaleOriginPoint() const {
 }
 
 void UIControlAnim::setScaleOriginPoint( const OriginPoint & center ) {
-	mScaleOriginPoint = dpToPx( center );
+	mScaleOriginPoint = PixelDensity::dpToPx( center );
 	updateOriginPoint();
 }
 
@@ -385,7 +385,7 @@ void UIControlAnim::borderDraw() {
 	Primitives P;
 	P.setFillMode( DRAW_LINE );
 	P.setBlendMode( getBlendMode() );
-	P.setLineWidth( dpToPx( mBorder->getWidth() ) );
+	P.setLineWidth( PixelDensity::dpToPx( mBorder->getWidth() ) );
 	P.setColor( getColor( mBorder->getColor() ) );
 
 	//! @TODO: Check why was this +0.1f -0.1f?

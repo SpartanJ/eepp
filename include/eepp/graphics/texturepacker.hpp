@@ -52,11 +52,12 @@ class EE_API TexturePacker {
 		/** Creates a new texture packer indicating the size of the texture atlas.
 		*	@param MaxWidth The maximum width that the texture atlas will use.
 		*	@param MaxHeight The maximum height that the texture atlas will use.
+		*	@param PixelDensity Indicates the device pixel density that represents the resources that will the packer pack.
 		*	@param ForcePowOfTwo Indicates that if the max with and height must be adjusted to fit a power of two texture.
 		*	@param PixelBorder Indicates how many pixels will be added to separate one image to another in the texture atlas. Usefull to avoid artifacts when rendered scaled SubTextures. Use at least 1 pixel to separate images if you will scale any SubTexture.
 		*	@param AllowFlipping Indicates if the images can be flipped inside the texture atlas. This is not compatible with eepp ( since it can't flip the textures back to the original orientation ). So avoid it for eepp.
 		*/
-		TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, const bool& ForcePowOfTwo = true, const Uint32& PixelBorder = 0, const bool& AllowFlipping = false );
+		TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity = PD_MDPI, const bool& ForcePowOfTwo = true, const Uint32& PixelBorder = 0, const bool& AllowFlipping = false );
 
 		~TexturePacker();
 
@@ -88,17 +89,18 @@ class EE_API TexturePacker {
 		*	If the instance of the texture packer was created without indicating this data, this must be called before adding any texture or image.
 		*	@param MaxWidth The maximum width that the texture atlas will use.
 		*	@param MaxHeight The maximum height that the texture atlas will use.
+		*	@param PixelDensity Indicates the device pixel density that represents the resources that will the packer pack.
 		*	@param ForcePowOfTwo Indicates that if the max with and height must be adjusted to fit a power of two texture.
 		*	@param PixelBorder Indicates how many pixels will be added to separate one image to another in the texture atlas. Usefull to avoid artifacts when rendered scaled SubTextures. Use at least 1 pixel to separate images if you will scale any SubTexture.
 		*	@param AllowFlipping Indicates if the images can be flipped inside the texture atlas. This is not compatible with eepp ( since it can't flip the textures back to the original orientation ). So avoid it for eepp.
 		*/
-		void setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const bool& ForcePowOfTwo = true, const Uint32& PixelBorder = 0, const bool& AllowFlipping = false );
+		void setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity = PD_MDPI, const bool& ForcePowOfTwo = true, const Uint32& PixelBorder = 0, const bool& AllowFlipping = false );
 
 		/** @return The texture atlas to generate width. */
-		const Int32& width() const;
+		const Int32& getWidth() const;
 
 		/** @return The texture atlas to generate height */
-		const Int32& height() const;
+		const Int32& getHeight() const;
 
 		/** @return If the texture atlas has already been saved, returns the file path to the texture atlas. */
 		const std::string& getFilepath() const;
@@ -113,7 +115,7 @@ class EE_API TexturePacker {
 
 		Int32 							mLongestEdge;
 		Int32							mTotalArea;
-		TexturePackerNode *			mFreeList;
+		TexturePackerNode *				mFreeList;
 		Int32							mWidth;
 		Int32							mHeight;
 		bool							mPacked;
@@ -126,6 +128,7 @@ class EE_API TexturePacker {
 		Int32							mPlacedCount;
 		bool							mForcePowOfTwo;
 		Int32							mPixelBorder;
+		EE_PIXEL_DENSITY				mPixelDensity;
 		bool							mSaveExtensions;
 		EE_SAVE_TYPE					mFormat;
 
@@ -139,7 +142,7 @@ class EE_API TexturePacker {
 
 		void							saveSubTextures();
 
-		void 							newFree( Int32 x, Int32 y, Int32 width, Int32 height );
+		void 							newFree( Int32 x, Int32 y, Int32 getWidth, Int32 getHeight );
 
 		bool 							mergeNodes();
 
@@ -151,15 +154,11 @@ class EE_API TexturePacker {
 
 		Int32							getChildCount();
 
-		const Int32&					getWidth() const;
-
-		const Int32&					getHeight() const;
-
 		const Int32&					getPlacedCount() const;
 
 		sTextureHdr						createTextureHdr( TexturePacker * Packer );
 
-		void							createSubTexturesHdr( TexturePacker * Packer, std::vector<sSubTextureHdr>& SubTextures );
+		void							createSubTexturesHdr(TexturePacker * Packer, std::vector<sSubTextureHdr> & SubTextures );
 
 		TexturePackerNode *				getBestFit( TexturePackerTex * t, TexturePackerNode ** prevBestFit, Int32 * EdgeCount );
 

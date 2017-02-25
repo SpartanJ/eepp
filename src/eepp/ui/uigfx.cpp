@@ -45,7 +45,7 @@ void UIGfx::setSubTexture( Graphics::SubTexture * subTexture ) {
 	autoSize();
 
 	if ( NULL != mSubTexture && mSize.x == 0 && mSize.y == 0 ) {
-		setPixelsSize( Sizei( mSubTexture->getDestSize().x, mSubTexture->getDestSize().y ) );
+		setPixelsSize( mSubTexture->getSize() );
 	}
 
 	autoAlign();
@@ -67,7 +67,7 @@ void UIGfx::draw() {
 	if ( mVisible ) {
 		if ( NULL != mSubTexture && 0.f != mAlpha ) {
 			Sizef oDestSize	= mSubTexture->getDestSize();
-			Vector2i oOff		= mSubTexture->getOffset();
+			Vector2i oOff	= mSubTexture->getOffset();
 
 			if ( mFlags & UI_FIT_TO_CONTROL ) {
 				mSubTexture->setOffset( Vector2i( 0, 0 ) );

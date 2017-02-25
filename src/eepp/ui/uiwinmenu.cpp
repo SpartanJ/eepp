@@ -80,7 +80,7 @@ void UIWinMenu::setTheme( UITheme * Theme ) {
 	}
 
 	if ( 0 == mMenuHeight && NULL != getSkin() && NULL != getSkin() ) {
-		mMenuHeight = pxToDpI( getSkin()->getSize().getHeight() );
+		mMenuHeight = PixelDensity::pxToDpI( getSkin()->getSize().getHeight() );
 
 		setSize( getParent()->getSize().getWidth(), mMenuHeight );
 
@@ -156,7 +156,7 @@ void UIWinMenu::refreshButtons() {
 		UISelectButton * pbut	= it->first;
 		UITextBox * tbox		= pbut->getTextBox();
 
-		pbut->setSize( pxToDpI( tbox->getTextWidth() ) + mButtonMargin, getSize().getHeight() );
+		pbut->setSize( PixelDensity::pxToDpI( tbox->getTextWidth() ) + mButtonMargin, getSize().getHeight() );
 		pbut->setPosition( xpos, ycenter );
 
 		xpos += pbut->getSize().getWidth() + mMarginBetweenButtons;

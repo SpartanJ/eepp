@@ -92,7 +92,7 @@ void GameObjectSubTexture::setTilePosition( Vector2i pos ) {
 
 Sizei GameObjectSubTexture::getSize() {
 	if ( NULL != mSubTexture )
-		return mSubTexture->getRealSize();
+		return mSubTexture->getSize();
 
 	return Sizei();
 }

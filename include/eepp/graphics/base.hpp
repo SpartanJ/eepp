@@ -23,5 +23,6 @@ using namespace EE::System;
 
 #include <eepp/graphics/renders.hpp>
 #include <eepp/graphics/blendmode.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 
 #endif

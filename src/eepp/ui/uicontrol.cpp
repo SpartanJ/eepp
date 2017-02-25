@@ -9,15 +9,11 @@
 
 namespace EE { namespace UI {
 
-Float UIControl::getPixelDensity() {
-	return Engine::instance()->getPixelDensity();
-}
-
 UIControl::UIControl( const CreateParams& Params ) :
 	mPos( Params.Pos ),
-	mRealPos( Params.Pos.x * getPixelDensity(), Params.Pos.y * getPixelDensity() ),
+	mRealPos( Params.Pos.x * PixelDensity::getPixelDensity(), Params.Pos.y * PixelDensity::getPixelDensity() ),
 	mSize( Params.Size ),
-	mRealSize( dpToPxI( Params.Size ) ),
+	mRealSize( PixelDensity::dpToPxI( Params.Size ) ),
 	mFlags( Params.Flags ),
 	mData( 0 ),
 	mParentCtrl( Params.ParentCtrl ),
@@ -151,7 +147,7 @@ Uint32 UIControl::onMessage( const UIMessage * Msg ) {
 
 void UIControl::setInternalPosition( const Vector2i& Pos ) {
 	mPos = Pos;
-	mRealPos = Vector2i( Pos.x * getPixelDensity(), Pos.y * getPixelDensity() );
+	mRealPos = Vector2i( Pos.x * PixelDensity::getPixelDensity(), Pos.y * PixelDensity::getPixelDensity() );
 }
 
 void UIControl::setPosition( const Vector2i& Pos ) {
@@ -164,7 +160,7 @@ void UIControl::setPosition( const Int32& x, const Int32& y ) {
 }
 
 void UIControl::setPixelsPosition( const Vector2i& Pos ) {
-	mPos = Vector2i( pxToDpI( Pos.x ), pxToDpI( Pos.y ) );
+	mPos = Vector2i( PixelDensity::pxToDpI( Pos.x ), PixelDensity::pxToDpI( Pos.y ) );
 	mRealPos = Pos;
 	onPositionChange();
 }
@@ -183,11 +179,11 @@ const Vector2i &UIControl::getRealPosition() const {
 
 void UIControl::setInternalSize( const Sizei& size ) {
 	mSize = size;
-	mRealSize = Sizei( size.x * getPixelDensity(), size.y * getPixelDensity() );
+	mRealSize = Sizei( size.x * PixelDensity::getPixelDensity(), size.y * PixelDensity::getPixelDensity() );
 }
 
 void UIControl::setInternalPixelsSize( const Sizei& size ) {
-	mSize = pxToDpI( size );
+	mSize = PixelDensity::pxToDpI( size );
 	mRealSize = size;
 }
 
@@ -210,7 +206,7 @@ void UIControl::setSize( const Int32& Width, const Int32& Height ) {
 }
 
 void UIControl::setPixelsSize( const Sizei & size ) {
-	setSize( pxToDpI( size ) );
+	setSize( PixelDensity::pxToDpI( size ) );
 }
 
 void UIControl::setPixelsSize( const Int32& x, const Int32& y ) {
@@ -334,7 +330,7 @@ void UIControl::drawHighlightFocus() {
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
 		P.setColor( UIManager::instance()->getHighlightFocusColor() );
-		P.setLineWidth( dpToPxI( 1 ) );
+		P.setLineWidth( PixelDensity::dpToPxI( 1 ) );
 		P.drawRectangle( getRectf() );
 	}
 }
@@ -345,7 +341,7 @@ void UIControl::drawOverControl() {
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
 		P.setColor( UIManager::instance()->getHighlightOverColor() );
-		P.setLineWidth( dpToPxI( 1 ) );
+		P.setLineWidth( PixelDensity::dpToPxI( 1 ) );
 		P.drawRectangle( getRectf() );
 	}
 }
@@ -367,7 +363,7 @@ void UIControl::drawBox() {
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
 		P.setColor( ColorA::colorFromPointer( this ) );
-		P.setLineWidth( dpToPxI( 1 ) );
+		P.setLineWidth( PixelDensity::dpToPxI( 1 ) );
 		P.drawRectangle( getRectf() );
 	}
 }
@@ -662,70 +658,6 @@ Rectf UIControl::getRectf() {
 	return Rectf( mScreenPosf, Sizef( (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight() ) );
 }
 
-Float UIControl::dpToPx( Float dp ) {
-	return dp * getPixelDensity();
-}
-
-Int32 UIControl::dpToPxI( Float dp ) {
-	return (Int32)dpToPx( dp );
-}
-
-Float UIControl::pxToDp( Float px ) {
-	return px / getPixelDensity();
-}
-
-Int32 UIControl::pxToDpI( Float px ) {
-	return (Int32)pxToDp( px );
-}
-
-Sizei UIControl::dpToPxI( Sizei size ) {
-	return Sizei( dpToPxI( size.x ), dpToPxI( size.y ) );
-}
-
-Sizei UIControl::pxToDpI( Sizei size ) {
-	return Sizei( pxToDpI( size.x ), pxToDpI( size.y ) );
-}
-
-Recti UIControl::dpToPxI( Recti rect ) {
-	return rect * getPixelDensity();
-}
-
-Recti UIControl::pxToDpI( Recti rect ) {
-	return rect / getPixelDensity();
-}
-
-Rectf UIControl::dpToPx( Rectf rect ) {
-	return rect * getPixelDensity();
-}
-
-Rectf UIControl::pxToDp( Rectf rect ) {
-	return rect / getPixelDensity();
-}
-
-Sizef UIControl::dpToPx( Sizef size ) {
-	return size * getPixelDensity();
-}
-
-Sizef UIControl::pxToDp( Sizef size ) {
-	return size * getPixelDensity();
-}
-
-Sizei UIControl::dpToPxI( Sizef size ) {
-	return Sizei( dpToPxI( size.x ), dpToPxI( size.y ) );
-}
-
-Sizei UIControl::pxToDpI( Sizef size ) {
-	return Sizei( pxToDpI( size.x ), pxToDpI( size.y ) );
-}
-
-Vector2i UIControl::dpToPxI( Vector2i pos ) {
-	return Sizei( dpToPxI( pos.x ), dpToPxI( pos.y ) );
-}
-
-Vector2i UIControl::pxToDpI( Vector2i pos ) {
-	return Sizei( pxToDpI( pos.x ), pxToDpI( pos.y ) );
-}
-
 void UIControl::backgroundDraw() {
 	Primitives P;
 	Rectf R = getRectf();
@@ -751,7 +683,7 @@ void UIControl::borderDraw() {
 	Primitives P;
 	P.setFillMode( DRAW_LINE );
 	P.setBlendMode( getBlendMode() );
-	P.setLineWidth( dpToPx( mBorder->getWidth() ) );
+	P.setLineWidth( PixelDensity::dpToPx( mBorder->getWidth() ) );
 	P.setColor( mBorder->getColor() );
 
 	//! @TODO: Check why was this +0.1f -0.1f?
@@ -1347,28 +1279,28 @@ Recti UIControl::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool Pad
 					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Left );
 
 					if ( NULL != tSubTexture )
-						tPadding.Left = tSubTexture->getRealSize().getWidth();
+						tPadding.Left = tSubTexture->getSize().getWidth();
 				}
 
 				if ( PadRight ) {
 					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Right );
 
 					if ( NULL != tSubTexture )
-						tPadding.Right = tSubTexture->getRealSize().getWidth();
+						tPadding.Right = tSubTexture->getSize().getWidth();
 				}
 
 				if ( PadTop ) {
 					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Up );
 
 					if ( NULL != tSubTexture )
-						tPadding.Top = tSubTexture->getRealSize().getHeight();
+						tPadding.Top = tSubTexture->getSize().getHeight();
 				}
 
 				if ( PadBottom ) {
 					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Down );
 
 					if ( NULL != tSubTexture )
-						tPadding.Bottom = tSubTexture->getRealSize().getHeight();
+						tPadding.Bottom = tSubTexture->getSize().getHeight();
 				}
 			}
 		}
@@ -1498,11 +1430,11 @@ void UIControl::worldToControl( Vector2i& pos ) const {
 	}
 
 	Pos = Vector2f( Pos.x / scale.x, Pos.y / scale.y );
-	pos = Vector2i( Pos.x / getPixelDensity(), Pos.y / getPixelDensity() );
+	pos = Vector2i( Pos.x / PixelDensity::getPixelDensity(), Pos.y / PixelDensity::getPixelDensity() );
 }
 
 void UIControl::controlToWorld( Vector2i& pos ) const {
-	Vector2f Pos( (Float)pos.x * getPixelDensity(), (Float)pos.y * getPixelDensity() );
+	Vector2f Pos( (Float)pos.x * PixelDensity::getPixelDensity(), (Float)pos.y * PixelDensity::getPixelDensity() );
 
 	std::list<UIControl*> parents;
 

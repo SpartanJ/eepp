@@ -127,7 +127,7 @@ void TextureAtlasNew::textureAtlasSave( const UIEvent * Event ) {
 		b = static_cast<Int32>( mPixelSpace->getValue() );
 
 		if ( Res1 && Res2 ) {
-			Graphics::TexturePacker * TexturePacker = eeNew( Graphics::TexturePacker, ( w, h, false, b ) );
+			Graphics::TexturePacker * TexturePacker = eeNew( Graphics::TexturePacker, ( w, h, PD_MDPI, false, b ) );
 
 			TexturePacker->addTexturesPath( mTGPath->getText() );
 
