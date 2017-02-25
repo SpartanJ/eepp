@@ -124,33 +124,29 @@ void UIWinMenu::refreshButtons() {
 	Uint32 xpos = mFirstButtonMargin;
 	Int32 h = 0, th = 0, ycenter = 0;
 
-	if ( NULL != getSkin() ) {
-		SubTexture * subTexture = getSkin()->getSubTexture( UISkinState::StateNormal );
+	UISkin * skin = getSkin();
 
-		if ( NULL != subTexture ) {
-			h = subTexture->getSize().getHeight();
+	if ( NULL != skin ) {
+		h = skin->getSize().getHeight();
 
-			if ( mButtons.begin() != mButtons.end() ) {
-				UISelectButton * tbut = mButtons.begin()->first;
+		if ( mButtons.begin() != mButtons.end() ) {
+			UISelectButton * tbut = mButtons.begin()->first;
 
-				if ( NULL != tbut->getSkin() ) {
-					SubTexture * tSubTexture2 = tbut->getSkin()->getSubTexture( UISkinState::StateSelected );
+			skin = tbut->getSkin();
 
-					if ( NULL != tSubTexture2 )  {
-						th = tSubTexture2->getSize().getHeight();
+			if ( NULL != skin ) {
+				th = skin->getSize( UISkinState::StateSelected ).getHeight();
 
-						switch ( VAlignGet( getFlags() ) ) {
-							case UI_VALIGN_CENTER:
-								ycenter = ( h - th ) / 2;
-								break;
-							case UI_VALIGN_BOTTOM:
-								ycenter = ( h - th );
-								break;
-							case UI_VALIGN_TOP:
-								ycenter = 0;
-								break;
-						}
-					}
+				switch ( VAlignGet( getFlags() ) ) {
+					case UI_VALIGN_CENTER:
+						ycenter = ( h - th ) / 2;
+						break;
+					case UI_VALIGN_BOTTOM:
+						ycenter = ( h - th );
+						break;
+					case UI_VALIGN_TOP:
+						ycenter = 0;
+						break;
 				}
 			}
 		}

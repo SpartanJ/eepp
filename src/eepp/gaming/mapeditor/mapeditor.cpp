@@ -444,19 +444,11 @@ void MapEditor::CreateUIMap() {
 	Float ScrollV = 16;
 
 	if ( NULL != HScrollSkin ) {
-		SubTexture * tTex = HScrollSkin->getSubTexture( UISkinState::StateNormal );
-
-		if ( NULL != tTex ) {
-			ScrollH = tTex->getSize().getHeight();
-		}
+		ScrollH = HScrollSkin->getSize().getHeight();
 	}
 
 	if ( NULL != VScrollSkin ) {
-		SubTexture * tTex = VScrollSkin->getSubTexture( UISkinState::StateNormal );
-
-		if ( NULL != tTex ) {
-			ScrollV = tTex->getSize().getHeight();
-		}
+		ScrollV = VScrollSkin->getSize().getHeight();
 	}
 
 	UIComplexControl::CreateParams Params;

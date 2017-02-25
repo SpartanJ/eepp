@@ -76,27 +76,18 @@ void UIRadioButton::setTheme( UITheme * Theme ) {
 	mActiveButton->setThemeControl	( Theme, "radiobutton_active" );
 	mInactiveButton->setThemeControl( Theme, "radiobutton_inactive" );
 
-	SubTexture * tSubTexture = NULL;
 	UISkin * tSkin = mActiveButton->getSkin();
 
 	if ( tSkin ) {
-		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
-
-		if ( NULL != tSubTexture ) {
-			mActiveButton->setPixelsSize( tSubTexture->getRealSize() );
-			mActiveButton->centerVertical();
-		}
+		mActiveButton->setPixelsSize( tSkin->getSize() );
+		mActiveButton->centerVertical();
 	}
 
 	tSkin = mInactiveButton->getSkin();
 
 	if ( NULL != tSkin ) {
-		tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
-
-		if ( NULL != tSubTexture ) {
-			mInactiveButton->setPixelsSize( tSubTexture->getRealSize() );
-			mInactiveButton->centerVertical();
-		}
+		mInactiveButton->setPixelsSize( tSkin->getSize() );
+		mInactiveButton->centerVertical();
 	}
 
 	setPadding( Recti(0,0,0,0) );
