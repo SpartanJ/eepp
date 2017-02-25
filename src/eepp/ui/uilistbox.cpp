@@ -174,7 +174,7 @@ void UIListBox::setTheme( UITheme * Theme ) {
 
 void UIListBox::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mPaddingContainer = makePadding();
+		mPaddingContainer = pxToDpI( makePadding() );
 	}
 }
 
@@ -227,8 +227,8 @@ Uint32 UIListBox::addListBoxItem( const String& Text ) {
 	if ( NULL != mFont ) {
 		Uint32 twidth = mFont->getTextWidth( Text );
 
-		if ( twidth > (Uint32)dpToPxI( mMaxTextWidth ) ) {
-			mMaxTextWidth = (Uint32)pxToDpI( twidth );
+		if ( twidth > mMaxTextWidth ) {
+			mMaxTextWidth = twidth;
 
 			updateListBoxItemsSize();
 		}
@@ -310,8 +310,8 @@ void UIListBox::clear() {
 	mSelected.clear();
 	mVScrollBar->setValue(0);
 
-	updateScroll();
 	findMaxWidth();
+	updateScroll();
 	updateListBoxItemsSize();
 
 	sendCommonEvent( UIEvent::EventOnControlClear );
@@ -361,7 +361,7 @@ void UIListBox::onSizeChange() {
 	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
 
 	if ( mContainer->isClipped() && UI_SCROLLBAR_AUTO == mHScrollMode ) {
-		if ( (Int32)mMaxTextWidth <= mContainer->getSize().getWidth() ) {
+		if ( (Int32)mMaxTextWidth <= mContainer->getRealSize().getWidth() ) {
 			mHScrollBar->setVisible( false );
 			mHScrollBar->setEnabled( false );
 			mHScrollInit = 0;
@@ -397,6 +397,19 @@ void UIListBox::setRowHeight() {
 	}
 }
 
+void UIListBox::setHScrollStep() {
+	Float width = (Float)mContainer->getRealSize().getWidth();
+
+	if ( ( mItemsNotVisible > 0 && UI_SCROLLBAR_AUTO == mVScrollMode ) || UI_SCROLLBAR_ALWAYS_ON == mVScrollMode )
+		width -= mVScrollBar->getRealSize().getWidth();
+
+	Float stepVal = width / (Float)mMaxTextWidth;
+
+	mHScrollBar->setPageStep( stepVal );
+
+	mHScrollBar->setClickStep( stepVal );
+}
+
 void UIListBox::findMaxWidth() {
 	Uint32 size = (Uint32)mItems.size();
 	Int32 width;
@@ -409,8 +422,8 @@ void UIListBox::findMaxWidth() {
 		else
 			width = mFont->getTextWidth( mTexts[i] );
 
-		if ( width > dpToPxI( mMaxTextWidth ) )
-			mMaxTextWidth = (Uint32)pxToDpI( width );
+		if ( width > (Int32)mMaxTextWidth )
+			mMaxTextWidth = width;
 	}
 }
 
@@ -425,8 +438,9 @@ void UIListBox::itemUpdateSize( UIListBoxItem * Item ) {
 	if ( NULL != Item ) {
 		Int32 width = (Int32)Item->getTextWidth();
 
-		if ( width > dpToPxI( mMaxTextWidth ) )
-			mMaxTextWidth = (Uint32)pxToDpI( width );
+		if ( width > (Int32)mMaxTextWidth ) {
+			mMaxTextWidth = width;
+		}
 
 		if ( !mHScrollBar->isVisible() ) {
 			if ( width < mContainer->getSize().getWidth() )
@@ -503,8 +517,8 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 	}
 
 	if ( Clipped && ( UI_SCROLLBAR_AUTO == mHScrollMode || UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) ) {
-		if ( ( mVScrollBar->isVisible() && mContainer->getSize().getWidth() - mVScrollBar->getSize().getWidth() < (Int32)mMaxTextWidth ) ||
-			( !mVScrollBar->isVisible() && mContainer->getSize().getWidth() < (Int32)mMaxTextWidth ) ) {
+		if ( ( mVScrollBar->isVisible() && mContainer->getRealSize().getWidth() - mVScrollBar->getRealSize().getWidth() < (Int32)mMaxTextWidth ) ||
+			( !mVScrollBar->isVisible() && mContainer->getRealSize().getWidth() < (Int32)mMaxTextWidth ) ) {
 				mHScrollBar->setVisible( true );
 				mHScrollBar->setEnabled( true );
 
@@ -513,9 +527,9 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 				Int32 ScrollH;
 
 				if ( mVScrollBar->isVisible() )
-					ScrollH = mMaxTextWidth - mContainer->getSize().getWidth() + mVScrollBar->getSize().getWidth();
+					ScrollH = pxToDpI( mMaxTextWidth ) - mContainer->getSize().getWidth() + mVScrollBar->getSize().getWidth();
 				else
-					ScrollH = mMaxTextWidth - mContainer->getSize().getWidth();
+					ScrollH = pxToDpI( mMaxTextWidth ) - mContainer->getSize().getWidth();
 
 				Int32 HScrolleable = (Uint32)( mHScrollBar->getValue() * ScrollH );
 
@@ -640,6 +654,8 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 		mHScrollBar->setPosition( mHScrollPadding.Left, mSize.getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
 		mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
 	}
+
+	setHScrollStep();
 }
 
 void UIListBox::itemKeyEvent( const UIEventKey &Event ) {

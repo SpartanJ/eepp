@@ -159,7 +159,7 @@ void EETest::createUIThemeTextureAtlas() {
 	std::string Path( MyPath + "ui/" + mThemeName );
 
 	if ( !FileSystem::fileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
-		TexturePacker tp( 256, 256, true, 2 );
+		TexturePacker tp( 512, 512, true, 2 );
 		tp.addTexturesPath( Path );
 		tp.packTextures();
 		tp.save( tgpath + ".png", SAVE_TYPE_PNG );
@@ -286,7 +286,7 @@ void EETest::createUI() {
 			str[i-1] = "Test ListBox " + String::toStr(i) + " testing it right now!";
 	}
 
-	/*
+
 	UIControl::CreateParams Params( UIManager::instance()->getMainControl(), Vector2i(0,0), Sizei( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
 	Params.Border.setWidth( 2 );
@@ -547,7 +547,7 @@ void EETest::createUI() {
 	TxtGfxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
 	TxtGfxParams.SubTexture = mTheme->getIconByName( "ok" );
 
-	for ( Uint32 i = 0; i < 100; i++ ) {
+	for ( Uint32 i = 0; i < 15; i++ ) {
 		UIGridCell * Cell			= eeNew( UIGridCell, ( CellParams ) );
 		UITextBox * TxtBox			= eeNew( UITextBox, ( TxtBoxParams ) );
 		UITextInput * TxtInput		= eeNew( UITextInput, ( TxtInputParams ) );
@@ -587,6 +587,7 @@ void EETest::createUI() {
 	eePRINTL( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 	/**/
 
+	/**/
 	UIRadioButton * ctrl = eeNew( UIRadioButton, () );
 	ctrl->setPosition( 100, 100 );
 	ctrl->setSize( 320, 32 );
@@ -658,7 +659,7 @@ void EETest::createUI() {
 
 	UIListBox * listBox = eeNew( UIListBox, () );
 	listBox->setPosition( 50, 320 );
-	listBox->setSize( 100, 160 );
+	listBox->setSize( 200, 160 );
 	listBox->setVisible( true );
 	listBox->setEnabled( true );
 	listBox->addListBoxItems( str );

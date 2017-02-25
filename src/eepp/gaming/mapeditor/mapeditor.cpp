@@ -811,6 +811,8 @@ void MapEditor::OnMapSizeChange( const UIEvent *Event ) {
 	mMapVScroll->setMinValue( 0 );
 	mMapVScroll->setMaxValue( v.y );
 	mMapVScroll->setClickStep( mUIMap->Map()->getTileSize().getHeight() * mUIMap->Map()->getScale() );
+	mMapHScroll->setPageStep( (Float)mUIMap->Map()->getViewSize().getWidth() );
+	mMapVScroll->setPageStep( (Float)mUIMap->Map()->getViewSize().getHeight() );
 }
 
 void MapEditor::OnScrollMapH( const UIEvent * Event ) {

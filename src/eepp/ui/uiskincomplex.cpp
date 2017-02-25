@@ -147,7 +147,6 @@ void UISkinComplex::setSkin( const Uint32& State ) {
 	eeASSERT ( State < UISkinState::StateCount );
 
 	for ( Uint32 Side = 0; Side < SideCount; Side++ ) {
-
 		SubTexture * SubTexture = TextureAtlasManager::instance()->getSubTextureByName( std::string( mName + "_" + UISkin::getSkinStateName( State ) + "_" + SideSuffix[ Side ] ) );
 
 		if ( NULL != SubTexture )
@@ -168,7 +167,7 @@ SubTexture * UISkinComplex::getSubTextureSide( const Uint32& State, const Uint32
 }
 
 void UISkinComplex::stateNormalToState( const Uint32& State ) {
-	if ( NULL == mSubTexture[ State ][ 0 ] ) {
+	if ( NULL == mSubTexture[ State ][ Center ] ) {
 		for ( Uint32 Side = 0; Side < SideCount; Side++ ) {
 			mSubTexture[ State ][ Side ] = mSubTexture[ UISkinState::StateNormal ][ Side ];
 		}

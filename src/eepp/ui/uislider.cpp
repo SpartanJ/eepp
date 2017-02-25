@@ -21,7 +21,7 @@ UISlider::UISlider( const UISlider::CreateParams& Params ) :
 	UIControl::CreateParams BgParams;
 	BgParams.setParent( this );
 
-	if ( !mOrientation )
+	if ( UI_HORIZONTAL == mOrientation )
 		BgParams.Size = Sizei( mSize.getWidth() - 16, 8 );
 	else
 		BgParams.Size = Sizei( 8, mSize.getHeight() - 16 );
@@ -41,7 +41,7 @@ UISlider::UISlider( const UISlider::CreateParams& Params ) :
 	mSlider->setVisible( true );
 	mSlider->setDragEnabled( true );
 
-	if ( !mOrientation )
+	if ( UI_HORIZONTAL == mOrientation )
 		mSlider->centerVertical();
 	else
 		mSlider->centerHorizontal();

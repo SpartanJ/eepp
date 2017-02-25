@@ -236,6 +236,8 @@ class EE_API UIListBox : public UIComplexControl {
 		virtual Uint32 onKeyDown( const UIEventKey &Event );
 
 		void itemKeyEvent( const UIEventKey &Event );
+
+		void setHScrollStep();
 };
 
 }}

@@ -207,6 +207,27 @@ void UIGenericGrid::updateHScroll() {
 	}
 }
 
+void UIGenericGrid::setHScrollStep() {
+	Float width = (Float)mContainer->getRealSize().getWidth();
+
+	if ( ( mItemsNotVisible > 0 && UI_SCROLLBAR_AUTO == mVScrollMode ) || UI_SCROLLBAR_ALWAYS_ON == mVScrollMode )
+		width -= mVScrollBar->getRealSize().getWidth();
+
+	Float maxWidth = 0;
+
+	if ( mCollumnsCount > 0 ) {
+		for ( Uint32 i = 0; i < mCollumnsCount; i++ ) {
+			maxWidth += mCollumnsWidth[i];
+		}
+	}
+
+	Float stepVal = width / (Float)maxWidth;
+
+	mHScrollBar->setPageStep( stepVal );
+
+	mHScrollBar->setClickStep( stepVal );
+}
+
 void UIGenericGrid::updateScroll( bool FromScrollChange ) {
 	if ( !mItems.size() )
 		return;
@@ -309,6 +330,8 @@ void UIGenericGrid::updateScroll( bool FromScrollChange ) {
 		mHScrollBar->setPosition( 0, mSize.getHeight() - mHScrollBar->getSize().getHeight() );
 		mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), mHScrollBar->getSize().getHeight() );
 	}
+
+	setHScrollStep();
 }
 
 void UIGenericGrid::updateSize() {
@@ -330,6 +353,8 @@ void UIGenericGrid::add( UIGridCell * Cell ) {
 	updateSize();
 
 	updateScroll();
+
+	mVScrollBar->setPageStep( ( (Float)mContainer->getSize().getHeight() /(Float) mRowHeight ) / (Float)mItems.size() );
 }
 
 void UIGenericGrid::remove( UIGridCell * Cell ) {

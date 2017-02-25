@@ -157,6 +157,8 @@ class EE_API UIGenericGrid : public UIComplexControl {
 		void updateVScroll();
 
 		void updateHScroll();
+
+		void setHScrollStep();
 };
 
 }}
