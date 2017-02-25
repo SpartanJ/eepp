@@ -258,7 +258,7 @@ void EETest::createUI() {
 	mThemeName = "uitheme";
 
 	if ( PixelDensity::getPixelDensity() == 2 ) {
-		//mThemeName += "2x";
+		mThemeName += "2x";
 	}
 
 	createUIThemeTextureAtlas();

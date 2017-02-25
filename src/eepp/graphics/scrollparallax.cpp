@@ -29,7 +29,7 @@ void ScrollParallax::setSubTexture( Graphics::SubTexture * subTexture ) {
 void ScrollParallax::setSubTexture() {
 	if ( NULL != mSubTexture ) {
 		mRect		= mSubTexture->getSrcRect();
-		mRealSize	= Vector2f( (Float)mSubTexture->getRealSize().getWidth(), (Float)mSubTexture->getRealSize().getHeight() );
+		mRealSize	= Vector2f( (Float)mSubTexture->getPxSize().getWidth(), (Float)mSubTexture->getPxSize().getHeight() );
 
 		mTiles.x	= ( (Int32)mSize.getWidth() / (Int32)mRealSize.getWidth() ) + 1;
 		mTiles.y	= ( (Int32)mSize.getHeight() / (Int32)mRealSize.getHeight() ) + 1;
@@ -101,6 +101,9 @@ void ScrollParallax::draw() {
 		if ( mSpeed.y > 0.f )
 			Pos.y -= mRealSize.getHeight();
 
+		Float pd = mSubTexture->getPixelDensity() / PixelDensity::getPixelDensity();
+		Float ps = PixelDensity::getPixelDensity() / mSubTexture->getPixelDensity();
+
 		for ( Int32 y = -1; y < mTiles.y; y++ ) {
 			for ( Int32 x = -1; x < mTiles.x; x++ ) {
 				Recti Rect 	= mRect;
@@ -108,25 +111,25 @@ void ScrollParallax::draw() {
 
 				if ( AABB.intersect( mAABB ) ) {
 					if ( Pos.x < mAABB.Left ) {
-						Rect.Left += (Int32)( mAABB.Left - Pos.x );
+						Rect.Left += (Int32)( ( mAABB.Left - Pos.x ) * pd );
 						AABB.Left = mAABB.Left;
 					}
 
 					if ( Pos.x + mRealSize.getWidth() > mAABB.Right ) {
-						Rect.Right -= (Int32)( ( Pos.x + mRealSize.getWidth() ) - mAABB.Right );
+						Rect.Right -= (Int32)( ( ( Pos.x + mRealSize.getWidth() ) - mAABB.Right ) * pd );
 					}
 
 					if ( Pos.y < mAABB.Top ) {
-						Rect.Top += (Int32)( mAABB.Top - Pos.y );
+						Rect.Top += (Int32)( ( mAABB.Top - Pos.y ) * pd );
 						AABB.Top = mAABB.Top;
 					}
 
 					if ( Pos.y + mRealSize.getHeight() > mAABB.Bottom ) {
-						Rect.Bottom -= (Int32)( ( Pos.y + mRealSize.getHeight() ) - mAABB.Bottom );
+						Rect.Bottom -= (Int32)( ( ( Pos.y + mRealSize.getHeight() ) - mAABB.Bottom ) * pd );
 					}
 
 					mSubTexture->setSrcRect( Rect );
-					mSubTexture->setDestSize( Vector2f( Rect.getSize().x, Rect.getSize().y ) );
+					mSubTexture->setDestSize( Vector2f( Rect.getSize().x * ps, Rect.getSize().y * ps ) );
 
 					if ( !( Rect.Right == 0 || Rect.Bottom == 0 ) )
 						mSubTexture->draw( AABB.Left, AABB.Top, mColor, 0.f, Vector2f::One, mBlend );
