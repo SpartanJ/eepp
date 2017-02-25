@@ -449,7 +449,7 @@ void TileMap::update() {
 		mLightManager->Update();
 
 	for ( Uint32 i = 0; i < mLayerCount; i++ )
-		mLayers[i]->update();
+		mLayers[i]->update( Engine::instance()->getElapsed() );
 
 	if ( mUpdateCb.IsSet() )
 		mUpdateCb();

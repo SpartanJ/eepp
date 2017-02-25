@@ -58,7 +58,7 @@ void TileMapLayer::draw( const Vector2f& Offset ) {
 	GLi->popMatrix();
 }
 
-void TileMapLayer::update() {
+void TileMapLayer::update( const Time& dt ) {
 	Vector2i start = mMap->getStartTile();
 	Vector2i end = mMap->getEndTile();
 
@@ -68,7 +68,7 @@ void TileMapLayer::update() {
 			mCurTile.y = y;
 
 			if ( NULL != mTiles[x][y] ) {
-				mTiles[x][y]->update();
+				mTiles[x][y]->update( dt );
 			}
 		}
 	}

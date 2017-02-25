@@ -1191,6 +1191,7 @@ GameObject * MapEditor::CreateGameObject() {
 
 			Sprite * tAnimSprite = eeNew( Sprite, ( String::removeNumbersAtEnd( mGfxPreview->getSubTexture()->getName() ) ) );
 			tObj = eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, tAnimSprite ) );
+			tAnimSprite->setAutoAnimate( false );
 
 		} else {
 

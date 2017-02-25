@@ -33,6 +33,10 @@ bool GameObjectSubTextureEx::isType( const Uint32& type ) {
 
 void GameObjectSubTextureEx::draw() {
 	if ( NULL != mSubTexture ) {
+		Sizef destSizeO = mSubTexture->getDestSize();
+		Sizei realSize = mSubTexture->getRealSize();
+		mSubTexture->setDestSize( Sizef( (Float)realSize.getWidth(), (Float)realSize.getHeight() ) );
+
 		if ( mLayer->getMap()->getLightsEnabled() && mLayer->getLightsEnabled() ) {
 			MapLightManager * LM = mLayer->getMap()->getLightManager();
 
@@ -80,6 +84,8 @@ void GameObjectSubTextureEx::draw() {
 				mSubTexture->draw( mPos.x, mPos.y, mColor, mAngle, mScale, mBlend, mRender );
 			}
 		}
+
+		mSubTexture->setDestSize( destSizeO );
 	}
 }
 

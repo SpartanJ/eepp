@@ -76,7 +76,7 @@ void GameObject::setFliped( bool fliped ) {
 void GameObject::draw() {
 }
 
-void GameObject::update() {
+void GameObject::update( const Time & dt ) {
 }
 
 Vector2f GameObject::getPosition() const {

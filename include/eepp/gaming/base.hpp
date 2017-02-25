@@ -15,6 +15,7 @@ using namespace EE::Math;
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/time.hpp>
 using namespace EE::System;
 
 #endif

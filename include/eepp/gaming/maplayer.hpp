@@ -15,7 +15,7 @@ class EE_API MapLayer {
 
 		virtual void draw( const Vector2f& Offset = Vector2f(0,0) ) = 0;
 
-		virtual void update() = 0;
+		virtual void update( const Time& dt ) = 0;
 
 		const Uint32& getFlags() const;
 

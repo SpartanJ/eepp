@@ -18,7 +18,7 @@ class EE_API GameObject {
 
 		virtual void draw();
 
-		virtual void update();
+		virtual void update( const Time& dt );
 
 		virtual Vector2f getPosition() const;
 

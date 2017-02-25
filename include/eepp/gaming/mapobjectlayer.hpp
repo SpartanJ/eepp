@@ -23,7 +23,7 @@ class EE_API MapObjectLayer : public MapLayer {
 
 		virtual void draw( const Vector2f &Offset = Vector2f(0,0) );
 
-		virtual void update();
+		virtual void update( const Time& dt );
 
 		virtual void addGameObject( GameObject * obj );
 

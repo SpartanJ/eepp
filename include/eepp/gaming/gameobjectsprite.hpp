@@ -18,6 +18,8 @@ class EE_API GameObjectSprite : public GameObject {
 
 		virtual void draw();
 
+		virtual void update( const Time& dt );
+
 		Vector2f getPosition() const;
 
 		virtual void setPosition( Vector2f pos );

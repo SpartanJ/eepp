@@ -60,9 +60,9 @@ void MapObjectLayer::draw( const Vector2f &Offset ) {
 	GLi->popMatrix();
 }
 
-void MapObjectLayer::update() {
+void MapObjectLayer::update( const Time& dt ) {
 	for ( ObjList::iterator it = mObjects.begin(); it != mObjects.end(); it++ ) {
-		(*it)->update();
+		(*it)->update( dt );
 	}
 }
 
