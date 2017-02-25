@@ -31,8 +31,8 @@ void ScrollParallax::setSubTexture() {
 		mRect		= mSubTexture->getSrcRect();
 		mRealSize	= Vector2f( (Float)mSubTexture->getRealSize().getWidth(), (Float)mSubTexture->getRealSize().getHeight() );
 
-		mTiles.x	= ( (Int32)mSize.getWidth() / mSubTexture->getRealSize().getWidth() ) + 1;
-		mTiles.y	= ( (Int32)mSize.getHeight() / mSubTexture->getRealSize().getHeight() ) + 1;
+		mTiles.x	= ( (Int32)mSize.getWidth() / (Int32)mRealSize.getWidth() ) + 1;
+		mTiles.y	= ( (Int32)mSize.getHeight() / (Int32)mRealSize.getHeight() ) + 1;
 	}
 }
 
@@ -126,7 +126,7 @@ void ScrollParallax::draw() {
 					}
 
 					mSubTexture->setSrcRect( Rect );
-					mSubTexture->resetDestSize();
+					mSubTexture->setDestSize( Vector2f( Rect.getSize().x, Rect.getSize().y ) );
 
 					if ( !( Rect.Right == 0 || Rect.Bottom == 0 ) )
 						mSubTexture->draw( AABB.Left, AABB.Top, mColor, 0.f, Vector2f::One, mBlend );

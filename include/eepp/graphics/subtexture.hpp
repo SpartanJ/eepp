@@ -151,6 +151,10 @@ class EE_API SubTexture {
 		Sizei getDpSize();
 
 		Sizei getPxSize();
+
+		Sizef getOriDestSize() const;
+
+		void setOriDestSize(const Sizef & oriDestSize);
 	protected:
 		Uint8 *		mPixels;
 		Uint8 *		mAlpha;
@@ -159,6 +163,7 @@ class EE_API SubTexture {
 		Uint32 		mTexId;
 		Graphics::Texture * 	mTexture;
 		Recti		mSrcRect;
+		Sizef		mOriDestSize;
 		Sizef		mDestSize;
 		Vector2i	mOffset;
 		Float		mPixelDensity;

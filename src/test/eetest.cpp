@@ -258,14 +258,14 @@ void EETest::createUI() {
 	mThemeName = "uitheme";
 
 	if ( PixelDensity::getPixelDensity() == 2 ) {
-		mThemeName += "2x";
+		//mThemeName += "2x";
 	}
 
 	createUIThemeTextureAtlas();
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	UIManager::instance()->init(); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
+	UIManager::instance()->init(); // UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
 	//mTheme = UITheme::LoadFromPath( eeNew( UIdefaultTheme, ( mThemeName, mThemeName ) ), MyPath + mThemeName + "/" );
 
@@ -286,7 +286,7 @@ void EETest::createUI() {
 			str[i-1] = "Test ListBox " + String::toStr(i) + " testing it right now!";
 	}
 
-
+	/**/
 	UIControl::CreateParams Params( UIManager::instance()->getMainControl(), Vector2i(0,0), Sizei( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
 	Params.Border.setWidth( 2 );
@@ -587,7 +587,6 @@ void EETest::createUI() {
 	eePRINTL( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 	/**/
 
-	/**/
 	UIRadioButton * ctrl = eeNew( UIRadioButton, () );
 	ctrl->setPosition( 100, 100 );
 	ctrl->setSize( 320, 32 );

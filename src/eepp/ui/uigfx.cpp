@@ -103,9 +103,19 @@ void UIGfx::draw() {
 					drawSubTexture();
 				}
 			} else {
+				Sizei realOffSet = mSubTexture->getOffset();
+
+				mSubTexture->setOffset( Vector2i( (Int32)( (Float)realOffSet.x / mSubTexture->getPixelDensity() * PixelDensity::getPixelDensity() ),
+												  (Int32)( (Float)realOffSet.y / mSubTexture->getPixelDensity() * PixelDensity::getPixelDensity() )
+										) );
+
+				mSubTexture->setDestSize( Vector2f( (Float)mSubTexture->getPxSize().x, (Float)mSubTexture->getPxSize().y ) );
+
 				autoAlign();
 
 				drawSubTexture();
+
+				mSubTexture->setOffset( realOffSet );
 			}
 
 			mSubTexture->setDestSize( oDestSize );

@@ -16,7 +16,11 @@ TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( const UIComplexContr
 
 	mTheme = UIThemeManager::instance()->getDefaultTheme();
 
-	mGfx = mTheme->createGfx( NULL, this );
+	mGfx = eeNew( UIGfx, () );
+	mGfx->setParent( this );
+	mGfx->setVisible( true );
+	mGfx->setEnabled( true );
+	mGfx->unsetFlags( UI_FIT_TO_CONTROL );
 
 	UIDragable::CreateParams DragParams;
 	DragParams.setParent( this );
@@ -25,6 +29,7 @@ TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( const UIComplexContr
 	mDrag->setEnabled( true );
 	mDrag->setVisible( true );
 	mDrag->setDragEnabled( true );
+	mDrag->center();
 
 	getCenter();
 }
@@ -52,6 +57,8 @@ void TextureAtlasSubTextureEditor::update() {
 
 	if ( NULL != mGfx->getSubTexture() && mDrag->isDragEnabled() && mDrag->isDragging() && Pos != mDrag->getRealPosition() ) {
 		Vector2i Diff = -( Pos - mDrag->getRealPosition() );
+
+		Diff = PixelDensity::pxToDpI( Diff );
 
 		mGfx->getSubTexture()->setOffset( Vector2i( mGfx->getSubTexture()->getOffset().x + Diff.x, mGfx->getSubTexture()->getOffset().y + Diff.y ) );
 

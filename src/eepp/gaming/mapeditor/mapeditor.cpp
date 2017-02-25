@@ -795,39 +795,34 @@ void MapEditor::OnMapSizeChange( const UIEvent *Event ) {
 	if ( mMouseScrolling )
 		return;
 
-	Vector2i v( mUIMap->Map()->getMaxOffset() );
+	Vector2f t( mUIMap->Map()->getTileSize().getWidth() * mUIMap->Map()->getScale(),
+				mUIMap->Map()->getTileSize().getHeight() * mUIMap->Map()->getScale() );
+
+	Vector2f v( (Float)mUIMap->Map()->getViewSize().getWidth(), (Float)mUIMap->Map()->getViewSize().getHeight() );
+
+	Vector2f s( t.x * mUIMap->Map()->getSize().getWidth(), t.y * mUIMap->Map()->getSize().getHeight() );
+
+	Vector2f m( s.x - v.x, s.y - v.y );
 
 	mMapHScroll->setMinValue( 0 );
-	mMapHScroll->setMaxValue( v.x );
-	mMapHScroll->setClickStep( mUIMap->Map()->getTileSize().getWidth() * mUIMap->Map()->getScale() );
+	mMapHScroll->setMaxValue( m.x );
+	mMapHScroll->setClickStep( t.y );
 	mMapVScroll->setMinValue( 0 );
-	mMapVScroll->setMaxValue( v.y );
-	mMapVScroll->setClickStep( mUIMap->Map()->getTileSize().getHeight() * mUIMap->Map()->getScale() );
-	mMapHScroll->setPageStep( (Float)mUIMap->Map()->getViewSize().getWidth() );
-	mMapVScroll->setPageStep( (Float)mUIMap->Map()->getViewSize().getHeight() );
+	mMapVScroll->setMaxValue( m.y );
+	mMapVScroll->setClickStep( t.x );
+	mMapHScroll->setPageStep( v.x / s.x * m.x );
+	mMapVScroll->setPageStep( v.y / s.y * m.y );
 }
 
 void MapEditor::OnScrollMapH( const UIEvent * Event ) {
 	if ( mMouseScrolling )
 		return;
 
-	UIScrollBar * Scr = reinterpret_cast<UIScrollBar*> ( Event->getControl() );
-
-	Vector2f Off = mUIMap->Map()->getOffset();
-
-	Off.x = -Scr->getValue();
-
-	mUIMap->Map()->setOffset( Off ) ;
+	mUIMap->Map()->setOffset( Vector2f( -mMapHScroll->getValue(), -mMapVScroll->getValue() ) ) ;
 }
 
 void MapEditor::OnScrollMapV( const UIEvent * Event ) {
-	UIScrollBar * Scr = reinterpret_cast<UIScrollBar*> ( Event->getControl() );
-
-	Vector2f Off = mUIMap->Map()->getOffset();
-
-	Off.y = -Scr->getValue();
-
-	mUIMap->Map()->setOffset( Off ) ;
+	mUIMap->Map()->setOffset( Vector2f( -mMapHScroll->getValue(), -mMapVScroll->getValue() ) ) ;
 }
 
 void MapEditor::UpdateScroll() {

@@ -15,6 +15,7 @@ SubTexture::SubTexture() :
 	mTexId(0),
 	mTexture(NULL),
 	mSrcRect( Recti(0,0,0,0) ),
+	mOriDestSize(0,0),
 	mDestSize(0,0),
 	mOffset(0,0),
 	mPixelDensity(1)
@@ -30,7 +31,8 @@ SubTexture::SubTexture( const Uint32& TexId, const std::string& Name ) :
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect( Recti( 0, 0, NULL != mTexture ? mTexture->getImageWidth() : 0, NULL != mTexture ? mTexture->getImageHeight() : 0 ) ),
-	mDestSize( (Float)mSrcRect.getSize().getWidth(), (Float)mSrcRect.getSize().getHeight() ),
+	mOriDestSize( (Float)mSrcRect.getSize().getWidth(), (Float)mSrcRect.getSize().getHeight() ),
+	mDestSize( mOriDestSize ),
 	mOffset(0,0),
 	mPixelDensity(1)
 {
@@ -45,7 +47,8 @@ SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const std::st
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect( SrcRect ),
-	mDestSize( (Float)( mSrcRect.Right - mSrcRect.Left ), (Float)( mSrcRect.Bottom - mSrcRect.Top ) ),
+	mOriDestSize( (Float)( mSrcRect.Right - mSrcRect.Left ), (Float)( mSrcRect.Bottom - mSrcRect.Top ) ),
+	mDestSize( mOriDestSize ),
 	mOffset(0,0),
 	mPixelDensity(1)
 {
@@ -60,6 +63,7 @@ SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& 
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect(SrcRect),
+	mOriDestSize(DestSize),
 	mDestSize(DestSize),
 	mOffset(0,0),
 	mPixelDensity(1)
@@ -75,6 +79,7 @@ SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& 
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect(SrcRect),
+	mOriDestSize(DestSize),
 	mDestSize(DestSize),
 	mOffset(Offset),
 	mPixelDensity(1)
@@ -374,9 +379,8 @@ bool SubTexture::saveToFile(const std::string& filepath, const EE_SAVE_TYPE& For
 }
 
 void SubTexture::resetDestSize() {
-	Sizei Size = mSrcRect.getSize();
-	mDestSize.x	= (Float)Size.getWidth() / mPixelDensity  * PixelDensity::getPixelDensity();
-	mDestSize.y = (Float)Size.getHeight() / mPixelDensity * PixelDensity::getPixelDensity();
+	mDestSize.x	= mOriDestSize.getWidth();
+	mDestSize.y = mOriDestSize.getHeight();
 }
 
 Float SubTexture::getPixelDensity() const {
@@ -385,19 +389,22 @@ Float SubTexture::getPixelDensity() const {
 
 void SubTexture::setPixelDensity( const Float & pixelDensity ) {
 	mPixelDensity = pixelDensity;
-	resetDestSize();
 }
 
 Sizei SubTexture::getDpSize() {
-	Sizei Size = mSrcRect.getSize();
-
-	return Sizei( (Int32)( (Float)Size.getWidth() / mPixelDensity ), (Int32)( (Float)Size.getHeight() / mPixelDensity ) );
+	return Sizei( (Int32)( mOriDestSize.getWidth() / mPixelDensity ), (Int32)( mOriDestSize.getHeight() / mPixelDensity ) );
 }
 
 Sizei SubTexture::getPxSize() {
-	Sizei Size = mSrcRect.getSize();
+	return Sizei( (Int32)( mOriDestSize.getWidth() / mPixelDensity * PixelDensity::getPixelDensity() ), (Int32)( mOriDestSize.getHeight() / mPixelDensity * PixelDensity::getPixelDensity() ) );
+}
 
-	return Sizei( (Int32)( (Float)Size.getWidth() / mPixelDensity * PixelDensity::getPixelDensity() ), (Int32)( (Float)Size.getHeight() / mPixelDensity * PixelDensity::getPixelDensity() ) );
+Sizef SubTexture::getOriDestSize() const {
+	return mOriDestSize;
+}
+
+void SubTexture::setOriDestSize(const Sizef & oriDestSize) {
+	mOriDestSize = oriDestSize;
 }
 
 }}

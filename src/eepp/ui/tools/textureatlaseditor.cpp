@@ -135,9 +135,9 @@ void TextureAtlasEditor::onResetDestSize( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( NULL != mCurSubTexture && MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-		mCurSubTexture->setDestSize( Sizef( mCurSubTexture->getRealSize().getWidth(), mCurSubTexture->getRealSize().getHeight() ) );
+		Sizei RealSize = mCurSubTexture->getDpSize();
 
-		Sizei RealSize = mCurSubTexture->getSize();
+		mCurSubTexture->resetDestSize();
 
 		mSpinDestW->setValue( RealSize.getWidth() );
 		mSpinDestH->setValue( RealSize.getHeight() );
@@ -157,7 +157,7 @@ void TextureAtlasEditor::onCenterOffset( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( NULL != mCurSubTexture && MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-		Sizei NSize( -( (Int32)mCurSubTexture->getDestSize().x / 2 ), -( (Int32)mCurSubTexture->getDestSize().y / 2 ) );
+		Sizei NSize( -( (Int32)mCurSubTexture->getDpSize().x / 2 ), -( (Int32)mCurSubTexture->getDpSize().y / 2 ) );
 
 		mSpinOffX->setValue( NSize.x );
 		mSpinOffY->setValue( NSize.y );
@@ -168,7 +168,7 @@ void TextureAtlasEditor::onHBOffset( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( NULL != mCurSubTexture && MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-		Sizei NSize( -( (Int32)mCurSubTexture->getDestSize().x / 2 ), -(Int32)mCurSubTexture->getDestSize().y );
+		Sizei NSize( -( (Int32)mCurSubTexture->getDpSize().x / 2 ), -(Int32)mCurSubTexture->getDpSize().y );
 
 		mSpinOffX->setValue( NSize.x );
 		mSpinOffY->setValue( NSize.y );
@@ -189,13 +189,15 @@ void TextureAtlasEditor::onOffYChange( const UIEvent * Event ) {
 
 void TextureAtlasEditor::onDestWChange( const UIEvent * Event ) {
 	if ( NULL != mCurSubTexture ) {
-		mCurSubTexture->setDestSize( Sizef( (Int32)mSpinDestW->getValue(), mCurSubTexture->getDestSize().y ) );
+		mCurSubTexture->setOriDestSize( Sizef( (Int32)mSpinDestW->getValue(), mCurSubTexture->getDpSize().y ) );
+		mSubTextureEditor->getGfx()->setSize( (Int32)mSpinDestW->getValue(), mSubTextureEditor->getGfx()->getSize().getHeight() );
 	}
 }
 
 void TextureAtlasEditor::onDestHChange( const UIEvent * Event ) {
 	if ( NULL != mCurSubTexture ) {
-		mCurSubTexture->setDestSize( Sizef( mCurSubTexture->getDestSize().x, (Int32)mSpinDestH->getValue() ) );
+		mCurSubTexture->setOriDestSize( Sizef( mCurSubTexture->getDpSize().x, (Int32)mSpinDestH->getValue() ) );
+		mSubTextureEditor->getGfx()->setSize( mSubTextureEditor->getGfx()->getSize().getWidth(), (Int32)mSpinDestH->getValue() );
 	}
 }
 
@@ -316,10 +318,10 @@ void TextureAtlasEditor::onSubTextureChange( const UIEvent * Event ) {
 
 		if ( NULL != mCurSubTexture ) {
 			mSubTextureEditor->setSubTexture( mCurSubTexture );
-			mSpinOffX->setValue( mCurSubTexture->getOffset().x );
-			mSpinOffY->setValue( mCurSubTexture->getOffset().y );
-			mSpinDestW->setValue( mCurSubTexture->getDestSize().x );
-			mSpinDestH->setValue( mCurSubTexture->getDestSize().y );
+			mSpinOffX->setValue( PixelDensity::pxToDp( mCurSubTexture->getOffset().x ) );
+			mSpinOffY->setValue( PixelDensity::pxToDp( mCurSubTexture->getOffset().y ) );
+			mSpinDestW->setValue( mCurSubTexture->getDpSize().x );
+			mSpinDestH->setValue( mCurSubTexture->getDpSize().y );
 		}
 	}
 }

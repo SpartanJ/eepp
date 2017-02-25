@@ -60,7 +60,7 @@ void UISprite::draw() {
 
 			if ( NULL != subTexture ) {
 				Sizef oDestSize = subTexture->getDestSize();
-				Sizei pxSize = mSprite->getCurrentSubTexture()->getPxSize();
+				Sizei pxSize = subTexture->getPxSize();
 
 				subTexture->setDestSize( Sizef( (Float)pxSize.x, (Float)pxSize.y ) );
 
