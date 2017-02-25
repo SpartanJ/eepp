@@ -79,14 +79,14 @@ void UIRadioButton::setTheme( UITheme * Theme ) {
 	UISkin * tSkin = mActiveButton->getSkin();
 
 	if ( tSkin ) {
-		mActiveButton->setPixelsSize( tSkin->getSize() );
+		mActiveButton->setSize( tSkin->getSize() );
 		mActiveButton->centerVertical();
 	}
 
 	tSkin = mInactiveButton->getSkin();
 
 	if ( NULL != tSkin ) {
-		mInactiveButton->setPixelsSize( tSkin->getSize() );
+		mInactiveButton->setSize( tSkin->getSize() );
 		mInactiveButton->centerVertical();
 	}
 

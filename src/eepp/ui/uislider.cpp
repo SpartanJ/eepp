@@ -134,18 +134,18 @@ void UISlider::adjustChilds() {
 
 	if ( NULL != tSkin ) {
 		if ( mPageStep == 0 ) {
-			mSlider->setPixelsSize( tSkin->getSize() );
+			mSlider->setSize( tSkin->getSize() );
 		} else {
 			Float percent = ( mPageStep / ( mMaxValue - mMinValue ) );
 
 			if ( UI_HORIZONTAL == mOrientation ) {
-				Int32 size = eemax( (Int32)( (Float)mRealSize.getWidth() * percent ), tSkin->getSize().getWidth() );
+				Int32 size = eemax( (Int32)( (Float)mSize.getWidth() * percent ), tSkin->getSize().getWidth() );
 
-				mSlider->setPixelsSize( size, tSkin->getSize().getHeight() );
+				mSlider->setSize( size, tSkin->getSize().getHeight() );
 			} else {
-				Int32 size = eemax( (Int32)( (Float)mRealSize.getHeight() * percent ), tSkin->getSize().getHeight() );
+				Int32 size = eemax( (Int32)( (Float)mSize.getHeight() * percent ), tSkin->getSize().getHeight() );
 
-				mSlider->setPixelsSize( tSkin->getSize().getWidth(), size );
+				mSlider->setSize( tSkin->getSize().getWidth(), size );
 			}
 		}
 
@@ -163,26 +163,26 @@ void UISlider::adjustChilds() {
 			Int32 Height;
 
 			if ( mExpandBackground )
-				Height = mRealSize.getHeight();
+				Height = mSize.getHeight();
 			else
 				Height = tSkin->getSize().getHeight();
 
 			if ( mAllowHalfSliderOut )
-				mBackSlider->setPixelsSize( Sizei( mRealSize.getWidth() - mSlider->getRealSize().getWidth(), Height ) );
+				mBackSlider->setSize( Sizei( mSize.getWidth() - mSlider->getSize().getWidth(), Height ) );
 			else
-				mBackSlider->setPixelsSize( Sizei( mRealSize.getWidth(), Height ) );
+				mBackSlider->setSize( Sizei( mSize.getWidth(), Height ) );
 		} else {
 			Int32 Width;
 
 			if ( mExpandBackground )
-				Width = mRealSize.getWidth();
+				Width = mSize.getWidth();
 			else
 				Width = tSkin->getSize().getWidth();
 
 			if ( mAllowHalfSliderOut )
-				mBackSlider->setPixelsSize( Sizei( Width, mRealSize.getHeight() - mSlider->getRealSize().getHeight() ) );
+				mBackSlider->setSize( Sizei( Width, mSize.getHeight() - mSlider->getSize().getHeight() ) );
 			else
-				mBackSlider->setPixelsSize( Sizei( Width, mRealSize.getHeight() ) );
+				mBackSlider->setSize( Sizei( Width, mSize.getHeight() ) );
 		}
 
 		mBackSlider->center();

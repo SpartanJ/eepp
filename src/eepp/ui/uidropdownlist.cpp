@@ -113,7 +113,7 @@ void UIDropDownList::onSizeChange() {
 
 void UIDropDownList::autoSizeControl() {
 	if ( mFlags & UI_AUTO_SIZE || 0 == mSize.getHeight() ) {
-		setPixelsSize( mRealSize.x, getSkinSize().getHeight() );
+		setSize( mSize.x, getSkinSize().getHeight() );
 	}
 }
 

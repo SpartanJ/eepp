@@ -57,7 +57,7 @@ void UIProgressBar::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "progressbar" );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		setPixelsSize( mRealSize.x, getSkinSize().getHeight() );
+		setSize( mSize.x, getSkinSize().getHeight() );
 	}
 
 	UISkin * tSkin = Theme->getByName( Theme->getAbbr() + "_progressbar_filler" );
@@ -68,7 +68,7 @@ void UIProgressBar::setTheme( UITheme * Theme ) {
 		if ( NULL != tSubTexture ) {
 			eeSAFE_DELETE( mParallax );
 
-			Float Height = (Float)getSkinSize().getHeight();
+			Float Height = (Float)PixelDensity::dpToPx( getSkinSize().getHeight() );
 
 			if ( !mVerticalExpand )
 				Height = (Float)tSubTexture->getSize().getHeight();

@@ -42,7 +42,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 	Sizei uls;
 
 	if ( NULL != tSubTexture ) {
-		uls = tSubTexture->getSize();
+		uls = tSubTexture->getPxSize();
 
 		tSubTexture->draw( X, Y, mTempColor );
 	}
@@ -52,7 +52,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 	Sizei dls;
 
 	if ( NULL != tSubTexture ) {
-		dls = tSubTexture->getSize();
+		dls = tSubTexture->getPxSize();
 
 		tSubTexture->draw( X, Y + Height - dls.getHeight(), mTempColor );
 	}
@@ -62,7 +62,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 	Sizei urs;
 
 	if ( NULL != tSubTexture ) {
-		urs = tSubTexture->getSize();
+		urs = tSubTexture->getPxSize();
 
 		tSubTexture->draw( X + Width - urs.getWidth(), Y, mTempColor );
 	}
@@ -72,7 +72,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 	Sizei drs;
 
 	if ( NULL != tSubTexture ) {
-		drs = tSubTexture->getSize();
+		drs = tSubTexture->getPxSize();
 
 		tSubTexture->draw( X + Width - drs.getWidth(), Y + Height - drs.getHeight(), mTempColor );
 	}
@@ -87,7 +87,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 		tSubTexture->resetDestSize();
 
 		if ( uls.getWidth() == 0 )
-			uls.x = tSubTexture->getSize().getWidth();
+			uls.x = tSubTexture->getPxSize().getWidth();
 	}
 
 	tSubTexture = mSubTexture[ State ][ Up ];
@@ -100,21 +100,21 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 		tSubTexture->resetDestSize();
 
 		if ( urs.getHeight() == 0 )
-			urs.y = tSubTexture->getSize().getHeight();
+			urs.y = tSubTexture->getPxSize().getHeight();
 
 		if ( uls.getHeight() == 0 )
-			uls.y = tSubTexture->getSize().getHeight();
+			uls.y = tSubTexture->getPxSize().getHeight();
 	}
 
 	tSubTexture = mSubTexture[ State ][ Right ];
 
 	if ( NULL != tSubTexture ) {
 		if ( urs.getWidth() == 0 )
-			urs.x = tSubTexture->getSize().getWidth();
+			urs.x = tSubTexture->getPxSize().getWidth();
 
 		tSubTexture->setDestSize( Sizef( tSubTexture->getDestSize().x, Height - urs.getHeight() - drs.getHeight() ) );
 
-		tSubTexture->draw( X + Width - tSubTexture->getSize().getWidth(), Y + urs.getHeight(), mTempColor );
+		tSubTexture->draw( X + Width - tSubTexture->getPxSize().getWidth(), Y + urs.getHeight(), mTempColor );
 
 		tSubTexture->resetDestSize();
 	}
@@ -124,12 +124,12 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 	if ( NULL != tSubTexture ) {
 		tSubTexture->setDestSize( Sizef( Width - dls.getWidth() - drs.getWidth(), tSubTexture->getDestSize().y ) );
 
-		tSubTexture->draw( X + dls.getWidth(), Y + Height - tSubTexture->getSize().getHeight(), mTempColor );
+		tSubTexture->draw( X + dls.getWidth(), Y + Height - tSubTexture->getPxSize().getHeight(), mTempColor );
 
 		tSubTexture->resetDestSize();
 
 		if ( dls.getHeight() == 0 && drs.getHeight() == 0 )
-			dls.setHeight( tSubTexture->getSize().getHeight() );
+			dls.setHeight( tSubTexture->getPxSize().getHeight() );
 	}
 
 	tSubTexture = mSubTexture[ State ][ Center ];
@@ -204,32 +204,32 @@ void UISkinComplex::cacheSize() {
 		SubTexture * tSubTexture = mSubTexture[ state ][ Center ];
 
 		if ( NULL != tSubTexture ) {
-			w += tSubTexture->getSize().x;
-			h += tSubTexture->getSize().y;
+			w += tSubTexture->getDpSize().x;
+			h += tSubTexture->getDpSize().y;
 		}
 
 		tSubTexture = mSubTexture[ state ][ Up ];
 
 		if ( NULL != tSubTexture ) {
-			h += tSubTexture->getSize().y;
+			h += tSubTexture->getDpSize().y;
 		}
 
 		tSubTexture = mSubTexture[ state ][ Down ];
 
 		if ( NULL != tSubTexture ) {
-			h += tSubTexture->getSize().y;
+			h += tSubTexture->getDpSize().y;
 		}
 
 		tSubTexture = mSubTexture[ state ][ Left ];
 
 		if ( NULL != tSubTexture ) {
-			w += tSubTexture->getSize().x;
+			w += tSubTexture->getDpSize().x;
 		}
 
 		tSubTexture = mSubTexture[ state ][ Right ];
 
 		if ( NULL != tSubTexture ) {
-			w += tSubTexture->getSize().x;
+			w += tSubTexture->getDpSize().x;
 		}
 
 		mSize[ state ] = Sizei( w, h );

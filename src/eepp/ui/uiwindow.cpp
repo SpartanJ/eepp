@@ -240,17 +240,17 @@ void UIWindow::setTheme( UITheme *Theme ) {
 
 		if ( NULL != mButtonClose ) {
 			mButtonClose->setThemeControl( Theme, "winclose" );
-			mButtonClose->setPixelsSize( mButtonClose->getSkinSize() );
+			mButtonClose->setSize( mButtonClose->getSkinSize() );
 		}
 
 		if ( NULL != mButtonMaximize ) {
 			mButtonMaximize->setThemeControl( Theme, "winmax" );
-			mButtonMaximize->setPixelsSize( mButtonMaximize->getSkinSize() );
+			mButtonMaximize->setSize( mButtonMaximize->getSkinSize() );
 		}
 
 		if ( NULL != mButtonMinimize ) {
 			mButtonMinimize->setThemeControl( Theme, "winmin" );
-			mButtonMinimize->setPixelsSize( mButtonMinimize->getSkinSize() );
+			mButtonMinimize->setSize( mButtonMinimize->getSkinSize() );
 		}
 
 		getMinWinSize();
@@ -343,29 +343,25 @@ void UIWindow::fixChildsSize() {
 	Sizei decoSize = mDecoSize;
 
 	if ( mDecoAutoSize ) {
-		decoSize = mDecoSize = Sizei( mRealSize.getWidth(), mWindowDecoration->getSkinSize().getHeight() );
-	} else {
-		decoSize = PixelDensity::dpToPxI( mDecoSize );
+		decoSize = mDecoSize = Sizei( mSize.getWidth(), mWindowDecoration->getSkinSize().getHeight() );
 	}
 
-	mWindowDecoration->setPixelsSize( mDecoSize );
+	mWindowDecoration->setSize( mDecoSize );
 
 	if ( mBorderAutoSize ) {
-		mBorderBottom->setPixelsSize( Sizei( mRealSize.getWidth(), mBorderBottom->getSkinSize().getHeight() ) );
+		mBorderBottom->setSize( Sizei( mSize.getWidth(), mBorderBottom->getSkinSize().getHeight() ) );
 	} else {
 		mBorderBottom->setSize( mSize.getWidth(), mBorderSize.getHeight() );
 	}
 
-	Uint32 BorderHeight = mRealSize.getHeight() - decoSize.getHeight() - mBorderBottom->getRealSize().getHeight();
+	Uint32 BorderHeight = mSize.getHeight() - decoSize.getHeight() - mBorderBottom->getSize().getHeight();
 
 	if ( mBorderAutoSize ) {
-		mBorderLeft->setPixelsSize( Sizei( mBorderLeft->getSkinSize().getWidth(), BorderHeight ) );
-		mBorderRight->setPixelsSize( Sizei( mBorderRight->getSkinSize().getWidth(), BorderHeight ) );
+		mBorderLeft->setSize( Sizei( mBorderLeft->getSkinSize().getWidth(), BorderHeight ) );
+		mBorderRight->setSize( Sizei( mBorderRight->getSkinSize().getWidth(), BorderHeight ) );
 	} else {
-		Sizei borderSize = PixelDensity::dpToPxI( mBorderSize );
-
-		mBorderLeft->setSize( borderSize.getWidth(), BorderHeight );
-		mBorderRight->setSize( borderSize.getWidth(), BorderHeight );
+		mBorderLeft->setSize( mBorderSize.getWidth(), BorderHeight );
+		mBorderRight->setSize( mBorderSize.getWidth(), BorderHeight );
 	}
 
 	mBorderLeft->setPosition( 0, mWindowDecoration->getSize().getHeight() );

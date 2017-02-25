@@ -302,7 +302,7 @@ void UIManager::clipDisable() {
 }
 
 void UIManager::clipSmartEnable(UIControl * ctrl, const Int32 & x, const Int32 & y, const Uint32 & Width, const Uint32 & Height) {
-	if ( ctrl->isMeOrParentTreeRotated() ) {
+	if ( ctrl->isMeOrParentTreeScaledOrRotated() ) {
 		clipPlaneEnable( x, y, Width, Height );
 	} else {
 		clipEnable( x, y, Width, Height );
@@ -310,7 +310,7 @@ void UIManager::clipSmartEnable(UIControl * ctrl, const Int32 & x, const Int32 &
 }
 
 void UIManager::clipSmartDisable(UIControl * ctrl) {
-	if ( ctrl->isMeOrParentTreeRotated() ) {
+	if ( ctrl->isMeOrParentTreeScaledOrRotated() ) {
 		clipPlaneDisable();
 	} else {
 		clipDisable();

@@ -199,7 +199,13 @@ class EE_API UIControl {
 
 		Uint32 isRotated();
 
+		Uint32 isScaled();
+
 		bool isMeOrParentTreeRotated();
+
+		bool isMeOrParentTreeScaled();
+
+		bool isMeOrParentTreeScaledOrRotated();
 
 		Uint32 addEventListener( const Uint32& EventType, const UIEventCallback& Callback );
 

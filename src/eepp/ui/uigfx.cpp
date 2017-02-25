@@ -25,7 +25,9 @@ UIGfx::UIGfx() :
 	mRender( RN_NORMAL ),
 	mAlignOffset(0,0)
 {
-	mFlags |= UI_FIT_TO_CONTROL;
+	mFlags |= UI_FIT_TO_CONTROL | UI_AUTO_SIZE;
+
+	autoSize();
 }
 
 UIGfx::~UIGfx() {
@@ -45,7 +47,7 @@ void UIGfx::setSubTexture( Graphics::SubTexture * subTexture ) {
 	autoSize();
 
 	if ( NULL != mSubTexture && mSize.x == 0 && mSize.y == 0 ) {
-		setPixelsSize( mSubTexture->getSize() );
+		setSize( mSubTexture->getDpSize() );
 	}
 
 	autoAlign();
@@ -54,7 +56,7 @@ void UIGfx::setSubTexture( Graphics::SubTexture * subTexture ) {
 void UIGfx::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mSubTexture ) {
-			setPixelsSize( mSubTexture->getSize() );
+			setSize( mSubTexture->getDpSize() );
 		} else {
 			setSize( Sizei( 0, 0 ) );
 		}
@@ -77,37 +79,37 @@ void UIGfx::draw() {
 
 				drawSubTexture();
 
-				mSubTexture->setDestSize( oDestSize );
-				mSubTexture->setOffset( oOff );
 			} else if ( mFlags & UI_AUTO_FIT ) {
 				mSubTexture->setOffset( Vector2i( 0, 0 ) );
 
-				Float Scale1 = mRealSize.x / oDestSize.x;
-				Float Scale2 = mRealSize.y / oDestSize.y;
+				Sizei pxSize = mSubTexture->getPxSize();
+				Float Scale1 = mRealSize.x / (Float)pxSize.x;
+				Float Scale2 = mRealSize.y / (Float)pxSize.y;
 
 				if ( Scale1 < 1 || Scale2 < 1 ) {
 					if ( Scale2 < Scale1 )
 						Scale1 = Scale2;
 
-					mSubTexture->setDestSize( Sizef( oDestSize.x * Scale1, oDestSize.y * Scale1 ) );
+					mSubTexture->setDestSize( Sizef( pxSize.x * Scale1, pxSize.y * Scale1 ) );
 
 					autoAlign();
 
 					drawSubTexture();
-
-					mSubTexture->setDestSize( oDestSize );
+				} else {					
+					mSubTexture->setDestSize( Vector2f( (Float)pxSize.x, (Float)pxSize.y ) );
 
 					autoAlign();
-				} else {
+
 					drawSubTexture();
 				}
-
-				mSubTexture->setOffset( oOff );
 			} else {
 				autoAlign();
 
 				drawSubTexture();
 			}
+
+			mSubTexture->setDestSize( oDestSize );
+			mSubTexture->setOffset( oOff );
 		}
 	}
 }

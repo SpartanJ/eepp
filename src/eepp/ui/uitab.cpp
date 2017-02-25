@@ -72,7 +72,7 @@ void UITab::onStateChange() {
 	if ( NULL != tTabW ) {
 		Int32 skinSize = getSkin()->getSize( mSkinState->getState() ).getHeight();
 
-		setPixelsSize( mRealSize.getWidth(), skinSize );
+		setSize( mSize.getWidth(), skinSize );
 
 		if ( mSkinState->getState() == UISkinState::StateSelected ) {
 			mTextBox->setFontColor( tTabW->mFontSelectedColor );

@@ -73,17 +73,17 @@ void UISpinBox::setTheme( UITheme * Theme ) {
 	tSkin = mPushUp->getSkin();
 
 	if ( NULL != tSkin ) {
-		mPushUp->setPixelsSize( tSkin->getSize() );
+		mPushUp->setSize( tSkin->getSize() );
 	}
 
 	tSkin = mPushDown->getSkin();
 
 	if ( NULL != tSkin ) {
-		mPushDown->setPixelsSize( tSkin->getSize() );
+		mPushDown->setSize( tSkin->getSize() );
 	}
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		setInternalPixelsHeight( mInput->getSkinSize().getHeight() );
+		setInternalHeight( mInput->getSkinSize().getHeight() );
 	}
 
 	adjustChilds();

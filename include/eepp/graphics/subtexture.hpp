@@ -149,6 +149,8 @@ class EE_API SubTexture {
 		void setPixelDensity( const Float & pixelDensity );
 
 		Sizei getDpSize();
+
+		Sizei getPxSize();
 	protected:
 		Uint8 *		mPixels;
 		Uint8 *		mAlpha;

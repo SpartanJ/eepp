@@ -13,10 +13,10 @@ UISprite::UISprite( const UISprite::CreateParams& Params ) :
 	if ( Params.DealloSprite )
 		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
 
-	if ( ( getFlags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) {
-		if ( NULL != mSprite && NULL != mSprite->getCurrentSubTexture() ) {
-			setSize( mSprite->getCurrentSubTexture()->getSize() );
-		}
+	if ( NULL != mSprite ) {
+		mSprite->setAutoAnimate( false );
+
+		updateSize();
 	}
 }
 
@@ -42,6 +42,7 @@ void UISprite::setSprite( Graphics::Sprite * sprite ) {
 		eeSAFE_DELETE( mSprite );
 
 	mSprite = sprite;
+	mSprite->setAutoAnimate( false );
 	
 	updateSize();
 }
@@ -52,10 +53,30 @@ void UISprite::draw() {
 	if ( mVisible ) {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
 			checkSubTextureUpdate();
+
 			mSprite->setPosition( (Float)( mScreenPos.x + mAlignOffset.x ), (Float)( mScreenPos.y + mAlignOffset.y ) );
-			mSprite->draw( getBlendMode(), mRender );
+
+			SubTexture * subTexture = mSprite->getCurrentSubTexture();
+
+			if ( NULL != subTexture ) {
+				Sizef oDestSize = subTexture->getDestSize();
+				Sizei pxSize = mSprite->getCurrentSubTexture()->getPxSize();
+
+				subTexture->setDestSize( Sizef( (Float)pxSize.x, (Float)pxSize.y ) );
+
+				mSprite->draw( getBlendMode(), mRender );
+
+				subTexture->setDestSize( oDestSize );
+			}
 		}
 	}
+}
+
+void UISprite::update() {
+	UIComplexControl::update();
+
+	if ( NULL != mSprite )
+		mSprite->update();
 }
 
 void UISprite::checkSubTextureUpdate() {
@@ -100,10 +121,10 @@ void UISprite::setRenderMode( const EE_RENDER_MODE& render ) {
 }
 
 void UISprite::updateSize() {
-	if ( getFlags() & UI_AUTO_SIZE ) {
+	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mSprite ) {
-			if ( NULL != mSprite->getCurrentSubTexture() && mSprite->getCurrentSubTexture()->getSize() != mSize )
-				setSize( mSprite->getCurrentSubTexture()->getSize() );
+			if ( NULL != mSprite->getCurrentSubTexture() && mSprite->getCurrentSubTexture()->getDpSize() != mSize )
+				setSize( mSprite->getCurrentSubTexture()->getDpSize() );
 		}
 	}
 }
@@ -115,17 +136,17 @@ void UISprite::autoAlign() {
 	SubTexture * tSubTexture = mSprite->getCurrentSubTexture();
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.getWidth() / 2 - tSubTexture->getSize().getWidth() / 2;
+		mAlignOffset.x = mSize.getWidth() / 2 - tSubTexture->getDpSize().getWidth() / 2;
 	} else if ( fontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.getWidth() - tSubTexture->getSize().getWidth();
+		mAlignOffset.x =  mSize.getWidth() - tSubTexture->getDpSize().getWidth();
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.getHeight() / 2 - tSubTexture->getSize().getHeight() / 2;
+		mAlignOffset.y = mSize.getHeight() / 2 - tSubTexture->getDpSize().getHeight() / 2;
 	} else if ( fontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.getHeight() - tSubTexture->getSize().getHeight();
+		mAlignOffset.y = mSize.getHeight() - tSubTexture->getDpSize().getHeight();
 	} else {
 		mAlignOffset.y = 0;
 	}

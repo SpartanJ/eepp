@@ -52,7 +52,7 @@ void UIComboBox::createButton() {
 			SubTexture * tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Right );
 
 			if ( NULL != tSubTexture )
-				btnWidth = tSubTexture->getSize().getWidth();
+				btnWidth = tSubTexture->getDpSize().getWidth();
 		}
 	}
 
@@ -67,8 +67,8 @@ void UIComboBox::createButton() {
 
 	}
 
-	mButton->setPixelsSize( btnWidth, mRealSize.getHeight() );
-	mButton->setPixelsPosition( mRealSize.getWidth() - btnWidth, 0 );
+	mButton->setSize( btnWidth, mSize.getHeight() );
+	mButton->setPosition( mSize.getWidth() - btnWidth, 0 );
 }
 
 void UIComboBox::onButtonClick( const UIEvent * Event ) {

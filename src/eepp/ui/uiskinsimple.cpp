@@ -74,7 +74,7 @@ UISkin * UISkinSimple::clone() {
 
 Sizei UISkinSimple::getSize( const Uint32 & state ) {
 	if ( NULL != mSubTexture[ state ] ) {
-		return mSubTexture[ state ]->getSize();
+		return mSubTexture[ state ]->getDpSize();
 	}
 
 	return Sizei();

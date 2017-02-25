@@ -315,7 +315,7 @@ Uint32 UITextBox::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		Vector2i controlPos( Pos );
 		worldToControl( controlPos );
-		controlPos = PixelDensity::dpToPxI( controlPos );
+		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mAlignOffset.x, (Int32)mAlignOffset.y );
 
 		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), controlPos );
 

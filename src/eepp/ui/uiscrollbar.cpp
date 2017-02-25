@@ -101,13 +101,13 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 	tSkin = mBtnUp->getSkin();
 
 	if ( NULL != tSkin ) {
-		mBtnUp->setPixelsSize( tSkin->getSize() );
+		mBtnUp->setSize( tSkin->getSize() );
 	}
 
 	tSkin = mBtnDown->getSkin();
 
 	if ( NULL != tSkin ) {
-		mBtnDown->setPixelsSize( tSkin->getSize() );
+		mBtnDown->setSize( tSkin->getSize() );
 	}
 
 	adjustChilds();
@@ -125,11 +125,11 @@ void UIScrollBar::autoSize() {
 
 		if ( mFlags & UI_AUTO_SIZE ) {
 			if ( mSlider->isVertical() ) {
-				mSlider->setPixelsSize( size.getWidth() , mRealSize.getHeight() );
-				setPixelsSize( size.getWidth(), mRealSize.getHeight() );
+				mSlider->setSize( size.getWidth() , mSize.getHeight() );
+				setSize( size.getWidth(), mSize.getHeight() );
 			} else {
-				mSlider->setPixelsSize( mRealSize.getWidth(), size.getHeight() );
-				setPixelsSize( mRealSize.getWidth(), size.getHeight() );
+				mSlider->setSize( mSize.getWidth(), size.getHeight() );
+				setSize( mSize.getWidth(), size.getHeight() );
 			}
 		}
 	}

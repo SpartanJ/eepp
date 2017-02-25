@@ -394,4 +394,10 @@ Sizei SubTexture::getDpSize() {
 	return Sizei( (Int32)( (Float)Size.getWidth() / mPixelDensity ), (Int32)( (Float)Size.getHeight() / mPixelDensity ) );
 }
 
+Sizei SubTexture::getPxSize() {
+	Sizei Size = mSrcRect.getSize();
+
+	return Sizei( (Int32)( (Float)Size.getWidth() / mPixelDensity * PixelDensity::getPixelDensity() ), (Int32)( (Float)Size.getHeight() / mPixelDensity * PixelDensity::getPixelDensity() ) );
+}
+
 }}

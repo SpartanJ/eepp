@@ -24,7 +24,7 @@ void UISeparator::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "separator" );
 	
 	if ( NULL != getSkin() ) {
-		setPixelsSize( Sizei( mRealSize.getWidth(), getSkin()->getSize().getHeight() ) );
+		setSize( Sizei( mSize.getWidth(), getSkin()->getSize().getHeight() ) );
 	}
 }
 

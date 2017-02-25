@@ -105,7 +105,7 @@ void UITextInput::drawWaitingCursor() {
 			Primitives P;
 			P.setColor( mFontColor );
 
-			Float CurPosX = mScreenPos.x + mAlignOffset.x + mCurPos.x + 1 + mRealPadding.Left;
+			Float CurPosX = mScreenPos.x + mAlignOffset.x + mCurPos.x + PixelDensity::dpToPxI( 1.f ) + mRealPadding.Left;
 			Float CurPosY = mScreenPos.y + mAlignOffset.y + mCurPos.y + mRealPadding.Top;
 
 			if ( CurPosX > (Float)mScreenPos.x + (Float)mRealSize.x )
@@ -196,7 +196,7 @@ void UITextInput::setTheme( UITheme * Theme ) {
 
 void UITextInput::autoSize() {
 	if ( ( mFlags & UI_AUTO_SIZE ) || 0 == mSize.getHeight() ) {
-		setPixelsSize( mRealSize.x, getSkinSize().getHeight() );
+		setSize( mSize.x, getSkinSize().getHeight() );
 	}
 }
 
@@ -250,7 +250,7 @@ Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTON_LMASK ) {
 		Vector2i controlPos( Pos );
 		worldToControl( controlPos );
-		controlPos = PixelDensity::dpToPxI( controlPos );
+		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mAlignOffset.x, (Int32)mAlignOffset.y );
 
 		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), controlPos );
 

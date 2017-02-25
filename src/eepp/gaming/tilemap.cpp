@@ -446,7 +446,7 @@ void TileMap::update() {
 	updateScreenAABB();
 
 	if ( NULL != mLightManager )
-		mLightManager->Update();
+		mLightManager->update();
 
 	for ( Uint32 i = 0; i < mLayerCount; i++ )
 		mLayers[i]->update( Engine::instance()->getElapsed() );

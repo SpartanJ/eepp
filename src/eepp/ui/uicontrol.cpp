@@ -1039,11 +1039,41 @@ Uint32 UIControl::isRotated() {
 	return mControlFlags & UI_CTRL_FLAG_ROTATED;
 }
 
+Uint32 UIControl::isScaled() {
+	return mControlFlags & UI_CTRL_FLAG_SCALED;
+}
+
 bool UIControl::isMeOrParentTreeRotated() {
 	UIControl * Ctrl = this;
 
 	while( NULL != Ctrl ) {
 		if ( Ctrl->isRotated() )
+			return true;
+
+		Ctrl = Ctrl->getParent();
+	}
+
+	return false;
+}
+
+bool UIControl::isMeOrParentTreeScaled() {
+	UIControl * Ctrl = this;
+
+	while( NULL != Ctrl ) {
+		if ( Ctrl->isScaled() )
+			return true;
+
+		Ctrl = Ctrl->getParent();
+	}
+
+	return false;
+}
+
+bool UIControl::isMeOrParentTreeScaledOrRotated() {
+	UIControl * Ctrl = this;
+
+	while( NULL != Ctrl ) {
+		if ( Ctrl->isScaled() || Ctrl->isRotated() )
 			return true;
 
 		Ctrl = Ctrl->getParent();

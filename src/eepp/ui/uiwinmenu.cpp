@@ -80,7 +80,7 @@ void UIWinMenu::setTheme( UITheme * Theme ) {
 	}
 
 	if ( 0 == mMenuHeight && NULL != getSkin() && NULL != getSkin() ) {
-		mMenuHeight = PixelDensity::pxToDpI( getSkin()->getSize().getHeight() );
+		mMenuHeight = getSkin()->getSize().getHeight();
 
 		setSize( getParent()->getSize().getWidth(), mMenuHeight );
 

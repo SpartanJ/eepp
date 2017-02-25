@@ -17,7 +17,7 @@ class EE_API MapLightManager {
 
 		virtual ~MapLightManager();
 
-		virtual void Update();
+		virtual void update();
 
 		void addLight( MapLight * Light );
 

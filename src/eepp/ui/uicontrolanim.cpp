@@ -118,6 +118,14 @@ const Vector2f& UIControlAnim::getScale() const {
 
 void UIControlAnim::setScale( const Vector2f & scale ) {
 	mScale = scale;
+
+	if ( mScale != 1.f ) {
+		mControlFlags |= UI_CTRL_FLAG_SCALED;
+	} else {
+		if ( mControlFlags & UI_CTRL_FLAG_SCALED )
+			mControlFlags &= ~UI_CTRL_FLAG_SCALED;
+	}
+
 	onScaleChange();
 }
 

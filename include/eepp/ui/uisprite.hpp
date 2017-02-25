@@ -38,6 +38,8 @@ class EE_API UISprite : public UIComplexControl {
 
 		virtual void draw();
 
+		virtual void update();
+
 		virtual void setAlpha( const Float& alpha );
 
 		Graphics::Sprite * getSprite() const;

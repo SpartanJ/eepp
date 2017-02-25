@@ -22,7 +22,7 @@ MapLightManager::~MapLightManager() {
 	destroyLights();
 }
 
-void MapLightManager::Update() {
+void MapLightManager::update() {
 	if ( mIsByVertex ) {
 		updateByVertex();
 	} else {
@@ -148,7 +148,7 @@ void MapLightManager::addLight( MapLight * Light ) {
 	mLights.push_back( Light );
 
 	if ( mLights.size() == 1 )
-		Update();
+		update();
 }
 
 void MapLightManager::removeLight( MapLight * Light ) {
