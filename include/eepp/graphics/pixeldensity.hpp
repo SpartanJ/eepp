@@ -73,6 +73,10 @@ class EE_API PixelDensity {
 		static Vector2i dpToPxI( Vector2i pos );
 
 		static Vector2i pxToDpI( Vector2i pos );
+
+		static Vector2f dpToPx( Vector2f pos );
+
+		static Vector2f pxToDp( Vector2f pos );
 	protected:
 		static Float sPixelDensity;
 };

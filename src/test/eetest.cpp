@@ -256,11 +256,11 @@ void EETest::createUI() {
 	Clock TE;
 
 	mThemeName = "uitheme";
-/*
+
 	if ( PixelDensity::getPixelDensity() == 2 ) {
 		mThemeName += "2x";
 	}
-*/
+
 	createUIThemeTextureAtlas();
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );

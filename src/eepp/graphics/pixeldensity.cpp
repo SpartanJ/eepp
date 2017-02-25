@@ -80,4 +80,12 @@ Vector2i PixelDensity::pxToDpI( Vector2i pos ) {
 	return Sizei( pxToDpI( pos.x ), pxToDpI( pos.y ) );
 }
 
+Vector2f PixelDensity::dpToPx( Vector2f pos ) {
+	return Vector2f( dpToPx( pos.x ), dpToPx( pos.y ) );
+}
+
+Vector2f PixelDensity::pxToDp( Vector2f pos ) {
+	return Vector2f( pxToDp( pos.x ), pxToDp( pos.y ) );
+}
+
 }}

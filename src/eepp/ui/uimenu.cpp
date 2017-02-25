@@ -346,7 +346,7 @@ void UIMenu::onSizeChange() {
 
 void UIMenu::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mPadding = PixelDensity::pxToDpI( makePadding() );
+		mPadding = makePadding();
 	}
 }
 

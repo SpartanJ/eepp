@@ -14,6 +14,8 @@ UITooltip::UITooltip( UITooltip::CreateParams& Params, UIControl * TooltipOf ) :
 	mTooltipTime( Time::Zero ),
 	mTooltipOf( TooltipOf )
 {
+	setPadding( mPadding );
+
 	mTextCache = eeNew( TextCache, () );
 	mTextCache->setFont( Params.Font );
 	mTextCache->setColor( mFontColor );
@@ -62,7 +64,7 @@ void UITooltip::setTheme( UITheme * Theme ) {
 
 void UITooltip::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mPadding = makePadding( true, true, true, true );
+		setPadding( makePadding( true, true, true, true ) );
 	}
 }
 
@@ -155,37 +157,37 @@ void UITooltip::setAlpha( const Float& alpha ) {
 void UITooltip::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		setPixelsSize(
-			(int)mTextCache->getTextWidth() + mPadding.Left + mPadding.Right,
-			(int)mTextCache->getTextHeight() + mPadding.Top + mPadding.Bottom
+			(int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right,
+			(int)mTextCache->getTextHeight() + mRealPadding.Top + mRealPadding.Bottom
 		);
 	}
 }
 
 void UITooltip::autoAlign() {
-	Uint32 Width	= mRealSize.getWidth()	- mPadding.Left - mPadding.Right;
-	Uint32 Height	= mRealSize.getHeight()	- mPadding.Top	- mPadding.Bottom;
+	Uint32 Width	= mRealSize.getWidth()	- mRealPadding.Left - mRealPadding.Right;
+	Uint32 Height	= mRealSize.getHeight()	- mRealPadding.Top	- mRealPadding.Bottom;
 
 	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mAlignOffset.x = mPadding.Left + (Float)( (Int32)( Width - mTextCache->getTextWidth() ) / 2 );
+			mAlignOffset.x = mRealPadding.Left + (Float)( (Int32)( Width - mTextCache->getTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
-			mAlignOffset.x = ( (Float)Width - (Float)mTextCache->getTextWidth() ) - mPadding.Right;
+			mAlignOffset.x = ( (Float)Width - (Float)mTextCache->getTextWidth() ) - mRealPadding.Right;
 			break;
 		case UI_HALIGN_LEFT:
-			mAlignOffset.x = mPadding.Left;
+			mAlignOffset.x = mRealPadding.Left;
 			break;
 	}
 
 	switch ( fontVAlignGet( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
-			mAlignOffset.y = mPadding.Top + (Float)( ( (Int32)( Height - mTextCache->getTextHeight() ) ) / 2 );
+			mAlignOffset.y = mRealPadding.Top + (Float)( ( (Int32)( Height - mTextCache->getTextHeight() ) ) / 2 );
 			break;
 		case UI_VALIGN_BOTTOM:
-			mAlignOffset.y = ( (Float)Height - (Float)mTextCache->getTextHeight() ) - mPadding.Bottom;
+			mAlignOffset.y = ( (Float)Height - (Float)mTextCache->getTextHeight() ) - mRealPadding.Bottom;
 			break;
 		case UI_VALIGN_TOP:
-			mAlignOffset.y = mPadding.Top;
+			mAlignOffset.y = mRealPadding.Top;
 			break;
 	}
 }
@@ -210,6 +212,8 @@ void UITooltip::onFontChanged() {
 
 void UITooltip::setPadding( const Recti& padding ) {
 	mPadding = padding;
+	mRealPadding = PixelDensity::dpToPxI( mPadding );
+
 }
 
 const Recti& UITooltip::getPadding() const {
@@ -232,8 +236,8 @@ const int& UITooltip::getNumLines() const {
 	return mTextCache->getNumLines();
 }
 
-const Vector2f& UITooltip::getAlignOffset() const {
-	return mAlignOffset;
+Vector2f UITooltip::getAlignOffset() {
+	return PixelDensity::pxToDp( mAlignOffset );
 }
 
 void UITooltip::setTooltipTime( const Time& Time ) {

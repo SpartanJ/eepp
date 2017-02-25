@@ -71,7 +71,7 @@ class EE_API SubTexture {
 
 		/** Sets the Destination Size of the SubTexture.
 		*	The size can be different from the original size of the SubTexture.
-		*	For example if the SubTexture width is 32 pixels, by default the destination width is 32 pixels, but it can be changed to anything wanted. */
+		*	For example if the SubTexture width is 32 pixels, by default the destination width is 32 pixels, but it can be changed to anything want. */
 		void setDestSize( const Sizef& destSize );
 
 		/** @return The SubTexture default offset. The offset is added to the position passed when is drawed. */
@@ -141,12 +141,14 @@ class EE_API SubTexture {
 		*	This will get the Texture from VRAM ( it will not work with OpenGL ES ) */
 		bool saveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format );
 
-		/** Sets the Destination Size as the Source Rect Size ( the real size of the SubTexture ). */
+		/** Sets the Destination Size as the Source Rect Size ( the real size of the SubTexture ) multiplied by the pixel density. */
 		void resetDestSize();
 
 		Float getPixelDensity() const;
 
 		void setPixelDensity( const Float & pixelDensity );
+
+		Sizei getDpSize();
 	protected:
 		Uint8 *		mPixels;
 		Uint8 *		mAlpha;

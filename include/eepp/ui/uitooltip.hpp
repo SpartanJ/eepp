@@ -89,7 +89,7 @@ class EE_API UITooltip : public UIControlAnim {
 
 		const int& getNumLines() const;
 
-		const Vector2f& getAlignOffset() const;
+		Vector2f getAlignOffset();
 
 		void setTooltipTime( const Time& Time );
 
@@ -100,9 +100,10 @@ class EE_API UITooltip : public UIControlAnim {
 		TextCache *	mTextCache;
 		ColorA 		mFontColor;
 		ColorA 		mFontShadowColor;
-		Vector2f 		mAlignOffset;
-		Recti			mPadding;
-		Time			mTooltipTime;
+		Vector2f 	mAlignOffset;
+		Recti		mPadding;
+		Recti		mRealPadding;
+		Time		mTooltipTime;
 		UIControl *	mTooltipOf;
 
 		virtual void onSizeChange();

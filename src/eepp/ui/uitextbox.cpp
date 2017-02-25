@@ -243,11 +243,6 @@ void UITextBox::setPadding( const Recti& padding ) {
 	mRealPadding = PixelDensity::dpToPxI( padding );
 }
 
-void UITextBox::setPixelsPadding( const Recti& padding ) {
-	mPadding = PixelDensity::pxToDpI( padding );
-	mRealPadding = padding;
-}
-
 const Recti& UITextBox::getPadding() const {
 	return mPadding;
 }

@@ -1279,28 +1279,28 @@ Recti UIControl::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool Pad
 					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Left );
 
 					if ( NULL != tSubTexture )
-						tPadding.Left = tSubTexture->getSize().getWidth();
+						tPadding.Left = tSubTexture->getDpSize().getWidth();
 				}
 
 				if ( PadRight ) {
 					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Right );
 
 					if ( NULL != tSubTexture )
-						tPadding.Right = tSubTexture->getSize().getWidth();
+						tPadding.Right = tSubTexture->getDpSize().getWidth();
 				}
 
 				if ( PadTop ) {
 					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Up );
 
 					if ( NULL != tSubTexture )
-						tPadding.Top = tSubTexture->getSize().getHeight();
+						tPadding.Top = tSubTexture->getDpSize().getHeight();
 				}
 
 				if ( PadBottom ) {
 					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Down );
 
 					if ( NULL != tSubTexture )
-						tPadding.Bottom = tSubTexture->getSize().getHeight();
+						tPadding.Bottom = tSubTexture->getDpSize().getHeight();
 				}
 			}
 		}

@@ -70,7 +70,7 @@ void UIPushButton::onSizeChange() {
 		mTextBox->setPosition( 0, 0 );
 	}
 
-	mIcon->setPosition( PixelDensity::pxToDpI( mIconSpace ), 0 );
+	mIcon->setPosition( mIconSpace, 0 );
 	mIcon->centerVertical();
 
 	if ( NULL != mTextBox ) {
@@ -93,32 +93,6 @@ void UIPushButton::onSizeChange() {
 	if ( NULL != mTextBox && 0 == mTextBox->getText().size() ) {
 		mIcon->center();
 	}
-
-	/** Auto Size only for height? May be set another flag to this... */
-	/**
-	if ( mFlags & UI_AUTO_SIZE ) {
-		if ( NULL != mTextBox ) {
-			Recti P = makePadding();
-
-			setInternalHeight( mIcon->getSize().getHeight()	+ P.Top		+ P.Bottom );
-
-			if ( 0 == mTextBox->getText().size() ) {
-				setInternalWidth( mIcon->getSize().getWidth()		+ P.Left	+ P.Right );
-
-				mIcon->center();
-			} else {
-				setInternalWidth( mIconSpace + mIcon->setPosition(.x + mIcon->getSize().getWidth() + mTextBox->getSize().getWidth() );
-
-				if ( mSize.getHeight() < P.Top + P.Bottom + mTextBox->getTextHeight() )
-					setInternalHeight( P.Top + P.Bottom + mTextBox->getTextHeight() );
-			}
-		}
-	} else {
-		if ( NULL != mTextBox && 0 == mTextBox->getText().size() ) {
-			mIcon->center();
-		}
-	}
-	*/
 }
 
 void UIPushButton::setTheme( UITheme * Theme ) {

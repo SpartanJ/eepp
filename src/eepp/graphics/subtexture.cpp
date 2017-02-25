@@ -388,4 +388,10 @@ void SubTexture::setPixelDensity( const Float & pixelDensity ) {
 	resetDestSize();
 }
 
+Sizei SubTexture::getDpSize() {
+	Sizei Size = mSrcRect.getSize();
+
+	return Sizei( (Int32)( (Float)Size.getWidth() / mPixelDensity ), (Int32)( (Float)Size.getHeight() / mPixelDensity ) );
+}
+
 }}

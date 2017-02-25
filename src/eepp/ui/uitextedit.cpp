@@ -230,7 +230,7 @@ void UITextEdit::scrollbarsSet() {
 
 void UITextEdit::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mPadding = makePadding();
+		mPadding = PixelDensity::dpToPxI( makePadding() );
 	}
 }
 
