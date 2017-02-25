@@ -928,6 +928,42 @@ void UIControl::childsCloseAll() {
 	}
 }
 
+std::string UIControl::getId() const {
+	return mId;
+}
+
+void UIControl::setId(const std::string & id) {
+	mId = id;
+	mIdHash = String::hash( id );
+}
+
+Uint32 UIControl::getIdHash() const {
+	return mIdHash;
+}
+
+UIControl * UIControl::findIdHash( const Uint32& idHash ) {
+	if ( mIdHash == idHash ) {
+		return this;
+	} else {
+		UIControl * child = mChild;
+
+		while ( NULL != child ) {
+			UIControl * foundCtrl = child->findIdHash( idHash );
+
+			if ( NULL != foundCtrl )
+				return foundCtrl;
+
+			child = child->mNext;
+		}
+	}
+
+	return NULL;
+}
+
+UIControl * UIControl::find( const std::string& id ) {
+	return findIdHash( String::hash( id ) );
+}
+
 bool UIControl::isChild( UIControl * ChildCtrl ) const {
 	UIControl * ChildLoop = mChild;
 

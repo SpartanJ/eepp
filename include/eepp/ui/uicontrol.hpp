@@ -260,11 +260,21 @@ class EE_API UIControl {
 		Recti getScreenRect();
 
 		void childsCloseAll();
+
+		std::string getId() const;
+
+		void setId( const std::string & id );
+
+		Uint32 getIdHash() const;
+
+		UIControl * find( const std::string& id );
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
 		friend class UIManager;
 		friend class UIWindow;
 
+		std::string		mId;
+		Uint32			mIdHash;
 		Vector2i		mPos;
 		Vector2i		mRealPos;
 		Vector2i		mScreenPos;
@@ -462,6 +472,8 @@ class EE_API UIControl {
 		Vector2i dpToPxI( Vector2i pos );
 
 		Vector2i pxToDpI( Vector2i pos );
+
+		UIControl * findIdHash( const Uint32& idHash );
 };
 
 }}

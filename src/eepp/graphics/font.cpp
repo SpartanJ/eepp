@@ -3,6 +3,7 @@
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/window/engine.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -130,7 +131,9 @@ void Font::draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 			setColor( TextCache.getShadowColor() );
 		}
 
-		draw( X + 1, Y + 1, f, Scale, Angle, Effect );
+		Float pd = Window::Engine::instance()->getPixelDensity();
+
+		draw( X + 1 * pd, Y + 1 * pd, f, Scale, Angle, Effect );
 
 		mTextCache.setFlags( Flags );
 

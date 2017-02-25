@@ -133,7 +133,7 @@ void FrameBufferFBO::unbind() {
 		recoverView();
 
 		if ( mDepthBuffer ) {
-			glBindFramebufferEXT( GL_FRAMEBUFFER, mLastRB );
+			glBindFramebufferEXT( GL_RENDERBUFFER, mLastRB );
 		}
 
 		glBindFramebufferEXT( GL_FRAMEBUFFER, mLastFB );
