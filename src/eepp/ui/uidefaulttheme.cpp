@@ -156,9 +156,6 @@ UIComboBox * UIDefaultTheme::createComboBox( UIControl * Parent, const Sizei& Si
 	ComboParams.setPosition( Pos );
 	ComboParams.setSize( Size );
 	ComboParams.Flags = Flags;
-	ComboParams.MinNumVisibleItems = MinNumVisibleItems;
-	ComboParams.PopUpToMainControl = PopUpToMainControl;
-	ComboParams.ListBox = ListBox;
 
 	if ( getUseDefaultThemeValues() ) {
 		ComboParams.Flags |= UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED;

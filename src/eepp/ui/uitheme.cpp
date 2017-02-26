@@ -73,6 +73,7 @@ static void loadThemeElements( std::list<std::string>& UI_THEME_ELEMENTS, std::l
 		UI_THEME_ELEMENTS.push_back( "listboxitem" );
 		UI_THEME_ELEMENTS.push_back( "dropdownlist" );
 		UI_THEME_ELEMENTS.push_back( "combobox" );
+		UI_THEME_ELEMENTS.push_back( "combobox_button" );
 		UI_THEME_ELEMENTS.push_back( "menu" );
 		UI_THEME_ELEMENTS.push_back( "menuitem" );
 		UI_THEME_ELEMENTS.push_back( "separator" );
@@ -594,9 +595,7 @@ UIComboBox * UITheme::createComboBox( UIControl * Parent, const Sizei& Size, con
 	ComboParams.setPosition( Pos );
 	ComboParams.setSize( Size );
 	ComboParams.Flags = Flags;
-	ComboParams.MinNumVisibleItems = MinNumVisibleItems;
-	ComboParams.PopUpToMainControl = PopUpToMainControl;
-	ComboParams.ListBox = ListBox;
+
 	UIComboBox * Ctrl = eeNew( UIComboBox, ( ComboParams ) );
 	Ctrl->setVisible( true );
 	Ctrl->setEnabled( true );

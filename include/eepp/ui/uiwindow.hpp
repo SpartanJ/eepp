@@ -46,9 +46,9 @@ class EE_API UIWindow : public UIComplexControl {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		virtual void setSize( const Sizei& size );
+		virtual UIControl * setSize( const Sizei& size );
 
-		void setSize( const Int32& Width, const Int32& Height );
+		UIControl * setSize( const Int32& Width, const Int32& Height );
 
 		const Sizei& getSize();
 

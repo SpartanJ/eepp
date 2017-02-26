@@ -90,9 +90,9 @@ class EE_API UIControl {
 
 		virtual void messagePost( const UIMessage * Msg );
 
-		void setPosition( const Vector2i& position );
+		UIControl * setPosition( const Vector2i& position );
 
-		void setPosition( const Int32& x, const Int32& y );
+		UIControl * setPosition( const Int32& x, const Int32& y );
 
 		void setPixelsPosition( const Vector2i& position );
 
@@ -102,9 +102,9 @@ class EE_API UIControl {
 
 		const Vector2i& getRealPosition() const;
 
-		virtual void setSize( const Sizei& size );
+		virtual UIControl * setSize( const Sizei& size );
 
-		void setSize( const Int32& Width, const Int32& Height );
+		UIControl * setSize( const Int32& Width, const Int32& Height );
 
 		void setPixelsSize( const Sizei& size );
 
@@ -116,13 +116,13 @@ class EE_API UIControl {
 
 		Recti getRect() const;
 
-		void setVisible( const bool& visible );
+		UIControl * setVisible( const bool& visible );
 
 		bool isVisible() const;
 
 		bool isHided() const;
 
-		void setEnabled( const bool& enabled );
+		UIControl * setEnabled( const bool& enabled );
 
 		bool isEnabled() const;
 
@@ -130,7 +130,7 @@ class EE_API UIControl {
 
 		UIControl * getParent() const;
 
-		void setParent( UIControl * parent );
+		UIControl * setParent( UIControl * parent );
 
 		void centerHorizontal();
 
@@ -350,6 +350,8 @@ class EE_API UIControl {
 		virtual void onParentSizeChange( const Vector2i& SizeChange );
 
 		virtual void onStateChange();
+
+		virtual void onParentChange();
 		
 		virtual void onComplexControlFocusLoss();
 

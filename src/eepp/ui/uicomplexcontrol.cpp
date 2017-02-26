@@ -134,7 +134,7 @@ void UIComplexControl::tooltipRemove() {
 	mTooltip = NULL;
 }
 
-void UIComplexControl::setSize( const Sizei& size ) {
+UIControl * UIComplexControl::setSize( const Sizei& size ) {
 	Sizei s( size );
 
 	if ( s.x < mMinControlSize.x )
@@ -143,11 +143,11 @@ void UIComplexControl::setSize( const Sizei& size ) {
 	if ( s.y < mMinControlSize.y )
 		s.y = mMinControlSize.y;
 
-	UIControlAnim::setSize( s );
+	return UIControlAnim::setSize( s );
 }
 
-void UIComplexControl::setSize( const Int32& Width, const Int32& Height ) {
-	UIControlAnim::setSize( Width, Height );
+UIControl * UIComplexControl::setSize( const Int32& Width, const Int32& Height ) {
+	return UIControlAnim::setSize( Width, Height );
 }
 
 const Sizei& UIComplexControl::getSize() {

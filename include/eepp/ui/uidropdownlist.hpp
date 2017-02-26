@@ -40,12 +40,25 @@ class EE_API UIDropDownList : public UITextInput {
 		UIListBox * getListBox() const;
 
 		virtual void update();
+
+		void showList();
+
+		bool getPopUpToMainControl() const;
+
+		void setPopUpToMainControl(bool popUpToMainControl);
+
+		Uint32 getMinNumVisibleItems() const;
+
+		void setMinNumVisibleItems(const Uint32 & minNumVisibleItems);
+
 	protected:
-		UIListBox *	mListBox;
+		friend class UIComboBox;
+
+		UIListBox *		mListBox;
+		UIControl *		mFriendCtrl;
 		Uint32			mMinNumVisibleItems;
 		bool			mPopUpToMainControl;
 
-		void showListBox();
 
 		void onListBoxFocusLoss( const UIEvent * Event );
 
@@ -70,6 +83,10 @@ class EE_API UIDropDownList : public UITextInput {
 		virtual void autoSize();
 
 		virtual void autoSizeControl();
+
+		virtual void doAftersetTheme();
+
+		void setFriendControl( UIControl * friendCtrl );
 
 		void destroyListBox();
 };

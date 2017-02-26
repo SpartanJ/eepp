@@ -4,20 +4,18 @@
 namespace EE { namespace UI {
 
 UIComboBox::UIComboBox( UIComboBox::CreateParams& Params ) :
-	UIDropDownList( Params ),
+	UIComplexControl( Params ),
+	mDropDownList( NULL ),
 	mButton( NULL )
 {
-	setAllowEditing( true );
-
 	applyDefaultTheme();
 }
 
 UIComboBox::UIComboBox() :
-	UIDropDownList(),
+	UIComplexControl(),
+	mDropDownList( NULL ),
 	mButton( NULL )
 {
-	setAllowEditing( true );
-
 	applyDefaultTheme();
 }
 
@@ -29,83 +27,91 @@ Uint32 UIComboBox::getType() const {
 }
 
 bool UIComboBox::isType( const Uint32& type ) const {
-	return UIComboBox::getType() == type ? true : UIDropDownList::isType( type );
+	return UIComboBox::getType() == type ? true : UIComplexControl::isType( type );
 }
 
 void UIComboBox::setTheme( UITheme * Theme ) {
-	UIControl::setThemeControl( Theme, "combobox" );
-
-	autoSizeControl();
-
-	autoPadding();
-
-	onSizeChange();
-}
-
-void UIComboBox::createButton() {
-	Int32 btnWidth = 0;
-
-	if ( NULL != mSkinState && NULL != mSkinState->getSkin() ) {
-		if ( mSkinState->getSkin()->getType() == UISkin::SkinComplex ) {
-			UISkinComplex * tComplex = reinterpret_cast<UISkinComplex*> ( mSkinState->getSkin() );
-
-			SubTexture * tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Right );
-
-			if ( NULL != tSubTexture )
-				btnWidth = tSubTexture->getDpSize().getWidth();
-		}
+	if ( NULL == mDropDownList ) {
+		mDropDownList = eeNew( UIDropDownList, () );
+		mDropDownList->setParent( this );
+		mDropDownList->setVisible( true );
+		mDropDownList->setEnabled( true );
+		mDropDownList->setAllowEditing( true );
+		mDropDownList->getInputTextBuffer()->setFreeEditing( true );
+		mDropDownList->setFriendControl( this );
 	}
 
 	if ( NULL == mButton ) {
-		mButton = eeNew( UIControl, () );
+		mButton = eeNew( UIComplexControl, () );
 		mButton->setParent( this );
 		mButton->setVisible( true );
 		mButton->setEnabled( true );
 		mButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIComboBox::onButtonClick ) );
-		mButton->addEventListener( UIEvent::EventMouseEnter, cb::Make1( this, &UIComboBox::onButtonEnter ) );
-		mButton->addEventListener( UIEvent::EventMouseExit, cb::Make1( this, &UIComboBox::onButtonExit ) );
-
 	}
 
-	mButton->setSize( btnWidth, mSize.getHeight() );
-	mButton->setPosition( mSize.getWidth() - btnWidth, 0 );
+	mDropDownList->setThemeControl( Theme, "combobox" );
+	mDropDownList->doAftersetTheme();
+
+	mButton->setThemeControl( Theme, "combobox_button" );
+
+	if ( NULL != mDropDownList->getSkin() ) {
+		setInternalHeight( mDropDownList->getSkin()->getSize().getHeight() );
+	}
+
+	if ( NULL != mButton->getSkin() ) {
+		mButton->setSize( mButton->getSkin()->getSize() );
+	}
+
+	updateControls();
+}
+
+UIListBox *UIComboBox::getListBox() {
+	return mDropDownList->getListBox();
+}
+
+InputTextBuffer *UIComboBox::getInputTextBuffer() {
+	return mDropDownList->getInputTextBuffer();
+}
+
+const String& UIComboBox::getText() {
+	return mDropDownList->getText();
+}
+
+void UIComboBox::updateControls() {
+	if ( ( mFlags & UI_AUTO_SIZE ) || 0 == mSize.getHeight() ) {
+		setInternalHeight( mDropDownList->getSkin()->getSize().getHeight() );
+	}
+
+	mDropDownList->setPosition( 0, 0 );
+	mDropDownList->setSize( mSize.getWidth() - mButton->getSize().getWidth(), mSize.getHeight() );
+	mDropDownList->getListBox()->setSize( mSize.getWidth(), mDropDownList->getListBox()->getSize().getHeight() );
+
+	mButton->setPosition( mSize.getWidth() - mButton->getSize().getWidth(), 0 );
+	mButton->centerVertical();
 }
 
 void UIComboBox::onButtonClick( const UIEvent * Event ) {
 	const UIEventMouse * MEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( MEvent->getFlags() & EE_BUTTON_LMASK ) {
-		showListBox();
+		mDropDownList->showList();
 	}
-}
-
-void UIComboBox::onButtonEnter( const UIEvent * Event ) {
-	setSkinState( UISkinState::StateMouseEnter );
-}
-
-void UIComboBox::onButtonExit( const UIEvent * Event ) {
-	setSkinState( UISkinState::StateMouseExit );
-}
-
-Uint32 UIComboBox::onMouseClick( const Vector2i& position, const Uint32 Flags ) {
-	if ( Flags & EE_BUTTON_LMASK ) {
-		UITextInput::onMouseClick( position, Flags );
-
-		if ( mListBox->isVisible() ) {
-			hide();
-		}
-	}
-
-	return 1;
-}
-
-void UIComboBox::onControlClear( const UIEvent *Event ) {
 }
 
 void UIComboBox::onSizeChange() {
-	UIDropDownList::onSizeChange();
+	UIComplexControl::onSizeChange();
 
-	createButton();
+	updateControls();
+}
+
+void UIComboBox::onPositionChange() {
+	UIComplexControl::onPositionChange();
+
+	updateControls();
+}
+
+void UIComboBox::onParentChange() {
+	//mButton->centerVertical();
 }
 
 }}

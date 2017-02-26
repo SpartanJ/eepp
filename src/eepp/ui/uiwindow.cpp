@@ -309,7 +309,7 @@ void UIWindow::onSizeChange() {
 	}
 }
 
-void UIWindow::setSize( const Sizei& Size ) {
+UIControl * UIWindow::setSize( const Sizei& Size ) {
 	if ( NULL != mWindowDecoration ) {
 		Sizei size = Size;
 
@@ -320,10 +320,13 @@ void UIWindow::setSize( const Sizei& Size ) {
 	} else {
 		UIComplexControl::setSize( Size );
 	}
+
+	return this;
 }
 
-void UIWindow::setSize( const Int32& Width, const Int32& Height ) {
+UIControl * UIWindow::setSize( const Int32& Width, const Int32& Height ) {
 	setSize( Sizei( Width, Height ) );
+	return this;
 }
 
 const Sizei& UIWindow::getSize() {

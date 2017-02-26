@@ -35,10 +35,22 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	mSaveFileType->getListBox()->setSelected( "PNG" );
 
 	createTxtBox( Vector2i( 10, 50 ), "Max. Texture Atlas Width:" );
-	mComboWidth = mTheme->createComboBox( mUIWindow->getContainer(), Sizei( 100, 22 ), Vector2i( PosX, 50 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE );
+
+	mComboWidth = eeNew( UIComboBox, () );
+	mComboWidth->setParent( mUIWindow->getContainer() );
+	mComboWidth->setSize( 100, 0 );
+	mComboWidth->setPosition( PosX, 50 );
+	mComboWidth->setVisible( true );
+	mComboWidth->setEnabled( true );
 
 	createTxtBox( Vector2i( 10, 80 ), "Max. Texture Atlas Height:" );
-	mComboHeight = mTheme->createComboBox( mUIWindow->getContainer(), Sizei( 100, 22 ), Vector2i( PosX, 80 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE );
+
+	mComboHeight = eeNew( UIComboBox, () );
+	mComboHeight->setParent( mUIWindow->getContainer() );
+	mComboHeight->setSize( 100, 0 );
+	mComboHeight->setPosition( PosX, 80 );
+	mComboHeight->setVisible( true );
+	mComboHeight->setEnabled( true );
 
 	std::vector<String> Sizes;
 

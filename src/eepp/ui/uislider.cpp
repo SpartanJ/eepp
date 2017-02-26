@@ -377,10 +377,12 @@ UI_ORIENTATION UISlider::getOrientation() const {
 	return mOrientation;
 }
 
-void UISlider::setOrientation( const UI_ORIENTATION & orientation ) {
+UIControl * UISlider::setOrientation( const UI_ORIENTATION & orientation ) {
 	mOrientation = orientation;
 
 	applyDefaultTheme();
+
+	return this;
 }
 
 bool UISlider::getAllowHalfSliderOut() const {

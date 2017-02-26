@@ -30,7 +30,7 @@ UITextInput::UITextInput() :
 	mAllowEditing( true ),
 	mShowingWait( true )
 {
-	setFlags( UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE );
+	setFlags( UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED );
 
 	mTextBuffer.start();
 	mTextBuffer.setActive( false );

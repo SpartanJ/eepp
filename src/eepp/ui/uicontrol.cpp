@@ -153,13 +153,15 @@ void UIControl::setInternalPosition( const Vector2i& Pos ) {
 	mRealPos = Vector2i( Pos.x * PixelDensity::getPixelDensity(), Pos.y * PixelDensity::getPixelDensity() );
 }
 
-void UIControl::setPosition( const Vector2i& Pos ) {
+UIControl * UIControl::setPosition( const Vector2i& Pos ) {
 	setInternalPosition( Pos );
 	onPositionChange();
+	return this;
 }
 
-void UIControl::setPosition( const Int32& x, const Int32& y ) {
+UIControl * UIControl::setPosition( const Int32& x, const Int32& y ) {
 	setPosition( Vector2i( x, y ) );
+	return this;
 }
 
 void UIControl::setPixelsPosition( const Vector2i& Pos ) {
@@ -190,7 +192,7 @@ void UIControl::setInternalPixelsSize( const Sizei& size ) {
 	mRealSize = size;
 }
 
-void UIControl::setSize( const Sizei& Size ) {
+UIControl * UIControl::setSize( const Sizei& Size ) {
 	if ( Size != mSize ) {
 		Vector2i sizeChange( Size.x - mSize.x, Size.y - mSize.y );
 
@@ -202,10 +204,13 @@ void UIControl::setSize( const Sizei& Size ) {
 			sendParentSizeChange( sizeChange );
 		}
 	}
+
+	return this;
 }
 
-void UIControl::setSize( const Int32& Width, const Int32& Height ) {
+UIControl * UIControl::setSize( const Int32& Width, const Int32& Height ) {
 	setSize( Sizei( Width, Height ) );
+	return this;
 }
 
 void UIControl::setPixelsSize( const Sizei & size ) {
@@ -244,9 +249,10 @@ const Sizei& UIControl::getRealSize() {
 	return mRealSize;
 }
 
-void UIControl::setVisible( const bool& visible ) {
+UIControl * UIControl::setVisible( const bool& visible ) {
 	mVisible = visible;
 	onVisibleChange();
+	return this;
 }
 
 bool UIControl::isVisible() const {
@@ -257,9 +263,10 @@ bool UIControl::isHided() const {
 	return !mVisible;
 }
 
-void UIControl::setEnabled( const bool& enabled ) {
+UIControl * UIControl::setEnabled( const bool& enabled ) {
 	mEnabled = enabled;
 	onEnabledChange();
+	return this;
 }
 
 bool UIControl::isEnabled() const {
@@ -274,9 +281,9 @@ UIControl * UIControl::getParent() const {
 	return mParentCtrl;
 }
 
-void UIControl::setParent( UIControl * parent ) {
+UIControl * UIControl::setParent( UIControl * parent ) {
 	if ( parent == mParentCtrl )
-		return;
+		return this;
 
 	if ( NULL != mParentCtrl )
 		mParentCtrl->childRemove( this );
@@ -285,6 +292,10 @@ void UIControl::setParent( UIControl * parent ) {
 
 	if ( NULL != mParentCtrl )
 		mParentCtrl->childAdd( this );
+
+	onParentChange();
+
+	return this;
 }
 
 bool UIControl::isParentOf( UIControl * Ctrl ) {
@@ -1219,6 +1230,9 @@ void UIControl::setSkin( const UISkin& Skin ) {
 }
 
 void UIControl::onStateChange() {
+}
+
+void UIControl::onParentChange() {
 }
 
 void UIControl::setSkinState( const Uint32& State ) {

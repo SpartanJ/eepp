@@ -65,7 +65,7 @@ class EE_API UIScrollBar : public UIComplexControl {
 
 		UI_ORIENTATION getOrientation() const;
 
-		void setOrientation( const UI_ORIENTATION & orientation );
+		UIControl * setOrientation( const UI_ORIENTATION & orientation );
 
 		bool getExpandBackground() const;
 

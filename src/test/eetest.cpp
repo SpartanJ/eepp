@@ -265,7 +265,7 @@ void EETest::createUI() {
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	UIManager::instance()->init(UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER); // UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
+	UIManager::instance()->init(); // UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
 	//mTheme = UITheme::LoadFromPath( eeNew( UIdefaultTheme, ( mThemeName, mThemeName ) ), MyPath + mThemeName + "/" );
 
@@ -588,94 +588,58 @@ void EETest::createUI() {
 	/**/
 
 	UIRadioButton * ctrl = eeNew( UIRadioButton, () );
-	ctrl->setPosition( 100, 100 );
-	ctrl->setSize( 320, 32 );
+	ctrl->setPosition( 50, 100 )->setSize( 320, 32 )->setVisible( true )->setEnabled( true );
 	ctrl->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	ctrl->setBorderEnabled( true )->setColor( 0x66666666 );
-	ctrl->setVisible( true );
-	ctrl->setEnabled( true );
 	ctrl->setText( "Happy RadioButon :)" );
 	ctrl->setFontColor( 0x000000FF );
 
 	UICheckBox * cbox = eeNew( UICheckBox, () );
-	cbox->setPosition( 100, 164 );
-	cbox->setSize( 320, 32 );
+	cbox->setPosition( 50, 164 )->setSize( 320, 32 )->setVisible( true )->setEnabled( true );
 	cbox->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	cbox->setBorderEnabled( true )->setColor( 0x66666666 );
-	cbox->setVisible( true );
-	cbox->setEnabled( true );
 	cbox->setText( "Happy CheckBox :)" );
 	cbox->setFontColor( 0x000000FF );
 
 	UIGfx * gfx = eeNew( UIGfx, () );
-	gfx->setPosition( 100, 132 );
-	gfx->setSize( 16, 16 );
+	gfx->setPosition( 50, 132 )->setSize( 16, 16 )->setVisible( true )->setEnabled( true );
 	gfx->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	gfx->setSubTexture( mTheme->getIconByName( "ok" ) );
-	gfx->setVisible( true );
-	gfx->setEnabled( true );
 
 	UISlider * slider = eeNew( UISlider, () );
-	slider->setPosition( 50, 100 );
-	slider->setSize( 100, 100 );
-	slider->setVisible( true );
-	slider->setEnabled( true );
-	slider->setOrientation( UI_HORIZONTAL );
+	slider->setOrientation( UI_HORIZONTAL )->setPosition( 50, 0 )->setSize( 100, 100 )->setVisible( true )->setEnabled( true );
 	slider->setAllowHalfSliderOut( true );
 
 	UISlider * slider2 = eeNew( UISlider, () );
-	slider2->setPosition( 50, 25 );
-	slider2->setSize( 100, 100 );
-	slider2->setVisible( true );
-	slider2->setEnabled( true );
-	slider2->setOrientation( UI_VERTICAL );
+	slider2->setOrientation( UI_VERTICAL )->setPosition( 100, 0 )->setSize( 100, 100 )->setVisible( true )->setEnabled( true );
 	slider2->setAllowHalfSliderOut( true );
 
 	UITextInput * textInput = eeNew( UITextInput, () );
-	textInput->setPosition( 50, 210 );
-	textInput->setSize( 100, 0 );
-	textInput->setVisible( true );
-	textInput->setEnabled( true );
+	textInput->setPosition( 50, 210 )->setSize( 200, 0 )->setVisible( true )->setEnabled( true );
+
+	UIListBox * listBox = eeNew( UIListBox, () );
+	listBox->setPosition( 50, 320 )->setSize( 200, 160 )->setVisible( true )->setEnabled( true );
+	listBox->addListBoxItems( str );
+
+	UIScrollBar * scrollBar = eeNew( UIScrollBar, () );
+	scrollBar->setOrientation( UI_HORIZONTAL )->setPosition( 200, 0 )->setSize( 100, 0 )->setVisible( true )->setEnabled( true );
+
+	UIScrollBar * scrollBar2 = eeNew( UIScrollBar, () );
+	scrollBar2->setOrientation( UI_VERTICAL )->setPosition( 300, 0 )->setSize( 0, 100 )->setVisible( true )->setEnabled( true );
 
 	UIDropDownList * dropdownList = eeNew( UIDropDownList, () );
-	dropdownList->setPosition( 50, 250 );
-	dropdownList->setSize( 100, 0 );
-	dropdownList->setVisible( true );
-	dropdownList->setEnabled( true );
+	dropdownList->setPosition( 50, 240 )->setSize( 200, 0 )->setVisible( true )->setEnabled( true );
 	dropdownList->getListBox()->addListBoxItem( "Test 1" );
 	dropdownList->getListBox()->addListBoxItem( "Test 2" );
 	dropdownList->getListBox()->addListBoxItem( "Test 3" );
 
 	UIComboBox * comboBox = eeNew( UIComboBox, () );
-	comboBox->setPosition( 50, 280 );
-	comboBox->setSize( 100, 0 );
-	comboBox->setVisible( true );
-	comboBox->setEnabled( true );
-	comboBox->getListBox()->addListBoxItem( "Test 1" );
-	comboBox->getListBox()->addListBoxItem( "Test 2" );
-	comboBox->getListBox()->addListBoxItem( "Test 3" );
+	comboBox->setPosition( 50, 280 )->setSize( 200, 0 )->setVisible( true )->setEnabled( true );
+	comboBox->getListBox()->addListBoxItem( "Test 1234" );
+	comboBox->getListBox()->addListBoxItem( "Test 2345" );
+	comboBox->getListBox()->addListBoxItem( "Test 3567" );
 	comboBox->getListBox()->setSelected( 0 );
 
-	UIListBox * listBox = eeNew( UIListBox, () );
-	listBox->setPosition( 50, 320 );
-	listBox->setSize( 200, 160 );
-	listBox->setVisible( true );
-	listBox->setEnabled( true );
-	listBox->addListBoxItems( str );
-
-	UIScrollBar * scrollBar = eeNew( UIScrollBar, () );
-	scrollBar->setOrientation( UI_HORIZONTAL );
-	scrollBar->setPosition( 200, 150 );
-	scrollBar->setSize( 100, 0 );
-	scrollBar->setVisible( true );
-	scrollBar->setEnabled( true );
-
-	UIScrollBar * scrollBar2 = eeNew( UIScrollBar, () );
-	scrollBar2->setOrientation( UI_VERTICAL );
-	scrollBar2->setPosition( 200, 25 );
-	scrollBar2->setSize( 0, 100 );
-	scrollBar2->setVisible( true );
-	scrollBar2->setEnabled( true );
 }
 
 void EETest::createMapEditor() {

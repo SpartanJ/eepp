@@ -5,7 +5,7 @@
 
 namespace EE { namespace UI {
 
-class EE_API UIComboBox : public UIDropDownList {
+class EE_API UIComboBox : public UIComplexControl {
 	public:
 		UIComboBox( UIComboBox::CreateParams& Params );
 
@@ -18,8 +18,19 @@ class EE_API UIComboBox : public UIDropDownList {
 		virtual bool isType( const Uint32& type ) const;
 
 		virtual void setTheme( UITheme * Theme );
+
+		UIListBox * getListBox();
+
+		UIDropDownList * getDropDownList() const { return mDropDownList; }
+
+		UIComplexControl * getButton() const { return mButton; }
+
+		InputTextBuffer * getInputTextBuffer();
+
+		const String& getText();
 	protected:
-		UIControl * mButton;
+		UIDropDownList * mDropDownList;
+		UIComplexControl * mButton;
 
 		void onButtonClick( const UIEvent * Event );
 
@@ -27,13 +38,13 @@ class EE_API UIComboBox : public UIDropDownList {
 
 		void onButtonExit( const UIEvent * Event );
 
-		Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
-
-		void createButton();
-
-		virtual void onControlClear( const UIEvent *Event );
+		void updateControls();
 
 		virtual void onSizeChange();
+
+		virtual void onPositionChange();
+
+		virtual void onParentChange();
 };
 
 }}
