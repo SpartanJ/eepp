@@ -18,7 +18,7 @@ UITextInput::UITextInput( const UITextInput::CreateParams& Params ) :
 	mTextBuffer.setActive( false );
 	mTextBuffer.setFreeEditing( Params.SupportFreeEditing );
 	mTextBuffer.setTextSelectionEnabled( isTextSelectionEnabled() );
-	mTextBuffer.maxLength( Params.MaxLength );
+	mTextBuffer.setMaxLength( Params.MaxLength );
 	mTextBuffer.setReturnCallback( cb::Make0( this, &UITextInput::privOnPressEnter ) );
 
 	applyDefaultTheme();
@@ -195,7 +195,7 @@ void UITextInput::setTheme( UITheme * Theme ) {
 }
 
 void UITextInput::autoSize() {
-	if ( ( mFlags & UI_AUTO_SIZE ) || 0 == mSize.getHeight() ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) && 0 == mSize.getHeight() ) {
 		setSize( mSize.x, getSkinSize().getHeight() );
 	}
 }
@@ -300,6 +300,22 @@ Int32 UITextInput::selCurInit() {
 
 Int32 UITextInput::selCurEnd() {
 	return mTextBuffer.selCurEnd();
+}
+
+void UITextInput::setMaxLength( Uint32 maxLength ) {
+	mTextBuffer.setMaxLength( maxLength );
+}
+
+Uint32 UITextInput::getMaxLength() {
+	return mTextBuffer.getMaxLength();
+}
+
+void UITextInput::setFreeEditing( bool support ) {
+	mTextBuffer.setFreeEditing( support );
+}
+
+bool UITextInput::isFreeEditingEnabled() {
+	return mTextBuffer.isFreeEditingEnabled();
 }
 
 }}

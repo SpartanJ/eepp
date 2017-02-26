@@ -53,7 +53,7 @@ enum UI_FLAGS {
 	UI_TAB_STOP						= (1 << 11),
 	UI_FIT_TO_CONTROL				= (1 << 12),
 	UI_CLIP_ENABLE					= (1 << 13),
-	UI_AUTO_SHRINK_TEXT				= (1 << 14),
+	UI_WORD_WRAP					= (1 << 14),
 	UI_MULTI_SELECT					= (1 << 15),
 	UI_AUTO_PADDING					= (1 << 16),
 	UI_DRAG_ENABLE					= (1 << 17),

@@ -105,10 +105,10 @@ class EE_API InputTextBuffer {
 		void pushIgnoredChar( const Uint32& ch );
 
 		/** Set the new max length */
-		void maxLength( const Uint32& Max );
+		void setMaxLength( const Uint32& Max );
 
 		/** @return The Max Length */
-		const Uint32& maxLength() const;
+		const Uint32& getMaxLength() const;
 
 		/** Support copy paste */
 		void supportCopyPaste( const bool& support );

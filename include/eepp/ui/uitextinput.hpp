@@ -14,7 +14,7 @@ class EE_API UITextInput : public UITextBox {
 				inline CreateParams() :
 					UITextBox::CreateParams(),
 					SupportFreeEditing( true ),
-					MaxLength( 256 ),
+					MaxLength( 1024*8 ),
 					PassInput( false )
 				{
 				}
@@ -55,13 +55,21 @@ class EE_API UITextInput : public UITextBox {
 		virtual void setText( const String& text );
 
 		virtual void shrinkText( const Uint32& MaxWidth );
+
+		void setMaxLength( Uint32 maxLength );
+
+		Uint32 getMaxLength();
+
+		void setFreeEditing( bool support );
+
+		bool isFreeEditingEnabled();
 	protected:
 		InputTextBuffer	mTextBuffer;
-		Float				mWaitCursorTime;
-		Vector2f			mCurPos;
+		Float			mWaitCursorTime;
+		Vector2f		mCurPos;
 		int				mCursorPos;
-		bool				mAllowEditing;
-		bool				mShowingWait;
+		bool			mAllowEditing;
+		bool			mShowingWait;
 
 		void resetWaitCursor();
 

@@ -586,16 +586,16 @@ void EETest::createUI() {
 
 	eePRINTL( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 	/**/
-
+	/**/
 	UIRadioButton * ctrl = eeNew( UIRadioButton, () );
-	ctrl->setPosition( 50, 100 )->setSize( 320, 32 )->setVisible( true )->setEnabled( true );
+	ctrl->setPosition( 50, 100 )->setSize( 200, 32 )->setVisible( true )->setEnabled( true );
 	ctrl->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	ctrl->setBorderEnabled( true )->setColor( 0x66666666 );
 	ctrl->setText( "Happy RadioButon :)" );
 	ctrl->setFontColor( 0x000000FF );
 
 	UICheckBox * cbox = eeNew( UICheckBox, () );
-	cbox->setPosition( 50, 164 )->setSize( 320, 32 )->setVisible( true )->setEnabled( true );
+	cbox->setPosition( 50, 164 )->setSize( 200, 32 )->setVisible( true )->setEnabled( true );
 	cbox->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	cbox->setBorderEnabled( true )->setColor( 0x66666666 );
 	cbox->setText( "Happy CheckBox :)" );
@@ -639,7 +639,11 @@ void EETest::createUI() {
 	comboBox->getListBox()->addListBoxItem( "Test 2345" );
 	comboBox->getListBox()->addListBoxItem( "Test 3567" );
 	comboBox->getListBox()->setSelected( 0 );
+	/**/
 
+	UITextEdit * textEdit = eeNew( UITextEdit, () );
+	textEdit->setPosition( 350, 4 )->setSize( 200, 200 )->setVisible( true )->setEnabled( true );
+	textEdit->setText( mBuda );
 }
 
 void EETest::createMapEditor() {
@@ -712,11 +716,11 @@ void EETest::createDecoratedWindow() {
 	TEdit->setText( mBuda );
 	TabWidget->add( "TextEdit", TEdit );
 
-	UITextInput * Txt = mTheme->createTextInput( TabWidget, Sizei(), Vector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED );
+	UITextInput * Txt = mTheme->createTextInput( TabWidget, Sizei(), Vector2i(), UI_AUTO_PADDING | UI_WORD_WRAP | UI_TEXT_SELECTION_ENABLED );
 	Txt->setText( mBuda );
 	TabWidget->add( "TextInput", Txt );
 
-	TabWidget->add( "TextBox", mTheme->createTextBox( mBuda, TabWidget, Sizei(), Vector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED ) );
+	TabWidget->add( "TextBox", mTheme->createTextBox( mBuda, TabWidget, Sizei(), Vector2i(), UI_AUTO_PADDING | UI_WORD_WRAP | UI_TEXT_SELECTION_ENABLED ) );
 
 	createWinMenu();
 }

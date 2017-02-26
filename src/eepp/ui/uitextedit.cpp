@@ -37,8 +37,8 @@ UITextEdit::UITextEdit( UITextEdit::CreateParams& Params ) :
 	TIParams.FontColor			= Params.FontColor;
 	TIParams.FontShadowColor	= Params.FontShadowColor;
 
-	if ( Params.WordWrap && !( mFlags & UI_AUTO_SHRINK_TEXT ) )
-		mFlags |= UI_AUTO_SHRINK_TEXT;
+	if ( Params.WordWrap && !( mFlags & UI_WORD_WRAP ) )
+		mFlags |= UI_WORD_WRAP;
 
 	mTextInput	= eeNew( UITextInput, ( TIParams ) );
 	mTextInput->getInputTextBuffer()->isNewLineEnabled( true );
@@ -74,6 +74,53 @@ UITextEdit::UITextEdit( UITextEdit::CreateParams& Params ) :
 
 	mTextInput->setPixelsSize( mRealSize - Sizei( mPadding.Left + mPadding.Right, mPadding.Top + mPadding.Bottom ) );
 }
+
+UITextEdit::UITextEdit() :
+	UIComplexControl(),
+	mTextInput( NULL ),
+	mHScrollBar( NULL ),
+	mVScrollBar( NULL ),
+	mHScrollBarMode( UI_SCROLLBAR_AUTO ),
+	mVScrollBarMode( UI_SCROLLBAR_AUTO ),
+	mSkipValueChange( false )
+{
+	setFlags( UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED | UI_CLIP_ENABLE | UI_WORD_WRAP );
+
+	mTextInput	= eeNew( UITextInput, () );
+	mTextInput->setParent( this );
+	mTextInput->setFlags( UI_TEXT_SELECTION_ENABLED | UI_TEXT_SELECTION_ENABLED | UI_VALIGN_TOP );
+	mTextInput->unsetFlags( UI_CLIP_ENABLE | UI_VALIGN_CENTER );
+	mTextInput->getInputTextBuffer()->isNewLineEnabled( true );
+	mTextInput->setVisible( true );
+	mTextInput->setEnabled( true );
+	mTextInput->setSize( mSize );
+
+	mTextInput->addEventListener( UIEvent::EventOnSizeChange		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
+	mTextInput->addEventListener( UIEvent::EventOnTextChanged		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
+	mTextInput->addEventListener( UIEvent::EventOnPressEnter		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
+	mTextInput->addEventListener( UIEvent::EventOnCursorPosChange	, cb::Make1( this, &UITextEdit::onCursorPosChange ) );
+
+	mVScrollBar = eeNew( UIScrollBar, () );
+	mVScrollBar->setOrientation( UI_VERTICAL );
+	mVScrollBar->setParent( this );
+	mVScrollBar->setPosition( mSize.getWidth() - 16, 0 );
+	mVScrollBar->setSize( 16, mSize.getHeight() );
+	mVScrollBar->setValue( 1 );
+
+	mHScrollBar = eeNew( UIScrollBar, () );
+	mHScrollBar->setOrientation( UI_HORIZONTAL );
+	mHScrollBar->setParent( this );
+	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
+	mHScrollBar->setPosition( 0, mSize.getHeight() - 16 );
+
+	mVScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UITextEdit::onVScrollValueChange ) );
+	mHScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UITextEdit::onHScrollValueChange ) );
+
+	autoPadding();
+
+	applyDefaultTheme();
+}
+
 
 UITextEdit::~UITextEdit() {
 }
@@ -222,10 +269,33 @@ void UITextEdit::scrollbarsSet() {
 		}
 	}
 
-	if ( mFlags & UI_AUTO_SHRINK_TEXT ) {
+	if ( mFlags & UI_WORD_WRAP ) {
 		mVScrollBar->setVisible( true );
 		mVScrollBar->setEnabled( true );
 	}
+
+	mSkipValueChange = true;
+	if ( mVScrollBar->isVisible() ) {
+		int extraH = 0;
+
+		if ( mHScrollBar->isVisible() )
+			extraH = mHScrollBar->getRealSize().getHeight();
+
+		Int32 totH = mRealSize.getHeight() - mPadding.Top - mPadding.Bottom - extraH;
+
+		if ( mTextInput->getTextHeight() > totH ) {
+			mVScrollBar->setPageStep( (Float)totH / (Float)mTextInput->getTextHeight() );
+		}
+	}
+
+	if ( mHScrollBar->isVisible() ) {
+		Int32 totW = mRealSize.getWidth() - mPadding.Left - mPadding.Right - mVScrollBar->getRealSize().getWidth();
+
+		if ( mTextInput->getTextWidth() > totW ) {
+			mHScrollBar->setPageStep( (Float)totW / (Float)mTextInput->getTextWidth() );
+		}
+	}
+	mSkipValueChange = false;
 }
 
 void UITextEdit::autoPadding() {
@@ -288,7 +358,7 @@ void UITextEdit::onInputSizeChange( const UIEvent * Event ) {
 
 	shrinkText( Width );
 
-	if ( ( mFlags & UI_AUTO_SHRINK_TEXT ) && mTextInput->getTextHeight() < Height ) {
+	if ( ( mFlags & UI_WORD_WRAP ) && mTextInput->getTextHeight() < Height ) {
 		mVScrollBar->setVisible( false );
 		mVScrollBar->setEnabled( false );
 	}
@@ -372,7 +442,7 @@ void UITextEdit::fixScrollToCursor() {
 }
 
 void UITextEdit::shrinkText( const Uint32& Width ) {
-	if ( getFlags() & UI_AUTO_SHRINK_TEXT ) {
+	if ( getFlags() & UI_WORD_WRAP ) {
 		mTextInput->shrinkText( Width );
 	}
 }
@@ -392,8 +462,32 @@ void UITextEdit::setAllowEditing( const bool& allow ) {
 	mTextInput->setAllowEditing( allow );
 }
 
-const bool& UITextEdit::getAllowEditing() const {
+const bool& UITextEdit::isEditingAllowed() const {
 	return mTextInput->getAllowEditing();
+}
+
+void UITextEdit::setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+	if ( Mode != mVScrollBarMode ) {
+		mVScrollBarMode = Mode;
+
+		scrollbarsSet();
+	}
+}
+
+const UI_SCROLLBAR_MODE& UITextEdit::getVerticalScrollMode() {
+	return mVScrollBarMode;
+}
+
+void UITextEdit::setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+	if ( Mode != mHScrollBarMode ) {
+		mHScrollBarMode = Mode;
+
+		scrollbarsSet();
+	}
+}
+
+const UI_SCROLLBAR_MODE& UITextEdit::getHorizontalScrollMode() {
+	return mHScrollBarMode;
 }
 
 }}

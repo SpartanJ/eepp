@@ -16,6 +16,7 @@ UIDefaultTheme::UIDefaultTheme( const std::string& name, const std::string& Abbr
 	setFontOverColor( ColorA( 255, 255, 255, 255 ) );
 	setFontSelectedColor( ColorA( 255, 255, 255, 255 ) );
 	setFontShadowColor( ColorA( 50, 50, 50, 150 ) );
+	setFontSelectionBackColor( ColorA( 150, 150, 150, 255 ) );
 }
 
 UIPopUpMenu * UIDefaultTheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {

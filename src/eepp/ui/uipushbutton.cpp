@@ -77,12 +77,15 @@ void UIPushButton::onSizeChange() {
 		switch ( fontHAlignGet( getFlags() ) ) {
 			case UI_HALIGN_LEFT:
 				mTextBox->setPosition( mIcon->getPosition().x + mIcon->getSize().getWidth(), 0 );
-				mTextBox->setSize( mSize.getWidth() - mIcon->getPosition().x + mIcon->getSize().getWidth(), mSize.getHeight() );
+				mTextBox->setSize( mSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth(), mSize.getHeight() );
 				break;
 			case UI_HALIGN_CENTER:
 				if ( NULL != mIcon->getSubTexture() ) {
 					if ( mIcon->getPosition().x + mIcon->getSize().getWidth() >= mTextBox->alignOffset().x ) {
-						mTextBox->setPosition( mIcon->getPosition().x + mIcon->getSize().getWidth() + 1 - mTextBox->alignOffset().x, mTextBox->getPosition().y );
+						mTextBox->setPosition( mIcon->getPosition().x + mIcon->getSize().getWidth() + 1 - mTextBox->alignOffset().x,
+											   mTextBox->getPosition().y );
+
+						mTextBox->setSize( mSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth() - 1, mTextBox->getSize().getHeight() );
 					}
 				}
 

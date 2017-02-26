@@ -134,16 +134,6 @@ UIListBox::UIListBox() :
 	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
 	mHScrollBar->setPosition( 0, mSize.getHeight() - 16 );
 
-	if ( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) {
-		mHScrollBar->setVisible( true );
-		mHScrollBar->setEnabled( true );
-	}
-
-	if ( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode ) {
-		mVScrollBar->setVisible( true );
-		mVScrollBar->setEnabled( true );
-	}
-
 	mVScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIListBox::onScrollValueChange ) );
 	mHScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIListBox::onHScrollValueChange ) );
 

@@ -44,14 +44,17 @@ UITextBox::UITextBox() :
 	mTextCache = eeNew( TextCache, () );
 
 	if ( NULL != UIThemeManager::instance()->getDefaultFont() ) {
-		mTextCache->setFont( UIThemeManager::instance()->getDefaultFont() );
+		setFont( UIThemeManager::instance()->getDefaultFont() );
 	} else {
 		eePRINTL( "UITextBox::UITextBox : Created a UI TextBox without a defined font." );
 	}
 
+	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
+
 	if ( NULL != UIThemeManager::instance()->getDefaultTheme() ) {
-		mTextCache->setColor( UIThemeManager::instance()->getDefaultTheme()->getFontColor() );
-		mTextCache->setShadowColor( UIThemeManager::instance()->getDefaultTheme()->getFontShadowColor() );
+		setFontColor( Theme->getFontColor() );
+		setFontShadowColor( Theme->getFontShadowColor() );
+		setSelectionBackColor( Theme->getFontSelectionBackColor() );
 	}
 
 	autoAlign();
@@ -111,14 +114,14 @@ void UITextBox::setFont( Graphics::Font * font ) {
 }
 
 const String& UITextBox::getText() {
-	if ( mFlags & UI_AUTO_SHRINK_TEXT )
+	if ( mFlags & UI_WORD_WRAP )
 		return mString;
 
 	return mTextCache->getText();
 }
 
 void UITextBox::setText( const String& text ) {
-	if ( mFlags & UI_AUTO_SHRINK_TEXT ) {
+	if ( mFlags & UI_WORD_WRAP ) {
 		mString = text;
 		mTextCache->setText( mString );
 	} else {
@@ -168,13 +171,13 @@ void UITextBox::setAlpha( const Float& alpha ) {
 }
 
 void UITextBox::autoShrink() {
-	if ( mFlags & UI_AUTO_SHRINK_TEXT ) {
+	if ( mFlags & UI_WORD_WRAP ) {
 		shrinkText( mRealSize.getWidth() );
 	}
 }
 
 void UITextBox::shrinkText( const Uint32& MaxWidth ) {
-	if ( mFlags & UI_AUTO_SHRINK_TEXT ) {
+	if ( mFlags & UI_WORD_WRAP ) {
 		mTextCache->setText( mString );
 	}
 

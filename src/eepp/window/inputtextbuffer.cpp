@@ -663,14 +663,14 @@ bool InputTextBuffer::canAdd() {
 	return mText.size() < mMaxLength;
 }
 
-void InputTextBuffer::maxLength( const Uint32& Max ) {
+void InputTextBuffer::setMaxLength( const Uint32& Max ) {
 	mMaxLength = Max;
 
 	if ( mText.size() > mMaxLength )
 		mText.resize( mMaxLength );
 }
 
-const Uint32& InputTextBuffer::maxLength() const {
+const Uint32& InputTextBuffer::getMaxLength() const {
 	return mMaxLength;
 }
 

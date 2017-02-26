@@ -86,6 +86,10 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		const ColorA& getFontSelectedColor() const;
 
+		ColorA getFontSelectionBackColor() const;
+
+		void setFontSelectionBackColor(const ColorA & fontSelectionBackColor);
+
 		void setFontColor( const ColorA& Color );
 
 		void setFontShadowColor( const ColorA& Color );
@@ -114,9 +118,9 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		virtual UITextEdit * createTextEdit( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED, UI_SCROLLBAR_MODE HScrollBar = UI_SCROLLBAR_AUTO, UI_SCROLLBAR_MODE VScrollBar = UI_SCROLLBAR_AUTO, bool WordWrap = true );
 
-		virtual UITextInput * createTextInput( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED, bool SupportFreeEditing = true, Uint32 MaxLength = 256 );
+		virtual UITextInput * createTextInput( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED, bool SupportFreeEditing = true, Uint32 MaxLength = 1024*8 );
 
-		virtual UITextInputPassword * createTextInputPassword( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED, bool SupportFreeEditing = true, Uint32 MaxLength = 256 );
+		virtual UITextInputPassword * createTextInputPassword( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED, bool SupportFreeEditing = true, Uint32 MaxLength = 1024*8 );
 
 		virtual UITooltip * createTooltip( UIControl * TooltipOf, UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
 
@@ -155,12 +159,13 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 		std::string				mName;
 		Uint32					mNameHash;
 		std::string				mAbbr;
-		Graphics::TextureAtlas *			mTextureAtlas;
-		Graphics::Font *					mFont;
-		ColorA				mFontColor;
-		ColorA				mFontShadowColor;
-		ColorA				mFontOverColor;
-		ColorA				mFontSelectedColor;
+		Graphics::TextureAtlas *mTextureAtlas;
+		Graphics::Font *		mFont;
+		ColorA					mFontColor;
+		ColorA					mFontShadowColor;
+		ColorA					mFontOverColor;
+		ColorA					mFontSelectedColor;
+		ColorA					mFontSelectionBackColor;
 		bool					mUsedefaultThemeValues;
 		std::list<std::string>	mUIElements;
 		std::list<std::string>	mUIIcons;

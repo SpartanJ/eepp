@@ -90,8 +90,8 @@ class EE_API UIPushButton : public UIComplexControl {
 
 		void setFontOverColor( const ColorA& color );
 	protected:
-		ColorA		mFontColor;
-		ColorA		mFontOverColor;
+		ColorA			mFontColor;
+		ColorA			mFontOverColor;
 		UIGfx * 		mIcon;
 		UITextBox * 	mTextBox;
 		Int32			mIconSpace;

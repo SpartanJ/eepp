@@ -27,6 +27,8 @@ class EE_API UITextEdit : public UIComplexControl {
 
 		UITextEdit( UITextEdit::CreateParams& Params );
 
+		UITextEdit();
+
 		virtual ~UITextEdit();
 
 		virtual Uint32 getType() const;
@@ -49,7 +51,16 @@ class EE_API UITextEdit : public UIComplexControl {
 
 		void setAllowEditing( const bool& allow );
 
-		const bool& getAllowEditing() const;
+		const bool& isEditingAllowed() const;
+
+		void setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+
+		const UI_SCROLLBAR_MODE& getVerticalScrollMode();
+
+		void setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+
+		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
+
 	protected:
 		UITextInput *		mTextInput;
 		UIScrollBar *		mHScrollBar;
@@ -57,7 +68,6 @@ class EE_API UITextEdit : public UIComplexControl {
 		UI_SCROLLBAR_MODE	mHScrollBarMode;
 		UI_SCROLLBAR_MODE	mVScrollBarMode;
 		Recti				mPadding;
-		String				mText;
 		bool				mSkipValueChange;
 
 		virtual void onSizeChange();

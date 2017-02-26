@@ -331,6 +331,7 @@ UITheme::UITheme(const std::string& name, const std::string& Abbr, Graphics::Fon
 	mFontShadowColor( 255, 255, 255, 200 ),
 	mFontOverColor( 0, 0, 0, 255 ),
 	mFontSelectedColor( 0, 0, 0, 255 ),
+	mFontSelectionBackColor( 150, 150, 150, 255 ),
 	mUsedefaultThemeValues( true )
 {
 }
@@ -796,6 +797,16 @@ UITabWidget * UITheme::createTabWidget( UIControl *Parent, const Sizei &Size, co
 	Ctrl->setVisible( true );
 	Ctrl->setEnabled( true );
 	return Ctrl;
+}
+
+ColorA UITheme::getFontSelectionBackColor() const
+{
+	return mFontSelectionBackColor;
+}
+
+void UITheme::setFontSelectionBackColor(const ColorA & fontSelectionBackColor)
+{
+	mFontSelectionBackColor = fontSelectionBackColor;
 }
 
 }}

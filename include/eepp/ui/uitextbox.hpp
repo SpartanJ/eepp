@@ -90,11 +90,11 @@ class EE_API UITextBox : public UIComplexControl {
 
 		bool isTextSelectionEnabled() const;
 	protected:
-		TextCache *	mTextCache;
+		TextCache *		mTextCache;
 		String			mString;
-		ColorA 		mFontColor;
-		ColorA 		mFontShadowColor;
-		ColorA		mFontSelectionBackColor;
+		ColorA			mFontColor;
+		ColorA			mFontShadowColor;
+		ColorA			mFontSelectionBackColor;
 		Vector2f 		mAlignOffset;
 		Recti			mPadding;
 		Recti			mRealPadding;
