@@ -45,6 +45,8 @@ UIScrollBar::UIScrollBar( const UIScrollBar::CreateParams& Params ) :
 UIScrollBar::UIScrollBar() :
 	UIComplexControl()
 {
+	setFlags( UI_AUTO_SIZE );
+
 	mBtnDown	= eeNew( UIControlAnim, () );
 	mBtnUp		= eeNew( UIControlAnim, () );
 	mBtnUp->setParent( this );

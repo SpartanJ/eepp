@@ -29,7 +29,7 @@ void UIPopUpMenu::setTheme( UITheme * Theme ) {
 bool UIPopUpMenu::show() {
 	if ( !isVisible() || 0.f == mAlpha ) {
 		#ifdef EE_PLATFORM_TOUCH
-		mTE.Restart();
+		mTE.restart();
 		#endif
 
 		setEnabled( true );
@@ -83,7 +83,7 @@ Uint32 UIPopUpMenu::onMessage( const UIMessage * Msg ) {
 		case UIMessage::MsgMouseUp:
 		{
 			#ifdef EE_PLATFORM_TOUCH
-			if ( mTE.Elapsed().AsMilliseconds() > 250.f ) {
+			if ( mTE.getElapsed().asMilliseconds() > 250.f ) {
 			#endif
 				if ( !Msg->getSender()->isType( UI_TYPE_MENUSUBMENU ) && ( Msg->getFlags() & EE_BUTTONS_LRM ) ) {
 					sendCommonEvent( UIEvent::EventOnHideByClick );

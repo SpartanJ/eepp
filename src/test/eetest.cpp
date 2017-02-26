@@ -265,7 +265,7 @@ void EETest::createUI() {
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	UIManager::instance()->init(); // UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
+	UIManager::instance()->init(UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER); // UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
 	//mTheme = UITheme::LoadFromPath( eeNew( UIdefaultTheme, ( mThemeName, mThemeName ) ), MyPath + mThemeName + "/" );
 
@@ -1795,8 +1795,8 @@ void EETest::postStepRemove( Space *space, void * tshape, void * unused ) {
 	}
 	#else
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
-		if ( NULL != mMouseJoint[i] && ( mMouseJoint[i]->A() == shape->Body() || mMouseJoint[i]->B() == shape->Body() ) ) {
-			mSpace->RemoveConstraint( mMouseJoint[i] );
+		if ( NULL != mMouseJoint[i] && ( mMouseJoint[i]->getA() == shape->getBody() || mMouseJoint[i]->getB() == shape->getBody() ) ) {
+			mSpace->removeConstraint( mMouseJoint[i] );
 			eeSAFE_DELETE( mMouseJoint[i] );
 		}
 	}
@@ -1946,28 +1946,28 @@ void EETest::physicsUpdate() {
 	}
 	#else
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
-		InputFinger * Finger = KM->GetFingerIndex(i);
+		InputFinger * Finger = KM->getFingerIndex(i);
 		mMousePoint[i] = cVectNew( Finger->x, Finger->y );
 		cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last[i] ), tocpv( mMousePoint[i] ), 0.25 ) );
 		mMouseBody[i]->setPosition( newPoint );
-		mMouseBody[i]->Vel( ( newPoint - mMousePoint_last[i] ) * (cpFloat)mWindow->FPS() );
+		mMouseBody[i]->setVel( ( newPoint - mMousePoint_last[i] ) * (cpFloat)mWindow->getFPS() );
 		mMousePoint_last[i] = newPoint;
 
-		if ( Finger->IsDown() ) {
+		if ( Finger->isDown() ) {
 			if ( NULL == mMouseJoint[i] ) {
 				cVect point = cVectNew( Finger->x, Finger->y );
 
-				Shape * shape = mSpace->PointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
+				Shape * shape = mSpace->pointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
 
 				if( NULL != shape ){
-					mMouseJoint[i] = eeNew( PivotJoint, ( mMouseBody[i], shape->Body(), cVectZero, shape->Body()->World2Local( point ) ) );
+					mMouseJoint[i] = eeNew( PivotJoint, ( mMouseBody[i], shape->getBody(), cVectZero, shape->getBody()->world2Local( point ) ) );
 
-					mMouseJoint[i]->MaxForce( 50000.0f );
-					mSpace->AddConstraint( mMouseJoint[i] );
+					mMouseJoint[i]->setMaxForce( 50000.0f );
+					mSpace->addConstraint( mMouseJoint[i] );
 				}
 			}
 		} else if ( NULL != mMouseJoint[i] ) {
-			mSpace->RemoveConstraint( mMouseJoint[i] );
+			mSpace->removeConstraint( mMouseJoint[i] );
 			eeSAFE_DELETE( mMouseJoint[i] );
 		}
 	}

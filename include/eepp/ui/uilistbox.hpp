@@ -159,6 +159,10 @@ class EE_API UIListBox : public UIComplexControl {
 		bool isTouchDragging() const;
 
 		void setTouchDragging( const bool& dragging );
+
+		Float getTouchDragDeceleration() const;
+
+		void setTouchDragDeceleration(const Float & touchDragDeceleration);
 	protected:
 		friend class UIListBoxItem;
 		friend class UIItemContainer<UIListBox>;

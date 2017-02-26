@@ -102,33 +102,37 @@ UIListBox::UIListBox() :
 {
 	setFlags( UI_CLIP_ENABLE | UI_AUTO_PADDING );
 
-	if ( NULL != UIThemeManager::instance()->getDefaultFont() )
+	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
+
+	if ( NULL != Theme ) {
+		mFont				= Theme->getFont();
+		mFontColor			= Theme->getFontColor();
+		mFontOverColor		= Theme->getFontOverColor();
+		mFontSelectedColor	= Theme->getFontSelectedColor();
+	}
+
+	if ( NULL == mFont && NULL != UIThemeManager::instance()->getDefaultFont() )
 		mFont = UIThemeManager::instance()->getDefaultFont();
 
-	UIControl::CreateParams CParams;
-	CParams.setParent( this );
-	CParams.setPosition( mPaddingContainer.Left, mPaddingContainer.Top );
-	CParams.Size = Sizei( mSize.getWidth() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.getHeight() - mPaddingContainer.Top - mPaddingContainer.Bottom );
-	CParams.Flags = mFlags;
-	mContainer = eeNew( UIItemContainer<UIListBox>, ( CParams ) );
+	mContainer = eeNew( UIItemContainer<UIListBox>, () );
+	mContainer->setParent( this );
+	mContainer->setSize( mSize.getWidth(), mSize.getHeight() );
 	mContainer->setVisible( true );
 	mContainer->setEnabled( true );
+	mContainer->setFlags( mFlags );
+	mContainer->setPosition( 0, 0 );
 
-	if ( mFlags & UI_CLIP_ENABLE )
-		mFlags &= ~UI_CLIP_ENABLE;
+	mVScrollBar = eeNew( UIScrollBar, () );
+	mVScrollBar->setOrientation( UI_VERTICAL );
+	mVScrollBar->setParent( this );
+	mVScrollBar->setPosition( mSize.getWidth() - 16, 0 );
+	mVScrollBar->setSize( 16, mSize.getHeight() );
 
-	UIScrollBar::CreateParams ScrollBarP;
-	ScrollBarP.setParent( this );
-	ScrollBarP.Size = Sizei( 15, mSize.getHeight() );
-	ScrollBarP.setPosition( mSize.getWidth() - 15, 0 );
-	ScrollBarP.Flags = UI_AUTO_SIZE;
-	ScrollBarP.VerticalScrollBar = true;
-	mVScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
-
-	ScrollBarP.Size = Sizei( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 15 );
-	ScrollBarP.setPosition( 0, mSize.getHeight() - 15 );
-	ScrollBarP.VerticalScrollBar = false;
-	mHScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
+	mHScrollBar = eeNew( UIScrollBar, () );
+	mHScrollBar->setOrientation( UI_HORIZONTAL );
+	mHScrollBar->setParent( this );
+	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
+	mHScrollBar->setPosition( 0, mSize.getHeight() - 16 );
 
 	if ( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) {
 		mHScrollBar->setVisible( true );
@@ -1041,6 +1045,14 @@ bool UIListBox::isTouchDragging() const {
 
 void UIListBox::setTouchDragging( const bool& dragging ) {
 	writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, true == dragging );
+}
+
+Float UIListBox::getTouchDragDeceleration() const {
+	return mTouchDragDeceleration;
+}
+
+void UIListBox::setTouchDragDeceleration(const Float & touchDragDeceleration) {
+	mTouchDragDeceleration = touchDragDeceleration;
 }
 
 void UIListBox::update() {

@@ -72,6 +72,9 @@ UIControl::UIControl() :
 
 	if ( NULL != mParentCtrl )
 		mParentCtrl->childAdd( this );
+
+	updateScreenPos();
+	updateQuad();
 }
 
 UIControl::~UIControl() {

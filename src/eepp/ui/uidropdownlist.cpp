@@ -69,9 +69,11 @@ UIDropDownList::UIDropDownList() :
 		LBParams.Size 				= Sizei( mSize.getWidth(), mMinNumVisibleItems * mSize.getHeight() );
 		LBParams.Flags 				= flags;
 		LBParams.FontSelectedColor	= ColorA( 255, 255, 255, 255 );
-		mListBox = eeNew( UIListBox, ( LBParams ) );
+
 	}
 
+	mListBox = eeNew( UIListBox, () );
+	mListBox->setSize( mSize.getWidth(), mMinNumVisibleItems * mSize.getHeight() );
 	mListBox->setEnabled( false );
 	mListBox->setVisible( false );
 
