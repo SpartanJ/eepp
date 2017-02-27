@@ -11,7 +11,11 @@ class EE_API UITab : public UISelectButton {
 	public:
 		UITab( UISelectButton::CreateParams& Params, UIControl * controlOwned );
 
+		UITab();
+
 		UIControl * getControlOwned() const;
+
+		void setControlOwned( UIControl * controlOwned );
 
 		virtual ~UITab();
 
@@ -26,8 +30,9 @@ class EE_API UITab : public UISelectButton {
 		virtual void setText( const String& text );
 
 		virtual void update();
+
 	protected:
-		UIControl *	mCtrlOwned;
+		UIControl *	mControlOwned;
 
 		virtual Uint32 onMouseClick( const Vector2i &position, const Uint32 flags );
 
@@ -36,6 +41,8 @@ class EE_API UITab : public UISelectButton {
 		void autoSize();
 
 		UITabWidget * getTabWidget();
+
+		virtual void onParentChange();
 };
 
 }}

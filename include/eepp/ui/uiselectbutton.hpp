@@ -22,8 +22,14 @@ class EE_API UISelectButton : public UIPushButton {
 		virtual void unselect();
 
 		virtual void select();
+
+		ColorA getFontSelectedColor() const;
+
+		void setFontSelectedColor(const ColorA & fontSelectedColor);
 	protected:
 		virtual void onStateChange();
+
+		ColorA mFontSelectedColor;
 };
 
 }}

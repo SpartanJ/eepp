@@ -723,6 +723,13 @@ void EETest::createNewUI() {
 	WinMenu->addMenuButton( "File", PopMenu );
 	WinMenu->addMenuButton( "Edit", PopMenu2 );
 	/**/
+
+	UITabWidget * TabWidget = eeNew( UITabWidget, () );
+	TabWidget->setPosition( 350, 550 )->setSize( 200, 100 );
+
+	TabWidget->add( "Tab 1", eeNew( UIControl, () ) );
+	TabWidget->add( "Tab 2", eeNew( UIControl, () ) );
+	TabWidget->add( "Tab 3", eeNew( UIControl, () ) );
 }
 
 void EETest::createMapEditor() {

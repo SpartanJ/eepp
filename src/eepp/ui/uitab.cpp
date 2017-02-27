@@ -6,7 +6,14 @@ namespace EE { namespace UI {
 
 UITab::UITab( UISelectButton::CreateParams& Params, UIControl * controlOwned ) :
 	UISelectButton( Params ),
-	mCtrlOwned( controlOwned )
+	mControlOwned( controlOwned )
+{
+	applyDefaultTheme();
+}
+
+UITab::UITab() :
+	UISelectButton(),
+	mControlOwned( NULL )
 {
 	applyDefaultTheme();
 }
@@ -23,11 +30,15 @@ bool UITab::isType( const Uint32& type ) const {
 }
 
 UITabWidget * UITab::getTabWidget() {
-	if ( getParent()->getParent()->isType( UI_TYPE_TABWIDGET ) ) {
+	if ( NULL != getParent() && NULL != getParent()->getParent() && getParent()->getParent()->isType( UI_TYPE_TABWIDGET ) ) {
 		return reinterpret_cast<UITabWidget*> ( getParent()->getParent() );
 	}
 
 	return NULL;
+}
+
+void UITab::onParentChange() {
+	applyDefaultTheme();
 }
 
 void UITab::setTheme( UITheme * Theme ) {
@@ -125,10 +136,6 @@ void UITab::autoSize() {
 	}
 }
 
-UIControl * UITab::getControlOwned() const {
-	return mCtrlOwned;
-}
-
 void UITab::update() {
 	UISelectButton::update();
 
@@ -151,6 +158,14 @@ void UITab::update() {
 			}
 		}
 	}
+}
+
+UIControl * UITab::getControlOwned() const {
+	return mControlOwned;
+}
+
+void UITab::setControlOwned(UIControl * controlOwned) {
+	mControlOwned = controlOwned;
 }
 
 }}

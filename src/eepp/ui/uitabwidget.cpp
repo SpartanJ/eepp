@@ -50,6 +50,53 @@ UITabWidget::UITabWidget( UITabWidget::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
+UITabWidget::UITabWidget() :
+	UIComplexControl(),
+	mFont( NULL ),
+	mFontColor(),
+	mFontShadowColor(),
+	mFontOverColor(),
+	mFontSelectedColor(),
+	mTabSeparation( 0 ),
+	mMaxTextLength( 32 ),
+	mTabWidgetHeight( 64 ),
+	mMinTabWidth( 32 ),
+	mMaxTabWidth( 210 ),
+	mTabsClosable( false ),
+	mSpecialBorderTabs( false ),
+	mDrawLineBelowTabs( false ),
+	mLineBelowTabsColor( ColorA::Black ),
+	mLineBewowTabsYOffset( 0 ),
+	mTabSelected( NULL ),
+	mTabSelectedIndex( eeINDEX_NOT_FOUND )
+{
+	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
+
+	if ( NULL != Theme ) {
+		mFont				= Theme->getFont();
+		mFontColor			= Theme->getFontColor();
+		mFontShadowColor	= Theme->getFontShadowColor();
+		mFontOverColor		= Theme->getFontOverColor();
+		mFontSelectedColor	= Theme->getFontSelectedColor();
+	}
+
+	if ( NULL == mFont )
+		mFont = UIThemeManager::instance()->getDefaultFont();
+
+	mTabContainer = eeNew( UIComplexControl, ( ) );
+	mTabContainer->setParent( this )->setPosition( 0, 0 )->setSize( mSize.getWidth(), mTabWidgetHeight )->setVisible( true )->setEnabled( true );
+	mTabContainer->setFlags( UI_CLIP_ENABLE | UI_ANCHOR_RIGHT );
+
+	mCtrlContainer = eeNew( UIComplexControl, ( ) );
+	mCtrlContainer->setParent( this )->setPosition( 0, mTabWidgetHeight )
+			->setSize( mSize.getWidth(), mSize.getHeight() - mTabWidgetHeight )->setVisible( true )->setEnabled( true )
+			->setFlags( UI_CLIP_ENABLE | UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT );
+
+	onSizeChange();
+
+	applyDefaultTheme();
+}
+
 UITabWidget::~UITabWidget() {
 }
 
@@ -119,6 +166,156 @@ void UITabWidget::draw() {
 
 		if ( smooth ) GLi->lineSmooth( true );
 	}
+}
+
+Font * UITabWidget::getFont() const {
+	return mFont;
+}
+
+void UITabWidget::setFont(Font * font) {
+	mFont = font;
+
+	if ( mTabs.size() > 0 ) {
+		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
+			((UITab*)mTabs[ i ])->setFont( mFont );
+		}
+	}
+}
+
+ColorA UITabWidget::getFontColor() const {
+	return mFontColor;
+}
+
+void UITabWidget::setFontColor(const ColorA & fontColor) {
+	mFontColor = fontColor;
+
+	if ( mTabs.size() > 0 ) {
+		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
+			((UITab*)mTabs[ i ])->setFontColor( mFontColor );
+		}
+	}
+}
+
+ColorA UITabWidget::getFontShadowColor() const {
+	return mFontShadowColor;
+}
+
+void UITabWidget::setFontShadowColor(const ColorA & fontShadowColor) {
+	mFontShadowColor = fontShadowColor;
+
+	if ( mTabs.size() > 0 ) {
+		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
+			((UITab*)mTabs[ i ])->setFontShadowColor( mFontShadowColor );
+		}
+	}
+}
+
+ColorA UITabWidget::getFontOverColor() const {
+	return mFontOverColor;
+}
+
+void UITabWidget::setFontOverColor(const ColorA & fontOverColor) {
+	mFontOverColor = fontOverColor;
+
+	if ( mTabs.size() > 0 ) {
+		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
+			((UITab*)mTabs[ i ])->setFontOverColor( mFontOverColor );
+		}
+	}
+}
+
+ColorA UITabWidget::getFontSelectedColor() const {
+	return mFontSelectedColor;
+}
+
+void UITabWidget::setFontSelectedColor(const ColorA & fontSelectedColor) {
+	mFontSelectedColor = fontSelectedColor;
+
+	if ( mTabs.size() > 0 ) {
+		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
+			((UITab*)mTabs[ i ])->setFontSelectedColor( mFontSelectedColor );
+		}
+	}
+}
+
+Int32 UITabWidget::getTabSeparation() const {
+	return mTabSeparation;
+}
+
+void UITabWidget::setTabSeparation(const Int32 & tabSeparation) {
+	mTabSeparation = tabSeparation;
+	setTabContainerSize();
+	posTabs();
+}
+
+Uint32 UITabWidget::getMaxTextLength() const {
+	return mMaxTextLength;
+}
+
+void UITabWidget::setMaxTextLength(const Uint32 & maxTextLength) {
+	mMaxTextLength = maxTextLength;
+}
+
+Uint32 UITabWidget::getTabWidgetHeight() const {
+	return mTabWidgetHeight;
+}
+
+Uint32 UITabWidget::getMinTabWidth() const
+{
+	return mMinTabWidth;
+}
+
+void UITabWidget::setMinTabWidth(const Uint32 & minTabWidth) {
+	mMinTabWidth = minTabWidth;
+}
+
+Uint32 UITabWidget::getMaxTabWidth() const {
+	return mMaxTabWidth;
+}
+
+void UITabWidget::setMaxTabWidth(const Uint32 & maxTabWidth) {
+	mMaxTabWidth = maxTabWidth;
+}
+
+bool UITabWidget::getTabsClosable() const {
+	return mTabsClosable;
+}
+
+void UITabWidget::setTabsClosable(bool tabsClosable) {
+	mTabsClosable = tabsClosable;
+}
+
+bool UITabWidget::getSpecialBorderTabs() const {
+	return mSpecialBorderTabs;
+}
+
+void UITabWidget::setSpecialBorderTabs(bool specialBorderTabs) {
+	mSpecialBorderTabs = specialBorderTabs;
+	applyThemeToTabs();
+}
+
+bool UITabWidget::getDrawLineBelowTabs() const {
+	return mDrawLineBelowTabs;
+}
+
+void UITabWidget::setDrawLineBelowTabs(bool drawLineBelowTabs) {
+	mDrawLineBelowTabs = drawLineBelowTabs;
+}
+
+ColorA UITabWidget::getLineBelowTabsColor() const {
+	return mLineBelowTabsColor;
+}
+
+void UITabWidget::setLineBelowTabsColor(const ColorA & lineBelowTabsColor) {
+	mLineBelowTabsColor = lineBelowTabsColor;
+}
+
+Int32 UITabWidget::getLineBewowTabsYOffset() const {
+	return mLineBewowTabsYOffset;
+}
+
+void UITabWidget::setLineBewowTabsYOffset(const Int32 & lineBewowTabsYOffset) {
+	mLineBewowTabsYOffset = lineBewowTabsYOffset;
 }
 
 void UITabWidget::setTabContainerSize() {
@@ -194,20 +391,19 @@ void UITabWidget::orderTabs() {
 }
 
 UITab * UITabWidget::createTab( const String& Text, UIControl * CtrlOwned, SubTexture * Icon ) {
-	UITab::CreateParams Params;
-	Params.setParent( mTabContainer );
-	Params.Font 			= mFont;
-	Params.FontColor 		= mFontColor;
-	Params.FontShadowColor 	= mFontShadowColor;
-	Params.FontOverColor 	= mFontOverColor;
-	Params.Icon				= Icon;
-	Params.Flags			= UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE;
-
-	UITab * tCtrl 	= eeNew( UITab, ( Params, CtrlOwned ) );
-
+	UITab * tCtrl 	= eeNew( UITab, ( ) );
+	tCtrl->setParent( mTabContainer );
+	tCtrl->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE );
+	tCtrl->setFont( mFont );
+	tCtrl->setFontColor( mFontColor );
+	tCtrl->setFontShadowColor( mFontShadowColor );
+	tCtrl->setFontOverColor( mFontOverColor );
+	tCtrl->setFontSelectedColor( mFontSelectedColor );
+	tCtrl->setIcon( Icon );
 	tCtrl->setText( Text );
 	tCtrl->setVisible( true );
 	tCtrl->setEnabled( true );
+	tCtrl->setControlOwned( CtrlOwned );
 
 	CtrlOwned->setParent( mCtrlContainer );
 	CtrlOwned->setVisible( false );

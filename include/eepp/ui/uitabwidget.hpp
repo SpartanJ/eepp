@@ -67,6 +67,8 @@ class EE_API UITabWidget : public UIComplexControl {
 
 		UITabWidget( UITabWidget::CreateParams& Params );
 
+		UITabWidget();
+
 		virtual ~UITabWidget();
 
 		virtual Uint32 getType() const;
@@ -106,16 +108,74 @@ class EE_API UITabWidget : public UIComplexControl {
 		UIComplexControl * getControlContainer() const;
 
 		virtual void draw();
+
+		Font * getFont() const;
+
+		void setFont(Font * font);
+
+		ColorA getFontColor() const;
+
+		void setFontColor(const ColorA & fontColor);
+
+		ColorA getFontShadowColor() const;
+
+		void setFontShadowColor(const ColorA & fontShadowColor);
+
+		ColorA getFontOverColor() const;
+
+		void setFontOverColor(const ColorA & fontOverColor);
+
+		ColorA getFontSelectedColor() const;
+
+		void setFontSelectedColor(const ColorA & fontSelectedColor);
+
+		Int32 getTabSeparation() const;
+
+		void setTabSeparation(const Int32 & tabSeparation);
+
+		Uint32 getMaxTextLength() const;
+
+		void setMaxTextLength(const Uint32 & maxTextLength);
+
+		Uint32 getTabWidgetHeight() const;
+
+		Uint32 getMinTabWidth() const;
+
+		void setMinTabWidth(const Uint32 & minTabWidth);
+
+		Uint32 getMaxTabWidth() const;
+
+		void setMaxTabWidth(const Uint32 & maxTabWidth);
+
+		bool getTabsClosable() const;
+
+		void setTabsClosable(bool tabsClosable);
+
+		bool getSpecialBorderTabs() const;
+
+		void setSpecialBorderTabs(bool specialBorderTabs);
+
+		bool getDrawLineBelowTabs() const;
+
+		void setDrawLineBelowTabs(bool drawLineBelowTabs);
+
+		ColorA getLineBelowTabsColor() const;
+
+		void setLineBelowTabsColor(const ColorA & lineBelowTabsColor);
+
+		Int32 getLineBewowTabsYOffset() const;
+
+		void setLineBewowTabsYOffset(const Int32 & lineBewowTabsYOffset);
 	protected:
 		friend class UITab;
 
 		UIComplexControl *		mCtrlContainer;
 		UIComplexControl *		mTabContainer;
 		Font *					mFont;
-		ColorA				mFontColor;
-		ColorA				mFontShadowColor;
-		ColorA				mFontOverColor;
-		ColorA				mFontSelectedColor;
+		ColorA					mFontColor;
+		ColorA					mFontShadowColor;
+		ColorA					mFontOverColor;
+		ColorA					mFontSelectedColor;
 		Int32					mTabSeparation;
 		Uint32					mMaxTextLength;
 		Uint32					mTabWidgetHeight;
@@ -124,11 +184,11 @@ class EE_API UITabWidget : public UIComplexControl {
 		bool					mTabsClosable;
 		bool					mSpecialBorderTabs;
 		bool					mDrawLineBelowTabs;
-		ColorA				mLineBelowTabsColor;
+		ColorA					mLineBelowTabsColor;
 		Int32					mLineBewowTabsYOffset;
 
 		std::deque<UITab*>		mTabs;
-		UITab *				mTabSelected;
+		UITab *					mTabSelected;
 		Uint32					mTabSelectedIndex;
 
 		void doAftersetTheme();

@@ -65,7 +65,23 @@ void UISelectButton::onStateChange() {
 		} else {
 			getTextBox()->setFontColor( Menu->getFontColor() );
 		}
+	} else {
+		if ( mSkinState->getState() == UISkinState::StateSelected ) {
+			getTextBox()->setFontColor( mFontSelectedColor );
+		} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
+			getTextBox()->setFontColor( mFontOverColor );
+		} else {
+			getTextBox()->setFontColor( mFontColor );
+		}
 	}
+}
+
+ColorA UISelectButton::getFontSelectedColor() const {
+	return mFontSelectedColor;
+}
+
+void UISelectButton::setFontSelectedColor(const ColorA & fontSelectedColor) {
+	mFontSelectedColor = fontSelectedColor;
 }
 
 }}
