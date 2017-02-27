@@ -639,9 +639,14 @@ void EETest::createNewUI() {
 	listBox->addListBoxItems( str );
 
 	UIProgressBar * progressBar = eeNew( UIProgressBar, () );
-	progressBar->setPosition( 50, 540 )->setSize( 200, 26 );
+	progressBar->setPosition( 50, 530 )->setSize( 200, 26 );
 	progressBar->setProgress( 60.f );
 	progressBar->setDisplayPercent( true );
+
+	UIPushButton * pushButton = eeNew( UIPushButton, () );
+	pushButton->setPosition( 50, 560 )->setSize( 200, 0 );
+	pushButton->setText( "PushButton" );
+	pushButton->setIcon( mTheme->getIconByName( "ok" ) );
 
 	UISprite * sprite = eeNew( UISprite, () );
 	sprite->setPosition( 50, 600 );

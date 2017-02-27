@@ -61,6 +61,8 @@ UIPushButton::UIPushButton() :
 	mTextBox( NULL ),
 	mIconSpace( 0 )
 {
+	setFlags( UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
+
 	mIcon = eeNew( UIGfx, () );
 	mIcon->setParent( this );
 	mIcon->setFlags( UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
@@ -91,7 +93,11 @@ bool UIPushButton::isType( const Uint32& type ) const {
 	return UIPushButton::getType() == type ? true : UIComplexControl::isType( type );
 }
 
-void UIPushButton::onSizeChange() {
+void UIPushButton::onSizeChange() {	
+	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() && 0 == mSize.getHeight() ) {
+		setInternalHeight( getSkinSize().getHeight() );
+	}
+
 	if ( NULL != mTextBox ) {
 		mTextBox->setSize( mSize );
 		mTextBox->setPosition( 0, 0 );
