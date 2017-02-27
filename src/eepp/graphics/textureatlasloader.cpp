@@ -368,14 +368,20 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 	Int32 x, y, c;
 
 	Int32 NeedUpdate = 0;
+	EE_PIXEL_DENSITY pixelDensity = PD_MDPI;
 
 	FileSystem::dirPathAddSlashAtEnd( ImagesPath );
 
 	Uint32 z;
 
 	Uint32 totalSubTextures = 0;
-	for ( z = 0; z < mTempAtlass.size(); z++ )
+	for ( z = 0; z < mTempAtlass.size(); z++ ) {
 		totalSubTextures += mTempAtlass[z].Texture.SubTextureCount;
+
+		if ( mTempAtlass[z].Texture.SubTextureCount > 0 ) {
+			pixelDensity = (EE_PIXEL_DENSITY)mTempAtlass[z].SubTextures[0].PixelDensity;
+		}
+	}
 
 	Uint32 totalImages = 0;
 	std::vector<std::string> PathFiles = FileSystem::filesGetInPath( ImagesPath );
@@ -434,7 +440,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 		std::string tapath( FileSystem::fileRemoveExtension( TextureAtlasPath ) + "." + Image::saveTypeToExtension( mTexGrHdr.Format ) );
 
 		if ( 2 == NeedUpdate ) {
-			TexturePacker tp( mTexGrHdr.Width, mTexGrHdr.Height, PD_MDPI, 0 != ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_POW_OF_TWO ), mTexGrHdr.PixelBorder, mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_ALLOW_FLIPPING );
+			TexturePacker tp( mTexGrHdr.Width, mTexGrHdr.Height, pixelDensity, 0 != ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_POW_OF_TWO ), mTexGrHdr.PixelBorder, mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_ALLOW_FLIPPING );
 
 			tp.addTexturesPath( ImagesPath );
 

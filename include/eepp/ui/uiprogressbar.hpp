@@ -29,6 +29,8 @@ class EE_API UIProgressBar : public UIComplexControl {
 
 		UIProgressBar( const UIProgressBar::CreateParams& Params );
 
+		UIProgressBar();
+
 		virtual ~UIProgressBar();
 
 		virtual Uint32 getType() const;
@@ -55,9 +57,9 @@ class EE_API UIProgressBar : public UIComplexControl {
 
 		const bool& getVerticalExpand() const;
 
-		void setFillerMargin( const Rectf& margin );
+		void setFillerPadding( const Rectf& margin );
 
-		const Rectf& getFillerMargin() const;
+		const Rectf& getFillerPadding() const;
 
 		void setDisplayPercent( const bool& displayPercent );
 
@@ -68,7 +70,7 @@ class EE_API UIProgressBar : public UIComplexControl {
 	protected:
 		bool				mVerticalExpand;
 		Vector2f			mSpeed;
-		Rectf				mFillerMargin;
+		Rectf				mFillerPadding;
 		bool				mDisplayPercent;
 
 		Float				mProgress;

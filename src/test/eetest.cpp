@@ -638,8 +638,13 @@ void EETest::createNewUI() {
 	listBox->setPosition( 50, 360 )->setSize( 200, 160 );
 	listBox->addListBoxItems( str );
 
+	UIProgressBar * progressBar = eeNew( UIProgressBar, () );
+	progressBar->setPosition( 50, 540 )->setSize( 200, 26 );
+	progressBar->setProgress( 60.f );
+	progressBar->setDisplayPercent( true );
+
 	UISprite * sprite = eeNew( UISprite, () );
-	sprite->setPosition( 50, 540 );
+	sprite->setPosition( 50, 600 );
 	sprite->setSprite( &SP );
 
 	UIScrollBar * scrollBar = eeNew( UIScrollBar, () );

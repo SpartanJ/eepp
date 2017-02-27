@@ -6,7 +6,7 @@ UIProgressBar::UIProgressBar( const UIProgressBar::CreateParams& Params ) :
 	UIComplexControl( Params ),
 	mVerticalExpand( Params.VerticalExpand ),
 	mSpeed( Params.MovementSpeed ),
-	mFillerMargin( Params.FillerMargin ),
+	mFillerPadding( Params.FillerMargin ),
 	mDisplayPercent( Params.DisplayPercent ),
 	mProgress( 0.f ),
 	mTotalSteps( 100.f ),
@@ -19,6 +19,28 @@ UIProgressBar::UIProgressBar( const UIProgressBar::CreateParams& Params ) :
 	TxtBoxParams.setPosition( 0, 0 );
 
 	mTextBox = eeNew( UITextBox, ( TxtBoxParams ) );
+	mTextBox->setEnabled( false );
+
+	updateTextBox();
+
+	applyDefaultTheme();
+}
+
+UIProgressBar::UIProgressBar() :
+	UIComplexControl(),
+	mVerticalExpand( true ),
+	mSpeed( 64.f, 0.f ),
+	mFillerPadding(),
+	mDisplayPercent( false ),
+	mProgress( 0.f ),
+	mTotalSteps( 100.f ),
+	mParallax( NULL )
+{
+	setFlags( UI_AUTO_PADDING | UI_AUTO_SIZE );
+
+	mTextBox = eeNew( UITextBox, () );
+	mTextBox->setHorizontalAlign( UI_HALIGN_CENTER );
+	mTextBox->setParent( this );
 	mTextBox->setEnabled( false );
 
 	updateTextBox();
@@ -45,7 +67,7 @@ void UIProgressBar::draw() {
 		ColorA C( mParallax->getColor() );
 		C.Alpha = (Uint8)mAlpha;
 
-		Rectf fillerMargin = PixelDensity::dpToPx( mFillerMargin );
+		Rectf fillerMargin = PixelDensity::dpToPx( mFillerPadding );
 
 		mParallax->setColor( C );
 		mParallax->setPosition( Vector2f( mScreenPos.x + fillerMargin.Left, mScreenPos.y + fillerMargin.Top ) );
@@ -76,9 +98,16 @@ void UIProgressBar::setTheme( UITheme * Theme ) {
 			if ( Height > mRealSize.getHeight() )
 				Height = mRealSize.getHeight();
 
-			Rectf fillerMargin = PixelDensity::dpToPx( mFillerMargin );
+			if ( mFlags & UI_AUTO_PADDING ) {
+				Float meH = (Float)getSkinSize().getHeight();
+				Float otH = (Float)tSkin->getSize().getHeight();
+				Float res = Math::roundUp( ( meH - otH ) * 0.5f );
+				mFillerPadding = Rectf( res, res, res, res );
+			}
 
-			mParallax = eeNew( ScrollParallax, ( tSubTexture, Vector2f( mScreenPos.x + fillerMargin.Left, mScreenPos.y + fillerMargin.Top ), Sizef( ( ( mRealSize.getWidth() - fillerMargin.Left - fillerMargin.Right ) * mProgress ) / mTotalSteps, Height - fillerMargin.Top - fillerMargin.Bottom ), mSpeed ) );
+			Rectf fillerPadding = PixelDensity::dpToPx( mFillerPadding );
+
+			mParallax = eeNew( ScrollParallax, ( tSubTexture, Vector2f( mScreenPos.x + fillerPadding.Left, mScreenPos.y + fillerPadding.Top ), Sizef( ( ( mRealSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) / mTotalSteps, Height - fillerPadding.Top - fillerPadding.Bottom ), mSpeed ) );
 		}
 	}
 }
@@ -101,9 +130,9 @@ void UIProgressBar::onSizeChange() {
 		if ( Height > mRealSize.getHeight() )
 			Height = mRealSize.getHeight();
 
-		Rectf fillerMargin = PixelDensity::dpToPx( mFillerMargin );
+		Rectf fillerPadding = PixelDensity::dpToPx( mFillerPadding );
 
-		mParallax->setSize( Sizef( ( ( mRealSize.getWidth() - fillerMargin.Left - fillerMargin.Right ) * mProgress ) / mTotalSteps, Height - fillerMargin.Top - fillerMargin.Bottom ) );
+		mParallax->setSize( Sizef( ( ( mRealSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) / mTotalSteps, Height - fillerPadding.Top - fillerPadding.Bottom ) );
 	}
 
 	updateTextBox();
@@ -135,7 +164,7 @@ void UIProgressBar::setMovementSpeed( const Vector2f& Speed ) {
 	mSpeed = Speed;
 
 	if ( NULL != mParallax )
-		mParallax->setSpeed( mSpeed );
+		mParallax->setSpeed( PixelDensity::dpToPx( mSpeed ) );
 }
 
 const Vector2f& UIProgressBar::getMovementSpeed() const {
@@ -154,15 +183,15 @@ const bool& UIProgressBar::getVerticalExpand() const {
 	return mVerticalExpand;
 }
 
-void UIProgressBar::setFillerMargin( const Rectf& margin ) {
-	mFillerMargin = margin;
+void UIProgressBar::setFillerPadding( const Rectf& margin ) {
+	mFillerPadding = margin;
 
 	onPositionChange();
 	onSizeChange();
 }
 
-const Rectf& UIProgressBar::getFillerMargin() const {
-	return mFillerMargin;
+const Rectf& UIProgressBar::getFillerPadding() const {
+	return mFillerPadding;
 }
 
 void UIProgressBar::setDisplayPercent( const bool& DisplayPercent ) {
