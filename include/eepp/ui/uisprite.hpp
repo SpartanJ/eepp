@@ -17,7 +17,7 @@ class EE_API UISprite : public UIComplexControl {
 					UIComplexControl::CreateParams(),
 					Sprite( NULL ),
 					SpriteRender( RN_NORMAL ),
-					DealloSprite( true )
+					DeallocSprite( true )
 				{
 				}
 
@@ -25,10 +25,12 @@ class EE_API UISprite : public UIComplexControl {
 
 				Graphics::Sprite * 	Sprite;
 				EE_RENDER_MODE		SpriteRender;
-				bool				DealloSprite;
+				bool				DeallocSprite;
 		};
 
 		UISprite( const UISprite::CreateParams& Params );
+
+		UISprite();
 
 		virtual ~UISprite();
 
@@ -55,6 +57,10 @@ class EE_API UISprite : public UIComplexControl {
 		void setRenderMode( const EE_RENDER_MODE& render );
 
 		const Vector2i& getAlignOffset() const;
+
+		void setDeallocSprite( const bool& dealloc );
+
+		bool getDeallocSprite();
 	protected:
 		Graphics::Sprite * 	mSprite;
 		EE_RENDER_MODE 		mRender;

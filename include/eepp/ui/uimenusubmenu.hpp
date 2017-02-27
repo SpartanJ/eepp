@@ -26,6 +26,8 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
 		UIMenuSubMenu( UIMenuSubMenu::CreateParams& Params );
 
+		UIMenuSubMenu();
+
 		virtual ~UIMenuSubMenu();
 
 		virtual Uint32 getType() const;
@@ -43,6 +45,11 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 		void showSubMenu();
 
 		virtual bool inheritsFrom( const Uint32 getType );
+
+		Float getMouseOverTimeShowMenu() const;
+
+		void setMouseOverTimeShowMenu(const Float & maxTime);
+
 	protected:
 		UIMenu *	mSubMenu;
 		UISkin *	mSkinArrow;

@@ -11,6 +11,14 @@ UIPopUpMenu::UIPopUpMenu( UIPopUpMenu::CreateParams Params ) :
 	applyDefaultTheme();
 }
 
+UIPopUpMenu::UIPopUpMenu() :
+	UIMenu()
+{
+	setVisible( false );
+	setEnabled( false );
+	applyDefaultTheme();
+}
+
 UIPopUpMenu::~UIPopUpMenu() {
 	onClose();
 }

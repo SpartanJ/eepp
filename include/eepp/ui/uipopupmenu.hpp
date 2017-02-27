@@ -9,6 +9,8 @@ class EE_API UIPopUpMenu : public UIMenu {
 	public:
 		UIPopUpMenu( UIPopUpMenu::CreateParams Params );
 
+		UIPopUpMenu();
+
 		virtual ~UIPopUpMenu();
 
 		virtual Uint32 getType() const;

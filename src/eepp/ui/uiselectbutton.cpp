@@ -8,6 +8,11 @@ UISelectButton::UISelectButton( const UIPushButton::CreateParams& Params ) :
 {
 }
 
+UISelectButton::UISelectButton() :
+	UIPushButton()
+{
+}
+
 UISelectButton::~UISelectButton() {
 }
 

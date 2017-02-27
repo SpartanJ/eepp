@@ -101,7 +101,7 @@ class EE_API UITextBox : public UIComplexControl {
 		Int32			mSelCurInit;
 		Int32			mSelCurEnd;
 
-		virtual void drawSelection();
+		virtual void drawSelection(TextCache * textCache);
 
 		virtual void onSizeChange();
 

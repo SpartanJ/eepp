@@ -8,6 +8,8 @@ namespace EE { namespace UI {
 class EE_API UISeparator : public UIControlAnim {
 	public:
 		UISeparator( UIControlAnim::CreateParams Params );
+
+		UISeparator();
 		
 		virtual ~UISeparator();
 

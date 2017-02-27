@@ -28,6 +28,45 @@ UIMenu::UIMenu( UIMenu::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
+UIMenu::UIMenu() :
+	UIComplexControl(),
+	mPadding(),
+	mFont( NULL ),
+	mFontColor(),
+	mFontShadowColor(),
+	mFontOverColor(),
+	mFontSelectedColor(),
+	mMinWidth( 100 ),
+	mMinSpaceForIcons( 24 ),
+	mMinRightMargin( 8 ),
+	mMaxWidth( 0 ),
+	mNextPosY( 0 ),
+	mBiggestIcon( mMinSpaceForIcons ),
+	mItemSelected( NULL ),
+	mItemSelectedIndex( eeINDEX_NOT_FOUND ),
+	mClickHide( false ),
+	mLastTickMove( 0 )
+{
+	setFlags( UI_AUTO_SIZE );
+
+	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
+
+	if ( NULL != Theme ) {
+		mFont				= Theme->getFont();
+		mFontColor			= Theme->getMenuFontColor();
+		mFontShadowColor	= Theme->getFontShadowColor();
+		mFontOverColor		= Theme->getMenuFontColorOver();
+		mFontSelectedColor	= Theme->getFontSelectedColor();
+	}
+
+	if ( NULL == mFont )
+		mFont = UIThemeManager::instance()->getDefaultFont();
+
+	onSizeChange();
+
+	applyDefaultTheme();
+}
+
 UIMenu::~UIMenu() {
 }
 
@@ -536,6 +575,55 @@ Uint32 UIMenu::onKeyDown( const UIEventKey& Event ) {
 
 const Recti& UIMenu::getPadding() const {
 	return mPadding;
+}
+
+Font * UIMenu::getFont() const {
+	return mFont;
+}
+
+void UIMenu::setFont(Font * font) {
+	mFont = font;
+}
+
+ColorA UIMenu::getFontColor() const {
+	return mFontColor;
+}
+
+void UIMenu::setFontColor(const ColorA & fontColor) {
+	mFontColor = fontColor;
+}
+
+ColorA UIMenu::getFontShadowColor() const {
+	return mFontShadowColor;
+}
+
+void UIMenu::setFontShadowColor(const ColorA & fontShadowColor) {
+	mFontShadowColor = fontShadowColor;
+}
+
+ColorA UIMenu::getFontOverColor() const {
+	return mFontOverColor;
+}
+
+void UIMenu::setFontOverColor(const ColorA & fontOverColor) {
+	mFontOverColor = fontOverColor;
+}
+
+ColorA UIMenu::getFontSelectedColor() const {
+	return mFontSelectedColor;
+}
+
+void UIMenu::setFontSelectedColor(const ColorA & fontSelectedColor) {
+	mFontSelectedColor = fontSelectedColor;
+}
+
+Uint32 UIMenu::getMinRightMargin() const {
+	return mMinRightMargin;
+}
+
+void UIMenu::setMinRightMargin(const Uint32 & minRightMargin) {
+	mMinRightMargin = minRightMargin;
+	rePosControls();
 }
 
 void UIMenu::fixMenuPos( Vector2i& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {

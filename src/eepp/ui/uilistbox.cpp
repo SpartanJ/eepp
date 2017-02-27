@@ -73,7 +73,6 @@ UIListBox::UIListBox( UIListBox::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
-
 UIListBox::UIListBox() :
 	UIComplexControl(),
 	mRowHeight(0),

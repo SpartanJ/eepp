@@ -332,7 +332,7 @@ UITheme::UITheme(const std::string& name, const std::string& Abbr, Graphics::Fon
 	mFontOverColor( 0, 0, 0, 255 ),
 	mFontSelectedColor( 0, 0, 0, 255 ),
 	mFontSelectionBackColor( 150, 150, 150, 255 ),
-	mUsedefaultThemeValues( true )
+	mUseDefaultThemeValues( true )
 {
 }
 
@@ -404,11 +404,11 @@ void UITheme::setFontSelectedColor( const ColorA& Color ) {
 }
 
 void UITheme::setUseDefaultThemeValues( const bool& Use ) {
-	mUsedefaultThemeValues = Use;
+	mUseDefaultThemeValues = Use;
 }
 
 const bool& UITheme::getUseDefaultThemeValues() const {
-	return mUsedefaultThemeValues;
+	return mUseDefaultThemeValues;
 }
 
 Graphics::TextureAtlas * UITheme::getTextureAtlas() const {
@@ -449,7 +449,7 @@ UISprite * UITheme::createSprite( Sprite * Sprite, UIControl * Parent, const Siz
 	SpriteParams.Flags = Flags;
 	SpriteParams.Sprite = Sprite;
 	SpriteParams.SpriteRender = SpriteRender;
-	SpriteParams.DealloSprite = DealloSprite;
+	SpriteParams.DeallocSprite = DealloSprite;
 	UISprite * Spr = eeNew( UISprite, ( SpriteParams ) );
 	Spr->setVisible( true );
 	Spr->setEnabled( true );
@@ -797,6 +797,26 @@ UITabWidget * UITheme::createTabWidget( UIControl *Parent, const Sizei &Size, co
 	Ctrl->setVisible( true );
 	Ctrl->setEnabled( true );
 	return Ctrl;
+}
+
+ColorA UITheme::getMenuFontColor() const
+{
+	return mMenuFontColor;
+}
+
+void UITheme::setMenuFontColor(const ColorA & menuFontColor)
+{
+	mMenuFontColor = menuFontColor;
+}
+
+ColorA UITheme::getMenuFontColorOver() const
+{
+	return mMenuFontColorOver;
+}
+
+void UITheme::setMenuFontColorOver(const ColorA & menuFontColorOver)
+{
+	mMenuFontColorOver = menuFontColorOver;
 }
 
 ColorA UITheme::getFontSelectionBackColor() const

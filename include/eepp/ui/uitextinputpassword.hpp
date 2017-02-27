@@ -10,6 +10,8 @@ class UITextInputPassword : public UITextInput
 	public:
 		UITextInputPassword( const UITextInput::CreateParams& Params );
 
+		UITextInputPassword();
+
 		virtual void draw();
 
 		virtual const String& getText();

@@ -616,7 +616,7 @@ void EETest::createNewUI() {
 	cbox->setFontColor( 0x000000FF );
 
 	UIGfx * gfx = eeNew( UIGfx, () );
-	gfx->setPosition( 50, 132 )->setSize( 16, 16 );
+	gfx->setPosition( 50, 140 )->setSize( 16, 16 );
 	gfx->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	gfx->setSubTexture( mTheme->getIconByName( "ok" ) );
 
@@ -631,9 +631,16 @@ void EETest::createNewUI() {
 	UITextInput * textInput = eeNew( UITextInput, () );
 	textInput->setPosition( 50, 210 )->setSize( 200, 0 );
 
+	UITextInputPassword * textInputPass = eeNew( UITextInputPassword, () );
+	textInputPass->setPosition( 50, 245 )->setSize( 200, 0 );
+
 	UIListBox * listBox = eeNew( UIListBox, () );
-	listBox->setPosition( 50, 320 )->setSize( 200, 160 );
+	listBox->setPosition( 50, 360 )->setSize( 200, 160 );
 	listBox->addListBoxItems( str );
+
+	UISprite * sprite = eeNew( UISprite, () );
+	sprite->setPosition( 50, 540 );
+	sprite->setSprite( &SP );
 
 	UIScrollBar * scrollBar = eeNew( UIScrollBar, () );
 	scrollBar->setOrientation( UI_HORIZONTAL )->setPosition( 200, 0 )->setSize( 100, 0 );
@@ -642,7 +649,7 @@ void EETest::createNewUI() {
 	scrollBar2->setOrientation( UI_VERTICAL )->setPosition( 300, 0 )->setSize( 0, 100 );
 
 	UIDropDownList * dropdownList = eeNew( UIDropDownList, () );
-	dropdownList->setPosition( 50, 240 )->setSize( 200, 0 );
+	dropdownList->setPosition( 50, 320 )->setSize( 200, 0 );
 	dropdownList->getListBox()->addListBoxItem( "Test 1" );
 	dropdownList->getListBox()->addListBoxItem( "Test 2" );
 	dropdownList->getListBox()->addListBoxItem( "Test 3" );
@@ -684,7 +691,6 @@ void EETest::createNewUI() {
 		Cell->setCell( 2, TxtInput );
 		genGrid->add( Cell );
 	}
-	/**/
 
 	UIWindow * MenuCont = eeNew( UIWindow, () );
 	MenuCont->setPosition( 350, 400 )->setSize( 200, 125 );
@@ -692,13 +698,13 @@ void EETest::createNewUI() {
 	UIWinMenu * WinMenu = eeNew( UIWinMenu, () );
 	WinMenu->setParent( MenuCont->getContainer() );
 
-	UIPopUpMenu * PopMenu = mTheme->createPopUpMenu();
+	UIPopUpMenu * PopMenu = eeNew( UIPopUpMenu, () );
 	PopMenu->add( "File" );
 	PopMenu->add( "Open" );
 	PopMenu->add( "Close" );
 	PopMenu->add( "Quit" );
 
-	UIPopUpMenu * PopMenu2 = mTheme->createPopUpMenu();
+	UIPopUpMenu * PopMenu2 = eeNew( UIPopUpMenu, () );
 	PopMenu2->add( "Bla" );
 	PopMenu2->add( "Bla 2" );
 	PopMenu2->add( "Bla 3" );
@@ -706,6 +712,7 @@ void EETest::createNewUI() {
 
 	WinMenu->addMenuButton( "File", PopMenu );
 	WinMenu->addMenuButton( "Edit", PopMenu2 );
+	/**/
 }
 
 void EETest::createMapEditor() {

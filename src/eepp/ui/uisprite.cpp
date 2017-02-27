@@ -10,7 +10,7 @@ UISprite::UISprite( const UISprite::CreateParams& Params ) :
 	mAlignOffset(0,0),
 	mSubTextureLast(NULL)
 {
-	if ( Params.DealloSprite )
+	if ( Params.DeallocSprite )
 		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
 
 	if ( NULL != mSprite ) {
@@ -18,6 +18,15 @@ UISprite::UISprite( const UISprite::CreateParams& Params ) :
 
 		updateSize();
 	}
+}
+
+UISprite::UISprite() :
+	UIComplexControl(),
+	mSprite( NULL ),
+	mRender( RN_NORMAL ),
+	mAlignOffset(0,0),
+	mSubTextureLast(NULL)
+{
 }
 
 UISprite::~UISprite() {
@@ -154,6 +163,14 @@ void UISprite::autoAlign() {
 
 const Vector2i& UISprite::getAlignOffset() const {
 	return mAlignOffset;
+}
+
+void UISprite::setDeallocSprite( const bool& dealloc ) {
+	writeCtrlFlag( UI_CTRL_FLAG_FREE_USE, dealloc ? 1 : 0 );
+}
+
+bool UISprite::getDeallocSprite() {
+	return mControlFlags & UI_CTRL_FLAG_FREE_USE;
 }
 
 void UISprite::onSizeChange() {

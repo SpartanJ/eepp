@@ -57,6 +57,8 @@ class EE_API UIMenu : public UIComplexControl {
 
 		UIMenu( UIMenu::CreateParams& Params );
 
+		UIMenu();
+
 		virtual ~UIMenu();
 
 		virtual Uint32 getType() const;
@@ -98,6 +100,31 @@ class EE_API UIMenu : public UIComplexControl {
 		virtual bool hide();
 
 		const Recti& getPadding() const;
+
+		Font * getFont() const;
+
+		void setFont(Font * font);
+
+		ColorA getFontColor() const;
+
+		void setFontColor(const ColorA & fontColor);
+
+		ColorA getFontShadowColor() const;
+
+		void setFontShadowColor(const ColorA & fontShadowColor);
+
+		ColorA getFontOverColor() const;
+
+		void setFontOverColor(const ColorA & fontOverColor);
+
+		ColorA getFontSelectedColor() const;
+
+		void setFontSelectedColor(const ColorA & fontSelectedColor);
+
+		Uint32 getMinRightMargin() const;
+
+		void setMinRightMargin(const Uint32 & minRightMargin);
+
 	protected:
 		friend class UIMenuItem;
 		friend class UIMenuCheckBox;

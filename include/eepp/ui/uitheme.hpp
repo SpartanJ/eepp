@@ -155,6 +155,14 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 		virtual UIMessageBox * createMessageBox( UI_MSGBOX_TYPE Type = MSGBOX_OKCANCEL, const String& Message = String(), Uint32 WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL, UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED, Sizei MinWindowSize = Sizei(0,0), Uint8 BaseAlpha = 255 );
 
 		virtual UITabWidget * createTabWidget( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_HALIGN_CENTER | UI_VALIGN_BOTTOM | UI_CONTROL_DEFAULT_ANCHOR, const bool& TabsClosable = false, const bool& SpecialBorderTabs = false , const Int32& TabSeparation = 0, const Uint32& MaxTextLength = 30, const Uint32& TabWidgetHeight = 0, const Uint32& TabTextAlign = UI_HALIGN_CENTER | UI_VALIGN_CENTER, const Uint32& MinTabWidth = 32, const Uint32& MaxTabWidth = 210 );
+
+		ColorA getMenuFontColor() const;
+
+		void setMenuFontColor(const ColorA & menuFontColor);
+
+		ColorA getMenuFontColorOver() const;
+
+		void setMenuFontColorOver(const ColorA & menuFontColorOver);
 	protected:
 		std::string				mName;
 		Uint32					mNameHash;
@@ -166,7 +174,9 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 		ColorA					mFontOverColor;
 		ColorA					mFontSelectedColor;
 		ColorA					mFontSelectionBackColor;
-		bool					mUsedefaultThemeValues;
+		ColorA					mMenuFontColor;
+		ColorA					mMenuFontColorOver;
+		bool					mUseDefaultThemeValues;
 		std::list<std::string>	mUIElements;
 		std::list<std::string>	mUIIcons;
 

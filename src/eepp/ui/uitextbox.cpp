@@ -23,10 +23,11 @@ UITextBox::UITextBox( const UITextBox::CreateParams& Params ) :
 	mTextCache->setShadowColor( mFontShadowColor );
 
 	if ( NULL == Params.Font ) {
-		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
+		if ( NULL != UIThemeManager::instance()->getDefaultFont() ) {
 			mTextCache->setFont( UIThemeManager::instance()->getDefaultFont() );
-		else
+		} else {
 			eePRINTL( "UITextBox::UITextBox : Created a UI TextBox without a defined font." );
+		}
 	}
 
 	autoAlign();
@@ -43,18 +44,19 @@ UITextBox::UITextBox() :
 {
 	mTextCache = eeNew( TextCache, () );
 
-	if ( NULL != UIThemeManager::instance()->getDefaultFont() ) {
-		setFont( UIThemeManager::instance()->getDefaultFont() );
-	} else {
-		eePRINTL( "UITextBox::UITextBox : Created a UI TextBox without a defined font." );
-	}
-
 	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL != UIThemeManager::instance()->getDefaultTheme() ) {
+		setFont( Theme->getFont() );
 		setFontColor( Theme->getFontColor() );
 		setFontShadowColor( Theme->getFontShadowColor() );
 		setSelectionBackColor( Theme->getFontSelectionBackColor() );
+	}
+
+	if ( NULL == getFont() && NULL != UIThemeManager::instance()->getDefaultFont() ) {
+		setFont( UIThemeManager::instance()->getDefaultFont() );
+	} else {
+		eePRINTL( "UITextBox::UITextBox : Created a UI TextBox without a defined font." );
 	}
 
 	autoAlign();
@@ -76,7 +78,7 @@ void UITextBox::draw() {
 	if ( mVisible && 0.f != mAlpha ) {
 		UIControlAnim::draw();
 
-		drawSelection();
+		drawSelection( mTextCache );
 
 		if ( mTextCache->getTextWidth() ) {
 			if ( mFlags & UI_CLIP_ENABLE ) {
@@ -337,12 +339,12 @@ Uint32 UITextBox::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 	return UIComplexControl::onMouseDown( Pos, Flags );
 }
 
-void UITextBox::drawSelection() {
+void UITextBox::drawSelection( TextCache * textCache ) {
 	if ( selCurInit() != selCurEnd() ) {
 		Int32 init		= eemin( selCurInit(), selCurEnd() );
 		Int32 end		= eemax( selCurInit(), selCurEnd() );
 
-		if ( init < 0 && end > (Int32)mTextCache->getText().size() ) {
+		if ( init < 0 && end > (Int32)textCache->getText().size() ) {
 			return;
 		}
 
@@ -353,19 +355,19 @@ void UITextBox::drawSelection() {
 		P.setColor( mFontSelectionBackColor );
 
 		do {
-			initPos	= mTextCache->getFont()->getCursorPos( mTextCache->getText(), init );
-			lastEnd = mTextCache->getText().find_first_of( '\n', init );
+			initPos	= textCache->getFont()->getCursorPos( textCache->getText(), init );
+			lastEnd = textCache->getText().find_first_of( '\n', init );
 
 			if ( lastEnd < end && -1 != lastEnd ) {
-				endPos	= mTextCache->getFont()->getCursorPos( mTextCache->getText(), lastEnd );
+				endPos	= textCache->getFont()->getCursorPos( textCache->getText(), lastEnd );
 				init	= lastEnd + 1;
 			} else {
-				endPos	= mTextCache->getFont()->getCursorPos( mTextCache->getText(), end );
+				endPos	= textCache->getFont()->getCursorPos( textCache->getText(), end );
 				lastEnd = end;
 			}
 
 			P.drawRectangle( Rectf( mScreenPos.x + initPos.x + mAlignOffset.x + mRealPadding.Left,
-									  mScreenPos.y + initPos.y - mTextCache->getFont()->getFontHeight() + mAlignOffset.y + mRealPadding.Top,
+									  mScreenPos.y + initPos.y - textCache->getFont()->getFontHeight() + mAlignOffset.y + mRealPadding.Top,
 									  mScreenPos.x + endPos.x + mAlignOffset.x + mRealPadding.Left,
 									  mScreenPos.y + endPos.y + mAlignOffset.y + mRealPadding.Top )
 			);

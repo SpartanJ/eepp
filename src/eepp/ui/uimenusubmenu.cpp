@@ -27,6 +27,25 @@ UIMenuSubMenu::UIMenuSubMenu( UIMenuSubMenu::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
+UIMenuSubMenu::UIMenuSubMenu() :
+	UIMenuItem(),
+	mSubMenu( NULL ),
+	mSkinArrow( NULL ),
+	mArrow( NULL ),
+	mTimeOver( 0.f ),
+	mMaxTime( 200.f ),
+	mCbId( 0 ),
+	mCbId2( 0 )
+{
+	mArrow = eeNew( UIGfx, () );
+	mArrow->setParent( this );
+	mArrow->setFlags( UI_AUTO_SIZE );
+	mArrow->setVisible( true );
+	mArrow->setEnabled( false );
+
+	applyDefaultTheme();
+}
+
 UIMenuSubMenu::~UIMenuSubMenu() {
 }
 
@@ -153,6 +172,14 @@ bool UIMenuSubMenu::inheritsFrom( const Uint32 Type ) {
 		return true;
 
 	return false;
+}
+
+Float UIMenuSubMenu::getMouseOverTimeShowMenu() const {
+	return mMaxTime;
+}
+
+void UIMenuSubMenu::setMouseOverTimeShowMenu(const Float & maxTime) {
+	mMaxTime = maxTime;
 }
 
 }}

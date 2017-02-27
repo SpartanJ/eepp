@@ -9,6 +9,12 @@ UISeparator::UISeparator( UIControlAnim::CreateParams Params ) :
 	applyDefaultTheme();
 }
 
+UISeparator::UISeparator() :
+	UIControlAnim()
+{
+	applyDefaultTheme();
+}
+
 UISeparator::~UISeparator() {
 }
 

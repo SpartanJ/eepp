@@ -10,16 +10,20 @@ UITextInputPassword::UITextInputPassword( const UITextInput::CreateParams& Param
 	UITextInput( Params )
 {
 	mPassCache = eeNew( TextCache, () );
-	mPassCache->setFont( Params.Font );
+	mPassCache->setFont( mTextCache->getFont() );
 	mPassCache->setColor( mFontColor );
 	mPassCache->setShadowColor( mFontShadowColor );
 
-	if ( NULL == Params.Font ) {
-		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
-			mPassCache->setFont( UIThemeManager::instance()->getDefaultFont() );
-		else
-			eePRINTL( "UITextInputPassword::UITextInputPassword : Created a UI TextInputPassword without a defined font." );
-	}
+	autoAlign();
+}
+
+UITextInputPassword::UITextInputPassword() :
+	UITextInput()
+{
+	mPassCache = eeNew( TextCache, () );
+	mPassCache->setFont( mTextCache->getFont() );
+	mPassCache->setColor( mFontColor );
+	mPassCache->setShadowColor( mFontShadowColor );
 
 	autoAlign();
 }
@@ -27,6 +31,8 @@ UITextInputPassword::UITextInputPassword( const UITextInput::CreateParams& Param
 void UITextInputPassword::draw() {
 	if ( mVisible && 0.f != mAlpha ) {
 		UIControlAnim::draw();
+
+		drawSelection( mPassCache );
 
 		if ( mPassCache->getTextWidth() ) {
 			if ( mFlags & UI_CLIP_ENABLE ) {
@@ -82,10 +88,10 @@ void UITextInputPassword::alignFix() {
 void UITextInputPassword::autoAlign() {
 	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mAlignOffset.x = (Float)( (Int32)( mSize.x - mPassCache->getTextWidth() ) / 2 );
+			mAlignOffset.x = (Float)( (Int32)( mRealSize.x - mPassCache->getTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
-			mAlignOffset.x = ( (Float)mSize.x - (Float)mPassCache->getTextWidth() );
+			mAlignOffset.x = ( (Float)mRealSize.x - (Float)mPassCache->getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
 			mAlignOffset.x = 0.f;
@@ -94,10 +100,10 @@ void UITextInputPassword::autoAlign() {
 
 	switch ( fontVAlignGet( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
-			mAlignOffset.y = (Float)( ( (Int32)( mSize.y - mPassCache->getTextHeight() ) ) / 2 ) - 1;
+			mAlignOffset.y = (Float)( ( (Int32)( mRealSize.y - mPassCache->getTextHeight() ) ) / 2 ) - 1;
 			break;
 		case UI_VALIGN_BOTTOM:
-			mAlignOffset.y = ( (Float)mSize.y - (Float)mPassCache->getTextHeight() );
+			mAlignOffset.y = ( (Float)mRealSize.y - (Float)mPassCache->getTextHeight() );
 			break;
 		case UI_VALIGN_TOP:
 			mAlignOffset.y = 0.f;

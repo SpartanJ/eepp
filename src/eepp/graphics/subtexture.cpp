@@ -138,6 +138,10 @@ const Sizef& SubTexture::getDestSize() const {
 
 void SubTexture::setDestSize( const Sizef& destSize ) {
 	mDestSize = destSize;
+
+	if ( mOriDestSize.x == 0 && mOriDestSize.y == 0 ) {
+		mOriDestSize = destSize;
+	}
 }
 
 const Vector2i& SubTexture::getOffset() const {
