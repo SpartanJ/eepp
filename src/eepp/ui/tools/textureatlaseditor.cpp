@@ -36,7 +36,6 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	}
 
 	UITextBox * TxtBox;
-	Uint32 Flags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_TOP | UI_CLIP_ENABLE | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED;
 	Uint32 InitY = 230;
 
 	createTextBox( Vector2i( mUIContainer->getSize().getWidth() - 205, 30 ), "SubTexture List:" );
@@ -49,7 +48,8 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	InitY +=30;
 
-	mSpinOffX = mTheme->createSpinBox( mUIContainer, Sizei( 100, 22 ), Vector2i(), Flags, 0, false );
+	mSpinOffX = eeNew( UISpinBox, () );
+	mSpinOffX->setParent( mUIContainer )->setSize( 100, 0 )->setVisible( true )->setEnabled( true );
 	mSpinOffX->setMinValue( -32000 );
 	mSpinOffX->setMaxValue( 32000 );
 	mSpinOffX->setPosition( mUIContainer->getSize().getWidth() - mSpinOffX->getSize().getWidth() - 10, InitY );
@@ -60,7 +60,8 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	InitY +=30;
 
-	mSpinOffY = mTheme->createSpinBox( mUIContainer, Sizei( 100, 22 ), Vector2i(), Flags, 0, false );
+	mSpinOffY = eeNew( UISpinBox, () );
+	mSpinOffY->setParent( mUIContainer )->setSize( 100, 0 )->setVisible( true )->setEnabled( true );
 	mSpinOffY->setMinValue( -32000 );
 	mSpinOffY->setMaxValue( 32000 );
 	mSpinOffY->setPosition( mUIContainer->getSize().getWidth() - mSpinOffY->getSize().getWidth() - 10, InitY );
@@ -70,7 +71,8 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	InitY +=30;
 
-	mSpinDestW = mTheme->createSpinBox( mUIContainer, Sizei( 100, 22 ), Vector2i(), Flags, 0, false );
+	mSpinDestW = eeNew( UISpinBox, () );
+	mSpinDestW->setParent( mUIContainer )->setSize( 100, 0 )->setVisible( true )->setEnabled( true );
 	mSpinDestW->setMaxValue( 32000 );
 	mSpinDestW->setPosition( mUIContainer->getSize().getWidth() - mSpinDestW->getSize().getWidth() - 10, InitY );
 	mSpinDestW->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onDestWChange ) );
@@ -79,7 +81,8 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	InitY +=30;
 
-	mSpinDestH = mTheme->createSpinBox( mUIContainer, Sizei( 100, 22 ), Vector2i(), Flags, 0, false );
+	mSpinDestH = eeNew( UISpinBox, () );
+	mSpinDestH->setParent( mUIContainer )->setSize( 100, 0 )->setVisible( true )->setEnabled( true );
 	mSpinDestH->setMaxValue( 32000 );
 	mSpinDestH->setPosition( mUIContainer->getSize().getWidth() - mSpinDestH->getSize().getWidth() - 10, InitY );
 	mSpinDestH->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onDestHChange ) );
@@ -266,7 +269,7 @@ void TextureAtlasEditor::fileMenuClick( const UIEvent * Event ) {
 		if ( mUIWindow == UIManager::instance()->getMainControl() ) {
 			UIManager::instance()->getWindow()->close();
 		} else {
-			mUIWindow->CloseWindow();
+			mUIWindow->closeWindow();
 		}
 	}
 }

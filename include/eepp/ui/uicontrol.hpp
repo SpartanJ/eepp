@@ -136,6 +136,10 @@ class EE_API UIControl {
 
 		void centerVertical();
 
+		void centerVerticalUp();
+
+		void centerVerticalDown();
+
 		void center();
 
 		virtual void close();
@@ -170,9 +174,9 @@ class EE_API UIControl {
 
 		const Uint32& getFlags() const;
 
-		void setFlags( const Uint32& flags );
+		UIControl * setFlags( const Uint32& flags );
 
-		void unsetFlags( const Uint32& flags );
+		UIControl * unsetFlags( const Uint32& flags );
 
 		void setBlendMode( const EE_BLEND_MODE& blend );
 

@@ -49,7 +49,8 @@ Window::Window( WindowSettings Settings, ContextSettings Context, Clipboard * Cl
 	mInput( Input ),
 	mCursorManager( CursorManager ),
 	mPlatform( NULL ),
-	mNumCallBacks( 0 )
+	mNumCallBacks( 0 ),
+	mPushScissorClip( true )
 {
 	mWindow.WindowConfig	= Settings;
 	mWindow.ContextConfig	= Context;
@@ -330,11 +331,27 @@ void Window::clipEnable( const Int32& x, const Int32& y, const Uint32& Width, co
 	GlobalBatchRenderer::instance()->draw();
 	GLi->scissor( x, getHeight() - ( y + Height ), Width, Height );
 	GLi->enable( GL_SCISSOR_TEST );
+
+	if ( mPushScissorClip ) {
+		mScissorsClipped.push_back( Rectf( x, y, Width, Height ) );
+	}
 }
 
 void Window::clipDisable() {
 	GlobalBatchRenderer::instance()->draw();
-	GLi->disable( GL_SCISSOR_TEST );
+
+	if ( ! mScissorsClipped.empty() ) { // This should always be true
+		mScissorsClipped.pop_back();
+	}
+
+	if ( mScissorsClipped.empty() ) {
+		GLi->disable( GL_SCISSOR_TEST );
+	} else {
+		Rectf R( mScissorsClipped.back() );
+		mPushScissorClip = false;
+		clipEnable( R.Left, R.Top, R.Right, R.Bottom );
+		mPushScissorClip = true;
+	}
 }
 
 void Window::clipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {

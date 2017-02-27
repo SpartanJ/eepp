@@ -8,6 +8,9 @@ UIWindow::UIWindow( const UIWindow::CreateParams& Params ) :
 	UIComplexControl( Params ),
 	mWinFlags( Params.WinFlags ),
 	mWindowDecoration( NULL ),
+	mBorderLeft( NULL ),
+	mBorderRight( NULL ),
+	mBorderBottom( NULL ),
 	mButtonClose( NULL ),
 	mButtonMinimize( NULL ),
 	mButtonMaximize( NULL ),
@@ -37,68 +40,48 @@ UIWindow::UIWindow( const UIWindow::CreateParams& Params ) :
 	mContainer->setSize( mSize );
 	mContainer->addEventListener( UIEvent::EventOnPosChange, cb::Make1( this, &UIWindow::onContainerPosChange ) );
 
-	if ( !( mWinFlags & UI_WIN_NO_BORDER ) ) {
-		UIControlAnim::CreateParams tParams;
-		tParams.setParent( this );
+	updateWinFlags();
 
-		mWindowDecoration = eeNew( UIControlAnim, ( tParams ) );
-		mWindowDecoration->setVisible( true );
-		mWindowDecoration->setEnabled( false );
+	setAlpha( mBaseAlpha );
 
-		mBorderLeft		= eeNew( UIControlAnim, ( tParams ) );
-		mBorderLeft->setEnabled( true );
-		mBorderLeft->setVisible( true );
+	applyDefaultTheme();
+}
 
-		mBorderRight	= eeNew( UIControlAnim, ( tParams ) );
-		mBorderRight->setEnabled( true );
-		mBorderRight->setVisible( true );
+UIWindow::UIWindow() :
+	UIComplexControl(),
+	mWinFlags( UI_WIN_DEFAULT_FLAGS ),
+	mWindowDecoration( NULL ),
+	mBorderLeft( NULL ),
+	mBorderRight( NULL ),
+	mBorderBottom( NULL ),
+	mButtonClose( NULL ),
+	mButtonMinimize( NULL ),
+	mButtonMaximize( NULL ),
+	mTitle( NULL ),
+	mModalCtrl( NULL ),
+	mDecoSize(),
+	mBorderSize(),
+	mMinWindowSize(),
+	mButtonsPositionFixer( ),
+	mButtonsSeparation( 4 ),
+	mMinCornerDistance( 24 ),
+	mResizeType( RESIZE_NONE ),
+	mTitleFontColor( 0xFFFFFFFF ),
+	mBaseAlpha( 255 ),
+	mDecoAutoSize( true ),
+	mBorderAutoSize( true )
+{
+	UIManager::instance()->windowAdd( this );
 
-		mBorderBottom	= eeNew( UIControlAnim, ( tParams ) );
-		mBorderBottom->setEnabled( true );
-		mBorderBottom->setVisible( true );
+	mContainer		= eeNew( UIComplexControl, () );
+	mContainer->setParent( this );
+	mContainer->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
+	mContainer->setEnabled( true );
+	mContainer->setVisible( true );
+	mContainer->setSize( mSize );
+	mContainer->addEventListener( UIEvent::EventOnPosChange, cb::Make1( this, &UIWindow::onContainerPosChange ) );
 
-		if ( mWinFlags & UI_WIN_DRAGABLE_CONTAINER )
-			mContainer->setDragEnabled( true );
-
-		UIComplexControl::CreateParams ButtonParams;
-		ButtonParams.setParent( this );
-
-		if ( mWinFlags & UI_WIN_CLOSE_BUTTON ) {
-			mButtonClose = eeNew( UIComplexControl, ( ButtonParams ) );
-			mButtonClose->setVisible( true );
-			mButtonClose->setEnabled( true );
-
-			if ( mWinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
-				mButtonClose->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonCloseClick ) );
-			}
-		}
-
-		if ( ( mWinFlags & UI_WIN_RESIZEABLE ) && ( mWinFlags & UI_WIN_MAXIMIZE_BUTTON ) ) {
-			mButtonMaximize = eeNew( UIComplexControl, ( ButtonParams ) );
-			mButtonMaximize->setVisible( true );
-			mButtonMaximize->setEnabled( true );
-
-			if ( mWinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
-				mButtonMaximize->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonMaximizeClick ) );
-			}
-		}
-
-		if ( mWinFlags & UI_WIN_MINIMIZE_BUTTON ) {
-			mButtonMinimize = eeNew( UIComplexControl, ( ButtonParams ) );
-			mButtonMinimize->setVisible( true );
-			mButtonMinimize->setEnabled( true );
-
-			if ( mWinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
-				mButtonMinimize->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonMinimizeClick ) );
-			}
-		}
-
-		setDragEnabled( true );
-	}
-
-	if ( isModal() ) {
-		createModalControl();
-	}
+	updateWinFlags();
 
 	setAlpha( mBaseAlpha );
 
@@ -113,6 +96,86 @@ UIWindow::~UIWindow() {
 	sendCommonEvent( UIEvent::EventOnWindowClose );
 }
 
+void UIWindow::updateWinFlags() {
+	if ( !( mWinFlags & UI_WIN_NO_BORDER ) ) {
+		if ( NULL == mWindowDecoration )
+			mWindowDecoration = eeNew( UIControlAnim, () );
+
+		mWindowDecoration->setParent( this );
+		mWindowDecoration->setVisible( true );
+		mWindowDecoration->setEnabled( false );
+
+		if ( NULL == mBorderLeft )
+			mBorderLeft		= eeNew( UIControlAnim, () );
+
+		mBorderLeft->setParent( this );
+		mBorderLeft->setEnabled( true );
+		mBorderLeft->setVisible( true );
+
+		if ( NULL == mBorderRight )
+			mBorderRight	= eeNew( UIControlAnim, () );
+
+		mBorderRight->setParent( this );
+		mBorderRight->setEnabled( true );
+		mBorderRight->setVisible( true );
+
+		if ( NULL == mBorderBottom )
+			mBorderBottom	= eeNew( UIControlAnim, ( ) );
+
+		mBorderBottom->setParent( this );
+		mBorderBottom->setEnabled( true );
+		mBorderBottom->setVisible( true );
+
+		if ( mWinFlags & UI_WIN_DRAGABLE_CONTAINER )
+			mContainer->setDragEnabled( true );
+
+		if ( mWinFlags & UI_WIN_CLOSE_BUTTON ) {
+			if ( NULL == mButtonClose )
+				mButtonClose = eeNew( UIComplexControl, () );
+
+			mButtonClose->setParent( this );
+			mButtonClose->setVisible( true );
+			mButtonClose->setEnabled( true );
+
+			if ( mWinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
+				mButtonClose->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonCloseClick ) );
+			}
+		}
+
+		if ( ( mWinFlags & UI_WIN_RESIZEABLE ) && ( mWinFlags & UI_WIN_MAXIMIZE_BUTTON ) ) {
+			if ( NULL == mButtonMaximize )
+				mButtonMaximize = eeNew( UIComplexControl, () );
+
+			mButtonMaximize->setParent( this );
+			mButtonMaximize->setVisible( true );
+			mButtonMaximize->setEnabled( true );
+
+			if ( mWinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
+				mButtonMaximize->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonMaximizeClick ) );
+			}
+		}
+
+		if ( mWinFlags & UI_WIN_MINIMIZE_BUTTON ) {
+			if ( NULL == mButtonMinimize )
+				mButtonMinimize = eeNew( UIComplexControl, () );
+
+			mButtonMinimize->setParent( this );
+			mButtonMinimize->setVisible( true );
+			mButtonMinimize->setEnabled( true );
+
+			if ( mWinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
+				mButtonMinimize->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonMinimizeClick ) );
+			}
+		}
+
+		setDragEnabled( true );
+	}
+
+	if ( isModal() ) {
+		createModalControl();
+	}
+}
+
 void UIWindow::createModalControl() {
 	UIControl * Ctrl = UIManager::instance()->getMainControl();
 
@@ -122,6 +185,9 @@ void UIWindow::createModalControl() {
 		mModalCtrl->setPosition( 0, 0 );
 		mModalCtrl->setSize( Ctrl->getSize() );
 	}
+
+	mModalCtrl->setEnabled( false );
+	mModalCtrl->setVisible( false );
 
 	disableByModal();
 }
@@ -173,22 +239,22 @@ bool UIWindow::isType( const Uint32& type ) const {
 }
 
 void UIWindow::onContainerPosChange( const UIEvent * Event ) {
-	Vector2i PosDiff = mContainer->getPosition() - Vector2i( mBorderLeft->getSize().getWidth(), mWindowDecoration->getSize().getHeight() );
+	Vector2i PosDiff = mContainer->getPosition() - Vector2i( NULL != mBorderLeft ? mBorderLeft->getSize().getWidth() : 0, NULL != mWindowDecoration ? mWindowDecoration->getSize().getHeight() : 0 );
 
 	if ( PosDiff.x != 0 || PosDiff.y != 0 ) {
-		mContainer->setPosition( mBorderLeft->getSize().getWidth(), mWindowDecoration->getSize().getHeight() );
+		mContainer->setPosition( NULL != mBorderLeft ? mBorderLeft->getSize().getWidth() : 0, NULL != mWindowDecoration ? mWindowDecoration->getSize().getHeight() : 0 );
 
 		setPosition( mPos + PosDiff );
 	}
 }
 
 void UIWindow::onButtonCloseClick( const UIEvent * Event ) {
-	CloseWindow();
+	closeWindow();
 
 	sendCommonEvent( UIEvent::EventOnWindowCloseClick );
 }
 
-void UIWindow::CloseWindow() {
+void UIWindow::closeWindow() {
 	if ( NULL != mButtonClose )
 		mButtonClose->setEnabled( false );
 
@@ -222,7 +288,7 @@ void UIWindow::onButtonMaximizeClick( const UIEvent * Event ) {
 }
 
 void UIWindow::onButtonMinimizeClick( const UIEvent * Event ) {
-	Hide();
+	hide();
 
 	sendCommonEvent( UIEvent::EventOnWindowMinimizeClick );
 }
@@ -758,7 +824,7 @@ bool UIWindow::show() {
 	return false;
 }
 
-bool UIWindow::Hide() {
+bool UIWindow::hide() {
 	if ( isVisible() ) {
 		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
 			disableFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
@@ -924,6 +990,18 @@ bool UIWindow::removeShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
 
 bool UIWindow::isMaximizable() {
 	return 0 != ( ( mWinFlags & UI_WIN_RESIZEABLE ) && ( mWinFlags & UI_WIN_MAXIMIZE_BUTTON ) );
+}
+
+Uint32 UIWindow::getWinFlags() const {
+	return mWinFlags;
+}
+
+UIWindow * UIWindow::setWinFlags(const Uint32 & winFlags) {
+	mWinFlags = winFlags;
+
+	updateWinFlags();
+
+	return this;
 }
 
 bool UIWindow::isModal() {

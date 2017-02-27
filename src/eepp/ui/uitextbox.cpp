@@ -151,7 +151,7 @@ const ColorA& UITextBox::getFontShadowColor() const {
 
 void UITextBox::setFontShadowColor( const ColorA& color ) {
 	mFontShadowColor = color;
-	mTextCache->setShadowColor( mFontColor );
+	mTextCache->setShadowColor( mFontShadowColor );
 }
 
 const ColorA& UITextBox::getSelectionBackColor() const {

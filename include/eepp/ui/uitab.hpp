@@ -9,9 +9,9 @@ class UITabWidget;
 
 class EE_API UITab : public UISelectButton {
 	public:
-		UITab( UISelectButton::CreateParams& Params, UIControl * ctrlOwned );
+		UITab( UISelectButton::CreateParams& Params, UIControl * controlOwned );
 
-		UIControl * ctrlOwned() const;
+		UIControl * getControlOwned() const;
 
 		virtual ~UITab();
 

@@ -66,7 +66,8 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	mComboHeight->getListBox()->setSelected( "512" );
 
 	createTxtBox( Vector2i( 10, 110 ), "Space between sub textures (pixels):" );
-	mPixelSpace = mTheme->createSpinBox( mUIWindow->getContainer(), Sizei( 100, 22 ), Vector2i( PosX, 110 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED, 0, false );
+	mPixelSpace = eeNew( UISpinBox, () );
+	mPixelSpace->setParent( mUIWindow->getContainer() )->setSize( 100, 0 )->setPosition( PosX, 110 )->setVisible( true )->setEnabled( true );
 
 	createTxtBox( Vector2i( 10, 140 ), "Texture Atlas Folder Path:" );
 	mTGPath = mTheme->createTextInput( mUIWindow->getContainer(), Sizei( mUIWindow->getContainer()->getSize().getWidth() - 60, 22 ), Vector2i( 10, 160 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE , false, 512 );
@@ -93,7 +94,14 @@ TextureAtlasNew::~TextureAtlasNew() {
 }
 
 UITextBox * TextureAtlasNew::createTxtBox( Vector2i Pos, const String& Text ) {
-	return mTheme->createTextBox( Text, mUIWindow->getContainer(), Sizei(), Pos, UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	UITextBox * textBox = eeNew( UITextBox, () );
+	textBox->setParent( mUIWindow->getContainer() )
+			->setPosition( Pos )
+			->setFlags( UI_DRAW_SHADOW | UI_AUTO_SIZE )
+			->setVisible( true )
+			->setEnabled( true );
+	textBox->setText( Text );
+	return textBox;
 }
 
 void TextureAtlasNew::okClick( const UIEvent * Event ) {
@@ -116,7 +124,7 @@ void TextureAtlasNew::cancelClick( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*>( Event );
 
 	if ( MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-		mUIWindow->CloseWindow();
+		mUIWindow->closeWindow();
 	}
 }
 
@@ -162,7 +170,7 @@ void TextureAtlasNew::textureAtlasSave( const UIEvent * Event ) {
 			if ( mNewTGCb.IsSet() )
 				mNewTGCb( TexturePacker );
 
-			mUIWindow->CloseWindow();
+			mUIWindow->closeWindow();
 		}
 	}
 }

@@ -52,11 +52,11 @@ void UIGOTypeNew::onOKClick( const UIEvent * Event ) {
 			mCb( mUIInput->getText().toUtf8(), String::hash( mUIInput->getText().toUtf8() ) );
 	}
 
-	mUIWindow->CloseWindow();
+	mUIWindow->closeWindow();
 }
 
 void UIGOTypeNew::onCancelClick( const UIEvent * Event ) {
-	mUIWindow->CloseWindow();
+	mUIWindow->closeWindow();
 }
 
 void UIGOTypeNew::onWindowClose( const UIEvent * Event ) {

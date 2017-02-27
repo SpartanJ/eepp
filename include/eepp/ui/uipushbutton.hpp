@@ -56,6 +56,8 @@ class EE_API UIPushButton : public UIComplexControl {
 
 		UIPushButton( const UIPushButton::CreateParams& Params );
 
+		UIPushButton();
+
 		virtual ~UIPushButton();
 
 		virtual Uint32 getType() const;
@@ -82,6 +84,10 @@ class EE_API UIPushButton : public UIComplexControl {
 
 		UITextBox * getTextBox() const;
 
+		void setFont( Font * font );
+
+		Font * getFont();
+
 		const ColorA& getFontColor() const;
 
 		void setFontColor( const ColorA& color );
@@ -89,6 +95,10 @@ class EE_API UIPushButton : public UIComplexControl {
 		const ColorA& getFontOverColor() const;
 
 		void setFontOverColor( const ColorA& color );
+
+		const ColorA& getFontShadowColor() const;
+
+		void setFontShadowColor( const ColorA& color );
 	protected:
 		ColorA			mFontColor;
 		ColorA			mFontOverColor;

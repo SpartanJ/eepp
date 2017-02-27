@@ -4,9 +4,9 @@
 
 namespace EE { namespace UI {
 
-UITab::UITab( UISelectButton::CreateParams& Params, UIControl * CtrlOwned ) :
+UITab::UITab( UISelectButton::CreateParams& Params, UIControl * controlOwned ) :
 	UISelectButton( Params ),
-	mCtrlOwned( CtrlOwned )
+	mCtrlOwned( controlOwned )
 {
 	applyDefaultTheme();
 }
@@ -72,6 +72,10 @@ void UITab::onStateChange() {
 	if ( NULL != tTabW ) {
 		Int32 skinSize = getSkin()->getSize( mSkinState->getState() ).getHeight();
 
+		if ( 0 == skinSize ) {
+			skinSize = getSkin()->getSize().getHeight();
+		}
+
 		setSize( mSize.getWidth(), skinSize );
 
 		if ( mSkinState->getState() == UISkinState::StateSelected ) {
@@ -121,7 +125,7 @@ void UITab::autoSize() {
 	}
 }
 
-UIControl * UITab::ctrlOwned() const {
+UIControl * UITab::getControlOwned() const {
 	return mCtrlOwned;
 }
 

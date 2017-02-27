@@ -12,6 +12,15 @@ UIMenuCheckBox::UIMenuCheckBox( UIMenuCheckBox::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
+UIMenuCheckBox::UIMenuCheckBox() :
+	UIMenuItem(),
+	mActive( false ),
+	mSkinActive( NULL ),
+	mSkinInactive( NULL )
+{
+	applyDefaultTheme();
+}
+
 UIMenuCheckBox::~UIMenuCheckBox() {
 }
 

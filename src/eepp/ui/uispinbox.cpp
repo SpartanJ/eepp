@@ -50,6 +50,39 @@ UISpinBox::UISpinBox( const UISpinBox::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
+UISpinBox::UISpinBox() :
+	UIComplexControl(),
+	mMinValue( 0.f ),
+	mMaxValue( 1024.f ),
+	mValue( 0 ),
+	mClickStep( 1.f )
+{
+	mInput	= eeNew( UITextInput, () );
+	mInput->setVisible( true );
+	mInput->setEnabled( true );
+	mInput->setParent( this );
+
+	mPushUp	= eeNew( UIControlAnim, () );
+	mPushUp->setVisible( true );
+	mPushUp->setEnabled( true );
+	mPushUp->setParent( this );
+	mPushUp->setSize( 16, 16 );
+
+	mPushDown = eeNew( UIControlAnim, () );
+	mPushDown->setVisible( true );
+	mPushDown->setEnabled( true );
+	mPushDown->setParent( this );
+	mPushDown->setSize( 16, 16 );
+
+	mInput->getInputTextBuffer()->setAllowOnlyNumbers( true, false );
+
+	internalValue( mValue, true );
+
+	adjustChilds();
+
+	applyDefaultTheme();
+}
+
 UISpinBox::~UISpinBox() {
 }
 
@@ -62,11 +95,11 @@ bool UISpinBox::isType( const Uint32& type ) const {
 }
 
 void UISpinBox::setTheme( UITheme * Theme ) {
-	UIControl::setThemeControl		( Theme, "spinbox" );
+	UIControl::setThemeControl( Theme, "spinbox" );
 
-	mInput->setThemeControl		( Theme, "spinbox_input" );
-	mPushUp->setThemeControl		( Theme, "spinbox_btnup" );
-	mPushDown->setThemeControl	( Theme, "spinbox_btndown" );
+	mInput->setThemeControl( Theme, "spinbox_input" );
+	mPushUp->setThemeControl( Theme, "spinbox_btnup" );
+	mPushDown->setThemeControl( Theme, "spinbox_btndown" );
 
 	UISkin * tSkin = NULL;
 
@@ -82,17 +115,24 @@ void UISpinBox::setTheme( UITheme * Theme ) {
 		mPushDown->setSize( tSkin->getSize() );
 	}
 
-	if ( mFlags & UI_AUTO_SIZE ) {
-		setInternalHeight( mInput->getSkinSize().getHeight() );
-	}
-
 	adjustChilds();
 }
 
 void UISpinBox::adjustChilds() {
-	mPushUp->setPosition( mSize.getWidth() - mPushUp->getSize().getWidth(), 0 );
-	mPushDown->setPosition( mSize.getWidth() - mPushDown->getSize().getWidth(), mPushUp->getSize().getHeight() );
-	mInput->setSize( mSize.getWidth() - mPushUp->getSize().getWidth(), mSize.getHeight() );
+	mInput->setSize( mSize.getWidth() - mPushUp->getSize().getWidth(), mInput->getSize().getHeight() );
+
+	if ( mInput->getSize().getHeight() < mInput->getSkinSize().getHeight() ) {
+		mInput->setSize( mSize.getWidth() - mPushUp->getSize().getWidth(), mInput->getSkinSize().getHeight() );
+	}
+
+	if ( ( mFlags & UI_AUTO_SIZE ) || mSize.getHeight() < mInput->getSize().getHeight() ) {
+		setInternalHeight( mInput->getSkinSize().getHeight() );
+	}
+
+	mInput->centerVertical();
+
+	mPushUp->setPosition( mSize.getWidth() - mPushUp->getSize().getWidth(), mInput->getPosition().y );
+	mPushDown->setPosition( mSize.getWidth() - mPushDown->getSize().getWidth(), mInput->getPosition().y + mPushUp->getSize().getHeight() );
 }
 
 void UISpinBox::setPadding( const Recti& padding ) {
@@ -233,6 +273,14 @@ UIControlAnim * UISpinBox::getButtonPushDown() const {
 
 UITextInput * UISpinBox::getTextInput() const {
 	return mInput;
+}
+
+void UISpinBox::setAllowOnlyNumbers(bool allow) {
+	mInput->getInputTextBuffer()->setAllowOnlyNumbers( true, allow );
+}
+
+bool UISpinBox::dotsInNumbersAllowed() {
+	return mInput->getInputTextBuffer()->dotsInNumbersAllowed();
 }
 
 void UISpinBox::onAlphaChange() {

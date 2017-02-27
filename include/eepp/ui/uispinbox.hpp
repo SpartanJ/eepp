@@ -26,6 +26,8 @@ class EE_API UISpinBox : public UIComplexControl {
 
 		UISpinBox( const UISpinBox::CreateParams& Params );
 
+		UISpinBox();
+
 		virtual ~UISpinBox();
 
 		virtual Uint32 getType() const;
@@ -65,6 +67,10 @@ class EE_API UISpinBox : public UIComplexControl {
 		UIControlAnim * getButtonPushDown() const;
 
 		UITextInput * getTextInput() const;
+
+		void setAllowOnlyNumbers( bool allow );
+
+		bool dotsInNumbersAllowed();
 	protected:
 		UITextInput * 		mInput;
 		UIControlAnim * 	mPushUp;

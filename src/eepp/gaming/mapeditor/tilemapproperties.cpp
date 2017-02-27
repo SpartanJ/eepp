@@ -189,11 +189,11 @@ void TileMapProperties::loadProperties() {
 void TileMapProperties::onOKClick( const UIEvent * Event ) {
 	saveProperties();
 
-	mUIWindow->CloseWindow();
+	mUIWindow->closeWindow();
 }
 
 void TileMapProperties::onCancelClick( const UIEvent * Event ) {
-	mUIWindow->CloseWindow();
+	mUIWindow->closeWindow();
 }
 
 void TileMapProperties::onWindowClose( const UIEvent * Event ) {

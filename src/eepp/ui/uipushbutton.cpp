@@ -53,6 +53,33 @@ UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
+UIPushButton::UIPushButton() :
+	UIComplexControl(),
+	mFontColor(),
+	mFontOverColor(),
+	mIcon( NULL ),
+	mTextBox( NULL ),
+	mIconSpace( 0 )
+{
+	mIcon = eeNew( UIGfx, () );
+	mIcon->setParent( this );
+	mIcon->setFlags( UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
+	mIcon->setVisible( true );
+	mIcon->setEnabled( false );
+
+	mTextBox = eeNew( UITextBox, () );
+	mTextBox->setParent( this );
+	mTextBox->setVisible( true );
+	mTextBox->setEnabled( false );
+	mTextBox->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
+
+	mControlFlags |= UI_CTRL_FLAG_FREE_USE; // IconAutoMargin
+
+	onSizeChange();
+
+	applyDefaultTheme();
+}
+
 UIPushButton::~UIPushButton() {
 }
 
@@ -167,6 +194,14 @@ UITextBox * UIPushButton::getTextBox() const {
 	return mTextBox;
 }
 
+void UIPushButton::setFont(Font * font) {
+	mTextBox->setFont( font );
+}
+
+Font *UIPushButton::getFont() {
+	return mTextBox->getFont();
+}
+
 void UIPushButton::onAlphaChange() {
 	UIControlAnim::onAlphaChange();
 
@@ -219,6 +254,14 @@ const ColorA& UIPushButton::getFontOverColor() const {
 void UIPushButton::setFontOverColor( const ColorA& color ) {
 	mFontOverColor = color;
 	onStateChange();
+}
+
+const ColorA& UIPushButton::getFontShadowColor() const {
+	return mTextBox->getFontShadowColor();
+}
+
+void UIPushButton::setFontShadowColor( const ColorA& color ) {
+	mTextBox->setFontShadowColor( color );
 }
 
 }}

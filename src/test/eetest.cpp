@@ -252,6 +252,18 @@ void EETest::onWindowResize(EE::Window::Window * win) {
 	Map.setViewSize( win->getSize() );
 }
 
+static std::vector<String> getTestStringArr() {
+	Int32 wsize = 15;
+	std::vector<String> str(wsize);
+
+	if ( wsize ) {
+		for ( Int32 i = 1; i <= wsize; i++ )
+			str[i-1] = "Test ListBox " + String::toStr(i) + " testing it right now!";
+	}
+
+	return str;
+}
+
 void EETest::createUI() {
 	Clock TE;
 
@@ -267,7 +279,7 @@ void EETest::createUI() {
 
 	UIManager::instance()->init(); // UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
-	//mTheme = UITheme::LoadFromPath( eeNew( UIdefaultTheme, ( mThemeName, mThemeName ) ), MyPath + mThemeName + "/" );
+	//mTheme = UITheme::loadFromPath( eeNew( UIdefaultTheme, ( mThemeName, mThemeName ) ), MyPath + mThemeName + "/" );
 
 	TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
 
@@ -278,13 +290,7 @@ void EETest::createUI() {
 	UIThemeManager::instance()->setDefaultFont( TTF );
 	UIThemeManager::instance()->setDefaultTheme( mThemeName );
 
-	Int32 wsize = 15;
-	std::vector<String> str(wsize);
-
-	if ( wsize ) {
-		for ( Int32 i = 1; i <= wsize; i++ )
-			str[i-1] = "Test ListBox " + String::toStr(i) + " testing it right now!";
-	}
+	std::vector<String> str = getTestStringArr();
 
 	/**/
 	UIControl::CreateParams Params( UIManager::instance()->getMainControl(), Vector2i(0,0), Sizei( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
@@ -295,6 +301,7 @@ void EETest::createUI() {
 
 	UIWindow * tWin = mTheme->createWindow( NULL, Sizei( 530, 405 ), Vector2i( 320, 240 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DRAGABLE_CONTAINER , Sizei( 530, 405 ), 200 );
 	C = tWin->getContainer();
+	tWin->setVisible( false )->setEnabled( false );
 
 	tWin->setTitle( "Controls Test" );
 
@@ -586,64 +593,119 @@ void EETest::createUI() {
 
 	eePRINTL( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 	/**/
+
+	createNewUI();
+}
+
+void EETest::createNewUI() {
+	std::vector<String> str = getTestStringArr();
+
 	/**/
 	UIRadioButton * ctrl = eeNew( UIRadioButton, () );
-	ctrl->setPosition( 50, 100 )->setSize( 200, 32 )->setVisible( true )->setEnabled( true );
+	ctrl->setPosition( 50, 100 )->setSize( 200, 32 );
 	ctrl->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	ctrl->setBorderEnabled( true )->setColor( 0x66666666 );
 	ctrl->setText( "Happy RadioButon :)" );
 	ctrl->setFontColor( 0x000000FF );
 
 	UICheckBox * cbox = eeNew( UICheckBox, () );
-	cbox->setPosition( 50, 164 )->setSize( 200, 32 )->setVisible( true )->setEnabled( true );
+	cbox->setPosition( 50, 164 )->setSize( 200, 32 );
 	cbox->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	cbox->setBorderEnabled( true )->setColor( 0x66666666 );
 	cbox->setText( "Happy CheckBox :)" );
 	cbox->setFontColor( 0x000000FF );
 
 	UIGfx * gfx = eeNew( UIGfx, () );
-	gfx->setPosition( 50, 132 )->setSize( 16, 16 )->setVisible( true )->setEnabled( true );
+	gfx->setPosition( 50, 132 )->setSize( 16, 16 );
 	gfx->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	gfx->setSubTexture( mTheme->getIconByName( "ok" ) );
 
 	UISlider * slider = eeNew( UISlider, () );
-	slider->setOrientation( UI_HORIZONTAL )->setPosition( 50, 0 )->setSize( 100, 100 )->setVisible( true )->setEnabled( true );
+	slider->setOrientation( UI_HORIZONTAL )->setPosition( 50, 0 )->setSize( 100, 100 );
 	slider->setAllowHalfSliderOut( true );
 
 	UISlider * slider2 = eeNew( UISlider, () );
-	slider2->setOrientation( UI_VERTICAL )->setPosition( 100, 0 )->setSize( 100, 100 )->setVisible( true )->setEnabled( true );
+	slider2->setOrientation( UI_VERTICAL )->setPosition( 100, 0 )->setSize( 100, 100 );
 	slider2->setAllowHalfSliderOut( true );
 
 	UITextInput * textInput = eeNew( UITextInput, () );
-	textInput->setPosition( 50, 210 )->setSize( 200, 0 )->setVisible( true )->setEnabled( true );
+	textInput->setPosition( 50, 210 )->setSize( 200, 0 );
 
 	UIListBox * listBox = eeNew( UIListBox, () );
-	listBox->setPosition( 50, 320 )->setSize( 200, 160 )->setVisible( true )->setEnabled( true );
+	listBox->setPosition( 50, 320 )->setSize( 200, 160 );
 	listBox->addListBoxItems( str );
 
 	UIScrollBar * scrollBar = eeNew( UIScrollBar, () );
-	scrollBar->setOrientation( UI_HORIZONTAL )->setPosition( 200, 0 )->setSize( 100, 0 )->setVisible( true )->setEnabled( true );
+	scrollBar->setOrientation( UI_HORIZONTAL )->setPosition( 200, 0 )->setSize( 100, 0 );
 
 	UIScrollBar * scrollBar2 = eeNew( UIScrollBar, () );
-	scrollBar2->setOrientation( UI_VERTICAL )->setPosition( 300, 0 )->setSize( 0, 100 )->setVisible( true )->setEnabled( true );
+	scrollBar2->setOrientation( UI_VERTICAL )->setPosition( 300, 0 )->setSize( 0, 100 );
 
 	UIDropDownList * dropdownList = eeNew( UIDropDownList, () );
-	dropdownList->setPosition( 50, 240 )->setSize( 200, 0 )->setVisible( true )->setEnabled( true );
+	dropdownList->setPosition( 50, 240 )->setSize( 200, 0 );
 	dropdownList->getListBox()->addListBoxItem( "Test 1" );
 	dropdownList->getListBox()->addListBoxItem( "Test 2" );
 	dropdownList->getListBox()->addListBoxItem( "Test 3" );
 
 	UIComboBox * comboBox = eeNew( UIComboBox, () );
-	comboBox->setPosition( 50, 280 )->setSize( 200, 0 )->setVisible( true )->setEnabled( true );
+	comboBox->setPosition( 50, 280 )->setSize( 200, 0 );
 	comboBox->getListBox()->addListBoxItem( "Test 1234" );
 	comboBox->getListBox()->addListBoxItem( "Test 2345" );
 	comboBox->getListBox()->addListBoxItem( "Test 3567" );
 	comboBox->getListBox()->setSelected( 0 );
-	/**/
 
 	UITextEdit * textEdit = eeNew( UITextEdit, () );
-	textEdit->setPosition( 350, 4 )->setSize( 200, 200 )->setVisible( true )->setEnabled( true );
+	textEdit->setPosition( 350, 4 )->setSize( 200, 200 );
 	textEdit->setText( mBuda );
+
+	UISpinBox * spinBox = eeNew( UISpinBox, () );
+	spinBox->setPosition( 350, 210 )->setSize( 200, 0 );
+
+	UIGenericGrid * genGrid = eeNew( UIGenericGrid, () );
+	genGrid->setPosition( 350, 250 )->setSize( 200, 130 );
+	genGrid->setCollumnsCount( 3 );
+	genGrid->setRowHeight( 24 );
+	genGrid->setCollumnWidth( 0, 50 );
+	genGrid->setCollumnWidth( 1, 24 );
+	genGrid->setCollumnWidth( 2, 100 );
+
+	for ( Uint32 i = 0; i < 15; i++ ) {
+		UIGridCell * Cell			= eeNew( UIGridCell, () );
+		UITextBox * TxtBox			= eeNew( UITextBox, () );
+		UITextInput * TxtInput		= eeNew( UITextInput, () );
+		UIGfx * TxtGfx				= eeNew( UIGfx, () );
+
+		Cell->setParent( genGrid->getContainer() );
+
+		TxtGfx->setSubTexture( mTheme->getIconByName( "ok" ) );
+		TxtBox->setText( "Test " + String::toStr( i+1 ) );
+		Cell->setCell( 0, TxtBox );
+		Cell->setCell( 1, TxtGfx );
+		Cell->setCell( 2, TxtInput );
+		genGrid->add( Cell );
+	}
+	/**/
+
+	UIWindow * MenuCont = eeNew( UIWindow, () );
+	MenuCont->setPosition( 350, 400 )->setSize( 200, 125 );
+
+	UIWinMenu * WinMenu = eeNew( UIWinMenu, () );
+	WinMenu->setParent( MenuCont->getContainer() );
+
+	UIPopUpMenu * PopMenu = mTheme->createPopUpMenu();
+	PopMenu->add( "File" );
+	PopMenu->add( "Open" );
+	PopMenu->add( "Close" );
+	PopMenu->add( "Quit" );
+
+	UIPopUpMenu * PopMenu2 = mTheme->createPopUpMenu();
+	PopMenu2->add( "Bla" );
+	PopMenu2->add( "Bla 2" );
+	PopMenu2->add( "Bla 3" );
+	PopMenu2->add( "Bla 4" );
+
+	WinMenu->addMenuButton( "File", PopMenu );
+	WinMenu->addMenuButton( "Edit", PopMenu2 );
 }
 
 void EETest::createMapEditor() {

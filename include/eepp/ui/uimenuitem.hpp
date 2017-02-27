@@ -9,6 +9,8 @@ class EE_API UIMenuItem : public UIPushButton {
 	public:
 		UIMenuItem( UIMenuItem::CreateParams& Params );
 
+		UIMenuItem();
+
 		virtual ~UIMenuItem();
 
 		virtual Uint32 getType() const;

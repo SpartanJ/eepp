@@ -14,7 +14,6 @@ UIGenericGrid::UIGenericGrid( const UIGenericGrid::CreateParams& Params ) :
 	mHScrollMode( Params.HScrollMode ),
 	mCollumnsCount( Params.CollumnsCount ),
 	mRowHeight( Params.RowHeight ),
-	mTotalWidth( Params.GridWidth ),
 	mLastPos( eeINDEX_NOT_FOUND ),
 	mVisibleFirst(0),
 	mVisibleLast(0),
@@ -53,15 +52,64 @@ UIGenericGrid::UIGenericGrid( const UIGenericGrid::CreateParams& Params ) :
 	ScrollBarP.VerticalScrollBar	= false;
 	mHScrollBar						= eeNew( UIScrollBar, ( ScrollBarP ) );
 
-	if ( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) {
-		mHScrollBar->setVisible( true );
-		mHScrollBar->setEnabled( true );
-	}
+	mHScrollBar->setVisible( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode );
+	mHScrollBar->setEnabled( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode );
+	mVScrollBar->setVisible( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
+	mVScrollBar->setEnabled( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
 
-	if ( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode ) {
-		mVScrollBar->setVisible( true );
-		mVScrollBar->setEnabled( true );
-	}
+	mVScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIGenericGrid::onScrollValueChange ) );
+	mHScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIGenericGrid::onScrollValueChange ) );
+
+	applyDefaultTheme();
+}
+
+UIGenericGrid::UIGenericGrid() :
+	UIComplexControl(),
+	mPadding(),
+	mSmoothScroll( false ),
+	mContainer( NULL ),
+	mVScrollBar( NULL ),
+	mHScrollBar( NULL ),
+	mVScrollMode( UI_SCROLLBAR_AUTO ),
+	mHScrollMode( UI_SCROLLBAR_AUTO ),
+	mCollumnsCount( 0 ),
+	mRowHeight( 0 ),
+	mTotalWidth( 0 ),
+	mLastPos( eeINDEX_NOT_FOUND ),
+	mVisibleFirst(0),
+	mVisibleLast(0),
+	mHScrollInit(0),
+	mItemsNotVisible(0),
+	mSelected(-1),
+	mTouchDragAcceleration(0),
+	mTouchDragDeceleration( 0.01f ),
+	mCollWidthAssigned( false )
+{
+	setFlags( UI_AUTO_PADDING );
+
+	mContainer = eeNew( UIItemContainer<UIGenericGrid> , () );
+	mContainer->setVisible( true );
+	mContainer->setEnabled( true );
+	mContainer->setParent( this );
+	mContainer->setPosition( mPadding.Left, mPadding.Top );
+	mContainer->setSize( mSize.getWidth() - mPadding.Right - mPadding.Left, mSize.getHeight() - mPadding.Top - mPadding.Bottom );
+
+	mVScrollBar = eeNew( UIScrollBar, () );
+	mVScrollBar->setOrientation( UI_VERTICAL );
+	mVScrollBar->setParent( this );
+	mVScrollBar->setPosition( mSize.getWidth() - 16, 0 );
+	mVScrollBar->setSize( 16, mSize.getHeight() );
+
+	mHScrollBar = eeNew( UIScrollBar, () );
+	mHScrollBar->setOrientation( UI_HORIZONTAL );
+	mHScrollBar->setParent( this );
+	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
+	mHScrollBar->setPosition( 0, mSize.getHeight() - 16 );
+
+	mHScrollBar->setVisible( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode );
+	mHScrollBar->setEnabled( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode );
+	mVScrollBar->setVisible( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
+	mVScrollBar->setEnabled( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
 
 	mVScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIGenericGrid::onScrollValueChange ) );
 	mHScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIGenericGrid::onScrollValueChange ) );
@@ -81,7 +129,7 @@ bool UIGenericGrid::isType( const Uint32& type ) const {
 }
 
 void UIGenericGrid::setDefaultCollumnsWidth() {
-	if ( mCollWidthAssigned )
+	if ( mCollWidthAssigned || 0 == mCollumnsCount || 0 == mRowHeight )
 		return;
 
 	if ( mItemsNotVisible <= 0 ) {
@@ -100,7 +148,8 @@ void UIGenericGrid::setDefaultCollumnsWidth() {
 	Uint32 CollumnWidh = mContainer->getSize().getWidth() / mCollumnsCount;
 
 	for ( Uint32 i = 0; i < mCollumnsCount; i++ ) {
-		mCollumnsWidth[ i ] = CollumnWidh;
+		if ( 0 == mCollumnsWidth[ i ] )
+			mCollumnsWidth[ i ] = CollumnWidh;
 	}
 
 	updateSize();
@@ -341,6 +390,8 @@ void UIGenericGrid::updateSize() {
 }
 
 void UIGenericGrid::add( UIGridCell * Cell ) {
+	Cell->setParent( getContainer() );
+
 	mItems.push_back( Cell );
 
 	if ( mContainer != Cell->getParent() )
@@ -415,6 +466,15 @@ void UIGenericGrid::setCollumnWidth( const Uint32& CollumnIndex, const Uint32& C
 
 Uint32 UIGenericGrid::getCount() const {
 	return mItems.size();
+}
+
+void UIGenericGrid::setCollumnsCount(const Uint32 & collumnsCount) {
+	mCollumnsCount = collumnsCount;
+
+	mCollumnsWidth.resize( mCollumnsCount, 0 );
+	mCollumnsPos.resize( mCollumnsCount, 0 );
+
+	setDefaultCollumnsWidth();
 }
 
 const Uint32& UIGenericGrid::getCollumnsCount() const {
@@ -581,6 +641,28 @@ bool UIGenericGrid::isTouchDragging() const {
 
 void UIGenericGrid::setTouchDragging( const bool& dragging ) {
 	writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, true == dragging );
+}
+
+bool UIGenericGrid::getSmoothScroll() const {
+	return mSmoothScroll;
+}
+
+void UIGenericGrid::setSmoothScroll(bool smoothScroll) {
+	mSmoothScroll = smoothScroll;
+
+	if ( mSmoothScroll ) {
+		mContainer->setFlags( UI_CLIP_ENABLE );
+	} else {
+		mContainer->unsetFlags( UI_CLIP_ENABLE );
+	}
+}
+
+Float UIGenericGrid::getTouchDragDeceleration() const {
+	return mTouchDragDeceleration;
+}
+
+void UIGenericGrid::setTouchDragDeceleration(const Float & touchDragDeceleration) {
+	mTouchDragDeceleration = touchDragDeceleration;
 }
 
 void UIGenericGrid::update() {

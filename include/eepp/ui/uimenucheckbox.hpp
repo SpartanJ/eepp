@@ -9,6 +9,8 @@ class EE_API UIMenuCheckBox : public UIMenuItem {
 	public:
 		UIMenuCheckBox( UIMenuCheckBox::CreateParams& Params );
 
+		UIMenuCheckBox();
+
 		virtual ~UIMenuCheckBox();
 
 		virtual Uint32 getType() const;

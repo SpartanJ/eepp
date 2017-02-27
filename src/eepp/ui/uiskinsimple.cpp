@@ -49,6 +49,10 @@ SubTexture * UISkinSimple::getSubTexture( const Uint32& State ) const {
 	return mSubTexture[ State ];
 }
 
+bool UISkinSimple::stateExists( const Uint32 & state ) {
+	return NULL != mSubTexture[ state ];
+}
+
 void UISkinSimple::stateNormalToState( const Uint32& State ) {
 	if ( NULL == mSubTexture[ State ] )
 		mSubTexture[ State ] = mSubTexture[ UISkinState::StateNormal ];

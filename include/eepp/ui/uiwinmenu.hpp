@@ -51,6 +51,8 @@ class EE_API UIWinMenu : public UIComplexControl {
 
 		UIWinMenu( const UIWinMenu::CreateParams& Params );
 
+		UIWinMenu();
+
 		virtual ~UIWinMenu();
 
 		virtual Uint32 getType() const;
@@ -75,11 +77,22 @@ class EE_API UIWinMenu : public UIComplexControl {
 
 		const ColorA& getFontSelectedColor() const;
 
+		void setFont(Graphics::Font * font);
+
 		Graphics::Font * getFont() const;
 
 		UISelectButton * getButton( const String& ButtonText );
 
 		UIPopUpMenu * getPopUpMenu( const String& ButtonText );
+
+		ColorA getFontShadowColor() const;
+
+		void setFontShadowColor(const ColorA & fontShadowColor);
+
+		Uint32 getMarginBetweenButtons() const;
+
+		void setMarginBetweenButtons(const Uint32 & marginBetweenButtons);
+
 	protected:
 		typedef std::list< std::pair< UISelectButton *, UIPopUpMenu * > > WinMenuList;
 
@@ -98,6 +111,8 @@ class EE_API UIWinMenu : public UIComplexControl {
 		void refreshButtons();
 
 		virtual Uint32 onMessage( const UIMessage * Msg );
+
+		virtual void onParentChange();
 
 		virtual void onComplexControlFocusLoss();
 

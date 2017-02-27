@@ -492,6 +492,8 @@ class EE_API Window {
 		};
 
 		FrameData mFrameData;
+		std::list<Rectf> mScissorsClipped;
+		bool mPushScissorClip;
 
 		/** Set the flag state to be the current window */
 		virtual void setCurrent();

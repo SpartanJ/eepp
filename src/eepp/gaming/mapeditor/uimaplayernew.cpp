@@ -71,11 +71,11 @@ void UIMapLayerNew::onOKClick( const UIEvent * Event ) {
 			mNewLayerCb( this );
 	}
 
-	mUIWindow->CloseWindow();
+	mUIWindow->closeWindow();
 }
 
 void UIMapLayerNew::onCancelClick( const UIEvent * Event ) {
-	mUIWindow->CloseWindow();
+	mUIWindow->closeWindow();
 }
 
 void UIMapLayerNew::onWindowClose( const UIEvent * Event ) {

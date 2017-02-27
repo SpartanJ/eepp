@@ -900,7 +900,7 @@ void MapEditor::FileMenuClick( const UIEvent * Event ) {
 		if ( mUIWindow == UIManager::instance()->getMainControl() ) {
 			UIManager::instance()->getWindow()->close();
 		} else {
-			mUIWindow->CloseWindow();
+			mUIWindow->closeWindow();
 		}
 	}
 }

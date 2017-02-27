@@ -22,10 +22,9 @@ TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( const UIComplexContr
 	mGfx->setEnabled( true );
 	mGfx->unsetFlags( UI_FIT_TO_CONTROL );
 
-	UIDragable::CreateParams DragParams;
-	DragParams.setParent( this );
-	DragParams.setSize( 500000, 500000 );
-	mDrag = eeNew( UIDragable, ( DragParams ) );
+	mDrag = eeNew( UIDragable, () );
+	mDrag->setParent( this );
+	mDrag->setSize( 64000, 64000 );
 	mDrag->setEnabled( true );
 	mDrag->setVisible( true );
 	mDrag->setDragEnabled( true );

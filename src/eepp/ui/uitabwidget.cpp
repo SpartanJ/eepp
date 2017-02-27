@@ -269,7 +269,7 @@ void UITabWidget::remove( const Uint32& Index ) {
 	eeASSERT( Index < mTabs.size() );
 
 	if ( mTabs[ Index ] == mTabSelected ) {
-		mTabSelected->ctrlOwned()->setVisible( false );
+		mTabSelected->getControlOwned()->setVisible( false );
 	}
 
 	eeSAFE_DELETE( mTabs[ Index ] );
@@ -334,7 +334,7 @@ void UITabWidget::setTabSelected( UITab * Tab ) {
 
 	if ( NULL != mTabSelected ) {
 		mTabSelected->unselect();
-		mTabSelected->ctrlOwned()->setVisible( false );
+		mTabSelected->getControlOwned()->setVisible( false );
 	}
 
 	if ( NULL != Tab ) {
@@ -349,9 +349,9 @@ void UITabWidget::setTabSelected( UITab * Tab ) {
 		mTabSelected		= Tab;
 		mTabSelectedIndex	= TabIndex;
 
-		mTabSelected->ctrlOwned()->setVisible( true );
-		mTabSelected->ctrlOwned()->setSize( mCtrlContainer->getSize() );
-		mTabSelected->ctrlOwned()->setPosition( 0, 0 );
+		mTabSelected->getControlOwned()->setVisible( true );
+		mTabSelected->getControlOwned()->setSize( mCtrlContainer->getSize() );
+		mTabSelected->getControlOwned()->setPosition( 0, 0 );
 
 		orderTabs();
 
@@ -385,7 +385,7 @@ void UITabWidget::onSizeChange() {
 	posTabs();
 
 	if ( NULL != mTabSelected ) {
-		mTabSelected->ctrlOwned()->setSize( mCtrlContainer->getSize() );
+		mTabSelected->getControlOwned()->setSize( mCtrlContainer->getSize() );
 	}
 
 	UIControl::onSizeChange();

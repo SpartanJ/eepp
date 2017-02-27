@@ -27,6 +27,35 @@ UIWinMenu::UIWinMenu( const UIWinMenu::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
+UIWinMenu::UIWinMenu() :
+	UIComplexControl(),
+	mCurrentMenu( NULL ),
+	mMarginBetweenButtons(0),
+	mButtonMargin(12),
+	mFirstButtonMargin(1),
+	mMenuHeight(0)
+{
+	if ( !(mFlags & UI_ANCHOR_RIGHT) )
+		mFlags |= UI_ANCHOR_RIGHT;
+
+	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
+
+	if ( NULL != Theme ) {
+		mFont				= Theme->getFont();
+		mFontColor			= Theme->getFontColor();
+		mFontShadowColor	= Theme->getFontShadowColor();
+		mFontOverColor		= Theme->getFontOverColor();
+		mFontSelectedColor	= Theme->getFontSelectedColor();
+	}
+
+	if ( NULL == mFont )
+		mFont = UIThemeManager::instance()->getDefaultFont();
+
+	onParentChange();
+
+	applyDefaultTheme();
+}
+
 UIWinMenu::~UIWinMenu() {
 	destroyMenues();
 }
@@ -120,6 +149,29 @@ UIPopUpMenu * UIWinMenu::getPopUpMenu( const String& ButtonText ) {
 	return NULL;
 }
 
+ColorA UIWinMenu::getFontShadowColor() const {
+	return mFontShadowColor;
+}
+
+void UIWinMenu::setFontShadowColor(const ColorA & fontShadowColor) {
+	mFontShadowColor = fontShadowColor;
+	refreshButtons();
+}
+
+Uint32 UIWinMenu::getMarginBetweenButtons() const {
+	return mMarginBetweenButtons;
+}
+
+void UIWinMenu::setMarginBetweenButtons(const Uint32 & marginBetweenButtons) {
+	mMarginBetweenButtons = marginBetweenButtons;
+	refreshButtons();
+}
+
+void UIWinMenu::setFont(Graphics::Font * font) {
+	mFont = font;
+	refreshButtons();
+}
+
 void UIWinMenu::refreshButtons() {
 	Uint32 xpos = mFirstButtonMargin;
 	Int32 h = 0, th = 0, ycenter = 0;
@@ -156,6 +208,10 @@ void UIWinMenu::refreshButtons() {
 		UISelectButton * pbut	= it->first;
 		UITextBox * tbox		= pbut->getTextBox();
 
+		pbut->setFont( mFont );
+		pbut->setFontColor( mFontColor );
+		pbut->setFontOverColor( mFontOverColor );
+		pbut->setFontShadowColor( mFontShadowColor );
 		pbut->setSize( PixelDensity::pxToDpI( tbox->getTextWidth() ) + mButtonMargin, getSize().getHeight() );
 		pbut->setPosition( xpos, ycenter );
 
@@ -219,6 +275,12 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 	}
 
 	return 0;
+}
+
+void UIWinMenu::onParentChange() {
+	setSize( getParent()->getSize().getWidth(), mMenuHeight );
+
+	updateAnchorsDistances();
 }
 
 void UIWinMenu::unselectButtons() {

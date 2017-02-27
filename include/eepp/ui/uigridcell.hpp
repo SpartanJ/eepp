@@ -12,6 +12,8 @@ class EE_API UIGridCell : public UIComplexControl {
 	public:
 		UIGridCell( UIGridCell::CreateParams& Params );
 
+		UIGridCell();
+
 		virtual ~UIGridCell();
 
 		virtual void setTheme( UITheme * Theme );
@@ -44,6 +46,8 @@ class EE_API UIGridCell : public UIComplexControl {
 		virtual Uint32 onMouseExit( const Vector2i& position, const Uint32 flags );
 
 		virtual void onStateChange();
+
+		virtual void onParentChange();
 };
 
 }}

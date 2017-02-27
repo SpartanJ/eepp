@@ -119,9 +119,9 @@ Uint32 UIMessageBox::onMessage( const UIMessage * Msg ) {
 				if ( Msg->getSender() == mButtonOK && mButtonOK->getPolygon().pointInside( mouse ) ) {
 					sendCommonEvent( UIEvent::EventMsgBoxConfirmClick );
 
-					CloseWindow();
+					closeWindow();
 				} else if ( Msg->getSender() == mButtonCancel ) {
-					CloseWindow();
+					closeWindow();
 				}
 			}
 
@@ -164,7 +164,7 @@ void UIMessageBox::autoSize() {
 
 Uint32 UIMessageBox::onKeyUp( const UIEventKey & Event ) {
 	if ( mCloseWithKey && Event.getKeyCode() == mCloseWithKey ) {
-		CloseWindow();
+		closeWindow();
 	}
 
 	return 1;

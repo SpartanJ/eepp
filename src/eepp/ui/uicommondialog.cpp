@@ -265,7 +265,7 @@ Uint32 UICommonDialog::onMessage( const UIMessage * Msg ) {
 				} else if ( Msg->getSender() == mButtonCancel ) {
 					disableButtons();
 
-					CloseWindow();
+					closeWindow();
 				} else if ( Msg->getSender() == mButtonUp ) {
 					mCurPath = FileSystem::removeLastFolderFromPath( mCurPath );
 					mPath->setText( mCurPath );
@@ -325,7 +325,7 @@ void UICommonDialog::save() {
 
 	disableButtons();
 
-	CloseWindow();
+	closeWindow();
 }
 
 void UICommonDialog::open() {
@@ -342,7 +342,7 @@ void UICommonDialog::open() {
 
 		disableButtons();
 
-		CloseWindow();
+		closeWindow();
 	}
 }
 

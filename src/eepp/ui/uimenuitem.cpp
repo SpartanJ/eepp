@@ -9,6 +9,12 @@ UIMenuItem::UIMenuItem( UIPushButton::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
+UIMenuItem::UIMenuItem() :
+	UIPushButton()
+{
+	applyDefaultTheme();
+}
+
 UIMenuItem::~UIMenuItem() {
 }
 

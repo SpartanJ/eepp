@@ -27,8 +27,8 @@ UIControl::UIControl( const CreateParams& Params ) :
 	mControlFlags( 0 ),
 	mBlend( Params.Blend ),
 	mNumCallBacks( 0 ),
-	mVisible( false ),
-	mEnabled( false )
+	mVisible( true ),
+	mEnabled( true )
 {
 	if ( NULL == mParentCtrl && NULL != UIManager::instance()->getMainControl() ) {
 		mParentCtrl = UIManager::instance()->getMainControl();
@@ -48,8 +48,10 @@ UIControl::UIControl( const CreateParams& Params ) :
 }
 
 UIControl::UIControl() :
-	mPos(),
-	mSize(),
+	mPos( 0, 0 ),
+	mRealPos( 0, 0 ),
+	mSize( 0, 0 ),
+	mRealSize( 0, 0 ),
 	mFlags( UI_CONTROL_DEFAULT_FLAGS ),
 	mData( 0 ),
 	mParentCtrl( NULL ),
@@ -63,8 +65,8 @@ UIControl::UIControl() :
 	mControlFlags( 0 ),
 	mBlend( ALPHA_NORMAL ),
 	mNumCallBacks( 0 ),
-	mVisible( false ),
-	mEnabled( false )
+	mVisible( true ),
+	mEnabled( true )
 {
 	if ( NULL == mParentCtrl && NULL != UIManager::instance()->getMainControl() ) {
 		mParentCtrl = UIManager::instance()->getMainControl();
@@ -293,6 +295,10 @@ UIControl * UIControl::setParent( UIControl * parent ) {
 	if ( NULL != mParentCtrl )
 		mParentCtrl->childAdd( this );
 
+	onPositionChange();
+
+	updateQuad();
+
 	onParentChange();
 
 	return this;
@@ -317,14 +323,28 @@ void UIControl::centerHorizontal() {
 	UIControl * Ctrl = getParent();
 
 	if ( NULL != Ctrl )
-		setPosition( Vector2i( ( Ctrl->getSize().getWidth() / 2 ) - ( mSize.getWidth() / 2 ), mPos.y ) );
+		setPosition( ( Ctrl->getSize().getWidth() - mSize.getWidth() ) / 2, mPos.y );
 }
 
 void UIControl::centerVertical(){
 	UIControl * Ctrl = getParent();
 
 	if ( NULL != Ctrl )
-		setPosition( Vector2i( mPos.x, ( Ctrl->getSize().getHeight() / 2 ) - ( mSize.getHeight() / 2 ) ) );
+		setPosition( mPos.x, ( Ctrl->getSize().getHeight() - mSize.getHeight() ) / 2 );
+}
+
+void UIControl::centerVerticalUp(){
+	UIControl * Ctrl = getParent();
+
+	if ( NULL != Ctrl )
+		setPosition( mPos.x, ( Ctrl->getSize().getHeight() - mSize.getHeight() ) / 2 - mSize.getHeight() / 2 );
+}
+
+void UIControl::centerVerticalDown(){
+	UIControl * Ctrl = getParent();
+
+	if ( NULL != Ctrl )
+		setPosition( mPos.x, ( Ctrl->getSize().getHeight() - mSize.getHeight() ) / 2 + mSize.getHeight() / 2 );
 }
 
 void UIControl::center() {
@@ -597,20 +617,23 @@ const Uint32& UIControl::getFlags() const {
 	return mFlags;
 }
 
-void UIControl::setFlags( const Uint32& flags ) {
-	mFlags |= flags;
-
-
-	if ( NULL == mBackground && ( mFlags & UI_FILL_BACKGROUND ) )
+UIControl * UIControl::setFlags( const Uint32& flags ) {
+	if ( NULL == mBackground && ( flags & UI_FILL_BACKGROUND ) )
 		mBackground = eeNew( UIBackground, () );
 
-	if ( NULL == mBorder && ( mFlags & UI_BORDER ) )
+	if ( NULL == mBorder && ( flags & UI_BORDER ) )
 		mBorder = eeNew( UIBorder, () );
+
+	mFlags |= flags;
+
+	return this;
 }
 
-void UIControl::unsetFlags(const Uint32 & flags) {
+UIControl * UIControl::unsetFlags(const Uint32 & flags) {
 	if ( mFlags & flags )
 		mFlags &= ~flags;
+
+	return this;
 }
 
 void UIControl::setBlendMode( const EE_BLEND_MODE& blend ) {

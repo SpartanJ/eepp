@@ -18,6 +18,8 @@ class EE_API UISkinSimple : public UISkin {
 
 		SubTexture * getSubTexture( const Uint32& State ) const;
 
+		bool stateExists( const Uint32& state );
+
 		UISkinSimple * clone( const std::string& NewName, const bool& CopyColorsState = true );
 
 		virtual UISkin * clone();

@@ -250,11 +250,11 @@ void UIMapNew::onOKClick( const UIEvent * Event ) {
 			mNewMapCb();
 	}
 
-	mUIWindow->CloseWindow();
+	mUIWindow->closeWindow();
 }
 
 void UIMapNew::onCancelClick( const UIEvent * Event ) {
-	mUIWindow->CloseWindow();
+	mUIWindow->closeWindow();
 }
 
 void UIMapNew::onWindowClose( const UIEvent * Event ) {

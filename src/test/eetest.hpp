@@ -299,6 +299,8 @@ class EETest : private Thread {
 		void onShowMenu( const UIEvent * Event );
 
 		void onWindowResize( EE::Window::Window * win );
+
+		void createNewUI();
 };
 
 }

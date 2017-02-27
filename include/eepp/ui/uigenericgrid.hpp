@@ -19,7 +19,6 @@ class EE_API UIGenericGrid : public UIComplexControl {
 					HScrollMode( UI_SCROLLBAR_AUTO ),
 					CollumnsCount(1),
 					RowHeight( 24 ),
-					GridWidth( 0 ),
 					TouchDragDeceleration( 0.01f )
 				{
 				}
@@ -31,12 +30,13 @@ class EE_API UIGenericGrid : public UIComplexControl {
 				UI_SCROLLBAR_MODE	HScrollMode;
 				Uint32				CollumnsCount;
 				Uint32				RowHeight;
-				Uint32				GridWidth;
 				Recti				PaddingContainer;
 				Float				TouchDragDeceleration;
 		};
 
 		UIGenericGrid( const UIGenericGrid::CreateParams& Params );
+
+		UIGenericGrid();
 
 		~UIGenericGrid();
 
@@ -59,6 +59,8 @@ class EE_API UIGenericGrid : public UIComplexControl {
 		const Uint32& getCollumnWidth( const Uint32& CollumnIndex ) const;
 
 		Uint32 getCount() const;
+
+		void setCollumnsCount(const Uint32 & collumnsCount);
 
 		const Uint32& getCollumnsCount() const;
 
@@ -101,6 +103,14 @@ class EE_API UIGenericGrid : public UIComplexControl {
 		bool isTouchDragging() const;
 
 		void setTouchDragging( const bool& dragging );
+
+		bool getSmoothScroll() const;
+
+		void setSmoothScroll(bool smoothScroll);
+
+		Float getTouchDragDeceleration() const;
+
+		void setTouchDragDeceleration(const Float & touchDragDeceleration);
 	protected:
 		friend class UIItemContainer<UIGenericGrid>;
 		friend class UIGridCell;

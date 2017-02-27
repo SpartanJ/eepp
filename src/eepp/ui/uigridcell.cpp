@@ -12,6 +12,12 @@ UIGridCell::UIGridCell( UIGridCell::CreateParams& Params ) :
 	applyDefaultTheme();
 }
 
+UIGridCell::UIGridCell() :
+	UIComplexControl()
+{
+	applyDefaultTheme();
+}
+
 UIGridCell::~UIGridCell() {
 	if ( UIManager::instance()->getFocusControl() == this )
 		mParentCtrl->setFocus();
@@ -167,6 +173,11 @@ void UIGridCell::onStateChange() {
 	if ( isSelected() && mSkinState->getState() != UISkinState::StateSelected ) {
 		setSkinState( UISkinState::StateSelected );
 	}
+}
+
+void UIGridCell::onParentChange() {
+	if ( NULL != getParent() && NULL != gridParent() )
+		mCells.resize( gridParent()->getCollumnsCount(), NULL );
 }
 
 }}

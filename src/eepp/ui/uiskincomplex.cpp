@@ -177,6 +177,10 @@ SubTexture * UISkinComplex::getSubTexture( const Uint32& State ) const {
 	return mSubTexture[ State ][ Center ];
 }
 
+bool UISkinComplex::stateExists( const Uint32 & state ) {
+	return NULL != mSubTexture[ state ];
+}
+
 SubTexture * UISkinComplex::getSubTextureSide( const Uint32& State, const Uint32& Side ) {
 	eeASSERT ( State < UISkinState::StateCount && Side < UISkinComplex::SideCount );
 

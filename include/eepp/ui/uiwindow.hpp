@@ -40,6 +40,8 @@ class EE_API UIWindow : public UIComplexControl {
 
 		UIWindow( const UIWindow::CreateParams& Params );
 
+		UIWindow();
+
 		virtual ~UIWindow();
 
 		virtual Uint32 getType() const;
@@ -68,11 +70,11 @@ class EE_API UIWindow : public UIComplexControl {
 
 		virtual bool show();
 
-		virtual bool Hide();
+		virtual bool hide();
 
 		virtual void update();
 
-		virtual void CloseWindow();
+		virtual void closeWindow();
 
 		virtual void close();
 
@@ -97,6 +99,10 @@ class EE_API UIWindow : public UIComplexControl {
 		void maximize();
 
 		bool isMaximizable();
+
+		Uint32 getWinFlags() const;
+
+		UIWindow * setWinFlags(const Uint32 & winFlags);
 	protected:
 		class KeyboardShortcut {
 			public:
@@ -216,6 +222,8 @@ class EE_API UIWindow : public UIComplexControl {
 		void resizeCursor();
 
 		void applyMinWinSize();
+
+		void updateWinFlags();
 };
 
 }}

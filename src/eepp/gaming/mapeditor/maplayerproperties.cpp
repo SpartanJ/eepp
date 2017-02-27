@@ -127,11 +127,11 @@ void MapLayerProperties::onOKClick( const UIEvent * Event ) {
 		mRefreshCb();
 	}
 
-	mUIWindow->CloseWindow();
+	mUIWindow->closeWindow();
 }
 
 void MapLayerProperties::onCancelClick( const UIEvent * Event ) {
-	mUIWindow->CloseWindow();
+	mUIWindow->closeWindow();
 }
 
 void MapLayerProperties::onWindowClose( const UIEvent * Event ) {

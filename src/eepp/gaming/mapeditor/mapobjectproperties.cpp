@@ -128,11 +128,11 @@ void MapObjectProperties::onOKClick( const UIEvent * Event ) {
 	mObj->setName( mUIInput->getText().toUtf8() );
 	mObj->setTypeName( mUIInput2->getText().toUtf8() );
 
-	mUIWindow->CloseWindow();
+	mUIWindow->closeWindow();
 }
 
 void MapObjectProperties::onCancelClick( const UIEvent * Event ) {
-	mUIWindow->CloseWindow();
+	mUIWindow->closeWindow();
 }
 
 void MapObjectProperties::onWindowClose( const UIEvent * Event ) {
