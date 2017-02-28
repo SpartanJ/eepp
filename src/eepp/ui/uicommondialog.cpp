@@ -40,7 +40,6 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	}
 
 	UITextBox * lookIn = UITextBox::New();
-	lookIn->setFlags( UI_AUTO_SIZE );
 	lookIn->setParent( getContainer() );
 	lookIn->setPosition( 6, 13 );
 	lookIn->setVisible( true );

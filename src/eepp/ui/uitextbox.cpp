@@ -111,6 +111,10 @@ void UITextBox::setText( const String& text ) {
 		mTextCache->setText( text );
 	}
 
+	if ( mSize == Sizei::Zero ) {
+		setFlags( UI_AUTO_SIZE );
+	}
+
 	autoShrink();
 	autoSize();
 	autoAlign();
@@ -168,7 +172,7 @@ void UITextBox::shrinkText( const Uint32& MaxWidth ) {
 }
 
 void UITextBox::autoSize() {
-	if ( mFlags & UI_AUTO_SIZE ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) ) {
 		setPixelsSize( Sizei( (int)mTextCache->getTextWidth(), (int)mTextCache->getTextHeight() ) );
 	}
 }
