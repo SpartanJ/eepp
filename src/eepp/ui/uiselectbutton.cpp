@@ -3,6 +3,10 @@
 
 namespace EE { namespace UI {
 
+UISelectButton *UISelectButton::New() {
+	return eeNew( UISelectButton, () );
+}
+
 UISelectButton::UISelectButton( const UIPushButton::CreateParams& Params ) :
 	UIPushButton( Params )
 {

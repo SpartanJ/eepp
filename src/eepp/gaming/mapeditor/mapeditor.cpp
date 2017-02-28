@@ -84,7 +84,8 @@ void MapEditor::CreateME() {
 }
 
 void MapEditor::CreateWinMenu() {
-	UIWinMenu * WinMenu = mTheme->createWinMenu( mUIContainer );
+	UIWinMenu * WinMenu = UIWinMenu::New();
+	WinMenu->setParent( mUIContainer );
 
 	mTileBox = mTheme->createTextBox( "", mUIContainer, Sizei(), Vector2i(), UI_HALIGN_RIGHT | UI_VALIGN_CENTER | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
 	mTileBox->setSize( 100, WinMenu->getSize().getHeight() );

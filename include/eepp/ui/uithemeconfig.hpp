@@ -2,6 +2,7 @@
 #define EE_UICUITHEMECONFIG_HPP
 
 #include <eepp/ui/base.hpp>
+#include <eepp/ui/uihelper.hpp>
 
 namespace EE { namespace Graphics {
 class Font;
@@ -95,17 +96,17 @@ class TabWidgetStyleConfig : public FontStyleConfig {
 			FontStyleConfig( fontStyleConfig )
 		{}
 
-		Int32		tabSeparation;
-		Uint32		maxTextLength;
-		Uint32		tabWidgetHeight;
-		Uint32		tabTextAlign;
-		Uint32		minTabWidth;
-		Uint32		maxTabWidth;
-		bool		tabsClosable;
-		bool		specialBorderTabs; //! Indicates if the periferical tabs ( the left and right border tab ) are different from the central tabs.
-		bool		drawLineBelowTabs;
+		Int32		tabSeparation = 0;
+		Uint32		maxTextLength = 30;
+		Uint32		tabWidgetHeight = 0;
+		Uint32		tabTextAlign = ( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
+		Uint32		minTabWidth = 32;
+		Uint32		maxTabWidth = 300;
+		bool		tabsClosable = false;
+		bool		specialBorderTabs = false; //! Indicates if the periferical tabs ( the left and right border tab ) are different from the central tabs.
+		bool		drawLineBelowTabs = false;
 		ColorA		lineBelowTabsColor;
-		Int32		lineBelowTabsYOffset;
+		Int32		lineBelowTabsYOffset = 0;
 };
 
 class ProgressBarStyleConfig : public FontStyleConfig {
@@ -120,6 +121,20 @@ class ProgressBarStyleConfig : public FontStyleConfig {
 		bool verticalExpand = true;
 		Vector2f movementSpeed = Vector2f( 64.f, 0 );
 		Rectf fillerPadding;
+};
+
+class WinMenuStyleConfig : public FontStyleConfig {
+	public:
+		WinMenuStyleConfig() {}
+
+		WinMenuStyleConfig( FontStyleConfig fontStyleConfig ) :
+			FontStyleConfig( fontStyleConfig )
+		{}
+
+		Uint32				marginBetweenButtons = 0;
+		Uint32				buttonMargin = 4;
+		Uint32				menuHeight = 0;
+		Uint32				firstButtonMargin = 1;
 };
 
 }}

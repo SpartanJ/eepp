@@ -10,26 +10,7 @@ namespace EE { namespace UI {
 
 class EE_API UIWinMenu : public UIComplexControl {
 	public:
-		class CreateParams : public UIComplexControl::CreateParams {
-			public:
-				inline CreateParams() :
-					UIComplexControl::CreateParams(),
-					marginBetweenButtons(0),
-					buttonMargin(4),
-					menuHeight(0),
-					firstButtonMargin(1)
-				{
-					fontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
-				}
-
-				FontStyleConfig		fontStyleConfig;
-				Uint32				marginBetweenButtons;
-				Uint32				buttonMargin;
-				Uint32				menuHeight;
-				Uint32				firstButtonMargin;
-		};
-
-		UIWinMenu( const UIWinMenu::CreateParams& Params );
+		static UIWinMenu * New();
 
 		UIWinMenu();
 
@@ -56,15 +37,16 @@ class EE_API UIWinMenu : public UIComplexControl {
 		FontStyleConfig getFontStyleConfig() const;
 
 		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
+
+		WinMenuStyleConfig getStyleConfig() const;
+
+		void setStyleConfig(const WinMenuStyleConfig & styleConfig);
+
 	protected:
 		typedef std::list< std::pair< UISelectButton *, UIPopUpMenu * > > WinMenuList;
 
-		FontStyleConfig mFontStyleConfig;
+		WinMenuStyleConfig mStyleConfig;
 		UIPopUpMenu *	mCurrentMenu;
-		Uint32			mMarginBetweenButtons;
-		Uint32			mButtonMargin;
-		Uint32			mFirstButtonMargin;
-		Uint32			mMenuHeight;
 		WinMenuList		mButtons;
 
 		void refreshButtons();

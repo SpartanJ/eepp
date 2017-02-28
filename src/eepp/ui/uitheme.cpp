@@ -640,23 +640,6 @@ UISelectButton * UITheme::createSelectButton( UIControl * Parent, const Sizei& S
 	return Ctrl;
 }
 
-UIWinMenu * UITheme::createWinMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MarginBetweenButtons, Uint32 ButtonMargin, Uint32 MenuHeight, Uint32 FirstButtonMargin ) {
-	UIWinMenu::CreateParams WinMenuParams;
-	WinMenuParams.setParent( Parent );
-	WinMenuParams.setPosition( Pos );
-	WinMenuParams.setSize( Size );
-	WinMenuParams.Flags = Flags;
-	WinMenuParams.marginBetweenButtons = MarginBetweenButtons;
-	WinMenuParams.buttonMargin = ButtonMargin;
-	WinMenuParams.menuHeight = MenuHeight;
-	WinMenuParams.firstButtonMargin = FirstButtonMargin;
-
-	UIWinMenu * Ctrl = eeNew( UIWinMenu, ( WinMenuParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
 UIWindow * UITheme::createWindow( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
 	UIWindow::CreateParams WinParams;
 	WinParams.setParent( Parent );
@@ -743,23 +726,15 @@ void UITheme::setFontStyleConfig(const FontStyleConfig & fontConfig) {
 }
 
 TabWidgetStyleConfig UITheme::getTabWidgetStyleConfig() {
-	TabWidgetStyleConfig tabWidgetStyleConfig( getFontStyleConfig() );
-	tabWidgetStyleConfig.tabSeparation = 0;
-	tabWidgetStyleConfig.maxTextLength = 30;
-	tabWidgetStyleConfig.tabWidgetHeight =  0;
-	tabWidgetStyleConfig.tabTextAlign = ( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
-	tabWidgetStyleConfig.minTabWidth = 32;
-	tabWidgetStyleConfig.maxTabWidth = 210;
-	tabWidgetStyleConfig.tabsClosable = false;
-	tabWidgetStyleConfig.specialBorderTabs = false;
-	tabWidgetStyleConfig.drawLineBelowTabs = false;
-	tabWidgetStyleConfig.lineBelowTabsYOffset = 0;
-	return tabWidgetStyleConfig;
+	return TabWidgetStyleConfig( getFontStyleConfig() );
 }
 
 ProgressBarStyleConfig UITheme::getProgressBarStyleConfig() {
-	ProgressBarStyleConfig progressBarStyleConfig( getFontStyleConfig() );
-	return progressBarStyleConfig;
+	return ProgressBarStyleConfig( getFontStyleConfig() );;
+}
+
+WinMenuStyleConfig UITheme::getWinMenuStyleConfig() {
+	return WinMenuStyleConfig( getFontStyleConfig() );
 }
 
 FontStyleConfig UITheme::getFontStyleConfig() const {

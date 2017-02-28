@@ -43,6 +43,12 @@ ProgressBarStyleConfig UIDefaultTheme::getProgressBarStyleConfig() {
 	return progressBarStyleConfig;
 }
 
+WinMenuStyleConfig UIDefaultTheme::getWinMenuStyleConfig() {
+	WinMenuStyleConfig winMenuStyleConfig = UITheme::getWinMenuStyleConfig();
+	winMenuStyleConfig.buttonMargin = 12;
+	return winMenuStyleConfig;
+}
+
 UIPopUpMenu * UIDefaultTheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	UIPopUpMenu::CreateParams MenuParams;
 	MenuParams.setParent( Parent );
@@ -62,27 +68,6 @@ UIPopUpMenu * UIDefaultTheme::createPopUpMenu( UIControl * Parent, const Sizei& 
 	}
 
 	return eeNew( UIPopUpMenu, ( MenuParams ) );
-}
-
-UIWinMenu * UIDefaultTheme::createWinMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MarginBetweenButtons, Uint32 ButtonMargin, Uint32 MenuHeight, Uint32 FirstButtonMargin ) {
-	UIWinMenu::CreateParams WinMenuParams;
-	WinMenuParams.setParent( Parent );
-	WinMenuParams.setPosition( Pos );
-	WinMenuParams.setSize( Size );
-	WinMenuParams.Flags = Flags;
-	WinMenuParams.marginBetweenButtons = MarginBetweenButtons;
-	WinMenuParams.buttonMargin = ButtonMargin;
-	WinMenuParams.menuHeight = MenuHeight;
-	WinMenuParams.firstButtonMargin = FirstButtonMargin;
-
-	if ( getUseDefaultThemeValues() ) {
-		WinMenuParams.buttonMargin = 12;
-	}
-
-	UIWinMenu * Ctrl = eeNew( UIWinMenu, ( WinMenuParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
 }
 
 UIWindow * UIDefaultTheme::createWindow( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha ) {

@@ -760,7 +760,8 @@ void EETest::createCommonDialog() {
 }
 
 void EETest::createWinMenu() {
-	UIWinMenu * WinMenu = mTheme->createWinMenu( mUIWindow->getContainer() );
+	UIWinMenu * WinMenu = UIWinMenu::New();
+	WinMenu->setParent( mUIWindow->getContainer() );
 
 	UIPopUpMenu * PopMenu = mTheme->createPopUpMenu();
 	PopMenu->add( "File" );

@@ -220,7 +220,8 @@ void TextureAtlasEditor::createTGEditor() {
 }
 
 void TextureAtlasEditor::createWinMenu() {
-	mWinMenu = mTheme->createWinMenu( mUIContainer );
+	mWinMenu = UIWinMenu::New();
+	mWinMenu->setParent( mUIContainer );
 
 	UIPopUpMenu * PU = mTheme->createPopUpMenu();
 	PU->add( "New...", mTheme->getIconByName( "document-new" ) );
