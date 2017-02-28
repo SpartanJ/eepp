@@ -724,15 +724,8 @@ void UIWindow::internalSize( const Int32& w, const Int32& h ) {
 void UIWindow::internalSize( Sizei Size ) {
 	Sizei realMin = PixelDensity::dpToPxI( mMinWindowSize );
 
-	if ( Size.x < realMin.x || Size.y < realMin.y ) {
-		if ( Size.x < realMin.x && Size.y < realMin.y ) {
-			Size = realMin;
-		} else if ( Size.x < realMin.x ) {
-			Size.x = realMin.x;
-		} else {
-			Size.y = realMin.y;
-		}
-	}
+	Size.x = eemax( realMin.x, Size.x );
+	Size.y = eemax( realMin.y, Size.y );
 
 	if ( Size != mRealSize ) {
 		setInternalPixelsSize( Size );

@@ -6,6 +6,10 @@
 
 namespace EE { namespace UI {
 
+UIListBox * UIListBox::New() {
+	return eeNew( UIListBox, () );
+}
+
 UIListBox::UIListBox( UIListBox::CreateParams& Params ) :
 	UIComplexControl( Params ),
 	mFontStyleConfig( Params.fontStyleConfig ),
@@ -1017,6 +1021,17 @@ Float UIListBox::getTouchDragDeceleration() const {
 
 void UIListBox::setTouchDragDeceleration(const Float & touchDragDeceleration) {
 	mTouchDragDeceleration = touchDragDeceleration;
+}
+
+FontStyleConfig UIListBox::getFontStyleConfig() const {
+	return mFontStyleConfig;
+}
+
+void UIListBox::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
+	mFontStyleConfig = fontStyleConfig;
+
+	setFont( mFontStyleConfig.font );
+	setFontColor( mFontStyleConfig.fontColor );
 }
 
 void UIListBox::update() {

@@ -28,7 +28,7 @@ bool UIComboBox::isType( const Uint32& type ) const {
 
 void UIComboBox::setTheme( UITheme * Theme ) {
 	if ( NULL == mDropDownList ) {
-		mDropDownList = eeNew( UIDropDownList, () );
+		mDropDownList = UIDropDownList::New();
 		mDropDownList->setParent( this );
 		mDropDownList->setVisible( true );
 		mDropDownList->setEnabled( true );

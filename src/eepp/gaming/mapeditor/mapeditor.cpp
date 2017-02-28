@@ -251,7 +251,9 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 
 	Txt = mTheme->createTextBox( "Add Game Object as...", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 4 ), TxtFlags );
 
-	mGOTypeList = mTheme->createDropDownList( mSubTextureCont, Sizei( Width - 26, 21 ), Vector2i( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
+	mGOTypeList = UIDropDownList::New();
+	mGOTypeList->setParent( mSubTextureCont )->setSize( Width - 26, 0 )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->setFlags( UI_DRAW_SHADOW );
+
 	mGOTypeList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::OnTypeChange ) );
 	FillGotyList();
 
@@ -264,7 +266,9 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 
 	Txt = mTheme->createTextBox( "Layers:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mGOTypeList->getPosition().y + mGOTypeList->getSize().getHeight() + 4 ), TxtFlags );
 
-	mLayerList = mTheme->createDropDownList( mSubTextureCont, Sizei( Width, 21 ), Vector2i( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
+	mLayerList = UIDropDownList::New();
+	mLayerList->setParent( mSubTextureCont )->setSize( Width, 0 )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->setFlags( UI_DRAW_SHADOW );
+
 	mLayerList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::OnLayerSelect ) );
 
 	Txt = mTheme->createTextBox( "Game Object Flags:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mLayerList->getPosition().y + mLayerList->getSize().getHeight() + 4 ), TxtFlags );
@@ -316,7 +320,8 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 
 	Txt = mTheme->createTextBox( "Texture Atlases:", mSGCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 0 ), TxtFlags );
 
-	mTextureAtlasesList = mTheme->createDropDownList( mSGCont, Sizei( Width, 21 ), Vector2i( 0, Txt->getPosition().y +Txt->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
+	mTextureAtlasesList = UIDropDownList::New();
+	mTextureAtlasesList->setParent( mSGCont )->setSize( Width, 0 )->setPosition( 0, Txt->getPosition().y +Txt->getSize().getHeight() + 4 )->setFlags( UI_DRAW_SHADOW );
 	mTextureAtlasesList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::OnTextureAtlasChange ) );
 
 	mSubTextureList = mTheme->createListBox( mSGCont, Sizei( Width, 156 ), Vector2i( 0, mTextureAtlasesList->getPosition().y + mTextureAtlasesList->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );

@@ -540,21 +540,6 @@ UISlider * UITheme::createSlider( UIControl * Parent, const Sizei& Size, const V
 	return Ctrl;
 }
 
-UIDropDownList * UITheme::createDropDownList( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
-	UIDropDownList::CreateParams DDLParams;
-	DDLParams.setParent( Parent );
-	DDLParams.setPosition( Pos );
-	DDLParams.setSize( Size );
-	DDLParams.Flags = Flags;
-	DDLParams.MinNumVisibleItems = MinNumVisibleItems;
-	DDLParams.PopUpToMainControl = PopUpToMainControl;
-	DDLParams.ListBox = ListBox;
-	UIDropDownList * Ctrl = eeNew( UIDropDownList, ( DDLParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
 UIListBox * UITheme::createListBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool SmoothScroll, Uint32 RowHeight, UI_SCROLLBAR_MODE VScrollMode, UI_SCROLLBAR_MODE HScrollMode, Recti PaddingContainer ) {
 	UIListBox::CreateParams LBParams;
 	LBParams.setParent( Parent );
@@ -735,6 +720,10 @@ ProgressBarStyleConfig UITheme::getProgressBarStyleConfig() {
 
 WinMenuStyleConfig UITheme::getWinMenuStyleConfig() {
 	return WinMenuStyleConfig( getFontStyleConfig() );
+}
+
+DropDownListStyleConfig UITheme::getDropDownListStyleConfig() {
+	return DropDownListStyleConfig( getFontStyleConfig() );
 }
 
 FontStyleConfig UITheme::getFontStyleConfig() const {

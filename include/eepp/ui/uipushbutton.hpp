@@ -9,6 +9,8 @@ namespace EE { namespace UI {
 
 class EE_API UIPushButton : public UIComplexControl {
 	public:
+		static UIPushButton * New();
+
 		class CreateParams : public UITextBox::CreateParams {
 			public:
 				inline CreateParams() :

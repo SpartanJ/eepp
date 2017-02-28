@@ -10,6 +10,8 @@ namespace EE { namespace UI {
 
 class EE_API UIListBox : public UIComplexControl {
 	public:
+		static UIListBox * New();
+
 		class CreateParams : public UIComplexControl::CreateParams {
 			public:
 				inline CreateParams() :
@@ -146,6 +148,10 @@ class EE_API UIListBox : public UIComplexControl {
 		Float getTouchDragDeceleration() const;
 
 		void setTouchDragDeceleration(const Float & touchDragDeceleration);
+
+		FontStyleConfig getFontStyleConfig() const;
+
+		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
 	protected:
 		friend class UIListBoxItem;
 		friend class UIItemContainer<UIListBox>;

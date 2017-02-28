@@ -137,6 +137,18 @@ class WinMenuStyleConfig : public FontStyleConfig {
 		Uint32				firstButtonMargin = 1;
 };
 
+class DropDownListStyleConfig : public FontStyleConfig {
+	public:
+		DropDownListStyleConfig() {}
+
+		DropDownListStyleConfig( FontStyleConfig fontStyleConfig ) :
+			FontStyleConfig( fontStyleConfig )
+		{}
+
+		Uint32 maxNumVisibleItems = 10;
+		bool popUpToMainControl = false;
+};
+
 }}
 
 #endif

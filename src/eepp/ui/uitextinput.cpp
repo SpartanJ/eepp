@@ -8,6 +8,10 @@
 
 namespace EE { namespace UI {
 
+UITextInput * UITextInput::New() {
+	return eeNew( UITextInput, () );
+}
+
 UITextInput::UITextInput( const UITextInput::CreateParams& Params ) :
 	UITextBox( Params ),
 	mCursorPos(0),

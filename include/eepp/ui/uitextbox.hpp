@@ -7,6 +7,8 @@ namespace EE { namespace UI {
 
 class EE_API UITextBox : public UIComplexControl {
 	public:
+		static UITextBox * New();
+
 		class CreateParams : public UIComplexControl::CreateParams {
 			public:
 				inline CreateParams() :
@@ -117,6 +119,8 @@ class EE_API UITextBox : public UIComplexControl {
 		virtual Int32 selCurInit();
 
 		virtual Int32 selCurEnd();
+
+		virtual void onAlignChange();
 
 };
 

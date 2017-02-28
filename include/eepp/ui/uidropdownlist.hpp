@@ -8,24 +8,7 @@ namespace EE { namespace UI {
 
 class EE_API UIDropDownList : public UITextInput {
 	public:
-		class CreateParams : public UITextInput::CreateParams {
-			public:
-				inline CreateParams() :
-					UITextInput::CreateParams(),
-					ListBox( NULL ),
-					MinNumVisibleItems( 6 ),
-					PopUpToMainControl( false )
-				{
-				}
-
-				inline ~CreateParams() {}
-
-				UIListBox * 	ListBox;
-				Uint32			MinNumVisibleItems;
-				bool			PopUpToMainControl;
-		};
-
-		UIDropDownList( UIDropDownList::CreateParams& Params );
+		static UIDropDownList * New();
 
 		UIDropDownList();
 
@@ -47,18 +30,19 @@ class EE_API UIDropDownList : public UITextInput {
 
 		void setPopUpToMainControl(bool popUpToMainControl);
 
-		Uint32 getMinNumVisibleItems() const;
+		Uint32 getMaxNumVisibleItems() const;
 
-		void setMinNumVisibleItems(const Uint32 & minNumVisibleItems);
+		void setMaxNumVisibleItems(const Uint32 & maxNumVisibleItems);
 
+		DropDownListStyleConfig getStyleConfig() const;
+
+		void setStyleConfig(const DropDownListStyleConfig & styleConfig);
 	protected:
 		friend class UIComboBox;
 
+		DropDownListStyleConfig mStyleConfig;
 		UIListBox *		mListBox;
 		UIControl *		mFriendCtrl;
-		Uint32			mMinNumVisibleItems;
-		bool			mPopUpToMainControl;
-
 
 		void onListBoxFocusLoss( const UIEvent * Event );
 

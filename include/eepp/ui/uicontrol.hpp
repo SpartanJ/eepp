@@ -358,6 +358,8 @@ class EE_API UIControl {
 		virtual void onStateChange();
 
 		virtual void onParentChange();
+
+		virtual void onAlignChange();
 		
 		virtual void onComplexControlFocusLoss();
 

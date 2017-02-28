@@ -9,6 +9,8 @@ namespace EE { namespace UI {
 
 class EE_API UITextInput : public UITextBox {
 	public:
+		static UITextInput * New();
+
 		class CreateParams : public UITextBox::CreateParams {
 			public:
 				inline CreateParams() :

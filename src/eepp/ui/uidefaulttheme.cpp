@@ -135,24 +135,4 @@ UIMessageBox * UIDefaultTheme::createMessageBox( UI_MSGBOX_TYPE Type, const Stri
 	return eeNew( UIMessageBox, ( MsgBoxParams ) );
 }
 
-UIDropDownList * UIDefaultTheme::createDropDownList( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
-	UIDropDownList::CreateParams DDLParams;
-	DDLParams.setParent( Parent );
-	DDLParams.setPosition( Pos );
-	DDLParams.setSize( Size );
-	DDLParams.Flags = Flags;
-	DDLParams.MinNumVisibleItems = MinNumVisibleItems;
-	DDLParams.PopUpToMainControl = PopUpToMainControl;
-	DDLParams.ListBox = ListBox;
-
-	if ( getUseDefaultThemeValues() ) {
-		DDLParams.Flags |= UI_AUTO_SIZE;
-	}
-
-	UIDropDownList * Ctrl = eeNew( UIDropDownList, ( DDLParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
 }}

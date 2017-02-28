@@ -445,14 +445,10 @@ void EETest::createUI() {
 
 	mListBox->addListBoxItems( str );
 
-	UIDropDownList::CreateParams DDLParams;
-	DDLParams.setParent( C );
-	DDLParams.setPosition( 20, 55 );
-	DDLParams.Size = Sizei( 100, 21 );
-	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_TOUCH_DRAG_ENABLED;
-	UIDropDownList * mDropDownList = eeNew( UIDropDownList, ( DDLParams ) );
-	mDropDownList->setVisible( true );
-	mDropDownList->setEnabled( true );
+	UIDropDownList * dropDownList = UIDropDownList::New();
+	dropDownList->setParent( C )->setPosition( 20, 50 )->setSize( 100, 21 );
+	dropDownList->getListBox()->setFlags( UI_TOUCH_DRAG_ENABLED );
+	dropDownList->setMaxNumVisibleItems( 4 );
 
 	std::vector<String> combostrs;
 	combostrs.push_back( "Plane" );
@@ -464,8 +460,8 @@ void EETest::createUI() {
 	combostrs.push_back( "Bike" );
 	combostrs.push_back( "Motorbike" );
 
-	mDropDownList->getListBox()->addListBoxItems( combostrs );
-	mDropDownList->getListBox()->setSelected( 0 );
+	dropDownList->getListBox()->addListBoxItems( combostrs );
+	dropDownList->getListBox()->setSelected( 0 );
 
 	UIComboBox * mComboBox = UIComboBox::New();
 	mComboBox->setParent( C )->setPosition( 20, 80 )->setSize(  100, 1 );
@@ -652,7 +648,7 @@ void EETest::createNewUI() {
 	UIScrollBar * scrollBar2 = eeNew( UIScrollBar, () );
 	scrollBar2->setOrientation( UI_VERTICAL )->setPosition( 300, 0 )->setSize( 0, 100 );
 
-	UIDropDownList * dropdownList = eeNew( UIDropDownList, () );
+	UIDropDownList * dropdownList = UIDropDownList::New();
 	dropdownList->setPosition( 50, 320 )->setSize( 200, 0 );
 	dropdownList->getListBox()->addListBoxItem( "Test 1" );
 	dropdownList->getListBox()->addListBoxItem( "Test 2" );

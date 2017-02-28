@@ -153,6 +153,13 @@ UIControl * UIComplexControl::unsetFlags(const Uint32 & flags) {
 	return UIControlAnim::unsetFlags( flags );
 }
 
+UIComplexControl * UIComplexControl::setAnchors(const Uint32 & flags) {
+	mFlags &= ~(UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM);
+	mFlags |= flags;
+	updateAnchorsDistances();
+	return this;
+}
+
 UIControl * UIComplexControl::setSize( const Int32& Width, const Int32& Height ) {
 	return UIControlAnim::setSize( Width, Height );
 }
@@ -167,7 +174,7 @@ void UIComplexControl::onParentSizeChange( const Vector2i& SizeChange ) {
 	if ( mFlags & UI_ANCHOR_LEFT ) {
 		// Nothing ?
 	} else {
-		setPosition( mPos.x += SizeChange.x, mPos.y );
+		setInternalPosition( Vector2i( mPos.x += SizeChange.x, mPos.y ) );
 	}
 
 	if ( mFlags & UI_ANCHOR_RIGHT ) {
@@ -182,7 +189,7 @@ void UIComplexControl::onParentSizeChange( const Vector2i& SizeChange ) {
 	if ( mFlags & UI_ANCHOR_TOP ) {
 		// Nothing ?
 	} else {
-		setPosition( mPos.x, mPos.y += SizeChange.y );
+		setInternalPosition( Vector2i( mPos.x, mPos.y += SizeChange.y ) );
 	}
 
 	if ( mFlags & UI_ANCHOR_BOTTOM ) {
@@ -198,6 +205,11 @@ void UIComplexControl::onParentSizeChange( const Vector2i& SizeChange ) {
 		setSize( newSize );
 
 	UIControlAnim::onParentSizeChange( SizeChange );
+}
+
+void UIComplexControl::onPositionChange() {
+	updateAnchorsDistances();
+	UIControlAnim::onPositionChange();
 }
 
 }}

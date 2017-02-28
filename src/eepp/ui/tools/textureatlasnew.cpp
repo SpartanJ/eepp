@@ -23,7 +23,8 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	Int32 PosX = mUIWindow->getContainer()->getSize().getWidth() - 110;
 
 	createTxtBox( Vector2i( 10, 20 ), "Save File Format:" );
-	mSaveFileType = mTheme->createDropDownList( mUIWindow->getContainer(), Sizei( 100, 22 ), Vector2i( PosX, 20 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE );
+	mSaveFileType = UIDropDownList::New();
+	mSaveFileType->setParent( mUIWindow->getContainer() )->setSize( 100, 0 )->setPosition( PosX, 20 );
 
 	std::vector<String> FileTypes;
 	FileTypes.push_back( "TGA" );

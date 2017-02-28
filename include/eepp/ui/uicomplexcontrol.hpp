@@ -55,6 +55,8 @@ class EE_API UIComplexControl : public UIControlAnim {
 
 		virtual UIControl * unsetFlags( const Uint32& flags );
 
+		virtual UIComplexControl * setAnchors( const Uint32& flags );
+
 		UIControl * setSize( const Int32& Width, const Int32& Height );
 
 		const Sizei& getSize();
@@ -70,12 +72,14 @@ class EE_API UIComplexControl : public UIControlAnim {
 		void updateAnchorsDistances();
 	protected:
 		UITooltip *	mTooltip;
-		Sizei			mMinControlSize;
-		Recti			mDistToBorder;
+		Sizei		mMinControlSize;
+		Recti		mDistToBorder;
 
 		void createTooltip();
 
 		virtual void onParentSizeChange( const Vector2i& SizeChange );
+
+		virtual void onPositionChange();
 };
 
 }}

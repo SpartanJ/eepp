@@ -8,6 +8,10 @@
 
 namespace EE { namespace UI {
 
+UITextBox *UITextBox::New() {
+	return eeNew( UITextBox, () );
+}
+
 UITextBox::UITextBox( const UITextBox::CreateParams& Params ) :
 	UIComplexControl( Params ),
 	mFontStyleConfig( Params.fontStyleConfig ),
@@ -377,6 +381,10 @@ Int32 UITextBox::selCurInit() {
 
 Int32 UITextBox::selCurEnd() {
 	return mSelCurEnd;
+}
+
+void UITextBox::onAlignChange() {
+	autoAlign();
 }
 
 void UITextBox::setFontStyleConfig( const FontStyleConfig& fontStyleConfig ) {

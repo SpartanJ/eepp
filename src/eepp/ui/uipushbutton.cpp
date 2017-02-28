@@ -3,6 +3,10 @@
 
 namespace EE { namespace UI {
 
+UIPushButton * UIPushButton::New() {
+	return eeNew( UIPushButton, () );
+}
+
 UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 	UIComplexControl( Params ),
 	mFontStyleConfig( Params.fontStyleConfig ),

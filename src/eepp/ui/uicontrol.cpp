@@ -153,6 +153,8 @@ Uint32 UIControl::onMessage( const UIMessage * Msg ) {
 void UIControl::setInternalPosition( const Vector2i& Pos ) {
 	mPos = Pos;
 	mRealPos = Vector2i( Pos.x * PixelDensity::getPixelDensity(), Pos.y * PixelDensity::getPixelDensity() );
+	updateScreenPos();
+	updateChildsScreenPos();
 }
 
 UIControl * UIControl::setPosition( const Vector2i& Pos ) {
@@ -169,6 +171,8 @@ UIControl * UIControl::setPosition( const Int32& x, const Int32& y ) {
 void UIControl::setPixelsPosition( const Vector2i& Pos ) {
 	mPos = Vector2i( PixelDensity::pxToDpI( Pos.x ), PixelDensity::pxToDpI( Pos.y ) );
 	mRealPos = Pos;
+	updateScreenPos();
+	updateChildsScreenPos();
 	onPositionChange();
 }
 
@@ -187,11 +191,13 @@ const Vector2i &UIControl::getRealPosition() const {
 void UIControl::setInternalSize( const Sizei& size ) {
 	mSize = size;
 	mRealSize = Sizei( size.x * PixelDensity::getPixelDensity(), size.y * PixelDensity::getPixelDensity() );
+	updateCenter();
 }
 
 void UIControl::setInternalPixelsSize( const Sizei& size ) {
 	mSize = PixelDensity::pxToDpI( size );
 	mRealSize = size;
+	updateCenter();
 }
 
 UIControl * UIControl::setSize( const Sizei& Size ) {
@@ -295,7 +301,9 @@ UIControl * UIControl::setParent( UIControl * parent ) {
 	if ( NULL != mParentCtrl )
 		mParentCtrl->childAdd( this );
 
-	onPositionChange();
+	updateScreenPos();
+
+	updateChildsScreenPos();
 
 	updateQuad();
 
@@ -555,7 +563,10 @@ Uint32 UIControl::getHorizontalAlign() const {
 }
 
 void UIControl::setHorizontalAlign( Uint32 halign ) {
+	mFlags &= ~UI_HALIGN_MASK;
 	mFlags |= halign & UI_HALIGN_MASK;
+
+	onAlignChange();
 }
 
 Uint32 UIControl::getVerticalAlign() const {
@@ -563,7 +574,10 @@ Uint32 UIControl::getVerticalAlign() const {
 }
 
 void UIControl::setVerticalAlign( Uint32 valign ) {
+	mFlags &= ~UI_VALIGN_MASK;
 	mFlags |= valign & UI_VALIGN_MASK;
+
+	onAlignChange();
 }
 
 UIBackground * UIControl::setBackgroundFillEnabled( bool enabled ) {
@@ -624,6 +638,10 @@ UIControl * UIControl::setFlags( const Uint32& flags ) {
 	if ( NULL == mBorder && ( flags & UI_BORDER ) )
 		mBorder = eeNew( UIBorder, () );
 
+	if ( fontHAlignGet( flags ) || fontVAlignGet( flags ) ) {
+		onAlignChange();
+	}
+
 	mFlags |= flags;
 
 	return this;
@@ -632,6 +650,10 @@ UIControl * UIControl::setFlags( const Uint32& flags ) {
 UIControl * UIControl::unsetFlags(const Uint32 & flags) {
 	if ( mFlags & flags )
 		mFlags &= ~flags;
+
+	if ( fontHAlignGet( flags ) || fontVAlignGet( flags ) ) {
+		onAlignChange();
+	}
 
 	return this;
 }
@@ -683,16 +705,10 @@ void UIControl::onEnabledChange() {
 }
 
 void UIControl::onPositionChange() {
-	updateScreenPos();
-
-	updateChildsScreenPos();
-
 	sendCommonEvent( UIEvent::EventOnPosChange );
 }
 
 void UIControl::onSizeChange() {
-	updateCenter();
-
 	sendCommonEvent( UIEvent::EventOnSizeChange );
 }
 
@@ -1265,6 +1281,9 @@ void UIControl::onStateChange() {
 }
 
 void UIControl::onParentChange() {
+}
+
+void UIControl::onAlignChange() {
 }
 
 void UIControl::setSkinState( const Uint32& State ) {
