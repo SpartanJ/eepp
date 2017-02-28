@@ -50,7 +50,7 @@ class EE_API UICheckBox : public UITextBox {
 
 		virtual Uint32 onMessage( const UIMessage * Msg );
 
-		void doAftersetTheme();
+		void doAfterSetTheme();
 
 		virtual void autoSize();
 };

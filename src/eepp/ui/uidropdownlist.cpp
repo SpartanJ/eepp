@@ -88,7 +88,7 @@ bool UIDropDownList::isType( const Uint32& type ) const {
 void UIDropDownList::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "dropdownlist" );
 
-	doAftersetTheme();
+	doAfterSetTheme();
 }
 
 void UIDropDownList::onSizeChange() {
@@ -103,7 +103,7 @@ void UIDropDownList::autoSizeControl() {
 	}
 }
 
-void UIDropDownList::doAftersetTheme() {
+void UIDropDownList::doAfterSetTheme() {
 	autoPadding();
 
 	autoSizeControl();

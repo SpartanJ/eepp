@@ -223,13 +223,13 @@ class EE_API UIControl {
 
 		virtual void setTheme( UITheme * Theme );
 
-		void setThemeControl( UITheme * Theme, const std::string& ControlName );
+		UIControl * setThemeControl( UITheme * Theme, const std::string& ControlName );
+
+		UIControl * setThemeControl( const std::string& ControlName );
 
 		void setThemeToChilds( UITheme * Theme );
 
 		UISkin * getSkin();
-
-		void setSkinFromTheme( UITheme * Theme, const std::string& ControlName );
 
 		virtual void setSkin( const UISkin& Skin );
 
@@ -373,7 +373,7 @@ class EE_API UIControl {
 
 		virtual void drawChilds();
 
-		virtual void doAftersetTheme();
+		virtual void doAfterSetTheme();
 
 		virtual UIControl * overFind( const Vector2f& Point );
 

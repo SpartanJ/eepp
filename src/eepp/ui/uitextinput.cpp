@@ -60,13 +60,13 @@ void UITextInput::update() {
 	UITextBox::update();
 
 	if ( mTextBuffer.changedSinceLastUpdate() ) {
-		Vector2f offSet = mAlignOffset;
+		Vector2f offSet = mRealAlignOffset;
 
 		UITextBox::setText( mTextBuffer.getBuffer() );
 
 		updateText();
 
-		mAlignOffset = offSet;
+		mRealAlignOffset = offSet;
 
 		resetWaitCursor();
 
@@ -105,8 +105,8 @@ void UITextInput::drawWaitingCursor() {
 			Primitives P;
 			P.setColor( mFontColor );
 
-			Float CurPosX = mScreenPos.x + mAlignOffset.x + mCurPos.x + PixelDensity::dpToPxI( 1.f ) + mRealPadding.Left;
-			Float CurPosY = mScreenPos.y + mAlignOffset.y + mCurPos.y + mRealPadding.Top;
+			Float CurPosX = mScreenPos.x + mRealAlignOffset.x + mCurPos.x + PixelDensity::dpToPxI( 1.f ) + mRealPadding.Left;
+			Float CurPosY = mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mRealPadding.Top;
 
 			if ( CurPosX > (Float)mScreenPos.x + (Float)mRealSize.x )
 				CurPosX = (Float)mScreenPos.x + (Float)mRealSize.x;
@@ -173,16 +173,16 @@ void UITextInput::alignFix() {
 		mTextCache->getFont()->setText( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPos() - NLPos ) );
 
 		Float tW	= mTextCache->getFont()->getTextWidth();
-		Float tX	= mAlignOffset.x + tW;
+		Float tX	= mRealAlignOffset.x + tW;
 
 		mCurPos.x	= tW;
 		mCurPos.y	= (Float)LineNum * (Float)mTextCache->getFont()->getFontHeight();
 
 		if ( !mTextBuffer.setSupportNewLine() ) {
 			if ( tX < 0.f )
-				mAlignOffset.x = -( mAlignOffset.x + ( tW - mAlignOffset.x ) );
+				mRealAlignOffset.x = -( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
 			else if ( tX > mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right )
-				mAlignOffset.x = mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
+				mRealAlignOffset.x = mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right - ( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
 		}
 	}
 }
@@ -250,7 +250,7 @@ Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTON_LMASK ) {
 		Vector2i controlPos( Pos );
 		worldToControl( controlPos );
-		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mAlignOffset.x, (Int32)mAlignOffset.y );
+		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mRealAlignOffset.x, (Int32)mRealAlignOffset.y );
 
 		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), controlPos );
 

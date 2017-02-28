@@ -84,7 +84,7 @@ class EE_API UIDropDownList : public UITextInput {
 
 		virtual void autoSizeControl();
 
-		virtual void doAftersetTheme();
+		virtual void doAfterSetTheme();
 
 		void setFriendControl( UIControl * friendCtrl );
 

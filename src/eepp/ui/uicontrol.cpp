@@ -1217,7 +1217,11 @@ void UIControl::safeDeleteSkinState() {
 	eeSAFE_DELETE( mSkinState );
 }
 
-void UIControl::setThemeControl( UITheme * Theme, const std::string& ControlName ) {
+UIControl * UIControl::setThemeControl( const std::string& ControlName ) {
+	return setThemeControl( UIThemeManager::instance()->getDefaultTheme(), ControlName );
+}
+
+UIControl * UIControl::setThemeControl( UITheme * Theme, const std::string& ControlName ) {
 	if ( NULL != Theme ) {
 		UISkin * tSkin = Theme->getByName( Theme->getAbbr() + "_" + ControlName );
 
@@ -1232,12 +1236,12 @@ void UIControl::setThemeControl( UITheme * Theme, const std::string& ControlName
 
 			mSkinState = eeNew( UISkinState, ( tSkin ) );
 			mSkinState->setState( InitialState );
+
+			doAfterSetTheme();
 		}
 	}
-}
 
-void UIControl::setSkinFromTheme( UITheme * Theme, const std::string& ControlName ) {
-	setThemeControl( Theme, ControlName );
+	return this;
 }
 
 void UIControl::setSkin( const UISkin& Skin ) {
@@ -1249,7 +1253,7 @@ void UIControl::setSkin( const UISkin& Skin ) {
 
 	mSkinState = eeNew( UISkinState, ( SkinCopy ) );
 
-	doAftersetTheme();
+	doAfterSetTheme();
 }
 
 void UIControl::onStateChange() {
@@ -1459,7 +1463,7 @@ UIControl * UIControl::getNextComplexControl() {
 	return UIManager::instance()->getMainControl();
 }
 
-void UIControl::doAftersetTheme() {
+void UIControl::doAfterSetTheme() {
 }
 
 void UIControl::worldToControl( Vector2i& pos ) const {

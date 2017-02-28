@@ -269,7 +269,7 @@ void EETest::createUI() {
 
 	mThemeName = "uitheme";
 
-	if ( PixelDensity::getPixelDensity() == 2 ) {
+	if ( PixelDensity::getPixelDensity() >= 2 ) {
 		mThemeName += "2x";
 	}
 
@@ -703,7 +703,7 @@ void EETest::createNewUI() {
 	}
 
 	UIWindow * MenuCont = eeNew( UIWindow, () );
-	MenuCont->setPosition( 350, 400 )->setSize( 200, 125 );
+	MenuCont->setPosition( 350, 390 )->setSize( 200, 115 );
 
 	UIWinMenu * WinMenu = eeNew( UIWinMenu, () );
 	WinMenu->setParent( MenuCont->getContainer() );
@@ -722,14 +722,15 @@ void EETest::createNewUI() {
 
 	WinMenu->addMenuButton( "File", PopMenu );
 	WinMenu->addMenuButton( "Edit", PopMenu2 );
-	/**/
 
 	UITabWidget * TabWidget = eeNew( UITabWidget, () );
-	TabWidget->setPosition( 350, 550 )->setSize( 200, 100 );
+	TabWidget->setPosition( 350, 530 )->setSize( 200, 64 );
 
-	TabWidget->add( "Tab 1", eeNew( UIControl, () ) );
-	TabWidget->add( "Tab 2", eeNew( UIControl, () ) );
-	TabWidget->add( "Tab 3", eeNew( UIControl, () ) );
+	TabWidget->add( "Tab 1", (eeNew( UIComplexControl, () ))->setThemeControl( "winback" ), mTheme->getIconByName( "ok" ) );
+	TabWidget->add( "Tab 2", (eeNew( UIComplexControl, () ))->setThemeControl( "winback" ), mTheme->getIconByName( "go-up" ) );
+	TabWidget->add( "Tab 3", (eeNew( UIComplexControl, () ))->setThemeControl( "winback" ), mTheme->getIconByName( "add" ) );
+
+	/**/
 }
 
 void EETest::createMapEditor() {

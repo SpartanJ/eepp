@@ -50,7 +50,7 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 	}
 
 	mDropDownList->setThemeControl( Theme, "combobox" );
-	mDropDownList->doAftersetTheme();
+	mDropDownList->doAfterSetTheme();
 
 	mButton->setThemeControl( Theme, "combobox_button" );
 

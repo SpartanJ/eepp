@@ -46,7 +46,7 @@ void UITextInputPassword::draw() {
 			}
 
 			mPassCache->setFlags( getFlags() );
-			mPassCache->draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mRealPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
+			mPassCache->draw( (Float)mScreenPos.x + mRealAlignOffset.x + (Float)mRealPadding.Left, (Float)mScreenPos.y + mRealAlignOffset.y + (Float)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				UIManager::instance()->clipSmartDisable( this );
@@ -71,16 +71,16 @@ void UITextInputPassword::alignFix() {
 		mPassCache->getFont()->setText( pasStr );
 
 		Float tW	= mPassCache->getFont()->getTextWidth();
-		Float tX	= mAlignOffset.x + tW;
+		Float tX	= mRealAlignOffset.x + tW;
 
 		mCurPos.x	= tW;
 		mCurPos.y	= (Float)LineNum * (Float)mPassCache->getFont()->getFontHeight();
 
 		if ( !mTextBuffer.setSupportNewLine() ) {
 			if ( tX < 0.f )
-				mAlignOffset.x = -( mAlignOffset.x + ( tW - mAlignOffset.x ) );
+				mRealAlignOffset.x = -( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
 			else if ( tX > mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right )
-				mAlignOffset.x = mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
+				mRealAlignOffset.x = mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right - ( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
 		}
 	}
 }
@@ -88,25 +88,25 @@ void UITextInputPassword::alignFix() {
 void UITextInputPassword::autoAlign() {
 	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mAlignOffset.x = (Float)( (Int32)( mRealSize.x - mPassCache->getTextWidth() ) / 2 );
+			mRealAlignOffset.x = (Float)( (Int32)( mRealSize.x - mPassCache->getTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
-			mAlignOffset.x = ( (Float)mRealSize.x - (Float)mPassCache->getTextWidth() );
+			mRealAlignOffset.x = ( (Float)mRealSize.x - (Float)mPassCache->getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
-			mAlignOffset.x = 0.f;
+			mRealAlignOffset.x = 0.f;
 			break;
 	}
 
 	switch ( fontVAlignGet( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
-			mAlignOffset.y = (Float)( ( (Int32)( mRealSize.y - mPassCache->getTextHeight() ) ) / 2 ) - 1;
+			mRealAlignOffset.y = (Float)( ( (Int32)( mRealSize.y - mPassCache->getTextHeight() ) ) / 2 ) - 1;
 			break;
 		case UI_VALIGN_BOTTOM:
-			mAlignOffset.y = ( (Float)mRealSize.y - (Float)mPassCache->getTextHeight() );
+			mRealAlignOffset.y = ( (Float)mRealSize.y - (Float)mPassCache->getTextHeight() );
 			break;
 		case UI_VALIGN_TOP:
-			mAlignOffset.y = 0.f;
+			mRealAlignOffset.y = 0.f;
 			break;
 	}
 }

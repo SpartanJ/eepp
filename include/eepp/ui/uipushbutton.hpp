@@ -114,7 +114,7 @@ class EE_API UIPushButton : public UIComplexControl {
 
 		virtual void onStateChange();
 
-		virtual void doAftersetTheme();
+		virtual void doAfterSetTheme();
 
 		virtual Uint32 onKeyDown( const UIEventKey& Event );
 

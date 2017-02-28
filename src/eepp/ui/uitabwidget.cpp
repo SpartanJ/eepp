@@ -59,17 +59,19 @@ UITabWidget::UITabWidget() :
 	mFontSelectedColor(),
 	mTabSeparation( 0 ),
 	mMaxTextLength( 32 ),
-	mTabWidgetHeight( 64 ),
+	mTabWidgetHeight( 0 ),
 	mMinTabWidth( 32 ),
-	mMaxTabWidth( 210 ),
+	mMaxTabWidth( 0xFFFFFF ),
 	mTabsClosable( false ),
-	mSpecialBorderTabs( false ),
-	mDrawLineBelowTabs( false ),
-	mLineBelowTabsColor( ColorA::Black ),
-	mLineBewowTabsYOffset( 0 ),
+	mSpecialBorderTabs( true ),
+	mDrawLineBelowTabs( true ),
+	mLineBelowTabsColor( ColorA(0,0,0,255) ),
+	mLineBewowTabsYOffset( -1 ),
 	mTabSelected( NULL ),
 	mTabSelectedIndex( eeINDEX_NOT_FOUND )
 {
+	setHorizontalAlign( UI_HALIGN_CENTER );
+
 	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL != Theme ) {
@@ -127,10 +129,10 @@ void UITabWidget::setTheme( UITheme * Theme ) {
 		}
 	}
 
-	doAftersetTheme();
+	doAfterSetTheme();
 }
 
-void UITabWidget::doAftersetTheme() {
+void UITabWidget::doAfterSetTheme() {
 	onSizeChange();
 }
 
@@ -141,26 +143,22 @@ void UITabWidget::seContainerSize() {
 }
 
 void UITabWidget::draw() {
+	UIComplexControl::draw();
+
 	if ( mDrawLineBelowTabs ) {
 		bool smooth = GLi->isLineSmooth();
 		if ( smooth ) GLi->lineSmooth( false );
 
 		Primitives P;
-		Vector2i p1( mRealPos.x, mRealPos.y + mTabContainer->getRealSize().getHeight() + mLineBewowTabsYOffset );
-		Vector2i p2( mRealPos.x + mTabContainer->getRealPosition().x, p1.y );
+		Vector2i p1( mScreenPos.x, mScreenPos.y + mTabContainer->getRealSize().getHeight() + mLineBewowTabsYOffset );
+		Vector2i p2( mScreenPos.x + mTabContainer->getRealPosition().x, p1.y );
 
-		controlToScreen( p1 );
-		controlToScreen( p2 );
-
-		P.setLineWidth( 1 );
+		P.setLineWidth( PixelDensity::dpToPx( 1 ) );
 		P.setColor( mLineBelowTabsColor );
 		P.drawLine( Line2f( Vector2f( p1.x, p1.y ), Vector2f( p2.x, p2.y ) ) );
 
-		Vector2i p3( mRealPos.x + mTabContainer->getRealPosition().x + mTabContainer->getRealSize().getWidth(), mRealPos.y + mTabContainer->getRealSize().getHeight() + mLineBewowTabsYOffset );
-		Vector2i p4( mRealPos.x + mRealSize.getWidth(), p3.y );
-
-		controlToScreen( p3 );
-		controlToScreen( p4 );
+		Vector2i p3( mScreenPos.x + mTabContainer->getRealPosition().x + mTabContainer->getRealSize().getWidth(), mScreenPos.y + mTabContainer->getRealSize().getHeight() + mLineBewowTabsYOffset );
+		Vector2i p4( mScreenPos.x + mRealSize.getWidth(), p3.y );
 
 		P.drawLine( Line2f( Vector2f( p3.x, p3.y ), Vector2f( p4.x, p4.y ) ) );
 

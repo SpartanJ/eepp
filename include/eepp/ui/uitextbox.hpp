@@ -84,7 +84,7 @@ class EE_API UITextBox : public UIComplexControl {
 
 		const int& getNumLines() const;
 
-		const Vector2f& alignOffset() const;
+		const Vector2i & getAlignOffset() const;
 
 		virtual void shrinkText( const Uint32& MaxWidth );
 
@@ -95,7 +95,8 @@ class EE_API UITextBox : public UIComplexControl {
 		ColorA			mFontColor;
 		ColorA			mFontShadowColor;
 		ColorA			mFontSelectionBackColor;
-		Vector2f 		mAlignOffset;
+		Vector2i 		mAlignOffset;
+		Vector2f 		mRealAlignOffset;
 		Recti			mPadding;
 		Recti			mRealPadding;
 		Int32			mSelCurInit;

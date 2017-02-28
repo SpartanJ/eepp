@@ -168,7 +168,7 @@ class EE_API UIMenu : public UIComplexControl {
 
 		UIMenuSubMenu * createSubMenu( const String& Text, SubTexture * Icon, UIMenu * SubMenu );
 		
-		void doAftersetTheme();
+		void doAfterSetTheme();
 
 		bool checkControlSize( UIControl * Control, const bool& Resize = true );
 

@@ -13,7 +13,7 @@ UITextBox::UITextBox( const UITextBox::CreateParams& Params ) :
 	mFontColor( Params.FontColor ),
 	mFontShadowColor( Params.FontShadowColor ),
 	mFontSelectionBackColor( Params.FontSelectionBackColor ),
-	mAlignOffset( 0.f, 0.f ),
+	mRealAlignOffset( 0.f, 0.f ),
 	mSelCurInit( -1 ),
 	mSelCurEnd( -1 )
 {
@@ -38,7 +38,7 @@ UITextBox::UITextBox() :
 	mFontColor(),
 	mFontShadowColor(),
 	mFontSelectionBackColor(),
-	mAlignOffset( 0.f, 0.f ),
+	mRealAlignOffset( 0.f, 0.f ),
 	mSelCurInit( -1 ),
 	mSelCurEnd( -1 )
 {
@@ -92,7 +92,7 @@ void UITextBox::draw() {
 			}
 
 			mTextCache->setFlags( getFlags() );
-			mTextCache->draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mRealPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
+			mTextCache->draw( (Float)mScreenPos.x + mRealAlignOffset.x + (Float)mRealPadding.Left, (Float)mScreenPos.y + mRealAlignOffset.y + (Float)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				UIManager::instance()->clipSmartDisable( this );
@@ -195,27 +195,29 @@ void UITextBox::autoSize() {
 void UITextBox::autoAlign() {
 	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mAlignOffset.x = (Float)( (Int32)( mRealSize.x - mTextCache->getTextWidth() ) / 2 );
+			mRealAlignOffset.x = (Float)( (Int32)( mRealSize.x - mTextCache->getTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
-			mAlignOffset.x = ( (Float)mRealSize.x - (Float)mTextCache->getTextWidth() );
+			mRealAlignOffset.x = ( (Float)mRealSize.x - (Float)mTextCache->getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
-			mAlignOffset.x = 0.f;
+			mRealAlignOffset.x = 0.f;
 			break;
 	}
 
 	switch ( fontVAlignGet( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
-			mAlignOffset.y = (Float)( ( (Int32)( mRealSize.y - mTextCache->getTextHeight() ) ) / 2 ) - 1;
+			mRealAlignOffset.y = (Float)( ( (Int32)( mRealSize.y - mTextCache->getTextHeight() ) ) / 2 ) - 1;
 			break;
 		case UI_VALIGN_BOTTOM:
-			mAlignOffset.y = ( (Float)mRealSize.y - (Float)mTextCache->getTextHeight() );
+			mRealAlignOffset.y = ( (Float)mRealSize.y - (Float)mTextCache->getTextHeight() );
 			break;
 		case UI_VALIGN_TOP:
-			mAlignOffset.y = 0.f;
+			mRealAlignOffset.y = 0.f;
 			break;
 	}
+
+	mAlignOffset = PixelDensity::pxToDpI( mRealAlignOffset );
 }
 
 Uint32 UITextBox::onFocusLoss() {
@@ -276,7 +278,7 @@ const int& UITextBox::getNumLines() const {
 	return mTextCache->getNumLines();
 }
 
-const Vector2f& UITextBox::alignOffset() const {
+const Vector2i& UITextBox::getAlignOffset() const {
 	return mAlignOffset;
 }
 
@@ -320,7 +322,7 @@ Uint32 UITextBox::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		Vector2i controlPos( Pos );
 		worldToControl( controlPos );
-		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mAlignOffset.x, (Int32)mAlignOffset.y );
+		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mRealAlignOffset.x, (Int32)mRealAlignOffset.y );
 
 		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), controlPos );
 
@@ -366,10 +368,10 @@ void UITextBox::drawSelection( TextCache * textCache ) {
 				lastEnd = end;
 			}
 
-			P.drawRectangle( Rectf( mScreenPos.x + initPos.x + mAlignOffset.x + mRealPadding.Left,
-									  mScreenPos.y + initPos.y - textCache->getFont()->getFontHeight() + mAlignOffset.y + mRealPadding.Top,
-									  mScreenPos.x + endPos.x + mAlignOffset.x + mRealPadding.Left,
-									  mScreenPos.y + endPos.y + mAlignOffset.y + mRealPadding.Top )
+			P.drawRectangle( Rectf( mScreenPos.x + initPos.x + mRealAlignOffset.x + mRealPadding.Left,
+									  mScreenPos.y + initPos.y - textCache->getFont()->getFontHeight() + mRealAlignOffset.y + mRealPadding.Top,
+									  mScreenPos.x + endPos.x + mRealAlignOffset.x + mRealPadding.Left,
+									  mScreenPos.y + endPos.y + mRealAlignOffset.y + mRealPadding.Top )
 			);
 		} while ( end != lastEnd );
 	}

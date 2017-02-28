@@ -58,7 +58,7 @@ void UITab::setTheme( UITheme * Theme ) {
 
 	UIControl::setThemeControl( Theme, tabPos );
 
-	doAftersetTheme();
+	doAfterSetTheme();
 }
 
 Uint32 UITab::onMouseClick( const Vector2i &Pos, const Uint32 Flags ) {
@@ -123,7 +123,7 @@ void UITab::setText( const String &text ) {
 
 void UITab::autoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Uint32 w = PixelDensity::pxToDpI( mTextBox->getTextWidth() ) + getSkinSize().getWidth();
+		Uint32 w = PixelDensity::pxToDpI( mTextBox->getTextWidth() ) + mIconSpace + ( NULL != mIcon ? mIcon->getSize().getWidth() : 0 ) + getSkinSize().getWidth();
 
 		UITabWidget * tTabW = getTabWidget();
 

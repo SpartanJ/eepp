@@ -71,10 +71,10 @@ void UICheckBox::setTheme( UITheme * Theme ) {
 	mActiveButton->setThemeControl	( Theme, "checkbox_active" );
 	mInactiveButton->setThemeControl( Theme, "checkbox_inactive" );
 
-	doAftersetTheme();
+	doAfterSetTheme();
 }
 
-void UICheckBox::doAftersetTheme() {
+void UICheckBox::doAfterSetTheme() {
 	UISkin * tSkin = mActiveButton->getSkin();
 
 	if ( tSkin ) {

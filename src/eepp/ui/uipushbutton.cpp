@@ -1,4 +1,5 @@
 #include <eepp/ui/uipushbutton.hpp>
+#include <eepp/graphics/textcache.hpp>
 
 namespace EE { namespace UI {
 
@@ -98,6 +99,15 @@ void UIPushButton::onSizeChange() {
 		setInternalHeight( getSkinSize().getHeight() );
 	}
 
+	if ( ( mFlags & UI_AUTO_SIZE ) ) {
+		Int32 txtW = NULL != mTextBox ? PixelDensity::pxToDpI( mTextBox->getTextCache()->getTextWidth() ) : 0;
+		Int32 minSize = txtW + ( NULL != mIcon ? mIcon->getSize().getWidth() : 0 ) + getSkinSize().getWidth();
+
+		if ( minSize > mSize.getWidth() ) {
+			setInternalWidth( minSize );
+		}
+	}
+
 	if ( NULL != mTextBox ) {
 		mTextBox->setSize( mSize );
 		mTextBox->setPosition( 0, 0 );
@@ -114,11 +124,15 @@ void UIPushButton::onSizeChange() {
 				break;
 			case UI_HALIGN_CENTER:
 				if ( NULL != mIcon->getSubTexture() ) {
-					if ( mIcon->getPosition().x + mIcon->getSize().getWidth() >= mTextBox->alignOffset().x ) {
-						mTextBox->setPosition( mIcon->getPosition().x + mIcon->getSize().getWidth() + 1 - mTextBox->alignOffset().x,
-											   mTextBox->getPosition().y );
+					Uint32 iconPos = mIcon->getPosition().x + mIcon->getSize().getWidth();
+					Uint32 txtOff = mTextBox->getPosition().x + mTextBox->getAlignOffset().x;
 
-						mTextBox->setSize( mSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth() - 1, mTextBox->getSize().getHeight() );
+					if ( iconPos >= txtOff) {
+						Int32 px = PixelDensity::dpToPxI(1);
+
+						mTextBox->setPosition( iconPos + px, mTextBox->getPosition().y );
+
+						mTextBox->setSize( mSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth() - px, mTextBox->getSize().getHeight() );
 					}
 				}
 
@@ -134,10 +148,10 @@ void UIPushButton::onSizeChange() {
 void UIPushButton::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "button" );
 
-	doAftersetTheme();
+	doAfterSetTheme();
 }
 
-void UIPushButton::doAftersetTheme() {
+void UIPushButton::doAfterSetTheme() {
 	if ( NULL != mTextBox && NULL == mTextBox->getFont() && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFont() )
 		mTextBox->setFont( mSkinState->getSkin()->getTheme()->getFont() );
 

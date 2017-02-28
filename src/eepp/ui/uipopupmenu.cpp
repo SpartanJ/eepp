@@ -33,7 +33,7 @@ bool UIPopUpMenu::isType( const Uint32& type ) const {
 
 void UIPopUpMenu::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "popupmenu" );
-	doAftersetTheme();
+	doAfterSetTheme();
 }
 
 bool UIPopUpMenu::show() {
