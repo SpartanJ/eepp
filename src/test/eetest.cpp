@@ -426,7 +426,8 @@ void EETest::createUI() {
 	mScrollBar->setEnabled( true );
 	mScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &EETest::onValueChange ) );
 
-	mProgressBar = mTheme->createProgressBar( C, Sizei( 200, 20 ), Vector2i( 20, 190 ) );
+	mProgressBar = UIProgressBar::New();
+	mProgressBar->setParent( C )->setSize( 200, 24 )->setPosition( 20, 190 );
 
 	TextParams.setPosition( 20, 5 );
 	mTextBoxValue = eeNew( UITextBox, ( TextParams ) );
@@ -466,15 +467,8 @@ void EETest::createUI() {
 	mDropDownList->getListBox()->addListBoxItems( combostrs );
 	mDropDownList->getListBox()->setSelected( 0 );
 
-	UIComboBox::CreateParams ComboParams;
-	ComboParams.setParent( C );
-	ComboParams.setPosition( 20, 80 );
-	ComboParams.Size = Sizei( 100, 1 );
-	ComboParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_AUTO_SIZE | UI_TOUCH_DRAG_ENABLED | UI_TEXT_SELECTION_ENABLED;
-	UIComboBox * mComboBox = eeNew( UIComboBox, ( ComboParams ) );
-	mComboBox->setVisible( true );
-	mComboBox->setEnabled( true );
-
+	UIComboBox * mComboBox = UIComboBox::New();
+	mComboBox->setParent( C )->setPosition( 20, 80 )->setSize(  100, 1 );
 	mComboBox->getListBox()->addListBoxItems( combostrs );
 	mComboBox->getListBox()->setSelected( 0 );
 
@@ -797,7 +791,11 @@ void EETest::createDecoratedWindow() {
 
 	mUIWindow->addShortcut( KEY_C, KEYMOD_ALT, Button );
 
-	UITabWidget * TabWidget = mTheme->createTabWidget( mUIWindow->getContainer(), Sizei( 510, 250 ), Vector2i( 10, 55 ), UI_HALIGN_CENTER | UI_VALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
+	UITabWidget * TabWidget = UITabWidget::New();
+	TabWidget->setParent( mUIWindow->getContainer() )->setSize( 510, 250 )->setPosition( 10, 55 )->
+			setFlags( UI_HALIGN_CENTER | UI_VALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
+
+			//mTheme->createTabWidget( mUIWindow->getContainer(), Sizei( 510, 250 ), Vector2i( 10, 55 ), UI_HALIGN_CENTER | UI_VALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
 
 	UITextEdit * TEdit = mTheme->createTextEdit( TabWidget, Sizei(), Vector2i() );
 	TEdit->setText( mBuda );

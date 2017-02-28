@@ -13,26 +13,12 @@ class EE_API UIPushButton : public UIComplexControl {
 			public:
 				inline CreateParams() :
 					UITextBox::CreateParams(),
-					Font( NULL ),
-					FontColor( 0, 0, 0, 255 ),
-					FontShadowColor( 0, 0, 0, 255 ),
-					FontOverColor( 0, 0, 0, 255 ),
 					Icon( NULL ),
 					IconHorizontalMargin( 0 ),
 					IconAutoMargin( true ),
 					IconMinSize( 0, 0 )
 				{
-					UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
-
-					if ( NULL != Theme ) {
-						Font			= Theme->getFont();
-						FontColor		= Theme->getFontColor();
-						FontShadowColor	= Theme->getFontShadowColor();
-						FontOverColor	= Theme->getFontOverColor();
-					}
-
-					if ( NULL == Font )
-						Font = UIThemeManager::instance()->getDefaultFont();
+					fontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 				}
 
 				inline ~CreateParams() {}
@@ -44,10 +30,7 @@ class EE_API UIPushButton : public UIComplexControl {
 						IconHorizontalMargin = 4;
 				}
 
-				Graphics::Font * 	Font;
-				ColorA				FontColor;
-				ColorA				FontShadowColor;
-				ColorA				FontOverColor;
+				FontStyleConfig		fontStyleConfig;
 				SubTexture *		Icon;
 				Int32				IconHorizontalMargin;
 				bool				IconAutoMargin;
@@ -99,9 +82,12 @@ class EE_API UIPushButton : public UIComplexControl {
 		const ColorA& getFontShadowColor() const;
 
 		void setFontShadowColor( const ColorA& color );
+
+		FontStyleConfig getFontStyleConfig() const;
+
+		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
 	protected:
-		ColorA			mFontColor;
-		ColorA			mFontOverColor;
+		FontStyleConfig mFontStyleConfig;
 		UIGfx * 		mIcon;
 		UITextBox * 	mTextBox;
 		Int32			mIconSpace;

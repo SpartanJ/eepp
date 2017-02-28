@@ -59,29 +59,29 @@ void UISelectButton::onStateChange() {
 		UIWinMenu * Menu = reinterpret_cast<UIWinMenu*> ( getParent() );
 
 		if ( mSkinState->getState() == UISkinState::StateSelected ) {
-			getTextBox()->setFontColor( Menu->getFontSelectedColor() );
+			getTextBox()->setFontColor( Menu->getFontStyleConfig().getFontSelectedColor() );
 		} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-			getTextBox()->setFontColor( Menu->getFontOverColor() );
+			getTextBox()->setFontColor( Menu->getFontStyleConfig().getFontOverColor() );
 		} else {
-			getTextBox()->setFontColor( Menu->getFontColor() );
+			getTextBox()->setFontColor( Menu->getFontStyleConfig().getFontColor() );
 		}
 	} else {
 		if ( mSkinState->getState() == UISkinState::StateSelected ) {
-			getTextBox()->setFontColor( mFontSelectedColor );
+			getTextBox()->setFontColor( mFontStyleConfig.fontSelectedColor );
 		} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-			getTextBox()->setFontColor( mFontOverColor );
+			getTextBox()->setFontColor( mFontStyleConfig.fontOverColor );
 		} else {
-			getTextBox()->setFontColor( mFontColor );
+			getTextBox()->setFontColor( mFontStyleConfig.fontColor );
 		}
 	}
 }
 
-ColorA UISelectButton::getFontSelectedColor() const {
-	return mFontSelectedColor;
+void UISelectButton::setFontSelectedColor(const ColorA & color) {
+	mFontStyleConfig.fontSelectedColor = color;
 }
 
-void UISelectButton::setFontSelectedColor(const ColorA & fontSelectedColor) {
-	mFontSelectedColor = fontSelectedColor;
+const ColorA &UISelectButton::getFontSelectedColor() const {
+	return mFontStyleConfig.fontSelectedColor;
 }
 
 }}

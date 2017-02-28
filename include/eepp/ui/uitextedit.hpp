@@ -61,6 +61,9 @@ class EE_API UITextEdit : public UIComplexControl {
 
 		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
 
+		FontStyleConfig getFontStyleConfig() const;
+
+		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
 	protected:
 		UITextInput *		mTextInput;
 		UIScrollBar *		mHScrollBar;

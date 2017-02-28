@@ -47,7 +47,7 @@ void UITab::setTheme( UITheme * Theme ) {
 	UITabWidget * tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
-		if ( tTabW->mSpecialBorderTabs ) {
+		if ( tTabW->getSpecialBorderTabs() ) {
 			if ( 0 == tTabW->getTabIndex( this ) ) {
 				tabPos = "tab_left";
 			} else if ( tTabW->getCount() > 0 && ( tTabW->getCount() - 1 ) == tTabW->getTabIndex( this ) ) {
@@ -90,11 +90,11 @@ void UITab::onStateChange() {
 		setSize( mSize.getWidth(), skinSize );
 
 		if ( mSkinState->getState() == UISkinState::StateSelected ) {
-			mTextBox->setFontColor( tTabW->mFontSelectedColor );
+			mTextBox->setFontColor( tTabW->getFontSelectedColor() );
 		} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-			mTextBox->setFontColor( tTabW->mFontOverColor );
+			mTextBox->setFontColor( tTabW->getFontOverColor() );
 		} else {
-			mTextBox->setFontColor( tTabW->mFontColor );
+			mTextBox->setFontColor( tTabW->getFontColor() );
 		}
 	}
 }
@@ -107,8 +107,8 @@ void UITab::setText( const String &text ) {
 	UITabWidget * tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
-		if ( text.size() > tTabW->mMaxTextLength ) {
-			UIPushButton::setText( text.substr( 0, tTabW->mMaxTextLength ) );
+		if ( text.size() > tTabW->getMaxTextLength() ) {
+			UIPushButton::setText( text.substr( 0, tTabW->getMaxTextLength() ) );
 
 			autoSize();
 
@@ -128,8 +128,8 @@ void UITab::autoSize() {
 		UITabWidget * tTabW = getTabWidget();
 
 		if ( NULL != tTabW ) {
-			w = eemax( w, tTabW->mMinTabWidth );
-			w = eemin( w, tTabW->mMaxTabWidth );
+			w = eemax( w, tTabW->getMinTabWidth() );
+			w = eemin( w, tTabW->getMaxTabWidth() );
 		}
 
 		setSize( w, mSize.getHeight() );
@@ -152,7 +152,7 @@ void UITab::update() {
 					} else if ( Flags & EE_BUTTON_WDMASK ) {
 						tTabW->selectNext();
 					}
-				} else if ( tTabW->mTabsClosable && ( Flags & EE_BUTTON_MMASK ) ) {
+				} else if ( tTabW->getTabsClosable() && ( Flags & EE_BUTTON_MMASK ) ) {
 					tTabW->remove( this );
 				}
 			}

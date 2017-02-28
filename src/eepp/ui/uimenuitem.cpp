@@ -43,11 +43,11 @@ void UIMenuItem::onStateChange() {
 	UIMenu * tMenu = reinterpret_cast<UIMenu*> ( getParent() );
 
 	if ( mSkinState->getState() == UISkinState::StateSelected ) {
-		mTextBox->setFontColor( tMenu->mFontSelectedColor );
+		mTextBox->setFontColor( tMenu->getFontStyleConfig().getFontSelectedColor() );
 	} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-		mTextBox->setFontColor( tMenu->mFontOverColor );
+		mTextBox->setFontColor( tMenu->getFontStyleConfig().getFontOverColor() );
 	} else {
-		mTextBox->setFontColor( tMenu->mFontColor );
+		mTextBox->setFontColor( tMenu->getFontStyleConfig().getFontColor() );
 	}
 }
 

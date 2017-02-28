@@ -8,6 +8,7 @@ namespace EE { namespace UI {
 
 UIListBox::UIListBox( UIListBox::CreateParams& Params ) :
 	UIComplexControl( Params ),
+	mFontStyleConfig( Params.fontStyleConfig ),
 	mRowHeight( Params.RowHeight ),
 	mVScrollMode( Params.VScrollMode ),
 	mHScrollMode( Params.HScrollMode ),
@@ -18,10 +19,6 @@ UIListBox::UIListBox( UIListBox::CreateParams& Params ) :
 	mContainer( NULL ),
 	mVScrollBar( NULL ),
 	mHScrollBar( NULL ),
-	mFont( Params.Font ),
-	mFontColor( Params.FontColor ),
-	mFontOverColor( Params.FontOverColor ),
-	mFontSelectedColor( Params.FontSelectedColor ),
 	mLastPos( eeINDEX_NOT_FOUND ),
 	mMaxTextWidth(0),
 	mHScrollInit(0),
@@ -32,9 +29,6 @@ UIListBox::UIListBox( UIListBox::CreateParams& Params ) :
 	mTouchDragAcceleration(0),
 	mTouchDragDeceleration( Params.TouchDragDeceleration )
 {
-	if ( NULL == Params.Font && NULL != UIThemeManager::instance()->getDefaultFont() )
-		mFont = UIThemeManager::instance()->getDefaultFont();
-
 	UIControl::CreateParams CParams;
 	CParams.setParent( this );
 	CParams.setPosition( mPaddingContainer.Left, mPaddingContainer.Top );
@@ -96,17 +90,7 @@ UIListBox::UIListBox() :
 {
 	setFlags( UI_CLIP_ENABLE | UI_AUTO_PADDING );
 
-	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != Theme ) {
-		mFont				= Theme->getFont();
-		mFontColor			= Theme->getFontColor();
-		mFontOverColor		= Theme->getFontOverColor();
-		mFontSelectedColor	= Theme->getFontSelectedColor();
-	}
-
-	if ( NULL == mFont && NULL != UIThemeManager::instance()->getDefaultFont() )
-		mFont = UIThemeManager::instance()->getDefaultFont();
+	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 
 	mContainer = eeNew( UIItemContainer<UIListBox>, () );
 	mContainer->setParent( this );
@@ -151,9 +135,6 @@ bool UIListBox::isType( const Uint32& type ) const {
 
 void UIListBox::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "listbox" );
-
-	if ( NULL == mFont && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFont() )
-		mFont = mSkinState->getSkin()->getTheme()->getFont();
 
 	autoPadding();
 
@@ -212,8 +193,8 @@ Uint32 UIListBox::addListBoxItem( const String& Text ) {
 	mTexts.push_back( Text );
 	mItems.push_back( NULL );
 
-	if ( NULL != mFont ) {
-		Uint32 twidth = mFont->getTextWidth( Text );
+	if ( NULL != mFontStyleConfig.font ) {
+		Uint32 twidth = mFontStyleConfig.font->getTextWidth( Text );
 
 		if ( twidth > mMaxTextWidth ) {
 			mMaxTextWidth = twidth;
@@ -232,10 +213,9 @@ Uint32 UIListBox::addListBoxItem( const String& Text ) {
 UIListBoxItem * UIListBox::createListBoxItem( const String& Name ) {
 	UITextBox::CreateParams TextParams;
 	TextParams.setParent( mContainer );
-	TextParams.Flags 		= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	TextParams.Font 		= mFont;
-	TextParams.FontColor 	= mFontColor;
-	UIListBoxItem * tItem 	= eeNew( UIListBoxItem, ( TextParams ) );
+	TextParams.Flags			= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	TextParams.fontStyleConfig 	= mFontStyleConfig;
+	UIListBoxItem * tItem		= eeNew( UIListBoxItem, ( TextParams ) );
 	tItem->setText( Name );
 
 	return tItem;
@@ -370,11 +350,11 @@ void UIListBox::setRowHeight() {
 		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
 			FontSize = UIThemeManager::instance()->getDefaultFont()->getFontHeight();
 
-		if ( NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFont() )
-			FontSize = mSkinState->getSkin()->getTheme()->getFont()->getFontHeight();
+		if ( NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() )
+			FontSize = mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont()->getFontHeight();
 
-		if ( NULL != mFont )
-			FontSize = mFont->getFontHeight();
+		if ( NULL != mFontStyleConfig.getFont() )
+			FontSize = mFontStyleConfig.getFont()->getFontHeight();
 
 		mRowHeight = (Uint32)PixelDensity::pxToDpI( FontSize + 4 );
 	}
@@ -408,7 +388,7 @@ void UIListBox::findMaxWidth() {
 		if ( NULL != mItems[i] )
 			width = (Int32)mItems[i]->getTextWidth();
 		else
-			width = mFont->getTextWidth( mTexts[i] );
+			width = mFontStyleConfig.font->getTextWidth( mTexts[i] );
 
 		if ( width > (Int32)mMaxTextWidth )
 			mMaxTextWidth = width;
@@ -749,37 +729,37 @@ Uint32 UIListBox::getItemIndex( const String& Text ) {
 }
 
 void UIListBox::setFontColor( const ColorA& Color ) {
-	mFontColor = Color;
+	mFontStyleConfig.fontColor = Color;
 
 	for ( Uint32 i = 0; i < mItems.size(); i++ )
-		mItems[i]->setFontColor( mFontColor );
+		mItems[i]->setFontColor( mFontStyleConfig.fontColor );
 }
 
 const ColorA& UIListBox::getFontColor() const {
-	return mFontColor;
+	return mFontStyleConfig.fontColor;
 }
 
 void UIListBox::setFontOverColor( const ColorA& Color ) {
-	mFontOverColor = Color;
+	mFontStyleConfig.fontOverColor = Color;
 }
 
 const ColorA& UIListBox::getFontOverColor() const {
-	return mFontOverColor;
+	return mFontStyleConfig.fontOverColor;
 }
 
 void UIListBox::setFontSelectedColor( const ColorA& Color ) {
-	mFontSelectedColor = Color;
+	mFontStyleConfig.fontSelectedColor = Color;
 }
 
 const ColorA& UIListBox::getFontSelectedColor() const {
-	return mFontSelectedColor;
+	return mFontStyleConfig.fontSelectedColor;
 }
 
 void UIListBox::setFont( Graphics::Font * Font ) {
-	mFont = Font;
+	mFontStyleConfig.font = Font;
 
 	for ( Uint32 i = 0; i < mItems.size(); i++ )
-		mItems[i]->setFont( mFont );
+		mItems[i]->setFont( mFontStyleConfig.font );
 
 	findMaxWidth();
 	updateListBoxItemsSize();
@@ -787,7 +767,7 @@ void UIListBox::setFont( Graphics::Font * Font ) {
 }
 
 Graphics::Font * UIListBox::getFont() const {
-	return mFont;
+	return mFontStyleConfig.font;
 }
 
 void UIListBox::setContainerPadding( const Recti& Padding ) {

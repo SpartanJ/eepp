@@ -31,7 +31,7 @@ UIDropDownList::UIDropDownList( UIDropDownList::CreateParams& Params ) :
 			UIListBox::CreateParams LBParams;
 			LBParams.Size 				= Sizei( mSize.getWidth(), mMinNumVisibleItems * mSize.getHeight() );
 			LBParams.Flags 				= flags;
-			LBParams.FontSelectedColor	= ColorA( 255, 255, 255, 255 );
+			LBParams.fontStyleConfig.fontSelectedColor	= ColorA( 255, 255, 255, 255 );
 			mListBox = eeNew( UIListBox, ( LBParams ) );
 		}
 	}

@@ -33,9 +33,7 @@ UITextEdit::UITextEdit( UITextEdit::CreateParams& Params ) :
 	TIParams.Size				= mSize;
 	TIParams.Flags				= UI_VALIGN_TOP | UI_HALIGN_LEFT | UI_TEXT_SELECTION_ENABLED | extraFlags;
 	TIParams.MaxLength			= 1024 * 1024 * 10;
-	TIParams.Font				= Params.Font;
-	TIParams.FontColor			= Params.FontColor;
-	TIParams.FontShadowColor	= Params.FontShadowColor;
+	TIParams.fontStyleConfig	= Params.fontStyleConfig;
 
 	if ( Params.WordWrap && !( mFlags & UI_WORD_WRAP ) )
 		mFlags |= UI_WORD_WRAP;
@@ -488,6 +486,16 @@ void UITextEdit::setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 
 const UI_SCROLLBAR_MODE& UITextEdit::getHorizontalScrollMode() {
 	return mHScrollBarMode;
+}
+
+FontStyleConfig UITextEdit::getFontStyleConfig() const {
+	return mTextInput->getFontStyleConfig();
+}
+
+void UITextEdit::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
+	if ( NULL != mTextInput ) {
+		mTextInput->setFontStyleConfig( fontStyleConfig );
+	}
 }
 
 }}

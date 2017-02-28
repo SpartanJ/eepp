@@ -10,54 +10,31 @@ namespace EE { namespace UI {
 
 UITextBox::UITextBox( const UITextBox::CreateParams& Params ) :
 	UIComplexControl( Params ),
-	mFontColor( Params.FontColor ),
-	mFontShadowColor( Params.FontShadowColor ),
-	mFontSelectionBackColor( Params.FontSelectionBackColor ),
+	mFontStyleConfig( Params.fontStyleConfig ),
 	mRealAlignOffset( 0.f, 0.f ),
 	mSelCurInit( -1 ),
 	mSelCurEnd( -1 )
 {
 	mTextCache = eeNew( TextCache, () );
-	mTextCache->setFont( Params.Font );
-	mTextCache->setColor( mFontColor );
-	mTextCache->setShadowColor( mFontShadowColor );
-
-	if ( NULL == Params.Font ) {
-		if ( NULL != UIThemeManager::instance()->getDefaultFont() ) {
-			mTextCache->setFont( UIThemeManager::instance()->getDefaultFont() );
-		} else {
-			eePRINTL( "UITextBox::UITextBox : Created a UI TextBox without a defined font." );
-		}
-	}
+	mTextCache->setFont( mFontStyleConfig.font );
+	mTextCache->setColor( mFontStyleConfig.fontColor );
+	mTextCache->setShadowColor( mFontStyleConfig.fontShadowColor );
 
 	autoAlign();
 }
 
 UITextBox::UITextBox() :
 	UIComplexControl(),
-	mFontColor(),
-	mFontShadowColor(),
-	mFontSelectionBackColor(),
 	mRealAlignOffset( 0.f, 0.f ),
 	mSelCurInit( -1 ),
 	mSelCurEnd( -1 )
 {
+	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
+
 	mTextCache = eeNew( TextCache, () );
-
-	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != UIThemeManager::instance()->getDefaultTheme() ) {
-		setFont( Theme->getFont() );
-		setFontColor( Theme->getFontColor() );
-		setFontShadowColor( Theme->getFontShadowColor() );
-		setSelectionBackColor( Theme->getFontSelectionBackColor() );
-	}
-
-	if ( NULL == getFont() && NULL != UIThemeManager::instance()->getDefaultFont() ) {
-		setFont( UIThemeManager::instance()->getDefaultFont() );
-	} else {
-		eePRINTL( "UITextBox::UITextBox : Created a UI TextBox without a defined font." );
-	}
+	mTextCache->setFont( mFontStyleConfig.font );
+	mTextCache->setColor( mFontStyleConfig.fontColor );
+	mTextCache->setShadowColor( mFontStyleConfig.fontShadowColor );
 
 	autoAlign();
 }
@@ -137,39 +114,39 @@ void UITextBox::setText( const String& text ) {
 }
 
 const ColorA& UITextBox::getFontColor() const {
-	return mFontColor;
+	return mFontStyleConfig.fontColor;
 }
 
 void UITextBox::setFontColor( const ColorA& color ) {
-	mFontColor = color;
+	mFontStyleConfig.fontColor = color;
 	mTextCache->setColor( color );
 
 	setAlpha( color.a() );
 }
 
 const ColorA& UITextBox::getFontShadowColor() const {
-	return mFontShadowColor;
+	return mFontStyleConfig.fontShadowColor;
 }
 
 void UITextBox::setFontShadowColor( const ColorA& color ) {
-	mFontShadowColor = color;
-	mTextCache->setShadowColor( mFontShadowColor );
+	mFontStyleConfig.fontShadowColor = color;
+	mTextCache->setShadowColor( mFontStyleConfig.fontShadowColor );
 }
 
 const ColorA& UITextBox::getSelectionBackColor() const {
-	return mFontSelectionBackColor;
+	return mFontStyleConfig.fontSelectionBackColor;
 }
 
 void UITextBox::setSelectionBackColor( const ColorA& color ) {
-	mFontSelectionBackColor = color;
+	mFontStyleConfig.fontSelectionBackColor = color;
 }
 
 void UITextBox::setAlpha( const Float& alpha ) {
 	UIControlAnim::setAlpha( alpha );
-	mFontColor.Alpha = (Uint8)alpha;
-	mFontShadowColor.Alpha = (Uint8)alpha;
+	mFontStyleConfig.fontColor.Alpha = (Uint8)alpha;
+	mFontStyleConfig.fontShadowColor.Alpha = (Uint8)alpha;
 
-	mTextCache->setAlpha( mFontColor.Alpha );
+	mTextCache->setAlpha( mFontStyleConfig.fontColor.Alpha );
 }
 
 void UITextBox::autoShrink() {
@@ -257,8 +234,8 @@ const Recti& UITextBox::getPadding() const {
 void UITextBox::setTheme( UITheme * Theme ) {
 	UIControlAnim::setTheme( Theme );
 
-	if ( NULL == mTextCache->getFont() && NULL != Theme->getFont() ) {
-		mTextCache->setFont( Theme->getFont() );
+	if ( NULL == mTextCache->getFont() && NULL != Theme->getFontStyleConfig().getFont() ) {
+		mTextCache->setFont( Theme->getFontStyleConfig().getFont() );
 	}
 }
 
@@ -354,7 +331,7 @@ void UITextBox::drawSelection( TextCache * textCache ) {
 		Vector2i initPos, endPos;
 
 		Primitives P;
-		P.setColor( mFontSelectionBackColor );
+		P.setColor( mFontStyleConfig.fontSelectionBackColor );
 
 		do {
 			initPos	= textCache->getFont()->getCursorPos( textCache->getText(), init );
@@ -381,6 +358,11 @@ bool UITextBox::isTextSelectionEnabled() const {
 	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
 }
 
+FontStyleConfig UITextBox::getFontStyleConfig() const
+{
+	return mFontStyleConfig;
+}
+
 void UITextBox::selCurInit( const Int32& init ) {
 	mSelCurInit = init;
 }
@@ -395,6 +377,14 @@ Int32 UITextBox::selCurInit() {
 
 Int32 UITextBox::selCurEnd() {
 	return mSelCurEnd;
+}
+
+void UITextBox::setFontStyleConfig( const FontStyleConfig& fontStyleConfig ) {
+	mFontStyleConfig = fontStyleConfig;
+
+	setFont( mFontStyleConfig.getFont() );
+	setFontColor( mFontStyleConfig.getFontColor() );
+	setFontShadowColor( mFontStyleConfig.getFontShadowColor() );
 }
 
 }}

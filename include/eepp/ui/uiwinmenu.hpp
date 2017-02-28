@@ -14,39 +14,19 @@ class EE_API UIWinMenu : public UIComplexControl {
 			public:
 				inline CreateParams() :
 					UIComplexControl::CreateParams(),
-					Font( NULL ),
-					FontColor( 0, 0, 0, 255 ),
-					FontShadowColor( 0, 0, 0, 255 ),
-					FontOverColor( 0, 0, 0, 255 ),
-					FontSelectedColor( 0, 0, 0, 255 ),
-					MarginBetweenButtons(0),
-					ButtonMargin(4),
-					MenuHeight(0),
-					FirstButtonMargin(1)
+					marginBetweenButtons(0),
+					buttonMargin(4),
+					menuHeight(0),
+					firstButtonMargin(1)
 				{
-					UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
-
-					if ( NULL != Theme ) {
-						Font				= Theme->getFont();
-						FontColor			= Theme->getFontColor();
-						FontShadowColor		= Theme->getFontShadowColor();
-						FontOverColor		= Theme->getFontOverColor();
-						FontSelectedColor	= Theme->getFontSelectedColor();
-					}
-
-					if ( NULL == Font )
-						Font = UIThemeManager::instance()->getDefaultFont();
+					fontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 				}
 
-				Graphics::Font * 	Font;
-				ColorA				FontColor;
-				ColorA				FontShadowColor;
-				ColorA				FontOverColor;
-				ColorA				FontSelectedColor;
-				Uint32				MarginBetweenButtons;
-				Uint32				ButtonMargin;
-				Uint32				MenuHeight;
-				Uint32				FirstButtonMargin;
+				FontStyleConfig		fontStyleConfig;
+				Uint32				marginBetweenButtons;
+				Uint32				buttonMargin;
+				Uint32				menuHeight;
+				Uint32				firstButtonMargin;
 		};
 
 		UIWinMenu( const UIWinMenu::CreateParams& Params );
@@ -65,42 +45,21 @@ class EE_API UIWinMenu : public UIComplexControl {
 
 		virtual void setTheme( UITheme * Theme );
 
-		void setFontColor( const ColorA& Color );
-
-		const ColorA& getFontColor() const;
-
-		void setFontOverColor( const ColorA& Color );
-
-		const ColorA& getFontOverColor() const;
-
-		void setFontSelectedColor( const ColorA& Color );
-
-		const ColorA& getFontSelectedColor() const;
-
-		void setFont(Graphics::Font * font);
-
-		Graphics::Font * getFont() const;
-
 		UISelectButton * getButton( const String& ButtonText );
 
 		UIPopUpMenu * getPopUpMenu( const String& ButtonText );
-
-		ColorA getFontShadowColor() const;
-
-		void setFontShadowColor(const ColorA & fontShadowColor);
 
 		Uint32 getMarginBetweenButtons() const;
 
 		void setMarginBetweenButtons(const Uint32 & marginBetweenButtons);
 
+		FontStyleConfig getFontStyleConfig() const;
+
+		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
 	protected:
 		typedef std::list< std::pair< UISelectButton *, UIPopUpMenu * > > WinMenuList;
 
-		Graphics::Font *mFont;
-		ColorA			mFontColor;
-		ColorA			mFontShadowColor;
-		ColorA			mFontOverColor;
-		ColorA			mFontSelectedColor;
+		FontStyleConfig mFontStyleConfig;
 		UIPopUpMenu *	mCurrentMenu;
 		Uint32			mMarginBetweenButtons;
 		Uint32			mButtonMargin;

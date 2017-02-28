@@ -636,6 +636,11 @@ UIControl * UIControl::unsetFlags(const Uint32 & flags) {
 	return this;
 }
 
+UIControl *UIControl::resetFlags() {
+	mFlags = 0;
+	return this;
+}
+
 void UIControl::setBlendMode( const EE_BLEND_MODE& blend ) {
 	mBlend = static_cast<Uint16> ( blend );
 }

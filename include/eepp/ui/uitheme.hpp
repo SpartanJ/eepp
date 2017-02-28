@@ -2,6 +2,7 @@
 #define EE_UICUITHEME_HPP
 
 #include <eepp/ui/base.hpp>
+#include <eepp/ui/uithemeconfig.hpp>
 #include <eepp/ui/uihelper.hpp>
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/system/resourcemanager.hpp>
@@ -74,30 +75,6 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		virtual UISkin * add( UISkin * Resource );
 
-		void setFont( Graphics::Font * setFont );
-
-		Graphics::Font * getFont() const;
-
-		const ColorA& getFontColor() const;
-
-		const ColorA& getFontShadowColor() const;
-
-		const ColorA& getFontOverColor() const;
-
-		const ColorA& getFontSelectedColor() const;
-
-		ColorA getFontSelectionBackColor() const;
-
-		void setFontSelectionBackColor(const ColorA & fontSelectionBackColor);
-
-		void setFontColor( const ColorA& Color );
-
-		void setFontShadowColor( const ColorA& Color );
-
-		void setFontOverColor( const ColorA& Color );
-
-		void setFontSelectedColor( const ColorA& Color );
-
 		void setUseDefaultThemeValues( const bool& Use );
 
 		const bool& getUseDefaultThemeValues() const;
@@ -122,15 +99,11 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		virtual UITextInputPassword * createTextInputPassword( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED, bool SupportFreeEditing = true, Uint32 MaxLength = 1024*8 );
 
-		virtual UITooltip * createTooltip( UIControl * TooltipOf, UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
-
 		virtual UIScrollBar * createScrollBar( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, bool VerticalScrollBar = false );
 
 		virtual UISlider * createSlider( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS, bool VerticalSlider = false, bool AllowHalfSliderOut = true, bool ExpandBackground = false );
 
 		virtual UISpinBox * createSpinBox( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED, Float DefaultValue = 0.f, bool AllowDotsInNumbers = true );
-
-		virtual UIComboBox * createComboBox( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED, Uint32 MinNumVisibleItems = 6, bool PopUpToMainControl = false, UIListBox * ListBox = NULL );
 
 		virtual UIDropDownList * createDropDownList( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING, Uint32 MinNumVisibleItems = 6, bool PopUpToMainControl = false, UIListBox * ListBox = NULL );
 
@@ -139,8 +112,6 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 		virtual UIMenu * createMenu( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE | UI_AUTO_PADDING, Recti PaddingContainer = Recti(), Uint32 MinWidth = 0, Uint32 MinSpaceForIcons = 0, Uint32 MinRightMargin = 0 );
 
 		virtual UIPopUpMenu * createPopUpMenu(UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE | UI_AUTO_PADDING, Recti PaddingContainer = Recti(), Uint32 MinWidth = 0, Uint32 MinSpaceForIcons = 0, Uint32 MinRightMargin = 0 );
-
-		virtual UIProgressBar * createProgressBar( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS, bool DisplayPercent = false, bool VerticalExpand = false, Vector2f MovementSpeed = Vector2f( 64, 0 ), Rectf FillerMargin = Rectf() );
 
 		virtual UIPushButton * createPushButton( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, SubTexture * Icon = NULL, Int32 IconHorizontalMargin = 0, bool IconAutoMargin = true );
 
@@ -154,8 +125,6 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		virtual UIMessageBox * createMessageBox( UI_MSGBOX_TYPE Type = MSGBOX_OKCANCEL, const String& Message = String(), Uint32 WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL, UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED, Sizei MinWindowSize = Sizei(0,0), Uint8 BaseAlpha = 255 );
 
-		virtual UITabWidget * createTabWidget( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_HALIGN_CENTER | UI_VALIGN_BOTTOM | UI_CONTROL_DEFAULT_ANCHOR, const bool& TabsClosable = false, const bool& SpecialBorderTabs = false , const Int32& TabSeparation = 0, const Uint32& MaxTextLength = 30, const Uint32& TabWidgetHeight = 0, const Uint32& TabTextAlign = UI_HALIGN_CENTER | UI_VALIGN_CENTER, const Uint32& MinTabWidth = 32, const Uint32& MaxTabWidth = 210 );
-
 		ColorA getMenuFontColor() const;
 
 		void setMenuFontColor(const ColorA & menuFontColor);
@@ -163,19 +132,37 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 		ColorA getMenuFontColorOver() const;
 
 		void setMenuFontColorOver(const ColorA & menuFontColorOver);
+
+		ColorA getTooltipFontColor() const;
+
+		void setTooltipFontColor(const ColorA & tooltipFontColor);
+
+		Recti getTooltipPadding() const;
+
+		void setTooltipPadding(const Recti & tooltipPadding);
+
+		Int32 getTabSeparation() const;
+
+		void setTabSeparation(const Int32 & tabSeparation);
+
+		FontStyleConfig getFontStyleConfig() const;
+
+		void setFontStyleConfig(const FontStyleConfig & fontConfig);
+
+		virtual TabWidgetStyleConfig getTabWidgetStyleConfig();
+
+		virtual ProgressBarStyleConfig getProgressBarStyleConfig();
 	protected:
 		std::string				mName;
 		Uint32					mNameHash;
 		std::string				mAbbr;
 		Graphics::TextureAtlas *mTextureAtlas;
-		Graphics::Font *		mFont;
-		ColorA					mFontColor;
-		ColorA					mFontShadowColor;
-		ColorA					mFontOverColor;
-		ColorA					mFontSelectedColor;
-		ColorA					mFontSelectionBackColor;
+		FontStyleConfig			mFontStyleConfig;
 		ColorA					mMenuFontColor;
 		ColorA					mMenuFontColorOver;
+		ColorA					mTooltipFontColor;
+		Recti					mTooltipPadding;
+		Int32					mTabSeparation;
 		bool					mUseDefaultThemeValues;
 		std::list<std::string>	mUIElements;
 		std::list<std::string>	mUIIcons;

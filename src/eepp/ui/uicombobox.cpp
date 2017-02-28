@@ -3,12 +3,8 @@
 
 namespace EE { namespace UI {
 
-UIComboBox::UIComboBox( UIComboBox::CreateParams& Params ) :
-	UIComplexControl( Params ),
-	mDropDownList( NULL ),
-	mButton( NULL )
-{
-	applyDefaultTheme();
+UIComboBox *UIComboBox::New() {
+	return eeNew( UIComboBox, () );
 }
 
 UIComboBox::UIComboBox() :
@@ -78,7 +74,7 @@ const String& UIComboBox::getText() {
 }
 
 void UIComboBox::updateControls() {
-	if ( ( mFlags & UI_AUTO_SIZE ) || 0 == mSize.getHeight() ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) || mSize.getHeight() < mDropDownList->getSkin()->getSize().getHeight() ) {
 		setInternalHeight( mDropDownList->getSkin()->getSize().getHeight() );
 	}
 
@@ -108,10 +104,6 @@ void UIComboBox::onPositionChange() {
 	UIComplexControl::onPositionChange();
 
 	updateControls();
-}
-
-void UIComboBox::onParentChange() {
-	//mButton->centerVertical();
 }
 
 }}

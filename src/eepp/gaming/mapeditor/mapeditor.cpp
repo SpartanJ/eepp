@@ -187,8 +187,15 @@ void MapEditor::CreateETGMenu() {
 
 	mObjectCont = eeNew( UIComplexControl, ( CParams ) );
 
-	mTabWidget = mTheme->createTabWidget( mWinContainer, Sizei( Width + DistToBorder, mWinContainer->getSize().getHeight() - DistFromTopMenu ), Vector2i( ContPosX, DistFromTopMenu ), UI_HALIGN_CENTER | UI_VALIGN_BOTTOM | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM );
+	mTabWidget = UITabWidget::New();
+
+	mTabWidget->setParent( mWinContainer )->
+				setSize( Width + DistToBorder, mWinContainer->getSize().getHeight() - DistFromTopMenu )->
+				setPosition( ContPosX, DistFromTopMenu )->resetFlags()->
+				setFlags( UI_HALIGN_CENTER | UI_VALIGN_BOTTOM | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM );
+
 	mTabWidget->addEventListener( UIEvent::EventOnTabSelected, cb::Make1( this, &MapEditor::OnTabSelected ) );
+
 	CreateTabs();
 
 	CreateLighContainer();

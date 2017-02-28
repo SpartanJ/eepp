@@ -10,30 +10,14 @@ class EE_API UITextBox : public UIComplexControl {
 		class CreateParams : public UIComplexControl::CreateParams {
 			public:
 				inline CreateParams() :
-					UIComplexControl::CreateParams(),
-					Font( NULL ),
-					FontColor( 0, 0, 0, 255 ),
-					FontShadowColor( 255, 255, 255, 150 ),
-					FontSelectionBackColor( 150, 150, 150, 150 )
+					UIComplexControl::CreateParams()
 				{
-					UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
-
-					if ( NULL != Theme ) {
-						Font			= Theme->getFont();
-						FontColor		= Theme->getFontColor();
-						FontShadowColor	= Theme->getFontShadowColor();
-					}
-
-					if ( NULL == Font )
-						Font = UIThemeManager::instance()->getDefaultFont();
+					fontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 				}
 
 				inline ~CreateParams() {}
 
-				Graphics::Font * 	Font;
-				ColorA				FontColor;
-				ColorA				FontShadowColor;
-				ColorA				FontSelectionBackColor;
+				FontStyleConfig fontStyleConfig;
 		};
 
 		UITextBox( const UITextBox::CreateParams& Params );
@@ -89,12 +73,14 @@ class EE_API UITextBox : public UIComplexControl {
 		virtual void shrinkText( const Uint32& MaxWidth );
 
 		bool isTextSelectionEnabled() const;
+
+		virtual void setFontStyleConfig( const FontStyleConfig& fontStyleConfig );
+
+		FontStyleConfig getFontStyleConfig() const;
 	protected:
 		TextCache *		mTextCache;
 		String			mString;
-		ColorA			mFontColor;
-		ColorA			mFontShadowColor;
-		ColorA			mFontSelectionBackColor;
+		FontStyleConfig mFontStyleConfig;
 		Vector2i 		mAlignOffset;
 		Vector2f 		mRealAlignOffset;
 		Recti			mPadding;

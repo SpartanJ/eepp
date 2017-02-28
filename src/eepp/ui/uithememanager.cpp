@@ -14,9 +14,9 @@ UIThemeManager::UIThemeManager() :
 	mEnableDefaultEffects( false ),
 	mFadeInTime( Milliseconds( 100.f ) ),
 	mFadeOutTime( Milliseconds ( 100.f ) ),
-	mtooltipTimeToShow( Milliseconds( 200 ) ),
-	mtooltipFollowMouse( true ),
-	mcursorSize( 16, 16 )
+	mTooltipTimeToShow( Milliseconds( 200 ) ),
+	mTooltipFollowMouse( true ),
+	mCursorSize( 16, 16 )
 {
 }
 
@@ -25,6 +25,15 @@ UIThemeManager::~UIThemeManager() {
 
 void UIThemeManager::setDefaultFont( Font * Font ) {
 	mFont = Font;
+
+	if ( NULL != mThemeDefault ) {
+		FontStyleConfig fontStyleConfig = mThemeDefault->getFontStyleConfig();
+
+		if ( NULL == fontStyleConfig.getFont() && NULL != mFont ) {
+			fontStyleConfig.font = mFont;
+			mThemeDefault->setFontStyleConfig( fontStyleConfig );
+		}
+	}
 }
 
 Font * UIThemeManager::getDefaultFont() const {
@@ -46,6 +55,13 @@ void UIThemeManager::setTheme( UITheme * Theme ) {
 
 void UIThemeManager::setDefaultTheme( UITheme * Theme ) {
 	mThemeDefault = Theme;
+
+	FontStyleConfig fontStyleConfig = mThemeDefault->getFontStyleConfig();
+
+	if ( NULL == fontStyleConfig.getFont() && NULL != mFont ) {
+		fontStyleConfig.font = mFont;
+		mThemeDefault->setFontStyleConfig( fontStyleConfig );
+	}
 }
 
 void UIThemeManager::setDefaultTheme( const std::string& Theme ) {
@@ -94,27 +110,35 @@ void UIThemeManager::setControlsFadeOutTime( const Time& Time ) {
 }
 
 void UIThemeManager::setTooltipTimeToShow( const Time& Time ) {
-	mtooltipTimeToShow = Time;
+	mTooltipTimeToShow = Time;
 }
 
 const Time& UIThemeManager::getTooltipTimeToShow() const {
-	return mtooltipTimeToShow;
+	return mTooltipTimeToShow;
 }
 
 void UIThemeManager::setTooltipFollowMouse( const bool& Follow ) {
-	mtooltipFollowMouse = Follow;
+	mTooltipFollowMouse = Follow;
 }
 
 const bool& UIThemeManager::getTooltipFollowMouse() const {
-	return mtooltipFollowMouse;
+	return mTooltipFollowMouse;
 }
 
 void UIThemeManager::setCursorSize( const Sizei& Size ) {
-	mcursorSize = Size;
+	mCursorSize = Size;
 }
 
 const Sizei& UIThemeManager::getCursorSize() const {
-	return mcursorSize;
+	return mCursorSize;
+}
+
+FontStyleConfig UIThemeManager::getDefaultFontStyleConfig() {
+	if ( NULL != getDefaultTheme() ) {
+		return getDefaultTheme()->getFontStyleConfig();
+	}
+
+	return FontStyleConfig();
 }
 
 }}

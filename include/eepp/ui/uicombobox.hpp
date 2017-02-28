@@ -7,7 +7,7 @@ namespace EE { namespace UI {
 
 class EE_API UIComboBox : public UIComplexControl {
 	public:
-		UIComboBox( UIComboBox::CreateParams& Params );
+		static UIComboBox * New();
 
 		UIComboBox();
 
@@ -43,8 +43,6 @@ class EE_API UIComboBox : public UIComplexControl {
 		virtual void onSizeChange();
 
 		virtual void onPositionChange();
-
-		virtual void onParentChange();
 };
 
 }}

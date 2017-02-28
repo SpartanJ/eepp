@@ -6,16 +6,12 @@ namespace EE { namespace UI {
 
 UIWinMenu::UIWinMenu( const UIWinMenu::CreateParams& Params ) :
 	UIComplexControl( Params ),
-	mFont( Params.Font ),
-	mFontColor( Params.FontColor ),
-	mFontShadowColor( Params.FontShadowColor ),
-	mFontOverColor( Params.FontOverColor ),
-	mFontSelectedColor( Params.FontSelectedColor ),
+	mFontStyleConfig( Params.fontStyleConfig ),
 	mCurrentMenu( NULL ),
-	mMarginBetweenButtons( Params.MarginBetweenButtons ),
-	mButtonMargin( Params.ButtonMargin ),
-	mFirstButtonMargin( Params.FirstButtonMargin ),
-	mMenuHeight( Params.MenuHeight )
+	mMarginBetweenButtons( Params.marginBetweenButtons ),
+	mButtonMargin( Params.buttonMargin ),
+	mFirstButtonMargin( Params.firstButtonMargin ),
+	mMenuHeight( Params.menuHeight )
 {
 	if ( !(mFlags & UI_ANCHOR_RIGHT) )
 		mFlags |= UI_ANCHOR_RIGHT;
@@ -38,18 +34,7 @@ UIWinMenu::UIWinMenu() :
 	if ( !(mFlags & UI_ANCHOR_RIGHT) )
 		mFlags |= UI_ANCHOR_RIGHT;
 
-	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != Theme ) {
-		mFont				= Theme->getFont();
-		mFontColor			= Theme->getFontColor();
-		mFontShadowColor	= Theme->getFontShadowColor();
-		mFontOverColor		= Theme->getFontOverColor();
-		mFontSelectedColor	= Theme->getFontSelectedColor();
-	}
-
-	if ( NULL == mFont )
-		mFont = UIThemeManager::instance()->getDefaultFont();
+	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 
 	onParentChange();
 
@@ -78,10 +63,7 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	if ( mFlags & UI_DRAW_SHADOW )
 		ButtonParams.Flags |= UI_DRAW_SHADOW;
 
-	ButtonParams.Font				= mFont;
-	ButtonParams.FontColor			= mFontColor;
-	ButtonParams.FontShadowColor	= mFontShadowColor;
-	ButtonParams.FontOverColor		= mFontOverColor;
+	ButtonParams.fontStyleConfig = mFontStyleConfig;
 
 	UISelectButton * Button = eeNew( UISelectButton, ( ButtonParams ) );
 	Button->setText( ButtonText );
@@ -149,15 +131,6 @@ UIPopUpMenu * UIWinMenu::getPopUpMenu( const String& ButtonText ) {
 	return NULL;
 }
 
-ColorA UIWinMenu::getFontShadowColor() const {
-	return mFontShadowColor;
-}
-
-void UIWinMenu::setFontShadowColor(const ColorA & fontShadowColor) {
-	mFontShadowColor = fontShadowColor;
-	refreshButtons();
-}
-
 Uint32 UIWinMenu::getMarginBetweenButtons() const {
 	return mMarginBetweenButtons;
 }
@@ -167,8 +140,12 @@ void UIWinMenu::setMarginBetweenButtons(const Uint32 & marginBetweenButtons) {
 	refreshButtons();
 }
 
-void UIWinMenu::setFont(Graphics::Font * font) {
-	mFont = font;
+FontStyleConfig UIWinMenu::getFontStyleConfig() const {
+	return mFontStyleConfig;
+}
+
+void UIWinMenu::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
+	mFontStyleConfig = fontStyleConfig;
 	refreshButtons();
 }
 
@@ -208,10 +185,7 @@ void UIWinMenu::refreshButtons() {
 		UISelectButton * pbut	= it->first;
 		UITextBox * tbox		= pbut->getTextBox();
 
-		pbut->setFont( mFont );
-		pbut->setFontColor( mFontColor );
-		pbut->setFontOverColor( mFontOverColor );
-		pbut->setFontShadowColor( mFontShadowColor );
+		pbut->setFontStyleConfig( mFontStyleConfig );
 		pbut->setSize( PixelDensity::pxToDpI( tbox->getTextWidth() ) + mButtonMargin, getSize().getHeight() );
 		pbut->setPosition( xpos, ycenter );
 
@@ -327,35 +301,6 @@ void UIWinMenu::onComplexControlFocusLoss() {
 	}
 
 	unselectButtons();
-}
-
-
-void UIWinMenu::setFontColor( const ColorA& Color ) {
-	mFontColor = Color;
-}
-
-const ColorA& UIWinMenu::getFontColor() const {
-	return mFontColor;
-}
-
-void UIWinMenu::setFontOverColor( const ColorA& Color ) {
-	mFontOverColor = Color;
-}
-
-const ColorA& UIWinMenu::getFontOverColor() const {
-	return mFontOverColor;
-}
-
-void UIWinMenu::setFontSelectedColor( const ColorA& Color ) {
-	mFontSelectedColor = Color;
-}
-
-const ColorA& UIWinMenu::getFontSelectedColor() const {
-	return mFontSelectedColor;
-}
-
-Graphics::Font * UIWinMenu::getFont() const {
-	return mFont;
 }
 
 void UIWinMenu::destroyMenues() {

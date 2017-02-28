@@ -30,7 +30,6 @@ class EE_API UITab : public UISelectButton {
 		virtual void setText( const String& text );
 
 		virtual void update();
-
 	protected:
 		UIControl *	mControlOwned;
 

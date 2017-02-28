@@ -5,8 +5,7 @@ namespace EE { namespace UI {
 
 UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 	UIComplexControl( Params ),
-	mFontColor( Params.FontColor ),
-	mFontOverColor( Params.FontOverColor ),
+	mFontStyleConfig( Params.fontStyleConfig ),
 	mIcon( NULL ),
 	mTextBox( NULL ),
 	mIconSpace( Params.IconHorizontalMargin )
@@ -35,9 +34,7 @@ UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 	UITextBox::CreateParams TxtParams = Params;
 	TxtParams.setParent( this );
 	TxtParams.Flags 			= HAlignGet( Params.Flags ) | VAlignGet( Params.Flags );
-	TxtParams.Font				= Params.Font;
-	TxtParams.FontColor 		= Params.FontColor;
-	TxtParams.FontShadowColor 	= Params.FontShadowColor;
+	TxtParams.fontStyleConfig	= Params.fontStyleConfig;
 
 	if ( TxtParams.Flags & UI_CLIP_ENABLE )
 		TxtParams.Flags &= ~UI_CLIP_ENABLE;
@@ -56,12 +53,12 @@ UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 
 UIPushButton::UIPushButton() :
 	UIComplexControl(),
-	mFontColor(),
-	mFontOverColor(),
 	mIcon( NULL ),
 	mTextBox( NULL ),
 	mIconSpace( 0 )
 {
+	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
+
 	setFlags( UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 
 	mIcon = eeNew( UIGfx, () );
@@ -152,8 +149,8 @@ void UIPushButton::setTheme( UITheme * Theme ) {
 }
 
 void UIPushButton::doAfterSetTheme() {
-	if ( NULL != mTextBox && NULL == mTextBox->getFont() && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFont() )
-		mTextBox->setFont( mSkinState->getSkin()->getTheme()->getFont() );
+	if ( NULL != mTextBox && NULL == mTextBox->getFont() && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() )
+		mTextBox->setFont( mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() );
 
 	if ( mControlFlags & UI_CTRL_FLAG_FREE_USE ) {
 		Recti RMargin = makePadding( true, false, false, false, true );
@@ -231,9 +228,9 @@ void UIPushButton::onAlphaChange() {
 
 void UIPushButton::onStateChange() {
 	if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-		mTextBox->setFontColor( mFontOverColor );
+		mTextBox->setFontColor( mFontStyleConfig.fontOverColor );
 	} else {
-		mTextBox->setFontColor( mFontColor );
+		mTextBox->setFontColor( mFontStyleConfig.fontColor );
 	}
 
 	mTextBox->setAlpha( mAlpha );
@@ -259,20 +256,20 @@ Uint32 UIPushButton::onKeyUp( const UIEventKey& Event ) {
 	return UIComplexControl::onKeyUp( Event );
 }
 const ColorA& UIPushButton::getFontColor() const {
-	return mFontColor;
+	return mFontStyleConfig.fontColor;
 }
 
 void UIPushButton::setFontColor( const ColorA& color ) {
-	mFontColor = color;
+	mFontStyleConfig.fontColor = color;
 	onStateChange();
 }
 
 const ColorA& UIPushButton::getFontOverColor() const {
-	return mFontOverColor;
+	return mFontStyleConfig.fontOverColor;
 }
 
 void UIPushButton::setFontOverColor( const ColorA& color ) {
-	mFontOverColor = color;
+	mFontStyleConfig.fontOverColor = color;
 	onStateChange();
 }
 
@@ -282,6 +279,16 @@ const ColorA& UIPushButton::getFontShadowColor() const {
 
 void UIPushButton::setFontShadowColor( const ColorA& color ) {
 	mTextBox->setFontShadowColor( color );
+}
+
+FontStyleConfig UIPushButton::getFontStyleConfig() const {
+	return mFontStyleConfig;
+}
+
+void UIPushButton::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
+	mFontStyleConfig = fontStyleConfig;
+	mTextBox->setFontStyleConfig( fontStyleConfig );
+	onStateChange();
 }
 
 }}

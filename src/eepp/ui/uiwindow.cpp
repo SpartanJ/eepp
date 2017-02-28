@@ -881,7 +881,7 @@ void UIWindow::setTitle( const String& Text ) {
 		UITextBox::CreateParams Params;
 		Params.setParent( this );
 		Params.Flags		= UI_CLIP_ENABLE | UI_VALIGN_CENTER;
-		Params.FontColor	= mTitleFontColor;
+		Params.fontStyleConfig.fontColor	= mTitleFontColor;
 
 		if ( mFlags & UI_HALIGN_CENTER )
 			Params.Flags |= UI_HALIGN_CENTER;

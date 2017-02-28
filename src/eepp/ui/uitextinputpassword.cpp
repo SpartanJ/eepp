@@ -10,9 +10,7 @@ UITextInputPassword::UITextInputPassword( const UITextInput::CreateParams& Param
 	UITextInput( Params )
 {
 	mPassCache = eeNew( TextCache, () );
-	mPassCache->setFont( mTextCache->getFont() );
-	mPassCache->setColor( mFontColor );
-	mPassCache->setShadowColor( mFontShadowColor );
+	setFontStyleConfig( mFontStyleConfig );
 
 	autoAlign();
 }
@@ -21,9 +19,7 @@ UITextInputPassword::UITextInputPassword() :
 	UITextInput()
 {
 	mPassCache = eeNew( TextCache, () );
-	mPassCache->setFont( mTextCache->getFont() );
-	mPassCache->setColor( mFontColor );
-	mPassCache->setShadowColor( mFontShadowColor );
+	setFontStyleConfig( mFontStyleConfig );
 
 	autoAlign();
 }
@@ -135,6 +131,14 @@ void UITextInputPassword::setText( const String& text ) {
 
 TextCache *UITextInputPassword::getPassCache() const {
 	return mPassCache;
+}
+
+void UITextInputPassword::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
+	UITextInput::setFontStyleConfig( fontStyleConfig );
+
+	mPassCache->setFont( mFontStyleConfig.getFont() );
+	mPassCache->setColor( mFontStyleConfig.getFontColor() );
+	mPassCache->setShadowColor( mFontStyleConfig.getFontShadowColor() );
 }
 
 const String& UITextInputPassword::getText() {

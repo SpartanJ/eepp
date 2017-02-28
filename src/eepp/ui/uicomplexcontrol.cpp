@@ -97,18 +97,9 @@ void UIComplexControl::createTooltip() {
 	if ( NULL != mTooltip )
 		return;
 
-	UITheme * tTheme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != tTheme ) {
-		mTooltip = tTheme->createTooltip( this, UIManager::instance()->getMainControl() );
-		mTooltip->setVisible( false );
-		mTooltip->setEnabled( false );
-	} else {
-		UITooltip::CreateParams Params;
-		Params.setParent( UIManager::instance()->getMainControl() );
-		Params.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_PADDING | UI_AUTO_SIZE;
-		mTooltip = eeNew( UITooltip, ( Params, this ) );
-	}
+	mTooltip = eeNew( UITooltip, () );
+	mTooltip->setVisible( false )->setEnabled( false );
+	mTooltip->setTooltipOf( this );
 }
 
 void UIComplexControl::setTooltipText( const String& Text ) {
@@ -144,6 +135,22 @@ UIControl * UIComplexControl::setSize( const Sizei& size ) {
 		s.y = mMinControlSize.y;
 
 	return UIControlAnim::setSize( s );
+}
+
+UIControl * UIComplexControl::setFlags(const Uint32 & flags) {
+	if ( flags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) {
+		updateAnchorsDistances();
+	}
+
+	return UIControlAnim::setFlags( flags );
+}
+
+UIControl * UIComplexControl::unsetFlags(const Uint32 & flags) {
+	if ( flags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) {
+		updateAnchorsDistances();
+	}
+
+	return UIControlAnim::unsetFlags( flags );
 }
 
 UIControl * UIComplexControl::setSize( const Int32& Width, const Int32& Height ) {

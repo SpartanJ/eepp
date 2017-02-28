@@ -19,27 +19,14 @@ class EE_API UIListBox : public UIComplexControl {
 					VScrollMode( UI_SCROLLBAR_AUTO ),
 					HScrollMode( UI_SCROLLBAR_AUTO ),
 					PaddingContainer(),
-					Font( NULL ),
-					FontColor( 0, 0, 0, 255 ),
-					FontOverColor( 0, 0, 0, 255 ),
-					FontSelectedColor( 0, 0, 0, 255 ),
 					TouchDragDeceleration( 0.01f )
 				{
-					UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
-
-					if ( NULL != Theme ) {
-						Font				= Theme->getFont();
-						FontColor			= Theme->getFontColor();
-						FontOverColor		= Theme->getFontOverColor();
-						FontSelectedColor	= Theme->getFontSelectedColor();
-					}
-
-					if ( NULL == Font )
-						Font = UIThemeManager::instance()->getDefaultFont();
+					fontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 				}
 
 				inline ~CreateParams() {}
 
+				FontStyleConfig		fontStyleConfig;
 				Uint32				RowHeight;
 				bool				SmoothScroll;
 				UI_SCROLLBAR_MODE	VScrollMode;
@@ -47,10 +34,6 @@ class EE_API UIListBox : public UIComplexControl {
 				Recti				PaddingContainer;
 				Recti				HScrollPadding;
 				Recti				VScrollPadding;
-				Graphics::Font *	Font;
-				ColorA				FontColor;
-				ColorA				FontOverColor;
-				ColorA				FontSelectedColor;
 				Float				TouchDragDeceleration;
 		};
 
@@ -168,6 +151,7 @@ class EE_API UIListBox : public UIComplexControl {
 		friend class UIItemContainer<UIListBox>;
 		friend class UIDropDownList;
 
+		FontStyleConfig		mFontStyleConfig;
 		Uint32 				mRowHeight;
 		UI_SCROLLBAR_MODE	mVScrollMode;
 		UI_SCROLLBAR_MODE	mHScrollMode;
@@ -178,10 +162,6 @@ class EE_API UIListBox : public UIComplexControl {
 		UIItemContainer<UIListBox> * mContainer;
 		UIScrollBar * 		mVScrollBar;
 		UIScrollBar * 		mHScrollBar;
-		Graphics::Font * 	mFont;
-		ColorA				mFontColor;
-		ColorA				mFontOverColor;
-		ColorA				mFontSelectedColor;
 		Uint32 				mLastPos;
 		Uint32 				mMaxTextWidth;
 		Int32 				mHScrollInit;

@@ -51,6 +51,10 @@ class EE_API UIComplexControl : public UIControlAnim {
 
 		virtual UIControl * setSize( const Sizei& size );
 
+		virtual UIControl * setFlags( const Uint32& flags );
+
+		virtual UIControl * unsetFlags( const Uint32& flags );
+
 		UIControl * setSize( const Int32& Width, const Int32& Height );
 
 		const Sizei& getSize();

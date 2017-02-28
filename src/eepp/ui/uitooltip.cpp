@@ -5,33 +5,37 @@
 
 namespace EE { namespace UI {
 
-UITooltip::UITooltip( UITooltip::CreateParams& Params, UIControl * TooltipOf ) :
-	UIControlAnim( Params ),
-	mFontColor( Params.FontColor ),
-	mFontShadowColor( Params.FontShadowColor ),
+UITooltip::UITooltip() :
+	UIControlAnim(),
 	mAlignOffset( 0.f, 0.f ),
-	mPadding( Params.Padding ),
+	mPadding(),
 	mTooltipTime( Time::Zero ),
-	mTooltipOf( TooltipOf )
+	mTooltipOf()
 {
-	setPadding( mPadding );
+	setFlags( UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
 
 	mTextCache = eeNew( TextCache, () );
-	mTextCache->setFont( Params.Font );
-	mTextCache->setColor( mFontColor );
-	mTextCache->setShadowColor( mFontShadowColor );
 
-	if ( NULL == Params.Font ) {
-		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
-			mTextCache->setFont( UIThemeManager::instance()->getDefaultFont() );
-		else
-			eePRINTL( "UITooltip::UITextBox : Created a UI TextBox without a defined font." );
+	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
+
+	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
+
+	if ( NULL != Theme ) {
+		if ( Theme->getTooltipPadding() != Recti() )
+			setPadding( Theme->getTooltipPadding() );
+
+		setFont( mFontStyleConfig.font );
+		setFontColor( Theme->getTooltipFontColor() );
+		setFontShadowColor( mFontStyleConfig.fontShadowColor );
+	}
+
+	if ( NULL == getFont() && NULL != UIThemeManager::instance()->getDefaultFont() ) {
+		setFont( UIThemeManager::instance()->getDefaultFont() );
+	} else {
+		eePRINTL( "UITooltip::UITooltip : Created a UI TextBox without a defined font." );
 	}
 
 	autoPadding();
-
-	if ( Params.ParentCtrl != UIManager::instance()->getMainControl() )
-		setParent( UIManager::instance()->getMainControl() );
 
 	applyDefaultTheme();
 }
@@ -56,14 +60,10 @@ void UITooltip::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "tooltip" );
 
 	autoPadding();
-
-	if ( NULL == mTextCache->getFont() && NULL != Theme->getFont() ) {
-		mTextCache->setFont( Theme->getFont() );
-	}
 }
 
 void UITooltip::autoPadding() {
-	if ( mFlags & UI_AUTO_PADDING ) {
+	if ( ( mFlags & UI_AUTO_PADDING ) && mPadding == Recti() ) {
 		setPadding( makePadding( true, true, true, true ) );
 	}
 }
@@ -127,31 +127,32 @@ void UITooltip::setText( const String& text ) {
 	onTextChanged();
 }
 
-const ColorA& UITooltip::getColor() const {
-	return mFontColor;
+const ColorA& UITooltip::getFontColor() const {
+	return mFontStyleConfig.fontColor;
 }
 
-void UITooltip::setColor( const ColorA& color ) {
-	mFontColor = color;
+void UITooltip::setFontColor( const ColorA& color ) {
+	mFontStyleConfig.fontColor = color;
+	mTextCache->setColor( mFontStyleConfig.fontColor );
 	setAlpha( color.a() );
 }
 
-const ColorA& UITooltip::getShadowColor() const {
-	return mFontShadowColor;
+const ColorA& UITooltip::getFontShadowColor() const {
+	return mFontStyleConfig.fontShadowColor;
 }
 
-void UITooltip::setShadowColor( const ColorA& color ) {
-	mFontShadowColor = color;
+void UITooltip::setFontShadowColor( const ColorA& color ) {
+	mFontStyleConfig.fontShadowColor = color;
 	setAlpha( color.a() );
-	mTextCache->setShadowColor( mFontColor );
+	mTextCache->setShadowColor( mFontStyleConfig.fontShadowColor );
 }
 
 void UITooltip::setAlpha( const Float& alpha ) {
 	UIControlAnim::setAlpha( alpha );
-	mFontColor.Alpha = (Uint8)alpha;
-	mFontShadowColor.Alpha = (Uint8)alpha;
+	mFontStyleConfig.fontColor.Alpha = (Uint8)alpha;
+	mFontStyleConfig.fontShadowColor.Alpha = (Uint8)alpha;
 
-	mTextCache->setColor( mFontColor );
+	mTextCache->setColor( mFontStyleConfig.fontColor );
 }
 
 void UITooltip::autoSize() {
@@ -250,6 +251,26 @@ void UITooltip::addTooltipTime( const Time& Time ) {
 
 const Time& UITooltip::getTooltipTime() const {
 	return mTooltipTime;
+}
+
+UIControl * UITooltip::getTooltipOf() const {
+	return mTooltipOf;
+}
+
+void UITooltip::setTooltipOf(UIControl * tooltipOf) {
+	mTooltipOf = tooltipOf;
+}
+
+FontStyleConfig UITooltip::getFontStyleConfig() const {
+	return mFontStyleConfig;
+}
+
+void UITooltip::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
+	mFontStyleConfig = fontStyleConfig;
+
+	setFont( mFontStyleConfig.font );
+	setFontColor( mFontStyleConfig.fontColor );
+	setFontShadowColor( mFontStyleConfig.fontShadowColor );
 }
 
 }}

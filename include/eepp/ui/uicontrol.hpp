@@ -174,9 +174,11 @@ class EE_API UIControl {
 
 		const Uint32& getFlags() const;
 
-		UIControl * setFlags( const Uint32& flags );
+		virtual UIControl * setFlags( const Uint32& flags );
 
-		UIControl * unsetFlags( const Uint32& flags );
+		virtual UIControl * unsetFlags( const Uint32& flags );
+
+		UIControl * resetFlags();
 
 		void setBlendMode( const EE_BLEND_MODE& blend );
 

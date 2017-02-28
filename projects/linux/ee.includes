@@ -5,3 +5,4 @@
 .
 ../../include/eepp/graphics
 ../../src/eepp/graphics
+../../include/eepp/ui

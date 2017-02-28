@@ -19,6 +19,8 @@ class UITextInputPassword : public UITextInput
 		virtual void setText( const String& text );
 
 		TextCache * getPassCache() const;
+
+		void setFontStyleConfig( const FontStyleConfig& fontStyleConfig );
 	protected:
 		TextCache *	mPassCache;
 

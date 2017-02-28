@@ -19,24 +19,9 @@ class EE_API UIMenu : public UIComplexControl {
 					PaddingContainer(),
 					MinWidth( 0 ),
 					MinSpaceForIcons( 0 ),
-					MinRightMargin( 0 ),
-					Font( NULL ),
-					FontColor( 0, 0, 0, 255 ),
-					FontOverColor( 0, 0, 0, 255 ),
-					FontSelectedColor( 0, 0, 0, 255 )
+					MinRightMargin( 0 )
 				{
-					UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
-
-					if ( NULL != Theme ) {
-						Font				= Theme->getFont();
-						FontColor			= Theme->getFontColor();
-						FontShadowColor		= Theme->getFontShadowColor();
-						FontOverColor		= Theme->getFontOverColor();
-						FontSelectedColor	= Theme->getFontSelectedColor();
-					}
-
-					if ( NULL == Font )
-						Font = UIThemeManager::instance()->getDefaultFont();
+					fontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 				}
 
 				inline ~CreateParams() {}
@@ -45,11 +30,7 @@ class EE_API UIMenu : public UIComplexControl {
 				Uint32				MinWidth;
 				Uint32				MinSpaceForIcons;
 				Uint32				MinRightMargin;
-				Graphics::Font * 	Font;
-				ColorA				FontColor;
-				ColorA				FontShadowColor;
-				ColorA				FontOverColor;
-				ColorA				FontSelectedColor;
+				FontStyleConfig		fontStyleConfig;
 
 		};
 
@@ -101,29 +82,13 @@ class EE_API UIMenu : public UIComplexControl {
 
 		const Recti& getPadding() const;
 
-		Font * getFont() const;
-
-		void setFont(Font * font);
-
-		ColorA getFontColor() const;
-
-		void setFontColor(const ColorA & fontColor);
-
-		ColorA getFontShadowColor() const;
-
-		void setFontShadowColor(const ColorA & fontShadowColor);
-
-		ColorA getFontOverColor() const;
-
-		void setFontOverColor(const ColorA & fontOverColor);
-
-		ColorA getFontSelectedColor() const;
-
-		void setFontSelectedColor(const ColorA & fontSelectedColor);
-
 		Uint32 getMinRightMargin() const;
 
 		void setMinRightMargin(const Uint32 & minRightMargin);
+
+		FontStyleConfig getFontStyleConfig() const;
+
+		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
 
 	protected:
 		friend class UIMenuItem;
@@ -132,11 +97,7 @@ class EE_API UIMenu : public UIComplexControl {
 
 		std::deque<UIControl *> mItems;
 		Recti				mPadding;
-		Font *				mFont;
-		ColorA				mFontColor;
-		ColorA				mFontShadowColor;
-		ColorA				mFontOverColor;
-		ColorA				mFontSelectedColor;
+		FontStyleConfig		mFontStyleConfig;
 		Uint32				mMinWidth;
 		Uint32				mMinSpaceForIcons;
 		Uint32				mMinRightMargin;

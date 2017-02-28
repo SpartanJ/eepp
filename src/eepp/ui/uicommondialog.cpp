@@ -100,13 +100,7 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 						);
 
 	LBParams.Flags = UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_CLIP_ENABLE;
-	LBParams.FontSelectedColor = ColorA( 255, 255, 255, 255 );
-
-	if ( NULL != UIThemeManager::instance()->getDefaultTheme() ) {
-		UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
-
-		LBParams.FontSelectedColor = Theme->getFontSelectedColor();
-	}
+	LBParams.fontStyleConfig.fontSelectedColor = ColorA( 255, 255, 255, 255 );
 
 	mList = eeNew( UIListBox, ( LBParams ) );
 	mList->setVisible( true );

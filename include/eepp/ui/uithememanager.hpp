@@ -57,6 +57,8 @@ class EE_API UIThemeManager : public ResourceManager<UITheme> {
 		void setCursorSize( const Sizei& Size );
 
 		const Sizei& getCursorSize() const;
+
+		FontStyleConfig getDefaultFontStyleConfig();
 	protected:
 		Font *				mFont;
 		UITheme * 			mThemeDefault;
@@ -66,10 +68,10 @@ class EE_API UIThemeManager : public ResourceManager<UITheme> {
 		Time				mFadeInTime;
 		Time				mFadeOutTime;
 
-		Time				mtooltipTimeToShow;
-		bool				mtooltipFollowMouse;
+		Time				mTooltipTimeToShow;
+		bool				mTooltipFollowMouse;
 
-		Sizei				mcursorSize;
+		Sizei				mCursorSize;
 
 		UIThemeManager();
 };

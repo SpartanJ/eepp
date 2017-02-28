@@ -2,46 +2,29 @@
 
 namespace EE { namespace UI {
 
-UIProgressBar::UIProgressBar( const UIProgressBar::CreateParams& Params ) :
-	UIComplexControl( Params ),
-	mVerticalExpand( Params.VerticalExpand ),
-	mSpeed( Params.MovementSpeed ),
-	mFillerPadding( Params.FillerMargin ),
-	mDisplayPercent( Params.DisplayPercent ),
-	mProgress( 0.f ),
-	mTotalSteps( 100.f ),
-	mParallax( NULL )
-{
-	UITextBox::CreateParams TxtBoxParams = Params;
-
-	TxtBoxParams.setParent( this );
-	TxtBoxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
-	TxtBoxParams.setPosition( 0, 0 );
-
-	mTextBox = eeNew( UITextBox, ( TxtBoxParams ) );
-	mTextBox->setEnabled( false );
-
-	updateTextBox();
-
-	applyDefaultTheme();
+UIProgressBar *UIProgressBar::New() {
+	return eeNew( UIProgressBar, () );
 }
 
 UIProgressBar::UIProgressBar() :
 	UIComplexControl(),
-	mVerticalExpand( true ),
-	mSpeed( 64.f, 0.f ),
-	mFillerPadding(),
-	mDisplayPercent( false ),
 	mProgress( 0.f ),
 	mTotalSteps( 100.f ),
 	mParallax( NULL )
 {
 	setFlags( UI_AUTO_PADDING | UI_AUTO_SIZE );
 
+	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
+
 	mTextBox = eeNew( UITextBox, () );
 	mTextBox->setHorizontalAlign( UI_HALIGN_CENTER );
 	mTextBox->setParent( this );
 	mTextBox->setEnabled( false );
+
+	if ( NULL != Theme ) {
+		mStyleConfig = Theme->getProgressBarStyleConfig();
+		mTextBox->setFontStyleConfig( mStyleConfig );
+	}
 
 	updateTextBox();
 
@@ -67,7 +50,7 @@ void UIProgressBar::draw() {
 		ColorA C( mParallax->getColor() );
 		C.Alpha = (Uint8)mAlpha;
 
-		Rectf fillerMargin = PixelDensity::dpToPx( mFillerPadding );
+		Rectf fillerMargin = PixelDensity::dpToPx( mStyleConfig.fillerPadding );
 
 		mParallax->setColor( C );
 		mParallax->setPosition( Vector2f( mScreenPos.x + fillerMargin.Left, mScreenPos.y + fillerMargin.Top ) );
@@ -92,7 +75,7 @@ void UIProgressBar::setTheme( UITheme * Theme ) {
 
 			Float Height = (Float)PixelDensity::dpToPx( getSkinSize().getHeight() );
 
-			if ( !mVerticalExpand )
+			if ( !mStyleConfig.verticalExpand )
 				Height = (Float)tSubTexture->getSize().getHeight();
 
 			if ( Height > mRealSize.getHeight() )
@@ -102,12 +85,12 @@ void UIProgressBar::setTheme( UITheme * Theme ) {
 				Float meH = (Float)getSkinSize().getHeight();
 				Float otH = (Float)tSkin->getSize().getHeight();
 				Float res = Math::roundUp( ( meH - otH ) * 0.5f );
-				mFillerPadding = Rectf( res, res, res, res );
+				mStyleConfig.fillerPadding = Rectf( res, res, res, res );
 			}
 
-			Rectf fillerPadding = PixelDensity::dpToPx( mFillerPadding );
+			Rectf fillerPadding = PixelDensity::dpToPx( mStyleConfig.fillerPadding );
 
-			mParallax = eeNew( ScrollParallax, ( tSubTexture, Vector2f( mScreenPos.x + fillerPadding.Left, mScreenPos.y + fillerPadding.Top ), Sizef( ( ( mRealSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) / mTotalSteps, Height - fillerPadding.Top - fillerPadding.Bottom ), mSpeed ) );
+			mParallax = eeNew( ScrollParallax, ( tSubTexture, Vector2f( mScreenPos.x + fillerPadding.Left, mScreenPos.y + fillerPadding.Top ), Sizef( ( ( mRealSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) / mTotalSteps, Height - fillerPadding.Top - fillerPadding.Bottom ), mStyleConfig.movementSpeed ) );
 		}
 	}
 }
@@ -124,13 +107,13 @@ void UIProgressBar::onSizeChange() {
 	if ( NULL != mParallax ) {
 		Float Height = (Float)mRealSize.getHeight();
 
-		if ( !mVerticalExpand && mParallax->getSubTexture() )
+		if ( !mStyleConfig.verticalExpand && mParallax->getSubTexture() )
 			Height = (Float)mParallax->getSubTexture()->getSize().getHeight();
 
 		if ( Height > mRealSize.getHeight() )
 			Height = mRealSize.getHeight();
 
-		Rectf fillerPadding = PixelDensity::dpToPx( mFillerPadding );
+		Rectf fillerPadding = PixelDensity::dpToPx( mStyleConfig.fillerPadding );
 
 		mParallax->setSize( Sizef( ( ( mRealSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) / mTotalSteps, Height - fillerPadding.Top - fillerPadding.Bottom ) );
 	}
@@ -161,51 +144,51 @@ const Float& UIProgressBar::getTotalSteps() const {
 }
 
 void UIProgressBar::setMovementSpeed( const Vector2f& Speed ) {
-	mSpeed = Speed;
+	mStyleConfig.movementSpeed = Speed;
 
 	if ( NULL != mParallax )
-		mParallax->setSpeed( PixelDensity::dpToPx( mSpeed ) );
+		mParallax->setSpeed( PixelDensity::dpToPx( Speed ) );
 }
 
 const Vector2f& UIProgressBar::getMovementSpeed() const {
-	return mSpeed;
+	return mStyleConfig.movementSpeed;
 }
 
 void UIProgressBar::setVerticalExpand( const bool& VerticalExpand ) {
-	if ( VerticalExpand != mVerticalExpand ) {
-		mVerticalExpand = VerticalExpand;
+	if ( VerticalExpand != mStyleConfig.verticalExpand ) {
+		mStyleConfig.verticalExpand = VerticalExpand;
 
 		onSizeChange();
 	}
 }
 
 const bool& UIProgressBar::getVerticalExpand() const {
-	return mVerticalExpand;
+	return mStyleConfig.verticalExpand;
 }
 
 void UIProgressBar::setFillerPadding( const Rectf& margin ) {
-	mFillerPadding = margin;
+	mStyleConfig.fillerPadding = margin;
 
 	onPositionChange();
 	onSizeChange();
 }
 
 const Rectf& UIProgressBar::getFillerPadding() const {
-	return mFillerPadding;
+	return mStyleConfig.fillerPadding;
 }
 
 void UIProgressBar::setDisplayPercent( const bool& DisplayPercent ) {
-	mDisplayPercent = DisplayPercent;
+	mStyleConfig.displayPercent = DisplayPercent;
 
 	updateTextBox();
 }
 
 const bool& UIProgressBar::getDisplayPercent() const {
-	return mDisplayPercent;
+	return mStyleConfig.displayPercent;
 }
 
 void UIProgressBar::updateTextBox() {
-	mTextBox->setVisible( mDisplayPercent );
+	mTextBox->setVisible( mStyleConfig.displayPercent );
 	mTextBox->setSize( mSize );
 	mTextBox->setText( String::toStr( (Int32)( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
 }

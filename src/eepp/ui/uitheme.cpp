@@ -326,14 +326,16 @@ UITheme::UITheme(const std::string& name, const std::string& Abbr, Graphics::Fon
 	mNameHash( String::hash( mName ) ),
 	mAbbr( Abbr ),
 	mTextureAtlas( NULL ),
-	mFont( defaultFont ),
-	mFontColor( 0, 0, 0, 255 ),
-	mFontShadowColor( 255, 255, 255, 200 ),
-	mFontOverColor( 0, 0, 0, 255 ),
-	mFontSelectedColor( 0, 0, 0, 255 ),
-	mFontSelectionBackColor( 150, 150, 150, 255 ),
 	mUseDefaultThemeValues( true )
 {
+	mFontStyleConfig.font = defaultFont;
+	mFontStyleConfig.fontShadowColor = ColorA( 255, 255, 255, 200 );
+	mFontStyleConfig.fontColor = mFontStyleConfig.fontOverColor = mFontStyleConfig.fontSelectedColor = ColorA( 0, 0, 0, 255 );
+	mFontStyleConfig.fontSelectionBackColor = ColorA( 150, 150, 150, 255 );
+
+	if ( NULL == defaultFont ) {
+		mFontStyleConfig.font = UIThemeManager::instance()->getDefaultFont();
+	}
 }
 
 UITheme::~UITheme() {
@@ -361,46 +363,6 @@ UISkin * UITheme::add( UISkin * Resource ) {
 	Resource->setTheme( this );
 
 	return ResourceManager<UISkin>::add( Resource );
-}
-
-void UITheme::setFont( Graphics::Font * Font ) {
-	mFont = Font;
-}
-
-Graphics::Font * UITheme::getFont() const {
-	return mFont;
-}
-
-const ColorA& UITheme::getFontColor() const {
-	return mFontColor;
-}
-
-const ColorA& UITheme::getFontShadowColor() const {
-	return mFontShadowColor;
-}
-
-const ColorA& UITheme::getFontOverColor() const {
-	return mFontOverColor;
-}
-
-const ColorA& UITheme::getFontSelectedColor() const {
-	return mFontSelectedColor;
-}
-
-void UITheme::setFontColor( const ColorA& Color ) {
-	mFontColor = Color;
-}
-
-void UITheme::setFontShadowColor( const ColorA& Color ) {
-	mFontShadowColor = Color;
-}
-
-void UITheme::setFontOverColor( const ColorA& Color ) {
-	mFontOverColor = Color;
-}
-
-void UITheme::setFontSelectedColor( const ColorA& Color ) {
-	mFontSelectedColor = Color;
 }
 
 void UITheme::setUseDefaultThemeValues( const bool& Use ) {
@@ -493,18 +455,6 @@ UITextBox * UITheme::createTextBox( const String& Text, UIControl * Parent, cons
 	return Ctrl;
 }
 
-UITooltip * UITheme::createTooltip( UIControl * TooltipOf, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
-	UITooltip::CreateParams TooltipParams;
-	TooltipParams.setParent( Parent );
-	TooltipParams.setPosition( Pos );
-	TooltipParams.setSize( Size );
-	TooltipParams.Flags = Flags;
-	UITooltip * Ctrl = eeNew( UITooltip, ( TooltipParams, TooltipOf ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
 UITextEdit * UITheme::createTextEdit( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, UI_SCROLLBAR_MODE HScrollBar, UI_SCROLLBAR_MODE VScrollBar, bool WordWrap ) {
 	UITextEdit::CreateParams TextEditParams;
 	TextEditParams.setParent( Parent );
@@ -590,19 +540,6 @@ UISlider * UITheme::createSlider( UIControl * Parent, const Sizei& Size, const V
 	return Ctrl;
 }
 
-UIComboBox * UITheme::createComboBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
-	UIComboBox::CreateParams ComboParams;
-	ComboParams.setParent( Parent );
-	ComboParams.setPosition( Pos );
-	ComboParams.setSize( Size );
-	ComboParams.Flags = Flags;
-
-	UIComboBox * Ctrl = eeNew( UIComboBox, ( ComboParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
 UIDropDownList * UITheme::createDropDownList( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, UIListBox * ListBox ) {
 	UIDropDownList::CreateParams DDLParams;
 	DDLParams.setParent( Parent );
@@ -665,23 +602,6 @@ UIPopUpMenu * UITheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, c
 	return eeNew( UIPopUpMenu, ( MenuParams ) );
 }
 
-UIProgressBar * UITheme::createProgressBar( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool DisplayPercent, bool VerticalExpand, Vector2f MovementSpeed, Rectf FillerMargin ) {
-	UIProgressBar::CreateParams PBParams;
-	PBParams.setParent( Parent );
-	PBParams.setPosition( Pos );
-	PBParams.setSize( Size );
-	PBParams.Flags = Flags;
-	PBParams.DisplayPercent = DisplayPercent;
-	PBParams.VerticalExpand = VerticalExpand;
-	PBParams.MovementSpeed = MovementSpeed;
-	PBParams.FillerMargin = FillerMargin;
-
-	UIProgressBar * Ctrl = eeNew( UIProgressBar, ( PBParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
 UIPushButton * UITheme::createPushButton( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, SubTexture * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
 	UIPushButton::CreateParams ButtonParams;
 	ButtonParams.setParent( Parent );
@@ -726,10 +646,10 @@ UIWinMenu * UITheme::createWinMenu( UIControl * Parent, const Sizei& Size, const
 	WinMenuParams.setPosition( Pos );
 	WinMenuParams.setSize( Size );
 	WinMenuParams.Flags = Flags;
-	WinMenuParams.MarginBetweenButtons = MarginBetweenButtons;
-	WinMenuParams.ButtonMargin = ButtonMargin;
-	WinMenuParams.MenuHeight = MenuHeight;
-	WinMenuParams.FirstButtonMargin = FirstButtonMargin;
+	WinMenuParams.marginBetweenButtons = MarginBetweenButtons;
+	WinMenuParams.buttonMargin = ButtonMargin;
+	WinMenuParams.menuHeight = MenuHeight;
+	WinMenuParams.firstButtonMargin = FirstButtonMargin;
 
 	UIWinMenu * Ctrl = eeNew( UIWinMenu, ( WinMenuParams ) );
 	Ctrl->setVisible( true );
@@ -778,55 +698,72 @@ UIMessageBox * UITheme::createMessageBox( UI_MSGBOX_TYPE Type, const String& Mes
 	return eeNew( UIMessageBox, ( MsgBoxParams ) );
 }
 
-UITabWidget * UITheme::createTabWidget( UIControl *Parent, const Sizei &Size, const Vector2i &Pos, const Uint32 &Flags, const bool &TabsClosable, const bool &SpecialBorderTabs, const Int32 &TabSeparation, const Uint32 &MaxTextLength, const Uint32 &TabWidgetHeight, const Uint32 &TabTextAlign, const Uint32 &MinTabWidth, const Uint32 &MaxTabWidth ) {
-	UITabWidget::CreateParams TabWidgetParams;
-	TabWidgetParams.setParent( Parent );
-	TabWidgetParams.setPosition( Pos );
-	TabWidgetParams.setSize( Size );
-	TabWidgetParams.Flags = Flags;
-	TabWidgetParams.TabsClosable = TabsClosable;
-	TabWidgetParams.SpecialBorderTabs = SpecialBorderTabs;
-	TabWidgetParams.TabSeparation = TabSeparation;
-	TabWidgetParams.MaxTextLength = MaxTextLength;
-	TabWidgetParams.TabWidgetHeight = TabWidgetHeight;
-	TabWidgetParams.TabTextAlign = TabTextAlign;
-	TabWidgetParams.MinTabWidth = MinTabWidth;
-	TabWidgetParams.MaxTabWidth = MaxTabWidth;
-
-	UITabWidget * Ctrl = eeNew( UITabWidget, ( TabWidgetParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
-ColorA UITheme::getMenuFontColor() const
-{
+ColorA UITheme::getMenuFontColor() const {
 	return mMenuFontColor;
 }
 
-void UITheme::setMenuFontColor(const ColorA & menuFontColor)
-{
+void UITheme::setMenuFontColor(const ColorA & menuFontColor) {
 	mMenuFontColor = menuFontColor;
 }
 
-ColorA UITheme::getMenuFontColorOver() const
-{
+ColorA UITheme::getMenuFontColorOver() const {
 	return mMenuFontColorOver;
 }
 
-void UITheme::setMenuFontColorOver(const ColorA & menuFontColorOver)
-{
+void UITheme::setMenuFontColorOver(const ColorA & menuFontColorOver) {
 	mMenuFontColorOver = menuFontColorOver;
 }
 
-ColorA UITheme::getFontSelectionBackColor() const
-{
-	return mFontSelectionBackColor;
+ColorA UITheme::getTooltipFontColor() const {
+	return mTooltipFontColor;
 }
 
-void UITheme::setFontSelectionBackColor(const ColorA & fontSelectionBackColor)
-{
-	mFontSelectionBackColor = fontSelectionBackColor;
+void UITheme::setTooltipFontColor(const ColorA & tooltipFontColor) {
+	mTooltipFontColor = tooltipFontColor;
+}
+
+Recti UITheme::getTooltipPadding() const {
+	return mTooltipPadding;
+}
+
+void UITheme::setTooltipPadding(const Recti & tooltipPadding) {
+	mTooltipPadding = tooltipPadding;
+}
+
+Int32 UITheme::getTabSeparation() const {
+	return mTabSeparation;
+}
+
+void UITheme::setTabSeparation(const Int32 & tabSeparation) {
+	mTabSeparation = tabSeparation;
+}
+
+void UITheme::setFontStyleConfig(const FontStyleConfig & fontConfig) {
+	mFontStyleConfig = fontConfig;
+}
+
+TabWidgetStyleConfig UITheme::getTabWidgetStyleConfig() {
+	TabWidgetStyleConfig tabWidgetStyleConfig( getFontStyleConfig() );
+	tabWidgetStyleConfig.tabSeparation = 0;
+	tabWidgetStyleConfig.maxTextLength = 30;
+	tabWidgetStyleConfig.tabWidgetHeight =  0;
+	tabWidgetStyleConfig.tabTextAlign = ( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
+	tabWidgetStyleConfig.minTabWidth = 32;
+	tabWidgetStyleConfig.maxTabWidth = 210;
+	tabWidgetStyleConfig.tabsClosable = false;
+	tabWidgetStyleConfig.specialBorderTabs = false;
+	tabWidgetStyleConfig.drawLineBelowTabs = false;
+	tabWidgetStyleConfig.lineBelowTabsYOffset = 0;
+	return tabWidgetStyleConfig;
+}
+
+ProgressBarStyleConfig UITheme::getProgressBarStyleConfig() {
+	ProgressBarStyleConfig progressBarStyleConfig( getFontStyleConfig() );
+	return progressBarStyleConfig;
+}
+
+FontStyleConfig UITheme::getFontStyleConfig() const {
+	return mFontStyleConfig;
 }
 
 }}
