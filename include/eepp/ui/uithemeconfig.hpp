@@ -149,6 +149,27 @@ class DropDownListStyleConfig : public FontStyleConfig {
 		bool popUpToMainControl = false;
 };
 
+class WindowStyleConfig : public FontStyleConfig {
+	public:
+		WindowStyleConfig() {}
+
+		WindowStyleConfig( FontStyleConfig fontStyleConfig ) :
+			FontStyleConfig( fontStyleConfig )
+		{}
+
+		Uint32		winFlags = UI_WIN_DEFAULT_FLAGS;
+		Sizei		decorationSize;
+		Sizei		borderSize;
+		Sizei		minWindowSize;
+		Vector2i	buttonsPositionFixer;
+		Uint32		buttonsSeparation = 4;
+		Int32		minCornerDistance = 24;
+		ColorA		titleFontColor = ColorA( 255, 255, 255, 255 );
+		Uint8		baseAlpha = 255;
+		bool		decorationAutoSize = true;
+		bool		borderAutoSize = true;
+};
+
 }}
 
 #endif

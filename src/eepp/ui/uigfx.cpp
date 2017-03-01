@@ -3,6 +3,10 @@
 
 namespace EE { namespace UI {
 
+UIGfx *UIGfx::New() {
+	return eeNew( UIGfx, () );
+}
+
 UIGfx::UIGfx( const UIGfx::CreateParams& Params ) :
 	UIComplexControl( Params ),
 	mSubTexture( Params.SubTexture ),
@@ -179,6 +183,11 @@ void UIGfx::onSizeChange() {
 	autoSize();
 	autoAlign();
 	UIControlAnim::onSizeChange();
+}
+
+void UIGfx::onAlignChange() {
+	autoSize();
+	autoAlign();
 }
 
 const Vector2i& UIGfx::getAlignOffset() const {

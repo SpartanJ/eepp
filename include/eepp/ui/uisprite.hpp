@@ -11,6 +11,8 @@ namespace EE { namespace UI {
 
 class EE_API UISprite : public UIComplexControl {
 	public:
+		static UISprite * New();
+
 		class CreateParams : public UIComplexControl::CreateParams {
 			public:
 				inline CreateParams() :

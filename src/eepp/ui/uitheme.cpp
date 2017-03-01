@@ -388,36 +388,6 @@ SubTexture * UITheme::getIconByName( const std::string& name ) {
 	return NULL;
 }
 
-UIGfx * UITheme::createGfx( SubTexture * SubTexture, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, ColorA SubTextureColor, EE_RENDER_MODE SubTextureRender ) {
-	UIGfx::CreateParams GfxParams;
-	GfxParams.setParent( Parent );
-	GfxParams.setPosition( Pos );
-	GfxParams.setSize( Size );
-	GfxParams.Flags = Flags;
-	GfxParams.SubTexture = SubTexture;
-	GfxParams.SubTextureColor = SubTextureColor;
-	GfxParams.SubTextureRender = SubTextureRender;
-	UIGfx * Gfx = eeNew( UIGfx, ( GfxParams ) );
-	Gfx->setVisible( true );
-	Gfx->setEnabled( true );
-	return Gfx;
-}
-
-UISprite * UITheme::createSprite( Sprite * Sprite, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool DealloSprite, EE_RENDER_MODE SpriteRender ) {
-	UISprite::CreateParams SpriteParams;
-	SpriteParams.setParent( Parent );
-	SpriteParams.setPosition( Pos );
-	SpriteParams.setSize( Size );
-	SpriteParams.Flags = Flags;
-	SpriteParams.Sprite = Sprite;
-	SpriteParams.SpriteRender = SpriteRender;
-	SpriteParams.DeallocSprite = DealloSprite;
-	UISprite * Spr = eeNew( UISprite, ( SpriteParams ) );
-	Spr->setVisible( true );
-	Spr->setEnabled( true );
-	return Spr;
-}
-
 UICheckBox * UITheme::createCheckBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
 	UICheckBox::CreateParams CheckBoxParams;
 	CheckBoxParams.setParent( Parent );
@@ -425,18 +395,6 @@ UICheckBox * UITheme::createCheckBox( UIControl * Parent, const Sizei& Size, con
 	CheckBoxParams.setSize( Size );
 	CheckBoxParams.Flags = Flags;
 	UICheckBox * Ctrl = eeNew( UICheckBox, ( CheckBoxParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
-UIRadioButton * UITheme::createRadioButton( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
-	UIRadioButton::CreateParams RadioButtonParams;
-	RadioButtonParams.setParent( Parent );
-	RadioButtonParams.setPosition( Pos );
-	RadioButtonParams.setSize( Size );
-	RadioButtonParams.Flags = Flags;
-	UIRadioButton * Ctrl = eeNew( UIRadioButton, ( RadioButtonParams ) );
 	Ctrl->setVisible( true );
 	Ctrl->setEnabled( true );
 	return Ctrl;
@@ -455,21 +413,6 @@ UITextBox * UITheme::createTextBox( const String& Text, UIControl * Parent, cons
 	return Ctrl;
 }
 
-UITextEdit * UITheme::createTextEdit( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, UI_SCROLLBAR_MODE HScrollBar, UI_SCROLLBAR_MODE VScrollBar, bool WordWrap ) {
-	UITextEdit::CreateParams TextEditParams;
-	TextEditParams.setParent( Parent );
-	TextEditParams.setPosition( Pos );
-	TextEditParams.setSize( Size );
-	TextEditParams.Flags = Flags;
-	TextEditParams.HScrollBar = HScrollBar;
-	TextEditParams.VScrollBar = VScrollBar;
-	TextEditParams.WordWrap = WordWrap;
-	UITextEdit * Ctrl = eeNew( UITextEdit, ( TextEditParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
 UITextInput * UITheme::createTextInput( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool SupportFreeEditing, Uint32 MaxLength ) {
 	UITextInput::CreateParams TextInputParams;
 	TextInputParams.setParent( Parent );
@@ -479,20 +422,6 @@ UITextInput * UITheme::createTextInput( UIControl * Parent, const Sizei& Size, c
 	TextInputParams.SupportFreeEditing = SupportFreeEditing;
 	TextInputParams.MaxLength = MaxLength;
 	UITextInput * Ctrl = eeNew( UITextInput, ( TextInputParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
-UITextInputPassword * UITheme::createTextInputPassword( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool SupportFreeEditing, Uint32 MaxLength ) {
-	UITextInput::CreateParams TextInputParams;
-	TextInputParams.setParent( Parent );
-	TextInputParams.setPosition( Pos );
-	TextInputParams.setSize( Size );
-	TextInputParams.Flags = Flags;
-	TextInputParams.SupportFreeEditing = SupportFreeEditing;
-	TextInputParams.MaxLength = MaxLength;
-	UITextInputPassword * Ctrl = eeNew( UITextInputPassword, ( TextInputParams ) );
 	Ctrl->setVisible( true );
 	Ctrl->setEnabled( true );
 	return Ctrl;
@@ -557,23 +486,6 @@ UIListBox * UITheme::createListBox( UIControl * Parent, const Sizei& Size, const
 	return Ctrl;
 }
 
-UIMenu * UITheme::createMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
-	UIMenu::CreateParams MenuParams;
-	MenuParams.setParent( Parent );
-	MenuParams.setPosition( Pos );
-	MenuParams.setSize( Size );
-	MenuParams.Flags = Flags;
-	MenuParams.PaddingContainer = PaddingContainer;
-	MenuParams.MinWidth = MinWidth;
-	MenuParams.MinSpaceForIcons = MinSpaceForIcons;
-	MenuParams.MinRightMargin = MinRightMargin;
-
-	UIMenu * Ctrl = eeNew( UIMenu, ( MenuParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
 UIPopUpMenu * UITheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	UIPopUpMenu::CreateParams MenuParams;
 	MenuParams.setParent( Parent );
@@ -625,27 +537,15 @@ UISelectButton * UITheme::createSelectButton( UIControl * Parent, const Sizei& S
 	return Ctrl;
 }
 
-UIWindow * UITheme::createWindow( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
-	UIWindow::CreateParams WinParams;
-	WinParams.setParent( Parent );
-	WinParams.setPosition( Pos );
-	WinParams.setSize( Size );
-	WinParams.Flags = Flags;
-	WinParams.WinFlags = WinFlags;
-	WinParams.MinWindowSize = MinWindowSize;
-	WinParams.BaseAlpha = BaseAlpha;
-	return eeNew( UIWindow, ( WinParams ) );
-}
-
 UICommonDialog * UITheme::createCommonDialog( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
 	UICommonDialog::CreateParams DLGParams;
 	DLGParams.setParent( Parent );
 	DLGParams.setPosition( Pos );
 	DLGParams.setSize( Size );
 	DLGParams.Flags = Flags;
-	DLGParams.WinFlags = WinFlags;
-	DLGParams.MinWindowSize = MinWindowSize;
-	DLGParams.BaseAlpha = BaseAlpha;
+	DLGParams.windowStyleConfig.winFlags = WinFlags;
+	DLGParams.windowStyleConfig.minWindowSize = MinWindowSize;
+	DLGParams.windowStyleConfig.baseAlpha = BaseAlpha;
 	DLGParams.DefaultDirectory = DefaultDirectory;
 	DLGParams.DefaultFilePattern = DefaultFilePattern;
 	DLGParams.CDLFlags = CDLFlags;
@@ -658,9 +558,9 @@ UIMessageBox * UITheme::createMessageBox( UI_MSGBOX_TYPE Type, const String& Mes
 	MsgBoxParams.setPosition( Pos );
 	MsgBoxParams.setSize( Size );
 	MsgBoxParams.Flags = Flags;
-	MsgBoxParams.WinFlags = WinFlags;
-	MsgBoxParams.MinWindowSize = MinWindowSize;
-	MsgBoxParams.BaseAlpha = BaseAlpha;
+	MsgBoxParams.windowStyleConfig.winFlags = WinFlags;
+	MsgBoxParams.windowStyleConfig.minWindowSize = MinWindowSize;
+	MsgBoxParams.windowStyleConfig.baseAlpha = BaseAlpha;
 	MsgBoxParams.Type = Type;
 	MsgBoxParams.Message = Message;
 	return eeNew( UIMessageBox, ( MsgBoxParams ) );
@@ -698,14 +598,6 @@ void UITheme::setTooltipPadding(const Recti & tooltipPadding) {
 	mTooltipPadding = tooltipPadding;
 }
 
-Int32 UITheme::getTabSeparation() const {
-	return mTabSeparation;
-}
-
-void UITheme::setTabSeparation(const Int32 & tabSeparation) {
-	mTabSeparation = tabSeparation;
-}
-
 void UITheme::setFontStyleConfig(const FontStyleConfig & fontConfig) {
 	mFontStyleConfig = fontConfig;
 }
@@ -724,6 +616,10 @@ WinMenuStyleConfig UITheme::getWinMenuStyleConfig() {
 
 DropDownListStyleConfig UITheme::getDropDownListStyleConfig() {
 	return DropDownListStyleConfig( getFontStyleConfig() );
+}
+
+WindowStyleConfig UITheme::getWindowStyleConfig() {
+	return WindowStyleConfig( getFontStyleConfig() );
 }
 
 FontStyleConfig UITheme::getFontStyleConfig() const {

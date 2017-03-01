@@ -8,6 +8,8 @@ namespace EE { namespace UI {
 
 class EE_API UIComplexControl : public UIControlAnim {
 	public:
+		static UIComplexControl * New();
+
 		class CreateParams : public UIControlAnim::CreateParams {
 			public:
 				inline CreateParams() :

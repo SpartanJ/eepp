@@ -22,6 +22,8 @@ class UIManager;
 
 class EE_API UIControl {
 	public:
+		static UIControl * New();
+
 		typedef cb::Callback1<void, const UIEvent*> UIEventCallback;
 
 		class CreateParams {
@@ -150,11 +152,11 @@ class EE_API UIControl {
 
 		Uint32 getHorizontalAlign() const;
 
-		void setHorizontalAlign( Uint32 halign );
+		UIControl * setHorizontalAlign( Uint32 halign );
 
 		Uint32 getVerticalAlign() const;
 
-		void setVerticalAlign( Uint32 valign );
+		UIControl * setVerticalAlign( Uint32 valign );
 
 		UIBackground * setBackgroundFillEnabled( bool enabled );
 
@@ -178,7 +180,7 @@ class EE_API UIControl {
 
 		virtual UIControl * unsetFlags( const Uint32& flags );
 
-		UIControl * resetFlags();
+		UIControl * resetFlags( Uint32 newFlags = 0 );
 
 		void setBlendMode( const EE_BLEND_MODE& blend );
 

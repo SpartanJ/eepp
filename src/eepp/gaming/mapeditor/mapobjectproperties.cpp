@@ -19,7 +19,9 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 	if ( NULL == mUITheme )
 		return;
 
-	mUIWindow	= mUITheme->createWindow( NULL, Sizei( 500, 500 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL, Sizei( 500, 500 ) );
+	mUIWindow	= UIWindow::New();
+	mUIWindow->setSizeWithDecoration( 500, 500 )->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL )->setMinWindowSize( 500, 500 );
+
 	mUIWindow->addEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &MapObjectProperties::onWindowClose ) );
 	mUIWindow->setTitle( "Object Properties" );
 

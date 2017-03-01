@@ -3,6 +3,10 @@
 
 namespace EE { namespace UI {
 
+UIComplexControl * UIComplexControl::New() {
+	return eeNew( UIComplexControl, () );
+}
+
 UIComplexControl::UIComplexControl( const UIComplexControl::CreateParams& Params ) :
 	UIControlAnim( Params ),
 	mTooltip( NULL ),

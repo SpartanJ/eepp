@@ -16,7 +16,9 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	if ( NULL == mTheme )
 		return;
 
-	mUIWindow	= mTheme->createWindow( NULL, Sizei( 378, 244 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL );
+	mUIWindow	= UIWindow::New();
+	mUIWindow->setSizeWithDecoration( 378, 244 )->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL )->setMinWindowSize( 378, 244 );
+
 	mUIWindow->addEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &TextureAtlasNew::windowClose ) );
 	mUIWindow->setTitle( "New Texture Atlas" );
 
@@ -67,7 +69,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	mComboHeight->getListBox()->setSelected( "512" );
 
 	createTxtBox( Vector2i( 10, 110 ), "Space between sub textures (pixels):" );
-	mPixelSpace = eeNew( UISpinBox, () );
+	mPixelSpace = UISpinBox::New();
 	mPixelSpace->setParent( mUIWindow->getContainer() )->setSize( 100, 0 )->setPosition( PosX, 110 )->setVisible( true )->setEnabled( true );
 
 	createTxtBox( Vector2i( 10, 140 ), "Texture Atlas Folder Path:" );

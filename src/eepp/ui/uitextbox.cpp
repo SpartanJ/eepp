@@ -169,11 +169,12 @@ void UITextBox::shrinkText( const Uint32& MaxWidth ) {
 	}
 
 	mTextCache->getFont()->shrinkText( mTextCache->getText(), MaxWidth );
+	mTextCache->cacheWidth();
 }
 
 void UITextBox::autoSize() {
 	if ( ( mFlags & UI_AUTO_SIZE ) ) {
-		setPixelsSize( Sizei( (int)mTextCache->getTextWidth(), (int)mTextCache->getTextHeight() ) );
+		setInternalPixelsSize( Sizei( (int)mTextCache->getTextWidth(), (int)mTextCache->getTextHeight() ) );
 	}
 }
 

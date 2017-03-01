@@ -9,33 +9,23 @@ namespace EE { namespace UI {
 
 class EE_API UIWindow : public UIComplexControl {
 	public:
+		static UIWindow * New();
+
 		class CreateParams : public UIComplexControl::CreateParams {
 			public:
 				inline CreateParams() :
-					UIComplexControl::CreateParams(),
-					WinFlags( UI_WIN_DEFAULT_FLAGS ),
-					ButtonsSeparation( 4 ),
-					MinCornerDistance( 24 ),
-					TitleFontColor( 255, 255, 255, 255 ),
-					BaseAlpha( 255 ),
-					DecorationAutoSize( true ),
-					BorderAutoSize( true )
+					UIComplexControl::CreateParams()
 				{
+					UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
+
+					if ( NULL != theme ) {
+						windowStyleConfig = theme->getWindowStyleConfig();
+					}
 				}
 
 				inline ~CreateParams() {}
 
-				Uint32		WinFlags;
-				Sizei		DecorationSize;
-				Sizei		BorderSize;
-				Sizei		MinWindowSize;
-				Vector2i	ButtonsPositionFixer;
-				Uint32		ButtonsSeparation;
-				Int32		MinCornerDistance;
-				ColorA	TitleFontColor;
-				Uint8		BaseAlpha;
-				bool		DecorationAutoSize;
-				bool		BorderAutoSize;
+				WindowStyleConfig windowStyleConfig;
 		};
 
 		UIWindow( const UIWindow::CreateParams& Params );
@@ -51,6 +41,10 @@ class EE_API UIWindow : public UIComplexControl {
 		virtual UIControl * setSize( const Sizei& size );
 
 		UIControl * setSize( const Int32& Width, const Int32& Height );
+
+		UIWindow * setSizeWithDecoration( const Int32& Width, const Int32& Height );
+
+		UIWindow * setSizeWithDecoration( const Sizei& size );
 
 		const Sizei& getSize();
 
@@ -103,6 +97,16 @@ class EE_API UIWindow : public UIComplexControl {
 		Uint32 getWinFlags() const;
 
 		UIWindow * setWinFlags(const Uint32 & winFlags);
+
+		WindowStyleConfig getStyleConfig() const;
+
+		UIWindow * setStyleConfig(const WindowStyleConfig & styleConfig);
+
+		UIWindow * setMinWindowSize( Sizei size );
+
+		UIWindow * setMinWindowSize( const Int32& width, const Int32& height );
+
+		const Sizei& getMinWindowSize();
 	protected:
 		class KeyboardShortcut {
 			public:
@@ -137,8 +141,7 @@ class EE_API UIWindow : public UIComplexControl {
 			RESIZE_TOPRIGHT
 		};
 
-		Uint32				mWinFlags;
-
+		WindowStyleConfig	mStyleConfig;
 		UIControlAnim *	mWindowDecoration;
 		UIControlAnim *	mBorderLeft;
 		UIControlAnim *	mBorderRight;
@@ -148,30 +151,15 @@ class EE_API UIWindow : public UIComplexControl {
 		UIComplexControl *	mButtonClose;
 		UIComplexControl *	mButtonMinimize;
 		UIComplexControl *	mButtonMaximize;
-		UITextBox *		mTitle;
+		UITextBox *			mTitle;
 
-		UIControlAnim *	mModalCtrl;
+		UIComplexControl *	mModalCtrl;
 
-		Sizei				mDecoSize;
-		Sizei				mBorderSize;
-		Sizei				mMinWindowSize;
 		Vector2i			mNonMaxPos;
 		Sizei				mNonMaxSize;
-		Vector2i			mButtonsPositionFixer;
-		Uint32				mButtonsSeparation;
-		Int32				mMinCornerDistance;
-
 		UI_RESIZE_TYPE		mResizeType;
 		Vector2i			mResizePos;
-
-		ColorA			mTitleFontColor;
-
 		KeyboardShortcuts	mKbShortcuts;
-
-		Uint8				mBaseAlpha;
-
-		bool				mDecoAutoSize;
-		bool				mBorderAutoSize;
 
 		virtual void onSizeChange();
 
@@ -203,7 +191,7 @@ class EE_API UIWindow : public UIComplexControl {
 
 		void internalSize( const Int32& w, const Int32& h );
 
-		void getMinWinSize();
+		void calcMinWinSize();
 
 		void fixTitleSize();
 

@@ -6,15 +6,6 @@
 
 namespace EE { namespace UI {
 
-UITextInputPassword::UITextInputPassword( const UITextInput::CreateParams& Params ) :
-	UITextInput( Params )
-{
-	mPassCache = eeNew( TextCache, () );
-	setFontStyleConfig( mFontStyleConfig );
-
-	autoAlign();
-}
-
 UITextInputPassword::UITextInputPassword() :
 	UITextInput()
 {
@@ -22,6 +13,10 @@ UITextInputPassword::UITextInputPassword() :
 	setFontStyleConfig( mFontStyleConfig );
 
 	autoAlign();
+}
+
+UITextInputPassword::~UITextInputPassword() {
+	eeSAFE_DELETE( mPassCache );
 }
 
 void UITextInputPassword::draw() {

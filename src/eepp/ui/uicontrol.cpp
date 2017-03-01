@@ -9,6 +9,10 @@
 
 namespace EE { namespace UI {
 
+UIControl *UIControl::New() {
+	return eeNew( UIControl, () );
+}
+
 UIControl::UIControl( const CreateParams& Params ) :
 	mPos( Params.Pos ),
 	mRealPos( Params.Pos.x * PixelDensity::getPixelDensity(), Params.Pos.y * PixelDensity::getPixelDensity() ),
@@ -562,22 +566,24 @@ Uint32 UIControl::getHorizontalAlign() const {
 	return mFlags & UI_HALIGN_MASK;
 }
 
-void UIControl::setHorizontalAlign( Uint32 halign ) {
+UIControl * UIControl::setHorizontalAlign( Uint32 halign ) {
 	mFlags &= ~UI_HALIGN_MASK;
 	mFlags |= halign & UI_HALIGN_MASK;
 
 	onAlignChange();
+	return this;
 }
 
 Uint32 UIControl::getVerticalAlign() const {
 	return mFlags & UI_VALIGN_MASK;
 }
 
-void UIControl::setVerticalAlign( Uint32 valign ) {
+UIControl * UIControl::setVerticalAlign( Uint32 valign ) {
 	mFlags &= ~UI_VALIGN_MASK;
 	mFlags |= valign & UI_VALIGN_MASK;
 
 	onAlignChange();
+	return this;
 }
 
 UIBackground * UIControl::setBackgroundFillEnabled( bool enabled ) {
@@ -658,8 +664,8 @@ UIControl * UIControl::unsetFlags(const Uint32 & flags) {
 	return this;
 }
 
-UIControl *UIControl::resetFlags() {
-	mFlags = 0;
+UIControl *UIControl::resetFlags( Uint32 newFlags ) {
+	mFlags = newFlags;
 	return this;
 }
 

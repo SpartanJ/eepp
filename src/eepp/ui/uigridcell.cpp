@@ -4,6 +4,10 @@
 
 namespace EE { namespace UI {
 
+UIGridCell *UIGridCell::New() {
+	return eeNew( UIGridCell, () );
+}
+
 UIGridCell::UIGridCell( UIGridCell::CreateParams& Params ) :
 	UIComplexControl( Params )
 {

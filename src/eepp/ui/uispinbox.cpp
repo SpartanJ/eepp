@@ -3,6 +3,10 @@
 
 namespace EE { namespace UI {
 
+UISpinBox * UISpinBox::New() {
+	return eeNew( UISpinBox, () );
+}
+
 UISpinBox::UISpinBox( const UISpinBox::CreateParams& Params ) :
 	UIComplexControl( Params ),
 	mMinValue( 0.f ),

@@ -48,11 +48,12 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	InitY +=30;
 
-	mSpinOffX = eeNew( UISpinBox, () );
+	mSpinOffX = UISpinBox::New();
 	mSpinOffX->setParent( mUIContainer )->setSize( 100, 0 )->setVisible( true )->setEnabled( true );
 	mSpinOffX->setMinValue( -32000 );
 	mSpinOffX->setMaxValue( 32000 );
 	mSpinOffX->setPosition( mUIContainer->getSize().getWidth() - mSpinOffX->getSize().getWidth() - 10, InitY );
+	mSpinOffX->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
 	mSpinOffX->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onOffXChange ) );
 
 	TxtBox = createTextBox( Vector2i(), "Offset X:" );
@@ -60,31 +61,34 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	InitY +=30;
 
-	mSpinOffY = eeNew( UISpinBox, () );
+	mSpinOffY = UISpinBox::New();
 	mSpinOffY->setParent( mUIContainer )->setSize( 100, 0 )->setVisible( true )->setEnabled( true );
 	mSpinOffY->setMinValue( -32000 );
 	mSpinOffY->setMaxValue( 32000 );
 	mSpinOffY->setPosition( mUIContainer->getSize().getWidth() - mSpinOffY->getSize().getWidth() - 10, InitY );
+	mSpinOffY->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
 	mSpinOffY->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onOffYChange ) );
 	TxtBox = createTextBox( Vector2i(), "Offset Y:" );
 	TxtBox->setPosition( mSpinOffY->getPosition().x - 10 - TxtBox->getSize().getWidth(), InitY );
 
 	InitY +=30;
 
-	mSpinDestW = eeNew( UISpinBox, () );
+	mSpinDestW = UISpinBox::New();
 	mSpinDestW->setParent( mUIContainer )->setSize( 100, 0 )->setVisible( true )->setEnabled( true );
 	mSpinDestW->setMaxValue( 32000 );
 	mSpinDestW->setPosition( mUIContainer->getSize().getWidth() - mSpinDestW->getSize().getWidth() - 10, InitY );
+	mSpinDestW->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
 	mSpinDestW->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onDestWChange ) );
 	TxtBox = createTextBox( Vector2i(), "Dest. Width:" );
 	TxtBox->setPosition( mSpinDestW->getPosition().x - 10 - TxtBox->getSize().getWidth(), InitY );
 
 	InitY +=30;
 
-	mSpinDestH = eeNew( UISpinBox, () );
+	mSpinDestH = UISpinBox::New();
 	mSpinDestH->setParent( mUIContainer )->setSize( 100, 0 )->setVisible( true )->setEnabled( true );
 	mSpinDestH->setMaxValue( 32000 );
 	mSpinDestH->setPosition( mUIContainer->getSize().getWidth() - mSpinDestH->getSize().getWidth() - 10, InitY );
+	mSpinDestH->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
 	mSpinDestH->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onDestHChange ) );
 	TxtBox = createTextBox( Vector2i(), "Dest. Height:" );
 	TxtBox->setPosition( mSpinDestH->getPosition().x - 10 - TxtBox->getSize().getWidth(), InitY );

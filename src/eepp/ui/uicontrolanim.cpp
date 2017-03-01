@@ -6,6 +6,10 @@
 
 namespace EE { namespace UI {
 
+UIControlAnim *UIControlAnim::New() {
+	return eeNew( UIControlAnim, () );
+}
+
 UIControlAnim::UIControlAnim( const CreateParams& Params ) :
 	UIDragable( Params ),
 	mAngle(0.f),

@@ -17,7 +17,11 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	if ( NULL == mTheme )
 		return;
 
-	mUIWindow	= mTheme->createWindow( NULL, Sizei( 320, 380 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_SHARE_ALPHA_WITH_CHILDS | UI_WIN_MODAL, Sizei( 320, 380 ) );
+	mUIWindow	= UIWindow::New();
+	mUIWindow->setSizeWithDecoration( 320, 380 )
+			->setWinFlags( UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_SHARE_ALPHA_WITH_CHILDS | UI_WIN_MODAL )
+			->setMinWindowSize( 320, 380 );
+
 	mUIWindow->addEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &UIMapNew::onWindowClose ) );
 
 	if ( !mResizeMap ) {

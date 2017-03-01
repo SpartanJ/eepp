@@ -3,6 +3,10 @@
 
 namespace EE { namespace UI {
 
+UISprite * UISprite::New() {
+	return eeNew( UISprite, () );
+}
+
 UISprite::UISprite( const UISprite::CreateParams& Params ) :
 	UIComplexControl( Params ),
 	mSprite( Params.Sprite ),

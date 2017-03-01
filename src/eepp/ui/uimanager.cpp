@@ -53,10 +53,10 @@ void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 	Params.setPosition( 0, 0 );
 	Params.setSize( (Float)Engine::instance()->getWidth() / PixelDensity::getPixelDensity(), (Float)Engine::instance()->getHeight() / PixelDensity::getPixelDensity() );
 	Params.Flags = UI_CONTROL_DEFAULT_FLAGS | UI_REPORT_SIZE_CHANGE_TO_CHILDS;
-	Params.WinFlags = UI_WIN_NO_BORDER | UI_WIN_RESIZEABLE;
-	Params.MinWindowSize = Sizei( 0, 0 );
-	Params.DecorationSize = Sizei( 0, 0 );
-	Params.DecorationAutoSize = false;
+	Params.windowStyleConfig.winFlags = UI_WIN_NO_BORDER | UI_WIN_RESIZEABLE;
+	Params.windowStyleConfig.minWindowSize = Sizei( 0, 0 );
+	Params.windowStyleConfig.decorationSize = Sizei( 0, 0 );
+	Params.windowStyleConfig.decorationAutoSize = false;
 
 	mControl		= eeNew( UIWindow, ( Params ) );
 	mControl->setVisible( true );

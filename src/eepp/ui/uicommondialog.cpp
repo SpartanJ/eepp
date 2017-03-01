@@ -25,11 +25,11 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 		mRealSize.y = PixelDensity::dpToPxI( CDLG_MIN_HEIGHT );
 	}
 
-	if ( mMinWindowSize.getWidth() < CDLG_MIN_WIDTH )
-		mMinWindowSize.setWidth( CDLG_MIN_WIDTH );
+	if ( mStyleConfig.minWindowSize.getWidth() < CDLG_MIN_WIDTH )
+		mStyleConfig.minWindowSize.setWidth( CDLG_MIN_WIDTH );
 
-	if ( mMinWindowSize.getHeight() < CDLG_MIN_HEIGHT )
-		mMinWindowSize.setHeight( CDLG_MIN_HEIGHT );
+	if ( mStyleConfig.minWindowSize.getHeight() < CDLG_MIN_HEIGHT )
+		mStyleConfig.minWindowSize.setHeight( CDLG_MIN_HEIGHT );
 
 	mContainer->setSize( mSize );
 

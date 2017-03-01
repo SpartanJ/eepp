@@ -21,7 +21,6 @@ UIDefaultTheme::UIDefaultTheme( const std::string& name, const std::string& Abbr
 	setMenuFontColorOver( ColorA( 255, 255, 255, 255 ) );
 	setTooltipFontColor( ColorA( 0, 0, 0, 255 ) );
 	setTooltipPadding( Recti( 4, 6, 4, 6) );
-	setTabSeparation( -1 );
 }
 
 TabWidgetStyleConfig UIDefaultTheme::getTabWidgetStyleConfig() {
@@ -49,6 +48,14 @@ WinMenuStyleConfig UIDefaultTheme::getWinMenuStyleConfig() {
 	return winMenuStyleConfig;
 }
 
+WindowStyleConfig UIDefaultTheme::getWindowStyleConfig() {
+	WindowStyleConfig windowStyleConfig = UITheme::getWindowStyleConfig();
+	windowStyleConfig.winFlags |= UI_WIN_DRAW_SHADOW;
+	windowStyleConfig.buttonsPositionFixer.x = -2;
+	windowStyleConfig.titleFontColor = ColorA( 230, 230, 230, 255 );
+	return windowStyleConfig;
+}
+
 UIPopUpMenu * UIDefaultTheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	UIPopUpMenu::CreateParams MenuParams;
 	MenuParams.setParent( Parent );
@@ -70,44 +77,24 @@ UIPopUpMenu * UIDefaultTheme::createPopUpMenu( UIControl * Parent, const Sizei& 
 	return eeNew( UIPopUpMenu, ( MenuParams ) );
 }
 
-UIWindow * UIDefaultTheme::createWindow( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
-	UIWindow::CreateParams WinParams;
-	WinParams.setParent( Parent );
-	WinParams.setPosition( Pos );
-	WinParams.setSize( Size );
-	WinParams.Flags = Flags;
-	WinParams.WinFlags = WinFlags;
-	WinParams.MinWindowSize = MinWindowSize;
-	WinParams.BaseAlpha = BaseAlpha;
-
-	if ( getUseDefaultThemeValues() ) {
-		WinParams.Flags |= UI_DRAW_SHADOW;
-		WinParams.WinFlags |= UI_WIN_DRAW_SHADOW;
-		WinParams.ButtonsPositionFixer.x = -2;
-		WinParams.TitleFontColor = ColorA( 230, 230, 230, 255 );
-	}
-
-	return eeNew( UIWindow, ( WinParams ) );
-}
-
 UICommonDialog * UIDefaultTheme::createCommonDialog( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
 	UICommonDialog::CreateParams DLGParams;
 	DLGParams.setParent( Parent );
 	DLGParams.setPosition( Pos );
 	DLGParams.setSize( Size );
 	DLGParams.Flags = Flags;
-	DLGParams.WinFlags = WinFlags;
-	DLGParams.MinWindowSize = MinWindowSize;
-	DLGParams.BaseAlpha = BaseAlpha;
+	DLGParams.windowStyleConfig.winFlags = WinFlags;
+	DLGParams.windowStyleConfig.minWindowSize = MinWindowSize;
+	DLGParams.windowStyleConfig.baseAlpha = BaseAlpha;
 	DLGParams.DefaultDirectory = DefaultDirectory;
 	DLGParams.DefaultFilePattern = DefaultFilePattern;
 	DLGParams.CDLFlags = CDLFlags;
 
 	if ( getUseDefaultThemeValues() ) {
 		DLGParams.Flags |= UI_DRAW_SHADOW;
-		DLGParams.WinFlags |= UI_WIN_DRAW_SHADOW;
-		DLGParams.ButtonsPositionFixer.x = -2;
-		DLGParams.TitleFontColor = ColorA( 230, 230, 230, 255 );
+		DLGParams.windowStyleConfig.winFlags |= UI_WIN_DRAW_SHADOW;
+		DLGParams.windowStyleConfig.buttonsPositionFixer.x = -2;
+		DLGParams.windowStyleConfig.titleFontColor = ColorA( 230, 230, 230, 255 );
 	}
 
 	return eeNew( UICommonDialog, ( DLGParams ) );
@@ -119,17 +106,17 @@ UIMessageBox * UIDefaultTheme::createMessageBox( UI_MSGBOX_TYPE Type, const Stri
 	MsgBoxParams.setPosition( Pos );
 	MsgBoxParams.setSize( Size );
 	MsgBoxParams.Flags = Flags;
-	MsgBoxParams.WinFlags = WinFlags;
-	MsgBoxParams.MinWindowSize = MinWindowSize;
-	MsgBoxParams.BaseAlpha = BaseAlpha;
+	MsgBoxParams.windowStyleConfig.winFlags = WinFlags;
+	MsgBoxParams.windowStyleConfig.minWindowSize = MinWindowSize;
+	MsgBoxParams.windowStyleConfig.baseAlpha = BaseAlpha;
 	MsgBoxParams.Type = Type;
 	MsgBoxParams.Message = Message;
 
 	if ( getUseDefaultThemeValues() ) {
 		MsgBoxParams.Flags |= UI_DRAW_SHADOW;
-		MsgBoxParams.WinFlags |= UI_WIN_DRAW_SHADOW;
-		MsgBoxParams.ButtonsPositionFixer.x = -2;
-		MsgBoxParams.TitleFontColor = ColorA( 230, 230, 230, 255 );
+		MsgBoxParams.windowStyleConfig.winFlags |= UI_WIN_DRAW_SHADOW;
+		MsgBoxParams.windowStyleConfig.buttonsPositionFixer.x = -2;
+		MsgBoxParams.windowStyleConfig.titleFontColor = ColorA( 230, 230, 230, 255 );
 	}
 
 	return eeNew( UIMessageBox, ( MsgBoxParams ) );

@@ -4,6 +4,10 @@
 
 namespace EE { namespace UI {
 
+UIDragable * UIDragable::New() {
+	return eeNew( UIDragable, () );
+}
+
 UIDragable::UIDragable( const UIControl::CreateParams& Params ) :
 	UIControl( Params ),
 	mDragButton( EE_BUTTON_LMASK )

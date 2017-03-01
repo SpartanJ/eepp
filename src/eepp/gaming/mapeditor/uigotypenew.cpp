@@ -14,7 +14,9 @@ UIGOTypeNew::UIGOTypeNew( cb::Callback2<void, std::string, Uint32> Cb ) :
 	if ( NULL == mUITheme )
 		return;
 
-	mUIWindow	= mUITheme->createWindow( NULL, Sizei( 278, 114 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL, Sizei( 278, 114 ) );
+	mUIWindow	= UIWindow::New();
+	mUIWindow->setSizeWithDecoration( 278, 114 )->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL )->setMinWindowSize( 278, 114 );
+
 	mUIWindow->addEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &UIGOTypeNew::onWindowClose ) );
 	mUIWindow->setTitle( "Add GameObject Type" );
 

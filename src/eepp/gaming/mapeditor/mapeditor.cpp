@@ -328,9 +328,12 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 	mSubTextureList->setSize( mSubTextureList->getSize().getWidth(), mSubTextureList->getRowHeight() * 9 + mSubTextureList->getContainerPadding().Top + mSubTextureList->getContainerPadding().Bottom );
 	mSubTextureList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::OnSubTextureChange ) );
 
-	mGfxPreview = mTheme->createGfx( NULL, mSGCont, Sizei( Width, Width ), Vector2i( 0, mSubTextureList->getPosition().y + mSubTextureList->getSize().getHeight() + 4 ), UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_AUTO_FIT );
-	mGfxPreview->setBorderEnabled( true );
-	mGfxPreview->getBorder()->setColor( ColorA( 0, 0, 0, 200 ) );
+	mGfxPreview = UIGfx::New();
+	mGfxPreview->resetFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_AUTO_FIT )
+			   ->setParent( mSGCont )->setSize( Width, Width )
+			   ->setPosition( 0, mSubTextureList->getPosition().y + mSubTextureList->getSize().getHeight() + 4 );
+
+	mGfxPreview->setBorderEnabled( true )->setColor( ColorA( 0, 0, 0, 200 ) );
 
 	UIComplexControl::CreateParams DIParams;
 	DIParams.setParent( mSubTextureCont );
@@ -1014,7 +1017,11 @@ void MapEditor::MapMenuClick( const UIEvent * Event ) {
 	const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getControl() )->getText();
 
 	if ( "New Texture Atlas..." == txt ) {
-		UIWindow * tWin = mTheme->createWindow( NULL, Sizei( 1024, 768 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, Sizei( 1024, 768 ) );
+		UIWindow * tWin = UIWindow::New();
+		tWin->setSizeWithDecoration( 1024, 768 );
+		tWin->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER );
+		tWin->setMinWindowSize( 1024, 768 );
+
 		eeNew ( Tools::TextureAtlasEditor, ( tWin ) );
 		tWin->center();
 		tWin->show();

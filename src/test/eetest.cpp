@@ -277,7 +277,7 @@ void EETest::createUI() {
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	UIManager::instance()->init(); // UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
+	UIManager::instance()->init(UI_MANAGER_DRAW_BOXES); // UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
 	//mTheme = UITheme::loadFromPath( eeNew( UIdefaultTheme, ( mThemeName, mThemeName ) ), MyPath + mThemeName + "/" );
 
@@ -299,7 +299,14 @@ void EETest::createUI() {
 	Params.Border.setColor( 0x979797CC );
 	Params.Background.setColors( ColorA( 0xEDEDED66 ), ColorA( 0xEDEDEDCC ), ColorA( 0xEDEDEDCC ), ColorA( 0xEDEDED66 ) );
 
-	UIWindow * tWin = mTheme->createWindow( NULL, Sizei( 530, 405 ), Vector2i( 320, 240 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DRAGABLE_CONTAINER , Sizei( 530, 405 ), 200 );
+	UIWindow * tWin = UIWindow::New();
+	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
+	WindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
+	windowStyleConfig.winFlags = UI_WIN_DRAGABLE_CONTAINER;
+	windowStyleConfig.minWindowSize = Sizei( 530, 405 );
+	windowStyleConfig.baseAlpha = 200;
+	tWin->setStyleConfig( windowStyleConfig );
+
 	C = tWin->getContainer();
 	tWin->setVisible( false )->setEnabled( false );
 
@@ -330,7 +337,12 @@ void EETest::createUI() {
 	Child2->startRotation( 0.f, 360.f, Milliseconds( 5000.f ) );
 	Child2->getRotationInterpolation()->setLoop( true );
 
-	mTheme->createSprite( eeNew( Sprite, ( "gn" ) ), C, Sizei(), Vector2i( 160, 100 ) );
+	UISprite * sprite = UISprite::New();
+	sprite->setFlags( UI_AUTO_SIZE );
+	sprite->setSprite( eeNew( Sprite, ( "gn" ) ) );
+	sprite->setDeallocSprite( true );
+	sprite->setParent( C );
+	sprite->setPosition( 160, 100 );
 
 	UITextBox::CreateParams TextParams;
 	TextParams.setParent( C );
@@ -638,7 +650,7 @@ void EETest::createNewUI() {
 	pushButton->setText( "PushButton" );
 	pushButton->setIcon( mTheme->getIconByName( "ok" ) );
 
-	UISprite * sprite = eeNew( UISprite, () );
+	UISprite * sprite = UISprite::New();
 	sprite->setPosition( 50, 600 );
 	sprite->setSprite( &SP );
 
@@ -665,7 +677,7 @@ void EETest::createNewUI() {
 	textEdit->setPosition( 350, 4 )->setSize( 200, 200 );
 	textEdit->setText( mBuda );
 
-	UISpinBox * spinBox = eeNew( UISpinBox, () );
+	UISpinBox * spinBox = UISpinBox::New();
 	spinBox->setPosition( 350, 210 )->setSize( 200, 0 );
 
 	UIGenericGrid * genGrid = eeNew( UIGenericGrid, () );
@@ -678,17 +690,20 @@ void EETest::createNewUI() {
 
 	for ( Uint32 i = 0; i < 15; i++ ) {
 		UIGridCell * Cell			= eeNew( UIGridCell, () );
-		UITextBox * TxtBox			= eeNew( UITextBox, () );
-		UITextInput * TxtInput		= eeNew( UITextInput, () );
-		UIGfx * TxtGfx				= eeNew( UIGfx, () );
+		UITextBox * TxtBox			= UITextBox::New();
+		UITextInput * TxtInput		= UITextInput::New();
+		UIGfx * TxtGfx				= UIGfx::New();
+		TxtGfx->unsetFlags( UI_AUTO_SIZE );
 
 		Cell->setParent( genGrid->getContainer() );
 
-		TxtGfx->setSubTexture( mTheme->getIconByName( "ok" ) );
-		TxtBox->setText( "Test " + String::toStr( i+1 ) );
 		Cell->setCell( 0, TxtBox );
 		Cell->setCell( 1, TxtGfx );
 		Cell->setCell( 2, TxtInput );
+
+		TxtGfx->setSubTexture( mTheme->getIconByName( "ok" ) );
+		TxtBox->setText( "Test " + String::toStr( i+1 ) );
+
 		genGrid->add( Cell );
 	}
 
@@ -716,9 +731,9 @@ void EETest::createNewUI() {
 	UITabWidget * TabWidget = eeNew( UITabWidget, () );
 	TabWidget->setPosition( 350, 530 )->setSize( 200, 64 );
 
-	TabWidget->add( "Tab 1", (eeNew( UIComplexControl, () ))->setThemeControl( "winback" ), mTheme->getIconByName( "ok" ) );
-	TabWidget->add( "Tab 2", (eeNew( UIComplexControl, () ))->setThemeControl( "winback" ), mTheme->getIconByName( "go-up" ) );
-	TabWidget->add( "Tab 3", (eeNew( UIComplexControl, () ))->setThemeControl( "winback" ), mTheme->getIconByName( "add" ) );
+	TabWidget->add( "Tab 1", UIComplexControl::New()->setThemeControl( "winback" ), mTheme->getIconByName( "ok" ) );
+	TabWidget->add( "Tab 2", UIComplexControl::New()->setThemeControl( "winback" ), mTheme->getIconByName( "go-up" ) );
+	TabWidget->add( "Tab 3", UIComplexControl::New()->setThemeControl( "winback" ), mTheme->getIconByName( "add" ) );
 
 	/**/
 }
@@ -727,7 +742,13 @@ void EETest::createMapEditor() {
 	if ( NULL != mMapEditor )
 		return;
 
-	UIWindow * tWin = mTheme->createWindow( NULL, Sizei( 1024, 768 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, Sizei( 1024, 768 ) );
+	UIWindow * tWin = UIWindow::New();
+	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
+	WindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
+	windowStyleConfig.winFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER;
+	windowStyleConfig.minWindowSize = Sizei( 1024, 768 );
+	tWin->setStyleConfig( windowStyleConfig );
+
 	mMapEditor = eeNew( MapEditor, ( tWin, cb::Make0( this, &EETest::onMapEditorClose ) ) );
 	tWin->center();
 	tWin->show();
@@ -738,7 +759,13 @@ void EETest::onMapEditorClose() {
 }
 
 void EETest::createETGEditor() {
-	UIWindow * tWin = mTheme->createWindow( NULL, Sizei( 1024, 768 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, Sizei( 1024, 768 ) );
+	UIWindow * tWin = UIWindow::New();
+	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
+	WindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
+	windowStyleConfig.winFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER;
+	windowStyleConfig.minWindowSize = Sizei( 1024, 768 );
+	tWin->setStyleConfig( windowStyleConfig );
+
 	mETGEditor = eeNew ( Tools::TextureAtlasEditor, ( tWin, cb::Make0( this, &EETest::onETGEditorClose ) ) );
 	tWin->center();
 	tWin->show();
@@ -776,7 +803,9 @@ void EETest::createWinMenu() {
 }
 
 void EETest::createDecoratedWindow() {
-	mUIWindow = mTheme->createWindow( NULL, Sizei( 530, 350 ), Vector2i( 200, 50 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, Sizei( 100, 200 ) );
+	mUIWindow = UIWindow::New();
+	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON )
+			->setMinWindowSize( 530, 350 )->setPosition( 200, 50 );
 
 	mUIWindow->addEventListener( UIEvent::EventOnWindowCloseClick, cb::Make1( this, &EETest::onCloseClick ) );
 	mUIWindow->setTitle( "Test Window" );
@@ -792,17 +821,23 @@ void EETest::createDecoratedWindow() {
 	TabWidget->setParent( mUIWindow->getContainer() )->setSize( 510, 250 )->setPosition( 10, 55 )->
 			setFlags( UI_HALIGN_CENTER | UI_VALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
 
-			//mTheme->createTabWidget( mUIWindow->getContainer(), Sizei( 510, 250 ), Vector2i( 10, 55 ), UI_HALIGN_CENTER | UI_VALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
-
-	UITextEdit * TEdit = mTheme->createTextEdit( TabWidget, Sizei(), Vector2i() );
+	UITextEdit * TEdit = UITextEdit::New();
+	TEdit->setParent( TabWidget );
 	TEdit->setText( mBuda );
 	TabWidget->add( "TextEdit", TEdit );
 
-	UITextInput * Txt = mTheme->createTextInput( TabWidget, Sizei(), Vector2i(), UI_AUTO_PADDING | UI_WORD_WRAP | UI_TEXT_SELECTION_ENABLED );
+	UITextInput * Txt = UITextInput::New();
+	Txt->setFlags( UI_WORD_WRAP );
+	Txt->setParent( TabWidget );
 	Txt->setText( mBuda );
 	TabWidget->add( "TextInput", Txt );
 
-	TabWidget->add( "TextBox", mTheme->createTextBox( mBuda, TabWidget, Sizei(), Vector2i(), UI_AUTO_PADDING | UI_WORD_WRAP | UI_TEXT_SELECTION_ENABLED ) );
+	UITextBox * txtBox = UITextBox::New();
+	txtBox->resetFlags( UI_HALIGN_LEFT | UI_VALIGN_TOP | UI_AUTO_PADDING | UI_WORD_WRAP | UI_TEXT_SELECTION_ENABLED );
+	txtBox->setParent( TabWidget );
+	txtBox->setText( mBuda );
+
+	TabWidget->add( "TextBox", txtBox );
 
 	createWinMenu();
 }

@@ -8,6 +8,8 @@ namespace EE { namespace UI {
 
 class EE_API UISpinBox : public UIComplexControl {
 	public:
+		static UISpinBox * New();
+
 		class CreateParams : public UITextInput::CreateParams {
 			public:
 				inline CreateParams() :

@@ -8,7 +8,9 @@
 namespace EE { namespace UI {
 
 class EE_API UITextEdit : public UIComplexControl {
-	public:			
+	public:
+		static UITextEdit * New();
+
 		class CreateParams : public UITextBox::CreateParams {
 			public:
 				inline CreateParams() : UITextBox::CreateParams(),

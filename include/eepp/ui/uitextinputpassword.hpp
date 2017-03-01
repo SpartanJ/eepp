@@ -8,9 +8,9 @@ namespace EE { namespace UI {
 class UITextInputPassword : public UITextInput
 {
 	public:
-		UITextInputPassword( const UITextInput::CreateParams& Params );
-
 		UITextInputPassword();
+
+		~UITextInputPassword();
 
 		virtual void draw();
 

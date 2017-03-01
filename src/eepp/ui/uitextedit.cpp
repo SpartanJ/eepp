@@ -5,6 +5,10 @@
 
 namespace EE { namespace UI {
 
+UITextEdit *UITextEdit::New() {
+	return eeNew( UITextEdit, () );
+}
+
 UITextEdit::UITextEdit( UITextEdit::CreateParams& Params ) :
 	UIComplexControl( Params ),
 	mTextInput( NULL ),

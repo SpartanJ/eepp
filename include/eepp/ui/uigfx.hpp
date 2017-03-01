@@ -7,6 +7,8 @@ namespace EE { namespace UI {
 
 class EE_API UIGfx : public UIComplexControl {
 	public:
+		static UIGfx * New();
+
 		class CreateParams : public UIComplexControl::CreateParams {
 			public:
 				inline CreateParams() :
@@ -58,6 +60,8 @@ class EE_API UIGfx : public UIComplexControl {
 		Vector2i				mAlignOffset;
 
 		virtual void onSizeChange();
+
+		virtual void onAlignChange();
 
 		void autoSize();
 
