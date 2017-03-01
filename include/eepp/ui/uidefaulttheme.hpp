@@ -17,7 +17,7 @@ class EE_API UIDefaultTheme : public UITheme {
 
 		WindowStyleConfig getWindowStyleConfig();
 
-		virtual UIPopUpMenu * createPopUpMenu(UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE | UI_AUTO_PADDING, Recti PaddingContainer = Recti(), Uint32 MinWidth = 100, Uint32 MinSpaceForIcons = 16, Uint32 MinRightMargin = 8 );
+		MenuStyleConfig getMenuStyleConfig();
 
 		virtual UICommonDialog * createCommonDialog( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED, Uint32 WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, Sizei MinWindowSize = Sizei(0,0), Uint8 BaseAlpha = 255, Uint32 CDLFlags = UI_CDL_DEFAULT_FLAGS, std::string DefaultFilePattern = "*", std::string DefaultDirectory = Sys::getProcessPath() );
 

@@ -227,7 +227,7 @@ void TextureAtlasEditor::createWinMenu() {
 	mWinMenu = UIWinMenu::New();
 	mWinMenu->setParent( mUIContainer );
 
-	UIPopUpMenu * PU = mTheme->createPopUpMenu();
+	UIPopUpMenu * PU = UIPopUpMenu::New();
 	PU->add( "New...", mTheme->getIconByName( "document-new" ) );
 	PU->add( "Open...", mTheme->getIconByName( "document-open" ) );
 	PU->addSeparator();

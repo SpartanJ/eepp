@@ -566,7 +566,7 @@ void UIMap::objItemClick( const UIEvent * Event ) {
 }
 
 void UIMap::createObjPopUpMenu() {
-	UIPopUpMenu * Menu = mTheme->createPopUpMenu();
+	UIPopUpMenu * Menu = UIPopUpMenu::New();
 
 	Menu->add( "Duplicate Object" );
 	Menu->add( "Remove Object" );

@@ -13,79 +13,79 @@ namespace EE { namespace UI {
 class FontStyleConfig {
 	public:
 		Graphics::Font * getFont() const {
-			return font;
+			return Font;
 		}
 
 		const ColorA& getFontColor() const {
-			return fontColor;
+			return FontColor;
 		}
 
 		const ColorA& getFontShadowColor() const {
-			return fontShadowColor;
+			return FontShadowColor;
 		}
 
 		const ColorA& getFontOverColor() const {
-			return fontOverColor;
+			return FontOverColor;
 		}
 
 		const ColorA& getFontSelectedColor() const {
-			return fontSelectedColor;
+			return FontSelectedColor;
 		}
 
 		ColorA getFontSelectionBackColor() const {
-			return fontSelectionBackColor;
+			return FontSelectionBackColor;
 		}
 
 		void setFont( Font * font ) {
-			this->font = font;
+			Font = font;
 		}
 
 		void setFontColor( const ColorA& color ) {
-			fontColor = color;
+			FontColor = color;
 		}
 
 		void setFontShadowColor( const ColorA& color ) {
-			fontShadowColor = color;
+			FontShadowColor = color;
 		}
 
 		void setFontOverColor( const ColorA& color ) {
-			fontOverColor = color;
+			FontOverColor = color;
 		}
 
 		void setFontSelectedColor( const ColorA& color ) {
-			fontSelectedColor = color;
+			FontSelectedColor = color;
 		}
 
 		void setFontSelectionBackColor(const ColorA& color) {
-			fontSelectionBackColor = color;
+			FontSelectionBackColor = color;
 		}
 
 		FontStyleConfig() {}
 
 		FontStyleConfig( const FontStyleConfig& fontStyleConfig ) :
-			font( fontStyleConfig.font ),
-			fontColor( fontStyleConfig.fontColor ),
-			fontShadowColor( fontStyleConfig.fontShadowColor ),
-			fontOverColor( fontStyleConfig.fontOverColor ),
-			fontSelectedColor( fontStyleConfig.fontSelectedColor ),
-			fontSelectionBackColor( fontStyleConfig.fontSelectionBackColor )
+			Font( fontStyleConfig.Font ),
+			FontColor( fontStyleConfig.FontColor ),
+			FontShadowColor( fontStyleConfig.FontShadowColor ),
+			FontOverColor( fontStyleConfig.FontOverColor ),
+			FontSelectedColor( fontStyleConfig.FontSelectedColor ),
+			FontSelectionBackColor( fontStyleConfig.FontSelectionBackColor )
 		{}
 
 		void updateFontStyleConfig( const FontStyleConfig& fontStyleConfig ) {
-			font = ( fontStyleConfig.font );
-			fontColor = ( fontStyleConfig.fontColor );
-			fontShadowColor = ( fontStyleConfig.fontShadowColor );
-			fontOverColor = ( fontStyleConfig.fontOverColor );
-			fontSelectedColor = ( fontStyleConfig.fontSelectedColor );
-			fontSelectionBackColor = ( fontStyleConfig.fontSelectionBackColor );
+			Font = fontStyleConfig.Font ;
+			FontColor = fontStyleConfig.FontColor ;
+			FontShadowColor = fontStyleConfig.FontShadowColor ;
+			FontOverColor = fontStyleConfig.FontOverColor ;
+			FontSelectedColor = fontStyleConfig.FontSelectedColor ;
+			FontSelectionBackColor = fontStyleConfig.FontSelectionBackColor ;
 		}
 
-		Font * font;
-		ColorA fontColor;
-		ColorA fontShadowColor;
-		ColorA fontOverColor;
-		ColorA fontSelectedColor;
-		ColorA fontSelectionBackColor;
+		Graphics::Font * Font;
+		ColorA FontColor;
+		ColorA FontShadowColor;
+		ColorA FontOverColor;
+		ColorA FontSelectedColor;
+		ColorA FontSelectionBackColor;
 };
 
 class TabWidgetStyleConfig : public FontStyleConfig {
@@ -96,17 +96,17 @@ class TabWidgetStyleConfig : public FontStyleConfig {
 			FontStyleConfig( fontStyleConfig )
 		{}
 
-		Int32		tabSeparation = 0;
-		Uint32		maxTextLength = 30;
-		Uint32		tabWidgetHeight = 0;
-		Uint32		tabTextAlign = ( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
-		Uint32		minTabWidth = 32;
-		Uint32		maxTabWidth = 300;
-		bool		tabsClosable = false;
-		bool		specialBorderTabs = false; //! Indicates if the periferical tabs ( the left and right border tab ) are different from the central tabs.
-		bool		drawLineBelowTabs = false;
-		ColorA		lineBelowTabsColor;
-		Int32		lineBelowTabsYOffset = 0;
+		Int32		TabSeparation = 0;
+		Uint32		MaxTextLength = 30;
+		Uint32		TabWidgetHeight = 0;
+		Uint32		TabTextAlign = ( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
+		Uint32		MinTabWidth = 32;
+		Uint32		MaxTabWidth = 300;
+		bool		TabsClosable = false;
+		bool		SpecialBorderTabs = false; //! Indicates if the periferical tabs ( the left and right border tab ) are different from the central tabs.
+		bool		DrawLineBelowTabs = false;
+		ColorA		LineBelowTabsColor;
+		Int32		LineBelowTabsYOffset = 0;
 };
 
 class ProgressBarStyleConfig : public FontStyleConfig {
@@ -117,10 +117,10 @@ class ProgressBarStyleConfig : public FontStyleConfig {
 			FontStyleConfig( fontStyleConfig )
 		{}
 
-		bool displayPercent = false;
-		bool verticalExpand = true;
-		Vector2f movementSpeed = Vector2f( 64.f, 0 );
-		Rectf fillerPadding;
+		bool DisplayPercent = false;
+		bool VerticalExpand = true;
+		Vector2f MovementSpeed = Vector2f( 64.f, 0 );
+		Rectf FillerPadding;
 };
 
 class WinMenuStyleConfig : public FontStyleConfig {
@@ -131,10 +131,10 @@ class WinMenuStyleConfig : public FontStyleConfig {
 			FontStyleConfig( fontStyleConfig )
 		{}
 
-		Uint32				marginBetweenButtons = 0;
-		Uint32				buttonMargin = 4;
-		Uint32				menuHeight = 0;
-		Uint32				firstButtonMargin = 1;
+		Uint32				MarginBetweenButtons = 0;
+		Uint32				ButtonMargin = 4;
+		Uint32				MenuHeight = 0;
+		Uint32				FirstButtonMargin = 1;
 };
 
 class DropDownListStyleConfig : public FontStyleConfig {
@@ -145,8 +145,8 @@ class DropDownListStyleConfig : public FontStyleConfig {
 			FontStyleConfig( fontStyleConfig )
 		{}
 
-		Uint32 maxNumVisibleItems = 10;
-		bool popUpToMainControl = false;
+		Uint32 MaxNumVisibleItems = 10;
+		bool PopUpToMainControl = false;
 };
 
 class WindowStyleConfig : public FontStyleConfig {
@@ -157,17 +157,32 @@ class WindowStyleConfig : public FontStyleConfig {
 			FontStyleConfig( fontStyleConfig )
 		{}
 
-		Uint32		winFlags = UI_WIN_DEFAULT_FLAGS;
-		Sizei		decorationSize;
-		Sizei		borderSize;
-		Sizei		minWindowSize;
-		Vector2i	buttonsPositionFixer;
-		Uint32		buttonsSeparation = 4;
-		Int32		minCornerDistance = 24;
-		ColorA		titleFontColor = ColorA( 255, 255, 255, 255 );
-		Uint8		baseAlpha = 255;
-		bool		decorationAutoSize = true;
-		bool		borderAutoSize = true;
+		Uint32		WinFlags = UI_WIN_DEFAULT_FLAGS;
+		Sizei		DecorationSize;
+		Sizei		BorderSize;
+		Sizei		MinWindowSize;
+		Vector2i	ButtonsPositionFixer;
+		Uint32		ButtonsSeparation = 4;
+		Int32		MinCornerDistance = 24;
+		ColorA		TitleFontColor = ColorA( 255, 255, 255, 255 );
+		Uint8		BaseAlpha = 255;
+		bool		DecorationAutoSize = true;
+		bool		BorderAutoSize = true;
+};
+
+class MenuStyleConfig : public FontStyleConfig {
+	public:
+		MenuStyleConfig() {}
+
+		MenuStyleConfig( FontStyleConfig fontStyleConfig ) :
+			FontStyleConfig( fontStyleConfig )
+		{}
+
+		Recti				Padding = Recti(0, 0, 0, 0);
+		Uint32				MinWidth = 0;
+		Uint32				MinSpaceForIcons = 0;
+		Uint32				MinRightMargin = 0;
+
 };
 
 }}

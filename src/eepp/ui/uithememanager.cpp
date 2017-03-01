@@ -30,7 +30,7 @@ void UIThemeManager::setDefaultFont( Font * Font ) {
 		FontStyleConfig fontStyleConfig = mThemeDefault->getFontStyleConfig();
 
 		if ( NULL == fontStyleConfig.getFont() && NULL != mFont ) {
-			fontStyleConfig.font = mFont;
+			fontStyleConfig.Font = mFont;
 			mThemeDefault->setFontStyleConfig( fontStyleConfig );
 		}
 	}
@@ -59,7 +59,7 @@ void UIThemeManager::setDefaultTheme( UITheme * Theme ) {
 	FontStyleConfig fontStyleConfig = mThemeDefault->getFontStyleConfig();
 
 	if ( NULL == fontStyleConfig.getFont() && NULL != mFont ) {
-		fontStyleConfig.font = mFont;
+		fontStyleConfig.Font = mFont;
 		mThemeDefault->setFontStyleConfig( fontStyleConfig );
 	}
 }

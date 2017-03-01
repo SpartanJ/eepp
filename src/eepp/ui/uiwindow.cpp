@@ -32,7 +32,7 @@ UIWindow::UIWindow( const UIWindow::CreateParams& Params ) :
 
 	updateWinFlags();
 
-	setAlpha( mStyleConfig.baseAlpha );
+	setAlpha( mStyleConfig.BaseAlpha );
 
 	applyDefaultTheme();
 }
@@ -68,7 +68,7 @@ UIWindow::UIWindow() :
 
 	updateWinFlags();
 
-	setAlpha( mStyleConfig.baseAlpha );
+	setAlpha( mStyleConfig.BaseAlpha );
 
 	applyDefaultTheme();
 }
@@ -82,7 +82,7 @@ UIWindow::~UIWindow() {
 }
 
 void UIWindow::updateWinFlags() {
-	if ( !( mStyleConfig.winFlags & UI_WIN_NO_BORDER ) ) {
+	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) ) {
 		if ( NULL == mWindowDecoration )
 			mWindowDecoration = eeNew( UIControlAnim, () );
 
@@ -111,10 +111,10 @@ void UIWindow::updateWinFlags() {
 		mBorderBottom->setEnabled( true );
 		mBorderBottom->setVisible( true );
 
-		if ( mStyleConfig.winFlags & UI_WIN_DRAGABLE_CONTAINER )
+		if ( mStyleConfig.WinFlags & UI_WIN_DRAGABLE_CONTAINER )
 			mContainer->setDragEnabled( true );
 
-		if ( mStyleConfig.winFlags & UI_WIN_CLOSE_BUTTON ) {
+		if ( mStyleConfig.WinFlags & UI_WIN_CLOSE_BUTTON ) {
 			if ( NULL == mButtonClose )
 				mButtonClose = eeNew( UIComplexControl, () );
 
@@ -122,12 +122,12 @@ void UIWindow::updateWinFlags() {
 			mButtonClose->setVisible( true );
 			mButtonClose->setEnabled( true );
 
-			if ( mStyleConfig.winFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
+			if ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
 				mButtonClose->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonCloseClick ) );
 			}
 		}
 
-		if ( ( mStyleConfig.winFlags & UI_WIN_RESIZEABLE ) && ( mStyleConfig.winFlags & UI_WIN_MAXIMIZE_BUTTON ) ) {
+		if ( ( mStyleConfig.WinFlags & UI_WIN_RESIZEABLE ) && ( mStyleConfig.WinFlags & UI_WIN_MAXIMIZE_BUTTON ) ) {
 			if ( NULL == mButtonMaximize )
 				mButtonMaximize = eeNew( UIComplexControl, () );
 
@@ -135,12 +135,12 @@ void UIWindow::updateWinFlags() {
 			mButtonMaximize->setVisible( true );
 			mButtonMaximize->setEnabled( true );
 
-			if ( mStyleConfig.winFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
+			if ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
 				mButtonMaximize->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonMaximizeClick ) );
 			}
 		}
 
-		if ( mStyleConfig.winFlags & UI_WIN_MINIMIZE_BUTTON ) {
+		if ( mStyleConfig.WinFlags & UI_WIN_MINIMIZE_BUTTON ) {
 			if ( NULL == mButtonMinimize )
 				mButtonMinimize = eeNew( UIComplexControl, () );
 
@@ -148,7 +148,7 @@ void UIWindow::updateWinFlags() {
 			mButtonMinimize->setVisible( true );
 			mButtonMinimize->setEnabled( true );
 
-			if ( mStyleConfig.winFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
+			if ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
 				mButtonMinimize->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonMinimizeClick ) );
 			}
 		}
@@ -286,7 +286,7 @@ void UIWindow::setTheme( UITheme *Theme ) {
 
 	mContainer->setThemeControl			( Theme, "winback"			);
 
-	if ( !( mStyleConfig.winFlags & UI_WIN_NO_BORDER ) ) {
+	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) ) {
 		mWindowDecoration->setThemeControl	( Theme, "windeco"			);
 		mBorderLeft->setThemeControl		( Theme, "winborderleft"	);
 		mBorderRight->setThemeControl		( Theme, "winborderright"	);
@@ -313,12 +313,12 @@ void UIWindow::setTheme( UITheme *Theme ) {
 }
 
 void UIWindow::calcMinWinSize() {
-	if ( NULL == mWindowDecoration || ( mStyleConfig.minWindowSize.x != 0 && mStyleConfig.minWindowSize.y != 0 ) )
+	if ( NULL == mWindowDecoration || ( mStyleConfig.MinWindowSize.x != 0 && mStyleConfig.MinWindowSize.y != 0 ) )
 		return;
 
 	Sizei tSize;
 
-	tSize.x = mBorderLeft->getSize().getWidth() + mBorderRight->getSize().getWidth() - mStyleConfig.buttonsPositionFixer.x;
+	tSize.x = mBorderLeft->getSize().getWidth() + mBorderRight->getSize().getWidth() - mStyleConfig.ButtonsPositionFixer.x;
 	tSize.y = mWindowDecoration->getSize().getHeight() + mBorderBottom->getSize().getHeight();
 
 	if ( NULL != mButtonClose )
@@ -330,31 +330,31 @@ void UIWindow::calcMinWinSize() {
 	if ( NULL != mButtonMinimize )
 		tSize.x += mButtonMinimize->getSize().getWidth();
 
-	if ( mStyleConfig.minWindowSize.x < tSize.x )
-		mStyleConfig.minWindowSize.x = tSize.x;
+	if ( mStyleConfig.MinWindowSize.x < tSize.x )
+		mStyleConfig.MinWindowSize.x = tSize.x;
 
-	if ( mStyleConfig.minWindowSize.y < tSize.y )
-		mStyleConfig.minWindowSize.y = tSize.y;
+	if ( mStyleConfig.MinWindowSize.y < tSize.y )
+		mStyleConfig.MinWindowSize.y = tSize.y;
 }
 
 void UIWindow::applyMinWinSize() {
-	if ( mSize.x < mStyleConfig.minWindowSize.x && mSize.y < mStyleConfig.minWindowSize.y ) {
-		setSize( mStyleConfig.minWindowSize );
-	} else if ( mSize.x < mStyleConfig.minWindowSize.x ) {
-		setSize( Sizei( mStyleConfig.minWindowSize.x, mSize.y ) );
-	} else if ( mSize.y < mStyleConfig.minWindowSize.y ) {
-		setSize( Sizei( mSize.x, mStyleConfig.minWindowSize.y ) );
+	if ( mSize.x < mStyleConfig.MinWindowSize.x && mSize.y < mStyleConfig.MinWindowSize.y ) {
+		setSize( mStyleConfig.MinWindowSize );
+	} else if ( mSize.x < mStyleConfig.MinWindowSize.x ) {
+		setSize( Sizei( mStyleConfig.MinWindowSize.x, mSize.y ) );
+	} else if ( mSize.y < mStyleConfig.MinWindowSize.y ) {
+		setSize( Sizei( mSize.x, mStyleConfig.MinWindowSize.y ) );
 	}
 }
 
 void UIWindow::onSizeChange() {
-	if ( mSize.x < mStyleConfig.minWindowSize.x || mSize.y < mStyleConfig.minWindowSize.y ) {
-		if ( mSize.x < mStyleConfig.minWindowSize.x && mSize.y < mStyleConfig.minWindowSize.y ) {
-			setSize( mStyleConfig.minWindowSize );
-		} else if ( mSize.x < mStyleConfig.minWindowSize.x ) {
-			setSize( Sizei( mStyleConfig.minWindowSize.x, mSize.y ) );
+	if ( mSize.x < mStyleConfig.MinWindowSize.x || mSize.y < mStyleConfig.MinWindowSize.y ) {
+		if ( mSize.x < mStyleConfig.MinWindowSize.x && mSize.y < mStyleConfig.MinWindowSize.y ) {
+			setSize( mStyleConfig.MinWindowSize );
+		} else if ( mSize.x < mStyleConfig.MinWindowSize.x ) {
+			setSize( Sizei( mStyleConfig.MinWindowSize.x, mSize.y ) );
 		} else {
-			setSize( Sizei( mSize.x, mStyleConfig.minWindowSize.y ) );
+			setSize( Sizei( mSize.x, mStyleConfig.MinWindowSize.y ) );
 		}
 	} else {
 		fixChildsSize();
@@ -398,8 +398,8 @@ const Sizei& UIWindow::getSize() {
 }
 
 void UIWindow::fixChildsSize() {
-	if ( mSize.getWidth() < mStyleConfig.minWindowSize.getWidth() || mSize.getHeight() < mStyleConfig.minWindowSize.getHeight() ) {
-		internalSize( eemin( mSize.getWidth(), mStyleConfig.minWindowSize.getWidth() ), eemin( mSize.getHeight(), mStyleConfig.minWindowSize.getHeight() ) );
+	if ( mSize.getWidth() < mStyleConfig.MinWindowSize.getWidth() || mSize.getHeight() < mStyleConfig.MinWindowSize.getHeight() ) {
+		internalSize( eemin( mSize.getWidth(), mStyleConfig.MinWindowSize.getWidth() ), eemin( mSize.getHeight(), mStyleConfig.MinWindowSize.getHeight() ) );
 	}
 
 	if ( NULL == mWindowDecoration ) {
@@ -407,28 +407,28 @@ void UIWindow::fixChildsSize() {
 		return;
 	}
 
-	Sizei decoSize = mStyleConfig.decorationSize;
+	Sizei decoSize = mStyleConfig.DecorationSize;
 
-	if ( mStyleConfig.decorationAutoSize ) {
-		decoSize = mStyleConfig.decorationSize = Sizei( mSize.getWidth(), mWindowDecoration->getSkinSize().getHeight() );
+	if ( mStyleConfig.DecorationAutoSize ) {
+		decoSize = mStyleConfig.DecorationSize = Sizei( mSize.getWidth(), mWindowDecoration->getSkinSize().getHeight() );
 	}
 
-	mWindowDecoration->setSize( mStyleConfig.decorationSize );
+	mWindowDecoration->setSize( mStyleConfig.DecorationSize );
 
-	if ( mStyleConfig.borderAutoSize ) {
+	if ( mStyleConfig.BorderAutoSize ) {
 		mBorderBottom->setSize( Sizei( mSize.getWidth(), mBorderBottom->getSkinSize().getHeight() ) );
 	} else {
-		mBorderBottom->setSize( mSize.getWidth(), mStyleConfig.borderSize.getHeight() );
+		mBorderBottom->setSize( mSize.getWidth(), mStyleConfig.BorderSize.getHeight() );
 	}
 
 	Uint32 BorderHeight = mSize.getHeight() - decoSize.getHeight() - mBorderBottom->getSize().getHeight();
 
-	if ( mStyleConfig.borderAutoSize ) {
+	if ( mStyleConfig.BorderAutoSize ) {
 		mBorderLeft->setSize( Sizei( mBorderLeft->getSkinSize().getWidth(), BorderHeight ) );
 		mBorderRight->setSize( Sizei( mBorderRight->getSkinSize().getWidth(), BorderHeight ) );
 	} else {
-		mBorderLeft->setSize( mStyleConfig.borderSize.getWidth(), BorderHeight );
-		mBorderRight->setSize( mStyleConfig.borderSize.getWidth(), BorderHeight );
+		mBorderLeft->setSize( mStyleConfig.BorderSize.getWidth(), BorderHeight );
+		mBorderRight->setSize( mStyleConfig.BorderSize.getWidth(), BorderHeight );
 	}
 
 	mBorderLeft->setPosition( 0, mWindowDecoration->getSize().getHeight() );
@@ -441,31 +441,31 @@ void UIWindow::fixChildsSize() {
 	Uint32 yPos;
 
 	if ( NULL != mButtonClose ) {
-		yPos = mWindowDecoration->getSize().getHeight() / 2 - mButtonClose->getSize().getHeight() / 2 + mStyleConfig.buttonsPositionFixer.y;
+		yPos = mWindowDecoration->getSize().getHeight() / 2 - mButtonClose->getSize().getHeight() / 2 + mStyleConfig.ButtonsPositionFixer.y;
 
-		mButtonClose->setPosition( mWindowDecoration->getSize().getWidth() - mBorderRight->getSize().getWidth() - mButtonClose->getSize().getWidth() + mStyleConfig.buttonsPositionFixer.x, yPos );
+		mButtonClose->setPosition( mWindowDecoration->getSize().getWidth() - mBorderRight->getSize().getWidth() - mButtonClose->getSize().getWidth() + mStyleConfig.ButtonsPositionFixer.x, yPos );
 	}
 
 	if ( NULL != mButtonMaximize ) {
-		yPos = mWindowDecoration->getSize().getHeight() / 2 - mButtonMaximize->getSize().getHeight() / 2 + mStyleConfig.buttonsPositionFixer.y;
+		yPos = mWindowDecoration->getSize().getHeight() / 2 - mButtonMaximize->getSize().getHeight() / 2 + mStyleConfig.ButtonsPositionFixer.y;
 
 		if ( NULL != mButtonClose ) {
-			mButtonMaximize->setPosition( mButtonClose->getPosition().x - mStyleConfig.buttonsSeparation - mButtonMaximize->getSize().getWidth(), yPos );
+			mButtonMaximize->setPosition( mButtonClose->getPosition().x - mStyleConfig.ButtonsSeparation - mButtonMaximize->getSize().getWidth(), yPos );
 		} else {
-			mButtonMaximize->setPosition( mWindowDecoration->getSize().getWidth() - mBorderRight->getSize().getWidth() - mButtonMaximize->getSize().getWidth() + mStyleConfig.buttonsPositionFixer.x, yPos );
+			mButtonMaximize->setPosition( mWindowDecoration->getSize().getWidth() - mBorderRight->getSize().getWidth() - mButtonMaximize->getSize().getWidth() + mStyleConfig.ButtonsPositionFixer.x, yPos );
 		}
 	}
 
 	if ( NULL != mButtonMinimize ) {
-		yPos = mWindowDecoration->getSize().getHeight() / 2 - mButtonMinimize->getSize().getHeight() / 2 + mStyleConfig.buttonsPositionFixer.y;
+		yPos = mWindowDecoration->getSize().getHeight() / 2 - mButtonMinimize->getSize().getHeight() / 2 + mStyleConfig.ButtonsPositionFixer.y;
 
 		if ( NULL != mButtonMaximize ) {
-			mButtonMinimize->setPosition( mButtonMaximize->getPosition().x - mStyleConfig.buttonsSeparation - mButtonMinimize->getSize().getWidth(), yPos );
+			mButtonMinimize->setPosition( mButtonMaximize->getPosition().x - mStyleConfig.ButtonsSeparation - mButtonMinimize->getSize().getWidth(), yPos );
 		} else {
 			if ( NULL != mButtonClose ) {
-				mButtonMinimize->setPosition( mButtonClose->getPosition().x - mStyleConfig.buttonsSeparation - mButtonMinimize->getSize().getWidth(), yPos );
+				mButtonMinimize->setPosition( mButtonClose->getPosition().x - mStyleConfig.ButtonsSeparation - mButtonMinimize->getSize().getWidth(), yPos );
 			} else {
-				mButtonMinimize->setPosition( mWindowDecoration->getSize().getWidth() - mBorderRight->getSize().getWidth() - mButtonMinimize->getSize().getWidth() + mStyleConfig.buttonsPositionFixer.x, yPos );
+				mButtonMinimize->setPosition( mWindowDecoration->getSize().getWidth() - mBorderRight->getSize().getWidth() - mButtonMinimize->getSize().getWidth() + mStyleConfig.ButtonsPositionFixer.x, yPos );
 			}
 		}
 	}
@@ -517,7 +517,7 @@ void UIWindow::doResize ( const UIMessage * Msg ) {
 	if ( NULL == mWindowDecoration )
 		return;
 
-	if (	!( mStyleConfig.winFlags & UI_WIN_RESIZEABLE ) ||
+	if (	!( mStyleConfig.WinFlags & UI_WIN_RESIZEABLE ) ||
 			!( Msg->getFlags() & EE_BUTTON_LMASK ) ||
 			RESIZE_NONE != mResizeType ||
 			( UIManager::instance()->getLastPressTrigger() & EE_BUTTON_LMASK )
@@ -538,30 +538,30 @@ void UIWindow::decideResizeType( UIControl * Control ) {
 		} else if ( Pos.x >= ( mSize.getWidth() - mBorderRight->getSize().getWidth() ) ) {
 			tryResize( RESIZE_TOPRIGHT );
 		} else if ( Pos.y <= mBorderBottom->getSize().getHeight() ) {
-			if ( Pos.x < mStyleConfig.minCornerDistance ) {
+			if ( Pos.x < mStyleConfig.MinCornerDistance ) {
 				tryResize( RESIZE_TOPLEFT );
-			} else if ( Pos.x > mSize.getWidth() - mStyleConfig.minCornerDistance ) {
+			} else if ( Pos.x > mSize.getWidth() - mStyleConfig.MinCornerDistance ) {
 				tryResize( RESIZE_TOPRIGHT );
 			} else {
 				tryResize( RESIZE_TOP );
 			}
 		}
 	} else if ( Control == mBorderBottom ) {
-		if ( Pos.x < mStyleConfig.minCornerDistance ) {
+		if ( Pos.x < mStyleConfig.MinCornerDistance ) {
 			tryResize( RESIZE_LEFTBOTTOM );
-		} else if ( Pos.x > mSize.getWidth() - mStyleConfig.minCornerDistance ) {
+		} else if ( Pos.x > mSize.getWidth() - mStyleConfig.MinCornerDistance ) {
 			tryResize( RESIZE_RIGHTBOTTOM );
 		} else {
 			tryResize( RESIZE_BOTTOM );
 		}
 	} else if ( Control == mBorderLeft )  {
-		if ( Pos.y >= mSize.getHeight() - mStyleConfig.minCornerDistance ) {
+		if ( Pos.y >= mSize.getHeight() - mStyleConfig.MinCornerDistance ) {
 			tryResize( RESIZE_LEFTBOTTOM );
 		} else {
 			tryResize( RESIZE_LEFT );
 		}
 	} else if ( Control == mBorderRight ) {
-		if ( Pos.y >= mSize.getHeight() - mStyleConfig.minCornerDistance ) {
+		if ( Pos.y >= mSize.getHeight() - mStyleConfig.MinCornerDistance ) {
 			tryResize( RESIZE_RIGHTBOTTOM );
 		} else {
 			tryResize( RESIZE_RIGHT );
@@ -720,7 +720,7 @@ void UIWindow::internalSize( const Int32& w, const Int32& h ) {
 }
 
 void UIWindow::internalSize( Sizei Size ) {
-	Sizei realMin = PixelDensity::dpToPxI( mStyleConfig.minWindowSize );
+	Sizei realMin = PixelDensity::dpToPxI( mStyleConfig.MinWindowSize );
 
 	Size.x = eemax( realMin.x, Size.x );
 	Size.y = eemax( realMin.y, Size.y );
@@ -734,7 +734,7 @@ void UIWindow::internalSize( Sizei Size ) {
 void UIWindow::draw() {
 	UIComplexControl::draw();
 
-	if ( mStyleConfig.winFlags & UI_WIN_DRAW_SHADOW ) {
+	if ( mStyleConfig.WinFlags & UI_WIN_DRAW_SHADOW ) {
 		Primitives P;
 		P.setForceDraw( false );
 
@@ -797,7 +797,7 @@ bool UIWindow::show() {
 
 		setFocus();
 
-		startAlphaAnim( mStyleConfig.baseAlpha == getAlpha() ? 0.f : mAlpha, mStyleConfig.baseAlpha, UIThemeManager::instance()->getControlsFadeInTime() );
+		startAlphaAnim( mStyleConfig.BaseAlpha == getAlpha() ? 0.f : mAlpha, mStyleConfig.BaseAlpha, UIThemeManager::instance()->getControlsFadeInTime() );
 
 		if ( isModal() ) {
 			createModalControl();
@@ -838,7 +838,7 @@ bool UIWindow::hide() {
 }
 
 void UIWindow::onAlphaChange() {
-	if ( mStyleConfig.winFlags & UI_WIN_SHARE_ALPHA_WITH_CHILDS ) {
+	if ( mStyleConfig.WinFlags & UI_WIN_SHARE_ALPHA_WITH_CHILDS ) {
 		UIControlAnim * AnimChild;
 		UIControl * CurChild = mChild;
 
@@ -856,15 +856,15 @@ void UIWindow::onAlphaChange() {
 }
 
 void UIWindow::setBaseAlpha( const Uint8& Alpha ) {
-	if ( mAlpha == mStyleConfig.baseAlpha ) {
+	if ( mAlpha == mStyleConfig.BaseAlpha ) {
 		UIControlAnim::setAlpha( Alpha );
 	}
 
-	mStyleConfig.baseAlpha = Alpha;
+	mStyleConfig.BaseAlpha = Alpha;
 }
 
 const Uint8& UIWindow::getBaseAlpha() const {
-	return mStyleConfig.baseAlpha;
+	return mStyleConfig.BaseAlpha;
 }
 
 void UIWindow::setTitle( const String& Text ) {
@@ -873,7 +873,7 @@ void UIWindow::setTitle( const String& Text ) {
 		mTitle->setParent( this );
 		mTitle->setHorizontalAlign( getHorizontalAlign() );
 		mTitle->setVerticalAlign( getVerticalAlign() );
-		mTitle->setFontColor( mStyleConfig.titleFontColor );
+		mTitle->setFontColor( mStyleConfig.TitleFontColor );
 
 		if ( mFlags & UI_DRAW_SHADOW )
 			mTitle->setFlags( UI_DRAW_SHADOW );
@@ -921,7 +921,7 @@ void UIWindow::maximize() {
 }
 
 Uint32 UIWindow::onMouseDoubleClick( const Vector2i &Pos, const Uint32 Flags ) {
-	if ( ( mStyleConfig.winFlags & UI_WIN_RESIZEABLE ) && ( NULL != mButtonMaximize ) && ( Flags & EE_BUTTON_LMASK ) ) {
+	if ( ( mStyleConfig.WinFlags & UI_WIN_RESIZEABLE ) && ( NULL != mButtonMaximize ) && ( Flags & EE_BUTTON_LMASK ) ) {
 		onButtonMaximizeClick( NULL );
 	}
 
@@ -977,15 +977,15 @@ bool UIWindow::removeShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
 }
 
 bool UIWindow::isMaximizable() {
-	return 0 != ( ( mStyleConfig.winFlags & UI_WIN_RESIZEABLE ) && ( mStyleConfig.winFlags & UI_WIN_MAXIMIZE_BUTTON ) );
+	return 0 != ( ( mStyleConfig.WinFlags & UI_WIN_RESIZEABLE ) && ( mStyleConfig.WinFlags & UI_WIN_MAXIMIZE_BUTTON ) );
 }
 
 Uint32 UIWindow::getWinFlags() const {
-	return mStyleConfig.winFlags;
+	return mStyleConfig.WinFlags;
 }
 
 UIWindow * UIWindow::setWinFlags(const Uint32 & winFlags) {
-	mStyleConfig.winFlags = winFlags;
+	mStyleConfig.WinFlags = winFlags;
 
 	updateWinFlags();
 
@@ -1001,7 +1001,7 @@ UIWindow * UIWindow::setStyleConfig(const WindowStyleConfig & styleConfig) {
 
 	updateWinFlags();
 
-	setAlpha( mStyleConfig.baseAlpha );
+	setAlpha( mStyleConfig.BaseAlpha );
 
 	applyDefaultTheme();
 
@@ -1015,7 +1015,7 @@ UIWindow * UIWindow::setMinWindowSize( const Int32& width, const Int32& height )
 }
 
 UIWindow * UIWindow::setMinWindowSize( Sizei size ) {
-	mStyleConfig.minWindowSize = size;
+	mStyleConfig.MinWindowSize = size;
 
 	applyMinWinSize();
 
@@ -1023,11 +1023,11 @@ UIWindow * UIWindow::setMinWindowSize( Sizei size ) {
 }
 
 const Sizei& UIWindow::getMinWindowSize() {
-	return mStyleConfig.minWindowSize;
+	return mStyleConfig.MinWindowSize;
 }
 
 bool UIWindow::isModal() {
-	return 0 != ( mStyleConfig.winFlags & UI_WIN_MODAL );
+	return 0 != ( mStyleConfig.WinFlags & UI_WIN_MODAL );
 }
 
 UIControlAnim * UIWindow::getModalControl() const {
@@ -1037,7 +1037,7 @@ UIControlAnim * UIWindow::getModalControl() const {
 void UIWindow::resizeCursor() {
 	UIManager * Man = UIManager::instance();
 
-	if ( !isMouseOverMeOrChilds() || !Man->getUseGlobalCursors() || ( mStyleConfig.winFlags & UI_WIN_NO_BORDER ) || !( mStyleConfig.winFlags & UI_WIN_RESIZEABLE ) )
+	if ( !isMouseOverMeOrChilds() || !Man->getUseGlobalCursors() || ( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) || !( mStyleConfig.WinFlags & UI_WIN_RESIZEABLE ) )
 		return;
 
 	Vector2i Pos = Man->getMousePos();
@@ -1052,9 +1052,9 @@ void UIWindow::resizeCursor() {
 		} else if ( Pos.x >= ( mSize.getWidth() - mBorderRight->getSize().getWidth() ) ) {
 			Man->setCursor( EE_CURSOR_SIZENESW ); // RESIZE_TOPRIGHT
 		} else if ( Pos.y <= mBorderBottom->getSize().getHeight() ) {
-			if ( Pos.x < mStyleConfig.minCornerDistance ) {
+			if ( Pos.x < mStyleConfig.MinCornerDistance ) {
 				Man->setCursor( EE_CURSOR_SIZENWSE ); // RESIZE_TOPLEFT
-			} else if ( Pos.x > mSize.getWidth() - mStyleConfig.minCornerDistance ) {
+			} else if ( Pos.x > mSize.getWidth() - mStyleConfig.MinCornerDistance ) {
 				Man->setCursor( EE_CURSOR_SIZENESW ); // RESIZE_TOPRIGHT
 			} else {
 				Man->setCursor( EE_CURSOR_SIZENS ); // RESIZE_TOP
@@ -1063,21 +1063,21 @@ void UIWindow::resizeCursor() {
 			Man->setCursor( EE_CURSOR_ARROW );
 		}
 	} else if ( Control == mBorderBottom ) {
-		if ( Pos.x < mStyleConfig.minCornerDistance ) {
+		if ( Pos.x < mStyleConfig.MinCornerDistance ) {
 			Man->setCursor( EE_CURSOR_SIZENESW ); // RESIZE_LEFTBOTTOM
-		} else if ( Pos.x > mSize.getWidth() - mStyleConfig.minCornerDistance ) {
+		} else if ( Pos.x > mSize.getWidth() - mStyleConfig.MinCornerDistance ) {
 			Man->setCursor( EE_CURSOR_SIZENWSE ); // RESIZE_RIGHTBOTTOM
 		} else {
 			Man->setCursor( EE_CURSOR_SIZENS ); // RESIZE_BOTTOM
 		}
 	} else if ( Control == mBorderLeft )  {
-		if ( Pos.y >= mSize.getHeight() - mStyleConfig.minCornerDistance ) {
+		if ( Pos.y >= mSize.getHeight() - mStyleConfig.MinCornerDistance ) {
 			Man->setCursor( EE_CURSOR_SIZENESW ); // RESIZE_LEFTBOTTOM
 		} else {
 			Man->setCursor( EE_CURSOR_SIZEWE ); // RESIZE_LEFT
 		}
 	} else if ( Control == mBorderRight ) {
-		if ( Pos.y >= mSize.getHeight() - mStyleConfig.minCornerDistance ) {
+		if ( Pos.y >= mSize.getHeight() - mStyleConfig.MinCornerDistance ) {
 			Man->setCursor( EE_CURSOR_SIZENWSE ); // RESIZE_RIGHTBOTTOM
 		} else {
 			Man->setCursor( EE_CURSOR_SIZEWE ); // RESIZE_RIGHT

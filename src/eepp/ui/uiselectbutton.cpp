@@ -71,21 +71,21 @@ void UISelectButton::onStateChange() {
 		}
 	} else {
 		if ( mSkinState->getState() == UISkinState::StateSelected ) {
-			getTextBox()->setFontColor( mFontStyleConfig.fontSelectedColor );
+			getTextBox()->setFontColor( mFontStyleConfig.FontSelectedColor );
 		} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-			getTextBox()->setFontColor( mFontStyleConfig.fontOverColor );
+			getTextBox()->setFontColor( mFontStyleConfig.FontOverColor );
 		} else {
-			getTextBox()->setFontColor( mFontStyleConfig.fontColor );
+			getTextBox()->setFontColor( mFontStyleConfig.FontColor );
 		}
 	}
 }
 
 void UISelectButton::setFontSelectedColor(const ColorA & color) {
-	mFontStyleConfig.fontSelectedColor = color;
+	mFontStyleConfig.FontSelectedColor = color;
 }
 
 const ColorA &UISelectButton::getFontSelectedColor() const {
-	return mFontStyleConfig.fontSelectedColor;
+	return mFontStyleConfig.FontSelectedColor;
 }
 
 }}

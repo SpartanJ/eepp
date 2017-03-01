@@ -232,9 +232,9 @@ void UIPushButton::onAlphaChange() {
 
 void UIPushButton::onStateChange() {
 	if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-		mTextBox->setFontColor( mFontStyleConfig.fontOverColor );
+		mTextBox->setFontColor( mFontStyleConfig.FontOverColor );
 	} else {
-		mTextBox->setFontColor( mFontStyleConfig.fontColor );
+		mTextBox->setFontColor( mFontStyleConfig.FontColor );
 	}
 
 	mTextBox->setAlpha( mAlpha );
@@ -260,20 +260,20 @@ Uint32 UIPushButton::onKeyUp( const UIEventKey& Event ) {
 	return UIComplexControl::onKeyUp( Event );
 }
 const ColorA& UIPushButton::getFontColor() const {
-	return mFontStyleConfig.fontColor;
+	return mFontStyleConfig.FontColor;
 }
 
 void UIPushButton::setFontColor( const ColorA& color ) {
-	mFontStyleConfig.fontColor = color;
+	mFontStyleConfig.FontColor = color;
 	onStateChange();
 }
 
 const ColorA& UIPushButton::getFontOverColor() const {
-	return mFontStyleConfig.fontOverColor;
+	return mFontStyleConfig.FontOverColor;
 }
 
 void UIPushButton::setFontOverColor( const ColorA& color ) {
-	mFontStyleConfig.fontOverColor = color;
+	mFontStyleConfig.FontOverColor = color;
 	onStateChange();
 }
 

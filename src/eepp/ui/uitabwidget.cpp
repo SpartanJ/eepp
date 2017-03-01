@@ -23,12 +23,12 @@ UITabWidget::UITabWidget() :
 	}
 
 	mTabContainer = eeNew( UIComplexControl, ( ) );
-	mTabContainer->setParent( this )->setPosition( 0, 0 )->setSize( mSize.getWidth(), mStyleConfig.tabWidgetHeight )->setVisible( true )->setEnabled( true );
+	mTabContainer->setParent( this )->setPosition( 0, 0 )->setSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight )->setVisible( true )->setEnabled( true );
 	mTabContainer->setFlags( UI_CLIP_ENABLE | UI_ANCHOR_RIGHT );
 
 	mCtrlContainer = eeNew( UIComplexControl, ( ) );
-	mCtrlContainer->setParent( this )->setPosition( 0, mStyleConfig.tabWidgetHeight )
-			->setSize( mSize.getWidth(), mSize.getHeight() - mStyleConfig.tabWidgetHeight )->setVisible( true )->setEnabled( true )
+	mCtrlContainer->setParent( this )->setPosition( 0, mStyleConfig.TabWidgetHeight )
+			->setSize( mSize.getWidth(), mSize.getHeight() - mStyleConfig.TabWidgetHeight )->setVisible( true )->setEnabled( true )
 			->setFlags( UI_CLIP_ENABLE | UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT );
 
 	onSizeChange();
@@ -52,14 +52,14 @@ void UITabWidget::setTheme( UITheme * Theme ) {
 
 	mCtrlContainer->setThemeControl( Theme, "tabcontainer" );
 
-	if ( 0 == mStyleConfig.tabWidgetHeight ) {
+	if ( 0 == mStyleConfig.TabWidgetHeight ) {
 		UISkin * tSkin		= Theme->getByName( Theme->getAbbr() + "_" + "tab" );
 
 		if ( NULL != tSkin ) {
 			Sizei tSize1		= getSkinSize( tSkin );
 			Sizei tSize2		= getSkinSize( tSkin, UISkinState::StateSelected );
 
-			mStyleConfig.tabWidgetHeight	= eemax( tSize1.getHeight(), tSize2.getHeight() );
+			mStyleConfig.TabWidgetHeight	= eemax( tSize1.getHeight(), tSize2.getHeight() );
 
 			seContainerSize();
 			orderTabs();
@@ -74,27 +74,27 @@ void UITabWidget::doAfterSetTheme() {
 }
 
 void UITabWidget::seContainerSize() {
-	mTabContainer->setSize( mSize.getWidth(), mStyleConfig.tabWidgetHeight );
-	mCtrlContainer->setPosition( 0, mStyleConfig.tabWidgetHeight );
-	mCtrlContainer->setSize( mSize.getWidth(), mSize.getHeight() - mStyleConfig.tabWidgetHeight );
+	mTabContainer->setSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight );
+	mCtrlContainer->setPosition( 0, mStyleConfig.TabWidgetHeight );
+	mCtrlContainer->setSize( mSize.getWidth(), mSize.getHeight() - mStyleConfig.TabWidgetHeight );
 }
 
 void UITabWidget::draw() {
 	UIComplexControl::draw();
 
-	if ( mStyleConfig.drawLineBelowTabs ) {
+	if ( mStyleConfig.DrawLineBelowTabs ) {
 		bool smooth = GLi->isLineSmooth();
 		if ( smooth ) GLi->lineSmooth( false );
 
 		Primitives P;
-		Vector2i p1( mScreenPos.x, mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.lineBelowTabsYOffset );
+		Vector2i p1( mScreenPos.x, mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
 		Vector2i p2( mScreenPos.x + mTabContainer->getRealPosition().x, p1.y );
 
 		P.setLineWidth( PixelDensity::dpToPx( 1 ) );
-		P.setColor(mStyleConfig.lineBelowTabsColor );
+		P.setColor(mStyleConfig.LineBelowTabsColor );
 		P.drawLine( Line2f( Vector2f( p1.x, p1.y ), Vector2f( p2.x, p2.y ) ) );
 
-		Vector2i p3( mScreenPos.x + mTabContainer->getRealPosition().x + mTabContainer->getRealSize().getWidth(), mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.lineBelowTabsYOffset );
+		Vector2i p3( mScreenPos.x + mTabContainer->getRealPosition().x + mTabContainer->getRealSize().getWidth(), mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
 		Vector2i p4( mScreenPos.x + mRealSize.getWidth(), p3.y );
 
 		P.drawLine( Line2f( Vector2f( p3.x, p3.y ), Vector2f( p4.x, p4.y ) ) );
@@ -116,161 +116,161 @@ TabWidgetStyleConfig UITabWidget::getStyleConfig() const {
 }
 
 void UITabWidget::setStyleConfig(const TabWidgetStyleConfig & styleConfig) {
-	Uint32		tabWidgetHeight = mStyleConfig.tabWidgetHeight;
+	Uint32		tabWidgetHeight = mStyleConfig.TabWidgetHeight;
 	mStyleConfig = styleConfig;
-	mStyleConfig.tabWidgetHeight = tabWidgetHeight;
+	mStyleConfig.TabWidgetHeight = tabWidgetHeight;
 	seContainerSize();
 	setTabContainerSize();
 	orderTabs();
 }
 
 Font * UITabWidget::getFont() const {
-	return mStyleConfig.font;
+	return mStyleConfig.Font;
 }
 
 void UITabWidget::setFont(Font * font) {
-	mStyleConfig.font = font;
+	mStyleConfig.Font = font;
 
 	if ( mTabs.size() > 0 ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setFont( mStyleConfig.font );
+			((UITab*)mTabs[ i ])->setFont( mStyleConfig.Font );
 		}
 	}
 }
 
 ColorA UITabWidget::getFontColor() const {
-	return mStyleConfig.fontColor;
+	return mStyleConfig.FontColor;
 }
 
 void UITabWidget::setFontColor(const ColorA & fontColor) {
-	mStyleConfig.fontColor = fontColor;
+	mStyleConfig.FontColor = fontColor;
 
 	if ( mTabs.size() > 0 ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setFontColor( mStyleConfig.fontColor );
+			((UITab*)mTabs[ i ])->setFontColor( mStyleConfig.FontColor );
 		}
 	}
 }
 
 ColorA UITabWidget::getFontShadowColor() const {
-	return mStyleConfig.fontShadowColor;
+	return mStyleConfig.FontShadowColor;
 }
 
 void UITabWidget::setFontShadowColor(const ColorA & fontShadowColor) {
-	mStyleConfig.fontShadowColor = fontShadowColor;
+	mStyleConfig.FontShadowColor = fontShadowColor;
 
 	if ( mTabs.size() > 0 ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setFontShadowColor( mStyleConfig.fontShadowColor );
+			((UITab*)mTabs[ i ])->setFontShadowColor( mStyleConfig.FontShadowColor );
 		}
 	}
 }
 
 ColorA UITabWidget::getFontOverColor() const {
-	return mStyleConfig.fontOverColor;
+	return mStyleConfig.FontOverColor;
 }
 
 void UITabWidget::setFontOverColor(const ColorA & fontOverColor) {
-	mStyleConfig.fontOverColor = fontOverColor;
+	mStyleConfig.FontOverColor = fontOverColor;
 
 	if ( mTabs.size() > 0 ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setFontOverColor( mStyleConfig.fontOverColor );
+			((UITab*)mTabs[ i ])->setFontOverColor( mStyleConfig.FontOverColor );
 		}
 	}
 }
 
 ColorA UITabWidget::getFontSelectedColor() const {
-	return mStyleConfig.fontSelectedColor;
+	return mStyleConfig.FontSelectedColor;
 }
 
 void UITabWidget::setFontSelectedColor(const ColorA & fontSelectedColor) {
-	mStyleConfig.fontSelectedColor = fontSelectedColor;
+	mStyleConfig.FontSelectedColor = fontSelectedColor;
 
 	if ( mTabs.size() > 0 ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setFontSelectedColor( mStyleConfig.fontSelectedColor );
+			((UITab*)mTabs[ i ])->setFontSelectedColor( mStyleConfig.FontSelectedColor );
 		}
 	}
 }
 
 Int32 UITabWidget::getTabSeparation() const {
-	return mStyleConfig.tabSeparation;
+	return mStyleConfig.TabSeparation;
 }
 
 void UITabWidget::setTabSeparation(const Int32 & tabSeparation) {
-	mStyleConfig.tabSeparation = tabSeparation;
+	mStyleConfig.TabSeparation = tabSeparation;
 	setTabContainerSize();
 	posTabs();
 }
 
 Uint32 UITabWidget::getMaxTextLength() const {
-	return mStyleConfig.maxTextLength;
+	return mStyleConfig.MaxTextLength;
 }
 
 void UITabWidget::setMaxTextLength(const Uint32 & maxTextLength) {
-	mStyleConfig.maxTextLength = maxTextLength;
+	mStyleConfig.MaxTextLength = maxTextLength;
 }
 
 Uint32 UITabWidget::getTabWidgetHeight() const {
-	return mStyleConfig.tabWidgetHeight;
+	return mStyleConfig.TabWidgetHeight;
 }
 
 Uint32 UITabWidget::getMinTabWidth() const {
-	return mStyleConfig.minTabWidth;
+	return mStyleConfig.MinTabWidth;
 }
 
 void UITabWidget::setMinTabWidth(const Uint32 & minTabWidth) {
-	mStyleConfig.minTabWidth = minTabWidth;
+	mStyleConfig.MinTabWidth = minTabWidth;
 }
 
 Uint32 UITabWidget::getMaxTabWidth() const {
-	return mStyleConfig.maxTabWidth;
+	return mStyleConfig.MaxTabWidth;
 }
 
 void UITabWidget::setMaxTabWidth(const Uint32 & maxTabWidth) {
-	mStyleConfig.maxTabWidth = maxTabWidth;
+	mStyleConfig.MaxTabWidth = maxTabWidth;
 }
 
 bool UITabWidget::getTabsClosable() const {
-	return mStyleConfig.tabsClosable;
+	return mStyleConfig.TabsClosable;
 }
 
 void UITabWidget::setTabsClosable(bool tabsClosable) {
-	mStyleConfig.tabsClosable = tabsClosable;
+	mStyleConfig.TabsClosable = tabsClosable;
 }
 
 bool UITabWidget::getSpecialBorderTabs() const {
-	return mStyleConfig.specialBorderTabs;
+	return mStyleConfig.SpecialBorderTabs;
 }
 
 void UITabWidget::setSpecialBorderTabs(bool specialBorderTabs) {
-	mStyleConfig.specialBorderTabs = specialBorderTabs;
+	mStyleConfig.SpecialBorderTabs = specialBorderTabs;
 	applyThemeToTabs();
 }
 
 bool UITabWidget::getDrawLineBelowTabs() const {
-	return mStyleConfig.drawLineBelowTabs;
+	return mStyleConfig.DrawLineBelowTabs;
 }
 
 void UITabWidget::setDrawLineBelowTabs(bool drawLineBelowTabs) {
-	mStyleConfig.drawLineBelowTabs = drawLineBelowTabs;
+	mStyleConfig.DrawLineBelowTabs = drawLineBelowTabs;
 }
 
 ColorA UITabWidget::getLineBelowTabsColor() const {
-	return mStyleConfig.lineBelowTabsColor;
+	return mStyleConfig.LineBelowTabsColor;
 }
 
 void UITabWidget::setLineBelowTabsColor(const ColorA & lineBelowTabsColor) {
-	mStyleConfig.lineBelowTabsColor = lineBelowTabsColor;
+	mStyleConfig.LineBelowTabsColor = lineBelowTabsColor;
 }
 
 Int32 UITabWidget::getLineBelowTabsYOffset() const {
-	return mStyleConfig.lineBelowTabsYOffset;
+	return mStyleConfig.LineBelowTabsYOffset;
 }
 
 void UITabWidget::setLineBelowTabsYOffset(const Int32 & lineBelowTabsYOffset) {
-	mStyleConfig.lineBelowTabsYOffset = lineBelowTabsYOffset;
+	mStyleConfig.LineBelowTabsYOffset = lineBelowTabsYOffset;
 }
 
 void UITabWidget::setTabContainerSize() {
@@ -278,13 +278,13 @@ void UITabWidget::setTabContainerSize() {
 
 	if ( mTabs.size() > 0 ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			s += mTabs[i]->getSize().getWidth() + mStyleConfig.tabSeparation;
+			s += mTabs[i]->getSize().getWidth() + mStyleConfig.TabSeparation;
 		}
 
-		s -= mStyleConfig.tabSeparation;
+		s -= mStyleConfig.TabSeparation;
 	}
 
-	mTabContainer->setSize( s, mStyleConfig.tabWidgetHeight );
+	mTabContainer->setSize( s, mStyleConfig.TabWidgetHeight );
 
 	switch ( HAlignGet( mFlags ) )
 	{
@@ -309,19 +309,19 @@ void UITabWidget::posTabs() {
 		switch ( VA )
 		{
 			case UI_VALIGN_BOTTOM:
-				h = mStyleConfig.tabWidgetHeight - mTabs[i]->getSize().getHeight();
+				h = mStyleConfig.TabWidgetHeight - mTabs[i]->getSize().getHeight();
 				break;
 			case UI_VALIGN_TOP:
 				h = 0;
 				break;
 			case UI_VALIGN_CENTER:
-				h = mStyleConfig.tabWidgetHeight / 2 - mTabs[i]->getSize().getHeight() / 2;
+				h = mStyleConfig.TabWidgetHeight / 2 - mTabs[i]->getSize().getHeight() / 2;
 				break;
 		}
 
 		mTabs[i]->setPosition( w, h );
 
-		w += mTabs[i]->getSize().getWidth() + mStyleConfig.tabSeparation;
+		w += mTabs[i]->getSize().getWidth() + mStyleConfig.TabSeparation;
 	}
 }
 
@@ -539,7 +539,7 @@ void UITabWidget::onSizeChange() {
 }
 
 void UITabWidget::applyThemeToTabs() {
-	if ( mStyleConfig.specialBorderTabs ) {
+	if ( mStyleConfig.SpecialBorderTabs ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
 			mTabs[ i ]->applyDefaultTheme();
 		}

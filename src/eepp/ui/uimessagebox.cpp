@@ -145,7 +145,7 @@ UIPushButton * UIMessageBox::getButtonCancel() const {
 }
 
 void UIMessageBox::autoSize() {
-	Sizei nSize( mTextBox->getTextWidth() + 48, mTextBox->getTextHeight() + mButtonOK->getSize().getHeight() + mStyleConfig.decorationSize.getHeight() + 8 );
+	Sizei nSize( mTextBox->getTextWidth() + 48, mTextBox->getTextHeight() + mButtonOK->getSize().getHeight() + mStyleConfig.DecorationSize.getHeight() + 8 );
 
 	if ( !( nSize.getWidth() > getContainer()->getSize().getWidth() ) ) {
 		nSize.x = getContainer()->getSize().getWidth();
@@ -158,7 +158,7 @@ void UIMessageBox::autoSize() {
 	if ( nSize.x != getContainer()->getSize().getWidth() || nSize.y != getContainer()->getSize().getHeight() ) {
 		setSize( nSize );
 
-		 mStyleConfig.minWindowSize = nSize;
+		 mStyleConfig.MinWindowSize = nSize;
 	}
 }
 

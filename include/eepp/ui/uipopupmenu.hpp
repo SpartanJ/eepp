@@ -7,7 +7,7 @@ namespace EE { namespace UI {
 
 class EE_API UIPopUpMenu : public UIMenu {
 	public:
-		UIPopUpMenu( UIPopUpMenu::CreateParams Params );
+		static UIPopUpMenu * New();
 
 		UIPopUpMenu();
 

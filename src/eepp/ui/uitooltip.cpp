@@ -24,9 +24,9 @@ UITooltip::UITooltip() :
 		if ( Theme->getTooltipPadding() != Recti() )
 			setPadding( Theme->getTooltipPadding() );
 
-		setFont( mFontStyleConfig.font );
+		setFont( mFontStyleConfig.Font );
 		setFontColor( Theme->getTooltipFontColor() );
-		setFontShadowColor( mFontStyleConfig.fontShadowColor );
+		setFontShadowColor( mFontStyleConfig.FontShadowColor );
 	}
 
 	if ( NULL == getFont() && NULL != UIThemeManager::instance()->getDefaultFont() ) {
@@ -128,31 +128,31 @@ void UITooltip::setText( const String& text ) {
 }
 
 const ColorA& UITooltip::getFontColor() const {
-	return mFontStyleConfig.fontColor;
+	return mFontStyleConfig.FontColor;
 }
 
 void UITooltip::setFontColor( const ColorA& color ) {
-	mFontStyleConfig.fontColor = color;
-	mTextCache->setColor( mFontStyleConfig.fontColor );
+	mFontStyleConfig.FontColor = color;
+	mTextCache->setColor( mFontStyleConfig.FontColor );
 	setAlpha( color.a() );
 }
 
 const ColorA& UITooltip::getFontShadowColor() const {
-	return mFontStyleConfig.fontShadowColor;
+	return mFontStyleConfig.FontShadowColor;
 }
 
 void UITooltip::setFontShadowColor( const ColorA& color ) {
-	mFontStyleConfig.fontShadowColor = color;
+	mFontStyleConfig.FontShadowColor = color;
 	setAlpha( color.a() );
-	mTextCache->setShadowColor( mFontStyleConfig.fontShadowColor );
+	mTextCache->setShadowColor( mFontStyleConfig.FontShadowColor );
 }
 
 void UITooltip::setAlpha( const Float& alpha ) {
 	UIControlAnim::setAlpha( alpha );
-	mFontStyleConfig.fontColor.Alpha = (Uint8)alpha;
-	mFontStyleConfig.fontShadowColor.Alpha = (Uint8)alpha;
+	mFontStyleConfig.FontColor.Alpha = (Uint8)alpha;
+	mFontStyleConfig.FontShadowColor.Alpha = (Uint8)alpha;
 
-	mTextCache->setColor( mFontStyleConfig.fontColor );
+	mTextCache->setColor( mFontStyleConfig.FontColor );
 }
 
 void UITooltip::autoSize() {
@@ -268,9 +268,9 @@ FontStyleConfig UITooltip::getFontStyleConfig() const {
 void UITooltip::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
 	mFontStyleConfig = fontStyleConfig;
 
-	setFont( mFontStyleConfig.font );
-	setFontColor( mFontStyleConfig.fontColor );
-	setFontShadowColor( mFontStyleConfig.fontShadowColor );
+	setFont( mFontStyleConfig.Font );
+	setFontColor( mFontStyleConfig.FontColor );
+	setFontShadowColor( mFontStyleConfig.FontShadowColor );
 }
 
 }}

@@ -92,7 +92,8 @@ void MapEditor::CreateWinMenu() {
 	mTileBox->setPosition( Vector2i( mUIContainer->getSize().getWidth() - mTileBox->getSize().getWidth(), 0 ) );
 	mTileBox->updateAnchorsDistances();
 
-	UIPopUpMenu * PU1 = mTheme->createPopUpMenu( mUIContainer );
+	UIPopUpMenu * PU1 = UIPopUpMenu::New();
+	PU1->setParent( mUIContainer );
 	PU1->add( "New...", mTheme->getIconByName( "document-new" ) );
 	PU1->add( "Open...", mTheme->getIconByName( "document-open" ) );
 	PU1->addSeparator();
@@ -106,7 +107,8 @@ void MapEditor::CreateWinMenu() {
 	PU1->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &MapEditor::FileMenuClick ) );
 	WinMenu->addMenuButton( "File", PU1 );
 
-	UIPopUpMenu * PU3 = mTheme->createPopUpMenu( mUIContainer );
+	UIPopUpMenu * PU3 = UIPopUpMenu::New();
+	PU3->setParent( mUIContainer );
 	mChkShowGrid = reinterpret_cast<UIMenuCheckBox*>( PU3->getItem( PU3->addCheckBox( "Show Grid" ) ) );
 
 	mChkShowGrid->setActive( true );
@@ -124,14 +126,16 @@ void MapEditor::CreateWinMenu() {
 	PU3->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &MapEditor::ViewMenuClick ) );
 	WinMenu->addMenuButton( "View", PU3 );
 
-	UIPopUpMenu * PU4 = mTheme->createPopUpMenu( mUIContainer );
+	UIPopUpMenu * PU4 = UIPopUpMenu::New();
+	PU4->setParent( mUIContainer );
 	PU4->add( "Properties..." );
 	PU4->add( "Resize..." );
 
 	PU4->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &MapEditor::MapMenuClick ) );
 	WinMenu->addMenuButton( "Map", PU4 );
 
-	UIPopUpMenu * PU5 = mTheme->createPopUpMenu( mUIContainer );
+	UIPopUpMenu * PU5 = UIPopUpMenu::New();
+	PU5->setParent( mUIContainer );
 	PU5->add( "Add Tile Layer..." );
 	PU5->add( "Add Object Layer..." );
 	PU5->addSeparator();
@@ -154,7 +158,8 @@ void MapEditor::CreateWinMenu() {
 	PU5->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &MapEditor::LayerMenuClick ) );
 	WinMenu->addMenuButton( "Layer", PU5 );
 
-	UIPopUpMenu * PU6 = mTheme->createPopUpMenu( mUIContainer );
+	UIPopUpMenu * PU6 = UIPopUpMenu::New();
+	PU6->setParent( mUIContainer );
 	PU6->add( "New Texture Atlas..." );
 	PU6->add( "Add External Texture Atlas..." );
 	WinMenu->addMenuButton( "Atlases", PU6 );

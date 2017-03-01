@@ -3,12 +3,8 @@
 
 namespace EE { namespace UI {
 
-UIPopUpMenu::UIPopUpMenu( UIPopUpMenu::CreateParams Params ) :
-	UIMenu( Params )
-{
-	setVisible( false );
-	setEnabled( false );
-	applyDefaultTheme();
+UIPopUpMenu *UIPopUpMenu::New() {
+	return eeNew( UIPopUpMenu, () );
 }
 
 UIPopUpMenu::UIPopUpMenu() :

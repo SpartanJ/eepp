@@ -302,9 +302,9 @@ void EETest::createUI() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
 	WindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.winFlags = UI_WIN_DRAGABLE_CONTAINER;
-	windowStyleConfig.minWindowSize = Sizei( 530, 405 );
-	windowStyleConfig.baseAlpha = 200;
+	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER;
+	windowStyleConfig.MinWindowSize = Sizei( 530, 405 );
+	windowStyleConfig.BaseAlpha = 200;
 	tWin->setStyleConfig( windowStyleConfig );
 
 	C = tWin->getContainer();
@@ -480,7 +480,7 @@ void EETest::createUI() {
 	mComboBox->getListBox()->addListBoxItems( combostrs );
 	mComboBox->getListBox()->setSelected( 0 );
 
-	Menu = mTheme->createPopUpMenu();
+	Menu = UIPopUpMenu::New();
 	Menu->add( "New", mTheme->getIconByName( "document-new" ) );
 
 	Menu->add( "Open...", mTheme->getIconByName( "document-open" ) );
@@ -501,13 +501,13 @@ void EETest::createUI() {
 	Menu->add( "Show Window 2" );
 	Menu->addCheckBox( "Multi Viewport" );
 
-	UIPopUpMenu * Menu3 = mTheme->createPopUpMenu();
+	UIPopUpMenu * Menu3 = UIPopUpMenu::New();
 	Menu3->add( "Hello World 1" );
 	Menu3->add( "Hello World 2" );
 	Menu3->add( "Hello World 3" );
 	Menu3->add( "Hello World 4" );
 
-	UIPopUpMenu * Menu2 = mTheme->createPopUpMenu();
+	UIPopUpMenu * Menu2 = UIPopUpMenu::New();
 	Menu2->add( "Test 1" );
 	Menu2->add( "Test 2" );
 	Menu2->add( "Test 3" );
@@ -745,8 +745,8 @@ void EETest::createMapEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	WindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.winFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER;
-	windowStyleConfig.minWindowSize = Sizei( 1024, 768 );
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER;
+	windowStyleConfig.MinWindowSize = Sizei( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
 	mMapEditor = eeNew( MapEditor, ( tWin, cb::Make0( this, &EETest::onMapEditorClose ) ) );
@@ -762,8 +762,8 @@ void EETest::createETGEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	WindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.winFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER;
-	windowStyleConfig.minWindowSize = Sizei( 1024, 768 );
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER;
+	windowStyleConfig.MinWindowSize = Sizei( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
 	mETGEditor = eeNew ( Tools::TextureAtlasEditor, ( tWin, cb::Make0( this, &EETest::onETGEditorClose ) ) );
@@ -786,13 +786,13 @@ void EETest::createWinMenu() {
 	UIWinMenu * WinMenu = UIWinMenu::New();
 	WinMenu->setParent( mUIWindow->getContainer() );
 
-	UIPopUpMenu * PopMenu = mTheme->createPopUpMenu();
+	UIPopUpMenu * PopMenu = UIPopUpMenu::New();
 	PopMenu->add( "File" );
 	PopMenu->add( "Open" );
 	PopMenu->add( "Close" );
 	PopMenu->add( "Quit" );
 
-	UIPopUpMenu * PopMenu2 = mTheme->createPopUpMenu();
+	UIPopUpMenu * PopMenu2 = UIPopUpMenu::New();
 	PopMenu2->add( "Bla" );
 	PopMenu2->add( "Bla 2" );
 	PopMenu2->add( "Bla 3" );

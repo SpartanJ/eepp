@@ -4,35 +4,15 @@
 
 namespace EE { namespace UI {
 
-UIMenu::UIMenu( UIMenu::CreateParams& Params ) :
-	UIComplexControl( Params ),
-	mPadding( Params.PaddingContainer ),
-	mFontStyleConfig( Params.fontStyleConfig ),
-	mMinWidth( Params.MinWidth ),
-	mMinSpaceForIcons( Params.MinSpaceForIcons ),
-	mMinRightMargin( Params.MinRightMargin ),
-	mMaxWidth( 0 ),
-	mNextPosY( 0 ),
-	mBiggestIcon( mMinSpaceForIcons ),
-	mItemSelected( NULL ),
-	mItemSelectedIndex( eeINDEX_NOT_FOUND ),
-	mClickHide( false ),
-	mLastTickMove( 0 )
-{
-	onSizeChange();
-
-	applyDefaultTheme();
+UIMenu *UIMenu::New() {
+	return eeNew( UIMenu, () );
 }
 
 UIMenu::UIMenu() :
 	UIComplexControl(),
-	mPadding(),
-	mMinWidth( 100 ),
-	mMinSpaceForIcons( 24 ),
-	mMinRightMargin( 8 ),
 	mMaxWidth( 0 ),
 	mNextPosY( 0 ),
-	mBiggestIcon( mMinSpaceForIcons ),
+	mBiggestIcon( 0 ),
 	mItemSelected( NULL ),
 	mItemSelectedIndex( eeINDEX_NOT_FOUND ),
 	mClickHide( false ),
@@ -40,13 +20,13 @@ UIMenu::UIMenu() :
 {
 	setFlags( UI_AUTO_SIZE );
 
-	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
+	mStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 
 	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL != Theme ) {
-		mFontStyleConfig.fontColor = Theme->getMenuFontColor();
-		mFontStyleConfig.fontOverColor = Theme->getMenuFontColorOver();
+		mStyleConfig = Theme->getMenuStyleConfig();
+		mBiggestIcon = mStyleConfig.MinSpaceForIcons;
 	}
 
 	onSizeChange();
@@ -79,9 +59,9 @@ void UIMenu::doAfterSetTheme() {
 UIMenuItem * UIMenu::createMenuItem( const String& Text, SubTexture * Icon ) {
 	UIMenuItem::CreateParams Params;
 	Params.setParent( this );
-	Params.fontStyleConfig	= mFontStyleConfig;
+	Params.fontStyleConfig	= mStyleConfig;
 	Params.Icon				= Icon;
-	Params.IconMinSize		= Sizei( mMinSpaceForIcons, mMinSpaceForIcons );
+	Params.IconMinSize		= Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
 		Params.Flags		= UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
@@ -105,8 +85,8 @@ Uint32 UIMenu::add( const String& Text, SubTexture * Icon ) {
 UIMenuCheckBox * UIMenu::createMenuCheckBox( const String& Text, const bool &Active ) {
 	UIMenuCheckBox::CreateParams Params;
 	Params.setParent( this );
-	Params.fontStyleConfig 	= mFontStyleConfig;
-	Params.IconMinSize		= Sizei( mMinSpaceForIcons, mMinSpaceForIcons );
+	Params.fontStyleConfig 	= mStyleConfig;
+	Params.IconMinSize		= Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
 		Params.Flags		= UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
@@ -133,10 +113,10 @@ Uint32 UIMenu::addCheckBox( const String& Text, const bool& Active ) {
 UIMenuSubMenu * UIMenu::createSubMenu( const String& Text, SubTexture * Icon, UIMenu * SubMenu ) {
 	UIMenuSubMenu::CreateParams Params;
 	Params.setParent( this );
-	Params.fontStyleConfig	= mFontStyleConfig;
+	Params.fontStyleConfig	= mStyleConfig;
 	Params.SubMenu			= SubMenu;
 	Params.Icon				= Icon;
-	Params.IconMinSize		= Sizei( mMinSpaceForIcons, mMinSpaceForIcons );
+	Params.IconMinSize		= Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
 		Params.Flags		= UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
@@ -171,8 +151,8 @@ bool UIMenu::checkControlSize( UIControl * Control, const bool& Resize ) {
 			if ( Control->isType( UI_TYPE_MENUSUBMENU ) ) {
 				UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( tItem );
 
-				if ( textWidth + (Int32)mBiggestIcon + tMenu->getArrow()->getSize().getWidth() + (Int32)mMinRightMargin > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
-					mMaxWidth = textWidth + mBiggestIcon + mPadding.Left + mPadding.Right + tMenu->getArrow()->getSize().getWidth() + mMinRightMargin;
+				if ( textWidth + (Int32)mBiggestIcon + tMenu->getArrow()->getSize().getWidth() + (Int32)mStyleConfig.MinRightMargin > (Int32)mMaxWidth - mStyleConfig.Padding.Left - mStyleConfig.Padding.Right ) {
+					mMaxWidth = textWidth + mBiggestIcon + mStyleConfig.Padding.Left + mStyleConfig.Padding.Right + tMenu->getArrow()->getSize().getWidth() + mStyleConfig.MinRightMargin;
 
 					if ( Resize ) {
 						resizeControls();
@@ -181,8 +161,8 @@ bool UIMenu::checkControlSize( UIControl * Control, const bool& Resize ) {
 					}
 				}
 			} else {
-				if ( textWidth + (Int32)mBiggestIcon +  (Int32)mMinRightMargin > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
-					mMaxWidth = textWidth + mBiggestIcon + mPadding.Left + mPadding.Right + mMinRightMargin;
+				if ( textWidth + (Int32)mBiggestIcon +  (Int32)mStyleConfig.MinRightMargin > (Int32)mMaxWidth - mStyleConfig.Padding.Left - mStyleConfig.Padding.Right ) {
+					mMaxWidth = textWidth + mBiggestIcon + mStyleConfig.Padding.Left + mStyleConfig.Padding.Right + mStyleConfig.MinRightMargin;
 
 					if ( Resize ) {
 						resizeControls();
@@ -205,7 +185,7 @@ Uint32 UIMenu::add( UIControl * Control ) {
 
 	setControlSize( Control, getCount() );
 
-	Control->setPosition( mPadding.Left, mPadding.Top + mNextPosY );
+	Control->setPosition( mStyleConfig.Padding.Left, mStyleConfig.Padding.Top + mNextPosY );
 
 	mNextPosY += Control->getSize().getHeight();
 
@@ -217,14 +197,14 @@ Uint32 UIMenu::add( UIControl * Control ) {
 }
 
 void UIMenu::setControlSize( UIControl * Control, const Uint32& Pos ) {
-	Control->setSize( mSize.getWidth() - mPadding.Left - mPadding.Right, Control->getSize().getHeight() );
+	Control->setSize( mSize.getWidth() - mStyleConfig.Padding.Left - mStyleConfig.Padding.Right, Control->getSize().getHeight() );
 }
 
 Uint32 UIMenu::addSeparator() {
 	UISeparator::CreateParams Params;
 	Params.setParent( this );
-	Params.setPosition( mPadding.Left, mPadding.Top + mNextPosY );
-	Params.Size = Sizei( mSize.getWidth() - mPadding.Left - mPadding.Right, 3 );
+	Params.setPosition( mStyleConfig.Padding.Left, mStyleConfig.Padding.Top + mNextPosY );
+	Params.Size = Sizei( mSize.getWidth() - mStyleConfig.Padding.Left - mStyleConfig.Padding.Right, 3 );
 
 	UISeparator * Control = eeNew( UISeparator, ( Params ) );
 
@@ -356,14 +336,14 @@ Uint32 UIMenu::onMessage( const UIMessage * Msg ) {
 }
 
 void UIMenu::onSizeChange() {
-	if ( 0 != mMinWidth && mSize.getWidth() < (Int32)mMinWidth ) {
-		setSize( mMinWidth, mNextPosY + mPadding.Top + mPadding.Bottom );
+	if ( 0 != mStyleConfig.MinWidth && mSize.getWidth() < (Int32)mStyleConfig.MinWidth ) {
+		setSize( mStyleConfig.MinWidth, mNextPosY + mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom );
 	}
 }
 
 void UIMenu::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mPadding = makePadding();
+		mStyleConfig.Padding = makePadding();
 	}
 }
 
@@ -378,7 +358,7 @@ void UIMenu::resizeControls() {
 void UIMenu::rePosControls() {
 	Uint32 i;
 	mNextPosY = 0;
-	mBiggestIcon = mMinSpaceForIcons;
+	mBiggestIcon = mStyleConfig.MinSpaceForIcons;
 
 	if ( mFlags & UI_AUTO_SIZE ) {
 		mMaxWidth = 0;
@@ -389,7 +369,7 @@ void UIMenu::rePosControls() {
 	}
 
 	for ( i = 0; i < mItems.size(); i++ ) {
-		mItems[i]->setPosition( mPadding.Left, mPadding.Top + mNextPosY );
+		mItems[i]->setPosition( mStyleConfig.Padding.Left, mStyleConfig.Padding.Top + mNextPosY );
 
 		mNextPosY += mItems[i]->getSize().getHeight();
 	}
@@ -399,9 +379,9 @@ void UIMenu::rePosControls() {
 
 void UIMenu::resizeMe() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		setSize( mMaxWidth, mNextPosY + mPadding.Top + mPadding.Bottom );
+		setSize( mMaxWidth, mNextPosY + mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom );
 	} else {
-		setSize( mSize.getWidth(), mNextPosY + mPadding.Top + mPadding.Bottom );
+		setSize( mSize.getWidth(), mNextPosY + mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom );
 	}
 }
 
@@ -552,26 +532,24 @@ Uint32 UIMenu::onKeyDown( const UIEventKey& Event ) {
 }
 
 const Recti& UIMenu::getPadding() const {
-	return mPadding;
+	return mStyleConfig.Padding;
 }
 
 Uint32 UIMenu::getMinRightMargin() const {
-	return mMinRightMargin;
+	return mStyleConfig.MinRightMargin;
 }
 
 void UIMenu::setMinRightMargin(const Uint32 & minRightMargin) {
-	mMinRightMargin = minRightMargin;
+	mStyleConfig.MinRightMargin = minRightMargin;
 	rePosControls();
 }
 
-FontStyleConfig UIMenu::getFontStyleConfig() const
-{
-	return mFontStyleConfig;
+FontStyleConfig UIMenu::getFontStyleConfig() const {
+	return mStyleConfig;
 }
 
-void UIMenu::setFontStyleConfig(const FontStyleConfig & fontStyleConfig)
-{
-	mFontStyleConfig = fontStyleConfig;
+void UIMenu::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
+	mStyleConfig = fontStyleConfig;
 }
 
 void UIMenu::fixMenuPos( Vector2i& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {

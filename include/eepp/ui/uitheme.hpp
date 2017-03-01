@@ -97,8 +97,6 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		virtual UIListBox * createListBox( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING, bool SmoothScroll = true, Uint32 RowHeight = 0, UI_SCROLLBAR_MODE VScrollMode = UI_SCROLLBAR_AUTO, UI_SCROLLBAR_MODE HScrollMode = UI_SCROLLBAR_AUTO, Recti PaddingContainer = Recti() );
 
-		virtual UIPopUpMenu * createPopUpMenu(UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE | UI_AUTO_PADDING, Recti PaddingContainer = Recti(), Uint32 MinWidth = 0, Uint32 MinSpaceForIcons = 0, Uint32 MinRightMargin = 0 );
-
 		virtual UIPushButton * createPushButton( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, SubTexture * Icon = NULL, Int32 IconHorizontalMargin = 0, bool IconAutoMargin = true );
 
 		virtual UISelectButton * createSelectButton( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, SubTexture * Icon = NULL, Int32 IconHorizontalMargin = 0, bool IconAutoMargin = true );
@@ -106,14 +104,6 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 		virtual UICommonDialog * createCommonDialog( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED, Uint32 WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, Sizei MinWindowSize = Sizei(0,0), Uint8 BaseAlpha = 255, Uint32 CDLFlags = UI_CDL_DEFAULT_FLAGS, std::string DefaultFilePattern = "*", std::string DefaultDirectory = Sys::getProcessPath() );
 
 		virtual UIMessageBox * createMessageBox( UI_MSGBOX_TYPE Type = MSGBOX_OKCANCEL, const String& Message = String(), Uint32 WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL, UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED, Sizei MinWindowSize = Sizei(0,0), Uint8 BaseAlpha = 255 );
-
-		ColorA getMenuFontColor() const;
-
-		void setMenuFontColor(const ColorA & menuFontColor);
-
-		ColorA getMenuFontColorOver() const;
-
-		void setMenuFontColorOver(const ColorA & menuFontColorOver);
 
 		ColorA getTooltipFontColor() const;
 
@@ -136,6 +126,8 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 		virtual DropDownListStyleConfig getDropDownListStyleConfig();
 
 		virtual WindowStyleConfig getWindowStyleConfig();
+
+		virtual MenuStyleConfig getMenuStyleConfig();
 	protected:
 		std::string				mName;
 		Uint32					mNameHash;

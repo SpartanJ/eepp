@@ -12,31 +12,9 @@ namespace EE { namespace UI {
 
 class EE_API UIMenu : public UIComplexControl {
 	public:
-		class CreateParams : public UIComplexControl::CreateParams {
-			public:
-				inline CreateParams() :
-					UIComplexControl::CreateParams(),
-					PaddingContainer(),
-					MinWidth( 0 ),
-					MinSpaceForIcons( 0 ),
-					MinRightMargin( 0 )
-				{
-					fontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
-				}
-
-				inline ~CreateParams() {}
-
-				Recti				PaddingContainer;
-				Uint32				MinWidth;
-				Uint32				MinSpaceForIcons;
-				Uint32				MinRightMargin;
-				FontStyleConfig		fontStyleConfig;
-
-		};
+		static UIMenu * New();
 
 		static void fixMenuPos( Vector2i& position, UIMenu * Menu, UIMenu * parent = NULL, UIMenuSubMenu * SubMenu = NULL );
-
-		UIMenu( UIMenu::CreateParams& Params );
 
 		UIMenu();
 
@@ -96,11 +74,7 @@ class EE_API UIMenu : public UIComplexControl {
 		friend class UIMenuSubMenu;
 
 		std::deque<UIControl *> mItems;
-		Recti				mPadding;
-		FontStyleConfig		mFontStyleConfig;
-		Uint32				mMinWidth;
-		Uint32				mMinSpaceForIcons;
-		Uint32				mMinRightMargin;
+		MenuStyleConfig		mStyleConfig;
 		Uint32				mMaxWidth;
 		Uint32				mNextPosY;
 		Uint32				mBiggestIcon;

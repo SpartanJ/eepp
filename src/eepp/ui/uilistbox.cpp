@@ -197,8 +197,8 @@ Uint32 UIListBox::addListBoxItem( const String& Text ) {
 	mTexts.push_back( Text );
 	mItems.push_back( NULL );
 
-	if ( NULL != mFontStyleConfig.font ) {
-		Uint32 twidth = mFontStyleConfig.font->getTextWidth( Text );
+	if ( NULL != mFontStyleConfig.Font ) {
+		Uint32 twidth = mFontStyleConfig.Font->getTextWidth( Text );
 
 		if ( twidth > mMaxTextWidth ) {
 			mMaxTextWidth = twidth;
@@ -392,7 +392,7 @@ void UIListBox::findMaxWidth() {
 		if ( NULL != mItems[i] )
 			width = (Int32)mItems[i]->getTextWidth();
 		else
-			width = mFontStyleConfig.font->getTextWidth( mTexts[i] );
+			width = mFontStyleConfig.Font->getTextWidth( mTexts[i] );
 
 		if ( width > (Int32)mMaxTextWidth )
 			mMaxTextWidth = width;
@@ -733,37 +733,37 @@ Uint32 UIListBox::getItemIndex( const String& Text ) {
 }
 
 void UIListBox::setFontColor( const ColorA& Color ) {
-	mFontStyleConfig.fontColor = Color;
+	mFontStyleConfig.FontColor = Color;
 
 	for ( Uint32 i = 0; i < mItems.size(); i++ )
-		mItems[i]->setFontColor( mFontStyleConfig.fontColor );
+		mItems[i]->setFontColor( mFontStyleConfig.FontColor );
 }
 
 const ColorA& UIListBox::getFontColor() const {
-	return mFontStyleConfig.fontColor;
+	return mFontStyleConfig.FontColor;
 }
 
 void UIListBox::setFontOverColor( const ColorA& Color ) {
-	mFontStyleConfig.fontOverColor = Color;
+	mFontStyleConfig.FontOverColor = Color;
 }
 
 const ColorA& UIListBox::getFontOverColor() const {
-	return mFontStyleConfig.fontOverColor;
+	return mFontStyleConfig.FontOverColor;
 }
 
 void UIListBox::setFontSelectedColor( const ColorA& Color ) {
-	mFontStyleConfig.fontSelectedColor = Color;
+	mFontStyleConfig.FontSelectedColor = Color;
 }
 
 const ColorA& UIListBox::getFontSelectedColor() const {
-	return mFontStyleConfig.fontSelectedColor;
+	return mFontStyleConfig.FontSelectedColor;
 }
 
 void UIListBox::setFont( Graphics::Font * Font ) {
-	mFontStyleConfig.font = Font;
+	mFontStyleConfig.Font = Font;
 
 	for ( Uint32 i = 0; i < mItems.size(); i++ )
-		mItems[i]->setFont( mFontStyleConfig.font );
+		mItems[i]->setFont( mFontStyleConfig.Font );
 
 	findMaxWidth();
 	updateListBoxItemsSize();
@@ -771,7 +771,7 @@ void UIListBox::setFont( Graphics::Font * Font ) {
 }
 
 Graphics::Font * UIListBox::getFont() const {
-	return mFontStyleConfig.font;
+	return mFontStyleConfig.Font;
 }
 
 void UIListBox::setContainerPadding( const Recti& Padding ) {
@@ -1030,8 +1030,8 @@ FontStyleConfig UIListBox::getFontStyleConfig() const {
 void UIListBox::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
 	mFontStyleConfig = fontStyleConfig;
 
-	setFont( mFontStyleConfig.font );
-	setFontColor( mFontStyleConfig.fontColor );
+	setFont( mFontStyleConfig.Font );
+	setFontColor( mFontStyleConfig.FontColor );
 }
 
 void UIListBox::update() {

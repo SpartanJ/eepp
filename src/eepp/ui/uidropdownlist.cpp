@@ -26,7 +26,7 @@ UIDropDownList::UIDropDownList() :
 	applyDefaultTheme();
 
 	mListBox = eeNew( UIListBox, () );
-	mListBox->setSize( mSize.getWidth(), mStyleConfig.maxNumVisibleItems * mSize.getHeight() );
+	mListBox->setSize( mSize.getWidth(), mStyleConfig.MaxNumVisibleItems * mSize.getHeight() );
 	mListBox->setEnabled( false );
 	mListBox->setVisible( false );
 
@@ -98,7 +98,7 @@ Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 
 void UIDropDownList::showList() {
 	if ( !mListBox->isVisible() ) {
-		if ( !mStyleConfig.popUpToMainControl )
+		if ( !mStyleConfig.PopUpToMainControl )
 			mListBox->setParent( NULL != mFriendCtrl ? mFriendCtrl->getParent() : getParent() );
 		else
 			mListBox->setParent( UIManager::instance()->getMainControl() );
@@ -107,7 +107,7 @@ void UIDropDownList::showList() {
 
 		Vector2i Pos( mPos.x, mPos.y + mSize.getHeight() );
 
-		if ( mStyleConfig.popUpToMainControl ) {
+		if ( mStyleConfig.PopUpToMainControl ) {
 			getParent()->controlToWorld( Pos );
 			Pos = PixelDensity::pxToDpI( Pos );
 		} else if ( NULL != mFriendCtrl ) {
@@ -121,8 +121,8 @@ void UIDropDownList::showList() {
 
 			Float sliderValue = mListBox->getVerticalScrollBar()->getValue();
 
-			if ( mStyleConfig.maxNumVisibleItems < mListBox->getCount() )
-				mListBox->setSize( NULL != mFriendCtrl ? mFriendCtrl->getSize().getWidth() : mSize.getWidth(), (Int32)( mStyleConfig.maxNumVisibleItems * mListBox->getRowHeight() ) + tPadding.Top + tPadding.Bottom );
+			if ( mStyleConfig.MaxNumVisibleItems < mListBox->getCount() )
+				mListBox->setSize( NULL != mFriendCtrl ? mFriendCtrl->getSize().getWidth() : mSize.getWidth(), (Int32)( mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() ) + tPadding.Top + tPadding.Bottom );
 			else {
 				mListBox->setSize( NULL != mFriendCtrl ? mFriendCtrl->getSize().getWidth() : mSize.getWidth(), (Int32)( mListBox->getCount() * mListBox->getRowHeight() ) + tPadding.Top + tPadding.Bottom );
 			}
@@ -135,7 +135,7 @@ void UIDropDownList::showList() {
 			if ( !UIManager::instance()->getMainControl()->getScreenRect().contains( aabbi ) ) {
 				Pos = Vector2i( mPos.x, mPos.y );
 
-				if ( mStyleConfig.popUpToMainControl ) {
+				if ( mStyleConfig.PopUpToMainControl ) {
 					getParent()->controlToWorld( Pos );
 					Pos = PixelDensity::pxToDpI( Pos );
 				}
@@ -157,21 +157,21 @@ void UIDropDownList::showList() {
 }
 
 bool UIDropDownList::getPopUpToMainControl() const {
-	return mStyleConfig.popUpToMainControl;
+	return mStyleConfig.PopUpToMainControl;
 }
 
 void UIDropDownList::setPopUpToMainControl(bool popUpToMainControl) {
-	mStyleConfig.popUpToMainControl = popUpToMainControl;
+	mStyleConfig.PopUpToMainControl = popUpToMainControl;
 }
 
 Uint32 UIDropDownList::getMaxNumVisibleItems() const {
-	return mStyleConfig.maxNumVisibleItems;
+	return mStyleConfig.MaxNumVisibleItems;
 }
 
 void UIDropDownList::setMaxNumVisibleItems(const Uint32 & maxNumVisibleItems) {
-	mStyleConfig.maxNumVisibleItems = maxNumVisibleItems;
+	mStyleConfig.MaxNumVisibleItems = maxNumVisibleItems;
 
-	mListBox->setSize( mSize.getWidth(), mStyleConfig.maxNumVisibleItems * mSize.getHeight() );
+	mListBox->setSize( mSize.getWidth(), mStyleConfig.MaxNumVisibleItems * mSize.getHeight() );
 }
 
 DropDownListStyleConfig UIDropDownList::getStyleConfig() const {
@@ -182,7 +182,7 @@ void UIDropDownList::setStyleConfig(const DropDownListStyleConfig & styleConfig)
 	mStyleConfig = styleConfig;
 
 	mListBox->setFontStyleConfig( mStyleConfig );
-	setMaxNumVisibleItems( mStyleConfig.maxNumVisibleItems );
+	setMaxNumVisibleItems( mStyleConfig.MaxNumVisibleItems );
 }
 
 void UIDropDownList::onControlClear( const UIEvent * Event ) {

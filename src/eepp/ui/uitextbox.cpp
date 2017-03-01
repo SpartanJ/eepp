@@ -20,9 +20,9 @@ UITextBox::UITextBox( const UITextBox::CreateParams& Params ) :
 	mSelCurEnd( -1 )
 {
 	mTextCache = eeNew( TextCache, () );
-	mTextCache->setFont( mFontStyleConfig.font );
-	mTextCache->setColor( mFontStyleConfig.fontColor );
-	mTextCache->setShadowColor( mFontStyleConfig.fontShadowColor );
+	mTextCache->setFont( mFontStyleConfig.Font );
+	mTextCache->setColor( mFontStyleConfig.FontColor );
+	mTextCache->setShadowColor( mFontStyleConfig.FontShadowColor );
 
 	autoAlign();
 }
@@ -36,9 +36,9 @@ UITextBox::UITextBox() :
 	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 
 	mTextCache = eeNew( TextCache, () );
-	mTextCache->setFont( mFontStyleConfig.font );
-	mTextCache->setColor( mFontStyleConfig.fontColor );
-	mTextCache->setShadowColor( mFontStyleConfig.fontShadowColor );
+	mTextCache->setFont( mFontStyleConfig.Font );
+	mTextCache->setColor( mFontStyleConfig.FontColor );
+	mTextCache->setShadowColor( mFontStyleConfig.FontShadowColor );
 
 	autoAlign();
 }
@@ -122,39 +122,39 @@ void UITextBox::setText( const String& text ) {
 }
 
 const ColorA& UITextBox::getFontColor() const {
-	return mFontStyleConfig.fontColor;
+	return mFontStyleConfig.FontColor;
 }
 
 void UITextBox::setFontColor( const ColorA& color ) {
-	mFontStyleConfig.fontColor = color;
+	mFontStyleConfig.FontColor = color;
 	mTextCache->setColor( color );
 
 	setAlpha( color.a() );
 }
 
 const ColorA& UITextBox::getFontShadowColor() const {
-	return mFontStyleConfig.fontShadowColor;
+	return mFontStyleConfig.FontShadowColor;
 }
 
 void UITextBox::setFontShadowColor( const ColorA& color ) {
-	mFontStyleConfig.fontShadowColor = color;
-	mTextCache->setShadowColor( mFontStyleConfig.fontShadowColor );
+	mFontStyleConfig.FontShadowColor = color;
+	mTextCache->setShadowColor( mFontStyleConfig.FontShadowColor );
 }
 
 const ColorA& UITextBox::getSelectionBackColor() const {
-	return mFontStyleConfig.fontSelectionBackColor;
+	return mFontStyleConfig.FontSelectionBackColor;
 }
 
 void UITextBox::setSelectionBackColor( const ColorA& color ) {
-	mFontStyleConfig.fontSelectionBackColor = color;
+	mFontStyleConfig.FontSelectionBackColor = color;
 }
 
 void UITextBox::setAlpha( const Float& alpha ) {
 	UIControlAnim::setAlpha( alpha );
-	mFontStyleConfig.fontColor.Alpha = (Uint8)alpha;
-	mFontStyleConfig.fontShadowColor.Alpha = (Uint8)alpha;
+	mFontStyleConfig.FontColor.Alpha = (Uint8)alpha;
+	mFontStyleConfig.FontShadowColor.Alpha = (Uint8)alpha;
 
-	mTextCache->setAlpha( mFontStyleConfig.fontColor.Alpha );
+	mTextCache->setAlpha( mFontStyleConfig.FontColor.Alpha );
 }
 
 void UITextBox::autoShrink() {
@@ -340,7 +340,7 @@ void UITextBox::drawSelection( TextCache * textCache ) {
 		Vector2i initPos, endPos;
 
 		Primitives P;
-		P.setColor( mFontStyleConfig.fontSelectionBackColor );
+		P.setColor( mFontStyleConfig.FontSelectionBackColor );
 
 		do {
 			initPos	= textCache->getFont()->getCursorPos( textCache->getText(), init );

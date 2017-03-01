@@ -328,13 +328,13 @@ UITheme::UITheme(const std::string& name, const std::string& Abbr, Graphics::Fon
 	mTextureAtlas( NULL ),
 	mUseDefaultThemeValues( true )
 {
-	mFontStyleConfig.font = defaultFont;
-	mFontStyleConfig.fontShadowColor = ColorA( 255, 255, 255, 200 );
-	mFontStyleConfig.fontColor = mFontStyleConfig.fontOverColor = mFontStyleConfig.fontSelectedColor = ColorA( 0, 0, 0, 255 );
-	mFontStyleConfig.fontSelectionBackColor = ColorA( 150, 150, 150, 255 );
+	mFontStyleConfig.Font = defaultFont;
+	mFontStyleConfig.FontShadowColor = ColorA( 255, 255, 255, 200 );
+	mFontStyleConfig.FontColor = mFontStyleConfig.FontOverColor = mFontStyleConfig.FontSelectedColor = ColorA( 0, 0, 0, 255 );
+	mFontStyleConfig.FontSelectionBackColor = ColorA( 150, 150, 150, 255 );
 
 	if ( NULL == defaultFont ) {
-		mFontStyleConfig.font = UIThemeManager::instance()->getDefaultFont();
+		mFontStyleConfig.Font = UIThemeManager::instance()->getDefaultFont();
 	}
 }
 
@@ -486,19 +486,6 @@ UIListBox * UITheme::createListBox( UIControl * Parent, const Sizei& Size, const
 	return Ctrl;
 }
 
-UIPopUpMenu * UITheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
-	UIPopUpMenu::CreateParams MenuParams;
-	MenuParams.setParent( Parent );
-	MenuParams.setPosition( Pos );
-	MenuParams.setSize( Size );
-	MenuParams.Flags = Flags;
-	MenuParams.PaddingContainer = PaddingContainer;
-	MenuParams.MinWidth = MinWidth;
-	MenuParams.MinSpaceForIcons = MinSpaceForIcons;
-	MenuParams.MinRightMargin = MinRightMargin;
-	return eeNew( UIPopUpMenu, ( MenuParams ) );
-}
-
 UIPushButton * UITheme::createPushButton( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, SubTexture * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
 	UIPushButton::CreateParams ButtonParams;
 	ButtonParams.setParent( Parent );
@@ -543,9 +530,9 @@ UICommonDialog * UITheme::createCommonDialog( UIControl * Parent, const Sizei& S
 	DLGParams.setPosition( Pos );
 	DLGParams.setSize( Size );
 	DLGParams.Flags = Flags;
-	DLGParams.windowStyleConfig.winFlags = WinFlags;
-	DLGParams.windowStyleConfig.minWindowSize = MinWindowSize;
-	DLGParams.windowStyleConfig.baseAlpha = BaseAlpha;
+	DLGParams.windowStyleConfig.WinFlags = WinFlags;
+	DLGParams.windowStyleConfig.MinWindowSize = MinWindowSize;
+	DLGParams.windowStyleConfig.BaseAlpha = BaseAlpha;
 	DLGParams.DefaultDirectory = DefaultDirectory;
 	DLGParams.DefaultFilePattern = DefaultFilePattern;
 	DLGParams.CDLFlags = CDLFlags;
@@ -558,28 +545,12 @@ UIMessageBox * UITheme::createMessageBox( UI_MSGBOX_TYPE Type, const String& Mes
 	MsgBoxParams.setPosition( Pos );
 	MsgBoxParams.setSize( Size );
 	MsgBoxParams.Flags = Flags;
-	MsgBoxParams.windowStyleConfig.winFlags = WinFlags;
-	MsgBoxParams.windowStyleConfig.minWindowSize = MinWindowSize;
-	MsgBoxParams.windowStyleConfig.baseAlpha = BaseAlpha;
+	MsgBoxParams.windowStyleConfig.WinFlags = WinFlags;
+	MsgBoxParams.windowStyleConfig.MinWindowSize = MinWindowSize;
+	MsgBoxParams.windowStyleConfig.BaseAlpha = BaseAlpha;
 	MsgBoxParams.Type = Type;
 	MsgBoxParams.Message = Message;
 	return eeNew( UIMessageBox, ( MsgBoxParams ) );
-}
-
-ColorA UITheme::getMenuFontColor() const {
-	return mMenuFontColor;
-}
-
-void UITheme::setMenuFontColor(const ColorA & menuFontColor) {
-	mMenuFontColor = menuFontColor;
-}
-
-ColorA UITheme::getMenuFontColorOver() const {
-	return mMenuFontColorOver;
-}
-
-void UITheme::setMenuFontColorOver(const ColorA & menuFontColorOver) {
-	mMenuFontColorOver = menuFontColorOver;
 }
 
 ColorA UITheme::getTooltipFontColor() const {
@@ -620,6 +591,10 @@ DropDownListStyleConfig UITheme::getDropDownListStyleConfig() {
 
 WindowStyleConfig UITheme::getWindowStyleConfig() {
 	return WindowStyleConfig( getFontStyleConfig() );
+}
+
+MenuStyleConfig UITheme::getMenuStyleConfig() {
+	return MenuStyleConfig( getFontStyleConfig() );
 }
 
 FontStyleConfig UITheme::getFontStyleConfig() const {

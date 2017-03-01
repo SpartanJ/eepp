@@ -71,10 +71,10 @@ void UIWinMenu::setTheme( UITheme * Theme ) {
 		it->first->setThemeControl( Theme, "winmenubutton" );
 	}
 
-	if ( 0 == mStyleConfig.menuHeight && NULL != getSkin() && NULL != getSkin() ) {
-		mStyleConfig.menuHeight = getSkin()->getSize().getHeight();
+	if ( 0 == mStyleConfig.MenuHeight && NULL != getSkin() && NULL != getSkin() ) {
+		mStyleConfig.MenuHeight = getSkin()->getSize().getHeight();
 
-		setSize( getParent()->getSize().getWidth(), mStyleConfig.menuHeight );
+		setSize( getParent()->getSize().getWidth(), mStyleConfig.MenuHeight );
 
 		updateAnchorsDistances();
 	}
@@ -113,11 +113,11 @@ UIPopUpMenu * UIWinMenu::getPopUpMenu( const String& ButtonText ) {
 }
 
 Uint32 UIWinMenu::getMarginBetweenButtons() const {
-	return mStyleConfig.marginBetweenButtons;
+	return mStyleConfig.MarginBetweenButtons;
 }
 
 void UIWinMenu::setMarginBetweenButtons(const Uint32 & marginBetweenButtons) {
-	mStyleConfig.marginBetweenButtons = marginBetweenButtons;
+	mStyleConfig.MarginBetweenButtons = marginBetweenButtons;
 	refreshButtons();
 }
 
@@ -140,7 +140,7 @@ void UIWinMenu::setStyleConfig(const WinMenuStyleConfig & styleConfig) {
 }
 
 void UIWinMenu::refreshButtons() {
-	Uint32 xpos = mStyleConfig.firstButtonMargin;
+	Uint32 xpos = mStyleConfig.FirstButtonMargin;
 	Int32 h = 0, th = 0, ycenter = 0;
 
 	UISkin * skin = getSkin();
@@ -176,10 +176,10 @@ void UIWinMenu::refreshButtons() {
 		UITextBox * tbox		= pbut->getTextBox();
 
 		pbut->setFontStyleConfig( mStyleConfig );
-		pbut->setSize( PixelDensity::pxToDpI( tbox->getTextWidth() ) + mStyleConfig.buttonMargin, getSize().getHeight() );
+		pbut->setSize( PixelDensity::pxToDpI( tbox->getTextWidth() ) + mStyleConfig.ButtonMargin, getSize().getHeight() );
 		pbut->setPosition( xpos, ycenter );
 
-		xpos += pbut->getSize().getWidth() + mStyleConfig.marginBetweenButtons;
+		xpos += pbut->getSize().getWidth() + mStyleConfig.MarginBetweenButtons;
 	}
 }
 
@@ -242,7 +242,7 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 }
 
 void UIWinMenu::onParentChange() {
-	setSize( getParent()->getSize().getWidth(), mStyleConfig.menuHeight );
+	setSize( getParent()->getSize().getWidth(), mStyleConfig.MenuHeight );
 
 	updateAnchorsDistances();
 }

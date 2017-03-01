@@ -12,69 +12,56 @@ namespace EE { namespace UI {
 UIDefaultTheme::UIDefaultTheme( const std::string& name, const std::string& Abbr, Graphics::Font * defaultFont ) :
 	UITheme( name, Abbr, defaultFont )
 {
-	mFontStyleConfig.fontColor = ColorA( 230, 230, 230, 255 );
-	mFontStyleConfig.fontOverColor = mFontStyleConfig.fontSelectedColor = ColorA( 255, 255, 255, 255 );
-	mFontStyleConfig.fontShadowColor = ColorA( 50, 50, 50, 150 );
-	mFontStyleConfig.fontSelectionBackColor = ColorA( 150, 150, 150, 255 );
+	mFontStyleConfig.FontColor = ColorA( 230, 230, 230, 255 );
+	mFontStyleConfig.FontOverColor = mFontStyleConfig.FontSelectedColor = ColorA( 255, 255, 255, 255 );
+	mFontStyleConfig.FontShadowColor = ColorA( 50, 50, 50, 150 );
+	mFontStyleConfig.FontSelectionBackColor = ColorA( 150, 150, 150, 255 );
 
-	setMenuFontColor( ColorA( 230, 230, 230, 255 ) );
-	setMenuFontColorOver( ColorA( 255, 255, 255, 255 ) );
 	setTooltipFontColor( ColorA( 0, 0, 0, 255 ) );
 	setTooltipPadding( Recti( 4, 6, 4, 6) );
 }
 
 TabWidgetStyleConfig UIDefaultTheme::getTabWidgetStyleConfig() {
 	TabWidgetStyleConfig tabWidgetStyleConfig = UITheme::getTabWidgetStyleConfig();
-	tabWidgetStyleConfig.tabSeparation = -1;
-	tabWidgetStyleConfig.fontSelectedColor = ColorA( 255, 255, 255, 255 );
-	tabWidgetStyleConfig.drawLineBelowTabs = true;
-	tabWidgetStyleConfig.lineBelowTabsColor = ColorA( 0, 0, 0, 255 );
-	tabWidgetStyleConfig.lineBelowTabsYOffset = -1;
+	tabWidgetStyleConfig.TabSeparation = -1;
+	tabWidgetStyleConfig.FontSelectedColor = ColorA( 255, 255, 255, 255 );
+	tabWidgetStyleConfig.DrawLineBelowTabs = true;
+	tabWidgetStyleConfig.LineBelowTabsColor = ColorA( 0, 0, 0, 255 );
+	tabWidgetStyleConfig.LineBelowTabsYOffset = -1;
 	return tabWidgetStyleConfig;
 }
 
 ProgressBarStyleConfig UIDefaultTheme::getProgressBarStyleConfig() {
 	ProgressBarStyleConfig progressBarStyleConfig = UITheme::getProgressBarStyleConfig();
-	progressBarStyleConfig.displayPercent = true;
-	progressBarStyleConfig.verticalExpand = true;
-	progressBarStyleConfig.fillerPadding = Rectf( 2, 2, 2, 2 );
-	progressBarStyleConfig.movementSpeed = Vector2f( 32, 0 );
+	progressBarStyleConfig.DisplayPercent = true;
+	progressBarStyleConfig.VerticalExpand = true;
+	progressBarStyleConfig.FillerPadding = Rectf( 2, 2, 2, 2 );
+	progressBarStyleConfig.MovementSpeed = Vector2f( 32, 0 );
 	return progressBarStyleConfig;
 }
 
 WinMenuStyleConfig UIDefaultTheme::getWinMenuStyleConfig() {
 	WinMenuStyleConfig winMenuStyleConfig = UITheme::getWinMenuStyleConfig();
-	winMenuStyleConfig.buttonMargin = 12;
+	winMenuStyleConfig.ButtonMargin = 12;
 	return winMenuStyleConfig;
 }
 
 WindowStyleConfig UIDefaultTheme::getWindowStyleConfig() {
 	WindowStyleConfig windowStyleConfig = UITheme::getWindowStyleConfig();
-	windowStyleConfig.winFlags |= UI_WIN_DRAW_SHADOW;
-	windowStyleConfig.buttonsPositionFixer.x = -2;
-	windowStyleConfig.titleFontColor = ColorA( 230, 230, 230, 255 );
+	windowStyleConfig.WinFlags |= UI_WIN_DRAW_SHADOW;
+	windowStyleConfig.ButtonsPositionFixer.x = -2;
+	windowStyleConfig.TitleFontColor = ColorA( 230, 230, 230, 255 );
 	return windowStyleConfig;
 }
 
-UIPopUpMenu * UIDefaultTheme::createPopUpMenu( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
-	UIPopUpMenu::CreateParams MenuParams;
-	MenuParams.setParent( Parent );
-	MenuParams.setPosition( Pos );
-	MenuParams.setSize( Size );
-	MenuParams.Flags = Flags;
-	MenuParams.PaddingContainer = PaddingContainer;
-	MenuParams.MinWidth = MinWidth;
-	MenuParams.MinSpaceForIcons = MinSpaceForIcons;
-	MenuParams.MinRightMargin = MinRightMargin;
-
-	if ( getUseDefaultThemeValues() ) {
-		MenuParams.MinWidth = 100;
-		MenuParams.MinSpaceForIcons = 24;
-		MenuParams.MinRightMargin = 8;
-		MenuParams.fontStyleConfig.fontColor = ColorA( 230, 230, 230, 255 );
-	}
-
-	return eeNew( UIPopUpMenu, ( MenuParams ) );
+MenuStyleConfig UIDefaultTheme::getMenuStyleConfig() {
+	MenuStyleConfig menuStyleConfig = UITheme::getMenuStyleConfig();
+	menuStyleConfig.MinWidth = 100;
+	menuStyleConfig.MinSpaceForIcons = 24;
+	menuStyleConfig.MinRightMargin = 8;
+	menuStyleConfig.FontColor = ColorA( 230, 230, 230, 255 );
+	menuStyleConfig.FontOverColor = ColorA( 255, 255, 255, 255 );
+	return menuStyleConfig;
 }
 
 UICommonDialog * UIDefaultTheme::createCommonDialog( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
@@ -83,18 +70,18 @@ UICommonDialog * UIDefaultTheme::createCommonDialog( UIControl * Parent, const S
 	DLGParams.setPosition( Pos );
 	DLGParams.setSize( Size );
 	DLGParams.Flags = Flags;
-	DLGParams.windowStyleConfig.winFlags = WinFlags;
-	DLGParams.windowStyleConfig.minWindowSize = MinWindowSize;
-	DLGParams.windowStyleConfig.baseAlpha = BaseAlpha;
+	DLGParams.windowStyleConfig.WinFlags = WinFlags;
+	DLGParams.windowStyleConfig.MinWindowSize = MinWindowSize;
+	DLGParams.windowStyleConfig.BaseAlpha = BaseAlpha;
 	DLGParams.DefaultDirectory = DefaultDirectory;
 	DLGParams.DefaultFilePattern = DefaultFilePattern;
 	DLGParams.CDLFlags = CDLFlags;
 
 	if ( getUseDefaultThemeValues() ) {
 		DLGParams.Flags |= UI_DRAW_SHADOW;
-		DLGParams.windowStyleConfig.winFlags |= UI_WIN_DRAW_SHADOW;
-		DLGParams.windowStyleConfig.buttonsPositionFixer.x = -2;
-		DLGParams.windowStyleConfig.titleFontColor = ColorA( 230, 230, 230, 255 );
+		DLGParams.windowStyleConfig.WinFlags |= UI_WIN_DRAW_SHADOW;
+		DLGParams.windowStyleConfig.ButtonsPositionFixer.x = -2;
+		DLGParams.windowStyleConfig.TitleFontColor = ColorA( 230, 230, 230, 255 );
 	}
 
 	return eeNew( UICommonDialog, ( DLGParams ) );
@@ -106,17 +93,17 @@ UIMessageBox * UIDefaultTheme::createMessageBox( UI_MSGBOX_TYPE Type, const Stri
 	MsgBoxParams.setPosition( Pos );
 	MsgBoxParams.setSize( Size );
 	MsgBoxParams.Flags = Flags;
-	MsgBoxParams.windowStyleConfig.winFlags = WinFlags;
-	MsgBoxParams.windowStyleConfig.minWindowSize = MinWindowSize;
-	MsgBoxParams.windowStyleConfig.baseAlpha = BaseAlpha;
+	MsgBoxParams.windowStyleConfig.WinFlags = WinFlags;
+	MsgBoxParams.windowStyleConfig.MinWindowSize = MinWindowSize;
+	MsgBoxParams.windowStyleConfig.BaseAlpha = BaseAlpha;
 	MsgBoxParams.Type = Type;
 	MsgBoxParams.Message = Message;
 
 	if ( getUseDefaultThemeValues() ) {
 		MsgBoxParams.Flags |= UI_DRAW_SHADOW;
-		MsgBoxParams.windowStyleConfig.winFlags |= UI_WIN_DRAW_SHADOW;
-		MsgBoxParams.windowStyleConfig.buttonsPositionFixer.x = -2;
-		MsgBoxParams.windowStyleConfig.titleFontColor = ColorA( 230, 230, 230, 255 );
+		MsgBoxParams.windowStyleConfig.WinFlags |= UI_WIN_DRAW_SHADOW;
+		MsgBoxParams.windowStyleConfig.ButtonsPositionFixer.x = -2;
+		MsgBoxParams.windowStyleConfig.TitleFontColor = ColorA( 230, 230, 230, 255 );
 	}
 
 	return eeNew( UIMessageBox, ( MsgBoxParams ) );
