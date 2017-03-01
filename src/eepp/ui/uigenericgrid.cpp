@@ -399,7 +399,7 @@ void UIGenericGrid::add( UIGridCell * Cell ) {
 
 	setDefaultCollumnsWidth();
 
-	Cell->autoSize();
+	Cell->onAutoSize();
 
 	updateSize();
 

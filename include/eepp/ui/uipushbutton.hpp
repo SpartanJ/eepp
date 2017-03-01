@@ -20,7 +20,7 @@ class EE_API UIPushButton : public UIComplexControl {
 					IconAutoMargin( true ),
 					IconMinSize( 0, 0 )
 				{
-					fontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
+					FontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 				}
 
 				inline ~CreateParams() {}
@@ -32,7 +32,7 @@ class EE_API UIPushButton : public UIComplexControl {
 						IconHorizontalMargin = 4;
 				}
 
-				FontStyleConfig		fontStyleConfig;
+				UI::FontStyleConfig	FontStyleConfig;
 				SubTexture *		Icon;
 				Int32				IconHorizontalMargin;
 				bool				IconAutoMargin;

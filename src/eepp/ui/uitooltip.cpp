@@ -29,8 +29,9 @@ UITooltip::UITooltip() :
 		setFontShadowColor( mFontStyleConfig.FontShadowColor );
 	}
 
-	if ( NULL == getFont() && NULL != UIThemeManager::instance()->getDefaultFont() ) {
-		setFont( UIThemeManager::instance()->getDefaultFont() );
+	if ( NULL == getFont() ) {
+		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
+			setFont( UIThemeManager::instance()->getDefaultFont() );
 	} else {
 		eePRINTL( "UITooltip::UITooltip : Created a UI TextBox without a defined font." );
 	}
@@ -73,6 +74,7 @@ void UITooltip::show() {
 		toFront();
 
 		setVisible( true );
+		setEnabled( true );
 
 		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
 			startAlphaAnim( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->getControlsFadeInTime() );
@@ -86,6 +88,7 @@ void UITooltip::hide() {
 			disableFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
 		} else {
 			setVisible( false );
+			setEnabled( false );
 		}
 	}
 }
@@ -109,7 +112,7 @@ void UITooltip::setFont( Graphics::Font * font ) {
 	if ( mTextCache->getFont() != font ) {
 		mTextCache->setFont( font );
 		autoPadding();
-		autoSize();
+		onAutoSize();
 		autoAlign();
 		onFontChanged();
 	}
@@ -122,7 +125,7 @@ const String& UITooltip::getText() {
 void UITooltip::setText( const String& text ) {
 	mTextCache->setText( text );
 	autoPadding();
-	autoSize();
+	onAutoSize();
 	autoAlign();
 	onTextChanged();
 }
@@ -155,7 +158,7 @@ void UITooltip::setAlpha( const Float& alpha ) {
 	mTextCache->setColor( mFontStyleConfig.FontColor );
 }
 
-void UITooltip::autoSize() {
+void UITooltip::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		setPixelsSize(
 			(int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right,
@@ -195,7 +198,7 @@ void UITooltip::autoAlign() {
 
 void UITooltip::onSizeChange() {
 	autoPadding();
-	autoSize();
+	onAutoSize();
 	autoAlign();
 
 	UIControlAnim::onSizeChange();

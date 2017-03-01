@@ -62,7 +62,7 @@ UIControl * UIGridCell::getCell( const Uint32& CollumnIndex ) const {
 }
 
 void UIGridCell::fixCell() {
-	autoSize();
+	onAutoSize();
 
 	UIGenericGrid * P = gridParent();
 
@@ -167,7 +167,7 @@ Uint32 UIGridCell::onMessage( const UIMessage * Msg ) {
 	return 0;
 }
 
-void UIGridCell::autoSize() {
+void UIGridCell::onAutoSize() {
 	UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( getParent()->getParent() );
 
 	setSize( MyParent->mTotalWidth, MyParent->mRowHeight );

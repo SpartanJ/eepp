@@ -33,8 +33,6 @@ class EE_API UIGridCell : public UIComplexControl {
 		void select();
 
 		virtual Uint32 onMessage( const UIMessage * Msg );
-
-		void autoSize();
 	protected:
 		friend class UIItemContainer<UIGenericGrid>;
 		friend class UIGenericGrid;
@@ -50,6 +48,8 @@ class EE_API UIGridCell : public UIComplexControl {
 		virtual void onStateChange();
 
 		virtual void onParentChange();
+
+		virtual void onAutoSize();
 };
 
 }}

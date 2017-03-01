@@ -93,7 +93,7 @@ void UIRadioButton::setTheme( UITheme * Theme ) {
 	setPadding( Recti(0,0,0,0) );
 }
 
-void UIRadioButton::autoSize() {
+void UIRadioButton::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		mActiveButton->centerVertical();
 		mInactiveButton->centerVertical();

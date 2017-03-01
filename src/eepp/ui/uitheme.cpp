@@ -388,18 +388,6 @@ SubTexture * UITheme::getIconByName( const std::string& name ) {
 	return NULL;
 }
 
-UICheckBox * UITheme::createCheckBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
-	UICheckBox::CreateParams CheckBoxParams;
-	CheckBoxParams.setParent( Parent );
-	CheckBoxParams.setPosition( Pos );
-	CheckBoxParams.setSize( Size );
-	CheckBoxParams.Flags = Flags;
-	UICheckBox * Ctrl = eeNew( UICheckBox, ( CheckBoxParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
 UITextBox * UITheme::createTextBox( const String& Text, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
 	UITextBox::CreateParams TextBoxParams;
 	TextBoxParams.setParent( Parent );

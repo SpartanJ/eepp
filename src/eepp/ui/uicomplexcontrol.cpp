@@ -146,6 +146,10 @@ UIControl * UIComplexControl::setFlags(const Uint32 & flags) {
 		updateAnchorsDistances();
 	}
 
+	if ( flags & UI_AUTO_SIZE ) {
+		onAutoSize();
+	}
+
 	return UIControlAnim::setFlags( flags );
 }
 
@@ -214,6 +218,9 @@ void UIComplexControl::onParentSizeChange( const Vector2i& SizeChange ) {
 void UIComplexControl::onPositionChange() {
 	updateAnchorsDistances();
 	UIControlAnim::onPositionChange();
+}
+
+void UIComplexControl::onAutoSize() {
 }
 
 }}

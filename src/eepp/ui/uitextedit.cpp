@@ -37,7 +37,7 @@ UITextEdit::UITextEdit( UITextEdit::CreateParams& Params ) :
 	TIParams.Size				= mSize;
 	TIParams.Flags				= UI_VALIGN_TOP | UI_HALIGN_LEFT | UI_TEXT_SELECTION_ENABLED | extraFlags;
 	TIParams.MaxLength			= 1024 * 1024 * 10;
-	TIParams.fontStyleConfig	= Params.fontStyleConfig;
+	TIParams.FontStyleConfig	= Params.FontStyleConfig;
 
 	if ( Params.WordWrap && !( mFlags & UI_WORD_WRAP ) )
 		mFlags |= UI_WORD_WRAP;

@@ -78,7 +78,7 @@ void UIDropDownList::setFriendControl( UIControl * friendCtrl ) {
 	mFriendCtrl = friendCtrl;
 }
 
-void UIDropDownList::autoSize() {
+void UIDropDownList::onAutoSize() {
 }
 
 UIListBox * UIDropDownList::getListBox() const {

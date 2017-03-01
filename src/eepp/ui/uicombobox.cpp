@@ -75,7 +75,7 @@ const String& UIComboBox::getText() {
 
 void UIComboBox::updateControls() {
 	if ( ( mFlags & UI_AUTO_SIZE ) || mSize.getHeight() < mDropDownList->getSkin()->getSize().getHeight() ) {
-		setInternalHeight( mDropDownList->getSkin()->getSize().getHeight() );
+		onAutoSize();
 	}
 
 	mDropDownList->setPosition( 0, 0 );
@@ -104,6 +104,10 @@ void UIComboBox::onPositionChange() {
 	UIComplexControl::onPositionChange();
 
 	updateControls();
+}
+
+void UIComboBox::onAutoSize() {
+	setInternalHeight( mDropDownList->getSkin()->getSize().getHeight() );
 }
 
 }}

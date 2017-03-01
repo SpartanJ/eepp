@@ -218,7 +218,7 @@ UIListBoxItem * UIListBox::createListBoxItem( const String& Name ) {
 	UITextBox::CreateParams TextParams;
 	TextParams.setParent( mContainer );
 	TextParams.Flags			= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	TextParams.fontStyleConfig 	= mFontStyleConfig;
+	TextParams.FontStyleConfig 	= mFontStyleConfig;
 	UIListBoxItem * tItem		= eeNew( UIListBoxItem, ( TextParams ) );
 	tItem->setText( Name );
 

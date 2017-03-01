@@ -180,7 +180,7 @@ class EE_API UIControl {
 
 		virtual UIControl * unsetFlags( const Uint32& flags );
 
-		UIControl * resetFlags( Uint32 newFlags = 0 );
+		virtual UIControl * resetFlags( Uint32 newFlags = 0 );
 
 		void setBlendMode( const EE_BLEND_MODE& blend );
 

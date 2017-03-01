@@ -42,12 +42,12 @@ class EE_API UIMessageBox : public UIWindow {
 		virtual bool		show();
 	protected:
 		UI_MSGBOX_TYPE		mMsgBoxType;
-		UITextBox *		mTextBox;
+		UITextBox *			mTextBox;
 		UIPushButton *		mButtonOK;
 		UIPushButton *		mButtonCancel;
 		Uint32				mCloseWithKey;
 
-		void				autoSize();
+		virtual void		onAutoSize();
 
 		virtual Uint32 onKeyUp( const UIEventKey& Event );
 };

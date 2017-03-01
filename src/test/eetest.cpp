@@ -363,15 +363,9 @@ void EETest::createUI() {
 	Input->setVisible( true );
 	Input->setEnabled( true );
 
-	UIPushButton::CreateParams ButtonParams;
-	ButtonParams.setParent( C );
-	ButtonParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE;
-	ButtonParams.setPosition( 225, 216 );
-	ButtonParams.Size = Sizei( 90, 0 );
-	ButtonParams.setIcon( mTheme->getIconByName( "ok" ) );
-	UIPushButton * Button = eeNew( UIPushButton, ( ButtonParams ) );
-	Button->setVisible( true );
-	Button->setEnabled( true );
+	UIPushButton * Button = UIPushButton::New();
+	Button->setParent( C )->setPosition( 225, 215 )->setSize( 90, 0 );
+	Button->setIcon( mTheme->getIconByName( "ok" ) );
 	Button->setText( "Click Me" );
 	Button->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 	Button->setTooltipText( "Click and see what happens..." );

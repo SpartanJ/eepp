@@ -43,6 +43,8 @@ class EE_API UIComboBox : public UIComplexControl {
 		virtual void onSizeChange();
 
 		virtual void onPositionChange();
+
+		virtual void onAutoSize();
 };
 
 }}

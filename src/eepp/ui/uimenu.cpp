@@ -18,7 +18,7 @@ UIMenu::UIMenu() :
 	mClickHide( false ),
 	mLastTickMove( 0 )
 {
-	setFlags( UI_AUTO_SIZE );
+	mFlags |= UI_AUTO_SIZE;
 
 	mStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 
@@ -59,7 +59,7 @@ void UIMenu::doAfterSetTheme() {
 UIMenuItem * UIMenu::createMenuItem( const String& Text, SubTexture * Icon ) {
 	UIMenuItem::CreateParams Params;
 	Params.setParent( this );
-	Params.fontStyleConfig	= mStyleConfig;
+	Params.FontStyleConfig	= mStyleConfig;
 	Params.Icon				= Icon;
 	Params.IconMinSize		= Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
@@ -85,7 +85,7 @@ Uint32 UIMenu::add( const String& Text, SubTexture * Icon ) {
 UIMenuCheckBox * UIMenu::createMenuCheckBox( const String& Text, const bool &Active ) {
 	UIMenuCheckBox::CreateParams Params;
 	Params.setParent( this );
-	Params.fontStyleConfig 	= mStyleConfig;
+	Params.FontStyleConfig 	= mStyleConfig;
 	Params.IconMinSize		= Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
@@ -113,7 +113,7 @@ Uint32 UIMenu::addCheckBox( const String& Text, const bool& Active ) {
 UIMenuSubMenu * UIMenu::createSubMenu( const String& Text, SubTexture * Icon, UIMenu * SubMenu ) {
 	UIMenuSubMenu::CreateParams Params;
 	Params.setParent( this );
-	Params.fontStyleConfig	= mStyleConfig;
+	Params.FontStyleConfig	= mStyleConfig;
 	Params.SubMenu			= SubMenu;
 	Params.Icon				= Icon;
 	Params.IconMinSize		= Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );

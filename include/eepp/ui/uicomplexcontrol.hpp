@@ -82,6 +82,8 @@ class EE_API UIComplexControl : public UIControlAnim {
 		virtual void onParentSizeChange( const Vector2i& SizeChange );
 
 		virtual void onPositionChange();
+
+		virtual void onAutoSize();
 };
 
 }}

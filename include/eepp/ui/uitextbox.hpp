@@ -14,12 +14,12 @@ class EE_API UITextBox : public UIComplexControl {
 				inline CreateParams() :
 					UIComplexControl::CreateParams()
 				{
-					fontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
+					FontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 				}
 
 				inline ~CreateParams() {}
 
-				FontStyleConfig fontStyleConfig;
+				UI::FontStyleConfig FontStyleConfig;
 		};
 
 		UITextBox( const UITextBox::CreateParams& Params );
@@ -96,7 +96,7 @@ class EE_API UITextBox : public UIComplexControl {
 
 		virtual void autoShrink();
 
-		virtual void autoSize();
+		virtual void onAutoSize();
 
 		virtual void autoAlign();
 

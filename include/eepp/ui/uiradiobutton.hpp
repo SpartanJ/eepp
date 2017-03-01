@@ -54,7 +54,7 @@ class EE_API UIRadioButton : public UITextBox {
 
 		virtual Uint32 onMessage( const UIMessage * Msg );
 
-		virtual void autoSize();
+		virtual void onAutoSize();
 };
 
 }}

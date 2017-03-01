@@ -9,7 +9,7 @@ UIPushButton * UIPushButton::New() {
 
 UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 	UIComplexControl( Params ),
-	mFontStyleConfig( Params.fontStyleConfig ),
+	mFontStyleConfig( Params.FontStyleConfig ),
 	mIcon( NULL ),
 	mTextBox( NULL ),
 	mIconSpace( Params.IconHorizontalMargin )
@@ -38,7 +38,7 @@ UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 	UITextBox::CreateParams TxtParams = Params;
 	TxtParams.setParent( this );
 	TxtParams.Flags 			= HAlignGet( Params.Flags ) | VAlignGet( Params.Flags );
-	TxtParams.fontStyleConfig	= Params.fontStyleConfig;
+	TxtParams.FontStyleConfig	= Params.FontStyleConfig;
 
 	if ( TxtParams.Flags & UI_CLIP_ENABLE )
 		TxtParams.Flags &= ~UI_CLIP_ENABLE;

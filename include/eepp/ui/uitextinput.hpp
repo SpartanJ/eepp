@@ -77,7 +77,7 @@ class EE_API UITextInput : public UITextBox {
 
 		virtual void alignFix();
 
-		virtual void autoSize();
+		virtual void onAutoSize();
 
 		void privOnPressEnter();
 

@@ -34,7 +34,7 @@ UITextInput::UITextInput() :
 	mAllowEditing( true ),
 	mShowingWait( true )
 {
-	resetFlags( UI_HALIGN_LEFT | UI_VALIGN_TOP | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED );
+	setFlags( UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED );
 
 	mTextBuffer.start();
 	mTextBuffer.setActive( false );
@@ -195,10 +195,10 @@ void UITextInput::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "textinput" );
 
 	autoPadding();
-	autoSize();
+	onAutoSize();
 }
 
-void UITextInput::autoSize() {
+void UITextInput::onAutoSize() {
 	if ( ( mFlags & UI_AUTO_SIZE ) && 0 == mSize.getHeight() ) {
 		setSize( mSize.x, getSkinSize().getHeight() );
 	}

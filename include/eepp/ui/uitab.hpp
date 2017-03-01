@@ -37,7 +37,7 @@ class EE_API UITab : public UISelectButton {
 
 		virtual void onStateChange();
 
-		void autoSize();
+		virtual void onAutoSize();
 
 		UITabWidget * getTabWidget();
 

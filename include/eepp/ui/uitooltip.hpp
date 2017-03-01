@@ -87,7 +87,7 @@ class EE_API UITooltip : public UIControlAnim {
 
 		virtual void onSizeChange();
 
-		virtual void autoSize();
+		virtual void onAutoSize();
 
 		virtual void autoAlign();
 

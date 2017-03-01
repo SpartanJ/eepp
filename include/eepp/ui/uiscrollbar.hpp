@@ -77,7 +77,7 @@ class EE_API UIScrollBar : public UIComplexControl {
 
 		virtual void onSizeChange();
 
-		void autoSize();
+		virtual void onAutoSize();
 
 		void adjustChilds();
 

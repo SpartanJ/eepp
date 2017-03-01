@@ -5,6 +5,10 @@
 
 namespace EE { namespace UI {
 
+UICheckBox * UICheckBox::New() {
+	return eeNew( UICheckBox, () );
+}
+
 UICheckBox::UICheckBox( const UITextBox::CreateParams& Params ) :
 	UITextBox( Params ),
 	mActive( false ),
@@ -92,9 +96,9 @@ void UICheckBox::doAfterSetTheme() {
 	setPadding( Recti(0,0,0,0) );
 }
 
-void UICheckBox::autoSize() {
+void UICheckBox::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() );
+		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() + mTextSeparation );
 
 		if ( mSize.getHeight() == 0 ) {
 			setInternalHeight( mActiveButton->getSize().getHeight() );

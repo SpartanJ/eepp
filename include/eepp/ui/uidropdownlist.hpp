@@ -64,7 +64,7 @@ class EE_API UIDropDownList : public UITextInput {
 
 		virtual void onSizeChange();
 
-		virtual void autoSize();
+		virtual void onAutoSize();
 
 		virtual void autoSizeControl();
 

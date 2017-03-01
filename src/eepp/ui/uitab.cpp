@@ -110,7 +110,7 @@ void UITab::setText( const String &text ) {
 		if ( text.size() > tTabW->getMaxTextLength() ) {
 			UIPushButton::setText( text.substr( 0, tTabW->getMaxTextLength() ) );
 
-			autoSize();
+			onAutoSize();
 
 			return;
 		}
@@ -118,10 +118,10 @@ void UITab::setText( const String &text ) {
 
 	UIPushButton::setText( text );
 
-	autoSize();
+	onAutoSize();
 }
 
-void UITab::autoSize() {
+void UITab::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		Uint32 w = PixelDensity::pxToDpI( mTextBox->getTextWidth() ) + mIconSpace + ( NULL != mIcon ? mIcon->getSize().getWidth() : 0 ) + getSkinSize().getWidth();
 

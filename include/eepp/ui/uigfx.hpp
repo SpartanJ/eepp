@@ -63,7 +63,7 @@ class EE_API UIGfx : public UIComplexControl {
 
 		virtual void onAlignChange();
 
-		void autoSize();
+		void onAutoSize();
 
 		void autoAlign();
 

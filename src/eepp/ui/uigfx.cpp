@@ -19,7 +19,7 @@ UIGfx::UIGfx( const UIGfx::CreateParams& Params ) :
 
 	mColor.Alpha = (Uint8)mAlpha;
 
-	autoSize();
+	onAutoSize();
 }
 
 UIGfx::UIGfx() :
@@ -31,7 +31,7 @@ UIGfx::UIGfx() :
 {
 	mFlags |= UI_FIT_TO_CONTROL | UI_AUTO_SIZE;
 
-	autoSize();
+	onAutoSize();
 }
 
 UIGfx::~UIGfx() {
@@ -48,7 +48,7 @@ bool UIGfx::isType( const Uint32& type ) const {
 void UIGfx::setSubTexture( Graphics::SubTexture * subTexture ) {
 	mSubTexture = subTexture;
 
-	autoSize();
+	onAutoSize();
 
 	if ( NULL != mSubTexture && mSize.x == 0 && mSize.y == 0 ) {
 		setSize( mSubTexture->getDpSize() );
@@ -57,7 +57,7 @@ void UIGfx::setSubTexture( Graphics::SubTexture * subTexture ) {
 	autoAlign();
 }
 
-void UIGfx::autoSize() {
+void UIGfx::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mSubTexture ) {
 			setSize( mSubTexture->getDpSize() );
@@ -180,13 +180,13 @@ void UIGfx::autoAlign() {
 }
 
 void UIGfx::onSizeChange() {
-	autoSize();
+	onAutoSize();
 	autoAlign();
 	UIControlAnim::onSizeChange();
 }
 
 void UIGfx::onAlignChange() {
-	autoSize();
+	onAutoSize();
 	autoAlign();
 }
 

@@ -14,7 +14,7 @@ UITextBox *UITextBox::New() {
 
 UITextBox::UITextBox( const UITextBox::CreateParams& Params ) :
 	UIComplexControl( Params ),
-	mFontStyleConfig( Params.fontStyleConfig ),
+	mFontStyleConfig( Params.FontStyleConfig ),
 	mRealAlignOffset( 0.f, 0.f ),
 	mSelCurInit( -1 ),
 	mSelCurEnd( -1 )
@@ -90,7 +90,7 @@ void UITextBox::setFont( Graphics::Font * font ) {
 	if ( mTextCache->getFont() != font ) {
 		mTextCache->setFont( font );
 		autoShrink();
-		autoSize();
+		onAutoSize();
 		autoAlign();
 		onFontChanged();
 	}
@@ -111,12 +111,8 @@ void UITextBox::setText( const String& text ) {
 		mTextCache->setText( text );
 	}
 
-	if ( mSize == Sizei::Zero ) {
-		setFlags( UI_AUTO_SIZE );
-	}
-
 	autoShrink();
-	autoSize();
+	onAutoSize();
 	autoAlign();
 	onTextChanged();
 }
@@ -172,7 +168,7 @@ void UITextBox::shrinkText( const Uint32& MaxWidth ) {
 	mTextCache->cacheWidth();
 }
 
-void UITextBox::autoSize() {
+void UITextBox::onAutoSize() {
 	if ( ( mFlags & UI_AUTO_SIZE ) ) {
 		setInternalPixelsSize( Sizei( (int)mTextCache->getTextWidth(), (int)mTextCache->getTextHeight() ) );
 	}
@@ -215,7 +211,7 @@ Uint32 UITextBox::onFocusLoss() {
 
 void UITextBox::onSizeChange() {
 	autoShrink();
-	autoSize();
+	onAutoSize();
 	autoAlign();
 
 	UIControlAnim::onSizeChange();

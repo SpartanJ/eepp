@@ -45,7 +45,7 @@ UIScrollBar::UIScrollBar( const UIScrollBar::CreateParams& Params ) :
 UIScrollBar::UIScrollBar() :
 	UIComplexControl()
 {
-	setFlags( UI_AUTO_SIZE );
+	mFlags |= UI_AUTO_SIZE;
 
 	mBtnDown	= eeNew( UIControlAnim, () );
 	mBtnUp		= eeNew( UIControlAnim, () );
@@ -117,7 +117,7 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 	mSlider->adjustChilds();
 }
 
-void UIScrollBar::autoSize() {
+void UIScrollBar::onAutoSize() {
 	UISkin * tSkin = mSlider->getBackSlider()->getSkin();
 
 	if ( NULL != tSkin ) {
@@ -146,7 +146,7 @@ void UIScrollBar::onSizeChange() {
 }
 
 void UIScrollBar::adjustChilds() {
-	autoSize();
+	onAutoSize();
 
 	mBtnUp->setPosition( 0, 0 );
 

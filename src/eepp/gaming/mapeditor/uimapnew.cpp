@@ -80,7 +80,10 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 
 	Txt = mTheme->createTextBox( "Map Flags:", mUIWindow->getContainer(), Sizei(), Vector2i( Txt->getPosition().x, mUIMapMaxLayers->getPosition().y + mUIMapMaxLayers->getSize().getHeight() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	mUILightsEnabled = mTheme->createCheckBox( mUIWindow->getContainer(), Sizei(), Vector2i( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + Txt->getSize().getHeight() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+	mUILightsEnabled = UICheckBox::New();
+	mUILightsEnabled->setParent( mUIWindow->getContainer() )
+			->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + Txt->getSize().getHeight() + 16 )
+			->setFlags( UI_AUTO_SIZE );
 	mUILightsEnabled->setText( "Lights Enabled" );
 	mUILightsEnabled->setActive( true );
 
@@ -88,7 +91,10 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 		mUILightsEnabled->setActive( 0 != mUIMap->Map()->getLightsEnabled() );
 	}
 
-	mUILightsByVertex = mTheme->createCheckBox( mUIWindow->getContainer(), Sizei(), Vector2i( mUIWindow->getContainer()->getSize().getWidth() / 2, mUILightsEnabled->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+	mUILightsByVertex = UICheckBox::New();
+	mUILightsByVertex->setParent( mUIWindow->getContainer() )
+			->setPosition( mUIWindow->getContainer()->getSize().getWidth() / 2, mUILightsEnabled->getPosition().y )
+			->setFlags( UI_AUTO_SIZE );
 	mUILightsByVertex->setText( "Lights By Vertex" );
 	mUILightsByVertex->setActive( true );
 
@@ -96,7 +102,10 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 		mUILightsByVertex->setActive( 0 != mUIMap->Map()->getLightsByVertex() );
 	}
 
-	mUIClampBorders = mTheme->createCheckBox( mUIWindow->getContainer(), Sizei(), Vector2i( Txt->getPosition().x + DistFromTitle, mUILightsEnabled->getPosition().y + mUILightsEnabled->getSize().getHeight() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+	mUIClampBorders = UICheckBox::New();
+	mUIClampBorders->setParent( mUIWindow->getContainer() )
+			->setPosition( Txt->getPosition().x + DistFromTitle, mUILightsEnabled->getPosition().y + mUILightsEnabled->getSize().getHeight() + 16 )
+			->setFlags( UI_AUTO_SIZE );
 	mUIClampBorders->setText( "Clamp Borders" );
 	mUIClampBorders->setActive( true );
 
@@ -104,7 +113,10 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 		mUIClampBorders->setActive( 0 != mUIMap->Map()->getClampBorders() );
 	}
 
-	mUIClipArea = mTheme->createCheckBox( mUIWindow->getContainer(), Sizei(), Vector2i( mUIWindow->getContainer()->getSize().getWidth() / 2, mUIClampBorders->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+	mUIClipArea = UICheckBox::New();
+	mUIClipArea->setParent( mUIWindow->getContainer() )
+			->setPosition( mUIWindow->getContainer()->getSize().getWidth() / 2, mUIClampBorders->getPosition().y )
+			->setFlags( UI_AUTO_SIZE );
 	mUIClipArea->setText( "Clip View Area" );
 	mUIClipArea->setActive( true );
 
