@@ -250,8 +250,8 @@ void TextureAtlasEditor::fileMenuClick( const UIEvent * Event ) {
 	if ( "New..." == txt ) {
 		eeNew( TextureAtlasNew, ( cb::Make1( this, &TextureAtlasEditor::onTextureAtlasCreate ) ) );
 	} else if ( "Open..." == txt ) {
-		UICommonDialog * TGDialog = mTheme->createCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, Sizei(), 255, UI_CDL_DEFAULT_FLAGS, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
-
+		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
+		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open Texture Atlas" );
 		TGDialog->addEventListener( UIEvent::EventOpenFile, cb::Make1( this, &TextureAtlasEditor::openTextureAtlas ) );
 		TGDialog->center();
@@ -262,7 +262,7 @@ void TextureAtlasEditor::fileMenuClick( const UIEvent * Event ) {
 		}
 	} else if ( "Close" == txt ) {
 		if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->isLoaded()  ) {
-			UIMessageBox * MsgBox = mTheme->createMessageBox( MSGBOX_OKCANCEL, "Do you really want to close the current texture atlas?\nAll changes will be lost." );
+			UIMessageBox * MsgBox = UIMessageBox::New( MSGBOX_OKCANCEL, "Do you really want to close the current texture atlas?\nAll changes will be lost." );
 			MsgBox->addEventListener( UIEvent::EventMsgBoxConfirmClick, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasClose ) );
 			MsgBox->setTitle( "Close Texture Atlas?" );
 			MsgBox->center();

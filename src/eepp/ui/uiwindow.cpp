@@ -8,35 +8,6 @@ UIWindow * UIWindow::New() {
 	return eeNew( UIWindow, () );
 }
 
-UIWindow::UIWindow( const UIWindow::CreateParams& Params ) :
-	UIComplexControl( Params ),
-	mStyleConfig( Params.windowStyleConfig ),
-	mWindowDecoration( NULL ),
-	mBorderLeft( NULL ),
-	mBorderRight( NULL ),
-	mBorderBottom( NULL ),
-	mButtonClose( NULL ),
-	mButtonMinimize( NULL ),
-	mButtonMaximize( NULL ),
-	mTitle( NULL ),
-	mModalCtrl( NULL ),
-	mResizeType( RESIZE_NONE )
-{
-	UIManager::instance()->windowAdd( this );
-
-	mContainer		= eeNew( UIComplexControl, () );
-	mContainer->setParent( this );
-	mContainer->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
-	mContainer->setSize( mSize );
-	mContainer->addEventListener( UIEvent::EventOnPosChange, cb::Make1( this, &UIWindow::onContainerPosChange ) );
-
-	updateWinFlags();
-
-	setAlpha( mStyleConfig.BaseAlpha );
-
-	applyDefaultTheme();
-}
-
 UIWindow::UIWindow() :
 	UIComplexControl(),
 	mWindowDecoration( NULL ),
@@ -48,7 +19,10 @@ UIWindow::UIWindow() :
 	mButtonMaximize( NULL ),
 	mTitle( NULL ),
 	mModalCtrl( NULL ),
-	mResizeType( RESIZE_NONE )
+	mResizeType( RESIZE_NONE ),
+	mCloseListener(0),
+	mMaximizeListener(0),
+	mMinimizeListener(0)
 {
 	setHorizontalAlign( UI_HALIGN_CENTER );
 
@@ -60,7 +34,7 @@ UIWindow::UIWindow() :
 		mStyleConfig = theme->getWindowStyleConfig();
 	}
 
-	mContainer		= eeNew( UIComplexControl, () );
+	mContainer		= UIComplexControl::New();
 	mContainer->setParent( this );
 	mContainer->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
 	mContainer->setSize( mSize );
@@ -82,6 +56,8 @@ UIWindow::~UIWindow() {
 }
 
 void UIWindow::updateWinFlags() {
+	bool needsUpdate = false;
+
 	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) ) {
 		if ( NULL == mWindowDecoration )
 			mWindowDecoration = eeNew( UIControlAnim, () );
@@ -115,49 +91,61 @@ void UIWindow::updateWinFlags() {
 			mContainer->setDragEnabled( true );
 
 		if ( mStyleConfig.WinFlags & UI_WIN_CLOSE_BUTTON ) {
-			if ( NULL == mButtonClose )
-				mButtonClose = eeNew( UIComplexControl, () );
+			if ( NULL == mButtonClose ) {
+				mButtonClose = UIComplexControl::New();
+				needsUpdate = true;
+			}
 
 			mButtonClose->setParent( this );
 			mButtonClose->setVisible( true );
 			mButtonClose->setEnabled( true );
 
-			if ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
-				mButtonClose->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonCloseClick ) );
+			if ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS && 0 == mCloseListener ) {
+				mCloseListener = mButtonClose->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonCloseClick ) );
 			}
 		}
 
 		if ( ( mStyleConfig.WinFlags & UI_WIN_RESIZEABLE ) && ( mStyleConfig.WinFlags & UI_WIN_MAXIMIZE_BUTTON ) ) {
-			if ( NULL == mButtonMaximize )
-				mButtonMaximize = eeNew( UIComplexControl, () );
+			if ( NULL == mButtonMaximize ) {
+				mButtonMaximize = UIComplexControl::New();
+				needsUpdate = true;
+			}
 
 			mButtonMaximize->setParent( this );
 			mButtonMaximize->setVisible( true );
 			mButtonMaximize->setEnabled( true );
 
-			if ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
-				mButtonMaximize->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonMaximizeClick ) );
+			if ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS && 0 == mMaximizeListener ) {
+				mMaximizeListener = mButtonMaximize->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonMaximizeClick ) );
 			}
 		}
 
 		if ( mStyleConfig.WinFlags & UI_WIN_MINIMIZE_BUTTON ) {
-			if ( NULL == mButtonMinimize )
-				mButtonMinimize = eeNew( UIComplexControl, () );
+			if ( NULL == mButtonMinimize ) {
+				mButtonMinimize = UIComplexControl::New();
+				needsUpdate = true;
+			}
 
 			mButtonMinimize->setParent( this );
 			mButtonMinimize->setVisible( true );
 			mButtonMinimize->setEnabled( true );
 
-			if ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
-				mButtonMinimize->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonMinimizeClick ) );
+			if ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS && 0 == mMinimizeListener ) {
+				mMinimizeListener = mButtonMinimize->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonMinimizeClick ) );
 			}
 		}
 
 		setDragEnabled( true );
+	} else {
+		setDragEnabled( false );
 	}
 
 	if ( isModal() ) {
 		createModalControl();
+	}
+
+	if ( needsUpdate ) {
+		applyDefaultTheme();
 	}
 }
 

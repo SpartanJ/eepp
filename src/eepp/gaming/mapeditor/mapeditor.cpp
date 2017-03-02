@@ -904,15 +904,15 @@ void MapEditor::FileMenuClick( const UIEvent * Event ) {
 	if ( "New..." == txt ) {
 		CreateNewMap();
 	} else if ( "Open..." == txt ) {
-		UICommonDialog * TGDialog = mTheme->createCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, Sizei(), 255, UI_CDL_DEFAULT_FLAGS, "*.eem" );
-
+		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*.eem" );
+		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open Map" );
 		TGDialog->addEventListener( UIEvent::EventOpenFile, cb::Make1( this, &MapEditor::MapOpen ) );
 		TGDialog->center();
 		TGDialog->show();
 	} else if ( "Save As..." == txt ) {
-		UICommonDialog * TGDialog = mTheme->createCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, Sizei(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*.eem" );
-
+		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*.eem" );
+		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Save Map" );
 		TGDialog->addEventListener( UIEvent::EventSaveFile, cb::Make1( this, &MapEditor::MapSave ) );
 		TGDialog->center();
@@ -922,7 +922,7 @@ void MapEditor::FileMenuClick( const UIEvent * Event ) {
 			mUIMap->Map()->save( mUIMap->Map()->getPath() );
 		}
 	} else if ( "Close" == txt ) {
-		UIMessageBox * MsgBox = mTheme->createMessageBox( MSGBOX_OKCANCEL, "Do you really want to close the current map?\nAll changes will be lost." );
+		UIMessageBox * MsgBox = UIMessageBox::New( MSGBOX_OKCANCEL, "Do you really want to close the current map?\nAll changes will be lost." );
 		MsgBox->addEventListener( UIEvent::EventMsgBoxConfirmClick, cb::Make1( this, &MapEditor::OnMapClose ) );
 		MsgBox->setTitle( "Close Map?" );
 		MsgBox->center();
@@ -1041,8 +1041,8 @@ void MapEditor::MapMenuClick( const UIEvent * Event ) {
 		tWin->center();
 		tWin->show();
 	} else if ( "Add External Texture Atlas..." == txt ) {
-		UICommonDialog * TGDialog = mTheme->createCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, Sizei(), 255, UI_CDL_DEFAULT_FLAGS, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
-
+		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
+		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Load Texture Atlas..." );
 		TGDialog->addEventListener( UIEvent::EventOpenFile, cb::Make1( this, &MapEditor::TextureAtlasOpen ) );
 		TGDialog->center();
@@ -1088,7 +1088,7 @@ void MapEditor::LayerMenuClick( const UIEvent * Event ) {
 }
 
 UIMessageBox * MapEditor::CreateAlert( const String& title, const String& text ) {
-	UIMessageBox * MsgBox = mTheme->createMessageBox( MSGBOX_OK, text );
+	UIMessageBox * MsgBox = UIMessageBox::New( MSGBOX_OK, text );
 	MsgBox->setTitle( title );
 	MsgBox->center();
 	MsgBox->show();

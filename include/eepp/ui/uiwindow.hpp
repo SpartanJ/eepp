@@ -11,25 +11,6 @@ class EE_API UIWindow : public UIComplexControl {
 	public:
 		static UIWindow * New();
 
-		class CreateParams : public UIComplexControl::CreateParams {
-			public:
-				inline CreateParams() :
-					UIComplexControl::CreateParams()
-				{
-					UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
-
-					if ( NULL != theme ) {
-						windowStyleConfig = theme->getWindowStyleConfig();
-					}
-				}
-
-				inline ~CreateParams() {}
-
-				WindowStyleConfig windowStyleConfig;
-		};
-
-		UIWindow( const UIWindow::CreateParams& Params );
-
 		UIWindow();
 
 		virtual ~UIWindow();
@@ -160,6 +141,10 @@ class EE_API UIWindow : public UIComplexControl {
 		UI_RESIZE_TYPE		mResizeType;
 		Vector2i			mResizePos;
 		KeyboardShortcuts	mKbShortcuts;
+
+		Uint32				mCloseListener;
+		Uint32				mMaximizeListener;
+		Uint32				mMinimizeListener;
 
 		virtual void onSizeChange();
 

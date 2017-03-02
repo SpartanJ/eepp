@@ -10,10 +10,14 @@ namespace EE { namespace UI {
 #define CDLG_MIN_WIDTH 420
 #define CDLG_MIN_HEIGHT 320
 
-UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
-	UIWindow( Params ),
-	mCurPath( Params.DefaultDirectory ),
-	mCDLFlags( Params.CDLFlags )
+UICommonDialog * UICommonDialog::New(Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory) {
+	return eeNew( UICommonDialog, ( CDLFlags, DefaultFilePattern, DefaultDirectory ) );
+}
+
+UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern, std::__cxx11::string DefaultDirectory ) :
+	UIWindow(),
+	mCurPath( DefaultDirectory ),
+	mCDLFlags( CDLFlags )
 {
 	if ( mSize.getWidth() < CDLG_MIN_WIDTH ) {
 		mSize.x = CDLG_MIN_WIDTH;
@@ -123,7 +127,7 @@ UICommonDialog::UICommonDialog( const UICommonDialog::CreateParams& Params ) :
 	mFiletype->setPosition( fileTypes->getPosition().x + fileTypes->getSize().getWidth(), fileTypes->getPosition().y );
 	mFiletype->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT );
 	mFiletype->setPopUpToMainControl( true );
-	mFiletype->getListBox()->addListBoxItem( Params.DefaultFilePattern );
+	mFiletype->getListBox()->addListBoxItem( DefaultFilePattern );
 	mFiletype->getListBox()->setSelected(0);
 
 	applyDefaultTheme();

@@ -48,17 +48,16 @@ void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 
 	mInit			= true;
 
-	UIWindow::CreateParams Params;
-	Params.setParent( NULL );
-	Params.setPosition( 0, 0 );
-	Params.setSize( (Float)Engine::instance()->getWidth() / PixelDensity::getPixelDensity(), (Float)Engine::instance()->getHeight() / PixelDensity::getPixelDensity() );
-	Params.Flags = UI_CONTROL_DEFAULT_FLAGS | UI_REPORT_SIZE_CHANGE_TO_CHILDS;
-	Params.windowStyleConfig.WinFlags = UI_WIN_NO_BORDER | UI_WIN_RESIZEABLE;
-	Params.windowStyleConfig.MinWindowSize = Sizei( 0, 0 );
-	Params.windowStyleConfig.DecorationSize = Sizei( 0, 0 );
-	Params.windowStyleConfig.DecorationAutoSize = false;
 
-	mControl		= eeNew( UIWindow, ( Params ) );
+	WindowStyleConfig windowStyleConfig;
+	windowStyleConfig.WinFlags = UI_WIN_NO_BORDER | UI_WIN_RESIZEABLE;
+	windowStyleConfig.MinWindowSize = Sizei( 0, 0 );
+	windowStyleConfig.DecorationSize = Sizei( 0, 0 );
+	windowStyleConfig.DecorationAutoSize = false;
+	mControl = UIWindow::New();
+	mControl->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
+	mControl->setStyleConfig( windowStyleConfig );
+	mControl->setSize( (Float)Engine::instance()->getWidth() / PixelDensity::getPixelDensity(), (Float)Engine::instance()->getHeight() / PixelDensity::getPixelDensity() );
 	mControl->setVisible( true );
 	mControl->setEnabled( true );
 	mControl->getContainer()->setEnabled( false );

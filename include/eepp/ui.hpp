@@ -48,6 +48,6 @@
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 
-#include <eepp/ui/uidefaulttheme.hpp>
+#include <eepp/ui/uithemedefault.hpp>
 
 #endif

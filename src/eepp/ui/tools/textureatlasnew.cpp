@@ -114,8 +114,8 @@ void TextureAtlasNew::okClick( const UIEvent * Event ) {
 		std::string ext( mSaveFileType->getText() );
 		String::toLowerInPlace( ext );
 
-		UICommonDialog * TGDialog = mTheme->createCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, Sizei(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*." + ext );
-
+		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*." + ext );
+		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Save Texture Atlas" );
 		TGDialog->addEventListener( UIEvent::EventSaveFile, cb::Make1( this, &TextureAtlasNew::textureAtlasSave ) );
 		TGDialog->center();
@@ -182,8 +182,8 @@ void TextureAtlasNew::onDialogFolderSelect( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*>( Event );
 
 	if ( MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-		UICommonDialog * TGDialog = mTheme->createCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, Sizei(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_ALLOW_FOLDER_SELECT, "*" );
-
+		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS | CDL_FLAG_ALLOW_FOLDER_SELECT, "*" );
+		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Create Texture Atlas ( Select Folder Containing Textures )" );
 		TGDialog->addEventListener( UIEvent::EventOpenFile, cb::Make1( this, &TextureAtlasNew::onSelectFolder ) );
 		TGDialog->center();
@@ -223,13 +223,13 @@ void TextureAtlasNew::onSelectFolder( const UIEvent * Event ) {
 		if ( count ) {
 			mTGPath->setText( FPath );
 		} else {
-			MsgBox = mTheme->createMessageBox( MSGBOX_OK, "The folder must contain at least one image!" );
+			MsgBox = UIMessageBox::New( MSGBOX_OK, "The folder must contain at least one image!" );
 			MsgBox->setTitle( "Error" );
 			MsgBox->center();
 			MsgBox->show();
 		}
 	} else {
-		MsgBox = mTheme->createMessageBox( MSGBOX_OK, "You must select a folder!" );
+		MsgBox = UIMessageBox::New( MSGBOX_OK, "You must select a folder!" );
 		MsgBox->setTitle( "Error" );
 		MsgBox->center();
 		MsgBox->show();

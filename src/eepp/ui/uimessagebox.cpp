@@ -3,10 +3,14 @@
 
 namespace EE { namespace UI {
 
-UIMessageBox::UIMessageBox( const UIMessageBox::CreateParams& Params ) :
-	UIWindow( Params ),
-	mMsgBoxType( Params.Type ),
-	mCloseWithKey( Params.CloseWithKey )
+UIMessageBox * UIMessageBox::New(UI_MSGBOX_TYPE type, String message) {
+	return eeNew( UIMessageBox, ( type, message ) );
+}
+
+UIMessageBox::UIMessageBox( UI_MSGBOX_TYPE type , String message ) :
+	UIWindow(),
+	mMsgBoxType( type ),
+	mCloseWithKey( KEY_UNKNOWN )
 {
 	mButtonOK = UIPushButton::New();
 	mButtonOK->setParent( getContainer() )
@@ -28,7 +32,7 @@ UIMessageBox::UIMessageBox( const UIMessageBox::CreateParams& Params ) :
 	mTextBox->setParent( getContainer() )
 			->setSize( getContainer()->getSize().getWidth(), mButtonOK->getPosition().y )
 			->setHorizontalAlign( UI_HALIGN_CENTER );
-	mTextBox->setText( Params.Message );
+	mTextBox->setText( message );
 
 	setSize( getContainer()->getSize().getWidth(), mTextBox->getTextHeight() + mButtonOK->getSize().getHeight() + 8 );
 
@@ -66,7 +70,6 @@ UIMessageBox::UIMessageBox( const UIMessageBox::CreateParams& Params ) :
 	mButtonOK->toFront();
 
 	onAutoSize();
-
 }
 
 UIMessageBox::~UIMessageBox() {
@@ -129,7 +132,7 @@ UIPushButton * UIMessageBox::getButtonCancel() const {
 }
 
 void UIMessageBox::onAutoSize() {
-	Sizei nSize( mTextBox->getTextWidth() + 48, mTextBox->getTextHeight() + mButtonOK->getSize().getHeight() + mStyleConfig.DecorationSize.getHeight() + 8 );
+	Sizei nSize( PixelDensity::pxToDpI( mTextBox->getTextWidth() ) + 48, mTextBox->getTextHeight() + mButtonOK->getSize().getHeight() + mStyleConfig.DecorationSize.getHeight() + 8 );
 
 	if ( !( nSize.getWidth() > getContainer()->getSize().getWidth() ) ) {
 		nSize.x = getContainer()->getSize().getWidth();
@@ -160,6 +163,16 @@ bool UIMessageBox::show() {
 	mButtonOK->setFocus();
 
 	return b;
+}
+
+Uint32 UIMessageBox::getCloseWithKey() const
+{
+	return mCloseWithKey;
+}
+
+void UIMessageBox::setCloseWithKey(const Uint32 & closeWithKey)
+{
+	mCloseWithKey = closeWithKey;
 }
 
 }}

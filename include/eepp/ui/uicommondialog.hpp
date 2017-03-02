@@ -13,24 +13,9 @@ namespace EE { namespace UI {
 
 class EE_API UICommonDialog : public UIWindow {
 	public:
-		class CreateParams : public UIWindow::CreateParams {
-			public:
-				inline CreateParams() :
-					UIWindow::CreateParams(),
-					DefaultDirectory( Sys::getProcessPath() ),
-					DefaultFilePattern( "*" ),
-					CDLFlags( UI_CDL_DEFAULT_FLAGS )
-				{
-				}
+		static UICommonDialog * New( Uint32 CDLFlags = UI_CDL_DEFAULT_FLAGS, std::string DefaultFilePattern = "*", std::string DefaultDirectory = Sys::getProcessPath() );
 
-				inline ~CreateParams() {}
-
-				std::string DefaultDirectory;
-				std::string	DefaultFilePattern;
-				Uint32		CDLFlags;
-		};
-
-		UICommonDialog( const UICommonDialog::CreateParams& Params );
+		UICommonDialog( Uint32 CDLFlags = UI_CDL_DEFAULT_FLAGS, std::string DefaultFilePattern = "*", std::string DefaultDirectory = Sys::getProcessPath() );
 
 		virtual ~UICommonDialog();
 

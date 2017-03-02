@@ -9,23 +9,9 @@ namespace EE { namespace UI {
 
 class EE_API UIMessageBox : public UIWindow {
 	public:
-		class CreateParams : public UIWindow::CreateParams {
-			public:
-				inline CreateParams() :
-					UIWindow::CreateParams(),
-					Type( MSGBOX_OKCANCEL ),
-					CloseWithKey( KEY_UNKNOWN )
-				{
-				}
+		static UIMessageBox * New( UI_MSGBOX_TYPE type, String message );
 
-				inline ~CreateParams() {}
-
-				UI_MSGBOX_TYPE	Type;
-				String			Message;
-				Uint32			CloseWithKey;
-		};
-
-		UIMessageBox( const UIMessageBox::CreateParams& Params );
+		UIMessageBox( UI_MSGBOX_TYPE type, String message );
 
 		virtual ~UIMessageBox();
 
@@ -40,6 +26,10 @@ class EE_API UIMessageBox : public UIWindow {
 		UIPushButton *		getButtonCancel() const;
 
 		virtual bool		show();
+
+		Uint32 getCloseWithKey() const;
+
+		void setCloseWithKey(const Uint32 & closeWithKey);
 	protected:
 		UI_MSGBOX_TYPE		mMsgBoxType;
 		UITextBox *			mTextBox;

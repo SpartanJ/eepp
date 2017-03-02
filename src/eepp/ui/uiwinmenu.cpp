@@ -4,7 +4,7 @@
 
 namespace EE { namespace UI {
 
-UIWinMenu *UIWinMenu::New() {
+UIWinMenu * UIWinMenu::New() {
 	return eeNew( UIWinMenu, () );
 }
 

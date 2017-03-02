@@ -1,9 +1,11 @@
 ../../include/eepp/graphics/font.hpp
 ../../include/eepp/ui/uithemeconfig.hpp
+../../include/eepp/ui/uithemedefault.hpp
 ../../src/eepp/gaming/mapobjectlayer.cpp
 ../../src/eepp/graphics/globalbatchrenderer.cpp
 ../../src/eepp/graphics/pixeldensity.cpp
 ../../src/eepp/graphics/pixelperfect.cpp
+../../src/eepp/ui/uithemedefault.cpp
 ee.config
 ee.includes
 ../../../eeiv/src/capp.cpp
@@ -580,8 +582,6 @@ ee.includes
 ../../include/eepp/core/noncopyable.hpp
 ../../include/eepp/system/clock.hpp
 ../../src/eepp/system/lock.cpp
-../../src/eepp/ui/uidefaulttheme.cpp
-../../include/eepp/ui/uidefaulttheme.hpp
 ../../src/eepp/helper/SOIL2/src/SOIL2/stbi_pvr_c.h
 ../../src/eepp/helper/SOIL2/src/SOIL2/stbi_pvr.h
 ../../src/eepp/helper/SOIL2/src/SOIL2/stbi_pkm_c.h

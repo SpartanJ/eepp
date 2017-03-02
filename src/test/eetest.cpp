@@ -283,7 +283,7 @@ void EETest::createUI() {
 
 	TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
 
-	mTheme = UITheme::loadFromTextureAtlas( eeNew( UIDefaultTheme, ( mThemeName, mThemeName ) ), TextureAtlasManager::instance()->getByName( mThemeName ) );
+	mTheme = UITheme::loadFromTextureAtlas( eeNew( UIThemeDefault, ( mThemeName, mThemeName ) ), TextureAtlasManager::instance()->getByName( mThemeName ) );
 
 	UIThemeManager::instance()->add( mTheme );
 	UIThemeManager::instance()->setDefaultEffectsEnabled( true );
@@ -770,7 +770,8 @@ void EETest::onETGEditorClose() {
 }
 
 void EETest::createCommonDialog() {
-	UICommonDialog * CDialog = mTheme->createCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON );
+	UICommonDialog * CDialog = UICommonDialog::New();
+	CDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON );
 	CDialog->addFilePattern( "*.hpp;*.cpp", true );
 	CDialog->center();
 	CDialog->show();

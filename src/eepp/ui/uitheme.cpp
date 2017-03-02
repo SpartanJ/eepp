@@ -512,35 +512,6 @@ UISelectButton * UITheme::createSelectButton( UIControl * Parent, const Sizei& S
 	return Ctrl;
 }
 
-UICommonDialog * UITheme::createCommonDialog( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
-	UICommonDialog::CreateParams DLGParams;
-	DLGParams.setParent( Parent );
-	DLGParams.setPosition( Pos );
-	DLGParams.setSize( Size );
-	DLGParams.Flags = Flags;
-	DLGParams.windowStyleConfig.WinFlags = WinFlags;
-	DLGParams.windowStyleConfig.MinWindowSize = MinWindowSize;
-	DLGParams.windowStyleConfig.BaseAlpha = BaseAlpha;
-	DLGParams.DefaultDirectory = DefaultDirectory;
-	DLGParams.DefaultFilePattern = DefaultFilePattern;
-	DLGParams.CDLFlags = CDLFlags;
-	return eeNew( UICommonDialog, ( DLGParams ) );
-}
-
-UIMessageBox * UITheme::createMessageBox( UI_MSGBOX_TYPE Type, const String& Message, Uint32 WinFlags, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
-	UIMessageBox::CreateParams MsgBoxParams;
-	MsgBoxParams.setParent( Parent );
-	MsgBoxParams.setPosition( Pos );
-	MsgBoxParams.setSize( Size );
-	MsgBoxParams.Flags = Flags;
-	MsgBoxParams.windowStyleConfig.WinFlags = WinFlags;
-	MsgBoxParams.windowStyleConfig.MinWindowSize = MinWindowSize;
-	MsgBoxParams.windowStyleConfig.BaseAlpha = BaseAlpha;
-	MsgBoxParams.Type = Type;
-	MsgBoxParams.Message = Message;
-	return eeNew( UIMessageBox, ( MsgBoxParams ) );
-}
-
 ColorA UITheme::getTooltipFontColor() const {
 	return mTooltipFontColor;
 }
