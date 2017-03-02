@@ -13,8 +13,8 @@ UIScrollBar::UIScrollBar() :
 {
 	mFlags |= UI_AUTO_SIZE;
 
-	mBtnDown	= eeNew( UIControlAnim, () );
-	mBtnUp		= eeNew( UIControlAnim, () );
+	mBtnDown	= UIControlAnim::New();
+	mBtnUp		= UIControlAnim::New();
 	mBtnUp->setParent( this );
 	mBtnUp->setVisible( true );
 	mBtnUp->setEnabled( true );
@@ -24,7 +24,7 @@ UIScrollBar::UIScrollBar() :
 	mBtnDown->setEnabled( true );
 	mBtnDown->setSize( 16, 16 );
 
-	mSlider		= eeNew( UISlider, () );
+	mSlider		= UISlider::New();
 	mSlider->setParent( this );
 	mSlider->setVisible( true );
 	mSlider->setEnabled( true );

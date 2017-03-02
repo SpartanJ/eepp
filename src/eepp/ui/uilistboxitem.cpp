@@ -4,10 +4,8 @@
 
 namespace EE { namespace UI {
 
-UIListBoxItem::UIListBoxItem( const UITextBox::CreateParams& Params ) :
-	UITextBox( Params )
-{
-	applyDefaultTheme();
+UIListBoxItem * UIListBoxItem::New() {
+	return eeNew( UIListBoxItem, () );
 }
 
 UIListBoxItem::UIListBoxItem() :

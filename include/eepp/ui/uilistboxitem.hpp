@@ -10,7 +10,7 @@ class UIListBox;
 
 class EE_API UIListBoxItem : public UITextBox {
 	public:
-		UIListBoxItem( const UITextBox::CreateParams& Params );
+		static UIListBoxItem * New();
 
 		UIListBoxItem();
 

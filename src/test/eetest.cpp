@@ -277,7 +277,9 @@ void EETest::createUI() {
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	UIManager::instance()->init(UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES); // UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES
+	Uint32 UI_MAN_OPS = 0;
+	//UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES;
+	UIManager::instance()->init(UI_MAN_OPS);
 
 	//mTheme = UITheme::loadFromPath( eeNew( UIdefaultTheme, ( mThemeName, mThemeName ) ), MyPath + mThemeName + "/" );
 

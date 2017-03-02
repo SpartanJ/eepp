@@ -177,15 +177,10 @@ void UIMenu::setControlSize( UIControl * Control, const Uint32& Pos ) {
 }
 
 Uint32 UIMenu::addSeparator() {
-	UISeparator::CreateParams Params;
-	Params.setParent( this );
-	Params.setPosition( mStyleConfig.Padding.Left, mStyleConfig.Padding.Top + mNextPosY );
-	Params.Size = Sizei( mSize.getWidth() - mStyleConfig.Padding.Left - mStyleConfig.Padding.Right, 3 );
-
-	UISeparator * Control = eeNew( UISeparator, ( Params ) );
-
-	Control->setVisible( true );
-	Control->setEnabled( true );
+	UISeparator * Control = UISeparator::New();
+	Control->setParent( this );
+	Control->setPosition( mStyleConfig.Padding.Left, mStyleConfig.Padding.Top + mNextPosY );
+	Control->setSize( mSize.getWidth() - mStyleConfig.Padding.Left - mStyleConfig.Padding.Right, 3 );
 
 	mNextPosY += Control->getSize().getHeight();
 

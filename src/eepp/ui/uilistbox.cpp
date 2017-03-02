@@ -154,11 +154,10 @@ Uint32 UIListBox::addListBoxItem( const String& Text ) {
 }
 
 UIListBoxItem * UIListBox::createListBoxItem( const String& Name ) {
-	UITextBox::CreateParams TextParams;
-	TextParams.setParent( mContainer );
-	TextParams.Flags			= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	TextParams.FontStyleConfig 	= mFontStyleConfig;
-	UIListBoxItem * tItem		= eeNew( UIListBoxItem, ( TextParams ) );
+	UIListBoxItem * tItem		= UIListBoxItem::New();
+	tItem->setParent( mContainer );
+	tItem->setHorizontalAlign( UI_HALIGN_LEFT )->setVerticalAlign( UI_VALIGN_CENTER );
+	tItem->setFontStyleConfig( mFontStyleConfig );
 	tItem->setText( Name );
 
 	return tItem;

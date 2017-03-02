@@ -3,10 +3,8 @@
 
 namespace EE { namespace UI {
 
-UISeparator::UISeparator( UIControlAnim::CreateParams Params ) :
-	UIControlAnim( Params )
-{
-	applyDefaultTheme();
+UISeparator * UISeparator::New() {
+	return eeNew( UISeparator, () );
 }
 
 UISeparator::UISeparator() :
