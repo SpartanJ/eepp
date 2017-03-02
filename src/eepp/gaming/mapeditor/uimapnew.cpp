@@ -182,12 +182,16 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 		mUIBlueSlider->setValue( mUIMap->Map()->getBaseColor().b() );
 	}
 
-	UIPushButton * OKButton = mTheme->createPushButton( mUIWindow->getContainer(), Sizei( 80, 22 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->getIconByName( "ok" ) );
+	UIPushButton * OKButton = UIPushButton::New();
+	OKButton->setParent(  mUIWindow->getContainer() )->setSize( 80, 0 );
+	OKButton->setIcon( mTheme->getIconByName( "ok" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
 	OKButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIMapNew::onOKClick ) );
 	OKButton->setText( "OK" );
 
-	UIPushButton * CancelButton = mTheme->createPushButton( mUIWindow->getContainer(), OKButton->getSize(), Vector2i( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->getIconByName( "cancel" ) );
+	UIPushButton * CancelButton = UIPushButton::New();
+	CancelButton->setParent( mUIWindow->getContainer() )->setSize( OKButton->getSize() )->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y );
+	CancelButton->setIcon( mTheme->getIconByName( "cancel" ) );
 	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIMapNew::onCancelClick ) );
 	CancelButton->setText( "Cancel" );
 

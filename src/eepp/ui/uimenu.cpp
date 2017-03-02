@@ -61,7 +61,7 @@ UIMenuItem * UIMenu::createMenuItem( const String& Text, SubTexture * Icon ) {
 	Params.setParent( this );
 	Params.FontStyleConfig	= mStyleConfig;
 	Params.Icon				= Icon;
-	Params.IconMinSize		= Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
+	Params.StyleConfig.IconMinSize		= Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
 		Params.Flags		= UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
@@ -86,7 +86,7 @@ UIMenuCheckBox * UIMenu::createMenuCheckBox( const String& Text, const bool &Act
 	UIMenuCheckBox::CreateParams Params;
 	Params.setParent( this );
 	Params.FontStyleConfig 	= mStyleConfig;
-	Params.IconMinSize		= Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
+	Params.StyleConfig.IconMinSize		= Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
 		Params.Flags		= UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
@@ -116,7 +116,7 @@ UIMenuSubMenu * UIMenu::createSubMenu( const String& Text, SubTexture * Icon, UI
 	Params.FontStyleConfig	= mStyleConfig;
 	Params.SubMenu			= SubMenu;
 	Params.Icon				= Icon;
-	Params.IconMinSize		= Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
+	Params.StyleConfig.IconMinSize		= Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
 		Params.Flags		= UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;

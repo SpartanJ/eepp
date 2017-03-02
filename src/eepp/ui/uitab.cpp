@@ -4,11 +4,8 @@
 
 namespace EE { namespace UI {
 
-UITab::UITab( UISelectButton::CreateParams& Params, UIControl * controlOwned ) :
-	UISelectButton( Params ),
-	mControlOwned( controlOwned )
-{
-	applyDefaultTheme();
+UITab *UITab::New() {
+	return eeNew( UITab, () );
 }
 
 UITab::UITab() :
@@ -123,7 +120,7 @@ void UITab::setText( const String &text ) {
 
 void UITab::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Uint32 w = PixelDensity::pxToDpI( mTextBox->getTextWidth() ) + mIconSpace + ( NULL != mIcon ? mIcon->getSize().getWidth() : 0 ) + getSkinSize().getWidth();
+		Uint32 w = PixelDensity::pxToDpI( mTextBox->getTextWidth() ) + mStyleConfig.IconHorizontalMargin + ( NULL != mIcon ? mIcon->getSize().getWidth() : 0 ) + getSkinSize().getWidth();
 
 		UITabWidget * tTabW = getTabWidget();
 

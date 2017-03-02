@@ -9,16 +9,15 @@ UIPushButton * UIPushButton::New() {
 
 UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 	UIComplexControl( Params ),
-	mFontStyleConfig( Params.FontStyleConfig ),
+	mStyleConfig( Params.StyleConfig ),
 	mIcon( NULL ),
-	mTextBox( NULL ),
-	mIconSpace( Params.IconHorizontalMargin )
+	mTextBox( NULL )
 {
 	UIGfx::CreateParams GfxParams;
 	GfxParams.setParent( this );
 	GfxParams.SubTexture = Params.Icon;
 
-	if ( Params.IconMinSize.x != 0 && Params.IconMinSize.y != 0 ) {
+	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
 		GfxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
 	} else {
 		GfxParams.Flags = UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER;
@@ -26,8 +25,8 @@ UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 
 	mIcon = eeNew( UIGfx, ( GfxParams ) );
 
-	if ( Params.IconMinSize.x != 0 && Params.IconMinSize.y != 0 ) {
-		mIcon->setSize( Params.IconMinSize );
+	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
+		mIcon->setSize( mStyleConfig.IconMinSize );
 	}
 
 	mIcon->setVisible( true );
@@ -38,7 +37,7 @@ UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 	UITextBox::CreateParams TxtParams = Params;
 	TxtParams.setParent( this );
 	TxtParams.Flags 			= HAlignGet( Params.Flags ) | VAlignGet( Params.Flags );
-	TxtParams.FontStyleConfig	= Params.FontStyleConfig;
+	TxtParams.FontStyleConfig	= Params.StyleConfig;
 
 	if ( TxtParams.Flags & UI_CLIP_ENABLE )
 		TxtParams.Flags &= ~UI_CLIP_ENABLE;
@@ -47,7 +46,7 @@ UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 	mTextBox->setVisible( true );
 	mTextBox->setEnabled( false );
 
-	if ( Params.IconAutoMargin )
+	if ( mStyleConfig.IconAutoMargin )
 		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
 
 	onSizeChange();
@@ -58,26 +57,43 @@ UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
 UIPushButton::UIPushButton() :
 	UIComplexControl(),
 	mIcon( NULL ),
-	mTextBox( NULL ),
-	mIconSpace( 0 )
+	mTextBox( NULL )
 {
-	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
+	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
 
-	setFlags( UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
+	if ( NULL != theme ) {
+		mStyleConfig = theme->getPushButtonStyleConfig();
+	}
 
-	mIcon = eeNew( UIGfx, () );
+	mFlags |= ( UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
+
+	Uint32 GfxFlags;
+
+	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
+		GfxFlags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
+	} else {
+		GfxFlags = UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER;
+	}
+
+	mIcon = UIGfx::New();
 	mIcon->setParent( this );
-	mIcon->setFlags( UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
+	mIcon->setFlags( GfxFlags );
+
+	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
+		mIcon->setSize( mStyleConfig.IconMinSize );
+	}
+
 	mIcon->setVisible( true );
 	mIcon->setEnabled( false );
 
-	mTextBox = eeNew( UITextBox, () );
+	mTextBox = UITextBox::New();
 	mTextBox->setParent( this );
 	mTextBox->setVisible( true );
 	mTextBox->setEnabled( false );
 	mTextBox->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 
-	mControlFlags |= UI_CTRL_FLAG_FREE_USE; // IconAutoMargin
+	if ( mStyleConfig.IconAutoMargin )
+		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
 
 	onSizeChange();
 
@@ -114,7 +130,7 @@ void UIPushButton::onSizeChange() {
 		mTextBox->setPosition( 0, 0 );
 	}
 
-	mIcon->setPosition( mIconSpace, 0 );
+	mIcon->setPosition( mStyleConfig.IconHorizontalMargin, 0 );
 	mIcon->centerVertical();
 
 	if ( NULL != mTextBox ) {
@@ -158,7 +174,7 @@ void UIPushButton::doAfterSetTheme() {
 
 	if ( mControlFlags & UI_CTRL_FLAG_FREE_USE ) {
 		Recti RMargin = makePadding( true, false, false, false, true );
-		mIconSpace = RMargin.Left;
+		mStyleConfig.IconHorizontalMargin = RMargin.Left;
 	}
 
 	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() ) {
@@ -176,9 +192,10 @@ void UIPushButton::autoPadding() {
 	}
 }
 
-void UIPushButton::setIcon( SubTexture * Icon ) {
+UIPushButton * UIPushButton::setIcon( SubTexture * Icon ) {
 	mIcon->setSubTexture( Icon );
 	onSizeChange();
+	return this;
 }
 
 UIGfx * UIPushButton::getIcon() const {
@@ -203,12 +220,12 @@ const Recti& UIPushButton::getPadding() const {
 }
 
 void UIPushButton::setIconHorizontalMargin( Int32 margin ) {
-	mIconSpace = margin;
+	mStyleConfig.IconHorizontalMargin = margin;
 	onSizeChange();
 }
 
 const Int32& UIPushButton::getIconHorizontalMargin() const {
-	return mIconSpace;
+	return mStyleConfig.IconHorizontalMargin;
 }
 
 UITextBox * UIPushButton::getTextBox() const {
@@ -232,9 +249,9 @@ void UIPushButton::onAlphaChange() {
 
 void UIPushButton::onStateChange() {
 	if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-		mTextBox->setFontColor( mFontStyleConfig.FontOverColor );
+		mTextBox->setFontColor( mStyleConfig.FontOverColor );
 	} else {
-		mTextBox->setFontColor( mFontStyleConfig.FontColor );
+		mTextBox->setFontColor( mStyleConfig.FontColor );
 	}
 
 	mTextBox->setAlpha( mAlpha );
@@ -260,20 +277,20 @@ Uint32 UIPushButton::onKeyUp( const UIEventKey& Event ) {
 	return UIComplexControl::onKeyUp( Event );
 }
 const ColorA& UIPushButton::getFontColor() const {
-	return mFontStyleConfig.FontColor;
+	return mStyleConfig.FontColor;
 }
 
 void UIPushButton::setFontColor( const ColorA& color ) {
-	mFontStyleConfig.FontColor = color;
+	mStyleConfig.FontColor = color;
 	onStateChange();
 }
 
 const ColorA& UIPushButton::getFontOverColor() const {
-	return mFontStyleConfig.FontOverColor;
+	return mStyleConfig.FontOverColor;
 }
 
 void UIPushButton::setFontOverColor( const ColorA& color ) {
-	mFontStyleConfig.FontOverColor = color;
+	mStyleConfig.FontOverColor = color;
 	onStateChange();
 }
 
@@ -285,12 +302,12 @@ void UIPushButton::setFontShadowColor( const ColorA& color ) {
 	mTextBox->setFontShadowColor( color );
 }
 
-FontStyleConfig UIPushButton::getFontStyleConfig() const {
-	return mFontStyleConfig;
+FontStyleConfig UIPushButton::getStyleConfig() const {
+	return mStyleConfig;
 }
 
-void UIPushButton::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
-	mFontStyleConfig = fontStyleConfig;
+void UIPushButton::setStyleConfig(const PushButtonStyleConfig & fontStyleConfig) {
+	mStyleConfig = fontStyleConfig;
 	mTextBox->setFontStyleConfig( fontStyleConfig );
 	onStateChange();
 }

@@ -9,7 +9,7 @@ class UITabWidget;
 
 class EE_API UITab : public UISelectButton {
 	public:
-		UITab( UISelectButton::CreateParams& Params, UIControl * controlOwned );
+		static UITab * New();
 
 		UITab();
 

@@ -185,6 +185,19 @@ class MenuStyleConfig : public FontStyleConfig {
 
 };
 
+class PushButtonStyleConfig : public FontStyleConfig {
+	public:
+		PushButtonStyleConfig() {}
+
+		PushButtonStyleConfig( FontStyleConfig fontStyleConfig ) :
+			FontStyleConfig( fontStyleConfig )
+		{}
+
+		Int32				IconHorizontalMargin = 4;
+		bool				IconAutoMargin = true;
+		Sizei				IconMinSize;
+};
+
 }}
 
 #endif

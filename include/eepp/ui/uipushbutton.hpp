@@ -15,28 +15,23 @@ class EE_API UIPushButton : public UIComplexControl {
 			public:
 				inline CreateParams() :
 					UITextBox::CreateParams(),
-					Icon( NULL ),
-					IconHorizontalMargin( 0 ),
-					IconAutoMargin( true ),
-					IconMinSize( 0, 0 )
+					Icon( NULL )
 				{
-					FontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
+					UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
+
+					if ( NULL != theme ) {
+						StyleConfig = theme->getPushButtonStyleConfig();
+					}
 				}
 
 				inline ~CreateParams() {}
 
 				inline void setIcon( SubTexture * icon ) {
 					Icon = icon;
-
-					if ( !IconHorizontalMargin )
-						IconHorizontalMargin = 4;
 				}
 
-				UI::FontStyleConfig	FontStyleConfig;
+				PushButtonStyleConfig	StyleConfig;
 				SubTexture *		Icon;
-				Int32				IconHorizontalMargin;
-				bool				IconAutoMargin;
-				Sizei				IconMinSize;
 		};
 
 		UIPushButton( const UIPushButton::CreateParams& Params );
@@ -51,7 +46,7 @@ class EE_API UIPushButton : public UIComplexControl {
 
 		virtual void setTheme( UITheme * Theme );
 
-		virtual void setIcon( SubTexture * icon );
+		virtual UIPushButton * setIcon( SubTexture * icon );
 
 		virtual UIGfx * getIcon() const;
 
@@ -85,14 +80,13 @@ class EE_API UIPushButton : public UIComplexControl {
 
 		void setFontShadowColor( const ColorA& color );
 
-		FontStyleConfig getFontStyleConfig() const;
+		FontStyleConfig getStyleConfig() const;
 
-		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
+		void setStyleConfig(const PushButtonStyleConfig & styleConfig);
 	protected:
-		FontStyleConfig mFontStyleConfig;
+		PushButtonStyleConfig mStyleConfig;
 		UIGfx * 		mIcon;
 		UITextBox * 	mTextBox;
-		Int32			mIconSpace;
 
 		virtual void onSizeChange();
 

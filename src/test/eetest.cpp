@@ -277,7 +277,7 @@ void EETest::createUI() {
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	UIManager::instance()->init(UI_MANAGER_DRAW_BOXES); // UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
+	UIManager::instance()->init(UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA); // UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
 	//mTheme = UITheme::loadFromPath( eeNew( UIdefaultTheme, ( mThemeName, mThemeName ) ), MyPath + mThemeName + "/" );
 
@@ -579,9 +579,11 @@ void EETest::createUI() {
 
 	UISkinSimple nSkin( "button-te" );
 
-	mShowMenu = mTheme->createPushButton( NULL, butTex->getSize(), Vector2i( mWindow->getWidth() - butTex->getWidth() - 20, mWindow->getHeight() - butTex->getHeight() - 10 ), UI_CONTROL_ALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
+	mShowMenu = UIPushButton::New();
+	mShowMenu->setSize( butText->getSize() )->setPosition( mWindow->getWidth() - butTex->getWidth() - 20, mWindow->getHeight() - butTex->getHeight() - 10 );
 	mShowMenu->setSkin( nSkin );
 	mShowMenu->setText( "Show Menu" );
+	mShowMenu->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	mShowMenu->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::OnShowMenu ) );
 #endif
 
@@ -806,7 +808,9 @@ void EETest::createDecoratedWindow() {
 	mUIWindow->setTitle( "Test Window" );
 	mUIWindow->toBack();
 
-	UIPushButton * Button = mTheme->createPushButton( mUIWindow->getContainer(), Sizei( 510, 22 ), Vector2i( 10, 28 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_ANCHOR_RIGHT );
+	UIPushButton * Button = UIPushButton::New();
+	Button->setParent( mUIWindow->getContainer() )->setSize( 510, 22 )->setPosition( 10, 28 );
+	Button->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
 	Button->setText( "Click Me" );
 	Button->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 

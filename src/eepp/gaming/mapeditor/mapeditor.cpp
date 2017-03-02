@@ -262,7 +262,10 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 	mGOTypeList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::OnTypeChange ) );
 	FillGotyList();
 
-	mBtnGOTypeAdd = mTheme->createPushButton( mSubTextureCont, Sizei( 24, 21 ), Vector2i( mGOTypeList->getPosition().x + mGOTypeList->getSize().getWidth() + 2, mGOTypeList->getPosition().y ), UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mTheme->getIconByName( "add" ) );
+	mBtnGOTypeAdd = UIPushButton::New();
+	mBtnGOTypeAdd->setParent( mSubTextureCont )->setSize( 24, mGOTypeList->getSize().getHeight() )
+				 ->setPosition(  mGOTypeList->getPosition().x + mGOTypeList->getSize().getWidth() + 2, mGOTypeList->getPosition().y );
+	mBtnGOTypeAdd->setIcon( mTheme->getIconByName( "add" ) )->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mBtnGOTypeAdd->setTooltipText( "Adds a new game object type\nunknown by the map editor." );
 	mBtnGOTypeAdd->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::AddNewGOType ) );
 
@@ -364,7 +367,8 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 }
 
 void MapEditor::CreateLighContainer() {
-	UIPushButton * NewLightBut = mTheme->createPushButton( mLightCont, Sizei( mLightCont->getSize().getWidth() - TAB_CONT_X_DIST * 2, 22 ), Vector2i( TAB_CONT_X_DIST, 0 ) );
+	UIPushButton * NewLightBut = UIPushButton::New();
+	NewLightBut->setParent( mLightCont )->setSize(  mLightCont->getSize().getWidth() - TAB_CONT_X_DIST * 2, 0 )->setPosition( TAB_CONT_X_DIST, 0 );
 	NewLightBut->setText( "New Light" );
 	NewLightBut->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::OnNewLight ) );
 

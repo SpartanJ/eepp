@@ -95,10 +95,6 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		virtual UIListBox * createListBox( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING, bool SmoothScroll = true, Uint32 RowHeight = 0, UI_SCROLLBAR_MODE VScrollMode = UI_SCROLLBAR_AUTO, UI_SCROLLBAR_MODE HScrollMode = UI_SCROLLBAR_AUTO, Recti PaddingContainer = Recti() );
 
-		virtual UIPushButton * createPushButton( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, SubTexture * Icon = NULL, Int32 IconHorizontalMargin = 0, bool IconAutoMargin = true );
-
-		virtual UISelectButton * createSelectButton( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, SubTexture * Icon = NULL, Int32 IconHorizontalMargin = 0, bool IconAutoMargin = true );
-
 		ColorA getTooltipFontColor() const;
 
 		void setTooltipFontColor(const ColorA & tooltipFontColor);
@@ -122,6 +118,8 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 		virtual WindowStyleConfig getWindowStyleConfig();
 
 		virtual MenuStyleConfig getMenuStyleConfig();
+
+		virtual PushButtonStyleConfig getPushButtonStyleConfig();
 	protected:
 		std::string				mName;
 		Uint32					mNameHash;

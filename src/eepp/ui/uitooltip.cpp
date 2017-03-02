@@ -32,8 +32,8 @@ UITooltip::UITooltip() :
 	if ( NULL == getFont() ) {
 		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
 			setFont( UIThemeManager::instance()->getDefaultFont() );
-	} else {
-		eePRINTL( "UITooltip::UITooltip : Created a UI TextBox without a defined font." );
+		else
+			eePRINTL( "UITooltip::UITooltip : Created a UI TextBox without a defined font." );
 	}
 
 	autoPadding();
@@ -94,7 +94,7 @@ void UITooltip::hide() {
 }
 
 void UITooltip::draw() {
-	if ( mVisible && 0.f != mAlpha ) {
+	if ( mVisible && 0.f != mAlpha && mTextCache->getText().size() > 0 ) {
 		UIControlAnim::draw();
 
 		if ( mTextCache->getTextWidth() ) {

@@ -45,7 +45,7 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	if ( mFlags & UI_DRAW_SHADOW )
 		Button->setFlags( UI_DRAW_SHADOW );
 
-	Button->setFontStyleConfig( mStyleConfig );
+	Button->setStyleConfig( mStyleConfig );
 	Button->setParent( this );
 	Button->setText( ButtonText );
 	Button->setVisible( true );
@@ -175,7 +175,7 @@ void UIWinMenu::refreshButtons() {
 		UISelectButton * pbut	= it->first;
 		UITextBox * tbox		= pbut->getTextBox();
 
-		pbut->setFontStyleConfig( mStyleConfig );
+		pbut->setStyleConfig( mStyleConfig );
 		pbut->setSize( PixelDensity::pxToDpI( tbox->getTextWidth() ) + mStyleConfig.ButtonMargin, getSize().getHeight() );
 		pbut->setPosition( xpos, ycenter );
 

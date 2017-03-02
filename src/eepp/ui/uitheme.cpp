@@ -474,44 +474,6 @@ UIListBox * UITheme::createListBox( UIControl * Parent, const Sizei& Size, const
 	return Ctrl;
 }
 
-UIPushButton * UITheme::createPushButton( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, SubTexture * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
-	UIPushButton::CreateParams ButtonParams;
-	ButtonParams.setParent( Parent );
-	ButtonParams.setPosition( Pos );
-	ButtonParams.setSize( Size );
-	ButtonParams.Flags = Flags;
-	ButtonParams.Icon = Icon;
-	ButtonParams.IconHorizontalMargin = IconHorizontalMargin;
-	ButtonParams.IconAutoMargin = IconAutoMargin;
-
-	if ( NULL != Icon )
-		ButtonParams.setIcon( Icon );
-
-	UIPushButton * Ctrl = eeNew( UIPushButton, ( ButtonParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
-UISelectButton * UITheme::createSelectButton( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, SubTexture * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
-	UIPushButton::CreateParams ButtonParams;
-	ButtonParams.setParent( Parent );
-	ButtonParams.setPosition( Pos );
-	ButtonParams.setSize( Size );
-	ButtonParams.Flags = Flags;
-	ButtonParams.Icon = Icon;
-	ButtonParams.IconHorizontalMargin = IconHorizontalMargin;
-	ButtonParams.IconAutoMargin = IconAutoMargin;
-
-	if ( NULL != Icon )
-		ButtonParams.setIcon( Icon );
-
-	UISelectButton * Ctrl = eeNew( UISelectButton, ( ButtonParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
 ColorA UITheme::getTooltipFontColor() const {
 	return mTooltipFontColor;
 }
@@ -554,6 +516,10 @@ WindowStyleConfig UITheme::getWindowStyleConfig() {
 
 MenuStyleConfig UITheme::getMenuStyleConfig() {
 	return MenuStyleConfig( getFontStyleConfig() );
+}
+
+PushButtonStyleConfig UITheme::getPushButtonStyleConfig() {
+	return PushButtonStyleConfig( getFontStyleConfig() );
 }
 
 FontStyleConfig UITheme::getFontStyleConfig() const {

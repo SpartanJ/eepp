@@ -9,8 +9,6 @@ class EE_API UISelectButton : public UIPushButton {
 	public:
 		static UISelectButton * New();
 
-		UISelectButton( const UIPushButton::CreateParams& Params );
-
 		UISelectButton();
 
 		virtual ~UISelectButton();

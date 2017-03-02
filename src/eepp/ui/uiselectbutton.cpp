@@ -7,11 +7,6 @@ UISelectButton *UISelectButton::New() {
 	return eeNew( UISelectButton, () );
 }
 
-UISelectButton::UISelectButton( const UIPushButton::CreateParams& Params ) :
-	UIPushButton( Params )
-{
-}
-
 UISelectButton::UISelectButton() :
 	UIPushButton()
 {
@@ -71,21 +66,21 @@ void UISelectButton::onStateChange() {
 		}
 	} else {
 		if ( mSkinState->getState() == UISkinState::StateSelected ) {
-			getTextBox()->setFontColor( mFontStyleConfig.FontSelectedColor );
+			getTextBox()->setFontColor( mStyleConfig.FontSelectedColor );
 		} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
-			getTextBox()->setFontColor( mFontStyleConfig.FontOverColor );
+			getTextBox()->setFontColor( mStyleConfig.FontOverColor );
 		} else {
-			getTextBox()->setFontColor( mFontStyleConfig.FontColor );
+			getTextBox()->setFontColor( mStyleConfig.FontColor );
 		}
 	}
 }
 
 void UISelectButton::setFontSelectedColor(const ColorA & color) {
-	mFontStyleConfig.FontSelectedColor = color;
+	mStyleConfig.FontSelectedColor = color;
 }
 
 const ColorA &UISelectButton::getFontSelectedColor() const {
-	return mFontStyleConfig.FontSelectedColor;
+	return mStyleConfig.FontSelectedColor;
 }
 
 }}

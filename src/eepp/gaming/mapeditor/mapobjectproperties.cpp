@@ -42,13 +42,17 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 	mUITheme->createTextBox( "Property Name", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 ), TxtBoxFlags );
 	UITextBox * TxtBox = mUITheme->createTextBox( "Property Value", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50+192, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 ), TxtBoxFlags );
 
-	UIPushButton * OKButton = mUITheme->createPushButton( mUIWindow->getContainer(), Sizei( 80, 22 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->getIconByName( "ok" ) );
+	UIPushButton * OKButton = UIPushButton::New();
+	OKButton->setParent(  mUIWindow->getContainer() )->setSize( 80, 0 );
+	OKButton->setIcon( mUITheme->getIconByName( "ok" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
 	OKButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::onOKClick ) );
 
 	OKButton->setText( "OK" );
 
-	UIPushButton * CancelButton = mUITheme->createPushButton( mUIWindow->getContainer(), OKButton->getSize(), Vector2i( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->getIconByName( "cancel" ) );
+	UIPushButton * CancelButton = UIPushButton::New();
+	CancelButton->setParent( mUIWindow->getContainer() )->setSize( OKButton->getSize() )->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y );
+	CancelButton->setIcon( mUITheme->getIconByName( "cancel" ) );
 	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::onCancelClick ) );
 	CancelButton->setText( "Cancel" );
 
@@ -70,7 +74,10 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 
 	Vector2i Pos( mGenGrid->getPosition().x + mGenGrid->getSize().getWidth() + 10, mGenGrid->getPosition().y );
 
-	UIPushButton * AddButton = mUITheme->createPushButton( mUIWindow->getContainer(), Sizei(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->getIconByName( "add" ) );
+	UIPushButton * AddButton = UIPushButton::New();
+	AddButton->setParent( mUIWindow->getContainer() )->setSize( 24, 0 )->setPosition( Pos );
+	AddButton->setIcon( mUITheme->getIconByName( "add" ) );
+	AddButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	AddButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::onAddCellClick ) );
 
 	if ( NULL == AddButton->getIcon()->getSubTexture() )
@@ -78,7 +85,10 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 
 	Pos.y += AddButton->getSize().getHeight() + 5;
 
-	UIPushButton * RemoveButton = mUITheme->createPushButton( mUIWindow->getContainer(), Sizei(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->getIconByName( "remove" )  );
+	UIPushButton * RemoveButton = UIPushButton::New();
+	RemoveButton->setParent( mUIWindow->getContainer() )->setSize( 24, 0 )->setPosition( Pos );
+	RemoveButton->setIcon( mUITheme->getIconByName( "remove" ) );
+	RemoveButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	RemoveButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::onRemoveCellClick ) );
 
 	if ( NULL == RemoveButton->getIcon()->getSubTexture() )

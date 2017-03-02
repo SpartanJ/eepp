@@ -76,16 +76,21 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	mTGPath = mTheme->createTextInput( mUIWindow->getContainer(), Sizei( mUIWindow->getContainer()->getSize().getWidth() - 60, 22 ), Vector2i( 10, 160 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE , false, 512 );
 	mTGPath->setAllowEditing( false );
 
-	mSetPathButton = mTheme->createPushButton( mUIWindow->getContainer(), Sizei( 32, 32 ), Vector2i( mUIWindow->getContainer()->getSize().getWidth() - 10 - 32, 160 ) );
+	mSetPathButton = UIPushButton::New();
+	mSetPathButton->setParent( mUIWindow->getContainer() )->setSize( 32, 22 )->setPosition( mUIWindow->getContainer()->getSize().getWidth() - 10 - 32, 160 );
 	mSetPathButton->setText( "..." );
 	mSetPathButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasNew::onDialogFolderSelect ) );
 
-	UIPushButton * OKButton = mTheme->createPushButton( mUIWindow->getContainer(), Sizei( 80, 22 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->getIconByName( "ok" ) );
+	UIPushButton * OKButton = UIPushButton::New();
+	OKButton->setParent( mUIWindow->getContainer() )->setSize( 80, 0 );
+	OKButton->setIcon( mTheme->getIconByName( "ok" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
 	OKButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasNew::okClick ) );
 	OKButton->setText( "OK" );
 
-	UIPushButton * CancelButton = mTheme->createPushButton( mUIWindow->getContainer(), OKButton->getSize(), Vector2i( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->getIconByName( "cancel" ) );
+	UIPushButton * CancelButton = UIPushButton::New();
+	CancelButton->setParent( mUIWindow->getContainer() )->setSize( 80, 0 )->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y );
+	CancelButton->setIcon( mTheme->getIconByName( "cancel" ) );
 	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasNew::cancelClick ) );
 	CancelButton->setText( "Cancel" );
 

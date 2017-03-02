@@ -93,21 +93,27 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	TxtBox = createTextBox( Vector2i(), "Dest. Height:" );
 	TxtBox->setPosition( mSpinDestH->getPosition().x - 10 - TxtBox->getSize().getWidth(), InitY );
 
-	Uint32 ButFlags = UI_CONTROL_ALIGN_CENTER | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_AUTO_SIZE;
-
-	UIPushButton * ResetButton = mTheme->createPushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( mUIContainer->getSize().getWidth() - 120 - 5 , mSpinDestH->getPosition().y + mSpinDestH->getSize().getHeight() + 8 ), ButFlags );
+	UIPushButton * ResetButton = UIPushButton::New();
+	ResetButton->setParent( mUIContainer )->setSize( 200, 0 )->setPosition( mUIContainer->getSize().getWidth() - 200 - 5 , mSpinDestH->getPosition().y + mSpinDestH->getSize().getHeight() + 8 );
+	ResetButton->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
 	ResetButton->setText( "Reset Dest. Size" );
 	ResetButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onResetDestSize ) );
 
-	UIPushButton * ResetOffsetButton = mTheme->createPushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( ResetButton->getPosition().x, ResetButton->getPosition().y + ResetButton->getSize().getHeight() + 8 ), ButFlags );
+	UIPushButton * ResetOffsetButton = UIPushButton::New();
+	ResetOffsetButton->setParent( mUIContainer )->setSize( 200, 0 )->setPosition( ResetButton->getPosition().x, ResetButton->getPosition().y + ResetButton->getSize().getHeight() + 8 );
+	ResetOffsetButton->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
 	ResetOffsetButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onResetOffset ) );
 	ResetOffsetButton->setText( "Reset Offset" );
 
-	UIPushButton * CenterOffsetButton = mTheme->createPushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( ResetOffsetButton->getPosition().x, ResetOffsetButton->getPosition().y + ResetOffsetButton->getSize().getHeight() + 8 ), ButFlags );
+	UIPushButton * CenterOffsetButton = UIPushButton::New();
+	CenterOffsetButton->setParent( mUIContainer )->setSize( 200, 0 )->setPosition( ResetOffsetButton->getPosition().x, ResetOffsetButton->getPosition().y + ResetOffsetButton->getSize().getHeight() + 8 );
+	CenterOffsetButton->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
 	CenterOffsetButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onCenterOffset ) );
 	CenterOffsetButton->setText( "Centered Offset" );
 
-	UIPushButton * HBOffsetButton = mTheme->createPushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( CenterOffsetButton->getPosition().x, CenterOffsetButton->getPosition().y + CenterOffsetButton->getSize().getHeight() + 8 ), ButFlags );
+	UIPushButton * HBOffsetButton = UIPushButton::New();
+	HBOffsetButton->setParent( mUIContainer )->setSize( 200, 0 )->setPosition( CenterOffsetButton->getPosition().x, CenterOffsetButton->getPosition().y + CenterOffsetButton->getSize().getHeight() + 8 );
+	HBOffsetButton->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
 	HBOffsetButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onHBOffset ) );
 	HBOffsetButton->setText( "Half-Bottom Offset" );
 

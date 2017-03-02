@@ -393,13 +393,22 @@ void UIControl::drawOverControl() {
 }
 
 void UIControl::drawDebugData() {
-	Graphics::Font * font = UIThemeManager::instance()->getDefaultFont();
+	if ( UIManager::instance()->getDrawDebugData() ) {
+		if ( isComplex() ) {
+			UIComplexControl * me = static_cast<UIComplexControl*>( this );
 
-	if ( UIManager::instance()->getDrawDebugData() && font != NULL ) {
-		String text( String::strFormated( "X: %d Y: %d\nW: %d H: %d", mRealPos.x, mRealPos.y, mRealSize.x, mRealSize.y ) );
+			if ( UIManager::instance()->getOverControl() == this ) {
+				String text( String::strFormated( "X: %d Y: %d\nW: %d H: %d", mPos.x, mPos.y, mSize.x, mSize.y ) );
 
-		font->setColor( ColorA( 255, 0, 255, 255 ) );
-		font->draw( text, mScreenPos.x, mScreenPos.y );
+				if ( !mId.empty() ) {
+					text = "ID: " + mId + "\n" + text;
+				}
+
+				me->setTooltipText( text );
+			} else {
+				me->setTooltipText( "" );
+			}
+		}
 	}
 }
 

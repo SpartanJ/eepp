@@ -346,16 +346,15 @@ void UITabWidget::orderTabs() {
 }
 
 UITab * UITabWidget::createTab( const String& Text, UIControl * CtrlOwned, SubTexture * Icon ) {
-	UITab * tCtrl 	= eeNew( UITab, ( ) );
+	UITab * tCtrl 	= UITab::New();
 	tCtrl->setParent( mTabContainer );
 	tCtrl->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE );
-	tCtrl->setFontStyleConfig( mStyleConfig );
+	tCtrl->setStyleConfig( mStyleConfig );
 	tCtrl->setIcon( Icon );
 	tCtrl->setText( Text );
 	tCtrl->setVisible( true );
 	tCtrl->setEnabled( true );
 	tCtrl->setControlOwned( CtrlOwned );
-
 	CtrlOwned->setParent( mCtrlContainer );
 	CtrlOwned->setVisible( false );
 	CtrlOwned->setEnabled( true );
