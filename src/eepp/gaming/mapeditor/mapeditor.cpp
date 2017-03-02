@@ -284,34 +284,34 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 	Uint32 ChkFlags = UI_CONTROL_DEFAULT_ALIGN | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
 	mChkMirrored = UICheckBox::New();
-	mChkMirrored->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkMirrored->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags )->setFlags( UI_DRAW_SHADOW );
 	mChkMirrored->setText( "Mirrored" );
 	mChkMirrored->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickMirrored ) );
 
 	mChkFliped = UICheckBox::New();
-	mChkFliped->setParent( mSubTextureCont )->setPosition( mChkMirrored->getPosition().x + mChkMirrored->getSize().getWidth() + 32, mChkMirrored->getPosition().y  )->resetFlags( ChkFlags );
+	mChkFliped->setParent( mSubTextureCont )->setPosition( mChkMirrored->getPosition().x + mChkMirrored->getSize().getWidth() + 32, mChkMirrored->getPosition().y  )->resetFlags( ChkFlags )->setFlags( UI_DRAW_SHADOW );
 	mChkFliped->setText( "Fliped" );
 	mChkFliped->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickFliped ) );
 
 	mChkBlocked = UICheckBox::New();
-	mChkBlocked->setParent( mSubTextureCont )->setPosition( mChkMirrored->getPosition().x, mChkMirrored->getPosition().y + mChkMirrored->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkBlocked->setParent( mSubTextureCont )->setPosition( mChkMirrored->getPosition().x, mChkMirrored->getPosition().y + mChkMirrored->getSize().getHeight() + 4 )->resetFlags( ChkFlags )->setFlags( UI_DRAW_SHADOW );
 	mChkBlocked->setText( "Blocked" );
 	mChkBlocked->setTooltipText( "Blocks the tile occupied by the sprite." );
 	mChkBlocked->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickBlocked ) );
 
 	mChkAnim = UICheckBox::New();
-	mChkAnim->setParent( mSubTextureCont )->setPosition( mChkFliped->getPosition().x, mChkFliped->getPosition().y + mChkFliped->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkAnim->setParent( mSubTextureCont )->setPosition( mChkFliped->getPosition().x, mChkFliped->getPosition().y + mChkFliped->getSize().getHeight() + 4 )->resetFlags( ChkFlags )->setFlags( UI_DRAW_SHADOW );
 	mChkAnim->setText( "Animated" );
 	mChkAnim->setTooltipText( "Indicates if the Sprite is animated." );
 	mChkAnim->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickAnimated ) );
 
 	mChkRot90 = UICheckBox::New();
-	mChkRot90->setParent( mSubTextureCont )->setPosition( mChkBlocked->getPosition().x, mChkBlocked->getPosition().y + mChkBlocked->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkRot90->setParent( mSubTextureCont )->setPosition( mChkBlocked->getPosition().x, mChkBlocked->getPosition().y + mChkBlocked->getSize().getHeight() + 4 )->resetFlags( ChkFlags )->setFlags( UI_DRAW_SHADOW );
 	mChkRot90->setText( String::fromUtf8( "Rotate 90º" ) );
 	mChkRot90->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickRot90 ) );
 
 	mChkAutoFix = UICheckBox::New();
-	mChkAutoFix->setParent( mSubTextureCont )->setPosition( mChkAnim->getPosition().x, mChkAnim->getPosition().y + mChkAnim->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkAutoFix->setParent( mSubTextureCont )->setPosition( mChkAnim->getPosition().x, mChkAnim->getPosition().y + mChkAnim->getSize().getHeight() + 4 )->resetFlags( ChkFlags )->setFlags( UI_DRAW_SHADOW );
 	mChkAutoFix->setText( "AutoFix TilePos" );
 	mChkAutoFix->setTooltipText( "In a tiled layer if the sprite is moved,\nit will update the current tile position automatically." );
 	mChkAutoFix->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickAutoFix ) );
@@ -319,7 +319,7 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 	Txt = mTheme->createTextBox( "Game Object Data:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mChkRot90->getPosition().y + mChkRot90->getSize().getHeight() + 8 ), TxtFlags );
 
 	mChkDI = UICheckBox::New();
-	mChkDI->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkDI->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags )->setFlags( UI_DRAW_SHADOW );;
 	mChkDI->setText( "Add as DataId" );
 	mChkDI->setTooltipText( "If the resource it's not a sprite,\nyou can reference it with a data id" );
 	mChkDI->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickDI ) );

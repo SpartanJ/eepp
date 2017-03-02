@@ -9,22 +9,7 @@ class UIMenu;
 
 class EE_API UIMenuSubMenu : public UIMenuItem {
 	public:
-		class CreateParams : public UIMenuItem::CreateParams {
-			public:
-				inline CreateParams() :
-					UIMenuItem::CreateParams(),
-					SubMenu( NULL ),
-					MouseOverTimeShowMenu( 200.f )
-				{
-				}
-
-				inline ~CreateParams() {}
-
-				UIMenu * SubMenu;
-				Float MouseOverTimeShowMenu;
-		};
-
-		UIMenuSubMenu( UIMenuSubMenu::CreateParams& Params );
+		static UIMenuSubMenu * New();
 
 		UIMenuSubMenu();
 

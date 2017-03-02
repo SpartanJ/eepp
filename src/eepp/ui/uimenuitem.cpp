@@ -3,10 +3,8 @@
 
 namespace EE { namespace UI {
 
-UIMenuItem::UIMenuItem( UIPushButton::CreateParams& Params ) : 
-	UIPushButton( Params )
-{
-	applyDefaultTheme();
+UIMenuItem *UIMenuItem::New() {
+	return eeNew( UIMenuItem, () );
 }
 
 UIMenuItem::UIMenuItem() :

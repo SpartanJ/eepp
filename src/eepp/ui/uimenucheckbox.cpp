@@ -3,13 +3,8 @@
 
 namespace EE { namespace UI {
 
-UIMenuCheckBox::UIMenuCheckBox( UIMenuCheckBox::CreateParams& Params ) :
-	UIMenuItem( Params ),
-	mActive( false ),
-	mSkinActive( NULL ),
-	mSkinInactive( NULL )
-{
-	applyDefaultTheme();
+UIMenuCheckBox * UIMenuCheckBox::New() {
+	return eeNew( UIMenuCheckBox, () );
 }
 
 UIMenuCheckBox::UIMenuCheckBox() :

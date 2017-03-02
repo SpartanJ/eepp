@@ -7,7 +7,7 @@ namespace EE { namespace UI {
 
 class EE_API UIMenuCheckBox : public UIMenuItem {
 	public:
-		UIMenuCheckBox( UIMenuCheckBox::CreateParams& Params );
+		static UIMenuCheckBox * New();
 
 		UIMenuCheckBox();
 

@@ -4,27 +4,8 @@
 
 namespace EE { namespace UI {
 
-UIMenuSubMenu::UIMenuSubMenu( UIMenuSubMenu::CreateParams& Params ) :
-	UIMenuItem( Params ),
-	mSubMenu( NULL ),
-	mSkinArrow( NULL ),
-	mArrow( NULL ),
-	mTimeOver( 0.f ),
-	mMaxTime( Params.MouseOverTimeShowMenu ),
-	mCbId( 0 ),
-	mCbId2( 0 )
-{
-	UIGfx::CreateParams GfxParams;
-	GfxParams.setParent( this );
-	GfxParams.SubTexture = NULL;
-	GfxParams.Flags = UI_AUTO_SIZE;
-	mArrow = eeNew( UIGfx, ( GfxParams ) );
-	mArrow->setVisible( true );
-	mArrow->setEnabled( false );
-
-	setSubMenu( Params.SubMenu );
-
-	applyDefaultTheme();
+UIMenuSubMenu * UIMenuSubMenu::New() {
+	return eeNew( UIMenuSubMenu, () );
 }
 
 UIMenuSubMenu::UIMenuSubMenu() :

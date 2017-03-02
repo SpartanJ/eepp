@@ -7,7 +7,7 @@ namespace EE { namespace UI {
 
 class EE_API UIMenuItem : public UIPushButton {
 	public:
-		UIMenuItem( UIMenuItem::CreateParams& Params );
+		static UIMenuItem * New();
 
 		UIMenuItem();
 

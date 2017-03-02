@@ -61,8 +61,6 @@ void UIGfx::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mSubTexture ) {
 			setSize( mSubTexture->getDpSize() );
-		} else {
-			setSize( Sizei( 0, 0 ) );
 		}
 	}
 }

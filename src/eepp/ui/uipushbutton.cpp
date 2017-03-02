@@ -7,53 +7,6 @@ UIPushButton * UIPushButton::New() {
 	return eeNew( UIPushButton, () );
 }
 
-UIPushButton::UIPushButton( const UIPushButton::CreateParams& Params ) :
-	UIComplexControl( Params ),
-	mStyleConfig( Params.StyleConfig ),
-	mIcon( NULL ),
-	mTextBox( NULL )
-{
-	UIGfx::CreateParams GfxParams;
-	GfxParams.setParent( this );
-	GfxParams.SubTexture = Params.Icon;
-
-	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
-		GfxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
-	} else {
-		GfxParams.Flags = UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER;
-	}
-
-	mIcon = eeNew( UIGfx, ( GfxParams ) );
-
-	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
-		mIcon->setSize( mStyleConfig.IconMinSize );
-	}
-
-	mIcon->setVisible( true );
-	mIcon->setEnabled( false );
-
-	setIcon( Params.Icon );
-
-	UITextBox::CreateParams TxtParams = Params;
-	TxtParams.setParent( this );
-	TxtParams.Flags 			= HAlignGet( Params.Flags ) | VAlignGet( Params.Flags );
-	TxtParams.FontStyleConfig	= Params.StyleConfig;
-
-	if ( TxtParams.Flags & UI_CLIP_ENABLE )
-		TxtParams.Flags &= ~UI_CLIP_ENABLE;
-
-	mTextBox = eeNew( UITextBox, ( TxtParams ) );
-	mTextBox->setVisible( true );
-	mTextBox->setEnabled( false );
-
-	if ( mStyleConfig.IconAutoMargin )
-		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
-
-	onSizeChange();
-
-	applyDefaultTheme();
-}
-
 UIPushButton::UIPushButton() :
 	UIComplexControl(),
 	mIcon( NULL ),
@@ -78,6 +31,7 @@ UIPushButton::UIPushButton() :
 	mIcon = UIGfx::New();
 	mIcon->setParent( this );
 	mIcon->setFlags( GfxFlags );
+	mIcon->unsetFlags( UI_AUTO_SIZE | UI_FIT_TO_CONTROL );
 
 	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
 		mIcon->setSize( mStyleConfig.IconMinSize );
@@ -257,6 +211,11 @@ void UIPushButton::onStateChange() {
 	mTextBox->setAlpha( mAlpha );
 }
 
+void UIPushButton::onAlignChange() {
+	mTextBox->setHorizontalAlign( getHorizontalAlign() );
+	mTextBox->setVerticalAlign( getVerticalAlign() );
+}
+
 Uint32 UIPushButton::onKeyDown( const UIEventKey& Event ) {
 	if ( Event.getKeyCode() == KEY_RETURN ) {
 		UIMessage Msg( this, UIMessage::MsgClick, EE_BUTTON_LMASK );
@@ -306,9 +265,19 @@ FontStyleConfig UIPushButton::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UIPushButton::setStyleConfig(const PushButtonStyleConfig & fontStyleConfig) {
-	mStyleConfig = fontStyleConfig;
-	mTextBox->setFontStyleConfig( fontStyleConfig );
+void UIPushButton::setStyleConfig(const PushButtonStyleConfig & styleConfig) {
+	mStyleConfig = styleConfig;
+	mTextBox->setFontStyleConfig( styleConfig );
+
+	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
+		Sizei minSize( eemax( mSize.x, mStyleConfig.IconMinSize.x ), eemax( mSize.y, mStyleConfig.IconMinSize.y ) );
+
+		if ( minSize != mSize ) {
+			mIcon->setSize( minSize );
+			onSizeChange();
+		}
+	}
+
 	onStateChange();
 }
 

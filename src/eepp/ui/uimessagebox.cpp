@@ -12,6 +12,14 @@ UIMessageBox::UIMessageBox( UI_MSGBOX_TYPE type , String message ) :
 	mMsgBoxType( type ),
 	mCloseWithKey( KEY_UNKNOWN )
 {
+	setInternalSize( Sizei( 1024, 1024 ) );
+
+	mTextBox = UITextBox::New();
+	mTextBox->setParent( getContainer() )
+			->setHorizontalAlign( UI_HALIGN_CENTER )
+			->setVerticalAlign( UI_VALIGN_CENTER );
+	mTextBox->setText( message );
+
 	mButtonOK = UIPushButton::New();
 	mButtonOK->setParent( getContainer() )
 			 ->setFlags( UI_AUTO_SIZE )
@@ -28,15 +36,17 @@ UIMessageBox::UIMessageBox( UI_MSGBOX_TYPE type , String message ) :
 
 	applyDefaultTheme();
 
-	mTextBox = UITextBox::New();
-	mTextBox->setParent( getContainer() )
-			->setSize( getContainer()->getSize().getWidth(), mButtonOK->getPosition().y )
-			->setHorizontalAlign( UI_HALIGN_CENTER );
-	mTextBox->setText( message );
+	mTextBox->setPosition( 0, 8 );
+	mTextBox->setSize( PixelDensity::pxToDpI( mTextBox->getTextWidth() ) + 24, mTextBox->getTextHeight() );
+	setSize( mTextBox->getSize().getWidth() + 24, mTextBox->getSize().getHeight() + mButtonOK->getSize().getHeight() + mStyleConfig.DecorationSize.getHeight() + 16 );
+	mTextBox->centerHorizontal();
+	mTextBox->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
 
-	setSize( getContainer()->getSize().getWidth(), mTextBox->getTextHeight() + mButtonOK->getSize().getHeight() + 8 );
+	setMinWindowSize( getSize() );
 
-	mTextBox->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
+	mStyleConfig.WinFlags &= ~UI_WIN_RESIZEABLE;
+
+	updateWinFlags();
 
 	switch ( mMsgBoxType ) {
 		case MSGBOX_OKCANCEL:
@@ -68,8 +78,6 @@ UIMessageBox::UIMessageBox( UI_MSGBOX_TYPE type , String message ) :
 
 	mButtonCancel->toFront();
 	mButtonOK->toFront();
-
-	onAutoSize();
 }
 
 UIMessageBox::~UIMessageBox() {
@@ -129,24 +137,6 @@ UIPushButton *	UIMessageBox::getButtonOK() const {
 
 UIPushButton * UIMessageBox::getButtonCancel() const {
 	return mButtonCancel;
-}
-
-void UIMessageBox::onAutoSize() {
-	Sizei nSize( PixelDensity::pxToDpI( mTextBox->getTextWidth() ) + 48, mTextBox->getTextHeight() + mButtonOK->getSize().getHeight() + mStyleConfig.DecorationSize.getHeight() + 8 );
-
-	if ( !( nSize.getWidth() > getContainer()->getSize().getWidth() ) ) {
-		nSize.x = getContainer()->getSize().getWidth();
-	}
-
-	if ( !( nSize.getHeight() > getContainer()->getSize().getHeight() ) ) {
-		nSize.y = getContainer()->getSize().getHeight();
-	}
-
-	if ( nSize.x != getContainer()->getSize().getWidth() || nSize.y != getContainer()->getSize().getHeight() ) {
-		setSize( nSize );
-
-		mStyleConfig.MinWindowSize = nSize;
-	}
 }
 
 Uint32 UIMessageBox::onKeyUp( const UIEventKey & Event ) {

@@ -57,23 +57,15 @@ void UIMenu::doAfterSetTheme() {
 }
 
 UIMenuItem * UIMenu::createMenuItem( const String& Text, SubTexture * Icon ) {
-	UIMenuItem::CreateParams Params;
-	Params.setParent( this );
-	Params.FontStyleConfig	= mStyleConfig;
-	Params.Icon				= Icon;
-	Params.StyleConfig.IconMinSize		= Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
+	PushButtonStyleConfig styleConfig( mStyleConfig );
+	styleConfig.IconMinSize = Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
-	if ( mFlags & UI_AUTO_SIZE ) {
-		Params.Flags		= UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	} else {
-		Params.Flags		= UI_AUTO_SIZE | UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	}
-
-	UIMenuItem * tCtrl 	= eeNew( UIMenuItem, ( Params ) );
-
-	tCtrl->setText( Text );
-	tCtrl->setVisible( true );
-	tCtrl->setEnabled( true );
+	UIMenuItem * tCtrl 	= UIMenuItem::New();
+	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
+	tCtrl->setParent( this );
+	tCtrl->setStyleConfig( styleConfig );
+	tCtrl->setIcon( Icon );
+	tCtrl->setText( Text );;
 
 	return tCtrl;
 }
@@ -83,22 +75,14 @@ Uint32 UIMenu::add( const String& Text, SubTexture * Icon ) {
 }
 
 UIMenuCheckBox * UIMenu::createMenuCheckBox( const String& Text, const bool &Active ) {
-	UIMenuCheckBox::CreateParams Params;
-	Params.setParent( this );
-	Params.FontStyleConfig 	= mStyleConfig;
-	Params.StyleConfig.IconMinSize		= Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
+	PushButtonStyleConfig styleConfig( mStyleConfig );
+	styleConfig.IconMinSize = Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
-	if ( mFlags & UI_AUTO_SIZE ) {
-		Params.Flags		= UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	} else {
-		Params.Flags		= UI_AUTO_SIZE | UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	}
-
-	UIMenuCheckBox * tCtrl 	= eeNew( UIMenuCheckBox, ( Params ) );
-
+	UIMenuCheckBox * tCtrl 	= UIMenuCheckBox::New();
+	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
+	tCtrl->setParent( this );
+	tCtrl->setStyleConfig( styleConfig );
 	tCtrl->setText( Text );
-	tCtrl->setVisible( true );
-	tCtrl->setEnabled( true );
 
 	if ( Active )
 		tCtrl->setActive( Active );
@@ -111,24 +95,16 @@ Uint32 UIMenu::addCheckBox( const String& Text, const bool& Active ) {
 }
 
 UIMenuSubMenu * UIMenu::createSubMenu( const String& Text, SubTexture * Icon, UIMenu * SubMenu ) {
-	UIMenuSubMenu::CreateParams Params;
-	Params.setParent( this );
-	Params.FontStyleConfig	= mStyleConfig;
-	Params.SubMenu			= SubMenu;
-	Params.Icon				= Icon;
-	Params.StyleConfig.IconMinSize		= Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
+	PushButtonStyleConfig styleConfig( mStyleConfig );
+	styleConfig.IconMinSize = Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
-	if ( mFlags & UI_AUTO_SIZE ) {
-		Params.Flags		= UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	} else {
-		Params.Flags		= UI_AUTO_SIZE | UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	}
-
-	UIMenuSubMenu * tCtrl 	= eeNew( UIMenuSubMenu, ( Params ) );
-
+	UIMenuSubMenu * tCtrl 	= UIMenuSubMenu::New();
+	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
+	tCtrl->setParent( this );
+	tCtrl->setStyleConfig( styleConfig );
+	tCtrl->setIcon( Icon );
 	tCtrl->setText( Text );
-	tCtrl->setVisible( true );
-	tCtrl->setEnabled( true );
+	tCtrl->setSubMenu( SubMenu );
 
 	return tCtrl;
 }
@@ -146,12 +122,12 @@ bool UIMenu::checkControlSize( UIControl * Control, const bool& Resize ) {
 		}
 
 		if ( mFlags & UI_AUTO_SIZE ) {
-			Int32 textWidth = PixelDensity::pxToDpI( tItem->getTextBox()->getTextWidth() );
-
 			if ( Control->isType( UI_TYPE_MENUSUBMENU ) ) {
+				Int32 textWidth = PixelDensity::pxToDpI( tItem->getTextBox()->getTextWidth() );
+
 				UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( tItem );
 
-				if ( textWidth + (Int32)mBiggestIcon + tMenu->getArrow()->getSize().getWidth() + (Int32)mStyleConfig.MinRightMargin > (Int32)mMaxWidth - mStyleConfig.Padding.Left - mStyleConfig.Padding.Right ) {
+				if ( textWidth + (Int32)mBiggestIcon + tMenu->getArrow()->getSize().getWidth() + (Int32)mStyleConfig.MinRightMargin > (Int32)mMaxWidth ) {
 					mMaxWidth = textWidth + mBiggestIcon + mStyleConfig.Padding.Left + mStyleConfig.Padding.Right + tMenu->getArrow()->getSize().getWidth() + mStyleConfig.MinRightMargin;
 
 					if ( Resize ) {
@@ -161,8 +137,8 @@ bool UIMenu::checkControlSize( UIControl * Control, const bool& Resize ) {
 					}
 				}
 			} else {
-				if ( textWidth + (Int32)mBiggestIcon +  (Int32)mStyleConfig.MinRightMargin > (Int32)mMaxWidth - mStyleConfig.Padding.Left - mStyleConfig.Padding.Right ) {
-					mMaxWidth = textWidth + mBiggestIcon + mStyleConfig.Padding.Left + mStyleConfig.Padding.Right + mStyleConfig.MinRightMargin;
+				if ( Control->getSize().getWidth() > (Int32)mMaxWidth ) {
+					mMaxWidth = Control->getSize().getWidth();
 
 					if ( Resize ) {
 						resizeControls();
@@ -197,7 +173,7 @@ Uint32 UIMenu::add( UIControl * Control ) {
 }
 
 void UIMenu::setControlSize( UIControl * Control, const Uint32& Pos ) {
-	Control->setSize( mSize.getWidth() - mStyleConfig.Padding.Left - mStyleConfig.Padding.Right, Control->getSize().getHeight() );
+	Control->setSize( mSize.getWidth(), Control->getSize().getHeight() );
 }
 
 Uint32 UIMenu::addSeparator() {

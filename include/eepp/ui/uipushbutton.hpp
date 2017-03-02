@@ -11,31 +11,6 @@ class EE_API UIPushButton : public UIComplexControl {
 	public:
 		static UIPushButton * New();
 
-		class CreateParams : public UITextBox::CreateParams {
-			public:
-				inline CreateParams() :
-					UITextBox::CreateParams(),
-					Icon( NULL )
-				{
-					UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
-
-					if ( NULL != theme ) {
-						StyleConfig = theme->getPushButtonStyleConfig();
-					}
-				}
-
-				inline ~CreateParams() {}
-
-				inline void setIcon( SubTexture * icon ) {
-					Icon = icon;
-				}
-
-				PushButtonStyleConfig	StyleConfig;
-				SubTexture *		Icon;
-		};
-
-		UIPushButton( const UIPushButton::CreateParams& Params );
-
 		UIPushButton();
 
 		virtual ~UIPushButton();
@@ -95,6 +70,8 @@ class EE_API UIPushButton : public UIComplexControl {
 		virtual void onAlphaChange();
 
 		virtual void onStateChange();
+
+		virtual void onAlignChange();
 
 		virtual void doAfterSetTheme();
 
