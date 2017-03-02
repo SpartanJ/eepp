@@ -279,8 +279,10 @@ UITextInput * UISpinBox::getTextInput() const {
 	return mInput;
 }
 
-void UISpinBox::setAllowOnlyNumbers(bool allow) {
+UISpinBox * UISpinBox::setAllowOnlyNumbers(bool allow) {
 	mInput->getInputTextBuffer()->setAllowOnlyNumbers( true, allow );
+
+	return this;
 }
 
 bool UISpinBox::dotsInNumbersAllowed() {

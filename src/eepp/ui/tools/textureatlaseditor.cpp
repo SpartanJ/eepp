@@ -40,8 +40,11 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	createTextBox( Vector2i( mUIContainer->getSize().getWidth() - 205, 30 ), "SubTexture List:" );
 
-	mSubTextureList = mTheme->createListBox( mUIContainer, Sizei( 200, 156 ), Vector2i( mUIContainer->getSize().getWidth() - 205, 50 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	mSubTextureList->setSize( mSubTextureList->getSize().getWidth(), mSubTextureList->getRowHeight() * 9 + mSubTextureList->getContainerPadding().Top + mSubTextureList->getContainerPadding().Bottom );
+	mSubTextureList = UIListBox::New();
+	mSubTextureList->setParent( mUIContainer )
+			->setPosition( mUIContainer->getSize().getWidth() - 205, 50 )
+			->setSize( 200, mSubTextureList->getRowHeight() * 9 + mSubTextureList->getContainerPadding().Top + mSubTextureList->getContainerPadding().Bottom );
+	mSubTextureList->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mSubTextureList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &TextureAtlasEditor::onSubTextureChange ) );
 
 	createTextBox( Vector2i( mUIContainer->getSize().getWidth() - 205, InitY ), "Current SubTexture:" );

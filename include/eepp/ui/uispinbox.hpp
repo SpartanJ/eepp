@@ -70,7 +70,7 @@ class EE_API UISpinBox : public UIComplexControl {
 
 		UITextInput * getTextInput() const;
 
-		void setAllowOnlyNumbers( bool allow );
+		UISpinBox * setAllowOnlyNumbers( bool allow );
 
 		bool dotsInNumbersAllowed();
 	protected:

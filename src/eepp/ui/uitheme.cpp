@@ -429,19 +429,6 @@ UISpinBox * UITheme::createSpinBox( UIControl * Parent, const Sizei& Size, const
 	return Ctrl;
 }
 
-UIScrollBar * UITheme::createScrollBar( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool VerticalScrollBar ) {
-	UIScrollBar::CreateParams ScrollBarParams;
-	ScrollBarParams.setParent( Parent );
-	ScrollBarParams.setPosition( Pos );
-	ScrollBarParams.setSize( Size );
-	ScrollBarParams.Flags = Flags;
-	ScrollBarParams.VerticalScrollBar = VerticalScrollBar;
-	UIScrollBar * Ctrl = eeNew( UIScrollBar, ( ScrollBarParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
 UISlider * UITheme::createSlider( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool VerticalSlider, bool AllowHalfSliderOut, bool ExpandBackground ) {
 	UISlider::CreateParams SliderParams;
 	SliderParams.setParent( Parent );
@@ -452,23 +439,6 @@ UISlider * UITheme::createSlider( UIControl * Parent, const Sizei& Size, const V
 	SliderParams.AllowHalfSliderOut = AllowHalfSliderOut;
 	SliderParams.ExpandBackground = ExpandBackground;
 	UISlider * Ctrl = eeNew( UISlider, ( SliderParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
-UIListBox * UITheme::createListBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool SmoothScroll, Uint32 RowHeight, UI_SCROLLBAR_MODE VScrollMode, UI_SCROLLBAR_MODE HScrollMode, Recti PaddingContainer ) {
-	UIListBox::CreateParams LBParams;
-	LBParams.setParent( Parent );
-	LBParams.setPosition( Pos );
-	LBParams.setSize( Size );
-	LBParams.Flags = Flags;
-	LBParams.SmoothScroll = SmoothScroll;
-	LBParams.RowHeight = RowHeight;
-	LBParams.VScrollMode = VScrollMode;
-	LBParams.HScrollMode = HScrollMode;
-	LBParams.PaddingContainer = PaddingContainer;
-	UIListBox * Ctrl = eeNew( UIListBox, ( LBParams ) );
 	Ctrl->setVisible( true );
 	Ctrl->setEnabled( true );
 	return Ctrl;

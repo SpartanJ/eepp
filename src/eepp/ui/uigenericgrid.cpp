@@ -3,64 +3,8 @@
 
 namespace EE { namespace UI {
 
-UIGenericGrid::UIGenericGrid( const UIGenericGrid::CreateParams& Params ) :
-	UIComplexControl( Params ),
-	mPadding( Params.PaddingContainer ),
-	mSmoothScroll( Params.SmoothScroll ),
-	mContainer( NULL ),
-	mVScrollBar( NULL ),
-	mHScrollBar( NULL ),
-	mVScrollMode( Params.VScrollMode ),
-	mHScrollMode( Params.HScrollMode ),
-	mCollumnsCount( Params.CollumnsCount ),
-	mRowHeight( Params.RowHeight ),
-	mLastPos( eeINDEX_NOT_FOUND ),
-	mVisibleFirst(0),
-	mVisibleLast(0),
-	mHScrollInit(0),
-	mItemsNotVisible(0),
-	mSelected(-1),
-	mTouchDragAcceleration(0),
-	mTouchDragDeceleration( Params.TouchDragDeceleration ),
-	mCollWidthAssigned( false )
-{
-	mCollumnsWidth.resize( mCollumnsCount, 0 );
-	mCollumnsPos.resize( mCollumnsCount, 0 );
-
-	UIComplexControl::CreateParams CParams;
-	CParams.setParent( this );
-	CParams.setPosition( mPadding.Left, mPadding.Top );
-	CParams.Size = Sizei( mSize.getWidth() - mPadding.Right - mPadding.Left, mSize.getHeight() - mPadding.Top - mPadding.Bottom );
-	CParams.Flags = Params.Flags;
-	mContainer = eeNew( UIItemContainer<UIGenericGrid> , ( CParams ) );
-	mContainer->setVisible( true );
-	mContainer->setEnabled( true );
-
-	if ( mFlags & UI_CLIP_ENABLE )
-		mFlags &= ~UI_CLIP_ENABLE;
-
-	UIScrollBar::CreateParams ScrollBarP;
-	ScrollBarP.setParent				( this );
-	ScrollBarP.setPosition				( mSize.getWidth() - 15, 0 );
-	ScrollBarP.Flags				= UI_AUTO_SIZE;
-	ScrollBarP.VerticalScrollBar	= true;
-	ScrollBarP.Size					= Sizei( 15, mSize.getHeight() );
-	mVScrollBar						= eeNew( UIScrollBar, ( ScrollBarP ) );
-
-	ScrollBarP.setPosition				( 0, mSize.getHeight() - 15 );
-	ScrollBarP.Size					= Sizei( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 15 );
-	ScrollBarP.VerticalScrollBar	= false;
-	mHScrollBar						= eeNew( UIScrollBar, ( ScrollBarP ) );
-
-	mHScrollBar->setVisible( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode );
-	mHScrollBar->setEnabled( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode );
-	mVScrollBar->setVisible( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
-	mVScrollBar->setEnabled( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
-
-	mVScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIGenericGrid::onScrollValueChange ) );
-	mHScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIGenericGrid::onScrollValueChange ) );
-
-	applyDefaultTheme();
+UIGenericGrid * UIGenericGrid::New() {
+	return eeNew( UIGenericGrid, () );
 }
 
 UIGenericGrid::UIGenericGrid() :
@@ -452,7 +396,7 @@ void UIGenericGrid::remove( Uint32 ItemIndex ) {
 	remove( std::vector<Uint32> ( 1, ItemIndex ) );
 }
 
-void UIGenericGrid::setCollumnWidth( const Uint32& CollumnIndex, const Uint32& CollumnWidth ) {
+UIGenericGrid * UIGenericGrid::setCollumnWidth( const Uint32& CollumnIndex, const Uint32& CollumnWidth ) {
 	eeASSERT( CollumnIndex < mCollumnsCount );
 
 	mCollWidthAssigned = true;
@@ -462,19 +406,23 @@ void UIGenericGrid::setCollumnWidth( const Uint32& CollumnIndex, const Uint32& C
 	updateCollumnsPos();
 	updateCells();
 	updateScroll();
+
+	return this;
 }
 
 Uint32 UIGenericGrid::getCount() const {
 	return mItems.size();
 }
 
-void UIGenericGrid::setCollumnsCount(const Uint32 & collumnsCount) {
+UIGenericGrid * UIGenericGrid::setCollumnsCount(const Uint32 & collumnsCount) {
 	mCollumnsCount = collumnsCount;
 
 	mCollumnsWidth.resize( mCollumnsCount, 0 );
 	mCollumnsPos.resize( mCollumnsCount, 0 );
 
 	setDefaultCollumnsWidth();
+
+	return this;
 }
 
 const Uint32& UIGenericGrid::getCollumnsCount() const {
@@ -487,7 +435,7 @@ const Uint32& UIGenericGrid::getCollumnWidth( const Uint32& CollumnIndex ) const
 	return mCollumnsWidth[ CollumnIndex ];
 }
 
-void UIGenericGrid::setRowHeight( const Uint32& height ) {
+UIGenericGrid * UIGenericGrid::setRowHeight( const Uint32& height ) {
 	if ( mRowHeight != height ) {
 		mRowHeight = height;
 
@@ -495,6 +443,8 @@ void UIGenericGrid::setRowHeight( const Uint32& height ) {
 		updateCells();
 		updateScroll();
 	}
+
+	return this;
 }
 
 const Uint32& UIGenericGrid::getRowHeight() const {

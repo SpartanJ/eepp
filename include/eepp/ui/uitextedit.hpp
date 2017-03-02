@@ -11,24 +11,6 @@ class EE_API UITextEdit : public UIComplexControl {
 	public:
 		static UITextEdit * New();
 
-		class CreateParams : public UITextBox::CreateParams {
-			public:
-				inline CreateParams() : UITextBox::CreateParams(),
-					HScrollBar( UI_SCROLLBAR_AUTO ),
-					VScrollBar( UI_SCROLLBAR_AUTO ),
-					WordWrap( true )
-				{
-				}
-
-				inline ~CreateParams() {}
-
-				UI_SCROLLBAR_MODE	HScrollBar;
-				UI_SCROLLBAR_MODE	VScrollBar;
-				bool				WordWrap;
-		};
-
-		UITextEdit( UITextEdit::CreateParams& Params );
-
 		UITextEdit();
 
 		virtual ~UITextEdit();

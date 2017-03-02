@@ -10,67 +10,6 @@ UIListBox * UIListBox::New() {
 	return eeNew( UIListBox, () );
 }
 
-UIListBox::UIListBox( UIListBox::CreateParams& Params ) :
-	UIComplexControl( Params ),
-	mFontStyleConfig( Params.fontStyleConfig ),
-	mRowHeight( Params.RowHeight ),
-	mVScrollMode( Params.VScrollMode ),
-	mHScrollMode( Params.HScrollMode ),
-	mSmoothScroll( Params.SmoothScroll ),
-	mPaddingContainer( Params.PaddingContainer ),
-	mHScrollPadding( Params.HScrollPadding ),
-	mVScrollPadding( Params.VScrollPadding ),
-	mContainer( NULL ),
-	mVScrollBar( NULL ),
-	mHScrollBar( NULL ),
-	mLastPos( eeINDEX_NOT_FOUND ),
-	mMaxTextWidth(0),
-	mHScrollInit(0),
-	mItemsNotVisible(0),
-	mLastTickMove(0),
-	mVisibleFirst(0),
-	mVisibleLast(0),
-	mTouchDragAcceleration(0),
-	mTouchDragDeceleration( Params.TouchDragDeceleration )
-{
-	UIControl::CreateParams CParams;
-	CParams.setParent( this );
-	CParams.setPosition( mPaddingContainer.Left, mPaddingContainer.Top );
-	CParams.Size = Sizei( mSize.getWidth() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.getHeight() - mPaddingContainer.Top - mPaddingContainer.Bottom );
-	CParams.Flags = Params.Flags;
-	mContainer = eeNew( UIItemContainer<UIListBox>, ( CParams ) );
-	mContainer->setVisible( true );
-	mContainer->setEnabled( true );
-
-	if ( mFlags & UI_CLIP_ENABLE )
-		mFlags &= ~UI_CLIP_ENABLE;
-
-	UIScrollBar::CreateParams ScrollBarP;
-	ScrollBarP.setParent( this );
-	ScrollBarP.Size = Sizei( 15, mSize.getHeight() );
-	ScrollBarP.setPosition( mSize.getWidth() - 15, 0 );
-	ScrollBarP.Flags = UI_AUTO_SIZE;
-	ScrollBarP.VerticalScrollBar = true;
-	mVScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
-
-	ScrollBarP.Size = Sizei( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 15 );
-	ScrollBarP.setPosition( 0, mSize.getHeight() - 15 );
-	ScrollBarP.VerticalScrollBar = false;
-	mHScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
-
-	mHScrollBar->setVisible( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode );
-	mHScrollBar->setEnabled( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode );
-	mVScrollBar->setVisible( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
-	mVScrollBar->setEnabled( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
-
-	mVScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIListBox::onScrollValueChange ) );
-	mHScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIListBox::onHScrollValueChange ) );
-
-	setRowHeight();
-
-	applyDefaultTheme();
-}
-
 UIListBox::UIListBox() :
 	UIComplexControl(),
 	mRowHeight(0),

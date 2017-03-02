@@ -339,8 +339,11 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 	mTextureAtlasesList->setParent( mSGCont )->setSize( Width, 0 )->setPosition( 0, Txt->getPosition().y +Txt->getSize().getHeight() + 4 )->setFlags( UI_DRAW_SHADOW );
 	mTextureAtlasesList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::OnTextureAtlasChange ) );
 
-	mSubTextureList = mTheme->createListBox( mSGCont, Sizei( Width, 156 ), Vector2i( 0, mTextureAtlasesList->getPosition().y + mTextureAtlasesList->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	mSubTextureList->setSize( mSubTextureList->getSize().getWidth(), mSubTextureList->getRowHeight() * 9 + mSubTextureList->getContainerPadding().Top + mSubTextureList->getContainerPadding().Bottom );
+	mSubTextureList = UIListBox::New();
+	mSubTextureList->setParent( mSGCont )
+			->setPosition( 0, mTextureAtlasesList->getPosition().y + mTextureAtlasesList->getSize().getHeight() + 4 )
+			->setSize( Width, mSubTextureList->getRowHeight() * 9 + mSubTextureList->getContainerPadding().Top + mSubTextureList->getContainerPadding().Bottom );
+	mSubTextureList->setAnchors(UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mSubTextureList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::OnSubTextureChange ) );
 
 	mGfxPreview = UIGfx::New();
@@ -506,10 +509,18 @@ void MapEditor::CreateUIMap() {
 	mUIMap->setUpdateScrollCb( cb::Make0( this, &MapEditor::UpdateScroll ) );
 	mUIMap->setTileBox( mTileBox );
 
-	mMapHScroll = mTheme->createScrollBar( mWinContainer, Sizei( Params.Size.getWidth(), ScrollH ), Vector2i( 0, mWinContainer->getSize().getHeight() - ScrollH ), UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_AUTO_SIZE );
+	mMapHScroll = UIScrollBar::New();
+	mMapHScroll->setOrientation( UI_HORIZONTAL )
+			   ->setParent( mWinContainer )
+			   ->setSize( mWinContainer->getSize().getWidth() - 225 - ScrollV, ScrollH )
+			   ->setPosition( 0, mWinContainer->getSize().getHeight() - ScrollH );
+	mMapHScroll->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	mMapHScroll->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnScrollMapH ) );
 
-	mMapVScroll = mTheme->createScrollBar( mWinContainer, Sizei( ScrollV, Params.Size.getHeight() ), Vector2i( Params.Size.getWidth() + ScrollV, 0 ), UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_AUTO_SIZE , true );
+	mMapVScroll = UIScrollBar::New();
+	mMapVScroll->setParent( mWinContainer )->setSize( ScrollV, mWinContainer->getSize().getHeight() - ScrollH )
+			   ->setPosition( mWinContainer->getSize().getWidth() - 225 - ScrollV, 0 );
+	mMapVScroll->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM );
 	mMapVScroll->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnScrollMapV ) );
 
 	MapCreated();

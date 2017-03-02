@@ -8,6 +8,8 @@ namespace EE { namespace UI {
 class UITextInputPassword : public UITextInput
 {
 	public:
+		static UITextInputPassword * New();
+
 		UITextInputPassword();
 
 		~UITextInputPassword();

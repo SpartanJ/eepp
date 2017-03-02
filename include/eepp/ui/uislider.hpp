@@ -8,6 +8,7 @@ namespace EE { namespace UI {
 
 class EE_API UISlider : public UIComplexControl {
 	public:
+		static UISlider * New();
 		class CreateParams : public UIComplexControl::CreateParams {
 			public:
 				inline CreateParams() :

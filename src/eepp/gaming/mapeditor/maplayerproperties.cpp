@@ -52,14 +52,20 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapLayerProperties::onCancelClick ) );
 	CancelButton->setText( "Cancel" );
 
-	UIGenericGrid::CreateParams GridParams;
+/*	UIGenericGrid::CreateParams GridParams;
 	GridParams.setParent( mUIWindow->getContainer() );
 	GridParams.setPosition( 50, TxtBox->getPosition().y + TxtBox->getSize().getHeight() );
 	GridParams.setSize( 400, 350 );
 	GridParams.Flags = UI_AUTO_PADDING;
 	GridParams.RowHeight = 24;
 	GridParams.CollumnsCount = 5;
-	mGenGrid = eeNew( UIGenericGrid, ( GridParams ) );
+	mGenGrid = eeNew( UIGenericGrid, ( GridParams ) );*/
+	mGenGrid = UIGenericGrid::New();
+	mGenGrid->setParent( mUIWindow->getContainer() );
+	mGenGrid->setSize( 400, 350 );
+	mGenGrid->setPosition( 50, TxtBox->getPosition().y + TxtBox->getSize().getHeight() );
+	mGenGrid->setRowHeight( 24 );
+	mGenGrid->setCollumnsCount( 5 );
 	mGenGrid->setVisible( true );
 	mGenGrid->setEnabled( true );
 	mGenGrid->setCollumnWidth( 0, 10 );

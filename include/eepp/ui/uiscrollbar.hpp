@@ -8,20 +8,7 @@ namespace EE { namespace UI {
 
 class EE_API UIScrollBar : public UIComplexControl {
 	public:
-		class CreateParams : public UIComplexControl::CreateParams {
-			public:
-				inline CreateParams() :
-					UIComplexControl::CreateParams(),
-					VerticalScrollBar( false )
-				{
-				}
-
-				inline ~CreateParams() {}
-
-				bool 	VerticalScrollBar;
-		};
-
-		UIScrollBar( const UIScrollBar::CreateParams& Params );
+		static UIScrollBar * New();
 
 		UIScrollBar();
 

@@ -10,31 +10,7 @@ namespace EE { namespace UI {
 
 class EE_API UIGenericGrid : public UIComplexControl {
 	public:
-		class CreateParams : public UIComplexControl::CreateParams {
-			public:
-				inline CreateParams() :
-					UIComplexControl::CreateParams(),
-					SmoothScroll( true ),
-					VScrollMode( UI_SCROLLBAR_AUTO ),
-					HScrollMode( UI_SCROLLBAR_AUTO ),
-					CollumnsCount(1),
-					RowHeight( 24 ),
-					TouchDragDeceleration( 0.01f )
-				{
-				}
-
-				inline ~CreateParams() {}
-
-				bool				SmoothScroll;
-				UI_SCROLLBAR_MODE	VScrollMode;
-				UI_SCROLLBAR_MODE	HScrollMode;
-				Uint32				CollumnsCount;
-				Uint32				RowHeight;
-				Recti				PaddingContainer;
-				Float				TouchDragDeceleration;
-		};
-
-		UIGenericGrid( const UIGenericGrid::CreateParams& Params );
+		static UIGenericGrid * New();
 
 		UIGenericGrid();
 
@@ -54,17 +30,17 @@ class EE_API UIGenericGrid : public UIComplexControl {
 
 		void remove( Uint32 ItemIndex );
 
-		void setCollumnWidth( const Uint32& CollumnIndex, const Uint32& collumnWidth );
+		UIGenericGrid * setCollumnWidth( const Uint32& CollumnIndex, const Uint32& collumnWidth );
 
 		const Uint32& getCollumnWidth( const Uint32& CollumnIndex ) const;
 
 		Uint32 getCount() const;
 
-		void setCollumnsCount(const Uint32 & collumnsCount);
+		UIGenericGrid * setCollumnsCount(const Uint32 & collumnsCount);
 
 		const Uint32& getCollumnsCount() const;
 
-		void setRowHeight( const Uint32& height );
+		UIGenericGrid * setRowHeight( const Uint32& height );
 
 		const Uint32& getRowHeight() const;
 

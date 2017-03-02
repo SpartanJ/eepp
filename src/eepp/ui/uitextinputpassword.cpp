@@ -6,6 +6,10 @@
 
 namespace EE { namespace UI {
 
+UITextInputPassword *UITextInputPassword::New() {
+	return eeNew( UITextInputPassword, () );
+}
+
 UITextInputPassword::UITextInputPassword() :
 	UITextInput()
 {

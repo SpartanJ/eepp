@@ -8,7 +8,7 @@ namespace EE { namespace UI {
 
 class EE_API UIRadioButton : public UITextBox {
 	public:
-		UIRadioButton( const UITextBox::CreateParams& Params );
+		static UIRadioButton * New();
 
 		UIRadioButton();
 

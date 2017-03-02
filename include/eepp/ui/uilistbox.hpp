@@ -12,35 +12,6 @@ class EE_API UIListBox : public UIComplexControl {
 	public:
 		static UIListBox * New();
 
-		class CreateParams : public UIComplexControl::CreateParams {
-			public:
-				inline CreateParams() :
-					UIComplexControl::CreateParams(),
-					RowHeight( 0 ),
-					SmoothScroll( true ),
-					VScrollMode( UI_SCROLLBAR_AUTO ),
-					HScrollMode( UI_SCROLLBAR_AUTO ),
-					PaddingContainer(),
-					TouchDragDeceleration( 0.01f )
-				{
-					fontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
-				}
-
-				inline ~CreateParams() {}
-
-				FontStyleConfig		fontStyleConfig;
-				Uint32				RowHeight;
-				bool				SmoothScroll;
-				UI_SCROLLBAR_MODE	VScrollMode;
-				UI_SCROLLBAR_MODE	HScrollMode;
-				Recti				PaddingContainer;
-				Recti				HScrollPadding;
-				Recti				VScrollPadding;
-				Float				TouchDragDeceleration;
-		};
-
-		UIListBox( UIListBox::CreateParams& Params );
-
 		UIListBox();
 
 		virtual ~UIListBox();

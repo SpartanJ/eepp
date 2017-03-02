@@ -4,6 +4,10 @@
 
 namespace EE { namespace UI {
 
+UISlider *UISlider::New() {
+	return eeNew( UISlider, () );
+}
+
 UISlider::UISlider( const UISlider::CreateParams& Params ) :
 	UIComplexControl( Params ),
 	mOrientation( Params.VerticalSlider ? UI_VERTICAL : UI_HORIZONTAL ),

@@ -4,42 +4,8 @@
 
 namespace EE { namespace UI {
 
-UIScrollBar::UIScrollBar( const UIScrollBar::CreateParams& Params ) :
-	UIComplexControl( Params )
-{
-	UIControlAnim::CreateParams CParams = Params;
-	CParams.Size = Sizei( 16, 16 );
-	CParams.setParent( this );
-
-	mBtnDown	= eeNew( UIControlAnim, ( CParams ) );
-	mBtnUp		= eeNew( UIControlAnim, ( CParams ) );
-
-	mBtnDown->setVisible( true );
-	mBtnDown->setEnabled( true );
-	mBtnUp->setVisible( true );
-	mBtnUp->setEnabled( true );
-
-	UISlider::CreateParams SParams;
-	SParams.Background = Params.Background;
-	SParams.Blend = Params.Blend;
-	SParams.Border = Params.Border;
-	SParams.Flags = Params.Flags;
-	SParams.setParent( this );
-	SParams.Pos = Params.Pos;
-	SParams.Size = Params.Size;
-	SParams.VerticalSlider = Params.VerticalScrollBar;
-	SParams.AllowHalfSliderOut = false;
-	SParams.ExpandBackground = true;
-
-	mSlider		= eeNew( UISlider, ( SParams ) );
-	mSlider->setVisible( true );
-	mSlider->setEnabled( true );
-
-	mSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
-
-	adjustChilds();
-
-	applyDefaultTheme();
+UIScrollBar * UIScrollBar::New() {
+	return eeNew( UIScrollBar, () );
 }
 
 UIScrollBar::UIScrollBar() :
