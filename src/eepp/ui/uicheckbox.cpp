@@ -9,30 +9,6 @@ UICheckBox * UICheckBox::New() {
 	return eeNew( UICheckBox, () );
 }
 
-UICheckBox::UICheckBox( const UITextBox::CreateParams& Params ) :
-	UITextBox( Params ),
-	mActive( false ),
-	mTextSeparation( 4 )
-{
-	UIControlAnim::CreateParams ButtonParams( Params );
-
-	ButtonParams.setParent( this );
-	ButtonParams.setPosition( Vector2i( 0, 0 ) );
-	ButtonParams.Size = Sizei( 16, 16 );
-
-	mActiveButton 	= eeNew( UIControlAnim, ( ButtonParams ) );
-	mActiveButton->setVisible( false );
-	mActiveButton->setEnabled( true );
-
-	mInactiveButton = eeNew( UIControlAnim, ( ButtonParams ) );
-	mInactiveButton->setVisible( true );
-	mInactiveButton->setEnabled( true );
-
-	setPadding( Recti(0,0,0,0) );
-
-	applyDefaultTheme();
-}
-
 UICheckBox::UICheckBox() :
 	UITextBox(),
 	mActive( false ),

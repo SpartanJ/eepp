@@ -77,31 +77,21 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	OKButton->setIcon( mUITheme->getIconByName( "ok" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
 	OKButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::onOKClick ) );
-
 	OKButton->setText( "OK" );
+	OKButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 
 	UIPushButton * CancelButton = UIPushButton::New();
 	CancelButton->setParent( mUIWindow->getContainer() )->setSize( OKButton->getSize() )->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y );
 	CancelButton->setIcon( mUITheme->getIconByName( "cancel" ) );
 	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::onCancelClick ) );
 	CancelButton->setText( "Cancel" );
+	CancelButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 
-/*	UIGenericGrid::CreateParams GridParams;
-	GridParams.setParent( mUIWindow->getContainer() );
-	GridParams.setPosition( 50, TxtBox->getPosition().y + 20 );
-	GridParams.setSize( 400, 400 - DiffIfLights );
-	GridParams.Flags = UI_AUTO_PADDING;
-	GridParams.RowHeight = 24;
-	GridParams.CollumnsCount = 5;
-	mGenGrid = eeNew( UIGenericGrid, ( GridParams ) );*/
 	mGenGrid = UIGenericGrid::New();
 	mGenGrid->setParent( mUIWindow->getContainer() );
-	mGenGrid->setSize( 400, 350 );
-	mGenGrid->setPosition( 50, TxtBox->getPosition().y + TxtBox->getSize().getHeight() );
-	mGenGrid->setRowHeight( 24 );
-	mGenGrid->setCollumnsCount( 5 );
-	mGenGrid->setVisible( true );
-	mGenGrid->setEnabled( true );
+	mGenGrid->setSize( 400, 310 )->setPosition( 50, TxtBox->getPosition().y + TxtBox->getSize().getHeight() );
+	mGenGrid->setRowHeight( 24 )->setCollumnsCount( 5 );
+	mGenGrid->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	mGenGrid->setCollumnWidth( 0, 10 );
 	mGenGrid->setCollumnWidth( 1, 175 );
 	mGenGrid->setCollumnWidth( 2, 10 );
@@ -256,28 +246,19 @@ void TileMapProperties::createGridElems() {
 }
 
 UIGridCell * TileMapProperties::createCell() {
-	UIGridCell::CreateParams CellParams;
-	CellParams.setParent( mGenGrid->getContainer() );
+	UIGridCell * Cell = UIGridCell::New();
+	UITextInput * TxtInput = UITextInput::New();
+	UITextInput * TxtInput2 = UITextInput::New();
 
-	UITextInput::CreateParams TxtInputParams;
-	TxtInputParams.Flags = UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED;
-	TxtInputParams.MaxLength = LAYER_NAME_SIZE;
+	Cell->setParent( mGenGrid->getContainer() );
+	TxtInput->setMaxLength( LAYER_NAME_SIZE );
+	TxtInput2->setMaxLength( LAYER_NAME_SIZE );
 
-	UIComplexControl::CreateParams CControl;
-
-	UIGridCell * Cell			= eeNew( UIGridCell, ( CellParams ) );
-	UITextInput * TxtInput		= eeNew( UITextInput, ( TxtInputParams ) );
-	UITextInput * TxtInput2	= eeNew( UITextInput, ( TxtInputParams ) );
-
-	Cell->setCell( 0, eeNew( UIComplexControl, ( CControl ) ) );
-
+	Cell->setCell( 0, UIComplexControl::New() );
 	Cell->setCell( 1, TxtInput );
-
-	Cell->setCell( 2, eeNew( UIComplexControl, ( CControl ) ) );
-
+	Cell->setCell( 2, UIComplexControl::New() );
 	Cell->setCell( 3, TxtInput2 );
-
-	Cell->setCell( 4, eeNew( UIComplexControl, ( CControl ) ) );
+	Cell->setCell( 4, UIComplexControl::New() );
 
 	return Cell;
 }

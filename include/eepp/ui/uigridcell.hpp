@@ -12,8 +12,6 @@ class EE_API UIGridCell : public UIComplexControl {
 	public:
 		static UIGridCell * New();
 
-		UIGridCell( UIGridCell::CreateParams& Params );
-
 		UIGridCell();
 
 		virtual ~UIGridCell();

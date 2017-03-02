@@ -10,8 +10,6 @@ class EE_API UICheckBox : public UITextBox {
 	public:
 		static UICheckBox * New();
 
-		UICheckBox( const UITextBox::CreateParams& Params );
-
 		UICheckBox();
 
 		virtual ~UICheckBox();

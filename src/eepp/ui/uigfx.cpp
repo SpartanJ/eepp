@@ -29,7 +29,7 @@ UIGfx::UIGfx() :
 	mRender( RN_NORMAL ),
 	mAlignOffset(0,0)
 {
-	mFlags |= UI_FIT_TO_CONTROL | UI_AUTO_SIZE;
+	mFlags |= UI_AUTO_SIZE;
 
 	onAutoSize();
 }
@@ -58,7 +58,7 @@ void UIGfx::setSubTexture( Graphics::SubTexture * subTexture ) {
 }
 
 void UIGfx::onAutoSize() {
-	if ( mFlags & UI_AUTO_SIZE ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) && Sizei::Zero == mSize ) {
 		if ( NULL != mSubTexture ) {
 			setSize( mSubTexture->getDpSize() );
 		}

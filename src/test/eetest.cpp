@@ -277,7 +277,7 @@ void EETest::createUI() {
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	UIManager::instance()->init(); // UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES
+	UIManager::instance()->init(UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES); // UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES
 
 	//mTheme = UITheme::loadFromPath( eeNew( UIdefaultTheme, ( mThemeName, mThemeName ) ), MyPath + mThemeName + "/" );
 
@@ -293,12 +293,6 @@ void EETest::createUI() {
 	std::vector<String> str = getTestStringArr();
 
 	/**/
-	UIControl::CreateParams Params( UIManager::instance()->getMainControl(), Vector2i(0,0), Sizei( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
-
-	Params.Border.setWidth( 2 );
-	Params.Border.setColor( 0x979797CC );
-	Params.Background.setColors( ColorA( 0xEDEDED66 ), ColorA( 0xEDEDEDCC ), ColorA( 0xEDEDEDCC ), ColorA( 0xEDEDED66 ) );
-
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
 	WindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
@@ -493,7 +487,7 @@ void EETest::createUI() {
 	eePRINTL( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 	/**/
 
-	createNewUI();
+	//createNewUI();
 }
 
 void EETest::createNewUI() {
@@ -849,11 +843,8 @@ void EETest::onButtonClick( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( MouseEvent->getFlags() & EE_BUTTONS_LRM ) {
-		UIGfx::CreateParams GfxParams;
-		GfxParams.setParent( UIManager::instance()->getMainControl() );
-		GfxParams.SubTexture = mTheme->getIconByName( "ok" );
-		UIGfx * Gfx = eeNew( UIGfx, ( GfxParams ) );
-		Gfx->setVisible( true );
+		UIGfx * Gfx = UIGfx::New();
+		Gfx->setSubTexture( mTheme->getIconByName( "ok" ) );
 		Gfx->setEnabled( false );
 
 		Gfx->startRotation( 0, 2500, Milliseconds( 2500 ) );
