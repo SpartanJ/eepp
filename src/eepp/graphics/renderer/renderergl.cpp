@@ -229,15 +229,17 @@ void RendererGL::pointSize( float size ) {
 }
 
 void RendererGL::clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
-	double tX = (double)x;
-	double tY = (double)y;
-	double tW = (double)Width;
-	double tH = (double)Height;
+	Rectf r( x, y, x + Width, y + Height );
 
-	double clip_left[] 	= { 1.0	, 0.0	, 0.0, -tX 		};
-	double clip_right[] 	= { -1.0, 0.0	, 0.0, tX + tW 	};
-	double clip_top[] 	= { 0.0	, 1.0	, 0.0, -tY 		};
-	double clip_bottom[] 	= { 0.0	, -1.0	, 0.0, tY + tH 	};
+	if ( !mPlanesClipped.empty() ) {
+		Rectf r2 = mPlanesClipped.back();
+		r.shrink( r2 );
+	}
+
+	double clip_left[] 	= { 1.0	, 0.0	, 0.0, -r.Left 		};
+	double clip_right[] 	= { -1.0, 0.0	, 0.0, r.Right 	};
+	double clip_top[] 	= { 0.0	, 1.0	, 0.0, -r.Top 		};
+	double clip_bottom[] 	= { 0.0	, -1.0	, 0.0, r.Bottom };
 
 	GLi->enable(GL_CLIP_PLANE0);
 	GLi->enable(GL_CLIP_PLANE1);
@@ -250,7 +252,7 @@ void RendererGL::clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32&
 	clipPlane(GL_CLIP_PLANE3, clip_bottom);
 
 	if ( mPushClip ) {
-		mPlanesClipped.push_back( Rectf( x, y, Width, Height ) );
+		mPlanesClipped.push_back( r );
 	}
 }
 
@@ -267,7 +269,7 @@ void RendererGL::clip2DPlaneDisable() {
 	} else {
 		Rectf R( mPlanesClipped.back() );
 		mPushClip = false;
-		clip2DPlaneEnable( R.Left, R.Top, R.Right, R.Bottom );
+		clip2DPlaneEnable( R.Left, R.Top, R.getWidth(), R.getHeight() );
 		mPushClip = true;
 	}
 }

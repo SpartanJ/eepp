@@ -66,6 +66,7 @@ class EETest : private Thread {
 		Font * FF2;
 		Font * TTF;
 		Font * TTFB;
+		Font * DBSM;
 
 		Primitives PR;
 		bool iL1, iL2;

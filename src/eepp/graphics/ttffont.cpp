@@ -52,10 +52,10 @@ bool TTFFont::loadFromMemory( Uint8* TTFData, const unsigned int& TTFDataSize, c
 
 	if ( OutlineSize && OutlineFreetype == OutlineMethod ) {
 		mFontOutline = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, rSize, 0, NumCharsToGen );
-		mFontOutline->Outline( OutlineSize );
+		mFontOutline->Outline( OutlineSize * PixelDensity::getPixelDensity() );
 	}
 
-	return iLoad( rSize, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
+	return iLoad( rSize, Style, NumCharsToGen, FontColor, OutlineSize * PixelDensity::getPixelDensity(), OutlineColor, AddPixelSeparator );
 }
 
 bool TTFFont::load( const std::string& Filepath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) {
@@ -70,10 +70,10 @@ bool TTFFont::load( const std::string& Filepath, const unsigned int& Size, EE_TT
 
 		if ( OutlineSize && OutlineFreetype == OutlineMethod ) {
 			mFontOutline = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), rSize, 0, NumCharsToGen );
-			mFontOutline->Outline( OutlineSize );
+			mFontOutline->Outline( OutlineSize * PixelDensity::getPixelDensity() );
 		}
 
-		return iLoad( rSize, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
+		return iLoad( rSize, Style, NumCharsToGen, FontColor, OutlineSize * PixelDensity::getPixelDensity(), OutlineColor, AddPixelSeparator );
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		Pack * tPack = PackManager::instance()->exists( mFilepath );
 

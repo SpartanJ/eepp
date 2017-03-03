@@ -541,15 +541,17 @@ void RendererGL3::matrixMode(unsigned int mode) {
 }
 
 void RendererGL3::clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
-	float tX = (float)x;
-	float tY = (float)y;
-	float tW = (float)Width;
-	float tH = (float)Height;
+	Rectf r( x, y, x + Width, y + Height );
 
-	glm::vec4 vclip_left	( 1.0	, 0.0	, 0.0	, -tX		);
-	glm::vec4 vclip_right	( -1.0	, 0.0	, 0.0	, tX + tW	);
-	glm::vec4 vclip_top		( 0.0	, 1.0	, 0.0	, -tY		);
-	glm::vec4 vclip_bottom	( 0.0	, -1.0	, 0.0	, tY + tH	);
+	if ( !mPlanesClipped.empty() ) {
+		Rectf r2 = mPlanesClipped.back();
+		r.shrink( r2 );
+	}
+
+	glm::vec4 vclip_left	( 1.0	, 0.0	, 0.0	, -r.Left	);
+	glm::vec4 vclip_right	( -1.0	, 0.0	, 0.0	, r.Right	);
+	glm::vec4 vclip_top		( 0.0	, 1.0	, 0.0	, -r.Top	);
+	glm::vec4 vclip_bottom	( 0.0	, -1.0	, 0.0	, r.Bottom	);
 
 	glm::mat4 invMV = glm::inverse( mStack->mModelViewMatrix.top() );
 
@@ -569,7 +571,7 @@ void RendererGL3::clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32
 	glUniform4fv( mPlanes[3], 1, static_cast<const float*>( &vclip_bottom[0]	)	);
 
 	if ( mPushClip ) {
-		mPlanesClipped.push_back( Rectf( x, y, Width, Height ) );
+		mPlanesClipped.push_back( r );
 	}
 }
 
@@ -586,7 +588,7 @@ void RendererGL3::clip2DPlaneDisable() {
 	} else {
 		Rectf R( mPlanesClipped.back() );
 		mPushClip = false;
-		clip2DPlaneEnable( R.Left, R.Top, R.Right, R.Bottom );
+		clip2DPlaneEnable( R.Left, R.Top, R.getWidth(), R.getHeight() );
 		mPushClip = true;
 	}
 }

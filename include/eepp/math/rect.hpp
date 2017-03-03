@@ -25,7 +25,9 @@ class tRECT {
 
 		bool contains( const Vector2<T>& Vect );
 
-		void merge( const tRECT<T>& Rect );
+		void expand( const tRECT<T>& Rect );
+
+		void shrink( const tRECT<T>& Rect );
 
 		void expand( const Vector2<T>& Vect );
 
@@ -214,19 +216,27 @@ T tRECT<T>::getHeight() {
 }
 
 template <typename T>
-void tRECT<T>::merge( const tRECT<T>& Rect ) {
+void tRECT<T>::expand( const tRECT<T>& Rect ) {
 	Left	= eemin( Left	, Rect.Left		);
-	Bottom	= eemin( Bottom	, Rect.Bottom	);
+	Bottom	= eemax( Bottom	, Rect.Bottom	);
 	Right	= eemax( Right	, Rect.Right	);
+	Top		= eemin( Top	, Rect.Top		);
+}
+
+template <typename T>
+void tRECT<T>::shrink( const tRECT<T>& Rect ) {
+	Left	= eemax( Left	, Rect.Left		);
+	Bottom	= eemin( Bottom	, Rect.Bottom	);
+	Right	= eemin( Right	, Rect.Right	);
 	Top		= eemax( Top	, Rect.Top		);
 }
 
 template <typename T>
 void tRECT<T>::expand( const Vector2<T>& Vect ) {
 	Left	= eemin( Left	, Vect.x	);
-	Bottom	= eemin( Bottom	, Vect.y	);
+	Bottom	= eemax( Bottom	, Vect.y	);
 	Right	= eemax( Right	, Vect.x	);
-	Top		= eemax( Top	, Vect.y	);
+	Top		= eemin( Top	, Vect.y	);
 }
 
 template <typename T>

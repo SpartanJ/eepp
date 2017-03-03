@@ -179,6 +179,7 @@ void EETest::loadFonts() {
 	mFontLoader.add( eeNew( TextureFontLoader, ( "ProggySquareSZ", eeNew( TextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
 	mFontLoader.add( eeNew( TTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255) ) ) );
 	mFontLoader.add( eeNew( TTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255), 1, RGB(0,0,0), true ) ) );
+	mFontLoader.add( eeNew( TTFFontLoader, ( "DejaVuSansMono", MyPath + "fonts/DejaVuSansMono.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255), 1 ) ) );
 
 	mFontLoader.load( cb::Make1( this, &EETest::onFontLoaded ) );
 }
@@ -188,13 +189,14 @@ void EETest::onFontLoaded( ResourceLoader * ObjLoaded ) {
 	FF2		= FontManager::instance()->getByName( "ProggySquareSZ" );
 	TTF		= FontManager::instance()->getByName( "arial" );
 	TTFB	= FontManager::instance()->getByName( "arialb" );
+	DBSM	= FontManager::instance()->getByName( "DejaVuSansMono" );
 
 	eePRINTL( "Fonts loading time: %4.3f ms.", mFTE.getElapsed().asMilliseconds() );
 
 	eeASSERT( TTF != NULL );
 	eeASSERT( TTFB != NULL );
 
-	Con.create( FF, true );
+	Con.create( DBSM, true );
 	Con.ignoreCharOnPrompt( 186 ); // 'º'
 
 	mBuda = String::fromUtf8( "El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde." );
@@ -441,6 +443,7 @@ void EETest::createUI() {
 	TextEdit->setText( mBuda );
 
 	UIGenericGrid * genGrid = UIGenericGrid::New();
+	genGrid->setSmoothScroll( true );
 	genGrid->setParent( C )->setPosition( 325, 245 )->setSize( 200, 130 );
 	genGrid->setCollumnsCount( 3 )->setRowHeight( 24 );
 
@@ -575,6 +578,7 @@ void EETest::createNewUI() {
 	spinBox->setPosition( 350, 210 )->setSize( 200, 0 );
 
 	UIGenericGrid * genGrid = UIGenericGrid::New();
+	genGrid->setSmoothScroll( true );
 	genGrid->setPosition( 350, 250 )->setSize( 200, 130 );
 	genGrid->setCollumnsCount( 3 )->setRowHeight( 24 );
 	genGrid->setCollumnWidth( 0, 50 );
@@ -1293,11 +1297,11 @@ void EETest::render() {
 						);
 		#else
 		mInfo = String::strFormated( "EE - FPS: %d Elapsed Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s",
-							mWindow->FPS(),
-							et.AsMilliseconds(),
+							mWindow->getFPS(),
+							et.asMilliseconds(),
 							(Int32)Mouse.x,
 							(Int32)Mouse.y,
-							FileSystem::sizeToString( TF->MemorySize() ).c_str()
+							FileSystem::sizeToString( TF->getTextureMemorySize() ).c_str()
 						);
 		#endif
 
