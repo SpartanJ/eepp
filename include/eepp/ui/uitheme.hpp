@@ -87,8 +87,6 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		virtual UITextInput * createTextInput( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED, bool SupportFreeEditing = true, Uint32 MaxLength = 1024*8 );
 
-		virtual UISlider * createSlider( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS, bool VerticalSlider = false, bool AllowHalfSliderOut = true, bool ExpandBackground = false );
-
 		virtual UISpinBox * createSpinBox( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED, Float DefaultValue = 0.f, bool AllowDotsInNumbers = true );
 
 		ColorA getTooltipFontColor() const;
@@ -116,6 +114,8 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 		virtual MenuStyleConfig getMenuStyleConfig();
 
 		virtual PushButtonStyleConfig getPushButtonStyleConfig();
+
+		virtual SliderStyleConfig getSliderStyleConfig();
 	protected:
 		std::string				mName;
 		Uint32					mNameHash;

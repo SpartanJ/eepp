@@ -346,7 +346,7 @@ void EETest::createUI() {
 	mSlider->setOrientation( UI_HORIZONTAL )->setParent( C )->setPosition( 220, 80 )->setSize( 80, 24 );
 	mSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &EETest::onSliderValueChange ) );
 
-	UISlider::New()->setParent( C )->setPosition( 40, 110 )->setSize( 24, 80 );
+	UISlider::New()->setOrientation( UI_VERTICAL )->setParent( C )->setPosition( 40, 110 )->setSize( 24, 80 );
 
 	UISlider::New()->setOrientation( UI_HORIZONTAL )->setParent( C )->setPosition( 60, 110 )->setSize( 80, 24 );
 

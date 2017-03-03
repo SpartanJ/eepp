@@ -18,6 +18,8 @@ class EE_API UIThemeDefault : public UITheme {
 		WindowStyleConfig getWindowStyleConfig();
 
 		MenuStyleConfig getMenuStyleConfig();
+
+		SliderStyleConfig getSliderStyleConfig();
 };
 
 }}

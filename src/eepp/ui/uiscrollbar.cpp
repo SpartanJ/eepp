@@ -16,18 +16,15 @@ UIScrollBar::UIScrollBar() :
 	mBtnDown	= UIControlAnim::New();
 	mBtnUp		= UIControlAnim::New();
 	mBtnUp->setParent( this );
-	mBtnUp->setVisible( true );
-	mBtnUp->setEnabled( true );
 	mBtnUp->setSize( 16, 16 );
 	mBtnDown->setParent( this );
-	mBtnDown->setVisible( true );
-	mBtnDown->setEnabled( true );
 	mBtnDown->setSize( 16, 16 );
 
 	mSlider		= UISlider::New();
+	mSlider->setOrientation( UI_VERTICAL );
 	mSlider->setParent( this );
-	mSlider->setVisible( true );
-	mSlider->setEnabled( true );
+	mSlider->setAllowHalfSliderOut( false );
+	mSlider->setExpandBackground( false );
 
 	mSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
 

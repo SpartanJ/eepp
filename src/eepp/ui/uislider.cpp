@@ -8,56 +8,9 @@ UISlider *UISlider::New() {
 	return eeNew( UISlider, () );
 }
 
-UISlider::UISlider( const UISlider::CreateParams& Params ) :
-	UIComplexControl( Params ),
-	mOrientation( Params.VerticalSlider ? UI_VERTICAL : UI_HORIZONTAL ),
-	mAllowHalfSliderOut( Params.AllowHalfSliderOut ),
-	mExpandBackground( Params.ExpandBackground ),
-	mBackSlider( NULL ),
-	mSlider( NULL ),
-	mMinValue( 0.f ),
-	mMaxValue( 1.f ),
-	mValue( 0.f ),
-	mClickStep( 0.1f ),
-	mPageStep(0),
-	mOnPosChange( false )
-{
-	UIControl::CreateParams BgParams;
-	BgParams.setParent( this );
-
-	if ( UI_HORIZONTAL == mOrientation )
-		BgParams.Size = Sizei( mSize.getWidth() - 16, 8 );
-	else
-		BgParams.Size = Sizei( 8, mSize.getHeight() - 16 );
-
-	mBackSlider = eeNew( UIControlAnim, ( BgParams ) );
-	mBackSlider->setVisible( true );
-	mBackSlider->setEnabled( true );
-	mBackSlider->center();
-
-	UIDragable::CreateParams SlideParams;
-	SlideParams.setParent( this );
-	SlideParams.Size = Sizei( 16, 16 );
-	SlideParams.setPosition( Vector2i( 0, 0 ) );
-
-	mSlider = eeNew( Private::UISliderButton, ( SlideParams ) );
-	mSlider->setEnabled( true );
-	mSlider->setVisible( true );
-	mSlider->setDragEnabled( true );
-
-	if ( UI_HORIZONTAL == mOrientation )
-		mSlider->centerVertical();
-	else
-		mSlider->centerHorizontal();
-
-	applyDefaultTheme();
-}
-
 UISlider::UISlider() :
 	UIComplexControl(),
-	mOrientation( UI_VERTICAL ),
-	mAllowHalfSliderOut( false ),
-	mExpandBackground( false ),
+	mOrientation( UI_HORIZONTAL ),
 	mBackSlider( NULL ),
 	mSlider( NULL ),
 	mMinValue( 0.f ),
@@ -67,6 +20,12 @@ UISlider::UISlider() :
 	mPageStep(0),
 	mOnPosChange( false )
 {
+	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
+
+	if ( NULL != theme ) {
+		mStyleConfig = theme->getSliderStyleConfig();
+	}
+
 	Sizei bgSize;
 
 	if ( UI_HORIZONTAL == mOrientation )
@@ -166,24 +125,24 @@ void UISlider::adjustChilds() {
 		if ( UI_HORIZONTAL == mOrientation ) {
 			Int32 Height;
 
-			if ( mExpandBackground )
+			if ( mStyleConfig.ExpandBackground )
 				Height = mSize.getHeight();
 			else
 				Height = tSkin->getSize().getHeight();
 
-			if ( mAllowHalfSliderOut )
+			if ( mStyleConfig.AllowHalfSliderOut )
 				mBackSlider->setSize( Sizei( mSize.getWidth() - mSlider->getSize().getWidth(), Height ) );
 			else
 				mBackSlider->setSize( Sizei( mSize.getWidth(), Height ) );
 		} else {
 			Int32 Width;
 
-			if ( mExpandBackground )
+			if ( mStyleConfig.ExpandBackground )
 				Width = mSize.getWidth();
 			else
 				Width = tSkin->getSize().getWidth();
 
-			if ( mAllowHalfSliderOut )
+			if ( mStyleConfig.AllowHalfSliderOut )
 				mBackSlider->setSize( Sizei( Width, mSize.getHeight() - mSlider->getSize().getHeight() ) );
 			else
 				mBackSlider->setSize( Sizei( Width, mSize.getHeight() ) );
@@ -205,7 +164,7 @@ void UISlider::fixSliderPos() {
 			if ( mSlider->getPosition().x < 0 )
 				mSlider->setPosition( 0, 0 );
 
-			if ( mAllowHalfSliderOut ) {
+			if ( mStyleConfig.AllowHalfSliderOut ) {
 				if ( mSlider->getPosition().x > mBackSlider->getSize().getWidth() )
 					mSlider->setPosition( mBackSlider->getSize().getWidth(), 0 );
 			} else {
@@ -215,7 +174,7 @@ void UISlider::fixSliderPos() {
 
 			mSlider->centerVertical();
 
-			if ( mAllowHalfSliderOut )
+			if ( mStyleConfig.AllowHalfSliderOut )
 				setValue( mMinValue + (Float)mSlider->getPosition().x * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getWidth() );
 			else
 				setValue( mMinValue + (Float)mSlider->getPosition().x * ( mMaxValue - mMinValue ) / ( (Float)mSize.getWidth() - mSlider->getSize().getWidth() ) );
@@ -225,7 +184,7 @@ void UISlider::fixSliderPos() {
 			if ( mSlider->getPosition().y < 0 )
 				mSlider->setPosition( 0, 0 );
 
-			if ( mAllowHalfSliderOut ) {
+			if ( mStyleConfig.AllowHalfSliderOut ) {
 				if ( mSlider->getPosition().y > mBackSlider->getSize().getHeight() )
 					mSlider->setPosition( 0, mBackSlider->getSize().getHeight() );
 			} else {
@@ -236,7 +195,7 @@ void UISlider::fixSliderPos() {
 
 			mSlider->centerHorizontal();
 
-			if ( mAllowHalfSliderOut )
+			if ( mStyleConfig.AllowHalfSliderOut )
 				setValue( mMinValue + (Float)mSlider->getPosition().y * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getHeight() );
 			else
 				setValue( mMinValue + (Float)mSlider->getPosition().y * ( mMaxValue - mMinValue ) / ( (Float)mSize.getHeight() - mSlider->getSize().getHeight() ) );
@@ -259,12 +218,12 @@ void UISlider::setValue( Float Val ) {
 			mOnPosChange = true;
 
 			if ( UI_HORIZONTAL == mOrientation ) {
-				if ( mAllowHalfSliderOut )
+				if ( mStyleConfig.AllowHalfSliderOut )
 					mSlider->setPosition( (Int32)( (Float)mBackSlider->getSize().getWidth() * Percent ), mSlider->getPosition().y );
 				else
 					mSlider->setPosition( (Int32)( ( (Float)mSize.getWidth() - mSlider->getSize().getWidth() ) * Percent ), mSlider->getPosition().y );
 			} else {
-				if ( mAllowHalfSliderOut )
+				if ( mStyleConfig.AllowHalfSliderOut )
 					mSlider->setPosition( mSlider->getPosition().x, (Int32)( (Float)mBackSlider->getSize().getHeight() * Percent ) );
 				else
 					mSlider->setPosition( mSlider->getPosition().x, (Int32)( ( (Float)mSize.getHeight() - mSlider->getSize().getHeight() ) * Percent ) );
@@ -381,7 +340,7 @@ UI_ORIENTATION UISlider::getOrientation() const {
 	return mOrientation;
 }
 
-UIControl * UISlider::setOrientation( const UI_ORIENTATION & orientation ) {
+UISlider * UISlider::setOrientation( const UI_ORIENTATION & orientation ) {
 	mOrientation = orientation;
 
 	applyDefaultTheme();
@@ -390,11 +349,11 @@ UIControl * UISlider::setOrientation( const UI_ORIENTATION & orientation ) {
 }
 
 bool UISlider::getAllowHalfSliderOut() const {
-	return mAllowHalfSliderOut;
+	return mStyleConfig.AllowHalfSliderOut;
 }
 
 void UISlider::setAllowHalfSliderOut( bool allowHalfSliderOut ) {
-	mAllowHalfSliderOut = allowHalfSliderOut;
+	mStyleConfig.AllowHalfSliderOut = allowHalfSliderOut;
 
 	adjustChilds();
 
@@ -402,11 +361,11 @@ void UISlider::setAllowHalfSliderOut( bool allowHalfSliderOut ) {
 }
 
 bool UISlider::getExpandBackground() const {
-	return mExpandBackground;
+	return mStyleConfig.ExpandBackground;
 }
 
 void UISlider::setExpandBackground( bool expandBackground ) {
-	mExpandBackground = expandBackground;
+	mStyleConfig.ExpandBackground = expandBackground;
 
 	adjustChilds();
 

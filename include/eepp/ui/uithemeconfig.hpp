@@ -198,6 +198,14 @@ class PushButtonStyleConfig : public FontStyleConfig {
 		Sizei				IconMinSize;
 };
 
+class SliderStyleConfig {
+	public:
+		SliderStyleConfig() {}
+
+		bool AllowHalfSliderOut = false;
+		bool ExpandBackground = false;
+};
+
 }}
 
 #endif

@@ -64,4 +64,11 @@ MenuStyleConfig UIThemeDefault::getMenuStyleConfig() {
 	return menuStyleConfig;
 }
 
+SliderStyleConfig UIThemeDefault::getSliderStyleConfig()
+{
+	SliderStyleConfig sliderStyleConfig;
+	sliderStyleConfig.AllowHalfSliderOut = true;
+	return sliderStyleConfig;
+}
+
 }}

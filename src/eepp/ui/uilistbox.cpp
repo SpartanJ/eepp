@@ -48,12 +48,14 @@ UIListBox::UIListBox() :
 	mVScrollBar->setParent( this );
 	mVScrollBar->setPosition( mSize.getWidth() - 16, 0 );
 	mVScrollBar->setSize( 16, mSize.getHeight() );
+	mVScrollBar->setEnabled( false )->setVisible( false );
 
 	mHScrollBar = eeNew( UIScrollBar, () );
 	mHScrollBar->setOrientation( UI_HORIZONTAL );
 	mHScrollBar->setParent( this );
 	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
 	mHScrollBar->setPosition( 0, mSize.getHeight() - 16 );
+	mHScrollBar->setEnabled( false )->setVisible( false );
 
 	mVScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIListBox::onScrollValueChange ) );
 	mHScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIListBox::onHScrollValueChange ) );

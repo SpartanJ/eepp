@@ -9,24 +9,6 @@ namespace EE { namespace UI {
 class EE_API UISlider : public UIComplexControl {
 	public:
 		static UISlider * New();
-		class CreateParams : public UIComplexControl::CreateParams {
-			public:
-				inline CreateParams() :
-					UIComplexControl::CreateParams(),
-					VerticalSlider( false ),
-					AllowHalfSliderOut( true ),
-					ExpandBackground( false )
-				{
-				}
-
-				inline ~CreateParams() {}
-
-				bool 	VerticalSlider;
-				bool	AllowHalfSliderOut;
-				bool	ExpandBackground;
-		};
-
-		UISlider( const UISlider::CreateParams& Params );
 
 		UISlider();
 
@@ -68,7 +50,7 @@ class EE_API UISlider : public UIComplexControl {
 
 		UI_ORIENTATION getOrientation() const;
 
-		UIControl * setOrientation( const UI_ORIENTATION & orientation );
+		UISlider * setOrientation( const UI_ORIENTATION & orientation );
 
 		bool getAllowHalfSliderOut() const;
 
@@ -85,8 +67,7 @@ class EE_API UISlider : public UIComplexControl {
 		friend class Private::UISliderButton;
 
 		UI_ORIENTATION		mOrientation;
-		bool				mAllowHalfSliderOut;
-		bool				mExpandBackground;
+		SliderStyleConfig	mStyleConfig;
 		UIControlAnim *		mBackSlider;
 		Private::UISliderButton * 	mSlider;
 		Float				mMinValue;

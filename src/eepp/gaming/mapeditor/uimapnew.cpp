@@ -144,7 +144,8 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 
 	Txt = mTheme->createTextBox( "Red Color:", mUIWindow->getContainer(), Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	mUIRedSlider = mTheme->createSlider( mUIWindow->getContainer(), Sizei( 128, 20 ), Vector2i( Txt->getPosition().x + Txt->getSize().getWidth() + 16, Txt->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+	mUIRedSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
+	mUIRedSlider->setParent( mUIWindow->getContainer() )->setSize( 128, 20 )->setPosition( Txt->getPosition().x + Txt->getSize().getWidth() + 16, Txt->getPosition().y );
 	mUIRedSlider->setMaxValue( 255 );
 	mUIRedSlider->setValue( 255 );
 	mUIRedSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIMapNew::onRedChange ) );
@@ -157,10 +158,10 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 
 	Txt = mTheme->createTextBox( "Green Color:", mUIWindow->getContainer(), Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	mUIGreenSlider = mTheme->createSlider( mUIWindow->getContainer(), Sizei( 128, 20 ), Vector2i( mUIRedSlider->getPosition().x, Txt->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+	mUIGreenSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
+	mUIGreenSlider->setParent( mUIWindow->getContainer() )->setSize( 128, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIGreenSlider->setMaxValue( 255 );
 	mUIGreenSlider->setValue( 255 );
-
 	mUIGreenSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIMapNew::onGreenChange ) );
 
 	mUIGreenTxt = mTheme->createTextBox( String::toStr( 255 ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
@@ -171,7 +172,8 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 
 	Txt = mTheme->createTextBox( "Blue Color:", mUIWindow->getContainer(), Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	mUIBlueSlider = mTheme->createSlider( mUIWindow->getContainer(), Sizei( 128, 20 ), Vector2i( mUIRedSlider->getPosition().x, Txt->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+	mUIBlueSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
+	mUIBlueSlider->setParent( mUIWindow->getContainer() )->setSize( 128, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIBlueSlider->setMaxValue( 255 );
 	mUIBlueSlider->setValue( 255 );
 	mUIBlueSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIMapNew::onBlueChange ) );

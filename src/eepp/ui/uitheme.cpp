@@ -429,21 +429,6 @@ UISpinBox * UITheme::createSpinBox( UIControl * Parent, const Sizei& Size, const
 	return Ctrl;
 }
 
-UISlider * UITheme::createSlider( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool VerticalSlider, bool AllowHalfSliderOut, bool ExpandBackground ) {
-	UISlider::CreateParams SliderParams;
-	SliderParams.setParent( Parent );
-	SliderParams.setPosition( Pos );
-	SliderParams.setSize( Size );
-	SliderParams.Flags = Flags;
-	SliderParams.VerticalSlider = VerticalSlider;
-	SliderParams.AllowHalfSliderOut = AllowHalfSliderOut;
-	SliderParams.ExpandBackground = ExpandBackground;
-	UISlider * Ctrl = eeNew( UISlider, ( SliderParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
 ColorA UITheme::getTooltipFontColor() const {
 	return mTooltipFontColor;
 }
@@ -490,6 +475,10 @@ MenuStyleConfig UITheme::getMenuStyleConfig() {
 
 PushButtonStyleConfig UITheme::getPushButtonStyleConfig() {
 	return PushButtonStyleConfig( getFontStyleConfig() );
+}
+
+SliderStyleConfig UITheme::getSliderStyleConfig() {
+	return SliderStyleConfig();
 }
 
 FontStyleConfig UITheme::getFontStyleConfig() const {

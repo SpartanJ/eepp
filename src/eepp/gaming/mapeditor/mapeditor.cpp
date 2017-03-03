@@ -389,7 +389,9 @@ void MapEditor::CreateLighContainer() {
 	mUIBaseColor->setEnabled( true );
 
 	Txt = mTheme->createTextBox( "R:", mLightCont, Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	mUIRedSlider = mTheme->createSlider( mLightCont, Sizei( 100, 20 ), Vector2i( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+
+	mUIRedSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
+	mUIRedSlider->setParent( mLightCont )->setSize( 100, 20 )->setPosition( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y );
 	mUIRedSlider->setMaxValue( 255 );
 	mUIRedSlider->setValue( 255 );
 	mUIRedSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnRedChange ) );
@@ -397,7 +399,8 @@ void MapEditor::CreateLighContainer() {
 	mUIRedTxt = mTheme->createTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	Txt = mTheme->createTextBox( "G:", mLightCont, Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	mUIGreenSlider = mTheme->createSlider( mLightCont, Sizei( 100, 20 ), Vector2i( mUIRedSlider->getPosition().x, Txt->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+	mUIGreenSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
+	mUIGreenSlider->setParent( mLightCont )->setSize( 100, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIGreenSlider->setMaxValue( 255 );
 	mUIGreenSlider->setValue( 255 );
 	mUIGreenSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnGreenChange ) );
@@ -405,7 +408,8 @@ void MapEditor::CreateLighContainer() {
 	mUIGreenTxt = mTheme->createTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	Txt = mTheme->createTextBox( "B:", mLightCont, Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	mUIBlueSlider = mTheme->createSlider( mLightCont, Sizei( 100, 20 ), Vector2i( mUIRedSlider->getPosition().x, Txt->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+	mUIBlueSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
+	mUIBlueSlider->setParent( mLightCont )->setSize( 100, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIBlueSlider->setMaxValue( 255 );
 	mUIBlueSlider->setValue( 255 );
 	mUIBlueSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnBlueChange ) );
