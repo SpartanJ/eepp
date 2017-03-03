@@ -8,13 +8,6 @@ UIDragable * UIDragable::New() {
 	return eeNew( UIDragable, () );
 }
 
-UIDragable::UIDragable( const UIControl::CreateParams& Params ) :
-	UIControl( Params ),
-	mDragButton( EE_BUTTON_LMASK )
-{
-	mControlFlags |= UI_CTRL_FLAG_DRAGABLE;
-}
-
 UIDragable::UIDragable() :
 	UIControl(),
 	mDragButton( EE_BUTTON_LMASK )

@@ -8,8 +8,6 @@ namespace EE { namespace UI {
 template<class TContainer>
 class UIItemContainer : public UIControl {
 	public:
-		UIItemContainer( UIControl::CreateParams& Params );
-
 		UIItemContainer();
 
 		~UIItemContainer();
@@ -20,12 +18,6 @@ class UIItemContainer : public UIControl {
 	protected:
 		UIControl * overFind( const Vector2f& Point );
 };
-
-template<class TContainer>
-UIItemContainer<TContainer>::UIItemContainer( UIControl::CreateParams& Params ) :
-	UIControl( Params )
-{
-}
 
 template<class TContainer>
 UIItemContainer<TContainer>::UIItemContainer() :

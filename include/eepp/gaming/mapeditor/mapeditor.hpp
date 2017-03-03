@@ -32,14 +32,14 @@ class EE_API MapEditor {
 		~MapEditor();
 	protected:
 		UIWindow *			mUIWindow;
-		UIControl *		mUIContainer;
+		UIControl *			mUIContainer;
 		UITheme *			mTheme;
 		Private::UIMap *	mUIMap;
 		MapEditorCloseCb	mCloseCb;
 		UIDropDownList *	mTextureAtlasesList;
-		UIControl *		mWinContainer;
-		UIListBox *		mSubTextureList;
-		UIGfx *			mGfxPreview;
+		UIComplexControl *	mWinContainer;
+		UIListBox *			mSubTextureList;
+		UIGfx *				mGfxPreview;
 		TextureAtlas *		mCurSG;
 		UIScrollBar *		mMapHScroll;
 		UIScrollBar *		mMapVScroll;
@@ -55,11 +55,11 @@ class EE_API MapEditor {
 		UIPushButton *		mBtnGOTypeAdd;
 		Uint32				mCurGOType;
 		Uint32				mCurGOFlags;
-		UIComplexControl * mSubTextureCont;
-		UIComplexControl * mLightCont;
-		UIComplexControl * mObjectCont;
-		UIComplexControl * mSGCont;
-		UIComplexControl * mDICont;
+		UIComplexControl *	mSubTextureCont;
+		UIComplexControl *	mLightCont;
+		UIComplexControl *	mObjectCont;
+		UIComplexControl *	mSGCont;
+		UIComplexControl *	mDICont;
 		UICheckBox *		mChkDI;
 		UITextInput *		mDataIdInput;
 		UIMenuCheckBox	*	mLayerChkVisible;
@@ -75,166 +75,166 @@ class EE_API MapEditor {
 		UISlider *			mUIRedSlider;
 		UISlider *			mUIGreenSlider;
 		UISlider *			mUIBlueSlider;
-		UITextBox *		mUIRedTxt;
-		UITextBox *		mUIGreenTxt;
-		UITextBox *		mUIBlueTxt;
-		UISpinBox *		mLightRadius;
+		UITextBox *			mUIRedTxt;
+		UITextBox *			mUIGreenTxt;
+		UITextBox *			mUIBlueTxt;
+		UISpinBox *			mLightRadius;
 		UICheckBox *		mLightTypeChk;
-		UITextBox *		mTileBox;
+		UITextBox *			mTileBox;
 		Int32				mLastSelButtonY;
 		bool				mMouseScrolling;
 
 		std::list<UISelectButton*> mObjContButton;
 
-		void OnRedChange( const UIEvent * Event );
+		void onRedChange( const UIEvent * Event );
 
-		void OnGreenChange( const UIEvent * Event );
+		void onGreenChange( const UIEvent * Event );
 
-		void OnBlueChange( const UIEvent * Event );
+		void onBlueChange( const UIEvent * Event );
 
-		void CreateLighContainer();
+		void createLighContainer();
 
-		UISelectButton * AddObjContButton( String text , Uint32 mode );
+		UISelectButton * addObjContButton( String text , Uint32 mode );
 
-		void CreateObjectsContainer();
+		void createObjectsContainer();
 
-		void CreateSubTextureContainer( Int32 Width );
+		void createSubTextureContainer( Int32 Width );
 
-		void WindowClose( const UIEvent * Event );
+		void windowClose( const UIEvent * Event );
 
-		void TextureAtlasOpen( const UIEvent * Event );
+		void cextureAtlasOpen( const UIEvent * Event );
 
-		void CreateME();
+		void createME();
 
-		void CreateWinMenu();
+		void createWinMenu();
 
-		void CreateETGMenu();
+		void createETGMenu();
 
-		void CreateUIMap();
+		void createUIMap();
 
-		void FillSGCombo();
+		void fillSGCombo();
 
-		void FillSubTextureList();
+		void fillSubTextureList();
 
-		void CreateNewMap();
+		void createNewMap();
 
-		void FileMenuClick( const UIEvent * Event );
+		void fileMenuClick( const UIEvent * Event );
 
-		void ViewMenuClick( const UIEvent * Event );
+		void viewMenuClick( const UIEvent * Event );
 
-		void MapMenuClick( const UIEvent * Event );
+		void mapMenuClick( const UIEvent * Event );
 
-		void LayerMenuClick( const UIEvent * Event );
+		void layerMenuClick( const UIEvent * Event );
 
-		void OnTextureAtlasChange( const UIEvent * Event );
+		void onTextureAtlasChange( const UIEvent * Event );
 
-		void MapOpen( const UIEvent * Event );
+		void mapOpen( const UIEvent * Event );
 
-		void MapSave( const UIEvent * Event );
+		void mapSave( const UIEvent * Event );
 
-		void OnSubTextureChange( const UIEvent * Event );
+		void onSubTextureChange( const UIEvent * Event );
 
-		void OnTypeChange( const UIEvent * Event );
+		void onTypeChange( const UIEvent * Event );
 
-		void OnScrollMapH( const UIEvent * Event );
+		void onScrollMapH( const UIEvent * Event );
 
-		void OnScrollMapV( const UIEvent * Event );
+		void onScrollMapV( const UIEvent * Event );
 
-		void OnMapSizeChange( const UIEvent * Event = NULL );
+		void onMapSizeChange( const UIEvent * Event = NULL );
 
-		void OnLayerSelect( const UIEvent * Event );
+		void onLayerSelect( const UIEvent * Event );
 
-		void MapCreated();
+		void mapCreated();
 
-		void ChkClickMirrored( const UIEvent * Event );
+		void chkClickMirrored( const UIEvent * Event );
 
-		void ChkClickFliped( const UIEvent * Event );
+		void chkClickFlipped( const UIEvent * Event );
 
-		void ChkClickBlocked( const UIEvent * Event );
+		void chkClickBlocked( const UIEvent * Event );
 
-		void ChkClickAnimated( const UIEvent * Event );
+		void chkClickAnimated( const UIEvent * Event );
 
-		void ChkClickRot90( const UIEvent * Event );
+		void chkClickRot90( const UIEvent * Event );
 
-		void ChkClickAutoFix( const UIEvent * Event );
+		void chkClickAutoFix( const UIEvent * Event );
 
-		void ChkClickDI( const UIEvent * Event );
+		void chkClickDI( const UIEvent * Event );
 
-		void ChkClickClampToTile( const UIEvent * Event );
+		void chkClickClampToTile( const UIEvent * Event );
 
-		void OnMapMouseDown( const UIEvent * Event );
+		void onMapMouseDown( const UIEvent * Event );
 
-		void OnMapMouseClick( const UIEvent * Event );
+		void onMapMouseClick( const UIEvent * Event );
 
-		void OnLayerAdd( Private::UIMapLayerNew * UILayer );
+		void onLayerAdd( Private::UIMapLayerNew * UILayer );
 
-		void AddNewGOType( const UIEvent * Event );
+		void addNewGOType( const UIEvent * Event );
 
-		void OnMapClose( const UIEvent * Event );
+		void onMapClose( const UIEvent * Event );
 
-		void OnNewLight( const UIEvent * Event );
+		void onNewLight( const UIEvent * Event );
 
-		void OnLightRadiusChangeVal( const UIEvent * Event );
+		void onLightRadiusChangeVal( const UIEvent * Event );
 
-		void OnLightTypeChange( const UIEvent * Event );
+		void onLightTypeChange( const UIEvent * Event );
 
-		void OnLightSelect( MapLight * Light );
+		void onLightSelect( MapLight * Light );
 
-		void OnLightRadiusChange( MapLight * Light );
+		void onLightRadiusChange( MapLight * Light );
 
-		void OnObjectModeSel( const UIEvent * Event );
+		void onObjectModeSel( const UIEvent * Event );
 
-		void OnNewGOTypeAdded( std::string name, Uint32 hash );
+		void onNewGOTypeAdded( std::string name, Uint32 hash );
 
-		void OnAddObject( Uint32 Type, Polygon2f poly );
+		void onAddObject( Uint32 Type, Polygon2f poly );
 
-		void UpdateGfx();
+		void updateGfx();
 
-		void UpdateFlags();
+		void updateFlags();
 
-		void AddGameObjectToTile();
+		void addGameObjectToTile();
 
-		void RemoveGameObjectFromTile();
+		void removeGameObjectFromTile();
 
-		void AddGameObject();
+		void addGameObject();
 
-		void RemoveGameObject();
+		void removeGameObject();
 
-		GameObject * CreateGameObject();
+		GameObject * createGameObject();
 
-		void MoveLayerUp();
+		void moveLayerUp();
 
-		void MoveLayerDown();
+		void moveLayerDown();
 
-		void RemoveLayer();
+		void removeLayer();
 
-		void RefreshLayersList();
+		void refreshLayersList();
 
-		void CreateNewEmptyMap();
+		void createNewEmptyMap();
 
-		void FillGotyList();
+		void fillGotyList();
 
-		void RefreshGotyList();
+		void refreshGotyList();
 
-		void SetViewOptions();
+		void setViewOptions();
 
-		GameObject * GetCurrentGOOver();
+		GameObject * getCurrentGOOver();
 
-		void ZoomIn();
+		void zoomIn();
 
-		void ZoomOut();
+		void zoomOut();
 
-		UIMessageBox * CreateAlert( const String& title, const String& text );
+		UIMessageBox * createAlert( const String& title, const String& text );
 
-		UIMessageBox * CreateNoLayerAlert( const String title );
+		UIMessageBox * createNoLayerAlert( const String title );
 
-		void OnTabSelected( const UIEvent * Event );
+		void onTabSelected( const UIEvent * Event );
 
-		void CreateTabs();
+		void createTabs();
 
-		void OnMapLoad();
+		void onMapLoad();
 
-		void UpdateScroll();
+		void updateScroll();
 };
 
 }}

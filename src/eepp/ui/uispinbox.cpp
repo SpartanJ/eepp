@@ -14,18 +14,18 @@ UISpinBox::UISpinBox() :
 	mValue( 0 ),
 	mClickStep( 1.f )
 {
-	mInput	= eeNew( UITextInput, () );
+	mInput	= UITextInput::New();
 	mInput->setVisible( true );
 	mInput->setEnabled( true );
 	mInput->setParent( this );
 
-	mPushUp	= eeNew( UIControlAnim, () );
+	mPushUp	= UIControlAnim::New();
 	mPushUp->setVisible( true );
 	mPushUp->setEnabled( true );
 	mPushUp->setParent( this );
 	mPushUp->setSize( 16, 16 );
 
-	mPushDown = eeNew( UIControlAnim, () );
+	mPushDown = UIControlAnim::New();
 	mPushDown->setVisible( true );
 	mPushDown->setEnabled( true );
 	mPushDown->setParent( this );

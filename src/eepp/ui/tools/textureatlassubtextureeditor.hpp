@@ -12,7 +12,7 @@ class TextureAtlasEditor;
 
 class EE_API TextureAtlasSubTextureEditor : public UIComplexControl {
 	public:
-		TextureAtlasSubTextureEditor( const UIComplexControl::CreateParams& Params, TextureAtlasEditor * Editor );
+		TextureAtlasSubTextureEditor( TextureAtlasEditor * Editor );
 
 		virtual ~TextureAtlasSubTextureEditor();
 

@@ -11,8 +11,6 @@ class EE_API UIControlAnim : public UIDragable {
 	public:
 		static UIControlAnim * New();
 
-		UIControlAnim( const CreateParams& Params );
-
 		UIControlAnim();
 
 		virtual ~UIControlAnim();

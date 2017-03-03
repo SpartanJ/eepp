@@ -75,27 +75,13 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		virtual UISkin * add( UISkin * Resource );
 
-		void setUseDefaultThemeValues( const bool& Use );
-
-		const bool& getUseDefaultThemeValues() const;
-
 		Graphics::TextureAtlas * getTextureAtlas() const;
 
 		SubTexture * getIconByName( const std::string& name );
 
-		virtual UITextBox * createTextBox( const String& Text = "", UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+		TooltipStyleConfig getFontStyleConfig() const;
 
-		ColorA getTooltipFontColor() const;
-
-		void setTooltipFontColor(const ColorA & tooltipFontColor);
-
-		Recti getTooltipPadding() const;
-
-		void setTooltipPadding(const Recti & tooltipPadding);
-
-		FontStyleConfig getFontStyleConfig() const;
-
-		void setFontStyleConfig(const FontStyleConfig & fontConfig);
+		void setFontStyleConfig(const TooltipStyleConfig & fontConfig);
 
 		virtual TabWidgetStyleConfig getTabWidgetStyleConfig();
 
@@ -112,17 +98,14 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 		virtual PushButtonStyleConfig getPushButtonStyleConfig();
 
 		virtual SliderStyleConfig getSliderStyleConfig();
+
+		virtual TooltipStyleConfig getTooltipStyleConfig();
 	protected:
 		std::string				mName;
 		Uint32					mNameHash;
 		std::string				mAbbr;
 		Graphics::TextureAtlas *mTextureAtlas;
-		FontStyleConfig			mFontStyleConfig;
-		ColorA					mMenuFontColor;
-		ColorA					mMenuFontColorOver;
-		ColorA					mTooltipFontColor;
-		Recti					mTooltipPadding;
-		bool					mUseDefaultThemeValues;
+		TooltipStyleConfig			mFontStyleConfig;
 		std::list<std::string>	mUIElements;
 		std::list<std::string>	mUIIcons;
 

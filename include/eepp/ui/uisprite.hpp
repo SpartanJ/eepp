@@ -13,25 +13,6 @@ class EE_API UISprite : public UIComplexControl {
 	public:
 		static UISprite * New();
 
-		class CreateParams : public UIComplexControl::CreateParams {
-			public:
-				inline CreateParams() :
-					UIComplexControl::CreateParams(),
-					Sprite( NULL ),
-					SpriteRender( RN_NORMAL ),
-					DeallocSprite( true )
-				{
-				}
-
-				inline ~CreateParams() {}
-
-				Graphics::Sprite * 	Sprite;
-				EE_RENDER_MODE		SpriteRender;
-				bool				DeallocSprite;
-		};
-
-		UISprite( const UISprite::CreateParams& Params );
-
 		UISprite();
 
 		virtual ~UISprite();

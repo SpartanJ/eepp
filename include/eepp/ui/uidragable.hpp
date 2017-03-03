@@ -9,8 +9,6 @@ class EE_API UIDragable : public UIControl {
 	public:
 		static UIDragable * New();
 
-		UIDragable( const UIControl::CreateParams& Params );
-
 		UIDragable();
 
 		virtual Uint32 getType() const;

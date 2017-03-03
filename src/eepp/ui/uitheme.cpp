@@ -325,8 +325,7 @@ UITheme::UITheme(const std::string& name, const std::string& Abbr, Graphics::Fon
 	mName( name ),
 	mNameHash( String::hash( mName ) ),
 	mAbbr( Abbr ),
-	mTextureAtlas( NULL ),
-	mUseDefaultThemeValues( true )
+	mTextureAtlas( NULL )
 {
 	mFontStyleConfig.Font = defaultFont;
 	mFontStyleConfig.FontShadowColor = ColorA( 255, 255, 255, 200 );
@@ -365,14 +364,6 @@ UISkin * UITheme::add( UISkin * Resource ) {
 	return ResourceManager<UISkin>::add( Resource );
 }
 
-void UITheme::setUseDefaultThemeValues( const bool& Use ) {
-	mUseDefaultThemeValues = Use;
-}
-
-const bool& UITheme::getUseDefaultThemeValues() const {
-	return mUseDefaultThemeValues;
-}
-
 Graphics::TextureAtlas * UITheme::getTextureAtlas() const {
 	return mTextureAtlas;
 }
@@ -388,36 +379,7 @@ SubTexture * UITheme::getIconByName( const std::string& name ) {
 	return NULL;
 }
 
-UITextBox * UITheme::createTextBox( const String& Text, UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
-	UITextBox::CreateParams TextBoxParams;
-	TextBoxParams.setParent( Parent );
-	TextBoxParams.setPosition( Pos );
-	TextBoxParams.setSize( Size );
-	TextBoxParams.Flags = Flags;
-	UITextBox * Ctrl = eeNew( UITextBox, ( TextBoxParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( false );
-	Ctrl->setText( Text );
-	return Ctrl;
-}
-
-ColorA UITheme::getTooltipFontColor() const {
-	return mTooltipFontColor;
-}
-
-void UITheme::setTooltipFontColor(const ColorA & tooltipFontColor) {
-	mTooltipFontColor = tooltipFontColor;
-}
-
-Recti UITheme::getTooltipPadding() const {
-	return mTooltipPadding;
-}
-
-void UITheme::setTooltipPadding(const Recti & tooltipPadding) {
-	mTooltipPadding = tooltipPadding;
-}
-
-void UITheme::setFontStyleConfig(const FontStyleConfig & fontConfig) {
+void UITheme::setFontStyleConfig(const TooltipStyleConfig & fontConfig) {
 	mFontStyleConfig = fontConfig;
 }
 
@@ -453,7 +415,11 @@ SliderStyleConfig UITheme::getSliderStyleConfig() {
 	return SliderStyleConfig();
 }
 
-FontStyleConfig UITheme::getFontStyleConfig() const {
+TooltipStyleConfig UITheme::getTooltipStyleConfig() {
+	return TooltipStyleConfig( getFontStyleConfig() );
+}
+
+TooltipStyleConfig UITheme::getFontStyleConfig() const {
 	return mFontStyleConfig;
 }
 

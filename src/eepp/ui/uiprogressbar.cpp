@@ -16,7 +16,7 @@ UIProgressBar::UIProgressBar() :
 
 	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
 
-	mTextBox = eeNew( UITextBox, () );
+	mTextBox = UITextBox::New();
 	mTextBox->setHorizontalAlign( UI_HALIGN_CENTER );
 	mTextBox->setParent( this );
 	mTextBox->setEnabled( false );

@@ -7,23 +7,6 @@ UISprite * UISprite::New() {
 	return eeNew( UISprite, () );
 }
 
-UISprite::UISprite( const UISprite::CreateParams& Params ) :
-	UIComplexControl( Params ),
-	mSprite( Params.Sprite ),
-	mRender( Params.SpriteRender ),
-	mAlignOffset(0,0),
-	mSubTextureLast(NULL)
-{
-	if ( Params.DeallocSprite )
-		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
-
-	if ( NULL != mSprite ) {
-		mSprite->setAutoAnimate( false );
-
-		updateSize();
-	}
-}
-
 UISprite::UISprite() :
 	UIComplexControl(),
 	mSprite( NULL ),

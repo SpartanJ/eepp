@@ -43,14 +43,14 @@ UIListBox::UIListBox() :
 	mContainer->setFlags( mFlags );
 	mContainer->setPosition( 0, 0 );
 
-	mVScrollBar = eeNew( UIScrollBar, () );
+	mVScrollBar = UIScrollBar::New();
 	mVScrollBar->setOrientation( UI_VERTICAL );
 	mVScrollBar->setParent( this );
 	mVScrollBar->setPosition( mSize.getWidth() - 16, 0 );
 	mVScrollBar->setSize( 16, mSize.getHeight() );
 	mVScrollBar->setEnabled( false )->setVisible( false );
 
-	mHScrollBar = eeNew( UIScrollBar, () );
+	mHScrollBar = UIScrollBar::New();
 	mHScrollBar->setOrientation( UI_HORIZONTAL );
 	mHScrollBar->setParent( this );
 	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
@@ -963,11 +963,11 @@ void UIListBox::setTouchDragDeceleration(const Float & touchDragDeceleration) {
 	mTouchDragDeceleration = touchDragDeceleration;
 }
 
-FontStyleConfig UIListBox::getFontStyleConfig() const {
+TooltipStyleConfig UIListBox::getFontStyleConfig() const {
 	return mFontStyleConfig;
 }
 
-void UIListBox::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
+void UIListBox::setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig) {
 	mFontStyleConfig = fontStyleConfig;
 
 	setFont( mFontStyleConfig.Font );

@@ -7,21 +7,6 @@ UIGfx *UIGfx::New() {
 	return eeNew( UIGfx, () );
 }
 
-UIGfx::UIGfx( const UIGfx::CreateParams& Params ) :
-	UIComplexControl( Params ),
-	mSubTexture( Params.SubTexture ),
-	mColor( Params.SubTextureColor ),
-	mRender( Params.SubTextureRender ),
-	mAlignOffset(0,0)
-{
-	if ( NULL != mSubTexture && ( ( getFlags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) )
-		setSize( mSubTexture->getSize() );
-
-	mColor.Alpha = (Uint8)mAlpha;
-
-	onAutoSize();
-}
-
 UIGfx::UIGfx() :
 	UIComplexControl(),
 	mSubTexture( NULL ),

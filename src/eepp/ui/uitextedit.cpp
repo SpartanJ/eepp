@@ -20,7 +20,7 @@ UITextEdit::UITextEdit() :
 {
 	setFlags( UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED | UI_CLIP_ENABLE | UI_WORD_WRAP );
 
-	mTextInput	= eeNew( UITextInput, () );
+	mTextInput	= UITextInput::New();
 	mTextInput->setParent( this );
 	mTextInput->setFlags( UI_TEXT_SELECTION_ENABLED | UI_TEXT_SELECTION_ENABLED | UI_VALIGN_TOP );
 	mTextInput->unsetFlags( UI_CLIP_ENABLE | UI_VALIGN_CENTER );
@@ -34,14 +34,14 @@ UITextEdit::UITextEdit() :
 	mTextInput->addEventListener( UIEvent::EventOnPressEnter		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
 	mTextInput->addEventListener( UIEvent::EventOnCursorPosChange	, cb::Make1( this, &UITextEdit::onCursorPosChange ) );
 
-	mVScrollBar = eeNew( UIScrollBar, () );
+	mVScrollBar = UIScrollBar::New();
 	mVScrollBar->setOrientation( UI_VERTICAL );
 	mVScrollBar->setParent( this );
 	mVScrollBar->setPosition( mSize.getWidth() - 16, 0 );
 	mVScrollBar->setSize( 16, mSize.getHeight() );
 	mVScrollBar->setValue( 1 );
 
-	mHScrollBar = eeNew( UIScrollBar, () );
+	mHScrollBar = UIScrollBar::New();
 	mHScrollBar->setOrientation( UI_HORIZONTAL );
 	mHScrollBar->setParent( this );
 	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
@@ -424,11 +424,11 @@ const UI_SCROLLBAR_MODE& UITextEdit::getHorizontalScrollMode() {
 	return mHScrollBarMode;
 }
 
-FontStyleConfig UITextEdit::getFontStyleConfig() const {
+TooltipStyleConfig UITextEdit::getFontStyleConfig() const {
 	return mTextInput->getFontStyleConfig();
 }
 
-void UITextEdit::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
+void UITextEdit::setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig) {
 	if ( NULL != mTextInput ) {
 		mTextInput->setFontStyleConfig( fontStyleConfig );
 	}

@@ -26,54 +26,6 @@ class EE_API UIControl {
 
 		typedef cb::Callback1<void, const UIEvent*> UIEventCallback;
 
-		class CreateParams {
-			public:
-				CreateParams(
-					UIControl * parentCtrl,
-					const Vector2i& pos = Vector2i( 0, 0 ),
-					const Sizei& size = Sizei( -1, -1 ),
-					const Uint32& flags = UI_CONTROL_DEFAULT_FLAGS,
-					const EE_BLEND_MODE& blend = ALPHA_NORMAL,
-					const UIBackground& Back = UIBackground(),
-					const UIBorder& Bord = UIBorder()
-				) :
-					ParentCtrl( parentCtrl ),
-					Pos( pos ),
-					Size( size ),
-					Flags( flags ),
-					Blend( blend )
-				{
-					Background = Back;
-					Border = Bord;
-				}
-
-				CreateParams() {
-					ParentCtrl		= NULL;
-					Pos				= Vector2i( 0, 0 );
-					Size			= Sizei( -1, -1 );
-					Flags			= UI_CONTROL_DEFAULT_FLAGS;
-					Blend			= ALPHA_NORMAL;
-				}
-
-				~CreateParams() {}
-
-				void setPosition( const Vector2i& pos )						{ Pos.x = pos.x; Pos.y = pos.y; }
-				void setPosition( const Int32& X, const Int32& Y )				{ Pos.x = X; Pos.y = Y; }
-				void setParent( UIControl * Ctrl )							{ ParentCtrl = Ctrl; }
-				void setSize( const Sizei& size )							{ Size.x = size.x; Size.y = size.y;	}
-				void setSize( const Int32& Width, const Int32& Height )		{ Size.x = Width; Size.y = Height;	}
-
-				UIControl *		ParentCtrl;
-				Vector2i			Pos;
-				Sizei				Size;
-				Uint32				Flags;
-				UIBackground		Background;
-				UIBorder			Border;
-				EE_BLEND_MODE	Blend;
-		};
-
-		UIControl( const CreateParams& Params );
-
 		UIControl();
 
 		virtual ~UIControl();

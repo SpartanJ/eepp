@@ -211,12 +211,14 @@ const bool& UITextInput::getAllowEditing() const {
 	return mAllowEditing;
 }
 
-void UITextInput::setText( const String& text ) {
+UITextBox * UITextInput::setText( const String& text ) {
 	UITextBox::setText( text );
 
 	mTextBuffer.setBuffer( text );
 
 	mTextBuffer.cursorToEnd();
+
+	return this;
 }
 
 const String& UITextInput::getText() {

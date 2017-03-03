@@ -16,9 +16,6 @@ UIThemeDefault::UIThemeDefault( const std::string& name, const std::string& Abbr
 	mFontStyleConfig.FontOverColor = mFontStyleConfig.FontSelectedColor = ColorA( 255, 255, 255, 255 );
 	mFontStyleConfig.FontShadowColor = ColorA( 50, 50, 50, 150 );
 	mFontStyleConfig.FontSelectionBackColor = ColorA( 150, 150, 150, 255 );
-
-	setTooltipFontColor( ColorA( 0, 0, 0, 255 ) );
-	setTooltipPadding( Recti( 4, 6, 4, 6) );
 }
 
 TabWidgetStyleConfig UIThemeDefault::getTabWidgetStyleConfig() {
@@ -64,11 +61,17 @@ MenuStyleConfig UIThemeDefault::getMenuStyleConfig() {
 	return menuStyleConfig;
 }
 
-SliderStyleConfig UIThemeDefault::getSliderStyleConfig()
-{
+SliderStyleConfig UIThemeDefault::getSliderStyleConfig() {
 	SliderStyleConfig sliderStyleConfig;
 	sliderStyleConfig.AllowHalfSliderOut = true;
 	return sliderStyleConfig;
+}
+
+TooltipStyleConfig UIThemeDefault::getTooltipStyleConfig() {
+	TooltipStyleConfig tooltipStyleConfig = UITheme::getTooltipStyleConfig();
+	tooltipStyleConfig.FontColor = ColorA( 0, 0, 0, 255 );
+	tooltipStyleConfig.Padding = Recti( 4, 6, 4, 6 );
+	return tooltipStyleConfig;
 }
 
 }}

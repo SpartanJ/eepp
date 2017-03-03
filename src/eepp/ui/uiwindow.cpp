@@ -60,28 +60,28 @@ void UIWindow::updateWinFlags() {
 
 	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) ) {
 		if ( NULL == mWindowDecoration )
-			mWindowDecoration = eeNew( UIControlAnim, () );
+			mWindowDecoration = UIControlAnim::New();
 
 		mWindowDecoration->setParent( this );
 		mWindowDecoration->setVisible( true );
 		mWindowDecoration->setEnabled( false );
 
 		if ( NULL == mBorderLeft )
-			mBorderLeft		= eeNew( UIControlAnim, () );
+			mBorderLeft		= UIControlAnim::New();
 
 		mBorderLeft->setParent( this );
 		mBorderLeft->setEnabled( true );
 		mBorderLeft->setVisible( true );
 
 		if ( NULL == mBorderRight )
-			mBorderRight	= eeNew( UIControlAnim, () );
+			mBorderRight	= UIControlAnim::New();
 
 		mBorderRight->setParent( this );
 		mBorderRight->setEnabled( true );
 		mBorderRight->setVisible( true );
 
 		if ( NULL == mBorderBottom )
-			mBorderBottom	= eeNew( UIControlAnim, ( ) );
+			mBorderBottom	= UIControlAnim::New();
 
 		mBorderBottom->setParent( this );
 		mBorderBottom->setEnabled( true );
@@ -857,7 +857,7 @@ const Uint8& UIWindow::getBaseAlpha() const {
 
 void UIWindow::setTitle( const String& Text ) {
 	if ( NULL == mTitle ) {
-		mTitle = eeNew( UITextBox, () );
+		mTitle = UITextBox::New();
 		mTitle->setParent( this );
 		mTitle->setHorizontalAlign( getHorizontalAlign() );
 		mTitle->setVerticalAlign( getVerticalAlign() );

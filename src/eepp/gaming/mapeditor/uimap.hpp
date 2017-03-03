@@ -20,6 +20,8 @@ namespace Private {
 
 class EE_API UIMap : public UIComplexControl {
 	public:
+		static UIMap * New( UITheme * Theme, TileMap * Map = NULL );
+
 		enum EDITING_OBJ_MODE {
 			SELECT_OBJECTS,
 			EDIT_POLYGONS,
@@ -35,7 +37,7 @@ class EE_API UIMap : public UIComplexControl {
 		typedef cb::Callback0<void> OnMapLoadCb;
 		typedef cb::Callback0<void> UpdateScrollCb;
 
-		UIMap( const UIComplexControl::CreateParams& Params, UITheme * Theme, TileMap * Map = NULL );
+		UIMap( UITheme * Theme, TileMap * Map = NULL );
 
 		virtual ~UIMap();
 

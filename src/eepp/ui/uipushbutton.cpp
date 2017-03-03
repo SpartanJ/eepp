@@ -261,7 +261,7 @@ void UIPushButton::setFontShadowColor( const ColorA& color ) {
 	mTextBox->setFontShadowColor( color );
 }
 
-FontStyleConfig UIPushButton::getStyleConfig() const {
+TooltipStyleConfig UIPushButton::getStyleConfig() const {
 	return mStyleConfig;
 }
 

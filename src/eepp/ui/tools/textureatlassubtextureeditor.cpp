@@ -5,8 +5,8 @@
 
 namespace EE { namespace UI { namespace Tools {
 
-TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( const UIComplexControl::CreateParams& Params, TextureAtlasEditor * Editor ) :
-	UIComplexControl( Params ),
+TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( TextureAtlasEditor * Editor ) :
+	UIComplexControl(),
 	mGfx( NULL ),
 	mEditor( Editor )
 {
@@ -16,13 +16,13 @@ TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( const UIComplexContr
 
 	mTheme = UIThemeManager::instance()->getDefaultTheme();
 
-	mGfx = eeNew( UIGfx, () );
+	mGfx = UIGfx::New();
 	mGfx->setParent( this );
 	mGfx->setVisible( true );
 	mGfx->setEnabled( true );
 	mGfx->unsetFlags( UI_FIT_TO_CONTROL );
 
-	mDrag = eeNew( UIDragable, () );
+	mDrag = UIDragable::New();
 	mDrag->setParent( this );
 	mDrag->setSize( 64000, 64000 );
 	mDrag->setEnabled( true );

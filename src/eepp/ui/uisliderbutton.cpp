@@ -3,10 +3,8 @@
 
 namespace EE { namespace UI { namespace Private {
 
-UISliderButton::UISliderButton( const UIControlAnim::CreateParams& Params ) :
-	UIControlAnim( Params )
-{
-	applyDefaultTheme();
+UISliderButton *UISliderButton::New() {
+	return eeNew( UISliderButton, () );
 }
 
 UISliderButton::UISliderButton() :

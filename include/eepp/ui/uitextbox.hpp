@@ -9,21 +9,6 @@ class EE_API UITextBox : public UIComplexControl {
 	public:
 		static UITextBox * New();
 
-		class CreateParams : public UIComplexControl::CreateParams {
-			public:
-				inline CreateParams() :
-					UIComplexControl::CreateParams()
-				{
-					FontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
-				}
-
-				inline ~CreateParams() {}
-
-				UI::FontStyleConfig FontStyleConfig;
-		};
-
-		UITextBox( const UITextBox::CreateParams& Params );
-
 		UITextBox();
 
 		virtual ~UITextBox();
@@ -42,7 +27,7 @@ class EE_API UITextBox : public UIComplexControl {
 
 		virtual const String& getText();
 
-		virtual void setText( const String& text );
+		virtual UITextBox * setText( const String& text );
 
 		const ColorA& getFontColor() const;
 
@@ -76,13 +61,13 @@ class EE_API UITextBox : public UIComplexControl {
 
 		bool isTextSelectionEnabled() const;
 
-		virtual void setFontStyleConfig( const FontStyleConfig& fontStyleConfig );
+		virtual void setFontStyleConfig( const TooltipStyleConfig& fontStyleConfig );
 
-		FontStyleConfig getFontStyleConfig() const;
+		TooltipStyleConfig getFontStyleConfig() const;
 	protected:
 		TextCache *		mTextCache;
 		String			mString;
-		FontStyleConfig mFontStyleConfig;
+		TooltipStyleConfig mFontStyleConfig;
 		Vector2i 		mAlignOffset;
 		Vector2f 		mRealAlignOffset;
 		Recti			mPadding;

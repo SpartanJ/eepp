@@ -10,37 +10,6 @@ class EE_API UIComplexControl : public UIControlAnim {
 	public:
 		static UIComplexControl * New();
 
-		class CreateParams : public UIControlAnim::CreateParams {
-			public:
-				inline CreateParams() :
-					UIControlAnim::CreateParams(),
-					MinControlSize( 0, 0 )
-				{
-				}
-
-				inline CreateParams(
-					UIControl * parentCtrl,
-					const Vector2i& pos = Vector2i( 0, 0 ),
-					const Sizei& size = Sizei( -1, -1 ),
-					const Uint32& flags = UI_CONTROL_DEFAULT_FLAGS,
-					const EE_BLEND_MODE& blend = ALPHA_NORMAL,
-					const UIBackground& Back = UIBackground(),
-					const UIBorder& Bord = UIBorder(),
-					const Sizei& MinCtrlSize = Sizei(0,0)
-				) :
-					UIControlAnim::CreateParams( parentCtrl, pos, size, flags, blend, Back, Bord ),
-					MinControlSize( MinCtrlSize )
-				{
-				}
-
-				inline ~CreateParams() {}
-
-				String	TooltipText;
-				Sizei	MinControlSize;
-		};
-
-		UIComplexControl( const UIComplexControl::CreateParams& Params );
-
 		UIComplexControl();
 
 		virtual ~UIComplexControl();

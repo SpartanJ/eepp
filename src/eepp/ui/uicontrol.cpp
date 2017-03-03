@@ -13,44 +13,6 @@ UIControl *UIControl::New() {
 	return eeNew( UIControl, () );
 }
 
-UIControl::UIControl( const CreateParams& Params ) :
-	mPos( Params.Pos ),
-	mRealPos( Params.Pos.x * PixelDensity::getPixelDensity(), Params.Pos.y * PixelDensity::getPixelDensity() ),
-	mSize( Params.Size ),
-	mRealSize( PixelDensity::dpToPxI( Params.Size ) ),
-	mFlags( Params.Flags ),
-	mData( 0 ),
-	mParentCtrl( Params.ParentCtrl ),
-	mChild( NULL ),
-	mChildLast( NULL ),
-	mNext( NULL ),
-	mPrev( NULL ),
-	mSkinState( NULL ),
-	mBackground( NULL ),
-	mBorder( NULL ),
-	mControlFlags( 0 ),
-	mBlend( Params.Blend ),
-	mNumCallBacks( 0 ),
-	mVisible( true ),
-	mEnabled( true )
-{
-	if ( NULL == mParentCtrl && NULL != UIManager::instance()->getMainControl() ) {
-		mParentCtrl = UIManager::instance()->getMainControl();
-	}
-
-	if ( NULL != mParentCtrl )
-		mParentCtrl->childAdd( this );
-
-	if ( mFlags & UI_FILL_BACKGROUND )
-		mBackground = eeNew( UIBackground, ( Params.Background ) );
-
-	if ( mFlags & UI_BORDER )
-		mBorder = eeNew( UIBorder, ( Params.Border ) );
-
-	updateScreenPos();
-	updateQuad();
-}
-
 UIControl::UIControl() :
 	mPos( 0, 0 ),
 	mRealPos( 0, 0 ),

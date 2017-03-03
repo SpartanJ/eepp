@@ -7,8 +7,11 @@
 
 namespace EE { namespace Gaming { namespace Private {
 
-UIMap::UIMap( const UIComplexControl::CreateParams& Params, UITheme * Theme, TileMap * Map ) :
-	UIComplexControl( Params ),
+UIMap * UIMap::New( UITheme * Theme, TileMap * Map ) {
+	return eeNew( UIMap, ( Theme, Map ) );
+}
+
+UIMap::UIMap( UITheme * Theme, TileMap * Map ) :
 	mMap( Map ),
 	mCurLayer( NULL ),
 	mEditingMode( 0 ),

@@ -29,7 +29,8 @@ class EE_API TextureAtlasEditor {
 		class UITGEUpdater : public UIControl
 		{
 			public:
-				UITGEUpdater( const CreateParams& Params, TextureAtlasEditor * TGEditor ) : UIControl( Params ), mTGEditor( TGEditor ) {}
+				UITGEUpdater( TextureAtlasEditor * TGEditor ) : UIControl(), mTGEditor( TGEditor ) {}
+
 				virtual void update() { mTGEditor->update(); }
 			protected:
 				TextureAtlasEditor * mTGEditor;

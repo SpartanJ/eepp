@@ -206,6 +206,17 @@ class SliderStyleConfig {
 		bool ExpandBackground = false;
 };
 
+class TooltipStyleConfig : public FontStyleConfig {
+	public:
+		TooltipStyleConfig() {}
+
+		TooltipStyleConfig( FontStyleConfig fontStyleConfig ) :
+			FontStyleConfig( fontStyleConfig )
+		{}
+
+		Recti		Padding;
+};
+
 }}
 
 #endif

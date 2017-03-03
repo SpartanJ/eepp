@@ -39,7 +39,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 
 	createTxtBox( Vector2i( 10, 50 ), "Max. Texture Atlas Width:" );
 
-	mComboWidth = eeNew( UIComboBox, () );
+	mComboWidth = UIComboBox::New();
 	mComboWidth->setParent( mUIWindow->getContainer() );
 	mComboWidth->setSize( 100, 0 );
 	mComboWidth->setPosition( PosX, 50 );
@@ -48,7 +48,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 
 	createTxtBox( Vector2i( 10, 80 ), "Max. Texture Atlas Height:" );
 
-	mComboHeight = eeNew( UIComboBox, () );
+	mComboHeight = UIComboBox::New();
 	mComboHeight->setParent( mUIWindow->getContainer() );
 	mComboHeight->setSize( 100, 0 );
 	mComboHeight->setPosition( PosX, 80 );
@@ -103,7 +103,7 @@ TextureAtlasNew::~TextureAtlasNew() {
 }
 
 UITextBox * TextureAtlasNew::createTxtBox( Vector2i Pos, const String& Text ) {
-	UITextBox * textBox = eeNew( UITextBox, () );
+	UITextBox * textBox = UITextBox::New();
 	textBox->setParent( mUIWindow->getContainer() )
 			->setPosition( Pos )
 			->setFlags( UI_DRAW_SHADOW | UI_AUTO_SIZE )

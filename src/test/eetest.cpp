@@ -281,7 +281,7 @@ void EETest::createUI() {
 	//UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES;
 	UIManager::instance()->init(UI_MAN_OPS);
 
-	//mTheme = UITheme::loadFromPath( eeNew( UIdefaultTheme, ( mThemeName, mThemeName ) ), MyPath + mThemeName + "/" );
+	//mTheme = UITheme::loadFromPath( eeNew( UIThemeDefault, ( mThemeName, mThemeName ) ), MyPath + mThemeName + "/" );
 
 	TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
 
@@ -600,19 +600,19 @@ void EETest::createNewUI() {
 		genGrid->add( Cell );
 	}
 
-	UIWindow * MenuCont = eeNew( UIWindow, () );
+	UIWindow * MenuCont = UIWindow::New();
 	MenuCont->setPosition( 350, 390 )->setSize( 200, 115 );
 
-	UIWinMenu * WinMenu = eeNew( UIWinMenu, () );
+	UIWinMenu * WinMenu = UIWinMenu::New();
 	WinMenu->setParent( MenuCont->getContainer() );
 
-	UIPopUpMenu * PopMenu = eeNew( UIPopUpMenu, () );
+	UIPopUpMenu * PopMenu = UIPopUpMenu::New();
 	PopMenu->add( "File" );
 	PopMenu->add( "Open" );
 	PopMenu->add( "Close" );
 	PopMenu->add( "Quit" );
 
-	UIPopUpMenu * PopMenu2 = eeNew( UIPopUpMenu, () );
+	UIPopUpMenu * PopMenu2 = UIPopUpMenu::New();
 	PopMenu2->add( "Bla" );
 	PopMenu2->add( "Bla 2" );
 	PopMenu2->add( "Bla 3" );
@@ -621,7 +621,7 @@ void EETest::createNewUI() {
 	WinMenu->addMenuButton( "File", PopMenu );
 	WinMenu->addMenuButton( "Edit", PopMenu2 );
 
-	UITabWidget * TabWidget = eeNew( UITabWidget, () );
+	UITabWidget * TabWidget = UITabWidget::New();
 	TabWidget->setPosition( 350, 530 )->setSize( 200, 64 );
 
 	TabWidget->add( "Tab 1", UIComplexControl::New()->setThemeControl( "winback" ), mTheme->getIconByName( "ok" ) );

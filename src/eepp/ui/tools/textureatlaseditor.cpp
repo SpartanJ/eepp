@@ -125,17 +125,15 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	createTGEditor();
 
-	UIComplexControl::CreateParams Params;
-	Params.setParent( mUIContainer );
-	Params.setPosition( 0, mWinMenu->getSize().getHeight() );
-	Params.setSize( 800, 600 );
-	Params.Background.setColor( ColorA( 0, 0, 0, 50 ) );
-	Params.Flags |= UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT | UI_CLIP_ENABLE | UI_BORDER | UI_FILL_BACKGROUND;
-	mSubTextureEditor = eeNew( TextureAtlasSubTextureEditor, ( Params, this ) );
-	mSubTextureEditor->setVisible( true );
-	mSubTextureEditor->setEnabled( true );
+	mSubTextureEditor = eeNew( TextureAtlasSubTextureEditor, ( this ) );
+	mSubTextureEditor->setFlags( UI_CLIP_ENABLE | UI_BORDER | UI_FILL_BACKGROUND );
+	mSubTextureEditor->setParent( mUIContainer );
+	mSubTextureEditor->setPosition( 0, mWinMenu->getSize().getHeight() );
+	mSubTextureEditor->setSize( 800, 600 );
+	mSubTextureEditor->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT );
+	mSubTextureEditor->getBackground()->setColor( ColorA( 0, 0, 0, 50 ) );
 
-	mTGEU = eeNew( UITGEUpdater, ( UITGEUpdater::CreateParams(), this ) );
+	mTGEU = eeNew( UITGEUpdater, ( this ) );
 }
 
 TextureAtlasEditor::~TextureAtlasEditor() {
@@ -218,7 +216,12 @@ void TextureAtlasEditor::onDestHChange( const UIEvent * Event ) {
 }
 
 UITextBox * TextureAtlasEditor::createTextBox( Vector2i Pos, const String& Text ) {
-	return mTheme->createTextBox( Text, mUIContainer, Sizei(), Pos, UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	UITextBox * txtBox = UITextBox::New();
+	txtBox->resetFlags( UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	txtBox->setParent( mUIContainer );
+	txtBox->setPosition( Pos );
+	txtBox->setText( Text );
+	return txtBox;
 }
 
 void TextureAtlasEditor::windowClose( const UIEvent * Event ) {

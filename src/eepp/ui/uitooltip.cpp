@@ -5,10 +5,13 @@
 
 namespace EE { namespace UI {
 
+UITooltip *UITooltip::New() {
+	return eeNew( UITooltip, () );
+}
+
 UITooltip::UITooltip() :
 	UIControlAnim(),
 	mAlignOffset( 0.f, 0.f ),
-	mPadding(),
 	mTooltipTime( Time::Zero ),
 	mTooltipOf()
 {
@@ -16,17 +19,10 @@ UITooltip::UITooltip() :
 
 	mTextCache = eeNew( TextCache, () );
 
-	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
+	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
 
-	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != Theme ) {
-		if ( Theme->getTooltipPadding() != Recti() )
-			setPadding( Theme->getTooltipPadding() );
-
-		setFont( mFontStyleConfig.Font );
-		setFontColor( Theme->getTooltipFontColor() );
-		setFontShadowColor( mFontStyleConfig.FontShadowColor );
+	if ( NULL != theme ) {
+		setStyleConfig( theme->getTooltipStyleConfig() );
 	}
 
 	if ( NULL == getFont() ) {
@@ -64,7 +60,7 @@ void UITooltip::setTheme( UITheme * Theme ) {
 }
 
 void UITooltip::autoPadding() {
-	if ( ( mFlags & UI_AUTO_PADDING ) && mPadding == Recti() ) {
+	if ( ( mFlags & UI_AUTO_PADDING ) && mStyleConfig.Padding == Recti() ) {
 		setPadding( makePadding( true, true, true, true ) );
 	}
 }
@@ -131,31 +127,31 @@ void UITooltip::setText( const String& text ) {
 }
 
 const ColorA& UITooltip::getFontColor() const {
-	return mFontStyleConfig.FontColor;
+	return mStyleConfig.FontColor;
 }
 
 void UITooltip::setFontColor( const ColorA& color ) {
-	mFontStyleConfig.FontColor = color;
-	mTextCache->setColor( mFontStyleConfig.FontColor );
+	mStyleConfig.FontColor = color;
+	mTextCache->setColor( mStyleConfig.FontColor );
 	setAlpha( color.a() );
 }
 
 const ColorA& UITooltip::getFontShadowColor() const {
-	return mFontStyleConfig.FontShadowColor;
+	return mStyleConfig.FontShadowColor;
 }
 
 void UITooltip::setFontShadowColor( const ColorA& color ) {
-	mFontStyleConfig.FontShadowColor = color;
+	mStyleConfig.FontShadowColor = color;
 	setAlpha( color.a() );
-	mTextCache->setShadowColor( mFontStyleConfig.FontShadowColor );
+	mTextCache->setShadowColor( mStyleConfig.FontShadowColor );
 }
 
 void UITooltip::setAlpha( const Float& alpha ) {
 	UIControlAnim::setAlpha( alpha );
-	mFontStyleConfig.FontColor.Alpha = (Uint8)alpha;
-	mFontStyleConfig.FontShadowColor.Alpha = (Uint8)alpha;
+	mStyleConfig.FontColor.Alpha = (Uint8)alpha;
+	mStyleConfig.FontShadowColor.Alpha = (Uint8)alpha;
 
-	mTextCache->setColor( mFontStyleConfig.FontColor );
+	mTextCache->setColor( mStyleConfig.FontColor );
 }
 
 void UITooltip::onAutoSize() {
@@ -215,13 +211,12 @@ void UITooltip::onFontChanged() {
 }
 
 void UITooltip::setPadding( const Recti& padding ) {
-	mPadding = padding;
-	mRealPadding = PixelDensity::dpToPxI( mPadding );
-
+	mStyleConfig.Padding = padding;
+	mRealPadding = PixelDensity::dpToPxI( mStyleConfig.Padding );
 }
 
 const Recti& UITooltip::getPadding() const {
-	return mPadding;
+	return mStyleConfig.Padding;
 }
 
 TextCache * UITooltip::getTextCache() {
@@ -264,16 +259,19 @@ void UITooltip::setTooltipOf(UIControl * tooltipOf) {
 	mTooltipOf = tooltipOf;
 }
 
-FontStyleConfig UITooltip::getFontStyleConfig() const {
-	return mFontStyleConfig;
+TooltipStyleConfig UITooltip::getStyleConfig() const {
+	return mStyleConfig;
 }
 
-void UITooltip::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
-	mFontStyleConfig = fontStyleConfig;
+void UITooltip::setStyleConfig(const TooltipStyleConfig & styleConfig) {
+	mStyleConfig = styleConfig;
 
-	setFont( mFontStyleConfig.Font );
-	setFontColor( mFontStyleConfig.FontColor );
-	setFontShadowColor( mFontStyleConfig.FontShadowColor );
+	if ( mStyleConfig.Padding != Recti() )
+		setPadding( mStyleConfig.Padding );
+
+	setFont( mStyleConfig.Font );
+	setFontColor( mStyleConfig.FontColor );
+	setFontShadowColor( mStyleConfig.FontShadowColor );
 }
 
 }}

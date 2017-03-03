@@ -58,7 +58,7 @@ class EE_API UIThemeManager : public ResourceManager<UITheme> {
 
 		const Sizei& getCursorSize() const;
 
-		FontStyleConfig getDefaultFontStyleConfig();
+		TooltipStyleConfig getDefaultFontStyleConfig();
 	protected:
 		Font *				mFont;
 		UITheme * 			mThemeDefault;

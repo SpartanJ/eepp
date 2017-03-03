@@ -10,21 +10,6 @@ UIControlAnim *UIControlAnim::New() {
 	return eeNew( UIControlAnim, () );
 }
 
-UIControlAnim::UIControlAnim( const CreateParams& Params ) :
-	UIDragable( Params ),
-	mAngle(0.f),
-	mScale(1.f,1.f),
-	mAlpha(255.f),
-	mAngleAnim(NULL),
-	mScaleAnim(NULL),
-	mAlphaAnim(NULL),
-	mMoveAnim(NULL)
-{
-	mControlFlags |= UI_CTRL_FLAG_ANIM;
-
-	updateOriginPoint();
-}
-
 UIControlAnim::UIControlAnim() :
 	UIDragable(),
 	mAngle(0.f),

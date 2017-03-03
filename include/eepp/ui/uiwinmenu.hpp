@@ -34,9 +34,9 @@ class EE_API UIWinMenu : public UIComplexControl {
 
 		void setMarginBetweenButtons(const Uint32 & marginBetweenButtons);
 
-		FontStyleConfig getFontStyleConfig() const;
+		TooltipStyleConfig getFontStyleConfig() const;
 
-		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
+		void setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig);
 
 		WinMenuStyleConfig getStyleConfig() const;
 

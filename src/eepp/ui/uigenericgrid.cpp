@@ -38,13 +38,13 @@ UIGenericGrid::UIGenericGrid() :
 	mContainer->setPosition( mPadding.Left, mPadding.Top );
 	mContainer->setSize( mSize.getWidth() - mPadding.Right - mPadding.Left, mSize.getHeight() - mPadding.Top - mPadding.Bottom );
 
-	mVScrollBar = eeNew( UIScrollBar, () );
+	mVScrollBar = UIScrollBar::New();
 	mVScrollBar->setOrientation( UI_VERTICAL );
 	mVScrollBar->setParent( this );
 	mVScrollBar->setPosition( mSize.getWidth() - 16, 0 );
 	mVScrollBar->setSize( 16, mSize.getHeight() );
 
-	mHScrollBar = eeNew( UIScrollBar, () );
+	mHScrollBar = UIScrollBar::New();
 	mHScrollBar->setOrientation( UI_HORIZONTAL );
 	mHScrollBar->setParent( this );
 	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );

@@ -29,15 +29,24 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 	Int32 InitialY		= 16;
 	Int32 DistFromTitle	= 18;
 
-	UITextBox * Txt = mUITheme->createTextBox( "Layer name:", mUIWindow->getContainer(), Sizei(), Vector2i( 50, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	UITextBox * Txt = UITextBox::New();
+	Txt->setFlags( UI_DRAW_SHADOW | UI_AUTO_SIZE )->setParent( mUIWindow->getContainer() )->setPosition( 50, InitialY );
+	Txt->setText( "Layer name:" );
+
 	mUIInput = UITextInput::New()->setMaxLength( 64 );
 	mUIInput->setParent( mUIWindow->getContainer() )->setSize( 120, 0 )->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
 	mUIInput->setText( mLayer->getName() );
 	mUIInput->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &MapLayerProperties::onOKClick ) );
 
-	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
-	mUITheme->createTextBox( "Property Name", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 ), TxtBoxFlags );
-	UITextBox * TxtBox = mUITheme->createTextBox( "Property Value", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50+192, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 ), TxtBoxFlags );
+	UITextBox * TxtBox = UITextBox::New();
+	TxtBox->setParent( mUIWindow->getContainer() )->setSize( 192, 24 )->setHorizontalAlign( UI_HALIGN_CENTER )->setFlags( UI_DRAW_SHADOW )
+		  ->setPosition( 50, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 );
+	TxtBox->setText( "Property Name" );
+
+	TxtBox = UITextBox::New();
+	TxtBox->setParent( mUIWindow->getContainer() )->setSize( 192, 24 )->setHorizontalAlign( UI_HALIGN_CENTER )->setFlags( UI_DRAW_SHADOW )
+		  ->setPosition( 50+192, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 );
+	TxtBox->setText( "Property Value" );
 
 	UIPushButton * OKButton = UIPushButton::New();
 	OKButton->setParent(  mUIWindow->getContainer() )->setSize( 80, 0 );

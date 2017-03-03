@@ -121,11 +121,11 @@ void UIWinMenu::setMarginBetweenButtons(const Uint32 & marginBetweenButtons) {
 	refreshButtons();
 }
 
-FontStyleConfig UIWinMenu::getFontStyleConfig() const {
-	return FontStyleConfig(mStyleConfig);
+TooltipStyleConfig UIWinMenu::getFontStyleConfig() const {
+	return TooltipStyleConfig(mStyleConfig);
 }
 
-void UIWinMenu::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
+void UIWinMenu::setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig) {
 	mStyleConfig = fontStyleConfig;
 	refreshButtons();
 }

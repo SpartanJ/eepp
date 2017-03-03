@@ -11,6 +11,8 @@ namespace EE { namespace UI {
 
 class EE_API UITooltip : public UIControlAnim {
 	public:
+		static UITooltip * New();
+
 		UITooltip();
 
 		virtual ~UITooltip();
@@ -73,14 +75,13 @@ class EE_API UITooltip : public UIControlAnim {
 
 		void setTooltipOf(UIControl * tooltipOf);
 
-		FontStyleConfig getFontStyleConfig() const;
+		TooltipStyleConfig getStyleConfig() const;
 
-		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
+		void setStyleConfig(const TooltipStyleConfig & styleConfig);
 	protected:
 		TextCache *	mTextCache;
-		FontStyleConfig mFontStyleConfig;
+		TooltipStyleConfig mStyleConfig;
 		Vector2f 	mAlignOffset;
-		Recti		mPadding;
 		Recti		mRealPadding;
 		Time		mTooltipTime;
 		UIControl *	mTooltipOf;

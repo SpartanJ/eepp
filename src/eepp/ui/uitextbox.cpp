@@ -12,21 +12,6 @@ UITextBox *UITextBox::New() {
 	return eeNew( UITextBox, () );
 }
 
-UITextBox::UITextBox( const UITextBox::CreateParams& Params ) :
-	UIComplexControl( Params ),
-	mFontStyleConfig( Params.FontStyleConfig ),
-	mRealAlignOffset( 0.f, 0.f ),
-	mSelCurInit( -1 ),
-	mSelCurEnd( -1 )
-{
-	mTextCache = eeNew( TextCache, () );
-	mTextCache->setFont( mFontStyleConfig.Font );
-	mTextCache->setColor( mFontStyleConfig.FontColor );
-	mTextCache->setShadowColor( mFontStyleConfig.FontShadowColor );
-
-	autoAlign();
-}
-
 UITextBox::UITextBox() :
 	UIComplexControl(),
 	mRealAlignOffset( 0.f, 0.f ),
@@ -103,7 +88,7 @@ const String& UITextBox::getText() {
 	return mTextCache->getText();
 }
 
-void UITextBox::setText( const String& text ) {
+UITextBox * UITextBox::setText( const String& text ) {
 	if ( mFlags & UI_WORD_WRAP ) {
 		mString = text;
 		mTextCache->setText( mString );
@@ -115,6 +100,8 @@ void UITextBox::setText( const String& text ) {
 	onAutoSize();
 	autoAlign();
 	onTextChanged();
+
+	return this;
 }
 
 const ColorA& UITextBox::getFontColor() const {
@@ -363,7 +350,7 @@ bool UITextBox::isTextSelectionEnabled() const {
 	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
 }
 
-FontStyleConfig UITextBox::getFontStyleConfig() const
+TooltipStyleConfig UITextBox::getFontStyleConfig() const
 {
 	return mFontStyleConfig;
 }
@@ -388,7 +375,7 @@ void UITextBox::onAlignChange() {
 	autoAlign();
 }
 
-void UITextBox::setFontStyleConfig( const FontStyleConfig& fontStyleConfig ) {
+void UITextBox::setFontStyleConfig( const TooltipStyleConfig& fontStyleConfig ) {
 	mFontStyleConfig = fontStyleConfig;
 
 	setFont( mFontStyleConfig.getFont() );

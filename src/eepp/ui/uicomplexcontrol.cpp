@@ -7,18 +7,6 @@ UIComplexControl * UIComplexControl::New() {
 	return eeNew( UIComplexControl, () );
 }
 
-UIComplexControl::UIComplexControl( const UIComplexControl::CreateParams& Params ) :
-	UIControlAnim( Params ),
-	mTooltip( NULL ),
-	mMinControlSize( Params.MinControlSize )
-{
-	mControlFlags |= UI_CTRL_FLAG_COMPLEX;
-
-	updateAnchorsDistances();
-
-	setTooltipText( Params.TooltipText );
-}
-
 UIComplexControl::UIComplexControl() :
 	UIControlAnim(),
 	mTooltip( NULL ),
@@ -104,7 +92,7 @@ void UIComplexControl::createTooltip() {
 	if ( NULL != mTooltip )
 		return;
 
-	mTooltip = eeNew( UITooltip, () );
+	mTooltip = UITooltip::New();
 	mTooltip->setVisible( false )->setEnabled( false );
 	mTooltip->setTooltipOf( this );
 }

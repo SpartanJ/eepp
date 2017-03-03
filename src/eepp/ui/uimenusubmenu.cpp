@@ -18,7 +18,7 @@ UIMenuSubMenu::UIMenuSubMenu() :
 	mCbId( 0 ),
 	mCbId2( 0 )
 {
-	mArrow = eeNew( UIGfx, () );
+	mArrow = UIGfx::New();
 	mArrow->setParent( this );
 	mArrow->setFlags( UI_AUTO_SIZE );
 	mArrow->setVisible( true );

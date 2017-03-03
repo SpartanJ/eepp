@@ -33,7 +33,7 @@ UISlider::UISlider() :
 	else
 		bgSize = Sizei( 8, mSize.getHeight() - 16 );
 
-	mBackSlider = eeNew( UIControlAnim, () );
+	mBackSlider = UIControlAnim::New();
 	mBackSlider->setParent( this );
 	mBackSlider->setVisible( true );
 	mBackSlider->setEnabled( true );

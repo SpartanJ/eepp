@@ -120,15 +120,15 @@ class EE_API UIListBox : public UIComplexControl {
 
 		void setTouchDragDeceleration(const Float & touchDragDeceleration);
 
-		FontStyleConfig getFontStyleConfig() const;
+		TooltipStyleConfig getFontStyleConfig() const;
 
-		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
+		void setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig);
 	protected:
 		friend class UIListBoxItem;
 		friend class UIItemContainer<UIListBox>;
 		friend class UIDropDownList;
 
-		FontStyleConfig		mFontStyleConfig;
+		TooltipStyleConfig		mFontStyleConfig;
 		Uint32 				mRowHeight;
 		UI_SCROLLBAR_MODE	mVScrollMode;
 		UI_SCROLLBAR_MODE	mHScrollMode;

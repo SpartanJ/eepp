@@ -22,11 +22,11 @@ UITabWidget::UITabWidget() :
 		mStyleConfig = Theme->getTabWidgetStyleConfig();
 	}
 
-	mTabContainer = eeNew( UIComplexControl, ( ) );
+	mTabContainer = UIComplexControl::New();
 	mTabContainer->setParent( this )->setPosition( 0, 0 )->setSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight )->setVisible( true )->setEnabled( true );
 	mTabContainer->setFlags( UI_CLIP_ENABLE | UI_ANCHOR_RIGHT );
 
-	mCtrlContainer = eeNew( UIComplexControl, ( ) );
+	mCtrlContainer = UIComplexControl::New();
 	mCtrlContainer->setParent( this )->setPosition( 0, mStyleConfig.TabWidgetHeight )
 			->setSize( mSize.getWidth(), mSize.getHeight() - mStyleConfig.TabWidgetHeight )->setVisible( true )->setEnabled( true )
 			->setFlags( UI_CLIP_ENABLE | UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT );
@@ -103,11 +103,11 @@ void UITabWidget::draw() {
 	}
 }
 
-FontStyleConfig UITabWidget::getFontStyleConfig() const {
-	return FontStyleConfig( mStyleConfig );
+TooltipStyleConfig UITabWidget::getFontStyleConfig() const {
+	return TooltipStyleConfig( mStyleConfig );
 }
 
-void UITabWidget::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
+void UITabWidget::setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig) {
 	mStyleConfig.updateFontStyleConfig( fontStyleConfig );
 }
 

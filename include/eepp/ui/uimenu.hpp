@@ -64,9 +64,9 @@ class EE_API UIMenu : public UIComplexControl {
 
 		void setMinRightMargin(const Uint32 & minRightMargin);
 
-		FontStyleConfig getFontStyleConfig() const;
+		TooltipStyleConfig getFontStyleConfig() const;
 
-		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
+		void setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig);
 
 	protected:
 		friend class UIMenuItem;

@@ -515,11 +515,11 @@ void UIMenu::setMinRightMargin(const Uint32 & minRightMargin) {
 	rePosControls();
 }
 
-FontStyleConfig UIMenu::getFontStyleConfig() const {
+TooltipStyleConfig UIMenu::getFontStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UIMenu::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
+void UIMenu::setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig) {
 	mStyleConfig = fontStyleConfig;
 }
 

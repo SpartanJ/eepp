@@ -111,9 +111,9 @@ class EE_API UITabWidget : public UIComplexControl {
 
 		void setLineBelowTabsYOffset(const Int32 & lineBelowTabsYOffset);
 
-		FontStyleConfig getFontStyleConfig() const;
+		TooltipStyleConfig getFontStyleConfig() const;
 
-		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
+		void setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig);
 
 		TabWidgetStyleConfig getStyleConfig() const;
 

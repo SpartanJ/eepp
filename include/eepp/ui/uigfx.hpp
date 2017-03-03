@@ -9,25 +9,6 @@ class EE_API UIGfx : public UIComplexControl {
 	public:
 		static UIGfx * New();
 
-		class CreateParams : public UIComplexControl::CreateParams {
-			public:
-				inline CreateParams() :
-					UIComplexControl::CreateParams(),
-					SubTexture( NULL ),
-					SubTextureColor(),
-					SubTextureRender( RN_NORMAL )
-				{
-				}
-
-				inline ~CreateParams() {}
-
-				Graphics::SubTexture * 	SubTexture;
-				ColorA					SubTextureColor;
-				EE_RENDER_MODE			SubTextureRender;
-		};
-
-		UIGfx( const UIGfx::CreateParams& Params );
-
 		UIGfx();
 
 		virtual ~UIGfx();

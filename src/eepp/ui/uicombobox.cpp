@@ -38,7 +38,7 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 	}
 
 	if ( NULL == mButton ) {
-		mButton = eeNew( UIComplexControl, () );
+		mButton = UIComplexControl::New();
 		mButton->setParent( this );
 		mButton->setVisible( true );
 		mButton->setEnabled( true );

@@ -55,7 +55,7 @@ class EE_API UIPushButton : public UIComplexControl {
 
 		void setFontShadowColor( const ColorA& color );
 
-		FontStyleConfig getStyleConfig() const;
+		TooltipStyleConfig getStyleConfig() const;
 
 		void setStyleConfig(const PushButtonStyleConfig & styleConfig);
 	protected:

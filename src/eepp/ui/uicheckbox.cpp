@@ -14,14 +14,14 @@ UICheckBox::UICheckBox() :
 	mActive( false ),
 	mTextSeparation( 4 )
 {
-	mActiveButton 	= eeNew( UIControlAnim, () );
+	mActiveButton 	= UIControlAnim::New();
 	mActiveButton->setVisible( false );
 	mActiveButton->setEnabled( true );
 	mActiveButton->setParent( this );
 	mActiveButton->setPosition( 0, 0 );
 	mActiveButton->setSize( 16, 16 );
 
-	mInactiveButton = eeNew( UIControlAnim, () );
+	mInactiveButton = UIControlAnim::New();
 	mInactiveButton->setVisible( true );
 	mInactiveButton->setEnabled( true );
 	mInactiveButton->setParent( this );

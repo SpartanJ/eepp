@@ -25,7 +25,7 @@ UIDropDownList::UIDropDownList() :
 
 	applyDefaultTheme();
 
-	mListBox = eeNew( UIListBox, () );
+	mListBox = UIListBox::New();
 	mListBox->setSize( mSize.getWidth(), mStyleConfig.MaxNumVisibleItems * mSize.getHeight() );
 	mListBox->setEnabled( false );
 	mListBox->setVisible( false );
