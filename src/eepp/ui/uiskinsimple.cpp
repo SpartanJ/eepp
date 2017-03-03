@@ -84,4 +84,8 @@ Sizei UISkinSimple::getSize( const Uint32 & state ) {
 	return Sizei();
 }
 
+Sizei UISkinSimple::getBorderSize( const Uint32 & state ) {
+	return Sizei();
+}
+
 }}

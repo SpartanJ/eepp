@@ -57,6 +57,10 @@ class EE_API UISkin {
 		virtual UISkin * clone() = 0;
 
 		const Uint32& getType() const;
+
+		virtual Sizei getBorderSize( const Uint32 & state ) = 0;
+
+		virtual Sizei getBorderSize();
 	protected:
 		friend class UIControl;
 		friend class UISkinState;

@@ -42,10 +42,13 @@ class EE_API UISkinComplex : public UISkin {
 		virtual UISkin * clone();
 
 		Sizei getSize( const Uint32& state );
+
+		Sizei getBorderSize( const Uint32 &state );
 	protected:
 		SubTexture * 	mSubTexture[ UISkinState::StateCount ][ SideCount ];
 		ColorA		mTempColor;
 		Sizei		mSize[ UISkinState::StateCount ];
+		Sizei		mBorderSize[ UISkinState::StateCount ];
 
 		void cacheSize();
 

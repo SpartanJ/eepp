@@ -82,6 +82,10 @@ const Uint32& UISkin::getType() const {
 	return mType;
 }
 
+Sizei UISkin::getBorderSize() {
+	return getBorderSize( UISkinState::StateNormal );
+}
+
 bool UISkin::getColorDefault( const Uint32& State ) {
 	return BitOp::readBitKey( &mColorDefault, State );
 }

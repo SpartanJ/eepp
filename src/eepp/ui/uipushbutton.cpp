@@ -72,7 +72,9 @@ void UIPushButton::onSizeChange() {
 
 	if ( ( mFlags & UI_AUTO_SIZE ) ) {
 		Int32 txtW = NULL != mTextBox ? PixelDensity::pxToDpI( mTextBox->getTextCache()->getTextWidth() ) : 0;
-		Int32 minSize = txtW + ( NULL != mIcon ? mIcon->getSize().getWidth() : 0 ) + getSkinSize().getWidth();
+		Int32 minSize = txtW + ( NULL != mIcon ? mIcon->getSize().getWidth() : 0 )
+						+ mStyleConfig.IconHorizontalMargin + mTextBox->getPadding().Left + mTextBox->getPadding().Right +
+						(  NULL != getSkin() ? getSkin()->getBorderSize().getWidth() : 0 );
 
 		if ( minSize > mSize.getWidth() ) {
 			setInternalWidth( minSize );

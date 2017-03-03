@@ -246,7 +246,7 @@ void EETest::onShowMenu( const UIEvent * Event ) {
 	if ( Menu->show() ) {
 		Vector2i Pos = Vector2i( (Int32)PB->getPolygon()[0].x, (Int32)PB->getPolygon()[0].y - 2 );
 		UIMenu::fixMenuPos( Pos , Menu );
-		Menu->setPosition( Pos );
+		Menu->setPosition( Sizei( (Float)Pos.x / PixelDensity::getPixelDensity(), (Float)Pos.y / PixelDensity::getPixelDensity() ) );
 	}
 }
 
@@ -475,17 +475,23 @@ void EETest::createUI() {
 
 	Texture * butTex = TF->getTexture( TF->load( MyPath + "sprites/button-te_normal.png" ) );
 
-	SG->Add( butTex->getId(), "button-te_normal" );
-	SG->Add( TF->load( MyPath + "sprites/button-te_mdown.png" ), "button-te_mdown" );
+	SG->add( butTex->getId(), "button-te_normal" );
+	SG->add( TF->load( MyPath + "sprites/button-te_mdown.png" ), "button-te_mdown" );
 
 	UISkinSimple nSkin( "button-te" );
+	Sizei screenSize = UIManager::instance()->getMainControl()->getSize();
 
 	mShowMenu = UIPushButton::New();
-	mShowMenu->setSize( butText->getSize() )->setPosition( mWindow->getWidth() - butTex->getWidth() - 20, mWindow->getHeight() - butTex->getHeight() - 10 );
 	mShowMenu->setSkin( nSkin );
+
+	Sizei skinSize = mShowMenu->getSkinSize();
+
+	mShowMenu->setSize( mShowMenu->getSkinSize() )
+			->setPosition( screenSize.getWidth() - skinSize.getWidth() - 20,
+						   screenSize.getHeight() - skinSize.getHeight() - 10 );
 	mShowMenu->setText( "Show Menu" );
 	mShowMenu->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
-	mShowMenu->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::OnShowMenu ) );
+	mShowMenu->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onShowMenu ) );
 #endif
 
 	C = reinterpret_cast<UIControlAnim*> ( C->getParent() );
@@ -1931,7 +1937,7 @@ void EETest::physicsUpdate() {
 		InputFinger * Finger = KM->getFingerIndex(i);
 		mMousePoint[i] = cVectNew( Finger->x, Finger->y );
 		cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last[i] ), tocpv( mMousePoint[i] ), 0.25 ) );
-		mMouseBody[i]->setPosition( newPoint );
+		mMouseBody[i]->setPos( newPoint );
 		mMouseBody[i]->setVel( ( newPoint - mMousePoint_last[i] ) * (cpFloat)mWindow->getFPS() );
 		mMousePoint_last[i] = newPoint;
 
