@@ -316,6 +316,7 @@ void EETest::createUI() {
 	sprite->setSprite( eeNew( Sprite, ( "gn" ) ) );
 	sprite->setParent( C );
 	sprite->setPosition( 160, 100 );
+	sprite->setDeallocSprite( true );
 
 	UITextBox * Text = UITextBox::New();
 	Text->setParent( C )->setEnabled( false )->setSize( 320, 240 )->setHorizontalAlign( UI_HALIGN_RIGHT )->setVerticalAlign( UI_VALIGN_TOP );

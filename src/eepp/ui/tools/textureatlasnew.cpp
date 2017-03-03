@@ -73,7 +73,8 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	mPixelSpace->setParent( mUIWindow->getContainer() )->setSize( 100, 0 )->setPosition( PosX, 110 )->setVisible( true )->setEnabled( true );
 
 	createTxtBox( Vector2i( 10, 140 ), "Texture Atlas Folder Path:" );
-	mTGPath = mTheme->createTextInput( mUIWindow->getContainer(), Sizei( mUIWindow->getContainer()->getSize().getWidth() - 60, 22 ), Vector2i( 10, 160 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE , false, 512 );
+	mTGPath = UITextInput::New()->setMaxLength( 512 );
+	mTGPath->setParent( mUIWindow->getContainer() )->setSize( mUIWindow->getContainer()->getSize().getWidth() - 60, 0 )->setPosition( 10, 160 );
 	mTGPath->setAllowEditing( false );
 
 	mSetPathButton = UIPushButton::New();

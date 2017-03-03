@@ -85,8 +85,6 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		virtual UITextBox * createTextBox( const String& Text = "", UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 
-		virtual UITextInput * createTextInput( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED, bool SupportFreeEditing = true, Uint32 MaxLength = 1024*8 );
-
 		ColorA getTooltipFontColor() const;
 
 		void setTooltipFontColor(const ColorA & tooltipFontColor);

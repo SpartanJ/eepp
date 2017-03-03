@@ -29,12 +29,16 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 	Int32 DistFromTitle	= 18;
 
 	UITextBox * Txt = mUITheme->createTextBox( "Object name:", mUIWindow->getContainer(), Sizei(), Vector2i( 50, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	mUIInput = mUITheme->createTextInput( mUIWindow->getContainer(), Sizei( 120, 22 ), Vector2i( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE, true, 64 );
+	mUIInput = UITextInput::New();
+	mUIInput->setParent( mUIWindow->getContainer() )->setSize( 120, 0 )->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
+	mUIInput->setMaxLength( 64 );
 	mUIInput->setText( mObj->getName() );
 	mUIInput->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &MapObjectProperties::onOKClick ) );
 
 	UITextBox * Txt2 = mUITheme->createTextBox( "Object type:", mUIWindow->getContainer(), Sizei(), Vector2i( 50+192, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	mUIInput2 = mUITheme->createTextInput( mUIWindow->getContainer(), Sizei( 120, 22 ), Vector2i( Txt2->getPosition().x + DistFromTitle, Txt2->getPosition().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE, true, 64 );
+	mUIInput2 = UITextInput::New();
+	mUIInput2->setParent( mUIWindow->getContainer() )->setSize( 120, 0 )->setPosition( Txt2->getPosition().x + DistFromTitle, Txt2->getPosition().y + DistFromTitle );
+	mUIInput2->setMaxLength( 64 );
 	mUIInput2->setText( mObj->getTypeName() );
 	mUIInput2->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &MapObjectProperties::onOKClick ) );
 

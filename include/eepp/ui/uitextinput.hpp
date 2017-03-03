@@ -11,25 +11,6 @@ class EE_API UITextInput : public UITextBox {
 	public:
 		static UITextInput * New();
 
-		class CreateParams : public UITextBox::CreateParams {
-			public:
-				inline CreateParams() :
-					UITextBox::CreateParams(),
-					SupportFreeEditing( true ),
-					MaxLength( 1024*8 ),
-					PassInput( false )
-				{
-				}
-
-				inline ~CreateParams() {}
-
-				bool SupportFreeEditing;
-				Uint32 MaxLength;
-				bool PassInput;
-		};
-
-		UITextInput( const UITextInput::CreateParams& Params );
-
 		UITextInput();
 
 		virtual ~UITextInput();
@@ -48,7 +29,7 @@ class EE_API UITextInput : public UITextBox {
 
 		InputTextBuffer * getInputTextBuffer();
 
-		void setAllowEditing( const bool& allow );
+		UITextInput * setAllowEditing( const bool& allow );
 
 		const bool& getAllowEditing() const;
 
@@ -58,11 +39,11 @@ class EE_API UITextInput : public UITextBox {
 
 		virtual void shrinkText( const Uint32& MaxWidth );
 
-		void setMaxLength( Uint32 maxLength );
+		UITextInput * setMaxLength( Uint32 maxLength );
 
 		Uint32 getMaxLength();
 
-		void setFreeEditing( bool support );
+		UITextInput * setFreeEditing( bool support );
 
 		bool isFreeEditingEnabled();
 	protected:

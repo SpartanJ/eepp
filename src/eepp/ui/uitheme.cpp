@@ -401,20 +401,6 @@ UITextBox * UITheme::createTextBox( const String& Text, UIControl * Parent, cons
 	return Ctrl;
 }
 
-UITextInput * UITheme::createTextInput( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool SupportFreeEditing, Uint32 MaxLength ) {
-	UITextInput::CreateParams TextInputParams;
-	TextInputParams.setParent( Parent );
-	TextInputParams.setPosition( Pos );
-	TextInputParams.setSize( Size );
-	TextInputParams.Flags = Flags;
-	TextInputParams.SupportFreeEditing = SupportFreeEditing;
-	TextInputParams.MaxLength = MaxLength;
-	UITextInput * Ctrl = eeNew( UITextInput, ( TextInputParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
 ColorA UITheme::getTooltipFontColor() const {
 	return mTooltipFontColor;
 }

@@ -322,14 +322,11 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 	mChkDI->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags )->setFlags( UI_DRAW_SHADOW );;
 	mChkDI->setText( "Add as DataId" );
 	mChkDI->setTooltipText( "If the resource it's not a sprite,\nyou can reference it with a data id" );
-	mChkDI->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickDI ) );
+	mChkDI->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::ChkClickDI ) );
 
-	UIComplexControl::CreateParams SGParams;
-	SGParams.setParent( mSubTextureCont );
-	SGParams.setPosition( Vector2i( TAB_CONT_X_DIST, mChkDI->getPosition().y + mChkDI->getSize().getHeight() + 8 ) );
-	SGParams.setSize( Sizei( Width, 400 ) );
-	SGParams.Flags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
-	mSGCont = eeNew( UIComplexControl, ( SGParams ) );
+	mSGCont = UIComplexControl::New();
+	mSGCont->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, mChkDI->getPosition().y + mChkDI->getSize().getHeight() + 8 )->setSize( Width, 400 );
+	mSGCont->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mSGCont->setEnabled( true );
 	mSGCont->setVisible( true );
 
@@ -353,18 +350,17 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 
 	mGfxPreview->setBorderEnabled( true )->setColor( ColorA( 0, 0, 0, 200 ) );
 
-	UIComplexControl::CreateParams DIParams;
-	DIParams.setParent( mSubTextureCont );
-	DIParams.setPosition( SGParams.Pos );
-	DIParams.setSize( Sizei( Width, 400 ) );
-	DIParams.Flags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
-	mDICont = eeNew( UIComplexControl, ( DIParams ) );
+	mDICont = UIComplexControl::New();
+	mDICont->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, mChkDI->getPosition().y + mChkDI->getSize().getHeight() + 8 );
+	mDICont->setSize(  Width, 400 );
+	mDICont->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mDICont->setEnabled( false );
 	mDICont->setVisible( false );
 
 	Txt = mTheme->createTextBox( "DataId String:", mDICont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 0 ), TxtFlags );
 
-	mDataIdInput = mTheme->createTextInput( mDICont, Sizei( Width / 4 * 3, 21 ), Vector2i( TAB_CONT_X_DIST + 8, Txt->getPosition().y + Txt->getSize().getHeight() + 8 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE );
+	mDataIdInput = UITextInput::New();
+	mDataIdInput->setParent( mDICont )->setSize( Width / 4 * 3, 0 )->setPosition( TAB_CONT_X_DIST + 8, Txt->getPosition().y + Txt->getSize().getHeight() + 8 );
 
 	FillSGCombo();
 }

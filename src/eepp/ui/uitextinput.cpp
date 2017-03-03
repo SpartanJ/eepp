@@ -12,22 +12,6 @@ UITextInput * UITextInput::New() {
 	return eeNew( UITextInput, () );
 }
 
-UITextInput::UITextInput( const UITextInput::CreateParams& Params ) :
-	UITextBox( Params ),
-	mCursorPos(0),
-	mAllowEditing( true ),
-	mShowingWait( true )
-{
-	mTextBuffer.start();
-	mTextBuffer.setActive( false );
-	mTextBuffer.setFreeEditing( Params.SupportFreeEditing );
-	mTextBuffer.setTextSelectionEnabled( isTextSelectionEnabled() );
-	mTextBuffer.setMaxLength( Params.MaxLength );
-	mTextBuffer.setReturnCallback( cb::Make0( this, &UITextInput::privOnPressEnter ) );
-
-	applyDefaultTheme();
-}
-
 UITextInput::UITextInput() :
 	UITextBox(),
 	mCursorPos(0),
@@ -214,11 +198,13 @@ InputTextBuffer * UITextInput::getInputTextBuffer() {
 	return &mTextBuffer;
 }
 
-void UITextInput::setAllowEditing( const bool& allow ) {
+UITextInput * UITextInput::setAllowEditing( const bool& allow ) {
 	mAllowEditing = allow;
 
 	if ( !mAllowEditing && mTextBuffer.isActive() )
 		mTextBuffer.setActive( false );
+
+	return this;
 }
 
 const bool& UITextInput::getAllowEditing() const {
@@ -306,16 +292,18 @@ Int32 UITextInput::selCurEnd() {
 	return mTextBuffer.selCurEnd();
 }
 
-void UITextInput::setMaxLength( Uint32 maxLength ) {
+UITextInput * UITextInput::setMaxLength( Uint32 maxLength ) {
 	mTextBuffer.setMaxLength( maxLength );
+	return this;
 }
 
 Uint32 UITextInput::getMaxLength() {
 	return mTextBuffer.getMaxLength();
 }
 
-void UITextInput::setFreeEditing( bool support ) {
+UITextInput * UITextInput::setFreeEditing( bool support ) {
 	mTextBuffer.setFreeEditing( support );
+	return this;
 }
 
 bool UITextInput::isFreeEditingEnabled() {

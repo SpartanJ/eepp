@@ -30,7 +30,8 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 	Int32 DistFromTitle	= 18;
 
 	UITextBox * Txt = mUITheme->createTextBox( "Layer name:", mUIWindow->getContainer(), Sizei(), Vector2i( 50, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	mUIInput = mUITheme->createTextInput( mUIWindow->getContainer(), Sizei( 120, 22 ), Vector2i( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE, true, 64 );
+	mUIInput = UITextInput::New()->setMaxLength( 64 );
+	mUIInput->setParent( mUIWindow->getContainer() )->setSize( 120, 0 )->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
 	mUIInput->setText( mLayer->getName() );
 	mUIInput->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &MapLayerProperties::onOKClick ) );
 
