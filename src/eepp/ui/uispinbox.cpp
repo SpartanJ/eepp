@@ -7,53 +7,6 @@ UISpinBox * UISpinBox::New() {
 	return eeNew( UISpinBox, () );
 }
 
-UISpinBox::UISpinBox( const UISpinBox::CreateParams& Params ) :
-	UIComplexControl( Params ),
-	mMinValue( 0.f ),
-	mMaxValue( 1024.f ),
-	mValue( Params.DefaultValue ),
-	mClickStep( 1.f )
-{
-	UITextInput::CreateParams InputParams( Params );
-	InputParams.setPosition( 0, 0 );
-	InputParams.setParent( this );
-
-	if ( InputParams.Flags & UI_AUTO_SIZE )
-		InputParams.Flags &= ~UI_AUTO_SIZE;
-
-	if ( InputParams.Flags & UI_TEXT_SELECTION_ENABLED )
-		InputParams.Flags |= UI_TEXT_SELECTION_ENABLED;
-
-	InputParams.Flags |= UI_AUTO_PADDING;
-
-	mInput		= eeNew( UITextInput, ( InputParams ) );
-
-	UIControlAnim::CreateParams BtnParams( Params );
-	BtnParams.setParent( this );
-	BtnParams.Size = Sizei( 16, 16 );
-
-	if ( BtnParams.Flags & UI_CLIP_ENABLE )
-		BtnParams.Flags &= ~UI_CLIP_ENABLE;
-
-	mPushUp		= eeNew( UIControlAnim, ( BtnParams ) );
-	mPushDown 	= eeNew( UIControlAnim, ( BtnParams ) );
-
-	mInput->setVisible		( true );
-	mInput->setEnabled		( true );
-	mPushUp->setVisible	( true );
-	mPushUp->setEnabled	( true );
-	mPushDown->setVisible	( true );
-	mPushDown->setEnabled	( true );
-
-	mInput->getInputTextBuffer()->setAllowOnlyNumbers( true, Params.AllowDotsInNumbers );
-
-	internalValue( mValue, true );
-
-	adjustChilds();
-
-	applyDefaultTheme();
-}
-
 UISpinBox::UISpinBox() :
 	UIComplexControl(),
 	mMinValue( 0.f ),
@@ -211,30 +164,35 @@ void UISpinBox::onSizeChange() {
 	adjustChilds();
 }
 
-void UISpinBox::setValue( const Float& Val ) {
+UISpinBox * UISpinBox::setValue( const Float& Val ) {
 	internalValue( Val, false );
+	return this;
 }
 
 const Float& UISpinBox::getValue() const {
 	return mValue;
 }
 
-void UISpinBox::setMinValue( const Float& MinVal ) {
+UISpinBox * UISpinBox::setMinValue( const Float& MinVal ) {
 	mMinValue = MinVal;
 
 	if ( mValue < mMinValue )
 		mValue = mMinValue;
+
+	return this;
 }
 
 const Float& UISpinBox::getMinValue() const {
 	return mMinValue;
 }
 
-void UISpinBox::setMaxValue( const Float& MaxVal ) {
+UISpinBox * UISpinBox::setMaxValue( const Float& MaxVal ) {
 	mMaxValue = MaxVal;
 
 	if ( mValue > mMaxValue )
 		mValue = mMaxValue;
+
+	return this;
 }
 
 const Float& UISpinBox::getMaxValue() const {

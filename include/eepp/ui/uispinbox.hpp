@@ -10,24 +10,6 @@ class EE_API UISpinBox : public UIComplexControl {
 	public:
 		static UISpinBox * New();
 
-		class CreateParams : public UITextInput::CreateParams {
-			public:
-				inline CreateParams() :
-					UITextInput::CreateParams(),
-					DefaultValue( 0.f ),
-					AllowDotsInNumbers( false )
-				{
-					MaxLength = 24;
-				}
-
-				inline ~CreateParams() {}
-
-				Float DefaultValue;
-				bool AllowDotsInNumbers;
-		};
-
-		UISpinBox( const UISpinBox::CreateParams& Params );
-
 		UISpinBox();
 
 		virtual ~UISpinBox();
@@ -50,15 +32,15 @@ class EE_API UISpinBox : public UIComplexControl {
 
 		void addValue( const Float& value );
 
-		virtual void setMinValue( const Float& MinVal );
+		virtual UISpinBox * setMinValue( const Float& MinVal );
 
 		const Float& getMinValue() const;
 
-		virtual void setMaxValue( const Float& MaxVal );
+		virtual UISpinBox * setMaxValue( const Float& MaxVal );
 
 		const Float& getMaxValue() const;
 
-		virtual void setValue( const Float& Val );
+		virtual UISpinBox * setValue( const Float& Val );
 
 		const Float& getValue() const;
 

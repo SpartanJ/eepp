@@ -415,20 +415,6 @@ UITextInput * UITheme::createTextInput( UIControl * Parent, const Sizei& Size, c
 	return Ctrl;
 }
 
-UISpinBox * UITheme::createSpinBox( UIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Float DefaultValue, bool AllowDotsInNumbers ) {
-	UISpinBox::CreateParams SpinBoxParams;
-	SpinBoxParams.setParent( Parent );
-	SpinBoxParams.setPosition( Pos );
-	SpinBoxParams.setSize( Size );
-	SpinBoxParams.Flags = Flags;
-	SpinBoxParams.DefaultValue = DefaultValue;
-	SpinBoxParams.AllowDotsInNumbers = AllowDotsInNumbers;
-	UISpinBox * Ctrl = eeNew( UISpinBox, ( SpinBoxParams ) );
-	Ctrl->setVisible( true );
-	Ctrl->setEnabled( true );
-	return Ctrl;
-}
-
 ColorA UITheme::getTooltipFontColor() const {
 	return mTooltipFontColor;
 }
