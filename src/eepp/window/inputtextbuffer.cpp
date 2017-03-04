@@ -289,11 +289,12 @@ void InputTextBuffer::update( InputEvent* Event ) {
 								}
 							}
 
-							if ( ( ( Event->key.keysym.sym & KEYMOD_LCTRL ) &&
+							if ( ( ( ( Event->key.keysym.sym & KEYMOD_LCTRL ) &&
 								   ( Event->key.keysym.sym == KEY_X || Event->key.keysym.sym == KEY_V ) ) ||
-								Event->key.keysym.sym == KEY_DELETE
+								Event->key.keysym.sym == KEY_DELETE ) || c == KEY_BACKSPACE
 							) {
 								removeSelection();
+								break;
 							}
 						}
 

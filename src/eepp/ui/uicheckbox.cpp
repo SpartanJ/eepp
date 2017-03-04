@@ -51,10 +51,10 @@ void UICheckBox::setTheme( UITheme * Theme ) {
 	mActiveButton->setThemeControl	( Theme, "checkbox_active" );
 	mInactiveButton->setThemeControl( Theme, "checkbox_inactive" );
 
-	doAfterSetTheme();
+	onThemeLoaded();
 }
 
-void UICheckBox::doAfterSetTheme() {
+void UICheckBox::onThemeLoaded() {
 	UISkin * tSkin = mActiveButton->getSkin();
 
 	if ( tSkin ) {
@@ -68,6 +68,8 @@ void UICheckBox::doAfterSetTheme() {
 		mInactiveButton->setSize( tSkin->getSize() );
 		mInactiveButton->centerVertical();
 	}
+
+	mMinControlSize = mActiveButton->getSkinSize();
 
 	setPadding( Recti(0,0,0,0) );
 }

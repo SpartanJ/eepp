@@ -26,7 +26,7 @@ bool UIMenuItem::isType( const Uint32& type ) const {
 
 void UIMenuItem::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "menuitem" );
-	doAfterSetTheme();
+	onThemeLoaded();
 }
 
 Uint32 UIMenuItem::onMouseEnter( const Vector2i &Pos, const Uint32 Flags ) {

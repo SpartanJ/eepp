@@ -35,7 +35,7 @@ void UIMenuCheckBox::setTheme( UITheme * Theme ) {
 
 	setActive( mActive );
 
-	doAfterSetTheme();
+	onThemeLoaded();
 }
 
 const bool& UIMenuCheckBox::isActive() const {

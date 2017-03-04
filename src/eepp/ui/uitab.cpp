@@ -55,7 +55,7 @@ void UITab::setTheme( UITheme * Theme ) {
 
 	UIControl::setThemeControl( Theme, tabPos );
 
-	doAfterSetTheme();
+	onThemeLoaded();
 }
 
 Uint32 UITab::onMouseClick( const Vector2i &Pos, const Uint32 Flags ) {

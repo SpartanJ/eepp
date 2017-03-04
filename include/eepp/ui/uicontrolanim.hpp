@@ -99,9 +99,11 @@ class EE_API UIControlAnim : public UIDragable {
 		Interpolation * 	mAlphaAnim;
 		Waypoints * 		mMoveAnim;
 
-		virtual void backgroundDraw();
+		virtual void drawBackground();
 
-		virtual void borderDraw();
+		virtual void drawBorder();
+
+		virtual void drawSkin();
 
 		ColorA getColor( const ColorA& Col );
 

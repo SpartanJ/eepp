@@ -73,7 +73,7 @@ class EE_API UIPushButton : public UIComplexControl {
 
 		virtual void onAlignChange();
 
-		virtual void doAfterSetTheme();
+		virtual void onThemeLoaded();
 
 		virtual Uint32 onKeyDown( const UIEventKey& Event );
 

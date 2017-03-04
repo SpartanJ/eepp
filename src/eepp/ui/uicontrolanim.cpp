@@ -40,16 +40,19 @@ bool UIControlAnim::isType( const Uint32& type ) const {
 	return UIControlAnim::getType() == type ? true : UIControl::isType( type );
 }
 
+void UIControlAnim::drawSkin() {
+	if ( NULL != mSkinState )
+		mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight(), (Uint32)mAlpha );
+}
+
 void UIControlAnim::draw() {
 	if ( mVisible && 0.f != mAlpha ) {
-		if ( mFlags & UI_FILL_BACKGROUND )
-			backgroundDraw();
+		drawBackground();
 
 		if ( mFlags & UI_BORDER )
-			borderDraw();
+			drawBorder();
 
-		if ( NULL != mSkinState )
-			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight(), (Uint32)mAlpha );
+		drawSkin();
 
 		drawHighlightFocus();
 
@@ -357,48 +360,52 @@ Interpolation * UIControlAnim::disableFadeOut( const Time& Time, const bool& Alp
 	return mAlphaAnim;
 }
 
-void UIControlAnim::backgroundDraw() {
-	Primitives P;
-	Rectf R = getRectf();
-	P.setBlendMode( mBackground->getBlendMode() );
-	P.setColor( getColor( mBackground->getColor() ) );
+void UIControlAnim::drawBackground() {
+	if ( mFlags & UI_FILL_BACKGROUND ) {
+		Primitives P;
+		Rectf R = getRectf();
+		P.setBlendMode( mBackground->getBlendMode() );
+		P.setColor( getColor( mBackground->getColor() ) );
 
-	if ( 4 == mBackground->getColors().size() ) {
-		if ( mBackground->getCorners() ) {
-			P.drawRoundedRectangle( R, getColor( mBackground->getColors()[0] ), getColor( mBackground->getColors()[1] ), getColor( mBackground->getColors()[2] ), getColor( mBackground->getColors()[3] ), mBackground->getCorners() );
+		if ( 4 == mBackground->getColors().size() ) {
+			if ( mBackground->getCorners() ) {
+				P.drawRoundedRectangle( R, getColor( mBackground->getColors()[0] ), getColor( mBackground->getColors()[1] ), getColor( mBackground->getColors()[2] ), getColor( mBackground->getColors()[3] ), mBackground->getCorners() );
+			} else {
+				P.drawRectangle( R, getColor( mBackground->getColors()[0] ), getColor( mBackground->getColors()[1] ), getColor( mBackground->getColors()[2] ), getColor( mBackground->getColors()[3] ) );
+			}
 		} else {
-			P.drawRectangle( R, getColor( mBackground->getColors()[0] ), getColor( mBackground->getColors()[1] ), getColor( mBackground->getColors()[2] ), getColor( mBackground->getColors()[3] ) );
-		}
-	} else {
-		if ( mBackground->getCorners() ) {
-			P.drawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->getCorners() );
-		} else {
-			P.drawRectangle( R );
+			if ( mBackground->getCorners() ) {
+				P.drawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->getCorners() );
+			} else {
+				P.drawRectangle( R );
+			}
 		}
 	}
 }
 
-void UIControlAnim::borderDraw() {
-	Primitives P;
-	P.setFillMode( DRAW_LINE );
-	P.setBlendMode( getBlendMode() );
-	P.setLineWidth( PixelDensity::dpToPx( mBorder->getWidth() ) );
-	P.setColor( getColor( mBorder->getColor() ) );
+void UIControlAnim::drawBorder() {
+	if ( mFlags & UI_BORDER ) {
+		Primitives P;
+		P.setFillMode( DRAW_LINE );
+		P.setBlendMode( getBlendMode() );
+		P.setLineWidth( PixelDensity::dpToPx( mBorder->getWidth() ) );
+		P.setColor( getColor( mBorder->getColor() ) );
 
-	//! @TODO: Check why was this +0.1f -0.1f?
-	if ( mFlags & UI_CLIP_ENABLE ) {
-		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mRealSize.getWidth() - 0.1f, (Float)mRealSize.getHeight() - 0.1f ) );
+		//! @TODO: Check why was this +0.1f -0.1f?
+		if ( mFlags & UI_CLIP_ENABLE ) {
+			Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mRealSize.getWidth() - 0.1f, (Float)mRealSize.getHeight() - 0.1f ) );
 
-		if ( mBackground->getCorners() ) {
-			P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->getCorners() );
+			if ( mBackground->getCorners() ) {
+				P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->getCorners() );
+			} else {
+				P.drawRectangle( R );
+			}
 		} else {
-			P.drawRectangle( R );
-		}
-	} else {
-		if ( mBackground->getCorners() ) {
-			P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->getCorners() );
-		} else {
-			P.drawRectangle( getRectf() );
+			if ( mBackground->getCorners() ) {
+				P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->getCorners() );
+			} else {
+				P.drawRectangle( getRectf() );
+			}
 		}
 	}
 }

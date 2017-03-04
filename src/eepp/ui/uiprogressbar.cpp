@@ -61,10 +61,6 @@ void UIProgressBar::draw() {
 void UIProgressBar::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "progressbar" );
 
-	if ( mFlags & UI_AUTO_SIZE ) {
-		setSize( mSize.x, getSkinSize().getHeight() );
-	}
-
 	UISkin * tSkin = Theme->getByName( Theme->getAbbr() + "_progressbar_filler" );
 
 	if ( tSkin ) {
@@ -92,6 +88,17 @@ void UIProgressBar::setTheme( UITheme * Theme ) {
 
 			mParallax = eeNew( ScrollParallax, ( tSubTexture, Vector2f( mScreenPos.x + fillerPadding.Left, mScreenPos.y + fillerPadding.Top ), Sizef( ( ( mRealSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) / mTotalSteps, Height - fillerPadding.Top - fillerPadding.Bottom ), mStyleConfig.MovementSpeed ) );
 		}
+	}
+
+	onThemeLoaded();
+}
+
+void UIProgressBar::onThemeLoaded() {
+	mMinControlSize.x = eemax( mMinControlSize.x, getSkinSize().getWidth() );
+	mMinControlSize.y = eemax( mMinControlSize.y, getSkinSize().getHeight() );
+
+	if ( mFlags & UI_AUTO_SIZE ) {
+		setSize( mSize.x, getSkinSize().getHeight() );
 	}
 }
 

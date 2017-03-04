@@ -499,7 +499,7 @@ void EETest::createUI() {
 	eePRINTL( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 	/**/
 
-	//createNewUI();
+	createNewUI();
 }
 
 void EETest::createNewUI() {
@@ -544,7 +544,7 @@ void EETest::createNewUI() {
 	listBox->addListBoxItems( str );
 
 	UIProgressBar * progressBar = UIProgressBar::New();
-	progressBar->setPosition( 50, 530 )->setSize( 200, 26 );
+	progressBar->setPosition( 50, 530 )->setSize( 200, 0 );
 	progressBar->setProgress( 60.f );
 	progressBar->setDisplayPercent( true );
 
@@ -564,7 +564,7 @@ void EETest::createNewUI() {
 	scrollBar2->setOrientation( UI_VERTICAL )->setPosition( 300, 0 )->setSize( 0, 100 );
 
 	UIDropDownList * dropdownList = UIDropDownList::New();
-	dropdownList->setPosition( 50, 320 )->setSize( 200, 0 );
+	dropdownList->setPosition( 50, 320 )->setSize( 200, 100 );
 	dropdownList->getListBox()->addListBoxItem( "Test 1" );
 	dropdownList->getListBox()->addListBoxItem( "Test 2" );
 	dropdownList->getListBox()->addListBoxItem( "Test 3" );

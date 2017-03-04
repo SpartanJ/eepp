@@ -47,10 +47,10 @@ bool UIMenu::isType( const Uint32& type ) const {
 
 void UIMenu::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "menu" );
-	doAfterSetTheme();
+	onThemeLoaded();
 }
 
-void UIMenu::doAfterSetTheme() {
+void UIMenu::onThemeLoaded() {
 	autoPadding();
 
 	onSizeChange();

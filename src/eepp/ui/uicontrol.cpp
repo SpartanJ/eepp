@@ -385,16 +385,18 @@ void UIControl::drawBox() {
 	}
 }
 
+void UIControl::drawSkin() {
+	if ( NULL != mSkinState )
+		mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight(), 255 );
+}
+
 void UIControl::draw() {
 	if ( mVisible ) {
-		if ( mFlags & UI_FILL_BACKGROUND )
-			backgroundDraw();
+		drawBackground();
 
-		if ( mFlags & UI_BORDER )
-			borderDraw();
+		drawBorder();
 
-		if ( NULL != mSkinState )
-			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight(), 255 );
+		drawSkin();
 
 		drawDebugData();
 
@@ -693,48 +695,52 @@ Rectf UIControl::getRectf() {
 	return Rectf( mScreenPosf, Sizef( (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight() ) );
 }
 
-void UIControl::backgroundDraw() {
-	Primitives P;
-	Rectf R = getRectf();
-	P.setBlendMode( mBackground->getBlendMode() );
-	P.setColor( mBackground->getColor() );
+void UIControl::drawBackground() {
+	if ( mFlags & UI_FILL_BACKGROUND ) {
+		Primitives P;
+		Rectf R = getRectf();
+		P.setBlendMode( mBackground->getBlendMode() );
+		P.setColor( mBackground->getColor() );
 
-	if ( 4 == mBackground->getColors().size() ) {
-		if ( mBackground->getCorners() ) {
-			P.drawRoundedRectangle( R, mBackground->getColors()[0], mBackground->getColors()[1], mBackground->getColors()[2], mBackground->getColors()[3], mBackground->getCorners() );
+		if ( 4 == mBackground->getColors().size() ) {
+			if ( mBackground->getCorners() ) {
+				P.drawRoundedRectangle( R, mBackground->getColors()[0], mBackground->getColors()[1], mBackground->getColors()[2], mBackground->getColors()[3], mBackground->getCorners() );
+			} else {
+				P.drawRectangle( R, mBackground->getColors()[0], mBackground->getColors()[1], mBackground->getColors()[2], mBackground->getColors()[3] );
+			}
 		} else {
-			P.drawRectangle( R, mBackground->getColors()[0], mBackground->getColors()[1], mBackground->getColors()[2], mBackground->getColors()[3] );
-		}
-	} else {
-		if ( mBackground->getCorners() ) {
-			P.drawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->getCorners() );
-		} else {
-			P.drawRectangle( R );
+			if ( mBackground->getCorners() ) {
+				P.drawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->getCorners() );
+			} else {
+				P.drawRectangle( R );
+			}
 		}
 	}
 }
 
-void UIControl::borderDraw() {
-	Primitives P;
-	P.setFillMode( DRAW_LINE );
-	P.setBlendMode( getBlendMode() );
-	P.setLineWidth( PixelDensity::dpToPx( mBorder->getWidth() ) );
-	P.setColor( mBorder->getColor() );
+void UIControl::drawBorder() {
+	if ( mFlags & UI_BORDER ) {
+		Primitives P;
+		P.setFillMode( DRAW_LINE );
+		P.setBlendMode( getBlendMode() );
+		P.setLineWidth( PixelDensity::dpToPx( mBorder->getWidth() ) );
+		P.setColor( mBorder->getColor() );
 
-	//! @TODO: Check why was this +0.1f -0.1f?
-	if ( mFlags & UI_CLIP_ENABLE ) {
-		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mRealSize.getWidth() - 0.1f, (Float)mRealSize.getHeight() - 0.1f ) );
+		//! @TODO: Check why was this +0.1f -0.1f?
+		if ( mFlags & UI_CLIP_ENABLE ) {
+			Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mRealSize.getWidth() - 0.1f, (Float)mRealSize.getHeight() - 0.1f ) );
 
-		if ( mBackground->getCorners() ) {
-			P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->getCorners() );
+			if ( mBackground->getCorners() ) {
+				P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->getCorners() );
+			} else {
+				P.drawRectangle( R );
+			}
 		} else {
-			P.drawRectangle( R );
-		}
-	} else {
-		if ( mBackground->getCorners() ) {
-			P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->getCorners() );
-		} else {
-			P.drawRectangle( getRectf() );
+			if ( mBackground->getCorners() ) {
+				P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->getCorners() );
+			} else {
+				P.drawRectangle( getRectf() );
+			}
 		}
 	}
 }
@@ -1235,7 +1241,7 @@ UIControl * UIControl::setThemeControl( UITheme * Theme, const std::string& Cont
 			mSkinState = eeNew( UISkinState, ( tSkin ) );
 			mSkinState->setState( InitialState );
 
-			doAfterSetTheme();
+			onThemeLoaded();
 		}
 	}
 
@@ -1251,7 +1257,7 @@ void UIControl::setSkin( const UISkin& Skin ) {
 
 	mSkinState = eeNew( UISkinState, ( SkinCopy ) );
 
-	doAfterSetTheme();
+	onThemeLoaded();
 }
 
 void UIControl::onStateChange() {
@@ -1464,7 +1470,7 @@ UIControl * UIControl::getNextComplexControl() {
 	return UIManager::instance()->getMainControl();
 }
 
-void UIControl::doAfterSetTheme() {
+void UIControl::onThemeLoaded() {
 }
 
 void UIControl::worldToControl( Vector2i& pos ) const {

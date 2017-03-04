@@ -317,9 +317,11 @@ class EE_API UIControl {
 		
 		virtual void onComplexControlFocusLoss();
 
-		virtual void backgroundDraw();
+		virtual void drawSkin();
 
-		virtual void borderDraw();
+		virtual void drawBackground();
+
+		virtual void drawBorder();
 
 		virtual void updateQuad();
 
@@ -331,7 +333,7 @@ class EE_API UIControl {
 
 		virtual void drawChilds();
 
-		virtual void doAfterSetTheme();
+		virtual void onThemeLoaded();
 
 		virtual UIControl * overFind( const Vector2f& Point );
 

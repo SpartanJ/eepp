@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI {
 
-UIDropDownList *UIDropDownList::New() {
+UIDropDownList * UIDropDownList::New() {
 	return eeNew( UIDropDownList, () );
 }
 
@@ -53,7 +53,7 @@ bool UIDropDownList::isType( const Uint32& type ) const {
 void UIDropDownList::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "dropdownlist" );
 
-	doAfterSetTheme();
+	onThemeLoaded();
 }
 
 void UIDropDownList::onSizeChange() {
@@ -68,7 +68,7 @@ void UIDropDownList::autoSizeControl() {
 	}
 }
 
-void UIDropDownList::doAfterSetTheme() {
+void UIDropDownList::onThemeLoaded() {
 	autoPadding();
 
 	autoSizeControl();

@@ -128,7 +128,7 @@ class EE_API UITabWidget : public UIComplexControl {
 		UITab *					mTabSelected;
 		Uint32					mTabSelectedIndex;
 
-		void doAfterSetTheme();
+		void onThemeLoaded();
 
 		UITab * createTab( const String& Text, UIControl * CtrlOwned, SubTexture * Icon );
 

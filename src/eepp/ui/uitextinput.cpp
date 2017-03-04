@@ -178,6 +178,14 @@ void UITextInput::alignFix() {
 void UITextInput::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "textinput" );
 
+	onThemeLoaded();
+}
+
+void UITextInput::onThemeLoaded() {
+	UITextBox::onThemeLoaded();
+
+	mMinControlSize.y = eemax( mMinControlSize.y, getSkinSize().getHeight() );
+
 	autoPadding();
 	onAutoSize();
 }

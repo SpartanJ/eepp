@@ -76,6 +76,8 @@ class EE_API UITextInput : public UITextBox {
 
 		virtual Uint32 onPressEnter();
 
+		void onThemeLoaded();
+
 		virtual void onCursorPosChange();
 
 		void drawWaitingCursor();

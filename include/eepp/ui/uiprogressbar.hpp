@@ -58,6 +58,8 @@ class EE_API UIProgressBar : public UIComplexControl {
 		virtual Uint32 onValueChange();
 
 		virtual void onSizeChange();
+
+		virtual void onThemeLoaded();
 		
 		void updateTextBox();
 		

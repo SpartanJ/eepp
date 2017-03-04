@@ -66,10 +66,10 @@ void UITabWidget::setTheme( UITheme * Theme ) {
 		}
 	}
 
-	doAfterSetTheme();
+	onThemeLoaded();
 }
 
-void UITabWidget::doAfterSetTheme() {
+void UITabWidget::onThemeLoaded() {
 	onSizeChange();
 }
 

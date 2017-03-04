@@ -121,10 +121,10 @@ void UIPushButton::onSizeChange() {
 void UIPushButton::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "button" );
 
-	doAfterSetTheme();
+	onThemeLoaded();
 }
 
-void UIPushButton::doAfterSetTheme() {
+void UIPushButton::onThemeLoaded() {
 	if ( NULL != mTextBox && NULL == mTextBox->getFont() && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() )
 		mTextBox->setFont( mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() );
 

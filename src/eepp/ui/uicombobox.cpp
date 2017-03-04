@@ -46,7 +46,7 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 	}
 
 	mDropDownList->setThemeControl( Theme, "combobox" );
-	mDropDownList->doAfterSetTheme();
+	mDropDownList->onThemeLoaded();
 
 	mButton->setThemeControl( Theme, "combobox_button" );
 
@@ -61,11 +61,11 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 	updateControls();
 }
 
-UIListBox *UIComboBox::getListBox() {
+UIListBox * UIComboBox::getListBox() {
 	return mDropDownList->getListBox();
 }
 
-InputTextBuffer *UIComboBox::getInputTextBuffer() {
+InputTextBuffer * UIComboBox::getInputTextBuffer() {
 	return mDropDownList->getInputTextBuffer();
 }
 
@@ -79,8 +79,9 @@ void UIComboBox::updateControls() {
 	}
 
 	mDropDownList->setPosition( 0, 0 );
-	mDropDownList->setSize( mSize.getWidth() - mButton->getSize().getWidth(), mSize.getHeight() );
+	mDropDownList->setSize( mSize.getWidth() - mButton->getSize().getWidth(), 0 );
 	mDropDownList->getListBox()->setSize( mSize.getWidth(), mDropDownList->getListBox()->getSize().getHeight() );
+	mDropDownList->centerVertical();
 
 	mButton->setPosition( mSize.getWidth() - mButton->getSize().getWidth(), 0 );
 	mButton->centerVertical();

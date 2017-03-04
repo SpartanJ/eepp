@@ -52,6 +52,10 @@ void UIRadioButton::setTheme( UITheme * Theme ) {
 	mActiveButton->setThemeControl	( Theme, "radiobutton_active" );
 	mInactiveButton->setThemeControl( Theme, "radiobutton_inactive" );
 
+	onThemeLoaded();
+}
+
+void UIRadioButton::onThemeLoaded() {
 	UISkin * tSkin = mActiveButton->getSkin();
 
 	if ( tSkin ) {
@@ -65,6 +69,8 @@ void UIRadioButton::setTheme( UITheme * Theme ) {
 		mInactiveButton->setSize( tSkin->getSize() );
 		mInactiveButton->centerVertical();
 	}
+
+	mMinControlSize = mActiveButton->getSkinSize();
 
 	setPadding( Recti(0,0,0,0) );
 }
