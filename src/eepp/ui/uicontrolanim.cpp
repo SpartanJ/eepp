@@ -6,7 +6,7 @@
 
 namespace EE { namespace UI {
 
-UIControlAnim *UIControlAnim::New() {
+UIControlAnim * UIControlAnim::New() {
 	return eeNew( UIControlAnim, () );
 }
 

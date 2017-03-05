@@ -23,14 +23,14 @@ class EE_API UIComboBox : public UIComplexControl {
 
 		UIDropDownList * getDropDownList() const { return mDropDownList; }
 
-		UIComplexControl * getButton() const { return mButton; }
+		UIControlAnim * getButton() const { return mButton; }
 
 		InputTextBuffer * getInputTextBuffer();
 
 		const String& getText();
 	protected:
 		UIDropDownList * mDropDownList;
-		UIComplexControl * mButton;
+		UIControlAnim * mButton;
 
 		void onButtonClick( const UIEvent * Event );
 

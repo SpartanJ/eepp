@@ -53,6 +53,8 @@ class EE_API UIComplexControl : public UIControlAnim {
 		virtual void onPositionChange();
 
 		virtual void onAutoSize();
+
+		void updateAnchors( const Vector2i & SizeChange );
 };
 
 }}

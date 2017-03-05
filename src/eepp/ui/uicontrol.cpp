@@ -9,7 +9,7 @@
 
 namespace EE { namespace UI {
 
-UIControl *UIControl::New() {
+UIControl * UIControl::New() {
 	return eeNew( UIControl, () );
 }
 

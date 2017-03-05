@@ -35,11 +35,11 @@ class EE_API UIWindow : public UIComplexControl {
 
 		UIControlAnim * getContainer() const;
 
-		UIComplexControl * getButtonClose() const;
+		UIControlAnim * getButtonClose() const;
 
-		UIComplexControl * getButtonMaximize() const;
+		UIControlAnim * getButtonMaximize() const;
 
-		UIComplexControl * getButtonMinimize() const;
+		UIControlAnim * getButtonMinimize() const;
 
 		virtual void draw();
 
@@ -69,7 +69,7 @@ class EE_API UIWindow : public UIComplexControl {
 
 		bool isModal();
 
-		UIControlAnim * getModalControl() const;
+		UIComplexControl * getModalControl() const;
 
 		void maximize();
 
@@ -127,12 +127,12 @@ class EE_API UIWindow : public UIComplexControl {
 		UIControlAnim *	mBorderLeft;
 		UIControlAnim *	mBorderRight;
 		UIControlAnim *	mBorderBottom;
-		UIComplexControl *	mContainer;
+		UIControlAnim *	mContainer;
 
-		UIComplexControl *	mButtonClose;
-		UIComplexControl *	mButtonMinimize;
-		UIComplexControl *	mButtonMaximize;
-		UITextBox *			mTitle;
+		UIControlAnim *	mButtonClose;
+		UIControlAnim *	mButtonMinimize;
+		UIControlAnim *	mButtonMaximize;
+		UITextBox *		mTitle;
 
 		UIComplexControl *	mModalCtrl;
 
