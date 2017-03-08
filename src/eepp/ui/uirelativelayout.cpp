@@ -58,30 +58,55 @@ void UIRelativeLayout::fixChilds() {
 void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 	Vector2i pos( widget->getPosition() );
 
-	switch ( fontHAlignGet( widget->getLayoutGravity() ) ) {
-		case UI_HALIGN_CENTER:
-			pos.x = ( mSize.getWidth() - widget->getSize().getWidth() ) / 2;
-			break;
-		case UI_HALIGN_RIGHT:
-			pos.x = mSize.getWidth() - widget->getSize().getWidth() - widget->getLayoutMargin().Right;
-			break;
-		case UI_HALIGN_LEFT:
-		default:
-			pos.x = widget->getLayoutMargin().Left;
-			break;
-	}
+	if ( widget->getLayoutPositionRule() != LayoutPositionRules::NONE && widget->getParent() == widget->getLayoutPositionRuleWidget()->getParent() ) {
+		UIWidget * of = widget->getLayoutPositionRuleWidget();
 
-	switch ( fontVAlignGet( widget->getLayoutGravity() ) ) {
-		case UI_VALIGN_CENTER:
-			pos.y = ( mSize.getHeight() - widget->getSize().getHeight() ) / 2;
-			break;
-		case UI_VALIGN_BOTTOM:
-			pos.y = mSize.getHeight() - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom;
-			break;
-		case UI_VALIGN_TOP:
-		default:
-			pos.y = widget->getLayoutMargin().Left;
-			break;
+		switch ( widget->getLayoutPositionRule() ) {
+			case LEFT_OF:
+				pos.x = of->getPosition().x - widget->getSize().getWidth() - widget->getLayoutMargin().Right - of->getLayoutMargin().Left;
+				pos.y = of->getPosition().y;
+				break;
+			case RIGHT_OF:
+				pos.x = of->getPosition().x + of->getSize().getWidth() + widget->getLayoutMargin().Left + of->getLayoutMargin().Right;
+				pos.y = of->getPosition().y;
+				break;
+			case TOP_OF:
+				pos.x = of->getPosition().x;
+				pos.y = of->getPosition().y - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom - of->getLayoutMargin().Top;
+				break;
+			case BOTTOM_OF:
+				pos.x = of->getPosition().x;
+				pos.y = of->getPosition().y + of->getSize().getHeight() + widget->getLayoutMargin().Top + of->getLayoutMargin().Bottom;
+				break;
+			default:
+				break;
+		}
+	} else {
+		switch ( fontHAlignGet( widget->getLayoutGravity() ) ) {
+			case UI_HALIGN_CENTER:
+				pos.x = ( mSize.getWidth() - widget->getSize().getWidth() ) / 2;
+				break;
+			case UI_HALIGN_RIGHT:
+				pos.x = mSize.getWidth() - widget->getSize().getWidth() - widget->getLayoutMargin().Right;
+				break;
+			case UI_HALIGN_LEFT:
+			default:
+				pos.x = widget->getLayoutMargin().Left;
+				break;
+		}
+
+		switch ( fontVAlignGet( widget->getLayoutGravity() ) ) {
+			case UI_VALIGN_CENTER:
+				pos.y = ( mSize.getHeight() - widget->getSize().getHeight() ) / 2;
+				break;
+			case UI_VALIGN_BOTTOM:
+				pos.y = mSize.getHeight() - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom;
+				break;
+			case UI_VALIGN_TOP:
+			default:
+				pos.y = widget->getLayoutMargin().Left;
+				break;
+		}
 	}
 
 	widget->setPosition( pos );

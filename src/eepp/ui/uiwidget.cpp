@@ -14,7 +14,9 @@ UIWidget::UIWidget() :
 	mLayoutWeight(0),
 	mLayoutGravity(0),
 	mLayoutWidthRules(WRAP_CONTENT),
-	mLayoutHeightRules(WRAP_CONTENT)
+	mLayoutHeightRules(WRAP_CONTENT),
+	mLayoutPositionRule(LayoutPositionRules::NONE),
+	mLayoutPositionRuleWidget(NULL)
 {
 	mControlFlags |= UI_CTRL_FLAG_COMPLEX;
 
@@ -89,6 +91,20 @@ UIWidget * UIWidget::setLayoutSizeRules(const LayoutSizeRules & layoutWidthRules
 	mLayoutWidthRules = layoutWidthRules;
 	mLayoutHeightRules = layoutHeightRules;
 	return this;
+}
+
+UIWidget * UIWidget::setLayoutPositionRule(const LayoutPositionRules & layoutPositionRule, UIWidget * of) {
+	mLayoutPositionRule = layoutPositionRule;
+	mLayoutPositionRuleWidget  = of;
+	return this;
+}
+
+UIWidget * UIWidget::getLayoutPositionRuleWidget() const {
+	return mLayoutPositionRuleWidget;
+}
+
+LayoutPositionRules UIWidget::getLayoutPositionRule() const {
+	return mLayoutPositionRule;
 }
 
 void UIWidget::update() {

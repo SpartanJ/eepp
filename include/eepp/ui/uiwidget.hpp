@@ -63,6 +63,12 @@ class EE_API UIWidget : public UIControlAnim {
 		UIWidget * setLayoutHeightRules(const LayoutSizeRules & layoutHeightRules);
 
 		UIWidget * setLayoutSizeRules( const LayoutSizeRules & layoutWidthRules, const LayoutSizeRules & layoutHeightRules );
+
+		UIWidget * setLayoutPositionRule( const LayoutPositionRules& layoutPositionRule, UIWidget * of );
+
+		UIWidget * getLayoutPositionRuleWidget() const;
+
+		LayoutPositionRules getLayoutPositionRule() const;
 	protected:
 		friend class UILinearLayout;
 
@@ -75,6 +81,8 @@ class EE_API UIWidget : public UIControlAnim {
 		Uint32		mLayoutGravity;
 		LayoutSizeRules mLayoutWidthRules;
 		LayoutSizeRules mLayoutHeightRules;
+		LayoutPositionRules mLayoutPositionRule;
+		UIWidget * mLayoutPositionRuleWidget;
 
 		void createTooltip();
 

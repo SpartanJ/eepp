@@ -90,10 +90,6 @@ class EE_API UIControl {
 
 		void centerVertical();
 
-		void centerVerticalUp();
-
-		void centerVerticalDown();
-
 		void center();
 
 		virtual void close();
@@ -227,7 +223,7 @@ class EE_API UIControl {
 
 		std::string getId() const;
 
-		void setId( const std::string & id );
+		UIControl * setId( const std::string & id );
 
 		Uint32 getIdHash() const;
 

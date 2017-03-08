@@ -157,6 +157,14 @@ enum LayoutSizeRules {
 	WRAP_CONTENT
 };
 
+enum LayoutPositionRules {
+	NONE,
+	LEFT_OF,
+	RIGHT_OF,
+	TOP_OF,
+	BOTTOM_OF
+};
+
 static const Uint32 UI_CONTROL_DEFAULT_ALIGN = UI_HALIGN_LEFT | UI_VALIGN_CENTER;
 
 static const Uint32 UI_CONTROL_ALIGN_CENTER = UI_HALIGN_CENTER | UI_VALIGN_CENTER;

@@ -699,8 +699,11 @@ void EETest::createNewUI() {
 	rlay->setLayoutMargin( Recti( 16, 16, 16, 16 ) );
 	rlay->setBackgroundFillEnabled( true )->setColor( 0x333333CC );
 
-	UIPushButton::New()->setText( "OK" )->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )->setLayoutMargin( Recti( 0, 0, 16, 16 ) )->setParent( rlay );
-	UIPushButton::New()->setText( "Cancel" )->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )->setLayoutMargin( Recti( 0, 0, 16 + 32, 16 ) )->setParent( rlay );
+	UIPushButton * ofBut = UIPushButton::New();
+	ofBut->setText( "OK" )->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )->setLayoutMargin( Recti( 0, 0, 16, 16 ) )->setParent( rlay );
+
+	UIPushButton::New()->setText( "Cancel" )->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )->setLayoutMargin( Recti( 0, 0, 8, 0 ) )
+			->setLayoutPositionRule( LayoutPositionRules::LEFT_OF, ofBut )->setParent( rlay );
 
 	win2->show();
 	/**/

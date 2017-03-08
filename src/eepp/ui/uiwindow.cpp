@@ -49,6 +49,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) :
 			break;
 	}
 
+	mContainer->setLayoutSizeRules( FIXED, FIXED );
 	mContainer->setParent( this );
 	mContainer->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
 	mContainer->setSize( mSize );

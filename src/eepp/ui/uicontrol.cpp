@@ -307,20 +307,6 @@ void UIControl::centerVertical(){
 		setPosition( mPos.x, ( Ctrl->getSize().getHeight() - mSize.getHeight() ) / 2 );
 }
 
-void UIControl::centerVerticalUp(){
-	UIControl * Ctrl = getParent();
-
-	if ( NULL != Ctrl )
-		setPosition( mPos.x, ( Ctrl->getSize().getHeight() - mSize.getHeight() ) / 2 - mSize.getHeight() / 2 );
-}
-
-void UIControl::centerVerticalDown(){
-	UIControl * Ctrl = getParent();
-
-	if ( NULL != Ctrl )
-		setPosition( mPos.x, ( Ctrl->getSize().getHeight() - mSize.getHeight() ) / 2 + mSize.getHeight() / 2 );
-}
-
 void UIControl::center() {
 	centerHorizontal();
 	centerVertical();
@@ -911,9 +897,10 @@ std::string UIControl::getId() const {
 	return mId;
 }
 
-void UIControl::setId(const std::string & id) {
+UIControl * UIControl::setId(const std::string & id) {
 	mId = id;
 	mIdHash = String::hash( id );
+	return this;
 }
 
 Uint32 UIControl::getIdHash() const {
