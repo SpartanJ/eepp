@@ -11,11 +11,13 @@ class UIRelativeLayout : public UIWidget {
 
 		UIRelativeLayout();
 
-
+		UIRelativeLayout * add( UIWidget * widget );
 	protected:
 		virtual void onSizeChange();
 
 		virtual void onChildCountChange();
+
+		virtual void onParentSizeChange( const Vector2i& SizeChange );
 
 		void fixChilds();
 

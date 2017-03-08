@@ -3,6 +3,7 @@
 ../../include/eepp/ui/uiimage.hpp
 ../../include/eepp/ui/uilinearlayout.hpp
 ../../include/eepp/ui/uimenuseparator.hpp
+../../include/eepp/ui/uirelativelayout.hpp
 ../../include/eepp/ui/uitable.hpp
 ../../include/eepp/ui/uitablecell.hpp
 ../../include/eepp/ui/uitextview.hpp
@@ -17,6 +18,7 @@
 ../../src/eepp/ui/uiimage.cpp
 ../../src/eepp/ui/uilinearlayout.cpp
 ../../src/eepp/ui/uimenuseparator.cpp
+../../src/eepp/ui/uirelativelayout.cpp
 ../../src/eepp/ui/uitable.cpp
 ../../src/eepp/ui/uitablecell.cpp
 ../../src/eepp/ui/uitextview.cpp

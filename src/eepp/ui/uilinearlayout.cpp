@@ -56,6 +56,9 @@ void UILinearLayout::onChildCountChange() {
 }
 
 void UILinearLayout::pack() {
+	setInternalPosition( Vector2i( mLayoutMargin.Left, mPos.y ) );
+	setInternalPosition( Vector2i( mPos.x, mLayoutMargin.Top ) );
+
 	if ( mOrientation == UI_VERTICAL )
 		packVertical();
 	else

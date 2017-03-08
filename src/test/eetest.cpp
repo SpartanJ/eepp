@@ -642,7 +642,7 @@ void EETest::createNewUI() {
 	/**/
 	UIWindow * win = UIWindow::New();
 	win->setSize( 500, 500 );
-	win->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MINIMIZE_BUTTON );
+	win->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
 
 	UILinearLayout * layWin = UILinearLayout::NewVertical();
 	layWin->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
@@ -686,6 +686,23 @@ void EETest::createNewUI() {
 	drop->getListBox()->addListBoxItems( { "Car", "Bus", "Plane", "Submarine" } );
 	drop->getListBox()->setSelected(0);
 	win->show();
+	/**/
+
+	/**/
+	UIWindow * win2 = UIWindow::New();
+	win2->setSize( 500, 500 );
+	win2->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
+
+	UIRelativeLayout * rlay = UIRelativeLayout::New();
+	rlay->setParent( win2->getContainer() );
+	rlay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
+	rlay->setLayoutMargin( Recti( 16, 16, 16, 16 ) );
+	rlay->setBackgroundFillEnabled( true )->setColor( 0x333333CC );
+
+	UIPushButton::New()->setText( "OK" )->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )->setLayoutMargin( Recti( 0, 0, 16, 16 ) )->setParent( rlay );
+	UIPushButton::New()->setText( "Cancel" )->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )->setLayoutMargin( Recti( 0, 0, 16 + 32, 16 ) )->setParent( rlay );
+
+	win2->show();
 	/**/
 }
 

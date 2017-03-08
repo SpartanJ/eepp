@@ -281,7 +281,7 @@ Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 }
 
 Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
-	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
+	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && UIManager::instance()->getDownControl() == this ) {
 		Vector2i controlPos( Pos );
 		worldToControl( controlPos );
 		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mRealAlignOffset.x, (Int32)mRealAlignOffset.y );

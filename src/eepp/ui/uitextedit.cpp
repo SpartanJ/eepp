@@ -203,11 +203,6 @@ void UITextEdit::scrollbarsSet() {
 		}
 	}
 
-	if ( mFlags & UI_WORD_WRAP ) {
-		mVScrollBar->setVisible( true );
-		mVScrollBar->setEnabled( true );
-	}
-
 	mSkipValueChange = true;
 	if ( mVScrollBar->isVisible() ) {
 		int extraH = 0;

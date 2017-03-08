@@ -11,6 +11,11 @@ UIRelativeLayout::UIRelativeLayout() :
 {
 }
 
+UIRelativeLayout * UIRelativeLayout::add(UIWidget * widget) {
+	widget->setParent( this );
+	return this;
+}
+
 void UIRelativeLayout::onSizeChange() {
 	fixChilds();
 }
@@ -19,7 +24,22 @@ void UIRelativeLayout::onChildCountChange() {
 	fixChilds();
 }
 
+void UIRelativeLayout::onParentSizeChange( const Vector2i& SizeChange ) {
+	fixChilds();
+}
+
 void UIRelativeLayout::fixChilds() {
+	setInternalPosition( Vector2i( mLayoutMargin.Left, mPos.y ) );
+	setInternalPosition( Vector2i( mPos.x, mLayoutMargin.Top ) );
+
+	if ( getLayoutWidthRules() == MATCH_PARENT ) {
+		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
+	}
+
+	if ( getLayoutHeightRules() == MATCH_PARENT ) {
+		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
+	}
+
 	UIControl * child = mChild;
 
 	while ( NULL != child ) {
