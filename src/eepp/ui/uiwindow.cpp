@@ -1,14 +1,16 @@
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/ui/uirelativelayout.hpp>
 
 namespace EE { namespace UI {
 
-UIWindow * UIWindow::New() {
-	return eeNew( UIWindow, () );
+UIWindow * UIWindow::New( UIWindow::WindowBaseContainerType type ) {
+	return eeNew( UIWindow, ( type ) );
 }
 
-UIWindow::UIWindow() :
+UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) :
 	UIWidget(),
 	mWindowDecoration( NULL ),
 	mBorderLeft( NULL ),
@@ -34,7 +36,19 @@ UIWindow::UIWindow() :
 		mStyleConfig = theme->getWindowStyleConfig();
 	}
 
-	mContainer		= UIControlAnim::New();
+	switch ( type ) {
+		case LINEAR_LAYOUT:
+			mContainer		= UILinearLayout::New();
+			break;
+		case RELATIVE_LAYOUT:
+			mContainer		= UIRelativeLayout::New();
+			break;
+		case SIMPLE_LAYOUT:
+		default:
+			mContainer		= UIWidget::New();
+			break;
+	}
+
 	mContainer->setParent( this );
 	mContainer->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
 	mContainer->setSize( mSize );
@@ -771,7 +785,7 @@ void UIWindow::update() {
 	updateResize();
 }
 
-UIControlAnim * UIWindow::getContainer() const {
+UIWidget * UIWindow::getContainer() const {
 	return mContainer;
 }
 

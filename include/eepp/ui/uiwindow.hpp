@@ -9,9 +9,15 @@ namespace EE { namespace UI {
 
 class EE_API UIWindow : public UIWidget {
 	public:
-		static UIWindow * New();
+		enum WindowBaseContainerType {
+			SIMPLE_LAYOUT,
+			LINEAR_LAYOUT,
+			RELATIVE_LAYOUT
+		};
 
-		UIWindow();
+		static UIWindow * New( WindowBaseContainerType type = SIMPLE_LAYOUT );
+
+		UIWindow( WindowBaseContainerType type = SIMPLE_LAYOUT );
 
 		virtual ~UIWindow();
 
@@ -33,7 +39,7 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual Uint32 onMessage( const UIMessage *Msg );
 
-		UIControlAnim * getContainer() const;
+		UIWidget * getContainer() const;
 
 		UIControlAnim * getButtonClose() const;
 
@@ -127,7 +133,7 @@ class EE_API UIWindow : public UIWidget {
 		UIControlAnim *	mBorderLeft;
 		UIControlAnim *	mBorderRight;
 		UIControlAnim *	mBorderBottom;
-		UIControlAnim *	mContainer;
+		UIWidget *	mContainer;
 
 		UIControlAnim *	mButtonClose;
 		UIControlAnim *	mButtonMinimize;
