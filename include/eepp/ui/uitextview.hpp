@@ -1,17 +1,17 @@
 #ifndef EE_UICUITEXTBOX_H
 #define EE_UICUITEXTBOX_H
 
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UITextBox : public UIComplexControl {
+class EE_API UITextView : public UIWidget {
 	public:
-		static UITextBox * New();
+		static UITextView * New();
 
-		UITextBox();
+		UITextView();
 
-		virtual ~UITextBox();
+		virtual ~UITextView();
 
 		virtual Uint32 getType() const;
 
@@ -27,7 +27,7 @@ class EE_API UITextBox : public UIComplexControl {
 
 		virtual const String& getText();
 
-		virtual UITextBox * setText( const String& text );
+		virtual UITextView * setText( const String& text );
 
 		const ColorA& getFontColor() const;
 
@@ -40,10 +40,6 @@ class EE_API UITextBox : public UIComplexControl {
 		const ColorA& getSelectionBackColor() const;
 
 		void setSelectionBackColor( const ColorA& color );
-
-		virtual void setPadding( const Recti& padding );
-
-		const Recti& getPadding() const;
 
 		virtual void setTheme( UITheme * Theme );
 
@@ -64,16 +60,20 @@ class EE_API UITextBox : public UIComplexControl {
 		virtual void setFontStyleConfig( const TooltipStyleConfig& fontStyleConfig );
 
 		TooltipStyleConfig getFontStyleConfig() const;
+
+		const Recti& getPadding() const;
+
+		void setPadding(const Recti & padding);
 	protected:
 		TextCache *		mTextCache;
 		String			mString;
 		TooltipStyleConfig mFontStyleConfig;
 		Vector2i 		mAlignOffset;
 		Vector2f 		mRealAlignOffset;
-		Recti			mPadding;
-		Recti			mRealPadding;
 		Int32			mSelCurInit;
 		Int32			mSelCurEnd;
+		Recti		mPadding;
+		Recti		mRealPadding;
 
 		virtual void drawSelection(TextCache * textCache);
 
@@ -88,6 +88,8 @@ class EE_API UITextBox : public UIComplexControl {
 		virtual void onTextChanged();
 
 		virtual void onFontChanged();
+
+		virtual void onPaddingChange();
 
 		virtual Uint32 onFocusLoss();
 

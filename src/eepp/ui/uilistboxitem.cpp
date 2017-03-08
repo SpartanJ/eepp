@@ -9,7 +9,7 @@ UIListBoxItem * UIListBoxItem::New() {
 }
 
 UIListBoxItem::UIListBoxItem() :
-	UITextBox()
+	UITextView()
 {
 	applyDefaultTheme();
 }
@@ -27,7 +27,7 @@ Uint32 UIListBoxItem::getType() const {
 }
 
 bool UIListBoxItem::isType( const Uint32& type ) const {
-	return UIListBoxItem::getType() == type ? true : UITextBox::isType( type );
+	return UIListBoxItem::getType() == type ? true : UITextView::isType( type );
 }
 
 void UIListBoxItem::setTheme( UITheme * Theme ) {
@@ -78,7 +78,7 @@ void UIListBoxItem::select() {
 }
 
 void UIListBoxItem::update() {
-	UITextBox::update();
+	UITextView::update();
 
 	if ( mEnabled && mVisible ) {
 		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( getParent()->getParent() );

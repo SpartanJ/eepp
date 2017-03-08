@@ -1,41 +1,97 @@
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uimanager.hpp>
 
 namespace EE { namespace UI {
 
-UIComplexControl * UIComplexControl::New() {
-	return eeNew( UIComplexControl, () );
+UIWidget * UIWidget::New() {
+	return eeNew( UIWidget, () );
 }
 
-UIComplexControl::UIComplexControl() :
+UIWidget::UIWidget() :
 	UIControlAnim(),
 	mTooltip( NULL ),
-	mMinControlSize()
+	mMinControlSize(),
+	mLayoutWeight(0),
+	mLayoutGravity(0),
+	mLayoutWidthRules(WRAP_CONTENT),
+	mLayoutHeightRules(WRAP_CONTENT)
 {
 	mControlFlags |= UI_CTRL_FLAG_COMPLEX;
 
 	updateAnchorsDistances();
 }
 
-UIComplexControl::~UIComplexControl() {
+UIWidget::~UIWidget() {
 	eeSAFE_DELETE( mTooltip );
 }
 
-Uint32 UIComplexControl::getType() const {
-	return UI_TYPE_CONTROL_COMPLEX;
+Uint32 UIWidget::getType() const {
+	return UI_TYPE_WIDGET;
 }
 
-bool UIComplexControl::isType( const Uint32& type ) const {
-	return UIComplexControl::getType() == type ? true : UIControlAnim::isType( type );
+bool UIWidget::isType( const Uint32& type ) const {
+	return UIWidget::getType() == type ? true : UIControlAnim::isType( type );
 }
 
-void UIComplexControl::updateAnchorsDistances() {
+void UIWidget::updateAnchorsDistances() {
 	if ( NULL != mParentCtrl ) {
 		mDistToBorder	= Recti( mRealPos.x, mRealPos.y, mParentCtrl->getRealSize().x - ( mRealPos.x + mRealSize.x ), mParentCtrl->getRealSize().y - ( mRealPos.y + mRealSize.y ) );
 	}
 }
 
-void UIComplexControl::update() {
+Recti UIWidget::getLayoutMargin() const {
+	return mLayoutMargin;
+}
+
+UIWidget * UIWidget::setLayoutMargin(const Recti & margin) {
+	mLayoutMargin = margin;
+	mRealMargin = PixelDensity::dpToPxI( margin );
+	return this;
+}
+
+Float UIWidget::getLayoutWeight() const {
+	return mLayoutWeight;
+}
+
+UIWidget * UIWidget::setLayoutWeight(const Float & weight) {
+	mLayoutWeight = weight;
+	return this;
+}
+
+Uint32 UIWidget::getLayoutGravity() const {
+	return mLayoutGravity;
+}
+
+UIWidget * UIWidget::setLayoutGravity(const Uint32 & layoutGravity) {
+	mLayoutGravity = layoutGravity;
+	return this;
+}
+
+LayoutSizeRules UIWidget::getLayoutWidthRules() const {
+	return mLayoutWidthRules;
+}
+
+UIWidget * UIWidget::setLayoutWidthRules(const LayoutSizeRules & layoutWidthRules) {
+	mLayoutWidthRules = layoutWidthRules;
+	return this;
+}
+
+LayoutSizeRules UIWidget::getLayoutHeightRules() const {
+	return mLayoutHeightRules;
+}
+
+UIWidget * UIWidget::setLayoutHeightRules(const LayoutSizeRules & layoutHeightRules) {
+	mLayoutHeightRules = layoutHeightRules;
+	return this;
+}
+
+UIWidget * UIWidget::setLayoutSizeRules(const LayoutSizeRules & layoutWidthRules, const LayoutSizeRules & layoutHeightRules) {
+	mLayoutWidthRules = layoutWidthRules;
+	mLayoutHeightRules = layoutHeightRules;
+	return this;
+}
+
+void UIWidget::update() {
 	if ( mVisible && NULL != mTooltip && mTooltip->getText().size() ) {
 		if ( isMouseOverMeOrChilds() ) {
 			UIManager * uiManager = UIManager::instance();
@@ -88,7 +144,7 @@ void UIComplexControl::update() {
 	UIControlAnim::update();
 }
 
-void UIComplexControl::createTooltip() {
+void UIWidget::createTooltip() {
 	if ( NULL != mTooltip )
 		return;
 
@@ -97,7 +153,7 @@ void UIComplexControl::createTooltip() {
 	mTooltip->setTooltipOf( this );
 }
 
-void UIComplexControl::setTooltipText( const String& Text ) {
+UIWidget * UIWidget::setTooltipText( const String& Text ) {
 	if ( NULL == mTooltip ) {	// If the tooltip wasn't created it will avoid to create a new one if the string is ""
 		if ( Text.size() ) {
 			createTooltip();
@@ -107,20 +163,22 @@ void UIComplexControl::setTooltipText( const String& Text ) {
 	} else { // but if it's created, i will allow it
 		mTooltip->setText( Text );
 	}
+
+	return this;
 }
 
-String UIComplexControl::getTooltipText() {
+String UIWidget::getTooltipText() {
 	if ( NULL != mTooltip )
 		return mTooltip->getText();
 
 	return String();
 }
 
-void UIComplexControl::tooltipRemove() {
+void UIWidget::tooltipRemove() {
 	mTooltip = NULL;
 }
 
-UIControl * UIComplexControl::setSize( const Sizei& size ) {
+UIControl * UIWidget::setSize( const Sizei& size ) {
 	Sizei s( size );
 
 	if ( s.x < mMinControlSize.x )
@@ -132,7 +190,7 @@ UIControl * UIComplexControl::setSize( const Sizei& size ) {
 	return UIControlAnim::setSize( s );
 }
 
-UIControl * UIComplexControl::setFlags(const Uint32 & flags) {
+UIControl * UIWidget::setFlags(const Uint32 & flags) {
 	if ( flags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) {
 		updateAnchorsDistances();
 	}
@@ -144,7 +202,7 @@ UIControl * UIComplexControl::setFlags(const Uint32 & flags) {
 	return UIControlAnim::setFlags( flags );
 }
 
-UIControl * UIComplexControl::unsetFlags(const Uint32 & flags) {
+UIControl * UIWidget::unsetFlags(const Uint32 & flags) {
 	if ( flags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) {
 		updateAnchorsDistances();
 	}
@@ -152,35 +210,35 @@ UIControl * UIComplexControl::unsetFlags(const Uint32 & flags) {
 	return UIControlAnim::unsetFlags( flags );
 }
 
-UIComplexControl * UIComplexControl::setAnchors(const Uint32 & flags) {
+UIWidget * UIWidget::setAnchors(const Uint32 & flags) {
 	mFlags &= ~(UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM);
 	mFlags |= flags;
 	updateAnchorsDistances();
 	return this;
 }
 
-UIControl * UIComplexControl::setSize( const Int32& Width, const Int32& Height ) {
+UIControl * UIWidget::setSize( const Int32& Width, const Int32& Height ) {
 	return UIControlAnim::setSize( Width, Height );
 }
 
-const Sizei& UIComplexControl::getSize() {
+const Sizei& UIWidget::getSize() {
 	return UIControlAnim::getSize();
 }
 
-void UIComplexControl::onParentSizeChange( const Vector2i& SizeChange ) {
+void UIWidget::onParentSizeChange( const Vector2i& SizeChange ) {
 	updateAnchors( SizeChange );
 	UIControlAnim::onParentSizeChange( SizeChange );
 }
 
-void UIComplexControl::onPositionChange() {
+void UIWidget::onPositionChange() {
 	updateAnchorsDistances();
 	UIControlAnim::onPositionChange();
 }
 
-void UIComplexControl::onAutoSize() {
+void UIWidget::onAutoSize() {
 }
 
-void UIComplexControl::updateAnchors( const Vector2i& SizeChange ) {
+void UIWidget::updateAnchors( const Vector2i& SizeChange ) {
 	if ( !( mFlags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) )
 		return;
 
@@ -214,6 +272,36 @@ void UIComplexControl::updateAnchors( const Vector2i& SizeChange ) {
 
 	if ( newSize != mSize )
 		setSize( newSize );
+}
+
+void UIWidget::alignAgainstLayout() {
+	Vector2i pos = mPos;
+
+	switch ( fontHAlignGet( mLayoutGravity ) ) {
+		case UI_HALIGN_CENTER:
+			pos.x = ( getParent()->getSize().getWidth() - mSize.getWidth() ) / 2;
+			break;
+		case UI_HALIGN_RIGHT:
+			pos.x = getParent()->getSize().getWidth() - mLayoutMargin.Right;
+			break;
+		case UI_HALIGN_LEFT:
+			pos.x = mLayoutMargin.Left;
+			break;
+	}
+
+	switch ( fontVAlignGet( mLayoutGravity ) ) {
+		case UI_VALIGN_CENTER:
+			pos.y = ( getParent()->getSize().getHeight() - mSize.getHeight() ) / 2;
+			break;
+		case UI_VALIGN_BOTTOM:
+			pos.y = getParent()->getSize().getHeight() - mLayoutMargin.Bottom;
+			break;
+		case UI_VALIGN_TOP:
+			pos.y = mLayoutMargin.Top;
+			break;
+	}
+
+	setInternalPosition( pos );
 }
 
 }}

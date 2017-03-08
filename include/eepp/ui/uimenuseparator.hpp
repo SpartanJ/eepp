@@ -5,13 +5,13 @@
 
 namespace EE { namespace UI {
 
-class EE_API UISeparator : public UIControlAnim {
+class EE_API UIMenuSeparator : public UIControlAnim {
 	public:
-		static UISeparator * New();
+		static UIMenuSeparator * New();
 
-		UISeparator();
+		UIMenuSeparator();
 		
-		virtual ~UISeparator();
+		virtual ~UIMenuSeparator();
 
 		virtual Uint32 getType() const;
 

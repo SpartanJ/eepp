@@ -1,12 +1,12 @@
 #ifndef EE_UICUIRADIOBUTTON_H
 #define EE_UICUIRADIOBUTTON_H
 
-#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIRadioButton : public UITextBox {
+class EE_API UIRadioButton : public UITextView {
 	public:
 		static UIRadioButton * New();
 
@@ -23,8 +23,6 @@ class EE_API UIRadioButton : public UITextBox {
 		const bool& isActive() const;
 
 		void setActive( const bool& active );
-
-		virtual void setPadding( const Recti& padding );
 
 		UIControlAnim * getActiveButton() const;
 
@@ -57,6 +55,8 @@ class EE_API UIRadioButton : public UITextBox {
 		virtual void onAutoSize();
 
 		virtual void onThemeLoaded();
+
+		virtual void onPaddingChange();
 };
 
 }}

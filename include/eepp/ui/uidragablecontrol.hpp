@@ -5,11 +5,11 @@
 
 namespace EE { namespace UI {
 
-class EE_API UIDragable : public UIControl {
+class EE_API UIDragableControl : public UIControl {
 	public:
-		static UIDragable * New();
+		static UIDragableControl * New();
 
-		UIDragable();
+		UIDragableControl();
 
 		virtual Uint32 getType() const;
 
@@ -33,7 +33,7 @@ class EE_API UIDragable : public UIControl {
 
 		const Uint32& getDragButton() const;
 	protected:
-		virtual ~UIDragable();
+		virtual ~UIDragableControl();
 
 		Vector2i 	mDragPoint;
 		Uint32 		mDragButton;

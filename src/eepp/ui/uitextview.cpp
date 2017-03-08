@@ -1,4 +1,4 @@
-#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/textcache.hpp>
@@ -8,12 +8,12 @@
 
 namespace EE { namespace UI {
 
-UITextBox *UITextBox::New() {
-	return eeNew( UITextBox, () );
+UITextView * UITextView::New() {
+	return eeNew( UITextView, () );
 }
 
-UITextBox::UITextBox() :
-	UIComplexControl(),
+UITextView::UITextView() :
+	UIWidget(),
 	mRealAlignOffset( 0.f, 0.f ),
 	mSelCurInit( -1 ),
 	mSelCurEnd( -1 )
@@ -28,19 +28,19 @@ UITextBox::UITextBox() :
 	autoAlign();
 }
 
-UITextBox::~UITextBox() {
+UITextView::~UITextView() {
 	eeSAFE_DELETE( mTextCache );
 }
 
-Uint32 UITextBox::getType() const {
-	return UI_TYPE_TEXTBOX;
+Uint32 UITextView::getType() const {
+	return UI_TYPE_TEXTVIEW;
 }
 
-bool UITextBox::isType( const Uint32& type ) const {
-	return UITextBox::getType() == type ? true : UIComplexControl::isType( type );
+bool UITextView::isType( const Uint32& type ) const {
+	return UITextView::getType() == type ? true : UIWidget::isType( type );
 }
 
-void UITextBox::draw() {
+void UITextView::draw() {
 	if ( mVisible && 0.f != mAlpha ) {
 		UIControlAnim::draw();
 
@@ -67,11 +67,11 @@ void UITextBox::draw() {
 	}
 }
 
-Graphics::Font * UITextBox::getFont() const {
+Graphics::Font * UITextView::getFont() const {
 	return mTextCache->getFont();
 }
 
-void UITextBox::setFont( Graphics::Font * font ) {
+void UITextView::setFont( Graphics::Font * font ) {
 	if ( mTextCache->getFont() != font ) {
 		mTextCache->setFont( font );
 		autoShrink();
@@ -81,14 +81,14 @@ void UITextBox::setFont( Graphics::Font * font ) {
 	}
 }
 
-const String& UITextBox::getText() {
+const String& UITextView::getText() {
 	if ( mFlags & UI_WORD_WRAP )
 		return mString;
 
 	return mTextCache->getText();
 }
 
-UITextBox * UITextBox::setText( const String& text ) {
+UITextView * UITextView::setText( const String& text ) {
 	if ( mFlags & UI_WORD_WRAP ) {
 		mString = text;
 		mTextCache->setText( mString );
@@ -104,35 +104,35 @@ UITextBox * UITextBox::setText( const String& text ) {
 	return this;
 }
 
-const ColorA& UITextBox::getFontColor() const {
+const ColorA& UITextView::getFontColor() const {
 	return mFontStyleConfig.FontColor;
 }
 
-void UITextBox::setFontColor( const ColorA& color ) {
+void UITextView::setFontColor( const ColorA& color ) {
 	mFontStyleConfig.FontColor = color;
 	mTextCache->setColor( color );
 
 	setAlpha( color.a() );
 }
 
-const ColorA& UITextBox::getFontShadowColor() const {
+const ColorA& UITextView::getFontShadowColor() const {
 	return mFontStyleConfig.FontShadowColor;
 }
 
-void UITextBox::setFontShadowColor( const ColorA& color ) {
+void UITextView::setFontShadowColor( const ColorA& color ) {
 	mFontStyleConfig.FontShadowColor = color;
 	mTextCache->setShadowColor( mFontStyleConfig.FontShadowColor );
 }
 
-const ColorA& UITextBox::getSelectionBackColor() const {
+const ColorA& UITextView::getSelectionBackColor() const {
 	return mFontStyleConfig.FontSelectionBackColor;
 }
 
-void UITextBox::setSelectionBackColor( const ColorA& color ) {
+void UITextView::setSelectionBackColor( const ColorA& color ) {
 	mFontStyleConfig.FontSelectionBackColor = color;
 }
 
-void UITextBox::setAlpha( const Float& alpha ) {
+void UITextView::setAlpha( const Float& alpha ) {
 	UIControlAnim::setAlpha( alpha );
 	mFontStyleConfig.FontColor.Alpha = (Uint8)alpha;
 	mFontStyleConfig.FontShadowColor.Alpha = (Uint8)alpha;
@@ -140,13 +140,13 @@ void UITextBox::setAlpha( const Float& alpha ) {
 	mTextCache->setAlpha( mFontStyleConfig.FontColor.Alpha );
 }
 
-void UITextBox::autoShrink() {
+void UITextView::autoShrink() {
 	if ( mFlags & UI_WORD_WRAP ) {
 		shrinkText( mRealSize.getWidth() );
 	}
 }
 
-void UITextBox::shrinkText( const Uint32& MaxWidth ) {
+void UITextView::shrinkText( const Uint32& MaxWidth ) {
 	if ( mFlags & UI_WORD_WRAP ) {
 		mTextCache->setText( mString );
 	}
@@ -155,13 +155,15 @@ void UITextBox::shrinkText( const Uint32& MaxWidth ) {
 	mTextCache->cacheWidth();
 }
 
-void UITextBox::onAutoSize() {
-	if ( ( mFlags & UI_AUTO_SIZE ) ) {
+void UITextView::onAutoSize() {
+	if ( ( mFlags & UI_AUTO_SIZE && 0 == mSize.getHeight() ) ) {
 		setInternalPixelsSize( Sizei( (int)mTextCache->getTextWidth(), (int)mTextCache->getTextHeight() ) );
+
+		autoAlign();
 	}
 }
 
-void UITextBox::autoAlign() {
+void UITextView::autoAlign() {
 	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mRealAlignOffset.x = (Float)( (Int32)( mRealSize.x - mTextCache->getTextWidth() ) / 2 );
@@ -189,14 +191,14 @@ void UITextBox::autoAlign() {
 	mAlignOffset = PixelDensity::pxToDpI( mRealAlignOffset );
 }
 
-Uint32 UITextBox::onFocusLoss() {
+Uint32 UITextView::onFocusLoss() {
 	selCurInit( -1 );
 	selCurEnd( -1 );
 
 	return 1;
 }
 
-void UITextBox::onSizeChange() {
+void UITextView::onSizeChange() {
 	autoShrink();
 	onAutoSize();
 	autoAlign();
@@ -206,24 +208,15 @@ void UITextBox::onSizeChange() {
 	mTextCache->cacheWidth();
 }
 
-void UITextBox::onTextChanged() {
+void UITextView::onTextChanged() {
 	sendCommonEvent( UIEvent::EventOnTextChanged );
 }
 
-void UITextBox::onFontChanged() {
+void UITextView::onFontChanged() {
 	sendCommonEvent( UIEvent::EventOnFontChanged );
 }
 
-void UITextBox::setPadding( const Recti& padding ) {
-	mPadding = padding;
-	mRealPadding = PixelDensity::dpToPxI( padding );
-}
-
-const Recti& UITextBox::getPadding() const {
-	return mPadding;
-}
-
-void UITextBox::setTheme( UITheme * Theme ) {
+void UITextView::setTheme( UITheme * Theme ) {
 	UIControlAnim::setTheme( Theme );
 
 	if ( NULL == mTextCache->getFont() && NULL != Theme->getFontStyleConfig().getFont() ) {
@@ -231,27 +224,27 @@ void UITextBox::setTheme( UITheme * Theme ) {
 	}
 }
 
-TextCache * UITextBox::getTextCache() {
+TextCache * UITextView::getTextCache() {
 	return mTextCache;
 }
 
-Float UITextBox::getTextWidth() {
+Float UITextView::getTextWidth() {
 	return mTextCache->getTextWidth();
 }
 
-Float UITextBox::getTextHeight() {
+Float UITextView::getTextHeight() {
 	return mTextCache->getTextHeight();
 }
 
-const int& UITextBox::getNumLines() const {
+const int& UITextView::getNumLines() const {
 	return mTextCache->getNumLines();
 }
 
-const Vector2i& UITextBox::getAlignOffset() const {
+const Vector2i& UITextView::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-Uint32 UITextBox::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		Vector2i controlPos( Pos );
 		worldToControl( controlPos );
@@ -271,10 +264,10 @@ Uint32 UITextBox::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) 
 		}
 	}
 
-	return UIComplexControl::onMouseDoubleClick( Pos, Flags );
+	return UIWidget::onMouseDoubleClick( Pos, Flags );
 }
 
-Uint32 UITextBox::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		if ( selCurInit() == selCurEnd() ) {
 			selCurInit( -1 );
@@ -287,7 +280,7 @@ Uint32 UITextBox::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	return 1;
 }
 
-Uint32 UITextBox::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		Vector2i controlPos( Pos );
 		worldToControl( controlPos );
@@ -307,10 +300,10 @@ Uint32 UITextBox::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 		mControlFlags |= UI_CTRL_FLAG_SELECTING;
 	}
 
-	return UIComplexControl::onMouseDown( Pos, Flags );
+	return UIWidget::onMouseDown( Pos, Flags );
 }
 
-void UITextBox::drawSelection( TextCache * textCache ) {
+void UITextView::drawSelection( TextCache * textCache ) {
 	if ( selCurInit() != selCurEnd() ) {
 		Int32 init		= eemin( selCurInit(), selCurEnd() );
 		Int32 end		= eemax( selCurInit(), selCurEnd() );
@@ -346,41 +339,56 @@ void UITextBox::drawSelection( TextCache * textCache ) {
 	}
 }
 
-bool UITextBox::isTextSelectionEnabled() const {
+bool UITextView::isTextSelectionEnabled() const {
 	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
 }
 
-TooltipStyleConfig UITextBox::getFontStyleConfig() const
+TooltipStyleConfig UITextView::getFontStyleConfig() const
 {
 	return mFontStyleConfig;
 }
 
-void UITextBox::selCurInit( const Int32& init ) {
+void UITextView::selCurInit( const Int32& init ) {
 	mSelCurInit = init;
 }
 
-void UITextBox::selCurEnd( const Int32& end ) {
+void UITextView::selCurEnd( const Int32& end ) {
 	mSelCurEnd = end;
 }
 
-Int32 UITextBox::selCurInit() {
+Int32 UITextView::selCurInit() {
 	return mSelCurInit;
 }
 
-Int32 UITextBox::selCurEnd() {
+Int32 UITextView::selCurEnd() {
 	return mSelCurEnd;
 }
 
-void UITextBox::onAlignChange() {
+void UITextView::onAlignChange() {
 	autoAlign();
 }
 
-void UITextBox::setFontStyleConfig( const TooltipStyleConfig& fontStyleConfig ) {
+void UITextView::setFontStyleConfig( const TooltipStyleConfig& fontStyleConfig ) {
 	mFontStyleConfig = fontStyleConfig;
 
 	setFont( mFontStyleConfig.getFont() );
 	setFontColor( mFontStyleConfig.getFontColor() );
 	setFontShadowColor( mFontStyleConfig.getFontShadowColor() );
+}
+
+const Recti& UITextView::getPadding() const {
+	return mPadding;
+}
+
+void UITextView::setPadding(const Recti & padding) {
+	if ( padding != mPadding ) {
+		mPadding = padding;
+		mRealPadding = PixelDensity::dpToPxI( mPadding );
+		onPaddingChange();
+	}
+}
+
+void UITextView::onPaddingChange() {
 }
 
 }}

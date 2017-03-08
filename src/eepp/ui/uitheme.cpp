@@ -19,14 +19,14 @@
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uislider.hpp>
 #include <eepp/ui/uispinbox.hpp>
-#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextinputpassword.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
-#include <eepp/ui/uigfx.hpp>
+#include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/ui/uicommondialog.hpp>
 #include <eepp/ui/uimessagebox.hpp>

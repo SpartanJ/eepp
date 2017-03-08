@@ -10,7 +10,7 @@ UIRadioButton * UIRadioButton::New() {
 }
 
 UIRadioButton::UIRadioButton() :
-	UITextBox(),
+	UITextView(),
 	mActiveButton(NULL),
 	mInactiveButton(NULL),
 	mActive( false ),
@@ -30,7 +30,7 @@ UIRadioButton::UIRadioButton() :
 	mInactiveButton->setPosition( 0, 0 );
 	mInactiveButton->setSize( 16, 16 );
 
-	setPadding( Recti(0,0,0,0) );
+	onPaddingChange();
 
 	applyDefaultTheme();
 }
@@ -43,7 +43,7 @@ Uint32 UIRadioButton::getType() const {
 }
 
 bool UIRadioButton::isType( const Uint32& type ) const {
-	return UIRadioButton::getType() == type ? true : UITextBox::isType( type );
+	return UIRadioButton::getType() == type ? true : UITextView::isType( type );
 }
 
 void UIRadioButton::setTheme( UITheme * Theme ) {
@@ -72,7 +72,7 @@ void UIRadioButton::onThemeLoaded() {
 
 	mMinControlSize = mActiveButton->getSkinSize();
 
-	setPadding( Recti(0,0,0,0) );
+	onPaddingChange();
 }
 
 void UIRadioButton::onAutoSize() {
@@ -85,7 +85,7 @@ void UIRadioButton::onAutoSize() {
 }
 
 void UIRadioButton::onSizeChange() {
-	UITextBox::onSizeChange();
+	UITextView::onSizeChange();
 
 	mActiveButton->centerVertical();
 	mInactiveButton->centerVertical();
@@ -199,9 +199,7 @@ const bool& UIRadioButton::isActive() const {
 	return mActive;
 }
 
-void UIRadioButton::setPadding( const Recti& padding ) {
-	UITextBox::setPadding( padding );
-
+void UIRadioButton::onPaddingChange() {
 	mActiveButton->setPosition( mPadding.Left, mActiveButton->getPosition().y );
 	mInactiveButton->setPosition( mPadding.Left, mInactiveButton->getPosition().y );
 
@@ -235,11 +233,11 @@ Uint32 UIRadioButton::onKeyDown( const UIEventKey& Event ) {
 		}
 	}
 
-	return UITextBox::onKeyDown( Event );
+	return UITextView::onKeyDown( Event );
 }
 
 void UIRadioButton::onAlphaChange() {
-	UITextBox::onAlphaChange();
+	UITextView::onAlphaChange();
 	
 	mActiveButton->setAlpha( mAlpha );
 	mInactiveButton->setAlpha( mAlpha );

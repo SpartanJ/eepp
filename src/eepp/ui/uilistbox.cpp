@@ -11,12 +11,12 @@ UIListBox * UIListBox::New() {
 }
 
 UIListBox::UIListBox() :
-	UIComplexControl(),
+	UIWidget(),
 	mRowHeight(0),
 	mVScrollMode( UI_SCROLLBAR_AUTO ),
 	mHScrollMode( UI_SCROLLBAR_AUTO ),
 	mSmoothScroll( true ),
-	mPaddingContainer(),
+	mContainerPadding(),
 	mHScrollPadding(),
 	mVScrollPadding(),
 	mContainer( NULL ),
@@ -75,7 +75,7 @@ Uint32 UIListBox::getType() const {
 }
 
 bool UIListBox::isType( const Uint32& type ) const {
-	return UIListBox::getType() == type ? true : UIComplexControl::isType( type );
+	return UIListBox::getType() == type ? true : UIWidget::isType( type );
 }
 
 void UIListBox::setTheme( UITheme * Theme ) {
@@ -88,7 +88,7 @@ void UIListBox::setTheme( UITheme * Theme ) {
 
 void UIListBox::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mPaddingContainer = makePadding();
+		mContainerPadding = makePadding();
 	}
 }
 
@@ -369,12 +369,12 @@ void UIListBox::itemUpdateSize( UIListBoxItem * Item ) {
 }
 
 void UIListBox::containerResize() {
-	mContainer->setPosition( mPaddingContainer.Left, mPaddingContainer.Top );
+	mContainer->setPosition( mContainerPadding.Left, mContainerPadding.Top );
 
 	if( mHScrollBar->isVisible() )
-		mContainer->setSize( mSize.getWidth() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.getHeight() - mPaddingContainer.Top - mHScrollBar->getSize().getHeight() );
+		mContainer->setSize( mSize.getWidth() - mContainerPadding.Right - mContainerPadding.Left, mSize.getHeight() - mContainerPadding.Top - mHScrollBar->getSize().getHeight() );
 	else
-		mContainer->setSize( mSize.getWidth() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.getHeight() - mPaddingContainer.Bottom - mPaddingContainer.Top );
+		mContainer->setSize( mSize.getWidth() - mContainerPadding.Right - mContainerPadding.Left, mSize.getHeight() - mContainerPadding.Bottom - mContainerPadding.Top );
 }
 
 void UIListBox::createItemIndex( const Uint32& i ) {
@@ -715,8 +715,8 @@ Graphics::Font * UIListBox::getFont() const {
 }
 
 void UIListBox::setContainerPadding( const Recti& Padding ) {
-	if ( Padding != mPaddingContainer ) {
-		mPaddingContainer = Padding;
+	if ( Padding != mContainerPadding ) {
+		mContainerPadding = Padding;
 
 		containerResize();
 		updateScroll();
@@ -724,7 +724,7 @@ void UIListBox::setContainerPadding( const Recti& Padding ) {
 }
 
 const Recti& UIListBox::getContainerPadding() const {
-	return mPaddingContainer;
+	return mContainerPadding;
 }
 
 void UIListBox::setSmoothScroll( const bool& soft ) {
@@ -892,7 +892,7 @@ Uint32 UIListBox::onMessage( const UIMessage * Msg ) {
 }
 
 void UIListBox::onAlphaChange() {
-	UIComplexControl::onAlphaChange();
+	UIWidget::onAlphaChange();
 
 	if ( mItems.size() ) {
 		for ( Uint32 i = mVisibleFirst; i <= mVisibleLast; i++ ) {
@@ -963,11 +963,11 @@ void UIListBox::setTouchDragDeceleration(const Float & touchDragDeceleration) {
 	mTouchDragDeceleration = touchDragDeceleration;
 }
 
-TooltipStyleConfig UIListBox::getFontStyleConfig() const {
+FontStyleConfig UIListBox::getFontStyleConfig() const {
 	return mFontStyleConfig;
 }
 
-void UIListBox::setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig) {
+void UIListBox::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
 	mFontStyleConfig = fontStyleConfig;
 
 	setFont( mFontStyleConfig.Font );
@@ -1030,7 +1030,7 @@ void UIListBox::update() {
 		}
 	}
 
-	UIComplexControl::update();
+	UIWidget::update();
 }
 
 }}

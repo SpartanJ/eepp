@@ -4,7 +4,7 @@
 #include <eepp/gaming/base.hpp>
 #include <eepp/gaming/tilemap.hpp>
 #include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uigenericgrid.hpp>
+#include <eepp/ui/uitable.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uislider.hpp>
 
@@ -21,15 +21,15 @@ class EE_API TileMapProperties {
 	protected:
 		UITheme *			mUITheme;
 		UIWindow *			mUIWindow;
-		UIGenericGrid *		mGenGrid;
+		UITable *		mGenGrid;
 		TileMap *			mMap;
-		UIComplexControl *	mUIBaseColor;
+		UIWidget *	mUIBaseColor;
 		UISlider *			mUIRedSlider;
 		UISlider *			mUIGreenSlider;
 		UISlider *			mUIBlueSlider;
-		UITextBox *			mUIRedTxt;
-		UITextBox *			mUIGreenTxt;
-		UITextBox *			mUIBlueTxt;
+		UITextView *			mUIRedTxt;
+		UITextView *			mUIGreenTxt;
+		UITextView *			mUIBlueTxt;
 
 		void onWindowClose( const UIEvent * Event );
 
@@ -53,7 +53,7 @@ class EE_API TileMapProperties {
 
 		void loadProperties();
 
-		UIGridCell * createCell();
+		UITableCell * createCell();
 };
 
 }}}

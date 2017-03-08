@@ -6,7 +6,7 @@
 
 namespace EE { namespace UI {
 
-class EE_API UISpinBox : public UIComplexControl {
+class EE_API UISpinBox : public UIWidget {
 	public:
 		static UISpinBox * New();
 

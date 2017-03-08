@@ -14,7 +14,7 @@ UIMessageBox::UIMessageBox( UI_MSGBOX_TYPE type , String message ) :
 {
 	setInternalSize( Sizei( 1024, 1024 ) );
 
-	mTextBox = UITextBox::New();
+	mTextBox = UITextView::New();
 	mTextBox->setParent( getContainer() )
 			->setHorizontalAlign( UI_HALIGN_CENTER )
 			->setVerticalAlign( UI_VALIGN_CENTER );
@@ -127,7 +127,7 @@ Uint32 UIMessageBox::onMessage( const UIMessage * Msg ) {
 	return UIWindow::onMessage( Msg );
 }
 
-UITextBox * UIMessageBox::getTextBox() const {
+UITextView * UIMessageBox::getTextBox() const {
 	return mTextBox;
 }
 

@@ -1,20 +1,20 @@
 #ifndef EE_UICUIGRIDCELL_HPP
 #define EE_UICUIGRIDCELL_HPP
 
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
 
 namespace EE { namespace UI {
 
-class UIGenericGrid;
+class UITable;
 
-class EE_API UIGridCell : public UIComplexControl {
+class EE_API UITableCell : public UIWidget {
 	public:
-		static UIGridCell * New();
+		static UITableCell * New();
 
-		UIGridCell();
+		UITableCell();
 
-		virtual ~UIGridCell();
+		virtual ~UITableCell();
 
 		virtual void setTheme( UITheme * Theme );
 
@@ -32,12 +32,12 @@ class EE_API UIGridCell : public UIComplexControl {
 
 		virtual Uint32 onMessage( const UIMessage * Msg );
 	protected:
-		friend class UIItemContainer<UIGenericGrid>;
-		friend class UIGenericGrid;
+		friend class UIItemContainer<UITable>;
+		friend class UITable;
 
 		std::vector<UIControl*> mCells;
 
-		UIGenericGrid * gridParent() const;
+		UITable * gridParent() const;
 
 		void fixCell();
 

@@ -9,7 +9,7 @@ UISlider *UISlider::New() {
 }
 
 UISlider::UISlider() :
-	UIComplexControl(),
+	UIWidget(),
 	mOrientation( UI_HORIZONTAL ),
 	mBackSlider( NULL ),
 	mSlider( NULL ),
@@ -64,7 +64,7 @@ Uint32 UISlider::getType() const {
 }
 
 bool UISlider::isType( const Uint32& type ) const {
-	return UISlider::getType() == type ? true : UIComplexControl::isType( type );
+	return UISlider::getType() == type ? true : UIWidget::isType( type );
 }
 
 void UISlider::setTheme( UITheme * Theme ) {
@@ -86,7 +86,7 @@ void UISlider::setTheme( UITheme * Theme ) {
 }
 
 void UISlider::onSizeChange() {
-	UIComplexControl::onSizeChange();
+	UIWidget::onSizeChange();
 	adjustChilds();
 }
 
@@ -307,7 +307,7 @@ Uint32 UISlider::onKeyDown( const UIEventKey &Event ) {
 		}
 	}
 
-	return UIComplexControl::onKeyDown( Event );
+	return UIWidget::onKeyDown( Event );
 }
 
 void UISlider::manageClick( const Uint32& Flags ) {
@@ -388,7 +388,7 @@ UIControl * UISlider::getBackSlider() const {
 	return mBackSlider;
 }
 
-UIDragable * UISlider::getSliderButton() const {
+UIDragableControl * UISlider::getSliderButton() const {
 	return mSlider;
 }
 

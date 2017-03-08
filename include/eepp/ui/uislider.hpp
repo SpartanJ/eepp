@@ -1,12 +1,12 @@
 #ifndef EE_UIUISlider_HPP
 #define EE_UIUISlider_HPP
 
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uisliderbutton.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UISlider : public UIComplexControl {
+class EE_API UISlider : public UIWidget {
 	public:
 		static UISlider * New();
 
@@ -42,7 +42,7 @@ class EE_API UISlider : public UIComplexControl {
 
 		UIControl * getBackSlider() const;
 
-		UIDragable * getSliderButton() const;
+		UIDragableControl * getSliderButton() const;
 
 		void adjustChilds();
 

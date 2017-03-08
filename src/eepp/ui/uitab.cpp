@@ -100,7 +100,7 @@ const String& UITab::getText() {
 	return UIPushButton::getText();
 }
 
-void UITab::setText( const String &text ) {
+UIPushButton * UITab::setText( const String &text ) {
 	UITabWidget * tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
@@ -109,13 +109,14 @@ void UITab::setText( const String &text ) {
 
 			onAutoSize();
 
-			return;
+			return this;
 		}
 	}
 
 	UIPushButton::setText( text );
 
 	onAutoSize();
+	return this;
 }
 
 void UITab::onAutoSize() {

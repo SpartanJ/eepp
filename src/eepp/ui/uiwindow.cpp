@@ -9,7 +9,7 @@ UIWindow * UIWindow::New() {
 }
 
 UIWindow::UIWindow() :
-	UIComplexControl(),
+	UIWidget(),
 	mWindowDecoration( NULL ),
 	mBorderLeft( NULL ),
 	mBorderRight( NULL ),
@@ -162,7 +162,7 @@ void UIWindow::createModalControl() {
 	UIControl * Ctrl = UIManager::instance()->getMainControl();
 
 	if ( NULL == mModalCtrl ) {
-		mModalCtrl = UIComplexControl::New();
+		mModalCtrl = UIWidget::New();
 		mModalCtrl->setParent( Ctrl )->setPosition(0,0)->setSize( Ctrl->getSize() );
 		mModalCtrl->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	} else {
@@ -220,7 +220,7 @@ Uint32 UIWindow::getType() const {
 }
 
 bool UIWindow::isType( const Uint32& type ) const {
-	return UIWindow::getType() == type ? true : UIComplexControl::isType( type );
+	return UIWindow::getType() == type ? true : UIWidget::isType( type );
 }
 
 void UIWindow::onContainerPosChange( const UIEvent * Event ) {
@@ -261,7 +261,7 @@ void UIWindow::closeWindow() {
 }
 
 void UIWindow::close() {
-	UIComplexControl::close();
+	UIWidget::close();
 
 	enableByModal();
 }
@@ -279,7 +279,7 @@ void UIWindow::onButtonMinimizeClick( const UIEvent * Event ) {
 }
 
 void UIWindow::setTheme( UITheme *Theme ) {
-	UIComplexControl::setTheme( Theme );
+	UIWidget::setTheme( Theme );
 
 	mContainer->setThemeControl			( Theme, "winback"			);
 
@@ -356,7 +356,7 @@ void UIWindow::onSizeChange() {
 	} else {
 		fixChildsSize();
 
-		UIComplexControl::onSizeChange();
+		UIWidget::onSizeChange();
 	}
 }
 
@@ -367,9 +367,9 @@ UIControl * UIWindow::setSize( const Sizei& Size ) {
 		size.x += mBorderLeft->getSize().getWidth() + mBorderRight->getSize().getWidth();
 		size.y += mWindowDecoration->getSize().getHeight() + mBorderBottom->getSize().getHeight();
 
-		UIComplexControl::setSize( size );
+		UIWidget::setSize( size );
 	} else {
-		UIComplexControl::setSize( Size );
+		UIWidget::setSize( Size );
 	}
 
 	return this;
@@ -386,12 +386,12 @@ UIWindow *UIWindow::setSizeWithDecoration(const Int32 & Width, const Int32 & Hei
 }
 
 UIWindow *UIWindow::setSizeWithDecoration(const Sizei & size) {
-	UIComplexControl::setSize( size );
+	UIWidget::setSize( size );
 	return this;
 }
 
 const Sizei& UIWindow::getSize() {
-	return UIComplexControl::getSize();
+	return UIWidget::getSize();
 }
 
 void UIWindow::fixChildsSize() {
@@ -507,7 +507,7 @@ Uint32 UIWindow::onMessage( const UIMessage * Msg ) {
 		}
 	}
 
-	return UIComplexControl::onMessage( Msg );
+	return UIWidget::onMessage( Msg );
 }
 
 void UIWindow::doResize ( const UIMessage * Msg ) {
@@ -729,7 +729,7 @@ void UIWindow::internalSize( Sizei Size ) {
 }
 
 void UIWindow::draw() {
-	UIComplexControl::draw();
+	UIWidget::draw();
 
 	if ( mStyleConfig.WinFlags & UI_WIN_DRAW_SHADOW ) {
 		Primitives P;
@@ -766,7 +766,7 @@ void UIWindow::draw() {
 void UIWindow::update() {
 	resizeCursor();
 
-	UIComplexControl::update();
+	UIWidget::update();
 
 	updateResize();
 }
@@ -849,7 +849,7 @@ void UIWindow::onAlphaChange() {
 		}
 	}
 
-	UIComplexControl::onAlphaChange();
+	UIWidget::onAlphaChange();
 }
 
 void UIWindow::setBaseAlpha( const Uint8& Alpha ) {
@@ -866,7 +866,7 @@ const Uint8& UIWindow::getBaseAlpha() const {
 
 void UIWindow::setTitle( const String& Text ) {
 	if ( NULL == mTitle ) {
-		mTitle = UITextBox::New();
+		mTitle = UITextView::New();
 		mTitle->setParent( this );
 		mTitle->setHorizontalAlign( getHorizontalAlign() );
 		mTitle->setVerticalAlign( getVerticalAlign() );
@@ -898,7 +898,7 @@ String UIWindow::getTitle() const {
 	return String();
 }
 
-UITextBox * UIWindow::getTitleTextBox() const {
+UITextView * UIWindow::getTitleTextBox() const {
 	return mTitle;
 }
 
@@ -928,7 +928,7 @@ Uint32 UIWindow::onMouseDoubleClick( const Vector2i &Pos, const Uint32 Flags ) {
 Uint32 UIWindow::onKeyDown( const UIEventKey &Event ) {
 	checkShortcuts( Event.getKeyCode(), Event.getMod() );
 
-	return UIComplexControl::onKeyDown( Event );
+	return UIWidget::onKeyDown( Event );
 }
 
 void UIWindow::checkShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {
@@ -1027,7 +1027,7 @@ bool UIWindow::isModal() {
 	return 0 != ( mStyleConfig.WinFlags & UI_WIN_MODAL );
 }
 
-UIComplexControl * UIWindow::getModalControl() const {
+UIWidget * UIWindow::getModalControl() const {
 	return mModalCtrl;
 }
 

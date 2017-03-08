@@ -1,13 +1,13 @@
 #ifndef EE_UICUIWINDOW_HPP
 #define EE_UICUIWINDOW_HPP
 
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uipushbutton.hpp>
-#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uitextview.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIWindow : public UIComplexControl {
+class EE_API UIWindow : public UIWidget {
 	public:
 		static UIWindow * New();
 
@@ -61,7 +61,7 @@ class EE_API UIWindow : public UIComplexControl {
 
 		String getTitle() const;
 
-		UITextBox * getTitleTextBox() const;
+		UITextView * getTitleTextBox() const;
 
 		bool addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIPushButton * Button );
 
@@ -69,7 +69,7 @@ class EE_API UIWindow : public UIComplexControl {
 
 		bool isModal();
 
-		UIComplexControl * getModalControl() const;
+		UIWidget * getModalControl() const;
 
 		void maximize();
 
@@ -132,9 +132,9 @@ class EE_API UIWindow : public UIComplexControl {
 		UIControlAnim *	mButtonClose;
 		UIControlAnim *	mButtonMinimize;
 		UIControlAnim *	mButtonMaximize;
-		UITextBox *		mTitle;
+		UITextView *		mTitle;
 
-		UIComplexControl *	mModalCtrl;
+		UIWidget *	mModalCtrl;
 
 		Vector2i			mNonMaxPos;
 		Sizei				mNonMaxSize;

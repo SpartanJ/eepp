@@ -1,32 +1,32 @@
-#include <eepp/ui/uidragable.hpp>
+#include <eepp/ui/uidragablecontrol.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/window/input.hpp>
 
 namespace EE { namespace UI {
 
-UIDragable * UIDragable::New() {
-	return eeNew( UIDragable, () );
+UIDragableControl * UIDragableControl::New() {
+	return eeNew( UIDragableControl, () );
 }
 
-UIDragable::UIDragable() :
+UIDragableControl::UIDragableControl() :
 	UIControl(),
 	mDragButton( EE_BUTTON_LMASK )
 {
 	mControlFlags |= UI_CTRL_FLAG_DRAGABLE;
 }
 
-UIDragable::~UIDragable() {
+UIDragableControl::~UIDragableControl() {
 }
 
-Uint32 UIDragable::getType() const {
+Uint32 UIDragableControl::getType() const {
 	return UI_TYPE_CONTROL_DRAGABLE;
 }
 
-bool UIDragable::isType( const Uint32& type ) const {
-	return UIDragable::getType() == type ? true : UIControl::isType( type );
+bool UIDragableControl::isType( const Uint32& type ) const {
+	return UIDragableControl::getType() == type ? true : UIControl::isType( type );
 }
 
-Uint32 UIDragable::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UIDragableControl::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( !( UIManager::instance()->getLastPressTrigger() & mDragButton ) && ( Flags & mDragButton ) && isDragEnabled() && !isDragging() ) {
 		setDragging( true );
 		mDragPoint = Pos;
@@ -36,7 +36,7 @@ Uint32 UIDragable::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 	return 1;
 }
 
-Uint32 UIDragable::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UIDragableControl::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( isDragEnabled() && isDragging() && ( Flags & mDragButton ) ) {
 		setDragging( false );
 	}
@@ -45,15 +45,15 @@ Uint32 UIDragable::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
 	return 1;
 }
 
-const Vector2i& UIDragable::getDragPoint() const {
+const Vector2i& UIDragableControl::getDragPoint() const {
 	return mDragPoint;
 }
 
-void UIDragable::setDragPoint( const Vector2i& Point ) {
+void UIDragableControl::setDragPoint( const Vector2i& Point ) {
 	mDragPoint = Point;
 }
 
-void UIDragable::update() {
+void UIDragableControl::update() {
 	UIControl::update();
 
 	if ( !isDragEnabled() )
@@ -87,31 +87,31 @@ void UIDragable::update() {
 	}
 }
 
-Uint32 UIDragable::onDrag( const Vector2i& Pos ) {
+Uint32 UIDragableControl::onDrag( const Vector2i& Pos ) {
 	return 1;
 }
 
-Uint32 UIDragable::OnDragStart( const Vector2i& Pos ) {
+Uint32 UIDragableControl::OnDragStart( const Vector2i& Pos ) {
 	return 1;
 }
 
-Uint32 UIDragable::OnDragEnd( const Vector2i& Pos ) {
+Uint32 UIDragableControl::OnDragEnd( const Vector2i& Pos ) {
 	return 1;
 }
 
-bool UIDragable::isDragEnabled() const {
+bool UIDragableControl::isDragEnabled() const {
 	return 0 != ( mFlags & UI_DRAG_ENABLE );
 }
 
-void UIDragable::setDragEnabled( const bool& enable ) {
+void UIDragableControl::setDragEnabled( const bool& enable ) {
 	writeFlag( UI_DRAG_ENABLE, true == enable );
 }
 
-bool UIDragable::isDragging() const {
+bool UIDragableControl::isDragging() const {
 	return 0 != ( mControlFlags & UI_CTRL_FLAG_DRAGGING );
 }
 
-void UIDragable::setDragging( const bool& dragging ) {
+void UIDragableControl::setDragging( const bool& dragging ) {
 	writeCtrlFlag( UI_CTRL_FLAG_DRAGGING, true == dragging );
 
 	if ( dragging ) {
@@ -127,11 +127,11 @@ void UIDragable::setDragging( const bool& dragging ) {
 	}
 }
 
-void UIDragable::setDragButton( const Uint32& Button ) {
+void UIDragableControl::setDragButton( const Uint32& Button ) {
 	mDragButton = Button;
 }
 
-const Uint32& UIDragable::getDragButton() const {
+const Uint32& UIDragableControl::getDragButton() const {
 	return mDragButton;
 }
 

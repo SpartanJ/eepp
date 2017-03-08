@@ -23,7 +23,7 @@ UIGOTypeNew::UIGOTypeNew( cb::Callback2<void, std::string, Uint32> Cb ) :
 	Int32 InitialY		= 16;
 	Int32 DistFromTitle	= 18;
 
-	UITextBox * Txt = UITextBox::New();
+	UITextView * Txt = UITextView::New();
 	Txt->setFlags( UI_DRAW_SHADOW | UI_AUTO_SIZE )->setParent( mUIWindow->getContainer() )->setPosition( 16, InitialY );
 	Txt->setText( "GameObject Type Name" );
 

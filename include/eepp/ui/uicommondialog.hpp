@@ -2,7 +2,7 @@
 #define EE_UICUICOMMONDIALOG_HPP
 
 #include <eepp/ui/base.hpp>
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uitextinput.hpp>

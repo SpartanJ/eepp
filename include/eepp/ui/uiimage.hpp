@@ -1,17 +1,17 @@
 #ifndef EE_UICUIGFX_H
 #define EE_UICUIGFX_H
 
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIGfx : public UIComplexControl {
+class EE_API UIImage : public UIWidget {
 	public:
-		static UIGfx * New();
+		static UIImage * New();
 
-		UIGfx();
+		UIImage();
 
-		virtual ~UIGfx();
+		virtual ~UIImage();
 
 		virtual Uint32 getType() const;
 

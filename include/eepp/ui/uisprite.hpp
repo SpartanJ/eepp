@@ -1,7 +1,7 @@
 #ifndef EE_UICUISPRITE_HPP
 #define EE_UICUISPRITE_HPP
 
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace Graphics {
 class Sprite;
@@ -9,7 +9,7 @@ class Sprite;
 
 namespace EE { namespace UI {
 
-class EE_API UISprite : public UIComplexControl {
+class EE_API UISprite : public UIWidget {
 	public:
 		static UISprite * New();
 

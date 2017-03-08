@@ -1,20 +1,20 @@
-#include <eepp/ui/uigridcell.hpp>
-#include <eepp/ui/uigenericgrid.hpp>
+#include <eepp/ui/uitablecell.hpp>
+#include <eepp/ui/uitable.hpp>
 #include <eepp/ui/uimanager.hpp>
 
 namespace EE { namespace UI {
 
-UIGridCell * UIGridCell::New() {
-	return eeNew( UIGridCell, () );
+UITableCell * UITableCell::New() {
+	return eeNew( UITableCell, () );
 }
 
-UIGridCell::UIGridCell() :
-	UIComplexControl()
+UITableCell::UITableCell() :
+	UIWidget()
 {
 	applyDefaultTheme();
 }
 
-UIGridCell::~UIGridCell() {
+UITableCell::~UITableCell() {
 	if ( UIManager::instance()->getFocusControl() == this )
 		mParentCtrl->setFocus();
 
@@ -22,18 +22,18 @@ UIGridCell::~UIGridCell() {
 		UIManager::instance()->setOverControl( mParentCtrl );
 }
 
-void UIGridCell::setTheme( UITheme * Theme ) {
+void UITableCell::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "gridcell" );
 }
 
-UIGenericGrid * UIGridCell::gridParent() const {
-	return reinterpret_cast<UIGenericGrid*> ( mParentCtrl->getParent() );
+UITable * UITableCell::gridParent() const {
+	return reinterpret_cast<UITable*> ( mParentCtrl->getParent() );
 }
 
-void UIGridCell::setCell( const Uint32& CollumnIndex, UIControl * Ctrl ) {
+void UITableCell::setCell( const Uint32& CollumnIndex, UIControl * Ctrl ) {
 	eeASSERT( CollumnIndex < gridParent()->getCollumnsCount() );
 
-	UIGenericGrid * P = gridParent();
+	UITable * P = gridParent();
 
 	mCells[ CollumnIndex ] = Ctrl;
 
@@ -47,16 +47,16 @@ void UIGridCell::setCell( const Uint32& CollumnIndex, UIControl * Ctrl ) {
 	Ctrl->setEnabled( true );
 }
 
-UIControl * UIGridCell::getCell( const Uint32& CollumnIndex ) const {
+UIControl * UITableCell::getCell( const Uint32& CollumnIndex ) const {
 	eeASSERT( CollumnIndex < gridParent()->getCollumnsCount() );
 
 	return mCells[ CollumnIndex ];
 }
 
-void UIGridCell::fixCell() {
+void UITableCell::fixCell() {
 	onAutoSize();
 
-	UIGenericGrid * P = gridParent();
+	UITable * P = gridParent();
 
 	for ( Uint32 i = 0; i < mCells.size(); i++ ) {
 		mCells[i]->setPosition	( P->getCellPosition( i )	, 0					);
@@ -64,9 +64,9 @@ void UIGridCell::fixCell() {
 	}
 }
 
-void UIGridCell::update() {
+void UITableCell::update() {
 	if ( mEnabled && mVisible ) {
-		UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( getParent()->getParent() );
+		UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
 		Uint32 Flags				= UIManager::instance()->getInput()->getClickTrigger();
 
 		if ( NULL != MyParent && MyParent->getAlpha() != mAlpha ) {
@@ -86,11 +86,11 @@ void UIGridCell::update() {
 		}
 	}
 
-	UIComplexControl::update();
+	UIWidget::update();
 }
 
-void UIGridCell::select() {
-	UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( getParent()->getParent() );
+void UITableCell::select() {
+	UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
 
 	if ( MyParent->getItemSelected() != this ) {
 		if ( NULL != MyParent->getItemSelected() )
@@ -110,18 +110,18 @@ void UIGridCell::select() {
 	}
 }
 
-void UIGridCell::unselect() {
+void UITableCell::unselect() {
 	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
 		mControlFlags &= ~UI_CTRL_FLAG_SELECTED;
 
 	setSkinState( UISkinState::StateNormal );
 }
 
-bool UIGridCell::isSelected() const {
+bool UITableCell::isSelected() const {
 	return 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
 }
 
-Uint32 UIGridCell::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITableCell::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 	UIControl::onMouseExit( Pos, Flags );
 
 	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
@@ -130,7 +130,7 @@ Uint32 UIGridCell::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 	return 1;
 }
 
-Uint32 UIGridCell::onMessage( const UIMessage * Msg ) {
+Uint32 UITableCell::onMessage( const UIMessage * Msg ) {
 	switch( Msg->getMsg() ) {
 		case UIMessage::MsgMouseEnter:
 		{
@@ -159,19 +159,19 @@ Uint32 UIGridCell::onMessage( const UIMessage * Msg ) {
 	return 0;
 }
 
-void UIGridCell::onAutoSize() {
-	UIGenericGrid * MyParent 	= reinterpret_cast<UIGenericGrid*> ( getParent()->getParent() );
+void UITableCell::onAutoSize() {
+	UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
 
 	setSize( MyParent->mTotalWidth, MyParent->mRowHeight );
 }
 
-void UIGridCell::onStateChange() {
+void UITableCell::onStateChange() {
 	if ( isSelected() && mSkinState->getState() != UISkinState::StateSelected ) {
 		setSkinState( UISkinState::StateSelected );
 	}
 }
 
-void UIGridCell::onParentChange() {
+void UITableCell::onParentChange() {
 	if ( NULL != getParent() && NULL != gridParent() )
 		mCells.resize( gridParent()->getCollumnsCount(), NULL );
 }

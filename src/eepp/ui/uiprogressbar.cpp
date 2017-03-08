@@ -7,7 +7,7 @@ UIProgressBar *UIProgressBar::New() {
 }
 
 UIProgressBar::UIProgressBar() :
-	UIComplexControl(),
+	UIWidget(),
 	mProgress( 0.f ),
 	mTotalSteps( 100.f ),
 	mParallax( NULL )
@@ -16,7 +16,7 @@ UIProgressBar::UIProgressBar() :
 
 	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
 
-	mTextBox = UITextBox::New();
+	mTextBox = UITextView::New();
 	mTextBox->setHorizontalAlign( UI_HALIGN_CENTER );
 	mTextBox->setParent( this );
 	mTextBox->setEnabled( false );
@@ -40,7 +40,7 @@ Uint32 UIProgressBar::getType() const {
 }
 
 bool UIProgressBar::isType( const Uint32& type ) const {
-	return UIProgressBar::getType() == type ? true : UIComplexControl::isType( type );
+	return UIProgressBar::getType() == type ? true : UIWidget::isType( type );
 }
 
 void UIProgressBar::draw() {
@@ -200,7 +200,7 @@ void UIProgressBar::updateTextBox() {
 	mTextBox->center();
 }
 
-UITextBox * UIProgressBar::getTextBox() const {
+UITextView * UIProgressBar::getTextBox() const {
 	return mTextBox;
 }
 

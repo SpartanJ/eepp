@@ -122,7 +122,7 @@ void UITextInputPassword::updatePass( const String& pass ) {
 	mPassCache->setText( newTxt );
 }
 
-UITextBox * UITextInputPassword::setText( const String& text ) {
+UITextView * UITextInputPassword::setText( const String& text ) {
 	UITextInput::setText( text );
 
 	updatePass( text );
@@ -143,7 +143,7 @@ void UITextInputPassword::setFontStyleConfig(const TooltipStyleConfig & fontStyl
 }
 
 const String& UITextInputPassword::getText() {
-	return UITextBox::getText();
+	return UITextView::getText();
 }
 
 

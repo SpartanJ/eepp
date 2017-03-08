@@ -3,8 +3,8 @@
 
 namespace EE { namespace Gaming { namespace Private {
 
-static UITextBox * createTextBox( const String& Text = "", UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE ) {
-	UITextBox * Ctrl = UITextBox::New();
+static UITextView * createTextBox( const String& Text = "", UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE ) {
+	UITextView * Ctrl = UITextView::New();
 	Ctrl->resetFlags( Flags )->setParent( Parent )->setPosition( Pos )->setSize( Size )->setVisible( true )->setEnabled( false );
 	Ctrl->setText( Text );
 	return Ctrl;
@@ -35,14 +35,14 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 	Int32 InitialY		= 16;
 	Int32 DistFromTitle	= 18;
 
-	UITextBox * Txt = createTextBox( "Object name:", mUIWindow->getContainer(), Sizei(), Vector2i( 50, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	UITextView * Txt = createTextBox( "Object name:", mUIWindow->getContainer(), Sizei(), Vector2i( 50, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	mUIInput = UITextInput::New();
 	mUIInput->setParent( mUIWindow->getContainer() )->setSize( 120, 0 )->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
 	mUIInput->setMaxLength( 64 );
 	mUIInput->setText( mObj->getName() );
 	mUIInput->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &MapObjectProperties::onOKClick ) );
 
-	UITextBox * Txt2 = createTextBox( "Object type:", mUIWindow->getContainer(), Sizei(), Vector2i( 50+192, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	UITextView * Txt2 = createTextBox( "Object type:", mUIWindow->getContainer(), Sizei(), Vector2i( 50+192, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	mUIInput2 = UITextInput::New();
 	mUIInput2->setParent( mUIWindow->getContainer() )->setSize( 120, 0 )->setPosition( Txt2->getPosition().x + DistFromTitle, Txt2->getPosition().y + DistFromTitle );
 	mUIInput2->setMaxLength( 64 );
@@ -51,7 +51,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 
 	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
 	createTextBox( "Property Name", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 ), TxtBoxFlags );
-	UITextBox * TxtBox = createTextBox( "Property Value", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50+192, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 ), TxtBoxFlags );
+	UITextView * TxtBox = createTextBox( "Property Value", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50+192, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 ), TxtBoxFlags );
 
 	UIPushButton * OKButton = UIPushButton::New();
 	OKButton->setParent(  mUIWindow->getContainer() )->setSize( 80, 0 );
@@ -68,7 +68,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 	CancelButton->setText( "Cancel" );
 	CancelButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 
-	mGenGrid = UIGenericGrid::New();
+	mGenGrid = UITable::New();
 	mGenGrid->setParent( mUIWindow->getContainer() );
 	mGenGrid->setSize( 400, 340 )->setPosition( 50, TxtBox->getPosition().y + TxtBox->getSize().getHeight() );
 	mGenGrid->setRowHeight( 24 )->setCollumnsCount( 5 );
@@ -114,7 +114,7 @@ void MapObjectProperties::saveProperties() {
 	mObj->clearProperties();
 
 	for ( Uint32 i = 0; i < mGenGrid->getCount(); i++ ) {
-		UIGridCell * Cell = mGenGrid->getCell( i );
+		UITableCell * Cell = mGenGrid->getCell( i );
 
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->getCell( 1 ) );
 		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->getCell( 3 ) );
@@ -129,7 +129,7 @@ void MapObjectProperties::loadProperties() {
 	GameObjectObject::PropertiesMap& Proper = mObj->getProperties();
 
 	for ( GameObjectObject::PropertiesMap::iterator it = Proper.begin(); it != Proper.end(); it++ ) {
-		UIGridCell * Cell = createCell();
+		UITableCell * Cell = createCell();
 
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->getCell( 1 ) );
 		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->getCell( 3 ) );
@@ -195,8 +195,8 @@ void MapObjectProperties::createGridElems() {
 	}
 }
 
-UIGridCell * MapObjectProperties::createCell() {
-	UIGridCell * Cell = UIGridCell::New();
+UITableCell * MapObjectProperties::createCell() {
+	UITableCell * Cell = UITableCell::New();
 	UITextInput * TxtInput = UITextInput::New();
 	UITextInput * TxtInput2 = UITextInput::New();
 
@@ -204,11 +204,11 @@ UIGridCell * MapObjectProperties::createCell() {
 	TxtInput->setMaxLength( LAYER_NAME_SIZE );
 	TxtInput2->setMaxLength( LAYER_NAME_SIZE );
 
-	Cell->setCell( 0, UIComplexControl::New() );
+	Cell->setCell( 0, UIWidget::New() );
 	Cell->setCell( 1, TxtInput );
-	Cell->setCell( 2, UIComplexControl::New() );
+	Cell->setCell( 2, UIWidget::New() );
 	Cell->setCell( 3, TxtInput2 );
-	Cell->setCell( 4, UIComplexControl::New() );
+	Cell->setCell( 4, UIWidget::New() );
 
 	return Cell;
 }

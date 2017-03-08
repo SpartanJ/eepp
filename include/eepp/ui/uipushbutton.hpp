@@ -1,13 +1,13 @@
 #ifndef EE_UICUIPUSHBUTTON_HPP
 #define EE_UICUIPUSHBUTTON_HPP
 
-#include <eepp/ui/uicomplexcontrol.hpp>
-#include <eepp/ui/uitextbox.hpp>
-#include <eepp/ui/uigfx.hpp>
+#include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uiimage.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIPushButton : public UIComplexControl {
+class EE_API UIPushButton : public UIWidget {
 	public:
 		static UIPushButton * New();
 
@@ -23,9 +23,9 @@ class EE_API UIPushButton : public UIComplexControl {
 
 		virtual UIPushButton * setIcon( SubTexture * icon );
 
-		virtual UIGfx * getIcon() const;
+		virtual UIImage * getIcon() const;
 
-		virtual void setText( const String& text );
+		virtual UIPushButton * setText( const String& text );
 
 		virtual const String& getText();
 
@@ -37,7 +37,7 @@ class EE_API UIPushButton : public UIComplexControl {
 
 		const Int32& getIconHorizontalMargin() const;
 
-		UITextBox * getTextBox() const;
+		UITextView * getTextBox() const;
 
 		void setFont( Font * font );
 
@@ -60,8 +60,8 @@ class EE_API UIPushButton : public UIComplexControl {
 		void setStyleConfig(const PushButtonStyleConfig & styleConfig);
 	protected:
 		PushButtonStyleConfig mStyleConfig;
-		UIGfx * 		mIcon;
-		UITextBox * 	mTextBox;
+		UIImage * 		mIcon;
+		UITextView * 	mTextBox;
 
 		virtual void onSizeChange();
 

@@ -2,7 +2,7 @@
 #define EE_UICUIMESSAGEBOX_HPP
 
 #include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 
 namespace EE { namespace UI {
@@ -19,7 +19,7 @@ class EE_API UIMessageBox : public UIWindow {
 
 		virtual void		setTheme( UITheme * Theme );
 
-		UITextBox *			getTextBox() const;
+		UITextView *			getTextBox() const;
 
 		UIPushButton *		getButtonOK() const;
 
@@ -32,7 +32,7 @@ class EE_API UIMessageBox : public UIWindow {
 		void setCloseWithKey(const Uint32 & closeWithKey);
 	protected:
 		UI_MSGBOX_TYPE		mMsgBoxType;
-		UITextBox *			mTextBox;
+		UITextView *			mTextBox;
 		UIPushButton *		mButtonOK;
 		UIPushButton *		mButtonCancel;
 		Uint32				mCloseWithKey;

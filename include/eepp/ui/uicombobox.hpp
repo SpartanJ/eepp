@@ -5,7 +5,7 @@
 
 namespace EE { namespace UI {
 
-class EE_API UIComboBox : public UIComplexControl {
+class EE_API UIComboBox : public UIWidget {
 	public:
 		static UIComboBox * New();
 

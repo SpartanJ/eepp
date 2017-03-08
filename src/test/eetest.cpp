@@ -320,7 +320,7 @@ void EETest::createUI() {
 	sprite->setPosition( 160, 100 );
 	sprite->setDeallocSprite( true );
 
-	UITextBox * Text = UITextBox::New();
+	UITextView * Text = UITextView::New();
 	Text->setParent( C )->setEnabled( false )->setSize( 320, 240 )->setHorizontalAlign( UI_HALIGN_RIGHT )->setVerticalAlign( UI_VALIGN_TOP );
 	Text->setText( "Turn around\nJust Turn Around\nAround!" );
 
@@ -362,7 +362,7 @@ void EETest::createUI() {
 	mProgressBar = UIProgressBar::New();
 	mProgressBar->setParent( C )->setSize( 200, 24 )->setPosition( 20, 190 );
 
-	mTextBoxValue = UITextBox::New();
+	mTextBoxValue = UITextView::New();
 	mTextBoxValue->setParent( C )->setPosition( 20, 0 )->setFlags( UI_AUTO_SIZE );
 	mTextBoxValue->setVisible( true );
 	onValueChange( NULL );
@@ -442,16 +442,16 @@ void EETest::createUI() {
 	TextEdit->setParent( C )->setPosition( 5, 245 )->setSize( 315, 130 );
 	TextEdit->setText( mBuda );
 
-	UIGenericGrid * genGrid = UIGenericGrid::New();
+	UITable * genGrid = UITable::New();
 	genGrid->setSmoothScroll( true );
 	genGrid->setParent( C )->setPosition( 325, 245 )->setSize( 200, 130 );
 	genGrid->setCollumnsCount( 3 )->setRowHeight( 24 );
 
 	for ( Uint32 i = 0; i < 15; i++ ) {
-		UIGridCell * Cell			= UIGridCell::New();
-		UITextBox * TxtBox			= UITextBox::New();
+		UITableCell * Cell			= UITableCell::New();
+		UITextView * TxtBox			= UITextView::New();
 		UITextInput * TxtInput		= UITextInput::New();
-		UIGfx * TxtGfx				= UIGfx::New();
+		UIImage * TxtGfx				= UIImage::New();
 
 		Cell->setParent( genGrid->getContainer() );
 
@@ -520,7 +520,7 @@ void EETest::createNewUI() {
 	cbox->setText( "Happy CheckBox :)" );
 	cbox->setFontColor( 0x000000FF );
 
-	UIGfx * gfx = UIGfx::New();
+	UIImage * gfx = UIImage::New();
 	gfx->setPosition( 50, 140 )->setSize( 16, 16 );
 	gfx->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	gfx->setSubTexture( mTheme->getIconByName( "ok" ) );
@@ -583,7 +583,7 @@ void EETest::createNewUI() {
 	UISpinBox * spinBox = UISpinBox::New();
 	spinBox->setPosition( 350, 210 )->setSize( 200, 0 );
 
-	UIGenericGrid * genGrid = UIGenericGrid::New();
+	UITable * genGrid = UITable::New();
 	genGrid->setSmoothScroll( true );
 	genGrid->setPosition( 350, 250 )->setSize( 200, 130 );
 	genGrid->setCollumnsCount( 3 )->setRowHeight( 24 );
@@ -592,10 +592,10 @@ void EETest::createNewUI() {
 	genGrid->setCollumnWidth( 2, 100 );
 
 	for ( Uint32 i = 0; i < 15; i++ ) {
-		UIGridCell * Cell			= UIGridCell::New();
-		UITextBox * TxtBox			= UITextBox::New();
+		UITableCell * Cell			= UITableCell::New();
+		UITextView * TxtBox			= UITextView::New();
 		UITextInput * TxtInput		= UITextInput::New();
-		UIGfx * TxtGfx				= UIGfx::New();
+		UIImage * TxtGfx				= UIImage::New();
 		TxtGfx->unsetFlags( UI_AUTO_SIZE );
 
 		Cell->setParent( genGrid->getContainer() );
@@ -634,10 +634,58 @@ void EETest::createNewUI() {
 	UITabWidget * TabWidget = UITabWidget::New();
 	TabWidget->setPosition( 350, 530 )->setSize( 200, 64 );
 
-	TabWidget->add( "Tab 1", UIComplexControl::New()->setThemeControl( "winback" ), mTheme->getIconByName( "ok" ) );
-	TabWidget->add( "Tab 2", UIComplexControl::New()->setThemeControl( "winback" ), mTheme->getIconByName( "go-up" ) );
-	TabWidget->add( "Tab 3", UIComplexControl::New()->setThemeControl( "winback" ), mTheme->getIconByName( "add" ) );
+	TabWidget->add( "Tab 1", UIWidget::New()->setThemeControl( "winback" ), mTheme->getIconByName( "ok" ) );
+	TabWidget->add( "Tab 2", UIWidget::New()->setThemeControl( "winback" ), mTheme->getIconByName( "go-up" ) );
+	TabWidget->add( "Tab 3", UIWidget::New()->setThemeControl( "winback" ), mTheme->getIconByName( "add" ) );
 
+	/**/
+	/**/
+	UIWindow * win = UIWindow::New();
+	win->setSize( 500, 500 );
+	win->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MINIMIZE_BUTTON );
+
+	UILinearLayout * layWin = UILinearLayout::NewVertical();
+	layWin->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
+	layWin->setParent( win->getContainer() );
+
+	UILinearLayout * layPar = UILinearLayout::NewHorizontal();
+	layPar->setParent( layWin );
+	layPar->setLayoutMargin( Recti( 16, 16, 16, 16 ) );
+	layPar->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT );
+	layPar->setLayoutGravity( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
+	layPar->setBackgroundFillEnabled( true )->setColor( 0x999999FF );
+
+	UILinearLayout * lay = UILinearLayout::NewVertical();
+	lay->setLayoutGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
+	lay->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT );
+	lay->setBackgroundFillEnabled( true )->setColor( 0x333333FF );
+	lay->setLayoutWeight( 0.7f );
+
+	UITextView::New()->setText( "Text on test 1" )->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )->setParent( lay );
+	UITextView::New()->setText( "Text on test 2" )->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
+	UICheckBox::New()->setText( "Checkbox" )->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
+	UITextView::New()->setText( "Text on test 3" )->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
+	UITextView::New()->setText( "Text on test 4" )->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
+	UITextInput::New()->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
+
+	UILinearLayout * lay2 = UILinearLayout::NewVertical();
+	lay2->setLayoutGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
+	lay2->setLayoutSizeRules( FIXED, MATCH_PARENT );
+	lay2->setBackgroundFillEnabled( true )->setColor( 0x000000FF );
+	lay2->setLayoutWeight( 0.3f );
+
+	UIPushButton::New()->setText( "PushButton" )->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutGravity( UI_VALIGN_CENTER )->setParent( lay2 );
+	UIListBox * lbox = UIListBox::New();
+	lbox->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, FIXED )->setSize( 0, 120 )->setParent( lay2 );
+	lbox->addListBoxItems( { "This", "is", "a", "ListBox" } );
+	lay2->setParent( layPar );
+	lay->setParent( layPar );
+
+	UIDropDownList * drop = UIDropDownList::New();
+	drop->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( layWin );
+	drop->getListBox()->addListBoxItems( { "Car", "Bus", "Plane", "Submarine" } );
+	drop->getListBox()->setSelected(0);
+	win->show();
 	/**/
 }
 
@@ -686,9 +734,20 @@ void EETest::createCommonDialog() {
 	CDialog->show();
 }
 
-void EETest::createWinMenu() {
+void EETest::createDecoratedWindow() {
+	mUIWindow = UIWindow::New();
+	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON )
+			->setMinWindowSize( 530, 350 )->setPosition( 200, 50 );
+
+	mUIWindow->addEventListener( UIEvent::EventOnWindowCloseClick, cb::Make1( this, &EETest::onCloseClick ) );
+	mUIWindow->setTitle( "Test Window" );
+
+	UILinearLayout * lay = UILinearLayout::NewVertical();
+	lay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
+	lay->setParent( mUIWindow->getContainer() );
+
 	UIWinMenu * WinMenu = UIWinMenu::New();
-	WinMenu->setParent( mUIWindow->getContainer() );
+	WinMenu->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
 
 	UIPopUpMenu * PopMenu = UIPopUpMenu::New();
 	PopMenu->add( "File" );
@@ -704,28 +763,20 @@ void EETest::createWinMenu() {
 
 	WinMenu->addMenuButton( "File", PopMenu );
 	WinMenu->addMenuButton( "Edit", PopMenu2 );
-}
-
-void EETest::createDecoratedWindow() {
-	mUIWindow = UIWindow::New();
-	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON )
-			->setMinWindowSize( 530, 350 )->setPosition( 200, 50 );
-
-	mUIWindow->addEventListener( UIEvent::EventOnWindowCloseClick, cb::Make1( this, &EETest::onCloseClick ) );
-	mUIWindow->setTitle( "Test Window" );
-	mUIWindow->toBack();
 
 	UIPushButton * Button = UIPushButton::New();
-	Button->setParent( mUIWindow->getContainer() )->setSize( 510, 22 )->setPosition( 10, 28 );
-	Button->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
+	Button->setLayoutMargin( Recti( 5, 5, 5, 5 ) );
 	Button->setText( "Click Me" );
+	Button->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
 	Button->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 
 	mUIWindow->addShortcut( KEY_C, KEYMOD_ALT, Button );
 
 	UITabWidget * TabWidget = UITabWidget::New();
-	TabWidget->setParent( mUIWindow->getContainer() )->setSize( 510, 250 )->setPosition( 10, 55 )->
-			setFlags( UI_HALIGN_CENTER | UI_VALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
+	TabWidget->setLayoutMargin( Recti( 5, 5, 5, 5 ) )
+			->setLayoutWeight( 1 )
+			->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )
+			->setParent( lay )->setFlags( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
 
 	UITextEdit * TEdit = UITextEdit::New();
 	TEdit->setParent( TabWidget );
@@ -738,14 +789,12 @@ void EETest::createDecoratedWindow() {
 	Txt->setText( mBuda );
 	TabWidget->add( "TextInput", Txt );
 
-	UITextBox * txtBox = UITextBox::New();
+	UITextView * txtBox = UITextView::New();
 	txtBox->resetFlags( UI_HALIGN_LEFT | UI_VALIGN_TOP | UI_AUTO_PADDING | UI_WORD_WRAP | UI_TEXT_SELECTION_ENABLED );
 	txtBox->setParent( TabWidget );
 	txtBox->setText( mBuda );
 
 	TabWidget->add( "TextBox", txtBox );
-
-	createWinMenu();
 }
 
 void EETest::onCloseClick( const UIEvent * Event ) {
@@ -856,7 +905,7 @@ void EETest::onButtonClick( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( MouseEvent->getFlags() & EE_BUTTONS_LRM ) {
-		UIGfx * Gfx = UIGfx::New();
+		UIImage * Gfx = UIImage::New();
 		Gfx->setSubTexture( mTheme->getIconByName( "ok" ) );
 		Gfx->setEnabled( false );
 
@@ -864,7 +913,7 @@ void EETest::onButtonClick( const UIEvent * Event ) {
 		Gfx->startMovement( Vector2i( Math::randi( 0, mWindow->getWidth() ), -64 ), Vector2i( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ), Milliseconds( 2500 ) );
 		Gfx->closeFadeOut( Milliseconds( 3500 ) );
 
-		mListBox->addListBoxItem( "Test ListBox " + String::toStr( mListBox->getCount() + 1 ) + " testing it right now!" );
+		//mListBox->addListBoxItem( "Test ListBox " + String::toStr( mListBox->getCount() + 1 ) + " testing it right now!" );
 	}
 }
 

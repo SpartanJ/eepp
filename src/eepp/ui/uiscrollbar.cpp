@@ -9,7 +9,7 @@ UIScrollBar * UIScrollBar::New() {
 }
 
 UIScrollBar::UIScrollBar() :
-	UIComplexControl()
+	UIWidget()
 {
 	mFlags |= UI_AUTO_SIZE;
 
@@ -41,7 +41,7 @@ Uint32 UIScrollBar::getType() const {
 }
 
 bool UIScrollBar::isType( const Uint32& type ) const {
-	return UIScrollBar::getType() == type ? true : UIComplexControl::isType( type );
+	return UIScrollBar::getType() == type ? true : UIWidget::isType( type );
 }
 
 void UIScrollBar::setTheme( UITheme * Theme ) {
@@ -105,7 +105,7 @@ void UIScrollBar::onSizeChange() {
 
 	mSlider->adjustChilds();
 
-	UIComplexControl::onSizeChange();
+	UIWidget::onSizeChange();
 }
 
 void UIScrollBar::adjustChilds() {

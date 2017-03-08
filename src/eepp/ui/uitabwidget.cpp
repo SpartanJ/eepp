@@ -10,7 +10,7 @@ UITabWidget * UITabWidget::New() {
 }
 
 UITabWidget::UITabWidget() :
-	UIComplexControl(),
+	UIWidget(),
 	mTabSelected( NULL ),
 	mTabSelectedIndex( eeINDEX_NOT_FOUND )
 {
@@ -22,11 +22,11 @@ UITabWidget::UITabWidget() :
 		mStyleConfig = Theme->getTabWidgetStyleConfig();
 	}
 
-	mTabContainer = UIComplexControl::New();
+	mTabContainer = UIWidget::New();
 	mTabContainer->setParent( this )->setPosition( 0, 0 )->setSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight )->setVisible( true )->setEnabled( true );
 	mTabContainer->setFlags( UI_CLIP_ENABLE | UI_ANCHOR_RIGHT );
 
-	mCtrlContainer = UIComplexControl::New();
+	mCtrlContainer = UIWidget::New();
 	mCtrlContainer->setParent( this )->setPosition( 0, mStyleConfig.TabWidgetHeight )
 			->setSize( mSize.getWidth(), mSize.getHeight() - mStyleConfig.TabWidgetHeight )->setVisible( true )->setEnabled( true )
 			->setFlags( UI_CLIP_ENABLE | UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT );
@@ -44,7 +44,7 @@ Uint32 UITabWidget::getType() const {
 }
 
 bool UITabWidget::isType( const Uint32& type ) const {
-	return UITabWidget::getType() == type ? true : UIComplexControl::isType( type );
+	return UITabWidget::getType() == type ? true : UIWidget::isType( type );
 }
 
 void UITabWidget::setTheme( UITheme * Theme ) {
@@ -80,7 +80,7 @@ void UITabWidget::seContainerSize() {
 }
 
 void UITabWidget::draw() {
-	UIComplexControl::draw();
+	UIWidget::draw();
 
 	if ( mStyleConfig.DrawLineBelowTabs ) {
 		bool smooth = GLi->isLineSmooth();
@@ -545,11 +545,11 @@ void UITabWidget::applyThemeToTabs() {
 	}
 }
 
-UIComplexControl * UITabWidget::getTabContainer() const {
+UIWidget * UITabWidget::getTabContainer() const {
 	return mTabContainer;
 }
 
-UIComplexControl * UITabWidget::getControlContainer() const {
+UIWidget * UITabWidget::getControlContainer() const {
 	return mCtrlContainer;
 }
 

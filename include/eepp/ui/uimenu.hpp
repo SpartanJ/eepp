@@ -5,12 +5,12 @@
 #include <eepp/ui/uimenuitem.hpp>
 #include <eepp/ui/uimenucheckbox.hpp>
 #include <eepp/ui/uimenusubmenu.hpp>
-#include <eepp/ui/uiseparator.hpp>
+#include <eepp/ui/uimenuseparator.hpp>
 #include <deque>
 
 namespace EE { namespace UI {
 
-class EE_API UIMenu : public UIComplexControl {
+class EE_API UIMenu : public UIWidget {
 	public:
 		static UIMenu * New();
 

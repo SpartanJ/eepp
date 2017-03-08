@@ -10,7 +10,7 @@ UICheckBox * UICheckBox::New() {
 }
 
 UICheckBox::UICheckBox() :
-	UITextBox(),
+	UITextView(),
 	mActive( false ),
 	mTextSeparation( 4 )
 {
@@ -28,7 +28,7 @@ UICheckBox::UICheckBox() :
 	mInactiveButton->setPosition( 0, 0 );
 	mInactiveButton->setSize( 16, 16 );
 
-	setPadding( Recti(0,0,0,0) );
+	onPaddingChange();
 
 	applyDefaultTheme();
 }
@@ -42,7 +42,7 @@ Uint32 UICheckBox::getType() const {
 }
 
 bool UICheckBox::isType( const Uint32& type ) const {
-	return UICheckBox::getType() == type ? true : UITextBox::isType( type );
+	return UICheckBox::getType() == type ? true : UITextView::isType( type );
 }
 
 void UICheckBox::setTheme( UITheme * Theme ) {
@@ -71,12 +71,14 @@ void UICheckBox::onThemeLoaded() {
 
 	mMinControlSize = mActiveButton->getSkinSize();
 
-	setPadding( Recti(0,0,0,0) );
+	onPaddingChange();
 }
 
 void UICheckBox::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() + mTextSeparation );
+		if ( mSize.getWidth() == 0 ) {
+			setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() + mTextSeparation );
+		}
 
 		if ( mSize.getHeight() == 0 ) {
 			setInternalHeight( mActiveButton->getSize().getHeight() );
@@ -88,7 +90,7 @@ void UICheckBox::onAutoSize() {
 }
 
 void UICheckBox::onSizeChange() {
-	UITextBox::onSizeChange();
+	UITextView::onSizeChange();
 
 	mActiveButton->centerVertical();
 	mInactiveButton->centerVertical();
@@ -136,9 +138,7 @@ const bool& UICheckBox::isActive() const {
 	return mActive;
 }
 
-void UICheckBox::setPadding( const Recti& padding ) {
-	UITextBox::setPadding( padding );
-
+void UICheckBox::onPaddingChange() {
 	mActiveButton->setPosition( mPadding.Left, mActiveButton->getPosition().y );
 	mInactiveButton->setPosition( mPadding.Left, mInactiveButton->getPosition().y );
 
@@ -164,7 +164,7 @@ void UICheckBox::setTextSeparation(const Int32 & textSeparation) {
 }
 
 Uint32 UICheckBox::onKeyDown( const UIEventKey& Event ) {
-	UITextBox::onKeyDown( Event );
+	UITextView::onKeyDown( Event );
 
 	if ( Event.getKeyCode() == KEY_SPACE ) {
 		if ( Sys::getTicks() - mLastTick > 250 ) {
@@ -178,7 +178,7 @@ Uint32 UICheckBox::onKeyDown( const UIEventKey& Event ) {
 }
 
 void UICheckBox::onAlphaChange() {
-	UITextBox::onAlphaChange();
+	UITextView::onAlphaChange();
 	
 	mActiveButton->setAlpha( mAlpha );
 	mInactiveButton->setAlpha( mAlpha );

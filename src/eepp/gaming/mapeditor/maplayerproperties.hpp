@@ -5,7 +5,7 @@
 #include <eepp/gaming/maphelper.hpp>
 #include <eepp/gaming/maplayer.hpp>
 #include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uigenericgrid.hpp>
+#include <eepp/ui/uitable.hpp>
 #include <eepp/ui/uitextinput.hpp>
 
 using namespace EE::UI;
@@ -25,7 +25,7 @@ class EE_API MapLayerProperties {
 	protected:
 		UITheme *			mUITheme;
 		UIWindow *			mUIWindow;
-		UIGenericGrid *	mGenGrid;
+		UITable *	mGenGrid;
 		MapLayer *			mLayer;
 		UITextInput *		mUIInput;
 		RefreshLayerListCb	mRefreshCb;
@@ -46,7 +46,7 @@ class EE_API MapLayerProperties {
 
 		void loadProperties();
 
-		UIGridCell * createCell();
+		UITableCell * createCell();
 };
 
 }}}

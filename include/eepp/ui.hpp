@@ -14,10 +14,10 @@
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uicontrol.hpp>
-#include <eepp/ui/uidragable.hpp>
+#include <eepp/ui/uidragablecontrol.hpp>
 #include <eepp/ui/uicontrolanim.hpp>
-#include <eepp/ui/uigfx.hpp>
-#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uiimage.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextinputpassword.hpp>
 #include <eepp/ui/uipushbutton.hpp>
@@ -33,12 +33,12 @@
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uimenu.hpp>
 #include <eepp/ui/uimenuitem.hpp>
-#include <eepp/ui/uiseparator.hpp>
+#include <eepp/ui/uimenuseparator.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/ui/uitextedit.hpp>
-#include <eepp/ui/uigridcell.hpp>
-#include <eepp/ui/uigenericgrid.hpp>
+#include <eepp/ui/uitablecell.hpp>
+#include <eepp/ui/uitable.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
@@ -46,6 +46,7 @@
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitabwidget.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 
 #include <eepp/ui/uithemedefault.hpp>

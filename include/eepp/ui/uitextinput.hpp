@@ -2,12 +2,12 @@
 #define EE_UICUITEXTINPUT_H
 
 #include <eepp/ui/uicontrolanim.hpp>
-#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/window/inputtextbuffer.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UITextInput : public UITextBox {
+class EE_API UITextInput : public UITextView {
 	public:
 		static UITextInput * New();
 
@@ -35,7 +35,7 @@ class EE_API UITextInput : public UITextBox {
 
 		virtual const String& getText();
 
-		virtual UITextBox * setText( const String& text );
+		virtual UITextView * setText( const String& text );
 
 		virtual void shrinkText( const Uint32& MaxWidth );
 

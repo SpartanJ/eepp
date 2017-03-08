@@ -2,19 +2,19 @@
 #define EE_UICUIGENERICGRID_HPP
 
 #include <eepp/ui/uicontrolanim.hpp>
-#include <eepp/ui/uigridcell.hpp>
+#include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIGenericGrid : public UIComplexControl {
+class EE_API UITable : public UIWidget {
 	public:
-		static UIGenericGrid * New();
+		static UITable * New();
 
-		UIGenericGrid();
+		UITable();
 
-		~UIGenericGrid();
+		~UITable();
 
 		virtual Uint32 getType() const;
 
@@ -22,29 +22,29 @@ class EE_API UIGenericGrid : public UIComplexControl {
 
 		virtual void setTheme( UITheme * Theme );
 
-		void add( UIGridCell * Cell );
+		void add( UITableCell * Cell );
 
-		void remove( UIGridCell * Cell );
+		void remove( UITableCell * Cell );
 
 		void remove( std::vector<Uint32> ItemsIndex );
 
 		void remove( Uint32 ItemIndex );
 
-		UIGenericGrid * setCollumnWidth( const Uint32& CollumnIndex, const Uint32& collumnWidth );
+		UITable * setCollumnWidth( const Uint32& CollumnIndex, const Uint32& collumnWidth );
 
 		const Uint32& getCollumnWidth( const Uint32& CollumnIndex ) const;
 
 		Uint32 getCount() const;
 
-		UIGenericGrid * setCollumnsCount(const Uint32 & collumnsCount);
+		UITable * setCollumnsCount(const Uint32 & collumnsCount);
 
 		const Uint32& getCollumnsCount() const;
 
-		UIGenericGrid * setRowHeight( const Uint32& height );
+		UITable * setRowHeight( const Uint32& height );
 
 		const Uint32& getRowHeight() const;
 
-		UIGridCell * getCell( const Uint32& CellIndex ) const;
+		UITableCell * getCell( const Uint32& CellIndex ) const;
 
 		void setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
 
@@ -60,15 +60,15 @@ class EE_API UIGenericGrid : public UIComplexControl {
 
 		UIScrollBar * getHorizontalScrollBar() const;
 
-		Uint32 getItemIndex( UIGridCell * Item );
+		Uint32 getItemIndex( UITableCell * Item );
 
-		UIGridCell * getItemSelected();
+		UITableCell * getItemSelected();
 
 		Uint32 getItemSelectedIndex() const;
 
 		Uint32 onMessage( const UIMessage * Msg );
 
-		UIItemContainer<UIGenericGrid> * getContainer() const;
+		UIItemContainer<UITable> * getContainer() const;
 
 		virtual void update();
 
@@ -87,18 +87,22 @@ class EE_API UIGenericGrid : public UIComplexControl {
 		Float getTouchDragDeceleration() const;
 
 		void setTouchDragDeceleration(const Float & touchDragDeceleration);
-	protected:
-		friend class UIItemContainer<UIGenericGrid>;
-		friend class UIGridCell;
 
-		Recti						mPadding;
+		Recti getContainerPadding() const;
+
+		void setContainerPadding( const Recti & containerPadding);
+	protected:
+		friend class UIItemContainer<UITable>;
+		friend class UITableCell;
+
+		Recti						mContainerPadding;
 		bool						mSmoothScroll;
-		UIItemContainer<UIGenericGrid> *	mContainer;
+		UIItemContainer<UITable> *	mContainer;
 		UIScrollBar *				mVScrollBar;
 		UIScrollBar *				mHScrollBar;
 		UI_SCROLLBAR_MODE			mVScrollMode;
 		UI_SCROLLBAR_MODE			mHScrollMode;
-		std::vector<UIGridCell*>	mItems;
+		std::vector<UITableCell*>	mItems;
 		Uint32						mCollumnsCount;
 		Uint32						mRowHeight;
 		std::vector<Uint32>			mCollumnsWidth;

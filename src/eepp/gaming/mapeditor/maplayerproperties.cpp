@@ -29,7 +29,7 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 	Int32 InitialY		= 16;
 	Int32 DistFromTitle	= 18;
 
-	UITextBox * Txt = UITextBox::New();
+	UITextView * Txt = UITextView::New();
 	Txt->setFlags( UI_DRAW_SHADOW | UI_AUTO_SIZE )->setParent( mUIWindow->getContainer() )->setPosition( 50, InitialY );
 	Txt->setText( "Layer name:" );
 
@@ -38,12 +38,12 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 	mUIInput->setText( mLayer->getName() );
 	mUIInput->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &MapLayerProperties::onOKClick ) );
 
-	UITextBox * TxtBox = UITextBox::New();
+	UITextView * TxtBox = UITextView::New();
 	TxtBox->setParent( mUIWindow->getContainer() )->setSize( 192, 24 )->setHorizontalAlign( UI_HALIGN_CENTER )->setFlags( UI_DRAW_SHADOW )
 		  ->setPosition( 50, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 );
 	TxtBox->setText( "Property Name" );
 
-	TxtBox = UITextBox::New();
+	TxtBox = UITextView::New();
 	TxtBox->setParent( mUIWindow->getContainer() )->setSize( 192, 24 )->setHorizontalAlign( UI_HALIGN_CENTER )->setFlags( UI_DRAW_SHADOW )
 		  ->setPosition( 50+192, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 );
 	TxtBox->setText( "Property Value" );
@@ -63,7 +63,7 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 	CancelButton->setText( "Cancel" );
 	CancelButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 
-	mGenGrid = UIGenericGrid::New();
+	mGenGrid = UITable::New();
 	mGenGrid->setParent( mUIWindow->getContainer() );
 	mGenGrid->setSize( 400, 340 )->setPosition( 50, TxtBox->getPosition().y + TxtBox->getSize().getHeight() );
 	mGenGrid->setRowHeight( 24 )->setCollumnsCount( 5 );
@@ -109,7 +109,7 @@ void MapLayerProperties::saveProperties() {
 	mLayer->clearProperties();
 
 	for ( Uint32 i = 0; i < mGenGrid->getCount(); i++ ) {
-		UIGridCell * Cell = mGenGrid->getCell( i );
+		UITableCell * Cell = mGenGrid->getCell( i );
 
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->getCell( 1 ) );
 		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->getCell( 3 ) );
@@ -124,7 +124,7 @@ void MapLayerProperties::loadProperties() {
 	MapLayer::PropertiesMap& Proper = mLayer->getProperties();
 
 	for ( MapLayer::PropertiesMap::iterator it = Proper.begin(); it != Proper.end(); it++ ) {
-		UIGridCell * Cell = createCell();
+		UITableCell * Cell = createCell();
 
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->getCell( 1 ) );
 		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->getCell( 3 ) );
@@ -193,8 +193,8 @@ void MapLayerProperties::createGridElems() {
 	}
 }
 
-UIGridCell * MapLayerProperties::createCell() {
-	UIGridCell * Cell = UIGridCell::New();
+UITableCell * MapLayerProperties::createCell() {
+	UITableCell * Cell = UITableCell::New();
 	UITextInput * TxtInput = UITextInput::New();
 	UITextInput * TxtInput2 = UITextInput::New();
 
@@ -202,11 +202,11 @@ UIGridCell * MapLayerProperties::createCell() {
 	TxtInput->setMaxLength( LAYER_NAME_SIZE );
 	TxtInput2->setMaxLength( LAYER_NAME_SIZE );
 
-	Cell->setCell( 0, UIComplexControl::New() );
+	Cell->setCell( 0, UIWidget::New() );
 	Cell->setCell( 1, TxtInput );
-	Cell->setCell( 2, UIComplexControl::New() );
+	Cell->setCell( 2, UIWidget::New() );
 	Cell->setCell( 3, TxtInput2 );
-	Cell->setCell( 4, UIComplexControl::New() );
+	Cell->setCell( 4, UIWidget::New() );
 
 	return Cell;
 }

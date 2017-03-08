@@ -1,13 +1,13 @@
 #ifndef EE_UICUITABWIDGET_HPP
 #define EE_UICUITABWIDGET_HPP
 
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <deque>
 
 namespace EE { namespace UI {
 
-class EE_API UITabWidget : public UIComplexControl {
+class EE_API UITabWidget : public UIWidget {
 	public:
 		static UITabWidget * New();
 
@@ -47,9 +47,9 @@ class EE_API UITabWidget : public UIComplexControl {
 
 		Uint32 getSelectedTabIndex() const;
 
-		UIComplexControl * getTabContainer() const;
+		UIWidget * getTabContainer() const;
 
-		UIComplexControl * getControlContainer() const;
+		UIWidget * getControlContainer() const;
 
 		virtual void draw();
 
@@ -121,8 +121,8 @@ class EE_API UITabWidget : public UIComplexControl {
 	protected:
 		friend class UITab;
 
-		UIComplexControl *		mCtrlContainer;
-		UIComplexControl *		mTabContainer;
+		UIWidget *		mCtrlContainer;
+		UIWidget *		mTabContainer;
 		TabWidgetStyleConfig	mStyleConfig;
 		std::deque<UITab*>		mTabs;
 		UITab *					mTabSelected;

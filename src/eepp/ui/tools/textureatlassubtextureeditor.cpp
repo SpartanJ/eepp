@@ -6,7 +6,7 @@
 namespace EE { namespace UI { namespace Tools {
 
 TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( TextureAtlasEditor * Editor ) :
-	UIComplexControl(),
+	UIWidget(),
 	mGfx( NULL ),
 	mEditor( Editor )
 {
@@ -16,13 +16,13 @@ TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( TextureAtlasEditor *
 
 	mTheme = UIThemeManager::instance()->getDefaultTheme();
 
-	mGfx = UIGfx::New();
+	mGfx = UIImage::New();
 	mGfx->setParent( this );
 	mGfx->setVisible( true );
 	mGfx->setEnabled( true );
 	mGfx->unsetFlags( UI_FIT_TO_CONTROL );
 
-	mDrag = UIDragable::New();
+	mDrag = UIDragableControl::New();
 	mDrag->setParent( this );
 	mDrag->setSize( 64000, 64000 );
 	mDrag->setEnabled( true );
@@ -46,13 +46,13 @@ void TextureAtlasSubTextureEditor::draw() {
 	P.drawLine( Line2f( Vector2f( mScreenPos.x, mScreenPos.y + uiCenterPx.y ), Vector2f( mScreenPos.x + mRealSize.getWidth(), mScreenPos.y + uiCenterPx.y ) ) );
 	P.drawLine( Line2f( Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y ), Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y + mRealSize.getHeight() ) ) );
 
-	UIComplexControl::draw();
+	UIWidget::draw();
 }
 
 void TextureAtlasSubTextureEditor::update() {
 	Vector2i Pos = mDrag->getRealPosition();
 
-	UIComplexControl::update();
+	UIWidget::update();
 
 	if ( NULL != mGfx->getSubTexture() && mDrag->isDragEnabled() && mDrag->isDragging() && Pos != mDrag->getRealPosition() ) {
 		Vector2i Diff = -( Pos - mDrag->getRealPosition() );
@@ -80,7 +80,7 @@ void TextureAtlasSubTextureEditor::setSubTexture( Graphics::SubTexture * subText
 	mGfx->setSubTexture( subTexture );
 }
 
-UIGfx * TextureAtlasSubTextureEditor::getGfx() const {
+UIImage * TextureAtlasSubTextureEditor::getGfx() const {
 	return mGfx;
 }
 

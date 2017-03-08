@@ -1,12 +1,12 @@
 #ifndef EE_UICUICHECKBOX_H
 #define EE_UICUICHECKBOX_H
 
-#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UICheckBox : public UITextBox {
+class EE_API UICheckBox : public UITextView {
 	public:
 		static UICheckBox * New();
 
@@ -23,8 +23,6 @@ class EE_API UICheckBox : public UITextBox {
 		const bool& isActive() const;
 
 		void setActive( const bool& active );
-
-		virtual void setPadding( const Recti& padding );
 
 		UIControlAnim * getActiveButton() const;
 
@@ -53,6 +51,8 @@ class EE_API UICheckBox : public UITextBox {
 		virtual void onThemeLoaded();
 
 		virtual void onAutoSize();
+
+		virtual void onPaddingChange();
 };
 
 }}

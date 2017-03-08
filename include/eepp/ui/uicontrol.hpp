@@ -153,7 +153,7 @@ class EE_API UIControl {
 
 		Uint32 isDragable();
 
-		Uint32 isComplex();
+		Uint32 isWidget();
 
 		Uint32 isClipped();
 
@@ -232,6 +232,8 @@ class EE_API UIControl {
 		Uint32 getIdHash() const;
 
 		UIControl * find( const std::string& id );
+
+		UIControl * getWindowContainer();
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
 		friend class UIManager;
@@ -334,6 +336,8 @@ class EE_API UIControl {
 		virtual void drawChilds();
 
 		virtual void onThemeLoaded();
+
+		virtual void onChildCountChange();
 
 		virtual UIControl * overFind( const Vector2f& Point );
 

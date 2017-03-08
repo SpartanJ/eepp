@@ -8,7 +8,7 @@ UISpinBox * UISpinBox::New() {
 }
 
 UISpinBox::UISpinBox() :
-	UIComplexControl(),
+	UIWidget(),
 	mMinValue( 0.f ),
 	mMaxValue( 1024.f ),
 	mValue( 0 ),
@@ -48,7 +48,7 @@ Uint32 UISpinBox::getType() const {
 }
 
 bool UISpinBox::isType( const Uint32& type ) const {
-	return UISpinBox::getType() == type ? true : UIComplexControl::isType( type );
+	return UISpinBox::getType() == type ? true : UIWidget::isType( type );
 }
 
 void UISpinBox::setTheme( UITheme * Theme ) {
@@ -159,7 +159,7 @@ void UISpinBox::internalValue( const Float& Val, const bool& Force ) {
 }
 
 void UISpinBox::onSizeChange() {
-	UIComplexControl::onSizeChange();
+	UIWidget::onSizeChange();
 
 	adjustChilds();
 }

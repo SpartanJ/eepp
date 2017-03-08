@@ -1,6 +1,6 @@
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uimanager.hpp>
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/graphics/textcache.hpp>
 
 namespace EE { namespace UI {
@@ -40,8 +40,8 @@ UITooltip::UITooltip() :
 UITooltip::~UITooltip() {
 	eeSAFE_DELETE( mTextCache );
 
-	if ( NULL != mTooltipOf && mTooltipOf->isComplex() ) {
-		reinterpret_cast<UIComplexControl*>( mTooltipOf )->tooltipRemove();
+	if ( NULL != mTooltipOf && mTooltipOf->isWidget() ) {
+		reinterpret_cast<UIWidget*>( mTooltipOf )->tooltipRemove();
 	}
 }
 

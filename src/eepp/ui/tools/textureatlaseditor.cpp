@@ -35,7 +35,7 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 		mUIContainer = mUIWindow->getContainer();
 	}
 
-	UITextBox * TxtBox;
+	UITextView * TxtBox;
 	Uint32 InitY = 230;
 
 	createTextBox( Vector2i( mUIContainer->getSize().getWidth() - 205, 30 ), "SubTexture List:" );
@@ -215,8 +215,8 @@ void TextureAtlasEditor::onDestHChange( const UIEvent * Event ) {
 	}
 }
 
-UITextBox * TextureAtlasEditor::createTextBox( Vector2i Pos, const String& Text ) {
-	UITextBox * txtBox = UITextBox::New();
+UITextView * TextureAtlasEditor::createTextBox( Vector2i Pos, const String& Text ) {
+	UITextView * txtBox = UITextView::New();
 	txtBox->resetFlags( UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	txtBox->setParent( mUIContainer );
 	txtBox->setPosition( Pos );

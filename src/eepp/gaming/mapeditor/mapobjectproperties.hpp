@@ -5,7 +5,7 @@
 #include <eepp/gaming/maphelper.hpp>
 #include <eepp/gaming/gameobjectobject.hpp>
 #include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uigenericgrid.hpp>
+#include <eepp/ui/uitable.hpp>
 #include <eepp/ui/uitextinput.hpp>
 
 using namespace EE::UI;
@@ -23,7 +23,7 @@ class MapObjectProperties {
 	protected:
 		UITheme *			mUITheme;
 		UIWindow *			mUIWindow;
-		UIGenericGrid *		mGenGrid;
+		UITable *		mGenGrid;
 		GameObjectObject *	mObj;
 		UITextInput *		mUIInput;
 		UITextInput *		mUIInput2;
@@ -44,7 +44,7 @@ class MapObjectProperties {
 
 		void loadProperties();
 
-		UIGridCell * createCell();
+		UITableCell * createCell();
 };
 
 }}}

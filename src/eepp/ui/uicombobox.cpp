@@ -8,7 +8,7 @@ UIComboBox *UIComboBox::New() {
 }
 
 UIComboBox::UIComboBox() :
-	UIComplexControl(),
+	UIWidget(),
 	mDropDownList( NULL ),
 	mButton( NULL )
 {
@@ -23,7 +23,7 @@ Uint32 UIComboBox::getType() const {
 }
 
 bool UIComboBox::isType( const Uint32& type ) const {
-	return UIComboBox::getType() == type ? true : UIComplexControl::isType( type );
+	return UIComboBox::getType() == type ? true : UIWidget::isType( type );
 }
 
 void UIComboBox::setTheme( UITheme * Theme ) {
@@ -96,13 +96,13 @@ void UIComboBox::onButtonClick( const UIEvent * Event ) {
 }
 
 void UIComboBox::onSizeChange() {
-	UIComplexControl::onSizeChange();
+	UIWidget::onSizeChange();
 
 	updateControls();
 }
 
 void UIComboBox::onPositionChange() {
-	UIComplexControl::onPositionChange();
+	UIWidget::onPositionChange();
 
 	updateControls();
 }

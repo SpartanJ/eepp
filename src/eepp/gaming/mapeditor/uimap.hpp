@@ -2,8 +2,8 @@
 #define EE_GAMINGCUIMAP_HPP
 
 #include <eepp/gaming/base.hpp>
-#include <eepp/ui/uicomplexcontrol.hpp>
-#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/gaming/tilemap.hpp>
 #include <eepp/gaming/maplightmanager.hpp>
@@ -18,7 +18,7 @@ class GameObjectObject;
 
 namespace Private {
 
-class EE_API UIMap : public UIComplexControl {
+class EE_API UIMap : public UIWidget {
 	public:
 		static UIMap * New( UITheme * Theme, TileMap * Map = NULL );
 
@@ -85,7 +85,7 @@ class EE_API UIMap : public UIComplexControl {
 
 		void createObjPopUpMenu();
 
-		void setTileBox( UITextBox * tilebox );
+		void setTileBox( UITextView * tilebox );
 
 		void replaceMap( TileMap * newMap );
 	protected:		
@@ -128,7 +128,7 @@ class EE_API UIMap : public UIComplexControl {
 		Rectf				mSelPointRect;
 		bool				mSelPoint;
 
-		UITextBox *			mTileBox;
+		UITextView *			mTileBox;
 		Vector2i			mLastMouseTilePos;
 
 		UpdateScrollCb		mUpdateScrollCb;

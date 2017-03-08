@@ -7,7 +7,7 @@
 
 namespace EE { namespace UI {
 
-class EE_API UITextEdit : public UIComplexControl {
+class EE_API UITextEdit : public UIWidget {
 	public:
 		static UITextEdit * New();
 
@@ -45,17 +45,17 @@ class EE_API UITextEdit : public UIComplexControl {
 
 		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
 
-		TooltipStyleConfig getFontStyleConfig() const;
+		FontStyleConfig getFontStyleConfig() const;
 
-		void setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig);
+		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
 	protected:
 		UITextInput *		mTextInput;
 		UIScrollBar *		mHScrollBar;
 		UIScrollBar *		mVScrollBar;
 		UI_SCROLLBAR_MODE	mHScrollBarMode;
 		UI_SCROLLBAR_MODE	mVScrollBarMode;
-		Recti				mPadding;
 		bool				mSkipValueChange;
+		Recti				mContainerPadding;
 
 		virtual void onSizeChange();
 

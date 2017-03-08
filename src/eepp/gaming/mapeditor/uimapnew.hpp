@@ -27,13 +27,13 @@ class EE_API UIMapNew {
 		UICheckBox *		mUILightsByVertex;
 		UICheckBox *		mUIClampBorders;
 		UICheckBox *		mUIClipArea;
-		UIComplexControl *	mUIBaseColor;
+		UIWidget *	mUIBaseColor;
 		UISlider *			mUIRedSlider;
 		UISlider *			mUIGreenSlider;
 		UISlider *			mUIBlueSlider;
-		UITextBox *		mUIRedTxt;
-		UITextBox *		mUIGreenTxt;
-		UITextBox *		mUIBlueTxt;
+		UITextView *		mUIRedTxt;
+		UITextView *		mUIGreenTxt;
+		UITextView *		mUIBlueTxt;
 
 		cb::Callback0<void> mNewMapCb;
 

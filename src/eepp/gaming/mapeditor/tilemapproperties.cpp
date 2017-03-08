@@ -2,8 +2,8 @@
 
 namespace EE { namespace Gaming { namespace Private {
 
-static UITextBox * createTextBox( const String& Text = "", UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE ) {
-	UITextBox * Ctrl = UITextBox::New();
+static UITextView * createTextBox( const String& Text = "", UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE ) {
+	UITextView * Ctrl = UITextView::New();
 	Ctrl->resetFlags( Flags )->setParent( Parent )->setPosition( Pos )->setSize( Size )->setVisible( true )->setEnabled( false );
 	Ctrl->setText( Text );
 	return Ctrl;
@@ -37,9 +37,9 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	if ( mMap->getLightsEnabled() ) {
 		DiffIfLights = 100;
 
-		UITextBox * Txt = createTextBox( "Map Base Color:", mUIWindow->getContainer(), Sizei(), Vector2i( 50, 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+		UITextView * Txt = createTextBox( "Map Base Color:", mUIWindow->getContainer(), Sizei(), Vector2i( 50, 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-		mUIBaseColor = UIComplexControl::New();
+		mUIBaseColor = UIWidget::New();
 		mUIBaseColor->setFlags( UI_FILL_BACKGROUND | UI_BORDER );
 		mUIBaseColor->setParent( mUIWindow->getContainer() );
 		mUIBaseColor->setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
@@ -77,7 +77,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	}
 
 	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
-	UITextBox * TxtBox = createTextBox( "Property Name", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50, 10 + DiffIfLights ), TxtBoxFlags );
+	UITextView * TxtBox = createTextBox( "Property Name", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50, 10 + DiffIfLights ), TxtBoxFlags );
 	createTextBox( "Property Value", mUIWindow->getContainer(), Sizei(192, 24), Vector2i(50+192, TxtBox->getPosition().y ), TxtBoxFlags );
 
 	UIPushButton * OKButton = UIPushButton::New();
@@ -95,7 +95,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	CancelButton->setText( "Cancel" );
 	CancelButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 
-	mGenGrid = UIGenericGrid::New();
+	mGenGrid = UITable::New();
 	mGenGrid->setParent( mUIWindow->getContainer() );
 	mGenGrid->setSize( 400, 310 )->setPosition( 50, TxtBox->getPosition().y + TxtBox->getSize().getHeight() );
 	mGenGrid->setRowHeight( 24 )->setCollumnsCount( 5 );
@@ -175,7 +175,7 @@ void TileMapProperties::saveProperties() {
 	mMap->clearProperties();
 
 	for ( Uint32 i = 0; i < mGenGrid->getCount(); i++ ) {
-		UIGridCell * Cell = mGenGrid->getCell( i );
+		UITableCell * Cell = mGenGrid->getCell( i );
 
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->getCell( 1 ) );
 		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->getCell( 3 ) );
@@ -190,7 +190,7 @@ void TileMapProperties::loadProperties() {
 	TileMap::PropertiesMap& Proper = mMap->getProperties();
 
 	for ( TileMap::PropertiesMap::iterator it = Proper.begin(); it != Proper.end(); it++ ) {
-		UIGridCell * Cell = createCell();
+		UITableCell * Cell = createCell();
 
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->getCell( 1 ) );
 		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->getCell( 3 ) );
@@ -253,8 +253,8 @@ void TileMapProperties::createGridElems() {
 	}
 }
 
-UIGridCell * TileMapProperties::createCell() {
-	UIGridCell * Cell = UIGridCell::New();
+UITableCell * TileMapProperties::createCell() {
+	UITableCell * Cell = UITableCell::New();
 	UITextInput * TxtInput = UITextInput::New();
 	UITextInput * TxtInput2 = UITextInput::New();
 
@@ -262,11 +262,11 @@ UIGridCell * TileMapProperties::createCell() {
 	TxtInput->setMaxLength( LAYER_NAME_SIZE );
 	TxtInput2->setMaxLength( LAYER_NAME_SIZE );
 
-	Cell->setCell( 0, UIComplexControl::New() );
+	Cell->setCell( 0, UIWidget::New() );
 	Cell->setCell( 1, TxtInput );
-	Cell->setCell( 2, UIComplexControl::New() );
+	Cell->setCell( 2, UIWidget::New() );
 	Cell->setCell( 3, TxtInput2 );
-	Cell->setCell( 4, UIComplexControl::New() );
+	Cell->setCell( 4, UIWidget::New() );
 
 	return Cell;
 }

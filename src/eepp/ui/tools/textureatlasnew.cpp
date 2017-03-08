@@ -102,8 +102,8 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 TextureAtlasNew::~TextureAtlasNew() {
 }
 
-UITextBox * TextureAtlasNew::createTxtBox( Vector2i Pos, const String& Text ) {
-	UITextBox * textBox = UITextBox::New();
+UITextView * TextureAtlasNew::createTxtBox( Vector2i Pos, const String& Text ) {
+	UITextView * textBox = UITextView::New();
 	textBox->setParent( mUIWindow->getContainer() )
 			->setPosition( Pos )
 			->setFlags( UI_DRAW_SHADOW | UI_AUTO_SIZE )

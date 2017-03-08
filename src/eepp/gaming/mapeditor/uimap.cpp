@@ -81,7 +81,7 @@ TileMap * UIMap::Map() const {
 }
 
 void UIMap::draw() {
-	UIComplexControl::draw();
+	UIWidget::draw();
 
 	if ( NULL != mMap ) {
 		mMap->draw();
@@ -89,7 +89,7 @@ void UIMap::draw() {
 }
 
 void UIMap::updateScreenPos() {
-	UIComplexControl::updateScreenPos();
+	UIWidget::updateScreenPos();
 
 	if ( NULL != mMap ) {
 		mMap->setPosition( mScreenPos );
@@ -97,7 +97,7 @@ void UIMap::updateScreenPos() {
 }
 
 void UIMap::update() {
-	UIComplexControl::update();
+	UIWidget::update();
 
 	if ( NULL != mMap ) {
 		mMap->update();
@@ -326,7 +326,7 @@ void UIMap::onSizeChange() {
 		mMap->setViewSize( mRealSize );
 	}
 
-	UIComplexControl::onSizeChange();
+	UIWidget::onSizeChange();
 }
 
 Uint32 UIMap::onMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
@@ -345,7 +345,7 @@ Uint32 UIMap::onMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
 		}
 	}
 
-	return UIComplexControl::onMouseMove( Pos, Flags );
+	return UIWidget::onMouseMove( Pos, Flags );
 }
 
 void UIMap::addLight( MapLight * Light ) {
@@ -502,7 +502,7 @@ void UIMap::clearLights() {
 }
 
 void UIMap::onAlphaChange() {
-	UIComplexControl::onAlphaChange();
+	UIWidget::onAlphaChange();
 
 	if ( NULL != mMap ) {
 		mMap->setBackAlpha( (Uint8)mAlpha );
@@ -585,7 +585,7 @@ void UIMap::createObjPopUpMenu() {
 	}
 }
 
-void UIMap::setTileBox( UITextBox * tilebox ) {
+void UIMap::setTileBox( UITextView * tilebox ) {
 	mTileBox = tilebox;
 }
 

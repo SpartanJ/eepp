@@ -2,12 +2,12 @@
 #define EE_UICPROGRESSBAR_HPP
 
 #include <eepp/ui/uicontrolanim.hpp>
-#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/graphics/scrollparallax.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIProgressBar : public UIComplexControl {
+class EE_API UIProgressBar : public UIWidget {
 	public:
 		static UIProgressBar * New();
 
@@ -47,13 +47,13 @@ class EE_API UIProgressBar : public UIComplexControl {
 
 		const bool& getDisplayPercent() const;
 		
-		UITextBox * getTextBox() const;
+		UITextView * getTextBox() const;
 	protected:
 		ProgressBarStyleConfig mStyleConfig;
 		Float				mProgress;
 		Float				mTotalSteps;
 		ScrollParallax *	mParallax;
-		UITextBox * 		mTextBox;
+		UITextView * 		mTextBox;
 
 		virtual Uint32 onValueChange();
 

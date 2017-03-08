@@ -8,7 +8,7 @@ UIPushButton * UIPushButton::New() {
 }
 
 UIPushButton::UIPushButton() :
-	UIComplexControl(),
+	UIWidget(),
 	mIcon( NULL ),
 	mTextBox( NULL )
 {
@@ -28,7 +28,7 @@ UIPushButton::UIPushButton() :
 		GfxFlags = UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER;
 	}
 
-	mIcon = UIGfx::New();
+	mIcon = UIImage::New();
 	mIcon->setParent( this );
 	mIcon->setFlags( GfxFlags );
 	mIcon->unsetFlags( UI_AUTO_SIZE | UI_FIT_TO_CONTROL );
@@ -40,7 +40,7 @@ UIPushButton::UIPushButton() :
 	mIcon->setVisible( true );
 	mIcon->setEnabled( false );
 
-	mTextBox = UITextBox::New();
+	mTextBox = UITextView::New();
 	mTextBox->setParent( this );
 	mTextBox->setVisible( true );
 	mTextBox->setEnabled( false );
@@ -62,7 +62,7 @@ Uint32 UIPushButton::getType() const {
 }
 
 bool UIPushButton::isType( const Uint32& type ) const {
-	return UIPushButton::getType() == type ? true : UIComplexControl::isType( type );
+	return UIPushButton::getType() == type ? true : UIWidget::isType( type );
 }
 
 void UIPushButton::onSizeChange() {	
@@ -154,13 +154,14 @@ UIPushButton * UIPushButton::setIcon( SubTexture * Icon ) {
 	return this;
 }
 
-UIGfx * UIPushButton::getIcon() const {
+UIImage * UIPushButton::getIcon() const {
 	return mIcon;
 }
 
-void UIPushButton::setText( const String& text ) {
+UIPushButton * UIPushButton::setText( const String& text ) {
 	mTextBox->setText( text );
 	onSizeChange();
+	return this;
 }
 
 const String& UIPushButton::getText() {
@@ -184,7 +185,7 @@ const Int32& UIPushButton::getIconHorizontalMargin() const {
 	return mStyleConfig.IconHorizontalMargin;
 }
 
-UITextBox * UIPushButton::getTextBox() const {
+UITextView * UIPushButton::getTextBox() const {
 	return mTextBox;
 }
 
@@ -227,7 +228,7 @@ Uint32 UIPushButton::onKeyDown( const UIEventKey& Event ) {
 		setSkinState( UISkinState::StateMouseDown );
 	}
 
-	return UIComplexControl::onKeyDown( Event );
+	return UIWidget::onKeyDown( Event );
 }
 
 Uint32 UIPushButton::onKeyUp( const UIEventKey& Event ) {
@@ -235,7 +236,7 @@ Uint32 UIPushButton::onKeyUp( const UIEventKey& Event ) {
 		setPrevSkinState();
 	}
 
-	return UIComplexControl::onKeyUp( Event );
+	return UIWidget::onKeyUp( Event );
 }
 const ColorA& UIPushButton::getFontColor() const {
 	return mStyleConfig.FontColor;

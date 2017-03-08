@@ -2,13 +2,13 @@
 #define EE_UICUIWINMENU_HPP
 
 #include <eepp/ui/base.hpp>
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIWinMenu : public UIComplexControl {
+class EE_API UIWinMenu : public UIWidget {
 	public:
 		static UIWinMenu * New();
 

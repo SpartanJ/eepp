@@ -43,7 +43,7 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern
 		setTitle( "Select a file" );
 	}
 
-	UITextBox * lookIn = UITextBox::New();
+	UITextView * lookIn = UITextView::New();
 	lookIn->setParent( getContainer() );
 	lookIn->setPosition( 6, 13 );
 	lookIn->setVisible( true );
@@ -96,7 +96,7 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern
 	);
 	mList->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM );
 
-	UITextBox * fileName = UITextBox::New();
+	UITextView * fileName = UITextView::New();
 	fileName->setParent( getContainer() );
 	fileName->setPosition( 6, mButtonOpen->getPosition().y );
 	fileName->setSize( 74, fileName->getTextHeight() );
@@ -105,7 +105,7 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern
 	fileName->setEnabled( false );
 	fileName->setText( "File Name:" );
 
-	UITextBox * fileTypes = UITextBox::New();
+	UITextView * fileTypes = UITextView::New();
 	fileTypes->setParent( getContainer() );
 	fileTypes->setSize( 74, fileTypes->getTextHeight() );
 	fileTypes->setPosition( fileName->getPosition().x, mButtonCancel->getPosition().y );

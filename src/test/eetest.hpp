@@ -159,12 +159,11 @@ class EETest : private Thread {
 		void onSliderValueChange( const UIEvent * Event );
 		void onWinMouseUp( const UIEvent * Event );
 		void createDecoratedWindow();
-		void createWinMenu();
 		void createUIThemeTextureAtlas();
 
 		UIControlAnim * C;
 		UIScrollBar * mScrollBar;
-		UITextBox * mTextBoxValue;
+		UITextView * mTextBoxValue;
 		UISlider * mSlider;
 		UIProgressBar * mProgressBar;
 		UIListBox * mListBox;

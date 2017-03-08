@@ -11,7 +11,7 @@ UIControlAnim * UIControlAnim::New() {
 }
 
 UIControlAnim::UIControlAnim() :
-	UIDragable(),
+	UIDragableControl(),
 	mAngle(0.f),
 	mScale(1.f,1.f),
 	mAlpha(255.f),
@@ -49,8 +49,7 @@ void UIControlAnim::draw() {
 	if ( mVisible && 0.f != mAlpha ) {
 		drawBackground();
 
-		if ( mFlags & UI_BORDER )
-			drawBorder();
+		drawBorder();
 
 		drawSkin();
 
@@ -200,7 +199,7 @@ void UIControlAnim::matrixUnset() {
 }
 
 void UIControlAnim::update() {
-	UIDragable::update();
+	UIDragableControl::update();
 
 	if ( NULL != mMoveAnim && mMoveAnim->isEnabled() ) {
 		mMoveAnim->update( getElapsed() );
@@ -435,7 +434,7 @@ void UIControlAnim::updateQuad() {
 }
 
 void UIControlAnim::onSizeChange() {
-	UIDragable::onSizeChange();
+	UIDragableControl::onSizeChange();
 
 	updateOriginPoint();
 }

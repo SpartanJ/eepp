@@ -1,15 +1,15 @@
-#include <eepp/ui/uigenericgrid.hpp>
+#include <eepp/ui/uitable.hpp>
 #include <eepp/ui/uimanager.hpp>
 
 namespace EE { namespace UI {
 
-UIGenericGrid * UIGenericGrid::New() {
-	return eeNew( UIGenericGrid, () );
+UITable * UITable::New() {
+	return eeNew( UITable, () );
 }
 
-UIGenericGrid::UIGenericGrid() :
-	UIComplexControl(),
-	mPadding(),
+UITable::UITable() :
+	UIWidget(),
+	mContainerPadding(),
 	mSmoothScroll( false ),
 	mContainer( NULL ),
 	mVScrollBar( NULL ),
@@ -31,12 +31,12 @@ UIGenericGrid::UIGenericGrid() :
 {
 	setFlags( UI_AUTO_PADDING );
 
-	mContainer = eeNew( UIItemContainer<UIGenericGrid> , () );
+	mContainer = eeNew( UIItemContainer<UITable> , () );
 	mContainer->setVisible( true );
 	mContainer->setEnabled( true );
 	mContainer->setParent( this );
-	mContainer->setPosition( mPadding.Left, mPadding.Top );
-	mContainer->setSize( mSize.getWidth() - mPadding.Right - mPadding.Left, mSize.getHeight() - mPadding.Top - mPadding.Bottom );
+	mContainer->setPosition( mContainerPadding.Left, mContainerPadding.Top );
+	mContainer->setSize( mSize.getWidth() - mContainerPadding.Right - mContainerPadding.Left, mSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom );
 
 	mVScrollBar = UIScrollBar::New();
 	mVScrollBar->setOrientation( UI_VERTICAL );
@@ -55,24 +55,24 @@ UIGenericGrid::UIGenericGrid() :
 	mVScrollBar->setVisible( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
 	mVScrollBar->setEnabled( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
 
-	mVScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIGenericGrid::onScrollValueChange ) );
-	mHScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIGenericGrid::onScrollValueChange ) );
+	mVScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UITable::onScrollValueChange ) );
+	mHScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UITable::onScrollValueChange ) );
 
 	applyDefaultTheme();
 }
 
-UIGenericGrid::~UIGenericGrid() {
+UITable::~UITable() {
 }
 
-Uint32 UIGenericGrid::getType() const {
-	return UI_TYPE_GENERICGRID;
+Uint32 UITable::getType() const {
+	return UI_TYPE_TABLE;
 }
 
-bool UIGenericGrid::isType( const Uint32& type ) const {
-	return UIGenericGrid::getType() == type ? true : UIControlAnim::isType( type );
+bool UITable::isType( const Uint32& type ) const {
+	return UITable::getType() == type ? true : UIControlAnim::isType( type );
 }
 
-void UIGenericGrid::setDefaultCollumnsWidth() {
+void UITable::setDefaultCollumnsWidth() {
 	if ( mCollWidthAssigned || 0 == mCollumnsCount || 0 == mRowHeight )
 		return;
 
@@ -100,11 +100,11 @@ void UIGenericGrid::setDefaultCollumnsWidth() {
 	updateCells();
 }
 
-void UIGenericGrid::onScrollValueChange( const UIEvent * Event ) {
+void UITable::onScrollValueChange( const UIEvent * Event ) {
 	updateScroll( true );
 }
 
-void UIGenericGrid::setTheme( UITheme * Theme ) {
+void UITable::setTheme( UITheme * Theme ) {
 	UIControl::setThemeControl( Theme, "genericgrid" );
 
 	autoPadding();
@@ -112,13 +112,13 @@ void UIGenericGrid::setTheme( UITheme * Theme ) {
 	onSizeChange();
 }
 
-void UIGenericGrid::autoPadding() {
+void UITable::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mPadding = makePadding();
+		mContainerPadding = makePadding();
 	}
 }
 
-void UIGenericGrid::onSizeChange() {
+void UITable::onSizeChange() {
 	mVScrollBar->setPosition( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 0 );
 	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), mSize.getHeight() );
 
@@ -138,13 +138,13 @@ void UIGenericGrid::onSizeChange() {
 	updateScroll();
 }
 
-void UIGenericGrid::containerResize() {
-	mContainer->setPosition( mPadding.Left, mPadding.Top );
+void UITable::containerResize() {
+	mContainer->setPosition( mContainerPadding.Left, mContainerPadding.Top );
 
 	if( mHScrollBar->isVisible() )
-		mContainer->setSize( mSize.getWidth() - mPadding.Right, mSize.getHeight() - mPadding.Top - mHScrollBar->getSize().getHeight() );
+		mContainer->setSize( mSize.getWidth() - mContainerPadding.Right, mSize.getHeight() - mContainerPadding.Top - mHScrollBar->getSize().getHeight() );
 	else
-		mContainer->setSize( mSize.getWidth() - mPadding.Right, mSize.getHeight() - mPadding.Bottom - mPadding.Top );
+		mContainer->setSize( mSize.getWidth() - mContainerPadding.Right, mSize.getHeight() - mContainerPadding.Bottom - mContainerPadding.Top );
 
 	if ( mVScrollBar->isVisible() )
 		mContainer->setSize( mContainer->getSize().getWidth() - mVScrollBar->getSize().getWidth(), mContainer->getSize().getHeight() );
@@ -152,7 +152,7 @@ void UIGenericGrid::containerResize() {
 	setDefaultCollumnsWidth();
 }
 
-void UIGenericGrid::updateVScroll() {
+void UITable::updateVScroll() {
 	if ( mItemsNotVisible <= 0 ) {
 		if ( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode ) {
 			mVScrollBar->setVisible( true );
@@ -174,7 +174,7 @@ void UIGenericGrid::updateVScroll() {
 	containerResize();
 }
 
-void UIGenericGrid::updateHScroll() {
+void UITable::updateHScroll() {
 	if ( mContainer->isClipped() && ( UI_SCROLLBAR_AUTO == mHScrollMode || UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) ) {
 		if ( mContainer->getSize().getWidth() < (Int32)mTotalWidth ) {
 				mHScrollBar->setVisible( true );
@@ -200,7 +200,7 @@ void UIGenericGrid::updateHScroll() {
 	}
 }
 
-void UIGenericGrid::setHScrollStep() {
+void UITable::setHScrollStep() {
 	Float width = (Float)mContainer->getRealSize().getWidth();
 
 	if ( ( mItemsNotVisible > 0 && UI_SCROLLBAR_AUTO == mVScrollMode ) || UI_SCROLLBAR_ALWAYS_ON == mVScrollMode )
@@ -221,11 +221,11 @@ void UIGenericGrid::setHScrollStep() {
 	mHScrollBar->setClickStep( stepVal );
 }
 
-void UIGenericGrid::updateScroll( bool FromScrollChange ) {
+void UITable::updateScroll( bool FromScrollChange ) {
 	if ( !mItems.size() )
 		return;
 
-	UIGridCell * Item;
+	UITableCell * Item;
 	Uint32 i, RelPos = 0, RelPosMax;
 	Int32 ItemPos, ItemPosMax;
 	Int32 tHLastScroll 		= mHScrollInit;
@@ -327,13 +327,13 @@ void UIGenericGrid::updateScroll( bool FromScrollChange ) {
 	setHScrollStep();
 }
 
-void UIGenericGrid::updateSize() {
+void UITable::updateSize() {
 	updateCollumnsPos();
 
 	mTotalHeight = mItems.size() * mRowHeight;
 }
 
-void UIGenericGrid::add( UIGridCell * Cell ) {
+void UITable::add( UITableCell * Cell ) {
 	Cell->setParent( getContainer() );
 
 	mItems.push_back( Cell );
@@ -352,13 +352,13 @@ void UIGenericGrid::add( UIGridCell * Cell ) {
 	mVScrollBar->setPageStep( ( (Float)mContainer->getSize().getHeight() /(Float) mRowHeight ) / (Float)mItems.size() );
 }
 
-void UIGenericGrid::remove( UIGridCell * Cell ) {
+void UITable::remove( UITableCell * Cell ) {
 	return remove( getItemIndex( Cell ) );
 }
 
-void UIGenericGrid::remove( std::vector<Uint32> ItemsIndex ) {
+void UITable::remove( std::vector<Uint32> ItemsIndex ) {
 	if ( ItemsIndex.size() && eeINDEX_NOT_FOUND != ItemsIndex[0] ) {
-		std::vector<UIGridCell*> ItemsCpy;
+		std::vector<UITableCell*> ItemsCpy;
 		bool erase;
 
 		for ( Uint32 i = 0; i < mItems.size(); i++ ) {
@@ -392,11 +392,11 @@ void UIGenericGrid::remove( std::vector<Uint32> ItemsIndex ) {
 	}
 }
 
-void UIGenericGrid::remove( Uint32 ItemIndex ) {
+void UITable::remove( Uint32 ItemIndex ) {
 	remove( std::vector<Uint32> ( 1, ItemIndex ) );
 }
 
-UIGenericGrid * UIGenericGrid::setCollumnWidth( const Uint32& CollumnIndex, const Uint32& CollumnWidth ) {
+UITable * UITable::setCollumnWidth( const Uint32& CollumnIndex, const Uint32& CollumnWidth ) {
 	eeASSERT( CollumnIndex < mCollumnsCount );
 
 	mCollWidthAssigned = true;
@@ -410,11 +410,11 @@ UIGenericGrid * UIGenericGrid::setCollumnWidth( const Uint32& CollumnIndex, cons
 	return this;
 }
 
-Uint32 UIGenericGrid::getCount() const {
+Uint32 UITable::getCount() const {
 	return mItems.size();
 }
 
-UIGenericGrid * UIGenericGrid::setCollumnsCount(const Uint32 & collumnsCount) {
+UITable * UITable::setCollumnsCount(const Uint32 & collumnsCount) {
 	mCollumnsCount = collumnsCount;
 
 	mCollumnsWidth.resize( mCollumnsCount, 0 );
@@ -425,17 +425,17 @@ UIGenericGrid * UIGenericGrid::setCollumnsCount(const Uint32 & collumnsCount) {
 	return this;
 }
 
-const Uint32& UIGenericGrid::getCollumnsCount() const {
+const Uint32& UITable::getCollumnsCount() const {
 	return mCollumnsCount;
 }
 
-const Uint32& UIGenericGrid::getCollumnWidth( const Uint32& CollumnIndex ) const {
+const Uint32& UITable::getCollumnWidth( const Uint32& CollumnIndex ) const {
 	eeASSERT( CollumnIndex < mCollumnsCount );
 
 	return mCollumnsWidth[ CollumnIndex ];
 }
 
-UIGenericGrid * UIGenericGrid::setRowHeight( const Uint32& height ) {
+UITable * UITable::setRowHeight( const Uint32& height ) {
 	if ( mRowHeight != height ) {
 		mRowHeight = height;
 
@@ -447,29 +447,29 @@ UIGenericGrid * UIGenericGrid::setRowHeight( const Uint32& height ) {
 	return this;
 }
 
-const Uint32& UIGenericGrid::getRowHeight() const {
+const Uint32& UITable::getRowHeight() const {
 	return mRowHeight;
 }
 
-UIGridCell * UIGenericGrid::getCell( const Uint32& CellIndex ) const {
+UITableCell * UITable::getCell( const Uint32& CellIndex ) const {
 	eeASSERT( CellIndex < mItems.size() );
 
 	return mItems[ CellIndex ];
 }
 
-Uint32 UIGenericGrid::getCellPosition( const Uint32& CollumnIndex ) {
+Uint32 UITable::getCellPosition( const Uint32& CollumnIndex ) {
 	eeASSERT( CollumnIndex < mCollumnsCount );
 
 	return mCollumnsPos[ CollumnIndex ];
 }
 
-void UIGenericGrid::updateCells() {
+void UITable::updateCells() {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		mItems[i]->fixCell();
 	}
 }
 
-void UIGenericGrid::updateCollumnsPos() {
+void UITable::updateCollumnsPos() {
 	Uint32 Pos = 0;
 
 	for ( Uint32 i = 0; i < mCollumnsCount; i++ ) {
@@ -481,14 +481,14 @@ void UIGenericGrid::updateCollumnsPos() {
 	mTotalWidth = Pos;
 }
 
-void UIGenericGrid::onAlphaChange() {
+void UITable::onAlphaChange() {
 	UIControlAnim::onAlphaChange();
 
 	mVScrollBar->setAlpha( mAlpha );
 	mHScrollBar->setAlpha( mAlpha );
 }
 
-void UIGenericGrid::setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+void UITable::setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	if ( Mode != mVScrollMode ) {
 		mVScrollMode = Mode;
 
@@ -496,11 +496,11 @@ void UIGenericGrid::setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	}
 }
 
-const UI_SCROLLBAR_MODE& UIGenericGrid::getVerticalScrollMode() {
+const UI_SCROLLBAR_MODE& UITable::getVerticalScrollMode() {
 	return mVScrollMode;
 }
 
-void UIGenericGrid::setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+void UITable::setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	if ( Mode != mHScrollMode ) {
 		mHScrollMode = Mode;
 
@@ -518,19 +518,19 @@ void UIGenericGrid::setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	}
 }
 
-const UI_SCROLLBAR_MODE& UIGenericGrid::getHorizontalScrollMode() {
+const UI_SCROLLBAR_MODE& UITable::getHorizontalScrollMode() {
 	return mHScrollMode;
 }
 
-UIScrollBar * UIGenericGrid::getVerticalScrollBar() const {
+UIScrollBar * UITable::getVerticalScrollBar() const {
 	return mVScrollBar;
 }
 
-UIScrollBar * UIGenericGrid::getHorizontalScrollBar() const {
+UIScrollBar * UITable::getHorizontalScrollBar() const {
 	return mHScrollBar;
 }
 
-Uint32 UIGenericGrid::getItemIndex( UIGridCell * Item ) {
+Uint32 UITable::getItemIndex( UITableCell * Item ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( Item == mItems[i] )
 			return i;
@@ -539,24 +539,24 @@ Uint32 UIGenericGrid::getItemIndex( UIGridCell * Item ) {
 	return eeINDEX_NOT_FOUND;
 }
 
-Uint32 UIGenericGrid::onSelected() {
+Uint32 UITable::onSelected() {
 	sendCommonEvent( UIEvent::EventOnItemSelected );
 
 	return 1;
 }
 
-UIGridCell * UIGenericGrid::getItemSelected() {
+UITableCell * UITable::getItemSelected() {
 	if ( -1 != mSelected )
 		return mItems[ mSelected ];
 
 	return NULL;
 }
 
-Uint32 UIGenericGrid::getItemSelectedIndex() const {
+Uint32 UITable::getItemSelectedIndex() const {
 	return mSelected;
 }
 
-Uint32 UIGenericGrid::onMessage( const UIMessage * Msg ) {
+Uint32 UITable::onMessage( const UIMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
 		case UIMessage::MsgFocusLoss:
 		{
@@ -573,31 +573,31 @@ Uint32 UIGenericGrid::onMessage( const UIMessage * Msg ) {
 	return 0;
 }
 
-UIItemContainer<UIGenericGrid> * UIGenericGrid::getContainer() const {
+UIItemContainer<UITable> * UITable::getContainer() const {
 	return mContainer;
 }
 
-bool UIGenericGrid::isTouchDragEnabled() const {
+bool UITable::isTouchDragEnabled() const {
 	return 0 != ( mFlags & UI_TOUCH_DRAG_ENABLED );
 }
 
-void UIGenericGrid::setTouchDragEnabled( const bool& enable ) {
+void UITable::setTouchDragEnabled( const bool& enable ) {
 	writeFlag( UI_TOUCH_DRAG_ENABLED, true == enable );
 }
 
-bool UIGenericGrid::isTouchDragging() const {
+bool UITable::isTouchDragging() const {
 	return 0 != ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING );
 }
 
-void UIGenericGrid::setTouchDragging( const bool& dragging ) {
+void UITable::setTouchDragging( const bool& dragging ) {
 	writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, true == dragging );
 }
 
-bool UIGenericGrid::getSmoothScroll() const {
+bool UITable::getSmoothScroll() const {
 	return mSmoothScroll;
 }
 
-void UIGenericGrid::setSmoothScroll(bool smoothScroll) {
+void UITable::setSmoothScroll(bool smoothScroll) {
 	mSmoothScroll = smoothScroll;
 
 	if ( mSmoothScroll ) {
@@ -607,15 +607,26 @@ void UIGenericGrid::setSmoothScroll(bool smoothScroll) {
 	}
 }
 
-Float UIGenericGrid::getTouchDragDeceleration() const {
+Float UITable::getTouchDragDeceleration() const {
 	return mTouchDragDeceleration;
 }
 
-void UIGenericGrid::setTouchDragDeceleration(const Float & touchDragDeceleration) {
+void UITable::setTouchDragDeceleration(const Float & touchDragDeceleration) {
 	mTouchDragDeceleration = touchDragDeceleration;
 }
 
-void UIGenericGrid::update() {
+Recti UITable::getContainerPadding() const {
+	return mContainerPadding;
+}
+
+void UITable::setContainerPadding(const Recti & containerPadding) {
+	if ( containerPadding != mContainerPadding ) {
+		mContainerPadding = containerPadding;
+		containerResize();
+	}
+}
+
+void UITable::update() {
 	if ( mEnabled && mVisible ) {
 		if ( mFlags & UI_TOUCH_DRAG_ENABLED ) {
 			Uint32 Press	= UIManager::instance()->getPressTrigger();
@@ -671,7 +682,7 @@ void UIGenericGrid::update() {
 		}
 	}
 
-	UIComplexControl::update();
+	UIWidget::update();
 }
 
 }}

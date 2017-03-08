@@ -8,7 +8,7 @@ UISprite * UISprite::New() {
 }
 
 UISprite::UISprite() :
-	UIComplexControl(),
+	UIWidget(),
 	mSprite( NULL ),
 	mRender( RN_NORMAL ),
 	mAlignOffset(0,0),
@@ -26,7 +26,7 @@ Uint32 UISprite::getType() const {
 }
 
 bool UISprite::isType( const Uint32& type ) const {
-	return UISprite::getType() == type ? true : UIComplexControl::isType( type );
+	return UISprite::getType() == type ? true : UIWidget::isType( type );
 }
 
 Uint32 UISprite::deallocSprite() {
@@ -69,7 +69,7 @@ void UISprite::draw() {
 }
 
 void UISprite::update() {
-	UIComplexControl::update();
+	UIWidget::update();
 
 	if ( NULL != mSprite )
 		mSprite->update();

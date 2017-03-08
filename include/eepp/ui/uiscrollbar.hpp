@@ -1,12 +1,12 @@
 #ifndef EE_UICUISCROLLBAR_HPP
 #define EE_UICUISCROLLBAR_HPP
 
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uislider.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIScrollBar : public UIComplexControl {
+class EE_API UIScrollBar : public UIWidget {
 	public:
 		static UIScrollBar * New();
 

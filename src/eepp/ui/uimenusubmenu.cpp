@@ -18,7 +18,7 @@ UIMenuSubMenu::UIMenuSubMenu() :
 	mCbId( 0 ),
 	mCbId2( 0 )
 {
-	mArrow = UIGfx::New();
+	mArrow = UIImage::New();
 	mArrow->setParent( this );
 	mArrow->setFlags( UI_AUTO_SIZE );
 	mArrow->setVisible( true );
@@ -123,7 +123,7 @@ Uint32 UIMenuSubMenu::onMouseExit( const Vector2i &Pos, const Uint32 Flags ) {
 	return 1;
 }
 
-UIGfx * UIMenuSubMenu::getArrow() const {
+UIImage * UIMenuSubMenu::getArrow() const {
 	return mArrow;
 }
 

@@ -9,7 +9,7 @@ UIWinMenu * UIWinMenu::New() {
 }
 
 UIWinMenu::UIWinMenu() :
-	UIComplexControl(),
+	UIWidget(),
 	mCurrentMenu( NULL )
 {
 	if ( !(mFlags & UI_ANCHOR_RIGHT) )
@@ -34,7 +34,7 @@ Uint32 UIWinMenu::getType() const {
 }
 
 bool UIWinMenu::isType( const Uint32& type ) const {
-	return UIWinMenu::getType() == type ? true : UIComplexControl::isType( type );
+	return UIWinMenu::getType() == type ? true : UIWidget::isType( type );
 }
 
 void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
@@ -56,7 +56,7 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 
 	Menu->setVisible( false );
 	Menu->setEnabled( false );
-	Menu->setParent( getParent() );
+	Menu->setParent( getWindowContainer() );
 	Menu->addEventListener( UIEvent::EventOnComplexControlFocusLoss, cb::Make1( this, &UIWinMenu::onMenuFocusLoss ) );
 
 	mButtons.push_back( std::make_pair( Button, Menu ) );
@@ -65,7 +65,7 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 }
 
 void UIWinMenu::setTheme( UITheme * Theme ) {
-	UIComplexControl::setThemeControl( Theme, "winmenu" );
+	UIWidget::setThemeControl( Theme, "winmenu" );
 
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
 		it->first->setThemeControl( Theme, "winmenubutton" );
@@ -173,7 +173,7 @@ void UIWinMenu::refreshButtons() {
 
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
 		UISelectButton * pbut	= it->first;
-		UITextBox * tbox		= pbut->getTextBox();
+		UITextView * tbox		= pbut->getTextBox();
 
 		pbut->setStyleConfig( mStyleConfig );
 		pbut->setSize( PixelDensity::pxToDpI( tbox->getTextWidth() ) + mStyleConfig.ButtonMargin, getSize().getHeight() );
@@ -282,7 +282,7 @@ void UIWinMenu::onMenuFocusLoss( const UIEvent * Event ) {
 }
 
 void UIWinMenu::onComplexControlFocusLoss() {
-	UIComplexControl::onComplexControlFocusLoss();
+	UIWidget::onComplexControlFocusLoss();
 
 	if ( NULL != mCurrentMenu ) {
 		mCurrentMenu->hide();

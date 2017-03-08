@@ -39,8 +39,8 @@ using namespace EE::Gaming::Private;
 
 namespace EE { namespace Gaming {
 
-static UITextBox * createTextBox( const String& Text = "", UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE ) {
-	UITextBox * Ctrl = UITextBox::New();
+static UITextView * createTextBox( const String& Text = "", UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE ) {
+	UITextView * Ctrl = UITextView::New();
 	Ctrl->resetFlags( Flags )->setParent( Parent )->setPosition( Pos )->setSize( Size )->setVisible( true )->setEnabled( false );
 	Ctrl->setText( Text );
 	return Ctrl;
@@ -172,7 +172,7 @@ void MapEditor::createWinMenu() {
 	WinMenu->addMenuButton( "Atlases", PU6 );
 	PU6->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &MapEditor::mapMenuClick ) );
 
-	mWinContainer = UIComplexControl::New();
+	mWinContainer = UIWidget::New();
 	mWinContainer->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
 	mWinContainer->setParent( mUIContainer );
 	mWinContainer->setPosition( 0, WinMenu->getSize().getHeight() );
@@ -186,17 +186,17 @@ void MapEditor::createETGMenu() {
 	Int32 ContPosX = mWinContainer->getSize().getWidth() - Width - DistToBorder;
 	Int32 DistFromTopMenu = 4;
 
-	mSubTextureCont = UIComplexControl::New();
+	mSubTextureCont = UIWidget::New();
 	mSubTextureCont->setParent( mWinContainer );
 	mSubTextureCont->setSize( Sizei( Width + DistToBorder, mWinContainer->getSize().getHeight() ) );
 	mSubTextureCont->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 
-	mLightCont = UIComplexControl::New();
+	mLightCont = UIWidget::New();
 	mLightCont->setParent( mWinContainer );
 	mLightCont->setSize( mSubTextureCont->getSize() );
 	mLightCont->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 
-	mObjectCont = UIComplexControl::New();
+	mObjectCont = UIWidget::New();
 	mObjectCont->setParent( mWinContainer );
 	mObjectCont->setSize( mSubTextureCont->getSize() );
 	mObjectCont->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
@@ -259,7 +259,7 @@ void MapEditor::fillGotyList() {
 }
 
 void MapEditor::createSubTextureContainer( Int32 Width ) {
-	UITextBox * Txt;
+	UITextView * Txt;
 	Uint32 TxtFlags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_DRAW_SHADOW;
 
 	Txt = createTextBox( "Add Game Object as...", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 4 ), TxtFlags );
@@ -332,7 +332,7 @@ void MapEditor::createSubTextureContainer( Int32 Width ) {
 	mChkDI->setTooltipText( "If the resource it's not a sprite,\nyou can reference it with a data id" );
 	mChkDI->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::chkClickDI ) );
 
-	mSGCont = UIComplexControl::New();
+	mSGCont = UIWidget::New();
 	mSGCont->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, mChkDI->getPosition().y + mChkDI->getSize().getHeight() + 8 )->setSize( Width, 400 );
 	mSGCont->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mSGCont->setEnabled( true );
@@ -351,14 +351,14 @@ void MapEditor::createSubTextureContainer( Int32 Width ) {
 	mSubTextureList->setAnchors(UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mSubTextureList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::onSubTextureChange ) );
 
-	mGfxPreview = UIGfx::New();
+	mGfxPreview = UIImage::New();
 	mGfxPreview->resetFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_AUTO_FIT )
 			   ->setParent( mSGCont )->setSize( Width, Width )
 			   ->setPosition( 0, mSubTextureList->getPosition().y + mSubTextureList->getSize().getHeight() + 4 );
 
 	mGfxPreview->setBorderEnabled( true )->setColor( ColorA( 0, 0, 0, 200 ) );
 
-	mDICont = UIComplexControl::New();
+	mDICont = UIWidget::New();
 	mDICont->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, mChkDI->getPosition().y + mChkDI->getSize().getHeight() + 8 );
 	mDICont->setSize(  Width, 400 );
 	mDICont->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
@@ -379,9 +379,9 @@ void MapEditor::createLighContainer() {
 	NewLightBut->setText( "New Light" );
 	NewLightBut->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::onNewLight ) );
 
-	UITextBox * Txt = createTextBox( "Light Color:", mLightCont, Sizei(), Vector2i( TAB_CONT_X_DIST, 32 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	UITextView * Txt = createTextBox( "Light Color:", mLightCont, Sizei(), Vector2i( TAB_CONT_X_DIST, 32 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	mUIBaseColor = UIComplexControl::New();
+	mUIBaseColor = UIWidget::New();
 	mUIBaseColor->setFlags( UI_FILL_BACKGROUND | UI_BORDER );
 	mUIBaseColor->setParent( mLightCont );
 	mUIBaseColor->setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );

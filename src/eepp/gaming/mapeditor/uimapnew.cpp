@@ -5,8 +5,8 @@
 
 namespace EE { namespace Gaming { namespace Private {
 
-static UITextBox * createTextBox( const String& Text = "", UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE ) {
-	UITextBox * Ctrl = UITextBox::New();
+static UITextView * createTextBox( const String& Text = "", UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE ) {
+	UITextView * Ctrl = UITextView::New();
 	Ctrl->resetFlags( Flags )->setParent( Parent )->setPosition( Pos )->setSize( Size )->setVisible( true )->setEnabled( false );
 	Ctrl->setText( Text );
 	return Ctrl;
@@ -40,7 +40,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	Int32 InitialY		= 16;
 	Int32 DistFromTitle	= 18;
 
-	UITextBox * Txt = createTextBox( "Map Size", mUIWindow->getContainer(), Sizei(), Vector2i( 16, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	UITextView * Txt = createTextBox( "Map Size", mUIWindow->getContainer(), Sizei(), Vector2i( 16, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	Txt = createTextBox( "Width:", mUIWindow->getContainer(), Sizei( 46, 24 ), Vector2i( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
 
@@ -138,7 +138,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 
 	Txt = createTextBox( "Map Base Color:", mUIWindow->getContainer(), Sizei(), Vector2i( Txt->getPosition().x, mUIClipArea->getPosition().y + mUIClipArea->getSize().getHeight() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	mUIBaseColor = UIComplexControl::New();
+	mUIBaseColor = UIWidget::New();
 	mUIBaseColor->setFlags( UI_FILL_BACKGROUND | UI_BORDER );
 	mUIBaseColor->getBorder()->setColor( ColorA( 100, 100, 100, 200 ) );
 	mUIBaseColor->getBackground()->setColor( ResizeMap ? mUIMap->Map()->getBaseColor() : ColorA( 255, 255, 255, 255 ) );

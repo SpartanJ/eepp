@@ -1,14 +1,14 @@
-#include <eepp/ui/uigfx.hpp>
+#include <eepp/ui/uiimage.hpp>
 #include <eepp/graphics/subtexture.hpp>
 
 namespace EE { namespace UI {
 
-UIGfx *UIGfx::New() {
-	return eeNew( UIGfx, () );
+UIImage * UIImage::New() {
+	return eeNew( UIImage, () );
 }
 
-UIGfx::UIGfx() :
-	UIComplexControl(),
+UIImage::UIImage() :
+	UIWidget(),
 	mSubTexture( NULL ),
 	mColor(),
 	mRender( RN_NORMAL ),
@@ -19,18 +19,18 @@ UIGfx::UIGfx() :
 	onAutoSize();
 }
 
-UIGfx::~UIGfx() {
+UIImage::~UIImage() {
 }
 
-Uint32 UIGfx::getType() const {
-	return UI_TYPE_GFX;
+Uint32 UIImage::getType() const {
+	return UI_TYPE_IMAGE;
 }
 
-bool UIGfx::isType( const Uint32& type ) const {
-	return UIGfx::getType() == type ? true : UIComplexControl::isType( type );
+bool UIImage::isType( const Uint32& type ) const {
+	return UIImage::getType() == type ? true : UIWidget::isType( type );
 }
 
-void UIGfx::setSubTexture( Graphics::SubTexture * subTexture ) {
+void UIImage::setSubTexture( Graphics::SubTexture * subTexture ) {
 	mSubTexture = subTexture;
 
 	onAutoSize();
@@ -42,7 +42,7 @@ void UIGfx::setSubTexture( Graphics::SubTexture * subTexture ) {
 	autoAlign();
 }
 
-void UIGfx::onAutoSize() {
+void UIImage::onAutoSize() {
 	if ( ( mFlags & UI_AUTO_SIZE ) && Sizei::Zero == mSize ) {
 		if ( NULL != mSubTexture ) {
 			setSize( mSubTexture->getDpSize() );
@@ -50,7 +50,7 @@ void UIGfx::onAutoSize() {
 	}
 }
 
-void UIGfx::draw() {
+void UIImage::draw() {
 	UIControlAnim::draw();
 
 	if ( mVisible ) {
@@ -111,37 +111,37 @@ void UIGfx::draw() {
 	}
 }
 
-void UIGfx::drawSubTexture() {
+void UIImage::drawSubTexture() {
 	mSubTexture->draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, mColor, 0.f, Vector2f::One, getBlendMode(), mRender );
 }
 
-void UIGfx::setAlpha( const Float& alpha ) {
+void UIImage::setAlpha( const Float& alpha ) {
 	UIControlAnim::setAlpha( alpha );
 	mColor.Alpha = (Uint8)alpha;
 }
 
-Graphics::SubTexture * UIGfx::getSubTexture() const {
+Graphics::SubTexture * UIImage::getSubTexture() const {
 	return mSubTexture;
 }
 
-const ColorA& UIGfx::getColor() const {
+const ColorA& UIImage::getColor() const {
 	return mColor;
 }
 
-void UIGfx::setColor( const ColorA& col ) {
+void UIImage::setColor( const ColorA& col ) {
 	mColor = col;
 	setAlpha( col.a() );
 }
 
-const EE_RENDER_MODE& UIGfx::getRenderMode() const {
+const EE_RENDER_MODE& UIImage::getRenderMode() const {
 	return mRender;
 }
 
-void UIGfx::setRenderMode( const EE_RENDER_MODE& render ) {
+void UIImage::setRenderMode( const EE_RENDER_MODE& render ) {
 	mRender = render;
 }
 
-void UIGfx::autoAlign() {
+void UIImage::autoAlign() {
 	if ( NULL == mSubTexture )
 		return;
 
@@ -162,18 +162,18 @@ void UIGfx::autoAlign() {
 	}
 }
 
-void UIGfx::onSizeChange() {
+void UIImage::onSizeChange() {
 	onAutoSize();
 	autoAlign();
 	UIControlAnim::onSizeChange();
 }
 
-void UIGfx::onAlignChange() {
+void UIImage::onAlignChange() {
 	onAutoSize();
 	autoAlign();
 }
 
-const Vector2i& UIGfx::getAlignOffset() const {
+const Vector2i& UIImage::getAlignOffset() const {
 	return mAlignOffset;
 }
 

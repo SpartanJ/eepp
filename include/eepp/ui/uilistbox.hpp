@@ -8,7 +8,7 @@
 
 namespace EE { namespace UI {
 
-class EE_API UIListBox : public UIComplexControl {
+class EE_API UIListBox : public UIWidget {
 	public:
 		static UIListBox * New();
 
@@ -120,20 +120,20 @@ class EE_API UIListBox : public UIComplexControl {
 
 		void setTouchDragDeceleration(const Float & touchDragDeceleration);
 
-		TooltipStyleConfig getFontStyleConfig() const;
+		FontStyleConfig getFontStyleConfig() const;
 
-		void setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig);
+		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
 	protected:
 		friend class UIListBoxItem;
 		friend class UIItemContainer<UIListBox>;
 		friend class UIDropDownList;
 
-		TooltipStyleConfig		mFontStyleConfig;
+		FontStyleConfig		mFontStyleConfig;
 		Uint32 				mRowHeight;
 		UI_SCROLLBAR_MODE	mVScrollMode;
 		UI_SCROLLBAR_MODE	mHScrollMode;
 		bool 				mSmoothScroll;
-		Recti				mPaddingContainer;
+		Recti				mContainerPadding;
 		Recti				mHScrollPadding;
 		Recti				mVScrollPadding;
 		UIItemContainer<UIListBox> * mContainer;

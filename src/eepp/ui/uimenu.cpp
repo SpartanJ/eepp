@@ -9,7 +9,7 @@ UIMenu *UIMenu::New() {
 }
 
 UIMenu::UIMenu() :
-	UIComplexControl(),
+	UIWidget(),
 	mMaxWidth( 0 ),
 	mNextPosY( 0 ),
 	mBiggestIcon( 0 ),
@@ -42,7 +42,7 @@ Uint32 UIMenu::getType() const {
 }
 
 bool UIMenu::isType( const Uint32& type ) const {
-	return UIMenu::getType() == type ? true : UIComplexControl::isType( type );
+	return UIMenu::getType() == type ? true : UIWidget::isType( type );
 }
 
 void UIMenu::setTheme( UITheme * Theme ) {
@@ -177,7 +177,7 @@ void UIMenu::setControlSize( UIControl * Control, const Uint32& Pos ) {
 }
 
 Uint32 UIMenu::addSeparator() {
-	UISeparator * Control = UISeparator::New();
+	UIMenuSeparator * Control = UIMenuSeparator::New();
 	Control->setParent( this );
 	Control->setPosition( mStyleConfig.Padding.Left, mStyleConfig.Padding.Top + mNextPosY );
 	Control->setSize( mSize.getWidth() - mStyleConfig.Padding.Left - mStyleConfig.Padding.Right, 3 );
@@ -398,7 +398,7 @@ void UIMenu::setItemSelected( UIControl * Item ) {
 
 void UIMenu::trySelect( UIControl * Ctrl, bool Up ) {
 	if ( mItems.size() ) {
-		if ( !Ctrl->isType( UI_TYPE_SEPARATOR ) ) {
+		if ( !Ctrl->isType( UI_TYPE_MENU_SEPARATOR ) ) {
 			setItemSelected( Ctrl );
 		} else {
 			Uint32 Index = getItemIndex( Ctrl );
@@ -407,7 +407,7 @@ void UIMenu::trySelect( UIControl * Ctrl, bool Up ) {
 				if ( Up ) {
 					if ( Index > 0 ) {
 						for ( Int32 i = (Int32)Index - 1; i >= 0; i-- ) {
-							if ( !mItems[i]->isType( UI_TYPE_SEPARATOR ) ) {
+							if ( !mItems[i]->isType( UI_TYPE_MENU_SEPARATOR ) ) {
 								setItemSelected( mItems[i] );
 								return;
 							}
@@ -417,7 +417,7 @@ void UIMenu::trySelect( UIControl * Ctrl, bool Up ) {
 					setItemSelected( mItems[ mItems.size() ] );
 				} else {
 					for ( Uint32 i = Index + 1; i < mItems.size(); i++ ) {
-						if ( !mItems[i]->isType( UI_TYPE_SEPARATOR ) ) {
+						if ( !mItems[i]->isType( UI_TYPE_MENU_SEPARATOR ) ) {
 							setItemSelected( mItems[i] );
 							return;
 						}
@@ -499,7 +499,7 @@ Uint32 UIMenu::onKeyDown( const UIEventKey& Event ) {
 		}
 	}
 
-	return UIComplexControl::onKeyDown( Event );
+	return UIWidget::onKeyDown( Event );
 }
 
 const Recti& UIMenu::getPadding() const {

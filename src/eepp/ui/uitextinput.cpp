@@ -13,7 +13,7 @@ UITextInput * UITextInput::New() {
 }
 
 UITextInput::UITextInput() :
-	UITextBox(),
+	UITextView(),
 	mCursorPos(0),
 	mAllowEditing( true ),
 	mShowingWait( true )
@@ -37,7 +37,7 @@ Uint32 UITextInput::getType() const {
 }
 
 bool UITextInput::isType( const Uint32& type ) const {
-	return UITextInput::getType() == type ? true : UITextBox::isType( type );
+	return UITextInput::getType() == type ? true : UITextView::isType( type );
 }
 
 void UITextInput::update() {
@@ -45,12 +45,12 @@ void UITextInput::update() {
 		UIManager::instance()->setCursor( EE_CURSOR_IBEAM );
 	}
 
-	UITextBox::update();
+	UITextView::update();
 
 	if ( mTextBuffer.changedSinceLastUpdate() ) {
 		Vector2f offSet = mRealAlignOffset;
 
-		UITextBox::setText( mTextBuffer.getBuffer() );
+		UITextView::setText( mTextBuffer.getBuffer() );
 
 		updateText();
 
@@ -113,7 +113,7 @@ void UITextInput::drawWaitingCursor() {
 }
 
 void UITextInput::draw() {
-	UITextBox::draw();
+	UITextView::draw();
 
 	drawWaitingCursor();
 }
@@ -132,7 +132,7 @@ Uint32 UITextInput::onFocus() {
 
 Uint32 UITextInput::onFocusLoss() {
 	mTextBuffer.setActive( false );
-	return UITextBox::onFocusLoss();
+	return UITextView::onFocusLoss();
 }
 
 Uint32 UITextInput::onPressEnter() {
@@ -182,7 +182,7 @@ void UITextInput::setTheme( UITheme * Theme ) {
 }
 
 void UITextInput::onThemeLoaded() {
-	UITextBox::onThemeLoaded();
+	UITextView::onThemeLoaded();
 
 	mMinControlSize.y = eemax( mMinControlSize.y, getSkinSize().getHeight() );
 
@@ -219,8 +219,8 @@ const bool& UITextInput::getAllowEditing() const {
 	return mAllowEditing;
 }
 
-UITextBox * UITextInput::setText( const String& text ) {
-	UITextBox::setText( text );
+UITextView * UITextInput::setText( const String& text ) {
+	UITextView::setText( text );
 
 	mTextBuffer.setBuffer( text );
 
@@ -230,13 +230,13 @@ UITextBox * UITextInput::setText( const String& text ) {
 }
 
 const String& UITextInput::getText() {
-	return UITextBox::getText();
+	return UITextView::getText();
 }
 
 void UITextInput::shrinkText( const Uint32& MaxWidth ) {
 	mTextCache->setText( mTextBuffer.getBuffer() );
 
-	UITextBox::shrinkText( MaxWidth );
+	UITextView::shrinkText( MaxWidth );
 
 	mTextBuffer.setBuffer( mTextCache->getText() );
 
@@ -260,11 +260,11 @@ Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 		}
 	}
 
-	return UITextBox::onMouseClick( Pos, Flags );
+	return UITextView::onMouseClick( Pos, Flags );
 }
 
 Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
-	UITextBox::onMouseDoubleClick( Pos, Flags );
+	UITextView::onMouseDoubleClick( Pos, Flags );
 
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && selCurEnd() != -1 ) {
 		mTextBuffer.setCursorPos( selCurEnd() );

@@ -11,7 +11,7 @@
 
 namespace EE { namespace UI {
 class UIMessageBox;
-class UITextBox;
+class UITextView;
 }}
 
 using namespace EE::UI;
@@ -37,9 +37,9 @@ class EE_API MapEditor {
 		Private::UIMap *	mUIMap;
 		MapEditorCloseCb	mCloseCb;
 		UIDropDownList *	mTextureAtlasesList;
-		UIComplexControl *	mWinContainer;
+		UIWidget *	mWinContainer;
 		UIListBox *			mSubTextureList;
-		UIGfx *				mGfxPreview;
+		UIImage *				mGfxPreview;
 		TextureAtlas *		mCurSG;
 		UIScrollBar *		mMapHScroll;
 		UIScrollBar *		mMapVScroll;
@@ -55,11 +55,11 @@ class EE_API MapEditor {
 		UIPushButton *		mBtnGOTypeAdd;
 		Uint32				mCurGOType;
 		Uint32				mCurGOFlags;
-		UIComplexControl *	mSubTextureCont;
-		UIComplexControl *	mLightCont;
-		UIComplexControl *	mObjectCont;
-		UIComplexControl *	mSGCont;
-		UIComplexControl *	mDICont;
+		UIWidget *	mSubTextureCont;
+		UIWidget *	mLightCont;
+		UIWidget *	mObjectCont;
+		UIWidget *	mSGCont;
+		UIWidget *	mDICont;
 		UICheckBox *		mChkDI;
 		UITextInput *		mDataIdInput;
 		UIMenuCheckBox	*	mLayerChkVisible;
@@ -71,16 +71,16 @@ class EE_API MapEditor {
 		UICheckBox	*		mChkClampToTile;
 
 		//! Light Color
-		UIComplexControl *	mUIBaseColor;
+		UIWidget *	mUIBaseColor;
 		UISlider *			mUIRedSlider;
 		UISlider *			mUIGreenSlider;
 		UISlider *			mUIBlueSlider;
-		UITextBox *			mUIRedTxt;
-		UITextBox *			mUIGreenTxt;
-		UITextBox *			mUIBlueTxt;
+		UITextView *			mUIRedTxt;
+		UITextView *			mUIGreenTxt;
+		UITextView *			mUIBlueTxt;
 		UISpinBox *			mLightRadius;
 		UICheckBox *		mLightTypeChk;
-		UITextBox *			mTileBox;
+		UITextView *			mTileBox;
 		Int32				mLastSelButtonY;
 		bool				mMouseScrolling;
 

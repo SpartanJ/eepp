@@ -356,8 +356,8 @@ void UIControl::drawOverControl() {
 
 void UIControl::drawDebugData() {
 	if ( UIManager::instance()->getDrawDebugData() ) {
-		if ( isComplex() ) {
-			UIComplexControl * me = static_cast<UIComplexControl*>( this );
+		if ( isWidget() ) {
+			UIWidget * me = static_cast<UIWidget*>( this );
 
 			if ( UIManager::instance()->getOverControl() == this ) {
 				String text( String::strFormated( "X: %d Y: %d\nW: %d H: %d", mPos.x, mPos.y, mSize.x, mSize.y ) );
@@ -817,6 +817,8 @@ void UIControl::childAdd( UIControl * ChildCtrl ) {
 		ChildCtrl->mNext		= NULL;
 		mChildLast 				= ChildCtrl;
 	}
+
+	onChildCountChange();
 }
 
 void UIControl::childAddAt( UIControl * ChildCtrl, Uint32 Pos ) {
@@ -863,6 +865,8 @@ void UIControl::childAddAt( UIControl * ChildCtrl, Uint32 Pos ) {
 			}
 		}
 	}
+
+	onChildCountChange();
 }
 
 void UIControl::childRemove( UIControl * ChildCtrl ) {
@@ -890,6 +894,8 @@ void UIControl::childRemove( UIControl * ChildCtrl ) {
 
 		ChildCtrl->mPrev = NULL;
 	}
+
+	onChildCountChange();
 }
 
 void UIControl::childsCloseAll() {
@@ -1068,7 +1074,7 @@ Uint32 UIControl::isDragable() {
 	return mControlFlags & UI_CTRL_FLAG_DRAGABLE;
 }
 
-Uint32 UIControl::isComplex() {
+Uint32 UIControl::isWidget() {
 	return mControlFlags & UI_CTRL_FLAG_COMPLEX;
 }
 
@@ -1431,7 +1437,7 @@ UIControl * UIControl::getNextComplexControl() {
 
 	while( NULL != ChildLoop ) {
 		if ( ChildLoop->isVisible() && ChildLoop->isEnabled() ) {
-			if ( ChildLoop->isComplex() ) {
+			if ( ChildLoop->isWidget() ) {
 				return ChildLoop;
 			} else {
 				Found = ChildLoop->getNextComplexControl();
@@ -1446,7 +1452,7 @@ UIControl * UIControl::getNextComplexControl() {
 	}
 
 	if ( NULL != mNext ) {
-		if ( mNext->isVisible() && mNext->isEnabled() && mNext->isComplex() ) {
+		if ( mNext->isVisible() && mNext->isEnabled() && mNext->isWidget() ) {
 			return mNext;
 		} else {
 			return mNext->getNextComplexControl();
@@ -1456,7 +1462,7 @@ UIControl * UIControl::getNextComplexControl() {
 
 		while ( NULL != ChildLoop ) {
 			if ( NULL != ChildLoop->mNext ) {
-				if ( ChildLoop->mNext->isVisible() && ChildLoop->mNext->isEnabled() && ChildLoop->mNext->isComplex() ) {
+				if ( ChildLoop->mNext->isVisible() && ChildLoop->mNext->isEnabled() && ChildLoop->mNext->isWidget() ) {
 					return ChildLoop->mNext;
 				} else {
 					return ChildLoop->mNext->getNextComplexControl();
@@ -1471,6 +1477,9 @@ UIControl * UIControl::getNextComplexControl() {
 }
 
 void UIControl::onThemeLoaded() {
+}
+
+void UIControl::onChildCountChange() {
 }
 
 void UIControl::worldToControl( Vector2i& pos ) const {
@@ -1545,6 +1554,25 @@ void UIControl::controlToWorld( Vector2i& pos ) const {
 	}
 
 	pos = Vector2i( eeceil( Pos.x ), eeceil( Pos.y ) );
+}
+
+UIControl * UIControl::getWindowContainer() {
+	UIControl * Ctrl = this;
+
+	while ( Ctrl != NULL ) {
+		if ( Ctrl->isType( UI_TYPE_WINDOW ) ) {
+			if ( UIManager::instance()->getMainControl() == Ctrl ) {
+				return Ctrl;
+			} else {
+				return static_cast<UIWindow*>( Ctrl )->getContainer();
+			}
+
+		}
+
+		Ctrl = Ctrl->getParent();
+	}
+
+	return NULL;
 }
 
 }}

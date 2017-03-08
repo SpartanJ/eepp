@@ -1,14 +1,14 @@
 #ifndef EE_UICUILISTBOXITEM_HPP
 #define EE_UICUILISTBOXITEM_HPP
 
-#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
 
 namespace EE { namespace UI {
 
 class UIListBox;
 
-class EE_API UIListBoxItem : public UITextBox {
+class EE_API UIListBoxItem : public UITextView {
 	public:
 		static UIListBoxItem * New();
 

@@ -2,15 +2,15 @@
 #define EE_UITOOLSCTEXTUREATLASSUBTEXTUREEDITOR_HPP
 
 #include <eepp/ui/base.hpp>
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/graphics/subtexture.hpp>
-#include <eepp/ui/uigfx.hpp>
+#include <eepp/ui/uiimage.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
 class TextureAtlasEditor;
 
-class EE_API TextureAtlasSubTextureEditor : public UIComplexControl {
+class EE_API TextureAtlasSubTextureEditor : public UIWidget {
 	public:
 		TextureAtlasSubTextureEditor( TextureAtlasEditor * Editor );
 
@@ -24,11 +24,11 @@ class EE_API TextureAtlasSubTextureEditor : public UIComplexControl {
 
 		void setSubTexture( Graphics::SubTexture * subTexture );
 
-		UIGfx * getGfx() const;
+		UIImage * getGfx() const;
 	protected:
 		UITheme *				mTheme;
-		UIGfx *					mGfx;
-		UIDragable *			mDrag;
+		UIImage *					mGfx;
+		UIDragableControl *			mDrag;
 		Vector2i				mUICenter;
 		TextureAtlasEditor *	mEditor;
 

@@ -3,11 +3,11 @@
 
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uicontrol.hpp>
-#include <eepp/ui/uidragable.hpp>
+#include <eepp/ui/uidragablecontrol.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIControlAnim : public UIDragable {
+class EE_API UIControlAnim : public UIDragableControl {
 	public:
 		static UIControlAnim * New();
 
