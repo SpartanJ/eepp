@@ -40,7 +40,7 @@ UISlider::UISlider() :
 	mBackSlider->setSize( bgSize );
 	mBackSlider->center();
 
-	mSlider = eeNew( Private::UISliderButton, () );
+	mSlider = Private::UISliderButton::New();
 	mSlider->setParent( this );
 	mSlider->setEnabled( true );
 	mSlider->setVisible( true );

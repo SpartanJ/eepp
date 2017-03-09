@@ -1,4 +1,6 @@
 ../../include/eepp/graphics/font.hpp
+../../include/eepp/math/interpolation1d.hpp
+../../include/eepp/math/interpolation2d.hpp
 ../../include/eepp/ui/uidragablecontrol.hpp
 ../../include/eepp/ui/uiimage.hpp
 ../../include/eepp/ui/uilinearlayout.hpp
@@ -14,6 +16,8 @@
 ../../src/eepp/graphics/globalbatchrenderer.cpp
 ../../src/eepp/graphics/pixeldensity.cpp
 ../../src/eepp/graphics/pixelperfect.cpp
+../../src/eepp/math/interpolation1d.cpp
+../../src/eepp/math/interpolation2d.cpp
 ../../src/eepp/ui/uidragablecontrol.cpp
 ../../src/eepp/ui/uiimage.cpp
 ../../src/eepp/ui/uilinearlayout.cpp
@@ -347,15 +351,11 @@ ee.includes
 ../../include/eepp/math/line2.hpp
 ../../include/eepp/math/ease.hpp
 ../../include/eepp/math/easing.hpp
-../../include/eepp/math/waypoints.hpp
 ../../include/eepp/math/perlinnoise.hpp
 ../../include/eepp/system/colors.hpp
-../../include/eepp/math/interpolation.hpp
 ../../src/eepp/system/safedatapointer.cpp
 ../../src/eepp/math/easing.cpp
-../../src/eepp/math/waypoints.cpp
 ../../src/eepp/math/perlinnoise.cpp
-../../src/eepp/math/interpolation.cpp
 ../../include/eepp/window/keycodes.hpp
 ../../include/eepp/window/joycodes.hpp
 ../../include/eepp/window/inputhelper.hpp

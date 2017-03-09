@@ -7,8 +7,8 @@
 #include <eepp/math/rect.hpp>
 #include <eepp/math/vector2.hpp>
 #include <eepp/math/polygon2.hpp>
-#include <eepp/math/interpolation.hpp>
-#include <eepp/math/waypoints.hpp>
+#include <eepp/math/interpolation1d.hpp>
+#include <eepp/math/interpolation2d.hpp>
 #include <eepp/math/math.hpp>
 #include <eepp/math/originpoint.hpp>
 using namespace EE::Math;

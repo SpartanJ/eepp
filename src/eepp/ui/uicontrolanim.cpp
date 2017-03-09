@@ -252,9 +252,9 @@ bool UIControlAnim::isAnimating() {
 	return ( NULL != mAlphaAnim && mAlphaAnim->isEnabled() ) || ( NULL != mAngleAnim && mAngleAnim->isEnabled() ) || ( NULL != mScaleAnim && mScaleAnim->isEnabled() ) || ( NULL != mMoveAnim && mMoveAnim->isEnabled() );
 }
 
-Interpolation * UIControlAnim::startAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds, const Ease::Interpolation& Type, Interpolation::OnPathEndCallback PathEndCallback ) {
+Interpolation1d * UIControlAnim::startAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds, const Ease::Interpolation& Type, Interpolation1d::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mAlphaAnim )
-		mAlphaAnim = eeNew( Interpolation, () );
+		mAlphaAnim = eeNew( Interpolation1d, () );
 
 	mAlphaAnim->clearWaypoints();
 	mAlphaAnim->addWaypoint( From );
@@ -283,9 +283,9 @@ Interpolation * UIControlAnim::startAlphaAnim( const Float& From, const Float& T
 	return mAlphaAnim;
 }
 
-Waypoints * UIControlAnim::startScaleAnim( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation::OnPathEndCallback PathEndCallback ) {
+Interpolation2d * UIControlAnim::startScaleAnim( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation1d::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mScaleAnim )
-		mScaleAnim = eeNew( Waypoints, () );
+		mScaleAnim = eeNew( Interpolation2d, () );
 
 	mScaleAnim->clearWaypoints();
 	mScaleAnim->addWaypoint( From );
@@ -299,13 +299,13 @@ Waypoints * UIControlAnim::startScaleAnim( const Vector2f& From, const Vector2f&
 	return mScaleAnim;
 }
 
-Waypoints * UIControlAnim::startScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation::OnPathEndCallback PathEndCallback ) {
+Interpolation2d * UIControlAnim::startScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation1d::OnPathEndCallback PathEndCallback ) {
 	return startScaleAnim( Vector2f( From, From ), Vector2f( To, To ), TotalTime, Type, PathEndCallback );
 }
 
-Waypoints * UIControlAnim::startMovement( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& Type, Waypoints::OnPathEndCallback PathEndCallback ) {
+Interpolation2d * UIControlAnim::startMovement( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation2d::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mMoveAnim )
-		mMoveAnim = eeNew( Waypoints, () );
+		mMoveAnim = eeNew( Interpolation2d, () );
 
 	mMoveAnim->clearWaypoints();
 	mMoveAnim->addWaypoint( Vector2f( (Float)From.x, (Float)From.y ) );
@@ -319,9 +319,9 @@ Waypoints * UIControlAnim::startMovement( const Vector2i& From, const Vector2i& 
 	return mMoveAnim;
 }
 
-Interpolation * UIControlAnim::startRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation::OnPathEndCallback PathEndCallback ) {
+Interpolation1d * UIControlAnim::startRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation1d::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mAngleAnim )
-		mAngleAnim = eeNew( Interpolation, () );
+		mAngleAnim = eeNew( Interpolation1d, () );
 
 	mAngleAnim->clearWaypoints();
 	mAngleAnim->addWaypoint( From );
@@ -335,21 +335,21 @@ Interpolation * UIControlAnim::startRotation( const Float& From, const Float& To
 	return mAngleAnim;
 }
 
-Interpolation * UIControlAnim::createFadeIn( const Time& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
+Interpolation1d * UIControlAnim::createFadeIn( const Time& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
 	return startAlphaAnim( mAlpha, 255.f, Time, AlphaChilds, Type );
 }
 
-Interpolation * UIControlAnim::createFadeOut( const Time& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
+Interpolation1d * UIControlAnim::createFadeOut( const Time& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
 	return startAlphaAnim( 255.f, mAlpha, Time, AlphaChilds, Type );
 }
 
-Interpolation * UIControlAnim::closeFadeOut( const Time& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
+Interpolation1d * UIControlAnim::closeFadeOut( const Time& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
 	startAlphaAnim	( mAlpha, 0.f, Time, AlphaChilds, Type );
 	mControlFlags |= UI_CTRL_FLAG_CLOSE_FO;
 	return mAlphaAnim;
 }
 
-Interpolation * UIControlAnim::disableFadeOut( const Time& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
+Interpolation1d * UIControlAnim::disableFadeOut( const Time& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
 	setEnabled( false );
 
 	startAlphaAnim	( mAlpha, 0.f, Time, AlphaChilds, Type );
@@ -463,30 +463,30 @@ void UIControlAnim::updateOriginPoint() {
 	}
 }
 
-Interpolation * UIControlAnim::getRotationInterpolation() {
+Interpolation1d * UIControlAnim::getRotationInterpolation() {
 	if ( NULL == mAngleAnim )
-		mAngleAnim = eeNew( Interpolation, () );
+		mAngleAnim = eeNew( Interpolation1d, () );
 
 	return mAngleAnim;
 }
 
-Waypoints * UIControlAnim::getScaleInterpolation() {
+Interpolation2d * UIControlAnim::getScaleInterpolation() {
 	if ( NULL == mScaleAnim )
-		mScaleAnim = eeNew( Waypoints, () );
+		mScaleAnim = eeNew( Interpolation2d, () );
 
 	return mScaleAnim;
 }
 
-Interpolation * UIControlAnim::getAlphaInterpolation() {
+Interpolation1d * UIControlAnim::getAlphaInterpolation() {
 	if ( NULL == mAlphaAnim )
-		mAlphaAnim = eeNew( Interpolation, () );
+		mAlphaAnim = eeNew( Interpolation1d, () );
 
 	return mAlphaAnim;
 }
 
-Waypoints * UIControlAnim::getMovementInterpolation() {
+Interpolation2d * UIControlAnim::getMovementInterpolation() {
 	if ( NULL == mMoveAnim )
-		mMoveAnim = eeNew( Waypoints, () );
+		mMoveAnim = eeNew( Interpolation2d, () );
 
 	return mMoveAnim;
 }

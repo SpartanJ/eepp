@@ -100,7 +100,7 @@ class EETest : private Thread {
 		std::vector<Uint8> tmpv;
 		std::vector<Uint8> MySong;
 
-		Waypoints WP;
+		Interpolation2d WP;
 		Int32 PartsNum;
 		Uint32 Cursor[1];
 		Texture * CursorP[1];

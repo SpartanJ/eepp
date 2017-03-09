@@ -12,21 +12,21 @@ namespace EE { namespace Math {
 
 /** @brief The basic waypoint class. */
 template <typename T>
-class tWaypoint {
+class tPoint2d {
 	public:
-		tWaypoint() { p = Vector2<T>(0,0); t = 0; }
-		tWaypoint( const Vector2<T>& Pos, const Float& Time ) { p = Pos; t = Time; }
+		tPoint2d() { p = Vector2<T>(0,0); t = 0; }
+		tPoint2d( const Vector2<T>& Pos, const Float& Time ) { p = Pos; t = Time; }
 		Vector2<T> p;
 		Float t;
 };
-typedef tWaypoint<Float> Waypoint;
+typedef tPoint2d<Float> Point2d;
 
 /** @brief A waypoint manager, used for movement interpolations. */
-class EE_API Waypoints {
+class EE_API Interpolation2d {
 	public:
-		Waypoints();
+		Interpolation2d();
 
-		~Waypoints();
+		~Interpolation2d();
 
 		typedef cb::Callback0<void> OnPathEndCallback;
 
@@ -81,16 +81,16 @@ class EE_API Waypoints {
 		void setTotalTime( const Time & TotTime );
 
 		/** @return The Current Node */
-		Waypoint * getCurrentActual() const;
+		Point2d * getCurrentActual() const;
 
 		/** @return The Next Node */
-		Waypoint * getCurrentNext() const;
+		Point2d * getCurrentNext() const;
 
 		/** @return The Current Position in the vector */
 		const Uint32& getCurrentPos() const;
 
 		/** @return the vector of waypoints */
-		const std::vector<Waypoint>& getWaypoints() const;
+		const std::vector<Point2d>& getWaypoints() const;
 
 		/** Set the current interpolation speed ( This will destroy the time of the interpolation and create one depending on the speed ) ( pixels per second ) */
 		void setSpeed( const Float& speed );
@@ -122,10 +122,10 @@ class EE_API Waypoints {
 		double mCurTime;
 		Float mSpeed;
 
-		Waypoint* mActP;
-		Waypoint* mNexP;
+		Point2d* mActP;
+		Point2d* mNexP;
 
-		std::vector<Waypoint> mPoints;
+		std::vector<Point2d> mPoints;
 
 		OnPathEndCallback mOnPathEndCallback;
 

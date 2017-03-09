@@ -21,11 +21,11 @@ class tPoint1d {
 typedef tPoint1d<Float> Point1d;
 
 /** @brief A interpolation movement manager, used for movement interpolations. */
-class EE_API Interpolation {
+class EE_API Interpolation1d {
 	public:
-		Interpolation();
+		Interpolation1d();
 
-		~Interpolation();
+		~Interpolation1d();
 
 		typedef cb::Callback0<void> OnPathEndCallback;
 

@@ -1,10 +1,10 @@
-#include <eepp/math/waypoints.hpp>
+#include <eepp/math/interpolation2d.hpp>
 #include <eepp/math/easing.hpp>
 using namespace EE::Math::easing;
 
 namespace EE { namespace Math {
 
-Waypoints::Waypoints() :
+Interpolation2d::Interpolation2d() :
 	mType(Ease::Linear),
 	mEnable(false),
 	mUpdate(true),
@@ -19,10 +19,10 @@ Waypoints::Waypoints() :
 {
 }
 
-Waypoints::~Waypoints() {
+Interpolation2d::~Interpolation2d() {
 }
 
-void Waypoints::start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback ) {
+void Interpolation2d::start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback ) {
 	mEnable				= true;
 	mOnPathEndCallback	= PathEndCallback;
 	mOnStepCallback		= StepCallback;
@@ -39,19 +39,19 @@ void Waypoints::start( OnPathEndCallback PathEndCallback, OnStepCallback StepCal
 	}
 }
 
-void Waypoints::stop() {
+void Interpolation2d::stop() {
 	mEnable = false;
 }
 
-void Waypoints::setPathEndCallback( OnPathEndCallback PathEndCallback ) {
+void Interpolation2d::setPathEndCallback( OnPathEndCallback PathEndCallback ) {
 	mOnPathEndCallback = PathEndCallback;
 }
 
-void Waypoints::setStepCallback( OnStepCallback StepCallback ) {
+void Interpolation2d::setStepCallback( OnStepCallback StepCallback ) {
 	mOnStepCallback = StepCallback;
 }
 
-void Waypoints::reset() {
+void Interpolation2d::reset() {
 	mTotDist = 0.f;
 	mEnable = false;
 	mCurPoint = 0;
@@ -63,13 +63,13 @@ void Waypoints::reset() {
 		mCurPos = mPoints[0].p;
 }
 
-void Waypoints::clearWaypoints() {
+void Interpolation2d::clearWaypoints() {
 	reset();
 	mPoints.clear();
 }
 
-void Waypoints::addWaypoint( const Vector2f& Pos, const Float& Time ) {
-	mPoints.push_back( Waypoint(Pos, Time) );
+void Interpolation2d::addWaypoint( const Vector2f& Pos, const Float& Time ) {
+	mPoints.push_back( Point2d(Pos, Time) );
 
 	if ( mPoints.size() >= 2 )
 	{
@@ -77,14 +77,14 @@ void Waypoints::addWaypoint( const Vector2f& Pos, const Float& Time ) {
 	}
 }
 
-bool Waypoints::editWaypoint( const unsigned int& PointNum, const Vector2f& NewPos, const Float& NewTime  ) {
+bool Interpolation2d::editWaypoint( const unsigned int& PointNum, const Vector2f& NewPos, const Float& NewTime  ) {
 	if ( PointNum < mPoints.size() ) {
 		if ( 0 == PointNum )
 			mTotDist -= mPoints[ PointNum ].p.distance( mPoints[ PointNum + 1 ].p );
 		else
 			mTotDist -= mPoints[ PointNum ].p.distance( mPoints[ PointNum - 1 ].p );
 
-		mPoints[ PointNum ] = Waypoint( NewPos, NewTime );
+		mPoints[ PointNum ] = Point2d( NewPos, NewTime );
 
 		if ( 0 == PointNum ) {
 			if ( PointNum + (unsigned int)1 < mPoints.size() )
@@ -97,7 +97,7 @@ bool Waypoints::editWaypoint( const unsigned int& PointNum, const Vector2f& NewP
 	return false;
 }
 
-bool Waypoints::eraseWaypoint( const unsigned int& PointNum ) {
+bool Interpolation2d::eraseWaypoint( const unsigned int& PointNum ) {
 	if ( PointNum < mPoints.size() && !mEnable ) {
 		if ( 0 == PointNum )
 			mTotDist -= mPoints[ PointNum ].p.distance( mPoints[ PointNum + 1 ].p );
@@ -111,7 +111,7 @@ bool Waypoints::eraseWaypoint( const unsigned int& PointNum ) {
 	return false;
 }
 
-void Waypoints::setSpeed( const Float& Speed ) {
+void Interpolation2d::setSpeed( const Float& Speed ) {
 	Float tdist = mTotDist;
 	mSpeed = Speed;
 	Float CurDist;
@@ -139,11 +139,11 @@ void Waypoints::setSpeed( const Float& Speed ) {
 	}
 }
 
-const Vector2f& Waypoints::getPos() {
+const Vector2f& Interpolation2d::getPos() {
 	return mCurPos;
 }
 
-void Waypoints::update( const Time& Elapsed ) {
+void Interpolation2d::update( const Time& Elapsed ) {
 	if ( mEnable && mPoints.size() > 1 && mCurPoint != mPoints.size() ) {
 		if ( mUpdate ) {
 			mCurTime = 0;
@@ -195,7 +195,7 @@ void Waypoints::update( const Time& Elapsed ) {
 	}
 }
 
-void Waypoints::setTotalTime( const Time& TotTime ) {
+void Interpolation2d::setTotalTime( const Time& TotTime ) {
 	unsigned int i;
 	Float tdist = mTotDist;
 
@@ -216,51 +216,51 @@ void Waypoints::setTotalTime( const Time& TotTime ) {
 		mPoints[i].t = mPoints[i].p.distance( mPoints[i + 1].p ) * TotTime.asMilliseconds() / tdist;
 }
 
-void Waypoints::setType( Ease::Interpolation InterpolationType ) {
+void Interpolation2d::setType( Ease::Interpolation InterpolationType ) {
 	mType = InterpolationType;
 }
 
-const int& Waypoints::getType() const {
+const int& Interpolation2d::getType() const {
 	return mType;
 }
 
-bool Waypoints::getLoop() const {
+bool Interpolation2d::getLoop() const {
 	return mLoop;
 }
 
-void Waypoints::setLoop( const bool& loop ) {
+void Interpolation2d::setLoop( const bool& loop ) {
 	mLoop = loop;
 }
 
-bool Waypoints::ended() const {
+bool Interpolation2d::ended() const {
 	return mEnded;
 }
 
-Waypoint * Waypoints::getCurrentActual() const {
+Point2d * Interpolation2d::getCurrentActual() const {
 	return mActP;
 }
 
-Waypoint * Waypoints::getCurrentNext() const {
+Point2d * Interpolation2d::getCurrentNext() const {
 	return mNexP;
 }
 
-const Uint32& Waypoints::getCurrentPos() const {
+const Uint32& Interpolation2d::getCurrentPos() const {
 	return mCurPoint;
 }
 
-const std::vector<Waypoint>& Waypoints::getWaypoints() const {
+const std::vector<Point2d>& Interpolation2d::getWaypoints() const {
 	return mPoints;
 }
 
-const Float& Waypoints::getSpeed() const {
+const Float& Interpolation2d::getSpeed() const {
 	return mSpeed;
 }
 
-const bool& Waypoints::isEnabled() const {
+const bool& Interpolation2d::isEnabled() const {
 	return mEnable;
 }
 
-void Waypoints::setEnabled( const bool& Enabled ) {
+void Interpolation2d::setEnabled( const bool& Enabled ) {
 	mEnable = Enabled;
 }
 

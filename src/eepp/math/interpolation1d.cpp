@@ -1,10 +1,10 @@
-#include <eepp/math/interpolation.hpp>
+#include <eepp/math/interpolation1d.hpp>
 #include <eepp/math/easing.hpp>
 using namespace EE::Math::easing;
 
 namespace EE { namespace Math {
 
-Interpolation::Interpolation() :
+Interpolation1d::Interpolation1d() :
 	mType(Ease::Linear),
 	mEnable(false),
 	mUpdate(true),
@@ -22,10 +22,10 @@ Interpolation::Interpolation() :
 {
 }
 
-Interpolation::~Interpolation() {
+Interpolation1d::~Interpolation1d() {
 }
 
-void Interpolation::start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback) {
+void Interpolation1d::start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback) {
 	mEnable				= true;
 	mOnPathEndCallback	= PathEndCallback;
 	mOnStepCallback		= StepCallback;
@@ -42,19 +42,19 @@ void Interpolation::start( OnPathEndCallback PathEndCallback, OnStepCallback Ste
 	}
 }
 
-void Interpolation::stop() {
+void Interpolation1d::stop() {
 	mEnable	= false;
 }
 
-void Interpolation::setPathEndCallback( OnPathEndCallback PathEndCallback ) {
+void Interpolation1d::setPathEndCallback( OnPathEndCallback PathEndCallback ) {
 	mOnPathEndCallback = PathEndCallback;
 }
 
-void Interpolation::setStepCallback( OnStepCallback StepCallback ) {
+void Interpolation1d::setStepCallback( OnStepCallback StepCallback ) {
 	mOnStepCallback = StepCallback;
 }
 
-void Interpolation::reset() {
+void Interpolation1d::reset() {
 	mTotDist = 0.f;
 	mActP = mNexP = NULL;
 	mEnable	= false;
@@ -68,19 +68,19 @@ void Interpolation::reset() {
 		mCurPos = mPoints[0].p;
 }
 
-void Interpolation::clearWaypoints() {
+void Interpolation1d::clearWaypoints() {
 	reset();
 	mPoints.clear();
 }
 
-void Interpolation::addWaypoint( const Float Pos, const Float Time ) {
+void Interpolation1d::addWaypoint( const Float Pos, const Float Time ) {
 	mPoints.push_back( Point1d( Pos, Time ) );
 
 	if ( mPoints.size() >= 2 )
 		mTotDist += eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[ mPoints.size() - 2 ].p );
 }
 
-bool Interpolation::editWaypoint( const unsigned int& PointNum, const Float& NewPos, const Float NewTime ) {
+bool Interpolation1d::editWaypoint( const unsigned int& PointNum, const Float& NewPos, const Float NewTime ) {
 	if ( PointNum < mPoints.size() ) {
 		if ( 0 == PointNum )
 			mTotDist -= eeabs( mPoints[ PointNum ].p - mPoints[ PointNum + 1 ].p );
@@ -101,7 +101,7 @@ bool Interpolation::editWaypoint( const unsigned int& PointNum, const Float& New
 	return false;
 }
 
-bool Interpolation::eraseWaypoint( const unsigned int& PointNum ) {
+bool Interpolation1d::eraseWaypoint( const unsigned int& PointNum ) {
 	if ( PointNum < mPoints.size() && !mEnable ) {
 		if ( 0 == PointNum )
 			mTotDist -= eeabs( mPoints[ PointNum ].p - mPoints[ PointNum + 1 ].p );
@@ -115,19 +115,19 @@ bool Interpolation::eraseWaypoint( const unsigned int& PointNum ) {
 	return false;
 }
 
-const Float& Interpolation::getEndPos() {
+const Float& Interpolation1d::getEndPos() {
 	return mPoints[ mPoints.size() - 1 ].p;
 }
 
-const Float& Interpolation::getPos() {
+const Float& Interpolation1d::getPos() {
 	return mCurPos;
 }
 
-const Float& Interpolation::getRealPos() const {
+const Float& Interpolation1d::getRealPos() const {
 	return mCurPos;
 }
 
-void Interpolation::update( const Time& Elapsed ) {
+void Interpolation1d::update( const Time& Elapsed ) {
 	if ( mEnable && mPoints.size() > 1 && mCurPoint != mPoints.size() ) {
 		if ( mUpdate ) {
 			mCurTime = 0;
@@ -178,7 +178,7 @@ void Interpolation::update( const Time& Elapsed ) {
 	}
 }
 
-void Interpolation::setTotalTime( const Time & TotTime ) {
+void Interpolation1d::setTotalTime( const Time & TotTime ) {
 	Float tdist = mTotDist;
 
 	if ( tdist == 0.0f ) {
@@ -197,7 +197,7 @@ void Interpolation::setTotalTime( const Time & TotTime ) {
 	}
 }
 
-void Interpolation::setSpeed( const Float Speed ) {
+void Interpolation1d::setSpeed( const Float Speed ) {
 	Float tdist = mTotDist;
 	mSpeed = Speed;
 	Float CurDist;
@@ -225,51 +225,51 @@ void Interpolation::setSpeed( const Float Speed ) {
 	}
 }
 
-void Interpolation::setType( Ease::Interpolation InterpolationType ) {
+void Interpolation1d::setType( Ease::Interpolation InterpolationType ) {
 	mType = InterpolationType;
 }
 
-const int& Interpolation::getType() const {
+const int& Interpolation1d::getType() const {
 	return mType;
 }
 
-const bool& Interpolation::getLoop() const {
+const bool& Interpolation1d::getLoop() const {
 	return mLoop;
 }
 
-void Interpolation::setLoop( const bool& loop ) {
+void Interpolation1d::setLoop( const bool& loop ) {
 	mLoop = loop;
 }
 
-const bool& Interpolation::ended() const {
+const bool& Interpolation1d::ended() const {
 	return mEnded;
 }
 
-Point1d * Interpolation::getCurrentActual() const {
+Point1d * Interpolation1d::getCurrentActual() const {
 	return mActP;
 }
 
-Point1d * Interpolation::getCurrentNext() const {
+Point1d * Interpolation1d::getCurrentNext() const {
 	return mNexP;
 }
 
-const Uint32& Interpolation::getCurrentPos() const {
+const Uint32& Interpolation1d::getCurrentPos() const {
 	return mCurPoint;
 }
 
-const std::vector<Point1d>& Interpolation::getPoints() const {
+const std::vector<Point1d>& Interpolation1d::getPoints() const {
 	return mPoints;
 }
 
-const Float& Interpolation::getSpeed() const {
+const Float& Interpolation1d::getSpeed() const {
 	return mSpeed;
 }
 
-const bool& Interpolation::isEnabled() const {
+const bool& Interpolation1d::isEnabled() const {
 	return mEnable;
 }
 
-void Interpolation::setEnabled( const bool& Enabled ) {
+void Interpolation1d::setEnabled( const bool& Enabled ) {
 	mEnable = Enabled;
 }
 

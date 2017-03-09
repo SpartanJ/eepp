@@ -3,9 +3,9 @@
 EE::Window::Window * win = NULL;
 
 // Define a interpolation to control the Rock sprite angle
-Interpolation RockAngle;
+Interpolation1d RockAngle;
 
-Interpolation PlanetAngle;
+Interpolation1d PlanetAngle;
 
 // Create a primitive drawer instance to draw the AABB of the Rock
 Primitives P;
@@ -24,7 +24,7 @@ void spriteCallback( Uint32 Event, Sprite * Sprite, void * UserData ) {
 		Sprite->fireEvent( USER_SPRITE_EVENT );
 	} else if ( Event == USER_SPRITE_EVENT ) {
 		// Create an interpolation to change the angle of the sprite
-		Interpolation * RotationInterpolation = reinterpret_cast<Interpolation*>( UserData );
+		Interpolation1d * RotationInterpolation = reinterpret_cast<Interpolation1d*>( UserData );
 		RotationInterpolation->clearWaypoints();
 		RotationInterpolation->addWaypoint( Sprite->getRotation() );
 		RotationInterpolation->addWaypoint( Sprite->getRotation() + 45.f );

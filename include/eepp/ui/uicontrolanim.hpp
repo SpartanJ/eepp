@@ -55,31 +55,31 @@ class EE_API UIControlAnim : public UIDragableControl {
 
 		bool isAnimating();
 
-		Interpolation * startAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& alphaChilds = true, const Ease::Interpolation& getType = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
+		Interpolation1d * startAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& alphaChilds = true, const Ease::Interpolation& getType = Ease::Linear, Interpolation1d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
 
-		Waypoints * startScaleAnim( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& getType = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
+		Interpolation2d * startScaleAnim( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& getType = Ease::Linear, Interpolation1d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
 
-		Waypoints * startScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& getType = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
+		Interpolation2d * startScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& getType = Ease::Linear, Interpolation1d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
 
-		Waypoints * startMovement( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& getType = Ease::Linear, Waypoints::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
+		Interpolation2d * startMovement( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& getType = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
 
-		Interpolation * startRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& getType = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
+		Interpolation1d * startRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& getType = Ease::Linear, Interpolation1d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
 
-		Interpolation * createFadeIn( const Time& Time, const bool& alphaChilds = true, const Ease::Interpolation& getType = Ease::Linear );
+		Interpolation1d * createFadeIn( const Time& Time, const bool& alphaChilds = true, const Ease::Interpolation& getType = Ease::Linear );
 
-		Interpolation * createFadeOut( const Time& Time, const bool& alphaChilds = true, const Ease::Interpolation& getType = Ease::Linear );
+		Interpolation1d * createFadeOut( const Time& Time, const bool& alphaChilds = true, const Ease::Interpolation& getType = Ease::Linear );
 
-		Interpolation * closeFadeOut( const Time& Time, const bool& alphaChilds = true, const Ease::Interpolation& getType = Ease::Linear );
+		Interpolation1d * closeFadeOut( const Time& Time, const bool& alphaChilds = true, const Ease::Interpolation& getType = Ease::Linear );
 
-		Interpolation * disableFadeOut( const Time & Time, const bool& alphaChilds = true, const Ease::Interpolation& getType = Ease::Linear );
+		Interpolation1d * disableFadeOut( const Time & Time, const bool& alphaChilds = true, const Ease::Interpolation& getType = Ease::Linear );
 
-		Interpolation * getRotationInterpolation();
+		Interpolation1d * getRotationInterpolation();
 
-		Waypoints * getScaleInterpolation();
+		Interpolation2d * getScaleInterpolation();
 
-		Interpolation * getAlphaInterpolation();
+		Interpolation1d * getAlphaInterpolation();
 
-		Waypoints * getMovementInterpolation();
+		Interpolation2d * getMovementInterpolation();
 
 		virtual void draw();
 
@@ -94,10 +94,10 @@ class EE_API UIControlAnim : public UIDragableControl {
 		OriginPoint			mScaleOriginPoint;
 		Float				mAlpha;
 
-		Interpolation * 	mAngleAnim;
-		Waypoints *			mScaleAnim;
-		Interpolation * 	mAlphaAnim;
-		Waypoints * 		mMoveAnim;
+		Interpolation1d * 	mAngleAnim;
+		Interpolation2d *	mScaleAnim;
+		Interpolation1d * 	mAlphaAnim;
+		Interpolation2d * 	mMoveAnim;
 
 		virtual void drawBackground();
 
