@@ -513,6 +513,7 @@ Uint32 UIWindow::onMessage( const UIMessage * Msg ) {
 		case UIMessage::MsgDragStart:
 		{
 			UIManager::instance()->setCursor( EE_CURSOR_HAND );
+			toFront();
 			break;
 		}
 		case UIMessage::MsgDragEnd:
