@@ -1,5 +1,7 @@
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/graphics/sprite.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
+#include <eepp/graphics/globaltextureatlas.hpp>
 
 namespace EE { namespace UI {
 
@@ -162,6 +164,25 @@ bool UISprite::getDeallocSprite() {
 
 void UISprite::onSizeChange() {
 	autoAlign();
+	notifyLayoutAttrChange();
+}
+
+void UISprite::loadFromXmlNode(const pugi::xml_node & node) {
+	UIWidget::loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "src" == name || "sprite" == name ) {
+			std::string val = ait->as_string();
+
+			if ( val.size() ) {
+				setDeallocSprite( true );
+				setSprite( eeNew( Sprite, ( val ) ) );
+			}
+		}
+	}
 }
 
 }}

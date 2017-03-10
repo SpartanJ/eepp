@@ -44,6 +44,8 @@ class EE_API UISprite : public UIWidget {
 		void setDeallocSprite( const bool& dealloc );
 
 		bool getDeallocSprite();
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		Graphics::Sprite * 	mSprite;
 		EE_RENDER_MODE 		mRender;

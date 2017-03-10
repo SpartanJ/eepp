@@ -37,6 +37,8 @@ class EE_API UIDropDownList : public UITextInput {
 		DropDownListStyleConfig getStyleConfig() const;
 
 		void setStyleConfig(const DropDownListStyleConfig & styleConfig);
+
+		void loadFromXmlNode(const pugi::xml_node & node);
 	protected:
 		friend class UIComboBox;
 

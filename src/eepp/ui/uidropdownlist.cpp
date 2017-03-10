@@ -1,5 +1,6 @@
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -101,7 +102,7 @@ Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 void UIDropDownList::showList() {
 	if ( !mListBox->isVisible() ) {
 		if ( !mStyleConfig.PopUpToMainControl )
-			mListBox->setParent( NULL != mFriendCtrl ? mFriendCtrl->getParent() : getParent() );
+			mListBox->setParent( NULL != mFriendCtrl ? mFriendCtrl->getParent() : getWindowContainer() );
 		else
 			mListBox->setParent( UIManager::instance()->getMainControl() );
 
@@ -114,6 +115,13 @@ void UIDropDownList::showList() {
 			Pos = PixelDensity::pxToDpI( Pos );
 		} else if ( NULL != mFriendCtrl ) {
 			Pos = Vector2i( mFriendCtrl->getPosition().x, mFriendCtrl->getPosition().y + mFriendCtrl->getSize().getHeight() );
+		} else {
+			UIControl * ParentLoop = getParent();
+			UIControl * rp = getWindowContainer();
+			while ( rp != ParentLoop ) {
+				Pos += ParentLoop->getPosition();
+				ParentLoop = ParentLoop->getParent();
+			}
 		}
 
 		mListBox->setPosition( Pos );
@@ -267,6 +275,12 @@ void UIDropDownList::destroyListBox() {
 	if ( !UIManager::instance()->isShootingDown() ) {
 		mListBox->close();
 	}
+}
+
+void UIDropDownList::loadFromXmlNode(const pugi::xml_node & node) {
+	UITextInput::loadFromXmlNode( node );
+
+	mListBox->loadFromXmlNode( node );
 }
 
 }}

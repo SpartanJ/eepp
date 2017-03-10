@@ -34,6 +34,8 @@ class EE_API UIImage : public UIWidget {
 		void setRenderMode( const EE_RENDER_MODE& render );
 
 		const Vector2i& getAlignOffset() const;
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		Graphics::SubTexture * 	mSubTexture;
 		ColorA					mColor;

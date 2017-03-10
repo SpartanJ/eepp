@@ -122,7 +122,8 @@ void UILinearLayout::packVertical() {
 			Vector2i pos( 0, curY );
 
 			if ( widget->getLayoutWeight() != 0 ) {
-				Float size = (Float)( mSize.getHeight() - freeSize.getHeight() ) * widget->getLayoutWeight();
+				Int32 totSize = ( getLayoutHeightRules() == MATCH_PARENT ) ? mSize.getHeight() : getParent()->getSize().getHeight() - mLayoutMargin.Bottom - mLayoutMargin.Top;
+				Float size = (Float)( totSize - freeSize.getHeight() ) * widget->getLayoutWeight();
 
 				widget->setSize( widget->getSize().getWidth(), (Int32)size );
 			}
@@ -220,7 +221,8 @@ void UILinearLayout::packHorizontal() {
 			Vector2i pos( curX, 0 );
 
 			if ( widget->getLayoutWeight() != 0 ) {
-				Float size = (Float)( mSize.getWidth() - freeSize.getWidth() ) * widget->getLayoutWeight();
+				Int32 totSize = ( getLayoutWidthRules() == MATCH_PARENT ) ? mSize.getWidth() : getParent()->getSize().getWidth() - mLayoutMargin.Right - mLayoutMargin.Left;
+				Float size = (Float)( totSize - freeSize.getWidth() ) * widget->getLayoutWeight();
 
 				widget->setSize( (Int32)size, widget->getSize().getHeight() );
 			}

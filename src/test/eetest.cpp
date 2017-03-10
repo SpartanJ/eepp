@@ -503,22 +503,9 @@ void EETest::createUI() {
 }
 
 void EETest::createNewUI() {
-	UIManager::instance()->loadLayoutFromString( "<widget x='50' y='50' width='50' height='50' background-color='00FF00FF'>"
-												 "	<widget width='25' height='25' background-color='FF00FFFF'>"
-												 "		<widget width='10' height='10' background-color='0000FFFF' />"
-												 "	</widget>"
-												 "</widget>" );
-
-	UIManager::instance()->loadLayoutFromString(
-		"<LinearLayout id='testlayout' orientation='vertical' layout_width='fixed' width='200' layout_height='wrap_content'>"
-		"	<TextView text='Hello World!' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' background-color='000000FF' />"
-		"	<PushButton text='Hello World' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' />"
-		"</LinearLayout>"
-	);
-
 	std::vector<String> str = getTestStringArr();
 
-	/**/
+	/*
 	UIRadioButton * ctrl = UIRadioButton::New();
 	ctrl->setPosition( 50, 100 )->setSize( 200, 32 );
 	ctrl->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
@@ -652,14 +639,14 @@ void EETest::createNewUI() {
 	TabWidget->add( "Tab 3", UIWidget::New()->setThemeControl( "winback" ), mTheme->getIconByName( "add" ) );
 
 	/**/
-	/**/
+	/*
 	UIWindow * win = UIWindow::New();
 	win->setSize( 500, 500 );
 	win->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
 
 	UILinearLayout * layWin = UILinearLayout::NewVertical();
 	layWin->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
-	layWin->setParent( win->getContainer() );
+	layWin->setParent( win );
 
 	UILinearLayout * layPar = UILinearLayout::NewHorizontal();
 	layPar->setParent( layWin );
@@ -701,13 +688,13 @@ void EETest::createNewUI() {
 	win->show();
 	/**/
 
-	/**/
+	/*
 	UIWindow * win2 = UIWindow::New();
 	win2->setSize( 500, 500 );
 	win2->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
 
 	UIRelativeLayout * rlay = UIRelativeLayout::New();
-	rlay->setParent( win2->getContainer() );
+	rlay->setParent( win2 );
 	rlay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
 	rlay->setLayoutMargin( Recti( 16, 16, 16, 16 ) );
 	rlay->setBackgroundFillEnabled( true )->setColor( 0x333333CC );
@@ -720,6 +707,26 @@ void EETest::createNewUI() {
 
 	win2->show();
 	/**/
+
+	UIManager::instance()->loadLayoutFromString(
+		"<window width='300' height='300' winflags='default|maximize'>"
+		"	<LinearLayout id='testlayout' orientation='vertical' layout_width='match_parent' layout_height='match_parent' layout_margin='8'>"
+		"		<TextView text='Hello World!' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' background-color='000000FF' />"
+		"		<PushButton text='OK!' icon='ok' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' />"
+		"		<Image src='thecircle' layout_width='match_parent' layout_height='fixed' height='32' flags='clip' />"
+		"		<Sprite src='gn' />"
+		"		<TextInput text='test' layout_width='match_parent' layout_height='wrap_content' />"
+		"		<DropDownList layout_width='match_parent' layout_height='wrap_content' selected-index='0'>"
+		"			<item>Test Item</item>"
+		"			<item>Test Item 2</item>"
+		"		</DropDownList>"
+		"		<ListBox layout_width='match_parent' layout_height='match_parent' layout_weight='1'>"
+		"			<item>Hello!</item>"
+		"			<item>World!</item>"
+		"		</ListBox>"
+		"	</LinearLayout>"
+		"</window>"
+	);
 }
 
 void EETest::createMapEditor() {

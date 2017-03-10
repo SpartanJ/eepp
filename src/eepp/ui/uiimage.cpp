@@ -1,5 +1,7 @@
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/graphics/subtexture.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
+#include <eepp/graphics/globaltextureatlas.hpp>
 
 namespace EE { namespace UI {
 
@@ -40,6 +42,8 @@ void UIImage::setSubTexture( Graphics::SubTexture * subTexture ) {
 	}
 
 	autoAlign();
+
+	notifyLayoutAttrChange();
 }
 
 void UIImage::onAutoSize() {
@@ -175,6 +179,35 @@ void UIImage::onAlignChange() {
 
 const Vector2i& UIImage::getAlignOffset() const {
 	return mAlignOffset;
+}
+
+void UIImage::loadFromXmlNode(const pugi::xml_node & node) {
+	UIWidget::loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "src" == name || "subtexture" == name ) {
+			SubTexture * res = NULL;
+
+			if ( NULL != ( res = GlobalTextureAtlas::instance()->getByName( ait->as_string() ) ) ) {
+				setSubTexture( res );
+			}
+		} else if ( "scaletype" == name ) {
+			std::string val = ait->as_string();
+
+			if ( "expand" == val ) {
+				unsetFlags( UI_AUTO_FIT );
+				setFlags( UI_FIT_TO_CONTROL );
+			} else if ( "fit_inside" == val ) {
+				unsetFlags( UI_FIT_TO_CONTROL );
+				setFlags( UI_AUTO_FIT );
+			} else if ( "keep" == val ) {
+				unsetFlags( UI_AUTO_FIT | UI_FIT_TO_CONTROL );
+			}
+		}
+	}
 }
 
 }}

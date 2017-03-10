@@ -3,6 +3,8 @@
 #include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
 #include <eepp/graphics/font.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
+#include <eepp/graphics/fontmanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -1033,6 +1035,72 @@ void UIListBox::update() {
 	}
 
 	UIWidget::update();
+}
+
+void UIListBox::loadFromXmlNode(const pugi::xml_node & node) {
+	UIWidget::loadFromXmlNode( node );
+
+	std::vector<String> items;
+	for ( pugi::xml_node item = node.child("item"); item; item = item.next_sibling("item") ) {
+		std::string data = item.text().as_string();
+
+		if ( data.size() ) {
+			items.push_back( String( data ) );
+		}
+	}
+
+	if ( items.size() ) {
+		addListBoxItems( items );
+	}
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "row-height" == name || "rowheight" == name ) {
+			setRowHeight( ait->as_int() );
+		} else if ( "font-color" == name ) {
+			setFontColor( ColorA::fromString( ait->as_string() ) );
+		} else if ( "font-shadow-color" == name ) {
+			mFontStyleConfig.FontShadowColor = ( ColorA::fromString( ait->as_string() ) );
+		} else if ( "font-over-color" == name ) {
+			setFontOverColor( ColorA::fromString( ait->as_string() ) );
+		} else if ( "font-selected-color" == name ) {
+			setFontSelectedColor( ColorA::fromString( ait->as_string() ) );
+		} else if ( "font-selection-back-color" == name ) {
+			mFontStyleConfig.FontSelectionBackColor = ( ColorA::fromString( ait->as_string() ) );
+		} else if ( "font-name" == name ) {
+			Font * font = FontManager::instance()->getByName( ait->as_string() );
+
+			if ( NULL != font )
+				setFont( font );
+		} else if ( "padding" == name ) {
+			int val = ait->as_int();
+			setContainerPadding( Recti( val, val, val, val ) );
+		} else if ( "padding_left" == name ) {
+			setContainerPadding( Recti( ait->as_int(), mContainerPadding.Top, mContainerPadding.Right, mContainerPadding.Bottom ) );
+		} else if ( "padding_right" == name ) {
+			setContainerPadding( Recti( mContainerPadding.Left, mContainerPadding.Top, ait->as_int(), mContainerPadding.Bottom ) );
+		} else if ( "padding_top" == name ) {
+			setContainerPadding( Recti( mContainerPadding.Left, ait->as_int(), mContainerPadding.Right, mContainerPadding.Bottom ) );
+		} else if ( "padding_bottom" == name ) {
+			setContainerPadding( Recti( mContainerPadding.Left, mContainerPadding.Top, mContainerPadding.Right, ait->as_int() ) );
+		} else if ( "vertical-scroll-mode" == name || "vscroll-mode" == name ) {
+			std::string val = ait->as_string();
+			if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
+			else if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+			else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+		} else if ( "horizontal-scroll-mode" == name || "hscroll-mode" == name ) {
+			std::string val = ait->as_string();
+			if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
+			else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+			else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+		} else if ( "selected-index" == name || "selectedindex" == name ) {
+			setSelected( ait->as_uint() );
+		} else if ( "selected-text" == name || "selectedtext" == name ) {
+			setSelected( ait->as_string() );
+		}
+	}
 }
 
 }}

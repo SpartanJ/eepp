@@ -89,6 +89,8 @@ void UITextEdit::onSizeChange() {
 
 	mTextInput->setPosition( PixelDensity::pxToDpI( mContainerPadding.Left ), PixelDensity::pxToDpI( mContainerPadding.Top ) );
 
+	onInputSizeChange( NULL );
+
 	scrollbarsSet();
 
 	fixScroll();

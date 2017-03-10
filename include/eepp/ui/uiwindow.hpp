@@ -94,6 +94,8 @@ class EE_API UIWindow : public UIWidget {
 		UIWindow * setMinWindowSize( const Int32& width, const Int32& height );
 
 		const Sizei& getMinWindowSize();
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		class KeyboardShortcut {
 			public:
@@ -155,6 +157,8 @@ class EE_API UIWindow : public UIWidget {
 		virtual void onSizeChange();
 
 		virtual void onAlphaChange();
+
+		virtual void onChildCountChange();
 
 		virtual Uint32 onKeyDown( const UIEventKey &Event );
 

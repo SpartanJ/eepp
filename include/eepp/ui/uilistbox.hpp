@@ -123,6 +123,8 @@ class EE_API UIListBox : public UIWidget {
 		FontStyleConfig getFontStyleConfig() const;
 
 		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
+
+		void loadFromXmlNode(const pugi::xml_node & node);
 	protected:
 		friend class UIListBoxItem;
 		friend class UIItemContainer<UIListBox>;

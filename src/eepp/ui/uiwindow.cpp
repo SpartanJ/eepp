@@ -3,6 +3,7 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -50,8 +51,9 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) :
 	}
 
 	mContainer->setLayoutSizeRules( FIXED, FIXED );
+	mContainer->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
 	mContainer->setParent( this );
-	mContainer->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
+	mContainer->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS | UI_CLIP_ENABLE );
 	mContainer->setSize( mSize );
 	mContainer->addEventListener( UIEvent::EventOnPosChange, cb::Make1( this, &UIWindow::onContainerPosChange ) );
 
@@ -74,29 +76,37 @@ void UIWindow::updateWinFlags() {
 	bool needsUpdate = false;
 
 	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) ) {
-		if ( NULL == mWindowDecoration )
+		if ( NULL == mWindowDecoration ) {
 			mWindowDecoration = UIControlAnim::New();
+			mWindowDecoration->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
+		}
 
 		mWindowDecoration->setParent( this );
 		mWindowDecoration->setVisible( true );
 		mWindowDecoration->setEnabled( false );
 
-		if ( NULL == mBorderLeft )
+		if ( NULL == mBorderLeft ) {
 			mBorderLeft		= UIControlAnim::New();
+			mBorderLeft->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
+		}
 
 		mBorderLeft->setParent( this );
 		mBorderLeft->setEnabled( true );
 		mBorderLeft->setVisible( true );
 
-		if ( NULL == mBorderRight )
+		if ( NULL == mBorderRight ) {
 			mBorderRight	= UIControlAnim::New();
+			mBorderRight->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
+		}
 
 		mBorderRight->setParent( this );
 		mBorderRight->setEnabled( true );
 		mBorderRight->setVisible( true );
 
-		if ( NULL == mBorderBottom )
+		if ( NULL == mBorderBottom ) {
 			mBorderBottom	= UIControlAnim::New();
+			mBorderBottom->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
+		}
 
 		mBorderBottom->setParent( this );
 		mBorderBottom->setEnabled( true );
@@ -108,6 +118,7 @@ void UIWindow::updateWinFlags() {
 		if ( mStyleConfig.WinFlags & UI_WIN_CLOSE_BUTTON ) {
 			if ( NULL == mButtonClose ) {
 				mButtonClose = UIControlAnim::New();
+				mButtonClose->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
 				needsUpdate = true;
 			}
 
@@ -126,6 +137,7 @@ void UIWindow::updateWinFlags() {
 		if ( ( mStyleConfig.WinFlags & UI_WIN_RESIZEABLE ) && ( mStyleConfig.WinFlags & UI_WIN_MAXIMIZE_BUTTON ) ) {
 			if ( NULL == mButtonMaximize ) {
 				mButtonMaximize = UIControlAnim::New();
+				mButtonMaximize->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
 				needsUpdate = true;
 			}
 
@@ -144,6 +156,7 @@ void UIWindow::updateWinFlags() {
 		if ( mStyleConfig.WinFlags & UI_WIN_MINIMIZE_BUTTON ) {
 			if ( NULL == mButtonMinimize ) {
 				mButtonMinimize = UIControlAnim::New();
+				mButtonMinimize->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
 				needsUpdate = true;
 			}
 
@@ -178,6 +191,7 @@ void UIWindow::createModalControl() {
 
 	if ( NULL == mModalCtrl ) {
 		mModalCtrl = UIWidget::New();
+		mModalCtrl->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
 		mModalCtrl->setParent( Ctrl )->setPosition(0,0)->setSize( Ctrl->getSize() );
 		mModalCtrl->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	} else {
@@ -868,6 +882,27 @@ void UIWindow::onAlphaChange() {
 	UIWidget::onAlphaChange();
 }
 
+void UIWindow::onChildCountChange() {
+	if ( NULL == mContainer || UIManager::instance()->getMainControl() == this )
+		return;
+
+	UIControl * child = mChild;
+	bool found = false;
+
+	while ( NULL != child ) {
+		if ( !( child->getControlFlags() & UI_CTRL_FLAG_OWNED_BY_WINDOW ) ) {
+			found = true;
+			break;
+		}
+
+		child = child->getNextControl();
+	}
+
+	if ( found ) {
+		child->setParent( mContainer );
+	}
+}
+
 void UIWindow::setBaseAlpha( const Uint8& Alpha ) {
 	if ( mAlpha == mStyleConfig.BaseAlpha ) {
 		UIControlAnim::setAlpha( Alpha );
@@ -883,6 +918,7 @@ const Uint8& UIWindow::getBaseAlpha() const {
 void UIWindow::setTitle( const String& Text ) {
 	if ( NULL == mTitle ) {
 		mTitle = UITextView::New();
+		mTitle->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
 		mTitle->setParent( this );
 		mTitle->setHorizontalAlign( getHorizontalAlign() );
 		mTitle->setVerticalAlign( getVerticalAlign() );
@@ -1096,6 +1132,54 @@ void UIWindow::resizeCursor() {
 			Man->setCursor( EE_CURSOR_SIZEWE ); // RESIZE_RIGHT
 		}
 	}
+}
+
+void UIWindow::loadFromXmlNode(const pugi::xml_node & node) {
+	UIWidget::loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "width" == name ) {
+			setSize( ait->as_int(), mSize.getHeight() );
+		} else if ( "height" == name ) {
+			setSize( mSize.getWidth(), ait->as_int() );
+		} else if ( "title" == name ) {
+			setTitle( ait->as_string() );
+		} else if ( "basealpha" == name ) {
+			unsigned int val = ait->as_uint();
+			if ( val >= 0 && val <= 255 )
+				setBaseAlpha( (Uint8)val );
+		} else if ( "winflags" == name ) {
+			std::string flagsStr = ait->as_string();
+			String::toLowerInPlace( flagsStr );
+			std::vector<std::string> strings = String::split( flagsStr, '|' );
+			Uint32 winflags = 0;
+
+			if ( strings.size() ) {
+				for ( std::size_t i = 0; i < strings.size(); i++ ) {
+					std::string cur = strings[i];
+
+					if ( "default" == cur ) winflags |= UI_WIN_DEFAULT_FLAGS;
+					else if ( "close" == cur ) winflags |= UI_WIN_CLOSE_BUTTON;
+					else if ( "maximize" == cur ) winflags |= UI_WIN_MAXIMIZE_BUTTON;
+					else if ( "minimize" == cur ) winflags |= UI_WIN_MINIMIZE_BUTTON;
+					else if ( "dragable" == cur ) winflags |= UI_WIN_DRAGABLE_CONTAINER;
+					else if ( "shadow" == cur ) winflags |= UI_WIN_DRAW_SHADOW;
+					else if ( "modal" == cur ) winflags |= UI_WIN_MODAL;
+					else if ( "noborder" == cur || "borderless" == cur ) winflags |= UI_WIN_NO_BORDER;
+					else if ( "resizeable" == cur ) winflags |= UI_WIN_RESIZEABLE;
+					else if ( "sharealpha" == cur ) winflags |= UI_WIN_SHARE_ALPHA_WITH_CHILDS;
+					else if ( "buttonactions" == cur ) winflags |= UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS;
+				}
+
+				setWinFlags( winflags );
+			}
+		}
+	}
+
+	show();
 }
 
 }}

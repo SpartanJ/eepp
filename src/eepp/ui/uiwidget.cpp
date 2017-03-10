@@ -351,8 +351,10 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			setInternalPosition( Vector2i( mPos.x, ait->as_int() ) );
 		} else if ( "width" == name ) {
 			setInternalWidth( ait->as_int() );
+			notifyLayoutAttrChange();
 		} else if ( "height" == name ) {
 			setInternalHeight( ait->as_int() );
+			notifyLayoutAttrChange();
 		} else if ( "background-color" == name ) {
 			setBackgroundFillEnabled( true )->setColor( ColorA::fromString( ait->as_string() ) );
 		} else if ( "border-color" == name ) {
@@ -375,6 +377,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			if ( strings.size() ) {
 				for ( std::size_t i = 0; i < strings.size(); i++ ) {
 					std::string cur = strings[i];
+					String::toLowerInPlace( cur );
 
 					if ( "left" == cur )
 						setHorizontalAlign( UI_HALIGN_LEFT );
@@ -393,6 +396,8 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 						setVerticalAlign( UI_VALIGN_CENTER );
 					}
 				}
+
+				notifyLayoutAttrChange();
 			}
 		} else if ( "flags" == name ) {
 			std::string flags = ait->as_string();
@@ -402,19 +407,22 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			if ( strings.size() ) {
 				for ( std::size_t i = 0; i < strings.size(); i++ ) {
 					std::string cur = strings[i];
+					String::toLowerInPlace( cur );
 
-					if ( "draw_shadow" == cur ) {
+					if ( "draw_shadow" == cur || "drawshadow" == cur ) {
 						setFlags( UI_DRAW_SHADOW );
-					} else if ( "auto_size" == cur ) {
+					} else if ( "auto_size" == cur || "autosize" == cur ) {
 						setFlags( UI_AUTO_SIZE );
+						notifyLayoutAttrChange();
 					} else if ( "clip" == cur ) {
 						setFlags( UI_CLIP_ENABLE );
-					} else if ( "word_wrap" == cur ) {
+					} else if ( "word_wrap" == cur || "wordwrap" == cur ) {
 						setFlags( UI_WORD_WRAP );
 					} else if ( "multi" == cur ) {
 						setFlags(  UI_MULTI_SELECT );
-					} else if ( "auto_padding" == cur ) {
+					} else if ( "auto_padding" == cur || "autopadding" == cur ) {
 						setFlags( UI_AUTO_PADDING );
+						notifyLayoutAttrChange();
 					} else if ( "report_size_change_to_childs" == cur ) {
 						setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
 					}
@@ -444,6 +452,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			if ( strings.size() ) {
 				for ( std::size_t i = 0; i < strings.size(); i++ ) {
 					std::string cur = strings[i];
+					String::toLowerInPlace( cur );
 
 					if ( "left" == cur )
 						gravity |= UI_HALIGN_LEFT;
