@@ -45,6 +45,8 @@ bool UIScrollBar::isType( const Uint32& type ) const {
 }
 
 void UIScrollBar::setTheme( UITheme * Theme ) {
+	UIWidget::setTheme( Theme );
+
 	if ( !isVertical() ) {
 		UIControl::setThemeControl( Theme, "hscrollbar" );
 		mSlider->setThemeControl( Theme, "hscrollbar_slider" );

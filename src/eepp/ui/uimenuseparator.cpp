@@ -8,7 +8,7 @@ UIMenuSeparator * UIMenuSeparator::New() {
 }
 
 UIMenuSeparator::UIMenuSeparator() :
-	UIControlAnim()
+	UIWidget()
 {
 	applyDefaultTheme();
 }
@@ -25,7 +25,8 @@ bool UIMenuSeparator::isType( const Uint32& type ) const {
 }
 
 void UIMenuSeparator::setTheme( UITheme * Theme ) {
-	UIControl::setThemeControl( Theme, "separator" );
+	UIWidget::setTheme( Theme );
+	setThemeControl( Theme, "separator" );
 	
 	if ( NULL != getSkin() ) {
 		setSize( Sizei( mSize.getWidth(), getSkin()->getSize().getHeight() ) );

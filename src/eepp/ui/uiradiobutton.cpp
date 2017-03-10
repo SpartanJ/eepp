@@ -47,7 +47,8 @@ bool UIRadioButton::isType( const Uint32& type ) const {
 }
 
 void UIRadioButton::setTheme( UITheme * Theme ) {
-	UIControl::setThemeControl( Theme, "radiobutton" );
+	UIWidget::setTheme( Theme );
+	setThemeControl( Theme, "radiobutton" );
 
 	mActiveButton->setThemeControl	( Theme, "radiobutton_active" );
 	mInactiveButton->setThemeControl( Theme, "radiobutton_inactive" );

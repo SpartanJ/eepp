@@ -46,6 +46,8 @@ class EE_API UITextInput : public UITextView {
 		UITextInput * setFreeEditing( bool support );
 
 		bool isFreeEditingEnabled();
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		InputTextBuffer	mTextBuffer;
 		Float			mWaitCursorTime;

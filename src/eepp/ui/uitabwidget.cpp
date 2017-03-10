@@ -48,6 +48,8 @@ bool UITabWidget::isType( const Uint32& type ) const {
 }
 
 void UITabWidget::setTheme( UITheme * Theme ) {
+	UIWidget::setTheme( Theme );
+
 	mTabContainer->setThemeControl( Theme, "tabwidget" );
 
 	mCtrlContainer->setThemeControl( Theme, "tabcontainer" );

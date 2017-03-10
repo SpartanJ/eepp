@@ -19,6 +19,7 @@
 ../../src/eepp/math/interpolation1d.cpp
 ../../src/eepp/math/interpolation2d.cpp
 ../../src/eepp/ui/uidragablecontrol.cpp
+../../src/eepp/ui/uihelper.cpp
 ../../src/eepp/ui/uiimage.cpp
 ../../src/eepp/ui/uilinearlayout.cpp
 ../../src/eepp/ui/uimenuseparator.cpp

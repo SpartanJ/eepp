@@ -28,7 +28,9 @@ bool UIMenuCheckBox::isType( const Uint32& type ) const {
 }
 
 void UIMenuCheckBox::setTheme( UITheme * Theme ) {
-	UIControl::setThemeControl( Theme, "menuitem" );
+	UIWidget::setTheme( Theme );
+
+	setThemeControl( Theme, "menuitem" );
 
 	mSkinActive		= Theme->getByName( Theme->getAbbr() + "_" + "menucheckbox_active" );
 	mSkinInactive	= Theme->getByName( Theme->getAbbr() + "_" + "menucheckbox_inactive" );

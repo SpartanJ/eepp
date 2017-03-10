@@ -31,7 +31,9 @@ bool UIListBoxItem::isType( const Uint32& type ) const {
 }
 
 void UIListBoxItem::setTheme( UITheme * Theme ) {
-	UIControl::setThemeControl( Theme, "listboxitem" );
+	UIWidget::setTheme( Theme );
+
+	setThemeControl( Theme, "listboxitem" );
 }
 
 Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {

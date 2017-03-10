@@ -7,6 +7,10 @@
 #include <eepp/window/window.hpp>
 #include <eepp/window/cursorhelper.hpp>
 
+namespace pugi {
+class xml_node;
+}
+
 namespace EE { namespace UI {
 
 class EE_API UIManager {
@@ -115,6 +119,12 @@ class EE_API UIManager {
 		const bool& getUseGlobalCursors();
 
 		void setCursor( EE_CURSOR_TYPE cursor );
+
+		void loadLayout( const std::string& layoutPath );
+
+		void loadLayoutFromString( const std::string& layoutString );
+
+		void loadLayoutFromMemory( const void * buffer, Int32 bufferSize );
 	protected:
 		friend class UIControl;
 		friend class UIWindow;
@@ -163,6 +173,8 @@ class EE_API UIManager {
 		void				addToCloseQueue( UIControl * Ctrl );
 
 		void				checkClose();
+
+		void				loadLayoutNodes( pugi::xml_node node, UIControl * parent );
 };
 
 }}

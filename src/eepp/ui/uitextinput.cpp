@@ -5,6 +5,7 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/textcache.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -176,7 +177,9 @@ void UITextInput::alignFix() {
 }
 
 void UITextInput::setTheme( UITheme * Theme ) {
-	UIControl::setThemeControl( Theme, "textinput" );
+	UIWidget::setTheme( Theme );
+
+	setThemeControl( Theme, "textinput" );
 
 	onThemeLoaded();
 }
@@ -318,6 +321,25 @@ UITextInput * UITextInput::setFreeEditing( bool support ) {
 
 bool UITextInput::isFreeEditingEnabled() {
 	return mTextBuffer.isFreeEditingEnabled();
+}
+
+void UITextInput::loadFromXmlNode(const pugi::xml_node & node) {
+	UITextView::loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "text" == name ) {
+			setText( ait->as_string() );
+		} else if ( "allow-editing" == name ) {
+			setAllowEditing( ait->as_bool() );
+		} else if ( "max-length" == name ) {
+			setMaxLength( ait->as_uint() );
+		} else if ( "free-editing" == name ) {
+			setFreeEditing( ait->as_bool() );
+		}
+	}
 }
 
 }}

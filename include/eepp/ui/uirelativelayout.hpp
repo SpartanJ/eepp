@@ -13,6 +13,8 @@ class UIRelativeLayout : public UIWidget {
 
 		UIRelativeLayout * add( UIWidget * widget );
 	protected:
+		virtual Uint32 onMessage(const UIMessage * Msg);
+
 		virtual void onSizeChange();
 
 		virtual void onChildCountChange();

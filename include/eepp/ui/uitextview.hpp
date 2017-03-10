@@ -64,6 +64,8 @@ class EE_API UITextView : public UIWidget {
 		const Recti& getPadding() const;
 
 		void setPadding(const Recti & padding);
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		TextCache *		mTextCache;
 		String			mString;

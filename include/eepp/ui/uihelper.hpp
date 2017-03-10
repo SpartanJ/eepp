@@ -47,7 +47,6 @@ enum UI_FLAGS {
 	UI_DRAW_SHADOW					= FONT_DRAW_SHADOW,
 	UI_TEXT_DRAW_VERTICAL			= FONT_DRAW_VERTICAL,
 	UI_AUTO_SIZE					= (1 << 7),
-	UI_INGORE_FOCUS					= (1 << 8),
 	UI_FILL_BACKGROUND				= (1 << 9),
 	UI_BORDER						= (1 << 10),
 	UI_TAB_STOP						= (1 << 11),
@@ -178,6 +177,12 @@ static const Uint32 UI_CONTROL_DEFAULT_FLAGS_CENTERED = UI_ANCHOR_LEFT | UI_ANCH
 static const Uint32 UI_WIN_DEFAULT_FLAGS = UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_RESIZEABLE | UI_WIN_SHARE_ALPHA_WITH_CHILDS;
 
 static const Uint32 UI_CDL_DEFAULT_FLAGS = CDL_FLAG_FOLDERS_FISRT | CDL_FLAG_SORT_ALPHABETICALLY;
+
+class UIWidget;
+class UIHelper {
+	public:
+		static UIWidget * createUIWidgetFromName( std::string name );
+};
 
 }}
 

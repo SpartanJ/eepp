@@ -2,6 +2,7 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
 #include <algorithm>
 
 namespace EE { namespace UI {
@@ -500,6 +501,59 @@ const bool& UIManager::getUseGlobalCursors() {
 void UIManager::setCursor( EE_CURSOR_TYPE cursor ) {
 	if ( mUseGlobalCursors ) {
 		mWindow->getCursorManager()->set( cursor );
+	}
+}
+
+void UIManager::loadLayoutNodes( pugi::xml_node node, UIControl * parent ) {
+	for ( pugi::xml_node widget = node; widget; widget = widget.next_sibling() ) {
+		UIWidget * uiwidget = UIHelper::createUIWidgetFromName( widget.name() );
+
+		if ( NULL != uiwidget ) {
+			uiwidget->setParent( parent );
+			uiwidget->loadFromXmlNode( widget );
+
+			if ( widget.first_child() ) {
+				loadLayoutNodes( widget.first_child(), uiwidget );
+			}
+		}
+	}
+}
+
+void UIManager::loadLayout( const std::string& layoutPath ) {
+	pugi::xml_document doc;
+	pugi::xml_parse_result result = doc.load_file( layoutPath.c_str() );
+
+	if ( result ) {
+		loadLayoutNodes( doc.first_child(), getMainControl() );
+	} else {
+		eePRINTL( "Error: Couldn't load UI Layout: %s", layoutPath.c_str() );
+		eePRINTL( "Error description: %s", result.description() );
+		eePRINTL( "Error offset: %d", result.offset );
+	}
+}
+void UIManager::loadLayoutFromString( const std::string& layoutString ) {
+	pugi::xml_document doc;
+	pugi::xml_parse_result result = doc.load_string( layoutString.c_str() );
+
+	if ( result ) {
+		loadLayoutNodes( doc.first_child(), getMainControl() );
+	} else {
+		eePRINTL( "Error: Couldn't load UI Layout from string: %s", layoutString.c_str() );
+		eePRINTL( "Error description: %s", result.description() );
+		eePRINTL( "Error offset: %d", result.offset );
+	}
+}
+
+void UIManager::loadLayoutFromMemory( const void * buffer, Int32 bufferSize ) {
+	pugi::xml_document doc;
+	pugi::xml_parse_result result = doc.load_buffer( buffer, bufferSize);
+
+	if ( result ) {
+		loadLayoutNodes( doc.first_child(), getMainControl() );
+	} else {
+		eePRINTL( "Error: Couldn't load UI Layout from buffer" );
+		eePRINTL( "Error description: %s", result.description() );
+		eePRINTL( "Error offset: %d", result.offset );
 	}
 }
 

@@ -1,4 +1,5 @@
 #include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace  EE { namespace UI {
 
@@ -155,7 +156,7 @@ void UILinearLayout::packVertical() {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
 	}
 
-	if ( getLayoutHeightRules() == WRAP_CONTENT && mSize.getWidth() != maxX ) {
+	if ( getLayoutWidthRules() == WRAP_CONTENT && mSize.getWidth() != maxX ) {
 		setInternalWidth( maxX );
 		packVertical();
 	}
@@ -291,6 +292,37 @@ Sizei UILinearLayout::getTotalUsedSize() {
 	}
 
 	return size;
+}
+
+void UILinearLayout::loadFromXmlNode(const pugi::xml_node & node) {
+	UIWidget::loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "orientation" == name ) {
+			std::string val = ait->as_string();
+			String::toLowerInPlace( val );
+
+			if ( "horizontal" == val )
+				setOrientation( UI_HORIZONTAL );
+			else if ( "vertical" == val )
+				setOrientation( UI_VERTICAL );
+		}
+	}
+}
+
+Uint32 UILinearLayout::onMessage(const UIMessage * Msg) {
+	switch( Msg->getMsg() ) {
+		case UIMessage::MsgLayoutAttributeChange:
+		{
+			pack();
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
 }}

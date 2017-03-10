@@ -3,6 +3,8 @@
 
 #include <eepp/config.hpp>
 #include <eepp/system/bitop.hpp>
+#include <cstdlib>
+#include <string>
 
 namespace EE { namespace System {
 
@@ -242,6 +244,14 @@ class tColorAI : public tColorA<Uint8>
 			b = (b*mult)/max + add;
 
 			return tColorAI(r, g, b, 255);
+		}
+
+		static inline tColorAI fromString( const char * str ) {
+			return tColorAI( std::strtoul( str, NULL, 16 ) );
+		}
+
+		static inline tColorAI fromString( const std::string& str ) {
+			return tColorAI( std::strtoul( str.c_str(), NULL, 16 ) );
 		}
 };
 

@@ -54,7 +54,7 @@ bool UITooltip::isType( const Uint32& type ) const {
 }
 
 void UITooltip::setTheme( UITheme * Theme ) {
-	UIControl::setThemeControl( Theme, "tooltip" );
+	setThemeControl( Theme, "tooltip" );
 
 	autoPadding();
 }

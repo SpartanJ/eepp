@@ -1,5 +1,7 @@
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/graphics/textcache.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
+#include <eepp/graphics/globaltextureatlas.hpp>
 
 namespace EE { namespace UI {
 
@@ -119,7 +121,8 @@ void UIPushButton::onSizeChange() {
 }
 
 void UIPushButton::setTheme( UITheme * Theme ) {
-	UIControl::setThemeControl( Theme, "button" );
+	UIWidget::setTheme( Theme );
+	setThemeControl( Theme, "button" );
 
 	onThemeLoaded();
 }
@@ -282,6 +285,32 @@ void UIPushButton::setStyleConfig(const PushButtonStyleConfig & styleConfig) {
 	}
 
 	onStateChange();
+}
+
+void UIPushButton::loadFromXmlNode(const pugi::xml_node & node) {
+	UIWidget::loadFromXmlNode( node );
+
+	mTextBox->loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "text" == name ) {
+			setText( ait->as_string() );
+		} else if ( "font-over-color" == name ) {
+			setFontOverColor( ColorA::fromString( ait->as_string() ) );
+		} else if ( "icon" == name ) {
+			std::string val = ait->as_string();
+			SubTexture * icon = NULL;
+
+			if ( NULL != mTheme && NULL != ( icon = mTheme->getIconByName( val ) ) ) {
+				setIcon( icon );
+			} else if ( NULL != ( icon = GlobalTextureAtlas::instance()->getByName( val ) ) ) {
+				setIcon( icon );
+			}
+		}
+	}
 }
 
 }}

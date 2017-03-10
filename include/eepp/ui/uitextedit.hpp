@@ -48,6 +48,8 @@ class EE_API UITextEdit : public UIWidget {
 		FontStyleConfig getFontStyleConfig() const;
 
 		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		UITextInput *		mTextInput;
 		UIScrollBar *		mHScrollBar;

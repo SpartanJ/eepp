@@ -293,7 +293,7 @@ void UIWindow::onButtonMinimizeClick( const UIEvent * Event ) {
 	sendCommonEvent( UIEvent::EventOnWindowMinimizeClick );
 }
 
-void UIWindow::setTheme( UITheme *Theme ) {
+void UIWindow::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
 	mContainer->setThemeControl			( Theme, "winback"			);

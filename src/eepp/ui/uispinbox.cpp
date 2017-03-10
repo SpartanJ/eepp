@@ -52,7 +52,9 @@ bool UISpinBox::isType( const Uint32& type ) const {
 }
 
 void UISpinBox::setTheme( UITheme * Theme ) {
-	UIControl::setThemeControl( Theme, "spinbox" );
+	UIWidget::setTheme( Theme );
+
+	setThemeControl( Theme, "spinbox" );
 
 	mInput->setThemeControl( Theme, "spinbox_input" );
 	mPushUp->setThemeControl( Theme, "spinbox_btnup" );

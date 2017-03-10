@@ -24,8 +24,12 @@ class UILinearLayout : public UIWidget {
 		UILinearLayout * setOrientation(const UI_ORIENTATION & getOrientation);
 
 		UILinearLayout * add( UIWidget * widget );
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		UI_ORIENTATION mOrientation;
+
+		virtual Uint32 onMessage( const UIMessage * Msg );
 
 		virtual void onSizeChange();
 

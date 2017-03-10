@@ -58,6 +58,8 @@ class EE_API UIPushButton : public UIWidget {
 		TooltipStyleConfig getStyleConfig() const;
 
 		void setStyleConfig(const PushButtonStyleConfig & styleConfig);
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		PushButtonStyleConfig mStyleConfig;
 		UIImage * 		mIcon;

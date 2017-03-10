@@ -65,7 +65,9 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 }
 
 void UIWinMenu::setTheme( UITheme * Theme ) {
-	UIWidget::setThemeControl( Theme, "winmenu" );
+	UIWidget::setTheme( Theme );
+
+	setThemeControl( Theme, "winmenu" );
 
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
 		it->first->setThemeControl( Theme, "winmenubutton" );

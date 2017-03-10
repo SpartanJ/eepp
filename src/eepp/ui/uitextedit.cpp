@@ -2,6 +2,7 @@
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/textcache.hpp>
 #include <eepp/graphics/font.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -68,7 +69,9 @@ bool UITextEdit::isType( const Uint32& type ) const {
 }
 
 void UITextEdit::setTheme( UITheme * Theme ) {
-	UIControl::setThemeControl( Theme, "textedit" );
+	UIWidget::setTheme( Theme );
+
+	setThemeControl( Theme, "textedit" );
 
 	mTextInput->setThemeControl( Theme, "textedit_box" );
 
@@ -426,6 +429,33 @@ FontStyleConfig UITextEdit::getFontStyleConfig() const {
 void UITextEdit::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
 	if ( NULL != mTextInput ) {
 		mTextInput->setFontStyleConfig( fontStyleConfig );
+	}
+}
+
+void UITextEdit::loadFromXmlNode(const pugi::xml_node & node) {
+	UIWidget::loadFromXmlNode( node );
+
+	mTextInput->loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "text" == name ) {
+			setText( ait->as_string() );
+		} else if ( "allow-editing" == name ) {
+			setAllowEditing( ait->as_bool() );
+		} else if ( "vertical-scroll-mode" == name || "vscroll-mode" == name ) {
+			std::string val = ait->as_string();
+			if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
+			else if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+			else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+		} else if ( "horizontal-scroll-mode" == name || "hscroll-mode" == name ) {
+			std::string val = ait->as_string();
+			if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
+			else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+			else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+		}
 	}
 }
 

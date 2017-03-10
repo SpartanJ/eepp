@@ -5,6 +5,8 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/window/clipboard.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
+#include <eepp/graphics/fontmanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -217,7 +219,7 @@ void UITextView::onFontChanged() {
 }
 
 void UITextView::setTheme( UITheme * Theme ) {
-	UIControlAnim::setTheme( Theme );
+	UIWidget::setTheme( Theme );
 
 	if ( NULL == mTextCache->getFont() && NULL != Theme->getFontStyleConfig().getFont() ) {
 		mTextCache->setFont( Theme->getFontStyleConfig().getFont() );
@@ -389,6 +391,45 @@ void UITextView::setPadding(const Recti & padding) {
 }
 
 void UITextView::onPaddingChange() {
+}
+
+void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
+	UIWidget::loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "text" == name ) {
+			setText( ait->as_string() );
+		} else if ( "font-color" == name ) {
+			setFontColor( ColorA::fromString( ait->as_string() ) );
+		} else if ( "font-shadow-color" == name ) {
+			setFontShadowColor( ColorA::fromString( ait->as_string() ) );
+		} else if ( "font-over-color" == name ) {
+			mFontStyleConfig.FontOverColor = ColorA::fromString( ait->as_string() );
+		} else if ( "font-selected-color" == name ) {
+			mFontStyleConfig.FontSelectedColor = ColorA::fromString( ait->as_string() );
+		} else if ( "font-selection-back-color" == name ) {
+			setSelectionBackColor( ColorA::fromString( ait->as_string() ) );
+		} else if ( "font-name" == name ) {
+			Font * font = FontManager::instance()->getByName( ait->as_string() );
+
+			if ( NULL != font )
+				setFont( font );
+		} else if ( "padding" == name ) {
+			int val = ait->as_int();
+			setPadding( Recti( val, val, val, val ) );
+		} else if ( "padding_left" == name ) {
+			setPadding( Recti( ait->as_int(), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
+		} else if ( "padding_right" == name ) {
+			setPadding( Recti( mPadding.Left, mPadding.Top, ait->as_int(), mPadding.Bottom ) );
+		} else if ( "padding_top" == name ) {
+			setPadding( Recti( mPadding.Left, ait->as_int(), mPadding.Right, mPadding.Bottom ) );
+		} else if ( "padding_bottom" == name ) {
+			setPadding( Recti( mPadding.Left, mPadding.Top, mPadding.Right, ait->as_int() ) );
+		}
+	}
 }
 
 }}

@@ -24,6 +24,7 @@ class EE_API UIMessage {
 			MsgSelected,
 			MsgDragStart,
 			MsgDragEnd,
+			MsgLayoutAttributeChange,
 			MsgUser,
 			MsgForceDWord = eeINDEX_NOT_FOUND
 		};

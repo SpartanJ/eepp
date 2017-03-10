@@ -502,7 +502,8 @@ function add_static_links()
 			"stb_vorbis-static",
 			"jpeg-compressor-static",
 			"zlib-static",
-			"imageresampler-static"
+			"imageresampler-static",
+			"pugixml-static"
 	}
 	
 	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
@@ -792,6 +793,13 @@ solution "eepp"
 			build_base_configuration( "glew" )
 	end
 	
+	project "pugixml-static"
+		kind "StaticLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
+		files { "src/eepp/helper/pugixml/*.cpp" }
+		build_base_cpp_configuration( "pugixml" )
+
 	project "zlib-static"
 		kind "StaticLib"
 		language "C"

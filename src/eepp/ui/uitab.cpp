@@ -39,6 +39,8 @@ void UITab::onParentChange() {
 }
 
 void UITab::setTheme( UITheme * Theme ) {
+	UIWidget::setTheme( Theme );
+
 	std::string tabPos = "tab";
 
 	UITabWidget * tTabW = getTabWidget();

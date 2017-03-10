@@ -4,6 +4,10 @@
 #include <eepp/ui/uicontrolanim.hpp>
 #include <eepp/ui/uitooltip.hpp>
 
+namespace pugi {
+class xml_node;
+}
+
 namespace EE { namespace UI {
 
 class EE_API UIWidget : public UIControlAnim {
@@ -27,6 +31,8 @@ class EE_API UIWidget : public UIControlAnim {
 		virtual UIControl * unsetFlags( const Uint32& flags );
 
 		virtual UIWidget * setAnchors( const Uint32& flags );
+
+		virtual void setTheme( UITheme * Theme );
 
 		UIControl * setSize( const Int32& Width, const Int32& Height );
 
@@ -69,9 +75,13 @@ class EE_API UIWidget : public UIControlAnim {
 		UIWidget * getLayoutPositionRuleWidget() const;
 
 		LayoutPositionRules getLayoutPositionRule() const;
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
+		friend class UIManager;
 		friend class UILinearLayout;
 
+		UITheme *	mTheme;
 		UITooltip *	mTooltip;
 		Sizei		mMinControlSize;
 		Recti		mDistToBorder;
@@ -91,6 +101,8 @@ class EE_API UIWidget : public UIControlAnim {
 		virtual void onPositionChange();
 
 		virtual void onAutoSize();
+
+		void notifyLayoutAttrChange();
 
 		void updateAnchors( const Vector2i & SizeChange );
 

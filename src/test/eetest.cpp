@@ -503,6 +503,19 @@ void EETest::createUI() {
 }
 
 void EETest::createNewUI() {
+	UIManager::instance()->loadLayoutFromString( "<widget x='50' y='50' width='50' height='50' background-color='00FF00FF'>"
+												 "	<widget width='25' height='25' background-color='FF00FFFF'>"
+												 "		<widget width='10' height='10' background-color='0000FFFF' />"
+												 "	</widget>"
+												 "</widget>" );
+
+	UIManager::instance()->loadLayoutFromString(
+		"<LinearLayout id='testlayout' orientation='vertical' layout_width='fixed' width='200' layout_height='wrap_content'>"
+		"	<TextView text='Hello World!' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' background-color='000000FF' />"
+		"	<PushButton text='Hello World' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' />"
+		"</LinearLayout>"
+	);
+
 	std::vector<String> str = getTestStringArr();
 
 	/**/

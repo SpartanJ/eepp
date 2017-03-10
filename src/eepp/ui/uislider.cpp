@@ -68,13 +68,15 @@ bool UISlider::isType( const Uint32& type ) const {
 }
 
 void UISlider::setTheme( UITheme * Theme ) {
+	UIWidget::setTheme( Theme );
+
 	if ( UI_HORIZONTAL == mOrientation ) {
-		UIControl::setThemeControl( Theme, "hslider" );
+		setThemeControl( Theme, "hslider" );
 
 		mBackSlider->setThemeControl( Theme, "hslider_bg" );
 		mSlider->setThemeControl( Theme, "hslider_button" );
 	} else {
-		UIControl::setThemeControl( Theme, "vslider" );
+		setThemeControl( Theme, "vslider" );
 
 		mBackSlider->setThemeControl( Theme, "vslider_bg" );
 		mSlider->setThemeControl( Theme, "vslider_button" );
