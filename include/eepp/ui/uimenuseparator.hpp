@@ -1,11 +1,11 @@
 #ifndef EE_UICUISEPARATOR
 #define EE_UICUISEPARATOR
 
-#include <eepp/ui/uicontrolanim.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIMenuSeparator : public UIControlAnim {
+class EE_API UIMenuSeparator : public UIWidget {
 	public:
 		static UIMenuSeparator * New();
 
