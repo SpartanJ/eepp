@@ -296,7 +296,7 @@ MD5::Result MD5::fromStream( IOStream & stream ) {
 	Context ctx;
 	Int64 buff_size = 512;
 	Int64 size = (Int64)stream.getSize();
-	char data[buff_size];
+	char data[512];
 
 	init( &ctx );
 

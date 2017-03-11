@@ -276,7 +276,7 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 		}
 
 		WIN32_FIND_DATA findFileData;
-		HANDLE hFind = FindFirstFile( (LPCTSTR) mPath.ToAnsiString().c_str(), &findFileData );
+		HANDLE hFind = FindFirstFile( (LPCTSTR) mPath.toAnsiString().c_str(), &findFileData );
 
 		if( hFind != INVALID_HANDLE_VALUE ) {
 			String tmpstr( String::fromUtf8( findFileData.cFileName ) );

@@ -8,6 +8,7 @@
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 #include <eepp/helper/jpeg-compressor/jpge.h>
 #include <eepp/helper/imageresampler/resampler.h>
+#include <algorithm>
 
 namespace EE { namespace Graphics {
 

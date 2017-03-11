@@ -14,7 +14,7 @@ UICommonDialog * UICommonDialog::New(Uint32 CDLFlags, std::string DefaultFilePat
 	return eeNew( UICommonDialog, ( CDLFlags, DefaultFilePattern, DefaultDirectory ) );
 }
 
-UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern, std::__cxx11::string DefaultDirectory ) :
+UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern, std::string DefaultDirectory ) :
 	UIWindow(),
 	mCurPath( DefaultDirectory ),
 	mCDLFlags( CDLFlags )

@@ -116,7 +116,7 @@ static std::string GetWindowsArch() {
 	OSVERSIONINFOEX osvi;
 	SYSTEM_INFO si;
 	PGNSI pGNSI;
-	BOOL bOsVersionInfoEx;
+	BOOL bOsVersionInfoEx = TRUE;
 
 	ZeroMemory(&si, sizeof(SYSTEM_INFO));
 	ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
@@ -577,7 +577,7 @@ std::string Sys::getConfigPath( std::string appname ) {
 
 		_dupenv_s( &ppath, &ssize, "APPDATA" );
 
-		String::StrCopy( path, ppath, EE_MAX_CFG_PATH_LEN );
+		String::strCopy( path, ppath, EE_MAX_CFG_PATH_LEN );
 
 		free( ppath );
 

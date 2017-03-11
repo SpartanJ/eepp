@@ -1,6 +1,7 @@
 #include <eepp/system/platform/win/clockimpl.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
+#include <algorithm>
 
 namespace EE { namespace System { namespace Platform { 
 
@@ -76,7 +77,7 @@ unsigned long ClockImpl::getElapsedTime() {
 	signed long msecOff = (signed long)(newTicks - check);
 	if (msecOff < -100 || msecOff > 100) {
 		// We must keep the timer running forward :)
-		LONGLONG adjust = (std::min)(msecOff * mFrequency.QuadPart / 1000, newTime - mLastTime);
+		LONGLONG adjust = std::min(msecOff * mFrequency.QuadPart / 1000, newTime - mLastTime);
 		mStartTime.QuadPart += adjust;
 		newTime -= adjust;
 	}
