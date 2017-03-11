@@ -3,6 +3,13 @@
 
 #include "hkbase.hpp"
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_OUTLINE_H
+#include FT_STROKER_H
+#include FT_GLYPH_H
+#include FT_TRUETYPE_IDS_H
+
 namespace HaikuTTF {
 
 class hkGlyph {
@@ -11,37 +18,37 @@ class hkGlyph {
 
 		~hkGlyph();
 
-		int			Stored() const;
-		void		Stored( int stored );
+		int			stored() const;
+		void		stored( int stored );
 
-		FT_UInt		Index() const;
-		void		Index( FT_UInt index );
+		FT_UInt		index() const;
+		void		index( FT_UInt index );
 
-		FT_Bitmap *	Pixmap();
-		void		Pixmap( const FT_Bitmap& pixmap );
+		FT_Bitmap *	pixmap();
+		void		pixmap( const FT_Bitmap& pixmap );
 
-		int			MinX() const;
-		void		MinX( int minx );
+		int			minX() const;
+		void		minX( int minx );
 
-		int			MinY() const;
-		void		MinY( int miny );
+		int			minY() const;
+		void		minY( int miny );
 
-		int			MaxX() const;
-		void		MaxX( int maxx );
+		int			maxX() const;
+		void		maxX( int maxx );
 
-		int			MaxY() const;
-		void		MaxY( int maxy );
+		int			maxY() const;
+		void		maxY( int maxy );
 
-		int			OffsetY() const;
-		void		OffsetY( int offsety );
+		int			offsetY() const;
+		void		offsetY( int offsety );
 
-		int			Advance() const;
-		void		Advance( int advance );
+		int			advance() const;
+		void		advance( int advance );
 
-		u16			Cached() const;
-		void		Cached( u16 cached );
+		u16			cached() const;
+		void		cached( u16 cached );
 
-		void 		Flush();
+		void 		flush();
 	protected:
 		int			mStored;
 		FT_UInt		mIndex;

@@ -35,13 +35,6 @@ typedef unsigned int		u32;
 	#define HK_PLATFORM_POSIX
 #endif
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include FT_OUTLINE_H
-#include FT_STROKER_H
-#include FT_GLYPH_H
-#include FT_TRUETYPE_IDS_H
-
 #define NUM_GRAYS       256
 
 #define FT_FLOOR(X)		( ( X & -64 ) / 64 )
@@ -62,10 +55,10 @@ typedef unsigned int		u32;
 #define HK_TTF_HINTING_MONO      	(2)
 #define HK_TTF_HINTING_NONE      	(3)
 
-#define HK_TTF_HANDLE_STYLE_BOLD(font) 				( ( (font)->Style() & HK_TTF_STYLE_BOLD ) && !( (font)->FaceStyle() & HK_TTF_STYLE_BOLD ) )
-#define HK_TTF_HANDLE_STYLE_ITALIC(font) 			( ( (font)->Style() & HK_TTF_STYLE_ITALIC ) && !( (font)->FaceStyle() & HK_TTF_STYLE_ITALIC ) )
-#define HK_TTF_HANDLE_STYLE_UNDERLINE(font) 		( (font)->Style() & HK_TTF_STYLE_UNDERLINE )
-#define HK_TTF_HANDLE_STYLE_STRIKETHROUGH(font) 	( (font)->Style() & HK_TTF_STYLE_STRIKETHROUGH )
+#define HK_TTF_HANDLE_STYLE_BOLD(font) 				( ( (font)->style() & HK_TTF_STYLE_BOLD ) && !( (font)->faceStyle() & HK_TTF_STYLE_BOLD ) )
+#define HK_TTF_HANDLE_STYLE_ITALIC(font) 			( ( (font)->style() & HK_TTF_STYLE_ITALIC ) && !( (font)->faceStyle() & HK_TTF_STYLE_ITALIC ) )
+#define HK_TTF_HANDLE_STYLE_UNDERLINE(font) 		( (font)->style() & HK_TTF_STYLE_UNDERLINE )
+#define HK_TTF_HANDLE_STYLE_STRIKETHROUGH(font) 	( (font)->style() & HK_TTF_STYLE_STRIKETHROUGH )
 
 #define HK_TTF_STYLE_NO_GLYPH_CHANGE				( HK_TTF_STYLE_UNDERLINE | HK_TTF_STYLE_STRIKETHROUGH )
 

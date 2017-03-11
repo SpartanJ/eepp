@@ -13,9 +13,9 @@ class hkMutex {
 		
 		~hkMutex();
 		
-		void Lock();
+		void lock();
 		
-		void Unlock();
+		void unlock();
 	protected:
 		hkMutexImpl * mImpl;
 };

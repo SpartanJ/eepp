@@ -24,7 +24,7 @@ TTFFont::TTFFont( const std::string FontName ) :
 }
 
 TTFFont::~TTFFont() {
-	hkFontManager::instance()->Destroy();
+	hkFontManager::instance()->destroy();
 }
 
 bool TTFFont::loadFromPack( Pack* Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) {
@@ -48,11 +48,11 @@ bool TTFFont::loadFromMemory( Uint8* TTFData, const unsigned int& TTFDataSize, c
 
 	Int32 rSize = (Int32)((Float)Size * PixelDensity::getPixelDensity());
 
-	mFont = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, rSize, 0, NumCharsToGen );
+	mFont = hkFontManager::instance()->openFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, rSize, 0, NumCharsToGen );
 
 	if ( OutlineSize && OutlineFreetype == OutlineMethod ) {
-		mFontOutline = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, rSize, 0, NumCharsToGen );
-		mFontOutline->Outline( OutlineSize * PixelDensity::getPixelDensity() );
+		mFontOutline = hkFontManager::instance()->openFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, rSize, 0, NumCharsToGen );
+		mFontOutline->outline( OutlineSize * PixelDensity::getPixelDensity() );
 	}
 
 	return iLoad( rSize, Style, NumCharsToGen, FontColor, OutlineSize * PixelDensity::getPixelDensity(), OutlineColor, AddPixelSeparator );
@@ -66,11 +66,11 @@ bool TTFFont::load( const std::string& Filepath, const unsigned int& Size, EE_TT
 
 		Int32 rSize = (Int32)((Float)Size * PixelDensity::getPixelDensity());
 
-		mFont = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), rSize, 0, NumCharsToGen );
+		mFont = hkFontManager::instance()->openFromFile( Filepath.c_str(), rSize, 0, NumCharsToGen );
 
 		if ( OutlineSize && OutlineFreetype == OutlineMethod ) {
-			mFontOutline = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), rSize, 0, NumCharsToGen );
-			mFontOutline->Outline( OutlineSize * PixelDensity::getPixelDensity() );
+			mFontOutline = hkFontManager::instance()->openFromFile( Filepath.c_str(), rSize, 0, NumCharsToGen );
+			mFontOutline->outline( OutlineSize * PixelDensity::getPixelDensity() );
 		}
 
 		return iLoad( rSize, Style, NumCharsToGen, FontColor, OutlineSize * PixelDensity::getPixelDensity(), OutlineColor, AddPixelSeparator );
@@ -110,15 +110,15 @@ bool TTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Ui
 
 	mSize 			= Size;
 
-	mFont->Style( Style );
+	mFont->style( Style );
 
-	mHeight 		= mFont->Height() + OutTotal;
-	mLineSkip		= mFont->LineSkip();
-	mAscent			= mFont->Ascent();
-	mDescent		= mFont->Descent();
+	mHeight 		= mFont->height() + OutTotal;
+	mLineSkip		= mFont->lineSkip();
+	mAscent			= mFont->ascent();
+	mDescent		= mFont->descent();
 
 	if ( NULL != mFontOutline )
-		mHeight		= mFontOutline->Height();
+		mHeight		= mFontOutline->height();
 
 	mNumChars 		= NumCharsToGen;
 	mFontColor 		= FontColor;
@@ -166,27 +166,27 @@ bool TTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Ui
 
 	//Loop through all chars
 	for ( unsigned int i = 0; i < mNumChars; i++ ) {
-		TempGlyphSurface = mFont->GlyphRender( i, fFontColor.getValue() );
+		TempGlyphSurface = mFont->renderGlyph( i, fFontColor.getValue() );
 
 		//New temp glyph
 		eeGlyph TempGlyph;
 
 		//Get the glyph attributes
-		mFont->GlyphMetrics( i, &TempGlyph.MinX, &TempGlyph.MaxX, &TempGlyph.MinY, &TempGlyph.MaxY, &TempGlyph.Advance );
+		mFont->getGlyphMetrics( i, &TempGlyph.MinX, &TempGlyph.MaxX, &TempGlyph.MinY, &TempGlyph.MaxY, &TempGlyph.Advance );
 
 		//Set size of glyph rect
-		GlyphRect.x = mFont->Current()->Pixmap()->width;
-		GlyphRect.y = mFont->Current()->Pixmap()->rows;
+		GlyphRect.x = mFont->current()->pixmap()->width;
+		GlyphRect.y = mFont->current()->pixmap()->rows;
 
 		// Create the outline for the glyph and copy the outline to the texture
 		if ( OutlineSize && OutlineFreetype == OutlineMethod ) {
-			TempOutGlyphSurface = mFontOutline->GlyphRender( i, ColorA( OutlineColor ).getValue() );
+			TempOutGlyphSurface = mFontOutline->renderGlyph( i, ColorA( OutlineColor ).getValue() );
 
-			mFontOutline->GlyphMetrics( i, &TempGlyph.MinX, &TempGlyph.MaxX, &TempGlyph.MinY, &TempGlyph.MaxY, &TempGlyph.Advance );
+			mFontOutline->getGlyphMetrics( i, &TempGlyph.MinX, &TempGlyph.MaxX, &TempGlyph.MinY, &TempGlyph.MaxY, &TempGlyph.Advance );
 
 			// Set size of glyph rect
-			GlyphRect.x = mFontOutline->Current()->Pixmap()->width;
-			GlyphRect.y = mFontOutline->Current()->Pixmap()->rows;
+			GlyphRect.x = mFontOutline->current()->pixmap()->width;
+			GlyphRect.y = mFontOutline->current()->pixmap()->rows;
 
 			// Fix to ensure that the glyph is rendered with the real size
 			if ( eeabs( TempGlyph.MaxX - TempGlyph.MinX ) != GlyphRect.x ) {
@@ -194,7 +194,7 @@ bool TTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Ui
 			}
 
 			Image out( TempOutGlyphSurface, GlyphRect.x, GlyphRect.y, 4 ); out.avoidFreeImage( true );
-			Image in( TempGlyphSurface, mFont->Current()->Pixmap()->width, mFont->Current()->Pixmap()->rows, 4 ); in.avoidFreeImage( true );
+			Image in( TempGlyphSurface, mFont->current()->pixmap()->width, mFont->current()->pixmap()->rows, 4 ); in.avoidFreeImage( true );
 
 			Uint32 px = ( ( (Float)out.getWidth()	- (Float)in.getWidth() )		* 0.5f );
 			Uint32 py = ( ( (Float)out.getHeight()	- (Float)in.getHeight() )	* 0.5f );
@@ -303,10 +303,10 @@ bool TTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Ui
 		hkSAFE_DELETE_ARRAY( TempOutGlyphSurface );
 	}
 
-	hkFontManager::instance()->CloseFont( mFont );
+	hkFontManager::instance()->closeFont( mFont );
 
 	if ( NULL != mFontOutline )
-		hkFontManager::instance()->CloseFont( mFontOutline );
+		hkFontManager::instance()->closeFont( mFontOutline );
 
 	mTexReady = true;
 

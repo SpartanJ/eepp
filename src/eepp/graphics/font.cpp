@@ -440,7 +440,7 @@ Vector2i Font::getCursorPos( const String& Text, const Uint32& Pos ) {
 	return Vector2i( Width, Height );
 }
 
-static bool IsStopSelChar( Uint32 c ) {
+static bool isStopSelChar( Uint32 c ) {
 	return ( !String::isCharacter( c ) && !String::isNumber( c ) ) ||
 			' ' == c ||
 			'.' == c ||
@@ -457,7 +457,7 @@ void Font::selectSubStringFromCursor( const String& Text, const Int32& CurPos, I
 	EndCur	= Text.size();
 
 	for ( std::size_t i = CurPos; i < Text.size(); i++ ) {
-		if ( IsStopSelChar( Text[i] ) ) {
+		if ( isStopSelChar( Text[i] ) ) {
 			EndCur = i;
 			break;
 		}
@@ -468,7 +468,7 @@ void Font::selectSubStringFromCursor( const String& Text, const Int32& CurPos, I
 	}
 
 	for ( Int32 i = CurPos; i >= 0; i-- ) {
-		if ( IsStopSelChar( Text[i] ) ) {
+		if ( isStopSelChar( Text[i] ) ) {
 			InitCur = i + 1;
 			break;
 		}

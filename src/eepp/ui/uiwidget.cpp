@@ -17,7 +17,7 @@ UIWidget::UIWidget() :
 	mLayoutGravity(0),
 	mLayoutWidthRules(WRAP_CONTENT),
 	mLayoutHeightRules(WRAP_CONTENT),
-	mLayoutPositionRule(LayoutPositionRules::NONE),
+	mLayoutPositionRule(NONE),
 	mLayoutPositionRuleWidget(NULL)
 {
 	mControlFlags |= UI_CTRL_FLAG_COMPLEX;
@@ -478,22 +478,22 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			String::toLowerInPlace( val );
 
 			if ( "match_parent" == val ) {
-				setLayoutWidthRules( LayoutSizeRules::MATCH_PARENT );
+				setLayoutWidthRules( MATCH_PARENT );
 			} else if ( "wrap_content" == val ) {
-				setLayoutWidthRules( LayoutSizeRules::WRAP_CONTENT );
+				setLayoutWidthRules( WRAP_CONTENT );
 			} else if ( "fixed" == val ) {
-				setLayoutWidthRules( LayoutSizeRules::FIXED );
+				setLayoutWidthRules( FIXED );
 			}
 		} else if ( "layout_height" == name ) {
 			std::string val = ait->as_string();
 			String::toLowerInPlace( val );
 
 			if ( "match_parent" == val ) {
-				setLayoutHeightRules( LayoutSizeRules::MATCH_PARENT );
+				setLayoutHeightRules( MATCH_PARENT );
 			} else if ( "wrap_content" == val ) {
-				setLayoutHeightRules( LayoutSizeRules::WRAP_CONTENT );
+				setLayoutHeightRules( WRAP_CONTENT );
 			} else if ( "fixed" == val ) {
-				setLayoutHeightRules( LayoutSizeRules::FIXED );
+				setLayoutHeightRules( FIXED );
 			}
 		} else if ( String::startsWith( name, "layout_to_" ) ) {
 			LayoutPositionRules rule = NONE;

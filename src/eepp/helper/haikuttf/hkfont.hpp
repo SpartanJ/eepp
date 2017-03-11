@@ -14,68 +14,66 @@ class hkFont {
 
 		~hkFont();
 
-		void				Face( FT_Face face );
-		FT_Face				Face();
+		void				face( FT_Face face );
+		FT_Face				face();
 
-		void				Height( int height );
-		int					Height();
+		void				height( int height );
+		int					height();
 
-		void				Ascent( int ascent );
-		int					Ascent();
+		void				ascent( int ascent );
+		int					ascent();
 
-		void				Descent( int descent );
-		int					Descent();
+		void				descent( int descent );
+		int					descent();
 
-		void				LineSkip( int lineskip );
-		int					LineSkip();
+		void				lineSkip( int lineskip );
+		int					lineSkip();
 
-		void				FaceStyle( int facestyle );
-		int					FaceStyle();
+		void				faceStyle( int facestyle );
+		int					faceStyle();
 
-		void				Kerning( int kerning );
-		int					Kerning();
+		void				kerning( int kerning );
+		int					kerning();
 
-		void				GlyphOverhang( int glyphoverhang );
-		int					GlyphOverhang();
+		void				glyphOverhang( int glyphoverhang );
+		int					glyphOverhang();
 
-		void				GlyphItalics( float glyphitalics );
-		float				GlyphItalics();
+		void				glyphItalics( float glyphitalics );
+		float				glyphItalics();
 
-		void				UnderlineOffset( int underlineoffset );
-		int					UnderlineOffset();
+		void				underlineOffset( int underlineoffset );
+		int					underlineOffset();
 
-		void				UnderlineHeight( int underlineheight );
-		int					UnderlineHeight();
+		void				underlineHeight( int underlineheight );
+		int					underlineHeight();
 
-		void				Current( hkGlyph * current );
-		hkGlyph *			Current();
+		void				current( hkGlyph * current );
+		hkGlyph *			current();
 
-		void				Scratch( hkGlyph scratch );
-		hkGlyph				Scratch();
+		void				scratch( hkGlyph scratch );
+		hkGlyph				scratch();
 
-		void				FontSizeFamily( int fontsizefamily );
-		int					FontSizeFamily();
+		void				fontSizeFamily( int fontsizefamily );
+		int					fontSizeFamily();
 
-		void 				Outline( int outline );
-		int					Outline() const;
+		void 				outline( int outline );
+		int					outline() const;
 
-		void 				Hinting( int hinting );
-		int					Hinting() const;
+		void 				hinting( int hinting );
+		int					hinting() const;
 
-		void 				Style( int style );
-		int					Style();
+		void 				style( int style );
+		int					style();
 
-		hkFontManager * 	Manager() const;
+		FT_Error 			findGlyph( u32 ch, int want );
 
-		FT_Error 			GlyphFind( u16 ch, int want );
+		FT_Error 			loadGlyph( u32 ch, hkGlyph * cached, int want );
 
-		FT_Error 			GlyphLoad( u16 ch, hkGlyph * cached, int want );
+		unsigned char * 	renderGlyph( u32 ch, u32 fg = 0x00000000 );
 
-		unsigned char * 	GlyphRender( u16 ch, u32 fg = 0x00000000 );
+		int 				getGlyphMetrics( u32 ch, int* minx, int* maxx, int* miny, int* maxy, int* advance );
 
-		int 				GlyphMetrics( u16 ch, int* minx, int* maxx, int* miny, int* maxy, int* advance );
-
-		void 				CacheFlush();
+		void 				cacheFlush();
 	protected:
 		friend class hkFontManager;
 
@@ -101,13 +99,13 @@ class hkFont {
 		int 				mOutline;
 		int 				mHinting;
 
-		int 				UnderlineTopRow();
+		int 				underlineTopRow();
 
-		int 				StrikeThroughTopRow();
+		int 				strikeThroughTopRow();
 
-		void 				DrawLine( const unsigned char * textbuf, const int row, const u32 color, FT_Bitmap * bitmap );
+		void 				drawLine( const unsigned char * textbuf, const int row, const u32 color, FT_Bitmap * bitmap );
 
-		void 				InitLineMectrics( const unsigned char * textbuf, const int row, u8 **pdst, int *pheight, FT_Bitmap * bitmap );
+		void 				initLineMectrics( const unsigned char * textbuf, const int row, u8 **pdst, int *pheight, FT_Bitmap * bitmap );
 };
 
 }

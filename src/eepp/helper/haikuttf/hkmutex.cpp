@@ -68,11 +68,11 @@ hkMutex::~hkMutex() {
 	hkSAFE_DELETE( mImpl )
 }
 
-void hkMutex::Lock() {
+void hkMutex::lock() {
 	mImpl->Lock();
 }
 
-void hkMutex::Unlock() {
+void hkMutex::unlock() {
 	mImpl->Unlock();
 }
 

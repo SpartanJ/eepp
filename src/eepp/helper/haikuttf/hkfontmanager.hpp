@@ -21,30 +21,30 @@ class hkFontManager : private hkMutex {
 
 		~hkFontManager();
 
-		int 				Init();
+		int 				init();
 
-		void 				Destroy();
+		void 				destroy();
 
-		int 				WasInit();
+		int 				wasInit();
 
-		void 				CloseFont( hkFont * Font );
+		void 				closeFont( hkFont * Font );
 
-		hkFont * 			OpenFromMemory( const u8* data, unsigned long size, int ptsize, long index = 0, unsigned int glyphCacheSize = 256 );
+		hkFont * 			openFromMemory( const u8* data, unsigned long size, int ptsize, long index = 0, unsigned int glyphCacheSize = 256 );
 
-		hkFont * 			OpenFromFile( const char* filename, int ptsize, long index = 0, unsigned int glyphCacheSize = 256 );
+		hkFont * 			openFromFile( const char* filename, int ptsize, long index = 0, unsigned int glyphCacheSize = 256 );
 
-		FT_Library 			Library() const;
+		FT_Library 			getLibrary() const;
 	protected:
 		friend class hkFont;
 		
 		FT_Library 			mLibrary;
 		int 				mInitialized;
 
-		hkFont * 			FontPrepare( hkFont * font, int ptsize );
+		hkFont * 			fontPrepare( hkFont * font, int ptsize );
 		
-		void MutexLock();
+		void mutexLock();
 		
-		void MutexUnlock();
+		void mutexUnlock();
 };
 
 }

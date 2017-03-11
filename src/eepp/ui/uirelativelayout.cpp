@@ -58,7 +58,7 @@ void UIRelativeLayout::fixChilds() {
 void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 	Vector2i pos( widget->getPosition() );
 
-	if ( widget->getLayoutPositionRule() != LayoutPositionRules::NONE && widget->getParent() == widget->getLayoutPositionRuleWidget()->getParent() ) {
+	if ( widget->getLayoutPositionRule() != NONE && widget->getParent() == widget->getLayoutPositionRuleWidget()->getParent() ) {
 		UIWidget * of = widget->getLayoutPositionRuleWidget();
 
 		switch ( widget->getLayoutPositionRule() ) {

@@ -24,14 +24,14 @@ hkFontManager::hkFontManager() :
 	mLibrary(NULL),
 	mInitialized(0)
 {
-	Init();
+	init();
 }
 
 hkFontManager::~hkFontManager() {
-	Destroy();
+	destroy();
 }
 
-int hkFontManager::Init() {
+int hkFontManager::init() {
 	int status = 0;
 
 	if ( !mInitialized ) {
@@ -47,7 +47,7 @@ int hkFontManager::Init() {
 	return status;
 }
 
-void hkFontManager::Destroy() {
+void hkFontManager::destroy() {
 	if ( mInitialized ) {
 		if ( --mInitialized == 0 ) {
 			FT_Done_FreeType( mLibrary );
@@ -55,21 +55,21 @@ void hkFontManager::Destroy() {
 	}
 }
 
-int hkFontManager::WasInit() {
+int hkFontManager::wasInit() {
 	return mInitialized;
 }
 
-void hkFontManager::CloseFont( hkFont * Font ) {
+void hkFontManager::closeFont( hkFont * Font ) {
 	hkSAFE_DELETE( Font );
 }
 
-hkFont * hkFontManager::OpenFromMemory( const u8* data, unsigned long size, int ptsize, long index, unsigned int glyphCacheSize ) {
-	if ( Init() != 0 )
+hkFont * hkFontManager::openFromMemory( const u8* data, unsigned long size, int ptsize, long index, unsigned int glyphCacheSize ) {
+	if ( init() != 0 )
 		return NULL;
 
 	FT_Face face = NULL;
 
-	MutexLock();
+	mutexLock();
 
 	if ( FT_New_Memory_Face( mLibrary, reinterpret_cast<const FT_Byte*>(data), static_cast<FT_Long>(size), index, &face ) != 0  )
 		return NULL;
@@ -77,22 +77,22 @@ hkFont * hkFontManager::OpenFromMemory( const u8* data, unsigned long size, int 
 	if ( FT_Select_Charmap( face, FT_ENCODING_UNICODE ) != 0 )
 		return NULL;
 
-	MutexUnlock();
+	mutexUnlock();
 
 	hkFont * Font = hkNew( hkFont, ( this, glyphCacheSize ) );
 
-	Font->Face( face );
+	Font->face( face );
 
-	return FontPrepare( Font, ptsize );
+	return fontPrepare( Font, ptsize );
 }
 
-hkFont * hkFontManager::OpenFromFile( const char* filename, int ptsize, long index, unsigned int glyphCacheSize ) {
-	if ( Init() != 0 )
+hkFont * hkFontManager::openFromFile( const char* filename, int ptsize, long index, unsigned int glyphCacheSize ) {
+	if ( init() != 0 )
 		return NULL;
 
 	FT_Face face;
 
-	MutexLock();
+	mutexLock();
 
 	if ( FT_New_Face( mLibrary, filename, index, &face ) != 0 )
 		return NULL;
@@ -100,89 +100,89 @@ hkFont * hkFontManager::OpenFromFile( const char* filename, int ptsize, long ind
 	if ( FT_Select_Charmap(face, FT_ENCODING_UNICODE) != 0 )
 		return NULL;
 
-	MutexUnlock();
+	mutexUnlock();
 
 	hkFont * Font = hkNew( hkFont, ( this, glyphCacheSize ) );
 
-	Font->Face( face );
+	Font->face( face );
 
-	return FontPrepare( Font, ptsize );
+	return fontPrepare( Font, ptsize );
 }
 
-hkFont * hkFontManager::FontPrepare( hkFont * font, int ptsize ) {
+hkFont * hkFontManager::fontPrepare( hkFont * font, int ptsize ) {
 	FT_Error error;
 	FT_Face face;
 	FT_Fixed scale;
 
-	face = font->Face();
+	face = font->face();
 
 	if ( FT_IS_SCALABLE( face ) ) {
-		MutexLock();
+		mutexLock();
 
-		error = FT_Set_Char_Size( font->Face(), 0, ptsize * 64, 0, 0 );
+		error = FT_Set_Char_Size( font->face(), 0, ptsize * 64, 0, 0 );
 
 		if( error ) {
-			CloseFont( font );
+			closeFont( font );
 
-			MutexUnlock();
+			mutexUnlock();
 
 			return NULL;
 		}
 
-		MutexUnlock();
+		mutexUnlock();
 
 		scale = face->size->metrics.y_scale;
-		font->Ascent( FT_CEIL( FT_MulFix( face->ascender, scale) ) );
-		font->Descent( FT_CEIL( FT_MulFix( face->descender, scale ) ) );
-		font->Height( font->Ascent() - font->Descent() + 1 );
-		font->LineSkip( FT_CEIL( FT_MulFix( face->height, scale ) ) );
-		font->UnderlineOffset( FT_FLOOR( FT_MulFix( face->underline_position, scale ) ) );
-		font->UnderlineHeight( FT_FLOOR( FT_MulFix( face->underline_thickness, scale ) ) );
+		font->ascent( FT_CEIL( FT_MulFix( face->ascender, scale) ) );
+		font->descent( FT_CEIL( FT_MulFix( face->descender, scale ) ) );
+		font->height( font->ascent() - font->descent() + 1 );
+		font->lineSkip( FT_CEIL( FT_MulFix( face->height, scale ) ) );
+		font->underlineOffset( FT_FLOOR( FT_MulFix( face->underline_position, scale ) ) );
+		font->underlineHeight( FT_FLOOR( FT_MulFix( face->underline_thickness, scale ) ) );
 	} else {
 		if ( ptsize >= face->num_fixed_sizes )
 			ptsize = face->num_fixed_sizes - 1;
 
-		font->FontSizeFamily( ptsize );
+		font->fontSizeFamily( ptsize );
 		error = FT_Set_Pixel_Sizes( face, face->available_sizes[ptsize].height, face->available_sizes[ptsize].width );
 
-		font->Ascent( face->available_sizes[ptsize].height );
-		font->Descent( 0 );
-		font->Height( face->available_sizes[ptsize].height );
-		font->LineSkip( FT_CEIL( font->Ascent() ) );
-		font->UnderlineOffset( FT_FLOOR( face->underline_position ) );
-		font->UnderlineHeight( FT_FLOOR( face->underline_thickness ) );
+		font->ascent( face->available_sizes[ptsize].height );
+		font->descent( 0 );
+		font->height( face->available_sizes[ptsize].height );
+		font->lineSkip( FT_CEIL( font->ascent() ) );
+		font->underlineOffset( FT_FLOOR( face->underline_position ) );
+		font->underlineHeight( FT_FLOOR( face->underline_thickness ) );
 	}
 
-	if ( font->UnderlineHeight() < 1 )
-		font->UnderlineHeight( 1 );
+	if ( font->underlineHeight() < 1 )
+		font->underlineHeight( 1 );
 
-	font->FaceStyle( HK_TTF_STYLE_NORMAL );
+	font->faceStyle( HK_TTF_STYLE_NORMAL );
 
 	if ( face->style_flags & FT_STYLE_FLAG_BOLD )
-		font->FaceStyle( font->FaceStyle() | HK_TTF_STYLE_BOLD );
+		font->faceStyle( font->faceStyle() | HK_TTF_STYLE_BOLD );
 
 	if ( face->style_flags & FT_STYLE_FLAG_ITALIC )
-		font->FaceStyle( font->FaceStyle() | HK_TTF_STYLE_ITALIC );
+		font->faceStyle( font->faceStyle() | HK_TTF_STYLE_ITALIC );
 
-	font->Style( font->FaceStyle() );
-	font->Outline( 0 );
-	font->Kerning( 1 );
-	font->GlyphOverhang( face->size->metrics.y_ppem / 10 );
-	font->GlyphItalics( 0.207f );
-	font->GlyphItalics( font->GlyphItalics() * font->Height() );
+	font->style( font->faceStyle() );
+	font->outline( 0 );
+	font->kerning( 1 );
+	font->glyphOverhang( face->size->metrics.y_ppem / 10 );
+	font->glyphItalics( 0.207f );
+	font->glyphItalics( font->glyphItalics() * font->height() );
 
 	return font;
 }
 
-void hkFontManager::MutexLock() {
-	Lock();
+void hkFontManager::mutexLock() {
+	lock();
 }
 
-void hkFontManager::MutexUnlock() {
-	Unlock();
+void hkFontManager::mutexUnlock() {
+	unlock();
 }
 
-FT_Library hkFontManager::Library() const {
+FT_Library hkFontManager::getLibrary() const {
 	return mLibrary;
 }
 

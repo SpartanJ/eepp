@@ -17,10 +17,10 @@ hkGlyph::hkGlyph() :
 }
 
 hkGlyph::~hkGlyph() {
-	Flush();
+	flush();
 }
 
-void hkGlyph::Flush() {
+void hkGlyph::flush() {
 	mStored	= 0;
 	mIndex	= 0;
 	mCached	= 0;
@@ -28,83 +28,83 @@ void hkGlyph::Flush() {
 	hkSAFE_FREE( mPixmap.buffer );
 }
 
-int hkGlyph::Stored() const {
+int hkGlyph::stored() const {
 	return mStored;
 }
 
-void hkGlyph::Stored( int stored ) {
+void hkGlyph::stored( int stored ) {
 	mStored = stored;
 }
 
-FT_UInt hkGlyph::Index() const {
+FT_UInt hkGlyph::index() const {
 	return mIndex;
 }
 
-void hkGlyph::Index( FT_UInt index ) {
+void hkGlyph::index( FT_UInt index ) {
 	mIndex = index;
 }
 
-FT_Bitmap *	hkGlyph::Pixmap() {
+FT_Bitmap *	hkGlyph::pixmap() {
 	return &mPixmap;
 }
 
-void hkGlyph::Pixmap( const FT_Bitmap& pixmap ) {
+void hkGlyph::pixmap( const FT_Bitmap& pixmap ) {
 	mPixmap = pixmap;
 }
 
-int	hkGlyph::MinX() const {
+int	hkGlyph::minX() const {
 	return mMinX;
 }
 
-void hkGlyph::MinX( int minx ) {
+void hkGlyph::minX( int minx ) {
 	mMinX = minx;
 }
 
-int	hkGlyph::MinY() const {
+int	hkGlyph::minY() const {
 	return mMinY;
 }
 
-void hkGlyph::MinY( int miny ) {
+void hkGlyph::minY( int miny ) {
 	mMinY = miny;
 }
 
-int	hkGlyph::MaxX() const {
+int	hkGlyph::maxX() const {
 	return mMaxX;
 }
 
-void hkGlyph::MaxX( int maxx ) {
+void hkGlyph::maxX( int maxx ) {
 	mMaxX = maxx;
 }
 
-int hkGlyph::MaxY() const {
+int hkGlyph::maxY() const {
 	return mMaxY;
 }
 
-void hkGlyph::MaxY( int maxy ) {
+void hkGlyph::maxY( int maxy ) {
 	mMaxY = maxy;
 }
 
-int	hkGlyph::OffsetY() const {
+int	hkGlyph::offsetY() const {
 	return mOffsetY;
 }
 
-void hkGlyph::OffsetY( int offsety ) {
+void hkGlyph::offsetY( int offsety ) {
 	mOffsetY = offsety;
 }
 
-int	hkGlyph::Advance() const {
+int	hkGlyph::advance() const {
 	return mAdvance;
 }
 
-void hkGlyph::Advance( int advance ) {
+void hkGlyph::advance( int advance ) {
 	mAdvance = advance;
 }
 
-u16	hkGlyph::Cached() const {
+u16	hkGlyph::cached() const {
 	return mCached;
 }
 
-void hkGlyph::Cached( u16 cached ) {
+void hkGlyph::cached( u16 cached ) {
 	mCached = cached;
 }
 
