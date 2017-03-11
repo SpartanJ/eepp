@@ -6,6 +6,7 @@
 #include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
 #include <eepp/window/cursorhelper.hpp>
+#include <eepp/system/pack.hpp>
 
 namespace pugi {
 class xml_node;
@@ -125,6 +126,10 @@ class EE_API UIManager {
 		void loadLayoutFromString( const std::string& layoutString );
 
 		void loadLayoutFromMemory( const void * buffer, Int32 bufferSize );
+
+		void loadLayoutFromStream( IOStream& stream );
+
+		void loadLayoutFromPack( Pack * pack, const std::string& FilePackPath );
 	protected:
 		friend class UIControl;
 		friend class UIWindow;

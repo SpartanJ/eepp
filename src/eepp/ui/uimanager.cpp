@@ -520,15 +520,24 @@ void UIManager::loadLayoutNodes( pugi::xml_node node, UIControl * parent ) {
 }
 
 void UIManager::loadLayout( const std::string& layoutPath ) {
-	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_file( layoutPath.c_str() );
+	if ( FileSystem::fileExists( layoutPath ) ) {
+		pugi::xml_document doc;
+		pugi::xml_parse_result result = doc.load_file( layoutPath.c_str() );
 
-	if ( result ) {
-		loadLayoutNodes( doc.first_child(), getMainControl() );
-	} else {
-		eePRINTL( "Error: Couldn't load UI Layout: %s", layoutPath.c_str() );
-		eePRINTL( "Error description: %s", result.description() );
-		eePRINTL( "Error offset: %d", result.offset );
+		if ( result ) {
+			loadLayoutNodes( doc.first_child(), getMainControl() );
+		} else {
+			eePRINTL( "Error: Couldn't load UI Layout: %s", layoutPath.c_str() );
+			eePRINTL( "Error description: %s", result.description() );
+			eePRINTL( "Error offset: %d", result.offset );
+		}
+	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
+		std::string path( layoutPath );
+		Pack * pack = PackManager::instance()->exists( path );
+
+		if ( NULL != pack ) {
+			loadLayoutFromPack( pack, path );
+		}
 	}
 }
 void UIManager::loadLayoutFromString( const std::string& layoutString ) {
@@ -554,6 +563,34 @@ void UIManager::loadLayoutFromMemory( const void * buffer, Int32 bufferSize ) {
 		eePRINTL( "Error: Couldn't load UI Layout from buffer" );
 		eePRINTL( "Error description: %s", result.description() );
 		eePRINTL( "Error offset: %d", result.offset );
+	}
+}
+
+void UIManager::loadLayoutFromStream( IOStream& stream ) {
+	if ( !stream.isOpen() )
+		return;
+
+	ios_size bufferSize = stream.getSize();
+	SafeDataPointer safeDataPointer( eeNewArray( Uint8, bufferSize ), bufferSize );
+	stream.read( reinterpret_cast<char*>( safeDataPointer.Data ), safeDataPointer.DataSize );
+
+	pugi::xml_document doc;
+	pugi::xml_parse_result result = doc.load_buffer( safeDataPointer.Data, safeDataPointer.DataSize );
+
+	if ( result ) {
+		loadLayoutNodes( doc.first_child(), getMainControl() );
+	} else {
+		eePRINTL( "Error: Couldn't load UI Layout from stream" );
+		eePRINTL( "Error description: %s", result.description() );
+		eePRINTL( "Error offset: %d", result.offset );
+	}
+}
+
+void UIManager::loadLayoutFromPack( Pack * pack, const std::string& FilePackPath ) {
+	SafeDataPointer PData;
+
+	if ( pack->isOpen() && pack->extractFileToMemory( FilePackPath, PData ) ) {
+		loadLayoutFromMemory( PData.Data, PData.DataSize );
 	}
 }
 
