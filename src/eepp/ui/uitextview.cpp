@@ -402,17 +402,17 @@ void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
 
 		if ( "text" == name ) {
 			setText( ait->as_string() );
-		} else if ( "font-color" == name ) {
+		} else if ( "textcolor" == name ) {
 			setFontColor( ColorA::fromString( ait->as_string() ) );
-		} else if ( "font-shadow-color" == name ) {
+		} else if ( "textshadowcolor" == name ) {
 			setFontShadowColor( ColorA::fromString( ait->as_string() ) );
-		} else if ( "font-over-color" == name ) {
+		} else if ( "textovercolor" == name ) {
 			mFontStyleConfig.FontOverColor = ColorA::fromString( ait->as_string() );
-		} else if ( "font-selected-color" == name ) {
+		} else if ( "textselectedcolor" == name ) {
 			mFontStyleConfig.FontSelectedColor = ColorA::fromString( ait->as_string() );
-		} else if ( "font-selection-back-color" == name ) {
+		} else if ( "textselectionbackcolor" == name ) {
 			setSelectionBackColor( ColorA::fromString( ait->as_string() ) );
-		} else if ( "font-name" == name ) {
+		} else if ( "fontfamily" == name || "fontname" == name ) {
 			Font * font = FontManager::instance()->getByName( ait->as_string() );
 
 			if ( NULL != font )
@@ -420,13 +420,13 @@ void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
 		} else if ( "padding" == name ) {
 			int val = ait->as_int();
 			setPadding( Recti( val, val, val, val ) );
-		} else if ( "padding_left" == name ) {
+		} else if ( "paddingleft" == name ) {
 			setPadding( Recti( ait->as_int(), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
-		} else if ( "padding_right" == name ) {
+		} else if ( "paddingright" == name ) {
 			setPadding( Recti( mPadding.Left, mPadding.Top, ait->as_int(), mPadding.Bottom ) );
-		} else if ( "padding_top" == name ) {
+		} else if ( "paddingtop" == name ) {
 			setPadding( Recti( mPadding.Left, ait->as_int(), mPadding.Right, mPadding.Bottom ) );
-		} else if ( "padding_bottom" == name ) {
+		} else if ( "paddingbottom" == name ) {
 			setPadding( Recti( mPadding.Left, mPadding.Top, mPadding.Right, ait->as_int() ) );
 		}
 	}

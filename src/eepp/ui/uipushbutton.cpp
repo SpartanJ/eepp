@@ -298,7 +298,7 @@ void UIPushButton::loadFromXmlNode(const pugi::xml_node & node) {
 
 		if ( "text" == name ) {
 			setText( ait->as_string() );
-		} else if ( "font-over-color" == name ) {
+		} else if ( "textovercolor" == name ) {
 			setFontOverColor( ColorA::fromString( ait->as_string() ) );
 		} else if ( "icon" == name ) {
 			std::string val = ait->as_string();

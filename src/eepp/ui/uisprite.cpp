@@ -174,7 +174,7 @@ void UISprite::loadFromXmlNode(const pugi::xml_node & node) {
 		std::string name = ait->name();
 		String::toLowerInPlace( name );
 
-		if ( "src" == name || "sprite" == name ) {
+		if ( "src" == name ) {
 			std::string val = ait->as_string();
 
 			if ( val.size() ) {

@@ -332,11 +332,11 @@ void UITextInput::loadFromXmlNode(const pugi::xml_node & node) {
 
 		if ( "text" == name ) {
 			setText( ait->as_string() );
-		} else if ( "allow-editing" == name ) {
+		} else if ( "allowediting" == name ) {
 			setAllowEditing( ait->as_bool() );
-		} else if ( "max-length" == name ) {
+		} else if ( "maxlength" == name ) {
 			setMaxLength( ait->as_uint() );
-		} else if ( "free-editing" == name ) {
+		} else if ( "freeediting" == name ) {
 			setFreeEditing( ait->as_bool() );
 		}
 	}

@@ -445,14 +445,14 @@ void UITextEdit::loadFromXmlNode(const pugi::xml_node & node) {
 
 		if ( "text" == name ) {
 			setText( ait->as_string() );
-		} else if ( "allow-editing" == name ) {
+		} else if ( "allowediting" == name ) {
 			setAllowEditing( ait->as_bool() );
-		} else if ( "vertical-scroll-mode" == name || "vscroll-mode" == name ) {
+		} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {
 			std::string val = ait->as_string();
 			if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
 			else if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
 			else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
-		} else if ( "horizontal-scroll-mode" == name || "hscroll-mode" == name ) {
+		} else if ( "horizontalscrollmode" == name || "hscrollmode" == name ) {
 			std::string val = ait->as_string();
 			if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
 			else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );

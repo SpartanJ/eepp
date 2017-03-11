@@ -355,11 +355,11 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 		} else if ( "height" == name ) {
 			setInternalHeight( ait->as_int() );
 			notifyLayoutAttrChange();
-		} else if ( "background-color" == name ) {
+		} else if ( "backgroundcolor" == name ) {
 			setBackgroundFillEnabled( true )->setColor( ColorA::fromString( ait->as_string() ) );
-		} else if ( "border-color" == name ) {
+		} else if ( "bordercolor" == name ) {
 			setBorderEnabled( true )->setColor( ColorA::fromString( ait->as_string() ) );
-		} else if ( "border-width" == name ) {
+		} else if ( "borderwidth" == name ) {
 			setBorderEnabled( true )->setWidth( ait->as_uint(1) );
 		} else if ( "visible" == name ) {
 			setVisible( ait->as_bool() );
@@ -423,7 +423,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 					} else if ( "auto_padding" == cur || "autopadding" == cur ) {
 						setFlags( UI_AUTO_PADDING );
 						notifyLayoutAttrChange();
-					} else if ( "report_size_change_to_childs" == cur ) {
+					} else if ( "reportsizechangetochilds" == cur || "report_size_change_to_childs" == cur ) {
 						setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
 					}
 				}
@@ -431,13 +431,13 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 		} else if ( "layout_margin" == name ) {
 			int val = ait->as_int();
 			setLayoutMargin( Recti( val, val, val, val ) );
-		} else if ( "layout_margin_left" == name ) {
+		} else if ( "layout_marginleft" == name ) {
 			setLayoutMargin( Recti( ait->as_int(), mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) );
-		} else if ( "layout_margin_right" == name ) {
+		} else if ( "layout_marginright" == name ) {
 			setLayoutMargin( Recti( mLayoutMargin.Left, mLayoutMargin.Top, ait->as_int(), mLayoutMargin.Bottom ) );
-		} else if ( "layout_margin_top" == name ) {
+		} else if ( "layout_margintop" == name ) {
 			setLayoutMargin( Recti( mLayoutMargin.Left, ait->as_int(), mLayoutMargin.Right, mLayoutMargin.Bottom ) );
-		} else if ( "layout_margin_bottom" == name ) {
+		} else if ( "layout_marginbottom" == name ) {
 			setLayoutMargin( Recti( mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, ait->as_int() ) );
 		} else if ( "tooltip" == name ) {
 			setTooltipText( ait->as_string() );
@@ -495,12 +495,12 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			} else if ( "fixed" == val ) {
 				setLayoutHeightRules( FIXED );
 			}
-		} else if ( String::startsWith( name, "layout_to_" ) ) {
+		} else if ( String::startsWith( name, "layout_to_" ) || String::startsWith( name, "layoutto" ) ) {
 			LayoutPositionRules rule = NONE;
-			if ( "layout_to_left_of" == name ) rule = LEFT_OF;
-			else if ( "layout_to_right_of" == name ) rule = RIGHT_OF;
-			else if ( "layout_to_top_of" == name ) rule = TOP_OF;
-			else if ( "layout_to_bottom_of" == name ) rule = BOTTOM_OF;
+			if ( "layout_to_left_of" == name || "layouttoleftof" == name ) rule = LEFT_OF;
+			else if ( "layout_to_right_of" == name || "layouttorightof" == name ) rule = RIGHT_OF;
+			else if ( "layout_to_top_of" == name || "layouttotopof" == name ) rule = TOP_OF;
+			else if ( "layout_to_bottom_of" == name || "layouttobottomof" == name ) rule = BOTTOM_OF;
 
 			std::string id = ait->as_string();
 
