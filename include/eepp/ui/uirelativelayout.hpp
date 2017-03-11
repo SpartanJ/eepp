@@ -5,7 +5,7 @@
 
 namespace EE { namespace UI {
 
-class UIRelativeLayout : public UIWidget {
+class EE_API UIRelativeLayout : public UIWidget {
 	public:
 		static UIRelativeLayout * New();
 

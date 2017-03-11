@@ -358,7 +358,11 @@ function build_link_configuration( package_name, use_ee_icon )
 	elseif package_name == "eepp-static" then
 		defines { "EE_STATIC" }
 	end
-	
+
+	if not is_vs() then
+		buildoptions{ "-std=c++11" }
+	end
+
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then
 		if not _OPTIONS["with-static-eepp"] then
 			links { "eepp-shared" }
@@ -396,7 +400,7 @@ function build_link_configuration( package_name, use_ee_icon )
 			extension = ".x86.ios"
 		end
 	end
-	
+
 	configuration "debug"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
 		flags { "Symbols" }
@@ -676,6 +680,10 @@ function build_eepp( build_name )
 		includedirs { "src/eepp/helper/libzip/vs" }
 	end
 
+	if not is_vs() then
+		buildoptions{ "-std=c++11" }
+	end
+
 	if os.is("windows") then
 		files { "src/eepp/system/platform/win/*.cpp" }
 		files { "src/eepp/network/platform/win/*.cpp" }
@@ -726,7 +734,7 @@ function build_eepp( build_name )
 	links { link_list }
 	
 	build_link_configuration( build_name )
-	
+
 	configuration "windows"
 		files { "src/eepp/window/platform/win/*.cpp" }
 		add_cross_config_links()

@@ -180,7 +180,7 @@ static const Uint32 UI_WIN_DEFAULT_FLAGS = UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFA
 static const Uint32 UI_CDL_DEFAULT_FLAGS = CDL_FLAG_FOLDERS_FISRT | CDL_FLAG_SORT_ALPHABETICALLY;
 
 class UIWidget;
-class UIHelper {
+class EE_API UIHelper {
 	public:
 		static UIWidget * createUIWidgetFromName( std::string name );
 };
