@@ -143,7 +143,9 @@ Uint32 UIListBox::addListBoxItem( const String& Text ) {
 	mItems.push_back( NULL );
 
 	if ( NULL != mFontStyleConfig.Font ) {
-		Uint32 twidth = mFontStyleConfig.Font->getTextWidth( Text );
+		TextCache textCache( mFontStyleConfig.Font );
+		textCache.setText( Text );
+		Uint32 twidth = textCache.getTextWidth();
 
 		if ( twidth > mMaxTextWidth ) {
 			mMaxTextWidth = twidth;
@@ -329,14 +331,17 @@ void UIListBox::setHScrollStep() {
 void UIListBox::findMaxWidth() {
 	Uint32 size = (Uint32)mItems.size();
 	Int32 width;
+	TextCache textCache( mFontStyleConfig.Font );
 
 	mMaxTextWidth = 0;
 
 	for ( Uint32 i = 0; i < size; i++ ) {
-		if ( NULL != mItems[i] )
+		if ( NULL != mItems[i] ) {
 			width = (Int32)mItems[i]->getTextWidth();
-		else
-			width = mFontStyleConfig.Font->getTextWidth( mTexts[i] );
+		} else {
+			textCache.setText( mTexts[i]  );
+			width = textCache.getTextWidth();
+		}
 
 		if ( width > (Int32)mMaxTextWidth )
 			mMaxTextWidth = width;

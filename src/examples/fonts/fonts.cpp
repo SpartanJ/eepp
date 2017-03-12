@@ -6,6 +6,11 @@ TTFFont * TTFO			= NULL;
 TTFFont * TTF2			= NULL;
 TextureFont * TexF		= NULL;
 TextureFont * TexF2	= NULL;
+TextCache TTFCache;
+TextCache TTF2Cache;
+TextCache TTFOCache;
+TextCache TexFCache;
+TextCache TexF2Cache;
 TextCache TxtCache;
 
 void mainLoop()
@@ -25,21 +30,21 @@ void mainLoop()
 	Float YPos = 32;
 
 	// Draw the text on screen
-	TTF->draw( win->getWidth() * 0.5f - TTF->getTextWidth() * 0.5f, YPos );
+	TTFCache.draw( win->getWidth() * 0.5f - TTFCache.getTextWidth() * 0.5f, YPos );
 
-	TTFO->draw( win->getWidth() * 0.5f - TTFO->getTextWidth() * 0.5f, ( YPos += TTF->getTextHeight() + 24 ) );
+	TTFOCache.draw( ( win->getWidth() - TTFOCache.getTextWidth() ) * 0.5f, ( YPos += TTFCache.getTextHeight() + 24 ) );
 
-	TTF2->draw( win->getWidth() * 0.5f - TTF2->getTextWidth() * 0.5f, ( YPos += TTF->getTextHeight() + 24 ) );
+	TTF2Cache.draw( ( win->getWidth() - TTF2Cache.getTextWidth() ) * 0.5f, ( YPos += TTFOCache.getTextHeight() + 24 ) );
 
-	TexF->draw( win->getWidth() * 0.5f - TexF->getTextWidth() * 0.5f, ( YPos += TTF2->getTextHeight() + 24 ) );
+	TexFCache.draw( ( win->getWidth() - TexFCache.getTextWidth() ) * 0.5f, ( YPos += TTF2Cache.getTextHeight() + 24 ) );
 
-	TexF2->draw( win->getWidth() * 0.5f - TexF2->getTextWidth() * 0.5f, ( YPos += TexF->getTextHeight() + 24 ) );
+	TexF2Cache.draw( ( win->getWidth() - TexF2Cache.getTextWidth() ) * 0.5f, ( YPos += TexFCache.getTextHeight() + 24 ) );
 
 	// Draw the cached text
-	TxtCache.draw( 48, ( YPos += TexF2->getTextHeight() + 24 ) );
+	TxtCache.draw( ( win->getWidth() - TxtCache.getTextWidth() ) * 0.5f, ( YPos += TexF2Cache.getTextHeight() + 24 ) );
 
 	// Text rotated and scaled
-	TTF->draw( win->getWidth() * 0.5f - TTF->getTextWidth() * 0.5f, 512, FONT_DRAW_LEFT, Vector2f( 0.75f, 0.75f ), 12.5f );
+	TTFCache.draw( ( win->getWidth() - TTFCache.getTextWidth() ) * 0.5f, 512 + 32, Vector2f( 0.75f, 0.75f ), 12.5f );
 
 	// Draw frame
 	win->display();
@@ -90,16 +95,26 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		TexLoader.load();;
 		TexF2->load( TexLoader.getId(), 32 );
 
+		// Set the font to the text cache
+		TTFCache.setFont( TTF );
 		// Set a text to render
-		TTF->setText( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
-		TTFO->setText( TTF->getText() );
-		TTF2->setText( TTF->getText() );
-		TexF->setText( TTF->getText() );
-		TexF2->setText( TTF->getText() );
+		TTFCache.setText( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
+
+		TTFOCache.setFont( TTFO );
+		TTFOCache.setText( TTFCache.getText() );
+
+		TTF2Cache.setFont( TTF2 );
+		TTF2Cache.setText( TTFCache.getText() );
 
 		// Set the font color
-		TTF2->setColor( RGB(0,0,0) );
-		TexF->setColor( RGB(0,0,0) );
+		TTF2Cache.setColor( RGB(0,0,0) );
+
+		TexFCache.setFont( TexF );
+		TexFCache.setText( TTFCache.getText() );
+		TexFCache.setColor( RGB(0,0,0) );
+
+		TexF2Cache.setFont( TexF2 );
+		TexF2Cache.setText( TTFCache.getText() );
 
 		// Create a new text string
 		String Txt( "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." );

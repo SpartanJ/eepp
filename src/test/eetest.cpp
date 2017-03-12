@@ -84,9 +84,6 @@ void EETest::init() {
 		Scenes[4] = cb::Make0( this, &EETest::screen4 );
 		Scenes[5] = cb::Make0( this, &EETest::screen5 );
 
-		//InBuf.Start();
-		InBuf.isNewLineEnabled( true );
-
 		setRandomSeed( static_cast<Uint32>( Sys::getSystemTime() * 1000 ) );
 
 		loadTextures();
@@ -861,7 +858,6 @@ void EETest::onItemClick( const UIEvent * Event ) {
 		setScreen( 5 );
 	} else if ( "Show Console" == txt ) {
 		Con.toggle();
-		InBuf.setActive( !Con.isActive() );
 
 		if ( Con.isActive() ) {
 			mWindow->startTextInput();
@@ -1452,23 +1448,6 @@ void EETest::render() {
 
 	mInfoText.draw( 6.f, 6.f );
 
-	if ( InBuf.isActive() ) {
-		Uint32 NLPos = 0;
-		Uint32 LineNum = InBuf.getCurPosLinePos( NLPos );
-		if ( InBuf.getCursorPos() == (int)InBuf.getBuffer().size() && !LineNum ) {
-			FF2->draw( "_", 6.f + FF2->getTextWidth(), 180.f );
-		} else {
-			FF2->setText( InBuf.getBuffer().substr( NLPos, InBuf.getCursorPos() - NLPos ) );
-			FF2->draw( "_", 6.f + FF2->getTextWidth(), 180.f + (Float)LineNum * (Float)FF2->getFontHeight() );
-		}
-
-		FF2->setText( "FPS: " + String::toStr( mWindow->getFPS() ) );
-		FF2->draw( mWindow->getWidth() - FF2->getTextWidth() - 15, 0 );
-
-		FF2->setText( InBuf.getBuffer() );
-		FF2->draw( 6, 180, FONT_DRAW_SHADOW );
-	}
-
 	UIManager::instance()->draw();
 	UIManager::instance()->update();
 
@@ -1550,7 +1529,6 @@ void EETest::input() {
 
 	if ( KM->isKeyUp( KEY_F3 ) || KM->isKeyUp( KEY_WORLD_26 ) || KM->isKeyUp( KEY_BACKSLASH ) ) {
 		Con.toggle();
-		InBuf.setActive( !Con.isActive() );
 	}
 
 	if ( KM->isKeyUp(KEY_1) && KM->isControlPressed() )

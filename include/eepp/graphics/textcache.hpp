@@ -107,6 +107,10 @@ class EE_API TextCache {
 		std::vector<eeVertexCoords>	mRenderCoords;
 		std::vector<ColorA> mColors;
 
+		void internalDraw( const Float& X, const Float& Y, const Vector2f& Scale, const Float& Angle, EE_BLEND_MODE Effect );
+
+		void cacheVerts(const Int32 & X, const Int32 & Y);
+
 		void updateCoords();
 
 		const bool& cachedCoords() const;

@@ -43,7 +43,6 @@ class EETest : private Thread {
 		TextureFactory* TF;
 		System::Log* Log;
 		EE::Window::Input* KM;
-		InputTextBuffer InBuf;
 
 		bool side, aside;
 		Float ang, scale, alpha, Ang;

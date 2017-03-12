@@ -81,6 +81,7 @@ class FontStyleConfig {
 		}
 
 		Graphics::Font * Font;
+		Uint32 FontCharacterSize;
 		ColorA FontColor;
 		ColorA FontShadowColor;
 		ColorA FontOverColor;

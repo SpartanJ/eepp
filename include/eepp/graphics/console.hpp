@@ -165,7 +165,7 @@ class EE_API Console : protected LogReaderInterface {
 		sCon mCon;
 
 		Float mCurAlpha;
-
+		TextCache mTextCache;
 		bool mEnabled;
 		bool mVisible;
 		bool mFadeIn;

@@ -12,6 +12,7 @@ namespace EE { namespace UI {
 UIThemeDefault::UIThemeDefault( const std::string& name, const std::string& Abbr, Graphics::Font * defaultFont ) :
 	UITheme( name, Abbr, defaultFont )
 {
+	mFontStyleConfig.FontCharacterSize = 12;
 	mFontStyleConfig.FontColor = ColorA( 230, 230, 230, 255 );
 	mFontStyleConfig.FontOverColor = mFontStyleConfig.FontSelectedColor = ColorA( 255, 255, 255, 255 );
 	mFontStyleConfig.FontShadowColor = ColorA( 50, 50, 50, 150 );

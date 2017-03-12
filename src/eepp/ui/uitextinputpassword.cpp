@@ -63,9 +63,9 @@ void UITextInputPassword::alignFix() {
 		for ( size_t i = 0; i < curStr.size(); i++ )
 			pasStr += '*';
 
-		mPassCache->getFont()->setText( pasStr );
+		mPassCache->setText( pasStr );
 
-		Float tW	= mPassCache->getFont()->getTextWidth();
+		Float tW	= mPassCache->getTextWidth();
 		Float tX	= mRealAlignOffset.x + tW;
 
 		mCurPos.x	= tW;

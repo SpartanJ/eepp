@@ -159,9 +159,11 @@ void UITextInput::alignFix() {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
 
-		mTextCache->getFont()->setText( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPos() - NLPos ) );
+		TextCache textCache( mTextCache->getFont() );
 
-		Float tW	= mTextCache->getFont()->getTextWidth();
+		textCache.setText( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPos() - NLPos ) );
+
+		Float tW	= textCache.getTextWidth();
 		Float tX	= mRealAlignOffset.x + tW;
 
 		mCurPos.x	= tW;
