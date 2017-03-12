@@ -36,17 +36,12 @@ inline Uint32 fontVAlignGet( Uint32 Flags ) {
 #define FONT_DRAW_ALIGN_MASK	( FONT_DRAW_VALIGN_MASK | FONT_DRAW_HALIGN_MASK )
 
 /** Basic Glyph structure used by the engine */
-struct eeGlyph {
+struct Glyph {
 	Int32 MinX, MaxX, MinY, MaxY, Advance;
 	Uint16 CurX, CurY, CurW, CurH, GlyphH;
 };
 
-struct eeVertexCoords {
-	Float TexCoords[2];
-	Float Vertex[2];
-};
-
-struct eeTexCoords {
+struct TextureCoords {
 	Float TexCoords[8];
 	Float Vertex[8];
 };

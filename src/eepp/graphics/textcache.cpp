@@ -153,10 +153,6 @@ void TextCache::setShadowColor(const ColorA& color) {
 	mFontShadowColor = color;
 }
 
-std::vector<eeVertexCoords>& TextCache::getVertextCoords() {
-	return mRenderCoords;
-}
-
 std::vector<ColorA>& TextCache::getColors() {
 	return mColors;
 }
@@ -171,81 +167,8 @@ void TextCache::cacheWidth() {
 	mCachedCoords = false;
 }
 
-void TextCache::internalDraw( const Float& X, const Float& Y, const Vector2f & Scale, const Float & Angle, EE_BLEND_MODE Effect ) {
-	GlobalBatchRenderer::instance()->draw();
-	TextureFactory::instance()->bind( mFont->getTexId() );
-	BlendMode::setMode( Effect );
-
-	if ( mFlags & FONT_DRAW_SHADOW ) {
-		Uint32 f = mFlags;
-
-		mFlags &= ~FONT_DRAW_SHADOW;
-
-		ColorA Col = getColor();
-
-		if ( Col.a() != 255 ) {
-			ColorA ShadowColor = getShadowColor();
-
-			ShadowColor.Alpha = (Uint8)( (Float)ShadowColor.Alpha * ( (Float)Col.a() / (Float)255 ) );
-
-			setColor( ShadowColor );
-		} else {
-			setColor( getShadowColor() );
-		}
-
-		Float pd = PixelDensity::getPixelDensity();
-
-		GLi->translatef( 1 * pd , 1 * pd, 0.f );
-
-		internalDraw( X, Y, Scale, Angle, Effect );
-
-		GLi->translatef( -1 * pd , -1 * pd, 0.f );
-
-		mFlags = f;
-
-		setColor( Col );
-	}
-
-	Float cX = (Float) ( (Int32)X );
-	Float cY = (Float) ( (Int32)Y );
-	unsigned int numvert = 0;
-
-	if ( Angle != 0.0f || Scale != 1.0f ) {
-		GLi->pushMatrix();
-
-		Vector2f Center( cX + getTextWidth() * 0.5f, cY + getTextHeight() * 0.5f );
-		GLi->translatef( Center.x , Center.y, 0.f );
-		GLi->rotatef( Angle, 0.0f, 0.0f, 1.0f );
-		GLi->scalef( Scale.x, Scale.y, 1.0f );
-		GLi->translatef( -Center.x + X, -Center.y + Y, 0.f );
-	}
-
-	if ( !cachedCoords() ) {
-		cacheVerts( X, Y );
-	}
-
-	numvert = cachedVerts();
-
-	Uint32 alloc	= numvert * sizeof(eeVertexCoords);
-	Uint32 allocC	= numvert * GLi->quadVertexs();
-
-	GLi->colorPointer	( 4, GL_UNSIGNED_BYTE	, 0						, reinterpret_cast<char*>( &mColors[0] )							, allocC	);
-	GLi->texCoordPointer( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[0] )						, alloc		);
-	GLi->vertexPointer	( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[0] ) + sizeof(Float) * 2	, alloc		);
-
-	if ( GLi->quadsSupported() ) {
-		GLi->drawArrays( GL_QUADS, 0, numvert );
-	} else {
-		GLi->drawArrays( GL_TRIANGLES, 0, numvert );
-	}
-
-	if ( Angle != 0.0f || Scale != 1.0f ) {
-		GLi->popMatrix();
-	}
-}
-
-void TextCache::cacheVerts( const Int32& X, const Int32& Y ) {
-	if ( cachedCoords() )
+void TextCache::cacheVerts() {
+	if ( mCachedCoords )
 		return;
 
 	Float nX = 0;
@@ -267,8 +190,6 @@ void TextCache::cacheVerts( const Int32& X, const Int32& Y ) {
 	}
 
 	Uint32 tGlyphSize = mFont->getGlyphCount();
-	Float cX = (Float) ( (Int32)X );
-	Float cY = (Float) ( (Int32)Y );
 	unsigned int numvert = 0;
 
 	for ( unsigned int i = 0; i < getText().size(); i++ ) {
@@ -278,8 +199,8 @@ void TextCache::cacheVerts( const Int32& X, const Int32& Y ) {
 			Char = 256 + Char;
 
 		if ( Char >= 0 && Char < tGlyphSize ) {
-			eeTexCoords C = mFont->getTexCoords( Char );
-			eeGlyph Glyph = mFont->getGlyph( Char );
+			TextureCoords C = mFont->getTextureCoords( Char );
+			Glyph Glyph = mFont->getGlyph( Char );
 
 			switch( Char ) {
 				case '\v':
@@ -301,7 +222,7 @@ void TextCache::cacheVerts( const Int32& X, const Int32& Y ) {
 				case '\n':
 				{
 					if ( mFlags & FONT_DRAW_VERTICAL ) {
-						nX += (mFont->getFontHeight());
+						nX += mFont->getFontHeight();
 						nY = 0;
 					} else {
 						if ( i + 1 < getText().size() ) {
@@ -317,7 +238,7 @@ void TextCache::cacheVerts( const Int32& X, const Int32& Y ) {
 							}
 						}
 
-						nY += (mFont->getFontHeight());
+						nY += mFont->getLineSkip();
 						Line++;
 					}
 
@@ -329,45 +250,45 @@ void TextCache::cacheVerts( const Int32& X, const Int32& Y ) {
 						for ( Uint8 z = 0; z < 8; z+=2 ) {
 							mRenderCoords[ numvert ].TexCoords[0]	= C.TexCoords[z];
 							mRenderCoords[ numvert ].TexCoords[1]	= C.TexCoords[ z + 1 ];
-							mRenderCoords[ numvert ].Vertex[0]		= cX + C.Vertex[z] + nX;
-							mRenderCoords[ numvert ].Vertex[1]		= cY + C.Vertex[ z + 1 ] + nY;
+							mRenderCoords[ numvert ].Vertex[0]		= C.Vertex[z] + nX;
+							mRenderCoords[ numvert ].Vertex[1]		= C.Vertex[ z + 1 ] + nY;
 							numvert++;
 						}
 					} else {
 						mRenderCoords[ numvert ].TexCoords[0]	= C.TexCoords[2];
 						mRenderCoords[ numvert ].TexCoords[1]	= C.TexCoords[ 2 + 1 ];
-						mRenderCoords[ numvert ].Vertex[0]		= cX + C.Vertex[2] + nX;
-						mRenderCoords[ numvert ].Vertex[1]		= cY + C.Vertex[ 2 + 1 ] + nY;
+						mRenderCoords[ numvert ].Vertex[0]		= C.Vertex[2] + nX;
+						mRenderCoords[ numvert ].Vertex[1]		= C.Vertex[ 2 + 1 ] + nY;
 						numvert++;
 
 						mRenderCoords[ numvert ].TexCoords[0]	= C.TexCoords[0];
 						mRenderCoords[ numvert ].TexCoords[1]	= C.TexCoords[ 0 + 1 ];
-						mRenderCoords[ numvert ].Vertex[0]		= cX + C.Vertex[0] + nX;
-						mRenderCoords[ numvert ].Vertex[1]		= cY + C.Vertex[ 0 + 1 ] + nY;
+						mRenderCoords[ numvert ].Vertex[0]		= C.Vertex[0] + nX;
+						mRenderCoords[ numvert ].Vertex[1]		= C.Vertex[ 0 + 1 ] + nY;
 						numvert++;
 
 						mRenderCoords[ numvert ].TexCoords[0]	= C.TexCoords[6];
 						mRenderCoords[ numvert ].TexCoords[1]	= C.TexCoords[ 6 + 1 ];
-						mRenderCoords[ numvert ].Vertex[0]		= cX + C.Vertex[6] + nX;
-						mRenderCoords[ numvert ].Vertex[1]		= cY + C.Vertex[ 6 + 1 ] + nY;
+						mRenderCoords[ numvert ].Vertex[0]		= C.Vertex[6] + nX;
+						mRenderCoords[ numvert ].Vertex[1]		= C.Vertex[ 6 + 1 ] + nY;
 						numvert++;
 
 						mRenderCoords[ numvert ].TexCoords[0]	= C.TexCoords[2];
 						mRenderCoords[ numvert ].TexCoords[1]	= C.TexCoords[ 2 + 1 ];
-						mRenderCoords[ numvert ].Vertex[0]		= cX + C.Vertex[2] + nX;
-						mRenderCoords[ numvert ].Vertex[1]		= cY + C.Vertex[ 2 + 1 ] + nY;
+						mRenderCoords[ numvert ].Vertex[0]		= C.Vertex[2] + nX;
+						mRenderCoords[ numvert ].Vertex[1]		= C.Vertex[ 2 + 1 ] + nY;
 						numvert++;
 
 						mRenderCoords[ numvert ].TexCoords[0]	= C.TexCoords[4];
 						mRenderCoords[ numvert ].TexCoords[1]	= C.TexCoords[ 4 + 1 ];
-						mRenderCoords[ numvert ].Vertex[0]		= cX + C.Vertex[4] + nX;
-						mRenderCoords[ numvert ].Vertex[1]		= cY + C.Vertex[ 4 + 1 ] + nY;
+						mRenderCoords[ numvert ].Vertex[0]		= C.Vertex[4] + nX;
+						mRenderCoords[ numvert ].Vertex[1]		= C.Vertex[ 4 + 1 ] + nY;
 						numvert++;
 
 						mRenderCoords[ numvert ].TexCoords[0]	= C.TexCoords[6];
 						mRenderCoords[ numvert ].TexCoords[1]	= C.TexCoords[ 6 + 1 ];
-						mRenderCoords[ numvert ].Vertex[0]		= cX + C.Vertex[6] + nX;
-						mRenderCoords[ numvert ].Vertex[1]		= cY + C.Vertex[ 6 + 1 ] + nY;
+						mRenderCoords[ numvert ].Vertex[0]		= C.Vertex[6] + nX;
+						mRenderCoords[ numvert ].Vertex[1]		= C.Vertex[ 6 + 1 ] + nY;
 						numvert++;
 					}
 
@@ -380,8 +301,8 @@ void TextCache::cacheVerts( const Int32& X, const Int32& Y ) {
 		}
 	}
 
-	cachedCoords( true );
-	cachedVerts( numvert );
+	mCachedCoords = true;
+	mVertexNumCached = numvert;
 }
 
 Float TextCache::getTextWidth() {
@@ -403,33 +324,77 @@ const std::vector<Float>& TextCache::getLinesWidth() {
 void TextCache::draw( const Float& X, const Float& Y, const Vector2f& Scale, const Float& Angle, EE_BLEND_MODE Effect ) {
 	if ( NULL != mFont ) {
 		GlobalBatchRenderer::instance()->draw();
+		TextureFactory::instance()->bind( mFont->getTexId() );
+		BlendMode::setMode( Effect );
+
+		if ( mFlags & FONT_DRAW_SHADOW ) {
+			Uint32 f = mFlags;
+
+			mFlags &= ~FONT_DRAW_SHADOW;
+
+			ColorA Col = getColor();
+
+			if ( Col.a() != 255 ) {
+				ColorA ShadowColor = getShadowColor();
+
+				ShadowColor.Alpha = (Uint8)( (Float)ShadowColor.Alpha * ( (Float)Col.a() / (Float)255 ) );
+
+				setColor( ShadowColor );
+			} else {
+				setColor( getShadowColor() );
+			}
+
+			Float pd = PixelDensity::dpToPx(1);
+
+			draw( X + pd, Y + pd, Scale, Angle, Effect );
+
+			mFlags = f;
+
+			setColor( Col );
+		}
+
+		unsigned int numvert = 0;
 
 		if ( Angle != 0.0f || Scale != 1.0f ) {
-			internalDraw( X, Y, Scale, Angle, Effect );
+			Float cX = (Float) ( (Int32)X );
+			Float cY = (Float) ( (Int32)Y );
+
+			GLi->pushMatrix();
+
+			Vector2f Center( cX + getTextWidth() * 0.5f, cY + getTextHeight() * 0.5f );
+			GLi->translatef( Center.x , Center.y, 0.f );
+			GLi->rotatef( Angle, 0.0f, 0.0f, 1.0f );
+			GLi->scalef( Scale.x, Scale.y, 1.0f );
+			GLi->translatef( -Center.x + X, -Center.y + Y, 0.f );
 		} else {
-			GLi->translatef( X, Y, 0.f );
-	
-			internalDraw( 0, 0, Scale, Angle, Effect );
-	
-			GLi->translatef( -X, -Y, 0.f );
+			GLi->translatef( X, Y, 0 );
+		}
+
+		if ( !mCachedCoords ) {
+			cacheVerts();
+		}
+
+		numvert = mVertexNumCached;
+
+		Uint32 alloc	= numvert * sizeof(VertexCoords);
+		Uint32 allocC	= numvert * GLi->quadVertexs();
+
+		GLi->colorPointer	( 4, GL_UNSIGNED_BYTE	, 0						, reinterpret_cast<char*>( &mColors[0] )							, allocC	);
+		GLi->texCoordPointer( 2, GL_FP				, sizeof(VertexCoords), reinterpret_cast<char*>( &mRenderCoords[0] )						, alloc		);
+		GLi->vertexPointer	( 2, GL_FP				, sizeof(VertexCoords), reinterpret_cast<char*>( &mRenderCoords[0] ) + sizeof(Float) * 2	, alloc		);
+
+		if ( GLi->quadsSupported() ) {
+			GLi->drawArrays( GL_QUADS, 0, numvert );
+		} else {
+			GLi->drawArrays( GL_TRIANGLES, 0, numvert );
+		}
+
+		if ( Angle != 0.0f || Scale != 1.0f ) {
+			GLi->popMatrix();
+		} else {
+			GLi->translatef( -X, -Y, 0 );
 		}
 	}
-}
-
-const bool& TextCache::cachedCoords() const {
-	return mCachedCoords;
-}
-
-void TextCache::cachedCoords( const bool& cached ) {
-	mCachedCoords = cached;
-}
-
-const unsigned int& TextCache::cachedVerts() const {
-	return mVertexNumCached;
-}
-
-void TextCache::cachedVerts( const unsigned int& num ) {
-	mVertexNumCached = num;
 }
 
 void TextCache::setFlags( const Uint32& flags ) {

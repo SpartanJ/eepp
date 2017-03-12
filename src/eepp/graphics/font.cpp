@@ -177,11 +177,13 @@ Vector2i Font::getCursorPos( const String& Text, const Uint32& Pos ) {
 	return Vector2i( Width, Height );
 }
 
-const eeGlyph& Font::getGlyph(const Uint32 & index) {
+const Glyph& Font::getGlyph(const Uint32 & index) {
+	eeASSERT( index < mGlyphs.size() );
 	return mGlyphs[ index ];
 }
 
-const eeTexCoords& Font::getTexCoords(const Uint32 & index) {
+const TextureCoords& Font::getTextureCoords(const Uint32 & index) {
+	eeASSERT( index < mTexCoords.size() );
 	return mTexCoords[ index ];
 }
 
@@ -232,55 +234,55 @@ void Font::shrinkText( std::string& Str, const Uint32& MaxWidth ) {
 	if ( !Str.size() )
 		return;
 
-	Float		tCurWidth		= 0.f;
-	Float 	tWordWidth		= 0.f;
-	Float 	tMaxWidth		= (Float) MaxWidth;
-	char *		tStringLoop		= &Str[0];
-	char *		tLastSpace		= NULL;
-	Uint32 		tGlyphSize 		= (Uint32)mGlyphs.size();
+	Float tCurWidth = 0.f;
+	Float tWordWidth = 0.f;
+	Float tMaxWidth = (Float) MaxWidth;
+	char * tChar = &Str[0];
+	char * tLastSpace = NULL;
+	Uint32  tGlyphSize = (Uint32)mGlyphs.size();
 
-	while ( *tStringLoop ) {
-		if ( (Uint32)( *tStringLoop ) < tGlyphSize ) {
-			eeGlyph * pChar = &mGlyphs[ ( *tStringLoop ) ];
+	while ( *tChar ) {
+		if ( (Uint32)( *tChar ) < tGlyphSize ) {
+			Glyph * pChar = &mGlyphs[ ( *tChar ) ];
 			Float fCharWidth	= (Float)pChar->Advance;
 
-			if ( ( *tStringLoop ) == '\t' )
+			if ( ( *tChar ) == '\t' )
 				fCharWidth += pChar->Advance * 3;
 
 			tWordWidth		+= fCharWidth;
 
-			if ( ' ' == *tStringLoop || '\0' == *( tStringLoop + 1 ) ) {
+			if ( ' ' == *tChar || '\0' == *( tChar + 1 ) ) {
 				if ( tCurWidth + tWordWidth < tMaxWidth ) {
 					tCurWidth		+= tWordWidth;
-					tLastSpace		= tStringLoop;
+					tLastSpace		= tChar;
 
-					tStringLoop++;
+					tChar++;
 				} else {
 					if ( NULL != tLastSpace ) {
 						*tLastSpace		= '\n';
-						tStringLoop	= tLastSpace + 1;
+						tChar	= tLastSpace + 1;
 					} else {
-						*tStringLoop	= '\n';
+						*tChar	= '\n';
 					}
 
-					if ( '\0' == *( tStringLoop + 1 ) )
-						tStringLoop++;
+					if ( '\0' == *( tChar + 1 ) )
+						tChar++;
 
 					tLastSpace		= NULL;
 					tCurWidth		= 0.f;
 				}
 
 				tWordWidth = 0.f;
-			} else if ( '\n' == *tStringLoop ) {
+			} else if ( '\n' == *tChar ) {
 				tWordWidth 		= 0.f;
 				tCurWidth 		= 0.f;
 				tLastSpace		= NULL;
-				tStringLoop++;
+				tChar++;
 			} else {
-				tStringLoop++;
+				tChar++;
 			}
 		} else {
-			*tStringLoop		= ' ';
+			*tChar		= ' ';
 		}
 	}
 }
@@ -289,43 +291,43 @@ void Font::shrinkText( String& Str, const Uint32& MaxWidth ) {
 	if ( !Str.size() )
 		return;
 
-	Float		tCurWidth		= 0.f;
-	Float 	tWordWidth		= 0.f;
-	Float 	tMaxWidth		= (Float) MaxWidth;
-	String::StringBaseType *	tStringLoop		= &Str[0];
-	String::StringBaseType *	tLastSpace		= NULL;
+	Float tCurWidth = 0.f;
+	Float tWordWidth = 0.f;
+	Float tMaxWidth = (Float) MaxWidth;
+	String::StringBaseType * tChar = &Str[0];
+	String::StringBaseType * tLastSpace = NULL;
 
-	while ( *tStringLoop ) {
-		if ( (String::StringBaseType)( *tStringLoop ) < mGlyphs.size() ) {
-			eeGlyph * pChar = &mGlyphs[ ( *tStringLoop ) ];
+	while ( *tChar ) {
+		if ( (String::StringBaseType)( *tChar ) < mGlyphs.size() ) {
+			Glyph * pChar = &mGlyphs[ ( *tChar ) ];
 			Float fCharWidth	= (Float)pChar->Advance;
 
-			if ( ( *tStringLoop ) == '\t' )
+			if ( ( *tChar ) == '\t' )
 				fCharWidth += pChar->Advance * 3;
 
 			// Add the new char width to the current word width
 			tWordWidth		+= fCharWidth;
 
-			if ( ' ' == *tStringLoop || '\0' == *( tStringLoop + 1 ) ) {
+			if ( ' ' == *tChar || '\0' == *( tChar + 1 ) ) {
 
 				// If current width plus word width is minor to the max width, continue adding
 				if ( tCurWidth + tWordWidth < tMaxWidth ) {
 					tCurWidth		+= tWordWidth;
-					tLastSpace		= tStringLoop;
+					tLastSpace		= tChar;
 
-					tStringLoop++;
+					tChar++;
 				} else {
 					// If it was an space before, replace that space for an new line
 					// Start counting from the new line first character
 					if ( NULL != tLastSpace ) {
 						*tLastSpace		= '\n';
-						tStringLoop	= tLastSpace + 1;
+						tChar	= tLastSpace + 1;
 					} else {	// The word is larger than the current possible width
-						*tStringLoop	= '\n';
+						*tChar	= '\n';
 					}
 
-					if ( '\0' == *( tStringLoop + 1 ) )
-						tStringLoop++;
+					if ( '\0' == *( tChar + 1 ) )
+						tChar++;
 
 					// Set the last spaces as null, because is a new line
 					tLastSpace		= NULL;
@@ -336,16 +338,16 @@ void Font::shrinkText( String& Str, const Uint32& MaxWidth ) {
 
 				// New word, so we reset the current word width
 				tWordWidth = 0.f;
-			} else if ( '\n' == *tStringLoop ) {
+			} else if ( '\n' == *tChar ) {
 				tWordWidth 		= 0.f;
 				tCurWidth 		= 0.f;
 				tLastSpace		= NULL;
-				tStringLoop++;
+				tChar++;
 			} else {
-				tStringLoop++;
+				tChar++;
 			}
 		} else {	// Replace any unknown char as spaces.
-			*tStringLoop		= ' ';
+			*tChar		= ' ';
 		}
 	}
 }

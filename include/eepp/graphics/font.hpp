@@ -67,9 +67,9 @@ class EE_API Font {
 		/** @return The cursor position inside the string */
 		Vector2i getCursorPos( const String& Text, const Uint32& Pos );
 
-		const eeGlyph& getGlyph( const Uint32& index );
+		const Glyph& getGlyph( const Uint32& index );
 
-		const eeTexCoords&  getTexCoords( const Uint32& index );
+		const TextureCoords&  getTextureCoords( const Uint32& index );
 
 		Uint32 getGlyphCount() const;
 	protected:
@@ -83,8 +83,8 @@ class EE_API Font {
 		Int32						mAscent;
 		Int32						mDescent;
 
-		std::vector<eeGlyph> 		mGlyphs;
-		std::vector<eeTexCoords> 	mTexCoords;
+		std::vector<Glyph> 		mGlyphs;
+		std::vector<TextureCoords> 	mTexCoords;
 
 		TextCache					mTextCache;
 

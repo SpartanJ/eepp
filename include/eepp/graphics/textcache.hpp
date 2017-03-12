@@ -42,9 +42,6 @@ class EE_API TextCache {
 		/** @return Every cached text line width */
 		const std::vector<Float>& getLinesWidth();
 
-		/** @return The vertex coordinates cached */
-		std::vector<eeVertexCoords>& getVertextCoords();
-
 		/** @return The text colors cached */
 		std::vector<ColorA>& getColors();
 
@@ -86,6 +83,11 @@ class EE_API TextCache {
 		/** Force to cache the width of the current text */
 		void cacheWidth();
 	protected:
+		struct VertexCoords {
+			Float TexCoords[2];
+			Float Vertex[2];
+		};
+
 		friend class Font;
 
 		String mText;
@@ -104,22 +106,12 @@ class EE_API TextCache {
 		bool mCachedCoords;
 
 		std::vector<Float> mLinesWidth;
-		std::vector<eeVertexCoords>	mRenderCoords;
+		std::vector<VertexCoords>	mRenderCoords;
 		std::vector<ColorA> mColors;
 
-		void internalDraw( const Float& X, const Float& Y, const Vector2f& Scale, const Float& Angle, EE_BLEND_MODE Effect );
-
-		void cacheVerts(const Int32 & X, const Int32 & Y);
+		void cacheVerts();
 
 		void updateCoords();
-
-		const bool& cachedCoords() const;
-
-		void cachedCoords( const bool& cached );
-		
-		const unsigned int& cachedVerts() const;
-
-		void cachedVerts( const unsigned int& num );
 };
 
 }}
