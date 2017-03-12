@@ -12,6 +12,19 @@ namespace EE { namespace Graphics {
 
 static BatchRenderer * sBR = NULL;
 
+
+Uint32 Texture::getMaximumSize() {
+	static bool checked = false;
+	static GLint size = 0;
+
+	if (!checked) {
+		checked = true;
+		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &size);
+	}
+
+	return static_cast<Uint32>(size);
+}
+
 Texture::Texture() :
 	Image(),
 	mFilepath(""),
@@ -136,6 +149,29 @@ Uint8 * Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
 
 	return &mPixels[0];
 	#else
+	if ( !( mFlags & TEX_FLAG_LOCKED ) ) {
+		TextureSaver saver( mTexture );
+
+		GLuint frameBuffer = 0;
+		glGenFramebuffersEXT(1, &frameBuffer);
+
+		if ( frameBuffer ) {
+			allocate( mWidth * mHeight * mChannels );
+
+			GLint previousFrameBuffer;
+			glGetIntegerv( GL_FRAMEBUFFER_BINDING, &previousFrameBuffer );
+			glBindFramebufferEXT( GL_FRAMEBUFFER, frameBuffer );
+			glFramebufferTexture2DEXT( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture, 0 );
+			glReadPixels( 0, 0, mWidth, mHeight, GL_RGBA, GL_UNSIGNED_BYTE, &mPixels[0] );
+			glDeleteFramebuffersEXT(1, &frameBuffer);
+			glBindFramebufferEXT( GL_FRAMEBUFFER, previousFrameBuffer );
+
+			mFlags |= TEX_FLAG_LOCKED;
+
+			return &mPixels[0];
+		}
+	}
+
 	return NULL;
 	#endif
 }
@@ -381,6 +417,12 @@ void Texture::update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x
 		TextureSaver saver( mTexture );
 
 		glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, (unsigned int)pf, GL_UNSIGNED_BYTE, pixels );
+
+		if ( hasLocalCopy() ) {
+			Image image( pixels, width, height, mChannels );
+
+			Image::copyImage( &image, x, y );
+		}
 	}
 }
 
@@ -390,6 +432,24 @@ void Texture::update( const Uint8* pixels ) {
 
 void Texture::update( Image *image, Uint32 x, Uint32 y ) {
 	update( image->getPixelsPtr(), image->getWidth(), image->getHeight(), x, y, channelsToPixelFormat( image->getChannels() ) );
+}
+
+void Texture::replace( Image * image ) {
+	Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
+	flags = (mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
+
+	Int32 width = (Int32)image->getWidth();
+	Int32 height = (Int32)image->getHeight();
+	mTexture = SOIL_create_OGL_texture( image->getPixelsPtr(), &width, &height, image->getChannels(), mTexture, flags );
+	mWidth = mImgWidth = width;
+	mHeight = mImgHeight = height;
+	mChannels = image->getChannels();
+
+	if ( hasLocalCopy() ) {
+		// Renew the local copy
+		allocate( image->getMemSize(), ColorA(0,0,0,0), false );
+		Image::copyImage( image );
+	}
 }
 
 const Uint32& Texture::getHashName() const {

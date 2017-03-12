@@ -90,7 +90,7 @@ class EE_API Console : protected LogReaderInterface {
 		* @param Font The Font pointer to class
 		* @param MakeDefaultCommands Register the default commands provided by the class?
 		* @param AttachToLog Attach the console to the Log instance
-		* @param MaxLogLines Maximun number of lines stored on the console
+		* @param MaxLogLines Maximum number of lines stored on the console
 		* @param TextureId Background texture id ( 0 for no texture )
 		*/
 		void create( Font* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const unsigned int& MaxLogLines = 1024, const Uint32& textureId = 0 );
