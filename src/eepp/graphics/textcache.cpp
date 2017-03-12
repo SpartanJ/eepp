@@ -183,8 +183,6 @@ void TextCache::internalDraw( const Float& X, const Float& Y, const Vector2f & S
 
 		ColorA Col = getColor();
 
-		setText( getText() );
-
 		if ( Col.a() != 255 ) {
 			ColorA ShadowColor = getShadowColor();
 
@@ -197,7 +195,11 @@ void TextCache::internalDraw( const Float& X, const Float& Y, const Vector2f & S
 
 		Float pd = PixelDensity::getPixelDensity();
 
-		internalDraw( X + 1 * pd, Y + 1 * pd, Scale, Angle, Effect );
+		GLi->translatef( 1 * pd , 1 * pd, 0.f );
+
+		internalDraw( X, Y, Scale, Angle, Effect );
+
+		GLi->translatef( -1 * pd , -1 * pd, 0.f );
 
 		mFlags = f;
 
@@ -218,9 +220,6 @@ void TextCache::internalDraw( const Float& X, const Float& Y, const Vector2f & S
 		GLi->translatef( -Center.x + X, -Center.y + Y, 0.f );
 	}
 
-	std::vector<eeVertexCoords>& RenderCoords = getVertextCoords();
-	std::vector<ColorA>& Colors = getColors();
-
 	if ( !cachedCoords() ) {
 		cacheVerts( X, Y );
 	}
@@ -230,9 +229,9 @@ void TextCache::internalDraw( const Float& X, const Float& Y, const Vector2f & S
 	Uint32 alloc	= numvert * sizeof(eeVertexCoords);
 	Uint32 allocC	= numvert * GLi->quadVertexs();
 
-	GLi->colorPointer	( 4, GL_UNSIGNED_BYTE	, 0						, reinterpret_cast<char*>( &Colors[0] )								, allocC	);
-	GLi->texCoordPointer( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] )						, alloc		);
-	GLi->vertexPointer	( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] ) + sizeof(Float) * 2	, alloc		);
+	GLi->colorPointer	( 4, GL_UNSIGNED_BYTE	, 0						, reinterpret_cast<char*>( &mColors[0] )							, allocC	);
+	GLi->texCoordPointer( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[0] )						, alloc		);
+	GLi->vertexPointer	( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[0] ) + sizeof(Float) * 2	, alloc		);
 
 	if ( GLi->quadsSupported() ) {
 		GLi->drawArrays( GL_QUADS, 0, numvert );
