@@ -633,7 +633,7 @@ FontTrueType::Page::Page() :
 }
 
 FontTrueType::Page::~Page() {
-	if ( NULL != texture )
+	if ( NULL != texture && TextureFactory::existsSingleton() )
 		TextureFactory::instance()->remove( texture->getId() );
 }
 

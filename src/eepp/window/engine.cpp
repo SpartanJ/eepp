@@ -53,11 +53,11 @@ Engine::~Engine() {
 
 	GlobalBatchRenderer::destroySingleton();
 
-	TextureFactory::destroySingleton();
-
 	TextureAtlasManager::destroySingleton();
 
 	FontManager::destroySingleton();
+
+	TextureFactory::destroySingleton();
 
 	UI::UIManager::destroySingleton();
 
