@@ -169,7 +169,7 @@ bool TTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Ui
 		TempGlyphSurface = mFont->renderGlyph( i, fFontColor.getValue() );
 
 		//New temp glyph
-		Glyph TempGlyph;
+		GlyphData TempGlyph;
 
 		//Get the glyph attributes
 		mFont->getGlyphMetrics( i, &TempGlyph.MinX, &TempGlyph.MaxX, &TempGlyph.MinY, &TempGlyph.MaxY, &TempGlyph.Advance );
@@ -338,9 +338,7 @@ void TTFFont::rebuildFromGlyphs() {
 
 	Texture * Tex = TextureFactory::instance()->getTexture( mTexId );
 
-	TextureFactory::instance()->bind( Tex );
-
-	Glyph tGlyph;
+	GlyphData tGlyph;
 
 	for (unsigned int i = 0; i < mNumChars; i++) {
 		tGlyph		= mGlyphs[i];
@@ -401,7 +399,7 @@ bool TTFFont::saveCoordinates( const std::string& Filepath ) {
 		fs.write( reinterpret_cast<const char*>( &FntHdr ), sizeof(sFntHdr) );
 
 		// Write the glyphs
-		fs.write( reinterpret_cast<const char*> (&mGlyphs[0]), sizeof(Glyph) * mGlyphs.size() );
+		fs.write( reinterpret_cast<const char*> (&mGlyphs[0]), sizeof(GlyphData) * mGlyphs.size() );
 
 		rebuildFromGlyphs();
 

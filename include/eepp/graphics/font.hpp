@@ -22,12 +22,6 @@ class EE_API Font {
 		/** @return The recommended line spacing */
 		Int32 getLineSkip() const;
 
-		/** @return The font highest ascent (height above base) */
-		Int32 getFontAscent() const;
-
-		/** @return The font lowest descent (height below base) */
-		Int32 getFontDescent() const;
-
 		/** Shrink the String to a max width
 		* @param Str The string to shrink
 		* @param MaxWidth The Max Width posible
@@ -67,7 +61,7 @@ class EE_API Font {
 		/** @return The cursor position inside the string */
 		Vector2i getCursorPos( const String& Text, const Uint32& Pos );
 
-		const Glyph& getGlyph( const Uint32& index );
+		const GlyphData& getGlyph( const Uint32& index );
 
 		const TextureCoords&  getTextureCoords( const Uint32& index );
 
@@ -83,7 +77,7 @@ class EE_API Font {
 		Int32						mAscent;
 		Int32						mDescent;
 
-		std::vector<Glyph> 		mGlyphs;
+		std::vector<GlyphData> 		mGlyphs;
 		std::vector<TextureCoords> 	mTexCoords;
 
 		TextCache					mTextCache;

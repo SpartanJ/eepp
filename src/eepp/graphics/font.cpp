@@ -38,14 +38,6 @@ Int32 Font::getLineSkip() const {
 	return mLineSkip;
 }
 
-Int32 Font::getFontAscent() const {
-	return mAscent;
-}
-
-Int32 Font::getFontDescent() const {
-	return mDescent;
-}
-
 void Font::cacheWidth( const String& Text, std::vector<Float>& LinesWidth, Float& CachedWidth, int& NumLines , int& LargestLineCharCount ) {
 	LinesWidth.clear();
 
@@ -177,7 +169,7 @@ Vector2i Font::getCursorPos( const String& Text, const Uint32& Pos ) {
 	return Vector2i( Width, Height );
 }
 
-const Glyph& Font::getGlyph(const Uint32 & index) {
+const GlyphData& Font::getGlyph(const Uint32 & index) {
 	eeASSERT( index < mGlyphs.size() );
 	return mGlyphs[ index ];
 }
@@ -243,7 +235,7 @@ void Font::shrinkText( std::string& Str, const Uint32& MaxWidth ) {
 
 	while ( *tChar ) {
 		if ( (Uint32)( *tChar ) < tGlyphSize ) {
-			Glyph * pChar = &mGlyphs[ ( *tChar ) ];
+			GlyphData * pChar = &mGlyphs[ ( *tChar ) ];
 			Float fCharWidth	= (Float)pChar->Advance;
 
 			if ( ( *tChar ) == '\t' )
@@ -299,7 +291,7 @@ void Font::shrinkText( String& Str, const Uint32& MaxWidth ) {
 
 	while ( *tChar ) {
 		if ( (String::StringBaseType)( *tChar ) < mGlyphs.size() ) {
-			Glyph * pChar = &mGlyphs[ ( *tChar ) ];
+			GlyphData * pChar = &mGlyphs[ ( *tChar ) ];
 			Float fCharWidth	= (Float)pChar->Advance;
 
 			if ( ( *tChar ) == '\t' )

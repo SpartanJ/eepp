@@ -83,11 +83,6 @@ class EE_API TextCache {
 		/** Force to cache the width of the current text */
 		void cacheWidth();
 	protected:
-		struct VertexCoords {
-			Float TexCoords[2];
-			Float Vertex[2];
-		};
-
 		friend class Font;
 
 		String mText;

@@ -200,7 +200,7 @@ void TextCache::cacheVerts() {
 
 		if ( Char >= 0 && Char < tGlyphSize ) {
 			TextureCoords C = mFont->getTextureCoords( Char );
-			Glyph Glyph = mFont->getGlyph( Char );
+			GlyphData Glyph = mFont->getGlyph( Char );
 
 			switch( Char ) {
 				case '\v':

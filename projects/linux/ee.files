@@ -1,4 +1,6 @@
 ../../include/eepp/graphics/font.hpp
+../../include/eepp/graphics/fonttruetype.hpp
+../../include/eepp/graphics/text.hpp
 ../../include/eepp/math/interpolation1d.hpp
 ../../include/eepp/math/interpolation2d.hpp
 ../../include/eepp/ui/uidragablecontrol.hpp
@@ -13,9 +15,11 @@
 ../../include/eepp/ui/uithemedefault.hpp
 ../../include/eepp/ui/uiwidget.hpp
 ../../src/eepp/gaming/mapobjectlayer.cpp
+../../src/eepp/graphics/fonttruetype.cpp
 ../../src/eepp/graphics/globalbatchrenderer.cpp
 ../../src/eepp/graphics/pixeldensity.cpp
 ../../src/eepp/graphics/pixelperfect.cpp
+../../src/eepp/graphics/text.cpp
 ../../src/eepp/math/interpolation1d.cpp
 ../../src/eepp/math/interpolation2d.cpp
 ../../src/eepp/ui/uidragablecontrol.cpp

@@ -109,7 +109,7 @@ void TextureFont::buildFromGlyphs() {
 
 	TextureFactory::instance()->bind( Tex );
 
-	Glyph tGlyph;
+	GlyphData tGlyph;
 
 	for (unsigned int i = 0; i < mNumChars; i++) {
 		tGlyph		= mGlyphs[i];
@@ -201,7 +201,7 @@ bool TextureFont::loadFromStream( const Uint32& TexId, IOStream& IOS ) {
 			mGlyphs.resize( mNumChars );
 
 			// Read the glyphs
-			IOS.read( (char*)&mGlyphs[0], sizeof(Glyph) * mNumChars );
+			IOS.read( (char*)&mGlyphs[0], sizeof(GlyphData) * mNumChars );
 
 			buildFromGlyphs();
 
