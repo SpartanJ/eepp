@@ -886,7 +886,7 @@ void MapEditor::updateScroll() {
 void MapEditor::mapOpen( const UIEvent * Event ) {
 	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->getControl() );
 
-	if ( mUIMap->Map()->load( CDL->getFullPath() ) ) {
+	if ( mUIMap->Map()->loadFromFile( CDL->getFullPath() ) ) {
 		onMapLoad();
 	}
 }

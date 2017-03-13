@@ -168,7 +168,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 	return tTheme;
 }
 
-UITheme * UITheme::loadFromPath( UITheme * tTheme, const std::string& Path, const std::string ImgExt ) {
+UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path, const std::string ImgExt ) {
 	Clock TE;
 
 	loadThemeElements( tTheme->mUIElements, tTheme->mUIIcons );
@@ -210,7 +210,7 @@ UITheme * UITheme::loadFromPath( UITheme * tTheme, const std::string& Path, cons
 		Element		= RPath + ElemName + "." + ImgExt;
 
 		if ( FileSystem::fileExists( Element ) ) {
-			tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->load( Element ), ElemName ) ) );
+			tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( Element ), ElemName ) ) );
 		}
 	}
 
@@ -231,8 +231,8 @@ UITheme * UITheme::loadFromPath( UITheme * tTheme, const std::string& Path, cons
 	return tTheme;
 }
 
-UITheme * UITheme::loadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt ) {
-	return loadFromPath( eeNew( UITheme, ( Name, NameAbbr ) ), Path, ImgExt );
+UITheme * UITheme::loadFromFile( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt ) {
+	return loadFromFile( eeNew( UITheme, ( Name, NameAbbr ) ), Path, ImgExt );
 }
 
 UITheme * UITheme::loadFromTextureAtlas( Graphics::TextureAtlas * TextureAtlas, const std::string& Name, const std::string NameAbbr ) {
@@ -293,7 +293,7 @@ bool UITheme::searchFilesOfElement( Graphics::TextureAtlas * SG, const std::stri
 			ElemFullPath = ElemPath + "." + ImgExt;
 
 			if ( FileSystem::fileExists( ElemFullPath ) ) {
-				SG->add( eeNew( SubTexture, ( TextureFactory::instance()->load( ElemFullPath ), ElemName ) ) );
+				SG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( ElemFullPath ), ElemName ) ) );
 
 				IsComplex = 1;
 				Found = true;
@@ -310,7 +310,7 @@ bool UITheme::searchFilesOfElement( Graphics::TextureAtlas * SG, const std::stri
 			ElemFullPath = ElemPath + "." + ImgExt;
 
 			if ( FileSystem::fileExists( ElemFullPath ) ) {
-				SG->add( eeNew( SubTexture, ( TextureFactory::instance()->load( ElemFullPath ), ElemName ) ) );
+				SG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( ElemFullPath ), ElemName ) ) );
 
 				Found = true;
 			}

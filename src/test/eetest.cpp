@@ -177,7 +177,7 @@ void EETest::loadFonts() {
 
 void EETest::onFontLoaded( ResourceLoader * ObjLoaded ) {
 	TTF		= FontManager::instance()->getByName( "arial" );
-	DBSM	= FontManager::instance()->getByName( "DejaVuSansMono" );
+	Font * DBSM	= FontManager::instance()->getByName( "DejaVuSansMono" );
 
 	eePRINTL( "Fonts loading time: %4.3f ms.", mFTE.getElapsed().asMilliseconds() );
 
@@ -185,8 +185,10 @@ void EETest::onFontLoaded( ResourceLoader * ObjLoaded ) {
 	eeASSERT( DBSM != NULL );
 
 	Con.create( DBSM, true );
+	Con.setBackgroundColor( 0x201f1fEE );
+	Con.setFontColor( 0xcfcfcfff );
 	Con.ignoreCharOnPrompt( 186 ); // 'º'
-	Con.getTextCache().setOutlineThickness( 1 );
+	Con.getTextCache().setCharacterSize( 12 );
 	Con.getTextCache().setOutlineColor( ColorA(0,0,0,150) );
 
 	mBuda = String::fromUtf8( "El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde." );
@@ -275,7 +277,7 @@ void EETest::createUI() {
 	//UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES;
 	UIManager::instance()->init(UI_MAN_OPS);
 
-	//mTheme = UITheme::loadFromPath( eeNew( UIThemeDefault, ( mThemeName, mThemeName ) ), MyPath + mThemeName + "/" );
+	//mTheme = UITheme::loadFromFile( eeNew( UIThemeDefault, ( mThemeName, mThemeName ) ), MyPath + mThemeName + "/" );
 
 	TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
 
@@ -465,10 +467,10 @@ void EETest::createUI() {
 #ifdef EE_PLATFORM_TOUCH
 	TextureAtlas * SG = GlobalTextureAtlas::instance();
 
-	Texture * butTex = TF->getTexture( TF->load( MyPath + "sprites/button-te_normal.png" ) );
+	Texture * butTex = TF->getTexture( TF->loadFromFile( MyPath + "sprites/button-te_normal.png" ) );
 
 	SG->add( butTex->getId(), "button-te_normal" );
-	SG->add( TF->load( MyPath + "sprites/button-te_mdown.png" ), "button-te_mdown" );
+	SG->add( TF->loadFromFile( MyPath + "sprites/button-te_mdown.png" ), "button-te_mdown" );
 
 	UISkinSimple nSkin( "button-te" );
 	Sizei screenSize = UIManager::instance()->getMainControl()->getSize();
@@ -1024,7 +1026,7 @@ void EETest::loadTextures() {
 	TNP.resize(12);
 
 	for ( i = 0; i <= 6; i++ ) {
-		TN[i] = TF->load( MyPath + "sprites/" + String::toStr(i+1) + ".png", (i+1) == 7 ? true : false, ( (i+1) == 4 ) ? CLAMP_REPEAT : CLAMP_TO_EDGE );
+		TN[i] = TF->loadFromFile( MyPath + "sprites/" + String::toStr(i+1) + ".png", (i+1) == 7 ? true : false, ( (i+1) == 4 ) ? CLAMP_REPEAT : CLAMP_TO_EDGE );
 		TNP[i] = TF->getTexture( TN[i] );
 	}
 
@@ -1038,14 +1040,14 @@ void EETest::loadTextures() {
 			Tiles[i] = SG->getByName( String::toStr( i+1 ) );
 		}
 
-		Tiles[6] = SG->add( TF->load( MyPath + "sprites/objects/1.png" ), "7" );
+		Tiles[6] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/1.png" ), "7" );
 
 		#ifdef EE_GLES
 		Image tImg( MyPath + "sprites/objects/2.png", 4 );
 		tImg.CreateMaskFromColor( ColorA(0,0,0,255), 0 );
 		Tiles[7] = SG->Add( TF->loadFromPixels( tImg.getPixelsPtr(), tImg.getWidth(), tImg.getHeight(), tImg.getChannels() ), "8" );
 		#else
-		Tiles[7] = SG->add( TF->load( MyPath + "sprites/objects/2.png" ), "8" );
+		Tiles[7] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/2.png" ), "8" );
 		Tiles[7]->getTexture()->createMaskFromColor( ColorA(0,0,0,255), 0 );
 		#endif
 	}
@@ -1085,7 +1087,7 @@ void EETest::loadTextures() {
 		Tex->unlock(false, true);
 	}
 
-	Cursor[0] = TF->load( MyPath + "cursors/cursor.tga" );
+	Cursor[0] = TF->loadFromFile( MyPath + "cursors/cursor.tga" );
 	CursorP[0] = TF->getTexture( Cursor[0] );
 
 	CursorManager * CurMan = mWindow->getCursorManager();
@@ -1112,7 +1114,7 @@ void EETest::loadTextures() {
 
 	eePRINTL( "Textures loading time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	Map.load( MyPath + "maps/test.eem" );
+	Map.loadFromFile( MyPath + "maps/test.eem" );
 	Map.setDrawGrid( false );
 	Map.setClipedArea( false );
 	Map.setDrawBackground( false );

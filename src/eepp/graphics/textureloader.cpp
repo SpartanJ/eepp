@@ -232,7 +232,7 @@ void TextureLoader::start() {
 	mTE.restart();
 
 	if ( TEX_LT_PATH == mLoadType )
-		loadFromPath();
+		loadFromFile();
 	else if ( TEX_LT_MEM == mLoadType )
 		loadFromMemory();
 	else if ( TEX_LT_PACK == mLoadType )
@@ -255,7 +255,7 @@ void TextureLoader::loadFile() {
 	fs.read( reinterpret_cast<char*> ( mPixels ), mSize );
 }
 
-void TextureLoader::loadFromPath() {
+void TextureLoader::loadFromFile() {
 	if ( FileSystem::fileExists( mFilepath ) ) {
 		mImgType = stbi_test( mFilepath.c_str() );
 

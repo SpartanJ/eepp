@@ -48,7 +48,7 @@ class EE_API TileMap {
 
 		virtual MapLayer * getLayer( const std::string& name );
 
-		virtual bool load( const std::string& path );
+		virtual bool loadFromFile( const std::string& path );
 
 		virtual bool loadFromStream( IOStream& IOS );
 

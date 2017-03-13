@@ -99,6 +99,11 @@ Console::~Console() {
 	}
 }
 
+void Console::setCharacterSize(const EE::Uint32 & characterSize) {
+	mTextCache.setCharacterSize( characterSize );
+	mFontSize = (Float)( mTextCache.getFont()->getLineSpacing( mTextCache.getCharacterSizePx() ) );
+}
+
 void Console::create( Font* Font, const bool& MakeDefaultCommands, const bool& AttachToLog, const unsigned int& MaxLogLines, const Uint32& TextureId ) {
 	if ( NULL == mWindow ) {
 		mWindow = Engine::instance()->getCurrentWindow();

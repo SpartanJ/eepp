@@ -32,7 +32,7 @@ TextureAtlasLoader::TextureAtlasLoader( const std::string& TextureAtlasPath, con
 	mTextureAtlas(NULL),
 	mLoadCallback( LoadCallback )
 {
-	load();
+	loadFromFile();
 }
 
 TextureAtlasLoader::TextureAtlasLoader( const Uint8* Data, const Uint32& DataSize, const std::string& TextureAtlasName, const bool& Threaded, GLLoadCallback LoadCallback ) :
@@ -134,7 +134,7 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 	}
 }
 
-void TextureAtlasLoader::load( const std::string& TextureAtlasPath ) {
+void TextureAtlasLoader::loadFromFile( const std::string& TextureAtlasPath ) {
 	if ( TextureAtlasPath.size() )
 		mTextureAtlasPath = TextureAtlasPath;
 
@@ -359,7 +359,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 		return false;
 
 	mSkipResourceLoad = true;
-	load( TextureAtlasPath );
+	loadFromFile( TextureAtlasPath );
 	mSkipResourceLoad = false;
 
 	if ( !mTempAtlass.size() )

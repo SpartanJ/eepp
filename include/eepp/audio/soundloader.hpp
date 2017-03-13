@@ -51,7 +51,7 @@ class tSoundLoader : public ObjectLoader {
 
 		void 					start();
 	private:
-		void 					loadFromPath();
+		void 					loadFromFile();
 		void					loadFromMemory();
 		void					loadFromPack();
 		void 					loadFromSamples();
@@ -124,7 +124,7 @@ void tSoundLoader<T>::start() {
 		ObjectLoader::start();
 
 		if ( SND_LT_PATH == mLoadType )
-			loadFromPath();
+			loadFromFile();
 		else if ( SND_LT_MEM == mLoadType )
 			loadFromMemory();
 		else if ( SND_LT_PACK == mLoadType )
@@ -137,7 +137,7 @@ void tSoundLoader<T>::start() {
 }
 
 template <typename T>
-void tSoundLoader<T>::loadFromPath() {
+void tSoundLoader<T>::loadFromFile() {
 	mSndMngr->loadFromFile( mId, mFilepath );
 }
 

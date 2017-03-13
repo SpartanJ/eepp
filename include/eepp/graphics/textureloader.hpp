@@ -119,7 +119,7 @@ class EE_API TextureLoader : public ObjectLoader {
 		Clock			mTE;
 
 		void			loadFile();
-		void 			loadFromPath();
+		void 			loadFromFile();
 		void			loadFromMemory();
 		void			loadFromPack();
 		void 			loadFromPixels();

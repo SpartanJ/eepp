@@ -62,7 +62,6 @@ class EETest : private Thread {
 		Sprite SP;
 		Sprite CL1, CL2;
 		Font * TTF;
-		Font * DBSM;
 
 		Primitives PR;
 		bool iL1, iL2;

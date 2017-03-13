@@ -261,7 +261,7 @@ void UIMapNew::onOKClick( const UIEvent * Event ) {
 			Map->setBackColor( ColorA( 100, 100, 100, 100 ) );
 			Map->setGridLinesColor( ColorA( 150, 150, 150, 150 ) );
 			Map->forceHeadersOnLoad( Sizei( w, h ), Sizei( tw, th ), ml, Flags );
-			Map->load( mapPath );
+			Map->loadFromFile( mapPath );
 			Map->disableForcedHeaders();
 			Map->mPath = oldPath;
 
