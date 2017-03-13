@@ -161,7 +161,7 @@ void UITextInput::alignFix() {
 
 		Text textCache( mTextCache->getFont(), mTextCache->getCharacterSize() );
 
-		textCache.setText( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPos() - NLPos ) );
+		textCache.setString( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPos() - NLPos ) );
 
 		Float tW	= textCache.getTextWidth();
 		Float tX	= mRealAlignOffset.x + tW;
@@ -239,11 +239,11 @@ const String& UITextInput::getText() {
 }
 
 void UITextInput::shrinkText( const Uint32& MaxWidth ) {
-	mTextCache->setText( mTextBuffer.getBuffer() );
+	mTextCache->setString( mTextBuffer.getBuffer() );
 
 	UITextView::shrinkText( MaxWidth );
 
-	mTextBuffer.setBuffer( mTextCache->getText() );
+	mTextBuffer.setBuffer( mTextCache->getString() );
 
 	alignFix();
 }
@@ -257,7 +257,7 @@ Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 		worldToControl( controlPos );
 		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mRealAlignOffset.x, (Int32)mRealAlignOffset.y );
 
-		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), controlPos );
+		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getString(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), controlPos );
 
 		if ( -1 != curPos ) {
 			mTextBuffer.setCursorPos( curPos );

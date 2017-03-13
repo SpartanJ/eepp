@@ -90,7 +90,7 @@ void UITooltip::hide() {
 }
 
 void UITooltip::draw() {
-	if ( mVisible && 0.f != mAlpha && mTextCache->getText().size() > 0 ) {
+	if ( mVisible && 0.f != mAlpha && mTextCache->getString().size() > 0 ) {
 		UIControlAnim::draw();
 
 		if ( mTextCache->getTextWidth() ) {
@@ -115,11 +115,11 @@ void UITooltip::setFont( Graphics::Font * font ) {
 }
 
 const String& UITooltip::getText() {
-	return mTextCache->getText();
+	return mTextCache->getString();
 }
 
 void UITooltip::setText( const String& text ) {
-	mTextCache->setText( text );
+	mTextCache->setString( text );
 	autoPadding();
 	onAutoSize();
 	autoAlign();

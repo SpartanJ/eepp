@@ -145,7 +145,7 @@ Uint32 UIListBox::addListBoxItem( const String& text ) {
 
 	if ( NULL != mFontStyleConfig.Font ) {
 		Text textCache( mFontStyleConfig.Font, mFontStyleConfig.FontCharacterSize );
-		textCache.setText( text );
+		textCache.setString( text );
 		Uint32 twidth = textCache.getTextWidth();
 
 		if ( twidth > mMaxTextWidth ) {
@@ -340,7 +340,7 @@ void UIListBox::findMaxWidth() {
 		if ( NULL != mItems[i] ) {
 			width = (Int32)mItems[i]->getTextWidth();
 		} else {
-			textCache.setText( mTexts[i]  );
+			textCache.setString( mTexts[i]  );
 			width = textCache.getTextWidth();
 		}
 

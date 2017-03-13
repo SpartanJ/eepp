@@ -346,7 +346,7 @@ void UITextEdit::fixScrollToCursor() {
 		Uint32 LineNum = mTextInput->getInputTextBuffer()->getCurPosLinePos( NLPos );
 
 		Text textCache( mTextInput->getTextCache()->getFont(), mTextInput->getFontStyleConfig().FontCharacterSize );
-		textCache.setText(
+		textCache.setString(
 			mTextInput->getInputTextBuffer()->getBuffer().substr(
 				NLPos, mTextInput->getInputTextBuffer()->getCursorPos() - NLPos
 			)

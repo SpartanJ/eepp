@@ -63,7 +63,7 @@ void UITextInputPassword::alignFix() {
 		for ( size_t i = 0; i < curStr.size(); i++ )
 			pasStr += '*';
 
-		mPassCache->setText( pasStr );
+		mPassCache->setString( pasStr );
 
 		Float tW	= mPassCache->getTextWidth();
 		Float tX	= mRealAlignOffset.x + tW;
@@ -107,7 +107,7 @@ void UITextInputPassword::autoAlign() {
 }
 
 void UITextInputPassword::updateText() {
-	updatePass( mTextCache->getText() );
+	updatePass( mTextCache->getString() );
 }
 
 void UITextInputPassword::updatePass( const String& pass ) {
@@ -117,7 +117,7 @@ void UITextInputPassword::updatePass( const String& pass ) {
 		newTxt += '*';
 	}
 
-	mPassCache->setText( newTxt );
+	mPassCache->setString( newTxt );
 }
 
 UITextView * UITextInputPassword::setText( const String& text ) {

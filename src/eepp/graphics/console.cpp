@@ -198,7 +198,7 @@ void Console::draw() {
 				if ( i < static_cast<Int16>( mCmdLog.size() ) && i >= 0 ) {
 					CurY = mTempY + mY + mCurHeight - Pos * mFontSize - mFontSize * 2;
 
-					mTextCache.setText( mCmdLog[i] );
+					mTextCache.setString( mCmdLog[i] );
 					mTextCache.draw( mFontSize, CurY );
 
 					Pos++;
@@ -208,19 +208,19 @@ void Console::draw() {
 			CurY = mTempY + mY + mCurHeight - mFontSize - 1;
 
 			mTextCache.setColor( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mA) ) );
-			mTextCache.setText( "> " + mTBuf->getBuffer() );
+			mTextCache.setString( "> " + mTBuf->getBuffer() );
 			mTextCache.draw( mFontSize, CurY );
 
 			mTextCache.setColor( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mCurAlpha) ) );
 
 			if ( (unsigned int)mTBuf->getCursorPos() == mTBuf->getBuffer().size() ) {
 				Uint32 width = mTextCache.getTextWidth();
-				mTextCache.setText( "_" );
+				mTextCache.setString( "_" );
 				mTextCache.draw( mFontSize + width, CurY );
 			} else {
-				mTextCache.setText( "> " + mTBuf->getBuffer().substr( 0, mTBuf->getCursorPos() ) );
+				mTextCache.setString( "> " + mTBuf->getBuffer().substr( 0, mTBuf->getCursorPos() ) );
 				Uint32 width = mFontSize + mTextCache.getTextWidth();
-				mTextCache.setText( "_" );
+				mTextCache.setString( "_" );
 				mTextCache.draw( width, CurY );
 			}
 
@@ -231,7 +231,7 @@ void Console::draw() {
 	if ( mShowFps && NULL != mFont ) {
 		ColorA OldColor1( mTextCache.getColor() );
 		mTextCache.setColor( ColorA () );
-		mTextCache.setText( "FPS: " + String::toStr( mWindow->getFPS() ) );
+		mTextCache.setString( "FPS: " + String::toStr( mWindow->getFPS() ) );
 		mTextCache.draw( mWindow->getWidth() - mTextCache.getTextWidth() - 15, 6 );
 		mTextCache.setColor( OldColor1 );
 	}

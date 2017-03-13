@@ -26,7 +26,7 @@ class EE_API Text {
 		/** Create a text from a font */
 		void create(Graphics::Font * font, const String& text = "", ColorA FontColor = ColorA(255,255,255,255), ColorA FontShadowColor = ColorA(0,0,0,255) , Uint32 characterSize = 12);
 
-		void setText(const String& string);
+		void setString(const String& string);
 
 		void setFont(Font * font);
 
@@ -42,7 +42,7 @@ class EE_API Text {
 
 		void setOutlineThickness(Float thickness);
 
-		String& getText();
+		String& getString();
 
 		Font * getFont() const;
 

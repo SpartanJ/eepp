@@ -291,7 +291,7 @@ Uint32 FontTrueType::getFontHeight(const Uint32 & characterSize) {
 	FT_Face face = static_cast<FT_Face>(mFace);
 
 	if (face && setCurrentSize(characterSize)) {
-		return static_cast<Float>(face->height) / static_cast<Float>(1 << 6);
+		return static_cast<Float>( eemax( (Float)face->height, (Float)face->size->metrics.height ) ) / static_cast<Float>(1 << 6);
 	} else {
 		return 0.f;
 	}

@@ -248,7 +248,7 @@ void Text::create(Font * font, const String & text, ColorA FontColor, ColorA Fon
 	ensureGeometryUpdate();
 }
 
-void Text::setText(const String& string) {
+void Text::setString(const String& string) {
 	if (mString != string) {
 		mString = string;
 		mGeometryNeedUpdate = true;
@@ -323,7 +323,7 @@ void Text::setOutlineThickness(Float thickness) {
 	}
 }
 
-String& Text::getText() {
+String& Text::getString() {
 	return mString;
 }
 

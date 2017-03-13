@@ -1393,7 +1393,7 @@ void EETest::render() {
 						);
 		#endif
 
-		mInfoText.setText( mInfo );
+		mInfoText.setString( mInfo );
 	}
 
 	if ( !MultiViewportMode ) {

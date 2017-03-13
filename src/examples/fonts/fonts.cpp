@@ -81,7 +81,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		text.setFillColor( 0xFFFFFFFF );
 		text.setOutlineThickness( 2 );
 		text.setFlags( FONT_DRAW_CENTER );
-		text.setText( Txt );
+		text.setString( Txt );
 
 		win->setBackColor( RGB(230,230,230) );
 

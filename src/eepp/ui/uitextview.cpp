@@ -153,15 +153,15 @@ const String& UITextView::getText() {
 	if ( mFlags & UI_WORD_WRAP )
 		return mString;
 
-	return mTextCache->getText();
+	return mTextCache->getString();
 }
 
 UITextView * UITextView::setText( const String& text ) {
 	if ( mFlags & UI_WORD_WRAP ) {
 		mString = text;
-		mTextCache->setText( mString );
+		mTextCache->setString( mString );
 	} else {
-		mTextCache->setText( text );
+		mTextCache->setString( text );
 	}
 
 	autoShrink();
@@ -221,10 +221,10 @@ void UITextView::autoShrink() {
 
 void UITextView::shrinkText( const Uint32& MaxWidth ) {
 	if ( mFlags & UI_WORD_WRAP ) {
-		mTextCache->setText( mString );
+		mTextCache->setString( mString );
 	}
 
-	mTextCache->getFont()->shrinkText( mTextCache->getText(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), MaxWidth );
+	mTextCache->getFont()->shrinkText( mTextCache->getString(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), MaxWidth );
 	mTextCache->cacheWidth();
 }
 
@@ -323,12 +323,12 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags )
 		worldToControl( controlPos );
 		controlPos = PixelDensity::dpToPxI( controlPos );
 
-		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), controlPos );
+		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getString(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), controlPos );
 
 		if ( -1 != curPos ) {
 			Int32 tSelCurInit, tSelCurEnd;
 
-			mTextCache->getFont()->selectSubStringFromCursor( mTextCache->getText(), curPos, tSelCurInit, tSelCurEnd );
+			mTextCache->getFont()->selectSubStringFromCursor( mTextCache->getString(), curPos, tSelCurInit, tSelCurEnd );
 
 			selCurInit( tSelCurInit );
 			selCurEnd( tSelCurEnd );
@@ -359,7 +359,7 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 		worldToControl( controlPos );
 		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mRealAlignOffset.x, (Int32)mRealAlignOffset.y );
 
-		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), controlPos );
+		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getString(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), controlPos );
 
 		if ( -1 != curPos ) {
 			if ( -1 == selCurInit() || !( mControlFlags & UI_CTRL_FLAG_SELECTING ) ) {
@@ -381,7 +381,7 @@ void UITextView::drawSelection( Text * textCache ) {
 		Int32 init		= eemin( selCurInit(), selCurEnd() );
 		Int32 end		= eemax( selCurInit(), selCurEnd() );
 
-		if ( init < 0 && end > (Int32)textCache->getText().size() ) {
+		if ( init < 0 && end > (Int32)textCache->getString().size() ) {
 			return;
 		}
 
@@ -392,14 +392,14 @@ void UITextView::drawSelection( Text * textCache ) {
 		P.setColor( mFontStyleConfig.FontSelectionBackColor );
 
 		do {
-			initPos	= textCache->getFont()->getCursorPos( textCache->getText(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), init );
-			lastEnd = textCache->getText().find_first_of( '\n', init );
+			initPos	= textCache->getFont()->getCursorPos( textCache->getString(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), init );
+			lastEnd = textCache->getString().find_first_of( '\n', init );
 
 			if ( lastEnd < end && -1 != lastEnd ) {
-				endPos	= textCache->getFont()->getCursorPos( textCache->getText(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), lastEnd );
+				endPos	= textCache->getFont()->getCursorPos( textCache->getString(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), lastEnd );
 				init	= lastEnd + 1;
 			} else {
-				endPos	= textCache->getFont()->getCursorPos( textCache->getText(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), end );
+				endPos	= textCache->getFont()->getCursorPos( textCache->getString(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), end );
 				lastEnd = end;
 			}
 
