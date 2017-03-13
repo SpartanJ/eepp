@@ -68,35 +68,68 @@ class FontStyleConfig {
 			FontCharacterSize = value;
 		}
 
+		Uint32 getFontStyle() const {
+			return FontStyle;
+		}
+
+		void setFontStyle( const Uint32& style ) {
+			FontStyle = style;
+		}
+
+		Float getOutlineThickness() const {
+			return OutlineThickness;
+		}
+
+		void setOutlineThickness( const Uint32& outlineThickness ) {
+			OutlineThickness = outlineThickness;
+		}
+
+		ColorA getOutlineColor() const {
+			return OutlineColor;
+		}
+
+		void setOutlineColor(const ColorA & value) {
+			OutlineColor = value;
+		}
+
 		FontStyleConfig() {}
 
 		FontStyleConfig( const FontStyleConfig& fontStyleConfig ) :
 			Font( fontStyleConfig.Font ),
 			FontCharacterSize( fontStyleConfig.FontCharacterSize ),
+			FontStyle( fontStyleConfig.FontStyle ),
 			FontColor( fontStyleConfig.FontColor ),
 			FontShadowColor( fontStyleConfig.FontShadowColor ),
 			FontOverColor( fontStyleConfig.FontOverColor ),
 			FontSelectedColor( fontStyleConfig.FontSelectedColor ),
-			FontSelectionBackColor( fontStyleConfig.FontSelectionBackColor )
+			FontSelectionBackColor( fontStyleConfig.FontSelectionBackColor ),
+			OutlineThickness( fontStyleConfig.OutlineThickness ),
+			OutlineColor( fontStyleConfig.OutlineColor )
 		{}
 
 		void updateFontStyleConfig( const FontStyleConfig& fontStyleConfig ) {
-			Font = fontStyleConfig.Font ;
+			Font = fontStyleConfig.Font;
+			FontStyle = fontStyleConfig.FontStyle;
 			FontCharacterSize = fontStyleConfig.FontCharacterSize;
-			FontColor = fontStyleConfig.FontColor ;
-			FontShadowColor = fontStyleConfig.FontShadowColor ;
-			FontOverColor = fontStyleConfig.FontOverColor ;
-			FontSelectedColor = fontStyleConfig.FontSelectedColor ;
-			FontSelectionBackColor = fontStyleConfig.FontSelectionBackColor ;
+			FontColor = fontStyleConfig.FontColor;
+			FontShadowColor = fontStyleConfig.FontShadowColor;
+			FontOverColor = fontStyleConfig.FontOverColor;
+			FontSelectedColor = fontStyleConfig.FontSelectedColor;
+			FontSelectionBackColor = fontStyleConfig.FontSelectionBackColor;
+			OutlineThickness = fontStyleConfig.OutlineThickness;
+			OutlineColor = fontStyleConfig.OutlineColor;
 		}
 
 		Graphics::Font * Font = NULL;
 		Uint32 FontCharacterSize = 12;
+		Uint32 FontStyle = 0;
 		ColorA FontColor = ColorA(255,255,255,255);
 		ColorA FontShadowColor = ColorA(50,50,50,230);
 		ColorA FontOverColor = ColorA(255,255,255,255);
 		ColorA FontSelectedColor = ColorA(255,255,255,255);
 		ColorA FontSelectionBackColor = ColorA(255,255,255,255);
+		Float OutlineThickness = 0;
+		ColorA OutlineColor = ColorA(0,0,0,255);
 };
 
 class TabWidgetStyleConfig : public FontStyleConfig {

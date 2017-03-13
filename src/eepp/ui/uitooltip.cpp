@@ -1,7 +1,7 @@
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uiwidget.hpp>
-#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/text.hpp>
 
 namespace EE { namespace UI {
 
@@ -17,7 +17,7 @@ UITooltip::UITooltip() :
 {
 	setFlags( UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
 
-	mTextCache = eeNew( TextCache, () );
+	mTextCache = eeNew( Text, () );
 
 	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
 
@@ -219,7 +219,7 @@ const Recti& UITooltip::getPadding() const {
 	return mStyleConfig.Padding;
 }
 
-TextCache * UITooltip::getTextCache() {
+Text * UITooltip::getTextCache() {
 	return mTextCache;
 }
 

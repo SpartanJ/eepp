@@ -1,5 +1,5 @@
 #include <eepp/ui/uipushbutton.hpp>
-#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 

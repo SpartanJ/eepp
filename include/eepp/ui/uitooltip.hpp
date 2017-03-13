@@ -4,7 +4,7 @@
 #include <eepp/ui/uicontrolanim.hpp>
 
 namespace EE { namespace Graphics {
-class TextCache;
+class Text;
 }}
 
 namespace EE { namespace UI {
@@ -55,7 +55,7 @@ class EE_API UITooltip : public UIControlAnim {
 
 		const Recti& getPadding() const;
 
-		TextCache * getTextCache();
+		Text * getTextCache();
 
 		Float getTextWidth();
 
@@ -79,7 +79,7 @@ class EE_API UITooltip : public UIControlAnim {
 
 		void setStyleConfig(const TooltipStyleConfig & styleConfig);
 	protected:
-		TextCache *	mTextCache;
+		Text *	mTextCache;
 		TooltipStyleConfig mStyleConfig;
 		Vector2f 	mAlignOffset;
 		Recti		mRealPadding;

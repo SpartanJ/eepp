@@ -5,7 +5,7 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>
 #include <eepp/graphics/fontmanager.hpp>
-#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/text.hpp>
 
 namespace EE { namespace UI {
 
@@ -139,13 +139,13 @@ Uint32 UIListBox::addListBoxItem( UIListBoxItem * Item ) {
 	return (Uint32)(mItems.size() - 1);
 }
 
-Uint32 UIListBox::addListBoxItem( const String& Text ) {
-	mTexts.push_back( Text );
+Uint32 UIListBox::addListBoxItem( const String& text ) {
+	mTexts.push_back( text );
 	mItems.push_back( NULL );
 
 	if ( NULL != mFontStyleConfig.Font ) {
-		TextCache textCache( mFontStyleConfig.Font, mFontStyleConfig.FontCharacterSize );
-		textCache.setText( Text );
+		Text textCache( mFontStyleConfig.Font, mFontStyleConfig.FontCharacterSize );
+		textCache.setText( text );
 		Uint32 twidth = textCache.getTextWidth();
 
 		if ( twidth > mMaxTextWidth ) {
@@ -332,7 +332,7 @@ void UIListBox::setHScrollStep() {
 void UIListBox::findMaxWidth() {
 	Uint32 size = (Uint32)mItems.size();
 	Int32 width;
-	TextCache textCache( mFontStyleConfig.Font, mFontStyleConfig.FontCharacterSize );
+	Text textCache( mFontStyleConfig.Font, mFontStyleConfig.FontCharacterSize );
 
 	mMaxTextWidth = 0;
 

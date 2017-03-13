@@ -4,7 +4,7 @@
 #include <eepp/graphics/renderer/gl.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/font.hpp>
-#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -159,7 +159,7 @@ void UITextInput::alignFix() {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
 
-		TextCache textCache( mTextCache->getFont(), mTextCache->getCharacterSize() );
+		Text textCache( mTextCache->getFont(), mTextCache->getCharacterSize() );
 
 		textCache.setText( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPos() - NLPos ) );
 
@@ -257,7 +257,7 @@ Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 		worldToControl( controlPos );
 		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mRealAlignOffset.x, (Int32)mRealAlignOffset.y );
 
-		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & TextCache::Bold, mTextCache->getOutlineThickness(), controlPos );
+		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), controlPos );
 
 		if ( -1 != curPos ) {
 			mTextBuffer.setCursorPos( curPos );

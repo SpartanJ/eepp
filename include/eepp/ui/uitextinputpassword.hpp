@@ -20,11 +20,11 @@ class UITextInputPassword : public UITextInput
 
 		virtual UITextView * setText( const String& text );
 
-		TextCache * getPassCache() const;
+		Text * getPassCache() const;
 
 		void setFontStyleConfig( const TooltipStyleConfig& fontStyleConfig );
 	protected:
-		TextCache *	mPassCache;
+		Text *	mPassCache;
 
 		void alignFix();
 

@@ -82,13 +82,6 @@ class EE_API Font {
 		Uint32 						mType;
 		std::string					mFontName;
 		Uint32						mFontHash;
-		Uint32 						mTexId;
-		Uint32 						mHeight;
-		Uint32 						mSize;
-		Int32						mLineSkip;
-
-		std::vector<GlyphData> 		mGlyphs;
-		std::vector<TextureCoords> 	mTexCoords;
 
 		Font( const Uint32& Type, const std::string& setName );
 };

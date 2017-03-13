@@ -23,7 +23,23 @@ class EE_API UITextView : public UIWidget {
 
 		Graphics::Font * getFont() const;
 
-		void setFont( Graphics::Font * font );
+		UITextView * setFont( Graphics::Font * font );
+
+		Uint32 getCharacterSize();
+
+		UITextView * setCharacterSize( const Uint32& characterSize );
+
+		const Uint32& getFontStyle() const;
+
+		UITextView * setFontStyle( const Uint32& fontStyle );
+
+		const Float & getOutlineThickness() const;
+
+		UITextView * setOutlineThickness( const Float& outlineThickness );
+
+		const ColorA& getOutlineColor() const;
+
+		UITextView * setOutlineColor( const ColorA& outlineColor );
 
 		virtual const String& getText();
 
@@ -31,19 +47,19 @@ class EE_API UITextView : public UIWidget {
 
 		const ColorA& getFontColor() const;
 
-		void setFontColor( const ColorA& color );
+		UITextView * setFontColor( const ColorA& color );
 
 		const ColorA& getFontShadowColor() const;
 
-		void setFontShadowColor( const ColorA& color );
+		UITextView * setFontShadowColor( const ColorA& color );
 
 		const ColorA& getSelectionBackColor() const;
 
-		void setSelectionBackColor( const ColorA& color );
+		UITextView * setSelectionBackColor( const ColorA& color );
 
 		virtual void setTheme( UITheme * Theme );
 
-		TextCache * getTextCache();
+		Text * getTextCache();
 
 		Float getTextWidth();
 
@@ -63,11 +79,11 @@ class EE_API UITextView : public UIWidget {
 
 		const Recti& getPadding() const;
 
-		void setPadding(const Recti & padding);
+		UITextView * setPadding(const Recti & padding);
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
-		TextCache *		mTextCache;
+		Text *		mTextCache;
 		String			mString;
 		TooltipStyleConfig mFontStyleConfig;
 		Vector2i 		mAlignOffset;
@@ -77,7 +93,7 @@ class EE_API UITextView : public UIWidget {
 		Recti		mPadding;
 		Recti		mRealPadding;
 
-		virtual void drawSelection(TextCache * textCache);
+		virtual void drawSelection(Text * textCache);
 
 		virtual void onSizeChange();
 

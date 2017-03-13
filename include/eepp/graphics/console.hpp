@@ -5,7 +5,7 @@
 #include <eepp/window/inputtextbuffer.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/font.hpp>
-#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/text.hpp>
 #include <deque>
 
 namespace EE { namespace Window { class Window; class InputTextBuffer; class InputEvent; } }
@@ -122,6 +122,8 @@ class EE_API Console : protected LogReaderInterface {
 
 		/** Activate/Deactive fps rendering */
 		void showFps( const bool& Show );
+
+		Text& getTextCache();
 	protected:
 		std::map < String, ConsoleCallback > mCallbacks;
 		std::deque < String > mCmdLog;
@@ -166,7 +168,7 @@ class EE_API Console : protected LogReaderInterface {
 		sCon mCon;
 
 		Float mCurAlpha;
-		TextCache mTextCache;
+		Text mTextCache;
 		bool mEnabled;
 		bool mVisible;
 		bool mFadeIn;
@@ -246,7 +248,7 @@ class EE_API Console : protected LogReaderInterface {
 
 		void privVideoResize( EE::Window::Window * win );
 
-		void writeLog( const std::string& TextCache );
+		void writeLog( const std::string& Text );
 
 		void getFilesFrom( std::string txt, const Uint32& curPos );
 

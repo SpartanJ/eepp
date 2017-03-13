@@ -1,4 +1,4 @@
-#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/renderer/gl.hpp>
 #include <eepp/graphics/glextensions.hpp>
@@ -15,10 +15,9 @@ namespace EE { namespace Graphics {
 		Float v1 = 0;
 		Float u2 = 1 / (Float)textureSize.getWidth();
 		Float v2 = 1 / (Float)textureSize.getHeight();
+		VertexCoords vc;
 
 		if ( GLi->quadsSupported() ) {
-			VertexCoords vc;
-
 			vc.TexCoords[0]	= u1;
 			vc.TexCoords[1]	= v1;
 			vc.Vertex[0]	= centerDiffX + -outlineThickness;
@@ -47,7 +46,47 @@ namespace EE { namespace Graphics {
 			colors.push_back( color );
 			vertices.push_back( vc );
 		} else {
+			vc.TexCoords[0]	= u1;
+			vc.TexCoords[1]	= v2;
+			vc.Vertex[0]	= centerDiffX + -outlineThickness;
+			vc.Vertex[1]	= bottom + outlineThickness;
+			colors.push_back( color );
+			vertices.push_back( vc );
 
+			vc.TexCoords[0]	= u1;
+			vc.TexCoords[1]	= v1;
+			vc.Vertex[0]	= centerDiffX + -outlineThickness;
+			vc.Vertex[1]	= top - outlineThickness;
+			colors.push_back( color );
+			vertices.push_back( vc );
+
+			vc.TexCoords[0]	= u2;
+			vc.TexCoords[1]	= v1;
+			vc.Vertex[0]	= centerDiffX + lineLength + outlineThickness;
+			vc.Vertex[1]	= top - outlineThickness;
+			colors.push_back( color );
+			vertices.push_back( vc );
+
+			vc.TexCoords[0]	= u1;
+			vc.TexCoords[1]	= v2;
+			vc.Vertex[0]	= centerDiffX + -outlineThickness;
+			vc.Vertex[1]	= bottom + outlineThickness;
+			colors.push_back( color );
+			vertices.push_back( vc );
+
+			vc.TexCoords[0]	= u2;
+			vc.TexCoords[1]	= v2;
+			vc.Vertex[0]	= centerDiffX + lineLength + outlineThickness;
+			vc.Vertex[1]	= bottom + outlineThickness;
+			colors.push_back( color );
+			vertices.push_back( vc );
+
+			vc.TexCoords[0]	= u2;
+			vc.TexCoords[1]	= v1;
+			vc.Vertex[0]	= centerDiffX + lineLength + outlineThickness;
+			vc.Vertex[1]	= top - outlineThickness;
+			colors.push_back( color );
+			vertices.push_back( vc );
 		}
 	}
 
@@ -62,9 +101,9 @@ namespace EE { namespace Graphics {
 		Float v1 = static_cast<Float>(glyph.textureRect.Top) / (Float)textureSize.getHeight();
 		Float u2 = static_cast<Float>(glyph.textureRect.Left + glyph.textureRect.Right) / (Float)textureSize.getWidth();
 		Float v2 = static_cast<Float>(glyph.textureRect.Top  + glyph.textureRect.Bottom) / (Float)textureSize.getHeight();
+		VertexCoords vc;
 
 		if ( GLi->quadsSupported() ) {
-			VertexCoords vc;
 
 			vc.TexCoords[0]	= u1;
 			vc.TexCoords[1]	= v1;
@@ -94,14 +133,54 @@ namespace EE { namespace Graphics {
 			colors.push_back( color );
 			vertices.push_back( vc );
 		} else {
+			vc.TexCoords[0]	= u1;
+			vc.TexCoords[1]	= v2;
+			vc.Vertex[0]	= centerDiffX + position.x + left  - italic * bottom - outlineThickness;
+			vc.Vertex[1]	= position.y + bottom - outlineThickness;
+			colors.push_back( color );
+			vertices.push_back( vc );
 
+			vc.TexCoords[0]	= u1;
+			vc.TexCoords[1]	= v1;
+			vc.Vertex[0]	= centerDiffX + position.x + left  - italic * top	- outlineThickness;
+			vc.Vertex[1]	= position.y + top	- outlineThickness;
+			colors.push_back( color );
+			vertices.push_back( vc );
+
+			vc.TexCoords[0]	= u2;
+			vc.TexCoords[1]	= v1;
+			vc.Vertex[0]	= centerDiffX + position.x + right - italic * top - outlineThickness;
+			vc.Vertex[1]	= position.y + top - outlineThickness;
+			colors.push_back( color );
+			vertices.push_back( vc );
+
+			vc.TexCoords[0]	= u1;
+			vc.TexCoords[1]	= v2;
+			vc.Vertex[0]	= centerDiffX + position.x + left  - italic * bottom - outlineThickness;
+			vc.Vertex[1]	= position.y + bottom - outlineThickness;
+			colors.push_back( color );
+			vertices.push_back( vc );
+
+			vc.TexCoords[0]	= u2;
+			vc.TexCoords[1]	= v2;
+			vc.Vertex[0]	= centerDiffX + position.x + right - italic * bottom - outlineThickness;
+			vc.Vertex[1]	= position.y + bottom - outlineThickness;
+			colors.push_back( color );
+			vertices.push_back( vc );
+
+			vc.TexCoords[0]	= u2;
+			vc.TexCoords[1]	= v1;
+			vc.Vertex[0]	= centerDiffX + position.x + right - italic * top - outlineThickness;
+			vc.Vertex[1]	= position.y + top - outlineThickness;
+			colors.push_back( color );
+			vertices.push_back( vc );
 		}
 	}
 }}
 
 namespace EE { namespace Graphics {
 
-TextCache::TextCache() :
+Text::Text() :
 	mString(),
 	mFont(NULL),
 	mCharacterSize(12),
@@ -120,7 +199,7 @@ TextCache::TextCache() :
 {
 }
 
-TextCache::TextCache(const String& string, Font * font, unsigned int characterSize) :
+Text::Text(const String& string, Font * font, unsigned int characterSize) :
 	mString(string),
 	mFont(font),
 	mCharacterSize(characterSize),
@@ -139,7 +218,7 @@ TextCache::TextCache(const String& string, Font * font, unsigned int characterSi
 {
 }
 
-TextCache::TextCache(Font * font, unsigned int characterSize) :
+Text::Text(Font * font, unsigned int characterSize) :
 	mFont(font),
 	mCharacterSize(characterSize),
 	mRealCharacterSize(PixelDensity::dpToPxI(mCharacterSize)),
@@ -157,7 +236,7 @@ TextCache::TextCache(Font * font, unsigned int characterSize) :
 {
 }
 
-void TextCache::create(Font * font, const String & text, ColorA FontColor, ColorA FontShadowColor, Uint32 characterSize ) {
+void Text::create(Font * font, const String & text, ColorA FontColor, ColorA FontShadowColor, Uint32 characterSize ) {
 	mFont = font;
 	mString = text;
 	mCharacterSize = characterSize;
@@ -169,7 +248,7 @@ void TextCache::create(Font * font, const String & text, ColorA FontColor, Color
 	ensureGeometryUpdate();
 }
 
-void TextCache::setText(const String& string) {
+void Text::setText(const String& string) {
 	if (mString != string) {
 		mString = string;
 		mGeometryNeedUpdate = true;
@@ -177,7 +256,7 @@ void TextCache::setText(const String& string) {
 	}
 }
 
-void TextCache::setFont(Font * font) {
+void Text::setFont(Font * font) {
 	if (mFont != font) {
 		mFont = font;
 
@@ -189,7 +268,7 @@ void TextCache::setFont(Font * font) {
 	}
 }
 
-void TextCache::setCharacterSize(unsigned int size) {
+void Text::setCharacterSize(unsigned int size) {
 	if (mCharacterSize != size) {
 		mCharacterSize = size;
 
@@ -201,7 +280,7 @@ void TextCache::setCharacterSize(unsigned int size) {
 	}
 }
 
-void TextCache::setStyle(Uint32 style) {
+void Text::setStyle(Uint32 style) {
 	if (mStyle != style) {
 		mStyle = style;
 		mGeometryNeedUpdate = true;
@@ -209,11 +288,11 @@ void TextCache::setStyle(Uint32 style) {
 	}
 }
 
-void TextCache::setColor(const ColorA & color) {
+void Text::setColor(const ColorA & color) {
 	setFillColor(color);
 }
 
-void TextCache::setFillColor(const ColorA& color) {
+void Text::setFillColor(const ColorA& color) {
 	if (color != mFillColor) {
 		mFillColor = color;
 
@@ -225,7 +304,7 @@ void TextCache::setFillColor(const ColorA& color) {
 	}
 }
 
-void TextCache::setOutlineColor(const ColorA& color) {
+void Text::setOutlineColor(const ColorA& color) {
 	if (color != mOutlineColor) {
 		mOutlineColor = color;
 
@@ -237,61 +316,61 @@ void TextCache::setOutlineColor(const ColorA& color) {
 	}
 }
 
-void TextCache::setOutlineThickness(Float thickness) {
+void Text::setOutlineThickness(Float thickness) {
 	if (thickness != mOutlineThickness) {
 		mOutlineThickness = thickness;
 		mGeometryNeedUpdate = true;
 	}
 }
 
-String& TextCache::getText() {
+String& Text::getText() {
 	return mString;
 }
 
-Font* TextCache::getFont() const {
+Font* Text::getFont() const {
 	return mFont;
 }
 
-unsigned int TextCache::getCharacterSize() const {
+unsigned int Text::getCharacterSize() const {
 	return mCharacterSize;
 }
 
-unsigned int TextCache::getCharacterSizePx() const {
+unsigned int Text::getCharacterSizePx() const {
 	return mRealCharacterSize;
 }
 
-const Uint32 &TextCache::getFontHeight() const {
+const Uint32 &Text::getFontHeight() const {
 	return mFontHeight;
 }
 
-Uint32 TextCache::getStyle() const {
+Uint32 Text::getStyle() const {
 	return mStyle;
 }
 
-void TextCache::setAlpha( const Uint8& alpha ) {
+void Text::setAlpha( const Uint8& alpha ) {
 	std::size_t s = mColors.size();
 	for ( Uint32 i = 0; i < s; i++ ) {
 		mColors[ i ].Alpha = alpha;
 	}
 }
 
-const ColorA& TextCache::getFillColor() const {
+const ColorA& Text::getFillColor() const {
 	return mFillColor;
 }
 
-const ColorA &TextCache::getColor() const {
+const ColorA &Text::getColor() const {
 	return getFillColor();
 }
 
-const ColorA& TextCache::getOutlineColor() const {
+const ColorA& Text::getOutlineColor() const {
 	return mOutlineColor;
 }
 
-Float TextCache::getOutlineThickness() const {
+Float Text::getOutlineThickness() const {
 	return mOutlineThickness;
 }
 
-Vector2f TextCache::findCharacterPos(std::size_t index) const {
+Vector2f Text::findCharacterPos(std::size_t index) const {
 	// Make sure that we have a valid font
 	if (!mFont)
 		return Vector2f();
@@ -330,21 +409,21 @@ Vector2f TextCache::findCharacterPos(std::size_t index) const {
 	return position;
 }
 
-Rectf TextCache::getLocalBounds() {
+Rectf Text::getLocalBounds() {
 	ensureGeometryUpdate();
 
 	return mBounds;
 }
 
-Float TextCache::getTextWidth() {
+Float Text::getTextWidth() {
 	return mCachedWidth;
 }
 
-Float TextCache::getTextHeight() {
+Float Text::getTextHeight() {
 	return mFont->getLineSpacing(mRealCharacterSize) * mNumLines;
 }
 
-void TextCache::draw(const Float & X, const Float & Y, const Vector2f & Scale, const Float & Angle, EE_BLEND_MODE Effect) {
+void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const Float & Angle, EE_BLEND_MODE Effect) {
 	if ( NULL != mFont ) {
 		GlobalBatchRenderer::instance()->draw();
 		TextureFactory::instance()->bind( mFont->getTexture(mRealCharacterSize) );
@@ -430,7 +509,7 @@ void TextCache::draw(const Float & X, const Float & Y, const Vector2f & Scale, c
 	}
 }
 
-void TextCache::ensureGeometryUpdate() {
+void Text::ensureGeometryUpdate() {
 	Sizei textureSize = mFont->getTexture(mRealCharacterSize)->getSize();
 
 	if ( textureSize != mTextureSize )
@@ -635,40 +714,39 @@ void TextCache::ensureGeometryUpdate() {
 	mBounds.Bottom = maxY - minY;
 }
 
-const ColorA& TextCache::getShadowColor() const {
+const ColorA& Text::getShadowColor() const {
 	return mFontShadowColor;
 }
 
-void TextCache::setShadowColor(const ColorA& color) {
+void Text::setShadowColor(const ColorA& color) {
 	mFontShadowColor = color;
 }
 
-const int& TextCache::getNumLines() const {
+const int& Text::getNumLines() const {
 	return mNumLines;
 }
 
-const std::vector<Float>& TextCache::getLinesWidth() {
+const std::vector<Float>& Text::getLinesWidth() {
 	return mLinesWidth;
 }
 
-void TextCache::setFlags( const Uint32& flags ) {
+void Text::setFlags( const Uint32& flags ) {
 	if ( mFlags != flags ) {
 		mFlags = flags;
 		mGeometryNeedUpdate = true;
 	}
 }
 
-const Uint32& TextCache::getFlags() const {
+const Uint32& Text::getFlags() const {
 	return mFlags;
 }
 
-void TextCache::cacheWidth() {
+void Text::cacheWidth() {
 	if ( NULL != mFont && mString.size() ) {
 		mFont->cacheWidth( mString, mRealCharacterSize, (mStyle & Bold), mOutlineThickness, mLinesWidth, mCachedWidth, mNumLines, mLargestLineCharCount );
 	} else {
 		mCachedWidth = 0;
 	}
 }
-
 
 }}

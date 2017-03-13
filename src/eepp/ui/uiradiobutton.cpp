@@ -1,7 +1,7 @@
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/subtexture.hpp>
-#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/text.hpp>
 
 namespace EE { namespace UI {
 

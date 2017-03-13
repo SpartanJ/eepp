@@ -1,6 +1,6 @@
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uimanager.hpp>
-#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>
 
@@ -345,7 +345,7 @@ void UITextEdit::fixScrollToCursor() {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum = mTextInput->getInputTextBuffer()->getCurPosLinePos( NLPos );
 
-		TextCache textCache( mTextInput->getTextCache()->getFont(), mTextInput->getFontStyleConfig().FontCharacterSize );
+		Text textCache( mTextInput->getTextCache()->getFont(), mTextInput->getFontStyleConfig().FontCharacterSize );
 		textCache.setText(
 			mTextInput->getInputTextBuffer()->getBuffer().substr(
 				NLPos, mTextInput->getInputTextBuffer()->getCursorPos() - NLPos

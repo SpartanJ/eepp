@@ -902,6 +902,10 @@ void Console::showFps( const bool& Show ) {
 	mShowFps = Show;
 }
 
+Text & Console::getTextCache() {
+	return mTextCache;
+}
+
 void Console::writeLog( const std::string& Text ) {
 	std::vector<String> Strings = String::split( String( Text ) );
 

@@ -13,8 +13,6 @@ Font::Font( const Uint32& Type, const std::string& Name ) :
 }
 
 Font::~Font() {
-	mGlyphs.clear();
-
 	if ( !FontManager::instance()->isDestroying() ) {
 		FontManager::instance()->remove( this, false );
 	}

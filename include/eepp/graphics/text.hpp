@@ -6,7 +6,7 @@
 
 namespace EE { namespace Graphics {
 
-class EE_API TextCache {
+class EE_API Text {
 	public:
 		enum Style
 		{
@@ -17,11 +17,11 @@ class EE_API TextCache {
 			StrikeThrough	= 1 << 3  ///< Strike through characters
 		};
 
-		TextCache();
+		Text();
 
-		TextCache(const String& string, Font * font, unsigned int characterSize = 30);
+		Text(const String& string, Font * font, unsigned int characterSize = 30);
 
-		TextCache(Font * font, unsigned int characterSize = 30);
+		Text(Font * font, unsigned int characterSize = 30);
 
 		/** Create a text from a font */
 		void create(Graphics::Font * font, const String& text = "", ColorA FontColor = ColorA(255,255,255,255), ColorA FontShadowColor = ColorA(0,0,0,255) , Uint32 characterSize = 12);
@@ -99,7 +99,7 @@ class EE_API TextCache {
 
 		/** Force to cache the width of the current text */
 		void cacheWidth();
-	private:
+	protected:
 		void ensureGeometryUpdate();
 
 		String				mString;			 ///< String to display

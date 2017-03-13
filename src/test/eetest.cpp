@@ -169,43 +169,38 @@ void EETest::createUIThemeTextureAtlas() {
 void EETest::loadFonts() {
 	mFTE.restart();
 
-	TextureLoader * tl = eeNew( TextureLoader, ( MyPath + "fonts/conchars.png" ) );
-	tl->setColorKey( RGB(0,0,0) );
-
-	//mFontLoader.add( eeNew( TextureFontLoader, ( "conchars", tl, (unsigned int)32 ) ) );
-	//mFontLoader.add( eeNew( TextureFontLoader, ( "ProggySquareSZ", eeNew( TextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
 	mFontLoader.add( eeNew( FontTrueTypeLoader, ( "arial", MyPath + "fonts/arial.ttf" ) ) );
-	mFontLoader.add( eeNew( FontTrueTypeLoader, ( "arialb", MyPath + "fonts/arial.ttf" ) ) );
 	mFontLoader.add( eeNew( FontTrueTypeLoader, ( "DejaVuSansMono", MyPath + "fonts/DejaVuSansMono.ttf" ) ) );
 
 	mFontLoader.load( cb::Make1( this, &EETest::onFontLoaded ) );
 }
 
 void EETest::onFontLoaded( ResourceLoader * ObjLoaded ) {
-	//FF		= FontManager::instance()->getByName( "conchars" );
-	//FF2		= FontManager::instance()->getByName( "ProggySquareSZ" );
-	FF = TTF		= FontManager::instance()->getByName( "arial" );
-	FF2 = TTFB	= FontManager::instance()->getByName( "arialb" );
+	TTF		= FontManager::instance()->getByName( "arial" );
 	DBSM	= FontManager::instance()->getByName( "DejaVuSansMono" );
 
 	eePRINTL( "Fonts loading time: %4.3f ms.", mFTE.getElapsed().asMilliseconds() );
 
 	eeASSERT( TTF != NULL );
-	eeASSERT( TTFB != NULL );
+	eeASSERT( DBSM != NULL );
 
 	Con.create( DBSM, true );
 	Con.ignoreCharOnPrompt( 186 ); // 'º'
+	Con.getTextCache().setOutlineThickness( 1 );
+	Con.getTextCache().setOutlineColor( ColorA(0,0,0,150) );
 
 	mBuda = String::fromUtf8( "El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde." );
 
 	createUI();
 
-	mEEText.create( TTFB, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to see the PopUp Menu" );
-	mFBOText.create( TTFB, "This is a VBO\nInside of a FBO" );
-	//mFBOText.setColor( ColorA(255,255,0,255), mFBOText.getText().find( "VBO" ), mFBOText.getText().find( "VBO" ) + 2 );
-	//mFBOText.setColor( ColorA(255,255,0,255), mFBOText.getText().find( "FBO" ), mFBOText.getText().find( "FBO" ) + 2 );
+	mEEText.create( TTF, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to see the PopUp Menu" );
+	mEEText.setOutlineThickness( 1 );
+	mEEText.setOutlineColor( ColorA(0,0,0,255) );
+	mFBOText.create( TTF, "This is a VBO\nInside of a FBO" );
+	mFBOText.setOutlineThickness( 1 );
+	mFBOText.setOutlineColor( ColorA(0,0,0,255) );
 
-	mInfoText.create( FF, "", ColorA(255,255,255,150) );
+	mInfoText.create( DBSM, "", ColorA(100,100,100,255) );
 }
 
 void EETest::createShaders() {

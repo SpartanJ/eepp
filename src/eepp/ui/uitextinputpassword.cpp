@@ -1,7 +1,7 @@
 #include <eepp/ui/uitextinputpassword.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
-#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/graphics/font.hpp>
 
 namespace EE { namespace UI {
@@ -13,7 +13,7 @@ UITextInputPassword *UITextInputPassword::New() {
 UITextInputPassword::UITextInputPassword() :
 	UITextInput()
 {
-	mPassCache = eeNew( TextCache, () );
+	mPassCache = eeNew( Text, () );
 	setFontStyleConfig( mFontStyleConfig );
 
 	autoAlign();
@@ -128,7 +128,7 @@ UITextView * UITextInputPassword::setText( const String& text ) {
 	return this;
 }
 
-TextCache *UITextInputPassword::getPassCache() const {
+Text *UITextInputPassword::getPassCache() const {
 	return mPassCache;
 }
 

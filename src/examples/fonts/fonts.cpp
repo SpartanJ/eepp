@@ -1,12 +1,12 @@
 #include <eepp/ee.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
-#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/text.hpp>
 
 EE::Window::Window * win			= NULL;
 FontTrueType * fontTest;
 Uint32 nextGliph = 0;
 Clock timer;
-TextCache text;
+Text text;
 
 void mainLoop()
 {

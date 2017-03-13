@@ -1,7 +1,7 @@
 ../../include/eepp/graphics/font.hpp
 ../../include/eepp/graphics/fonttruetype.hpp
 ../../include/eepp/graphics/fonttruetypeloader.hpp
-../../include/eepp/graphics/textcache.hpp
+../../include/eepp/graphics/text.hpp
 ../../include/eepp/math/interpolation1d.hpp
 ../../include/eepp/math/interpolation2d.hpp
 ../../include/eepp/ui/uidragablecontrol.hpp
@@ -21,7 +21,7 @@
 ../../src/eepp/graphics/globalbatchrenderer.cpp
 ../../src/eepp/graphics/pixeldensity.cpp
 ../../src/eepp/graphics/pixelperfect.cpp
-../../src/eepp/graphics/textcache.cpp
+../../src/eepp/graphics/text.cpp
 ../../src/eepp/math/interpolation1d.cpp
 ../../src/eepp/math/interpolation2d.cpp
 ../../src/eepp/ui/uidragablecontrol.cpp
