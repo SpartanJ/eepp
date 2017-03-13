@@ -29,7 +29,6 @@
 #include <eepp/graphics/batchrenderer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/text.hpp>
-#include <eepp/graphics/pixelperfect.hpp>
 #include <eepp/graphics/shader.hpp>
 #include <eepp/graphics/shaderprogram.hpp>
 #include <eepp/graphics/shaderprogrammanager.hpp>

@@ -114,7 +114,7 @@ const Float &UITextView::getOutlineThickness() const {
 
 UITextView * UITextView::setOutlineThickness( const Float & outlineThickness ) {
 	if ( mFontStyleConfig.OutlineThickness != outlineThickness ) {
-		mTextCache->setStyle( outlineThickness );
+		mTextCache->setOutlineThickness( outlineThickness );
 		mFontStyleConfig.OutlineThickness = outlineThickness;
 		autoShrink();
 		onAutoSize();
@@ -491,7 +491,7 @@ void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
 			if ( NULL != font )
 				setFont( font );
 		} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
-			setCharacterSize( ait->as_uint( getCharacterSize() ) );
+			setCharacterSize( PixelDensity::toDpFromStringI( ait->as_string() ) );
 		} else if ( "textstyle" == name || "fontstyle" == name ) {
 			std::string valStr = ait->as_string();
 			String::toLowerInPlace( valStr );
@@ -516,20 +516,20 @@ void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
 				setFontStyle( flags );
 			}
 		} else if ( "fontoutlinethickness" == name ) {
-			setOutlineThickness( ait->as_float() );
+			setOutlineThickness( PixelDensity::toDpFromString( ait->as_string() ) );
 		} else if ( "fontoutlinecolor" == name ) {
 			setOutlineColor( ColorA::fromString( ait->as_string() ) );
 		} else if ( "padding" == name ) {
-			int val = ait->as_int();
+			int val = PixelDensity::toDpFromStringI( ait->as_string() );
 			setPadding( Recti( val, val, val, val ) );
 		} else if ( "paddingleft" == name ) {
-			setPadding( Recti( ait->as_int(), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
+			setPadding( Recti( PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
 		} else if ( "paddingright" == name ) {
-			setPadding( Recti( mPadding.Left, mPadding.Top, ait->as_int(), mPadding.Bottom ) );
+			setPadding( Recti( mPadding.Left, mPadding.Top, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Bottom ) );
 		} else if ( "paddingtop" == name ) {
-			setPadding( Recti( mPadding.Left, ait->as_int(), mPadding.Right, mPadding.Bottom ) );
+			setPadding( Recti( mPadding.Left, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Right, mPadding.Bottom ) );
 		} else if ( "paddingbottom" == name ) {
-			setPadding( Recti( mPadding.Left, mPadding.Top, mPadding.Right, ait->as_int() ) );
+			setPadding( Recti( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
 		}
 	}
 }

@@ -7,7 +7,7 @@
 namespace EE { namespace Graphics {
 
 FontTrueTypeLoader::FontTrueTypeLoader( const std::string& FontName, const std::string& Filepath ) :
-	ObjectLoader( FontTTFLoaderType ),
+	ObjectLoader( FontLoader ),
 	mLoadType( TTF_LT_PATH ),
 	mFontName( FontName ),
 	mFilepath( Filepath ),
@@ -17,7 +17,7 @@ FontTrueTypeLoader::FontTrueTypeLoader( const std::string& FontName, const std::
 }
 
 FontTrueTypeLoader::FontTrueTypeLoader( const std::string& FontName, System::Pack * Pack, const std::string& FilePackPath ) :
-	ObjectLoader( FontTTFLoaderType ),
+	ObjectLoader( FontLoader ),
 	mLoadType( TTF_LT_PACK ),
 	mFontName( FontName ),
 	mFilepath( FilePackPath ),
@@ -28,7 +28,7 @@ FontTrueTypeLoader::FontTrueTypeLoader( const std::string& FontName, System::Pac
 }
 
 FontTrueTypeLoader::FontTrueTypeLoader( const std::string& FontName, Uint8* TTFData, const unsigned int& TTFDataSize ) :
-	ObjectLoader( FontTTFLoaderType ),
+	ObjectLoader( FontLoader ),
 	mLoadType( TTF_LT_MEM ),
 	mFontName( FontName ),
 	mData( TTFData ),
@@ -39,7 +39,7 @@ FontTrueTypeLoader::FontTrueTypeLoader( const std::string& FontName, Uint8* TTFD
 }
 
 FontTrueTypeLoader::FontTrueTypeLoader( const std::string& FontName, IOStream& stream ) :
-	ObjectLoader( FontTTFLoaderType ),
+	ObjectLoader( FontLoader ),
 	mLoadType( TTF_LT_MEM ),
 	mFontName( FontName ),
 	mIOStream( &stream ),

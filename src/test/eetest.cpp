@@ -703,11 +703,11 @@ void EETest::createNewUI() {
 	/**/
 
 	UIManager::instance()->loadLayoutFromString(
-		"<window width='300' height='300' winflags='default|maximize'>"
-		"	<LinearLayout id='testlayout' orientation='vertical' layout_width='match_parent' layout_height='match_parent' layout_margin='8'>"
+		"<window layout_width='300dp' layout_height='300dp' winflags='default|maximize'>"
+		"	<LinearLayout id='testlayout' orientation='vertical' layout_width='match_parent' layout_height='match_parent' layout_margin='8dp'>"
 		"		<TextView text='Hello World!' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' backgroundColor='000000FF' />"
-		"		<PushButton text='OK!' icon='ok' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' />"
-		"		<Image src='thecircle' layout_width='match_parent' layout_height='fixed' height='32' flags='clip' />"
+		"		<PushButton text='OK!' textSize='16dp' icon='ok' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' />"
+		"		<Image src='thecircle' layout_width='match_parent' layout_height='32dp' flags='clip' />"
 		"		<Sprite src='gn' />"
 		"		<TextInput text='test' layout_width='match_parent' layout_height='wrap_content' />"
 		"		<DropDownList layout_width='match_parent' layout_height='wrap_content' selectedIndex='0'>"

@@ -2,6 +2,7 @@
 #define EE_PIXELDENSITY_HPP
 
 #include <eepp/config.hpp>
+#include <string>
 #include <eepp/math/size.hpp>
 #include <eepp/math/rect.hpp>
 #include <eepp/math/vector2.hpp>
@@ -77,6 +78,10 @@ class EE_API PixelDensity {
 		static Vector2f dpToPx( Vector2f pos );
 
 		static Vector2f pxToDp( Vector2f pos );
+
+		static Float toDpFromString( const std::string& str );
+
+		static Float toDpFromStringI( const std::string& str );
 	protected:
 		static Float sPixelDensity;
 };
