@@ -133,12 +133,12 @@ const Sizei& UIThemeManager::getCursorSize() const {
 	return mCursorSize;
 }
 
-TooltipStyleConfig UIThemeManager::getDefaultFontStyleConfig() {
+FontStyleConfig UIThemeManager::getDefaultFontStyleConfig() {
 	if ( NULL != getDefaultTheme() ) {
 		return getDefaultTheme()->getFontStyleConfig();
 	}
 
-	return TooltipStyleConfig();
+	return FontStyleConfig();
 }
 
 }}

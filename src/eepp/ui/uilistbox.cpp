@@ -5,6 +5,7 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>
 #include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/textcache.hpp>
 
 namespace EE { namespace UI {
 
@@ -143,7 +144,7 @@ Uint32 UIListBox::addListBoxItem( const String& Text ) {
 	mItems.push_back( NULL );
 
 	if ( NULL != mFontStyleConfig.Font ) {
-		TextCache textCache( mFontStyleConfig.Font );
+		TextCache textCache( mFontStyleConfig.Font, mFontStyleConfig.FontCharacterSize );
 		textCache.setText( Text );
 		Uint32 twidth = textCache.getTextWidth();
 
@@ -295,18 +296,18 @@ void UIListBox::setRowHeight() {
 	Uint32 tOldRowHeight = mRowHeight;
 
 	if ( 0 == mRowHeight ) {
-		Uint32 FontSize = 12;
+		Uint32 FontSize = PixelDensity::dpToPxI( 12 );
 
 		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
-			FontSize = UIThemeManager::instance()->getDefaultFont()->getFontHeight();
+			FontSize = UIThemeManager::instance()->getDefaultFont()->getFontHeight( PixelDensity::dpToPxI( UIThemeManager::instance()->getDefaultFontStyleConfig().FontCharacterSize ) );
 
 		if ( NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() )
-			FontSize = mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont()->getFontHeight();
+			FontSize = mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont()->getFontHeight( PixelDensity::dpToPxI( mSkinState->getSkin()->getTheme()->getFontStyleConfig().FontCharacterSize ) );
 
 		if ( NULL != mFontStyleConfig.getFont() )
-			FontSize = mFontStyleConfig.getFont()->getFontHeight();
+			FontSize = mFontStyleConfig.getFont()->getFontHeight( PixelDensity::dpToPxI( mFontStyleConfig.FontCharacterSize ) );
 
-		mRowHeight = (Uint32)PixelDensity::pxToDpI( FontSize + 4 );
+		mRowHeight = (Uint32)PixelDensity::pxToDpI( FontSize );
 	}
 
 	if ( tOldRowHeight != mRowHeight ) {
@@ -331,7 +332,7 @@ void UIListBox::setHScrollStep() {
 void UIListBox::findMaxWidth() {
 	Uint32 size = (Uint32)mItems.size();
 	Int32 width;
-	TextCache textCache( mFontStyleConfig.Font );
+	TextCache textCache( mFontStyleConfig.Font, mFontStyleConfig.FontCharacterSize );
 
 	mMaxTextWidth = 0;
 

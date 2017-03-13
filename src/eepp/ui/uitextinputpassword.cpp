@@ -69,7 +69,7 @@ void UITextInputPassword::alignFix() {
 		Float tX	= mRealAlignOffset.x + tW;
 
 		mCurPos.x	= tW;
-		mCurPos.y	= (Float)LineNum * (Float)mPassCache->getFont()->getFontHeight();
+		mCurPos.y	= (Float)LineNum * (Float)mPassCache->getFont()->getLineSpacing( mPassCache->getCharacterSizePx() );
 
 		if ( !mTextBuffer.setSupportNewLine() ) {
 			if ( tX < 0.f )
@@ -111,8 +111,6 @@ void UITextInputPassword::updateText() {
 }
 
 void UITextInputPassword::updatePass( const String& pass ) {
-	mPassCache->getText().clear();
-
 	String newTxt;
 
 	for ( size_t i = 0; i < pass.size(); i++ ) {
@@ -137,6 +135,7 @@ TextCache *UITextInputPassword::getPassCache() const {
 void UITextInputPassword::setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig) {
 	UITextInput::setFontStyleConfig( fontStyleConfig );
 
+	mPassCache->setCharacterSize( mFontStyleConfig.FontCharacterSize );
 	mPassCache->setFont( mFontStyleConfig.getFont() );
 	mPassCache->setColor( mFontStyleConfig.getFontColor() );
 	mPassCache->setShadowColor( mFontStyleConfig.getFontShadowColor() );

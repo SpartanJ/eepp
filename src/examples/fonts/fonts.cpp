@@ -1,23 +1,12 @@
 #include <eepp/ee.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
-#include <eepp/graphics/text.hpp>
+#include <eepp/graphics/textcache.hpp>
 
 EE::Window::Window * win			= NULL;
-TTFFont * TTF			= NULL;
-TTFFont * TTFO			= NULL;
-TTFFont * TTF2			= NULL;
-TextureFont * TexF		= NULL;
-TextureFont * TexF2	= NULL;
-TextCache TTFCache;
-TextCache TTF2Cache;
-TextCache TTFOCache;
-TextCache TexFCache;
-TextCache TexF2Cache;
-TextCache TxtCache;
-FontTrueType fontTest;
+FontTrueType * fontTest;
 Uint32 nextGliph = 0;
 Clock timer;
-Text text;
+TextCache text;
 
 void mainLoop()
 {
@@ -78,84 +67,16 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// Get the application path
 		std::string AppPath = Sys::getProcessPath();
 
-		// Create a new True Type Font
-		TTF		= TTFFont::New( "DejaVuSansMonoOutline" );
-		TTFO	= TTFFont::New( "DejaVuSansMonoOutlineFreetype" );
-		TTF2	= TTFFont::New( "DejaVuSansMono" );
-		TexF	= TextureFont::New( "ProggySquareSZ" );
-		TexF2	= TextureFont::New( "conchars" );
-
-		// Load the TTF font
-		TTF->load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 18, TTF_STYLE_NORMAL, 128, RGB(255,255,255), 3, RGB(0,0,0), true );
-
-		// Change the default method to use for outlining the font glyphs
-		TTFFont::OutlineMethod = TTFFont::OutlineFreetype;
-
-		// Create the exact same font than before but using the new outlining method
-		TTFO->load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 18, TTF_STYLE_NORMAL, 128, RGB(255,255,255), 3, RGB(0,0,0), true );
-
-		TTF2->load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 48, TTF_STYLE_NORMAL, 128, RGB(255,255,255), 0, RGB(0,0,0), true );
-
 		// Save the TTF font so then it can be loaded as a TextureFont
 		//TTF->save( AppPath + "assets/temp/DejaVuSansMono.png", AppPath + "assets/temp/DejaVuSansMono.fnt" );
-
-		// Load the texture font, previusly generated from a True Type Font
-		// First load the texture
-		Uint32 TexFid = TextureFactory::instance()->load( AppPath + "assets/fonts/ProggySquareSZ.png" );
-		TexF->load( TexFid,  AppPath + "assets/fonts/ProggySquareSZ.dat" );
-
-		// Load a monospaced texture font from image ( using the texture loader to set the color key )
-		TextureLoader TexLoader( AppPath + "assets/fonts/conchars.png" );
-		TexLoader.setColorKey( RGB(0,0,0) );
-		TexLoader.load();;
-		TexF2->load( TexLoader.getId(), 32 );
-
-		// Set the font to the text cache
-		TTFCache.setFont( TTF );
-		// Set a text to render
-		TTFCache.setText( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
-
-		TTFOCache.setFont( TTFO );
-		TTFOCache.setText( TTFCache.getText() );
-
-		TTF2Cache.setFont( TTF2 );
-		TTF2Cache.setText( TTFCache.getText() );
-
-		// Set the font color
-		TTF2Cache.setColor( RGB(0,0,0) );
-
-		TexFCache.setFont( TexF );
-		TexFCache.setText( TTFCache.getText() );
-		TexFCache.setColor( RGB(0,0,0) );
-
-		TexF2Cache.setFont( TexF2 );
-		TexF2Cache.setText( TTFCache.getText() );
 
 		// Create a new text string
 		String Txt( "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." );
 
-		// Make the text fit the screen width ( wrap the text )
-		//TTF2->shrinkText( Txt, win->getWidth() - 96 );
-
-		// Create a new text cache to draw on screen
-		// The cached text will
-		TxtCache.create( TTF2, Txt, ColorA(0,0,0,255) );
-
-		// Set the text cache to be centered
-		TxtCache.setFlags( FONT_DRAW_CENTER );
-
-		// Set the font color to a substring of the text
-		// To be able to set the color of the font, create the font as white
-		// Create a gradient
-		size_t size = TxtCache.getText().size();
-
-		for ( size_t i = 0; i < size; i++ ) {
-			TxtCache.setColor( ColorA(255*i/size,0,0,255), i, i+1 );
-		}
-
-		fontTest.loadFromFile( AppPath + "assets/fonts/DejaVuSansMono.ttf" );
-		fontTest.shrinkText( Txt, 24, false, 2, win->getWidth() - 96 );
-		text.setFontTrueType( &fontTest );
+		fontTest = FontTrueType::New( "DejaVuSansMono" );
+		fontTest->loadFromFile( AppPath + "assets/fonts/DejaVuSansMono.ttf" );
+		fontTest->shrinkText( Txt, 24, false, 2, win->getWidth() - 96 );
+		text.setFont( fontTest );
 		text.setCharacterSize( 24 );
 		text.setFillColor( 0xFFFFFFFF );
 		text.setOutlineThickness( 2 );

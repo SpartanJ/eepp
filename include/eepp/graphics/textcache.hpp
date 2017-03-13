@@ -1,69 +1,83 @@
-#ifndef EE_GRAPHICSCTEXTCACHE_H
-#define EE_GRAPHICSCTEXTCACHE_H
+#ifndef EE_GRAPHICS_TEXT_HPP
+#define EE_GRAPHICS_TEXT_HPP
 
-#include <eepp/graphics/base.hpp>
+#include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fonthelper.hpp>
 
 namespace EE { namespace Graphics {
 
-class Font;
-
-/** @brief Caches text for a fast font rendering. */
 class EE_API TextCache {
 	public:
-		/** Create a text from a font */
-		TextCache( Graphics::Font * font, const String& text = "", ColorA FontColor = ColorA(255,255,255,255), ColorA FontShadowColor = ColorA(0,0,0,255) );
+		enum Style
+		{
+			Regular	   		= 0,	  ///< Regular characters, no style
+			Bold			= 1 << 0, ///< Bold characters
+			Italic			= 1 << 1, ///< Italic characters
+			Underlined		= 1 << 2, ///< Underlined characters
+			StrikeThrough	= 1 << 3  ///< Strike through characters
+		};
 
 		TextCache();
 
-		~TextCache();
+		TextCache(const String& string, Font * font, unsigned int characterSize = 30);
+
+		TextCache(Font * font, unsigned int characterSize = 30);
 
 		/** Create a text from a font */
-		void create( Graphics::Font * font, const String& text = "", ColorA FontColor = ColorA(255,255,255,255), ColorA FontShadowColor = ColorA(0,0,0,255) );
+		void create(Graphics::Font * font, const String& text = "", ColorA FontColor = ColorA(255,255,255,255), ColorA FontShadowColor = ColorA(0,0,0,255) , Uint32 characterSize = 12);
 
-		/** @return The font used for the text cache */
-		Graphics::Font * getFont() const;
+		void setText(const String& string);
 
-		/** Change the font used for the text cache */
-		void setFont( Graphics::Font * font );
+		void setFont(Font * font);
 
-		/** @return The text cached */
+		void setCharacterSize(unsigned int size);
+
+		void setStyle(Uint32 style);
+
+		void setColor(const ColorA& color);
+
+		void setFillColor(const ColorA& color);
+
+		void setOutlineColor(const ColorA& color);
+
+		void setOutlineThickness(Float thickness);
+
 		String& getText();
 
-		/** Set the text to be cached */
-		void setText( const String& text );
+		Font * getFont() const;
 
+		unsigned int getCharacterSize() const;
+
+		unsigned int getCharacterSizePx() const;
+
+		const Uint32& getFontHeight() const;
+
+		Uint32 getStyle() const;
+
+		/** @see Set the alpha of each individual character.
+		**	This doesn't break any custom color per-character setted. */
+		void setAlpha( const Uint8& alpha );
+
+		const ColorA& getFillColor() const;
+
+		const ColorA& getColor() const;
+
+		const ColorA& getOutlineColor() const;
+
+		Float getOutlineThickness() const;
+
+		Vector2f findCharacterPos(std::size_t index) const;
+
+		Rectf getLocalBounds();
+		
 		/** @return The cached text width */
 		Float getTextWidth();
 
 		/** @return The cached text height */
 		Float getTextHeight();
 
-		/** @return Every cached text line width */
-		const std::vector<Float>& getLinesWidth();
-
-		/** @return The text colors cached */
-		std::vector<ColorA>& getColors();
-
 		/** Draw the cached text on screen */
 		void draw( const Float& X, const Float& Y, const Vector2f& Scale = Vector2f::One, const Float& Angle = 0, EE_BLEND_MODE Effect = ALPHA_NORMAL );
-
-		/** @return The Font Color */
-		const ColorA& getColor() const;
-
-		/** Set the color of the string rendered */
-		void setColor(const ColorA& color);
-
-		/** @see Set the alpha of each individual character.
-		**	This doesn't break any custom color per-character setted. */
-		void setAlpha( const Uint8& alpha );
-
-		/** Set the color of the substring
-		* @param color The color
-		* @param from The first char to change the color
-		* @param to The last char to change the color
-		*/
-		void setColor(const ColorA& color, Uint32 from, Uint32 to );
 
 		/** @return The Shadow Font Color */
 		const ColorA& getShadowColor() const;
@@ -71,8 +85,8 @@ class EE_API TextCache {
 		/** Set the shadow color of the string rendered */
 		void setShadowColor(const ColorA& color);
 
-		/** @return The number of lines that the cached text contains */
-		const int& getNumLines() const;
+		/** @return Every cached text line width */
+		const std::vector<Float>& getLinesWidth();
 
 		/** Set the font draw flags */
 		void setFlags( const Uint32& flags );
@@ -80,35 +94,43 @@ class EE_API TextCache {
 		/** @return The font draw flags */
 		const Uint32& getFlags() const;
 
+		/** @return The number of lines that the cached text contains */
+		const int& getNumLines() const;
+
 		/** Force to cache the width of the current text */
 		void cacheWidth();
-	protected:
-		friend class Font;
+	private:
+		void ensureGeometryUpdate();
 
-		String mText;
-		Graphics::Font * mFont;
+		String				mString;			 ///< String to display
+		Font *				mFont;			   ///< FontTrueType used to display the string
+		unsigned int		mCharacterSize;	  ///< Base size of characters, in pixels
+		unsigned int		mRealCharacterSize;
+		Uint32				mStyle;			  ///< Text style (see Style enum)
+		ColorA				mFillColor;		  ///< Text fill color
+		ColorA				mOutlineColor;	   ///< Text outline color
+		Float				mOutlineThickness;   ///< Thickness of the text's outline
+		Sizei				mTextureSize;
 
-		Float mCachedWidth;
-		int mNumLines;
-		int mLargestLineCharCount;
+		mutable Rectf   	mBounds;			 ///< Bounding rectangle of the text (in local coordinates)
+		mutable bool		mGeometryNeedUpdate; ///< Does the geometry need to be recomputed?
 
-		ColorA mFontColor;
-		ColorA mFontShadowColor;
+		Float				mCachedWidth;
+		int					mNumLines;
+		int					mLargestLineCharCount;
+		ColorA				mFontShadowColor;
+		Uint32				mFlags;
+		Uint32				mFontHeight;
 
-		Uint32 mFlags;
-		Uint32 mVertexNumCached;
-
-		bool mCachedCoords;
-
-		std::vector<Float> mLinesWidth;
-		std::vector<VertexCoords>	mRenderCoords;
+		std::vector<VertexCoords>	mVertices;
 		std::vector<ColorA> mColors;
 
-		void cacheVerts();
-
-		void updateCoords();
+		std::vector<VertexCoords>	mOutlineVertices;
+		std::vector<ColorA> mOutlineColors;
+		std::vector<Float> mLinesWidth;
 };
 
 }}
+
 
 #endif

@@ -108,10 +108,7 @@ void Console::create( Font* Font, const bool& MakeDefaultCommands, const bool& A
 
 	mTextCache.setFont( mFont );
 
-	mFontSize = (Float)( mFont->getFontSize() * 1.25 );
-
-	if ( mFont->getFontHeight() < mFontSize && ( mFont->getFontHeight() != mFont->getFontSize() || mFont->getLineSkip() != (Int32)mFont->getFontHeight() ) )
-		mFontSize = mFont->getFontHeight();
+	mFontSize = (Float)( mTextCache.getFont()->getLineSpacing( mTextCache.getCharacterSizePx() ) );
 
 	if ( TextureId > 0 )
 		mTexId = TextureId;
@@ -579,7 +576,7 @@ void Console::getFilesFrom( std::string txt, const Uint32& curPos ) {
 }
 
 Int32 Console::linesInScreen() {
-	return static_cast<Int32> ( (mCurHeight / mFontSize) - 1 );
+	return static_cast<Int32> ( ( mCurHeight / mFontSize ) - 1 );
 }
 
 void Console::privInputCallback( InputEvent * Event ) {

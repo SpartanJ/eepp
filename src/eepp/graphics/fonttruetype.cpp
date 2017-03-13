@@ -1,5 +1,7 @@
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/system/iostream.hpp>
+#include <eepp/system/pack.hpp>
+#include <eepp/system/packmanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 
 #include <ft2build.h>
@@ -31,7 +33,12 @@ namespace {
 
 namespace EE { namespace Graphics {
 
-FontTrueType::FontTrueType() :
+FontTrueType * FontTrueType::New( const std::string FontName ) {
+	return eeNew( FontTrueType, ( FontName ) );
+}
+
+FontTrueType::FontTrueType( const std::string FontName ) :
+	Font( FONT_TYPE_TTF, FontName ),
 	mLibrary  (NULL),
 	mFace     (NULL),
 	mStreamRec(NULL),
@@ -41,25 +48,15 @@ FontTrueType::FontTrueType() :
 {
 }
 
-FontTrueType::FontTrueType(const FontTrueType& copy) :
-	mLibrary    (copy.mLibrary),
-	mFace       (copy.mFace),
-	mStreamRec  (copy.mStreamRec),
-	mStroker    (copy.mStroker),
-	mRefCount   (copy.mRefCount),
-	mInfo       (copy.mInfo),
-	mPages      (copy.mPages),
-	mPixelBuffer(copy.mPixelBuffer)
-{
-	if (mRefCount)
-		(*mRefCount)++;
-}
-
 FontTrueType::~FontTrueType() {
 	cleanup();
 }
 
 bool FontTrueType::loadFromFile(const std::string& filename) {
+	if ( !FileSystem::fileExists( filename ) && PackManager::instance()->isFallbackToPacksActive() ) {
+		loadFromPack( PackManager::instance()->getPackByPath( filename ), filename );
+	}
+
 	// Cleanup the previous resources
 	cleanup();
 	mRefCount = new int(1);
@@ -67,7 +64,7 @@ bool FontTrueType::loadFromFile(const std::string& filename) {
 	// Initialize FreeType
 	FT_Library library;
 	if (FT_Init_FreeType(&library) != 0) {
-		std::cout <<  "Failed to load font \"" << filename << "\" (failed to initialize FreeType)" << std::endl;
+		eePRINTL( "Failed to load font \"%s\" (failed to initialize FreeType)", filename.c_str() );
 		return false;
 	}
 	mLibrary = library;
@@ -75,21 +72,21 @@ bool FontTrueType::loadFromFile(const std::string& filename) {
 	// Load the new font face from the specified file
 	FT_Face face;
 	if (FT_New_Face(static_cast<FT_Library>(mLibrary), filename.c_str(), 0, &face) != 0) {
-		std::cout <<  "Failed to load font \"" << filename << "\" (failed to create the font face)" << std::endl;
+		eePRINTL( "Failed to load font \"%s\" (failed to create the font face)", filename.c_str() );
 		return false;
 	}
 
 	// Load the stroker that will be used to outline the font
 	FT_Stroker stroker;
 	if (FT_Stroker_New(static_cast<FT_Library>(mLibrary), &stroker) != 0) {
-		std::cout <<  "Failed to load font \"" << filename << "\" (failed to create the stroker)" << std::endl;
+		eePRINTL( "Failed to load font \"%s\" (failed to create the stroker)", filename.c_str() );
 		return false;
 	}
 	mStroker = stroker;
 
 	// Select the unicode character map
 	if (FT_Select_Charmap(face, FT_ENCODING_UNICODE) != 0) {
-		std::cout <<  "Failed to load font \"" << filename << "\" (failed to set the Unicode character set)" << std::endl;
+		eePRINTL(  "Failed to load font \"%s\" (failed to set the Unicode character set)", filename.c_str() );
 		FT_Done_Face(face);
 		return false;
 	}
@@ -111,7 +108,7 @@ bool FontTrueType::loadFromMemory(const void* data, std::size_t sizeInBytes) {
 	// Initialize FreeType
 	FT_Library library;
 	if (FT_Init_FreeType(&library) != 0) {
-		std::cout <<  "Failed to load font from memory (failed to initialize FreeType)" << std::endl;
+		eePRINTL( "Failed to load font from memory (failed to initialize FreeType)" );
 		return false;
 	}
 	mLibrary = library;
@@ -119,21 +116,21 @@ bool FontTrueType::loadFromMemory(const void* data, std::size_t sizeInBytes) {
 	// Load the new font face from the specified file
 	FT_Face face;
 	if (FT_New_Memory_Face(static_cast<FT_Library>(mLibrary), reinterpret_cast<const FT_Byte*>(data), static_cast<FT_Long>(sizeInBytes), 0, &face) != 0) {
-		std::cout <<  "Failed to load font from memory (failed to create the font face)" << std::endl;
+		eePRINTL( "Failed to load font from memory (failed to create the font face)" );
 		return false;
 	}
 
 	// Load the stroker that will be used to outline the font
 	FT_Stroker stroker;
 	if (FT_Stroker_New(static_cast<FT_Library>(mLibrary), &stroker) != 0) {
-		std::cout <<  "Failed to load font from memory (failed to create the stroker)" << std::endl;
+		eePRINTL( "Failed to load font from memory (failed to create the stroker)" );
 		return false;
 	}
 	mStroker = stroker;
 
 	// Select the Unicode character map
 	if (FT_Select_Charmap(face, FT_ENCODING_UNICODE) != 0) {
-		std::cout <<  "Failed to load font from memory (failed to set the Unicode character set)" << std::endl;
+		eePRINTL( "Failed to load font from memory (failed to set the Unicode character set)" );
 		FT_Done_Face(face);
 		return false;
 	}
@@ -155,7 +152,7 @@ bool FontTrueType::loadFromStream(IOStream& stream) {
 	// Initialize FreeType
 	FT_Library library;
 	if (FT_Init_FreeType(&library) != 0) {
-		std::cout <<  "Failed to load font from stream (failed to initialize FreeType)" << std::endl;
+		eePRINTL( "Failed to load font from stream (failed to initialize FreeType)" );
 		return false;
 	}
 	mLibrary = library;
@@ -182,7 +179,7 @@ bool FontTrueType::loadFromStream(IOStream& stream) {
 	// Load the new font face from the specified stream
 	FT_Face face;
 	if (FT_Open_Face(static_cast<FT_Library>(mLibrary), &args, 0, &face) != 0) {
-		std::cout <<  "Failed to load font from stream (failed to create the font face)" << std::endl;
+		eePRINTL(  "Failed to load font from stream (failed to create the font face)" );
 		delete rec;
 		return false;
 	}
@@ -190,14 +187,14 @@ bool FontTrueType::loadFromStream(IOStream& stream) {
 	// Load the stroker that will be used to outline the font
 	FT_Stroker stroker;
 	if (FT_Stroker_New(static_cast<FT_Library>(mLibrary), &stroker) != 0) {
-		std::cout <<  "Failed to load font from stream (failed to create the stroker)" << std::endl;
+		eePRINTL( "Failed to load font from stream (failed to create the stroker)" );
 		return false;
 	}
 	mStroker = stroker;
 
 	// Select the Unicode character map
 	if (FT_Select_Charmap(face, FT_ENCODING_UNICODE) != 0) {
-		std::cout <<  "Failed to load font from stream (failed to set the Unicode character set)" << std::endl;
+		eePRINTL( "Failed to load font from stream (failed to set the Unicode character set)" );
 		FT_Done_Face(face);
 		delete rec;
 		return false;
@@ -211,6 +208,20 @@ bool FontTrueType::loadFromStream(IOStream& stream) {
 	mInfo.family = face->family_name ? face->family_name : std::string();
 
 	return true;
+}
+
+bool FontTrueType::loadFromPack( Pack * pack, std::string filePackPath ) {
+	if ( NULL == pack )
+		return false;
+
+	bool Ret = false;
+	SafeDataPointer PData;
+
+	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, PData ) ) {
+		Ret = loadFromMemory( PData.Data, PData.DataSize );
+	}
+
+	return Ret;
 }
 
 const FontTrueType::Info& FontTrueType::getInfo() const {
@@ -271,6 +282,16 @@ Float FontTrueType::getLineSpacing(unsigned int characterSize) const {
 
 	if (face && setCurrentSize(characterSize)) {
 		return static_cast<Float>(face->size->metrics.height) / static_cast<Float>(1 << 6);
+	} else {
+		return 0.f;
+	}
+}
+
+Uint32 FontTrueType::getFontHeight(const Uint32 & characterSize) {
+	FT_Face face = static_cast<FT_Face>(mFace);
+
+	if (face && setCurrentSize(characterSize)) {
+		return static_cast<Float>(face->height) / static_cast<Float>(1 << 6);
 	} else {
 		return 0.f;
 	}
@@ -417,7 +438,7 @@ Glyph FontTrueType::loadGlyph(Uint32 codePoint, unsigned int characterSize, bool
 			FT_Bitmap_Embolden(static_cast<FT_Library>(mLibrary), &bitmap, weight, weight);
 
 		if (outlineThickness != 0)
-			std::cout <<  "Failed to outline glyph (no fallback available)" << std::endl;
+			eePRINTL( "Failed to outline glyph (no fallback available)" );
 	}
 
 	// Compute the glyph's advance offset
@@ -540,9 +561,10 @@ Recti FontTrueType::findGlyphRect(Page& page, unsigned int width, unsigned int h
 				newImage.copyImage(page.texture, 0, 0);
 				//page.texture->unlock();
 
-				page.texture->replace(&newImage);			} else {
+				page.texture->replace(&newImage);
+			} else {
 				// Oops, we've reached the maximum texture size...
-				std::cout <<  "Failed to add a new character to the font: the maximum texture size has been reached" << std::endl;
+				eePRINTL( "Failed to add a new character to the font: the maximum texture size has been reached" );
 				return Recti(0, 0, 2, 2);
 			}
 		}
@@ -578,11 +600,11 @@ bool FontTrueType::setCurrentSize(unsigned int characterSize) const {
 			// fail if the requested size is not available
 			if (!FT_IS_SCALABLE(face))
 			{
-				std::cout <<  "Failed to set bitmap font size to " << characterSize << std::endl;
-				std::cout <<  "Available sizes are: ";
+				eePRINTL( "Failed to set bitmap font size to %d", characterSize );
+				eePRINTL( "Available sizes are: " );
 				for (int i = 0; i < face->num_fixed_sizes; ++i)
-					std::cout <<  face->available_sizes[i].height << " ";
-				std::cout <<  std::endl;
+					eePRINT( "%d ", face->available_sizes[i].height );
+				eePRINTL("");
 			}
 		}
 
@@ -613,282 +635,6 @@ FontTrueType::Page::Page() :
 FontTrueType::Page::~Page() {
 	if ( NULL != texture )
 		TextureFactory::instance()->remove( texture->getId() );
-}
-
-void FontTrueType::cacheWidth( const String& Text, const Uint32& characterSize, bool bold, Float outlineThickness, std::vector<Float>& LinesWidth, Float& CachedWidth, int& NumLines , int& LargestLineCharCount ) {
-	LinesWidth.clear();
-
-	Float Width = 0, MaxWidth = 0;
-	Int32 CharID;
-	Int32 Lines = 1;
-	Int32 CharCount = 0;
-	LargestLineCharCount = 0;
-
-	for (std::size_t i = 0; i < Text.size(); ++i) {
-		CharID = static_cast<Int32>( Text.at(i) );
-		Glyph glyph = getGlyph( CharID, characterSize, bold, outlineThickness );
-
-		Width += glyph.advance;
-
-		CharCount++;
-
-		if ( CharID == '\t' )
-			Width += glyph.advance * 3;
-
-		if ( CharID == '\n' ) {
-			Lines++;
-
-			Float lWidth = ( CharID == '\t' ) ? glyph.advance * 4.f : glyph.advance;
-
-			LinesWidth.push_back( Width - lWidth );
-
-			Width = 0;
-
-			CharCount = 0;
-		} else {
-			if ( CharCount > LargestLineCharCount )
-				LargestLineCharCount = CharCount;
-		}
-
-		if ( Width > MaxWidth )
-			MaxWidth = Width;
-	}
-
-	if ( Text.size() && Text.at( Text.size() - 1 ) != '\n' ) {
-		LinesWidth.push_back( Width );
-	}
-
-	CachedWidth = MaxWidth;
-	NumLines = Lines;
-}
-
-Int32 FontTrueType::findClosestCursorPosFromPoint( const String& Text, const Uint32& characterSize, bool bold, Float outlineThickness, const Vector2i& pos ) {
-	Float Width = 0, lWidth = 0, Height = getLineSpacing(characterSize), lHeight = 0;
-	Int32 CharID;
-	std::size_t tSize = Text.size();
-
-	for (std::size_t i = 0; i < tSize; ++i) {
-		CharID = static_cast<Int32>( Text.at(i) );
-		Glyph glyph = getGlyph( CharID, characterSize, bold, outlineThickness );
-
-		lWidth = Width;
-
-		Width += glyph.advance;
-
-		if ( CharID == '\t' ) {
-			Width += glyph.advance * 3;
-		}
-
-		if ( CharID == '\n' ) {
-			lWidth = 0;
-			Width = 0;
-		}
-
-		if ( pos.x <= Width && pos.x >= lWidth && pos.y <= Height && pos.y >= lHeight ) {
-			if ( i + 1 < tSize ) {
-				Int32 curDist	= eeabs( pos.x - lWidth );
-				Int32 nextDist	= eeabs( pos.x - ( lWidth + glyph.advance ) );
-
-				if ( nextDist < curDist ) {
-					return  i + 1;
-				}
-			}
-
-			return i;
-		}
-
-		if ( CharID == '\n' ) {
-			lHeight = Height;
-			Height += getLineSpacing(characterSize);
-
-			if ( pos.x > Width && pos.y <= lHeight ) {
-				return i;
-			}
-		}
-	}
-
-	if ( pos.x >= Width ) {
-		return tSize;
-	}
-
-	return -1;
-}
-
-Vector2i FontTrueType::getCursorPos( const String& Text, const Uint32& characterSize, bool bold, Float outlineThickness, const Uint32& Pos ) {
-	Float Width = 0, Height = getLineSpacing(characterSize);
-	Int32 CharID;
-	std::size_t tSize = ( Pos < Text.size() ) ? Pos : Text.size();
-
-	for (std::size_t i = 0; i < tSize; ++i) {
-		CharID = static_cast<Int32>( Text.at(i) );
-		Glyph glyph = getGlyph( CharID, characterSize, bold, outlineThickness );
-
-		Width += glyph.advance;
-
-		if ( CharID == '\t' ) {
-			Width += glyph.advance * 3;
-		}
-
-		if ( CharID == '\n' ) {
-			Width = 0;
-			Height += getLineSpacing(characterSize);
-		}
-	}
-
-	return Vector2i( Width, Height );
-}
-
-static bool isStopSelChar( Uint32 c ) {
-	return ( !String::isCharacter( c ) && !String::isNumber( c ) ) ||
-			' ' == c ||
-			'.' == c ||
-			',' == c ||
-			';' == c ||
-			':' == c ||
-			'\n' == c ||
-			'"' == c ||
-			'\'' == c;
-}
-
-void FontTrueType::selectSubStringFromCursor( const String& Text, const Uint32& characterSize, bool bold, Float outlineThickness, const Int32& CurPos, Int32& InitCur, Int32& EndCur ) {
-	InitCur	= 0;
-	EndCur	= Text.size();
-
-	for ( std::size_t i = CurPos; i < Text.size(); i++ ) {
-		if ( isStopSelChar( Text[i] ) ) {
-			EndCur = i;
-			break;
-		}
-	}
-
-	if ( 0 == CurPos ) {
-		InitCur = 0;
-	}
-
-	for ( Int32 i = CurPos; i >= 0; i-- ) {
-		if ( isStopSelChar( Text[i] ) ) {
-			InitCur = i + 1;
-			break;
-		}
-	}
-
-	if ( InitCur == EndCur ) {
-		InitCur = EndCur = -1;
-	}
-}
-
-void FontTrueType::shrinkText( std::string& Str, const Uint32& characterSize, bool bold, Float outlineThickness, const Uint32& MaxWidth ) {
-	if ( !Str.size() )
-		return;
-
-	Float tCurWidth = 0.f;
-	Float tWordWidth = 0.f;
-	Float tMaxWidth = (Float) MaxWidth;
-	char * tChar = &Str[0];
-	char * tLastSpace = NULL;
-
-	while ( *tChar ) {
-		Glyph pChar = getGlyph( *tChar, characterSize, bold, outlineThickness );
-		Float fCharWidth	= (Float)pChar.advance;
-
-		if ( ( *tChar ) == '\t' )
-			fCharWidth += pChar.advance * 3;
-
-		tWordWidth		+= fCharWidth;
-
-		if ( ' ' == *tChar || '\0' == *( tChar + 1 ) ) {
-			if ( tCurWidth + tWordWidth < tMaxWidth ) {
-				tCurWidth		+= tWordWidth;
-				tLastSpace		= tChar;
-
-				tChar++;
-			} else {
-				if ( NULL != tLastSpace ) {
-					*tLastSpace		= '\n';
-					tChar	= tLastSpace + 1;
-				} else {
-					*tChar	= '\n';
-				}
-
-				if ( '\0' == *( tChar + 1 ) )
-					tChar++;
-
-				tLastSpace		= NULL;
-				tCurWidth		= 0.f;
-			}
-
-			tWordWidth = 0.f;
-		} else if ( '\n' == *tChar ) {
-			tWordWidth 		= 0.f;
-			tCurWidth 		= 0.f;
-			tLastSpace		= NULL;
-			tChar++;
-		} else {
-			tChar++;
-		}
-	}
-}
-
-void FontTrueType::shrinkText( String& Str, const Uint32& characterSize, bool bold, Float outlineThickness, const Uint32& MaxWidth ) {
-	if ( !Str.size() )
-		return;
-
-	Float tCurWidth = 0.f;
-	Float tWordWidth = 0.f;
-	Float tMaxWidth = (Float) MaxWidth;
-	String::StringBaseType * tChar = &Str[0];
-	String::StringBaseType * tLastSpace = NULL;
-
-	while ( *tChar ) {
-		Glyph pChar = getGlyph( *tChar, characterSize, bold, outlineThickness );
-
-		Float fCharWidth	= (Float)pChar.advance;
-
-		if ( ( *tChar ) == '\t' )
-			fCharWidth += pChar.advance * 3;
-
-		// Add the new char width to the current word width
-		tWordWidth		+= fCharWidth;
-
-		if ( ' ' == *tChar || '\0' == *( tChar + 1 ) ) {
-
-			// If current width plus word width is minor to the max width, continue adding
-			if ( tCurWidth + tWordWidth < tMaxWidth ) {
-				tCurWidth		+= tWordWidth;
-				tLastSpace		= tChar;
-
-				tChar++;
-			} else {
-				// If it was an space before, replace that space for an new line
-				// Start counting from the new line first character
-				if ( NULL != tLastSpace ) {
-					*tLastSpace		= '\n';
-					tChar	= tLastSpace + 1;
-				} else {	// The word is larger than the current possible width
-					*tChar	= '\n';
-				}
-
-				if ( '\0' == *( tChar + 1 ) )
-					tChar++;
-
-				// Set the last spaces as null, because is a new line
-				tLastSpace		= NULL;
-
-				// New line, new current width
-				tCurWidth		= 0.f;
-			}
-
-			// New word, so we reset the current word width
-			tWordWidth = 0.f;
-		} else if ( '\n' == *tChar ) {
-			tWordWidth 		= 0.f;
-			tCurWidth 		= 0.f;
-			tLastSpace		= NULL;
-			tChar++;
-		} else {
-			tChar++;
-		}
-	}
 }
 
 }}

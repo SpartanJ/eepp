@@ -23,6 +23,7 @@ UITextView::UITextView() :
 	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 
 	mTextCache = eeNew( TextCache, () );
+	mTextCache->setCharacterSize( mFontStyleConfig.FontCharacterSize );
 	mTextCache->setFont( mFontStyleConfig.Font );
 	mTextCache->setColor( mFontStyleConfig.FontColor );
 	mTextCache->setShadowColor( mFontStyleConfig.FontShadowColor );
@@ -153,7 +154,7 @@ void UITextView::shrinkText( const Uint32& MaxWidth ) {
 		mTextCache->setText( mString );
 	}
 
-	mTextCache->getFont()->shrinkText( mTextCache->getText(), MaxWidth );
+	mTextCache->getFont()->shrinkText( mTextCache->getText(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & TextCache::Bold, mTextCache->getOutlineThickness(), MaxWidth );
 	mTextCache->cacheWidth();
 }
 
@@ -252,7 +253,7 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags )
 		worldToControl( controlPos );
 		controlPos = PixelDensity::dpToPxI( controlPos );
 
-		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), controlPos );
+		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & TextCache::Bold, mTextCache->getOutlineThickness(), controlPos );
 
 		if ( -1 != curPos ) {
 			Int32 tSelCurInit, tSelCurEnd;
@@ -288,7 +289,7 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 		worldToControl( controlPos );
 		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mRealAlignOffset.x, (Int32)mRealAlignOffset.y );
 
-		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), controlPos );
+		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & TextCache::Bold, mTextCache->getOutlineThickness(), controlPos );
 
 		if ( -1 != curPos ) {
 			if ( -1 == selCurInit() || !( mControlFlags & UI_CTRL_FLAG_SELECTING ) ) {
@@ -321,19 +322,19 @@ void UITextView::drawSelection( TextCache * textCache ) {
 		P.setColor( mFontStyleConfig.FontSelectionBackColor );
 
 		do {
-			initPos	= textCache->getFont()->getCursorPos( textCache->getText(), init );
+			initPos	= textCache->getFont()->getCursorPos( textCache->getText(), textCache->getCharacterSizePx(), textCache->getStyle() & TextCache::Bold, textCache->getOutlineThickness(), init );
 			lastEnd = textCache->getText().find_first_of( '\n', init );
 
 			if ( lastEnd < end && -1 != lastEnd ) {
-				endPos	= textCache->getFont()->getCursorPos( textCache->getText(), lastEnd );
+				endPos	= textCache->getFont()->getCursorPos( textCache->getText(), textCache->getCharacterSizePx(), textCache->getStyle() & TextCache::Bold, textCache->getOutlineThickness(), lastEnd );
 				init	= lastEnd + 1;
 			} else {
-				endPos	= textCache->getFont()->getCursorPos( textCache->getText(), end );
+				endPos	= textCache->getFont()->getCursorPos( textCache->getText(), textCache->getCharacterSizePx(), textCache->getStyle() & TextCache::Bold, textCache->getOutlineThickness(), end );
 				lastEnd = end;
 			}
 
 			P.drawRectangle( Rectf( mScreenPos.x + initPos.x + mRealAlignOffset.x + mRealPadding.Left,
-									  mScreenPos.y + initPos.y - textCache->getFont()->getFontHeight() + mRealAlignOffset.y + mRealPadding.Top,
+									  mScreenPos.y + initPos.y - textCache->getFont()->getLineSpacing( textCache->getCharacterSizePx() ) + mRealAlignOffset.y + mRealPadding.Top,
 									  mScreenPos.x + endPos.x + mRealAlignOffset.x + mRealPadding.Left,
 									  mScreenPos.y + endPos.y + mRealAlignOffset.y + mRealPadding.Top )
 			);

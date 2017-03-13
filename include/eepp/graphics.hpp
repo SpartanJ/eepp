@@ -20,10 +20,8 @@
 #include <eepp/graphics/particle.hpp>
 #include <eepp/graphics/particlesystem.hpp>
 #include <eepp/graphics/font.hpp>
-#include <eepp/graphics/texturefont.hpp>
-#include <eepp/graphics/ttffont.hpp>
-#include <eepp/graphics/texturefontloader.hpp>
-#include <eepp/graphics/ttffontloader.hpp>
+#include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/fonttruetypeloader.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/scrollparallax.hpp>

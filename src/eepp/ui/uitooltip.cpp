@@ -272,6 +272,7 @@ void UITooltip::setStyleConfig(const TooltipStyleConfig & styleConfig) {
 	setFont( mStyleConfig.Font );
 	setFontColor( mStyleConfig.FontColor );
 	setFontShadowColor( mStyleConfig.FontShadowColor );
+	mTextCache->setCharacterSize( mStyleConfig.FontCharacterSize );
 }
 
 }}

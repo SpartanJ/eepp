@@ -60,10 +60,19 @@ class FontStyleConfig {
 			FontSelectionBackColor = color;
 		}
 
+		Uint32 getFontCharacterSize() const {
+			return FontCharacterSize;
+		}
+
+		void setFontCharacterSize(const Uint32 & value) {
+			FontCharacterSize = value;
+		}
+
 		FontStyleConfig() {}
 
 		FontStyleConfig( const FontStyleConfig& fontStyleConfig ) :
 			Font( fontStyleConfig.Font ),
+			FontCharacterSize( fontStyleConfig.FontCharacterSize ),
 			FontColor( fontStyleConfig.FontColor ),
 			FontShadowColor( fontStyleConfig.FontShadowColor ),
 			FontOverColor( fontStyleConfig.FontOverColor ),
@@ -73,6 +82,7 @@ class FontStyleConfig {
 
 		void updateFontStyleConfig( const FontStyleConfig& fontStyleConfig ) {
 			Font = fontStyleConfig.Font ;
+			FontCharacterSize = fontStyleConfig.FontCharacterSize;
 			FontColor = fontStyleConfig.FontColor ;
 			FontShadowColor = fontStyleConfig.FontShadowColor ;
 			FontOverColor = fontStyleConfig.FontOverColor ;
@@ -80,13 +90,13 @@ class FontStyleConfig {
 			FontSelectionBackColor = fontStyleConfig.FontSelectionBackColor ;
 		}
 
-		Graphics::Font * Font;
-		Uint32 FontCharacterSize;
-		ColorA FontColor;
-		ColorA FontShadowColor;
-		ColorA FontOverColor;
-		ColorA FontSelectedColor;
-		ColorA FontSelectionBackColor;
+		Graphics::Font * Font = NULL;
+		Uint32 FontCharacterSize = 12;
+		ColorA FontColor = ColorA(255,255,255,255);
+		ColorA FontShadowColor = ColorA(50,50,50,230);
+		ColorA FontOverColor = ColorA(255,255,255,255);
+		ColorA FontSelectedColor = ColorA(255,255,255,255);
+		ColorA FontSelectionBackColor = ColorA(255,255,255,255);
 };
 
 class TabWidgetStyleConfig : public FontStyleConfig {

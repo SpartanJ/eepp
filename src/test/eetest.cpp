@@ -172,20 +172,20 @@ void EETest::loadFonts() {
 	TextureLoader * tl = eeNew( TextureLoader, ( MyPath + "fonts/conchars.png" ) );
 	tl->setColorKey( RGB(0,0,0) );
 
-	mFontLoader.add( eeNew( TextureFontLoader, ( "conchars", tl, (unsigned int)32 ) ) );
-	mFontLoader.add( eeNew( TextureFontLoader, ( "ProggySquareSZ", eeNew( TextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
-	mFontLoader.add( eeNew( TTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255) ) ) );
-	mFontLoader.add( eeNew( TTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255), 1, RGB(0,0,0), true ) ) );
-	mFontLoader.add( eeNew( TTFFontLoader, ( "DejaVuSansMono", MyPath + "fonts/DejaVuSansMono.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255), 1 ) ) );
+	//mFontLoader.add( eeNew( TextureFontLoader, ( "conchars", tl, (unsigned int)32 ) ) );
+	//mFontLoader.add( eeNew( TextureFontLoader, ( "ProggySquareSZ", eeNew( TextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
+	mFontLoader.add( eeNew( FontTrueTypeLoader, ( "arial", MyPath + "fonts/arial.ttf" ) ) );
+	mFontLoader.add( eeNew( FontTrueTypeLoader, ( "arialb", MyPath + "fonts/arial.ttf" ) ) );
+	mFontLoader.add( eeNew( FontTrueTypeLoader, ( "DejaVuSansMono", MyPath + "fonts/DejaVuSansMono.ttf" ) ) );
 
 	mFontLoader.load( cb::Make1( this, &EETest::onFontLoaded ) );
 }
 
 void EETest::onFontLoaded( ResourceLoader * ObjLoaded ) {
-	FF		= FontManager::instance()->getByName( "conchars" );
-	FF2		= FontManager::instance()->getByName( "ProggySquareSZ" );
-	TTF		= FontManager::instance()->getByName( "arial" );
-	TTFB	= FontManager::instance()->getByName( "arialb" );
+	//FF		= FontManager::instance()->getByName( "conchars" );
+	//FF2		= FontManager::instance()->getByName( "ProggySquareSZ" );
+	FF = TTF		= FontManager::instance()->getByName( "arial" );
+	FF2 = TTFB	= FontManager::instance()->getByName( "arialb" );
 	DBSM	= FontManager::instance()->getByName( "DejaVuSansMono" );
 
 	eePRINTL( "Fonts loading time: %4.3f ms.", mFTE.getElapsed().asMilliseconds() );
@@ -202,8 +202,8 @@ void EETest::onFontLoaded( ResourceLoader * ObjLoaded ) {
 
 	mEEText.create( TTFB, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to see the PopUp Menu" );
 	mFBOText.create( TTFB, "This is a VBO\nInside of a FBO" );
-	mFBOText.setColor( ColorA(255,255,0,255), mFBOText.getText().find( "VBO" ), mFBOText.getText().find( "VBO" ) + 2 );
-	mFBOText.setColor( ColorA(255,255,0,255), mFBOText.getText().find( "FBO" ), mFBOText.getText().find( "FBO" ) + 2 );
+	//mFBOText.setColor( ColorA(255,255,0,255), mFBOText.getText().find( "VBO" ), mFBOText.getText().find( "VBO" ) + 2 );
+	//mFBOText.setColor( ColorA(255,255,0,255), mFBOText.getText().find( "FBO" ), mFBOText.getText().find( "FBO" ) + 2 );
 
 	mInfoText.create( FF, "", ColorA(255,255,255,150) );
 }
