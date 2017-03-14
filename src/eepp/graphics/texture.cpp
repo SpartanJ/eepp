@@ -12,7 +12,6 @@ namespace EE { namespace Graphics {
 
 static BatchRenderer * sBR = NULL;
 
-
 Uint32 Texture::getMaximumSize() {
 	static bool checked = false;
 	static GLint size = 0;
@@ -444,6 +443,10 @@ void Texture::replace( Image * image ) {
 	mWidth = mImgWidth = width;
 	mHeight = mImgHeight = height;
 	mChannels = image->getChannels();
+
+	TextureFactory::instance()->mMemSize -= mSize;
+	mSize = mWidth * mHeight * mChannels;
+	TextureFactory::instance()->mMemSize += mSize;
 
 	if ( hasLocalCopy() ) {
 		// Renew the local copy
