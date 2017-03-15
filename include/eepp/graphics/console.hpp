@@ -27,8 +27,8 @@ class EE_API Console : protected LogReaderInterface {
 
 		~Console();
 
-		/** Set the Console Height when it's Minimized ( Not Maximized ) */
-		void setConsoleMinimizedHeight( const Float& MinHeight ) { mHeightMin = MinHeight; if (mVisible && !mExpand) mCurHeight = mHeightMin; }
+		/** Set the Console Height ( percent, between 0 and 1 ) when it's not in fullscreen  */
+		void setConsoleMinimizedHeight( const Float& MinHeight );
 
 		/** Get the Console Height when it's Minimized ( Not Maximized ) */
 		Float getConsoleMinimizedHeight() const { return mHeightMin; }
@@ -54,10 +54,10 @@ class EE_API Console : protected LogReaderInterface {
 		const ColorA& getBackgroundLineColor() const { return mConLineColor; }
 
 		/** Set the Console Font Color */
-		void setFontColor( const ColorA& FntColor ) { mFontColor = FntColor; }
+		void setFontColor( const ColorA& FntColor ) { mFontStyleConfig.Color = FntColor; }
 
 		/** Get the Console Font Color */
-		const ColorA& getFontColor() const { return mFontColor; }
+		const ColorA& getFontColor() const { return mFontStyleConfig.Color; }
 
 		/** Set the Console Client Input ( Writeable Line ) Font Color */
 		void setFontLineColor( const ColorA& FntColor ) { mFontLineColor = FntColor; }
@@ -125,7 +125,9 @@ class EE_API Console : protected LogReaderInterface {
 		/** Activate/Deactive fps rendering */
 		void showFps( const bool& Show );
 
-		Text& getTextCache();
+		FontStyleConfig getFontStyleConfig() const;
+
+		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
 	protected:
 		std::map < String, ConsoleCallback > mCallbacks;
 		std::deque < String > mCmdLog;
@@ -135,7 +137,6 @@ class EE_API Console : protected LogReaderInterface {
 
 		ColorA mConColor;
 		ColorA mConLineColor;
-		ColorA mFontColor;
 		ColorA mFontLineColor;
 
 		Float mWidth;
@@ -157,8 +158,6 @@ class EE_API Console : protected LogReaderInterface {
 
 		InputTextBuffer * mTBuf;
 
-		Font * mFont;
-
 		Primitives mPri;
 		Uint32 mTexId;
 
@@ -170,7 +169,8 @@ class EE_API Console : protected LogReaderInterface {
 		sCon mCon;
 
 		Float mCurAlpha;
-		Text mTextCache;
+		std::vector<Text> mTextCache;
+		FontStyleConfig mFontStyleConfig;
 		bool mEnabled;
 		bool mVisible;
 		bool mFadeIn;
@@ -254,7 +254,9 @@ class EE_API Console : protected LogReaderInterface {
 
 		void getFilesFrom( std::string txt, const Uint32& curPos );
 
-		Int32 linesInScreen();
+		Int32 linesOnScreen();
+
+		Int32 maxLinesOnScreen();
 
 		String getLastCommonSubStr( std::list<String>& cmds );
 };

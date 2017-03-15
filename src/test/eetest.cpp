@@ -186,10 +186,9 @@ void EETest::onFontLoaded( ResourceLoader * ObjLoaded ) {
 
 	Con.create( DBSM, true );
 	Con.setBackgroundColor( 0x201f1fEE );
+	Con.setBackgroundLineColor( 0x666666EE );
 	Con.setFontColor( 0xcfcfcfff );
 	Con.ignoreCharOnPrompt( 186 ); // 'º'
-	Con.getTextCache().setCharacterSize( 12 );
-	Con.getTextCache().setOutlineColor( ColorA(0,0,0,150) );
 
 	mBuda = String::fromUtf8( "El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde." );
 
