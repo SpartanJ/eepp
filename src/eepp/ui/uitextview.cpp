@@ -223,8 +223,9 @@ void UITextView::shrinkText( const Uint32& MaxWidth ) {
 		mTextCache->setString( mString );
 	}
 
-	mTextCache->getFont()->shrinkText( mTextCache->getString(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), MaxWidth );
-	mTextCache->cacheWidth();
+	String str = mTextCache->getString();
+	mTextCache->getFont()->shrinkText( str, mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), MaxWidth );
+	mTextCache->setString( str );
 }
 
 void UITextView::onAutoSize() {
@@ -276,8 +277,6 @@ void UITextView::onSizeChange() {
 	autoAlign();
 
 	UIControlAnim::onSizeChange();
-
-	mTextCache->cacheWidth();
 }
 
 void UITextView::onTextChanged() {

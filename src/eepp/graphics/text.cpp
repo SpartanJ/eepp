@@ -529,8 +529,6 @@ void Text::ensureGeometryUpdate() {
 
 	mTextureSize = textureSize;
 
-	cacheWidth();
-
 	// Mark geometry as updated
 	mGeometryNeedUpdate = false;
 
@@ -572,20 +570,10 @@ void Text::ensureGeometryUpdate() {
 	Float maxY = 0.f;
 	Uint32 prevChar = 0;
 
-	for (std::size_t i = 0; i < mString.size(); ++i) {
-		Uint32 curChar = mString[i];
-
-		// Apply the outline
-		if (mOutlineThickness != 0) {
-			mFont->getGlyph(curChar, mRealCharacterSize, bold, mOutlineThickness);
-		}
-
-		// Extract the current glyph's description
-		mFont->getGlyph(curChar, mRealCharacterSize, bold);
-	}
-
 	Float centerDiffX = 0;
 	unsigned int Line = 0;
+
+	cacheWidth();
 
 	switch ( fontHAlignGet( mFlags ) ) {
 		case FONT_DRAW_CENTER:
@@ -593,7 +581,7 @@ void Text::ensureGeometryUpdate() {
 			Line++;
 			break;
 		case FONT_DRAW_RIGHT:
-			centerDiffX = mCachedWidth - getLinesWidth()[ Line ];
+			centerDiffX = mCachedWidth - mLinesWidth[ Line ];
 			Line++;
 			break;
 	}

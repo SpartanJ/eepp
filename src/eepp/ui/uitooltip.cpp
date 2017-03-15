@@ -198,8 +198,6 @@ void UITooltip::onSizeChange() {
 	autoAlign();
 
 	UIControlAnim::onSizeChange();
-
-	mTextCache->cacheWidth();
 }
 
 void UITooltip::onTextChanged() {
