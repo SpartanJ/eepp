@@ -85,9 +85,9 @@ class EE_API UIWindow : public UIWidget {
 
 		UIWindow * setWinFlags(const Uint32 & winFlags);
 
-		WindowStyleConfig getStyleConfig() const;
+		UIWindowStyleConfig getStyleConfig() const;
 
-		UIWindow * setStyleConfig(const WindowStyleConfig & styleConfig);
+		UIWindow * setStyleConfig(const UIWindowStyleConfig & styleConfig);
 
 		UIWindow * setMinWindowSize( Sizei size );
 
@@ -130,7 +130,7 @@ class EE_API UIWindow : public UIWidget {
 			RESIZE_TOPRIGHT
 		};
 
-		WindowStyleConfig	mStyleConfig;
+		UIWindowStyleConfig	mStyleConfig;
 		UIControlAnim *	mWindowDecoration;
 		UIControlAnim *	mBorderLeft;
 		UIControlAnim *	mBorderRight;

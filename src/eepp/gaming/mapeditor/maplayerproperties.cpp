@@ -30,7 +30,7 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 	Int32 DistFromTitle	= 18;
 
 	UITextView * Txt = UITextView::New();
-	Txt->setFlags( UI_DRAW_SHADOW | UI_AUTO_SIZE )->setParent( mUIWindow->getContainer() )->setPosition( 50, InitialY );
+	Txt->setFontStyle( Text::Shadow )->setFlags( UI_AUTO_SIZE )->setParent( mUIWindow->getContainer() )->setPosition( 50, InitialY );
 	Txt->setText( "Layer name:" );
 
 	mUIInput = UITextInput::New()->setMaxLength( 64 );
@@ -39,12 +39,12 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 	mUIInput->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &MapLayerProperties::onOKClick ) );
 
 	UITextView * TxtBox = UITextView::New();
-	TxtBox->setParent( mUIWindow->getContainer() )->setSize( 192, 24 )->setHorizontalAlign( UI_HALIGN_CENTER )->setFlags( UI_DRAW_SHADOW )
+	TxtBox->setFontStyle( Text::Shadow )->setParent( mUIWindow->getContainer() )->setSize( 192, 24 )->setHorizontalAlign( UI_HALIGN_CENTER )
 		  ->setPosition( 50, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 );
 	TxtBox->setText( "Property Name" );
 
 	TxtBox = UITextView::New();
-	TxtBox->setParent( mUIWindow->getContainer() )->setSize( 192, 24 )->setHorizontalAlign( UI_HALIGN_CENTER )->setFlags( UI_DRAW_SHADOW )
+	TxtBox->setFontStyle( Text::Shadow )->setParent( mUIWindow->getContainer() )->setSize( 192, 24 )->setHorizontalAlign( UI_HALIGN_CENTER )
 		  ->setPosition( 50+192, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 );
 	TxtBox->setText( "Property Value" );
 

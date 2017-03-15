@@ -30,9 +30,6 @@ inline Uint32 fontVAlignGet( Uint32 Flags ) {
 	return Flags & FONT_DRAW_VALIGN_MASK;
 }
 
-#define FONT_DRAW_SHADOW		(1 << 5)
-#define FONT_DRAW_VERTICAL		(1 << 6)
-
 #define FONT_DRAW_ALIGN_MASK	( FONT_DRAW_VALIGN_MASK | FONT_DRAW_HALIGN_MASK )
 
 struct VertexCoords {

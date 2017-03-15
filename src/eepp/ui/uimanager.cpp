@@ -50,7 +50,7 @@ void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 	mInit			= true;
 
 
-	WindowStyleConfig windowStyleConfig;
+	UIWindowStyleConfig windowStyleConfig;
 	windowStyleConfig.WinFlags = UI_WIN_NO_BORDER | UI_WIN_RESIZEABLE;
 	windowStyleConfig.MinWindowSize = Sizei( 0, 0 );
 	windowStyleConfig.DecorationSize = Sizei( 0, 0 );
@@ -519,7 +519,7 @@ void UIManager::loadLayoutNodes( pugi::xml_node node, UIControl * parent ) {
 	}
 }
 
-void UIManager::loadLayout( const std::string& layoutPath ) {
+void UIManager::loadLayoutFromFile( const std::string& layoutPath ) {
 	if ( FileSystem::fileExists( layoutPath ) ) {
 		pugi::xml_document doc;
 		pugi::xml_parse_result result = doc.load_file( layoutPath.c_str() );

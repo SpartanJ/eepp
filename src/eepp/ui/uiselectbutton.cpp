@@ -1,5 +1,6 @@
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -70,7 +71,7 @@ void UISelectButton::onStateChange() {
 		} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
 			getTextBox()->setFontColor( mStyleConfig.FontOverColor );
 		} else {
-			getTextBox()->setFontColor( mStyleConfig.FontColor );
+			getTextBox()->setFontColor( mStyleConfig.Color );
 		}
 	}
 }
@@ -81,6 +82,19 @@ void UISelectButton::setFontSelectedColor(const ColorA & color) {
 
 const ColorA &UISelectButton::getFontSelectedColor() const {
 	return mStyleConfig.FontSelectedColor;
+}
+
+void UISelectButton::loadFromXmlNode(const pugi::xml_node & node) {
+	UIPushButton::loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "textselectedcolor" == name ) {
+			setFontSelectedColor( ColorA::fromString( ait->as_string() ) );
+		}
+	}
 }
 
 }}

@@ -22,7 +22,7 @@ class UITextInputPassword : public UITextInput
 
 		Text * getPassCache() const;
 
-		void setFontStyleConfig( const TooltipStyleConfig& fontStyleConfig );
+		void setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig );
 	protected:
 		Text *	mPassCache;
 

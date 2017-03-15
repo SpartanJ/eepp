@@ -144,7 +144,7 @@ Uint32 UIListBox::addListBoxItem( const String& text ) {
 	mItems.push_back( NULL );
 
 	if ( NULL != mFontStyleConfig.Font ) {
-		Text textCache( mFontStyleConfig.Font, mFontStyleConfig.FontCharacterSize );
+		Text textCache( mFontStyleConfig.Font, mFontStyleConfig.CharacterSize );
 		textCache.setString( text );
 		Uint32 twidth = textCache.getTextWidth();
 
@@ -299,13 +299,13 @@ void UIListBox::setRowHeight() {
 		Uint32 FontSize = PixelDensity::dpToPxI( 12 );
 
 		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
-			FontSize = UIThemeManager::instance()->getDefaultFont()->getFontHeight( PixelDensity::dpToPxI( UIThemeManager::instance()->getDefaultFontStyleConfig().FontCharacterSize ) );
+			FontSize = UIThemeManager::instance()->getDefaultFont()->getFontHeight( PixelDensity::dpToPxI( UIThemeManager::instance()->getDefaultFontStyleConfig().CharacterSize ) );
 
 		if ( NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() )
-			FontSize = mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont()->getFontHeight( PixelDensity::dpToPxI( mSkinState->getSkin()->getTheme()->getFontStyleConfig().FontCharacterSize ) );
+			FontSize = mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont()->getFontHeight( PixelDensity::dpToPxI( mSkinState->getSkin()->getTheme()->getFontStyleConfig().CharacterSize ) );
 
 		if ( NULL != mFontStyleConfig.getFont() )
-			FontSize = mFontStyleConfig.getFont()->getFontHeight( PixelDensity::dpToPxI( mFontStyleConfig.FontCharacterSize ) );
+			FontSize = mFontStyleConfig.getFont()->getFontHeight( PixelDensity::dpToPxI( mFontStyleConfig.CharacterSize ) );
 
 		mRowHeight = (Uint32)PixelDensity::pxToDpI( FontSize );
 	}
@@ -332,7 +332,7 @@ void UIListBox::setHScrollStep() {
 void UIListBox::findMaxWidth() {
 	Uint32 size = (Uint32)mItems.size();
 	Int32 width;
-	Text textCache( mFontStyleConfig.Font, mFontStyleConfig.FontCharacterSize );
+	Text textCache( mFontStyleConfig.Font, mFontStyleConfig.CharacterSize );
 
 	mMaxTextWidth = 0;
 
@@ -683,14 +683,14 @@ Uint32 UIListBox::getItemIndex( const String& Text ) {
 }
 
 void UIListBox::setFontColor( const ColorA& Color ) {
-	mFontStyleConfig.FontColor = Color;
+	mFontStyleConfig.Color = Color;
 
 	for ( Uint32 i = 0; i < mItems.size(); i++ )
-		mItems[i]->setFontColor( mFontStyleConfig.FontColor );
+		mItems[i]->setFontColor( mFontStyleConfig.Color );
 }
 
 const ColorA& UIListBox::getFontColor() const {
-	return mFontStyleConfig.FontColor;
+	return mFontStyleConfig.Color;
 }
 
 void UIListBox::setFontOverColor( const ColorA& Color ) {
@@ -973,15 +973,15 @@ void UIListBox::setTouchDragDeceleration(const Float & touchDragDeceleration) {
 	mTouchDragDeceleration = touchDragDeceleration;
 }
 
-FontStyleConfig UIListBox::getFontStyleConfig() const {
+UIFontStyleConfig UIListBox::getFontStyleConfig() const {
 	return mFontStyleConfig;
 }
 
-void UIListBox::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
+void UIListBox::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
 	mFontStyleConfig = fontStyleConfig;
 
 	setFont( mFontStyleConfig.Font );
-	setFontColor( mFontStyleConfig.FontColor );
+	setFontColor( mFontStyleConfig.Color );
 }
 
 void UIListBox::update() {
@@ -1068,7 +1068,7 @@ void UIListBox::loadFromXmlNode(const pugi::xml_node & node) {
 		} else if ( "textcolor" == name ) {
 			setFontColor( ColorA::fromString( ait->as_string() ) );
 		} else if ( "textshadowcolor" == name ) {
-			mFontStyleConfig.FontShadowColor = ( ColorA::fromString( ait->as_string() ) );
+			mFontStyleConfig.ShadowColor = ( ColorA::fromString( ait->as_string() ) );
 		} else if ( "textovercolor" == name ) {
 			setFontOverColor( ColorA::fromString( ait->as_string() ) );
 		} else if ( "textselectedcolor" == name ) {

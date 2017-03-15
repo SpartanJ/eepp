@@ -1,4 +1,6 @@
 #include <eepp/ui/uiprogressbar.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
+#include <eepp/graphics/globaltextureatlas.hpp>
 
 namespace EE { namespace UI {
 
@@ -174,8 +176,8 @@ const bool& UIProgressBar::getVerticalExpand() const {
 	return mStyleConfig.VerticalExpand;
 }
 
-void UIProgressBar::setFillerPadding( const Rectf& margin ) {
-	mStyleConfig.FillerPadding = margin;
+void UIProgressBar::setFillerPadding( const Rectf& padding ) {
+	mStyleConfig.FillerPadding = padding;
 
 	onPositionChange();
 	onSizeChange();
@@ -203,6 +205,41 @@ void UIProgressBar::updateTextBox() {
 
 UITextView * UIProgressBar::getTextBox() const {
 	return mTextBox;
+}
+
+void UIProgressBar::loadFromXmlNode(const pugi::xml_node & node) {
+	UIWidget::loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "src" == name ) {
+			SubTexture * subTexture = GlobalTextureAtlas::instance()->getByName( ait->as_string() );
+
+			if ( NULL != mParallax && NULL != subTexture )
+				mParallax->setSubTexture( subTexture );
+		} else if ( "totalsteps" == name ) {
+			setTotalSteps( ait->as_float() );
+		} else if ( "progress" == name ) {
+			setProgress( ait->as_float() );
+		} else if ( "verticalexpand" == name ) {
+			setVerticalExpand( ait->as_bool() );
+		} else if ( "displaypercent" == name ) {
+			setDisplayPercent( ait->as_bool() );
+		} else if ( "fillerpadding" == name ) {
+			Float val = PixelDensity::toDpFromString( ait->as_string() );
+			setFillerPadding( Rectf( val, val, val, val ) );
+		} else if ( "fillerpaddingleft" == name ) {
+			setFillerPadding( Rectf( PixelDensity::toDpFromString( ait->as_string() ), mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
+		} else if ( "fillerpaddingright" == name ) {
+			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, PixelDensity::toDpFromString( ait->as_string() ), mStyleConfig.FillerPadding.Bottom ) );
+		} else if ( "fillerpaddingtop" == name ) {
+			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, PixelDensity::toDpFromString( ait->as_string() ), mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
+		} else if ( "fillerpaddingbottom" == name ) {
+			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, PixelDensity::toDpFromString( ait->as_string() ) ) );
+		}
+	}
 }
 
 void UIProgressBar::onAlphaChange() {

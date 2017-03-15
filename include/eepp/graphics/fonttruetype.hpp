@@ -4,9 +4,6 @@
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/font.hpp>
-#include <map>
-#include <string>
-#include <vector>
 
 namespace EE { namespace System {
 class Pack;

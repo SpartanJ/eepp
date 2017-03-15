@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fonthelper.hpp>
+#include <eepp/graphics/fontstyleconfig.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -14,7 +15,8 @@ class EE_API Text {
 			Bold			= 1 << 0, ///< Bold characters
 			Italic			= 1 << 1, ///< Italic characters
 			Underlined		= 1 << 2, ///< Underlined characters
-			StrikeThrough	= 1 << 3  ///< Strike through characters
+			StrikeThrough	= 1 << 3, ///< Strike through characters
+			Shadow			= 1 << 4  ///< Draw a shadow below the text
 		};
 
 		Text();
@@ -99,6 +101,8 @@ class EE_API Text {
 
 		/** Force to cache the width of the current text */
 		void cacheWidth();
+
+		void setStyleConfig( const FontStyleConfig& styleConfig );
 	protected:
 		void ensureGeometryUpdate();
 

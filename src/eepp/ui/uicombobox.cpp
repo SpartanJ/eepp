@@ -75,6 +75,10 @@ const String& UIComboBox::getText() {
 	return mDropDownList->getText();
 }
 
+void UIComboBox::loadFromXmlNode(const pugi::xml_node& node) {
+	mDropDownList->loadFromXmlNode( node );
+}
+
 void UIComboBox::updateControls() {
 	if ( ( mFlags & UI_AUTO_SIZE ) || mSize.getHeight() < mDropDownList->getSkin()->getSize().getHeight() ) {
 		onAutoSize();

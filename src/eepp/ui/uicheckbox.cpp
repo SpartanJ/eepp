@@ -2,6 +2,7 @@
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/subtexture.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -163,6 +164,19 @@ void UICheckBox::setTextSeparation(const Int32 & textSeparation) {
 	mTextSeparation = textSeparation;
 
 	setPadding( getPadding() );
+}
+
+void UICheckBox::loadFromXmlNode(const pugi::xml_node & node) {
+	UIWidget::loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "selected" == name || "active" == name ) {
+			setActive( ait->as_bool() );
+		}
+	}
 }
 
 Uint32 UICheckBox::onKeyDown( const UIEventKey& Event ) {

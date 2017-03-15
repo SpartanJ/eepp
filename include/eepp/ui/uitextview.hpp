@@ -2,6 +2,7 @@
 #define EE_UICUITEXTBOX_H
 
 #include <eepp/ui/uiwidget.hpp>
+#include <eepp/graphics/text.hpp>
 
 namespace EE { namespace UI {
 
@@ -59,8 +60,6 @@ class EE_API UITextView : public UIWidget {
 
 		virtual void setTheme( UITheme * Theme );
 
-		Text * getTextCache();
-
 		Float getTextWidth();
 
 		Float getTextHeight();
@@ -73,9 +72,9 @@ class EE_API UITextView : public UIWidget {
 
 		bool isTextSelectionEnabled() const;
 
-		virtual void setFontStyleConfig( const TooltipStyleConfig& fontStyleConfig );
+		virtual void setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig );
 
-		TooltipStyleConfig getFontStyleConfig() const;
+		UITooltipStyleConfig getFontStyleConfig() const;
 
 		const Recti& getPadding() const;
 
@@ -85,7 +84,7 @@ class EE_API UITextView : public UIWidget {
 	protected:
 		Text *		mTextCache;
 		String			mString;
-		TooltipStyleConfig mFontStyleConfig;
+		UITooltipStyleConfig mFontStyleConfig;
 		Vector2i 		mAlignOffset;
 		Vector2f 		mRealAlignOffset;
 		Int32			mSelCurInit;

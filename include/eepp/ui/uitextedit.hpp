@@ -45,9 +45,9 @@ class EE_API UITextEdit : public UIWidget {
 
 		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
 
-		FontStyleConfig getFontStyleConfig() const;
+		UIFontStyleConfig getFontStyleConfig() const;
 
-		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
+		void setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig);
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:

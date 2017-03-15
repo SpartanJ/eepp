@@ -184,11 +184,11 @@ void UIDropDownList::setMaxNumVisibleItems(const Uint32 & maxNumVisibleItems) {
 	mListBox->setSize( mSize.getWidth(), mStyleConfig.MaxNumVisibleItems * mSize.getHeight() );
 }
 
-DropDownListStyleConfig UIDropDownList::getStyleConfig() const {
+UIDropDownListStyleConfig UIDropDownList::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UIDropDownList::setStyleConfig(const DropDownListStyleConfig & styleConfig) {
+void UIDropDownList::setStyleConfig(const UIDropDownListStyleConfig & styleConfig) {
 	mStyleConfig = styleConfig;
 
 	mListBox->setFontStyleConfig( mStyleConfig );

@@ -55,6 +55,8 @@ class EE_API UISpinBox : public UIWidget {
 		UISpinBox * setAllowOnlyNumbers( bool allow );
 
 		bool dotsInNumbersAllowed();
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		UITextInput * 		mInput;
 		UIControlAnim * 	mPushUp;

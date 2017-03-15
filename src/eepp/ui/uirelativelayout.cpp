@@ -11,6 +11,14 @@ UIRelativeLayout::UIRelativeLayout() :
 {
 }
 
+Uint32 UIRelativeLayout::getType() const {
+	return UI_TYPE_RELATIVE_LAYOUT;
+}
+
+bool UIRelativeLayout::isType( const Uint32& type ) const {
+	return UIWidget::getType() == type ? true : UIWidget::isType( type );
+}
+
 UIRelativeLayout * UIRelativeLayout::add(UIWidget * widget) {
 	widget->setParent( this );
 	return this;

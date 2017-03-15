@@ -127,31 +127,31 @@ void UITooltip::setText( const String& text ) {
 }
 
 const ColorA& UITooltip::getFontColor() const {
-	return mStyleConfig.FontColor;
+	return mStyleConfig.Color;
 }
 
 void UITooltip::setFontColor( const ColorA& color ) {
-	mStyleConfig.FontColor = color;
-	mTextCache->setColor( mStyleConfig.FontColor );
+	mStyleConfig.Color = color;
+	mTextCache->setColor( mStyleConfig.Color );
 	setAlpha( color.a() );
 }
 
 const ColorA& UITooltip::getFontShadowColor() const {
-	return mStyleConfig.FontShadowColor;
+	return mStyleConfig.ShadowColor;
 }
 
 void UITooltip::setFontShadowColor( const ColorA& color ) {
-	mStyleConfig.FontShadowColor = color;
+	mStyleConfig.ShadowColor = color;
 	setAlpha( color.a() );
-	mTextCache->setShadowColor( mStyleConfig.FontShadowColor );
+	mTextCache->setShadowColor( mStyleConfig.ShadowColor );
 }
 
 void UITooltip::setAlpha( const Float& alpha ) {
 	UIControlAnim::setAlpha( alpha );
-	mStyleConfig.FontColor.Alpha = (Uint8)alpha;
-	mStyleConfig.FontShadowColor.Alpha = (Uint8)alpha;
+	mStyleConfig.Color.Alpha = (Uint8)alpha;
+	mStyleConfig.ShadowColor.Alpha = (Uint8)alpha;
 
-	mTextCache->setColor( mStyleConfig.FontColor );
+	mTextCache->setColor( mStyleConfig.Color );
 }
 
 void UITooltip::onAutoSize() {
@@ -259,20 +259,23 @@ void UITooltip::setTooltipOf(UIControl * tooltipOf) {
 	mTooltipOf = tooltipOf;
 }
 
-TooltipStyleConfig UITooltip::getStyleConfig() const {
+UITooltipStyleConfig UITooltip::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UITooltip::setStyleConfig(const TooltipStyleConfig & styleConfig) {
+void UITooltip::setStyleConfig(const UITooltipStyleConfig & styleConfig) {
 	mStyleConfig = styleConfig;
 
 	if ( mStyleConfig.Padding != Recti() )
 		setPadding( mStyleConfig.Padding );
 
 	setFont( mStyleConfig.Font );
-	setFontColor( mStyleConfig.FontColor );
-	setFontShadowColor( mStyleConfig.FontShadowColor );
-	mTextCache->setCharacterSize( mStyleConfig.FontCharacterSize );
+	setFontColor( mStyleConfig.Color );
+	setFontShadowColor( mStyleConfig.ShadowColor );
+	mTextCache->setCharacterSize( mStyleConfig.CharacterSize );
+	mTextCache->setStyle( mStyleConfig.Style );
+	mTextCache->setOutlineThickness( mStyleConfig.OutlineThickness );
+	mTextCache->setOutlineColor( mStyleConfig.OutlineColor );
 }
 
 }}

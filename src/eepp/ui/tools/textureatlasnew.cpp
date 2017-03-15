@@ -104,9 +104,10 @@ TextureAtlasNew::~TextureAtlasNew() {
 
 UITextView * TextureAtlasNew::createTxtBox( Vector2i Pos, const String& Text ) {
 	UITextView * textBox = UITextView::New();
-	textBox->setParent( mUIWindow->getContainer() )
+	textBox->setFontStyle( Text::Shadow )
+			->setFlags( UI_AUTO_SIZE )
+			->setParent( mUIWindow->getContainer() )
 			->setPosition( Pos )
-			->setFlags( UI_DRAW_SHADOW | UI_AUTO_SIZE )
 			->setVisible( true )
 			->setEnabled( true );
 	textBox->setText( Text );

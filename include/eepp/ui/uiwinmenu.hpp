@@ -34,18 +34,18 @@ class EE_API UIWinMenu : public UIWidget {
 
 		void setMarginBetweenButtons(const Uint32 & marginBetweenButtons);
 
-		TooltipStyleConfig getFontStyleConfig() const;
+		UITooltipStyleConfig getFontStyleConfig() const;
 
-		void setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig);
+		void setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig);
 
-		WinMenuStyleConfig getStyleConfig() const;
+		UIWinMenuStyleConfig getStyleConfig() const;
 
-		void setStyleConfig(const WinMenuStyleConfig & styleConfig);
+		void setStyleConfig(const UIWinMenuStyleConfig & styleConfig);
 
 	protected:
 		typedef std::list< std::pair< UISelectButton *, UIPopUpMenu * > > WinMenuList;
 
-		WinMenuStyleConfig mStyleConfig;
+		UIWinMenuStyleConfig mStyleConfig;
 		UIPopUpMenu *	mCurrentMenu;
 		WinMenuList		mButtons;
 

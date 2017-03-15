@@ -1,5 +1,4 @@
 #include <eepp/gaming/mapeditor/uigotypenew.hpp>
-#include <eepp/ui/uitextinput.hpp>
 
 namespace EE { namespace Gaming { namespace Private {
 
@@ -24,7 +23,7 @@ UIGOTypeNew::UIGOTypeNew( cb::Callback2<void, std::string, Uint32> Cb ) :
 	Int32 DistFromTitle	= 18;
 
 	UITextView * Txt = UITextView::New();
-	Txt->setFlags( UI_DRAW_SHADOW | UI_AUTO_SIZE )->setParent( mUIWindow->getContainer() )->setPosition( 16, InitialY );
+	Txt->setFontStyle( Text::Shadow )->setFlags( UI_AUTO_SIZE )->setParent( mUIWindow->getContainer() )->setPosition( 16, InitialY );
 	Txt->setText( "GameObject Type Name" );
 
 	mUIInput = UITextInput::New()->setMaxLength( 64 );

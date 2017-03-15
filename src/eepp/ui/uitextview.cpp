@@ -1,7 +1,6 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
-#include <eepp/graphics/text.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/window/clipboard.hpp>
@@ -24,10 +23,10 @@ UITextView::UITextView() :
 
 	mTextCache = eeNew( Text, () );
 	mTextCache->setFont( mFontStyleConfig.Font );
-	mTextCache->setCharacterSize( mFontStyleConfig.FontCharacterSize );
-	mTextCache->setStyle( mFontStyleConfig.FontStyle );
-	mTextCache->setColor( mFontStyleConfig.FontColor );
-	mTextCache->setShadowColor( mFontStyleConfig.FontShadowColor );
+	mTextCache->setCharacterSize( mFontStyleConfig.CharacterSize );
+	mTextCache->setStyle( mFontStyleConfig.Style );
+	mTextCache->setColor( mFontStyleConfig.Color );
+	mTextCache->setShadowColor( mFontStyleConfig.ShadowColor );
 	mTextCache->setOutlineThickness( mFontStyleConfig.OutlineThickness );
 	mTextCache->setOutlineColor( mFontStyleConfig.OutlineColor );
 
@@ -105,7 +104,7 @@ UITextView *UITextView::setCharacterSize( const Uint32 & characterSize ) {
 }
 
 const Uint32 &UITextView::getFontStyle() const {
-	return mFontStyleConfig.FontStyle;
+	return mFontStyleConfig.Style;
 }
 
 const Float &UITextView::getOutlineThickness() const {
@@ -138,9 +137,9 @@ UITextView * UITextView::setOutlineColor(const ColorA & outlineColor) {
 }
 
 UITextView * UITextView::setFontStyle(const Uint32 & fontStyle) {
-	if ( mFontStyleConfig.FontStyle != fontStyle ) {
+	if ( mFontStyleConfig.Style != fontStyle ) {
 		mTextCache->setStyle( fontStyle );
-		mFontStyleConfig.FontStyle = fontStyle;
+		mFontStyleConfig.Style = fontStyle;
 		autoShrink();
 		onAutoSize();
 		autoAlign();
@@ -173,11 +172,11 @@ UITextView * UITextView::setText( const String& text ) {
 }
 
 const ColorA& UITextView::getFontColor() const {
-	return mFontStyleConfig.FontColor;
+	return mFontStyleConfig.Color;
 }
 
 UITextView * UITextView::setFontColor( const ColorA& color ) {
-	mFontStyleConfig.FontColor = color;
+	mFontStyleConfig.Color = color;
 	mTextCache->setColor( color );
 
 	setAlpha( color.a() );
@@ -186,12 +185,12 @@ UITextView * UITextView::setFontColor( const ColorA& color ) {
 }
 
 const ColorA& UITextView::getFontShadowColor() const {
-	return mFontStyleConfig.FontShadowColor;
+	return mFontStyleConfig.ShadowColor;
 }
 
 UITextView * UITextView::setFontShadowColor( const ColorA& color ) {
-	mFontStyleConfig.FontShadowColor = color;
-	mTextCache->setShadowColor( mFontStyleConfig.FontShadowColor );
+	mFontStyleConfig.ShadowColor = color;
+	mTextCache->setShadowColor( mFontStyleConfig.ShadowColor );
 
 	return this;
 }
@@ -207,10 +206,10 @@ UITextView * UITextView::setSelectionBackColor( const ColorA& color ) {
 
 void UITextView::setAlpha( const Float& alpha ) {
 	UIControlAnim::setAlpha( alpha );
-	mFontStyleConfig.FontColor.Alpha = (Uint8)alpha;
-	mFontStyleConfig.FontShadowColor.Alpha = (Uint8)alpha;
+	mFontStyleConfig.Color.Alpha = (Uint8)alpha;
+	mFontStyleConfig.ShadowColor.Alpha = (Uint8)alpha;
 
-	mTextCache->setAlpha( mFontStyleConfig.FontColor.Alpha );
+	mTextCache->setAlpha( mFontStyleConfig.Color.Alpha );
 }
 
 void UITextView::autoShrink() {
@@ -295,10 +294,6 @@ void UITextView::setTheme( UITheme * Theme ) {
 	if ( NULL == mTextCache->getFont() && NULL != Theme->getFontStyleConfig().getFont() ) {
 		mTextCache->setFont( Theme->getFontStyleConfig().getFont() );
 	}
-}
-
-Text * UITextView::getTextCache() {
-	return mTextCache;
 }
 
 Float UITextView::getTextWidth() {
@@ -416,7 +411,7 @@ bool UITextView::isTextSelectionEnabled() const {
 	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
 }
 
-TooltipStyleConfig UITextView::getFontStyleConfig() const
+UITooltipStyleConfig UITextView::getFontStyleConfig() const
 {
 	return mFontStyleConfig;
 }
@@ -441,12 +436,16 @@ void UITextView::onAlignChange() {
 	autoAlign();
 }
 
-void UITextView::setFontStyleConfig( const TooltipStyleConfig& fontStyleConfig ) {
+void UITextView::setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig ) {
 	mFontStyleConfig = fontStyleConfig;
 
 	setFont( mFontStyleConfig.getFont() );
 	setFontColor( mFontStyleConfig.getFontColor() );
+	setCharacterSize( mFontStyleConfig.getFontCharacterSize() );
 	setFontShadowColor( mFontStyleConfig.getFontShadowColor() );
+	setFontStyle( mFontStyleConfig.getFontStyle() );
+	setOutlineThickness( mFontStyleConfig.getOutlineThickness() );
+	setOutlineColor( mFontStyleConfig.getOutlineColor() );
 }
 
 const Recti& UITextView::getPadding() const {
@@ -511,6 +510,8 @@ void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
 						flags |= Text::Italic;
 					else if ( "strikethrough" == cur )
 						flags |= Text::StrikeThrough;
+					else if ( "shadowed" == cur || "shadow" == cur )
+						flags |= Text::Shadow;
 				}
 
 				setFontStyle( flags );

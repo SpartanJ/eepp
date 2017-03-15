@@ -15,33 +15,6 @@ class Font;
 
 namespace EE { namespace UI {
 
-class UIControl;
-class UICheckBox;
-class UIComboBox;
-class UIDropDownList;
-class UIListBox;
-class UIPopUpMenu;
-class UIProgressBar;
-class UIPushButton;
-class UISelectButton;
-class UIRadioButton;
-class UIScrollBar;
-class UISlider;
-class UISpinBox;
-class UITextView;
-class UITextEdit;
-class UITextInput;
-class UITextInputPassword;
-class UITooltip;
-class UIWindow;
-class UIWinMenu;
-class UIImage;
-class UISprite;
-class UIMenu;
-class UICommonDialog;
-class UIMessageBox;
-class UITabWidget;
-
 class EE_API UITheme : protected ResourceManager<UISkin> {
 	public:
 		using ResourceManager<UISkin>::getById;
@@ -79,33 +52,33 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		SubTexture * getIconByName( const std::string& name );
 
-		TooltipStyleConfig getFontStyleConfig() const;
+		UITooltipStyleConfig getFontStyleConfig() const;
 
-		void setFontStyleConfig(const TooltipStyleConfig & fontConfig);
+		void setFontStyleConfig(const UITooltipStyleConfig & fontConfig);
 
-		virtual TabWidgetStyleConfig getTabWidgetStyleConfig();
+		virtual UITabWidgetStyleConfig getTabWidgetStyleConfig();
 
-		virtual ProgressBarStyleConfig getProgressBarStyleConfig();
+		virtual UIProgressBarStyleConfig getProgressBarStyleConfig();
 
-		virtual WinMenuStyleConfig getWinMenuStyleConfig();
+		virtual UIWinMenuStyleConfig getWinMenuStyleConfig();
 
-		virtual DropDownListStyleConfig getDropDownListStyleConfig();
+		virtual UIDropDownListStyleConfig getDropDownListStyleConfig();
 
-		virtual WindowStyleConfig getWindowStyleConfig();
+		virtual UIWindowStyleConfig getWindowStyleConfig();
 
-		virtual MenuStyleConfig getMenuStyleConfig();
+		virtual UIMenuStyleConfig getMenuStyleConfig();
 
-		virtual PushButtonStyleConfig getPushButtonStyleConfig();
+		virtual UIPushButtonStyleConfig getPushButtonStyleConfig();
 
-		virtual SliderStyleConfig getSliderStyleConfig();
+		virtual UISliderStyleConfig getSliderStyleConfig();
 
-		virtual TooltipStyleConfig getTooltipStyleConfig();
+		virtual UITooltipStyleConfig getTooltipStyleConfig();
 	protected:
 		std::string				mName;
 		Uint32					mNameHash;
 		std::string				mAbbr;
 		Graphics::TextureAtlas *mTextureAtlas;
-		TooltipStyleConfig			mFontStyleConfig;
+		UITooltipStyleConfig	mFontStyleConfig;
 		std::list<std::string>	mUIElements;
 		std::list<std::string>	mUIIcons;
 

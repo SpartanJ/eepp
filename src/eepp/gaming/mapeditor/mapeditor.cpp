@@ -15,16 +15,6 @@
 #include <eepp/gaming/gameobjectobject.hpp>
 #include <eepp/gaming/gameobjectpolygon.hpp>
 #include <eepp/gaming/gameobjectpolyline.hpp>
-#include <eepp/ui/uimanager.hpp>
-#include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/uiwinmenu.hpp>
-#include <eepp/ui/uipopupmenu.hpp>
-#include <eepp/ui/uispinbox.hpp>
-#include <eepp/ui/uicheckbox.hpp>
-#include <eepp/ui/uicommondialog.hpp>
-#include <eepp/ui/uimessagebox.hpp>
-#include <eepp/ui/uitabwidget.hpp>
-#include <eepp/ui/tools/textureatlaseditor.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
@@ -39,8 +29,9 @@ using namespace EE::Gaming::Private;
 
 namespace EE { namespace Gaming {
 
-static UITextView * createTextBox( const String& Text = "", UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE ) {
+static UITextView * createTextBox( const String& Text = "", UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, const Uint32& fontStyle = Text::Regular ) {
 	UITextView * Ctrl = UITextView::New();
+	Ctrl->setFontStyle( fontStyle );
 	Ctrl->resetFlags( Flags )->setParent( Parent )->setPosition( Pos )->setSize( Size )->setVisible( true )->setEnabled( false );
 	Ctrl->setText( Text );
 	return Ctrl;
@@ -260,12 +251,12 @@ void MapEditor::fillGotyList() {
 
 void MapEditor::createSubTextureContainer( Int32 Width ) {
 	UITextView * Txt;
-	Uint32 TxtFlags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_DRAW_SHADOW;
+	Uint32 TxtFlags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
-	Txt = createTextBox( "Add Game Object as...", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 4 ), TxtFlags );
+	Txt = createTextBox( "Add Game Object as...", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 4 ), TxtFlags, Text::Shadow );
 
 	mGOTypeList = UIDropDownList::New();
-	mGOTypeList->setParent( mSubTextureCont )->setSize( Width - 26, 0 )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->setFlags( UI_DRAW_SHADOW );
+	mGOTypeList->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setSize( Width - 26, 0 )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 
 	mGOTypeList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::onTypeChange ) );
 	fillGotyList();
@@ -280,54 +271,54 @@ void MapEditor::createSubTextureContainer( Int32 Width ) {
 	if ( NULL == mBtnGOTypeAdd->getIcon()->getSubTexture() )
 		mBtnGOTypeAdd->setText( "..." );
 
-	Txt = createTextBox( "Layers:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mGOTypeList->getPosition().y + mGOTypeList->getSize().getHeight() + 4 ), TxtFlags );
+	Txt = createTextBox( "Layers:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mGOTypeList->getPosition().y + mGOTypeList->getSize().getHeight() + 4 ), TxtFlags, Text::Shadow );
 
 	mLayerList = UIDropDownList::New();
-	mLayerList->setParent( mSubTextureCont )->setSize( Width, 0 )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->setFlags( UI_DRAW_SHADOW );
+	mLayerList->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setSize( Width, 0 )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 
 	mLayerList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::onLayerSelect ) );
 
-	Txt = createTextBox( "Game Object Flags:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mLayerList->getPosition().y + mLayerList->getSize().getHeight() + 4 ), TxtFlags );
+	Txt = createTextBox( "Game Object Flags:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mLayerList->getPosition().y + mLayerList->getSize().getHeight() + 4 ), TxtFlags, Text::Shadow );
 
 	Uint32 ChkFlags = UI_CONTROL_DEFAULT_ALIGN | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
 	mChkMirrored = UICheckBox::New();
-	mChkMirrored->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags )->setFlags( UI_DRAW_SHADOW );
+	mChkMirrored->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
 	mChkMirrored->setText( "Mirrored" );
 	mChkMirrored->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::chkClickMirrored ) );
 
 	mChkFliped = UICheckBox::New();
-	mChkFliped->setParent( mSubTextureCont )->setPosition( mChkMirrored->getPosition().x + mChkMirrored->getSize().getWidth() + 32, mChkMirrored->getPosition().y  )->resetFlags( ChkFlags )->setFlags( UI_DRAW_SHADOW );
+	mChkFliped->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( mChkMirrored->getPosition().x + mChkMirrored->getSize().getWidth() + 32, mChkMirrored->getPosition().y  )->resetFlags( ChkFlags );
 	mChkFliped->setText( "Fliped" );
 	mChkFliped->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::chkClickFlipped ) );
 
 	mChkBlocked = UICheckBox::New();
-	mChkBlocked->setParent( mSubTextureCont )->setPosition( mChkMirrored->getPosition().x, mChkMirrored->getPosition().y + mChkMirrored->getSize().getHeight() + 4 )->resetFlags( ChkFlags )->setFlags( UI_DRAW_SHADOW );
+	mChkBlocked->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( mChkMirrored->getPosition().x, mChkMirrored->getPosition().y + mChkMirrored->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
 	mChkBlocked->setText( "Blocked" );
 	mChkBlocked->setTooltipText( "Blocks the tile occupied by the sprite." );
 	mChkBlocked->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::chkClickBlocked ) );
 
 	mChkAnim = UICheckBox::New();
-	mChkAnim->setParent( mSubTextureCont )->setPosition( mChkFliped->getPosition().x, mChkFliped->getPosition().y + mChkFliped->getSize().getHeight() + 4 )->resetFlags( ChkFlags )->setFlags( UI_DRAW_SHADOW );
+	mChkAnim->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( mChkFliped->getPosition().x, mChkFliped->getPosition().y + mChkFliped->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
 	mChkAnim->setText( "Animated" );
 	mChkAnim->setTooltipText( "Indicates if the Sprite is animated." );
 	mChkAnim->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::chkClickAnimated ) );
 
 	mChkRot90 = UICheckBox::New();
-	mChkRot90->setParent( mSubTextureCont )->setPosition( mChkBlocked->getPosition().x, mChkBlocked->getPosition().y + mChkBlocked->getSize().getHeight() + 4 )->resetFlags( ChkFlags )->setFlags( UI_DRAW_SHADOW );
+	mChkRot90->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( mChkBlocked->getPosition().x, mChkBlocked->getPosition().y + mChkBlocked->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
 	mChkRot90->setText( String::fromUtf8( "Rotate 90º" ) );
 	mChkRot90->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::chkClickRot90 ) );
 
 	mChkAutoFix = UICheckBox::New();
-	mChkAutoFix->setParent( mSubTextureCont )->setPosition( mChkAnim->getPosition().x, mChkAnim->getPosition().y + mChkAnim->getSize().getHeight() + 4 )->resetFlags( ChkFlags )->setFlags( UI_DRAW_SHADOW );
+	mChkAutoFix->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( mChkAnim->getPosition().x, mChkAnim->getPosition().y + mChkAnim->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
 	mChkAutoFix->setText( "AutoFix TilePos" );
 	mChkAutoFix->setTooltipText( "In a tiled layer if the sprite is moved,\nit will update the current tile position automatically." );
 	mChkAutoFix->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::chkClickAutoFix ) );
 
-	Txt = createTextBox( "Game Object Data:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mChkRot90->getPosition().y + mChkRot90->getSize().getHeight() + 8 ), TxtFlags );
+	Txt = createTextBox( "Game Object Data:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mChkRot90->getPosition().y + mChkRot90->getSize().getHeight() + 8 ), TxtFlags, Text::Shadow );
 
 	mChkDI = UICheckBox::New();
-	mChkDI->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags )->setFlags( UI_DRAW_SHADOW );;
+	mChkDI->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
 	mChkDI->setText( "Add as DataId" );
 	mChkDI->setTooltipText( "If the resource it's not a sprite,\nyou can reference it with a data id" );
 	mChkDI->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::chkClickDI ) );
@@ -338,10 +329,10 @@ void MapEditor::createSubTextureContainer( Int32 Width ) {
 	mSGCont->setEnabled( true );
 	mSGCont->setVisible( true );
 
-	Txt = createTextBox( "Texture Atlases:", mSGCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 0 ), TxtFlags );
+	Txt = createTextBox( "Texture Atlases:", mSGCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 0 ), TxtFlags, Text::Shadow );
 
 	mTextureAtlasesList = UIDropDownList::New();
-	mTextureAtlasesList->setParent( mSGCont )->setSize( Width, 0 )->setPosition( 0, Txt->getPosition().y +Txt->getSize().getHeight() + 4 )->setFlags( UI_DRAW_SHADOW );
+	mTextureAtlasesList->setFontStyle( Text::Shadow )->setParent( mSGCont )->setSize( Width, 0 )->setPosition( 0, Txt->getPosition().y +Txt->getSize().getHeight() + 4 );
 	mTextureAtlasesList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::onTextureAtlasChange ) );
 
 	mSubTextureList = UIListBox::New();
@@ -365,7 +356,7 @@ void MapEditor::createSubTextureContainer( Int32 Width ) {
 	mDICont->setEnabled( false );
 	mDICont->setVisible( false );
 
-	Txt = createTextBox( "DataId String:", mDICont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 0 ), TxtFlags );
+	Txt = createTextBox( "DataId String:", mDICont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 0 ), TxtFlags, Text::Shadow );
 
 	mDataIdInput = UITextInput::New();
 	mDataIdInput->setParent( mDICont )->setSize( Width / 4 * 3, 0 )->setPosition( TAB_CONT_X_DIST + 8, Txt->getPosition().y + Txt->getSize().getHeight() + 8 );
@@ -379,7 +370,8 @@ void MapEditor::createLighContainer() {
 	NewLightBut->setText( "New Light" );
 	NewLightBut->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::onNewLight ) );
 
-	UITextView * Txt = createTextBox( "Light Color:", mLightCont, Sizei(), Vector2i( TAB_CONT_X_DIST, 32 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	UITextView * Txt = createTextBox( "Light Color:", mLightCont, Sizei(), Vector2i( TAB_CONT_X_DIST, 32 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+	Txt->setFontStyle( Text::Shadow );
 
 	mUIBaseColor = UIWidget::New();
 	mUIBaseColor->setFlags( UI_FILL_BACKGROUND | UI_BORDER );
@@ -389,7 +381,7 @@ void MapEditor::createLighContainer() {
 	mUIBaseColor->getBackground()->setColor( ColorA(255,255,255,255) );
 	mUIBaseColor->getBorder()->setColor( ColorA( 100, 100, 100, 200 ) );
 
-	Txt = createTextBox( "R:", mLightCont, Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	Txt = createTextBox( "R:", mLightCont, Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 	mUIRedSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
 	mUIRedSlider->setParent( mLightCont )->setSize( 100, 20 )->setPosition( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y );
@@ -397,27 +389,27 @@ void MapEditor::createLighContainer() {
 	mUIRedSlider->setValue( 255 );
 	mUIRedSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::onRedChange ) );
 
-	mUIRedTxt = createTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIRedTxt = createTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
-	Txt = createTextBox( "G:", mLightCont, Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	Txt = createTextBox( "G:", mLightCont, Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 	mUIGreenSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
 	mUIGreenSlider->setParent( mLightCont )->setSize( 100, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIGreenSlider->setMaxValue( 255 );
 	mUIGreenSlider->setValue( 255 );
 	mUIGreenSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::onGreenChange ) );
 
-	mUIGreenTxt = createTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIGreenTxt = createTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
-	Txt = createTextBox( "B:", mLightCont, Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	Txt = createTextBox( "B:", mLightCont, Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 	mUIBlueSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
 	mUIBlueSlider->setParent( mLightCont )->setSize( 100, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIBlueSlider->setMaxValue( 255 );
 	mUIBlueSlider->setValue( 255 );
 	mUIBlueSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::onBlueChange ) );
 
-	mUIBlueTxt = createTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4, mUIBlueSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIBlueTxt = createTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4, mUIBlueSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
-	Txt = createTextBox( "Light Radius:", mLightCont, Sizei(), Vector2i( TAB_CONT_X_DIST, mUIBlueTxt->getPosition().y + mUIBlueTxt->getSize().getHeight() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	Txt = createTextBox( "Light Radius:", mLightCont, Sizei(), Vector2i( TAB_CONT_X_DIST, mUIBlueTxt->getPosition().y + mUIBlueTxt->getSize().getHeight() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 	mLightRadius = UISpinBox::New()->setAllowOnlyNumbers( false )->setValue( 100 );
 	mLightRadius->setParent( mLightCont )->setSize( 100, 0 )->setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 8 );

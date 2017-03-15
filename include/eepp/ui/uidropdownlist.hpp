@@ -34,15 +34,15 @@ class EE_API UIDropDownList : public UITextInput {
 
 		void setMaxNumVisibleItems(const Uint32 & maxNumVisibleItems);
 
-		DropDownListStyleConfig getStyleConfig() const;
+		UIDropDownListStyleConfig getStyleConfig() const;
 
-		void setStyleConfig(const DropDownListStyleConfig & styleConfig);
+		void setStyleConfig(const UIDropDownListStyleConfig & styleConfig);
 
 		void loadFromXmlNode(const pugi::xml_node & node);
 	protected:
 		friend class UIComboBox;
 
-		DropDownListStyleConfig mStyleConfig;
+		UIDropDownListStyleConfig mStyleConfig;
 		UIListBox *		mListBox;
 		UIControl *		mFriendCtrl;
 

@@ -64,9 +64,9 @@ class EE_API UIMenu : public UIWidget {
 
 		void setMinRightMargin(const Uint32 & minRightMargin);
 
-		TooltipStyleConfig getFontStyleConfig() const;
+		UITooltipStyleConfig getFontStyleConfig() const;
 
-		void setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig);
+		void setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig);
 
 	protected:
 		friend class UIMenuItem;
@@ -74,7 +74,7 @@ class EE_API UIMenu : public UIWidget {
 		friend class UIMenuSubMenu;
 
 		std::deque<UIControl *> mItems;
-		MenuStyleConfig		mStyleConfig;
+		UIMenuStyleConfig		mStyleConfig;
 		Uint32				mMaxWidth;
 		Uint32				mNextPosY;
 		Uint32				mBiggestIcon;

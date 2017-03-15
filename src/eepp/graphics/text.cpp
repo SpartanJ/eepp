@@ -429,10 +429,10 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 		TextureFactory::instance()->bind( mFont->getTexture(mRealCharacterSize) );
 		BlendMode::setMode( Effect );
 
-		if ( mFlags & FONT_DRAW_SHADOW ) {
-			Uint32 f = mFlags;
+		if ( mStyle & Shadow ) {
+			Uint32 f = mStyle;
 
-			mFlags &= ~FONT_DRAW_SHADOW;
+			mStyle &= ~Shadow;
 
 			ColorA Col = getFillColor();
 
@@ -450,7 +450,7 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 
 			draw( X + pd, Y + pd, Scale, Angle, Effect );
 
-			mFlags = f;
+			mStyle = f;
 
 			setFillColor( Col );
 		}
@@ -579,17 +579,15 @@ void Text::ensureGeometryUpdate() {
 	Float centerDiffX = 0;
 	unsigned int Line = 0;
 
-	if ( !( mFlags & FONT_DRAW_VERTICAL ) ) {
-		switch ( fontHAlignGet( mFlags ) ) {
-			case FONT_DRAW_CENTER:
-				centerDiffX = (Float)( (Int32)( ( mCachedWidth - mLinesWidth[ Line ] ) * 0.5f ) );
-				Line++;
-				break;
-			case FONT_DRAW_RIGHT:
-				centerDiffX = mCachedWidth - getLinesWidth()[ Line ];
-				Line++;
-				break;
-		}
+	switch ( fontHAlignGet( mFlags ) ) {
+		case FONT_DRAW_CENTER:
+			centerDiffX = (Float)( (Int32)( ( mCachedWidth - mLinesWidth[ Line ] ) * 0.5f ) );
+			Line++;
+			break;
+		case FONT_DRAW_RIGHT:
+			centerDiffX = mCachedWidth - getLinesWidth()[ Line ];
+			Line++;
+			break;
 	}
 
 	for (std::size_t i = 0; i < mString.size(); ++i) {
@@ -747,6 +745,15 @@ void Text::cacheWidth() {
 	} else {
 		mCachedWidth = 0;
 	}
+}
+
+void Text::setStyleConfig( const FontStyleConfig& styleConfig ) {
+	setFont( styleConfig.Font );
+	setCharacterSize( styleConfig.CharacterSize );
+	setFillColor( styleConfig.Color );
+	setStyle( styleConfig.Style );
+	setOutlineThickness( styleConfig.OutlineThickness );
+	setOutlineColor( styleConfig.OutlineColor );
 }
 
 }}

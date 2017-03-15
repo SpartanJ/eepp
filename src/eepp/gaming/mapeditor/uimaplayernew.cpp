@@ -1,5 +1,4 @@
 #include <eepp/gaming/mapeditor/uimaplayernew.hpp>
-#include <eepp/ui/uitextinput.hpp>
 
 namespace EE { namespace Gaming { namespace Private {
 
@@ -30,7 +29,7 @@ UIMapLayerNew::UIMapLayerNew( UIMap * Map, EE_LAYER_TYPE Type, NewLayerCb newLay
 	Int32 DistFromTitle	= 18;
 
 	UITextView * Txt = UITextView::New();
-	Txt->setFlags( UI_DRAW_SHADOW | UI_AUTO_SIZE )->setParent( mUIWindow->getContainer() )->setPosition( 16, InitialY );
+	Txt->setFontStyle( Text::Shadow )->setFlags( UI_AUTO_SIZE )->setParent( mUIWindow->getContainer() )->setPosition( 16, InitialY );
 	Txt->setText( "Layer Name" );
 
 	mUILayerName = UITextInput::New()->setMaxLength( 64 );

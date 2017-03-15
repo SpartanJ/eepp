@@ -73,7 +73,7 @@ void UIPushButton::onSizeChange() {
 	}
 
 	if ( ( mFlags & UI_AUTO_SIZE ) ) {
-		Int32 txtW = NULL != mTextBox ? PixelDensity::pxToDpI( mTextBox->getTextCache()->getTextWidth() ) : 0;
+		Int32 txtW = NULL != mTextBox ? PixelDensity::pxToDpI( mTextBox->getTextWidth() ) : 0;
 		Int32 minSize = txtW + ( NULL != mIcon ? mIcon->getSize().getWidth() : 0 )
 						+ mStyleConfig.IconHorizontalMargin + mTextBox->getPadding().Left + mTextBox->getPadding().Right +
 						(  NULL != getSkin() ? getSkin()->getBorderSize().getWidth() : 0 );
@@ -211,7 +211,7 @@ void UIPushButton::onStateChange() {
 	if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
 		mTextBox->setFontColor( mStyleConfig.FontOverColor );
 	} else {
-		mTextBox->setFontColor( mStyleConfig.FontColor );
+		mTextBox->setFontColor( mStyleConfig.Color );
 	}
 
 	mTextBox->setAlpha( mAlpha );
@@ -242,11 +242,11 @@ Uint32 UIPushButton::onKeyUp( const UIEventKey& Event ) {
 	return UIWidget::onKeyUp( Event );
 }
 const ColorA& UIPushButton::getFontColor() const {
-	return mStyleConfig.FontColor;
+	return mStyleConfig.Color;
 }
 
 void UIPushButton::setFontColor( const ColorA& color ) {
-	mStyleConfig.FontColor = color;
+	mStyleConfig.Color = color;
 	onStateChange();
 }
 
@@ -267,11 +267,59 @@ void UIPushButton::setFontShadowColor( const ColorA& color ) {
 	mTextBox->setFontShadowColor( color );
 }
 
-TooltipStyleConfig UIPushButton::getStyleConfig() const {
+Uint32 UIPushButton::getCharacterSize() {
+	return mTextBox->getCharacterSize();
+}
+
+void UIPushButton::setCharacterSize(const Uint32 & characterSize) {
+	mTextBox->setCharacterSize( characterSize );
+	onSizeChange();
+}
+
+const Uint32 &UIPushButton::getFontStyle() const {
+	return mStyleConfig.Style;
+}
+
+const Float &UIPushButton::getOutlineThickness() const {
+	return mStyleConfig.OutlineThickness;
+}
+
+UIPushButton * UIPushButton::setOutlineThickness( const Float & outlineThickness ) {
+	if ( mStyleConfig.OutlineThickness != outlineThickness ) {
+		mTextBox->setOutlineThickness( outlineThickness );
+		mStyleConfig.OutlineThickness = outlineThickness;
+	}
+
+	return this;
+}
+
+const ColorA &UIPushButton::getOutlineColor() const {
+	return mStyleConfig.OutlineColor;
+}
+
+UIPushButton * UIPushButton::setOutlineColor(const ColorA & outlineColor) {
+	if ( mStyleConfig.OutlineColor != outlineColor ) {
+		mTextBox->setOutlineColor( outlineColor );
+		mStyleConfig.OutlineColor = outlineColor;
+	}
+
+	return this;
+}
+
+UIPushButton * UIPushButton::setFontStyle(const Uint32 & fontStyle) {
+	if ( mStyleConfig.Style != fontStyle ) {
+		mTextBox->setFontStyle( fontStyle );
+		mStyleConfig.Style = fontStyle;
+	}
+
+	return this;
+}
+
+UITooltipStyleConfig UIPushButton::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UIPushButton::setStyleConfig(const PushButtonStyleConfig & styleConfig) {
+void UIPushButton::setStyleConfig(const UIPushButtonStyleConfig & styleConfig) {
 	mStyleConfig = styleConfig;
 	mTextBox->setFontStyleConfig( styleConfig );
 

@@ -9,19 +9,19 @@ class EE_API UIThemeDefault : public UITheme {
 	public:
 		UIThemeDefault( const std::string& name, const std::string& abbr, Graphics::Font * defaultFont = NULL );
 
-		TabWidgetStyleConfig getTabWidgetStyleConfig();
+		UITabWidgetStyleConfig getTabWidgetStyleConfig();
 
-		ProgressBarStyleConfig getProgressBarStyleConfig();
+		UIProgressBarStyleConfig getProgressBarStyleConfig();
 
-		WinMenuStyleConfig getWinMenuStyleConfig();
+		UIWinMenuStyleConfig getWinMenuStyleConfig();
 
-		WindowStyleConfig getWindowStyleConfig();
+		UIWindowStyleConfig getWindowStyleConfig();
 
-		MenuStyleConfig getMenuStyleConfig();
+		UIMenuStyleConfig getMenuStyleConfig();
 
-		SliderStyleConfig getSliderStyleConfig();
+		UISliderStyleConfig getSliderStyleConfig();
 
-		TooltipStyleConfig getTooltipStyleConfig();
+		UITooltipStyleConfig getTooltipStyleConfig();
 };
 
 }}

@@ -121,7 +121,7 @@ class EE_API UIManager {
 
 		void setCursor( EE_CURSOR_TYPE cursor );
 
-		void loadLayout( const std::string& layoutPath );
+		void loadLayoutFromFile( const std::string& layoutPath );
 
 		void loadLayoutFromString( const std::string& layoutString );
 

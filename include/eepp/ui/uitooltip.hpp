@@ -75,12 +75,12 @@ class EE_API UITooltip : public UIControlAnim {
 
 		void setTooltipOf(UIControl * tooltipOf);
 
-		TooltipStyleConfig getStyleConfig() const;
+		UITooltipStyleConfig getStyleConfig() const;
 
-		void setStyleConfig(const TooltipStyleConfig & styleConfig);
+		void setStyleConfig(const UITooltipStyleConfig & styleConfig);
 	protected:
 		Text *	mTextCache;
-		TooltipStyleConfig mStyleConfig;
+		UITooltipStyleConfig mStyleConfig;
 		Vector2f 	mAlignOffset;
 		Recti		mRealPadding;
 		Time		mTooltipTime;

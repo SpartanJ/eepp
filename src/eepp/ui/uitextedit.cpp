@@ -345,7 +345,7 @@ void UITextEdit::fixScrollToCursor() {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum = mTextInput->getInputTextBuffer()->getCurPosLinePos( NLPos );
 
-		Text textCache( mTextInput->getTextCache()->getFont(), mTextInput->getFontStyleConfig().FontCharacterSize );
+		Text textCache( mTextInput->getFont(), mTextInput->getFontStyleConfig().CharacterSize );
 		textCache.setString(
 			mTextInput->getInputTextBuffer()->getBuffer().substr(
 				NLPos, mTextInput->getInputTextBuffer()->getCursorPos() - NLPos
@@ -425,11 +425,11 @@ const UI_SCROLLBAR_MODE& UITextEdit::getHorizontalScrollMode() {
 	return mHScrollBarMode;
 }
 
-FontStyleConfig UITextEdit::getFontStyleConfig() const {
+UIFontStyleConfig UITextEdit::getFontStyleConfig() const {
 	return mTextInput->getFontStyleConfig();
 }
 
-void UITextEdit::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
+void UITextEdit::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
 	if ( NULL != mTextInput ) {
 		mTextInput->setFontStyleConfig( fontStyleConfig );
 	}

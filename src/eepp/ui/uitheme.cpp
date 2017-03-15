@@ -328,8 +328,8 @@ UITheme::UITheme(const std::string& name, const std::string& Abbr, Graphics::Fon
 	mTextureAtlas( NULL )
 {
 	mFontStyleConfig.Font = defaultFont;
-	mFontStyleConfig.FontShadowColor = ColorA( 255, 255, 255, 200 );
-	mFontStyleConfig.FontColor = mFontStyleConfig.FontOverColor = mFontStyleConfig.FontSelectedColor = ColorA( 0, 0, 0, 255 );
+	mFontStyleConfig.ShadowColor = ColorA( 255, 255, 255, 200 );
+	mFontStyleConfig.Color = mFontStyleConfig.FontOverColor = mFontStyleConfig.FontSelectedColor = ColorA( 0, 0, 0, 255 );
 	mFontStyleConfig.FontSelectionBackColor = ColorA( 150, 150, 150, 255 );
 
 	if ( NULL == defaultFont ) {
@@ -379,47 +379,47 @@ SubTexture * UITheme::getIconByName( const std::string& name ) {
 	return NULL;
 }
 
-void UITheme::setFontStyleConfig(const TooltipStyleConfig & fontConfig) {
+void UITheme::setFontStyleConfig(const UITooltipStyleConfig & fontConfig) {
 	mFontStyleConfig = fontConfig;
 }
 
-TabWidgetStyleConfig UITheme::getTabWidgetStyleConfig() {
-	return TabWidgetStyleConfig( getFontStyleConfig() );
+UITabWidgetStyleConfig UITheme::getTabWidgetStyleConfig() {
+	return UITabWidgetStyleConfig( getFontStyleConfig() );
 }
 
-ProgressBarStyleConfig UITheme::getProgressBarStyleConfig() {
-	return ProgressBarStyleConfig( getFontStyleConfig() );;
+UIProgressBarStyleConfig UITheme::getProgressBarStyleConfig() {
+	return UIProgressBarStyleConfig( getFontStyleConfig() );;
 }
 
-WinMenuStyleConfig UITheme::getWinMenuStyleConfig() {
-	return WinMenuStyleConfig( getFontStyleConfig() );
+UIWinMenuStyleConfig UITheme::getWinMenuStyleConfig() {
+	return UIWinMenuStyleConfig( getFontStyleConfig() );
 }
 
-DropDownListStyleConfig UITheme::getDropDownListStyleConfig() {
-	return DropDownListStyleConfig( getFontStyleConfig() );
+UIDropDownListStyleConfig UITheme::getDropDownListStyleConfig() {
+	return UIDropDownListStyleConfig( getFontStyleConfig() );
 }
 
-WindowStyleConfig UITheme::getWindowStyleConfig() {
-	return WindowStyleConfig( getFontStyleConfig() );
+UIWindowStyleConfig UITheme::getWindowStyleConfig() {
+	return UIWindowStyleConfig( getFontStyleConfig() );
 }
 
-MenuStyleConfig UITheme::getMenuStyleConfig() {
-	return MenuStyleConfig( getFontStyleConfig() );
+UIMenuStyleConfig UITheme::getMenuStyleConfig() {
+	return UIMenuStyleConfig( getFontStyleConfig() );
 }
 
-PushButtonStyleConfig UITheme::getPushButtonStyleConfig() {
-	return PushButtonStyleConfig( getFontStyleConfig() );
+UIPushButtonStyleConfig UITheme::getPushButtonStyleConfig() {
+	return UIPushButtonStyleConfig( getFontStyleConfig() );
 }
 
-SliderStyleConfig UITheme::getSliderStyleConfig() {
-	return SliderStyleConfig();
+UISliderStyleConfig UITheme::getSliderStyleConfig() {
+	return UISliderStyleConfig();
 }
 
-TooltipStyleConfig UITheme::getTooltipStyleConfig() {
-	return TooltipStyleConfig( getFontStyleConfig() );
+UITooltipStyleConfig UITheme::getTooltipStyleConfig() {
+	return UITooltipStyleConfig( getFontStyleConfig() );
 }
 
-TooltipStyleConfig UITheme::getFontStyleConfig() const {
+UITooltipStyleConfig UITheme::getFontStyleConfig() const {
 	return mFontStyleConfig;
 }
 

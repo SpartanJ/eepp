@@ -132,10 +132,10 @@ Text *UITextInputPassword::getPassCache() const {
 	return mPassCache;
 }
 
-void UITextInputPassword::setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig) {
+void UITextInputPassword::setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig) {
 	UITextInput::setFontStyleConfig( fontStyleConfig );
 
-	mPassCache->setCharacterSize( mFontStyleConfig.FontCharacterSize );
+	mPassCache->setCharacterSize( mFontStyleConfig.CharacterSize );
 	mPassCache->setFont( mFontStyleConfig.getFont() );
 	mPassCache->setColor( mFontStyleConfig.getFontColor() );
 	mPassCache->setShadowColor( mFontStyleConfig.getFontShadowColor() );

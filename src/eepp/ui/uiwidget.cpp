@@ -409,9 +409,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 					std::string cur = strings[i];
 					String::toLowerInPlace( cur );
 
-					if ( "draw_shadow" == cur || "drawshadow" == cur ) {
-						setFlags( UI_DRAW_SHADOW );
-					} else if ( "auto_size" == cur || "autosize" == cur ) {
+					if ( "auto_size" == cur || "autosize" == cur ) {
 						setFlags( UI_AUTO_SIZE );
 						notifyLayoutAttrChange();
 					} else if ( "clip" == cur ) {

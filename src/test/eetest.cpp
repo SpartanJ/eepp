@@ -293,7 +293,7 @@ void EETest::createUI() {
 	/**/
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
-	WindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
+	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER;
 	windowStyleConfig.MinWindowSize = Sizei( 530, 405 );
 	windowStyleConfig.BaseAlpha = 200;
@@ -721,6 +721,7 @@ void EETest::createNewUI() {
 		"	</LinearLayout>"
 		"</window>"
 	);
+
 }
 
 void EETest::createMapEditor() {
@@ -729,7 +730,7 @@ void EETest::createMapEditor() {
 
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
-	WindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
+	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER;
 	windowStyleConfig.MinWindowSize = Sizei( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
@@ -746,7 +747,7 @@ void EETest::onMapEditorClose() {
 void EETest::createETGEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
-	WindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
+	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER;
 	windowStyleConfig.MinWindowSize = Sizei( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
