@@ -51,7 +51,7 @@ class tSoundLoader : public ObjectLoader {
 
 		void 					start();
 	private:
-		void 					loadFromPath();
+		void 					loadFromFile();
 		void					loadFromMemory();
 		void					loadFromPack();
 		void 					loadFromSamples();
@@ -61,7 +61,7 @@ template <typename T>
 tSoundLoader<T>::tSoundLoader( tSoundManager<T> * SndMngr,
 	const T& id,
 	const std::string& filepath
-) : ObjectLoader( ObjectLoader::SoundLoaderType ),
+) : ObjectLoader( ObjectLoader::SoundLoader ),
 	mLoadType(SND_LT_PATH),
 	mSndMngr(SndMngr),
 	mId(id),
@@ -74,7 +74,7 @@ tSoundLoader<T>::tSoundLoader( tSoundManager<T> * SndMngr,
 	const T& id,
 	const char * Data,
 	std::size_t SizeInBytes
-) : ObjectLoader( ObjectLoader::SoundLoaderType ),
+) : ObjectLoader( ObjectLoader::SoundLoader ),
 	mLoadType(SND_LT_MEM),
 	mSndMngr(SndMngr),
 	mId(id),
@@ -90,7 +90,7 @@ tSoundLoader<T>::tSoundLoader( tSoundManager<T> * SndMngr,
 	std::size_t SamplesCount,
 	unsigned int ChannelCount,
 	unsigned int SampleRate
-) : ObjectLoader( ObjectLoader::SoundLoaderType ),
+) : ObjectLoader( ObjectLoader::SoundLoader ),
 	mLoadType(SND_LT_SAMPLES),
 	mSndMngr(SndMngr),
 	mId(id),
@@ -105,7 +105,7 @@ template <typename T>
 tSoundLoader<T>::tSoundLoader( tSoundManager<T> * SndMngr,
 	const T& id, Pack* Pack,
 	const std::string& FilePackPath
-) : ObjectLoader( ObjectLoader::SoundLoaderType ),
+) : ObjectLoader( ObjectLoader::SoundLoader ),
 	mLoadType(SND_LT_PACK),
 	mSndMngr(SndMngr),
 	mId(id),
@@ -124,7 +124,7 @@ void tSoundLoader<T>::start() {
 		ObjectLoader::start();
 
 		if ( SND_LT_PATH == mLoadType )
-			loadFromPath();
+			loadFromFile();
 		else if ( SND_LT_MEM == mLoadType )
 			loadFromMemory();
 		else if ( SND_LT_PACK == mLoadType )
@@ -137,7 +137,7 @@ void tSoundLoader<T>::start() {
 }
 
 template <typename T>
-void tSoundLoader<T>::loadFromPath() {
+void tSoundLoader<T>::loadFromFile() {
 	mSndMngr->loadFromFile( mId, mFilepath );
 }
 

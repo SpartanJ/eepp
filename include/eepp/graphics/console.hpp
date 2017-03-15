@@ -5,6 +5,7 @@
 #include <eepp/window/inputtextbuffer.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/font.hpp>
+#include <eepp/graphics/text.hpp>
 #include <deque>
 
 namespace EE { namespace Window { class Window; class InputTextBuffer; class InputEvent; } }
@@ -39,7 +40,9 @@ class EE_API Console : protected LogReaderInterface {
 		Uint32 getBackgroundTextureId() const { return mTexId; }
 
 		/** Set the Console Background Color */
-		void setBackgroundColor( const ColorA& BackColor ) { mConColor = BackColor; }
+		void setBackgroundColor( const ColorA& BackColor ) { mConColor = BackColor; mMaxAlpha = mConColor.a(); }
+
+		void setCharacterSize( const Uint32& characterSize );
 
 		/** Get the Console Background Color */
 		const ColorA& getBackgroundColor() const { return mConColor; }
@@ -90,7 +93,7 @@ class EE_API Console : protected LogReaderInterface {
 		* @param Font The Font pointer to class
 		* @param MakeDefaultCommands Register the default commands provided by the class?
 		* @param AttachToLog Attach the console to the Log instance
-		* @param MaxLogLines Maximun number of lines stored on the console
+		* @param MaxLogLines Maximum number of lines stored on the console
 		* @param TextureId Background texture id ( 0 for no texture )
 		*/
 		void create( Font* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const unsigned int& MaxLogLines = 1024, const Uint32& textureId = 0 );
@@ -121,6 +124,8 @@ class EE_API Console : protected LogReaderInterface {
 
 		/** Activate/Deactive fps rendering */
 		void showFps( const bool& Show );
+
+		Text& getTextCache();
 	protected:
 		std::map < String, ConsoleCallback > mCallbacks;
 		std::deque < String > mCmdLog;
@@ -165,7 +170,7 @@ class EE_API Console : protected LogReaderInterface {
 		sCon mCon;
 
 		Float mCurAlpha;
-
+		Text mTextCache;
 		bool mEnabled;
 		bool mVisible;
 		bool mFadeIn;

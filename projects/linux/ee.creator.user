@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.2.0, 2017-03-07T21:37:36. -->
+<!-- Written by QtCreator 4.2.0, 2017-03-14T12:05:07. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -161,7 +161,7 @@
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
-      <value type="QString" key="ProjectExplorer.ProcessStep.Arguments">--with-static-backend --with-ssl --with-backend=SDL2,SFML gmake</value>
+      <value type="QString" key="ProjectExplorer.ProcessStep.Arguments">--with-static-backend --with-static-freetype --with-ssl --with-backend=SDL2,SFML gmake</value>
       <value type="QString" key="ProjectExplorer.ProcessStep.Command">premake4</value>
       <value type="QString" key="ProjectExplorer.ProcessStep.WorkingDirectory">%{buildDir}../../../</value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">Custom Process Step</value>

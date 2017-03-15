@@ -63,11 +63,13 @@ class EE_API UISlider : public UIWidget {
 		Float getPageStep() const;
 
 		void setPageStep( const Float & pageStep );
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		friend class Private::UISliderButton;
 
 		UI_ORIENTATION		mOrientation;
-		SliderStyleConfig	mStyleConfig;
+		UISliderStyleConfig	mStyleConfig;
 		UIControlAnim *		mBackSlider;
 		Private::UISliderButton * 	mSlider;
 		Float				mMinValue;

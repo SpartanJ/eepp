@@ -99,8 +99,8 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		std::string AppPath = Sys::getProcessPath();
 
 		// Load the rock texture
-		Uint32 PlanetId	= TextureFactory::instance()->load( AppPath + "assets/sprites/7.png" );
-		Uint32 RockId	= TextureFactory::instance()->load( AppPath + "assets/sprites/5.png" );
+		Uint32 PlanetId	= TextureFactory::instance()->loadFromFile( AppPath + "assets/sprites/7.png" );
+		Uint32 RockId	= TextureFactory::instance()->loadFromFile( AppPath + "assets/sprites/5.png" );
 
 		// Load a previously generated texture atlas that contains the SubTextures needed to load an animated sprite
 		TextureAtlasLoader Blindies( AppPath + "assets/atlases/bnb.eta" );

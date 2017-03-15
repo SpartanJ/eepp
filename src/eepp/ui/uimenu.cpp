@@ -59,7 +59,7 @@ void UIMenu::onThemeLoaded() {
 }
 
 UIMenuItem * UIMenu::createMenuItem( const String& Text, SubTexture * Icon ) {
-	PushButtonStyleConfig styleConfig( mStyleConfig );
+	UIPushButtonStyleConfig styleConfig( mStyleConfig );
 	styleConfig.IconMinSize = Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
 	UIMenuItem * tCtrl 	= UIMenuItem::New();
@@ -77,7 +77,7 @@ Uint32 UIMenu::add( const String& Text, SubTexture * Icon ) {
 }
 
 UIMenuCheckBox * UIMenu::createMenuCheckBox( const String& Text, const bool &Active ) {
-	PushButtonStyleConfig styleConfig( mStyleConfig );
+	UIPushButtonStyleConfig styleConfig( mStyleConfig );
 	styleConfig.IconMinSize = Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
 	UIMenuCheckBox * tCtrl 	= UIMenuCheckBox::New();
@@ -97,7 +97,7 @@ Uint32 UIMenu::addCheckBox( const String& Text, const bool& Active ) {
 }
 
 UIMenuSubMenu * UIMenu::createSubMenu( const String& Text, SubTexture * Icon, UIMenu * SubMenu ) {
-	PushButtonStyleConfig styleConfig( mStyleConfig );
+	UIPushButtonStyleConfig styleConfig( mStyleConfig );
 	styleConfig.IconMinSize = Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
 	UIMenuSubMenu * tCtrl 	= UIMenuSubMenu::New();
@@ -517,11 +517,11 @@ void UIMenu::setMinRightMargin(const Uint32 & minRightMargin) {
 	rePosControls();
 }
 
-TooltipStyleConfig UIMenu::getFontStyleConfig() const {
+UITooltipStyleConfig UIMenu::getFontStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UIMenu::setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig) {
+void UIMenu::setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig) {
 	mStyleConfig = fontStyleConfig;
 }
 

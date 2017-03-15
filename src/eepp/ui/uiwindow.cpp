@@ -1,6 +1,7 @@
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>
@@ -915,7 +916,7 @@ const Uint8& UIWindow::getBaseAlpha() const {
 	return mStyleConfig.BaseAlpha;
 }
 
-void UIWindow::setTitle( const String& Text ) {
+void UIWindow::setTitle( const String& text ) {
 	if ( NULL == mTitle ) {
 		mTitle = UITextView::New();
 		mTitle->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
@@ -924,8 +925,11 @@ void UIWindow::setTitle( const String& Text ) {
 		mTitle->setVerticalAlign( getVerticalAlign() );
 		mTitle->setFontColor( mStyleConfig.TitleFontColor );
 
-		if ( mFlags & UI_DRAW_SHADOW )
-			mTitle->setFlags( UI_DRAW_SHADOW );
+		if ( mStyleConfig.Style & Text::Shadow ) {
+			UIFontStyleConfig fsc = mTitle->getFontStyleConfig();
+			fsc.Style |= Text::Shadow;
+			mTitle->setFontStyleConfig( fsc );
+		}
 
 		mTitle->setEnabled( false );
 		mTitle->setVisible( true );
@@ -933,7 +937,7 @@ void UIWindow::setTitle( const String& Text ) {
 
 	fixTitleSize();
 
-	mTitle->setText( Text );
+	mTitle->setText( text );
 }
 
 void UIWindow::fixTitleSize() {
@@ -1041,11 +1045,11 @@ UIWindow * UIWindow::setWinFlags(const Uint32 & winFlags) {
 	return this;
 }
 
-WindowStyleConfig UIWindow::getStyleConfig() const {
+UIWindowStyleConfig UIWindow::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-UIWindow * UIWindow::setStyleConfig(const WindowStyleConfig & styleConfig) {
+UIWindow * UIWindow::setStyleConfig(const UIWindowStyleConfig & styleConfig) {
 	mStyleConfig = styleConfig;
 
 	updateWinFlags();

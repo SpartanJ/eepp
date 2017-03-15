@@ -55,7 +55,7 @@ Uint32 TextureFactory::loadFromStream( IOStream& Stream, const bool& Mipmap, con
 	return myTex.getId();
 }
 
-Uint32 TextureFactory::load( const std::string& Filepath, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+Uint32 TextureFactory::loadFromFile( const std::string& Filepath, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
 	TextureLoader myTex( Filepath, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 	myTex.load();
 	return myTex.getId();

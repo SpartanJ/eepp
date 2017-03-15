@@ -31,6 +31,8 @@ class EE_API UIRadioButton : public UITextView {
 		Int32 getTextSeparation() const;
 
 		void setTextSeparation(const Int32 & textSeparation);
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		UIControlAnim *	mActiveButton;
 		UIControlAnim *	mInactiveButton;

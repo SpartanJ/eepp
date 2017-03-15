@@ -66,7 +66,7 @@ class EE_API TextureAtlasLoader {
 		*	If the loader is not threaded, it will load the atlas immediately.
 		*	@param TextureAtlasPath The texture atlas path.
 		*/
-		void					load( const std::string& TextureAtlasPath = "" );
+		void					loadFromFile( const std::string& TextureAtlasPath = "" );
 
 		/** Loads a texture atlas from a io stream.
 		*	If the loader is not threaded, it will load the atlas immediately.

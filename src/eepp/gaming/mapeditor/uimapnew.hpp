@@ -3,6 +3,9 @@
 
 #include <eepp/gaming/base.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#include <eepp/ui/uispinbox.hpp>
+#include <eepp/ui/uicheckbox.hpp>
+#include <eepp/ui/uislider.hpp>
 #include <eepp/gaming/mapeditor/uimap.hpp>
 
 using namespace EE::UI;

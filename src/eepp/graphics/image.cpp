@@ -548,7 +548,7 @@ void Image::fillWithColor( const ColorA& Color ) {
 }
 
 void Image::copyImage( Graphics::Image * image, const Uint32& x, const Uint32& y ) {
-	if ( NULL != mPixels && NULL != image->getPixels() && mWidth >= x + image->getWidth() && mHeight >= y + image->getHeight() ) {
+	if ( NULL != mPixels && NULL != image->getPixelsPtr() && mWidth >= x + image->getWidth() && mHeight >= y + image->getHeight() ) {
 		unsigned int dWidth 	= image->getWidth();
 		unsigned int dHeight 	= image->getHeight();
 
@@ -572,7 +572,6 @@ void Image::copyImage( Graphics::Image * image, const Uint32& x, const Uint32& y
 
 void Image::resize( const Uint32 &newWidth, const Uint32 &newHeight , EE_RESAMPLER_FILTER filter ) {
 	if ( NULL != mPixels && mWidth != newWidth && mHeight != newHeight ) {
-
 		unsigned char * resampled = resample_image( mPixels, mWidth, mHeight, mChannels, newWidth, newHeight, filter );
 
 		if ( NULL != resampled ) {

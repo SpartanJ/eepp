@@ -240,6 +240,12 @@ void UIScrollBar::setExpandBackground( bool expandBackground ) {
 	adjustChilds();
 }
 
+void UIScrollBar::loadFromXmlNode(const pugi::xml_node & node) {
+	UIWidget::loadFromXmlNode( node );
+
+	mSlider->loadFromXmlNode( node );
+}
+
 UI_ORIENTATION UIScrollBar::getOrientation() const {
 	return mSlider->getOrientation();
 }

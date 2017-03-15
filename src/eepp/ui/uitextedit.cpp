@@ -1,6 +1,6 @@
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uimanager.hpp>
-#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>
 
@@ -345,7 +345,8 @@ void UITextEdit::fixScrollToCursor() {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum = mTextInput->getInputTextBuffer()->getCurPosLinePos( NLPos );
 
-		mTextInput->getTextCache()->getFont()->setText(
+		Text textCache( mTextInput->getFont(), mTextInput->getFontStyleConfig().CharacterSize );
+		textCache.setString(
 			mTextInput->getInputTextBuffer()->getBuffer().substr(
 				NLPos, mTextInput->getInputTextBuffer()->getCursorPos() - NLPos
 			)
@@ -353,8 +354,8 @@ void UITextEdit::fixScrollToCursor() {
 
 		mSkipValueChange = true;
 
-		Float tW	= mTextInput->getTextCache()->getFont()->getTextWidth();
-		Float tH	= (Float)(LineNum + 1) * (Float)mTextInput->getTextCache()->getFont()->getFontHeight();
+		Float tW	= textCache.getTextWidth();
+		Float tH	= (Float)(LineNum + 1) * (Float)textCache.getFont()->getLineSpacing( textCache.getCharacterSizePx() );
 
 		if ( tW > Width ) {
 			mTextInput->setPixelsPosition( mContainerPadding.Left + Width - tW, mTextInput->getRealPosition().y );
@@ -424,11 +425,11 @@ const UI_SCROLLBAR_MODE& UITextEdit::getHorizontalScrollMode() {
 	return mHScrollBarMode;
 }
 
-FontStyleConfig UITextEdit::getFontStyleConfig() const {
+UIFontStyleConfig UITextEdit::getFontStyleConfig() const {
 	return mTextInput->getFontStyleConfig();
 }
 
-void UITextEdit::setFontStyleConfig(const FontStyleConfig & fontStyleConfig) {
+void UITextEdit::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
 	if ( NULL != mTextInput ) {
 		mTextInput->setFontStyleConfig( fontStyleConfig );
 	}

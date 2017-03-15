@@ -55,13 +55,29 @@ class EE_API UIPushButton : public UIWidget {
 
 		void setFontShadowColor( const ColorA& color );
 
-		TooltipStyleConfig getStyleConfig() const;
+		Uint32 getCharacterSize();
 
-		void setStyleConfig(const PushButtonStyleConfig & styleConfig);
+		void setCharacterSize( const Uint32& characterSize );
+
+		const Uint32& getFontStyle() const;
+
+		UIPushButton * setFontStyle( const Uint32& fontStyle );
+
+		const Float & getOutlineThickness() const;
+
+		UIPushButton * setOutlineThickness( const Float& outlineThickness );
+
+		const ColorA& getOutlineColor() const;
+
+		UIPushButton * setOutlineColor( const ColorA& outlineColor );
+
+		UITooltipStyleConfig getStyleConfig() const;
+
+		void setStyleConfig(const UIPushButtonStyleConfig & styleConfig);
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
-		PushButtonStyleConfig mStyleConfig;
+		UIPushButtonStyleConfig mStyleConfig;
 		UIImage * 		mIcon;
 		UITextView * 	mTextBox;
 

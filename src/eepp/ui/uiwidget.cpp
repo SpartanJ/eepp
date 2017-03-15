@@ -346,21 +346,21 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 		if ( "id" == name ) {
 			setId( ait->value() );
 		} else if ( "x" == name ) {
-			setInternalPosition( Vector2i( ait->as_int(), mPos.y ) );
+			setInternalPosition( Vector2i( PixelDensity::toDpFromStringI( ait->as_string() ), mPos.y ) );
 		} else if ( "y" == name ) {
-			setInternalPosition( Vector2i( mPos.x, ait->as_int() ) );
+			setInternalPosition( Vector2i( mPos.x, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
 		} else if ( "width" == name ) {
-			setInternalWidth( ait->as_int() );
+			setInternalWidth( PixelDensity::toDpFromStringI( ait->as_string() ) );
 			notifyLayoutAttrChange();
 		} else if ( "height" == name ) {
-			setInternalHeight( ait->as_int() );
+			setInternalHeight( PixelDensity::toDpFromStringI( ait->as_string() ) );
 			notifyLayoutAttrChange();
 		} else if ( "backgroundcolor" == name ) {
 			setBackgroundFillEnabled( true )->setColor( ColorA::fromString( ait->as_string() ) );
 		} else if ( "bordercolor" == name ) {
 			setBorderEnabled( true )->setColor( ColorA::fromString( ait->as_string() ) );
 		} else if ( "borderwidth" == name ) {
-			setBorderEnabled( true )->setWidth( ait->as_uint(1) );
+			setBorderEnabled( true )->setWidth( PixelDensity::toDpFromStringI( ait->as_string("1") ) );
 		} else if ( "visible" == name ) {
 			setVisible( ait->as_bool() );
 		} else if ( "enabled" == name ) {
@@ -409,9 +409,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 					std::string cur = strings[i];
 					String::toLowerInPlace( cur );
 
-					if ( "draw_shadow" == cur || "drawshadow" == cur ) {
-						setFlags( UI_DRAW_SHADOW );
-					} else if ( "auto_size" == cur || "autosize" == cur ) {
+					if ( "auto_size" == cur || "autosize" == cur ) {
 						setFlags( UI_AUTO_SIZE );
 						notifyLayoutAttrChange();
 					} else if ( "clip" == cur ) {
@@ -429,16 +427,16 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 				}
 			}
 		} else if ( "layout_margin" == name ) {
-			int val = ait->as_int();
+			int val = PixelDensity::toDpFromStringI( ait->as_string() );
 			setLayoutMargin( Recti( val, val, val, val ) );
 		} else if ( "layout_marginleft" == name ) {
-			setLayoutMargin( Recti( ait->as_int(), mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) );
+			setLayoutMargin( Recti( PixelDensity::toDpFromStringI( ait->as_string() ), mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) );
 		} else if ( "layout_marginright" == name ) {
-			setLayoutMargin( Recti( mLayoutMargin.Left, mLayoutMargin.Top, ait->as_int(), mLayoutMargin.Bottom ) );
+			setLayoutMargin( Recti( mLayoutMargin.Left, mLayoutMargin.Top, PixelDensity::toDpFromStringI( ait->as_string() ), mLayoutMargin.Bottom ) );
 		} else if ( "layout_margintop" == name ) {
-			setLayoutMargin( Recti( mLayoutMargin.Left, ait->as_int(), mLayoutMargin.Right, mLayoutMargin.Bottom ) );
+			setLayoutMargin( Recti( mLayoutMargin.Left, PixelDensity::toDpFromStringI( ait->as_string() ), mLayoutMargin.Right, mLayoutMargin.Bottom ) );
 		} else if ( "layout_marginbottom" == name ) {
-			setLayoutMargin( Recti( mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, ait->as_int() ) );
+			setLayoutMargin( Recti( mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
 		} else if ( "tooltip" == name ) {
 			setTooltipText( ait->as_string() );
 		} else if ( "layout_weight" == name ) {
@@ -483,6 +481,9 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 				setLayoutWidthRules( WRAP_CONTENT );
 			} else if ( "fixed" == val ) {
 				setLayoutWidthRules( FIXED );
+			} else {
+				setLayoutWidthRules( FIXED );
+				setInternalWidth( PixelDensity::toDpFromStringI( val ) );
 			}
 		} else if ( "layout_height" == name ) {
 			std::string val = ait->as_string();
@@ -494,6 +495,9 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 				setLayoutHeightRules( WRAP_CONTENT );
 			} else if ( "fixed" == val ) {
 				setLayoutHeightRules( FIXED );
+			} else {
+				setLayoutHeightRules( FIXED );
+				setInternalHeight( PixelDensity::toDpFromStringI( val ) );
 			}
 		} else if ( String::startsWith( name, "layout_to_" ) || String::startsWith( name, "layoutto" ) ) {
 			LayoutPositionRules rule = NONE;

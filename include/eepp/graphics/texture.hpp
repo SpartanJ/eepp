@@ -11,6 +11,8 @@ namespace EE { namespace Graphics {
 
 class EE_API Texture : public Image, private NonCopyable {
 	public:
+		static Uint32 getMaximumSize();
+
 		/** Set the OpenGL Texture Id (texture handle) */
 		void setHandle( const int& texture ) { mTexture = texture; }
 
@@ -123,6 +125,9 @@ class EE_API Texture : public Image, private NonCopyable {
 		**	@param x X offset in the texture where to copy the source image
 		**	@param y Y offset in the texture where to copy the source image */
 		void update( Image * image, Uint32 x = 0, Uint32 y = 0 );
+
+		/** Replaces the current texture with the image provided, reusing the current texture id. */
+		void replace( Image * image );
 
 		/** Flip the texture ( rotate the texture 90º ). Warning: This is flipped in memory, a real flipping. */
 		void flip();

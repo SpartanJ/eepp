@@ -4,7 +4,7 @@
 #include <eepp/graphics/renderer/gl.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/font.hpp>
-#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -92,7 +92,7 @@ void UITextInput::drawWaitingCursor() {
 				GLi->lineSmooth( false );
 
 			Primitives P;
-			P.setColor( mFontStyleConfig.FontColor );
+			P.setColor( mFontStyleConfig.Color );
 
 			Float CurPosX = mScreenPos.x + mRealAlignOffset.x + mCurPos.x + PixelDensity::dpToPxI( 1.f ) + mRealPadding.Left;
 			Float CurPosY = mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mRealPadding.Top;
@@ -100,7 +100,7 @@ void UITextInput::drawWaitingCursor() {
 			if ( CurPosX > (Float)mScreenPos.x + (Float)mRealSize.x )
 				CurPosX = (Float)mScreenPos.x + (Float)mRealSize.x;
 
-			P.drawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->getFont()->getFontHeight() ) ) );
+			P.drawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->getFont()->getLineSpacing( mTextCache->getCharacterSizePx() ) ) ) );
 
 			if ( disableSmooth )
 				GLi->lineSmooth( true );
@@ -159,13 +159,15 @@ void UITextInput::alignFix() {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
 
-		mTextCache->getFont()->setText( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPos() - NLPos ) );
+		Text textCache( mTextCache->getFont(), mTextCache->getCharacterSize() );
 
-		Float tW	= mTextCache->getFont()->getTextWidth();
+		textCache.setString( mTextBuffer.getBuffer().substr( NLPos, mTextBuffer.getCursorPos() - NLPos ) );
+
+		Float tW	= textCache.getTextWidth();
 		Float tX	= mRealAlignOffset.x + tW;
 
 		mCurPos.x	= tW;
-		mCurPos.y	= (Float)LineNum * (Float)mTextCache->getFont()->getFontHeight();
+		mCurPos.y	= (Float)LineNum * (Float)mTextCache->getFont()->getLineSpacing( mTextCache->getCharacterSizePx() );
 
 		if ( !mTextBuffer.setSupportNewLine() ) {
 			if ( tX < 0.f )
@@ -237,11 +239,11 @@ const String& UITextInput::getText() {
 }
 
 void UITextInput::shrinkText( const Uint32& MaxWidth ) {
-	mTextCache->setText( mTextBuffer.getBuffer() );
+	mTextCache->setString( mTextBuffer.getBuffer() );
 
 	UITextView::shrinkText( MaxWidth );
 
-	mTextBuffer.setBuffer( mTextCache->getText() );
+	mTextBuffer.setBuffer( mTextCache->getString() );
 
 	alignFix();
 }
@@ -255,7 +257,7 @@ Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 		worldToControl( controlPos );
 		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mRealAlignOffset.x, (Int32)mRealAlignOffset.y );
 
-		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), controlPos );
+		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getString(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), controlPos );
 
 		if ( -1 != curPos ) {
 			mTextBuffer.setCursorPos( curPos );

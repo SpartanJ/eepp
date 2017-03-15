@@ -1,7 +1,7 @@
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uiwidget.hpp>
-#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/text.hpp>
 
 namespace EE { namespace UI {
 
@@ -17,7 +17,7 @@ UITooltip::UITooltip() :
 {
 	setFlags( UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
 
-	mTextCache = eeNew( TextCache, () );
+	mTextCache = eeNew( Text, () );
 
 	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
 
@@ -90,7 +90,7 @@ void UITooltip::hide() {
 }
 
 void UITooltip::draw() {
-	if ( mVisible && 0.f != mAlpha && mTextCache->getText().size() > 0 ) {
+	if ( mVisible && 0.f != mAlpha && mTextCache->getString().size() > 0 ) {
 		UIControlAnim::draw();
 
 		if ( mTextCache->getTextWidth() ) {
@@ -115,11 +115,11 @@ void UITooltip::setFont( Graphics::Font * font ) {
 }
 
 const String& UITooltip::getText() {
-	return mTextCache->getText();
+	return mTextCache->getString();
 }
 
 void UITooltip::setText( const String& text ) {
-	mTextCache->setText( text );
+	mTextCache->setString( text );
 	autoPadding();
 	onAutoSize();
 	autoAlign();
@@ -127,31 +127,31 @@ void UITooltip::setText( const String& text ) {
 }
 
 const ColorA& UITooltip::getFontColor() const {
-	return mStyleConfig.FontColor;
+	return mStyleConfig.Color;
 }
 
 void UITooltip::setFontColor( const ColorA& color ) {
-	mStyleConfig.FontColor = color;
-	mTextCache->setColor( mStyleConfig.FontColor );
+	mStyleConfig.Color = color;
+	mTextCache->setColor( mStyleConfig.Color );
 	setAlpha( color.a() );
 }
 
 const ColorA& UITooltip::getFontShadowColor() const {
-	return mStyleConfig.FontShadowColor;
+	return mStyleConfig.ShadowColor;
 }
 
 void UITooltip::setFontShadowColor( const ColorA& color ) {
-	mStyleConfig.FontShadowColor = color;
+	mStyleConfig.ShadowColor = color;
 	setAlpha( color.a() );
-	mTextCache->setShadowColor( mStyleConfig.FontShadowColor );
+	mTextCache->setShadowColor( mStyleConfig.ShadowColor );
 }
 
 void UITooltip::setAlpha( const Float& alpha ) {
 	UIControlAnim::setAlpha( alpha );
-	mStyleConfig.FontColor.Alpha = (Uint8)alpha;
-	mStyleConfig.FontShadowColor.Alpha = (Uint8)alpha;
+	mStyleConfig.Color.Alpha = (Uint8)alpha;
+	mStyleConfig.ShadowColor.Alpha = (Uint8)alpha;
 
-	mTextCache->setColor( mStyleConfig.FontColor );
+	mTextCache->setColor( mStyleConfig.Color );
 }
 
 void UITooltip::onAutoSize() {
@@ -219,7 +219,7 @@ const Recti& UITooltip::getPadding() const {
 	return mStyleConfig.Padding;
 }
 
-TextCache * UITooltip::getTextCache() {
+Text * UITooltip::getTextCache() {
 	return mTextCache;
 }
 
@@ -259,19 +259,23 @@ void UITooltip::setTooltipOf(UIControl * tooltipOf) {
 	mTooltipOf = tooltipOf;
 }
 
-TooltipStyleConfig UITooltip::getStyleConfig() const {
+UITooltipStyleConfig UITooltip::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UITooltip::setStyleConfig(const TooltipStyleConfig & styleConfig) {
+void UITooltip::setStyleConfig(const UITooltipStyleConfig & styleConfig) {
 	mStyleConfig = styleConfig;
 
 	if ( mStyleConfig.Padding != Recti() )
 		setPadding( mStyleConfig.Padding );
 
 	setFont( mStyleConfig.Font );
-	setFontColor( mStyleConfig.FontColor );
-	setFontShadowColor( mStyleConfig.FontShadowColor );
+	setFontColor( mStyleConfig.Color );
+	setFontShadowColor( mStyleConfig.ShadowColor );
+	mTextCache->setCharacterSize( mStyleConfig.CharacterSize );
+	mTextCache->setStyle( mStyleConfig.Style );
+	mTextCache->setOutlineThickness( mStyleConfig.OutlineThickness );
+	mTextCache->setOutlineColor( mStyleConfig.OutlineColor );
 }
 
 }}

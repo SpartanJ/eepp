@@ -11,6 +11,10 @@ class EE_API UIRelativeLayout : public UIWidget {
 
 		UIRelativeLayout();
 
+		virtual Uint32 getType() const;
+
+		virtual bool isType( const Uint32& type ) const;
+
 		UIRelativeLayout * add( UIWidget * widget );
 	protected:
 		virtual Uint32 onMessage(const UIMessage * Msg);

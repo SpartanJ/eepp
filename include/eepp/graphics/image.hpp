@@ -184,7 +184,7 @@ class EE_API Image {
 		bool			mAvoidFree;
 		bool			mLoadedFromStbi;
 
-		void 			allocate( const Uint32& getSize, ColorA DefaultColor = ColorA(0,0,0,0), bool memsetData = true );
+		void 			allocate( const Uint32& size, ColorA DefaultColor = ColorA(0,0,0,0), bool memsetData = true );
 
 		void			loadFromPack( Pack * Pack, const std::string& FilePackPath );
 };

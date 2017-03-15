@@ -35,6 +35,8 @@ UIWidget * UIHelper::createUIWidgetFromName( std::string name ) {
 		return UILinearLayout::NewHorizontal();
 	} else if ( name == "linearlayout" || name == "verticallinearlayout" || name == "vll" ) {
 		return UILinearLayout::NewVertical();
+	} else if ( name == "relativelayout" ) {
+		return UIRelativeLayout::New();
 	} else if ( name == "textview" ) {
 		return UITextView::New();
 	} else if ( name == "pushbutton" ) {

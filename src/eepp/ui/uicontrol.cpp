@@ -637,7 +637,7 @@ EE_BLEND_MODE UIControl::getBlendMode() {
 }
 
 void UIControl::toFront() {
-	if ( NULL != mParentCtrl ) {
+	if ( NULL != mParentCtrl && mParentCtrl->mChildLast != this ) {
 		mParentCtrl->childRemove( this );
 		mParentCtrl->childAdd( this );
 	}

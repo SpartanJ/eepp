@@ -1,4 +1,5 @@
 #include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/core/string.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -86,6 +87,41 @@ Vector2f PixelDensity::dpToPx( Vector2f pos ) {
 
 Vector2f PixelDensity::pxToDp( Vector2f pos ) {
 	return Vector2f( pxToDp( pos.x ), pxToDp( pos.y ) );
+}
+
+Float PixelDensity::toDpFromString( const std::string& str ) {
+	std::string num;
+	std::string unit;
+
+	for ( std::size_t i = 0; i < str.size(); i++ ) {
+		if ( String::isNumber( str[i], true ) ) {
+			num += str[i];
+		} else {
+			unit = str.substr( i );
+			break;
+		}
+	}
+
+	if ( num.size() ) {
+		Float val = 0;
+		bool res = String::fromString<Float>( val, num );
+
+		if ( res ) {
+			if ( unit == "dp" || unit == "dip" ) {
+				return val;
+			} else if ( unit == "px" ) {
+				return pxToDp( val );
+			} else {
+				return val;
+			}
+		}
+	}
+
+	return 0;
+}
+
+Float PixelDensity::toDpFromStringI( const std::string& str ) {
+	return (Int32)toDpFromString( str );
 }
 
 }}

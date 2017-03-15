@@ -42,9 +42,6 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 
 	UISelectButton * Button = UISelectButton::New();
 
-	if ( mFlags & UI_DRAW_SHADOW )
-		Button->setFlags( UI_DRAW_SHADOW );
-
 	Button->setStyleConfig( mStyleConfig );
 	Button->setParent( this );
 	Button->setText( ButtonText );
@@ -123,20 +120,20 @@ void UIWinMenu::setMarginBetweenButtons(const Uint32 & marginBetweenButtons) {
 	refreshButtons();
 }
 
-TooltipStyleConfig UIWinMenu::getFontStyleConfig() const {
-	return TooltipStyleConfig(mStyleConfig);
+UITooltipStyleConfig UIWinMenu::getFontStyleConfig() const {
+	return UITooltipStyleConfig(mStyleConfig);
 }
 
-void UIWinMenu::setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig) {
+void UIWinMenu::setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig) {
 	mStyleConfig = fontStyleConfig;
 	refreshButtons();
 }
 
-WinMenuStyleConfig UIWinMenu::getStyleConfig() const {
+UIWinMenuStyleConfig UIWinMenu::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UIWinMenu::setStyleConfig(const WinMenuStyleConfig & styleConfig) {
+void UIWinMenu::setStyleConfig(const UIWinMenuStyleConfig & styleConfig) {
 	mStyleConfig = styleConfig;
 	refreshButtons();
 }

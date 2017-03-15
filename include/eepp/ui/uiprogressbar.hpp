@@ -39,7 +39,7 @@ class EE_API UIProgressBar : public UIWidget {
 
 		const bool& getVerticalExpand() const;
 
-		void setFillerPadding( const Rectf& margin );
+		void setFillerPadding( const Rectf& padding );
 
 		const Rectf& getFillerPadding() const;
 
@@ -48,8 +48,10 @@ class EE_API UIProgressBar : public UIWidget {
 		const bool& getDisplayPercent() const;
 		
 		UITextView * getTextBox() const;
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
-		ProgressBarStyleConfig mStyleConfig;
+		UIProgressBarStyleConfig mStyleConfig;
 		Float				mProgress;
 		Float				mTotalSteps;
 		ScrollParallax *	mParallax;

@@ -120,9 +120,9 @@ class EE_API UIListBox : public UIWidget {
 
 		void setTouchDragDeceleration(const Float & touchDragDeceleration);
 
-		FontStyleConfig getFontStyleConfig() const;
+		UIFontStyleConfig getFontStyleConfig() const;
 
-		void setFontStyleConfig(const FontStyleConfig & fontStyleConfig);
+		void setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig);
 
 		void loadFromXmlNode(const pugi::xml_node & node);
 	protected:
@@ -130,7 +130,7 @@ class EE_API UIListBox : public UIWidget {
 		friend class UIItemContainer<UIListBox>;
 		friend class UIDropDownList;
 
-		FontStyleConfig		mFontStyleConfig;
+		UIFontStyleConfig		mFontStyleConfig;
 		Uint32 				mRowHeight;
 		UI_SCROLLBAR_MODE	mVScrollMode;
 		UI_SCROLLBAR_MODE	mHScrollMode;

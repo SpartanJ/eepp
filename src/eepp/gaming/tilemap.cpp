@@ -840,7 +840,7 @@ bool TileMap::loadFromStream( IOStream& IOS ) {
 					if ( NULL == TextureAtlasManager::instance()->getByName( sgname ) ) {
 						TextureAtlasLoader * tgl = eeNew( TextureAtlasLoader, () );
 
-						tgl->load( Sys::getProcessPath() + TextureAtlases[i] );
+						tgl->loadFromFile( Sys::getProcessPath() + TextureAtlases[i] );
 
 						eeSAFE_DELETE( tgl );
 					}
@@ -1038,7 +1038,7 @@ const std::string& TileMap::getPath() const {
 	return mPath;
 }
 
-bool TileMap::load( const std::string& path ) {
+bool TileMap::loadFromFile( const std::string& path ) {
 	if ( FileSystem::fileExists( path ) ) {
 		mPath = path;
 

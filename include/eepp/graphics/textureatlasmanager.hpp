@@ -16,7 +16,7 @@ class EE_API TextureAtlasManager : public ResourceManager<TextureAtlas> {
 		virtual ~TextureAtlasManager();
 
 		/** Loads a texture atlas from its path ( the texture atlas binary is expected, not the texture, the ".eta" file ). */
-		TextureAtlas * load( const std::string& TextureAtlasPath );
+		TextureAtlas * loadFromFile( const std::string& TextureAtlasPath );
 
 		/** Loads a texture atlas from a io stream. */
 		TextureAtlas * loadFromStream( IOStream& IOS );

@@ -1,7 +1,6 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
-#include <eepp/graphics/textcache.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/window/clipboard.hpp>
@@ -22,10 +21,14 @@ UITextView::UITextView() :
 {
 	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 
-	mTextCache = eeNew( TextCache, () );
+	mTextCache = eeNew( Text, () );
 	mTextCache->setFont( mFontStyleConfig.Font );
-	mTextCache->setColor( mFontStyleConfig.FontColor );
-	mTextCache->setShadowColor( mFontStyleConfig.FontShadowColor );
+	mTextCache->setCharacterSize( mFontStyleConfig.CharacterSize );
+	mTextCache->setStyle( mFontStyleConfig.Style );
+	mTextCache->setColor( mFontStyleConfig.Color );
+	mTextCache->setShadowColor( mFontStyleConfig.ShadowColor );
+	mTextCache->setOutlineThickness( mFontStyleConfig.OutlineThickness );
+	mTextCache->setOutlineColor( mFontStyleConfig.OutlineColor );
 
 	autoAlign();
 }
@@ -73,7 +76,7 @@ Graphics::Font * UITextView::getFont() const {
 	return mTextCache->getFont();
 }
 
-void UITextView::setFont( Graphics::Font * font ) {
+UITextView * UITextView::setFont( Graphics::Font * font ) {
 	if ( mTextCache->getFont() != font ) {
 		mTextCache->setFont( font );
 		autoShrink();
@@ -81,21 +84,83 @@ void UITextView::setFont( Graphics::Font * font ) {
 		autoAlign();
 		onFontChanged();
 	}
+
+	return this;
+}
+
+Uint32 UITextView::getCharacterSize() {
+	return mTextCache->getCharacterSize();
+}
+
+UITextView *UITextView::setCharacterSize( const Uint32 & characterSize ) {
+	if ( mTextCache->getCharacterSize() != characterSize ) {
+		mTextCache->setCharacterSize( characterSize );
+		autoShrink();
+		onAutoSize();
+		autoAlign();
+	}
+
+	return this;
+}
+
+const Uint32 &UITextView::getFontStyle() const {
+	return mFontStyleConfig.Style;
+}
+
+const Float &UITextView::getOutlineThickness() const {
+	return mFontStyleConfig.OutlineThickness;
+}
+
+UITextView * UITextView::setOutlineThickness( const Float & outlineThickness ) {
+	if ( mFontStyleConfig.OutlineThickness != outlineThickness ) {
+		mTextCache->setOutlineThickness( outlineThickness );
+		mFontStyleConfig.OutlineThickness = outlineThickness;
+		autoShrink();
+		onAutoSize();
+		autoAlign();
+	}
+
+	return this;
+}
+
+const ColorA &UITextView::getOutlineColor() const {
+	return mFontStyleConfig.OutlineColor;
+}
+
+UITextView * UITextView::setOutlineColor(const ColorA & outlineColor) {
+	if ( mFontStyleConfig.OutlineColor != outlineColor ) {
+		mTextCache->setOutlineColor( outlineColor );
+		mFontStyleConfig.OutlineColor = outlineColor;
+	}
+
+	return this;
+}
+
+UITextView * UITextView::setFontStyle(const Uint32 & fontStyle) {
+	if ( mFontStyleConfig.Style != fontStyle ) {
+		mTextCache->setStyle( fontStyle );
+		mFontStyleConfig.Style = fontStyle;
+		autoShrink();
+		onAutoSize();
+		autoAlign();
+	}
+
+	return this;
 }
 
 const String& UITextView::getText() {
 	if ( mFlags & UI_WORD_WRAP )
 		return mString;
 
-	return mTextCache->getText();
+	return mTextCache->getString();
 }
 
 UITextView * UITextView::setText( const String& text ) {
 	if ( mFlags & UI_WORD_WRAP ) {
 		mString = text;
-		mTextCache->setText( mString );
+		mTextCache->setString( mString );
 	} else {
-		mTextCache->setText( text );
+		mTextCache->setString( text );
 	}
 
 	autoShrink();
@@ -107,39 +172,44 @@ UITextView * UITextView::setText( const String& text ) {
 }
 
 const ColorA& UITextView::getFontColor() const {
-	return mFontStyleConfig.FontColor;
+	return mFontStyleConfig.Color;
 }
 
-void UITextView::setFontColor( const ColorA& color ) {
-	mFontStyleConfig.FontColor = color;
+UITextView * UITextView::setFontColor( const ColorA& color ) {
+	mFontStyleConfig.Color = color;
 	mTextCache->setColor( color );
 
 	setAlpha( color.a() );
+
+	return this;
 }
 
 const ColorA& UITextView::getFontShadowColor() const {
-	return mFontStyleConfig.FontShadowColor;
+	return mFontStyleConfig.ShadowColor;
 }
 
-void UITextView::setFontShadowColor( const ColorA& color ) {
-	mFontStyleConfig.FontShadowColor = color;
-	mTextCache->setShadowColor( mFontStyleConfig.FontShadowColor );
+UITextView * UITextView::setFontShadowColor( const ColorA& color ) {
+	mFontStyleConfig.ShadowColor = color;
+	mTextCache->setShadowColor( mFontStyleConfig.ShadowColor );
+
+	return this;
 }
 
 const ColorA& UITextView::getSelectionBackColor() const {
 	return mFontStyleConfig.FontSelectionBackColor;
 }
 
-void UITextView::setSelectionBackColor( const ColorA& color ) {
+UITextView * UITextView::setSelectionBackColor( const ColorA& color ) {
 	mFontStyleConfig.FontSelectionBackColor = color;
+	return this;
 }
 
 void UITextView::setAlpha( const Float& alpha ) {
 	UIControlAnim::setAlpha( alpha );
-	mFontStyleConfig.FontColor.Alpha = (Uint8)alpha;
-	mFontStyleConfig.FontShadowColor.Alpha = (Uint8)alpha;
+	mFontStyleConfig.Color.Alpha = (Uint8)alpha;
+	mFontStyleConfig.ShadowColor.Alpha = (Uint8)alpha;
 
-	mTextCache->setAlpha( mFontStyleConfig.FontColor.Alpha );
+	mTextCache->setAlpha( mFontStyleConfig.Color.Alpha );
 }
 
 void UITextView::autoShrink() {
@@ -150,10 +220,10 @@ void UITextView::autoShrink() {
 
 void UITextView::shrinkText( const Uint32& MaxWidth ) {
 	if ( mFlags & UI_WORD_WRAP ) {
-		mTextCache->setText( mString );
+		mTextCache->setString( mString );
 	}
 
-	mTextCache->getFont()->shrinkText( mTextCache->getText(), MaxWidth );
+	mTextCache->getFont()->shrinkText( mTextCache->getString(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), MaxWidth );
 	mTextCache->cacheWidth();
 }
 
@@ -226,10 +296,6 @@ void UITextView::setTheme( UITheme * Theme ) {
 	}
 }
 
-TextCache * UITextView::getTextCache() {
-	return mTextCache;
-}
-
 Float UITextView::getTextWidth() {
 	return mTextCache->getTextWidth();
 }
@@ -252,12 +318,12 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags )
 		worldToControl( controlPos );
 		controlPos = PixelDensity::dpToPxI( controlPos );
 
-		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), controlPos );
+		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getString(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), controlPos );
 
 		if ( -1 != curPos ) {
 			Int32 tSelCurInit, tSelCurEnd;
 
-			mTextCache->getFont()->selectSubStringFromCursor( mTextCache->getText(), curPos, tSelCurInit, tSelCurEnd );
+			mTextCache->getFont()->selectSubStringFromCursor( mTextCache->getString(), curPos, tSelCurInit, tSelCurEnd );
 
 			selCurInit( tSelCurInit );
 			selCurEnd( tSelCurEnd );
@@ -288,7 +354,7 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 		worldToControl( controlPos );
 		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mRealAlignOffset.x, (Int32)mRealAlignOffset.y );
 
-		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getText(), controlPos );
+		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getString(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), controlPos );
 
 		if ( -1 != curPos ) {
 			if ( -1 == selCurInit() || !( mControlFlags & UI_CTRL_FLAG_SELECTING ) ) {
@@ -305,12 +371,12 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 	return UIWidget::onMouseDown( Pos, Flags );
 }
 
-void UITextView::drawSelection( TextCache * textCache ) {
+void UITextView::drawSelection( Text * textCache ) {
 	if ( selCurInit() != selCurEnd() ) {
 		Int32 init		= eemin( selCurInit(), selCurEnd() );
 		Int32 end		= eemax( selCurInit(), selCurEnd() );
 
-		if ( init < 0 && end > (Int32)textCache->getText().size() ) {
+		if ( init < 0 && end > (Int32)textCache->getString().size() ) {
 			return;
 		}
 
@@ -321,19 +387,19 @@ void UITextView::drawSelection( TextCache * textCache ) {
 		P.setColor( mFontStyleConfig.FontSelectionBackColor );
 
 		do {
-			initPos	= textCache->getFont()->getCursorPos( textCache->getText(), init );
-			lastEnd = textCache->getText().find_first_of( '\n', init );
+			initPos	= textCache->getFont()->getCursorPos( textCache->getString(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), init );
+			lastEnd = textCache->getString().find_first_of( '\n', init );
 
 			if ( lastEnd < end && -1 != lastEnd ) {
-				endPos	= textCache->getFont()->getCursorPos( textCache->getText(), lastEnd );
+				endPos	= textCache->getFont()->getCursorPos( textCache->getString(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), lastEnd );
 				init	= lastEnd + 1;
 			} else {
-				endPos	= textCache->getFont()->getCursorPos( textCache->getText(), end );
+				endPos	= textCache->getFont()->getCursorPos( textCache->getString(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), end );
 				lastEnd = end;
 			}
 
 			P.drawRectangle( Rectf( mScreenPos.x + initPos.x + mRealAlignOffset.x + mRealPadding.Left,
-									  mScreenPos.y + initPos.y - textCache->getFont()->getFontHeight() + mRealAlignOffset.y + mRealPadding.Top,
+									  mScreenPos.y + initPos.y - textCache->getFont()->getLineSpacing( textCache->getCharacterSizePx() ) + mRealAlignOffset.y + mRealPadding.Top,
 									  mScreenPos.x + endPos.x + mRealAlignOffset.x + mRealPadding.Left,
 									  mScreenPos.y + endPos.y + mRealAlignOffset.y + mRealPadding.Top )
 			);
@@ -345,7 +411,7 @@ bool UITextView::isTextSelectionEnabled() const {
 	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
 }
 
-TooltipStyleConfig UITextView::getFontStyleConfig() const
+UITooltipStyleConfig UITextView::getFontStyleConfig() const
 {
 	return mFontStyleConfig;
 }
@@ -370,24 +436,30 @@ void UITextView::onAlignChange() {
 	autoAlign();
 }
 
-void UITextView::setFontStyleConfig( const TooltipStyleConfig& fontStyleConfig ) {
+void UITextView::setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig ) {
 	mFontStyleConfig = fontStyleConfig;
 
 	setFont( mFontStyleConfig.getFont() );
 	setFontColor( mFontStyleConfig.getFontColor() );
+	setCharacterSize( mFontStyleConfig.getFontCharacterSize() );
 	setFontShadowColor( mFontStyleConfig.getFontShadowColor() );
+	setFontStyle( mFontStyleConfig.getFontStyle() );
+	setOutlineThickness( mFontStyleConfig.getOutlineThickness() );
+	setOutlineColor( mFontStyleConfig.getOutlineColor() );
 }
 
 const Recti& UITextView::getPadding() const {
 	return mPadding;
 }
 
-void UITextView::setPadding(const Recti & padding) {
+UITextView * UITextView::setPadding(const Recti & padding) {
 	if ( padding != mPadding ) {
 		mPadding = padding;
 		mRealPadding = PixelDensity::dpToPxI( mPadding );
 		onPaddingChange();
 	}
+
+	return this;
 }
 
 void UITextView::onPaddingChange() {
@@ -417,17 +489,48 @@ void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
 
 			if ( NULL != font )
 				setFont( font );
+		} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
+			setCharacterSize( PixelDensity::toDpFromStringI( ait->as_string() ) );
+		} else if ( "textstyle" == name || "fontstyle" == name ) {
+			std::string valStr = ait->as_string();
+			String::toLowerInPlace( valStr );
+			std::vector<std::string> strings = String::split( valStr, '|' );
+			Uint32 flags = Text::Regular;
+
+			if ( strings.size() ) {
+				for ( std::size_t i = 0; i < strings.size(); i++ ) {
+					std::string cur = strings[i];
+					String::toLowerInPlace( cur );
+
+					if ( "underlined" == cur || "underline" == cur )
+						flags |= Text::Underlined;
+					else if ( "bold" == cur )
+						flags |= Text::Bold;
+					else if ( "italic" == cur )
+						flags |= Text::Italic;
+					else if ( "strikethrough" == cur )
+						flags |= Text::StrikeThrough;
+					else if ( "shadowed" == cur || "shadow" == cur )
+						flags |= Text::Shadow;
+				}
+
+				setFontStyle( flags );
+			}
+		} else if ( "fontoutlinethickness" == name ) {
+			setOutlineThickness( PixelDensity::toDpFromString( ait->as_string() ) );
+		} else if ( "fontoutlinecolor" == name ) {
+			setOutlineColor( ColorA::fromString( ait->as_string() ) );
 		} else if ( "padding" == name ) {
-			int val = ait->as_int();
+			int val = PixelDensity::toDpFromStringI( ait->as_string() );
 			setPadding( Recti( val, val, val, val ) );
 		} else if ( "paddingleft" == name ) {
-			setPadding( Recti( ait->as_int(), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
+			setPadding( Recti( PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
 		} else if ( "paddingright" == name ) {
-			setPadding( Recti( mPadding.Left, mPadding.Top, ait->as_int(), mPadding.Bottom ) );
+			setPadding( Recti( mPadding.Left, mPadding.Top, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Bottom ) );
 		} else if ( "paddingtop" == name ) {
-			setPadding( Recti( mPadding.Left, ait->as_int(), mPadding.Right, mPadding.Bottom ) );
+			setPadding( Recti( mPadding.Left, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Right, mPadding.Bottom ) );
 		} else if ( "paddingbottom" == name ) {
-			setPadding( Recti( mPadding.Left, mPadding.Top, mPadding.Right, ait->as_int() ) );
+			setPadding( Recti( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
 		}
 	}
 }

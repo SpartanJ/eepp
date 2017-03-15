@@ -99,6 +99,11 @@ Console::~Console() {
 	}
 }
 
+void Console::setCharacterSize(const EE::Uint32 & characterSize) {
+	mTextCache.setCharacterSize( characterSize );
+	mFontSize = (Float)( mTextCache.getFont()->getLineSpacing( mTextCache.getCharacterSizePx() ) );
+}
+
 void Console::create( Font* Font, const bool& MakeDefaultCommands, const bool& AttachToLog, const unsigned int& MaxLogLines, const Uint32& TextureId ) {
 	if ( NULL == mWindow ) {
 		mWindow = Engine::instance()->getCurrentWindow();
@@ -106,10 +111,9 @@ void Console::create( Font* Font, const bool& MakeDefaultCommands, const bool& A
 
 	mFont = Font;
 
-	mFontSize = (Float)( mFont->getFontSize() * 1.25 );
+	mTextCache.setFont( mFont );
 
-	if ( mFont->getFontHeight() < mFontSize && ( mFont->getFontHeight() != mFont->getFontSize() || mFont->getLineSkip() != (Int32)mFont->getFontHeight() ) )
-		mFontSize = mFont->getFontHeight();
+	mFontSize = (Float)( mTextCache.getFont()->getLineSpacing( mTextCache.getCharacterSizePx() ) );
 
 	if ( TextureId > 0 )
 		mTexId = TextureId;
@@ -155,7 +159,7 @@ void Console::addCommand( const String& Command, ConsoleCallback CB ) {
 
 void Console::draw() {
 	if ( mEnabled && NULL != mFont ) {
-		ColorA OldColor( mFont->getColor() );
+		ColorA OldColor( mTextCache.getColor() );
 
 		fade();
 
@@ -188,13 +192,14 @@ void Console::draw() {
 			mCon.ConMin = mEx;
 			mCon.ConMax = (int)mCmdLog.size() - 1;
 
-			mFont->setColor( ColorA ( mFontColor.r(), mFontColor.g(), mFontColor.b(), static_cast<Uint8>(mA) ) );
+			mTextCache.setColor( ColorA ( mFontColor.r(), mFontColor.g(), mFontColor.b(), static_cast<Uint8>(mA) ) );
 
 			for (int i = mCon.ConMax - mCon.ConModif; i >= mCon.ConMin - mCon.ConModif; i-- ) {
 				if ( i < static_cast<Int16>( mCmdLog.size() ) && i >= 0 ) {
 					CurY = mTempY + mY + mCurHeight - Pos * mFontSize - mFontSize * 2;
 
-					mFont->draw( mCmdLog[i], mFontSize, CurY );
+					mTextCache.setString( mCmdLog[i] );
+					mTextCache.draw( mFontSize, CurY );
 
 					Pos++;
 				}
@@ -202,29 +207,33 @@ void Console::draw() {
 
 			CurY = mTempY + mY + mCurHeight - mFontSize - 1;
 
-			mFont->setColor( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mA) ) );
-			mFont->setText( "> " + mTBuf->getBuffer() );
-			mFont->draw( mFontSize, CurY );
+			mTextCache.setColor( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mA) ) );
+			mTextCache.setString( "> " + mTBuf->getBuffer() );
+			mTextCache.draw( mFontSize, CurY );
 
-			mFont->setColor( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mCurAlpha) ) );
+			mTextCache.setColor( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mCurAlpha) ) );
 
 			if ( (unsigned int)mTBuf->getCursorPos() == mTBuf->getBuffer().size() ) {
-				mFont->draw( "_", mFontSize + mFont->getTextWidth() , CurY );
+				Uint32 width = mTextCache.getTextWidth();
+				mTextCache.setString( "_" );
+				mTextCache.draw( mFontSize + width, CurY );
 			} else {
-				mFont->setText( "> " + mTBuf->getBuffer().substr( 0, mTBuf->getCursorPos() ) );
-				mFont->draw( "_", mFontSize + mFont->getTextWidth() , CurY );
+				mTextCache.setString( "> " + mTBuf->getBuffer().substr( 0, mTBuf->getCursorPos() ) );
+				Uint32 width = mFontSize + mTextCache.getTextWidth();
+				mTextCache.setString( "_" );
+				mTextCache.draw( width, CurY );
 			}
 
-			mFont->setColor( OldColor );
+			mTextCache.setColor( OldColor );
 		}
 	}
 
 	if ( mShowFps && NULL != mFont ) {
-		ColorA OldColor1( mFont->getColor() );
-		mFont->setColor( ColorA () );
-		mFont->setText( "FPS: " + String::toStr( mWindow->getFPS() ) );
-		mFont->draw( mWindow->getWidth() - mFont->getTextWidth() - 15, 6 );
-		mFont->setColor( OldColor1 );
+		ColorA OldColor1( mTextCache.getColor() );
+		mTextCache.setColor( ColorA () );
+		mTextCache.setString( "FPS: " + String::toStr( mWindow->getFPS() ) );
+		mTextCache.draw( mWindow->getWidth() - mTextCache.getTextWidth() - 15, 6 );
+		mTextCache.setColor( OldColor1 );
 	}
 }
 
@@ -572,7 +581,7 @@ void Console::getFilesFrom( std::string txt, const Uint32& curPos ) {
 }
 
 Int32 Console::linesInScreen() {
-	return static_cast<Int32> ( (mCurHeight / mFontSize) - 1 );
+	return static_cast<Int32> ( ( mCurHeight / mFontSize ) - 1 );
 }
 
 void Console::privInputCallback( InputEvent * Event ) {
@@ -896,6 +905,10 @@ const bool& Console::isShowingFps() const {
 
 void Console::showFps( const bool& Show ) {
 	mShowFps = Show;
+}
+
+Text & Console::getTextCache() {
+	return mTextCache;
 }
 
 void Console::writeLog( const std::string& Text ) {

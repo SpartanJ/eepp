@@ -1,6 +1,7 @@
 #include <eepp/ui/uislider.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/subtexture.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -399,6 +400,35 @@ void UISlider::onAlphaChange() {
 	
 	mBackSlider->setAlpha( mAlpha );
 	mSlider->setAlpha( mAlpha );
+}
+
+void UISlider::loadFromXmlNode(const pugi::xml_node & node) {
+	UIWidget::loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "orientation" == name ) {
+			std::string val = ait->as_string();
+			String::toLowerInPlace( val );
+
+			if ( "horizontal" == val )
+				setOrientation( UI_HORIZONTAL );
+			else if ( "vertical" == val )
+				setOrientation( UI_VERTICAL );
+		} else if ( "minvalue" == name ) {
+			setMinValue( ait->as_float() );
+		} else if ( "maxvalue" == name ) {
+			setMaxValue( ait->as_float() );
+		} else if ( "value" == name ) {
+			setValue( ait->as_float() );
+		} else if ( "clickstep" == name ) {
+			setClickStep( ait->as_float() );
+		} else if ( "pagestep" == name ) {
+			setPageStep( ait->as_float() );
+		}
+	}
 }
 
 }}

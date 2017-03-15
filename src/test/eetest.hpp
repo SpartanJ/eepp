@@ -43,7 +43,6 @@ class EETest : private Thread {
 		TextureFactory* TF;
 		System::Log* Log;
 		EE::Window::Input* KM;
-		InputTextBuffer InBuf;
 
 		bool side, aside;
 		Float ang, scale, alpha, Ang;
@@ -62,11 +61,7 @@ class EETest : private Thread {
 
 		Sprite SP;
 		Sprite CL1, CL2;
-		Font * FF;
-		Font * FF2;
 		Font * TTF;
-		Font * TTFB;
-		Font * DBSM;
 
 		Primitives PR;
 		bool iL1, iL2;
@@ -172,9 +167,9 @@ class EETest : private Thread {
 		MapEditor * mMapEditor;
 		TextureAtlasEditor * mETGEditor;
 
-		TextCache mEEText;
-		TextCache mFBOText;
-		TextCache mInfoText;
+		Text mEEText;
+		Text mFBOText;
+		Text mInfoText;
 
 		std::string mThemeName;
 

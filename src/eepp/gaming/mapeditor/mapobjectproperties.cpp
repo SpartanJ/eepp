@@ -3,8 +3,9 @@
 
 namespace EE { namespace Gaming { namespace Private {
 
-static UITextView * createTextBox( const String& Text = "", UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE ) {
+static UITextView * createTextBox( const String& Text = "", UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, const Uint32& fontStyle = Text::Regular ) {
 	UITextView * Ctrl = UITextView::New();
+	Ctrl->setFontStyle( fontStyle );
 	Ctrl->resetFlags( Flags )->setParent( Parent )->setPosition( Pos )->setSize( Size )->setVisible( true )->setEnabled( false );
 	Ctrl->setText( Text );
 	return Ctrl;
@@ -35,23 +36,23 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 	Int32 InitialY		= 16;
 	Int32 DistFromTitle	= 18;
 
-	UITextView * Txt = createTextBox( "Object name:", mUIWindow->getContainer(), Sizei(), Vector2i( 50, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	UITextView * Txt = createTextBox( "Object name:", mUIWindow->getContainer(), Sizei(), Vector2i( 50, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 	mUIInput = UITextInput::New();
 	mUIInput->setParent( mUIWindow->getContainer() )->setSize( 120, 0 )->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
 	mUIInput->setMaxLength( 64 );
 	mUIInput->setText( mObj->getName() );
 	mUIInput->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &MapObjectProperties::onOKClick ) );
 
-	UITextView * Txt2 = createTextBox( "Object type:", mUIWindow->getContainer(), Sizei(), Vector2i( 50+192, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	UITextView * Txt2 = createTextBox( "Object type:", mUIWindow->getContainer(), Sizei(), Vector2i( 50+192, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 	mUIInput2 = UITextInput::New();
 	mUIInput2->setParent( mUIWindow->getContainer() )->setSize( 120, 0 )->setPosition( Txt2->getPosition().x + DistFromTitle, Txt2->getPosition().y + DistFromTitle );
 	mUIInput2->setMaxLength( 64 );
 	mUIInput2->setText( mObj->getTypeName() );
 	mUIInput2->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &MapObjectProperties::onOKClick ) );
 
-	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
-	createTextBox( "Property Name", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 ), TxtBoxFlags );
-	UITextView * TxtBox = createTextBox( "Property Value", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50+192, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 ), TxtBoxFlags );
+	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
+	createTextBox( "Property Name", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 ), TxtBoxFlags, Text::Shadow );
+	UITextView * TxtBox = createTextBox( "Property Value", mUIWindow->getContainer(), Sizei(192, 24), Vector2i( 50+192, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 ), TxtBoxFlags, Text::Shadow );
 
 	UIPushButton * OKButton = UIPushButton::New();
 	OKButton->setParent(  mUIWindow->getContainer() )->setSize( 80, 0 );

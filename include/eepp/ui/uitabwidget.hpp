@@ -19,9 +19,9 @@ class EE_API UITabWidget : public UIWidget {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		Uint32 add( const String& Text, UIControl * CtrlOwned, SubTexture * Icon = NULL );
+		UITabWidget * add( const String& Text, UIControl * CtrlOwned, SubTexture * Icon = NULL );
 
-		Uint32 add( UITab * Tab );
+		UITabWidget * add( UITab * Tab );
 
 		UITab * getTab( const Uint32& Index );
 
@@ -73,6 +73,22 @@ class EE_API UITabWidget : public UIWidget {
 
 		void setFontSelectedColor(const ColorA & fontSelectedColor);
 
+		Uint32 getCharacterSize();
+
+		void setCharacterSize(const Uint32 & characterSize);
+
+		const Uint32& getFontStyle() const;
+
+		UITabWidget * setFontStyle( const Uint32& fontStyle );
+
+		const Float & getOutlineThickness() const;
+
+		UITabWidget * setOutlineThickness( const Float& outlineThickness );
+
+		const ColorA& getOutlineColor() const;
+
+		UITabWidget * setOutlineColor( const ColorA& outlineColor );
+
 		Int32 getTabSeparation() const;
 
 		void setTabSeparation(const Int32 & tabSeparation);
@@ -111,19 +127,21 @@ class EE_API UITabWidget : public UIWidget {
 
 		void setLineBelowTabsYOffset(const Int32 & lineBelowTabsYOffset);
 
-		TooltipStyleConfig getFontStyleConfig() const;
+		UITooltipStyleConfig getFontStyleConfig() const;
 
-		void setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig);
+		void setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig);
 
-		TabWidgetStyleConfig getStyleConfig() const;
+		UITabWidgetStyleConfig getStyleConfig() const;
 
-		void setStyleConfig(const TabWidgetStyleConfig & styleConfig);
+		void setStyleConfig(const UITabWidgetStyleConfig & styleConfig);
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		friend class UITab;
 
 		UIWidget *		mCtrlContainer;
 		UIWidget *		mTabContainer;
-		TabWidgetStyleConfig	mStyleConfig;
+		UITabWidgetStyleConfig	mStyleConfig;
 		std::deque<UITab*>		mTabs;
 		UITab *					mTabSelected;
 		Uint32					mTabSelectedIndex;
@@ -133,6 +151,8 @@ class EE_API UITabWidget : public UIWidget {
 		UITab * createTab( const String& Text, UIControl * CtrlOwned, SubTexture * Icon );
 
 		virtual void onSizeChange();
+
+		virtual void onChildCountChange();
 
 		void setTabSelected( UITab * Tab );
 
@@ -151,6 +171,8 @@ class EE_API UITabWidget : public UIWidget {
 		void selectNext();
 
 		void applyThemeToTabs();
+
+		void refreshControlOwned( UITab * tab );
 };
 
 }}

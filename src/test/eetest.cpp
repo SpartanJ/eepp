@@ -84,9 +84,6 @@ void EETest::init() {
 		Scenes[4] = cb::Make0( this, &EETest::screen4 );
 		Scenes[5] = cb::Make0( this, &EETest::screen5 );
 
-		//InBuf.Start();
-		InBuf.isNewLineEnabled( true );
-
 		setRandomSeed( static_cast<Uint32>( Sys::getSystemTime() * 1000 ) );
 
 		loadTextures();
@@ -172,43 +169,40 @@ void EETest::createUIThemeTextureAtlas() {
 void EETest::loadFonts() {
 	mFTE.restart();
 
-	TextureLoader * tl = eeNew( TextureLoader, ( MyPath + "fonts/conchars.png" ) );
-	tl->setColorKey( RGB(0,0,0) );
-
-	mFontLoader.add( eeNew( TextureFontLoader, ( "conchars", tl, (unsigned int)32 ) ) );
-	mFontLoader.add( eeNew( TextureFontLoader, ( "ProggySquareSZ", eeNew( TextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
-	mFontLoader.add( eeNew( TTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255) ) ) );
-	mFontLoader.add( eeNew( TTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255), 1, RGB(0,0,0), true ) ) );
-	mFontLoader.add( eeNew( TTFFontLoader, ( "DejaVuSansMono", MyPath + "fonts/DejaVuSansMono.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255), 1 ) ) );
+	mFontLoader.add( eeNew( FontTrueTypeLoader, ( "arial", MyPath + "fonts/arial.ttf" ) ) );
+	mFontLoader.add( eeNew( FontTrueTypeLoader, ( "DejaVuSansMono", MyPath + "fonts/DejaVuSansMono.ttf" ) ) );
 
 	mFontLoader.load( cb::Make1( this, &EETest::onFontLoaded ) );
 }
 
 void EETest::onFontLoaded( ResourceLoader * ObjLoaded ) {
-	FF		= FontManager::instance()->getByName( "conchars" );
-	FF2		= FontManager::instance()->getByName( "ProggySquareSZ" );
 	TTF		= FontManager::instance()->getByName( "arial" );
-	TTFB	= FontManager::instance()->getByName( "arialb" );
-	DBSM	= FontManager::instance()->getByName( "DejaVuSansMono" );
+	Font * DBSM	= FontManager::instance()->getByName( "DejaVuSansMono" );
 
 	eePRINTL( "Fonts loading time: %4.3f ms.", mFTE.getElapsed().asMilliseconds() );
 
 	eeASSERT( TTF != NULL );
-	eeASSERT( TTFB != NULL );
+	eeASSERT( DBSM != NULL );
 
 	Con.create( DBSM, true );
+	Con.setBackgroundColor( 0x201f1fEE );
+	Con.setFontColor( 0xcfcfcfff );
 	Con.ignoreCharOnPrompt( 186 ); // 'º'
+	Con.getTextCache().setCharacterSize( 12 );
+	Con.getTextCache().setOutlineColor( ColorA(0,0,0,150) );
 
 	mBuda = String::fromUtf8( "El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde." );
 
 	createUI();
 
-	mEEText.create( TTFB, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to see the PopUp Menu" );
-	mFBOText.create( TTFB, "This is a VBO\nInside of a FBO" );
-	mFBOText.setColor( ColorA(255,255,0,255), mFBOText.getText().find( "VBO" ), mFBOText.getText().find( "VBO" ) + 2 );
-	mFBOText.setColor( ColorA(255,255,0,255), mFBOText.getText().find( "FBO" ), mFBOText.getText().find( "FBO" ) + 2 );
+	mEEText.create( TTF, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to see the PopUp Menu" );
+	mEEText.setOutlineThickness( 1 );
+	mEEText.setOutlineColor( ColorA(0,0,0,255) );
+	mFBOText.create( TTF, "This is a VBO\nInside of a FBO" );
+	mFBOText.setOutlineThickness( 1 );
+	mFBOText.setOutlineColor( ColorA(0,0,0,255) );
 
-	mInfoText.create( FF, "", ColorA(255,255,255,150) );
+	mInfoText.create( DBSM, "", ColorA(100,100,100,255) );
 }
 
 void EETest::createShaders() {
@@ -283,7 +277,7 @@ void EETest::createUI() {
 	//UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES;
 	UIManager::instance()->init(UI_MAN_OPS);
 
-	//mTheme = UITheme::loadFromPath( eeNew( UIThemeDefault, ( mThemeName, mThemeName ) ), MyPath + mThemeName + "/" );
+	//mTheme = UITheme::loadFromFile( eeNew( UIThemeDefault, ( mThemeName, mThemeName ) ), MyPath + mThemeName + "/" );
 
 	TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
 
@@ -299,7 +293,7 @@ void EETest::createUI() {
 	/**/
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
-	WindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
+	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER;
 	windowStyleConfig.MinWindowSize = Sizei( 530, 405 );
 	windowStyleConfig.BaseAlpha = 200;
@@ -473,10 +467,10 @@ void EETest::createUI() {
 #ifdef EE_PLATFORM_TOUCH
 	TextureAtlas * SG = GlobalTextureAtlas::instance();
 
-	Texture * butTex = TF->getTexture( TF->load( MyPath + "sprites/button-te_normal.png" ) );
+	Texture * butTex = TF->getTexture( TF->loadFromFile( MyPath + "sprites/button-te_normal.png" ) );
 
 	SG->add( butTex->getId(), "button-te_normal" );
-	SG->add( TF->load( MyPath + "sprites/button-te_mdown.png" ), "button-te_mdown" );
+	SG->add( TF->loadFromFile( MyPath + "sprites/button-te_mdown.png" ), "button-te_mdown" );
 
 	UISkinSimple nSkin( "button-te" );
 	Sizei screenSize = UIManager::instance()->getMainControl()->getSize();
@@ -709,11 +703,11 @@ void EETest::createNewUI() {
 	/**/
 
 	UIManager::instance()->loadLayoutFromString(
-		"<window width='300' height='300' winflags='default|maximize'>"
-		"	<LinearLayout id='testlayout' orientation='vertical' layout_width='match_parent' layout_height='match_parent' layout_margin='8'>"
+		"<window layout_width='300dp' layout_height='300dp' winflags='default|maximize'>"
+		"	<LinearLayout id='testlayout' orientation='vertical' layout_width='match_parent' layout_height='match_parent' layout_margin='8dp'>"
 		"		<TextView text='Hello World!' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' backgroundColor='000000FF' />"
-		"		<PushButton text='OK!' icon='ok' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' />"
-		"		<Image src='thecircle' layout_width='match_parent' layout_height='fixed' height='32' flags='clip' />"
+		"		<PushButton text='OK!' textSize='16dp' icon='ok' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' />"
+		"		<Image src='thecircle' layout_width='match_parent' layout_height='32dp' flags='clip' />"
 		"		<Sprite src='gn' />"
 		"		<TextInput text='test' layout_width='match_parent' layout_height='wrap_content' />"
 		"		<DropDownList layout_width='match_parent' layout_height='wrap_content' selectedIndex='0'>"
@@ -727,6 +721,7 @@ void EETest::createNewUI() {
 		"	</LinearLayout>"
 		"</window>"
 	);
+
 }
 
 void EETest::createMapEditor() {
@@ -735,7 +730,7 @@ void EETest::createMapEditor() {
 
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
-	WindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
+	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER;
 	windowStyleConfig.MinWindowSize = Sizei( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
@@ -752,7 +747,7 @@ void EETest::onMapEditorClose() {
 void EETest::createETGEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
-	WindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
+	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER;
 	windowStyleConfig.MinWindowSize = Sizei( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
@@ -861,7 +856,6 @@ void EETest::onItemClick( const UIEvent * Event ) {
 		setScreen( 5 );
 	} else if ( "Show Console" == txt ) {
 		Con.toggle();
-		InBuf.setActive( !Con.isActive() );
 
 		if ( Con.isActive() ) {
 			mWindow->startTextInput();
@@ -1033,7 +1027,7 @@ void EETest::loadTextures() {
 	TNP.resize(12);
 
 	for ( i = 0; i <= 6; i++ ) {
-		TN[i] = TF->load( MyPath + "sprites/" + String::toStr(i+1) + ".png", (i+1) == 7 ? true : false, ( (i+1) == 4 ) ? CLAMP_REPEAT : CLAMP_TO_EDGE );
+		TN[i] = TF->loadFromFile( MyPath + "sprites/" + String::toStr(i+1) + ".png", (i+1) == 7 ? true : false, ( (i+1) == 4 ) ? CLAMP_REPEAT : CLAMP_TO_EDGE );
 		TNP[i] = TF->getTexture( TN[i] );
 	}
 
@@ -1047,14 +1041,14 @@ void EETest::loadTextures() {
 			Tiles[i] = SG->getByName( String::toStr( i+1 ) );
 		}
 
-		Tiles[6] = SG->add( TF->load( MyPath + "sprites/objects/1.png" ), "7" );
+		Tiles[6] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/1.png" ), "7" );
 
 		#ifdef EE_GLES
 		Image tImg( MyPath + "sprites/objects/2.png", 4 );
 		tImg.CreateMaskFromColor( ColorA(0,0,0,255), 0 );
 		Tiles[7] = SG->Add( TF->loadFromPixels( tImg.getPixelsPtr(), tImg.getWidth(), tImg.getHeight(), tImg.getChannels() ), "8" );
 		#else
-		Tiles[7] = SG->add( TF->load( MyPath + "sprites/objects/2.png" ), "8" );
+		Tiles[7] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/2.png" ), "8" );
 		Tiles[7]->getTexture()->createMaskFromColor( ColorA(0,0,0,255), 0 );
 		#endif
 	}
@@ -1094,7 +1088,7 @@ void EETest::loadTextures() {
 		Tex->unlock(false, true);
 	}
 
-	Cursor[0] = TF->load( MyPath + "cursors/cursor.tga" );
+	Cursor[0] = TF->loadFromFile( MyPath + "cursors/cursor.tga" );
 	CursorP[0] = TF->getTexture( Cursor[0] );
 
 	CursorManager * CurMan = mWindow->getCursorManager();
@@ -1121,7 +1115,7 @@ void EETest::loadTextures() {
 
 	eePRINTL( "Textures loading time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	Map.load( MyPath + "maps/test.eem" );
+	Map.loadFromFile( MyPath + "maps/test.eem" );
 	Map.setDrawGrid( false );
 	Map.setClipedArea( false );
 	Map.setDrawBackground( false );
@@ -1400,7 +1394,7 @@ void EETest::render() {
 						);
 		#endif
 
-		mInfoText.setText( mInfo );
+		mInfoText.setString( mInfo );
 	}
 
 	if ( !MultiViewportMode ) {
@@ -1451,23 +1445,6 @@ void EETest::render() {
 	mEEText.draw( 0.f, (Float)mWindow->getHeight() - mEEText.getTextHeight() );
 
 	mInfoText.draw( 6.f, 6.f );
-
-	if ( InBuf.isActive() ) {
-		Uint32 NLPos = 0;
-		Uint32 LineNum = InBuf.getCurPosLinePos( NLPos );
-		if ( InBuf.getCursorPos() == (int)InBuf.getBuffer().size() && !LineNum ) {
-			FF2->draw( "_", 6.f + FF2->getTextWidth(), 180.f );
-		} else {
-			FF2->setText( InBuf.getBuffer().substr( NLPos, InBuf.getCursorPos() - NLPos ) );
-			FF2->draw( "_", 6.f + FF2->getTextWidth(), 180.f + (Float)LineNum * (Float)FF2->getFontHeight() );
-		}
-
-		FF2->setText( "FPS: " + String::toStr( mWindow->getFPS() ) );
-		FF2->draw( mWindow->getWidth() - FF2->getTextWidth() - 15, 0 );
-
-		FF2->setText( InBuf.getBuffer() );
-		FF2->draw( 6, 180, FONT_DRAW_SHADOW );
-	}
 
 	UIManager::instance()->draw();
 	UIManager::instance()->update();
@@ -1550,7 +1527,6 @@ void EETest::input() {
 
 	if ( KM->isKeyUp( KEY_F3 ) || KM->isKeyUp( KEY_WORLD_26 ) || KM->isKeyUp( KEY_BACKSLASH ) ) {
 		Con.toggle();
-		InBuf.setActive( !Con.isActive() );
 	}
 
 	if ( KM->isKeyUp(KEY_1) && KM->isControlPressed() )

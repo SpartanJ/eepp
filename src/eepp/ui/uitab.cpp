@@ -1,6 +1,7 @@
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -111,13 +112,23 @@ UIPushButton * UITab::setText( const String &text ) {
 
 			onAutoSize();
 
+			tTabW->orderTabs();
+
+			tTabW->setTabSelected( tTabW->getSelectedTab() );
+
 			return this;
 		}
+
 	}
 
 	UIPushButton::setText( text );
 
 	onAutoSize();
+
+	tTabW->orderTabs();
+
+	tTabW->setTabSelected( tTabW->getSelectedTab() );
+
 	return this;
 }
 
@@ -140,6 +151,10 @@ void UITab::update() {
 	UISelectButton::update();
 
 	if ( mEnabled && mVisible ) {
+		if ( NULL == mControlOwned && !mOwnedName.empty() ) {
+			setOwnedControl();
+		}
+
 		if ( isMouseOver() ) {
 			UITabWidget * tTabW	= getTabWidget();
 
@@ -160,12 +175,43 @@ void UITab::update() {
 	}
 }
 
+void UITab::loadFromXmlNode(const pugi::xml_node & node) {
+	UISelectButton::loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "controlowned" == name || "owns" == name ) {
+			mOwnedName = ait->as_string();
+			setOwnedControl();
+		}
+	}
+}
+
+void UITab::setOwnedControl() {
+	UIControl * ctrl = getParent()->getParent()->find( mOwnedName );
+
+	if ( NULL != ctrl ) {
+		setControlOwned( ctrl );
+	}
+}
+
 UIControl * UITab::getControlOwned() const {
 	return mControlOwned;
 }
 
 void UITab::setControlOwned(UIControl * controlOwned) {
 	mControlOwned = controlOwned;
+
+	UITabWidget * tTabW = getTabWidget();
+
+	if ( NULL != tTabW ) {
+		tTabW->refreshControlOwned( this );
+
+		if ( NULL == tTabW->mTabSelected )
+			tTabW->setTabSelected( this );
+	}
 }
 
 }}

@@ -3,6 +3,7 @@
 
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uihelper.hpp>
+#include <eepp/graphics/fontstyleconfig.hpp>
 
 namespace EE { namespace Graphics {
 class Font;
@@ -10,20 +11,8 @@ class Font;
 
 namespace EE { namespace UI {
 
-class FontStyleConfig {
+class UIFontStyleConfig : public FontStyleConfig {
 	public:
-		Graphics::Font * getFont() const {
-			return Font;
-		}
-
-		const ColorA& getFontColor() const {
-			return FontColor;
-		}
-
-		const ColorA& getFontShadowColor() const {
-			return FontShadowColor;
-		}
-
 		const ColorA& getFontOverColor() const {
 			return FontOverColor;
 		}
@@ -36,16 +25,8 @@ class FontStyleConfig {
 			return FontSelectionBackColor;
 		}
 
-		void setFont( Font * font ) {
-			Font = font;
-		}
-
-		void setFontColor( const ColorA& color ) {
-			FontColor = color;
-		}
-
 		void setFontShadowColor( const ColorA& color ) {
-			FontShadowColor = color;
+			ShadowColor = color;
 		}
 
 		void setFontOverColor( const ColorA& color ) {
@@ -60,40 +41,33 @@ class FontStyleConfig {
 			FontSelectionBackColor = color;
 		}
 
-		FontStyleConfig() {}
+		UIFontStyleConfig() : FontStyleConfig() {}
 
-		FontStyleConfig( const FontStyleConfig& fontStyleConfig ) :
-			Font( fontStyleConfig.Font ),
-			FontColor( fontStyleConfig.FontColor ),
-			FontShadowColor( fontStyleConfig.FontShadowColor ),
+		UIFontStyleConfig( const UIFontStyleConfig& fontStyleConfig ) :
+			FontStyleConfig( fontStyleConfig ),
 			FontOverColor( fontStyleConfig.FontOverColor ),
 			FontSelectedColor( fontStyleConfig.FontSelectedColor ),
 			FontSelectionBackColor( fontStyleConfig.FontSelectionBackColor )
 		{}
 
-		void updateFontStyleConfig( const FontStyleConfig& fontStyleConfig ) {
-			Font = fontStyleConfig.Font ;
-			FontColor = fontStyleConfig.FontColor ;
-			FontShadowColor = fontStyleConfig.FontShadowColor ;
-			FontOverColor = fontStyleConfig.FontOverColor ;
-			FontSelectedColor = fontStyleConfig.FontSelectedColor ;
-			FontSelectionBackColor = fontStyleConfig.FontSelectionBackColor ;
+		virtual void updateFontStyleConfig( const UIFontStyleConfig& fontStyleConfig ) {
+			FontStyleConfig::updateFontStyleConfig( fontStyleConfig );
+			FontOverColor = fontStyleConfig.FontOverColor;
+			FontSelectedColor = fontStyleConfig.FontSelectedColor;
+			FontSelectionBackColor = fontStyleConfig.FontSelectionBackColor;
 		}
 
-		Graphics::Font * Font;
-		ColorA FontColor;
-		ColorA FontShadowColor;
-		ColorA FontOverColor;
-		ColorA FontSelectedColor;
-		ColorA FontSelectionBackColor;
+		ColorA FontOverColor = ColorA(255,255,255,255);
+		ColorA FontSelectedColor = ColorA(255,255,255,255);
+		ColorA FontSelectionBackColor = ColorA(255,255,255,255);
 };
 
-class TabWidgetStyleConfig : public FontStyleConfig {
+class UITabWidgetStyleConfig : public UIFontStyleConfig {
 	public:
-		TabWidgetStyleConfig() {}
+		UITabWidgetStyleConfig() {}
 
-		TabWidgetStyleConfig( FontStyleConfig fontStyleConfig ) :
-			FontStyleConfig( fontStyleConfig )
+		UITabWidgetStyleConfig( UIFontStyleConfig fontStyleConfig ) :
+			UIFontStyleConfig( fontStyleConfig )
 		{}
 
 		Int32		TabSeparation = 0;
@@ -109,12 +83,12 @@ class TabWidgetStyleConfig : public FontStyleConfig {
 		Int32		LineBelowTabsYOffset = 0;
 };
 
-class ProgressBarStyleConfig : public FontStyleConfig {
+class UIProgressBarStyleConfig : public UIFontStyleConfig {
 	public:
-		ProgressBarStyleConfig() {}
+		UIProgressBarStyleConfig() {}
 
-		ProgressBarStyleConfig( FontStyleConfig fontStyleConfig ) :
-			FontStyleConfig( fontStyleConfig )
+		UIProgressBarStyleConfig( UIFontStyleConfig fontStyleConfig ) :
+			UIFontStyleConfig( fontStyleConfig )
 		{}
 
 		bool DisplayPercent = false;
@@ -123,12 +97,12 @@ class ProgressBarStyleConfig : public FontStyleConfig {
 		Rectf FillerPadding;
 };
 
-class WinMenuStyleConfig : public FontStyleConfig {
+class UIWinMenuStyleConfig : public UIFontStyleConfig {
 	public:
-		WinMenuStyleConfig() {}
+		UIWinMenuStyleConfig() {}
 
-		WinMenuStyleConfig( FontStyleConfig fontStyleConfig ) :
-			FontStyleConfig( fontStyleConfig )
+		UIWinMenuStyleConfig( UIFontStyleConfig fontStyleConfig ) :
+			UIFontStyleConfig( fontStyleConfig )
 		{}
 
 		Uint32				MarginBetweenButtons = 0;
@@ -137,24 +111,24 @@ class WinMenuStyleConfig : public FontStyleConfig {
 		Uint32				FirstButtonMargin = 1;
 };
 
-class DropDownListStyleConfig : public FontStyleConfig {
+class UIDropDownListStyleConfig : public UIFontStyleConfig {
 	public:
-		DropDownListStyleConfig() {}
+		UIDropDownListStyleConfig() {}
 
-		DropDownListStyleConfig( FontStyleConfig fontStyleConfig ) :
-			FontStyleConfig( fontStyleConfig )
+		UIDropDownListStyleConfig( UIFontStyleConfig fontStyleConfig ) :
+			UIFontStyleConfig( fontStyleConfig )
 		{}
 
 		Uint32 MaxNumVisibleItems = 10;
 		bool PopUpToMainControl = false;
 };
 
-class WindowStyleConfig : public FontStyleConfig {
+class UIWindowStyleConfig : public UIFontStyleConfig {
 	public:
-		WindowStyleConfig() {}
+		UIWindowStyleConfig() {}
 
-		WindowStyleConfig( FontStyleConfig fontStyleConfig ) :
-			FontStyleConfig( fontStyleConfig )
+		UIWindowStyleConfig( UIFontStyleConfig fontStyleConfig ) :
+			UIFontStyleConfig( fontStyleConfig )
 		{}
 
 		Uint32		WinFlags = UI_WIN_DEFAULT_FLAGS;
@@ -170,12 +144,12 @@ class WindowStyleConfig : public FontStyleConfig {
 		bool		BorderAutoSize = true;
 };
 
-class MenuStyleConfig : public FontStyleConfig {
+class UIMenuStyleConfig : public UIFontStyleConfig {
 	public:
-		MenuStyleConfig() {}
+		UIMenuStyleConfig() {}
 
-		MenuStyleConfig( FontStyleConfig fontStyleConfig ) :
-			FontStyleConfig( fontStyleConfig )
+		UIMenuStyleConfig( UIFontStyleConfig fontStyleConfig ) :
+			UIFontStyleConfig( fontStyleConfig )
 		{}
 
 		Recti				Padding = Recti(0, 0, 0, 0);
@@ -185,12 +159,12 @@ class MenuStyleConfig : public FontStyleConfig {
 
 };
 
-class PushButtonStyleConfig : public FontStyleConfig {
+class UIPushButtonStyleConfig : public UIFontStyleConfig {
 	public:
-		PushButtonStyleConfig() {}
+		UIPushButtonStyleConfig() {}
 
-		PushButtonStyleConfig( FontStyleConfig fontStyleConfig ) :
-			FontStyleConfig( fontStyleConfig )
+		UIPushButtonStyleConfig( UIFontStyleConfig fontStyleConfig ) :
+			UIFontStyleConfig( fontStyleConfig )
 		{}
 
 		Int32				IconHorizontalMargin = 4;
@@ -198,20 +172,20 @@ class PushButtonStyleConfig : public FontStyleConfig {
 		Sizei				IconMinSize;
 };
 
-class SliderStyleConfig {
+class UISliderStyleConfig {
 	public:
-		SliderStyleConfig() {}
+		UISliderStyleConfig() {}
 
 		bool AllowHalfSliderOut = false;
 		bool ExpandBackground = false;
 };
 
-class TooltipStyleConfig : public FontStyleConfig {
+class UITooltipStyleConfig : public UIFontStyleConfig {
 	public:
-		TooltipStyleConfig() {}
+		UITooltipStyleConfig() {}
 
-		TooltipStyleConfig( FontStyleConfig fontStyleConfig ) :
-			FontStyleConfig( fontStyleConfig )
+		UITooltipStyleConfig( UIFontStyleConfig fontStyleConfig ) :
+			UIFontStyleConfig( fontStyleConfig )
 		{}
 
 		Recti		Padding;

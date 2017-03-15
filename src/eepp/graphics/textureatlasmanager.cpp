@@ -15,7 +15,7 @@ TextureAtlasManager::TextureAtlasManager() :
 TextureAtlasManager::~TextureAtlasManager() {
 }
 
-TextureAtlas * TextureAtlasManager::load( const std::string& TextureAtlasPath ) {
+TextureAtlas * TextureAtlasManager::loadFromFile( const std::string& TextureAtlasPath ) {
 	TextureAtlasLoader loader( TextureAtlasPath );
 
 	return loader.getTextureAtlas();

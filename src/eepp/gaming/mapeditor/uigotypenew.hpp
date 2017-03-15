@@ -3,6 +3,7 @@
 
 #include <eepp/gaming/base.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#include <eepp/ui/uitextinput.hpp>
 
 using namespace EE::UI;
 

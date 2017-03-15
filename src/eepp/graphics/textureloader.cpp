@@ -63,7 +63,7 @@ TextureLoader::TextureLoader( IOStream& Stream,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
-) : ObjectLoader( ObjectLoader::TextureLoaderType ),
+) : ObjectLoader( ObjectLoader::TextureLoader ),
 	mLoadType(TEX_LT_STREAM),
 	mPixels(NULL),
 	mTexId(0),
@@ -94,7 +94,7 @@ TextureLoader::TextureLoader( const std::string& Filepath,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
-) : ObjectLoader( ObjectLoader::TextureLoaderType ),
+) : ObjectLoader( ObjectLoader::TextureLoader ),
 	mLoadType(TEX_LT_PATH),
 	mPixels(NULL),
 	mTexId(0),
@@ -126,7 +126,7 @@ TextureLoader::TextureLoader( const unsigned char * ImagePtr,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
-) : ObjectLoader( ObjectLoader::TextureLoaderType ),
+) : ObjectLoader( ObjectLoader::TextureLoader ),
 	mLoadType(TEX_LT_MEM),
 	mPixels(NULL),
 	mTexId(0),
@@ -158,7 +158,7 @@ TextureLoader::TextureLoader( Pack * Pack,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
-) : ObjectLoader( ObjectLoader::TextureLoaderType ),
+) : ObjectLoader( ObjectLoader::TextureLoader ),
 	mLoadType(TEX_LT_PACK),
 	mPixels(NULL),
 	mTexId(0),
@@ -193,7 +193,7 @@ TextureLoader::TextureLoader( const unsigned char * Pixels,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy,
 	const std::string& FileName
-) : ObjectLoader( ObjectLoader::TextureLoaderType ),
+) : ObjectLoader( ObjectLoader::TextureLoader ),
 	mLoadType(TEX_LT_PIXELS),
 	mPixels( const_cast<unsigned char *> ( Pixels ) ),
 	mTexId(0),
@@ -232,7 +232,7 @@ void TextureLoader::start() {
 	mTE.restart();
 
 	if ( TEX_LT_PATH == mLoadType )
-		loadFromPath();
+		loadFromFile();
 	else if ( TEX_LT_MEM == mLoadType )
 		loadFromMemory();
 	else if ( TEX_LT_PACK == mLoadType )
@@ -255,7 +255,7 @@ void TextureLoader::loadFile() {
 	fs.read( reinterpret_cast<char*> ( mPixels ), mSize );
 }
 
-void TextureLoader::loadFromPath() {
+void TextureLoader::loadFromFile() {
 	if ( FileSystem::fileExists( mFilepath ) ) {
 		mImgType = stbi_test( mFilepath.c_str() );
 

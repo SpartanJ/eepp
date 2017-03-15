@@ -1,7 +1,7 @@
 #include <eepp/ui/uitextinputpassword.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
-#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/graphics/font.hpp>
 
 namespace EE { namespace UI {
@@ -13,7 +13,7 @@ UITextInputPassword *UITextInputPassword::New() {
 UITextInputPassword::UITextInputPassword() :
 	UITextInput()
 {
-	mPassCache = eeNew( TextCache, () );
+	mPassCache = eeNew( Text, () );
 	setFontStyleConfig( mFontStyleConfig );
 
 	autoAlign();
@@ -63,13 +63,13 @@ void UITextInputPassword::alignFix() {
 		for ( size_t i = 0; i < curStr.size(); i++ )
 			pasStr += '*';
 
-		mPassCache->getFont()->setText( pasStr );
+		mPassCache->setString( pasStr );
 
-		Float tW	= mPassCache->getFont()->getTextWidth();
+		Float tW	= mPassCache->getTextWidth();
 		Float tX	= mRealAlignOffset.x + tW;
 
 		mCurPos.x	= tW;
-		mCurPos.y	= (Float)LineNum * (Float)mPassCache->getFont()->getFontHeight();
+		mCurPos.y	= (Float)LineNum * (Float)mPassCache->getFont()->getLineSpacing( mPassCache->getCharacterSizePx() );
 
 		if ( !mTextBuffer.setSupportNewLine() ) {
 			if ( tX < 0.f )
@@ -107,19 +107,17 @@ void UITextInputPassword::autoAlign() {
 }
 
 void UITextInputPassword::updateText() {
-	updatePass( mTextCache->getText() );
+	updatePass( mTextCache->getString() );
 }
 
 void UITextInputPassword::updatePass( const String& pass ) {
-	mPassCache->getText().clear();
-
 	String newTxt;
 
 	for ( size_t i = 0; i < pass.size(); i++ ) {
 		newTxt += '*';
 	}
 
-	mPassCache->setText( newTxt );
+	mPassCache->setString( newTxt );
 }
 
 UITextView * UITextInputPassword::setText( const String& text ) {
@@ -130,13 +128,14 @@ UITextView * UITextInputPassword::setText( const String& text ) {
 	return this;
 }
 
-TextCache *UITextInputPassword::getPassCache() const {
+Text *UITextInputPassword::getPassCache() const {
 	return mPassCache;
 }
 
-void UITextInputPassword::setFontStyleConfig(const TooltipStyleConfig & fontStyleConfig) {
+void UITextInputPassword::setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig) {
 	UITextInput::setFontStyleConfig( fontStyleConfig );
 
+	mPassCache->setCharacterSize( mFontStyleConfig.CharacterSize );
 	mPassCache->setFont( mFontStyleConfig.getFont() );
 	mPassCache->setColor( mFontStyleConfig.getFontColor() );
 	mPassCache->setShadowColor( mFontStyleConfig.getFontShadowColor() );

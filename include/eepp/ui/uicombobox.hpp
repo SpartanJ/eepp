@@ -28,6 +28,8 @@ class EE_API UIComboBox : public UIWidget {
 		InputTextBuffer * getInputTextBuffer();
 
 		const String& getText();
+
+		void loadFromXmlNode(const pugi::xml_node & node);
 	protected:
 		UIDropDownList * mDropDownList;
 		UIControlAnim * mButton;

@@ -5,6 +5,16 @@
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uimenucheckbox.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
+#include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiwinmenu.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
+#include <eepp/ui/uispinbox.hpp>
+#include <eepp/ui/uicheckbox.hpp>
+#include <eepp/ui/uicommondialog.hpp>
+#include <eepp/ui/uimessagebox.hpp>
+#include <eepp/ui/uitabwidget.hpp>
+#include <eepp/ui/tools/textureatlaseditor.hpp>
 #include <eepp/gaming/maplayer.hpp>
 #include <eepp/gaming/maplight.hpp>
 #include <eepp/gaming/gameobject.hpp>
