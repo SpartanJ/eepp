@@ -97,7 +97,7 @@ class EE_API Text {
 		const Uint32& getFlags() const;
 
 		/** @return The number of lines that the cached text contains */
-		const int& getNumLines() const;
+		const int& getNumLines();
 
 		/** Force to cache the width of the current text */
 		void cacheWidth();
@@ -118,6 +118,7 @@ class EE_API Text {
 
 		mutable Rectf   	mBounds;			 ///< Bounding rectangle of the text (in local coordinates)
 		mutable bool		mGeometryNeedUpdate; ///< Does the geometry need to be recomputed?
+		mutable bool		mCachedWidthNeedUpdate;
 
 		Float				mCachedWidth;
 		int					mNumLines;

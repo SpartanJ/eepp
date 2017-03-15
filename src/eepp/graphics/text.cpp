@@ -190,6 +190,7 @@ Text::Text() :
 	mOutlineColor(0, 0, 0, 255),
 	mOutlineThickness (0),
 	mGeometryNeedUpdate(false),
+	mCachedWidthNeedUpdate(false),
 	mCachedWidth(0),
 	mNumLines(0),
 	mLargestLineCharCount(0),
@@ -209,6 +210,7 @@ Text::Text(const String& string, Font * font, unsigned int characterSize) :
 	mOutlineColor(0, 0, 0, 255),
 	mOutlineThickness(0),
 	mGeometryNeedUpdate(true),
+	mCachedWidthNeedUpdate(true),
 	mCachedWidth(0),
 	mNumLines(0),
 	mLargestLineCharCount(0),
@@ -227,6 +229,7 @@ Text::Text(Font * font, unsigned int characterSize) :
 	mOutlineColor(0, 0, 0, 255),
 	mOutlineThickness(0),
 	mGeometryNeedUpdate(true),
+	mCachedWidthNeedUpdate(true),
 	mCachedWidth(0),
 	mNumLines(0),
 	mLargestLineCharCount(0),
@@ -243,8 +246,8 @@ void Text::create(Font * font, const String & text, ColorA FontColor, ColorA Fon
 	mRealCharacterSize = PixelDensity::dpToPxI(mCharacterSize);
 	setColor( FontColor );
 	setShadowColor( FontShadowColor );
-	cacheWidth();
 	mGeometryNeedUpdate = true;
+	mCachedWidthNeedUpdate = true;
 	ensureGeometryUpdate();
 }
 
@@ -252,7 +255,7 @@ void Text::setString(const String& string) {
 	if (mString != string) {
 		mString = string;
 		mGeometryNeedUpdate = true;
-		cacheWidth();
+		mCachedWidthNeedUpdate = true;
 	}
 }
 
@@ -264,7 +267,7 @@ void Text::setFont(Font * font) {
 		mFontHeight = mFont->getFontHeight( mRealCharacterSize );
 
 		mGeometryNeedUpdate = true;
-		cacheWidth();
+		mCachedWidthNeedUpdate = true;
 	}
 }
 
@@ -276,7 +279,7 @@ void Text::setCharacterSize(unsigned int size) {
 		mFontHeight = mFont->getFontHeight( mRealCharacterSize );
 
 		mGeometryNeedUpdate = true;
-		cacheWidth();
+		mCachedWidthNeedUpdate = true;
 	}
 }
 
@@ -284,7 +287,7 @@ void Text::setStyle(Uint32 style) {
 	if (mStyle != style) {
 		mStyle = style;
 		mGeometryNeedUpdate = true;
-		cacheWidth();
+		mCachedWidthNeedUpdate = true;
 	}
 }
 
@@ -320,6 +323,7 @@ void Text::setOutlineThickness(Float thickness) {
 	if (thickness != mOutlineThickness) {
 		mOutlineThickness = thickness;
 		mGeometryNeedUpdate = true;
+		mCachedWidthNeedUpdate = true;
 	}
 }
 
@@ -416,10 +420,14 @@ Rectf Text::getLocalBounds() {
 }
 
 Float Text::getTextWidth() {
+	cacheWidth();
+
 	return mCachedWidth;
 }
 
 Float Text::getTextHeight() {
+	cacheWidth();
+
 	return mFont->getLineSpacing(mRealCharacterSize) * mNumLines;
 }
 
@@ -720,11 +728,15 @@ void Text::setShadowColor(const ColorA& color) {
 	mFontShadowColor = color;
 }
 
-const int& Text::getNumLines() const {
+const int& Text::getNumLines() {
+	cacheWidth();
+
 	return mNumLines;
 }
 
 const std::vector<Float>& Text::getLinesWidth() {
+	cacheWidth();
+
 	return mLinesWidth;
 }
 
@@ -740,8 +752,12 @@ const Uint32& Text::getFlags() const {
 }
 
 void Text::cacheWidth() {
+	if ( !mCachedWidthNeedUpdate )
+		return;
+
 	if ( NULL != mFont && mString.size() ) {
 		mFont->cacheWidth( mString, mRealCharacterSize, (mStyle & Bold), mOutlineThickness, mLinesWidth, mCachedWidth, mNumLines, mLargestLineCharCount );
+		mCachedWidthNeedUpdate = false;
 	} else {
 		mCachedWidth = 0;
 	}
