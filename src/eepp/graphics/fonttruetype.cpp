@@ -287,11 +287,23 @@ Float FontTrueType::getLineSpacing(unsigned int characterSize) const {
 	}
 }
 
+#define FT_FLOOR(X)		( ( X & -64 ) / 64 )
+#define FT_CEIL(X)		( ( ( X + 63) & -64 ) / 64 )
+
 Uint32 FontTrueType::getFontHeight(const Uint32 & characterSize) {
 	FT_Face face = static_cast<FT_Face>(mFace);
 
 	if (face && setCurrentSize(characterSize)) {
-		return static_cast<Float>( eemax( (Float)face->height, (Float)face->size->metrics.height ) ) / static_cast<Float>(1 << 6);
+		if ( FT_IS_SCALABLE( face ) ) {
+			FT_Fixed scale = face->size->metrics.y_scale;
+
+			int  ascent = ( FT_CEIL( FT_MulFix( face->ascender, scale) ) );
+			int descent = ( FT_CEIL( FT_MulFix( face->descender, scale ) ) );
+			int height = ( ascent - descent + 1 );
+			return height;
+		} else {
+			return static_cast<Float>( (Float)face->size->metrics.height ) / static_cast<Float>(1 << 6);
+		}
 	} else {
 		return 0.f;
 	}
@@ -398,7 +410,7 @@ Glyph FontTrueType::loadGlyph(Uint32 codePoint, unsigned int characterSize, bool
 		return glyph;
 
 	// Load the glyph corresponding to the code point
-	FT_Int32 flags = FT_LOAD_TARGET_NORMAL | FT_LOAD_FORCE_AUTOHINT;
+	FT_Int32 flags = FT_LOAD_TARGET_NORMAL; //  | FT_LOAD_FORCE_AUTOHINT
 	if (outlineThickness != 0)
 		flags |= FT_LOAD_NO_BITMAP;
 	if (FT_Load_Char(face, codePoint, flags) != 0)
