@@ -99,9 +99,6 @@ class EE_API Text {
 		/** @return The number of lines that the cached text contains */
 		const int& getNumLines();
 
-		/** Force to cache the width of the current text */
-		void cacheWidth();
-
 		void setStyleConfig( const FontStyleConfig& styleConfig );
 	protected:
 		void ensureGeometryUpdate();
@@ -133,6 +130,9 @@ class EE_API Text {
 		std::vector<VertexCoords>	mOutlineVertices;
 		std::vector<ColorA> mOutlineColors;
 		std::vector<Float> mLinesWidth;
+
+		/** Force to cache the width of the current text */
+		void cacheWidth();
 };
 
 }}
