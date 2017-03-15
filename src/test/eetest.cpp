@@ -203,6 +203,7 @@ void EETest::onFontLoaded( ResourceLoader * ObjLoaded ) {
 	mFBOText.setOutlineColor( ColorA(0,0,0,255) );
 
 	mInfoText.create( DBSM, "", ColorA(100,100,100,255) );
+	mInfoText.setOutlineThickness( 1 );
 }
 
 void EETest::createShaders() {
@@ -955,9 +956,9 @@ void EETest::setScreen( Uint32 num ) {
 	if ( NULL != mTerrainBut ) mTerrainBut->setVisible( 1 == num );
 
 	if ( 0 == num || 5 == num )
-		mWindow->setBackColor( RGB( 240, 240, 240 ) );
+		mWindow->setClearColor( RGB( 240, 240, 240 ) );
 	else
-		mWindow->setBackColor( RGB( 0, 0, 0 ) );
+		mWindow->setClearColor( RGB( 0, 0, 0 ) );
 
 	if ( num < 6 )
 		Screen = num;
@@ -1375,7 +1376,7 @@ void EETest::render() {
 	if ( Sys::getTicks() - lasttick >= 50 ) {
 		lasttick = Sys::getTicks();
 		#ifdef EE_DEBUG
-		mInfo = String::strFormated( "EE - FPS: %d Elapsed Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
+		mInfo = String::strFormated( "EE - FPS: %d Frame Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
 							mWindow->getFPS(),
 							et.asMilliseconds(),
 							(Int32)Mouse.x,
@@ -1395,6 +1396,14 @@ void EETest::render() {
 		#endif
 
 		mInfoText.setString( mInfo );
+
+		if ( mWindow->getClearColor().r() == 0 ) {
+			mInfoText.setColor( ColorA(255,255,255,255) );
+			mInfoText.setOutlineColor( ColorA(0,0,0,255) );
+		} else {
+			mInfoText.setColor( ColorA(0,0,0,255) );
+			mInfoText.setOutlineColor( ColorA(255,255,255,255) );
+		}
 	}
 
 	if ( !MultiViewportMode ) {
@@ -1448,7 +1457,6 @@ void EETest::render() {
 
 	UIManager::instance()->draw();
 	UIManager::instance()->update();
-
 
 	Con.draw();
 }

@@ -55,7 +55,7 @@ ColorAf FrameBuffer::getClearColor() const {
 void FrameBuffer::clear() {
 	GLi->clearColor( mClearColor.r(), mClearColor.g(), mClearColor.b(), mClearColor.a() );
 	GLi->clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-	mWindow->setBackColor( mWindow->getBackColor() );
+	mWindow->setClearColor( mWindow->getClearColor() );
 }
 
 void FrameBuffer::setBufferView() {

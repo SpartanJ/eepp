@@ -133,7 +133,7 @@ void Window::setup2D( const bool& KeepView ) {
 	GLi->pixelStorei( GL_UNPACK_ALIGNMENT, 1 );
 	GLi->pixelStorei( GL_PACK_ALIGNMENT, 1 );
 
-	setBackColor( mWindow.BackgroundColor );
+	setClearColor( mWindow.ClearColor );
 
 	GLi->lineSmooth();
 
@@ -170,13 +170,13 @@ const WindowInfo * Window::getWindowInfo() const {
 	return &mWindow;
 }
 
-void Window::setBackColor( const RGB& Color ) {
-	mWindow.BackgroundColor = Color;
-	GLi->clearColor( static_cast<Float>( mWindow.BackgroundColor.r() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.g() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.b() ) / 255.0f, 255.0f );
+void Window::setClearColor( const RGB& Color ) {
+	mWindow.ClearColor = Color;
+	GLi->clearColor( static_cast<Float>( mWindow.ClearColor.r() ) / 255.0f, static_cast<Float>( mWindow.ClearColor.g() ) / 255.0f, static_cast<Float>( mWindow.ClearColor.b() ) / 255.0f, 255.0f );
 }
 
-const RGB& Window::getBackColor() const {
-	return mWindow.BackgroundColor;
+RGB Window::getClearColor() const {
+	return mWindow.ClearColor;
 }
 
 bool Window::takeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format ) {

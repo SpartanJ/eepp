@@ -93,7 +93,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	// Check if created
 	if ( win->isOpen() ) {
 		// Set window background color
-		win->setBackColor( RGB( 50, 50, 50 ) );
+		win->setClearColor( RGB( 50, 50, 50 ) );
 
 		GLi->polygonMode( );
 

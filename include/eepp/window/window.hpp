@@ -106,7 +106,7 @@ class WindowInfo {
 	public:
 
 	inline WindowInfo() :
-		BackgroundColor(0,0,0),
+		ClearColor(0,0,0),
 		Created( false ),
 		Maximized( false )
 	{}
@@ -117,7 +117,7 @@ class WindowInfo {
 	Sizei				DesktopResolution;
 	Sizei				WindowSize;
 	Uint32				Flags;
-	RGB				BackgroundColor;
+	RGB				ClearColor;
 	bool				Created;
 	bool				Maximized;
 	eeWindowContex		Context;
@@ -296,10 +296,10 @@ class EE_API Window {
 		void setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix = true );
 
 		/** Set the window background color */
-		void setBackColor( const RGB& Color );
+		void setClearColor( const RGB& Color );
 
 		/** @return The background clear color */
-		const RGB& getBackColor() const;
+		RGB getClearColor() const;
 
 		/** Captures the window front buffer and saves it to disk. \n
 		* You have to call it before Display, and after render all the objects. \n

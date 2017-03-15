@@ -60,7 +60,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	win = Engine::instance()->createWindow( WindowSettings( 960, 640, "eepp - Fonts" ), ContextSettings( true ) );
 
 	// Set window background color
-	win->setBackColor( RGB(255,255,255) );
+	win->setClearColor( RGB(255,255,255) );
 
 	// Check if created
 	if ( win->isOpen() ) {
@@ -83,7 +83,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		text.setFlags( FONT_DRAW_CENTER );
 		text.setString( Txt );
 
-		win->setBackColor( RGB(230,230,230) );
+		win->setClearColor( RGB(230,230,230) );
 
 		// Application loop
 		win->runMainLoop( &mainLoop );

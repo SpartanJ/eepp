@@ -116,7 +116,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	win = Engine::instance()->createWindow( WindowSettings( 1024, 768, "eepp - VBO - FBO and Batch Rendering" ), ContextSettings( true ) );
 
 	// Set window background color
-	win->setBackColor( RGB( 50, 50, 50 ) );
+	win->setClearColor( RGB( 50, 50, 50 ) );
 
 	// Check if created
 	if ( win->isOpen() ) {
