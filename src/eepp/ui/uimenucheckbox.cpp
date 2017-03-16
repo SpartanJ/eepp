@@ -32,8 +32,8 @@ void UIMenuCheckBox::setTheme( UITheme * Theme ) {
 
 	setThemeControl( Theme, "menuitem" );
 
-	mSkinActive		= Theme->getByName( Theme->getAbbr() + "_" + "menucheckbox_active" );
-	mSkinInactive	= Theme->getByName( Theme->getAbbr() + "_" + "menucheckbox_inactive" );
+	mSkinActive		= Theme->getSkin( "menucheckbox_active" );
+	mSkinInactive	= Theme->getSkin( "menucheckbox_inactive" );
 
 	setActive( mActive );
 

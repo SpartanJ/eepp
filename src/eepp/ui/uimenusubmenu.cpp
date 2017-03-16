@@ -41,7 +41,7 @@ bool UIMenuSubMenu::isType( const Uint32& type ) const {
 void UIMenuSubMenu::setTheme( UITheme * Theme ) {
 	UIMenuItem::setTheme( Theme );
 
-	mSkinArrow		= Theme->getByName( Theme->getAbbr() + "_" + "menuarrow" );
+	mSkinArrow		= Theme->getSkin( "menuarrow" );
 
 	onStateChange();
 }

@@ -146,7 +146,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 	for ( std::list<std::string>::iterator it = tTheme->mUIElements.begin() ; it != tTheme->mUIElements.end(); it++ ) {
 		Uint32 IsComplex = 0;
 
-		Element = std::string( tTheme->getAbbr() + "_" + *it );
+		Element = tTheme->getAbbr() + "_" + *it;
 
 		Found 	= searchFilesInAtlas( TextureAtlas, Element, IsComplex );
 
@@ -377,6 +377,10 @@ SubTexture * UITheme::getIconByName( const std::string& name ) {
 		return mTextureAtlas->getByName( mAbbr + "_icon_" + name );
 
 	return NULL;
+}
+
+UISkin * UITheme::getSkin(const std::string & controlName) {
+	return getByName( mAbbr + "_" + controlName );
 }
 
 void UITheme::setFontStyleConfig(const UITooltipStyleConfig & fontConfig) {

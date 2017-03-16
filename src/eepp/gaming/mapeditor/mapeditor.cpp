@@ -473,8 +473,8 @@ void MapEditor::onObjectModeSel( const UIEvent * Event ) {
 }
 
 void MapEditor::createUIMap() {
-	UISkin * HScrollSkin = mTheme->getByName( mTheme->getAbbr() + "_" + "hscrollbar_bg" );
-	UISkin * VScrollSkin = mTheme->getByName( mTheme->getAbbr() + "_" + "vscrollbar_bg" );
+	UISkin * HScrollSkin = mTheme->getSkin( "hscrollbar_bg" );
+	UISkin * VScrollSkin = mTheme->getSkin( "vscrollbar_bg" );
 
 	Float ScrollH = 16;
 	Float ScrollV = 16;

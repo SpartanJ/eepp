@@ -1220,7 +1220,7 @@ UIControl * UIControl::setThemeControl( const std::string& ControlName ) {
 
 UIControl * UIControl::setThemeControl( UITheme * Theme, const std::string& ControlName ) {
 	if ( NULL != Theme ) {
-		UISkin * tSkin = Theme->getByName( Theme->getAbbr() + "_" + ControlName );
+		UISkin * tSkin = Theme->getSkin( ControlName );
 
 		if ( NULL != tSkin ) {
 			Uint32 InitialState = UISkinState::StateNormal;

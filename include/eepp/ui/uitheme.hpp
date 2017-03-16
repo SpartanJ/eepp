@@ -52,6 +52,8 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		SubTexture * getIconByName( const std::string& name );
 
+		UISkin * getSkin( const std::string& controlName );
+
 		UITooltipStyleConfig getFontStyleConfig() const;
 
 		void setFontStyleConfig(const UITooltipStyleConfig & fontConfig);

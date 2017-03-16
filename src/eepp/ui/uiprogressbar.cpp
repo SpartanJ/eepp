@@ -64,7 +64,7 @@ void UIProgressBar::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 	setThemeControl( Theme, "progressbar" );
 
-	UISkin * tSkin = Theme->getByName( Theme->getAbbr() + "_progressbar_filler" );
+	UISkin * tSkin = Theme->getSkin( "progressbar_filler" );
 
 	if ( tSkin ) {
 		SubTexture * tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );

@@ -65,9 +65,9 @@ UIListBox::UIListBox() :
 
 	setSmoothScroll( true );
 
-	setRowHeight();
-
 	applyDefaultTheme();
+
+	setRowHeight();
 }
 
 UIListBox::~UIListBox() {
@@ -298,16 +298,15 @@ void UIListBox::setRowHeight() {
 	if ( 0 == mRowHeight ) {
 		Uint32 FontSize = PixelDensity::dpToPxI( 12 );
 
-		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
-			FontSize = UIThemeManager::instance()->getDefaultFont()->getFontHeight( PixelDensity::dpToPxI( UIThemeManager::instance()->getDefaultFontStyleConfig().CharacterSize ) );
+		UITheme * theme = NULL != mTheme ? mTheme : UIThemeManager::instance()->getDefaultTheme();
 
-		if ( NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() )
-			FontSize = mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont()->getFontHeight( PixelDensity::dpToPxI( mSkinState->getSkin()->getTheme()->getFontStyleConfig().CharacterSize ) );
+		if ( NULL != theme )
+			FontSize = theme->getFontStyleConfig().getFont()->getFontHeight( PixelDensity::dpToPxI( UIThemeManager::instance()->getDefaultFontStyleConfig().CharacterSize ) );
 
 		if ( NULL != mFontStyleConfig.getFont() )
 			FontSize = mFontStyleConfig.getFont()->getFontHeight( PixelDensity::dpToPxI( mFontStyleConfig.CharacterSize ) );
 
-		mRowHeight = (Uint32)PixelDensity::pxToDpI( FontSize );
+		mRowHeight = (Uint32)PixelDensity::pxToDpI( FontSize ) + 4;
 	}
 
 	if ( tOldRowHeight != mRowHeight ) {
