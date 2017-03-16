@@ -11,6 +11,15 @@ namespace Demo_Test {
 void EETest::init() {
 	EE = Engine::instance();
 
+	Translator t;
+
+	t.loadFromString(
+		"<resources language='en'>"
+		"		<string name='app_name'>eepp</string>"
+		"		<string name='formatted'>Test %d %s</string>"
+		"</resources>"
+	);
+
 	Log::instance()->setLiveWrite( true );
 	Log::instance()->setConsoleOutput( true );
 

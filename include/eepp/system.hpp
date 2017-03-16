@@ -26,5 +26,6 @@
 #include <eepp/system/threadlocalptr.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/md5.hpp>
+#include <eepp/system/translator.hpp>
 
 #endif

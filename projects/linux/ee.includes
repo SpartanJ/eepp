@@ -8,3 +8,5 @@
 ../../include/eepp/ui
 ../../src/eepp/ui
 ../../src/eepp/helper/freetype2/include/
+../../include/eepp/system
+../../src/eepp/system
