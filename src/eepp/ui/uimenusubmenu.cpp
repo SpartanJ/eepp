@@ -11,7 +11,6 @@ UIMenuSubMenu * UIMenuSubMenu::New() {
 UIMenuSubMenu::UIMenuSubMenu() :
 	UIMenuItem(),
 	mSubMenu( NULL ),
-	mSkinArrow( NULL ),
 	mArrow( NULL ),
 	mTimeOver( 0.f ),
 	mMaxTime( 200.f ),
@@ -41,7 +40,8 @@ bool UIMenuSubMenu::isType( const Uint32& type ) const {
 void UIMenuSubMenu::setTheme( UITheme * Theme ) {
 	UIMenuItem::setTheme( Theme );
 
-	mSkinArrow		= Theme->getSkin( "menuarrow" );
+	mArrow->setThemeControl( "menuarrow" );
+	mArrow->setSize( mArrow->getSkinSize() );
 
 	onStateChange();
 }
@@ -56,14 +56,7 @@ void UIMenuSubMenu::onSizeChange() {
 void UIMenuSubMenu::onStateChange() {
 	UIMenuItem::onStateChange();
 
-	if ( NULL != mSkinArrow ) {
-		if ( mSkinState->getState() == UISkinState::StateSelected )
-			mArrow->setSubTexture( mSkinArrow->getSubTexture( UISkinState::StateMouseEnter ) );
-		else
-			mArrow->setSubTexture( mSkinArrow->getSubTexture( UISkinState::StateNormal ) );
-
-		onSizeChange();
-	}
+	onSizeChange();
 }
 
 void UIMenuSubMenu::setSubMenu( UIMenu * SubMenu ) {
@@ -123,7 +116,7 @@ Uint32 UIMenuSubMenu::onMouseExit( const Vector2i &Pos, const Uint32 Flags ) {
 	return 1;
 }
 
-UIImage * UIMenuSubMenu::getArrow() const {
+UIControl * UIMenuSubMenu::getArrow() const {
 	return mArrow;
 }
 

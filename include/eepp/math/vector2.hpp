@@ -263,6 +263,26 @@ bool operator !=(const T& V, const Vector2<T>& V1) {
 }
 
 template <typename T>
+bool operator <(const Vector2<T>& V1, const Vector2<T>& V2) {
+	return (V1.x < V2.x) && (V1.y < V2.y);
+}
+
+template <typename T>
+bool operator >(const Vector2<T>& V1, const Vector2<T>& V2) {
+	return (V1.x > V2.x) && (V1.y > V2.y);
+}
+
+template <typename T>
+bool operator <=(const Vector2<T>& V1, const Vector2<T>& V2) {
+	return (V1.x <= V2.x) && (V1.y <= V2.y);
+}
+
+template <typename T>
+bool operator >=(const Vector2<T>& V1, const Vector2<T>& V2) {
+	return (V1.x >= V2.x) && (V1.y >= V2.y);
+}
+
+template <typename T>
 T Vector2<T>::cosAng( const T& Ang ) {
 	return eecos(Ang * EE_PI_180);
 }

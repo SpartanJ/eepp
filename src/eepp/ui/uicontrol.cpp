@@ -46,7 +46,7 @@ UIControl::UIControl() :
 }
 
 UIControl::~UIControl() {
-	safeDeleteSkinState();
+	removeSkin();
 	eeSAFE_DELETE( mBackground );
 	eeSAFE_DELETE( mBorder );
 
@@ -372,8 +372,16 @@ void UIControl::drawBox() {
 }
 
 void UIControl::drawSkin() {
-	if ( NULL != mSkinState )
-		mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight(), 255 );
+	if ( NULL != mSkinState ) {
+		if ( mFlags & UI_SKIN_KEEP_SIZE_ON_DRAW ) {
+			Sizei rSize = PixelDensity::dpToPxI( mSkinState->getSkin()->getSize( mSkinState->getState() ) );
+			Sizei diff = ( mRealSize - rSize ) / 2;
+
+			mSkinState->draw( mScreenPosf.x + diff.x, mScreenPosf.y + diff.y, (Float)rSize.getWidth(), (Float)rSize.getHeight(), 255 );
+		} else {
+			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight(), 255 );
+		}
+	}
 }
 
 void UIControl::draw() {
@@ -1204,16 +1212,6 @@ void UIControl::setTheme( UITheme * Theme ) {
 	setThemeControl( Theme, "control" );
 }
 
-void UIControl::safeDeleteSkinState() {
-	if ( NULL != mSkinState && ( mControlFlags & UI_CTRL_FLAG_SKIN_OWNER ) ) {
-		UISkin * tSkin = mSkinState->getSkin();
-
-		eeSAFE_DELETE( tSkin );
-	}
-
-	eeSAFE_DELETE( mSkinState );
-}
-
 UIControl * UIControl::setThemeControl( const std::string& ControlName ) {
 	return setThemeControl( UIThemeManager::instance()->getDefaultTheme(), ControlName );
 }
@@ -1229,7 +1227,7 @@ UIControl * UIControl::setThemeControl( UITheme * Theme, const std::string& Cont
 				InitialState = mSkinState->getState();
 			}
 
-			safeDeleteSkinState();
+			removeSkin();
 
 			mSkinState = eeNew( UISkinState, ( tSkin ) );
 			mSkinState->setState( InitialState );
@@ -1242,7 +1240,7 @@ UIControl * UIControl::setThemeControl( UITheme * Theme, const std::string& Cont
 }
 
 void UIControl::setSkin( const UISkin& Skin ) {
-	safeDeleteSkinState();
+	removeSkin();
 
 	writeCtrlFlag( UI_CTRL_FLAG_SKIN_OWNER, 1 );
 
@@ -1251,6 +1249,38 @@ void UIControl::setSkin( const UISkin& Skin ) {
 	mSkinState = eeNew( UISkinState, ( SkinCopy ) );
 
 	onThemeLoaded();
+}
+
+UIControl * UIControl::setSkin( UISkin * skin ) {
+	if ( NULL != skin ) {
+		if ( NULL != mSkinState && mSkinState->getSkin() == skin )
+			return this;
+
+		Uint32 InitialState = UISkinState::StateNormal;
+
+		if ( NULL != mSkinState ) {
+			InitialState = mSkinState->getState();
+		}
+
+		removeSkin();
+
+		mSkinState = eeNew( UISkinState, ( skin ) );
+		mSkinState->setState( InitialState );
+
+		onThemeLoaded();
+	}
+
+	return this;
+}
+
+void UIControl::removeSkin() {
+	if ( NULL != mSkinState && ( mControlFlags & UI_CTRL_FLAG_SKIN_OWNER ) ) {
+		UISkin * tSkin = mSkinState->getSkin();
+
+		eeSAFE_DELETE( tSkin );
+	}
+
+	eeSAFE_DELETE( mSkinState );
 }
 
 void UIControl::onStateChange() {

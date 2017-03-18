@@ -46,6 +46,7 @@ enum UI_FLAGS {
 	UI_VALIGN_BOTTOM				= FONT_DRAW_BOTTOM,
 	UI_VALIGN_CENTER				= FONT_DRAW_MIDDLE,
 	UI_AUTO_SIZE					= (1 << 7),
+	UI_SKIN_KEEP_SIZE_ON_DRAW		= (1 << 8),
 	UI_FILL_BACKGROUND				= (1 << 9),
 	UI_BORDER						= (1 << 10),
 	UI_TAB_STOP						= (1 << 11),

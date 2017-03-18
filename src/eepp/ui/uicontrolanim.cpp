@@ -41,8 +41,16 @@ bool UIControlAnim::isType( const Uint32& type ) const {
 }
 
 void UIControlAnim::drawSkin() {
-	if ( NULL != mSkinState )
-		mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight(), (Uint32)mAlpha );
+	if ( NULL != mSkinState ) {
+		if ( mFlags & UI_SKIN_KEEP_SIZE_ON_DRAW ) {
+			Sizei rSize = PixelDensity::dpToPxI( mSkinState->getSkin()->getSize( mSkinState->getState() ) );
+			Sizei diff = ( mRealSize - rSize ) / 2;
+
+			mSkinState->draw( mScreenPosf.x + diff.x, mScreenPosf.y + diff.y, (Float)rSize.getWidth(), (Float)rSize.getHeight(), (Uint32)mAlpha );
+		} else {
+			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight(), (Uint32)mAlpha );
+		}
+	}
 }
 
 void UIControlAnim::draw() {

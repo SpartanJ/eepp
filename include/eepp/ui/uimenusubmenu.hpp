@@ -25,7 +25,7 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
 		UIMenu * getSubMenu() const;
 
-		UIImage * getArrow() const;
+		UIControl * getArrow() const;
 
 		void showSubMenu();
 
@@ -37,8 +37,7 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
 	protected:
 		UIMenu *	mSubMenu;
-		UISkin *	mSkinArrow;
-		UIImage	*	mArrow;
+		UIControl *	mArrow;
 		Float		mTimeOver;
 		Float		mMaxTime;
 		Uint32		mCbId;

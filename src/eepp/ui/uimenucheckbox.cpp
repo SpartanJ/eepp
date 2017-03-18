@@ -14,6 +14,7 @@ UIMenuCheckBox::UIMenuCheckBox() :
 	mSkinInactive( NULL )
 {
 	applyDefaultTheme();
+	mIcon->setFlags( UI_SKIN_KEEP_SIZE_ON_DRAW );
 }
 
 UIMenuCheckBox::~UIMenuCheckBox() {
@@ -50,20 +51,28 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 
 	if ( mActive ) {
 		if ( NULL != mSkinActive ) {
+			if ( NULL == mIcon->getSkin() || mIcon->getSkin()->getName() != mSkinActive->getName() )
+				mIcon->setSkin( mSkinActive );
+
 			if ( mSkinState->getState() == UISkinState::StateSelected )
-				setIcon( mSkinActive->getSubTexture( UISkinState::StateMouseEnter ) );
+				mIcon->setSkinState( UISkinState::StateMouseEnter );
 			else
-				setIcon( mSkinActive->getSubTexture( UISkinState::StateNormal ) );
-		} else
-			mIcon->setSubTexture( NULL );
+				mIcon->setSkinState( UISkinState::StateNormal );
+		} else {
+			mIcon->removeSkin();
+		}
 	} else {
-		if ( NULL != mSkinInactive )
+		if ( NULL != mSkinInactive ) {
+			if ( NULL == mIcon->getSkin() || mIcon->getSkin()->getName() != mSkinInactive->getName() )
+				mIcon->setSkin( mSkinInactive );
+
 			if ( mSkinState->getState() == UISkinState::StateSelected )
-				setIcon( mSkinInactive->getSubTexture( UISkinState::StateMouseEnter ) );
+				mIcon->setSkinState( UISkinState::StateMouseEnter );
 			else
-				setIcon( mSkinInactive->getSubTexture( UISkinState::StateNormal ) );
-		else
-			mIcon->setSubTexture( NULL );
+				mIcon->setSkinState( UISkinState::StateNormal );
+		} else {
+			mIcon->removeSkin();
+		}
 	}
 
 	if ( oActive != active ) {

@@ -185,6 +185,10 @@ class EE_API UIControl {
 
 		virtual void setSkin( const UISkin& Skin );
 
+		UIControl * setSkin( UISkin * skin );
+
+		void removeSkin();
+
 		UIControl * getFirstChild() const;
 
 		UIControl * getLastChild() const;
@@ -382,8 +386,6 @@ class EE_API UIControl {
 		Time getElapsed();
 
 		Recti makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
-
-		void safeDeleteSkinState();
 
 		Sizei getSkinSize( UISkin * Skin, const Uint32& State = UISkinState::StateNormal );
 
