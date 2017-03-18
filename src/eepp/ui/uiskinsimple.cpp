@@ -43,12 +43,6 @@ void UISkinSimple::setSkin( const Uint32& State ) {
 	mSubTexture[ State ] = TextureAtlasManager::instance()->getSubTextureByName( Name );
 }
 
-SubTexture * UISkinSimple::getSubTexture( const Uint32& State ) const {
-	eeASSERT ( State < UISkinState::StateCount );
-
-	return mSubTexture[ State ];
-}
-
 bool UISkinSimple::stateExists( const Uint32 & state ) {
 	return NULL != mSubTexture[ state ];
 }

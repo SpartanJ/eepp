@@ -171,20 +171,17 @@ void UISkinComplex::setSkin( const Uint32& State ) {
 	}
 }
 
-SubTexture * UISkinComplex::getSubTexture( const Uint32& State ) const {
-	eeASSERT ( State < UISkinState::StateCount );
-
-	return mSubTexture[ State ][ Center ];
-}
-
 bool UISkinComplex::stateExists( const Uint32 & state ) {
 	return NULL != mSubTexture[ state ];
 }
 
-SubTexture * UISkinComplex::getSubTextureSide( const Uint32& State, const Uint32& Side ) {
+Sizei UISkinComplex::getSideSize( const Uint32& State, const Uint32& Side ) {
 	eeASSERT ( State < UISkinState::StateCount && Side < UISkinComplex::SideCount );
 
-	return mSubTexture[ State ][ Side ];
+	if ( NULL != mSubTexture[ State ][ Side ] )
+		return mSubTexture[ State ][ Side ]->getDpSize();
+
+	return Sizei();
 }
 
 void UISkinComplex::stateNormalToState( const Uint32& State ) {

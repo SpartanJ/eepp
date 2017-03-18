@@ -34,8 +34,6 @@ class EE_API UISkin {
 
 		virtual Sizei getSize();
 
-		virtual SubTexture * getSubTexture( const Uint32& State ) const = 0;
-
 		virtual bool stateExists( const Uint32& State ) = 0;
 
 		virtual void setColor( const Uint32& State, const ColorA& Color );

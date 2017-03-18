@@ -31,6 +31,8 @@ class EE_API UIProgressBar : public UIWidget {
 
 		virtual void draw();
 
+		virtual void update();
+
 		void setMovementSpeed( const Vector2f& Speed );
 
 		const Vector2f& getMovementSpeed() const;
@@ -54,8 +56,9 @@ class EE_API UIProgressBar : public UIWidget {
 		UIProgressBarStyleConfig mStyleConfig;
 		Float				mProgress;
 		Float				mTotalSteps;
-		ScrollParallax *	mParallax;
 		UITextView * 		mTextBox;
+		Vector2f			mOffset;
+		UISkin *			mFillerSkin;
 
 		virtual Uint32 onValueChange();
 

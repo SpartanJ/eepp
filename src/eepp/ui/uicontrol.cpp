@@ -1377,34 +1377,20 @@ Recti UIControl::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool Pad
 			if ( mSkinState->getSkin()->getType() == UISkin::SkinComplex ) {
 				UISkinComplex * tComplex = reinterpret_cast<UISkinComplex*> ( mSkinState->getSkin() );
 
-				SubTexture * tSubTexture = NULL;
-
 				if ( PadLeft ) {
-					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Left );
-
-					if ( NULL != tSubTexture )
-						tPadding.Left = tSubTexture->getDpSize().getWidth();
+					tPadding.Left = tComplex->getSideSize( UISkinState::StateNormal, UISkinComplex::Left ).getWidth();
 				}
 
 				if ( PadRight ) {
-					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Right );
-
-					if ( NULL != tSubTexture )
-						tPadding.Right = tSubTexture->getDpSize().getWidth();
+					tPadding.Right = tComplex->getSideSize( UISkinState::StateNormal, UISkinComplex::Right ).getWidth();
 				}
 
 				if ( PadTop ) {
-					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Up );
-
-					if ( NULL != tSubTexture )
-						tPadding.Top = tSubTexture->getDpSize().getHeight();
+					tPadding.Top = tComplex->getSideSize( UISkinState::StateNormal, UISkinComplex::Up ).getHeight();
 				}
 
 				if ( PadBottom ) {
-					tSubTexture = tComplex->getSubTextureSide( UISkinState::StateNormal, UISkinComplex::Down );
-
-					if ( NULL != tSubTexture )
-						tPadding.Bottom = tSubTexture->getDpSize().getHeight();
+					tPadding.Bottom = tComplex->getSideSize( UISkinState::StateNormal, UISkinComplex::Down ).getHeight();
 				}
 			}
 		}

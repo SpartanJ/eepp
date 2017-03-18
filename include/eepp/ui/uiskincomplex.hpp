@@ -31,11 +31,9 @@ class EE_API UISkinComplex : public UISkin {
 
 		void setSkin( const Uint32& State );
 
-		SubTexture * getSubTexture( const Uint32& State ) const;
-
 		bool stateExists( const Uint32& state );
 
-		SubTexture * getSubTextureSide( const Uint32& State, const Uint32& Side );
+		Sizei getSideSize( const Uint32& State, const Uint32& Side );
 
 		UISkinComplex * clone( const std::string& NewName, const bool& CopyColorsState = true );
 

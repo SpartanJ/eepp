@@ -1,4 +1,5 @@
 #include <eepp/ui/uiprogressbar.hpp>
+#include <eepp/ui/uimanager.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 
@@ -12,7 +13,7 @@ UIProgressBar::UIProgressBar() :
 	UIWidget(),
 	mProgress( 0.f ),
 	mTotalSteps( 100.f ),
-	mParallax( NULL )
+	mFillerSkin( NULL )
 {
 	setFlags( UI_AUTO_PADDING | UI_AUTO_SIZE );
 
@@ -34,7 +35,6 @@ UIProgressBar::UIProgressBar() :
 }
 
 UIProgressBar::~UIProgressBar() {
-	eeSAFE_DELETE( mParallax );
 }
 
 Uint32 UIProgressBar::getType() const {
@@ -48,48 +48,61 @@ bool UIProgressBar::isType( const Uint32& type ) const {
 void UIProgressBar::draw() {
 	UIControlAnim::draw();
 
-	if ( NULL != mParallax && 0.f != mAlpha ) {
-		ColorA C( mParallax->getColor() );
-		C.Alpha = (Uint8)mAlpha;
+	if ( NULL == mFillerSkin )
+		return;
 
-		Rectf fillerMargin = PixelDensity::dpToPx( mStyleConfig.FillerPadding );
+	Rectf fillerPadding = PixelDensity::dpToPx( mStyleConfig.FillerPadding );
 
-		mParallax->setColor( C );
-		mParallax->setPosition( Vector2f( mScreenPos.x + fillerMargin.Left, mScreenPos.y + fillerMargin.Top ) );
-		mParallax->draw();
+	Float Height = (Float)mRealSize.getHeight();
+
+	if ( !mStyleConfig.VerticalExpand )
+		Height = (Float)mFillerSkin->getSize().getHeight();
+
+	if ( Height > mRealSize.getHeight() )
+		Height = mRealSize.getHeight();
+
+	Sizef fSize( ( ( mRealSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) / mTotalSteps, Height - fillerPadding.Top - fillerPadding.Bottom );
+	Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize() ) );
+	Sizei numTiles( (Int32)eeceil( (Float)fSize.getWidth() / (Float)rSize.getWidth() + 2 ),
+				(Int32)eeceil( (Float)fSize.getHeight() / (Float)rSize.getHeight() ) + 2 );
+
+	UIManager::instance()->clipSmartEnable( this, mScreenPos.x + fillerPadding.Left, mScreenPos.y + fillerPadding.Top, fSize.getWidth(), fSize.getHeight() );
+
+	for ( int y = -1; y < numTiles.y; y++ ) {
+		for ( int x = -1; x < numTiles.x; x++ ) {
+			mFillerSkin->draw( (Int32)mOffset.x + mScreenPos.x + fillerPadding.Left + x * rSize.getWidth(), mOffset.y + mScreenPos.y + fillerPadding.Top + y * rSize.getHeight(), rSize.getWidth(), rSize.getHeight(), 255, UISkinState::StateNormal );
+		}
 	}
+
+	UIManager::instance()->clipSmartDisable( this );
+}
+
+void UIProgressBar::update() {
+	UIControlAnim::update();
+
+	mOffset += mStyleConfig.MovementSpeed * (Float)( getElapsed().asSeconds() );
+
+	Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize() ) );
+
+	if ( mOffset.x > rSize.getWidth() || mOffset.x < -rSize.getWidth() )
+		mOffset.x = 0.f;
+
+	if ( mOffset.y > rSize.getHeight() || mOffset.y < -rSize.getHeight() )
+		mOffset.y = 0.f;
 }
 
 void UIProgressBar::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 	setThemeControl( Theme, "progressbar" );
 
-	UISkin * tSkin = Theme->getSkin( "progressbar_filler" );
+	mFillerSkin = Theme->getSkin( "progressbar_filler" );
 
-	if ( tSkin ) {
-		SubTexture * tSubTexture = tSkin->getSubTexture( UISkinState::StateNormal );
-
-		if ( NULL != tSubTexture ) {
-			eeSAFE_DELETE( mParallax );
-
-			Float Height = (Float)PixelDensity::dpToPx( getSkinSize().getHeight() );
-
-			if ( !mStyleConfig.VerticalExpand )
-				Height = (Float)tSubTexture->getSize().getHeight();
-
-			if ( Height > mRealSize.getHeight() )
-				Height = mRealSize.getHeight();
-
-			if ( mFlags & UI_AUTO_PADDING ) {
-				Float meH = (Float)getSkinSize().getHeight();
-				Float otH = (Float)tSkin->getSize().getHeight();
-				Float res = Math::roundUp( ( meH - otH ) * 0.5f );
-				mStyleConfig.FillerPadding = Rectf( res, res, res, res );
-			}
-
-			Rectf fillerPadding = PixelDensity::dpToPx( mStyleConfig.FillerPadding );
-
-			mParallax = eeNew( ScrollParallax, ( tSubTexture, Vector2f( mScreenPos.x + fillerPadding.Left, mScreenPos.y + fillerPadding.Top ), Sizef( ( ( mRealSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) / mTotalSteps, Height - fillerPadding.Top - fillerPadding.Bottom ), mStyleConfig.MovementSpeed ) );
+	if ( mFillerSkin ) {
+		if ( mFlags & UI_AUTO_PADDING ) {
+			Float meH = (Float)getSkinSize().getHeight();
+			Float otH = (Float)mFillerSkin->getSize().getHeight();
+			Float res = Math::roundUp( ( meH - otH ) * 0.5f );
+			mStyleConfig.FillerPadding = Rectf( res, res, res, res );
 		}
 	}
 
@@ -114,20 +127,6 @@ Uint32 UIProgressBar::onValueChange() {
 }
 
 void UIProgressBar::onSizeChange() {
-	if ( NULL != mParallax ) {
-		Float Height = (Float)mRealSize.getHeight();
-
-		if ( !mStyleConfig.VerticalExpand && mParallax->getSubTexture() )
-			Height = (Float)mParallax->getSubTexture()->getSize().getHeight();
-
-		if ( Height > mRealSize.getHeight() )
-			Height = mRealSize.getHeight();
-
-		Rectf fillerPadding = PixelDensity::dpToPx( mStyleConfig.FillerPadding );
-
-		mParallax->setSize( Sizef( ( ( mRealSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) / mTotalSteps, Height - fillerPadding.Top - fillerPadding.Bottom ) );
-	}
-
 	updateTextBox();
 }
 
@@ -155,9 +154,6 @@ const Float& UIProgressBar::getTotalSteps() const {
 
 void UIProgressBar::setMovementSpeed( const Vector2f& Speed ) {
 	mStyleConfig.MovementSpeed = Speed;
-
-	if ( NULL != mParallax )
-		mParallax->setSpeed( PixelDensity::dpToPx( Speed ) );
 }
 
 const Vector2f& UIProgressBar::getMovementSpeed() const {
@@ -214,12 +210,7 @@ void UIProgressBar::loadFromXmlNode(const pugi::xml_node & node) {
 		std::string name = ait->name();
 		String::toLowerInPlace( name );
 
-		if ( "src" == name ) {
-			SubTexture * subTexture = GlobalTextureAtlas::instance()->getByName( ait->as_string() );
-
-			if ( NULL != mParallax && NULL != subTexture )
-				mParallax->setSubTexture( subTexture );
-		} else if ( "totalsteps" == name ) {
+		if ( "totalsteps" == name ) {
 			setTotalSteps( ait->as_float() );
 		} else if ( "progress" == name ) {
 			setProgress( ait->as_float() );
