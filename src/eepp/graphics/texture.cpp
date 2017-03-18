@@ -285,7 +285,7 @@ void Texture::replaceColor( const ColorA& ColorKey, const ColorA& NewColor ) {
 void Texture::createMaskFromColor( const ColorA& ColorKey, Uint8 Alpha ) {
 	lock( true );
 
-	Image::replaceColor( ColorKey, ColorA( ColorKey.r(), ColorKey.g(), ColorKey.b(), Alpha ) );
+	Image::replaceColor( ColorKey, ColorA( ColorKey.r, ColorKey.g, ColorKey.b, Alpha ) );
 
 	unlock( false, true );
 }
@@ -725,3 +725,19 @@ void Texture::drawQuadEx( Quad2f Q, const Vector2f& Offset, const Float &Angle, 
 }
 
 }}
+
+Sizef EE::Graphics::Texture::getSize() {
+	return Sizef( PixelDensity::pxToDp( mImgWidth ), PixelDensity::pxToDp( mImgHeight ) );
+}
+
+Sizei EE::Graphics::Texture::getPixelSize() {
+	return Sizei( mImgWidth, mImgHeight );
+}
+
+void EE::Graphics::Texture::draw( const Vector2f & position ) {
+	drawFast( position.x, position.y );
+}
+
+void EE::Graphics::Texture::draw(const Vector2f & position, const Sizef & size) {
+	drawFast( position.x, position.y, 0, Vector2f::One, mColorFilter, ALPHA_NORMAL, size.x, size.y );
+}

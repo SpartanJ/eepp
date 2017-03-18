@@ -354,7 +354,7 @@ Uint32 Text::getStyle() const {
 void Text::setAlpha( const Uint8& alpha ) {
 	std::size_t s = mColors.size();
 	for ( Uint32 i = 0; i < s; i++ ) {
-		mColors[ i ].Alpha = alpha;
+		mColors[ i ].a = alpha;
 	}
 }
 
@@ -444,10 +444,10 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 
 			ColorA Col = getFillColor();
 
-			if ( Col.a() != 255 ) {
+			if ( Col.a != 255 ) {
 				ColorA ShadowColor = getShadowColor();
 
-				ShadowColor.Alpha = (Uint8)( (Float)ShadowColor.Alpha * ( (Float)Col.a() / (Float)255 ) );
+				ShadowColor.a = (Uint8)( (Float)ShadowColor.a * ( (Float)Col.a / (Float)255 ) );
 
 				setFillColor( ShadowColor );
 			} else {
@@ -518,7 +518,7 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 }
 
 void Text::ensureGeometryUpdate() {
-	Sizei textureSize = mFont->getTexture(mRealCharacterSize)->getSize();
+	Sizei textureSize = mFont->getTexture(mRealCharacterSize)->getPixelSize();
 
 	if ( textureSize != mTextureSize )
 		mGeometryNeedUpdate = true;

@@ -9,7 +9,7 @@
 namespace EE { namespace Graphics {
 
 /** @brief A Sprite controller class, can hold and control sprites animations. */
-class EE_API Sprite {
+class EE_API Sprite : public Drawable {
 	public:
 		/// Event ID - Sprite - User Data
 		typedef cb::Callback3< void, Uint32, Sprite *, void * > SpriteCallback;
@@ -267,15 +267,9 @@ class EE_API Sprite {
 		*/
 		void draw( const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect );
 
-		/** Draw the sprite to the screen forcing the Blend Mode
-		* @param Blend The Blend Mode
-		*/
-		void draw( const EE_BLEND_MODE& Blend );
+		void draw(const Vector2f & position);
 
-		/** Draw the sprite to the screen forcing the Render Type
-		* @param Effect The Render Type
-		*/
-		void draw( const EE_RENDER_MODE& Effect );
+		void draw(const Vector2f & position, const Sizef & size);
 
 		/** Set the number of repetitions of the animation. Any number below 0 the animation will loop. */
 		void setRepetitions( const int& Repeations );

@@ -30,8 +30,8 @@ void Particle::update(const Float &pTime) {
 	mY = mY + mYSpeed * pTime;
 	mXSpeed = mXSpeed + mXAcc * pTime;
 	mYSpeed = mYSpeed + mYAcc * pTime;
-	mColor.Alpha -= mAlphaDecay * pTime;
-	if (mColor.Alpha < 0) mColor.Alpha = 0;
+	mColor.a -= mAlphaDecay * pTime;
+	if (mColor.a < 0) mColor.a = 0;
 }
 
 }}

@@ -54,10 +54,10 @@ void VertexBuffer::addVertexCoord( const Vector2f& VertexCoord, const Uint32& Te
 }
 
 void VertexBuffer::addColor( const ColorA& Color ) {
-	mColorArray.push_back( Color.r() );
-	mColorArray.push_back( Color.g() );
-	mColorArray.push_back( Color.b() );
-	mColorArray.push_back( Color.a() );
+	mColorArray.push_back( Color.r );
+	mColorArray.push_back( Color.g );
+	mColorArray.push_back( Color.b );
+	mColorArray.push_back( Color.a );
 }
 
 void VertexBuffer::addIndex( const Uint32& Index ) {

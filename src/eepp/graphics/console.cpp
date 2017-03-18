@@ -123,7 +123,7 @@ void Console::create( Font * Font, const bool& MakeDefaultCommands, const bool& 
 		mTexId = TextureId;
 
 	mMaxLogLines = MaxLogLines;
-	mMaxAlpha = (Float)mConColor.a();
+	mMaxAlpha = (Float)mConColor.a;
 
 	mEnabled = true;
 
@@ -168,17 +168,17 @@ void Console::draw() {
 
 		if ( mY > 0.0f ) {
 			if ( mTexId == 0 ) {
-				mPri.setColor( ColorA( mConColor.r(), mConColor.g(), mConColor.b(), static_cast<Uint8>(mA) ) );
+				mPri.setColor( ColorA( mConColor.r, mConColor.g, mConColor.b, static_cast<Uint8>(mA) ) );
 				mPri.drawRectangle( Rectf( Vector2f( 0.0f, 0.0f ), Sizef( mWidth, mY ) ) );
 			} else {
-				ColorA C( mConColor.r(), mConColor.g(), mConColor.b(), static_cast<Uint8>(mA) );
+				ColorA C( mConColor.r, mConColor.g, mConColor.b, static_cast<Uint8>(mA) );
 
 				Texture * Tex = TextureFactory::instance()->getTexture( mTexId );
 
 				if ( NULL != Tex )
 					Tex->drawEx( 0.0f, 0.0f, mWidth, mY, 0.0f, Vector2f::One, C, C, C, C );
 			}
-			mPri.setColor( ColorA( mConLineColor.r(), mConLineColor.g(), mConLineColor.b(), static_cast<Uint8>(mA) ) );
+			mPri.setColor( ColorA( mConLineColor.r, mConLineColor.g, mConLineColor.b, static_cast<Uint8>(mA) ) );
 			mPri.drawRectangle( Rectf( Vector2f( 0.0f, mY ), Sizef( mWidth, PixelDensity::dpToPx( 2.0f ) ) ) );
 
 			Int32 linesInScreen = this->linesOnScreen();
@@ -202,7 +202,7 @@ void Console::draw() {
 					Text& text = mTextCache[Pos];
 
 					text.setStyleConfig( mFontStyleConfig );
-					text.setColor( ColorA ( mFontStyleConfig.Color.r(), mFontStyleConfig.Color.g(), mFontStyleConfig.Color.b(), static_cast<Uint8>(mA) ) );
+					text.setColor( ColorA ( mFontStyleConfig.Color.r, mFontStyleConfig.Color.g, mFontStyleConfig.Color.b, static_cast<Uint8>(mA) ) );
 					text.setString( mCmdLog[i] );
 					text.draw( mFontSize, CurY );
 
@@ -214,13 +214,13 @@ void Console::draw() {
 
 			Text& text = mTextCache[ mTextCache.size() - 1 ];
 			text.setStyleConfig( mFontStyleConfig );
-			text.setColor( ColorA( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mA) ) );
+			text.setColor( ColorA( mFontLineColor.r, mFontLineColor.g, mFontLineColor.b, static_cast<Uint8>(mA) ) );
 			text.setString( "> " + mTBuf->getBuffer() );
 			text.draw( mFontSize, CurY );
 
 			Text& text2 = mTextCache[ mTextCache.size() - 2 ];
 			text2.setStyleConfig( mFontStyleConfig );
-			text2.setColor( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mCurAlpha) ) );
+			text2.setColor( ColorA ( mFontLineColor.r, mFontLineColor.g, mFontLineColor.b, static_cast<Uint8>(mCurAlpha) ) );
 
 			if ( (unsigned int)mTBuf->getCursorPos() == mTBuf->getBuffer().size() ) {
 				Uint32 width = text.getTextWidth();

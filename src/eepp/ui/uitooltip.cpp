@@ -133,7 +133,7 @@ const ColorA& UITooltip::getFontColor() const {
 void UITooltip::setFontColor( const ColorA& color ) {
 	mStyleConfig.Color = color;
 	mTextCache->setColor( mStyleConfig.Color );
-	setAlpha( color.a() );
+	setAlpha( color.a );
 }
 
 const ColorA& UITooltip::getFontShadowColor() const {
@@ -142,14 +142,14 @@ const ColorA& UITooltip::getFontShadowColor() const {
 
 void UITooltip::setFontShadowColor( const ColorA& color ) {
 	mStyleConfig.ShadowColor = color;
-	setAlpha( color.a() );
+	setAlpha( color.a );
 	mTextCache->setShadowColor( mStyleConfig.ShadowColor );
 }
 
 void UITooltip::setAlpha( const Float& alpha ) {
 	UIControlAnim::setAlpha( alpha );
-	mStyleConfig.Color.Alpha = (Uint8)alpha;
-	mStyleConfig.ShadowColor.Alpha = (Uint8)alpha;
+	mStyleConfig.Color.a = (Uint8)alpha;
+	mStyleConfig.ShadowColor.a = (Uint8)alpha;
 
 	mTextCache->setColor( mStyleConfig.Color );
 }

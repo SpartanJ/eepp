@@ -16,10 +16,10 @@ class EE_API Particle{
 
 		const ColorAf& getColor() const { return mColor; }
 		
-		Float r() { return mColor.r(); }
-		Float g() { return mColor.g(); }
-		Float b() { return mColor.b(); }
-		Float a() { return mColor.a(); }
+		Float r() { return mColor.r; }
+		Float g() { return mColor.g; }
+		Float b() { return mColor.b; }
+		Float a() { return mColor.a; }
 		
 		void reset(const Float &x, const Float &y, const Float &xspeed, const Float &yspeed, const Float &xacc, const Float &yacc, const Float size = 16);
 

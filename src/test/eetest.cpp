@@ -1086,10 +1086,10 @@ void EETest::loadTextures() {
 			for ( x = 0; x < w; x++) {
 				ColorA C = Tex->getPixel(x, y);
 
-				if ( C.r() > 200 && C.g() > 200 && C.b() > 200 )
-					Tex->setPixel(x, y, ColorA( Math::randi(0, 255), Math::randi(0, 255), Math::randi(0, 255), C.a() ) );
+				if ( C.r > 200 && C.g > 200 && C.b > 200 )
+					Tex->setPixel(x, y, ColorA( Math::randi(0, 255), Math::randi(0, 255), Math::randi(0, 255), C.a ) );
 				else
-					Tex->setPixel(x, y, ColorA( Math::randi(200, 255), Math::randi(200, 255), Math::randi(200, 255), C.a() ) );
+					Tex->setPixel(x, y, ColorA( Math::randi(200, 255), Math::randi(200, 255), Math::randi(200, 255), C.a ) );
 			}
 		}
 
@@ -1404,7 +1404,7 @@ void EETest::render() {
 
 		mInfoText.setString( mInfo );
 
-		if ( mWindow->getClearColor().r() == 0 ) {
+		if ( mWindow->getClearColor().r == 0 ) {
 			mInfoText.setColor( ColorA(255,255,255,255) );
 			mInfoText.setOutlineColor( ColorA(0,0,0,255) );
 		} else {

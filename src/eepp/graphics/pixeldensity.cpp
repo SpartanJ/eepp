@@ -62,7 +62,7 @@ Sizef PixelDensity::dpToPx( Sizef size ) {
 }
 
 Sizef PixelDensity::pxToDp( Sizef size ) {
-	return size * getPixelDensity();
+	return size / getPixelDensity();
 }
 
 Sizei PixelDensity::dpToPxI( Sizef size ) {

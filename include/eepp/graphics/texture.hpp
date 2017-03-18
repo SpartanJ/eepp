@@ -3,13 +3,14 @@
 
 #include <eepp/core.hpp>
 #include <eepp/graphics/image.hpp>
+#include <eepp/graphics/drawable.hpp>
 #include <eepp/core/noncopyable.hpp>
 #include <eepp/math/polygon2.hpp>
 #include <eepp/math/originpoint.hpp>
 
 namespace EE { namespace Graphics {
 
-class EE_API Texture : public Image, private NonCopyable {
+class EE_API Texture : public Image, public Drawable, private NonCopyable {
 	public:
 		static Uint32 getMaximumSize();
 
@@ -214,6 +215,14 @@ class EE_API Texture : public Image, private NonCopyable {
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
 		void drawQuadEx( Quad2f Q, const Vector2f& Offset = Vector2f(), const Float &Angle = 0.0f, const Vector2f &scale = Vector2f::One, const ColorA& Color0 = ColorA(255,255,255,255), const ColorA& Color1 = ColorA(255,255,255,255), const ColorA& Color2 = ColorA(255,255,255,255), const ColorA& Color3 = ColorA(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, Recti texSector = Recti(0,0,0,0) );
+
+		Sizef getSize();
+
+		Sizei getPixelSize();
+
+		void draw(const Vector2f & position);
+
+		void draw(const Vector2f & position, const Sizef & size);
 
 		/** Set the texture factory internal id of the texture */
 		void setId( const Uint32& id );

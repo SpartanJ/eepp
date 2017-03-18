@@ -172,7 +172,7 @@ const WindowInfo * Window::getWindowInfo() const {
 
 void Window::setClearColor( const RGB& Color ) {
 	mWindow.ClearColor = Color;
-	GLi->clearColor( static_cast<Float>( mWindow.ClearColor.r() ) / 255.0f, static_cast<Float>( mWindow.ClearColor.g() ) / 255.0f, static_cast<Float>( mWindow.ClearColor.b() ) / 255.0f, 255.0f );
+	GLi->clearColor( static_cast<Float>( mWindow.ClearColor.r ) / 255.0f, static_cast<Float>( mWindow.ClearColor.g ) / 255.0f, static_cast<Float>( mWindow.ClearColor.b ) / 255.0f, 255.0f );
 }
 
 RGB Window::getClearColor() const {

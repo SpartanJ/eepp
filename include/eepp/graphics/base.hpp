@@ -9,7 +9,7 @@
 #include <eepp/math/math.hpp>
 using namespace EE::Math;
 
-#include <eepp/system/colors.hpp>
+#include <eepp/system/color.hpp>
 #include <eepp/system/bitop.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/singleton.hpp>

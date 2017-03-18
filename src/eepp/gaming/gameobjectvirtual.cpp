@@ -47,7 +47,7 @@ Uint32 GameObjectVirtual::getRealType() const {
 
 Sizei GameObjectVirtual::getSize() {
 	if ( NULL != mSubTexture )
-		return mSubTexture->getSize();
+		return Sizei( (Int32)mSubTexture->getDestSize().x, (Int32)mSubTexture->getDestSize().y );
 
 	if ( NULL != mLayer )
 		return mLayer->getMap()->getTileSize();
@@ -104,7 +104,7 @@ void GameObjectVirtual::draw() {
 		Primitives P;
 
 		ColorA C( mDataId );
-		C.Alpha = 255;
+		C.a = 255;
 
 		P.setColor( C );
 

@@ -220,9 +220,9 @@ void TileMap::draw() {
 	if ( getDrawBackground() ) {
 		Primitives P;
 
-		Uint8 Alpha = static_cast<Uint8>( (Float)mBackColor.a() * ( (Float)mBackAlpha / 255.f ) );
+		Uint8 Alpha = static_cast<Uint8>( (Float)mBackColor.a * ( (Float)mBackAlpha / 255.f ) );
 
-		P.setColor( ColorA( mBackColor.r(), mBackColor.g(), mBackColor.b(), Alpha ) );
+		P.setColor( ColorA( mBackColor.r, mBackColor.g, mBackColor.b, Alpha ) );
 		P.drawRectangle( Rectf( Vector2f( mScreenPos.x, mScreenPos.y ), Sizef( mViewSize.x, mViewSize.y ) ), 0.f, Vector2f::One );
 		P.setColor( ColorA( 255, 255, 255, 255 ) );
 	}
@@ -293,12 +293,12 @@ void TileMap::gridDraw() {
 					ColorA TileTexCol2( *mLightManager->getTileColor( TPos, 2 ) );
 					ColorA TileTexCol3( *mLightManager->getTileColor( TPos, 3 ) );
 
-					TileTexCol0.Alpha = TileTexCol1.Alpha = TileTexCol2.Alpha = TileTexCol3.Alpha	= mBackAlpha;
+					TileTexCol0.a = TileTexCol1.a = TileTexCol2.a = TileTexCol3.a	= mBackAlpha;
 
 					mTileTex->drawEx( tx, ty, 0, 0, 0, Vector2f::One, TileTexCol0, TileTexCol1, TileTexCol2, TileTexCol3 );
 				} else {
 					TileTexCol			= *mLightManager->getTileColor( TPos );
-					TileTexCol.Alpha	= mBackAlpha;
+					TileTexCol.a	= mBackAlpha;
 
 					mTileTex->draw( tx, ty, 0, Vector2f::One, TileTexCol );
 				}

@@ -567,9 +567,9 @@ void MapEditor::onLightRadiusChange( MapLight * Light ) {
 void MapEditor::onLightSelect( MapLight * Light ) {
 	ColorA Col( Light->getColor() );
 
-	mUIRedSlider->setValue( Col.r() );
-	mUIGreenSlider->setValue( Col.g() );
-	mUIBlueSlider->setValue( Col.b() );
+	mUIRedSlider->setValue( Col.r );
+	mUIGreenSlider->setValue( Col.g );
+	mUIBlueSlider->setValue( Col.b );
 	mLightRadius->setValue( Light->getRadius() );
 	mLightTypeChk->setActive( Light->getType() == LIGHT_ISOMETRIC ? true : false );
 }
@@ -585,39 +585,39 @@ void MapEditor::onNewLight( const UIEvent * Event ) {
 
 void MapEditor::onRedChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
-	Col.Red = (Uint8)mUIRedSlider->getValue();
+	Col.r = (Uint8)mUIRedSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
 
 	if ( NULL != mUIMap->getSelectedLight() ) {
 		RGB lCol( mUIMap->getSelectedLight()->getColor() );
-		lCol.Red = Col.r();
+		lCol.r = Col.r;
 		mUIMap->getSelectedLight()->setColor( lCol );
 	}
 }
 
 void MapEditor::onGreenChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
-	Col.Green = (Uint8)mUIGreenSlider->getValue();
+	Col.g = (Uint8)mUIGreenSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
 
 	if ( NULL != mUIMap->getSelectedLight() ) {
 		RGB lCol( mUIMap->getSelectedLight()->getColor() );
-		lCol.Green = Col.g();
+		lCol.g = Col.g;
 		mUIMap->getSelectedLight()->setColor( lCol );
 	}
 }
 
 void MapEditor::onBlueChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
-	Col.Blue = (Uint8)mUIBlueSlider->getValue();
+	Col.b = (Uint8)mUIBlueSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
 
 	if ( NULL != mUIMap->getSelectedLight() ) {
 		RGB lCol( mUIMap->getSelectedLight()->getColor() );
-		lCol.Blue = Col.b();
+		lCol.b = Col.b;
 		mUIMap->getSelectedLight()->setColor( lCol );
 	}
 }

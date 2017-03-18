@@ -11,7 +11,7 @@
 using namespace EE::Math;
 
 #include <eepp/core.hpp>
-#include <eepp/system/colors.hpp>
+#include <eepp/system/color.hpp>
 #include <eepp/system/singleton.hpp>
 using namespace EE::System;
 

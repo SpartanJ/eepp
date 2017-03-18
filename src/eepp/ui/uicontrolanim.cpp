@@ -418,7 +418,7 @@ void UIControlAnim::drawBorder() {
 }
 
 ColorA UIControlAnim::getColor( const ColorA& Col ) {
-	return ColorA( Col.r(), Col.g(), Col.b(), static_cast<Uint8>( (Float)Col.a() * ( mAlpha / 255.f ) ) );
+	return ColorA( Col.r, Col.g, Col.b, static_cast<Uint8>( (Float)Col.a * ( mAlpha / 255.f ) ) );
 }
 
 void UIControlAnim::updateQuad() {

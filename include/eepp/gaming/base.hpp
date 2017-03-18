@@ -9,7 +9,7 @@
 using namespace EE::Math;
 
 #include <eepp/system/bitop.hpp>
-#include <eepp/system/colors.hpp>
+#include <eepp/system/color.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/iostreamfile.hpp>

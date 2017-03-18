@@ -1,3 +1,4 @@
+../../include/eepp/graphics/drawable.hpp
 ../../include/eepp/graphics/font.hpp
 ../../include/eepp/graphics/fontstyleconfig.hpp
 ../../include/eepp/graphics/fonttruetype.hpp
@@ -5,6 +6,7 @@
 ../../include/eepp/graphics/text.hpp
 ../../include/eepp/math/interpolation1d.hpp
 ../../include/eepp/math/interpolation2d.hpp
+../../include/eepp/system/color.hpp
 ../../include/eepp/system/translator.hpp
 ../../include/eepp/ui/uidragablecontrol.hpp
 ../../include/eepp/ui/uiimage.hpp
@@ -18,6 +20,7 @@
 ../../include/eepp/ui/uithemedefault.hpp
 ../../include/eepp/ui/uiwidget.hpp
 ../../src/eepp/gaming/mapobjectlayer.cpp
+../../src/eepp/graphics/drawable.cpp
 ../../src/eepp/graphics/fonttruetype.cpp
 ../../src/eepp/graphics/fonttruetypeloader.cpp
 ../../src/eepp/graphics/globalbatchrenderer.cpp
@@ -26,6 +29,7 @@
 ../../src/eepp/graphics/text.cpp
 ../../src/eepp/math/interpolation1d.cpp
 ../../src/eepp/math/interpolation2d.cpp
+../../src/eepp/system/color.cpp
 ../../src/eepp/system/translator.cpp
 ../../src/eepp/ui/uidragablecontrol.cpp
 ../../src/eepp/ui/uihelper.cpp
@@ -361,7 +365,6 @@ ee.includes
 ../../include/eepp/math/ease.hpp
 ../../include/eepp/math/easing.hpp
 ../../include/eepp/math/perlinnoise.hpp
-../../include/eepp/system/colors.hpp
 ../../src/eepp/system/safedatapointer.cpp
 ../../src/eepp/math/easing.cpp
 ../../src/eepp/math/perlinnoise.cpp

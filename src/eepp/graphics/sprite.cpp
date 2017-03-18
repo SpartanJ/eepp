@@ -598,12 +598,33 @@ void Sprite::draw() {
 	draw( mBlend, mEffect );
 }
 
-void Sprite::draw( const EE_BLEND_MODE& Blend ) {
-	draw( Blend, mEffect );
+void Sprite::draw( const Vector2f& position ) {
+	draw( position, Sizef::Zero );
 }
 
-void Sprite::draw( const EE_RENDER_MODE& Effect ) {
-	draw( mBlend, Effect );
+void Sprite::draw( const Vector2f& position, const Sizef& size ) {
+	if ( SPR_FGET( SPRITE_FLAG_AUTO_ANIM ) )
+		update();
+
+	SubTexture * S = getCurrentSubTexture();
+
+	if ( S == NULL )
+		return;
+
+	Sizef oldSize = S->getDestSize();
+
+	if ( size != Sizef::Zero ) {
+		S->setDestSize( size );
+	}
+
+	if ( NULL == mVertexColors )
+		S->draw( position.x, position.y, getColorFilterAlpha(), mRotation, mScale, mBlend, mEffect, mOrigin );
+	else
+		S->draw( position.x, position.y, mRotation, mScale, getColorFilterAlpha(), getColorFilterAlpha(), getColorFilterAlpha(), getColorFilterAlpha(), mBlend, mEffect, mOrigin );
+
+	if ( size != Sizef::Zero ) {
+		S->setDestSize( oldSize );
+	}
 }
 
 unsigned int Sprite::getFrame( const unsigned int& FrameNum ) {
@@ -658,7 +679,7 @@ Sizef Sprite::setSize( const unsigned int& FrameNum, const unsigned int& SubFram
 }
 
 Sizef Sprite::getSize() {
-	return mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->getDestSize();
+	return mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->getSize();
 }
 
 void Sprite::setRepetitions( const int& Repeations ) {
@@ -768,11 +789,11 @@ const ColorA& Sprite::getColor() const {
 }
 
 void Sprite::setAlpha( const Uint8& Alpha ) {
-	mColor.Alpha = Alpha;
+	mColor.a = Alpha;
 }
 
 const Uint8& Sprite::getAlpha() const {
-	return mColor.Alpha;
+	return mColor.a;
 }
 
 const unsigned int& Sprite::getCurrentFrame() const {

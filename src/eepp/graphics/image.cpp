@@ -493,37 +493,37 @@ void Image::replaceColor( const ColorA& ColorKey, const ColorA& NewColor ) {
 		Pos = i * mChannels;
 
 		if ( 4 == mChannels ) {
-			if ( mPixels[ Pos ] == ColorKey.r() && mPixels[ Pos + 1 ] == ColorKey.g() && mPixels[ Pos + 2 ] == ColorKey.b() && mPixels[ Pos + 3 ] == ColorKey.a() ) {
-				mPixels[ Pos ] 		= NewColor.r();
-				mPixels[ Pos + 1 ]	= NewColor.g();
-				mPixels[ Pos + 2 ]	= NewColor.b();
-				mPixels[ Pos + 3 ]	= NewColor.a();
+			if ( mPixels[ Pos ] == ColorKey.r && mPixels[ Pos + 1 ] == ColorKey.g && mPixels[ Pos + 2 ] == ColorKey.b && mPixels[ Pos + 3 ] == ColorKey.a ) {
+				mPixels[ Pos ] 		= NewColor.r;
+				mPixels[ Pos + 1 ]	= NewColor.g;
+				mPixels[ Pos + 2 ]	= NewColor.b;
+				mPixels[ Pos + 3 ]	= NewColor.a;
 			}
 		} else if ( 3 == mChannels ) {
-			if ( mPixels[ Pos ] == ColorKey.r() && mPixels[ Pos + 1 ] == ColorKey.g() && mPixels[ Pos + 2 ] == ColorKey.b() ) {
-				mPixels[ Pos ] 		= NewColor.r();
-				mPixels[ Pos + 1 ]	= NewColor.g();
-				mPixels[ Pos + 2 ]	= NewColor.b();
+			if ( mPixels[ Pos ] == ColorKey.r && mPixels[ Pos + 1 ] == ColorKey.g && mPixels[ Pos + 2 ] == ColorKey.b ) {
+				mPixels[ Pos ] 		= NewColor.r;
+				mPixels[ Pos + 1 ]	= NewColor.g;
+				mPixels[ Pos + 2 ]	= NewColor.b;
 			}
 		} else if ( 2 == mChannels ) {
-			if ( mPixels[ Pos ] == ColorKey.r() && mPixels[ Pos + 1 ] == ColorKey.g() ) {
-				mPixels[ Pos ] 		= NewColor.r();
-				mPixels[ Pos + 1 ]	= NewColor.g();
+			if ( mPixels[ Pos ] == ColorKey.r && mPixels[ Pos + 1 ] == ColorKey.g ) {
+				mPixels[ Pos ] 		= NewColor.r;
+				mPixels[ Pos + 1 ]	= NewColor.g;
 			}
 		} else if ( 1 == mChannels ) {
-			if ( mPixels[ Pos ] == ColorKey.r() ) {
-				mPixels[ Pos ] 		= NewColor.r();
+			if ( mPixels[ Pos ] == ColorKey.r ) {
+				mPixels[ Pos ] 		= NewColor.r;
 			}
 		}
 	}
 }
 
 void Image::createMaskFromColor( const ColorA& ColorKey, Uint8 Alpha ) {
-	replaceColor( ColorKey, ColorA( ColorKey.r(), ColorKey.g(), ColorKey.b(), Alpha ) );
+	replaceColor( ColorKey, ColorA( ColorKey.r, ColorKey.g, ColorKey.b, Alpha ) );
 }
 
 void Image::createMaskFromColor( const RGB& ColorKey, Uint8 Alpha ) {
-	createMaskFromColor( ColorA( ColorKey.r(), ColorKey.g(), ColorKey.b(), 255 ), Alpha );
+	createMaskFromColor( ColorA( ColorKey.r, ColorKey.g, ColorKey.b, 255 ), Alpha );
 }
 
 void Image::fillWithColor( const ColorA& Color ) {
@@ -536,13 +536,13 @@ void Image::fillWithColor( const ColorA& Color ) {
 	for ( unsigned int i = 0; i < size; i += mChannels ) {
 		for ( z = 0; z < mChannels; z++ ) {
 			if ( 0 == z )
-				mPixels[ i + z ] = Color.r();
+				mPixels[ i + z ] = Color.r;
 			else if ( 1 == z )
-				mPixels[ i + z ] = Color.g();
+				mPixels[ i + z ] = Color.g;
 			else if ( 2 == z )
-				mPixels[ i + z ] = Color.b();
+				mPixels[ i + z ] = Color.b;
 			else if ( 3 == z )
-				mPixels[ i + z ] = Color.a();
+				mPixels[ i + z ] = Color.a;
 		}
 	}
 }

@@ -153,7 +153,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	mUIRedTxt = createTextBox( String::toStr( 255 ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 	if ( ResizeMap ) {
-		mUIRedSlider->setValue( mUIMap->Map()->getBaseColor().r() );
+		mUIRedSlider->setValue( mUIMap->Map()->getBaseColor().r );
 	}
 
 	Txt = createTextBox( "Green Color:", mUIWindow->getContainer(), Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
@@ -167,7 +167,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	mUIGreenTxt = createTextBox( String::toStr( 255 ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 	if ( ResizeMap ) {
-		mUIGreenSlider->setValue( mUIMap->Map()->getBaseColor().g() );
+		mUIGreenSlider->setValue( mUIMap->Map()->getBaseColor().g );
 	}
 
 	Txt = createTextBox( "Blue Color:", mUIWindow->getContainer(), Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
@@ -181,7 +181,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	mUIBlueTxt = createTextBox( String::toStr( 255 ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4, mUIBlueSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 	if ( ResizeMap ) {
-		mUIBlueSlider->setValue( mUIMap->Map()->getBaseColor().b() );
+		mUIBlueSlider->setValue( mUIMap->Map()->getBaseColor().b );
 	}
 
 	UIPushButton * OKButton = UIPushButton::New();
@@ -206,21 +206,21 @@ UIMapNew::~UIMapNew() {
 
 void UIMapNew::onRedChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
-	Col.Red = (Uint8)mUIRedSlider->getValue();
+	Col.r = (Uint8)mUIRedSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
 }
 
 void UIMapNew::onGreenChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
-	Col.Green = (Uint8)mUIGreenSlider->getValue();
+	Col.g = (Uint8)mUIGreenSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
 }
 
 void UIMapNew::onBlueChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
-	Col.Blue = (Uint8)mUIBlueSlider->getValue();
+	Col.b = (Uint8)mUIBlueSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
 }

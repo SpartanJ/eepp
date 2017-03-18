@@ -40,7 +40,7 @@ class EE_API Console : protected LogReaderInterface {
 		Uint32 getBackgroundTextureId() const { return mTexId; }
 
 		/** Set the Console Background Color */
-		void setBackgroundColor( const ColorA& BackColor ) { mConColor = BackColor; mMaxAlpha = mConColor.a(); }
+		void setBackgroundColor( const ColorA& BackColor ) { mConColor = BackColor; mMaxAlpha = mConColor.a; }
 
 		void setCharacterSize( const Uint32& characterSize );
 

@@ -85,10 +85,10 @@ static BYTE *get_dib_from_bitmap_32(Image *bitmap) {
 			ColorA C = bitmap->getPixel( x, y );
 
 			/* BGR */
-			dst[0] = C.b();
-			dst[1] = C.g();
-			dst[2] = C.r();
-			dst[3] = C.a();
+			dst[0] = C.b;
+			dst[1] = C.g;
+			dst[2] = C.r;
+			dst[3] = C.a;
 
 			dst += 4;
 		}
@@ -178,7 +178,7 @@ void CursorWin::create() {
 		for (x = 0; x < (int)mImage->getWidth(); x++) {
 			ColorA C = mImage->getPixel( x, y );
 
-			if ( C.a() != 0 ) {
+			if ( C.a != 0 ) {
 				/* Don't touch XOR value */
 				SetPixel( h_and_dc, x, y, 0 );
 			} else {

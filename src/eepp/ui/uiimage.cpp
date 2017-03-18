@@ -121,7 +121,7 @@ void UIImage::drawSubTexture() {
 
 void UIImage::setAlpha( const Float& alpha ) {
 	UIControlAnim::setAlpha( alpha );
-	mColor.Alpha = (Uint8)alpha;
+	mColor.a = (Uint8)alpha;
 }
 
 Graphics::SubTexture * UIImage::getSubTexture() const {
@@ -134,7 +134,7 @@ const ColorA& UIImage::getColor() const {
 
 void UIImage::setColor( const ColorA& col ) {
 	mColor = col;
-	setAlpha( col.a() );
+	setAlpha( col.a );
 }
 
 const EE_RENDER_MODE& UIImage::getRenderMode() const {

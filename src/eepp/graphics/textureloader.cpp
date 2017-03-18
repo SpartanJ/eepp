@@ -450,7 +450,7 @@ void TextureLoader::loadFromPixels() {
 
 					Image * tImg = eeNew ( Image, ( mPixels, mImgWidth, mImgHeight, mChannels ) );
 
-					tImg->createMaskFromColor( ColorA( mColorKey->r(), mColorKey->g(), mColorKey->b(), 255 ), 0 );
+					tImg->createMaskFromColor( ColorA( mColorKey->r, mColorKey->g, mColorKey->b, 255 ), 0 );
 
 					tImg->avoidFreeImage( true  );
 
@@ -538,7 +538,7 @@ const Uint32& TextureLoader::getId() const {
 
 void TextureLoader::setColorKey( RGB Color ) {
 	eeSAFE_DELETE( mColorKey );
-	mColorKey = eeNew( RGB, ( Color.r(), Color.g(), Color.b() ) );
+	mColorKey = eeNew( RGB, ( Color.r, Color.g, Color.b ) );
 }
 
 const std::string& TextureLoader::filepath() const {

@@ -14,7 +14,7 @@
 using namespace EE::Math;
 
 #include <eepp/system/bitop.hpp>
-#include <eepp/system/colors.hpp>
+#include <eepp/system/color.hpp>
 #include <eepp/system/singleton.hpp>
 #include <eepp/system/sys.hpp>
 using namespace EE::System;

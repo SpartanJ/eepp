@@ -4,11 +4,12 @@
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/math/originpoint.hpp>
+#include <eepp/graphics/drawable.hpp>
 
 namespace EE { namespace Graphics {
 
 /** @brief A SubTexture is a part of a texture that represent an sprite.*/
-class EE_API SubTexture {
+class EE_API SubTexture : public Drawable {
 	public:
 		/** Creates an empty SubTexture */
 		SubTexture();
@@ -86,6 +87,10 @@ class EE_API SubTexture {
 
 		void draw( const Quad2f Q, const Vector2f& offset = Vector2f(), const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const ColorA& Color0 = ColorA(), const ColorA& Color1 = ColorA(), const ColorA& Color2 = ColorA(), const ColorA& Color3 = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
 
+		virtual void draw( const Vector2f& position );
+
+		virtual void draw(const Vector2f& position, const Sizef & size );
+
 		/** @return The texture instance used by the SubTexture. */
 		Graphics::Texture * getTexture();
 
@@ -132,7 +137,7 @@ class EE_API SubTexture {
 		Sizei getRealSize();
 
 		/** @return This is the same as Destination Size but with the values rounded as integers. */
-		Sizei getSize();
+		Sizef getSize();
 
 		/** @return A pixel pointer to the texture loaded in memory ( downloaded from VRAM doing Lock()/Unlock() ). */
 		const Uint8* getPixelsPtr();
@@ -157,7 +162,7 @@ class EE_API SubTexture {
 		void setOriDestSize(const Sizef & oriDestSize);
 	protected:
 		Uint8 *		mPixels;
-		Uint8 *		mAlpha;
+		Uint8 *		mAlphaMask;
 		std::string mName;
 		Uint32		mId;
 		Uint32 		mTexId;

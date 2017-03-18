@@ -58,7 +58,7 @@ void CursorX11::create() {
 		for ( ix = 0; ix < mImage->getWidth(); ix++ ) {
 			ColorA C = mImage->getPixel( ix, iy );
 
-			image->pixels[c++] = ( C.a() << 24 ) | ( C.r() << 16 ) | ( C.g() <<8 ) | ( C.b() );
+			image->pixels[c++] = ( C.a << 24 ) | ( C.r << 16 ) | ( C.g <<8 ) | ( C.b );
 		}
 	}
 

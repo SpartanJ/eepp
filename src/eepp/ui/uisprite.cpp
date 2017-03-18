@@ -107,7 +107,7 @@ void UISprite::setColor( const ColorA& color ) {
 	if ( NULL != mSprite )
 		mSprite->setColor( color );
 	
-	setAlpha( color.a() );
+	setAlpha( color.a );
 }
 
 const EE_RENDER_MODE& UISprite::getRenderMode() const {

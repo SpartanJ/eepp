@@ -52,29 +52,29 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 		mUIRedSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
 		mUIRedSlider->setParent( mUIWindow->getContainer() )->setSize( 255, 20 )->setPosition( Txt->getPosition().x + Txt->getSize().getWidth() + 16, Txt->getPosition().y );
 		mUIRedSlider->setMaxValue( 255 );
-		mUIRedSlider->setValue( mMap->getBaseColor().r() );
+		mUIRedSlider->setValue( mMap->getBaseColor().r );
 		mUIRedSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TileMapProperties::onRedChange ) );
 
-		mUIRedTxt = createTextBox( String::toStr( (Uint32)mMap->getBaseColor().r() ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		mUIRedTxt = createTextBox( String::toStr( (Uint32)mMap->getBaseColor().r ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 		Txt = createTextBox( "Green Color:", mUIWindow->getContainer(), Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 		mUIGreenSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
 		mUIGreenSlider->setParent( mUIWindow->getContainer() )->setSize( 255, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 		mUIGreenSlider->setMaxValue( 255 );
-		mUIGreenSlider->setValue( mMap->getBaseColor().g() );
+		mUIGreenSlider->setValue( mMap->getBaseColor().g );
 		mUIGreenSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TileMapProperties::onGreenChange ) );
 
-		mUIGreenTxt = createTextBox( String::toStr( (Uint32)mMap->getBaseColor().g() ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		mUIGreenTxt = createTextBox( String::toStr( (Uint32)mMap->getBaseColor().g ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 		Txt = createTextBox( "Blue Color:", mUIWindow->getContainer(), Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 		mUIBlueSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
 		mUIBlueSlider->setParent( mUIWindow->getContainer() )->setSize( 255, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 		mUIBlueSlider->setMaxValue( 255 );
-		mUIBlueSlider->setValue( mMap->getBaseColor().b() );
+		mUIBlueSlider->setValue( mMap->getBaseColor().b );
 		mUIBlueSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TileMapProperties::onBlueChange ) );
 
-		mUIBlueTxt = createTextBox( String::toStr( (Uint32)mMap->getBaseColor().b() ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4, mUIBlueSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		mUIBlueTxt = createTextBox( String::toStr( (Uint32)mMap->getBaseColor().b ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4, mUIBlueSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 	}
 
 	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
@@ -140,34 +140,34 @@ TileMapProperties::~TileMapProperties() {
 
 void TileMapProperties::onRedChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
-	Col.Red = (Uint8)mUIRedSlider->getValue();
+	Col.r = (Uint8)mUIRedSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
 
 	ColorA MapCol = mMap->getBaseColor();
-	MapCol.Red = Col.Red;
+	MapCol.r = Col.r;
 	mMap->setBaseColor( MapCol );
 }
 
 void TileMapProperties::onGreenChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
-	Col.Green = (Uint8)mUIGreenSlider->getValue();
+	Col.g = (Uint8)mUIGreenSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
 
 	ColorA MapCol = mMap->getBaseColor();
-	MapCol.Green = Col.Green;
+	MapCol.g = Col.g;
 	mMap->setBaseColor( MapCol );
 }
 
 void TileMapProperties::onBlueChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->getBackground()->getColor();
-	Col.Blue = (Uint8)mUIBlueSlider->getValue();
+	Col.b = (Uint8)mUIBlueSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
 
 	ColorA MapCol = mMap->getBaseColor();
-	MapCol.Blue = Col.Blue;
+	MapCol.b = Col.b;
 	mMap->setBaseColor( MapCol );
 }
 

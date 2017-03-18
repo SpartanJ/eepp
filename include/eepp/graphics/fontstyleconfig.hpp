@@ -2,7 +2,7 @@
 #define EE_GRAPHICS_FONTSTYLECONFIG_HPP
 
 #include <eepp/config.hpp>
-#include <eepp/system/colors.hpp>
+#include <eepp/system/color.hpp>
 using namespace EE::System;
 
 namespace EE { namespace Graphics {

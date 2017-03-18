@@ -53,9 +53,9 @@ void MapLightManager::updateByVertex() {
 			for ( Int32 x = start.x; x < end.x; x++ ) {
 				for ( Int32 y = start.y; y < end.y; y++ ) {
 					if ( firstLight ) {
-						mTileColors[x][y][0]->Red = mTileColors[x][y][1]->Red = mTileColors[x][y][2]->Red = mTileColors[x][y][3]->Red = BaseColor.Red;
-						mTileColors[x][y][0]->Green = mTileColors[x][y][1]->Green = mTileColors[x][y][2]->Green = mTileColors[x][y][3]->Green = BaseColor.Green;
-						mTileColors[x][y][0]->Blue = mTileColors[x][y][1]->Blue = mTileColors[x][y][2]->Blue = mTileColors[x][y][3]->Blue = BaseColor.Blue;
+						mTileColors[x][y][0]->r = mTileColors[x][y][1]->r = mTileColors[x][y][2]->r = mTileColors[x][y][3]->r = BaseColor.r;
+						mTileColors[x][y][0]->g = mTileColors[x][y][1]->g = mTileColors[x][y][2]->g = mTileColors[x][y][3]->g = BaseColor.g;
+						mTileColors[x][y][0]->b = mTileColors[x][y][1]->b = mTileColors[x][y][2]->b = mTileColors[x][y][3]->b = BaseColor.b;
 					}
 
 					Pos.x = x * TileSize.x;
@@ -106,9 +106,9 @@ void MapLightManager::updateByTile() {
 			for ( Int32 x = start.x; x < end.x; x++ ) {
 				for ( Int32 y = start.y; y < end.y; y++ ) {
 					if ( firstLight ) {
-						mTileColors[x][y][0]->Red = BaseColor.Red;
-						mTileColors[x][y][0]->Green = BaseColor.Green;
-						mTileColors[x][y][0]->Blue = BaseColor.Blue;
+						mTileColors[x][y][0]->r = BaseColor.r;
+						mTileColors[x][y][0]->g = BaseColor.g;
+						mTileColors[x][y][0]->b = BaseColor.b;
 					}
 
 					Pos.x = x * TileSize.x;

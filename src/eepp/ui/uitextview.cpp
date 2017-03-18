@@ -179,7 +179,7 @@ UITextView * UITextView::setFontColor( const ColorA& color ) {
 	mFontStyleConfig.Color = color;
 	mTextCache->setColor( color );
 
-	setAlpha( color.a() );
+	setAlpha( color.a );
 
 	return this;
 }
@@ -206,10 +206,10 @@ UITextView * UITextView::setSelectionBackColor( const ColorA& color ) {
 
 void UITextView::setAlpha( const Float& alpha ) {
 	UIControlAnim::setAlpha( alpha );
-	mFontStyleConfig.Color.Alpha = (Uint8)alpha;
-	mFontStyleConfig.ShadowColor.Alpha = (Uint8)alpha;
+	mFontStyleConfig.Color.a = (Uint8)alpha;
+	mFontStyleConfig.ShadowColor.a = (Uint8)alpha;
 
-	mTextCache->setAlpha( mFontStyleConfig.Color.Alpha );
+	mTextCache->setAlpha( mFontStyleConfig.Color.a );
 }
 
 void UITextView::autoShrink() {

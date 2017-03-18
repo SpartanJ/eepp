@@ -7,7 +7,7 @@
 #include <eepp/math/rect.hpp>
 using namespace EE::Math;
 
-#include <eepp/system/colors.hpp>
+#include <eepp/system/color.hpp>
 using namespace EE::System;
 
 #include <eepp/graphics/renders.hpp>
