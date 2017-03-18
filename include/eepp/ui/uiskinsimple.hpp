@@ -4,6 +4,10 @@
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uiskin.hpp>
 
+namespace EE { namespace Graphics {
+class Drawable;
+}}
+
 namespace EE { namespace UI {
 
 class EE_API UISkinSimple : public UISkin {
@@ -26,7 +30,7 @@ class EE_API UISkinSimple : public UISkin {
 
 		Sizei getBorderSize( const Uint32 & state );
 	protected:
-		SubTexture * 	mSubTexture[ UISkinState::StateCount ];
+		Drawable * 	mDrawable[ UISkinState::StateCount ];
 		ColorA		mTempColor;
 
 		void stateNormalToState( const Uint32& State );

@@ -3,52 +3,68 @@
 namespace EE { namespace Graphics {
 
 Drawable::Drawable() :
-	mColorFilter(Color::White),
-	mAlpha(255)
+	mColor(Color::White)
 {}
 
 void Drawable::setAlpha( Uint8 alpha ) {
-	if ( mAlpha != alpha ) {
-		mAlpha = alpha;
+	if ( mColor.a != alpha ) {
+		mColor.a = alpha;
 
 		onAlphaChange();
 	}
 }
 
 const Uint8& Drawable::getAlpha() {
-	return mAlpha;
+	return mColor.a;
 }
 
-void Drawable::setColorFilter( Color color ) {
-	if ( mColorFilter != color ) {
-		mColorFilter = color;
+void Drawable::setColor(const ColorA & color) {
+	mColor = color;
+	onColorFilterChange();
+	onAlphaChange();
+}
+
+const ColorA& Drawable::getColor() const {
+	return mColor;
+}
+
+void Drawable::setColorFilter( const ColorA& color ) {
+	if ( mColor.r != color.r || mColor.g != color.g || mColor.b != color.b ) {
+		mColor.r = color.r;
+		mColor.g = color.g;
+		mColor.b = color.b;
 
 		onColorFilterChange();
 	}
 }
 
-const Color& Drawable::getColorFilter() {
-	return mColorFilter;
+Color Drawable::getColorFilter() {
+	return Color( mColor.r, mColor.g, mColor.b );
+}
+
+void Drawable::clearColor() {
+	if ( mColor != ColorA::White ) {
+		mColor = ColorA::White;
+
+		onColorFilterChange();
+		onAlphaChange();
+	}
 }
 
 void Drawable::clearColorFilter() {
-	if ( mColorFilter != Color::White ) {
-		mColorFilter = Color::White;
+	if ( mColor.r != 255 || mColor.g != 255 || mColor.b != 255 ) {
+		mColor.r = mColor.g = mColor.b = 255;
 
 		onColorFilterChange();
 	}
 }
 
 void Drawable::resetAlpha() {
-	if ( mAlpha != 255 ) {
-		mAlpha = 255;
+	if ( mColor.a != 255 ) {
+		mColor.a = 255;
 
 		onAlphaChange();
 	}
-}
-
-ColorA Drawable::getColorFilterAlpha() {
-	return ColorA( mColorFilter.r, mColorFilter.g, mColorFilter.b, mAlpha );
 }
 
 void Drawable::onAlphaChange() {

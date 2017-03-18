@@ -1,5 +1,6 @@
 #include <eepp/ui/uiskinsimple.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
+#include <eepp/graphics/drawable.hpp>
 
 namespace EE { namespace UI {
 
@@ -7,7 +8,7 @@ UISkinSimple::UISkinSimple( const std::string& Name ) :
 	UISkin( Name, SkinSimple )
 {
 	for ( Int32 i = 0; i < UISkinState::StateCount; i++ )
-		mSubTexture[ i ] = NULL;
+		mDrawable[ i ] = NULL;
 
 	setSkins();
 }
@@ -19,19 +20,17 @@ void UISkinSimple::draw( const Float& X, const Float& Y, const Float& Width, con
 	if ( 0 == Alpha )
 		return;
 
-	SubTexture * tSubTexture = mSubTexture[ State ];
-	mTempColor		= mColor[ State ];
+	Drawable * tDrawable = mDrawable[ State ];
+	mTempColor	= mColor[ State ];
 
-	if ( NULL != tSubTexture ) {
-		tSubTexture->setDestSize( Sizef( Width, Height ) );
-
+	if ( NULL != tDrawable ) {
 		if ( mTempColor.a != Alpha ) {
 			mTempColor.a = (Uint8)( (Float)mTempColor.a * ( (Float)Alpha / 255.f ) );
 		}
 
-		tSubTexture->draw( X, Y, mTempColor );
-
-		tSubTexture->resetDestSize();
+		tDrawable->setColor( mTempColor );
+		tDrawable->draw( Vector2f( X, Y ), Sizef( Width, Height ) );
+		tDrawable->clearColor();
 	}
 }
 
@@ -40,16 +39,16 @@ void UISkinSimple::setSkin( const Uint32& State ) {
 
 	std::string Name( mName + "_" + UISkin::getSkinStateName( State ) );
 
-	mSubTexture[ State ] = TextureAtlasManager::instance()->getSubTextureByName( Name );
+	mDrawable[ State ] = TextureAtlasManager::instance()->getSubTextureByName( Name );
 }
 
 bool UISkinSimple::stateExists( const Uint32 & state ) {
-	return NULL != mSubTexture[ state ];
+	return NULL != mDrawable[ state ];
 }
 
 void UISkinSimple::stateNormalToState( const Uint32& State ) {
-	if ( NULL == mSubTexture[ State ] )
-		mSubTexture[ State ] = mSubTexture[ UISkinState::StateNormal ];
+	if ( NULL == mDrawable[ State ] )
+		mDrawable[ State ] = mDrawable[ UISkinState::StateNormal ];
 }
 
 UISkinSimple * UISkinSimple::clone( const std::string& NewName, const bool& CopyColorsState ) {
@@ -61,7 +60,7 @@ UISkinSimple * UISkinSimple::clone( const std::string& NewName, const bool& Copy
 		memcpy( &SkinS->mColor[0], &mColor[0], UISkinState::StateCount * sizeof(ColorA) );
 	}
 
-	memcpy( &SkinS->mSubTexture[0], &mSubTexture[0], UISkinState::StateCount * sizeof(SubTexture*) );
+	memcpy( &SkinS->mDrawable[0], &mDrawable[0], UISkinState::StateCount * sizeof(SubTexture*) );
 
 	return SkinS;
 }
@@ -71,8 +70,9 @@ UISkin * UISkinSimple::clone() {
 }
 
 Sizei UISkinSimple::getSize( const Uint32 & state ) {
-	if ( NULL != mSubTexture[ state ] ) {
-		return mSubTexture[ state ]->getDpSize();
+	if ( NULL != mDrawable[ state ] ) {
+		Sizef s( mDrawable[ state ]->getSize() );
+		return Sizei( (Int32)s.x, (Int32)s.y );
 	}
 
 	return Sizei();

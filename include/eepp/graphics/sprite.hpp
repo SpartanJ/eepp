@@ -124,18 +124,6 @@ class EE_API Sprite : public Drawable {
 		/** Set the animation paused or not */
 		void setAnimationPaused( const bool& Pause );
 
-		/** Set the sprite color */
-		void setColor( const ColorA& color);
-
-		/** @return The sprite color */
-		const ColorA& getColor() const;
-
-		/** Set the sprite Color Alpha */
-		void setAlpha( const Uint8& alpha );
-
-		/** @return The sprite Color Alpha */
-		const Uint8& getAlpha() const;
-
 		/** Set the Current Frame */
 		void setCurrentFrame( unsigned int CurFrame );
 
@@ -359,7 +347,6 @@ class EE_API Sprite : public Drawable {
 		Vector2f			mScale;
 		Float				mAnimSpeed;
 
-		ColorA			mColor;
 		ColorA *			mVertexColors;
 
 		int				mRepetitions; //!< Number of repetions of the animation, default -1 that equals to loop.

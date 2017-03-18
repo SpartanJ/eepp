@@ -168,13 +168,13 @@ void SubTexture::draw( const Quad2f Q, const Vector2f& Offset, const Float& Angl
 }
 
 void SubTexture::draw( const Vector2f& position ) {
-	draw( position.x, position.y, ColorA( mColorFilter.r, mColorFilter.g, mColorFilter.b, mAlpha ) );
+	draw( position.x, position.y, getColor() );
 }
 
 void SubTexture::draw( const Vector2f & position, const Sizef& size ) {
 	Sizef oldSize( mDestSize );
 	mDestSize = size;
-	draw( position.x, position.y, getColorFilterAlpha() );
+	draw( position.x, position.y, getColor() );
 	mDestSize = oldSize;
 }
 

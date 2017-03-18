@@ -739,5 +739,5 @@ void EE::Graphics::Texture::draw( const Vector2f & position ) {
 }
 
 void EE::Graphics::Texture::draw(const Vector2f & position, const Sizef & size) {
-	drawFast( position.x, position.y, 0, Vector2f::One, mColorFilter, ALPHA_NORMAL, size.x, size.y );
+	drawFast( position.x, position.y, 0, Vector2f::One, mColor, ALPHA_NORMAL, size.x, size.y );
 }

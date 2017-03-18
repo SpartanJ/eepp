@@ -22,23 +22,25 @@ class EE_API Drawable {
 
 		const Uint8& getAlpha();
 
-		void setColorFilter( Color color );
+		void setColor( const ColorA& color );
 
-		const Color& getColorFilter();
+		const ColorA& getColor() const;
+
+		void setColorFilter( const ColorA& color );
+
+		Color getColorFilter();
+
+		void clearColor();
 
 		void clearColorFilter();
 
 		void resetAlpha();
-
 	protected:
-		Color mColorFilter;
-		Uint8 mAlpha;
+		ColorA mColor;
 
 		virtual void onAlphaChange();
 
 		virtual void onColorFilterChange();
-
-		ColorA getColorFilterAlpha();
 };
 
 }}

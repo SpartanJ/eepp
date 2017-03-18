@@ -16,7 +16,6 @@ Sprite::Sprite() :
 	mRotation( 0.f ),
 	mScale( 1.f, 1.f ),
 	mAnimSpeed( 16.f ),
-	mColor( 255,255,255,255 ),
 	mVertexColors( NULL ),
 	mRepetitions( -1 ),
 	mBlend( ALPHA_NORMAL ),
@@ -37,7 +36,6 @@ Sprite::Sprite( const std::string& name, const std::string& extension, TextureAt
 	mRotation( 0.f ),
 	mScale( 1.f, 1.f ),
 	mAnimSpeed( 16.f ),
-	mColor( 255,255,255,255 ),
 	mVertexColors( NULL ),
 	mRepetitions( -1 ),
 	mBlend( ALPHA_NORMAL ),
@@ -59,7 +57,6 @@ Sprite::Sprite( SubTexture * SubTexture ) :
 	mRotation( 0.f ),
 	mScale( 1.f, 1.f ),
 	mAnimSpeed( 16.f ),
-	mColor( 255,255,255,255 ),
 	mVertexColors( NULL ),
 	mRepetitions( -1 ),
 	mBlend( ALPHA_NORMAL ),
@@ -81,7 +78,6 @@ Sprite::Sprite( const Uint32& TexId, const Sizef &DestSize, const Vector2i &Offs
 	mRotation( 0.f ),
 	mScale( 1.f, 1.f ),
 	mAnimSpeed( 16.f ),
-	mColor( 255,255,255,255 ),
 	mVertexColors( NULL ),
 	mRepetitions( -1 ),
 	mBlend( ALPHA_NORMAL ),
@@ -618,9 +614,9 @@ void Sprite::draw( const Vector2f& position, const Sizef& size ) {
 	}
 
 	if ( NULL == mVertexColors )
-		S->draw( position.x, position.y, getColorFilterAlpha(), mRotation, mScale, mBlend, mEffect, mOrigin );
+		S->draw( position.x, position.y, getColor(), mRotation, mScale, mBlend, mEffect, mOrigin );
 	else
-		S->draw( position.x, position.y, mRotation, mScale, getColorFilterAlpha(), getColorFilterAlpha(), getColorFilterAlpha(), getColorFilterAlpha(), mBlend, mEffect, mOrigin );
+		S->draw( position.x, position.y, mRotation, mScale, getColor(), getColor(), getColor(), getColor(), mBlend, mEffect, mOrigin );
 
 	if ( size != Sizef::Zero ) {
 		S->setDestSize( oldSize );
@@ -778,22 +774,6 @@ void Sprite::setAnimationPaused( const bool& Pause )	{
 		if ( SPR_FGET( SPRITE_FLAG_ANIM_PAUSED ) )
 			mFlags &= ~SPRITE_FLAG_ANIM_PAUSED;
 	}
-}
-
-void Sprite::setColor( const ColorA& Color) {
-	mColor = Color;
-}
-
-const ColorA& Sprite::getColor() const {
-	return mColor;
-}
-
-void Sprite::setAlpha( const Uint8& Alpha ) {
-	mColor.a = Alpha;
-}
-
-const Uint8& Sprite::getAlpha() const {
-	return mColor.a;
 }
 
 const unsigned int& Sprite::getCurrentFrame() const {
