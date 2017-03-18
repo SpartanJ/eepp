@@ -11,9 +11,9 @@ InputFinger::InputFinger() :
 	ydelta(0),
 	last_x(0),
 	last_y(0),
-	last_pressure(0),
+	lastPressure(0),
 	down(false),
-	was_down(false)
+	wasDown(false)
 {	
 }
 
@@ -21,8 +21,8 @@ bool InputFinger::isDown() {
 	return down;
 }
 
-bool InputFinger::wasDown() {
-	return was_down;
+bool InputFinger::getWasDown() {
+	return wasDown;
 }
 
 Vector2i InputFinger::getPos() {
@@ -32,7 +32,7 @@ Vector2i InputFinger::getPos() {
 void InputFinger::writeLast() {
 	last_x = x;
 	last_y = y;
-	last_pressure = pressure;
+	lastPressure = pressure;
 }
 
 }} 

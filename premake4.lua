@@ -493,8 +493,6 @@ function add_static_links()
 		end
 	end
 	
-	links { "haikuttf-static" }
-	
 	if _OPTIONS["with-static-freetype"] or not os_findlib("freetype") then
 		print("Enabled static freetype")
 		links { "freetype-static" }
@@ -853,14 +851,6 @@ solution "eepp"
 		files { "src/eepp/helper/chipmunk/*.c", "src/eepp/helper/chipmunk/constraints/*.c" }
 		includedirs { "include/eepp/helper/chipmunk" }
 		build_base_configuration( "chipmunk" )
-
-	project "haikuttf-static"
-		kind "StaticLib"
-		language "C++"
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/haikuttf/*.cpp" }
-		includedirs { "src/eepp/helper/freetype2/include" }
-		build_base_cpp_configuration( "haikuttf" )
 
 	project "jpeg-compressor-static"
 		kind "StaticLib"

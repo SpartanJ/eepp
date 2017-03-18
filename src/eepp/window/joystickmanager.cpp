@@ -13,13 +13,13 @@ JoystickManager::JoystickManager() :
 }
 
 JoystickManager::~JoystickManager() {
-	for ( Uint32 i = 0; i < count(); i++ )
+	for ( Uint32 i = 0; i < getCount(); i++ )
 		eeSAFE_DELETE( mJoysticks[i] );
 
 	close();
 }
 
-Uint32 JoystickManager::count() {
+Uint32 JoystickManager::getCount() {
 	return mCount;
 }
 

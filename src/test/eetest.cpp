@@ -508,7 +508,6 @@ void EETest::createUI() {
 void EETest::createNewUI() {
 	std::vector<String> str = getTestStringArr();
 
-	/*
 	UIRadioButton * ctrl = UIRadioButton::New();
 	ctrl->setPosition( 50, 100 )->setSize( 200, 32 );
 	ctrl->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
@@ -522,7 +521,7 @@ void EETest::createNewUI() {
 	cbox->setBorderEnabled( true )->setColor( 0x66666666 );
 	cbox->setText( "Happy CheckBox :)" );
 	cbox->setFontColor( 0x000000FF );
-
+	/*
 	UIImage * gfx = UIImage::New();
 	gfx->setPosition( 50, 140 )->setSize( 16, 16 );
 	gfx->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
@@ -641,7 +640,7 @@ void EETest::createNewUI() {
 	TabWidget->add( "Tab 2", UIWidget::New()->setThemeControl( "winback" ), mTheme->getIconByName( "go-up" ) );
 	TabWidget->add( "Tab 3", UIWidget::New()->setThemeControl( "winback" ), mTheme->getIconByName( "add" ) );
 
-	/**/
+	*/
 	/*
 	UIWindow * win = UIWindow::New();
 	win->setSize( 500, 500 );
@@ -689,7 +688,7 @@ void EETest::createNewUI() {
 	drop->getListBox()->addListBoxItems( { "Car", "Bus", "Plane", "Submarine" } );
 	drop->getListBox()->setSelected(0);
 	win->show();
-	/**/
+	*/
 
 	/*
 	UIWindow * win2 = UIWindow::New();
@@ -709,7 +708,7 @@ void EETest::createNewUI() {
 			->setLayoutPositionRule( LEFT_OF, ofBut )->setParent( rlay );
 
 	win2->show();
-	/**/
+
 
 	UIManager::instance()->loadLayoutFromString(
 		"<window layout_width='300dp' layout_height='300dp' winflags='default|maximize'>"
@@ -730,7 +729,7 @@ void EETest::createNewUI() {
 		"	</LinearLayout>"
 		"</window>"
 	);
-
+	*/
 }
 
 void EETest::createMapEditor() {
@@ -1593,8 +1592,8 @@ void EETest::input() {
 
 			nmX = eemax<Float>( nmX, 0 );
 			nmY = eemax<Float>( nmY, 0 );
-			nmX = eemin( nmX, (Float)EE->getWidth() );
-			nmY = eemin( nmY, (Float)EE->getHeight() );
+			nmX = eemin( nmX, (Float)EE->getCurrentWindow()->getWidth() );
+			nmY = eemin( nmY, (Float)EE->getCurrentWindow()->getHeight() );
 
 			KM->injectMousePos( (Int32)nmX, (Int32)nmY );
 

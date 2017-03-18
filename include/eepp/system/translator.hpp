@@ -14,9 +14,6 @@ class Pack;
 
 class Translator {
 	public:
-		typedef std::map<std::string, String> StringDictionary;
-		typedef std::map<std::string, StringDictionary> StringLocaleDictionary;
-
 		Translator( const std::locale& locale = std::locale() );
 
 		void loadFromDirectory( std::string dirPath, std::string ext = "xml" );
@@ -45,6 +42,9 @@ class Translator {
 
 		void setCurrentLanguage( const std::string& currentLanguage );
 	protected:
+		typedef std::map<std::string, String> StringDictionary;
+		typedef std::map<std::string, StringDictionary> StringLocaleDictionary;
+
 		std::string mDefaultLanguage;
 		std::string mCurrentLanguage;
 		StringLocaleDictionary mDictionary;

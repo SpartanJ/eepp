@@ -20,15 +20,15 @@ class InputFinger {
 		float ydelta;
 		Int32 last_x;
 		Int32 last_y;
-		float last_pressure;
+		float lastPressure;
 		bool down;
-		bool was_down;
+		bool wasDown;
 
 		/** @return If is currently pressed */
 		bool isDown();
 
 		/** @return If was down in the last update */
-		bool wasDown();
+		bool getWasDown();
 
 		/** @return The current position of the finger */
 		Vector2i getPos();

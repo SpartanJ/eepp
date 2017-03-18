@@ -157,7 +157,7 @@ void Input::processEvent( InputEvent * Event ) {
 			Finger->y			= (Uint16)( Event->finger.y * (Float)mWindow->getHeight() );
 			Finger->pressure	= Event->finger.pressure;
 			Finger->down		= false;
-			Finger->was_down	= true;
+			Finger->wasDown		= true;
 			Finger->xdelta		= Event->finger.dx;
 			Finger->ydelta		= Event->finger.dy;
 
@@ -222,7 +222,7 @@ InputFinger * Input::getFingerId( const Int64 &fingerId ) {
 
 void Input::resetFingerWasDown() {
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
-		mFingers[i].was_down = false;
+		mFingers[i].wasDown = false;
 	}
 }
 
@@ -429,7 +429,7 @@ std::list<InputFinger *> Input::getFingersWasDown() {
 	std::list<InputFinger *> fDown;
 
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
-		if ( mFingers[i].was_down ) {
+		if ( mFingers[i].wasDown ) {
 			fDown.push_back( &mFingers[i] );
 		}
 	}

@@ -39,15 +39,6 @@ class EE_API Engine {
 		/** @return If any window is created. */
 		bool isRunning() const;
 
-		/** @return The current window elapsed time. */
-		Time getElapsed() const;
-
-		/** @return The current window width. */
-		const Uint32& getWidth() const;
-
-		/** @return The current window height */
-		const Uint32& getHeight() const;
-
 		/** @return If the window instance is inside the window list. */
 		bool existsWindow( EE::Window::Window * window );
 

@@ -58,7 +58,7 @@ void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 	mControl = UIWindow::New();
 	mControl->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
 	mControl->setStyleConfig( windowStyleConfig );
-	mControl->setSize( (Float)Engine::instance()->getWidth() / PixelDensity::getPixelDensity(), (Float)Engine::instance()->getHeight() / PixelDensity::getPixelDensity() );
+	mControl->setSize( (Float)mWindow->getWidth() / PixelDensity::getPixelDensity(), (Float)mWindow->getHeight() / PixelDensity::getPixelDensity() );
 	mControl->setVisible( true );
 	mControl->setEnabled( true );
 	mControl->getContainer()->setEnabled( false );

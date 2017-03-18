@@ -10,7 +10,6 @@
 #include <eepp/graphics/vertexbuffermanager.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/audio/audiolistener.hpp>
-#include <eepp/helper/haikuttf/hkfontmanager.hpp>
 #include <eepp/physics/physicsmanager.hpp>
 #include <eepp/network/ssl/sslsocket.hpp>
 #include <eepp/window/backend.hpp>
@@ -68,8 +67,6 @@ Engine::~Engine() {
 	PackManager::destroySingleton();
 
 	Log::destroySingleton();
-
-	HaikuTTF::hkFontManager::destroySingleton();
 
 	#ifdef EE_SSL_SUPPORT
 	Network::SSL::SSLSocket::end();
@@ -213,24 +210,6 @@ Uint32 Engine::getWindowCount() const {
 
 bool Engine::isRunning() const {
 	return NULL != mWindow;
-}
-
-Time Engine::getElapsed() const {
-	eeASSERT( isRunning() );
-
-	return mWindow->getElapsed();
-}
-
-const Uint32& Engine::getWidth() const {
-	eeASSERT( isRunning() );
-
-	return mWindow->getWidth();
-}
-
-const Uint32& Engine::getHeight() const {
-	eeASSERT( isRunning() );
-
-	return mWindow->getHeight();
 }
 
 Uint32 Engine::getDefaultBackend() const {
