@@ -62,7 +62,7 @@ void UIImage::draw() {
 			Sizef oDestSize	= mSubTexture->getDestSize();
 			Vector2i oOff	= mSubTexture->getOffset();
 
-			if ( mFlags & UI_FIT_TO_CONTROL ) {
+			if ( mScaleType == UIScaleType::Expand ) {
 				mSubTexture->setOffset( Vector2i( 0, 0 ) );
 				mSubTexture->setDestSize( Vector2f( mRealSize.x, mRealSize.y ) );
 
@@ -70,7 +70,7 @@ void UIImage::draw() {
 
 				drawSubTexture();
 
-			} else if ( mFlags & UI_AUTO_FIT ) {
+			} else if ( mScaleType == UIScaleType::FitInside ) {
 				mSubTexture->setOffset( Vector2i( 0, 0 ) );
 
 				Sizei pxSize = mSubTexture->getPxSize();
@@ -196,18 +196,26 @@ void UIImage::loadFromXmlNode(const pugi::xml_node & node) {
 			}
 		} else if ( "scaletype" == name ) {
 			std::string val = ait->as_string();
+			String::toLowerInPlace( val );
 
 			if ( "expand" == val ) {
-				unsetFlags( UI_AUTO_FIT );
-				setFlags( UI_FIT_TO_CONTROL );
-			} else if ( "fit_inside" == val ) {
-				unsetFlags( UI_FIT_TO_CONTROL );
-				setFlags( UI_AUTO_FIT );
-			} else if ( "keep" == val ) {
-				unsetFlags( UI_AUTO_FIT | UI_FIT_TO_CONTROL );
+				setScaleType( UIScaleType::Expand );
+			} else if ( "fit_inside" == val || "fitinside" == val ) {
+				setScaleType( UIScaleType::FitInside );
+			} else if ( "none" == val ) {
+				setScaleType( UIScaleType::None );
 			}
 		}
 	}
+}
+
+Uint32 UIImage::getScaleType() const {
+	return mScaleType;
+}
+
+UIImage * UIImage::setScaleType(const Uint32& scaleType) {
+	mScaleType = scaleType;
+	return this;
 }
 
 }}

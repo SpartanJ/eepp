@@ -26,6 +26,8 @@
 
 namespace  EE { namespace UI {
 
+static UIHelper::CreateUIWidgetCb customWidgetCallback;
+
 UIWidget * UIHelper::createUIWidgetFromName( std::string name ) {
 	String::toLowerInPlace( name );
 
@@ -83,7 +85,15 @@ UIWidget * UIHelper::createUIWidgetFromName( std::string name ) {
 		return UIWindow::New();
 	}
 
+	if ( customWidgetCallback.IsSet() ) {
+		return customWidgetCallback( name );
+	}
+
 	return NULL;
+}
+
+void UIHelper::setCreateCustomUIWidgetCallback(UIHelper::CreateUIWidgetCb cb) {
+	customWidgetCallback = cb;
 }
 
 }}

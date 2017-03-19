@@ -191,6 +191,15 @@ class UITooltipStyleConfig : public UIFontStyleConfig {
 		Recti		Padding;
 };
 
+class UIScaleType {
+	public:
+		enum Type {
+			None,
+			Expand,
+			FitInside
+		};
+};
+
 }}
 
 #endif

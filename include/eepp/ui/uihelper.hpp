@@ -45,25 +45,23 @@ enum UI_FLAGS {
 	UI_HALIGN_CENTER				= FONT_DRAW_CENTER,
 	UI_VALIGN_BOTTOM				= FONT_DRAW_BOTTOM,
 	UI_VALIGN_CENTER				= FONT_DRAW_MIDDLE,
-	UI_AUTO_SIZE					= (1 << 7),
-	UI_SKIN_KEEP_SIZE_ON_DRAW		= (1 << 8),
-	UI_FILL_BACKGROUND				= (1 << 9),
-	UI_BORDER						= (1 << 10),
-	UI_TAB_STOP						= (1 << 11),
-	UI_FIT_TO_CONTROL				= (1 << 12),
-	UI_CLIP_ENABLE					= (1 << 13),
-	UI_WORD_WRAP					= (1 << 14),
-	UI_MULTI_SELECT					= (1 << 15),
-	UI_AUTO_PADDING					= (1 << 16),
-	UI_DRAG_ENABLE					= (1 << 17),
-	UI_REPORT_SIZE_CHANGE_TO_CHILDS = (1 << 18),
-	UI_ANCHOR_TOP					= (1 << 19),
-	UI_ANCHOR_BOTTOM				= (1 << 20),
-	UI_ANCHOR_LEFT					= (1 << 21),
-	UI_ANCHOR_RIGHT					= (1 << 22),
-	UI_AUTO_FIT						= (1 << 23),
-	UI_TOUCH_DRAG_ENABLED			= (1 << 24),
-	UI_TEXT_SELECTION_ENABLED		= (1 << 25)
+	UI_AUTO_SIZE					= (1 << 4),
+	UI_SKIN_KEEP_SIZE_ON_DRAW		= (1 << 5),
+	UI_FILL_BACKGROUND				= (1 << 6),
+	UI_BORDER						= (1 << 7),
+	UI_TAB_STOP						= (1 << 8),
+	UI_CLIP_ENABLE					= (1 << 9),
+	UI_WORD_WRAP					= (1 << 10),
+	UI_MULTI_SELECT					= (1 << 11),
+	UI_AUTO_PADDING					= (1 << 12),
+	UI_DRAG_ENABLE					= (1 << 13),
+	UI_REPORT_SIZE_CHANGE_TO_CHILDS = (1 << 14),
+	UI_ANCHOR_TOP					= (1 << 15),
+	UI_ANCHOR_BOTTOM				= (1 << 16),
+	UI_ANCHOR_LEFT					= (1 << 17),
+	UI_ANCHOR_RIGHT					= (1 << 18),
+	UI_TOUCH_DRAG_ENABLED			= (1 << 19),
+	UI_TEXT_SELECTION_ENABLED		= (1 << 20)
 };
 
 enum UI_CONTROL_TYPES {
@@ -182,7 +180,11 @@ static const Uint32 UI_CDL_DEFAULT_FLAGS = CDL_FLAG_FOLDERS_FISRT | CDL_FLAG_SOR
 class UIWidget;
 class EE_API UIHelper {
 	public:
+		typedef cb::Callback1<UIWidget*, std::string> CreateUIWidgetCb;
+
 		static UIWidget * createUIWidgetFromName( std::string name );
+
+		static void setCreateCustomUIWidgetCallback( CreateUIWidgetCb cb );
 };
 
 }}

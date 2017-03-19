@@ -20,7 +20,6 @@ TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( TextureAtlasEditor *
 	mGfx->setParent( this );
 	mGfx->setVisible( true );
 	mGfx->setEnabled( true );
-	mGfx->unsetFlags( UI_FIT_TO_CONTROL );
 
 	mDrag = UIDragableControl::New();
 	mDrag->setParent( this );

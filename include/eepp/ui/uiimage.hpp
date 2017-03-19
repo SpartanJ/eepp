@@ -36,7 +36,12 @@ class EE_API UIImage : public UIWidget {
 		const Vector2i& getAlignOffset() const;
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
+
+		Uint32 getScaleType() const;
+
+		UIImage * setScaleType(const Uint32 & scaleType);
 	protected:
+		Uint32					mScaleType;
 		Graphics::SubTexture * 	mSubTexture;
 		ColorA					mColor;
 		EE_RENDER_MODE			mRender;

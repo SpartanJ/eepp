@@ -33,7 +33,7 @@ UIPushButton::UIPushButton() :
 	mIcon = UIImage::New();
 	mIcon->setParent( this );
 	mIcon->setFlags( GfxFlags );
-	mIcon->unsetFlags( UI_AUTO_SIZE | UI_FIT_TO_CONTROL );
+	mIcon->unsetFlags( UI_AUTO_SIZE );
 
 	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
 		mIcon->setSize( mStyleConfig.IconMinSize );

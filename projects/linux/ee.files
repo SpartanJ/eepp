@@ -42,8 +42,6 @@
 ../../src/eepp/ui/uitextview.cpp
 ../../src/eepp/ui/uithemedefault.cpp
 ../../src/eepp/ui/uiwidget.cpp
-ee.config
-ee.includes
 ../../../eeiv/src/capp.cpp
 ../../include/eepp/audio/soundmanager.hpp
 ../../include/eepp/audio/soundloader.hpp

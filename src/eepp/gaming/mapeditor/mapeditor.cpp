@@ -343,7 +343,8 @@ void MapEditor::createSubTextureContainer( Int32 Width ) {
 	mSubTextureList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::onSubTextureChange ) );
 
 	mGfxPreview = UIImage::New();
-	mGfxPreview->resetFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_AUTO_FIT )
+	mGfxPreview->setScaleType( UIScaleType::FitInside )
+			   ->resetFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP )
 			   ->setParent( mSGCont )->setSize( Width, Width )
 			   ->setPosition( 0, mSubTextureList->getPosition().y + mSubTextureList->getSize().getHeight() + 4 );
 

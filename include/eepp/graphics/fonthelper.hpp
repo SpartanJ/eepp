@@ -37,17 +37,6 @@ struct VertexCoords {
 	Float Vertex[2];
 };
 
-typedef struct sFntHdrS {
-	Uint32	Magic;
-	Uint32	FirstChar;
-	Uint32	NumChars;
-	Uint32	Size;
-	Uint32	Height;
-	Int32	LineSkip;
-	Int32	Ascent;
-	Int32	Descent;
-} sFntHdr;
-
 #define EE_TTF_FONT_MAGIC ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'F' << 16 ) | ( 'N' << 24 ) )
 
 }}
