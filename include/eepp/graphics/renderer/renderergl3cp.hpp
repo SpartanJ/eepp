@@ -1,7 +1,7 @@
 #ifndef EE_GRAPHICS_CRENDERERGL3CP_HPP
 #define EE_GRAPHICS_CRENDERERGL3CP_HPP
 
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 
 #ifdef EE_GL3_ENABLED
 
@@ -16,7 +16,7 @@ namespace Private {
 class MatrixStack;
 }
 
-class EE_API RendererGL3CP : public cGL {
+class EE_API RendererGL3CP : public Renderer {
 	public:
 		RendererGL3CP();
 

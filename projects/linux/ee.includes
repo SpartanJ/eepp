@@ -10,3 +10,5 @@
 ../../src/eepp/helper/freetype2/include/
 ../../include/eepp/system
 ../../src/eepp/system
+../../src/eepp/graphics/renderer
+../../include/eepp/graphics/renderer

@@ -16,7 +16,7 @@
 #include <eepp/graphics/vertexbuffermanager.hpp>
 #include <eepp/graphics/framebuffermanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <eepp/system/zip.hpp>
@@ -227,9 +227,9 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	SDL_GL_MakeCurrent( mSDLWindow, mGLContext );
 
-	if ( NULL == cGL::existsSingleton() ) {
-		cGL::createSingleton( mWindow.ContextConfig.Version );
-		cGL::instance()->init();
+	if ( NULL == Renderer::existsSingleton() ) {
+		Renderer::createSingleton( mWindow.ContextConfig.Version );
+		Renderer::instance()->init();
 	}
 
 	createPlatform();

@@ -1,5 +1,5 @@
-#include <eepp/graphics/glextensions.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/openglext.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/renderer/renderergl.hpp>
 #include <eepp/graphics/renderer/renderergl3.hpp>
 #include <eepp/graphics/renderer/renderergl3cp.hpp>
@@ -10,11 +10,11 @@ namespace EE { namespace Graphics {
 
 typedef const GLubyte *( * pglGetStringiFunc) (unsigned int, unsigned int);
 
-cGL * GLi = NULL;
+Renderer * GLi = NULL;
 
-cGL * cGL::ms_singleton = NULL;
+Renderer * Renderer::sSingleton = NULL;
 
-cGL * cGL::createSingleton( EEGL_version ver ) {
+Renderer * Renderer::createSingleton( EEGL_version ver ) {
 	#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
 	if ( GLv_default == ver )
 		ver = GLv_2;
@@ -44,21 +44,21 @@ cGL * cGL::createSingleton( EEGL_version ver ) {
 		case GLv_ES2:
 		{
 			#if defined( EE_GL3_ENABLED ) || defined( EE_GLES2 )
-			ms_singleton = eeNew( RendererGLES2, () );
+			sSingleton = eeNew( RendererGLES2, () );
 			break;
 			#endif
 		}
 		case GLv_3:
 		{
 			#if defined( EE_GL3_ENABLED ) || defined( EE_GLES2 )
-			ms_singleton = eeNew( RendererGL3, () );
+			sSingleton = eeNew( RendererGL3, () );
 			break;
 			#endif
 		}
 		case GLv_3CP:
 		{
 			#if defined( EE_GL3_ENABLED ) || defined( EE_GLES2 )
-			ms_singleton = eeNew( RendererGL3CP, () );
+			sSingleton = eeNew( RendererGL3CP, () );
 			break;
 			#endif
 		}
@@ -68,16 +68,16 @@ cGL * cGL::createSingleton( EEGL_version ver ) {
 		default:
 		{
 			#ifndef EE_GLES2
-			ms_singleton = eeNew( RendererGL, () );
+			sSingleton = eeNew( RendererGL, () );
 			#endif
 		}
 	}
 
-	return ms_singleton;
+	return sSingleton;
 }
 
-cGL * cGL::createSingleton() {
-	if ( ms_singleton == 0 ) {
+Renderer * Renderer::createSingleton() {
+	if ( sSingleton == 0 ) {
 		#if defined( EE_GLES_BOTH )
 			ms_singleton = eeNew( RendererGL, () );
 		#elif defined( EE_GLES2 )
@@ -85,31 +85,31 @@ cGL * cGL::createSingleton() {
 		#elif defined( EE_GLES1 )
 			ms_singleton = eeNew( RendererGL, () );
 		#else
-			ms_singleton = eeNew( RendererGL, () );
+			sSingleton = eeNew( RendererGL, () );
 		#endif
 	}
 
-	return ms_singleton;
+	return sSingleton;
 }
 
-cGL * cGL::existsSingleton() {
-	return ms_singleton;
+Renderer * Renderer::existsSingleton() {
+	return sSingleton;
 }
 
-cGL * cGL::instance() {
+Renderer * Renderer::instance() {
 	return createSingleton();
 }
 
-void cGL::destroySingleton() {
-	if( ms_singleton != 0 ) {
-		eeDelete( ms_singleton );
-		ms_singleton = 0;
+void Renderer::destroySingleton() {
+	if( sSingleton != 0 ) {
+		eeDelete( sSingleton );
+		sSingleton = 0;
 	}
 }
 
-cGL::cGL() :
+Renderer::Renderer() :
 	mExtensions(0),
-	mStateFlags( 1 << GLSF_LINE_SMOOTH ),
+	mStateFlags( 1 << RSF_LINE_SMOOTH ),
 	mPushClip( true ),
 	mQuadsSupported( true ),
 	mBlendEnabled( false ),
@@ -120,31 +120,31 @@ cGL::cGL() :
 	GLi = this;
 }
 
-cGL::~cGL() {
+Renderer::~Renderer() {
 	GLi = NULL;
 }
 
-RendererGL * cGL::getRendererGL() {
+RendererGL * Renderer::getRendererGL() {
 	return reinterpret_cast<RendererGL*>( this );
 }
 
-RendererGL3 * cGL::getRendererGL3() {
+RendererGL3 * Renderer::getRendererGL3() {
 	return reinterpret_cast<RendererGL3*>( this );
 }
 
-RendererGL3CP * cGL::getRendererGL3CP() {
+RendererGL3CP * Renderer::getRendererGL3CP() {
 	return reinterpret_cast<RendererGL3CP*>( this );
 }
 
-RendererGLES2 * cGL::getRendererGLES2() {
+RendererGLES2 * Renderer::getRendererGLES2() {
 	return reinterpret_cast<RendererGLES2*>( this );
 }
 
-void cGL::writeExtension( Uint8 Pos, Uint32 BitWrite ) {
+void Renderer::writeExtension( Uint8 Pos, Uint32 BitWrite ) {
 	BitOp::writeBitKey( &mExtensions, Pos, BitWrite );
 }
 
-void cGL::init() {
+void Renderer::init() {
 	#ifdef EE_GLEW_AVAILABLE
 	glewExperimental = 1;
 
@@ -234,7 +234,7 @@ void cGL::init() {
 	#endif
 }
 
-bool cGL::isExtension( const std::string& name ) {
+bool Renderer::isExtension( const std::string& name ) {
 #ifdef EE_GLEW_AVAILABLE
 	return 0 != glewIsSupported( name.c_str() );
 #else
@@ -242,11 +242,11 @@ bool cGL::isExtension( const std::string& name ) {
 #endif
 }
 
-bool cGL::isExtension( EEGL_extensions name ) {
+bool Renderer::isExtension( EEGL_extensions name ) {
 	return 0 != ( mExtensions & ( 1 << name ) );
 }
 
-bool cGL::pointSpriteSupported() {
+bool Renderer::pointSpriteSupported() {
 #ifdef EE_GLES
 	return true;
 #else
@@ -254,7 +254,7 @@ bool cGL::pointSpriteSupported() {
 #endif
 }
 
-bool cGL::shadersSupported() {
+bool Renderer::shadersSupported() {
 #ifdef EE_GLES
 	return ( GLv_ES2 == Version() || GLv_3 == Version() || GLv_3CP == Version() );
 #else
@@ -262,7 +262,7 @@ bool cGL::shadersSupported() {
 #endif
 }
 
-Uint32 cGL::getTextureParamEnum( const EE_TEXTURE_PARAM& Type ) {
+Uint32 Renderer::getTextureParamEnum( const EE_TEXTURE_PARAM& Type ) {
 	#ifndef EE_GLES
 	switch( Type ) {
 		case TEX_PARAM_COLOR_FUNC:			return GL_COMBINE_RGB_ARB;
@@ -287,7 +287,7 @@ Uint32 cGL::getTextureParamEnum( const EE_TEXTURE_PARAM& Type ) {
 	return 0;
 }
 
-Uint32 cGL::getTextureFuncEnum( const EE_TEXTURE_FUNC& Type ) {
+Uint32 Renderer::getTextureFuncEnum( const EE_TEXTURE_FUNC& Type ) {
 	#ifndef EE_GLES2
 	switch( Type ) {
 		case TEX_FUNC_MODULATE:			return GL_MODULATE;
@@ -303,7 +303,7 @@ Uint32 cGL::getTextureFuncEnum( const EE_TEXTURE_FUNC& Type ) {
 	return 0;
 }
 
-Uint32 cGL::getTextureSourceEnum( const EE_TEXTURE_SOURCE& Type ) {
+Uint32 Renderer::getTextureSourceEnum( const EE_TEXTURE_SOURCE& Type ) {
 	#ifndef EE_GLES2
 	switch ( Type ) {
 		case TEX_SRC_TEXTURE:	return GL_TEXTURE;
@@ -316,7 +316,7 @@ Uint32 cGL::getTextureSourceEnum( const EE_TEXTURE_SOURCE& Type ) {
 	return 0;
 }
 
-Uint32 cGL::getTextureOpEnum( const EE_TEXTURE_OP& Type ) {
+Uint32 Renderer::getTextureOpEnum( const EE_TEXTURE_OP& Type ) {
 	#ifndef EE_GLES2
 	switch ( Type ) {
 		case TEX_OP_COLOR:				return GL_SRC_COLOR;
@@ -329,7 +329,7 @@ Uint32 cGL::getTextureOpEnum( const EE_TEXTURE_OP& Type ) {
 	return 0;
 }
 
-std::string cGL::getExtensions() {
+std::string Renderer::getExtensions() {
 	std::string exts;
 
 	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
@@ -371,11 +371,11 @@ std::string cGL::getExtensions() {
 	return exts;
 }
 
-void cGL::viewport( int x, int y, int width, int height ) {
+void Renderer::viewport( int x, int y, int width, int height ) {
 	glViewport( x, y, width, height );
 }
 
-void cGL::disable ( unsigned int cap ) {
+void Renderer::disable ( unsigned int cap ) {
 	switch ( cap )
 	{
 		case GL_BLEND:
@@ -393,7 +393,7 @@ void cGL::disable ( unsigned int cap ) {
 	glDisable( cap );
 }
 
-void cGL::enable( unsigned int cap ) {
+void Renderer::enable( unsigned int cap ) {
 	switch ( cap )
 	{
 		case GL_BLEND:
@@ -411,50 +411,50 @@ void cGL::enable( unsigned int cap ) {
 	glEnable( cap );
 }
 
-const char * cGL::getString( unsigned int name ) {
+const char * Renderer::getString( unsigned int name ) {
 	return (const char*)glGetString( name );
 }
 
-void cGL::clear ( unsigned int mask ) {
+void Renderer::clear ( unsigned int mask ) {
 	glClear( mask );
 }
 
-void cGL::clearColor( float red, float green, float blue, float alpha ) {
+void Renderer::clearColor( float red, float green, float blue, float alpha ) {
 	glClearColor( red, green, blue, alpha );
 }
 
-void cGL::scissor ( int x, int y, int width, int height ) {
+void Renderer::scissor ( int x, int y, int width, int height ) {
 	glScissor( x, y, width, height );
 }
 
-void cGL::polygonMode( unsigned int face, unsigned int mode ) {
+void Renderer::polygonMode( unsigned int face, unsigned int mode ) {
 	#ifndef EE_GLES
 	glPolygonMode( face, mode );
 	#endif
 }
 
-void cGL::drawArrays (unsigned int mode, int first, int count) {
+void Renderer::drawArrays (unsigned int mode, int first, int count) {
 	glDrawArrays( mode, first, count );
 }
 
-void cGL::drawElements( unsigned int mode, int count, unsigned int type, const void *indices ) {
+void Renderer::drawElements( unsigned int mode, int count, unsigned int type, const void *indices ) {
 	glDrawElements( mode, count, type, indices );
 }
 
-void cGL::bindTexture ( unsigned int target, unsigned int texture ) {
+void Renderer::bindTexture ( unsigned int target, unsigned int texture ) {
 	if ( GLv_3CP == version() && 0 == texture ) return;
 	glBindTexture( target, texture );
 }
 
-void cGL::activeTexture( unsigned int texture ) {
+void Renderer::activeTexture( unsigned int texture ) {
 	glActiveTexture( texture );
 }
 
-void cGL::blendFunc ( unsigned int sfactor, unsigned int dfactor ) {
+void Renderer::blendFunc ( unsigned int sfactor, unsigned int dfactor ) {
 	glBlendFunc( sfactor, dfactor );
 }
 
-void cGL::setShader( ShaderProgram * Shader ) {
+void Renderer::setShader( ShaderProgram * Shader ) {
 	#ifdef EE_SHADERS_SUPPORTED
 	if ( NULL != Shader ) {
 		glUseProgram( Shader->getHandler() );
@@ -464,15 +464,15 @@ void cGL::setShader( ShaderProgram * Shader ) {
 	#endif
 }
 
-bool cGL::isLineSmooth() {
-	return BitOp::readBitKey( &mStateFlags, GLSF_LINE_SMOOTH );
+bool Renderer::isLineSmooth() {
+	return BitOp::readBitKey( &mStateFlags, RSF_LINE_SMOOTH );
 }
 
-void cGL::lineSmooth() {
+void Renderer::lineSmooth() {
 	lineSmooth( isLineSmooth() );
 }
 
-void cGL::lineSmooth( const bool& Enable ) {
+void Renderer::lineSmooth( const bool& Enable ) {
 	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	if ( Enable ) {
 		GLi->enable( GL_LINE_SMOOTH );
@@ -480,11 +480,11 @@ void cGL::lineSmooth( const bool& Enable ) {
 		GLi->disable( GL_LINE_SMOOTH );
 	}
 
-	BitOp::writeBitKey( &mStateFlags, GLSF_LINE_SMOOTH, Enable ? 1 : 0 );
+	BitOp::writeBitKey( &mStateFlags, RSF_LINE_SMOOTH, Enable ? 1 : 0 );
 	#endif
 }
 
-void cGL::lineWidth(float width) {
+void Renderer::lineWidth(float width) {
 	if ( width != mLineWidth ) {
 		#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		if ( GLv_3CP != version() )
@@ -497,29 +497,29 @@ void cGL::lineWidth(float width) {
 
 }
 
-void cGL::polygonMode() {
+void Renderer::polygonMode() {
 	EE_FILL_MODE Mode = DRAW_FILL;
 
-	if ( BitOp::readBitKey( &mStateFlags, GLSF_POLYGON_MODE ) )
+	if ( BitOp::readBitKey( &mStateFlags, RSF_POLYGON_MODE ) )
 		Mode = DRAW_LINE;
 
 	polygonMode( Mode );
 }
 
-void cGL::pixelStorei(unsigned int pname, int param) {
+void Renderer::pixelStorei(unsigned int pname, int param) {
 	glPixelStorei( pname, param );
 }
 
-void cGL::polygonMode( const EE_FILL_MODE& Mode ) {
+void Renderer::polygonMode( const EE_FILL_MODE& Mode ) {
 	if ( Mode == DRAW_FILL )
 		polygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	else
 		polygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
-	BitOp::writeBitKey( &mStateFlags, GLSF_POLYGON_MODE, Mode == DRAW_LINE ? 1 : 0 );
+	BitOp::writeBitKey( &mStateFlags, RSF_POLYGON_MODE, Mode == DRAW_LINE ? 1 : 0 );
 }
 
-std::string cGL::getVendor() {
+std::string Renderer::getVendor() {
 	const char * str = getString( GL_VENDOR );
 
 	if ( NULL != str )
@@ -528,7 +528,7 @@ std::string cGL::getVendor() {
 	return std::string();
 }
 
-std::string cGL::getRenderer() {
+std::string Renderer::getRenderer() {
 	const char * str = getString( GL_RENDERER );
 
 	if ( NULL != str )
@@ -537,7 +537,7 @@ std::string cGL::getRenderer() {
 	return std::string();
 }
 
-std::string cGL::getVersion() {
+std::string Renderer::getVersion() {
 	const char * str = getString( GL_VERSION );
 
 	if ( NULL != str )
@@ -546,7 +546,7 @@ std::string cGL::getVersion() {
 	return std::string();
 }
 
-std::string cGL::getShadingLanguageVersion() {
+std::string Renderer::getShadingLanguageVersion() {
 	if ( shadersSupported() ) {
 		#ifdef GL_SHADING_LANGUAGE_VERSION
 			const char * str = getString( GL_SHADING_LANGUAGE_VERSION );
@@ -559,11 +559,11 @@ std::string cGL::getShadingLanguageVersion() {
 	return std::string( "Shaders not supported" );
 }
 
-void cGL::getViewport( int * viewport ) {
+void Renderer::getViewport( int * viewport ) {
 	glGetIntegerv( GL_VIEWPORT, viewport );
 }
 
-Vector3f cGL::projectCurrent( const Vector3f& point ) {
+Vector3f Renderer::projectCurrent( const Vector3f& point ) {
 	float projMat[16];
 	getCurrentMatrix( GL_PROJECTION_MATRIX, projMat );
 
@@ -583,7 +583,7 @@ Vector3f cGL::projectCurrent( const Vector3f& point ) {
 	return Vector3f( tv3.x, tv3.y, tv3.z );
 }
 
-Vector3f cGL::unProjectCurrent( const Vector3f& point ) {
+Vector3f Renderer::unProjectCurrent( const Vector3f& point ) {
 	float projMat[16];
 	getCurrentMatrix( GL_PROJECTION_MATRIX, projMat );
 
@@ -603,27 +603,27 @@ Vector3f cGL::unProjectCurrent( const Vector3f& point ) {
 	return Vector3f( tv3.x, tv3.y, tv3.z );
 }
 
-void cGL::stencilFunc( unsigned int func, int ref, unsigned int mask ) {
+void Renderer::stencilFunc( unsigned int func, int ref, unsigned int mask ) {
 	glStencilFunc( func, ref, mask );
 }
 
-void cGL::stencilOp( unsigned int fail, unsigned int zfail, unsigned int zpass ) {
+void Renderer::stencilOp( unsigned int fail, unsigned int zfail, unsigned int zpass ) {
 	glStencilOp( fail, zfail, zpass );
 }
 
-void cGL::stencilMask ( unsigned int mask ) {
+void Renderer::stencilMask ( unsigned int mask ) {
 	glStencilMask( mask );
 }
 
-void cGL::colorMask ( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha ) {
+void Renderer::colorMask ( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha ) {
 	glColorMask( red, green, blue, alpha );
 }
 
-const int& cGL::quadVertexs() const {
+const int& Renderer::quadVertexs() const {
 	return mQuadVertexs;
 }
 
-void cGL::bindVertexArray ( unsigned int array ) {
+void Renderer::bindVertexArray ( unsigned int array ) {
 #if !defined( EE_GLES )
 	if ( mCurVAO != array ) {
 		glBindVertexArray( array );
@@ -633,19 +633,19 @@ void cGL::bindVertexArray ( unsigned int array ) {
 #endif
 }
 
-void cGL::deleteVertexArrays ( int n, const unsigned int *arrays ) {
+void Renderer::deleteVertexArrays ( int n, const unsigned int *arrays ) {
 #if !defined( EE_GLES )
 	glDeleteVertexArrays( n, arrays );
 #endif
 }
 
-void cGL::genVertexArrays ( int n, unsigned int *arrays ) {
+void Renderer::genVertexArrays ( int n, unsigned int *arrays ) {
 #if !defined( EE_GLES )
 	glGenVertexArrays( n, arrays );
 #endif
 }
 
-const bool& cGL::quadsSupported() const {
+const bool& Renderer::quadsSupported() const {
 	return mQuadsSupported;
 }
 

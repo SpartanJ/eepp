@@ -1,6 +1,6 @@
 #include <eepp/ui/uicontrolanim.hpp>
 #include <eepp/ui/uimanager.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/primitives.hpp>
 

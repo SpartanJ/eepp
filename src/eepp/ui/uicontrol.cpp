@@ -3,7 +3,7 @@
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/subtexture.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/window/engine.hpp>
 

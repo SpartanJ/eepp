@@ -21,7 +21,7 @@
 #include <eepp/window/backend/SFML/cursormanagersfml.hpp>
 #include <eepp/window/platform/platformimpl.hpp>
 
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
@@ -68,9 +68,9 @@ bool WindowSFML::create( WindowSettings Settings, ContextSettings Context ) {
 
 	mSFMLWindow.setVerticalSyncEnabled( Context.VSync );
 
-	if ( NULL == cGL::existsSingleton() ) {
-		cGL::createSingleton( mWindow.ContextConfig.Version );
-		cGL::instance()->init();
+	if ( NULL == Renderer::existsSingleton() ) {
+		Renderer::createSingleton( mWindow.ContextConfig.Version );
+		Renderer::instance()->init();
 	}
 
 	createPlatform();

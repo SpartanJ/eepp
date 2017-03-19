@@ -238,6 +238,6 @@
 
 #endif
 
-#include <eepp/graphics/glhelper.hpp>
+#include <eepp/graphics/renderer/rendererhelper.hpp>
 
 #endif

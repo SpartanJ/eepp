@@ -1,4 +1,4 @@
-#include <eepp/graphics/glextensions.hpp>
+#include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderergl.hpp>
 
 /*

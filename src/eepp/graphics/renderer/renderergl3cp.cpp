@@ -1,9 +1,9 @@
-#include <eepp/graphics/glextensions.hpp>
+#include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderergl3cp.hpp>
 
 #ifdef EE_GL3_ENABLED
 
-#include <eepp/graphics/renderer/rendererhelper.hpp>
+#include <eepp/graphics/renderer/rendererstackhelper.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -108,7 +108,7 @@ void RendererGL3CP::init() {
 	if ( !mLoaded ) {
 		Uint32 i;
 
-		cGL::init();
+		Renderer::init();
 
 		std::string vs( EEGL3CP_SHADER_BASE_VS );
 		std::string fs( EEGL3CP_SHADER_BASE_FS );
@@ -289,7 +289,7 @@ void RendererGL3CP::enable( unsigned int cap ) {
 		}
 	}
 
-	cGL::enable( cap );
+	Renderer::enable( cap );
 }
 
 void RendererGL3CP::disable ( unsigned int cap ) {
@@ -330,7 +330,7 @@ void RendererGL3CP::disable ( unsigned int cap ) {
 		}
 	}
 
-	cGL::disable( cap );
+	Renderer::disable( cap );
 }
 
 void RendererGL3CP::enableClientState( unsigned int array ) {

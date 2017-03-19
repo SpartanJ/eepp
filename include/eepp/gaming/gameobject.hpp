@@ -5,7 +5,7 @@
 #include <eepp/gaming/maphelper.hpp>
 #include <eepp/gaming/maplayer.hpp>
 
-#include <eepp/graphics/renders.hpp>
+#include <eepp/graphics/graphicshelper.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {

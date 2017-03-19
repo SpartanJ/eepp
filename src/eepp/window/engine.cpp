@@ -15,7 +15,7 @@
 #include <eepp/window/backend.hpp>
 #include <eepp/window/backend/SDL2/backendsdl2.hpp>
 #include <eepp/window/backend/SFML/backendsfml.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 
 #define BACKEND_SDL2		1
 #define BACKEND_SFML		2
@@ -60,7 +60,7 @@ Engine::~Engine() {
 
 	UI::UIManager::destroySingleton();
 
-	Graphics::cGL::destroySingleton();
+	Graphics::Renderer::destroySingleton();
 
 	ShaderProgramManager::destroySingleton();
 

@@ -1,6 +1,6 @@
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uimanager.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>

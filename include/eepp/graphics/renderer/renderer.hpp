@@ -3,7 +3,7 @@
 
 #include <eepp/graphics/renderer/base.hpp>
 #include <eepp/graphics/shaderprogram.hpp>
-#include <eepp/graphics/glhelper.hpp>
+#include <eepp/graphics/renderer/rendererhelper.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -17,27 +17,26 @@ class RendererGL3CP;
 class RendererGLES2;
 
 /** @brief This class is an abstraction of some OpenGL functionality.
-*	eepp have 3 different rendering pipelines: OpenGL 2, OpenGL 3 and OpenGL ES 2. This abstraction is to encapsulate this pipelines.
+*	eepp have 4 different rendering pipelines: OpenGL 2, OpenGL 3, OpenGL 3 Core Profile and OpenGL ES 2. This abstraction is to encapsulate this pipelines.
 *	eepp implements its own state machine to simulate fixed-pipeline commands with OpenGL 3 and OpenGL ES 2.
 *	Most of the commands can be found in the OpenGL documentation.
 *	This is only useful for advanced users that want some control of the OpenGL pipeline. It's mostly used internally by the engine.
 */
-class EE_API cGL {
-	static cGL * ms_singleton;
+class EE_API Renderer {
 	public:
-		static cGL * createSingleton( EEGL_version ver );
+		static Renderer * createSingleton( EEGL_version ver );
 
-		static cGL * createSingleton();
+		static Renderer * createSingleton();
 
-		static cGL * existsSingleton();
+		static Renderer * existsSingleton();
 
-		static cGL * instance();
+		static Renderer * instance();
 
 		static void destroySingleton();
 
-		cGL();
+		Renderer();
 
-		virtual ~cGL();
+		virtual ~Renderer();
 
 		virtual void init();
 
@@ -212,9 +211,11 @@ class EE_API cGL {
 
 		const int& quadVertexs() const;
 	protected:
-		enum GLStateFlags {
-			GLSF_LINE_SMOOTH	= 0,
-			GLSF_POLYGON_MODE
+		static Renderer * sSingleton;
+
+		enum RendererStateFlags {
+			RSF_LINE_SMOOTH	= 0,
+			RSF_POLYGON_MODE
 		};
 
 		Uint32	mExtensions;
@@ -231,7 +232,7 @@ class EE_API cGL {
 		void writeExtension( Uint8 Pos, Uint32 BitWrite );
 };
 
-extern EE_API cGL * GLi;
+extern EE_API Renderer * GLi;
 
 }}
 

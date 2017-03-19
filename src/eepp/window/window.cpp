@@ -5,8 +5,8 @@
 #include <eepp/window/platform/null/nullimpl.hpp>
 #include <eepp/window/platformimpl.hpp>
 #include <eepp/window/engine.hpp>
-#include <eepp/graphics/glextensions.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/openglext.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/system/filesystem.hpp>

@@ -1,7 +1,7 @@
 #ifndef EE_GRAPHICS_CRENDERERGLES2_HPP
 #define EE_GRAPHICS_CRENDERERGLES2_HPP
 
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 
 #ifdef EE_GL3_ENABLED
 
@@ -19,7 +19,7 @@ namespace Private {
 class MatrixStack;
 }
 
-class EE_API RendererGLES2 : public cGL {
+class EE_API RendererGLES2 : public Renderer {
 	public:
 		RendererGLES2();
 

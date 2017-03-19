@@ -12,7 +12,7 @@ namespace  EE { namespace System {
 class IOStream;
 class Pack;
 
-class Translator {
+class EE_API Translator {
 	public:
 		Translator( const std::locale& locale = std::locale() );
 

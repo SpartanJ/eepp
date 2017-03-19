@@ -1,5 +1,5 @@
 #include <eepp/ee.hpp>
-#include <eepp/graphics/opengl.hpp>
+#include <eepp/graphics/renderer/opengl.hpp>
 
 /// This example is based on the WebGL demo from http://minimal.be/lab/fluGL/
 namespace Demo_ExternalShader {

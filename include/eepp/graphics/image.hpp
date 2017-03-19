@@ -10,7 +10,7 @@ using namespace EE::Math;
 #include <eepp/system/color.hpp>
 using namespace EE::System;
 
-#include <eepp/graphics/renders.hpp>
+#include <eepp/graphics/graphicshelper.hpp>
 
 namespace EE { namespace System {
 class Pack;

@@ -1,8 +1,8 @@
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/window/engine.hpp>
-#include <eepp/graphics/glextensions.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/opengl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/framebufferfbo.hpp>
 #include <eepp/graphics/framebuffermanager.hpp>
 #include <eepp/window/window.hpp>

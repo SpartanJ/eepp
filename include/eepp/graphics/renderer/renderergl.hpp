@@ -1,14 +1,14 @@
 #ifndef EE_GRAPHICS_CRENDERERGL_HPP
 #define EE_GRAPHICS_CRENDERERGL_HPP
 
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 
 namespace EE { namespace Graphics {
 
 //! Avoid compilling the fixed pipeline renderer for GLES2, because it's not supported.
 #if !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
 
-class EE_API RendererGL : public cGL {
+class EE_API RendererGL : public Renderer {
 	public:
 		RendererGL();
 		

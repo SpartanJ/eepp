@@ -1,7 +1,7 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/texture.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
-#include <eepp/graphics/glextensions.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/renderer/opengl.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <cmath>

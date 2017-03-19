@@ -2,7 +2,7 @@
 #define EE_GRAPHICSCVERTEXBUFFER_HPP
 
 #include <eepp/graphics/base.hpp>
-#include <eepp/graphics/vbohelper.hpp>
+#include <eepp/graphics/vertexbufferhelper.hpp>
 
 namespace EE { namespace Graphics {
 

@@ -2,7 +2,6 @@
 #define EE_GRAPHICSCTEXTURESAVER_HPP
 
 #include <eepp/config.hpp>
-#include <eepp/graphics/opengl.hpp>
 
 namespace EE { namespace Graphics { namespace Private {
 

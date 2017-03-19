@@ -1,12 +1,12 @@
 #ifndef EEPP_GRAPHICS_HPP
 #define EEPP_GRAPHICS_HPP
 
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/blendmode.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/renderer/renderergl.hpp>
 #include <eepp/graphics/renderer/renderergl3.hpp>
-#include <eepp/graphics/renders.hpp>
+#include <eepp/graphics/graphicshelper.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/textureloader.hpp>

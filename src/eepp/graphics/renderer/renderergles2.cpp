@@ -1,9 +1,9 @@
-#include <eepp/graphics/glextensions.hpp>
+#include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderergles2.hpp>
 
 #ifdef EE_GL3_ENABLED
 
-#include <eepp/graphics/renderer/rendererhelper.hpp>
+#include <eepp/graphics/renderer/rendererstackhelper.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -102,7 +102,7 @@ void RendererGLES2::init() {
 	if ( !mLoaded ) {
 		Uint32 i;
 
-		cGL::init();
+		Renderer::init();
 
 		std::string vs( EEGLES2_SHADER_BASE_VS );
 		std::string fs( EEGLES2_SHADER_BASE_FS );
@@ -303,7 +303,7 @@ void RendererGLES2::enable( unsigned int cap ) {
 		{
 			mPointSpriteEnabled = 1;
 
-			//cGL::Enable( GL_VERTEX_PROGRAM_POINT_SIZE );
+			//Renderer::Enable( GL_VERTEX_PROGRAM_POINT_SIZE );
 
 			setShader( EEGLES2_SHADER_POINTSPRITE );
 
@@ -311,7 +311,7 @@ void RendererGLES2::enable( unsigned int cap ) {
 		}
 	}
 
-	cGL::enable( cap );
+	Renderer::enable( cap );
 }
 
 void RendererGLES2::disable ( unsigned int cap ) {
@@ -351,7 +351,7 @@ void RendererGLES2::disable ( unsigned int cap ) {
 		{
 			mPointSpriteEnabled = 0;
 
-			//cGL::Disable( GL_VERTEX_PROGRAM_POINT_SIZE );
+			//Renderer::Disable( GL_VERTEX_PROGRAM_POINT_SIZE );
 
 			setShader( EEGLES2_SHADER_BASE );
 
@@ -359,7 +359,7 @@ void RendererGLES2::disable ( unsigned int cap ) {
 		}
 	}
 
-	cGL::disable( cap );
+	Renderer::disable( cap );
 }
 
 void RendererGLES2::enableClientState( unsigned int array ) {

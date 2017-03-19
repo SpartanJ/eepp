@@ -2,7 +2,7 @@
 #define EE_GRAPHICS_BLENDMODE_HPP
 
 #include <eepp/config.hpp>
-#include <eepp/graphics/renders.hpp>
+#include <eepp/graphics/graphicshelper.hpp>
 
 namespace EE { namespace Graphics {
 

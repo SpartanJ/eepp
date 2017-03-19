@@ -2,8 +2,8 @@
 #include <eepp/math/polygon2.hpp>
 #include <eepp/graphics/batchrenderer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
-#include <eepp/graphics/glextensions.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/opengl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 
 namespace EE { namespace Graphics {
 

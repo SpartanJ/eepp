@@ -1,7 +1,7 @@
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/window/engine.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/text.hpp>

@@ -1,9 +1,9 @@
-#include <eepp/graphics/glextensions.hpp>
+#include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderergl3.hpp>
 
 #ifdef EE_GL3_ENABLED
 
-#include <eepp/graphics/renderer/rendererhelper.hpp>
+#include <eepp/graphics/renderer/rendererstackhelper.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -67,7 +67,7 @@ RendererGL3::RendererGL3() :
 	mStack->mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 	mStack->mModelViewMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 
-	cGL::enable( GL_VERTEX_PROGRAM_POINT_SIZE );
+	Renderer::enable( GL_VERTEX_PROGRAM_POINT_SIZE );
 }
 
 RendererGL3::~RendererGL3() {
@@ -86,7 +86,7 @@ void RendererGL3::init() {
 	if ( !mLoaded ) {
 		Uint32 i;
 
-		cGL::init();
+		Renderer::init();
 
 		std::string vs( EEGL3_SHADER_BASE_VS );
 		std::string fs( EEGL3_SHADER_BASE_FS );
@@ -258,7 +258,7 @@ void RendererGL3::enable( unsigned int cap ) {
 		}
 	}
 
-	cGL::enable( cap );
+	Renderer::enable( cap );
 }
 
 void RendererGL3::disable ( unsigned int cap ) {
@@ -300,7 +300,7 @@ void RendererGL3::disable ( unsigned int cap ) {
 		}
 	}
 
-	cGL::disable( cap );
+	Renderer::disable( cap );
 }
 
 void RendererGL3::enableClientState( unsigned int array ) {

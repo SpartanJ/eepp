@@ -1,6 +1,6 @@
 #include <eepp/graphics/console.hpp>
 #include <eepp/window/engine.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/audio/audiolistener.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/cursormanager.hpp>

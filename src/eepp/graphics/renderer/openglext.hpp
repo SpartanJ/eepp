@@ -16,6 +16,6 @@
 	#endif
 #endif
 
-#include <eepp/graphics/opengl.hpp>
+#include <eepp/graphics/renderer/opengl.hpp>
 
 #endif

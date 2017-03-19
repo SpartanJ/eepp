@@ -1,5 +1,6 @@
 #include <eepp/graphics/texturesaver.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/opengl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 
 namespace EE { namespace Graphics { namespace Private {
 
