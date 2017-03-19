@@ -8,7 +8,7 @@
 
 namespace EE { namespace Graphics {
 	// Add an underline or strikethrough line to the vertex array
-	static void addLine(std::vector<VertexCoords>& vertices, std::vector<ColorA>& colors, Float lineLength, Float lineTop, const EE::System::ColorA& color, Float offset, Float thickness, Float outlineThickness, Sizei textureSize, Int32 centerDiffX) {
+	void Text::addLine(std::vector<VertexCoords>& vertices, std::vector<ColorA>& colors, Float lineLength, Float lineTop, const EE::System::ColorA& color, Float offset, Float thickness, Float outlineThickness, Sizei textureSize, Int32 centerDiffX) {
 		Float top = std::floor(lineTop + offset - (thickness / 2) + 0.5f);
 		Float bottom = top + std::floor(thickness + 0.5f);
 		Float u1 = 0;
@@ -18,80 +18,80 @@ namespace EE { namespace Graphics {
 		VertexCoords vc;
 
 		if ( GLi->quadsSupported() ) {
-			vc.TexCoords[0]	= u1;
-			vc.TexCoords[1]	= v1;
-			vc.Vertex[0]	= centerDiffX + -outlineThickness;
-			vc.Vertex[1]	= top - outlineThickness;
+			vc.texCoords.x	= u1;
+			vc.texCoords.y	= v1;
+			vc.position.x	= centerDiffX + -outlineThickness;
+			vc.position.y	= top - outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 
-			vc.TexCoords[0]	= u1;
-			vc.TexCoords[1]	= v2;
-			vc.Vertex[0]	= centerDiffX + -outlineThickness;
-			vc.Vertex[1]	= bottom + outlineThickness;
+			vc.texCoords.x	= u1;
+			vc.texCoords.y	= v2;
+			vc.position.x	= centerDiffX + -outlineThickness;
+			vc.position.y	= bottom + outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 
-			vc.TexCoords[0]	= u2;
-			vc.TexCoords[1]	= v2;
-			vc.Vertex[0]	= centerDiffX + lineLength + outlineThickness;
-			vc.Vertex[1]	= bottom + outlineThickness;
+			vc.texCoords.x	= u2;
+			vc.texCoords.y	= v2;
+			vc.position.x	= centerDiffX + lineLength + outlineThickness;
+			vc.position.y	= bottom + outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 
-			vc.TexCoords[0]	= u2;
-			vc.TexCoords[1]	= v1;
-			vc.Vertex[0]	= centerDiffX + lineLength + outlineThickness;
-			vc.Vertex[1]	= top - outlineThickness;
+			vc.texCoords.x	= u2;
+			vc.texCoords.y	= v1;
+			vc.position.x	= centerDiffX + lineLength + outlineThickness;
+			vc.position.y	= top - outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 		} else {
-			vc.TexCoords[0]	= u1;
-			vc.TexCoords[1]	= v2;
-			vc.Vertex[0]	= centerDiffX + -outlineThickness;
-			vc.Vertex[1]	= bottom + outlineThickness;
+			vc.texCoords.x	= u1;
+			vc.texCoords.y	= v2;
+			vc.position.x	= centerDiffX + -outlineThickness;
+			vc.position.y	= bottom + outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 
-			vc.TexCoords[0]	= u1;
-			vc.TexCoords[1]	= v1;
-			vc.Vertex[0]	= centerDiffX + -outlineThickness;
-			vc.Vertex[1]	= top - outlineThickness;
+			vc.texCoords.x	= u1;
+			vc.texCoords.y	= v1;
+			vc.position.x	= centerDiffX + -outlineThickness;
+			vc.position.y	= top - outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 
-			vc.TexCoords[0]	= u2;
-			vc.TexCoords[1]	= v1;
-			vc.Vertex[0]	= centerDiffX + lineLength + outlineThickness;
-			vc.Vertex[1]	= top - outlineThickness;
+			vc.texCoords.x	= u2;
+			vc.texCoords.y	= v1;
+			vc.position.x	= centerDiffX + lineLength + outlineThickness;
+			vc.position.y	= top - outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 
-			vc.TexCoords[0]	= u1;
-			vc.TexCoords[1]	= v2;
-			vc.Vertex[0]	= centerDiffX + -outlineThickness;
-			vc.Vertex[1]	= bottom + outlineThickness;
+			vc.texCoords.x	= u1;
+			vc.texCoords.y	= v2;
+			vc.position.x	= centerDiffX + -outlineThickness;
+			vc.position.y	= bottom + outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 
-			vc.TexCoords[0]	= u2;
-			vc.TexCoords[1]	= v2;
-			vc.Vertex[0]	= centerDiffX + lineLength + outlineThickness;
-			vc.Vertex[1]	= bottom + outlineThickness;
+			vc.texCoords.x	= u2;
+			vc.texCoords.y	= v2;
+			vc.position.x	= centerDiffX + lineLength + outlineThickness;
+			vc.position.y	= bottom + outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 
-			vc.TexCoords[0]	= u2;
-			vc.TexCoords[1]	= v1;
-			vc.Vertex[0]	= centerDiffX + lineLength + outlineThickness;
-			vc.Vertex[1]	= top - outlineThickness;
+			vc.texCoords.x	= u2;
+			vc.texCoords.y	= v1;
+			vc.position.x	= centerDiffX + lineLength + outlineThickness;
+			vc.position.y	= top - outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 		}
 	}
 
 	// Add a glyph quad to the vertex array
-	static void addGlyphQuad(std::vector<VertexCoords>& vertices, std::vector<ColorA>& colors, Vector2f position, const EE::System::ColorA& color, const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness, Sizei textureSize, Int32 centerDiffX) {
+	void Text::addGlyphQuad(std::vector<VertexCoords>& vertices, std::vector<ColorA>& colors, Vector2f position, const EE::System::ColorA& color, const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness, Sizei textureSize, Int32 centerDiffX) {
 		Float left		= glyph.bounds.Left;
 		Float top		= glyph.bounds.Top;
 		Float right		= glyph.bounds.Left + glyph.bounds.Right;
@@ -105,73 +105,73 @@ namespace EE { namespace Graphics {
 
 		if ( GLi->quadsSupported() ) {
 
-			vc.TexCoords[0]	= u1;
-			vc.TexCoords[1]	= v1;
-			vc.Vertex[0]	= centerDiffX + position.x + left  - italic * top	- outlineThickness;
-			vc.Vertex[1]	= position.y + top	- outlineThickness;
+			vc.texCoords.x	= u1;
+			vc.texCoords.y	= v1;
+			vc.position.x	= centerDiffX + position.x + left  - italic * top	- outlineThickness;
+			vc.position.y	= position.y + top	- outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 
-			vc.TexCoords[0]	= u1;
-			vc.TexCoords[1]	= v2;
-			vc.Vertex[0]	= centerDiffX + position.x + left  - italic * bottom - outlineThickness;
-			vc.Vertex[1]	= position.y + bottom - outlineThickness;
+			vc.texCoords.x	= u1;
+			vc.texCoords.y	= v2;
+			vc.position.x	= centerDiffX + position.x + left  - italic * bottom - outlineThickness;
+			vc.position.y	= position.y + bottom - outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 
-			vc.TexCoords[0]	= u2;
-			vc.TexCoords[1]	= v2;
-			vc.Vertex[0]	= centerDiffX + position.x + right - italic * bottom - outlineThickness;
-			vc.Vertex[1]	= position.y + bottom - outlineThickness;
+			vc.texCoords.x	= u2;
+			vc.texCoords.y	= v2;
+			vc.position.x	= centerDiffX + position.x + right - italic * bottom - outlineThickness;
+			vc.position.y	= position.y + bottom - outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 
-			vc.TexCoords[0]	= u2;
-			vc.TexCoords[1]	= v1;
-			vc.Vertex[0]	= centerDiffX + position.x + right - italic * top - outlineThickness;
-			vc.Vertex[1]	= position.y + top - outlineThickness;
+			vc.texCoords.x	= u2;
+			vc.texCoords.y	= v1;
+			vc.position.x	= centerDiffX + position.x + right - italic * top - outlineThickness;
+			vc.position.y	= position.y + top - outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 		} else {
-			vc.TexCoords[0]	= u1;
-			vc.TexCoords[1]	= v2;
-			vc.Vertex[0]	= centerDiffX + position.x + left  - italic * bottom - outlineThickness;
-			vc.Vertex[1]	= position.y + bottom - outlineThickness;
+			vc.texCoords.x	= u1;
+			vc.texCoords.y	= v2;
+			vc.position.x	= centerDiffX + position.x + left  - italic * bottom - outlineThickness;
+			vc.position.y	= position.y + bottom - outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 
-			vc.TexCoords[0]	= u1;
-			vc.TexCoords[1]	= v1;
-			vc.Vertex[0]	= centerDiffX + position.x + left  - italic * top	- outlineThickness;
-			vc.Vertex[1]	= position.y + top	- outlineThickness;
+			vc.texCoords.x	= u1;
+			vc.texCoords.y	= v1;
+			vc.position.x	= centerDiffX + position.x + left  - italic * top	- outlineThickness;
+			vc.position.y	= position.y + top	- outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 
-			vc.TexCoords[0]	= u2;
-			vc.TexCoords[1]	= v1;
-			vc.Vertex[0]	= centerDiffX + position.x + right - italic * top - outlineThickness;
-			vc.Vertex[1]	= position.y + top - outlineThickness;
+			vc.texCoords.x	= u2;
+			vc.texCoords.y	= v1;
+			vc.position.x	= centerDiffX + position.x + right - italic * top - outlineThickness;
+			vc.position.y	= position.y + top - outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 
-			vc.TexCoords[0]	= u1;
-			vc.TexCoords[1]	= v2;
-			vc.Vertex[0]	= centerDiffX + position.x + left  - italic * bottom - outlineThickness;
-			vc.Vertex[1]	= position.y + bottom - outlineThickness;
+			vc.texCoords.x	= u1;
+			vc.texCoords.y	= v2;
+			vc.position.x	= centerDiffX + position.x + left  - italic * bottom - outlineThickness;
+			vc.position.y	= position.y + bottom - outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 
-			vc.TexCoords[0]	= u2;
-			vc.TexCoords[1]	= v2;
-			vc.Vertex[0]	= centerDiffX + position.x + right - italic * bottom - outlineThickness;
-			vc.Vertex[1]	= position.y + bottom - outlineThickness;
+			vc.texCoords.x	= u2;
+			vc.texCoords.y	= v2;
+			vc.position.x	= centerDiffX + position.x + right - italic * bottom - outlineThickness;
+			vc.position.y	= position.y + bottom - outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 
-			vc.TexCoords[0]	= u2;
-			vc.TexCoords[1]	= v1;
-			vc.Vertex[0]	= centerDiffX + position.x + right - italic * top - outlineThickness;
-			vc.Vertex[1]	= position.y + top - outlineThickness;
+			vc.texCoords.x	= u2;
+			vc.texCoords.y	= v1;
+			vc.position.x	= centerDiffX + position.x + right - italic * top - outlineThickness;
+			vc.position.y	= position.y + top - outlineThickness;
 			colors.push_back( color );
 			vertices.push_back( vc );
 		}

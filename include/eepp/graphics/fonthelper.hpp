@@ -32,11 +32,6 @@ inline Uint32 fontVAlignGet( Uint32 Flags ) {
 
 #define FONT_DRAW_ALIGN_MASK	( FONT_DRAW_VALIGN_MASK | FONT_DRAW_HALIGN_MASK )
 
-struct VertexCoords {
-	Float TexCoords[2];
-	Float Vertex[2];
-};
-
 #define EE_TTF_FONT_MAGIC ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'F' << 16 ) | ( 'N' << 24 ) )
 
 }}

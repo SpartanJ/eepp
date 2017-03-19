@@ -7,7 +7,7 @@
 namespace EE { namespace Graphics {
 
 /** @brief The vertex buffer class holds vertex data. The vertex position, colors, texture coordinates and indexes.
-*	This is useful to accelerate and encapsulate data. GPU VBOs are much faster because the data is in the GPU once is uploaded. eepp will try to use GPU VBOs if the GPU support them.
+*	This is useful to accelerate and encapsulate data.
 */
 class EE_API VertexBuffer {
 	public:
@@ -19,6 +19,9 @@ class EE_API VertexBuffer {
 		*	@param UsageType This indicates the kind of usage VBO will have. It's only useful if VBO extensions are supported ( almost for sure that it's supported ). More information here: http://www.opengl.org/sdk/docs/man/xhtml/glBufferData.xml
 		*/
 		static VertexBuffer * New( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, EE_DRAW_MODE DrawType = DM_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
+
+		/** Creates the simple vertex array implementation ( without VBOs or VAO ), which it's faster for many cases. */
+		static VertexBuffer * NewVertexArray( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, EE_DRAW_MODE DrawType = DM_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
 
 		virtual ~VertexBuffer();
 
@@ -35,7 +38,7 @@ class EE_API VertexBuffer {
 		*	@param VertexCoord The vertex texture coordinate.
 		*	@param TextureLevel Indicates the texture level if it's using multitextures.
 		*/
-		void addVertexCoord( const Vector2f& VertexCoord, const Uint32& TextureLevel = 0 );
+		void addTextureCoord( const Vector2f& VertexCoord, const Uint32& TextureLevel = 0 );
 
 		/** @brief Adds a color to the buffer.
 		*	@param Color The color value.

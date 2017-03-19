@@ -101,7 +101,10 @@ class EE_API Text {
 
 		void setStyleConfig( const FontStyleConfig& styleConfig );
 	protected:
-		void ensureGeometryUpdate();
+		struct VertexCoords {
+			Vector2f texCoords;
+			Vector2f position;
+		};
 
 		String				mString;			 ///< String to display
 		Font *				mFont;			   ///< FontTrueType used to display the string
@@ -131,8 +134,14 @@ class EE_API Text {
 		std::vector<ColorA> mOutlineColors;
 		std::vector<Float> mLinesWidth;
 
+		void ensureGeometryUpdate();
+
 		/** Force to cache the width of the current text */
 		void cacheWidth();
+
+		static void addLine(std::vector<VertexCoords>& vertices, std::vector<ColorA>& colors, Float lineLength, Float lineTop, const EE::System::ColorA& color, Float offset, Float thickness, Float outlineThickness, Sizei textureSize, Int32 centerDiffX);
+
+		static void addGlyphQuad(std::vector<VertexCoords>& vertices, std::vector<ColorA>& colors, Vector2f position, const EE::System::ColorA& color, const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness, Sizei textureSize, Int32 centerDiffX);
 };
 
 }}

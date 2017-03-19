@@ -14,6 +14,10 @@ VertexBuffer * VertexBuffer::New( const Uint32& VertexFlags, EE_DRAW_MODE DrawTy
 	return eeNew( VertexBufferOGL, ( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType ) );
 }
 
+VertexBuffer * VertexBuffer::NewVertexArray(const Uint32 & VertexFlags, EE_DRAW_MODE DrawType, const Int32 & ReserveVertexSize, const Int32 & ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) {
+	return eeNew( VertexBufferOGL, ( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType ) );
+}
+
 VertexBuffer::VertexBuffer( const Uint32& VertexFlags, EE_DRAW_MODE DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) :
 	mVertexFlags( VertexFlags ),
 	mDrawType( DrawType ),
@@ -29,6 +33,10 @@ VertexBuffer::VertexBuffer( const Uint32& VertexFlags, EE_DRAW_MODE DrawType, co
 					mColorArray.reserve( ReserveVertexSize * eeVertexElements[ i ] );
 			}
 		}
+	}
+
+	if ( ReserveIndexSize > 0 ) {
+		mIndexArray.reserve( ReserveIndexSize );
 	}
 
 	VertexBufferManager::instance()->add( this );
@@ -49,7 +57,7 @@ void VertexBuffer::addVertex( const Vector2f& Vertex ) {
 	addVertex( VERTEX_FLAG_POSITION, Vertex );
 }
 
-void VertexBuffer::addVertexCoord( const Vector2f& VertexCoord, const Uint32& TextureLevel ) {
+void VertexBuffer::addTextureCoord( const Vector2f& VertexCoord, const Uint32& TextureLevel ) {
 	addVertex( VERTEX_FLAG_TEXTURE0 + TextureLevel, VertexCoord );
 }
 
