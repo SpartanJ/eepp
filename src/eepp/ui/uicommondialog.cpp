@@ -2,6 +2,7 @@
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <algorithm>
 
@@ -43,92 +44,53 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern
 		setTitle( "Select a file" );
 	}
 
-	UITextView * lookIn = UITextView::New();
-	lookIn->setParent( getContainer() );
-	lookIn->setPosition( 6, 13 );
-	lookIn->setVisible( true );
-	lookIn->setEnabled( false );
-	lookIn->setText( "Look in:" );
+	UILinearLayout * linearLayout = UILinearLayout::NewVertical();
+	linearLayout->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT )->setLayoutMargin( Recti( 4, 2, 4, 2 ) )->setParent( getContainer() );
 
-	mButtonCancel = UIPushButton::New();
-	mButtonCancel->setParent( getContainer() );
-	mButtonCancel->setSize( 80, 0 );
-	mButtonCancel->setPosition( getContainer()->getSize().getWidth() - 86, getContainer()->getSize().getHeight() - mButtonCancel->getSize().getHeight() - 2 );
-	mButtonCancel->setText( "Cancel" );
-	mButtonCancel->setAnchors( UI_ANCHOR_RIGHT );
+	UILinearLayout * hLayout = UILinearLayout::NewHorizontal();
+	hLayout->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutMargin( Recti(0,0,0,4) )->setParent( linearLayout );
 
-	mButtonOpen = UIPushButton::New();
-	mButtonOpen->setParent( getContainer() );
-	mButtonOpen->setSize( 80, 0 );
-	mButtonOpen->setPosition( mButtonCancel->getPosition().x, mButtonCancel->getPosition().y - mButtonCancel->getSize().getHeight() - 4 );
-	mButtonOpen->setAnchors( UI_ANCHOR_RIGHT );
-
-	if ( isSaveDialog() )
-		mButtonOpen->setText( "Save" );
-	else
-		mButtonOpen->setText( "Open" );
+	UITextView::New()->setText( "Look in:" )->setLayoutSizeRules( WRAP_CONTENT, MATCH_PARENT )->setLayoutMargin( Recti( 0, 0, 4, 0 ) )
+			->setParent( hLayout )->setEnabled( false );
 
 	mPath = UITextInput::New();
-	mPath->setParent( getContainer() );
-	mPath->setPosition( 70, 6 );
-	mPath->setSize( getContainer()->getSize().getWidth() - mPath->getPosition().x - 42, 22 );
-	mPath->setFlags( UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
+	mPath->setText( mCurPath )->setLayoutSizeRules( WRAP_CONTENT, MATCH_PARENT )->setLayoutWeight( 1 )->setParent( hLayout );
 	mPath->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UICommonDialog::onPressEnter ) );
-	mPath->setText( mCurPath );
 
 	mButtonUp = UIPushButton::New();
-	mButtonUp->setParent( getContainer() );
-	mButtonUp->setSize( 24, 0 );
-	mButtonUp->setPosition( mPath->getPosition().x + mPath->getSize().getWidth() + 6, mPath->getPosition().y );
-	mButtonUp->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	mButtonUp->setText( "Up" );
+	mButtonUp->setText( "Up" )->setLayoutSizeRules( WRAP_CONTENT, MATCH_PARENT )->setParent( hLayout );
 
 	mList = UIListBox::New();
-	mList->setParent( getContainer() );
-	mList->setPosition( 6, mButtonUp->getPosition().y + mButtonUp->getSize().getHeight() + 4 );
-	mList->setSize( getContainer()->getSize().getWidth() - 12,
-					getContainer()->getSize().getHeight() -
-						mButtonUp->getSize().getHeight() -
-						mButtonUp->getPosition().y -
-						mButtonOpen->getSize().getHeight() -
-						mButtonCancel->getSize().getHeight() -
-						12
-	);
-	mList->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM );
+	mList->setParent( linearLayout );
+	mList->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutWeight( 1 )->setLayoutMargin( Recti(0,0,0,4) );
 
-	UITextView * fileName = UITextView::New();
-	fileName->setParent( getContainer() );
-	fileName->setPosition( 6, mButtonOpen->getPosition().y );
-	fileName->setSize( 74, fileName->getTextHeight() );
-	fileName->setAnchors( UI_ANCHOR_LEFT );
-	fileName->setVerticalAlign( UI_VALIGN_TOP );
-	fileName->setEnabled( false );
-	fileName->setText( "File Name:" );
+	hLayout = UILinearLayout::NewHorizontal();
+	hLayout->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutMargin( Recti(0,0,0,4) )->setParent( linearLayout );
 
-	UITextView * fileTypes = UITextView::New();
-	fileTypes->setParent( getContainer() );
-	fileTypes->setSize( 74, fileTypes->getTextHeight() );
-	fileTypes->setPosition( fileName->getPosition().x, mButtonCancel->getPosition().y );
-	fileTypes->setAnchors( UI_ANCHOR_LEFT );
-	fileTypes->setVerticalAlign( UI_VALIGN_TOP );
-	fileTypes->setEnabled( false );
-	fileTypes->setText( "Files of type:" );
+	UITextView::New()->setText( "File Name:" )->setLayoutSizeRules( FIXED, MATCH_PARENT )->setSize(74,0)->setParent( hLayout )->setEnabled( false );
 
 	mFile = UITextInput::New();
-	mFile->setParent( getContainer() );
-	mFile->setPosition( fileName->getPosition().x + fileName->getSize().getWidth(), fileName->getPosition().y );
-	mFile->setSize( getContainer()->getSize().getWidth() - mButtonOpen->getSize().getWidth() - mPath->getPosition().x - 20, mButtonOpen->getSize().getHeight() );
-	mFile->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT );
+	mFile->setLayoutSizeRules( WRAP_CONTENT, MATCH_PARENT )->setLayoutWeight( 1 )->setParent( hLayout );
+	mFile->setLayoutMargin( Recti( 0, 0, 4, 0 ) );
 	mFile->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UICommonDialog::onPressFileEnter ) );
 
+	mButtonOpen = UIPushButton::New();
+	mButtonOpen->setText( isSaveDialog() ? "Save" : "Open" )->setLayoutSizeRules( FIXED, WRAP_CONTENT )->setSize(80,0)->setParent( hLayout );
+
+	hLayout = UILinearLayout::NewHorizontal();
+	hLayout->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( linearLayout );
+
+	UITextView::New()->setText( "Files of type:" )->setLayoutSizeRules( FIXED, MATCH_PARENT )->setSize(74,0)->setParent( hLayout )->setEnabled( false );
+
 	mFiletype = UIDropDownList::New();
-	mFiletype->setParent( getContainer() );
-	mFiletype->setSize( mFile->getSize().getWidth(), 0 );
-	mFiletype->setPosition( fileTypes->getPosition().x + fileTypes->getSize().getWidth(), fileTypes->getPosition().y );
-	mFiletype->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT );
+	mFiletype->setLayoutSizeRules( WRAP_CONTENT, MATCH_PARENT )->setLayoutWeight( 1 )->setParent( hLayout );
 	mFiletype->setPopUpToMainControl( true );
 	mFiletype->getListBox()->addListBoxItem( DefaultFilePattern );
 	mFiletype->getListBox()->setSelected(0);
+	mFiletype->setLayoutMargin( Recti( 0, 0, 4, 0 ) );
+
+	mButtonCancel = UIPushButton::New();
+	mButtonCancel->setText( "Cancel" )->setLayoutSizeRules( FIXED, WRAP_CONTENT )->setSize(80,0)->setParent( hLayout );
 
 	applyDefaultTheme();
 
