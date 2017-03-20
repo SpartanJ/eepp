@@ -130,6 +130,8 @@ class EE_API UIManager {
 		void loadLayoutFromStream( IOStream& stream );
 
 		void loadLayoutFromPack( Pack * pack, const std::string& FilePackPath );
+
+		void loadLayoutNodes( pugi::xml_node node, UIControl * parent );
 	protected:
 		friend class UIControl;
 		friend class UIWindow;
@@ -178,8 +180,6 @@ class EE_API UIManager {
 		void				addToCloseQueue( UIControl * Ctrl );
 
 		void				checkClose();
-
-		void				loadLayoutNodes( pugi::xml_node node, UIControl * parent );
 };
 
 }}
