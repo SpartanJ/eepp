@@ -505,6 +505,9 @@ void UIManager::setCursor( EE_CURSOR_TYPE cursor ) {
 }
 
 void UIManager::loadLayoutNodes( pugi::xml_node node, UIControl * parent ) {
+	if ( NULL == parent )
+		parent = getMainControl();
+
 	for ( pugi::xml_node widget = node; widget; widget = widget.next_sibling() ) {
 		UIWidget * uiwidget = UIHelper::createUIWidgetFromName( widget.name() );
 
@@ -519,13 +522,13 @@ void UIManager::loadLayoutNodes( pugi::xml_node node, UIControl * parent ) {
 	}
 }
 
-void UIManager::loadLayoutFromFile( const std::string& layoutPath ) {
+void UIManager::loadLayoutFromFile( const std::string& layoutPath, UIControl * parent ) {
 	if ( FileSystem::fileExists( layoutPath ) ) {
 		pugi::xml_document doc;
 		pugi::xml_parse_result result = doc.load_file( layoutPath.c_str() );
 
 		if ( result ) {
-			loadLayoutNodes( doc.first_child(), getMainControl() );
+			loadLayoutNodes( doc.first_child(), NULL != parent ? parent : getMainControl() );
 		} else {
 			eePRINTL( "Error: Couldn't load UI Layout: %s", layoutPath.c_str() );
 			eePRINTL( "Error description: %s", result.description() );
@@ -540,12 +543,12 @@ void UIManager::loadLayoutFromFile( const std::string& layoutPath ) {
 		}
 	}
 }
-void UIManager::loadLayoutFromString( const std::string& layoutString ) {
+void UIManager::loadLayoutFromString( const std::string& layoutString, UIControl * parent ) {
 	pugi::xml_document doc;
 	pugi::xml_parse_result result = doc.load_string( layoutString.c_str() );
 
 	if ( result ) {
-		loadLayoutNodes( doc.first_child(), getMainControl() );
+		loadLayoutNodes( doc.first_child(), NULL != parent ? parent : getMainControl() );
 	} else {
 		eePRINTL( "Error: Couldn't load UI Layout from string: %s", layoutString.c_str() );
 		eePRINTL( "Error description: %s", result.description() );
@@ -553,12 +556,12 @@ void UIManager::loadLayoutFromString( const std::string& layoutString ) {
 	}
 }
 
-void UIManager::loadLayoutFromMemory( const void * buffer, Int32 bufferSize ) {
+void UIManager::loadLayoutFromMemory( const void * buffer, Int32 bufferSize, UIControl * parent ) {
 	pugi::xml_document doc;
 	pugi::xml_parse_result result = doc.load_buffer( buffer, bufferSize);
 
 	if ( result ) {
-		loadLayoutNodes( doc.first_child(), getMainControl() );
+		loadLayoutNodes( doc.first_child(), NULL != parent ? parent : getMainControl() );
 	} else {
 		eePRINTL( "Error: Couldn't load UI Layout from buffer" );
 		eePRINTL( "Error description: %s", result.description() );
@@ -566,7 +569,7 @@ void UIManager::loadLayoutFromMemory( const void * buffer, Int32 bufferSize ) {
 	}
 }
 
-void UIManager::loadLayoutFromStream( IOStream& stream ) {
+void UIManager::loadLayoutFromStream( IOStream& stream, UIControl * parent ) {
 	if ( !stream.isOpen() )
 		return;
 
@@ -578,7 +581,7 @@ void UIManager::loadLayoutFromStream( IOStream& stream ) {
 	pugi::xml_parse_result result = doc.load_buffer( safeDataPointer.Data, safeDataPointer.DataSize );
 
 	if ( result ) {
-		loadLayoutNodes( doc.first_child(), getMainControl() );
+		loadLayoutNodes( doc.first_child(), NULL != parent ? parent : getMainControl() );
 	} else {
 		eePRINTL( "Error: Couldn't load UI Layout from stream" );
 		eePRINTL( "Error description: %s", result.description() );
@@ -586,7 +589,7 @@ void UIManager::loadLayoutFromStream( IOStream& stream ) {
 	}
 }
 
-void UIManager::loadLayoutFromPack( Pack * pack, const std::string& FilePackPath ) {
+void UIManager::loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, UIControl * parent ) {
 	SafeDataPointer PData;
 
 	if ( pack->isOpen() && pack->extractFileToMemory( FilePackPath, PData ) ) {

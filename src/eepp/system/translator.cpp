@@ -206,8 +206,9 @@ void Translator::setLanguageFromLocale( std::locale locale ) {
 	std::string name = locale.name();
 
 	if ( "C" == name ) {
+		#if EE_PLATFORM != EE_PLATFORM_WIN
 		locale = std::locale( setlocale( LC_ALL, "" ) );
-
+		#endif
 		if ( "C" == locale.name() ) {
 			mCurrentLanguage = "en";
 		} else {

@@ -5,7 +5,7 @@
 
 namespace EE { namespace UI {
 
-class UITextInputPassword : public UITextInput
+class EE_API UITextInputPassword : public UITextInput
 {
 	public:
 		static UITextInputPassword * New();
