@@ -28,8 +28,6 @@ class UITextInputPassword : public UITextInput
 
 		void alignFix();
 
-		void autoAlign();
-
 		void updateText();
 
 		void updatePass( const String& pass );

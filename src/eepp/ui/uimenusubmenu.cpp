@@ -17,7 +17,7 @@ UIMenuSubMenu::UIMenuSubMenu() :
 	mCbId( 0 ),
 	mCbId2( 0 )
 {
-	mArrow = UIImage::New();
+	mArrow = UIControl::New();
 	mArrow->setParent( this );
 	mArrow->setFlags( UI_AUTO_SIZE );
 	mArrow->setVisible( true );

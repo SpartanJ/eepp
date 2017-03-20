@@ -454,12 +454,12 @@ void EETest::createUI() {
 		UITableCell * Cell			= UITableCell::New();
 		UITextView * TxtBox			= UITextView::New();
 		UITextInput * TxtInput		= UITextInput::New();
-		UIImage * TxtGfx				= UIImage::New();
+		UIImage * TxtGfx			= UIImage::New();
 
 		Cell->setParent( genGrid->getContainer() );
 
 		TxtGfx->setVerticalAlign( UI_VALIGN_CENTER );
-		TxtGfx->setSubTexture( mTheme->getIconByName( "ok" ) );
+		TxtGfx->setDrawable( mTheme->getIconByName( "ok" ) );
 		TxtBox->setText( "Test " + String::toStr( i+1 ) );
 
 		Cell->setCell( 0, TxtBox );
@@ -521,11 +521,11 @@ void EETest::createNewUI() {
 	cbox->setBorderEnabled( true )->setColor( 0x66666666 );
 	cbox->setText( "Happy CheckBox :)" );
 	cbox->setFontColor( 0x000000FF );
-	/*
+
 	UIImage * gfx = UIImage::New();
 	gfx->setPosition( 50, 140 )->setSize( 16, 16 );
 	gfx->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
-	gfx->setSubTexture( mTheme->getIconByName( "ok" ) );
+	gfx->setDrawable( mTheme->getIconByName( "ok" ) );
 
 	UISlider * slider = UISlider::New();
 	slider->setOrientation( UI_HORIZONTAL )->setPosition( 50, 0 )->setSize( 100, 100 );
@@ -606,7 +606,7 @@ void EETest::createNewUI() {
 		Cell->setCell( 1, TxtGfx );
 		Cell->setCell( 2, TxtInput );
 
-		TxtGfx->setSubTexture( mTheme->getIconByName( "ok" ) );
+		TxtGfx->setDrawable( mTheme->getIconByName( "ok" ) );
 		TxtBox->setText( "Test " + String::toStr( i+1 ) );
 
 		genGrid->add( Cell );
@@ -640,8 +640,6 @@ void EETest::createNewUI() {
 	TabWidget->add( "Tab 2", UIWidget::New()->setThemeControl( "winback" ), mTheme->getIconByName( "go-up" ) );
 	TabWidget->add( "Tab 3", UIWidget::New()->setThemeControl( "winback" ), mTheme->getIconByName( "add" ) );
 
-	*/
-	/*
 	UIWindow * win = UIWindow::New();
 	win->setSize( 500, 500 );
 	win->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
@@ -688,9 +686,7 @@ void EETest::createNewUI() {
 	drop->getListBox()->addListBoxItems( { "Car", "Bus", "Plane", "Submarine" } );
 	drop->getListBox()->setSelected(0);
 	win->show();
-	*/
 
-	/*
 	UIWindow * win2 = UIWindow::New();
 	win2->setSize( 500, 500 );
 	win2->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
@@ -708,7 +704,6 @@ void EETest::createNewUI() {
 			->setLayoutPositionRule( LEFT_OF, ofBut )->setParent( rlay );
 
 	win2->show();
-
 
 	UIManager::instance()->loadLayoutFromString(
 		"<window layout_width='300dp' layout_height='300dp' winflags='default|maximize'>"
@@ -729,7 +724,6 @@ void EETest::createNewUI() {
 		"	</LinearLayout>"
 		"</window>"
 	);
-	*/
 }
 
 void EETest::createMapEditor() {
@@ -948,7 +942,7 @@ void EETest::onButtonClick( const UIEvent * Event ) {
 
 	if ( MouseEvent->getFlags() & EE_BUTTONS_LRM ) {
 		UIImage * Gfx = UIImage::New();
-		Gfx->setSubTexture( mTheme->getIconByName( "ok" ) );
+		Gfx->setDrawable( mTheme->getIconByName( "ok" ) );
 		Gfx->setEnabled( false );
 
 		Gfx->startRotation( 0, 2500, Milliseconds( 2500 ) );

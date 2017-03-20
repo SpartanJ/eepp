@@ -11,6 +11,7 @@ namespace EE { namespace Graphics {
 class Sprite;
 class TextureAtlas;
 class Font;
+class Drawable;
 }}
 
 namespace EE { namespace UI {
@@ -50,7 +51,7 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		Graphics::TextureAtlas * getTextureAtlas() const;
 
-		SubTexture * getIconByName( const std::string& name );
+		EE::Graphics::Drawable * getIconByName( const std::string& name );
 
 		UISkin * getSkin( const std::string& controlName );
 

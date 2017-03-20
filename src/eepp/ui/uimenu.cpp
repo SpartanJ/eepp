@@ -58,7 +58,7 @@ void UIMenu::onThemeLoaded() {
 	onSizeChange();
 }
 
-UIMenuItem * UIMenu::createMenuItem( const String& Text, SubTexture * Icon ) {
+UIMenuItem * UIMenu::createMenuItem( const String& Text, Drawable * Icon ) {
 	UIPushButtonStyleConfig styleConfig( mStyleConfig );
 	styleConfig.IconMinSize = Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
@@ -72,7 +72,7 @@ UIMenuItem * UIMenu::createMenuItem( const String& Text, SubTexture * Icon ) {
 	return tCtrl;
 }
 
-Uint32 UIMenu::add( const String& Text, SubTexture * Icon ) {
+Uint32 UIMenu::add( const String& Text, Drawable * Icon ) {
 	return add( createMenuItem( Text, Icon ) );
 }
 
@@ -96,7 +96,7 @@ Uint32 UIMenu::addCheckBox( const String& Text, const bool& Active ) {
 	return add( createMenuCheckBox( Text, Active ) );
 }
 
-UIMenuSubMenu * UIMenu::createSubMenu( const String& Text, SubTexture * Icon, UIMenu * SubMenu ) {
+UIMenuSubMenu * UIMenu::createSubMenu( const String& Text, Drawable * Icon, UIMenu * SubMenu ) {
 	UIPushButtonStyleConfig styleConfig( mStyleConfig );
 	styleConfig.IconMinSize = Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
@@ -111,7 +111,7 @@ UIMenuSubMenu * UIMenu::createSubMenu( const String& Text, SubTexture * Icon, UI
 	return tCtrl;
 }
 
-Uint32 UIMenu::addSubMenu( const String& Text, SubTexture * Icon, UIMenu * SubMenu ) {
+Uint32 UIMenu::addSubMenu( const String& Text, Drawable * Icon, UIMenu * SubMenu ) {
 	return add( createSubMenu( Text, Icon, SubMenu ) );
 }
 
@@ -256,7 +256,7 @@ void UIMenu::removeAll() {
 	resizeMe();
 }
 
-void UIMenu::insert( const String& Text, SubTexture * Icon, const Uint32& Index ) {
+void UIMenu::insert( const String& Text, Drawable * Icon, const Uint32& Index ) {
 	insert( createMenuItem( Text, Icon ), Index );
 }
 

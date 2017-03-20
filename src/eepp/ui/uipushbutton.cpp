@@ -98,7 +98,7 @@ void UIPushButton::onSizeChange() {
 				mTextBox->setSize( mSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth(), mSize.getHeight() );
 				break;
 			case UI_HALIGN_CENTER:
-				if ( NULL != mIcon->getSubTexture() ) {
+				if ( NULL != mIcon->getDrawable() ) {
 					Uint32 iconPos = mIcon->getPosition().x + mIcon->getSize().getWidth();
 					Uint32 txtOff = mTextBox->getPosition().x + mTextBox->getAlignOffset().x;
 
@@ -151,8 +151,8 @@ void UIPushButton::autoPadding() {
 	}
 }
 
-UIPushButton * UIPushButton::setIcon( SubTexture * Icon ) {
-	mIcon->setSubTexture( Icon );
+UIPushButton * UIPushButton::setIcon( Drawable * Icon ) {
+	mIcon->setDrawable( Icon );
 	onSizeChange();
 	return this;
 }
@@ -350,7 +350,7 @@ void UIPushButton::loadFromXmlNode(const pugi::xml_node & node) {
 			setFontOverColor( ColorA::fromString( ait->as_string() ) );
 		} else if ( "icon" == name ) {
 			std::string val = ait->as_string();
-			SubTexture * icon = NULL;
+			Drawable * icon = NULL;
 
 			if ( NULL != mTheme && NULL != ( icon = mTheme->getIconByName( val ) ) ) {
 				setIcon( icon );

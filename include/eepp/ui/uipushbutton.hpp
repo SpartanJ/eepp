@@ -21,7 +21,7 @@ class EE_API UIPushButton : public UIWidget {
 
 		virtual void setTheme( UITheme * Theme );
 
-		virtual UIPushButton * setIcon( SubTexture * icon );
+		virtual UIPushButton * setIcon( Drawable * icon );
 
 		virtual UIImage * getIcon() const;
 
@@ -78,7 +78,7 @@ class EE_API UIPushButton : public UIWidget {
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		UIPushButtonStyleConfig mStyleConfig;
-		UIImage * 		mIcon;
+		UIImage * 	mIcon;
 		UITextView * 	mTextBox;
 
 		virtual void onSizeChange();

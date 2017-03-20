@@ -3,6 +3,7 @@
 
 #include <eepp/math/size.hpp>
 #include <eepp/system/color.hpp>
+#include <eepp/graphics/graphicshelper.hpp>
 using namespace EE::Math;
 using namespace EE::System;
 
@@ -10,7 +11,7 @@ namespace EE { namespace Graphics {
 
 class EE_API Drawable {
 	public:
-		Drawable();
+		Drawable( EE_DRAWABLE_TYPE drawableType );
 
 		virtual Sizef getSize() = 0;
 
@@ -35,7 +36,10 @@ class EE_API Drawable {
 		void clearColorFilter();
 
 		void resetAlpha();
+
+		EE_DRAWABLE_TYPE getDrawableType() const;
 	protected:
+		EE_DRAWABLE_TYPE mDrawableType;
 		ColorA mColor;
 
 		virtual void onAlphaChange();

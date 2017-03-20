@@ -16,6 +16,7 @@
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
+#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/particle.hpp>
 #include <eepp/graphics/particlesystem.hpp>

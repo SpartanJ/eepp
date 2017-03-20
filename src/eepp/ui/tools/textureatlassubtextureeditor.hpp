@@ -4,7 +4,7 @@
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/graphics/subtexture.hpp>
-#include <eepp/ui/uiimage.hpp>
+#include <eepp/ui/uisubtexture.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
@@ -24,10 +24,10 @@ class EE_API TextureAtlasSubTextureEditor : public UIWidget {
 
 		void setSubTexture( Graphics::SubTexture * subTexture );
 
-		UIImage * getGfx() const;
+		UISubTexture * getGfx() const;
 	protected:
 		UITheme *				mTheme;
-		UIImage *					mGfx;
+		UISubTexture *					mGfx;
 		UIDragableControl *			mDrag;
 		Vector2i				mUICenter;
 		TextureAtlasEditor *	mEditor;

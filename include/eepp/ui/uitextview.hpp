@@ -100,7 +100,7 @@ class EE_API UITextView : public UIWidget {
 
 		virtual void onAutoSize();
 
-		virtual void autoAlign();
+		virtual void alignFix();
 
 		virtual void onTextChanged();
 

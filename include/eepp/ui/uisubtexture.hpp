@@ -1,17 +1,17 @@
-#ifndef EE_UI_UIIMAGE_HPP
-#define EE_UI_UIIMAGE_HPP
+#ifndef EE_UICUIGFX_H
+#define EE_UICUIGFX_H
 
 #include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIImage : public UIWidget {
+class EE_API UISubTexture : public UIWidget {
 	public:
-		static UIImage * New();
+		static UISubTexture * New();
 
-		UIImage();
+		UISubTexture();
 
-		virtual ~UIImage();
+		virtual ~UISubTexture();
 
 		virtual Uint32 getType() const;
 
@@ -21,9 +21,9 @@ class EE_API UIImage : public UIWidget {
 
 		virtual void setAlpha( const Float& alpha );
 
-		Drawable * getDrawable() const;
+		Graphics::SubTexture * getSubTexture() const;
 
-		void setDrawable( Drawable * drawable );
+		void setSubTexture( Graphics::SubTexture * subTexture );
 
 		const ColorA& getColor() const;
 
@@ -39,13 +39,13 @@ class EE_API UIImage : public UIWidget {
 
 		Uint32 getScaleType() const;
 
-		UIImage * setScaleType(const Uint32 & scaleType);
+		UISubTexture * setScaleType(const Uint32 & scaleType);
 	protected:
-		Uint32			mScaleType;
-		Drawable *		mDrawable;
-		ColorA			mColor;
-		Vector2i		mAlignOffset;
-		Vector2f		mDestSize;
+		Uint32					mScaleType;
+		Graphics::SubTexture * 	mSubTexture;
+		ColorA					mColor;
+		EE_RENDER_MODE			mRender;
+		Vector2i				mAlignOffset;
 
 		virtual void onSizeChange();
 
@@ -53,14 +53,11 @@ class EE_API UIImage : public UIWidget {
 
 		void onAutoSize();
 
-		void calcDestSize();
-
 		void autoAlign();
 
-		void safeDeleteDrawable();
+		void drawSubTexture();
 };
 
 }}
-
 
 #endif

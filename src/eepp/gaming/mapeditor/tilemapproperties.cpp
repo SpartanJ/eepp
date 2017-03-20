@@ -115,7 +115,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	AddButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	AddButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::onAddCellClick ) );
 
-	if ( NULL == AddButton->getIcon()->getSubTexture() )
+	if ( NULL == AddButton->getIcon()->getDrawable() )
 		AddButton->setText( "+" );
 
 	Pos.y += AddButton->getSize().getHeight() + 5;
@@ -126,7 +126,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	RemoveButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	RemoveButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::onRemoveCellClick ) );
 
-	if ( NULL == RemoveButton->getIcon()->getSubTexture() )
+	if ( NULL == RemoveButton->getIcon()->getDrawable() )
 		RemoveButton->setText( "-" );
 
 	createGridElems();

@@ -16,7 +16,7 @@ UITextInputPassword::UITextInputPassword() :
 	mPassCache = eeNew( Text, () );
 	setFontStyleConfig( mFontStyleConfig );
 
-	autoAlign();
+	alignFix();
 }
 
 UITextInputPassword::~UITextInputPassword() {
@@ -35,8 +35,8 @@ void UITextInputPassword::draw() {
 						this,
 						mScreenPos.x + mRealPadding.Left,
 						mScreenPos.y + mRealPadding.Top,
-						mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-						mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
+						mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+						mRealSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
 				);
 			}
 
@@ -53,6 +53,30 @@ void UITextInputPassword::draw() {
 }
 
 void UITextInputPassword::alignFix() {
+	switch ( fontHAlignGet( getFlags() ) ) {
+		case UI_HALIGN_CENTER:
+			mRealAlignOffset.x = (Float)( (Int32)( mRealSize.x - mPassCache->getTextWidth() ) / 2 );
+			break;
+		case UI_HALIGN_RIGHT:
+			mRealAlignOffset.x = ( (Float)mRealSize.x - (Float)mPassCache->getTextWidth() );
+			break;
+		case UI_HALIGN_LEFT:
+			mRealAlignOffset.x = 0.f;
+			break;
+	}
+
+	switch ( fontVAlignGet( getFlags() ) ) {
+		case UI_VALIGN_CENTER:
+			mRealAlignOffset.y = (Float)( ( (Int32)( mRealSize.y - mPassCache->getTextHeight() ) ) / 2 ) - 1;
+			break;
+		case UI_VALIGN_BOTTOM:
+			mRealAlignOffset.y = ( (Float)mRealSize.y - (Float)mPassCache->getTextHeight() );
+			break;
+		case UI_VALIGN_TOP:
+			mRealAlignOffset.y = 0.f;
+			break;
+	}
+
 	if ( fontHAlignGet( getFlags() ) == UI_HALIGN_LEFT ) {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
@@ -80,32 +104,6 @@ void UITextInputPassword::alignFix() {
 	}
 }
 
-void UITextInputPassword::autoAlign() {
-	switch ( fontHAlignGet( getFlags() ) ) {
-		case UI_HALIGN_CENTER:
-			mRealAlignOffset.x = (Float)( (Int32)( mRealSize.x - mPassCache->getTextWidth() ) / 2 );
-			break;
-		case UI_HALIGN_RIGHT:
-			mRealAlignOffset.x = ( (Float)mRealSize.x - (Float)mPassCache->getTextWidth() );
-			break;
-		case UI_HALIGN_LEFT:
-			mRealAlignOffset.x = 0.f;
-			break;
-	}
-
-	switch ( fontVAlignGet( getFlags() ) ) {
-		case UI_VALIGN_CENTER:
-			mRealAlignOffset.y = (Float)( ( (Int32)( mRealSize.y - mPassCache->getTextHeight() ) ) / 2 ) - 1;
-			break;
-		case UI_VALIGN_BOTTOM:
-			mRealAlignOffset.y = ( (Float)mRealSize.y - (Float)mPassCache->getTextHeight() );
-			break;
-		case UI_VALIGN_TOP:
-			mRealAlignOffset.y = 0.f;
-			break;
-	}
-}
-
 void UITextInputPassword::updateText() {
 	updatePass( mTextCache->getString() );
 }
@@ -113,9 +111,8 @@ void UITextInputPassword::updateText() {
 void UITextInputPassword::updatePass( const String& pass ) {
 	String newTxt;
 
-	for ( size_t i = 0; i < pass.size(); i++ ) {
+	for ( size_t i = 0; i < pass.size(); i++ )
 		newTxt += '*';
-	}
 
 	mPassCache->setString( newTxt );
 }

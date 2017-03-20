@@ -87,8 +87,8 @@ void UIMessageBox::setTheme( UITheme * Theme ) {
 	UIWindow::setTheme( Theme );
 
 	if ( "Retry" != mButtonOK->getText() ) {
-		SubTexture * OKIcon = Theme->getIconByName( "ok" );
-		SubTexture * CancelIcon = Theme->getIconByName( "cancel" );
+		Drawable * OKIcon = Theme->getIconByName( "ok" );
+		Drawable * CancelIcon = Theme->getIconByName( "cancel" );
 
 		if ( NULL != OKIcon ) {
 			mButtonOK->setIcon( OKIcon );

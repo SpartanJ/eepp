@@ -88,7 +88,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 	AddButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	AddButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::onAddCellClick ) );
 
-	if ( NULL == AddButton->getIcon()->getSubTexture() )
+	if ( NULL == AddButton->getIcon()->getDrawable() )
 		AddButton->setText( "+" );
 
 	Pos.y += AddButton->getSize().getHeight() + 5;
@@ -99,7 +99,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 	RemoveButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	RemoveButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::onRemoveCellClick ) );
 
-	if ( NULL == RemoveButton->getIcon()->getSubTexture() )
+	if ( NULL == RemoveButton->getIcon()->getDrawable() )
 		RemoveButton->setText( "-" );
 
 	createGridElems();

@@ -4,6 +4,7 @@
 #include <eepp/gaming/base.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uimenucheckbox.hpp>
+#include <eepp/ui/uisubtexture.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -49,7 +50,7 @@ class EE_API MapEditor {
 		UIDropDownList *	mTextureAtlasesList;
 		UIWidget *	mWinContainer;
 		UIListBox *			mSubTextureList;
-		UIImage *				mGfxPreview;
+		UISubTexture *				mGfxPreview;
 		TextureAtlas *		mCurSG;
 		UIScrollBar *		mMapHScroll;
 		UIScrollBar *		mMapVScroll;

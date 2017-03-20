@@ -149,7 +149,7 @@ bool UICommonDialog::isType( const Uint32& type ) const {
 void UICommonDialog::setTheme( UITheme * Theme ) {
 	UIWindow::setTheme( Theme );
 
-	SubTexture * Icon = Theme->getIconByName( "go-up" );
+	Drawable * Icon = Theme->getIconByName( "go-up" );
 
 	if ( NULL != Icon ) {
 		mButtonUp->setText( "" );

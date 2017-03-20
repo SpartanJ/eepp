@@ -16,7 +16,7 @@ TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( TextureAtlasEditor *
 
 	mTheme = UIThemeManager::instance()->getDefaultTheme();
 
-	mGfx = UIImage::New();
+	mGfx = UISubTexture::New();
 	mGfx->setParent( this );
 	mGfx->setVisible( true );
 	mGfx->setEnabled( true );
@@ -79,7 +79,7 @@ void TextureAtlasSubTextureEditor::setSubTexture( Graphics::SubTexture * subText
 	mGfx->setSubTexture( subTexture );
 }
 
-UIImage * TextureAtlasSubTextureEditor::getGfx() const {
+UISubTexture * TextureAtlasSubTextureEditor::getGfx() const {
 	return mGfx;
 }
 

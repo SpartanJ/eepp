@@ -10,6 +10,7 @@ using namespace EE::Graphics::Private;
 namespace EE { namespace Graphics {
 
 SubTexture::SubTexture() :
+	Drawable( DRAWABLE_SUBTEXTURE ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
 	mId(0),
@@ -25,6 +26,7 @@ SubTexture::SubTexture() :
 }
 
 SubTexture::SubTexture( const Uint32& TexId, const std::string& Name ) :
+	Drawable( DRAWABLE_SUBTEXTURE ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
 	mName( Name ),
@@ -41,6 +43,7 @@ SubTexture::SubTexture( const Uint32& TexId, const std::string& Name ) :
 }
 
 SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const std::string& Name ) :
+	Drawable( DRAWABLE_SUBTEXTURE ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
 	mName( Name ),
@@ -57,6 +60,7 @@ SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const std::st
 }
 
 SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const std::string& Name ) :
+	Drawable( DRAWABLE_SUBTEXTURE ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
 	mName( Name ),
@@ -73,6 +77,7 @@ SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& 
 }
 
 SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const Vector2i &Offset, const std::string& Name ) :
+	Drawable( DRAWABLE_SUBTEXTURE ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
 	mName( Name ),

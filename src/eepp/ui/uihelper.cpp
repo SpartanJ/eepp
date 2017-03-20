@@ -7,7 +7,7 @@
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
-#include <eepp/ui/uiimage.hpp>
+#include <eepp/ui/uisubtexture.hpp>
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
@@ -52,7 +52,7 @@ UIWidget * UIHelper::createUIWidgetFromName( std::string name ) {
 	} else if ( name == "dropdownlist" ) {
 		return UIDropDownList::New();
 	} else if ( name == "image" ) {
-		return UIImage::New();
+		return UISubTexture::New();
 	} else if ( name == "listbox" ) {
 		return UIListBox::New();
 	} else if ( name == "winmenu" ) {

@@ -79,7 +79,7 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 		UIMenu * Menu = reinterpret_cast<UIMenu*> ( getParent() );
 
 		if ( !Menu->checkControlSize( this ) ) {
-			if ( NULL != getIcon()->getSubTexture() ) {
+			if ( NULL != getIcon()->getDrawable() ) {
 				setPadding( Recti( 0, 0, 0, 0 ) );
 			}
 		}

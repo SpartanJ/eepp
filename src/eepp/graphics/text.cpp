@@ -428,7 +428,7 @@ Float Text::getTextWidth() {
 Float Text::getTextHeight() {
 	cacheWidth();
 
-	return mFont->getLineSpacing(mRealCharacterSize) * mNumLines;
+	return mFont->getLineSpacing(mRealCharacterSize) * ( 0 == mNumLines ? 1 : mNumLines );
 }
 
 void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const Float & Angle, EE_BLEND_MODE Effect) {

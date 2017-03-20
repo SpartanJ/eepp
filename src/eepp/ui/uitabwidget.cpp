@@ -488,7 +488,7 @@ void UITabWidget::orderTabs() {
 	posTabs();
 }
 
-UITab * UITabWidget::createTab( const String& Text, UIControl * CtrlOwned, SubTexture * Icon ) {
+UITab * UITabWidget::createTab( const String& Text, UIControl * CtrlOwned, Drawable * Icon ) {
 	UITab * tCtrl 	= UITab::New();
 	tCtrl->setParent( mTabContainer );
 	tCtrl->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE );
@@ -505,7 +505,7 @@ UITab * UITabWidget::createTab( const String& Text, UIControl * CtrlOwned, SubTe
 	return tCtrl;
 }
 
-UITabWidget * UITabWidget::add( const String& Text, UIControl * CtrlOwned, SubTexture * Icon ) {
+UITabWidget * UITabWidget::add( const String& Text, UIControl * CtrlOwned, Drawable * Icon ) {
 	return add( createTab( Text, CtrlOwned, Icon ) );
 }
 
@@ -604,7 +604,7 @@ void UITabWidget::removeAll() {
 	orderTabs();
 }
 
-void UITabWidget::insert( const String& Text, UIControl * CtrlOwned, SubTexture * Icon, const Uint32& Index ) {
+void UITabWidget::insert( const String& Text, UIControl * CtrlOwned, Drawable * Icon, const Uint32& Index ) {
 	insert( createTab( Text, CtrlOwned, Icon ), Index );
 }
 

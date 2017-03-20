@@ -2,8 +2,9 @@
 
 namespace EE { namespace Graphics {
 
-Drawable::Drawable() :
-	mColor(Color::White)
+Drawable::Drawable(EE_DRAWABLE_TYPE drawableType) :
+	mDrawableType( drawableType ),
+	mColor( Color::White )
 {}
 
 void Drawable::setAlpha( Uint8 alpha ) {
@@ -65,6 +66,10 @@ void Drawable::resetAlpha() {
 
 		onAlphaChange();
 	}
+}
+
+EE_DRAWABLE_TYPE Drawable::getDrawableType() const {
+	return mDrawableType;
 }
 
 void Drawable::onAlphaChange() {

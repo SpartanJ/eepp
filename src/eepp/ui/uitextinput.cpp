@@ -155,6 +155,8 @@ void UITextInput::resetWaitCursor() {
 }
 
 void UITextInput::alignFix() {
+	UITextView::alignFix();
+
 	if ( fontHAlignGet( getFlags() ) == UI_HALIGN_LEFT ) {
 		Uint32 NLPos	= 0;
 		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );

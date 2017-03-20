@@ -30,7 +30,7 @@ UITextView::UITextView() :
 	mTextCache->setOutlineThickness( mFontStyleConfig.OutlineThickness );
 	mTextCache->setOutlineColor( mFontStyleConfig.OutlineColor );
 
-	autoAlign();
+	alignFix();
 }
 
 UITextView::~UITextView() {
@@ -81,7 +81,7 @@ UITextView * UITextView::setFont( Graphics::Font * font ) {
 		mTextCache->setFont( font );
 		autoShrink();
 		onAutoSize();
-		autoAlign();
+		alignFix();
 		onFontChanged();
 	}
 
@@ -97,7 +97,7 @@ UITextView *UITextView::setCharacterSize( const Uint32 & characterSize ) {
 		mTextCache->setCharacterSize( characterSize );
 		autoShrink();
 		onAutoSize();
-		autoAlign();
+		alignFix();
 	}
 
 	return this;
@@ -117,7 +117,7 @@ UITextView * UITextView::setOutlineThickness( const Float & outlineThickness ) {
 		mFontStyleConfig.OutlineThickness = outlineThickness;
 		autoShrink();
 		onAutoSize();
-		autoAlign();
+		alignFix();
 	}
 
 	return this;
@@ -142,7 +142,7 @@ UITextView * UITextView::setFontStyle(const Uint32 & fontStyle) {
 		mFontStyleConfig.Style = fontStyle;
 		autoShrink();
 		onAutoSize();
-		autoAlign();
+		alignFix();
 	}
 
 	return this;
@@ -165,7 +165,7 @@ UITextView * UITextView::setText( const String& text ) {
 
 	autoShrink();
 	onAutoSize();
-	autoAlign();
+	alignFix();
 	onTextChanged();
 
 	return this;
@@ -232,14 +232,14 @@ void UITextView::onAutoSize() {
 	if ( ( mFlags & UI_AUTO_SIZE && 0 == mSize.getHeight() ) ) {
 		setInternalPixelsSize( Sizei( (int)mTextCache->getTextWidth(), (int)mTextCache->getTextHeight() ) );
 
-		autoAlign();
+		alignFix();
 	}
 }
 
-void UITextView::autoAlign() {
+void UITextView::alignFix() {
 	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mRealAlignOffset.x = (Float)( (Int32)( mRealSize.x - mTextCache->getTextWidth() ) / 2 );
+			mRealAlignOffset.x = (Float)( (Int32)( mRealSize.x / 2 - mTextCache->getTextWidth() / 2 ) );
 			break;
 		case UI_HALIGN_RIGHT:
 			mRealAlignOffset.x = ( (Float)mRealSize.x - (Float)mTextCache->getTextWidth() );
@@ -251,7 +251,7 @@ void UITextView::autoAlign() {
 
 	switch ( fontVAlignGet( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
-			mRealAlignOffset.y = (Float)( ( (Int32)( mRealSize.y - mTextCache->getTextHeight() ) ) / 2 ) - 1;
+			mRealAlignOffset.y = (Float)( (Int32)( mRealSize.y / 2 - mTextCache->getTextHeight() / 2 ) ) - 1;
 			break;
 		case UI_VALIGN_BOTTOM:
 			mRealAlignOffset.y = ( (Float)mRealSize.y - (Float)mTextCache->getTextHeight() );
@@ -274,7 +274,7 @@ Uint32 UITextView::onFocusLoss() {
 void UITextView::onSizeChange() {
 	autoShrink();
 	onAutoSize();
-	autoAlign();
+	alignFix();
 
 	UIControlAnim::onSizeChange();
 }
@@ -432,7 +432,7 @@ Int32 UITextView::selCurEnd() {
 }
 
 void UITextView::onAlignChange() {
-	autoAlign();
+	alignFix();
 }
 
 void UITextView::setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig ) {

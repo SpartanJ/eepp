@@ -24,7 +24,7 @@ class EE_API UIMenu : public UIWidget {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		Uint32 add( const String& Text, SubTexture * Icon = NULL );
+		Uint32 add( const String& Text, Drawable * Icon = NULL );
 
 		Uint32 add( UIControl * Control );
 
@@ -32,7 +32,7 @@ class EE_API UIMenu : public UIWidget {
 
 		Uint32 addCheckBox( const String& Text, const bool& Active = false );
 
-		Uint32 addSubMenu( const String& Text, SubTexture * Icon = NULL, UIMenu * SubMenu = NULL );
+		Uint32 addSubMenu( const String& Text, Drawable * Icon = NULL, UIMenu * SubMenu = NULL );
 
 		UIControl * getItem( const Uint32& Index );
 		
@@ -48,7 +48,7 @@ class EE_API UIMenu : public UIWidget {
 
 		void removeAll();
 
-		void insert( const String& Text, SubTexture * Icon, const Uint32& Index );
+		void insert( const String& Text, Drawable * Icon, const Uint32& Index );
 
 		void insert( UIControl * Control, const Uint32& Index );
 
@@ -97,11 +97,11 @@ class EE_API UIMenu : public UIWidget {
 		
 		void resizeMe();
 		
-		UIMenuItem * createMenuItem( const String& Text, SubTexture * Icon );
+		UIMenuItem * createMenuItem( const String& Text, Drawable * Icon );
 
 		UIMenuCheckBox * createMenuCheckBox( const String& Text, const bool& Active );
 
-		UIMenuSubMenu * createSubMenu( const String& Text, SubTexture * Icon, UIMenu * SubMenu );
+		UIMenuSubMenu * createSubMenu( const String& Text, Drawable * Icon, UIMenu * SubMenu );
 		
 		void onThemeLoaded();
 

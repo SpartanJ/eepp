@@ -2,6 +2,7 @@
 #include <eepp/ui/uiskinsimple.hpp>
 #include <eepp/ui/uiskincomplex.hpp>
 #include <eepp/graphics/sprite.hpp>
+#include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/texturefactory.hpp>
@@ -26,7 +27,7 @@
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
-#include <eepp/ui/uiimage.hpp>
+#include <eepp/ui/uisubtexture.hpp>
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/ui/uicommondialog.hpp>
 #include <eepp/ui/uimessagebox.hpp>
@@ -372,7 +373,7 @@ void UITheme::getTextureAtlas( Graphics::TextureAtlas * SG ) {
 	mTextureAtlas = SG;
 }
 
-SubTexture * UITheme::getIconByName( const std::string& name ) {
+Drawable * UITheme::getIconByName( const std::string& name ) {
 	if ( NULL != mTextureAtlas )
 		return mTextureAtlas->getByName( mAbbr + "_icon_" + name );
 

@@ -268,7 +268,7 @@ void MapEditor::createSubTextureContainer( Int32 Width ) {
 	mBtnGOTypeAdd->setTooltipText( "Adds a new game object type\nunknown by the map editor." );
 	mBtnGOTypeAdd->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::addNewGOType ) );
 
-	if ( NULL == mBtnGOTypeAdd->getIcon()->getSubTexture() )
+	if ( NULL == mBtnGOTypeAdd->getIcon()->getDrawable() )
 		mBtnGOTypeAdd->setText( "..." );
 
 	Txt = createTextBox( "Layers:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mGOTypeList->getPosition().y + mGOTypeList->getSize().getHeight() + 4 ), TxtFlags, Text::Shadow );
@@ -342,7 +342,7 @@ void MapEditor::createSubTextureContainer( Int32 Width ) {
 	mSubTextureList->setAnchors(UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mSubTextureList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &MapEditor::onSubTextureChange ) );
 
-	mGfxPreview = UIImage::New();
+	mGfxPreview = UISubTexture::New();
 	mGfxPreview->setScaleType( UIScaleType::FitInside )
 			   ->resetFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP )
 			   ->setParent( mSGCont )->setSize( Width, Width )
