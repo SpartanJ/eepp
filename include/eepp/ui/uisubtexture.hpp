@@ -3,6 +3,10 @@
 
 #include <eepp/ui/uiwidget.hpp>
 
+namespace EE { namespace Graphics {
+class SubTexture;
+}}
+
 namespace EE { namespace UI {
 
 class EE_API UISubTexture : public UIWidget {

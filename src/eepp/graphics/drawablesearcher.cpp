@@ -30,10 +30,6 @@ static Drawable * searchByNameInternal( const std::string& name ) {
 		drawable = TextureFactory::instance()->getByHash( id );
 	}
 
-	if ( NULL == drawable ) {
-		drawable = getSprite( name );
-	}
-
 	return drawable;
 }
 

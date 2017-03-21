@@ -5,6 +5,7 @@
 
 namespace EE { namespace Graphics {
 class Sprite;
+class SubTexture;
 }}
 
 namespace EE { namespace UI {

@@ -60,7 +60,7 @@ UISkinSimple * UISkinSimple::clone( const std::string& NewName, const bool& Copy
 		memcpy( &SkinS->mColor[0], &mColor[0], UISkinState::StateCount * sizeof(ColorA) );
 	}
 
-	memcpy( &SkinS->mDrawable[0], &mDrawable[0], UISkinState::StateCount * sizeof(SubTexture*) );
+	memcpy( &SkinS->mDrawable[0], &mDrawable[0], UISkinState::StateCount * sizeof(Drawable*) );
 
 	return SkinS;
 }

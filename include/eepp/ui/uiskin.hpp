@@ -4,10 +4,6 @@
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uiskinstate.hpp>
 
-namespace EE { namespace Graphics {
-class SubTexture;
-}}
-
 namespace EE { namespace UI {
 
 class UITheme;

@@ -4,6 +4,10 @@
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uiskin.hpp>
 
+namespace EE { namespace Graphics {
+class Drawable;
+}}
+
 namespace EE { namespace UI {
 
 class EE_API UISkinComplex : public UISkin {
@@ -43,7 +47,7 @@ class EE_API UISkinComplex : public UISkin {
 
 		Sizei getBorderSize( const Uint32 &state );
 	protected:
-		SubTexture * 	mSubTexture[ UISkinState::StateCount ][ SideCount ];
+		Drawable * 	mDrawable[ UISkinState::StateCount ][ SideCount ];
 		ColorA		mTempColor;
 		Sizei		mSize[ UISkinState::StateCount ];
 		Sizei		mBorderSize[ UISkinState::StateCount ];
