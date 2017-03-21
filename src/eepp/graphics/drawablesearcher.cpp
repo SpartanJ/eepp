@@ -69,18 +69,6 @@ Drawable * DrawableSearcher::searchById( const Uint32& id ) {
 		drawable = TextureFactory::instance()->getByHash( id );
 	}
 
-	if ( NULL == drawable ) {
-		std::vector<SubTexture*> tSubTextureVec = TextureAtlasManager::instance()->getSubTexturesByPatternId( id );
-
-		if ( tSubTextureVec.size() ) {
-			Sprite * tSprite = eeNew( Graphics::Sprite, () );
-			tSprite->createAnimation();
-			tSprite->addFrames( tSubTextureVec );
-
-			drawable = tSprite;
-		}
-	}
-
 	if ( NULL == drawable && sPrintWarnings )
 		eePRINTL( "DrawableSearcher::searchById: \"%ld\" not found", id );
 
