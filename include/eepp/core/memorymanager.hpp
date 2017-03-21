@@ -47,7 +47,7 @@ class EE_API MemoryManager {
 
 		template<class T>
 		static T * free( T * Data ) {
-			free( Data );
+			::free( Data );
 			return Data;
 		}
 
