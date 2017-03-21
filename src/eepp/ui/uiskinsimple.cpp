@@ -1,6 +1,6 @@
 #include <eepp/ui/uiskinsimple.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/drawablesearcher.hpp>
 
 namespace EE { namespace UI {
 
@@ -39,7 +39,7 @@ void UISkinSimple::setSkin( const Uint32& State ) {
 
 	std::string Name( mName + "_" + UISkin::getSkinStateName( State ) );
 
-	mDrawable[ State ] = TextureAtlasManager::instance()->getSubTextureByName( Name );
+	mDrawable[ State ] = DrawableSearcher::searchByName( Name );
 }
 
 bool UISkinSimple::stateExists( const Uint32 & state ) {

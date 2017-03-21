@@ -95,11 +95,11 @@ std::vector<SubTexture*> TextureAtlasManager::getSubTexturesByPatternId( const U
 	return std::vector<SubTexture*>();
 }
 
-void TextureAtlasManager::printWarnings( const bool& warn ) {
+void TextureAtlasManager::setPrintWarnings( const bool& warn ) {
 	mWarnings = warn;
 }
 
-const bool& TextureAtlasManager::printWarnings() const {
+const bool& TextureAtlasManager::getPrintWarnings() const {
 	return mWarnings;
 }
 

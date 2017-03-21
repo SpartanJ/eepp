@@ -54,10 +54,10 @@ class EE_API TextureAtlasManager : public ResourceManager<TextureAtlas> {
 		void printResources();
 
 		/** Sets if the warnings for not finding a resource must be printed in screen. */
-		void printWarnings( const bool& warn );
+		void setPrintWarnings( const bool& warn );
 
 		/** @return If warnings are being printed. */
-		const bool& printWarnings() const;
+		const bool& getPrintWarnings() const;
 	protected:
 		bool	mWarnings;
 

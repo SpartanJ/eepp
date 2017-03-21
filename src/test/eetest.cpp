@@ -11,6 +11,9 @@ namespace Demo_Test {
 void EETest::init() {
 	EE = Engine::instance();
 
+	Log::instance()->setLiveWrite( true );
+	Log::instance()->setConsoleOutput( true );
+
 	Translator t;
 
 	t.loadFromString(
@@ -19,9 +22,6 @@ void EETest::init() {
 		"		<string name='formatted'>Test %d %s</string>"
 		"</resources>"
 	);
-
-	Log::instance()->setLiveWrite( true );
-	Log::instance()->setConsoleOutput( true );
 
 	DrawBack 			= false;
 	MultiViewportMode 	= false;
@@ -556,6 +556,7 @@ void EETest::createNewUI() {
 	pushButton->setIcon( mTheme->getIconByName( "ok" ) );
 
 	UISprite * sprite = UISprite::New();
+	sprite->setFlags( UI_AUTO_SIZE );
 	sprite->setPosition( 50, 600 );
 	sprite->setSprite( &SP );
 

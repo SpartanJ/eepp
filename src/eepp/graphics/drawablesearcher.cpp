@@ -6,6 +6,8 @@
 
 namespace EE { namespace Graphics {
 
+bool DrawableSearcher::sPrintWarnings = false;
+
 static Drawable * getSprite( const std::string& sprite ) {
 	std::vector<SubTexture*> tSubTextureVec = TextureAtlasManager::instance()->getSubTexturesByPattern( sprite );
 
@@ -22,7 +24,7 @@ static Drawable * getSprite( const std::string& sprite ) {
 
 static Drawable * searchByNameInternal( const std::string& name ) {
 	Uint32 id = String::hash( name );
-	Drawable * drawable = GlobalTextureAtlas::instance()->getById( id );
+	Drawable * drawable = TextureAtlasManager::instance()->getSubTextureById( id );
 
 	if ( NULL == drawable ) {
 		drawable = TextureFactory::instance()->getByHash( id );
@@ -41,28 +43,31 @@ Drawable * DrawableSearcher::searchByName( const std::string& name ) {
 	if ( name.size() ) {
 		if ( name[0] == '@' ) {
 			if ( String::startsWith( name, "@subtexture/" ) ) {
-				return GlobalTextureAtlas::instance()->getByName( name.substr( 12 ) );
+				drawable = TextureAtlasManager::instance()->getSubTextureByName( name.substr( 12 ) );
 			} else if ( String::startsWith( name, "@image/" ) ) {
-				return TextureFactory::instance()->getByName( name.substr( 7 ) );
+				drawable = TextureFactory::instance()->getByName( name.substr( 7 ) );
 			} else if ( String::startsWith( name, "@texture/" ) ) {
-				return TextureFactory::instance()->getByName( name.substr( 9 ) );
+				drawable = TextureFactory::instance()->getByName( name.substr( 9 ) );
 			} else if ( String::startsWith( name, "@sprite/" ) ) {
-				return getSprite( name.substr( 8 ) );
+				drawable = getSprite( name.substr( 8 ) );
 			} else if ( String::startsWith( name, "@drawable/" ) ) {
-				return searchByNameInternal( name.substr( 10 ) );
+				drawable = searchByNameInternal( name.substr( 10 ) );
 			} else {
-				return searchByNameInternal( name );
+				drawable = searchByNameInternal( name );
 			}
 		} else {
-			return searchByNameInternal( name );
+			drawable = searchByNameInternal( name );
 		}
 	}
+
+	if ( NULL == drawable && sPrintWarnings )
+		eePRINTL( "DrawableSearcher::searchByName: \"%s\" not found", name.c_str() );
 
 	return drawable;
 }
 
 Drawable * DrawableSearcher::searchById( const Uint32& id ) {
-	Drawable * drawable = GlobalTextureAtlas::instance()->getById( id );
+	Drawable * drawable = TextureAtlasManager::instance()->getSubTextureById( id );
 
 	if ( NULL == drawable ) {
 		drawable = TextureFactory::instance()->getByHash( id );
@@ -80,7 +85,18 @@ Drawable * DrawableSearcher::searchById( const Uint32& id ) {
 		}
 	}
 
+	if ( NULL == drawable && sPrintWarnings )
+		eePRINTL( "DrawableSearcher::searchById: \"%ld\" not found", id );
+
 	return drawable;
+}
+
+void DrawableSearcher::setPrintWarnings( const bool& print ) {
+	sPrintWarnings = print;
+}
+
+bool DrawableSearcher::getPrintWarnings() {
+	return sPrintWarnings;
 }
 
 }}
