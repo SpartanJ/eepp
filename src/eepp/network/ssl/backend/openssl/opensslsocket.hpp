@@ -58,7 +58,7 @@ class OpenSSLSocket : public SSLSocketImpl {
 
 		static bool matchSubjectAlternativeName(const char *hostname, const X509 *server_cert);
 
-		void _print_error(int err);
+		void printError(int err);
 };
 
 }}}

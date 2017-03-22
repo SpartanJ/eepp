@@ -258,12 +258,10 @@ Socket::Status OpenSSLSocket::connect( const IpAddress& remoteAddress, unsigned 
 	// Same as before, try to connect.
 	int result	= SSL_connect( mSSL );
 
-	eePRINTL( "CONNECTION RESULT: %d", result );
-
 	if ( result < 1 ) {
 		ERR_print_errors_fp(stdout);
 
-		_print_error(result);
+		printError(result);
 
 		mStatus	= Socket::Error;
 
@@ -273,10 +271,7 @@ Socket::Status OpenSSLSocket::connect( const IpAddress& remoteAddress, unsigned 
 	X509 * peer = SSL_get_peer_certificate( mSSL );
 
 	if ( peer ) {
-		bool cert_ok = SSL_get_verify_result(mSSL) == X509_V_OK;
-
-		eePRINTL( "cert_ok: %d", (int)cert_ok );
-
+		//eePRINTL( "cert_ok: %d", (int)( SSL_get_verify_result(mSSL) == X509_V_OK ) );
 		mStatus	= Socket::Done;
 	} else if ( mSSLSocket->mValidateCertificate ) {
 		mStatus	= Socket::Error;
@@ -303,7 +298,7 @@ void OpenSSLSocket::disconnect() {
 	mStatus		= Socket::Disconnected;
 }
 
-void OpenSSLSocket::_print_error(int err) {
+void OpenSSLSocket::printError(int err) {
 	err = SSL_get_error(mSSL,err);
 
 	switch(err) {
@@ -331,7 +326,7 @@ Socket::Status OpenSSLSocket::send( const void * data, std::size_t size ) {
 		int ret = SSL_write( mSSL, buf, size );
 
 		if ( ret <= 0 ) {
-			_print_error(ret);
+			printError(ret);
 
 			disconnect();
 
@@ -359,7 +354,7 @@ Socket::Status OpenSSLSocket::receive( void * data, std::size_t size, std::size_
 		int ret = SSL_read( mSSL, buf, size );
 
 		if ( ret < 0 ) {
-			_print_error(ret);
+			printError(ret);
 
 			disconnect();
 
