@@ -520,10 +520,6 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 }
 
 void Text::ensureGeometryUpdate() {
-	// No font or text: nothing to draw
-	if (!mFont || mString.empty())
-		return;
-
 	Sizei textureSize = mFont->getTexture(mRealCharacterSize)->getPixelSize();
 
 	if ( textureSize != mTextureSize )
@@ -544,6 +540,10 @@ void Text::ensureGeometryUpdate() {
 	mOutlineVertices.clear();
 	mOutlineColors.clear();
 	mBounds = Rectf();
+
+	// No font or text: nothing to draw
+	if (!mFont || mString.empty())
+		return;
 
 	// Compute values related to the text style
 	bool  bold			   = (mStyle & Bold) != 0;
