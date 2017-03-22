@@ -49,19 +49,19 @@ const std::string &Http::Request::getUri() const {
 	return mUri;
 }
 
-const bool& Http::Request::validateCertificate() const {
+const bool& Http::Request::getValidateCertificate() const {
 	return mValidateCertificate;
 }
 
-void Http::Request::validateCertificate(bool enable) {
+void Http::Request::setValidateCertificate(bool enable) {
 	mValidateCertificate = enable;
 }
 
-const bool &Http::Request::validateHostname() const {
+const bool &Http::Request::getValidateHostname() const {
 	return mValidateHostname;
 }
 
-void Http::Request::validateHostname(bool enable) {
+void Http::Request::setValidateHostname(bool enable) {
 	mValidateHostname = enable;
 }
 
@@ -294,7 +294,7 @@ Http::Response Http::sendRequest(const Http::Request& request, Time timeout) {
 	}
 
 	if ( NULL == mConnection ) {
-		TcpSocket * Conn	= mIsSSL ? eeNew( SSLSocket, ( mHostName, request.validateCertificate(), request.validateHostname() ) ) : eeNew( TcpSocket, () );
+		TcpSocket * Conn	= mIsSSL ? eeNew( SSLSocket, ( mHostName, request.getValidateCertificate(), request.getValidateHostname() ) ) : eeNew( TcpSocket, () );
 		mConnection			= Conn;
 	}
 

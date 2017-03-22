@@ -85,16 +85,16 @@ class EE_API Http : NonCopyable {
 			const std::string& getUri() const;
 
 			/** @return If SSL certificate validation is enabled */
-			const bool& validateCertificate() const;
+			const bool& getValidateCertificate() const;
 
 			/** Enable/disable SSL certificate validation */
-			void validateCertificate( bool enable );
+			void setValidateCertificate( bool enable );
 
 			/** @return If SSL hostname validation is enabled */
-			const bool& validateHostname() const;
+			const bool& getValidateHostname() const;
 
 			/** Enable/disable SSL hostname validation */
-			void validateHostname( bool enable );
+			void setValidateHostname( bool enable );
 		private:
 			friend class Http;
 
