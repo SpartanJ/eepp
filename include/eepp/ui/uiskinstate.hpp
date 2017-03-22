@@ -19,6 +19,8 @@ class EE_API UISkinState {
 			StateCount
 		};
 
+		static UISkinState * New( UISkin * skin );
+
 		UISkinState( UISkin * Skin );
 
 		~UISkinState();

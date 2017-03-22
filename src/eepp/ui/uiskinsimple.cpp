@@ -4,8 +4,12 @@
 
 namespace EE { namespace UI {
 
-UISkinSimple::UISkinSimple( const std::string& Name ) :
-	UISkin( Name, SkinSimple )
+UISkinSimple * UISkinSimple::New( const std::string& name ) {
+	return eeNew( UISkinSimple, ( name ) );
+}
+
+UISkinSimple::UISkinSimple(const std::string& name ) :
+	UISkin( name, SkinSimple )
 {
 	for ( Int32 i = 0; i < UISkinState::StateCount; i++ )
 		mDrawable[ i ] = NULL;
@@ -52,7 +56,7 @@ void UISkinSimple::stateNormalToState( const Uint32& State ) {
 }
 
 UISkinSimple * UISkinSimple::clone( const std::string& NewName, const bool& CopyColorsState ) {
-	UISkinSimple * SkinS = eeNew( UISkinSimple, ( NewName ) );
+	UISkinSimple * SkinS = UISkinSimple::New( NewName );
 
 	if ( CopyColorsState ) {
 		SkinS->mColorDefault = mColorDefault;

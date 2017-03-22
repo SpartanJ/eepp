@@ -8,14 +8,18 @@ static const char SideSuffix[ UISkinComplex::SideCount ][4] = {
 	"ml", "mr","d","u","ul","ur","dl","dr","m"
 };
 
+UISkinComplex *UISkinComplex::New(const std::string & name) {
+	return eeNew( UISkinComplex, ( name ) );
+}
+
 std::string UISkinComplex::getSideSuffix( const Uint32& Side ) {
 	eeASSERT( Side < UISkinComplex::SideCount );
 
 	return std::string( SideSuffix[ Side ] );
 }
 
-UISkinComplex::UISkinComplex( const std::string& Name ) :
-	UISkin( Name, SkinComplex )
+UISkinComplex::UISkinComplex(const std::string& name ) :
+	UISkin( name, SkinComplex )
 {
 	for ( Int32 x = 0; x < UISkinState::StateCount; x++ )
 		for ( Int32 y = 0; y < SideCount; y++ )
@@ -194,7 +198,7 @@ void UISkinComplex::stateNormalToState( const Uint32& State ) {
 }
 
 UISkinComplex * UISkinComplex::clone( const std::string& NewName, const bool& CopyColorsState ) {
-	UISkinComplex * SkinC = eeNew( UISkinComplex, ( NewName ) );
+	UISkinComplex * SkinC = UISkinComplex::New( NewName );
 
 	if ( CopyColorsState ) {
 		SkinC->mColorDefault = mColorDefault;

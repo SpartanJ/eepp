@@ -2,23 +2,31 @@
 
 namespace EE { namespace UI {
 
-UIBorder::UIBorder() :  mColor( 0xFF404040 ), mWidth( 1 ) {}
-UIBorder::UIBorder( const UIBorder& border ) : mColor( border.getColor() ), mWidth( border.getWidth() ) {}
+UIBorder * UIBorder::New() {
+	return eeNew( UIBorder, () );
+}
+
+UIBorder::UIBorder() :
+	mColor( ColorA::Black ),
+	mWidth( 1 )
+{}
 
 const ColorA& UIBorder::getColor() const	{
 	return	mColor;
 }
 
-void UIBorder::setColor( const ColorA& Col )	{
+UIBorder * UIBorder::setColor( const ColorA& Col )	{
 	mColor = Col;
+	return this;
 }
 
 const unsigned int& UIBorder::getWidth() const {
 	return	mWidth;
 }
 
-void UIBorder::setWidth( const unsigned int& width )	{
+UIBorder * UIBorder::setWidth( const unsigned int& width )	{
 	mWidth = width;
+	return this;
 }
 
 }}

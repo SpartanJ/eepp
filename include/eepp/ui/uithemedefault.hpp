@@ -7,6 +7,8 @@ namespace EE { namespace UI {
 
 class EE_API UIThemeDefault : public UITheme {
 	public:
+		static UIThemeDefault * New( const std::string& name, const std::string& abbr, Graphics::Font * defaultFont = NULL );
+
 		UIThemeDefault( const std::string& name, const std::string& abbr, Graphics::Font * defaultFont = NULL );
 
 		UITabWidgetStyleConfig getTabWidgetStyleConfig();

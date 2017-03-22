@@ -12,7 +12,9 @@ namespace EE { namespace UI {
 
 class EE_API UISkinSimple : public UISkin {
 	public:
-		UISkinSimple( const std::string& getName );
+		static UISkinSimple * New( const std::string& name );
+
+		UISkinSimple( const std::string& name );
 
 		virtual ~UISkinSimple();
 
@@ -39,4 +41,3 @@ class EE_API UISkinSimple : public UISkin {
 }}
 
 #endif
-

@@ -557,7 +557,7 @@ UIBackground * UIControl::setBackgroundFillEnabled( bool enabled ) {
 	writeFlag( UI_FILL_BACKGROUND, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBackground ) {
-		mBackground = eeNew( UIBackground, () );
+		mBackground = UIBackground::New();
 	}
 
 	return mBackground;
@@ -567,10 +567,10 @@ UIBorder * UIControl::setBorderEnabled( bool enabled ) {
 	writeFlag( UI_BORDER, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBorder ) {
-		mBorder = eeNew( UIBorder, () );
+		mBorder = UIBorder::New();
 
 		if ( NULL == mBackground ) {
-			mBackground = eeNew( UIBackground, () );
+			mBackground = UIBackground::New();
 		}
 	}
 
@@ -606,10 +606,10 @@ const Uint32& UIControl::getFlags() const {
 
 UIControl * UIControl::setFlags( const Uint32& flags ) {
 	if ( NULL == mBackground && ( flags & UI_FILL_BACKGROUND ) )
-		mBackground = eeNew( UIBackground, () );
+		mBackground = UIBackground::New();
 
 	if ( NULL == mBorder && ( flags & UI_BORDER ) )
-		mBorder = eeNew( UIBorder, () );
+		mBorder = UIBorder::New();
 
 	if ( fontHAlignGet( flags ) || fontVAlignGet( flags ) ) {
 		onAlignChange();
@@ -720,7 +720,6 @@ void UIControl::drawBorder() {
 		P.setLineWidth( PixelDensity::dpToPx( mBorder->getWidth() ) );
 		P.setColor( mBorder->getColor() );
 
-		//! @TODO: Check why was this +0.1f -0.1f?
 		if ( mFlags & UI_CLIP_ENABLE ) {
 			Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mRealSize.getWidth() - 0.1f, (Float)mRealSize.getHeight() - 0.1f ) );
 
@@ -1190,7 +1189,7 @@ void UIControl::sendEvent( const UIEvent * Event ) {
 
 UIBackground * UIControl::getBackground() {
 	if ( NULL == mBackground ) {
-		mBackground = eeNew( UIBackground, () );
+		mBackground = UIBackground::New();
 	}
 
 	return mBackground;
@@ -1198,7 +1197,7 @@ UIBackground * UIControl::getBackground() {
 
 UIBorder * UIControl::getBorder() {
 	if ( NULL == mBorder ) {
-		mBorder = eeNew( UIBorder, () );
+		mBorder = UIBorder::New();
 	}
 
 	return mBorder;
@@ -1229,7 +1228,7 @@ UIControl * UIControl::setThemeControl( UITheme * Theme, const std::string& Cont
 
 			removeSkin();
 
-			mSkinState = eeNew( UISkinState, ( tSkin ) );
+			mSkinState = UISkinState::New( tSkin );
 			mSkinState->setState( InitialState );
 
 			onThemeLoaded();
@@ -1246,7 +1245,7 @@ void UIControl::setSkin( const UISkin& Skin ) {
 
 	UISkin * SkinCopy = const_cast<UISkin*>( &Skin )->clone();
 
-	mSkinState = eeNew( UISkinState, ( SkinCopy ) );
+	mSkinState = UISkinState::New( SkinCopy );
 
 	onThemeLoaded();
 }
@@ -1264,7 +1263,7 @@ UIControl * UIControl::setSkin( UISkin * skin ) {
 
 		removeSkin();
 
-		mSkinState = eeNew( UISkinState, ( skin ) );
+		mSkinState = UISkinState::New( skin );
 		mSkinState->setState( InitialState );
 
 		onThemeLoaded();

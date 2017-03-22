@@ -124,6 +124,10 @@ void UITheme::addThemeIcon( const std::string& Icon ) {
 	mUIIcons.push_back( Icon );
 }
 
+UITheme * UITheme::New( const std::string & name, const std::string & abbr, Font * defaultFont ) {
+	return eeNew( UITheme, ( name, abbr, defaultFont ) );
+}
+
 UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtlas * TextureAtlas ) {
 	eeASSERT( NULL != tTheme && NULL != TextureAtlas );
 
@@ -159,9 +163,9 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 
 	for ( i = 0; i < ElemFound.size(); i++ ) {
 		if ( ElemType[i] )
-			tTheme->add( eeNew( UISkinComplex, ( ElemFound[i] ) ) );
+			tTheme->add( UISkinComplex::New( ElemFound[i] ) );
 		else
-			tTheme->add( eeNew( UISkinSimple, ( ElemFound[i] ) ) );
+			tTheme->add( UISkinSimple::New( ElemFound[i] ) );
 	}
 
 	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from TextureAtlas )", TE.getElapsed().asMilliseconds() );
@@ -222,9 +226,9 @@ UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path, cons
 
 	for ( i = 0; i < ElemFound.size(); i++ ) {
 		if ( ElemType[i] )
-			tTheme->add( eeNew( UISkinComplex, ( ElemFound[i] ) ) );
+			tTheme->add( UISkinComplex::New( ElemFound[i] ) );
 		else
-			tTheme->add( eeNew( UISkinSimple, ( ElemFound[i] ) ) );
+			tTheme->add( UISkinSimple::New( ElemFound[i] ) );
 	}
 
 	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from path )", TE.getElapsed().asMilliseconds() );
@@ -233,11 +237,11 @@ UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path, cons
 }
 
 UITheme * UITheme::loadFromFile( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt ) {
-	return loadFromFile( eeNew( UITheme, ( Name, NameAbbr ) ), Path, ImgExt );
+	return loadFromFile( UITheme::New( Name, NameAbbr ), Path, ImgExt );
 }
 
 UITheme * UITheme::loadFromTextureAtlas( Graphics::TextureAtlas * TextureAtlas, const std::string& Name, const std::string NameAbbr ) {
-	return loadFromTextureAtlas( eeNew( UITheme, ( Name, NameAbbr ) ), TextureAtlas );
+	return loadFromTextureAtlas( UITheme::New( Name, NameAbbr ), TextureAtlas );
 }
 
 bool UITheme::searchFilesInAtlas( Graphics::TextureAtlas * SG, std::string Element, Uint32& IsComplex ) {

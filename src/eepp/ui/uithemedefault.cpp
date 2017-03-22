@@ -9,6 +9,10 @@
 
 namespace EE { namespace UI {
 
+UIThemeDefault * UIThemeDefault::New( const std::string & name, const std::string & abbr, Font * defaultFont ) {
+	return eeNew( UIThemeDefault, ( name, abbr, defaultFont ) );
+}
+
 UIThemeDefault::UIThemeDefault( const std::string& name, const std::string& Abbr, Graphics::Font * defaultFont ) :
 	UITheme( name, Abbr, defaultFont )
 {

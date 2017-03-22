@@ -7,16 +7,17 @@ namespace EE { namespace UI {
 
 class EE_API UIBorder {
 	public:
+		static UIBorder * New();
+
 		UIBorder();
-		UIBorder( const UIBorder& border );
 
 		const ColorA& getColor() const;
 
-		void setColor( const ColorA& Col );
+		UIBorder * setColor( const ColorA& Col );
 
 		const unsigned int& getWidth() const;
 
-		void setWidth( const unsigned int& width );
+		UIBorder * setWidth( const unsigned int& width );
 	protected:
 		ColorA			mColor;
 		unsigned int	mWidth;

@@ -23,6 +23,8 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 		using ResourceManager<UISkin>::exists;
 		using ResourceManager<UISkin>::existsId;
 
+		static UITheme * New( const std::string& name, const std::string& abbr, Graphics::Font * defaultFont = NULL );
+
 		static UITheme * loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtlas * getTextureAtlas );
 
 		static UITheme * loadFromFile( UITheme * tTheme, const std::string& Path, const std::string ImgExt = "png" );

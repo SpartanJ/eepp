@@ -12,6 +12,8 @@ namespace EE { namespace UI {
 
 class EE_API UISkinComplex : public UISkin {
 	public:
+		static UISkinComplex * New( const std::string& name );
+
 		static std::string getSideSuffix( const Uint32& Side );
 
 		enum UISkinComplexSides {
@@ -27,7 +29,7 @@ class EE_API UISkinComplex : public UISkin {
 			SideCount
 		};
 
-		UISkinComplex( const std::string& getName );
+		UISkinComplex( const std::string& name );
 
 		virtual ~UISkinComplex();
 

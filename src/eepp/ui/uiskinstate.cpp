@@ -3,6 +3,10 @@
 
 namespace EE { namespace UI {
 
+UISkinState *UISkinState::New( UISkin * skin ) {
+	return eeNew( UISkinState, (  skin ) );
+}
+
 UISkinState::UISkinState( UISkin * Skin ) :
 	mSkin( Skin ),
 	mCurState(0),
