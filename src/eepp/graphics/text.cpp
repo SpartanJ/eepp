@@ -4,6 +4,7 @@
 #include <eepp/graphics/renderer/opengl.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <algorithm>
 #include <cmath>
 
 namespace EE { namespace Graphics {
@@ -483,6 +484,9 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 		ensureGeometryUpdate();
 
 		numvert = mVertices.size();
+
+		if ( 0 == numvert )
+			return;
 
 		Uint32 alloc	= numvert * sizeof(VertexCoords);
 		Uint32 allocC	= numvert * GLi->quadVertexs();

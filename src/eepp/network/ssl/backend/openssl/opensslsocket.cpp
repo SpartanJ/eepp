@@ -8,6 +8,10 @@
 #include <eepp/network/ssl/backend/openssl/curl_hostcheck.h>
 #include <eepp/system/filesystem.hpp>
 
+#ifndef CRYPTO_malloc_init
+#define CRYPTO_malloc_init OPENSSL_malloc_init
+#endif
+
 namespace EE { namespace Network { namespace SSL {
 
 static std::vector<X509*> sCerts;
@@ -91,7 +95,7 @@ int OpenSSLSocket::certVerifyCb( X509_STORE_CTX * x509_ctx, void * arg ) {
 	/* This is the function that OpenSSL would call if we hadn't called
 	 * SSL_CTX_set_cert_verify_callback().  Therefore, we are "wrapping"
 	 * the default functionality, rather than replacing it. */
-	bool base_cert_valid = X509_verify_cert( x509_ctx );
+	bool base_cert_valid = 0 != X509_verify_cert( x509_ctx );
 
 	if ( !base_cert_valid ) {
 		eePRINTL( "Cause: %s", X509_verify_cert_error_string( X509_STORE_CTX_get_error( x509_ctx ) ) );

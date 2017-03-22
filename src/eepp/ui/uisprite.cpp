@@ -159,7 +159,7 @@ void UISprite::setDeallocSprite( const bool& dealloc ) {
 }
 
 bool UISprite::getDeallocSprite() {
-	return mControlFlags & UI_CTRL_FLAG_FREE_USE;
+	return 0 != ( mControlFlags & UI_CTRL_FLAG_FREE_USE );
 }
 
 void UISprite::onSizeChange() {

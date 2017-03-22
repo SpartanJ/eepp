@@ -206,13 +206,18 @@ void Translator::setLanguageFromLocale( std::locale locale ) {
 	std::string name = locale.name();
 
 	if ( "C" == name ) {
-		#if EE_PLATFORM != EE_PLATFORM_WIN
-		locale = std::locale( setlocale( LC_ALL, "" ) );
+		#ifdef EE_SUPPORT_EXCEPTIONS
+		try {
+			const char * loc = setlocale( LC_ALL, "" );
+			locale = std::locale( loc );
+			name = locale.name();
+		} catch( ... ) {}
 		#endif
-		if ( "C" == locale.name() ) {
+
+		if ( "C" == name ) {
 			mCurrentLanguage = "en";
 		} else {
-			mCurrentLanguage = locale.name().substr(0,2);
+			mCurrentLanguage = name.substr(0,2);
 		}
 	} else {
 		mCurrentLanguage = name.substr(0,2);

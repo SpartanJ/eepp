@@ -42,7 +42,7 @@ void GameObject::clearFlag( const Uint32& Flag ) {
 }
 
 bool GameObject::isBlocked() const {
-	return mFlags & GObjFlags::GAMEOBJECT_BLOCKED;
+	return 0 != ( mFlags & GObjFlags::GAMEOBJECT_BLOCKED );
 }
 
 void GameObject::setBlocked( bool blocked ) {
@@ -50,7 +50,7 @@ void GameObject::setBlocked( bool blocked ) {
 }
 
 bool GameObject::isRotated() const {
-	return mFlags & GObjFlags::GAMEOBJECT_ROTATE_90DEG;
+	return 0 != ( mFlags & GObjFlags::GAMEOBJECT_ROTATE_90DEG );
 }
 
 void GameObject::setRotated( bool rotated ) {
@@ -58,7 +58,7 @@ void GameObject::setRotated( bool rotated ) {
 }
 
 bool GameObject::isMirrored() const {
-	return mFlags & GObjFlags::GAMEOBJECT_MIRRORED;
+	return 0 != ( mFlags & GObjFlags::GAMEOBJECT_MIRRORED );
 }
 
 void GameObject::setMirrored( bool mirrored ) {
@@ -66,7 +66,7 @@ void GameObject::setMirrored( bool mirrored ) {
 }
 
 bool GameObject::isFliped() const {
-	return mFlags & GObjFlags::GAMEOBJECT_FLIPED;
+	return 0 != ( mFlags & GObjFlags::GAMEOBJECT_FLIPED );
 }
 
 void GameObject::setFliped( bool fliped ) {

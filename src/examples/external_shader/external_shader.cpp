@@ -258,9 +258,9 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		for (i = 0; i < ParticlesNum; i++ )
 		{
-			vertices[i]		= Vector3ff( 0, 0, 1.83 );
-			velocities[i]	= Vector3ff( (Math::randf() * 2 - 1)*.05, (Math::randf() * 2 - 1)*.05, .93 + Math::randf()*.02 );
-			colors[i]		= ColorAf( Math::randf() * 0.5, 0.1, 0.8, 0.5 );
+			vertices[i]		= Vector3ff( 0, 0, 1.83f );
+			velocities[i]	= Vector3ff( (Math::randf() * 2 - 1)*.05f, (Math::randf() * 2 - 1)*.05f, .93f + Math::randf()*.02f );
+			colors[i]		= ColorAf( Math::randf() * 0.5f, 0.1f, 0.8f, 0.5f );
 		}
 
 		/** Optimized for ARM ( pre-cache sqrt ) */
