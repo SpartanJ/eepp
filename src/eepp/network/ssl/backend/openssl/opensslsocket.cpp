@@ -8,10 +8,6 @@
 #include <eepp/network/ssl/backend/openssl/curl_hostcheck.h>
 #include <eepp/system/filesystem.hpp>
 
-#ifndef CRYPTO_malloc_init
-#define CRYPTO_malloc_init OPENSSL_malloc_init
-#endif
-
 namespace EE { namespace Network { namespace SSL {
 
 static std::vector<X509*> sCerts;
@@ -133,9 +129,13 @@ int OpenSSLSocket::certVerifyCb( X509_STORE_CTX * x509_ctx, void * arg ) {
 }
 
 bool OpenSSLSocket::init() {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	CRYPTO_malloc_init(); // Initialize malloc, free, etc for OpenSSL's use
 
-	SSL_library_init(); // Initialize OpenSSL's SSL libraries
+	SSL_library_init();
+#else
+	OPENSSL_init_ssl(0, NULL);
+#endif
 
 	SSL_load_error_strings(); // Load SSL error strings
 
