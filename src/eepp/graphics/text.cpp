@@ -434,6 +434,13 @@ Float Text::getTextHeight() {
 
 void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const Float & Angle, EE_BLEND_MODE Effect) {
 	if ( NULL != mFont ) {
+		ensureGeometryUpdate();
+
+		unsigned int numvert = mVertices.size();
+
+		if ( 0 == numvert )
+			return;
+
 		GlobalBatchRenderer::instance()->draw();
 		TextureFactory::instance()->bind( mFont->getTexture(mRealCharacterSize) );
 		BlendMode::setMode( Effect );
@@ -464,8 +471,6 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 			setFillColor( Col );
 		}
 
-		unsigned int numvert = 0;
-
 		if ( Angle != 0.0f || Scale != 1.0f ) {
 			Float cX = (Float) ( (Int32)X );
 			Float cY = (Float) ( (Int32)Y );
@@ -480,13 +485,6 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 		} else {
 			GLi->translatef( X, Y, 0 );
 		}
-
-		ensureGeometryUpdate();
-
-		numvert = mVertices.size();
-
-		if ( 0 == numvert )
-			return;
 
 		Uint32 alloc	= numvert * sizeof(VertexCoords);
 		Uint32 allocC	= numvert * GLi->quadVertexs();
@@ -522,6 +520,10 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 }
 
 void Text::ensureGeometryUpdate() {
+	// No font or text: nothing to draw
+	if (!mFont || mString.empty())
+		return;
+
 	Sizei textureSize = mFont->getTexture(mRealCharacterSize)->getPixelSize();
 
 	if ( textureSize != mTextureSize )
@@ -542,10 +544,6 @@ void Text::ensureGeometryUpdate() {
 	mOutlineVertices.clear();
 	mOutlineColors.clear();
 	mBounds = Rectf();
-
-	// No font or text: nothing to draw
-	if (!mFont || mString.empty())
-		return;
 
 	// Compute values related to the text style
 	bool  bold			   = (mStyle & Bold) != 0;
