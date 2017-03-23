@@ -515,6 +515,11 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 
 				setLayoutPositionRule( rule, widget );
 			}
+		} else if ( "clip" == name ) {
+			if ( ait->as_bool() )
+				setFlags( UI_CLIP_ENABLE );
+			else
+				unsetFlags( UI_CLIP_ENABLE );
 		}
 	}
 }
