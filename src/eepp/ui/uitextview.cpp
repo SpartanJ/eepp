@@ -81,9 +81,7 @@ Graphics::Font * UITextView::getFont() const {
 UITextView * UITextView::setFont( Graphics::Font * font ) {
 	if ( mTextCache->getFont() != font ) {
 		mTextCache->setFont( font );
-		autoShrink();
-		onAutoSize();
-		alignFix();
+		recalculate();
 		onFontChanged();
 	}
 
@@ -97,9 +95,7 @@ Uint32 UITextView::getCharacterSize() {
 UITextView *UITextView::setCharacterSize( const Uint32 & characterSize ) {
 	if ( mTextCache->getCharacterSize() != characterSize ) {
 		mTextCache->setCharacterSize( characterSize );
-		autoShrink();
-		onAutoSize();
-		alignFix();
+		recalculate();
 	}
 
 	return this;
@@ -117,9 +113,7 @@ UITextView * UITextView::setOutlineThickness( const Float & outlineThickness ) {
 	if ( mFontStyleConfig.OutlineThickness != outlineThickness ) {
 		mTextCache->setOutlineThickness( outlineThickness );
 		mFontStyleConfig.OutlineThickness = outlineThickness;
-		autoShrink();
-		onAutoSize();
-		alignFix();
+		recalculate();
 	}
 
 	return this;
@@ -142,9 +136,7 @@ UITextView * UITextView::setFontStyle(const Uint32 & fontStyle) {
 	if ( mFontStyleConfig.Style != fontStyle ) {
 		mTextCache->setStyle( fontStyle );
 		mFontStyleConfig.Style = fontStyle;
-		autoShrink();
-		onAutoSize();
-		alignFix();
+		recalculate();
 	}
 
 	return this;
@@ -165,9 +157,7 @@ UITextView * UITextView::setText( const String& text ) {
 		mTextCache->setString( text );
 	}
 
-	autoShrink();
-	onAutoSize();
-	alignFix();
+	recalculate();
 	onTextChanged();
 
 	return this;
@@ -274,9 +264,7 @@ Uint32 UITextView::onFocusLoss() {
 }
 
 void UITextView::onSizeChange() {
-	autoShrink();
-	onAutoSize();
-	alignFix();
+	recalculate();
 
 	UIControlAnim::onSizeChange();
 }
@@ -450,6 +438,17 @@ Int32 UITextView::selCurEnd() {
 
 void UITextView::onAlignChange() {
 	alignFix();
+}
+
+void UITextView::recalculate() {
+	autoShrink();
+	onAutoSize();
+	alignFix();
+	resetSelCache();
+}
+
+void UITextView::resetSelCache() {
+	mLastSelCurInit = mLastSelCurEnd = -1;
 }
 
 void UITextView::setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig ) {

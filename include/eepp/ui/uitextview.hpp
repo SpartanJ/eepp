@@ -139,6 +139,10 @@ class EE_API UITextView : public UIWidget {
 
 		virtual void onAlignChange();
 
+		void recalculate();
+
+		void resetSelCache();
+
 };
 
 }}
