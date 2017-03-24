@@ -52,12 +52,12 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 
 		fontTest = FontTrueType::New( "DejaVuSansMono" );
 		fontTest->loadFromFile( AppPath + "assets/fonts/DejaVuSansMono.ttf" );
-		fontTest->shrinkText( Txt, 24, false, 2, win->getWidth() - 96 );
 
 		text.setFont( fontTest );
 		text.setCharacterSize( 24 );
 		text.setAlign( TEXT_ALIGN_CENTER );
 		text.setString( Txt );
+		text.shrinkText( win->getWidth() - 96 );
 
 		// Set the font color to a substring of the text
 		// Create a gradient

@@ -41,30 +41,6 @@ class EE_API Font {
 		/** @return The font id */
 		const Uint32& getId();
 
-		/** Shrink the String to a max width
-		* @param Str The string to shrink
-		* @param MaxWidth The Max Width posible
-		*/
-		void shrinkText( String& Str, const Uint32& characterSize, bool bold, Float outlineThickness, const Uint32& MaxWidth );
-
-		/** Shrink the string to a max width
-		* @param Str The string to shrink
-		* @param MaxWidth The Max Width posible
-		*/
-		void shrinkText( std::string& Str, const Uint32& characterSize, bool bold, Float outlineThickness, const Uint32& MaxWidth );
-
-		/** Cache the with of the current text */
-		void cacheWidth( const String& TextCache, const Uint32& characterSize, bool bold, Float outlineThickness, std::vector<Float>& LinesWidth, Float& CachedWidth, int& NumLines, int& LargestLineCharCount );
-
-		/** Finds the closest cursor position to the point position */
-		Int32 findClosestCursorPosFromPoint( const String& TextCache, const Uint32& characterSize, bool bold, Float outlineThickness, const Vector2i& pos );
-
-		/** Simulates a selection request and return the initial and end cursor position when the selection worked. Otherwise both parameters will be -1. */
-		void selectSubStringFromCursor(const String& TextCache, const Int32& CurPos, Int32& InitCur, Int32& EndCur );
-
-		/** @return The cursor position inside the string */
-		Vector2i getCursorPos( const String& TextCache, const Uint32& characterSize, bool bold, Float outlineThickness, const Uint32& Pos );
-
 		virtual const Info& getInfo() const = 0;
 
 		virtual const Glyph& getGlyph(Uint32 codePoint, unsigned int characterSize, bool bold, Float outlineThickness = 0) const = 0;

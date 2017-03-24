@@ -93,13 +93,13 @@ class EE_API UITextView : public UIWidget {
 		Recti		mRealPadding;
 		struct SelPosCache
 		{
-			SelPosCache( Vector2i ip, Vector2i ep ) :
+			SelPosCache( Vector2f ip, Vector2f ep ) :
 				initPos( ip ),
 				endPos( ep )
 			{}
 
-			Vector2i initPos;
-			Vector2i endPos;
+			Vector2f initPos;
+			Vector2f endPos;
 		};
 		std::vector<SelPosCache> mSelPosCache;
 		Int32		mLastSelCurInit;

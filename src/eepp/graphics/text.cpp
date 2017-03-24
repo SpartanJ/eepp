@@ -240,6 +240,238 @@ Vector2f Text::findCharacterPos(std::size_t index) const {
 	return position;
 }
 
+Int32 Text::findCharacterFromPos( const Vector2i& pos ) {
+	if ( NULL == mFont )
+		return 0;
+
+	Float vspace = mFont->getLineSpacing(mRealCharacterSize);
+	Float Width = 0, lWidth = 0, Height = vspace, lHeight = 0;
+	Uint32 CharID;
+	Uint32 prevChar = 0;
+	std::size_t tSize = mString.size();
+	bool  bold = (mStyle & Bold) != 0;
+
+	for (std::size_t i = 0; i < tSize; ++i) {
+		CharID = mString[i];
+		Glyph glyph = mFont->getGlyph( CharID, mRealCharacterSize, bold, mOutlineThickness );
+
+		lWidth = Width;
+
+		if ( CharID != '\r' ) {
+			Width += mFont->getKerning(prevChar, CharID, mRealCharacterSize);
+			prevChar = CharID;
+			Width += glyph.advance;
+		}
+
+		if ( CharID == '\t' ) {
+			Width += glyph.advance * 3;
+		}
+
+		if ( CharID == '\n' ) {
+			lWidth = 0;
+			Width = 0;
+		}
+
+		if ( pos.x <= Width && pos.x >= lWidth && pos.y <= Height && pos.y >= lHeight ) {
+			if ( i + 1 < tSize ) {
+				Int32 curDist	= eeabs( pos.x - lWidth );
+				Int32 nextDist	= eeabs( pos.x - ( lWidth + glyph.advance ) );
+
+				if ( nextDist < curDist ) {
+					return  i + 1;
+				}
+			}
+
+			return i;
+		}
+
+		if ( CharID == '\n' ) {
+			lHeight = Height;
+			Height += vspace;
+
+			if ( pos.x > Width && pos.y <= lHeight ) {
+				return i;
+			}
+		}
+	}
+
+	if ( pos.x >= Width ) {
+		return tSize;
+	}
+
+	return -1;
+}
+
+static bool isStopSelChar( Uint32 c ) {
+	return ( !String::isCharacter( c ) && !String::isNumber( c ) ) ||
+			' ' == c ||
+			'.' == c ||
+			',' == c ||
+			';' == c ||
+			':' == c ||
+			'\n' == c ||
+			'"' == c ||
+			'\'' == c;
+}
+
+void Text::findWordFromCharacterIndex( const Int32& characterIndex, Int32& InitCur, Int32& EndCur ) {
+	InitCur	= 0;
+	EndCur	= mString.size();
+
+	for ( std::size_t i = characterIndex; i < mString.size(); i++ ) {
+		if ( isStopSelChar( mString[i] ) ) {
+			EndCur = i;
+			break;
+		}
+	}
+
+	if ( 0 == characterIndex ) {
+		InitCur = 0;
+	}
+
+	for ( Int32 i = characterIndex; i >= 0; i-- ) {
+		if ( isStopSelChar( mString[i] ) ) {
+			InitCur = i + 1;
+			break;
+		}
+	}
+
+	if ( InitCur == EndCur ) {
+		InitCur = EndCur = -1;
+	}
+}
+
+void Text::getWidthInfo( std::vector<Float>& LinesWidth, Float& CachedWidth, int& NumLines , int& LargestLineCharCount ) {
+	if ( NULL == mFont )
+		return;
+
+	LinesWidth.clear();
+
+	Float Width = 0, MaxWidth = 0;
+	Uint32 CharID;
+	Int32 Lines = 1;
+	Int32 CharCount = 0;
+	Uint32 prevChar = 0;
+	LargestLineCharCount = 0;
+	bool bold = (mStyle & Bold) != 0;
+
+	for (std::size_t i = 0; i < mString.size(); ++i) {
+		CharID = static_cast<Int32>( mString.at(i) );
+		Glyph glyph = mFont->getGlyph( CharID, mRealCharacterSize, bold, mOutlineThickness );
+
+		if ( CharID != '\r' ) {
+			Width += mFont->getKerning(prevChar, CharID, mRealCharacterSize);
+			prevChar = CharID;
+			Width += glyph.advance;
+		}
+
+		CharCount++;
+
+		if ( CharID == '\t' )
+			Width += glyph.advance * 3;
+
+		if ( CharID == '\n' ) {
+			Lines++;
+
+			Float lWidth = ( CharID == '\t' ) ? glyph.advance * 4.f : glyph.advance;
+
+			LinesWidth.push_back( Width - lWidth );
+
+			Width = 0;
+
+			CharCount = 0;
+		} else {
+			if ( CharCount > LargestLineCharCount )
+				LargestLineCharCount = CharCount;
+		}
+
+		if ( Width > MaxWidth )
+			MaxWidth = Width;
+	}
+
+	if ( mString.size() && mString.at( mString.size() - 1 ) != '\n' ) {
+		LinesWidth.push_back( Width );
+	}
+
+	CachedWidth = MaxWidth;
+	NumLines = Lines;
+}
+
+void Text::shrinkText( const Uint32& MaxWidth ) {
+	if ( !mString.size() || NULL == mFont )
+		return;
+
+	Float tCurWidth = 0.f;
+	Float tWordWidth = 0.f;
+	Float tMaxWidth = (Float) MaxWidth;
+	String::StringBaseType * tChar = &mString[0];
+	String::StringBaseType * tLastSpace = NULL;
+	Uint32 prevChar = 0;
+	bool bold = (mStyle & Bold) != 0;
+
+	while ( *tChar ) {
+		Glyph pChar = mFont->getGlyph( *tChar, mRealCharacterSize, bold, mOutlineThickness );
+
+		Float fCharWidth	= (Float)pChar.advance;
+
+		if ( ( *tChar ) == '\t' )
+			fCharWidth += pChar.advance * 3;
+		else if ( ( *tChar ) == '\r' )
+			fCharWidth = 0;
+
+		// Add the new char width to the current word width
+		tWordWidth		+= fCharWidth;
+
+		if ( *tChar != '\r' ) {
+			tWordWidth += mFont->getKerning(prevChar, *tChar, mRealCharacterSize);
+			prevChar = *tChar;
+		}
+
+		if ( ' ' == *tChar || '\0' == *( tChar + 1 ) ) {
+
+			// If current width plus word width is minor to the max width, continue adding
+			if ( tCurWidth + tWordWidth < tMaxWidth ) {
+				tCurWidth		+= tWordWidth;
+				tLastSpace		= tChar;
+
+				tChar++;
+			} else {
+				// If it was an space before, replace that space for an new line
+				// Start counting from the new line first character
+				if ( NULL != tLastSpace ) {
+					*tLastSpace		= '\n';
+					tChar	= tLastSpace + 1;
+				} else {	// The word is larger than the current possible width
+					*tChar	= '\n';
+				}
+
+				if ( '\0' == *( tChar + 1 ) )
+					tChar++;
+
+				// Set the last spaces as null, because is a new line
+				tLastSpace		= NULL;
+
+				// New line, new current width
+				tCurWidth		= 0.f;
+			}
+
+			// New word, so we reset the current word width
+			tWordWidth = 0.f;
+		} else if ( '\n' == *tChar ) {
+			tWordWidth 		= 0.f;
+			tCurWidth 		= 0.f;
+			tLastSpace		= NULL;
+			tChar++;
+		} else {
+			tChar++;
+		}
+	}
+
+	mCachedWidthNeedUpdate = true;
+	mGeometryNeedUpdate = true;
+	mColorsNeedUpdate = true;
+}
+
 Rectf Text::getLocalBounds() {
 	ensureGeometryUpdate();
 
@@ -590,7 +822,7 @@ void Text::cacheWidth() {
 		return;
 
 	if ( NULL != mFont && mString.size() ) {
-		mFont->cacheWidth( mString, mRealCharacterSize, (mStyle & Bold), mOutlineThickness, mLinesWidth, mCachedWidth, mNumLines, mLargestLineCharCount );
+		getWidthInfo( mLinesWidth, mCachedWidth, mNumLines, mLargestLineCharCount );
 		mCachedWidthNeedUpdate = false;
 	} else {
 		mCachedWidth = 0;

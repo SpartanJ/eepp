@@ -215,9 +215,7 @@ void UITextView::shrinkText( const Uint32& MaxWidth ) {
 		mTextCache->setString( mString );
 	}
 
-	String str = mTextCache->getString();
-	mTextCache->getFont()->shrinkText( str, mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), MaxWidth );
-	mTextCache->setString( str );
+	mTextCache->shrinkText( MaxWidth );
 }
 
 void UITextView::onAutoSize() {
@@ -307,12 +305,12 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags )
 		worldToControl( controlPos );
 		controlPos = PixelDensity::dpToPxI( controlPos );
 
-		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getString(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), controlPos );
+		Int32 curPos = mTextCache->findCharacterFromPos( controlPos );
 
 		if ( -1 != curPos ) {
 			Int32 tSelCurInit, tSelCurEnd;
 
-			mTextCache->getFont()->selectSubStringFromCursor( mTextCache->getString(), curPos, tSelCurInit, tSelCurEnd );
+			mTextCache->findWordFromCharacterIndex( curPos, tSelCurInit, tSelCurEnd );
 
 			selCurInit( tSelCurInit );
 			selCurEnd( tSelCurEnd );
@@ -343,7 +341,7 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 		worldToControl( controlPos );
 		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mRealAlignOffset.x, (Int32)mRealAlignOffset.y );
 
-		Int32 curPos = mTextCache->getFont()->findClosestCursorPosFromPoint( mTextCache->getString(), mTextCache->getCharacterSizePx(), mTextCache->getStyle() & Text::Bold, mTextCache->getOutlineThickness(), controlPos );
+		Int32 curPos = mTextCache->findCharacterFromPos( controlPos );
 
 		if ( -1 != curPos ) {
 			if ( -1 == selCurInit() || !( mControlFlags & UI_CTRL_FLAG_SELECTING ) ) {
@@ -370,7 +368,7 @@ void UITextView::drawSelection( Text * textCache ) {
 		}
 
 		Int32 lastEnd;
-		Vector2i initPos, endPos;
+		Vector2f initPos, endPos;
 
 		if ( mLastSelCurInit != selCurInit() || mLastSelCurEnd != selCurEnd() ) {
 			mSelPosCache.clear();
@@ -378,14 +376,14 @@ void UITextView::drawSelection( Text * textCache ) {
 			mLastSelCurEnd = selCurEnd();
 
 			do {
-				initPos	= textCache->getFont()->getCursorPos( textCache->getString(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), init );
+				initPos	= textCache->findCharacterPos( init );
 				lastEnd = textCache->getString().find_first_of( '\n', init );
 
 				if ( lastEnd < end && -1 != lastEnd ) {
-					endPos	= textCache->getFont()->getCursorPos( textCache->getString(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), lastEnd );
+					endPos	= textCache->findCharacterPos( lastEnd );
 					init	= lastEnd + 1;
 				} else {
-					endPos	= textCache->getFont()->getCursorPos( textCache->getString(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), end );
+					endPos	= textCache->findCharacterPos( end );
 					lastEnd = end;
 				}
 
@@ -396,15 +394,16 @@ void UITextView::drawSelection( Text * textCache ) {
 		if ( mSelPosCache.size() ) {
 			Primitives P;
 			P.setColor( mFontStyleConfig.FontSelectionBackColor );
+			Float vspace = textCache->getFont()->getLineSpacing( textCache->getCharacterSizePx() );
 
 			for ( size_t i = 0; i < mSelPosCache.size(); i++ ) {
 				initPos = mSelPosCache[i].initPos;
 				endPos = mSelPosCache[i].endPos;
 
 				P.drawRectangle( Rectf( mScreenPos.x + initPos.x + mRealAlignOffset.x + mRealPadding.Left,
-										  mScreenPos.y + initPos.y - textCache->getFont()->getLineSpacing( textCache->getCharacterSizePx() ) + mRealAlignOffset.y + mRealPadding.Top,
+										  mScreenPos.y + initPos.y + mRealAlignOffset.y + mRealPadding.Top,
 										  mScreenPos.x + endPos.x + mRealAlignOffset.x + mRealPadding.Left,
-										  mScreenPos.y + endPos.y + mRealAlignOffset.y + mRealPadding.Top )
+										  mScreenPos.y + endPos.y + vspace + mRealAlignOffset.y + mRealPadding.Top )
 				);
 			}
 		}

@@ -102,6 +102,20 @@ class EE_API Text {
 		const int& getNumLines();
 
 		void setStyleConfig( const FontStyleConfig& styleConfig );
+
+		/** Finds the closest cursor position to the point position */
+		Int32 findCharacterFromPos( const Vector2i& pos );
+
+		/** Simulates a selection request and return the initial and end cursor position when the selection worked. Otherwise both parameters will be -1. */
+		void findWordFromCharacterIndex( const Int32& characterIndex, Int32& InitCur, Int32& EndCur );
+
+		/** Cache the with of the current text */
+		void getWidthInfo( std::vector<Float>& LinesWidth, Float& CachedWidth, int& NumLines, int& LargestLineCharCount );
+
+		/** Shrink the String to a max width
+		* @param MaxWidth The Max Width posible
+		*/
+		void shrinkText( const Uint32& MaxWidth );
 	protected:
 		struct VertexCoords {
 			Vector2f texCoords;
