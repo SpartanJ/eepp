@@ -91,6 +91,19 @@ class EE_API UITextView : public UIWidget {
 		Int32			mSelCurEnd;
 		Recti		mPadding;
 		Recti		mRealPadding;
+		struct SelPosCache
+		{
+			SelPosCache( Vector2i ip, Vector2i ep ) :
+				initPos( ip ),
+				endPos( ep )
+			{}
+
+			Vector2i initPos;
+			Vector2i endPos;
+		};
+		std::vector<SelPosCache> mSelPosCache;
+		Int32		mLastSelCurInit;
+		Int32		mLastSelCurEnd;
 
 		virtual void drawSelection(Text * textCache);
 

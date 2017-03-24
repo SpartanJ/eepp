@@ -17,7 +17,9 @@ UITextView::UITextView() :
 	UIWidget(),
 	mRealAlignOffset( 0.f, 0.f ),
 	mSelCurInit( -1 ),
-	mSelCurEnd( -1 )
+	mSelCurEnd( -1 ),
+	mLastSelCurInit( -1 ),
+	mLastSelCurEnd( -1 )
 {
 	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 
@@ -382,27 +384,42 @@ void UITextView::drawSelection( Text * textCache ) {
 		Int32 lastEnd;
 		Vector2i initPos, endPos;
 
-		Primitives P;
-		P.setColor( mFontStyleConfig.FontSelectionBackColor );
+		if ( mLastSelCurInit != selCurInit() || mLastSelCurEnd != selCurEnd() ) {
+			mSelPosCache.clear();
+			mLastSelCurInit = selCurInit();
+			mLastSelCurEnd = selCurEnd();
 
-		do {
-			initPos	= textCache->getFont()->getCursorPos( textCache->getString(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), init );
-			lastEnd = textCache->getString().find_first_of( '\n', init );
+			do {
+				initPos	= textCache->getFont()->getCursorPos( textCache->getString(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), init );
+				lastEnd = textCache->getString().find_first_of( '\n', init );
 
-			if ( lastEnd < end && -1 != lastEnd ) {
-				endPos	= textCache->getFont()->getCursorPos( textCache->getString(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), lastEnd );
-				init	= lastEnd + 1;
-			} else {
-				endPos	= textCache->getFont()->getCursorPos( textCache->getString(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), end );
-				lastEnd = end;
+				if ( lastEnd < end && -1 != lastEnd ) {
+					endPos	= textCache->getFont()->getCursorPos( textCache->getString(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), lastEnd );
+					init	= lastEnd + 1;
+				} else {
+					endPos	= textCache->getFont()->getCursorPos( textCache->getString(), textCache->getCharacterSizePx(), textCache->getStyle() & Text::Bold, textCache->getOutlineThickness(), end );
+					lastEnd = end;
+				}
+
+				mSelPosCache.push_back( SelPosCache( initPos, endPos ) );
+			} while ( end != lastEnd );
+		}
+
+		if ( mSelPosCache.size() ) {
+			Primitives P;
+			P.setColor( mFontStyleConfig.FontSelectionBackColor );
+
+			for ( size_t i = 0; i < mSelPosCache.size(); i++ ) {
+				initPos = mSelPosCache[i].initPos;
+				endPos = mSelPosCache[i].endPos;
+
+				P.drawRectangle( Rectf( mScreenPos.x + initPos.x + mRealAlignOffset.x + mRealPadding.Left,
+										  mScreenPos.y + initPos.y - textCache->getFont()->getLineSpacing( textCache->getCharacterSizePx() ) + mRealAlignOffset.y + mRealPadding.Top,
+										  mScreenPos.x + endPos.x + mRealAlignOffset.x + mRealPadding.Left,
+										  mScreenPos.y + endPos.y + mRealAlignOffset.y + mRealPadding.Top )
+				);
 			}
-
-			P.drawRectangle( Rectf( mScreenPos.x + initPos.x + mRealAlignOffset.x + mRealPadding.Left,
-									  mScreenPos.y + initPos.y - textCache->getFont()->getLineSpacing( textCache->getCharacterSizePx() ) + mRealAlignOffset.y + mRealPadding.Top,
-									  mScreenPos.x + endPos.x + mRealAlignOffset.x + mRealPadding.Left,
-									  mScreenPos.y + endPos.y + mRealAlignOffset.y + mRealPadding.Top )
-			);
-		} while ( end != lastEnd );
+		}
 	}
 }
 
