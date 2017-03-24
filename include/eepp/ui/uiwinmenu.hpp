@@ -34,10 +34,6 @@ class EE_API UIWinMenu : public UIWidget {
 
 		void setMarginBetweenButtons(const Uint32 & marginBetweenButtons);
 
-		UITooltipStyleConfig getFontStyleConfig() const;
-
-		void setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig);
-
 		UIWinMenuStyleConfig getStyleConfig() const;
 
 		void setStyleConfig(const UIWinMenuStyleConfig & styleConfig);

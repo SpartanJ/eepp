@@ -8,178 +8,6 @@
 #include <cmath>
 
 namespace EE { namespace Graphics {
-	// Add an underline or strikethrough line to the vertex array
-	void Text::addLine(std::vector<VertexCoords>& vertices, std::vector<ColorA>& colors, Float lineLength, Float lineTop, const EE::System::ColorA& color, Float offset, Float thickness, Float outlineThickness, Sizei textureSize, Int32 centerDiffX) {
-		Float top = std::floor(lineTop + offset - (thickness / 2) + 0.5f);
-		Float bottom = top + std::floor(thickness + 0.5f);
-		Float u1 = 0;
-		Float v1 = 0;
-		Float u2 = 1 / (Float)textureSize.getWidth();
-		Float v2 = 1 / (Float)textureSize.getHeight();
-		VertexCoords vc;
-
-		if ( GLi->quadsSupported() ) {
-			vc.texCoords.x	= u1;
-			vc.texCoords.y	= v1;
-			vc.position.x	= centerDiffX + -outlineThickness;
-			vc.position.y	= top - outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-
-			vc.texCoords.x	= u1;
-			vc.texCoords.y	= v2;
-			vc.position.x	= centerDiffX + -outlineThickness;
-			vc.position.y	= bottom + outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-
-			vc.texCoords.x	= u2;
-			vc.texCoords.y	= v2;
-			vc.position.x	= centerDiffX + lineLength + outlineThickness;
-			vc.position.y	= bottom + outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-
-			vc.texCoords.x	= u2;
-			vc.texCoords.y	= v1;
-			vc.position.x	= centerDiffX + lineLength + outlineThickness;
-			vc.position.y	= top - outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-		} else {
-			vc.texCoords.x	= u1;
-			vc.texCoords.y	= v2;
-			vc.position.x	= centerDiffX + -outlineThickness;
-			vc.position.y	= bottom + outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-
-			vc.texCoords.x	= u1;
-			vc.texCoords.y	= v1;
-			vc.position.x	= centerDiffX + -outlineThickness;
-			vc.position.y	= top - outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-
-			vc.texCoords.x	= u2;
-			vc.texCoords.y	= v1;
-			vc.position.x	= centerDiffX + lineLength + outlineThickness;
-			vc.position.y	= top - outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-
-			vc.texCoords.x	= u1;
-			vc.texCoords.y	= v2;
-			vc.position.x	= centerDiffX + -outlineThickness;
-			vc.position.y	= bottom + outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-
-			vc.texCoords.x	= u2;
-			vc.texCoords.y	= v2;
-			vc.position.x	= centerDiffX + lineLength + outlineThickness;
-			vc.position.y	= bottom + outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-
-			vc.texCoords.x	= u2;
-			vc.texCoords.y	= v1;
-			vc.position.x	= centerDiffX + lineLength + outlineThickness;
-			vc.position.y	= top - outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-		}
-	}
-
-	// Add a glyph quad to the vertex array
-	void Text::addGlyphQuad(std::vector<VertexCoords>& vertices, std::vector<ColorA>& colors, Vector2f position, const EE::System::ColorA& color, const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness, Sizei textureSize, Int32 centerDiffX) {
-		Float left		= glyph.bounds.Left;
-		Float top		= glyph.bounds.Top;
-		Float right		= glyph.bounds.Left + glyph.bounds.Right;
-		Float bottom	= glyph.bounds.Top  + glyph.bounds.Bottom;
-
-		Float u1 = static_cast<Float>(glyph.textureRect.Left) / (Float)textureSize.getWidth();
-		Float v1 = static_cast<Float>(glyph.textureRect.Top) / (Float)textureSize.getHeight();
-		Float u2 = static_cast<Float>(glyph.textureRect.Left + glyph.textureRect.Right) / (Float)textureSize.getWidth();
-		Float v2 = static_cast<Float>(glyph.textureRect.Top  + glyph.textureRect.Bottom) / (Float)textureSize.getHeight();
-		VertexCoords vc;
-
-		if ( GLi->quadsSupported() ) {
-
-			vc.texCoords.x	= u1;
-			vc.texCoords.y	= v1;
-			vc.position.x	= centerDiffX + position.x + left  - italic * top	- outlineThickness;
-			vc.position.y	= position.y + top	- outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-
-			vc.texCoords.x	= u1;
-			vc.texCoords.y	= v2;
-			vc.position.x	= centerDiffX + position.x + left  - italic * bottom - outlineThickness;
-			vc.position.y	= position.y + bottom - outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-
-			vc.texCoords.x	= u2;
-			vc.texCoords.y	= v2;
-			vc.position.x	= centerDiffX + position.x + right - italic * bottom - outlineThickness;
-			vc.position.y	= position.y + bottom - outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-
-			vc.texCoords.x	= u2;
-			vc.texCoords.y	= v1;
-			vc.position.x	= centerDiffX + position.x + right - italic * top - outlineThickness;
-			vc.position.y	= position.y + top - outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-		} else {
-			vc.texCoords.x	= u1;
-			vc.texCoords.y	= v2;
-			vc.position.x	= centerDiffX + position.x + left  - italic * bottom - outlineThickness;
-			vc.position.y	= position.y + bottom - outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-
-			vc.texCoords.x	= u1;
-			vc.texCoords.y	= v1;
-			vc.position.x	= centerDiffX + position.x + left  - italic * top	- outlineThickness;
-			vc.position.y	= position.y + top	- outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-
-			vc.texCoords.x	= u2;
-			vc.texCoords.y	= v1;
-			vc.position.x	= centerDiffX + position.x + right - italic * top - outlineThickness;
-			vc.position.y	= position.y + top - outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-
-			vc.texCoords.x	= u1;
-			vc.texCoords.y	= v2;
-			vc.position.x	= centerDiffX + position.x + left  - italic * bottom - outlineThickness;
-			vc.position.y	= position.y + bottom - outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-
-			vc.texCoords.x	= u2;
-			vc.texCoords.y	= v2;
-			vc.position.x	= centerDiffX + position.x + right - italic * bottom - outlineThickness;
-			vc.position.y	= position.y + bottom - outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-
-			vc.texCoords.x	= u2;
-			vc.texCoords.y	= v1;
-			vc.position.x	= centerDiffX + position.x + right - italic * top - outlineThickness;
-			vc.position.y	= position.y + top - outlineThickness;
-			colors.push_back( color );
-			vertices.push_back( vc );
-		}
-	}
-}}
-
-namespace EE { namespace Graphics {
 
 Text::Text() :
 	mString(),
@@ -192,11 +20,12 @@ Text::Text() :
 	mOutlineThickness (0),
 	mGeometryNeedUpdate(false),
 	mCachedWidthNeedUpdate(false),
+	mColorsNeedUpdate(false),
 	mCachedWidth(0),
 	mNumLines(0),
 	mLargestLineCharCount(0),
 	mFontShadowColor( ColorA( 0, 0, 0, 255 ) ),
-	mFlags(0),
+	mAlign(0),
 	mFontHeight(0)
 {
 }
@@ -212,11 +41,12 @@ Text::Text(const String& string, Font * font, unsigned int characterSize) :
 	mOutlineThickness(0),
 	mGeometryNeedUpdate(true),
 	mCachedWidthNeedUpdate(true),
+	mColorsNeedUpdate(true),
 	mCachedWidth(0),
 	mNumLines(0),
 	mLargestLineCharCount(0),
 	mFontShadowColor( ColorA( 0, 0, 0, 255 ) ),
-	mFlags(0),
+	mAlign(0),
 	mFontHeight( mFont->getFontHeight( mRealCharacterSize ) )
 {
 }
@@ -231,11 +61,12 @@ Text::Text(Font * font, unsigned int characterSize) :
 	mOutlineThickness(0),
 	mGeometryNeedUpdate(true),
 	mCachedWidthNeedUpdate(true),
+	mColorsNeedUpdate(true),
 	mCachedWidth(0),
 	mNumLines(0),
 	mLargestLineCharCount(0),
 	mFontShadowColor( ColorA( 0, 0, 0, 255 ) ),
-	mFlags(0),
+	mAlign(0),
 	mFontHeight( mFont->getFontHeight( mRealCharacterSize ) )
 {
 }
@@ -245,16 +76,18 @@ void Text::create(Font * font, const String & text, ColorA FontColor, ColorA Fon
 	mString = text;
 	mCharacterSize = characterSize;
 	mRealCharacterSize = PixelDensity::dpToPxI(mCharacterSize);
-	setColor( FontColor );
+	setFillColor( FontColor );
 	setShadowColor( FontShadowColor );
 	mGeometryNeedUpdate = true;
 	mCachedWidthNeedUpdate = true;
+	mColorsNeedUpdate = true;
 	ensureGeometryUpdate();
 }
 
 void Text::setString(const String& string) {
 	if (mString != string) {
 		mString = string;
+		mColorsNeedUpdate = true;
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
 	}
@@ -273,7 +106,7 @@ void Text::setFont(Font * font) {
 }
 
 void Text::setCharacterSize(unsigned int size) {
-	if (mCharacterSize != size) {
+	if ( NULL != mFont && mCharacterSize != size) {
 		mCharacterSize = size;
 
 		mRealCharacterSize = PixelDensity::dpToPxI( mCharacterSize );
@@ -287,6 +120,7 @@ void Text::setCharacterSize(unsigned int size) {
 void Text::setStyle(Uint32 style) {
 	if (mStyle != style) {
 		mStyle = style;
+		mColorsNeedUpdate = true;
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
 	}
@@ -299,30 +133,21 @@ void Text::setColor(const ColorA & color) {
 void Text::setFillColor(const ColorA& color) {
 	if (color != mFillColor) {
 		mFillColor = color;
-
-		// Change vertex colors directly, no need to update whole geometry
-		// (if geometry is updated anyway, we can skip this step)
-		if (!mGeometryNeedUpdate) {
-			mColors.assign( mVertices.size(), mFillColor );
-		}
+		mColorsNeedUpdate = true;
 	}
 }
 
 void Text::setOutlineColor(const ColorA& color) {
 	if (color != mOutlineColor) {
 		mOutlineColor = color;
-
-		// Change vertex colors directly, no need to update whole geometry
-		// (if geometry is updated anyway, we can skip this step)
-		if (!mGeometryNeedUpdate) {
-			mOutlineColors.assign( mOutlineVertices.size(), mOutlineColor );
-		}
+		mColorsNeedUpdate = true;
 	}
 }
 
 void Text::setOutlineThickness(Float thickness) {
 	if (thickness != mOutlineThickness) {
 		mOutlineThickness = thickness;
+		mColorsNeedUpdate = true;
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
 	}
@@ -454,13 +279,14 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 
 			if ( Col.a != 255 ) {
 				ColorA ShadowColor = getShadowColor();
-
 				ShadowColor.a = (Uint8)( (Float)ShadowColor.a * ( (Float)Col.a / (Float)255 ) );
 
 				setFillColor( ShadowColor );
 			} else {
 				setFillColor( getShadowColor() );
 			}
+
+			mColors.assign( mColors.size(), getFillColor() );
 
 			Float pd = PixelDensity::dpToPx(1);
 
@@ -469,6 +295,7 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 			mStyle = f;
 
 			setFillColor( Col );
+			mColors.assign( mColors.size(), getFillColor() );
 		}
 
 		if ( Angle != 0.0f || Scale != 1.0f ) {
@@ -536,9 +363,7 @@ void Text::ensureGeometryUpdate() {
 
 	// Clear the previous geometry
 	mVertices.clear();
-	mColors.clear();;
 	mOutlineVertices.clear();
-	mOutlineColors.clear();
 	mBounds = Rectf();
 
 	// No font or text: nothing to draw
@@ -575,14 +400,15 @@ void Text::ensureGeometryUpdate() {
 	Float centerDiffX = 0;
 	unsigned int Line = 0;
 
+	ensureColorUpdate();
 	cacheWidth();
 
-	switch ( fontHAlignGet( mFlags ) ) {
-		case FONT_DRAW_CENTER:
+	switch ( fontHAlignGet( mAlign ) ) {
+		case TEXT_ALIGN_CENTER:
 			centerDiffX = (Float)( (Int32)( ( mCachedWidth - mLinesWidth[ Line ] ) * 0.5f ) );
 			Line++;
 			break;
-		case FONT_DRAW_RIGHT:
+		case TEXT_ALIGN_RIGHT:
 			centerDiffX = mCachedWidth - mLinesWidth[ Line ];
 			Line++;
 			break;
@@ -597,26 +423,26 @@ void Text::ensureGeometryUpdate() {
 
 		// If we're using the underlined style and there's a new line, draw a line
 		if (underlined && (curChar == L'\n')) {
-			addLine(mVertices, mColors, x, y, mFillColor, underlineOffset, underlineThickness, 0, textureSize, centerDiffX);
+			addLine(mVertices, x, y, underlineOffset, underlineThickness, 0, textureSize, centerDiffX);
 
 			if (mOutlineThickness != 0)
-				addLine(mOutlineVertices, mOutlineColors, x, y, mOutlineColor, underlineOffset, underlineThickness, mOutlineThickness, textureSize, centerDiffX);
+				addLine(mOutlineVertices, x, y, underlineOffset, underlineThickness, mOutlineThickness, textureSize, centerDiffX);
 		}
 
 		// If we're using the strike through style and there's a new line, draw a line across all characters
 		if (strikeThrough && (curChar == L'\n')) {
-			addLine(mVertices, mColors, x, y, mFillColor, strikeThroughOffset, underlineThickness, 0, textureSize, centerDiffX);
+			addLine(mVertices, x, y, strikeThroughOffset, underlineThickness, 0, textureSize, centerDiffX);
 
 			if (mOutlineThickness != 0)
-				addLine(mOutlineVertices, mOutlineColors, x, y, mOutlineColor, strikeThroughOffset, underlineThickness, mOutlineThickness, textureSize, centerDiffX);
+				addLine(mOutlineVertices, x, y, strikeThroughOffset, underlineThickness, mOutlineThickness, textureSize, centerDiffX);
 		}
 
 		if ( curChar == L'\n' ) {
-			switch ( fontHAlignGet( mFlags ) ) {
-				case FONT_DRAW_CENTER:
+			switch ( fontHAlignGet( mAlign ) ) {
+				case TEXT_ALIGN_CENTER:
 					centerDiffX = (Float)( (Int32)( ( mCachedWidth - mLinesWidth[ Line ] ) * 0.5f ) );
 					break;
-				case FONT_DRAW_RIGHT:
+				case TEXT_ALIGN_RIGHT:
 					centerDiffX = mCachedWidth - mLinesWidth[ Line ];
 					break;
 			}
@@ -655,7 +481,7 @@ void Text::ensureGeometryUpdate() {
 			Float bottom = glyph.bounds.Top  + glyph.bounds.Bottom;
 
 			// Add the outline glyph to the vertices
-			addGlyphQuad(mOutlineVertices, mOutlineColors, Vector2f(x, y), mOutlineColor, glyph, italic, mOutlineThickness, textureSize, centerDiffX);
+			addGlyphQuad(mOutlineVertices, Vector2f(x, y), glyph, italic, mOutlineThickness, textureSize, centerDiffX);
 
 			// Update the current bounds with the outlined glyph bounds
 			minX = std::min(minX, x + left   - italic * bottom - mOutlineThickness);
@@ -668,7 +494,7 @@ void Text::ensureGeometryUpdate() {
 		const Glyph& glyph = mFont->getGlyph(curChar, mRealCharacterSize, bold);
 
 		// Add the glyph to the vertices
-		addGlyphQuad(mVertices, mColors, Vector2f(x, y), mFillColor, glyph, italic, 0, textureSize, centerDiffX);
+		addGlyphQuad(mVertices, Vector2f(x, y), glyph, italic, 0, textureSize, centerDiffX);
 
 		// Update the current bounds with the non outlined glyph bounds
 		if (mOutlineThickness == 0) {
@@ -689,18 +515,18 @@ void Text::ensureGeometryUpdate() {
 
 	// If we're using the underlined style, add the last line
 	if (underlined && (x > 0)) {
-		addLine(mVertices, mColors, x, y, mFillColor, underlineOffset, underlineThickness, 0, textureSize, centerDiffX);
+		addLine(mVertices, x, y, underlineOffset, underlineThickness, 0, textureSize, centerDiffX);
 
 		if (mOutlineThickness != 0)
-			addLine(mOutlineVertices, mOutlineColors, x, y, mOutlineColor, underlineOffset, underlineThickness, mOutlineThickness, textureSize, centerDiffX);
+			addLine(mOutlineVertices, x, y, underlineOffset, underlineThickness, mOutlineThickness, textureSize, centerDiffX);
 	}
 
 	// If we're using the strike through style, add the last line across all characters
 	if (strikeThrough && (x > 0)) {
-		addLine(mVertices, mColors, x, y, mFillColor, strikeThroughOffset, underlineThickness, 0, textureSize, centerDiffX);
+		addLine(mVertices, x, y, strikeThroughOffset, underlineThickness, 0, textureSize, centerDiffX);
 
 		if (mOutlineThickness != 0)
-			addLine(mOutlineVertices, mOutlineColors, x, y, mOutlineColor, strikeThroughOffset, underlineThickness, mOutlineThickness, textureSize, centerDiffX);
+			addLine(mOutlineVertices, x, y, strikeThroughOffset, underlineThickness, mOutlineThickness, textureSize, centerDiffX);
 	}
 
 	// Update the bounding rectangle
@@ -708,6 +534,22 @@ void Text::ensureGeometryUpdate() {
 	mBounds.Top = minY;
 	mBounds.Right = maxX - minX;
 	mBounds.Bottom = maxY - minY;
+}
+
+void Text::ensureColorUpdate() {
+	if ( mColorsNeedUpdate ) {
+		Uint32 tv = getTotalVertices();
+
+		if ( mColors.size() < tv ) {
+			mColors.resize( tv, mFillColor );
+		}
+
+		if ( 0 != mOutlineThickness && ( mOutlineColors.size() < tv ) ) {
+			mOutlineColors.resize( tv, mOutlineColor );
+		}
+
+		mColorsNeedUpdate = false;
+	}
 }
 
 const ColorA& Text::getShadowColor() const {
@@ -730,15 +572,15 @@ const std::vector<Float>& Text::getLinesWidth() {
 	return mLinesWidth;
 }
 
-void Text::setFlags( const Uint32& flags ) {
-	if ( mFlags != flags ) {
-		mFlags = flags;
+void Text::setAlign( const Uint32& align ) {
+	if ( mAlign != align ) {
+		mAlign = align;
 		mGeometryNeedUpdate = true;
 	}
 }
 
-const Uint32& Text::getFlags() const {
-	return mFlags;
+const Uint32& Text::getAlign() const {
+	return mAlign;
 }
 
 void Text::cacheWidth() {
@@ -760,6 +602,289 @@ void Text::setStyleConfig( const FontStyleConfig& styleConfig ) {
 	setStyle( styleConfig.Style );
 	setOutlineThickness( styleConfig.OutlineThickness );
 	setOutlineColor( styleConfig.OutlineColor );
+}
+
+void Text::setFillColor( const ColorA& color, Uint32 from, Uint32 to ) {
+	if ( mString.empty() )
+		return;
+
+	ensureColorUpdate();
+
+	bool  underlined = (mStyle & Underlined) != 0;
+	bool  strikeThrough = (mStyle & StrikeThrough) != 0;
+	std::vector<ColorA> colors( GLi->quadVertexs(), color );
+	std::size_t s = mString.size();
+
+	if ( to >= s ) {
+		to = s - 1;
+	}
+
+	if ( from <= to && from < s && to <= s ) {
+		size_t rto	= to + 1;
+		Int32 rpos	= from;
+		Int32 lpos	= 0;
+		Uint32 i;
+		Uint32 qsize = sizeof(ColorA) * GLi->quadVertexs();
+		String::StringBaseType curChar;
+
+		// Spaces, new lines and tabs are not rendered, and not counted as a color
+		// We need to skip those characters as nonexistent chars
+		for ( i = 0; i < from; i++ ) {
+			curChar = mString[i];
+
+			if ( ' ' == curChar || '\n' == curChar || '\t' == curChar ) {
+				if ( rpos > 0 ) {
+					rpos--;
+
+					if ( '\n' == curChar) {
+						if ( underlined )
+							rpos++;
+
+						if ( strikeThrough )
+							rpos++;
+					}
+				}
+			}
+		}
+
+		for ( Uint32 i = from; i < rto; i++ ) {
+			curChar = mString[i];
+
+			lpos	= rpos;
+			rpos++;
+
+			// Same here
+			if ( ' ' == curChar || '\n' == curChar || '\t' == curChar ) {
+				if ( rpos > 0 ) {
+					rpos--;
+
+					if ( '\n' == curChar) {
+						if ( underlined ) {
+							memcpy( &(mColors[ rpos * GLi->quadVertexs() ]), &colors[0], qsize );
+							rpos++;
+						}
+
+						if ( strikeThrough ) {
+							memcpy( &(mColors[ rpos * GLi->quadVertexs() ]), &colors[0], qsize );
+							rpos++;
+						}
+					}
+				}
+			}
+
+			memcpy( &(mColors[ lpos * GLi->quadVertexs() ]), &colors[0], qsize );
+		}
+
+		if ( rto == s ) {
+			if ( underlined ) {
+				lpos++;
+				Uint32 pos = lpos * GLi->quadVertexs();
+
+				if ( pos < mColors.size() )
+					memcpy( &(mColors[ lpos * GLi->quadVertexs() ]), &colors[0], qsize );
+			}
+
+			if ( strikeThrough ) {
+				lpos++;
+				Uint32 pos = lpos * GLi->quadVertexs();
+
+				if ( pos < mColors.size() )
+					memcpy( &(mColors[ lpos * GLi->quadVertexs() ]), &colors[0], qsize );
+			}
+		}
+	}
+}
+
+// Add an underline or strikethrough line to the vertex array
+void Text::addLine(std::vector<VertexCoords>& vertices, Float lineLength, Float lineTop, Float offset, Float thickness, Float outlineThickness, Sizei textureSize, Int32 centerDiffX) {
+	Float top = std::floor(lineTop + offset - (thickness / 2) + 0.5f);
+	Float bottom = top + std::floor(thickness + 0.5f);
+	Float u1 = 0;
+	Float v1 = 0;
+	Float u2 = 1 / (Float)textureSize.getWidth();
+	Float v2 = 1 / (Float)textureSize.getHeight();
+	VertexCoords vc;
+
+	if ( GLi->quadsSupported() ) {
+		vc.texCoords.x	= u1;
+		vc.texCoords.y	= v1;
+		vc.position.x	= centerDiffX + -outlineThickness;
+		vc.position.y	= top - outlineThickness;
+		vertices.push_back( vc );
+
+		vc.texCoords.x	= u1;
+		vc.texCoords.y	= v2;
+		vc.position.x	= centerDiffX + -outlineThickness;
+		vc.position.y	= bottom + outlineThickness;
+		vertices.push_back( vc );
+
+		vc.texCoords.x	= u2;
+		vc.texCoords.y	= v2;
+		vc.position.x	= centerDiffX + lineLength + outlineThickness;
+		vc.position.y	= bottom + outlineThickness;
+		vertices.push_back( vc );
+
+		vc.texCoords.x	= u2;
+		vc.texCoords.y	= v1;
+		vc.position.x	= centerDiffX + lineLength + outlineThickness;
+		vc.position.y	= top - outlineThickness;
+		vertices.push_back( vc );
+	} else {
+		vc.texCoords.x	= u1;
+		vc.texCoords.y	= v2;
+		vc.position.x	= centerDiffX + -outlineThickness;
+		vc.position.y	= bottom + outlineThickness;
+		vertices.push_back( vc );
+
+		vc.texCoords.x	= u1;
+		vc.texCoords.y	= v1;
+		vc.position.x	= centerDiffX + -outlineThickness;
+		vc.position.y	= top - outlineThickness;
+		vertices.push_back( vc );
+
+		vc.texCoords.x	= u2;
+		vc.texCoords.y	= v1;
+		vc.position.x	= centerDiffX + lineLength + outlineThickness;
+		vc.position.y	= top - outlineThickness;
+		vertices.push_back( vc );
+
+		vc.texCoords.x	= u1;
+		vc.texCoords.y	= v2;
+		vc.position.x	= centerDiffX + -outlineThickness;
+		vc.position.y	= bottom + outlineThickness;
+		vertices.push_back( vc );
+
+		vc.texCoords.x	= u2;
+		vc.texCoords.y	= v2;
+		vc.position.x	= centerDiffX + lineLength + outlineThickness;
+		vc.position.y	= bottom + outlineThickness;
+		vertices.push_back( vc );
+
+		vc.texCoords.x	= u2;
+		vc.texCoords.y	= v1;
+		vc.position.x	= centerDiffX + lineLength + outlineThickness;
+		vc.position.y	= top - outlineThickness;
+		vertices.push_back( vc );
+	}
+}
+
+// Add a glyph quad to the vertex array
+void Text::addGlyphQuad(std::vector<VertexCoords>& vertices, Vector2f position, const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness, Sizei textureSize, Int32 centerDiffX) {
+	Float left		= glyph.bounds.Left;
+	Float top		= glyph.bounds.Top;
+	Float right		= glyph.bounds.Left + glyph.bounds.Right;
+	Float bottom	= glyph.bounds.Top  + glyph.bounds.Bottom;
+
+	Float u1 = static_cast<Float>(glyph.textureRect.Left) / (Float)textureSize.getWidth();
+	Float v1 = static_cast<Float>(glyph.textureRect.Top) / (Float)textureSize.getHeight();
+	Float u2 = static_cast<Float>(glyph.textureRect.Left + glyph.textureRect.Right) / (Float)textureSize.getWidth();
+	Float v2 = static_cast<Float>(glyph.textureRect.Top  + glyph.textureRect.Bottom) / (Float)textureSize.getHeight();
+	VertexCoords vc;
+
+	if ( GLi->quadsSupported() ) {
+
+		vc.texCoords.x	= u1;
+		vc.texCoords.y	= v1;
+		vc.position.x	= centerDiffX + position.x + left  - italic * top	- outlineThickness;
+		vc.position.y	= position.y + top	- outlineThickness;
+		vertices.push_back( vc );
+
+		vc.texCoords.x	= u1;
+		vc.texCoords.y	= v2;
+		vc.position.x	= centerDiffX + position.x + left  - italic * bottom - outlineThickness;
+		vc.position.y	= position.y + bottom - outlineThickness;
+		vertices.push_back( vc );
+
+		vc.texCoords.x	= u2;
+		vc.texCoords.y	= v2;
+		vc.position.x	= centerDiffX + position.x + right - italic * bottom - outlineThickness;
+		vc.position.y	= position.y + bottom - outlineThickness;
+		vertices.push_back( vc );
+
+		vc.texCoords.x	= u2;
+		vc.texCoords.y	= v1;
+		vc.position.x	= centerDiffX + position.x + right - italic * top - outlineThickness;
+		vc.position.y	= position.y + top - outlineThickness;
+		vertices.push_back( vc );
+	} else {
+		vc.texCoords.x	= u1;
+		vc.texCoords.y	= v2;
+		vc.position.x	= centerDiffX + position.x + left  - italic * bottom - outlineThickness;
+		vc.position.y	= position.y + bottom - outlineThickness;
+		vertices.push_back( vc );
+
+		vc.texCoords.x	= u1;
+		vc.texCoords.y	= v1;
+		vc.position.x	= centerDiffX + position.x + left  - italic * top	- outlineThickness;
+		vc.position.y	= position.y + top	- outlineThickness;
+		vertices.push_back( vc );
+
+		vc.texCoords.x	= u2;
+		vc.texCoords.y	= v1;
+		vc.position.x	= centerDiffX + position.x + right - italic * top - outlineThickness;
+		vc.position.y	= position.y + top - outlineThickness;
+		vertices.push_back( vc );
+
+		vc.texCoords.x	= u1;
+		vc.texCoords.y	= v2;
+		vc.position.x	= centerDiffX + position.x + left  - italic * bottom - outlineThickness;
+		vc.position.y	= position.y + bottom - outlineThickness;
+		vertices.push_back( vc );
+
+		vc.texCoords.x	= u2;
+		vc.texCoords.y	= v2;
+		vc.position.x	= centerDiffX + position.x + right - italic * bottom - outlineThickness;
+		vc.position.y	= position.y + bottom - outlineThickness;
+		vertices.push_back( vc );
+
+		vc.texCoords.x	= u2;
+		vc.texCoords.y	= v1;
+		vc.position.x	= centerDiffX + position.x + right - italic * top - outlineThickness;
+		vc.position.y	= position.y + top - outlineThickness;
+		vertices.push_back( vc );
+	}
+}
+
+Uint32 Text::getTotalVertices() {
+	bool  underlined = (mStyle & Underlined) != 0;
+	bool  strikeThrough = (mStyle & StrikeThrough) != 0;
+	size_t sl = mString.size();
+	size_t sv = sl * GLi->quadVertexs();
+
+	Uint32 * c = &mString[0];
+	Uint32 skiped = 0;
+	bool lineHasChars = false;
+
+	while ( '\0' != *c ) {
+		lineHasChars = true;
+
+		if ( ' ' == *c || '\n' == *c || '\t' == *c ) {
+			lineHasChars = false;
+			skiped++;
+
+			if ( '\n' == *c ) {
+				if ( underlined )
+					skiped--;
+
+				if ( strikeThrough )
+					skiped--;
+			}
+		}
+
+		c++;
+	}
+
+	if ( lineHasChars ) {
+		if ( underlined )
+			skiped--;
+
+		if ( strikeThrough )
+			skiped--;
+	}
+
+	sv -= skiped * GLi->quadVertexs();
+
+	return sv;
 }
 
 }}

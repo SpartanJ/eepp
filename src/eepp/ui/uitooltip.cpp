@@ -94,7 +94,7 @@ void UITooltip::draw() {
 		UIControlAnim::draw();
 
 		if ( mTextCache->getTextWidth() ) {
-			mTextCache->setFlags( getFlags() );
+			mTextCache->setAlign( getFlags() );
 			mTextCache->draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, Vector2f::One, 0.f, getBlendMode() );
 		}
 	}

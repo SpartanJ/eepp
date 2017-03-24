@@ -1353,7 +1353,7 @@ void EETest::screen4() {
 		mVBO->draw();
 		mVBO->unbind();
 
-		mFBOText.setFlags( FONT_DRAW_CENTER );
+		mFBOText.setAlign( TEXT_ALIGN_CENTER );
 		mFBOText.draw( 128.f - (Float)(Int32)( mFBOText.getTextWidth() * 0.5f ), 25.f - (Float)(Int32)( mFBOText.getTextHeight() * 0.5f ) );
 	}
 
@@ -1435,7 +1435,7 @@ void EETest::render() {
 	ColorA ColRR2( 100, 100, 100, 220 );
 	ColorA ColRR3( 100, 100, 100, 220 );
 
-	mEEText.setFlags( FONT_DRAW_CENTER );
+	mEEText.setAlign( TEXT_ALIGN_CENTER );
 
 	PR.setColor( ColorA(150, 150, 150, 220) );
 	PR.setFillMode( DRAW_FILL );

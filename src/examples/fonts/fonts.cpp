@@ -4,12 +4,12 @@
 
 EE::Window::Window * win			= NULL;
 FontTrueType * fontTest;
-Uint32 nextGliph = 0;
-Clock timer;
+FontTrueType * fontTest2;
 Text text;
+Text text2;
+Text text3;
 
-void mainLoop()
-{
+void mainLoop() {
 	// Clear the screen buffer
 	win->clear();
 
@@ -22,53 +22,30 @@ void mainLoop()
 		win->close();
 	}
 
-/*
-	Float YPos = 32;
+	text.draw( ( win->getWidth() - text.getTextWidth() ) * 0.5f, 32 );
 
-	// Draw the text on screen
-	TTFCache.draw( win->getWidth() * 0.5f - TTFCache.getTextWidth() * 0.5f, YPos );
-
-	TTFOCache.draw( ( win->getWidth() - TTFOCache.getTextWidth() ) * 0.5f, ( YPos += TTFCache.getTextHeight() + 24 ) );
-
-	TTF2Cache.draw( ( win->getWidth() - TTF2Cache.getTextWidth() ) * 0.5f, ( YPos += TTFOCache.getTextHeight() + 24 ) );
-
-	TexFCache.draw( ( win->getWidth() - TexFCache.getTextWidth() ) * 0.5f, ( YPos += TTF2Cache.getTextHeight() + 24 ) );
-
-	TexF2Cache.draw( ( win->getWidth() - TexF2Cache.getTextWidth() ) * 0.5f, ( YPos += TexFCache.getTextHeight() + 24 ) );
-
-	// Draw the cached text
-	TxtCache.draw( ( win->getWidth() - TxtCache.getTextWidth() ) * 0.5f, ( YPos += TexF2Cache.getTextHeight() + 24 ) );
+	text2.draw( ( win->getWidth() - text2.getTextWidth() ) * 0.5f, 300 );
 
 	// Text rotated and scaled
-	TTFCache.draw( ( win->getWidth() - TTFCache.getTextWidth() ) * 0.5f, 512 + 32, Vector2f( 0.75f, 0.75f ), 12.5f );
-*/
-	/*if ( timer.getElapsedTime().asMilliseconds() > 50 ) {
-		fontTest.getGlyph( nextGliph, 48, false );
-		nextGliph++;
-		timer.restart();
-	}*/
+	text2.draw( ( win->getWidth() - text2.getTextWidth() ) * 0.5f, 430, Vector2f(1.1f,1.1f), 12.5f );
 
-	text.draw( ( win->getWidth() - text.getTextWidth() ) * 0.5f, 0 );
+	text3.draw( ( win->getWidth() - text3.getTextWidth() ) * 0.5f, 560 );
 
 	// Draw frame
 	win->display();
 }
 
-EE_MAIN_FUNC int main (int argc, char * argv [])
-{
+EE_MAIN_FUNC int main (int argc, char * argv []) {
 	// Create a new window
 	win = Engine::instance()->createWindow( WindowSettings( 960, 640, "eepp - Fonts" ), ContextSettings( true ) );
 
 	// Set window background color
-	win->setClearColor( RGB(255,255,255) );
+	win->setClearColor( Color(230,230,230) );
 
 	// Check if created
 	if ( win->isOpen() ) {
 		// Get the application path
 		std::string AppPath = Sys::getProcessPath();
-
-		// Save the TTF font so then it can be loaded as a TextureFont
-		//TTF->save( AppPath + "assets/temp/DejaVuSansMono.png", AppPath + "assets/temp/DejaVuSansMono.fnt" );
 
 		// Create a new text string
 		String Txt( "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." );
@@ -76,14 +53,34 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		fontTest = FontTrueType::New( "DejaVuSansMono" );
 		fontTest->loadFromFile( AppPath + "assets/fonts/DejaVuSansMono.ttf" );
 		fontTest->shrinkText( Txt, 24, false, 2, win->getWidth() - 96 );
+
 		text.setFont( fontTest );
 		text.setCharacterSize( 24 );
-		text.setFillColor( 0xFFFFFFFF );
-		text.setOutlineThickness( 2 );
-		text.setFlags( FONT_DRAW_CENTER );
+		text.setAlign( TEXT_ALIGN_CENTER );
 		text.setString( Txt );
 
-		win->setClearColor( RGB(230,230,230) );
+		// Set the font color to a substring of the text
+		// Create a gradient
+		size_t size = Txt.size();
+
+		for ( size_t i = 0; i < size; i++ ) {
+			text.setFillColor( ColorA(255*i/size,0,0,255), i, i+1 );
+		}
+
+		fontTest2 = FontTrueType::New( "Arial" );
+		fontTest2->loadFromFile( AppPath + "assets/fonts/arial.ttf" );
+
+		text2.setFont( fontTest2 );
+		text2.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
+		text2.setCharacterSize( 32 );
+		text2.setFillColor( Color::Black );
+
+		text3.setFont( fontTest );
+		text3.setString( text2.getString() );
+		text3.setOutlineThickness( 2 );
+		text3.setCharacterSize( 24 );
+		text3.setFillColor( ColorA(255,255,255,255) );
+		text3.setOutlineColor( ColorA(0,0,0,255) );
 
 		// Application loop
 		win->runMainLoop( &mainLoop );

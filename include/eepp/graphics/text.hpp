@@ -40,6 +40,8 @@ class EE_API Text {
 
 		void setFillColor(const ColorA& color);
 
+		void setFillColor(const ColorA& color, Uint32 from, Uint32 to);
+
 		void setOutlineColor(const ColorA& color);
 
 		void setOutlineThickness(Float thickness);
@@ -90,11 +92,11 @@ class EE_API Text {
 		/** @return Every cached text line width */
 		const std::vector<Float>& getLinesWidth();
 
-		/** Set the font draw flags */
-		void setFlags( const Uint32& flags );
+		/** Set the text draw align */
+		void setAlign( const Uint32& align );
 
-		/** @return The font draw flags */
-		const Uint32& getFlags() const;
+		/** @return The text align */
+		const Uint32& getAlign() const;
 
 		/** @return The number of lines that the cached text contains */
 		const int& getNumLines();
@@ -119,12 +121,13 @@ class EE_API Text {
 		mutable Rectf   	mBounds;			 ///< Bounding rectangle of the text (in local coordinates)
 		mutable bool		mGeometryNeedUpdate; ///< Does the geometry need to be recomputed?
 		mutable bool		mCachedWidthNeedUpdate;
+		mutable bool		mColorsNeedUpdate;
 
 		Float				mCachedWidth;
 		int					mNumLines;
 		int					mLargestLineCharCount;
 		ColorA				mFontShadowColor;
-		Uint32				mFlags;
+		Uint32				mAlign;
 		Uint32				mFontHeight;
 
 		std::vector<VertexCoords>	mVertices;
@@ -136,12 +139,16 @@ class EE_API Text {
 
 		void ensureGeometryUpdate();
 
+		void ensureColorUpdate();
+
 		/** Force to cache the width of the current text */
 		void cacheWidth();
 
-		static void addLine(std::vector<VertexCoords>& vertices, std::vector<ColorA>& colors, Float lineLength, Float lineTop, const EE::System::ColorA& color, Float offset, Float thickness, Float outlineThickness, Sizei textureSize, Int32 centerDiffX);
+		static void addLine(std::vector<VertexCoords>& vertice, Float lineLength, Float lineTop, Float offset, Float thickness, Float outlineThickness, Sizei textureSize, Int32 centerDiffX);
 
-		static void addGlyphQuad(std::vector<VertexCoords>& vertices, std::vector<ColorA>& colors, Vector2f position, const EE::System::ColorA& color, const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness, Sizei textureSize, Int32 centerDiffX);
+		static void addGlyphQuad(std::vector<VertexCoords>& vertices, Vector2f position, const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness, Sizei textureSize, Int32 centerDiffX);
+
+		Uint32 getTotalVertices();
 };
 
 }}

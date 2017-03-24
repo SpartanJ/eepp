@@ -62,7 +62,7 @@ void UITextView::draw() {
 				);
 			}
 
-			mTextCache->setFlags( getFlags() );
+			mTextCache->setAlign( getFlags() );
 			mTextCache->draw( (Float)mScreenPos.x + mRealAlignOffset.x + (Float)mRealPadding.Left, (Float)mScreenPos.y + mRealAlignOffset.y + (Float)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {

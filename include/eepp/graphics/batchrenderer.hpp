@@ -262,7 +262,7 @@ class EE_API BatchRenderer {
 
 		void rotate( const Vector2f& center, Vector2f* point, const Float& angle );
 
-		void setBlendMode( EE_DRAW_MODE Mode, const bool& Force );
+		void setDrawMode( const EE_DRAW_MODE & Mode, const bool& Force );
 };
 
 }}
