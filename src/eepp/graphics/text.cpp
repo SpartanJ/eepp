@@ -230,6 +230,7 @@ Vector2f Text::findCharacterPos(std::size_t index) const {
 			case ' ':  position.x += hspace;				 continue;
 			case '\t': position.x += hspace * 4;			 continue;
 			case '\n': position.y += vspace; position.x = 0; continue;
+			case '\r': continue;
 		}
 
 		// For regular characters, add the advance offset of the glyph
@@ -451,7 +452,7 @@ void Text::ensureGeometryUpdate() {
 		}
 
 		// Handle special characters
-		if ((curChar == ' ') || (curChar == '\t') || (curChar == '\n')) {
+		if ((curChar == ' ') || (curChar == '\t') || (curChar == '\n') || (curChar == '\r')) {
 			// Update the current bounds (min coordinates)
 			minX = std::min(minX, x);
 			minY = std::min(minY, y);
@@ -460,6 +461,7 @@ void Text::ensureGeometryUpdate() {
 				case ' ':  x += hspace;		break;
 				case '\t': x += hspace * 4;	break;
 				case '\n': y += vspace; x = 0; break;
+				case '\r': break;
 			}
 
 			// Update the current bounds (max coordinates)
@@ -632,7 +634,7 @@ void Text::setFillColor( const ColorA& color, Uint32 from, Uint32 to ) {
 		for ( i = 0; i < from; i++ ) {
 			curChar = mString[i];
 
-			if ( ' ' == curChar || '\n' == curChar || '\t' == curChar ) {
+			if ( ' ' == curChar || '\n' == curChar || '\t' == curChar || '\r' == curChar ) {
 				if ( rpos > 0 ) {
 					rpos--;
 
@@ -654,7 +656,7 @@ void Text::setFillColor( const ColorA& color, Uint32 from, Uint32 to ) {
 			rpos++;
 
 			// Same here
-			if ( ' ' == curChar || '\n' == curChar || '\t' == curChar ) {
+			if ( ' ' == curChar || '\n' == curChar || '\t' == curChar || '\r' == curChar ) {
 				if ( rpos > 0 ) {
 					rpos--;
 
@@ -858,7 +860,7 @@ Uint32 Text::getTotalVertices() {
 	while ( '\0' != *c ) {
 		lineHasChars = true;
 
-		if ( ' ' == *c || '\n' == *c || '\t' == *c ) {
+		if ( ' ' == *c || '\n' == *c || '\t' == *c || '\r' == *c ) {
 			lineHasChars = false;
 			skiped++;
 

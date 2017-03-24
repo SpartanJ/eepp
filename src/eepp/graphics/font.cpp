@@ -48,7 +48,8 @@ void Font::cacheWidth( const String& Text, const Uint32& characterSize, bool bol
 		CharID = static_cast<Int32>( Text.at(i) );
 		Glyph glyph = getGlyph( CharID, characterSize, bold, outlineThickness );
 
-		Width += glyph.advance;
+		if ( CharID != '\r' )
+			Width += glyph.advance;
 
 		CharCount++;
 
@@ -93,7 +94,8 @@ Int32 Font::findClosestCursorPosFromPoint( const String& Text, const Uint32& cha
 
 		lWidth = Width;
 
-		Width += glyph.advance;
+		if ( CharID != '\r' )
+			Width += glyph.advance;
 
 		if ( CharID == '\t' ) {
 			Width += glyph.advance * 3;
@@ -143,7 +145,8 @@ Vector2i Font::getCursorPos( const String& Text, const Uint32& characterSize, bo
 		CharID = static_cast<Int32>( Text.at(i) );
 		Glyph glyph = getGlyph( CharID, characterSize, bold, outlineThickness );
 
-		Width += glyph.advance;
+		if ( CharID != '\r' )
+			Width += glyph.advance;
 
 		if ( CharID == '\t' ) {
 			Width += glyph.advance * 3;
@@ -213,6 +216,8 @@ void Font::shrinkText( std::string& Str, const Uint32& characterSize, bool bold,
 
 		if ( ( *tChar ) == '\t' )
 			fCharWidth += pChar.advance * 3;
+		else if ( ( *tChar ) == '\r' )
+			fCharWidth = 0;
 
 		tWordWidth		+= fCharWidth;
 
@@ -266,6 +271,8 @@ void Font::shrinkText( String& Str, const Uint32& characterSize, bool bold, Floa
 
 		if ( ( *tChar ) == '\t' )
 			fCharWidth += pChar.advance * 3;
+		else if ( ( *tChar ) == '\r' )
+			fCharWidth = 0;
 
 		// Add the new char width to the current word width
 		tWordWidth		+= fCharWidth;
