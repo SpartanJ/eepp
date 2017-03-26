@@ -134,7 +134,7 @@ void UITextInputPassword::setFontStyleConfig(const UITooltipStyleConfig & fontSt
 
 	mPassCache->setCharacterSize( mFontStyleConfig.CharacterSize );
 	mPassCache->setFont( mFontStyleConfig.getFont() );
-	mPassCache->setColor( mFontStyleConfig.getFontColor() );
+	mPassCache->setFillColor( mFontStyleConfig.getFontColor() );
 	mPassCache->setShadowColor( mFontStyleConfig.getFontShadowColor() );
 }
 

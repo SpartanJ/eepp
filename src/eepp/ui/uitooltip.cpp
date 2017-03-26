@@ -132,7 +132,7 @@ const ColorA& UITooltip::getFontColor() const {
 
 void UITooltip::setFontColor( const ColorA& color ) {
 	mStyleConfig.Color = color;
-	mTextCache->setColor( mStyleConfig.Color );
+	mTextCache->setFillColor( mStyleConfig.Color );
 	setAlpha( color.a );
 }
 
@@ -151,7 +151,7 @@ void UITooltip::setAlpha( const Float& alpha ) {
 	mStyleConfig.Color.a = (Uint8)alpha;
 	mStyleConfig.ShadowColor.a = (Uint8)alpha;
 
-	mTextCache->setColor( mStyleConfig.Color );
+	mTextCache->setFillColor( mStyleConfig.Color );
 }
 
 void UITooltip::onAutoSize() {

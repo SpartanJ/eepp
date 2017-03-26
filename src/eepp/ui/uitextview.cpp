@@ -27,7 +27,7 @@ UITextView::UITextView() :
 	mTextCache->setFont( mFontStyleConfig.Font );
 	mTextCache->setCharacterSize( mFontStyleConfig.CharacterSize );
 	mTextCache->setStyle( mFontStyleConfig.Style );
-	mTextCache->setColor( mFontStyleConfig.Color );
+	mTextCache->setFillColor( mFontStyleConfig.Color );
 	mTextCache->setShadowColor( mFontStyleConfig.ShadowColor );
 	mTextCache->setOutlineThickness( mFontStyleConfig.OutlineThickness );
 	mTextCache->setOutlineColor( mFontStyleConfig.OutlineColor );
@@ -169,7 +169,7 @@ const ColorA& UITextView::getFontColor() const {
 
 UITextView * UITextView::setFontColor( const ColorA& color ) {
 	mFontStyleConfig.Color = color;
-	mTextCache->setColor( color );
+	mTextCache->setFillColor( color );
 
 	setAlpha( color.a );
 

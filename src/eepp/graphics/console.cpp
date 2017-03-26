@@ -202,7 +202,7 @@ void Console::draw() {
 					Text& text = mTextCache[Pos];
 
 					text.setStyleConfig( mFontStyleConfig );
-					text.setColor( ColorA ( mFontStyleConfig.Color.r, mFontStyleConfig.Color.g, mFontStyleConfig.Color.b, static_cast<Uint8>(mA) ) );
+					text.setFillColor( ColorA( mFontStyleConfig.Color.r, mFontStyleConfig.Color.g, mFontStyleConfig.Color.b, static_cast<Uint8>(mA) ) );
 					text.setString( mCmdLog[i] );
 					text.draw( mFontSize, CurY );
 
@@ -214,13 +214,13 @@ void Console::draw() {
 
 			Text& text = mTextCache[ mTextCache.size() - 1 ];
 			text.setStyleConfig( mFontStyleConfig );
-			text.setColor( ColorA( mFontLineColor.r, mFontLineColor.g, mFontLineColor.b, static_cast<Uint8>(mA) ) );
+			text.setFillColor( ColorA( mFontLineColor.r, mFontLineColor.g, mFontLineColor.b, static_cast<Uint8>(mA) ) );
 			text.setString( "> " + mTBuf->getBuffer() );
 			text.draw( mFontSize, CurY );
 
 			Text& text2 = mTextCache[ mTextCache.size() - 2 ];
 			text2.setStyleConfig( mFontStyleConfig );
-			text2.setColor( ColorA ( mFontLineColor.r, mFontLineColor.g, mFontLineColor.b, static_cast<Uint8>(mCurAlpha) ) );
+			text2.setFillColor( ColorA ( mFontLineColor.r, mFontLineColor.g, mFontLineColor.b, static_cast<Uint8>(mCurAlpha) ) );
 
 			if ( (unsigned int)mTBuf->getCursorPos() == mTBuf->getBuffer().size() ) {
 				Uint32 width = text.getTextWidth();
@@ -239,10 +239,10 @@ void Console::draw() {
 		Text& text = mTextCache[ mTextCache.size() - 3 ];
 		ColorA OldColor1( text.getColor() );
 		text.setStyleConfig( mFontStyleConfig );
-		text.setColor( ColorA () );
+		text.setFillColor( ColorA () );
 		text.setString( "FPS: " + String::toStr( mWindow->getFPS() ) );
 		text.draw( mWindow->getWidth() - text.getTextWidth() - 15, 6 );
-		text.setColor( OldColor1 );
+		text.setFillColor( OldColor1 );
 	}
 }
 

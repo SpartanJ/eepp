@@ -580,6 +580,9 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 }
 
 void Text::ensureGeometryUpdate() {
+	ensureColorUpdate();
+	cacheWidth();
+
 	Sizei textureSize = mFont->getTexture(mRealCharacterSize)->getPixelSize();
 
 	if ( textureSize != mTextureSize )
@@ -632,9 +635,6 @@ void Text::ensureGeometryUpdate() {
 
 	Float centerDiffX = 0;
 	unsigned int Line = 0;
-
-	ensureColorUpdate();
-	cacheWidth();
 
 	switch ( fontHAlignGet( mAlign ) ) {
 		case TEXT_ALIGN_CENTER:
@@ -778,8 +778,12 @@ void Text::ensureColorUpdate() {
 			mColors.resize( tv, mFillColor );
 		}
 
+		mColors.assign( tv, mFillColor );
+
 		if ( 0 != mOutlineThickness && ( mOutlineColors.size() < tv ) ) {
 			mOutlineColors.resize( tv, mOutlineColor );
+
+			mOutlineColors.assign( tv, mOutlineColor );
 		}
 
 		mColorsNeedUpdate = false;

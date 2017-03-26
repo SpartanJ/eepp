@@ -1400,10 +1400,10 @@ void EETest::render() {
 		mInfoText.setString( mInfo );
 
 		if ( mWindow->getClearColor().r == 0 ) {
-			mInfoText.setColor( ColorA(255,255,255,255) );
+			mInfoText.setFillColor( ColorA(255,255,255,255) );
 			mInfoText.setOutlineColor( ColorA(0,0,0,255) );
 		} else {
-			mInfoText.setColor( ColorA(0,0,0,255) );
+			mInfoText.setFillColor( ColorA(0,0,0,255) );
 			mInfoText.setOutlineColor( ColorA(255,255,255,255) );
 		}
 	}
