@@ -9,9 +9,6 @@ VertexBufferOGL::VertexBufferOGL( const Uint32& VertexFlags, EE_DRAW_MODE DrawTy
 {
 }
 
-VertexBufferOGL::~VertexBufferOGL() {
-}
-
 void VertexBufferOGL::bind() {
 	setVertexStates();
 }

@@ -1,14 +1,50 @@
 #include <eepp/graphics/primitivedrawable.hpp>
+#include <eepp/graphics/vertexbuffer.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 
 namespace EE { namespace Graphics {
 
 PrimitiveDrawable::PrimitiveDrawable(EE_DRAWABLE_TYPE drawableType) :
-	Drawable( drawableType )
+	Drawable( drawableType ),
+	mNeedsUpdate( true ),
+	mRecreateVertexBuffer( true ),
+	mVertexBuffer( NULL )
 {
 }
 
-void PrimitiveDrawable::setFillMode( const EE_FILL_MODE& Mode ) {
+PrimitiveDrawable::~PrimitiveDrawable() {
+	eeSAFE_DELETE( mVertexBuffer );
+}
+
+void PrimitiveDrawable::draw( const Vector2f & position, const Sizef& size ) {
+	if ( mPosition != position ) {
+		mPosition = position;
+		mNeedsUpdate = true;
+	}
+
+	if ( mNeedsUpdate )
+		updateVertex();
+
+	if ( NULL != mVertexBuffer ) {
+		BatchRenderer * BR = GlobalBatchRenderer::instance();
+
+		BR->draw();
+
+		Float lw = BR->getLineWidth();
+		BR->setLineWidth( mLineWidth );
+
+		mVertexBuffer->bind();
+		mVertexBuffer->draw();
+		mVertexBuffer->unbind();
+
+		BR->setLineWidth( lw );
+	}
+}
+
+void PrimitiveDrawable::setFillMode(const EE_FILL_MODE & Mode) {
 	mFillMode = Mode;
+	mNeedsUpdate = true;
+	mRecreateVertexBuffer = true;
 }
 
 const EE_FILL_MODE& PrimitiveDrawable::getFillMode() const {
@@ -29,6 +65,24 @@ void PrimitiveDrawable::setLineWidth( const Float& width ) {
 
 const Float& PrimitiveDrawable::getLineWidth() const {
 	return mLineWidth;
+}
+
+void PrimitiveDrawable::onAlphaChange() {
+	mNeedsUpdate = true;
+}
+
+void PrimitiveDrawable::onColorFilterChange() {
+	mNeedsUpdate = true;
+}
+
+void PrimitiveDrawable::prepareVertexBuffer( const EE_DRAW_MODE& drawableType ) {
+	if ( mRecreateVertexBuffer ) {
+		eeSAFE_DELETE( mVertexBuffer );
+		mVertexBuffer = VertexBuffer::NewVertexArray( VERTEX_FLAGS_PRIMITIVE, drawableType );
+		mRecreateVertexBuffer = false;
+	}
+
+	mVertexBuffer->clear();
 }
 
 }}

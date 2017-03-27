@@ -1,6 +1,6 @@
 #include <eepp/ee.hpp>
 
-#define GL_STENCIL_TEST				0x0B90
+#define GL_STENCIL_TEST			0x0B90
 #define GL_EQUAL				0x0202
 #define GL_NEVER				0x0200
 #define GL_KEEP					0x1E00
@@ -9,6 +9,7 @@
 EE::Window::Window * win = NULL;
 float circ = 0, circ2 = 0;
 int op = 1;
+ArcDrawable arcDrawable( 100, 64 );
 
 void mainLoop()
 {
@@ -79,11 +80,9 @@ void mainLoop()
 
 	GLi->Disable(GL_STENCIL_TEST);
 */
-	ArcDrawable arcDrawable( 100, 64 );
-	arcDrawable.setColorFilter( ColorA( 220, 0, 0, 200 ) );
-	arcDrawable.setFillMode( DRAW_FILL );
+	arcDrawable.setArcAngle( circ );
+	arcDrawable.setArcStartAngle( circ2 );
 	arcDrawable.draw( winCenter );
-
 
 	// Draw frame
 	win->display();
@@ -98,9 +97,10 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	// Check if created
 	if ( win->isOpen() ) {
 		// Set window background color
-		win->setClearColor( RGB( 50, 50, 50 ) );
+		win->setClearColor( Color( 50, 50, 50 ) );
 
-		GLi->polygonMode( );
+		arcDrawable.setColorFilter( ColorA( 0, 255, 0, 150 ) );
+		arcDrawable.setFillMode( DRAW_FILL );
 
 		// Set the MainLoop function and run it
 		// This is the application loop, it will loop until the window is closed.
