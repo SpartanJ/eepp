@@ -81,6 +81,7 @@ void Text::create(Font * font, const String & text, ColorA FontColor, ColorA Fon
 	mGeometryNeedUpdate = true;
 	mCachedWidthNeedUpdate = true;
 	mColorsNeedUpdate = true;
+	ensureColorUpdate();
 	ensureGeometryUpdate();
 }
 
@@ -492,6 +493,7 @@ Float Text::getTextHeight() {
 
 void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const Float & Angle, EE_BLEND_MODE Effect) {
 	if ( NULL != mFont ) {
+		ensureColorUpdate();
 		ensureGeometryUpdate();
 
 		unsigned int numvert = mVertices.size();
@@ -580,7 +582,6 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 }
 
 void Text::ensureGeometryUpdate() {
-	ensureColorUpdate();
 	cacheWidth();
 
 	Sizei textureSize = mFont->getTexture(mRealCharacterSize)->getPixelSize();
@@ -1020,7 +1021,6 @@ void Text::addGlyphQuad(std::vector<VertexCoords>& vertices, Vector2f position, 
 	VertexCoords vc;
 
 	if ( GLi->quadsSupported() ) {
-
 		vc.texCoords.x	= u1;
 		vc.texCoords.y	= v1;
 		vc.position.x	= centerDiffX + position.x + left  - italic * top	- outlineThickness;

@@ -44,21 +44,21 @@ void mainLoop()
 
 	Vector2f winCenter( win->getWidth() * 0.5f, win->getHeight() * 0.5f );
 
-
+/*
 	GLi->enable(GL_STENCIL_TEST);
 	GLi->stencilMask(0xFF);
 	GLi->stencilFunc(GL_NEVER, 1, 0xFF);
 	GLi->stencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
 
-	p.drawCircle( winCenter, 150, 40 );
+	p.drawCircle( winCenter, 150, 64 );
 
 	GLi->stencilFunc(GL_EQUAL, 0, 0xFF);
 
 	// Draw a circle
-	p.drawArc( winCenter, 200, 40, circ, circ2 );
+	p.drawArc( winCenter, 200, 64, circ, circ2 );
 
 	GLi->disable(GL_STENCIL_TEST);
-
+*/
 /*
 	GLi->Enable(GL_STENCIL_TEST);
 
@@ -79,6 +79,11 @@ void mainLoop()
 
 	GLi->Disable(GL_STENCIL_TEST);
 */
+	ArcDrawable arcDrawable( 100, 64 );
+	arcDrawable.setColorFilter( ColorA( 220, 0, 0, 200 ) );
+	arcDrawable.setFillMode( DRAW_FILL );
+	arcDrawable.draw( winCenter );
+
 
 	// Draw frame
 	win->display();

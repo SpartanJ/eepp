@@ -39,5 +39,6 @@
 #include <eepp/graphics/vertexbuffer.hpp>
 #include <eepp/graphics/vertexbufferogl.hpp>
 #include <eepp/graphics/vertexbuffervbo.hpp>
+#include <eepp/graphics/arcdrawable.hpp>
 
 #endif

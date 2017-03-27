@@ -398,7 +398,6 @@ void UIControlAnim::drawBorder() {
 		P.setLineWidth( PixelDensity::dpToPx( mBorder->getWidth() ) );
 		P.setColor( getColor( mBorder->getColor() ) );
 
-		//! @TODO: Check why was this +0.1f -0.1f?
 		if ( mFlags & UI_CLIP_ENABLE ) {
 			Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mRealSize.getWidth() - 0.1f, (Float)mRealSize.getHeight() - 0.1f ) );
 
