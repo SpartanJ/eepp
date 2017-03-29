@@ -738,6 +738,10 @@ Sizei EE::Graphics::Texture::getPixelSize() {
 	return Sizei( mImgWidth, mImgHeight );
 }
 
+void EE::Graphics::Texture::draw() {
+	drawFast( mPosition.x, mPosition.y );
+}
+
 void EE::Graphics::Texture::draw( const Vector2f & position ) {
 	drawFast( position.x, position.y );
 }

@@ -173,6 +173,10 @@ void SubTexture::draw( const Quad2f Q, const Vector2f& Offset, const Float& Angl
 		mTexture->drawQuadEx( Q, Offset, Angle, Scale, Color0, Color1, Color2, Color3, Blend, mSrcRect );
 }
 
+void SubTexture::draw() {
+	draw( mPosition );
+}
+
 void SubTexture::draw( const Vector2f& position ) {
 	draw( position.x, position.y, getColor() );
 }

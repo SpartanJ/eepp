@@ -1104,7 +1104,7 @@ void EETest::loadTextures() {
 	CurMan->set( EE_CURSOR_ARROW );
 
 	CL1.addFrame( TN[2] );
-	CL1.setPosition( 500, 400 );
+	CL1.setPosition( Vector2f( 500, 400 ) );
 	CL1.setScale( 0.5f );
 
 	CL2.addFrame(TN[0], Sizef(96, 96) );
@@ -1113,7 +1113,7 @@ void EETest::loadTextures() {
 	mTGL = eeNew( TextureAtlasLoader, ( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
 
 	mBlindy.addFramesByPattern( "rn" );
-	mBlindy.setPosition( 320.f, 0.f );
+	mBlindy.setPosition( Vector2f( 320.f, 0.f ) );
 
 	mBoxSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( SubTexture, ( TN[3], "ilmare" ) ) ) ) );
 	mCircleSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( SubTexture, ( TN[1], "thecircle" ) ) ) ) );
@@ -1242,7 +1242,7 @@ void EETest::screen2() {
 	ColorA Col(255,255,255,(int)alpha);
 	TNP[1]->drawEx( (Float)mWindow->getWidth() - 128.f, (Float)mWindow->getHeight() - 128.f, 128.f, 128.f, ang, Vector2f::One, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
 
-	SP.setPosition( alpha, alpha );
+	SP.setPosition( Vector2f( alpha, alpha ) );
 	SP.draw();
 
 	#ifndef EE_GLES
@@ -1262,7 +1262,7 @@ void EETest::screen2() {
 	CL1.setRotation(ang);
 	CL1.setScale(scale * 0.5f);
 
-	CL2.setPosition( (Float)Mousef.x - 64.f, (Float)Mousef.y + 128.f );
+	CL2.setPosition( Vector2f( (Float)Mousef.x - 64.f, (Float)Mousef.y + 128.f ) );
 	CL2.setRotation(-ang);
 
 	CL1.draw();
@@ -1348,7 +1348,7 @@ void EETest::screen4() {
 	}
 
 	if ( NULL != mVBO ) {
-		mBlindy.setPosition( 128-16, 128-16 );
+		mBlindy.setPosition( Vector2f( 128-16, 128-16 ) );
 		mBlindy.draw();
 
 		mVBO->bind();

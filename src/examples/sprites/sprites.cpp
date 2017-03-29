@@ -139,11 +139,14 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// Set the sprites position to the screen center
 		Vector2i ScreenCenter( Engine::instance()->getCurrentWindow()->getWidth() / 2, Engine::instance()->getCurrentWindow()->getHeight() / 2 );
 
-		Planet.setPosition( ScreenCenter.x - Planet.getAABB().getSize().getWidth() / 2, ScreenCenter.y - Planet.getAABB().getSize().getHeight() / 2 );
+		Planet.setPosition( Vector2f( ScreenCenter.x - Planet.getAABB().getSize().getWidth() / 2,
+									  ScreenCenter.y - Planet.getAABB().getSize().getHeight() / 2 ) );
 
-		Rock.setPosition( ScreenCenter.x - Rock.getAABB().getSize().getWidth() / 2, ScreenCenter.y - Rock.getAABB().getSize().getHeight() / 2 );
+		Rock.setPosition( Vector2f( ScreenCenter.x - Rock.getAABB().getSize().getWidth() / 2,
+						  ScreenCenter.y - Rock.getAABB().getSize().getHeight() / 2 ) );
 
-		Blindy.setPosition( ScreenCenter.x - Blindy.getAABB().getSize().getWidth() / 2, ScreenCenter.y - Blindy.getAABB().getSize().getHeight() / 2 );
+		Blindy.setPosition( Vector2f( ScreenCenter.x - Blindy.getAABB().getSize().getWidth() / 2,
+							ScreenCenter.y - Blindy.getAABB().getSize().getHeight() / 2 ) );
 
 		// Set the planet angle interpolation
 		PlanetAngle.addWaypoint( 0 );

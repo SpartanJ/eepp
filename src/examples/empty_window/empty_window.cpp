@@ -10,6 +10,7 @@ EE::Window::Window * win = NULL;
 float circ = 0, circ2 = 0;
 int op = 1;
 ArcDrawable arcDrawable( 100, 64 );
+RectangleDrawable rectDrawable( Vector2f(0,0), Sizef(250,250) );
 
 void mainLoop()
 {
@@ -84,6 +85,8 @@ void mainLoop()
 	arcDrawable.setArcStartAngle( circ2 );
 	arcDrawable.draw( winCenter );
 
+	rectDrawable.draw();
+
 	// Draw frame
 	win->display();
 }
@@ -101,6 +104,10 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		arcDrawable.setColorFilter( ColorA( 0, 255, 0, 150 ) );
 		arcDrawable.setFillMode( DRAW_FILL );
+
+		rectDrawable.setColorFilter( ColorA( 255, 0, 0, 150 ) );
+		rectDrawable.setFillMode( DRAW_FILL );
+		rectDrawable.setCorners( 64 );
 
 		// Set the MainLoop function and run it
 		// This is the application loop, it will loop until the window is closed.

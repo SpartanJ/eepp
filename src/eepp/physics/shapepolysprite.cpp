@@ -40,7 +40,7 @@ void ShapePolySprite::draw( Space * space ) {
 	cVect Pos = getBody()->getPos();
 
 	mSprite->setOffset( mOffset );
-	mSprite->setPosition( Pos.x, Pos.y );
+	mSprite->setPosition( Vector2f( Pos.x, Pos.y ) );
 	mSprite->setRotation( getBody()->getAngleDeg() );
 	mSprite->draw();
 }

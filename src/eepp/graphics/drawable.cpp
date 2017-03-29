@@ -72,10 +72,24 @@ EE_DRAWABLE_TYPE Drawable::getDrawableType() const {
 	return mDrawableType;
 }
 
+const Vector2f& Drawable::getPosition() const {
+	return mPosition;
+}
+
+void Drawable::setPosition( const Vector2f& position ) {
+	if ( position != mPosition ) {
+		mPosition = position;
+		onPositionChange();
+	}
+}
+
 void Drawable::onAlphaChange() {
 }
 
 void Drawable::onColorFilterChange() {
+}
+
+void Drawable::onPositionChange() {
 }
 
 }}

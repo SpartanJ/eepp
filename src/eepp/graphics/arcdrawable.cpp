@@ -27,6 +27,10 @@ Sizef ArcDrawable::getSize() {
 	return Sizef( mRadius * 2, mRadius * 2 );
 }
 
+void ArcDrawable::draw() {
+	draw( mPosition );
+}
+
 void ArcDrawable::draw(const Vector2f & position) {
 	draw( position, getSize() );
 }

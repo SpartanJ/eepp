@@ -249,6 +249,14 @@ typedef Colorf				RGBf;
 typedef ColorA				RGBA;
 typedef ColorAf				RGBAf;
 
+class RectColors {
+	public:
+		ColorA TopLeft;
+		ColorA TopRight;
+		ColorA BottomLeft;
+		ColorA BottomRight;
+};
+
 }}
 
 #endif

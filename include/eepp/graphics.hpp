@@ -40,5 +40,7 @@
 #include <eepp/graphics/vertexbufferogl.hpp>
 #include <eepp/graphics/vertexbuffervbo.hpp>
 #include <eepp/graphics/arcdrawable.hpp>
+#include <eepp/graphics/circledrawable.hpp>
+#include <eepp/graphics/rectangledrawable.hpp>
 
 #endif

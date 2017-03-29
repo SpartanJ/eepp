@@ -75,6 +75,10 @@ void PrimitiveDrawable::onColorFilterChange() {
 	mNeedsUpdate = true;
 }
 
+void PrimitiveDrawable::onPositionChange() {
+	mNeedsUpdate = true;
+}
+
 void PrimitiveDrawable::prepareVertexBuffer( const EE_DRAW_MODE& drawableType ) {
 	if ( mRecreateVertexBuffer ) {
 		eeSAFE_DELETE( mVertexBuffer );

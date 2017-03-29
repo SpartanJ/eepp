@@ -14,6 +14,8 @@ class ArcDrawable : public PrimitiveDrawable {
 
 		virtual Sizef getSize();
 
+		virtual void draw();
+
 		virtual void draw( const Vector2f& position );
 
 		virtual void draw( const Vector2f& position, const Sizef& size );

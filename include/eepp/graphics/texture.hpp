@@ -220,6 +220,8 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 
 		Sizei getPixelSize();
 
+		void draw();
+
 		void draw(const Vector2f & position);
 
 		void draw(const Vector2f & position, const Sizef & size);

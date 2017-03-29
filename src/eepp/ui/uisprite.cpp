@@ -52,7 +52,7 @@ void UISprite::draw() {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
 			checkSubTextureUpdate();
 
-			mSprite->setPosition( (Float)( mScreenPos.x + mAlignOffset.x ), (Float)( mScreenPos.y + mAlignOffset.y ) );
+			mSprite->setPosition( Vector2f( (Float)( mScreenPos.x + mAlignOffset.x ), (Float)( mScreenPos.y + mAlignOffset.y ) ) );
 
 			SubTexture * subTexture = mSprite->getCurrentSubTexture();
 

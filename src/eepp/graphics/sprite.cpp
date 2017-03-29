@@ -13,7 +13,6 @@ namespace EE { namespace Graphics {
 Sprite::Sprite() :
 	Drawable( DRAWABLE_SPRITE ),
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
-	mPos(),
 	mRotation( 0.f ),
 	mScale( 1.f, 1.f ),
 	mAnimSpeed( 16.f ),
@@ -34,7 +33,6 @@ Sprite::Sprite() :
 Sprite::Sprite( const std::string& name, const std::string& extension, TextureAtlas * SearchInTextureAtlas )  :
 	Drawable( DRAWABLE_SPRITE ),
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
-	mPos(),
 	mRotation( 0.f ),
 	mScale( 1.f, 1.f ),
 	mAnimSpeed( 16.f ),
@@ -56,7 +54,6 @@ Sprite::Sprite( const std::string& name, const std::string& extension, TextureAt
 Sprite::Sprite( SubTexture * SubTexture ) :
 	Drawable( DRAWABLE_SPRITE ),
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
-	mPos(),
 	mRotation( 0.f ),
 	mScale( 1.f, 1.f ),
 	mAnimSpeed( 16.f ),
@@ -78,7 +75,6 @@ Sprite::Sprite( SubTexture * SubTexture ) :
 Sprite::Sprite( const Uint32& TexId, const Sizef &DestSize, const Vector2i &Offset, const Recti& TexSector ) :
 	Drawable( DRAWABLE_SPRITE ),
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
-	mPos(),
 	mRotation( 0.f ),
 	mScale( 1.f, 1.f ),
 	mAnimSpeed( 16.f ),
@@ -102,14 +98,16 @@ Sprite::~Sprite() {
 }
 
 Sprite& Sprite::operator =( const Sprite& Other ) {
+	mDrawableType		= Other.mDrawableType;
 	mFrames				= Other.mFrames;
 	mFlags				= Other.mFlags;
-	mPos				= Other.mPos;
-	mRotation				= Other.mRotation;
+	mColor				= Other.mColor;
+	mPosition			= Other.mPosition;
+	mRotation			= Other.mRotation;
 	mScale				= Other.mScale;
 	mAnimSpeed			= Other.mAnimSpeed;
 	mColor				= Other.mColor;
-	mRepetitions			= Other.mRepetitions;
+	mRepetitions		= Other.mRepetitions;
 	mBlend				= Other.mBlend;
 	mEffect				= Other.mEffect;
 	mCurrentFrame		= Other.mCurrentFrame;
@@ -135,9 +133,11 @@ Sprite& Sprite::operator =( const Sprite& Other ) {
 Sprite Sprite::clone() {
 	Sprite Spr;
 
+	Spr.mDrawableType		= mDrawableType;
+	Spr.mColor				= mColor;
 	Spr.mFrames				= mFrames;
 	Spr.mFlags				= mFlags;
-	Spr.mPos				= mPos;
+	Spr.mPosition			= mPosition;
 	Spr.mRotation			= mRotation;
 	Spr.mScale				= mScale;
 	Spr.mAnimSpeed			= mAnimSpeed;
@@ -224,10 +224,10 @@ Quad2f Sprite::getQuad() {
 	SubTexture * S;
 
 	if ( mFrames.size() && ( S = getCurrentSubTexture() ) ) {
-		Rectf TmpR( mPos.x,
-					  mPos.y,
-					  mPos.x + S->getDestSize().x,
-					  mPos.y + S->getDestSize().y
+		Rectf TmpR( mPosition.x,
+					  mPosition.y,
+					  mPosition.x + S->getDestSize().x,
+					  mPosition.y + S->getDestSize().y
 					);
 
 		Quad2f Q = Quad2f( Vector2f( TmpR.Left, TmpR.Top ),
@@ -241,9 +241,9 @@ Quad2f Sprite::getQuad() {
 		if ( mOrigin.OriginType == OriginPoint::OriginCenter ) {
 			Center	= TmpR.getCenter();
 		} else if ( mOrigin.OriginType == OriginPoint::OriginTopLeft ) {
-			Center	= mPos;
+			Center	= mPosition;
 		} else {
-			Center	+= mPos;
+			Center	+= mPosition;
 		}
 
 		switch ( mEffect ) {
@@ -285,16 +285,16 @@ eeAABB Sprite::getAABB() {
 		if ( mRotation != 0 || mEffect >= 4 ) {
 			return getQuad().toAABB();
 		} else { // The method used if mAngle != 0 works for mAngle = 0, but i prefer to use the faster way
-			TmpR = Rectf( mPos.x, mPos.y, mPos.x + S->getDestSize().x, mPos.y + S->getDestSize().y );
+			TmpR = Rectf( mPosition.x, mPosition.y, mPosition.x + S->getDestSize().x, mPosition.y + S->getDestSize().y );
 
 			Vector2f Center;
 
 			if ( mOrigin.OriginType == OriginPoint::OriginCenter ) {
 				Center	= TmpR.getCenter();
 			} else if ( mOrigin.OriginType == OriginPoint::OriginTopLeft ) {
-				Center	= mPos;
+				Center	= mPosition;
 			} else {
-				Center	= mPos + mOrigin;
+				Center	= mPosition + mOrigin;
 			}
 
 			TmpR.scale( mScale, Center );
@@ -302,19 +302,6 @@ eeAABB Sprite::getAABB() {
 	}
 
 	return TmpR;
-}
-
-const Vector2f Sprite::getPosition() const {
-	return mPos;
-}
-
-void Sprite::setPosition(const Float& x, const Float& y) {
-	mPos.x = x;
-	mPos.y = y;
-}
-
-void Sprite::setPosition( const Vector2f& NewPos ) {
-	mPos = NewPos;
 }
 
 void Sprite::updateVertexColors( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 ) {
@@ -589,9 +576,9 @@ void Sprite::draw( const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect ) {
 		return;
 
 	if ( NULL == mVertexColors )
-		S->draw( mPos.x, mPos.y, mColor, mRotation, mScale, Blend, Effect, mOrigin );
+		S->draw( mPosition.x, mPosition.y, mColor, mRotation, mScale, Blend, Effect, mOrigin );
 	else
-		S->draw( mPos.x, mPos.y, mRotation, mScale, mVertexColors[0], mVertexColors[1], mVertexColors[2], mVertexColors[3], Blend, Effect, mOrigin );
+		S->draw( mPosition.x, mPosition.y, mRotation, mScale, mVertexColors[0], mVertexColors[1], mVertexColors[2], mVertexColors[3], Blend, Effect, mOrigin );
 }
 
 void Sprite::draw() {
@@ -720,22 +707,6 @@ SubTexture * Sprite::getSubTexture( const unsigned int& frame, const unsigned in
 		return mFrames[ frame ].Spr[ SubFrame ];
 
 	return NULL;
-}
-
-void Sprite::setX( const Float& X ) {
-	mPos.x = X;
-}
-
-Float Sprite::getX() const {
-	return mPos.x;
-}
-
-void Sprite::setY( const Float& Y ) {
-	mPos.y = Y;
-}
-
-Float Sprite::getY() const {
-	return mPos.y;
 }
 
 void Sprite::setRotation( const Float& rotation ) {

@@ -51,18 +51,6 @@ class EE_API Sprite : public Drawable {
 
 		Sprite& operator =( const Sprite& Other );
 
-		/** Set the x axis position */
-		void setX( const Float& getX );
-
-		/** @return The x axis position */
-		Float getX() const;
-
-		/** Set the y axis position */
-		void setY( const Float& y );
-
-		/** @return The y axis position */
-		Float getY() const;
-
 		/** Set the Angle for the rendered sprite */
 		void setRotation( const Float& rotation );
 
@@ -161,15 +149,6 @@ class EE_API Sprite : public Drawable {
 
 		/** @return The AABB (axis-aligned bounding box) */
 		eeAABB getAABB();
-
-		/** Set the sprite position */
-		void setPosition( const Float& getX, const Float& y );
-
-		/** Set the sprite position from a Vector */
-		void setPosition( const Vector2f& NewPos );
-
-		/** @return The Position of the sprite */
-		const Vector2f getPosition() const;
 
 		/** Update the colors of every vertex rendered of the sprite ( this will override the default color )
 		* @param Color0 The Left - Top vertex color
@@ -341,24 +320,23 @@ class EE_API Sprite : public Drawable {
 		};
 
 		Uint32				mFlags;
-		Vector2f			mPos;
-		OriginPoint		mOrigin;
+		OriginPoint			mOrigin;
 		Float				mRotation;
 		Vector2f			mScale;
 		Float				mAnimSpeed;
 
 		ColorA *			mVertexColors;
 
-		int				mRepetitions; //!< Number of repetions of the animation, default -1 that equals to loop.
+		int					mRepetitions; //!< Number of repetions of the animation, default -1 that equals to loop.
 
 		EE_BLEND_MODE		mBlend;
 		EE_RENDER_MODE		mEffect;
 
-		unsigned int				mCurrentFrame;
+		unsigned int		mCurrentFrame;
 		Float				mfCurrentFrame;
-		unsigned int				mCurrentSubFrame;
-		unsigned int				mSubFrames;
-		unsigned int				mAnimTo;
+		unsigned int		mCurrentSubFrame;
+		unsigned int		mSubFrames;
+		unsigned int		mAnimTo;
 
 		SpriteCallback		mCb;
 		void *				mUserData;

@@ -45,6 +45,8 @@ class PrimitiveDrawable : public Drawable {
 
 		virtual void onColorFilterChange();
 
+		virtual void onPositionChange();
+
 		void prepareVertexBuffer( const EE_DRAW_MODE& drawableType );
 
 		virtual void updateVertex() = 0;

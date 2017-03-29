@@ -15,6 +15,8 @@ class EE_API Drawable {
 
 		virtual Sizef getSize() = 0;
 
+		virtual void draw() = 0;
+
 		virtual void draw( const Vector2f& position ) = 0;
 
 		virtual void draw( const Vector2f& position, const Sizef& size ) = 0;
@@ -38,13 +40,20 @@ class EE_API Drawable {
 		void resetAlpha();
 
 		EE_DRAWABLE_TYPE getDrawableType() const;
+
+		const Vector2f& getPosition() const;
+
+		void setPosition( const Vector2f& position );
 	protected:
 		EE_DRAWABLE_TYPE mDrawableType;
 		ColorA mColor;
+		Vector2f mPosition;
 
 		virtual void onAlphaChange();
 
 		virtual void onColorFilterChange();
+
+		virtual void onPositionChange();
 };
 
 }}

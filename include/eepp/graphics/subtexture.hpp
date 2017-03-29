@@ -87,6 +87,8 @@ class EE_API SubTexture : public Drawable {
 
 		void draw( const Quad2f Q, const Vector2f& offset = Vector2f(), const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const ColorA& Color0 = ColorA(), const ColorA& Color1 = ColorA(), const ColorA& Color2 = ColorA(), const ColorA& Color3 = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
 
+		virtual void draw();
+
 		virtual void draw( const Vector2f& position );
 
 		virtual void draw(const Vector2f& position, const Sizef & size );
