@@ -126,7 +126,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		mWindow.WindowConfig.Height	= mWindow.DesktopResolution.getHeight();
 	}
 
-	mWindow.Flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
+	mWindow.Flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::Resize ) {
 		mWindow.Flags |= SDL_WINDOW_RESIZABLE;
@@ -156,7 +156,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	/// In some platforms it will not create the desired window size, so we query the real window size created
 	int w, h;
-	SDL_GetWindowSize( mSDLWindow, &w, &h );
+	SDL_GL_GetDrawableSize( mSDLWindow, &w, &h );
 
 	mWindow.WindowConfig.Width	= w;
 	mWindow.WindowConfig.Height	= h;

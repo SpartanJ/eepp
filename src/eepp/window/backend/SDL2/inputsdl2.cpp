@@ -37,8 +37,8 @@ void InputSDL::update() {
 					case SDL_WINDOWEVENT_RESIZED:
 					{
 						EEEvent.Type = InputEvent::VideoResize;
-						EEEvent.resize.w = SDLEvent.window.data1;
-						EEEvent.resize.h = SDLEvent.window.data2;
+						EEEvent.resize.w = SDLEvent.window.data1 * mDPIScale;
+						EEEvent.resize.h = SDLEvent.window.data2 * mDPIScale;
 						break;
 					}
 					case SDL_WINDOWEVENT_EXPOSED:
@@ -141,10 +141,10 @@ void InputSDL::update() {
 				EEEvent.Type = InputEvent::MouseMotion;
 				EEEvent.motion.which = SDLEvent.motion.windowID;
 				EEEvent.motion.state = SDLEvent.motion.state;
-				EEEvent.motion.x = SDLEvent.motion.x;
-				EEEvent.motion.y = SDLEvent.motion.y;
-				EEEvent.motion.xrel = SDLEvent.motion.xrel;
-				EEEvent.motion.yrel = SDLEvent.motion.yrel;
+				EEEvent.motion.x = SDLEvent.motion.x * mDPIScale;
+				EEEvent.motion.y = SDLEvent.motion.y * mDPIScale;
+				EEEvent.motion.xrel = SDLEvent.motion.xrel * mDPIScale;
+				EEEvent.motion.yrel = SDLEvent.motion.yrel * mDPIScale;
 				break;
 			}
 			case SDL_MOUSEBUTTONDOWN:
@@ -322,6 +322,13 @@ void InputSDL::injectMousePos( const Uint16& x, const Uint16& y ) {
 }
 
 void InputSDL::init() {
+	int realX, realY;
+	int scaledX, scaledY;
+	SDL_Window * sdlw = reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow();
+	SDL_GL_GetDrawableSize(sdlw, &realX, &realY);
+	SDL_GetWindowSize(sdlw, &scaledX, &scaledY);
+	mDPIScale = (Float)realX / (Float)scaledX;
+	
 	Vector2if mTempMouse;
 
 	SDL_GetMouseState( &mTempMouse.x, &mTempMouse.y );
