@@ -1153,7 +1153,7 @@ void UIWindow::loadFromXmlNode(const pugi::xml_node & node) {
 			setTitle( ait->as_string() );
 		} else if ( "basealpha" == name ) {
 			unsigned int val = ait->as_uint();
-			if ( val >= 0 && val <= 255 )
+			if ( val <= 255 )
 				setBaseAlpha( (Uint8)val );
 		} else if ( "winflags" == name ) {
 			std::string flagsStr = ait->as_string();

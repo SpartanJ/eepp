@@ -65,8 +65,10 @@ void EETest::init() {
 	ContextSettings ConSettings	= EE->createContextSettings( &Ini );
 
 	if ( !( WinSettings.Style & WindowStyle::Fullscreen ) && !( WinSettings.Style & WindowStyle::UseDesktopResolution ) ) {
+#if EE_PLATFORM != EE_PLATFORM_MACOSX
 		WinSettings.Width *= WinSettings.PixelDensity;
 		WinSettings.Height *= WinSettings.PixelDensity;
+#endif
 	}
 
 	mWindow = EE->createWindow( WinSettings, ConSettings );

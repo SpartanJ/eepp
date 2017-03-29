@@ -551,7 +551,7 @@ function add_sfml()
 end
 
 function set_xcode_config()
-	if is_xcode() then
+	if is_xcode() or _OPTIONS["use-frameworks"] then
 		linkoptions { "-F/Library/Frameworks" }
 		includedirs { "/Library/Frameworks/SDL2.framework/Headers" }
 		defines { "EE_SDL2_FROM_ROOTPATH" }

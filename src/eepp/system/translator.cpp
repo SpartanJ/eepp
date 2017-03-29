@@ -75,11 +75,11 @@ void Translator::loadFromFile( const std::string& path, std::string lang ) {
 			eePRINTL( "Error offset: %d", result.offset );
 		}
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
-		std::string path( path );
-		Pack * pack = PackManager::instance()->exists( path );
+		std::string packPath( path );
+		Pack * pack = PackManager::instance()->exists( packPath );
 
 		if ( NULL != pack ) {
-			loadFromPack( pack, path, lang );
+			loadFromPack( pack, packPath, lang );
 		}
 	}
 }

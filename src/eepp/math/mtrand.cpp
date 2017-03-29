@@ -11,9 +11,9 @@ MTRand::MTRand() {
 }
 
 MTRand::MTRand( const MTRand& o ) {
-	register const Uint32 *t	= o.mState;
-	register Uint32	* s			= mState;
-	register int	i			= N;
+	const Uint32 *t	= o.mState;
+	Uint32	* s			= mState;
+	int	i			= N;
 
 	for ( ; i--; *s++ = *t++ )
 	{
@@ -25,11 +25,11 @@ MTRand::MTRand( const MTRand& o ) {
 }
 
 void MTRand::initialize( const Uint32 seed ) {
-	register Uint32 *s = mState;
+	Uint32 *s = mState;
 
-	register Uint32 *r = mState;
+	Uint32 *r = mState;
 
-	register Int32 i = 1;
+	Int32 i = 1;
 
 	*s++ = seed & 0xffffffffUL;
 
@@ -42,9 +42,9 @@ void MTRand::initialize( const Uint32 seed ) {
 void MTRand::reload() {
 	static const int MmN = int(M) - int(N);
 
-	register Uint32 *p = mState;
+	Uint32 *p = mState;
 
-	register int i;
+	int i;
 
 	for ( i = N - M; i--; ++p )
 		*p = twist( p[M], p[0], p[1] );
@@ -96,7 +96,7 @@ Uint32 MTRand::getRandi() {
 
 	--mLeft;
 
-	register Uint32 s1;
+	Uint32 s1;
 	s1 = *mNext++;
 	s1 ^= (s1 >> 11);
 	s1 ^= (s1 <<  7) & 0x9d2c5680UL;
@@ -150,9 +150,9 @@ MTRand& MTRand::operator=( const MTRand& o ) {
 	if ( this == &o )
 		return (*this);
 
-	register const Uint32 *t	= o.mState;
-	register Uint32 *s			= mState;
-	register int i			= N;
+	const Uint32 *t	= o.mState;
+	Uint32 *s			= mState;
+	int i			= N;
 
 	for ( ; i--; *s++ = *t++ )
 	{
@@ -165,17 +165,17 @@ MTRand& MTRand::operator=( const MTRand& o ) {
 }
 
 void MTRand::save( Uint32* saveArray ) const {
-	register const Uint32 *s = mState;
-	register Uint32 *sa = saveArray;
-	register int i = N;
+	const Uint32 *s = mState;
+	Uint32 *sa = saveArray;
+	int i = N;
 	for( ; i--; *sa++ = *s++ ) {}
 	*sa = mLeft;
 }
 
 void MTRand::load( Uint32 *const loadArray ) {
-	register Uint32 *s = mState;
-	register Uint32 *la = loadArray;
-	register int i = N;
+	Uint32 *s = mState;
+	Uint32 *la = loadArray;
+	int i = N;
 	for( ; i--; *s++ = *la++ ) {}
 	mLeft = *la;
 	mNext = &mState[N-mLeft];

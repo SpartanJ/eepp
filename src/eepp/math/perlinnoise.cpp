@@ -52,8 +52,8 @@ Float PerlinNoise::noise2D( Int32 x, Int32 y ) {
 }
 
 Float PerlinNoise::smoothedNoise2D(Float x, Float y) {
-	register Int32	tx	= static_cast<Int32>( x );
-	register Int32	ty	= static_cast<Int32>( y );
+	Int32	tx	= static_cast<Int32>( x );
+	Int32	ty	= static_cast<Int32>( y );
 
 	Float corners = ( noise2D( tx - 1, ty - 1	) + noise2D( tx + 1, ty - 1	) + noise2D( tx - 1	, ty + 1 ) + noise2D( tx + 1, ty + 1 ) ) / 16;
 	Float sides   = ( noise2D( tx - 1, ty		) + noise2D( tx + 1, ty		) + noise2D( tx		, ty - 1 ) + noise2D( tx	, ty + 1 ) ) /  8;

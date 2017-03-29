@@ -12,7 +12,7 @@ RectangleDrawable::~RectangleDrawable() {
 }
 
 Sizef RectangleDrawable::getSize() {
-
+	return Sizef();
 }
 
 void RectangleDrawable::draw(const Vector2f & position) {
