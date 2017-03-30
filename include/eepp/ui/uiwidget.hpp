@@ -100,6 +100,8 @@ class EE_API UIWidget : public UIControlAnim {
 
 		virtual void onPositionChange();
 
+		virtual void onVisibilityChange();
+
 		virtual void onAutoSize();
 
 		void notifyLayoutAttrChange();

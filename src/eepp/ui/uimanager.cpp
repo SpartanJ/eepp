@@ -2,6 +2,7 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>
 #include <algorithm>
 
@@ -286,19 +287,19 @@ const Uint32& UIManager::getLastPressTrigger() const {
 }
 
 void UIManager::clipPlaneEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
-	mWindow->clipPlaneEnable( x, y, Width, Height );
+	GLi->getClippingMask()->clipPlaneEnable( x, y, Width, Height );
 }
 
 void UIManager::clipPlaneDisable() {
-	mWindow->clipPlaneDisable();
+	GLi->getClippingMask()->clipPlaneDisable();
 }
 
 void UIManager::clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
-	mWindow->clipEnable( x, y, Width, Height );
+	GLi->getClippingMask()->clipEnable( x, y, Width, Height );
 }
 
 void UIManager::clipDisable() {
-	mWindow->clipDisable();
+	GLi->getClippingMask()->clipDisable();
 }
 
 void UIManager::clipSmartEnable(UIControl * ctrl, const Int32 & x, const Int32 & y, const Uint32 & Width, const Uint32 & Height) {

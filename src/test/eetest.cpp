@@ -1427,9 +1427,9 @@ void EETest::render() {
 		screen1();
 
 		mWindow->setView( mWindow->getDefaultView() );
-		mWindow->clipEnable( (Int32)HWidth - 320, (Int32)HHeight - 240, 640, 480 );
+		GLi->getClippingMask()->clipEnable( (Int32)HWidth - 320, (Int32)HHeight - 240, 640, 480 );
 		screen3();
-		mWindow->clipDisable();
+		GLi->getClippingMask()->clipDisable();
 	}
 
 	ColorA ColRR1( 150, 150, 150, 220 );

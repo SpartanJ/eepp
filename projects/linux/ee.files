@@ -10,6 +10,7 @@
 ../../include/eepp/graphics/primitivedrawable.hpp
 ../../include/eepp/graphics/rectangledrawable.hpp
 ../../include/eepp/graphics/renderer/base.hpp
+../../include/eepp/graphics/renderer/clippingmask.hpp
 ../../include/eepp/graphics/renderer/opengl.hpp
 ../../include/eepp/graphics/renderer/renderer.hpp
 ../../include/eepp/graphics/renderer/renderer.hpp
@@ -48,6 +49,7 @@
 ../../src/eepp/graphics/pixelperfect.cpp
 ../../src/eepp/graphics/primitivedrawable.cpp
 ../../src/eepp/graphics/rectangledrawable.cpp
+../../src/eepp/graphics/renderer/clippingmask.cpp
 ../../src/eepp/graphics/renderer/openglext.hpp
 ../../src/eepp/graphics/renderer/renderer.cpp
 ../../src/eepp/graphics/renderer/renderer.cpp

@@ -1,16 +1,10 @@
 #include <eepp/ee.hpp>
 
-#define GL_STENCIL_TEST			0x0B90
-#define GL_EQUAL				0x0202
-#define GL_NEVER				0x0200
-#define GL_KEEP					0x1E00
-#define GL_REPLACE				0x1E01
-
 EE::Window::Window * win = NULL;
 float circ = 0, circ2 = 0;
 int op = 1;
-ArcDrawable arcDrawable( 100, 64 );
-RectangleDrawable rectDrawable( Vector2f(0,0), Sizef(250,250) );
+ArcDrawable arcDrawable( 200, 64 );
+CircleDrawable circleDrawableMask( 150, 64 );
 
 void mainLoop()
 {
@@ -46,46 +40,20 @@ void mainLoop()
 
 	Vector2f winCenter( win->getWidth() * 0.5f, win->getHeight() * 0.5f );
 
-/*
-	GLi->enable(GL_STENCIL_TEST);
-	GLi->stencilMask(0xFF);
-	GLi->stencilFunc(GL_NEVER, 1, 0xFF);
-	GLi->stencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
+	ClippingMask * clippingMask = Renderer::instance()->getClippingMask();
 
-	p.drawCircle( winCenter, 150, 64 );
+	circleDrawableMask.setPosition( winCenter );
 
-	GLi->stencilFunc(GL_EQUAL, 0, 0xFF);
+	clippingMask->setMaskMode( ClippingMask::Exclusive );
+	clippingMask->clearMasks();
+	clippingMask->appendMask( circleDrawableMask );
+	clippingMask->stencilMaskEnable();
 
-	// Draw a circle
-	p.drawArc( winCenter, 200, 64, circ, circ2 );
-
-	GLi->disable(GL_STENCIL_TEST);
-*/
-/*
-	GLi->Enable(GL_STENCIL_TEST);
-
-	GLi->StencilFunc(GL_ALWAYS, 1, 1);
-	GLi->ColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-	GLi->StencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
-
-	p.SetColor( ColorA( 255, 255, 255, 255 ) );
-	p.DrawCircle( winCenter, 150, 40 );
-
-	GLi->StencilFunc(GL_NOTEQUAL, 1, 1);
-	GLi->StencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-	GLi->ColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-	// Draw a circle
-	p.SetColor( ColorA( 0, 255, 0, 150 ) );
-	p.DrawArc( winCenter, 200, 40, circ, circ2 );
-
-	GLi->Disable(GL_STENCIL_TEST);
-*/
 	arcDrawable.setArcAngle( circ );
 	arcDrawable.setArcStartAngle( circ2 );
 	arcDrawable.draw( winCenter );
 
-	rectDrawable.draw();
+	clippingMask->stencilMaskDisable();
 
 	// Draw frame
 	win->display();
@@ -102,12 +70,11 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// Set window background color
 		win->setClearColor( Color( 50, 50, 50 ) );
 
-		arcDrawable.setColorFilter( ColorA( 0, 255, 0, 150 ) );
+		arcDrawable.setColor( ColorA( 0, 255, 0, 150 ) );
 		arcDrawable.setFillMode( DRAW_FILL );
 
-		rectDrawable.setColorFilter( ColorA( 255, 0, 0, 150 ) );
-		rectDrawable.setFillMode( DRAW_FILL );
-		rectDrawable.setCorners( 64 );
+		circleDrawableMask.setColor( ColorA( 0, 255, 0, 150 ) );
+		circleDrawableMask.setFillMode( DRAW_FILL );
 
 		// Set the MainLoop function and run it
 		// This is the application loop, it will loop until the window is closed.

@@ -49,8 +49,7 @@ Window::Window( WindowSettings Settings, ContextSettings Context, Clipboard * Cl
 	mInput( Input ),
 	mCursorManager( CursorManager ),
 	mPlatform( NULL ),
-	mNumCallBacks( 0 ),
-	mPushScissorClip( true )
+	mNumCallBacks( 0 )
 {
 	mWindow.WindowConfig	= Settings;
 	mWindow.ContextConfig	= Context;
@@ -325,51 +324,6 @@ void Window::display( bool clear ) {
 	calculateFps();
 
 	limitFps();
-}
-
-void Window::clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
-	GlobalBatchRenderer::instance()->draw();
-
-	Rectf r( x, y, x + Width, y + Height );
-
-	if ( !mScissorsClipped.empty() ) {
-		Rectf r2 = mScissorsClipped.back();
-		r.shrink( r2 );
-	}
-
-	GLi->scissor( r.Left, getHeight() - r.Bottom, r.getWidth(), r.getHeight() );
-	GLi->enable( GL_SCISSOR_TEST );
-
-	if ( mPushScissorClip ) {
-		mScissorsClipped.push_back( r );
-	}
-}
-
-void Window::clipDisable() {
-	GlobalBatchRenderer::instance()->draw();
-
-	if ( ! mScissorsClipped.empty() ) { // This should always be true
-		mScissorsClipped.pop_back();
-	}
-
-	if ( mScissorsClipped.empty() ) {
-		GLi->disable( GL_SCISSOR_TEST );
-	} else {
-		Rectf R( mScissorsClipped.back() );
-		mPushScissorClip = false;
-		clipEnable( R.Left, R.Top, R.getWidth(), R.getHeight() );
-		mPushScissorClip = true;
-	}
-}
-
-void Window::clipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
-	GlobalBatchRenderer::instance()->draw();
-	GLi->clip2DPlaneEnable( x, y, Width, Height );
-}
-
-void Window::clipPlaneDisable() {
-	GlobalBatchRenderer::instance()->draw();
-	GLi->clip2DPlaneDisable();
 }
 
 Clipboard * Window::getClipboard() const {

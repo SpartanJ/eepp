@@ -45,11 +45,11 @@ Entropia Engine++
 
   * Backend based module, this means that you can easily create a backend for the window/input handling.
 
-  * Currently supports SDL 1.2, SDL 2 and SFML as backends.
+  * Currently supports SDL 2 and SFML as backends.
 
-  * Clipboard support ( SDL 2 backend and partial support with SDL 1.2 ).
+  * Clipboard support ( SDL 2 backend ).
 
-  * Color hardware cursors ( SDL 2 fully supported, partial support with SDL 1.2 and SFML ).
+  * Color hardware cursors ( SDL 2 fully supported, partial support with SFML ).
   
   * Multiple windows
 
@@ -74,7 +74,7 @@ Entropia Engine++
   * Provides all the basics stuffs for the full multi-threading support of the engine, file formats support for packing, clocks, resource manager, and much more.
 
 
-*Core Module:*
+**Core Module:**
 --------------
 
   * Customizable Memory Manager. Used by default in debug mode to track memory leaks.

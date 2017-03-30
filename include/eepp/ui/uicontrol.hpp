@@ -301,7 +301,7 @@ class EE_API UIControl {
 
 		virtual Uint32 onValueChange();
 
-		virtual void onVisibleChange();
+		virtual void onVisibilityChange();
 
 		virtual void onEnabledChange();
 

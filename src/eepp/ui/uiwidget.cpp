@@ -264,6 +264,11 @@ void UIWidget::onPositionChange() {
 	UIControlAnim::onPositionChange();
 }
 
+void UIWidget::onVisibilityChange() {
+	updateAnchorsDistances();
+	UIControlAnim::onVisibilityChange();
+}
+
 void UIWidget::onAutoSize() {
 }
 

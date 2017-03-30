@@ -115,12 +115,14 @@ Renderer::Renderer() :
 	mBlendEnabled( false ),
 	mQuadVertexs( 4 ),
 	mLineWidth( 1 ),
-	mCurVAO( 0 )
+	mCurVAO( 0 ),
+	mClippingMask( eeNew( ClippingMask , () ) )
 {
 	GLi = this;
 }
 
 Renderer::~Renderer() {
+	eeSAFE_DELETE( mClippingMask );
 	GLi = NULL;
 }
 
@@ -621,6 +623,10 @@ void Renderer::colorMask ( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha ) {
 
 const int& Renderer::quadVertexs() const {
 	return mQuadVertexs;
+}
+
+ClippingMask * Renderer::getClippingMask() const {
+	return mClippingMask;
 }
 
 void Renderer::bindVertexArray ( unsigned int array ) {

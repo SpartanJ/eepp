@@ -6,7 +6,7 @@
 
 namespace EE { namespace Graphics {
 
-class ArcDrawable : public PrimitiveDrawable {
+class EE_API ArcDrawable : public PrimitiveDrawable {
 	public:
 		ArcDrawable();
 

@@ -225,7 +225,7 @@ const Sizei& UIControl::getRealSize() {
 
 UIControl * UIControl::setVisible( const bool& visible ) {
 	mVisible = visible;
-	onVisibleChange();
+	onVisibilityChange();
 	return this;
 }
 
@@ -663,7 +663,7 @@ void UIControl::toPosition( const Uint32& Pos ) {
 	}
 }
 
-void UIControl::onVisibleChange() {
+void UIControl::onVisibilityChange() {
 	sendCommonEvent( UIEvent::EventOnVisibleChange );
 }
 

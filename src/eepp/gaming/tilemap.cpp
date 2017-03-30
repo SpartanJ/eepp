@@ -214,7 +214,7 @@ void TileMap::draw() {
 	GlobalBatchRenderer::instance()->draw();
 
 	if ( getClipedArea() ) {
-		mWindow->clipEnable( mScreenPos.x, mScreenPos.y, mViewSize.x, mViewSize.y );
+		GLi->getClippingMask()->clipEnable( mScreenPos.x, mScreenPos.y, mViewSize.x, mViewSize.y );
 	}
 
 	if ( getDrawBackground() ) {
@@ -252,7 +252,7 @@ void TileMap::draw() {
 	GLi->loadMatrixf( oldM );
 
 	if ( getClipedArea() ) {
-		mWindow->clipDisable();
+		GLi->getClippingMask()->clipDisable();
 	}
 }
 

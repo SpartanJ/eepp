@@ -7,7 +7,7 @@ namespace EE { namespace Graphics {
 
 class VertexBuffer;
 
-class PrimitiveDrawable : public Drawable {
+class EE_API PrimitiveDrawable : public Drawable {
 	public:
 		PrimitiveDrawable( EE_DRAWABLE_TYPE drawableType );
 
@@ -36,7 +36,6 @@ class PrimitiveDrawable : public Drawable {
 		EE_FILL_MODE			mFillMode;
 		EE_BLEND_MODE			mBlendMode;
 		Float					mLineWidth;
-		Vector2f mPosition;
 		bool mNeedsUpdate;
 		bool mRecreateVertexBuffer;
 		VertexBuffer * mVertexBuffer;

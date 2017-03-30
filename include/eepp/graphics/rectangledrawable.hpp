@@ -6,7 +6,7 @@
 
 namespace EE { namespace Graphics {
 
-class RectangleDrawable : public PrimitiveDrawable {
+class EE_API RectangleDrawable : public PrimitiveDrawable {
 	public:
 		RectangleDrawable();
 

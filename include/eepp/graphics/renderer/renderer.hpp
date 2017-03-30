@@ -4,6 +4,7 @@
 #include <eepp/graphics/renderer/base.hpp>
 #include <eepp/graphics/shaderprogram.hpp>
 #include <eepp/graphics/renderer/rendererhelper.hpp>
+#include <eepp/graphics/renderer/clippingmask.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -210,6 +211,8 @@ class EE_API Renderer {
 		const bool& quadsSupported() const;
 
 		const int& quadVertexs() const;
+
+		ClippingMask * getClippingMask() const;
 	protected:
 		static Renderer * sSingleton;
 
@@ -228,6 +231,7 @@ class EE_API Renderer {
 		unsigned int	mCurVAO;
 
 		std::list<Rectf> mPlanesClipped;
+		ClippingMask * mClippingMask;
 	private:
 		void writeExtension( Uint8 Pos, Uint32 BitWrite );
 };

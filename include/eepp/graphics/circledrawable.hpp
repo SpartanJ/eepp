@@ -5,7 +5,7 @@
 
 namespace EE { namespace Graphics {
 
-class CircleDrawable : public ArcDrawable {
+class EE_API CircleDrawable : public ArcDrawable {
 	public:
 		CircleDrawable();
 

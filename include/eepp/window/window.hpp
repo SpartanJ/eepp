@@ -318,18 +318,6 @@ class EE_API Window {
 		/** Get a frame per second limit. */
 		Uint32 getFrameRateLimit();
 
-		/** Set the current Clipping area ( default the entire window, SCISSOR TEST ). */
-		void clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
-
-		/** Disable the Clipping area */
-		void clipDisable();
-
-		/** Clip the area with a plane. */
-		void clipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
-
-		/** Disable the clip plane area. */
-		void clipPlaneDisable();
-
 		/** @return The clipboard manager */
 		Clipboard * getClipboard() const;
 		
@@ -492,8 +480,6 @@ class EE_API Window {
 		};
 
 		FrameData mFrameData;
-		std::list<Rectf> mScissorsClipped;
-		bool mPushScissorClip;
 
 		/** Set the flag state to be the current window */
 		virtual void setCurrent();

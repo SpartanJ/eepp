@@ -1,3 +1,5 @@
+../../include/eepp/graphics/arcdrawable.hpp
+../../include/eepp/graphics/circledrawable.hpp
 ../../include/eepp/graphics/drawable.hpp
 ../../include/eepp/graphics/drawablesearcher.hpp
 ../../include/eepp/graphics/font.hpp
@@ -5,7 +7,10 @@
 ../../include/eepp/graphics/fonttruetype.hpp
 ../../include/eepp/graphics/fonttruetypeloader.hpp
 ../../include/eepp/graphics/graphicshelper.hpp
+../../include/eepp/graphics/primitivedrawable.hpp
+../../include/eepp/graphics/rectangledrawable.hpp
 ../../include/eepp/graphics/renderer/base.hpp
+../../include/eepp/graphics/renderer/clippingmask.hpp
 ../../include/eepp/graphics/renderer/opengl.hpp
 ../../include/eepp/graphics/renderer/renderer.hpp
 ../../include/eepp/graphics/renderer/renderer.hpp
@@ -33,6 +38,8 @@
 ../../include/eepp/ui/uithemedefault.hpp
 ../../include/eepp/ui/uiwidget.hpp
 ../../src/eepp/gaming/mapobjectlayer.cpp
+../../src/eepp/graphics/arcdrawable.cpp
+../../src/eepp/graphics/circledrawable.cpp
 ../../src/eepp/graphics/drawable.cpp
 ../../src/eepp/graphics/drawablesearcher.cpp
 ../../src/eepp/graphics/fonttruetype.cpp
@@ -40,6 +47,9 @@
 ../../src/eepp/graphics/globalbatchrenderer.cpp
 ../../src/eepp/graphics/pixeldensity.cpp
 ../../src/eepp/graphics/pixelperfect.cpp
+../../src/eepp/graphics/primitivedrawable.cpp
+../../src/eepp/graphics/rectangledrawable.cpp
+../../src/eepp/graphics/renderer/clippingmask.cpp
 ../../src/eepp/graphics/renderer/openglext.hpp
 ../../src/eepp/graphics/renderer/renderer.cpp
 ../../src/eepp/graphics/renderer/renderer.cpp
