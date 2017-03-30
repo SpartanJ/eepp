@@ -50,7 +50,7 @@ class UIFontStyleConfig : public FontStyleConfig {
 			FontSelectionBackColor( fontStyleConfig.FontSelectionBackColor )
 		{}
 
-		virtual void updateFontStyleConfig( const UIFontStyleConfig& fontStyleConfig ) {
+		virtual void updateStyleConfig( const UIFontStyleConfig& fontStyleConfig ) {
 			FontStyleConfig::updateFontStyleConfig( fontStyleConfig );
 			FontOverColor = fontStyleConfig.FontOverColor;
 			FontSelectedColor = fontStyleConfig.FontSelectedColor;

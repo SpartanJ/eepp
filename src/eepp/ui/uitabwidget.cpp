@@ -112,7 +112,7 @@ UITooltipStyleConfig UITabWidget::getFontStyleConfig() const {
 }
 
 void UITabWidget::setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig) {
-	mStyleConfig.updateFontStyleConfig( fontStyleConfig );
+	mStyleConfig.updateStyleConfig( fontStyleConfig );
 }
 
 UITabWidgetStyleConfig UITabWidget::getStyleConfig() const {
