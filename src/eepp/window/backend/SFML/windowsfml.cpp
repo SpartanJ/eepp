@@ -51,7 +51,7 @@ bool WindowSFML::create( WindowSettings Settings, ContextSettings Context ) {
 	if ( mWindow.WindowConfig.Style & WindowStyle::Resize )
 		mWindow.Flags |= sf::Style::Resize;
 
-	if ( mWindow.WindowConfig.Style & WindowStyle::NoBorder )
+	if ( mWindow.WindowConfig.Style & WindowStyle::Borderless )
 		mWindow.Flags = sf::Style::None;
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::UseDesktopResolution ) {

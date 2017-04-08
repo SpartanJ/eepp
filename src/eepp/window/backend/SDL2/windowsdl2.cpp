@@ -132,7 +132,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		mWindow.Flags |= SDL_WINDOW_RESIZABLE;
 	}
 
-	if ( mWindow.WindowConfig.Style & WindowStyle::NoBorder ) {
+	if ( mWindow.WindowConfig.Style & WindowStyle::Borderless ) {
 		mWindow.Flags |= SDL_WINDOW_BORDERLESS;
 	}
 

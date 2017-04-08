@@ -27,7 +27,7 @@ class EE_API UISubTexture : public UIWidget {
 
 		Graphics::SubTexture * getSubTexture() const;
 
-		void setSubTexture( Graphics::SubTexture * subTexture );
+		UISubTexture * setSubTexture( Graphics::SubTexture * subTexture );
 
 		const ColorA& getColor() const;
 

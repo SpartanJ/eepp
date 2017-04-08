@@ -230,6 +230,8 @@ WindowSettings Engine::createWindowSettings( IniFile * ini, std::string iniKeyNa
 	int BitColor		= ini->getValueI( iniKeyName, "BitColor", 32);
 	bool Windowed		= ini->getValueB( iniKeyName, "Windowed", true );
 	bool Resizeable		= ini->getValueB( iniKeyName, "Resizeable", true );
+	bool Borderless		= ini->getValueB( iniKeyName, "Borderless", false );
+	bool UseDesktopResolution = ini->getValueB( iniKeyName, "UseDesktopResolution", false );
 	float pixelDensity	= ini->getValueF( iniKeyName, "PixelDensity", PixelDensity::getPixelDensity() );
 
 	std::string Backend = ini->getValue( iniKeyName, "Backend", "" );
@@ -241,6 +243,12 @@ WindowSettings Engine::createWindowSettings( IniFile * ini, std::string iniKeyNa
 	else if ( "sfml" == Backend )	WinBackend	= WindowBackend::SFML;
 
 	Uint32 Style = WindowStyle::Titlebar;
+
+	if ( Borderless )
+		Style = WindowStyle::Borderless;
+
+	if ( UseDesktopResolution )
+		Style |= WindowStyle::UseDesktopResolution;
 
 	if ( !Windowed )
 		Style |= WindowStyle::Fullscreen;

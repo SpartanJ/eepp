@@ -17,7 +17,7 @@ class CursorManager;
 namespace WindowStyle {
 	enum
 	{
-		NoBorder 					= ( 1 << 0 ),
+		Borderless 					= ( 1 << 0 ),
 		Titlebar					= ( 1 << 1 ),
 		Resize						= ( 1 << 2 ),
 		Fullscreen					= ( 1 << 3 ),

@@ -32,7 +32,7 @@ bool UISubTexture::isType( const Uint32& type ) const {
 	return UISubTexture::getType() == type ? true : UIWidget::isType( type );
 }
 
-void UISubTexture::setSubTexture( Graphics::SubTexture * subTexture ) {
+UISubTexture * UISubTexture::setSubTexture( Graphics::SubTexture * subTexture ) {
 	mSubTexture = subTexture;
 
 	onAutoSize();
@@ -44,6 +44,8 @@ void UISubTexture::setSubTexture( Graphics::SubTexture * subTexture ) {
 	autoAlign();
 
 	notifyLayoutAttrChange();
+
+	return this;
 }
 
 void UISubTexture::onAutoSize() {
