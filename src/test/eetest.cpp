@@ -511,9 +511,8 @@ void EETest::createNewUI() {
 	std::vector<String> str = getTestStringArr();
 
 	UILoader * loader = UILoader::New();
-	loader->setOutlineThickness(8)
+	loader->setOutlineThickness( 4 )
 			->setRadius( 25 )
-			->setOutlineThickness( 8 )
 			->setPosition( 800, 0 )
 			->setSize( 100, 100 )
 			->setBackgroundFillEnabled( true )->setColor( 0xCCCCCCCC );

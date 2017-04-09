@@ -72,7 +72,7 @@ void UILoader::update() {
 
 UILoader * UILoader::setOutlineThickness( const Float& thickness ) {
 	mOutlineThickness = thickness;
-	mCircle.setRadius( PixelDensity::dpToPx( mRadius ) - mOutlineThickness );
+	mCircle.setRadius( PixelDensity::dpToPx( mRadius ) - PixelDensity::dpToPx( mOutlineThickness ) );
 	return this;
 }
 
@@ -83,7 +83,7 @@ const Float& UILoader::getOutlineThickness() const {
 UILoader * UILoader::setRadius( const Float& radius ) {
 	mRadius = radius;
 	Float rRadius = PixelDensity::dpToPx( radius );
-	mCircle.setRadius( rRadius - mOutlineThickness );
+	mCircle.setRadius( rRadius - PixelDensity::dpToPx( mOutlineThickness ) );
 	mArc.setRadius( rRadius );
 	return this;
 }
