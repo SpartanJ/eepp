@@ -116,7 +116,7 @@ class EE_API UIControl {
 
 		UIControl * getNextControlLoop() const;
 
-		void setData( const UintPtr& data );
+		UIControl * setData( const UintPtr& data );
 
 		const UintPtr& getData() const;
 
@@ -130,7 +130,7 @@ class EE_API UIControl {
 
 		virtual UIControl * resetFlags( Uint32 newFlags = 0 );
 
-		void setBlendMode( const EE_BLEND_MODE& blend );
+		UIControl * setBlendMode( const EE_BLEND_MODE& blend );
 
 		EE_BLEND_MODE getBlendMode();
 
@@ -175,15 +175,15 @@ class EE_API UIControl {
 
 		virtual void setTheme( UITheme * Theme );
 
-		UIControl * setThemeControl( UITheme * Theme, const std::string& ControlName );
+		UIControl * setThemeSkin( UITheme * Theme, const std::string& skinName );
 
-		UIControl * setThemeControl( const std::string& ControlName );
+		UIControl * setThemeSkin( const std::string& skinName );
 
 		void setThemeToChilds( UITheme * Theme );
 
 		UISkin * getSkin();
 
-		virtual void setSkin( const UISkin& Skin );
+		virtual UIControl * setSkin( const UISkin& Skin );
 
 		UIControl * setSkin( UISkin * skin );
 

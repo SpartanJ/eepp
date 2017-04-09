@@ -54,7 +54,7 @@ bool UIDropDownList::isType( const Uint32& type ) const {
 void UIDropDownList::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
-	setThemeControl( Theme, "dropdownlist" );
+	setThemeSkin( Theme, "dropdownlist" );
 
 	onThemeLoaded();
 }

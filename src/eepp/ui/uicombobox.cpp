@@ -47,10 +47,10 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 		mButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIComboBox::onButtonClick ) );
 	}
 
-	mDropDownList->setThemeControl( Theme, "combobox" );
+	mDropDownList->setThemeSkin( Theme, "combobox" );
 	mDropDownList->onThemeLoaded();
 
-	mButton->setThemeControl( Theme, "combobox_button" );
+	mButton->setThemeSkin( Theme, "combobox_button" );
 
 	if ( NULL != mDropDownList->getSkin() ) {
 		setInternalHeight( mDropDownList->getSkin()->getSize().getHeight() );

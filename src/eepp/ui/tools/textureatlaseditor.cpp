@@ -26,7 +26,7 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	if ( NULL == mUIWindow ) {
 		mUIWindow = UIManager::instance()->getMainControl();
-		mUIWindow->setThemeControl( mTheme, "winback" );
+		mUIWindow->setThemeSkin( mTheme, "winback" );
 	}
 
 	if ( UIManager::instance()->getMainControl() == mUIWindow ) {

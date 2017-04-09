@@ -107,7 +107,7 @@ void UITable::onScrollValueChange( const UIEvent * Event ) {
 void UITable::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
-	setThemeControl( Theme, "genericgrid" );
+	setThemeSkin( Theme, "genericgrid" );
 
 	autoPadding();
 

@@ -646,9 +646,9 @@ void EETest::createNewUI() {
 	UITabWidget * TabWidget = UITabWidget::New();
 	TabWidget->setPosition( 350, 530 )->setSize( 200, 64 );
 
-	TabWidget->add( "Tab 1", UIWidget::New()->setThemeControl( "winback" ), mTheme->getIconByName( "ok" ) );
-	TabWidget->add( "Tab 2", UIWidget::New()->setThemeControl( "winback" ), mTheme->getIconByName( "go-up" ) );
-	TabWidget->add( "Tab 3", UIWidget::New()->setThemeControl( "winback" ), mTheme->getIconByName( "add" ) );
+	TabWidget->add( "Tab 1", UIWidget::New()->setThemeSkin( "winback" ), mTheme->getIconByName( "ok" ) );
+	TabWidget->add( "Tab 2", UIWidget::New()->setThemeSkin( "winback" ), mTheme->getIconByName( "go-up" ) );
+	TabWidget->add( "Tab 3", UIWidget::New()->setThemeSkin( "winback" ), mTheme->getIconByName( "add" ) );
 
 	UIWindow * win = UIWindow::New();
 	win->setSize( 500, 500 );

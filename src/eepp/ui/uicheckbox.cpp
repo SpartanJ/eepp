@@ -49,10 +49,10 @@ bool UICheckBox::isType( const Uint32& type ) const {
 void UICheckBox::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
-	setThemeControl( Theme, "checkbox" );
+	setThemeSkin( Theme, "checkbox" );
 
-	mActiveButton->setThemeControl	( Theme, "checkbox_active" );
-	mInactiveButton->setThemeControl( Theme, "checkbox_inactive" );
+	mActiveButton->setThemeSkin	( Theme, "checkbox_active" );
+	mInactiveButton->setThemeSkin( Theme, "checkbox_inactive" );
 
 	onThemeLoaded();
 }

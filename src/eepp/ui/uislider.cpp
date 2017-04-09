@@ -72,15 +72,15 @@ void UISlider::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
 	if ( UI_HORIZONTAL == mOrientation ) {
-		setThemeControl( Theme, "hslider" );
+		setThemeSkin( Theme, "hslider" );
 
-		mBackSlider->setThemeControl( Theme, "hslider_bg" );
-		mSlider->setThemeControl( Theme, "hslider_button" );
+		mBackSlider->setThemeSkin( Theme, "hslider_bg" );
+		mSlider->setThemeSkin( Theme, "hslider_button" );
 	} else {
-		setThemeControl( Theme, "vslider" );
+		setThemeSkin( Theme, "vslider" );
 
-		mBackSlider->setThemeControl( Theme, "vslider_bg" );
-		mSlider->setThemeControl( Theme, "vslider_button" );
+		mBackSlider->setThemeSkin( Theme, "vslider_bg" );
+		mSlider->setThemeSkin( Theme, "vslider_button" );
 	}
 
 	adjustChilds();

@@ -52,9 +52,9 @@ bool UITabWidget::isType( const Uint32& type ) const {
 void UITabWidget::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
-	mTabContainer->setThemeControl( Theme, "tabwidget" );
+	mTabContainer->setThemeSkin( Theme, "tabwidget" );
 
-	mCtrlContainer->setThemeControl( Theme, "tabcontainer" );
+	mCtrlContainer->setThemeSkin( Theme, "tabcontainer" );
 
 	if ( 0 == mStyleConfig.TabWidgetHeight ) {
 		UISkin * tSkin		= Theme->getSkin( "tab" );

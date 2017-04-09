@@ -183,7 +183,7 @@ void UITextInput::alignFix() {
 void UITextInput::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
-	setThemeControl( Theme, "textinput" );
+	setThemeSkin( Theme, "textinput" );
 
 	onThemeLoaded();
 }

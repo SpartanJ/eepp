@@ -122,7 +122,7 @@ void UIPushButton::onSizeChange() {
 
 void UIPushButton::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
-	setThemeControl( Theme, "button" );
+	setThemeSkin( Theme, "button" );
 
 	onThemeLoaded();
 }

@@ -373,7 +373,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 		} else if ( "theme" == name ) {
 			setThemeByName( ait->as_string() );
 		} else if ( "skin" == name ) {
-			setThemeControl( ait->as_string() );
+			setThemeSkin( ait->as_string() );
 		} else if ( "gravity" == name ) {
 			std::string gravity = ait->as_string();
 			String::toLowerInPlace( gravity );

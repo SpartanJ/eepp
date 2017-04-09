@@ -49,7 +49,7 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	Button->setEnabled( true );
 
 	if ( NULL != mSkinState && NULL != mSkinState->getSkin() )
-		Button->setThemeControl( mSkinState->getSkin()->getTheme(), "winmenubutton" );
+		Button->setThemeSkin( mSkinState->getSkin()->getTheme(), "winmenubutton" );
 
 	Menu->setVisible( false );
 	Menu->setEnabled( false );
@@ -64,10 +64,10 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 void UIWinMenu::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
-	setThemeControl( Theme, "winmenu" );
+	setThemeSkin( Theme, "winmenu" );
 
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
-		it->first->setThemeControl( Theme, "winmenubutton" );
+		it->first->setThemeSkin( Theme, "winmenubutton" );
 	}
 
 	if ( 0 == mStyleConfig.MenuHeight && NULL != getSkin() && NULL != getSkin() ) {

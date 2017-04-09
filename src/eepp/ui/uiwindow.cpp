@@ -311,26 +311,26 @@ void UIWindow::onButtonMinimizeClick( const UIEvent * Event ) {
 void UIWindow::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
-	mContainer->setThemeControl			( Theme, "winback"			);
+	mContainer->setThemeSkin			( Theme, "winback"			);
 
 	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) ) {
-		mWindowDecoration->setThemeControl	( Theme, "windeco"			);
-		mBorderLeft->setThemeControl		( Theme, "winborderleft"	);
-		mBorderRight->setThemeControl		( Theme, "winborderright"	);
-		mBorderBottom->setThemeControl		( Theme, "winborderbottom"	);
+		mWindowDecoration->setThemeSkin	( Theme, "windeco"			);
+		mBorderLeft->setThemeSkin		( Theme, "winborderleft"	);
+		mBorderRight->setThemeSkin		( Theme, "winborderright"	);
+		mBorderBottom->setThemeSkin		( Theme, "winborderbottom"	);
 
 		if ( NULL != mButtonClose ) {
-			mButtonClose->setThemeControl( Theme, "winclose" );
+			mButtonClose->setThemeSkin( Theme, "winclose" );
 			mButtonClose->setSize( mButtonClose->getSkinSize() );
 		}
 
 		if ( NULL != mButtonMaximize ) {
-			mButtonMaximize->setThemeControl( Theme, "winmax" );
+			mButtonMaximize->setThemeSkin( Theme, "winmax" );
 			mButtonMaximize->setSize( mButtonMaximize->getSkinSize() );
 		}
 
 		if ( NULL != mButtonMinimize ) {
-			mButtonMinimize->setThemeControl( Theme, "winmin" );
+			mButtonMinimize->setThemeSkin( Theme, "winmin" );
 			mButtonMinimize->setSize( mButtonMinimize->getSkinSize() );
 		}
 

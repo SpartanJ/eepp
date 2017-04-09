@@ -56,7 +56,7 @@ void UITab::setTheme( UITheme * Theme ) {
 		}
 	}
 
-	UIControl::setThemeControl( Theme, tabPos );
+	UIControl::setThemeSkin( Theme, tabPos );
 
 	onThemeLoaded();
 }

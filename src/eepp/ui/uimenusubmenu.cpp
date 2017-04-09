@@ -40,7 +40,7 @@ bool UIMenuSubMenu::isType( const Uint32& type ) const {
 void UIMenuSubMenu::setTheme( UITheme * Theme ) {
 	UIMenuItem::setTheme( Theme );
 
-	mArrow->setThemeControl( "menuarrow" );
+	mArrow->setThemeSkin( "menuarrow" );
 	mArrow->setSize( mArrow->getSkinSize() );
 
 	onStateChange();

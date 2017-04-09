@@ -592,8 +592,9 @@ UIControl * UIControl::getNextControlLoop() const {
 		return mNext;
 }
 
-void UIControl::setData(const UintPtr& data ) {
+UIControl * UIControl::setData(const UintPtr& data ) {
 	mData = data;
+	return this;
 }
 
 const UintPtr& UIControl::getData() const {
@@ -636,8 +637,9 @@ UIControl *UIControl::resetFlags( Uint32 newFlags ) {
 	return this;
 }
 
-void UIControl::setBlendMode( const EE_BLEND_MODE& blend ) {
+UIControl * UIControl::setBlendMode( const EE_BLEND_MODE& blend ) {
 	mBlend = static_cast<Uint16> ( blend );
+	return this;
 }
 
 EE_BLEND_MODE UIControl::getBlendMode() {
@@ -1208,16 +1210,16 @@ void UIControl::setThemeByName( const std::string& Theme ) {
 }
 
 void UIControl::setTheme( UITheme * Theme ) {
-	setThemeControl( Theme, "control" );
+	setThemeSkin( Theme, "control" );
 }
 
-UIControl * UIControl::setThemeControl( const std::string& ControlName ) {
-	return setThemeControl( UIThemeManager::instance()->getDefaultTheme(), ControlName );
+UIControl * UIControl::setThemeSkin(const std::string& skinName ) {
+	return setThemeSkin( UIThemeManager::instance()->getDefaultTheme(), skinName );
 }
 
-UIControl * UIControl::setThemeControl( UITheme * Theme, const std::string& ControlName ) {
+UIControl * UIControl::setThemeSkin(UITheme * Theme, const std::string& skinName ) {
 	if ( NULL != Theme ) {
-		UISkin * tSkin = Theme->getSkin( ControlName );
+		UISkin * tSkin = Theme->getSkin( skinName );
 
 		if ( NULL != tSkin ) {
 			Uint32 InitialState = UISkinState::StateNormal;
@@ -1238,7 +1240,7 @@ UIControl * UIControl::setThemeControl( UITheme * Theme, const std::string& Cont
 	return this;
 }
 
-void UIControl::setSkin( const UISkin& Skin ) {
+UIControl * UIControl::setSkin( const UISkin& Skin ) {
 	removeSkin();
 
 	writeCtrlFlag( UI_CTRL_FLAG_SKIN_OWNER, 1 );
@@ -1248,6 +1250,8 @@ void UIControl::setSkin( const UISkin& Skin ) {
 	mSkinState = UISkinState::New( SkinCopy );
 
 	onThemeLoaded();
+
+	return this;
 }
 
 UIControl * UIControl::setSkin( UISkin * skin ) {

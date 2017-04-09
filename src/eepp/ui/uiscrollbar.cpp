@@ -48,19 +48,19 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
 	if ( !isVertical() ) {
-		UIControl::setThemeControl( Theme, "hscrollbar" );
-		mSlider->setThemeControl( Theme, "hscrollbar_slider" );
-		mSlider->getBackSlider()->setThemeControl( Theme, "hscrollbar_bg" );
-		mSlider->getSliderButton()->setThemeControl( Theme, "hscrollbar_button" );
-		mBtnUp->setThemeControl( Theme, "hscrollbar_btnup" );
-		mBtnDown->setThemeControl( Theme, "hscrollbar_btndown" );
+		UIControl::setThemeSkin( Theme, "hscrollbar" );
+		mSlider->setThemeSkin( Theme, "hscrollbar_slider" );
+		mSlider->getBackSlider()->setThemeSkin( Theme, "hscrollbar_bg" );
+		mSlider->getSliderButton()->setThemeSkin( Theme, "hscrollbar_button" );
+		mBtnUp->setThemeSkin( Theme, "hscrollbar_btnup" );
+		mBtnDown->setThemeSkin( Theme, "hscrollbar_btndown" );
 	} else {
-		UIControl::setThemeControl( Theme, "vscrollbar" );
-		mSlider->setThemeControl( Theme, "vscrollbar_slider" );
-		mSlider->getBackSlider()->setThemeControl( Theme, "vscrollbar_bg" );
-		mSlider->getSliderButton()->setThemeControl( Theme, "vscrollbar_button" );
-		mBtnUp->setThemeControl( Theme, "vscrollbar_btnup" );
-		mBtnDown->setThemeControl( Theme, "vscrollbar_btndown" );
+		UIControl::setThemeSkin( Theme, "vscrollbar" );
+		mSlider->setThemeSkin( Theme, "vscrollbar_slider" );
+		mSlider->getBackSlider()->setThemeSkin( Theme, "vscrollbar_bg" );
+		mSlider->getSliderButton()->setThemeSkin( Theme, "vscrollbar_button" );
+		mBtnUp->setThemeSkin( Theme, "vscrollbar_btnup" );
+		mBtnDown->setThemeSkin( Theme, "vscrollbar_btndown" );
 	}
 
 	UISkin * tSkin = NULL;

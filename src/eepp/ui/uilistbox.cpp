@@ -84,7 +84,7 @@ bool UIListBox::isType( const Uint32& type ) const {
 void UIListBox::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
-	setThemeControl( Theme, "listbox" );
+	setThemeSkin( Theme, "listbox" );
 
 	autoPadding();
 

@@ -26,7 +26,7 @@ bool UIMenuItem::isType( const Uint32& type ) const {
 
 void UIMenuItem::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
-	setThemeControl( Theme, "menuitem" );
+	setThemeSkin( Theme, "menuitem" );
 	onThemeLoaded();
 }
 

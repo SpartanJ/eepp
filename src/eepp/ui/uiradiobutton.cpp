@@ -49,10 +49,10 @@ bool UIRadioButton::isType( const Uint32& type ) const {
 
 void UIRadioButton::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
-	setThemeControl( Theme, "radiobutton" );
+	setThemeSkin( Theme, "radiobutton" );
 
-	mActiveButton->setThemeControl	( Theme, "radiobutton_active" );
-	mInactiveButton->setThemeControl( Theme, "radiobutton_inactive" );
+	mActiveButton->setThemeSkin	( Theme, "radiobutton_active" );
+	mInactiveButton->setThemeSkin( Theme, "radiobutton_inactive" );
 
 	onThemeLoaded();
 }

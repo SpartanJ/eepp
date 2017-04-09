@@ -71,9 +71,9 @@ bool UITextEdit::isType( const Uint32& type ) const {
 void UITextEdit::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
-	setThemeControl( Theme, "textedit" );
+	setThemeSkin( Theme, "textedit" );
 
-	mTextInput->setThemeControl( Theme, "textedit_box" );
+	mTextInput->setThemeSkin( Theme, "textedit_box" );
 
 	autoPadding();
 
