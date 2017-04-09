@@ -510,6 +510,14 @@ void EETest::createUI() {
 void EETest::createNewUI() {
 	std::vector<String> str = getTestStringArr();
 
+	UILoader * loader = UILoader::New();
+	loader->setOutlineThickness(8)
+			->setRadius( 25 )
+			->setOutlineThickness( 8 )
+			->setPosition( 800, 0 )
+			->setSize( 100, 100 )
+			->setBackgroundFillEnabled( true )->setColor( 0xCCCCCCCC );
+
 	UIRadioButton * ctrl = UIRadioButton::New();
 	ctrl->setPosition( 50, 100 )->setSize( 200, 32 );
 	ctrl->setBackgroundFillEnabled( true )->setColor( 0x33333333 );

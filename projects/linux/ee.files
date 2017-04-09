@@ -68,6 +68,7 @@
 ../../src/eepp/ui/uihelper.cpp
 ../../src/eepp/ui/uiimage.cpp
 ../../src/eepp/ui/uilinearlayout.cpp
+../../src/eepp/ui/uiloader.cpp
 ../../src/eepp/ui/uimenuseparator.cpp
 ../../src/eepp/ui/uirelativelayout.cpp
 ../../src/eepp/ui/uisubtexture.cpp

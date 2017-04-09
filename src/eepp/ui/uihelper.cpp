@@ -22,6 +22,7 @@
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextinputpassword.hpp>
+#include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uiwindow.hpp>
 
 namespace  EE { namespace UI {
@@ -81,6 +82,8 @@ UIWidget * UIHelper::createUIWidgetFromName( std::string name ) {
 		return UITextInput::New();
 	} else if ( name == "textinputpassword" || name == "inputpassword" ) {
 		return UITextInputPassword::New();
+	} else if ( name == "loader" ) {
+		return UILoader::New();
 	} else if ( name == "window" ) {
 		return UIWindow::New();
 	}
