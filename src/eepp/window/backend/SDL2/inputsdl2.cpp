@@ -329,12 +329,16 @@ void InputSDL::init() {
 	SDL_GetWindowSize(sdlw, &scaledX, &scaledY);
 	mDPIScale = (Float)realX / (Float)scaledX;
 	
-	Vector2if mTempMouse;
+	Vector2i mTempMouse;
+	Vector2i mTempWinPos;
+	Recti mBordersSize;
 
-	SDL_GetMouseState( &mTempMouse.x, &mTempMouse.y );
+	SDL_GetGlobalMouseState( &mTempMouse.x, &mTempMouse.y );
+	SDL_GetWindowPosition( sdlw, &mTempWinPos.x, &mTempWinPos.y );
+	SDL_GetWindowBordersSize( sdlw, &mBordersSize.Top, &mBordersSize.Left, &mBordersSize.Bottom, &mBordersSize.Right );
 
-	mMousePos.x = (int)mTempMouse.x;
-	mMousePos.y = (int)mTempMouse.y;
+	mMousePos.x = (int)mTempMouse.x - mTempWinPos.x - mBordersSize.Left;
+	mMousePos.y = (int)mTempMouse.y - mTempWinPos.y - mBordersSize.Top;
 
 	initializeTables();
 

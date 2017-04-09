@@ -66,7 +66,7 @@ void videoResize( EE::Window::Window * w ) {
 	BlendMode::setMode( ALPHA_BLENDONE );
 
 	/// Set the line width
-	GlobalBatchRenderer::instance()->setLineWidth( 2 );
+	GLi->lineWidth( 2 );
 
 	if ( ShadersSupported ) {
 		/// Rebind the Shader
