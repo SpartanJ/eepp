@@ -704,8 +704,8 @@ function build_eepp( build_name )
 			"src/eepp/ui/tools/*.cpp",
 			"src/eepp/physics/*.cpp",
 			"src/eepp/physics/constraints/*.cpp",
-			"src/eepp/gaming/*.cpp",
-			"src/eepp/gaming/mapeditor/*.cpp"
+			"src/eepp/maps/*.cpp",
+			"src/eepp/maps/mapeditor/*.cpp"
 	}
 	
 	check_ssl_support()

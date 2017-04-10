@@ -23,7 +23,7 @@ Entropia Engine++
 
   * Batch Renderer ( all the rendering is automatically batched by the engine ).
 
-  * TTF and Texture fonts support.
+  * True type fonts support.
 
   * Frame Buffer support.
 
@@ -38,6 +38,8 @@ Entropia Engine++
   * Animated Sprites.
 
   * Texture Atlas support ( automatic creation and update of the texture atlas ).
+  
+  * Clipping Masks ( stencil, scissors, planes )
 
 
 **Window Module:**
@@ -114,10 +116,14 @@ Entropia Engine++
   
   * All the basic controls are implemented ( button, textbox, combobox, inputbox, menu, listbox, scrollbars, etc ).
   
+  * Layout system similar to Androids layouts.
+  
   * Features as text selection and key bindings.
+  
+  * Load layouts from XMLs
 
 
-**Gaming Module:**
+**Maps Module:**
 ------------------
 
   * Tiled Maps with software dynamic lights.

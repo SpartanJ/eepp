@@ -34,7 +34,7 @@
 						EE::Network documented.
 						EE::UI Not documented at all.
 						EE::Physics Not documented at all, chipmunk documentation should help.
-						EE::Gaming Not documented at all.
+						EE::Maps Not documented at all.
 
 	@todo Add more commented examples, showing at least the basic usage of the engine ( 10 or more examples at least ).
 				STATE:	7 examples available.
@@ -94,9 +94,9 @@
 	using namespace EE::UI;
 	using namespace EE::UI::Tools;
 
-	// Gaming
-	#include <eepp/gaming.hpp>
-	using namespace EE::Gaming;
+	// Maps
+	#include <eepp/maps.hpp>
+	using namespace EE::Maps;
 
 	// Physics
 	#include <eepp/physics.hpp>
