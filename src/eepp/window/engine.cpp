@@ -46,10 +46,6 @@ Engine::Engine() :
 Engine::~Engine() {
 	Physics::PhysicsManager::destroySingleton();
 
-	Graphics::Private::FrameBufferManager::destroySingleton();
-
-	Graphics::Private::VertexBufferManager::destroySingleton();
-
 	GlobalBatchRenderer::destroySingleton();
 
 	TextureAtlasManager::destroySingleton();
@@ -65,6 +61,10 @@ Engine::~Engine() {
 	ShaderProgramManager::destroySingleton();
 
 	PackManager::destroySingleton();
+
+	Graphics::Private::FrameBufferManager::destroySingleton();
+
+	Graphics::Private::VertexBufferManager::destroySingleton();
 
 	Log::destroySingleton();
 
