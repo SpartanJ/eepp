@@ -37,6 +37,7 @@
 ../../include/eepp/ui/uithemeconfig.hpp
 ../../include/eepp/ui/uithemedefault.hpp
 ../../include/eepp/ui/uiwidget.hpp
+../../include/eepp/ui/uiwidgetcreator.hpp
 ../../src/eepp/maps/mapobjectlayer.cpp
 ../../src/eepp/graphics/arcdrawable.cpp
 ../../src/eepp/graphics/circledrawable.cpp
@@ -65,7 +66,6 @@
 ../../src/eepp/system/color.cpp
 ../../src/eepp/system/translator.cpp
 ../../src/eepp/ui/uidragablecontrol.cpp
-../../src/eepp/ui/uihelper.cpp
 ../../src/eepp/ui/uiimage.cpp
 ../../src/eepp/ui/uilinearlayout.cpp
 ../../src/eepp/ui/uiloader.cpp
@@ -334,6 +334,7 @@
 ../../src/eepp/ui/tools/textureatlassubtextureeditor.hpp
 ../../src/eepp/ui/tools/textureatlasnew.hpp
 ../../include/eepp/ui/tools/textureatlaseditor.hpp
+../../src/eepp/ui/uiwidgetcreator.cpp
 ../../src/eepp/ui/uiwinmenu.cpp
 ../../src/eepp/ui/uiwindow.cpp
 ../../src/eepp/ui/uitooltip.cpp

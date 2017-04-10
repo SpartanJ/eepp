@@ -1,6 +1,7 @@
 #include <eepp/ui/uiwinmenu.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/subtexture.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -287,6 +288,25 @@ void UIWinMenu::destroyMenues() {
 	if ( !UIManager::instance()->isShootingDown() ) {
 		for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
 			it->second->close();
+		}
+	}
+}
+
+void UIWinMenu::loadFromXmlNode( const pugi::xml_node& node ) {
+	UIWidget::loadFromXmlNode( node );
+
+	for ( pugi::xml_node item = node.first_child(); item; item = item.next_sibling() ) {
+		std::string name( item.name() );
+		String::toLowerInPlace( name );
+
+		if ( "menu" == name ) {
+			std::string text( item.attribute("text").as_string() );
+
+			UIPopUpMenu * subMenu = UIPopUpMenu::New();
+
+			subMenu->loadFromXmlNode( item );
+
+			addMenuButton( String( text ), subMenu );
 		}
 	}
 }

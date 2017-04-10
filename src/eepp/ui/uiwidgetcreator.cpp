@@ -1,8 +1,9 @@
-#include <eepp/ui/uihelper.hpp>
+#include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uipushbutton.hpp>
+#include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uicombobox.hpp>
@@ -27,9 +28,11 @@
 
 namespace  EE { namespace UI {
 
-static UIHelper::CreateUIWidgetCb customWidgetCallback;
+typedef std::map<std::string, UIWidgetCreator::CreateUIWidgetCb> widgetCallbackMap;
 
-UIWidget * UIHelper::createUIWidgetFromName( std::string name ) {
+static widgetCallbackMap widgetCallback;
+
+UIWidget * UIWidgetCreator::createUIWidgetFromName( std::string name ) {
 	String::toLowerInPlace( name );
 
 	if ( name == "widget" ) {
@@ -84,19 +87,29 @@ UIWidget * UIHelper::createUIWidgetFromName( std::string name ) {
 		return UITextInputPassword::New();
 	} else if ( name == "loader" ) {
 		return UILoader::New();
+	} else if ( name == "selectbutton" ) {
+		return UISelectButton::New();
 	} else if ( name == "window" ) {
 		return UIWindow::New();
 	}
 
-	if ( customWidgetCallback.IsSet() ) {
-		return customWidgetCallback( name );
+	if ( widgetCallback.find( name ) != widgetCallback.end() ) {
+		return widgetCallback[ name ].Call( name );
 	}
 
 	return NULL;
 }
 
-void UIHelper::setCreateCustomUIWidgetCallback(UIHelper::CreateUIWidgetCb cb) {
-	customWidgetCallback = cb;
+void UIWidgetCreator::addCustomWidgetCallback( std::string widgetName, const UIWidgetCreator::CreateUIWidgetCb& cb ) {
+	widgetCallback[ String::toLower( widgetName ) ] = cb;
+}
+
+void UIWidgetCreator::removeCustomWidgetCallback( std::string widgetName ) {
+	widgetCallback.erase( String::toLower( widgetName ) );
+}
+
+bool UIWidgetCreator::existsCustomWidgetCallback( std::string widgetName ) {
+	return widgetCallback.find( String::toLower( widgetName ) ) != widgetCallback.end();
 }
 
 }}

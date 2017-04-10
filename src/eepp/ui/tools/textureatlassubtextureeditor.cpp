@@ -5,6 +5,10 @@
 
 namespace EE { namespace UI { namespace Tools {
 
+TextureAtlasSubTextureEditor * TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor::New( TextureAtlasEditor * Editor ) {
+	return eeNew( TextureAtlasSubTextureEditor, ( Editor ) );
+}
+
 TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( TextureAtlasEditor * Editor ) :
 	UIWidget(),
 	mGfx( NULL ),

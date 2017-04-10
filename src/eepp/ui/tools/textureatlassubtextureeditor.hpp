@@ -12,6 +12,8 @@ class TextureAtlasEditor;
 
 class EE_API TextureAtlasSubTextureEditor : public UIWidget {
 	public:
+		static TextureAtlasSubTextureEditor * New( TextureAtlasEditor * Editor );
+
 		TextureAtlasSubTextureEditor( TextureAtlasEditor * Editor );
 
 		virtual ~TextureAtlasSubTextureEditor();

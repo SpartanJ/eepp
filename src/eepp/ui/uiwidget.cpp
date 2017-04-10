@@ -489,6 +489,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			} else {
 				setLayoutWidthRules( FIXED );
 				setInternalWidth( PixelDensity::toDpFromStringI( val ) );
+				onSizeChange();
 			}
 		} else if ( "layout_height" == name ) {
 			std::string val = ait->as_string();
@@ -503,6 +504,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			} else {
 				setLayoutHeightRules( FIXED );
 				setInternalHeight( PixelDensity::toDpFromStringI( val ) );
+				onSizeChange();
 			}
 		} else if ( String::startsWith( name, "layout_to_" ) || String::startsWith( name, "layoutto" ) ) {
 			LayoutPositionRules rule = NONE;

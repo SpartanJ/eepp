@@ -4,6 +4,7 @@
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>
+#include <eepp/ui/uiwidgetcreator.hpp>
 #include <algorithm>
 
 namespace EE { namespace UI {
@@ -510,7 +511,7 @@ void UIManager::loadLayoutNodes( pugi::xml_node node, UIControl * parent ) {
 		parent = getMainControl();
 
 	for ( pugi::xml_node widget = node; widget; widget = widget.next_sibling() ) {
-		UIWidget * uiwidget = UIHelper::createUIWidgetFromName( widget.name() );
+		UIWidget * uiwidget = UIWidgetCreator::createUIWidgetFromName( widget.name() );
 
 		if ( NULL != uiwidget ) {
 			uiwidget->setParent( parent );

@@ -55,10 +55,6 @@ class EE_API TextureAtlasEditor {
 
 		void windowClose( const UIEvent * Event );
 
-		void createTGEditor();
-
-		void createWinMenu();
-
 		void fileMenuClick( const UIEvent * Event );
 
 		void onTextureAtlasCreate( TexturePacker * TexPacker );
@@ -96,6 +92,8 @@ class EE_API TextureAtlasEditor {
 		void onTextureAtlasLoaded( TextureAtlasLoader * TGLoader );
 
 		void update();
+
+		UIWidget * createTextureAtlasSubTextureEditor( std::string name );
 };
 
 }}}

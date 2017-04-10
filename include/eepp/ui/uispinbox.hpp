@@ -71,6 +71,8 @@ class EE_API UISpinBox : public UIWidget {
 		void internalValue( const Float& Val, const bool& Force = false );
 
 		virtual void onSizeChange();
+
+		virtual void onPositionChange();
 		
 		virtual void onAlphaChange();
 };

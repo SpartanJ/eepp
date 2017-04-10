@@ -68,6 +68,7 @@ class EE_API UIMenu : public UIWidget {
 
 		void setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig);
 
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		friend class UIMenuItem;
 		friend class UIMenuCheckBox;

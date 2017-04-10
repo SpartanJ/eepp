@@ -320,7 +320,7 @@ Uint32 UILinearLayout::onMessage(const UIMessage * Msg) {
 		case UIMessage::MsgLayoutAttributeChange:
 		{
 			pack();
-			return 1;
+			break;
 		}
 	}
 

@@ -38,6 +38,7 @@ class EE_API UIWinMenu : public UIWidget {
 
 		void setStyleConfig(const UIWinMenuStyleConfig & styleConfig);
 
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		typedef std::list< std::pair< UISelectButton *, UIPopUpMenu * > > WinMenuList;
 

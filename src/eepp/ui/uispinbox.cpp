@@ -167,6 +167,12 @@ void UISpinBox::onSizeChange() {
 	adjustChilds();
 }
 
+void UISpinBox::onPositionChange() {
+	UIWidget::onPositionChange();
+
+	adjustChilds();
+}
+
 UISpinBox * UISpinBox::setValue( const Float& Val ) {
 	internalValue( Val, false );
 	return this;

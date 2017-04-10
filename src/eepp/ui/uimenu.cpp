@@ -1,6 +1,9 @@
 #include <eepp/ui/uimenu.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/font.hpp>
+#include <eepp/graphics/drawablesearcher.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 
 namespace EE { namespace UI {
 
@@ -523,6 +526,50 @@ UITooltipStyleConfig UIMenu::getFontStyleConfig() const {
 
 void UIMenu::setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig) {
 	mStyleConfig = fontStyleConfig;
+}
+
+static Drawable * getIconDrawable( const std::string& name ) {
+	Drawable * iconDrawable = NULL;
+	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
+
+	if ( NULL != theme )
+		iconDrawable = theme->getIconByName( name );
+
+	if ( NULL == iconDrawable )
+		iconDrawable = DrawableSearcher::searchByName( name );
+
+	return iconDrawable;
+}
+
+void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
+	UIWidget::loadFromXmlNode( node );
+
+	for ( pugi::xml_node item = node.first_child(); item; item = item.next_sibling() ) {
+		std::string name( item.name() );
+		String::toLowerInPlace( name );
+
+		if ( name == "menuitem" || name == "item" ) {
+			std::string text( item.attribute("text").as_string() );
+			std::string icon( item.attribute("icon").as_string() );
+			add( String( text ), getIconDrawable( icon ) );
+		} else if ( name == "menuseparator" || name == "separator" ) {
+			addSeparator();
+		} else if ( name == "menucheckbox" || name == "checkbox" ) {
+			std::string text( item.attribute("text").as_string() );
+			bool active( item.attribute("active").as_bool() );
+
+			addCheckBox( String( text ), active );
+		} else if ( name == "menusubmenu" || name == "submenu" ) {
+			std::string text( item.attribute("text").as_string() );
+			std::string icon( item.attribute("icon").as_string() );
+
+			UIPopUpMenu * subMenu = UIPopUpMenu::New();
+
+			subMenu->loadFromXmlNode( item );
+
+			addSubMenu( String( text ), getIconDrawable( icon ), subMenu );
+		}
+	}
 }
 
 void UIMenu::fixMenuPos( Vector2i& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {
