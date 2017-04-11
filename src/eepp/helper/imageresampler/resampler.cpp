@@ -465,8 +465,6 @@ Resampler::Contrib_List* Resampler::make_clist(
 
    if (xscale < 1.0f)
    {
-	  int total;
-
       /* Handle case when there are fewer destination
       * samples than source samples (downsampling/minification).
       */
@@ -501,7 +499,6 @@ Resampler::Contrib_List* Resampler::make_clist(
          free(Pcontrib_bounds);
          return NULL;
       }
-      total = n;
 
       Pcpool_next = Pcpool;
 
@@ -521,7 +518,7 @@ Resampler::Contrib_List* Resampler::make_clist(
          Pcontrib[i].n = 0;
          Pcontrib[i].p = Pcpool_next;
          Pcpool_next += (right - left + 1);
-         resampler_assert ((Pcpool_next - Pcpool) <= total);
+         resampler_assert ((Pcpool_next - Pcpool) <= n);
 
          total_weight = 0;
 
