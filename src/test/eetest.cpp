@@ -660,7 +660,7 @@ void EETest::createNewUI() {
 
 	UILinearLayout * layPar = UILinearLayout::NewHorizontal();
 	layPar->setParent( layWin );
-	layPar->setLayoutMargin( Recti( 16, 16, 16, 16 ) );
+	layPar->setLayoutMargin( Recti( 10, 10, 10, 10 ) );
 	layPar->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT );
 	layPar->setLayoutGravity( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 	layPar->setBackgroundFillEnabled( true )->setColor( 0x999999FF );
@@ -680,13 +680,13 @@ void EETest::createNewUI() {
 
 	UILinearLayout * lay2 = UILinearLayout::NewVertical();
 	lay2->setLayoutGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
-	lay2->setLayoutSizeRules( FIXED, MATCH_PARENT );
-	lay2->setBackgroundFillEnabled( true )->setColor( 0x000000FF );
+	lay2->setLayoutSizeRules( FIXED, WRAP_CONTENT );
+	lay2->setBackgroundFillEnabled( true )->setColor( Color::Black );
 	lay2->setLayoutWeight( 0.3f );
 
 	UIPushButton::New()->setText( "PushButton" )->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutGravity( UI_VALIGN_CENTER )->setParent( lay2 );
 	UIListBox * lbox = UIListBox::New();
-	lbox->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, FIXED )->setSize( 0, 120 )->setParent( lay2 );
+	lbox->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, FIXED )->setSize( 0, 105 )->setParent( lay2 );
 	lbox->addListBoxItems( { "This", "is", "a", "ListBox" } );
 	lay2->setParent( layPar );
 	lay->setParent( layPar );
