@@ -104,7 +104,7 @@ void DampedSpring::draw() {
 	GLi->disable( GL_TEXTURE_2D );
 	GLi->disableClientState( GL_TEXTURE_COORD_ARRAY );
 
-	std::vector<ColorA> tcolors( springVAR_count * 4, ColorA( 0, 255, 0, 255 ) );
+	std::vector<Color> tcolors( springVAR_count * 4, Color( 0, 255, 0, 255 ) );
 	GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), springVAR_count * 4 );
 	GLi->vertexPointer( 2, GL_FLOAT, 0, springVAR, springVAR_count * sizeof(float) * 2 );
 

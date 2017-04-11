@@ -15,7 +15,7 @@ struct eeTexCoord {
 struct eeVertex {
 	Vector2f pos;
 	eeTexCoord tex;
-	ColorA color;
+	Color color;
 };
 
 class TextureFactory;
@@ -101,16 +101,16 @@ class EE_API BatchRenderer {
 		void quadsSetSubsetFree( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2, const Float& x3, const Float& y3 );
 
 		/** Set the quad color */
-		void quadsSetColor( const ColorA& Color );
+		void quadsSetColor( const Color& Color );
 
 		/** Set the quad color per vertex */
-		void quadsSetColorFree( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 );
+		void quadsSetColorFree( const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3 );
 
 		/** This will set as the default batch rendering to DM_POINTS. And will reset the point color to ColorA(255,255,255,255). */
 		void pointsBegin();
 
 		/** Set the point color */
-		void pointSetColor( const ColorA& Color );
+		void pointSetColor( const Color& Color );
 
 		/** Add to the batch a point ( this will change your batch rendering method to DM_POINTS, so if you were using another one will Draw all the batched vertexs first ) */
 		void batchPoint( const Float& x, const Float& y );
@@ -119,10 +119,10 @@ class EE_API BatchRenderer {
 		void linesBegin();
 
 		/** Set the line color */
-		void linesSetColor( const ColorA& Color );
+		void linesSetColor( const Color& Color );
 
 		/** Set the line color, per vertex */
-		void linesSetColorFree( const ColorA& Color0, const ColorA& Color1 );
+		void linesSetColorFree( const Color& Color0, const Color& Color1 );
 
 		/** Add to the batch a line ( this will change your batch rendering method to DM_LINES, so if you were using another one will Draw all the batched vertexs first ) */
 		void batchLine( const Float& x0, const Float& y0, const Float& x1, const Float& y1 );
@@ -131,10 +131,10 @@ class EE_API BatchRenderer {
 		void lineLoopBegin();
 
 		/** Set the line color */
-		void lineLoopSetColor( const ColorA& Color );
+		void lineLoopSetColor( const Color& Color );
 
 		/** Set the line color, per vertex */
-		void lineLoopSetColorFree( const ColorA& Color0, const ColorA& Color1 );
+		void lineLoopSetColorFree( const Color& Color0, const Color& Color1 );
 
 		/** Add to the batch a line ( this will change your batch rendering method to DM_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
 		void batchLineLoop( const Float& x0, const Float& y0, const Float& x1, const Float& y1 );
@@ -152,10 +152,10 @@ class EE_API BatchRenderer {
 		void lineStripBegin();
 
 		/** Set the line color */
-		void lineStripSetColor( const ColorA& Color );
+		void lineStripSetColor( const Color& Color );
 
 		/** Set the line color, per vertex */
-		void lineStripSetColorFree( const ColorA& Color0, const ColorA& Color1 );
+		void lineStripSetColorFree( const Color& Color0, const Color& Color1 );
 
 		/** Add to the batch a line ( this will change your batch rendering method to DM_LINE_STRIP, so if you were using another one will Draw all the batched vertexs first ) */
 		void batchLineStrip( const Float& x0, const Float& y0, const Float& x1, const Float& y1 );
@@ -173,10 +173,10 @@ class EE_API BatchRenderer {
 		void triangleFanBegin();
 
 		/** Set the triangle fan color */
-		void triangleFanSetColor( const ColorA& Color );
+		void triangleFanSetColor( const Color& Color );
 
 		/** Set the triangle fan color, per vertex */
-		void triangleFanSetColorFree( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2 );
+		void triangleFanSetColorFree( const Color& Color0, const Color& Color1, const Color& Color2 );
 
 		/** Set the texture sector to be rendered but freely seted */
 		void triangleFanSetSubset( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );
@@ -191,10 +191,10 @@ class EE_API BatchRenderer {
 		void trianglesBegin();
 
 		/** Set the triangles color */
-		void trianglesSetColor( const ColorA& Color );
+		void trianglesSetColor( const Color& Color );
 
 		/** Set the triangles color, per vertex */
-		void trianglesSetColorFree( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2 );
+		void trianglesSetColorFree( const Color& Color0, const Color& Color1, const Color& Color2 );
 
 		/** Set the texture sector to be rendered but freely seted */
 		void trianglesSetSubset( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );
@@ -203,7 +203,7 @@ class EE_API BatchRenderer {
 		void batchTriangle( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );
 
 		/** Set the polygon color */
-		void polygonSetColor( const ColorA& Color );
+		void polygonSetColor( const Color& Color );
 
 		/** Add to the batch a polygon ( this will change your batch rendering method to DM_POLYGON, so if you were using another one will Draw all the batched vertexs first ) */
 		void batchPolygon( const Polygon2f& Polygon );
@@ -242,7 +242,7 @@ class EE_API BatchRenderer {
 		EE_BLEND_MODE		mBlend;
 
 		eeTexCoord			mTexCoord[4];
-		ColorA			mVerColor[4];
+		Color			mVerColor[4];
 
 		EE_DRAW_MODE		mCurrentMode;
 

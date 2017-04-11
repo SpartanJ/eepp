@@ -32,9 +32,9 @@ class EE_API UISprite : public UIWidget {
 
 		void setSprite( Graphics::Sprite * sprite );
 
-		ColorA getColor() const;
+		Color getColor() const;
 
-		void setColor( const ColorA& color );
+		void setColor( const Color& color );
 
 		const EE_RENDER_MODE& getRenderMode() const;
 

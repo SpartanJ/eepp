@@ -95,7 +95,7 @@ void RectangleDrawable::setRectColors(const RectColors & rectColors) {
 	mUsingRectColors = true;
 }
 
-void RectangleDrawable::drawRectangle( const Rectf& R, const ColorA& TopLeft, const ColorA& BottomLeft, const ColorA& BottomRight, const ColorA& TopRight, const Float& Angle, const Vector2f& Scale ) {
+void RectangleDrawable::drawRectangle( const Rectf& R, const Color& TopLeft, const Color& BottomLeft, const Color& BottomRight, const Color& TopRight, const Float& Angle, const Vector2f& Scale ) {
 	BatchRenderer * sBR = GlobalBatchRenderer::instance();
 	sBR->setTexture( NULL );
 	sBR->setBlendMode( mBlendMode );

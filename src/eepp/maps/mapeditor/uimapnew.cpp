@@ -138,8 +138,8 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 
 	mUIBaseColor = UIWidget::New();
 	mUIBaseColor->setFlags( UI_FILL_BACKGROUND | UI_BORDER );
-	mUIBaseColor->getBorder()->setColor( ColorA( 100, 100, 100, 200 ) );
-	mUIBaseColor->getBackground()->setColor( ResizeMap ? mUIMap->Map()->getBaseColor() : ColorA( 255, 255, 255, 255 ) );
+	mUIBaseColor->getBorder()->setColor( Color( 100, 100, 100, 200 ) );
+	mUIBaseColor->getBackground()->setColor( ResizeMap ? mUIMap->Map()->getBaseColor() : Color( 255, 255, 255, 255 ) );
 	mUIBaseColor->setParent( mUIWindow->getContainer() )->setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->setSize( 64, 64 );
 
 	Txt = createTextBox( "Red Color:", mUIWindow->getContainer(), Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
@@ -205,21 +205,21 @@ UIMapNew::~UIMapNew() {
 }
 
 void UIMapNew::onRedChange( const UIEvent * Event ) {
-	ColorA Col = mUIBaseColor->getBackground()->getColor();
+	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.r = (Uint8)mUIRedSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
 }
 
 void UIMapNew::onGreenChange( const UIEvent * Event ) {
-	ColorA Col = mUIBaseColor->getBackground()->getColor();
+	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.g = (Uint8)mUIGreenSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
 }
 
 void UIMapNew::onBlueChange( const UIEvent * Event ) {
-	ColorA Col = mUIBaseColor->getBackground()->getColor();
+	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.b = (Uint8)mUIBlueSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
@@ -256,8 +256,8 @@ void UIMapNew::onOKClick( const UIEvent * Event ) {
 			mUIMap->Map()->saveToFile( mapPath );
 
 			TileMap * Map = eeNew( TileMap, () );
-			Map->setBackColor( ColorA( 100, 100, 100, 100 ) );
-			Map->setGridLinesColor( ColorA( 150, 150, 150, 150 ) );
+			Map->setBackColor( Color( 100, 100, 100, 100 ) );
+			Map->setGridLinesColor( Color( 150, 150, 150, 150 ) );
 			Map->forceHeadersOnLoad( Sizei( w, h ), Sizei( tw, th ), ml, Flags );
 			Map->loadFromFile( mapPath );
 			Map->disableForcedHeaders();

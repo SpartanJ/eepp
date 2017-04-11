@@ -33,11 +33,11 @@ void GameObjectPolygon::draw() {
 
 	Primitives P;
 	P.setFillMode( DRAW_FILL );
-	P.setColor( ColorA( colFill, colFill, colFill, colFill ) );
+	P.setColor( Color( colFill, colFill, colFill, colFill ) );
 	P.drawPolygon( mPoly );
 
 	P.setFillMode( DRAW_LINE );
-	P.setColor( ColorA( 255, 255, 0, 200 ) );
+	P.setColor( Color( 255, 255, 0, 200 ) );
 	P.drawPolygon( mPoly );
 }
 

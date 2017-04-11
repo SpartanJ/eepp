@@ -27,11 +27,11 @@ class EE_API MapLightManager {
 
 		Uint32 getCount();
 
-		const ColorA * getTileColor( const Vector2i& TilePos );
+		const Color * getTileColor( const Vector2i& TilePos );
 
-		const ColorA * getTileColor( const Vector2i& TilePos, const Uint32& Vertex );
+		const Color * getTileColor( const Vector2i& TilePos, const Uint32& Vertex );
 
-		ColorA getColorFromPos( const Vector2f& Pos );
+		Color getColorFromPos( const Vector2f& Pos );
 
 		const bool& isByVertex() const;
 
@@ -41,7 +41,7 @@ class EE_API MapLightManager {
 	protected:
 		TileMap *		mMap;
 		Int32			mNumVertex;
-		ColorA****		mTileColors;
+		Color****		mTileColors;
 		LightsList		mLights;
 		bool			mIsByVertex;
 

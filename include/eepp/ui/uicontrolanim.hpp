@@ -105,7 +105,7 @@ class EE_API UIControlAnim : public UIDragableControl {
 
 		virtual void drawSkin();
 
-		ColorA getColor( const ColorA& Col );
+		Color getColor( const Color& Col );
 
 		virtual void updateQuad();
 

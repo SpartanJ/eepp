@@ -46,7 +46,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 		mUIBaseColor->setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 		mUIBaseColor->setSize( 64, 64 );
 		mUIBaseColor->getBackground()->setColor( mMap->getBaseColor() );
-		mUIBaseColor->getBorder()->setColor( ColorA( 100, 100, 100, 200 ) );
+		mUIBaseColor->getBorder()->setColor( Color( 100, 100, 100, 200 ) );
 
 		Txt = createTextBox( "Red Color:", mUIWindow->getContainer(), Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 		mUIRedSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
@@ -139,34 +139,34 @@ TileMapProperties::~TileMapProperties() {
 }
 
 void TileMapProperties::onRedChange( const UIEvent * Event ) {
-	ColorA Col = mUIBaseColor->getBackground()->getColor();
+	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.r = (Uint8)mUIRedSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
 
-	ColorA MapCol = mMap->getBaseColor();
+	Color MapCol = mMap->getBaseColor();
 	MapCol.r = Col.r;
 	mMap->setBaseColor( MapCol );
 }
 
 void TileMapProperties::onGreenChange( const UIEvent * Event ) {
-	ColorA Col = mUIBaseColor->getBackground()->getColor();
+	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.g = (Uint8)mUIGreenSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
 
-	ColorA MapCol = mMap->getBaseColor();
+	Color MapCol = mMap->getBaseColor();
 	MapCol.g = Col.g;
 	mMap->setBaseColor( MapCol );
 }
 
 void TileMapProperties::onBlueChange( const UIEvent * Event ) {
-	ColorA Col = mUIBaseColor->getBackground()->getColor();
+	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.b = (Uint8)mUIBlueSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
 
-	ColorA MapCol = mMap->getBaseColor();
+	Color MapCol = mMap->getBaseColor();
 	MapCol.b = Col.b;
 	mMap->setBaseColor( MapCol );
 }

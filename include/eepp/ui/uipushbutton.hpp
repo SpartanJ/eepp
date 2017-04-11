@@ -43,17 +43,17 @@ class EE_API UIPushButton : public UIWidget {
 
 		Font * getFont();
 
-		const ColorA& getFontColor() const;
+		const Color& getFontColor() const;
 
-		void setFontColor( const ColorA& color );
+		void setFontColor( const Color& color );
 
-		const ColorA& getFontOverColor() const;
+		const Color& getFontOverColor() const;
 
-		void setFontOverColor( const ColorA& color );
+		void setFontOverColor( const Color& color );
 
-		const ColorA& getFontShadowColor() const;
+		const Color& getFontShadowColor() const;
 
-		void setFontShadowColor( const ColorA& color );
+		void setFontShadowColor( const Color& color );
 
 		Uint32 getCharacterSize();
 
@@ -67,9 +67,9 @@ class EE_API UIPushButton : public UIWidget {
 
 		UIPushButton * setOutlineThickness( const Float& outlineThickness );
 
-		const ColorA& getOutlineColor() const;
+		const Color& getOutlineColor() const;
 
-		UIPushButton * setOutlineColor( const ColorA& outlineColor );
+		UIPushButton * setOutlineColor( const Color& outlineColor );
 
 		UITooltipStyleConfig getStyleConfig() const;
 

@@ -71,16 +71,16 @@ void UISelectButton::onStateChange() {
 		} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
 			getTextBox()->setFontColor( mStyleConfig.FontOverColor );
 		} else {
-			getTextBox()->setFontColor( mStyleConfig.Color );
+			getTextBox()->setFontColor( mStyleConfig.FontColor );
 		}
 	}
 }
 
-void UISelectButton::setFontSelectedColor(const ColorA & color) {
+void UISelectButton::setFontSelectedColor(const Color & color) {
 	mStyleConfig.FontSelectedColor = color;
 }
 
-const ColorA &UISelectButton::getFontSelectedColor() const {
+const Color &UISelectButton::getFontSelectedColor() const {
 	return mStyleConfig.FontSelectedColor;
 }
 
@@ -92,7 +92,7 @@ void UISelectButton::loadFromXmlNode(const pugi::xml_node & node) {
 		String::toLowerInPlace( name );
 
 		if ( "textselectedcolor" == name ) {
-			setFontSelectedColor( ColorA::fromString( ait->as_string() ) );
+			setFontSelectedColor( Color::fromString( ait->as_string() ) );
 		}
 	}
 }

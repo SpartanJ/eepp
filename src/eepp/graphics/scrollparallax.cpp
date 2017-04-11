@@ -12,7 +12,7 @@ ScrollParallax::ScrollParallax() :
 ScrollParallax::~ScrollParallax()
 {}
 
-ScrollParallax::ScrollParallax( Graphics::SubTexture * SubTexture, const Vector2f& Position, const Sizef& Size, const Vector2f& Speed, const ColorA& Color, const EE_BLEND_MODE& Blend ) {
+ScrollParallax::ScrollParallax( Graphics::SubTexture * SubTexture, const Vector2f& Position, const Sizef& Size, const Vector2f& Speed, const Color& Color, const EE_BLEND_MODE& Blend ) {
 	create( SubTexture, Position, Size, Speed, Color, Blend );
 }
 
@@ -40,7 +40,7 @@ void ScrollParallax::setAABB() {
 	mAABB		= Rectf( mInitPos.x, mInitPos.y, mInitPos.x + mSize.getWidth(), mInitPos.y + mSize.getHeight() );
 }
 
-bool ScrollParallax::create( Graphics::SubTexture * SubTexture, const Vector2f& Position, const Sizef& Size, const Vector2f& Speed, const ColorA& Color, const EE_BLEND_MODE& Blend ) {
+bool ScrollParallax::create( Graphics::SubTexture * SubTexture, const Vector2f& Position, const Sizef& Size, const Vector2f& Speed, const Color& Color, const EE_BLEND_MODE& Blend ) {
 	mSubTexture		= SubTexture;
 	mPos		= Position;
 	mSize 		= Size;

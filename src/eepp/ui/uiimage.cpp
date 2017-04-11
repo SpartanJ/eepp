@@ -109,11 +109,11 @@ Drawable * UIImage::getDrawable() const {
 	return mDrawable;
 }
 
-const ColorA& UIImage::getColor() const {
+const Color& UIImage::getColor() const {
 	return mColor;
 }
 
-void UIImage::setColor( const ColorA& col ) {
+void UIImage::setColor( const Color& col ) {
 	mColor = col;
 	setAlpha( col.a );
 }

@@ -211,7 +211,7 @@ void UIPushButton::onStateChange() {
 	if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
 		mTextBox->setFontColor( mStyleConfig.FontOverColor );
 	} else {
-		mTextBox->setFontColor( mStyleConfig.Color );
+		mTextBox->setFontColor( mStyleConfig.FontColor );
 	}
 
 	mTextBox->setAlpha( mAlpha );
@@ -241,29 +241,29 @@ Uint32 UIPushButton::onKeyUp( const UIEventKey& Event ) {
 
 	return UIWidget::onKeyUp( Event );
 }
-const ColorA& UIPushButton::getFontColor() const {
-	return mStyleConfig.Color;
+const Color& UIPushButton::getFontColor() const {
+	return mStyleConfig.FontColor;
 }
 
-void UIPushButton::setFontColor( const ColorA& color ) {
-	mStyleConfig.Color = color;
+void UIPushButton::setFontColor( const Color& color ) {
+	mStyleConfig.FontColor = color;
 	onStateChange();
 }
 
-const ColorA& UIPushButton::getFontOverColor() const {
+const Color& UIPushButton::getFontOverColor() const {
 	return mStyleConfig.FontOverColor;
 }
 
-void UIPushButton::setFontOverColor( const ColorA& color ) {
+void UIPushButton::setFontOverColor( const Color& color ) {
 	mStyleConfig.FontOverColor = color;
 	onStateChange();
 }
 
-const ColorA& UIPushButton::getFontShadowColor() const {
+const Color& UIPushButton::getFontShadowColor() const {
 	return mTextBox->getFontShadowColor();
 }
 
-void UIPushButton::setFontShadowColor( const ColorA& color ) {
+void UIPushButton::setFontShadowColor( const Color& color ) {
 	mTextBox->setFontShadowColor( color );
 }
 
@@ -293,11 +293,11 @@ UIPushButton * UIPushButton::setOutlineThickness( const Float & outlineThickness
 	return this;
 }
 
-const ColorA &UIPushButton::getOutlineColor() const {
+const Color &UIPushButton::getOutlineColor() const {
 	return mStyleConfig.OutlineColor;
 }
 
-UIPushButton * UIPushButton::setOutlineColor(const ColorA & outlineColor) {
+UIPushButton * UIPushButton::setOutlineColor(const Color & outlineColor) {
 	if ( mStyleConfig.OutlineColor != outlineColor ) {
 		mTextBox->setOutlineColor( outlineColor );
 		mStyleConfig.OutlineColor = outlineColor;
@@ -347,7 +347,7 @@ void UIPushButton::loadFromXmlNode(const pugi::xml_node & node) {
 		if ( "text" == name ) {
 			setText( ait->as_string() );
 		} else if ( "textovercolor" == name ) {
-			setFontOverColor( ColorA::fromString( ait->as_string() ) );
+			setFontOverColor( Color::fromString( ait->as_string() ) );
 		} else if ( "icon" == name ) {
 			std::string val = ait->as_string();
 			Drawable * icon = NULL;

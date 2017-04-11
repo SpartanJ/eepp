@@ -95,7 +95,7 @@ bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool Dep
 	}
 
 	if ( NULL == mTexture ) {
-		Uint32 TexId = TextureFactory::instance()->createEmptyTexture( Width, Height, 4, ColorA(0,0,0,0) );
+		Uint32 TexId = TextureFactory::instance()->createEmptyTexture( Width, Height, 4, Color(0,0,0,0) );
 
 		if ( TextureFactory::instance()->existsId( TexId ) ) {
 			mTexture = 	TextureFactory::instance()->getTexture( TexId );

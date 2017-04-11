@@ -681,30 +681,30 @@ Uint32 UIListBox::getItemIndex( const String& Text ) {
 	return eeINDEX_NOT_FOUND;
 }
 
-void UIListBox::setFontColor( const ColorA& Color ) {
-	mFontStyleConfig.Color = Color;
+void UIListBox::setFontColor( const Color& Color ) {
+	mFontStyleConfig.FontColor = Color;
 
 	for ( Uint32 i = 0; i < mItems.size(); i++ )
-		mItems[i]->setFontColor( mFontStyleConfig.Color );
+		mItems[i]->setFontColor( mFontStyleConfig.FontColor );
 }
 
-const ColorA& UIListBox::getFontColor() const {
-	return mFontStyleConfig.Color;
+const Color& UIListBox::getFontColor() const {
+	return mFontStyleConfig.FontColor;
 }
 
-void UIListBox::setFontOverColor( const ColorA& Color ) {
+void UIListBox::setFontOverColor( const Color& Color ) {
 	mFontStyleConfig.FontOverColor = Color;
 }
 
-const ColorA& UIListBox::getFontOverColor() const {
+const Color& UIListBox::getFontOverColor() const {
 	return mFontStyleConfig.FontOverColor;
 }
 
-void UIListBox::setFontSelectedColor( const ColorA& Color ) {
+void UIListBox::setFontSelectedColor( const Color& Color ) {
 	mFontStyleConfig.FontSelectedColor = Color;
 }
 
-const ColorA& UIListBox::getFontSelectedColor() const {
+const Color& UIListBox::getFontSelectedColor() const {
 	return mFontStyleConfig.FontSelectedColor;
 }
 
@@ -980,7 +980,7 @@ void UIListBox::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
 	mFontStyleConfig = fontStyleConfig;
 
 	setFont( mFontStyleConfig.Font );
-	setFontColor( mFontStyleConfig.Color );
+	setFontColor( mFontStyleConfig.FontColor );
 }
 
 void UIListBox::update() {
@@ -1065,15 +1065,15 @@ void UIListBox::loadFromXmlNode(const pugi::xml_node & node) {
 		if ( "rowheight" == name ) {
 			setRowHeight( ait->as_int() );
 		} else if ( "textcolor" == name ) {
-			setFontColor( ColorA::fromString( ait->as_string() ) );
+			setFontColor( Color::fromString( ait->as_string() ) );
 		} else if ( "textshadowcolor" == name ) {
-			mFontStyleConfig.ShadowColor = ( ColorA::fromString( ait->as_string() ) );
+			mFontStyleConfig.ShadowColor = ( Color::fromString( ait->as_string() ) );
 		} else if ( "textovercolor" == name ) {
-			setFontOverColor( ColorA::fromString( ait->as_string() ) );
+			setFontOverColor( Color::fromString( ait->as_string() ) );
 		} else if ( "textselectedcolor" == name ) {
-			setFontSelectedColor( ColorA::fromString( ait->as_string() ) );
+			setFontSelectedColor( Color::fromString( ait->as_string() ) );
 		} else if ( "textselectionbackcolor" == name ) {
-			mFontStyleConfig.FontSelectionBackColor = ( ColorA::fromString( ait->as_string() ) );
+			mFontStyleConfig.FontSelectionBackColor = ( Color::fromString( ait->as_string() ) );
 		} else if ( "fontfamily" == name || "fontname" == name ) {
 			Font * font = FontManager::instance()->getByName( ait->as_string() );
 

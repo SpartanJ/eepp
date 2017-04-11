@@ -521,7 +521,7 @@ void TexturePacker::save( const std::string& Filepath, const EE_SAVE_TYPE& Forma
 
 	Image Img( (Uint32)mWidth, (Uint32)mHeight, (Uint32)4 );
 
-	Img.fillWithColor( ColorA(0,0,0,0) );
+	Img.fillWithColor( Color(0,0,0,0) );
 
 	TexturePackerTex * t = NULL;
 	int w, h, c;

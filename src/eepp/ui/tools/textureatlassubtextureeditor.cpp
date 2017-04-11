@@ -41,7 +41,7 @@ TextureAtlasSubTextureEditor::~TextureAtlasSubTextureEditor() {
 
 void TextureAtlasSubTextureEditor::draw() {
 	Primitives P;
-	P.setColor( ColorA( 255, 0, 0, mAlpha ) );
+	P.setColor( Color( 255, 0, 0, mAlpha ) );
 	P.setLineWidth( PixelDensity::dpToPx( 1.f ) );
 
 	Vector2i uiCenterPx = PixelDensity::dpToPxI( mUICenter );

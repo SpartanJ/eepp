@@ -141,11 +141,11 @@ UITabWidget * UITabWidget::setOutlineThickness( const Float & outlineThickness )
 	return this;
 }
 
-const ColorA &UITabWidget::getOutlineColor() const {
+const Color &UITabWidget::getOutlineColor() const {
 	return mStyleConfig.OutlineColor;
 }
 
-UITabWidget * UITabWidget::setOutlineColor(const ColorA & outlineColor) {
+UITabWidget * UITabWidget::setOutlineColor(const Color & outlineColor) {
 	if ( mStyleConfig.OutlineColor != outlineColor ) {
 		mStyleConfig.OutlineColor = outlineColor;
 
@@ -190,13 +190,13 @@ void UITabWidget::loadFromXmlNode(const pugi::xml_node & node) {
 		String::toLowerInPlace( name );
 
 		if ( "textcolor" == name ) {
-			setFontColor( ColorA::fromString( ait->as_string() ) );
+			setFontColor( Color::fromString( ait->as_string() ) );
 		} else if ( "textshadowcolor" == name ) {
-			setFontShadowColor( ColorA::fromString( ait->as_string() ) );
+			setFontShadowColor( Color::fromString( ait->as_string() ) );
 		} else if ( "textovercolor" == name ) {
-			setFontOverColor( ColorA::fromString( ait->as_string() ) );
+			setFontOverColor( Color::fromString( ait->as_string() ) );
 		} else if ( "textselectedcolor" == name ) {
-			setFontSelectedColor( ColorA::fromString( ait->as_string() ) );
+			setFontSelectedColor( Color::fromString( ait->as_string() ) );
 		} else if ( "fontfamily" == name || "fontname" == name ) {
 			Font * font = FontManager::instance()->getByName( ait->as_string() );
 
@@ -232,7 +232,7 @@ void UITabWidget::loadFromXmlNode(const pugi::xml_node & node) {
 		} else if ( "fontoutlinethickness" == name ) {
 			setOutlineThickness( PixelDensity::toDpFromString( ait->as_string() ) );
 		} else if ( "fontoutlinecolor" == name ) {
-			setOutlineColor( ColorA::fromString( ait->as_string() ) );
+			setOutlineColor( Color::fromString( ait->as_string() ) );
 		} else if ( "maxtextlength" == name ) {
 			setMaxTextLength( ait->as_uint(1) );
 		} else if ( "mintabwidth" == name ) {
@@ -246,7 +246,7 @@ void UITabWidget::loadFromXmlNode(const pugi::xml_node & node) {
 		} else if ( "drawlinebelowtabs" == name ) {
 			setDrawLineBelowTabs( ait->as_bool() );
 		} else if ( "linebelowtabscolor" == name ) {
-			setLineBelowTabsColor( ColorA::fromString( ait->as_string() ) );
+			setLineBelowTabsColor( Color::fromString( ait->as_string() ) );
 		} else if ( "linebelowtabsyoffset" == name ) {
 			setLineBelowTabsYOffset( ait->as_int() );
 		}
@@ -267,25 +267,25 @@ void UITabWidget::setFont(Font * font) {
 	}
 }
 
-ColorA UITabWidget::getFontColor() const {
-	return mStyleConfig.Color;
+Color UITabWidget::getFontColor() const {
+	return mStyleConfig.FontColor;
 }
 
-void UITabWidget::setFontColor(const ColorA & fontColor) {
-	mStyleConfig.Color = fontColor;
+void UITabWidget::setFontColor(const Color & fontColor) {
+	mStyleConfig.FontColor = fontColor;
 
 	if ( mTabs.size() > 0 ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setFontColor( mStyleConfig.Color );
+			((UITab*)mTabs[ i ])->setFontColor( mStyleConfig.FontColor );
 		}
 	}
 }
 
-ColorA UITabWidget::getFontShadowColor() const {
+Color UITabWidget::getFontShadowColor() const {
 	return mStyleConfig.ShadowColor;
 }
 
-void UITabWidget::setFontShadowColor(const ColorA & fontShadowColor) {
+void UITabWidget::setFontShadowColor(const Color & fontShadowColor) {
 	mStyleConfig.ShadowColor = fontShadowColor;
 
 	if ( mTabs.size() > 0 ) {
@@ -295,11 +295,11 @@ void UITabWidget::setFontShadowColor(const ColorA & fontShadowColor) {
 	}
 }
 
-ColorA UITabWidget::getFontOverColor() const {
+Color UITabWidget::getFontOverColor() const {
 	return mStyleConfig.FontOverColor;
 }
 
-void UITabWidget::setFontOverColor(const ColorA & fontOverColor) {
+void UITabWidget::setFontOverColor(const Color & fontOverColor) {
 	mStyleConfig.FontOverColor = fontOverColor;
 
 	if ( mTabs.size() > 0 ) {
@@ -309,11 +309,11 @@ void UITabWidget::setFontOverColor(const ColorA & fontOverColor) {
 	}
 }
 
-ColorA UITabWidget::getFontSelectedColor() const {
+Color UITabWidget::getFontSelectedColor() const {
 	return mStyleConfig.FontSelectedColor;
 }
 
-void UITabWidget::setFontSelectedColor(const ColorA & fontSelectedColor) {
+void UITabWidget::setFontSelectedColor(const Color & fontSelectedColor) {
 	mStyleConfig.FontSelectedColor = fontSelectedColor;
 
 	if ( mTabs.size() > 0 ) {
@@ -400,11 +400,11 @@ void UITabWidget::setDrawLineBelowTabs(bool drawLineBelowTabs) {
 	mStyleConfig.DrawLineBelowTabs = drawLineBelowTabs;
 }
 
-ColorA UITabWidget::getLineBelowTabsColor() const {
+Color UITabWidget::getLineBelowTabsColor() const {
 	return mStyleConfig.LineBelowTabsColor;
 }
 
-void UITabWidget::setLineBelowTabsColor(const ColorA & lineBelowTabsColor) {
+void UITabWidget::setLineBelowTabsColor(const Color & lineBelowTabsColor) {
 	mStyleConfig.LineBelowTabsColor = lineBelowTabsColor;
 }
 

@@ -51,7 +51,7 @@ void mainLoop()
 	// Draw the frame buffer many times
 	for ( int y = 0; y < 5; y++ ) {
 		for ( int x = 0; x < 5; x++ ) {
-			FBO->getTexture()->draw( x * 200, y * 200, -ang, Vector2f::One, ColorA(255,255,255,100) );
+			FBO->getTexture()->draw( x * 200, y * 200, -ang, Vector2f::One, Color(255,255,255,100) );
 		}
 	}
 
@@ -84,7 +84,7 @@ void mainLoop()
 			Float tmpy = (Float)y * 32.f;
 
 			// Add the quad to the batch
-			Batch->quadsSetColor( ColorA( z * 16, 255, 255, 150 ) );
+			Batch->quadsSetColor( Color( z * 16, 255, 255, 150 ) );
 			Batch->batchQuadFree( TmpQuad[0].x + tmpx, TmpQuad[0].y + tmpy, TmpQuad[1].x + tmpx, TmpQuad[1].y + tmpy, TmpQuad[2].x + tmpx, TmpQuad[2].y + tmpy, TmpQuad[3].x + tmpx, TmpQuad[3].y + tmpy );
 		}
 	}
@@ -131,14 +131,14 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		if ( NULL != VBO && NULL != VBO2 ) {
 			for ( Uint32 i = 0; i < Poly.getSize(); i++ ) {
 				VBO->addVertex( Poly[i] );
-				VBO->addColor( ColorA( 100 + i, 255 - i, 150 + i, 100 ) );
+				VBO->addColor( Color( 100 + i, 255 - i, 150 + i, 100 ) );
 			}
 
 			Poly.rotate( 90, Poly.toAABB().getCenter() );
 
 			for ( Uint32 i = 0; i < Poly.getSize(); i++ ) {
 				VBO2->addVertex( Poly[i] );
-				VBO2->addColor( ColorA( 100 + i, 255 - i, 150 + i, 100 ) );
+				VBO2->addColor( Color( 100 + i, 255 - i, 150 + i, 100 ) );
 			}
 
 			// Compile the Vertex Buffer, this uploads the data to the GPU

@@ -57,21 +57,21 @@ class EE_API UITabWidget : public UIWidget {
 
 		void setFont(Font * font);
 
-		ColorA getFontColor() const;
+		Color getFontColor() const;
 
-		void setFontColor(const ColorA & fontColor);
+		void setFontColor(const Color & fontColor);
 
-		ColorA getFontShadowColor() const;
+		Color getFontShadowColor() const;
 
-		void setFontShadowColor(const ColorA & fontShadowColor);
+		void setFontShadowColor(const Color & fontShadowColor);
 
-		ColorA getFontOverColor() const;
+		Color getFontOverColor() const;
 
-		void setFontOverColor(const ColorA & fontOverColor);
+		void setFontOverColor(const Color & fontOverColor);
 
-		ColorA getFontSelectedColor() const;
+		Color getFontSelectedColor() const;
 
-		void setFontSelectedColor(const ColorA & fontSelectedColor);
+		void setFontSelectedColor(const Color & fontSelectedColor);
 
 		Uint32 getCharacterSize();
 
@@ -85,9 +85,9 @@ class EE_API UITabWidget : public UIWidget {
 
 		UITabWidget * setOutlineThickness( const Float& outlineThickness );
 
-		const ColorA& getOutlineColor() const;
+		const Color& getOutlineColor() const;
 
-		UITabWidget * setOutlineColor( const ColorA& outlineColor );
+		UITabWidget * setOutlineColor( const Color& outlineColor );
 
 		Int32 getTabSeparation() const;
 
@@ -119,9 +119,9 @@ class EE_API UITabWidget : public UIWidget {
 
 		void setDrawLineBelowTabs(bool drawLineBelowTabs);
 
-		ColorA getLineBelowTabsColor() const;
+		Color getLineBelowTabsColor() const;
 
-		void setLineBelowTabsColor(const ColorA & lineBelowTabsColor);
+		void setLineBelowTabsColor(const Color & lineBelowTabsColor);
 
 		Int32 getLineBelowTabsYOffset() const;
 

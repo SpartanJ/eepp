@@ -40,7 +40,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 	win = Engine::instance()->createWindow( WindowSettings( 960, 640, "eepp - Fonts" ), ContextSettings( true ) );
 
 	// Set window background color
-	win->setClearColor( Color(230,230,230) );
+	win->setClearColor( RGB(230,230,230) );
 
 	// Check if created
 	if ( win->isOpen() ) {
@@ -64,7 +64,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		size_t size = Txt.size();
 
 		for ( size_t i = 0; i < size; i++ ) {
-			text.setFillColor( ColorA(255*i/size,0,0,255), i, i+1 );
+			text.setFillColor( Color(255*i/size,0,0,255), i, i+1 );
 		}
 
 		fontTest2 = FontTrueType::New( "Arial" );
@@ -79,8 +79,8 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		text3.setString( text2.getString() );
 		text3.setOutlineThickness( 2 );
 		text3.setCharacterSize( 24 );
-		text3.setFillColor( ColorA(255,255,255,255) );
-		text3.setOutlineColor( ColorA(0,0,0,255) );
+		text3.setFillColor( Color(255,255,255,255) );
+		text3.setOutlineColor( Color(0,0,0,255) );
 
 		// Application loop
 		win->runMainLoop( &mainLoop );

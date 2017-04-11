@@ -23,9 +23,9 @@ class EE_API UISelectButton : public UIPushButton {
 
 		virtual void select();
 
-		void setFontSelectedColor( const ColorA& color );
+		void setFontSelectedColor( const Color& color );
 
-		const ColorA& getFontSelectedColor() const;
+		const Color& getFontSelectedColor() const;
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:

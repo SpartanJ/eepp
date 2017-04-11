@@ -361,9 +361,9 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			setInternalHeight( PixelDensity::toDpFromStringI( ait->as_string() ) );
 			notifyLayoutAttrChange();
 		} else if ( "backgroundcolor" == name ) {
-			setBackgroundFillEnabled( true )->setColor( ColorA::fromString( ait->as_string() ) );
+			setBackgroundFillEnabled( true )->setColor( Color::fromString( ait->as_string() ) );
 		} else if ( "bordercolor" == name ) {
-			setBorderEnabled( true )->setColor( ColorA::fromString( ait->as_string() ) );
+			setBorderEnabled( true )->setColor( Color::fromString( ait->as_string() ) );
 		} else if ( "borderwidth" == name ) {
 			setBorderEnabled( true )->setWidth( PixelDensity::toDpFromStringI( ait->as_string("1") ) );
 		} else if ( "visible" == name ) {

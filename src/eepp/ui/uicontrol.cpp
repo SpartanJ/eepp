@@ -365,7 +365,7 @@ void UIControl::drawBox() {
 		Primitives P;
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
-		P.setColor( ColorA::colorFromPointer( this ) );
+		P.setColor( Color::colorFromPointer( this ) );
 		P.setLineWidth( PixelDensity::dpToPxI( 1 ) );
 		P.drawRectangle( getRectf() );
 	}

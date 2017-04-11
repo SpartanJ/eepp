@@ -98,12 +98,12 @@ void GameObjectVirtual::draw() {
 				}
 			}
 		} else {
-			mSubTexture->draw( mPos.x, mPos.y, ColorA(), getRotation(), Vector2f::One, ALPHA_NORMAL, getRenderModeFromFlags() );
+			mSubTexture->draw( mPos.x, mPos.y, Color(), getRotation(), Vector2f::One, ALPHA_NORMAL, getRenderModeFromFlags() );
 		}
 	} else {
 		Primitives P;
 
-		ColorA C( mDataId );
+		Color C( mDataId );
 		C.a = 255;
 
 		P.setColor( C );

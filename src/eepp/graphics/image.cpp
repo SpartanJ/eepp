@@ -263,7 +263,7 @@ Image::Image( const Uint8* data, const unsigned int& Width, const unsigned int& 
 	setPixels( data );
 }
 
-Image::Image( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const ColorA& DefaultColor, const bool& initWithDefaultColor ) :
+Image::Image( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const Color& DefaultColor, const bool& initWithDefaultColor ) :
 	mPixels(NULL),
 	mWidth(Width),
 	mHeight(Height),
@@ -374,7 +374,7 @@ void Image::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 
 void Image::setPixels( const Uint8* data ) {
 	if ( data != NULL ) {
-		allocate( mWidth * mHeight * mChannels, ColorA(0,0,0,0), false );
+		allocate( mWidth * mHeight * mChannels, Color(0,0,0,0), false );
 
 		memcpy( reinterpret_cast<void*>( &mPixels[0] ), reinterpret_cast<const void*> ( data ), mSize );
 	}
@@ -384,19 +384,19 @@ const Uint8* Image::getPixelsPtr() {
 	return reinterpret_cast<const Uint8*> (&mPixels[0]);
 }
 
-ColorA Image::getPixel( const unsigned int& x, const unsigned int& y ) {
+Color Image::getPixel( const unsigned int& x, const unsigned int& y ) {
 	eeASSERT( !( mPixels == NULL || x > mWidth || y > mHeight ) );
-	ColorA dst;
+	Color dst;
 	memcpy( &dst, &mPixels[ ( ( x + y * mWidth ) * mChannels ) ], mChannels );
 	return dst;
 }
 
-void Image::setPixel(const unsigned int& x, const unsigned int& y, const ColorA& Color) {
+void Image::setPixel(const unsigned int& x, const unsigned int& y, const Color& Color) {
 	eeASSERT( !( mPixels == NULL || x > mWidth || y > mHeight ) );
 	memcpy( &mPixels[ ( ( x + y * mWidth ) * mChannels ) ], &Color, mChannels );
 }
 
-void Image::create( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const ColorA& DefaultColor, const bool& initWithDefaultColor ) {
+void Image::create( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const Color& DefaultColor, const bool& initWithDefaultColor ) {
 	mWidth 		= Width;
 	mHeight 	= Height;
 	mChannels 	= Channels;
@@ -408,7 +408,7 @@ Uint8* Image::getPixels() const {
 	return mPixels;
 }
 
-void Image::allocate( const Uint32& size, ColorA DefaultColor, bool memsetData ) {
+void Image::allocate( const Uint32& size, Color DefaultColor, bool memsetData ) {
 	clearCache();
 
 	mPixels = eeNewArray( unsigned char, size );
@@ -481,7 +481,7 @@ bool Image::saveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format 
 	return Res;
 }
 
-void Image::replaceColor( const ColorA& ColorKey, const ColorA& NewColor ) {
+void Image::replaceColor( const Color& ColorKey, const Color& NewColor ) {
 	unsigned int Pos = 0;
 
 	if ( NULL == mPixels )
@@ -518,15 +518,15 @@ void Image::replaceColor( const ColorA& ColorKey, const ColorA& NewColor ) {
 	}
 }
 
-void Image::createMaskFromColor( const ColorA& ColorKey, Uint8 Alpha ) {
-	replaceColor( ColorKey, ColorA( ColorKey.r, ColorKey.g, ColorKey.b, Alpha ) );
+void Image::createMaskFromColor( const Color& ColorKey, Uint8 Alpha ) {
+	replaceColor( ColorKey, Color( ColorKey.r, ColorKey.g, ColorKey.b, Alpha ) );
 }
 
 void Image::createMaskFromColor( const RGB& ColorKey, Uint8 Alpha ) {
-	createMaskFromColor( ColorA( ColorKey.r, ColorKey.g, ColorKey.b, 255 ), Alpha );
+	createMaskFromColor( Color( ColorKey.r, ColorKey.g, ColorKey.b, 255 ), Alpha );
 }
 
-void Image::fillWithColor( const ColorA& Color ) {
+void Image::fillWithColor( const Color& Color ) {
 	if ( NULL == mPixels )
 		return;
 
@@ -661,8 +661,8 @@ void Image::blit( Graphics::Image * image, const Uint32& x, const Uint32& y ) {
 
 		for ( unsigned int ty = y; ty < dh; ty++ ) {
 			for ( unsigned int tx = x; tx < dw; tx++ ) {
-				ColorA ts( image->getPixel( tx - x, ty - y ) );
-				ColorA td( getPixel( tx, ty ) );
+				Color ts( image->getPixel( tx - x, ty - y ) );
+				Color td( getPixel( tx, ty ) );
 
 				setPixel( tx, ty, Color::blend( ts, td ) );
 			}

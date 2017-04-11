@@ -26,7 +26,7 @@ TextureFactory::~TextureFactory() {
 	unloadTextures();
 }
 
-Uint32 TextureFactory::createEmptyTexture( const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const ColorA& DefaultColor, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+Uint32 TextureFactory::createEmptyTexture( const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const Color& DefaultColor, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
 	Image TmpImg( Width, Height, Channels, DefaultColor );
 	return loadFromPixels( TmpImg.getPixelsPtr(), Width, Height, Channels, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 }

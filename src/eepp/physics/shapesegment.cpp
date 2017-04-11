@@ -97,7 +97,7 @@ void ShapeSegment::draw( Space * space ) {
 		GLi->disable( GL_TEXTURE_2D );
 		GLi->disableClientState( GL_TEXTURE_COORD_ARRAY );
 
-		std::vector<ColorA> tcolors( pillVAR_count * 4 );
+		std::vector<Color> tcolors( pillVAR_count * 4 );
 
 		GLi->pushMatrix();
 
@@ -116,7 +116,7 @@ void ShapeSegment::draw( Space * space ) {
 		GLi->vertexPointer( 3, GL_FLOAT, 0, pillVAR, pillVAR_count * sizeof(float) * 3 );
 
 		if( !seg->CP_PRIVATE(shape).sensor ) {
-			ColorA C = colorForShape( mShape, space->getSpace() );
+			Color C = colorForShape( mShape, space->getSpace() );
 
 			tcolors.assign( tcolors.size(), C );
 
@@ -125,7 +125,7 @@ void ShapeSegment::draw( Space * space ) {
 			GLi->drawArrays( GL_TRIANGLE_FAN, 0, pillVAR_count );
 		}
 
-		tcolors.assign( tcolors.size(), ColorA( 102, 102, 102, 255 ) );
+		tcolors.assign( tcolors.size(), Color( 102, 102, 102, 255 ) );
 
 		GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), pillVAR_count *  4 );
 

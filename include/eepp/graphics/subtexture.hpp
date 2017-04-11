@@ -81,11 +81,11 @@ class EE_API SubTexture : public Drawable {
 		/** Set the SubTexture offset. */
 		void setOffset( const Vector2i& offset );
 
-		void draw( const Float& X, const Float& Y, const ColorA& Color = ColorA(), const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter) );
+		void draw( const Float& X, const Float& Y, const Color& Color = Color(), const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter) );
 
-		void draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale, const ColorA& Color0 = ColorA(), const ColorA& Color1 = ColorA(), const ColorA& Color2 = ColorA(), const ColorA& Color3 = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter) );
+		void draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale, const Color& Color0 = Color(), const Color& Color1 = Color(), const Color& Color2 = Color(), const Color& Color3 = Color(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter) );
 
-		void draw( const Quad2f Q, const Vector2f& offset = Vector2f(), const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const ColorA& Color0 = ColorA(), const ColorA& Color1 = ColorA(), const ColorA& Color2 = ColorA(), const ColorA& Color3 = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
+		void draw( const Quad2f Q, const Vector2f& offset = Vector2f(), const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const Color& Color0 = Color(), const Color& Color1 = Color(), const Color& Color2 = Color(), const Color& Color3 = Color(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
 
 		virtual void draw();
 
@@ -97,10 +97,10 @@ class EE_API SubTexture : public Drawable {
 		Graphics::Texture * getTexture();
 
 		/** Replaces a color in the SubTexture ( needs Lock() ) */
-		void replaceColor( ColorA ColorKey, ColorA NewColor );
+		void replaceColor( Color ColorKey, Color NewColor );
 
 		/** Creates a mask from a color.  */
-		void createMaskFromColor( ColorA ColorKey, Uint8 Alpha );
+		void createMaskFromColor( Color ColorKey, Uint8 Alpha );
 
 		/** Creates a mask from a color. */
 		void createMaskFromColor( RGB ColorKey, Uint8 Alpha );
@@ -117,12 +117,12 @@ class EE_API SubTexture : public Drawable {
 
 		/** @return The color that corresponds to the position indicated in the SubTexture.
 		*	If the SubTexture wasn't locked before this call, it will be locked automatically. */
-		ColorA getColorAt( const Int32& X, const Int32& Y );
+		Color getColorAt( const Int32& X, const Int32& Y );
 
 		/** @brief Set a color to the position indicated in the SubTexture.
 		*	If the SubTexture wasn't locked before this call, it will be locked automatically.
 		*/
-		void setColorAt( const Int32& X, const Int32& Y, const ColorA& Color );
+		void setColorAt( const Int32& X, const Int32& Y, const Color& Color );
 
 		/** Deletes the texture buffer from memory ( not from VRAM ) if it was cached before ( using Lock() ). */
 		void clearCache();

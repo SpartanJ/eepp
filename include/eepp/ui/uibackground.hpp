@@ -11,15 +11,15 @@ class EE_API UIBackground {
 
 		UIBackground();
 
-		ColorA& getColor( const unsigned int& index = 0 );
+		Color& getColor( const unsigned int& index = 0 );
 
-		UIBackground * setColor( const ColorA& Col );
+		UIBackground * setColor( const Color& Col );
 
-		const std::vector<ColorA>& getColors();
+		const std::vector<Color>& getColors();
 
-		UIBackground * setColors( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor );
+		UIBackground * setColors( const Color& TopLeftColor, const Color& BottomLeftColor, const Color& BottomRightColor, const Color& TopRightColor );
 
-		UIBackground * setColorsTo( const ColorA& color );
+		UIBackground * setColorsTo( const Color& color );
 
 		const EE_BLEND_MODE& getBlendMode() const;
 
@@ -29,7 +29,7 @@ class EE_API UIBackground {
 
 		UIBackground * setCorners( const unsigned int& corners );
 	protected:
-		std::vector<ColorA>	mColor;
+		std::vector<Color>	mColor;
 
 		EE_BLEND_MODE		mBlendMode;
 		unsigned int		mCorners;

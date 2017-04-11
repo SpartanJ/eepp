@@ -10,24 +10,24 @@ UIBackground::UIBackground() :
 	mBlendMode( ALPHA_NORMAL ),
 	mCorners(0)
 {
-	mColor.push_back( ColorA(0xFF404040) );
+	mColor.push_back( Color(0xFF404040) );
 }
 
-ColorA& UIBackground::getColor( const unsigned int& index  ) {
+Color& UIBackground::getColor( const unsigned int& index  ) {
 	if ( index < mColor.size() )
 		return	mColor[ index ];
 
 	return mColor[ 0 ];
 }
 
-UIBackground * UIBackground::setColorsTo( const ColorA& Color ) {
+UIBackground * UIBackground::setColorsTo( const Color& Color ) {
 	for ( unsigned int i = 0; i < mColor.size(); i++ )
 		mColor[i] = Color;
 
 	return this;
 }
 
-UIBackground * UIBackground::setColors( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor ) {
+UIBackground * UIBackground::setColors( const Color& TopLeftColor, const Color& BottomLeftColor, const Color& BottomRightColor, const Color& TopRightColor ) {
 	mColor[0] = TopLeftColor;
 
 	if ( mColor.size() < 2 )
@@ -48,11 +48,11 @@ UIBackground * UIBackground::setColors( const ColorA& TopLeftColor, const ColorA
 	return this;
 }
 
-const std::vector<ColorA>& UIBackground::getColors() {
+const std::vector<Color>& UIBackground::getColors() {
 	return	mColor;
 }
 
-UIBackground * UIBackground::setColor( const ColorA& Col ) {
+UIBackground * UIBackground::setColor( const Color& Col ) {
 	mColor[0] = Col;
 	return this;
 }

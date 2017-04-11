@@ -32,8 +32,8 @@ UIMap::UIMap( UITheme * Theme, TileMap * Map ) :
 		mMap = eeNew( TileMap, () );
 	}
 
-	mMap->setBackColor( ColorA( 100, 100, 100, 100 ) );
-	mMap->setGridLinesColor( ColorA( 150, 150, 150, 150 ) );
+	mMap->setBackColor( Color( 100, 100, 100, 100 ) );
+	mMap->setGridLinesColor( Color( 150, 150, 150, 150 ) );
 	mMap->setScale( PixelDensity::getPixelDensity() );
 	mMap->setDrawCallback( cb::Make0( this, &UIMap::mapDraw ) );
 	mMap->setViewSize( mRealSize );
@@ -370,7 +370,7 @@ void UIMap::addLight( MapLight * Light ) {
 void UIMap::mapDraw() {
 	if ( EDITING_LIGHT == mEditingMode ) {
 		if ( NULL != mSelLight ) {
-			mP.setColor( ColorA( 255, 0, 0, (Uint8)mAlpha ) );
+			mP.setColor( Color( 255, 0, 0, (Uint8)mAlpha ) );
 
 			Vector2f Pos( mSelLight->getAABB().Left, mSelLight->getAABB().Top );
 			eeAABB AB( mSelLight->getAABB() );
@@ -384,11 +384,11 @@ void UIMap::mapDraw() {
 			{
 				if ( mObjRECTEditing ) {
 					mP.setFillMode( DRAW_FILL );
-					mP.setColor( ColorA( 100, 100, 100, 20 ) );
+					mP.setColor( Color( 100, 100, 100, 20 ) );
 					mP.drawRectangle( mObjRECT );
 
 					mP.setFillMode( DRAW_LINE );
-					mP.setColor( ColorA( 255, 0, 0, 200 ) );
+					mP.setColor( Color( 255, 0, 0, 200 ) );
 					mP.drawRectangle( mObjRECT );
 				}
 
@@ -397,22 +397,22 @@ void UIMap::mapDraw() {
 			case INSERT_POLYGON:
 			{
 				mP.setFillMode( DRAW_FILL );
-				mP.setColor( ColorA( 50, 50, 50, 50 ) );
+				mP.setColor( Color( 50, 50, 50, 50 ) );
 				mP.drawPolygon( mObjPoly );
 
 				mP.setFillMode( DRAW_LINE );
-				mP.setColor( ColorA( 255, 0, 0, 200 ) );
+				mP.setColor( Color( 255, 0, 0, 200 ) );
 				mP.drawPolygon( mObjPoly );
 
 				Polygon2f polyN( mObjPoly );
 				polyN.pushBack( getMouseMapPos() );
 
 				mP.setFillMode( DRAW_FILL );
-				mP.setColor( ColorA( 100, 100, 100, 100 ) );
+				mP.setColor( Color( 100, 100, 100, 100 ) );
 				mP.drawPolygon( polyN );
 
 				mP.setFillMode( DRAW_LINE );
-				mP.setColor( ColorA( 255, 255, 0, 200 ) );
+				mP.setColor( Color( 255, 255, 0, 200 ) );
 				mP.drawPolygon( polyN );
 
 				break;
@@ -420,14 +420,14 @@ void UIMap::mapDraw() {
 			case INSERT_POLYLINE:
 			{
 				mP.setFillMode( DRAW_LINE );
-				mP.setColor( ColorA( 255, 0, 0, 200 ) );
+				mP.setColor( Color( 255, 0, 0, 200 ) );
 				mP.drawPolygon( mObjPoly );
 
 				Polygon2f polyN( mObjPoly );
 				polyN.pushBack( getMouseMapPos() );
 
 				mP.setFillMode( DRAW_LINE );
-				mP.setColor( ColorA( 255, 255, 0, 200 ) );
+				mP.setColor( Color( 255, 255, 0, 200 ) );
 				mP.drawPolygon( polyN );
 
 				break;
@@ -435,7 +435,7 @@ void UIMap::mapDraw() {
 			case EDIT_POLYGONS:
 			{
 				if ( NULL != mSelObj && eeINDEX_NOT_FOUND != mSelPointIndex ) {
-					mP.setColor( ColorA( 255, 255, 100, 100 ) );
+					mP.setColor( Color( 255, 255, 100, 100 ) );
 
 					mP.setFillMode( DRAW_FILL );
 					mP.drawRectangle( mSelPointRect );

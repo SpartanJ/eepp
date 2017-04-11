@@ -57,7 +57,7 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	"	</WinMenu>"
 	"	<LinearLayout layout_width='match_parent' layout_height='match_parent' orientation='horizontal'>"
 	"		<TextureAtlasSubTextureEditor layout_width='match_parent' layout_height='match_parent' layout_weight='1' "
-	"										flags='clip' backgroundColor='00000032' borderWidth='1' borderColor='000000FF' />"
+	"										flags='clip' backgroundColor='#00000032' borderWidth='1' borderColor='#000000FF' />"
 	"		<LinearLayout orientation='vertical' layout_width='205dp' layout_height='match_parent' layout_marginLeft='8dp' layout_marginRight='8dp'>"
 	"			<TextView text='SubTexture List:' fontStyle='shadow' layout_marginTop='4dp' layout_marginBottom='8dp' />"
 	"			<ListBox id='SubTextureList' layout_width='match_parent' layout_height='144dp' />"

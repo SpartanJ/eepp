@@ -17,18 +17,18 @@ UIThemeDefault::UIThemeDefault( const std::string& name, const std::string& Abbr
 	UITheme( name, Abbr, defaultFont )
 {
 	mFontStyleConfig.CharacterSize = 12;
-	mFontStyleConfig.Color = ColorA( 230, 230, 230, 255 );
-	mFontStyleConfig.FontOverColor = mFontStyleConfig.FontSelectedColor = ColorA( 255, 255, 255, 255 );
-	mFontStyleConfig.ShadowColor = ColorA( 50, 50, 50, 150 );
-	mFontStyleConfig.FontSelectionBackColor = ColorA( 150, 150, 150, 255 );
+	mFontStyleConfig.FontColor = Color( 230, 230, 230, 255 );
+	mFontStyleConfig.FontOverColor = mFontStyleConfig.FontSelectedColor = Color( 255, 255, 255, 255 );
+	mFontStyleConfig.ShadowColor = Color( 50, 50, 50, 150 );
+	mFontStyleConfig.FontSelectionBackColor = Color( 150, 150, 150, 255 );
 }
 
 UITabWidgetStyleConfig UIThemeDefault::getTabWidgetStyleConfig() {
 	UITabWidgetStyleConfig tabWidgetStyleConfig = UITheme::getTabWidgetStyleConfig();
 	tabWidgetStyleConfig.TabSeparation = -1;
-	tabWidgetStyleConfig.FontSelectedColor = ColorA( 255, 255, 255, 255 );
+	tabWidgetStyleConfig.FontSelectedColor = Color( 255, 255, 255, 255 );
 	tabWidgetStyleConfig.DrawLineBelowTabs = true;
-	tabWidgetStyleConfig.LineBelowTabsColor = ColorA( 0, 0, 0, 255 );
+	tabWidgetStyleConfig.LineBelowTabsColor = Color( 0, 0, 0, 255 );
 	tabWidgetStyleConfig.LineBelowTabsYOffset = -1;
 	return tabWidgetStyleConfig;
 }
@@ -52,7 +52,7 @@ UIWindowStyleConfig UIThemeDefault::getWindowStyleConfig() {
 	UIWindowStyleConfig windowStyleConfig = UITheme::getWindowStyleConfig();
 	windowStyleConfig.WinFlags |= UI_WIN_DRAW_SHADOW;
 	windowStyleConfig.ButtonsPositionFixer.x = -2;
-	windowStyleConfig.TitleFontColor = ColorA( 230, 230, 230, 255 );
+	windowStyleConfig.TitleFontColor = Color( 230, 230, 230, 255 );
 	return windowStyleConfig;
 }
 
@@ -61,8 +61,8 @@ UIMenuStyleConfig UIThemeDefault::getMenuStyleConfig() {
 	menuStyleConfig.MinWidth = 100;
 	menuStyleConfig.MinSpaceForIcons = 24;
 	menuStyleConfig.MinRightMargin = 8;
-	menuStyleConfig.Color = ColorA( 230, 230, 230, 255 );
-	menuStyleConfig.FontOverColor = ColorA( 255, 255, 255, 255 );
+	menuStyleConfig.FontColor = Color( 230, 230, 230, 255 );
+	menuStyleConfig.FontOverColor = Color( 255, 255, 255, 255 );
 	return menuStyleConfig;
 }
 
@@ -74,7 +74,7 @@ UISliderStyleConfig UIThemeDefault::getSliderStyleConfig() {
 
 UITooltipStyleConfig UIThemeDefault::getTooltipStyleConfig() {
 	UITooltipStyleConfig tooltipStyleConfig = UITheme::getTooltipStyleConfig();
-	tooltipStyleConfig.Color = ColorA( 0, 0, 0, 255 );
+	tooltipStyleConfig.FontColor = Color( 0, 0, 0, 255 );
 	tooltipStyleConfig.Padding = Recti( 4, 6, 4, 6 );
 	return tooltipStyleConfig;
 }

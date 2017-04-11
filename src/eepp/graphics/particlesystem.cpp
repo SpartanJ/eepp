@@ -353,7 +353,7 @@ void ParticleSystem::draw() {
 			P = &mParticle[i];
 
 			if ( P->isUsed() ) {
-				BR->quadsSetColor( ColorA( static_cast<Uint8> ( P->r() * 255 ), static_cast<Uint8> ( P->g() * 255 ), static_cast<Uint8>( P->b() * 255 ), static_cast<Uint8>( P->a() * 255 ) ) );
+				BR->quadsSetColor( Color( static_cast<Uint8> ( P->r() * 255 ), static_cast<Uint8> ( P->g() * 255 ), static_cast<Uint8>( P->b() * 255 ), static_cast<Uint8>( P->a() * 255 ) ) );
 				BR->batchQuad( P->getX() - mHSize, P->getY() - mHSize, mSize, mSize );
 			}
 		}

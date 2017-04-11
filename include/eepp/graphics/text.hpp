@@ -26,7 +26,7 @@ class EE_API Text {
 		Text(Font * font, unsigned int characterSize = 30);
 
 		/** Create a text from a font */
-		void create(Graphics::Font * font, const String& text = "", ColorA FontColor = ColorA(255,255,255,255), ColorA FontShadowColor = ColorA(0,0,0,255) , Uint32 characterSize = 12);
+		void create(Graphics::Font * font, const String& text = "", Color FontColor = Color(255,255,255,255), Color FontShadowColor = Color(0,0,0,255) , Uint32 characterSize = 12);
 
 		void setString(const String& string);
 
@@ -36,13 +36,13 @@ class EE_API Text {
 
 		void setStyle(Uint32 style);
 
-		void setColor(const ColorA& color);
+		void setColor(const Color& color);
 
-		void setFillColor(const ColorA& color);
+		void setFillColor(const Color& color);
 
-		void setFillColor(const ColorA& color, Uint32 from, Uint32 to);
+		void setFillColor(const Color& color, Uint32 from, Uint32 to);
 
-		void setOutlineColor(const ColorA& color);
+		void setOutlineColor(const Color& color);
 
 		void setOutlineThickness(Float thickness);
 
@@ -62,11 +62,11 @@ class EE_API Text {
 		**	This doesn't break any custom color per-character setted. */
 		void setAlpha( const Uint8& alpha );
 
-		const ColorA& getFillColor() const;
+		const Color& getFillColor() const;
 
-		const ColorA& getColor() const;
+		const Color& getColor() const;
 
-		const ColorA& getOutlineColor() const;
+		const Color& getOutlineColor() const;
 
 		Float getOutlineThickness() const;
 
@@ -84,10 +84,10 @@ class EE_API Text {
 		void draw( const Float& X, const Float& Y, const Vector2f& Scale = Vector2f::One, const Float& Angle = 0, EE_BLEND_MODE Effect = ALPHA_NORMAL );
 
 		/** @return The Shadow Font Color */
-		const ColorA& getShadowColor() const;
+		const Color& getShadowColor() const;
 
 		/** Set the shadow color of the string rendered */
-		void setShadowColor(const ColorA& color);
+		void setShadowColor(const Color& color);
 
 		/** @return Every cached text line width */
 		const std::vector<Float>& getLinesWidth();
@@ -127,8 +127,8 @@ class EE_API Text {
 		unsigned int		mCharacterSize;	  ///< Base size of characters, in pixels
 		unsigned int		mRealCharacterSize;
 		Uint32				mStyle;			  ///< Text style (see Style enum)
-		ColorA				mFillColor;		  ///< Text fill color
-		ColorA				mOutlineColor;	   ///< Text outline color
+		Color				mFillColor;		  ///< Text fill color
+		Color				mOutlineColor;	   ///< Text outline color
 		Float				mOutlineThickness;   ///< Thickness of the text's outline
 		Sizei				mTextureSize;
 
@@ -140,15 +140,15 @@ class EE_API Text {
 		Float				mCachedWidth;
 		int					mNumLines;
 		int					mLargestLineCharCount;
-		ColorA				mFontShadowColor;
+		Color				mFontShadowColor;
 		Uint32				mAlign;
 		Uint32				mFontHeight;
 
 		std::vector<VertexCoords>	mVertices;
-		std::vector<ColorA> mColors;
+		std::vector<Color> mColors;
 
 		std::vector<VertexCoords>	mOutlineVertices;
-		std::vector<ColorA> mOutlineColors;
+		std::vector<Color> mOutlineColors;
 		std::vector<Float> mLinesWidth;
 
 		void ensureGeometryUpdate();

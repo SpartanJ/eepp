@@ -450,7 +450,7 @@ void TextureLoader::loadFromPixels() {
 
 					Image * tImg = eeNew ( Image, ( mPixels, mImgWidth, mImgHeight, mChannels ) );
 
-					tImg->createMaskFromColor( ColorA( mColorKey->r, mColorKey->g, mColorKey->b, 255 ), 0 );
+					tImg->createMaskFromColor( Color( mColorKey->r, mColorKey->g, mColorKey->b, 255 ), 0 );
 
 					tImg->avoidFreeImage( true  );
 

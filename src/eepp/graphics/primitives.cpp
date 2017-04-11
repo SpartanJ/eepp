@@ -47,7 +47,7 @@ void Primitives::drawLine( const Line2f& line ) {
 	drawBatch();
 }
 
-void Primitives::drawTriangle( const Triangle2f& t, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 ) {
+void Primitives::drawTriangle( const Triangle2f& t, const Color& Color1, const Color& Color2, const Color& Color3 ) {
 	sBR->setTexture( NULL );
 	sBR->setBlendMode( mBlendMode );
 
@@ -128,7 +128,7 @@ void Primitives::drawCircle( const Vector2f& p, const Float& radius, Uint32 segm
 
 		GLi->vertexPointer( 2, GL_FLOAT, 0, circleVAR, circleVAR_count * sizeof(float) * 2 );
 
-		std::vector<ColorA> colors( circleVAR_count - 1 ,mColor );
+		std::vector<Color> colors( circleVAR_count - 1 ,mColor );
 
 		GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, &colors[0], circleVAR_count * 4 );
 
@@ -217,7 +217,7 @@ void Primitives::drawArc( const Vector2f& p, const Float& radius, Uint32 segment
 	drawBatch();
 }
 
-void Primitives::drawRectangle( const Rectf& R, const ColorA& TopLeft, const ColorA& BottomLeft, const ColorA& BottomRight, const ColorA& TopRight, const Float& Angle, const Vector2f& Scale ) {
+void Primitives::drawRectangle( const Rectf& R, const Color& TopLeft, const Color& BottomLeft, const Color& BottomRight, const Color& TopRight, const Float& Angle, const Vector2f& Scale ) {
 	sBR->setTexture( NULL );
 	sBR->setBlendMode( mBlendMode );
 
@@ -266,7 +266,7 @@ void Primitives::drawRectangle( const Rectf& R, const Float& Angle, const Vector
 	drawRectangle( R, mColor, mColor, mColor, mColor, Angle, Scale );
 }
 
-void Primitives::drawRoundedRectangle( const Rectf& R, const ColorA& TopLeft, const ColorA& BottomLeft, const ColorA& BottomRight, const ColorA& TopRight, const Float& Angle, const Vector2f& Scale, const unsigned int& Corners ) {
+void Primitives::drawRoundedRectangle( const Rectf& R, const Color& TopLeft, const Color& BottomLeft, const Color& BottomRight, const Color& TopRight, const Float& Angle, const Vector2f& Scale, const unsigned int& Corners ) {
 	sBR->setTexture( NULL );
 	sBR->setBlendMode( mBlendMode );
 
@@ -349,7 +349,7 @@ void Primitives::drawRoundedRectangle( const Rectf& R, const Float& Angle, const
 	drawRoundedRectangle( R, mColor, mColor, mColor, mColor, Angle, Scale, Corners );
 }
 
-void Primitives::drawQuad( const Quad2f& q, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const ColorA& Color4, const Float& OffsetX, const Float& OffsetY ) {
+void Primitives::drawQuad( const Quad2f& q, const Color& Color1, const Color& Color2, const Color& Color3, const Color& Color4, const Float& OffsetX, const Float& OffsetY ) {
 	sBR->setTexture( NULL );
 	sBR->setBlendMode( mBlendMode );
 
@@ -427,11 +427,11 @@ const bool& Primitives::getForceDraw() const {
 	return mForceDraw;
 }
 
-void Primitives::setColor( const ColorA& Color ) {
+void Primitives::setColor( const Color& Color ) {
 	mColor = Color;
 }
 
-const ColorA& Primitives::getColor()
+const Color& Primitives::getColor()
 {
 	return mColor;
 }

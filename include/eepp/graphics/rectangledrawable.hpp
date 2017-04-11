@@ -45,7 +45,7 @@ class EE_API RectangleDrawable : public PrimitiveDrawable {
 		RectColors mRectColors;
 		bool mUsingRectColors;
 
-		void drawRectangle( const Rectf& R, const ColorA& TopLeft, const ColorA& BottomLeft, const ColorA& BottomRight, const ColorA& TopRight, const Float& Angle, const Vector2f& Scale );
+		void drawRectangle( const Rectf& R, const Color& TopLeft, const Color& BottomLeft, const Color& BottomRight, const Color& TopRight, const Float& Angle, const Vector2f& Scale );
 
 		void updateVertex();
 

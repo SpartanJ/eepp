@@ -348,7 +348,7 @@ void MapEditor::createSubTextureContainer( Int32 Width ) {
 			   ->setParent( mSGCont )->setSize( Width, Width )
 			   ->setPosition( 0, mSubTextureList->getPosition().y + mSubTextureList->getSize().getHeight() + 4 );
 
-	mGfxPreview->setBorderEnabled( true )->setColor( ColorA( 0, 0, 0, 200 ) );
+	mGfxPreview->setBorderEnabled( true )->setColor( Color( 0, 0, 0, 200 ) );
 
 	mDICont = UIWidget::New();
 	mDICont->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, mChkDI->getPosition().y + mChkDI->getSize().getHeight() + 8 );
@@ -379,8 +379,8 @@ void MapEditor::createLighContainer() {
 	mUIBaseColor->setParent( mLightCont );
 	mUIBaseColor->setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 	mUIBaseColor->setSize( 58, 64 );
-	mUIBaseColor->getBackground()->setColor( ColorA(255,255,255,255) );
-	mUIBaseColor->getBorder()->setColor( ColorA( 100, 100, 100, 200 ) );
+	mUIBaseColor->getBackground()->setColor( Color(255,255,255,255) );
+	mUIBaseColor->getBorder()->setColor( Color( 100, 100, 100, 200 ) );
 
 	Txt = createTextBox( "R:", mLightCont, Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
@@ -566,7 +566,7 @@ void MapEditor::onLightRadiusChange( MapLight * Light ) {
 }
 
 void MapEditor::onLightSelect( MapLight * Light ) {
-	ColorA Col( Light->getColor() );
+	Color Col( Light->getColor() );
 
 	mUIRedSlider->setValue( Col.r );
 	mUIGreenSlider->setValue( Col.g );
@@ -580,12 +580,12 @@ void MapEditor::onNewLight( const UIEvent * Event ) {
 
 	if ( MEvent->getFlags() & EE_BUTTON_LMASK ) {
 		Vector2i Pos = mUIMap->Map()->getMouseMapPos();
-		mUIMap->addLight( eeNew( MapLight, ( mLightRadius->getValue(), Pos.x, Pos.y, mUIBaseColor->getBackground()->getColor().toColor(), mLightTypeChk->isActive() ? LIGHT_ISOMETRIC : LIGHT_NORMAL ) ) );
+		mUIMap->addLight( eeNew( MapLight, ( mLightRadius->getValue(), Pos.x, Pos.y, mUIBaseColor->getBackground()->getColor().toRGB(), mLightTypeChk->isActive() ? LIGHT_ISOMETRIC : LIGHT_NORMAL ) ) );
 	}
 }
 
 void MapEditor::onRedChange( const UIEvent * Event ) {
-	ColorA Col = mUIBaseColor->getBackground()->getColor();
+	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.r = (Uint8)mUIRedSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
@@ -598,7 +598,7 @@ void MapEditor::onRedChange( const UIEvent * Event ) {
 }
 
 void MapEditor::onGreenChange( const UIEvent * Event ) {
-	ColorA Col = mUIBaseColor->getBackground()->getColor();
+	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.g = (Uint8)mUIGreenSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
@@ -611,7 +611,7 @@ void MapEditor::onGreenChange( const UIEvent * Event ) {
 }
 
 void MapEditor::onBlueChange( const UIEvent * Event ) {
-	ColorA Col = mUIBaseColor->getBackground()->getColor();
+	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.b = (Uint8)mUIBlueSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );

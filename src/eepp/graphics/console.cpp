@@ -39,7 +39,7 @@ Console::Console( EE::Window::Window * window ) :
 	mShowFps(false),
 	mCurSide(false)
 {
-	mFontStyleConfig.Color = ColorA(153, 153, 179, 230);
+	mFontStyleConfig.FontColor = Color(153, 153, 179, 230);
 
 	if ( NULL == mWindow ) {
 		mWindow = Engine::instance()->getCurrentWindow();
@@ -73,7 +73,7 @@ Console::Console( Font * font, const bool& MakeDefaultCommands, const bool& Atta
 	mShowFps(false),
 	mCurSide(false)
 {
-	mFontStyleConfig.Color = ColorA(153, 153, 179, 230);
+	mFontStyleConfig.FontColor = Color(153, 153, 179, 230);
 
 	if ( NULL == mWindow ) {
 		mWindow = Engine::instance()->getCurrentWindow();
@@ -168,17 +168,17 @@ void Console::draw() {
 
 		if ( mY > 0.0f ) {
 			if ( mTexId == 0 ) {
-				mPri.setColor( ColorA( mConColor.r, mConColor.g, mConColor.b, static_cast<Uint8>(mA) ) );
+				mPri.setColor( Color( mConColor.r, mConColor.g, mConColor.b, static_cast<Uint8>(mA) ) );
 				mPri.drawRectangle( Rectf( Vector2f( 0.0f, 0.0f ), Sizef( mWidth, mY ) ) );
 			} else {
-				ColorA C( mConColor.r, mConColor.g, mConColor.b, static_cast<Uint8>(mA) );
+				Color C( mConColor.r, mConColor.g, mConColor.b, static_cast<Uint8>(mA) );
 
 				Texture * Tex = TextureFactory::instance()->getTexture( mTexId );
 
 				if ( NULL != Tex )
 					Tex->drawEx( 0.0f, 0.0f, mWidth, mY, 0.0f, Vector2f::One, C, C, C, C );
 			}
-			mPri.setColor( ColorA( mConLineColor.r, mConLineColor.g, mConLineColor.b, static_cast<Uint8>(mA) ) );
+			mPri.setColor( Color( mConLineColor.r, mConLineColor.g, mConLineColor.b, static_cast<Uint8>(mA) ) );
 			mPri.drawRectangle( Rectf( Vector2f( 0.0f, mY ), Sizef( mWidth, PixelDensity::dpToPx( 2.0f ) ) ) );
 
 			Int32 linesInScreen = this->linesOnScreen();
@@ -202,7 +202,7 @@ void Console::draw() {
 					Text& text = mTextCache[Pos];
 
 					text.setStyleConfig( mFontStyleConfig );
-					text.setFillColor( ColorA( mFontStyleConfig.Color.r, mFontStyleConfig.Color.g, mFontStyleConfig.Color.b, static_cast<Uint8>(mA) ) );
+					text.setFillColor( Color( mFontStyleConfig.FontColor.r, mFontStyleConfig.FontColor.g, mFontStyleConfig.FontColor.b, static_cast<Uint8>(mA) ) );
 					text.setString( mCmdLog[i] );
 					text.draw( mFontSize, CurY );
 
@@ -214,13 +214,13 @@ void Console::draw() {
 
 			Text& text = mTextCache[ mTextCache.size() - 1 ];
 			text.setStyleConfig( mFontStyleConfig );
-			text.setFillColor( ColorA( mFontLineColor.r, mFontLineColor.g, mFontLineColor.b, static_cast<Uint8>(mA) ) );
+			text.setFillColor( Color( mFontLineColor.r, mFontLineColor.g, mFontLineColor.b, static_cast<Uint8>(mA) ) );
 			text.setString( "> " + mTBuf->getBuffer() );
 			text.draw( mFontSize, CurY );
 
 			Text& text2 = mTextCache[ mTextCache.size() - 2 ];
 			text2.setStyleConfig( mFontStyleConfig );
-			text2.setFillColor( ColorA ( mFontLineColor.r, mFontLineColor.g, mFontLineColor.b, static_cast<Uint8>(mCurAlpha) ) );
+			text2.setFillColor( Color( mFontLineColor.r, mFontLineColor.g, mFontLineColor.b, static_cast<Uint8>(mCurAlpha) ) );
 
 			if ( (unsigned int)mTBuf->getCursorPos() == mTBuf->getBuffer().size() ) {
 				Uint32 width = text.getTextWidth();
@@ -237,9 +237,9 @@ void Console::draw() {
 
 	if ( mShowFps && NULL != mFontStyleConfig.Font ) {
 		Text& text = mTextCache[ mTextCache.size() - 3 ];
-		ColorA OldColor1( text.getColor() );
+		Color OldColor1( text.getColor() );
 		text.setStyleConfig( mFontStyleConfig );
-		text.setFillColor( ColorA () );
+		text.setFillColor( Color() );
 		text.setString( "FPS: " + String::toStr( mWindow->getFPS() ) );
 		text.draw( mWindow->getWidth() - text.getTextWidth() - 15, 6 );
 		text.setFillColor( OldColor1 );

@@ -118,7 +118,7 @@ Sprite& Sprite::operator =( const Sprite& Other ) {
 	mCb					= Other.mCb;
 
 	if ( NULL != Other.mVertexColors ) {
-		mVertexColors		= eeNewArray( ColorA, 4 );
+		mVertexColors		= eeNewArray( Color, 4 );
 		mVertexColors[0]	= Other.mVertexColors[0];
 		mVertexColors[1]	= Other.mVertexColors[1];
 		mVertexColors[2]	= Other.mVertexColors[2];
@@ -154,7 +154,7 @@ Sprite Sprite::clone() {
 	Spr.mUserData			= mUserData;
 
 	if ( NULL != mVertexColors ) {
-		Spr.mVertexColors		= eeNewArray( ColorA, 4 );
+		Spr.mVertexColors		= eeNewArray( Color, 4 );
 		Spr.mVertexColors[0]	= mVertexColors[0];
 		Spr.mVertexColors[1]	= mVertexColors[1];
 		Spr.mVertexColors[2]	= mVertexColors[2];
@@ -183,7 +183,7 @@ void Sprite::reset() {
 	mRepetitions			= -1;
 
 	mRotation				= 0;
-	mColor				= ColorA(255, 255, 255, 255);
+	mColor				= Color(255, 255, 255, 255);
 
 	mBlend				= ALPHA_NORMAL;
 	mEffect				= RN_NORMAL;
@@ -304,9 +304,9 @@ eeAABB Sprite::getAABB() {
 	return TmpR;
 }
 
-void Sprite::updateVertexColors( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 ) {
+void Sprite::updateVertexColors( const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3 ) {
 	if ( NULL == mVertexColors )
-		mVertexColors		= eeNewArray( ColorA, 4 );
+		mVertexColors		= eeNewArray( Color, 4 );
 
 	mVertexColors[0]	= Color0;
 	mVertexColors[1]	= Color1;

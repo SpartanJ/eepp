@@ -343,11 +343,11 @@ bool UIManager::getDrawBoxes() const {
 	return 0 != ( mFlags & UI_MANAGER_DRAW_BOXES );
 }
 
-void UIManager::setHighlightFocusColor( const ColorA& Color ) {
+void UIManager::setHighlightFocusColor( const Color& Color ) {
 	mHighlightFocusColor = Color;
 }
 
-const ColorA& UIManager::getHighlightFocusColor() const {
+const Color& UIManager::getHighlightFocusColor() const {
 	return mHighlightFocusColor;
 }
 
@@ -359,11 +359,11 @@ bool UIManager::getHighlightOver() const {
 	return 0 != ( mFlags & UI_MANAGER_HIGHLIGHT_OVER );
 }
 
-void UIManager::setHighlightOverColor( const ColorA& Color ) {
+void UIManager::setHighlightOverColor( const Color& Color ) {
 	mHighlightOverColor = Color;
 }
 
-const ColorA& UIManager::getHighlightOverColor() const {
+const Color& UIManager::getHighlightOverColor() const {
 	return mHighlightOverColor;
 }
 

@@ -29,9 +29,9 @@ class EE_API UISubTexture : public UIWidget {
 
 		UISubTexture * setSubTexture( Graphics::SubTexture * subTexture );
 
-		const ColorA& getColor() const;
+		const Color& getColor() const;
 
-		void setColor( const ColorA& col );
+		void setColor( const Color& col );
 
 		const EE_RENDER_MODE& getRenderMode() const;
 
@@ -47,7 +47,7 @@ class EE_API UISubTexture : public UIWidget {
 	protected:
 		Uint32					mScaleType;
 		Graphics::SubTexture * 	mSubTexture;
-		ColorA					mColor;
+		Color					mColor;
 		EE_RENDER_MODE			mRender;
 		Vector2i				mAlignOffset;
 

@@ -38,25 +38,25 @@ class EE_API UITextView : public UIWidget {
 
 		UITextView * setOutlineThickness( const Float& outlineThickness );
 
-		const ColorA& getOutlineColor() const;
+		const Color& getOutlineColor() const;
 
-		UITextView * setOutlineColor( const ColorA& outlineColor );
+		UITextView * setOutlineColor( const Color& outlineColor );
 
 		virtual const String& getText();
 
 		virtual UITextView * setText( const String& text );
 
-		const ColorA& getFontColor() const;
+		const Color& getFontColor() const;
 
-		UITextView * setFontColor( const ColorA& color );
+		UITextView * setFontColor( const Color& color );
 
-		const ColorA& getFontShadowColor() const;
+		const Color& getFontShadowColor() const;
 
-		UITextView * setFontShadowColor( const ColorA& color );
+		UITextView * setFontShadowColor( const Color& color );
 
-		const ColorA& getSelectionBackColor() const;
+		const Color& getSelectionBackColor() const;
 
-		UITextView * setSelectionBackColor( const ColorA& color );
+		UITextView * setSelectionBackColor( const Color& color );
 
 		virtual void setTheme( UITheme * Theme );
 

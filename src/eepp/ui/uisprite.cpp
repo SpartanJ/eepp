@@ -96,14 +96,14 @@ Graphics::Sprite * UISprite::getSprite() const {
 	return mSprite;
 }
 
-ColorA UISprite::getColor() const {
+Color UISprite::getColor() const {
 	if ( NULL != mSprite )
 		return mSprite->getColor();
 
-	return ColorA();
+	return Color();
 }
 
-void UISprite::setColor( const ColorA& color ) {
+void UISprite::setColor( const Color& color ) {
 	if ( NULL != mSprite )
 		mSprite->setColor( color );
 	

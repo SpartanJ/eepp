@@ -61,7 +61,7 @@ void TileMap::reset() {
 	mMaxLayers	= 0;
 	mMouseOver = false;
 	mViewSize = Sizei( 800, 600 );
-	mBaseColor = ColorA( 255, 255, 255, 255 );
+	mBaseColor = Color( 255, 255, 255, 255 );
 }
 
 void TileMap::forceHeadersOnLoad( Sizei mapSize, Sizei tileSize, Uint32 numLayers, Uint32 flags ) {
@@ -125,11 +125,11 @@ void TileMap::createEmptyTile() {
 
 	if ( NULL == Tex ) {
 		Uint32 x, y;
-		ColorA Col( mGridLinesColor );
+		Color Col( mGridLinesColor );
 
 		Image Img( mTileSize.getWidth(), mTileSize.getHeight(), 4 );
 
-		Img.fillWithColor( ColorA( 0, 0, 0, 0 ) );
+		Img.fillWithColor( Color( 0, 0, 0, 0 ) );
 
 		for ( x = 0; x < Img.getWidth(); x++ ) {
 			Img.setPixel( x, 0, Col );
@@ -222,9 +222,9 @@ void TileMap::draw() {
 
 		Uint8 Alpha = static_cast<Uint8>( (Float)mBackColor.a * ( (Float)mBackAlpha / 255.f ) );
 
-		P.setColor( ColorA( mBackColor.r, mBackColor.g, mBackColor.b, Alpha ) );
+		P.setColor( Color( mBackColor.r, mBackColor.g, mBackColor.b, Alpha ) );
 		P.drawRectangle( Rectf( Vector2f( mScreenPos.x, mScreenPos.y ), Sizef( mViewSize.x, mViewSize.y ) ), 0.f, Vector2f::One );
-		P.setColor( ColorA( 255, 255, 255, 255 ) );
+		P.setColor( Color( 255, 255, 255, 255 ) );
 	}
 
 	float oldM[16];
@@ -276,7 +276,7 @@ void TileMap::gridDraw() {
 	Vector2i end = getEndTile();
 
 	Float tx, ty;
-	ColorA TileTexCol( 255, 255, 255, mBackAlpha );
+	Color TileTexCol( 255, 255, 255, mBackAlpha );
 
 	for ( Int32 x = start.x; x < end.x; x++ ) {
 		for ( Int32 y = start.y; y < end.y; y++ ) {
@@ -288,10 +288,10 @@ void TileMap::gridDraw() {
 				Vector2i TPos( x, y );
 
 				if ( mLightManager->isByVertex() ) {
-					ColorA TileTexCol0( *mLightManager->getTileColor( TPos, 0 ) );
-					ColorA TileTexCol1( *mLightManager->getTileColor( TPos, 1 ) );
-					ColorA TileTexCol2( *mLightManager->getTileColor( TPos, 2 ) );
-					ColorA TileTexCol3( *mLightManager->getTileColor( TPos, 3 ) );
+					Color TileTexCol0( *mLightManager->getTileColor( TPos, 0 ) );
+					Color TileTexCol1( *mLightManager->getTileColor( TPos, 1 ) );
+					Color TileTexCol2( *mLightManager->getTileColor( TPos, 2 ) );
+					Color TileTexCol3( *mLightManager->getTileColor( TPos, 3 ) );
 
 					TileTexCol0.a = TileTexCol1.a = TileTexCol2.a = TileTexCol3.a	= mBackAlpha;
 
@@ -519,11 +519,11 @@ const Vector2i& TileMap::getExtraTiles() const {
 	return mExtraTiles;
 }
 
-void TileMap::setBaseColor( const ColorA& color ) {
+void TileMap::setBaseColor( const Color& color ) {
 	mBaseColor = color;
 }
 
-const ColorA& TileMap::getBaseColor() const {
+const Color& TileMap::getBaseColor() const {
 	return mBaseColor;
 }
 
@@ -806,7 +806,7 @@ bool TileMap::loadFromStream( IOStream& IOS ) {
 				create( mForcedHeaders->MapSize, mForcedHeaders->NumLayers, mForcedHeaders->TileSize, mForcedHeaders->Flags );
 			}
 
-			setBaseColor( ColorA( MapHdr.BaseColor ) );
+			setBaseColor( Color( MapHdr.BaseColor ) );
 
 			//! Load Properties
 			if ( MapHdr.PropertyCount ) {
@@ -1009,8 +1009,8 @@ bool TileMap::loadFromStream( IOStream& IOS ) {
 					for ( i = 0; i < MapHdr.LightsCount; i++ ) {
 						tLightHdr = &( tLighsHdr[ i ] );
 
-						ColorA color( tLightHdr->Color );
-						RGB rgb( color.toColor() );
+						Color color( tLightHdr->Color );
+						RGB rgb( color.toRGB() );
 
 						mLightManager->addLight(
 							eeNew( MapLight, ( tLightHdr->Radius, tLightHdr->PosX, tLightHdr->PosY, rgb, (LIGHT_TYPE)tLightHdr->Type ) )
@@ -1352,7 +1352,7 @@ void TileMap::saveToStream( IOStream& IOS ) {
 				tLightHdr.Radius	= Light->getRadius();
 				tLightHdr.PosX		= (Int32)Light->getPosition().x;
 				tLightHdr.PosY		= (Int32)Light->getPosition().y;
-				tLightHdr.Color		= ColorA( Light->getColor() ).getValue();
+				tLightHdr.Color		= Color( Light->getColor() ).getValue();
 				tLightHdr.Type		= Light->getType();
 
 				IOS.write( (const char*)&tLightHdr, sizeof(sMapLightHdr) );
@@ -1455,11 +1455,11 @@ void TileMap::setBackAlpha( const Uint8& alpha ) {
 	mBackAlpha = alpha;
 }
 
-const ColorA& TileMap::getBackColor() const {
+const Color& TileMap::getBackColor() const {
 	return mBackColor;
 }
 
-void TileMap::setBackColor( const ColorA& col ) {
+void TileMap::setBackColor( const Color& col ) {
 	mBackColor = col;
 }
 
@@ -1467,11 +1467,11 @@ Uint32 TileMap::getNewObjectId() {
 	return ++mLastObjId;
 }
 
-void TileMap::setGridLinesColor( const ColorA& Col ) {
+void TileMap::setGridLinesColor( const Color& Col ) {
 	mGridLinesColor = Col;
 }
 
-const ColorA& TileMap::setGridLinesColor() const {
+const Color& TileMap::setGridLinesColor() const {
 	return mGridLinesColor;
 }
 

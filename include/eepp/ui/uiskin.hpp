@@ -32,9 +32,9 @@ class EE_API UISkin {
 
 		virtual bool stateExists( const Uint32& State ) = 0;
 
-		virtual void setColor( const Uint32& State, const ColorA& Color );
+		virtual void setColor( const Uint32& State, const Color& Color );
 
-		virtual const ColorA& getColor( const Uint32& State ) const;
+		virtual const Color& getColor( const Uint32& State ) const;
 
 		virtual void setSkins();
 
@@ -63,7 +63,7 @@ class EE_API UISkin {
 		std::string mName;
 		Uint32		mNameHash;
 		Uint32		mColorDefault;
-		ColorA 	mColor[ UISkinState::StateCount ];
+		Color 	mColor[ UISkinState::StateCount ];
 		UITheme * 	mTheme;
 
 		void stateBack( const Uint32& State );

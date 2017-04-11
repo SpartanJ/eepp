@@ -80,17 +80,17 @@ class EE_API UIManager {
 
 		bool getDrawBoxes() const;
 
-		void setHighlightFocusColor( const ColorA& Color );
+		void setHighlightFocusColor( const Color& Color );
 
-		const ColorA& getHighlightFocusColor() const;
+		const Color& getHighlightFocusColor() const;
 
 		void setHighlightOver( bool Highlight );
 
 		bool getHighlightOver() const;
 
-		void setHighlightOverColor( const ColorA& Color );
+		void setHighlightOverColor( const Color& Color );
 
-		const ColorA& getHighlightOverColor() const;
+		const Color& getHighlightOverColor() const;
 
 		void sendMouseClick( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
 
@@ -151,8 +151,8 @@ class EE_API UIManager {
 		Uint32				mResizeCb;
 
 		Uint32				mFlags;
-		ColorA			mHighlightFocusColor;
-		ColorA			mHighlightOverColor;
+		Color			mHighlightFocusColor;
+		Color			mHighlightOverColor;
 		Vector2i			mMouseDownPos;
 
 		bool				mInit;

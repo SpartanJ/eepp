@@ -426,14 +426,14 @@ void BatchRenderer::batchQuadFreeEx( const Float& x0, const Float& y0, const Flo
 void BatchRenderer::quadsBegin() {
 	setDrawMode( DM_QUADS, true );
 	quadsSetSubset( 0, 0, 1, 1 );
-	quadsSetColor( ColorA() );
+	quadsSetColor( Color() );
 }
 
-void BatchRenderer::quadsSetColor( const ColorA& Color ) {
+void BatchRenderer::quadsSetColor( const Color& Color ) {
 	mVerColor[0] = mVerColor[1] = mVerColor[2] = mVerColor[3] = Color;
 }
 
-void BatchRenderer::quadsSetColorFree( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 ) {
+void BatchRenderer::quadsSetColorFree( const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3 ) {
 	mVerColor[0] = Color0;
 	mVerColor[1] = Color1;
 	mVerColor[2] = Color2;
@@ -467,10 +467,10 @@ void BatchRenderer::rotate( const Vector2f& center, Vector2f* point, const Float
 void BatchRenderer::pointsBegin() {
 	setDrawMode( DM_POINTS, true );
 	quadsSetSubset( 0, 0, 1, 1 );
-	pointSetColor( ColorA() );
+	pointSetColor( Color() );
 }
 
-void BatchRenderer::pointSetColor( const ColorA& Color ) {
+void BatchRenderer::pointSetColor( const Color& Color ) {
 	quadsSetColor( Color );
 }
 
@@ -492,14 +492,14 @@ void BatchRenderer::batchPoint( const Float& x, const Float& y ) {
 void BatchRenderer::linesBegin() {
 	setDrawMode( DM_LINES, true );
 	quadsSetSubset( 0, 0, 1, 1 );
-	pointSetColor( ColorA() );
+	pointSetColor( Color() );
 }
 
-void BatchRenderer::linesSetColor( const ColorA& Color ) {
+void BatchRenderer::linesSetColor( const Color& Color ) {
 	quadsSetColor( Color );
 }
 
-void BatchRenderer::linesSetColorFree( const ColorA& Color0, const ColorA& Color1 ) {
+void BatchRenderer::linesSetColorFree( const Color& Color0, const Color& Color1 ) {
 	quadsSetColorFree( Color0, Color1, Color0, Color0 );
 }
 
@@ -527,14 +527,14 @@ void BatchRenderer::batchLine( const Float& x0, const Float& y0, const Float& x1
 void BatchRenderer::lineLoopBegin() {
 	setDrawMode( DM_LINE_LOOP, true );
 	quadsSetSubset( 0, 0, 1, 1 );
-	pointSetColor( ColorA() );
+	pointSetColor( Color() );
 }
 
-void BatchRenderer::lineLoopSetColor( const ColorA& Color ) {
+void BatchRenderer::lineLoopSetColor( const Color& Color ) {
 	quadsSetColor( Color );
 }
 
-void BatchRenderer::lineLoopSetColorFree( const ColorA& Color0, const ColorA& Color1 ) {
+void BatchRenderer::lineLoopSetColorFree( const Color& Color0, const Color& Color1 ) {
 	quadsSetColorFree( Color0, Color1, Color0, Color0 );
 }
 
@@ -585,14 +585,14 @@ void BatchRenderer::batchLineLoop( const Vector2f& vector1 ) {
 void BatchRenderer::lineStripBegin() {
 	setDrawMode( DM_LINE_STRIP, true );
 	quadsSetSubset( 0, 0, 1, 1 );
-	pointSetColor( ColorA() );
+	pointSetColor( Color() );
 }
 
-void BatchRenderer::lineStripSetColor( const ColorA& Color ) {
+void BatchRenderer::lineStripSetColor( const Color& Color ) {
 	quadsSetColor( Color );
 }
 
-void BatchRenderer::lineStripSetColorFree( const ColorA& Color0, const ColorA& Color1 ) {
+void BatchRenderer::lineStripSetColorFree( const Color& Color0, const Color& Color1 ) {
 	quadsSetColorFree( Color0, Color1, Color0, Color0 );
 }
 
@@ -643,14 +643,14 @@ void BatchRenderer::batchLineStrip( const Vector2f& vector1 ) {
 void BatchRenderer::triangleFanBegin() {
 	setDrawMode( DM_TRIANGLE_FAN, true );
 	triangleFanSetSubset( 0, 0, 0, 1, 1, 1 );
-	triangleFanSetColor( ColorA() );
+	triangleFanSetColor( Color() );
 }
 
-void BatchRenderer::triangleFanSetColor( const ColorA& Color ) {
+void BatchRenderer::triangleFanSetColor( const Color& Color ) {
 	quadsSetColor( Color );
 }
 
-void BatchRenderer::triangleFanSetColorFree( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2 ) {
+void BatchRenderer::triangleFanSetColorFree( const Color& Color0, const Color& Color1, const Color& Color2 ) {
 	quadsSetColorFree( Color0, Color1, Color2, Color0 );
 }
 
@@ -706,14 +706,14 @@ void BatchRenderer::batchTriangleFan( const Float& x0, const Float& y0 ) {
 void BatchRenderer::trianglesBegin() {
 	setDrawMode( DM_TRIANGLES, true );
 	trianglesSetSubset( 0, 0, 0, 1, 1, 1 );
-	trianglesSetColor( ColorA() );
+	trianglesSetColor( Color() );
 }
 
-void BatchRenderer::trianglesSetColor( const ColorA& Color ) {
+void BatchRenderer::trianglesSetColor( const Color& Color ) {
 	quadsSetColor( Color );
 }
 
-void BatchRenderer::trianglesSetColorFree( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2 ) {
+void BatchRenderer::trianglesSetColorFree( const Color& Color0, const Color& Color1, const Color& Color2 ) {
 	quadsSetColorFree( Color0, Color1, Color2, Color0 );
 }
 
@@ -751,7 +751,7 @@ void BatchRenderer::batchTriangle( const Float& x0, const Float& y0, const Float
 	addVertexs(3);
 }
 
-void BatchRenderer::polygonSetColor( const ColorA& Color ) {
+void BatchRenderer::polygonSetColor( const Color& Color ) {
 	pointSetColor( Color );
 }
 

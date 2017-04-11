@@ -64,7 +64,7 @@ class EE_API Image {
 		Image( const Uint8* data, const unsigned int& width, const unsigned int& height, const unsigned int& channels );
 
 		/** Create an empty image */
-		Image( const Uint32& width, const Uint32& height, const Uint32& channels, const ColorA& DefaultColor = ColorA(0,0,0,0), const bool& initWithDefaultColor = true );
+		Image( const Uint32& width, const Uint32& height, const Uint32& channels, const Color& DefaultColor = Color(0,0,0,0), const bool& initWithDefaultColor = true );
 
 		/** Load an image from path
 		* @param Path The path to the file.
@@ -82,13 +82,13 @@ class EE_API Image {
 		virtual ~Image();
 
 		/** Create an empty image data */
-		void create( const Uint32& width, const Uint32& height, const Uint32& channels, const ColorA &DefaultColor = ColorA(0,0,0,0), const bool& initWithDefaultColor = true );
+		void create( const Uint32& width, const Uint32& height, const Uint32& channels, const Color &DefaultColor = Color(0,0,0,0), const bool& initWithDefaultColor = true );
 
 		/** Return the pixel color from the image. \n You must have a copy of the image on local memory. For that you need to Lock the image first. */
-		virtual ColorA getPixel(const unsigned int& x, const unsigned int& y);
+		virtual Color getPixel(const unsigned int& x, const unsigned int& y);
 
 		/** Set the pixel color to the image. \n You must have a copy of the image on local memory. For that you need to Lock the image first. */
-		virtual void setPixel(const unsigned int& x, const unsigned int& y, const ColorA& Color);
+		virtual void setPixel(const unsigned int& x, const unsigned int& y, const Color& Color);
 
 		/** Assign a new array of pixels to the image in local memory ( it has to be exactly of the same size of the image ) */
 		virtual void setPixels( const Uint8* data );
@@ -130,16 +130,16 @@ class EE_API Image {
 		virtual bool saveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format );
 
 		/** Create an Alpha mask from a Color */
-		virtual void createMaskFromColor( const ColorA& ColorKey, Uint8 Alpha );
+		virtual void createMaskFromColor( const Color& ColorKey, Uint8 Alpha );
 
 		/** Create an Alpha mask from a Color */
 		void createMaskFromColor( const RGB& ColorKey, Uint8 Alpha );
 
 		/** Replace a color on the image */
-		virtual void replaceColor( const ColorA& ColorKey, const ColorA& NewColor );
+		virtual void replaceColor( const Color& ColorKey, const Color& NewColor );
 
 		/** Fill the image with a color */
-		virtual void fillWithColor( const ColorA& Color );
+		virtual void fillWithColor( const Color& Color );
 
 		/** Copy the image to this image data, starting from the position x,y */
 		virtual void copyImage( Graphics::Image * image, const Uint32& x = 0, const Uint32& y = 0 );
@@ -184,7 +184,7 @@ class EE_API Image {
 		bool			mAvoidFree;
 		bool			mLoadedFromStbi;
 
-		void 			allocate( const Uint32& size, ColorA DefaultColor = ColorA(0,0,0,0), bool memsetData = true );
+		void 			allocate( const Uint32& size, Color DefaultColor = Color(0,0,0,0), bool memsetData = true );
 
 		void			loadFromPack( Pack * Pack, const std::string& FilePackPath );
 };

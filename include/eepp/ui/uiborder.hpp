@@ -11,15 +11,15 @@ class EE_API UIBorder {
 
 		UIBorder();
 
-		const ColorA& getColor() const;
+		const Color& getColor() const;
 
-		UIBorder * setColor( const ColorA& Col );
+		UIBorder * setColor( const Color& Col );
 
 		const unsigned int& getWidth() const;
 
 		UIBorder * setWidth( const unsigned int& width );
 	protected:
-		ColorA			mColor;
+		Color			mColor;
 		unsigned int	mWidth;
 };
 

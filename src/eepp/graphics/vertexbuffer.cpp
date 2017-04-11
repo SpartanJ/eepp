@@ -61,7 +61,7 @@ void VertexBuffer::addTextureCoord( const Vector2f& VertexCoord, const Uint32& T
 	addVertex( VERTEX_FLAG_TEXTURE0 + TextureLevel, VertexCoord );
 }
 
-void VertexBuffer::addColor( const ColorA& Color ) {
+void VertexBuffer::addColor( const Color& Color ) {
 	mColorArray.push_back( Color.r );
 	mColorArray.push_back( Color.g );
 	mColorArray.push_back( Color.b );
@@ -122,12 +122,12 @@ Vector2f VertexBuffer::getVector2( const Uint32& Type, const Uint32& Index ) {
 	return Vector2f( mVertexArray[ Type ][ pos ], mVertexArray[ Type ][ pos + 1 ] );
 }
 
-ColorA VertexBuffer::getColor( const Uint32& Index ) {
+Color VertexBuffer::getColor( const Uint32& Index ) {
 	eeASSERT( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) );
 
 	Int32 pos = Index * eeVertexElements[ VERTEX_FLAG_COLOR ];
 
-	return ColorA( mColorArray[ pos ], mColorArray[ pos + 1 ], mColorArray[ pos + 2 ], mColorArray[ pos + 3 ] );
+	return Color( mColorArray[ pos ], mColorArray[ pos + 1 ], mColorArray[ pos + 2 ], mColorArray[ pos + 3 ] );
 }
 
 Uint32 VertexBuffer::getIndex( const Uint32& Index ) {

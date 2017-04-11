@@ -25,9 +25,9 @@ class EE_API UIImage : public UIWidget {
 
 		void setDrawable( Drawable * drawable );
 
-		const ColorA& getColor() const;
+		const Color& getColor() const;
 
-		void setColor( const ColorA& col );
+		void setColor( const Color& col );
 
 		const EE_RENDER_MODE& getRenderMode() const;
 
@@ -43,7 +43,7 @@ class EE_API UIImage : public UIWidget {
 	protected:
 		Uint32			mScaleType;
 		Drawable *		mDrawable;
-		ColorA			mColor;
+		Color			mColor;
 		Vector2i		mAlignOffset;
 		Vector2f		mDestSize;
 

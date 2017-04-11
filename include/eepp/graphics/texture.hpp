@@ -71,13 +71,13 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		bool saveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format );
 
 		/** Replace a color on the texture */
-		void replaceColor( const ColorA& ColorKey, const ColorA& NewColor);
+		void replaceColor( const Color& ColorKey, const Color& NewColor);
 
 		/** Create an Alpha mask from a Color */
-		void createMaskFromColor( const ColorA& ColorKey, Uint8 Alpha );
+		void createMaskFromColor( const Color& ColorKey, Uint8 Alpha );
 
 		/** Fill a texture with a color */
-		void fillWithColor( const ColorA& Color );
+		void fillWithColor( const Color& Color );
 
 		/** Resize the texture */
 		void resize( const Uint32& newWidth, const Uint32& newHeight, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
@@ -158,7 +158,7 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		* @param width The width of the texture rendered
 		* @param height The height of the texture rendered
 		*/
-		void drawFast( const Float& x, const Float& y, const Float& Angle = 0.0f, const Vector2f& scale = Vector2f::One, const ColorA& Color = ColorA(), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const Float &width = 0, const Float &height = 0 );
+		void drawFast( const Float& x, const Float& y, const Float& Angle = 0.0f, const Vector2f& scale = Vector2f::One, const Color& Color = Color(), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const Float &width = 0, const Float &height = 0 );
 
 		/** Render the texture on screen
 		* @param x The x position on screen
@@ -171,7 +171,7 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		* @param Center The rotation and scaling center. The center point is relative to the top-left corner of the object.
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void draw( const Float &x, const Float &y, const Float &Angle = 0, const Vector2f &scale = Vector2f::One, const ColorA& Color = ColorA(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter), const Recti& texSector = Recti(0,0,0,0) );
+		void draw( const Float &x, const Float &y, const Float &Angle = 0, const Vector2f &scale = Vector2f::One, const Color& Color = Color(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter), const Recti& texSector = Recti(0,0,0,0) );
 
 		/** Render the texture on screen. Extended because can set the vertex colors individually
 		* @param x The x position on screen
@@ -189,7 +189,7 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		* @param Center The rotation and scaling center. The center point is relative to the top-left corner of the object.
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void drawEx( Float x, Float y, Float width = 0.0f, Float height = 0.0f, const Float &Angle = 0, const Vector2f &scale = Vector2f::One, const ColorA& Color0 = ColorA(255,255,255,255), const ColorA& Color1 = ColorA(255,255,255,255), const ColorA& Color2 = ColorA(255,255,255,255), const ColorA& Color3 = ColorA(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter), const Recti& texSector = Recti(0,0,0,0) );
+		void drawEx( Float x, Float y, Float width = 0.0f, Float height = 0.0f, const Float &Angle = 0, const Vector2f &scale = Vector2f::One, const Color& Color0 = Color(255,255,255,255), const Color& Color1 = Color(255,255,255,255), const Color& Color2 = Color(255,255,255,255), const Color& Color3 = Color(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter), const Recti& texSector = Recti(0,0,0,0) );
 
 		/** Render a quad on Screen
 		* @param Q The Quad2f
@@ -200,7 +200,7 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		* @param Blend Set the Blend Mode ( default ALPHA_NORMAL )
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void drawQuad( const Quad2f& Q, const Vector2f& Offset = Vector2f(), const Float &Angle = 0.0f, const Vector2f &scale = Vector2f::One, const ColorA& Color = ColorA(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const Recti& texSector = Recti(0,0,0,0) );
+		void drawQuad( const Quad2f& Q, const Vector2f& Offset = Vector2f(), const Float &Angle = 0.0f, const Vector2f &scale = Vector2f::One, const Color& Color = Color(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const Recti& texSector = Recti(0,0,0,0) );
 
 		/** Render a quad on Screen
 		* @param Q The Quad2f
@@ -214,7 +214,7 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		* @param Blend Set the Blend Mode ( default ALPHA_NORMAL )
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void drawQuadEx( Quad2f Q, const Vector2f& Offset = Vector2f(), const Float &Angle = 0.0f, const Vector2f &scale = Vector2f::One, const ColorA& Color0 = ColorA(255,255,255,255), const ColorA& Color1 = ColorA(255,255,255,255), const ColorA& Color2 = ColorA(255,255,255,255), const ColorA& Color3 = ColorA(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, Recti texSector = Recti(0,0,0,0) );
+		void drawQuadEx( Quad2f Q, const Vector2f& Offset = Vector2f(), const Float &Angle = 0.0f, const Vector2f &scale = Vector2f::One, const Color& Color0 = Color(255,255,255,255), const Color& Color1 = Color(255,255,255,255), const Color& Color2 = Color(255,255,255,255), const Color& Color3 = Color(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, Recti texSector = Recti(0,0,0,0) );
 
 		Sizef getSize();
 
@@ -236,7 +236,7 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		void reload();
 
 		/** Set a pixel to the locked texture. */
-		void setPixel( const unsigned int& x, const unsigned int& y, const ColorA& Color );
+		void setPixel( const unsigned int& x, const unsigned int& y, const Color& Color );
 
 		/** Bind the texture. Activate the texture for rendering. */
 		void bind();

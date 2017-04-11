@@ -13,31 +13,31 @@ namespace EE { namespace UI {
 
 class UIFontStyleConfig : public FontStyleConfig {
 	public:
-		const ColorA& getFontOverColor() const {
+		const Color& getFontOverColor() const {
 			return FontOverColor;
 		}
 
-		const ColorA& getFontSelectedColor() const {
+		const Color& getFontSelectedColor() const {
 			return FontSelectedColor;
 		}
 
-		ColorA getFontSelectionBackColor() const {
+		Color getFontSelectionBackColor() const {
 			return FontSelectionBackColor;
 		}
 
-		void setFontShadowColor( const ColorA& color ) {
+		void setFontShadowColor( const Color& color ) {
 			ShadowColor = color;
 		}
 
-		void setFontOverColor( const ColorA& color ) {
+		void setFontOverColor( const Color& color ) {
 			FontOverColor = color;
 		}
 
-		void setFontSelectedColor( const ColorA& color ) {
+		void setFontSelectedColor( const Color& color ) {
 			FontSelectedColor = color;
 		}
 
-		void setFontSelectionBackColor(const ColorA& color) {
+		void setFontSelectionBackColor(const Color& color) {
 			FontSelectionBackColor = color;
 		}
 
@@ -57,9 +57,9 @@ class UIFontStyleConfig : public FontStyleConfig {
 			FontSelectionBackColor = fontStyleConfig.FontSelectionBackColor;
 		}
 
-		ColorA FontOverColor = ColorA(255,255,255,255);
-		ColorA FontSelectedColor = ColorA(255,255,255,255);
-		ColorA FontSelectionBackColor = ColorA(255,255,255,255);
+		Color FontOverColor = Color(255,255,255,255);
+		Color FontSelectedColor = Color(255,255,255,255);
+		Color FontSelectionBackColor = Color(255,255,255,255);
 };
 
 class UITabWidgetStyleConfig : public UIFontStyleConfig {
@@ -79,7 +79,7 @@ class UITabWidgetStyleConfig : public UIFontStyleConfig {
 		bool		TabsClosable = false;
 		bool		SpecialBorderTabs = false; //! Indicates if the periferical tabs ( the left and right border tab ) are different from the central tabs.
 		bool		DrawLineBelowTabs = false;
-		ColorA		LineBelowTabsColor;
+		Color		LineBelowTabsColor;
 		Int32		LineBelowTabsYOffset = 0;
 };
 
@@ -138,7 +138,7 @@ class UIWindowStyleConfig : public UIFontStyleConfig {
 		Vector2i	ButtonsPositionFixer;
 		Uint32		ButtonsSeparation = 4;
 		Int32		MinCornerDistance = 24;
-		ColorA		TitleFontColor = ColorA( 255, 255, 255, 255 );
+		Color		TitleFontColor = Color( 255, 255, 255, 255 );
 		Uint8		BaseAlpha = 255;
 		bool		DecorationAutoSize = true;
 		bool		BorderAutoSize = true;

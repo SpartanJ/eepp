@@ -92,14 +92,14 @@ const Float& UILoader::getRadius() const {
 	return mRadius;
 }
 
-UILoader * UILoader::setFillColor( const ColorA& color ) {
+UILoader * UILoader::setFillColor( const Color& color ) {
 	mColor = color;
 	mArc.setColor( mColor );
 	mCircle.setColor( mColor );
 	return this;
 }
 
-const ColorA& UILoader::getFillColor() const {
+const Color& UILoader::getFillColor() const {
 	return mColor;
 }
 
@@ -171,7 +171,7 @@ void UILoader::loadFromXmlNode(const pugi::xml_node & node) {
 		} else if ( "progress" == name ) {
 			setProgress( ait->as_float() );
 		} else if ( "fillcolor" == name ) {
-			setFillColor( ColorA::fromString( ait->as_string() ) );
+			setFillColor( Color::fromString( ait->as_string() ) );
 		} else if ( "radius" == name ) {
 			setRadius( ait->as_float() );
 		} else if ( "outlinethickness" == name ) {

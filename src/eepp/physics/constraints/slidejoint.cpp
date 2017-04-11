@@ -65,7 +65,7 @@ void SlideJoint::draw() {
 	BR->setTexture( NULL );
 	BR->setPointSize( mDrawPointSize );
 	BR->pointsBegin();
-	BR->pointSetColor( ColorA( 128, 255, 128, 255 ) );
+	BR->pointSetColor( Color( 128, 255, 128, 255 ) );
 	BR->batchPoint( a.x, a.y );
 	BR->batchPoint( b.x, b.y );
 	BR->draw();

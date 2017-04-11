@@ -44,7 +44,7 @@ void MapObjectLayer::draw( const Vector2f &Offset ) {
 	Texture * Tex = mMap->getBlankTileTexture();
 
 	if ( mMap->getShowBlocked() && NULL != Tex ) {
-		ColorA Col( 255, 0, 0, 200 );
+		Color Col( 255, 0, 0, 200 );
 
 		for ( it = mObjects.begin(); it != mObjects.end(); it++ ) {
 			GameObject * Obj = (*it);

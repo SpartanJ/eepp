@@ -156,7 +156,7 @@ class EE_API Sprite : public Drawable {
 		* @param Color2 The Right - Bottom vertex color
 		* @param Color3 The Right - Top vertex color
 		*/
-		void updateVertexColors( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 );
+		void updateVertexColors( const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3 );
 
 		/** This will disable the vertex colors */
 		void disableVertexColors();
@@ -325,7 +325,7 @@ class EE_API Sprite : public Drawable {
 		Vector2f			mScale;
 		Float				mAnimSpeed;
 
-		ColorA *			mVertexColors;
+		Color *			mVertexColors;
 
 		int					mRepetitions; //!< Number of repetions of the animation, default -1 that equals to loop.
 

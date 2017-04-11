@@ -50,7 +50,7 @@ class EE_API UISkinComplex : public UISkin {
 		Sizei getBorderSize( const Uint32 &state );
 	protected:
 		Drawable * 	mDrawable[ UISkinState::StateCount ][ SideCount ];
-		ColorA		mTempColor;
+		Color		mTempColor;
 		Sizei		mSize[ UISkinState::StateCount ];
 		Sizei		mBorderSize[ UISkinState::StateCount ];
 

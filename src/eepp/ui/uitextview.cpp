@@ -27,7 +27,7 @@ UITextView::UITextView() :
 	mTextCache->setFont( mFontStyleConfig.Font );
 	mTextCache->setCharacterSize( mFontStyleConfig.CharacterSize );
 	mTextCache->setStyle( mFontStyleConfig.Style );
-	mTextCache->setFillColor( mFontStyleConfig.Color );
+	mTextCache->setFillColor( mFontStyleConfig.FontColor );
 	mTextCache->setShadowColor( mFontStyleConfig.ShadowColor );
 	mTextCache->setOutlineThickness( mFontStyleConfig.OutlineThickness );
 	mTextCache->setOutlineColor( mFontStyleConfig.OutlineColor );
@@ -119,11 +119,11 @@ UITextView * UITextView::setOutlineThickness( const Float & outlineThickness ) {
 	return this;
 }
 
-const ColorA &UITextView::getOutlineColor() const {
+const Color &UITextView::getOutlineColor() const {
 	return mFontStyleConfig.OutlineColor;
 }
 
-UITextView * UITextView::setOutlineColor(const ColorA & outlineColor) {
+UITextView * UITextView::setOutlineColor(const Color & outlineColor) {
 	if ( mFontStyleConfig.OutlineColor != outlineColor ) {
 		mTextCache->setOutlineColor( outlineColor );
 		mFontStyleConfig.OutlineColor = outlineColor;
@@ -163,12 +163,12 @@ UITextView * UITextView::setText( const String& text ) {
 	return this;
 }
 
-const ColorA& UITextView::getFontColor() const {
-	return mFontStyleConfig.Color;
+const Color& UITextView::getFontColor() const {
+	return mFontStyleConfig.FontColor;
 }
 
-UITextView * UITextView::setFontColor( const ColorA& color ) {
-	mFontStyleConfig.Color = color;
+UITextView * UITextView::setFontColor( const Color& color ) {
+	mFontStyleConfig.FontColor = color;
 	mTextCache->setFillColor( color );
 
 	setAlpha( color.a );
@@ -176,32 +176,32 @@ UITextView * UITextView::setFontColor( const ColorA& color ) {
 	return this;
 }
 
-const ColorA& UITextView::getFontShadowColor() const {
+const Color& UITextView::getFontShadowColor() const {
 	return mFontStyleConfig.ShadowColor;
 }
 
-UITextView * UITextView::setFontShadowColor( const ColorA& color ) {
+UITextView * UITextView::setFontShadowColor( const Color& color ) {
 	mFontStyleConfig.ShadowColor = color;
 	mTextCache->setShadowColor( mFontStyleConfig.ShadowColor );
 
 	return this;
 }
 
-const ColorA& UITextView::getSelectionBackColor() const {
+const Color& UITextView::getSelectionBackColor() const {
 	return mFontStyleConfig.FontSelectionBackColor;
 }
 
-UITextView * UITextView::setSelectionBackColor( const ColorA& color ) {
+UITextView * UITextView::setSelectionBackColor( const Color& color ) {
 	mFontStyleConfig.FontSelectionBackColor = color;
 	return this;
 }
 
 void UITextView::setAlpha( const Float& alpha ) {
 	UIControlAnim::setAlpha( alpha );
-	mFontStyleConfig.Color.a = (Uint8)alpha;
+	mFontStyleConfig.FontColor.a = (Uint8)alpha;
 	mFontStyleConfig.ShadowColor.a = (Uint8)alpha;
 
-	mTextCache->setAlpha( mFontStyleConfig.Color.a );
+	mTextCache->setAlpha( mFontStyleConfig.FontColor.a );
 }
 
 void UITextView::autoShrink() {
@@ -489,15 +489,15 @@ void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
 		if ( "text" == name ) {
 			setText( ait->as_string() );
 		} else if ( "textcolor" == name ) {
-			setFontColor( ColorA::fromString( ait->as_string() ) );
+			setFontColor( Color::fromString( ait->as_string() ) );
 		} else if ( "textshadowcolor" == name ) {
-			setFontShadowColor( ColorA::fromString( ait->as_string() ) );
+			setFontShadowColor( Color::fromString( ait->as_string() ) );
 		} else if ( "textovercolor" == name ) {
-			mFontStyleConfig.FontOverColor = ColorA::fromString( ait->as_string() );
+			mFontStyleConfig.FontOverColor = Color::fromString( ait->as_string() );
 		} else if ( "textselectedcolor" == name ) {
-			mFontStyleConfig.FontSelectedColor = ColorA::fromString( ait->as_string() );
+			mFontStyleConfig.FontSelectedColor = Color::fromString( ait->as_string() );
 		} else if ( "textselectionbackcolor" == name ) {
-			setSelectionBackColor( ColorA::fromString( ait->as_string() ) );
+			setSelectionBackColor( Color::fromString( ait->as_string() ) );
 		} else if ( "fontfamily" == name || "fontname" == name ) {
 			Font * font = FontManager::instance()->getByName( ait->as_string() );
 
@@ -533,7 +533,7 @@ void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
 		} else if ( "fontoutlinethickness" == name ) {
 			setOutlineThickness( PixelDensity::toDpFromString( ait->as_string() ) );
 		} else if ( "fontoutlinecolor" == name ) {
-			setOutlineColor( ColorA::fromString( ait->as_string() ) );
+			setOutlineColor( Color::fromString( ait->as_string() ) );
 		} else if ( "padding" == name ) {
 			int val = PixelDensity::toDpFromStringI( ait->as_string() );
 			setPadding( Recti( val, val, val, val ) );

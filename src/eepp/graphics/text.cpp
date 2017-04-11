@@ -24,7 +24,7 @@ Text::Text() :
 	mCachedWidth(0),
 	mNumLines(0),
 	mLargestLineCharCount(0),
-	mFontShadowColor( ColorA( 0, 0, 0, 255 ) ),
+	mFontShadowColor( Color( 0, 0, 0, 255 ) ),
 	mAlign(0),
 	mFontHeight(0)
 {
@@ -45,7 +45,7 @@ Text::Text(const String& string, Font * font, unsigned int characterSize) :
 	mCachedWidth(0),
 	mNumLines(0),
 	mLargestLineCharCount(0),
-	mFontShadowColor( ColorA( 0, 0, 0, 255 ) ),
+	mFontShadowColor( Color( 0, 0, 0, 255 ) ),
 	mAlign(0),
 	mFontHeight( mFont->getFontHeight( mRealCharacterSize ) )
 {
@@ -65,13 +65,13 @@ Text::Text(Font * font, unsigned int characterSize) :
 	mCachedWidth(0),
 	mNumLines(0),
 	mLargestLineCharCount(0),
-	mFontShadowColor( ColorA( 0, 0, 0, 255 ) ),
+	mFontShadowColor( Color( 0, 0, 0, 255 ) ),
 	mAlign(0),
 	mFontHeight( mFont->getFontHeight( mRealCharacterSize ) )
 {
 }
 
-void Text::create(Font * font, const String & text, ColorA FontColor, ColorA FontShadowColor, Uint32 characterSize ) {
+void Text::create(Font * font, const String & text, Color FontColor, Color FontShadowColor, Uint32 characterSize ) {
 	mFont = font;
 	mString = text;
 	mCharacterSize = characterSize;
@@ -127,18 +127,18 @@ void Text::setStyle(Uint32 style) {
 	}
 }
 
-void Text::setColor(const ColorA & color) {
+void Text::setColor(const Color & color) {
 	setFillColor(color);
 }
 
-void Text::setFillColor(const ColorA& color) {
+void Text::setFillColor(const Color& color) {
 	if (color != mFillColor) {
 		mFillColor = color;
 		mColorsNeedUpdate = true;
 	}
 }
 
-void Text::setOutlineColor(const ColorA& color) {
+void Text::setOutlineColor(const Color& color) {
 	if (color != mOutlineColor) {
 		mOutlineColor = color;
 		mColorsNeedUpdate = true;
@@ -185,15 +185,15 @@ void Text::setAlpha( const Uint8& alpha ) {
 	}
 }
 
-const ColorA& Text::getFillColor() const {
+const Color& Text::getFillColor() const {
 	return mFillColor;
 }
 
-const ColorA &Text::getColor() const {
+const Color &Text::getColor() const {
 	return getFillColor();
 }
 
-const ColorA& Text::getOutlineColor() const {
+const Color& Text::getOutlineColor() const {
 	return mOutlineColor;
 }
 
@@ -510,10 +510,10 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 
 			mStyle &= ~Shadow;
 
-			ColorA Col = getFillColor();
+			Color Col = getFillColor();
 
 			if ( Col.a != 255 ) {
-				ColorA ShadowColor = getShadowColor();
+				Color ShadowColor = getShadowColor();
 				ShadowColor.a = (Uint8)( (Float)ShadowColor.a * ( (Float)Col.a / (Float)255 ) );
 
 				setFillColor( ShadowColor );
@@ -791,11 +791,11 @@ void Text::ensureColorUpdate() {
 	}
 }
 
-const ColorA& Text::getShadowColor() const {
+const Color& Text::getShadowColor() const {
 	return mFontShadowColor;
 }
 
-void Text::setShadowColor(const ColorA& color) {
+void Text::setShadowColor(const Color& color) {
 	mFontShadowColor = color;
 }
 
@@ -837,13 +837,13 @@ void Text::cacheWidth() {
 void Text::setStyleConfig( const FontStyleConfig& styleConfig ) {
 	setFont( styleConfig.Font );
 	setCharacterSize( styleConfig.CharacterSize );
-	setFillColor( styleConfig.Color );
+	setFillColor( styleConfig.FontColor );
 	setStyle( styleConfig.Style );
 	setOutlineThickness( styleConfig.OutlineThickness );
 	setOutlineColor( styleConfig.OutlineColor );
 }
 
-void Text::setFillColor( const ColorA& color, Uint32 from, Uint32 to ) {
+void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 	if ( mString.empty() )
 		return;
 
@@ -851,7 +851,7 @@ void Text::setFillColor( const ColorA& color, Uint32 from, Uint32 to ) {
 
 	bool  underlined = (mStyle & Underlined) != 0;
 	bool  strikeThrough = (mStyle & StrikeThrough) != 0;
-	std::vector<ColorA> colors( GLi->quadVertexs(), color );
+	std::vector<Color> colors( GLi->quadVertexs(), color );
 	std::size_t s = mString.size();
 
 	if ( to >= s ) {
@@ -863,7 +863,7 @@ void Text::setFillColor( const ColorA& color, Uint32 from, Uint32 to ) {
 		Int32 rpos	= from;
 		Int32 lpos	= 0;
 		Uint32 i;
-		Uint32 qsize = sizeof(ColorA) * GLi->quadVertexs();
+		Uint32 qsize = sizeof(Color) * GLi->quadVertexs();
 		String::StringBaseType curChar;
 
 		// Spaces, new lines and tabs are not rendered, and not counted as a color

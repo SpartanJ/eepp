@@ -333,9 +333,9 @@ UITheme::UITheme(const std::string& name, const std::string& Abbr, Graphics::Fon
 	mTextureAtlas( NULL )
 {
 	mFontStyleConfig.Font = defaultFont;
-	mFontStyleConfig.ShadowColor = ColorA( 255, 255, 255, 200 );
-	mFontStyleConfig.Color = mFontStyleConfig.FontOverColor = mFontStyleConfig.FontSelectedColor = ColorA( 0, 0, 0, 255 );
-	mFontStyleConfig.FontSelectionBackColor = ColorA( 150, 150, 150, 255 );
+	mFontStyleConfig.ShadowColor = Color( 255, 255, 255, 200 );
+	mFontStyleConfig.FontColor = mFontStyleConfig.FontOverColor = mFontStyleConfig.FontSelectedColor = Color( 0, 0, 0, 255 );
+	mFontStyleConfig.FontSelectionBackColor = Color( 150, 150, 150, 255 );
 
 	if ( NULL == defaultFont ) {
 		mFontStyleConfig.Font = UIThemeManager::instance()->getDefaultFont();

@@ -158,17 +158,17 @@ void SubTexture::setOffset( const Vector2i& offset ) {
 	mOffset = offset;
 }
 
-void SubTexture::draw( const Float& X, const Float& Y, const ColorA& Color, const Float& Angle, const Vector2f& Scale, const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect, OriginPoint Center ) {
+void SubTexture::draw( const Float& X, const Float& Y, const Color& Color, const Float& Angle, const Vector2f& Scale, const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect, OriginPoint Center ) {
 	if ( NULL != mTexture )
 		mTexture->drawEx( X + mOffset.x, Y + mOffset.y, mDestSize.x, mDestSize.y, Angle, Scale, Color, Color, Color, Color, Blend, Effect, Center, mSrcRect );
 }
 
-void SubTexture::draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect, OriginPoint Center ) {
+void SubTexture::draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect, OriginPoint Center ) {
 	if ( NULL != mTexture )
 		mTexture->drawEx( X + mOffset.x, Y + mOffset.y, mDestSize.x, mDestSize.y, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, Center, mSrcRect );
 }
 
-void SubTexture::draw( const Quad2f Q, const Vector2f& Offset, const Float& Angle, const Vector2f& Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE& Blend ) {
+void SubTexture::draw( const Quad2f Q, const Vector2f& Offset, const Float& Angle, const Vector2f& Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const EE_BLEND_MODE& Blend ) {
 	if ( NULL != mTexture )
 		mTexture->drawQuadEx( Q, Offset, Angle, Scale, Color0, Color1, Color2, Color3, Blend, mSrcRect );
 }
@@ -192,7 +192,7 @@ Graphics::Texture * SubTexture::getTexture() {
 	return mTexture;
 }
 
-void SubTexture::replaceColor( ColorA ColorKey, ColorA NewColor ) {
+void SubTexture::replaceColor( Color ColorKey, Color NewColor ) {
 	mTexture->lock();
 
 	for ( int y = mSrcRect.Top; y < mSrcRect.Bottom; y++ ) {
@@ -205,12 +205,12 @@ void SubTexture::replaceColor( ColorA ColorKey, ColorA NewColor ) {
 	mTexture->unlock( false, true );
 }
 
-void SubTexture::createMaskFromColor(ColorA ColorKey, Uint8 Alpha) {
-	replaceColor( ColorKey, ColorA( ColorKey.r, ColorKey.g, ColorKey.b, Alpha ) );
+void SubTexture::createMaskFromColor(Color ColorKey, Uint8 Alpha) {
+	replaceColor( ColorKey, Color( ColorKey.r, ColorKey.g, ColorKey.b, Alpha ) );
 }
 
 void SubTexture::createMaskFromColor(RGB ColorKey, Uint8 Alpha) {
-	createMaskFromColor( ColorA( ColorKey.r, ColorKey.g, ColorKey.b, 255 ), Alpha );
+	createMaskFromColor( Color( ColorKey.r, ColorKey.g, ColorKey.b, 255 ), Alpha );
 }
 
 void SubTexture::cacheAlphaMask() {
@@ -250,7 +250,7 @@ void SubTexture::cacheColors() {
 	int rY = 0;
 	int rX = 0;
 	int rW = mSrcRect.Right - mSrcRect.Left;
-	ColorA tColor;
+	Color tColor;
 	Uint32 Channels = mTexture->getChannels();
 	int Pos;
 
@@ -289,7 +289,7 @@ Uint8 SubTexture::getAlphaAt( const Int32& X, const Int32& Y ) {
 	return getAlphaAt( X, Y );
 }
 
-ColorA SubTexture::getColorAt( const Int32& X, const Int32& Y ) {
+Color SubTexture::getColorAt( const Int32& X, const Int32& Y ) {
 	if ( mTexture->hasLocalCopy() )
 		return mTexture->getPixel( mSrcRect.Left + X, mSrcRect.Right + Y );
 
@@ -298,13 +298,13 @@ ColorA SubTexture::getColorAt( const Int32& X, const Int32& Y ) {
 		unsigned int Pos = ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * Channels;
 
 		if ( 4 == Channels )
-			return ColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], mPixels[ Pos + 3 ] );
+			return Color( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], mPixels[ Pos + 3 ] );
 		else if ( 3 == Channels )
-			return ColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], 255 );
+			return Color( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], 255 );
 		else if ( 2 == Channels )
-			return ColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], 255, 255 );
+			return Color( mPixels[ Pos ], mPixels[ Pos + 1 ], 255, 255 );
 		else
-			return ColorA( mPixels[ Pos ], 255, 255, 255 );
+			return Color( mPixels[ Pos ], 255, 255, 255 );
 	}
 
 	cacheColors();
@@ -312,7 +312,7 @@ ColorA SubTexture::getColorAt( const Int32& X, const Int32& Y ) {
 	return getColorAt( X, Y );
 }
 
-void SubTexture::setColorAt( const Int32& X, const Int32& Y, const ColorA& Color ) {
+void SubTexture::setColorAt( const Int32& X, const Int32& Y, const Color& Color ) {
 	if ( NULL != mPixels ) {
 		Uint32 Channels = mTexture->getChannels();
 		unsigned int Pos = ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * Channels;

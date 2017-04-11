@@ -46,7 +46,7 @@ void TileMapLayer::draw( const Vector2f& Offset ) {
 			for ( Int32 y = start.y; y < end.y; y++ ) {
 				if ( NULL != mTiles[x][y] ) {
 					if ( mTiles[x][y]->isBlocked() ) {
-						Tex->draw( x * mMap->getTileSize().x, y * mMap->getTileSize().y, 0 , Vector2f::One, ColorA( 255, 0, 0, 200 ) );
+						Tex->draw( x * mMap->getTileSize().x, y * mMap->getTileSize().y, 0 , Vector2f::One, Color( 255, 0, 0, 200 ) );
 					}
 				}
 			}

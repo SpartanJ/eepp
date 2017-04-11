@@ -19,17 +19,17 @@ const Uint8& Drawable::getAlpha() {
 	return mColor.a;
 }
 
-void Drawable::setColor(const ColorA & color) {
+void Drawable::setColor(const Color & color) {
 	mColor = color;
 	onColorFilterChange();
 	onAlphaChange();
 }
 
-const ColorA& Drawable::getColor() const {
+const Color& Drawable::getColor() const {
 	return mColor;
 }
 
-void Drawable::setColorFilter( const ColorA& color ) {
+void Drawable::setColorFilter( const Color& color ) {
 	if ( mColor.r != color.r || mColor.g != color.g || mColor.b != color.b ) {
 		mColor.r = color.r;
 		mColor.g = color.g;
@@ -39,13 +39,13 @@ void Drawable::setColorFilter( const ColorA& color ) {
 	}
 }
 
-Color Drawable::getColorFilter() {
-	return Color( mColor.r, mColor.g, mColor.b );
+RGB Drawable::getColorFilter() {
+	return RGB( mColor.r, mColor.g, mColor.b );
 }
 
 void Drawable::clearColor() {
-	if ( mColor != ColorA::White ) {
-		mColor = ColorA::White;
+	if ( mColor != Color::White ) {
+		mColor = Color::White;
 
 		onColorFilterChange();
 		onAlphaChange();

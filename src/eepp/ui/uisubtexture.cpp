@@ -130,11 +130,11 @@ Graphics::SubTexture * UISubTexture::getSubTexture() const {
 	return mSubTexture;
 }
 
-const ColorA& UISubTexture::getColor() const {
+const Color& UISubTexture::getColor() const {
 	return mColor;
 }
 
-void UISubTexture::setColor( const ColorA& col ) {
+void UISubTexture::setColor( const Color& col ) {
 	mColor = col;
 	setAlpha( col.a );
 }

@@ -324,7 +324,7 @@ void Space::draw() {
 	if ( options->BodyPointSize ) {
 		BR->setPointSize( options->BodyPointSize );
 		BR->pointsBegin();
-		BR->pointSetColor( ColorA( 255, 255, 255, 255 ) );
+		BR->pointSetColor( Color( 255, 255, 255, 255 ) );
 
 		cpArray * bodies = mSpace->CP_PRIVATE(bodies);
 
@@ -340,7 +340,7 @@ void Space::draw() {
 	if ( options->CollisionPointSize ) {
 		BR->setPointSize( options->CollisionPointSize );
 		BR->pointsBegin();
-		BR->pointSetColor( ColorA( 255, 0, 0, 255 ) );
+		BR->pointSetColor( Color( 255, 0, 0, 255 ) );
 
 		cpArray * arbiters = mSpace->CP_PRIVATE(arbiters);
 

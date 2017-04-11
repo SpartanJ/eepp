@@ -7,15 +7,15 @@ UIBorder * UIBorder::New() {
 }
 
 UIBorder::UIBorder() :
-	mColor( ColorA::Black ),
+	mColor( Color::Black ),
 	mWidth( 1 )
 {}
 
-const ColorA& UIBorder::getColor() const	{
+const Color& UIBorder::getColor() const	{
 	return	mColor;
 }
 
-UIBorder * UIBorder::setColor( const ColorA& Col )	{
+UIBorder * UIBorder::setColor( const Color& Col )	{
 	mColor = Col;
 	return this;
 }

@@ -25,13 +25,13 @@ class EE_API Drawable {
 
 		const Uint8& getAlpha();
 
-		void setColor( const ColorA& color );
+		void setColor( const Color& color );
 
-		const ColorA& getColor() const;
+		const Color& getColor() const;
 
-		void setColorFilter( const ColorA& color );
+		void setColorFilter( const Color& color );
 
-		Color getColorFilter();
+		RGB getColorFilter();
 
 		void clearColor();
 
@@ -46,7 +46,7 @@ class EE_API Drawable {
 		void setPosition( const Vector2f& position );
 	protected:
 		EE_DRAWABLE_TYPE mDrawableType;
-		ColorA mColor;
+		Color mColor;
 		Vector2f mPosition;
 
 		virtual void onAlphaChange();

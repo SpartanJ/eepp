@@ -9,13 +9,13 @@ namespace EE { namespace System {
 
 /** @brief Template class for a RGB color */
 template<typename T>
-class tColor {
+class tRGB {
 	public:
 		T r;
 		T g;
 		T b;
 
-		tColor() :
+		tRGB() :
 			r(255),
 			g(255),
 			b(255)
@@ -27,7 +27,7 @@ class tColor {
 		**	@param g Green component
 		**	@param b Blue component
 		*/
-		tColor(T r, T g, T b) :
+		tRGB(T r, T g, T b) :
 			r(r),
 			g(g),
 			b(b)
@@ -35,7 +35,7 @@ class tColor {
 		}
 
 		/** From 32 bits value with RGB(A) byte order */
-		tColor( Uint32 Col )
+		tRGB( Uint32 Col )
 		{
 			Col		= BitOp::swapLE32( Col );
 			r	= static_cast<T>( Col >> 16	);
@@ -43,18 +43,18 @@ class tColor {
 			b	= static_cast<T>( Col >> 0	);
 		}
 
-		bool operator==( const tColor<T>& Col ) {
+		bool operator==( const tRGB<T>& Col ) {
 			return ( r == Col.r && g == Col.g && b == Col.b );
 		}
 
-		bool operator!=( const tColor<T>& Col ) {
+		bool operator!=( const tRGB<T>& Col ) {
 			return !( r == Col.r && g == Col.g && b == Col.b );
 		}
 };
 
 /** @brief Template class for a RGBA color */
 template<typename T>
-class tColorA {
+class tColor {
 	public:
 		union {
 			Uint32 Value;
@@ -68,7 +68,7 @@ class tColorA {
 			};
 		};
 
-		tColorA() :
+		tColor() :
 			r(255),
 			g(255),
 			b(255),
@@ -82,7 +82,7 @@ class tColorA {
 		**	@param b Blue component
 		**  @param a Alpha component
 		*/
-		tColorA(T r, T g, T b, T a) :
+		tColor(T r, T g, T b, T a) :
 			r(r),
 			g(g),
 			b(b),
@@ -91,7 +91,7 @@ class tColorA {
 		}
 
 		/** @brief Creates a RGBA color from a RGB color, the Alpha component is set as non-transparent. */
-		tColorA( const tColor<T>& Col ) :
+		tColor( const tRGB<T>& Col ) :
 			r( Col.r ),
 			g( Col.g ),
 			b( Col.b ),
@@ -103,7 +103,7 @@ class tColorA {
 		**	@param Col The RGB color
 		**	@param a The Alpha component value
 		*/
-		tColorA( const tColor<T>& Col, T a ) :
+		tColor( const tRGB<T>& Col, T a ) :
 			r( Col.r ),
 			g( Col.g ),
 			b( Col.b ),
@@ -111,13 +111,13 @@ class tColorA {
 		{
 		}
 
-		tColorA( const tColorA<T>& Col ) :
+		tColor( const tColor<T>& Col ) :
 			Value( Col.Value )
 		{
 		}
 
 		/** From a 32 bits value with RGBA byte order */
-		tColorA( const Uint32& Col ) :
+		tColor( const Uint32& Col ) :
 			Value( BitOp::swapBE32( Col ) )
 		{
 		}
@@ -133,128 +133,124 @@ class tColorA {
 		}
 
 		/** @brief Assign the color value from other RGBA color. */
-		void assign( const tColorA<T>& Col ) {
+		void assign( const tColor<T>& Col ) {
 			Value = Col.Value;
 		}
 
-		bool operator==( const tColorA<T>& Col ) const {
+		bool operator==( const tColor<T>& Col ) const {
 			return ( r == Col.r && g == Col.g && b == Col.b && a == Col.a );
 		}
 
-		bool operator!=( const tColorA<T>& Col ) const {
+		bool operator!=( const tColor<T>& Col ) const {
 			return !(*this == Col);
 		}
 
-		tColorA<T> operator+( const tColorA<T>& Col ) const {
-			return tColorA<T>(	eemin( this->r	+ Col.r	, 255 ),
+		tColor<T> operator+( const tColor<T>& Col ) const {
+			return tColor<T>(	eemin( this->r	+ Col.r	, 255 ),
 								eemin( this->g	+ Col.g	, 255 ),
 								eemin( this->b	+ Col.b	, 255 ),
 								eemin( this->a	+ Col.a	, 255 )
 			);
 		}
 
-		tColorA<T> operator-( const tColorA<T>& Col ) const {
-			return tColorA<T>(	eemax( this->r	- Col.r	, 0 ),
+		tColor<T> operator-( const tColor<T>& Col ) const {
+			return tColor<T>(	eemax( this->r	- Col.r	, 0 ),
 								eemax( this->g	- Col.g	, 0 ),
 								eemax( this->b	- Col.b	, 0 ),
 								eemax( this->a	- Col.a	, 0 )
 			);
 		}
 
-		tColorA<T> operator*( const tColorA<T>& Col ) const {
-			return tColorA<T>(	( this->r		* Col.r	/ 255 ),
+		tColor<T> operator*( const tColor<T>& Col ) const {
+			return tColor<T>(	( this->r		* Col.r	/ 255 ),
 								( this->g	* Col.g	/ 255 ),
 								( this->b	* Col.b	/ 255 ),
 								( this->a	* Col.a	/ 255 )
 			);
 		}
 
-		tColor<T> toColor() {
-			return tColor<T>( r, g, b );
+		tRGB<T> toRGB() {
+			return tRGB<T>( r, g, b );
 		}
 };
 
-class EE_API ColorA : public tColorA<Uint8>
+
+typedef tColor<Float> ColorAf;
+
+class EE_API Color : public tColor<Uint8>
 {
 	public:
-		ColorA();
+		Color();
 
-		ColorA( Uint8 r, Uint8 g, Uint8 b, Uint8 a );
+		Color( Uint8 r, Uint8 g, Uint8 b, Uint8 a = 255 );
 
-		ColorA( const tColor<Uint8>& Col );
+		Color( const tRGB<Uint8>& Col );
 
-		ColorA( const tColor<Uint8>& Col, Uint8 a );
+		Color( const tRGB<Uint8>& Col, Uint8 a );
 
-		ColorA( const tColorA<Uint8>& Col );
+		Color( const tColor<Uint8>& Col );
 
-		ColorA( const Uint32& Col );
+		Color( const Uint32& Col );
 
-		static ColorA colorFromPointer( void *ptr );
+		/** Blend a source color to destination color */
+		static ColorAf blend( ColorAf srcf, ColorAf dstf );
 
-		static ColorA fromString( const char * str );
+		/** Blend a source color to destination color */
+		static Color blend( Color src, Color dst );
 
-		static ColorA fromString( const std::string& str );
+		static Color colorFromPointer( void *ptr );
 
-		static const ColorA Transparent;
-		static const ColorA White;
-		static const ColorA Black;
+		static Color fromString( const char * str );
+
+		static Color fromString( std::string str );
+
+		static const Color Transparent;
+		static const Color White;
+		static const Color Black;
+		static const Color Red;
+		static const Color Green;
+		static const Color Blue;
+		static const Color Yellow;
+		static const Color Cyan;
+		static const Color Magenta;
+		static const Color Silver;
+		static const Color Gray;
+		static const Color Maroon;
+		static const Color Olive;
+		static const Color OfficeGreen;
+		static const Color Purple;
+		static const Color Teal;
+		static const Color Navy;
 };
 
-typedef tColor<Float>		Colorf;
-typedef tColorA<Float>		ColorAf;
-typedef tColorA<float>		ColorAff;
+typedef Color ColorA;
+typedef tColor<Float>		ColorAf;
 
 //! @brief Small class to help in some color operations
-class EE_API Color : public tColor<Uint8> {
+class EE_API RGB : public tRGB<Uint8> {
 public:
-	Color();
+	RGB();
 
 	/** Creates an RGB color from each component.
 	**	@param r Red component
 	**	@param g Green component
 	**	@param b Blue component
 	*/
-	Color(Uint8 r, Uint8 g, Uint8 b);
+	RGB( Uint8 r, Uint8 g, Uint8 b );
 
-	Color( const tColor<Uint8>& color );
+	RGB( const tRGB<Uint8>& color );
 
-	Color( Uint32 Col );
+	RGB( Uint32 Col );
 
-	/** Blend a source color to destination color */
-	static ColorAf blend( ColorAf srcf, ColorAf dstf );
-
-	/** Blend a source color to destination color */
-	static ColorA blend( ColorA src, ColorA dst );
-
-	static const Color White;
-	static const Color Black;
-	static const Color Red;
-	static const Color Green;
-	static const Color Blue;
-	static const Color Yellow;
-	static const Color Cyan;
-	static const Color Magenta;
-	static const Color Silver;
-	static const Color Gray;
-	static const Color Maroon;
-	static const Color Olive;
-	static const Color OfficeGreen;
-	static const Color Purple;
-	static const Color Teal;
-	static const Color Navy;
+	Color toColor();
 };
-
-typedef Color				RGB;
-typedef Colorf				RGBf;
-typedef ColorA				RGBA;
-typedef ColorAf				RGBAf;
 
 class RectColors {
 	public:
-		ColorA TopLeft;
-		ColorA TopRight;
-		ColorA BottomLeft;
-		ColorA BottomRight;
+		Color TopLeft;
+		Color TopRight;
+		Color BottomLeft;
+		Color BottomRight;
 };
 
 }}

@@ -766,8 +766,8 @@ void UIWindow::draw() {
 		Primitives P;
 		P.setForceDraw( false );
 
-		ColorA BeginC( 0, 0, 0, 25 * ( getAlpha() / (Float)255 ) );
-		ColorA EndC( 0, 0, 0, 0 );
+		Color BeginC( 0, 0, 0, 25 * ( getAlpha() / (Float)255 ) );
+		Color EndC( 0, 0, 0, 0 );
 		Float SSize = PixelDensity::dpToPx( 16.f );
 
 		Vector2i ShadowPos = mScreenPos + Vector2i( 0, 16 );

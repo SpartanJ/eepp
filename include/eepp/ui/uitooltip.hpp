@@ -39,13 +39,13 @@ class EE_API UITooltip : public UIControlAnim {
 
 		virtual void setText( const String& text );
 
-		const ColorA& getFontColor() const;
+		const Color& getFontColor() const;
 
-		void setFontColor( const ColorA& color );
+		void setFontColor( const Color& color );
 
-		const ColorA& getFontShadowColor() const;
+		const Color& getFontShadowColor() const;
 
-		void setFontShadowColor( const ColorA& color );
+		void setFontShadowColor( const Color& color );
 
 		virtual void onTextChanged();
 

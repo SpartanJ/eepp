@@ -126,21 +126,21 @@ void UITooltip::setText( const String& text ) {
 	onTextChanged();
 }
 
-const ColorA& UITooltip::getFontColor() const {
-	return mStyleConfig.Color;
+const Color& UITooltip::getFontColor() const {
+	return mStyleConfig.FontColor;
 }
 
-void UITooltip::setFontColor( const ColorA& color ) {
-	mStyleConfig.Color = color;
-	mTextCache->setFillColor( mStyleConfig.Color );
+void UITooltip::setFontColor( const Color& color ) {
+	mStyleConfig.FontColor = color;
+	mTextCache->setFillColor( mStyleConfig.FontColor );
 	setAlpha( color.a );
 }
 
-const ColorA& UITooltip::getFontShadowColor() const {
+const Color& UITooltip::getFontShadowColor() const {
 	return mStyleConfig.ShadowColor;
 }
 
-void UITooltip::setFontShadowColor( const ColorA& color ) {
+void UITooltip::setFontShadowColor( const Color& color ) {
 	mStyleConfig.ShadowColor = color;
 	setAlpha( color.a );
 	mTextCache->setShadowColor( mStyleConfig.ShadowColor );
@@ -148,10 +148,10 @@ void UITooltip::setFontShadowColor( const ColorA& color ) {
 
 void UITooltip::setAlpha( const Float& alpha ) {
 	UIControlAnim::setAlpha( alpha );
-	mStyleConfig.Color.a = (Uint8)alpha;
+	mStyleConfig.FontColor.a = (Uint8)alpha;
 	mStyleConfig.ShadowColor.a = (Uint8)alpha;
 
-	mTextCache->setFillColor( mStyleConfig.Color );
+	mTextCache->setFillColor( mStyleConfig.FontColor );
 }
 
 void UITooltip::onAutoSize() {
@@ -268,7 +268,7 @@ void UITooltip::setStyleConfig(const UITooltipStyleConfig & styleConfig) {
 		setPadding( mStyleConfig.Padding );
 
 	setFont( mStyleConfig.Font );
-	setFontColor( mStyleConfig.Color );
+	setFontColor( mStyleConfig.FontColor );
 	setFontShadowColor( mStyleConfig.ShadowColor );
 	mTextCache->setCharacterSize( mStyleConfig.CharacterSize );
 	mTextCache->setStyle( mStyleConfig.Style );

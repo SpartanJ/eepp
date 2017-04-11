@@ -67,7 +67,7 @@ RGB MapLight::processVertex( const Float& PointX, const Float& PointY, const RGB
 	return BaseColor;
 }
 
-ColorA MapLight::processVertex( const Float& PointX, const Float& PointY, const ColorA& VertexColor, const ColorA& BaseColor ) {
+Color MapLight::processVertex( const Float& PointX, const Float& PointY, const Color& VertexColor, const Color& BaseColor ) {
 	Float VertexDist;
 
 	if ( mActive ) {
@@ -80,7 +80,7 @@ ColorA MapLight::processVertex( const Float& PointX, const Float& PointY, const 
 		}
 
 		if ( VertexDist <= mRadius ) {
-			ColorA	TmpRGB;
+			Color	TmpRGB;
 			Uint8		TmpColor;
 			Float		LightC;
 
@@ -111,7 +111,7 @@ RGB MapLight::processVertex( const Vector2f& Pos, const RGB& VertexColor, const 
 	return processVertex( Pos.x, Pos.y, VertexColor, BaseColor );
 }
 
-ColorA MapLight::processVertex( const Vector2f& Pos, const ColorA& VertexColor, const ColorA& BaseColor ) {
+Color MapLight::processVertex( const Vector2f& Pos, const Color& VertexColor, const Color& BaseColor ) {
 	return processVertex( Pos.x, Pos.y, VertexColor, BaseColor );
 }
 

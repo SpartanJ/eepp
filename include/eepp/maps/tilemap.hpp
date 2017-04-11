@@ -168,9 +168,9 @@ class EE_API TileMap {
 
 		const std::string& getPath() const;
 
-		void setBaseColor( const ColorA& color );
+		void setBaseColor( const Color& color );
 
-		const ColorA& getBaseColor() const;
+		const Color& getBaseColor() const;
 
 		const eeAABB& getViewAreaAABB() const;
 
@@ -201,9 +201,9 @@ class EE_API TileMap {
 
 		void setBackAlpha( const Uint8& alpha );
 
-		const ColorA& getBackColor() const;
+		const Color& getBackColor() const;
 
-		void setBackColor( const ColorA& col );
+		void setBackColor( const Color& col );
 
 		const Float& getScale() const;
 
@@ -219,9 +219,9 @@ class EE_API TileMap {
 
 		void disableForcedHeaders();
 
-		void setGridLinesColor( const ColorA& Col );
+		void setGridLinesColor( const Color& Col );
 
-		const ColorA& setGridLinesColor() const;
+		const Color& setGridLinesColor() const;
 	protected:
 		friend class EE::Maps::Private::UIMapNew;
 
@@ -260,7 +260,7 @@ class EE_API TileMap {
 		Vector2i		mMouseOverTile;
 		Vector2i		mMouseOverTileFinal;
 		Vector2i		mMouseMapPos;
-		ColorA		mBaseColor;
+		Color		mBaseColor;
 		PropertiesMap	mProperties;
 		GOTypesList		mObjTypes;
 		CreateGOCb		mCreateGOCb;
@@ -270,9 +270,9 @@ class EE_API TileMap {
 		MapDrawCb		mDrawCb;
 		MapUpdateCb		mUpdateCb;
 		void *			mData;
-		ColorA		mTileOverColor;
-		ColorA		mBackColor;
-		ColorA		mGridLinesColor;
+		Color		mTileOverColor;
+		Color		mBackColor;
+		Color		mGridLinesColor;
 		Uint8			mBackAlpha;
 		bool			mMouseOver;
 		std::string		mPath;

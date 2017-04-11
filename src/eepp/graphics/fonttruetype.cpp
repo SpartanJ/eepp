@@ -637,7 +637,7 @@ FontTrueType::Page::Page() :
 	// Reserve a 2x2 white square for texturing underlines
 	for (int x = 0; x < 2; ++x)
 		for (int y = 0; y < 2; ++y)
-			image.setPixel(x, y, ColorA(255, 255, 255, 255));
+			image.setPixel(x, y, Color(255, 255, 255, 255));
 
 	// Create the texture
 	Uint32 texId = TextureFactory::instance()->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(), image.getChannels(), false, CLAMP_TO_EDGE, false, true );

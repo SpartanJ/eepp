@@ -60,17 +60,17 @@ class EE_API UIListBox : public UIWidget {
 
 		std::list<UIListBoxItem *> getItemsSelected();
 
-		void setFontColor( const ColorA& Color );
+		void setFontColor( const Color& Color );
 
-		const ColorA& getFontColor() const;
+		const Color& getFontColor() const;
 
-		void setFontOverColor( const ColorA& Color );
+		void setFontOverColor( const Color& Color );
 
-		const ColorA& getFontOverColor() const;
+		const Color& getFontOverColor() const;
 
-		void setFontSelectedColor( const ColorA& Color );
+		void setFontSelectedColor( const Color& Color );
 
-		const ColorA& getFontSelectedColor() const;
+		const Color& getFontSelectedColor() const;
 
 		void setFont( Graphics::Font * font );
 

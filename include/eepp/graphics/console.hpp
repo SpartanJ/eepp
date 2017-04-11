@@ -40,30 +40,30 @@ class EE_API Console : protected LogReaderInterface {
 		Uint32 getBackgroundTextureId() const { return mTexId; }
 
 		/** Set the Console Background Color */
-		void setBackgroundColor( const ColorA& BackColor ) { mConColor = BackColor; mMaxAlpha = mConColor.a; }
+		void setBackgroundColor( const Color& BackColor ) { mConColor = BackColor; mMaxAlpha = mConColor.a; }
 
 		void setCharacterSize( const Uint32& characterSize );
 
 		/** Get the Console Background Color */
-		const ColorA& getBackgroundColor() const { return mConColor; }
+		const Color& getBackgroundColor() const { return mConColor; }
 
 		/** Set the Console Border Line Background Color */
-		void setBackgroundLineColor( const ColorA& BackColor ) { mConLineColor = BackColor; }
+		void setBackgroundLineColor( const Color& BackColor ) { mConLineColor = BackColor; }
 
 		/** Get the Console Border Line Background Color */
-		const ColorA& getBackgroundLineColor() const { return mConLineColor; }
+		const Color& getBackgroundLineColor() const { return mConLineColor; }
 
 		/** Set the Console Font Color */
-		void setFontColor( const ColorA& FntColor ) { mFontStyleConfig.Color = FntColor; }
+		void setFontColor( const Color& FntColor ) { mFontStyleConfig.FontColor = FntColor; }
 
 		/** Get the Console Font Color */
-		const ColorA& getFontColor() const { return mFontStyleConfig.Color; }
+		const Color& getFontColor() const { return mFontStyleConfig.FontColor; }
 
 		/** Set the Console Client Input ( Writeable Line ) Font Color */
-		void setFontLineColor( const ColorA& FntColor ) { mFontLineColor = FntColor; }
+		void setFontLineColor( const Color& FntColor ) { mFontLineColor = FntColor; }
 
 		/** Get the Console Client Input ( Writeable Line ) Font Color */
-		const ColorA& getFontLineColor() const { return mFontLineColor; }
+		const Color& getFontLineColor() const { return mFontLineColor; }
 
 		/** Toogle the console between visible and hided with Fade In or Fade Out effect. */
 		void toggle();
@@ -135,9 +135,9 @@ class EE_API Console : protected LogReaderInterface {
 
 		EE::Window::Window * mWindow;
 
-		ColorA mConColor;
-		ColorA mConLineColor;
-		ColorA mFontLineColor;
+		Color mConColor;
+		Color mConLineColor;
+		Color mFontLineColor;
 
 		Float mWidth;
 		Float mHeight;

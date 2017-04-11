@@ -139,7 +139,7 @@ void EETest::init() {
 		if ( NULL != mVBO ) {
 			for ( Uint32 i = 0; i < Poly.getSize(); i++ ) {
 				mVBO->addVertex( Poly[i] );
-				mVBO->addColor( ColorA( 100 + i, 255 - i, 150 + i, 200 ) );
+				mVBO->addColor( Color( 100 + i, 255 - i, 150 + i, 200 ) );
 			}
 
 			mVBO->compile();
@@ -207,12 +207,12 @@ void EETest::onFontLoaded( ResourceLoader * ObjLoaded ) {
 
 	mEEText.create( TTF, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to see the PopUp Menu" );
 	mEEText.setOutlineThickness( 1 );
-	mEEText.setOutlineColor( ColorA(0,0,0,255) );
+	mEEText.setOutlineColor( Color(0,0,0,255) );
 	mFBOText.create( TTF, "This is a VBO\nInside of a FBO" );
 	mFBOText.setOutlineThickness( 1 );
-	mFBOText.setOutlineColor( ColorA(0,0,0,255) );
+	mFBOText.setOutlineColor( Color(0,0,0,255) );
 
-	mInfoText.create( DBSM, "", ColorA(100,100,100,255) );
+	mInfoText.create( DBSM, "", Color(100,100,100,255) );
 	mInfoText.setOutlineThickness( 1 );
 }
 
@@ -718,7 +718,7 @@ void EETest::createNewUI() {
 	UIManager::instance()->loadLayoutFromString(
 		"<window layout_width='300dp' layout_height='300dp' winflags='default|maximize'>"
 		"	<LinearLayout id='testlayout' orientation='vertical' layout_width='match_parent' layout_height='match_parent' layout_margin='8dp'>"
-		"		<TextView text='Hello World!' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' backgroundColor='000000FF' />"
+		"		<TextView text='Hello World!' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' backgroundColor='black' />"
 		"		<PushButton text='OK!' textSize='16dp' icon='ok' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' />"
 		"		<Image src='thecircle' layout_width='match_parent' layout_height='32dp' flags='clip' />"
 		"		<Sprite src='gn' />"
@@ -1061,7 +1061,7 @@ void EETest::loadTextures() {
 		Tiles[7] = SG->Add( TF->loadFromPixels( tImg.getPixelsPtr(), tImg.getWidth(), tImg.getHeight(), tImg.getChannels() ), "8" );
 		#else
 		Tiles[7] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/2.png" ), "8" );
-		Tiles[7]->getTexture()->createMaskFromColor( ColorA(0,0,0,255), 0 );
+		Tiles[7]->getTexture()->createMaskFromColor( Color(0,0,0,255), 0 );
 		#endif
 	}
 
@@ -1088,12 +1088,12 @@ void EETest::loadTextures() {
 
 		for ( y = 0; y < h; y++) {
 			for ( x = 0; x < w; x++) {
-				ColorA C = Tex->getPixel(x, y);
+				Color C = Tex->getPixel(x, y);
 
 				if ( C.r > 200 && C.g > 200 && C.b > 200 )
-					Tex->setPixel(x, y, ColorA( Math::randi(0, 255), Math::randi(0, 255), Math::randi(0, 255), C.a ) );
+					Tex->setPixel(x, y, Color( Math::randi(0, 255), Math::randi(0, 255), Math::randi(0, 255), C.a ) );
 				else
-					Tex->setPixel(x, y, ColorA( Math::randi(200, 255), Math::randi(200, 255), Math::randi(200, 255), C.a ) );
+					Tex->setPixel(x, y, Color( Math::randi(200, 255), Math::randi(200, 255), Math::randi(200, 255), C.a ) );
 			}
 		}
 
@@ -1115,7 +1115,7 @@ void EETest::loadTextures() {
 	CL1.setScale( 0.5f );
 
 	CL2.addFrame(TN[0], Sizef(96, 96) );
-	CL2.setColor( ColorA( 255, 255, 255, 255 ) );
+	CL2.setColor( Color( 255, 255, 255, 255 ) );
 
 	mTGL = eeNew( TextureAtlasLoader, ( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
 
@@ -1174,7 +1174,7 @@ void EETest::screen2() {
 
 	Batch.setTexture( TNP[2] );
 	Batch.quadsBegin();
-	Batch.quadsSetColor( ColorA(150,150,150,100) );
+	Batch.quadsSetColor( Color(150,150,150,100) );
 	Batch.quadsSetSubset( 0.0f, 0.0f, 0.5f, 0.5f );
 
 	Batch.setBatchRotation( ang );
@@ -1232,10 +1232,10 @@ void EETest::screen2() {
 	if ( mUseShaders )
 		mShaderProgram->unbind();
 
-	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, ColorA(255,255,255,150), ALPHA_NORMAL, RN_ISOMETRIC);
-	TNP[3]->draw( HWidth - 128, HHeight - 128, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRIC);
-	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
-	TNP[3]->draw( HWidth, HHeight, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
+	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color(255,255,255,150), ALPHA_NORMAL, RN_ISOMETRIC);
+	TNP[3]->draw( HWidth - 128, HHeight - 128, 0, Vector2f::One, Color(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRIC);
+	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
+	TNP[3]->draw( HWidth, HHeight, 0, Vector2f::One, Color(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
 
 	alpha = (!aside) ? alpha+et.asMilliseconds() * 0.1f : alpha-et.asMilliseconds() * 0.1f;
 	if (alpha>=255) {
@@ -1246,7 +1246,7 @@ void EETest::screen2() {
 		aside = false;
 	}
 
-	ColorA Col(255,255,255,(int)alpha);
+	Color Col(255,255,255,(int)alpha);
 	TNP[1]->drawEx( (Float)mWindow->getWidth() - 128.f, (Float)mWindow->getHeight() - 128.f, 128.f, 128.f, ang, Vector2f::One, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
 
 	SP.setPosition( Vector2f( alpha, alpha ) );
@@ -1256,15 +1256,15 @@ void EETest::screen2() {
 	CL1.setRenderMode( RN_ISOMETRIC );
 
 	if ( CL1.getAABB().intersectCircle( Mousef, 80.f ) )
-		CL1.setColor( ColorA(255, 0, 0, 200) );
+		CL1.setColor( Color(255, 0, 0, 200) );
 	else
-		CL1.setColor( ColorA(255, 255, 255, 200) );
+		CL1.setColor( Color(255, 255, 255, 200) );
 
 	if ( Polygon2f::intersectQuad2( CL1.getQuad() , CL2.getQuad() ) ) {
-		CL1.setColor( ColorA(0, 255, 0, 255) );
-		CL2.setColor( ColorA(0, 255, 0, 255) );
+		CL1.setColor( Color(0, 255, 0, 255) );
+		CL2.setColor( Color(0, 255, 0, 255) );
 	} else
-		CL2.setColor( ColorA(255, 255, 255, 255) );
+		CL2.setColor( Color(255, 255, 255, 255) );
 
 	CL1.setRotation(ang);
 	CL1.setScale(scale * 0.5f);
@@ -1287,7 +1287,7 @@ void EETest::screen2() {
 	if ( ShowParticles )
 		particles();
 
-	PR.setColor( ColorA(0, 255, 0, 50) );
+	PR.setColor( Color(0, 255, 0, 50) );
 
 	Line2f Line( Vector2f(0.f, 0.f), Vector2f( (Float)mWindow->getWidth(), (Float)mWindow->getHeight() ) );
 	Line2f Line2( Vector2f(Mousef.x - 80.f, Mousef.y - 80.f), Vector2f(Mousef.x + 80.f, Mousef.y + 80.f) );
@@ -1305,11 +1305,11 @@ void EETest::screen2() {
 		iL2 = false;
 
 	if (iL1 && iL2)
-		PR.setColor( ColorA(255, 0, 0, 255) );
+		PR.setColor( Color(255, 0, 0, 255) );
 	else if (iL1)
-		PR.setColor( ColorA(0, 0, 255, 255) );
+		PR.setColor( Color(0, 0, 255, 255) );
 	else if (iL2)
-		PR.setColor( ColorA(255, 255, 0, 255) );
+		PR.setColor( Color(255, 255, 0, 255) );
 
 	PR.setFillMode( DRAW_LINE );
 	PR.drawCircle( Vector2f( Mousef.x, Mousef.y ), 80.f, (Uint32)(Ang/3) );
@@ -1318,15 +1318,15 @@ void EETest::screen2() {
 	PR.drawLine( Line2f( Vector2f(Mousef.x - 80.f, Mousef.y + 80.f), Vector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) );
 	PR.drawLine( Line2f( Vector2f((Float)mWindow->getWidth(), 0.f), Vector2f( 0.f, (Float)mWindow->getHeight() ) ) );
 	PR.setFillMode( DRAW_FILL );
-	PR.drawQuad( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
+	PR.drawQuad( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), Color(220, 240, 0, 125), Color(100, 0, 240, 125), Color(250, 50, 25, 125), Color(50, 150, 150, 125) );
 	PR.setFillMode( DRAW_LINE );
 	PR.drawRectangle( Rectf( Vector2f( Mousef.x - 80.f, Mousef.y - 80.f ), Sizef( 160.f, 160.f ) ), 45.f );
 	PR.drawLine( Line2f( Vector2f(0.f, 0.f), Vector2f( (Float)mWindow->getWidth(), (Float)mWindow->getHeight() ) ) );
 
-	TNP[3]->drawQuadEx( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), Vector2f(), ang, Vector2f(scale,scale), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
+	TNP[3]->drawQuadEx( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), Vector2f(), ang, Vector2f(scale,scale), Color(220, 240, 0, 125), Color(100, 0, 240, 125), Color(250, 50, 25, 125), Color(50, 150, 150, 125) );
 
 	WP.update( et );
-	PR.setColor( ColorA(0, 255, 0, 255) );
+	PR.setColor( Color(0, 255, 0, 255) );
 	PR.drawPoint( WP.getPos(), 10.f );
 }
 
@@ -1409,11 +1409,11 @@ void EETest::render() {
 		mInfoText.setString( mInfo );
 
 		if ( mWindow->getClearColor().r == 0 ) {
-			mInfoText.setFillColor( ColorA(255,255,255,255) );
-			mInfoText.setOutlineColor( ColorA(0,0,0,255) );
+			mInfoText.setFillColor( Color(255,255,255,255) );
+			mInfoText.setOutlineColor( Color(0,0,0,255) );
 		} else {
-			mInfoText.setFillColor( ColorA(0,0,0,255) );
-			mInfoText.setOutlineColor( ColorA(255,255,255,255) );
+			mInfoText.setFillColor( Color(0,0,0,255) );
+			mInfoText.setOutlineColor( Color(255,255,255,255) );
 		}
 	}
 
@@ -1439,14 +1439,14 @@ void EETest::render() {
 		GLi->getClippingMask()->clipDisable();
 	}
 
-	ColorA ColRR1( 150, 150, 150, 220 );
-	ColorA ColRR4( 150, 150, 150, 220 );
-	ColorA ColRR2( 100, 100, 100, 220 );
-	ColorA ColRR3( 100, 100, 100, 220 );
+	Color ColRR1( 150, 150, 150, 220 );
+	Color ColRR4( 150, 150, 150, 220 );
+	Color ColRR2( 100, 100, 100, 220 );
+	Color ColRR3( 100, 100, 100, 220 );
 
 	mEEText.setAlign( TEXT_ALIGN_CENTER );
 
-	PR.setColor( ColorA(150, 150, 150, 220) );
+	PR.setColor( Color(150, 150, 150, 220) );
 	PR.setFillMode( DRAW_FILL );
 	PR.drawRectangle(
 				Rectf(

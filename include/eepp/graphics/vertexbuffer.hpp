@@ -43,7 +43,7 @@ class EE_API VertexBuffer {
 		/** @brief Adds a color to the buffer.
 		*	@param Color The color value.
 		*/
-		void addColor( const ColorA& Color );
+		void addColor( const Color& Color );
 
 		/** @brief Adds an index to the buffer.
 		*	@param Index The index value.
@@ -86,7 +86,7 @@ class EE_API VertexBuffer {
 		/** @return The color at the buffer position.
 		*	@param Index The position in the buffer.
 		*/
-		ColorA getColor( const Uint32& Index );
+		Color getColor( const Uint32& Index );
 
 		/** @return The index at the buffer position.
 		*	@param Index The position in the buffer.

@@ -15,11 +15,11 @@ class FontStyleConfig {
 			return Font;
 		}
 
-		const ColorA& getFontColor() const {
-			return Color;
+		const Color& getFontColor() const {
+			return FontColor;
 		}
 
-		const ColorA& getFontShadowColor() const {
+		const Color& getFontShadowColor() const {
 			return ShadowColor;
 		}
 
@@ -35,7 +35,7 @@ class FontStyleConfig {
 			return OutlineThickness;
 		}
 
-		ColorA getOutlineColor() const {
+		Color getOutlineColor() const {
 			return OutlineColor;
 		}
 
@@ -45,7 +45,7 @@ class FontStyleConfig {
 			Font( fontStyleConfig.Font ),
 			CharacterSize( fontStyleConfig.CharacterSize ),
 			Style( fontStyleConfig.Style ),
-			Color( fontStyleConfig.Color ),
+			FontColor( fontStyleConfig.FontColor ),
 			ShadowColor( fontStyleConfig.ShadowColor ),
 			OutlineThickness( fontStyleConfig.OutlineThickness ),
 			OutlineColor( fontStyleConfig.OutlineColor )
@@ -55,7 +55,7 @@ class FontStyleConfig {
 			Font = fontStyleConfig.Font;
 			Style = fontStyleConfig.Style;
 			CharacterSize = fontStyleConfig.CharacterSize;
-			Color = fontStyleConfig.Color;
+			FontColor = fontStyleConfig.FontColor;
 			ShadowColor = fontStyleConfig.ShadowColor;
 			OutlineThickness = fontStyleConfig.OutlineThickness;
 			OutlineColor = fontStyleConfig.OutlineColor;
@@ -64,10 +64,10 @@ class FontStyleConfig {
 		Graphics::Font * Font = NULL;
 		Uint32 CharacterSize = 12;
 		Uint32 Style = 0;
-		ColorA Color = ColorA(255,255,255,255);
-		ColorA ShadowColor = ColorA(50,50,50,230);
+		Color FontColor = Color(255,255,255,255);
+		Color ShadowColor = Color(50,50,50,230);
 		Float OutlineThickness = 0;
-		ColorA OutlineColor = ColorA(0,0,0,255);
+		Color OutlineColor = Color(0,0,0,255);
 };
 
 }}

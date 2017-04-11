@@ -23,11 +23,11 @@ class EE_API MapLight {
 
 		virtual RGB processVertex( const Float& PointX, const Float& PointY, const RGB& VertexColor, const RGB& BaseColor );
 
-		virtual ColorA processVertex( const Float& PointX, const Float& PointY, const ColorA& VertexColor, const ColorA& BaseColor );
+		virtual Color processVertex( const Float& PointX, const Float& PointY, const Color& VertexColor, const Color& BaseColor );
 
 		RGB processVertex( const Vector2f& Pos, const RGB& VertexColor, const RGB& BaseColor );
 
-		ColorA processVertex( const Vector2f& Pos, const ColorA& VertexColor, const ColorA& BaseColor );
+		Color processVertex( const Vector2f& Pos, const Color& VertexColor, const Color& BaseColor );
 
 		void move( const Float& addtox, const Float& addtoy );
 

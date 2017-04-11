@@ -39,7 +39,7 @@ void MapLightManager::updateByVertex() {
 	Vector2i end		= mMap->getEndTile();
 	eeAABB VisibleArea	= mMap->getViewAreaAABB();
 	Sizei TileSize		= mMap->getTileSize();
-	ColorA BaseColor	= mMap->getBaseColor();
+	Color BaseColor	= mMap->getBaseColor();
 	bool firstLight		= true;
 	Vector2i Pos;
 
@@ -92,7 +92,7 @@ void MapLightManager::updateByTile() {
 	eeAABB VisibleArea	= mMap->getViewAreaAABB();
 	Sizei TileSize		= mMap->getTileSize();
 	Sizei HalfTileSize = mMap->getTileSize() / 2;
-	ColorA BaseColor	= mMap->getBaseColor();
+	Color BaseColor	= mMap->getBaseColor();
 	bool firstLight		= true;
 	Vector2i Pos;
 
@@ -127,8 +127,8 @@ void MapLightManager::updateByTile() {
 	}
 }
 
-ColorA MapLightManager::getColorFromPos( const Vector2f& Pos ) {
-	ColorA Col( mMap->getBaseColor() );
+Color MapLightManager::getColorFromPos( const Vector2f& Pos ) {
+	Color Col( mMap->getBaseColor() );
 
 	if ( !mLights.size() )
 		return Col;
@@ -167,7 +167,7 @@ void MapLightManager::removeLight( const Vector2f& OverPos ) {
 	}
 }
 
-const ColorA * MapLightManager::getTileColor( const Vector2i& TilePos ) {
+const Color * MapLightManager::getTileColor( const Vector2i& TilePos ) {
 	eeASSERT( 1 == mNumVertex );
 
 	if ( !mLights.size() )
@@ -176,7 +176,7 @@ const ColorA * MapLightManager::getTileColor( const Vector2i& TilePos ) {
 	return mTileColors[ TilePos.x ][ TilePos.y ][0];
 }
 
-const ColorA * MapLightManager::getTileColor( const Vector2i& TilePos, const Uint32& Vertex ) {
+const Color * MapLightManager::getTileColor( const Vector2i& TilePos, const Uint32& Vertex ) {
 	eeASSERT( 4 == mNumVertex );
 
 	if ( !mLights.size() )
@@ -187,16 +187,16 @@ const ColorA * MapLightManager::getTileColor( const Vector2i& TilePos, const Uin
 
 void MapLightManager::allocateColors() {
 	Sizei Size		= mMap->getSize();
-	mTileColors		= eeNewArray( ColorA***, Size.getWidth() );
+	mTileColors		= eeNewArray( Color***, Size.getWidth() );
 
 	for ( Int32 x = 0; x < Size.x; x++ ) {
-		mTileColors[x] = eeNewArray( ColorA**, Size.getHeight() );
+		mTileColors[x] = eeNewArray( Color**, Size.getHeight() );
 
 		for ( Int32 y = 0; y < Size.y; y++ ) {
-			mTileColors[x][y] = eeNewArray( ColorA*, mNumVertex );
+			mTileColors[x][y] = eeNewArray( Color*, mNumVertex );
 
 			for ( Int32 v = 0; v < mNumVertex; v++ ) {
-				mTileColors[x][y][v] = eeNew( ColorA, (255,255,255,255) );
+				mTileColors[x][y][v] = eeNew( Color, (255,255,255,255) );
 			}
 		}
 	}

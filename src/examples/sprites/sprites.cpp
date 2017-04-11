@@ -77,11 +77,11 @@ void mainLoop()
 	Blindy.draw();
 
 	// Draw the Rock Axis-Aligned Bounding Box
-	P.setColor( ColorA( 255, 255, 255, 255 ) );
+	P.setColor( Color( 255, 255, 255, 255 ) );
 	P.drawRectangle( Rock.getAABB() );
 
 	// Draw the Rock Quad
-	P.setColor( ColorA( 255, 0, 0, 255 ) );
+	P.setColor( Color( 255, 0, 0, 255 ) );
 	P.drawQuad( Rock.getQuad() );
 
 	// Draw frame

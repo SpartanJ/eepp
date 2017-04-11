@@ -25,9 +25,9 @@ class EE_API UILoader : public UIWidget {
 
 		const Float& getRadius() const;
 
-		UILoader * setFillColor( const ColorA& color );
+		UILoader * setFillColor( const Color& color );
 
-		const ColorA& getFillColor() const;
+		const Color& getFillColor() const;
 
 		const bool& isIndeterminate() const;
 
@@ -51,7 +51,7 @@ class EE_API UILoader : public UIWidget {
 		Float mOutlineThickness;
 		ArcDrawable mArc;
 		CircleDrawable mCircle;
-		ColorA mColor;
+		Color mColor;
 		Float mArcAngle;
 		Float mArcStartAngle;
 		Float mProgress;

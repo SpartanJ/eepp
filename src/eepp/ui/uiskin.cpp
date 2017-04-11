@@ -22,7 +22,7 @@ UISkin::UISkin( const std::string& name, const Uint32& Type ) :
 	mNameHash( String::hash( mName ) ),
 	mTheme(NULL)
 {
-	ColorA tColor( 255, 255, 255, 255 );
+	Color tColor( 255, 255, 255, 255 );
 
 	mColorDefault	= tColor.getValue();
 
@@ -38,7 +38,7 @@ Sizei UISkin::getSize() {
 	return getSize( UISkinState::StateNormal );
 }
 
-void UISkin::setColor( const Uint32& State, const ColorA& Color ) {
+void UISkin::setColor( const Uint32& State, const Color& Color ) {
 	eeASSERT ( State < UISkinState::StateCount );
 
 	BitOp::writeBitKey( &mColorDefault, State, 0 );
@@ -46,7 +46,7 @@ void UISkin::setColor( const Uint32& State, const ColorA& Color ) {
 	mColor[ State ] = Color;
 }
 
-const ColorA& UISkin::getColor( const Uint32& State ) const {
+const Color& UISkin::getColor( const Uint32& State ) const {
 	eeASSERT ( State < UISkinState::StateCount );
 
 	return mColor[ State ];
