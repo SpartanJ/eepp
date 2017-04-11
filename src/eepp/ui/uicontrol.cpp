@@ -553,6 +553,14 @@ UIControl * UIControl::setVerticalAlign( Uint32 valign ) {
 	return this;
 }
 
+UIControl * UIControl::setGravity( Uint32 hvalign ) {
+	mFlags &= ~( UI_VALIGN_MASK | UI_HALIGN_MASK );
+	mFlags |= ( hvalign & ( UI_VALIGN_MASK | UI_HALIGN_MASK ) ) ;
+
+	onAlignChange();
+	return this;
+}
+
 UIBackground * UIControl::setBackgroundFillEnabled( bool enabled ) {
 	writeFlag( UI_FILL_BACKGROUND, enabled ? 1 : 0 );
 

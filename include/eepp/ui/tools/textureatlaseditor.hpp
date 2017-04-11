@@ -67,8 +67,6 @@ class EE_API TextureAtlasEditor {
 
 		void onSubTextureChange( const UIEvent * Event );
 
-		UITextView * createTextBox( Vector2i Pos, const String& Text );
-
 		void updateControls();
 
 		void fillSubTextureList();

@@ -8,11 +8,11 @@ namespace EE { namespace UI {
 
 class EE_API UIWidgetCreator {
 	public:
-		typedef cb::Callback1<UIWidget*, std::string> CreateUIWidgetCb;
+		typedef cb::Callback1<UIWidget*, std::string> CustomWidgetCb;
 
-		static UIWidget * createUIWidgetFromName( std::string name );
+		static UIWidget * createFromName( std::string widgetName );
 
-		static void addCustomWidgetCallback( std::string widgetName, const CreateUIWidgetCb& cb );
+		static void addCustomWidgetCallback( std::string widgetName, const CustomWidgetCb& cb );
 
 		static void removeCustomWidgetCallback( std::string widgetName );
 

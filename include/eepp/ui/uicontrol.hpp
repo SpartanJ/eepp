@@ -106,6 +106,8 @@ class EE_API UIControl {
 
 		UIControl * setVerticalAlign( Uint32 valign );
 
+		UIControl * setGravity( Uint32 hvalign );
+
 		UIBackground * setBackgroundFillEnabled( bool enabled );
 
 		UIBorder * setBorderEnabled( bool enabled );

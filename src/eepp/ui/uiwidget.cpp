@@ -266,6 +266,7 @@ void UIWidget::onPositionChange() {
 
 void UIWidget::onVisibilityChange() {
 	updateAnchorsDistances();
+	notifyLayoutAttrChange();
 	UIControlAnim::onVisibilityChange();
 }
 
@@ -275,6 +276,13 @@ void UIWidget::onAutoSize() {
 void UIWidget::notifyLayoutAttrChange() {
 	UIMessage msg( this, UIMessage::MsgLayoutAttributeChange );
 	messagePost( &msg );
+}
+
+void UIWidget::notifyLayoutAttrChangeParent() {
+	if ( NULL != mParentCtrl ) {
+		UIMessage msg( this, UIMessage::MsgLayoutAttributeChange );
+		mParentCtrl->messagePost( &msg );
+	}
 }
 
 void UIWidget::updateAnchors( const Vector2i& SizeChange ) {

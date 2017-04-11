@@ -511,7 +511,7 @@ void UIManager::loadLayoutNodes( pugi::xml_node node, UIControl * parent ) {
 		parent = getMainControl();
 
 	for ( pugi::xml_node widget = node; widget; widget = widget.next_sibling() ) {
-		UIWidget * uiwidget = UIWidgetCreator::createUIWidgetFromName( widget.name() );
+		UIWidget * uiwidget = UIWidgetCreator::createFromName( widget.name() );
 
 		if ( NULL != uiwidget ) {
 			uiwidget->setParent( parent );

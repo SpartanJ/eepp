@@ -78,7 +78,7 @@ void UILinearLayout::packVertical() {
 	UIControl * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
-		if ( ChildLoop->isWidget() ) {
+		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
 			UIWidget * widget = static_cast<UIWidget*>( ChildLoop );
 
 			if ( widget->getLayoutHeightRules() == WRAP_CONTENT ) {
@@ -153,6 +153,7 @@ void UILinearLayout::packVertical() {
 
 	if ( getLayoutHeightRules() == WRAP_CONTENT ) {
 		setInternalHeight( curY );
+		notifyLayoutAttrChangeParent();
 	} else if ( getLayoutHeightRules() == MATCH_PARENT ) {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
 	}
@@ -160,6 +161,7 @@ void UILinearLayout::packVertical() {
 	if ( getLayoutWidthRules() == WRAP_CONTENT && mSize.getWidth() != maxX ) {
 		setInternalWidth( maxX );
 		packVertical();
+		notifyLayoutAttrChangeParent();
 	}
 
 	alignAgainstLayout();
@@ -212,7 +214,7 @@ void UILinearLayout::packHorizontal() {
 	ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
-		if ( ChildLoop->isWidget() ) {
+		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
 			UIWidget * widget = static_cast<UIWidget*>( ChildLoop );
 			Recti margin = widget->getLayoutMargin();
 
@@ -236,7 +238,7 @@ void UILinearLayout::packHorizontal() {
 					break;
 				case UI_VALIGN_TOP:
 				default:
-					pos.y = widget->getLayoutMargin().Left;
+					pos.y = widget->getLayoutMargin().Top;
 					break;
 			}
 
@@ -252,6 +254,7 @@ void UILinearLayout::packHorizontal() {
 
 	if ( getLayoutWidthRules() == WRAP_CONTENT ) {
 		setInternalWidth( curX );
+		notifyLayoutAttrChangeParent();
 	} else if ( getLayoutWidthRules() == MATCH_PARENT ) {
 		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
 	}
@@ -259,6 +262,7 @@ void UILinearLayout::packHorizontal() {
 	if ( getLayoutHeightRules() == WRAP_CONTENT && mSize.getHeight() != maxY ) {
 		setInternalHeight( maxY );
 		packHorizontal();
+		notifyLayoutAttrChangeParent();
 	}
 
 	alignAgainstLayout();

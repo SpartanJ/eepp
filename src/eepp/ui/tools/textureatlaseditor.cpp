@@ -206,16 +206,6 @@ void TextureAtlasEditor::onDestHChange( const UIEvent * Event ) {
 	}
 }
 
-UITextView * TextureAtlasEditor::createTextBox( Vector2i Pos, const String& Text ) {
-	UITextView * txtBox = UITextView::New();
-	txtBox->setFontStyle( Text::Shadow );
-	txtBox->resetFlags( UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_AUTO_SIZE );
-	txtBox->setParent( mUIContainer );
-	txtBox->setPosition( Pos );
-	txtBox->setText( Text );
-	return txtBox;
-}
-
 void TextureAtlasEditor::windowClose( const UIEvent * Event ) {
 	if ( mCloseCb.IsSet() )
 		mCloseCb();

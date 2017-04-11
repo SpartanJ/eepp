@@ -106,6 +106,8 @@ class EE_API UIWidget : public UIControlAnim {
 
 		void notifyLayoutAttrChange();
 
+		void notifyLayoutAttrChangeParent();
+
 		void updateAnchors( const Vector2i & SizeChange );
 
 		void alignAgainstLayout();

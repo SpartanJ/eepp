@@ -1,5 +1,6 @@
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
 
 namespace EE { namespace UI {
 
@@ -12,41 +13,33 @@ UIMessageBox::UIMessageBox( UI_MSGBOX_TYPE type , String message ) :
 	mMsgBoxType( type ),
 	mCloseWithKey( KEY_UNKNOWN )
 {
-	setInternalSize( Sizei( 1024, 1024 ) );
-
-	mTextBox = UITextView::New();
-	mTextBox->setParent( getContainer() )
-			->setHorizontalAlign( UI_HALIGN_CENTER )
-			->setVerticalAlign( UI_VALIGN_CENTER );
-	mTextBox->setText( message );
-
-	mButtonOK = UIPushButton::New();
-	mButtonOK->setParent( getContainer() )
-			 ->setFlags( UI_AUTO_SIZE )
-			 ->setSize( 90, 0 )
-			 ->setPosition( getContainer()->getSize().getWidth() - 96, getContainer()->getSize().getHeight() - mButtonOK->getSize().getHeight() - 8 );
-	mButtonOK->setAnchors( UI_ANCHOR_RIGHT );
-
-	mButtonCancel = UIPushButton::New();
-	mButtonCancel->setParent( getContainer() )
-			 ->setFlags( UI_AUTO_SIZE )
-			 ->setSize( 90, 0 )
-			 ->setPosition( mButtonOK->getPosition().x - mButtonOK->getSize().getWidth() - 8, getContainer()->getSize().getHeight() - mButtonOK->getSize().getHeight() - 8 );
-	mButtonCancel->setAnchors( UI_ANCHOR_RIGHT );
-
-	applyDefaultTheme();
-
-	mTextBox->setPosition( 0, 8 );
-	mTextBox->setSize( PixelDensity::pxToDpI( mTextBox->getTextWidth() ) + 24, mTextBox->getTextHeight() );
-	setSize( mTextBox->getSize().getWidth() + 24, mTextBox->getSize().getHeight() + mButtonOK->getSize().getHeight() + mStyleConfig.DecorationSize.getHeight() + 16 );
-	mTextBox->centerHorizontal();
-	mTextBox->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
-
-	setMinWindowSize( getSize() );
-
 	mStyleConfig.WinFlags &= ~UI_WIN_RESIZEABLE;
 
 	updateWinFlags();
+
+	UILinearLayout * rlay = UILinearLayout::New();
+	rlay->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )->setParent( mContainer );
+
+	UILinearLayout * vlay = UILinearLayout::NewVertical();
+	vlay->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )
+		->setLayoutMargin( Recti( 8, 8, 8, 8) )->setParent( rlay );
+
+	mTextBox = UITextView::New();
+	mTextBox->setText( message )
+			->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )
+			->setParent( vlay );
+
+	UILinearLayout * hlay = UILinearLayout::NewHorizontal();
+	hlay->setLayoutMargin( Recti( 0, 8, 0, 0 ) )
+		->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )
+		->setLayoutGravity( UI_HALIGN_RIGHT | UI_VALIGN_CENTER )
+		->setParent( vlay );
+
+	mButtonOK = UIPushButton::New();
+	mButtonOK->setSize( 90, 0 )->setParent( hlay );
+
+	mButtonCancel = UIPushButton::New();
+	mButtonCancel->setLayoutMargin( Recti( 8, 0, 0, 0 ) )->setSize( 90, 0 )->setParent( hlay );
 
 	switch ( mMsgBoxType ) {
 		case MSGBOX_OKCANCEL:
@@ -76,8 +69,9 @@ UIMessageBox::UIMessageBox( UI_MSGBOX_TYPE type , String message ) :
 		}
 	}
 
-	mButtonCancel->toFront();
-	mButtonOK->toFront();
+	applyDefaultTheme();
+
+	setMinWindowSize( rlay->getSize() );
 }
 
 UIMessageBox::~UIMessageBox() {
@@ -98,9 +92,6 @@ void UIMessageBox::setTheme( UITheme * Theme ) {
 			mButtonCancel->setIcon( CancelIcon );
 		}
 	}
-
-	mButtonOK->setPosition( mButtonOK->getPosition().x, getContainer()->getSize().getHeight() - mButtonOK->getSize().getHeight() - 8 );
-	mButtonCancel->setPosition( mButtonCancel->getPosition().x, mButtonOK->getPosition().y );
 }
 
 Uint32 UIMessageBox::onMessage( const UIMessage * Msg ) {
@@ -155,13 +146,11 @@ bool UIMessageBox::show() {
 	return b;
 }
 
-Uint32 UIMessageBox::getCloseWithKey() const
-{
+Uint32 UIMessageBox::getCloseWithKey() const {
 	return mCloseWithKey;
 }
 
-void UIMessageBox::setCloseWithKey(const Uint32 & closeWithKey)
-{
+void UIMessageBox::setCloseWithKey(const Uint32 & closeWithKey) {
 	mCloseWithKey = closeWithKey;
 }
 

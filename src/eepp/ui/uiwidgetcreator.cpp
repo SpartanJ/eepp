@@ -28,79 +28,79 @@
 
 namespace  EE { namespace UI {
 
-typedef std::map<std::string, UIWidgetCreator::CreateUIWidgetCb> widgetCallbackMap;
+typedef std::map<std::string, UIWidgetCreator::CustomWidgetCb> widgetCallbackMap;
 
 static widgetCallbackMap widgetCallback;
 
-UIWidget * UIWidgetCreator::createUIWidgetFromName( std::string name ) {
-	String::toLowerInPlace( name );
+UIWidget * UIWidgetCreator::createFromName( std::string widgetName ) {
+	String::toLowerInPlace( widgetName );
 
-	if ( name == "widget" ) {
+	if ( widgetName == "widget" ) {
 		return UIWidget::New();
-	} else if ( name == "horizontallinearlayout" || name == "hll" ) {
+	} else if ( widgetName == "horizontallinearlayout" || widgetName == "hll" ) {
 		return UILinearLayout::NewHorizontal();
-	} else if ( name == "linearlayout" || name == "verticallinearlayout" || name == "vll" ) {
+	} else if ( widgetName == "linearlayout" || widgetName == "verticallinearlayout" || widgetName == "vll" ) {
 		return UILinearLayout::NewVertical();
-	} else if ( name == "relativelayout" ) {
+	} else if ( widgetName == "relativelayout" ) {
 		return UIRelativeLayout::New();
-	} else if ( name == "textview" ) {
+	} else if ( widgetName == "textview" ) {
 		return UITextView::New();
-	} else if ( name == "pushbutton" ) {
+	} else if ( widgetName == "pushbutton" ) {
 		return UIPushButton::New();
-	} else if ( name == "checkbox" ) {
+	} else if ( widgetName == "checkbox" ) {
 		return UICheckBox::New();
-	} else if ( name == "radiobutton" ) {
+	} else if ( widgetName == "radiobutton" ) {
 		return UIRadioButton::New();
-	} else if ( name == "combobox" ) {
+	} else if ( widgetName == "combobox" ) {
 		return UIComboBox::New();
-	} else if ( name == "dropdownlist" ) {
+	} else if ( widgetName == "dropdownlist" ) {
 		return UIDropDownList::New();
-	} else if ( name == "image" ) {
+	} else if ( widgetName == "image" ) {
 		return UISubTexture::New();
-	} else if ( name == "listbox" ) {
+	} else if ( widgetName == "listbox" ) {
 		return UIListBox::New();
-	} else if ( name == "winmenu" ) {
+	} else if ( widgetName == "winmenu" ) {
 		return UIWinMenu::New();
-	} else if ( name == "progressbar" ) {
+	} else if ( widgetName == "progressbar" ) {
 		return UIProgressBar::New();
-	} else if ( name == "scrollbar" ) {
+	} else if ( widgetName == "scrollbar" ) {
 		return UIScrollBar::New();
-	} else if ( name == "slider" ) {
+	} else if ( widgetName == "slider" ) {
 		return UISlider::New();
-	} else if ( name == "spinbox" ) {
+	} else if ( widgetName == "spinbox" ) {
 		return UISpinBox::New();
-	} else if (  name == "sprite" ) {
+	} else if (  widgetName == "sprite" ) {
 		return UISprite::New();
-	} else if ( name == "tab" ) {
+	} else if ( widgetName == "tab" ) {
 		return UITab::New();
-	} else if ( name == "table" ) {
+	} else if ( widgetName == "table" ) {
 		return UITable::New();
-	} else if ( name == "tablecell" ) {
+	} else if ( widgetName == "tablecell" ) {
 		return UITableCell::New();
-	} else if ( name == "tabwidget" ) {
+	} else if ( widgetName == "tabwidget" ) {
 		return UITabWidget::New();
-	} else if ( name == "textedit" ) {
+	} else if ( widgetName == "textedit" ) {
 		return UITextEdit::New();
-	} else if ( name == "textinput" || name == "input" ) {
+	} else if ( widgetName == "textinput" || widgetName == "input" ) {
 		return UITextInput::New();
-	} else if ( name == "textinputpassword" || name == "inputpassword" ) {
+	} else if ( widgetName == "textinputpassword" || widgetName == "inputpassword" ) {
 		return UITextInputPassword::New();
-	} else if ( name == "loader" ) {
+	} else if ( widgetName == "loader" ) {
 		return UILoader::New();
-	} else if ( name == "selectbutton" ) {
+	} else if ( widgetName == "selectbutton" ) {
 		return UISelectButton::New();
-	} else if ( name == "window" ) {
+	} else if ( widgetName == "window" ) {
 		return UIWindow::New();
 	}
 
-	if ( widgetCallback.find( name ) != widgetCallback.end() ) {
-		return widgetCallback[ name ].Call( name );
+	if ( widgetCallback.find( widgetName ) != widgetCallback.end() ) {
+		return widgetCallback[ widgetName ].Call( widgetName );
 	}
 
 	return NULL;
 }
 
-void UIWidgetCreator::addCustomWidgetCallback( std::string widgetName, const UIWidgetCreator::CreateUIWidgetCb& cb ) {
+void UIWidgetCreator::addCustomWidgetCallback( std::string widgetName, const UIWidgetCreator::CustomWidgetCb& cb ) {
 	widgetCallback[ String::toLower( widgetName ) ] = cb;
 }
 
