@@ -231,9 +231,22 @@ class EE_API UIControl {
 
 		Uint32 getIdHash() const;
 
+		UIControl * getWindowContainer();
+
 		UIControl * find( const std::string& id );
 
-		UIControl * getWindowContainer();
+		template<typename T>
+		T * find( const std::string& id )
+		{
+			return reinterpret_cast<T*>( find( id ) );
+		}
+
+		template<typename T>
+		T * bind( const std::string& id, T*& ctrl )
+		{
+			ctrl = find<T>( id );
+			return ctrl;
+		}
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
 		friend class UIManager;

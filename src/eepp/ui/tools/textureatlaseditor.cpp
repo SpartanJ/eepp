@@ -96,35 +96,30 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	UIWidgetCreator::removeCustomWidgetCallback( "TextureAtlasSubTextureEditor" );
 
-	mSubTextureList = reinterpret_cast<UIListBox*>( mUIContainer->find( "SubTextureList" ) );
+	mUIContainer->bind<UIListBox>( "SubTextureList", mSubTextureList );
 	mSubTextureList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &TextureAtlasEditor::onSubTextureChange ) );
 
-	mSpinOffX = reinterpret_cast<UISpinBox*>( mUIContainer->find( "offX" ) );
+	mUIContainer->bind<UISpinBox>( "offX", mSpinOffX );
 	mSpinOffX->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onOffXChange ) );
 
-	mSpinOffY = reinterpret_cast<UISpinBox*>( mUIContainer->find( "offY" ) );
+	mUIContainer->bind<UISpinBox>( "offY", mSpinOffY );
 	mSpinOffY->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onOffYChange ) );
 
-	mSpinDestW = reinterpret_cast<UISpinBox*>( mUIContainer->find( "destW" ) );
+	mUIContainer->bind<UISpinBox>( "destW", mSpinDestW );
 	mSpinDestW->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onDestWChange ) );
 
-	mSpinDestH = reinterpret_cast<UISpinBox*>( mUIContainer->find( "destH" ) );
+	mUIContainer->bind<UISpinBox>( "destH", mSpinDestH );
 	mSpinDestH->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onDestHChange ) );
 
-	reinterpret_cast<UIPushButton*>( mUIContainer->find( "resetDest" ) )
-			->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onResetDestSize ) );
+	mUIContainer->find<UIPushButton>( "resetDest" )->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onResetDestSize ) );
 
-	reinterpret_cast<UIPushButton*>( mUIContainer->find( "resetOff" ) )
-			->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onResetOffset ) );
+	mUIContainer->find<UIPushButton>( "resetOff" )->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onResetOffset ) );
 
-	reinterpret_cast<UIPushButton*>( mUIContainer->find( "centerOff" ) )
-			->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onCenterOffset ) );
+	mUIContainer->find<UIPushButton>( "centerOff" )->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onCenterOffset ) );
 
-	reinterpret_cast<UIPushButton*>( mUIContainer->find( "hbotOff" ) )
-			->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onHBOffset ) );
+	mUIContainer->find<UIPushButton>( "hbotOff" )->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onHBOffset ) );
 
-	reinterpret_cast<UIPopUpMenu*>( mUIContainer->find("fileMenu") )
-			->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &TextureAtlasEditor::fileMenuClick ) );
+	mUIContainer->find<UIPopUpMenu>("fileMenu")->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &TextureAtlasEditor::fileMenuClick ) );
 
 	mUIWindow->setTitle( "Texture Atlas Editor" );
 	mUIWindow->addEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
