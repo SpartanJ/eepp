@@ -196,9 +196,9 @@ void EETest::onFontLoaded( ResourceLoader * ObjLoaded ) {
 	eeASSERT( DBSM != NULL );
 
 	Con.create( DBSM, true );
-	Con.setBackgroundColor( 0x201f1fEE );
+	Con.setBackgroundColor( 0x201F1FEE );
 	Con.setBackgroundLineColor( 0x666666EE );
-	Con.setFontColor( 0xcfcfcfff );
+	Con.setFontColor( 0xCFCFCFFF );
 	Con.ignoreCharOnPrompt( 186 ); // 'º'
 
 	mBuda = String::fromUtf8( "El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde." );
@@ -522,14 +522,14 @@ void EETest::createNewUI() {
 	ctrl->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	ctrl->setBorderEnabled( true )->setColor( 0x66666666 );
 	ctrl->setText( "Happy RadioButon :)" );
-	ctrl->setFontColor( 0x000000FF );
+	ctrl->setFontColor( Color::Black );
 
 	UICheckBox * cbox = UICheckBox::New();
 	cbox->setPosition( 50, 164 )->setSize( 200, 32 );
 	cbox->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	cbox->setBorderEnabled( true )->setColor( 0x66666666 );
 	cbox->setText( "Happy CheckBox :)" );
-	cbox->setFontColor( 0x000000FF );
+	cbox->setFontColor( Color::Black );
 
 	UIImage * gfx = UIImage::New();
 	gfx->setPosition( 50, 140 )->setSize( 16, 16 );

@@ -10,7 +10,7 @@ UIBackground::UIBackground() :
 	mBlendMode( ALPHA_NORMAL ),
 	mCorners(0)
 {
-	mColor.push_back( Color(0xFF404040) );
+	mColor.push_back(Color::Black);
 }
 
 Color& UIBackground::getColor( const unsigned int& index  ) {

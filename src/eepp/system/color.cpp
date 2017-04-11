@@ -1,5 +1,6 @@
 #include <eepp/system/color.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/math/math.hpp>
 #include <cstdlib>
 
 namespace EE { namespace System {
@@ -80,6 +81,11 @@ Color::Color() :
 	tColor<Uint8>()
 {}
 
+Color::Color( std::string colorString ) {
+	Color c( fromString( colorString ) );
+	r = c.r; g = c.g; b = c.b; a = c.a;
+}
+
 Color::Color(Uint8 r, Uint8 g, Uint8 b, Uint8 a) :
 	tColor<Uint8>(r,g,b,a)
 {}
@@ -99,6 +105,144 @@ Color::Color( const tColor<Uint8>& Col ) :
 Color::Color( const Uint32& Col ) :
 	tColor<Uint8>( Col )
 {}
+
+Color Color::toHsv() {
+	Color hsv;
+	Color rgb( *this );
+	unsigned char rgbMin, rgbMax;
+
+	rgbMin = rgb.r < rgb.g ? (rgb.r < rgb.b ? rgb.r : rgb.b) : (rgb.g < rgb.b ? rgb.g : rgb.b);
+	rgbMax = rgb.r > rgb.g ? (rgb.r > rgb.b ? rgb.r : rgb.b) : (rgb.g > rgb.b ? rgb.g : rgb.b);
+
+	hsv.hsv.a = rgb.a;
+
+	hsv.hsv.v = rgbMax;
+	if (hsv.hsv.v == 0){
+		hsv.hsv.h = 0;
+		hsv.hsv.s = 0;
+		return hsv;
+	}
+
+	hsv.hsv.s = 255 * long(rgbMax - rgbMin) / hsv.hsv.v;
+	if (hsv.hsv.s == 0) {
+		hsv.hsv.h = 0;
+		return hsv;
+	}
+
+	if (rgbMax == rgb.r)
+		hsv.hsv.h = 0 + 43 * (rgb.g - rgb.b) / (rgbMax - rgbMin);
+	else if (rgbMax == rgb.g)
+		hsv.hsv.h = 85 + 43 * (rgb.b - rgb.r) / (rgbMax - rgbMin);
+	else
+		hsv.hsv.h = 171 + 43 * (rgb.r - rgb.g) / (rgbMax - rgbMin);
+
+	return hsv;
+}
+
+Color Color::fromHsv(const Color & hsv) {
+	Color rgb;
+	unsigned char region, remainder, p, q, t;
+
+	rgb.a = hsv.hsv.a;
+
+	if (hsv.hsv.s == 0) {
+		rgb.r = hsv.hsv.v;
+		rgb.g = hsv.hsv.v;
+		rgb.b = hsv.hsv.v;
+		return rgb;
+	}
+
+	region = hsv.hsv.h / 43;
+	remainder = (hsv.hsv.h - (region * 43)) * 6;
+
+	p = (hsv.hsv.v * (255 - hsv.hsv.s)) >> 8;
+	q = (hsv.hsv.v * (255 - ((hsv.hsv.s * remainder) >> 8))) >> 8;
+	t = (hsv.hsv.v * (255 - ((hsv.hsv.s * (255 - remainder)) >> 8))) >> 8;
+
+	switch (region) {
+		case 0:
+			rgb.r = hsv.hsv.v; rgb.g = t; rgb.b = p;
+			break;
+		case 1:
+			rgb.r = q; rgb.g = hsv.hsv.v; rgb.b = p;
+			break;
+		case 2:
+			rgb.r = p; rgb.g = hsv.hsv.v; rgb.b = t;
+			break;
+		case 3:
+			rgb.r = p; rgb.g = q; rgb.b = hsv.hsv.v;
+			break;
+		case 4:
+			rgb.r = t; rgb.g = p; rgb.b = hsv.hsv.v;
+			break;
+		default:
+			rgb.r = hsv.hsv.v; rgb.g = p; rgb.b = q;
+			break;
+	}
+
+	return rgb;
+}
+
+Colorf Color::toHsl() {
+	Colorf hsl;
+	float r = this->r / 255.f;
+	float g = this->g / 255.f;
+	float b = this->b / 255.f;
+	float a = this->a / 255.f;
+	float max = eemax(r, eemax( g, b ) );
+	float min = eemin(r, eemin( g, b ) );
+	float h, s, l = (max + min) / 2.f;
+
+	if ( max == min ) {
+		h = s = 0; // achromatic
+	} else {
+		float d = max - min;
+
+		s = l > 0.5f ? d / (2.f - max - min) : d / (max + min);
+
+		if ( r > g && r > b ) {
+			h = (g - b) / d + (g < b ? 6.f : 0.f);
+		} else if ( g > b ) {
+			h = (b - r) / d + 2.f;
+		} else {
+			h = (r - g) / d + 4.f;
+		}
+
+		h /= 6.f;
+	}
+
+	hsl.hsl.h = h;
+	hsl.hsl.s = s;
+	hsl.hsl.l = l;
+	hsl.hsl.a = a;
+
+	return hsl;
+}
+
+static Float hue2rgb( Float p, Float q, Float t) {
+	if(t < 0.f) t += 1.f;
+	if(t > 1.f) t -= 1.f;
+	if(t < 1.f/6.f) return p + (q - p) * 6.f * t;
+	if(t < 1.f/2.f) return q;
+	if(t < 2.f/3.f) return p + (q - p) * (2.f/3.f - t) * 6.f;
+	return p;
+}
+
+Color Color::fromHsl( const Colorf& hsl ) {
+	Color rgba;
+
+	if( hsl.hsl.s == 0  ){
+		rgba.r = rgba.g = rgba.b = (Uint8)Math::round( hsl.hsl.l ); // achromatic
+	} else {
+		Float q = hsl.hsl.l < 0.5f ? hsl.hsl.l * (1.f + hsl.hsl.s) : hsl.hsl.l + hsl.hsl.s - hsl.hsl.l * hsl.hsl.s;
+		Float p = 2.f * hsl.hsl.l - q;
+		rgba.r = hue2rgb(p, q, hsl.hsl.h + 1.f/3.f);
+		rgba.g = hue2rgb(p, q, hsl.hsl.h);
+		rgba.b = hue2rgb(p, q, hsl.hsl.h - 1.f/3.f);
+	}
+
+	return Color( (Uint8)Math::round(rgba.r * 255.f), (Uint8)Math::round(rgba.g * 255.f), (Uint8)Math::round(rgba.b * 255.f), Math::round( hsl.hsl.a * 255.f ) );
+}
 
 Color Color::colorFromPointer( void *ptr ) {
 	unsigned long val = (long)ptr;

@@ -66,6 +66,22 @@ class tColor {
 				T b;
 				T a;	//! Alpha color component ( transparency )
 			};
+
+			struct
+			{
+				T h;
+				T s;
+				T v;
+				T a;
+			} hsv;
+
+			struct
+			{
+				T h;
+				T s;
+				T l;
+				T a;
+			} hsl;
 		};
 
 		tColor() :
@@ -122,7 +138,7 @@ class tColor {
 		{
 		}
 
-		 //! @return The color represented as an Uint32 ( as 0xAABBGGRR for Little Endian )
+		 //! @return The color represented as an Uint32 ( as 0xRRGGBBAA for Little Endian )
 		Uint32 getValue() const {
 			return Value;
 		}
@@ -176,11 +192,14 @@ class tColor {
 
 
 typedef tColor<Float> ColorAf;
+typedef tColor<Float> Colorf;
 
 class EE_API Color : public tColor<Uint8>
 {
 	public:
 		Color();
+
+		Color( std::string colorString );
 
 		Color( Uint8 r, Uint8 g, Uint8 b, Uint8 a = 255 );
 
@@ -191,6 +210,14 @@ class EE_API Color : public tColor<Uint8>
 		Color( const tColor<Uint8>& Col );
 
 		Color( const Uint32& Col );
+
+		Color toHsv();
+
+		static Color fromHsv( const Color& hsv );
+
+		Colorf toHsl();
+
+		static Color fromHsl( const Colorf& hsl );
 
 		/** Blend a source color to destination color */
 		static ColorAf blend( ColorAf srcf, ColorAf dstf );
