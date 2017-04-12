@@ -9,7 +9,7 @@
 	#define NOMINMAX
 #endif
 #include <windows.h>
-#undef CreateWindow
+#undef RGB
 
 static BOOL WIN_showWindow( HWND hWnd, int nCmdShow ) {
 	return ShowWindow( hWnd, nCmdShow );
