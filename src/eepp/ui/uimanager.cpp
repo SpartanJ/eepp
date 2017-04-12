@@ -287,35 +287,19 @@ const Uint32& UIManager::getLastPressTrigger() const {
 	return mKM->getLastPressTrigger();
 }
 
-void UIManager::clipPlaneEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
-	GLi->getClippingMask()->clipPlaneEnable( x, y, Width, Height );
-}
-
-void UIManager::clipPlaneDisable() {
-	GLi->getClippingMask()->clipPlaneDisable();
-}
-
-void UIManager::clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
-	GLi->getClippingMask()->clipEnable( x, y, Width, Height );
-}
-
-void UIManager::clipDisable() {
-	GLi->getClippingMask()->clipDisable();
-}
-
 void UIManager::clipSmartEnable(UIControl * ctrl, const Int32 & x, const Int32 & y, const Uint32 & Width, const Uint32 & Height) {
 	if ( ctrl->isMeOrParentTreeScaledOrRotated() ) {
-		clipPlaneEnable( x, y, Width, Height );
+		GLi->getClippingMask()->clipPlaneEnable( x, y, Width, Height );
 	} else {
-		clipEnable( x, y, Width, Height );
+		GLi->getClippingMask()->clipEnable( x, y, Width, Height );
 	}
 }
 
 void UIManager::clipSmartDisable(UIControl * ctrl) {
 	if ( ctrl->isMeOrParentTreeScaledOrRotated() ) {
-		clipPlaneDisable();
+		GLi->getClippingMask()->clipPlaneDisable();
 	} else {
-		clipDisable();
+		GLi->getClippingMask()->clipDisable();
 	}
 }
 
@@ -522,6 +506,21 @@ void UIManager::loadLayoutNodes( pugi::xml_node node, UIControl * parent ) {
 			}
 		}
 	}
+}
+
+void UIManager::setTranslator( Translator translator ) {
+	mTranslator = translator;
+}
+
+String UIManager::getTranslatorString( const std::string & str ) {
+	if ( String::startsWith( str, "@string/" ) ) {
+		String tstr = mTranslator.getString( str.substr( 8 ) );
+
+		if ( !tstr.empty() )
+			return tstr;
+	}
+
+	return String( str );
 }
 
 void UIManager::loadLayoutFromFile( const std::string& layoutPath, UIControl * parent ) {

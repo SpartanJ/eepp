@@ -487,7 +487,7 @@ void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
 		String::toLowerInPlace( name );
 
 		if ( "text" == name ) {
-			setText( ait->as_string() );
+			setText( UIManager::instance()->getTranslatorString( ait->as_string() ) );
 		} else if ( "textcolor" == name ) {
 			setFontColor( Color::fromString( ait->as_string() ) );
 		} else if ( "textshadowcolor" == name ) {

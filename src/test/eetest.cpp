@@ -14,12 +14,11 @@ void EETest::init() {
 	Log::instance()->setLiveWrite( true );
 	Log::instance()->setConsoleOutput( true );
 
-	Translator t;
-
-	t.loadFromString(
+	mTranslator.loadFromString(
 		"<resources language='en'>"
 		"		<string name='app_name'>eepp</string>"
 		"		<string name='formatted'>Test %d %s</string>"
+		"		<string name='test_item'>Test Item 2</string>"
 		"</resources>"
 	);
 
@@ -287,6 +286,7 @@ void EETest::createUI() {
 	Uint32 UI_MAN_OPS = 0;
 	//UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES;
 	UIManager::instance()->init(UI_MAN_OPS);
+	UIManager::instance()->setTranslator( mTranslator );
 
 	//mTheme = UITheme::loadFromFile( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + mThemeName + "/" );
 
@@ -725,7 +725,7 @@ void EETest::createNewUI() {
 		"		<TextInput text='test' layout_width='match_parent' layout_height='wrap_content' />"
 		"		<DropDownList layout_width='match_parent' layout_height='wrap_content' selectedIndex='0'>"
 		"			<item>Test Item</item>"
-		"			<item>Test Item 2</item>"
+		"			<item>@string/test_item</item>"
 		"		</DropDownList>"
 		"		<ListBox layout_width='match_parent' layout_height='match_parent' layout_weight='1'>"
 		"			<item>Hello!</item>"

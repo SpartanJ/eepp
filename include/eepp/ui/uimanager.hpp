@@ -7,6 +7,7 @@
 #include <eepp/window/window.hpp>
 #include <eepp/window/cursorhelper.hpp>
 #include <eepp/system/pack.hpp>
+#include <eepp/system/translator.hpp>
 
 namespace pugi {
 class xml_node;
@@ -51,14 +52,6 @@ class EE_API UIManager {
 		const Uint32& getPressTrigger() const;
 
 		const Uint32& getLastPressTrigger() const;
-
-		void clipPlaneEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
-
-		void clipPlaneDisable();
-
-		void clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
-
-		void clipDisable();
 
 		void clipSmartEnable( UIControl * ctrl, const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
 
@@ -132,17 +125,23 @@ class EE_API UIManager {
 		void loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, UIControl * parent = NULL );
 
 		void loadLayoutNodes( pugi::xml_node node, UIControl * parent );
+
+		void setTranslator( Translator translator );
+
+		Translator& getTranslator();
+
+		String getTranslatorString( const std::string& str );
 	protected:
 		friend class UIControl;
 		friend class UIWindow;
 
-		EE::Window::Window *			mWindow;
-		Input *			mKM;
+		EE::Window::Window *mWindow;
+		Input *				mKM;
 		UIWindow *			mControl;
-		UIControl *		mFocusControl;
-		UIControl *		mOverControl;
+		UIControl *			mFocusControl;
+		UIControl *			mOverControl;
 		UIControl * 		mDownControl;
-		UIControl *		mLossFocusControl;
+		UIControl *			mLossFocusControl;
 		std::list<UIWindow*> mWindowsList;
 		std::list<UIControl*> mCloseList;
 
@@ -151,8 +150,8 @@ class EE_API UIManager {
 		Uint32				mResizeCb;
 
 		Uint32				mFlags;
-		Color			mHighlightFocusColor;
-		Color			mHighlightOverColor;
+		Color				mHighlightFocusColor;
+		Color				mHighlightOverColor;
 		Vector2i			mMouseDownPos;
 
 		bool				mInit;
@@ -160,6 +159,8 @@ class EE_API UIManager {
 		bool				mShootingDown;
 		bool				mControlDragging;
 		bool				mUseGlobalCursors;
+
+		Translator			mTranslator;
 
 		UIManager();
 

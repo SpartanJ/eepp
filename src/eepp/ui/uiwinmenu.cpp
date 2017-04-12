@@ -306,7 +306,7 @@ void UIWinMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 
 			subMenu->loadFromXmlNode( item );
 
-			addMenuButton( String( text ), subMenu );
+			addMenuButton( UIManager::instance()->getTranslatorString( text ), subMenu );
 		}
 	}
 }

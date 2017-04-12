@@ -1050,7 +1050,7 @@ void UIListBox::loadFromXmlNode(const pugi::xml_node & node) {
 		std::string data = item.text().as_string();
 
 		if ( data.size() ) {
-			items.push_back( String( data ) );
+			items.push_back( UIManager::instance()->getTranslatorString( data ) );
 		}
 	}
 

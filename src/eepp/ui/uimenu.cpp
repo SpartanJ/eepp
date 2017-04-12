@@ -4,6 +4,7 @@
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
+#include <eepp/ui/uimanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -551,14 +552,14 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 		if ( name == "menuitem" || name == "item" ) {
 			std::string text( item.attribute("text").as_string() );
 			std::string icon( item.attribute("icon").as_string() );
-			add( String( text ), getIconDrawable( icon ) );
+			add( UIManager::instance()->getTranslatorString( text ), getIconDrawable( icon ) );
 		} else if ( name == "menuseparator" || name == "separator" ) {
 			addSeparator();
 		} else if ( name == "menucheckbox" || name == "checkbox" ) {
 			std::string text( item.attribute("text").as_string() );
 			bool active( item.attribute("active").as_bool() );
 
-			addCheckBox( String( text ), active );
+			addCheckBox( UIManager::instance()->getTranslatorString( text ), active );
 		} else if ( name == "menusubmenu" || name == "submenu" ) {
 			std::string text( item.attribute("text").as_string() );
 			std::string icon( item.attribute("icon").as_string() );
@@ -567,7 +568,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 
 			subMenu->loadFromXmlNode( item );
 
-			addSubMenu( String( text ), getIconDrawable( icon ), subMenu );
+			addSubMenu( UIManager::instance()->getTranslatorString( text ), getIconDrawable( icon ), subMenu );
 		}
 	}
 }

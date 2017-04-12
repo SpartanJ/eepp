@@ -143,6 +143,7 @@ class EETest : private Thread {
 		VertexBuffer * mVBO;
 
 		Clock	mFTE;
+		Translator mTranslator;
 
 		void createCommonDialog();
 		void onItemClick( const UIEvent * Event );

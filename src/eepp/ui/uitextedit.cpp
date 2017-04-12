@@ -445,7 +445,7 @@ void UITextEdit::loadFromXmlNode(const pugi::xml_node & node) {
 		String::toLowerInPlace( name );
 
 		if ( "text" == name ) {
-			setText( ait->as_string() );
+			setText( UIManager::instance()->getTranslatorString( ait->as_string() ) );
 		} else if ( "allowediting" == name ) {
 			setAllowEditing( ait->as_bool() );
 		} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {
