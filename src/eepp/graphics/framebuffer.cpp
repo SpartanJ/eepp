@@ -10,9 +10,9 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-FrameBuffer * FrameBuffer::New( const Uint32& Width, const Uint32& Height, bool DepthBuffer, EE::Window::Window * window ) {
+FrameBuffer * FrameBuffer::New( const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer, EE::Window::Window * window ) {
 	if ( FrameBufferFBO::isSupported() )
-		return eeNew( FrameBufferFBO, ( Width, Height, DepthBuffer, window ) );
+		return eeNew( FrameBufferFBO, ( Width, Height, StencilBuffer, DepthBuffer, window ) );
 
 	return NULL;
 }
@@ -22,6 +22,7 @@ FrameBuffer::FrameBuffer( EE::Window::Window * window  ) :
 	mWidth(0),
 	mHeight(0),
 	mHasDepthBuffer(false),
+	mHasStencilBuffer(false),
 	mTexture(NULL),
 	mClearColor(0,0,0,0)
 {
@@ -54,7 +55,7 @@ ColorAf FrameBuffer::getClearColor() const {
 
 void FrameBuffer::clear() {
 	GLi->clearColor( mClearColor.r, mClearColor.g, mClearColor.b, mClearColor.a );
-	GLi->clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	GLi->clear( GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	mWindow->setClearColor( mWindow->getClearColor() );
 }
 
@@ -95,6 +96,10 @@ const Int32& FrameBuffer::getHeight() const {
 
 const bool& FrameBuffer::hasDepthBuffer() const {
 	return mHasDepthBuffer;
+}
+
+const bool &FrameBuffer::hasStencilBuffer() const {
+	return mHasStencilBuffer;
 }
 
 }}

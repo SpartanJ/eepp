@@ -17,10 +17,11 @@ class EE_API FrameBuffer {
 		/** @brief Creates a new instance of a frame buffer
 		**	@param Width The frame buffer width
 		**	@param Height The frame buffer height
+		**	@param StencilBuffer Indicates if a stencil buffer is used
 		**	@param DepthBuffer Indicates if a depth buffer is used
 		**	@param window In case that the application is using more than one window, the user can indicate which one to use ( by default uses the current active window )
 		*/
-		static FrameBuffer * New( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false, EE::Window::Window * window = NULL );
+		static FrameBuffer * New(const Uint32& Width, const Uint32& Height, bool StencilBuffer = true, bool DepthBuffer = false, EE::Window::Window * window = NULL );
 
 		virtual ~FrameBuffer();
 
@@ -61,11 +62,15 @@ class EE_API FrameBuffer {
 
 		/** @return True if the frame buffer has a depth buffer. */
 		const bool& hasDepthBuffer() const;
+
+		/** @return True if the frame buffer has a stencil buffer */
+		const bool& hasStencilBuffer() const;
 	protected:
 		EE::Window::Window *	mWindow;
 		Int32		mWidth;
 		Int32		mHeight;
 		bool		mHasDepthBuffer;
+		bool		mHasStencilBuffer;
 		Texture *	mTexture;
 		ColorAf	mClearColor;
 		View 		mPrevView;

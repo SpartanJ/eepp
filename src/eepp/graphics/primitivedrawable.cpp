@@ -6,6 +6,7 @@ namespace EE { namespace Graphics {
 
 PrimitiveDrawable::PrimitiveDrawable(EE_DRAWABLE_TYPE drawableType) :
 	Drawable( drawableType ),
+	mFillMode( DRAW_FILL ),
 	mNeedsUpdate( true ),
 	mRecreateVertexBuffer( true ),
 	mVertexBuffer( NULL )

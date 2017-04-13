@@ -126,7 +126,7 @@ void EETest::init() {
 		Batch.allocVertexs( 2048 );
 		Batch.setBlendMode( ALPHA_BLENDONE );
 
-		mFBO = FrameBuffer::New( 256, 256, false );
+		mFBO = FrameBuffer::New( 256, 256 );
 
 		if ( NULL != mFBO )
 			mFBO->setClearColor( ColorAf( 0, 0, 0, 0.5f ) );
@@ -1380,6 +1380,20 @@ void EETest::screen4() {
 		mFBOText.setAlign( TEXT_ALIGN_CENTER );
 		mFBOText.draw( 128.f - (Float)(Int32)( mFBOText.getTextWidth() * 0.5f ), 25.f - (Float)(Int32)( mFBOText.getTextHeight() * 0.5f ) );
 	}
+
+	Vector2f center(mFBO->getWidth() * 0.5f,mFBO->getHeight() * 0.5f);
+	CircleDrawable r;
+	r.setPosition( center );
+	r.setRadius( 18 );
+	GLi->getClippingMask()->setMaskMode( ClippingMask::Exclusive );
+	GLi->getClippingMask()->clearMasks();
+	GLi->getClippingMask()->appendMask( r );
+	GLi->getClippingMask()->stencilMaskEnable();
+	Primitives p;
+	p.setFillMode( DRAW_FILL );
+	p.setColor( Color( 100, 200, 100, 150 ) );
+	p.drawCircle( center, 32 );
+	GLi->getClippingMask()->stencilMaskDisable();
 
 	if ( NULL != mFBO ) {
 		mFBO->unbind();

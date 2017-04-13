@@ -15,18 +15,22 @@ FrameBufferFBO::FrameBufferFBO( EE::Window::Window * window ) :
 	FrameBuffer( window ),
 	mFrameBuffer(0),
 	mDepthBuffer(0),
+	mStencilBuffer(0),
 	mLastFB(0),
-	mLastRB(0)
+	mLastDB(0),
+	mLastSB(0)
 {}
 
-FrameBufferFBO::FrameBufferFBO( const Uint32& Width, const Uint32& Height, bool DepthBuffer, EE::Window::Window * window ) :
+FrameBufferFBO::FrameBufferFBO( const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer, EE::Window::Window * window ) :
 	FrameBuffer( window ),
 	mFrameBuffer(0),
 	mDepthBuffer(0),
+	mStencilBuffer(0),
 	mLastFB(0),
-	mLastRB(0)
+	mLastDB(0),
+	mLastSB(0)
 {
-	create( Width, Height, DepthBuffer );
+	create( Width, Height, StencilBuffer, DepthBuffer );
 }
 
 FrameBufferFBO::~FrameBufferFBO() {
@@ -44,6 +48,11 @@ FrameBufferFBO::~FrameBufferFBO() {
 		glDeleteFramebuffersEXT( 1, &depthBuffer );
 	}
 
+	if ( mStencilBuffer ) {
+		unsigned int stencilBuffer = static_cast<unsigned int>( mStencilBuffer );
+		glDeleteFramebuffersEXT( 1, &stencilBuffer );
+	}
+
 	if ( mFrameBuffer ) {
 		unsigned int frameBuffer = static_cast<unsigned int>( mFrameBuffer );
 		glDeleteFramebuffersEXT( 1, &frameBuffer );
@@ -51,10 +60,10 @@ FrameBufferFBO::~FrameBufferFBO() {
 }
 
 bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height ) {
-	return create( Width, Height, false );
+	return create( Width, Height, true, false );
 }
 
-bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool DepthBuffer ) {
+bool FrameBufferFBO::create(const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer ) {
 	if ( !isSupported() )
 		return false;
 
@@ -64,6 +73,7 @@ bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool Dep
 
 	mWidth 			= Width;
 	mHeight 		= Height;
+	mHasStencilBuffer = StencilBuffer;
 	mHasDepthBuffer = DepthBuffer;
 
 	unsigned int frameBuffer = 0;
@@ -87,15 +97,35 @@ bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool Dep
 		if ( !mDepthBuffer )
 			return false;
 
-		bindRenderBuffer();
+		bindDepthBuffer();
 
 		glRenderbufferStorageEXT( GL_RENDERBUFFER, GL_DEPTH_COMPONENT, Width, Height );
 
 		glFramebufferRenderbufferEXT( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, mDepthBuffer );
+
+		glBindFramebufferEXT( GL_RENDERBUFFER, mLastDB );
+	}
+
+	if ( StencilBuffer ) {
+		GLuint stencil = 0;
+		glGenRenderbuffersEXT( 1, &stencil );
+
+		mStencilBuffer = static_cast<Uint32>(stencil);
+
+		if (!mStencilBuffer)
+			return false;
+
+		bindStencilBuffer();
+
+		glRenderbufferStorageEXT( GL_RENDERBUFFER, GL_STENCIL_INDEX, Width, Height );
+
+		glFramebufferRenderbufferEXT( GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER_EXT, mStencilBuffer );
+
+		glBindFramebufferEXT( GL_RENDERBUFFER, mLastSB );
 	}
 
 	if ( NULL == mTexture ) {
-		Uint32 TexId = TextureFactory::instance()->createEmptyTexture( Width, Height, 4, Color(0,0,0,0) );
+		Uint32 TexId = TextureFactory::instance()->createEmptyTexture( Width, Height, 4, Color::Transparent );
 
 		if ( TextureFactory::instance()->existsId( TexId ) ) {
 			mTexture = 	TextureFactory::instance()->getTexture( TexId );
@@ -122,7 +152,6 @@ void FrameBufferFBO::bind() {
 		GlobalBatchRenderer::instance()->draw();
 
 		bindFrameBuffer();
-		bindRenderBuffer();
 
 		setBufferView();
 	}
@@ -132,16 +161,12 @@ void FrameBufferFBO::unbind() {
 	if ( mFrameBuffer ) {
 		recoverView();
 
-		if ( mDepthBuffer ) {
-			glBindFramebufferEXT( GL_RENDERBUFFER, mLastRB );
-		}
-
 		glBindFramebufferEXT( GL_FRAMEBUFFER, mLastFB );
 	}
 }
 
 void FrameBufferFBO::reload() {
-	create( mWidth, mHeight, mHasDepthBuffer );
+	create( mWidth, mHeight, mHasStencilBuffer, mHasDepthBuffer );
 }
 
 void FrameBufferFBO::bindFrameBuffer() {
@@ -153,14 +178,25 @@ void FrameBufferFBO::bindFrameBuffer() {
 	glBindFramebufferEXT( GL_FRAMEBUFFER, mFrameBuffer );
 }
 
-void FrameBufferFBO::bindRenderBuffer() {
+void FrameBufferFBO::bindDepthBuffer() {
 	if ( mDepthBuffer ) {
-		int curRB;
-		glGetIntegerv( GL_RENDERBUFFER_BINDING, &curRB );
+		int curDB;
+		glGetIntegerv( GL_RENDERBUFFER_BINDING, &curDB );
 
-		mLastRB = (Int32)curRB;
+		mLastDB = (Int32)curDB;
 
 		glBindRenderbufferEXT( GL_RENDERBUFFER, mDepthBuffer );
+	}
+}
+
+void FrameBufferFBO::bindStencilBuffer() {
+	if ( mStencilBuffer ) {
+		int curSB;
+		glGetIntegerv( GL_RENDERBUFFER_BINDING, &curSB );
+
+		mLastSB = (Int32)curSB;
+
+		glBindRenderbufferEXT( GL_RENDERBUFFER, mStencilBuffer );
 	}
 }
 
