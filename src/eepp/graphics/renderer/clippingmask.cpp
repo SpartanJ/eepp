@@ -10,7 +10,7 @@ using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
-void ClippingMask::clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
+void ClippingMask::clipEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	EE::Window::Window * window = Engine::instance()->getCurrentWindow();
 	GlobalBatchRenderer::instance()->draw();
 

@@ -1,0 +1,64 @@
+#ifndef EE_UISCROLLVIEW_HPP
+#define EE_UISCROLLVIEW_HPP
+
+#include <eepp/ui/uiwidget.hpp>
+
+namespace EE { namespace UI {
+
+class UIScrollBar;
+
+class EE_API UIScrollView : public UIWidget {
+	public:
+		enum ScrollViewType {
+			Inclusive,
+			Exclusive
+		};
+
+		static UIScrollView * New();
+
+		UIScrollView();
+
+		virtual Uint32 getType() const;
+
+		virtual bool isType( const Uint32& type ) const;
+
+		void setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+
+		const UI_SCROLLBAR_MODE& getVerticalScrollMode();
+
+		void setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+
+		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
+
+		const ScrollViewType& getViewType() const;
+
+		void setViewType( const ScrollViewType& viewType );
+
+		UIScrollBar * getVerticalScrollBar() const;
+
+		UIScrollBar * getHorizontalScrollBar() const;
+
+		UIControlAnim * getContainer() const;
+	protected:
+		ScrollViewType mViewType;
+		UI_SCROLLBAR_MODE mVScrollMode;
+		UI_SCROLLBAR_MODE mHScrollMode;
+		UIScrollBar * mVScroll;
+		UIScrollBar * mHScroll;
+		UIControlAnim * mContainer;
+		UIControl * mScrollView;
+
+		virtual void onSizeChange();
+
+		virtual void onChildCountChange();
+
+		void onValueChangeCb( const UIEvent * Event );
+
+		void containerUpdate();
+
+		void updateScroll();
+};
+
+}}
+
+#endif

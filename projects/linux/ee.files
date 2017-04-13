@@ -30,6 +30,7 @@
 ../../include/eepp/ui/uilinearlayout.hpp
 ../../include/eepp/ui/uimenuseparator.hpp
 ../../include/eepp/ui/uirelativelayout.hpp
+../../include/eepp/ui/uiscrollview.hpp
 ../../include/eepp/ui/uisubtexture.hpp
 ../../include/eepp/ui/uitable.hpp
 ../../include/eepp/ui/uitablecell.hpp
@@ -71,6 +72,7 @@
 ../../src/eepp/ui/uiloader.cpp
 ../../src/eepp/ui/uimenuseparator.cpp
 ../../src/eepp/ui/uirelativelayout.cpp
+../../src/eepp/ui/uiscrollview.cpp
 ../../src/eepp/ui/uisubtexture.cpp
 ../../src/eepp/ui/uitable.cpp
 ../../src/eepp/ui/uitablecell.cpp

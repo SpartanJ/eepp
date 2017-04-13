@@ -16,7 +16,7 @@ class EE_API ClippingMask {
 		};
 
 		/** Set the current Clipping area ( default the entire window, SCISSOR TEST ). */
-		void clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
+		void clipEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
 
 		/** Disable the Clipping area */
 		void clipDisable();

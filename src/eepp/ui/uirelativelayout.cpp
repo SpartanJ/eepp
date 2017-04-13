@@ -161,7 +161,7 @@ Uint32 UIRelativeLayout::onMessage(const UIMessage * Msg) {
 		case UIMessage::MsgLayoutAttributeChange:
 		{
 			fixChilds();
-			return 1;
+			break;
 		}
 	}
 

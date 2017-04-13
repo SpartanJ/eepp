@@ -13,6 +13,10 @@ class EE_API UILoader : public UIWidget {
 
 		UILoader();
 
+		virtual Uint32 getType() const;
+
+		virtual bool isType( const Uint32& type ) const;
+
 		virtual void draw();
 
 		virtual void update();
@@ -59,9 +63,6 @@ class EE_API UILoader : public UIWidget {
 		Float mAnimationSpeed;
 		IntPtr mOp;
 		bool mIndeterminate;
-		bool mNeedsUpdate;
-
-		virtual void onPositionChange();
 
 		virtual void onSizeChange();
 };

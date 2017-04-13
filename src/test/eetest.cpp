@@ -510,94 +510,107 @@ void EETest::createUI() {
 void EETest::createNewUI() {
 	std::vector<String> str = getTestStringArr();
 
+	UIRelativeLayout * relLay = UIRelativeLayout::New();
+	relLay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
+
+	UIControlAnim * container = UIControlAnim::New();
+	container->setSize( relLay->getSize() - 32 );
+
+	UIScrollView * scrollView = UIScrollView::New();
+	scrollView->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT )->setParent( relLay );
+	scrollView->getContainer()->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onMainClick ) );
+	container->setParent( scrollView );
+	container->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onMainClick ) );
+
 	UILoader * loader = UILoader::New();
 	loader->setOutlineThickness( 4 )
 			->setRadius( 25 )
 			->setPosition( 800, 0 )
 			->setSize( 100, 100 )
+			->setParent( container )
 			->setBackgroundFillEnabled( true )->setColor( 0xCCCCCCCC );
 
 	UIRadioButton * ctrl = UIRadioButton::New();
-	ctrl->setPosition( 50, 100 )->setSize( 200, 32 );
+	ctrl->setPosition( 50, 100 )->setSize( 200, 32 )->setParent( container );
 	ctrl->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	ctrl->setBorderEnabled( true )->setColor( 0x66666666 );
 	ctrl->setText( "Happy RadioButon :)" );
 	ctrl->setFontColor( Color::Black );
 
 	UICheckBox * cbox = UICheckBox::New();
-	cbox->setPosition( 50, 164 )->setSize( 200, 32 );
+	cbox->setPosition( 50, 164 )->setSize( 200, 32 )->setParent( container );
 	cbox->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	cbox->setBorderEnabled( true )->setColor( 0x66666666 );
 	cbox->setText( "Happy CheckBox :)" );
 	cbox->setFontColor( Color::Black );
 
 	UIImage * gfx = UIImage::New();
-	gfx->setPosition( 50, 140 )->setSize( 16, 16 );
+	gfx->setPosition( 50, 140 )->setSize( 16, 16 )->setParent( container );
 	gfx->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	gfx->setDrawable( mTheme->getIconByName( "ok" ) );
 
 	UISlider * slider = UISlider::New();
-	slider->setOrientation( UI_HORIZONTAL )->setPosition( 50, 0 )->setSize( 100, 100 );
+	slider->setOrientation( UI_HORIZONTAL )->setPosition( 50, 0 )->setSize( 100, 100 )->setParent( container );
 	slider->setAllowHalfSliderOut( true );
 
 	UISlider * slider2 = UISlider::New();
-	slider2->setOrientation( UI_VERTICAL )->setPosition( 100, 0 )->setSize( 100, 100 );
+	slider2->setOrientation( UI_VERTICAL )->setPosition( 100, 0 )->setSize( 100, 100 )->setParent( container );
 	slider2->setAllowHalfSliderOut( true );
 
 	UITextInput * textInput = UITextInput::New();
-	textInput->setPosition( 50, 210 )->setSize( 200, 0 );
+	textInput->setPosition( 50, 210 )->setSize( 200, 0 )->setParent( container );
 
 	UITextInputPassword * textInputPass = UITextInputPassword::New();
-	textInputPass->setPosition( 50, 245 )->setSize( 200, 0 );
+	textInputPass->setPosition( 50, 245 )->setSize( 200, 0 )->setParent( container );
 
 	UIListBox * listBox = UIListBox::New();
-	listBox->setPosition( 50, 360 )->setSize( 200, 160 );
+	listBox->setPosition( 50, 360 )->setSize( 200, 160 )->setParent( container );
 	listBox->addListBoxItems( str );
 
 	UIProgressBar * progressBar = UIProgressBar::New();
-	progressBar->setPosition( 50, 530 )->setSize( 200, 0 );
+	progressBar->setPosition( 50, 530 )->setSize( 200, 0 )->setParent( container );
 	progressBar->setProgress( 60.f );
 	progressBar->setDisplayPercent( true );
 
 	UIPushButton * pushButton = UIPushButton::New();
-	pushButton->setPosition( 50, 560 )->setSize( 200, 0 );
+	pushButton->setPosition( 50, 560 )->setSize( 200, 0 )->setParent( container );
 	pushButton->setText( "PushButton" );
 	pushButton->setIcon( mTheme->getIconByName( "ok" ) );
 
 	UISprite * sprite = UISprite::New();
 	sprite->setFlags( UI_AUTO_SIZE );
-	sprite->setPosition( 50, 600 );
+	sprite->setPosition( 50, 600 )->setParent( container );
 	sprite->setSprite( &SP );
 
 	UIScrollBar * scrollBar = UIScrollBar::New();
-	scrollBar->setOrientation( UI_HORIZONTAL )->setPosition( 200, 0 )->setSize( 100, 0 );
+	scrollBar->setOrientation( UI_HORIZONTAL )->setPosition( 200, 0 )->setSize( 100, 0 )->setParent( container );
 
 	UIScrollBar * scrollBar2 = UIScrollBar::New();
-	scrollBar2->setOrientation( UI_VERTICAL )->setPosition( 300, 0 )->setSize( 0, 100 );
+	scrollBar2->setOrientation( UI_VERTICAL )->setPosition( 300, 0 )->setSize( 0, 100 )->setParent( container );
 
 	UIDropDownList * dropdownList = UIDropDownList::New();
-	dropdownList->setPosition( 50, 320 )->setSize( 200, 100 );
+	dropdownList->setPosition( 50, 320 )->setSize( 200, 100 )->setParent( container );
 	dropdownList->getListBox()->addListBoxItem( "Test 1" );
 	dropdownList->getListBox()->addListBoxItem( "Test 2" );
 	dropdownList->getListBox()->addListBoxItem( "Test 3" );
 
 	UIComboBox * comboBox = UIComboBox::New();
-	comboBox->setPosition( 50, 280 )->setSize( 200, 0 );
+	comboBox->setPosition( 50, 280 )->setSize( 200, 0 )->setParent( container );
 	comboBox->getListBox()->addListBoxItem( "Test 1234" );
 	comboBox->getListBox()->addListBoxItem( "Test 2345" );
 	comboBox->getListBox()->addListBoxItem( "Test 3567" );
 	comboBox->getListBox()->setSelected( 0 );
 
 	UITextEdit * textEdit = UITextEdit::New();
-	textEdit->setPosition( 350, 4 )->setSize( 200, 200 );
+	textEdit->setPosition( 350, 4 )->setSize( 200, 200 )->setParent( container );
 	textEdit->setText( mBuda );
 
 	UISpinBox * spinBox = UISpinBox::New();
-	spinBox->setPosition( 350, 210 )->setSize( 200, 0 );
+	spinBox->setPosition( 350, 210 )->setSize( 200, 0 )->setParent( container );
 
 	UITable * genGrid = UITable::New();
 	genGrid->setSmoothScroll( true );
-	genGrid->setPosition( 350, 250 )->setSize( 200, 130 );
+	genGrid->setPosition( 350, 250 )->setSize( 200, 130 )->setParent( container );
 	genGrid->setCollumnsCount( 3 )->setRowHeight( 24 );
 	genGrid->setCollumnWidth( 0, 50 );
 	genGrid->setCollumnWidth( 1, 24 );
@@ -622,6 +635,15 @@ void EETest::createNewUI() {
 		genGrid->add( Cell );
 	}
 
+	UITabWidget * TabWidget = UITabWidget::New();
+	TabWidget->setPosition( 350, 530 )->setSize( 200, 64 )->setParent( container );
+
+	TabWidget->add( "Tab 1", UIWidget::New()->setThemeSkin( "winback" ), mTheme->getIconByName( "ok" ) );
+	TabWidget->add( "Tab 2", UIWidget::New()->setThemeSkin( "winback" ), mTheme->getIconByName( "go-up" ) );
+	TabWidget->add( "Tab 3", UIWidget::New()->setThemeSkin( "winback" ), mTheme->getIconByName( "add" ) );
+
+
+
 	UIWindow * MenuCont = UIWindow::New();
 	MenuCont->setPosition( 350, 390 )->setSize( 200, 115 );
 
@@ -642,13 +664,6 @@ void EETest::createNewUI() {
 
 	WinMenu->addMenuButton( "File", PopMenu );
 	WinMenu->addMenuButton( "Edit", PopMenu2 );
-
-	UITabWidget * TabWidget = UITabWidget::New();
-	TabWidget->setPosition( 350, 530 )->setSize( 200, 64 );
-
-	TabWidget->add( "Tab 1", UIWidget::New()->setThemeSkin( "winback" ), mTheme->getIconByName( "ok" ) );
-	TabWidget->add( "Tab 2", UIWidget::New()->setThemeSkin( "winback" ), mTheme->getIconByName( "go-up" ) );
-	TabWidget->add( "Tab 3", UIWidget::New()->setThemeSkin( "winback" ), mTheme->getIconByName( "add" ) );
 
 	UIWindow * win = UIWindow::New();
 	win->setSize( 500, 500 );

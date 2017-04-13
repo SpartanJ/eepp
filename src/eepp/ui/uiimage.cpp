@@ -175,7 +175,7 @@ void UIImage::loadFromXmlNode(const pugi::xml_node & node) {
 		if ( "src" == name ) {
 			Drawable * res = NULL;
 
-			if ( NULL != ( res = DrawableSearcher::searchByName( name ) ) ) {
+			if ( NULL != ( res = DrawableSearcher::searchByName( ait->as_string() ) ) ) {
 				if ( res->getDrawableType() == DRAWABLE_SPRITE )
 					writeCtrlFlag( UI_CTRL_FLAG_DRAWABLE_OWNER, 1 );
 

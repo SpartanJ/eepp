@@ -8,9 +8,9 @@ namespace EE { namespace UI {
 
 class EE_API UISlider : public UIWidget {
 	public:
-		static UISlider * New();
+		static UISlider * New( const UI_ORIENTATION& orientation = UI_HORIZONTAL );
 
-		UISlider();
+		UISlider( const UI_ORIENTATION& orientation = UI_HORIZONTAL );
 
 		virtual ~UISlider();
 

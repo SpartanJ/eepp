@@ -19,24 +19,27 @@ UILoader::UILoader() :
 	mMaxProgress(100),
 	mAnimationSpeed(0.5f),
 	mOp(1),
-	mIndeterminate(true),
-	mNeedsUpdate(true)
+	mIndeterminate(true)
 {
 	mArc.setFillMode( DRAW_FILL );
 	mCircle.setFillMode( DRAW_FILL );
 	setFillColor( mColor );
 }
 
+Uint32 UILoader::getType() const {
+	return UI_TYPE_LOADER;
+}
+
+bool UILoader::isType( const Uint32& type ) const {
+	return UILoader::getType() == type ? true : UIWidget::isType( type );
+}
+
 void UILoader::draw() {
 	UIWidget::draw();
 
-	if ( mNeedsUpdate ) {
-		mNeedsUpdate = false;
-
-		Rectf rect( mScreenPosf, Sizef( mRealSize.x, mRealSize.y ) );
-		mArc.setPosition( rect.getCenter() );
-		mCircle.setPosition( rect.getCenter() );
-	}
+	Rectf rect( mScreenPosf, Sizef( mRealSize.x, mRealSize.y ) );
+	mArc.setPosition( rect.getCenter() );
+	mCircle.setPosition( rect.getCenter() );
 
 	ClippingMask * clippingMask = Renderer::instance()->getClippingMask();
 	clippingMask->setMaskMode( ClippingMask::Exclusive );
@@ -103,13 +106,7 @@ const Color& UILoader::getFillColor() const {
 	return mColor;
 }
 
-void UILoader::onPositionChange() {
-	mNeedsUpdate = true;
-}
-
 void UILoader::onSizeChange() {
-	mNeedsUpdate = true;
-
 	if ( mRadius == 0 ) {
 		setRadius( eemin( mSize.x, mSize.y ) / 2.f );
 	}

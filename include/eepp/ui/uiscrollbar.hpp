@@ -8,9 +8,9 @@ namespace EE { namespace UI {
 
 class EE_API UIScrollBar : public UIWidget {
 	public:
-		static UIScrollBar * New();
+		static UIScrollBar * New( const UI_ORIENTATION & orientation = UI_VERTICAL );
 
-		UIScrollBar();
+		UIScrollBar( const UI_ORIENTATION& orientation = UI_VERTICAL );
 
 		virtual ~UIScrollBar();
 

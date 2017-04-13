@@ -4,11 +4,11 @@
 
 namespace EE { namespace UI {
 
-UIScrollBar * UIScrollBar::New() {
-	return eeNew( UIScrollBar, () );
+UIScrollBar * UIScrollBar::New( const UI_ORIENTATION& orientation ) {
+	return eeNew( UIScrollBar, ( orientation ) );
 }
 
-UIScrollBar::UIScrollBar() :
+UIScrollBar::UIScrollBar( const UI_ORIENTATION& orientation ) :
 	UIWidget()
 {
 	mFlags |= UI_AUTO_SIZE;
@@ -21,7 +21,7 @@ UIScrollBar::UIScrollBar() :
 	mBtnDown->setSize( 16, 16 );
 
 	mSlider		= UISlider::New();
-	mSlider->setOrientation( UI_VERTICAL );
+	mSlider->setOrientation( orientation );
 	mSlider->setParent( this );
 	mSlider->setAllowHalfSliderOut( false );
 	mSlider->setExpandBackground( false );

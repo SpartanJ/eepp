@@ -226,9 +226,9 @@ void tRECT<T>::expand( const tRECT<T>& Rect ) {
 template <typename T>
 void tRECT<T>::shrink( const tRECT<T>& Rect ) {
 	Left	= eemax( Left	, Rect.Left		);
-	Bottom	= eemin( Bottom	, Rect.Bottom	);
-	Right	= eemin( Right	, Rect.Right	);
 	Top		= eemax( Top	, Rect.Top		);
+	Right	= eemax( Left, eemin( Right	, Rect.Right ) );
+	Bottom	= eemax( Top, eemin( Bottom	, Rect.Bottom ) );
 }
 
 template <typename T>
