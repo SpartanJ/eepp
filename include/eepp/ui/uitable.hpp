@@ -82,7 +82,7 @@ class EE_API UITable : public UIWidget {
 
 		bool getSmoothScroll() const;
 
-		void setSmoothScroll(bool smoothScroll);
+		UITable * setSmoothScroll(bool smoothScroll);
 
 		Float getTouchDragDeceleration() const;
 

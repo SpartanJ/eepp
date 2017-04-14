@@ -986,18 +986,19 @@ void UIListBox::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
 void UIListBox::update() {
 	if ( mEnabled && mVisible ) {
 		if ( mFlags & UI_TOUCH_DRAG_ENABLED ) {
-			Uint32 Press	= UIManager::instance()->getPressTrigger();
-			Uint32 LPress	= UIManager::instance()->getLastPressTrigger();
+			UIManager * manager = UIManager::instance();
+			Uint32 Press	= manager->getPressTrigger();
+			Uint32 LPress	= manager->getLastPressTrigger();
 
 			if ( ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING ) ) {
 				// Mouse Not Down
 				if ( !( Press & EE_BUTTON_LMASK ) ) {
 					writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 0 );
-					UIManager::instance()->setControlDragging( false );
+					manager->setControlDragging( false );
 					return;
 				}
 
-				Vector2i Pos( UIManager::instance()->getMousePos() );
+				Vector2i Pos( manager->getMousePos() );
 
 				if ( mTouchDragPoint != Pos ) {
 					Vector2i diff = -( mTouchDragPoint - Pos );
@@ -1008,7 +1009,7 @@ void UIListBox::update() {
 
 					mTouchDragPoint = Pos;
 
-					UIManager::instance()->setControlDragging( true );
+					manager->setControlDragging( true );
 				} else {
 					mTouchDragAcceleration -= getElapsed().asMilliseconds() * mTouchDragAcceleration * 0.01f;
 				}
@@ -1018,7 +1019,7 @@ void UIListBox::update() {
 					if ( !( LPress & EE_BUTTON_LMASK ) && ( Press & EE_BUTTON_LMASK ) ) {
 						writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 1 );
 
-						mTouchDragPoint			= UIManager::instance()->getMousePos();
+						mTouchDragPoint			= manager->getMousePos();
 						mTouchDragAcceleration	= 0;
 					}
 				}
@@ -1026,7 +1027,7 @@ void UIListBox::update() {
 				// Mouse Up
 				if ( ( LPress & EE_BUTTON_LMASK ) && !( Press & EE_BUTTON_LMASK ) ) {
 					writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 0 );
-					UIManager::instance()->setControlDragging( false );
+					manager->setControlDragging( false );
 				}
 
 				// Deaccelerate

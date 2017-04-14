@@ -311,7 +311,7 @@ Interpolation2d * UIControlAnim::startScaleAnim( const Float& From, const Float&
 	return startScaleAnim( Vector2f( From, From ), Vector2f( To, To ), TotalTime, Type, PathEndCallback );
 }
 
-Interpolation2d * UIControlAnim::startMovement( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation2d::OnPathEndCallback PathEndCallback ) {
+Interpolation2d * UIControlAnim::startTranslation( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation2d::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mMoveAnim )
 		mMoveAnim = eeNew( Interpolation2d, () );
 
@@ -491,7 +491,7 @@ Interpolation1d * UIControlAnim::getAlphaInterpolation() {
 	return mAlphaAnim;
 }
 
-Interpolation2d * UIControlAnim::getMovementInterpolation() {
+Interpolation2d * UIControlAnim::getTranslationInterpolation() {
 	if ( NULL == mMoveAnim )
 		mMoveAnim = eeNew( Interpolation2d, () );
 

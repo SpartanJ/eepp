@@ -61,7 +61,7 @@ class EE_API UIControlAnim : public UIDragableControl {
 
 		Interpolation2d * startScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& getType = Ease::Linear, Interpolation1d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
 
-		Interpolation2d * startMovement( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& getType = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
+		Interpolation2d * startTranslation( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& getType = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
 
 		Interpolation1d * startRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& getType = Ease::Linear, Interpolation1d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
 
@@ -79,7 +79,7 @@ class EE_API UIControlAnim : public UIDragableControl {
 
 		Interpolation1d * getAlphaInterpolation();
 
-		Interpolation2d * getMovementInterpolation();
+		Interpolation2d * getTranslationInterpolation();
 
 		virtual void draw();
 

@@ -448,7 +448,7 @@ void EETest::createUI() {
 	TextEdit->setText( mBuda );
 
 	UITable * genGrid = UITable::New();
-	genGrid->setSmoothScroll( true );
+	genGrid->setSmoothScroll( true )->setFlags( UI_TOUCH_DRAG_ENABLED );
 	genGrid->setParent( C )->setPosition( 325, 245 )->setSize( 200, 130 );
 	genGrid->setCollumnsCount( 3 )->setRowHeight( 24 );
 
@@ -892,6 +892,7 @@ void EETest::onItemClick( const UIEvent * Event ) {
 	} else if ( "Show Window" == txt ) {
 		UIMenuCheckBox * Chk = reinterpret_cast<UIMenuCheckBox*> ( Event->getControl() );
 
+		C->toFront();
 		C->setVisible( true );
 		C->setEnabled( true );
 
@@ -971,7 +972,7 @@ void EETest::onButtonClick( const UIEvent * Event ) {
 		Gfx->setEnabled( false );
 
 		Gfx->startRotation( 0, 2500, Milliseconds( 2500 ) );
-		Gfx->startMovement( Vector2i( Math::randi( 0, mWindow->getWidth() ), -64 ), Vector2i( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ), Milliseconds( 2500 ) );
+		Gfx->startTranslation( Vector2i( Math::randi( 0, mWindow->getWidth() ), -64 ), Vector2i( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ), Milliseconds( 2500 ) );
 		Gfx->closeFadeOut( Milliseconds( 3500 ) );
 
 		//mListBox->addListBoxItem( "Test ListBox " + String::toStr( mListBox->getCount() + 1 ) + " testing it right now!" );

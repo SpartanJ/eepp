@@ -50,6 +50,7 @@ CODE_SRCS				:=  \
 	helper/jpeg-compressor/*.cpp \
 	helper/imageresampler/*.cpp \
 	helper/haikuttf/*.cpp \
+	helper/pugixml/*.cpp \
 	system/*.cpp \
 	system/platform/posix/*.cpp \
 	network/*.cpp \
@@ -68,8 +69,8 @@ CODE_SRCS				:=  \
 	physics/constraints/*.cpp \
 	ui/*.cpp \
 	ui/tools/*.cpp \
-	gaming/*.cpp \
-	gaming/mapeditor/*.cpp
+	maps/*.cpp \
+	maps/mapeditor/*.cpp
 
 LOCAL_C_INCLUDES		:= $(MY_C_INCLUDES)
 
