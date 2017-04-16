@@ -901,7 +901,7 @@ Uint32 UIListBox::onMessage( const UIMessage * Msg ) {
 			UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
 
 			if ( this != FocusCtrl && !isParentOf( FocusCtrl ) ) {
-				onComplexControlFocusLoss();
+				onWidgetFocusLoss();
 			}
 			
 			return 1;

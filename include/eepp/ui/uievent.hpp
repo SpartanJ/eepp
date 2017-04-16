@@ -32,7 +32,7 @@ class EE_API UIEvent {
 			EventOnFontChanged,
 			EventOnPressEnter,
 			EventOnValueChange,
-			EventOnComplexControlFocusLoss,
+			EventOnWidgetFocusLoss,
 			EventOnItemClicked,
 			EventOnHideByClick,
 			EventOnItemKeyDown,

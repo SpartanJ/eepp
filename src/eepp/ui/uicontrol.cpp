@@ -511,8 +511,8 @@ Uint32 UIControl::onFocusLoss() {
 	return 1;
 }
 
-void UIControl::onComplexControlFocusLoss() {
-	sendCommonEvent( UIEvent::EventOnComplexControlFocusLoss );
+void UIControl::onWidgetFocusLoss() {
+	sendCommonEvent( UIEvent::EventOnWidgetFocusLoss );
 }
 
 bool UIControl::hasFocus() const {

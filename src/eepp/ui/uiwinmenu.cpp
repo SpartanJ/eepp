@@ -55,7 +55,7 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	Menu->setVisible( false );
 	Menu->setEnabled( false );
 	Menu->setParent( getWindowContainer() );
-	Menu->addEventListener( UIEvent::EventOnComplexControlFocusLoss, cb::Make1( this, &UIWinMenu::onMenuFocusLoss ) );
+	Menu->addEventListener( UIEvent::EventOnWidgetFocusLoss, cb::Make1( this, &UIWinMenu::onMenuFocusLoss ) );
 
 	mButtons.push_back( std::make_pair( Button, Menu ) );
 
@@ -222,7 +222,7 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 			UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
 
 			if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
-				onComplexControlFocusLoss();
+				onWidgetFocusLoss();
 			}
 
 			return 1;
@@ -268,12 +268,12 @@ void UIWinMenu::onMenuFocusLoss( const UIEvent * Event ) {
 	UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
 
 	if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
-		onComplexControlFocusLoss();
+		onWidgetFocusLoss();
 	}
 }
 
-void UIWinMenu::onComplexControlFocusLoss() {
-	UIWidget::onComplexControlFocusLoss();
+void UIWinMenu::onWidgetFocusLoss() {
+	UIWidget::onWidgetFocusLoss();
 
 	if ( NULL != mCurrentMenu ) {
 		mCurrentMenu->hide();

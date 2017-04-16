@@ -52,7 +52,7 @@ class EE_API UIWinMenu : public UIWidget {
 
 		virtual void onParentChange();
 
-		virtual void onComplexControlFocusLoss();
+		virtual void onWidgetFocusLoss();
 
 		UIPopUpMenu * getMenuFromButton( UISelectButton * Button );
 

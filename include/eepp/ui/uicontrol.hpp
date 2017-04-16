@@ -332,7 +332,7 @@ class EE_API UIControl {
 
 		virtual void onAlignChange();
 		
-		virtual void onComplexControlFocusLoss();
+		virtual void onWidgetFocusLoss();
 
 		virtual void drawSkin();
 

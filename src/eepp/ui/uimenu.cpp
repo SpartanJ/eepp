@@ -302,7 +302,7 @@ Uint32 UIMenu::onMessage( const UIMessage * Msg ) {
 			UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
 
 			if ( this != FocusCtrl && !isParentOf( FocusCtrl ) && !isSubMenu( FocusCtrl ) ) {
-				onComplexControlFocusLoss();
+				onWidgetFocusLoss();
 			}
 
 			return 1;

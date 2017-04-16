@@ -79,10 +79,10 @@ bool UIPopUpMenu::hide() {
 	return false;
 }
 
-void UIPopUpMenu::onComplexControlFocusLoss() {
+void UIPopUpMenu::onWidgetFocusLoss() {
 	hide();
 
-	UIMenu::onComplexControlFocusLoss();
+	UIMenu::onWidgetFocusLoss();
 }
 
 Uint32 UIPopUpMenu::onMessage( const UIMessage * Msg ) {

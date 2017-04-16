@@ -23,7 +23,7 @@ class EE_API UIPopUpMenu : public UIMenu {
 
 		virtual bool hide();
 	protected:
-		virtual void onComplexControlFocusLoss();
+		virtual void onWidgetFocusLoss();
 
 		virtual Uint32 onMessage( const UIMessage * Msg );
 

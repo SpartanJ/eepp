@@ -41,6 +41,16 @@ void UIScrollView::onSizeChange() {
 	containerUpdate();
 }
 
+void UIScrollView::onAlphaChange() {
+	UIWidget::onAlphaChange();
+	mVScroll->setAlpha( mAlpha );
+	mHScroll->setAlpha( mAlpha );
+	mContainer->setAlpha( mAlpha );
+
+	if ( NULL != mScrollView && mScrollView->isAnimated() )
+		reinterpret_cast<UIControlAnim*>( mScrollView )->setAlpha( mAlpha );
+}
+
 void UIScrollView::onChildCountChange() {
 	UIControl * child = mChild;
 	bool found = false;

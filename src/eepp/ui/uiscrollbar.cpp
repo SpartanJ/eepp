@@ -258,7 +258,6 @@ UIControl * UIScrollBar::setOrientation( const UI_ORIENTATION & orientation ) {
 	return this;
 }
 
-
 void UIScrollBar::onAlphaChange() {
 	UIControlAnim::onAlphaChange();
 	
