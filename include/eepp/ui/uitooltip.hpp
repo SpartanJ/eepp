@@ -51,9 +51,9 @@ class EE_API UITooltip : public UIControlAnim {
 
 		virtual void onFontChanged();
 
-		virtual void setPadding( const Recti& padding );
+		virtual void setPadding( const Rect& padding );
 
-		const Recti& getPadding() const;
+		const Rect& getPadding() const;
 
 		Text * getTextCache();
 
@@ -82,7 +82,7 @@ class EE_API UITooltip : public UIControlAnim {
 		Text *	mTextCache;
 		UITooltipStyleConfig mStyleConfig;
 		Vector2f 	mAlignOffset;
-		Recti		mRealPadding;
+		Rect		mRealPadding;
 		Time		mTooltipTime;
 		UIControl *	mTooltipOf;
 

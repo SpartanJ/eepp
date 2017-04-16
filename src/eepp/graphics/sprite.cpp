@@ -72,7 +72,7 @@ Sprite::Sprite( SubTexture * SubTexture ) :
 	createStatic( SubTexture );
 }
 
-Sprite::Sprite( const Uint32& TexId, const Sizef &DestSize, const Vector2i &Offset, const Recti& TexSector ) :
+Sprite::Sprite( const Uint32& TexId, const Sizef &DestSize, const Vector2i &Offset, const Rect& TexSector ) :
 	Drawable( DRAWABLE_SPRITE ),
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
 	mRotation( 0.f ),
@@ -277,8 +277,8 @@ Quad2f Sprite::getQuad() {
 	return Quad2f();
 }
 
-eeAABB Sprite::getAABB() {
-	eeAABB TmpR;
+Rectf Sprite::getAABB() {
+	Rectf TmpR;
 	SubTexture * S;
 
 	if ( mFrames.size() && ( S = getCurrentSubTexture() ) ) {
@@ -331,7 +331,7 @@ bool Sprite::createStatic( SubTexture * SubTexture ) {
 	return true;
 }
 
-bool Sprite::createStatic( const Uint32& TexId, const Sizef& DestSize, const Vector2i& Offset, const Recti& TexSector ) {
+bool Sprite::createStatic( const Uint32& TexId, const Sizef& DestSize, const Vector2i& Offset, const Rect& TexSector ) {
 	if ( TextureFactory::instance()->existsId( TexId ) ) {
 		reset();
 
@@ -427,7 +427,7 @@ unsigned int Sprite::addFrame( SubTexture * SubTexture ) {
 	return id;
 }
 
-unsigned int Sprite::addFrame( const Uint32& TexId, const Sizef& DestSize, const Vector2i& Offset, const Recti& TexSector ) {
+unsigned int Sprite::addFrame( const Uint32& TexId, const Sizef& DestSize, const Vector2i& Offset, const Rect& TexSector ) {
 	unsigned int id = framePos();
 
 	if ( addSubFrame( TexId, id, mCurrentSubFrame, DestSize, Offset, TexSector ) )
@@ -436,7 +436,7 @@ unsigned int Sprite::addFrame( const Uint32& TexId, const Sizef& DestSize, const
 	return 0;
 }
 
-bool Sprite::addSubFrame(const Uint32& TexId, const unsigned int& NumFrame, const unsigned int& NumSubFrame, const Sizef& DestSize, const Vector2i& Offset, const Recti& TexSector) {
+bool Sprite::addSubFrame(const Uint32& TexId, const unsigned int& NumFrame, const unsigned int& NumSubFrame, const Sizef& DestSize, const Vector2i& Offset, const Rect& TexSector) {
 	if ( !TextureFactory::instance()->existsId( TexId ) )
 		return false;
 
@@ -448,7 +448,7 @@ bool Sprite::addSubFrame(const Uint32& TexId, const unsigned int& NumFrame, cons
 	if ( TexSector.Right > 0 && TexSector.Bottom > 0 )
 		S->setSrcRect( TexSector );
 	else
-		S->setSrcRect( Recti( 0, 0, (Int32)Tex->getImageWidth(), (Int32)Tex->getImageHeight() ) );
+		S->setSrcRect( Rect( 0, 0, (Int32)Tex->getImageWidth(), (Int32)Tex->getImageHeight() ) );
 
 	Sizef destSize( DestSize );
 

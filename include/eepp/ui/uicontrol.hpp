@@ -68,7 +68,7 @@ class EE_API UIControl {
 
 		const Sizei& getRealSize();
 
-		Recti getRect() const;
+		Rect getRect() const;
 
 		UIControl * setVisible( const bool& visible );
 
@@ -223,7 +223,7 @@ class EE_API UIControl {
 
 		void applyDefaultTheme();
 
-		Recti getScreenRect();
+		Rect getScreenRect();
 
 		void childsCloseAll();
 
@@ -400,7 +400,7 @@ class EE_API UIControl {
 
 		Time getElapsed();
 
-		Recti makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
+		Rect makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
 
 		Sizei getSkinSize( UISkin * Skin, const Uint32& State = UISkinState::StateNormal );
 

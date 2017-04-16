@@ -40,15 +40,15 @@ SubTexture * TextureAtlas::add( const Uint32& TexId, const std::string& Name ) {
 	return add( eeNew( SubTexture, ( TexId, Name ) ) );
 }
 
-SubTexture * TextureAtlas::add( const Uint32& TexId, const Recti& SrcRect, const std::string& Name ) {
+SubTexture * TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const std::string& Name ) {
 	return add( eeNew( SubTexture, ( TexId, SrcRect, Name ) ) );
 }
 
-SubTexture * TextureAtlas::add( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const std::string& Name ) {
+SubTexture * TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& Name ) {
 	return add( eeNew ( SubTexture, ( TexId, SrcRect, DestSize, Name ) ) );
 }
 
-SubTexture * TextureAtlas::add( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const Vector2i& Offset, const std::string& Name ) {
+SubTexture * TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i& Offset, const std::string& Name ) {
 	return add( eeNew ( SubTexture, ( TexId, SrcRect, DestSize, Offset, Name ) ) );
 }
 

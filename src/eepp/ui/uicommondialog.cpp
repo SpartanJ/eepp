@@ -45,12 +45,12 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern
 	}
 
 	UILinearLayout * linearLayout = UILinearLayout::NewVertical();
-	linearLayout->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT )->setLayoutMargin( Recti( 4, 2, 4, 2 ) )->setParent( getContainer() );
+	linearLayout->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT )->setLayoutMargin( Rect( 4, 2, 4, 2 ) )->setParent( getContainer() );
 
 	UILinearLayout * hLayout = UILinearLayout::NewHorizontal();
-	hLayout->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutMargin( Recti(0,0,0,4) )->setParent( linearLayout );
+	hLayout->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutMargin( Rect(0,0,0,4) )->setParent( linearLayout );
 
-	UITextView::New()->setText( "Look in:" )->setLayoutSizeRules( WRAP_CONTENT, MATCH_PARENT )->setLayoutMargin( Recti( 0, 0, 4, 0 ) )
+	UITextView::New()->setText( "Look in:" )->setLayoutSizeRules( WRAP_CONTENT, MATCH_PARENT )->setLayoutMargin( Rect( 0, 0, 4, 0 ) )
 			->setParent( hLayout )->setEnabled( false );
 
 	mPath = UITextInput::New();
@@ -62,16 +62,16 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern
 
 	mList = UIListBox::New();
 	mList->setParent( linearLayout );
-	mList->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutWeight( 1 )->setLayoutMargin( Recti(0,0,0,4) );
+	mList->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutWeight( 1 )->setLayoutMargin( Rect(0,0,0,4) );
 
 	hLayout = UILinearLayout::NewHorizontal();
-	hLayout->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutMargin( Recti(0,0,0,4) )->setParent( linearLayout );
+	hLayout->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutMargin( Rect(0,0,0,4) )->setParent( linearLayout );
 
 	UITextView::New()->setText( "File Name:" )->setLayoutSizeRules( FIXED, MATCH_PARENT )->setSize(74,0)->setParent( hLayout )->setEnabled( false );
 
 	mFile = UITextInput::New();
 	mFile->setLayoutSizeRules( WRAP_CONTENT, MATCH_PARENT )->setLayoutWeight( 1 )->setParent( hLayout );
-	mFile->setLayoutMargin( Recti( 0, 0, 4, 0 ) );
+	mFile->setLayoutMargin( Rect( 0, 0, 4, 0 ) );
 	mFile->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UICommonDialog::onPressFileEnter ) );
 
 	mButtonOpen = UIPushButton::New();
@@ -87,7 +87,7 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern
 	mFiletype->setPopUpToMainControl( true );
 	mFiletype->getListBox()->addListBoxItem( DefaultFilePattern );
 	mFiletype->getListBox()->setSelected(0);
-	mFiletype->setLayoutMargin( Recti( 0, 0, 4, 0 ) );
+	mFiletype->setLayoutMargin( Rect( 0, 0, 4, 0 ) );
 
 	mButtonCancel = UIPushButton::New();
 	mButtonCancel->setText( "Cancel" )->setLayoutSizeRules( FIXED, WRAP_CONTENT )->setSize(80,0)->setParent( hLayout );

@@ -58,7 +58,7 @@ class EE_API UIMenu : public UIWidget {
 
 		virtual bool hide();
 
-		const Recti& getPadding() const;
+		const Rect& getPadding() const;
 
 		Uint32 getMinRightMargin() const;
 

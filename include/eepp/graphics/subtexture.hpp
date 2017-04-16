@@ -25,7 +25,7 @@ class EE_API SubTexture : public Drawable {
 		*	@param SrcRect The texture part that will be used as the SubTexture.
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture( const Uint32& TexId, const Recti& srcRect, const std::string& getName = "" );
+		SubTexture( const Uint32& TexId, const Rect& srcRect, const std::string& getName = "" );
 
 		/** Creates a SubTexture of the indicated part of the texture.
 		*	@param TexId The texture id
@@ -33,7 +33,7 @@ class EE_API SubTexture : public Drawable {
 		*	@param DestSize The destination size that the SubTexture will have when rendered.
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture( const Uint32& TexId, const Recti& srcRect, const Sizef& destSize, const std::string& getName = "" );
+		SubTexture( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const std::string& getName = "" );
 
 		/** Creates a SubTexture of the indicated part of the texture.
 		*	@param TexId The texture id
@@ -42,7 +42,7 @@ class EE_API SubTexture : public Drawable {
 		*	@param Offset The offset that will be added to the position passed when any Draw call is used.
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture( const Uint32& TexId, const Recti& srcRect, const Sizef& destSize, const Vector2i& offset, const std::string& getName = "" );
+		SubTexture( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const Vector2i& offset, const std::string& getName = "" );
 
 		virtual ~SubTexture();
 
@@ -62,10 +62,10 @@ class EE_API SubTexture : public Drawable {
 		void setTextureId( const Uint32& TexId );
 
 		/** @return The Texture sector that represents the SubTexture */
-		const Recti& getSrcRect() const;
+		const Rect& getSrcRect() const;
 
 		/** Sets the Texture sector that represents the SubTexture */
-		void setSrcRect( const Recti& Rect );
+		void setSrcRect( const Rect& rect );
 
 		/** @return The Destination Size of the SubTexture. */
 		const Sizef& getDestSize() const;
@@ -169,7 +169,7 @@ class EE_API SubTexture : public Drawable {
 		Uint32		mId;
 		Uint32 		mTexId;
 		Graphics::Texture * 	mTexture;
-		Recti		mSrcRect;
+		Rect		mSrcRect;
 		Sizef		mOriDestSize;
 		Sizef		mDestSize;
 		Vector2i	mOffset;

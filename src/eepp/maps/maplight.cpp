@@ -133,15 +133,15 @@ void MapLight::move( const Float& addtox, const Float& addtoy ) {
 	updatePos( mPos.x + addtox, mPos.y + addtoy );
 }
 
-eeAABB MapLight::getAABB() const {
+Rectf MapLight::getAABB() const {
 	return mAABB;
 }
 
 void MapLight::updateAABB() {
 	if ( mType == LIGHT_NORMAL )
-		mAABB = eeAABB( mPos.x - mRadius, mPos.y - mRadius, mPos.x + mRadius, mPos.y + mRadius );
+		mAABB = Rectf( mPos.x - mRadius, mPos.y - mRadius, mPos.x + mRadius, mPos.y + mRadius );
 	else
-		mAABB = eeAABB( mPos.x - mRadius, mPos.y - mRadius * 0.5f, mPos.x + mRadius, mPos.y + mRadius * 0.5f );
+		mAABB = Rectf( mPos.x - mRadius, mPos.y - mRadius * 0.5f, mPos.x + mRadius, mPos.y + mRadius * 0.5f );
 }
 
 const Float& MapLight::getRadius() const {

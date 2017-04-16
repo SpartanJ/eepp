@@ -39,6 +39,8 @@ class EE_API UIScrollView : public UITouchDragableWidget {
 		UIScrollBar * getHorizontalScrollBar() const;
 
 		UIControlAnim * getContainer() const;
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		ScrollViewType mViewType;
 		UI_SCROLLBAR_MODE mVScrollMode;

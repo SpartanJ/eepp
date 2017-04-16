@@ -95,11 +95,11 @@ void UISpinBox::adjustChilds() {
 	mPushDown->setPosition( mSize.getWidth() - mPushDown->getSize().getWidth(), mInput->getPosition().y + mPushUp->getSize().getHeight() );
 }
 
-void UISpinBox::setPadding( const Recti& padding ) {
+void UISpinBox::setPadding( const Rect& padding ) {
 	mInput->setPadding( padding );
 }
 
-const Recti& UISpinBox::getPadding() const {
+const Rect& UISpinBox::getPadding() const {
 	return mInput->getPadding();
 }
 

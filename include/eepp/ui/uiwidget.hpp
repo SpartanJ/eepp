@@ -48,9 +48,9 @@ class EE_API UIWidget : public UIControlAnim {
 
 		void updateAnchorsDistances();
 
-		Recti getLayoutMargin() const;
+		Rect getLayoutMargin() const;
 
-		UIWidget * setLayoutMargin(const Recti & margin);
+		UIWidget * setLayoutMargin(const Rect & margin);
 
 		Float getLayoutWeight() const;
 
@@ -79,14 +79,13 @@ class EE_API UIWidget : public UIControlAnim {
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		friend class UIManager;
-		friend class UILinearLayout;
 
 		UITheme *	mTheme;
 		UITooltip *	mTooltip;
 		Sizei		mMinControlSize;
-		Recti		mDistToBorder;
-		Recti		mLayoutMargin;
-		Recti		mRealMargin;
+		Rect		mDistToBorder;
+		Rect		mLayoutMargin;
+		Rect		mRealMargin;
 		Float		mLayoutWeight;
 		Uint32		mLayoutGravity;
 		LayoutSizeRules mLayoutWidthRules;

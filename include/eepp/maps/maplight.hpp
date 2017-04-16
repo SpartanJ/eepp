@@ -35,7 +35,7 @@ class EE_API MapLight {
 
 		void updatePos( const Vector2f& newPos );
 
-		eeAABB getAABB() const;
+		Rectf getAABB() const;
 
 		const Float& getRadius() const;
 
@@ -61,7 +61,7 @@ class EE_API MapLight {
 		Vector2f	mPos;
 		RGB		mColor;
 		LIGHT_TYPE	mType;
-		eeAABB		mAABB;
+		Rectf		mAABB;
 		bool		mActive;
 
 		void updateAABB();

@@ -115,7 +115,7 @@ void UILinearLayout::packVertical() {
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->isWidget() ) {
 			UIWidget * widget = static_cast<UIWidget*>( ChildLoop );
-			Recti margin = widget->getLayoutMargin();
+			Rect margin = widget->getLayoutMargin();
 
 			curY += margin.Top;
 
@@ -216,7 +216,7 @@ void UILinearLayout::packHorizontal() {
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
 			UIWidget * widget = static_cast<UIWidget*>( ChildLoop );
-			Recti margin = widget->getLayoutMargin();
+			Rect margin = widget->getLayoutMargin();
 
 			curX += margin.Left;
 
@@ -275,7 +275,7 @@ Sizei UILinearLayout::getTotalUsedSize() {
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->isWidget() ) {
 			UIWidget * widget = static_cast<UIWidget*>( ChildLoop );
-			Recti margin = widget->getLayoutMargin();
+			Rect margin = widget->getLayoutMargin();
 
 			size.x += margin.Left + margin.Right;
 

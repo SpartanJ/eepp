@@ -84,7 +84,7 @@ class EE_API ScrollParallax {
 		Vector2f			mPos;
 		Vector2f			mSpeed;
 		Sizef				mSize;
-		Recti				mRect;
+		Rect				mRect;
 		Clock				mElapsed;
 		Vector2i			mTiles;
 		Rectf				mAABB;

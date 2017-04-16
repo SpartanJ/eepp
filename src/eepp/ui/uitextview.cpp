@@ -462,11 +462,11 @@ void UITextView::setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig
 	setOutlineColor( mFontStyleConfig.getOutlineColor() );
 }
 
-const Recti& UITextView::getPadding() const {
+const Rect& UITextView::getPadding() const {
 	return mPadding;
 }
 
-UITextView * UITextView::setPadding(const Recti & padding) {
+UITextView * UITextView::setPadding(const Rect & padding) {
 	if ( padding != mPadding ) {
 		mPadding = padding;
 		mRealPadding = PixelDensity::dpToPxI( mPadding );
@@ -536,15 +536,15 @@ void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
 			setOutlineColor( Color::fromString( ait->as_string() ) );
 		} else if ( "padding" == name ) {
 			int val = PixelDensity::toDpFromStringI( ait->as_string() );
-			setPadding( Recti( val, val, val, val ) );
+			setPadding( Rect( val, val, val, val ) );
 		} else if ( "paddingleft" == name ) {
-			setPadding( Recti( PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
+			setPadding( Rect( PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
 		} else if ( "paddingright" == name ) {
-			setPadding( Recti( mPadding.Left, mPadding.Top, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Bottom ) );
+			setPadding( Rect( mPadding.Left, mPadding.Top, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Bottom ) );
 		} else if ( "paddingtop" == name ) {
-			setPadding( Recti( mPadding.Left, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Right, mPadding.Bottom ) );
+			setPadding( Rect( mPadding.Left, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Right, mPadding.Bottom ) );
 		} else if ( "paddingbottom" == name ) {
-			setPadding( Recti( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
+			setPadding( Rect( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
 		}
 	}
 }

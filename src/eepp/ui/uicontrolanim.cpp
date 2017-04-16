@@ -421,7 +421,7 @@ Color UIControlAnim::getColor( const Color& Col ) {
 }
 
 void UIControlAnim::updateQuad() {
-	mPoly		= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mRealSize.getWidth(), mScreenPosf.y + mRealSize.getHeight() ) );
+	mPoly		= Polygon2f( Rectf( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mRealSize.getWidth(), mScreenPosf.y + mRealSize.getHeight() ) );
 
 	mPoly.rotate( mAngle, getRotationCenter() );
 	mPoly.scale( mScale, getScaleCenter() );

@@ -373,7 +373,7 @@ void UIMap::mapDraw() {
 			mP.setColor( Color( 255, 0, 0, (Uint8)mAlpha ) );
 
 			Vector2f Pos( mSelLight->getAABB().Left, mSelLight->getAABB().Top );
-			eeAABB AB( mSelLight->getAABB() );
+			Rectf AB( mSelLight->getAABB() );
 
 			mP.setFillMode( DRAW_LINE );
 			mP.drawRectangle( Rectf( Pos, AB.getSize() ) );

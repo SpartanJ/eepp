@@ -13,7 +13,7 @@ class EE_API Glyph {
 
 		Float advance;     ///< Offset to move horizontally to the next character
 		Rectf bounds;      ///< Bounding rectangle of the glyph, in coordinates relative to the baseline
-		Recti textureRect; ///< Texture coordinates of the glyph inside the font's texture
+		Rect textureRect; ///< Texture coordinates of the glyph inside the font's texture
 };
 
 /** @brief Font interface class. */

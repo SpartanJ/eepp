@@ -532,7 +532,7 @@ Glyph FontTrueType::loadGlyph(Uint32 codePoint, unsigned int characterSize, bool
 	return glyph;
 }
 
-Recti FontTrueType::findGlyphRect(Page& page, unsigned int width, unsigned int height) const {
+Rect FontTrueType::findGlyphRect(Page& page, unsigned int width, unsigned int height) const {
 	// Find the line that fits well the glyph
 	Row* row = NULL;
 	Float bestRatio = 0;
@@ -577,7 +577,7 @@ Recti FontTrueType::findGlyphRect(Page& page, unsigned int width, unsigned int h
 			} else {
 				// Oops, we've reached the maximum texture size...
 				eePRINTL( "Failed to add a new character to the font: the maximum texture size has been reached" );
-				return Recti(0, 0, 2, 2);
+				return Rect(0, 0, 2, 2);
 			}
 		}
 
@@ -588,7 +588,7 @@ Recti FontTrueType::findGlyphRect(Page& page, unsigned int width, unsigned int h
 	}
 
 	// Find the glyph's rectangle on the selected row
-	Recti rect(row->width, row->top, width, height);
+	Rect rect(row->width, row->top, width, height);
 
 	// Update the row informations
 	row->width += width;

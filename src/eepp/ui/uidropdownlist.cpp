@@ -127,7 +127,7 @@ void UIDropDownList::showList() {
 		mListBox->setPosition( Pos );
 
 		if ( mListBox->getCount() ) {
-			Recti tPadding = mListBox->getContainerPadding();
+			Rect tPadding = mListBox->getContainerPadding();
 
 			Float sliderValue = mListBox->getVerticalScrollBar()->getValue();
 
@@ -140,7 +140,7 @@ void UIDropDownList::showList() {
 			mListBox->updateQuad();
 
 			Rectf aabb( mListBox->getPolygon().toAABB() );
-			Recti aabbi( aabb.Left, aabb.Top, aabb.Right, aabb.Bottom );
+			Rect aabbi( aabb.Left, aabb.Top, aabb.Right, aabb.Bottom );
 
 			if ( !UIManager::instance()->getMainControl()->getScreenRect().contains( aabbi ) ) {
 				Pos = Vector2i( mPos.x, mPos.y );

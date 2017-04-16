@@ -152,7 +152,7 @@ class UIMenuStyleConfig : public UIFontStyleConfig {
 			UIFontStyleConfig( fontStyleConfig )
 		{}
 
-		Recti				Padding = Recti(0, 0, 0, 0);
+		Rect				Padding = Rect(0, 0, 0, 0);
 		Uint32				MinWidth = 0;
 		Uint32				MinSpaceForIcons = 0;
 		Uint32				MinRightMargin = 0;
@@ -188,7 +188,7 @@ class UITooltipStyleConfig : public UIFontStyleConfig {
 			UIFontStyleConfig( fontStyleConfig )
 		{}
 
-		Recti		Padding;
+		Rect		Padding;
 };
 
 class UIScaleType {

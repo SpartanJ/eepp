@@ -371,7 +371,7 @@ class EE_API Window {
 		*
 		* @sa startTextInput()
 		*/
-		virtual void setTextInputRect( Recti& rect );
+		virtual void setTextInputRect( Rect& rect );
 
 		/**
 		* @brief Returns whether the platform has some screen keyboard support.

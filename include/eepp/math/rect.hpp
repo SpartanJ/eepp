@@ -19,21 +19,21 @@ class tRECT {
 
 		tRECT<T> copy();
 
-		bool intersect( const tRECT<T>& Rect );
+		bool intersect( const tRECT<T>& rect );
 
-		bool contains( const tRECT<T>& Rect );
+		bool contains( const tRECT<T>& rect );
 
 		bool contains( const Vector2<T>& Vect );
 
-		void expand( const tRECT<T>& Rect );
+		void expand( const tRECT<T>& rect );
 
-		void shrink( const tRECT<T>& Rect );
+		void shrink( const tRECT<T>& rect );
 
 		void expand( const Vector2<T>& Vect );
 
 		T area();
 
-		T mergedArea( const tRECT<T>& Rect );
+		T mergedArea( const tRECT<T>& rect );
 
 		bool intersectsSegment( const Vector2<T>& a, const Vector2<T>& b );
 
@@ -176,13 +176,13 @@ template <typename T>
 tRECT<T>::tRECT() : Left(0), Right(0), Top(0), Bottom(0) {}
 
 template <typename T>
-bool tRECT<T>::contains( const tRECT<T>& Rect ) {
-	return ( Left <= Rect.Left && Right >= Rect.Right && Top <= Rect.Top && Bottom >= Rect.Bottom );
+bool tRECT<T>::contains( const tRECT<T>& rect ) {
+	return ( Left <= rect.Left && Right >= rect.Right && Top <= rect.Top && Bottom >= rect.Bottom );
 }
 
 template <typename T>
-bool tRECT<T>::intersect( const tRECT<T>& Rect ) {
-	return !( Left > Rect.Right || Right < Rect.Left || Top > Rect.Bottom || Bottom < Rect.Top );
+bool tRECT<T>::intersect( const tRECT<T>& rect ) {
+	return !( Left > rect.Right || Right < rect.Left || Top > rect.Bottom || Bottom < rect.Top );
 }
 
 template <typename T>
@@ -216,19 +216,19 @@ T tRECT<T>::getHeight() {
 }
 
 template <typename T>
-void tRECT<T>::expand( const tRECT<T>& Rect ) {
-	Left	= eemin( Left	, Rect.Left		);
-	Bottom	= eemax( Bottom	, Rect.Bottom	);
-	Right	= eemax( Right	, Rect.Right	);
-	Top		= eemin( Top	, Rect.Top		);
+void tRECT<T>::expand( const tRECT<T>& rect ) {
+	Left	= eemin( Left	, rect.Left		);
+	Bottom	= eemax( Bottom	, rect.Bottom	);
+	Right	= eemax( Right	, rect.Right	);
+	Top		= eemin( Top	, rect.Top		);
 }
 
 template <typename T>
-void tRECT<T>::shrink( const tRECT<T>& Rect ) {
-	Left	= eemax( Left	, Rect.Left		);
-	Top		= eemax( Top	, Rect.Top		);
-	Right	= eemax( Left, eemin( Right	, Rect.Right ) );
-	Bottom	= eemax( Top, eemin( Bottom	, Rect.Bottom ) );
+void tRECT<T>::shrink( const tRECT<T>& rect ) {
+	Left	= eemax( Left	, rect.Left		);
+	Top		= eemax( Top	, rect.Top		);
+	Right	= eemax( Left, eemin( Right	, rect.Right ) );
+	Bottom	= eemax( Top, eemin( Bottom	, rect.Bottom ) );
 }
 
 template <typename T>
@@ -245,8 +245,8 @@ T tRECT<T>::area() {
 }
 
 template <typename T>
-T tRECT<T>::mergedArea( const tRECT<T>& Rect ) {
-	return ( eemax( Right, Rect.Right ) - eemin( Left, Rect.Left ) ) * ( eemin( Bottom, Rect.Bottom ) - eemax( Top, Rect.Top ) );
+T tRECT<T>::mergedArea( const tRECT<T>& rect ) {
+	return ( eemax( Right, rect.Right ) - eemin( Left, rect.Left ) ) * ( eemin( Bottom, rect.Bottom ) - eemax( Top, rect.Top ) );
 }
 
 template <typename T>
@@ -341,9 +341,7 @@ void tRECT<T>::scale( Vector2<T> scale ) {
 
 typedef tRECT<unsigned int>	Rectu;
 typedef tRECT<Float>		Rectf;
-typedef tRECT<Float>		eeAABB; // Axis-Aligned Bounding Box
-typedef tRECT<int>			Recti;
-typedef tRECT<Int32>		Rect;
+typedef tRECT<int>			Rect;
 
 }}
 

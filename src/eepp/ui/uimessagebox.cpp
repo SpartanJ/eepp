@@ -22,7 +22,7 @@ UIMessageBox::UIMessageBox( UI_MSGBOX_TYPE type , String message ) :
 
 	UILinearLayout * vlay = UILinearLayout::NewVertical();
 	vlay->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )
-		->setLayoutMargin( Recti( 8, 8, 8, 8) )->setParent( rlay );
+		->setLayoutMargin( Rect( 8, 8, 8, 8) )->setParent( rlay );
 
 	mTextBox = UITextView::New();
 	mTextBox->setText( message )
@@ -30,7 +30,7 @@ UIMessageBox::UIMessageBox( UI_MSGBOX_TYPE type , String message ) :
 			->setParent( vlay );
 
 	UILinearLayout * hlay = UILinearLayout::NewHorizontal();
-	hlay->setLayoutMargin( Recti( 0, 8, 0, 0 ) )
+	hlay->setLayoutMargin( Rect( 0, 8, 0, 0 ) )
 		->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )
 		->setLayoutGravity( UI_HALIGN_RIGHT | UI_VALIGN_CENTER )
 		->setParent( vlay );
@@ -39,7 +39,7 @@ UIMessageBox::UIMessageBox( UI_MSGBOX_TYPE type , String message ) :
 	mButtonOK->setSize( 90, 0 )->setParent( hlay );
 
 	mButtonCancel = UIPushButton::New();
-	mButtonCancel->setLayoutMargin( Recti( 8, 0, 0, 0 ) )->setSize( 90, 0 )->setParent( hlay );
+	mButtonCancel->setLayoutMargin( Rect( 8, 0, 0, 0 ) )->setSize( 90, 0 )->setParent( hlay );
 
 	switch ( mMsgBoxType ) {
 		case MSGBOX_OKCANCEL:

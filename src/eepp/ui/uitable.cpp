@@ -593,11 +593,11 @@ UITable * UITable::setSmoothScroll(bool smoothScroll) {
 	return this;
 }
 
-Recti UITable::getContainerPadding() const {
+Rect UITable::getContainerPadding() const {
 	return mContainerPadding;
 }
 
-void UITable::setContainerPadding(const Recti & containerPadding) {
+void UITable::setContainerPadding(const Rect & containerPadding) {
 	if ( containerPadding != mContainerPadding ) {
 		mContainerPadding = containerPadding;
 		containerResize();

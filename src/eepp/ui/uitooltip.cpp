@@ -60,7 +60,7 @@ void UITooltip::setTheme( UITheme * Theme ) {
 }
 
 void UITooltip::autoPadding() {
-	if ( ( mFlags & UI_AUTO_PADDING ) && mStyleConfig.Padding == Recti() ) {
+	if ( ( mFlags & UI_AUTO_PADDING ) && mStyleConfig.Padding == Rect() ) {
 		setPadding( makePadding( true, true, true, true ) );
 	}
 }
@@ -208,12 +208,12 @@ void UITooltip::onFontChanged() {
 	sendCommonEvent( UIEvent::EventOnFontChanged );
 }
 
-void UITooltip::setPadding( const Recti& padding ) {
+void UITooltip::setPadding( const Rect& padding ) {
 	mStyleConfig.Padding = padding;
 	mRealPadding = PixelDensity::dpToPxI( mStyleConfig.Padding );
 }
 
-const Recti& UITooltip::getPadding() const {
+const Rect& UITooltip::getPadding() const {
 	return mStyleConfig.Padding;
 }
 
@@ -264,7 +264,7 @@ UITooltipStyleConfig UITooltip::getStyleConfig() const {
 void UITooltip::setStyleConfig(const UITooltipStyleConfig & styleConfig) {
 	mStyleConfig = styleConfig;
 
-	if ( mStyleConfig.Padding != Recti() )
+	if ( mStyleConfig.Padding != Rect() )
 		setPadding( mStyleConfig.Padding );
 
 	setFont( mStyleConfig.Font );

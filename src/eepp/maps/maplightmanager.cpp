@@ -37,7 +37,7 @@ const bool& MapLightManager::isByVertex() const {
 void MapLightManager::updateByVertex() {
 	Vector2i start	= mMap->getStartTile();
 	Vector2i end		= mMap->getEndTile();
-	eeAABB VisibleArea	= mMap->getViewAreaAABB();
+	Rectf VisibleArea	= mMap->getViewAreaAABB();
 	Sizei TileSize		= mMap->getTileSize();
 	Color BaseColor	= mMap->getBaseColor();
 	bool firstLight		= true;
@@ -61,7 +61,7 @@ void MapLightManager::updateByVertex() {
 					Pos.x = x * TileSize.x;
 					Pos.y = y * TileSize.y;
 
-					eeAABB TileAABB( Pos.x, Pos.y, Pos.x + TileSize.x, Pos.y + TileSize.y );
+					Rectf TileAABB( Pos.x, Pos.y, Pos.x + TileSize.x, Pos.y + TileSize.y );
 
 					if ( TileAABB.intersect( Light->getAABB() ) ) {
 						if ( y > 0 )
@@ -89,7 +89,7 @@ void MapLightManager::updateByVertex() {
 void MapLightManager::updateByTile() {
 	Vector2i start	= mMap->getStartTile();
 	Vector2i end		= mMap->getEndTile();
-	eeAABB VisibleArea	= mMap->getViewAreaAABB();
+	Rectf VisibleArea	= mMap->getViewAreaAABB();
 	Sizei TileSize		= mMap->getTileSize();
 	Sizei HalfTileSize = mMap->getTileSize() / 2;
 	Color BaseColor	= mMap->getBaseColor();
@@ -114,7 +114,7 @@ void MapLightManager::updateByTile() {
 					Pos.x = x * TileSize.x;
 					Pos.y = y * TileSize.y;
 
-					eeAABB TileAABB( Pos.x, Pos.y, Pos.x + TileSize.x, Pos.y + TileSize.y );
+					Rectf TileAABB( Pos.x, Pos.y, Pos.x + TileSize.x, Pos.y + TileSize.y );
 
 					if ( TileAABB.intersect( Light->getAABB() ) ) {
 						mTileColors[x][y][0]->assign( Light->processVertex( Pos.x + HalfTileSize.getWidth(), Pos.y + HalfTileSize.getHeight(), *(mTileColors[x][y][0]), *(mTileColors[x][y][0]) ) );

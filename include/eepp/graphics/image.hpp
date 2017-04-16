@@ -157,7 +157,7 @@ class EE_API Image {
 		Graphics::Image * thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
 
 		/** Creates a cropped image from the current image */
-		Graphics::Image * crop( Recti rect );
+		Graphics::Image * crop( Rect rect );
 
 		/** Set as true if you dont want to free the image data in the Image destruction ( false as default ). */
 		void avoidFreeImage( const bool& AvoidFree );

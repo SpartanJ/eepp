@@ -1,5 +1,6 @@
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -196,6 +197,37 @@ void UIScrollView::onTouchDragValueChange( Vector2f diff ) {
 bool UIScrollView::isTouchOverAllowedChilds() {
 	bool ret = mViewType == Exclusive ? !mVScroll->isMouseOverMeOrChilds() && !mHScroll->isMouseOverMeOrChilds() : true;
 	return isMouseOverMeOrChilds() && mScrollView->isMouseOver() && ret;
+}
+
+void UIScrollView::loadFromXmlNode( const pugi::xml_node& node ) {
+	UIWidget::loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "type" == name ) {
+			std::string val( ait->as_string() );
+			String::toLowerInPlace( val );
+
+			if ( "inclusive" == val ) setViewType( Inclusive );
+			else if ( "exclusive" == val ) setViewType( Exclusive );
+		} else if ( "vscroll_mode" == name ) {
+			std::string val( ait->as_string() );
+			String::toLowerInPlace( val );
+
+			if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+			else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+			else if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
+		} else if ( "hscroll_mode" == name ) {
+			std::string val( ait->as_string() );
+			String::toLowerInPlace( val );
+
+			if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+			else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+			else if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
+		}
+	}
 }
 
 }}

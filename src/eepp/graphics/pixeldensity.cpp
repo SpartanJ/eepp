@@ -41,11 +41,11 @@ Sizei PixelDensity::pxToDpI( Sizei size ) {
 	return Sizei( pxToDpI( size.x ), pxToDpI( size.y ) );
 }
 
-Recti PixelDensity::dpToPxI( Recti rect ) {
+Rect PixelDensity::dpToPxI( Rect rect ) {
 	return rect * getPixelDensity();
 }
 
-Recti PixelDensity::pxToDpI( Recti rect ) {
+Rect PixelDensity::pxToDpI( Rect rect ) {
 	return rect / getPixelDensity();
 }
 

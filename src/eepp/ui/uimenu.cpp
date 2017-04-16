@@ -508,7 +508,7 @@ Uint32 UIMenu::onKeyDown( const UIEventKey& Event ) {
 	return UIWidget::onKeyDown( Event );
 }
 
-const Recti& UIMenu::getPadding() const {
+const Rect& UIMenu::getPadding() const {
 	return mStyleConfig.Padding;
 }
 
@@ -574,8 +574,8 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 }
 
 void UIMenu::fixMenuPos( Vector2i& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {
-	eeAABB qScreen( 0.f, 0.f, UIManager::instance()->getMainControl()->getRealSize().getWidth(), UIManager::instance()->getMainControl()->getRealSize().getHeight() );
-	eeAABB qPos( Pos.x, Pos.y, Pos.x + Menu->getRealSize().getWidth(), Pos.y + Menu->getRealSize().getHeight() );
+	Rectf qScreen( 0.f, 0.f, UIManager::instance()->getMainControl()->getRealSize().getWidth(), UIManager::instance()->getMainControl()->getRealSize().getHeight() );
+	Rectf qPos( Pos.x, Pos.y, Pos.x + Menu->getRealSize().getWidth(), Pos.y + Menu->getRealSize().getHeight() );
 
 	if ( NULL != Parent && NULL != SubMenu ) {
 		Vector2i addToPos( 0, 0 );
@@ -590,7 +590,7 @@ void UIMenu::fixMenuPos( Vector2i& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSu
 		Vector2i pPos = Parent->getRealPosition();
 		Parent->controlToScreen( pPos );
 
-		eeAABB qParent( pPos.x, pPos.y, pPos.x + Parent->getRealSize().getWidth(), pPos.y + Parent->getRealSize().getHeight() );
+		Rectf qParent( pPos.x, pPos.y, pPos.x + Parent->getRealSize().getWidth(), pPos.y + Parent->getRealSize().getHeight() );
 
 		Pos.x		= qParent.Right;
 		Pos.y		= sPos.y;

@@ -734,7 +734,7 @@ Graphics::Font * UIListBox::getFont() const {
 	return mFontStyleConfig.Font;
 }
 
-void UIListBox::setContainerPadding( const Recti& Padding ) {
+void UIListBox::setContainerPadding( const Rect& Padding ) {
 	if ( Padding != mContainerPadding ) {
 		mContainerPadding = Padding;
 
@@ -743,7 +743,7 @@ void UIListBox::setContainerPadding( const Recti& Padding ) {
 	}
 }
 
-const Recti& UIListBox::getContainerPadding() const {
+const Rect& UIListBox::getContainerPadding() const {
 	return mContainerPadding;
 }
 
@@ -1009,15 +1009,15 @@ void UIListBox::loadFromXmlNode(const pugi::xml_node & node) {
 				setFont( font );
 		} else if ( "padding" == name ) {
 			int val = ait->as_int();
-			setContainerPadding( Recti( val, val, val, val ) );
+			setContainerPadding( Rect( val, val, val, val ) );
 		} else if ( "paddingleft" == name ) {
-			setContainerPadding( Recti( ait->as_int(), mContainerPadding.Top, mContainerPadding.Right, mContainerPadding.Bottom ) );
+			setContainerPadding( Rect( ait->as_int(), mContainerPadding.Top, mContainerPadding.Right, mContainerPadding.Bottom ) );
 		} else if ( "paddingright" == name ) {
-			setContainerPadding( Recti( mContainerPadding.Left, mContainerPadding.Top, ait->as_int(), mContainerPadding.Bottom ) );
+			setContainerPadding( Rect( mContainerPadding.Left, mContainerPadding.Top, ait->as_int(), mContainerPadding.Bottom ) );
 		} else if ( "paddingtop" == name ) {
-			setContainerPadding( Recti( mContainerPadding.Left, ait->as_int(), mContainerPadding.Right, mContainerPadding.Bottom ) );
+			setContainerPadding( Rect( mContainerPadding.Left, ait->as_int(), mContainerPadding.Right, mContainerPadding.Bottom ) );
 		} else if ( "paddingbottom" == name ) {
-			setContainerPadding( Recti( mContainerPadding.Left, mContainerPadding.Top, mContainerPadding.Right, ait->as_int() ) );
+			setContainerPadding( Rect( mContainerPadding.Left, mContainerPadding.Top, mContainerPadding.Right, ait->as_int() ) );
 		} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {
 			std::string val = ait->as_string();
 			if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );

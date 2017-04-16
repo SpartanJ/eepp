@@ -133,7 +133,7 @@ void UIPushButton::onThemeLoaded() {
 		mTextBox->setFont( mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() );
 
 	if ( mControlFlags & UI_CTRL_FLAG_FREE_USE ) {
-		Recti RMargin = makePadding( true, false, false, false, true );
+		Rect RMargin = makePadding( true, false, false, false, true );
 		mStyleConfig.IconHorizontalMargin = RMargin.Left;
 	}
 
@@ -172,11 +172,11 @@ const String& UIPushButton::getText() {
 	return mTextBox->getText();
 }
 
-void UIPushButton::setPadding( const Recti& padding ) {
+void UIPushButton::setPadding( const Rect& padding ) {
 	mTextBox->setPadding( padding );
 }
 
-const Recti& UIPushButton::getPadding() const {
+const Rect& UIPushButton::getPadding() const {
 	return mTextBox->getPadding();
 }
 

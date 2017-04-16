@@ -12,7 +12,7 @@ class EE_API View {
 
 		View( const int& X, const int& Y, const int& Width, const int& Height );
 
-		View( const Recti& View );
+		View( const Rect& View );
 
 		~View();
 
@@ -35,7 +35,7 @@ class EE_API View {
 		void setCenter( const Vector2i& center );
 
 		/** @return The current view ( Left = X, Right = Width, Top = Y, Bottom = Height ) */
-		Recti getView() const { return mView; }
+		Rect getView() const { return mView; }
 
 		/** Set a new position to the view */
 		void setPosition( const int& X, const int& Y );
@@ -49,7 +49,7 @@ class EE_API View {
 		friend class Window;
 
 		bool mNeedUpdate;
-		Recti mView;
+		Rect mView;
 		Vector2f mCenter;
 
 		void calcCenter();

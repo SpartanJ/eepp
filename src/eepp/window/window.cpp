@@ -111,7 +111,7 @@ void Window::setViewport( const Int32& x, const Int32& y, const Uint32& Width, c
 void Window::setView( const View& View ) {
 	mCurrentView = &View;
 
-	Recti RView = mCurrentView->getView();
+	Rect RView = mCurrentView->getView();
 	setViewport( RView.Left, RView.Top, RView.Right, RView.Bottom );
 }
 
@@ -486,7 +486,7 @@ bool Window::isTextInputActive() {
 void Window::stopTextInput() {
 }
 
-void Window::setTextInputRect( Recti& rect ) {
+void Window::setTextInputRect( Rect& rect ) {
 }
 
 bool Window::hasScreenKeyboardSupport()

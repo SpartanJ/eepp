@@ -45,13 +45,13 @@ bool TexturePackerNode::fits( Int32 width, Int32 height, Int32 &edgeCount, const
 	return ret;
 }
 
-void TexturePackerNode::getRect( Recti &r ) const {
-	r = Recti( mX, mY, mX + mWidth - 1, mY + mHeight - 1 );
+void TexturePackerNode::getRect( Rect &r ) const {
+	r = Rect( mX, mY, mX + mWidth - 1, mY + mHeight - 1 );
 }
 
 void TexturePackerNode::validate( TexturePackerNode * n ) {
-	Recti r1;
-	Recti r2;
+	Rect r1;
+	Rect r2;
 	getRect( r1 );
 	n->getRect( r2 );
 	eeASSERT( !r1.intersect(r2) );
@@ -60,8 +60,8 @@ void TexturePackerNode::validate( TexturePackerNode * n ) {
 bool TexturePackerNode::merge( const TexturePackerNode& n ) {
 	bool ret = false;
 
-	Recti r1;
-	Recti r2;
+	Rect r1;
+	Rect r2;
 
 	getRect( r1 );
 	n.getRect( r2 );

@@ -108,7 +108,7 @@ GameObject * MapObjectLayer::getObjectOver( const Vector2i& pos, SEARCH_TYPE typ
 				tPos = tObj->getPosition();
 				tSize = tObj->getSize();
 
-				Recti objR( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y );
+				Rect objR( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y );
 
 				if ( objR.contains( pos ) )
 					return tObj;
@@ -123,7 +123,7 @@ GameObject * MapObjectLayer::getObjectOver( const Vector2i& pos, SEARCH_TYPE typ
 				tPos = tObj->getPosition();
 				tSize = tObj->getSize();
 
-				Recti objR( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y );
+				Rect objR( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y );
 
 				if ( objR.contains( pos ) )
 					return tObj;

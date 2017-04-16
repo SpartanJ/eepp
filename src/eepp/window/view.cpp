@@ -15,7 +15,7 @@ View::View( const int& X, const int& Y, const int& Width, const int& Height ) : 
 	setView( X, Y, Width, Height );
 }
 
-View::View( const Recti& View ) : mNeedUpdate(true) {
+View::View( const Rect& View ) : mNeedUpdate(true) {
 	mView = View;
 
 	calcCenter();

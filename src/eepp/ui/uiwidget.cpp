@@ -39,15 +39,15 @@ bool UIWidget::isType( const Uint32& type ) const {
 
 void UIWidget::updateAnchorsDistances() {
 	if ( NULL != mParentCtrl ) {
-		mDistToBorder	= Recti( mRealPos.x, mRealPos.y, mParentCtrl->getRealSize().x - ( mRealPos.x + mRealSize.x ), mParentCtrl->getRealSize().y - ( mRealPos.y + mRealSize.y ) );
+		mDistToBorder	= Rect( mRealPos.x, mRealPos.y, mParentCtrl->getRealSize().x - ( mRealPos.x + mRealSize.x ), mParentCtrl->getRealSize().y - ( mRealPos.y + mRealSize.y ) );
 	}
 }
 
-Recti UIWidget::getLayoutMargin() const {
+Rect UIWidget::getLayoutMargin() const {
 	return mLayoutMargin;
 }
 
-UIWidget * UIWidget::setLayoutMargin(const Recti & margin) {
+UIWidget * UIWidget::setLayoutMargin(const Rect & margin) {
 	mLayoutMargin = margin;
 	mRealMargin = PixelDensity::dpToPxI( margin );
 	notifyLayoutAttrChange();
@@ -441,15 +441,15 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			}
 		} else if ( "layout_margin" == name ) {
 			int val = PixelDensity::toDpFromStringI( ait->as_string() );
-			setLayoutMargin( Recti( val, val, val, val ) );
+			setLayoutMargin( Rect( val, val, val, val ) );
 		} else if ( "layout_marginleft" == name ) {
-			setLayoutMargin( Recti( PixelDensity::toDpFromStringI( ait->as_string() ), mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) );
+			setLayoutMargin( Rect( PixelDensity::toDpFromStringI( ait->as_string() ), mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) );
 		} else if ( "layout_marginright" == name ) {
-			setLayoutMargin( Recti( mLayoutMargin.Left, mLayoutMargin.Top, PixelDensity::toDpFromStringI( ait->as_string() ), mLayoutMargin.Bottom ) );
+			setLayoutMargin( Rect( mLayoutMargin.Left, mLayoutMargin.Top, PixelDensity::toDpFromStringI( ait->as_string() ), mLayoutMargin.Bottom ) );
 		} else if ( "layout_margintop" == name ) {
-			setLayoutMargin( Recti( mLayoutMargin.Left, PixelDensity::toDpFromStringI( ait->as_string() ), mLayoutMargin.Right, mLayoutMargin.Bottom ) );
+			setLayoutMargin( Rect( mLayoutMargin.Left, PixelDensity::toDpFromStringI( ait->as_string() ), mLayoutMargin.Right, mLayoutMargin.Bottom ) );
 		} else if ( "layout_marginbottom" == name ) {
-			setLayoutMargin( Recti( mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
+			setLayoutMargin( Rect( mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
 		} else if ( "tooltip" == name ) {
 			setTooltipText( ait->as_string() );
 		} else if ( "layout_weight" == name ) {

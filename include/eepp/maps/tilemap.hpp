@@ -172,7 +172,7 @@ class EE_API TileMap {
 
 		const Color& getBaseColor() const;
 
-		const eeAABB& getViewAreaAABB() const;
+		const Rectf& getViewAreaAABB() const;
 
 		MapLightManager * getLightManager() const;
 
@@ -265,7 +265,7 @@ class EE_API TileMap {
 		GOTypesList		mObjTypes;
 		CreateGOCb		mCreateGOCb;
 		Texture *		mTileTex;
-		eeAABB			mScreenAABB;
+		Rectf			mScreenAABB;
 		MapLightManager *	mLightManager;
 		MapDrawCb		mDrawCb;
 		MapUpdateCb		mUpdateCb;

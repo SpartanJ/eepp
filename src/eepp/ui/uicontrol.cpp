@@ -211,8 +211,8 @@ void UIControl::setInternalPixelsHeight( const Int32& height ) {
 	setInternalPixelsSize( Sizei( mRealSize.x, height ) );
 }
 
-Recti UIControl::getRect() const {
-	return Recti( mPos, mSize );
+Rect UIControl::getRect() const {
+	return Rect( mPos, mSize );
 }
 
 const Sizei& UIControl::getSize() {
@@ -1142,7 +1142,7 @@ const Vector2f& UIControl::getPolygonCenter() const {
 }
 
 void UIControl::updateQuad() {
-	mPoly 	= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mRealSize.getWidth(), mScreenPosf.y + mRealSize.getHeight() ) );
+	mPoly 	= Polygon2f( Rectf( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mRealSize.getWidth(), mScreenPosf.y + mRealSize.getHeight() ) );
 
 	UIControl * tParent = getParent();
 
@@ -1376,12 +1376,12 @@ void UIControl::applyDefaultTheme() {
 	UIThemeManager::instance()->applyDefaultTheme( this );
 }
 
-Recti UIControl::getScreenRect() {
-	return Recti( mScreenPos, mRealSize );
+Rect UIControl::getScreenRect() {
+	return Rect( mScreenPos, mRealSize );
 }
 
-Recti UIControl::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom, bool SkipFlags ) {
-	Recti tPadding( 0, 0, 0, 0 );
+Rect UIControl::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom, bool SkipFlags ) {
+	Rect tPadding( 0, 0, 0, 0 );
 
 	if ( mFlags & UI_AUTO_PADDING || SkipFlags ) {
 		if ( NULL != mSkinState && NULL != mSkinState->getSkin() ) {

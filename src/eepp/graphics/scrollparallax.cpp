@@ -106,7 +106,7 @@ void ScrollParallax::draw() {
 
 		for ( Int32 y = -1; y < mTiles.y; y++ ) {
 			for ( Int32 x = -1; x < mTiles.x; x++ ) {
-				Recti Rect 	= mRect;
+				Rect Rect 	= mRect;
 				Rectf AABB( Pos.x, Pos.y, Pos.x + mRealSize.getWidth(), Pos.y + mRealSize.getHeight() );
 
 				if ( AABB.intersect( mAABB ) ) {

@@ -275,7 +275,7 @@ Vector2f Input::getMousePosf() {
 
 Vector2i Input::getMousePosFromView( const View& View ) {
 	Vector2i RealMousePos = getMousePos();
-	Recti RView = View.getView();
+	Rect RView = View.getView();
 	return Vector2i( RealMousePos.x - RView.Left, RealMousePos.y - RView.Top );
 }
 

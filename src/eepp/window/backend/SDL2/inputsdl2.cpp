@@ -331,7 +331,7 @@ void InputSDL::init() {
 	
 	Vector2i mTempMouse;
 	Vector2i mTempWinPos;
-	Recti mBordersSize;
+	Rect mBordersSize;
 
 	SDL_GetGlobalMouseState( &mTempMouse.x, &mTempMouse.y );
 	SDL_GetWindowPosition( sdlw, &mTempWinPos.x, &mTempWinPos.y );

@@ -75,14 +75,14 @@ class EE_API UITable : public UITouchDragableWidget {
 
 		UITable * setSmoothScroll(bool smoothScroll);
 
-		Recti getContainerPadding() const;
+		Rect getContainerPadding() const;
 
-		void setContainerPadding( const Recti & containerPadding);
+		void setContainerPadding( const Rect & containerPadding);
 	protected:
 		friend class UIItemContainer<UITable>;
 		friend class UITableCell;
 
-		Recti						mContainerPadding;
+		Rect						mContainerPadding;
 		UIItemContainer<UITable> *	mContainer;
 		UIScrollBar *				mVScrollBar;
 		UIScrollBar *				mHScrollBar;

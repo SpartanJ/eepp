@@ -110,7 +110,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		for ( Int32 my = 0; my < 4; my++ ) {
 			for( Int32 mx = 0; mx < 8; mx++ ) {
 				// DestSize as 0,0 will use the SubTexture size
-				Rock.addFrame( RockId, Sizef( 0, 0 ), Vector2i( 0, 0 ), Recti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
+				Rock.addFrame( RockId, Sizef( 0, 0 ), Vector2i( 0, 0 ), Rect( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 			}
 		}
 

@@ -228,7 +228,7 @@ void TextureAtlasLoader::createSubTextures() {
 					if ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_REMOVE_EXTENSION )
 						SubTextureName = FileSystem::fileRemoveExtension( SubTextureName );
 
-					Recti tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
+					Rect tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
 
 					SubTexture * tSubTexture = eeNew( SubTexture, ( tTex->getId(), tRect, Sizef( (Float)tSh->DestWidth, (Float)tSh->DestHeight ), Vector2i( tSh->OffsetX, tSh->OffsetY ), SubTextureName ) );
 

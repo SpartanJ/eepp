@@ -55,9 +55,9 @@ class EE_API PixelDensity {
 
 		static Sizei pxToDpI( Sizei size );
 
-		static Recti dpToPxI( Recti size);
+		static Rect dpToPxI( Rect size);
 
-		static Recti pxToDpI( Recti size );
+		static Rect pxToDpI( Rect size );
 
 		static Rectf dpToPx( Rectf size);
 

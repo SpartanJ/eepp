@@ -67,7 +67,7 @@ class EE_API WindowSDL : public Window {
 
 		void stopTextInput();
 
-		void setTextInputRect( Recti& rect );
+		void setTextInputRect( Rect& rect );
 
 		bool hasScreenKeyboardSupport();
 

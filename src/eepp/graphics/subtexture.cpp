@@ -16,7 +16,7 @@ SubTexture::SubTexture() :
 	mId(0),
 	mTexId(0),
 	mTexture(NULL),
-	mSrcRect( Recti(0,0,0,0) ),
+	mSrcRect( Rect(0,0,0,0) ),
 	mOriDestSize(0,0),
 	mDestSize(0,0),
 	mOffset(0,0),
@@ -33,7 +33,7 @@ SubTexture::SubTexture( const Uint32& TexId, const std::string& Name ) :
 	mId( String::hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
-	mSrcRect( Recti( 0, 0, NULL != mTexture ? mTexture->getImageWidth() : 0, NULL != mTexture ? mTexture->getImageHeight() : 0 ) ),
+	mSrcRect( Rect( 0, 0, NULL != mTexture ? mTexture->getImageWidth() : 0, NULL != mTexture ? mTexture->getImageHeight() : 0 ) ),
 	mOriDestSize( (Float)mSrcRect.getSize().getWidth(), (Float)mSrcRect.getSize().getHeight() ),
 	mDestSize( mOriDestSize ),
 	mOffset(0,0),
@@ -42,7 +42,7 @@ SubTexture::SubTexture( const Uint32& TexId, const std::string& Name ) :
 	createUnnamed();
 }
 
-SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const std::string& Name ) :
+SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const std::string& Name ) :
 	Drawable( DRAWABLE_SUBTEXTURE ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
@@ -59,7 +59,7 @@ SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const std::st
 	createUnnamed();
 }
 
-SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const std::string& Name ) :
+SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& Name ) :
 	Drawable( DRAWABLE_SUBTEXTURE ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
@@ -76,7 +76,7 @@ SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& 
 	createUnnamed();
 }
 
-SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const Vector2i &Offset, const std::string& Name ) :
+SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i &Offset, const std::string& Name ) :
 	Drawable( DRAWABLE_SUBTEXTURE ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
@@ -124,12 +124,12 @@ void SubTexture::setTextureId( const Uint32& TexId ) {
 	mTexture	= TextureFactory::instance()->getTexture( TexId );
 }
 
-const Recti& SubTexture::getSrcRect() const {
+const Rect& SubTexture::getSrcRect() const {
 	return mSrcRect;
 }
 
-void SubTexture::setSrcRect( const Recti& Rect ) {
-	mSrcRect = Rect;
+void SubTexture::setSrcRect( const Rect& rect ) {
+	mSrcRect = rect;
 
 	if ( NULL != mPixels )
 		cacheColors();

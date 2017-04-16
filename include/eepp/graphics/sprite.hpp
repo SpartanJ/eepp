@@ -45,7 +45,7 @@ class EE_API Sprite : public Drawable {
 		*	@param Offset The offset added to the position of the frame ( the SubTexture )
 		*	@param TexSector The sector of the texture used by the SubTexture to be rendered
 		*/
-		Sprite( const Uint32& TexId, const Sizef &DestSize = Sizef(0,0), const Vector2i &offset = Vector2i(0,0), const Recti& TexSector = Recti(0,0,0,0) );
+		Sprite( const Uint32& TexId, const Sizef &DestSize = Sizef(0,0), const Vector2i &offset = Vector2i(0,0), const Rect& TexSector = Rect(0,0,0,0) );
 
 		virtual ~Sprite();
 
@@ -148,7 +148,7 @@ class EE_API Sprite : public Drawable {
 		void reset();
 
 		/** @return The AABB (axis-aligned bounding box) */
-		eeAABB getAABB();
+		Rectf getAABB();
 
 		/** Update the colors of every vertex rendered of the sprite ( this will override the default color )
 		* @param Color0 The Left - Top vertex color
@@ -174,7 +174,7 @@ class EE_API Sprite : public Drawable {
 		* @param TexSector The texture sector to be rendered ( default all the texture )
 		* @return True if success
 		*/
-		bool createStatic(const Uint32& TexId, const Sizef &DestSize = Sizef(0,0), const Vector2i &offset = Vector2i(0,0), const Recti& TexSector = Recti(0,0,0,0) );
+		bool createStatic(const Uint32& TexId, const Sizef &DestSize = Sizef(0,0), const Vector2i &offset = Vector2i(0,0), const Rect& TexSector = Rect(0,0,0,0) );
 
 		/** Creates an animated sprite
 		* @param SubFramesNum The number of subframes of the sprite
@@ -188,7 +188,7 @@ class EE_API Sprite : public Drawable {
 		* @param TexSector The texture sector to be rendered ( default all the texture )
 		* @return The frame position or 0 if fails
 		*/
-		unsigned int addFrame( const Uint32& TexId, const Sizef& DestSize = Sizef(0,0), const Vector2i& offset = Vector2i(0,0), const Recti& TexSector = Recti(0,0,0,0) );
+		unsigned int addFrame( const Uint32& TexId, const Sizef& DestSize = Sizef(0,0), const Vector2i& offset = Vector2i(0,0), const Rect& TexSector = Rect(0,0,0,0) );
 
 		/** Add a frame to the sprite (on the current sub frame)
 		* @param SubTexture The SubTexture used in the frame
@@ -215,7 +215,7 @@ class EE_API Sprite : public Drawable {
 		* @param TexSector The texture sector to be rendered ( default all the texture )
 		* @return True if success
 		*/
-		bool addSubFrame( const Uint32& TexId, const unsigned int& NumFrame, const unsigned int& NumSubFrame, const Sizef& DestSize = Sizef(0,0), const Vector2i& offset = Vector2i(0,0), const Recti& TexSector = Recti(0,0,0,0) );
+		bool addSubFrame( const Uint32& TexId, const unsigned int& NumFrame, const unsigned int& NumSubFrame, const Sizef& DestSize = Sizef(0,0), const Vector2i& offset = Vector2i(0,0), const Rect& TexSector = Rect(0,0,0,0) );
 
 		/** Add a frame on an specific subframe to the sprite
 		* @param SubTexture The SubTexture used in the frame

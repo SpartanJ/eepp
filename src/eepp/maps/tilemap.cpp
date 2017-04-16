@@ -433,10 +433,10 @@ void TileMap::setScale( const Float& scale ) {
 }
 
 void TileMap::updateScreenAABB() {
-	mScreenAABB = eeAABB( -mOffset.x, -mOffset.y, -mOffset.x + mViewSize.getWidth(), -mOffset.y + mViewSize.getHeight() );
+	mScreenAABB = Rectf( -mOffset.x, -mOffset.y, -mOffset.x + mViewSize.getWidth(), -mOffset.y + mViewSize.getHeight() );
 }
 
-const eeAABB& TileMap::getViewAreaAABB() const {
+const Rectf& TileMap::getViewAreaAABB() const {
 	return mScreenAABB;
 }
 

@@ -76,9 +76,9 @@ class EE_API UITextView : public UIWidget {
 
 		UITooltipStyleConfig getFontStyleConfig() const;
 
-		const Recti& getPadding() const;
+		const Rect& getPadding() const;
 
-		UITextView * setPadding(const Recti & padding);
+		UITextView * setPadding(const Rect & padding);
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
@@ -89,8 +89,8 @@ class EE_API UITextView : public UIWidget {
 		Vector2f 		mRealAlignOffset;
 		Int32			mSelCurInit;
 		Int32			mSelCurEnd;
-		Recti		mPadding;
-		Recti		mRealPadding;
+		Rect		mPadding;
+		Rect		mRealPadding;
 		struct SelPosCache
 		{
 			SelPosCache( Vector2f ip, Vector2f ep ) :

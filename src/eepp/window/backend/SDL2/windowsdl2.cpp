@@ -606,7 +606,7 @@ void WindowSDL::stopTextInput() {
 	SDL_StopTextInput();
 }
 
-void WindowSDL::setTextInputRect( Recti& rect ) {
+void WindowSDL::setTextInputRect( Rect& rect ) {
 	SDL_Rect r;
 
 	r.x = rect.Left;

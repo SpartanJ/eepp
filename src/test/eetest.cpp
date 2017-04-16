@@ -676,7 +676,7 @@ void EETest::createNewUI() {
 
 	UILinearLayout * layPar = UILinearLayout::NewHorizontal();
 	layPar->setParent( layWin );
-	layPar->setLayoutMargin( Recti( 10, 10, 10, 10 ) );
+	layPar->setLayoutMargin( Rect( 10, 10, 10, 10 ) );
 	layPar->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT );
 	layPar->setLayoutGravity( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 	layPar->setBackgroundFillEnabled( true )->setColor( 0x999999FF );
@@ -687,12 +687,12 @@ void EETest::createNewUI() {
 	lay->setBackgroundFillEnabled( true )->setColor( 0x333333FF );
 	lay->setLayoutWeight( 0.7f );
 
-	UITextView::New()->setText( "Text on test 1" )->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )->setParent( lay );
-	UITextView::New()->setText( "Text on test 2" )->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
-	UICheckBox::New()->setText( "Checkbox" )->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
-	UITextView::New()->setText( "Text on test 3" )->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
-	UITextView::New()->setText( "Text on test 4" )->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
-	UITextInput::New()->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
+	UITextView::New()->setText( "Text on test 1" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )->setParent( lay );
+	UITextView::New()->setText( "Text on test 2" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
+	UICheckBox::New()->setText( "Checkbox" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
+	UITextView::New()->setText( "Text on test 3" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
+	UITextView::New()->setText( "Text on test 4" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
+	UITextInput::New()->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
 
 	UILinearLayout * lay2 = UILinearLayout::NewVertical();
 	lay2->setLayoutGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
@@ -700,15 +700,15 @@ void EETest::createNewUI() {
 	lay2->setBackgroundFillEnabled( true )->setColor( Color::Black );
 	lay2->setLayoutWeight( 0.3f );
 
-	UIPushButton::New()->setText( "PushButton" )->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutGravity( UI_VALIGN_CENTER )->setParent( lay2 );
+	UIPushButton::New()->setText( "PushButton" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutGravity( UI_VALIGN_CENTER )->setParent( lay2 );
 	UIListBox * lbox = UIListBox::New();
-	lbox->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, FIXED )->setSize( 0, 105 )->setParent( lay2 );
+	lbox->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, FIXED )->setSize( 0, 105 )->setParent( lay2 );
 	lbox->addListBoxItems( { "This", "is", "a", "ListBox" } );
 	lay2->setParent( layPar );
 	lay->setParent( layPar );
 
 	UIDropDownList * drop = UIDropDownList::New();
-	drop->setLayoutMargin( Recti( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( layWin );
+	drop->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( layWin );
 	drop->getListBox()->addListBoxItems( { "Car", "Bus", "Plane", "Submarine" } );
 	drop->getListBox()->setSelected(0);
 	win->show();
@@ -720,13 +720,13 @@ void EETest::createNewUI() {
 	UIRelativeLayout * rlay = UIRelativeLayout::New();
 	rlay->setParent( win2 );
 	rlay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
-	rlay->setLayoutMargin( Recti( 16, 16, 16, 16 ) );
+	rlay->setLayoutMargin( Rect( 16, 16, 16, 16 ) );
 	rlay->setBackgroundFillEnabled( true )->setColor( 0x333333CC );
 
 	UIPushButton * ofBut = UIPushButton::New();
-	ofBut->setText( "OK" )->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )->setLayoutMargin( Recti( 0, 0, 16, 16 ) )->setParent( rlay );
+	ofBut->setText( "OK" )->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )->setLayoutMargin( Rect( 0, 0, 16, 16 ) )->setParent( rlay );
 
-	UIPushButton::New()->setText( "Cancel" )->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )->setLayoutMargin( Recti( 0, 0, 8, 0 ) )
+	UIPushButton::New()->setText( "Cancel" )->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )->setLayoutMargin( Rect( 0, 0, 8, 0 ) )
 			->setLayoutPositionRule( LEFT_OF, ofBut )->setParent( rlay );
 
 	win2->show();
@@ -828,7 +828,7 @@ void EETest::createDecoratedWindow() {
 	WinMenu->addMenuButton( "Edit", PopMenu2 );
 
 	UIPushButton * Button = UIPushButton::New();
-	Button->setLayoutMargin( Recti( 5, 5, 5, 5 ) );
+	Button->setLayoutMargin( Rect( 5, 5, 5, 5 ) );
 	Button->setText( "Click Me" );
 	Button->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
 	Button->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onButtonClick ) );
@@ -836,7 +836,7 @@ void EETest::createDecoratedWindow() {
 	mUIWindow->addShortcut( KEY_C, KEYMOD_ALT, Button );
 
 	UITabWidget * TabWidget = UITabWidget::New();
-	TabWidget->setLayoutMargin( Recti( 5, 5, 5, 5 ) )
+	TabWidget->setLayoutMargin( Rect( 5, 5, 5, 5 ) )
 			->setLayoutWeight( 1 )
 			->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )
 			->setParent( lay )->setFlags( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
@@ -1086,7 +1086,7 @@ void EETest::loadTextures() {
 
 	for ( Int32 my = 0; my < 4; my++ )
 		for( Int32 mx = 0; mx < 8; mx++ )
-			SP.addFrame( TN[4], Sizef( 0, 0 ), Vector2i( 0, 0 ), Recti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
+			SP.addFrame( TN[4], Sizef( 0, 0 ), Vector2i( 0, 0 ), Rect( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 
 	PS[0].setCallbackReset( cb::Make2( this, &EETest::particlesCallback ) );
 	PS[0].create( PSE_Callback, 500, TN[5], Vector2f( 0, 0 ), 16, true );
