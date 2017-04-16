@@ -8,7 +8,7 @@ UIScrollView * UIScrollView::New() {
 }
 
 UIScrollView::UIScrollView() :
-	UIWidget(),
+	UITouchDragableWidget(),
 	mViewType( Exclusive ),
 	mVScrollMode( UI_SCROLLBAR_AUTO ),
 	mHScrollMode( UI_SCROLLBAR_AUTO ),
@@ -33,7 +33,7 @@ Uint32 UIScrollView::getType() const {
 }
 
 bool UIScrollView::isType( const Uint32& type ) const {
-	return UIScrollView::getType() == type ? true : UIWidget::isType( type );
+	return UIScrollView::getType() == type ? true : UITouchDragableWidget::isType( type );
 }
 
 void UIScrollView::onSizeChange() {
@@ -173,6 +173,19 @@ void UIScrollView::updateScroll() {
 
 void UIScrollView::onValueChangeCb( const UIEvent * Event ) {
 	updateScroll();
+}
+
+void UIScrollView::onTouchDragValueChange( Vector2f diff ) {
+	if ( mVScroll->isEnabled() )
+		mVScroll->setValue( mVScroll->getValue() + ( -diff.y / (Float)( mScrollView->getSize().getHeight() ) ) );
+
+	if ( mHScroll->isEnabled() )
+		mHScroll->setValue( mHScroll->getValue() + ( -diff.x / (Float)( mScrollView->getSize().getWidth() ) ) );
+}
+
+bool UIScrollView::isTouchOverAllowedChilds() {
+	bool ret = mViewType == Exclusive ? !mVScroll->isMouseOverMeOrChilds() && !mHScroll->isMouseOverMeOrChilds() : true;
+	return isMouseOverMeOrChilds() && mScrollView->isMouseOver() && ret;
 }
 
 }}

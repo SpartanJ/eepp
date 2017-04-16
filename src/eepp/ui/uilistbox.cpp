@@ -14,11 +14,10 @@ UIListBox * UIListBox::New() {
 }
 
 UIListBox::UIListBox() :
-	UIWidget(),
+	UITouchDragableWidget(),
 	mRowHeight(0),
 	mVScrollMode( UI_SCROLLBAR_AUTO ),
 	mHScrollMode( UI_SCROLLBAR_AUTO ),
-	mSmoothScroll( true ),
 	mContainerPadding(),
 	mHScrollPadding(),
 	mVScrollPadding(),
@@ -32,7 +31,7 @@ UIListBox::UIListBox() :
 	mLastTickMove(0),
 	mVisibleFirst(0),
 	mVisibleLast(0),
-	mTouchDragAcceleration(0)
+	mSmoothScroll( true )
 {
 	setFlags( UI_CLIP_ENABLE | UI_AUTO_PADDING );
 
@@ -78,7 +77,7 @@ Uint32 UIListBox::getType() const {
 }
 
 bool UIListBox::isType( const Uint32& type ) const {
-	return UIListBox::getType() == type ? true : UIWidget::isType( type );
+	return UIListBox::getType() == type ? true : UITouchDragableWidget::isType( type );
 }
 
 void UIListBox::setTheme( UITheme * Theme ) {
@@ -326,6 +325,18 @@ void UIListBox::setHScrollStep() {
 	mHScrollBar->setPageStep( stepVal );
 
 	mHScrollBar->setClickStep( stepVal );
+}
+
+void UIListBox::onTouchDragValueChange( Vector2f diff ) {
+	if ( mVScrollBar->isEnabled() )
+		mVScrollBar->setValue( mVScrollBar->getValue() + ( -diff.y / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
+
+	if ( mHScrollBar->isEnabled() )
+		mHScrollBar->setValue( mHScrollBar->getValue() + ( -diff.x / mMaxTextWidth ) );
+}
+
+bool UIListBox::isTouchOverAllowedChilds() {
+	return isMouseOverMeOrChilds() && !mVScrollBar->isMouseOverMeOrChilds() && !mHScrollBar->isMouseOverMeOrChilds();
 }
 
 void UIListBox::findMaxWidth() {
@@ -948,30 +959,6 @@ const UI_SCROLLBAR_MODE& UIListBox::getHorizontalScrollMode() {
 	return mHScrollMode;
 }
 
-bool UIListBox::isTouchDragEnabled() const {
-	return 0 != ( mFlags & UI_TOUCH_DRAG_ENABLED );
-}
-
-void UIListBox::setTouchDragEnabled( const bool& enable ) {
-	writeFlag( UI_TOUCH_DRAG_ENABLED, true == enable );
-}
-
-bool UIListBox::isTouchDragging() const {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING );
-}
-
-void UIListBox::setTouchDragging( const bool& dragging ) {
-	writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, true == dragging );
-}
-
-Float UIListBox::getTouchDragDeceleration() const {
-	return mTouchDragDeceleration;
-}
-
-void UIListBox::setTouchDragDeceleration(const Float & touchDragDeceleration) {
-	mTouchDragDeceleration = touchDragDeceleration;
-}
-
 UIFontStyleConfig UIListBox::getFontStyleConfig() const {
 	return mFontStyleConfig;
 }
@@ -981,66 +968,6 @@ void UIListBox::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
 
 	setFont( mFontStyleConfig.Font );
 	setFontColor( mFontStyleConfig.FontColor );
-}
-
-void UIListBox::update() {
-	if ( mEnabled && mVisible ) {
-		if ( mFlags & UI_TOUCH_DRAG_ENABLED ) {
-			UIManager * manager = UIManager::instance();
-			Uint32 Press	= manager->getPressTrigger();
-			Uint32 LPress	= manager->getLastPressTrigger();
-
-			if ( ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING ) ) {
-				// Mouse Not Down
-				if ( !( Press & EE_BUTTON_LMASK ) ) {
-					writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 0 );
-					manager->setControlDragging( false );
-					return;
-				}
-
-				Vector2i Pos( manager->getMousePos() );
-
-				if ( mTouchDragPoint != Pos ) {
-					Vector2i diff = -( mTouchDragPoint - Pos );
-
-					mVScrollBar->setValue( mVScrollBar->getValue() + ( -diff.y / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
-
-					mTouchDragAcceleration += getElapsed().asMilliseconds() * diff.y * mTouchDragDeceleration;
-
-					mTouchDragPoint = Pos;
-
-					manager->setControlDragging( true );
-				} else {
-					mTouchDragAcceleration -= getElapsed().asMilliseconds() * mTouchDragAcceleration * 0.01f;
-				}
-			} else {
-				// Mouse Down
-				if ( isMouseOverMeOrChilds() && !mVScrollBar->isMouseOverMeOrChilds() && !mHScrollBar->isMouseOverMeOrChilds() ) {
-					if ( !( LPress & EE_BUTTON_LMASK ) && ( Press & EE_BUTTON_LMASK ) ) {
-						writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 1 );
-
-						mTouchDragPoint			= manager->getMousePos();
-						mTouchDragAcceleration	= 0;
-					}
-				}
-
-				// Mouse Up
-				if ( ( LPress & EE_BUTTON_LMASK ) && !( Press & EE_BUTTON_LMASK ) ) {
-					writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 0 );
-					manager->setControlDragging( false );
-				}
-
-				// Deaccelerate
-				if ( mTouchDragAcceleration > 0.01f || mTouchDragAcceleration < -0.01f ) {
-					mVScrollBar->setValue( mVScrollBar->getValue() + ( -mTouchDragAcceleration / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
-
-					mTouchDragAcceleration -= mTouchDragAcceleration * mTouchDragDeceleration * getElapsed().asMilliseconds();
-				}
-			}
-		}
-	}
-
-	UIWidget::update();
 }
 
 void UIListBox::loadFromXmlNode(const pugi::xml_node & node) {

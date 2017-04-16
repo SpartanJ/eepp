@@ -5,10 +5,11 @@
 #include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
+#include <eepp/ui/uitouchdragablewidget.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UITable : public UIWidget {
+class EE_API UITable : public UITouchDragableWidget {
 	public:
 		static UITable * New();
 
@@ -70,23 +71,9 @@ class EE_API UITable : public UIWidget {
 
 		UIItemContainer<UITable> * getContainer() const;
 
-		virtual void update();
-
-		bool isTouchDragEnabled() const;
-
-		void setTouchDragEnabled( const bool& enable );
-
-		bool isTouchDragging() const;
-
-		void setTouchDragging( const bool& dragging );
-
 		bool getSmoothScroll() const;
 
 		UITable * setSmoothScroll(bool smoothScroll);
-
-		Float getTouchDragDeceleration() const;
-
-		void setTouchDragDeceleration(const Float & touchDragDeceleration);
 
 		Recti getContainerPadding() const;
 
@@ -96,7 +83,6 @@ class EE_API UITable : public UIWidget {
 		friend class UITableCell;
 
 		Recti						mContainerPadding;
-		bool						mSmoothScroll;
 		UIItemContainer<UITable> *	mContainer;
 		UIScrollBar *				mVScrollBar;
 		UIScrollBar *				mHScrollBar;
@@ -115,11 +101,7 @@ class EE_API UITable : public UIWidget {
 		Int32						mHScrollInit;
 		Int32						mItemsNotVisible;
 		Int32						mSelected;
-
-		Vector2i					mTouchDragPoint;
-		Float						mTouchDragAcceleration;
-		Float						mTouchDragDeceleration;
-
+		bool						mSmoothScroll;
 		bool						mCollWidthAssigned;
 
 		void updateCells();
@@ -149,6 +131,10 @@ class EE_API UITable : public UIWidget {
 		void updateHScroll();
 
 		void setHScrollStep();
+
+		virtual void onTouchDragValueChange( Vector2f diff );
+
+		virtual bool isTouchOverAllowedChilds();
 };
 
 }}

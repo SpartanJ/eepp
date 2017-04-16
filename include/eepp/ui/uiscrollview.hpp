@@ -1,13 +1,13 @@
 #ifndef EE_UISCROLLVIEW_HPP
 #define EE_UISCROLLVIEW_HPP
 
-#include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uitouchdragablewidget.hpp>
 
 namespace EE { namespace UI {
 
 class UIScrollBar;
 
-class EE_API UIScrollView : public UIWidget {
+class EE_API UIScrollView : public UITouchDragableWidget {
 	public:
 		enum ScrollViewType {
 			Inclusive,
@@ -57,6 +57,10 @@ class EE_API UIScrollView : public UIWidget {
 		void containerUpdate();
 
 		void updateScroll();
+
+		virtual void onTouchDragValueChange( Vector2f diff );
+
+		virtual bool isTouchOverAllowedChilds();
 };
 
 }}

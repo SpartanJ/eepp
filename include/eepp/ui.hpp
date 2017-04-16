@@ -16,6 +16,8 @@
 #include <eepp/ui/uicontrol.hpp>
 #include <eepp/ui/uidragablecontrol.hpp>
 #include <eepp/ui/uicontrolanim.hpp>
+#include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uitouchdragablewidget.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uisubtexture.hpp>
 #include <eepp/ui/uitextview.hpp>

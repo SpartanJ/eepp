@@ -27,6 +27,7 @@
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uiimage.hpp>
+#include <eepp/ui/uitouchdragablewidget.hpp>
 
 namespace  EE { namespace UI {
 
@@ -67,6 +68,7 @@ UIWidget * UIWidgetCreator::createFromName( std::string widgetName ) {
 	else if ( widgetName == "window" )			return UIWindow::New();
 	else if ( widgetName == "scrollview" )		return UIScrollView::New();
 	else if ( widgetName == "subtexture" )		return UISubTexture::New();
+	else if ( widgetName == "touchdragable" )	return UITouchDragableWidget::New();
 
 	if ( widgetCallback.find( widgetName ) != widgetCallback.end() ) {
 		return widgetCallback[ widgetName ].Call( widgetName );

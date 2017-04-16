@@ -5,10 +5,11 @@
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
 #include <eepp/ui/uilistboxitem.hpp>
+#include <eepp/ui/uitouchdragablewidget.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIListBox : public UIWidget {
+class EE_API UIListBox : public UITouchDragableWidget {
 	public:
 		static UIListBox * New();
 
@@ -106,20 +107,6 @@ class EE_API UIListBox : public UIWidget {
 
 		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
 
-		virtual void update();
-
-		bool isTouchDragEnabled() const;
-
-		void setTouchDragEnabled( const bool& enable );
-
-		bool isTouchDragging() const;
-
-		void setTouchDragging( const bool& dragging );
-
-		Float getTouchDragDeceleration() const;
-
-		void setTouchDragDeceleration(const Float & touchDragDeceleration);
-
 		UIFontStyleConfig getFontStyleConfig() const;
 
 		void setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig);
@@ -134,7 +121,6 @@ class EE_API UIListBox : public UIWidget {
 		Uint32 				mRowHeight;
 		UI_SCROLLBAR_MODE	mVScrollMode;
 		UI_SCROLLBAR_MODE	mHScrollMode;
-		bool 				mSmoothScroll;
 		Recti				mContainerPadding;
 		Recti				mHScrollPadding;
 		Recti				mVScrollPadding;
@@ -150,9 +136,7 @@ class EE_API UIListBox : public UIWidget {
 		Uint32				mVisibleFirst;
 		Uint32				mVisibleLast;
 
-		Vector2i			mTouchDragPoint;
-		Float				mTouchDragAcceleration;
-		Float				mTouchDragDeceleration;
+		bool 				mSmoothScroll;
 
 		std::list<Uint32>				mSelected;
 		std::vector<UIListBoxItem *> 	mItems;
@@ -201,6 +185,10 @@ class EE_API UIListBox : public UIWidget {
 		void itemKeyEvent( const UIEventKey &Event );
 
 		void setHScrollStep();
+
+		virtual void onTouchDragValueChange( Vector2f diff );
+
+		virtual bool isTouchOverAllowedChilds();
 };
 
 }}

@@ -8,9 +8,8 @@ UITable * UITable::New() {
 }
 
 UITable::UITable() :
-	UIWidget(),
+	UITouchDragableWidget(),
 	mContainerPadding(),
-	mSmoothScroll( false ),
 	mContainer( NULL ),
 	mVScrollBar( NULL ),
 	mHScrollBar( NULL ),
@@ -25,8 +24,7 @@ UITable::UITable() :
 	mHScrollInit(0),
 	mItemsNotVisible(0),
 	mSelected(-1),
-	mTouchDragAcceleration(0),
-	mTouchDragDeceleration( 0.01f ),
+	mSmoothScroll( false ),
 	mCollWidthAssigned( false )
 {
 	setFlags( UI_AUTO_PADDING );
@@ -69,7 +67,7 @@ Uint32 UITable::getType() const {
 }
 
 bool UITable::isType( const Uint32& type ) const {
-	return UITable::getType() == type ? true : UIControlAnim::isType( type );
+	return UITable::getType() == type ? true : UITouchDragableWidget::isType( type );
 }
 
 void UITable::setDefaultCollumnsWidth() {
@@ -579,22 +577,6 @@ UIItemContainer<UITable> * UITable::getContainer() const {
 	return mContainer;
 }
 
-bool UITable::isTouchDragEnabled() const {
-	return 0 != ( mFlags & UI_TOUCH_DRAG_ENABLED );
-}
-
-void UITable::setTouchDragEnabled( const bool& enable ) {
-	writeFlag( UI_TOUCH_DRAG_ENABLED, true == enable );
-}
-
-bool UITable::isTouchDragging() const {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING );
-}
-
-void UITable::setTouchDragging( const bool& dragging ) {
-	writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, true == dragging );
-}
-
 bool UITable::getSmoothScroll() const {
 	return mSmoothScroll;
 }
@@ -611,14 +593,6 @@ UITable * UITable::setSmoothScroll(bool smoothScroll) {
 	return this;
 }
 
-Float UITable::getTouchDragDeceleration() const {
-	return mTouchDragDeceleration;
-}
-
-void UITable::setTouchDragDeceleration(const Float & touchDragDeceleration) {
-	mTouchDragDeceleration = touchDragDeceleration;
-}
-
 Recti UITable::getContainerPadding() const {
 	return mContainerPadding;
 }
@@ -630,64 +604,16 @@ void UITable::setContainerPadding(const Recti & containerPadding) {
 	}
 }
 
-void UITable::update() {
-	if ( mEnabled && mVisible ) {
-		if ( mFlags & UI_TOUCH_DRAG_ENABLED ) {
-			UIManager * manager = UIManager::instance();
-			Uint32 Press	= manager->getPressTrigger();
-			Uint32 LPress	= manager->getLastPressTrigger();
+void UITable::onTouchDragValueChange( Vector2f diff ) {
+	if ( mVScrollBar->isEnabled() )
+		mVScrollBar->setValue( mVScrollBar->getValue() + ( -diff.y / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
-			if ( ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING ) ) {
-				// Mouse Not Down
-				if ( !( Press & EE_BUTTON_LMASK ) ) {
-					writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 0 );
-					manager->setControlDragging( false );
-					return;
-				}
+	if ( mHScrollBar->isEnabled() )
+		mHScrollBar->setValue( mHScrollBar->getValue() + ( -diff.x / mTotalWidth ) );
+}
 
-				Vector2i Pos( manager->getMousePos() );
-
-				if ( mTouchDragPoint != Pos ) {
-					Vector2i diff = -( mTouchDragPoint - Pos );
-
-					mVScrollBar->setValue( mVScrollBar->getValue() + ( -diff.y / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
-
-					mTouchDragAcceleration += getElapsed().asMilliseconds() * diff.y * mTouchDragDeceleration;
-
-					mTouchDragPoint = Pos;
-
-					manager->setControlDragging( true );
-				} else {
-					mTouchDragAcceleration -= getElapsed().asMilliseconds() * mTouchDragAcceleration * 0.01f;
-				}
-			} else {
-				// Mouse Down
-				if ( isMouseOverMeOrChilds() && !mVScrollBar->isMouseOverMeOrChilds() && !mHScrollBar->isMouseOverMeOrChilds() ) {
-					if ( !( LPress & EE_BUTTON_LMASK ) && ( Press & EE_BUTTON_LMASK ) ) {
-						writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 1 );
-
-						mTouchDragPoint			= manager->getMousePos();
-						mTouchDragAcceleration	= 0;
-					}
-				}
-
-				// Mouse Up
-				if ( ( LPress & EE_BUTTON_LMASK ) && !( Press & EE_BUTTON_LMASK ) ) {
-					writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 0 );
-					manager->setControlDragging( false );
-				}
-
-				// Deaccelerate
-				if ( mTouchDragAcceleration > 0.01f || mTouchDragAcceleration < -0.01f ) {
-					mVScrollBar->setValue( mVScrollBar->getValue() + ( -mTouchDragAcceleration / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
-
-					mTouchDragAcceleration -= mTouchDragAcceleration * mTouchDragDeceleration * getElapsed().asMilliseconds();
-				}
-			}
-		}
-	}
-
-	UIWidget::update();
+bool UITable::isTouchOverAllowedChilds() {
+	return isMouseOverMeOrChilds() && !mVScrollBar->isMouseOverMeOrChilds() && !mHScrollBar->isMouseOverMeOrChilds();
 }
 
 }}

@@ -26,6 +26,7 @@
 ../../include/eepp/system/color.hpp
 ../../include/eepp/system/translator.hpp
 ../../include/eepp/ui/uidragablecontrol.hpp
+../../include/eepp/ui/uieventmouse.hpp
 ../../include/eepp/ui/uiimage.hpp
 ../../include/eepp/ui/uilinearlayout.hpp
 ../../include/eepp/ui/uimenuseparator.hpp
@@ -37,6 +38,7 @@
 ../../include/eepp/ui/uitextview.hpp
 ../../include/eepp/ui/uithemeconfig.hpp
 ../../include/eepp/ui/uithemedefault.hpp
+../../include/eepp/ui/uitouchdragablewidget.hpp
 ../../include/eepp/ui/uiwidget.hpp
 ../../include/eepp/ui/uiwidgetcreator.hpp
 ../../src/eepp/maps/mapobjectlayer.cpp
@@ -78,6 +80,7 @@
 ../../src/eepp/ui/uitablecell.cpp
 ../../src/eepp/ui/uitextview.cpp
 ../../src/eepp/ui/uithemedefault.cpp
+../../src/eepp/ui/uitouchdragablewidget.cpp
 ../../src/eepp/ui/uiwidget.cpp
 ../../../eeiv/src/capp.cpp
 ../../include/eepp/audio/soundmanager.hpp

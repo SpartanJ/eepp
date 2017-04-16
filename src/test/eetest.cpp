@@ -517,6 +517,7 @@ void EETest::createNewUI() {
 	container->setSize( relLay->getSize() - 32 );
 
 	UIScrollView * scrollView = UIScrollView::New();
+	scrollView->setTouchDragEnabled( true );
 	scrollView->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT )->setParent( relLay );
 	scrollView->getContainer()->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onMainClick ) );
 	container->setParent( scrollView );
