@@ -775,14 +775,14 @@ void Text::ensureColorUpdate() {
 	if ( mColorsNeedUpdate ) {
 		Uint32 tv = getTotalVertices();
 
-		if ( mColors.size() < tv ) {
+		if ( mColors.size() < tv )
 			mColors.resize( tv, mFillColor );
-		}
 
 		mColors.assign( tv, mFillColor );
 
-		if ( 0 != mOutlineThickness && ( mOutlineColors.size() < tv ) ) {
-			mOutlineColors.resize( tv, mOutlineColor );
+		if ( 0 != mOutlineThickness ) {
+			if ( mOutlineColors.size() < tv )
+				mOutlineColors.resize( tv, mOutlineColor );
 
 			mOutlineColors.assign( tv, mOutlineColor );
 		}

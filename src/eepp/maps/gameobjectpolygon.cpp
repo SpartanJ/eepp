@@ -7,7 +7,7 @@ using namespace EE::Graphics;
 namespace EE { namespace Maps {
 
 GameObjectPolygon::GameObjectPolygon( Uint32 DataId, Polygon2f poly, MapLayer * Layer, const Uint32& Flags ) :
-	GameObjectObject( DataId, poly.toAABB(), Layer, Flags )
+	GameObjectObject( DataId, poly.getBounds(), Layer, Flags )
 {
 	mPoly = Polygon2f( poly );
 }
@@ -43,7 +43,7 @@ void GameObjectPolygon::draw() {
 
 void GameObjectPolygon::setPolygonPoint( Uint32 index, Vector2f p ) {
 	mPoly.setAt( index, p );
-	mRect	= mPoly.toAABB();
+	mRect	= mPoly.getBounds();
 	mPos	= Vector2f( mRect.Left, mRect.Top );
 }
 

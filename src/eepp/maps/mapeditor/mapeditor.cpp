@@ -541,7 +541,7 @@ void MapEditor::onAddObject( Uint32 Type, Polygon2f poly ) {
 	MapObjectLayer * OL = static_cast<MapObjectLayer*> ( mCurLayer );
 
 	if ( GAMEOBJECT_TYPE_OBJECT == Type ) {
-		OL->addGameObject( eeNew( GameObjectObject, ( mUIMap->Map()->getNewObjectId(), poly.toAABB(), mCurLayer ) ) );
+		OL->addGameObject( eeNew( GameObjectObject, ( mUIMap->Map()->getNewObjectId(), poly.getBounds(), mCurLayer ) ) );
 	} else if ( GAMEOBJECT_TYPE_POLYGON == Type ) {
 		OL->addGameObject( eeNew( GameObjectPolygon, ( mUIMap->Map()->getNewObjectId(), poly, mCurLayer ) ) );
 	} else if ( GAMEOBJECT_TYPE_POLYLINE == Type ) {

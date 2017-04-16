@@ -88,7 +88,7 @@ void GameObjectObject::setPolygonPoint( Uint32 index, Vector2f p ) {
 	}
 
 	mPoly.setAt( index, p );
-	mRect	= mPoly.toAABB();
+	mRect	= mPoly.getBounds();
 	mPos	= Vector2f( mRect.Left, mRect.Top );
 	mPoly	= mRect;
 }

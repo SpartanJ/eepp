@@ -224,8 +224,10 @@ const Sizei& UIControl::getRealSize() {
 }
 
 UIControl * UIControl::setVisible( const bool& visible ) {
-	mVisible = visible;
-	onVisibilityChange();
+	if ( mVisible != visible ) {
+		mVisible = visible;
+		onVisibilityChange();
+	}
 	return this;
 }
 
@@ -238,8 +240,10 @@ bool UIControl::isHided() const {
 }
 
 UIControl * UIControl::setEnabled( const bool& enabled ) {
-	mEnabled = enabled;
-	onEnabledChange();
+	if ( mEnabled != enabled ) {
+		mEnabled = enabled;
+		onEnabledChange();
+	}
 	return this;
 }
 

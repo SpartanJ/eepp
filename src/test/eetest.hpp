@@ -229,6 +229,7 @@ class EETest : private Thread {
 		bool					mTerrainUp;
 		UIPushButton *			mShowMenu;
 		UIPushButton *			mTerrainBut;
+		UIRelativeLayout *		relLay;
 
 		void createMapEditor();
 

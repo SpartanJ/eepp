@@ -394,7 +394,7 @@ void Primitives::drawPolygon( const Polygon2f& p ) {
 			sBR->lineLoopSetColor( mColor );
 
 			for ( Uint32 i = 0; i < p.getSize(); i += 2 )
-				sBR->batchLineLoop( p.getX() + p[i].x, p.getY() + p[i].y, p.getX() + p[i+1].x, p.getY() + p[i+1].y );
+				sBR->batchLineLoop( p.getPosition() + p[i], p.getPosition() + p[i+1] );
 
 			break;
 		}

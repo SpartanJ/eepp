@@ -634,7 +634,7 @@ GameObject * TileMap::createGameObject( const Uint32& Type, const Uint32& Flags,
 			GameObjectObject * tObject = NULL;
 
 			if ( GAMEOBJECT_TYPE_OBJECT == Type ) {
-				tObject = eeNew( GameObjectObject, ( DataId, ObjData.Poly.toAABB(), Layer, Flags ) );
+				tObject = eeNew( GameObjectObject, ( DataId, ObjData.Poly.getBounds(), Layer, Flags ) );
 			} else if ( GAMEOBJECT_TYPE_POLYGON == Type ) {
 				tObject = eeNew( GameObjectPolygon, ( DataId, ObjData.Poly, Layer, Flags ) );
 			} else if ( GAMEOBJECT_TYPE_POLYLINE == Type ) {

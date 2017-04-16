@@ -63,25 +63,13 @@ class Polygon2 {
 		std::size_t getSize() const;
 
 		/** @return The position of the polygon ( also known as the offset of the polygon ) */
-		Vector2<T> getPosition() { return Vector2<T>(OffsetX, OffsetY); }
+		Vector2<T> getPosition() const { return Position; }
 
 		/** Move the polygon Vector2s, add to every point the distance specified  */
 		void move( Vector2<T> dist );
 
-		/** @return The X position of the polygon ( the X-axis Offset ) */
-		T getX() const { return OffsetX; }
-
-		/** @return The Y position of the polygon ( the Y-axis Offset ) */
-		T getY() const { return OffsetY; }
-
 		/** @return The position of the polygon  ( the offset )*/
-		void setPosition( const Vector2<T>& V ) { OffsetX = V.x; OffsetY = V.y; }
-
-		/** Set the new position of the x-axis ( the x-axis offset ) */
-		T setX( const T& x ) { OffsetX = x; }
-
-		/** Set the new position of the y-axis ( the y-axis offset ) */
-		T setY( const T& y ) { OffsetY = y; }
+		void setPosition( const Vector2<T>& pos ) { Position = pos; }
 
 		/** @return True if the polygons intersect */
 		bool intersect( const Polygon2<T>& p1 );
@@ -99,7 +87,7 @@ class Polygon2 {
 		bool pointInside( const Vector2<T>& point );
 
 		/** @return The polygon axis-aligned bounding box */
-		tRECT<T> toAABB();
+		tRECT<T> getBounds();
 
 		/** Creates a rounded rectangle polygon */
 		static Polygon2<T> createRoundedRectangle( const T& x, const T& y, const T& width, const T& height, const unsigned int& Radius = 8 );
@@ -118,13 +106,11 @@ class Polygon2 {
 		Uint32 closestPoint( const Vector2<T> &to, T * distance = NULL );
 	private:
 		std::vector< Vector2<T> > Vector;
-		T OffsetX, OffsetY;
+		Vector2<T> Position;
 };
 
 template <typename T>
-Polygon2<T>::Polygon2() :
-	OffsetX(0),
-	OffsetY(0)
+Polygon2<T>::Polygon2()
 {
 	clear();
 }
@@ -132,31 +118,30 @@ Polygon2<T>::Polygon2() :
 template <typename T>
 Polygon2<T>::Polygon2( const Polygon2<T>& fromPoly ) :
 	Vector( fromPoly.Vector ),
-	OffsetX( fromPoly.OffsetX ),
-	OffsetY( fromPoly.OffsetY )
+	Position( fromPoly.Position )
 {
 }
 
 template <typename T>
-Polygon2<T>::Polygon2( const std::vector< Vector2<T> >& theVecs ) : OffsetX(0), OffsetY(0) {
+Polygon2<T>::Polygon2( const std::vector< Vector2<T> >& theVecs ) {
 	for (Uint32 i = 0; i < theVecs.size(); i++)
 		pushBack ( theVecs[i] );
 }
 
 template <typename T>
-Polygon2<T>::Polygon2( const Triangle2<T>& fromTrig ) : OffsetX(0), OffsetY(0) {
+Polygon2<T>::Polygon2( const Triangle2<T>& fromTrig ) {
 	for (Uint8 i = 0; i < 3; i++)
 		pushBack ( fromTrig.V[i] );
 }
 
 template <typename T>
-Polygon2<T>::Polygon2( const Quad2<T>& fromQuad ) : OffsetX(0), OffsetY(0) {
+Polygon2<T>::Polygon2( const Quad2<T>& fromQuad ) {
 	for (Uint8 i = 0; i < 4; i++)
 		pushBack ( fromQuad.V[i] );
 }
 
 template<typename T>
-Polygon2<T>::Polygon2( const tRECT<T>& fromRect ) : OffsetX(0), OffsetY(0) {
+Polygon2<T>::Polygon2( const tRECT<T>& fromRect ) {
 	Vector.push_back( Vector2<T>( fromRect.Left, fromRect.Top ) );
 	Vector.push_back( Vector2<T>( fromRect.Left, fromRect.Bottom ) );
 	Vector.push_back( Vector2<T>( fromRect.Right, fromRect.Bottom ) );
@@ -315,7 +300,7 @@ bool Polygon2<T>::intersect( const Polygon2<T>& p1 ) {
 	Vector2<T> vAxis, vOffset;
 	unsigned int i = 0, j = 0, n, size = this->getSize();
 
-	vOffset = Vector2<T>( getX() - p1.getX(), getY() - p1.getY() );
+	vOffset = getPosition() - p1.getPosition();
 
 	for (i = 0; i < size; i++) {
 		n = i + 1;
@@ -396,7 +381,7 @@ bool Polygon2<T>::intersectQuad2( const Quad2<T>& q0, const Quad2<T>& q1, const 
 }
 
 template <typename T>
-tRECT<T> Polygon2<T>::toAABB() {
+tRECT<T> Polygon2<T>::getBounds() {
 	tRECT<T> TmpR;
 
 	if ( Vector.size() < 4 ) {
@@ -412,10 +397,10 @@ tRECT<T> Polygon2<T>::toAABB() {
 		if ( MaxY < Vector[i].y ) MaxY = Vector[i].y;
 	}
 
-	TmpR.Left	= MinX + OffsetX;
-	TmpR.Right	= MaxX + OffsetX;
-	TmpR.Top	= MinY + OffsetY;
-	TmpR.Bottom	= MaxY + OffsetY;
+	TmpR.Left	= MinX + Position.x;
+	TmpR.Right	= MaxX + Position.x;
+	TmpR.Top	= MinY + Position.y;
+	TmpR.Bottom	= MaxY + Position.y;
 
 	return TmpR;
 }

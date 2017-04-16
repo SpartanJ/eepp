@@ -764,8 +764,7 @@ void BatchRenderer::batchPolygon( const Polygon2f& Polygon ) {
 	for ( Uint32 i = 0; i < Polygon.getSize(); i++ ) {
 		mTVertex = &mVertex[ mNumVertex ];
 
-		mTVertex->pos.x = Polygon.getX() + Polygon[i].x;
-		mTVertex->pos.y = Polygon.getY() + Polygon[i].y;
+		mTVertex->pos	= Polygon.getPosition() + Polygon[i];
 		mTVertex->tex 	= mTexCoord[0];
 		mTVertex->color = mVerColor[0];
 

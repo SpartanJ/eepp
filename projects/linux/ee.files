@@ -1,5 +1,6 @@
 ../../include/eepp/graphics/arcdrawable.hpp
 ../../include/eepp/graphics/circledrawable.hpp
+../../include/eepp/graphics/convexshapedrawable.hpp
 ../../include/eepp/graphics/drawable.hpp
 ../../include/eepp/graphics/drawablesearcher.hpp
 ../../include/eepp/graphics/font.hpp
@@ -41,6 +42,7 @@
 ../../include/eepp/ui/uitouchdragablewidget.hpp
 ../../include/eepp/ui/uiwidget.hpp
 ../../include/eepp/ui/uiwidgetcreator.hpp
+../../src/eepp/graphics/convexshapedrawable.cpp
 ../../src/eepp/maps/mapobjectlayer.cpp
 ../../src/eepp/graphics/arcdrawable.cpp
 ../../src/eepp/graphics/circledrawable.cpp

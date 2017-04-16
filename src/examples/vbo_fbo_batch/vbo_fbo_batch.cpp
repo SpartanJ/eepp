@@ -134,7 +134,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 				VBO->addColor( Color( 100 + i, 255 - i, 150 + i, 100 ) );
 			}
 
-			Poly.rotate( 90, Poly.toAABB().getCenter() );
+			Poly.rotate( 90, Poly.getBounds().getCenter() );
 
 			for ( Uint32 i = 0; i < Poly.getSize(); i++ ) {
 				VBO2->addVertex( Poly[i] );

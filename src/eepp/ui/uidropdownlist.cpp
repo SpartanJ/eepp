@@ -139,7 +139,7 @@ void UIDropDownList::showList() {
 
 			mListBox->updateQuad();
 
-			Rectf aabb( mListBox->getPolygon().toAABB() );
+			Rectf aabb( mListBox->getPolygon().getBounds() );
 			Rect aabbi( aabb.Left, aabb.Top, aabb.Right, aabb.Bottom );
 
 			if ( !UIManager::instance()->getMainControl()->getScreenRect().contains( aabbi ) ) {

@@ -44,6 +44,7 @@ void EETest::init() {
 	mTerrainBut			= NULL;
 	mShowMenu			= NULL;
 	mTerrainUp			= true;
+	relLay				= NULL;
 
 	MyPath 				= Sys::getProcessPath() + "assets/";
 
@@ -58,7 +59,7 @@ void EETest::init() {
 #endif
 
 	mMusEnabled			= Ini.getValueB( "EEPP", "Music", false );
-	Int32 StartScreen	= Ini.getValueI( "EEPP", "StartScreen", 0 );
+	Int32 StartScreen	= Ini.getValueI( "EEPP", "StartScreen", 5 );
 
 	WindowSettings WinSettings	= EE->createWindowSettings( &Ini );
 	ContextSettings ConSettings	= EE->createContextSettings( &Ini );
@@ -510,7 +511,7 @@ void EETest::createUI() {
 void EETest::createNewUI() {
 	std::vector<String> str = getTestStringArr();
 
-	UIRelativeLayout * relLay = UIRelativeLayout::New();
+	relLay = UIRelativeLayout::New();
 	relLay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
 
 	UIControlAnim * container = UIControlAnim::New();
@@ -642,8 +643,6 @@ void EETest::createNewUI() {
 	TabWidget->add( "Tab 1", UIWidget::New()->setThemeSkin( "winback" ), mTheme->getIconByName( "ok" ) );
 	TabWidget->add( "Tab 2", UIWidget::New()->setThemeSkin( "winback" ), mTheme->getIconByName( "go-up" ) );
 	TabWidget->add( "Tab 3", UIWidget::New()->setThemeSkin( "winback" ), mTheme->getIconByName( "add" ) );
-
-
 
 	UIWindow * MenuCont = UIWindow::New();
 	MenuCont->setPosition( 350, 390 )->setSize( 200, 115 );
@@ -990,6 +989,8 @@ void EETest::setScreen( Uint32 num ) {
 
 	if ( num < 6 )
 		Screen = num;
+
+	if ( NULL != relLay ) relLay->setVisible( Screen == 5 );
 }
 
 void EETest::cmdSetPartsNum ( const std::vector < String >& params ) {
@@ -1189,6 +1190,18 @@ void EETest::screen2() {
 	if ( KM->isMouseLeftPressed() )
 		TNP[3]->drawEx( 0.f, 0.f, (Float)mWindow->getWidth(), (Float)mWindow->getHeight() );
 
+	ang+=et.asMilliseconds() * 0.1f;
+	ang = (ang>=360) ? 0 : ang;
+
+	ConvexShapeDrawable shape;
+	Polygon2f polygon( Polygon2f::createRoundedRectangle( 0, 0, 50, 50, 8 ) );
+	polygon.rotate( ang , polygon.getBounds().getCenter() );
+	shape.setPolygon( polygon );
+	shape.setPosition( Vector2f( 150, 150 ));
+	shape.setColor( Color::Magenta );
+	shape.setAlpha( 100 );
+	shape.draw();
+
 	Batch.setTexture( TNP[2] );
 	Batch.quadsBegin();
 	Batch.quadsSetColor( Color(150,150,150,100) );
@@ -1225,9 +1238,6 @@ void EETest::screen2() {
 
 	Float PlanetX = HWidth  - TNP[6]->getWidth() * 0.5f;
 	Float PlanetY = HHeight - TNP[6]->getHeight() * 0.5f;
-
-	ang+=et.asMilliseconds() * 0.1f;
-	ang = (ang>=360) ? 0 : ang;
 
 	if (scale>=1.5f) {
 		scale = 1.5f;
@@ -1408,7 +1418,6 @@ void EETest::screen4() {
 }
 
 void EETest::screen5() {
-
 }
 
 void EETest::render() {
@@ -1440,11 +1449,11 @@ void EETest::render() {
 		mInfoText.setString( mInfo );
 
 		if ( mWindow->getClearColor().r == 0 ) {
-			mInfoText.setFillColor( Color(255,255,255,255) );
-			mInfoText.setOutlineColor( Color(0,0,0,255) );
+			mInfoText.setFillColor( Color::White );
+			mInfoText.setOutlineColor( Color::Black );
 		} else {
-			mInfoText.setFillColor( Color(0,0,0,255) );
-			mInfoText.setOutlineColor( Color(255,255,255,255) );
+			mInfoText.setFillColor( Color::Black );
+			mInfoText.setOutlineColor( Color::White );
 		}
 	}
 

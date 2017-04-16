@@ -42,5 +42,6 @@
 #include <eepp/graphics/arcdrawable.hpp>
 #include <eepp/graphics/circledrawable.hpp>
 #include <eepp/graphics/rectangledrawable.hpp>
+#include <eepp/graphics/convexshapedrawable.hpp>
 
 #endif
