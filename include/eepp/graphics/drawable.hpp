@@ -11,8 +11,6 @@ namespace EE { namespace Graphics {
 
 class EE_API Drawable {
 	public:
-		Drawable( EE_DRAWABLE_TYPE drawableType );
-
 		virtual Sizef getSize() = 0;
 
 		virtual void draw() = 0;
@@ -48,6 +46,8 @@ class EE_API Drawable {
 		EE_DRAWABLE_TYPE mDrawableType;
 		Color mColor;
 		Vector2f mPosition;
+
+		Drawable( EE_DRAWABLE_TYPE drawableType );
 
 		virtual void onAlphaChange();
 

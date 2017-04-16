@@ -48,7 +48,9 @@ class EE_API ClippingMask {
 		void stencilMaskDisable( bool clearMasks = false );
 	protected:
 		std::list<Rectf> mScissorsClipped;
+		std::list<Rectf> mPlanesClipped;
 		bool mPushScissorClip;
+		bool mPushClip;
 
 		std::vector<const Drawable*> mDrawables;
 		Mode mMode;

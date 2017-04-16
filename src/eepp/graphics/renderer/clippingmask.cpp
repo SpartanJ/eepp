@@ -48,12 +48,36 @@ void ClippingMask::clipDisable() {
 
 void ClippingMask::clipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	GlobalBatchRenderer::instance()->draw();
-	GLi->clip2DPlaneEnable( x, y, Width, Height );
+
+	Rectf r( x, y, x + Width, y + Height );
+
+	if ( !mPlanesClipped.empty() ) {
+		Rectf r2 = mPlanesClipped.back();
+		r.shrink( r2 );
+	}
+
+	GLi->clip2DPlaneEnable( r.Left, r.Top, r.getWidth(), r.getHeight() );
+
+	if ( mPushClip ) {
+		mPlanesClipped.push_back( r );
+	}
 }
 
 void ClippingMask::clipPlaneDisable() {
 	GlobalBatchRenderer::instance()->draw();
-	GLi->clip2DPlaneDisable();
+
+	if ( ! mPlanesClipped.empty() ) { // This should always be true
+		mPlanesClipped.pop_back();
+	}
+
+	if ( mPlanesClipped.empty() ) {
+		GLi->clip2DPlaneDisable();
+	} else {
+		Rectf R( mPlanesClipped.back() );
+		mPushClip = false;
+		clipPlaneEnable( R.Left, R.Top, R.getWidth(), R.getHeight() );
+		mPushClip = true;
+	}
 }
 
 ClippingMask::ClippingMask() :

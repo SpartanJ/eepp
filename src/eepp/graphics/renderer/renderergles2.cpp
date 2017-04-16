@@ -619,11 +619,6 @@ void RendererGLES2::matrixMode(unsigned int mode) {
 void RendererGLES2::clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	Rectf r( x, y, x + Width, y + Height );
 
-	if ( !mPlanesClipped.empty() ) {
-		Rectf r2 = mPlanesClipped.back();
-		r.shrink( r2 );
-	}
-
 	glm::vec4 vclip_left	( 1.0	, 0.0	, 0.0	, -r.Left	);
 	glm::vec4 vclip_right	( -1.0	, 0.0	, 0.0	, r.Right	);
 	glm::vec4 vclip_top		( 0.0	, 1.0	, 0.0	, -r.Top	);
@@ -645,28 +640,13 @@ void RendererGLES2::clip2DPlaneEnable( const Int32& x, const Int32& y, const Int
 	glUniform4fv( mPlanes[1], 1, static_cast<const float*>( &vclip_right[0]	)	);
 	glUniform4fv( mPlanes[2], 1, static_cast<const float*>( &vclip_top[0]		)	);
 	glUniform4fv( mPlanes[3], 1, static_cast<const float*>( &vclip_bottom[0]	)	);
-
-	if ( mPushClip ) {
-		mPlanesClipped.push_back( r );
-	}
 }
 
 void RendererGLES2::clip2DPlaneDisable() {
-	if ( ! mPlanesClipped.empty() ) { // This should always be true
-		mPlanesClipped.pop_back();
-	}
-
-	if ( mPlanesClipped.empty() ) {
-		GLi->disable(GL_CLIP_PLANE0);
-		GLi->disable(GL_CLIP_PLANE1);
-		GLi->disable(GL_CLIP_PLANE2);
-		GLi->disable(GL_CLIP_PLANE3);
-	} else {
-		Rectf R( mPlanesClipped.back() );
-		mPushClip = false;
-		clip2DPlaneEnable( R.Left, R.Top, R.getWidth(), R.getHeight() );
-		mPushClip = true;
-	}
+	GLi->disable(GL_CLIP_PLANE0);
+	GLi->disable(GL_CLIP_PLANE1);
+	GLi->disable(GL_CLIP_PLANE2);
+	GLi->disable(GL_CLIP_PLANE3);
 }
 
 void RendererGLES2::pointSize( float size ) {

@@ -223,14 +223,12 @@ class EE_API Renderer {
 
 		Uint32	mExtensions;
 		Uint32	mStateFlags;
-		bool	mPushClip;
 		bool	mQuadsSupported;
 		bool	mBlendEnabled;
 		int		mQuadVertexs;
 		float mLineWidth;
 		unsigned int	mCurVAO;
 
-		std::list<Rectf> mPlanesClipped;
 		ClippingMask * mClippingMask;
 	private:
 		void writeExtension( Uint8 Pos, Uint32 BitWrite );

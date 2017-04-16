@@ -9,8 +9,6 @@ class VertexBuffer;
 
 class EE_API PrimitiveDrawable : public Drawable {
 	public:
-		PrimitiveDrawable( EE_DRAWABLE_TYPE drawableType );
-
 		virtual ~PrimitiveDrawable();
 
 		virtual void draw( const Vector2f& position, const Sizef& size );
@@ -33,6 +31,8 @@ class EE_API PrimitiveDrawable : public Drawable {
 		/** @return The line with to draw primitives */
 		const Float& getLineWidth() const;
 	protected:
+		PrimitiveDrawable( EE_DRAWABLE_TYPE drawableType );
+
 		EE_FILL_MODE			mFillMode;
 		EE_BLEND_MODE			mBlendMode;
 		Float					mLineWidth;

@@ -110,7 +110,6 @@ void Renderer::destroySingleton() {
 Renderer::Renderer() :
 	mExtensions(0),
 	mStateFlags( 1 << RSF_LINE_SMOOTH ),
-	mPushClip( true ),
 	mQuadsSupported( true ),
 	mBlendEnabled( false ),
 	mQuadVertexs( 4 ),
