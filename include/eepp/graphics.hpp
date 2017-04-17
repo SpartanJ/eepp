@@ -43,5 +43,6 @@
 #include <eepp/graphics/circledrawable.hpp>
 #include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/graphics/convexshapedrawable.hpp>
+#include <eepp/graphics/drawablegroup.hpp>
 
 #endif

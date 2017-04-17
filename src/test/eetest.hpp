@@ -231,6 +231,8 @@ class EETest : private Thread {
 		UIPushButton *			mTerrainBut;
 		UIRelativeLayout *		relLay;
 
+		DrawableGroup drawableGroup;
+
 		void createMapEditor();
 
 		void onMapEditorClose();

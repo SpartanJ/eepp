@@ -1418,6 +1418,46 @@ void EETest::screen4() {
 }
 
 void EETest::screen5() {
+	Color col( 0x000000CC );
+
+	if ( drawableGroup.getDrawableCount() == 0 ) {
+		ArcDrawable * arc = eeNew( ArcDrawable, () );
+		arc->setPosition( Vector2f( 60, 60 ) );
+		arc->setArcStartAngle( 90 );
+		arc->setArcAngle( 180 );
+		arc->setRadius( 60 );
+		arc->setColor( col );
+
+		RectangleDrawable * rect = eeNew( RectangleDrawable, () );
+		rect->setPosition( Vector2f( 0, 60 ) );
+		rect->setSize( Sizef( 120, 60 ) );
+		rect->setColor( col );
+
+		ArcDrawable * arc2 = eeNew( ArcDrawable, () );
+		arc2->setPosition( Vector2f( 60, 120 ) );
+		arc2->setArcStartAngle( -90 );
+		arc2->setArcAngle( 180 );
+		arc2->setRadius( 60 );
+		arc2->setColor( col );
+
+		ConvexShapeDrawable * poly = eeNew( ConvexShapeDrawable, () );
+		poly->setPosition( Vector2f( 60, 90 ) );
+		poly->addPoint( Vector2f( -10, -10 ) );
+		poly->addPoint( Vector2f( -10, 10 ) );
+		poly->addPoint( Vector2f( 10, 10 ) );
+		poly->addPoint( Vector2f( 10, -10 ) );
+		poly->setColor( col );
+		poly->setLineWidth( PixelDensity::getPixelDensity() );
+		poly->setFillMode( DRAW_LINE );
+
+		drawableGroup.addDrawable( arc );
+		drawableGroup.addDrawable( rect );
+		drawableGroup.addDrawable( arc2 );
+		drawableGroup.addDrawable( poly );
+		drawableGroup.setPosition( Vector2f( 800*2, 400*2 ) );
+	}
+
+	drawableGroup.draw();
 }
 
 void EETest::render() {

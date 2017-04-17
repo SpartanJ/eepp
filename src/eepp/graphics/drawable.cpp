@@ -7,6 +7,9 @@ Drawable::Drawable(EE_DRAWABLE_TYPE drawableType) :
 	mColor( Color::White )
 {}
 
+Drawable::~Drawable()
+{}
+
 void Drawable::setAlpha( Uint8 alpha ) {
 	if ( mColor.a != alpha ) {
 		mColor.a = alpha;

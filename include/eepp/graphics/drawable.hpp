@@ -11,6 +11,8 @@ namespace EE { namespace Graphics {
 
 class EE_API Drawable {
 	public:
+		virtual ~Drawable();
+
 		virtual Sizef getSize() = 0;
 
 		virtual void draw() = 0;
