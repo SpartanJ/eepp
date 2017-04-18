@@ -71,7 +71,6 @@ void UITouchDragableWidget::update() {
 
 					onTouchDragValueChange( diff );
 
-
 					mTouchDragAcceleration += elapsed * diff * mTouchDragDeceleration;
 
 					mTouchDragPoint = Pos;

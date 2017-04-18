@@ -44,9 +44,9 @@ class EE_API UIDragableControl : public UIControl {
 
 		virtual Uint32 onDrag( const Vector2i& position );
 
-		virtual Uint32 OnDragStart( const Vector2i& position );
+		virtual Uint32 onDragStart( const Vector2i& position );
 
-		virtual Uint32 OnDragEnd( const Vector2i& position );
+		virtual Uint32 onDragEnd( const Vector2i& position );
 };
 
 }}

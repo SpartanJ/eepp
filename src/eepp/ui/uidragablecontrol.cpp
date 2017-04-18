@@ -91,11 +91,11 @@ Uint32 UIDragableControl::onDrag( const Vector2i& Pos ) {
 	return 1;
 }
 
-Uint32 UIDragableControl::OnDragStart( const Vector2i& Pos ) {
+Uint32 UIDragableControl::onDragStart( const Vector2i& Pos ) {
 	return 1;
 }
 
-Uint32 UIDragableControl::OnDragEnd( const Vector2i& Pos ) {
+Uint32 UIDragableControl::onDragEnd( const Vector2i& Pos ) {
 	return 1;
 }
 
@@ -118,12 +118,12 @@ void UIDragableControl::setDragging( const bool& dragging ) {
 		UIMessage tMsg( this, UIMessage::MsgDragStart, 0 );
 		messagePost( &tMsg );
 
-		OnDragStart( UIManager::instance()->getMousePos() );
+		onDragStart( UIManager::instance()->getMousePos() );
 	} else {
 		UIMessage tMsg( this, UIMessage::MsgDragEnd, 0 );
 		messagePost( &tMsg );
 
-		OnDragEnd( UIManager::instance()->getMousePos() );
+		onDragEnd( UIManager::instance()->getMousePos() );
 	}
 }
 

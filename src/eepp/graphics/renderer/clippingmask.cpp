@@ -32,7 +32,7 @@ void ClippingMask::clipEnable( const Int32& x, const Int32& y, const Int32& Widt
 void ClippingMask::clipDisable() {
 	GlobalBatchRenderer::instance()->draw();
 
-	if ( ! mScissorsClipped.empty() ) { // This should always be true
+	if ( !mScissorsClipped.empty() ) { // This should always be true
 		mScissorsClipped.pop_back();
 	}
 
@@ -82,6 +82,7 @@ void ClippingMask::clipPlaneDisable() {
 
 ClippingMask::ClippingMask() :
 	mPushScissorClip( true ),
+	mPushClip( true ),
 	mMode( Inclusive )
 {
 }
