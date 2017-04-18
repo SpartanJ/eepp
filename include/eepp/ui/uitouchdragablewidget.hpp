@@ -28,6 +28,8 @@ class EE_API UITouchDragableWidget : public UIWidget {
 		Vector2f getTouchDragDeceleration() const;
 
 		UITouchDragableWidget * setTouchDragDeceleration( const Vector2f& touchDragDeceleration );
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		Vector2f mTouchDragPoint;
 		Vector2f mTouchDragAcceleration;

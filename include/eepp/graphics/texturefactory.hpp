@@ -122,7 +122,10 @@ class EE_API TextureFactory : protected Mutex {
 		void setCurrentTexture( const int& TexId, const Uint32& TextureUnit );
 
 		/** Returns the number of textures loaded */
-		Uint32 getNumTextures() const { return (Uint32)mTextures.size(); }
+		Uint32 getTextureCount() const { return (Uint32)mTextures.size(); }
+
+		/** @return All the active textures */
+		std::vector<Texture*> getTextures();
 
 		/** Set the texture enviroment
 		* @param Param The texture param

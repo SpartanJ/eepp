@@ -53,6 +53,7 @@
 #include <eepp/ui/uirelativelayout.hpp>
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <eepp/ui/uigridlayout.hpp>
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 
 #include <eepp/ui/uithemedefault.hpp>

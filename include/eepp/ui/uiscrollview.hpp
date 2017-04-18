@@ -49,6 +49,7 @@ class EE_API UIScrollView : public UITouchDragableWidget {
 		UIScrollBar * mHScroll;
 		UIControlAnim * mContainer;
 		UIControl * mScrollView;
+		Uint32 mSizeChangeCb;
 
 		virtual void onSizeChange();
 
@@ -57,6 +58,8 @@ class EE_API UIScrollView : public UITouchDragableWidget {
 		virtual void onChildCountChange();
 
 		void onValueChangeCb( const UIEvent * Event );
+
+		void onScrollViewSizeChange( const UIEvent * Event );
 
 		void containerUpdate();
 

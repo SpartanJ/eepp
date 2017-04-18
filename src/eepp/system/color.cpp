@@ -244,7 +244,7 @@ Color Color::fromHsl( const Colorf& hsl ) {
 	return Color( (Uint8)Math::round(rgba.r * 255.f), (Uint8)Math::round(rgba.g * 255.f), (Uint8)Math::round(rgba.b * 255.f), Math::round( hsl.hsl.a * 255.f ) );
 }
 
-Color Color::colorFromPointer( void *ptr ) {
+Color Color::fromPointer( void *ptr ) {
 	unsigned long val = (long)ptr;
 
 	// hash the pointer up nicely

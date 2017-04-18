@@ -179,6 +179,19 @@ void TextureFactory::setCurrentTexture( const int& TexId, const Uint32& TextureU
 	mCurrentTexture[ TextureUnit ] = TexId;
 }
 
+std::vector<Texture*> TextureFactory::getTextures() {
+	std::vector<Texture*> textures;
+
+	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
+		Texture* Tex = getTexture(i);
+
+		if ( Tex )
+			textures.push_back( Tex );
+	}
+
+	return textures;
+}
+
 void TextureFactory::reloadAllTextures() {
 	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
 		Texture* Tex = getTexture(i);

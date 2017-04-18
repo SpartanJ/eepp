@@ -12,6 +12,7 @@ UIImage * UIImage::New() {
 
 UIImage::UIImage() :
 	UIWidget(),
+	mScaleType( 0 ),
 	mDrawable( NULL ),
 	mColor(),
 	mAlignOffset(0,0)
@@ -33,7 +34,7 @@ bool UIImage::isType( const Uint32& type ) const {
 	return UIImage::getType() == type ? true : UIWidget::isType( type );
 }
 
-void UIImage::setDrawable( Drawable * drawable ) {
+UIImage * UIImage::setDrawable( Drawable * drawable ) {
 	safeDeleteDrawable();
 
 	mDrawable = drawable;
@@ -47,6 +48,8 @@ void UIImage::setDrawable( Drawable * drawable ) {
 	autoAlign();
 
 	notifyLayoutAttrChange();
+
+	return this;
 }
 
 void UIImage::onAutoSize() {
@@ -113,9 +116,10 @@ const Color& UIImage::getColor() const {
 	return mColor;
 }
 
-void UIImage::setColor( const Color& col ) {
+UIImage * UIImage::setColor( const Color& col ) {
 	mColor = col;
 	setAlpha( col.a );
+	return this;
 }
 
 void UIImage::autoAlign() {

@@ -16,7 +16,7 @@ Uint32 UIRelativeLayout::getType() const {
 }
 
 bool UIRelativeLayout::isType( const Uint32& type ) const {
-	return UIWidget::getType() == type ? true : UIWidget::isType( type );
+	return UIRelativeLayout::getType() == type ? true : UIWidget::isType( type );
 }
 
 UIRelativeLayout * UIRelativeLayout::add(UIWidget * widget) {
@@ -42,10 +42,12 @@ void UIRelativeLayout::fixChilds() {
 
 	if ( getLayoutWidthRules() == MATCH_PARENT ) {
 		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
+		sendCommonEvent( UIEvent::EventOnSizeChange );
 	}
 
 	if ( getLayoutHeightRules() == MATCH_PARENT ) {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
+		sendCommonEvent( UIEvent::EventOnSizeChange );
 	}
 
 	UIControl * child = mChild;

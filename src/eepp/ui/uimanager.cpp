@@ -355,7 +355,7 @@ void UIManager::checkTabPress( const Uint32& KeyCode ) {
 	eeASSERT( NULL != mFocusControl );
 
 	if ( KeyCode == KEY_TAB ) {
-		UIControl * Ctrl = mFocusControl->getNextComplexControl();
+		UIControl * Ctrl = mFocusControl->getNextWidget();
 
 		if ( NULL != Ctrl )
 			Ctrl->setFocus();

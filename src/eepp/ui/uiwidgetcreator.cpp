@@ -28,6 +28,7 @@
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uitouchdragablewidget.hpp>
+#include <eepp/ui/uigridlayout.hpp>
 
 namespace  EE { namespace UI {
 
@@ -69,6 +70,7 @@ UIWidget * UIWidgetCreator::createFromName( std::string widgetName ) {
 	else if ( widgetName == "scrollview" )		return UIScrollView::New();
 	else if ( widgetName == "subtexture" )		return UISubTexture::New();
 	else if ( widgetName == "touchdragable" )	return UITouchDragableWidget::New();
+	else if ( widgetName == "gridlayout" )		return UIGridLayout::New();
 
 	if ( widgetCallback.find( widgetName ) != widgetCallback.end() ) {
 		return widgetCallback[ widgetName ].Call( widgetName );

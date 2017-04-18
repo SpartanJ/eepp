@@ -971,7 +971,7 @@ void UIListBox::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
 }
 
 void UIListBox::loadFromXmlNode(const pugi::xml_node & node) {
-	UIWidget::loadFromXmlNode( node );
+	UITouchDragableWidget::loadFromXmlNode( node );
 
 	std::vector<String> items;
 	for ( pugi::xml_node item = node.child("item"); item; item = item.next_sibling("item") ) {

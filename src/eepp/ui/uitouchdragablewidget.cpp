@@ -1,5 +1,6 @@
 #include <eepp/ui/uitouchdragablewidget.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -117,6 +118,21 @@ void UITouchDragableWidget::onTouchDragValueChange( Vector2f diff )
 
 bool UITouchDragableWidget::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds();
+}
+
+void UITouchDragableWidget::loadFromXmlNode(const pugi::xml_node & node) {
+	UIWidget::loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "touchdrag" == name ) {
+			setTouchDragEnabled( ait->as_bool() );
+		} else if ( "touchdragdeceleration" == name ) {
+			setTouchDragDeceleration( Vector2f( ait->as_float(), ait->as_float() ) );
+		}
+	}
 }
 
 }}

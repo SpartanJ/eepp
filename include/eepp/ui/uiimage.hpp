@@ -23,15 +23,11 @@ class EE_API UIImage : public UIWidget {
 
 		Drawable * getDrawable() const;
 
-		void setDrawable( Drawable * drawable );
+		UIImage * setDrawable( Drawable * drawable );
 
 		const Color& getColor() const;
 
-		void setColor( const Color& col );
-
-		const EE_RENDER_MODE& getRenderMode() const;
-
-		void setRenderMode( const EE_RENDER_MODE& render );
+		UIImage * setColor( const Color& col );
 
 		const Vector2i& getAlignOffset() const;
 

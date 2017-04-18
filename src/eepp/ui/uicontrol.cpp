@@ -369,7 +369,7 @@ void UIControl::drawBox() {
 		Primitives P;
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
-		P.setColor( Color::colorFromPointer( this ) );
+		P.setColor( Color::fromPointer( this ) );
 		P.setLineWidth( PixelDensity::dpToPxI( 1 ) );
 		P.drawRectangle( getRectf() );
 	}
@@ -1449,7 +1449,7 @@ Sizei UIControl::getSkinSize() {
 	return Sizei::Zero;
 }
 
-UIControl * UIControl::getNextComplexControl() {
+UIControl * UIControl::getNextWidget() {
 	UIControl * Found		= NULL;
 	UIControl * ChildLoop	= mChild;
 
@@ -1458,7 +1458,7 @@ UIControl * UIControl::getNextComplexControl() {
 			if ( ChildLoop->isWidget() ) {
 				return ChildLoop;
 			} else {
-				Found = ChildLoop->getNextComplexControl();
+				Found = ChildLoop->getNextWidget();
 
 				if ( NULL != Found ) {
 					return Found;
@@ -1473,7 +1473,7 @@ UIControl * UIControl::getNextComplexControl() {
 		if ( mNext->isVisible() && mNext->isEnabled() && mNext->isWidget() ) {
 			return mNext;
 		} else {
-			return mNext->getNextComplexControl();
+			return mNext->getNextWidget();
 		}
 	} else {
 		ChildLoop = mParentCtrl;
@@ -1483,7 +1483,7 @@ UIControl * UIControl::getNextComplexControl() {
 				if ( ChildLoop->mNext->isVisible() && ChildLoop->mNext->isEnabled() && ChildLoop->mNext->isWidget() ) {
 					return ChildLoop->mNext;
 				} else {
-					return ChildLoop->mNext->getNextComplexControl();
+					return ChildLoop->mNext->getNextWidget();
 				}
 			}
 

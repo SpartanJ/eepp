@@ -225,7 +225,7 @@ class EE_API Color : public tColor<Uint8>
 		/** Blend a source color to destination color */
 		static Color blend( Color src, Color dst );
 
-		static Color colorFromPointer( void *ptr );
+		static Color fromPointer( void *ptr );
 
 		static Color fromString( const char * str );
 

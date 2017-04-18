@@ -749,6 +749,36 @@ void EETest::createNewUI() {
 		"	</LinearLayout>"
 		"</window>"
 	);
+
+	/*
+	UIManager::instance()->loadLayoutFromString(
+		"<window layout_width='800dp' layout_height='600dp' winflags='default|maximize'>"
+		"	<LinearLayout layout_width='match_parent' layout_height='match_parent'>"
+		"		<ScrollView layout_width='match_parent' layout_height='match_parent' layout_weight='1' touchdrag='true'>"
+		"			<GridLayout columnMode='size' rowMode='size' columnWidth='200dp' rowHeight='200dp' layout_width='match_parent' layout_height='wrap_content' id='gridlayout' />"
+		"		</ScrollView>"
+		"	</LinearLayout>"
+		"</window>"
+	);
+
+	UIGridLayout * gridLayout = NULL;
+	UIManager::instance()->getMainControl()->bind( "gridlayout", gridLayout );
+
+	if ( NULL != gridLayout ) {
+		std::vector<Texture*> textures = TextureFactory::instance()->getTextures();
+
+		if ( textures.size() > 0 ) {
+			for ( std::size_t i = 0; i < textures.size(); i++ ) {
+				UIImage::New()->setDrawable( textures[i] )
+						->setScaleType( UIScaleType::FitInside )
+						->setGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
+						->setEnabled( false )
+						->setParent( gridLayout )->setBackgroundFillEnabled( true )
+							->setColor( Color::fromPointer( textures[i] ) );
+			}
+		}
+	}
+	*/
 }
 
 void EETest::createMapEditor() {

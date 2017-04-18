@@ -219,7 +219,7 @@ class EE_API UIControl {
 
 		Sizei getSkinSize();
 
-		UIControl * getNextComplexControl();
+		UIControl * getNextWidget();
 
 		void applyDefaultTheme();
 

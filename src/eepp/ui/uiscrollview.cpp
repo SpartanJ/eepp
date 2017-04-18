@@ -16,12 +16,15 @@ UIScrollView::UIScrollView() :
 	mVScroll( UIScrollBar::New( UI_VERTICAL ) ),
 	mHScroll( UIScrollBar::New( UI_HORIZONTAL ) ),
 	mContainer( UIControlAnim::New() ),
-	mScrollView( NULL )
+	mScrollView( NULL ),
+	mSizeChangeCb( 0 )
 {
+	setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
+
 	mVScroll->setParent( this );
 	mHScroll->setParent( this );
 	mContainer->setParent( this );
-	mContainer->setFlags( UI_CLIP_ENABLE );
+	mContainer->setFlags( UI_CLIP_ENABLE | UI_REPORT_SIZE_CHANGE_TO_CHILDS );
 
 	mVScroll->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIScrollView::onValueChangeCb ) );
 	mHScroll->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIScrollView::onValueChangeCb ) );
@@ -66,11 +69,16 @@ void UIScrollView::onChildCountChange() {
 	}
 
 	if ( found ) {
-		if ( NULL != mScrollView )
+		if ( NULL != mScrollView ) {
+			if ( 0 != mSizeChangeCb )
+				mScrollView->removeEventListener( mSizeChangeCb );
+
 			mScrollView->close();
+		}
 
 		child->setParent( mContainer );
 		mScrollView = child;
+		mSizeChangeCb = mScrollView->addEventListener( UIEvent::EventOnSizeChange, cb::Make1( this, &UIScrollView::onScrollViewSizeChange ) );
 
 		containerUpdate();
 	}
@@ -186,6 +194,10 @@ void UIScrollView::onValueChangeCb( const UIEvent * Event ) {
 	updateScroll();
 }
 
+void UIScrollView::onScrollViewSizeChange(const UIEvent * Event) {
+	containerUpdate();
+}
+
 void UIScrollView::onTouchDragValueChange( Vector2f diff ) {
 	if ( mVScroll->isEnabled() )
 		mVScroll->setValue( mVScroll->getValue() + ( -diff.y / (Float)( mScrollView->getSize().getHeight() ) ) );
@@ -200,7 +212,7 @@ bool UIScrollView::isTouchOverAllowedChilds() {
 }
 
 void UIScrollView::loadFromXmlNode( const pugi::xml_node& node ) {
-	UIWidget::loadFromXmlNode( node );
+	UITouchDragableWidget::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
 		std::string name = ait->name();
