@@ -70,12 +70,10 @@ void UILinearLayout::pack() {
 void UILinearLayout::packVertical() {
 	if ( getLayoutWidthRules() == MATCH_PARENT && 0 == mLayoutWeight ) {
 		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
-		sendCommonEvent( UIEvent::EventOnSizeChange );
 	}
 
 	if ( getLayoutHeightRules() == MATCH_PARENT ) {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
-		sendCommonEvent( UIEvent::EventOnSizeChange );
 	}
 
 	UIControl * ChildLoop = mChild;
@@ -161,7 +159,6 @@ void UILinearLayout::packVertical() {
 	if ( getLayoutHeightRules() == WRAP_CONTENT ) {
 		setInternalHeight( curY );
 		notifyLayoutAttrChangeParent();
-		sendCommonEvent( UIEvent::EventOnSizeChange );
 	} else if ( getLayoutHeightRules() == MATCH_PARENT ) {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
 	}
@@ -170,7 +167,6 @@ void UILinearLayout::packVertical() {
 		setInternalWidth( maxX );
 		packVertical();
 		notifyLayoutAttrChangeParent();
-		sendCommonEvent( UIEvent::EventOnSizeChange );
 	}
 
 	alignAgainstLayout();
@@ -179,12 +175,10 @@ void UILinearLayout::packVertical() {
 void UILinearLayout::packHorizontal() {
 	if ( getLayoutWidthRules() == MATCH_PARENT ) {
 		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
-		sendCommonEvent( UIEvent::EventOnSizeChange );
 	}
 
 	if ( getLayoutHeightRules() == MATCH_PARENT && 0 == mLayoutWeight ) {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
-		sendCommonEvent( UIEvent::EventOnSizeChange );
 	}
 
 	UIControl * ChildLoop = mChild;
@@ -270,17 +264,14 @@ void UILinearLayout::packHorizontal() {
 	if ( getLayoutWidthRules() == WRAP_CONTENT ) {
 		setInternalWidth( curX );
 		notifyLayoutAttrChangeParent();
-		sendCommonEvent( UIEvent::EventOnSizeChange );
 	} else if ( getLayoutWidthRules() == MATCH_PARENT ) {
 		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
-		sendCommonEvent( UIEvent::EventOnSizeChange );
 	}
 
 	if ( getLayoutHeightRules() == WRAP_CONTENT && mSize.getHeight() != maxY ) {
 		setInternalHeight( maxY );
 		packHorizontal();
 		notifyLayoutAttrChangeParent();
-		sendCommonEvent( UIEvent::EventOnSizeChange );
 	}
 
 	alignAgainstLayout();

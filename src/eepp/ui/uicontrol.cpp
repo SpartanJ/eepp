@@ -158,12 +158,14 @@ void UIControl::setInternalSize( const Sizei& size ) {
 	mSize = size;
 	mRealSize = Sizei( size.x * PixelDensity::getPixelDensity(), size.y * PixelDensity::getPixelDensity() );
 	updateCenter();
+	sendCommonEvent( UIEvent::EventOnSizeChange );
 }
 
 void UIControl::setInternalPixelsSize( const Sizei& size ) {
 	mSize = PixelDensity::pxToDpI( size );
 	mRealSize = size;
 	updateCenter();
+	sendCommonEvent( UIEvent::EventOnSizeChange );
 }
 
 UIControl * UIControl::setSize( const Sizei& Size ) {
@@ -696,7 +698,6 @@ void UIControl::onPositionChange() {
 }
 
 void UIControl::onSizeChange() {
-	sendCommonEvent( UIEvent::EventOnSizeChange );
 }
 
 Rectf UIControl::getRectf() {

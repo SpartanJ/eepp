@@ -750,7 +750,6 @@ void EETest::createNewUI() {
 		"</window>"
 	);
 
-	/*
 	UIManager::instance()->loadLayoutFromString(
 		"<window layout_width='800dp' layout_height='600dp' winflags='default|maximize'>"
 		"	<LinearLayout layout_width='match_parent' layout_height='match_parent'>"
@@ -778,7 +777,6 @@ void EETest::createNewUI() {
 			}
 		}
 	}
-	*/
 }
 
 void EETest::createMapEditor() {

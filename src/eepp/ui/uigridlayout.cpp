@@ -129,12 +129,10 @@ void UIGridLayout::pack() {
 
 	if ( getLayoutWidthRules() == MATCH_PARENT ) {
 		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
-		sendCommonEvent( UIEvent::EventOnSizeChange );
 	}
 
 	if ( getLayoutHeightRules() == MATCH_PARENT ) {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
-		sendCommonEvent( UIEvent::EventOnSizeChange );
 	}
 
 	UIControl * ChildLoop = mChild;
@@ -145,9 +143,11 @@ void UIGridLayout::pack() {
 	if ( getHorizontalAlign() == UI_HALIGN_RIGHT )
 		pos.x = mSize.getWidth() - mPadding.Right;
 
+	bool usedLastRow = true;
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
 			UIWidget * widget = static_cast<UIWidget*>( ChildLoop );
+			usedLastRow = true;
 
 			if ( widget->getLayoutWeight() != 0.f )
 				targetSize.x = widget->getLayoutWeight() * ( mSize.getWidth() - mPadding.Left - mPadding.Right );
@@ -161,6 +161,7 @@ void UIGridLayout::pack() {
 				pos.x = getHorizontalAlign() == UI_HALIGN_RIGHT ? mSize.getWidth() - mPadding.Right : mPadding.Left;
 
 				pos.y += targetSize.getHeight() + mSpan.y;
+				usedLastRow = false;
 			} else {
 				pos.x += getHorizontalAlign() == UI_HALIGN_RIGHT ? -mSpan.x : mSpan.x;
 			}
@@ -170,8 +171,7 @@ void UIGridLayout::pack() {
 	}
 
 	if ( getLayoutHeightRules() == WRAP_CONTENT ) {
-		setInternalHeight( pos.y + targetSize.getHeight() );
-		sendCommonEvent( UIEvent::EventOnSizeChange );
+		setInternalHeight( pos.y + ( usedLastRow ? targetSize.getHeight() : 0 ) );
 	}
 }
 
