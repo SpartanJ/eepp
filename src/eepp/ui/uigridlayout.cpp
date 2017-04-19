@@ -124,8 +124,7 @@ void UIGridLayout::onParentSizeChange(const Vector2i & SizeChange) {
 }
 
 void UIGridLayout::pack() {
-	setInternalPosition( Vector2i( mLayoutMargin.Left, mPos.y ) );
-	setInternalPosition( Vector2i( mPos.x, mLayoutMargin.Top ) );
+	setInternalPosition( Vector2i( mLayoutMargin.Left, mLayoutMargin.Top ) );
 
 	if ( getLayoutWidthRules() == MATCH_PARENT ) {
 		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
