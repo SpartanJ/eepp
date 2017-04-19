@@ -28,7 +28,6 @@ class EE_API UILinearLayout : public UIWidget {
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		UI_ORIENTATION mOrientation;
-		bool mAttrChangeReceive;
 
 		virtual Uint32 onMessage( const UIMessage * Msg );
 

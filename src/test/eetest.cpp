@@ -753,7 +753,7 @@ void EETest::createNewUI() {
 	UIManager::instance()->loadLayoutFromString(
 		"<window layout_width='800dp' layout_height='600dp' winflags='default|maximize'>"
 		"	<LinearLayout layout_width='match_parent' layout_height='match_parent'>"
-		"		<ScrollView layout_width='match_parent' layout_height='match_parent' layout_weight='1' touchdrag='true'>"
+		"		<ScrollView layout_width='match_parent' layout_height='match_parent' touchdrag='true'>"
 		"			<GridLayout columnMode='size' rowMode='size' columnWidth='200dp' rowHeight='200dp' layout_width='match_parent' layout_height='wrap_content' id='gridlayout' />"
 		"		</ScrollView>"
 		"	</LinearLayout>"

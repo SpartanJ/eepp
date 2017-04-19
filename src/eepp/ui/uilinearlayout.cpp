@@ -17,8 +17,7 @@ UILinearLayout * UILinearLayout::NewHorizontal() {
 
 UILinearLayout::UILinearLayout() :
 	UIWidget(),
-	mOrientation( UI_VERTICAL ),
-	mAttrChangeReceive( true )
+	mOrientation( UI_VERTICAL )
 {
 	setFlags( UI_CLIP_ENABLE );
 }
@@ -94,7 +93,11 @@ void UILinearLayout::packVertical() {
 				}
 				case MATCH_PARENT:
 				{
-					widget->setSize( mSize.getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right, widget->getSize().getHeight() );
+					int w = mSize.getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right;
+
+					if ( widget->getSize().getWidth() != w )
+						widget->setSize( w, widget->getSize().getHeight() );
+
 					break;
 				}
 				case FIXED:
@@ -103,8 +106,8 @@ void UILinearLayout::packVertical() {
 				}
 			}
 
-			if ( widget->getLayoutHeightRules() == MATCH_PARENT && widget->getSize().getHeight() != mSize.getHeight() ) {
-				//widget->setSize( widget->getSize().getWidth(), mSize.getHeight() );
+			if ( widget->getLayoutHeightRules() == MATCH_PARENT && widget->getLayoutWeight() == 0 && widget->getSize().getHeight() != mSize.getHeight() ) {
+				widget->setSize( widget->getSize().getWidth(), mSize.getHeight() );
 			}
 		}
 
@@ -157,10 +160,15 @@ void UILinearLayout::packVertical() {
 	}
 
 	if ( getLayoutHeightRules() == WRAP_CONTENT ) {
-		setInternalHeight( curY );
-		notifyLayoutAttrChangeParent();
+		if ( curY != mSize.getHeight() ) {
+			setInternalHeight( curY );
+			notifyLayoutAttrChangeParent();
+		}
 	} else if ( getLayoutHeightRules() == MATCH_PARENT ) {
-		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
+		int h = getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom;
+
+		if ( h != mSize.getHeight() )
+			setInternalHeight( h );
 	}
 
 	if ( getLayoutWidthRules() == WRAP_CONTENT && mSize.getWidth() != maxX ) {
@@ -199,7 +207,11 @@ void UILinearLayout::packHorizontal() {
 				}
 				case MATCH_PARENT:
 				{
-					widget->setSize( widget->getSize().getWidth(), mSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom );
+					int h = mSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom;
+
+					if ( h != widget->getSize().getHeight() )
+						widget->setSize( widget->getSize().getWidth(), h );
+
 					break;
 				}
 				case FIXED:
@@ -208,8 +220,8 @@ void UILinearLayout::packHorizontal() {
 				}
 			}
 
-			if ( widget->getLayoutWidthRules() == MATCH_PARENT && widget->getSize().getWidth() != mSize.getWidth() ) {
-				//widget->setSize( mSize.getWidth(), widget->getSize().getWidth() );
+			if ( widget->getLayoutWidthRules() == MATCH_PARENT && widget->getLayoutWeight() == 0 && widget->getSize().getWidth() != mSize.getWidth() ) {
+				widget->setSize( mSize.getWidth(), widget->getSize().getWidth() );
 			}
 		}
 
@@ -262,10 +274,15 @@ void UILinearLayout::packHorizontal() {
 	}
 
 	if ( getLayoutWidthRules() == WRAP_CONTENT ) {
-		setInternalWidth( curX );
-		notifyLayoutAttrChangeParent();
+		if ( curX != mSize.getWidth() ) {
+			setInternalWidth( curX );
+			notifyLayoutAttrChangeParent();
+		}
 	} else if ( getLayoutWidthRules() == MATCH_PARENT ) {
-		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
+		int w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
+
+		if ( w != mSize.getWidth() )
+			setInternalWidth( w );
 	}
 
 	if ( getLayoutHeightRules() == WRAP_CONTENT && mSize.getHeight() != maxY ) {
