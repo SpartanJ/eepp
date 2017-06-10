@@ -49,6 +49,9 @@ bool UISelectButton::selected() const {
 }
 
 void UISelectButton::onStateChange() {
+	if ( NULL == mSkinState )
+		return;
+
 	if ( mSkinState->getState() != UISkinState::StateSelected && selected() ) {
 		if ( mSkinState->stateExists( UISkinState::StateSelected ) ) {
 			setSkinState( UISkinState::StateSelected );

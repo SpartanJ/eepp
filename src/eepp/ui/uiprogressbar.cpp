@@ -80,6 +80,9 @@ void UIProgressBar::draw() {
 void UIProgressBar::update() {
 	UIControlAnim::update();
 
+	if ( NULL == mFillerSkin )
+		return;
+
 	mOffset += mStyleConfig.MovementSpeed * (Float)( getElapsed().asSeconds() );
 
 	Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize() ) );

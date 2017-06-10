@@ -258,7 +258,7 @@ bool tRECT<T>::intersectsSegment( const Vector2<T>& a, const Vector2<T>& b ) {
 		Vector2<T> offset( ( a.x + b.x - Right - Left ), ( a.y + b.y - Bottom - Top ) );
 		Vector2<T> extents( Right - Left, Bottom - Top );
 
-		return ( eeabs( axis.Dot( offset ) ) < eeabs( axis.x * extents.x ) + eeabs( axis.y * extents.y ) );
+		return ( eeabs( axis.dot( offset ) ) < eeabs( axis.x * extents.x ) + eeabs( axis.y * extents.y ) );
 	}
 
 	return false;

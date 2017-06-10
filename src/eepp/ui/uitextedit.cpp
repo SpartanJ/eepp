@@ -225,10 +225,11 @@ void UITextEdit::scrollbarsSet() {
 	if ( mHScrollBar->isVisible() ) {
 		Int32 totW = mRealSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right - mVScrollBar->getRealSize().getWidth();
 
-		if ( mTextInput->getTextWidth() > totW ) {
+		if ( mTextInput->getTextWidth() > totW && 0 != mTextInput->getTextWidth() ) {
 			mHScrollBar->setPageStep( (Float)totW / (Float)mTextInput->getTextWidth() );
 		}
 	}
+
 	mSkipValueChange = false;
 }
 

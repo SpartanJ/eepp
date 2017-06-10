@@ -167,7 +167,7 @@ void EETest::createUIThemeTextureAtlas() {
 	std::string Path( MyPath + "ui/" + mThemeName );
 
 	if ( !FileSystem::fileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
-		TexturePacker tp( 512, 512, mThemeName.find_first_of( "2x" ) != std::string::npos ? PD_XHDPI : PD_MDPI, true, 2 );
+		TexturePacker tp( 512, 512, mThemeName.find_first_of( "2x" ) != std::string::npos ? PD_XHDPI : ( mThemeName.find_first_of( "1.5x" ) != std::string::npos ? PD_HDPI : PD_MDPI ), true, 2 );
 		tp.addTexturesPath( Path );
 		tp.packTextures();
 		tp.save( tgpath + ".png", SAVE_TYPE_PNG );
@@ -278,6 +278,8 @@ void EETest::createUI() {
 
 	if ( PixelDensity::getPixelDensity() >= 2 ) {
 		mThemeName += "2x";
+	} else if ( PixelDensity::getPixelDensity() >= 1.1 ) {
+		mThemeName += "1.5x";
 	}
 
 	createUIThemeTextureAtlas();
@@ -754,7 +756,7 @@ void EETest::createNewUI() {
 		"<window layout_width='800dp' layout_height='600dp' winflags='default|maximize'>"
 		"	<LinearLayout layout_width='match_parent' layout_height='match_parent'>"
 		"		<ScrollView layout_width='match_parent' layout_height='match_parent' touchdrag='true'>"
-		"			<GridLayout columnMode='size' rowMode='size' columnWidth='200dp' rowHeight='200dp' layout_width='match_parent' layout_height='wrap_content' id='gridlayout' />"
+		"			<GridLayout columnMode='size' rowMode='size' columnWidth='200dp' rowHeight='200dp' layout_width='match_parent' layout_height='wrap_content' id='gridlayout' clip='false' />"
 		"		</ScrollView>"
 		"	</LinearLayout>"
 		"</window>"
@@ -768,7 +770,8 @@ void EETest::createNewUI() {
 
 		if ( textures.size() > 0 ) {
 			for ( std::size_t i = 0; i < textures.size(); i++ ) {
-				UIImage::New()->setDrawable( textures[i] )
+				UIImage::New()
+						->setDrawable( textures[i] )
 						->setScaleType( UIScaleType::FitInside )
 						->setGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
 						->setEnabled( false )

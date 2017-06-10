@@ -24,10 +24,10 @@ class Vector2 {
 		Vector2<T> copy();
 
 		/** @return The Dot product of the 2D vectors. */
-		T Dot( const Vector2<T>& V2 );
+		T dot( const Vector2<T>& V2 );
 
 		/** @return The Cross product of the 2D vectors.  */
-		T Cross( const Vector2<T>& V2 );
+		T cross( const Vector2<T>& V2 );
 
 		/** @return The perpendicular vector */
 		Vector2<T> perp();
@@ -92,6 +92,10 @@ class Vector2 {
 		/** Scales the vector position against another vector */
 		void scale( const T& scale, const Vector2<T>& Center );
 
+		Vector2<T> ceil();
+
+		Vector2<T> floor();
+
 		T x;
 		T y;
 	private:
@@ -119,7 +123,7 @@ Vector2<T> Vector2<T>::lerpConst( const Vector2<T>& Vec, T Dist ) {
 
 template <typename T>
 Vector2<T> Vector2<T>::sphericalLerp( const Vector2<T>& Vec, T Time ) {
-	T omega = eeacos( Dot( Vec ) );
+	T omega = eeacos( dot( Vec ) );
 
 	if( omega ) {
 		T denom = 1 / eesin( omega );
@@ -132,7 +136,7 @@ Vector2<T> Vector2<T>::sphericalLerp( const Vector2<T>& Vec, T Time ) {
 
 template <typename T>
 Vector2<T> Vector2<T>::sphericalLerpConst( const Vector2<T>& Vec, T Angle ) {
-	T angle = eeacos( Dot( Vec ) );
+	T angle = eeacos( dot( Vec ) );
 	return lerp( Vec, ( ( Angle < angle ) ? Angle : angle ) / angle );
 }
 
@@ -334,12 +338,12 @@ void Vector2<T>::scale( const T& scale, const Vector2<T>& Center ) {
 
 
 template <typename T>
-T Vector2<T>::Dot( const Vector2<T>& V2 ) {
+T Vector2<T>::dot( const Vector2<T>& V2 ) {
 	return x * V2.x + y * V2.y;
 }
 
 template <typename T>
-T Vector2<T>::Cross( const Vector2<T>& V2 ) {
+T Vector2<T>::cross( const Vector2<T>& V2 ) {
 	return x * V2.x - y * V2.y;
 }
 
@@ -365,12 +369,12 @@ Vector2<T> Vector2<T>::unrotate( const Vector2<T>& V2 ) {
 
 template <typename T>
 T Vector2<T>::length() {
-	return eesqrt( Dot( Vector2<T>( x , y ) ) );
+	return eesqrt( dot( Vector2<T>( x , y ) ) );
 }
 
 template <typename T>
 T Vector2<T>::lengthSq() {
-	return Dot( Vector2<T>( x , y ) );
+	return dot( Vector2<T>( x , y ) );
 }
 
 template <typename T>
@@ -407,12 +411,22 @@ T Vector2<T>::distanceSq( const Vector2<T>& Vec ) {
 
 template <typename T>
 void Vector2<T>::clamp( T len ) {
-	if ( Dot( Vector2<T>( x, y ) ) > len * len ) {
+	if ( dot( Vector2<T>( x, y ) ) > len * len ) {
 		normalize();
 
 		x *= len;
 		y *= len;
 	}
+}
+
+template <typename T>
+Vector2<T> Vector2<T>::ceil() {
+	return Vector2<T>( eeceil( x ), eeceil( y ) );
+}
+
+template <typename T>
+Vector2<T> Vector2<T>::floor() {
+	return Vector2<T>( eefloor( x ), eefloor( y ) );
 }
 
 template <typename T>

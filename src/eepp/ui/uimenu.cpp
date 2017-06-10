@@ -186,7 +186,7 @@ Uint32 UIMenu::addSeparator() {
 	UIMenuSeparator * Control = UIMenuSeparator::New();
 	Control->setParent( this );
 	Control->setPosition( mStyleConfig.Padding.Left, mStyleConfig.Padding.Top + mNextPosY );
-	Control->setSize( mSize.getWidth() - mStyleConfig.Padding.Left - mStyleConfig.Padding.Right, 3 );
+	Control->setSize( mSize.getWidth() - mStyleConfig.Padding.Left - mStyleConfig.Padding.Right, Control->getSkinSize().getHeight() );
 
 	mNextPosY += Control->getSize().getHeight();
 

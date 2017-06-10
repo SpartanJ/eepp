@@ -18,7 +18,7 @@ UISlider::UISlider( const UI_ORIENTATION& orientation ) :
 	mMaxValue( 1.f ),
 	mValue( 0.f ),
 	mClickStep( 0.1f ),
-	mPageStep(0),
+	mPageStep( 0 ),
 	mOnPosChange( false )
 {
 	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();

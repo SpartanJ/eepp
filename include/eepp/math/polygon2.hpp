@@ -308,23 +308,23 @@ bool Polygon2<T>::intersect( const Polygon2<T>& p1 ) {
 
 		vAxis = Line2<T>( Vector[i], Vector[n] ).getNormal();
 
-		min0 = vAxis.Dot( Vector[0] );
+		min0 = vAxis.dot( Vector[0] );
 		max0 = min0;
 		for (j = 1; j < this->getSize(); j++) {
-			t = vAxis.Dot( Vector[j] );
+			t = vAxis.dot( Vector[j] );
 			if (t < min0) min0 = t;
 			if (t > max0) max0 = t;
 		}
 
-		min1 = vAxis.Dot( p1[0] );
+		min1 = vAxis.dot( p1[0] );
 		max1 = min1;
 		for (j = 1; j < p1.getSize(); j++) {
-			t = vAxis.Dot( p1[j] );
+			t = vAxis.dot( p1[j] );
 			if (t < min1) min1 = t;
 			if (t > max1) max1 = t;
 		}
 
-		sOffset = vAxis.Dot( vOffset );
+		sOffset = vAxis.dot( vOffset );
 		min0 += sOffset;
 		max0 += sOffset;
 
@@ -339,23 +339,23 @@ bool Polygon2<T>::intersect( const Polygon2<T>& p1 ) {
 
 		vAxis = Line2<T>( p1[i], p1[n] ).getNormal();
 
-		min0 = vAxis.Dot( Vector[0] );
+		min0 = vAxis.dot( Vector[0] );
 		max0 = min0;
 		for (j = 1; j < this->getSize(); j++) {
-			t = vAxis.Dot( Vector[j] );
+			t = vAxis.dot( Vector[j] );
 			if (t < min0) min0 = t;
 			if (t > max0) max0 = t;
 		}
 
-		min1 = vAxis.Dot( p1[0] );
+		min1 = vAxis.dot( p1[0] );
 		max1 = min1;
 		for (j = 1; j < p1.getSize(); j++) {
-			t = vAxis.Dot( p1[j] );
+			t = vAxis.dot( p1[j] );
 			if (t < min1) min1 = t;
 			if (t > max1) max1 = t;
 		}
 
-		sOffset = vAxis.Dot( vOffset );
+		sOffset = vAxis.dot( vOffset );
 		min0 += sOffset;
 		max0 += sOffset;
 

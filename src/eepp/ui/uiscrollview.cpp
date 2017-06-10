@@ -177,16 +177,20 @@ void UIScrollView::containerUpdate() {
 	mVScroll->setSize( mVScroll->getSize().getWidth(), mSize.getHeight() );
 	mHScroll->setSize( mSize.getWidth() - ( mVScroll->isVisible() ? mVScroll->getSize().getWidth() : 0 ), mHScroll->getSize().getHeight() );
 
-	mVScroll->setPageStep( (Float)mContainer->getSize().getHeight() / (Float)mScrollView->getSize().getHeight());
-	mHScroll->setPageStep( (Float)mContainer->getSize().getWidth() / (Float)mScrollView->getSize().getWidth() );
+	if ( mVScroll->isVisible() && 0 != mScrollView->getSize().getHeight() )
+		mVScroll->setPageStep( (Float)mContainer->getSize().getHeight() / (Float)mScrollView->getSize().getHeight() );
+
+	if ( mHScroll->isVisible() && 0 != mScrollView->getSize().getWidth() ) {
+		mHScroll->setPageStep( (Float)mContainer->getSize().getWidth() / (Float)mScrollView->getSize().getWidth() );
+	}
 
 	updateScroll();
 }
 
 void UIScrollView::updateScroll() {
 	mScrollView->setPosition(
-		-( mHScroll->getSlider()->getValue() * ( mScrollView->getSize().getWidth() - mSize.getWidth() ) ),
-		-( mVScroll->getSlider()->getValue() * ( mScrollView->getSize().getHeight() - mSize.getHeight() ) )
+		mHScroll->isVisible() ? -( mHScroll->getSlider()->getValue() * eemax( 0, mScrollView->getSize().getWidth() - mSize.getWidth() ) ) : 0 ,
+		mVScroll->isVisible() ? -( mVScroll->getSlider()->getValue() * eemax( 0, mScrollView->getSize().getHeight() - mSize.getHeight() ) ) : 0
 	);
 }
 
@@ -199,10 +203,10 @@ void UIScrollView::onScrollViewSizeChange(const UIEvent * Event) {
 }
 
 void UIScrollView::onTouchDragValueChange( Vector2f diff ) {
-	if ( mVScroll->isEnabled() )
+	if ( mVScroll->isEnabled() && 0 != mScrollView->getSize().getHeight() )
 		mVScroll->setValue( mVScroll->getValue() + ( -diff.y / (Float)( mScrollView->getSize().getHeight() ) ) );
 
-	if ( mHScroll->isEnabled() )
+	if ( mHScroll->isEnabled() && 0 != mScrollView->getSize().getWidth() )
 		mHScroll->setValue( mHScroll->getValue() + ( -diff.x / (Float)( mScrollView->getSize().getWidth() ) ) );
 }
 

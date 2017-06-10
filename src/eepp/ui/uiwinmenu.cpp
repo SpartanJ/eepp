@@ -71,8 +71,8 @@ void UIWinMenu::setTheme( UITheme * Theme ) {
 		it->first->setThemeSkin( Theme, "winmenubutton" );
 	}
 
-	if ( 0 == mStyleConfig.MenuHeight && NULL != getSkin() && NULL != getSkin() ) {
-		mStyleConfig.MenuHeight = getSkin()->getSize().getHeight();
+	if ( 0 == mStyleConfig.MenuHeight && NULL != getSkin() ) {
+		mStyleConfig.MenuHeight = getSkinSize().getHeight();
 
 		setSize( getParent()->getSize().getWidth(), mStyleConfig.MenuHeight );
 

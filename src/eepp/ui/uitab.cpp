@@ -80,11 +80,11 @@ void UITab::onStateChange() {
 
 	UITabWidget * tTabW = getTabWidget();
 
-	if ( NULL != tTabW ) {
-		Int32 skinSize = getSkin()->getSize( mSkinState->getState() ).getHeight();
+	if ( NULL != tTabW && NULL != mSkinState ) {
+		Int32 skinSize = getSkinSize( getSkin(), mSkinState->getState() ).getHeight();
 
 		if ( 0 == skinSize ) {
-			skinSize = getSkin()->getSize().getHeight();
+			skinSize = getSkinSize().getHeight();
 		}
 
 		setSize( mSize.getWidth(), skinSize );

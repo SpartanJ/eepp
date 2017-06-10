@@ -33,7 +33,8 @@ UISkinComplex::~UISkinComplex() {
 
 }
 
-#define DRAWABLE_PX_SIZE PixelDensity::dpToPx( tDrawable->getSize() )
+#define DRAWABLE_PX_SIZE PixelDensity::dpToPx( tDrawable->getSize() ).ceil()
+
 
 void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State ) {
 	if ( 0 == Alpha )

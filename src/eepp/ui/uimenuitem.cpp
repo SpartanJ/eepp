@@ -41,6 +41,9 @@ Uint32 UIMenuItem::onMouseEnter( const Vector2i &Pos, const Uint32 Flags ) {
 void UIMenuItem::onStateChange() {
 	UIMenu * tMenu = reinterpret_cast<UIMenu*> ( getParent() );
 
+	if ( NULL == mSkinState )
+		return;
+
 	if ( mSkinState->getState() == UISkinState::StateSelected ) {
 		mTextBox->setFontColor( tMenu->getFontStyleConfig().getFontSelectedColor() );
 	} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {

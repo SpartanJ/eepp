@@ -138,7 +138,7 @@ void UIPushButton::onThemeLoaded() {
 	}
 
 	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() ) {
-		setInternalHeight( getSkin()->getSize().getHeight() );
+		setInternalHeight( getSkinSize().getHeight() );
 	}
 
 	autoPadding();

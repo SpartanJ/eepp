@@ -53,11 +53,11 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 	mButton->setThemeSkin( Theme, "combobox_button" );
 
 	if ( NULL != mDropDownList->getSkin() ) {
-		setInternalHeight( mDropDownList->getSkin()->getSize().getHeight() );
+		setInternalHeight( mDropDownList->getSkinSize().getHeight() );
 	}
 
 	if ( NULL != mButton->getSkin() ) {
-		mButton->setSize( mButton->getSkin()->getSize() );
+		mButton->setSize( mButton->getSkinSize() );
 	}
 
 	updateControls();
@@ -80,7 +80,7 @@ void UIComboBox::loadFromXmlNode(const pugi::xml_node& node) {
 }
 
 void UIComboBox::updateControls() {
-	if ( ( mFlags & UI_AUTO_SIZE ) || mSize.getHeight() < mDropDownList->getSkin()->getSize().getHeight() ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) || mSize.getHeight() < mDropDownList->getSkinSize().getHeight() ) {
 		onAutoSize();
 	}
 
@@ -114,7 +114,7 @@ void UIComboBox::onPositionChange() {
 }
 
 void UIComboBox::onAutoSize() {
-	setInternalHeight( mDropDownList->getSkin()->getSize().getHeight() );
+	setInternalHeight( mDropDownList->getSkinSize().getHeight() );
 }
 
 }}
