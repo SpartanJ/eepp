@@ -71,7 +71,7 @@ UIMenuItem * UIMenu::createMenuItem( const String& Text, Drawable * Icon ) {
 	tCtrl->setParent( this );
 	tCtrl->setStyleConfig( styleConfig );
 	tCtrl->setIcon( Icon );
-	tCtrl->setText( Text );;
+	tCtrl->setText( Text );
 
 	return tCtrl;
 }
@@ -129,12 +129,12 @@ bool UIMenu::checkControlSize( UIControl * Control, const bool& Resize ) {
 
 		if ( mFlags & UI_AUTO_SIZE ) {
 			if ( Control->isType( UI_TYPE_MENUSUBMENU ) ) {
-				Int32 textWidth = PixelDensity::pxToDpI( tItem->getTextBox()->getTextWidth() );
+				Int32 textWidth = tItem->getTextBox()->getTextWidth();
 
 				UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( tItem );
 
-				if ( textWidth + (Int32)mBiggestIcon + tMenu->getArrow()->getSize().getWidth() + (Int32)mStyleConfig.MinRightMargin > (Int32)mMaxWidth ) {
-					mMaxWidth = textWidth + mBiggestIcon + mStyleConfig.Padding.Left + mStyleConfig.Padding.Right + tMenu->getArrow()->getSize().getWidth() + mStyleConfig.MinRightMargin;
+				if ( textWidth + PixelDensity::dpToPxI( mBiggestIcon ) + tMenu->getArrow()->getRealSize().getWidth() + PixelDensity::dpToPxI( mStyleConfig.MinRightMargin ) > (Int32)mMaxWidth ) {
+					mMaxWidth = textWidth + PixelDensity::dpToPxI( mBiggestIcon + mStyleConfig.Padding.Left + mStyleConfig.Padding.Right + mStyleConfig.MinRightMargin ) + tMenu->getArrow()->getRealSize().getWidth();
 
 					if ( Resize ) {
 						resizeControls();
@@ -143,8 +143,8 @@ bool UIMenu::checkControlSize( UIControl * Control, const bool& Resize ) {
 					}
 				}
 			} else {
-				if ( Control->getSize().getWidth() > (Int32)mMaxWidth ) {
-					mMaxWidth = Control->getSize().getWidth();
+				if ( Control->getRealSize().getWidth() > (Int32)mMaxWidth ) {
+					mMaxWidth = Control->getRealSize().getWidth();
 
 					if ( Resize ) {
 						resizeControls();
@@ -167,9 +167,9 @@ Uint32 UIMenu::add( UIControl * Control ) {
 
 	setControlSize( Control, getCount() );
 
-	Control->setPosition( mStyleConfig.Padding.Left, mStyleConfig.Padding.Top + mNextPosY );
+	Control->setPixelsPosition( PixelDensity::dpToPxI( mStyleConfig.Padding.Left ), PixelDensity::dpToPxI( mStyleConfig.Padding.Top ) + mNextPosY );
 
-	mNextPosY += Control->getSize().getHeight();
+	mNextPosY += Control->getRealSize().getHeight();
 
 	mItems.push_back( Control );
 
@@ -179,16 +179,16 @@ Uint32 UIMenu::add( UIControl * Control ) {
 }
 
 void UIMenu::setControlSize( UIControl * Control, const Uint32& Pos ) {
-	Control->setSize( mSize.getWidth(), Control->getSize().getHeight() );
+	Control->setPixelsSize( mRealSize.getWidth(), Control->getRealSize().getHeight() );
 }
 
 Uint32 UIMenu::addSeparator() {
 	UIMenuSeparator * Control = UIMenuSeparator::New();
 	Control->setParent( this );
-	Control->setPosition( mStyleConfig.Padding.Left, mStyleConfig.Padding.Top + mNextPosY );
-	Control->setSize( mSize.getWidth() - mStyleConfig.Padding.Left - mStyleConfig.Padding.Right, Control->getSkinSize().getHeight() );
+	Control->setPixelsPosition( PixelDensity::dpToPxI( mStyleConfig.Padding.Left ), PixelDensity::dpToPxI( mStyleConfig.Padding.Top ) + mNextPosY );
+	Control->setPixelsSize( mRealSize.getWidth() - PixelDensity::dpToPxI( mStyleConfig.Padding.Left - mStyleConfig.Padding.Right ), PixelDensity::dpToPxI( Control->getSkinSize().getHeight() ) );
 
-	mNextPosY += Control->getSize().getHeight();
+	mNextPosY += Control->getRealSize().getHeight();
 
 	mItems.push_back( Control );
 
@@ -314,7 +314,7 @@ Uint32 UIMenu::onMessage( const UIMessage * Msg ) {
 
 void UIMenu::onSizeChange() {
 	if ( 0 != mStyleConfig.MinWidth && mSize.getWidth() < (Int32)mStyleConfig.MinWidth ) {
-		setSize( mStyleConfig.MinWidth, mNextPosY + mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom );
+		setSize( mStyleConfig.MinWidth, PixelDensity::pxToDpI( mNextPosY ) + mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom );
 	}
 }
 
@@ -346,9 +346,11 @@ void UIMenu::rePosControls() {
 	}
 
 	for ( i = 0; i < mItems.size(); i++ ) {
-		mItems[i]->setPosition( mStyleConfig.Padding.Left, mStyleConfig.Padding.Top + mNextPosY );
+		UIControl * ctrl = mItems[i];
 
-		mNextPosY += mItems[i]->getSize().getHeight();
+		ctrl->setPixelsPosition( PixelDensity::dpToPxI( mStyleConfig.Padding.Left ), PixelDensity::dpToPxI( mStyleConfig.Padding.Top ) + mNextPosY );
+
+		mNextPosY += ctrl->getRealSize().getHeight();
 	}
 
 	resizeMe();
@@ -356,9 +358,9 @@ void UIMenu::rePosControls() {
 
 void UIMenu::resizeMe() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		setSize( mMaxWidth, mNextPosY + mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom );
+		setPixelsSize( mMaxWidth, mNextPosY + PixelDensity::dpToPxI( mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom ) );
 	} else {
-		setSize( mSize.getWidth(), mNextPosY + mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom );
+		setPixelsSize( mRealSize.getWidth(), mNextPosY + PixelDensity::dpToPxI( mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom ) );
 	}
 }
 

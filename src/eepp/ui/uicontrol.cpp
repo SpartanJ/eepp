@@ -190,7 +190,17 @@ UIControl * UIControl::setSize( const Int32& Width, const Int32& Height ) {
 }
 
 void UIControl::setPixelsSize( const Sizei & size ) {
-	setSize( PixelDensity::pxToDpI( size ) );
+	if ( size != mRealSize ) {
+		Vector2i sizeChange( size.x - mRealSize.x, size.y - mRealSize.y );
+
+		setInternalPixelsSize( size );
+
+		onSizeChange();
+
+		if ( mFlags & UI_REPORT_SIZE_CHANGE_TO_CHILDS ) {
+			sendParentSizeChange( PixelDensity::pxToDpI( sizeChange ) );
+		}
+	}
 }
 
 void UIControl::setPixelsSize( const Int32& x, const Int32& y ) {
