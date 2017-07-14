@@ -3,6 +3,8 @@
 #ifdef EE_BACKEND_SDL2
 
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM_ANDROID == EE_PLATFORM
+	#define EE_WMINFO
+
 	#if !defined( EE_COMPILER_MSVC ) && EE_PLATFORM != EE_PLATFORM_ANDROID && EE_PLATFORM != EE_PLATFORM_IOS && !defined( EE_SDL2_FROM_ROOTPATH )
 	#include <SDL2/SDL_syswm.h>
 	#else
@@ -12,6 +14,7 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
+#ifdef EE_WMINFO
 WMInfo::WMInfo( SDL_Window * win ) :
 	mWMInfo( eeNew( SDL_SysWMinfo, () ) )
 {
@@ -19,10 +22,17 @@ WMInfo::WMInfo( SDL_Window * win ) :
 	SDL_VERSION( &info->version );
 	SDL_GetWindowWMInfo ( win, info );
 }
+#else
+WMInfo::WMInfo( SDL_Window * win ) :
+	mWMInfo( NULL )
+{}
+#endif
 
 WMInfo::~WMInfo() {
+#ifdef EE_WMINFO
 	SDL_SysWMinfo * info = static_cast<SDL_SysWMinfo*> ( mWMInfo );
 	eeSAFE_DELETE( info );
+#endif
 }
 
 #if defined( EE_X11_PLATFORM )

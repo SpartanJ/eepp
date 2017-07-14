@@ -193,6 +193,12 @@ function os.is_real( os_name )
 	return os.get_real() == os_name
 end
 
+if os.is_real("haiku") then
+	premake.gcc.cc = "gcc-x86"
+	premake.gcc.cxx = "g++-x86"
+	premake.gcc.ar = "ar-x86"
+end
+
 function print_table( table_ref )
 	for _, value in pairs( table_ref ) do
 		print(value)
@@ -342,8 +348,10 @@ function fix_shared_lib_linking_path( package_name, libname )
 	if ( "4.4-beta5" == _PREMAKE_VERSION or "HEAD" == _PREMAKE_VERSION ) and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
 		if os.is("macosx") then
 			linkoptions { "-install_name " .. libname .. ".dylib" }
-		elseif os.is("linux") or os.is("freebsd") or os.is("haiku") then
+		elseif os.is("linux") or os.is("freebsd") then
 			linkoptions { "-Wl,-soname=\"" .. libname .. "\"" }
+		elseif os.is("haiku") then
+			linkoptions { "-Wl,-soname=\"" .. libname .. ".so" .. "\"" }
 		end
 	end
 end
@@ -464,7 +472,7 @@ function generate_os_links()
 	elseif os.is_real("freebsd") then
 		multiple_insert( os_links, { "rt", "pthread", "X11", "openal", "GL", "Xcursor" } )
 	elseif os.is_real("haiku") then
-		multiple_insert( os_links, { "openal", "GL" } )
+		multiple_insert( os_links, { "openal", "GL", "network" } )
 	elseif os.is_real("ios") then
 		multiple_insert( os_links, { "OpenGLES.framework", "OpenAL.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework" } )
 	elseif os.is_real("emscripten") then

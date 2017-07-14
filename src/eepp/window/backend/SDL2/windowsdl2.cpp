@@ -10,7 +10,6 @@
 #include <eepp/window/backend/SDL2/inputsdl2.hpp>
 #include <eepp/window/backend/SDL2/cursormanagersdl2.hpp>
 #include <eepp/window/backend/SDL2/wminfo.hpp>
-
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/shaderprogrammanager.hpp>
 #include <eepp/graphics/vertexbuffermanager.hpp>
@@ -65,8 +64,11 @@ WindowSDL::WindowSDL( WindowSettings Settings, ContextSettings Context ) :
 	Window( Settings, Context, eeNew( ClipboardSDL, ( this ) ), eeNew( InputSDL, ( this ) ), eeNew( CursorManagerSDL, ( this ) ) ),
 	mSDLWindow( NULL ),
 	mGLContext( NULL ),
-	mGLContextThread( NULL ),
+	mGLContextThread( NULL )
+#ifdef EE_USE_WMINFO
+	,
 	mWMinfo( NULL )
+#endif
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	,
 	mZip( eeNew( Zip, () ) )
@@ -312,7 +314,7 @@ void WindowSDL::createPlatform() {
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
 	mPlatform = eeNew( Platform::OSXImpl, ( this ) );
 #else
-	Window::CreatePlatform();
+	Window::createPlatform();
 #endif
 }
 
@@ -482,10 +484,11 @@ void WindowSDL::setGamma( Float Red, Float Green, Float Blue ) {
 }
 
 eeWindowHandle	WindowSDL::getWindowHandler() {
+#ifdef EE_USE_WMINFO
 	if ( NULL != mWMinfo ) {
 		return mWMinfo->getWindowHandler();
 	}
-
+#endif
 	return 0;
 }
 
