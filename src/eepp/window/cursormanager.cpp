@@ -7,7 +7,7 @@ CursorManager::CursorManager( EE::Window::Window * window ) :
 	mCurrent( NULL ),
 	mSysCursor( SYS_CURSOR_NONE ),
 	mCursors(),
-	mCurSysCursor( SYS_CURSOR_NONE ),
+	mCurSysCursor( false ),
 	mVisible( true )
 {
 	initGlobalCursors();

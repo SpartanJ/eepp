@@ -618,7 +618,7 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &
 				}
 			} else if ( Effect == RN_MIRROR ) {
 				sBR->quadsSetSubsetFree( width / w, 0, width / w, height / h, 0, height / h, 0, 0 );
-			} else if ( RN_FLIP ) {
+			} else if ( Effect == RN_FLIP ) {
 				sBR->quadsSetSubsetFree( 0, height / h, 0, 0, width / w, 0, width / w, height / h );
 			} else {
 				sBR->quadsSetSubsetFree( width / w, height / h, width / w, 0, 0, 0, 0, height / h );
