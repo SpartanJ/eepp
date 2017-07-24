@@ -111,7 +111,7 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 				break;
 			case UI_VALIGN_TOP:
 			default:
-				pos.y = widget->getLayoutMargin().Left;
+				pos.y = widget->getLayoutMargin().Top;
 				break;
 		}
 	}
