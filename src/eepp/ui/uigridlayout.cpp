@@ -156,7 +156,7 @@ void UIGridLayout::pack() {
 
 			pos.x += getHorizontalAlign() == UI_HALIGN_RIGHT ? -targetSize.getWidth() : targetSize.getWidth();
 
-			if ( pos.x < mPadding.Left || pos.x + targetSize.x > mSize.getWidth() - mPadding.Right ) {
+			if ( pos.x < mPadding.Left || pos.x + targetSize.x > mSize.getWidth() - mPadding.Right || pos.x + targetSize.x + mSpan.x > mSize.getWidth() - mPadding.Right ) {
 				pos.x = getHorizontalAlign() == UI_HALIGN_RIGHT ? mSize.getWidth() - mPadding.Right : mPadding.Left;
 
 				pos.y += targetSize.getHeight() + mSpan.y;
@@ -199,9 +199,9 @@ void UIGridLayout::loadFromXmlNode(const pugi::xml_node & node) {
 		String::toLowerInPlace( name );
 
 		if ( "columnspan" == name ) {
-			setSpan( Sizei( mSpan.x, ait->as_int() ) );
-		} else if ( "rowspan" == name ) {
 			setSpan( Sizei( ait->as_int(), mSpan.y ) );
+		} else if ( "rowspan" == name ) {
+			setSpan( Sizei( mSpan.x, ait->as_int() ) );
 		} else if ( "span" == name ) {
 			setSpan( Sizei( ait->as_int(), ait->as_int() ) );
 		} else if ( "columnmode" == name ) {
