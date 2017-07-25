@@ -504,6 +504,8 @@ void UIManager::loadLayoutNodes( pugi::xml_node node, UIControl * parent ) {
 			if ( widget.first_child() ) {
 				loadLayoutNodes( widget.first_child(), uiwidget );
 			}
+
+			uiwidget->onWidgetCreated();
 		}
 	}
 }

@@ -58,4 +58,6 @@
 
 #include <eepp/ui/uithemedefault.hpp>
 
+#include <eepp/ui/uiwidgetcreator.hpp>
+
 #endif

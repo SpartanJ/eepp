@@ -273,6 +273,9 @@ void UIWidget::onVisibilityChange() {
 void UIWidget::onAutoSize() {
 }
 
+void UIWidget::onWidgetCreated() {
+}
+
 void UIWidget::notifyLayoutAttrChange() {
 	UIMessage msg( this, UIMessage::MsgLayoutAttributeChange );
 	messagePost( &msg );

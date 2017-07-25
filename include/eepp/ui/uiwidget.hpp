@@ -103,6 +103,8 @@ class EE_API UIWidget : public UIControlAnim {
 
 		virtual void onAutoSize();
 
+		virtual void onWidgetCreated();
+
 		void notifyLayoutAttrChange();
 
 		void notifyLayoutAttrChangeParent();
