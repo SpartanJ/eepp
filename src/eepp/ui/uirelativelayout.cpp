@@ -91,7 +91,7 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 	} else {
 		switch ( fontHAlignGet( widget->getLayoutGravity() ) ) {
 			case UI_HALIGN_CENTER:
-				pos.x = ( mSize.getWidth() - widget->getSize().getWidth() ) / 2;
+				pos.x = ( mSize.getWidth() - widget->getSize().getWidth() ) / 2 + widget->getLayoutMargin().Left;
 				break;
 			case UI_HALIGN_RIGHT:
 				pos.x = mSize.getWidth() - widget->getSize().getWidth() - widget->getLayoutMargin().Right;
@@ -104,7 +104,7 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 
 		switch ( fontVAlignGet( widget->getLayoutGravity() ) ) {
 			case UI_VALIGN_CENTER:
-				pos.y = ( mSize.getHeight() - widget->getSize().getHeight() ) / 2;
+				pos.y = ( mSize.getHeight() - widget->getSize().getHeight() ) / 2 + widget->getLayoutMargin().Top;
 				break;
 			case UI_VALIGN_BOTTOM:
 				pos.y = mSize.getHeight() - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom;
