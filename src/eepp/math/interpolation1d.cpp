@@ -153,7 +153,9 @@ void Interpolation1d::update( const Time& Elapsed ) {
 
 					if ( mOnPathEndCallback.IsSet() ) {
 						mOnPathEndCallback();
-						mOnPathEndCallback.Reset();
+
+						if ( !mEnable )
+							mOnPathEndCallback.Reset();
 					}
 					return;
 				}
