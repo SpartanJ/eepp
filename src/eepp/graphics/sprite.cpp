@@ -106,7 +106,6 @@ Sprite& Sprite::operator =( const Sprite& Other ) {
 	mRotation			= Other.mRotation;
 	mScale				= Other.mScale;
 	mAnimSpeed			= Other.mAnimSpeed;
-	mColor				= Other.mColor;
 	mRepetitions		= Other.mRepetitions;
 	mBlend				= Other.mBlend;
 	mEffect				= Other.mEffect;
@@ -141,7 +140,6 @@ Sprite Sprite::clone() {
 	Spr.mRotation			= mRotation;
 	Spr.mScale				= mScale;
 	Spr.mAnimSpeed			= mAnimSpeed;
-	Spr.mColor				= mColor;
 	Spr.mRepetitions		= mRepetitions;
 	Spr.mBlend				= mBlend;
 	Spr.mEffect				= mEffect;
@@ -180,10 +178,10 @@ void Sprite::reset() {
 
 	mAnimSpeed			= 16.f;
 	mScale				= Vector2f::One;
-	mRepetitions			= -1;
+	mRepetitions		= -1;
 
-	mRotation				= 0;
-	mColor				= Color(255, 255, 255, 255);
+	mRotation			= 0;
+	mColor				= Color::White;
 
 	mBlend				= ALPHA_NORMAL;
 	mEffect				= RN_NORMAL;

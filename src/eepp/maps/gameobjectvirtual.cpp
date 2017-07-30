@@ -98,7 +98,7 @@ void GameObjectVirtual::draw() {
 				}
 			}
 		} else {
-			mSubTexture->draw( mPos.x, mPos.y, Color(), getRotation(), Vector2f::One, ALPHA_NORMAL, getRenderModeFromFlags() );
+			mSubTexture->draw( mPos.x, mPos.y, Color::White, getRotation(), Vector2f::One, ALPHA_NORMAL, getRenderModeFromFlags() );
 		}
 	} else {
 		Primitives P;

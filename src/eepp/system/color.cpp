@@ -80,7 +80,8 @@ Color Color::blend( Color src, Color dst ) {
 
 Color::Color() :
 	tColor<Uint8>()
-{}
+{
+}
 
 Color::Color( std::string colorString ) {
 	Color c( fromString( colorString ) );

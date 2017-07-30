@@ -239,7 +239,7 @@ void Console::draw() {
 		Text& text = mTextCache[ mTextCache.size() - 3 ];
 		Color OldColor1( text.getColor() );
 		text.setStyleConfig( mFontStyleConfig );
-		text.setFillColor( Color() );
+		text.setFillColor( Color::White );
 		text.setString( "FPS: " + String::toStr( mWindow->getFPS() ) );
 		text.draw( mWindow->getWidth() - text.getTextWidth() - 15, 6 );
 		text.setFillColor( OldColor1 );

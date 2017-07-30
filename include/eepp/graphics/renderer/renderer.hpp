@@ -213,6 +213,26 @@ class EE_API Renderer {
 		const int& quadVertexs() const;
 
 		ClippingMask * getClippingMask() const;
+
+		void genFramebuffers( int n, unsigned int* framebuffers );
+
+		void deleteFramebuffers( int n, const unsigned int* framebuffers );
+
+		void bindFramebuffer( unsigned int target, unsigned int framebuffer );
+
+		void framebufferTexture2D( unsigned int target, unsigned int attachment, unsigned int textarget, unsigned int texture, int level );
+
+		void genRenderbuffers( int n, unsigned int * renderbuffers );
+
+		void deleteRenderbuffers( int n, const unsigned int* renderbuffers );
+
+		void bindRenderbuffer( unsigned int target, unsigned int renderbuffer);
+
+		void renderbufferStorage( unsigned int target, unsigned int internalformat, int width, int height );
+
+		void framebufferRenderbuffer( unsigned int target, unsigned int attachment, unsigned int renderbuffertarget, unsigned int renderbuffer );
+
+		unsigned int checkFramebufferStatus( unsigned int target );
 	protected:
 		static Renderer * sSingleton;
 
@@ -232,6 +252,8 @@ class EE_API Renderer {
 		ClippingMask * mClippingMask;
 	private:
 		void writeExtension( Uint8 Pos, Uint32 BitWrite );
+
+		void * getProcAddress( std::string proc );
 };
 
 extern EE_API Renderer * GLi;

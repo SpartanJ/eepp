@@ -100,7 +100,7 @@ Color UISprite::getColor() const {
 	if ( NULL != mSprite )
 		return mSprite->getColor();
 
-	return Color();
+	return Color::White;
 }
 
 void UISprite::setColor( const Color& color ) {

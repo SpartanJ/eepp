@@ -97,6 +97,7 @@
 #define glFramebufferRenderbufferEXT glFramebufferRenderbuffer
 #define glFramebufferTexture2DEXT glFramebufferTexture2D
 #define glVertexAttribPointerARB glVertexAttribPointer
+#define glDeleteRenderbuffersEXT glDeleteRenderbuffers
 
 #define glGenVertexArrays glGenVertexArraysOES
 #define glDeleteVertexArrays glDeleteVertexArraysOES
@@ -175,6 +176,7 @@
 #define glFramebufferRenderbufferEXT glFramebufferRenderbufferOES
 #define glFramebufferTexture2DEXT glFramebufferTexture2DOES
 #define glBlendFuncSeparateEXT glBlendFuncSeparateOES
+#define glDeleteRenderbuffersEXT glDeleteRenderbuffersOES
 
 #define GL_FRAMEBUFFER GL_FRAMEBUFFER_OES
 #define GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE_OES

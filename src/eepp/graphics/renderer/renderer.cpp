@@ -10,6 +10,18 @@ namespace EE { namespace Graphics {
 
 typedef const GLubyte *( * pglGetStringiFunc) (unsigned int, unsigned int);
 
+typedef void (* pglGenFramebuffers) (GLsizei n, GLuint* framebuffers);
+typedef void (* pglBindFramebuffer) (GLenum target, GLuint framebuffer);
+typedef void (* pglFramebufferTexture2D) (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+typedef void (* pglDeleteFramebuffers) (GLsizei n, const GLuint* framebuffers);
+
+typedef void (* pglGenRenderbuffers) (GLsizei n, GLuint* renderbuffers);
+typedef void (* pglDeleteRenderbuffers) (GLsizei n, const GLuint* renderbuffers);
+typedef void (* pglRenderbufferStorage) (GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
+typedef void (* pglFramebufferRenderbuffer) (GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
+typedef GLenum (* pglCheckFramebufferStatus) (GLenum target);
+typedef void (* pglBindRenderbuffer) (GLenum target, GLuint renderbuffer);
+
 Renderer * GLi = NULL;
 
 Renderer * Renderer::sSingleton = NULL;
@@ -626,6 +638,125 @@ const int& Renderer::quadVertexs() const {
 
 ClippingMask * Renderer::getClippingMask() const {
 	return mClippingMask;
+}
+
+void * Renderer::getProcAddress( std::string proc ) {
+	void * addr = NULL;
+
+#ifdef EE_GLES
+	if ( version() == GLv_ES1 )
+		addr = SOIL_GL_GetProcAddress( ( proc + "OES" ).c_str()  );
+#endif
+
+	if ( NULL == addr )
+		addr = SOIL_GL_GetProcAddress( proc.c_str() );
+
+	if ( NULL == addr )
+		addr = SOIL_GL_GetProcAddress( ( proc + "EXT" ).c_str()  );
+
+	return addr;
+}
+
+void Renderer::genFramebuffers( int n, unsigned int * framebuffers ) {
+	static pglGenFramebuffers eeglGenFramebuffers = NULL;
+
+	if ( NULL == eeglGenFramebuffers )
+		eeglGenFramebuffers = (pglGenFramebuffers)getProcAddress( "glGenFramebuffers" );
+
+	if ( NULL != eeglGenFramebuffers )
+		eeglGenFramebuffers( n, framebuffers );
+}
+
+void Renderer::bindFramebuffer( unsigned int target, unsigned int framebuffer ) {
+	static pglBindFramebuffer eeglBindFramebuffer = NULL;
+
+	if ( NULL == eeglBindFramebuffer )
+		eeglBindFramebuffer = (pglBindFramebuffer)getProcAddress( "glBindFramebuffer" );
+
+	if ( NULL != eeglBindFramebuffer )
+		eeglBindFramebuffer( target, framebuffer );
+}
+
+void Renderer::framebufferTexture2D( unsigned int target, unsigned int attachment, unsigned int textarget, unsigned int texture, int level ) {
+	static pglFramebufferTexture2D eeglFramebufferTexture2D = NULL;
+
+	if ( NULL == eeglFramebufferTexture2D )
+		eeglFramebufferTexture2D = (pglFramebufferTexture2D)getProcAddress( "glFramebufferTexture2D" );
+
+	if ( NULL != eeglFramebufferTexture2D )
+		eeglFramebufferTexture2D( target, attachment, textarget, texture, level );
+}
+
+void Renderer::genRenderbuffers( int n, unsigned int * renderbuffers ) {
+	static pglGenRenderbuffers eeglGenRenderbuffers = NULL;
+
+	if ( NULL == eeglGenRenderbuffers )
+		eeglGenRenderbuffers = (pglGenRenderbuffers)getProcAddress("glGenRenderbuffers");
+
+	if ( NULL != eeglGenRenderbuffers )
+		eeglGenRenderbuffers( n, renderbuffers );
+}
+
+void Renderer::deleteRenderbuffers(int n, const unsigned int * renderbuffers) {
+	static pglDeleteRenderbuffers eeglDeleteRenderbuffers = NULL;
+
+	if ( NULL == eeglDeleteRenderbuffers )
+		eeglDeleteRenderbuffers = (pglDeleteRenderbuffers)getProcAddress("glDeleteRenderbuffers");
+
+	if ( NULL != eeglDeleteRenderbuffers )
+		eeglDeleteRenderbuffers( n, renderbuffers );
+}
+
+void Renderer::bindRenderbuffer( unsigned int target, unsigned int renderbuffer ) {
+	static pglBindRenderbuffer eeglBindRenderbuffer = NULL;
+
+	if ( NULL == eeglBindRenderbuffer )
+		eeglBindRenderbuffer = (pglBindRenderbuffer)getProcAddress("glBindRenderbuffer");
+
+	if ( NULL != eeglBindRenderbuffer )
+		eeglBindRenderbuffer( target, renderbuffer );
+}
+
+void Renderer::renderbufferStorage( unsigned int target, unsigned int internalformat, int width, int height ) {
+	static pglRenderbufferStorage eeglRenderbufferStorage = NULL;
+
+	if ( NULL == eeglRenderbufferStorage )
+		eeglRenderbufferStorage = (pglRenderbufferStorage)getProcAddress("glRenderbufferStorage");
+
+	if ( NULL != eeglRenderbufferStorage )
+		eeglRenderbufferStorage( target, internalformat, width, height );
+}
+
+void Renderer::framebufferRenderbuffer( unsigned int target, unsigned int attachment, unsigned int renderbuffertarget, unsigned int renderbuffer ) {
+	static pglFramebufferRenderbuffer eeglFramebufferRenderbuffer = NULL;
+
+	if ( NULL == eeglFramebufferRenderbuffer )
+		eeglFramebufferRenderbuffer = (pglFramebufferRenderbuffer)getProcAddress("glFramebufferRenderbuffer");
+
+	if ( NULL != eeglFramebufferRenderbuffer )
+		eeglFramebufferRenderbuffer( target, attachment, renderbuffertarget, renderbuffer );
+}
+
+unsigned int Renderer::checkFramebufferStatus( unsigned int target ) {
+	static pglCheckFramebufferStatus eeglCheckFramebufferStatus = NULL;
+
+	if ( NULL == eeglCheckFramebufferStatus )
+		eeglCheckFramebufferStatus = (pglCheckFramebufferStatus)getProcAddress("glCheckFramebufferStatus");
+
+	if ( NULL != eeglCheckFramebufferStatus )
+		return (unsigned int)eeglCheckFramebufferStatus( target );
+
+	return 0;
+}
+
+void Renderer::deleteFramebuffers( int n, const unsigned int * framebuffers ) {
+	static pglDeleteFramebuffers eeglDeleteFramebuffers = NULL;
+
+	if ( NULL == eeglDeleteFramebuffers )
+		eeglDeleteFramebuffers = (pglDeleteFramebuffers)getProcAddress("glDeleteFramebuffers");
+
+	if ( NULL != eeglDeleteFramebuffers )
+		eeglDeleteFramebuffers( n, framebuffers );
 }
 
 void Renderer::bindVertexArray ( unsigned int array ) {

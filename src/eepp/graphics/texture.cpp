@@ -156,18 +156,18 @@ Uint8 * Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
 		TextureSaver saver( mTexture );
 
 		GLuint frameBuffer = 0;
-		glGenFramebuffersEXT(1, &frameBuffer);
+		GLi->genFramebuffers(1, &frameBuffer);
 
 		if ( frameBuffer ) {
-			allocate( mWidth * mHeight * mChannels );
+			allocate( mWidth * mHeight * 4 );
 
 			GLint previousFrameBuffer;
 			glGetIntegerv( GL_FRAMEBUFFER_BINDING, &previousFrameBuffer );
-			glBindFramebufferEXT( GL_FRAMEBUFFER, frameBuffer );
-			glFramebufferTexture2DEXT( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture, 0 );
+			GLi->bindFramebuffer( GL_FRAMEBUFFER, frameBuffer );
+			GLi->framebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture, 0 );
 			glReadPixels( 0, 0, mWidth, mHeight, GL_RGBA, GL_UNSIGNED_BYTE, &mPixels[0] );
-			glDeleteFramebuffersEXT(1, &frameBuffer);
-			glBindFramebufferEXT( GL_FRAMEBUFFER, previousFrameBuffer );
+			GLi->deleteFramebuffers(1, &frameBuffer);
+			GLi->bindFramebuffer( GL_FRAMEBUFFER, previousFrameBuffer );
 
 			mFlags |= TEX_FLAG_LOCKED;
 

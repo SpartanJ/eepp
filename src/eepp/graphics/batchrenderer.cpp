@@ -426,7 +426,7 @@ void BatchRenderer::batchQuadFreeEx( const Float& x0, const Float& y0, const Flo
 void BatchRenderer::quadsBegin() {
 	setDrawMode( DM_QUADS, true );
 	quadsSetSubset( 0, 0, 1, 1 );
-	quadsSetColor( Color() );
+	quadsSetColor( Color::White );
 }
 
 void BatchRenderer::quadsSetColor( const Color& Color ) {
@@ -467,7 +467,7 @@ void BatchRenderer::rotate( const Vector2f& center, Vector2f* point, const Float
 void BatchRenderer::pointsBegin() {
 	setDrawMode( DM_POINTS, true );
 	quadsSetSubset( 0, 0, 1, 1 );
-	pointSetColor( Color() );
+	pointSetColor( Color::White );
 }
 
 void BatchRenderer::pointSetColor( const Color& Color ) {
@@ -492,7 +492,7 @@ void BatchRenderer::batchPoint( const Float& x, const Float& y ) {
 void BatchRenderer::linesBegin() {
 	setDrawMode( DM_LINES, true );
 	quadsSetSubset( 0, 0, 1, 1 );
-	pointSetColor( Color() );
+	pointSetColor( Color::White );
 }
 
 void BatchRenderer::linesSetColor( const Color& Color ) {
@@ -527,7 +527,7 @@ void BatchRenderer::batchLine( const Float& x0, const Float& y0, const Float& x1
 void BatchRenderer::lineLoopBegin() {
 	setDrawMode( DM_LINE_LOOP, true );
 	quadsSetSubset( 0, 0, 1, 1 );
-	pointSetColor( Color() );
+	pointSetColor( Color::White );
 }
 
 void BatchRenderer::lineLoopSetColor( const Color& Color ) {
@@ -585,7 +585,7 @@ void BatchRenderer::batchLineLoop( const Vector2f& vector1 ) {
 void BatchRenderer::lineStripBegin() {
 	setDrawMode( DM_LINE_STRIP, true );
 	quadsSetSubset( 0, 0, 1, 1 );
-	pointSetColor( Color() );
+	pointSetColor( Color::White );
 }
 
 void BatchRenderer::lineStripSetColor( const Color& Color ) {
@@ -643,7 +643,7 @@ void BatchRenderer::batchLineStrip( const Vector2f& vector1 ) {
 void BatchRenderer::triangleFanBegin() {
 	setDrawMode( DM_TRIANGLE_FAN, true );
 	triangleFanSetSubset( 0, 0, 0, 1, 1, 1 );
-	triangleFanSetColor( Color() );
+	triangleFanSetColor( Color::White );
 }
 
 void BatchRenderer::triangleFanSetColor( const Color& Color ) {
@@ -706,7 +706,7 @@ void BatchRenderer::batchTriangleFan( const Float& x0, const Float& y0 ) {
 void BatchRenderer::trianglesBegin() {
 	setDrawMode( DM_TRIANGLES, true );
 	trianglesSetSubset( 0, 0, 0, 1, 1, 1 );
-	trianglesSetColor( Color() );
+	trianglesSetColor( Color::White );
 }
 
 void BatchRenderer::trianglesSetColor( const Color& Color ) {

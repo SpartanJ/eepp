@@ -45,17 +45,17 @@ FrameBufferFBO::~FrameBufferFBO() {
 
 	if ( mDepthBuffer ) {
 		unsigned int depthBuffer = static_cast<unsigned int>( mDepthBuffer );
-		glDeleteFramebuffersEXT( 1, &depthBuffer );
+		GLi->deleteRenderbuffers( 1, &depthBuffer );
 	}
 
 	if ( mStencilBuffer ) {
 		unsigned int stencilBuffer = static_cast<unsigned int>( mStencilBuffer );
-		glDeleteFramebuffersEXT( 1, &stencilBuffer );
+		GLi->deleteRenderbuffers( 1, &stencilBuffer );
 	}
 
 	if ( mFrameBuffer ) {
 		unsigned int frameBuffer = static_cast<unsigned int>( mFrameBuffer );
-		glDeleteFramebuffersEXT( 1, &frameBuffer );
+		GLi->deleteFramebuffers( 1, &frameBuffer );
 	}
 }
 
@@ -78,7 +78,7 @@ bool FrameBufferFBO::create(const Uint32& Width, const Uint32& Height, bool Sten
 
 	unsigned int frameBuffer = 0;
 
-	glGenFramebuffersEXT( 1, &frameBuffer );
+	GLi->genFramebuffers( 1, &frameBuffer );
 
 	mFrameBuffer = static_cast<Int32>( frameBuffer );
 
@@ -90,7 +90,7 @@ bool FrameBufferFBO::create(const Uint32& Width, const Uint32& Height, bool Sten
 	if ( DepthBuffer ) {
 		unsigned int depth = 0;
 
-		glGenRenderbuffersEXT( 1, &depth );
+		GLi->genRenderbuffers( 1, &depth );
 
 		mDepthBuffer = static_cast<unsigned int>(depth);
 
@@ -99,16 +99,16 @@ bool FrameBufferFBO::create(const Uint32& Width, const Uint32& Height, bool Sten
 
 		bindDepthBuffer();
 
-		glRenderbufferStorageEXT( GL_RENDERBUFFER, GL_DEPTH_COMPONENT, Width, Height );
+		GLi->renderbufferStorage( GL_RENDERBUFFER, GL_DEPTH_COMPONENT, Width, Height );
 
-		glFramebufferRenderbufferEXT( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, mDepthBuffer );
+		GLi->framebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, mDepthBuffer );
 
-		glBindFramebufferEXT( GL_RENDERBUFFER, mLastDB );
+		GLi->bindFramebuffer( GL_RENDERBUFFER, mLastDB );
 	}
 
 	if ( StencilBuffer ) {
 		GLuint stencil = 0;
-		glGenRenderbuffersEXT( 1, &stencil );
+		GLi->genRenderbuffers( 1, &stencil );
 
 		mStencilBuffer = static_cast<Uint32>(stencil);
 
@@ -117,11 +117,11 @@ bool FrameBufferFBO::create(const Uint32& Width, const Uint32& Height, bool Sten
 
 		bindStencilBuffer();
 
-		glRenderbufferStorageEXT( GL_RENDERBUFFER, GL_STENCIL_INDEX, Width, Height );
+		GLi->renderbufferStorage( GL_RENDERBUFFER, GL_STENCIL_INDEX, Width, Height );
 
-		glFramebufferRenderbufferEXT( GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER_EXT, mStencilBuffer );
+		GLi->framebufferRenderbuffer( GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER_EXT, mStencilBuffer );
 
-		glBindFramebufferEXT( GL_RENDERBUFFER, mLastSB );
+		GLi->bindFramebuffer( GL_RENDERBUFFER, mLastSB );
 	}
 
 	if ( NULL == mTexture ) {
@@ -134,15 +134,15 @@ bool FrameBufferFBO::create(const Uint32& Width, const Uint32& Height, bool Sten
 		}
 	}
 
-	glFramebufferTexture2DEXT( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture->getHandle(), 0 );
+	GLi->framebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture->getHandle(), 0 );
 
-	if ( glCheckFramebufferStatusEXT( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE ) {
-		glBindFramebufferEXT( GL_FRAMEBUFFER, mLastFB );
+	if ( GLi->checkFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE ) {
+		GLi->bindFramebuffer( GL_FRAMEBUFFER, mLastFB );
 
 		return false;
 	}
 
-	glBindFramebufferEXT( GL_FRAMEBUFFER, mLastFB );
+	GLi->bindFramebuffer( GL_FRAMEBUFFER, mLastFB );
 
 	return true;
 }
@@ -161,7 +161,7 @@ void FrameBufferFBO::unbind() {
 	if ( mFrameBuffer ) {
 		recoverView();
 
-		glBindFramebufferEXT( GL_FRAMEBUFFER, mLastFB );
+		GLi->bindFramebuffer( GL_FRAMEBUFFER, mLastFB );
 	}
 }
 
@@ -175,7 +175,7 @@ void FrameBufferFBO::bindFrameBuffer() {
 
 	mLastFB = (Int32)curFB;
 
-	glBindFramebufferEXT( GL_FRAMEBUFFER, mFrameBuffer );
+	GLi->bindFramebuffer( GL_FRAMEBUFFER, mFrameBuffer );
 }
 
 void FrameBufferFBO::bindDepthBuffer() {
@@ -185,7 +185,7 @@ void FrameBufferFBO::bindDepthBuffer() {
 
 		mLastDB = (Int32)curDB;
 
-		glBindRenderbufferEXT( GL_RENDERBUFFER, mDepthBuffer );
+		GLi->bindRenderbuffer( GL_RENDERBUFFER, mDepthBuffer );
 	}
 }
 
@@ -196,7 +196,7 @@ void FrameBufferFBO::bindStencilBuffer() {
 
 		mLastSB = (Int32)curSB;
 
-		glBindRenderbufferEXT( GL_RENDERBUFFER, mStencilBuffer );
+		GLi->bindRenderbuffer( GL_RENDERBUFFER, mStencilBuffer );
 	}
 }
 

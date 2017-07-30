@@ -2,10 +2,11 @@
 
 namespace EE { namespace Graphics {
 
-Drawable::Drawable(EE_DRAWABLE_TYPE drawableType) :
+Drawable::Drawable( EE_DRAWABLE_TYPE drawableType ) :
 	mDrawableType( drawableType ),
-	mColor( Color::White )
-{}
+	mColor( Color(255,255,255,255) )
+{
+}
 
 Drawable::~Drawable()
 {}
