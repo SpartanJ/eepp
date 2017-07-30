@@ -23,7 +23,7 @@ namespace WindowStyle {
 		Fullscreen					= ( 1 << 3 ),
 		UseDesktopResolution		= ( 1 << 4 ),
 		#if EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM == EE_PLATFORM_ANDROID
-		Default						= NoBorder
+		Default						= Borderless
 		#else
 		Default						= Titlebar | Resize
 		#endif

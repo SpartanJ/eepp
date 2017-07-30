@@ -79,11 +79,11 @@ Renderer * Renderer::createSingleton( EEGL_version ver ) {
 Renderer * Renderer::createSingleton() {
 	if ( sSingleton == 0 ) {
 		#if defined( EE_GLES_BOTH )
-			ms_singleton = eeNew( RendererGL, () );
+			sSingleton = eeNew( RendererGL, () );
 		#elif defined( EE_GLES2 )
-			ms_singleton = eeNew( RendererGLES2, () );
+			sSingleton = eeNew( RendererGLES2, () );
 		#elif defined( EE_GLES1 )
-			ms_singleton = eeNew( RendererGL, () );
+			sSingleton = eeNew( RendererGL, () );
 		#else
 			sSingleton = eeNew( RendererGL, () );
 		#endif
@@ -192,45 +192,45 @@ void Renderer::init() {
 
 	#ifdef EE_GLES
 
-	WriteExtension( EEGL_ARB_point_parameters				, 1													);
-	WriteExtension( EEGL_ARB_point_sprite					, 1													);
-	WriteExtension( EEGL_ARB_multitexture					, 1													);
+	writeExtension( EEGL_ARB_point_parameters				, 1													);
+	writeExtension( EEGL_ARB_point_sprite					, 1													);
+	writeExtension( EEGL_ARB_multitexture					, 1													);
 
-	WriteExtension( EEGL_IMG_texture_compression_pvrtc		, IsExtension( "GL_IMG_texture_compression_pvrtc" )	);
+	writeExtension( EEGL_IMG_texture_compression_pvrtc		, isExtension( "GL_IMG_texture_compression_pvrtc" )	);
 
-	if ( !IsExtension( EEGL_EXT_texture_compression_s3tc ) ) {
-		WriteExtension(	EEGL_EXT_texture_compression_s3tc	, IsExtension( "GL_OES_texture_compression_S3TC" )	);
+	if ( !isExtension( EEGL_EXT_texture_compression_s3tc ) ) {
+		writeExtension(	EEGL_EXT_texture_compression_s3tc	, isExtension( "GL_OES_texture_compression_S3TC" )	);
 	}
 
-	if ( !IsExtension( EEGL_EXT_framebuffer_object ) ) {
-		WriteExtension(	EEGL_EXT_framebuffer_object			, IsExtension( "GL_OES_framebuffer_object" )		);
+	if ( !isExtension( EEGL_EXT_framebuffer_object ) ) {
+		writeExtension(	EEGL_EXT_framebuffer_object			, isExtension( "GL_OES_framebuffer_object" )		);
 	}
 
-	if ( !IsExtension( EEGL_ARB_texture_non_power_of_two ) ) {
-		WriteExtension( EEGL_ARB_texture_non_power_of_two	, IsExtension( "GL_IMG_texture_npot" )	||
-															  IsExtension( "GL_OES_texture_npot" )	||
-															  IsExtension( "GL_APPLE_texture_2D_limited_npot" )	);
+	if ( !isExtension( EEGL_ARB_texture_non_power_of_two ) ) {
+		writeExtension( EEGL_ARB_texture_non_power_of_two	, isExtension( "GL_IMG_texture_npot" )	||
+															  isExtension( "GL_OES_texture_npot" )	||
+															  isExtension( "GL_APPLE_texture_2D_limited_npot" )	);
 	}
 
-	if ( !IsExtension( EEGL_ARB_vertex_array_object ) ) {
-		WriteExtension( EEGL_ARB_vertex_array_object		, IsExtension( "GL_OES_vertex_array_object"	)		);
+	if ( !isExtension( EEGL_ARB_vertex_array_object ) ) {
+		writeExtension( EEGL_ARB_vertex_array_object		, isExtension( "GL_OES_vertex_array_object"	)		);
 	}
 
 	#endif
 
 	#ifdef EE_GLES2
-	WriteExtension( EEGL_EXT_framebuffer_object				, 1													);
-	WriteExtension( EEGL_ARB_vertex_buffer_object			, 1													);
-	WriteExtension( EEGL_ARB_shader_objects					, 1													);
-	WriteExtension( EEGL_ARB_vertex_shader					, 1													);
-	WriteExtension( EEGL_ARB_fragment_shader				, 1													);
+	writeExtension( EEGL_EXT_framebuffer_object				, 1													);
+	writeExtension( EEGL_ARB_vertex_buffer_object			, 1													);
+	writeExtension( EEGL_ARB_shader_objects					, 1													);
+	writeExtension( EEGL_ARB_vertex_shader					, 1													);
+	writeExtension( EEGL_ARB_fragment_shader				, 1													);
 	#endif
 
 	#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-	if ( !IsExtension( EEGL_EXT_texture_compression_s3tc ) ) {
-		WriteExtension(	EEGL_EXT_texture_compression_s3tc	,	IsExtension( "WEBGL_compressed_texture_s3tc" ) ||
-																IsExtension( "WEBKIT_WEBGL_compressed_texture_s3tc" ) ||
-																IsExtension( "MOZ_WEBGL_compressed_texture_s3tc" ) );
+	if ( !isExtension( EEGL_EXT_texture_compression_s3tc ) ) {
+		writeExtension(	EEGL_EXT_texture_compression_s3tc	,	isExtension( "WEBGL_compressed_texture_s3tc" ) ||
+																isExtension( "WEBKIT_WEBGL_compressed_texture_s3tc" ) ||
+																isExtension( "MOZ_WEBGL_compressed_texture_s3tc" ) );
 	}
 	#endif
 }
@@ -257,7 +257,7 @@ bool Renderer::pointSpriteSupported() {
 
 bool Renderer::shadersSupported() {
 #ifdef EE_GLES
-	return ( GLv_ES2 == Version() || GLv_3 == Version() || GLv_3CP == Version() );
+	return ( GLv_ES2 == version() || GLv_3 == version() || GLv_3CP == version() );
 #else
 	return GLv_3CP == version() || ( isExtension( EEGL_ARB_shader_objects ) && isExtension( EEGL_ARB_vertex_shader ) && isExtension( EEGL_ARB_fragment_shader ) );
 #endif

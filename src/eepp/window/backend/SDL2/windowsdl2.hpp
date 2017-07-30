@@ -115,7 +115,7 @@ class EE_API WindowSDL : public Window {
 
 		void SetGLConfig();
 
-		std::string GetVersion();
+		std::string getVersion();
 
 		void UpdateDesktopResolution();
 };

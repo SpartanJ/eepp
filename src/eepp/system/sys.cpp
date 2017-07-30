@@ -656,9 +656,9 @@ std::string Sys::getTempPath() {
 		}
 	#elif EE_PLATFORM == EE_PLATFORM_ANDROID
 		if ( NULL != Window::Engine::instance() ) {
-			String::StrCopy( path, Window::Engine::instance()->getCurrentWindow()->getInternalStoragePath().c_str(), EE_MAX_CFG_PATH_LEN );
+			String::strCopy( path, Window::Engine::instance()->getCurrentWindow()->getInternalStoragePath().c_str(), EE_MAX_CFG_PATH_LEN );
 		} else {
-			String::StrCopy( path, "/tmp", EE_MAX_CFG_PATH_LEN );
+			String::strCopy( path, "/tmp", EE_MAX_CFG_PATH_LEN );
 		}
 	#else
 		char * tmpdir = getenv("TMPDIR");

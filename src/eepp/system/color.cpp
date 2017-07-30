@@ -2,6 +2,7 @@
 #include <eepp/core/string.hpp>
 #include <eepp/math/math.hpp>
 #include <cstdlib>
+#include <ctype.h>
 
 namespace EE { namespace System {
 

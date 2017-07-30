@@ -149,11 +149,14 @@ bool SoundBuffer::loadFromSamples( const Int16 * Samples, std::size_t SamplesCou
 
 bool SoundBuffer::saveToFile(const std::string& Filename) const {
 	// Create the sound file in write mode
-	std::unique_ptr<SoundFile> File( SoundFile::createWrite( Filename, getChannelCount(), getSampleRate() ) );
+	SoundFile * File = SoundFile::createWrite( Filename, getChannelCount(), getSampleRate() );
 
-	if ( File.get() ) {
+	if ( NULL != File ) {
 		// Write the samples to the opened file
 		File->write( &mSamples[0], mSamples.size() );
+
+		eeSAFE_DELETE( File );
+
 		return true;
 	} else {
 		// Error...

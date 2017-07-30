@@ -1106,8 +1106,8 @@ void EETest::loadTextures() {
 
 		#ifdef EE_GLES
 		Image tImg( MyPath + "sprites/objects/2.png", 4 );
-		tImg.CreateMaskFromColor( ColorA(0,0,0,255), 0 );
-		Tiles[7] = SG->Add( TF->loadFromPixels( tImg.getPixelsPtr(), tImg.getWidth(), tImg.getHeight(), tImg.getChannels() ), "8" );
+		tImg.createMaskFromColor( ColorA(0,0,0,255), 0 );
+		Tiles[7] = SG->add( TF->loadFromPixels( tImg.getPixelsPtr(), tImg.getWidth(), tImg.getHeight(), tImg.getChannels() ), "8" );
 		#else
 		Tiles[7] = SG->add( TF->loadFromFile( MyPath + "sprites/objects/2.png" ), "8" );
 		Tiles[7]->getTexture()->createMaskFromColor( Color(0,0,0,255), 0 );

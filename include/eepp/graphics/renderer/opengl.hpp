@@ -103,6 +103,18 @@
 #define glBindVertexArray glBindVertexArrayOES
 #define GL_VERTEX_ARRAY_BINDING GL_VERTEX_ARRAY_BINDING_OES
 
+#ifndef GL_STENCIL_INDEX
+#define GL_STENCIL_INDEX GL_STENCIL_INDEX_OES
+#endif
+
+#ifndef GL_FRAMEBUFFER_EXT
+#define GL_FRAMEBUFFER_EXT GL_FRAMEBUFFER
+#endif
+
+#ifndef GL_RENDERBUFFER_EXT
+#define GL_RENDERBUFFER_EXT GL_RENDERBUFFER
+#endif
+
 #endif
 
 /// Exclusive only when its compiling only for GLES2

@@ -21,7 +21,7 @@
 #include <eepp/system/zip.hpp>
 #include <jni.h>
 
-static std::string SDL_AndroidgetApkPath() {
+static std::string SDL_AndroidGetApkPath() {
 	static std::string apkPath = "";
 
 	if ( "" == apkPath ) {
@@ -30,9 +30,9 @@ static std::string SDL_AndroidgetApkPath() {
 		jobject fileObject;
 		const char *path;
 
-		JNIEnv *env = (JNIEnv*)SDL_AndroidgetJNIEnv();
+		JNIEnv *env = (JNIEnv*)SDL_AndroidGetJNIEnv();
 
-		jclass ActivityClass = env->GetObjectClass((jobject)SDL_AndroidgetActivity());
+		jclass ActivityClass = env->GetObjectClass((jobject)SDL_AndroidGetActivity());
 
 		// context = SDLActivity.getContext();
 		mid = env->GetStaticMethodID(ActivityClass,"getContext","()Landroid/content/Context;");
@@ -109,7 +109,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
 		eePRINTL( "Unable to initialize SDL: %s", SDL_GetError() );
 
-		logFailureInit( "WindowSDL", GetVersion() );
+		logFailureInit( "WindowSDL", getVersion() );
 
 		return false;
 	}
@@ -151,7 +151,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	if ( NULL == mSDLWindow ) {
 		eePRINTL( "Unable to create window: %s", SDL_GetError() );
 
-		logFailureInit( "WindowSDL", GetVersion() );
+		logFailureInit( "WindowSDL", getVersion() );
 
 		return false;
 	}
@@ -220,7 +220,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	{
 		eePRINTL( "Unable to create context: %s", SDL_GetError() );
 
-		logFailureInit( "WindowSDL", GetVersion() );
+		logFailureInit( "WindowSDL", getVersion() );
 
 		return false;
 	}
@@ -259,18 +259,18 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	mCursorManager->set( SYS_CURSOR_ARROW );
 
 	#if EE_PLATFORM == EE_PLATFORM_ANDROID
-	std::string apkPath( SDL_AndroidgetApkPath() );
+	std::string apkPath( SDL_AndroidGetApkPath() );
 
 	eePRINTL( "Opening application APK in: %s", apkPath.c_str() );
 
-	if ( mZip->Open( apkPath ) )
+	if ( mZip->open( apkPath ) )
 		eePRINTL( "APK opened succesfully!" );
 	else
 		eePRINTL( "Failed to open APK!" );
 
-	LogSuccessfulInit( GetVersion(), apkPath );
+	logSuccessfulInit( getVersion(), apkPath );
 	#else
-	logSuccessfulInit( GetVersion() );
+	logSuccessfulInit( getVersion() );
 	#endif
 
 	return true;
@@ -292,7 +292,7 @@ void WindowSDL::unsetGLContextThread() {
 	SDL_GL_MakeCurrent( mSDLWindow, NULL );
 }
 
-std::string WindowSDL::GetVersion() {
+std::string WindowSDL::getVersion() {
 	SDL_version ver;
 
 	SDL_GetVersion( &ver );
@@ -635,27 +635,27 @@ bool WindowSDL::isScreenKeyboardShown() {
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 void * WindowSDL::getJNIEnv() {
-	return SDL_AndroidgetJNIEnv();
+	return SDL_AndroidGetJNIEnv();
 }
 
 void * WindowSDL::getActivity() {
-	return SDL_AndroidgetActivity();
+	return SDL_AndroidGetActivity();
 }
 
 int WindowSDL::getExternalStorageState() {
-	return SDL_AndroidgetExternalStorageState();
+	return SDL_AndroidGetExternalStorageState();
 }
 
 std::string WindowSDL::getInternalStoragePath() {
-	return std::string( SDL_AndroidgetInternalStoragePath() );
+	return std::string( SDL_AndroidGetInternalStoragePath() );
 }
 
 std::string WindowSDL::getExternalStoragePath() {
-	return std::string( SDL_AndroidgetExternalStoragePath() );
+	return std::string( SDL_AndroidGetExternalStoragePath() );
 }
 
 std::string WindowSDL::getApkPath() {
-	return SDL_AndroidgetApkPath();
+	return SDL_AndroidGetApkPath();
 }
 #endif
 

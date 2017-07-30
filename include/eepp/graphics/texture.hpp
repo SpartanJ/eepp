@@ -158,7 +158,7 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		* @param width The width of the texture rendered
 		* @param height The height of the texture rendered
 		*/
-		void drawFast( const Float& x, const Float& y, const Float& Angle = 0.0f, const Vector2f& scale = Vector2f::One, const Color& Color = Color(), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const Float &width = 0, const Float &height = 0 );
+		void drawFast( const Float& x, const Float& y, const Float& Angle = 0.0f, const Vector2f& scale = Vector2f::One, const Color& color = Color(), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const Float &width = 0, const Float &height = 0 );
 
 		/** Render the texture on screen
 		* @param x The x position on screen
@@ -171,7 +171,7 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		* @param Center The rotation and scaling center. The center point is relative to the top-left corner of the object.
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void draw( const Float &x, const Float &y, const Float &Angle = 0, const Vector2f &scale = Vector2f::One, const Color& Color = Color(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter), const Rect& texSector = Rect(0,0,0,0) );
+		void draw( const Float &x, const Float &y, const Float &Angle = 0, const Vector2f &scale = Vector2f::One, const Color& color = Color(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter), const Rect& texSector = Rect(0,0,0,0) );
 
 		/** Render the texture on screen. Extended because can set the vertex colors individually
 		* @param x The x position on screen
@@ -200,7 +200,7 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		* @param Blend Set the Blend Mode ( default ALPHA_NORMAL )
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void drawQuad( const Quad2f& Q, const Vector2f& Offset = Vector2f(), const Float &Angle = 0.0f, const Vector2f &scale = Vector2f::One, const Color& Color = Color(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const Rect& texSector = Rect(0,0,0,0) );
+		void drawQuad( const Quad2f& Q, const Vector2f& Offset = Vector2f(), const Float &Angle = 0.0f, const Vector2f &scale = Vector2f::One, const Color& color = Color(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const Rect& texSector = Rect(0,0,0,0) );
 
 		/** Render a quad on Screen
 		* @param Q The Quad2f
