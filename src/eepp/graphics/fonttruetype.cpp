@@ -411,24 +411,34 @@ Glyph FontTrueType::loadGlyph(Uint32 codePoint, unsigned int characterSize, bool
 
 	// First, transform our ugly void* to a FT_Face
 	FT_Face face = static_cast<FT_Face>(mFace);
-	if (!face)
+	if (!face) {
+		eePRINTL( "FT_Face failed for: codePoint %d characterSize: %d font %s", codePoint, characterSize, mFontName.c_str() );
 		return glyph;
+	}
 
 	// Set the character size
-	if (!setCurrentSize(characterSize))
+	if (!setCurrentSize(characterSize)) {
+		eePRINTL( "FontTrueType::setCurrentSize failed for: codePoint %d characterSize: %d font %s", codePoint, characterSize, mFontName.c_str() );
 		return glyph;
+	}
+
+	FT_Error err = 0;
 
 	// Load the glyph corresponding to the code point
 	FT_Int32 flags = FT_LOAD_TARGET_NORMAL; //  | FT_LOAD_FORCE_AUTOHINT
 	if (outlineThickness != 0)
 		flags |= FT_LOAD_NO_BITMAP;
-	if (FT_Load_Char(face, codePoint, flags) != 0)
+	if ( ( err = FT_Load_Char(face, codePoint, flags) ) != 0) {
+		eePRINTL( "FT_Load_Char failed for: codePoint %d characterSize: %d font: %s error: %d", codePoint, characterSize, mFontName.c_str(), err );
 		return glyph;
+	}
 
 	// Retrieve the glyph
 	FT_Glyph glyphDesc;
-	if (FT_Get_Glyph(face->glyph, &glyphDesc) != 0)
+	if (FT_Get_Glyph(face->glyph, &glyphDesc) != 0) {
+		eePRINTL( "FT_Get_Glyph failed for: codePoint %d characterSize: %d font: %s", codePoint, characterSize, mFontName.c_str() );
 		return glyph;
+	}
 
 	// Apply bold and outline (there is no fallback for outline) if necessary -- first technique using outline (highest quality)
 	FT_Pos weight = 1 << 6;
