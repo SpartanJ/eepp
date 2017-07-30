@@ -54,7 +54,16 @@ FontTrueType::~FontTrueType() {
 
 bool FontTrueType::loadFromFile(const std::string& filename) {
 	if ( !FileSystem::fileExists( filename ) && PackManager::instance()->isFallbackToPacksActive() ) {
-		loadFromPack( PackManager::instance()->getPackByPath( filename ), filename );
+		std::string path( filename );
+		Pack * pack = PackManager::instance()->exists( path );
+
+		if ( NULL != pack ) {
+			eePRINTL( "Loading font from pack: %s", path.c_str() );
+
+			return loadFromPack( pack, path );
+		}
+
+		return false;
 	}
 
 	// Cleanup the previous resources

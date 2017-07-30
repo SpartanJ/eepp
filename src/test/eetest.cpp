@@ -2179,8 +2179,6 @@ void EETest::end() {
 	eeSAFE_DELETE( PakTest );
 
 	Log::instance()->save();
-
-	Engine::destroySingleton();
 }
 
 }
@@ -2191,6 +2189,8 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 	Test->process();
 
 	eeDelete( Test );
+
+	Engine::destroySingleton();
 
 	MemoryManager::showResults();
 
