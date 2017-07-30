@@ -201,7 +201,11 @@ void Console::draw() {
 
 					Text& text = mTextCache[Pos];
 
-					text.setStyleConfig( mFontStyleConfig );
+					text.setFont( mFontStyleConfig.Font );
+					text.setCharacterSize( mFontStyleConfig.CharacterSize );
+					text.setStyle( mFontStyleConfig.Style );
+					text.setOutlineThickness( mFontStyleConfig.OutlineThickness );
+					text.setOutlineColor( mFontStyleConfig.OutlineColor );
 					text.setFillColor( Color( mFontStyleConfig.FontColor.r, mFontStyleConfig.FontColor.g, mFontStyleConfig.FontColor.b, static_cast<Uint8>(mA) ) );
 					text.setString( mCmdLog[i] );
 					text.draw( mFontSize, CurY );
@@ -213,13 +217,21 @@ void Console::draw() {
 			CurY = mTempY + mY + mCurHeight - mFontSize - 1;
 
 			Text& text = mTextCache[ mTextCache.size() - 1 ];
-			text.setStyleConfig( mFontStyleConfig );
+			text.setFont( mFontStyleConfig.Font );
+			text.setCharacterSize( mFontStyleConfig.CharacterSize );
+			text.setStyle( mFontStyleConfig.Style );
+			text.setOutlineThickness( mFontStyleConfig.OutlineThickness );
+			text.setOutlineColor( mFontStyleConfig.OutlineColor );
 			text.setFillColor( Color( mFontLineColor.r, mFontLineColor.g, mFontLineColor.b, static_cast<Uint8>(mA) ) );
 			text.setString( "> " + mTBuf->getBuffer() );
 			text.draw( mFontSize, CurY );
 
 			Text& text2 = mTextCache[ mTextCache.size() - 2 ];
-			text2.setStyleConfig( mFontStyleConfig );
+			text2.setFont( mFontStyleConfig.Font );
+			text2.setCharacterSize( mFontStyleConfig.CharacterSize );
+			text2.setStyle( mFontStyleConfig.Style );
+			text2.setOutlineThickness( mFontStyleConfig.OutlineThickness );
+			text2.setOutlineColor( mFontStyleConfig.OutlineColor );
 			text2.setFillColor( Color( mFontLineColor.r, mFontLineColor.g, mFontLineColor.b, static_cast<Uint8>(mCurAlpha) ) );
 
 			if ( (unsigned int)mTBuf->getCursorPos() == mTBuf->getBuffer().size() ) {
