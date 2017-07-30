@@ -8,7 +8,7 @@ namespace EE { namespace Maps {
 
 class EE_API GameObjectSubTextureEx : public GameObjectSubTexture {
 	public:
-		GameObjectSubTextureEx( const Uint32& Flags, MapLayer * Layer, Graphics::SubTexture * SubTexture = NULL, const Vector2f& Pos = Vector2f(), EE_BLEND_MODE Blend = ALPHA_NORMAL, EE_RENDER_MODE Render = RN_NORMAL, Float Angle = 0.f, Vector2f Scale = Vector2f::One, Color color = Color() );
+		GameObjectSubTextureEx( const Uint32& Flags, MapLayer * Layer, Graphics::SubTexture * SubTexture = NULL, const Vector2f& Pos = Vector2f(), EE_BLEND_MODE Blend = ALPHA_NORMAL, EE_RENDER_MODE Render = RN_NORMAL, Float Angle = 0.f, Vector2f Scale = Vector2f::One, Color color = Color::White );
 
 		virtual ~GameObjectSubTextureEx();
 

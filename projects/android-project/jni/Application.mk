@@ -10,12 +10,13 @@ APP_STL					:= c++_static
 APP_LDLIBS				:= -llog $(EE_GLES_LINK) -lm -lz -lOpenSLES -lEGL -landroid
 
 #Debug Build
-#APP_CFLAGS				:= -g -DDEBUG -DEE_DEBUG
-#APP_OPTIM 				:= debug
+APP_CFLAGS				:= -g -DDEBUG -DEE_DEBUG
+APP_CPPFLAGS			:= -std=c++11 -frtti -fexceptions
+APP_OPTIM 				:= debug
 
 #Release Build
-APP_CFLAGS				:= -fno-strict-aliasing -O3 -s -DNDEBUG -ffast-math
-APP_CPPFLAGS			:= -std=c++11 -frtti -fexceptions
+#APP_CFLAGS				:= -fno-strict-aliasing -O3 -s -DNDEBUG -ffast-math
+#APP_CPPFLAGS			:= -std=c++11 -frtti -fexceptions
 
 APP_PLATFORM			:= android-14
 APP_MODULES				:= main

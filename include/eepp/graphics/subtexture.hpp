@@ -81,11 +81,11 @@ class EE_API SubTexture : public Drawable {
 		/** Set the SubTexture offset. */
 		void setOffset( const Vector2i& offset );
 
-		void draw( const Float& X, const Float& Y, const Color& color = Color(), const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter) );
+		void draw( const Float& X, const Float& Y, const Color& color = Color::White, const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter) );
 
-		void draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale, const Color& Color0 = Color(), const Color& Color1 = Color(), const Color& Color2 = Color(), const Color& Color3 = Color(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter) );
+		void draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale, const Color& Color0 = Color::White, const Color& Color1 = Color::White, const Color& Color2 = Color::White, const Color& Color3 = Color::White, const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter) );
 
-		void draw( const Quad2f Q, const Vector2f& offset = Vector2f(), const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const Color& Color0 = Color(), const Color& Color1 = Color(), const Color& Color2 = Color(), const Color& Color3 = Color(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
+		void draw( const Quad2f Q, const Vector2f& offset = Vector2f(), const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const Color& Color0 = Color::White, const Color& Color1 = Color::White, const Color& Color2 = Color::White, const Color& Color3 = Color::White, const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
 
 		virtual void draw();
 

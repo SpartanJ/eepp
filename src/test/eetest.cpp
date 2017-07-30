@@ -64,6 +64,7 @@ void EETest::init() {
 	WindowSettings WinSettings	= EE->createWindowSettings( &Ini );
 	ContextSettings ConSettings	= EE->createContextSettings( &Ini );
 
+
 	if ( !( WinSettings.Style & WindowStyle::Fullscreen ) && !( WinSettings.Style & WindowStyle::UseDesktopResolution ) ) {
 #if EE_PLATFORM != EE_PLATFORM_MACOSX
 		WinSettings.Width *= WinSettings.PixelDensity;
@@ -478,6 +479,10 @@ void EETest::createUI() {
 	genGrid->setCollumnWidth( 1, 24 );
 	genGrid->setCollumnWidth( 2, 100 );
 
+	C = reinterpret_cast<UIControlAnim*> ( C->getParent() );
+
+	createNewUI();
+
 #ifdef EE_PLATFORM_TOUCH
 	TextureAtlas * SG = GlobalTextureAtlas::instance();
 
@@ -497,17 +502,13 @@ void EETest::createUI() {
 	mShowMenu->setSize( mShowMenu->getSkinSize() )
 			->setPosition( screenSize.getWidth() - skinSize.getWidth() - 20,
 						   screenSize.getHeight() - skinSize.getHeight() - 10 );
+
 	mShowMenu->setText( "Show Menu" );
 	mShowMenu->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	mShowMenu->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onShowMenu ) );
 #endif
 
-	C = reinterpret_cast<UIControlAnim*> ( C->getParent() );
-
 	eePRINTL( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
-	/**/
-
-	createNewUI();
 }
 
 void EETest::createNewUI() {
