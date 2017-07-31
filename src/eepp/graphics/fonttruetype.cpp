@@ -224,10 +224,11 @@ bool FontTrueType::loadFromPack( Pack * pack, std::string filePackPath ) {
 		return false;
 
 	bool Ret = false;
-	SafeDataPointer PData;
 
-	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, PData ) ) {
-		Ret = loadFromMemory( PData.Data, PData.DataSize );
+	mMemCopy.clear();
+
+	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, mMemCopy ) ) {
+		Ret = loadFromMemory( mMemCopy.Data, mMemCopy.DataSize );
 	}
 
 	return Ret;
