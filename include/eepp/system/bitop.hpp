@@ -75,7 +75,7 @@ class BitOp {
 	/** Swap big endian 16 bit value to little endian */
 	static inline Uint32 swapLE16( Uint32 Key ) {
 		#if EE_ENDIAN == EE_BIG_ENDIAN
-			return Swap16( Key );
+			return swap16( Key );
 		#else
 			return Key;
 		#endif
@@ -93,7 +93,7 @@ class BitOp {
 	/** Swap big endian 32 bit value to little endian */
 	static inline Uint32 swapLE32( Uint32 Key ) {
 		#if EE_ENDIAN == EE_BIG_ENDIAN
-			return Swap32( Key );
+			return swap32( Key );
 		#else
 			return Key;
 		#endif
@@ -111,7 +111,7 @@ class BitOp {
 	/** Swap big endian 64 bit value to little endian */
 	static inline Uint32 swapLE64( Uint32 Key ) {
 		#if EE_ENDIAN == EE_BIG_ENDIAN
-			return Swap64( Key );
+			return swap64( Key );
 		#else
 			return Key;
 		#endif
