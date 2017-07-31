@@ -82,8 +82,11 @@ bool FrameBufferFBO::create(const Uint32& Width, const Uint32& Height, bool Sten
 
 	mFrameBuffer = static_cast<Int32>( frameBuffer );
 
-	if ( !mFrameBuffer)
+	if ( !mFrameBuffer) {
+		eePRINT("FrameBufferFBO::create: Failed to created FrameBuffer Object");
+
 		return false;
+	}
 
 	bindFrameBuffer();
 
@@ -112,8 +115,11 @@ bool FrameBufferFBO::create(const Uint32& Width, const Uint32& Height, bool Sten
 
 		mStencilBuffer = static_cast<Uint32>(stencil);
 
-		if (!mStencilBuffer)
+		if (!mStencilBuffer) {
+			eePRINT("FrameBufferFBO::create: Failed to created Stencil Buffer");
+
 			return false;
+		}
 
 		bindStencilBuffer();
 

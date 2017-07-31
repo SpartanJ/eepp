@@ -19,7 +19,11 @@ Console::Console( EE::Window::Window * window ) :
 	mFontLineColor(255, 255, 255, 230),
 	mWidth(0),
 	mHeight(0),
+	#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
+	mHeightMin(0.5f),
+	#else
 	mHeightMin(0.6f),
+	#endif
 	mY(0.0f),
 	mA(0.0f),
 	mFadeSpeed( Milliseconds( 250.f ) ),
@@ -53,7 +57,11 @@ Console::Console( Font * font, const bool& MakeDefaultCommands, const bool& Atta
 	mFontLineColor(255, 255, 255, 230),
 	mWidth(0),
 	mHeight(0),
+	#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
+	mHeightMin(0.5f),
+	#else
 	mHeightMin(0.6f),
+	#endif
 	mY(0.0f),
 	mA(0.0f),
 	mFadeSpeed( Milliseconds( 250.f) ),
