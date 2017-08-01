@@ -14,6 +14,7 @@ UIControl * UIControl::New() {
 }
 
 UIControl::UIControl() :
+	mIdHash( 0 ),
 	mPos( 0, 0 ),
 	mRealPos( 0, 0 ),
 	mSize( 0, 0 ),
