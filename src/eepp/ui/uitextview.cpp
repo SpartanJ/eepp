@@ -94,6 +94,7 @@ Uint32 UITextView::getCharacterSize() {
 
 UITextView *UITextView::setCharacterSize( const Uint32 & characterSize ) {
 	if ( mTextCache->getCharacterSize() != characterSize ) {
+		mFontStyleConfig.CharacterSize = characterSize;
 		mTextCache->setCharacterSize( characterSize );
 		recalculate();
 	}
@@ -332,7 +333,7 @@ Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 		mControlFlags &= ~UI_CTRL_FLAG_SELECTING;
 	}
 
-	return 1;
+	return UIWidget::onMouseClick( Pos, Flags );
 }
 
 Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
