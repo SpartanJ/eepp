@@ -50,6 +50,10 @@ class EE_API UILoader : public UIWidget {
 		UILoader * setAnimationSpeed( const Float& animationSpeed );
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node);
+
+		Float getArcStartAngle() const;
+
+		UILoader * setArcStartAngle( const Float& arcStartAngle );
 	protected:
 		Float mRadius;
 		Float mOutlineThickness;

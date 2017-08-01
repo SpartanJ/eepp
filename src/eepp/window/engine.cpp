@@ -294,8 +294,9 @@ ContextSettings Engine::createContextSettings( IniFile * ini, std::string iniKey
 	bool doubleBuffering 		= ini->getValueB( iniKeyName, "DoubleBuffering", true );
 	int depthBufferSize 		= ini->getValueI( iniKeyName, "DepthBufferSize", 24 );
 	int stencilBufferSize 		= ini->getValueI( iniKeyName, "StencilBufferSize", 1 );
+	int multisamples			= ini->getValueI( iniKeyName, "Multisamples", 0 );
 
-	return ContextSettings( VSync, GLVer, doubleBuffering, depthBufferSize, stencilBufferSize );
+	return ContextSettings( VSync, GLVer, doubleBuffering, depthBufferSize, stencilBufferSize, multisamples );
 }
 
 ContextSettings Engine::createContextSettings( std::string iniPath, std::string iniKeyName ) {

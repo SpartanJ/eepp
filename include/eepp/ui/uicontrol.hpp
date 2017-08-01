@@ -249,6 +249,10 @@ class EE_API UIControl {
 			ctrl = find<T>( id );
 			return ctrl;
 		}
+
+		bool isReverseDraw() const;
+
+		void setReverseDraw( bool reverseDraw );
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
 		friend class UIManager;

@@ -772,14 +772,26 @@ void UIControl::setControlFlags( const Uint32& Flags ) {
 }
 
 void UIControl::drawChilds() {
-	UIControl * ChildLoop = mChild;
+	if ( isReverseDraw() ) {
+		UIControl * ChildLoop = mChildLast;
 
-	while ( NULL != ChildLoop ) {
-		if ( ChildLoop->mVisible ) {
-			ChildLoop->internalDraw();
+		while ( NULL != ChildLoop ) {
+			if ( ChildLoop->mVisible ) {
+				ChildLoop->internalDraw();
+			}
+
+			ChildLoop = ChildLoop->mPrev;
 		}
+	} else {
+		UIControl * ChildLoop = mChild;
 
-		ChildLoop = ChildLoop->mNext;
+		while ( NULL != ChildLoop ) {
+			if ( ChildLoop->mVisible ) {
+				ChildLoop->internalDraw();
+			}
+
+			ChildLoop = ChildLoop->mNext;
+		}
 	}
 }
 
@@ -1602,6 +1614,14 @@ UIControl * UIControl::getWindowContainer() {
 	}
 
 	return NULL;
+}
+
+bool UIControl::isReverseDraw() const {
+	return mControlFlags & UI_CTRL_FLAG_REVERSE_DRAW;
+}
+
+void UIControl::setReverseDraw( bool reverseDraw ) {
+	writeCtrlFlag( UI_CTRL_FLAG_REVERSE_DRAW, reverseDraw ? 1 : 0 );
 }
 
 }}

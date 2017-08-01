@@ -124,7 +124,9 @@ void UIGridLayout::onParentSizeChange(const Vector2i & SizeChange) {
 }
 
 void UIGridLayout::pack() {
-	setInternalPosition( Vector2i( mLayoutMargin.Left, mLayoutMargin.Top ) );
+	Sizei oldSize( mSize );
+
+	//setInternalPosition( Vector2i( mLayoutMargin.Left, mLayoutMargin.Top ) );
 
 	if ( getLayoutWidthRules() == MATCH_PARENT ) {
 		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
@@ -171,6 +173,10 @@ void UIGridLayout::pack() {
 
 	if ( getLayoutHeightRules() == WRAP_CONTENT ) {
 		setInternalHeight( pos.y + ( usedLastRow ? targetSize.getHeight() : 0 ) );
+	}
+
+	if ( oldSize != mSize ) {
+		notifyLayoutAttrChangeParent();
 	}
 }
 
@@ -231,6 +237,8 @@ void UIGridLayout::loadFromXmlNode(const pugi::xml_node & node) {
 			setPadding( Rect( mPadding.Left, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Right, mPadding.Bottom ) );
 		} else if ( "paddingbottom" == name ) {
 			setPadding( Rect( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
+		} else if ( "reversedraw" == name ) {
+			setReverseDraw( ait->as_bool() );
 		}
 	}
 }

@@ -146,6 +146,11 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		mTmpFlags |= SDL_WINDOW_FULLSCREEN;
 	}
 
+	if ( mWindow.ContextConfig.Multisamples > 0 ) {
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, mWindow.ContextConfig.Multisamples);
+	}
+
 	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Caption.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, mTmpFlags );
 
 	if ( NULL == mSDLWindow ) {

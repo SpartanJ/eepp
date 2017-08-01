@@ -56,11 +56,13 @@ void UIThemeManager::setTheme( UITheme * Theme ) {
 void UIThemeManager::setDefaultTheme( UITheme * Theme ) {
 	mThemeDefault = Theme;
 
-	UITooltipStyleConfig fontStyleConfig = mThemeDefault->getFontStyleConfig();
+	if ( NULL != mThemeDefault ) {
+		UITooltipStyleConfig fontStyleConfig = mThemeDefault->getFontStyleConfig();
 
-	if ( NULL == fontStyleConfig.getFont() && NULL != mFont ) {
-		fontStyleConfig.Font = mFont;
-		mThemeDefault->setFontStyleConfig( fontStyleConfig );
+		if ( NULL == fontStyleConfig.getFont() && NULL != mFont ) {
+			fontStyleConfig.Font = mFont;
+			mThemeDefault->setFontStyleConfig( fontStyleConfig );
+		}
 	}
 }
 

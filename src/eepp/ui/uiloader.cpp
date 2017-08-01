@@ -154,6 +154,15 @@ UILoader * UILoader::setAnimationSpeed( const Float& animationSpeed ) {
 	return this;
 }
 
+Float UILoader::getArcStartAngle() const {
+	return mArcStartAngle;
+}
+
+UILoader * UILoader::setArcStartAngle( const Float& arcStartAngle ) {
+	mArcStartAngle = arcStartAngle;
+	return this;
+}
+
 void UILoader::loadFromXmlNode(const pugi::xml_node & node) {
 	UIWidget::loadFromXmlNode( node );
 
@@ -173,8 +182,10 @@ void UILoader::loadFromXmlNode(const pugi::xml_node & node) {
 			setRadius( ait->as_float() );
 		} else if ( "outlinethickness" == name ) {
 			setOutlineThickness( ait->as_float() );
-		} else if ( "animationspeed" ) {
+		} else if ( "animationspeed" == name ) {
 			setAnimationSpeed( ait->as_float() );
+		} else if ( "arcstartangle" == name ) {
+			setArcStartAngle( ait->as_float() );
 		}
 	}
 }
