@@ -66,7 +66,7 @@ void UIDropDownList::onSizeChange() {
 }
 
 void UIDropDownList::autoSizeControl() {
-	if ( mFlags & UI_AUTO_SIZE || 0 == mSize.getHeight() ) {
+	if ( ( mFlags & UI_AUTO_SIZE || 0 == mSize.getHeight() ) && 0 != getSkinSize().getHeight() ) {
 		setSize( mSize.x, getSkinSize().getHeight() );
 	}
 }
