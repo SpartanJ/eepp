@@ -126,7 +126,7 @@ std::string FileSystem::fileRemoveFileName( const std::string& filepath ) {
 }
 
 void FileSystem::filePathRemoveProcessPath( std::string& path ) {
-	static std::string ProcessPath = Sys::getProcessPath();
+	std::string ProcessPath = Sys::getProcessPath();
 
 	if ( String::startsWith( path, ProcessPath ) && ProcessPath.length() < path.size() ) {
 		path = path.substr( ProcessPath.length() );

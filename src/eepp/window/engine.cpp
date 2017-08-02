@@ -156,9 +156,7 @@ EE::Window::Window * Engine::createWindow( WindowSettings Settings, ContextSetti
 		window = createDefaultWindow( Settings, Context );
 	}
 
-	if ( NULL == mWindow ) {
-		mWindow = window;
-	}
+	setCurrentWindow( window );
 
 	mWindows.push_back( mWindow );
 
