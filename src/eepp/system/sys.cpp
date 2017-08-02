@@ -516,7 +516,7 @@ static std::string sGetProcessPath() {
 	return FileSystem::fileRemoveFileName( std::string( info.name ) );
 #elif EE_PLATFORM == EE_PLATFORM_ANDROID
 	if ( NULL != Window::Engine::instance() && NULL != Window::Engine::instance()->getCurrentWindow() )
-		return Window::Engine::instance()->getCurrentWindow()->getInternalStoragePath() + "/";
+		return Window::Engine::instance()->getCurrentWindow()->getExternalStoragePath() + "/";
 
 	return "/sdcard/";
 #else
