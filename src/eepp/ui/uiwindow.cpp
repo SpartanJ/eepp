@@ -919,6 +919,7 @@ const Uint8& UIWindow::getBaseAlpha() const {
 void UIWindow::setTitle( const String& text ) {
 	if ( NULL == mTitle ) {
 		mTitle = UITextView::New();
+		mTitle->setLayoutSizeRules( FIXED, FIXED );
 		mTitle->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
 		mTitle->setParent( this );
 		mTitle->setHorizontalAlign( getHorizontalAlign() );

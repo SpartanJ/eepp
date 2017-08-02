@@ -28,6 +28,7 @@ Texture::Texture() :
 	Image(),
 	Drawable( DRAWABLE_TEXTURE ),
 	mFilepath(""),
+	mName(""),
 	mId(0),
 	mTexture(0),
 	mImgWidth(0),
@@ -45,6 +46,7 @@ Texture::Texture( const Texture& Copy ) :
 	Image(),
 	Drawable( DRAWABLE_TEXTURE ),
 	mFilepath( Copy.mFilepath ),
+	mName( Copy.mName ),
 	mId( Copy.mId ),
 	mTexture( Copy.mTexture ),
 	mImgWidth( Copy.mImgWidth ),
@@ -89,7 +91,8 @@ void Texture::deleteTexture() {
 
 void Texture::create( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
 	mFilepath 	= filepath;
-	mId 		= String::hash( mFilepath );
+	mName		= mFilepath;
+	mId 		= String::hash( mName );
 	mTexture 	= texture;
 	mWidth 		= width;
 	mHeight 	= height;
@@ -109,8 +112,17 @@ void Texture::create( const Uint32& texture, const unsigned int& width, const un
 	setPixels( data );
 }
 
+std::string Texture::getName() const {
+	return mName;
+}
+
+void Texture::setName(const std::string & name) {
+	mName = name;
+	mId = String::hash( name );
+}
+
 Uint8 * Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
-	#ifndef EE_GLES
+#ifndef EE_GLES
 	if ( !( mFlags & TEX_FLAG_LOCKED ) ) {
 		if ( ForceRGBA )
 			mChannels = 4;
@@ -510,7 +522,9 @@ void Texture::drawFast( const Float& x, const Float& y, const Float& Angle, cons
 	sBR->quadsSetColor( Color );
 
 	if ( getClampMode() == CLAMP_REPEAT ) {
-		sBR->quadsSetSubsetFree( 0, 0, 0, height / h, width / w, height / h, width / w, 0 );
+		Float iw = (Float)getImageWidth();
+		Float ih = (Float)getImageHeight();
+		sBR->quadsSetSubsetFree( 0, 0, 0, height / ih, width / iw, height / ih, width / iw, 0 );
 	}
 
 	sBR->batchQuadEx( x, y, w, h, Angle, Scale );

@@ -160,6 +160,7 @@ UITextView * UITextView::setText( const String& text ) {
 
 	recalculate();
 	onTextChanged();
+	notifyLayoutAttrChange();
 
 	return this;
 }
@@ -222,8 +223,14 @@ void UITextView::shrinkText( const Uint32& MaxWidth ) {
 void UITextView::onAutoSize() {
 	if ( ( mFlags & UI_AUTO_SIZE && 0 == mSize.getWidth() ) ) {
 		setInternalPixelsSize( Sizei( (int)mTextCache->getTextWidth(), (int)mTextCache->getTextHeight() ) );
+	}
 
-		alignFix();
+	if ( mLayoutWidthRules == WRAP_CONTENT ) {
+		setInternalPixelsWidth( (int)mTextCache->getTextWidth() );
+	}
+
+	if ( mLayoutHeightRules == WRAP_CONTENT ) {
+		setInternalPixelsHeight( (int)mTextCache->getTextHeight() );
 	}
 }
 
@@ -527,6 +534,10 @@ void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
 						flags |= Text::StrikeThrough;
 					else if ( "shadowed" == cur || "shadow" == cur )
 						flags |= Text::Shadow;
+					else if ( "wordwrap" == cur ) {
+						mFlags |= UI_WORD_WRAP;
+						autoShrink();
+					}
 				}
 
 				setFontStyle( flags );

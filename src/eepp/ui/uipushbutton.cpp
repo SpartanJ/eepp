@@ -44,6 +44,7 @@ UIPushButton::UIPushButton() :
 	mIcon->setEnabled( false );
 
 	mTextBox = UITextView::New();
+	mTextBox->setLayoutSizeRules( FIXED, FIXED );
 	mTextBox->setParent( this );
 	mTextBox->setVisible( true );
 	mTextBox->setEnabled( false );

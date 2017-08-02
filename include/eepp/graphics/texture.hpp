@@ -241,6 +241,10 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		/** Bind the texture. Activate the texture for rendering. */
 		void bind();
 
+		std::string getName() const;
+
+		void setName( const std::string& name );
+
 		virtual ~Texture();
 	protected:
 		enum TEXTURE_FLAGS
@@ -263,6 +267,7 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		void create( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& channels, const std::string& filepath, const EE_CLAMP_MODE& clampMode, const bool& CompressedTexture, const Uint32& memSize = 0, const Uint8* data = NULL );
 
 		std::string 	mFilepath;
+		std::string		mName;
 
 		Uint32 			mId;
 		Uint32 			mTexId;
