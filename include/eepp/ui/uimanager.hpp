@@ -114,17 +114,17 @@ class EE_API UIManager {
 
 		void setCursor( EE_CURSOR_TYPE cursor );
 
-		void loadLayoutFromFile( const std::string& layoutPath, UIControl * parent = NULL );
+		UIWidget * loadLayoutFromFile( const std::string& layoutPath, UIControl * parent = NULL );
 
-		void loadLayoutFromString( const std::string& layoutString, UIControl * parent = NULL );
+		UIWidget * loadLayoutFromString( const std::string& layoutString, UIControl * parent = NULL );
 
-		void loadLayoutFromMemory( const void * buffer, Int32 bufferSize, UIControl * parent = NULL );
+		UIWidget * loadLayoutFromMemory( const void * buffer, Int32 bufferSize, UIControl * parent = NULL );
 
-		void loadLayoutFromStream( IOStream& stream, UIControl * parent = NULL );
+		UIWidget * loadLayoutFromStream( IOStream& stream, UIControl * parent = NULL );
 
-		void loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, UIControl * parent = NULL );
+		UIWidget * loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, UIControl * parent = NULL );
 
-		void loadLayoutNodes( pugi::xml_node node, UIControl * parent );
+		UIWidget * loadLayoutNodes( pugi::xml_node node, UIControl * parent );
 
 		void setTranslator( Translator translator );
 
