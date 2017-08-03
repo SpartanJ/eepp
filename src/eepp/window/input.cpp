@@ -88,6 +88,7 @@ void Input::processEvent( InputEvent * Event ) {
 		case InputEvent::MouseButtonDown:
 		{
 			mPressTrigger		|= EE_BUTTON_MASK( Event->button.button );
+
 			break;
 		}
 		case InputEvent::MouseButtonUp:
@@ -146,6 +147,10 @@ void Input::processEvent( InputEvent * Event ) {
 			Finger->xdelta		= Event->finger.dx;
 			Finger->ydelta		= Event->finger.dy;
 
+			if ( 0 == Event->finger.fingerId ) {
+				mPressTrigger		|= EE_BUTTON_LMASK;
+			}
+
 			break;
 		}
 		case InputEvent::FingerUp:
@@ -161,6 +166,10 @@ void Input::processEvent( InputEvent * Event ) {
 			Finger->xdelta		= Event->finger.dx;
 			Finger->ydelta		= Event->finger.dy;
 
+			if ( 0 == Event->finger.fingerId ) {
+				mPressTrigger		&= ~EE_BUTTON_LMASK;
+			}
+
 			break;
 		}
 		case InputEvent::FingerMotion:
@@ -174,6 +183,10 @@ void Input::processEvent( InputEvent * Event ) {
 			Finger->down		= true;
 			Finger->xdelta		= Event->finger.dx;
 			Finger->ydelta		= Event->finger.dy;
+
+			if ( 0 == Event->finger.fingerId ) {
+				mPressTrigger		|= EE_BUTTON_LMASK;
+			}
 
 			break;
 		}

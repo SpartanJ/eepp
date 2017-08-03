@@ -53,7 +53,6 @@ void UITouchDragableWidget::update() {
 		if ( mFlags & UI_TOUCH_DRAG_ENABLED ) {
 			UIManager * manager = UIManager::instance();
 			Uint32 Press	= manager->getPressTrigger();
-			Uint32 LPress	= manager->getLastPressTrigger();
 
 			if ( ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING ) ) {
 				// Mouse Not Down
@@ -77,22 +76,17 @@ void UITouchDragableWidget::update() {
 					mTouchDragPoint = Pos;
 
 					manager->setControlDragging( true );
-
-					//eePRINTL( "elapsed.x: %.4f diff: %.4f mTouchDragAcceleration: %.4f eq: %.4f", elapsed.y, diff.y, mTouchDragAcceleration.y, elapsed.y * diff.y );
 				} else {
 					mTouchDragAcceleration -= elapsed * mTouchDragDeceleration;
-
-					//eePRINTL( "elapsed.x: %.2f mTouchDragAcceleration: %.4f eq: %.4f", elapsed.y, mTouchDragAcceleration.y, elapsed.y * mTouchDragDeceleration.y );
 				}
 			} else {
 				// Mouse Down
 				if ( isTouchOverAllowedChilds() ) {
-					if ( !( LPress & EE_BUTTON_LMASK ) && ( Press & EE_BUTTON_LMASK ) ) {
+					if ( Press & EE_BUTTON_LMASK ) {
 						writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 1 );
 
 						mTouchDragPoint			= Vector2f( manager->getMousePos().x, manager->getMousePos().y );
 						mTouchDragAcceleration	= Vector2f(0,0);
-						//eePRINTL( "reset acceleration." );
 					}
 				}
 
@@ -127,8 +121,6 @@ void UITouchDragableWidget::update() {
 					}
 
 					onTouchDragValueChange( mTouchDragAcceleration );
-
-					//eePRINTL( "mTouchDragAcceleration: %.4f deaccelerated: %.4f", mTouchDragAcceleration.y, mTouchDragDeceleration.y * ms );
 				}
 			}
 		}
