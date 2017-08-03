@@ -20,7 +20,7 @@ UIWidget::UIWidget() :
 	mLayoutPositionRule(NONE),
 	mLayoutPositionRuleWidget(NULL)
 {
-	mControlFlags |= UI_CTRL_FLAG_COMPLEX;
+	mControlFlags |= UI_CTRL_FLAG_WIDGET;
 
 	updateAnchorsDistances();
 }

@@ -1107,7 +1107,7 @@ Uint32 UIControl::isDragable() {
 }
 
 Uint32 UIControl::isWidget() {
-	return mControlFlags & UI_CTRL_FLAG_COMPLEX;
+	return mControlFlags & UI_CTRL_FLAG_WIDGET;
 }
 
 Uint32 UIControl::isClipped() {
