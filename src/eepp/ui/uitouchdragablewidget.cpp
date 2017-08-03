@@ -10,7 +10,7 @@ UITouchDragableWidget * UITouchDragableWidget::New() {
 
 UITouchDragableWidget::UITouchDragableWidget() :
 	UIWidget(),
-	mTouchDragDeceleration( 0.01f, 0.01f )
+	mTouchDragDeceleration( 5.f, 5.f )
 {}
 
 Uint32 UITouchDragableWidget::getType() const {
@@ -63,7 +63,7 @@ void UITouchDragableWidget::update() {
 					return;
 				}
 
-				Float ms = getElapsed().asMilliseconds();
+				Float ms = getElapsed().asSeconds();
 				Vector2f elapsed( ms, ms );
 				Vector2f Pos( manager->getMousePos().x, manager->getMousePos().y );
 
@@ -72,13 +72,17 @@ void UITouchDragableWidget::update() {
 
 					onTouchDragValueChange( diff );
 
-					mTouchDragAcceleration += elapsed * diff * mTouchDragDeceleration;
+					mTouchDragAcceleration += elapsed * diff;
 
 					mTouchDragPoint = Pos;
 
 					manager->setControlDragging( true );
+
+					//eePRINTL( "elapsed.x: %.4f diff: %.4f mTouchDragAcceleration: %.4f eq: %.4f", elapsed.y, diff.y, mTouchDragAcceleration.y, elapsed.y * diff.y );
 				} else {
-					mTouchDragAcceleration -= elapsed * mTouchDragAcceleration * mTouchDragDeceleration;
+					mTouchDragAcceleration -= elapsed * mTouchDragDeceleration;
+
+					//eePRINTL( "elapsed.x: %.2f mTouchDragAcceleration: %.4f eq: %.4f", elapsed.y, mTouchDragAcceleration.y, elapsed.y * mTouchDragDeceleration.y );
 				}
 			} else {
 				// Mouse Down
@@ -88,23 +92,43 @@ void UITouchDragableWidget::update() {
 
 						mTouchDragPoint			= Vector2f( manager->getMousePos().x, manager->getMousePos().y );
 						mTouchDragAcceleration	= Vector2f(0,0);
+						//eePRINTL( "reset acceleration." );
 					}
 				}
 
-				// Mouse Up
-				if ( ( LPress & EE_BUTTON_LMASK ) && !( Press & EE_BUTTON_LMASK ) ) {
-					writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 0 );
-					manager->setControlDragging( false );
-				}
-
 				// Deaccelerate
-				if ( mTouchDragAcceleration > Vector2f( 0.01f, 0.01f ) || mTouchDragAcceleration < Vector2f( -0.01f, -0.01f ) ) {
+				if ( mTouchDragAcceleration.x != 0 || mTouchDragAcceleration.y != 0 ) {
+					Float ms = getElapsed().asSeconds();
+
+					if ( 0 != mTouchDragAcceleration.x ) {
+						bool wasPositiveX = mTouchDragAcceleration.x >= 0;
+
+						if ( mTouchDragAcceleration.x > 0 )
+							mTouchDragAcceleration.x -= mTouchDragDeceleration.x * ms;
+						else
+							mTouchDragAcceleration.x += mTouchDragDeceleration.x * ms;
+
+
+						if ( wasPositiveX && mTouchDragAcceleration.x < 0 ) mTouchDragAcceleration.x = 0;
+						else if ( !wasPositiveX && mTouchDragAcceleration.x > 0 ) mTouchDragAcceleration.x = 0;
+					}
+
+					if ( 0 != mTouchDragAcceleration.y ) {
+						bool wasPositiveY = mTouchDragAcceleration.y >= 0;
+
+						if ( mTouchDragAcceleration.y > 0 )
+							mTouchDragAcceleration.y -= mTouchDragDeceleration.y * ms;
+						else
+							mTouchDragAcceleration.y += mTouchDragDeceleration.y * ms;
+
+
+						if ( wasPositiveY && mTouchDragAcceleration.y < 0 ) mTouchDragAcceleration.y = 0;
+						else if ( !wasPositiveY && mTouchDragAcceleration.y > 0 ) mTouchDragAcceleration.y = 0;
+					}
+
 					onTouchDragValueChange( mTouchDragAcceleration );
 
-					Float ms = getElapsed().asMilliseconds();
-					Vector2f elapsed( ms, ms );
-
-					mTouchDragAcceleration -= mTouchDragAcceleration * mTouchDragDeceleration * elapsed;
+					//eePRINTL( "mTouchDragAcceleration: %.4f deaccelerated: %.4f", mTouchDragAcceleration.y, mTouchDragDeceleration.y * ms );
 				}
 			}
 		}
