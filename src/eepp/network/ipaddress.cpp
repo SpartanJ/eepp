@@ -4,38 +4,6 @@
 #include <cstring>
 #include <utility>
 
-namespace {
-	EE::Uint32 Resolve(const std::string& address) {
-		if (address == "255.255.255.255") {
-			// The broadcast address needs to be handled explicitely,
-			// because it is also the value returned by inet_addr on error
-			return INADDR_BROADCAST;
-		} else {
-			// Try to convert the address as a byte representation ("xxx.xxx.xxx.xxx")
-			EE::Uint32 ip = inet_addr(address.c_str());
-			if (ip != INADDR_NONE)
-				return ip;
-
-			// Not a valid address, try to convert it as a host name
-			addrinfo hints;
-			std::memset(&hints, 0, sizeof(hints));
-			hints.ai_family = AF_INET;
-			addrinfo* result = NULL;
-
-			if (getaddrinfo(address.c_str(), NULL, &hints, &result) == 0) {
-				if (result) {
-					ip = reinterpret_cast<sockaddr_in*>(result->ai_addr)->sin_addr.s_addr;
-					freeaddrinfo(result);
-					return ip;
-				}
-			}
-
-			// Not a valid address nor a host name
-			return 0;
-		}
-	}
-}
-
 namespace EE { namespace Network {
 
 const IpAddress IpAddress::None;
@@ -53,14 +21,14 @@ IpAddress::IpAddress(const std::string& address) :
 	mAddress(0),
 	mValid(false)
 {
-	Resolve(address);
+	resolve(address);
 }
 
 IpAddress::IpAddress(const char* address) :
 	mAddress(0),
 	mValid(false)
 {
-	Resolve(address);
+	resolve(address);
 }
 
 IpAddress::IpAddress(Uint8 byte0, Uint8 byte1, Uint8 byte2, Uint8 byte3) :
