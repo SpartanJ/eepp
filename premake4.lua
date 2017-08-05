@@ -441,8 +441,8 @@ function build_link_configuration( package_name, use_ee_icon )
 		add_cross_config_links()
 	
 	configuration "emscripten"
-		linkoptions{ "-O1 -s TOTAL_MEMORY=67108864 -s ASM_JS=1 -s VERBOSE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s USE_SDL=2" }
-		buildoptions { "-fno-strict-aliasing -O2 -ffast-math -s USE_SDL=2" }
+		linkoptions{ "-O2 -s TOTAL_MEMORY=67108864 -s ASM_JS=1 -s VERBOSE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s USE_SDL=2" }
+		buildoptions { "-fno-strict-aliasing -O2 -s USE_SDL=2 -s PRECISE_F32=1" }
 
 		if _OPTIONS["with-gles1"] and ( not _OPTIONS["with-gles2"] or _OPTIONS["force-gles1"] ) then
 			linkoptions{ "-s LEGACY_GL_EMULATION=1" }

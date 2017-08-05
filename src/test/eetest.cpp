@@ -65,7 +65,7 @@ void EETest::init() {
 	ContextSettings ConSettings	= EE->createContextSettings( &Ini );
 
 	if ( !( WinSettings.Style & WindowStyle::Fullscreen ) && !( WinSettings.Style & WindowStyle::UseDesktopResolution ) ) {
-#if EE_PLATFORM != EE_PLATFORM_MACOSX
+#if EE_PLATFORM != EE_PLATFORM_MACOSX && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		WinSettings.Width *= WinSettings.PixelDensity;
 		WinSettings.Height *= WinSettings.PixelDensity;
 #endif
@@ -74,6 +74,8 @@ void EETest::init() {
 	mWindow = EE->createWindow( WinSettings, ConSettings );
 
 	if ( NULL != mWindow && mWindow->isOpen() ) {
+		MyPath 				= Sys::getProcessPath() + "assets/"; // Android needs to get the real process path AFTER the window creation
+
 		setScreen( StartScreen );
 
 		mWindow->setCaption( "eepp - Test Application" );
@@ -196,6 +198,9 @@ void EETest::onFontLoaded( ResourceLoader * ObjLoaded ) {
 	eeASSERT( DBSM != NULL );
 
 	Con.create( DBSM, true );
+	//   RR  GG  BB  AA
+	//   EE  1F  1F  20
+	//   20  1F  1F  EE
 	Con.setBackgroundColor( 0x201F1FEE );
 	Con.setBackgroundLineColor( 0x666666EE );
 	Con.setFontColor( 0xCFCFCFFF );

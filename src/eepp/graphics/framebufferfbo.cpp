@@ -82,23 +82,24 @@ bool FrameBufferFBO::create(const Uint32& Width, const Uint32& Height, bool Sten
 
 	mFrameBuffer = static_cast<Int32>( frameBuffer );
 
-	if ( !mFrameBuffer) {
+	if ( !mFrameBuffer ) {
 		eePRINT("FrameBufferFBO::create: Failed to created FrameBuffer Object");
-
 		return false;
 	}
 
 	bindFrameBuffer();
 
-	if ( DepthBuffer ) {
+	if ( mHasDepthBuffer ) {
 		unsigned int depth = 0;
 
 		GLi->genRenderbuffers( 1, &depth );
 
 		mDepthBuffer = static_cast<unsigned int>(depth);
 
-		if ( !mDepthBuffer )
+		if ( !mDepthBuffer ) {
+			eePRINT("FrameBufferFBO::create: Failed to created Depth Buffer");
 			return false;
+		}
 
 		bindDepthBuffer();
 
@@ -106,10 +107,10 @@ bool FrameBufferFBO::create(const Uint32& Width, const Uint32& Height, bool Sten
 
 		GLi->framebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, mDepthBuffer );
 
-		GLi->bindFramebuffer( GL_RENDERBUFFER, mLastDB );
+		GLi->bindRenderbuffer( GL_RENDERBUFFER, mLastDB );
 	}
 
-	if ( StencilBuffer ) {
+	if ( mHasStencilBuffer ) {
 		GLuint stencil = 0;
 		GLi->genRenderbuffers( 1, &stencil );
 
@@ -117,17 +118,16 @@ bool FrameBufferFBO::create(const Uint32& Width, const Uint32& Height, bool Sten
 
 		if (!mStencilBuffer) {
 			eePRINT("FrameBufferFBO::create: Failed to created Stencil Buffer");
-
 			return false;
 		}
 
 		bindStencilBuffer();
 
-		GLi->renderbufferStorage( GL_RENDERBUFFER, GL_STENCIL_INDEX, Width, Height );
+		GLi->renderbufferStorage( GL_RENDERBUFFER, GL_STENCIL_INDEX8, Width, Height );
 
 		GLi->framebufferRenderbuffer( GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER_EXT, mStencilBuffer );
 
-		GLi->bindFramebuffer( GL_RENDERBUFFER, mLastSB );
+		GLi->bindRenderbuffer( GL_RENDERBUFFER, mLastSB );
 	}
 
 	if ( NULL == mTexture ) {
@@ -136,15 +136,17 @@ bool FrameBufferFBO::create(const Uint32& Width, const Uint32& Height, bool Sten
 		if ( TextureFactory::instance()->existsId( TexId ) ) {
 			mTexture = 	TextureFactory::instance()->getTexture( TexId );
 		} else {
+			eePRINTL( "FrameBufferFBO::create: failed to create texture" );
 			return false;
 		}
 	}
 
 	GLi->framebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture->getHandle(), 0 );
 
-	if ( GLi->checkFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE ) {
+	Uint32 status = GLi->checkFramebufferStatus( GL_FRAMEBUFFER );
+	if ( status != GL_FRAMEBUFFER_COMPLETE ) {
+		eePRINTL("FrameBufferFBO::create: Failed to attach Frame Buffer. Status: %04X", status );
 		GLi->bindFramebuffer( GL_FRAMEBUFFER, mLastFB );
-
 		return false;
 	}
 
@@ -177,6 +179,7 @@ void FrameBufferFBO::reload() {
 
 void FrameBufferFBO::bindFrameBuffer() {
 	int curFB;
+
 	glGetIntegerv( GL_FRAMEBUFFER_BINDING, &curFB );
 
 	mLastFB = (Int32)curFB;

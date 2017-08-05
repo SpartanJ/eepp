@@ -23,7 +23,7 @@ void mainLoop()
 	}
 
 	// Draw a circle
-	p.drawCircle( Vector2f( win->getWidth() * 0.5f, win->getHeight() * 0.5f ), 200, 50 );
+	p.drawCircle( Vector2f( win->getWidth() * 0.5f, win->getHeight() * 0.5f ), 200, 60 );
 
 	// Draw frame
 	win->display();

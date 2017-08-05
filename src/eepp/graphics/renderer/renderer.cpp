@@ -244,6 +244,8 @@ void Renderer::init() {
 																isExtension( "WEBKIT_WEBGL_compressed_texture_s3tc" ) ||
 																isExtension( "MOZ_WEBGL_compressed_texture_s3tc" ) );
 	}
+
+	writeExtension( EEGL_ARB_texture_non_power_of_two	, 1	);
 	#endif
 }
 

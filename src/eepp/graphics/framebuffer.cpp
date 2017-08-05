@@ -13,7 +13,7 @@ namespace EE { namespace Graphics {
 FrameBuffer * FrameBuffer::New( const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer, EE::Window::Window * window ) {
 	if ( FrameBufferFBO::isSupported() )
 		return eeNew( FrameBufferFBO, ( Width, Height, StencilBuffer, DepthBuffer, window ) );
-
+	eePRINTL( "FBO not supported" );
 	return NULL;
 }
 

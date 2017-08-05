@@ -161,7 +161,7 @@ void Primitives::drawArc( const Vector2f& p, const Float& radius, Uint32 segment
 	if(segmentsCount < 6) segmentsCount = 6;
 	segmentsCount = segmentsCount > 360 ? 360 : segmentsCount;
 
-	Float angle_shift =  360 / static_cast<Float>(segmentsCount);
+	Float angleShift =  360 / static_cast<Float>(segmentsCount);
 	Float arcAngleA = arcAngle > 360 ? arcAngle - 360 * std::floor( arcAngle / 360 ) : arcAngle;
 
 	sBR->setTexture( NULL );
@@ -202,12 +202,12 @@ void Primitives::drawArc( const Vector2f& p, const Float& radius, Uint32 segment
 			sBR->triangleFanBegin();
 			sBR->triangleFanSetColor( mColor );
 
-			for( Float i = 0; i < arcAngleA; i+= angle_shift ) {
+			for( Float i = 0; i < arcAngleA; i+= angleShift ) {
 				Float startAngle = arcStartAngle + i;
 
 				sBR->batchTriangleFan( p.x , p.y,
 									   p.x + radius * Math::sinAng( startAngle ), p.y + radius * Math::cosAng( startAngle ),
-									   p.x + radius * Math::sinAng( startAngle + angle_shift ), p.y + radius * Math::cosAng( startAngle + angle_shift ) );
+									   p.x + radius * Math::sinAng( startAngle + angleShift ), p.y + radius * Math::cosAng( startAngle + angleShift ) );
 			}
 
 			break;
