@@ -128,7 +128,11 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		mWindow.WindowConfig.Height	= mWindow.DesktopResolution.getHeight();
 	}
 
-	mWindow.Flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
+	mWindow.Flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
+
+	#if SDL_VERSION_ATLEAST(2,0,1)
+	mWindow.Flags |= SDL_WINDOW_ALLOW_HIGHDPI;
+	#endif
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::Resize ) {
 		mWindow.Flags |= SDL_WINDOW_RESIZABLE;
@@ -138,7 +142,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		mWindow.Flags |= SDL_WINDOW_BORDERLESS;
 	}
 
-	SetGLConfig();
+	setGLConfig();
 
 	Uint32 mTmpFlags = mWindow.Flags;
 
@@ -162,12 +166,14 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	}
 
 	/// In some platforms it will not create the desired window size, so we query the real window size created
+	#if SDL_VERSION_ATLEAST(2,0,1)
 	int w, h;
 	SDL_GL_GetDrawableSize( mSDLWindow, &w, &h );
 
 	mWindow.WindowConfig.Width	= w;
 	mWindow.WindowConfig.Height	= h;
 	mWindow.WindowSize			= Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+	#endif
 
 	#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 		eePRINTL( "Choosing GL Version from: %d", Context.Version );
@@ -201,11 +207,13 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 			#endif
 		}
 	#else
+		#if SDL_VERSION_ATLEAST(2,0,0)
 		if ( GLv_3CP == Context.Version ) {
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 		}
+		#endif
 	#endif
 
 	#ifdef SDL2_THREADED_GLCONTEXT
@@ -323,7 +331,7 @@ void WindowSDL::createPlatform() {
 #endif
 }
 
-void WindowSDL::SetGLConfig() {
+void WindowSDL::setGLConfig() {
 	if ( mWindow.ContextConfig.DepthBufferSize ) SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE	, mWindow.ContextConfig.DepthBufferSize );				// Depth
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, ( mWindow.ContextConfig.DoubleBuffering ? 1 : 0 ) );	// Double Buffering
 	if ( mWindow.ContextConfig.StencilBufferSize ) SDL_GL_SetAttribute( SDL_GL_STENCIL_SIZE, mWindow.ContextConfig.StencilBufferSize );
@@ -405,7 +413,9 @@ void WindowSDL::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( this->isWindowed() && !Windowed ) {
 		mWinPos = getPosition();
 	} else {
+		#if SDL_VERSION_ATLEAST(2,0,0)
 		SDL_SetWindowFullscreen( mSDLWindow, Windowed ? 0 : SDL_WINDOW_FULLSCREEN );
+		#endif
 	}
 
 	SDL_SetWindowSize( mSDLWindow, Width, Height );
@@ -413,9 +423,11 @@ void WindowSDL::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( this->isWindowed() && !Windowed ) {
 		mWinPos = getPosition();
 
-		SetGLConfig();
+		setGLConfig();
 
+		#if SDL_VERSION_ATLEAST(2,0,0)
 		SDL_SetWindowFullscreen( mSDLWindow, Windowed ? 0 : SDL_WINDOW_FULLSCREEN );
+		#endif
 	}
 
 	if ( !this->isWindowed() && Windowed ) {
@@ -586,15 +598,17 @@ Vector2i WindowSDL::getPosition() {
 	return p;
 }
 
-void WindowSDL::UpdateDesktopResolution() {
+void WindowSDL::updateDesktopResolution() {
+#if SDL_VERSION_ATLEAST(2,0,0)
 	SDL_DisplayMode dpm;
 	SDL_GetDesktopDisplayMode( SDL_GetWindowDisplayIndex( mSDLWindow ), &dpm );
 
 	mWindow.DesktopResolution = Sizei( dpm.w, dpm.h );
+#endif
 }
 
 const Sizei& WindowSDL::getDesktopResolution() {
-	UpdateDesktopResolution();
+	updateDesktopResolution();
 	return Window::getDesktopResolution();
 }
 
@@ -607,7 +621,11 @@ void WindowSDL::startTextInput() {
 }
 
 bool WindowSDL::isTextInputActive() {
+#if SDL_VERSION_ATLEAST(2,0,0)
 	return SDL_TRUE == SDL_IsTextInputActive();
+#else
+	return false;
+#endif
 }
 
 void WindowSDL::stopTextInput() {
@@ -631,11 +649,19 @@ void WindowSDL::setTextInputRect( Rect& rect ) {
 }
 
 bool WindowSDL::hasScreenKeyboardSupport() {
+#if SDL_VERSION_ATLEAST(2,0,0)
 	return SDL_TRUE == SDL_HasScreenKeyboardSupport();
+#else
+	return false;
+#endif
 }
 
 bool WindowSDL::isScreenKeyboardShown() {
+#if SDL_VERSION_ATLEAST(2,0,0)
 	return SDL_TRUE == SDL_IsScreenKeyboardShown( mSDLWindow );
+#else
+	return false;
+#endif
 }
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID

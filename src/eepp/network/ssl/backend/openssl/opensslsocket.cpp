@@ -165,7 +165,7 @@ bool OpenSSLSocket::init() {
 			BIO_free(mem);
 		}
 
-		eePRINTL( "Loaded certs from '%s': %d", SSLSocket::CertificatesPath.c_str(), (int)sCerts.size() );
+		//eePRINTL( "Loaded certs from '%s': %d", SSLSocket::CertificatesPath.c_str(), (int)sCerts.size() );
 	}
 
 	return true;

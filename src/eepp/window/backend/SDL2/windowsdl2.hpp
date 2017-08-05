@@ -113,11 +113,11 @@ class EE_API WindowSDL : public Window {
 
 		void swapBuffers();
 
-		void SetGLConfig();
+		void setGLConfig();
 
 		std::string getVersion();
 
-		void UpdateDesktopResolution();
+		void updateDesktopResolution();
 };
 
 }}}}

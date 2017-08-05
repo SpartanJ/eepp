@@ -10,7 +10,9 @@ static SDL_Cursor * SDL_SYS_CURSORS[ SYS_CURSOR_COUNT ] = {0};
 
 static SDL_Cursor * getLoadCursor( const EE_SYSTEM_CURSOR& cursor ) {
 	if ( 0 == SDL_SYS_CURSORS[ cursor ] ) {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		SDL_SYS_CURSORS[ cursor ] = SDL_CreateSystemCursor( (SDL_SystemCursor)cursor );
+#endif
 	}
 
 	return SDL_SYS_CURSORS[ cursor ];

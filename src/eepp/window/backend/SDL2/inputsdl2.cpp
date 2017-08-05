@@ -98,7 +98,11 @@ void InputSDL::update() {
 				String txt = String::fromUtf8( SDLEvent.text.text );
 
 				EEEvent.Type = InputEvent::TextInput;
+				#if SDL_VERSION_ATLEAST(2,0,0)
 				EEEvent.text.timestamp = SDLEvent.text.timestamp;
+				#else
+				EEEvent.text.timestamp = Sys::getTicks();
+				#endif
 				EEEvent.text.text = txt[0];
 
 				processEvent( &EEEvent );
@@ -322,18 +326,20 @@ void InputSDL::injectMousePos( const Uint16& x, const Uint16& y ) {
 }
 
 void InputSDL::init() {
+#if SDL_VERSION_ATLEAST(2,0,1)
 	int realX, realY;
 	int scaledX, scaledY;
 	SDL_Window * sdlw = reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow();
 	SDL_GL_GetDrawableSize(sdlw, &realX, &realY);
 	SDL_GetWindowSize(sdlw, &scaledX, &scaledY);
 	mDPIScale = (Float)realX / (Float)scaledX;
-	
+#endif
+
+#if SDL_VERSION_ATLEAST(2,0,4)
 	Vector2i mTempMouse;
 	Vector2i mTempWinPos;
 	Rect mBordersSize;
 
-#if SDL_VERSION_ATLEAST(2,0,4)
 	SDL_GetGlobalMouseState( &mTempMouse.x, &mTempMouse.y );
 	SDL_GetWindowPosition( sdlw, &mTempWinPos.x, &mTempWinPos.y );
 	SDL_GetWindowBordersSize( sdlw, &mBordersSize.Top, &mBordersSize.Left, &mBordersSize.Bottom, &mBordersSize.Right );
