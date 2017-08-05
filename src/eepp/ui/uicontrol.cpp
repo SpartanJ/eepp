@@ -1249,11 +1249,11 @@ void UIControl::setTheme( UITheme * Theme ) {
 	setThemeSkin( Theme, "control" );
 }
 
-UIControl * UIControl::setThemeSkin(const std::string& skinName ) {
+UIControl * UIControl::setThemeSkin( const std::string& skinName ) {
 	return setThemeSkin( UIThemeManager::instance()->getDefaultTheme(), skinName );
 }
 
-UIControl * UIControl::setThemeSkin(UITheme * Theme, const std::string& skinName ) {
+UIControl * UIControl::setThemeSkin( UITheme * Theme, const std::string& skinName ) {
 	if ( NULL != Theme ) {
 		UISkin * tSkin = Theme->getSkin( skinName );
 

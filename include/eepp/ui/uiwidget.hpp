@@ -34,6 +34,10 @@ class EE_API UIWidget : public UIControlAnim {
 
 		virtual void setTheme( UITheme * Theme );
 
+		virtual UIControl * setThemeSkin( const std::string& skinName );
+
+		virtual UIControl * setThemeSkin( UITheme * Theme, const std::string& skinName );
+
 		UIControl * setSize( const Int32& Width, const Int32& Height );
 
 		const Sizei& getSize();

@@ -177,9 +177,9 @@ class EE_API UIControl {
 
 		virtual void setTheme( UITheme * Theme );
 
-		UIControl * setThemeSkin( UITheme * Theme, const std::string& skinName );
+		virtual UIControl * setThemeSkin( UITheme * Theme, const std::string& skinName );
 
-		UIControl * setThemeSkin( const std::string& skinName );
+		virtual UIControl * setThemeSkin( const std::string& skinName );
 
 		void setThemeToChilds( UITheme * Theme );
 

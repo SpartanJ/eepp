@@ -81,7 +81,7 @@ void UITouchDragableWidget::update() {
 				}
 			} else {
 				// Mouse Down
-				if ( isTouchOverAllowedChilds() ) {
+				if ( isTouchOverAllowedChilds() && !manager->isControlDragging() ) {
 					if ( Press & EE_BUTTON_LMASK ) {
 						writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 1 );
 

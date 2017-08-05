@@ -246,6 +246,14 @@ void UIWidget::setTheme( UITheme * Theme ) {
 	mTheme = Theme;
 }
 
+UIControl * UIWidget::setThemeSkin( const std::string& skinName ) {
+	return setThemeSkin( NULL != mTheme ? mTheme : UIThemeManager::instance()->getDefaultTheme(), skinName );
+}
+
+UIControl * UIWidget::setThemeSkin( UITheme * Theme, const std::string& skinName ) {
+	return UIControl::setThemeSkin( Theme, skinName );
+}
+
 UIControl * UIWidget::setSize( const Int32& Width, const Int32& Height ) {
 	return UIControlAnim::setSize( Width, Height );
 }
@@ -355,6 +363,8 @@ void UIWidget::alignAgainstLayout() {
 }
 
 void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
+	std::string skinName;
+
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
 		std::string name = ait->name();
 		String::toLowerInPlace( name );
@@ -383,8 +393,12 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			setEnabled( ait->as_bool() );
 		} else if ( "theme" == name ) {
 			setThemeByName( ait->as_string() );
+
+			if ( !skinName.empty() )
+				setThemeSkin( skinName );
 		} else if ( "skin" == name ) {
-			setThemeSkin( ait->as_string() );
+			skinName = ait->as_string();
+			setThemeSkin( skinName );
 		} else if ( "gravity" == name ) {
 			std::string gravity = ait->as_string();
 			String::toLowerInPlace( gravity );
