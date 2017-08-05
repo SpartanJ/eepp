@@ -2,6 +2,7 @@
 #define EE_NETWORKCUDPSOCKET_HPP
 
 #include <eepp/network/socket.hpp>
+#include <eepp/network/ipaddress.hpp>
 #include <vector>
 
 namespace EE { namespace Network {
@@ -35,9 +36,10 @@ class EE_API UdpSocket : public Socket {
 	**  system to automatically pick an available port, and then
 	**  call GetLocalPort to retrieve the chosen port.
 	**  @param port Port to Bind the socket to
+	**  @param address Address of the interface to bind to
 	**  @return Status code
 	**  @see Unbind, GetLocalPort */
-	Status bind(unsigned short port);
+	Status bind(unsigned short port, const IpAddress& address = IpAddress::Any);
 
 	/** @brief Unbind the socket from the local port to which it is bound
 	**  The port that the socket was previously using is immediately

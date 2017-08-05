@@ -48,7 +48,7 @@ class EE_API IpAddress
 		**  This constructor uses the internal representation of
 		**  the address directly. It should be used for optimization
 		**  purposes, and only if you got that representation from
-		**  IpAddress::ToInteger().
+		**  IpAddress::toInteger().
 		**  @param address 4 bytes of the address packed into a 32-bits integer
 		**  @see ToInteger */
 		explicit IpAddress(Uint32 address);
@@ -100,11 +100,19 @@ class EE_API IpAddress
 
 		// Static member data
 		static const IpAddress None;	  ///< Value representing an empty/invalid address
+		static const IpAddress Any;       ///< Value representing any address (0.0.0.0)
 		static const IpAddress LocalHost; ///< The "localhost" address (for connecting a computer to itself locally)
 		static const IpAddress Broadcast; ///< The "broadcast" address (for sending UDP messages to everyone on a local network)
 	private :
+		friend EE_API bool operator <(const IpAddress& left, const IpAddress& right);
+
+		/** @brief Resolve the given address string
+		**  @param address Address string */
+		void resolve(const std::string& address);
+
 		// Member data
 		Uint32 mAddress; ///< Address stored as an unsigned 32 bits integer
+		bool   mValid;   ///< Is the address valid?
 };
 
 /** @brief Overload of == operator to compare two IP addresses

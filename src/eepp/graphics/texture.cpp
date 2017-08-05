@@ -163,7 +163,7 @@ Uint8 * Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
 	}
 
 	return &mPixels[0];
-	#else
+#else
 	if ( !( mFlags & TEX_FLAG_LOCKED ) ) {
 		TextureSaver saver( mTexture );
 
@@ -188,7 +188,7 @@ Uint8 * Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
 	}
 
 	return NULL;
-	#endif
+#endif
 }
 
 Uint8 * Texture::lock( const bool& ForceRGBA ) {

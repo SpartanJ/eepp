@@ -321,6 +321,7 @@ private :
 
 	// Member data
 	TcpSocket mCommandSocket; ///< Socket holding the control connection with the server
+	std::string mReceiveBuffer; ///< Received command data that is yet to be processed
 };
 
 }}

@@ -24,13 +24,17 @@ unsigned short TcpListener::getLocalPort() const {
 	return 0;
 }
 
-Socket::Status TcpListener::listen(unsigned short port) {
+Socket::Status TcpListener::listen(unsigned short port, const IpAddress& address) {
 	// Create the internal socket if it doesn't exist
 	create();
 
+	// Check if the address is valid
+	if ((address == IpAddress::None) || (address == IpAddress::Broadcast))
+		return Error;
+
 	// Bind the socket to the specified port
-	sockaddr_in address = Private::SocketImpl::createAddress(INADDR_ANY, port);
-	if (bind(getHandle(), reinterpret_cast<sockaddr*>(&address), sizeof(address)) == -1) {
+	sockaddr_in addr = Private::SocketImpl::createAddress(address.toInteger(), port);
+	if (bind(getHandle(), reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == -1) {
 		// Not likely to happen, but...
 		eePRINTL( "Failed to bind listener socket to port %d", port );
 		return Error;

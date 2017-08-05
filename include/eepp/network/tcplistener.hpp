@@ -2,6 +2,7 @@
 #define EE_NETWORKCTCPLISTENER_HPP
 
 #include <eepp/network/socket.hpp>
+#include <eepp/network/ipaddress.hpp>
 
 namespace EE { namespace Network {
 
@@ -28,9 +29,10 @@ public :
 	**  If the socket was previously listening to another port,
 	**  it will be stopped first and bound to the new port.
 	**  @param port Port to listen for new connections
+	**  @param address Address of the interface to listen on
 	**  @return Status code
 	**  @see Accept, Close */
-	Status listen(unsigned short port);
+	Status listen(unsigned short port, const IpAddress& address = IpAddress::Any);
 
 	/** @brief Stop listening and close the socket
 	**  This function gracefully stops the listener. If the

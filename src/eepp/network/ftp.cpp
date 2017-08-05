@@ -272,8 +272,15 @@ Ftp::Response Ftp::getResponse() {
 		// Receive the response from the server
 		char buffer[1024];
 		std::size_t length;
-		if (mCommandSocket.receive(buffer, sizeof(buffer), length) != Socket::Done)
-			return Response(Response::ConnectionClosed);
+
+		if (mReceiveBuffer.empty()) {
+			if (mCommandSocket.receive(buffer, sizeof(buffer), length) != Socket::Done)
+				return Response(Response::ConnectionClosed);
+		} else {
+			std::copy(mReceiveBuffer.begin(), mReceiveBuffer.end(), buffer);
+			length = mReceiveBuffer.size();
+			mReceiveBuffer.clear();
+		}
 
 		// There can be several lines inside the received buffer, extract them all
 		std::istringstream in(std::string(buffer, length), std::ios_base::binary);

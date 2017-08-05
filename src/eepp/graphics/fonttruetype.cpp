@@ -89,18 +89,20 @@ bool FontTrueType::loadFromFile(const std::string& filename) {
 	FT_Stroker stroker;
 	if (FT_Stroker_New(static_cast<FT_Library>(mLibrary), &stroker) != 0) {
 		eePRINTL( "Failed to load font \"%s\" (failed to create the stroker)", filename.c_str() );
+		FT_Done_Face(face);
 		return false;
 	}
-	mStroker = stroker;
 
 	// Select the unicode character map
 	if (FT_Select_Charmap(face, FT_ENCODING_UNICODE) != 0) {
 		eePRINTL(  "Failed to load font \"%s\" (failed to set the Unicode character set)", filename.c_str() );
+		FT_Stroker_Done(stroker);
 		FT_Done_Face(face);
 		return false;
 	}
 
 	// Store the loaded font in our ugly void* :)
+	mStroker = stroker;
 	mFace = face;
 
 	// Store the font information
@@ -133,18 +135,20 @@ bool FontTrueType::loadFromMemory(const void* data, std::size_t sizeInBytes) {
 	FT_Stroker stroker;
 	if (FT_Stroker_New(static_cast<FT_Library>(mLibrary), &stroker) != 0) {
 		eePRINTL( "Failed to load font from memory (failed to create the stroker)" );
+		FT_Done_Face(face);
 		return false;
 	}
-	mStroker = stroker;
 
 	// Select the Unicode character map
 	if (FT_Select_Charmap(face, FT_ENCODING_UNICODE) != 0) {
 		eePRINTL( "Failed to load font from memory (failed to set the Unicode character set)" );
+		FT_Stroker_Done(stroker);
 		FT_Done_Face(face);
 		return false;
 	}
 
 	// Store the loaded font in our ugly void* :)
+	mStroker = stroker;
 	mFace = face;
 
 	// Store the font information
@@ -197,19 +201,22 @@ bool FontTrueType::loadFromStream(IOStream& stream) {
 	FT_Stroker stroker;
 	if (FT_Stroker_New(static_cast<FT_Library>(mLibrary), &stroker) != 0) {
 		eePRINTL( "Failed to load font from stream (failed to create the stroker)" );
+		FT_Done_Face(face);
+		delete rec;
 		return false;
 	}
-	mStroker = stroker;
 
 	// Select the Unicode character map
 	if (FT_Select_Charmap(face, FT_ENCODING_UNICODE) != 0) {
 		eePRINTL( "Failed to load font from stream (failed to set the Unicode character set)" );
+		FT_Stroker_Done(stroker);
 		FT_Done_Face(face);
 		delete rec;
 		return false;
 	}
 
 	// Store the loaded font in our ugly void* :)
+	mStroker = stroker;
 	mFace = face;
 	mStreamRec = rec;
 
@@ -403,7 +410,7 @@ void FontTrueType::cleanup() {
 	mStreamRec = NULL;
 	mRefCount  = NULL;
 	mPages.clear();
-	mPixelBuffer.clear();
+	std::vector<Uint8>().swap(mPixelBuffer);
 }
 
 Glyph FontTrueType::loadGlyph(Uint32 codePoint, unsigned int characterSize, bool bold, Float outlineThickness) const {
@@ -484,13 +491,16 @@ Glyph FontTrueType::loadGlyph(Uint32 codePoint, unsigned int characterSize, bool
 	if ((width > 0) && (height > 0)) {
 		// Leave a small padding around characters, so that filtering doesn't
 		// pollute them with pixels from neighbors
-		const unsigned int padding = 1;
+		const int padding = 1;
+
+		width += 2 * padding;
+		height += 2 * padding;
 
 		// Get the glyphs page corresponding to the character size
 		Page& page = mPages[characterSize];
 
 		// Find a good position for the new glyph into the texture
-		glyph.textureRect = findGlyphRect(page, width + 2 * padding, height + 2 * padding);
+		glyph.textureRect = findGlyphRect(page, width, height);
 
 		// Make sure the texture data is positioned in the center
 		// of the allocated texture rectangle
@@ -505,19 +515,31 @@ Glyph FontTrueType::loadGlyph(Uint32 codePoint, unsigned int characterSize, bool
 		glyph.bounds.Right  =  static_cast<Float>(face->glyph->metrics.width)        / static_cast<Float>(1 << 6) + outlineThickness * 2;
 		glyph.bounds.Bottom =  static_cast<Float>(face->glyph->metrics.height)       / static_cast<Float>(1 << 6) + outlineThickness * 2;
 
+		// Resize the pixel buffer to the new size and fill it with transparent white pixels
+		mPixelBuffer.resize(width * height * 4);
+
+		Uint8* current = &mPixelBuffer[0];
+		Uint8* end = current + width * height * 4;
+
+		while (current != end) {
+			(*current++) = 255;
+			(*current++) = 255;
+			(*current++) = 255;
+			(*current++) = 0;
+		}
+
 		// Extract the glyph's pixels from the bitmap
-		mPixelBuffer.resize(width * height * 4, 255);
 		const Uint8* pixels = bitmap.buffer;
 		if (bitmap.pixel_mode == FT_PIXEL_MODE_MONO)
 		{
 			// Pixels are 1 bit monochrome values
-			for (int y = 0; y < height; ++y)
+			for (int y = padding; y < height - padding; ++y)
 			{
-				for (int x = 0; x < width; ++x)
+				for (int x = padding; x < width - padding; ++x)// Extract the glyph's pixels from the bitmap
 				{
 					// The color channels remain white, just fill the alpha channel
-					std::size_t index = (x + y * width) * 4 + 3;
-					mPixelBuffer[index] = ((pixels[x / 8]) & (1 << (7 - (x % 8)))) ? 255 : 0;
+					std::size_t index = x + y * width;
+					mPixelBuffer[index * 4 + 3] = ((pixels[(x - padding) / 8]) & (1 << (7 - ((x - padding) % 8)))) ? 255 : 0;
 				}
 				pixels += bitmap.pitch;
 			}
@@ -525,23 +547,23 @@ Glyph FontTrueType::loadGlyph(Uint32 codePoint, unsigned int characterSize, bool
 		else
 		{
 			// Pixels are 8 bits gray levels
-			for (int y = 0; y < height; ++y)
+			for (int y = padding; y < height - padding; ++y)
 			{
-				for (int x = 0; x < width; ++x)
+				for (int x = padding; x < width - padding; ++x)
 				{
 					// The color channels remain white, just fill the alpha channel
-					std::size_t index = (x + y * width) * 4 + 3;
-					mPixelBuffer[index] = pixels[x];
+					std::size_t index = x + y * width;
+					mPixelBuffer[index * 4 + 3] = pixels[x - padding];
 				}
 				pixels += bitmap.pitch;
 			}
 		}
 
 		// Write the pixels to the texture
-		unsigned int x = glyph.textureRect.Left;
-		unsigned int y = glyph.textureRect.Top;
-		unsigned int w = glyph.textureRect.Right;
-		unsigned int h = glyph.textureRect.Bottom;
+		unsigned int x = glyph.textureRect.Left - padding;
+		unsigned int y = glyph.textureRect.Top - padding;
+		unsigned int w = glyph.textureRect.Right + 2 * padding;
+		unsigned int h = glyph.textureRect.Bottom + 2 * padding;
 		page.texture->update(&mPixelBuffer[0], w, h, x, y);
 	}
 
@@ -586,12 +608,9 @@ Rect FontTrueType::findGlyphRect(Page& page, unsigned int width, unsigned int he
 			unsigned int textureHeight = page.texture->getPixelSize().y;
 			if ( ( textureWidth * 2 <= Texture::getMaximumSize()) && (textureHeight * 2 <= Texture::getMaximumSize() ) ) {
 				// Make the texture 2 times bigger
-
-				//page.texture->lock();
 				Image newImage;
 				newImage.create(textureWidth * 2, textureHeight * 2, 4);
-				newImage.copyImage(page.texture, 0, 0);
-				//page.texture->unlock();
+				newImage.copyImage(page.texture);
 
 				page.texture->replace(&newImage);
 			} else {

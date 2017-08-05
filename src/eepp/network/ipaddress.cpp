@@ -2,6 +2,7 @@
 #include <eepp/network/http.hpp>
 #include <eepp/network/platform/platformimpl.hpp>
 #include <cstring>
+#include <utility>
 
 namespace {
 	EE::Uint32 Resolve(const std::string& address) {
@@ -38,34 +39,39 @@ namespace {
 namespace EE { namespace Network {
 
 const IpAddress IpAddress::None;
+const IpAddress IpAddress::Any(0, 0, 0, 0);
 const IpAddress IpAddress::LocalHost(127, 0, 0, 1);
 const IpAddress IpAddress::Broadcast(255, 255, 255, 255);
 
 IpAddress::IpAddress() :
-	mAddress(0)
+	mAddress(0),
+	mValid(false)
 {
-	// We're using 0 (INADDR_ANY) instead of INADDR_NONE to represent the invalid address,
-	// because the latter is also the broadcast address (255.255.255.255); it's ok because
-	// eepp doesn't publicly use INADDR_ANY (it is always used implicitely)
 }
 
 IpAddress::IpAddress(const std::string& address) :
-	mAddress(Resolve(address))
+	mAddress(0),
+	mValid(false)
 {
+	Resolve(address);
 }
 
 IpAddress::IpAddress(const char* address) :
-	mAddress(Resolve(address))
+	mAddress(0),
+	mValid(false)
 {
+	Resolve(address);
 }
 
 IpAddress::IpAddress(Uint8 byte0, Uint8 byte1, Uint8 byte2, Uint8 byte3) :
-	mAddress(htonl((byte0 << 24) | (byte1 << 16) | (byte2 << 8) | byte3))
+	mAddress(htonl((byte0 << 24) | (byte1 << 16) | (byte2 << 8) | byte3)),
+	mValid(true)
 {
 }
 
 IpAddress::IpAddress(Uint32 address) :
-	mAddress(htonl(address))
+	mAddress(htonl(address)),
+	mValid(true)
 {
 }
 
@@ -132,8 +138,54 @@ IpAddress IpAddress::getPublicAddress(Time timeout) {
 	return IpAddress();
 }
 
+void IpAddress::resolve(const std::string& address) {
+	mAddress = 0;
+	mValid = false;
+
+	if (address == "255.255.255.255")
+	{
+		// The broadcast address needs to be handled explicitly,
+		// because it is also the value returned by inet_addr on error
+		mAddress = INADDR_BROADCAST;
+		mValid = true;
+	}
+	else if (address == "0.0.0.0")
+	{
+		mAddress = INADDR_ANY;
+		mValid = true;
+	}
+	else
+	{
+		// Try to convert the address as a byte representation ("xxx.xxx.xxx.xxx")
+		Uint32 ip = inet_addr(address.c_str());
+		if (ip != INADDR_NONE)
+		{
+			mAddress = ip;
+			mValid = true;
+		}
+		else
+		{
+			// Not a valid address, try to convert it as a host name
+			addrinfo hints;
+			std::memset(&hints, 0, sizeof(hints));
+			hints.ai_family = AF_INET;
+			addrinfo* result = NULL;
+			if (getaddrinfo(address.c_str(), NULL, &hints, &result) == 0)
+			{
+				if (result)
+				{
+					ip = reinterpret_cast<sockaddr_in*>(result->ai_addr)->sin_addr.s_addr;
+					freeaddrinfo(result);
+					mAddress = ip;
+					mValid = true;
+				}
+			}
+		}
+	}
+}
+
 bool operator ==(const IpAddress& left, const IpAddress& right) {
-	return left.toInteger() == right.toInteger();
+	return !(left < right) && !(right < left);
 }
 
 bool operator !=(const IpAddress& left, const IpAddress& right) {
@@ -141,7 +193,7 @@ bool operator !=(const IpAddress& left, const IpAddress& right) {
 }
 
 bool operator <(const IpAddress& left, const IpAddress& right) {
-	return left.toInteger() < right.toInteger();
+	return std::make_pair(left.mValid, left.mAddress) < std::make_pair(right.mValid, right.mAddress);
 }
 
 bool operator >(const IpAddress& left, const IpAddress& right) {
