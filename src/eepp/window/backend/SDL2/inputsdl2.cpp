@@ -13,7 +13,8 @@ static Uint32	KeyCodesTable[ SDL_NUM_SCANCODES ];
 static bool		KeyCodesTableInit = false;
 
 InputSDL::InputSDL( EE::Window::Window * window ) :
-	Input( window, eeNew( JoystickManagerSDL, () ) )
+	Input( window, eeNew( JoystickManagerSDL, () ) ),
+	mDPIScale(1.f)
 {
 	#if defined( EE_X11_PLATFORM )
 	mMouseSpeed = 1.75f;

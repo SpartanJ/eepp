@@ -130,8 +130,10 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	mWindow.Flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
 
+	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	#if SDL_VERSION_ATLEAST(2,0,1)
 	mWindow.Flags |= SDL_WINDOW_ALLOW_HIGHDPI;
+	#endif
 	#endif
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::Resize ) {
