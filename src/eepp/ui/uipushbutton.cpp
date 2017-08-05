@@ -109,7 +109,7 @@ void UIPushButton::onSizeChange() {
 
 						mTextBox->setPosition( iconPos + px, mTextBox->getPosition().y );
 
-						mTextBox->setSize( mSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth() - px, mTextBox->getSize().getHeight() );
+						mTextBox->setSize( mSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth() - px, mSize.getHeight() );
 					}
 				}
 
@@ -341,6 +341,7 @@ void UIPushButton::loadFromXmlNode(const pugi::xml_node & node) {
 	UIWidget::loadFromXmlNode( node );
 
 	mTextBox->loadFromXmlNode( node );
+	mTextBox->setLayoutSizeRules( FIXED, FIXED );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
 		std::string name = ait->name();

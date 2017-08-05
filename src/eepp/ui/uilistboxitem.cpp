@@ -11,6 +11,7 @@ UIListBoxItem * UIListBoxItem::New() {
 UIListBoxItem::UIListBoxItem() :
 	UITextView()
 {
+	setLayoutSizeRules( FIXED, FIXED );
 	applyDefaultTheme();
 }
 

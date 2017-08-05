@@ -21,9 +21,6 @@ UITextView::UITextView() :
 	mLastSelCurInit( -1 ),
 	mLastSelCurEnd( -1 )
 {
-	mLayoutWidthRules = FIXED;
-	mLayoutHeightRules = FIXED;
-
 	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 
 	mTextCache = eeNew( Text, () );
