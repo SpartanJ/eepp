@@ -64,7 +64,6 @@ void EETest::init() {
 	WindowSettings WinSettings	= EE->createWindowSettings( &Ini );
 	ContextSettings ConSettings	= EE->createContextSettings( &Ini );
 
-
 	if ( !( WinSettings.Style & WindowStyle::Fullscreen ) && !( WinSettings.Style & WindowStyle::UseDesktopResolution ) ) {
 #if EE_PLATFORM != EE_PLATFORM_MACOSX
 		WinSettings.Width *= WinSettings.PixelDensity;
@@ -330,7 +329,7 @@ void EETest::createUI() {
 	sprite->setDeallocSprite( true );
 
 	UITextView * Text = UITextView::New();
-	Text->setParent( C )->setEnabled( false )->setSize( 320, 240 )->setHorizontalAlign( UI_HALIGN_RIGHT )->setVerticalAlign( UI_VALIGN_TOP );
+	Text->setLayoutSizeRules( FIXED, FIXED )->setParent( C )->setEnabled( false )->setSize( 320, 240 )->setHorizontalAlign( UI_HALIGN_RIGHT )->setVerticalAlign( UI_VALIGN_TOP );
 	Text->setText( "Turn around\nJust Turn Around\nAround!" );
 
 	UITextInput::New()->setParent( C )->setPosition( 20, 216 )->setSize( 200, 0 );
