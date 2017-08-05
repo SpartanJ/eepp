@@ -198,9 +198,6 @@ void EETest::onFontLoaded( ResourceLoader * ObjLoaded ) {
 	eeASSERT( DBSM != NULL );
 
 	Con.create( DBSM, true );
-	//   RR  GG  BB  AA
-	//   EE  1F  1F  20
-	//   20  1F  1F  EE
 	Con.setBackgroundColor( 0x201F1FEE );
 	Con.setBackgroundLineColor( 0x666666EE );
 	Con.setFontColor( 0xCFCFCFFF );
