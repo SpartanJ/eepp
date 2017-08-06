@@ -43,6 +43,8 @@ class TexturePackerTex {
 
 		inline const bool&		placed() const				{ return mPlaced; }
 
+		inline void placed( bool placed )					{ mPlaced = placed; }
+
 		inline const bool&		flipped() const				{ return mFlipped; }
 
 		inline const Int32&		longestEdge() const			{ return mLongestEdge; }

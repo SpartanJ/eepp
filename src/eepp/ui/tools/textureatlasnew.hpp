@@ -23,10 +23,11 @@ class EE_API TextureAtlasNew {
 		TGCreateCb			mNewTGCb;
 		UIComboBox *		mComboWidth;
 		UIComboBox *		mComboHeight;
-		UISpinBox *		mPixelSpace;
+		UISpinBox *			mPixelSpace;
 		UITextInput *		mTGPath;
 		UIPushButton *		mSetPathButton;
 		UIDropDownList *	mSaveFileType;
+		UIDropDownList *	mPixelDensity;
 
 		void windowClose( const UIEvent * Event );
 

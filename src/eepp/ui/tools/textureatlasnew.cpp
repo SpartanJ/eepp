@@ -17,7 +17,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 		return;
 
 	mUIWindow	= UIWindow::New();
-	mUIWindow->setSizeWithDecoration( 378, 244 )->setWinFlags( UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_SHARE_ALPHA_WITH_CHILDS | UI_WIN_MODAL )->setMinWindowSize( 378, 244 );
+	mUIWindow->setSizeWithDecoration( 378, 244 )->setWinFlags( UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_SHARE_ALPHA_WITH_CHILDS | UI_WIN_MODAL )->setMinWindowSize( 378, 260 );
 
 	mUIWindow->addEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &TextureAtlasNew::windowClose ) );
 	mUIWindow->setTitle( "New Texture Atlas" );
@@ -33,6 +33,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	FileTypes.push_back( "BMP" );
 	FileTypes.push_back( "PNG" );
 	FileTypes.push_back( "DDS" );
+	FileTypes.push_back( "JPG" );
 
 	mSaveFileType->getListBox()->addListBoxItems( FileTypes );
 	mSaveFileType->getListBox()->setSelected( "PNG" );
@@ -57,7 +58,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 
 	std::vector<String> Sizes;
 
-	for ( Uint32 i = 6; i < 14; i++ ) {
+	for ( Uint32 i = 8; i < 15; i++ ) {
 		Sizes.push_back( String::toStr( 1 << i ) );
 	}
 
@@ -65,20 +66,34 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	mComboHeight->getListBox()->addListBoxItems( Sizes );
 	mComboWidth->getInputTextBuffer()->setAllowOnlyNumbers( true );
 	mComboHeight->getInputTextBuffer()->setAllowOnlyNumbers( true );
-	mComboWidth->getListBox()->setSelected( "512" );
-	mComboHeight->getListBox()->setSelected( "512" );
+	mComboWidth->getListBox()->setSelected( "2048" );
+	mComboHeight->getListBox()->setSelected( "2048" );
 
 	createTxtBox( Vector2i( 10, 110 ), "Space between sub textures (pixels):" );
 	mPixelSpace = UISpinBox::New();
 	mPixelSpace->setParent( mUIWindow->getContainer() )->setSize( 100, 0 )->setPosition( PosX, 110 )->setVisible( true )->setEnabled( true );
 
-	createTxtBox( Vector2i( 10, 140 ), "Texture Atlas Folder Path:" );
+	createTxtBox( Vector2i( 10, 140 ), "Pixel Density:" );
+	mPixelDensity = UIDropDownList::New();
+	mPixelDensity->setParent( mUIWindow->getContainer() )->setSize( 100, 0 )->setPosition( PosX, 140 );
+
+	std::vector<String> PixelDensities;
+	PixelDensities.push_back( "MDPI" );
+	PixelDensities.push_back( "HDPI" );
+	PixelDensities.push_back( "XHDPI" );
+	PixelDensities.push_back( "XXHDPI" );
+	PixelDensities.push_back( "XXXHDPI" );
+
+	mPixelDensity->getListBox()->addListBoxItems( PixelDensities );
+	mPixelDensity->getListBox()->setSelected( "MDPI" );
+
+	createTxtBox( Vector2i( 10, 170 ), "Texture Atlas Folder Path:" );
 	mTGPath = UITextInput::New()->setMaxLength( 512 );
-	mTGPath->setParent( mUIWindow->getContainer() )->setSize( mUIWindow->getContainer()->getSize().getWidth() - 60, 0 )->setPosition( 10, 160 );
+	mTGPath->setParent( mUIWindow->getContainer() )->setSize( mUIWindow->getContainer()->getSize().getWidth() - 60, 0 )->setPosition( 10, 190 );
 	mTGPath->setAllowEditing( false );
 
 	mSetPathButton = UIPushButton::New();
-	mSetPathButton->setParent( mUIWindow->getContainer() )->setSize( 32, 22 )->setPosition( mUIWindow->getContainer()->getSize().getWidth() - 10 - 32, 160 );
+	mSetPathButton->setParent( mUIWindow->getContainer() )->setSize( 32, mTGPath->getSize().getHeight() )->setPosition( mUIWindow->getContainer()->getSize().getWidth() - 10 - 32, 190 );
 	mSetPathButton->setText( "..." );
 	mSetPathButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasNew::onDialogFolderSelect ) );
 
@@ -143,7 +158,7 @@ void TextureAtlasNew::windowClose( const UIEvent * Event ) {
 }
 
 static bool isValidExtension( const std::string& ext ) {
-	return ext == "png" || ext == "bmp" || ext == "dds" || ext == "tga";
+	return ext == "png" || ext == "bmp" || ext == "dds" || ext == "tga" || ext == "jpg";
 }
 
 void TextureAtlasNew::textureAtlasSave( const UIEvent * Event ) {
@@ -157,7 +172,7 @@ void TextureAtlasNew::textureAtlasSave( const UIEvent * Event ) {
 		b = static_cast<Int32>( mPixelSpace->getValue() );
 
 		if ( Res1 && Res2 ) {
-			Graphics::TexturePacker * TexturePacker = eeNew( Graphics::TexturePacker, ( w, h, PD_MDPI, false, b ) );
+			Graphics::TexturePacker * TexturePacker = eeNew( Graphics::TexturePacker, ( w, h, PixelDensity::fromString( mPixelDensity->getText() ), false, b ) );
 
 			TexturePacker->addTexturesPath( mTGPath->getText() );
 

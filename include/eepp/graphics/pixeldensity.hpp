@@ -6,6 +6,7 @@
 #include <eepp/math/size.hpp>
 #include <eepp/math/rect.hpp>
 #include <eepp/math/vector2.hpp>
+#include <eepp/core/string.hpp>
 
 using namespace EE::Math;
 
@@ -35,6 +36,20 @@ class EE_API PixelDensity {
 
 		static Float toFloat( Uint32 pd ) {
 			return toFloat( (EE_PIXEL_DENSITY)pd );
+		}
+
+		static EE_PIXEL_DENSITY fromString( std::string str ) {
+			String::toLowerInPlace( str );
+			if ( "mdpi" == str )			return PD_MDPI;
+			else if ( "hdpi" == str )		return PD_HDPI;
+			else if ( "xhdpi" == str )		return PD_XHDPI;
+			else if ( "xxhdpi" == str )		return PD_XXHDPI;
+			else if ( "xxxhdpi" == str )	return PD_XXXHDPI;
+			return PD_MDPI;
+		}
+
+		static EE_PIXEL_DENSITY fromString( String str ) {
+			return fromString( str.toUtf8() );
 		}
 
 		static const Float& getPixelDensity();

@@ -113,11 +113,11 @@ class EE_API TexturePacker {
 
 		std::list<TexturePackerTex*>	mTextures;
 
-		Int32 							mLongestEdge;
 		Int32							mTotalArea;
 		TexturePackerNode *				mFreeList;
 		Int32							mWidth;
 		Int32							mHeight;
+		Sizei							mMaxSize;
 		bool							mPacked;
 		bool							mAllowFlipping;
 		TexturePacker * 				mChild;
@@ -169,6 +169,8 @@ class EE_API TexturePacker {
 		void							createChild();
 
 		bool							addPackerTex( TexturePackerTex * TPack );
+
+		void							reset();
 };
 
 }}

@@ -1046,7 +1046,7 @@ void EETest::onTextureLoaded( ResourceLoader * ResLoaded ) {
 
 void EETest::loadTextures() {
 	if ( !FileSystem::fileExists( MyPath + "atlases/bnb.eta" ) ) {
-		TexturePacker tp( 512, 512, PD_MDPI, true, 0 );
+		TexturePacker tp( 1024, 512, PD_MDPI, true, 1 );
 		tp.addTexturesPath( MyPath + "atlases/bnb/" );
 		tp.save( MyPath + "atlases/bnb.png" );
 	}

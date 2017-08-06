@@ -9,11 +9,10 @@
 namespace EE { namespace Graphics {
 
 TexturePacker::TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const bool& AllowFlipping ) :
-	mLongestEdge(0),
 	mTotalArea(0),
 	mFreeList(NULL),
-	mWidth(0),
-	mHeight(0),
+	mWidth(128),
+	mHeight(128),
 	mPacked(false),
 	mAllowFlipping(false),
 	mChild(NULL),
@@ -28,11 +27,11 @@ TexturePacker::TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, c
 }
 
 TexturePacker::TexturePacker() :
-	mLongestEdge(0),
 	mTotalArea(0),
 	mFreeList(NULL),
-	mWidth(1024),
-	mHeight(1024),
+	mWidth(128),
+	mHeight(128),
+	mMaxSize(mWidth, mHeight),
 	mPacked(false),
 	mAllowFlipping(false),
 	mChild(NULL),
@@ -51,8 +50,7 @@ TexturePacker::~TexturePacker()
 }
 
 void TexturePacker::close() {
-	mLongestEdge 	= 0;
-	mTotalArea 		= 0;
+	reset();
 
 	std::list<TexturePackerTex*>::iterator it;
 
@@ -61,6 +59,19 @@ void TexturePacker::close() {
 	}
 
 	mTextures.clear();
+}
+
+void TexturePacker::reset() {
+	mStrategy		= PackBig;
+	mCount			= mTextures.size();
+
+	TexturePackerTex * t = NULL;
+	std::list<TexturePackerTex*>::iterator it;
+
+	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+		t = (*it);
+		t->placed( false );
+	}
 
 	if ( NULL != mFreeList ) {
 		TexturePackerNode * next = mFreeList;
@@ -73,6 +84,8 @@ void TexturePacker::close() {
 
 			eeSAFE_DELETE( kill );
 		}
+
+		mFreeList = NULL;
 	}
 
 	eeSAFE_DELETE( mChild );
@@ -80,14 +93,14 @@ void TexturePacker::close() {
 
 void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const bool& AllowFlipping ) {
 	if ( !mTextures.size() ) { // only can change the dimensions before adding any texture
-		mWidth 	= MaxWidth;
-		mHeight = MaxHeight;
+		mMaxSize.x = MaxWidth;
+		mMaxSize.y = MaxHeight;
 
-		if ( ForcePowOfTwo && !Math::isPow2( mWidth ) )
-			mWidth = Math::nextPowOfTwo( mWidth );
+		if ( ForcePowOfTwo && !Math::isPow2( mMaxSize.x ) )
+			mMaxSize.x = Math::nextPowOfTwo( mMaxSize.x );
 
-		if ( ForcePowOfTwo && !Math::isPow2( mHeight ) )
-			mHeight = Math::nextPowOfTwo( mHeight );
+		if ( ForcePowOfTwo && !Math::isPow2( mMaxSize.y ) )
+			mMaxSize.y = Math::nextPowOfTwo( mMaxSize.y );
 
 		mForcePowOfTwo 	= ForcePowOfTwo;
 		mAllowFlipping 	= AllowFlipping;
@@ -192,8 +205,6 @@ void TexturePacker::addBorderToTextures( const Int32& BorderSize ) {
 			t->width	( t->width() 	+ BorderSize );
 			t->height	( t->height() 	+ BorderSize );
 		}
-
-		mLongestEdge += BorderSize;
 	}
 }
 
@@ -376,10 +387,9 @@ void TexturePacker::createChild() {
 
 bool TexturePacker::addTexturesPath( std::string TexturesPath ) {
 	if ( FileSystem::isDirectory( TexturesPath ) ) {
-
 		FileSystem::dirPathAddSlashAtEnd( TexturesPath );
 
-		std::vector<std::string > files = FileSystem::filesGetInPath( TexturesPath );
+		std::vector<std::string> files = FileSystem::filesGetInPath( TexturesPath );
 		std::sort( files.begin(), files.end() );
 
 		for ( Uint32 i = 0; i < files.size(); i++ ) {
@@ -397,8 +407,8 @@ bool TexturePacker::addTexturesPath( std::string TexturesPath ) {
 bool TexturePacker::addPackerTex( TexturePackerTex * TPack ) {
 	if ( TPack->loadedInfo() ) {
 		// Only add the texture if can fit inside the atlas, otherwise it will ignore it
-		if ( ( TPack->width() + mPixelBorder <= mWidth && TPack->height() + mPixelBorder <= mHeight ) ||
-			( mAllowFlipping && ( TPack->width() + mPixelBorder <= mHeight && TPack->height() + mPixelBorder <= mWidth ) )
+		if ( ( TPack->width() + mPixelBorder <= mMaxSize.getWidth() && TPack->height() + mPixelBorder <= mMaxSize.getHeight() ) ||
+			( mAllowFlipping && ( TPack->width() + mPixelBorder <= mMaxSize.getHeight() && TPack->height() + mPixelBorder <= mMaxSize.getWidth() ) )
 		)
 		{
 			mTotalArea += TPack->area();
@@ -442,9 +452,6 @@ bool TexturePacker::addTexture( const std::string& TexturePath ) {
 }
 
 Int32 TexturePacker::packTextures() { // pack the textures, the return code is the amount of wasted/unused area.
-	if ( mWidth <= 0 || mHeight <= 0 )
-		return 0;
-
 	TexturePackerTex * t 	= NULL;
 
 	addBorderToTextures( (Int32)mPixelBorder );
@@ -476,7 +483,7 @@ Int32 TexturePacker::packTextures() { // pack the textures, the return code is t
 				eePRINTL( "Chaging Strategy to Tiny. %s faults.", t->name().c_str() );
 			} else if ( PackTiny == mStrategy ) {
 				mStrategy = PackFail;
-				eePRINTL( "Strategy fail, must create a new image. %s faults.", t->name().c_str() );
+				eePRINTL( "Strategy fail, must expand image or create a new one. %s faults.", t->name().c_str() );
 			}
 		} else {
 			insertTexture( t, bestFit, edgeCount, previousBestFit );
@@ -484,8 +491,28 @@ Int32 TexturePacker::packTextures() { // pack the textures, the return code is t
 		}
 
 		if ( PackFail == mStrategy ) {
-			eePRINTL( "Creating a new image as a child." );
-			createChild();
+			if ( mWidth < mMaxSize.getWidth() || mHeight < mMaxSize.getHeight() ) {
+				reset();
+				addBorderToTextures( -( (Int32)mPixelBorder ) );
+
+				if ( mWidth <= mHeight ) {
+					mWidth *= 2;
+
+					if ( mWidth > mMaxSize.getWidth() )
+						mWidth = mMaxSize.getWidth();
+				} else {
+					mHeight *= 2;
+
+					if ( mHeight > mMaxSize.getHeight() )
+						mHeight = mMaxSize.getHeight();
+				}
+
+				return packTextures();
+			} else {
+				eePRINTL( "Creating a new image as a child." );
+				createChild();
+			}
+
 			break;
 		}
 	}
