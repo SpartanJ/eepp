@@ -44,10 +44,15 @@ class EE_API Image {
 		*/
 		static bool getInfo( const std::string& path, int * width, int * height, int * channels );
 
-		/** @return True if the file is a valid image
+		/** @return True if the file is a valid image ( reads the file header to know if the file is an image file format supported )
 		* @param path the image path
 		*/
 		static bool isImage( const std::string& path );
+
+		/** @return If the path or file name has a supported image file extension
+		*   @param path the image path or file name
+		*/
+		static bool isImageExtension( const std::string& path );
 
 		/** @return The last failure image loading/info reason */
 		static std::string getLastFailureReason();

@@ -293,7 +293,7 @@ void EETest::createUI() {
 	UIManager::instance()->init(UI_MAN_OPS);
 	UIManager::instance()->setTranslator( mTranslator );
 
-	//mTheme = UITheme::loadFromFile( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + mThemeName + "/" );
+	//mTheme = UITheme::loadFromFile( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
 
 	TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
 

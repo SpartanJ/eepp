@@ -8,7 +8,7 @@ static const char SideSuffix[ UISkinComplex::SideCount ][4] = {
 	"ml", "mr","d","u","ul","ur","dl","dr","m"
 };
 
-UISkinComplex *UISkinComplex::New(const std::string & name) {
+UISkinComplex * UISkinComplex::New(const std::string & name) {
 	return eeNew( UISkinComplex, ( name ) );
 }
 
@@ -16,6 +16,16 @@ std::string UISkinComplex::getSideSuffix( const Uint32& Side ) {
 	eeASSERT( Side < UISkinComplex::SideCount );
 
 	return std::string( SideSuffix[ Side ] );
+}
+
+bool UISkinComplex::isSideSuffix( const std::string& suffix ) {
+	for ( int i = 0; i < UISkinComplex::SideCount; i++ ) {
+		if ( suffix == SideSuffix[i] ) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 UISkinComplex::UISkinComplex(const std::string& name ) :

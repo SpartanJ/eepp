@@ -27,11 +27,11 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		static UITheme * loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtlas * getTextureAtlas );
 
-		static UITheme * loadFromFile( UITheme * tTheme, const std::string& Path, const std::string ImgExt = "png" );
+		static UITheme * loadFromFile( UITheme * tTheme, const std::string& Path );
 
 		static UITheme * loadFromTextureAtlas( Graphics::TextureAtlas * getTextureAtlas, const std::string& Name, const std::string NameAbbr );
 
-		static UITheme * loadFromFile( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt = "png" );
+		static UITheme * loadFromFile( const std::string& Path, const std::string& Name, const std::string& NameAbbr );
 
 		void addThemeElement( const std::string& Element );
 
@@ -84,14 +84,8 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 		std::string				mAbbr;
 		Graphics::TextureAtlas *mTextureAtlas;
 		UITooltipStyleConfig	mFontStyleConfig;
-		std::list<std::string>	mUIElements;
-		std::list<std::string>	mUIIcons;
 
-		void getTextureAtlas( Graphics::TextureAtlas * SG );
-
-		static bool searchFilesOfElement( Graphics::TextureAtlas * SG, const std::string& Path, std::string Element, Uint32& IsComplex, const std::string ImgExt );
-
-		static bool searchFilesInAtlas( Graphics::TextureAtlas * SG, std::string Element, Uint32& IsComplex );
+		void setTextureAtlas( Graphics::TextureAtlas * SG );
 };
 
 }}

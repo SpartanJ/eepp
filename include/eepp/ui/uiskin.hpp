@@ -18,6 +18,8 @@ class EE_API UISkin {
 
 		static const char * getSkinStateName( const Uint32& State );
 
+		static bool isStateName( const std::string& State );
+
 		UISkin( const std::string& name, const Uint32& Type );
 
 		virtual ~UISkin();

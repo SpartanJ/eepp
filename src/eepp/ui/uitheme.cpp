@@ -1,6 +1,7 @@
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uiskinsimple.hpp>
 #include <eepp/ui/uiskincomplex.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/textureatlas.hpp>
@@ -9,119 +10,36 @@
 #include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/system/filesystem.hpp>
 
-#include <eepp/ui/uicheckbox.hpp>
-#include <eepp/ui/uicombobox.hpp>
-#include <eepp/ui/uidropdownlist.hpp>
-#include <eepp/ui/uilistbox.hpp>
-#include <eepp/ui/uipopupmenu.hpp>
-#include <eepp/ui/uiprogressbar.hpp>
-#include <eepp/ui/uipushbutton.hpp>
-#include <eepp/ui/uiradiobutton.hpp>
-#include <eepp/ui/uiscrollbar.hpp>
-#include <eepp/ui/uislider.hpp>
-#include <eepp/ui/uispinbox.hpp>
-#include <eepp/ui/uitextview.hpp>
-#include <eepp/ui/uitextedit.hpp>
-#include <eepp/ui/uitextinput.hpp>
-#include <eepp/ui/uitextinputpassword.hpp>
-#include <eepp/ui/uitooltip.hpp>
-#include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uiwinmenu.hpp>
-#include <eepp/ui/uisubtexture.hpp>
-#include <eepp/ui/uisprite.hpp>
-#include <eepp/ui/uicommondialog.hpp>
-#include <eepp/ui/uimessagebox.hpp>
-#include <eepp/ui/uitabwidget.hpp>
-
 namespace EE { namespace UI {
 
-static void loadThemeElements( std::list<std::string>& UI_THEME_ELEMENTS, std::list<std::string>& UI_THEME_ICONS ) {
-		UI_THEME_ELEMENTS.push_back( "control" );
-		UI_THEME_ELEMENTS.push_back( "button" );
-		UI_THEME_ELEMENTS.push_back( "textinput" );
-		UI_THEME_ELEMENTS.push_back( "checkbox" );
-		UI_THEME_ELEMENTS.push_back( "checkbox_active" );
-		UI_THEME_ELEMENTS.push_back( "checkbox_inactive" );
-		UI_THEME_ELEMENTS.push_back( "button" );
-		UI_THEME_ELEMENTS.push_back( "radiobutton" );
-		UI_THEME_ELEMENTS.push_back( "radiobutton_active" );
-		UI_THEME_ELEMENTS.push_back( "radiobutton_inactive" );
-		UI_THEME_ELEMENTS.push_back( "hslider" );
-		UI_THEME_ELEMENTS.push_back( "hslider_bg" );
-		UI_THEME_ELEMENTS.push_back( "hslider_button" );
-		UI_THEME_ELEMENTS.push_back( "vslider" );
-		UI_THEME_ELEMENTS.push_back( "vslider_bg" );
-		UI_THEME_ELEMENTS.push_back( "vslider_button" );
-		UI_THEME_ELEMENTS.push_back( "spinbox" );
-		UI_THEME_ELEMENTS.push_back( "spinbox_input" );
-		UI_THEME_ELEMENTS.push_back( "spinbox_btnup" );
-		UI_THEME_ELEMENTS.push_back( "spinbox_btndown" );
-		UI_THEME_ELEMENTS.push_back( "hscrollbar" );
-		UI_THEME_ELEMENTS.push_back( "hscrollbar_slider" );
-		UI_THEME_ELEMENTS.push_back( "hscrollbar_bg" );
-		UI_THEME_ELEMENTS.push_back( "hscrollbar_button" );
-		UI_THEME_ELEMENTS.push_back( "hscrollbar_btnup" );
-		UI_THEME_ELEMENTS.push_back( "hscrollbar_btndown" );
-		UI_THEME_ELEMENTS.push_back( "vscrollbar" );
-		UI_THEME_ELEMENTS.push_back( "vscrollbar_slider" );
-		UI_THEME_ELEMENTS.push_back( "vscrollbar_bg" );
-		UI_THEME_ELEMENTS.push_back( "vscrollbar_button" );
-		UI_THEME_ELEMENTS.push_back( "vscrollbar_btnup" );
-		UI_THEME_ELEMENTS.push_back( "vscrollbar_btndown" );
-		UI_THEME_ELEMENTS.push_back( "progressbar" );
-		UI_THEME_ELEMENTS.push_back( "progressbar_filler" );
-		UI_THEME_ELEMENTS.push_back( "listbox" );
-		UI_THEME_ELEMENTS.push_back( "listboxitem" );
-		UI_THEME_ELEMENTS.push_back( "dropdownlist" );
-		UI_THEME_ELEMENTS.push_back( "combobox" );
-		UI_THEME_ELEMENTS.push_back( "combobox_button" );
-		UI_THEME_ELEMENTS.push_back( "menu" );
-		UI_THEME_ELEMENTS.push_back( "menuitem" );
-		UI_THEME_ELEMENTS.push_back( "separator" );
-		UI_THEME_ELEMENTS.push_back( "menucheckbox_active" );
-		UI_THEME_ELEMENTS.push_back( "menucheckbox_inactive" );
-		UI_THEME_ELEMENTS.push_back( "menuarrow" );
-		UI_THEME_ELEMENTS.push_back( "textedit" );
-		UI_THEME_ELEMENTS.push_back( "textedit_box" );
-		UI_THEME_ELEMENTS.push_back( "tooltip" );
-		UI_THEME_ELEMENTS.push_back( "genericgrid" );
-		UI_THEME_ELEMENTS.push_back( "gridcell" );
-		UI_THEME_ELEMENTS.push_back( "windeco" );
-		UI_THEME_ELEMENTS.push_back( "winback" );
-		UI_THEME_ELEMENTS.push_back( "winborderleft" );
-		UI_THEME_ELEMENTS.push_back( "winborderright" );
-		UI_THEME_ELEMENTS.push_back( "winborderbottom" );
-		UI_THEME_ELEMENTS.push_back( "winclose" );
-		UI_THEME_ELEMENTS.push_back( "winmax" );
-		UI_THEME_ELEMENTS.push_back( "winmin" );
-		UI_THEME_ELEMENTS.push_back( "winshade" );
-		UI_THEME_ELEMENTS.push_back( "winmenu" );
-		UI_THEME_ELEMENTS.push_back( "winmenubutton" );
-		UI_THEME_ELEMENTS.push_back( "tabwidget" );
-		UI_THEME_ELEMENTS.push_back( "tabcontainer" );
-		UI_THEME_ELEMENTS.push_back( "tab" );
-		UI_THEME_ELEMENTS.push_back( "tab_left" );
-		UI_THEME_ELEMENTS.push_back( "tab_right" );
+static std::string elemNameFromSkinSimple( const std::vector<std::string>& nameParts ) {
+	std::string str;
+	int lPart = (int)nameParts.size() - 1;
 
-		UI_THEME_ICONS.push_back( "ok" );
-		UI_THEME_ICONS.push_back( "cancel" );
-		UI_THEME_ICONS.push_back( "remove" );
-		UI_THEME_ICONS.push_back( "go-up" );
-		UI_THEME_ICONS.push_back( "quit" );
-		UI_THEME_ICONS.push_back( "add" );
-		UI_THEME_ICONS.push_back( "document-open" );
-		UI_THEME_ICONS.push_back( "document-close" );
-		UI_THEME_ICONS.push_back( "document-new" );
-		UI_THEME_ICONS.push_back( "document-save" );
-		UI_THEME_ICONS.push_back( "document-save-as" );
+	for ( int i = 0; i < lPart; i++ ) {
+		str += nameParts[i];
+
+		if ( i != lPart - 1 ) {
+			str += "_";
+		}
+	}
+
+	return str;
 }
 
-void UITheme::addThemeElement( const std::string& Element ) {
-	mUIElements.push_back( Element );
-}
+static std::string elemNameFromSkinComplex( const std::vector<std::string>& nameParts ) {
+	std::string str;
+	int lPart = (int)nameParts.size() - 2;
 
-void UITheme::addThemeIcon( const std::string& Icon ) {
-	mUIIcons.push_back( Icon );
+	for ( int i = 0; i < lPart; i++ ) {
+		str += nameParts[i];
+
+		if ( i != lPart - 1 ) {
+			str += "_";
+		}
+	}
+
+	return str;
 }
 
 UITheme * UITheme::New( const std::string & name, const std::string & abbr, Font * defaultFont ) {
@@ -138,34 +56,39 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 
 	Clock TE;
 
-	loadThemeElements( tTheme->mUIElements, tTheme->mUIIcons );
+	tTheme->setTextureAtlas( TextureAtlas );
 
-	Uint32 i;
-	bool Found;
-	std::string Element;
-	std::vector<std::string> 	ElemFound;
-	std::vector<Uint32> 		ElemType;
+	std::list<SubTexture*>& resources = TextureAtlas->getResources();
+	std::list<SubTexture*>::iterator it;
+	std::string sAbbr( tTheme->getAbbr() + "_" );
+	std::map<std::string, bool> elemFound;
 
-	tTheme->getTextureAtlas( TextureAtlas );
+	for ( it = resources.begin(); it != resources.end(); it++ ) {
+		SubTexture* subTexture = *it;
 
-	for ( std::list<std::string>::iterator it = tTheme->mUIElements.begin() ; it != tTheme->mUIElements.end(); it++ ) {
-		Uint32 IsComplex = 0;
+		std::string name( subTexture->getName() );
 
-		Element = tTheme->getAbbr() + "_" + *it;
+		if ( String::startsWith( name, sAbbr ) ) {
+			std::vector<std::string> nameParts = String::split( name, '_' );
 
-		Found 	= searchFilesInAtlas( TextureAtlas, Element, IsComplex );
+			if ( nameParts.size() >= 3 ) {
+				int lPart = nameParts.size() - 1;
+				int llPart = nameParts.size() - 2;
 
-		if ( Found ) {
-			ElemFound.push_back( Element );
-			ElemType.push_back( IsComplex );
+				if ( UISkin::isStateName( nameParts[ lPart ] ) ) {
+					elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
+				} else if ( UISkin::isStateName( nameParts[ llPart ] ) && UISkinComplex::isSideSuffix( nameParts[ lPart ] ) ) {
+					elemFound[ elemNameFromSkinComplex( nameParts ) ] = true;
+				}
+			}
 		}
 	}
 
-	for ( i = 0; i < ElemFound.size(); i++ ) {
-		if ( ElemType[i] )
-			tTheme->add( UISkinComplex::New( ElemFound[i] ) );
+	for ( std::map<std::string, bool>::iterator it = elemFound.begin(); it != elemFound.end(); it++ ) {
+		if ( it->second )
+			tTheme->add( UISkinComplex::New( it->first ) );
 		else
-			tTheme->add( UISkinSimple::New( ElemFound[i] ) );
+			tTheme->add( UISkinSimple::New( it->first ) );
 	}
 
 	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from TextureAtlas )", TE.getElapsed().asMilliseconds() );
@@ -173,15 +96,9 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 	return tTheme;
 }
 
-UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path, const std::string ImgExt ) {
+UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path ) {
 	Clock TE;
 
-	loadThemeElements( tTheme->mUIElements, tTheme->mUIIcons );
-
-	Uint32 i;
-	bool Found;
-	std::string Element;
-	std::string ElemName;
 	std::string RPath( Path );
 
 	FileSystem::dirPathAddSlashAtEnd( RPath );
@@ -189,33 +106,41 @@ UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path, cons
 	if ( !FileSystem::isDirectory( RPath ) )
 		return NULL;
 
-	std::vector<std::string> 	ElemFound;
-	std::vector<Uint32> 		ElemType;
-
 	Graphics::TextureAtlas * tSG = eeNew( Graphics::TextureAtlas, ( tTheme->getAbbr() ) );
 
-	tTheme->getTextureAtlas( tSG );
+	tTheme->setTextureAtlas( tSG );
 
-	for ( std::list<std::string>::iterator it = tTheme->mUIElements.begin() ; it != tTheme->mUIElements.end(); it++ ) {
-		Uint32 IsComplex = 0;
+	std::vector<std::string> resources = FileSystem::filesGetInPath( RPath );
+	std::vector<std::string>::iterator it;
+	std::string sAbbr( tTheme->getAbbr() + "_" );
+	std::string sAbbrIcon( tTheme->getAbbr() + "_icon_" );
+	std::map<std::string, bool> elemFound;
 
-		Element = tTheme->getAbbr() + "_" + *it;
+	for ( it = resources.begin(); it != resources.end(); it++ ) {
+		std::string fpath( RPath + (*it) );
+		std::string name( FileSystem::fileRemoveExtension( *it ) );
 
-		Found 	= searchFilesOfElement( tSG, RPath, Element, IsComplex, ImgExt );
+		if ( !FileSystem::isDirectory( fpath ) ) {
+			if ( String::startsWith( name, sAbbrIcon ) ) {
+				tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
+			} else if ( String::startsWith( name, sAbbr ) ) {
+				std::vector<std::string> nameParts = String::split( name, '_' );
 
-		if ( Found ) {
-			ElemFound.push_back( Element );
-			ElemType.push_back( IsComplex );
-		}
-	}
+				if ( nameParts.size() >= 3 ) {
+					int lPart = nameParts.size() - 1;
+					int llPart = nameParts.size() - 2;
 
-	// Load the icons from path.
-	for ( std::list<std::string>::iterator it = tTheme->mUIIcons.begin() ; it != tTheme->mUIIcons.end(); it++ ) {
-		ElemName	= tTheme->getAbbr() + "_icon_" + *it;
-		Element		= RPath + ElemName + "." + ImgExt;
+					if ( UISkin::isStateName( nameParts[ lPart ] ) ) {
+						elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
 
-		if ( FileSystem::fileExists( Element ) ) {
-			tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( Element ), ElemName ) ) );
+						tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
+					} else if ( UISkin::isStateName( nameParts[ llPart ] ) && UISkinComplex::isSideSuffix( nameParts[ lPart ] ) ) {
+						elemFound[ elemNameFromSkinComplex( nameParts ) ] = true;
+
+						tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
+					}
+				}
+			}
 		}
 	}
 
@@ -224,11 +149,11 @@ UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path, cons
 	else
 		eeSAFE_DELETE( tSG );
 
-	for ( i = 0; i < ElemFound.size(); i++ ) {
-		if ( ElemType[i] )
-			tTheme->add( UISkinComplex::New( ElemFound[i] ) );
+	for ( std::map<std::string, bool>::iterator it = elemFound.begin(); it != elemFound.end(); it++ ) {
+		if ( it->second )
+			tTheme->add( UISkinComplex::New( it->first ) );
 		else
-			tTheme->add( UISkinSimple::New( ElemFound[i] ) );
+			tTheme->add( UISkinSimple::New( it->first ) );
 	}
 
 	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from path )", TE.getElapsed().asMilliseconds() );
@@ -236,93 +161,12 @@ UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path, cons
 	return tTheme;
 }
 
-UITheme * UITheme::loadFromFile( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt ) {
-	return loadFromFile( UITheme::New( Name, NameAbbr ), Path, ImgExt );
+UITheme * UITheme::loadFromFile( const std::string& Path, const std::string& Name, const std::string& NameAbbr ) {
+	return loadFromFile( UITheme::New( Name, NameAbbr ), Path );
 }
 
 UITheme * UITheme::loadFromTextureAtlas( Graphics::TextureAtlas * TextureAtlas, const std::string& Name, const std::string NameAbbr ) {
 	return loadFromTextureAtlas( UITheme::New( Name, NameAbbr ), TextureAtlas );
-}
-
-bool UITheme::searchFilesInAtlas( Graphics::TextureAtlas * SG, std::string Element, Uint32& IsComplex ) {
-	bool Found = false;
-	Uint32 i = 0, s = 0;
-	std::string ElemName;
-	IsComplex = 0;
-
-	// Search Complex Skin
-	for ( i = 0; i < UISkinState::StateCount; i++ ) {
-		for ( s = 0; s < UISkinComplex::SideCount; s++ ) {
-			ElemName = Element + "_" + UISkin::getSkinStateName( i ) + "_" + UISkinComplex::getSideSuffix( s );
-
-			if ( SG->getByName( ElemName ) ) {
-				IsComplex = 1;
-				Found = true;
-				break;
-			}
-		}
-
-		if ( Found ) {
-			break;
-		}
-	}
-
-	// Search Simple Skin
-	if ( !IsComplex ) {
-		for ( i = 0; i < UISkinState::StateCount; i++ ) {
-			ElemName = Element + "_" + UISkin::getSkinStateName( i );
-
-			if ( SG->getByName( ElemName ) ) {
-				Found = true;
-				break;
-			}
-		}
-	}
-
-	return Found;
-}
-
-bool UITheme::searchFilesOfElement( Graphics::TextureAtlas * SG, const std::string& Path, std::string Element, Uint32& IsComplex, const std::string ImgExt ) {
-	bool Found = false;
-	Uint32 i = 0, s = 0;
-	std::string ElemPath;
-	std::string ElemFullPath;
-	std::string ElemName;
-	IsComplex = 0;
-
-	// Search Complex Skin
-	for ( i = 0; i < UISkinState::StateCount; i++ ) {
-		for ( s = 0; s < UISkinComplex::SideCount; s++ ) {
-			ElemName = Element + "_" + UISkin::getSkinStateName( i ) + "_" + UISkinComplex::getSideSuffix( s );
-			ElemPath = Path + ElemName;
-			ElemFullPath = ElemPath + "." + ImgExt;
-
-			if ( FileSystem::fileExists( ElemFullPath ) ) {
-				SG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( ElemFullPath ), ElemName ) ) );
-
-				IsComplex = 1;
-				Found = true;
-				break;
-			}
-		}
-	}
-
-	// Seach Simple Skin
-	if ( !IsComplex ) {
-		for ( i = 0; i < UISkinState::StateCount; i++ ) {
-			ElemName = Element + "_" + UISkin::getSkinStateName( i );
-			ElemPath = Path + ElemName;
-			ElemFullPath = ElemPath + "." + ImgExt;
-
-			if ( FileSystem::fileExists( ElemFullPath ) ) {
-				SG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( ElemFullPath ), ElemName ) ) );
-
-				Found = true;
-			}
-		}
-	}
-
-	return Found;
 }
 
 UITheme::UITheme(const std::string& name, const std::string& Abbr, Graphics::Font * defaultFont ) :
@@ -373,7 +217,7 @@ Graphics::TextureAtlas * UITheme::getTextureAtlas() const {
 	return mTextureAtlas;
 }
 
-void UITheme::getTextureAtlas( Graphics::TextureAtlas * SG ) {
+void UITheme::setTextureAtlas( Graphics::TextureAtlas * SG ) {
 	mTextureAtlas = SG;
 }
 

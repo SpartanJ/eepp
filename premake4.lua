@@ -150,7 +150,7 @@ newoption {
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
 	allowed = {
 		{ "SDL2",  "SDL2 (default and recommended)" },
-		{ "SFML",  "SFML2 ( SFML 1.6 not supported )" },
+		{ "SFML",  "SFML2" },
 		{ "SDL2,SFML", "SDL2+SFML" }
 	}
 }

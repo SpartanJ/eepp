@@ -88,7 +88,6 @@
 ../../src/eepp/ui/uithemedefault.cpp
 ../../src/eepp/ui/uitouchdragablewidget.cpp
 ../../src/eepp/ui/uiwidget.cpp
-../../../eeiv/src/capp.cpp
 ../../include/eepp/audio/soundmanager.hpp
 ../../include/eepp/audio/soundloader.hpp
 ../../include/eepp/audio/soundstream.hpp
@@ -745,4 +744,3 @@
 ../../include/eepp/system/md5.hpp
 ../../src/eepp/system/md5.cpp
 ../../src/examples/strobe/strobe.cpp
-../../../eeiv/src/capp.hpp

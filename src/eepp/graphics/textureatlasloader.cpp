@@ -326,34 +326,6 @@ bool TextureAtlasLoader::updateTextureAtlas() {
 	return false;
 }
 
-static bool IsImage( std::string path ) {
-	if ( FileSystem::fileSize( path ) ) {
-		std::string File	= path.substr( path.find_last_of("/\\") + 1 );
-		std::string Ext		= File.substr( File.find_last_of(".") + 1 );
-		String::toLowerInPlace( Ext );
-
-		if ( Ext == "png" ||
-			 Ext == "tga" ||
-			 Ext == "bmp" ||
-			 Ext == "jpg" ||
-			 Ext == "gif" ||
-			 Ext == "jpeg" ||
-			 Ext == "dds" ||
-			 Ext == "psd" ||
-			 Ext == "hdr" ||
-			 Ext == "pic" ||
-			 Ext == "pvr" ||
-			 Ext == "pkm"
-		) {
-			return true;
-		} else {
-			return Image::isImage( path );
-		}
-	}
-
-	return false;
-}
-
 bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath ) {
 	if ( !TextureAtlasPath.size() || !ImagesPath.size() || !FileSystem::fileExists( TextureAtlasPath ) || !FileSystem::isDirectory( ImagesPath ) )
 		return false;
@@ -390,7 +362,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 		std::string realpath( ImagesPath + PathFiles[z] );
 
 		// Avoids reading file headers for known extensions
-		if ( IsImage( realpath ) )
+		if ( Image::isImageExtension( realpath ) )
 			totalImages++;
 	}
 

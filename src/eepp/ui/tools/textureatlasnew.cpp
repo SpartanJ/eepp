@@ -142,7 +142,7 @@ void TextureAtlasNew::windowClose( const UIEvent * Event ) {
 	eeDelete( this );
 }
 
-static bool IsValidExtension( const std::string& ext ) {
+static bool isValidExtension( const std::string& ext ) {
 	return ext == "png" || ext == "bmp" || ext == "dds" || ext == "tga";
 }
 
@@ -165,7 +165,7 @@ void TextureAtlasNew::textureAtlasSave( const UIEvent * Event ) {
 
 			std::string ext = FileSystem::fileExtension( FPath, true );
 
-			if ( !IsValidExtension( ext ) ) {
+			if ( !isValidExtension( ext ) ) {
 				FPath = FileSystem::fileRemoveExtension( FPath );
 
 				ext = mSaveFileType->getText();

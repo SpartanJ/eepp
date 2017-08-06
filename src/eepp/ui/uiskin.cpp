@@ -16,6 +16,16 @@ const char * UISkin::getSkinStateName( const Uint32& State ) {
 	return UISkinStatesNames[ State ];
 }
 
+bool UISkin::isStateName( const std::string& State ) {
+	for ( int i = 0; i < UISkinState::StateCount; i++ ) {
+		if ( State == UISkinStatesNames[i] ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 UISkin::UISkin( const std::string& name, const Uint32& Type ) :
 	mType( Type ),
 	mName( name ),

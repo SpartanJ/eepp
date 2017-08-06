@@ -224,6 +224,24 @@ bool Image::isImage( const std::string& path ) {
 	return STBI_unknown != stbi_test( path.c_str() );
 }
 
+bool Image::isImageExtension( const std::string& path ) {
+	std::string Ext( FileSystem::fileExtension( path ) );
+
+	return ( Ext == "png" ||
+		 Ext == "tga" ||
+		 Ext == "bmp" ||
+		 Ext == "jpg" ||
+		 Ext == "gif" ||
+		 Ext == "jpeg" ||
+		 Ext == "dds" ||
+		 Ext == "psd" ||
+		 Ext == "hdr" ||
+		 Ext == "pic" ||
+		 Ext == "pvr" ||
+		 Ext == "pkm"
+	);
+}
+
 std::string Image::getLastFailureReason() {
 	return std::string( stbi_failure_reason() );
 }

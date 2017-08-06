@@ -16,6 +16,8 @@ class EE_API UISkinComplex : public UISkin {
 
 		static std::string getSideSuffix( const Uint32& Side );
 
+		static bool isSideSuffix( const std::string& suffix );
+
 		enum UISkinComplexSides {
 			Left = 0,
 			Right,
