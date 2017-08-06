@@ -10,17 +10,17 @@ namespace EE { namespace Graphics {
 
 typedef const GLubyte *( * pglGetStringiFunc) (unsigned int, unsigned int);
 
-typedef void (* pglGenFramebuffers) (GLsizei n, GLuint* framebuffers);
-typedef void (* pglBindFramebuffer) (GLenum target, GLuint framebuffer);
-typedef void (* pglFramebufferTexture2D) (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
-typedef void (* pglDeleteFramebuffers) (GLsizei n, const GLuint* framebuffers);
+typedef void (APIENTRY * pglGenFramebuffers) (GLsizei n, GLuint* framebuffers);
+typedef void (APIENTRY * pglBindFramebuffer) (GLenum target, GLuint framebuffer);
+typedef void (APIENTRY * pglFramebufferTexture2D) (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+typedef void (APIENTRY * pglDeleteFramebuffers) (GLsizei n, const GLuint* framebuffers);
 
-typedef void (* pglGenRenderbuffers) (GLsizei n, GLuint* renderbuffers);
-typedef void (* pglDeleteRenderbuffers) (GLsizei n, const GLuint* renderbuffers);
-typedef void (* pglRenderbufferStorage) (GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
-typedef void (* pglFramebufferRenderbuffer) (GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
-typedef GLenum (* pglCheckFramebufferStatus) (GLenum target);
-typedef void (* pglBindRenderbuffer) (GLenum target, GLuint renderbuffer);
+typedef void (APIENTRY * pglGenRenderbuffers) (GLsizei n, GLuint* renderbuffers);
+typedef void (APIENTRY * pglDeleteRenderbuffers) (GLsizei n, const GLuint* renderbuffers);
+typedef void (APIENTRY * pglRenderbufferStorage) (GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
+typedef void (APIENTRY * pglFramebufferRenderbuffer) (GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
+typedef GLenum (APIENTRY * pglCheckFramebufferStatus) (GLenum target);
+typedef void (APIENTRY * pglBindRenderbuffer) (GLenum target, GLuint renderbuffer);
 
 Renderer * GLi = NULL;
 
