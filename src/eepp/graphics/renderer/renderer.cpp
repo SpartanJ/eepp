@@ -8,7 +8,11 @@
 
 namespace EE { namespace Graphics {
 
-typedef const GLubyte *( * pglGetStringiFunc) (unsigned int, unsigned int);
+#ifndef APIENTRY
+#define APIENTRY
+#endif
+
+typedef const GLubyte *(APIENTRY * pglGetStringiFunc) (unsigned int, unsigned int);
 
 typedef void (APIENTRY * pglGenFramebuffers) (GLsizei n, GLuint* framebuffers);
 typedef void (APIENTRY * pglBindFramebuffer) (GLenum target, GLuint framebuffer);

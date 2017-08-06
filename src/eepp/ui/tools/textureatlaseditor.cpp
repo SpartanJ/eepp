@@ -96,19 +96,19 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	UIWidgetCreator::removeCustomWidgetCallback( "TextureAtlasSubTextureEditor" );
 
-	mUIContainer->bind<UIListBox>( "SubTextureList", mSubTextureList );
+	mUIContainer->bind( "SubTextureList", mSubTextureList );
 	mSubTextureList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &TextureAtlasEditor::onSubTextureChange ) );
 
-	mUIContainer->bind<UISpinBox>( "offX", mSpinOffX );
+	mUIContainer->bind( "offX", mSpinOffX );
 	mSpinOffX->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onOffXChange ) );
 
-	mUIContainer->bind<UISpinBox>( "offY", mSpinOffY );
+	mUIContainer->bind( "offY", mSpinOffY );
 	mSpinOffY->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onOffYChange ) );
 
-	mUIContainer->bind<UISpinBox>( "destW", mSpinDestW );
+	mUIContainer->bind( "destW", mSpinDestW );
 	mSpinDestW->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onDestWChange ) );
 
-	mUIContainer->bind<UISpinBox>( "destH", mSpinDestH );
+	mUIContainer->bind( "destH", mSpinDestH );
 	mSpinDestH->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onDestHChange ) );
 
 	mUIContainer->find<UIPushButton>( "resetDest" )->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onResetDestSize ) );
