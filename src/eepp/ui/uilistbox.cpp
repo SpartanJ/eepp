@@ -1032,6 +1032,17 @@ void UIListBox::loadFromXmlNode(const pugi::xml_node & node) {
 			setSelected( ait->as_uint() );
 		} else if ( "selectedtext" == name ) {
 			setSelected( ait->as_string() );
+		} else if ( "scrollbartype" == name ) {
+			std::string val( ait->as_string() );
+			String::toLowerInPlace( val );
+
+			if ( "nobuttons" == val ) {
+				mVScrollBar->setScrollBarType( UIScrollBar::NoButtons );
+				mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
+			} else if ( "twobuttons" == val ) {
+				mVScrollBar->setScrollBarType( UIScrollBar::TwoButtons );
+				mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
+			}
 		}
 	}
 }

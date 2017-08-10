@@ -8,6 +8,11 @@ namespace EE { namespace UI {
 
 class EE_API UIScrollBar : public UIWidget {
 	public:
+		enum ScrollBarType {
+			TwoButtons,
+			NoButtons
+		};
+
 		static UIScrollBar * New( const UI_ORIENTATION & orientation = UI_VERTICAL );
 
 		UIScrollBar( const UI_ORIENTATION& orientation = UI_VERTICAL );
@@ -54,12 +59,18 @@ class EE_API UIScrollBar : public UIWidget {
 
 		UIControl * setOrientation( const UI_ORIENTATION & orientation );
 
+		ScrollBarType getScrollBarType() const;
+
+		void setScrollBarType(const ScrollBarType & scrollBarType);
+
 		bool getExpandBackground() const;
 
 		void setExpandBackground( bool expandBackground );
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
+
 	protected:
+		ScrollBarType	mScrollBarType;
 		UISlider * 		mSlider;
 		UIControlAnim *	mBtnUp;
 		UIControlAnim * mBtnDown;

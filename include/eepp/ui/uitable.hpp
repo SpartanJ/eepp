@@ -78,6 +78,8 @@ class EE_API UITable : public UITouchDragableWidget {
 		Rect getContainerPadding() const;
 
 		void setContainerPadding( const Rect & containerPadding);
+
+		void loadFromXmlNode(const pugi::xml_node & node);
 	protected:
 		friend class UIItemContainer<UITable>;
 		friend class UITableCell;

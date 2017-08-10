@@ -242,6 +242,17 @@ void UIScrollView::loadFromXmlNode( const pugi::xml_node& node ) {
 			if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
 			else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
 			else if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
+		} else if ( "scrollbartype" == name ) {
+			std::string val( ait->as_string() );
+			String::toLowerInPlace( val );
+
+			if ( "nobuttons" == val ) {
+				mVScroll->setScrollBarType( UIScrollBar::NoButtons );
+				mHScroll->setScrollBarType( UIScrollBar::NoButtons );
+			} else if ( "twobuttons" == val ) {
+				mVScroll->setScrollBarType( UIScrollBar::TwoButtons );
+				mHScroll->setScrollBarType( UIScrollBar::NoButtons );
+			}
 		}
 	}
 }

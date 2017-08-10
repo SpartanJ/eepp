@@ -9,7 +9,12 @@ UIScrollBar * UIScrollBar::New( const UI_ORIENTATION& orientation ) {
 }
 
 UIScrollBar::UIScrollBar( const UI_ORIENTATION& orientation ) :
-	UIWidget()
+	UIWidget(),
+#ifdef EE_PLATFORM_TOUCH
+	mScrollBarType( NoButtons )
+#else
+	mScrollBarType( TwoButtons )
+#endif
 {
 	mFlags |= UI_AUTO_SIZE;
 
@@ -115,22 +120,46 @@ void UIScrollBar::adjustChilds() {
 
 	mBtnUp->setPosition( 0, 0 );
 
-	if ( !isVertical() ) {
-		mBtnDown->setPosition( mSize.getWidth() - mBtnDown->getSize().getWidth(), 0 );
-		mSlider->setSize( mSize.getWidth() - mBtnDown->getSize().getWidth() - mBtnUp->getSize().getWidth(), mSize.getHeight() );
-		mSlider->setPosition( mBtnUp->getSize().getWidth(), 0 );
+	switch ( mScrollBarType ) {
+		case NoButtons:
+		{
+			mBtnDown->setVisible( false )->setEnabled( false );
+			mBtnUp->setVisible( false )->setEnabled( false );
 
-		mBtnDown->centerVertical();
-		mBtnUp->centerVertical();
-		mSlider->centerVertical();
-	} else {
-		mBtnDown->setPosition( 0, mSize.getHeight() - mBtnDown->getSize().getHeight() );
-		mSlider->setSize( mSize.getWidth(), mSize.getHeight() - mBtnDown->getSize().getHeight() - mBtnUp->getSize().getHeight() );
-		mSlider->setPosition( 0, mBtnUp->getSize().getHeight() );
+			if ( !isVertical() ) {
+				mSlider->setSize( mSize )->setPosition( 0, 0 )->centerVertical();
+			} else {
+				mSlider->setSize( mSize )->setPosition( 0, 0 )->centerHorizontal();
+			}
 
-		mBtnDown->centerHorizontal();
-		mBtnUp->centerHorizontal();
-		mSlider->centerHorizontal();
+			break;
+		}
+		case TwoButtons:
+		default:
+		{
+			mBtnDown->setVisible( true )->setEnabled( true );
+			mBtnUp->setVisible( true )->setEnabled( true );
+
+			if ( !isVertical() ) {
+				mBtnDown->setPosition( mSize.getWidth() - mBtnDown->getSize().getWidth(), 0 );
+				mSlider->setSize( mSize.getWidth() - mBtnDown->getSize().getWidth() - mBtnUp->getSize().getWidth(), mSize.getHeight() );
+				mSlider->setPosition( mBtnUp->getSize().getWidth(), 0 );
+
+				mBtnDown->centerVertical();
+				mBtnUp->centerVertical();
+				mSlider->centerVertical();
+			} else {
+				mBtnDown->setPosition( 0, mSize.getHeight() - mBtnDown->getSize().getHeight() );
+				mSlider->setSize( mSize.getWidth(), mSize.getHeight() - mBtnDown->getSize().getHeight() - mBtnUp->getSize().getHeight() );
+				mSlider->setPosition( 0, mBtnUp->getSize().getHeight() );
+
+				mBtnDown->centerHorizontal();
+				mBtnUp->centerHorizontal();
+				mSlider->centerHorizontal();
+			}
+
+			break;
+		}
 	}
 }
 
@@ -244,6 +273,18 @@ void UIScrollBar::loadFromXmlNode(const pugi::xml_node & node) {
 	UIWidget::loadFromXmlNode( node );
 
 	mSlider->loadFromXmlNode( node );
+}
+
+UIScrollBar::ScrollBarType UIScrollBar::getScrollBarType() const {
+	return mScrollBarType;
+}
+
+void UIScrollBar::setScrollBarType( const ScrollBarType & scrollBarType ) {
+	if ( mScrollBarType != scrollBarType ) {
+		mScrollBarType = scrollBarType;
+
+		adjustChilds();
+	}
 }
 
 UI_ORIENTATION UIScrollBar::getOrientation() const {
