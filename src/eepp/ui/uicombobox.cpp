@@ -76,6 +76,8 @@ const String& UIComboBox::getText() {
 }
 
 void UIComboBox::loadFromXmlNode(const pugi::xml_node& node) {
+	UIWidget::loadFromXmlNode( node );
+
 	mDropDownList->loadFromXmlNode( node );
 }
 

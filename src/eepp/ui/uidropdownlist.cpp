@@ -281,6 +281,17 @@ void UIDropDownList::loadFromXmlNode(const pugi::xml_node & node) {
 	UITextInput::loadFromXmlNode( node );
 
 	mListBox->loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "popuptomaincontrol" == name ) {
+			setPopUpToMainControl( ait->as_bool() );
+		} else if ( "maxnumvisibleitems" == name ) {
+			setMaxNumVisibleItems( ait->as_uint() );
+		}
+	}
 }
 
 }}

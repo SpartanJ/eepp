@@ -1,8 +1,9 @@
 #include <eepp/ui/tools/textureatlasnew.hpp>
 #include <eepp/ui/uicommondialog.hpp>
 #include <eepp/ui/uimessagebox.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
+#include <eepp/ui/uimanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 
 namespace EE { namespace UI { namespace Tools {
 
@@ -21,6 +22,67 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 
 	mUIWindow->addEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &TextureAtlasNew::windowClose ) );
 	mUIWindow->setTitle( "New Texture Atlas" );
+/*
+	std::string layout =
+	"<LinearLayout layout_width='match_parent' layout_height='match_parent'>"
+	 "	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal'>"
+	 "		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Save File Format:' />"
+	 "		<DropDownList id='saveType' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' selectedText='PNG'>"
+	 "			<item>TGA</item>"
+	 "			<item>BMP</item>"
+	 "			<item>PNG</item>"
+	 "			<item>DDS</item>"
+	 "			<item>JPG</item>"
+	 "		</DropDownList>"
+	 "	</LinearLayout>"
+	 "	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal'>"
+	 "		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Max. Texture Atlas Width:' />"
+	 "		<ComboBox id='maxTAWidth' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' popUpToMainControl='true'>"
+	 "		</ComboBox>"
+	 "	</LinearLayout>"
+	 "	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal'>"
+	 "		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Max. Texture Atlas Height:' />"
+	 "		<ComboBox id='maxTAHeight' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' popUpToMainControl='true'>"
+	 "		</ComboBox>"
+	 "	</LinearLayout>"
+	 "	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal'>"
+	 "		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Space between sub textures (pixels):' />"
+	 "		<SpinBox id='pixelSpace' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' popUpToMainControl='true'>"
+	 "		</SpinBox>"
+	 "	</LinearLayout>"
+	 "	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal'>"
+	 "		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Pixel Density:' />"
+	 "		<DropDownList id='pixelDensity' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' selectedText='MDPI'>"
+	 "			<item>MDPI</item>"
+	 "			<item>HDPI</item>"
+	 "			<item>XHDPI</item>"
+	 "			<item>XXHDPI</item>"
+	 "			<item>XXXHDPI</item>"
+	 "		</DropDownList>"
+	 "	</LinearLayout>"
+	 "	<TextView layout_width='match_parent' layout_height='wrap_content' layout_gravity='center_vertical' text='TextureAtlas Folder Path:' />"
+	 "</LinearLayout>";
+
+	UIManager::instance()->loadLayoutFromString( layout, mUIWindow->getContainer() );
+
+	mUIWindow->bind( "maxTAWidth", mComboWidth );
+	mUIWindow->bind( "maxTAHeight", mComboHeight );
+	mUIWindow->bind( "pixelSpace", mPixelSpace );
+	mUIWindow->bind( "pixelDensity", mPixelDensity );
+
+	std::vector<String> Sizes;
+
+	for ( Uint32 i = 8; i < 15; i++ ) {
+		Sizes.push_back( String::toStr( 1 << i ) );
+	}
+
+	mComboWidth->getListBox()->addListBoxItems( Sizes );
+	mComboHeight->getListBox()->addListBoxItems( Sizes );
+	mComboWidth->getInputTextBuffer()->setAllowOnlyNumbers( true );
+	mComboHeight->getInputTextBuffer()->setAllowOnlyNumbers( true );
+	mComboWidth->getListBox()->setSelected( "2048" );
+	mComboHeight->getListBox()->setSelected( "2048" );
+*/
 
 	Int32 PosX = mUIWindow->getContainer()->getSize().getWidth() - 110;
 
