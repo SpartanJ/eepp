@@ -53,6 +53,7 @@ void EETest::init() {
 	PartsNum			= Ini.getValueI( "EEPP", "ParticlesNum", 1000 );
 	mUseShaders			= Ini.getValueB( "EEPP", "UseShaders", false );
 	mJoyEnabled			= Ini.getValueB( "EEPP", "JoystickEnabled", false );
+	mDebugUI			= Ini.getValueB( "EEPP", "DebugUI", false );
 
 #if defined( EE_PLATFORM_TOUCH )
 	mJoyEnabled = false;
@@ -287,7 +288,8 @@ void EETest::createUI() {
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
 	Uint32 UI_MAN_OPS = 0;
-	//UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES;
+	if ( mDebugUI )
+		UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES;
 	UIManager::instance()->init(UI_MAN_OPS);
 	UIManager::instance()->setTranslator( mTranslator );
 

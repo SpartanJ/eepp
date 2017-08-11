@@ -35,8 +35,6 @@ class EE_API TextureAtlasNew {
 
 		void okClick( const UIEvent * Event );
 
-		UITextView * createTxtBox( Vector2i Pos, const String& Text );
-
 		void onDialogFolderSelect( const UIEvent * Event );
 
 		void onSelectFolder( const UIEvent * Event );

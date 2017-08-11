@@ -342,6 +342,10 @@ void UITextInput::loadFromXmlNode(const pugi::xml_node & node) {
 			setMaxLength( ait->as_uint() );
 		} else if ( "freeediting" == name ) {
 			setFreeEditing( ait->as_bool() );
+		} else if ( "onlynumbers" == name ) {
+			getInputTextBuffer()->setAllowOnlyNumbers( ait->as_bool(), getInputTextBuffer()->dotsInNumbersAllowed() );
+		} else if ( "allowdot" == name ) {
+			getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), ait->as_bool() );
 		}
 	}
 }

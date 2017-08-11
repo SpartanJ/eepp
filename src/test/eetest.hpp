@@ -115,6 +115,7 @@ class EETest : private Thread {
 		bool mUseShaders;
 		bool mJoyEnabled;
 		bool mMusEnabled;
+		bool mDebugUI;
 
 		Uint32 mLastFPSLimit;
 		bool mWasMinimized;

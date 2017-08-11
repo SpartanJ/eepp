@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI {
 
-UIComboBox *UIComboBox::New() {
+UIComboBox * UIComboBox::New() {
 	return eeNew( UIComboBox, () );
 }
 
@@ -36,7 +36,6 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 		mDropDownList->setEnabled( true );
 		mDropDownList->setAllowEditing( true );
 		mDropDownList->getInputTextBuffer()->setFreeEditing( true );
-		mDropDownList->setFriendControl( this );
 	}
 
 	if ( NULL == mButton ) {
