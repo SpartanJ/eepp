@@ -183,7 +183,7 @@ void Text::setAlpha( const Uint8& alpha ) {
 	for ( Uint32 i = 0; i < s; i++ ) {
 		mColors[ i ].a = alpha;
 	}
-	mColorsNeedUpdate = true;
+	mFillColor.a = alpha;
 }
 
 const Color& Text::getFillColor() const {

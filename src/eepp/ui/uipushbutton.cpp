@@ -198,7 +198,7 @@ void UIPushButton::setFont(Font * font) {
 	mTextBox->setFont( font );
 }
 
-Font *UIPushButton::getFont() {
+Font * UIPushButton::getFont() {
 	return mTextBox->getFont();
 }
 

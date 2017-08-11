@@ -95,7 +95,7 @@ void UITabWidget::draw() {
 		Vector2i p2( mScreenPos.x + mTabContainer->getRealPosition().x, p1.y );
 
 		P.setLineWidth( PixelDensity::dpToPx( 1 ) );
-		P.setColor(mStyleConfig.LineBelowTabsColor );
+		P.setColor( Color( mStyleConfig.LineBelowTabsColor, mAlpha ) );
 		P.drawLine( Line2f( Vector2f( p1.x, p1.y ), Vector2f( p2.x, p2.y ) ) );
 
 		Vector2i p3( mScreenPos.x + mTabContainer->getRealPosition().x + mTabContainer->getRealSize().getWidth(), mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );

@@ -100,6 +100,10 @@ Color::Color( const tRGB<Uint8>& Col, Uint8 a ) :
 	tColor<Uint8>( Col, a )
 {}
 
+Color::Color( const tColor<Uint8> & Col, Uint8 a ) :
+	tColor<Uint8>( Col.r, Col.g, Col.b, a )
+{}
+
 Color::Color( const tColor<Uint8>& Col ) :
 	tColor<Uint8>( Col.Value )
 {}

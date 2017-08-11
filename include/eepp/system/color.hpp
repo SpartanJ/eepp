@@ -207,6 +207,8 @@ class EE_API Color : public tColor<Uint8>
 
 		Color( const tRGB<Uint8>& Col, Uint8 a );
 
+		Color( const tColor<Uint8>& Col, Uint8 a );
+
 		Color( const tColor<Uint8>& Col );
 
 		Color( const Uint32& Col );

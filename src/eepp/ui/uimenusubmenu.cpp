@@ -17,7 +17,7 @@ UIMenuSubMenu::UIMenuSubMenu() :
 	mCbId( 0 ),
 	mCbId2( 0 )
 {
-	mArrow = UIControl::New();
+	mArrow = UIControlAnim::New();
 	mArrow->setParent( this );
 	mArrow->setFlags( UI_AUTO_SIZE );
 	mArrow->setVisible( true );
@@ -51,6 +51,12 @@ void UIMenuSubMenu::onSizeChange() {
 
 	mArrow->setPosition( getParent()->getSize().getWidth() - mArrow->getSize().getWidth() - PixelDensity::dpToPxI( 1 ), 0 );
 	mArrow->centerVertical();
+}
+
+void UIMenuSubMenu::onAlphaChange() {
+	UIMenuItem::onAlphaChange();
+
+	mArrow->setAlpha( mAlpha );
 }
 
 void UIMenuSubMenu::onStateChange() {
