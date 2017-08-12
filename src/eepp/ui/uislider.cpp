@@ -152,9 +152,9 @@ void UISlider::adjustChilds() {
 		}
 
 		mBackSlider->center();
-
-		fixSliderPos();
 	}
+
+	fixSliderPos();
 }
 
 void UISlider::fixSliderPos() {
