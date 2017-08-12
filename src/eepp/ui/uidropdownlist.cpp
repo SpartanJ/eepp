@@ -148,6 +148,15 @@ void UIDropDownList::showList() {
 				if ( mStyleConfig.PopUpToMainControl ) {
 					getParent()->controlToWorld( Pos );
 					Pos = PixelDensity::pxToDpI( Pos );
+				} else if ( NULL != mFriendCtrl ) {
+					Pos = Vector2i( mFriendCtrl->getPosition().x, mFriendCtrl->getPosition().y + mFriendCtrl->getSize().getHeight() );
+				} else {
+					UIControl * ParentLoop = getParent();
+					UIControl * rp = getWindowContainer();
+					while ( rp != ParentLoop ) {
+						Pos += ParentLoop->getPosition();
+						ParentLoop = ParentLoop->getParent();
+					}
 				}
 
 				Pos.y -= mListBox->getSize().getHeight();
