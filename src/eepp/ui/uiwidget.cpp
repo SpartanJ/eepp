@@ -388,7 +388,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			setBorderEnabled( true )->setColor( Color::fromString( ait->as_string() ) );
 		} else if ( "borderwidth" == name ) {
 			setBorderEnabled( true )->setWidth( PixelDensity::toDpFromStringI( ait->as_string("1") ) );
-		} else if ( "backgroundsrc" == name || "backgrounddrawable" == name ) {
+		} else if ( "background" == name ) {
 			Drawable * res = NULL;
 
 			if ( NULL != ( res = DrawableSearcher::searchByName( ait->as_string() ) ) ) {
