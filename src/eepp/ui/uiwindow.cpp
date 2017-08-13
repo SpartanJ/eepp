@@ -425,12 +425,12 @@ const Sizei& UIWindow::getSize() {
 }
 
 void UIWindow::fixChildsSize() {
-	if ( mSize.getWidth() < mStyleConfig.MinWindowSize.getWidth() || mSize.getHeight() < mStyleConfig.MinWindowSize.getHeight() ) {
-		internalSize( eemin( mSize.getWidth(), mStyleConfig.MinWindowSize.getWidth() ), eemin( mSize.getHeight(), mStyleConfig.MinWindowSize.getHeight() ) );
+	if ( mRealSize.getWidth() < PixelDensity::dpToPxI( mStyleConfig.MinWindowSize.getWidth() ) || mRealSize.getHeight() < PixelDensity::dpToPxI( mStyleConfig.MinWindowSize.getHeight() ) ) {
+		internalSize( eemin( mRealSize.getWidth(), PixelDensity::dpToPxI( mStyleConfig.MinWindowSize.getWidth() ) ), eemin( mRealSize.getHeight(), PixelDensity::dpToPxI( mStyleConfig.MinWindowSize.getHeight() ) ) );
 	}
 
 	if ( NULL == mWindowDecoration ) {
-		mContainer->setSize( mSize.getWidth(), mSize.getHeight() );
+		mContainer->setPixelsSize( mRealSize );
 		return;
 	}
 
@@ -440,59 +440,61 @@ void UIWindow::fixChildsSize() {
 		decoSize = mStyleConfig.DecorationSize = Sizei( mSize.getWidth(), mWindowDecoration->getSkinSize().getHeight() );
 	}
 
-	mWindowDecoration->setSize( mStyleConfig.DecorationSize );
+	mWindowDecoration->setPixelsSize( mRealSize.getWidth(), PixelDensity::dpToPxI( mStyleConfig.DecorationSize.getHeight() ) );
 
 	if ( mStyleConfig.BorderAutoSize ) {
-		mBorderBottom->setSize( Sizei( mSize.getWidth(), mBorderBottom->getSkinSize().getHeight() ) );
+		mBorderBottom->setPixelsSize( mRealSize.getWidth(), PixelDensity::dpToPxI( mBorderBottom->getSkinSize().getHeight() ) );
 	} else {
-		mBorderBottom->setSize( mSize.getWidth(), mStyleConfig.BorderSize.getHeight() );
+		mBorderBottom->setPixelsSize( mRealSize.getWidth(), PixelDensity::dpToPxI( mStyleConfig.BorderSize.getHeight() ) );
 	}
 
-	Uint32 BorderHeight = mSize.getHeight() - decoSize.getHeight() - mBorderBottom->getSize().getHeight();
+	Uint32 BorderHeight = mRealSize.getHeight() - PixelDensity::dpToPxI( decoSize.getHeight() ) - mBorderBottom->getRealSize().getHeight();
 
 	if ( mStyleConfig.BorderAutoSize ) {
-		mBorderLeft->setSize( Sizei( mBorderLeft->getSkinSize().getWidth(), BorderHeight ) );
-		mBorderRight->setSize( Sizei( mBorderRight->getSkinSize().getWidth(), BorderHeight ) );
+		mBorderLeft->setPixelsSize( PixelDensity::dpToPxI( mBorderLeft->getSkinSize().getWidth() ), BorderHeight );
+		mBorderRight->setPixelsSize( PixelDensity::dpToPxI( mBorderRight->getSkinSize().getWidth() ), BorderHeight );
 	} else {
-		mBorderLeft->setSize( mStyleConfig.BorderSize.getWidth(), BorderHeight );
-		mBorderRight->setSize( mStyleConfig.BorderSize.getWidth(), BorderHeight );
+		mBorderLeft->setPixelsSize( PixelDensity::dpToPxI( mStyleConfig.BorderSize.getWidth() ), BorderHeight );
+		mBorderRight->setPixelsSize( PixelDensity::dpToPxI( mStyleConfig.BorderSize.getWidth() ), BorderHeight );
 	}
 
-	mBorderLeft->setPosition( 0, mWindowDecoration->getSize().getHeight() );
-	mBorderRight->setPosition( mSize.getWidth() - mBorderRight->getSize().getWidth(), mWindowDecoration->getSize().getHeight() );
-	mBorderBottom->setPosition( 0, mSize.getHeight() - mBorderBottom->getSize().getHeight() );
+	mBorderLeft->setPixelsPosition( 0, mWindowDecoration->getRealSize().getHeight() );
+	mBorderRight->setPixelsPosition( mRealSize.getWidth() - mBorderRight->getRealSize().getWidth(), mWindowDecoration->getRealSize().getHeight() );
+	mBorderBottom->setPixelsPosition( 0, mRealSize.getHeight() - mBorderBottom->getRealSize().getHeight() );
 
-	mContainer->setPosition( mBorderLeft->getSize().getWidth(), mWindowDecoration->getSize().getHeight() );
-	mContainer->setSize( mSize.getWidth() - mBorderLeft->getSize().getWidth() - mBorderRight->getSize().getWidth(), mSize.getHeight() - mWindowDecoration->getSize().getHeight() - mBorderBottom->getSize().getHeight() );
+	mContainer->setPixelsPosition( mBorderLeft->getRealSize().getWidth(), mWindowDecoration->getRealSize().getHeight() );
+	mContainer->setPixelsSize( mRealSize.getWidth() - mBorderLeft->getRealSize().getWidth() - mBorderRight->getRealSize().getWidth(),
+							   mRealSize.getHeight() - mWindowDecoration->getRealSize().getHeight() - mBorderBottom->getRealSize().getHeight() );
 
 	Uint32 yPos;
+	Vector2i posFix( PixelDensity::dpToPxI( mStyleConfig.ButtonsPositionFixer ) );
 
 	if ( NULL != mButtonClose ) {
-		yPos = mWindowDecoration->getSize().getHeight() / 2 - mButtonClose->getSize().getHeight() / 2 + mStyleConfig.ButtonsPositionFixer.y;
+		yPos = mWindowDecoration->getRealSize().getHeight() / 2 - mButtonClose->getRealSize().getHeight() / 2 + posFix.y;
 
-		mButtonClose->setPosition( mWindowDecoration->getSize().getWidth() - mBorderRight->getSize().getWidth() - mButtonClose->getSize().getWidth() + mStyleConfig.ButtonsPositionFixer.x, yPos );
+		mButtonClose->setPixelsPosition( mWindowDecoration->getRealSize().getWidth() - mBorderRight->getRealSize().getWidth() - mButtonClose->getRealSize().getWidth() + posFix.x, yPos );
 	}
 
 	if ( NULL != mButtonMaximize ) {
-		yPos = mWindowDecoration->getSize().getHeight() / 2 - mButtonMaximize->getSize().getHeight() / 2 + mStyleConfig.ButtonsPositionFixer.y;
+		yPos = mWindowDecoration->getRealSize().getHeight() / 2 - mButtonMaximize->getRealSize().getHeight() / 2 + posFix.y;
 
 		if ( NULL != mButtonClose ) {
-			mButtonMaximize->setPosition( mButtonClose->getPosition().x - mStyleConfig.ButtonsSeparation - mButtonMaximize->getSize().getWidth(), yPos );
+			mButtonMaximize->setPixelsPosition( mButtonClose->getRealPosition().x - PixelDensity::dpToPxI( mStyleConfig.ButtonsSeparation ) - mButtonMaximize->getRealSize().getWidth(), yPos );
 		} else {
-			mButtonMaximize->setPosition( mWindowDecoration->getSize().getWidth() - mBorderRight->getSize().getWidth() - mButtonMaximize->getSize().getWidth() + mStyleConfig.ButtonsPositionFixer.x, yPos );
+			mButtonMaximize->setPixelsPosition( mWindowDecoration->getRealSize().getWidth() - mBorderRight->getRealSize().getWidth() - mButtonMaximize->getRealSize().getWidth() + posFix.x, yPos );
 		}
 	}
 
 	if ( NULL != mButtonMinimize ) {
-		yPos = mWindowDecoration->getSize().getHeight() / 2 - mButtonMinimize->getSize().getHeight() / 2 + mStyleConfig.ButtonsPositionFixer.y;
+		yPos = mWindowDecoration->getRealSize().getHeight() / 2 - mButtonMinimize->getRealSize().getHeight() / 2 + posFix.y;
 
 		if ( NULL != mButtonMaximize ) {
-			mButtonMinimize->setPosition( mButtonMaximize->getPosition().x - mStyleConfig.ButtonsSeparation - mButtonMinimize->getSize().getWidth(), yPos );
+			mButtonMinimize->setPixelsPosition( mButtonMaximize->getRealPosition().x - PixelDensity::dpToPxI( mStyleConfig.ButtonsSeparation ) - mButtonMinimize->getRealSize().getWidth(), yPos );
 		} else {
 			if ( NULL != mButtonClose ) {
-				mButtonMinimize->setPosition( mButtonClose->getPosition().x - mStyleConfig.ButtonsSeparation - mButtonMinimize->getSize().getWidth(), yPos );
+				mButtonMinimize->setPixelsPosition( mButtonClose->getRealPosition().x - PixelDensity::dpToPxI( mStyleConfig.ButtonsSeparation ) - mButtonMinimize->getRealSize().getWidth(), yPos );
 			} else {
-				mButtonMinimize->setPosition( mWindowDecoration->getSize().getWidth() - mBorderRight->getSize().getWidth() - mButtonMinimize->getSize().getWidth() + mStyleConfig.ButtonsPositionFixer.x, yPos );
+				mButtonMinimize->setPixelsPosition( mWindowDecoration->getRealSize().getWidth() - mBorderRight->getRealSize().getWidth() - mButtonMinimize->getRealSize().getWidth() + posFix.x, yPos );
 			}
 		}
 	}
