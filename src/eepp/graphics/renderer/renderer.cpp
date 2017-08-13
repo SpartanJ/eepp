@@ -13,12 +13,10 @@ namespace EE { namespace Graphics {
 #endif
 
 typedef const GLubyte *(APIENTRY * pglGetStringiFunc) (unsigned int, unsigned int);
-
 typedef void (APIENTRY * pglGenFramebuffers) (GLsizei n, GLuint* framebuffers);
 typedef void (APIENTRY * pglBindFramebuffer) (GLenum target, GLuint framebuffer);
 typedef void (APIENTRY * pglFramebufferTexture2D) (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
 typedef void (APIENTRY * pglDeleteFramebuffers) (GLsizei n, const GLuint* framebuffers);
-
 typedef void (APIENTRY * pglGenRenderbuffers) (GLsizei n, GLuint* renderbuffers);
 typedef void (APIENTRY * pglDeleteRenderbuffers) (GLsizei n, const GLuint* renderbuffers);
 typedef void (APIENTRY * pglRenderbufferStorage) (GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
@@ -37,10 +35,10 @@ Renderer * Renderer::createSingleton( EEGL_version ver ) {
 	#else
 		#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		if ( GLv_default == ver )
-			#ifdef EE_GLES1
-			ver = GLv_ES1;
-			#else
+			#ifdef EE_GLES2
 			ver = GLv_ES2;
+			#else
+			ver = GLv_ES1;
 			#endif
 		#else
 			if ( GLv_default == ver )
@@ -204,7 +202,7 @@ void Renderer::init() {
 
 	// NVIDIA added support for GL_OES_compressed_ETC1_RGB8_texture in desktop GPUs
 	// GLEW doesn't return the correct result
-	writeExtension( EEGL_OES_compressed_ETC1_RGB8_texture	, SOIL_GL_ExtensionSupported( "GL_OES_compressed_ETC1_RGB8_texture" )	);
+	writeExtension( EEGL_OES_compressed_ETC1_RGB8_texture	, isExtension( "GL_OES_compressed_ETC1_RGB8_texture" )	);
 
 	#ifdef EE_GLES
 

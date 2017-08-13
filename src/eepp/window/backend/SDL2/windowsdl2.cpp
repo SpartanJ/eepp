@@ -196,7 +196,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 			}
 		} else {
-			#if defined( EE_GLES2 ) && !defined( EE_GLES1 )
+			#if defined( EE_GLES2 )
 				eePRINTL( "Starting GLES2 default" );
 
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);

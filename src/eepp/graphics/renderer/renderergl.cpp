@@ -231,9 +231,9 @@ void RendererGL::pointSize( float size ) {
 void RendererGL::clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	Rectf r( x, y, x + Width, y + Height );
 
-	double clip_left[] 	= { 1.0	, 0.0	, 0.0, -r.Left 		};
+	double clip_left[]		= { 1.0	, 0.0	, 0.0, -r.Left 	};
 	double clip_right[] 	= { -1.0, 0.0	, 0.0, r.Right 	};
-	double clip_top[] 	= { 0.0	, 1.0	, 0.0, -r.Top 		};
+	double clip_top[]		= { 0.0	, 1.0	, 0.0, -r.Top 	};
 	double clip_bottom[] 	= { 0.0	, -1.0	, 0.0, r.Bottom };
 
 	GLi->enable(GL_CLIP_PLANE0);
