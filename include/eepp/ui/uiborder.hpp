@@ -18,6 +18,8 @@ class EE_API UIBorder {
 		const unsigned int& getWidth() const;
 
 		UIBorder * setWidth( const unsigned int& width );
+
+		void draw( Rectf R, const int& corners, const bool& clipping );
 	protected:
 		Color			mColor;
 		unsigned int	mWidth;

@@ -1,4 +1,7 @@
 #include <eepp/ui/uibackground.hpp>
+#include <eepp/graphics/primitives.hpp>
+
+using namespace EE::Graphics;
 
 namespace EE { namespace UI {
 
@@ -8,9 +11,16 @@ UIBackground * UIBackground::New() {
 
 UIBackground::UIBackground() :
 	mBlendMode( ALPHA_NORMAL ),
-	mCorners(0)
+	mCorners(0),
+	mDrawable( NULL ),
+	mOwnIt( false )
 {
-	mColor.push_back(Color::Black);
+	mColor.push_back( Color::Transparent );
+}
+
+UIBackground::~UIBackground() {
+	if ( mOwnIt )
+		eeSAFE_DELETE( mDrawable );
 }
 
 Color& UIBackground::getColor( const unsigned int& index  ) {
@@ -73,6 +83,44 @@ const unsigned int& UIBackground::getCorners() const {
 UIBackground * UIBackground::setCorners( const unsigned int& corners ) {
 	mCorners = corners;
 	return this;
+}
+
+void UIBackground::draw( Rectf R ) {
+	if ( mColor[0] != Color::Transparent || mColor.size() > 1 ) {
+		Primitives P;
+		P.setBlendMode( mBlendMode );
+		P.setColor( mColor[0] );
+
+		if ( 4 == mColor.size() ) {
+			if ( mCorners ) {
+				P.drawRoundedRectangle( R, mColor[0], mColor[1], mColor[2], mColor[3], mCorners );
+			} else {
+				P.drawRectangle( R, mColor[0], mColor[1], mColor[2], mColor[3] );
+			}
+		} else {
+			if ( mCorners ) {
+				P.drawRoundedRectangle( R, 0.f, Vector2f::One, mCorners );
+			} else {
+				P.drawRectangle( R );
+			}
+		}
+	}
+
+	if ( NULL != mDrawable ) {
+		mDrawable->draw( R.getPosition(), R.getSize() );
+	}
+}
+
+Drawable * UIBackground::getDrawable() const {
+	return mDrawable;
+}
+
+void UIBackground::setDrawable( Drawable * drawable , bool ownIt ) {
+	if ( mOwnIt )
+		eeSAFE_DELETE( mDrawable );
+
+	mDrawable = drawable;
+	mOwnIt = ownIt;
 }
 
 }}

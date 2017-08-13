@@ -1,5 +1,6 @@
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -387,6 +388,12 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			setBorderEnabled( true )->setColor( Color::fromString( ait->as_string() ) );
 		} else if ( "borderwidth" == name ) {
 			setBorderEnabled( true )->setWidth( PixelDensity::toDpFromStringI( ait->as_string("1") ) );
+		} else if ( "backgroundsrc" == name || "backgrounddrawable" == name ) {
+			Drawable * res = NULL;
+
+			if ( NULL != ( res = DrawableSearcher::searchByName( ait->as_string() ) ) ) {
+				setBackgroundFillEnabled( true )->setDrawable( res, res->getDrawableType() == DRAWABLE_SPRITE );
+			}
 		} else if ( "visible" == name ) {
 			setVisible( ait->as_bool() );
 		} else if ( "enabled" == name ) {

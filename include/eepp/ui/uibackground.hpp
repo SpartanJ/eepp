@@ -2,6 +2,7 @@
 #define EE_UICUIBACKGROUND_HPP
 
 #include <eepp/ui/base.hpp>
+#include <eepp/graphics/drawable.hpp>
 
 namespace EE { namespace UI {
 
@@ -10,6 +11,8 @@ class EE_API UIBackground {
 		static UIBackground * New();
 
 		UIBackground();
+
+		~UIBackground();
 
 		Color& getColor( const unsigned int& index = 0 );
 
@@ -28,11 +31,20 @@ class EE_API UIBackground {
 		const unsigned int& getCorners() const;
 
 		UIBackground * setCorners( const unsigned int& corners );
+
+		void draw( Rectf R );
+
+		Drawable * getDrawable() const;
+
+		void setDrawable( Drawable * drawable, bool ownIt );
+
 	protected:
 		std::vector<Color>	mColor;
 
 		EE_BLEND_MODE		mBlendMode;
 		unsigned int		mCorners;
+		Drawable *			mDrawable;
+		bool				mOwnIt;
 };
 
 }}

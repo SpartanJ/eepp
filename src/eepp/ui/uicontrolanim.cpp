@@ -369,50 +369,13 @@ Interpolation1d * UIControlAnim::disableFadeOut( const Time& Time, const bool& A
 
 void UIControlAnim::drawBackground() {
 	if ( mFlags & UI_FILL_BACKGROUND ) {
-		Primitives P;
-		Rectf R = getRectf();
-		P.setBlendMode( mBackground->getBlendMode() );
-		P.setColor( getColor( mBackground->getColor() ) );
-
-		if ( 4 == mBackground->getColors().size() ) {
-			if ( mBackground->getCorners() ) {
-				P.drawRoundedRectangle( R, getColor( mBackground->getColors()[0] ), getColor( mBackground->getColors()[1] ), getColor( mBackground->getColors()[2] ), getColor( mBackground->getColors()[3] ), mBackground->getCorners() );
-			} else {
-				P.drawRectangle( R, getColor( mBackground->getColors()[0] ), getColor( mBackground->getColors()[1] ), getColor( mBackground->getColors()[2] ), getColor( mBackground->getColors()[3] ) );
-			}
-		} else {
-			if ( mBackground->getCorners() ) {
-				P.drawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->getCorners() );
-			} else {
-				P.drawRectangle( R );
-			}
-		}
+		mBackground->draw( getRectf() );
 	}
 }
 
 void UIControlAnim::drawBorder() {
 	if ( mFlags & UI_BORDER ) {
-		Primitives P;
-		P.setFillMode( DRAW_LINE );
-		P.setBlendMode( getBlendMode() );
-		P.setLineWidth( PixelDensity::dpToPx( mBorder->getWidth() ) );
-		P.setColor( getColor( mBorder->getColor() ) );
-
-		if ( mFlags & UI_CLIP_ENABLE ) {
-			Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mRealSize.getWidth() - 0.1f, (Float)mRealSize.getHeight() - 0.1f ) );
-
-			if ( mBackground->getCorners() ) {
-				P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->getCorners() );
-			} else {
-				P.drawRectangle( R );
-			}
-		} else {
-			if ( mBackground->getCorners() ) {
-				P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->getCorners() );
-			} else {
-				P.drawRectangle( getRectf() );
-			}
-		}
+		mBorder->draw( getRectf(), mBackground->getCorners(), ( mFlags & UI_CLIP_ENABLE ) != 0 );
 	}
 }
 

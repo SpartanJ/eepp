@@ -717,50 +717,13 @@ Rectf UIControl::getRectf() {
 
 void UIControl::drawBackground() {
 	if ( mFlags & UI_FILL_BACKGROUND ) {
-		Primitives P;
-		Rectf R = getRectf();
-		P.setBlendMode( mBackground->getBlendMode() );
-		P.setColor( mBackground->getColor() );
-
-		if ( 4 == mBackground->getColors().size() ) {
-			if ( mBackground->getCorners() ) {
-				P.drawRoundedRectangle( R, mBackground->getColors()[0], mBackground->getColors()[1], mBackground->getColors()[2], mBackground->getColors()[3], mBackground->getCorners() );
-			} else {
-				P.drawRectangle( R, mBackground->getColors()[0], mBackground->getColors()[1], mBackground->getColors()[2], mBackground->getColors()[3] );
-			}
-		} else {
-			if ( mBackground->getCorners() ) {
-				P.drawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->getCorners() );
-			} else {
-				P.drawRectangle( R );
-			}
-		}
+		mBackground->draw( getRectf() );
 	}
 }
 
 void UIControl::drawBorder() {
 	if ( mFlags & UI_BORDER ) {
-		Primitives P;
-		P.setFillMode( DRAW_LINE );
-		P.setBlendMode( getBlendMode() );
-		P.setLineWidth( PixelDensity::dpToPx( mBorder->getWidth() ) );
-		P.setColor( mBorder->getColor() );
-
-		if ( mFlags & UI_CLIP_ENABLE ) {
-			Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mRealSize.getWidth() - 0.1f, (Float)mRealSize.getHeight() - 0.1f ) );
-
-			if ( mBackground->getCorners() ) {
-				P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->getCorners() );
-			} else {
-				P.drawRectangle( R );
-			}
-		} else {
-			if ( mBackground->getCorners() ) {
-				P.drawRoundedRectangle( getRectf(), 0.f, Vector2f::One, mBackground->getCorners() );
-			} else {
-				P.drawRectangle( getRectf() );
-			}
-		}
+		mBorder->draw( getRectf(), mBackground->getCorners(), ( mFlags & UI_CLIP_ENABLE ) != 0 );
 	}
 }
 
