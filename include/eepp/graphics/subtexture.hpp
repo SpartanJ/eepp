@@ -18,14 +18,14 @@ class EE_API SubTexture : public Drawable {
 		*	@param TexId The texture id
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture( const Uint32& TexId, const std::string& getName = "" );
+		SubTexture( const Uint32& TexId, const std::string& name = "" );
 
 		/** Creates a SubTexture of the indicated part of the texture.
 		*	@param TexId The texture id
 		*	@param SrcRect The texture part that will be used as the SubTexture.
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture( const Uint32& TexId, const Rect& srcRect, const std::string& getName = "" );
+		SubTexture( const Uint32& TexId, const Rect& srcRect, const std::string& name = "" );
 
 		/** Creates a SubTexture of the indicated part of the texture.
 		*	@param TexId The texture id
@@ -33,7 +33,7 @@ class EE_API SubTexture : public Drawable {
 		*	@param DestSize The destination size that the SubTexture will have when rendered.
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const std::string& getName = "" );
+		SubTexture( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const std::string& name = "" );
 
 		/** Creates a SubTexture of the indicated part of the texture.
 		*	@param TexId The texture id
@@ -42,7 +42,7 @@ class EE_API SubTexture : public Drawable {
 		*	@param Offset The offset that will be added to the position passed when any Draw call is used.
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const Vector2i& offset, const std::string& getName = "" );
+		SubTexture( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const Vector2i& offset, const std::string& name = "" );
 
 		virtual ~SubTexture();
 

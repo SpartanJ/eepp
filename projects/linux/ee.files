@@ -9,6 +9,7 @@
 ../../include/eepp/graphics/fonttruetype.hpp
 ../../include/eepp/graphics/fonttruetypeloader.hpp
 ../../include/eepp/graphics/graphicshelper.hpp
+../../include/eepp/graphics/ninepatch.hpp
 ../../include/eepp/graphics/primitivedrawable.hpp
 ../../include/eepp/graphics/rectangledrawable.hpp
 ../../include/eepp/graphics/renderer/base.hpp
@@ -46,6 +47,7 @@
 ../../include/eepp/ui/uiwidgetcreator.hpp
 ../../src/eepp/graphics/convexshapedrawable.cpp
 ../../src/eepp/graphics/drawablegroup.cpp
+../../src/eepp/graphics/ninepatch.cpp
 ../../src/eepp/maps/mapobjectlayer.cpp
 ../../src/eepp/graphics/arcdrawable.cpp
 ../../src/eepp/graphics/circledrawable.cpp

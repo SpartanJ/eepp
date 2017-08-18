@@ -25,11 +25,11 @@ SubTexture::SubTexture() :
 	createUnnamed();
 }
 
-SubTexture::SubTexture( const Uint32& TexId, const std::string& Name ) :
+SubTexture::SubTexture( const Uint32& TexId, const std::string& name ) :
 	Drawable( DRAWABLE_SUBTEXTURE ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
-	mName( Name ),
+	mName( name ),
 	mId( String::hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
@@ -42,11 +42,11 @@ SubTexture::SubTexture( const Uint32& TexId, const std::string& Name ) :
 	createUnnamed();
 }
 
-SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const std::string& Name ) :
+SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const std::string& name ) :
 	Drawable( DRAWABLE_SUBTEXTURE ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
-	mName( Name ),
+	mName( name ),
 	mId( String::hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
@@ -59,11 +59,11 @@ SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const std::str
 	createUnnamed();
 }
 
-SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& Name ) :
+SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& name ) :
 	Drawable( DRAWABLE_SUBTEXTURE ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
-	mName( Name ),
+	mName( name ),
 	mId( String::hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
@@ -76,11 +76,11 @@ SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const Sizef& D
 	createUnnamed();
 }
 
-SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i &Offset, const std::string& Name ) :
+SubTexture::SubTexture(const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i &Offset, const std::string& name ) :
 	Drawable( DRAWABLE_SUBTEXTURE ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
-	mName( Name ),
+	mName( name ),
 	mId( String::hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),

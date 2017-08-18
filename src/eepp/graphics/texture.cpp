@@ -744,24 +744,24 @@ void Texture::drawQuadEx( Quad2f Q, const Vector2f& Offset, const Float &Angle, 
 	sBR->drawOpt();
 }
 
-}}
-
-Sizef EE::Graphics::Texture::getSize() {
+Sizef Texture::getSize() {
 	return Sizef( PixelDensity::pxToDp( mImgWidth ), PixelDensity::pxToDp( mImgHeight ) );
 }
 
-Sizei EE::Graphics::Texture::getPixelSize() {
+Sizei Texture::getPixelSize() {
 	return Sizei( mImgWidth, mImgHeight );
 }
 
-void EE::Graphics::Texture::draw() {
+void Texture::draw() {
 	drawFast( mPosition.x, mPosition.y );
 }
 
-void EE::Graphics::Texture::draw( const Vector2f & position ) {
+void Texture::draw( const Vector2f & position ) {
 	drawFast( position.x, position.y );
 }
 
-void EE::Graphics::Texture::draw(const Vector2f & position, const Sizef & size) {
+void Texture::draw(const Vector2f & position, const Sizef & size) {
 	drawFast( position.x, position.y, 0, Vector2f::One, mColor, ALPHA_NORMAL, size.x, size.y );
 }
+
+}}
