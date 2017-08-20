@@ -74,7 +74,17 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 			std::vector<std::string> dotParts = String::split( name, '.' );
 
 			if ( dotParts.size() >= 3 && dotParts[ dotParts.size() - 1 ] == "9" ) {
-				std::vector<std::string> nameParts = String::split( dotParts[0], '_' );
+				std::string realName;
+
+				for ( size_t i = 0; i <  dotParts.size() - 2; i++ ) {
+					realName += dotParts[i];
+
+					if ( i != dotParts.size() - 3 ) {
+						realName += ".";
+					}
+				}
+
+				std::vector<std::string> nameParts = String::split( realName, '_' );
 
 				std::vector<std::string> srcRect = String::split( dotParts[ dotParts.size() - 2 ], '_' );
 				int l = 0, t = 0, r = 0, b = 0;
@@ -88,7 +98,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 
 				elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
 
-				NinePatchManager::instance()->add( eeNew( NinePatch, ( subTexture, l, t, r, b, dotParts[0] ) ) );
+				NinePatchManager::instance()->add( eeNew( NinePatch, ( subTexture, l, t, r, b, realName ) ) );
 			} else {
 				std::vector<std::string> nameParts = String::split( name, '_' );
 
@@ -149,7 +159,17 @@ UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path ) {
 				std::vector<std::string> dotParts = String::split( name, '.' );
 
 				if ( dotParts.size() >= 3 && dotParts[ dotParts.size() - 1 ] == "9" ) {
-					std::vector<std::string> nameParts = String::split( dotParts[0], '_' );
+					std::string realName;
+
+					for ( size_t i = 0; i <  dotParts.size() - 2; i++ ) {
+						realName += dotParts[i];
+
+						if ( i != dotParts.size() - 3 ) {
+							realName += ".";
+						}
+					}
+
+					std::vector<std::string> nameParts = String::split( realName, '_' );
 
 					std::vector<std::string> srcRect = String::split( dotParts[ dotParts.size() - 2 ], '_' );
 					int l = 0, t = 0, r = 0, b = 0;
@@ -163,7 +183,7 @@ UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path ) {
 
 					elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
 
-					NinePatchManager::instance()->add( eeNew( NinePatch, ( TextureFactory::instance()->loadFromFile( fpath ), l, t, r, b, dotParts[0] ) ) );
+					NinePatchManager::instance()->add( eeNew( NinePatch, ( TextureFactory::instance()->loadFromFile( fpath ), l, t, r, b, realName ) ) );
 				} else {
 					std::vector<std::string> nameParts = String::split( name, '_' );
 
