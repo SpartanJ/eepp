@@ -3,7 +3,7 @@
 namespace EE { namespace Graphics {
 
 TextureAtlas::TextureAtlas( const std::string& name ) :
-	ResourceManager<SubTexture> ( true )
+	ResourceManager<DrawableResource> ( true )
 {
 	setName( name );
 }
@@ -32,28 +32,28 @@ const Uint32& TextureAtlas::getId() const {
 	return mId;
 }
 
-SubTexture * TextureAtlas::add( SubTexture * subTexture ) {
-	return ResourceManager<SubTexture>::add( subTexture );
+DrawableResource * TextureAtlas::add( DrawableResource * drawableResource ) {
+	return ResourceManager<DrawableResource>::add( drawableResource );
 }
 
-SubTexture * TextureAtlas::add( const Uint32& TexId, const std::string& Name ) {
+DrawableResource * TextureAtlas::add( const Uint32& TexId, const std::string& Name ) {
 	return add( eeNew( SubTexture, ( TexId, Name ) ) );
 }
 
-SubTexture * TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const std::string& Name ) {
+DrawableResource * TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const std::string& Name ) {
 	return add( eeNew( SubTexture, ( TexId, SrcRect, Name ) ) );
 }
 
-SubTexture * TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& Name ) {
+DrawableResource * TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& Name ) {
 	return add( eeNew ( SubTexture, ( TexId, SrcRect, DestSize, Name ) ) );
 }
 
-SubTexture * TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i& Offset, const std::string& Name ) {
+DrawableResource * TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i& Offset, const std::string& Name ) {
 	return add( eeNew ( SubTexture, ( TexId, SrcRect, DestSize, Offset, Name ) ) );
 }
 
 Uint32 TextureAtlas::getCount() {
-	return ResourceManager<SubTexture>::getCount();
+	return ResourceManager<DrawableResource>::getCount();
 }
 
 void TextureAtlas::setTextures( std::vector<Texture*> textures ) {

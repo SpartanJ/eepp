@@ -7,7 +7,7 @@
 
 namespace EE { namespace Graphics {
 
-class EE_API NinePatch : public Drawable {
+class EE_API NinePatch : public DrawableResource {
 	public:
 		enum NinePatchSides {
 			Left = 0,
@@ -22,9 +22,9 @@ class EE_API NinePatch : public Drawable {
 			SideCount
 		};
 
-		NinePatch( const Uint32& TexId, int left, int top, int right, int bottom );
+		NinePatch( const Uint32& TexId, int left, int top, int right, int bottom, const std::string& name = "" );
 		
-		NinePatch( SubTexture * subTexture, int left, int top, int right, int bottom );
+		NinePatch( SubTexture * subTexture, int left, int top, int right, int bottom, const std::string& name = "" );
 
 		~NinePatch();
 		
@@ -35,10 +35,20 @@ class EE_API NinePatch : public Drawable {
 		virtual void draw( const Vector2f& position );
 
 		virtual void draw( const Vector2f& position, const Sizef& size );
+
+		const Sizef& getDestSize() const;
+
+		void setDestSize( const Sizef& destSize );
+
+		const Vector2i& getOffset() const;
+
+		void setOffset( const Vector2i& offset );
 	protected:
 		Drawable * 	mDrawable[ SideCount ];
 		Rect mRect;
 		Sizei mSize;
+		Sizef mDestSize;
+		Vector2i mOffset;
 
 		void createFromTexture( const Uint32& TexId, int left, int top, int right, int bottom );
 };

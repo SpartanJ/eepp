@@ -3,6 +3,7 @@
 ../../include/eepp/graphics/convexshapedrawable.hpp
 ../../include/eepp/graphics/drawable.hpp
 ../../include/eepp/graphics/drawablegroup.hpp
+../../include/eepp/graphics/drawableresource.hpp
 ../../include/eepp/graphics/drawablesearcher.hpp
 ../../include/eepp/graphics/font.hpp
 ../../include/eepp/graphics/fontstyleconfig.hpp
@@ -47,6 +48,7 @@
 ../../include/eepp/ui/uiwidgetcreator.hpp
 ../../src/eepp/graphics/convexshapedrawable.cpp
 ../../src/eepp/graphics/drawablegroup.cpp
+../../src/eepp/graphics/drawableresource.cpp
 ../../src/eepp/graphics/ninepatch.cpp
 ../../src/eepp/maps/mapobjectlayer.cpp
 ../../src/eepp/graphics/arcdrawable.cpp

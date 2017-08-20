@@ -9,7 +9,7 @@ namespace EE { namespace Graphics {
 bool DrawableSearcher::sPrintWarnings = false;
 
 static Drawable * getSprite( const std::string& sprite ) {
-	std::vector<SubTexture*> tSubTextureVec = TextureAtlasManager::instance()->getSubTexturesByPattern( sprite );
+	std::vector<DrawableResource*> tSubTextureVec = TextureAtlasManager::instance()->getSubTexturesByPattern( sprite );
 
 	if ( tSubTextureVec.size() ) {
 		Sprite * tSprite = eeNew( Graphics::Sprite, () );

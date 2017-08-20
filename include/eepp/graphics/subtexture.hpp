@@ -4,12 +4,12 @@
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/math/originpoint.hpp>
-#include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/drawableresource.hpp>
 
 namespace EE { namespace Graphics {
 
 /** @brief A SubTexture is a part of a texture that represent an sprite.*/
-class EE_API SubTexture : public Drawable {
+class EE_API SubTexture : public DrawableResource {
 	public:
 		/** Creates an empty SubTexture */
 		SubTexture();
@@ -45,15 +45,6 @@ class EE_API SubTexture : public Drawable {
 		SubTexture( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const Vector2i& offset, const std::string& name = "" );
 
 		virtual ~SubTexture();
-
-		/** @return The SubTexture Id. The Id is the String::hash of the SubTexture name. */
-		const Uint32& getId() const;
-
-		/** @return The SubTexture Name. */
-		const std::string getName() const;
-
-		/** Sets the SubTexture Name, it will also change the Id. */
-		void setName( const std::string& name );
 
 		/** @return The Texture Id that holds the SubTexture. */
 		const Uint32& getTextureId();
@@ -165,8 +156,6 @@ class EE_API SubTexture : public Drawable {
 	protected:
 		Uint8 *		mPixels;
 		Uint8 *		mAlphaMask;
-		std::string mName;
-		Uint32		mId;
 		Uint32 		mTexId;
 		Graphics::Texture * 	mTexture;
 		Rect		mSrcRect;
@@ -174,8 +163,6 @@ class EE_API SubTexture : public Drawable {
 		Sizef		mDestSize;
 		Vector2i	mOffset;
 		Float		mPixelDensity;
-
-		void createUnnamed();
 };
 
 }}

@@ -277,10 +277,10 @@ static std::vector<String> getTestStringArr() {
 void EETest::createUI() {
 	Clock TE;
 
-	mThemeName = "uitheme";
+	mThemeName = "uitheme_new";
 
 	if ( PixelDensity::getPixelDensity() >= 1.1 ) {
-		mThemeName += "2x";
+		mThemeName = "uitheme2x_new";
 	}
 
 	createUIThemeTextureAtlas();
@@ -293,11 +293,10 @@ void EETest::createUI() {
 	UIManager::instance()->init(UI_MAN_OPS);
 	UIManager::instance()->setTranslator( mTranslator );
 
-	//mTheme = UITheme::loadFromFile( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
+	mTheme = UITheme::loadFromFile( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
 
-	TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
-
-	mTheme = UITheme::loadFromTextureAtlas( UIThemeDefault::New( mThemeName, mThemeName ), TextureAtlasManager::instance()->getByName( mThemeName ) );
+	//TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
+	//mTheme = UITheme::loadFromTextureAtlas( UIThemeDefault::New( mThemeName, mThemeName ), TextureAtlasManager::instance()->getByName( mThemeName ) );
 
 	UIThemeManager::instance()->add( mTheme );
 	UIThemeManager::instance()->setDefaultEffectsEnabled( true );

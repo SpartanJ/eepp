@@ -3,8 +3,8 @@
 
 namespace EE { namespace Graphics {
 
-NinePatch::NinePatch( const Uint32& TexId, int left, int top, int right, int bottom ) :
-	Drawable( DRAWABLE_NINEPATCH ),
+NinePatch::NinePatch( const Uint32& TexId, int left, int top, int right, int bottom, const std::string& name ) :
+	DrawableResource( DRAWABLE_NINEPATCH, name ),
 	mRect( left, top, right, bottom )
 {
 	for ( Int32 i = 0; i < SideCount; i++ )
@@ -14,13 +14,14 @@ NinePatch::NinePatch( const Uint32& TexId, int left, int top, int right, int bot
 
 	if ( NULL != tex ) {
 		mSize = tex->getPixelSize();
+		mDestSize = Sizef( mSize.x, mSize.y );
 
 		createFromTexture( TexId, left, top, right, bottom );
 	}
 }
 
-NinePatch::NinePatch( SubTexture * subTexture, int left, int top, int right, int bottom ):
-	Drawable( DRAWABLE_NINEPATCH ),
+NinePatch::NinePatch( SubTexture * subTexture, int left, int top, int right, int bottom, const std::string& name ):
+	DrawableResource( DRAWABLE_NINEPATCH, name ),
 	mRect( left, top, right, bottom )
 {
 	for ( Int32 i = 0; i < SideCount; i++ )
@@ -32,6 +33,7 @@ NinePatch::NinePatch( SubTexture * subTexture, int left, int top, int right, int
 		Rect r( subTexture->getSrcRect() );
 
 		mSize = r.getSize();
+		mDestSize = Sizef( mSize.x, mSize.y );
 
 		createFromTexture( tex->getId(), left, top, right, bottom );
 
@@ -59,6 +61,14 @@ Sizef NinePatch::getSize() {
 	return Sizef( mSize.getWidth(), mSize.getHeight() );
 }
 
+const Vector2i& NinePatch::getOffset() const {
+	return mOffset;
+}
+
+void NinePatch::setOffset( const Vector2i& offset ) {
+	mOffset = offset;
+}
+
 void NinePatch::draw() {
 	draw( mPosition );
 }
@@ -68,15 +78,24 @@ void NinePatch::draw( const Vector2f& position ) {
 }
 
 void NinePatch::draw( const Vector2f& position, const Sizef& size ) {
-	mDrawable[ UpLeft ]->draw( position );
-	mDrawable[ Left ]->draw( Vector2f( position.x, position.y + mRect.Top ), Sizef( mRect.Left, size.getHeight() - mRect.Top - mRect.Bottom ) );
-	mDrawable[ DownLeft ]->draw( Vector2f( position.x, position.y + size.getHeight() - mRect.Bottom ) );
-	mDrawable[ Up ]->draw( Vector2f( position.x + mRect.Left, position.y ), Sizef( size.getWidth() - mRect.Left - mRect.Right, mRect.Top ) );
-	mDrawable[ Center ]->draw( Vector2f( position.x + mRect.Left, position.y + mRect.Top ), Sizef( size.getWidth() - mRect.Left - mRect.Right, size.getHeight() - mRect.Top - mRect.Bottom ) );
-	mDrawable[ Down ]->draw( Vector2f( position.x + mRect.Left, position.y + size.getHeight() - mRect.Bottom ), Sizef( size.getWidth() - mRect.Left - mRect.Right, mRect.Bottom ) );
-	mDrawable[ UpRight ]->draw( Vector2f( position.x + size.getWidth() - mRect.Right, position.y ) );
-	mDrawable[ Right ]->draw( Vector2f( position.x + size.getWidth() - mRect.Right, position.y + mRect.Top ), Vector2f( mRect.Right, size.getHeight() - mRect.Top - mRect.Bottom ) );
-	mDrawable[ DownRight ]->draw( Vector2f( position.x + size.getWidth() - mRect.Right, position.y + size.getHeight() - mRect.Bottom ) );
+	Vector2f pos( position.x + mOffset.x, position.y + mOffset.y );
+	mDrawable[ UpLeft ]->draw( pos );
+	mDrawable[ Left ]->draw( Vector2f( pos.x, pos.y + mRect.Top ), Sizef( mRect.Left, size.getHeight() - mRect.Top - mRect.Bottom ) );
+	mDrawable[ DownLeft ]->draw( Vector2f( pos.x, pos.y + size.getHeight() - mRect.Bottom ) );
+	mDrawable[ Up ]->draw( Vector2f( pos.x + mRect.Left, pos.y ), Sizef( size.getWidth() - mRect.Left - mRect.Right, mRect.Top ) );
+	mDrawable[ Center ]->draw( Vector2f( pos.x + mRect.Left, pos.y + mRect.Top ), Sizef( size.getWidth() - mRect.Left - mRect.Right, size.getHeight() - mRect.Top - mRect.Bottom ) );
+	mDrawable[ Down ]->draw( Vector2f( pos.x + mRect.Left, pos.y + size.getHeight() - mRect.Bottom ), Sizef( size.getWidth() - mRect.Left - mRect.Right, mRect.Bottom ) );
+	mDrawable[ UpRight ]->draw( Vector2f( pos.x + size.getWidth() - mRect.Right, pos.y ) );
+	mDrawable[ Right ]->draw( Vector2f( pos.x + size.getWidth() - mRect.Right, pos.y + mRect.Top ), Vector2f( mRect.Right, size.getHeight() - mRect.Top - mRect.Bottom ) );
+	mDrawable[ DownRight ]->draw( Vector2f( pos.x + size.getWidth() - mRect.Right, pos.y + size.getHeight() - mRect.Bottom ) );
+}
+
+const Sizef &NinePatch::getDestSize() const {
+	return mDestSize;
+}
+
+void NinePatch::setDestSize(const Sizef & destSize) {
+	mDestSize = destSize;
 }
 
 void NinePatch::createFromTexture(const Uint32 & TexId, int left, int top, int right, int bottom) {
