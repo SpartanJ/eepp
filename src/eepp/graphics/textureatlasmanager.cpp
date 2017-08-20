@@ -39,8 +39,8 @@ TextureAtlas * TextureAtlasManager::loadFromPack( Pack * Pack, const std::string
 	return loader.getTextureAtlas();
 }
 
-DrawableResource * TextureAtlasManager::getSubTextureByName( const std::string& Name ) {
-	DrawableResource * tSubTexture = getSubTextureById( String::hash( Name ) );
+SubTexture * TextureAtlasManager::getSubTextureByName( const std::string& Name ) {
+	SubTexture * tSubTexture = getSubTextureById( String::hash( Name ) );
 
 	if ( mWarnings ) {
 		eePRINTC( NULL == tSubTexture, "TextureAtlasManager::GetSubTextureByName SubTexture '%s' not found\n", Name.c_str() );
@@ -49,11 +49,11 @@ DrawableResource * TextureAtlasManager::getSubTextureByName( const std::string& 
 	return tSubTexture;
 }
 
-DrawableResource * TextureAtlasManager::getSubTextureById( const Uint32& Id ) {
+SubTexture * TextureAtlasManager::getSubTextureById( const Uint32& Id ) {
 	std::list<TextureAtlas*>::iterator it;
 
 	TextureAtlas * tSG = NULL;
-	DrawableResource * tSubTexture = NULL;
+	SubTexture * tSubTexture = NULL;
 
 	for ( it = mResources.begin(); it != mResources.end(); it++ ) {
 		tSG = (*it);
@@ -74,8 +74,8 @@ void TextureAtlasManager::printResources() {
 		(*it)->printNames();
 }
 
-std::vector<DrawableResource*> TextureAtlasManager::getSubTexturesByPatternId( const Uint32& SubTextureId, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
-	DrawableResource * tSubTexture 	= NULL;
+std::vector<SubTexture*> TextureAtlasManager::getSubTexturesByPatternId( const Uint32& SubTextureId, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
+	SubTexture * tSubTexture 	= NULL;
 	std::string tName;
 
 	if ( NULL == SearchInTextureAtlas )
@@ -92,7 +92,7 @@ std::vector<DrawableResource*> TextureAtlasManager::getSubTexturesByPatternId( c
 		return getSubTexturesByPattern( String::removeNumbersAtEnd( tSubTexture->getName() ), "", SearchInTextureAtlas );
 	}
 
-	return std::vector<DrawableResource*>();
+	return std::vector<SubTexture*>();
 }
 
 void TextureAtlasManager::setPrintWarnings( const bool& warn ) {
@@ -103,11 +103,11 @@ const bool& TextureAtlasManager::getPrintWarnings() const {
 	return mWarnings;
 }
 
-std::vector<DrawableResource*> TextureAtlasManager::getSubTexturesByPattern( const std::string& name, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
-	std::vector<DrawableResource*> 	SubTextures;
+std::vector<SubTexture*> TextureAtlasManager::getSubTexturesByPattern( const std::string& name, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
+	std::vector<SubTexture*> 	SubTextures;
 	std::string 			search;
 	bool 					found 	= true;
-	DrawableResource *		tSubTexture 	= NULL;
+	SubTexture *				tSubTexture 	= NULL;
 	std::string				realext = "";
 	int 					c 		= 0;
 	int					t		= 0;

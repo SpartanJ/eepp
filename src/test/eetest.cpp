@@ -170,7 +170,7 @@ void EETest::createUIThemeTextureAtlas() {
 	std::string Path( MyPath + "ui/" + mThemeName );
 
 	if ( !FileSystem::fileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
-		TexturePacker tp( 512, 512, mThemeName.find_first_of( "2x" ) != std::string::npos ? PD_XHDPI : ( mThemeName.find_first_of( "1.5x" ) != std::string::npos ? PD_HDPI : PD_MDPI ), true, 2 );
+		TexturePacker tp( 2048, 2048, mThemeName.find_first_of( "2x" ) != std::string::npos ? PD_XHDPI : ( mThemeName.find_first_of( "1.5x" ) != std::string::npos ? PD_HDPI : PD_MDPI ), true, 2 );
 		tp.addTexturesPath( Path );
 		tp.packTextures();
 		tp.save( tgpath + ".png", SAVE_TYPE_PNG );
@@ -293,10 +293,10 @@ void EETest::createUI() {
 	UIManager::instance()->init(UI_MAN_OPS);
 	UIManager::instance()->setTranslator( mTranslator );
 
-	mTheme = UITheme::loadFromFile( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
+	//mTheme = UITheme::loadFromFile( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
 
-	//TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
-	//mTheme = UITheme::loadFromTextureAtlas( UIThemeDefault::New( mThemeName, mThemeName ), TextureAtlasManager::instance()->getByName( mThemeName ) );
+	TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
+	mTheme = UITheme::loadFromTextureAtlas( UIThemeDefault::New( mThemeName, mThemeName ), TextureAtlasManager::instance()->getByName( mThemeName ) );
 
 	UIThemeManager::instance()->add( mTheme );
 	UIThemeManager::instance()->setDefaultEffectsEnabled( true );

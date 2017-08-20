@@ -194,12 +194,12 @@ class EE_API Sprite : public Drawable {
 		* @param SubTexture The SubTexture used in the frame
 		* @return The frame position or 0 if fails
 		*/
-		unsigned int addFrame( DrawableResource * SubTexture );
+		unsigned int addFrame( SubTexture * SubTexture );
 
 		/** Add a vector of SubTexture as an animation.
 		* @param SubTextures The Frames
 		*/
-		bool addFrames( const std::vector<DrawableResource *> SubTextures );
+		bool addFrames( const std::vector<SubTexture*> SubTextures );
 
 		/** @see TextureAtlasManager::GetSubTexturesByPattern */
 		bool addFramesByPattern( const std::string& name, const std::string& extension = "", TextureAtlas * SearchInTextureAtlas = NULL );
@@ -223,7 +223,7 @@ class EE_API Sprite : public Drawable {
 		* @param NumSubFrame The Sub Frame Number
 		* @return True if success
 		*/
-		bool addSubFrame( DrawableResource * SubTexture, const unsigned int& NumFrame, const unsigned int& NumSubFrame );
+		bool addSubFrame( SubTexture * SubTexture, const unsigned int& NumFrame, const unsigned int& NumSubFrame );
 
 		/** Draw the sprite to the screen */
 		void draw();
@@ -272,13 +272,13 @@ class EE_API Sprite : public Drawable {
 		void setReverseFromStart();
 
 		/** @return The Current SubTexture */
-		DrawableResource * getCurrentSubTexture();
+		SubTexture * getCurrentSubTexture();
 
 		/** @return The SubTexture Frame from the current sub frame */
-		DrawableResource * getSubTexture( const unsigned int& frame );
+		SubTexture * getSubTexture( const unsigned int& frame );
 
 		/** @return The SubTexture Frame from the SubFrame */
-		DrawableResource * getSubTexture( const unsigned int& frame, const unsigned int& SubFrame );
+		SubTexture * getSubTexture( const unsigned int& frame, const unsigned int& SubFrame );
 
 		/** Start playing from
 		** @param GoTo Frame that goes from 1 to Number of Frames
@@ -343,7 +343,7 @@ class EE_API Sprite : public Drawable {
 
 		class Frame {
 			public:
-				std::vector<DrawableResource *> Spr;
+				std::vector<SubTexture *> Spr;
 		};
 		std::vector<Frame> mFrames;
 

@@ -29,11 +29,11 @@ class EE_API TextureAtlasManager : public ResourceManager<TextureAtlas> {
 
 		/** It will search for a SubTexture Name in the texture atlases loaded.
 		*	@return The first SubTexture found with the given name in any atlas. */
-		DrawableResource * getSubTextureByName( const std::string& Name );
+		SubTexture * getSubTextureByName( const std::string& Name );
 
 		/** It will search for a SubTexture Id in the texture atlases loaded.
 		*	@return The first SubTexture found with the given id in any atlas. */
-		DrawableResource * getSubTextureById( const Uint32& Id );
+		SubTexture * getSubTextureById( const Uint32& Id );
 
 		/** Search for a pattern name
 		* For example search for name "car" with extensions "png", i will try to find car00.png car01.png car02.png, and so on, it will continue if find something, otherwise it will stop ( it will always search at least for car00.png and car01.png )
@@ -42,13 +42,13 @@ class EE_API TextureAtlasManager : public ResourceManager<TextureAtlas> {
 		* @param SearchInTextureAtlas If you want only to search in a especific atlas ( NULL if you want to search in all atlases )
 		* @note Texture atlases saves the SubTextures names without extension by default.
 		*/
-		std::vector<DrawableResource*> getSubTexturesByPattern( const std::string& name, const std::string& extension = "", TextureAtlas * SearchInTextureAtlas = NULL );
+		std::vector<SubTexture*> getSubTexturesByPattern( const std::string& name, const std::string& extension = "", TextureAtlas * SearchInTextureAtlas = NULL );
 
 		/** Search for a pattern id.
 		*	This will look for the SubTexture with the id passed, and it will try to find any pattern by the SubTexture name.
 		*	@see GetSubTexturesByPattern
 		*/
-		std::vector<DrawableResource*> getSubTexturesByPatternId( const Uint32& SubTextureId, const std::string& extension = "", TextureAtlas * SearchInTextureAtlas = NULL );
+		std::vector<SubTexture*> getSubTexturesByPatternId( const Uint32& SubTextureId, const std::string& extension = "", TextureAtlas * SearchInTextureAtlas = NULL );
 
 		/** Prints all the resources name to the screen. */
 		void printResources();

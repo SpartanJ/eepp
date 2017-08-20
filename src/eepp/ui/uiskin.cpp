@@ -92,7 +92,7 @@ const Uint32& UISkin::getType() const {
 	return mType;
 }
 
-Sizei UISkin::getBorderSize() {
+Rect UISkin::getBorderSize() {
 	return getBorderSize( UISkinState::StateNormal );
 }
 

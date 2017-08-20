@@ -229,14 +229,14 @@ Sizei UISkinComplex::getSize( const Uint32 & state ) {
 	return mSize[ state ];
 }
 
-Sizei UISkinComplex::getBorderSize(const Uint32 & state) {
+Rect UISkinComplex::getBorderSize(const Uint32 & state) {
 	return mBorderSize[ state ];
 }
 
 void UISkinComplex::cacheSize() {
 	for ( Int32 state = UISkinState::StateNormal; state < UISkinState::StateCount; state++ ) {
-		Int32 w = 0, bw = 0;
-		Int32 h = 0, bh = 0;
+		Int32 w = 0;
+		Int32 h = 0;
 
 		Drawable * tDrawable = mDrawable[ state ][ Center ];
 
@@ -249,32 +249,31 @@ void UISkinComplex::cacheSize() {
 
 		if ( NULL != tDrawable ) {
 			h += tDrawable->getSize().y;
-			bh += tDrawable->getSize().y;
+			mBorderSize[ state ].Top = tDrawable->getSize().y;
 		}
 
 		tDrawable = mDrawable[ state ][ Down ];
 
 		if ( NULL != tDrawable ) {
 			h += tDrawable->getSize().y;
-			bh += tDrawable->getSize().y;
+			mBorderSize[ state ].Bottom = tDrawable->getSize().y;
 		}
 
 		tDrawable = mDrawable[ state ][ Left ];
 
 		if ( NULL != tDrawable ) {
 			w += tDrawable->getSize().x;
-			bw += tDrawable->getSize().x;
+			mBorderSize[ state ].Left = tDrawable->getSize().x;
 		}
 
 		tDrawable = mDrawable[ state ][ Right ];
 
 		if ( NULL != tDrawable ) {
 			w += tDrawable->getSize().x;
-			bw += tDrawable->getSize().x;
+			mBorderSize[ state ].Right = tDrawable->getSize().x;
 		}
 
 		mSize[ state ] = Sizei( w, h );
-		mBorderSize[ state ] = Sizei( bw, bh );
 	}
 }
 

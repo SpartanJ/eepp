@@ -1,5 +1,6 @@
 #include <eepp/ui/uiskinsimple.hpp>
 #include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/ninepatch.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
 
 namespace EE { namespace UI {
@@ -82,8 +83,18 @@ Sizei UISkinSimple::getSize( const Uint32 & state ) {
 	return Sizei();
 }
 
-Sizei UISkinSimple::getBorderSize( const Uint32 & state ) {
-	return Sizei();
+Rect UISkinSimple::getBorderSize( const Uint32 & state ) {
+	if ( NULL != mDrawable[ state ] && mDrawable[ state ]->getDrawableType() == DRAWABLE_NINEPATCH ) {
+		NinePatch * ninePatch( static_cast<NinePatch*>( mDrawable[ state ] ) );
+		SubTexture * stl( ninePatch->getSubTexture( NinePatch::Left ) );
+		SubTexture * str( ninePatch->getSubTexture( NinePatch::Right ) );
+		SubTexture * stt( ninePatch->getSubTexture( NinePatch::Up ) );
+		SubTexture * stb( ninePatch->getSubTexture( NinePatch::Down ) );
+		Rect size( stl->getSize().getWidth(), stt->getSize().getHeight(), str->getSize().getWidth(), stb->getSize().getHeight() );
+		return size;
+	}
+
+	return Rect();
 }
 
 }}

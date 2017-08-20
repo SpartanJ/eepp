@@ -2,6 +2,7 @@
 #include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/sprite.hpp>
 
 namespace EE { namespace Graphics {
@@ -9,7 +10,7 @@ namespace EE { namespace Graphics {
 bool DrawableSearcher::sPrintWarnings = false;
 
 static Drawable * getSprite( const std::string& sprite ) {
-	std::vector<DrawableResource*> tSubTextureVec = TextureAtlasManager::instance()->getSubTexturesByPattern( sprite );
+	std::vector<SubTexture*> tSubTextureVec = TextureAtlasManager::instance()->getSubTexturesByPattern( sprite );
 
 	if ( tSubTextureVec.size() ) {
 		Sprite * tSprite = eeNew( Graphics::Sprite, () );
@@ -25,6 +26,10 @@ static Drawable * getSprite( const std::string& sprite ) {
 static Drawable * searchByNameInternal( const std::string& name ) {
 	Uint32 id = String::hash( name );
 	Drawable * drawable = TextureAtlasManager::instance()->getSubTextureById( id );
+
+	if ( NULL == drawable) {
+		drawable = NinePatchManager::instance()->getById( id );
+	}
 
 	if ( NULL == drawable ) {
 		drawable = TextureFactory::instance()->getByHash( id );
@@ -48,6 +53,8 @@ Drawable * DrawableSearcher::searchByName( const std::string& name ) {
 				drawable = getSprite( name.substr( 8 ) );
 			} else if ( String::startsWith( name, "@drawable/" ) ) {
 				drawable = searchByNameInternal( name.substr( 10 ) );
+			} else if ( String::startsWith( name, "@9p/" ) ) {
+				drawable = NinePatchManager::instance()->getByName( name.substr( 4 ) );
 			} else {
 				drawable = searchByNameInternal( name );
 			}

@@ -30,7 +30,7 @@ class EE_API UISkinSimple : public UISkin {
 
 		Sizei getSize( const Uint32& state );
 
-		Sizei getBorderSize( const Uint32 & state );
+		Rect getBorderSize( const Uint32 & state );
 	protected:
 		Drawable * 	mDrawable[ UISkinState::StateCount ];
 		Color		mTempColor;

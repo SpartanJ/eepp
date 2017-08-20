@@ -295,10 +295,9 @@ bool TextureAtlasLoader::updateTextureAtlas() {
 
 		for ( Int32 i = 0; i < tTexHdr->SubTextureCount; i++ ) {
 			sSubTextureHdr * tSh = &tTexAtlas->SubTextures[i];
-			DrawableResource * tDrawableResource =	mTextureAtlas->getById( tSh->ResourceID );
+			SubTexture * tSubTexture = mTextureAtlas->getById( tSh->ResourceID );
 
-			if ( NULL != tDrawableResource && tDrawableResource->getDrawableType() == DRAWABLE_SUBTEXTURE ) {
-				SubTexture * tSubTexture = static_cast<SubTexture*>( tDrawableResource );
+			if ( NULL != tSubTexture ) {
 				tSh->OffsetX = tSubTexture->getOffset().x;
 				tSh->OffsetY = tSubTexture->getOffset().x;
 				tSh->DestWidth = (Int32)tSubTexture->getDestSize().x;

@@ -36,21 +36,18 @@ class EE_API NinePatch : public DrawableResource {
 
 		virtual void draw( const Vector2f& position, const Sizef& size );
 
-		const Sizef& getDestSize() const;
-
-		void setDestSize( const Sizef& destSize );
-
-		const Vector2i& getOffset() const;
-
-		void setOffset( const Vector2i& offset );
+		SubTexture *	getSubTexture( const int& side );
 	protected:
-		Drawable * 	mDrawable[ SideCount ];
+		SubTexture * 	mDrawable[ SideCount ];
 		Rect mRect;
 		Sizei mSize;
-		Sizef mDestSize;
-		Vector2i mOffset;
+		Float mPixelDensity;
 
 		void createFromTexture( const Uint32& TexId, int left, int top, int right, int bottom );
+
+		virtual void onAlphaChange();
+
+		virtual void onColorFilterChange();
 };
 
 }}

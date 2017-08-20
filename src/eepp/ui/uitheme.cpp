@@ -9,6 +9,7 @@
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/ninepatch.hpp>
+#include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/system/filesystem.hpp>
 
 namespace EE { namespace UI {
@@ -59,27 +60,47 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 
 	tTheme->setTextureAtlas( TextureAtlas );
 
-	std::list<DrawableResource*>& resources = TextureAtlas->getResources();
-	std::list<DrawableResource*>::iterator it;
+	std::list<SubTexture*>& resources = TextureAtlas->getResources();
+	std::list<SubTexture*>::iterator it;
 	std::string sAbbr( tTheme->getAbbr() + "_" );
 	std::map<std::string, bool> elemFound;
 
 	for ( it = resources.begin(); it != resources.end(); it++ ) {
-		DrawableResource* subTexture = *it;
+		SubTexture* subTexture = *it;
 
 		std::string name( subTexture->getName() );
 
 		if ( String::startsWith( name, sAbbr ) ) {
-			std::vector<std::string> nameParts = String::split( name, '_' );
+			std::vector<std::string> dotParts = String::split( name, '.' );
 
-			if ( nameParts.size() >= 3 ) {
-				int lPart = nameParts.size() - 1;
-				int llPart = nameParts.size() - 2;
+			if ( dotParts.size() >= 3 && dotParts[ dotParts.size() - 1 ] == "9" ) {
+				std::vector<std::string> nameParts = String::split( dotParts[0], '_' );
 
-				if ( UISkin::isStateName( nameParts[ lPart ] ) ) {
-					elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
-				} else if ( UISkin::isStateName( nameParts[ llPart ] ) && UISkinComplex::isSideSuffix( nameParts[ lPart ] ) ) {
-					elemFound[ elemNameFromSkinComplex( nameParts ) ] = true;
+				std::vector<std::string> srcRect = String::split( dotParts[ dotParts.size() - 2 ], '_' );
+				int l = 0, t = 0, r = 0, b = 0;
+
+				if ( srcRect.size() == 4 ) {
+					String::fromString<int>( l, srcRect[0] );
+					String::fromString<int>( t, srcRect[1] );
+					String::fromString<int>( r, srcRect[2] );
+					String::fromString<int>( b, srcRect[3] );
+				}
+
+				elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
+
+				NinePatchManager::instance()->add( eeNew( NinePatch, ( subTexture, l, t, r, b, dotParts[0] ) ) );
+			} else {
+				std::vector<std::string> nameParts = String::split( name, '_' );
+
+				if ( nameParts.size() >= 3 ) {
+					int lPart = nameParts.size() - 1;
+					int llPart = nameParts.size() - 2;
+
+					if ( UISkin::isStateName( nameParts[ lPart ] ) ) {
+						elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
+					} else if ( UISkin::isStateName( nameParts[ llPart ] ) && UISkinComplex::isSideSuffix( nameParts[ lPart ] ) ) {
+						elemFound[ elemNameFromSkinComplex( nameParts ) ] = true;
+					}
 				}
 			}
 		}
@@ -130,19 +151,19 @@ UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path ) {
 				if ( dotParts.size() >= 3 && dotParts[ dotParts.size() - 1 ] == "9" ) {
 					std::vector<std::string> nameParts = String::split( dotParts[0], '_' );
 
-					std::string<std::string> srcRect = String::split( dotParts[ dotParts.size() - 2 ], '_' );
+					std::vector<std::string> srcRect = String::split( dotParts[ dotParts.size() - 2 ], '_' );
 					int l = 0, t = 0, r = 0, b = 0;
 
 					if ( srcRect.size() == 4 ) {
-						String::fromString<int>( &l, srcRect[0] );
-						String::fromString<int>( &t, srcRect[1] );
-						String::fromString<int>( &r, srcRect[2] );
-						String::fromString<int>( &b, srcRect[3] );
+						String::fromString<int>( l, srcRect[0] );
+						String::fromString<int>( t, srcRect[1] );
+						String::fromString<int>( r, srcRect[2] );
+						String::fromString<int>( b, srcRect[3] );
 					}
 
 					elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
 
-					tSG->add( eeNew( NinePatch, ( TextureFactory::instance()->loadFromFile( fpath ), l, t, r, b, name ) ) );
+					NinePatchManager::instance()->add( eeNew( NinePatch, ( TextureFactory::instance()->loadFromFile( fpath ), l, t, r, b, dotParts[0] ) ) );
 				} else {
 					std::vector<std::string> nameParts = String::split( name, '_' );
 

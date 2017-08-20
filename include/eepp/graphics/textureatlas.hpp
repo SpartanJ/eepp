@@ -9,28 +9,28 @@ namespace EE { namespace Graphics {
 /** @brief The texture atlas class represents a large image containing a collection of sub-images, or "atlas" which contains many smaller sub-images.
 * The texture atlas in eepp can represent more than one texture or image, but the common use should be a image with sub-images.
 * More information about Texture Atlases: http://en.wikipedia.org/wiki/Texture_atlas */
-class EE_API TextureAtlas : public ResourceManager<DrawableResource> {
+class EE_API TextureAtlas : public ResourceManager<SubTexture> {
 	public:
 		/** Creates a new texture atlas with the given name. */
 		TextureAtlas( const std::string& name = "" );
 
 		~TextureAtlas();
 
-		/** Adds a Drawable Resource to the Texture Atlas */
-		DrawableResource * add( DrawableResource * drawableResource );
+		/** Adds a SubTexture to the Texture Atlas */
+		SubTexture * add( SubTexture * subTexture );
 
 		/** Creates and add to the texture atlas a SubTexture from a Texture. It will use the full Texture as a SubTexture.
 		*	@param TexId The texture id
 		*	@param Name The texture name ( if any )
 		*/
-		DrawableResource * add( const Uint32& TexId, const std::string& Name = "" );
+		SubTexture * add( const Uint32& TexId, const std::string& Name = "" );
 
 		/** Creates and add to the texture atlas a SubTexture of the indicated part of the texture.
 		*	@param TexId The texture id
 		*	@param SrcRect The texture part that will be used as the SubTexture.
 		*	@param Name The texture name ( if any )
 		*/
-		DrawableResource * add( const Uint32& TexId, const Rect& SrcRect, const std::string& Name = "" );
+		SubTexture * add( const Uint32& TexId, const Rect& SrcRect, const std::string& Name = "" );
 
 		/** Creates and add to the texture atlas a SubTexture of the indicated part of the texture.
 		*	@param TexId The texture id
@@ -38,7 +38,7 @@ class EE_API TextureAtlas : public ResourceManager<DrawableResource> {
 		*	@param DestSize The destination size that the SubTexture will have when rendered.
 		*	@param Name The texture name ( if any )
 		*/
-		DrawableResource * add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& Name = "" );
+		SubTexture * add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& Name = "" );
 
 		/** Creates and add to the texture atlas a SubTexture of the indicated part of the texture.
 		*	@param TexId The texture id
@@ -47,7 +47,7 @@ class EE_API TextureAtlas : public ResourceManager<DrawableResource> {
 		*	@param Offset The offset that will be added to the position passed when any Draw call is used.
 		*	@param Name The texture name ( if any )
 		*/
-		DrawableResource * add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i& Offset, const std::string& Name = "" );
+		SubTexture * add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i& Offset, const std::string& Name = "" );
 
 		/** @return The texture atlas name. */
 		const std::string& getName() const;
@@ -63,7 +63,7 @@ class EE_API TextureAtlas : public ResourceManager<DrawableResource> {
 
 		/** @return The texture atlas Id. The Id is the String::hash of the texture atlas name. */
 		const Uint32& getId() const;
-
+		
 		/** @return The number of SubTextures inside the texture atlas. */
 		Uint32 getCount();
 

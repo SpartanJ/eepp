@@ -54,9 +54,9 @@ class EE_API UISkin {
 
 		const Uint32& getType() const;
 
-		virtual Sizei getBorderSize( const Uint32 & state ) = 0;
+		virtual Rect getBorderSize( const Uint32 & state ) = 0;
 
-		virtual Sizei getBorderSize();
+		virtual Rect getBorderSize();
 	protected:
 		friend class UIControl;
 		friend class UISkinState;
