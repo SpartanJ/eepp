@@ -70,19 +70,44 @@ void NinePatch::draw() {
 }
 
 void NinePatch::draw( const Vector2f& position ) {
-	draw( position, getSize() );
+	draw( position, mDestSize );
 }
 
 void NinePatch::draw( const Vector2f& position, const Sizef& size ) {
-	mDrawable[ UpLeft ]->draw( position );
-	mDrawable[ Left ]->draw( Vector2f( position.x, position.y + mRect.Top ), Sizef( mRect.Left, size.getHeight() - mRect.Top - mRect.Bottom ) );
-	mDrawable[ DownLeft ]->draw( Vector2f( position.x, position.y + size.getHeight() - mRect.Bottom ) );
-	mDrawable[ Up ]->draw( Vector2f( position.x + mRect.Left, position.y ), Sizef( size.getWidth() - mRect.Left - mRect.Right, mRect.Top ) );
-	mDrawable[ Center ]->draw( Vector2f( position.x + mRect.Left, position.y + mRect.Top ), Sizef( size.getWidth() - mRect.Left - mRect.Right, size.getHeight() - mRect.Top - mRect.Bottom ) );
-	mDrawable[ Down ]->draw( Vector2f( position.x + mRect.Left, position.y + size.getHeight() - mRect.Bottom ), Sizef( size.getWidth() - mRect.Left - mRect.Right, mRect.Bottom ) );
-	mDrawable[ UpRight ]->draw( Vector2f( position.x + size.getWidth() - mRect.Right, position.y ) );
-	mDrawable[ Right ]->draw( Vector2f( position.x + size.getWidth() - mRect.Right, position.y + mRect.Top ), Vector2f( mRect.Right, size.getHeight() - mRect.Top - mRect.Bottom ) );
-	mDrawable[ DownRight ]->draw( Vector2f( position.x + size.getWidth() - mRect.Right, position.y + size.getHeight() - mRect.Bottom ) );
+	if ( size != mDestSize ) {
+		mDestSize = size;
+
+		mDrawable[ UpLeft ]->setDestSize( Sizef( mRectf.Left, mRectf.Top ) );
+		mDrawable[ Left ]->setDestSize( Sizef( mRectf.Left, size.getHeight() - mRectf.Top - mRectf.Bottom ) );
+		mDrawable[ DownLeft ]->setDestSize( Sizef( mRectf.Left, mRectf.Bottom ) );
+		mDrawable[ Up ]->setDestSize( Sizef( size.getWidth() - mRectf.Left - mRectf.Right, mRectf.Top ) );
+		mDrawable[ Center ]->setDestSize( Sizef( size.getWidth() - mRectf.Left - mRectf.Right, size.getHeight() - mRectf.Top - mRectf.Bottom ) );
+		mDrawable[ Down ]->setDestSize( Sizef( size.getWidth() - mRectf.Left - mRectf.Right, mRectf.Bottom ) );
+		mDrawable[ UpRight ]->setDestSize( Sizef( mRectf.Right, mRectf.Top ) );
+		mDrawable[ Right ]->setDestSize( Sizef( mRectf.Right, size.getHeight() - mRectf.Top - mRectf.Bottom ) );
+		mDrawable[ DownRight ]->setDestSize( Sizef( mRectf.Right, mRectf.Bottom ) );
+	}
+
+	if ( position != mPosition ) {
+		mPosition = position;
+
+		mDrawable[ UpLeft ]->setPosition( position );
+		mDrawable[ Left ]->setPosition( Vector2f( position.x, position.y + mRectf.Top ) );
+		mDrawable[ DownLeft ]->setPosition( Vector2f( position.x, position.y + size.getHeight() - mRectf.Bottom ) );
+		mDrawable[ Up ]->setPosition( Vector2f( position.x + mRectf.Left, position.y ) );
+		mDrawable[ Center ]->setPosition( Vector2f( position.x + mRectf.Left, position.y + mRectf.Top ) );
+		mDrawable[ Down ]->setPosition( Vector2f( position.x + mRectf.Left, position.y + size.getHeight() - mRectf.Bottom ) );
+		mDrawable[ UpRight ]->setPosition( Vector2f( position.x + size.getWidth() - mRectf.Right, position.y ) );
+		mDrawable[ Right ]->setPosition( Vector2f( position.x + size.getWidth() - mRectf.Right, position.y + mRectf.Top ) );
+		mDrawable[ DownRight ]->setPosition( Vector2f( position.x + size.getWidth() - mRectf.Right, position.y + size.getHeight() - mRectf.Bottom ) );
+	}
+
+	for ( Int32 i = 0; i < SideCount; i++ ) {
+		Sizef destSize( mDrawable[i]->getDestSize() );
+
+		if ( destSize.getWidth() > 0 && destSize.getHeight() > 0 )
+			mDrawable[ i ]->draw();
+	}
 }
 
 SubTexture * NinePatch::getSubTexture( const int& side ) {
@@ -101,6 +126,16 @@ void NinePatch::createFromTexture(const Uint32 & TexId, int left, int top, int r
 	mDrawable[ DownLeft] = eeNew( SubTexture, ( TexId, Rect( 0, mSize.getHeight() - bottom, left, mSize.getHeight() ) ) );
 	mDrawable[ DownRight ] = eeNew( SubTexture, ( TexId, Rect( mSize.getWidth() - right, mSize.getHeight() - bottom, mSize.getWidth(), mSize.getHeight() ) ) );
 	mDrawable[ Center ] = eeNew( SubTexture, ( TexId, Rect( left, top, mSize.getWidth() - right, mSize.getHeight() - bottom ) ) );
+
+	mRect = Rect( left, top, right, bottom );
+
+	mRectf = Rectf( eeceil( mRect.Left / mPixelDensity * PixelDensity::getPixelDensity() ),
+				eeceil( mRect.Top / mPixelDensity * PixelDensity::getPixelDensity() ),
+				eeceil( mRect.Right / mPixelDensity * PixelDensity::getPixelDensity() ),
+				eeceil( mRect.Bottom / mPixelDensity * PixelDensity::getPixelDensity() )
+	);
+
+	mDestSize = getSize();
 }
 
 void NinePatch::onAlphaChange() {

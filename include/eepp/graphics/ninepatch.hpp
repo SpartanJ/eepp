@@ -40,7 +40,10 @@ class EE_API NinePatch : public DrawableResource {
 	protected:
 		SubTexture * 	mDrawable[ SideCount ];
 		Rect mRect;
+		Rectf mRectf;
 		Sizei mSize;
+		Sizef mDestSize;
+
 		Float mPixelDensity;
 
 		void createFromTexture( const Uint32& TexId, int left, int top, int right, int bottom );
