@@ -51,6 +51,10 @@ class EE_API NinePatch : public DrawableResource {
 		virtual void onAlphaChange();
 
 		virtual void onColorFilterChange();
+
+		void updatePosition();
+
+		void updateSize();
 };
 
 }}

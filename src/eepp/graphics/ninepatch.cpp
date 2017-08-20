@@ -74,32 +74,17 @@ void NinePatch::draw( const Vector2f& position ) {
 }
 
 void NinePatch::draw( const Vector2f& position, const Sizef& size ) {
-	if ( size != mDestSize ) {
-		mDestSize = size;
+	bool sizeChanged = false;
 
-		mDrawable[ UpLeft ]->setDestSize( Sizef( mRectf.Left, mRectf.Top ) );
-		mDrawable[ Left ]->setDestSize( Sizef( mRectf.Left, size.getHeight() - mRectf.Top - mRectf.Bottom ) );
-		mDrawable[ DownLeft ]->setDestSize( Sizef( mRectf.Left, mRectf.Bottom ) );
-		mDrawable[ Up ]->setDestSize( Sizef( size.getWidth() - mRectf.Left - mRectf.Right, mRectf.Top ) );
-		mDrawable[ Center ]->setDestSize( Sizef( size.getWidth() - mRectf.Left - mRectf.Right, size.getHeight() - mRectf.Top - mRectf.Bottom ) );
-		mDrawable[ Down ]->setDestSize( Sizef( size.getWidth() - mRectf.Left - mRectf.Right, mRectf.Bottom ) );
-		mDrawable[ UpRight ]->setDestSize( Sizef( mRectf.Right, mRectf.Top ) );
-		mDrawable[ Right ]->setDestSize( Sizef( mRectf.Right, size.getHeight() - mRectf.Top - mRectf.Bottom ) );
-		mDrawable[ DownRight ]->setDestSize( Sizef( mRectf.Right, mRectf.Bottom ) );
+	if ( size != mDestSize ) {
+		sizeChanged = true;
+		mDestSize = size;
+		updateSize();
 	}
 
-	if ( position != mPosition ) {
+	if ( position != mPosition || sizeChanged ) {
 		mPosition = position;
-
-		mDrawable[ UpLeft ]->setPosition( position );
-		mDrawable[ Left ]->setPosition( Vector2f( position.x, position.y + mRectf.Top ) );
-		mDrawable[ DownLeft ]->setPosition( Vector2f( position.x, position.y + size.getHeight() - mRectf.Bottom ) );
-		mDrawable[ Up ]->setPosition( Vector2f( position.x + mRectf.Left, position.y ) );
-		mDrawable[ Center ]->setPosition( Vector2f( position.x + mRectf.Left, position.y + mRectf.Top ) );
-		mDrawable[ Down ]->setPosition( Vector2f( position.x + mRectf.Left, position.y + size.getHeight() - mRectf.Bottom ) );
-		mDrawable[ UpRight ]->setPosition( Vector2f( position.x + size.getWidth() - mRectf.Right, position.y ) );
-		mDrawable[ Right ]->setPosition( Vector2f( position.x + size.getWidth() - mRectf.Right, position.y + mRectf.Top ) );
-		mDrawable[ DownRight ]->setPosition( Vector2f( position.x + size.getWidth() - mRectf.Right, position.y + size.getHeight() - mRectf.Bottom ) );
+		updatePosition();
 	}
 
 	for ( Int32 i = 0; i < SideCount; i++ ) {
@@ -136,6 +121,9 @@ void NinePatch::createFromTexture(const Uint32 & TexId, int left, int top, int r
 	);
 
 	mDestSize = getSize();
+
+	updatePosition();
+	updateSize();
 }
 
 void NinePatch::onAlphaChange() {
@@ -146,6 +134,30 @@ void NinePatch::onAlphaChange() {
 void NinePatch::onColorFilterChange() {
 	for ( Int32 i = 0; i < SideCount; i++ )
 		mDrawable[ i ]->setColor( mColor );
+}
+
+void NinePatch::updateSize() {
+	mDrawable[ UpLeft ]->setDestSize( Sizef( mRectf.Left, mRectf.Top ) );
+	mDrawable[ Left ]->setDestSize( Sizef( mRectf.Left, mDestSize.getHeight() - mRectf.Top - mRectf.Bottom ) );
+	mDrawable[ DownLeft ]->setDestSize( Sizef( mRectf.Left, mRectf.Bottom ) );
+	mDrawable[ Up ]->setDestSize( Sizef( mDestSize.getWidth() - mRectf.Left - mRectf.Right, mRectf.Top ) );
+	mDrawable[ Center ]->setDestSize( Sizef( mDestSize.getWidth() - mRectf.Left - mRectf.Right, mDestSize.getHeight() - mRectf.Top - mRectf.Bottom ) );
+	mDrawable[ Down ]->setDestSize( Sizef( mDestSize.getWidth() - mRectf.Left - mRectf.Right, mRectf.Bottom ) );
+	mDrawable[ UpRight ]->setDestSize( Sizef( mRectf.Right, mRectf.Top ) );
+	mDrawable[ Right ]->setDestSize( Sizef( mRectf.Right, mDestSize.getHeight() - mRectf.Top - mRectf.Bottom ) );
+	mDrawable[ DownRight ]->setDestSize( Sizef( mRectf.Right, mRectf.Bottom ) );
+}
+
+void NinePatch::updatePosition() {
+	mDrawable[ UpLeft ]->setPosition( mPosition );
+	mDrawable[ Left ]->setPosition( Vector2f( mPosition.x, mPosition.y + mRectf.Top ) );
+	mDrawable[ DownLeft ]->setPosition( Vector2f( mPosition.x, mPosition.y + mDestSize.getHeight() - mRectf.Bottom ) );
+	mDrawable[ Up ]->setPosition( Vector2f( mPosition.x + mRectf.Left, mPosition.y ) );
+	mDrawable[ Center ]->setPosition( Vector2f( mPosition.x + mRectf.Left, mPosition.y + mRectf.Top ) );
+	mDrawable[ Down ]->setPosition( Vector2f( mPosition.x + mRectf.Left, mPosition.y + mDestSize.getHeight() - mRectf.Bottom ) );
+	mDrawable[ UpRight ]->setPosition( Vector2f( mPosition.x + mDestSize.getWidth() - mRectf.Right, mPosition.y ) );
+	mDrawable[ Right ]->setPosition( Vector2f( mPosition.x + mDestSize.getWidth() - mRectf.Right, mPosition.y + mRectf.Top ) );
+	mDrawable[ DownRight ]->setPosition( Vector2f( mPosition.x + mDestSize.getWidth() - mRectf.Right, mPosition.y + mDestSize.getHeight() - mRectf.Bottom ) );
 }
 
 }}
