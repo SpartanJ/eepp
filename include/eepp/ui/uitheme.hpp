@@ -27,11 +27,11 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		static UITheme * loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtlas * getTextureAtlas );
 
-		static UITheme * loadFromFile( UITheme * tTheme, const std::string& Path );
+		static UITheme * loadFromFile( UITheme * tTheme, const std::string& Path, const Float& pixelDensity = 1 );
 
 		static UITheme * loadFromTextureAtlas( Graphics::TextureAtlas * getTextureAtlas, const std::string& Name, const std::string NameAbbr );
 
-		static UITheme * loadFromFile( const std::string& Path, const std::string& Name, const std::string& NameAbbr );
+		static UITheme * loadFromFile( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const Float& pixelDensity = 1 );
 
 		void addThemeElement( const std::string& Element );
 

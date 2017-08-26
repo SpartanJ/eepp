@@ -3,10 +3,10 @@
 
 namespace EE { namespace Graphics {
 
-NinePatch::NinePatch( const Uint32& TexId, int left, int top, int right, int bottom, const std::string& name ) :
+NinePatch::NinePatch(const Uint32& TexId, int left, int top, int right, int bottom, const Float & pixelDensity, const std::string& name ) :
 	DrawableResource( DRAWABLE_NINEPATCH, name ),
 	mRect( left, top, right, bottom ),
-	mPixelDensity(1)
+	mPixelDensity( pixelDensity )
 {
 	for ( Int32 i = 0; i < SideCount; i++ )
 		mDrawable[ i ] = NULL;

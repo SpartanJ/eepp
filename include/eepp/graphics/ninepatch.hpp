@@ -22,7 +22,7 @@ class EE_API NinePatch : public DrawableResource {
 			SideCount
 		};
 
-		NinePatch( const Uint32& TexId, int left, int top, int right, int bottom, const std::string& name = "" );
+		NinePatch( const Uint32& TexId, int left, int top, int right, int bottom, const Float& pixelDensity = 1, const std::string& name = "" );
 		
 		NinePatch( SubTexture * subTexture, int left, int top, int right, int bottom, const std::string& name = "" );
 
@@ -43,7 +43,6 @@ class EE_API NinePatch : public DrawableResource {
 		Rectf mRectf;
 		Sizei mSize;
 		Sizef mDestSize;
-
 		Float mPixelDensity;
 
 		void createFromTexture( const Uint32& TexId, int left, int top, int right, int bottom );

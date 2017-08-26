@@ -93,6 +93,40 @@ std::vector < std::string > String::split ( const std::string& str, const Int8& 
 	return tmp;
 }
 
+std::string String::join( const std::vector<std::string> & strArray, const Int8 & joinchar, const bool& appendLastJoinChar ) {
+	size_t s = strArray.size();
+	std::string str;
+
+	if ( s > 0 ) {
+		for ( size_t i = 0; i < s; i++ ) {
+			str += strArray[i];
+
+			if ( i != s - 1 || appendLastJoinChar ) {
+				str += joinchar;
+			}
+		}
+	}
+
+	return str;
+}
+
+String String::join( const std::vector<String> & strArray, const Int8 & joinchar, const bool& appendLastJoinChar ) {
+	size_t s = strArray.size();
+	String str;
+
+	if ( s > 0 ) {
+		for ( size_t i = 0; i < s; i++ ) {
+			str += strArray[i];
+
+			if ( i != s - 1 || appendLastJoinChar ) {
+				str += joinchar;
+			}
+		}
+	}
+
+	return str;
+}
+
 std::string String::lTrim(const std::string & str , char character) {
 	std::string::size_type pos1 = str.find_first_not_of(character);
 	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );

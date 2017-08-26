@@ -81,6 +81,12 @@ class EE_API String {
 	/** Split a string and hold it on a vector */
 	static std::vector < std::string > split( const std::string& str, const Int8& splitchar = '\n', const bool& pushEmptyString = false );
 
+	/** Joins a string vector into a single string */
+	static std::string join( const std::vector<std::string>& strArray, const Int8& joinchar = ' ', const bool& appendLastJoinChar = false );
+
+	/** Joins a string vector into a single string */
+	static String join( const std::vector<String>& strArray, const Int8& joinchar = ' ', const bool& appendLastJoinChar = false );
+
 	/** Remove the first space ( or the specified character ) on the string */
 	static std::string lTrim( const std::string & str, char character = ' ' );
 

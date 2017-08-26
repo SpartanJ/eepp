@@ -128,7 +128,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 	return tTheme;
 }
 
-UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path ) {
+UITheme * UITheme::loadFromFile(UITheme * tTheme, const std::string& Path , const Float & pixelDensity ) {
 	Clock TE;
 
 	std::string RPath( Path );
@@ -183,7 +183,7 @@ UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path ) {
 
 					elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
 
-					NinePatchManager::instance()->add( eeNew( NinePatch, ( TextureFactory::instance()->loadFromFile( fpath ), l, t, r, b, realName ) ) );
+					NinePatchManager::instance()->add( eeNew( NinePatch, ( TextureFactory::instance()->loadFromFile( fpath ), l, t, r, b, pixelDensity, realName ) ) );
 				} else {
 					std::vector<std::string> nameParts = String::split( name, '_' );
 
@@ -223,8 +223,8 @@ UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path ) {
 	return tTheme;
 }
 
-UITheme * UITheme::loadFromFile( const std::string& Path, const std::string& Name, const std::string& NameAbbr ) {
-	return loadFromFile( UITheme::New( Name, NameAbbr ), Path );
+UITheme * UITheme::loadFromFile( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const Float& pixelDensity ) {
+	return loadFromFile( UITheme::New( Name, NameAbbr ), Path, pixelDensity );
 }
 
 UITheme * UITheme::loadFromTextureAtlas( Graphics::TextureAtlas * TextureAtlas, const std::string& Name, const std::string NameAbbr ) {
