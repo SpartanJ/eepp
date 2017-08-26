@@ -78,7 +78,7 @@ void UIPushButton::onSizeChange() {
 		Int32 txtW = NULL != mTextBox ? PixelDensity::pxToDpI( mTextBox->getTextWidth() ) : 0;
 		Int32 minSize = txtW + ( NULL != mIcon ? mIcon->getSize().getWidth() : 0 )
 						+ mStyleConfig.IconHorizontalMargin + mTextBox->getPadding().Left + mTextBox->getPadding().Right +
-						(  NULL != getSkin() ? getSkin()->getBorderSize().getWidth() : 0 );
+						(  NULL != getSkin() ? getSkin()->getBorderSize().Left + getSkin()->getBorderSize().Right : 0 );
 
 		if ( minSize > mSize.getWidth() ) {
 			setInternalWidth( minSize );

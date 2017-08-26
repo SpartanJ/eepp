@@ -6,6 +6,7 @@
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/shaderprogrammanager.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
+#include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/framebuffermanager.hpp>
 #include <eepp/graphics/vertexbuffermanager.hpp>
 #include <eepp/ui/uimanager.hpp>
@@ -49,6 +50,8 @@ Engine::~Engine() {
 	GlobalBatchRenderer::destroySingleton();
 
 	TextureAtlasManager::destroySingleton();
+
+	NinePatchManager::destroySingleton();
 
 	FontManager::destroySingleton();
 

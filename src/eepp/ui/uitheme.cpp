@@ -8,6 +8,8 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
+#include <eepp/graphics/ninepatch.hpp>
+#include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/system/filesystem.hpp>
 
 namespace EE { namespace UI {
@@ -69,16 +71,46 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 		std::string name( subTexture->getName() );
 
 		if ( String::startsWith( name, sAbbr ) ) {
-			std::vector<std::string> nameParts = String::split( name, '_' );
+			std::vector<std::string> dotParts = String::split( name, '.' );
 
-			if ( nameParts.size() >= 3 ) {
-				int lPart = nameParts.size() - 1;
-				int llPart = nameParts.size() - 2;
+			if ( dotParts.size() >= 3 && dotParts[ dotParts.size() - 1 ] == "9" ) {
+				std::string realName;
 
-				if ( UISkin::isStateName( nameParts[ lPart ] ) ) {
-					elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
-				} else if ( UISkin::isStateName( nameParts[ llPart ] ) && UISkinComplex::isSideSuffix( nameParts[ lPart ] ) ) {
-					elemFound[ elemNameFromSkinComplex( nameParts ) ] = true;
+				for ( size_t i = 0; i <  dotParts.size() - 2; i++ ) {
+					realName += dotParts[i];
+
+					if ( i != dotParts.size() - 3 ) {
+						realName += ".";
+					}
+				}
+
+				std::vector<std::string> nameParts = String::split( realName, '_' );
+
+				std::vector<std::string> srcRect = String::split( dotParts[ dotParts.size() - 2 ], '_' );
+				int l = 0, t = 0, r = 0, b = 0;
+
+				if ( srcRect.size() == 4 ) {
+					String::fromString<int>( l, srcRect[0] );
+					String::fromString<int>( t, srcRect[1] );
+					String::fromString<int>( r, srcRect[2] );
+					String::fromString<int>( b, srcRect[3] );
+				}
+
+				elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
+
+				NinePatchManager::instance()->add( eeNew( NinePatch, ( subTexture, l, t, r, b, realName ) ) );
+			} else {
+				std::vector<std::string> nameParts = String::split( name, '_' );
+
+				if ( nameParts.size() >= 3 ) {
+					int lPart = nameParts.size() - 1;
+					int llPart = nameParts.size() - 2;
+
+					if ( UISkin::isStateName( nameParts[ lPart ] ) ) {
+						elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
+					} else if ( UISkin::isStateName( nameParts[ llPart ] ) && UISkinComplex::isSideSuffix( nameParts[ lPart ] ) ) {
+						elemFound[ elemNameFromSkinComplex( nameParts ) ] = true;
+					}
 				}
 			}
 		}
@@ -96,7 +128,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 	return tTheme;
 }
 
-UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path ) {
+UITheme * UITheme::loadFromFile(UITheme * tTheme, const std::string& Path , const Float & pixelDensity ) {
 	Clock TE;
 
 	std::string RPath( Path );
@@ -124,20 +156,50 @@ UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path ) {
 			if ( String::startsWith( name, sAbbrIcon ) ) {
 				tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
 			} else if ( String::startsWith( name, sAbbr ) ) {
-				std::vector<std::string> nameParts = String::split( name, '_' );
+				std::vector<std::string> dotParts = String::split( name, '.' );
 
-				if ( nameParts.size() >= 3 ) {
-					int lPart = nameParts.size() - 1;
-					int llPart = nameParts.size() - 2;
+				if ( dotParts.size() >= 3 && dotParts[ dotParts.size() - 1 ] == "9" ) {
+					std::string realName;
 
-					if ( UISkin::isStateName( nameParts[ lPart ] ) ) {
-						elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
+					for ( size_t i = 0; i <  dotParts.size() - 2; i++ ) {
+						realName += dotParts[i];
 
-						tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
-					} else if ( UISkin::isStateName( nameParts[ llPart ] ) && UISkinComplex::isSideSuffix( nameParts[ lPart ] ) ) {
-						elemFound[ elemNameFromSkinComplex( nameParts ) ] = true;
+						if ( i != dotParts.size() - 3 ) {
+							realName += ".";
+						}
+					}
 
-						tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
+					std::vector<std::string> nameParts = String::split( realName, '_' );
+
+					std::vector<std::string> srcRect = String::split( dotParts[ dotParts.size() - 2 ], '_' );
+					int l = 0, t = 0, r = 0, b = 0;
+
+					if ( srcRect.size() == 4 ) {
+						String::fromString<int>( l, srcRect[0] );
+						String::fromString<int>( t, srcRect[1] );
+						String::fromString<int>( r, srcRect[2] );
+						String::fromString<int>( b, srcRect[3] );
+					}
+
+					elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
+
+					NinePatchManager::instance()->add( eeNew( NinePatch, ( TextureFactory::instance()->loadFromFile( fpath ), l, t, r, b, pixelDensity, realName ) ) );
+				} else {
+					std::vector<std::string> nameParts = String::split( name, '_' );
+
+					if ( nameParts.size() >= 3 ) {
+						int lPart = nameParts.size() - 1;
+						int llPart = nameParts.size() - 2;
+
+						if ( UISkin::isStateName( nameParts[ lPart ] ) ) {
+							elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
+
+							tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
+						} else if ( UISkin::isStateName( nameParts[ llPart ] ) && UISkinComplex::isSideSuffix( nameParts[ lPart ] ) ) {
+							elemFound[ elemNameFromSkinComplex( nameParts ) ] = true;
+
+							tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
+						}
 					}
 				}
 			}
@@ -161,8 +223,8 @@ UITheme * UITheme::loadFromFile( UITheme * tTheme, const std::string& Path ) {
 	return tTheme;
 }
 
-UITheme * UITheme::loadFromFile( const std::string& Path, const std::string& Name, const std::string& NameAbbr ) {
-	return loadFromFile( UITheme::New( Name, NameAbbr ), Path );
+UITheme * UITheme::loadFromFile( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const Float& pixelDensity ) {
+	return loadFromFile( UITheme::New( Name, NameAbbr ), Path, pixelDensity );
 }
 
 UITheme * UITheme::loadFromTextureAtlas( Graphics::TextureAtlas * TextureAtlas, const std::string& Name, const std::string NameAbbr ) {

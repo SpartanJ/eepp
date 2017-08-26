@@ -170,7 +170,11 @@ void EETest::createUIThemeTextureAtlas() {
 	std::string Path( MyPath + "ui/" + mThemeName );
 
 	if ( !FileSystem::fileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
-		TexturePacker tp( 512, 512, mThemeName.find_first_of( "2x" ) != std::string::npos ? PD_XHDPI : ( mThemeName.find_first_of( "1.5x" ) != std::string::npos ? PD_HDPI : PD_MDPI ), true, 2 );
+		EE_PIXEL_DENSITY PD = PD_MDPI;
+		if ( mThemeName.find( "2x" ) != std::string::npos ) PD = PD_XHDPI;
+		else if  ( mThemeName.find( "1.5x" ) != std::string::npos ) PD = PD_HDPI;
+
+		TexturePacker tp( 2048, 2048, PD, true, 2 );
 		tp.addTexturesPath( Path );
 		tp.packTextures();
 		tp.save( tgpath + ".png", SAVE_TYPE_PNG );
@@ -279,8 +283,10 @@ void EETest::createUI() {
 
 	mThemeName = "uitheme";
 
-	if ( PixelDensity::getPixelDensity() >= 1.1 ) {
-		mThemeName += "2x";
+	if ( PixelDensity::getPixelDensity() > 1.5 ) {
+		mThemeName = "uitheme2x";
+	} else if ( PixelDensity::getPixelDensity() >= 1.1 ) {
+		mThemeName = "uitheme1.5x";
 	}
 
 	createUIThemeTextureAtlas();
@@ -296,7 +302,6 @@ void EETest::createUI() {
 	//mTheme = UITheme::loadFromFile( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
 
 	TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
-
 	mTheme = UITheme::loadFromTextureAtlas( UIThemeDefault::New( mThemeName, mThemeName ), TextureAtlasManager::instance()->getByName( mThemeName ) );
 
 	UIThemeManager::instance()->add( mTheme );
@@ -482,7 +487,7 @@ void EETest::createUI() {
 
 	C = reinterpret_cast<UIControlAnim*> ( C->getParent() );
 
-	createNewUI();
+	//createNewUI();
 
 #ifdef EE_PLATFORM_TOUCH
 	TextureAtlas * SG = GlobalTextureAtlas::instance();

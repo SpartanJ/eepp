@@ -49,12 +49,12 @@ class EE_API UISkinComplex : public UISkin {
 
 		Sizei getSize( const Uint32& state );
 
-		Sizei getBorderSize( const Uint32 &state );
+		Rect getBorderSize( const Uint32 &state );
 	protected:
 		Drawable * 	mDrawable[ UISkinState::StateCount ][ SideCount ];
 		Color		mTempColor;
 		Sizei		mSize[ UISkinState::StateCount ];
-		Sizei		mBorderSize[ UISkinState::StateCount ];
+		Rect		mBorderSize[ UISkinState::StateCount ];
 
 		void cacheSize();
 

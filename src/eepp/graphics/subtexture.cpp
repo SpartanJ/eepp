@@ -10,10 +10,9 @@ using namespace EE::Graphics::Private;
 namespace EE { namespace Graphics {
 
 SubTexture::SubTexture() :
-	Drawable( DRAWABLE_SUBTEXTURE ),
+	DrawableResource( DRAWABLE_SUBTEXTURE ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
-	mId(0),
 	mTexId(0),
 	mTexture(NULL),
 	mSrcRect( Rect(0,0,0,0) ),
@@ -22,15 +21,12 @@ SubTexture::SubTexture() :
 	mOffset(0,0),
 	mPixelDensity(1)
 {
-	createUnnamed();
 }
 
 SubTexture::SubTexture( const Uint32& TexId, const std::string& name ) :
-	Drawable( DRAWABLE_SUBTEXTURE ),
+	DrawableResource( DRAWABLE_SUBTEXTURE, name ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
-	mName( name ),
-	mId( String::hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect( Rect( 0, 0, NULL != mTexture ? mTexture->getImageWidth() : 0, NULL != mTexture ? mTexture->getImageHeight() : 0 ) ),
@@ -39,15 +35,12 @@ SubTexture::SubTexture( const Uint32& TexId, const std::string& name ) :
 	mOffset(0,0),
 	mPixelDensity(1)
 {
-	createUnnamed();
 }
 
 SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const std::string& name ) :
-	Drawable( DRAWABLE_SUBTEXTURE ),
+	DrawableResource( DRAWABLE_SUBTEXTURE, name ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
-	mName( name ),
-	mId( String::hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect( SrcRect ),
@@ -56,15 +49,12 @@ SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const std::str
 	mOffset(0,0),
 	mPixelDensity(1)
 {
-	createUnnamed();
 }
 
 SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& name ) :
-	Drawable( DRAWABLE_SUBTEXTURE ),
+	DrawableResource( DRAWABLE_SUBTEXTURE, name ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
-	mName( name ),
-	mId( String::hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect(SrcRect),
@@ -73,15 +63,12 @@ SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const Sizef& D
 	mOffset(0,0),
 	mPixelDensity(1)
 {
-	createUnnamed();
 }
 
 SubTexture::SubTexture(const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i &Offset, const std::string& name ) :
-	Drawable( DRAWABLE_SUBTEXTURE ),
+	DrawableResource( DRAWABLE_SUBTEXTURE, name ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
-	mName( name ),
-	mId( String::hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect(SrcRect),
@@ -90,29 +77,10 @@ SubTexture::SubTexture(const Uint32& TexId, const Rect& SrcRect, const Sizef& De
 	mOffset(Offset),
 	mPixelDensity(1)
 {
-	createUnnamed();
 }
 
 SubTexture::~SubTexture() {
 	clearCache();
-}
-
-void SubTexture::createUnnamed() {
-	if ( !mName.size() )
-		setName( std::string( "unnamed" ) );
-}
-
-const Uint32& SubTexture::getId() const {
-	return mId;
-}
-
-const std::string SubTexture::getName() const {
-	return mName;
-}
-
-void SubTexture::setName( const std::string& name ) {
-	mName = name;
-	mId = String::hash( mName );
 }
 
 const Uint32& SubTexture::getTextureId() {

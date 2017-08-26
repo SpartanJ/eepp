@@ -1376,24 +1376,22 @@ Rect UIControl::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadB
 
 	if ( mFlags & UI_AUTO_PADDING || SkipFlags ) {
 		if ( NULL != mSkinState && NULL != mSkinState->getSkin() ) {
-			if ( mSkinState->getSkin()->getType() == UISkin::SkinComplex ) {
-				UISkinComplex * tComplex = reinterpret_cast<UISkinComplex*> ( mSkinState->getSkin() );
+			Rect rPadding = mSkinState->getSkin()->getBorderSize( UISkinState::StateNormal );
 
-				if ( PadLeft ) {
-					tPadding.Left = tComplex->getSideSize( UISkinState::StateNormal, UISkinComplex::Left ).getWidth();
-				}
+			if ( PadLeft ) {
+				tPadding.Left = rPadding.Left;
+			}
 
-				if ( PadRight ) {
-					tPadding.Right = tComplex->getSideSize( UISkinState::StateNormal, UISkinComplex::Right ).getWidth();
-				}
+			if ( PadRight ) {
+				tPadding.Right = rPadding.Right;
+			}
 
-				if ( PadTop ) {
-					tPadding.Top = tComplex->getSideSize( UISkinState::StateNormal, UISkinComplex::Up ).getHeight();
-				}
+			if ( PadTop ) {
+				tPadding.Top = rPadding.Top;
+			}
 
-				if ( PadBottom ) {
-					tPadding.Bottom = tComplex->getSideSize( UISkinState::StateNormal, UISkinComplex::Down ).getHeight();
-				}
+			if ( PadBottom ) {
+				tPadding.Bottom = rPadding.Bottom;
 			}
 		}
 	}
