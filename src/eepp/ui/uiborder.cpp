@@ -39,10 +39,10 @@ void UIBorder::draw( Rectf R , const int& corners, const bool& clipping ) {
 	P.setColor( mColor );
 
 	if ( clipping ) {
-		Rectf R( Vector2f( R.Left + 0.1f, R.Top + 0.1f ), Sizef( R.getWidth() - 0.1f, R.getHeight() - 0.1f ) );
+		Rectf r( Vector2f( R.Left + 0.1f, R.Top + 0.1f ), Sizef( R.getWidth() - 0.1f, R.getHeight() - 0.1f ) );
 
 		if ( corners ) {
-			P.drawRoundedRectangle( R, 0.f, Vector2f::One, corners );
+			P.drawRoundedRectangle( r, 0.f, Vector2f::One, corners );
 		} else {
 			P.drawRectangle( R );
 		}
