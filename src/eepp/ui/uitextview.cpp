@@ -83,6 +83,7 @@ UITextView * UITextView::setFont( Graphics::Font * font ) {
 		mTextCache->setFont( font );
 		recalculate();
 		onFontChanged();
+		notifyLayoutAttrChange();
 	}
 
 	return this;
@@ -97,6 +98,7 @@ UITextView *UITextView::setCharacterSize( const Uint32 & characterSize ) {
 		mFontStyleConfig.CharacterSize = characterSize;
 		mTextCache->setCharacterSize( characterSize );
 		recalculate();
+		notifyLayoutAttrChange();
 	}
 
 	return this;
@@ -115,6 +117,7 @@ UITextView * UITextView::setOutlineThickness( const Float & outlineThickness ) {
 		mTextCache->setOutlineThickness( outlineThickness );
 		mFontStyleConfig.OutlineThickness = outlineThickness;
 		recalculate();
+		notifyLayoutAttrChange();
 	}
 
 	return this;
@@ -138,6 +141,7 @@ UITextView * UITextView::setFontStyle(const Uint32 & fontStyle) {
 		mTextCache->setStyle( fontStyle );
 		mFontStyleConfig.Style = fontStyle;
 		recalculate();
+		notifyLayoutAttrChange();
 	}
 
 	return this;
@@ -479,6 +483,7 @@ UITextView * UITextView::setPadding(const Rect & padding) {
 		mPadding = padding;
 		mRealPadding = PixelDensity::dpToPxI( mPadding );
 		onPaddingChange();
+		notifyLayoutAttrChange();
 	}
 
 	return this;
