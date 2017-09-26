@@ -32,11 +32,11 @@ UIBorder * UIBorder::setWidth( const unsigned int& width )	{
 	return this;
 }
 
-void UIBorder::draw( Rectf R , const int& corners, const bool& clipping ) {
+void UIBorder::draw( Rectf R , const Float& alpha, const int& corners, const bool& clipping ) {
 	Primitives P;
 	P.setFillMode( DRAW_LINE );
 	P.setLineWidth( PixelDensity::dpToPx( mWidth ) );
-	P.setColor( mColor );
+	P.setColor( 255 == alpha ? mColor : Color( mColor.r, mColor.g, mColor.b, static_cast<Uint8>( (Float)mColor.a * alpha / 255.f ) ) );
 
 	if ( clipping ) {
 		Rectf r( Vector2f( R.Left + 0.1f, R.Top + 0.1f ), Sizef( R.getWidth() - 0.1f, R.getHeight() - 0.1f ) );

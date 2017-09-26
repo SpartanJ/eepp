@@ -369,13 +369,13 @@ Interpolation1d * UIControlAnim::disableFadeOut( const Time& Time, const bool& A
 
 void UIControlAnim::drawBackground() {
 	if ( mFlags & UI_FILL_BACKGROUND ) {
-		mBackground->draw( getRectf() );
+		mBackground->draw( getRectf(), mAlpha );
 	}
 }
 
 void UIControlAnim::drawBorder() {
 	if ( mFlags & UI_BORDER ) {
-		mBorder->draw( getRectf(), mBackground->getCorners(), ( mFlags & UI_CLIP_ENABLE ) != 0 );
+		mBorder->draw( getRectf(), mAlpha, mBackground->getCorners(), ( mFlags & UI_CLIP_ENABLE ) != 0 );
 	}
 }
 

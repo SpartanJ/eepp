@@ -19,7 +19,7 @@ class EE_API UIBorder {
 
 		UIBorder * setWidth( const unsigned int& width );
 
-		void draw( Rectf R, const int& corners, const bool& clipping );
+		void draw( Rectf R, const Float& alpha, const int& corners, const bool& clipping );
 	protected:
 		Color			mColor;
 		unsigned int	mWidth;

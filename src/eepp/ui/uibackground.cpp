@@ -85,23 +85,49 @@ UIBackground * UIBackground::setCorners( const unsigned int& corners ) {
 	return this;
 }
 
-void UIBackground::draw( Rectf R ) {
+void UIBackground::draw( Rectf R, const Float& alpha ) {
 	if ( mColor[0] != Color::Transparent || mColor.size() > 1 ) {
 		Primitives P;
 		P.setBlendMode( mBlendMode );
-		P.setColor( mColor[0] );
 
-		if ( 4 == mColor.size() ) {
-			if ( mCorners ) {
-				P.drawRoundedRectangle( R, mColor[0], mColor[1], mColor[2], mColor[3], mCorners );
+		if ( 255 == alpha ) {
+			P.setColor( mColor[0] );
+
+			if ( 4 == mColor.size() ) {
+				if ( mCorners ) {
+					P.drawRoundedRectangle( R, mColor[0], mColor[1], mColor[2], mColor[3], mCorners );
+				} else {
+					P.drawRectangle( R, mColor[0], mColor[1], mColor[2], mColor[3] );
+				}
 			} else {
-				P.drawRectangle( R, mColor[0], mColor[1], mColor[2], mColor[3] );
+				if ( mCorners ) {
+					P.drawRoundedRectangle( R, 0.f, Vector2f::One, mCorners );
+				} else {
+					P.drawRectangle( R );
+				}
 			}
 		} else {
-			if ( mCorners ) {
-				P.drawRoundedRectangle( R, 0.f, Vector2f::One, mCorners );
+			std::vector<Color> color( mColor );
+
+			color[0].a = static_cast<Uint8>( (Float)color[0].a * ( alpha / 255.f ) );
+
+			P.setColor( color[0] );
+
+			if ( 4 == mColor.size() ) {
+				for ( size_t i = 0; i < color.size(); i++ )
+					color[i].a = static_cast<Uint8>( (Float)color[i].a * ( alpha / 255.f ) );
+
+				if ( mCorners ) {
+					P.drawRoundedRectangle( R, color[0], color[1], color[2], color[3], mCorners );
+				} else {
+					P.drawRectangle( R, color[0], color[1], color[2], color[3] );
+				}
 			} else {
-				P.drawRectangle( R );
+				if ( mCorners ) {
+					P.drawRoundedRectangle( R, 0.f, Vector2f::One, mCorners );
+				} else {
+					P.drawRectangle( R );
+				}
 			}
 		}
 	}

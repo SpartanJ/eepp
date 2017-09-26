@@ -32,7 +32,7 @@ class EE_API UIBackground {
 
 		UIBackground * setCorners( const unsigned int& corners );
 
-		void draw( Rectf R );
+		void draw( Rectf R, const Float& alpha );
 
 		Drawable * getDrawable() const;
 

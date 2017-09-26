@@ -717,13 +717,13 @@ Rectf UIControl::getRectf() {
 
 void UIControl::drawBackground() {
 	if ( mFlags & UI_FILL_BACKGROUND ) {
-		mBackground->draw( getRectf() );
+		mBackground->draw( getRectf(), 255.f );
 	}
 }
 
 void UIControl::drawBorder() {
 	if ( mFlags & UI_BORDER ) {
-		mBorder->draw( getRectf(), mBackground->getCorners(), ( mFlags & UI_CLIP_ENABLE ) != 0 );
+		mBorder->draw( getRectf(), 255.f, mBackground->getCorners(), ( mFlags & UI_CLIP_ENABLE ) != 0 );
 	}
 }
 
