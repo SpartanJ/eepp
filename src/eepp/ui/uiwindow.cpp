@@ -762,9 +762,7 @@ void UIWindow::internalSize( Sizei Size ) {
 }
 
 void UIWindow::draw() {
-	UIWidget::draw();
-
-	if ( mStyleConfig.WinFlags & UI_WIN_DRAW_SHADOW ) {
+	if ( mStyleConfig.WinFlags & UI_WIN_SHADOW ) {
 		Primitives P;
 		P.setForceDraw( false );
 
@@ -772,7 +770,7 @@ void UIWindow::draw() {
 		Color EndC( 0, 0, 0, 0 );
 		Float SSize = PixelDensity::dpToPx( 16.f );
 
-		Vector2i ShadowPos = mScreenPos + Vector2i( 0, 16 );
+		Vector2i ShadowPos = mScreenPos + Vector2i( 0, SSize );
 
 		P.drawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y ), Sizef( mRealSize.getWidth(), mRealSize.getHeight() ) ), BeginC, BeginC, BeginC, BeginC );
 
@@ -794,6 +792,8 @@ void UIWindow::draw() {
 
 		P.setForceDraw( true );
 	}
+
+	UIWidget::draw();
 }
 
 void UIWindow::update() {
@@ -1173,7 +1173,7 @@ void UIWindow::loadFromXmlNode(const pugi::xml_node & node) {
 					else if ( "maximize" == cur ) winflags |= UI_WIN_MAXIMIZE_BUTTON;
 					else if ( "minimize" == cur ) winflags |= UI_WIN_MINIMIZE_BUTTON;
 					else if ( "dragable" == cur ) winflags |= UI_WIN_DRAGABLE_CONTAINER;
-					else if ( "shadow" == cur ) winflags |= UI_WIN_DRAW_SHADOW;
+					else if ( "shadow" == cur ) winflags |= UI_WIN_SHADOW;
 					else if ( "modal" == cur ) winflags |= UI_WIN_MODAL;
 					else if ( "noborder" == cur || "borderless" == cur ) winflags |= UI_WIN_NO_BORDER;
 					else if ( "resizeable" == cur ) winflags |= UI_WIN_RESIZEABLE;

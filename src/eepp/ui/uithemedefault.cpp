@@ -50,7 +50,7 @@ UIWinMenuStyleConfig UIThemeDefault::getWinMenuStyleConfig() {
 
 UIWindowStyleConfig UIThemeDefault::getWindowStyleConfig() {
 	UIWindowStyleConfig windowStyleConfig = UITheme::getWindowStyleConfig();
-	windowStyleConfig.WinFlags |= UI_WIN_DRAW_SHADOW;
+	windowStyleConfig.WinFlags |= UI_WIN_SHADOW;
 	windowStyleConfig.ButtonsPositionFixer.x = -2;
 	windowStyleConfig.TitleFontColor = Color( 230, 230, 230, 255 );
 	return windowStyleConfig;

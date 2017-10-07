@@ -315,7 +315,7 @@ void EETest::createUI() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER;
+	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW;
 	windowStyleConfig.MinWindowSize = Sizei( 530, 405 );
 	windowStyleConfig.BaseAlpha = 200;
 	tWin->setStyleConfig( windowStyleConfig );
@@ -796,7 +796,7 @@ void EETest::createMapEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER;
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW;
 	windowStyleConfig.MinWindowSize = Sizei( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -813,7 +813,7 @@ void EETest::createETGEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER;
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW;
 	windowStyleConfig.MinWindowSize = Sizei( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -836,7 +836,7 @@ void EETest::createCommonDialog() {
 
 void EETest::createDecoratedWindow() {
 	mUIWindow = UIWindow::New();
-	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON )
+	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW )
 			->setMinWindowSize( 530, 350 )->setPosition( 200, 50 );
 
 	mUIWindow->addEventListener( UIEvent::EventOnWindowCloseClick, cb::Make1( this, &EETest::onCloseClick ) );

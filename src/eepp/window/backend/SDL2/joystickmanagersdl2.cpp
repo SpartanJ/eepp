@@ -25,6 +25,8 @@ void JoystickManagerSDL::update() {
 }
 
 void JoystickManagerSDL::openAsync() {
+	Sys::sleep(Milliseconds(500));
+
 	int error = SDL_InitSubSystem( SDL_INIT_JOYSTICK );
 
 	if ( !error ) {
