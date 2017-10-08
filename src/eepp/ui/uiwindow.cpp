@@ -206,6 +206,11 @@ void UIWindow::createFrameBuffer() {
 	mFrameBuffer = FrameBuffer::New( Math::nextPowOfTwo( mRealSize.getWidth() ), Math::nextPowOfTwo( mRealSize.getHeight() ) );
 }
 
+void UIWindow::drawFrameBuffer() {
+	SubTexture subTexture( mFrameBuffer->getTexture()->getId(), Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ) );
+	subTexture.draw( mScreenPosf.x, mScreenPosf.y );
+}
+
 void UIWindow::createModalControl() {
 	UIControl * Ctrl = UIManager::instance()->getMainControl();
 
@@ -1036,8 +1041,7 @@ void UIWindow::matrixUnset() {
 
 		mFrameBuffer->unbind();
 
-		SubTexture subTexture( mFrameBuffer->getTexture()->getId(), Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ) );
-		subTexture.draw( mScreenPosf.x, mScreenPosf.y );
+		drawFrameBuffer();
 	}
 }
 

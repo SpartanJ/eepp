@@ -220,6 +220,8 @@ class EE_API UIWindow : public UIWidget {
 		void updateWinFlags();
 
 		void createFrameBuffer();
+
+		void drawFrameBuffer();
 };
 
 }}
