@@ -159,11 +159,15 @@ class EE_API UIControl {
 
 		Uint32 isScaled();
 
+		Uint32 isFrameBuffer();
+
 		bool isMeOrParentTreeRotated();
 
 		bool isMeOrParentTreeScaled();
 
 		bool isMeOrParentTreeScaledOrRotated();
+
+		bool isMeOrParentTreeScaledOrRotatedOrFrameBuffer();
 
 		Uint32 addEventListener( const Uint32& EventType, const UIEventCallback& Callback );
 

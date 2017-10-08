@@ -2,6 +2,9 @@
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/graphics/framebuffer.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/subtexture.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>
@@ -14,6 +17,7 @@ UIWindow * UIWindow::New( UIWindow::WindowBaseContainerType type ) {
 
 UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) :
 	UIWidget(),
+	mFrameBuffer( NULL ),
 	mWindowDecoration( NULL ),
 	mBorderLeft( NULL ),
 	mBorderRight( NULL ),
@@ -71,10 +75,20 @@ UIWindow::~UIWindow() {
 	UIManager::instance()->setFocusLastWindow( this );
 
 	sendCommonEvent( UIEvent::EventOnWindowClose );
+
+	eeSAFE_DELETE( mFrameBuffer );
 }
 
 void UIWindow::updateWinFlags() {
 	bool needsUpdate = false;
+
+	writeCtrlFlag( UI_CTRL_FLAG_FRAME_BUFFER, ( mStyleConfig.WinFlags & UI_WIN_FRAME_BUFFER ) ? 1 : 0 );
+
+	if ( ( mStyleConfig.WinFlags & UI_WIN_FRAME_BUFFER ) && NULL == mFrameBuffer ) {
+		createFrameBuffer();
+	} else {
+		eeSAFE_DELETE( mFrameBuffer );
+	}
 
 	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) ) {
 		if ( NULL == mWindowDecoration ) {
@@ -185,6 +199,11 @@ void UIWindow::updateWinFlags() {
 	if ( needsUpdate ) {
 		applyDefaultTheme();
 	}
+}
+
+void UIWindow::createFrameBuffer() {
+	eeSAFE_DELETE( mFrameBuffer );
+	mFrameBuffer = FrameBuffer::New( Math::nextPowOfTwo( mRealSize.getWidth() ), Math::nextPowOfTwo( mRealSize.getHeight() ) );
 }
 
 void UIWindow::createModalControl() {
@@ -385,6 +404,14 @@ void UIWindow::onSizeChange() {
 		}
 	} else {
 		fixChildsSize();
+
+		if ( ownsFrameBuffer() && ( mFrameBuffer->getWidth() < mRealSize.getWidth() || mFrameBuffer->getHeight() < mRealSize.getHeight() ) ) {
+			if ( NULL == mFrameBuffer ) {
+				createFrameBuffer();
+			} else {
+				mFrameBuffer->resize( Math::nextPowOfTwo( mRealSize.getWidth() ), Math::nextPowOfTwo( mRealSize.getHeight() ) );
+			}
+		}
 
 		UIWidget::onSizeChange();
 	}
@@ -990,6 +1017,34 @@ Uint32 UIWindow::onKeyDown( const UIEventKey &Event ) {
 	return UIWidget::onKeyDown( Event );
 }
 
+void UIWindow::matrixSet() {
+	if ( ownsFrameBuffer() ) {
+		mFrameBuffer->bind();
+		mFrameBuffer->clear();
+
+		GLi->translatef( -mScreenPos.x , -mScreenPos.y, 0.f );
+	}
+
+	UIWidget::matrixSet();
+}
+
+void UIWindow::matrixUnset() {
+	UIWidget::matrixUnset();
+
+	if ( ownsFrameBuffer() ) {
+		GLi->translatef( mScreenPos.x , mScreenPos.y, 0.f );
+
+		mFrameBuffer->unbind();
+
+		SubTexture subTexture( mFrameBuffer->getTexture()->getId(), Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ) );
+		subTexture.draw( mScreenPosf.x, mScreenPosf.y );
+	}
+}
+
+bool UIWindow::ownsFrameBuffer() {
+	return ( ( mStyleConfig.WinFlags & UI_WIN_FRAME_BUFFER ) && NULL != mFrameBuffer );
+}
+
 void UIWindow::checkShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {
 	for ( KeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end(); it++ ) {
 		KeyboardShortcut kb = (*it);
@@ -1179,6 +1234,7 @@ void UIWindow::loadFromXmlNode(const pugi::xml_node & node) {
 					else if ( "resizeable" == cur ) winflags |= UI_WIN_RESIZEABLE;
 					else if ( "sharealpha" == cur ) winflags |= UI_WIN_SHARE_ALPHA_WITH_CHILDS;
 					else if ( "buttonactions" == cur ) winflags |= UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS;
+					else if ( "framebuffer"== cur ) winflags |= UI_WIN_FRAME_BUFFER;
 				}
 
 				setWinFlags( winflags );

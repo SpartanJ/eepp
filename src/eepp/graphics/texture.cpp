@@ -453,7 +453,7 @@ void Texture::replace( Image * image ) {
 	Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
 	flags = (mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 
-	TextureSaver TextureSaver;
+	TextureSaver textureSaver;
 
 	Int32 width = (Int32)image->getWidth();
 	Int32 height = (Int32)image->getHeight();

@@ -55,9 +55,9 @@ Engine::~Engine() {
 
 	FontManager::destroySingleton();
 
-	TextureFactory::destroySingleton();
-
 	UI::UIManager::destroySingleton();
+
+	TextureFactory::destroySingleton();
 
 	Graphics::Renderer::destroySingleton();
 

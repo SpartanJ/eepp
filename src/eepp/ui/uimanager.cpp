@@ -54,6 +54,10 @@ void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 
 	UIWindowStyleConfig windowStyleConfig;
 	windowStyleConfig.WinFlags = UI_WIN_NO_BORDER | UI_WIN_RESIZEABLE;
+
+	if ( isMainControlInFrameBuffer() )
+		windowStyleConfig.WinFlags |= UI_WIN_FRAME_BUFFER;
+
 	windowStyleConfig.MinWindowSize = Sizei( 0, 0 );
 	windowStyleConfig.DecorationSize = Sizei( 0, 0 );
 	windowStyleConfig.DecorationAutoSize = false;
@@ -288,7 +292,7 @@ const Uint32& UIManager::getLastPressTrigger() const {
 }
 
 void UIManager::clipSmartEnable(UIControl * ctrl, const Int32 & x, const Int32 & y, const Uint32 & Width, const Uint32 & Height) {
-	if ( ctrl->isMeOrParentTreeScaledOrRotated() ) {
+	if ( ctrl->isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
 		GLi->getClippingMask()->clipPlaneEnable( x, y, Width, Height );
 	} else {
 		GLi->getClippingMask()->clipEnable( x, y, Width, Height );
@@ -296,7 +300,7 @@ void UIManager::clipSmartEnable(UIControl * ctrl, const Int32 & x, const Int32 &
 }
 
 void UIManager::clipSmartDisable(UIControl * ctrl) {
-	if ( ctrl->isMeOrParentTreeScaledOrRotated() ) {
+	if ( ctrl->isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
 		GLi->getClippingMask()->clipPlaneDisable();
 	} else {
 		GLi->getClippingMask()->clipDisable();
@@ -345,6 +349,18 @@ bool UIManager::getHighlightOver() const {
 
 void UIManager::setHighlightOverColor( const Color& Color ) {
 	mHighlightOverColor = Color;
+}
+
+void UIManager::setMainControlInFrameBuffer(const bool& set) {
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_DRAW_BOXES, set ? 1 : 0 );
+
+	if ( NULL != mControl ) {
+		mControl->setWinFlags( mControl->getWinFlags() | ( set ? UI_WIN_FRAME_BUFFER : 0 ) );
+	}
+}
+
+bool UIManager::isMainControlInFrameBuffer() const {
+	return 0 != ( mFlags & UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER );
 }
 
 const Color& UIManager::getHighlightOverColor() const {

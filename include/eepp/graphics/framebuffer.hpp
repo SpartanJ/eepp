@@ -41,6 +41,9 @@ class EE_API FrameBuffer {
 		**	This is needed by the engine to recover any context lost. */
 		virtual void reload() = 0;
 
+		/** @brief Resizes the current Frame Buffer */
+		virtual void resize( const Uint32& Width, const Uint32& Height ) = 0;
+
 		/** @return The frame buffer texture. Everything is rendered to this texture.
 		** To render the frame buffer you just need to draw the texture as any other texture.
 		** The frame buffer must be unbinded before any rendering is done outside the frame buffer.
@@ -73,6 +76,7 @@ class EE_API FrameBuffer {
 		bool		mHasStencilBuffer;
 		Texture *	mTexture;
 		ColorAf	mClearColor;
+		View		mView;
 		View 		mPrevView;
 		float		mProjMat[16];
 

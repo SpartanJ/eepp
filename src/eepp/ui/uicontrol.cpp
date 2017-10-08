@@ -1085,6 +1085,10 @@ Uint32 UIControl::isScaled() {
 	return mControlFlags & UI_CTRL_FLAG_SCALED;
 }
 
+Uint32 UIControl::isFrameBuffer() {
+	return mControlFlags & UI_CTRL_FLAG_FRAME_BUFFER;
+}
+
 bool UIControl::isMeOrParentTreeRotated() {
 	UIControl * Ctrl = this;
 
@@ -1116,6 +1120,19 @@ bool UIControl::isMeOrParentTreeScaledOrRotated() {
 
 	while( NULL != Ctrl ) {
 		if ( Ctrl->isScaled() || Ctrl->isRotated() )
+			return true;
+
+		Ctrl = Ctrl->getParent();
+	}
+
+	return false;
+}
+
+bool UIControl::isMeOrParentTreeScaledOrRotatedOrFrameBuffer() {
+	UIControl * Ctrl = this;
+
+	while( NULL != Ctrl ) {
+		if ( Ctrl->isScaled() || Ctrl->isRotated() || Ctrl->isFrameBuffer() )
 			return true;
 
 		Ctrl = Ctrl->getParent();

@@ -177,6 +177,40 @@ void FrameBufferFBO::reload() {
 	create( mWidth, mHeight, mHasStencilBuffer, mHasDepthBuffer );
 }
 
+void FrameBufferFBO::resize( const Uint32& Width, const Uint32& Height ) {
+	mWidth = Width;
+	mHeight = Height;
+
+	bindFrameBuffer();
+
+	if ( mHasDepthBuffer ) {
+		bindDepthBuffer();
+
+		GLi->renderbufferStorage( GL_RENDERBUFFER, GL_DEPTH_COMPONENT, Width, Height );
+
+		GLi->framebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, mDepthBuffer );
+
+		GLi->bindRenderbuffer( GL_RENDERBUFFER, mLastDB );
+	}
+
+	if ( mHasStencilBuffer ) {
+		bindStencilBuffer();
+
+		GLi->renderbufferStorage( GL_RENDERBUFFER, GL_STENCIL_INDEX8, Width, Height );
+
+		GLi->framebufferRenderbuffer( GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER_EXT, mStencilBuffer );
+
+		GLi->bindRenderbuffer( GL_RENDERBUFFER, mLastSB );
+	}
+
+	if ( NULL != mTexture ) {
+		Image newImage( Width, Height, 4 );
+		mTexture->replace( &newImage );
+	}
+
+	GLi->bindFramebuffer( GL_FRAMEBUFFER, mLastFB );
+}
+
 void FrameBufferFBO::bindFrameBuffer() {
 	int curFB;
 

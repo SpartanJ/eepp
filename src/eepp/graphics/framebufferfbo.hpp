@@ -21,6 +21,8 @@ class EE_API FrameBufferFBO : public FrameBuffer {
 
 		void reload();
 
+		void resize( const Uint32& Width, const Uint32& Height );
+
 		static bool isSupported();
 	protected:
 		Int32 		mFrameBuffer;

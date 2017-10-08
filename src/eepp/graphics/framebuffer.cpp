@@ -10,6 +10,8 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
+static std::list<const View*> sFBOActiveViews;
+
 FrameBuffer * FrameBuffer::New( const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer, EE::Window::Window * window ) {
 	if ( FrameBufferFBO::isSupported() )
 		return eeNew( FrameBufferFBO, ( Width, Height, StencilBuffer, DepthBuffer, window ) );
@@ -34,9 +36,7 @@ FrameBuffer::FrameBuffer( EE::Window::Window * window  ) :
 }
 
 FrameBuffer::~FrameBuffer() {
-	if ( NULL != mTexture ) {
-		eeSAFE_DELETE( mTexture );
-	}
+	eeSAFE_DELETE( mTexture );
 
 	FrameBufferManager::instance()->remove( this );
 }
@@ -60,10 +60,11 @@ void FrameBuffer::clear() {
 }
 
 void FrameBuffer::setBufferView() {
-	mPrevView = mWindow->getView();
-
 	// Get the user projection matrix
 	GLi->getCurrentMatrix( GL_PROJECTION_MATRIX, mProjMat );
+
+	mView.setSize( mWidth, mHeight );
+	sFBOActiveViews.push_back(&mView);
 
 	GLi->viewport( 0, 0, mWidth, mHeight );
 	GLi->matrixMode( GL_PROJECTION );
@@ -76,7 +77,14 @@ void FrameBuffer::setBufferView() {
 void FrameBuffer::recoverView() {
 	GlobalBatchRenderer::instance()->draw();
 
-	mWindow->setView( mPrevView );
+	sFBOActiveViews.remove(&mView);
+
+	if ( sFBOActiveViews.empty() ) {
+		mWindow->setView( mWindow->getView() );
+	} else {
+		const View* view = sFBOActiveViews.back();
+		GLi->viewport( 0, 0, view->getView().getWidth(), view->getView().getHeight() );
+	}
 
 	// Recover the user projection matrix
 	GLi->loadIdentity();

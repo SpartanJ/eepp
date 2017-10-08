@@ -83,6 +83,10 @@ class EE_API UIManager {
 
 		void setHighlightOverColor( const Color& Color );
 
+		void setMainControlInFrameBuffer( const bool& set );
+
+		bool isMainControlInFrameBuffer() const;
+
 		const Color& getHighlightOverColor() const;
 
 		void sendMouseClick( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );

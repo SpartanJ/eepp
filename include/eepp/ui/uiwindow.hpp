@@ -5,6 +5,10 @@
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uitextview.hpp>
 
+namespace EE { namespace Graphics {
+class FrameBuffer;
+}}
+
 namespace EE { namespace UI {
 
 class EE_API UIWindow : public UIWidget {
@@ -95,6 +99,8 @@ class EE_API UIWindow : public UIWidget {
 
 		const Sizei& getMinWindowSize();
 
+		bool ownsFrameBuffer();
+
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		class KeyboardShortcut {
@@ -130,6 +136,7 @@ class EE_API UIWindow : public UIWidget {
 			RESIZE_TOPRIGHT
 		};
 
+		FrameBuffer * mFrameBuffer;
 		UIWindowStyleConfig	mStyleConfig;
 		UIControlAnim *	mWindowDecoration;
 		UIControlAnim *	mBorderLeft;
@@ -161,6 +168,10 @@ class EE_API UIWindow : public UIWidget {
 		virtual void onChildCountChange();
 
 		virtual Uint32 onKeyDown( const UIEventKey &Event );
+
+		virtual void matrixSet();
+
+		virtual void matrixUnset();
 
 		void onButtonCloseClick( const UIEvent * Event );
 
@@ -207,6 +218,8 @@ class EE_API UIWindow : public UIWidget {
 		void applyMinWinSize();
 
 		void updateWinFlags();
+
+		void createFrameBuffer();
 };
 
 }}
