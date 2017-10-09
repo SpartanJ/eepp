@@ -208,7 +208,7 @@ void UIWindow::createFrameBuffer() {
 
 void UIWindow::drawFrameBuffer() {
 	SubTexture subTexture( mFrameBuffer->getTexture()->getId(), Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ) );
-	subTexture.draw( mScreenPosf.x, mScreenPosf.y );
+	subTexture.draw( mScreenPosf.x, mScreenPosf.y, Color::White, mAngle, mScale );
 }
 
 void UIWindow::createModalControl() {
@@ -1028,9 +1028,9 @@ void UIWindow::matrixSet() {
 		mFrameBuffer->clear();
 
 		GLi->translatef( -mScreenPos.x , -mScreenPos.y, 0.f );
+	} else {
+		UIWidget::matrixSet();
 	}
-
-	UIWidget::matrixSet();
 }
 
 void UIWindow::matrixUnset() {

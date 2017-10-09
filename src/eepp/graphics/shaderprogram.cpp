@@ -47,7 +47,7 @@ ShaderProgram::ShaderProgram( const std::vector<Shader*>& Shaders, const std::st
 
 	addShaders( Shaders );
 
-	Link();
+	link();
 }
 
 ShaderProgram::ShaderProgram( const std::string& VertexShaderFile, const std::string& FragmentShaderFile, const std::string& name ) :
@@ -69,7 +69,7 @@ ShaderProgram::ShaderProgram( const std::string& VertexShaderFile, const std::st
 	addShader( vs );
 	addShader( fs );
 
-	Link();
+	link();
 }
 
 ShaderProgram::ShaderProgram( Pack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name ) :
@@ -92,7 +92,7 @@ ShaderProgram::ShaderProgram( Pack * Pack, const std::string& VertexShaderPath, 
 		addShader( vs );
 		addShader( fs );
 
-		Link();
+		link();
 	}
 }
 
@@ -115,7 +115,7 @@ ShaderProgram::ShaderProgram( const char * VertexShaderData, const Uint32& Verte
 	addShader( vs );
 	addShader( fs );
 
-	Link();
+	link();
 }
 
 ShaderProgram::ShaderProgram( const char ** VertexShaderData, const Uint32& NumLinesVS, const char ** FragmentShaderData, const Uint32& NumLinesFS, const std::string& name ) :
@@ -137,7 +137,7 @@ ShaderProgram::ShaderProgram( const char ** VertexShaderData, const Uint32& NumL
 	addShader( vs );
 	addShader( fs );
 
-	Link();
+	link();
 }
 
 ShaderProgram::~ShaderProgram() {
@@ -195,7 +195,7 @@ void ShaderProgram::reload() {
 		addShader( tmpShader[i] );
 	}
 
-	Link();
+	link();
 
 	if ( mReloadCb.IsSet() ) {
 		mReloadCb( this );
@@ -222,7 +222,7 @@ void ShaderProgram::addShaders( const std::vector<Shader*>& Shaders ) {
 		addShader( Shaders[i] );
 }
 
-bool ShaderProgram::Link() {
+bool ShaderProgram::link() {
 	#ifdef EE_SHADERS_SUPPORTED
 	glLinkProgram( getHandler() );
 

@@ -40,7 +40,7 @@ class EE_API ShaderProgram {
 		/** Add a vector of shaders */
 		void addShaders( const std::vector<Shader*>& Shaders );
 
-		virtual bool Link();
+		virtual bool link();
 
 		/** @return If the shader program is valid */
 		bool isValid() const { return mValid; }
