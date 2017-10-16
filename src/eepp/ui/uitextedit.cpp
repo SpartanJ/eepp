@@ -30,10 +30,10 @@ UITextEdit::UITextEdit() :
 	mTextInput->setEnabled( true );
 	mTextInput->setSize( mSize );
 
-	mTextInput->addEventListener( UIEvent::EventOnSizeChange		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
-	mTextInput->addEventListener( UIEvent::EventOnTextChanged		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
-	mTextInput->addEventListener( UIEvent::EventOnPressEnter		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
-	mTextInput->addEventListener( UIEvent::EventOnCursorPosChange	, cb::Make1( this, &UITextEdit::onCursorPosChange ) );
+	mTextInput->addEventListener( UIEvent::OnSizeChange		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
+	mTextInput->addEventListener( UIEvent::OnTextChanged		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
+	mTextInput->addEventListener( UIEvent::OnPressEnter		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
+	mTextInput->addEventListener( UIEvent::OnCursorPosChange	, cb::Make1( this, &UITextEdit::onCursorPosChange ) );
 
 	mVScrollBar = UIScrollBar::New();
 	mVScrollBar->setOrientation( UI_VERTICAL );
@@ -48,8 +48,8 @@ UITextEdit::UITextEdit() :
 	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
 	mHScrollBar->setPosition( 0, mSize.getHeight() - 16 );
 
-	mVScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UITextEdit::onVScrollValueChange ) );
-	mHScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UITextEdit::onHScrollValueChange ) );
+	mVScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UITextEdit::onVScrollValueChange ) );
+	mHScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UITextEdit::onHScrollValueChange ) );
 
 	autoPadding();
 
@@ -278,7 +278,7 @@ void UITextEdit::onInputSizeChange( const UIEvent * Event ) {
 	int Height	= mRealSize.getHeight()	- mContainerPadding.Top	- mContainerPadding.Bottom;
 
 	if ( NULL != Event ) {
-		if ( Event->getEventType() == UIEvent::EventOnPressEnter ) {
+		if ( Event->getEventType() == UIEvent::OnPressEnter ) {
 			mHScrollBar->setValue( 0 );
 		}
 	}

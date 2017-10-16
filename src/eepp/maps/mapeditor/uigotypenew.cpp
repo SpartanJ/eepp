@@ -16,7 +16,7 @@ UIGOTypeNew::UIGOTypeNew( cb::Callback2<void, std::string, Uint32> Cb ) :
 	mUIWindow	= UIWindow::New();
 	mUIWindow->setSizeWithDecoration( 278, 114 )->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL )->setMinWindowSize( 278, 114 );
 
-	mUIWindow->addEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &UIGOTypeNew::onWindowClose ) );
+	mUIWindow->addEventListener( UIEvent::OnWindowClose, cb::Make1( this, &UIGOTypeNew::onWindowClose ) );
 	mUIWindow->setTitle( "Add GameObject Type" );
 
 	Int32 InitialY		= 16;
@@ -33,15 +33,15 @@ UIGOTypeNew::UIGOTypeNew( cb::Callback2<void, std::string, Uint32> Cb ) :
 	OKButton->setParent(  mUIWindow->getContainer() )->setSize( 80, 0 );
 	OKButton->setIcon( mUITheme->getIconByName( "add" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
-	OKButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIGOTypeNew::onOKClick ) );
-	mUIInput->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UIGOTypeNew::onOKClick ) );
+	OKButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIGOTypeNew::onOKClick ) );
+	mUIInput->addEventListener( UIEvent::OnPressEnter, cb::Make1( this, &UIGOTypeNew::onOKClick ) );
 
 	OKButton->setText( "Add" );
 
 	UIPushButton * CancelButton = UIPushButton::New();
 	CancelButton->setParent( mUIWindow->getContainer() )->setSize( OKButton->getSize() )->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y );
 	CancelButton->setIcon( mUITheme->getIconByName( "cancel" ) );
-	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIGOTypeNew::onCancelClick ) );
+	CancelButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIGOTypeNew::onCancelClick ) );
 	CancelButton->setText( "Cancel" );
 
 	mUIWindow->center();

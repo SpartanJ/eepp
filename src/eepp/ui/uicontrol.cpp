@@ -159,14 +159,14 @@ void UIControl::setInternalSize( const Sizei& size ) {
 	mSize = size;
 	mRealSize = Sizei( size.x * PixelDensity::getPixelDensity(), size.y * PixelDensity::getPixelDensity() );
 	updateCenter();
-	sendCommonEvent( UIEvent::EventOnSizeChange );
+	sendCommonEvent( UIEvent::OnSizeChange );
 }
 
 void UIControl::setInternalPixelsSize( const Sizei& size ) {
 	mSize = PixelDensity::pxToDpI( size );
 	mRealSize = size;
 	updateCenter();
-	sendCommonEvent( UIEvent::EventOnSizeChange );
+	sendCommonEvent( UIEvent::OnSizeChange );
 }
 
 UIControl * UIControl::setSize( const Sizei& Size ) {
@@ -452,12 +452,12 @@ Uint32 UIControl::onKeyUp( const UIEventKey& Event ) {
 }
 
 Uint32 UIControl::onMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
-	sendMouseEvent( UIEvent::EventMouseMove, Pos, Flags );
+	sendMouseEvent( UIEvent::MouseMove, Pos, Flags );
 	return 1;
 }
 
 Uint32 UIControl::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
-	sendMouseEvent( UIEvent::EventMouseDown, Pos, Flags );
+	sendMouseEvent( UIEvent::MouseDown, Pos, Flags );
 
 	setSkinState( UISkinState::StateMouseDown );
 
@@ -465,7 +465,7 @@ Uint32 UIControl::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 }
 
 Uint32 UIControl::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
-	sendMouseEvent( UIEvent::EventMouseUp, Pos, Flags );
+	sendMouseEvent( UIEvent::MouseUp, Pos, Flags );
 
 	setPrevSkinState();
 
@@ -473,7 +473,7 @@ Uint32 UIControl::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
 }
 
 Uint32 UIControl::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
-	sendMouseEvent( UIEvent::EventMouseClick, Pos, Flags );
+	sendMouseEvent( UIEvent::MouseClick, Pos, Flags );
 	return 1;
 }
 
@@ -486,14 +486,14 @@ bool UIControl::isMouseOverMeOrChilds() {
 }
 
 Uint32 UIControl::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
-	sendMouseEvent( UIEvent::EventMouseDoubleClick, Pos, Flags );
+	sendMouseEvent( UIEvent::MouseDoubleClick, Pos, Flags );
 	return 1;
 }
 
 Uint32 UIControl::onMouseEnter( const Vector2i& Pos, const Uint32 Flags ) {
 	writeCtrlFlag( UI_CTRL_FLAG_MOUSEOVER, 1 );
 
-	sendMouseEvent( UIEvent::EventMouseEnter, Pos, Flags );
+	sendMouseEvent( UIEvent::MouseEnter, Pos, Flags );
 
 	setSkinState( UISkinState::StateMouseEnter );
 
@@ -503,7 +503,7 @@ Uint32 UIControl::onMouseEnter( const Vector2i& Pos, const Uint32 Flags ) {
 Uint32 UIControl::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 	writeCtrlFlag( UI_CTRL_FLAG_MOUSEOVER, 0 );
 
-	sendMouseEvent( UIEvent::EventMouseExit, Pos, Flags );
+	sendMouseEvent( UIEvent::MouseExit, Pos, Flags );
 
 	setSkinState( UISkinState::StateMouseExit );
 
@@ -513,7 +513,7 @@ Uint32 UIControl::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 Uint32 UIControl::onFocus() {
 	mControlFlags |= UI_CTRL_FLAG_HAS_FOCUS;
 
-	sendCommonEvent( UIEvent::EventOnFocus );
+	sendCommonEvent( UIEvent::OnFocus );
 
 	setSkinState( UISkinState::StateFocus );
 
@@ -523,13 +523,13 @@ Uint32 UIControl::onFocus() {
 Uint32 UIControl::onFocusLoss() {
 	mControlFlags &= ~UI_CTRL_FLAG_HAS_FOCUS;
 
-	sendCommonEvent( UIEvent::EventOnFocusLoss );
+	sendCommonEvent( UIEvent::OnFocusLoss );
 
 	return 1;
 }
 
 void UIControl::onWidgetFocusLoss() {
-	sendCommonEvent( UIEvent::EventOnWidgetFocusLoss );
+	sendCommonEvent( UIEvent::OnWidgetFocusLoss );
 }
 
 bool UIControl::hasFocus() const {
@@ -537,13 +537,13 @@ bool UIControl::hasFocus() const {
 }
 
 Uint32 UIControl::onValueChange() {
-	sendCommonEvent( UIEvent::EventOnValueChange );
+	sendCommonEvent( UIEvent::OnValueChange );
 
 	return 1;
 }
 
 void UIControl::onClose() {
-	sendCommonEvent( UIEvent::EventOnClose );
+	sendCommonEvent( UIEvent::OnClose );
 }
 
 Uint32 UIControl::getHorizontalAlign() const {
@@ -691,7 +691,7 @@ void UIControl::toPosition( const Uint32& Pos ) {
 }
 
 void UIControl::onVisibilityChange() {
-	sendCommonEvent( UIEvent::EventOnVisibleChange );
+	sendCommonEvent( UIEvent::OnVisibleChange );
 }
 
 void UIControl::onEnabledChange() {
@@ -701,11 +701,11 @@ void UIControl::onEnabledChange() {
 		}
 	}
 
-	sendCommonEvent( UIEvent::EventOnEnabledChange );
+	sendCommonEvent( UIEvent::OnEnabledChange );
 }
 
 void UIControl::onPositionChange() {
-	sendCommonEvent( UIEvent::EventOnPosChange );
+	sendCommonEvent( UIEvent::OnPosChange );
 }
 
 void UIControl::onSizeChange() {
@@ -1432,7 +1432,7 @@ void UIControl::sendParentSizeChange( const Vector2i& SizeChange ) {
 }
 
 void UIControl::onParentSizeChange( const Vector2i& SizeChange ) {
-	sendCommonEvent( UIEvent::EventOnParentSizeChange );
+	sendCommonEvent( UIEvent::OnParentSizeChange );
 }
 
 Sizei UIControl::getSkinSize( UISkin * Skin, const Uint32& State ) {

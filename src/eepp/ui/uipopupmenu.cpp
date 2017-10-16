@@ -87,13 +87,13 @@ void UIPopUpMenu::onWidgetFocusLoss() {
 
 Uint32 UIPopUpMenu::onMessage( const UIMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::MsgMouseUp:
+		case UIMessage::MouseUp:
 		{
 			#ifdef EE_PLATFORM_TOUCH
 			if ( mTE.getElapsed().asMilliseconds() > 250.f ) {
 			#endif
 				if ( !Msg->getSender()->isType( UI_TYPE_MENUSUBMENU ) && ( Msg->getFlags() & EE_BUTTONS_LRM ) ) {
-					sendCommonEvent( UIEvent::EventOnHideByClick );
+					sendCommonEvent( UIEvent::OnHideByClick );
 
 					if ( isVisible() )
 						UIManager::instance()->getMainControl()->setFocus();

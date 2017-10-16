@@ -78,7 +78,7 @@ void UITextInput::update() {
 }
 
 void UITextInput::onCursorPosChange() {
-	sendCommonEvent( UIEvent::EventOnCursorPosChange );
+	sendCommonEvent( UIEvent::OnCursorPosChange );
 }
 
 void UITextInput::drawWaitingCursor() {
@@ -137,7 +137,7 @@ Uint32 UITextInput::onFocusLoss() {
 }
 
 Uint32 UITextInput::onPressEnter() {
-	sendCommonEvent( UIEvent::EventOnPressEnter );
+	sendCommonEvent( UIEvent::OnPressEnter );
 	return 0;
 }
 

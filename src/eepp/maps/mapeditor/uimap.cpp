@@ -537,7 +537,7 @@ void UIMap::setUpdateScrollCb( UpdateScrollCb Cb ) {
 }
 
 Uint32 UIMap::onMessage( const UIMessage * Msg ) {
-	if ( Msg->getMsg() == UIMessage::MsgClick && Msg->getSender() == this && ( Msg->getFlags() & EE_BUTTON_RMASK ) ) {
+	if ( Msg->getMsg() == UIMessage::Click && Msg->getSender() == this && ( Msg->getFlags() & EE_BUTTON_RMASK ) ) {
 		if ( SELECT_OBJECTS == mEditingObjMode && NULL != mSelObj && mSelObj->pointInside( mMap->getMouseMapPosf() ) ) {
 			createObjPopUpMenu();
 		}
@@ -575,7 +575,7 @@ void UIMap::createObjPopUpMenu() {
 	Menu->add( "Remove Object" );
 	Menu->addSeparator();
 	Menu->add( "Object Properties..." );
-	Menu->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &UIMap::objItemClick ) );
+	Menu->addEventListener( UIEvent::OnItemClicked, cb::Make1( this, &UIMap::objItemClick ) );
 
 	if ( Menu->show() ) {
 		Vector2i Pos = UIManager::instance()->getInput()->getMousePos();

@@ -60,7 +60,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) :
 	mContainer->setParent( this );
 	mContainer->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS | UI_CLIP_ENABLE );
 	mContainer->setSize( mSize );
-	mContainer->addEventListener( UIEvent::EventOnPosChange, cb::Make1( this, &UIWindow::onContainerPosChange ) );
+	mContainer->addEventListener( UIEvent::OnPosChange, cb::Make1( this, &UIWindow::onContainerPosChange ) );
 
 	updateWinFlags();
 
@@ -74,7 +74,7 @@ UIWindow::~UIWindow() {
 
 	UIManager::instance()->setFocusLastWindow( this );
 
-	sendCommonEvent( UIEvent::EventOnWindowClose );
+	sendCommonEvent( UIEvent::OnWindowClose );
 
 	eeSAFE_DELETE( mFrameBuffer );
 }
@@ -142,7 +142,7 @@ void UIWindow::updateWinFlags() {
 			mButtonClose->setEnabled( true );
 
 			if ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS && 0 == mCloseListener ) {
-				mCloseListener = mButtonClose->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonCloseClick ) );
+				mCloseListener = mButtonClose->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIWindow::onButtonCloseClick ) );
 			}
 		} else if ( NULL != mButtonClose ) {
 			mButtonClose->setVisible( false )->setEnabled( false )->close();
@@ -161,7 +161,7 @@ void UIWindow::updateWinFlags() {
 			mButtonMaximize->setEnabled( true );
 
 			if ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS && 0 == mMaximizeListener ) {
-				mMaximizeListener = mButtonMaximize->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonMaximizeClick ) );
+				mMaximizeListener = mButtonMaximize->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIWindow::onButtonMaximizeClick ) );
 			}
 		} else if ( NULL != mButtonMaximize ) {
 			mButtonMaximize->setVisible( false )->setEnabled( false )->close();
@@ -180,7 +180,7 @@ void UIWindow::updateWinFlags() {
 			mButtonMinimize->setEnabled( true );
 
 			if ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS && 0 == mMinimizeListener ) {
-				mMinimizeListener = mButtonMinimize->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIWindow::onButtonMinimizeClick ) );
+				mMinimizeListener = mButtonMinimize->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIWindow::onButtonMinimizeClick ) );
 			}
 		} else if ( NULL != mButtonMinimize ) {
 			mButtonMinimize->setVisible( false )->setEnabled( false )->close();
@@ -290,7 +290,7 @@ void UIWindow::onContainerPosChange( const UIEvent * Event ) {
 void UIWindow::onButtonCloseClick( const UIEvent * Event ) {
 	closeWindow();
 
-	sendCommonEvent( UIEvent::EventOnWindowCloseClick );
+	sendCommonEvent( UIEvent::OnWindowCloseClick );
 }
 
 void UIWindow::closeWindow() {
@@ -323,13 +323,13 @@ void UIWindow::close() {
 void UIWindow::onButtonMaximizeClick( const UIEvent * Event ) {
 	maximize();
 
-	sendCommonEvent( UIEvent::EventOnWindowMaximizeClick );
+	sendCommonEvent( UIEvent::OnWindowMaximizeClick );
 }
 
 void UIWindow::onButtonMinimizeClick( const UIEvent * Event ) {
 	hide();
 
-	sendCommonEvent( UIEvent::EventOnWindowMinimizeClick );
+	sendCommonEvent( UIEvent::OnWindowMinimizeClick );
 }
 
 void UIWindow::setTheme( UITheme * Theme ) {
@@ -536,17 +536,17 @@ void UIWindow::fixChildsSize() {
 
 Uint32 UIWindow::onMessage( const UIMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::MsgFocus:
+		case UIMessage::Focus:
 		{
 			toFront();
 			break;
 		}
-		case UIMessage::MsgMouseDown:
+		case UIMessage::MouseDown:
 		{
 			doResize( Msg );
 			break;
 		}
-		case UIMessage::MsgWindowResize:
+		case UIMessage::WindowResize:
 		{
 			if ( isModal() && NULL != mModalCtrl ) {
 				mModalCtrl->setSize( UIManager::instance()->getMainControl()->getSize() );
@@ -554,18 +554,18 @@ Uint32 UIWindow::onMessage( const UIMessage * Msg ) {
 
 			break;
 		}
-		case UIMessage::MsgMouseExit:
+		case UIMessage::MouseExit:
 		{
 			UIManager::instance()->setCursor( EE_CURSOR_ARROW );
 			break;
 		}
-		case UIMessage::MsgDragStart:
+		case UIMessage::DragStart:
 		{
 			UIManager::instance()->setCursor( EE_CURSOR_HAND );
 			toFront();
 			break;
 		}
-		case UIMessage::MsgDragStop:
+		case UIMessage::DragStop:
 		{
 			UIManager::instance()->setCursor( EE_CURSOR_ARROW );
 			break;

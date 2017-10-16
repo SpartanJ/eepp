@@ -11,25 +11,25 @@ class EE_API UIMessage {
 	public:
 		enum Message
 		{
-			MsgClick = 0,
-			MsgDoubleClick,
-			MsgMouseEnter,
-			MsgMouseExit,
-			MsgMouseDown,
-			MsgMouseUp,
-			MsgWindowResize,
-			MsgFocus,
-			MsgFocusLoss,
-			MsgCellClicked,
-			MsgSelected,
-			MsgDragStart,
-			MsgDragStop,
-			MsgLayoutAttributeChange,
-			MsgUser,
-			MsgForceDWord = eeINDEX_NOT_FOUND
+			Click = 0,
+			DoubleClick,
+			MouseEnter,
+			MouseExit,
+			MouseDown,
+			MouseUp,
+			WindowResize,
+			Focus,
+			FocusLoss,
+			CellClicked,
+			Selected,
+			DragStart,
+			DragStop,
+			LayoutAttributeChange,
+			UserMessage,
+			NoMessage = eeINDEX_NOT_FOUND
 		};
 
-		UIMessage( UIControl * Ctrl, const Uint32& getMsg, const Uint32& getFlags = MsgForceDWord );
+		UIMessage( UIControl * Ctrl, const Uint32& getMsg, const Uint32& getFlags = NoMessage );
 
 		~UIMessage();
 

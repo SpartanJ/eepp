@@ -43,7 +43,7 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 		mButton->setParent( this );
 		mButton->setVisible( true );
 		mButton->setEnabled( true );
-		mButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIComboBox::onButtonClick ) );
+		mButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIComboBox::onButtonClick ) );
 	}
 
 	mDropDownList->setThemeSkin( Theme, "combobox" );

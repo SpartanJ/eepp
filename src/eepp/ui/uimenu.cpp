@@ -288,16 +288,16 @@ bool UIMenu::isSubMenu( UIControl * Ctrl ) {
 
 Uint32 UIMenu::onMessage( const UIMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::MsgMouseUp:
+		case UIMessage::MouseUp:
 		{
 			if ( Msg->getSender()->getParent() == this && ( Msg->getFlags() & EE_BUTTONS_LRM ) ) {
-				UIEvent ItemEvent( Msg->getSender(), UIEvent::EventOnItemClicked );
+				UIEvent ItemEvent( Msg->getSender(), UIEvent::OnItemClicked );
 				sendEvent( &ItemEvent );
 			}
 
 			return 1;
 		}
-		case UIMessage::MsgFocusLoss:
+		case UIMessage::FocusLoss:
 		{
 			UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
 
@@ -497,9 +497,9 @@ Uint32 UIMenu::onKeyDown( const UIEventKey& Event ) {
 				break;
 			case KEY_RETURN:
 				if ( NULL != mItemSelected ) {
-					mItemSelected->sendMouseEvent(UIEvent::EventMouseClick, UIManager::instance()->getMousePos(), EE_BUTTONS_ALL );
+					mItemSelected->sendMouseEvent(UIEvent::MouseClick, UIManager::instance()->getMousePos(), EE_BUTTONS_ALL );
 
-					UIMessage Msg( mItemSelected, UIMessage::MsgMouseUp, EE_BUTTONS_ALL );
+					UIMessage Msg( mItemSelected, UIMessage::MouseUp, EE_BUTTONS_ALL );
 					mItemSelected->messagePost( &Msg );
 				}
 

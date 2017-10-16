@@ -55,7 +55,7 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	Menu->setVisible( false );
 	Menu->setEnabled( false );
 	Menu->setParent( getWindowContainer() );
-	Menu->addEventListener( UIEvent::EventOnWidgetFocusLoss, cb::Make1( this, &UIWinMenu::onMenuFocusLoss ) );
+	Menu->addEventListener( UIEvent::OnWidgetFocusLoss, cb::Make1( this, &UIWinMenu::onMenuFocusLoss ) );
 
 	mButtons.push_back( std::make_pair( Button, Menu ) );
 
@@ -176,8 +176,8 @@ void UIWinMenu::refreshButtons() {
 
 Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::MsgMouseUp:
-		case UIMessage::MsgMouseEnter:
+		case UIMessage::MouseUp:
+		case UIMessage::MouseEnter:
 		{
 			if ( Msg->getSender()->isType( UI_TYPE_SELECTBUTTON ) ) {
 				UISelectButton * tbut	= reinterpret_cast<UISelectButton*> ( Msg->getSender() );
@@ -186,7 +186,7 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 				Vector2i pos( tbut->getPosition().x, tbut->getPosition().y + tbut->getSize().getHeight() );
 				tpop->setPosition( pos );
 
-				if ( Msg->getMsg() == UIMessage::MsgMouseEnter ) {
+				if ( Msg->getMsg() == UIMessage::MouseEnter ) {
 					if ( NULL != mCurrentMenu ) {
 						mCurrentMenu = tpop;
 
@@ -207,7 +207,7 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 
 			break;
 		}
-		case UIMessage::MsgSelected:
+		case UIMessage::Selected:
 		{
 			for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
 				if ( it->first != Msg->getSender() ) {
@@ -217,7 +217,7 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 
 			return 1;
 		}
-		case UIMessage::MsgFocusLoss:
+		case UIMessage::FocusLoss:
 		{
 			UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
 

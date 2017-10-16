@@ -29,7 +29,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	mUIWindow	= UIWindow::New();
 	mUIWindow->setSizeWithDecoration( 500, 500 )->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL )->setMinWindowSize( 500, 500 );
 
-	mUIWindow->addEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &TileMapProperties::onWindowClose ) );
+	mUIWindow->addEventListener( UIEvent::OnWindowClose, cb::Make1( this, &TileMapProperties::onWindowClose ) );
 	mUIWindow->setTitle( "Map Properties" );
 
 
@@ -53,7 +53,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 		mUIRedSlider->setParent( mUIWindow->getContainer() )->setSize( 255, 20 )->setPosition( Txt->getPosition().x + Txt->getSize().getWidth() + 16, Txt->getPosition().y );
 		mUIRedSlider->setMaxValue( 255 );
 		mUIRedSlider->setValue( mMap->getBaseColor().r );
-		mUIRedSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TileMapProperties::onRedChange ) );
+		mUIRedSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &TileMapProperties::onRedChange ) );
 
 		mUIRedTxt = createTextBox( String::toStr( (Uint32)mMap->getBaseColor().r ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
@@ -63,7 +63,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 		mUIGreenSlider->setParent( mUIWindow->getContainer() )->setSize( 255, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 		mUIGreenSlider->setMaxValue( 255 );
 		mUIGreenSlider->setValue( mMap->getBaseColor().g );
-		mUIGreenSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TileMapProperties::onGreenChange ) );
+		mUIGreenSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &TileMapProperties::onGreenChange ) );
 
 		mUIGreenTxt = createTextBox( String::toStr( (Uint32)mMap->getBaseColor().g ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
@@ -72,7 +72,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 		mUIBlueSlider->setParent( mUIWindow->getContainer() )->setSize( 255, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 		mUIBlueSlider->setMaxValue( 255 );
 		mUIBlueSlider->setValue( mMap->getBaseColor().b );
-		mUIBlueSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TileMapProperties::onBlueChange ) );
+		mUIBlueSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &TileMapProperties::onBlueChange ) );
 
 		mUIBlueTxt = createTextBox( String::toStr( (Uint32)mMap->getBaseColor().b ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4, mUIBlueSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 	}
@@ -85,14 +85,14 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	OKButton->setParent(  mUIWindow->getContainer() )->setSize( 80, 0 );
 	OKButton->setIcon( mUITheme->getIconByName( "ok" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
-	OKButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::onOKClick ) );
+	OKButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TileMapProperties::onOKClick ) );
 	OKButton->setText( "OK" );
 	OKButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 
 	UIPushButton * CancelButton = UIPushButton::New();
 	CancelButton->setParent( mUIWindow->getContainer() )->setSize( OKButton->getSize() )->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y );
 	CancelButton->setIcon( mUITheme->getIconByName( "cancel" ) );
-	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::onCancelClick ) );
+	CancelButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TileMapProperties::onCancelClick ) );
 	CancelButton->setText( "Cancel" );
 	CancelButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 
@@ -113,7 +113,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	AddButton->setParent( mUIWindow->getContainer() )->setSize( 24, 0 )->setPosition( Pos );
 	AddButton->setIcon( mUITheme->getIconByName( "add" ) );
 	AddButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	AddButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::onAddCellClick ) );
+	AddButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TileMapProperties::onAddCellClick ) );
 
 	if ( NULL == AddButton->getIcon()->getDrawable() )
 		AddButton->setText( "+" );
@@ -124,7 +124,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	RemoveButton->setParent( mUIWindow->getContainer() )->setSize( 24, 0 )->setPosition( Pos );
 	RemoveButton->setIcon( mUITheme->getIconByName( "remove" ) );
 	RemoveButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	RemoveButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TileMapProperties::onRemoveCellClick ) );
+	RemoveButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TileMapProperties::onRemoveCellClick ) );
 
 	if ( NULL == RemoveButton->getIcon()->getDrawable() )
 		RemoveButton->setText( "-" );

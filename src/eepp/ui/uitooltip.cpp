@@ -201,11 +201,11 @@ void UITooltip::onSizeChange() {
 }
 
 void UITooltip::onTextChanged() {
-	sendCommonEvent( UIEvent::EventOnTextChanged );
+	sendCommonEvent( UIEvent::OnTextChanged );
 }
 
 void UITooltip::onFontChanged() {
-	sendCommonEvent( UIEvent::EventOnFontChanged );
+	sendCommonEvent( UIEvent::OnFontChanged );
 }
 
 void UITooltip::setPadding( const Rect& padding ) {

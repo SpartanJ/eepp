@@ -652,7 +652,7 @@ void UITabWidget::setTabSelected( UITab * Tab ) {
 
 		orderTabs();
 
-		sendCommonEvent( UIEvent::EventOnTabSelected );
+		sendCommonEvent( UIEvent::OnTabSelected );
 	}
 }
 

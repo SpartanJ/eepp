@@ -96,14 +96,14 @@ void UIMessageBox::setTheme( UITheme * Theme ) {
 
 Uint32 UIMessageBox::onMessage( const UIMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::MsgClick:
+		case UIMessage::Click:
 		{
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				Vector2i mousei( UIManager::instance()->getMousePos() );
 				Vector2f mouse( mousei.x, mousei.y );
 
 				if ( Msg->getSender() == mButtonOK && mButtonOK->getPolygon().pointInside( mouse ) ) {
-					sendCommonEvent( UIEvent::EventMsgBoxConfirmClick );
+					sendCommonEvent( UIEvent::MsgBoxConfirmClick );
 
 					closeWindow();
 				} else if ( Msg->getSender() == mButtonCancel ) {

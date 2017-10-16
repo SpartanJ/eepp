@@ -118,17 +118,17 @@ void UIManager::inputCallback( InputEvent * Event ) {
 
 void UIManager::resizeControl( EE::Window::Window * win ) {
 	mControl->setSize( (Float)mWindow->getWidth() / PixelDensity::getPixelDensity(), (Float)mWindow->getHeight() / PixelDensity::getPixelDensity() );
-	sendMsg( mControl, UIMessage::MsgWindowResize );
+	sendMsg( mControl, UIMessage::WindowResize );
 
 	std::list<UIWindow*>::iterator it;
 
 	for ( it = mWindowsList.begin(); it != mWindowsList.end(); it++ ) {
-		sendMsg( *it, UIMessage::MsgWindowResize );
+		sendMsg( *it, UIMessage::WindowResize );
 	}
 }
 
 void UIManager::sendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
-	UIEventKey	KeyEvent	= UIEventKey( mFocusControl, UIEvent::EventKeyUp, KeyCode, Char, Mod );
+	UIEventKey	KeyEvent	= UIEventKey( mFocusControl, UIEvent::KeyUp, KeyCode, Char, Mod );
 	UIControl * CtrlLoop	= mFocusControl;
 
 	while( NULL != CtrlLoop ) {
@@ -140,7 +140,7 @@ void UIManager::sendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint
 }
 
 void UIManager::sendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
-	UIEventKey	KeyEvent	= UIEventKey( mFocusControl, UIEvent::EventKeyDown, KeyCode, Char, Mod );
+	UIEventKey	KeyEvent	= UIEventKey( mFocusControl, UIEvent::KeyDown, KeyCode, Char, Mod );
 	UIControl * CtrlLoop	= mFocusControl;
 
 	while( NULL != CtrlLoop ) {
@@ -166,10 +166,10 @@ void UIManager::setFocusControl( UIControl * Ctrl ) {
 		mFocusControl = Ctrl;
 
 		mLossFocusControl->onFocusLoss();
-		sendMsg( mLossFocusControl, UIMessage::MsgFocusLoss );
+		sendMsg( mLossFocusControl, UIMessage::FocusLoss );
 
 		mFocusControl->onFocus();
-		sendMsg( mFocusControl, UIMessage::MsgFocus );
+		sendMsg( mFocusControl, UIMessage::Focus );
 	}
 }
 
@@ -198,14 +198,14 @@ void UIManager::update() {
 
 	if ( pOver != mOverControl ) {
 		if ( NULL != mOverControl ) {
-			sendMsg( mOverControl, UIMessage::MsgMouseExit );
+			sendMsg( mOverControl, UIMessage::MouseExit );
 			mOverControl->onMouseExit( mKM->getMousePos(), 0 );
 		}
 
 		mOverControl = pOver;
 
 		if ( NULL != mOverControl ) {
-			sendMsg( mOverControl, UIMessage::MsgMouseEnter );
+			sendMsg( mOverControl, UIMessage::MouseEnter );
 			mOverControl->onMouseEnter( mKM->getMousePos(), 0 );
 		}
 	} else {
@@ -219,7 +219,7 @@ void UIManager::update() {
 
 		if ( NULL != mOverControl ) {
 			mOverControl->onMouseDown( mKM->getMousePos(), mKM->getPressTrigger() );
-			sendMsg( mOverControl, UIMessage::MsgMouseDown, mKM->getPressTrigger() );
+			sendMsg( mOverControl, UIMessage::MouseDown, mKM->getPressTrigger() );
 		}
 
 		if ( !mFirstPress ) {
@@ -237,14 +237,14 @@ void UIManager::update() {
 					setFocusControl( mOverControl );
 
 				mFocusControl->onMouseUp( mKM->getMousePos(), mKM->getReleaseTrigger() );
-				sendMsg( mFocusControl, UIMessage::MsgMouseUp, mKM->getReleaseTrigger() );
+				sendMsg( mFocusControl, UIMessage::MouseUp, mKM->getReleaseTrigger() );
 
 				if ( mKM->getClickTrigger() ) { // mDownControl == mOverControl &&
-					sendMsg( mFocusControl, UIMessage::MsgClick, mKM->getClickTrigger() );
+					sendMsg( mFocusControl, UIMessage::Click, mKM->getClickTrigger() );
 					mFocusControl->onMouseClick( mKM->getMousePos(), mKM->getClickTrigger() );
 
 					if ( mKM->getDoubleClickTrigger() ) {
-						sendMsg( mFocusControl, UIMessage::MsgDoubleClick, mKM->getDoubleClickTrigger() );
+						sendMsg( mFocusControl, UIMessage::DoubleClick, mKM->getDoubleClickTrigger() );
 						mFocusControl->onMouseDoubleClick( mKM->getMousePos(), mKM->getDoubleClickTrigger() );
 					}
 				}
@@ -379,17 +379,17 @@ void UIManager::checkTabPress( const Uint32& KeyCode ) {
 }
 
 void UIManager::sendMouseClick( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
-	sendMsg( ToCtrl, UIMessage::MsgClick, Flags );
+	sendMsg( ToCtrl, UIMessage::Click, Flags );
 	ToCtrl->onMouseClick( Pos, Flags );
 }
 
 void UIManager::sendMouseUp( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
-	sendMsg( ToCtrl, UIMessage::MsgMouseUp, Flags );
+	sendMsg( ToCtrl, UIMessage::MouseUp, Flags );
 	ToCtrl->onMouseUp( Pos, Flags );
 }
 
 void UIManager::sendMouseDown( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
-	sendMsg( ToCtrl, UIMessage::MsgMouseDown, Flags );
+	sendMsg( ToCtrl, UIMessage::MouseDown, Flags );
 	ToCtrl->onMouseDown( Pos, Flags );
 }
 

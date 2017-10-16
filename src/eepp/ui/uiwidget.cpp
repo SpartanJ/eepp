@@ -288,14 +288,14 @@ void UIWidget::onWidgetCreated() {
 
 void UIWidget::notifyLayoutAttrChange() {
 	if ( 0 == mPropertiesTransactionCount ) {
-		UIMessage msg( this, UIMessage::MsgLayoutAttributeChange );
+		UIMessage msg( this, UIMessage::LayoutAttributeChange );
 		messagePost( &msg );
 	}
 }
 
 void UIWidget::notifyLayoutAttrChangeParent() {
 	if ( 0 == mPropertiesTransactionCount && NULL != mParentCtrl ) {
-		UIMessage msg( this, UIMessage::MsgLayoutAttributeChange );
+		UIMessage msg( this, UIMessage::LayoutAttributeChange );
 		mParentCtrl->messagePost( &msg );
 	}
 }

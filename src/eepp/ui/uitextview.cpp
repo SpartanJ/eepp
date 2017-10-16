@@ -280,11 +280,11 @@ void UITextView::onSizeChange() {
 }
 
 void UITextView::onTextChanged() {
-	sendCommonEvent( UIEvent::EventOnTextChanged );
+	sendCommonEvent( UIEvent::OnTextChanged );
 }
 
 void UITextView::onFontChanged() {
-	sendCommonEvent( UIEvent::EventOnFontChanged );
+	sendCommonEvent( UIEvent::OnFontChanged );
 }
 
 void UITextView::setTheme( UITheme * Theme ) {

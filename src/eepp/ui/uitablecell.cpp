@@ -137,22 +137,22 @@ Uint32 UITableCell::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 
 Uint32 UITableCell::onMessage( const UIMessage * Msg ) {
 	switch( Msg->getMsg() ) {
-		case UIMessage::MsgMouseEnter:
+		case UIMessage::MouseEnter:
 		{
 			onMouseEnter( Vector2i(), Msg->getFlags() );
 			break;
 		}
-		case UIMessage::MsgMouseExit:
+		case UIMessage::MouseExit:
 		{
 			onMouseExit( Vector2i(), Msg->getFlags() );
 			break;
 		}
-		case UIMessage::MsgClick:
+		case UIMessage::Click:
 		{
 			if ( Msg->getFlags() & EE_BUTTONS_LRM ) {
 				select();
 
-				UIMessage tMsg( this, UIMessage::MsgCellClicked, Msg->getFlags() );
+				UIMessage tMsg( this, UIMessage::CellClicked, Msg->getFlags() );
 
 				messagePost( &tMsg );
 

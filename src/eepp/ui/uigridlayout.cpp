@@ -182,7 +182,7 @@ void UIGridLayout::pack() {
 
 Uint32 UIGridLayout::onMessage(const UIMessage * Msg) {
 	switch( Msg->getMsg() ) {
-		case UIMessage::MsgLayoutAttributeChange:
+		case UIMessage::LayoutAttributeChange:
 		{
 			pack();
 			break;

@@ -462,15 +462,15 @@ Interpolation2d * UIControlAnim::getTranslationInterpolation() {
 }
 
 void UIControlAnim::onAngleChange() {
-	sendCommonEvent( UIEvent::EventOnAngleChange );
+	sendCommonEvent( UIEvent::OnAngleChange );
 }
 
 void UIControlAnim::onScaleChange() {
-	sendCommonEvent( UIEvent::EventOnScaleChange );
+	sendCommonEvent( UIEvent::OnScaleChange );
 }
 
 void UIControlAnim::onAlphaChange() {
-	sendCommonEvent( UIEvent::EventOnAlphaChange );
+	sendCommonEvent( UIEvent::OnAlphaChange );
 }
 
 }}

@@ -226,7 +226,7 @@ void UIPushButton::onAlignChange() {
 
 Uint32 UIPushButton::onKeyDown( const UIEventKey& Event ) {
 	if ( Event.getKeyCode() == KEY_RETURN ) {
-		UIMessage Msg( this, UIMessage::MsgClick, EE_BUTTON_LMASK );
+		UIMessage Msg( this, UIMessage::Click, EE_BUTTON_LMASK );
 		messagePost( &Msg );
 		onMouseClick( Vector2i(0,0), EE_BUTTON_LMASK );
 

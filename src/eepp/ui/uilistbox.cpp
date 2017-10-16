@@ -59,8 +59,8 @@ UIListBox::UIListBox() :
 	mHScrollBar->setPosition( 0, mSize.getHeight() - 16 );
 	mHScrollBar->setEnabled( false )->setVisible( false );
 
-	mVScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIListBox::onScrollValueChange ) );
-	mHScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIListBox::onHScrollValueChange ) );
+	mVScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIListBox::onScrollValueChange ) );
+	mHScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIListBox::onHScrollValueChange ) );
 
 	setSmoothScroll( true );
 
@@ -232,7 +232,7 @@ void UIListBox::clear() {
 	updateScroll();
 	updateListBoxItemsSize();
 
-	sendCommonEvent( UIEvent::EventOnControlClear );
+	sendCommonEvent( UIEvent::OnControlClear );
 }
 
 Uint32 UIListBox::removeListBoxItem( Uint32 ItemIndex ) {
@@ -591,12 +591,12 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 }
 
 void UIListBox::itemKeyEvent( const UIEventKey &Event ) {
-	UIEventKey ItemEvent( Event.getControl(), UIEvent::EventOnItemKeyDown, Event.getKeyCode(), Event.getChar(), Event.getMod() );
+	UIEventKey ItemEvent( Event.getControl(), UIEvent::OnItemKeyDown, Event.getKeyCode(), Event.getChar(), Event.getMod() );
 	sendEvent( &ItemEvent );
 }
 
 void UIListBox::itemClicked( UIListBoxItem * Item ) {
-	UIEvent ItemEvent( Item, UIEvent::EventOnItemClicked );
+	UIEvent ItemEvent( Item, UIEvent::OnItemClicked );
 	sendEvent( &ItemEvent );
 
 	if ( !( isMultiSelect() && UIManager::instance()->getInput()->isKeyDown( KEY_LCTRL ) ) )
@@ -604,10 +604,10 @@ void UIListBox::itemClicked( UIListBoxItem * Item ) {
 }
 
 Uint32 UIListBox::onSelected() {
-	UIMessage tMsg( this, UIMessage::MsgSelected, 0 );
+	UIMessage tMsg( this, UIMessage::Selected, 0 );
 	messagePost( &tMsg );
 
-	sendCommonEvent( UIEvent::EventOnItemSelected );
+	sendCommonEvent( UIEvent::OnItemSelected );
 
 	return 1;
 }
@@ -896,7 +896,7 @@ Uint32 UIListBox::onKeyDown( const UIEventKey &Event ) {
 
 Uint32 UIListBox::onMessage( const UIMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::MsgFocusLoss:
+		case UIMessage::FocusLoss:
 		{
 			UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
 

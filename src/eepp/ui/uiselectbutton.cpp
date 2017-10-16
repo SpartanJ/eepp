@@ -32,7 +32,7 @@ void UISelectButton::select() {
 	mControlFlags |= UI_CTRL_FLAG_SELECTED;
 
 	if ( !wasSelected ) {
-		UIMessage tMsg( this, UIMessage::MsgSelected, 0 );
+		UIMessage tMsg( this, UIMessage::Selected, 0 );
 		messagePost( &tMsg );
 	}
 }

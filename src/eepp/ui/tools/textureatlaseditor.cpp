@@ -97,32 +97,32 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	UIWidgetCreator::removeCustomWidgetCallback( "TextureAtlasSubTextureEditor" );
 
 	mUIContainer->bind( "SubTextureList", mSubTextureList );
-	mSubTextureList->addEventListener( UIEvent::EventOnItemSelected, cb::Make1( this, &TextureAtlasEditor::onSubTextureChange ) );
+	mSubTextureList->addEventListener( UIEvent::OnItemSelected, cb::Make1( this, &TextureAtlasEditor::onSubTextureChange ) );
 
 	mUIContainer->bind( "offX", mSpinOffX );
-	mSpinOffX->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onOffXChange ) );
+	mSpinOffX->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &TextureAtlasEditor::onOffXChange ) );
 
 	mUIContainer->bind( "offY", mSpinOffY );
-	mSpinOffY->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onOffYChange ) );
+	mSpinOffY->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &TextureAtlasEditor::onOffYChange ) );
 
 	mUIContainer->bind( "destW", mSpinDestW );
-	mSpinDestW->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onDestWChange ) );
+	mSpinDestW->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &TextureAtlasEditor::onDestWChange ) );
 
 	mUIContainer->bind( "destH", mSpinDestH );
-	mSpinDestH->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::onDestHChange ) );
+	mSpinDestH->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &TextureAtlasEditor::onDestHChange ) );
 
-	mUIContainer->find<UIPushButton>( "resetDest" )->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onResetDestSize ) );
+	mUIContainer->find<UIPushButton>( "resetDest" )->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TextureAtlasEditor::onResetDestSize ) );
 
-	mUIContainer->find<UIPushButton>( "resetOff" )->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onResetOffset ) );
+	mUIContainer->find<UIPushButton>( "resetOff" )->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TextureAtlasEditor::onResetOffset ) );
 
-	mUIContainer->find<UIPushButton>( "centerOff" )->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onCenterOffset ) );
+	mUIContainer->find<UIPushButton>( "centerOff" )->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TextureAtlasEditor::onCenterOffset ) );
 
-	mUIContainer->find<UIPushButton>( "hbotOff" )->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::onHBOffset ) );
+	mUIContainer->find<UIPushButton>( "hbotOff" )->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TextureAtlasEditor::onHBOffset ) );
 
-	mUIContainer->find<UIPopUpMenu>("fileMenu")->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &TextureAtlasEditor::fileMenuClick ) );
+	mUIContainer->find<UIPopUpMenu>("fileMenu")->addEventListener( UIEvent::OnItemClicked, cb::Make1( this, &TextureAtlasEditor::fileMenuClick ) );
 
 	mUIWindow->setTitle( "Texture Atlas Editor" );
-	mUIWindow->addEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
+	mUIWindow->addEventListener( UIEvent::OnWindowClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
 
 	mTGEU = eeNew( UITGEUpdater, ( this ) );
 }
@@ -225,7 +225,7 @@ void TextureAtlasEditor::fileMenuClick( const UIEvent * Event ) {
 		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open Texture Atlas" );
-		TGDialog->addEventListener( UIEvent::EventOpenFile, cb::Make1( this, &TextureAtlasEditor::openTextureAtlas ) );
+		TGDialog->addEventListener( UIEvent::OpenFile, cb::Make1( this, &TextureAtlasEditor::openTextureAtlas ) );
 		TGDialog->center();
 		TGDialog->show();
 	} else if ( "Save" == txt ) {
@@ -235,7 +235,7 @@ void TextureAtlasEditor::fileMenuClick( const UIEvent * Event ) {
 	} else if ( "Close" == txt ) {
 		if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->isLoaded()  ) {
 			UIMessageBox * MsgBox = UIMessageBox::New( MSGBOX_OKCANCEL, "Do you really want to close the current texture atlas?\nAll changes will be lost." );
-			MsgBox->addEventListener( UIEvent::EventMsgBoxConfirmClick, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasClose ) );
+			MsgBox->addEventListener( UIEvent::MsgBoxConfirmClick, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasClose ) );
 			MsgBox->setTitle( "Close Texture Atlas?" );
 			MsgBox->center();
 			MsgBox->show();

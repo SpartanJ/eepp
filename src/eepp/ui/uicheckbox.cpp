@@ -101,13 +101,13 @@ void UICheckBox::onSizeChange() {
 
 Uint32 UICheckBox::onMessage( const UIMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::MsgClick: {
+		case UIMessage::Click: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				switchState();
 			}
 
 			if ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) {
-				sendMouseEvent( UIEvent::EventMouseClick, UIManager::instance()->getMousePos(), UIManager::instance()->getPressTrigger() );
+				sendMouseEvent( UIEvent::MouseClick, UIManager::instance()->getMousePos(), UIManager::instance()->getPressTrigger() );
 			}
 
 			return 1;

@@ -74,8 +74,8 @@ void UIMenuSubMenu::setSubMenu( UIMenu * SubMenu ) {
 	mSubMenu = SubMenu;
 
 	if ( NULL != mSubMenu ) {
-		mCbId	= mSubMenu->addEventListener( UIEvent::EventOnEnabledChange, cb::Make1( this, &UIMenuSubMenu::onSubMenuFocusLoss ) );
-		mCbId2	= mSubMenu->addEventListener( UIEvent::EventOnHideByClick, cb::Make1( this, &UIMenuSubMenu::onHideByClick ) );
+		mCbId	= mSubMenu->addEventListener( UIEvent::OnEnabledChange, cb::Make1( this, &UIMenuSubMenu::onSubMenuFocusLoss ) );
+		mCbId2	= mSubMenu->addEventListener( UIEvent::OnHideByClick, cb::Make1( this, &UIMenuSubMenu::onHideByClick ) );
 	}
 }
 

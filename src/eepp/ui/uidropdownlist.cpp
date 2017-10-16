@@ -31,12 +31,12 @@ UIDropDownList::UIDropDownList() :
 	mListBox->setEnabled( false );
 	mListBox->setVisible( false );
 
-	mListBox->addEventListener( UIEvent::EventOnWidgetFocusLoss, cb::Make1( this, &UIDropDownList::onListBoxFocusLoss ) );
-	mListBox->addEventListener( UIEvent::EventOnItemSelected	, cb::Make1( this, &UIDropDownList::onItemSelected ) );
-	mListBox->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &UIDropDownList::onItemClicked ) );
-	mListBox->addEventListener( UIEvent::EventOnItemKeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
-	mListBox->addEventListener( UIEvent::EventKeyDown		, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
-	mListBox->addEventListener( UIEvent::EventOnControlClear, cb::Make1( this, &UIDropDownList::onControlClear ) );
+	mListBox->addEventListener( UIEvent::OnWidgetFocusLoss, cb::Make1( this, &UIDropDownList::onListBoxFocusLoss ) );
+	mListBox->addEventListener( UIEvent::OnItemSelected	, cb::Make1( this, &UIDropDownList::onItemSelected ) );
+	mListBox->addEventListener( UIEvent::OnItemClicked, cb::Make1( this, &UIDropDownList::onItemClicked ) );
+	mListBox->addEventListener( UIEvent::OnItemKeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
+	mListBox->addEventListener( UIEvent::KeyDown		, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
+	mListBox->addEventListener( UIEvent::OnControlClear, cb::Make1( this, &UIDropDownList::onControlClear ) );
 }
 
 UIDropDownList::~UIDropDownList() {
@@ -232,10 +232,10 @@ void UIDropDownList::onItemClicked( const UIEvent * Event ) {
 void UIDropDownList::onItemSelected( const UIEvent * Event ) {
 	setText( mListBox->getItemSelectedText() );
 
-	UIMessage Msg( this, UIMessage::MsgSelected, mListBox->getItemSelectedIndex() );
+	UIMessage Msg( this, UIMessage::Selected, mListBox->getItemSelectedIndex() );
 	messagePost( &Msg );
 
-	sendCommonEvent( UIEvent::EventOnItemSelected );
+	sendCommonEvent( UIEvent::OnItemSelected );
 }
 
 void UIDropDownList::show() {

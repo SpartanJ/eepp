@@ -31,7 +31,7 @@ UIScrollBar::UIScrollBar( const UI_ORIENTATION& orientation ) :
 	mSlider->setAllowHalfSliderOut( false );
 	mSlider->setExpandBackground( false );
 
-	mSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
+	mSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
 
 	adjustChilds();
 
@@ -182,7 +182,7 @@ void UIScrollBar::manageClick( const Uint32& Flags ) {
 
 Uint32 UIScrollBar::onMessage( const UIMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::MsgClick:
+		case UIMessage::Click:
 		{
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender() == mBtnUp ) {

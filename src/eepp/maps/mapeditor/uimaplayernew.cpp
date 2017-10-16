@@ -18,7 +18,7 @@ UIMapLayerNew::UIMapLayerNew( UIMap * Map, EE_LAYER_TYPE Type, NewLayerCb newLay
 	mUIWindow	= UIWindow::New();
 	mUIWindow->setSizeWithDecoration( 278, 114 )->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL )->setMinWindowSize( 278, 114 );
 
-	mUIWindow->addEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &UIMapLayerNew::onWindowClose ) );
+	mUIWindow->addEventListener( UIEvent::OnWindowClose, cb::Make1( this, &UIMapLayerNew::onWindowClose ) );
 
 	if ( MAP_LAYER_TILED == mType )
 		mUIWindow->setTitle( "New Tile Layer" );
@@ -40,18 +40,18 @@ UIMapLayerNew::UIMapLayerNew( UIMap * Map, EE_LAYER_TYPE Type, NewLayerCb newLay
 	OKButton->setParent(  mUIWindow->getContainer() )->setSize( 80, 0 );
 	OKButton->setIcon( mTheme->getIconByName( "add" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
-	OKButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIMapLayerNew::onOKClick ) );
-	mUILayerName->addEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &UIMapLayerNew::onOKClick ) );
+	OKButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIMapLayerNew::onOKClick ) );
+	mUILayerName->addEventListener( UIEvent::OnPressEnter, cb::Make1( this, &UIMapLayerNew::onOKClick ) );
 
 	OKButton->setText( "Add" );
 
 	UIPushButton * CancelButton = UIPushButton::New();
 	CancelButton->setParent( mUIWindow->getContainer() )->setSize( OKButton->getSize() )->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y );
 	CancelButton->setIcon( mTheme->getIconByName( "cancel" ) );
-	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIMapLayerNew::onCancelClick ) );
+	CancelButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIMapLayerNew::onCancelClick ) );
 	CancelButton->setText( "Cancel" );
 
-	mUIWindow->addEventListener( UIEvent::EventKeyUp, cb::Make1( this, &UIMapLayerNew::onOnKeyUp ) );
+	mUIWindow->addEventListener( UIEvent::KeyUp, cb::Make1( this, &UIMapLayerNew::onOnKeyUp ) );
 
 	mUIWindow->center();
 	mUIWindow->show();

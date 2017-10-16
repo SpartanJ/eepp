@@ -27,7 +27,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 			->setWinFlags( UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_SHARE_ALPHA_WITH_CHILDS | UI_WIN_MODAL )
 			->setMinWindowSize( 320, 380 );
 
-	mUIWindow->addEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &UIMapNew::onWindowClose ) );
+	mUIWindow->addEventListener( UIEvent::OnWindowClose, cb::Make1( this, &UIMapNew::onWindowClose ) );
 
 	if ( !mResizeMap ) {
 		mUIWindow->setTitle( "New Map" );
@@ -148,7 +148,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	mUIRedSlider->setParent( mUIWindow->getContainer() )->setSize( 128, 20 )->setPosition( Txt->getPosition().x + Txt->getSize().getWidth() + 16, Txt->getPosition().y );
 	mUIRedSlider->setMaxValue( 255 );
 	mUIRedSlider->setValue( 255 );
-	mUIRedSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIMapNew::onRedChange ) );
+	mUIRedSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIMapNew::onRedChange ) );
 
 	mUIRedTxt = createTextBox( String::toStr( 255 ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
@@ -162,7 +162,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	mUIGreenSlider->setParent( mUIWindow->getContainer() )->setSize( 128, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIGreenSlider->setMaxValue( 255 );
 	mUIGreenSlider->setValue( 255 );
-	mUIGreenSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIMapNew::onGreenChange ) );
+	mUIGreenSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIMapNew::onGreenChange ) );
 
 	mUIGreenTxt = createTextBox( String::toStr( 255 ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
@@ -176,7 +176,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	mUIBlueSlider->setParent( mUIWindow->getContainer() )->setSize( 128, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIBlueSlider->setMaxValue( 255 );
 	mUIBlueSlider->setValue( 255 );
-	mUIBlueSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIMapNew::onBlueChange ) );
+	mUIBlueSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIMapNew::onBlueChange ) );
 
 	mUIBlueTxt = createTextBox( String::toStr( 255 ), mUIWindow->getContainer(), Sizei(), Vector2i( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4, mUIBlueSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
@@ -188,13 +188,13 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	OKButton->setParent(  mUIWindow->getContainer() )->setSize( 80, 0 );
 	OKButton->setIcon( mTheme->getIconByName( "ok" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
-	OKButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIMapNew::onOKClick ) );
+	OKButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIMapNew::onOKClick ) );
 	OKButton->setText( "OK" );
 
 	UIPushButton * CancelButton = UIPushButton::New();
 	CancelButton->setParent( mUIWindow->getContainer() )->setSize( OKButton->getSize() )->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y );
 	CancelButton->setIcon( mTheme->getIconByName( "cancel" ) );
-	CancelButton->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &UIMapNew::onCancelClick ) );
+	CancelButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIMapNew::onCancelClick ) );
 	CancelButton->setText( "Cancel" );
 
 	mUIWindow->center();

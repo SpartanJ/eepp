@@ -315,7 +315,7 @@ void EETest::createUI() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW;
+	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizei( 530, 405 );
 	windowStyleConfig.BaseAlpha = 200;
 	tWin->setStyleConfig( windowStyleConfig );
@@ -325,8 +325,8 @@ void EETest::createUI() {
 
 	tWin->setTitle( "Controls Test" );
 
-	tWin->addEventListener( UIEvent::EventMouseUp, cb::Make1( this, &EETest::onWinMouseUp ) );
-	C->addEventListener( UIEvent::EventMouseUp, cb::Make1( this, &EETest::onWinMouseUp ) );
+	tWin->addEventListener( UIEvent::MouseUp, cb::Make1( this, &EETest::onWinMouseUp ) );
+	C->addEventListener( UIEvent::MouseUp, cb::Make1( this, &EETest::onWinMouseUp ) );
 
 	UISprite * sprite = UISprite::New();
 	sprite->setFlags( UI_AUTO_SIZE );
@@ -345,7 +345,7 @@ void EETest::createUI() {
 	Button->setParent( C )->setPosition( 225, 215 )->setSize( 90, 0 );
 	Button->setIcon( mTheme->getIconByName( "ok" ) );
 	Button->setText( "Click Me" );
-	Button->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onButtonClick ) );
+	Button->addEventListener( UIEvent::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 	Button->setTooltipText( "Click and see what happens..." );
 
 	UICheckBox * Checkbox = UICheckBox::New();
@@ -362,7 +362,7 @@ void EETest::createUI() {
 
 	mSlider = UISlider::New();
 	mSlider->setOrientation( UI_HORIZONTAL )->setParent( C )->setPosition( 220, 80 )->setSize( 80, 24 );
-	mSlider->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &EETest::onSliderValueChange ) );
+	mSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &EETest::onSliderValueChange ) );
 
 	UISlider::New()->setOrientation( UI_VERTICAL )->setParent( C )->setPosition( 40, 110 )->setSize( 24, 80 );
 
@@ -372,7 +372,7 @@ void EETest::createUI() {
 
 	mScrollBar = UIScrollBar::New();
 	mScrollBar->setParent( C )->setSize( 0, 240 );
-	mScrollBar->addEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &EETest::onValueChange ) );
+	mScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &EETest::onValueChange ) );
 
 	mProgressBar = UIProgressBar::New();
 	mProgressBar->setParent( C )->setSize( 200, 24 )->setPosition( 20, 190 );
@@ -449,9 +449,9 @@ void EETest::createUI() {
 	Menu->addSeparator();
 	Menu->add( "Quit" );
 
-	Menu->addEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &EETest::onItemClick ) );
-	Menu->getItem( "Quit" )->addEventListener( UIEvent::EventMouseUp, cb::Make1( this, &EETest::onQuitClick ) );
-	UIManager::instance()->getMainControl()->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onMainClick ) );
+	Menu->addEventListener( UIEvent::OnItemClicked, cb::Make1( this, &EETest::onItemClick ) );
+	Menu->getItem( "Quit" )->addEventListener( UIEvent::MouseUp, cb::Make1( this, &EETest::onQuitClick ) );
+	UIManager::instance()->getMainControl()->addEventListener( UIEvent::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
 
 	UITextEdit * TextEdit = UITextEdit::New();
 	TextEdit->setParent( C )->setPosition( 5, 245 )->setSize( 315, 130 );
@@ -511,7 +511,7 @@ void EETest::createUI() {
 
 	mShowMenu->setText( "Show Menu" );
 	mShowMenu->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
-	mShowMenu->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onShowMenu ) );
+	mShowMenu->addEventListener( UIEvent::MouseClick, cb::Make1( this, &EETest::onShowMenu ) );
 #endif
 
 	eePRINTL( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
@@ -529,9 +529,9 @@ void EETest::createNewUI() {
 	UIScrollView * scrollView = UIScrollView::New();
 	scrollView->setTouchDragEnabled( true );
 	scrollView->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT )->setParent( relLay );
-	scrollView->getContainer()->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onMainClick ) );
+	scrollView->getContainer()->addEventListener( UIEvent::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
 	container->setParent( scrollView );
-	container->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onMainClick ) );
+	container->addEventListener( UIEvent::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
 
 	UILoader * loader = UILoader::New();
 	loader->setOutlineThickness( 4 )
@@ -851,10 +851,10 @@ void EETest::createDecoratedWindow() {
 	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER )
 			->setMinWindowSize( 530, 350 )->setPosition( 200, 50 );
 
-	mUIWindow->addEventListener( UIEvent::EventOnWindowCloseClick, cb::Make1( this, &EETest::onCloseClick ) );
+	mUIWindow->addEventListener( UIEvent::OnWindowCloseClick, cb::Make1( this, &EETest::onCloseClick ) );
 	mUIWindow->setTitle( "Test Window" );
-	mUIWindow->addEventListener( UIEvent::EventOnDragStart, cb::Make1( &onWinDragStart ) );
-	mUIWindow->addEventListener( UIEvent::EventOnDragStop, cb::Make1( &onWinDragStop ) );
+	mUIWindow->addEventListener( UIEvent::OnDragStart, cb::Make1( &onWinDragStart ) );
+	mUIWindow->addEventListener( UIEvent::OnDragStop, cb::Make1( &onWinDragStop ) );
 
 	UILinearLayout * lay = UILinearLayout::NewVertical();
 	lay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
@@ -882,7 +882,7 @@ void EETest::createDecoratedWindow() {
 	Button->setLayoutMargin( Rect( 5, 5, 5, 5 ) );
 	Button->setText( "Click Me" );
 	Button->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
-	Button->addEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::onButtonClick ) );
+	Button->addEventListener( UIEvent::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 
 	mUIWindow->addShortcut( KEY_C, KEYMOD_ALT, Button );
 
