@@ -1034,14 +1034,14 @@ void UIWindow::matrixSet() {
 }
 
 void UIWindow::matrixUnset() {
-	UIWidget::matrixUnset();
-
 	if ( ownsFrameBuffer() ) {
 		GLi->translatef( mScreenPos.x , mScreenPos.y, 0.f );
 
 		mFrameBuffer->unbind();
 
 		drawFrameBuffer();
+	} else {
+		UIWidget::matrixUnset();
 	}
 }
 
