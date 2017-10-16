@@ -565,7 +565,7 @@ Uint32 UIWindow::onMessage( const UIMessage * Msg ) {
 			toFront();
 			break;
 		}
-		case UIMessage::MsgDragEnd:
+		case UIMessage::MsgDragStop:
 		{
 			UIManager::instance()->setCursor( EE_CURSOR_ARROW );
 			break;
@@ -1201,6 +1201,8 @@ void UIWindow::resizeCursor() {
 }
 
 void UIWindow::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -1245,6 +1247,8 @@ void UIWindow::loadFromXmlNode(const pugi::xml_node & node) {
 			}
 		}
 	}
+
+	endPropertiesTransaction();
 
 	show();
 }

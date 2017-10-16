@@ -50,6 +50,8 @@ class EE_API UIEvent {
 			EventMsgBoxConfirmClick,
 			EventOnTabSelected,
 			EventOnClose, // Warning: Only some controls will report this event.
+			EventOnDragStart,
+			EventOnDragStop,
 			EventUser,
 			EventForceDWord = eeINDEX_NOT_FOUND
 		};

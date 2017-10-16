@@ -67,8 +67,8 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 			text.setFillColor( Color(255*i/size,0,0,255), i, i+1 );
 		}
 
-		fontTest2 = FontTrueType::New( "Arial" );
-		fontTest2->loadFromFile( AppPath + "assets/fonts/arial.ttf" );
+		fontTest2 = FontTrueType::New( "NotoSans-Regular" );
+		fontTest2->loadFromFile( AppPath + "assets/fonts/NotoSans-Regular.ttf" );
 
 		text2.setFont( fontTest2 );
 		text2.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );

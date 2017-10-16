@@ -8,7 +8,7 @@ UIGridLayout * UIGridLayout::New() {
 }
 
 UIGridLayout::UIGridLayout() :
-	UIWidget(),
+	UILayout(),
 	mColumnMode( Weight ),
 	mRowMode( Weight  ),
 	mColumnWeight( 0.25f ),
@@ -198,6 +198,8 @@ Sizei UIGridLayout::getTargetElementSize() {
 }
 
 void UIGridLayout::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -241,6 +243,8 @@ void UIGridLayout::loadFromXmlNode(const pugi::xml_node & node) {
 			setReverseDraw( ait->as_bool() );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 }} 

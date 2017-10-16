@@ -207,6 +207,8 @@ UITextView * UIProgressBar::getTextBox() const {
 }
 
 void UIProgressBar::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -234,6 +236,8 @@ void UIProgressBar::loadFromXmlNode(const pugi::xml_node & node) {
 			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, PixelDensity::toDpFromString( ait->as_string() ) ) );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 void UIProgressBar::onAlphaChange() {

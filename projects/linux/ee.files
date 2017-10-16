@@ -34,6 +34,7 @@
 ../../include/eepp/ui/uieventmouse.hpp
 ../../include/eepp/ui/uigridlayout.hpp
 ../../include/eepp/ui/uiimage.hpp
+../../include/eepp/ui/uilayout.hpp
 ../../include/eepp/ui/uilinearlayout.hpp
 ../../include/eepp/ui/uimenuseparator.hpp
 ../../include/eepp/ui/uirelativelayout.hpp
@@ -82,6 +83,7 @@
 ../../src/eepp/ui/uidragablecontrol.cpp
 ../../src/eepp/ui/uigridlayout.cpp
 ../../src/eepp/ui/uiimage.cpp
+../../src/eepp/ui/uilayout.cpp
 ../../src/eepp/ui/uilinearlayout.cpp
 ../../src/eepp/ui/uiloader.cpp
 ../../src/eepp/ui/uimenuseparator.cpp

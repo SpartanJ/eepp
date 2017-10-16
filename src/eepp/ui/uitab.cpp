@@ -176,6 +176,8 @@ void UITab::update() {
 }
 
 void UITab::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UISelectButton::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -187,6 +189,8 @@ void UITab::loadFromXmlNode(const pugi::xml_node & node) {
 			setOwnedControl();
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 void UITab::setOwnedControl() {

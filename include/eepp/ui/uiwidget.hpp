@@ -96,6 +96,7 @@ class EE_API UIWidget : public UIControlAnim {
 		LayoutSizeRules mLayoutHeightRules;
 		LayoutPositionRules mLayoutPositionRule;
 		UIWidget * mLayoutPositionRuleWidget;
+		int	mPropertiesTransactionCount;
 
 		void createTooltip();
 
@@ -108,6 +109,10 @@ class EE_API UIWidget : public UIControlAnim {
 		virtual void onAutoSize();
 
 		virtual void onWidgetCreated();
+
+		void beginPropertiesTransaction();
+
+		void endPropertiesTransaction();
 
 		void notifyLayoutAttrChange();
 

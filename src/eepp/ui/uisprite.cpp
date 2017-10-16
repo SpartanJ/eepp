@@ -168,6 +168,8 @@ void UISprite::onSizeChange() {
 }
 
 void UISprite::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -183,6 +185,8 @@ void UISprite::loadFromXmlNode(const pugi::xml_node & node) {
 			}
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 }}

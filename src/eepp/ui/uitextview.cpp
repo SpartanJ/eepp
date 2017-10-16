@@ -493,6 +493,8 @@ void UITextView::onPaddingChange() {
 }
 
 void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -564,6 +566,8 @@ void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
 			setPadding( Rect( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 }}

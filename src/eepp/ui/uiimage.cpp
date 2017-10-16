@@ -170,6 +170,8 @@ const Vector2i& UIImage::getAlignOffset() const {
 }
 
 void UIImage::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -198,6 +200,8 @@ void UIImage::loadFromXmlNode(const pugi::xml_node & node) {
 			}
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 Uint32 UIImage::getScaleType() const {

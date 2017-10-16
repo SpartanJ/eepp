@@ -338,6 +338,8 @@ void UIPushButton::setStyleConfig(const UIPushButtonStyleConfig & styleConfig) {
 }
 
 void UIPushButton::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	mTextBox->loadFromXmlNode( node );
@@ -362,6 +364,8 @@ void UIPushButton::loadFromXmlNode(const pugi::xml_node & node) {
 			}
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 }}

@@ -167,6 +167,8 @@ void UICheckBox::setTextSeparation(const Int32 & textSeparation) {
 }
 
 void UICheckBox::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -177,6 +179,8 @@ void UICheckBox::loadFromXmlNode(const pugi::xml_node & node) {
 			setActive( ait->as_bool() );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 Uint32 UICheckBox::onKeyDown( const UIEventKey& Event ) {

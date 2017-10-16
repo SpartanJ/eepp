@@ -265,6 +265,8 @@ void UISpinBox::onAlphaChange() {
 }
 
 void UISpinBox::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	mInput->loadFromXmlNode( node );
@@ -283,6 +285,8 @@ void UISpinBox::loadFromXmlNode(const pugi::xml_node & node) {
 			setClickStep( ait->as_float() );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 }}

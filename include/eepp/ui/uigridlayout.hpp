@@ -1,11 +1,11 @@
 #ifndef EE_UI_UIGRIDLAYOUT
 #define EE_UI_UIGRIDLAYOUT
 
-#include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uilayout.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIGridLayout : public UIWidget {
+class EE_API UIGridLayout : public UILayout {
 	public:
 		enum ElementMode
 		{

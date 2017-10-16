@@ -437,6 +437,8 @@ void UITextEdit::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
 }
 
 void UITextEdit::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	mTextInput->loadFromXmlNode( node );
@@ -461,6 +463,8 @@ void UITextEdit::loadFromXmlNode(const pugi::xml_node & node) {
 			else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 }}

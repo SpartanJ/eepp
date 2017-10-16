@@ -92,10 +92,12 @@ Uint32 UIDragableControl::onDrag( const Vector2i& Pos ) {
 }
 
 Uint32 UIDragableControl::onDragStart( const Vector2i& Pos ) {
+	sendCommonEvent( UIEvent::EventOnDragStart );
 	return 1;
 }
 
-Uint32 UIDragableControl::onDragEnd( const Vector2i& Pos ) {
+Uint32 UIDragableControl::onDragStop( const Vector2i& Pos ) {
+	sendCommonEvent( UIEvent::EventOnDragStop );
 	return 1;
 }
 
@@ -112,7 +114,7 @@ bool UIDragableControl::isDragging() const {
 }
 
 void UIDragableControl::setDragging( const bool& dragging ) {
-	writeCtrlFlag( UI_CTRL_FLAG_DRAGGING, true == dragging );
+	writeCtrlFlag( UI_CTRL_FLAG_DRAGGING, dragging );
 
 	if ( dragging ) {
 		UIMessage tMsg( this, UIMessage::MsgDragStart, 0 );
@@ -120,10 +122,10 @@ void UIDragableControl::setDragging( const bool& dragging ) {
 
 		onDragStart( UIManager::instance()->getMousePos() );
 	} else {
-		UIMessage tMsg( this, UIMessage::MsgDragEnd, 0 );
+		UIMessage tMsg( this, UIMessage::MsgDragStop, 0 );
 		messagePost( &tMsg );
 
-		onDragEnd( UIManager::instance()->getMousePos() );
+		onDragStop( UIManager::instance()->getMousePos() );
 	}
 }
 

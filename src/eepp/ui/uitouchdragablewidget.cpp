@@ -137,6 +137,8 @@ bool UITouchDragableWidget::isTouchOverAllowedChilds() {
 }
 
 void UITouchDragableWidget::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -149,6 +151,8 @@ void UITouchDragableWidget::loadFromXmlNode(const pugi::xml_node & node) {
 			setTouchDragDeceleration( Vector2f( ait->as_float(), ait->as_float() ) );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 }}

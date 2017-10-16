@@ -19,7 +19,8 @@ UIWidget::UIWidget() :
 	mLayoutWidthRules(WRAP_CONTENT),
 	mLayoutHeightRules(WRAP_CONTENT),
 	mLayoutPositionRule(NONE),
-	mLayoutPositionRuleWidget(NULL)
+	mLayoutPositionRuleWidget(NULL),
+	mPropertiesTransactionCount(0)
 {
 	mControlFlags |= UI_CTRL_FLAG_WIDGET;
 
@@ -286,12 +287,14 @@ void UIWidget::onWidgetCreated() {
 }
 
 void UIWidget::notifyLayoutAttrChange() {
-	UIMessage msg( this, UIMessage::MsgLayoutAttributeChange );
-	messagePost( &msg );
+	if ( 0 == mPropertiesTransactionCount ) {
+		UIMessage msg( this, UIMessage::MsgLayoutAttributeChange );
+		messagePost( &msg );
+	}
 }
 
 void UIWidget::notifyLayoutAttrChangeParent() {
-	if ( NULL != mParentCtrl ) {
+	if ( 0 == mPropertiesTransactionCount && NULL != mParentCtrl ) {
 		UIMessage msg( this, UIMessage::MsgLayoutAttributeChange );
 		mParentCtrl->messagePost( &msg );
 	}
@@ -363,7 +366,21 @@ void UIWidget::alignAgainstLayout() {
 	setInternalPosition( pos );
 }
 
+void UIWidget::beginPropertiesTransaction() {
+	mPropertiesTransactionCount++;
+}
+
+void UIWidget::endPropertiesTransaction() {
+	mPropertiesTransactionCount--;
+
+	if ( 0 == mPropertiesTransactionCount ) {
+		notifyLayoutAttrChange();
+	}
+}
+
 void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
+	beginPropertiesTransaction();
+
 	std::string skinName;
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -561,6 +578,8 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 				unsetFlags( UI_CLIP_ENABLE );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 }}

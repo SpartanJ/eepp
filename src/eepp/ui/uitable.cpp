@@ -618,6 +618,8 @@ bool UITable::isTouchOverAllowedChilds() {
 }
 
 void UITable::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UITouchDragableWidget::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -660,6 +662,8 @@ void UITable::loadFromXmlNode(const pugi::xml_node & node) {
 			}
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 }}

@@ -183,6 +183,8 @@ void UITabWidget::setStyleConfig(const UITabWidgetStyleConfig & styleConfig) {
 }
 
 void UITabWidget::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -251,6 +253,8 @@ void UITabWidget::loadFromXmlNode(const pugi::xml_node & node) {
 			setLineBelowTabsYOffset( ait->as_int() );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 Font * UITabWidget::getFont() const {

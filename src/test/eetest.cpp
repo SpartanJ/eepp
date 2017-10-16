@@ -187,14 +187,14 @@ void EETest::createUIThemeTextureAtlas() {
 void EETest::loadFonts() {
 	mFTE.restart();
 
-	mFontLoader.add( eeNew( FontTrueTypeLoader, ( "arial", MyPath + "fonts/arial.ttf" ) ) );
+	mFontLoader.add( eeNew( FontTrueTypeLoader, ( "NotoSans-Regular", MyPath + "fonts/NotoSans-Regular.ttf" ) ) );
 	mFontLoader.add( eeNew( FontTrueTypeLoader, ( "DejaVuSansMono", MyPath + "fonts/DejaVuSansMono.ttf" ) ) );
 
 	mFontLoader.load( cb::Make1( this, &EETest::onFontLoaded ) );
 }
 
 void EETest::onFontLoaded( ResourceLoader * ObjLoaded ) {
-	TTF		= FontManager::instance()->getByName( "arial" );
+	TTF		= FontManager::instance()->getByName( "NotoSans-Regular" );
 	Font * DBSM	= FontManager::instance()->getByName( "DejaVuSansMono" );
 
 	eePRINTL( "Fonts loading time: %4.3f ms.", mFTE.getElapsed().asMilliseconds() );
@@ -834,13 +834,27 @@ void EETest::createCommonDialog() {
 	CDialog->show();
 }
 
+static void onWinDragStart( const UIEvent * event ) {
+	UIControl * ctrl = static_cast<UIControl*>( event->getControl() );
+	UIWindow * window = ctrl->isType(UI_TYPE_WINDOW) ? static_cast<UIWindow*>( ctrl ) : static_cast<UIWindow*>( ctrl->getWindowContainer()->getParent() );
+	window->startAlphaAnim( window->getAlpha(), 100, Seconds(0.2f) );
+}
+
+static void onWinDragStop( const UIEvent * event ) {
+	UIControl * ctrl = static_cast<UIControl*>( event->getControl() );
+	UIWindow * window = ctrl->isType(UI_TYPE_WINDOW) ? static_cast<UIWindow*>( ctrl ) : static_cast<UIWindow*>( ctrl->getWindowContainer()->getParent() );
+	window->startAlphaAnim( window->getAlpha(), 255, Seconds(0.2f) );
+}
+
 void EETest::createDecoratedWindow() {
 	mUIWindow = UIWindow::New();
-	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW )
+	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER )
 			->setMinWindowSize( 530, 350 )->setPosition( 200, 50 );
 
 	mUIWindow->addEventListener( UIEvent::EventOnWindowCloseClick, cb::Make1( this, &EETest::onCloseClick ) );
 	mUIWindow->setTitle( "Test Window" );
+	mUIWindow->addEventListener( UIEvent::EventOnDragStart, cb::Make1( &onWinDragStart ) );
+	mUIWindow->addEventListener( UIEvent::EventOnDragStop, cb::Make1( &onWinDragStop ) );
 
 	UILinearLayout * lay = UILinearLayout::NewVertical();
 	lay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );

@@ -23,7 +23,7 @@ class EE_API UIMessage {
 			MsgCellClicked,
 			MsgSelected,
 			MsgDragStart,
-			MsgDragEnd,
+			MsgDragStop,
 			MsgLayoutAttributeChange,
 			MsgUser,
 			MsgForceDWord = eeINDEX_NOT_FOUND

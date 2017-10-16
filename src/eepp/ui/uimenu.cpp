@@ -545,6 +545,8 @@ static Drawable * getIconDrawable( const std::string& name ) {
 }
 
 void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	for ( pugi::xml_node item = node.first_child(); item; item = item.next_sibling() ) {
@@ -573,6 +575,8 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 			addSubMenu( UIManager::instance()->getTranslatorString( text ), getIconDrawable( icon ), subMenu );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 void UIMenu::fixMenuPos( Vector2i& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {

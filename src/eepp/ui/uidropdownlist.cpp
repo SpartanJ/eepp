@@ -287,6 +287,8 @@ void UIDropDownList::destroyListBox() {
 }
 
 void UIDropDownList::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UITextInput::loadFromXmlNode( node );
 
 	mListBox->loadFromXmlNode( node );
@@ -301,6 +303,8 @@ void UIDropDownList::loadFromXmlNode(const pugi::xml_node & node) {
 			setMaxNumVisibleItems( ait->as_uint() );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 }}

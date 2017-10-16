@@ -293,6 +293,8 @@ void UIWinMenu::destroyMenues() {
 }
 
 void UIWinMenu::loadFromXmlNode( const pugi::xml_node& node ) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	for ( pugi::xml_node item = node.first_child(); item; item = item.next_sibling() ) {
@@ -309,6 +311,8 @@ void UIWinMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 			addMenuButton( UIManager::instance()->getTranslatorString( text ), subMenu );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 }}

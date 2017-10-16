@@ -328,6 +328,8 @@ bool UITextInput::isFreeEditingEnabled() {
 }
 
 void UITextInput::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UITextView::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -348,6 +350,8 @@ void UITextInput::loadFromXmlNode(const pugi::xml_node & node) {
 			getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), ait->as_bool() );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 }}

@@ -164,6 +164,8 @@ UILoader * UILoader::setArcStartAngle( const Float& arcStartAngle ) {
 }
 
 void UILoader::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -188,6 +190,8 @@ void UILoader::loadFromXmlNode(const pugi::xml_node & node) {
 			setArcStartAngle( ait->as_float() );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 }}

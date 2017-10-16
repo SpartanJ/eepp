@@ -16,7 +16,7 @@ UILinearLayout * UILinearLayout::NewHorizontal() {
 }
 
 UILinearLayout::UILinearLayout() :
-	UIWidget(),
+	UILayout(),
 	mOrientation( UI_VERTICAL )
 {
 	setFlags( UI_CLIP_ENABLE );
@@ -326,6 +326,8 @@ Sizei UILinearLayout::getTotalUsedSize() {
 }
 
 void UILinearLayout::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -342,6 +344,8 @@ void UILinearLayout::loadFromXmlNode(const pugi::xml_node & node) {
 				setOrientation( UI_VERTICAL );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 Uint32 UILinearLayout::onMessage(const UIMessage * Msg) {

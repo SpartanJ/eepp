@@ -403,6 +403,8 @@ void UISlider::onAlphaChange() {
 }
 
 void UISlider::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UIWidget::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -429,6 +431,8 @@ void UISlider::loadFromXmlNode(const pugi::xml_node & node) {
 			setPageStep( ait->as_float() );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 }}

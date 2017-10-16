@@ -88,6 +88,8 @@ const Color &UISelectButton::getFontSelectedColor() const {
 }
 
 void UISelectButton::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
 	UIPushButton::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
@@ -98,6 +100,8 @@ void UISelectButton::loadFromXmlNode(const pugi::xml_node & node) {
 			setFontSelectedColor( Color::fromString( ait->as_string() ) );
 		}
 	}
+
+	endPropertiesTransaction();
 }
 
 }}

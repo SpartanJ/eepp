@@ -1,11 +1,11 @@
 #ifndef UI_UILINEARLAYOUT_HPP
 #define UI_UILINEARLAYOUT_HPP
 
-#include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uilayout.hpp>
 
 namespace  EE { namespace UI {
 
-class EE_API UILinearLayout : public UIWidget {
+class EE_API UILinearLayout : public UILayout {
 	public:
 		static UILinearLayout * New();
 

@@ -1,11 +1,11 @@
 #ifndef UI_UIRELATIVELAYOUT_HPP
 #define UI_UIRELATIVELAYOUT_HPP
 
-#include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uilayout.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIRelativeLayout : public UIWidget {
+class EE_API UIRelativeLayout : public UILayout {
 	public:
 		static UIRelativeLayout * New();
 
