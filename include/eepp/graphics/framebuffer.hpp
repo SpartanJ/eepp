@@ -63,6 +63,12 @@ class EE_API FrameBuffer {
 		/** @return The frame buffer height. */
 		const Int32& getHeight() const;
 
+		/** @return The frame buffer size. */
+		const Sizei& getSize() const;
+
+		/** @return The frame buffer size ( float ). */
+		const Sizef getSizef();
+
 		/** @return True if the frame buffer has a depth buffer. */
 		const bool& hasDepthBuffer() const;
 
@@ -70,8 +76,7 @@ class EE_API FrameBuffer {
 		const bool& hasStencilBuffer() const;
 	protected:
 		EE::Window::Window *	mWindow;
-		Int32		mWidth;
-		Int32		mHeight;
+		Sizei		mSize;
 		bool		mHasDepthBuffer;
 		bool		mHasStencilBuffer;
 		Texture *	mTexture;

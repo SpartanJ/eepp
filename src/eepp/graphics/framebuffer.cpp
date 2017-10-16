@@ -21,8 +21,7 @@ FrameBuffer * FrameBuffer::New( const Uint32& Width, const Uint32& Height, bool 
 
 FrameBuffer::FrameBuffer( EE::Window::Window * window  ) :
 	mWindow( window ),
-	mWidth(0),
-	mHeight(0),
+	mSize(0,0),
 	mHasDepthBuffer(false),
 	mHasStencilBuffer(false),
 	mTexture(NULL),
@@ -63,13 +62,13 @@ void FrameBuffer::setBufferView() {
 	// Get the user projection matrix
 	GLi->getCurrentMatrix( GL_PROJECTION_MATRIX, mProjMat );
 
-	mView.setSize( mWidth, mHeight );
+	mView.setSize( mSize.getWidth(), mSize.getHeight() );
 	sFBOActiveViews.push_back(&mView);
 
-	GLi->viewport( 0, 0, mWidth, mHeight );
+	GLi->viewport( 0, 0, mSize.getWidth(), mSize.getHeight() );
 	GLi->matrixMode( GL_PROJECTION );
 	GLi->loadIdentity();
-	GLi->ortho( 0.0f, mWidth, 0.f, mHeight, -1000.0f, 1000.0f );
+	GLi->ortho( 0.0f, mSize.getWidth(), 0.f, mSize.getHeight(), -1000.0f, 1000.0f );
 	GLi->matrixMode( GL_MODELVIEW );
 	GLi->loadIdentity();
 }
@@ -95,11 +94,15 @@ void FrameBuffer::recoverView() {
 }
 
 const Int32& FrameBuffer::getWidth() const {
-	return mWidth;
+	return mSize.x;
 }
 
 const Int32& FrameBuffer::getHeight() const {
-	return mHeight;
+	return mSize.y;
+}
+
+const Sizef FrameBuffer::getSizef() {
+	return Sizef( mSize.getWidth(), mSize.getHeight() );
 }
 
 const bool& FrameBuffer::hasDepthBuffer() const {

@@ -177,7 +177,7 @@ void ShaderProgram::init() {
 		mUniformLocations.clear();
 		mAttributeLocations.clear();
 	} else {
-		eePRINTL( "ShaderProgram::Init() %s: Couldn't create program.", mName.c_str() );
+		eePRINTL( "ShaderProgram::init() %s: Couldn't create program.", mName.c_str() );
 	}
 }
 
@@ -204,7 +204,7 @@ void ShaderProgram::reload() {
 
 void ShaderProgram::addShader( Shader* Shader ) {
 	if ( !Shader->isValid() ) {
-		eePRINTL( "ShaderProgram::AddShader() %s: Cannot add invalid shader", mName.c_str() );
+		eePRINTL( "ShaderProgram::addShader() %s: Cannot add invalid shader", mName.c_str() );
 		return;
 	}
 
@@ -302,63 +302,23 @@ void ShaderProgram::invalidateLocations() {
 }
 
 bool ShaderProgram::setUniform( const std::string& Name, float Value ) {
-	Int32 Location = getUniformLocation( Name );
-
-	if ( Location >= 0 ) {
-		#ifdef EE_SHADERS_SUPPORTED
-		glUniform1f( Location, Value );
-		#endif
-	}
-
-	return ( Location >= 0 );
+	return setUniform( getUniformLocation( Name ), Value );
 }
 
 bool ShaderProgram::setUniform( const std::string& Name, Vector2ff Value ) {
-	Int32 Location = getUniformLocation( Name );
-
-	if ( Location >= 0 ) {
-		#ifdef EE_SHADERS_SUPPORTED
-		glUniform2fv( Location, 1, reinterpret_cast<float*>( &Value ) );
-		#endif
-	}
-
-	return ( Location >= 0 );
+	return setUniform( getUniformLocation( Name ), Value );
 }
 
 bool ShaderProgram::setUniform( const std::string& Name, Vector3ff Value ) {
-	Int32 Location = getUniformLocation( Name );
-
-	if ( Location >= 0 ) {
-		#ifdef EE_SHADERS_SUPPORTED
-		glUniform3fv( Location, 1, reinterpret_cast<float*>( &Value ) );
-		#endif
-	}
-
-	return ( Location >= 0 );
+	return setUniform( getUniformLocation( Name ), Value );
 }
 
 bool ShaderProgram::setUniform( const std::string& Name, float x, float y, float z, float w ) {
-	Int32 Location = getUniformLocation( Name );
-
-	if ( Location >= 0 ) {
-		#ifdef EE_SHADERS_SUPPORTED
-		glUniform4f( Location, x, y, z, w );
-		#endif
-	}
-
-	return ( Location >= 0 );
+	return setUniform( getUniformLocation( Name ), x, y, z, w );
 }
 
 bool ShaderProgram::setUniform( const std::string& Name, Int32 Value ) {
-	Int32 Location = getUniformLocation( Name );
-
-	if ( Location >= 0 ) {
-		#ifdef EE_SHADERS_SUPPORTED
-		glUniform1i( Location, Value );
-		#endif
-	}
-
-	return ( Location >= 0 );
+	return setUniform( getUniformLocation( Name ), Value );
 }
 
 bool ShaderProgram::setUniform( const Int32& Location, Int32 Value ) {
@@ -434,15 +394,7 @@ bool ShaderProgram::setUniformMatrix( const Int32& Location, const float * Value
 }
 
 bool ShaderProgram::setUniformMatrix( const std::string Name, const float * Value ) {
-	Int32 Location = getUniformLocation( Name );
-
-	if ( Location >= 0 ) {
-		#ifdef EE_SHADERS_SUPPORTED
-		glUniformMatrix4fv( Location, 1, false, Value );
-		#endif
-	}
-
-	return ( Location >= 0 );
+	return setUniformMatrix( getUniformLocation( Name ), Value );
 }
 
 const std::string& ShaderProgram::getName() const {

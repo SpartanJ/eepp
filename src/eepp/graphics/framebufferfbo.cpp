@@ -71,8 +71,8 @@ bool FrameBufferFBO::create(const Uint32& Width, const Uint32& Height, bool Sten
 		mWindow = Engine::instance()->getCurrentWindow();
 	}
 
-	mWidth 			= Width;
-	mHeight 		= Height;
+	mSize.x = Width;
+	mSize.y = Height;
 	mHasStencilBuffer = StencilBuffer;
 	mHasDepthBuffer = DepthBuffer;
 
@@ -174,12 +174,12 @@ void FrameBufferFBO::unbind() {
 }
 
 void FrameBufferFBO::reload() {
-	create( mWidth, mHeight, mHasStencilBuffer, mHasDepthBuffer );
+	create( mSize.getWidth(), mSize.getHeight(), mHasStencilBuffer, mHasDepthBuffer );
 }
 
 void FrameBufferFBO::resize( const Uint32& Width, const Uint32& Height ) {
-	mWidth = Width;
-	mHeight = Height;
+	mSize.x = Width;
+	mSize.y = Height;
 
 	bindFrameBuffer();
 
