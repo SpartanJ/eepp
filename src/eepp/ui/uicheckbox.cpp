@@ -75,6 +75,8 @@ void UICheckBox::onThemeLoaded() {
 	mMinControlSize = mActiveButton->getSkinSize();
 
 	onPaddingChange();
+
+	UIWidget::onThemeLoaded();
 }
 
 void UICheckBox::onAutoSize() {

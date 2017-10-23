@@ -77,6 +77,8 @@ void UISelectButton::onStateChange() {
 			getTextBox()->setFontColor( mStyleConfig.FontColor );
 		}
 	}
+
+	UIPushButton::onStateChange();
 }
 
 void UISelectButton::setFontSelectedColor(const Color & color) {

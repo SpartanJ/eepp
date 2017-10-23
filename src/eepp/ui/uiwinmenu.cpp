@@ -236,6 +236,8 @@ void UIWinMenu::onParentChange() {
 	setSize( getParent()->getSize().getWidth(), mStyleConfig.MenuHeight );
 
 	updateAnchorsDistances();
+
+	UIWidget::onParentChange();
 }
 
 void UIWinMenu::unselectButtons() {

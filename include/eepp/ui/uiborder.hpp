@@ -5,11 +5,13 @@
 
 namespace EE { namespace UI {
 
+class UIControl;
+
 class EE_API UIBorder {
 	public:
-		static UIBorder * New();
+		static UIBorder * New( UIControl * control );
 
-		UIBorder();
+		UIBorder( UIControl * control );
 
 		const Color& getColor() const;
 
@@ -21,6 +23,7 @@ class EE_API UIBorder {
 
 		void draw( Rectf R, const Float& alpha, const int& corners, const bool& clipping );
 	protected:
+		UIControl *		mControl;
 		Color			mColor;
 		unsigned int	mWidth;
 };

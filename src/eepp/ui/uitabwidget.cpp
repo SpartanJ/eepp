@@ -75,6 +75,8 @@ void UITabWidget::setTheme( UITheme * Theme ) {
 
 void UITabWidget::onThemeLoaded() {
 	onSizeChange();
+
+	UIWidget::onThemeLoaded();
 }
 
 void UITabWidget::seContainerSize() {
@@ -357,6 +359,7 @@ Uint32 UITabWidget::getMaxTextLength() const {
 
 void UITabWidget::setMaxTextLength(const Uint32 & maxTextLength) {
 	mStyleConfig.MaxTextLength = maxTextLength;
+	invalidateDraw();
 }
 
 Uint32 UITabWidget::getTabWidgetHeight() const {
@@ -369,6 +372,7 @@ Uint32 UITabWidget::getMinTabWidth() const {
 
 void UITabWidget::setMinTabWidth(const Uint32 & minTabWidth) {
 	mStyleConfig.MinTabWidth = minTabWidth;
+	invalidateDraw();
 }
 
 Uint32 UITabWidget::getMaxTabWidth() const {
@@ -377,6 +381,7 @@ Uint32 UITabWidget::getMaxTabWidth() const {
 
 void UITabWidget::setMaxTabWidth(const Uint32 & maxTabWidth) {
 	mStyleConfig.MaxTabWidth = maxTabWidth;
+	invalidateDraw();
 }
 
 bool UITabWidget::getTabsClosable() const {
@@ -385,6 +390,7 @@ bool UITabWidget::getTabsClosable() const {
 
 void UITabWidget::setTabsClosable(bool tabsClosable) {
 	mStyleConfig.TabsClosable = tabsClosable;
+	invalidateDraw();
 }
 
 bool UITabWidget::getSpecialBorderTabs() const {
@@ -402,6 +408,7 @@ bool UITabWidget::getDrawLineBelowTabs() const {
 
 void UITabWidget::setDrawLineBelowTabs(bool drawLineBelowTabs) {
 	mStyleConfig.DrawLineBelowTabs = drawLineBelowTabs;
+	invalidateDraw();
 }
 
 Color UITabWidget::getLineBelowTabsColor() const {
@@ -410,6 +417,7 @@ Color UITabWidget::getLineBelowTabsColor() const {
 
 void UITabWidget::setLineBelowTabsColor(const Color & lineBelowTabsColor) {
 	mStyleConfig.LineBelowTabsColor = lineBelowTabsColor;
+	invalidateDraw();
 }
 
 Int32 UITabWidget::getLineBelowTabsYOffset() const {
@@ -418,6 +426,7 @@ Int32 UITabWidget::getLineBelowTabsYOffset() const {
 
 void UITabWidget::setLineBelowTabsYOffset(const Int32 & lineBelowTabsYOffset) {
 	mStyleConfig.LineBelowTabsYOffset = lineBelowTabsYOffset;
+	invalidateDraw();
 }
 
 void UITabWidget::setTabContainerSize() {
@@ -490,6 +499,8 @@ void UITabWidget::orderTabs() {
 	setTabContainerSize();
 
 	posTabs();
+
+	invalidateDraw();
 }
 
 UITab * UITabWidget::createTab( const String& Text, UIControl * CtrlOwned, Drawable * Icon ) {
@@ -624,6 +635,8 @@ void UITabWidget::setTabSelected( UITab * Tab ) {
 	if ( NULL == Tab )
 		return;
 
+	invalidateDraw();
+
 	if ( Tab == mTabSelected ) {
 		refreshControlOwned( Tab );
 		return;
@@ -694,7 +707,7 @@ void UITabWidget::onSizeChange() {
 		mTabSelected->getControlOwned()->setSize( mCtrlContainer->getSize() );
 	}
 
-	UIControl::onSizeChange();
+	UIWidget::onSizeChange();
 }
 
 void UITabWidget::onChildCountChange() {
@@ -729,6 +742,8 @@ void UITabWidget::onChildCountChange() {
 			child->setEnabled( true );
 		}
 	}
+
+	UIWidget::onChildCountChange();
 }
 
 void UITabWidget::applyThemeToTabs() {

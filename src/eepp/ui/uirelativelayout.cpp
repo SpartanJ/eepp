@@ -25,10 +25,12 @@ UIRelativeLayout * UIRelativeLayout::add(UIWidget * widget) {
 }
 
 void UIRelativeLayout::onSizeChange() {
+	UILayout::onSizeChange();
 	fixChilds();
 }
 
 void UIRelativeLayout::onChildCountChange() {
+	UILayout::onChildCountChange();
 	fixChilds();
 }
 

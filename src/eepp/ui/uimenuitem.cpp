@@ -51,6 +51,8 @@ void UIMenuItem::onStateChange() {
 	} else {
 		mTextBox->setFontColor( tMenu->getFontStyleConfig().getFontColor() );
 	}
+
+	UIPushButton::onStateChange();
 }
 
 }}

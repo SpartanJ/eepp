@@ -13,6 +13,8 @@ class EE_API FrameBufferManager : public Container<FrameBuffer> {
 		virtual ~FrameBufferManager();
 
 		void reload();
+
+		FrameBuffer * getCurrentlyBound();
 	protected:
 		FrameBufferManager();
 };

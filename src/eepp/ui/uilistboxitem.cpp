@@ -129,6 +129,8 @@ void UIListBoxItem::onStateChange() {
 	} else {
 		setFontColor( LBParent->getFontColor() );
 	}
+
+	UITextView::onStateChange();
 }
 
 }}

@@ -75,6 +75,8 @@ void UIRadioButton::onThemeLoaded() {
 	mMinControlSize = mActiveButton->getSkinSize();
 
 	onPaddingChange();
+
+	UIWidget::onThemeLoaded();
 }
 
 void UIRadioButton::onAutoSize() {

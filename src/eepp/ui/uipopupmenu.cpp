@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI {
 
-UIPopUpMenu *UIPopUpMenu::New() {
+UIPopUpMenu * UIPopUpMenu::New() {
 	return eeNew( UIPopUpMenu, () );
 }
 

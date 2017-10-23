@@ -848,7 +848,7 @@ static void onWinDragStop( const UIEvent * event ) {
 
 void EETest::createDecoratedWindow() {
 	mUIWindow = UIWindow::New();
-	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER )
+	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW /*| UI_WIN_FRAME_BUFFER*/ )
 			->setMinWindowSize( 530, 350 )->setPosition( 200, 50 );
 
 	mUIWindow->addEventListener( UIEvent::OnWindowCloseClick, cb::Make1( this, &EETest::onCloseClick ) );
@@ -1598,8 +1598,8 @@ void EETest::render() {
 
 	mInfoText.draw( 6.f, 6.f );
 
-	UIManager::instance()->draw();
 	UIManager::instance()->update();
+	UIManager::instance()->draw();
 
 	Con.draw();
 }

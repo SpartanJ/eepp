@@ -214,9 +214,6 @@ void UIManager::update() {
 	}
 
 	if ( mKM->getPressTrigger() ) {
-		/*if ( !wasDraggingControl && mOverControl != mFocusControl )
-			FocusControl( mOverControl );*/
-
 		if ( NULL != mOverControl ) {
 			mOverControl->onMouseDown( mKM->getMousePos(), mKM->getPressTrigger() );
 			sendMsg( mOverControl, UIMessage::MouseDown, mKM->getPressTrigger() );
@@ -239,7 +236,7 @@ void UIManager::update() {
 				mFocusControl->onMouseUp( mKM->getMousePos(), mKM->getReleaseTrigger() );
 				sendMsg( mFocusControl, UIMessage::MouseUp, mKM->getReleaseTrigger() );
 
-				if ( mKM->getClickTrigger() ) { // mDownControl == mOverControl &&
+				if ( mKM->getClickTrigger() ) {
 					sendMsg( mFocusControl, UIMessage::Click, mKM->getClickTrigger() );
 					mFocusControl->onMouseClick( mKM->getMousePos(), mKM->getClickTrigger() );
 
@@ -333,6 +330,14 @@ bool UIManager::getDrawBoxes() const {
 
 void UIManager::setHighlightFocusColor( const Color& Color ) {
 	mHighlightFocusColor = Color;
+}
+
+bool UIManager::usesInvalidation() {
+	return 0 != ( mFlags & UI_MANAGER_USE_DRAW_INVALIDATION );
+}
+
+void UIManager::setUseInvalidation( const bool& use ) {
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_USE_DRAW_INVALIDATION, use ? 1 : 0 );
 }
 
 const Color& UIManager::getHighlightFocusColor() const {

@@ -75,6 +75,10 @@ class EE_API UIManager {
 
 		void setHighlightFocusColor( const Color& Color );
 
+		bool usesInvalidation();
+
+		void setUseInvalidation( const bool& use );
+
 		const Color& getHighlightFocusColor() const;
 
 		void setHighlightOver( bool Highlight );

@@ -246,6 +246,7 @@ UIWidget * UIWidget::setAnchors(const Uint32 & flags) {
 
 void UIWidget::setTheme( UITheme * Theme ) {
 	mTheme = Theme;
+	invalidateDraw();
 }
 
 UIControl * UIWidget::setThemeSkin( const std::string& skinName ) {

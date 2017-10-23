@@ -1,5 +1,6 @@
 #include <eepp/ui/uicontrol.hpp>
 #include <eepp/ui/uitheme.hpp>
+#include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/subtexture.hpp>
@@ -22,6 +23,7 @@ UIControl::UIControl() :
 	mFlags( UI_CONTROL_DEFAULT_FLAGS ),
 	mData( 0 ),
 	mParentCtrl( NULL ),
+	mParentWindowCtrl( NULL ),
 	mChild( NULL ),
 	mChildLast( NULL ),
 	mNext( NULL ),
@@ -37,6 +39,7 @@ UIControl::UIControl() :
 {
 	if ( NULL == mParentCtrl && NULL != UIManager::instance()->getMainControl() ) {
 		mParentCtrl = UIManager::instance()->getMainControl();
+		mParentWindowCtrl = getParentWindow();
 	}
 
 	if ( NULL != mParentCtrl )
@@ -160,6 +163,7 @@ void UIControl::setInternalSize( const Sizei& size ) {
 	mRealSize = Sizei( size.x * PixelDensity::getPixelDensity(), size.y * PixelDensity::getPixelDensity() );
 	updateCenter();
 	sendCommonEvent( UIEvent::OnSizeChange );
+	invalidateDraw();
 }
 
 void UIControl::setInternalPixelsSize( const Sizei& size ) {
@@ -167,6 +171,7 @@ void UIControl::setInternalPixelsSize( const Sizei& size ) {
 	mRealSize = size;
 	updateCenter();
 	sendCommonEvent( UIEvent::OnSizeChange );
+	invalidateDraw();
 }
 
 UIControl * UIControl::setSize( const Sizei& Size ) {
@@ -291,6 +296,9 @@ UIControl * UIControl::setParent( UIControl * parent ) {
 	updateQuad();
 
 	onParentChange();
+
+	if ( mParentWindowCtrl != getParentWindow() )
+		onParentWindowControlChange();
 
 	return this;
 }
@@ -525,11 +533,14 @@ Uint32 UIControl::onFocusLoss() {
 
 	sendCommonEvent( UIEvent::OnFocusLoss );
 
+	invalidateDraw();
+
 	return 1;
 }
 
 void UIControl::onWidgetFocusLoss() {
 	sendCommonEvent( UIEvent::OnWidgetFocusLoss );
+	invalidateDraw();
 }
 
 bool UIControl::hasFocus() const {
@@ -538,12 +549,14 @@ bool UIControl::hasFocus() const {
 
 Uint32 UIControl::onValueChange() {
 	sendCommonEvent( UIEvent::OnValueChange );
+	invalidateDraw();
 
 	return 1;
 }
 
 void UIControl::onClose() {
 	sendCommonEvent( UIEvent::OnClose );
+	invalidateDraw();
 }
 
 Uint32 UIControl::getHorizontalAlign() const {
@@ -582,7 +595,7 @@ UIBackground * UIControl::setBackgroundFillEnabled( bool enabled ) {
 	writeFlag( UI_FILL_BACKGROUND, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBackground ) {
-		mBackground = UIBackground::New();
+		mBackground = UIBackground::New( this );
 	}
 
 	return mBackground;
@@ -592,10 +605,10 @@ UIBorder * UIControl::setBorderEnabled( bool enabled ) {
 	writeFlag( UI_BORDER, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBorder ) {
-		mBorder = UIBorder::New();
+		mBorder = UIBorder::New( this );
 
 		if ( NULL == mBackground ) {
-			mBackground = UIBackground::New();
+			mBackground = UIBackground::New( this );
 		}
 	}
 
@@ -632,10 +645,10 @@ const Uint32& UIControl::getFlags() const {
 
 UIControl * UIControl::setFlags( const Uint32& flags ) {
 	if ( NULL == mBackground && ( flags & UI_FILL_BACKGROUND ) )
-		mBackground = UIBackground::New();
+		mBackground = UIBackground::New( this );
 
 	if ( NULL == mBorder && ( flags & UI_BORDER ) )
-		mBorder = UIBorder::New();
+		mBorder = UIBorder::New( this );
 
 	if ( fontHAlignGet( flags ) || fontVAlignGet( flags ) ) {
 		onAlignChange();
@@ -664,6 +677,7 @@ UIControl *UIControl::resetFlags( Uint32 newFlags ) {
 
 UIControl * UIControl::setBlendMode( const EE_BLEND_MODE& blend ) {
 	mBlend = static_cast<Uint16> ( blend );
+	invalidateDraw();
 	return this;
 }
 
@@ -692,6 +706,7 @@ void UIControl::toPosition( const Uint32& Pos ) {
 
 void UIControl::onVisibilityChange() {
 	sendCommonEvent( UIEvent::OnVisibleChange );
+	invalidateDraw();
 }
 
 void UIControl::onEnabledChange() {
@@ -702,13 +717,16 @@ void UIControl::onEnabledChange() {
 	}
 
 	sendCommonEvent( UIEvent::OnEnabledChange );
+	invalidateDraw();
 }
 
 void UIControl::onPositionChange() {
 	sendCommonEvent( UIEvent::OnPosChange );
+	invalidateDraw();
 }
 
 void UIControl::onSizeChange() {
+	invalidateDraw();
 }
 
 Rectf UIControl::getRectf() {
@@ -823,7 +841,9 @@ void UIControl::childAddAt( UIControl * ChildCtrl, Uint32 Pos ) {
 	ChildCtrl->setParent( this );
 
 	childRemove( ChildCtrl );
+
 	ChildCtrl->mParentCtrl = this;
+	ChildCtrl->mParentWindowCtrl = ChildCtrl->getParentWindow();
 	
 	if ( ChildLoop == NULL ) {
 		mChild 				= ChildCtrl;
@@ -1041,6 +1061,17 @@ UIControl * UIControl::overFind( const Vector2f& Point ) {
 	return pOver;
 }
 
+void UIControl::onParentWindowControlChange() {
+	mParentWindowCtrl = getParentWindow();
+
+	UIControl * ChildLoop = mChild;
+
+	while ( NULL != ChildLoop ) {
+		ChildLoop->onParentWindowControlChange();
+		ChildLoop = ChildLoop->mNext;
+	}
+}
+
 UIControl * UIControl::childGetAt( Vector2i CtrlPos, unsigned int RecursiveLevel ) {
 	UIControl * Ctrl = NULL;
 
@@ -1207,7 +1238,7 @@ void UIControl::sendEvent( const UIEvent * Event ) {
 
 UIBackground * UIControl::getBackground() {
 	if ( NULL == mBackground ) {
-		mBackground = UIBackground::New();
+		mBackground = UIBackground::New( this );
 	}
 
 	return mBackground;
@@ -1215,7 +1246,7 @@ UIBackground * UIControl::getBackground() {
 
 UIBorder * UIControl::getBorder() {
 	if ( NULL == mBorder ) {
-		mBorder = UIBorder::New();
+		mBorder = UIBorder::New( this );
 	}
 
 	return mBorder;
@@ -1303,12 +1334,15 @@ void UIControl::removeSkin() {
 }
 
 void UIControl::onStateChange() {
+	invalidateDraw();
 }
 
 void UIControl::onParentChange() {
+	invalidateDraw();
 }
 
 void UIControl::onAlignChange() {
+	invalidateDraw();
 }
 
 void UIControl::setSkinState( const Uint32& State ) {
@@ -1433,6 +1467,7 @@ void UIControl::sendParentSizeChange( const Vector2i& SizeChange ) {
 
 void UIControl::onParentSizeChange( const Vector2i& SizeChange ) {
 	sendCommonEvent( UIEvent::OnParentSizeChange );
+	invalidateDraw();
 }
 
 Sizei UIControl::getSkinSize( UISkin * Skin, const Uint32& State ) {
@@ -1497,9 +1532,11 @@ UIControl * UIControl::getNextWidget() {
 }
 
 void UIControl::onThemeLoaded() {
+	invalidateDraw();
 }
 
 void UIControl::onChildCountChange() {
+	invalidateDraw();
 }
 
 void UIControl::worldToControl( Vector2i& pos ) const {
@@ -1586,8 +1623,20 @@ UIControl * UIControl::getWindowContainer() {
 			} else {
 				return static_cast<UIWindow*>( Ctrl )->getContainer();
 			}
-
 		}
+
+		Ctrl = Ctrl->getParent();
+	}
+
+	return NULL;
+}
+
+UIWindow * UIControl::getParentWindow() {
+	UIControl * Ctrl = this;
+
+	while ( Ctrl != NULL ) {
+		if ( Ctrl->isType( UI_TYPE_WINDOW ) )
+			return static_cast<UIWindow*>( Ctrl );
 
 		Ctrl = Ctrl->getParent();
 	}
@@ -1601,6 +1650,16 @@ bool UIControl::isReverseDraw() const {
 
 void UIControl::setReverseDraw( bool reverseDraw ) {
 	writeCtrlFlag( UI_CTRL_FLAG_REVERSE_DRAW, reverseDraw ? 1 : 0 );
+	invalidateDraw();
+}
+
+void UIControl::invalidateDraw() {
+	if ( NULL != mParentWindowCtrl )
+		mParentWindowCtrl->invalidate();
+}
+
+UIWindow * UIControl::getOwnerWindow() {
+	return mParentWindowCtrl;
 }
 
 }}

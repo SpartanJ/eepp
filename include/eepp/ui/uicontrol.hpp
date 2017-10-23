@@ -18,6 +18,7 @@
 namespace EE { namespace UI {
 
 class UITheme;
+class UIWindow;
 class UIManager;
 
 class EE_API UIControl {
@@ -257,6 +258,10 @@ class EE_API UIControl {
 		bool isReverseDraw() const;
 
 		void setReverseDraw( bool reverseDraw );
+
+		UIWindow * getOwnerWindow();
+
+		void invalidateDraw();
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
 		friend class UIManager;
@@ -275,6 +280,7 @@ class EE_API UIControl {
 		UintPtr			mData;
 
 		UIControl *		mParentCtrl;
+		UIWindow *		mParentWindowCtrl;
 		UIControl *		mChild;			//! Pointer to the first child of the control
 		UIControl * 	mChildLast;		//! Pointer to the last child added
 		UIControl *		mNext;			//! Pointer to the next child of the father
@@ -364,11 +370,13 @@ class EE_API UIControl {
 
 		virtual UIControl * overFind( const Vector2f& Point );
 
-		void clipMe();
+		virtual void onParentWindowControlChange();
+
+		virtual void clipMe();
 
 		void checkClose();
 
-		void internalDraw();
+		virtual void internalDraw();
 
 		void childDeleteAll();
 
@@ -390,9 +398,7 @@ class EE_API UIControl {
 
 		UIControl * childNext( UIControl * Ctrl, bool Loop = false ) const;
 
-		void clipDisable();
-
-		void clipTo();
+		virtual void clipDisable();
 
 		void setPrevSkinState();
 
@@ -437,6 +443,8 @@ class EE_API UIControl {
 		void setInternalPixelsHeight( const Int32& height );
 
 		UIControl * findIdHash( const Uint32& idHash );
+
+		UIWindow * getParentWindow();
 };
 
 }}

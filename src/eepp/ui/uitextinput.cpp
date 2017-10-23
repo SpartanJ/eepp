@@ -65,6 +65,8 @@ void UITextInput::update() {
 
 		mTextBuffer.setChangedSinceLastUpdate( false );
 
+		invalidateDraw();
+
 		return;
 	}
 
@@ -75,40 +77,46 @@ void UITextInput::update() {
 		mShowingWait = true;
 		onCursorPosChange();
 	}
+
+	updateWaitingCursor();
 }
 
 void UITextInput::onCursorPosChange() {
 	sendCommonEvent( UIEvent::OnCursorPosChange );
+	invalidateDraw();
 }
 
 void UITextInput::drawWaitingCursor() {
+	if ( mVisible && mTextBuffer.isActive() && mTextBuffer.isFreeEditingEnabled() && mShowingWait ) {
+		bool disableSmooth = mShowingWait && GLi->isLineSmooth();
+
+		if ( disableSmooth )
+			GLi->lineSmooth( false );
+
+		Primitives P;
+		P.setColor( mFontStyleConfig.FontColor );
+
+		Float CurPosX = mScreenPos.x + mRealAlignOffset.x + mCurPos.x + PixelDensity::dpToPxI( 1.f ) + mRealPadding.Left;
+		Float CurPosY = mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mRealPadding.Top;
+
+		if ( CurPosX > (Float)mScreenPos.x + (Float)mRealSize.x )
+			CurPosX = (Float)mScreenPos.x + (Float)mRealSize.x;
+
+		P.drawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->getFont()->getLineSpacing( mTextCache->getCharacterSizePx() ) ) ) );
+
+		if ( disableSmooth )
+			GLi->lineSmooth( true );
+	}
+}
+
+void UITextInput::updateWaitingCursor() {
 	if ( mVisible && mTextBuffer.isActive() && mTextBuffer.isFreeEditingEnabled() ) {
 		mWaitCursorTime += getElapsed().asMilliseconds();
-
-		if ( mShowingWait ) {
-			bool disableSmooth = mShowingWait && GLi->isLineSmooth();
-
-			if ( disableSmooth )
-				GLi->lineSmooth( false );
-
-			Primitives P;
-			P.setColor( mFontStyleConfig.FontColor );
-
-			Float CurPosX = mScreenPos.x + mRealAlignOffset.x + mCurPos.x + PixelDensity::dpToPxI( 1.f ) + mRealPadding.Left;
-			Float CurPosY = mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mRealPadding.Top;
-
-			if ( CurPosX > (Float)mScreenPos.x + (Float)mRealSize.x )
-				CurPosX = (Float)mScreenPos.x + (Float)mRealSize.x;
-
-			P.drawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->getFont()->getLineSpacing( mTextCache->getCharacterSizePx() ) ) ) );
-
-			if ( disableSmooth )
-				GLi->lineSmooth( true );
-		}
 
 		if ( mWaitCursorTime >= 500.f ) {
 			mShowingWait = !mShowingWait;
 			mWaitCursorTime = 0.f;
+			invalidateDraw();
 		}
 	}
 }
@@ -195,6 +203,8 @@ void UITextInput::onThemeLoaded() {
 
 	autoPadding();
 	onAutoSize();
+
+	UIWidget::onThemeLoaded();
 }
 
 void UITextInput::onAutoSize() {

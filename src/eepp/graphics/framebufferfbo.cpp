@@ -21,7 +21,7 @@ FrameBufferFBO::FrameBufferFBO( EE::Window::Window * window ) :
 	mLastSB(0)
 {}
 
-FrameBufferFBO::FrameBufferFBO( const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer, EE::Window::Window * window ) :
+FrameBufferFBO::FrameBufferFBO( const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer, const Uint32& channels, EE::Window::Window * window ) :
 	FrameBuffer( window ),
 	mFrameBuffer(0),
 	mDepthBuffer(0),
@@ -30,7 +30,7 @@ FrameBufferFBO::FrameBufferFBO( const Uint32& Width, const Uint32& Height, bool 
 	mLastDB(0),
 	mLastSB(0)
 {
-	create( Width, Height, StencilBuffer, DepthBuffer );
+	create( Width, Height, StencilBuffer, DepthBuffer, channels );
 }
 
 FrameBufferFBO::~FrameBufferFBO() {
@@ -60,10 +60,10 @@ FrameBufferFBO::~FrameBufferFBO() {
 }
 
 bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height ) {
-	return create( Width, Height, true, false );
+	return create( Width, Height, true, false, 4 );
 }
 
-bool FrameBufferFBO::create(const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer ) {
+bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer, const Uint32& channels ) {
 	if ( !isSupported() )
 		return false;
 
@@ -75,6 +75,7 @@ bool FrameBufferFBO::create(const Uint32& Width, const Uint32& Height, bool Sten
 	mSize.y = Height;
 	mHasStencilBuffer = StencilBuffer;
 	mHasDepthBuffer = DepthBuffer;
+	mChannels = channels;
 
 	unsigned int frameBuffer = 0;
 
@@ -131,7 +132,7 @@ bool FrameBufferFBO::create(const Uint32& Width, const Uint32& Height, bool Sten
 	}
 
 	if ( NULL == mTexture ) {
-		Uint32 TexId = TextureFactory::instance()->createEmptyTexture( Width, Height, 4, Color::Transparent );
+		Uint32 TexId = TextureFactory::instance()->createEmptyTexture( Width, Height, channels, Color::Transparent );
 
 		if ( TextureFactory::instance()->existsId( TexId ) ) {
 			mTexture = 	TextureFactory::instance()->getTexture( TexId );
@@ -174,7 +175,7 @@ void FrameBufferFBO::unbind() {
 }
 
 void FrameBufferFBO::reload() {
-	create( mSize.getWidth(), mSize.getHeight(), mHasStencilBuffer, mHasDepthBuffer );
+	create( mSize.getWidth(), mSize.getHeight(), mHasStencilBuffer, mHasDepthBuffer, mChannels );
 }
 
 void FrameBufferFBO::resize( const Uint32& Width, const Uint32& Height ) {
@@ -209,6 +210,10 @@ void FrameBufferFBO::resize( const Uint32& Width, const Uint32& Height ) {
 	}
 
 	GLi->bindFramebuffer( GL_FRAMEBUFFER, mLastFB );
+}
+
+const Int32 &FrameBufferFBO::getFrameBufferId() const {
+	return mFrameBuffer;
 }
 
 void FrameBufferFBO::bindFrameBuffer() {

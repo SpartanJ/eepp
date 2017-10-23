@@ -289,6 +289,8 @@ void UIListBox::onSizeChange() {
 	containerResize();
 	updateListBoxItemsSize();
 	updateScroll();
+
+	UIWidget::onSizeChange();
 }
 
 void UIListBox::setRowHeight() {
@@ -364,6 +366,8 @@ void UIListBox::updateListBoxItemsSize() {
 
 	for ( Uint32 i = 0; i < size; i++ )
 		itemUpdateSize( mItems[i] );
+
+	invalidateDraw();
 }
 
 void UIListBox::itemUpdateSize( UIListBoxItem * Item ) {
@@ -588,6 +592,8 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 	}
 
 	setHScrollStep();
+
+	invalidateDraw();
 }
 
 void UIListBox::itemKeyEvent( const UIEventKey &Event ) {

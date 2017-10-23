@@ -84,6 +84,8 @@ class EE_API UITextInput : public UITextView {
 
 		void drawWaitingCursor();
 
+		void updateWaitingCursor();
+
 		virtual void updateText();
 
 		virtual void selCurInit( const Int32& init );

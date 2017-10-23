@@ -1,15 +1,17 @@
 #include <eepp/ui/uibackground.hpp>
+#include <eepp/ui/uicontrol.hpp>
 #include <eepp/graphics/primitives.hpp>
 
 using namespace EE::Graphics;
 
 namespace EE { namespace UI {
 
-UIBackground * UIBackground::New() {
-	return eeNew( UIBackground, () );
+UIBackground * UIBackground::New( UIControl * control ) {
+	return eeNew( UIBackground, ( control ) );
 }
 
-UIBackground::UIBackground() :
+UIBackground::UIBackground( UIControl * control ) :
+	mControl( control ),
 	mBlendMode( ALPHA_NORMAL ),
 	mCorners(0),
 	mDrawable( NULL ),
@@ -34,6 +36,7 @@ UIBackground * UIBackground::setColorsTo( const Color& Color ) {
 	for ( unsigned int i = 0; i < mColor.size(); i++ )
 		mColor[i] = Color;
 
+	mControl->invalidateDraw();
 	return this;
 }
 
@@ -55,6 +58,7 @@ UIBackground * UIBackground::setColors( const Color& TopLeftColor, const Color& 
 	else
 		mColor[3] = TopRightColor;
 
+	mControl->invalidateDraw();
 	return this;
 }
 
@@ -64,6 +68,7 @@ const std::vector<Color>& UIBackground::getColors() {
 
 UIBackground * UIBackground::setColor( const Color& Col ) {
 	mColor[0] = Col;
+	mControl->invalidateDraw();
 	return this;
 }
 
@@ -73,6 +78,7 @@ const EE_BLEND_MODE& UIBackground::getBlendMode() const {
 
 UIBackground * UIBackground::setBlendMode( const EE_BLEND_MODE& blend ) {
 	mBlendMode = blend;
+	mControl->invalidateDraw();
 	return this;
 }
 
@@ -82,6 +88,7 @@ const unsigned int& UIBackground::getCorners() const {
 
 UIBackground * UIBackground::setCorners( const unsigned int& corners ) {
 	mCorners = corners;
+	mControl->invalidateDraw();
 	return this;
 }
 
@@ -147,6 +154,7 @@ void UIBackground::setDrawable( Drawable * drawable , bool ownIt ) {
 
 	mDrawable = drawable;
 	mOwnIt = ownIt;
+	mControl->invalidateDraw();
 }
 
 }}

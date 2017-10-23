@@ -463,14 +463,17 @@ Interpolation2d * UIControlAnim::getTranslationInterpolation() {
 
 void UIControlAnim::onAngleChange() {
 	sendCommonEvent( UIEvent::OnAngleChange );
+	invalidateDraw();
 }
 
 void UIControlAnim::onScaleChange() {
 	sendCommonEvent( UIEvent::OnScaleChange );
+	invalidateDraw();
 }
 
 void UIControlAnim::onAlphaChange() {
 	sendCommonEvent( UIEvent::OnAlphaChange );
+	invalidateDraw();
 }
 
 }}

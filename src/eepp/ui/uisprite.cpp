@@ -46,7 +46,7 @@ void UISprite::setSprite( Graphics::Sprite * sprite ) {
 }
 
 void UISprite::draw() {
-	UIControlAnim::draw();
+	UIWidget::draw();
 
 	if ( mVisible ) {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
@@ -73,8 +73,14 @@ void UISprite::draw() {
 void UISprite::update() {
 	UIWidget::update();
 
-	if ( NULL != mSprite )
+	if ( NULL != mSprite ) {
+		SubTexture * subTexture = mSprite->getCurrentSubTexture();
+
 		mSprite->update();
+
+		if ( subTexture != mSprite->getCurrentSubTexture() )
+			invalidateDraw();
+	}
 }
 
 void UISprite::checkSubTextureUpdate() {
@@ -86,10 +92,10 @@ void UISprite::checkSubTextureUpdate() {
 }
 
 void UISprite::setAlpha( const Float& alpha ) {
-	UIControlAnim::setAlpha( alpha );
-	
 	if ( NULL != mSprite )
 		mSprite->setAlpha( alpha );
+
+	UIWidget::setAlpha( alpha );
 }
 
 Graphics::Sprite * UISprite::getSprite() const {
@@ -116,6 +122,7 @@ const EE_RENDER_MODE& UISprite::getRenderMode() const {
 
 void UISprite::setRenderMode( const EE_RENDER_MODE& render ) {
 	mRender = render;
+	invalidateDraw();
 }
 
 void UISprite::updateSize() {
@@ -165,6 +172,7 @@ bool UISprite::getDeallocSprite() {
 void UISprite::onSizeChange() {
 	autoAlign();
 	notifyLayoutAttrChange();
+	UIWidget::onSizeChange();
 }
 
 void UISprite::loadFromXmlNode(const pugi::xml_node & node) {

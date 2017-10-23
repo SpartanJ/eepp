@@ -37,6 +37,7 @@ UITabWidget * UITab::getTabWidget() {
 
 void UITab::onParentChange() {
 	applyDefaultTheme();
+	UISelectButton::onParentChange();
 }
 
 void UITab::setTheme( UITheme * Theme ) {

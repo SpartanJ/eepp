@@ -45,14 +45,17 @@ UILinearLayout * UILinearLayout::add( UIWidget * widget ) {
 }
 
 void UILinearLayout::onSizeChange() {
+	UILayout::onSizeChange();
 	pack();
 }
 
 void UILinearLayout::onParentSizeChange( const Vector2i& SizeChange ) {
+	UILayout::onParentChange();
 	pack();
 }
 
 void UILinearLayout::onChildCountChange() {
+	UILayout::onChildCountChange();
 	pack();
 }
 

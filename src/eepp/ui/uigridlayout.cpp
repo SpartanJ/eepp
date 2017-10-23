@@ -32,6 +32,7 @@ Sizei UIGridLayout::getSpan() const {
 
 UIGridLayout * UIGridLayout::setSpan(const Sizei & span) {
 	mSpan = span;
+	invalidateDraw();
 	return this;
 }
 
@@ -42,6 +43,7 @@ UIGridLayout::ElementMode UIGridLayout::getColumnMode() const {
 UIGridLayout * UIGridLayout::setColumnMode(const UIGridLayout::ElementMode & mode) {
 	mColumnMode = mode;
 	pack();
+	invalidateDraw();
 	return this;
 }
 
@@ -52,6 +54,7 @@ UIGridLayout::ElementMode UIGridLayout::getRowMode() const {
 UIGridLayout *UIGridLayout::setRowMode(const UIGridLayout::ElementMode & mode) {
 	mRowMode = mode;
 	pack();
+	invalidateDraw();
 	return this;
 }
 
@@ -63,6 +66,7 @@ UIGridLayout * UIGridLayout::setColumnWeight(const Float & columnWeight) {
 	mColumnWeight = columnWeight;
 	if ( mColumnMode == Weight )
 		pack();
+	invalidateDraw();
 	return this;
 }
 
@@ -74,6 +78,7 @@ UIGridLayout * UIGridLayout::setColumnWidth(int columnWidth) {
 	mColumnWidth = columnWidth;
 	if ( mColumnMode == Size )
 		pack();
+	invalidateDraw();
 	return this;
 }
 
@@ -85,6 +90,7 @@ UIGridLayout * UIGridLayout::setRowHeight(int rowHeight) {
 	mRowHeight = rowHeight;
 	if ( mRowMode == Size )
 		pack();
+	invalidateDraw();
 	return this;
 }
 
@@ -96,6 +102,7 @@ UIGridLayout * UIGridLayout::setRowWeight(const Float & rowWeight) {
 	mRowWeight = rowWeight;
 	if ( mRowMode == Weight )
 		pack();
+	invalidateDraw();
 	return this;
 }
 
@@ -103,9 +110,9 @@ Rect UIGridLayout::getPadding() const {
 	return mPadding;
 }
 
-void UIGridLayout::setPadding(const Rect & padding)
-{
+void UIGridLayout::setPadding(const Rect & padding) {
 	mPadding = padding;
+	pack();
 }
 
 void UIGridLayout::onSizeChange() {
@@ -178,6 +185,8 @@ void UIGridLayout::pack() {
 	if ( oldSize != mSize ) {
 		notifyLayoutAttrChangeParent();
 	}
+
+	invalidateDraw();
 }
 
 Uint32 UIGridLayout::onMessage(const UIMessage * Msg) {

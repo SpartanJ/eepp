@@ -83,6 +83,8 @@ void UIProgressBar::update() {
 	if ( NULL == mFillerSkin )
 		return;
 
+	Vector2f offset( mOffset );
+
 	mOffset += mStyleConfig.MovementSpeed * (Float)( getElapsed().asSeconds() );
 
 	Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize() ) );
@@ -92,6 +94,9 @@ void UIProgressBar::update() {
 
 	if ( mOffset.y > rSize.getHeight() || mOffset.y < -rSize.getHeight() )
 		mOffset.y = 0.f;
+
+	if ( offset != mOffset )
+		invalidateDraw();
 }
 
 void UIProgressBar::setTheme( UITheme * Theme ) {
@@ -119,6 +124,8 @@ void UIProgressBar::onThemeLoaded() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		setSize( mSize.x, getSkinSize().getHeight() );
 	}
+
+	UIWidget::onThemeLoaded();
 }
 
 Uint32 UIProgressBar::onValueChange() {

@@ -1,15 +1,17 @@
 #include <eepp/ui/uiborder.hpp>
+#include <eepp/ui/uicontrol.hpp>
 #include <eepp/graphics/primitives.hpp>
 
 using namespace EE::Graphics;
 
 namespace EE { namespace UI {
 
-UIBorder * UIBorder::New() {
-	return eeNew( UIBorder, () );
+UIBorder * UIBorder::New( UIControl * control ) {
+	return eeNew( UIBorder, ( control ) );
 }
 
-UIBorder::UIBorder() :
+UIBorder::UIBorder( UIControl * control ) :
+	mControl( control ),
 	mColor( Color::Black ),
 	mWidth( 1 )
 {}
@@ -20,6 +22,7 @@ const Color& UIBorder::getColor() const	{
 
 UIBorder * UIBorder::setColor( const Color& Col )	{
 	mColor = Col;
+	mControl->invalidateDraw();
 	return this;
 }
 
@@ -29,6 +32,7 @@ const unsigned int& UIBorder::getWidth() const {
 
 UIBorder * UIBorder::setWidth( const unsigned int& width )	{
 	mWidth = width;
+	mControl->invalidateDraw();
 	return this;
 }
 

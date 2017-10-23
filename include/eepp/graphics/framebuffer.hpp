@@ -21,7 +21,7 @@ class EE_API FrameBuffer {
 		**	@param DepthBuffer Indicates if a depth buffer is used
 		**	@param window In case that the application is using more than one window, the user can indicate which one to use ( by default uses the current active window )
 		*/
-		static FrameBuffer * New(const Uint32& Width, const Uint32& Height, bool StencilBuffer = true, bool DepthBuffer = false, EE::Window::Window * window = NULL );
+		static FrameBuffer * New( const Uint32& Width, const Uint32& Height, bool StencilBuffer = true, bool DepthBuffer = false, const Uint32& channels = 4, EE::Window::Window * window = NULL );
 
 		virtual ~FrameBuffer();
 
@@ -43,6 +43,9 @@ class EE_API FrameBuffer {
 
 		/** @brief Resizes the current Frame Buffer */
 		virtual void resize( const Uint32& Width, const Uint32& Height ) = 0;
+
+		/** @return The allocated Frame Buffer internal Id ( OpenGL FBO id ) */
+		virtual const Int32& getFrameBufferId() const = 0;
 
 		/** @return The frame buffer texture. Everything is rendered to this texture.
 		** To render the frame buffer you just need to draw the texture as any other texture.
@@ -77,6 +80,7 @@ class EE_API FrameBuffer {
 	protected:
 		EE::Window::Window *	mWindow;
 		Sizei		mSize;
+		Uint32		mChannels;
 		bool		mHasDepthBuffer;
 		bool		mHasStencilBuffer;
 		Texture *	mTexture;

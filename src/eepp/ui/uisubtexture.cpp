@@ -45,6 +45,8 @@ UISubTexture * UISubTexture::setSubTexture( Graphics::SubTexture * subTexture ) 
 
 	notifyLayoutAttrChange();
 
+	invalidateDraw();
+
 	return this;
 }
 
@@ -122,7 +124,7 @@ void UISubTexture::drawSubTexture() {
 }
 
 void UISubTexture::setAlpha( const Float& alpha ) {
-	UIControlAnim::setAlpha( alpha );
+	UIWidget::setAlpha( alpha );
 	mColor.a = (Uint8)alpha;
 }
 
@@ -145,6 +147,7 @@ const EE_RENDER_MODE& UISubTexture::getRenderMode() const {
 
 void UISubTexture::setRenderMode( const EE_RENDER_MODE& render ) {
 	mRender = render;
+	invalidateDraw();
 }
 
 void UISubTexture::autoAlign() {
@@ -171,7 +174,7 @@ void UISubTexture::autoAlign() {
 void UISubTexture::onSizeChange() {
 	onAutoSize();
 	autoAlign();
-	UIControlAnim::onSizeChange();
+	UIWidget::onSizeChange();
 }
 
 void UISubTexture::onAlignChange() {
@@ -221,6 +224,7 @@ Uint32 UISubTexture::getScaleType() const {
 
 UISubTexture * UISubTexture::setScaleType(const Uint32& scaleType) {
 	mScaleType = scaleType;
+	invalidateDraw();
 	return this;
 }
 

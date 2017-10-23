@@ -12,9 +12,9 @@ namespace EE { namespace Graphics {
 
 static std::list<const View*> sFBOActiveViews;
 
-FrameBuffer * FrameBuffer::New( const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer, EE::Window::Window * window ) {
+FrameBuffer * FrameBuffer::New(const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer, const Uint32& channels, EE::Window::Window * window ) {
 	if ( FrameBufferFBO::isSupported() )
-		return eeNew( FrameBufferFBO, ( Width, Height, StencilBuffer, DepthBuffer, window ) );
+		return eeNew( FrameBufferFBO, ( Width, Height, StencilBuffer, DepthBuffer, channels, window ) );
 	eePRINTL( "FBO not supported" );
 	return NULL;
 }
@@ -22,6 +22,7 @@ FrameBuffer * FrameBuffer::New( const Uint32& Width, const Uint32& Height, bool 
 FrameBuffer::FrameBuffer( EE::Window::Window * window  ) :
 	mWindow( window ),
 	mSize(0,0),
+	mChannels(4),
 	mHasDepthBuffer(false),
 	mHasStencilBuffer(false),
 	mTexture(NULL),

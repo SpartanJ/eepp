@@ -51,8 +51,6 @@ class EE_API UIWindow : public UIWidget {
 
 		UIControlAnim * getButtonMinimize() const;
 
-		virtual void draw();
-
 		virtual bool show();
 
 		virtual bool hide();
@@ -85,6 +83,8 @@ class EE_API UIWindow : public UIWidget {
 
 		bool isMaximizable();
 
+		bool isResizeable();
+
 		Uint32 getWinFlags() const;
 
 		UIWindow * setWinFlags(const Uint32 & winFlags);
@@ -102,6 +102,10 @@ class EE_API UIWindow : public UIWidget {
 		bool ownsFrameBuffer();
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
+
+		virtual void internalDraw();
+
+		void invalidate();
 	protected:
 		class KeyboardShortcut {
 			public:
@@ -222,6 +226,10 @@ class EE_API UIWindow : public UIWidget {
 		void createFrameBuffer();
 
 		void drawFrameBuffer();
+
+		virtual void drawShadow();
+
+		Sizei getFrameBufferSize();
 };
 
 }}

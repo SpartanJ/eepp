@@ -6,7 +6,7 @@
 
 namespace EE { namespace UI {
 
-UITextEdit *UITextEdit::New() {
+UITextEdit * UITextEdit::New() {
 	return eeNew( UITextEdit, () );
 }
 
@@ -94,6 +94,8 @@ void UITextEdit::onSizeChange() {
 	scrollbarsSet();
 
 	fixScroll();
+
+	UIWidget::onSizeChange();
 }
 
 void UITextEdit::onParentSizeChange( const Vector2i& SizeChange ) {
@@ -135,6 +137,8 @@ void UITextEdit::fixScroll() {
 
 		mTextInput->setPixelsPosition( mContainerPadding.Left - pos, mTextInput->getRealPosition().y );
 	}
+
+	invalidateDraw();
 }
 
 void UITextEdit::scrollbarsSet() {
@@ -231,6 +235,8 @@ void UITextEdit::scrollbarsSet() {
 	}
 
 	mSkipValueChange = false;
+
+	invalidateDraw();
 }
 
 void UITextEdit::autoPadding() {
@@ -375,6 +381,8 @@ void UITextEdit::fixScrollToCursor() {
 
 		mSkipValueChange = false;
 	}
+
+	invalidateDraw();
 }
 
 void UITextEdit::shrinkText( const Uint32& Width ) {
@@ -384,7 +392,7 @@ void UITextEdit::shrinkText( const Uint32& Width ) {
 }
 
 void UITextEdit::update() {
-	UIControlAnim::update();
+	UIWidget::update();
 
 	if ( mTextInput->isEnabled() && mTextInput->isVisible() && mTextInput->isMouseOver() && mVScrollBar->isVisible() ) {
 		Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
@@ -396,6 +404,7 @@ void UITextEdit::update() {
 
 void UITextEdit::setAllowEditing( const bool& allow ) {
 	mTextInput->setAllowEditing( allow );
+	invalidateDraw();
 }
 
 const bool& UITextEdit::isEditingAllowed() const {

@@ -49,6 +49,8 @@ UIImage * UIImage::setDrawable( Drawable * drawable ) {
 
 	notifyLayoutAttrChange();
 
+	invalidateDraw();
+
 	return this;
 }
 
@@ -157,10 +159,11 @@ void UIImage::safeDeleteDrawable() {
 void UIImage::onSizeChange() {
 	onAutoSize();
 	calcDestSize();
-	UIControlAnim::onSizeChange();
+	UIWidget::onSizeChange();
 }
 
 void UIImage::onAlignChange() {
+	UIWidget::onAlignChange();
 	onAutoSize();
 	calcDestSize();
 }
@@ -211,6 +214,7 @@ Uint32 UIImage::getScaleType() const {
 UIImage * UIImage::setScaleType(const Uint32& scaleType) {
 	mScaleType = scaleType;
 	calcDestSize();
+	invalidateDraw();
 	return this;
 }
 

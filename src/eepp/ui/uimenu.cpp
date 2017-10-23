@@ -57,6 +57,8 @@ void UIMenu::setTheme( UITheme * Theme ) {
 }
 
 void UIMenu::onThemeLoaded() {
+	UIWidget::onThemeLoaded();
+
 	autoPadding();
 
 	onSizeChange();
@@ -316,6 +318,8 @@ void UIMenu::onSizeChange() {
 	if ( 0 != mStyleConfig.MinWidth && mSize.getWidth() < (Int32)mStyleConfig.MinWidth ) {
 		setSize( mStyleConfig.MinWidth, PixelDensity::pxToDpI( mNextPosY ) + mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom );
 	}
+
+	UIWidget::onSizeChange();
 }
 
 void UIMenu::autoPadding() {
@@ -354,6 +358,7 @@ void UIMenu::rePosControls() {
 	}
 
 	resizeMe();
+	invalidateDraw();
 }
 
 void UIMenu::resizeMe() {

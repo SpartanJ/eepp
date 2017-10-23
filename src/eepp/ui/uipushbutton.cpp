@@ -145,6 +145,8 @@ void UIPushButton::onThemeLoaded() {
 	autoPadding();
 
 	onSizeChange();
+
+	UIWidget::onThemeLoaded();
 }
 
 void UIPushButton::autoPadding() {
@@ -203,13 +205,15 @@ Font * UIPushButton::getFont() {
 }
 
 void UIPushButton::onAlphaChange() {
-	UIControlAnim::onAlphaChange();
+	UIWidget::onAlphaChange();
 
 	mIcon->setAlpha( mAlpha );
 	mTextBox->setAlpha( mAlpha );
 }
 
 void UIPushButton::onStateChange() {
+	UIWidget::onStateChange();
+
 	if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
 		mTextBox->setFontColor( mStyleConfig.FontOverColor );
 	} else {
@@ -220,6 +224,8 @@ void UIPushButton::onStateChange() {
 }
 
 void UIPushButton::onAlignChange() {
+	UIWidget::onAlignChange();
+
 	mTextBox->setHorizontalAlign( getHorizontalAlign() );
 	mTextBox->setVerticalAlign( getVerticalAlign() );
 }

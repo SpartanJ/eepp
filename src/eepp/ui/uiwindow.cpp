@@ -149,7 +149,7 @@ void UIWindow::updateWinFlags() {
 			mButtonClose = NULL;
 		}
 
-		if ( ( mStyleConfig.WinFlags & UI_WIN_RESIZEABLE ) && ( mStyleConfig.WinFlags & UI_WIN_MAXIMIZE_BUTTON ) ) {
+		if ( isMaximizable() ) {
 			if ( NULL == mButtonMaximize ) {
 				mButtonMaximize = UIControlAnim::New();
 				mButtonMaximize->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
@@ -203,12 +203,54 @@ void UIWindow::updateWinFlags() {
 
 void UIWindow::createFrameBuffer() {
 	eeSAFE_DELETE( mFrameBuffer );
-	mFrameBuffer = FrameBuffer::New( Math::nextPowOfTwo( mRealSize.getWidth() ), Math::nextPowOfTwo( mRealSize.getHeight() ) );
+	Sizei fboSize( getFrameBufferSize() );
+	mFrameBuffer = FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight() );
 }
 
 void UIWindow::drawFrameBuffer() {
 	SubTexture subTexture( mFrameBuffer->getTexture()->getId(), Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ) );
 	subTexture.draw( mScreenPosf.x, mScreenPosf.y, Color::White, mAngle, mScale );
+}
+
+void UIWindow::drawShadow() {
+	if ( mStyleConfig.WinFlags & UI_WIN_SHADOW ) {
+		UIWidget::matrixSet();
+
+		Primitives P;
+		P.setForceDraw( false );
+
+		Color BeginC( 0, 0, 0, 25 * ( getAlpha() / (Float)255 ) );
+		Color EndC( 0, 0, 0, 0 );
+		Float SSize = PixelDensity::dpToPx( 16.f );
+
+		Vector2i ShadowPos = mScreenPos + Vector2i( 0, SSize );
+
+		P.drawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y ), Sizef( mRealSize.getWidth(), mRealSize.getHeight() ) ), BeginC, BeginC, BeginC, BeginC );
+
+		P.drawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y - SSize ), Sizef( mRealSize.getWidth(), SSize ) ), EndC, BeginC, BeginC, EndC );
+
+		P.drawRectangle( Rectf( Vector2f( ShadowPos.x - SSize, ShadowPos.y ), Sizef( SSize, mRealSize.getHeight() ) ), EndC, EndC, BeginC, BeginC );
+
+		P.drawRectangle( Rectf( Vector2f( ShadowPos.x + mRealSize.getWidth(), ShadowPos.y ), Sizef( SSize, mRealSize.getHeight() ) ), BeginC, BeginC, EndC, EndC );
+
+		P.drawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y + mRealSize.getHeight() ), Sizef( mRealSize.getWidth(), SSize ) ), BeginC, EndC, EndC, BeginC );
+
+		P.drawTriangle( Triangle2f( Vector2f( ShadowPos.x + mRealSize.getWidth(), ShadowPos.y ), Vector2f( ShadowPos.x + mRealSize.getWidth(), ShadowPos.y - SSize ), Vector2f( ShadowPos.x + mRealSize.getWidth() + SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
+
+		P.drawTriangle( Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y ), Vector2f( ShadowPos.x, ShadowPos.y - SSize ), Vector2f( ShadowPos.x - SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
+
+		P.drawTriangle( Triangle2f( Vector2f( ShadowPos.x + mRealSize.getWidth(), ShadowPos.y + mRealSize.getHeight() ), Vector2f( ShadowPos.x + mRealSize.getWidth(), ShadowPos.y + mRealSize.getHeight() + SSize ), Vector2f( ShadowPos.x + mRealSize.getWidth() + SSize, ShadowPos.y + mRealSize.getHeight() ) ), BeginC, EndC, EndC );
+
+		P.drawTriangle( Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y + mRealSize.getHeight() ), Vector2f( ShadowPos.x - SSize, ShadowPos.y + mRealSize.getHeight() ), Vector2f( ShadowPos.x, ShadowPos.y + mRealSize.getHeight() + SSize ) ), BeginC, EndC, EndC );
+
+		P.setForceDraw( true );
+
+		UIWidget::matrixUnset();
+	}
+}
+
+Sizei UIWindow::getFrameBufferSize() {
+	return isResizeable() ? Sizei( Math::nextPowOfTwo( mRealSize.getWidth() ), Math::nextPowOfTwo( mRealSize.getHeight() ) ) : mRealSize;
 }
 
 void UIWindow::createModalControl() {
@@ -414,7 +456,8 @@ void UIWindow::onSizeChange() {
 			if ( NULL == mFrameBuffer ) {
 				createFrameBuffer();
 			} else {
-				mFrameBuffer->resize( Math::nextPowOfTwo( mRealSize.getWidth() ), Math::nextPowOfTwo( mRealSize.getHeight() ) );
+				Sizei fboSize( getFrameBufferSize() );
+				mFrameBuffer->resize( fboSize.getWidth(), fboSize.getHeight() );
 			}
 		}
 
@@ -579,7 +622,7 @@ void UIWindow::doResize ( const UIMessage * Msg ) {
 	if ( NULL == mWindowDecoration )
 		return;
 
-	if (	!( mStyleConfig.WinFlags & UI_WIN_RESIZEABLE ) ||
+	if (	!isResizeable() ||
 			!( Msg->getFlags() & EE_BUTTON_LMASK ) ||
 			RESIZE_NONE != mResizeType ||
 			( UIManager::instance()->getLastPressTrigger() & EE_BUTTON_LMASK )
@@ -793,41 +836,6 @@ void UIWindow::internalSize( Sizei Size ) {
 	}
 }
 
-void UIWindow::draw() {
-	if ( mStyleConfig.WinFlags & UI_WIN_SHADOW ) {
-		Primitives P;
-		P.setForceDraw( false );
-
-		Color BeginC( 0, 0, 0, 25 * ( getAlpha() / (Float)255 ) );
-		Color EndC( 0, 0, 0, 0 );
-		Float SSize = PixelDensity::dpToPx( 16.f );
-
-		Vector2i ShadowPos = mScreenPos + Vector2i( 0, SSize );
-
-		P.drawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y ), Sizef( mRealSize.getWidth(), mRealSize.getHeight() ) ), BeginC, BeginC, BeginC, BeginC );
-
-		P.drawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y - SSize ), Sizef( mRealSize.getWidth(), SSize ) ), EndC, BeginC, BeginC, EndC );
-
-		P.drawRectangle( Rectf( Vector2f( ShadowPos.x - SSize, ShadowPos.y ), Sizef( SSize, mRealSize.getHeight() ) ), EndC, EndC, BeginC, BeginC );
-
-		P.drawRectangle( Rectf( Vector2f( ShadowPos.x + mRealSize.getWidth(), ShadowPos.y ), Sizef( SSize, mRealSize.getHeight() ) ), BeginC, BeginC, EndC, EndC );
-
-		P.drawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y + mRealSize.getHeight() ), Sizef( mRealSize.getWidth(), SSize ) ), BeginC, EndC, EndC, BeginC );
-
-		P.drawTriangle( Triangle2f( Vector2f( ShadowPos.x + mRealSize.getWidth(), ShadowPos.y ), Vector2f( ShadowPos.x + mRealSize.getWidth(), ShadowPos.y - SSize ), Vector2f( ShadowPos.x + mRealSize.getWidth() + SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
-
-		P.drawTriangle( Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y ), Vector2f( ShadowPos.x, ShadowPos.y - SSize ), Vector2f( ShadowPos.x - SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
-
-		P.drawTriangle( Triangle2f( Vector2f( ShadowPos.x + mRealSize.getWidth(), ShadowPos.y + mRealSize.getHeight() ), Vector2f( ShadowPos.x + mRealSize.getWidth(), ShadowPos.y + mRealSize.getHeight() + SSize ), Vector2f( ShadowPos.x + mRealSize.getWidth() + SSize, ShadowPos.y + mRealSize.getHeight() ) ), BeginC, EndC, EndC );
-
-		P.drawTriangle( Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y + mRealSize.getHeight() ), Vector2f( ShadowPos.x - SSize, ShadowPos.y + mRealSize.getHeight() ), Vector2f( ShadowPos.x, ShadowPos.y + mRealSize.getHeight() + SSize ) ), BeginC, EndC, EndC );
-
-		P.setForceDraw( true );
-	}
-
-	UIWidget::draw();
-}
-
 void UIWindow::update() {
 	resizeCursor();
 
@@ -1009,7 +1017,7 @@ void UIWindow::maximize() {
 }
 
 Uint32 UIWindow::onMouseDoubleClick( const Vector2i &Pos, const Uint32 Flags ) {
-	if ( ( mStyleConfig.WinFlags & UI_WIN_RESIZEABLE ) && ( NULL != mButtonMaximize ) && ( Flags & EE_BUTTON_LMASK ) ) {
+	if ( isResizeable() && ( NULL != mButtonMaximize ) && ( Flags & EE_BUTTON_LMASK ) ) {
 		onButtonMaximizeClick( NULL );
 	}
 
@@ -1022,10 +1030,42 @@ Uint32 UIWindow::onKeyDown( const UIEventKey &Event ) {
 	return UIWidget::onKeyDown( Event );
 }
 
+void UIWindow::internalDraw() {
+	if ( mVisible ) {
+		drawShadow();
+
+		matrixSet();
+
+		if ( !ownsFrameBuffer() ||
+			 NULL == mParentCtrl ||
+			 !UIManager::instance()->usesInvalidation()
+			 || ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) ) {
+			clipMe();
+
+			draw();
+
+			drawChilds();
+
+			clipDisable();
+
+			writeCtrlFlag( UI_CTRL_FLAG_NEEDS_REDRAW, 0 );
+		}
+
+		matrixUnset();
+	}
+}
+
+void UIWindow::invalidate() {
+	if ( mVisible && NULL != mParentCtrl )
+		writeCtrlFlag( UI_CTRL_FLAG_NEEDS_REDRAW, 1 );
+}
+
 void UIWindow::matrixSet() {
 	if ( ownsFrameBuffer() ) {
 		mFrameBuffer->bind();
-		mFrameBuffer->clear();
+
+		if ( NULL == mParentCtrl || !UIManager::instance()->usesInvalidation() || ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) )
+			mFrameBuffer->clear();
 
 		GLi->translatef( -mScreenPos.x , -mScreenPos.y, 0.f );
 	} else {
@@ -1092,7 +1132,11 @@ bool UIWindow::removeShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
 }
 
 bool UIWindow::isMaximizable() {
-	return 0 != ( ( mStyleConfig.WinFlags & UI_WIN_RESIZEABLE ) && ( mStyleConfig.WinFlags & UI_WIN_MAXIMIZE_BUTTON ) );
+	return isResizeable() && 0 != ( mStyleConfig.WinFlags & UI_WIN_MAXIMIZE_BUTTON );
+}
+
+bool UIWindow::isResizeable() {
+	return 0 != ( mStyleConfig.WinFlags & UI_WIN_RESIZEABLE );
 }
 
 Uint32 UIWindow::getWinFlags() const {
@@ -1152,7 +1196,7 @@ UIWidget * UIWindow::getModalControl() const {
 void UIWindow::resizeCursor() {
 	UIManager * Man = UIManager::instance();
 
-	if ( !isMouseOverMeOrChilds() || !Man->getUseGlobalCursors() || ( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) || !( mStyleConfig.WinFlags & UI_WIN_RESIZEABLE ) )
+	if ( !isMouseOverMeOrChilds() || !Man->getUseGlobalCursors() || ( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) || !isResizeable() )
 		return;
 
 	Vector2i Pos = Man->getMousePos();

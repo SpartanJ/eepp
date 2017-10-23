@@ -99,6 +99,7 @@ UITextView *UITextView::setCharacterSize( const Uint32 & characterSize ) {
 		mTextCache->setCharacterSize( characterSize );
 		recalculate();
 		notifyLayoutAttrChange();
+		invalidateDraw();
 	}
 
 	return this;
@@ -118,6 +119,7 @@ UITextView * UITextView::setOutlineThickness( const Float & outlineThickness ) {
 		mFontStyleConfig.OutlineThickness = outlineThickness;
 		recalculate();
 		notifyLayoutAttrChange();
+		invalidateDraw();
 	}
 
 	return this;
@@ -131,6 +133,7 @@ UITextView * UITextView::setOutlineColor(const Color & outlineColor) {
 	if ( mFontStyleConfig.OutlineColor != outlineColor ) {
 		mTextCache->setOutlineColor( outlineColor );
 		mFontStyleConfig.OutlineColor = outlineColor;
+		invalidateDraw();
 	}
 
 	return this;
@@ -142,6 +145,7 @@ UITextView * UITextView::setFontStyle(const Uint32 & fontStyle) {
 		mFontStyleConfig.Style = fontStyle;
 		recalculate();
 		notifyLayoutAttrChange();
+		invalidateDraw();
 	}
 
 	return this;
@@ -189,7 +193,7 @@ const Color& UITextView::getFontShadowColor() const {
 UITextView * UITextView::setFontShadowColor( const Color& color ) {
 	mFontStyleConfig.ShadowColor = color;
 	mTextCache->setShadowColor( mFontStyleConfig.ShadowColor );
-
+	invalidateDraw();
 	return this;
 }
 
@@ -199,6 +203,7 @@ const Color& UITextView::getSelectionBackColor() const {
 
 UITextView * UITextView::setSelectionBackColor( const Color& color ) {
 	mFontStyleConfig.FontSelectionBackColor = color;
+	invalidateDraw();
 	return this;
 }
 
@@ -222,6 +227,7 @@ void UITextView::shrinkText( const Uint32& MaxWidth ) {
 	}
 
 	mTextCache->shrinkText( MaxWidth );
+	invalidateDraw();
 }
 
 void UITextView::onAutoSize() {
@@ -267,24 +273,26 @@ void UITextView::alignFix() {
 }
 
 Uint32 UITextView::onFocusLoss() {
+	UIWidget::onFocusLoss();
+
 	selCurInit( -1 );
 	selCurEnd( -1 );
-
 	return 1;
 }
 
 void UITextView::onSizeChange() {
 	recalculate();
-
 	UIControlAnim::onSizeChange();
 }
 
 void UITextView::onTextChanged() {
 	sendCommonEvent( UIEvent::OnTextChanged );
+	invalidateDraw();
 }
 
 void UITextView::onFontChanged() {
 	sendCommonEvent( UIEvent::OnFontChanged );
+	invalidateDraw();
 }
 
 void UITextView::setTheme( UITheme * Theme ) {
@@ -426,17 +434,18 @@ bool UITextView::isTextSelectionEnabled() const {
 	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
 }
 
-UITooltipStyleConfig UITextView::getFontStyleConfig() const
-{
+UITooltipStyleConfig UITextView::getFontStyleConfig() const {
 	return mFontStyleConfig;
 }
 
 void UITextView::selCurInit( const Int32& init ) {
 	mSelCurInit = init;
+	invalidateDraw();
 }
 
 void UITextView::selCurEnd( const Int32& end ) {
 	mSelCurEnd = end;
+	invalidateDraw();
 }
 
 Int32 UITextView::selCurInit() {
@@ -448,6 +457,7 @@ Int32 UITextView::selCurEnd() {
 }
 
 void UITextView::onAlignChange() {
+	UIWidget::onAlignChange();
 	alignFix();
 }
 
@@ -460,6 +470,7 @@ void UITextView::recalculate() {
 
 void UITextView::resetSelCache() {
 	mLastSelCurInit = mLastSelCurEnd = -1;
+	invalidateDraw();
 }
 
 void UITextView::setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig ) {
@@ -490,6 +501,7 @@ UITextView * UITextView::setPadding(const Rect & padding) {
 }
 
 void UITextView::onPaddingChange() {
+	invalidateDraw();
 }
 
 void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
