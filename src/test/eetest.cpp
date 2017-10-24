@@ -296,7 +296,7 @@ void EETest::createUI() {
 	Uint32 UI_MAN_OPS = 0;
 	if ( mDebugUI )
 		UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES;
-	UIManager::instance()->init(UI_MAN_OPS);
+	UIManager::instance()->init(UI_MAN_OPS | UI_MANAGER_USE_DRAW_INVALIDATION);
 	UIManager::instance()->setTranslator( mTranslator );
 
 	//mTheme = UITheme::loadFromFile( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
@@ -848,7 +848,7 @@ static void onWinDragStop( const UIEvent * event ) {
 
 void EETest::createDecoratedWindow() {
 	mUIWindow = UIWindow::New();
-	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW /*| UI_WIN_FRAME_BUFFER*/ )
+	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER )
 			->setMinWindowSize( 530, 350 )->setPosition( 200, 50 );
 
 	mUIWindow->addEventListener( UIEvent::OnWindowCloseClick, cb::Make1( this, &EETest::onCloseClick ) );

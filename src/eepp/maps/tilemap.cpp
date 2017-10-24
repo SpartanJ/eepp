@@ -214,7 +214,7 @@ void TileMap::draw() {
 	GlobalBatchRenderer::instance()->draw();
 
 	if ( getClipedArea() ) {
-		GLi->getClippingMask()->clipEnable( mScreenPos.x, mScreenPos.y, mViewSize.x, mViewSize.y );
+		GLi->getClippingMask()->clipPlaneEnable( mScreenPos.x, mScreenPos.y, mViewSize.x, mViewSize.y );
 	}
 
 	if ( getDrawBackground() ) {
@@ -227,9 +227,6 @@ void TileMap::draw() {
 		P.setColor( Color( 255, 255, 255, 255 ) );
 	}
 
-	float oldM[16];
-	GLi->getCurrentMatrix( GL_MODELVIEW_MATRIX, oldM );
-	GLi->loadIdentity();
 	GLi->pushMatrix();
 	GLi->translatef( (Float)static_cast<Int32>( mScreenPos.x + mOffset.x ), (Float)static_cast<Int32>( mScreenPos.y + mOffset.y ), 0 );
 	GLi->scalef( mScale, mScale, 0 );
@@ -249,10 +246,9 @@ void TileMap::draw() {
 	GlobalBatchRenderer::instance()->draw();
 
 	GLi->popMatrix();
-	GLi->loadMatrixf( oldM );
 
 	if ( getClipedArea() ) {
-		GLi->getClippingMask()->clipDisable();
+		GLi->getClippingMask()->clipPlaneDisable();
 	}
 }
 

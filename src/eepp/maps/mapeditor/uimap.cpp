@@ -2,6 +2,7 @@
 #include <eepp/maps/mapeditor/mapobjectproperties.hpp>
 #include <eepp/maps/gameobjectobject.hpp>
 #include <eepp/maps/mapobjectlayer.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 
@@ -100,6 +101,8 @@ void UIMap::update() {
 	UIWidget::update();
 
 	if ( NULL != mMap ) {
+		invalidateDraw();
+
 		mMap->update();
 
 		if ( mEnabled && mVisible && isMouseOver() ) {

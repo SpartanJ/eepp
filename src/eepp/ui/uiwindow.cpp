@@ -5,6 +5,7 @@
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>
@@ -1075,6 +1076,8 @@ void UIWindow::matrixSet() {
 
 void UIWindow::matrixUnset() {
 	if ( ownsFrameBuffer() ) {
+		GlobalBatchRenderer::instance()->draw();
+
 		GLi->translatef( mScreenPos.x , mScreenPos.y, 0.f );
 
 		mFrameBuffer->unbind();

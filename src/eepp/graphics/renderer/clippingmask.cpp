@@ -124,6 +124,7 @@ void ClippingMask::stencilMaskEnable() {
 	GLi->stencilMask(0xFF);
 	GLi->stencilFunc(GL_NEVER, 1, 0xFF);
 	GLi->stencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
+	GLi->clear(GL_STENCIL_BUFFER_BIT);
 
 	drawMask();
 
