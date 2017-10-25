@@ -102,6 +102,10 @@ const Int32& FrameBuffer::getHeight() const {
 	return mSize.y;
 }
 
+const Sizei &FrameBuffer::getSize() const {
+	return mSize;
+}
+
 const Sizef FrameBuffer::getSizef() {
 	return Sizef( mSize.getWidth(), mSize.getHeight() );
 }
@@ -110,8 +114,21 @@ const bool& FrameBuffer::hasDepthBuffer() const {
 	return mHasDepthBuffer;
 }
 
-const bool &FrameBuffer::hasStencilBuffer() const {
+const bool& FrameBuffer::hasStencilBuffer() const {
 	return mHasStencilBuffer;
+}
+
+const std::string& FrameBuffer::getName() const {
+	return mName;
+}
+
+void FrameBuffer::setName( const std::string& name ) {
+	mName = name;
+	mId = String::hash( mName );
+}
+
+const Uint32& FrameBuffer::getId() const {
+	return mId;
 }
 
 }}

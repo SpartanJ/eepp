@@ -38,4 +38,20 @@ FrameBuffer * FrameBufferManager::getCurrentlyBound() {
 	return NULL;
 }
 
+FrameBuffer * FrameBufferManager::getFromName( const std::string& name ) {
+	return getFromId( String::hash( name ) );
+}
+
+FrameBuffer * FrameBufferManager::getFromId( const Uint32& id ) {
+	std::list<FrameBuffer*>::iterator it;
+
+	for ( it = mResources.begin(); it != mResources.end(); it++ ) {
+		if ( (*it)->getId() == id ) {
+			return (*it);
+		}
+	}
+
+	return NULL;
+}
+
 }}}

@@ -36,7 +36,9 @@
 #include <eepp/graphics/shaderprogrammanager.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
 #include <eepp/graphics/framebuffer.hpp>
+#include <eepp/graphics/framebuffermanager.hpp>
 #include <eepp/graphics/vertexbuffer.hpp>
+#include <eepp/graphics/vertexbuffermanager.hpp>
 #include <eepp/graphics/vertexbufferogl.hpp>
 #include <eepp/graphics/vertexbuffervbo.hpp>
 #include <eepp/graphics/arcdrawable.hpp>

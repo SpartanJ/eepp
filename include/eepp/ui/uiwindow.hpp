@@ -106,6 +106,9 @@ class EE_API UIWindow : public UIWidget {
 		virtual void internalDraw();
 
 		void invalidate();
+
+		FrameBuffer * getFrameBuffer() const;
+
 	protected:
 		class KeyboardShortcut {
 			public:
@@ -228,6 +231,10 @@ class EE_API UIWindow : public UIWidget {
 		void drawFrameBuffer();
 
 		virtual void drawShadow();
+
+		virtual void preDraw();
+
+		virtual void postDraw();
 
 		Sizei getFrameBufferSize();
 };

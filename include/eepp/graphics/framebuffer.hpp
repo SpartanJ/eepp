@@ -77,10 +77,21 @@ class EE_API FrameBuffer {
 
 		/** @return True if the frame buffer has a stencil buffer */
 		const bool& hasStencilBuffer() const;
+
+		/** @return The frame buffer name. */
+		const std::string& getName() const;
+
+		/** Set a name to the frame buffer */
+		void setName( const std::string& name );
+
+		/** @return The hash id from its name */
+		const Uint32& getId() const;
 	protected:
 		EE::Window::Window *	mWindow;
 		Sizei		mSize;
 		Uint32		mChannels;
+		std::string mName;
+		Uint32		mId;
 		bool		mHasDepthBuffer;
 		bool		mHasStencilBuffer;
 		Texture *	mTexture;

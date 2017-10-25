@@ -8,6 +8,71 @@ static void mainLoop() {
 
 namespace Demo_Test {
 
+class UIBlurredWindow : public UIWindow {
+	public:
+		static UIBlurredWindow * New( ShaderProgram * blurShader ) {
+			return eeNew( UIBlurredWindow, ( blurShader ) );
+		}
+
+		UIBlurredWindow( ShaderProgram * blurShader ) :
+			UIWindow(),
+			mBlurShader( blurShader ),
+			mFboBlur( NULL )
+		{
+		}
+
+		~UIBlurredWindow()
+		{
+			eeSAFE_DELETE( mFboBlur );
+		}
+
+	protected:
+		ShaderProgram * mBlurShader;
+		FrameBuffer * mFboBlur;
+
+		void preDraw()
+		{
+			if ( !ownsFrameBuffer() )
+				return;
+
+			FrameBuffer * curFBO = FrameBufferManager::instance()->getFromName( "uimain" );
+
+			if ( NULL != curFBO && NULL != mBlurShader ) {
+				static int fboDiv = 2;
+
+				if ( NULL == mFboBlur ) {
+					mFboBlur = FrameBuffer::New( mRealSize.x / fboDiv, mRealSize.y / fboDiv );
+				} else if ( mFboBlur->getSize().getWidth() != mRealSize.x / fboDiv || mFboBlur->getSize().getHeight() != mRealSize.y / fboDiv ) {
+					mFboBlur->resize( mRealSize.x / fboDiv, mRealSize.y / fboDiv );
+				}
+
+				SubTexture subTexture( curFBO->getTexture()->getId(),
+									   Rect(	mScreenPos.x, mScreenPos.y,
+												mScreenPos.x + mRealSize.x, mScreenPos.y + mRealSize.y
+				) );
+
+				mBlurShader->bind();
+				mBlurShader->setUniform( "radius", 16.f );
+				mBlurShader->setUniform( "textureRes", curFBO->getTexture()->getSize() );
+				mBlurShader->setUniform( "dir", (Int32)0 );
+
+				mFboBlur->bind();
+				mFboBlur->clear();
+				subTexture.draw(Vector2f(0,0),mFboBlur->getSizef());
+				mFboBlur->unbind();
+
+				mFboBlur->bind();
+				mBlurShader->setUniform( "dir", (Int32)1 );
+				mFboBlur->getTexture()->draw(Vector2f(0,0),mFboBlur->getSizef());
+				mFboBlur->unbind();
+
+				mBlurShader->unbind();
+
+				mFboBlur->getTexture()->draw(mScreenPosf,Sizef(mRealSize.x,mRealSize.y));
+			}
+		}
+};
+
 void EETest::init() {
 	EE = Engine::instance();
 
@@ -231,6 +296,7 @@ void EETest::createShaders() {
 	if ( mUseShaders ) {
 		mBlurFactor = 0.01f;
 		mShaderProgram = ShaderProgram::New( MyPath + "shaders/blur.vert", MyPath + "shaders/blur.frag", "blur" );
+		mBlur = ShaderProgram::New( MyPath + "shaders/blur.vert", MyPath + "shaders/gaussian_blur.frag", "gaussian_blur" );
 	}
 }
 
@@ -296,7 +362,7 @@ void EETest::createUI() {
 	Uint32 UI_MAN_OPS = 0;
 	if ( mDebugUI )
 		UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES;
-	UIManager::instance()->init(UI_MAN_OPS | UI_MANAGER_USE_DRAW_INVALIDATION);
+	UIManager::instance()->init(UI_MAN_OPS | UI_MANAGER_USE_DRAW_INVALIDATION | UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER);
 	UIManager::instance()->setTranslator( mTranslator );
 
 	//mTheme = UITheme::loadFromFile( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
@@ -847,7 +913,7 @@ static void onWinDragStop( const UIEvent * event ) {
 }
 
 void EETest::createDecoratedWindow() {
-	mUIWindow = UIWindow::New();
+	mUIWindow = UIBlurredWindow::New( mBlur );
 	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER )
 			->setMinWindowSize( 530, 350 )->setPosition( 200, 50 );
 

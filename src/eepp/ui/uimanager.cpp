@@ -2,6 +2,7 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/helper/pugixml/pugixml.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -69,6 +70,12 @@ void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 	mControl->setEnabled( true );
 	mControl->getContainer()->setEnabled( false );
 	mControl->getContainer()->setVisible( false );
+
+	if ( mControl->ownsFrameBuffer() ) {
+		mControl->getFrameBuffer()->setName( "uimain" );
+		RGB cc = mWindow->getClearColor();
+		mControl->getFrameBuffer()->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 0 ) );
+	}
 
 	mFocusControl	= mControl;
 	mOverControl	= mControl;

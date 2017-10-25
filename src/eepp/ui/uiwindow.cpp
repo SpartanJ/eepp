@@ -1033,6 +1033,8 @@ Uint32 UIWindow::onKeyDown( const UIEventKey &Event ) {
 
 void UIWindow::internalDraw() {
 	if ( mVisible ) {
+		preDraw();
+
 		drawShadow();
 
 		matrixSet();
@@ -1053,12 +1055,18 @@ void UIWindow::internalDraw() {
 		}
 
 		matrixUnset();
+
+		postDraw();
 	}
 }
 
 void UIWindow::invalidate() {
 	if ( mVisible && NULL != mParentCtrl )
 		writeCtrlFlag( UI_CTRL_FLAG_NEEDS_REDRAW, 1 );
+}
+
+FrameBuffer * UIWindow::getFrameBuffer() const {
+	return mFrameBuffer;
 }
 
 void UIWindow::matrixSet() {
@@ -1298,6 +1306,12 @@ void UIWindow::loadFromXmlNode(const pugi::xml_node & node) {
 	endPropertiesTransaction();
 
 	show();
+}
+
+void UIWindow::preDraw() {
+}
+
+void UIWindow::postDraw() {
 }
 
 }}

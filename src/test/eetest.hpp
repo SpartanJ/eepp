@@ -110,6 +110,7 @@ class EETest : private Thread {
 		View Views[2];
 
 		ShaderProgram * mShaderProgram;
+		ShaderProgram * mBlur;
 
 		Float mBlurFactor;
 		bool mUseShaders;

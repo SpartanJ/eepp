@@ -15,6 +15,10 @@ class EE_API FrameBufferManager : public Container<FrameBuffer> {
 		void reload();
 
 		FrameBuffer * getCurrentlyBound();
+
+		FrameBuffer * getFromName( const std::string& name );
+
+		FrameBuffer * getFromId( const Uint32& id );
 	protected:
 		FrameBufferManager();
 };
