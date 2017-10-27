@@ -51,18 +51,27 @@ class UIBlurredWindow : public UIWindow {
 												mScreenPos.x + mRealSize.x, mScreenPos.y + mRealSize.y
 				) );
 
-				mBlurShader->bind();
-				mBlurShader->setUniform( "radius", 16.f );
-				mBlurShader->setUniform( "textureRes", curFBO->getTexture()->getSize() );
-				mBlurShader->setUniform( "dir", (Int32)0 );
-
+				RGB cc = UIManager::instance()->getWindow()->getClearColor();
+				mFboBlur->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 0 ) );
 				mFboBlur->bind();
 				mFboBlur->clear();
 				subTexture.draw(Vector2f(0,0),mFboBlur->getSizef());
 				mFboBlur->unbind();
 
+				mBlurShader->bind();
+
+				mBlurShader->setUniform( "radius", 16.f );
+				mBlurShader->setUniform( "dir", (Int32)0 );
+				mBlurShader->setUniform( "textureRes", mFboBlur->getSizef() );
+
 				mFboBlur->bind();
+				mFboBlur->getTexture()->draw(Vector2f(0,0),mFboBlur->getSizef());
+				mFboBlur->unbind();
+
 				mBlurShader->setUniform( "dir", (Int32)1 );
+				mBlurShader->setUniform( "textureRes", mFboBlur->getSizef() );
+
+				mFboBlur->bind();
 				mFboBlur->getTexture()->draw(Vector2f(0,0),mFboBlur->getSizef());
 				mFboBlur->unbind();
 
