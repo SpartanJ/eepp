@@ -99,6 +99,7 @@ class EE_API FrameBuffer {
 		View		mView;
 		View 		mPrevView;
 		float		mProjMat[16];
+		float		mModelViewMat[16];
 
 		FrameBuffer( EE::Window::Window * window );
 

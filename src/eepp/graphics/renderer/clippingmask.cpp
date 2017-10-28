@@ -138,6 +138,35 @@ void ClippingMask::stencilMaskDisable( bool clearMasks ) {
 		this->clearMasks();
 }
 
+std::list<Rectf> ClippingMask::getScissorsClipped() const {
+	return mScissorsClipped;
+}
+
+void ClippingMask::setScissorsClipped(const std::list<Rectf> & scissorsClipped) {
+	mScissorsClipped = scissorsClipped;
+
+	if ( !mScissorsClipped.empty() ) {
+		Rectf r( mScissorsClipped.back() );
+		EE::Window::Window * window = Engine::instance()->getCurrentWindow();
+		GLi->scissor( r.Left, window->getHeight() - r.Bottom, r.getWidth(), r.getHeight() );
+		GLi->enable( GL_SCISSOR_TEST );
+	}
+}
+
+std::list<Rectf> ClippingMask::getPlanesClipped() const {
+	return mPlanesClipped;
+}
+
+void ClippingMask::setPlanesClipped(const std::list<Rectf> & planesClipped) {
+	mPlanesClipped = planesClipped;
+
+	if ( !mPlanesClipped.empty() ) {
+		Rectf r( mPlanesClipped.back() );
+
+		GLi->clip2DPlaneEnable( r.Left, r.Top, r.getWidth(), r.getHeight() );
+	}
+}
+
 void ClippingMask::drawMask() {
 	for ( std::size_t i = 0; i < getMaskCount(); i++ )
 		const_cast<Drawable*>(mDrawables[i])->draw();

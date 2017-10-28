@@ -1115,12 +1115,20 @@ void UIWindow::internalDraw() {
 
 		drawShadow();
 
+		ClippingMask * clippingMask = GLi->getClippingMask();
+
+		std::list<Rectf> clips = clippingMask->getPlanesClipped();
+
+		if ( !clips.empty() )
+			clippingMask->clipPlaneDisable();
+
 		matrixSet();
 
 		if ( !ownsFrameBuffer() ||
 			 NULL == mParentCtrl ||
 			 !UIManager::instance()->usesInvalidation()
 			 || ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) ) {
+
 			clipMe();
 
 			draw();
@@ -1131,6 +1139,9 @@ void UIWindow::internalDraw() {
 		}
 
 		matrixUnset();
+
+		if ( !clips.empty() )
+			clippingMask->setPlanesClipped( clips );
 
 		postDraw();
 
@@ -1156,10 +1167,12 @@ void UIWindow::matrixSet() {
 
 			if ( NULL == mParentCtrl || !UIManager::instance()->usesInvalidation() || ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) )
 				mFrameBuffer->clear();
-		}
 
-		if ( 0 != mScreenPos )
-			GLi->translatef( -mScreenPos.x , -mScreenPos.y, 0.f );
+			if ( 0 != mScreenPos ) {
+				GLi->pushMatrix();
+				GLi->translatef( -mScreenPosf.x , -mScreenPosf.y, 0.f );
+			}
+		}
 	} else {
 		UIWidget::matrixSet();
 	}
@@ -1170,7 +1183,7 @@ void UIWindow::matrixUnset() {
 		GlobalBatchRenderer::instance()->draw();
 
 		if ( 0 != mScreenPos )
-			GLi->translatef( mScreenPos.x , mScreenPos.y, 0.f );
+			GLi->popMatrix();
 
 		if ( NULL != mFrameBuffer )
 			mFrameBuffer->unbind();

@@ -46,6 +46,15 @@ class EE_API ClippingMask {
 		void stencilMaskEnable();
 
 		void stencilMaskDisable( bool clearMasks = false );
+
+		std::list<Rectf> getScissorsClipped() const;
+
+		void setScissorsClipped(const std::list<Rectf> & scissorsClipped);
+
+		std::list<Rectf> getPlanesClipped() const;
+
+		void setPlanesClipped(const std::list<Rectf> & planesClipped);
+
 	protected:
 		std::list<Rectf> mScissorsClipped;
 		std::list<Rectf> mPlanesClipped;
