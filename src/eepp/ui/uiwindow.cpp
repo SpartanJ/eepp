@@ -1182,7 +1182,7 @@ void UIWindow::matrixUnset() {
 }
 
 bool UIWindow::ownsFrameBuffer() {
-	return 0 != mStyleConfig.WinFlags & UI_WIN_FRAME_BUFFER;
+	return 0 != ( mStyleConfig.WinFlags & UI_WIN_FRAME_BUFFER );
 }
 
 void UIWindow::checkShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {

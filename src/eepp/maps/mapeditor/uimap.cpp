@@ -13,7 +13,7 @@ UIMap * UIMap::New( UITheme * Theme, TileMap * Map ) {
 }
 
 UIMap::UIMap( UITheme * Theme, TileMap * Map ) :
-	UIWindow( SIMPLE_LAYOUT, UIWindowStyleConfig( UI_WIN_NO_BORDER | UI_WIN_FRAME_BUFFER ) ),
+	UIWindow( SIMPLE_LAYOUT, UIWindowStyleConfig( UI_WIN_NO_BORDER ) ),
 	mMap( Map ),
 	mCurLayer( NULL ),
 	mEditingMode( 0 ),
@@ -105,6 +105,7 @@ void UIMap::update() {
 
 	if ( NULL != mMap ) {
 		invalidate();
+		invalidateDraw();
 
 		mMap->update();
 
