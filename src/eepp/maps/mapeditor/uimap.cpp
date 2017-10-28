@@ -13,6 +13,7 @@ UIMap * UIMap::New( UITheme * Theme, TileMap * Map ) {
 }
 
 UIMap::UIMap( UITheme * Theme, TileMap * Map ) :
+	UIWindow( SIMPLE_LAYOUT, UIWindowStyleConfig( UI_WIN_NO_BORDER | UI_WIN_FRAME_BUFFER ) ),
 	mMap( Map ),
 	mCurLayer( NULL ),
 	mEditingMode( 0 ),
@@ -32,6 +33,8 @@ UIMap::UIMap( UITheme * Theme, TileMap * Map ) :
 	if ( NULL == Map ) {
 		mMap = eeNew( TileMap, () );
 	}
+
+	mContainer->setVisible( false )->setEnabled( false );
 
 	mMap->setBackColor( Color( 100, 100, 100, 100 ) );
 	mMap->setGridLinesColor( Color( 150, 150, 150, 150 ) );
@@ -82,7 +85,7 @@ TileMap * UIMap::Map() const {
 }
 
 void UIMap::draw() {
-	UIWidget::draw();
+	UIWindow::draw();
 
 	if ( NULL != mMap ) {
 		mMap->draw();
@@ -90,7 +93,7 @@ void UIMap::draw() {
 }
 
 void UIMap::updateScreenPos() {
-	UIWidget::updateScreenPos();
+	UIWindow::updateScreenPos();
 
 	if ( NULL != mMap ) {
 		mMap->setPosition( mScreenPos );
@@ -98,10 +101,10 @@ void UIMap::updateScreenPos() {
 }
 
 void UIMap::update() {
-	UIWidget::update();
+	UIWindow::update();
 
 	if ( NULL != mMap ) {
-		invalidateDraw();
+		invalidate();
 
 		mMap->update();
 
@@ -329,7 +332,7 @@ void UIMap::onSizeChange() {
 		mMap->setViewSize( mRealSize );
 	}
 
-	UIWidget::onSizeChange();
+	UIWindow::onSizeChange();
 }
 
 Uint32 UIMap::onMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
@@ -348,7 +351,7 @@ Uint32 UIMap::onMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
 		}
 	}
 
-	return UIWidget::onMouseMove( Pos, Flags );
+	return UIWindow::onMouseMove( Pos, Flags );
 }
 
 void UIMap::addLight( MapLight * Light ) {
@@ -505,7 +508,7 @@ void UIMap::clearLights() {
 }
 
 void UIMap::onAlphaChange() {
-	UIWidget::onAlphaChange();
+	UIWindow::onAlphaChange();
 
 	if ( NULL != mMap ) {
 		mMap->setBackAlpha( (Uint8)mAlpha );

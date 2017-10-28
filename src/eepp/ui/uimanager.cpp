@@ -25,6 +25,7 @@ UIManager::UIManager() :
 	mFlags( 0 ),
 	mHighlightFocusColor( 234, 195, 123, 255 ),
 	mHighlightOverColor( 195, 123, 234, 255 ),
+	mHighlightInvalidationColor( 220, 0, 0, 255 ),
 	mInit( false ),
 	mFirstPress( false ),
 	mShootingDown( false ),
@@ -319,6 +320,14 @@ bool UIManager::getHighlightFocus() const {
 	return 0 != ( mFlags & UI_MANAGER_HIGHLIGHT_FOCUS );
 }
 
+void UIManager::setHighlightInvalidation( bool Invalidation ) {
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_INVALIDATION, Invalidation ? 1 : 0 );
+}
+
+bool UIManager::getHighlightInvalidation() const {
+	return 0 != ( mFlags & UI_MANAGER_HIGHLIGHT_INVALIDATION );
+}
+
 void UIManager::setDrawDebugData( bool debug ) {
 	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_DRAW_DEBUG_DATA, debug ? 1 : 0 );
 }
@@ -531,6 +540,14 @@ String UIManager::getTranslatorString( const std::string & str ) {
 	}
 
 	return String( str );
+}
+
+const Color& UIManager::getHighlightInvalidationColor() const {
+	return mHighlightInvalidationColor;
+}
+
+void UIManager::setHighlightInvalidationColor(const Color & highlightInvalidationColor) {
+	mHighlightInvalidationColor = highlightInvalidationColor;
 }
 
 UIWidget * UIManager::loadLayoutNodes( pugi::xml_node node, UIControl * parent ) {

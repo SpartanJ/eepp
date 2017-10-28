@@ -12,13 +12,22 @@
 
 namespace EE { namespace UI {
 
+UIWindow * UIWindow::New( UIWindow::WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig ) {
+	return eeNew( UIWindow, ( type, windowStyleConfig ) );
+}
+
 UIWindow * UIWindow::New( UIWindow::WindowBaseContainerType type ) {
 	return eeNew( UIWindow, ( type ) );
 }
 
 UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) :
+	UIWindow( type, NULL != UIThemeManager::instance()->getDefaultTheme() ? UIThemeManager::instance()->getDefaultTheme()->getWindowStyleConfig() : UIWindowStyleConfig() )
+{}
+
+UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig ) :
 	UIWidget(),
 	mFrameBuffer( NULL ),
+	mStyleConfig( windowStyleConfig ),
 	mWindowDecoration( NULL ),
 	mBorderLeft( NULL ),
 	mBorderRight( NULL ),
@@ -36,12 +45,6 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) :
 	setHorizontalAlign( UI_HALIGN_CENTER );
 
 	UIManager::instance()->windowAdd( this );
-
-	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != theme ) {
-		mStyleConfig = theme->getWindowStyleConfig();
-	}
 
 	switch ( type ) {
 		case LINEAR_LAYOUT:
@@ -77,6 +80,8 @@ UIWindow::~UIWindow() {
 
 	sendCommonEvent( UIEvent::OnWindowClose );
 
+	onClose();
+
 	eeSAFE_DELETE( mFrameBuffer );
 }
 
@@ -89,6 +94,12 @@ void UIWindow::updateWinFlags() {
 		createFrameBuffer();
 	} else {
 		eeSAFE_DELETE( mFrameBuffer );
+	}
+
+	if ( NULL != mContainer && ( mStyleConfig.WinFlags & UI_WIN_DRAGABLE_CONTAINER ) ) {
+		mContainer->setDragEnabled( true );
+	} else {
+		setDragEnabled( false );
 	}
 
 	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) ) {
@@ -127,9 +138,6 @@ void UIWindow::updateWinFlags() {
 		mBorderBottom->setParent( this );
 		mBorderBottom->setEnabled( true );
 		mBorderBottom->setVisible( true );
-
-		if ( mStyleConfig.WinFlags & UI_WIN_DRAGABLE_CONTAINER )
-			mContainer->setDragEnabled( true );
 
 		if ( mStyleConfig.WinFlags & UI_WIN_CLOSE_BUTTON ) {
 			if ( NULL == mButtonClose ) {
@@ -190,7 +198,53 @@ void UIWindow::updateWinFlags() {
 
 		setDragEnabled( true );
 	} else {
-		setDragEnabled( false );
+		if ( NULL != mWindowDecoration ) {
+			mWindowDecoration->close();
+			mWindowDecoration = NULL;
+		}
+
+		if ( NULL != mBorderLeft ) {
+			mBorderLeft->close();
+			mBorderLeft = NULL;
+		}
+
+		if ( NULL != mBorderRight ) {
+			mBorderRight->close();
+			mBorderRight = NULL;
+		}
+
+		if ( NULL != mBorderBottom ) {
+			mBorderBottom->close();
+			mBorderBottom = NULL;
+		}
+
+		if ( NULL != mButtonClose ) {
+			mButtonClose->close();
+			mButtonClose = NULL;
+			mCloseListener = 0;
+		}
+
+		if ( NULL != mButtonMaximize ) {
+			mButtonMaximize->close();
+			mButtonMaximize = NULL;
+			mMaximizeListener = 0;
+		}
+
+		if ( NULL != mButtonMinimize ) {
+			mButtonMinimize->close();
+			mButtonMinimize = NULL;
+			mMinimizeListener = 0;
+		}
+
+		if ( NULL != mButtonClose ) {
+			mButtonClose->close();
+			mButtonClose = NULL;
+		}
+
+		if ( NULL != mContainer )
+			mContainer->setPosition( 0, 0 );
+
+		fixChildsSize();
 	}
 
 	if ( isModal() ) {
@@ -205,12 +259,31 @@ void UIWindow::updateWinFlags() {
 void UIWindow::createFrameBuffer() {
 	eeSAFE_DELETE( mFrameBuffer );
 	Sizei fboSize( getFrameBufferSize() );
+	if ( fboSize.getWidth() < 1 ) fboSize.setWidth(1);
+	if ( fboSize.getHeight() < 1 ) fboSize.setHeight(1);
 	mFrameBuffer = FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight() );
 }
 
 void UIWindow::drawFrameBuffer() {
-	SubTexture subTexture( mFrameBuffer->getTexture()->getId(), Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ) );
-	subTexture.draw( mScreenPosf.x, mScreenPosf.y, Color::White, mAngle, mScale );
+	if ( NULL != mFrameBuffer ) {
+		SubTexture subTexture( mFrameBuffer->getTexture()->getId(), Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ) );
+		subTexture.draw( mScreenPosf.x, mScreenPosf.y, Color::White, mAngle, mScale );
+	}
+}
+
+void UIWindow::drawHighlightInvalidation() {
+	if ( ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) && UIManager::instance()->getHighlightInvalidation() ) {
+		UIWidget::matrixSet();
+
+		Primitives P;
+		P.setFillMode( DRAW_LINE );
+		P.setBlendMode( getBlendMode() );
+		P.setColor( UIManager::instance()->getHighlightInvalidationColor() );
+		P.setLineWidth( PixelDensity::dpToPxI( 2 ) );
+		P.drawRectangle( getRectf() );
+
+		UIWidget::matrixUnset();
+	}
 }
 
 void UIWindow::drawShadow() {
@@ -321,6 +394,9 @@ bool UIWindow::isType( const Uint32& type ) const {
 }
 
 void UIWindow::onContainerPosChange( const UIEvent * Event ) {
+	if ( NULL == mContainer )
+		return;
+
 	Vector2i PosDiff = mContainer->getPosition() - Vector2i( NULL != mBorderLeft ? mBorderLeft->getSize().getWidth() : 0, NULL != mWindowDecoration ? mWindowDecoration->getSize().getHeight() : 0 );
 
 	if ( PosDiff.x != 0 || PosDiff.y != 0 ) {
@@ -378,7 +454,8 @@ void UIWindow::onButtonMinimizeClick( const UIEvent * Event ) {
 void UIWindow::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
-	mContainer->setThemeSkin			( Theme, "winback"			);
+	if ( NULL != mContainer )
+		mContainer->setThemeSkin			( Theme, "winback"			);
 
 	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) ) {
 		mWindowDecoration->setThemeSkin	( Theme, "windeco"			);
@@ -402,8 +479,9 @@ void UIWindow::setTheme( UITheme * Theme ) {
 		}
 
 		calcMinWinSize();
-		fixChildsSize();
 	}
+
+	fixChildsSize();
 }
 
 void UIWindow::calcMinWinSize() {
@@ -453,7 +531,7 @@ void UIWindow::onSizeChange() {
 	} else {
 		fixChildsSize();
 
-		if ( ownsFrameBuffer() && ( mFrameBuffer->getWidth() < mRealSize.getWidth() || mFrameBuffer->getHeight() < mRealSize.getHeight() ) ) {
+		if ( ownsFrameBuffer() && NULL != mFrameBuffer && ( mFrameBuffer->getWidth() < mRealSize.getWidth() || mFrameBuffer->getHeight() < mRealSize.getHeight() ) ) {
 			if ( NULL == mFrameBuffer ) {
 				createFrameBuffer();
 			} else {
@@ -505,7 +583,7 @@ void UIWindow::fixChildsSize() {
 		internalSize( eemin( mRealSize.getWidth(), PixelDensity::dpToPxI( mStyleConfig.MinWindowSize.getWidth() ) ), eemin( mRealSize.getHeight(), PixelDensity::dpToPxI( mStyleConfig.MinWindowSize.getHeight() ) ) );
 	}
 
-	if ( NULL == mWindowDecoration ) {
+	if ( NULL == mWindowDecoration && NULL != mContainer ) {
 		mContainer->setPixelsSize( mRealSize );
 		return;
 	}
@@ -1032,7 +1110,7 @@ Uint32 UIWindow::onKeyDown( const UIEventKey &Event ) {
 }
 
 void UIWindow::internalDraw() {
-	if ( mVisible ) {
+	if ( mVisible && 0 != mAlpha ) {
 		preDraw();
 
 		drawShadow();
@@ -1050,13 +1128,15 @@ void UIWindow::internalDraw() {
 			drawChilds();
 
 			clipDisable();
-
-			writeCtrlFlag( UI_CTRL_FLAG_NEEDS_REDRAW, 0 );
 		}
 
 		matrixUnset();
 
 		postDraw();
+
+		drawHighlightInvalidation();
+
+		writeCtrlFlag( UI_CTRL_FLAG_NEEDS_REDRAW, 0 );
 	}
 }
 
@@ -1071,12 +1151,15 @@ FrameBuffer * UIWindow::getFrameBuffer() const {
 
 void UIWindow::matrixSet() {
 	if ( ownsFrameBuffer() ) {
-		mFrameBuffer->bind();
+		if ( NULL != mFrameBuffer ) {
+			mFrameBuffer->bind();
 
-		if ( NULL == mParentCtrl || !UIManager::instance()->usesInvalidation() || ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) )
-			mFrameBuffer->clear();
+			if ( NULL == mParentCtrl || !UIManager::instance()->usesInvalidation() || ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) )
+				mFrameBuffer->clear();
+		}
 
-		GLi->translatef( -mScreenPos.x , -mScreenPos.y, 0.f );
+		if ( 0 != mScreenPos )
+			GLi->translatef( -mScreenPos.x , -mScreenPos.y, 0.f );
 	} else {
 		UIWidget::matrixSet();
 	}
@@ -1086,9 +1169,11 @@ void UIWindow::matrixUnset() {
 	if ( ownsFrameBuffer() ) {
 		GlobalBatchRenderer::instance()->draw();
 
-		GLi->translatef( mScreenPos.x , mScreenPos.y, 0.f );
+		if ( 0 != mScreenPos )
+			GLi->translatef( mScreenPos.x , mScreenPos.y, 0.f );
 
-		mFrameBuffer->unbind();
+		if ( NULL != mFrameBuffer )
+			mFrameBuffer->unbind();
 
 		drawFrameBuffer();
 	} else {
@@ -1097,7 +1182,7 @@ void UIWindow::matrixUnset() {
 }
 
 bool UIWindow::ownsFrameBuffer() {
-	return ( ( mStyleConfig.WinFlags & UI_WIN_FRAME_BUFFER ) && NULL != mFrameBuffer );
+	return 0 != mStyleConfig.WinFlags & UI_WIN_FRAME_BUFFER;
 }
 
 void UIWindow::checkShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {

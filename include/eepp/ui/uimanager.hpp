@@ -65,6 +65,10 @@ class EE_API UIManager {
 
 		bool getHighlightFocus() const;
 
+		void setHighlightInvalidation( bool Invalidation );
+
+		bool getHighlightInvalidation() const;
+
 		void setDrawDebugData( bool debug );
 
 		bool getDrawDebugData() const;
@@ -86,6 +90,10 @@ class EE_API UIManager {
 		bool getHighlightOver() const;
 
 		void setHighlightOverColor( const Color& Color );
+
+		const Color& getHighlightInvalidationColor() const;
+
+		void setHighlightInvalidationColor( const Color& highlightInvalidationColor );
 
 		void setMainControlInFrameBuffer( const bool& set );
 
@@ -139,6 +147,7 @@ class EE_API UIManager {
 		Translator& getTranslator();
 
 		String getTranslatorString( const std::string& str );
+
 	protected:
 		friend class UIControl;
 		friend class UIWindow;
@@ -160,6 +169,7 @@ class EE_API UIManager {
 		Uint32				mFlags;
 		Color				mHighlightFocusColor;
 		Color				mHighlightOverColor;
+		Color				mHighlightInvalidationColor;
 		Vector2i			mMouseDownPos;
 
 		bool				mInit;

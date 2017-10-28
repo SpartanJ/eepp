@@ -262,6 +262,10 @@ class EE_API UIControl {
 		UIWindow * getOwnerWindow();
 
 		void invalidateDraw();
+
+		void setClipEnabled();
+
+		void setClipDisabled();
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
 		friend class UIManager;

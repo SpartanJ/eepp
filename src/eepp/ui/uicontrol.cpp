@@ -128,8 +128,10 @@ void UIControl::setInternalPosition( const Vector2i& Pos ) {
 }
 
 UIControl * UIControl::setPosition( const Vector2i& Pos ) {
-	setInternalPosition( Pos );
-	onPositionChange();
+	if ( Pos != mPos ) {
+		setInternalPosition( Pos );
+		onPositionChange();
+	}
 	return this;
 }
 
@@ -139,11 +141,13 @@ UIControl * UIControl::setPosition( const Int32& x, const Int32& y ) {
 }
 
 void UIControl::setPixelsPosition( const Vector2i& Pos ) {
-	mPos = Vector2i( PixelDensity::pxToDpI( Pos.x ), PixelDensity::pxToDpI( Pos.y ) );
-	mRealPos = Pos;
-	updateScreenPos();
-	updateChildsScreenPos();
-	onPositionChange();
+	if ( mRealPos != Pos ) {
+		mPos = Vector2i( PixelDensity::pxToDpI( Pos.x ), PixelDensity::pxToDpI( Pos.y ) );
+		mRealPos = Pos;
+		updateScreenPos();
+		updateChildsScreenPos();
+		onPositionChange();
+	}
 }
 
 void UIControl::setPixelsPosition( const Int32& x, const Int32& y ) {
@@ -794,7 +798,7 @@ void UIControl::internalDraw() {
 }
 
 void UIControl::clipMe() {
-	if ( mFlags & UI_CLIP_ENABLE ) {
+	if ( mVisible && ( mFlags & UI_CLIP_ENABLE ) ) {
 		if ( mFlags & UI_BORDER )
 			UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() + 1 );
 		else
@@ -803,8 +807,9 @@ void UIControl::clipMe() {
 }
 
 void UIControl::clipDisable() {
-	if ( mFlags & UI_CLIP_ENABLE )
+	if ( mVisible && ( mFlags & UI_CLIP_ENABLE ) ) {
 		UIManager::instance()->clipSmartDisable( this );
+	}
 }
 
 void UIControl::matrixSet() {
@@ -1632,7 +1637,7 @@ UIControl * UIControl::getWindowContainer() {
 }
 
 UIWindow * UIControl::getParentWindow() {
-	UIControl * Ctrl = this;
+	UIControl * Ctrl = mParentCtrl;
 
 	while ( Ctrl != NULL ) {
 		if ( Ctrl->isType( UI_TYPE_WINDOW ) )
@@ -1656,6 +1661,14 @@ void UIControl::setReverseDraw( bool reverseDraw ) {
 void UIControl::invalidateDraw() {
 	if ( NULL != mParentWindowCtrl )
 		mParentWindowCtrl->invalidate();
+}
+
+void UIControl::setClipEnabled() {
+	writeFlag( UI_CLIP_ENABLE, 1 );
+}
+
+void UIControl::setClipDisabled() {
+	writeFlag( UI_CLIP_ENABLE, 0 );
 }
 
 UIWindow * UIControl::getOwnerWindow() {

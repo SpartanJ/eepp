@@ -127,6 +127,12 @@ class UIWindowStyleConfig : public UIFontStyleConfig {
 	public:
 		UIWindowStyleConfig() {}
 
+		UIWindowStyleConfig( Uint32 winFlags, UIFontStyleConfig fontStyleConfig = UIFontStyleConfig() ) :
+			UIFontStyleConfig( fontStyleConfig ),
+			WinFlags( winFlags )
+		{
+		}
+
 		UIWindowStyleConfig( UIFontStyleConfig fontStyleConfig ) :
 			UIFontStyleConfig( fontStyleConfig )
 		{}

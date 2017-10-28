@@ -370,7 +370,7 @@ void EETest::createUI() {
 
 	Uint32 UI_MAN_OPS = 0;
 	if ( mDebugUI )
-		UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES;
+		UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_INVALIDATION;
 	UIManager::instance()->init(UI_MAN_OPS | UI_MANAGER_USE_DRAW_INVALIDATION | UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER);
 	UIManager::instance()->setTranslator( mTranslator );
 
@@ -871,7 +871,7 @@ void EETest::createMapEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW;
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizei( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -888,7 +888,7 @@ void EETest::createETGEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW;
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizei( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -926,7 +926,7 @@ void EETest::createDecoratedWindow() {
 	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER )
 			->setMinWindowSize( 530, 350 )->setPosition( 200, 50 );
 
-	mUIWindow->addEventListener( UIEvent::OnWindowCloseClick, cb::Make1( this, &EETest::onCloseClick ) );
+	mUIWindow->addEventListener( UIEvent::OnWindowClose, cb::Make1( this, &EETest::onCloseClick ) );
 	mUIWindow->setTitle( "Test Window" );
 	mUIWindow->addEventListener( UIEvent::OnDragStart, cb::Make1( &onWinDragStart ) );
 	mUIWindow->addEventListener( UIEvent::OnDragStop, cb::Make1( &onWinDragStop ) );
@@ -939,10 +939,26 @@ void EETest::createDecoratedWindow() {
 	WinMenu->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
 
 	UIPopUpMenu * PopMenu = UIPopUpMenu::New();
-	PopMenu->add( "File" );
-	PopMenu->add( "Open" );
+	PopMenu->add( "Hide Border" );
 	PopMenu->add( "Close" );
-	PopMenu->add( "Quit" );
+	PopMenu->addEventListener( UIEvent::OnItemClicked, cb::Make1<void, const UIEvent*>( []( const UIEvent * Event ) {
+		if ( !Event->getControl()->isType( UI_TYPE_MENUITEM ) )
+			return;
+
+		UIMenuItem* menuItem = reinterpret_cast<UIMenuItem*> ( Event->getControl() );
+		const String& txt = menuItem->getText();
+		UIWindow * win = Event->getControl()->getOwnerWindow();
+
+		if ( "Hide Border" == txt ) {
+			win->setWinFlags( win->getWinFlags() | UI_WIN_NO_BORDER );
+			menuItem->setText( "Show Border" );
+		} else if ( "Show Border" ) {
+			win->setWinFlags( win->getWinFlags() & ~UI_WIN_NO_BORDER );
+			menuItem->setText( "Hide Border" );
+		} else if ( "Close" == txt ) {
+			win->closeFadeOut( Milliseconds(250) );
+		}
+	} ) );
 
 	UIPopUpMenu * PopMenu2 = UIPopUpMenu::New();
 	PopMenu2->add( "Bla" );

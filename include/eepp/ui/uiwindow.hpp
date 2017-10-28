@@ -19,7 +19,11 @@ class EE_API UIWindow : public UIWidget {
 			RELATIVE_LAYOUT
 		};
 
+		static UIWindow * New( WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig );
+
 		static UIWindow * New( WindowBaseContainerType type = SIMPLE_LAYOUT );
+
+		UIWindow( WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig );
 
 		UIWindow( WindowBaseContainerType type = SIMPLE_LAYOUT );
 
@@ -229,6 +233,8 @@ class EE_API UIWindow : public UIWidget {
 		void createFrameBuffer();
 
 		void drawFrameBuffer();
+
+		void drawHighlightInvalidation();
 
 		virtual void drawShadow();
 
