@@ -1109,6 +1109,10 @@ Uint32 UIControl::isWidget() {
 	return mControlFlags & UI_CTRL_FLAG_WIDGET;
 }
 
+Uint32 UIControl::isWindow() {
+	return mControlFlags & UI_CTRL_FLAG_WINDOW;
+}
+
 Uint32 UIControl::isClipped() {
 	return mFlags & UI_CLIP_ENABLE;
 }
@@ -1659,8 +1663,11 @@ void UIControl::setReverseDraw( bool reverseDraw ) {
 }
 
 void UIControl::invalidateDraw() {
-	if ( NULL != mParentWindowCtrl )
+	if ( NULL != mParentWindowCtrl ) {
 		mParentWindowCtrl->invalidate();
+	} else if (  NULL == mParentCtrl && isWindow() ) {
+		static_cast<UIWindow*>( this )->invalidate();
+	}
 }
 
 void UIControl::setClipEnabled() {

@@ -154,6 +154,8 @@ class EE_API UIControl {
 
 		Uint32 isWidget();
 
+		Uint32 isWindow();
+
 		Uint32 isClipped();
 
 		Uint32 isRotated();

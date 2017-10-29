@@ -42,6 +42,8 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 	mMaximizeListener(0),
 	mMinimizeListener(0)
 {
+	mControlFlags |= UI_CTRL_FLAG_WINDOW;
+
 	setHorizontalAlign( UI_HALIGN_CENTER );
 
 	UIManager::instance()->windowAdd( this );
@@ -1124,11 +1126,7 @@ void UIWindow::internalDraw() {
 
 		matrixSet();
 
-		if ( !ownsFrameBuffer() ||
-			 NULL == mParentCtrl ||
-			 !UIManager::instance()->usesInvalidation()
-			 || ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) ) {
-
+		if ( !ownsFrameBuffer() || !UIManager::instance()->usesInvalidation() || ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) ) {
 			clipMe();
 
 			draw();
@@ -1152,8 +1150,12 @@ void UIWindow::internalDraw() {
 }
 
 void UIWindow::invalidate() {
-	if ( mVisible && NULL != mParentCtrl )
+	if ( mVisible && mAlpha != 0.f ) {
 		writeCtrlFlag( UI_CTRL_FLAG_NEEDS_REDRAW, 1 );
+
+		if ( NULL != mParentWindowCtrl )
+			mParentWindowCtrl->invalidateDraw();
+	}
 }
 
 FrameBuffer * UIWindow::getFrameBuffer() const {
@@ -1165,7 +1167,7 @@ void UIWindow::matrixSet() {
 		if ( NULL != mFrameBuffer ) {
 			mFrameBuffer->bind();
 
-			if ( NULL == mParentCtrl || !UIManager::instance()->usesInvalidation() || ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) )
+			if ( !UIManager::instance()->usesInvalidation() || ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) )
 				mFrameBuffer->clear();
 
 			if ( 0 != mScreenPos ) {

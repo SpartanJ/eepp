@@ -105,6 +105,7 @@ void UIMap::update() {
 
 	if ( NULL != mMap ) {
 		invalidate();
+		invalidateDraw();
 
 		mMap->update();
 
