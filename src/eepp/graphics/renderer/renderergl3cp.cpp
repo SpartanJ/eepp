@@ -38,7 +38,7 @@ const char * EEGL3CP_PLANES_NAME[] = {
 	"dgl_ClipPlane[5]"
 };
 
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#if !defined( EE_GLES2 )
 
 const GLchar * EEGL3CP_SHADER_BASE_VS =
 #include "shaders/basegl3cp.vert"
