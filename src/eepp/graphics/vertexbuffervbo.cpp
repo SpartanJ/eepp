@@ -131,11 +131,11 @@ void VertexBufferVBO::draw() {
 
 		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER, mElementHandle );
 
-		glDrawElements( mDrawType, lSize, GL_UNSIGNED_INT, (char*)NULL );
+		GLi->drawElements( mDrawType, lSize, GL_UNSIGNED_INT, (char*)NULL );
 
 		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	} else {
-		glDrawArrays( mDrawType, 0, getVertexCount() );
+		GLi->drawArrays( mDrawType, 0, getVertexCount() );
 	}
 
 	if ( GLv_3CP == GLi->version() ) {
