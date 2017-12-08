@@ -85,7 +85,7 @@ void PrimitiveDrawable::onPositionChange() {
 void PrimitiveDrawable::prepareVertexBuffer( const EE_DRAW_MODE& drawableType ) {
 	if ( mRecreateVertexBuffer ) {
 		eeSAFE_DELETE( mVertexBuffer );
-		mVertexBuffer = VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, drawableType );
+		mVertexBuffer = VertexBuffer::NewVertexArray( VERTEX_FLAGS_PRIMITIVE, drawableType );
 		mRecreateVertexBuffer = false;
 	}
 

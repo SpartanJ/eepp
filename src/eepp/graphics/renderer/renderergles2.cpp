@@ -201,9 +201,14 @@ void RendererGLES2::setShader( ShaderProgram * Shader ) {
 		return;
 	}
 
-	disableClientState( GL_VERTEX_ARRAY );
-	disableClientState( GL_TEXTURE_COORD_ARRAY );
-	disableClientState( GL_COLOR_ARRAY );
+	if ( -1 == mAttribsLoc[ EEGL_VERTEX_ARRAY ] )
+		disableClientState( GL_VERTEX_ARRAY );
+
+	if ( -1 == mAttribsLoc[ EEGL_COLOR_ARRAY ] )
+		disableClientState( GL_COLOR_ARRAY );
+
+	if ( -1 == mTextureUnits[ mCurActiveTex ] )
+		disableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	mShaderPrev				= mCurShader;
 	mCurShader				= Shader;

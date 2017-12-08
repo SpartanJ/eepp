@@ -34,22 +34,6 @@ void VertexBufferOGL::setVertexStates() {
 	Uint32 alloc	= getVertexCount() * sizeof(Float) * 2;
 	Uint32 allocC	= getVertexCount() * 4;
 
-	/// POSITION
-	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
-		GLi->enableClientState( GL_VERTEX_ARRAY );
-		GLi->vertexPointer( eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FP, sizeof(Float) * eeVertexElements[ VERTEX_FLAG_POSITION ], &mVertexArray[ VERTEX_FLAG_POSITION ][0], alloc );
-	} else {
-		GLi->disableClientState( GL_VERTEX_ARRAY );
-	}
-
-	/// COLOR
-	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
-		GLi->enableClientState( GL_COLOR_ARRAY );
-		GLi->colorPointer( eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, sizeof(Uint8) * eeVertexElements[ VERTEX_FLAG_COLOR ], &mColorArray[0], allocC );
-	} else {
-		GLi->disableClientState( GL_COLOR_ARRAY );
-	}
-
 	/// TEXTURES
 	if ( GLi->isExtension( EEGL_ARB_multitexture ) ) {
 		for ( Int32 i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
@@ -76,22 +60,38 @@ void VertexBufferOGL::setVertexStates() {
 		}
 	}
 
+	/// POSITION
+	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
+		GLi->enableClientState( GL_VERTEX_ARRAY );
+		GLi->vertexPointer( eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FP, sizeof(Float) * eeVertexElements[ VERTEX_FLAG_POSITION ], &mVertexArray[ VERTEX_FLAG_POSITION ][0], alloc );
+	} else {
+		GLi->disableClientState( GL_VERTEX_ARRAY );
+	}
+
+	/// COLOR
+	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
+		GLi->enableClientState( GL_COLOR_ARRAY );
+		GLi->colorPointer( eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, sizeof(Uint8) * eeVertexElements[ VERTEX_FLAG_COLOR ], &mColorArray[0], allocC );
+	} else {
+		GLi->disableClientState( GL_COLOR_ARRAY );
+	}
+
 	GLi->clientActiveTexture( GL_TEXTURE0 );
 }
 
 
 void VertexBufferOGL::unbind() {
+	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
+		GLi->enable( GL_TEXTURE_2D );
+		GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
+	}
+
 	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
 		GLi->enableClientState( GL_VERTEX_ARRAY );
 	}
 
 	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
 		GLi->enableClientState( GL_COLOR_ARRAY );
-	}
-
-	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
-		GLi->enable( GL_TEXTURE_2D );
-		GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
 	}
 }
 
