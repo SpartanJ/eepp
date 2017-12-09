@@ -20,7 +20,6 @@ bool OpenSSLSocket::matchCommonName( const char * hostname, const X509 * server_
 	int common_name_loc = -1;
 	X509_NAME_ENTRY *common_name_entry = NULL;
 	ASN1_STRING *common_name_asn1 = NULL;
-	char *common_name_str = NULL;
 
 	// Find the position of the CN field in the Subject field of the certificate
 	common_name_loc = X509_NAME_get_index_by_NID( X509_get_subject_name( (X509 *) server_cert ), NID_commonName, -1 );
@@ -31,7 +30,11 @@ bool OpenSSLSocket::matchCommonName( const char * hostname, const X509 * server_
 	// Convert the CN field to a C string
 	common_name_asn1 = X509_NAME_ENTRY_get_data( common_name_entry );
 
-	common_name_str = (char *) ASN1_STRING_data( common_name_asn1 );
+	#if OPENSSL_VERSION_NUMBER < 0x10100000L
+	char * common_name_str = (char *) ASN1_STRING_data( common_name_asn1 );
+	#else
+	const char * common_name_str = (const char *) ASN1_STRING_get0_data( common_name_asn1 );
+	#endif
 
 	// Make sure there isn't an embedded NUL character in the CN
 	bool malformed_certificate = (size_t)ASN1_STRING_length( common_name_asn1 ) != strlen( common_name_str );
@@ -66,7 +69,11 @@ bool OpenSSLSocket::matchSubjectAlternativeName( const char * hostname, const X5
 
 		if ( current_name->type == GEN_DNS ) {
 			// Current name is a DNS name, let's check it
+			#if OPENSSL_VERSION_NUMBER < 0x10100000L
 			char * dns_name = (char *) ASN1_STRING_data( current_name->d.dNSName );
+			#else
+			const char * dns_name = (const char *) ASN1_STRING_get0_data( current_name->d.dNSName );
+			#endif
 
 			// Make sure there isn't an embedded NUL character in the DNS name
 			if ( (size_t)ASN1_STRING_length( current_name->d.dNSName ) != strlen( dns_name ) ) {

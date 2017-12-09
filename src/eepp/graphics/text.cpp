@@ -770,6 +770,9 @@ void Text::ensureGeometryUpdate() {
 	mBounds.Top = minY;
 	mBounds.Right = maxX - minX;
 	mBounds.Bottom = maxY - minY;
+
+	if ( mFont->getTexture(mRealCharacterSize)->getPixelSize() != mTextureSize )
+		ensureGeometryUpdate();
 }
 
 void Text::ensureColorUpdate() {
