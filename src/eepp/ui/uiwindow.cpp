@@ -1162,6 +1162,10 @@ FrameBuffer * UIWindow::getFrameBuffer() const {
 	return mFrameBuffer;
 }
 
+bool UIWindow::invalidated() {
+	return 0 != ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW );
+}
+
 void UIWindow::matrixSet() {
 	if ( ownsFrameBuffer() ) {
 		if ( NULL != mFrameBuffer ) {

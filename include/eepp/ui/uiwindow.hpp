@@ -111,8 +111,9 @@ class EE_API UIWindow : public UIWidget {
 
 		void invalidate();
 
-		FrameBuffer * getFrameBuffer() const;
+		bool invalidated();
 
+		FrameBuffer * getFrameBuffer() const;
 	protected:
 		class KeyboardShortcut {
 			public:
