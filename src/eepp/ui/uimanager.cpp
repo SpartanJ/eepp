@@ -121,6 +121,13 @@ void UIManager::inputCallback( InputEvent * Event ) {
 
 			checkTabPress( Event->key.keysym.sym );
 			break;
+		case InputEvent::SysWM:
+		case InputEvent::VideoResize:
+		case InputEvent::VideoExpose:
+		{
+			if ( NULL != mControl )
+				mControl->invalidate();
+		}
 	}
 }
 

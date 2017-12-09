@@ -40,7 +40,8 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 	mResizeType( RESIZE_NONE ),
 	mCloseListener(0),
 	mMaximizeListener(0),
-	mMinimizeListener(0)
+	mMinimizeListener(0),
+	mFrameBufferBound( false )
 {
 	mControlFlags |= UI_CTRL_FLAG_WINDOW;
 
@@ -326,7 +327,7 @@ void UIWindow::drawShadow() {
 }
 
 Sizei UIWindow::getFrameBufferSize() {
-	return isResizeable() ? Sizei( Math::nextPowOfTwo( mRealSize.getWidth() ), Math::nextPowOfTwo( mRealSize.getHeight() ) ) : mRealSize;
+	return isResizeable() && this != UIManager::instance()->getMainControl() ? Sizei( Math::nextPowOfTwo( mRealSize.getWidth() ), Math::nextPowOfTwo( mRealSize.getHeight() ) ) : mRealSize;
 }
 
 void UIWindow::createModalControl() {
@@ -1169,10 +1170,13 @@ bool UIWindow::invalidated() {
 void UIWindow::matrixSet() {
 	if ( ownsFrameBuffer() ) {
 		if ( NULL != mFrameBuffer ) {
-			mFrameBuffer->bind();
+			if ( !UIManager::instance()->usesInvalidation() || ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) ) {
+				mFrameBufferBound = true;
 
-			if ( !UIManager::instance()->usesInvalidation() || ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) )
+				mFrameBuffer->bind();
+
 				mFrameBuffer->clear();
+			}
 
 			if ( 0 != mScreenPos ) {
 				GLi->pushMatrix();
@@ -1191,8 +1195,11 @@ void UIWindow::matrixUnset() {
 		if ( 0 != mScreenPos )
 			GLi->popMatrix();
 
-		if ( NULL != mFrameBuffer )
+		if ( mFrameBufferBound ) {
 			mFrameBuffer->unbind();
+
+			mFrameBufferBound = false;
+		}
 
 		drawFrameBuffer();
 	} else {

@@ -168,6 +168,10 @@ void FrameBufferFBO::bind() {
 
 void FrameBufferFBO::unbind() {
 	if ( mFrameBuffer ) {
+		GlobalBatchRenderer::instance()->draw();
+
+		glFlush();
+
 		recoverView();
 
 		GLi->bindFramebuffer( GL_FRAMEBUFFER, mLastFB );

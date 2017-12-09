@@ -173,6 +173,8 @@ class EE_API UIWindow : public UIWidget {
 		Uint32				mMaximizeListener;
 		Uint32				mMinimizeListener;
 
+		bool				mFrameBufferBound;
+
 		virtual void onSizeChange();
 
 		virtual void onAlphaChange();
