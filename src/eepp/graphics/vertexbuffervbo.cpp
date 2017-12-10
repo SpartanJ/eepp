@@ -4,6 +4,7 @@
 #include <eepp/graphics/renderer/renderergl3.hpp>
 #include <eepp/graphics/renderer/renderergl3cp.hpp>
 #include <eepp/graphics/renderer/renderergles2.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -35,6 +36,8 @@ VertexBufferVBO::~VertexBufferVBO() {
 }
 
 void VertexBufferVBO::bind() {
+	GlobalBatchRenderer::instance()->draw();
+
 	if ( !mCompiled ) {
 		compile();
 

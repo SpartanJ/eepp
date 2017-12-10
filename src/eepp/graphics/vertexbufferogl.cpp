@@ -1,6 +1,7 @@
 #include <eepp/graphics/vertexbufferogl.hpp>
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -10,6 +11,7 @@ VertexBufferOGL::VertexBufferOGL( const Uint32& VertexFlags, EE_DRAW_MODE DrawTy
 }
 
 void VertexBufferOGL::bind() {
+	GlobalBatchRenderer::instance()->draw();
 	setVertexStates();
 }
 
