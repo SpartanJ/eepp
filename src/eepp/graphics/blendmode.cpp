@@ -16,13 +16,13 @@ void BlendMode::setMode( const EE_BLEND_MODE& blend, bool force ) {
 			switch (blend) {
 				case ALPHA_NORMAL:
 					if ( GLi->isExtension( EEGL_EXT_blend_func_separate ) )
-						glBlendFuncSeparateEXT( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+						GLi->blendFuncSeparate( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
 					else
 						GLi->blendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA);
 					break;
 				case ALPHA_BLENDONE:
 					if ( GLi->isExtension( EEGL_EXT_blend_func_separate ) )
-						glBlendFuncSeparateEXT( GL_SRC_ALPHA, GL_ONE, GL_ONE, GL_ONE );
+						GLi->blendFuncSeparate( GL_SRC_ALPHA, GL_ONE, GL_ONE, GL_ONE );
 					else
 						GLi->blendFunc(GL_SRC_ALPHA , GL_ONE);
 					break;

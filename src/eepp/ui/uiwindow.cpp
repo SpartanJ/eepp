@@ -1057,7 +1057,7 @@ void UIWindow::setTitle( const String& text ) {
 		}
 
 		mTitle->setEnabled( false );
-		mTitle->setVisible( true );
+		mTitle->setVisible( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) );
 	}
 
 	fixTitleSize();

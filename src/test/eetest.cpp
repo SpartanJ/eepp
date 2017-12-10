@@ -950,7 +950,7 @@ void EETest::createDecoratedWindow() {
 		if ( "Hide Border" == txt ) {
 			win->setWinFlags( win->getWinFlags() | UI_WIN_NO_BORDER );
 			menuItem->setText( "Show Border" );
-		} else if ( "Show Border" ) {
+		} else if ( "Show Border" == txt ) {
 			win->setWinFlags( win->getWinFlags() & ~UI_WIN_NO_BORDER );
 			menuItem->setText( "Hide Border" );
 		} else if ( "Close" == txt ) {

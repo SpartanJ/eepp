@@ -23,6 +23,7 @@ typedef void (APIENTRY * pglRenderbufferStorage) (GLenum target, GLenum internal
 typedef void (APIENTRY * pglFramebufferRenderbuffer) (GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
 typedef GLenum (APIENTRY * pglCheckFramebufferStatus) (GLenum target);
 typedef void (APIENTRY * pglBindRenderbuffer) (GLenum target, GLuint renderbuffer);
+typedef void (APIENTRY * pglBlendFuncSeparate) (GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha);
 
 Renderer * GLi = NULL;
 
@@ -230,14 +231,21 @@ void Renderer::init() {
 		writeExtension( EEGL_ARB_vertex_array_object		, isExtension( "GL_OES_vertex_array_object"	)		);
 	}
 
+	if ( !isExtension( EEGL_EXT_blend_func_separate ) ) {
+		writeExtension( EEGL_EXT_blend_func_separate		, isExtension( "GL_OES_blend_func_separate" )		);
+	}
+
 	#endif
 
 	#ifdef EE_GLES2
-	writeExtension( EEGL_EXT_framebuffer_object				, 1													);
-	writeExtension( EEGL_ARB_vertex_buffer_object			, 1													);
-	writeExtension( EEGL_ARB_shader_objects					, 1													);
-	writeExtension( EEGL_ARB_vertex_shader					, 1													);
-	writeExtension( EEGL_ARB_fragment_shader				, 1													);
+	if ( GLv_ES2 == version() ) {
+		writeExtension( EEGL_EXT_framebuffer_object				, 1													);
+		writeExtension( EEGL_ARB_vertex_buffer_object			, 1													);
+		writeExtension( EEGL_ARB_shader_objects					, 1													);
+		writeExtension( EEGL_ARB_vertex_shader					, 1													);
+		writeExtension( EEGL_ARB_fragment_shader				, 1													);
+		writeExtension( EEGL_EXT_blend_func_separate			, 1													);
+	}
 	#endif
 
 	#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
@@ -469,6 +477,16 @@ void Renderer::activeTexture( unsigned int texture ) {
 
 void Renderer::blendFunc ( unsigned int sfactor, unsigned int dfactor ) {
 	glBlendFunc( sfactor, dfactor );
+}
+
+void Renderer::blendFuncSeparate( unsigned int sfactorRGB, unsigned int dfactorRGB, unsigned int sfactorAlpha, unsigned int dfactorAlpha ) {
+	static pglBlendFuncSeparate eeglBlendFuncSeparate = NULL;
+
+	if ( NULL == eeglBlendFuncSeparate )
+		eeglBlendFuncSeparate = (pglBlendFuncSeparate)getProcAddress( "glBlendFuncSeparate" );
+
+	if ( NULL != eeglBlendFuncSeparate )
+		eeglBlendFuncSeparate( sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha );
 }
 
 void Renderer::setShader( ShaderProgram * Shader ) {
