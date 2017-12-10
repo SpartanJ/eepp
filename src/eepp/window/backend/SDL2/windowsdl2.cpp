@@ -17,11 +17,17 @@
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM == EE_PLATFORM_ANDROID
+#define SDL2_THREADED_GLCONTEXT
+#endif
+
+namespace EE { namespace Window { namespace Backend { namespace SDL2 {
+
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <eepp/system/zip.hpp>
 #include <jni.h>
 
-static std::string SDL_AndroidGetApkPath() {
+std::string WindowSDL::SDL_AndroidGetApkPath() {
 	static std::string apkPath = "";
 
 	if ( "" == apkPath ) {
@@ -52,13 +58,16 @@ static std::string SDL_AndroidGetApkPath() {
 
 	return apkPath;
 }
-#endif
 
-#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM == EE_PLATFORM_ANDROID
-#define SDL2_THREADED_GLCONTEXT
-#endif
+std::string WindowSDL::SDL_AndroidGetExternalStoragePath() {
+	return std::string( SDL_AndroidGetExternalStoragePath() );
+}
 
-namespace EE { namespace Window { namespace Backend { namespace SDL2 {
+std::string WindowSDL::SDL_AndroidGetInternalStoragePath() {
+	return std::string( SDL_AndroidGetInternalStoragePath() );
+}
+
+#endif
 
 WindowSDL::WindowSDL( WindowSettings Settings, ContextSettings Context ) :
 	Window( Settings, Context, eeNew( ClipboardSDL, ( this ) ), eeNew( InputSDL, ( this ) ), eeNew( CursorManagerSDL, ( this ) ) ),
@@ -68,10 +77,6 @@ WindowSDL::WindowSDL( WindowSettings Settings, ContextSettings Context ) :
 #ifdef EE_USE_WMINFO
 	,
 	mWMinfo( NULL )
-#endif
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-	,
-	mZip( eeNew( Zip, () ) )
 #endif
 {
 	create( Settings, Context );
@@ -92,10 +97,6 @@ WindowSDL::~WindowSDL() {
 
 #ifdef EE_USE_WMINFO
 	eeSAFE_DELETE( mWMinfo );
-#endif
-
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-	eeSAFE_DELETE( mZip );
 #endif
 }
 
@@ -273,20 +274,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	mCursorManager->set( SYS_CURSOR_ARROW );
 
-	#if EE_PLATFORM == EE_PLATFORM_ANDROID
-	std::string apkPath( SDL_AndroidGetApkPath() );
-
-	eePRINTL( "Opening application APK in: %s", apkPath.c_str() );
-
-	if ( mZip->open( apkPath ) )
-		eePRINTL( "APK opened succesfully!" );
-	else
-		eePRINTL( "Failed to open APK!" );
-
-	logSuccessfulInit( getVersion(), apkPath );
-	#else
 	logSuccessfulInit( getVersion() );
-	#endif
 
 	return true;
 }

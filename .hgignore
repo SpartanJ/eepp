@@ -45,3 +45,5 @@ projects/ios/eepp.app/assets
 projects/ios/eepp.app/eepp
 bin/libeepp-debug.dylib
 bin/libeepp.dylib
+*.iml
+.idea

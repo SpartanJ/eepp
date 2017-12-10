@@ -19,6 +19,14 @@ namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 class EE_API WindowSDL : public Window {
 	public:
+		#if EE_PLATFORM == EE_PLATFORM_ANDROID
+		static std::string SDL_AndroidGetApkPath();
+
+		static std::string SDL_AndroidGetExternalStoragePath();
+
+		static std::string SDL_AndroidGetInternalStoragePath();
+		#endif
+
 		WindowSDL( WindowSettings Settings, ContextSettings Context );
 		
 		virtual ~WindowSDL();
@@ -101,10 +109,6 @@ class EE_API WindowSDL : public Window {
 
 		#ifdef EE_USE_WMINFO
 		WMInfo *		mWMinfo;
-		#endif
-
-		#if EE_PLATFORM == EE_PLATFORM_ANDROID
-		Zip *			mZip;
 		#endif
 
 		Vector2i		mWinPos;

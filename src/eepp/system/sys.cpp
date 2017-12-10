@@ -515,10 +515,7 @@ static std::string sGetProcessPath() {
 
 	return FileSystem::fileRemoveFileName( std::string( info.name ) );
 #elif EE_PLATFORM == EE_PLATFORM_ANDROID
-	if ( NULL != Window::Engine::instance() && NULL != Window::Engine::instance()->getCurrentWindow() )
-		return Window::Engine::instance()->getCurrentWindow()->getExternalStoragePath() + "/";
-
-	return "/sdcard/";
+	return Window::Engine::instance()->getExternalStoragePath() + "/";
 #else
 	#warning Sys::GetProcessPath() not implemented on this platform. ( will return "./" )
 	return "./";
@@ -526,12 +523,8 @@ static std::string sGetProcessPath() {
 }
 
 std::string Sys::getProcessPath() {
-#if EE_PLATFORM != EE_PLATFORM_ANDROID
 	static std::string path = sGetProcessPath();
 	return path;
-#else
-	return sGetProcessPath();
-#endif
 }
 
 double Sys::getSystemTime() {
@@ -630,10 +623,7 @@ std::string Sys::getConfigPath( std::string appname ) {
 	#elif EE_PLATFORM == EE_PLATFORM_IOS
 		return GetProcessPath() + "config";
 	#elif EE_PLATFORM == EE_PLATFORM_ANDROID
-		if ( NULL != Window::Engine::instance() && NULL != Window::Engine::instance()->getCurrentWindow() )
-			return Window::Engine::instance()->getCurrentWindow()->getInternalStoragePath() + "/";
-
-		return std::string();
+		return Window::Engine::instance()->getInternalStoragePath() + "/";
 	#else
 		#warning Sys::GetConfigPath not implemented for this platform ( it will use HOME directory + /.appname )
 

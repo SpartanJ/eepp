@@ -168,10 +168,6 @@ void FrameBufferFBO::bind() {
 
 void FrameBufferFBO::unbind() {
 	if ( mFrameBuffer ) {
-		GlobalBatchRenderer::instance()->draw();
-
-		glFlush();
-
 		recoverView();
 
 		GLi->bindFramebuffer( GL_FRAMEBUFFER, mLastFB );
@@ -209,7 +205,7 @@ void FrameBufferFBO::resize( const Uint32& Width, const Uint32& Height ) {
 	}
 
 	if ( NULL != mTexture ) {
-		Image newImage( Width, Height, 4 );
+		Image newImage( Width, Height, mChannels );
 		mTexture->replace( &newImage );
 	}
 

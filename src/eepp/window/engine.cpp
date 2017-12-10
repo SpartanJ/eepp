@@ -18,6 +18,10 @@
 #include <eepp/window/backend/SFML/backendsfml.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+#include <eepp/system/zip.hpp>
+#endif
+
 #define BACKEND_SDL2		1
 #define BACKEND_SFML		2
 
@@ -40,6 +44,9 @@ Engine::Engine() :
 	mWindow( NULL ),
 	mSharedGLContext( false ),
 	mMainThreadId( 0 )
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	, mZip( NULL )
+#endif
 {
 	TextureAtlasManager::createSingleton();
 }
@@ -76,6 +83,10 @@ Engine::~Engine() {
 	#endif
 
 	destroy();
+
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	eeSAFE_DELETE( mZip );
+#endif
 
 	eeSAFE_DELETE( mBackend );
 }
@@ -321,5 +332,26 @@ bool Engine::isSharedGLContextEnabled() {
 Uint32 Engine::getMainThreadId() {
 	return mMainThreadId;
 }
+
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+std::string Engine::getExternalStoragePath() {
+	#if defined( EE_BACKEND_SDL2 )
+	if ( NULL == mZip ) {
+		mZip = eeNew( Zip, () );
+		mZip->open( Backend::SDL2::WindowSDL::SDL_AndroidGetApkPath() );
+	}
+
+	return SDL_AndroidGetExternalStoragePath();
+	#endif
+	return "";
+}
+
+std::string Engine::getInternalStoragePath() {
+	#if defined( EE_BACKEND_SDL2 )
+	return SDL_AndroidGetExternalStoragePath();
+	#endif
+	return "";
+}
+#endif
 
 }}

@@ -5,7 +5,7 @@
 #include <eepp/window/window.hpp>
 #include <list>
 
-namespace EE { namespace System { class IniFile; } }
+namespace EE { namespace System { class IniFile; class Pack; } }
 namespace EE { namespace Window { namespace Backend { class WindowBackend; } } }
 
 namespace EE { namespace Window {
@@ -116,6 +116,12 @@ class EE_API Engine {
 
 		/** @return The id of the thread that was used to initialize the OpenGL Context. */
 		Uint32 getMainThreadId();
+
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+		std::string getExternalStoragePath();
+
+		std::string getInternalStoragePath();
+#endif
 	protected:
 		friend class Window;
 
@@ -124,6 +130,7 @@ class EE_API Engine {
 		EE::Window::Window *			mWindow;
 		bool				mSharedGLContext;
 		Uint32				mMainThreadId;
+		Pack *				mZip;
 
 		Engine();
 

@@ -149,8 +149,6 @@ void EETest::init() {
 	mWindow = EE->createWindow( WinSettings, ConSettings );
 
 	if ( NULL != mWindow && mWindow->isOpen() ) {
-		MyPath 				= Sys::getProcessPath() + "assets/"; // Android needs to get the real process path AFTER the window creation
-
 		setScreen( StartScreen );
 
 		mWindow->setCaption( "eepp - Test Application" );

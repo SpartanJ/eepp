@@ -507,7 +507,7 @@ class EE_API Window {
 
 		void viewCheckUpdate();
 
-		void logSuccessfulInit( const std::string& BackendName, const std::string& ProcessPath = "" );
+		void logSuccessfulInit( const std::string& BackendName );
 
 		void logFailureInit( const std::string& ClassName, const std::string& BackendName );
 };
