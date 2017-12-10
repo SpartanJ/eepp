@@ -31,7 +31,7 @@ class EE_API PrimitiveDrawable : public Drawable {
 		/** @return The line with to draw primitives */
 		const Float& getLineWidth() const;
 	protected:
-		PrimitiveDrawable( EE_DRAWABLE_TYPE drawableType );
+		PrimitiveDrawable( Type drawableType );
 
 		EE_FILL_MODE			mFillMode;
 		BlendMode				mBlendMode;

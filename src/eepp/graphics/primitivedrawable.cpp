@@ -4,7 +4,7 @@
 
 namespace EE { namespace Graphics {
 
-PrimitiveDrawable::PrimitiveDrawable(EE_DRAWABLE_TYPE drawableType) :
+PrimitiveDrawable::PrimitiveDrawable(Type drawableType) :
 	Drawable( drawableType ),
 	mFillMode( DRAW_FILL ),
 	mBlendMode( BlendAlpha ),

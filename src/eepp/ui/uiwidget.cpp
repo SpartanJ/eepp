@@ -410,7 +410,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			Drawable * res = NULL;
 
 			if ( NULL != ( res = DrawableSearcher::searchByName( ait->as_string() ) ) ) {
-				setBackgroundFillEnabled( true )->setDrawable( res, res->getDrawableType() == DRAWABLE_SPRITE );
+				setBackgroundFillEnabled( true )->setDrawable( res, res->getDrawableType() == Drawable::SPRITE );
 			}
 		} else if ( "visible" == name ) {
 			setVisible( ait->as_bool() );

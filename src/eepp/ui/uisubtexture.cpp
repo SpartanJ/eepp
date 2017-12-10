@@ -198,7 +198,7 @@ void UISubTexture::loadFromXmlNode(const pugi::xml_node & node) {
 		if ( "src" == name || "subtexture" == name ) {
 			DrawableResource * res = NULL;
 
-			if ( NULL != ( res = GlobalTextureAtlas::instance()->getByName( ait->as_string() ) ) && res->getDrawableType() == DRAWABLE_SUBTEXTURE ) {
+			if ( NULL != ( res = GlobalTextureAtlas::instance()->getByName( ait->as_string() ) ) && res->getDrawableType() == Drawable::SUBTEXTURE ) {
 				setSubTexture( static_cast<SubTexture*>( res ) );
 			}
 		} else if ( "scaletype" == name ) {

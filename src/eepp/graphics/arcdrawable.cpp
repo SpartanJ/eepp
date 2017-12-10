@@ -4,7 +4,7 @@
 namespace EE { namespace Graphics {
 
 ArcDrawable::ArcDrawable() :
-	PrimitiveDrawable( DRAWABLE_ARC ),
+	PrimitiveDrawable( Drawable::ARC ),
 	mRadius( 0 ),
 	mSegmentsCount( 64 ),
 	mArcAngle( 360 ),
@@ -13,7 +13,7 @@ ArcDrawable::ArcDrawable() :
 }
 
 ArcDrawable::ArcDrawable( const Float & radius, Uint32 segmentsCount, const Float & arcAngle, const Float & arcStartAngle ) :
-	PrimitiveDrawable( DRAWABLE_ARC ),
+	PrimitiveDrawable( Drawable::ARC ),
 	mRadius( radius ),
 	mSegmentsCount( segmentsCount ),
 	mArcAngle( arcAngle ),

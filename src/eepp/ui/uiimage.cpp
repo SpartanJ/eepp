@@ -147,7 +147,7 @@ void UIImage::autoAlign() {
 
 void UIImage::safeDeleteDrawable() {
 	if ( NULL != mDrawable && ( mControlFlags & UI_CTRL_FLAG_DRAWABLE_OWNER ) ) {
-		if ( mDrawable->getDrawableType() == DRAWABLE_SPRITE ) {
+		if ( mDrawable->getDrawableType() == Drawable::SPRITE ) {
 			Sprite * spr = reinterpret_cast<Sprite*>( mDrawable );
 			eeSAFE_DELETE( spr );
 		}
@@ -185,7 +185,7 @@ void UIImage::loadFromXmlNode(const pugi::xml_node & node) {
 			Drawable * res = NULL;
 
 			if ( NULL != ( res = DrawableSearcher::searchByName( ait->as_string() ) ) ) {
-				if ( res->getDrawableType() == DRAWABLE_SPRITE )
+				if ( res->getDrawableType() == Drawable::SPRITE )
 					writeCtrlFlag( UI_CTRL_FLAG_DRAWABLE_OWNER, 1 );
 
 				setDrawable( res );

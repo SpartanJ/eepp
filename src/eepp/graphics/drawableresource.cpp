@@ -2,14 +2,14 @@
 
 namespace EE { namespace Graphics {
 
-DrawableResource::DrawableResource( EE_DRAWABLE_TYPE drawableType ) :
+DrawableResource::DrawableResource( Type drawableType ) :
 	Drawable( drawableType ),
 	mId(0)
 {
 	createUnnamed();
 }
 
-DrawableResource::DrawableResource( EE_DRAWABLE_TYPE drawableType, const std::string& name ) :
+DrawableResource::DrawableResource( Type drawableType, const std::string& name ) :
 	Drawable( drawableType ),
 	mId(0)
 {

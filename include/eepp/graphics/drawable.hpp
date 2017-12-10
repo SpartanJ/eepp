@@ -12,6 +12,18 @@ namespace EE { namespace Graphics {
 
 class EE_API Drawable {
 	public:
+		enum Type {
+			TEXTURE,
+			SUBTEXTURE,
+			SPRITE,
+			ARC,
+			RECTANGLE,
+			CONVEXSHAPE,
+			GROUP,
+			NINEPATCH,
+			CUSTOM
+		};
+
 		virtual ~Drawable();
 
 		virtual Sizef getSize() = 0;
@@ -40,17 +52,17 @@ class EE_API Drawable {
 
 		void resetAlpha();
 
-		EE_DRAWABLE_TYPE getDrawableType() const;
+		Type getDrawableType() const;
 
 		const Vector2f& getPosition() const;
 
 		void setPosition( const Vector2f& position );
 	protected:
-		EE_DRAWABLE_TYPE mDrawableType;
+		Type mDrawableType;
 		Color mColor;
 		Vector2f mPosition;
 
-		Drawable( EE_DRAWABLE_TYPE drawableType );
+		Drawable( Type drawableType );
 
 		virtual void onAlphaChange();
 

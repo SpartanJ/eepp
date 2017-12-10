@@ -26,7 +26,7 @@ Uint32 Texture::getMaximumSize() {
 
 Texture::Texture() :
 	Image(),
-	Drawable( DRAWABLE_TEXTURE ),
+	Drawable( Drawable::TEXTURE ),
 	mFilepath(""),
 	mName(""),
 	mId(0),
@@ -44,7 +44,7 @@ Texture::Texture() :
 
 Texture::Texture( const Texture& Copy ) :
 	Image(),
-	Drawable( DRAWABLE_TEXTURE ),
+	Drawable( Drawable::TEXTURE ),
 	mFilepath( Copy.mFilepath ),
 	mName( Copy.mName ),
 	mId( Copy.mId ),
@@ -64,7 +64,7 @@ Texture::Texture( const Texture& Copy ) :
 }
 
 Texture::Texture( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) :
-	Drawable( DRAWABLE_TEXTURE )
+	Drawable( Drawable::TEXTURE )
 {
 	create( texture, width, height, imgwidth, imgheight, UseMipmap, Channels, filepath, ClampMode, CompressedTexture, MemSize, data );
 }

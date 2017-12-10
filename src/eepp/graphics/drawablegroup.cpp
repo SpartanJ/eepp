@@ -5,7 +5,7 @@
 namespace EE { namespace Graphics {
 
 DrawableGroup::DrawableGroup() :
-	Drawable( DRAWABLE_GROUP ),
+	Drawable( Drawable::GROUP ),
 	mNeedsUpdate(true),
 	mClipEnabled(true),
 	mDrawableOwner(true)

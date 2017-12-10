@@ -5,7 +5,7 @@
 namespace EE { namespace Graphics {
 
 RectangleDrawable::RectangleDrawable() :
-	PrimitiveDrawable( DRAWABLE_RECTANGLE ),
+	PrimitiveDrawable( Drawable::RECTANGLE ),
 	mRotation( 0 ),
 	mScale( 1, 1 ),
 	mCorners( 0 ),
@@ -14,7 +14,7 @@ RectangleDrawable::RectangleDrawable() :
 }
 
 RectangleDrawable::RectangleDrawable(const Vector2f & position, const Sizef & size) :
-	PrimitiveDrawable( DRAWABLE_RECTANGLE ),
+	PrimitiveDrawable( Drawable::RECTANGLE ),
 	mSize( size ),
 	mRotation( 0 ),
 	mScale( 1, 1 ),

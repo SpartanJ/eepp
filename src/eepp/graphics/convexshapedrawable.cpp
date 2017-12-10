@@ -4,7 +4,7 @@
 namespace EE { namespace Graphics {
 
 ConvexShapeDrawable::ConvexShapeDrawable() :
-	PrimitiveDrawable( DRAWABLE_CONVEXSHAPE )
+	PrimitiveDrawable( Drawable::CONVEXSHAPE )
 {
 }
 

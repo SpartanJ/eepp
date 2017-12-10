@@ -11,7 +11,7 @@ using namespace EE::Window;
 namespace EE { namespace Graphics {
 
 Sprite::Sprite() :
-	Drawable( DRAWABLE_SPRITE ),
+	Drawable( Drawable::SPRITE ),
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
 	mRotation( 0.f ),
 	mScale( 1.f, 1.f ),
@@ -31,7 +31,7 @@ Sprite::Sprite() :
 }
 
 Sprite::Sprite( const std::string& name, const std::string& extension, TextureAtlas * SearchInTextureAtlas )  :
-	Drawable( DRAWABLE_SPRITE ),
+	Drawable( Drawable::SPRITE ),
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
 	mRotation( 0.f ),
 	mScale( 1.f, 1.f ),
@@ -52,7 +52,7 @@ Sprite::Sprite( const std::string& name, const std::string& extension, TextureAt
 }
 
 Sprite::Sprite( SubTexture * SubTexture ) :
-	Drawable( DRAWABLE_SPRITE ),
+	Drawable( Drawable::SPRITE ),
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
 	mRotation( 0.f ),
 	mScale( 1.f, 1.f ),
@@ -73,7 +73,7 @@ Sprite::Sprite( SubTexture * SubTexture ) :
 }
 
 Sprite::Sprite( const Uint32& TexId, const Sizef &DestSize, const Vector2i &Offset, const Rect& TexSector ) :
-	Drawable( DRAWABLE_SPRITE ),
+	Drawable( Drawable::SPRITE ),
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
 	mRotation( 0.f ),
 	mScale( 1.f, 1.f ),

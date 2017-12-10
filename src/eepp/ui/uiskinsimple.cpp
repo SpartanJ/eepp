@@ -84,7 +84,7 @@ Sizei UISkinSimple::getSize( const Uint32 & state ) {
 }
 
 Rect UISkinSimple::getBorderSize( const Uint32 & state ) {
-	if ( NULL != mDrawable[ state ] && mDrawable[ state ]->getDrawableType() == DRAWABLE_NINEPATCH ) {
+	if ( NULL != mDrawable[ state ] && mDrawable[ state ]->getDrawableType() == Drawable::NINEPATCH ) {
 		NinePatch * ninePatch( static_cast<NinePatch*>( mDrawable[ state ] ) );
 		SubTexture * stl( ninePatch->getSubTexture( NinePatch::Left ) );
 		SubTexture * str( ninePatch->getSubTexture( NinePatch::Right ) );

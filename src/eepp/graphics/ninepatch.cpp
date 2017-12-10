@@ -4,7 +4,7 @@
 namespace EE { namespace Graphics {
 
 NinePatch::NinePatch(const Uint32& TexId, int left, int top, int right, int bottom, const Float & pixelDensity, const std::string& name ) :
-	DrawableResource( DRAWABLE_NINEPATCH, name ),
+	DrawableResource( Drawable::NINEPATCH, name ),
 	mRect( left, top, right, bottom ),
 	mPixelDensity( pixelDensity )
 {
@@ -21,7 +21,7 @@ NinePatch::NinePatch(const Uint32& TexId, int left, int top, int right, int bott
 }
 
 NinePatch::NinePatch( SubTexture * subTexture, int left, int top, int right, int bottom, const std::string& name ):
-	DrawableResource( DRAWABLE_NINEPATCH, name ),
+	DrawableResource( Drawable::NINEPATCH, name ),
 	mRect( left, top, right, bottom ),
 	mPixelDensity(1)
 {
