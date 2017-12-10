@@ -255,6 +255,10 @@
 #define GL_DOUBLE 0x140A
 #endif
 
+#define GL_FUNC_ADD GL_FUNC_ADD_OES
+#define GL_FUNC_SUBTRACT GL_FUNC_SUBTRACT_OES
+#define GL_FUNC_REVERSE_SUBTRACT GL_FUNC_REVERSE_SUBTRACT_OES
+
 #endif
 
 #include <eepp/graphics/renderer/rendererhelper.hpp>

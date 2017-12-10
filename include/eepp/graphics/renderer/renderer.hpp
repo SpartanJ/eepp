@@ -95,6 +95,8 @@ class EE_API Renderer {
 
 		void blendFuncSeparate( unsigned int sfactorRGB, unsigned int dfactorRGB, unsigned int sfactorAlpha, unsigned int dfactorAlpha );
 
+		void blendEquationSeparate( unsigned int modeRGB, unsigned int modeAlpha );
+
 		void viewport( int x, int y, int width, int height );
 
 		void lineSmooth( const bool& enable );

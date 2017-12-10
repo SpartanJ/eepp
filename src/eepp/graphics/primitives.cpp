@@ -11,7 +11,7 @@ static GlobalBatchRenderer * sBR = NULL;
 
 Primitives::Primitives() :
 	mFillMode( DRAW_FILL ),
-	mBlendMode( ALPHA_NORMAL ),
+	mBlendMode( BlendAlpha ),
 	mLineWidth( 1.f ),
 	mForceDraw( true )
 {
@@ -444,11 +444,11 @@ const EE_FILL_MODE& Primitives::getFillMode() const {
 	return mFillMode;
 }
 
-void Primitives::setBlendMode( const EE_BLEND_MODE& Mode ) {
+void Primitives::setBlendMode( const BlendMode& Mode ) {
 	mBlendMode = Mode;
 }
 
-const EE_BLEND_MODE& Primitives::getBlendMode() const {
+const BlendMode& Primitives::getBlendMode() const {
 	return mBlendMode;
 }
 

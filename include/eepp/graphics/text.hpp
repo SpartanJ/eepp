@@ -81,7 +81,7 @@ class EE_API Text {
 		Float getTextHeight();
 
 		/** Draw the cached text on screen */
-		void draw( const Float& X, const Float& Y, const Vector2f& Scale = Vector2f::One, const Float& Angle = 0, EE_BLEND_MODE Effect = ALPHA_NORMAL );
+		void draw( const Float& X, const Float& Y, const Vector2f& Scale = Vector2f::One, const Float& Angle = 0, BlendMode Effect = BlendAlpha );
 
 		/** @return The Shadow Font Color */
 		const Color& getShadowColor() const;

@@ -7,7 +7,7 @@ namespace EE { namespace Graphics {
 PrimitiveDrawable::PrimitiveDrawable(EE_DRAWABLE_TYPE drawableType) :
 	Drawable( drawableType ),
 	mFillMode( DRAW_FILL ),
-	mBlendMode( ALPHA_NORMAL ),
+	mBlendMode( BlendAlpha ),
 	mLineWidth( 1.f ),
 	mNeedsUpdate( true ),
 	mRecreateVertexBuffer( true ),
@@ -54,11 +54,11 @@ const EE_FILL_MODE& PrimitiveDrawable::getFillMode() const {
 	return mFillMode;
 }
 
-void PrimitiveDrawable::setBlendMode( const EE_BLEND_MODE& Mode ) {
+void PrimitiveDrawable::setBlendMode( const BlendMode& Mode ) {
 	mBlendMode = Mode;
 }
 
-const EE_BLEND_MODE& PrimitiveDrawable::getBlendMode() const {
+const BlendMode& PrimitiveDrawable::getBlendMode() const {
 	return mBlendMode;
 }
 

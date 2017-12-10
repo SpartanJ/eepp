@@ -12,7 +12,7 @@ namespace EE { namespace Graphics {
 SINGLETON_DECLARE_IMPLEMENTATION(TextureFactory)
 
 TextureFactory::TextureFactory() :
-	mLastBlend(ALPHA_NORMAL),
+	mLastBlend(BlendAlpha),
 	mMemSize(0),
 	mErasing(false)
 {

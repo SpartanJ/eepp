@@ -73,11 +73,11 @@ void GameObjectVirtual::draw() {
 						*LM->getTileColor( Tile, 1 ),
 						*LM->getTileColor( Tile, 2 ),
 						*LM->getTileColor( Tile, 3 ),
-						ALPHA_NORMAL,
+						BlendAlpha,
 						getRenderModeFromFlags()
 					);
 				} else {
-					mSubTexture->draw( mPos.x, mPos.y, *LM->getTileColor( Tile ), getRotation(), Vector2f::One, ALPHA_NORMAL, getRenderModeFromFlags() );
+					mSubTexture->draw( mPos.x, mPos.y, *LM->getTileColor( Tile ), getRotation(), Vector2f::One, BlendAlpha, getRenderModeFromFlags() );
 				}
 			} else {
 				if ( LM->isByVertex() ) {
@@ -90,15 +90,15 @@ void GameObjectVirtual::draw() {
 						LM->getColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->getDestSize().y ) ),
 						LM->getColorFromPos( Vector2f( mPos.x + mSubTexture->getDestSize().x, mPos.y + mSubTexture->getDestSize().y ) ),
 						LM->getColorFromPos( Vector2f( mPos.x + mSubTexture->getDestSize().x, mPos.y ) ),
-						ALPHA_NORMAL,
+						BlendAlpha,
 						getRenderModeFromFlags()
 					);
 				} else {
-					mSubTexture->draw( mPos.x, mPos.y, LM->getColorFromPos( Vector2f( mPos.x, mPos.y ) ), getRotation(), Vector2f::One, ALPHA_NORMAL, getRenderModeFromFlags() );
+					mSubTexture->draw( mPos.x, mPos.y, LM->getColorFromPos( Vector2f( mPos.x, mPos.y ) ), getRotation(), Vector2f::One, BlendAlpha, getRenderModeFromFlags() );
 				}
 			}
 		} else {
-			mSubTexture->draw( mPos.x, mPos.y, Color::White, getRotation(), Vector2f::One, ALPHA_NORMAL, getRenderModeFromFlags() );
+			mSubTexture->draw( mPos.x, mPos.y, Color::White, getRotation(), Vector2f::One, BlendAlpha, getRenderModeFromFlags() );
 		}
 	} else {
 		Primitives P;

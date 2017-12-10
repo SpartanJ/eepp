@@ -133,10 +133,10 @@ class EE_API Primitives {
 		const EE_FILL_MODE& getFillMode() const;
 
 		/** Set the blend mode used to draw primitives */
-		void setBlendMode( const EE_BLEND_MODE& Mode );
+		void setBlendMode( const BlendMode& Mode );
 
 		/** @return The blend mode used to draw primitives */
-		const EE_BLEND_MODE& getBlendMode() const;
+		const BlendMode& getBlendMode() const;
 
 		/** Set the line width to draw primitives */
 		void setLineWidth( const Float& width );
@@ -146,7 +146,7 @@ class EE_API Primitives {
 	private:
 		Color					mColor;
 		EE_FILL_MODE			mFillMode;
-		EE_BLEND_MODE			mBlendMode;
+		BlendMode			mBlendMode;
 		Float					mLineWidth;
 		bool					mForceDraw;
 };

@@ -26,7 +26,9 @@ enum EEGL_extensions  {
 	EEGL_ARB_vertex_array_object,
 	EEGL_EXT_blend_func_separate,
 	EEGL_IMG_texture_compression_pvrtc,
-	EEGL_OES_compressed_ETC1_RGB8_texture
+	EEGL_OES_compressed_ETC1_RGB8_texture,
+	EEGL_EXT_blend_minmax,
+	EEGL_EXT_blend_subtract
 };
 
 enum EEGL_version {

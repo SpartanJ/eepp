@@ -18,7 +18,7 @@ Sprite::Sprite() :
 	mAnimSpeed( 16.f ),
 	mVertexColors( NULL ),
 	mRepetitions( -1 ),
-	mBlend( ALPHA_NORMAL ),
+	mBlend( BlendAlpha ),
 	mEffect( RN_NORMAL ),
 	mCurrentFrame( 0 ),
 	mfCurrentFrame( 0.f ),
@@ -38,7 +38,7 @@ Sprite::Sprite( const std::string& name, const std::string& extension, TextureAt
 	mAnimSpeed( 16.f ),
 	mVertexColors( NULL ),
 	mRepetitions( -1 ),
-	mBlend( ALPHA_NORMAL ),
+	mBlend( BlendAlpha ),
 	mEffect( RN_NORMAL ),
 	mCurrentFrame( 0 ),
 	mfCurrentFrame( 0.f ),
@@ -59,7 +59,7 @@ Sprite::Sprite( SubTexture * SubTexture ) :
 	mAnimSpeed( 16.f ),
 	mVertexColors( NULL ),
 	mRepetitions( -1 ),
-	mBlend( ALPHA_NORMAL ),
+	mBlend( BlendAlpha ),
 	mEffect( RN_NORMAL ),
 	mCurrentFrame( 0 ),
 	mfCurrentFrame( 0.f ),
@@ -80,7 +80,7 @@ Sprite::Sprite( const Uint32& TexId, const Sizef &DestSize, const Vector2i &Offs
 	mAnimSpeed( 16.f ),
 	mVertexColors( NULL ),
 	mRepetitions( -1 ),
-	mBlend( ALPHA_NORMAL ),
+	mBlend( BlendAlpha ),
 	mEffect( RN_NORMAL ),
 	mCurrentFrame( 0 ),
 	mfCurrentFrame( 0.f ),
@@ -183,7 +183,7 @@ void Sprite::reset() {
 	mRotation			= 0;
 	mColor				= Color::White;
 
-	mBlend				= ALPHA_NORMAL;
+	mBlend				= BlendAlpha;
 	mEffect				= RN_NORMAL;
 
 	mCurrentFrame		= 0;
@@ -564,7 +564,7 @@ void Sprite::setReverseFromStart() {
 	mCurrentFrame = Size;
 }
 
-void Sprite::draw( const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect ) {
+void Sprite::draw( const BlendMode& Blend, const EE_RENDER_MODE& Effect ) {
 	if ( SPR_FGET( SPRITE_FLAG_AUTO_ANIM ) )
 		update();
 
@@ -773,11 +773,11 @@ const EE_RENDER_MODE& Sprite::getRenderMode() const {
 	return mEffect;
 }
 
-void Sprite::setBlendMode( const EE_BLEND_MODE& Blend ) {
+void Sprite::setBlendMode( const BlendMode& Blend ) {
 	mBlend = Blend;
 }
 
-const EE_BLEND_MODE& Sprite::getBlendMode() const {
+const BlendMode& Sprite::getBlendMode() const {
 	return mBlend;
 }
 

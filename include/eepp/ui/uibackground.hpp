@@ -26,9 +26,9 @@ class EE_API UIBackground {
 
 		UIBackground * setColorsTo( const Color& color );
 
-		const EE_BLEND_MODE& getBlendMode() const;
+		const BlendMode& getBlendMode() const;
 
-		UIBackground * setBlendMode( const EE_BLEND_MODE& blend );
+		UIBackground * setBlendMode( const BlendMode& blend );
 
 		const unsigned int& getCorners() const;
 
@@ -43,7 +43,7 @@ class EE_API UIBackground {
 	protected:
 		std::vector<Color>	mColor;
 		UIControl *			mControl;
-		EE_BLEND_MODE		mBlendMode;
+		BlendMode		mBlendMode;
 		unsigned int		mCorners;
 		Drawable *			mDrawable;
 		bool				mOwnIt;

@@ -201,7 +201,7 @@ class EE_API TextureFactory : protected Mutex {
 
 		int mCurrentTexture[ EE_MAX_TEXTURE_UNITS ];
 
-		EE_BLEND_MODE mLastBlend;
+		BlendMode mLastBlend;
 
 		std::vector<Texture*> mTextures;
 

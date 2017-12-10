@@ -131,7 +131,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		Blindy.setRenderMode( RN_MIRROR );
 
 		// Set the Blend Mode of the sprite
-		Blindy.setBlendMode( ALPHA_BLENDONE );
+		Blindy.setBlendMode( BlendAdd );
 
 		// Set the primitive fill mode
 		P.setFillMode( DRAW_LINE );

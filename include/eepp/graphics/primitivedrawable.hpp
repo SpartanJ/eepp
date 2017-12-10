@@ -20,10 +20,10 @@ class EE_API PrimitiveDrawable : public Drawable {
 		const EE_FILL_MODE& getFillMode() const;
 
 		/** Set the blend mode used to draw primitives */
-		virtual void setBlendMode( const EE_BLEND_MODE& Mode );
+		virtual void setBlendMode( const BlendMode& Mode );
 
 		/** @return The blend mode used to draw primitives */
-		const EE_BLEND_MODE& getBlendMode() const;
+		const BlendMode& getBlendMode() const;
 
 		/** Set the line width to draw primitives */
 		virtual void setLineWidth( const Float& width );
@@ -34,7 +34,7 @@ class EE_API PrimitiveDrawable : public Drawable {
 		PrimitiveDrawable( EE_DRAWABLE_TYPE drawableType );
 
 		EE_FILL_MODE			mFillMode;
-		EE_BLEND_MODE			mBlendMode;
+		BlendMode				mBlendMode;
 		Float					mLineWidth;
 		bool mNeedsUpdate;
 		bool mRecreateVertexBuffer;

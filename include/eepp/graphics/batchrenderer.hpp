@@ -38,7 +38,7 @@ class EE_API BatchRenderer {
 		void setTexture( const Texture * Tex );
 
 		/** Set the predefined blending function to use on the batch */
-		void setBlendMode( const EE_BLEND_MODE& Blend );
+		void setBlendMode( const BlendMode& Blend );
 
 		/** Set if every batch call have to be immediately rendered */
 		void setBatchForceRendering( const bool& force ) { mForceRendering = force; }
@@ -239,7 +239,7 @@ class EE_API BatchRenderer {
 
 		const Texture *	mTexture;
 		TextureFactory *	mTF;
-		EE_BLEND_MODE		mBlend;
+		BlendMode		mBlend;
 
 		eeTexCoord			mTexCoord[4];
 		Color			mVerColor[4];

@@ -492,7 +492,7 @@ Float Text::getTextHeight() {
 	return mFont->getLineSpacing(mRealCharacterSize) * ( 0 == mNumLines ? 1 : mNumLines );
 }
 
-void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const Float & Angle, EE_BLEND_MODE Effect) {
+void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const Float & Angle, BlendMode Effect) {
 	if ( NULL != mFont ) {
 		ensureColorUpdate();
 		ensureGeometryUpdate();

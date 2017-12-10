@@ -133,9 +133,9 @@ class EE_API UIControl {
 
 		virtual UIControl * resetFlags( Uint32 newFlags = 0 );
 
-		UIControl * setBlendMode( const EE_BLEND_MODE& blend );
+		UIControl * setBlendMode( const BlendMode& blend );
 
-		EE_BLEND_MODE getBlendMode();
+		BlendMode getBlendMode();
 
 		void toFront();
 
@@ -297,7 +297,7 @@ class EE_API UIControl {
 		UIBorder *		mBorder;
 
 		Uint32			mControlFlags;
-		Uint16			mBlend;
+		BlendMode		mBlend;
 		Uint16			mNumCallBacks;
 
 		Polygon2f		mPoly;

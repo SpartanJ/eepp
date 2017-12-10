@@ -32,7 +32,7 @@ UIControl::UIControl() :
 	mBackground( NULL ),
 	mBorder( NULL ),
 	mControlFlags( 0 ),
-	mBlend( ALPHA_NORMAL ),
+	mBlend( BlendAlpha ),
 	mNumCallBacks( 0 ),
 	mVisible( true ),
 	mEnabled( true )
@@ -679,14 +679,14 @@ UIControl *UIControl::resetFlags( Uint32 newFlags ) {
 	return this;
 }
 
-UIControl * UIControl::setBlendMode( const EE_BLEND_MODE& blend ) {
-	mBlend = static_cast<Uint16> ( blend );
+UIControl * UIControl::setBlendMode( const BlendMode& blend ) {
+	mBlend = blend;
 	invalidateDraw();
 	return this;
 }
 
-EE_BLEND_MODE UIControl::getBlendMode() {
-	return static_cast<EE_BLEND_MODE> ( mBlend );
+BlendMode UIControl::getBlendMode() {
+	return mBlend;
 }
 
 void UIControl::toFront() {

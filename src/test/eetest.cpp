@@ -200,7 +200,7 @@ void EETest::init() {
 		WP.start();
 
 		Batch.allocVertexs( 2048 );
-		Batch.setBlendMode( ALPHA_BLENDONE );
+		Batch.setBlendMode( BlendAdd );
 
 		mFBO = FrameBuffer::New( 256, 256 );
 
@@ -1400,10 +1400,10 @@ void EETest::screen2() {
 	if ( mUseShaders )
 		mShaderProgram->unbind();
 
-	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color(255,255,255,150), ALPHA_NORMAL, RN_ISOMETRIC);
-	TNP[3]->draw( HWidth - 128, HHeight - 128, 0, Vector2f::One, Color(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRIC);
-	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
-	TNP[3]->draw( HWidth, HHeight, 0, Vector2f::One, Color(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
+	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color(255,255,255,150), BlendAlpha, RN_ISOMETRIC);
+	TNP[3]->draw( HWidth - 128, HHeight - 128, 0, Vector2f::One, Color(255,255,255,50), BlendAlpha, RN_ISOMETRIC);
+	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color(255,255,255,50), BlendAlpha, RN_ISOMETRICVERTICAL);
+	TNP[3]->draw( HWidth, HHeight, 0, Vector2f::One, Color(255,255,255,50), BlendAlpha, RN_ISOMETRICVERTICALNEGATIVE);
 
 	alpha = (!aside) ? alpha+et.asMilliseconds() * 0.1f : alpha-et.asMilliseconds() * 0.1f;
 	if (alpha>=255) {
@@ -1415,7 +1415,7 @@ void EETest::screen2() {
 	}
 
 	Color Col(255,255,255,(int)alpha);
-	TNP[1]->drawEx( (Float)mWindow->getWidth() - 128.f, (Float)mWindow->getHeight() - 128.f, 128.f, 128.f, ang, Vector2f::One, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
+	TNP[1]->drawEx( (Float)mWindow->getWidth() - 128.f, (Float)mWindow->getHeight() - 128.f, 128.f, 128.f, ang, Vector2f::One, Col, Col, Col, Col, BlendAdd, RN_FLIPMIRROR);
 
 	SP.setPosition( Vector2f( alpha, alpha ) );
 	SP.draw();

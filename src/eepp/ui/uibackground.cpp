@@ -12,7 +12,7 @@ UIBackground * UIBackground::New( UIControl * control ) {
 
 UIBackground::UIBackground( UIControl * control ) :
 	mControl( control ),
-	mBlendMode( ALPHA_NORMAL ),
+	mBlendMode( BlendAlpha ),
 	mCorners(0),
 	mDrawable( NULL ),
 	mOwnIt( false )
@@ -72,11 +72,11 @@ UIBackground * UIBackground::setColor( const Color& Col ) {
 	return this;
 }
 
-const EE_BLEND_MODE& UIBackground::getBlendMode() const {
+const BlendMode& UIBackground::getBlendMode() const {
 	return mBlendMode;
 }
 
-UIBackground * UIBackground::setBlendMode( const EE_BLEND_MODE& blend ) {
+UIBackground * UIBackground::setBlendMode( const BlendMode& blend ) {
 	mBlendMode = blend;
 	mControl->invalidateDraw();
 	return this;

@@ -25,6 +25,7 @@ typedef GLenum (APIENTRY * pglCheckFramebufferStatus) (GLenum target);
 typedef void (APIENTRY * pglBindRenderbuffer) (GLenum target, GLuint renderbuffer);
 typedef void (APIENTRY * pglBlendFuncSeparate) (GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha);
 typedef void (APIENTRY * pglDiscardFramebufferEXT) (GLenum target, GLsizei numAttachments, const GLenum* attachments);
+typedef void (APIENTRY * pglBlendEquationSeparate) (GLenum modeRGB, GLenum modeAlpha);
 
 Renderer * GLi = NULL;
 
@@ -182,6 +183,8 @@ void Renderer::init() {
 		writeExtension( EEGL_ARB_pixel_buffer_object		, GLEW_ARB_pixel_buffer_object						);
 		writeExtension( EEGL_ARB_vertex_array_object		, GLEW_ARB_vertex_array_object 						);
 		writeExtension( EEGL_EXT_blend_func_separate		, GLEW_EXT_blend_func_separate						);
+		writeExtension( EEGL_EXT_blend_minmax				, GLEW_EXT_blend_minmax 							);
+		writeExtension( EEGL_EXT_blend_subtract				, GLEW_EXT_blend_subtract							);
 	}
 	else
 	#endif
@@ -200,6 +203,8 @@ void Renderer::init() {
 		writeExtension( EEGL_ARB_pixel_buffer_object		, isExtension( "GL_ARB_pixel_buffer_object" )		);
 		writeExtension( EEGL_ARB_vertex_array_object		, isExtension( "GL_ARB_vertex_array_object" )		);
 		writeExtension( EEGL_EXT_blend_func_separate		, isExtension( "GL_EXT_blend_func_separate" )		);
+		writeExtension( EEGL_EXT_blend_minmax				, isExtension( "GL_EXT_blend_minmax" )				);
+		writeExtension( EEGL_EXT_blend_subtract				, isExtension( "GL_EXT_blend_subtract" )			);
 	}
 
 	// NVIDIA added support for GL_OES_compressed_ETC1_RGB8_texture in desktop GPUs
@@ -211,6 +216,9 @@ void Renderer::init() {
 	writeExtension( EEGL_ARB_point_parameters				, 1													);
 	writeExtension( EEGL_ARB_point_sprite					, 1													);
 	writeExtension( EEGL_ARB_multitexture					, 1													);
+
+	writeExtension( EEGL_EXT_blend_minmax					, 1													);
+	writeExtension( EEGL_EXT_blend_subtract					, 1													);
 
 	writeExtension( EEGL_IMG_texture_compression_pvrtc		, isExtension( "GL_IMG_texture_compression_pvrtc" )	);
 
@@ -488,6 +496,16 @@ void Renderer::blendFuncSeparate( unsigned int sfactorRGB, unsigned int dfactorR
 
 	if ( NULL != eeglBlendFuncSeparate )
 		eeglBlendFuncSeparate( sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha );
+}
+
+void Renderer::blendEquationSeparate( unsigned int modeRGB, unsigned int modeAlpha ) {
+	static pglBlendEquationSeparate eeglBlendEquationSeparate = NULL;
+
+	if ( NULL == eeglBlendEquationSeparate )
+		eeglBlendEquationSeparate = (pglBlendEquationSeparate)getProcAddress( "glBlendEquationSeparate" );
+
+	if ( NULL != eeglBlendEquationSeparate )
+		eeglBlendEquationSeparate( modeRGB, modeAlpha );
 }
 
 void Renderer::setShader( ShaderProgram * Shader ) {

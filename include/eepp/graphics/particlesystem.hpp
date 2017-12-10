@@ -122,10 +122,10 @@ class EE_API ParticleSystem {
 		void setCallbackReset( const ParticleCallback& pc );
 
 		/** @return The effect blend mode */
-		const EE_BLEND_MODE& getBlendMode() const;
+		const BlendMode& getBlendMode() const;
 
 		/** Set the effect blend mode */
-		void setBlendMode( const EE_BLEND_MODE& mode );
+		void setBlendMode( const BlendMode& mode );
 
 		/** @return The color of the effect */
 		const ColorAf& getColor() const;
@@ -158,7 +158,7 @@ class EE_API ParticleSystem {
 		Uint32				mLoops;
 
 		EE_PARTICLE_EFFECT	mEffect;
-		EE_BLEND_MODE	mBlend;
+		BlendMode	mBlend;
 
 		ColorAf			mColor;
 

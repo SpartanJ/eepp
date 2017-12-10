@@ -4,7 +4,7 @@
 
 namespace EE { namespace Maps {
 
-GameObjectSubTextureEx::GameObjectSubTextureEx( const Uint32& Flags, MapLayer * Layer, Graphics::SubTexture * SubTexture, const Vector2f& Pos, EE_BLEND_MODE Blend, EE_RENDER_MODE Render, Float Angle, Vector2f Scale, Color Color ) :
+GameObjectSubTextureEx::GameObjectSubTextureEx( const Uint32& Flags, MapLayer * Layer, Graphics::SubTexture * SubTexture, const Vector2f& Pos, BlendMode Blend, EE_RENDER_MODE Render, Float Angle, Vector2f Scale, Color Color ) :
 	GameObjectSubTexture( Flags, Layer, SubTexture, Pos ),
 	mBlend( Blend ),
 	mRender( Render ),

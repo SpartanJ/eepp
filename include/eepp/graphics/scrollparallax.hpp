@@ -22,8 +22,8 @@ class EE_API ScrollParallax {
 		* @param Size The size of the parallax
 		* @param Speed Speed of movement ( in Pixels Per Second )
 		* @param Color The Texture Color
-		* @param Blend The Blend Mode ( default ALPHA_NORMAL ) */
-		ScrollParallax( Graphics::SubTexture * subTexture, const Vector2f& position = Vector2f(), const Sizef& size = Sizef(), const Vector2f& speed = Vector2f(), const Color& color = Color::White, const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
+		* @param Blend The Blend Mode ( default BlendAlpha ) */
+		ScrollParallax( Graphics::SubTexture * subTexture, const Vector2f& position = Vector2f(), const Sizef& size = Sizef(), const Vector2f& speed = Vector2f(), const Color& color = Color::White, const BlendMode& Blend = BlendAlpha );
 
 		/** Create's the Scroll Parallax
 		* @param SubTexture The SubTexture to Draw
@@ -31,10 +31,10 @@ class EE_API ScrollParallax {
 		* @param Size The size of the parallax
 		* @param Speed Speed of movement ( in Pixels Per Second )
 		* @param Color The Texture Color
-		* @param Blend The Blend Mode ( default ALPHA_NORMAL )
+		* @param Blend The Blend Mode ( default BlendAlpha )
 		* @return True if success
 		*/
-		bool create( Graphics::SubTexture * subTexture, const Vector2f& position = Vector2f(), const Sizef& size = Sizef(), const Vector2f& speed = Vector2f(), const Color& color = Color::White, const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
+		bool create( Graphics::SubTexture * subTexture, const Vector2f& position = Vector2f(), const Sizef& size = Sizef(), const Vector2f& speed = Vector2f(), const Color& color = Color::White, const BlendMode& Blend = BlendAlpha );
 
 		/** Set the parallax texture color. */
 		void setColor( const Color& Color ) { mColor = Color; }
@@ -43,10 +43,10 @@ class EE_API ScrollParallax {
 		Color getColor() const { return mColor; }
 
 		/** Set the Blend Mode used. */
-		void setBlendMode( const EE_BLEND_MODE& Blend ) { mBlend = Blend; }
+		void setBlendMode( const BlendMode& Blend ) { mBlend = Blend; }
 
 		/** @return The Blend Mode used for the parallax. */
-		const EE_BLEND_MODE& getBlendMode() const { return mBlend; }
+		const BlendMode& getBlendMode() const { return mBlend; }
 
 		/** Draw the Scroll Parallax. */
 		void draw();
@@ -78,7 +78,7 @@ class EE_API ScrollParallax {
 		const Vector2f& getSpeed() const;
 	private:
 		Graphics::SubTexture * 		mSubTexture;
-		EE_BLEND_MODE		mBlend;
+		BlendMode		mBlend;
 		Color				mColor;
 		Vector2f			mInitPos;
 		Vector2f			mPos;

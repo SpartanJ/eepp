@@ -17,7 +17,7 @@ ParticleSystem::ParticleSystem() :
 	mPLeft( 0 ),
 	mLoops( 0 ),
 	mEffect( PSE_Nofx ),
-	mBlend( ALPHA_BLENDONE ),
+	mBlend( BlendAdd ),
 	mColor(),
 	mProgression( 0 ),
 	mDirection( 0 ),
@@ -462,11 +462,11 @@ bool ParticleSystem::isUsing() const {
 	return mUsed;
 }
 
-const EE_BLEND_MODE& ParticleSystem::getBlendMode() const {
+const BlendMode& ParticleSystem::getBlendMode() const {
 	return mBlend;
 }
 
-void ParticleSystem::setBlendMode( const EE_BLEND_MODE& mode ) {
+void ParticleSystem::setBlendMode( const BlendMode& mode ) {
 	mBlend = mode;
 }
 

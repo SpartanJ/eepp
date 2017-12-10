@@ -14,7 +14,7 @@ BatchRenderer::BatchRenderer() :
 	mNumVertex(0),
 	mTexture(NULL),
 	mTF( TextureFactory::instance() ),
-	mBlend(ALPHA_NORMAL),
+	mBlend(BlendAlpha),
 	mCurrentMode(DM_QUADS),
 	mRotation(0.0f),
 	mScale(1.0f,1.0f),
@@ -34,7 +34,7 @@ BatchRenderer::BatchRenderer( const unsigned int& Prealloc ) :
 	mNumVertex(0),
 	mTexture(NULL),
 	mTF( TextureFactory::instance() ),
-	mBlend(ALPHA_NORMAL),
+	mBlend(BlendAlpha),
 	mCurrentMode(DM_QUADS),
 	mRotation(0.0f),
 	mScale(1.0f,1.0f),
@@ -78,7 +78,7 @@ void BatchRenderer::setTexture( const Texture * Tex ) {
 	mTexture = Tex;
 }
 
-void BatchRenderer::setBlendMode( const EE_BLEND_MODE& Blend ) {
+void BatchRenderer::setBlendMode( const BlendMode& Blend ) {
 	if ( Blend != mBlend )
 		flush();
 

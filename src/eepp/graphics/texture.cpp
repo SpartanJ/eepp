@@ -509,11 +509,11 @@ bool Texture::isCompressed() const {
 	return 0 != ( mFlags & TEX_FLAG_COMPRESSED );
 }
 
-void Texture::draw( const Float &x, const Float &y, const Float &Angle, const Vector2f &Scale, const Color& Color, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, OriginPoint Center, const Rect& texSector) {
+void Texture::draw( const Float &x, const Float &y, const Float &Angle, const Vector2f &Scale, const Color& Color, const BlendMode &Blend, const EE_RENDER_MODE &Effect, OriginPoint Center, const Rect& texSector) {
 	drawEx( x, y, 0, 0, Angle, Scale, Color, Color, Color, Color, Blend, Effect, Center, texSector );
 }
 
-void Texture::drawFast( const Float& x, const Float& y, const Float& Angle, const Vector2f& Scale, const Color& Color, const EE_BLEND_MODE &Blend, const Float &width, const Float &height ) {
+void Texture::drawFast( const Float& x, const Float& y, const Float& Angle, const Vector2f& Scale, const Color& Color, const BlendMode &Blend, const Float &width, const Float &height ) {
 	Float w = 0.f != width	? width		: (Float)getImageWidth();
 	Float h = 0.f != height	? height	: (Float)getImageHeight();
 
@@ -534,7 +534,7 @@ void Texture::drawFast( const Float& x, const Float& y, const Float& Angle, cons
 	sBR->drawOpt();
 }
 
-void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &Angle, const Vector2f &Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, OriginPoint Center, const Rect& texSector ) {
+void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &Angle, const Vector2f &Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const BlendMode &Blend, const EE_RENDER_MODE &Effect, OriginPoint Center, const Rect& texSector ) {
 	bool renderSector	= true;
 	Rect Sector		= texSector;
 	Float w			= (Float)getImageWidth();
@@ -701,11 +701,11 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &
 	sBR->drawOpt();
 }
 
-void Texture::drawQuad( const Quad2f& Q, const Vector2f& Offset, const Float &Angle, const Vector2f &Scale, const Color& Color, const EE_BLEND_MODE &Blend, const Rect& texSector) {
+void Texture::drawQuad( const Quad2f& Q, const Vector2f& Offset, const Float &Angle, const Vector2f &Scale, const Color& Color, const BlendMode &Blend, const Rect& texSector) {
 	drawQuadEx( Q, Offset, Angle, Scale, Color, Color, Color, Color, Blend, texSector );
 }
 
-void Texture::drawQuadEx( Quad2f Q, const Vector2f& Offset, const Float &Angle, const Vector2f &Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const EE_BLEND_MODE &Blend, Rect texSector ) {
+void Texture::drawQuadEx( Quad2f Q, const Vector2f& Offset, const Float &Angle, const Vector2f &Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const BlendMode &Blend, Rect texSector ) {
 	bool renderSector = true;
 	Float w =	(Float)getImageWidth();
 	Float h = (Float)getImageHeight();
@@ -761,7 +761,7 @@ void Texture::draw( const Vector2f & position ) {
 }
 
 void Texture::draw(const Vector2f & position, const Sizef & size) {
-	drawFast( position.x, position.y, 0, Vector2f::One, mColor, ALPHA_NORMAL, size.x, size.y );
+	drawFast( position.x, position.y, 0, Vector2f::One, mColor, BlendAlpha, size.x, size.y );
 }
 
 }}
