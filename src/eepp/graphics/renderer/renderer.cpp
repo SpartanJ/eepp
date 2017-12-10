@@ -24,6 +24,7 @@ typedef void (APIENTRY * pglFramebufferRenderbuffer) (GLenum target, GLenum atta
 typedef GLenum (APIENTRY * pglCheckFramebufferStatus) (GLenum target);
 typedef void (APIENTRY * pglBindRenderbuffer) (GLenum target, GLuint renderbuffer);
 typedef void (APIENTRY * pglBlendFuncSeparate) (GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha);
+typedef void (APIENTRY * pglDiscardFramebufferEXT) (GLenum target, GLsizei numAttachments, const GLenum* attachments);
 
 Renderer * GLi = NULL;
 
@@ -769,6 +770,16 @@ unsigned int Renderer::checkFramebufferStatus( unsigned int target ) {
 		return (unsigned int)eeglCheckFramebufferStatus( target );
 
 	return 0;
+}
+
+void Renderer::discardFramebuffer( unsigned int target, int numAttachments, const unsigned int * attachments ) {
+	static pglDiscardFramebufferEXT eeglDiscardFramebuffer = NULL;
+
+	if ( NULL == eeglDiscardFramebuffer )
+		eeglDiscardFramebuffer = (pglDiscardFramebufferEXT)getProcAddress("glDiscardFramebuffer");
+
+	if ( NULL != eeglDiscardFramebuffer )
+		return eeglDiscardFramebuffer( target, numAttachments, attachments );
 }
 
 void Renderer::deleteFramebuffers( int n, const unsigned int * framebuffers ) {

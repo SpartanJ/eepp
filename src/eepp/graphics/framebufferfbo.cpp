@@ -224,6 +224,17 @@ void FrameBufferFBO::bindFrameBuffer() {
 	mLastFB = (Int32)curFB;
 
 	GLi->bindFramebuffer( GL_FRAMEBUFFER, mFrameBuffer );
+
+	if ( !mDepthBuffer && !mStencilBuffer ) {
+		const GLenum discards[]  = {GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT};
+		GLi->discardFramebuffer( GL_FRAMEBUFFER, 2, discards );
+	} else if ( !mDepthBuffer ) {
+		const GLenum discards[]  = {GL_DEPTH_ATTACHMENT};
+		GLi->discardFramebuffer( GL_FRAMEBUFFER, 1, discards );
+	} else if ( !mStencilBuffer ) {
+		const GLenum discards[]  = {GL_STENCIL_ATTACHMENT};
+		GLi->discardFramebuffer( GL_FRAMEBUFFER, 1, discards );
+	}
 }
 
 void FrameBufferFBO::bindDepthBuffer() {

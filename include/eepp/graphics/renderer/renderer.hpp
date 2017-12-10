@@ -235,6 +235,8 @@ class EE_API Renderer {
 		void framebufferRenderbuffer( unsigned int target, unsigned int attachment, unsigned int renderbuffertarget, unsigned int renderbuffer );
 
 		unsigned int checkFramebufferStatus( unsigned int target );
+
+		void discardFramebuffer( unsigned int target, int numAttachments, const unsigned int* attachments );
 	protected:
 		static Renderer * sSingleton;
 
