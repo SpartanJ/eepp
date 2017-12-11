@@ -12,6 +12,18 @@ namespace EE { namespace Graphics {
 
 class EE_API Texture : public Image, public Drawable, private NonCopyable {
 	public:
+		/** @enum TextureFilter Defines the texture filter used. */
+		enum TextureFilter {
+			TEXTURE_FILTER_LINEAR, 			//!< Linear filtering (Smoothed Zoom)
+			TEXTURE_FILTER_NEAREST 			//!< No filtering (Pixeled Zoom)
+		};
+
+		/** @enum ClampMode Set the clamp mode of the texture. */
+		enum ClampMode {
+			CLAMP_TO_EDGE,
+			CLAMP_REPEAT
+		};
+
 		static Uint32 getMaximumSize();
 
 		/** Set the OpenGL Texture Id (texture handle) */
@@ -42,10 +54,10 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		bool getMipmap() const;
 
 		/** Set the Texture Clamp Mode */
-		void setClampMode( const EE_CLAMP_MODE& clampmode );
+		void setClampMode( const Texture::ClampMode& clampmode );
 
 		/** @return The Texture Clamp Mode */
-		EE_CLAMP_MODE getClampMode() const { return mClampMode; }
+		ClampMode getClampMode() const { return mClampMode; }
 
 		/** Lock the Texture for direct access.
 		**	It is needed to have any read/write access to the texture. This feature is not supported in OpenGL ES. */
@@ -62,13 +74,13 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		const Uint8* getPixelsPtr();
 
 		/** Set the Texture Filter Mode */
-		void setFilter( const EE_TEX_FILTER& filter );
+		void setFilter( const TextureFilter& filter );
 
 		/** @return The texture filter used by the texture */
-		const EE_TEX_FILTER& getFilter() const;
+		const TextureFilter& getFilter() const;
 
 		/** Save the Texture to a new File */
-		bool saveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format );
+		bool saveToFile( const std::string& filepath, const Image::SaveType& Format );
 
 		/** Replace a color on the texture */
 		void replaceColor( const Color& ColorKey, const Color& NewColor);
@@ -80,10 +92,10 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		void fillWithColor( const Color& Color );
 
 		/** Resize the texture */
-		void resize( const Uint32& newWidth, const Uint32& newHeight, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
+		void resize( const Uint32& newWidth, const Uint32& newHeight, ResamplerFilter filter = ResamplerFilter::RESAMPLER_LANCZOS4 );
 
 		/** Scale the texture */
-		void scale( const Float& scale, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
+		void scale( const Float& scale, ResamplerFilter filter = ResamplerFilter::RESAMPLER_LANCZOS4 );
 
 		/** Copy an image inside the texture */
 		void copyImage( Image * image, const Uint32& x, const Uint32& y );
@@ -102,7 +114,7 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		**	@param x X offset in the texture where to copy the source pixels
 		**	@param y Y offset in the texture where to copy the source pixels
 		**	@param pf The pixel format of the @a pixel */
-		void update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x = 0, Uint32 y = 0, EE_PIXEL_FORMAT pf = PF_RGBA );
+		void update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x = 0, Uint32 y = 0, PixelFormat pf = PixelFormat::PIXEL_FORMAT_RGBA );
 
 		/** @brief Update the whole texture from an array of pixels
 		**	The @a pixel array is assumed to have the same size as
@@ -171,7 +183,7 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		* @param Center The rotation and scaling center. The center point is relative to the top-left corner of the object.
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void draw( const Float &x, const Float &y, const Float &Angle = 0, const Vector2f &scale = Vector2f::One, const Color& color = Color::White, const BlendMode &Blend = BlendAlpha, const EE_RENDER_MODE &Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter), const Rect& texSector = Rect(0,0,0,0) );
+		void draw( const Float &x, const Float &y, const Float &Angle = 0, const Vector2f &scale = Vector2f::One, const Color& color = Color::White, const BlendMode &Blend = BlendAlpha, const RenderMode &Effect = RENDER_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter), const Rect& texSector = Rect(0,0,0,0) );
 
 		/** Render the texture on screen. Extended because can set the vertex colors individually
 		* @param x The x position on screen
@@ -189,7 +201,7 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		* @param Center The rotation and scaling center. The center point is relative to the top-left corner of the object.
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void drawEx( Float x, Float y, Float width = 0.0f, Float height = 0.0f, const Float &Angle = 0, const Vector2f &scale = Vector2f::One, const Color& Color0 = Color::White, const Color& Color1 = Color(255,255,255,255), const Color& Color2 = Color(255,255,255,255), const Color& Color3 = Color(255,255,255,255), const BlendMode &Blend = BlendAlpha, const EE_RENDER_MODE &Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter), const Rect& texSector = Rect(0,0,0,0) );
+		void drawEx( Float x, Float y, Float width = 0.0f, Float height = 0.0f, const Float &Angle = 0, const Vector2f &scale = Vector2f::One, const Color& Color0 = Color::White, const Color& Color1 = Color(255,255,255,255), const Color& Color2 = Color(255,255,255,255), const Color& Color3 = Color(255,255,255,255), const BlendMode &Blend = BlendAlpha, const RenderMode &Effect = RENDER_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter), const Rect& texSector = Rect(0,0,0,0) );
 
 		/** Render a quad on Screen
 		* @param Q The Quad2f
@@ -260,11 +272,11 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 
 		Texture();
 
-		Texture( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& channels, const std::string& filepath, const EE_CLAMP_MODE& clampMode, const bool& CompressedTexture, const Uint32& memSize = 0, const Uint8* data = NULL );
+		Texture( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& channels, const std::string& filepath, const Texture::ClampMode& clampMode, const bool& CompressedTexture, const Uint32& memSize = 0, const Uint8* data = NULL );
 
 		Texture( const Texture& copy );
 
-		void create( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& channels, const std::string& filepath, const EE_CLAMP_MODE& clampMode, const bool& CompressedTexture, const Uint32& memSize = 0, const Uint8* data = NULL );
+		void create( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& channels, const std::string& filepath, const Texture::ClampMode& clampMode, const bool& CompressedTexture, const Uint32& memSize = 0, const Uint8* data = NULL );
 
 		std::string 	mFilepath;
 		std::string		mName;
@@ -278,8 +290,8 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 
 		Uint32			mFlags;
 
-		EE_CLAMP_MODE 	mClampMode;
-		EE_TEX_FILTER 	mFilter;
+		ClampMode 	mClampMode;
+		TextureFilter 	mFilter;
 
 		int				mInternalFormat;
 
@@ -287,7 +299,7 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 
 		Uint8 * 		iLock( const bool& ForceRGBA, const bool& KeepFormat );
 
-		void			iTextureFilter( const EE_TEX_FILTER& filter );
+		void			iTextureFilter( const TextureFilter& filter );
 };
 
 }}

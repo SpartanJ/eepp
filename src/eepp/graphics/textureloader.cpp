@@ -60,7 +60,7 @@ namespace jpeg
 
 TextureLoader::TextureLoader( IOStream& Stream,
 	const bool& Mipmap,
-	const EE_CLAMP_MODE& ClampMode,
+	const Texture::ClampMode& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
 ) : ObjectLoader( ObjectLoader::TextureLoader ),
@@ -91,7 +91,7 @@ TextureLoader::TextureLoader( IOStream& Stream,
 
 TextureLoader::TextureLoader( const std::string& Filepath,
 	const bool& Mipmap,
-	const EE_CLAMP_MODE& ClampMode,
+	const Texture::ClampMode& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
 ) : ObjectLoader( ObjectLoader::TextureLoader ),
@@ -123,7 +123,7 @@ TextureLoader::TextureLoader( const std::string& Filepath,
 TextureLoader::TextureLoader( const unsigned char * ImagePtr,
 	const unsigned int& Size,
 	const bool& Mipmap,
-	const EE_CLAMP_MODE& ClampMode,
+	const Texture::ClampMode& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
 ) : ObjectLoader( ObjectLoader::TextureLoader ),
@@ -155,7 +155,7 @@ TextureLoader::TextureLoader( const unsigned char * ImagePtr,
 TextureLoader::TextureLoader( Pack * Pack,
 	const std::string& FilePackPath,
 	const bool& Mipmap ,
-	const EE_CLAMP_MODE& ClampMode,
+	const Texture::ClampMode& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
 ) : ObjectLoader( ObjectLoader::TextureLoader ),
@@ -189,7 +189,7 @@ TextureLoader::TextureLoader( const unsigned char * Pixels,
 	const unsigned int& Height,
 	const unsigned int& Channels,
 	const bool& Mipmap,
-	const EE_CLAMP_MODE& ClampMode,
+	const Texture::ClampMode& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy,
 	const std::string& FileName
@@ -421,7 +421,7 @@ void TextureLoader::loadFromPixels() {
 
 			Uint32 flags = mMipmap ? SOIL_FLAG_MIPMAPS | SOIL_FLAG_GL_MIPMAPS : 0;
 
-			flags = ( mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
+			flags = ( mClampMode == Texture::ClampMode::CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 			flags = ( mCompressTexture ) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;
 
 			bool ForceGLThreaded = Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();

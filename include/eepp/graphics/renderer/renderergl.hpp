@@ -60,8 +60,6 @@ class EE_API RendererGL : public Renderer {
 
 		void clip2DPlaneDisable();
 
-		void texEnvi( unsigned int target, unsigned int pname, int param );
-
 		void multMatrixf ( const float *m );
 
 		void loadMatrixf( const float *m );

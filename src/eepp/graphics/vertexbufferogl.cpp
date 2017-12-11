@@ -5,7 +5,7 @@
 
 namespace EE { namespace Graphics {
 
-VertexBufferOGL::VertexBufferOGL( const Uint32& VertexFlags, EE_DRAW_MODE DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) :
+VertexBufferOGL::VertexBufferOGL( const Uint32& VertexFlags, PrimitiveType DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) :
 	VertexBuffer( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType )
 {
 }

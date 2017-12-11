@@ -83,7 +83,7 @@ void ArcDrawable::setSegmentsCount(const Uint32 & segmentsCount) {
 }
 
 void ArcDrawable::updateVertex() {
-	prepareVertexBuffer( mFillMode == DRAW_LINE ? DM_LINE_STRIP : DM_TRIANGLE_FAN );
+	prepareVertexBuffer( mFillMode == DRAW_LINE ? PRIMITIVE_LINE_STRIP : PRIMITIVE_TRIANGLE_FAN );
 
 	Float angleShift =  360 / static_cast<Float>(mSegmentsCount);
 	Float arcAngleA = mArcAngle > 360 ? mArcAngle - 360 * std::floor( mArcAngle / 360 ) : mArcAngle;

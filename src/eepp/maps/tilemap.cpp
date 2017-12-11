@@ -147,7 +147,7 @@ void TileMap::createEmptyTile() {
 			Img.getHeight(),
 			Img.getChannels(),
 			true,
-			CLAMP_TO_EDGE,
+			Texture::ClampMode::CLAMP_TO_EDGE,
 			false,
 			false,
 			tileName

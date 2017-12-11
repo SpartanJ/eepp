@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/renderer/base.hpp>
 #include <eepp/graphics/shaderprogram.hpp>
+#include <eepp/graphics/primitivetype.hpp>
 #include <eepp/graphics/renderer/rendererhelper.hpp>
 #include <eepp/graphics/renderer/clippingmask.hpp>
 
@@ -63,14 +64,6 @@ class EE_API Renderer {
 
 		bool shadersSupported();
 
-		Uint32 getTextureParamEnum( const EE_TEXTURE_PARAM& Type );
-
-		Uint32 getTextureFuncEnum( const EE_TEXTURE_FUNC& Type );
-
-		Uint32 getTextureSourceEnum( const EE_TEXTURE_SOURCE& Type );
-
-		Uint32 getTextureOpEnum( const EE_TEXTURE_OP& Type );
-
 		void clear ( unsigned int mask );
 
 		void clearColor ( float red, float green, float blue, float alpha );
@@ -109,7 +102,7 @@ class EE_API Renderer {
 		bool isLineSmooth();
 
 		/** Set the polygon fill mode ( wireframe or filled ) */
-		void polygonMode( const EE_FILL_MODE& Mode );
+		void polygonMode( const PrimitiveFillMode& Mode );
 
 		/** Reapply the polygon mode */
 		void polygonMode();
@@ -177,8 +170,6 @@ class EE_API Renderer {
 		virtual void multMatrixf( const float *m ) = 0;
 
 		virtual void clipPlane( unsigned int plane, const double *equation ) = 0;
-
-		virtual void texEnvi( unsigned int target, unsigned int pname, int param ) = 0;
 
 		virtual void loadMatrixf( const float *m ) = 0;
 

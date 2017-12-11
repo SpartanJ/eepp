@@ -296,73 +296,6 @@ bool Renderer::shadersSupported() {
 #endif
 }
 
-Uint32 Renderer::getTextureParamEnum( const EE_TEXTURE_PARAM& Type ) {
-	#ifndef EE_GLES
-	switch( Type ) {
-		case TEX_PARAM_COLOR_FUNC:			return GL_COMBINE_RGB_ARB;
-		case TEX_PARAM_ALPHA_FUNC:			return GL_COMBINE_ALPHA_ARB;
-		case TEX_PARAM_COLOR_SOURCE_0:		return GL_SOURCE0_RGB_ARB;
-		case TEX_PARAM_COLOR_SOURCE_1:		return GL_SOURCE1_RGB_ARB;
-		case TEX_PARAM_COLOR_SOURCE_2:		return GL_SOURCE2_RGB_ARB;
-		case TEX_PARAM_ALPHA_SOURCE_0:		return GL_SOURCE0_ALPHA_ARB;
-		case TEX_PARAM_ALPHA_SOURCE_1:		return GL_SOURCE1_ALPHA_ARB;
-		case TEX_PARAM_ALPHA_SOURCE_2:		return GL_SOURCE2_ALPHA_ARB;
-		case TEX_PARAM_COLOR_OP_0:			return GL_OPERAND0_RGB_ARB;
-		case TEX_PARAM_COLOR_OP_1:			return GL_OPERAND1_RGB_ARB;
-		case TEX_PARAM_COLOR_OP_2:			return GL_OPERAND2_RGB_ARB;
-		case TEX_PARAM_ALPHA_OP_0:			return GL_OPERAND0_ALPHA_ARB;
-		case TEX_PARAM_ALPHA_OP_1:			return GL_OPERAND1_ALPHA_ARB;
-		case TEX_PARAM_ALPHA_OP_2:			return GL_OPERAND2_ALPHA_ARB;
-		case TEX_PARAM_COLOR_SCALE:			return GL_RGB_SCALE_ARB;
-		case TEX_PARAM_ALPHA_SCALE:			return GL_ALPHA_SCALE;
-	}
-	#endif
-
-	return 0;
-}
-
-Uint32 Renderer::getTextureFuncEnum( const EE_TEXTURE_FUNC& Type ) {
-	#ifndef EE_GLES2
-	switch( Type ) {
-		case TEX_FUNC_MODULATE:			return GL_MODULATE;
-		case TEX_FUNC_REPLACE:			return GL_REPLACE;
-		case TEX_FUNC_ADD:				return GL_ADD;
-		case TEX_FUNC_SUBSTRACT:		return GL_SUBTRACT_ARB;
-		case TEX_FUNC_ADD_SIGNED:		return GL_ADD_SIGNED_ARB;
-		case TEX_FUNC_INTERPOLATE:		return GL_INTERPOLATE_ARB;
-		case TEX_FUNC_DOT3_RGB:			return GL_DOT3_RGB_ARB;
-		case TEX_FUNC_DOT3_RGBA:		return GL_DOT3_RGBA_ARB;
-	}
-	#endif
-	return 0;
-}
-
-Uint32 Renderer::getTextureSourceEnum( const EE_TEXTURE_SOURCE& Type ) {
-	#ifndef EE_GLES2
-	switch ( Type ) {
-		case TEX_SRC_TEXTURE:	return GL_TEXTURE;
-		case TEX_SRC_CONSTANT:	return GL_CONSTANT_ARB;
-		case TEX_SRC_PRIMARY:	return GL_PRIMARY_COLOR_ARB;
-		case TEX_SRC_PREVIOUS:	return GL_PREVIOUS_ARB;
-	}
-	#endif
-
-	return 0;
-}
-
-Uint32 Renderer::getTextureOpEnum( const EE_TEXTURE_OP& Type ) {
-	#ifndef EE_GLES2
-	switch ( Type ) {
-		case TEX_OP_COLOR:				return GL_SRC_COLOR;
-		case TEX_OP_ONE_MINUS_COLOR:	return GL_ONE_MINUS_SRC_COLOR;
-		case TEX_OP_ALPHA:				return GL_SRC_ALPHA;
-		case TEX_OP_ONE_MINUS_ALPHA:	return GL_ONE_MINUS_SRC_ALPHA;
-	}
-	#endif
-
-	return 0;
-}
-
 std::string Renderer::getExtensions() {
 	std::string exts;
 
@@ -552,7 +485,7 @@ void Renderer::lineWidth(float width) {
 }
 
 void Renderer::polygonMode() {
-	EE_FILL_MODE Mode = DRAW_FILL;
+	PrimitiveFillMode Mode = DRAW_FILL;
 
 	if ( BitOp::readBitKey( &mStateFlags, RSF_POLYGON_MODE ) )
 		Mode = DRAW_LINE;
@@ -564,7 +497,7 @@ void Renderer::pixelStorei(unsigned int pname, int param) {
 	glPixelStorei( pname, param );
 }
 
-void Renderer::polygonMode( const EE_FILL_MODE& Mode ) {
+void Renderer::polygonMode( const PrimitiveFillMode& Mode ) {
 	if ( Mode == DRAW_FILL )
 		polygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	else

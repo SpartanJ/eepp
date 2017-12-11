@@ -126,12 +126,12 @@ void SubTexture::setOffset( const Vector2i& offset ) {
 	mOffset = offset;
 }
 
-void SubTexture::draw( const Float& X, const Float& Y, const Color& Color, const Float& Angle, const Vector2f& Scale, const BlendMode& Blend, const EE_RENDER_MODE& Effect, OriginPoint Center ) {
+void SubTexture::draw( const Float& X, const Float& Y, const Color& Color, const Float& Angle, const Vector2f& Scale, const BlendMode& Blend, const RenderMode& Effect, OriginPoint Center ) {
 	if ( NULL != mTexture )
 		mTexture->drawEx( X + mOffset.x, Y + mOffset.y, mDestSize.x, mDestSize.y, Angle, Scale, Color, Color, Color, Color, Blend, Effect, Center, mSrcRect );
 }
 
-void SubTexture::draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const BlendMode& Blend, const EE_RENDER_MODE& Effect, OriginPoint Center ) {
+void SubTexture::draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const BlendMode& Blend, const RenderMode& Effect, OriginPoint Center ) {
 	if ( NULL != mTexture )
 		mTexture->drawEx( X + mOffset.x, Y + mOffset.y, mDestSize.x, mDestSize.y, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, Center, mSrcRect );
 }
@@ -351,13 +351,13 @@ const Uint8* SubTexture::getPixelsPtr() {
 	return reinterpret_cast<const Uint8*> (&mPixels[0]);
 }
 
-bool SubTexture::saveToFile(const std::string& filepath, const EE_SAVE_TYPE& Format) {
+bool SubTexture::saveToFile(const std::string& filepath, const Image::SaveType & Format) {
 	bool Res = false;
 
 	lock();
 
 	if ( NULL != mTexture ) {
-		if ( SAVE_TYPE_JPG != Format ) {
+		if ( Image::SaveType::SAVE_TYPE_JPG != Format ) {
 			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, getRealSize().getWidth(), getRealSize().getHeight(), mTexture->getChannels(), getPixelsPtr() ) );
 		} else {
 			jpge::params params;

@@ -84,8 +84,6 @@ class EE_API RendererGL3 : public Renderer {
 
 		void clipPlane( unsigned int plane, const double *equation );
 
-		void texEnvi( unsigned int target, unsigned int pname, int param );
-
 		void loadMatrixf( const float *m );
 
 		void frustum( float left, float right, float bottom, float top, float near_val, float far_val );

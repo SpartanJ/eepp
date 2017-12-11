@@ -128,7 +128,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		Rock.setAnimationSpeed( 32 );
 
 		// Set the render mode of the sprite
-		Blindy.setRenderMode( RN_MIRROR );
+		Blindy.setRenderMode( RENDER_MIRROR );
 
 		// Set the Blend Mode of the sprite
 		Blindy.setBlendMode( BlendAdd );

@@ -145,7 +145,7 @@ void RectangleDrawable::updateVertex() {
 	if ( mCorners == 0 )
 		return;
 
-	prepareVertexBuffer( mFillMode == DRAW_LINE ? DM_LINE_LOOP : DM_TRIANGLE_FAN );
+	prepareVertexBuffer( mFillMode == DRAW_LINE ? PRIMITIVE_LINE_LOOP : PRIMITIVE_TRIANGLE_FAN );
 
 	unsigned int i;
 	Sizef size			= mSize;

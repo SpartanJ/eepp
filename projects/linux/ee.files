@@ -9,10 +9,10 @@
 ../../include/eepp/graphics/fontstyleconfig.hpp
 ../../include/eepp/graphics/fonttruetype.hpp
 ../../include/eepp/graphics/fonttruetypeloader.hpp
-../../include/eepp/graphics/graphicshelper.hpp
 ../../include/eepp/graphics/ninepatch.hpp
 ../../include/eepp/graphics/ninepatchmanager.hpp
 ../../include/eepp/graphics/primitivedrawable.hpp
+../../include/eepp/graphics/primitivetype.hpp
 ../../include/eepp/graphics/rectangledrawable.hpp
 ../../include/eepp/graphics/renderer/base.hpp
 ../../include/eepp/graphics/renderer/clippingmask.hpp
@@ -24,6 +24,7 @@
 ../../include/eepp/graphics/renderer/renderergl3cp.hpp
 ../../include/eepp/graphics/renderer/renderergles2.hpp
 ../../include/eepp/graphics/renderer/rendererhelper.hpp
+../../include/eepp/graphics/rendermode.hpp
 ../../include/eepp/graphics/text.hpp
 ../../include/eepp/graphics/vertexbufferhelper.hpp
 ../../include/eepp/math/interpolation1d.hpp

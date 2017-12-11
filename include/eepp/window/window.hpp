@@ -3,6 +3,7 @@
 
 #include <eepp/window/base.hpp>
 #include <eepp/window/view.hpp>
+#include <eepp/graphics/image.hpp>
 
 namespace EE { namespace Window {
 
@@ -310,7 +311,7 @@ class EE_API Window {
 		* You can set only the path to save the files, like "screenshots/"
 		* @return False if failed, otherwise returns True
 		*/
-		bool takeScreenshot( std::string filepath = "", const EE_SAVE_TYPE& Format = SAVE_TYPE_PNG );
+		bool takeScreenshot( std::string filepath = "", const Image::SaveType& Format = Image::SaveType::SAVE_TYPE_PNG );
 
 		/** @return The pointer to the Window Info ( read only ) */
 		const WindowInfo * getWindowInfo() const;

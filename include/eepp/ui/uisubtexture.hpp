@@ -33,9 +33,9 @@ class EE_API UISubTexture : public UIWidget {
 
 		void setColor( const Color& col );
 
-		const EE_RENDER_MODE& getRenderMode() const;
+		const RenderMode& getRenderMode() const;
 
-		void setRenderMode( const EE_RENDER_MODE& render );
+		void setRenderMode( const RenderMode& render );
 
 		const Vector2i& getAlignOffset() const;
 
@@ -48,7 +48,7 @@ class EE_API UISubTexture : public UIWidget {
 		Uint32					mScaleType;
 		Graphics::SubTexture * 	mSubTexture;
 		Color					mColor;
-		EE_RENDER_MODE			mRender;
+		RenderMode			mRender;
 		Vector2i				mAlignOffset;
 
 		virtual void onSizeChange();

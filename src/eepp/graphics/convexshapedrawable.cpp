@@ -40,7 +40,7 @@ void ConvexShapeDrawable::resetPoints() {
 }
 
 void ConvexShapeDrawable::updateVertex() {
-	prepareVertexBuffer( mFillMode == DRAW_LINE ? DM_LINE_LOOP : DM_TRIANGLE_FAN );
+	prepareVertexBuffer( mFillMode == DRAW_LINE ? PRIMITIVE_LINE_LOOP : PRIMITIVE_TRIANGLE_FAN );
 
 	if ( mPolygon.getSize() == 0 )
 		return;

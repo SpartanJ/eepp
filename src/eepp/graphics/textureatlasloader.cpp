@@ -418,7 +418,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 
 			tp.packTextures();
 
-			tp.save( tapath, (EE_SAVE_TYPE)mTexGrHdr.Format );
+			tp.save( tapath, (Image::SaveType)mTexGrHdr.Format );
 		} else if ( 1 == NeedUpdate ) {
 			std::string etapath = FileSystem::fileRemoveExtension( tapath ) + EE_TEXTURE_ATLAS_EXTENSION;
 
@@ -472,7 +472,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 
 					fs.write( reinterpret_cast<const char*> (&tTexAtlas->SubTextures[0]), sizeof(sSubTextureHdr) * tTexHdr->SubTextureCount );
 
-					Img.saveToFile( tapath, (EE_SAVE_TYPE)mTexGrHdr.Format );
+					Img.saveToFile( tapath, (Image::SaveType)mTexGrHdr.Format );
 
 					if ( imgPtr )
 						free( imgPtr );

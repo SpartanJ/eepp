@@ -12,31 +12,31 @@
 
 namespace EE { namespace Graphics {
 
-static const char * get_resampler_name( EE_RESAMPLER_FILTER filter ) {
+static const char * get_resampler_name( Image::ResamplerFilter filter ) {
 	switch ( filter )
 	{
-		case RESAMPLER_BOX: return "box";
-		case RESAMPLER_TENT: return "tent";
-		case RESAMPLER_BELL: return "bell";
-		case RESAMPLER_BSPLINE: return "b-spline";
-		case RESAMPLER_MITCHELL: return "mitchell";
-		case RESAMPLER_LANCZOS3: return "lanczos3";
-		case RESAMPLER_BLACKMAN: return "blackman";
-		case RESAMPLER_LANCZOS4: return "lanczos4";
-		case RESAMPLER_LANCZOS6: return "lanczos6";
-		case RESAMPLER_LANCZOS12: return "lanczos12";
-		case RESAMPLER_KAISER: return "kaiser";
-		case RESAMPLER_GAUSSIAN: return "gaussian";
-		case RESAMPLER_CATMULLROM: return "catmullrom";
-		case RESAMPLER_QUADRATIC_INTERP: return "quadratic_interp";
-		case RESAMPLER_QUADRATIC_APPROX: return "quadratic_approx";
-		case RESAMPLER_QUADRATIC_MIX: return "quadratic_mix";
+		case Image::ResamplerFilter::RESAMPLER_BOX: return "box";
+		case Image::ResamplerFilter::RESAMPLER_TENT: return "tent";
+		case Image::ResamplerFilter::RESAMPLER_BELL: return "bell";
+		case Image::ResamplerFilter::RESAMPLER_BSPLINE: return "b-spline";
+		case Image::ResamplerFilter::RESAMPLER_MITCHELL: return "mitchell";
+		case Image::ResamplerFilter::RESAMPLER_LANCZOS3: return "lanczos3";
+		case Image::ResamplerFilter::RESAMPLER_BLACKMAN: return "blackman";
+		case Image::ResamplerFilter::RESAMPLER_LANCZOS4: return "lanczos4";
+		case Image::ResamplerFilter::RESAMPLER_LANCZOS6: return "lanczos6";
+		case Image::ResamplerFilter::RESAMPLER_LANCZOS12: return "lanczos12";
+		case Image::ResamplerFilter::RESAMPLER_KAISER: return "kaiser";
+		case Image::ResamplerFilter::RESAMPLER_GAUSSIAN: return "gaussian";
+		case Image::ResamplerFilter::RESAMPLER_CATMULLROM: return "catmullrom";
+		case Image::ResamplerFilter::RESAMPLER_QUADRATIC_INTERP: return "quadratic_interp";
+		case Image::ResamplerFilter::RESAMPLER_QUADRATIC_APPROX: return "quadratic_approx";
+		case Image::ResamplerFilter::RESAMPLER_QUADRATIC_MIX: return "quadratic_mix";
 	}
 
 	return "lanczos4";
 }
 
-static unsigned char * resample_image( unsigned char* pSrc_image, int src_width, int src_height, int n, int dst_width, int dst_height, EE_RESAMPLER_FILTER filter ) {
+static unsigned char * resample_image( unsigned char* pSrc_image, int src_width, int src_height, int n, int dst_width, int dst_height, Image::ResamplerFilter filter ) {
 	const int max_components = 4;
 
 	if ((std::max(src_width, src_height) > RESAMPLER_MAX_DIMENSION) || (n > max_components))
@@ -163,12 +163,12 @@ void Image::jpegQuality( Uint32 level ) {
 
 std::string Image::saveTypeToExtension( const Int32& Format ) {
 	switch( Format ) {
-		case SAVE_TYPE_TGA: return "tga";
-		case SAVE_TYPE_BMP: return "bmp";
-		case SAVE_TYPE_PNG: return "png";
-		case SAVE_TYPE_DDS: return "dds";
-		case SAVE_TYPE_JPG: return "jpg";
-		case SAVE_TYPE_UNKNOWN:
+		case Image::SaveType::SAVE_TYPE_TGA: return "tga";
+		case Image::SaveType::SAVE_TYPE_BMP: return "bmp";
+		case Image::SaveType::SAVE_TYPE_PNG: return "png";
+		case Image::SaveType::SAVE_TYPE_DDS: return "dds";
+		case Image::SaveType::SAVE_TYPE_JPG: return "jpg";
+		case Image::SaveType::SAVE_TYPE_UNKNOWN:
 		default:
 			break;
 	}
@@ -176,27 +176,27 @@ std::string Image::saveTypeToExtension( const Int32& Format ) {
 	return "";
 }
 
-EE_SAVE_TYPE Image::extensionToSaveType( const std::string& Extension ) {
-	EE_SAVE_TYPE saveType = SAVE_TYPE_UNKNOWN;
+Image::SaveType Image::extensionToSaveType( const std::string& Extension ) {
+	SaveType saveType = SaveType::SAVE_TYPE_UNKNOWN;
 
-	if ( Extension == "tga" )		saveType = SAVE_TYPE_TGA;
-	else if ( Extension == "bmp" )	saveType = SAVE_TYPE_BMP;
-	else if ( Extension == "png" )	saveType = SAVE_TYPE_PNG;
-	else if ( Extension == "dds" )	saveType = SAVE_TYPE_DDS;
-	else if ( Extension == "jpg" || Extension == "jpeg" ) saveType = SAVE_TYPE_JPG;
+	if ( Extension == "tga" )		saveType = SaveType::SAVE_TYPE_TGA;
+	else if ( Extension == "bmp" )	saveType = SaveType::SAVE_TYPE_BMP;
+	else if ( Extension == "png" )	saveType = SaveType::SAVE_TYPE_PNG;
+	else if ( Extension == "dds" )	saveType = SaveType::SAVE_TYPE_DDS;
+	else if ( Extension == "jpg" || Extension == "jpeg" ) saveType = SaveType::SAVE_TYPE_JPG;
 
 	return saveType;
 }
 
-EE_PIXEL_FORMAT Image::channelsToPixelFormat( const Uint32& channels ) {
-	EE_PIXEL_FORMAT pf = PF_RGBA;;
+Image::PixelFormat Image::channelsToPixelFormat( const Uint32& channels ) {
+	PixelFormat pf = PixelFormat::PIXEL_FORMAT_RGBA;
 
 	if ( 3 == channels )
-		pf = PF_RGB;
+		pf = PixelFormat::PIXEL_FORMAT_RGB;
 	else if ( 2 == channels )
-		pf = PF_RG;
+		pf = PixelFormat::PIXEL_FORMAT_RG;
 	else if ( 1 == channels )
-		pf = PF_RED;
+		pf = PixelFormat::PIXEL_FORMAT_RED;
 
 	return pf;
 }
@@ -478,7 +478,7 @@ unsigned int Image::getChannels() const {
 	return mChannels;
 }
 
-bool Image::saveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format ) {
+bool Image::saveToFile(const std::string& filepath, const SaveType & Format ) {
 	bool Res = false;
 
 	std::string fpath( FileSystem::fileRemoveFileName( filepath ));
@@ -487,7 +487,7 @@ bool Image::saveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format 
 		FileSystem::makeDir( fpath );
 
 	if ( NULL != mPixels && 0 != mWidth && 0 != mHeight && 0 != mChannels ) {
-		if ( SAVE_TYPE_JPG != Format ) {
+		if ( SaveType::SAVE_TYPE_JPG != Format ) {
 			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, (Int32)mWidth, (Int32)mHeight, mChannels, getPixelsPtr() ) );
 		} else {
 			jpge::params params;
@@ -588,7 +588,7 @@ void Image::copyImage( Graphics::Image * image, const Uint32& x, const Uint32& y
 	}
 }
 
-void Image::resize( const Uint32 &newWidth, const Uint32 &newHeight , EE_RESAMPLER_FILTER filter ) {
+void Image::resize( const Uint32 &newWidth, const Uint32 &newHeight , ResamplerFilter filter ) {
 	if ( NULL != mPixels && mWidth != newWidth && mHeight != newHeight ) {
 		unsigned char * resampled = resample_image( mPixels, mWidth, mHeight, mChannels, newWidth, newHeight, filter );
 
@@ -603,7 +603,7 @@ void Image::resize( const Uint32 &newWidth, const Uint32 &newHeight , EE_RESAMPL
 	}
 }
 
-void Image::scale( const Float& scale , EE_RESAMPLER_FILTER filter ) {
+void Image::scale( const Float& scale , ResamplerFilter filter ) {
 	if ( 1.f == scale )
 		return;
 
@@ -613,7 +613,7 @@ void Image::scale( const Float& scale , EE_RESAMPLER_FILTER filter ) {
 	resize( new_width, new_height, filter );
 }
 
-Graphics::Image * Image::thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, EE_RESAMPLER_FILTER filter ) {
+Graphics::Image * Image::thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, ResamplerFilter filter ) {
 	if ( NULL != mPixels ) {
 		Float iScaleX 	= ( (Float)maxWidth / (Float)mWidth );
 		Float iScaleY 	= ( (Float)maxHeight / (Float)mHeight );

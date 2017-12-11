@@ -21,8 +21,12 @@ using namespace EE::Math;
 #include <eepp/system/filesystem.hpp>
 using namespace EE::System;
 
-#include <eepp/graphics/graphicshelper.hpp>
+#include <eepp/graphics/rendermode.hpp>
 #include <eepp/graphics/blendmode.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
+
+#ifndef EE_MAX_TEXTURE_UNITS
+#define EE_MAX_TEXTURE_UNITS 4
+#endif
 
 #endif

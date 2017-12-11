@@ -26,42 +26,42 @@ TextureFactory::~TextureFactory() {
 	unloadTextures();
 }
 
-Uint32 TextureFactory::createEmptyTexture( const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const Color& DefaultColor, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+Uint32 TextureFactory::createEmptyTexture( const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const Color& DefaultColor, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
 	Image TmpImg( Width, Height, Channels, DefaultColor );
 	return loadFromPixels( TmpImg.getPixelsPtr(), Width, Height, Channels, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 }
 
-Uint32 TextureFactory::loadFromPixels( const unsigned char * Pixels, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const std::string& FileName ) {
+Uint32 TextureFactory::loadFromPixels( const unsigned char * Pixels, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const std::string& FileName ) {
 	TextureLoader myTex( Pixels, Width, Height, Channels, Mipmap, ClampMode, CompressTexture, KeepLocalCopy, FileName );
 	myTex.load();
 	return myTex.getId();
 }
 
-Uint32 TextureFactory::loadFromPack( Pack* Pack, const std::string& FilePackPath, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy  ) {
+Uint32 TextureFactory::loadFromPack( Pack* Pack, const std::string& FilePackPath, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy  ) {
 	TextureLoader myTex( Pack, FilePackPath, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 	myTex.load();
 	return myTex.getId();
 }
 
-Uint32 TextureFactory::loadFromMemory( const unsigned char * ImagePtr, const unsigned int& Size, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+Uint32 TextureFactory::loadFromMemory( const unsigned char * ImagePtr, const unsigned int& Size, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
 	TextureLoader myTex( ImagePtr, Size, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 	myTex.load();
 	return myTex.getId();
 }
 
-Uint32 TextureFactory::loadFromStream( IOStream& Stream, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+Uint32 TextureFactory::loadFromStream( IOStream& Stream, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
 	TextureLoader myTex( Stream, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 	myTex.load();
 	return myTex.getId();
 }
 
-Uint32 TextureFactory::loadFromFile( const std::string& Filepath, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+Uint32 TextureFactory::loadFromFile( const std::string& Filepath, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
 	TextureLoader myTex( Filepath, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 	myTex.load();
 	return myTex.getId();
 }
 
-Uint32 TextureFactory::pushTexture( const std::string& Filepath, const Uint32& TexId, const unsigned int& Width, const unsigned int& Height, const unsigned int& ImgWidth, const unsigned int& ImgHeight, const bool& Mipmap, const unsigned int& Channels, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy, const Uint32& MemSize ) {
+Uint32 TextureFactory::pushTexture( const std::string& Filepath, const Uint32& TexId, const unsigned int& Width, const unsigned int& Height, const unsigned int& ImgWidth, const unsigned int& ImgHeight, const bool& Mipmap, const unsigned int& Channels, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& LocalCopy, const Uint32& MemSize ) {
 	lock();
 
 	Texture * Tex 		= NULL;
@@ -230,24 +230,6 @@ void TextureFactory::setActiveTextureUnit( const Uint32& Unit ) {
 	GLi->activeTexture( GL_TEXTURE0 + Unit );
 }
 
-void TextureFactory::setTextureEnv( const EE_TEXTURE_PARAM& Param, const Int32& Val ) {
-	#ifndef EE_GLES2
-	unsigned int lParam = (unsigned int)GLi->getTextureParamEnum( Param );
-
-	GLi->texEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB );
-
-	if( Param == TEX_PARAM_COLOR_FUNC || Param == TEX_PARAM_ALPHA_FUNC ) {
-		GLi->texEnvi( GL_TEXTURE_ENV, lParam, GLi->getTextureFuncEnum( (EE_TEXTURE_FUNC)Val ) );
-	} else if( Param >= TEX_PARAM_COLOR_SOURCE_0 && Param <= TEX_PARAM_ALPHA_SOURCE_2 ) {
-		GLi->texEnvi( GL_TEXTURE_ENV, lParam, GLi->getTextureSourceEnum( (EE_TEXTURE_SOURCE)Val ) );
-	} else if( Param >= TEX_PARAM_COLOR_OP_0 && Param <= TEX_PARAM_ALPHA_OP_2 ) {
-		GLi->texEnvi( GL_TEXTURE_ENV, lParam, GLi->getTextureOpEnum( (EE_TEXTURE_OP)Val ) );
-	} else {
-		GLi->texEnvi( GL_TEXTURE_ENV, lParam, Val );
-	}
-	#endif
-}
-
 unsigned int TextureFactory::getValidTextureSize( const unsigned int& Size ) {
 	if ( GLi->isExtension( EEGL_ARB_texture_non_power_of_two ) )
 		return Size;
@@ -255,10 +237,10 @@ unsigned int TextureFactory::getValidTextureSize( const unsigned int& Size ) {
 		return Math::nextPowOfTwo(Size);
 }
 
-bool TextureFactory::saveImage( const std::string& filepath, const EE_SAVE_TYPE& Format, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const unsigned char* data ) {
+bool TextureFactory::saveImage(const std::string& filepath, const Image::SaveType & Format, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const unsigned char* data ) {
 	bool Res;
 
-	if ( SAVE_TYPE_JPG != Format ) {
+	if ( Image::SaveType::SAVE_TYPE_JPG != Format ) {
 		Res = 0 != SOIL_save_image ( filepath.c_str(), Format, Width, Height, Channels, data );
 	} else {
 		jpge::params params;

@@ -153,8 +153,7 @@ void Window::setup2D( const bool& KeepView ) {
 
 	if ( GLv_3 != GLi->version() ) {
 		#if !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
-		GLi->texEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
-		GLi->texEnvi( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
+		glTexEnvi( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
 		#endif
 	}
 
@@ -178,7 +177,7 @@ RGB Window::getClearColor() const {
 	return mWindow.ClearColor;
 }
 
-bool Window::takeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format ) {
+bool Window::takeScreenshot(std::string filepath, const Image::SaveType & Format ) {
 	GlobalBatchRenderer::instance()->draw();
 
 	bool CreateNewFile = false;

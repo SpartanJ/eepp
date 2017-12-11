@@ -2,6 +2,7 @@
 #define EE_GRAPHICS_PRIMITIVEDRAWABLE
 
 #include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/primitivetype.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -14,10 +15,10 @@ class EE_API PrimitiveDrawable : public Drawable {
 		virtual void draw( const Vector2f& position, const Sizef& size );
 
 		/** Set the fill mode used to draw primitives */
-		virtual void setFillMode( const EE_FILL_MODE& Mode );
+		virtual void setFillMode( const PrimitiveFillMode& Mode );
 
 		/** @return The fill mode used to draw primitives */
-		const EE_FILL_MODE& getFillMode() const;
+		const PrimitiveFillMode& getFillMode() const;
 
 		/** Set the blend mode used to draw primitives */
 		virtual void setBlendMode( const BlendMode& Mode );
@@ -33,7 +34,7 @@ class EE_API PrimitiveDrawable : public Drawable {
 	protected:
 		PrimitiveDrawable( Type drawableType );
 
-		EE_FILL_MODE			mFillMode;
+		PrimitiveFillMode			mFillMode;
 		BlendMode				mBlendMode;
 		Float					mLineWidth;
 		bool mNeedsUpdate;
@@ -46,7 +47,7 @@ class EE_API PrimitiveDrawable : public Drawable {
 
 		virtual void onPositionChange();
 
-		void prepareVertexBuffer( const EE_DRAW_MODE& drawableType );
+		void prepareVertexBuffer( const PrimitiveType& drawableType );
 
 		virtual void updateVertex() = 0;
 };

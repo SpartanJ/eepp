@@ -1,5 +1,4 @@
 #include <eepp/graphics/texturepacker.hpp>
-#include <eepp/graphics/image.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/graphics/texturepackernode.hpp>
 #include <eepp/graphics/texturepackertex.hpp>
@@ -536,7 +535,7 @@ Int32 TexturePacker::packTextures() { // pack the textures, the return code is t
 	return ( mWidth * mHeight ) - mTotalArea;
 }
 
-void TexturePacker::save( const std::string& Filepath, const EE_SAVE_TYPE& Format, const bool& SaveExtensions ) {
+void TexturePacker::save( const std::string& Filepath, const Image::SaveType& Format, const bool& SaveExtensions ) {
 	if ( !mPacked )
 		packTextures();
 
@@ -754,7 +753,7 @@ sTextureHdr	TexturePacker::createTextureHdr( TexturePacker * Packer ) {
 	return TexHdr;
 }
 
-void TexturePacker::childSave( const EE_SAVE_TYPE& Format ) {
+void TexturePacker::childSave( const Image::SaveType & Format ) {
 	if ( NULL != mChild ) {
 		TexturePacker * Parent 	= mChild->getParent();
 		TexturePacker * LastParent	= NULL;

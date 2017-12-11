@@ -2,6 +2,7 @@
 #define EE_GRAPHICSCPRIMITIVES_H
 
 #include <eepp/graphics/base.hpp>
+#include <eepp/graphics/primitivetype.hpp>
 #include <eepp/math/polygon2.hpp>
 
 namespace EE { namespace Graphics {
@@ -127,10 +128,10 @@ class EE_API Primitives {
 		void drawBatch();
 
 		/** Set the fill mode used to draw primitives */
-		void setFillMode( const EE_FILL_MODE& Mode );
+		void setFillMode( const PrimitiveFillMode& Mode );
 
 		/** @return The fill mode used to draw primitives */
-		const EE_FILL_MODE& getFillMode() const;
+		const PrimitiveFillMode& getFillMode() const;
 
 		/** Set the blend mode used to draw primitives */
 		void setBlendMode( const BlendMode& Mode );
@@ -145,7 +146,7 @@ class EE_API Primitives {
 		const Float& getLineWidth() const;
 	private:
 		Color					mColor;
-		EE_FILL_MODE			mFillMode;
+		PrimitiveFillMode			mFillMode;
 		BlendMode			mBlendMode;
 		Float					mLineWidth;
 		bool					mForceDraw;

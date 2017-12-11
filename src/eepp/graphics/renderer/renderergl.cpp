@@ -272,10 +272,6 @@ void RendererGL::loadMatrixf( const float *m ) {
 	glLoadMatrixf( m );
 }
 
-void RendererGL::texEnvi( unsigned int target, unsigned int pname, int param ) {
-	glTexEnvi( target, pname, param );
-}
-
 float RendererGL::pointSize() {
 	float ps = 1;
 

@@ -7,18 +7,18 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-VertexBuffer * VertexBuffer::New( const Uint32& VertexFlags, EE_DRAW_MODE DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) {
+VertexBuffer * VertexBuffer::New( const Uint32& VertexFlags, PrimitiveType DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) {
 	if ( GLi->isExtension( EEGL_ARB_vertex_buffer_object ) )
 		return eeNew( VertexBufferVBO, ( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType ) );
 
 	return eeNew( VertexBufferOGL, ( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType ) );
 }
 
-VertexBuffer * VertexBuffer::NewVertexArray(const Uint32 & VertexFlags, EE_DRAW_MODE DrawType, const Int32 & ReserveVertexSize, const Int32 & ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) {
+VertexBuffer * VertexBuffer::NewVertexArray(const Uint32 & VertexFlags, PrimitiveType DrawType, const Int32 & ReserveVertexSize, const Int32 & ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) {
 	return eeNew( VertexBufferOGL, ( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType ) );
 }
 
-VertexBuffer::VertexBuffer( const Uint32& VertexFlags, EE_DRAW_MODE DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) :
+VertexBuffer::VertexBuffer( const Uint32& VertexFlags, PrimitiveType DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) :
 	mVertexFlags( VertexFlags ),
 	mDrawType( DrawType ),
 	mUsageType( UsageType ),

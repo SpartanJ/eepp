@@ -22,7 +22,7 @@ using namespace EE::System;
 #include <eepp/window/inputhelper.hpp>
 using namespace EE::Window;
 
-#include <eepp/graphics/graphicshelper.hpp>
+#include <eepp/graphics/rendermode.hpp>
 #include <eepp/graphics/fonthelper.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 using namespace EE::Graphics;

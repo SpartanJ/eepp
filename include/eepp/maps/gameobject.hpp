@@ -5,7 +5,7 @@
 #include <eepp/maps/maphelper.hpp>
 #include <eepp/maps/maplayer.hpp>
 
-#include <eepp/graphics/graphicshelper.hpp>
+#include <eepp/graphics/rendermode.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Maps {
@@ -67,7 +67,7 @@ class EE_API GameObject {
 		Uint32		mFlags;
 		MapLayer *	mLayer;
 
-		virtual EE_RENDER_MODE getRenderModeFromFlags();
+		virtual RenderMode getRenderModeFromFlags();
 
 		void autoFixTilePos();
 

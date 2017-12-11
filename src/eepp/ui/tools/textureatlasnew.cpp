@@ -164,7 +164,7 @@ void TextureAtlasNew::textureAtlasSave( const UIEvent * Event ) {
 				FPath += "." + ext;
 			}
 
-			TexturePacker->save( FPath, static_cast<EE_SAVE_TYPE> ( mSaveFileType->getListBox()->getItemSelectedIndex() ) );
+			TexturePacker->save( FPath, static_cast<Image::SaveType> ( mSaveFileType->getListBox()->getItemSelectedIndex() ) );
 
 			if ( mNewTGCb.IsSet() )
 				mNewTGCb( TexturePacker );

@@ -644,13 +644,13 @@ void MapEditor::chkClickClampToTile( const UIEvent * Event ) {
 
 void MapEditor::updateGfx() {
 	if ( mChkMirrored->isActive() && mChkFliped->isActive() )
-		mGfxPreview->setRenderMode( RN_FLIPMIRROR );
+		mGfxPreview->setRenderMode( RENDER_FLIPPED_MIRRORED );
 	else if( mChkMirrored->isActive() )
-		mGfxPreview->setRenderMode( RN_MIRROR );
+		mGfxPreview->setRenderMode( RENDER_MIRROR );
 	else if ( mChkFliped->isActive() )
-		mGfxPreview->setRenderMode( RN_FLIP );
+		mGfxPreview->setRenderMode( RENDER_FLIPPED );
 	else
-		mGfxPreview->setRenderMode( RN_NORMAL );
+		mGfxPreview->setRenderMode( RENDER_NORMAL );
 
 	if ( mChkRot90->isActive() )
 		mGfxPreview->setRotation( 90 );

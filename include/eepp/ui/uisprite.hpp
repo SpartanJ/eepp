@@ -36,9 +36,9 @@ class EE_API UISprite : public UIWidget {
 
 		void setColor( const Color& color );
 
-		const EE_RENDER_MODE& getRenderMode() const;
+		const RenderMode& getRenderMode() const;
 
-		void setRenderMode( const EE_RENDER_MODE& render );
+		void setRenderMode( const RenderMode& render );
 
 		const Vector2i& getAlignOffset() const;
 
@@ -49,7 +49,7 @@ class EE_API UISprite : public UIWidget {
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		Graphics::Sprite * 	mSprite;
-		EE_RENDER_MODE 		mRender;
+		RenderMode 		mRender;
 		Vector2i			mAlignOffset;
 		SubTexture *		mSubTextureLast;
 		bool				mDealloc;

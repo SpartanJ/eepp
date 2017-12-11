@@ -14,7 +14,7 @@ using namespace EE::Math;
 #include <eepp/system/log.hpp>
 using namespace EE::System;
 
-#include <eepp/graphics/graphicshelper.hpp>
+#include <eepp/graphics/rendermode.hpp>
 #include <eepp/graphics/renderer/rendererhelper.hpp>
 using namespace EE::Graphics;
 

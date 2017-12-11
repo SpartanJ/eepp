@@ -72,9 +72,9 @@ class EE_API SubTexture : public DrawableResource {
 		/** Set the SubTexture offset. */
 		void setOffset( const Vector2i& offset );
 
-		void draw( const Float& X, const Float& Y, const Color& color = Color::White, const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const BlendMode& Blend = BlendAlpha, const EE_RENDER_MODE& Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter) );
+		void draw( const Float& X, const Float& Y, const Color& color = Color::White, const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const BlendMode& Blend = BlendAlpha, const RenderMode& Effect = RENDER_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter) );
 
-		void draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale, const Color& Color0 = Color::White, const Color& Color1 = Color::White, const Color& Color2 = Color::White, const Color& Color3 = Color::White, const BlendMode& Blend = BlendAlpha, const EE_RENDER_MODE& Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter) );
+		void draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale, const Color& Color0 = Color::White, const Color& Color1 = Color::White, const Color& Color2 = Color::White, const Color& Color3 = Color::White, const BlendMode& Blend = BlendAlpha, const RenderMode& Effect = RENDER_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter) );
 
 		void draw( const Quad2f Q, const Vector2f& offset = Vector2f(), const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const Color& Color0 = Color::White, const Color& Color1 = Color::White, const Color& Color2 = Color::White, const Color& Color3 = Color::White, const BlendMode& Blend = BlendAlpha );
 
@@ -137,7 +137,7 @@ class EE_API SubTexture : public DrawableResource {
 
 		/** Saves the SubTexture to a file in the file format specified.
 		*	This will get the Texture from VRAM ( it will not work with OpenGL ES ) */
-		bool saveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format );
+		bool saveToFile( const std::string& filepath, const Image::SaveType& Format );
 
 		/** Sets the Destination Size as the Source Rect Size ( the real size of the SubTexture ) multiplied by the pixel density. */
 		void resetDestSize();

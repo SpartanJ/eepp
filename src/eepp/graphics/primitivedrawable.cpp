@@ -44,13 +44,13 @@ void PrimitiveDrawable::draw( const Vector2f & position, const Sizef& size ) {
 	}
 }
 
-void PrimitiveDrawable::setFillMode(const EE_FILL_MODE & Mode) {
+void PrimitiveDrawable::setFillMode(const PrimitiveFillMode & Mode) {
 	mFillMode = Mode;
 	mNeedsUpdate = true;
 	mRecreateVertexBuffer = true;
 }
 
-const EE_FILL_MODE& PrimitiveDrawable::getFillMode() const {
+const PrimitiveFillMode& PrimitiveDrawable::getFillMode() const {
 	return mFillMode;
 }
 
@@ -82,7 +82,7 @@ void PrimitiveDrawable::onPositionChange() {
 	mNeedsUpdate = true;
 }
 
-void PrimitiveDrawable::prepareVertexBuffer( const EE_DRAW_MODE& drawableType ) {
+void PrimitiveDrawable::prepareVertexBuffer( const PrimitiveType& drawableType ) {
 	if ( mRecreateVertexBuffer ) {
 		eeSAFE_DELETE( mVertexBuffer );
 		mVertexBuffer = VertexBuffer::NewVertexArray( VERTEX_FLAGS_PRIMITIVE, drawableType );

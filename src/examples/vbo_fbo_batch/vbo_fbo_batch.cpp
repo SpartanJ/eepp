@@ -124,8 +124,8 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		// Create the Vertex Buffer, the vertex buffer stores the vertex data in the GPU, making the rendering much faster
 		// In the case that Vertex Buffer Object is not supported by the GPU, it will fallback to a inmediate-mode vertex buffer
-		VBO		= VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
-		VBO2	= VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
+		VBO		= VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLE_FAN );
+		VBO2	= VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLE_FAN );
 
 		// Add the vertex and vertex colors to the Vertex Buffer
 		if ( NULL != VBO && NULL != VBO2 ) {

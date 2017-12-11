@@ -34,8 +34,8 @@ Texture::Texture() :
 	mImgWidth(0),
 	mImgHeight(0),
 	mFlags(0),
-	mClampMode( CLAMP_TO_EDGE ),
-	mFilter( TEX_FILTER_LINEAR )
+	mClampMode(  CLAMP_TO_EDGE ),
+	mFilter( TEXTURE_FILTER_LINEAR )
 {
 	if ( NULL == sBR ) {
 		sBR = GlobalBatchRenderer::instance();
@@ -63,7 +63,7 @@ Texture::Texture( const Texture& Copy ) :
 	setPixels( reinterpret_cast<const Uint8*>( &Copy.mPixels[0] ) );
 }
 
-Texture::Texture( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) :
+Texture::Texture( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const Texture::ClampMode& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) :
 	Drawable( Drawable::TEXTURE )
 {
 	create( texture, width, height, imgwidth, imgheight, UseMipmap, Channels, filepath, ClampMode, CompressedTexture, MemSize, data );
@@ -89,7 +89,7 @@ void Texture::deleteTexture() {
 	}
 }
 
-void Texture::create( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
+void Texture::create( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const Texture::ClampMode& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
 	mFilepath 	= filepath;
 	mName		= mFilepath;
 	mId 		= String::hash( mName );
@@ -101,7 +101,7 @@ void Texture::create( const Uint32& texture, const unsigned int& width, const un
 	mImgHeight 	= imgheight;
 	mSize 		= MemSize;
 	mClampMode 	= ClampMode;
-	mFilter 	= TEX_FILTER_LINEAR;
+	mFilter 	= TEXTURE_FILTER_LINEAR;
 
 	if ( UseMipmap )
 		mFlags |= TEX_FLAG_MIPMAP;
@@ -251,7 +251,7 @@ void Texture::bind() {
 	TextureFactory::instance()->bind( this );
 }
 
-bool Texture::saveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format ) {
+bool Texture::saveToFile(const std::string& filepath, const SaveType & Format ) {
 	bool Res = false;
 
 	if ( mTexture ) {
@@ -265,28 +265,28 @@ bool Texture::saveToFile( const std::string& filepath, const EE_SAVE_TYPE& Forma
 	return Res;
 }
 
-void Texture::setFilter(const EE_TEX_FILTER& filter) {
+void Texture::setFilter(const TextureFilter& filter) {
 	if ( mFilter != filter ) {
 		iTextureFilter( filter );
 	}
 }
 
-void Texture::iTextureFilter( const EE_TEX_FILTER& filter ) {
+void Texture::iTextureFilter( const TextureFilter& filter ) {
 	if (mTexture) {
 		mFilter = filter;
 
 		TextureSaver saver( mTexture );
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (mFilter == TEXTURE_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
 
 		if ( mFlags & TEX_FLAG_MIPMAP )
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEXTURE_FILTER_LINEAR) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
 		else
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEXTURE_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
 	}
 }
 
-const EE_TEX_FILTER& Texture::getFilter() const {
+const Texture::TextureFilter& Texture::getFilter() const {
 	return mFilter;
 }
 
@@ -314,7 +314,7 @@ void Texture::fillWithColor( const Color& Color ) {
 	unlock( false, true );
 }
 
-void Texture::resize( const Uint32& newWidth, const Uint32& newHeight , EE_RESAMPLER_FILTER filter ) {
+void Texture::resize( const Uint32& newWidth, const Uint32& newHeight , ResamplerFilter filter ) {
 	lock();
 
 	Image::resize( newWidth, newHeight, filter );
@@ -322,7 +322,7 @@ void Texture::resize( const Uint32& newWidth, const Uint32& newHeight , EE_RESAM
 	unlock( false, true );
 }
 
-void Texture::scale( const Float& scale, EE_RESAMPLER_FILTER filter ) {
+void Texture::scale( const Float& scale, ResamplerFilter filter ) {
 	lock();
 
 	Image::scale( scale, filter );
@@ -353,7 +353,7 @@ bool Texture::hasLocalCopy() {
 	return ( mPixels != NULL );
 }
 
-void Texture::setClampMode( const EE_CLAMP_MODE& clampmode ) {
+void Texture::setClampMode( const Texture::ClampMode& clampmode ) {
 	if ( mClampMode != clampmode ) {
 		mClampMode = clampmode;
 		applyClampMode();
@@ -427,11 +427,23 @@ void Texture::reload()  {
 	}
 }
 
-void Texture::update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x, Uint32 y, EE_PIXEL_FORMAT pf ) {
+static unsigned int convertPixelFormatToGLFormat( Image::PixelFormat pf ) {
+	switch ( pf ) {
+		case Image::PixelFormat::PIXEL_FORMAT_RED: return 0x1903;
+		case Image::PixelFormat::PIXEL_FORMAT_RG: return 0x8227;
+		case Image::PixelFormat::PIXEL_FORMAT_RGB: return 0x1907;
+		case Image::PixelFormat::PIXEL_FORMAT_BGR: return 0x80E0;
+		case Image::PixelFormat::PIXEL_FORMAT_BGRA: return 0x80E1;
+		case Image::PixelFormat::PIXEL_FORMAT_RGBA: return 0x1908;
+		default: return 0x1908;
+	}
+}
+
+void Texture::update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x, Uint32 y, PixelFormat pf ) {
 	if ( NULL != pixels && mTexture && x + width <= mWidth && y + height <= mHeight ) {
 		TextureSaver saver( mTexture );
 
-		glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, (unsigned int)pf, GL_UNSIGNED_BYTE, pixels );
+		glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, (unsigned int)convertPixelFormatToGLFormat( pf ), GL_UNSIGNED_BYTE, pixels );
 
 		if ( hasLocalCopy() ) {
 			Image image( pixels, width, height, mChannels );
@@ -509,7 +521,7 @@ bool Texture::isCompressed() const {
 	return 0 != ( mFlags & TEX_FLAG_COMPRESSED );
 }
 
-void Texture::draw( const Float &x, const Float &y, const Float &Angle, const Vector2f &Scale, const Color& Color, const BlendMode &Blend, const EE_RENDER_MODE &Effect, OriginPoint Center, const Rect& texSector) {
+void Texture::draw( const Float &x, const Float &y, const Float &Angle, const Vector2f &Scale, const Color& Color, const BlendMode &Blend, const RenderMode &Effect, OriginPoint Center, const Rect& texSector) {
 	drawEx( x, y, 0, 0, Angle, Scale, Color, Color, Color, Color, Blend, Effect, Center, texSector );
 }
 
@@ -534,7 +546,7 @@ void Texture::drawFast( const Float& x, const Float& y, const Float& Angle, cons
 	sBR->drawOpt();
 }
 
-void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &Angle, const Vector2f &Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const BlendMode &Blend, const EE_RENDER_MODE &Effect, OriginPoint Center, const Rect& texSector ) {
+void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &Angle, const Vector2f &Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const BlendMode &Blend, const RenderMode &Effect, OriginPoint Center, const Rect& texSector ) {
 	bool renderSector	= true;
 	Rect Sector		= texSector;
 	Float w			= (Float)getImageWidth();
@@ -560,9 +572,9 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &
 	sBR->quadsBegin();
 	sBR->quadsSetColorFree( Color0, Color1, Color2, Color3 );
 
-	if ( Effect <= RN_FLIPMIRROR ) {
+	if ( Effect <= RENDER_FLIPPED_MIRRORED ) {
 		if ( getClampMode() == CLAMP_REPEAT ) {
-			if ( Effect == RN_NORMAL ) {
+			if ( Effect == RENDER_NORMAL ) {
 				if ( renderSector ) {
 					sBR->quadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
 
@@ -632,28 +644,28 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &
 				} else {
 					sBR->quadsSetSubsetFree( 0, 0, 0, height / h, width / w, height / h, width / w, 0 );
 				}
-			} else if ( Effect == RN_MIRROR ) {
+			} else if ( Effect == RENDER_MIRROR ) {
 				sBR->quadsSetSubsetFree( width / w, 0, width / w, height / h, 0, height / h, 0, 0 );
-			} else if ( Effect == RN_FLIP ) {
+			} else if ( Effect == RENDER_FLIPPED ) {
 				sBR->quadsSetSubsetFree( 0, height / h, 0, 0, width / w, 0, width / w, height / h );
 			} else {
 				sBR->quadsSetSubsetFree( width / w, height / h, width / w, 0, 0, 0, 0, height / h );
 			}
 		} else {
-			if ( Effect == RN_NORMAL ) {
+			if ( Effect == RENDER_NORMAL ) {
 				if ( renderSector )
 					sBR->quadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
-			} else if ( Effect == RN_MIRROR ) {
+			} else if ( Effect == RENDER_MIRROR ) {
 				if ( renderSector )
 					sBR->quadsSetSubsetFree( Sector.Right / w, Sector.Top / h, Sector.Right / w, Sector.Bottom / h, Sector.Left / w, Sector.Bottom / h, Sector.Left / w, Sector.Top / h );
 				else
 					sBR->quadsSetSubsetFree( 1, 0, 1, 1, 0, 1, 0, 0 );
-			} else if ( Effect == RN_FLIP ) {
+			} else if ( Effect == RENDER_FLIPPED ) {
 				if ( renderSector )
 					sBR->quadsSetSubsetFree( Sector.Left / w, Sector.Bottom / h, Sector.Left / w, Sector.Top / h, Sector.Right / w, Sector.Top / h, Sector.Right / w, Sector.Bottom / h );
 				else
 					sBR->quadsSetSubsetFree( 0, 1, 0, 0, 1, 0, 1, 1 );
-			} else if ( Effect == RN_FLIPMIRROR ) {
+			} else if ( Effect == RENDER_FLIPPED_MIRRORED ) {
 				if ( renderSector )
 					sBR->quadsSetSubsetFree( Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h, Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h );
 				else
@@ -669,15 +681,15 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &
 		Rectf TmpR( x, y, x + width, y + height );
 		Quad2f Q = Quad2f( Vector2f( TmpR.Left, TmpR.Top ), Vector2f( TmpR.Left, TmpR.Bottom ), Vector2f( TmpR.Right, TmpR.Bottom ), Vector2f( TmpR.Right, TmpR.Top ) );
 
-		if ( Effect == RN_ISOMETRIC ) {
+		if ( Effect == RENDER_ISOMETRIC ) {
 			Q.V[0].x += ( TmpR.Right - TmpR.Left );
 			Q.V[1].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 			Q.V[3].x += ( TmpR.Right - TmpR.Left );
 			Q.V[3].y += ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
-		} else if ( Effect == RN_ISOMETRICVERTICAL ) {
+		} else if ( Effect == RENDER_ISOMETRIC_VERTICAL ) {
 			Q.V[0].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 			Q.V[1].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
-		} else if ( Effect == RN_ISOMETRICVERTICALNEGATIVE ) {
+		} else if ( Effect == RENDER_ISOMETRIC_VERTICAL_NEGATIVE ) {
 			Q.V[2].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 			Q.V[3].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 		}

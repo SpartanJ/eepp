@@ -13,7 +13,7 @@ UISubTexture::UISubTexture() :
 	UIWidget(),
 	mSubTexture( NULL ),
 	mColor(),
-	mRender( RN_NORMAL ),
+	mRender( RENDER_NORMAL ),
 	mAlignOffset(0,0)
 {
 	mFlags |= UI_AUTO_SIZE;
@@ -141,11 +141,11 @@ void UISubTexture::setColor( const Color& col ) {
 	setAlpha( col.a );
 }
 
-const EE_RENDER_MODE& UISubTexture::getRenderMode() const {
+const RenderMode& UISubTexture::getRenderMode() const {
 	return mRender;
 }
 
-void UISubTexture::setRenderMode( const EE_RENDER_MODE& render ) {
+void UISubTexture::setRenderMode( const RenderMode& render ) {
 	mRender = render;
 	invalidateDraw();
 }

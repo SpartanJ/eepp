@@ -6,7 +6,8 @@
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/renderer/renderergl.hpp>
 #include <eepp/graphics/renderer/renderergl3.hpp>
-#include <eepp/graphics/graphicshelper.hpp>
+#include <eepp/graphics/rendermode.hpp>
+#include <eepp/graphics/primitivetype.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/textureloader.hpp>

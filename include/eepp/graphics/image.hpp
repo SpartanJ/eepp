@@ -10,7 +10,7 @@ using namespace EE::Math;
 #include <eepp/system/color.hpp>
 using namespace EE::System;
 
-#include <eepp/graphics/graphicshelper.hpp>
+#include <eepp/graphics/rendermode.hpp>
 
 namespace EE { namespace System {
 class Pack;
@@ -21,6 +21,46 @@ namespace EE { namespace Graphics {
 /** @brief A simple image class to manipulate them. */
 class EE_API Image {
 	public:
+		/** @enum PixelFormat Format Pixel formats to write into a texture image. */
+		enum PixelFormat {
+			PIXEL_FORMAT_RED,
+			PIXEL_FORMAT_RG,
+			PIXEL_FORMAT_RGB,
+			PIXEL_FORMAT_BGR,
+			PIXEL_FORMAT_RGBA,
+			PIXEL_FORMAT_BGRA
+		};
+
+		/** @enum ResamplerFilter ºººFilter The filter used to resample/resize an image. */
+		enum ResamplerFilter {
+			RESAMPLER_BOX,
+			RESAMPLER_TENT,
+			RESAMPLER_BELL,
+			RESAMPLER_BSPLINE,
+			RESAMPLER_MITCHELL,
+			RESAMPLER_LANCZOS3,
+			RESAMPLER_BLACKMAN,
+			RESAMPLER_LANCZOS4,
+			RESAMPLER_LANCZOS6,
+			RESAMPLER_LANCZOS12,
+			RESAMPLER_KAISER,
+			RESAMPLER_GAUSSIAN,
+			RESAMPLER_CATMULLROM,
+			RESAMPLER_QUADRATIC_INTERP,
+			RESAMPLER_QUADRATIC_APPROX,
+			RESAMPLER_QUADRATIC_MIX
+		};
+
+		/** @enum SaveType Defines the format to save a texture. */
+		enum SaveType {
+			SAVE_TYPE_UNKNOWN	= -1,
+			SAVE_TYPE_TGA		= 0,
+			SAVE_TYPE_BMP		= 1,
+			SAVE_TYPE_PNG		= 2,
+			SAVE_TYPE_DDS		= 3,
+			SAVE_TYPE_JPG		= 4
+		};
+
 		/** @return The current Jpeg save quality */
 		static Uint32 jpegQuality();
 
@@ -30,11 +70,11 @@ class EE_API Image {
 		/** @return The File Extension of a Save Type */
 		static std::string saveTypeToExtension( const Int32& Format );
 
-		/** @return The save type from a given extension ( example: "png" => SAVE_TYPE_PNG ) */
-		static EE_SAVE_TYPE extensionToSaveType( const std::string& Extension );
+		/** @return The save type from a given extension ( example: "png" => SaveType::SAVE_TYPE_PNG ) */
+		static SaveType extensionToSaveType( const std::string& Extension );
 
 		/** @return Convert the number of channels to a pixel format */
-		static EE_PIXEL_FORMAT channelsToPixelFormat( const Uint32& channels );
+		static PixelFormat channelsToPixelFormat( const Uint32& channels );
 
 		/** @return True if success to get the info.
 		* @param path the image path
@@ -132,7 +172,7 @@ class EE_API Image {
 		Sizei getSize();
 
 		/** Save the Image to a new File in a specific format */
-		virtual bool saveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format );
+		virtual bool saveToFile( const std::string& filepath, const SaveType& Format );
 
 		/** Create an Alpha mask from a Color */
 		virtual void createMaskFromColor( const Color& ColorKey, Uint8 Alpha );
@@ -150,16 +190,16 @@ class EE_API Image {
 		virtual void copyImage( Graphics::Image * image, const Uint32& x = 0, const Uint32& y = 0 );
 
 		/** Scale the image */
-		virtual void scale( const Float& scale, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
+		virtual void scale( const Float& scale, ResamplerFilter filter = ResamplerFilter::RESAMPLER_LANCZOS4 );
 
 		/** Resize the image */
-		virtual void resize( const Uint32& newWidth, const Uint32& newHeight, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
+		virtual void resize(const Uint32& newWidth, const Uint32& newHeight, ResamplerFilter filter = ResamplerFilter::RESAMPLER_LANCZOS4 );
 
 		/** Flip the image ( rotate the image 90º ) */
 		virtual void flip();
 
 		/** Create a thumnail of the image */
-		Graphics::Image * thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
+		Graphics::Image * thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, ResamplerFilter filter = ResamplerFilter::RESAMPLER_LANCZOS4 );
 
 		/** Creates a cropped image from the current image */
 		Graphics::Image * crop( Rect rect );

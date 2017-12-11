@@ -2,6 +2,7 @@
 #define EE_GRAPHICSCVERTEXBUFFER_HPP
 
 #include <eepp/graphics/base.hpp>
+#include <eepp/graphics/primitivetype.hpp>
 #include <eepp/graphics/vertexbufferhelper.hpp>
 
 namespace EE { namespace Graphics {
@@ -18,10 +19,10 @@ class EE_API VertexBuffer {
 		*	@param ReserveIndexSize If the vertex size is known is possible to reserve the space in memory for the indices to avoid resizeing the array.
 		*	@param UsageType This indicates the kind of usage VBO will have. It's only useful if VBO extensions are supported ( almost for sure that it's supported ). More information here: http://www.opengl.org/sdk/docs/man/xhtml/glBufferData.xml
 		*/
-		static VertexBuffer * New( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, EE_DRAW_MODE DrawType = DM_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
+		static VertexBuffer * New( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, PrimitiveType DrawType = PRIMITIVE_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
 
 		/** Creates the simple vertex array implementation ( without VBOs or VAO ), which it's faster for many cases. */
-		static VertexBuffer * NewVertexArray( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, EE_DRAW_MODE DrawType = DM_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
+		static VertexBuffer * NewVertexArray( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, PrimitiveType DrawType = PRIMITIVE_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
 
 		virtual ~VertexBuffer();
 
@@ -123,14 +124,14 @@ class EE_API VertexBuffer {
 		virtual void clear();
 	protected:
 		Uint32 					mVertexFlags;
-		EE_DRAW_MODE			mDrawType;
+		PrimitiveType			mDrawType;
 		EE_VBO_USAGE_TYPE		mUsageType;
 		Int32					mElemDraw;
 		std::vector<Float>	mVertexArray[ VERTEX_FLAGS_COUNT - 1 ];
 		std::vector<Uint8>		mColorArray;
 		std::vector<Uint32>		mIndexArray;
 
-		VertexBuffer( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, EE_DRAW_MODE DrawType = DM_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
+		VertexBuffer( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, PrimitiveType DrawType = PRIMITIVE_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
 
 		virtual void setVertexStates() = 0;
 };
@@ -147,7 +148,7 @@ class EE_API VertexBuffer {
 	// Creates a rounded rectangle.
 	Polygon2f Poly = Polygon2f::createRoundedRectangle( 0, 0, 256, 50 );
 
-	VertexBuffer * VBO = VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
+	VertexBuffer * VBO = VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLE_FAN );
 
 	if ( NULL != VBO ) {
 		// Upload the rounded rectangle data to the vertex buffer.

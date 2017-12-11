@@ -105,15 +105,15 @@ Uint32 GameObject::getDataId() {
 void GameObject::setDataId( Uint32 Id ){
 }
 
-EE_RENDER_MODE GameObject::getRenderModeFromFlags() {
-	EE_RENDER_MODE Render = RN_NORMAL;
+RenderMode GameObject::getRenderModeFromFlags() {
+	RenderMode Render = RENDER_NORMAL;
 
 	if ( ( mFlags & GObjFlags::GAMEOBJECT_MIRRORED ) && ( mFlags & GObjFlags::GAMEOBJECT_FLIPED ) ) {
-		Render = RN_FLIPMIRROR;
+		Render = RENDER_FLIPPED_MIRRORED;
 	} else if ( mFlags & GObjFlags::GAMEOBJECT_MIRRORED ) {
-		Render = RN_MIRROR;
+		Render = RENDER_MIRROR;
 	} else if ( mFlags & GObjFlags::GAMEOBJECT_FLIPED ) {
-		Render = RN_FLIP;
+		Render = RENDER_FLIPPED;
 	}
 
 	return Render;

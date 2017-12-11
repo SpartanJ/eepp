@@ -4,7 +4,7 @@
 #include <eepp/math/size.hpp>
 #include <eepp/system/color.hpp>
 #include <eepp/graphics/blendmode.hpp>
-#include <eepp/graphics/graphicshelper.hpp>
+#include <eepp/graphics/rendermode.hpp>
 using namespace EE::Math;
 using namespace EE::System;
 

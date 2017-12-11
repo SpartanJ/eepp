@@ -33,9 +33,9 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/packerhelper.hpp>
+#include <eepp/graphics/image.hpp>
 
 namespace EE { namespace Graphics {
-class Image;
 
 namespace Private { class TexturePackerNode; class TexturePackerTex; }
 
@@ -80,7 +80,7 @@ class EE_API TexturePacker {
 		*	@param Format The image format of the new texture atlas.
 		*	@param SaveExtensions Indicates if the extensions of the image files must be saved. Usually you wan't to find the SubTextures by its name without extension, but this can be changed here.
 		*/
-		void save( const std::string& Filepath, const EE_SAVE_TYPE& Format = SAVE_TYPE_PNG, const bool& SaveExtensions = false );
+		void save( const std::string& Filepath, const Image::SaveType& Format = Image::SaveType::SAVE_TYPE_PNG, const bool& SaveExtensions = false );
 
 		/** Clear all the textures added */
 		void close();
@@ -130,7 +130,7 @@ class EE_API TexturePacker {
 		Int32							mPixelBorder;
 		EE_PIXEL_DENSITY				mPixelDensity;
 		bool							mSaveExtensions;
-		EE_SAVE_TYPE					mFormat;
+		Image::SaveType			mFormat;
 
 		TexturePacker * 				getChild() const;
 
@@ -138,7 +138,7 @@ class EE_API TexturePacker {
 
 		std::list<TexturePackerTex*> *	getTexturePackPtr();
 
-		void							childSave( const EE_SAVE_TYPE& Format );
+		void							childSave( const Image::SaveType& Format );
 
 		void							saveSubTextures();
 

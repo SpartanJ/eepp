@@ -609,10 +609,6 @@ void RendererGL3::clientActiveTexture( unsigned int texture ) {
 		mCurActiveTex = 0;
 }
 
-void RendererGL3::texEnvi( unsigned int target, unsigned int pname, int param ) {
-	//! @TODO: Implement TexEnvi
-}
-
 std::string RendererGL3::getBaseVertexShader() {
 	return mBaseVertexShader;
 }

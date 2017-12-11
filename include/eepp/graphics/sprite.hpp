@@ -133,10 +133,10 @@ class EE_API Sprite : public Drawable {
 		const unsigned int& getCurrentSubFrame() const;
 
 		/** Set the Render Type */
-		void setRenderMode( const EE_RENDER_MODE& Effect );
+		void setRenderMode( const RenderMode& Effect );
 
 		/** @return The Render Type */
-		const EE_RENDER_MODE& getRenderMode() const;
+		const RenderMode& getRenderMode() const;
 
 		/** Set the Blend Mode */
 		void setBlendMode( const BlendMode& Blend );
@@ -232,7 +232,7 @@ class EE_API Sprite : public Drawable {
 		* @param Blend The Blend Mode
 		* @param Effect The Render Type
 		*/
-		void draw( const BlendMode& Blend, const EE_RENDER_MODE& Effect );
+		void draw( const BlendMode& Blend, const RenderMode& Effect );
 
 		void draw(const Vector2f & position);
 
@@ -330,7 +330,7 @@ class EE_API Sprite : public Drawable {
 		int					mRepetitions; //!< Number of repetions of the animation, default -1 that equals to loop.
 
 		BlendMode		mBlend;
-		EE_RENDER_MODE		mEffect;
+		RenderMode		mEffect;
 
 		unsigned int		mCurrentFrame;
 		Float				mfCurrentFrame;

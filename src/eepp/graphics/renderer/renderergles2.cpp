@@ -694,10 +694,6 @@ void RendererGLES2::clientActiveTexture( unsigned int texture ) {
 		mCurActiveTex = 0;
 }
 
-void RendererGLES2::texEnvi( unsigned int target, unsigned int pname, int param ) {
-	//! @TODO: Implement TexEnvi
-}
-
 std::string RendererGLES2::getBaseVertexShader() {
 	return mBaseVertexShader;
 }

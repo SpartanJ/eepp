@@ -12,7 +12,7 @@ UISprite * UISprite::New() {
 UISprite::UISprite() :
 	UIWidget(),
 	mSprite( NULL ),
-	mRender( RN_NORMAL ),
+	mRender( RENDER_NORMAL ),
 	mAlignOffset(0,0),
 	mSubTextureLast(NULL)
 {
@@ -116,11 +116,11 @@ void UISprite::setColor( const Color& color ) {
 	setAlpha( color.a );
 }
 
-const EE_RENDER_MODE& UISprite::getRenderMode() const {
+const RenderMode& UISprite::getRenderMode() const {
 	return mRender;
 }
 
-void UISprite::setRenderMode( const EE_RENDER_MODE& render ) {
+void UISprite::setRenderMode( const RenderMode& render ) {
 	mRender = render;
 	invalidateDraw();
 }

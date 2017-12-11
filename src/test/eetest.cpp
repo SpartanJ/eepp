@@ -209,7 +209,7 @@ void EETest::init() {
 
 		Polygon2f Poly = Polygon2f::createRoundedRectangle( 0, 0, 256, 50 );
 
-		mVBO = VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
+		mVBO = VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLE_FAN );
 
 		if ( NULL != mVBO ) {
 			for ( Uint32 i = 0; i < Poly.getSize(); i++ ) {
@@ -249,7 +249,7 @@ void EETest::createUIThemeTextureAtlas() {
 		TexturePacker tp( 2048, 2048, PD, true, 2 );
 		tp.addTexturesPath( Path );
 		tp.packTextures();
-		tp.save( tgpath + ".png", SAVE_TYPE_PNG );
+		tp.save( tgpath + ".png", Image::SaveType::SAVE_TYPE_PNG );
 	} else {
 		TextureAtlasLoader tgl;
 		tgl.updateTextureAtlas( tgpath + EE_TEXTURE_ATLAS_EXTENSION, Path );
@@ -1198,7 +1198,7 @@ void EETest::loadTextures() {
 	TNP.resize(12);
 
 	for ( i = 0; i <= 6; i++ ) {
-		TN[i] = TF->loadFromFile( MyPath + "sprites/" + String::toStr(i+1) + ".png", (i+1) == 7 ? true : false, ( (i+1) == 4 ) ? CLAMP_REPEAT : CLAMP_TO_EDGE );
+		TN[i] = TF->loadFromFile( MyPath + "sprites/" + String::toStr(i+1) + ".png", (i+1) == 7 ? true : false, ( (i+1) == 4 ) ? Texture::ClampMode::CLAMP_REPEAT : Texture::ClampMode::CLAMP_TO_EDGE );
 		TNP[i] = TF->getTexture( TN[i] );
 	}
 
@@ -1400,10 +1400,10 @@ void EETest::screen2() {
 	if ( mUseShaders )
 		mShaderProgram->unbind();
 
-	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color(255,255,255,150), BlendAlpha, RN_ISOMETRIC);
-	TNP[3]->draw( HWidth - 128, HHeight - 128, 0, Vector2f::One, Color(255,255,255,50), BlendAlpha, RN_ISOMETRIC);
-	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color(255,255,255,50), BlendAlpha, RN_ISOMETRICVERTICAL);
-	TNP[3]->draw( HWidth, HHeight, 0, Vector2f::One, Color(255,255,255,50), BlendAlpha, RN_ISOMETRICVERTICALNEGATIVE);
+	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color(255,255,255,150), BlendAlpha, RENDER_ISOMETRIC);
+	TNP[3]->draw( HWidth - 128, HHeight - 128, 0, Vector2f::One, Color(255,255,255,50), BlendAlpha, RENDER_ISOMETRIC);
+	TNP[3]->draw( HWidth - 128, HHeight, 0, Vector2f::One, Color(255,255,255,50), BlendAlpha, RENDER_ISOMETRIC_VERTICAL);
+	TNP[3]->draw( HWidth, HHeight, 0, Vector2f::One, Color(255,255,255,50), BlendAlpha, RENDER_ISOMETRIC_VERTICAL_NEGATIVE);
 
 	alpha = (!aside) ? alpha+et.asMilliseconds() * 0.1f : alpha-et.asMilliseconds() * 0.1f;
 	if (alpha>=255) {
@@ -1415,13 +1415,13 @@ void EETest::screen2() {
 	}
 
 	Color Col(255,255,255,(int)alpha);
-	TNP[1]->drawEx( (Float)mWindow->getWidth() - 128.f, (Float)mWindow->getHeight() - 128.f, 128.f, 128.f, ang, Vector2f::One, Col, Col, Col, Col, BlendAdd, RN_FLIPMIRROR);
+	TNP[1]->drawEx( (Float)mWindow->getWidth() - 128.f, (Float)mWindow->getHeight() - 128.f, 128.f, 128.f, ang, Vector2f::One, Col, Col, Col, Col, BlendAdd, RENDER_FLIPPED_MIRRORED);
 
 	SP.setPosition( Vector2f( alpha, alpha ) );
 	SP.draw();
 
 	#ifndef EE_GLES
-	CL1.setRenderMode( RN_ISOMETRIC );
+	CL1.setRenderMode( RENDER_ISOMETRIC );
 
 	if ( CL1.getAABB().intersectCircle( Mousef, 80.f ) )
 		CL1.setColor( Color(255, 0, 0, 200) );

@@ -19,7 +19,7 @@ Sprite::Sprite() :
 	mVertexColors( NULL ),
 	mRepetitions( -1 ),
 	mBlend( BlendAlpha ),
-	mEffect( RN_NORMAL ),
+	mEffect( RENDER_NORMAL ),
 	mCurrentFrame( 0 ),
 	mfCurrentFrame( 0.f ),
 	mCurrentSubFrame( 0 ),
@@ -39,7 +39,7 @@ Sprite::Sprite( const std::string& name, const std::string& extension, TextureAt
 	mVertexColors( NULL ),
 	mRepetitions( -1 ),
 	mBlend( BlendAlpha ),
-	mEffect( RN_NORMAL ),
+	mEffect( RENDER_NORMAL ),
 	mCurrentFrame( 0 ),
 	mfCurrentFrame( 0.f ),
 	mCurrentSubFrame( 0 ),
@@ -60,7 +60,7 @@ Sprite::Sprite( SubTexture * SubTexture ) :
 	mVertexColors( NULL ),
 	mRepetitions( -1 ),
 	mBlend( BlendAlpha ),
-	mEffect( RN_NORMAL ),
+	mEffect( RENDER_NORMAL ),
 	mCurrentFrame( 0 ),
 	mfCurrentFrame( 0.f ),
 	mCurrentSubFrame( 0 ),
@@ -81,7 +81,7 @@ Sprite::Sprite( const Uint32& TexId, const Sizef &DestSize, const Vector2i &Offs
 	mVertexColors( NULL ),
 	mRepetitions( -1 ),
 	mBlend( BlendAlpha ),
-	mEffect( RN_NORMAL ),
+	mEffect( RENDER_NORMAL ),
 	mCurrentFrame( 0 ),
 	mfCurrentFrame( 0.f ),
 	mCurrentSubFrame( 0 ),
@@ -184,7 +184,7 @@ void Sprite::reset() {
 	mColor				= Color::White;
 
 	mBlend				= BlendAlpha;
-	mEffect				= RN_NORMAL;
+	mEffect				= RENDER_NORMAL;
 
 	mCurrentFrame		= 0;
 	mCurrentSubFrame 	= 0;
@@ -245,22 +245,22 @@ Quad2f Sprite::getQuad() {
 		}
 
 		switch ( mEffect ) {
-			case RN_NORMAL:
-			case RN_MIRROR:
-			case RN_FLIP:
-			case RN_FLIPMIRROR:
+			case RENDER_NORMAL:
+			case RENDER_MIRROR:
+			case RENDER_FLIPPED:
+			case RENDER_FLIPPED_MIRRORED:
 				break;
-			case RN_ISOMETRIC:
+			case RENDER_ISOMETRIC:
 				Q.V[0].x += ( TmpR.Right - TmpR.Left );
 				Q.V[1].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 				Q.V[3].x += ( TmpR.Right - TmpR.Left );
 				Q.V[3].y += ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 				break;
-			case RN_ISOMETRICVERTICAL:
+			case RENDER_ISOMETRIC_VERTICAL:
 				Q.V[0].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 				Q.V[1].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 				break;
-			case RN_ISOMETRICVERTICALNEGATIVE:
+			case RENDER_ISOMETRIC_VERTICAL_NEGATIVE:
 				Q.V[2].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 				Q.V[3].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 				break;
@@ -564,7 +564,7 @@ void Sprite::setReverseFromStart() {
 	mCurrentFrame = Size;
 }
 
-void Sprite::draw( const BlendMode& Blend, const EE_RENDER_MODE& Effect ) {
+void Sprite::draw( const BlendMode& Blend, const RenderMode& Effect ) {
 	if ( SPR_FGET( SPRITE_FLAG_AUTO_ANIM ) )
 		update();
 
@@ -765,11 +765,11 @@ const unsigned int& Sprite::getCurrentSubFrame() const {
 	return mCurrentSubFrame;
 }
 
-void Sprite::setRenderMode( const EE_RENDER_MODE& Effect ) {
+void Sprite::setRenderMode( const RenderMode& Effect ) {
 	mEffect = Effect;
 }
 
-const EE_RENDER_MODE& Sprite::getRenderMode() const {
+const RenderMode& Sprite::getRenderMode() const {
 	return mEffect;
 }
 

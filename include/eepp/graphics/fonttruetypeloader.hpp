@@ -75,7 +75,6 @@ class EE_API FontTrueTypeLoader : public ObjectLoader {
 		std::string			mFontName;
 		std::string			mFilepath;
 		unsigned int		mSize;
-		EE_TTF_FONT_STYLE	mStyle;
 		Uint16				mNumCharsToGen;
 		RGB					mFontColor;
 		Uint8				mOutlineSize;

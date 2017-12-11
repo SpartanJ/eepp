@@ -15,7 +15,7 @@ BatchRenderer::BatchRenderer() :
 	mTexture(NULL),
 	mTF( TextureFactory::instance() ),
 	mBlend(BlendAlpha),
-	mCurrentMode(DM_QUADS),
+	mCurrentMode(PRIMITIVE_QUADS),
 	mRotation(0.0f),
 	mScale(1.0f,1.0f),
 	mPosition(0.0f, 0.0f),
@@ -35,7 +35,7 @@ BatchRenderer::BatchRenderer( const unsigned int& Prealloc ) :
 	mTexture(NULL),
 	mTF( TextureFactory::instance() ),
 	mBlend(BlendAlpha),
-	mCurrentMode(DM_QUADS),
+	mCurrentMode(PRIMITIVE_QUADS),
 	mRotation(0.0f),
 	mScale(1.0f,1.0f),
 	mPosition(0.0f, 0.0f),
@@ -92,7 +92,7 @@ void BatchRenderer::addVertexs( const unsigned int& num ) {
 		flush();
 }
 
-void BatchRenderer::setDrawMode( const EE_DRAW_MODE& Mode, const bool& Force ) {
+void BatchRenderer::setDrawMode( const PrimitiveType& Mode, const bool& Force ) {
 	if ( Force && mCurrentMode != Mode ) {
 		flush();
 		mCurrentMode = Mode;
@@ -113,7 +113,7 @@ void BatchRenderer::flush() {
 
 	BlendMode::setMode( mBlend );
 
-	if ( mCurrentMode == DM_POINTS && NULL != mTexture ) {
+	if ( mCurrentMode == PRIMITIVE_POINTS && NULL != mTexture ) {
 		GLi->enable( GL_POINT_SPRITE );
 		GLi->pointSize( (float)mTexture->getWidth() );
 	}
@@ -142,10 +142,10 @@ void BatchRenderer::flush() {
 	GLi->colorPointer	( 4, GL_UNSIGNED_BYTE	, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(Vector2f) + sizeof(eeTexCoord)	, alloc		);
 
 	if ( !GLi->quadsSupported() ) {
-		if ( DM_QUADS == mCurrentMode ) {
-			GLi->drawArrays( DM_TRIANGLES, 0, NumVertex );
-		} else if ( DM_POLYGON == mCurrentMode ) {
-			GLi->drawArrays( DM_TRIANGLE_FAN, 0, NumVertex );
+		if ( PRIMITIVE_QUADS == mCurrentMode ) {
+			GLi->drawArrays( PRIMITIVE_TRIANGLES, 0, NumVertex );
+		} else if ( PRIMITIVE_POLYGON == mCurrentMode ) {
+			GLi->drawArrays( PRIMITIVE_TRIANGLE_FAN, 0, NumVertex );
 		} else {
 			GLi->drawArrays( mCurrentMode, 0, NumVertex );
 		}
@@ -157,7 +157,7 @@ void BatchRenderer::flush() {
 		GLi->popMatrix();
 	}
 
-	if ( mCurrentMode == DM_POINTS && NULL != mTexture ) {
+	if ( mCurrentMode == PRIMITIVE_POINTS && NULL != mTexture ) {
 		GLi->disable( GL_POINT_SPRITE );
 	}
 
@@ -191,7 +191,7 @@ void BatchRenderer::batchQuadEx( Float x, Float y, Float width, Float height, Fl
 	originPoint.x += x;
 	originPoint.y += y;
 
-	setDrawMode( DM_QUADS, mForceBlendMode );
+	setDrawMode( PRIMITIVE_QUADS, mForceBlendMode );
 
 	if ( GLi->quadsSupported() ) {
 		mTVertex 		= &mVertex[ mNumVertex ];
@@ -270,7 +270,7 @@ void BatchRenderer::batchQuadFree( const Float& x0, const Float& y0, const Float
 	if ( mNumVertex + ( GLi->quadsSupported() ? 3 : 5 ) >= mVertexSize )
 		return;
 
-	setDrawMode( DM_QUADS, mForceBlendMode );
+	setDrawMode( PRIMITIVE_QUADS, mForceBlendMode );
 
 	if ( GLi->quadsSupported() ) {
 		mTVertex 		= &mVertex[ mNumVertex ];
@@ -354,7 +354,7 @@ void BatchRenderer::batchQuadFreeEx( const Float& x0, const Float& y0, const Flo
 		mQ.scale( Scale, QCenter );
 	}
 
-	setDrawMode( DM_QUADS, mForceBlendMode );
+	setDrawMode( PRIMITIVE_QUADS, mForceBlendMode );
 
 	if ( GLi->quadsSupported() ) {
 		mTVertex 		= &mVertex[ mNumVertex ];
@@ -424,7 +424,7 @@ void BatchRenderer::batchQuadFreeEx( const Float& x0, const Float& y0, const Flo
 }
 
 void BatchRenderer::quadsBegin() {
-	setDrawMode( DM_QUADS, true );
+	setDrawMode( PRIMITIVE_QUADS, true );
 	quadsSetSubset( 0, 0, 1, 1 );
 	quadsSetColor( Color::White );
 }
@@ -465,7 +465,7 @@ void BatchRenderer::rotate( const Vector2f& center, Vector2f* point, const Float
 }
 
 void BatchRenderer::pointsBegin() {
-	setDrawMode( DM_POINTS, true );
+	setDrawMode( PRIMITIVE_POINTS, true );
 	quadsSetSubset( 0, 0, 1, 1 );
 	pointSetColor( Color::White );
 }
@@ -478,7 +478,7 @@ void BatchRenderer::batchPoint( const Float& x, const Float& y ) {
 	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
-	setDrawMode( DM_POINTS, mForceBlendMode );
+	setDrawMode( PRIMITIVE_POINTS, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x;
@@ -490,7 +490,7 @@ void BatchRenderer::batchPoint( const Float& x, const Float& y ) {
 }
 
 void BatchRenderer::linesBegin() {
-	setDrawMode( DM_LINES, true );
+	setDrawMode( PRIMITIVE_LINES, true );
 	quadsSetSubset( 0, 0, 1, 1 );
 	pointSetColor( Color::White );
 }
@@ -507,7 +507,7 @@ void BatchRenderer::batchLine( const Float& x0, const Float& y0, const Float& x1
 	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
-	setDrawMode( DM_LINES, mForceBlendMode );
+	setDrawMode( PRIMITIVE_LINES, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x0;
@@ -525,7 +525,7 @@ void BatchRenderer::batchLine( const Float& x0, const Float& y0, const Float& x1
 }
 
 void BatchRenderer::lineLoopBegin() {
-	setDrawMode( DM_LINE_LOOP, true );
+	setDrawMode( PRIMITIVE_LINE_LOOP, true );
 	quadsSetSubset( 0, 0, 1, 1 );
 	pointSetColor( Color::White );
 }
@@ -542,7 +542,7 @@ void BatchRenderer::batchLineLoop( const Float& x0, const Float& y0, const Float
 	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
-	setDrawMode( DM_LINE_LOOP, mForceBlendMode );
+	setDrawMode( PRIMITIVE_LINE_LOOP, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x0;
@@ -567,7 +567,7 @@ void BatchRenderer::batchLineLoop( const Float& x0, const Float& y0 ) {
 	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
-	setDrawMode( DM_LINE_LOOP, mForceBlendMode );
+	setDrawMode( PRIMITIVE_LINE_LOOP, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x0;
@@ -583,7 +583,7 @@ void BatchRenderer::batchLineLoop( const Vector2f& vector1 ) {
 }
 
 void BatchRenderer::lineStripBegin() {
-	setDrawMode( DM_LINE_STRIP, true );
+	setDrawMode( PRIMITIVE_LINE_STRIP, true );
 	quadsSetSubset( 0, 0, 1, 1 );
 	pointSetColor( Color::White );
 }
@@ -600,7 +600,7 @@ void BatchRenderer::batchLineStrip( const Float& x0, const Float& y0, const Floa
 	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
-	setDrawMode( DM_LINE_STRIP, mForceBlendMode );
+	setDrawMode( PRIMITIVE_LINE_STRIP, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x0;
@@ -625,7 +625,7 @@ void BatchRenderer::batchLineStrip( const Float& x0, const Float& y0 ) {
 	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
-	setDrawMode( DM_LINE_STRIP, mForceBlendMode );
+	setDrawMode( PRIMITIVE_LINE_STRIP, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x0;
@@ -641,7 +641,7 @@ void BatchRenderer::batchLineStrip( const Vector2f& vector1 ) {
 }
 
 void BatchRenderer::triangleFanBegin() {
-	setDrawMode( DM_TRIANGLE_FAN, true );
+	setDrawMode( PRIMITIVE_TRIANGLE_FAN, true );
 	triangleFanSetSubset( 0, 0, 0, 1, 1, 1 );
 	triangleFanSetColor( Color::White );
 }
@@ -665,7 +665,7 @@ void BatchRenderer::batchTriangleFan( const Float& x0, const Float& y0, const Fl
 	if ( mNumVertex + 3 >= mVertexSize )
 		return;
 
-	setDrawMode( DM_TRIANGLE_FAN, mForceBlendMode );
+	setDrawMode( PRIMITIVE_TRIANGLE_FAN, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x0;
@@ -692,7 +692,7 @@ void BatchRenderer::batchTriangleFan( const Float& x0, const Float& y0 ) {
 	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
-	setDrawMode( DM_TRIANGLE_FAN, mForceBlendMode );
+	setDrawMode( PRIMITIVE_TRIANGLE_FAN, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x0;
@@ -704,7 +704,7 @@ void BatchRenderer::batchTriangleFan( const Float& x0, const Float& y0 ) {
 }
 
 void BatchRenderer::trianglesBegin() {
-	setDrawMode( DM_TRIANGLES, true );
+	setDrawMode( PRIMITIVE_TRIANGLES, true );
 	trianglesSetSubset( 0, 0, 0, 1, 1, 1 );
 	trianglesSetColor( Color::White );
 }
@@ -728,7 +728,7 @@ void BatchRenderer::batchTriangle( const Float& x0, const Float& y0, const Float
 	if ( mNumVertex + 2 >= mVertexSize )
 		return;
 
-	setDrawMode( DM_TRIANGLES, mForceBlendMode );
+	setDrawMode( PRIMITIVE_TRIANGLES, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x0;
@@ -759,7 +759,7 @@ void BatchRenderer::batchPolygon( const Polygon2f& Polygon ) {
 	if ( Polygon.getSize() > mVertexSize )
 		return;
 
-	setDrawMode( DM_POLYGON, mForceBlendMode );
+	setDrawMode( PRIMITIVE_POLYGON, mForceBlendMode );
 
 	for ( Uint32 i = 0; i < Polygon.getSize(); i++ ) {
 		mTVertex = &mVertex[ mNumVertex ];
@@ -776,7 +776,7 @@ void BatchRenderer::batchPolygonByPoint( const Float& x, const Float& y ) {
 	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
-	setDrawMode( DM_POLYGON, mForceBlendMode );
+	setDrawMode( PRIMITIVE_POLYGON, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x;

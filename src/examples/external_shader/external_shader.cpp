@@ -192,7 +192,7 @@ void mainLoop()
 	GLi->colorPointer( 4, GL_FP, sizeof(ColorAf), reinterpret_cast<char*> ( &colors[0] ), ParticlesNum * sizeof(Float) * 4 );
 
 	/// Draw the lines
-	GLi->drawArrays( DM_LINES, 0, ParticlesNum );
+	GLi->drawArrays( PRIMITIVE_LINES, 0, ParticlesNum );
 
 	/// Stop the simulation if the window is not visible
 	while ( !win->isVisible() ) {

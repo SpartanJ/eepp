@@ -436,11 +436,11 @@ const Color& Primitives::getColor()
 	return mColor;
 }
 
-void Primitives::setFillMode( const EE_FILL_MODE& Mode ) {
+void Primitives::setFillMode( const PrimitiveFillMode& Mode ) {
 	mFillMode = Mode;
 }
 
-const EE_FILL_MODE& Primitives::getFillMode() const {
+const PrimitiveFillMode& Primitives::getFillMode() const {
 	return mFillMode;
 }
 
