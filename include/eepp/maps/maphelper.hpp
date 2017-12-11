@@ -86,7 +86,8 @@ class GObjFlags {
 			GAMEOBJECT_FLIPED				= ( 1 << 3 ),
 			GAMEOBJECT_BLOCKED				= ( 1 << 4 ),
 			GAMEOBJECT_ROTATE_90DEG			= ( 1 << 5 ),
-			GAMEOBJECT_AUTO_FIX_TILE_POS	= ( 1 << 6 )
+			GAMEOBJECT_AUTO_FIX_TILE_POS	= ( 1 << 6 ),
+			GAMEOBJECT_BLEND_ADD			= ( 1 << 7 )
 		};
 };
 

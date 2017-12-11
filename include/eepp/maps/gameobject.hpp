@@ -6,6 +6,7 @@
 #include <eepp/maps/maplayer.hpp>
 
 #include <eepp/graphics/rendermode.hpp>
+#include <eepp/graphics/blendmode.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Maps {
@@ -58,6 +59,10 @@ class EE_API GameObject {
 
 		void setFliped( bool fliped );
 
+		bool isBlendAdd() const;
+
+		void setBlendAdd( bool blendAdd );
+
 		virtual Uint32 getDataId();
 
 		virtual void setDataId( Uint32 Id );
@@ -68,6 +73,8 @@ class EE_API GameObject {
 		MapLayer *	mLayer;
 
 		virtual RenderMode getRenderModeFromFlags();
+
+		virtual BlendMode getBlendModeFromFlags();
 
 		void autoFixTilePos();
 

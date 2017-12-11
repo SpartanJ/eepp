@@ -315,7 +315,13 @@ void MapEditor::createSubTextureContainer( Int32 Width ) {
 	mChkAutoFix->setTooltipText( "In a tiled layer if the sprite is moved,\nit will update the current tile position automatically." );
 	mChkAutoFix->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickAutoFix ) );
 
-	Txt = createTextBox( "Game Object Data:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mChkRot90->getPosition().y + mChkRot90->getSize().getHeight() + 8 ), TxtFlags, Text::Shadow );
+	mChkBlendAdd = UICheckBox::New();
+	mChkBlendAdd->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( mChkRot90->getPosition().x, mChkRot90->getPosition().y + mChkRot90->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkBlendAdd->setText( "Additive Blend" );
+	mChkBlendAdd->setTooltipText( "Use additive blend mode." );
+	mChkBlendAdd->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickAutoFix ) );
+
+	Txt = createTextBox( "Game Object Data:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mChkBlendAdd->getPosition().y + mChkBlendAdd->getSize().getHeight() + 8 ), TxtFlags, Text::Shadow );
 
 	mChkDI = UICheckBox::New();
 	mChkDI->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
@@ -678,6 +684,9 @@ void MapEditor::updateFlags() {
 
 	if ( mChkAutoFix->isActive() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_AUTO_FIX_TILE_POS;
+
+	if ( mChkBlendAdd->isActive() )
+		mCurGOFlags |= GObjFlags::GAMEOBJECT_BLEND_ADD;
 }
 
 void MapEditor::onTypeChange( const UIEvent * Event ) {

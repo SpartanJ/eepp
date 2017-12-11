@@ -298,8 +298,8 @@ void TextureAtlasEditor::onSubTextureChange( const UIEvent * Event ) {
 
 		if ( NULL != mCurSubTexture ) {
 			mSubTextureEditor->setSubTexture( mCurSubTexture );
-			mSpinOffX->setValue( PixelDensity::pxToDp( mCurSubTexture->getOffset().x ) );
-			mSpinOffY->setValue( PixelDensity::pxToDp( mCurSubTexture->getOffset().y ) );
+			mSpinOffX->setValue( mCurSubTexture->getOffset().x );
+			mSpinOffY->setValue( mCurSubTexture->getOffset().y );
 			mSpinDestW->setValue( mCurSubTexture->getDpSize().x );
 			mSpinDestH->setValue( mCurSubTexture->getDpSize().y );
 		}

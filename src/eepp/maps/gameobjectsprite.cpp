@@ -10,8 +10,10 @@ GameObjectSprite::GameObjectSprite( const Uint32& Flags, MapLayer * Layer, Graph
 	GameObject( Flags, Layer ),
 	mSprite( Sprite )
 {
-	if ( NULL != mSprite )
+	if ( NULL != mSprite ) {
 		mSprite->setRenderMode( getRenderModeFromFlags() );
+		mSprite->setBlendMode( getBlendModeFromFlags() );
+	}
 
 	assignTilePos();
 }
@@ -117,13 +119,15 @@ void GameObjectSprite::setSprite( Graphics::Sprite * sprite ) {
 	eeSAFE_DELETE( mSprite );
 	mSprite = sprite;
 	mSprite->setRenderMode( getRenderModeFromFlags() );
+	mSprite->setBlendMode( getBlendModeFromFlags() );
 	mSprite->setAutoAnimate( false );
 }
 
 void GameObjectSprite::setFlag( const Uint32& Flag ) {
-	if ( NULL != mSprite )
+	if ( NULL != mSprite ) {
 		mSprite->setRenderMode( getRenderModeFromFlags() );
-
+		mSprite->setBlendMode( getBlendModeFromFlags() );
+	}
 	GameObject::setFlag( Flag );
 }
 

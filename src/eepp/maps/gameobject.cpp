@@ -73,6 +73,14 @@ void GameObject::setFliped( bool fliped ) {
 	fliped ? setFlag( GObjFlags::GAMEOBJECT_FLIPED ) : clearFlag( GObjFlags::GAMEOBJECT_FLIPED );
 }
 
+bool GameObject::isBlendAdd() const {
+	return 0 != ( mFlags & GObjFlags::GAMEOBJECT_BLEND_ADD );
+}
+
+void GameObject::setBlendAdd(bool blendAdd) {
+	blendAdd ? setFlag( GObjFlags::GAMEOBJECT_BLEND_ADD ) : clearFlag( GObjFlags::GAMEOBJECT_BLEND_ADD );
+}
+
 void GameObject::draw() {
 }
 
@@ -117,6 +125,10 @@ RenderMode GameObject::getRenderModeFromFlags() {
 	}
 
 	return Render;
+}
+
+BlendMode GameObject::getBlendModeFromFlags() {
+	return isBlendAdd() ? BlendAdd : BlendAlpha;
 }
 
 MapLayer * GameObject::getLayer() const {

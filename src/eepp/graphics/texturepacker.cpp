@@ -467,10 +467,11 @@ Int32 TexturePacker::packTextures() { // pack the textures, the return code is t
 		//   (2) A match of one edge with the minimum area left over after the split.
 		//   (3) No edges match, so look for the node which leaves the least amount of area left over after the split.
 
-		if ( PackBig == mStrategy )
-			t 									= getLonguestEdge();
-		else if ( PackTiny == mStrategy )
-			t 									= getShortestEdge();
+		if ( PackBig == mStrategy ) {
+			t = getLonguestEdge();
+		} else if ( PackTiny == mStrategy ) {
+			t = getShortestEdge();
+		}
 
 		TexturePackerNode * previousBestFit = NULL;
 		Int32 edgeCount 					= 0;
@@ -478,8 +479,11 @@ Int32 TexturePacker::packTextures() { // pack the textures, the return code is t
 
 		if ( NULL == bestFit ) {
 			if ( PackBig == mStrategy ) {
-				mStrategy = PackTiny;
 				eePRINTL( "Chaging Strategy to Tiny. %s faults.", t->name().c_str() );
+				reset();
+				addBorderToTextures( -( (Int32)mPixelBorder ) );
+				mStrategy = PackTiny;
+				return packTextures();
 			} else if ( PackTiny == mStrategy ) {
 				mStrategy = PackFail;
 				eePRINTL( "Strategy fail, must expand image or create a new one. %s faults.", t->name().c_str() );

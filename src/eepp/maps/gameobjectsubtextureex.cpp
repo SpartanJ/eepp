@@ -14,6 +14,7 @@ GameObjectSubTextureEx::GameObjectSubTextureEx( const Uint32& Flags, MapLayer * 
 	mVertexColors( NULL )
 {
 	mRender = getRenderModeFromFlags();
+	mBlend = getBlendModeFromFlags();
 
 	if ( 0 == mAngle )
 		mAngle = getRotation();
@@ -91,7 +92,7 @@ void GameObjectSubTextureEx::draw() {
 
 void GameObjectSubTextureEx::setFlag( const Uint32& Flag ) {
 	mRender = getRenderModeFromFlags();
-
+	mBlend = getBlendModeFromFlags();
 	GameObject::setFlag( Flag );
 }
 

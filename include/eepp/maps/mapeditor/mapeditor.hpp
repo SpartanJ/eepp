@@ -62,6 +62,7 @@ class EE_API MapEditor {
 		UICheckBox *		mChkAnim;
 		UICheckBox *		mChkRot90;
 		UICheckBox *		mChkAutoFix;
+		UICheckBox *		mChkBlendAdd;
 		MapLayer *			mCurLayer;
 		UIPushButton *		mBtnGOTypeAdd;
 		Uint32				mCurGOType;
