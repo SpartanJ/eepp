@@ -90,6 +90,22 @@ void TexturePacker::reset() {
 	eeSAFE_DELETE( mChild );
 }
 
+Uint32 TexturePacker::getAtlasNumChannels() {
+	Uint32 maxChannels = 0;
+	TexturePackerTex * t = NULL;
+	std::list<TexturePackerTex*>::iterator it;
+
+	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+		t = (*it);
+
+		if ( t->placed() ) {
+			maxChannels = eemax( maxChannels, (Uint32)t->channels() );
+		}
+	}
+
+	return maxChannels;
+}
+
 void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const bool& AllowFlipping ) {
 	if ( !mTextures.size() ) { // only can change the dimensions before adding any texture
 		mMaxSize.x = MaxWidth;
@@ -549,7 +565,7 @@ void TexturePacker::save( const std::string& Filepath, const Image::SaveType& Fo
 	mFilepath = Filepath;
 	mSaveExtensions = SaveExtensions;
 
-	Image Img( (Uint32)mWidth, (Uint32)mHeight, (Uint32)4 );
+	Image Img( (Uint32)mWidth, (Uint32)mHeight, getAtlasNumChannels() );
 
 	Img.fillWithColor( Color(0,0,0,0) );
 

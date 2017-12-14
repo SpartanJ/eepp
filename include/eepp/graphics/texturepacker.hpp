@@ -171,6 +171,8 @@ class EE_API TexturePacker {
 		bool							addPackerTex( TexturePackerTex * TPack );
 
 		void							reset();
+
+		Uint32							getAtlasNumChannels();
 };
 
 }}
