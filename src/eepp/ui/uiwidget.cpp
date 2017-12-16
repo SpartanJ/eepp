@@ -50,9 +50,12 @@ Rect UIWidget::getLayoutMargin() const {
 }
 
 UIWidget * UIWidget::setLayoutMargin(const Rect & margin) {
-	mLayoutMargin = margin;
-	mRealMargin = PixelDensity::dpToPxI( margin );
-	notifyLayoutAttrChange();
+	if ( mLayoutMargin != margin ) {
+		mLayoutMargin = margin;
+		mRealMargin = PixelDensity::dpToPxI( margin );
+		notifyLayoutAttrChange();
+	}
+
 	return this;
 }
 
@@ -61,8 +64,11 @@ Float UIWidget::getLayoutWeight() const {
 }
 
 UIWidget * UIWidget::setLayoutWeight(const Float & weight) {
-	mLayoutWeight = weight;
-	notifyLayoutAttrChange();
+	if ( mLayoutWeight != weight ) {
+		mLayoutWeight = weight;
+		notifyLayoutAttrChange();
+	}
+
 	return this;
 }
 
@@ -71,8 +77,11 @@ Uint32 UIWidget::getLayoutGravity() const {
 }
 
 UIWidget * UIWidget::setLayoutGravity(const Uint32 & layoutGravity) {
-	mLayoutGravity = layoutGravity;
-	notifyLayoutAttrChange();
+	if ( mLayoutGravity != layoutGravity ) {
+		mLayoutGravity = layoutGravity;
+		notifyLayoutAttrChange();
+	}
+
 	return this;
 }
 
@@ -81,8 +90,11 @@ LayoutSizeRules UIWidget::getLayoutWidthRules() const {
 }
 
 UIWidget * UIWidget::setLayoutWidthRules(const LayoutSizeRules & layoutWidthRules) {
-	mLayoutWidthRules = layoutWidthRules;
-	notifyLayoutAttrChange();
+	if ( mLayoutWidthRules != layoutWidthRules ) {
+		mLayoutWidthRules = layoutWidthRules;
+		notifyLayoutAttrChange();
+	}
+
 	return this;
 }
 
@@ -91,22 +103,32 @@ LayoutSizeRules UIWidget::getLayoutHeightRules() const {
 }
 
 UIWidget * UIWidget::setLayoutHeightRules(const LayoutSizeRules & layoutHeightRules) {
-	mLayoutHeightRules = layoutHeightRules;
-	notifyLayoutAttrChange();
+	if ( mLayoutHeightRules != layoutHeightRules ) {
+		mLayoutHeightRules = layoutHeightRules;
+		notifyLayoutAttrChange();
+	}
+
 	return this;
 }
 
 UIWidget * UIWidget::setLayoutSizeRules(const LayoutSizeRules & layoutWidthRules, const LayoutSizeRules & layoutHeightRules) {
-	mLayoutWidthRules = layoutWidthRules;
-	mLayoutHeightRules = layoutHeightRules;
-	notifyLayoutAttrChange();
+	if ( mLayoutWidthRules != layoutWidthRules || mLayoutHeightRules != layoutHeightRules ) {
+		mLayoutWidthRules = layoutWidthRules;
+		mLayoutHeightRules = layoutHeightRules;
+		notifyLayoutAttrChange();
+	}
+
 	return this;
 }
 
 UIWidget * UIWidget::setLayoutPositionRule(const LayoutPositionRules & layoutPositionRule, UIWidget * of) {
-	mLayoutPositionRule = layoutPositionRule;
-	mLayoutPositionRuleWidget  = of;
-	notifyLayoutAttrChange();
+
+	if ( mLayoutPositionRule != layoutPositionRule || mLayoutPositionRuleWidget != of ) {
+		mLayoutPositionRule = layoutPositionRule;
+		mLayoutPositionRuleWidget = of;
+		notifyLayoutAttrChange();
+	}
+
 	return this;
 }
 

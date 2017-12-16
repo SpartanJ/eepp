@@ -294,7 +294,7 @@ UISkin * UITheme::getSkin(const std::string & controlName) {
 	return getByName( mAbbr + "_" + controlName );
 }
 
-void UITheme::setFontStyleConfig(const UITooltipStyleConfig & fontConfig) {
+void UITheme::setFontStyleConfig(UIFontStyleConfig fontConfig) {
 	mFontStyleConfig = fontConfig;
 }
 
@@ -334,7 +334,7 @@ UITooltipStyleConfig UITheme::getTooltipStyleConfig() {
 	return UITooltipStyleConfig( getFontStyleConfig() );
 }
 
-UITooltipStyleConfig UITheme::getFontStyleConfig() const {
+UIFontStyleConfig UITheme::getFontStyleConfig() const {
 	return mFontStyleConfig;
 }
 

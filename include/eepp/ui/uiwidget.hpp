@@ -81,6 +81,10 @@ class EE_API UIWidget : public UIControlAnim {
 		LayoutPositionRules getLayoutPositionRule() const;
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
+
+		void notifyLayoutAttrChange();
+
+		void notifyLayoutAttrChangeParent();
 	protected:
 		friend class UIManager;
 
@@ -113,10 +117,6 @@ class EE_API UIWidget : public UIControlAnim {
 		void beginPropertiesTransaction();
 
 		void endPropertiesTransaction();
-
-		void notifyLayoutAttrChange();
-
-		void notifyLayoutAttrChangeParent();
 
 		void updateAnchors( const Vector2i & SizeChange );
 

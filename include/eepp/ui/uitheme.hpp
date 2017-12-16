@@ -57,9 +57,9 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		UISkin * getSkin( const std::string& controlName );
 
-		UITooltipStyleConfig getFontStyleConfig() const;
+		UIFontStyleConfig getFontStyleConfig() const;
 
-		void setFontStyleConfig(const UITooltipStyleConfig & fontConfig);
+		void setFontStyleConfig(UIFontStyleConfig fontConfig);
 
 		virtual UITabWidgetStyleConfig getTabWidgetStyleConfig();
 
@@ -83,7 +83,7 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 		Uint32					mNameHash;
 		std::string				mAbbr;
 		Graphics::TextureAtlas *mTextureAtlas;
-		UITooltipStyleConfig	mFontStyleConfig;
+		UIFontStyleConfig		mFontStyleConfig;
 
 		void setTextureAtlas( Graphics::TextureAtlas * SG );
 };
