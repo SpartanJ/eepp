@@ -159,16 +159,18 @@ const String& UITextView::getText() {
 }
 
 UITextView * UITextView::setText( const String& text ) {
-	if ( mFlags & UI_WORD_WRAP ) {
-		mString = text;
-		mTextCache->setString( mString );
-	} else {
-		mTextCache->setString( text );
-	}
+	if ( mString != text ) {
+		if ( mFlags & UI_WORD_WRAP ) {
+			mString = text;
+			mTextCache->setString( mString );
+		} else {
+			mTextCache->setString( text );
+		}
 
-	recalculate();
-	onTextChanged();
-	notifyLayoutAttrChange();
+		recalculate();
+		onTextChanged();
+		notifyLayoutAttrChange();
+	}
 
 	return this;
 }
@@ -178,10 +180,12 @@ const Color& UITextView::getFontColor() const {
 }
 
 UITextView * UITextView::setFontColor( const Color& color ) {
-	mFontStyleConfig.FontColor = color;
-	mTextCache->setFillColor( color );
+	if ( mFontStyleConfig.FontColor != color ) {
+		mFontStyleConfig.FontColor = color;
+		mTextCache->setFillColor( color );
 
-	setAlpha( color.a );
+		setAlpha( color.a );
+	}
 
 	return this;
 }
@@ -191,9 +195,12 @@ const Color& UITextView::getFontShadowColor() const {
 }
 
 UITextView * UITextView::setFontShadowColor( const Color& color ) {
-	mFontStyleConfig.ShadowColor = color;
-	mTextCache->setShadowColor( mFontStyleConfig.ShadowColor );
-	invalidateDraw();
+	if ( mFontStyleConfig.ShadowColor != color ) {
+		mFontStyleConfig.ShadowColor = color;
+		mTextCache->setShadowColor( mFontStyleConfig.ShadowColor );
+		invalidateDraw();
+	}
+
 	return this;
 }
 
@@ -202,17 +209,22 @@ const Color& UITextView::getSelectionBackColor() const {
 }
 
 UITextView * UITextView::setSelectionBackColor( const Color& color ) {
-	mFontStyleConfig.FontSelectionBackColor = color;
-	invalidateDraw();
+	if ( mFontStyleConfig.FontSelectionBackColor != color ) {
+		mFontStyleConfig.FontSelectionBackColor = color;
+		invalidateDraw();
+	}
+
 	return this;
 }
 
 void UITextView::setAlpha( const Float& alpha ) {
-	UIControlAnim::setAlpha( alpha );
-	mFontStyleConfig.FontColor.a = (Uint8)alpha;
-	mFontStyleConfig.ShadowColor.a = (Uint8)alpha;
+	if ( mAlpha != alpha ) {
+		UIControlAnim::setAlpha( alpha );
+		mFontStyleConfig.FontColor.a = (Uint8)alpha;
+		mFontStyleConfig.ShadowColor.a = (Uint8)alpha;
 
-	mTextCache->setAlpha( mFontStyleConfig.FontColor.a );
+		mTextCache->setAlpha( mFontStyleConfig.FontColor.a );
+	}
 }
 
 void UITextView::autoShrink() {
@@ -439,13 +451,17 @@ UITooltipStyleConfig UITextView::getFontStyleConfig() const {
 }
 
 void UITextView::selCurInit( const Int32& init ) {
-	mSelCurInit = init;
-	invalidateDraw();
+	if ( mSelCurInit != init ) {
+		mSelCurInit = init;
+		invalidateDraw();
+	}
 }
 
 void UITextView::selCurEnd( const Int32& end ) {
-	mSelCurEnd = end;
-	invalidateDraw();
+	if ( mSelCurEnd != end ) {
+		mSelCurEnd = end;
+		invalidateDraw();
+	}
 }
 
 Int32 UITextView::selCurInit() {
