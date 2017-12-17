@@ -17,6 +17,10 @@ class EE_API UIWidgetCreator {
 		static void removeCustomWidgetCallback( std::string widgetName );
 
 		static bool existsCustomWidgetCallback( std::string widgetName );
+	protected:
+		typedef std::map<std::string, UIWidgetCreator::CustomWidgetCb> WidgetCallbackMap;
+
+		static WidgetCallbackMap widgetCallback;
 };
 
 }}

@@ -1665,7 +1665,7 @@ void UIControl::setReverseDraw( bool reverseDraw ) {
 void UIControl::invalidateDraw() {
 	if ( NULL != mParentWindowCtrl ) {
 		mParentWindowCtrl->invalidate();
-	} else if (  NULL == mParentCtrl && isWindow() ) {
+	} else if ( NULL == mParentCtrl && isWindow() ) {
 		static_cast<UIWindow*>( this )->invalidate();
 	}
 }

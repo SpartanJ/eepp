@@ -32,16 +32,14 @@
 
 namespace  EE { namespace UI {
 
-typedef std::map<std::string, UIWidgetCreator::CustomWidgetCb> widgetCallbackMap;
-
-static widgetCallbackMap widgetCallback;
+UIWidgetCreator::WidgetCallbackMap UIWidgetCreator::widgetCallback = UIWidgetCreator::WidgetCallbackMap();
 
 UIWidget * UIWidgetCreator::createFromName( std::string widgetName ) {
 	String::toLowerInPlace( widgetName );
 
 	if ( widgetName == "widget" )				return UIWidget::New();
-	else if ( widgetName == "horizontallinearlayout" || widgetName == "hll" )									return UILinearLayout::NewHorizontal();
-	else if ( widgetName == "linearlayout" || widgetName == "verticallinearlayout" || widgetName == "vll" )		return UILinearLayout::NewVertical();
+	else if ( widgetName == "horizontallinearlayout" || widgetName == "hll" || widgetName == "hbox" )									return UILinearLayout::NewHorizontal();
+	else if ( widgetName == "linearlayout" || widgetName == "verticallinearlayout" || widgetName == "vll" || widgetName == "vbox" )		return UILinearLayout::NewVertical();
 	else if ( widgetName == "relativelayout" )	return UIRelativeLayout::New();
 	else if ( widgetName == "textview" )		return UITextView::New();
 	else if ( widgetName == "pushbutton" )		return UIPushButton::New();

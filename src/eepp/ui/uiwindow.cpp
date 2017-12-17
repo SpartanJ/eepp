@@ -1127,7 +1127,7 @@ void UIWindow::internalDraw() {
 
 		matrixSet();
 
-		if ( !ownsFrameBuffer() || !UIManager::instance()->usesInvalidation() || ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) ) {
+		if ( !ownsFrameBuffer() || !UIManager::instance()->usesInvalidation() || invalidated() ) {
 			clipMe();
 
 			draw();
@@ -1170,7 +1170,7 @@ bool UIWindow::invalidated() {
 void UIWindow::matrixSet() {
 	if ( ownsFrameBuffer() ) {
 		if ( NULL != mFrameBuffer ) {
-			if ( !UIManager::instance()->usesInvalidation() || ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) ) {
+			if ( !UIManager::instance()->usesInvalidation() || invalidated() ) {
 				mFrameBufferBound = true;
 
 				mFrameBuffer->bind();
