@@ -128,7 +128,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 	return tTheme;
 }
 
-UITheme * UITheme::loadFromFile(UITheme * tTheme, const std::string& Path , const Float & pixelDensity ) {
+UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path , const Float & pixelDensity ) {
 	Clock TE;
 
 	std::string RPath( Path );
@@ -223,8 +223,8 @@ UITheme * UITheme::loadFromFile(UITheme * tTheme, const std::string& Path , cons
 	return tTheme;
 }
 
-UITheme * UITheme::loadFromFile( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const Float& pixelDensity ) {
-	return loadFromFile( UITheme::New( Name, NameAbbr ), Path, pixelDensity );
+UITheme * UITheme::loadFromDirectroy( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const Float& pixelDensity ) {
+	return loadFromDirectroy( UITheme::New( Name, NameAbbr ), Path, pixelDensity );
 }
 
 UITheme * UITheme::loadFromTextureAtlas( Graphics::TextureAtlas * TextureAtlas, const std::string& Name, const std::string NameAbbr ) {

@@ -372,7 +372,7 @@ void EETest::createUI() {
 	UIManager::instance()->init(UI_MAN_OPS | UI_MANAGER_USE_DRAW_INVALIDATION | UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER);
 	UIManager::instance()->setTranslator( mTranslator );
 
-	//mTheme = UITheme::loadFromFile( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
+	//mTheme = UITheme::loadFromDirectory( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
 
 	TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
 	mTheme = UITheme::loadFromTextureAtlas( UIThemeDefault::New( mThemeName, mThemeName ), TextureAtlasManager::instance()->getByName( mThemeName ) );
