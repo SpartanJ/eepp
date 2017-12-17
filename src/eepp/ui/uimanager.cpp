@@ -83,6 +83,8 @@ void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 
 	mCbId = mKM->pushCallback( cb::Make1( this, &UIManager::inputCallback ) );
 	mResizeCb = mWindow->pushResizeCallback( cb::Make1( this, &UIManager::resizeControl ) );
+
+	mClock.restart();
 }
 
 void UIManager::shutdown() {
@@ -203,7 +205,7 @@ void UIManager::sendMsg( UIControl * Ctrl, const Uint32& Msg, const Uint32& Flag
 }
 
 void UIManager::update() {
-	mElapsed = mWindow->getElapsed();
+	mElapsed = mClock.getElapsed();
 
 	bool wasDraggingControl = isControlDragging();
 

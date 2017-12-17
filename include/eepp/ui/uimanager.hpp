@@ -161,6 +161,7 @@ class EE_API UIManager {
 		UIControl *			mLossFocusControl;
 		std::list<UIWindow*> mWindowsList;
 		std::list<UIControl*> mCloseList;
+		Clock				mClock;
 
 		Time	 			mElapsed;
 		Int32 				mCbId;

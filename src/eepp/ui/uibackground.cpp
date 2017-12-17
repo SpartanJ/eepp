@@ -140,6 +140,7 @@ void UIBackground::draw( Rectf R, const Float& alpha ) {
 	}
 
 	if ( NULL != mDrawable ) {
+		mDrawable->setAlpha( alpha );
 		mDrawable->draw( R.getPosition(), R.getSize() );
 	}
 }
