@@ -34,6 +34,8 @@ namespace  EE { namespace UI {
 
 UIWidgetCreator::WidgetCallbackMap UIWidgetCreator::widgetCallback = UIWidgetCreator::WidgetCallbackMap();
 
+UIWidgetCreator::RegisteredWidgetCallbackMap UIWidgetCreator::registeredWidget = UIWidgetCreator::RegisteredWidgetCallbackMap();
+
 UIWidget * UIWidgetCreator::createFromName( std::string widgetName ) {
 	String::toLowerInPlace( widgetName );
 
@@ -70,6 +72,10 @@ UIWidget * UIWidgetCreator::createFromName( std::string widgetName ) {
 	else if ( widgetName == "touchdragable" )	return UITouchDragableWidget::New();
 	else if ( widgetName == "gridlayout" )		return UIGridLayout::New();
 
+	if ( registeredWidget.find( widgetName ) != registeredWidget.end() ) {
+		return registeredWidget[ widgetName ].Call();
+	}
+
 	if ( widgetCallback.find( widgetName ) != widgetCallback.end() ) {
 		return widgetCallback[ widgetName ].Call( widgetName );
 	}
@@ -87,6 +93,18 @@ void UIWidgetCreator::removeCustomWidgetCallback( std::string widgetName ) {
 
 bool UIWidgetCreator::existsCustomWidgetCallback( std::string widgetName ) {
 	return widgetCallback.find( String::toLower( widgetName ) ) != widgetCallback.end();
+}
+
+void UIWidgetCreator::registerWidget( std::string widgetName, const UIWidgetCreator::RegisterWidgetCb & cb ) {
+	registeredWidget[ String::toLower( widgetName ) ] = cb;
+}
+
+void UIWidgetCreator::unregisterWidget( std::string widgetName ) {
+	registeredWidget.erase( String::toLower( widgetName ) );
+}
+
+bool UIWidgetCreator::isWidgetRegistered( std::string widgetName ) {
+	return registeredWidget.find( String::toLower( widgetName ) ) != registeredWidget.end();
 }
 
 }}
