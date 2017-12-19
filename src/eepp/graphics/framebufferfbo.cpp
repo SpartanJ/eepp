@@ -4,6 +4,7 @@
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/subtexture.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -14,23 +15,27 @@ bool FrameBufferFBO::isSupported() {
 FrameBufferFBO::FrameBufferFBO( EE::Window::Window * window ) :
 	FrameBuffer( window ),
 	mFrameBuffer(0),
+	mColorBuffer(0),
 	mDepthBuffer(0),
 	mStencilBuffer(0),
 	mLastFB(0),
+	mLastCB(0),
 	mLastDB(0),
 	mLastSB(0)
 {}
 
-FrameBufferFBO::FrameBufferFBO( const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer, const Uint32& channels, EE::Window::Window * window ) :
+FrameBufferFBO::FrameBufferFBO( const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer, bool useColorBuffer, const Uint32& channels, EE::Window::Window * window ) :
 	FrameBuffer( window ),
 	mFrameBuffer(0),
+	mColorBuffer(0),
 	mDepthBuffer(0),
 	mStencilBuffer(0),
 	mLastFB(0),
+	mLastCB(0),
 	mLastDB(0),
 	mLastSB(0)
 {
-	create( Width, Height, StencilBuffer, DepthBuffer, channels );
+	create( Width, Height, StencilBuffer, DepthBuffer, useColorBuffer, channels );
 }
 
 FrameBufferFBO::~FrameBufferFBO() {
@@ -53,6 +58,11 @@ FrameBufferFBO::~FrameBufferFBO() {
 		GLi->deleteRenderbuffers( 1, &stencilBuffer );
 	}
 
+	if ( mColorBuffer ) {
+		unsigned int colorBuffer = static_cast<unsigned int>( mColorBuffer );
+		GLi->deleteRenderbuffers( 1, &colorBuffer );
+	}
+
 	if ( mFrameBuffer ) {
 		unsigned int frameBuffer = static_cast<unsigned int>( mFrameBuffer );
 		GLi->deleteFramebuffers( 1, &frameBuffer );
@@ -60,10 +70,10 @@ FrameBufferFBO::~FrameBufferFBO() {
 }
 
 bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height ) {
-	return create( Width, Height, true, false, 4 );
+	return create( Width, Height, true, false, false, 4 );
 }
 
-bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer, const Uint32& channels ) {
+bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer, bool useColorBuffer, const Uint32& channels ) {
 	if ( !isSupported() )
 		return false;
 
@@ -73,6 +83,7 @@ bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool Ste
 
 	mSize.x = Width;
 	mSize.y = Height;
+	mHasColorBuffer = useColorBuffer && GLi->version() != GLv_ES1 && GLi->version() != GLv_ES2;
 	mHasStencilBuffer = StencilBuffer;
 	mHasDepthBuffer = DepthBuffer;
 	mChannels = channels;
@@ -126,23 +137,41 @@ bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool Ste
 
 		GLi->renderbufferStorage( GL_RENDERBUFFER, GL_STENCIL_INDEX8, Width, Height );
 
-		GLi->framebufferRenderbuffer( GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER_EXT, mStencilBuffer );
+		GLi->framebufferRenderbuffer( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, mStencilBuffer );
 
 		GLi->bindRenderbuffer( GL_RENDERBUFFER, mLastSB );
 	}
 
-	if ( NULL == mTexture ) {
-		Uint32 TexId = TextureFactory::instance()->createEmptyTexture( Width, Height, channels, Color::Transparent );
+	if ( mHasColorBuffer ) {
+		GLuint color = 0;
+		GLi->genRenderbuffers( 1, &color );
 
-		if ( TextureFactory::instance()->existsId( TexId ) ) {
-			mTexture = 	TextureFactory::instance()->getTexture( TexId );
-		} else {
-			eePRINTL( "FrameBufferFBO::create: failed to create texture" );
-			return false;
-		}
+		mColorBuffer = static_cast<unsigned int>(color);
+
+		bindColorBuffer();
+
+		GLi->renderbufferStorage( GL_RENDERBUFFER, channels == 3 ? GL_RGB8 : GL_RGBA8, Width, Height );
+
+		GLi->framebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, mColorBuffer );
+
+		GLi->bindRenderbuffer( GL_RENDERBUFFER, mLastCB );
+
 	}
+	else
+	{
+		if ( NULL == mTexture ) {
+			Uint32 TexId = TextureFactory::instance()->createEmptyTexture( Width, Height, channels, Color::Transparent );
 
-	GLi->framebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture->getHandle(), 0 );
+			if ( TextureFactory::instance()->existsId( TexId ) ) {
+				mTexture = 	TextureFactory::instance()->getTexture( TexId );
+			} else {
+				eePRINTL( "FrameBufferFBO::create: failed to create texture" );
+				return false;
+			}
+		}
+
+		GLi->framebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture->getHandle(), 0 );
+	}
 
 	Uint32 status = GLi->checkFramebufferStatus( GL_FRAMEBUFFER );
 	if ( status != GL_FRAMEBUFFER_COMPLETE ) {
@@ -175,7 +204,7 @@ void FrameBufferFBO::unbind() {
 }
 
 void FrameBufferFBO::reload() {
-	create( mSize.getWidth(), mSize.getHeight(), mHasStencilBuffer, mHasDepthBuffer, mChannels );
+	create( mSize.getWidth(), mSize.getHeight(), mHasStencilBuffer, mHasDepthBuffer, mHasColorBuffer, mChannels );
 }
 
 void FrameBufferFBO::resize( const Uint32& Width, const Uint32& Height ) {
@@ -199,7 +228,7 @@ void FrameBufferFBO::resize( const Uint32& Width, const Uint32& Height ) {
 
 		GLi->renderbufferStorage( GL_RENDERBUFFER, GL_STENCIL_INDEX8, Width, Height );
 
-		GLi->framebufferRenderbuffer( GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER_EXT, mStencilBuffer );
+		GLi->framebufferRenderbuffer( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, mStencilBuffer );
 
 		GLi->bindRenderbuffer( GL_RENDERBUFFER, mLastSB );
 	}
@@ -207,9 +236,48 @@ void FrameBufferFBO::resize( const Uint32& Width, const Uint32& Height ) {
 	if ( NULL != mTexture ) {
 		Image newImage( Width, Height, mChannels );
 		mTexture->replace( &newImage );
+	} else if ( mColorBuffer ) {
+		bindColorBuffer();
+
+		GLi->renderbufferStorage( GL_RENDERBUFFER, mChannels == 3 ? GL_RGB8 : GL_RGBA8, Width, Height );
+
+		GLi->framebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, mColorBuffer );
+
+		GLi->bindRenderbuffer( GL_RENDERBUFFER, mLastCB );
 	}
 
 	GLi->bindFramebuffer( GL_FRAMEBUFFER, mLastFB );
+}
+
+void FrameBufferFBO::draw( const Vector2f & position, const Sizef & size ) {
+	if ( NULL != mTexture ) {
+		mTexture->draw( position, size );
+	} else if ( mColorBuffer ) {
+		GLi->bindFramebuffer(GL_READ_FRAMEBUFFER, mFrameBuffer);
+		GLi->bindFramebuffer(GL_DRAW_FRAMEBUFFER, mLastFB);
+
+		glBlitFramebufferEXT( 0, 0, (Int32)mSize.getWidth(), (Int32)mSize.getHeight(),
+						   position.x, position.y, position.x + size.x, position.y + size.y,
+						   GL_COLOR_BUFFER_BIT, GL_LINEAR );
+	}
+}
+
+void FrameBufferFBO::draw( Rect src, Rect dst ) {
+	if ( NULL != mTexture ) {
+		SubTexture subTexture( getTexture()->getId(), src );
+		Sizei size( dst.getSize() );
+		subTexture.setDestSize( Sizef( size.x, size.y ) );
+		subTexture.draw( dst.Left, dst.Top, Color::White );
+	} else if ( mColorBuffer ) {
+		GLi->bindFramebuffer(GL_READ_FRAMEBUFFER, mFrameBuffer);
+		GLi->bindFramebuffer(GL_DRAW_FRAMEBUFFER, mLastFB);
+
+		glBlitFramebufferEXT( src.Left, 0 == mLastFB ? src.Bottom : src.Top, src.Right, 0 == mLastFB ? src.Top : src.Bottom,
+						   dst.Left, dst.Top, dst.Right, dst.Bottom,
+						   GL_COLOR_BUFFER_BIT, GL_LINEAR );
+
+		GLi->bindFramebuffer(GL_READ_FRAMEBUFFER, mLastFB);
+	}
 }
 
 const Int32 &FrameBufferFBO::getFrameBufferId() const {
@@ -256,6 +324,17 @@ void FrameBufferFBO::bindStencilBuffer() {
 		mLastSB = (Int32)curSB;
 
 		GLi->bindRenderbuffer( GL_RENDERBUFFER, mStencilBuffer );
+	}
+}
+
+void FrameBufferFBO::bindColorBuffer() {
+	if ( mColorBuffer ) {
+		int curCB;
+		glGetIntegerv( GL_RENDERBUFFER_BINDING, &curCB );
+
+		mLastCB = (Int32)curCB;
+
+		GLi->bindRenderbuffer( GL_RENDERBUFFER, mColorBuffer );
 	}
 }
 

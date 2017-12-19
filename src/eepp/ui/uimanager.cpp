@@ -382,7 +382,7 @@ void UIManager::setHighlightOverColor( const Color& Color ) {
 }
 
 void UIManager::setMainControlInFrameBuffer(const bool& set) {
-	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_DRAW_BOXES, set ? 1 : 0 );
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER, set ? 1 : 0 );
 
 	if ( NULL != mControl ) {
 		mControl->setWinFlags( mControl->getWinFlags() | ( set ? UI_WIN_FRAME_BUFFER : 0 ) );
@@ -391,6 +391,18 @@ void UIManager::setMainControlInFrameBuffer(const bool& set) {
 
 bool UIManager::isMainControlInFrameBuffer() const {
 	return 0 != ( mFlags & UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER );
+}
+
+void UIManager::setMainControlInColorBuffer(const bool& set) {
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_MAIN_CONTROL_IN_COLOR_BUFFER, set ? 1 : 0 );
+
+	if ( NULL != mControl ) {
+		mControl->setWinFlags( mControl->getWinFlags() | ( set ? UI_WIN_COLOR_BUFFER : 0 ) );
+	}
+}
+
+bool UIManager::isMainControlInColorBuffer() const {
+	return 0 != ( mFlags & UI_MANAGER_MAIN_CONTROL_IN_COLOR_BUFFER );
 }
 
 const Color& UIManager::getHighlightOverColor() const {

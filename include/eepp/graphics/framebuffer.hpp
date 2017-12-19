@@ -19,9 +19,10 @@ class EE_API FrameBuffer {
 		**	@param Height The frame buffer height
 		**	@param StencilBuffer Indicates if a stencil buffer is used
 		**	@param DepthBuffer Indicates if a depth buffer is used
+		**	@param useColorBuffer Indicates if the frame buffer uses a color attachment render buffer ( instead of a texture )
 		**	@param window In case that the application is using more than one window, the user can indicate which one to use ( by default uses the current active window )
 		*/
-		static FrameBuffer * New( const Uint32& Width, const Uint32& Height, bool StencilBuffer = true, bool DepthBuffer = false, const Uint32& channels = 4, EE::Window::Window * window = NULL );
+		static FrameBuffer * New( const Uint32& Width, const Uint32& Height, bool StencilBuffer = true, bool DepthBuffer = false, bool useColorBuffer = false, const Uint32& channels = 4, EE::Window::Window * window = NULL );
 
 		virtual ~FrameBuffer();
 
@@ -33,6 +34,12 @@ class EE_API FrameBuffer {
 		/** @brief Disables the off-screen rendering.
 		**	Anything rendered after this will be rendered to the back-buffer. */
 		virtual void unbind() = 0;
+
+		/** Draws the buffer to the screen */
+		virtual void draw( const Vector2f& position, const Sizef& size ) = 0;
+
+		/** Draws the buffer to the screen */
+		virtual void draw( Rect src, Rect dst ) = 0;
 
 		/** @brief Clears the frame buffer pixels to the default frame buffer clear color. */
 		void clear();
@@ -72,6 +79,9 @@ class EE_API FrameBuffer {
 		/** @return The frame buffer size ( float ). */
 		const Sizef getSizef();
 
+		/** @return True if the frame buffer has a color buffer. */
+		const bool& hasColorBuffer() const;
+
 		/** @return True if the frame buffer has a depth buffer. */
 		const bool& hasDepthBuffer() const;
 
@@ -92,6 +102,7 @@ class EE_API FrameBuffer {
 		Uint32		mChannels;
 		std::string mName;
 		Uint32		mId;
+		bool		mHasColorBuffer;
 		bool		mHasDepthBuffer;
 		bool		mHasStencilBuffer;
 		Texture *	mTexture;

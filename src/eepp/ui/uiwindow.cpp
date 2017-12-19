@@ -264,13 +264,17 @@ void UIWindow::createFrameBuffer() {
 	Sizei fboSize( getFrameBufferSize() );
 	if ( fboSize.getWidth() < 1 ) fboSize.setWidth(1);
 	if ( fboSize.getHeight() < 1 ) fboSize.setHeight(1);
-	mFrameBuffer = FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight() );
+	mFrameBuffer = FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight(), true, false, ( mStyleConfig.WinFlags & UI_WIN_COLOR_BUFFER ) ? true : false );
 }
 
 void UIWindow::drawFrameBuffer() {
 	if ( NULL != mFrameBuffer ) {
-		SubTexture subTexture( mFrameBuffer->getTexture()->getId(), Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ) );
-		subTexture.draw( mScreenPosf.x, mScreenPosf.y, Color::White, mAngle, mScale );
+		if ( mFrameBuffer->hasColorBuffer() ) {
+			mFrameBuffer->draw( Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ), Rect( mScreenPos.x, mScreenPos.y, mScreenPos.x + mRealSize.getWidth(), mScreenPos.y + mRealSize.getHeight() ) );
+		} else {
+			SubTexture subTexture( mFrameBuffer->getTexture()->getId(), Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ) );
+			subTexture.draw( mScreenPosf.x, mScreenPosf.y, Color::White, mAngle, mScale );
+		}
 	}
 }
 
@@ -1407,6 +1411,7 @@ void UIWindow::loadFromXmlNode(const pugi::xml_node & node) {
 					else if ( "sharealpha" == cur ) winflags |= UI_WIN_SHARE_ALPHA_WITH_CHILDS;
 					else if ( "buttonactions" == cur ) winflags |= UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS;
 					else if ( "framebuffer"== cur ) winflags |= UI_WIN_FRAME_BUFFER;
+					else if ( "colorbuffer"== cur ) winflags |= UI_WIN_COLOR_BUFFER;
 				}
 
 				setWinFlags( winflags );

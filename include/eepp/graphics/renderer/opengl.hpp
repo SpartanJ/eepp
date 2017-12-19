@@ -82,6 +82,25 @@
 	#define glBufferSubDataARB glBufferSubData
 
 	#define GL_QUADS 0x0007
+	#ifndef GL_RGB8
+	#define GL_RGB8 GL_RGB8_OES
+	#endif
+
+	#ifndef GL_RGBA8
+	#define GL_RGBA8 GL_RGBA8_OES
+	#endif
+
+	#ifndef GL_READ_FRAMEBUFFER
+	#define GL_READ_FRAMEBUFFER GL_READ_FRAMEBUFFER_APPLE
+	#endif
+
+	#ifndef GL_DRAW_FRAMEBUFFER
+	#define GL_DRAW_FRAMEBUFFER GL_DRAW_FRAMEBUFFER_APPLE
+	#endif
+
+	#ifndef glBlitFramebufferEXT
+	#define glBlitFramebufferEXT( p1, p2, p3, p4, p5, p6, p7, p8, p9, p10 )
+	#endif
 #endif
 
 /// Wrap GLES2 functions
@@ -106,14 +125,6 @@
 
 #ifndef GL_STENCIL_INDEX
 #define GL_STENCIL_INDEX GL_STENCIL_INDEX_OES
-#endif
-
-#ifndef GL_FRAMEBUFFER_EXT
-#define GL_FRAMEBUFFER_EXT GL_FRAMEBUFFER
-#endif
-
-#ifndef GL_RENDERBUFFER_EXT
-#define GL_RENDERBUFFER_EXT GL_RENDERBUFFER
 #endif
 
 #endif
@@ -258,6 +269,9 @@
 #define GL_FUNC_ADD GL_FUNC_ADD_OES
 #define GL_FUNC_SUBTRACT GL_FUNC_SUBTRACT_OES
 #define GL_FUNC_REVERSE_SUBTRACT GL_FUNC_REVERSE_SUBTRACT_OES
+
+#define GL_FRAMEBUFFER GL_FRAMEBUFFER_OES
+#define GL_RENDERBUFFER GL_RENDERBUFFER_OES
 
 #endif
 

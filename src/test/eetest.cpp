@@ -37,7 +37,7 @@ class UIBlurredWindow : public UIWindow {
 
 			FrameBuffer * curFBO = FrameBufferManager::instance()->getFromName( "uimain" );
 
-			if ( NULL != curFBO && NULL != mBlurShader ) {
+			if ( NULL != curFBO && NULL != curFBO->getTexture() && NULL != mBlurShader ) {
 				static int fboDiv = 2;
 
 				if ( NULL == mFboBlur ) {

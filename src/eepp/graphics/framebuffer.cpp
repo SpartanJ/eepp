@@ -12,9 +12,9 @@ namespace EE { namespace Graphics {
 
 static std::list<const View*> sFBOActiveViews;
 
-FrameBuffer * FrameBuffer::New(const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer, const Uint32& channels, EE::Window::Window * window ) {
+FrameBuffer * FrameBuffer::New(const Uint32& Width, const Uint32& Height, bool StencilBuffer, bool DepthBuffer, bool useColorBuffer, const Uint32& channels, EE::Window::Window * window ) {
 	if ( FrameBufferFBO::isSupported() )
-		return eeNew( FrameBufferFBO, ( Width, Height, StencilBuffer, DepthBuffer, channels, window ) );
+		return eeNew( FrameBufferFBO, ( Width, Height, StencilBuffer, DepthBuffer, useColorBuffer, channels, window ) );
 	eePRINTL( "FBO not supported" );
 	return NULL;
 }
@@ -23,6 +23,7 @@ FrameBuffer::FrameBuffer( EE::Window::Window * window  ) :
 	mWindow( window ),
 	mSize(0,0),
 	mChannels(4),
+	mHasColorBuffer(false),
 	mHasDepthBuffer(false),
 	mHasStencilBuffer(false),
 	mTexture(NULL),
@@ -110,6 +111,10 @@ const Sizei &FrameBuffer::getSize() const {
 
 const Sizef FrameBuffer::getSizef() {
 	return Sizef( mSize.getWidth(), mSize.getHeight() );
+}
+
+const bool &FrameBuffer::hasColorBuffer() const {
+	return mHasColorBuffer;
 }
 
 const bool& FrameBuffer::hasDepthBuffer() const {
