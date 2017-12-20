@@ -220,6 +220,9 @@ eeWindowContex WindowSFML::getContext() const {
 void WindowSFML::getMainContext() {
 }
 
+void WindowSFML::onWindowResize( Uint32 Width, Uint32 Height ) {
+}
+
 eeWindowHandle	WindowSFML::getWindowHandler() {
 #if defined( EE_X11_PLATFORM )
 	if ( 0 == mWinHandler ) {

@@ -192,7 +192,7 @@ void Input::processEvent( InputEvent * Event ) {
 		}
 		case InputEvent::VideoResize:
 		{
-			mWindow->setSize( Event->resize.w, Event->resize.h, mWindow->isWindowed() );
+			mWindow->onWindowResize( Event->resize.w, Event->resize.h );
 			break;
 		}
 		case InputEvent::Quit:

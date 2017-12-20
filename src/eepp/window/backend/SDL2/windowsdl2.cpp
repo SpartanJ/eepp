@@ -340,19 +340,25 @@ void WindowSDL::setGLConfig() {
 }
 
 void WindowSDL::toggleFullscreen() {
-	bool WasMaximized = mWindow.Maximized;
+	eePRINTL( "toggleFullscreen called: %s", isWindowed() ? "is windowed" : "is fullscreen" );
 
 	if ( isWindowed() ) {
-		setSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, !isWindowed() );
-	} else {
-		setSize( mWindow.WindowSize.getWidth(), mWindow.WindowSize.getHeight(), !isWindowed() );
+		mWinPos = getPosition();
+		mWindow.Maximized = isMaximized();
 	}
 
-	if ( WasMaximized ) {
-		maximize();
-	}
+	SDL_SetWindowFullscreen( mSDLWindow, isWindowed() ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0 );
+
+	BitOp::setBitFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, isWindowed() ? 1 : 0 );
 
 	getCursorManager()->reload();
+
+	if ( isWindowed() ) {
+		setPosition( mWinPos.x, mWinPos.y );
+
+		if ( mWindow.Maximized )
+			maximize();
+	}
 }
 
 void WindowSDL::setCaption( const std::string& Caption ) {
@@ -375,6 +381,29 @@ bool WindowSDL::isVisible() {
 	flags = SDL_GetWindowFlags( mSDLWindow );
 
 	return 0 != ( ( flags & SDL_WINDOW_SHOWN ) && !( flags & SDL_WINDOW_MINIMIZED ) );
+}
+
+void WindowSDL::onWindowResize( Uint32 Width, Uint32 Height ) {
+	if ( mWindow.WindowConfig.Width && Height == mWindow.WindowConfig.Height )
+		return;
+
+	eePRINTL( "onWindowResize: %d Height %d.", Width, Height );
+
+	mWindow.WindowConfig.Width	= Width;
+	mWindow.WindowConfig.Height	= Height;
+	mWindow.WindowSize = Sizei( Width, Height );
+
+	mDefaultView.setView( 0, 0, Width, Height );
+
+	setup2D();
+
+	SDL_PumpEvents();
+
+	SDL_FlushEvent( SDL_WINDOWEVENT );
+
+	mCursorManager->reload();
+
+	sendVideoResizeCb();
 }
 
 void WindowSDL::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
@@ -400,7 +429,7 @@ void WindowSDL::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 		mWindow.WindowSize = Sizei( oldWidth, oldHeight );
 	}
 
-	if ( this->isWindowed() && !Windowed ) {
+	if ( isWindowed() && !Windowed ) {
 		mWinPos = getPosition();
 	} else {
 		#if SDL_VERSION_ATLEAST(2,0,0)
@@ -410,7 +439,7 @@ void WindowSDL::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 
 	SDL_SetWindowSize( mSDLWindow, Width, Height );
 
-	if ( this->isWindowed() && !Windowed ) {
+	if ( isWindowed() && !Windowed ) {
 		mWinPos = getPosition();
 
 		setGLConfig();
@@ -420,7 +449,7 @@ void WindowSDL::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 		#endif
 	}
 
-	if ( !this->isWindowed() && Windowed ) {
+	if ( isWindowed() && Windowed ) {
 		setPosition( mWinPos.x, mWinPos.y );
 	}
 

@@ -122,6 +122,8 @@ class EE_API WindowSDL : public Window {
 		std::string getVersion();
 
 		void updateDesktopResolution();
+
+		void onWindowResize( Uint32 Width, Uint32 Height );
 };
 
 }}}}

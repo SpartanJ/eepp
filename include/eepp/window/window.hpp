@@ -444,6 +444,7 @@ class EE_API Window {
 		void runMainLoop( void (*func)(), int fps = 0 );
 	protected:
 		friend class Engine;
+		friend class Input;
 
 		WindowInfo mWindow;
 		Clipboard *	mClipboard;
@@ -495,6 +496,8 @@ class EE_API Window {
 		virtual void getMainContext();
 
 		virtual void createPlatform();
+
+		virtual void onWindowResize( Uint32 Width, Uint32 Height ) = 0;
 
 		void sendVideoResizeCb();
 

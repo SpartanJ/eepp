@@ -67,6 +67,8 @@ class EE_API WindowSFML : public Window {
 
 		void getMainContext();
 
+		void onWindowResize( Uint32 Width, Uint32 Height );
+
 		std::string getVersion();
 
 		void videoResize( Uint32 Width, Uint32 Height );

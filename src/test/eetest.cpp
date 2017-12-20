@@ -1746,11 +1746,7 @@ void EETest::input() {
 		TF->reloadAllTextures();
 
 	if ( KM->isAltPressed() && KM->isKeyUp( KEY_RETURN ) ) {
-		if ( mWindow->isWindowed() ) {
-			mWindow->setSize( mWindow->getDesktopResolution().getWidth(), mWindow->getDesktopResolution().getHeight(), false );
-		} else {
-			mWindow->toggleFullscreen();
-		}
+		mWindow->toggleFullscreen();
 	}
 
 	if ( KM->grabInput() ) {
