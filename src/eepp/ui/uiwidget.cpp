@@ -401,6 +401,32 @@ void UIWidget::endPropertiesTransaction() {
 	}
 }
 
+static OriginPoint toOriginPoint( std::string val ) {
+	String::toLowerInPlace( val );
+
+	if ( "center" == val ) {
+		return OriginPoint::OriginCenter;
+	} else if ( "topleft" == val ) {
+		return OriginPoint::OriginTopLeft;
+	} else {
+		std::vector<std::string> parts = String::split( val, ',' );
+
+		if ( parts.size() == 2 ) {
+			Float x = 0;
+			Float y = 0;
+
+			bool Res1 = String::fromString<Float>( x, parts[0] );
+			bool Res2 = String::fromString<Float>( y, parts[1] );
+
+			if ( Res1 && Res2 ) {
+				return OriginPoint( x, y );
+			}
+		}
+	}
+
+	return OriginPoint::OriginCenter;
+}
+
 void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginPropertiesTransaction();
 
@@ -599,6 +625,14 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 				setFlags( UI_CLIP_ENABLE );
 			else
 				unsetFlags( UI_CLIP_ENABLE );
+		} else if ( "rotation" == name ) {
+			setRotation( ait->as_float() );
+		} else if ( "scale" == name ) {
+			setScale( ait->as_float() );
+		} else if ( "rotationoriginpoint" == name ) {
+			setRotationOriginPoint( toOriginPoint( ait->as_string() ) );
+		} else if ( "scaleoriginpoint" == name ) {
+			setScaleOriginPoint( toOriginPoint( ait->as_string() ) );
 		}
 	}
 
