@@ -186,12 +186,12 @@ void UIControlAnim::matrixSet() {
 
 		GLi->pushMatrix();
 
-		Vector2f scaleCenter = this->getScaleCenter();
+		Vector2f scaleCenter = getScaleCenter();
 		GLi->translatef( scaleCenter.x , scaleCenter.y, 0.f );
 		GLi->scalef( mScale.x, mScale.y, 1.0f );
 		GLi->translatef( -scaleCenter.x, -scaleCenter.y, 0.f );
 
-		Vector2f rotationCenter = this->getRotationCenter();
+		Vector2f rotationCenter = getRotationCenter();
 		GLi->translatef( rotationCenter.x , rotationCenter.y, 0.f );
 		GLi->rotatef( mAngle, 0.0f, 0.0f, 1.0f );
 		GLi->translatef( -rotationCenter.x, -rotationCenter.y, 0.f );

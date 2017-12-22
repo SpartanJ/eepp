@@ -492,7 +492,7 @@ Float Text::getTextHeight() {
 	return mFont->getLineSpacing(mRealCharacterSize) * ( 0 == mNumLines ? 1 : mNumLines );
 }
 
-void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const Float & Angle, BlendMode Effect) {
+void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const Float & Rotation, BlendMode Effect, const OriginPoint& rotationCenter, const OriginPoint& scaleCenter) {
 	if ( NULL != mFont ) {
 		ensureColorUpdate();
 		ensureGeometryUpdate();
@@ -526,7 +526,7 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 
 			Float pd = PixelDensity::dpToPx(1);
 
-			draw( X + pd, Y + pd, Scale, Angle, Effect );
+			draw( X + pd, Y + pd, Scale, Rotation, Effect );
 
 			mStyle = f;
 
@@ -534,17 +534,28 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 			mColors.assign( mColors.size(), getFillColor() );
 		}
 
-		if ( Angle != 0.0f || Scale != 1.0f ) {
+		if ( Rotation != 0.0f || Scale != 1.0f ) {
 			Float cX = (Float) ( (Int32)X );
 			Float cY = (Float) ( (Int32)Y );
+			Vector2f Center( cX + mCachedWidth * 0.5f, cY + getTextHeight() * 0.5f );
 
 			GLi->pushMatrix();
 
-			Vector2f Center( cX + mCachedWidth * 0.5f, cY + getTextHeight() * 0.5f );
-			GLi->translatef( Center.x , Center.y, 0.f );
-			GLi->rotatef( Angle, 0.0f, 0.0f, 1.0f );
+			Vector2f center = Center;
+			if ( OriginPoint::OriginTopLeft == scaleCenter.OriginType ) center = Vector2f( cX, cY );
+			else if ( OriginPoint::OriginCustom == scaleCenter.OriginType ) center = Vector2f( scaleCenter.x, scaleCenter.y );
+
+			GLi->translatef( center.x , center.y, 0.f );
 			GLi->scalef( Scale.x, Scale.y, 1.0f );
-			GLi->translatef( -Center.x + X, -Center.y + Y, 0.f );
+			GLi->translatef( -center.x, -center.y, 0.f );
+
+			center = Center;
+			if ( OriginPoint::OriginTopLeft == rotationCenter.OriginType ) center = Vector2f( cX, cY );
+			else if ( OriginPoint::OriginCustom == rotationCenter.OriginType ) center = Vector2f( rotationCenter.x, rotationCenter.y );
+
+			GLi->translatef( center.x , center.y, 0.f );
+			GLi->rotatef( Rotation, 0.0f, 0.0f, 1.0f );
+			GLi->translatef( -center.x + cX, -center.y + cY, 0.f );
 		} else {
 			GLi->translatef( X, Y, 0 );
 		}
@@ -574,7 +585,7 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 			GLi->drawArrays( GL_TRIANGLES, 0, numvert );
 		}
 
-		if ( Angle != 0.0f || Scale != 1.0f ) {
+		if ( Rotation != 0.0f || Scale != 1.0f ) {
 			GLi->popMatrix();
 		} else {
 			GLi->translatef( -X, -Y, 0 );

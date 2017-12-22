@@ -602,6 +602,8 @@ UIBackground * UIControl::setBackgroundFillEnabled( bool enabled ) {
 		mBackground = UIBackground::New( this );
 	}
 
+	invalidateDraw();
+
 	return mBackground;
 }
 

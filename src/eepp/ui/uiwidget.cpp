@@ -427,6 +427,19 @@ static OriginPoint toOriginPoint( std::string val ) {
 	return OriginPoint::OriginCenter;
 }
 
+static BlendMode toBlendMode( std::string val ) {
+	String::toLowerInPlace( val );
+
+	BlendMode blendMode;
+
+	if ( val == "add" ) blendMode == BlendAdd;
+	else if ( val == "alpha" ) blendMode == BlendAlpha;
+	else if ( val == "multiply" ) blendMode == BlendMultiply;
+	else if ( val == "none" ) blendMode == BlendNone;
+
+	return blendMode;
+}
+
 void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginPropertiesTransaction();
 
@@ -633,6 +646,10 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			setRotationOriginPoint( toOriginPoint( ait->as_string() ) );
 		} else if ( "scaleoriginpoint" == name ) {
 			setScaleOriginPoint( toOriginPoint( ait->as_string() ) );
+		} else if ( "blendmode" == name ) {
+			setBlendMode( toBlendMode( ait->as_string() ) );
+		} else if ( "backgroundblendmode" == name ) {
+			setBackgroundFillEnabled( true )->setBlendMode( toBlendMode( ait->as_string() ) );
 		}
 	}
 
