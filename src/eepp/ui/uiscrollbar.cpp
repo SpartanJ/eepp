@@ -104,6 +104,20 @@ void UIScrollBar::onAutoSize() {
 				setSize( mSize.getWidth(), size.getHeight() );
 			}
 		}
+	} else if ( NULL != mSlider->getSliderButton() ) {
+		UISkin * tSkin = mSlider->getSliderButton()->getSkin();
+
+		if ( NULL != tSkin ) {
+			Sizei size = tSkin->getSize();
+
+			if ( mFlags & UI_AUTO_SIZE ) {
+				if ( mSlider->isVertical() ) {
+					setSize( size.getWidth(), mSize.getHeight() );
+				} else {
+					setSize( mSize.getWidth(), size.getHeight() );
+				}
+			}
+		}
 	}
 }
 
