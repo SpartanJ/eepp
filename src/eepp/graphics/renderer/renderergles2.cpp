@@ -280,7 +280,11 @@ void RendererGLES2::enable( unsigned int cap ) {
 			if ( 0 == mTexActive ) {
 				mTexActive = 1;
 
-				setShader( EEGLES2_SHADER_BASE );
+				if ( !mClippingEnabled ) {
+					setShader( EEGLES2_SHADER_BASE );
+				} else if ( -1 != mTexActiveLoc ) {
+					mCurShader->setUniform( mTexActiveLoc, mTexActive );
+				}
 			}
 
 			return;
@@ -326,7 +330,11 @@ void RendererGLES2::disable ( unsigned int cap ) {
 			if ( 1 == mTexActive ) {
 				mTexActive = 0;
 
-				setShader( EEGLES2_SHADER_PRIMITIVE );
+				if ( !mClippingEnabled ) {
+					setShader( EEGLES2_SHADER_PRIMITIVE );
+				} else if ( -1 != mTexActiveLoc ) {
+					mCurShader->setUniform( mTexActiveLoc, mTexActive );
+				}
 			}
 
 			return;
