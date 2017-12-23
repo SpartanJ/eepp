@@ -151,7 +151,7 @@ void Window::setup2D( const bool& KeepView ) {
 
 	BlendMode::setMode( BlendAlpha, true );
 
-	if ( GLv_3 != GLi->version() ) {
+	if ( GLv_3 != GLi->version() && GLv_ES2 != GLi->version() ) {
 		#if !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
 		glTexEnvi( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
 		#endif
