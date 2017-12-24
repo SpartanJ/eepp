@@ -307,8 +307,9 @@ ContextSettings Engine::createContextSettings( IniFile * ini, std::string iniKey
 	int depthBufferSize 		= ini->getValueI( iniKeyName, "DepthBufferSize", 24 );
 	int stencilBufferSize 		= ini->getValueI( iniKeyName, "StencilBufferSize", 1 );
 	int multisamples			= ini->getValueI( iniKeyName, "Multisamples", 0 );
+	bool sharedGLContext			= ini->getValueB( iniKeyName, "SharedGLContext", false );
 
-	return ContextSettings( VSync, GLVer, doubleBuffering, depthBufferSize, stencilBufferSize, multisamples );
+	return ContextSettings( VSync, GLVer, doubleBuffering, depthBufferSize, stencilBufferSize, multisamples, sharedGLContext );
 }
 
 ContextSettings Engine::createContextSettings( std::string iniPath, std::string iniKeyName ) {
@@ -326,7 +327,7 @@ void Engine::disableSharedGLContext() {
 }
 
 bool Engine::isSharedGLContextEnabled() {
-	return mSharedGLContext;
+	return mSharedGLContext && mWindow->isThreadedGLContext();
 }
 
 Uint32 Engine::getMainThreadId() {

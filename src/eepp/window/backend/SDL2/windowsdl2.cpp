@@ -220,17 +220,21 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	#endif
 
 	#ifdef SDL2_THREADED_GLCONTEXT
-		SDL_GL_SetAttribute( SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1 );
+		if ( mWindow.ContextConfig.SharedGLContext ) {
+			SDL_GL_SetAttribute( SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1 );
 
-		mGLContext			= SDL_GL_CreateContext( mSDLWindow );
-		mGLContextThread	= SDL_GL_CreateContext( mSDLWindow );
+			mGLContext			= SDL_GL_CreateContext( mSDLWindow );
+			mGLContextThread	= SDL_GL_CreateContext( mSDLWindow );
+		} else {
+			mGLContext			= SDL_GL_CreateContext( mSDLWindow );
+		}
 	#else
 		mGLContext			= SDL_GL_CreateContext( mSDLWindow );
 	#endif
 
 	if ( NULL == mGLContext
 	#ifdef SDL2_THREADED_GLCONTEXT
-		 || NULL == mGLContextThread
+		 || ( mWindow.ContextConfig.SharedGLContext && NULL == mGLContextThread )
 	#endif
 	)
 	{
@@ -281,7 +285,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 bool WindowSDL::isThreadedGLContext() {
 #ifdef SDL2_THREADED_GLCONTEXT
-	return true;
+	return mWindow.ContextConfig.SharedGLContext;
 #else
 	return false;
 #endif
