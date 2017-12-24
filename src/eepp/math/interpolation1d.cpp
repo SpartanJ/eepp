@@ -5,6 +5,7 @@ using namespace EE::Math::easing;
 namespace EE { namespace Math {
 
 Interpolation1d::Interpolation1d() :
+	mData(0),
 	mType(Ease::Linear),
 	mEnable(false),
 	mUpdate(true),
@@ -13,7 +14,7 @@ Interpolation1d::Interpolation1d() :
 	mTotDist(0.f),
 	mCurPos(0.f),
 	mCurPoint(0),
-	mCurTime(0),
+	mCurTime(Time::Zero),
 	mSpeed(1.3f),
 	mActP(NULL),
 	mNexP(NULL),
@@ -25,7 +26,7 @@ Interpolation1d::Interpolation1d() :
 Interpolation1d::~Interpolation1d() {
 }
 
-void Interpolation1d::start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback) {
+Interpolation1d& Interpolation1d::start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback) {
 	mEnable				= true;
 	mOnPathEndCallback	= PathEndCallback;
 	mOnStepCallback		= StepCallback;
@@ -40,119 +41,137 @@ void Interpolation1d::start( OnPathEndCallback PathEndCallback, OnStepCallback S
 	} else {
 		mEnable = false;
 	}
+
+	return *this;
 }
 
-void Interpolation1d::stop() {
+Interpolation1d& Interpolation1d::stop() {
 	mEnable	= false;
+	return *this;
 }
 
-void Interpolation1d::setPathEndCallback( OnPathEndCallback PathEndCallback ) {
+Interpolation1d& Interpolation1d::setPathEndCallback( OnPathEndCallback PathEndCallback ) {
 	mOnPathEndCallback = PathEndCallback;
+	return *this;
 }
 
-void Interpolation1d::setStepCallback( OnStepCallback StepCallback ) {
+Interpolation1d& Interpolation1d::setStepCallback( OnStepCallback StepCallback ) {
 	mOnStepCallback = StepCallback;
+	return *this;
 }
 
-void Interpolation1d::reset() {
+Interpolation1d &Interpolation1d::wait( const Float& pos, const Time& time ) {
+	add( pos, time ).add( pos );
+	return *this;
+}
+
+Interpolation1d &Interpolation1d::waitAndAdd(const EE::Float & pos, const EE::System::Time & waitTime, const EE::System::Time & addTime) {
+	add( pos, waitTime ).add( pos, addTime );
+}
+
+Interpolation1d & Interpolation1d::reset() {
+	mData = 0;
 	mTotDist = 0.f;
 	mActP = mNexP = NULL;
 	mEnable	= false;
 	mCurPoint = 0;
 	mUpdate	= true;
 	mEnded = false;
-	mCurTime = 0;
+	mCurTime = Time::Zero;
 	mOnPathEndCallback = NULL;
+	mOnStepCallback = NULL;
 
 	if ( mPoints.size() )
 		mCurPos = mPoints[0].p;
+
+	return *this;
 }
 
-void Interpolation1d::clearWaypoints() {
+Interpolation1d& Interpolation1d::clear() {
 	reset();
 	mPoints.clear();
+	return *this;
 }
 
-void Interpolation1d::addWaypoint( const Float Pos, const Float Time ) {
-	mPoints.push_back( Point1d( Pos, Time ) );
+Interpolation1d & Interpolation1d::add( const Float & pos, const Time& time ) {
+	mPoints.push_back( Point1d( pos, time ) );
 
 	if ( mPoints.size() >= 2 )
 		mTotDist += eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[ mPoints.size() - 2 ].p );
+
+	return *this;
 }
 
-bool Interpolation1d::editWaypoint( const unsigned int& PointNum, const Float& NewPos, const Float NewTime ) {
+Interpolation1d& Interpolation1d::edit( const unsigned int& PointNum, const Float& pos, const Time& time ) {
 	if ( PointNum < mPoints.size() ) {
-		if ( 0 == PointNum )
+		if ( 0 == PointNum ) {
 			mTotDist -= eeabs( mPoints[ PointNum ].p - mPoints[ PointNum + 1 ].p );
-		else
+		} else {
 			mTotDist -= eeabs( mPoints[ PointNum ].p - mPoints[ PointNum - 1 ].p );
+		}
 
-		mPoints[ PointNum ] = Point1d( NewPos, NewTime );
+		mPoints[ PointNum ] = Point1d( pos, time );
 
 		if ( 0 == PointNum ) {
-			if ( PointNum + 1 < mPoints.size() )
+			if ( PointNum + 1 < mPoints.size() ) {
 				mTotDist += eeabs( mPoints[ PointNum ].p - mPoints[ PointNum + 1 ].p );
-		}
-		else
+			}
+		} else {
 			mTotDist += eeabs( mPoints[ PointNum ].p - mPoints[ PointNum - 1 ].p );
-
-		return true;
+		}
 	}
-	return false;
+
+	return *this;
 }
 
-bool Interpolation1d::eraseWaypoint( const unsigned int& PointNum ) {
+Interpolation1d& Interpolation1d::erase( const unsigned int& PointNum ) {
 	if ( PointNum < mPoints.size() && !mEnable ) {
-		if ( 0 == PointNum )
+		if ( 0 == PointNum ) {
 			mTotDist -= eeabs( mPoints[ PointNum ].p - mPoints[ PointNum + 1 ].p );
-		else
+		} else {
 			mTotDist -= eeabs( mPoints[ PointNum ].p - mPoints[ PointNum - 1 ].p );
+		}
 
 		mPoints.erase( mPoints.begin() + PointNum );
-
-		return true;
 	}
-	return false;
+
+	return *this;
 }
 
-const Float& Interpolation1d::getEndPos() {
+const Float& Interpolation1d::getFinalPosition() {
 	return mPoints[ mPoints.size() - 1 ].p;
 }
 
-const Float& Interpolation1d::getPos() {
-	return mCurPos;
-}
-
-const Float& Interpolation1d::getRealPos() const {
+const Float& Interpolation1d::getPosition() {
 	return mCurPos;
 }
 
 void Interpolation1d::update( const Time& Elapsed ) {
 	if ( mEnable && mPoints.size() > 1 && mCurPoint != mPoints.size() ) {
 		if ( mUpdate ) {
-			mCurTime = 0;
+			mCurTime = Time::Zero;
 			mActP = &mPoints[ mCurPoint ];
 
 			if ( mCurPoint + 1 < mPoints.size() ) {
 				mNexP = &mPoints[ mCurPoint + 1 ];
 
 				if ( mOnStepCallback.IsSet() )
-					mOnStepCallback();
+					mOnStepCallback(*this);
 			} else {
 				if ( mOnStepCallback.IsSet() )
-					mOnStepCallback();
+					mOnStepCallback(*this);
 
 				if ( mLoop ) {
 					mNexP = &mPoints[ 0 ];
 
 					if ( mOnPathEndCallback.IsSet() )
-						mOnPathEndCallback();
+						mOnPathEndCallback(*this);
 				} else {
 					mEnable = false;
 					mEnded = true;
 
 					if ( mOnPathEndCallback.IsSet() ) {
-						mOnPathEndCallback();
+						mOnPathEndCallback(*this);
 
 						if ( !mEnable )
 							mOnPathEndCallback.Reset();
@@ -160,12 +179,13 @@ void Interpolation1d::update( const Time& Elapsed ) {
 					return;
 				}
 			}
+
 			mUpdate = false;
 		}
 
-		mCurTime += Elapsed.asMilliseconds();
+		mCurTime += Elapsed;
 
-		mCurPos = easingCb[ mType ]( mCurTime, mActP->p, ( mNexP->p - mActP->p ), mActP->t );
+		mCurPos = easingCb[ mType ]( mCurTime.asMilliseconds(), mActP->p, ( mNexP->p - mActP->p ), mActP->t.asMilliseconds() );
 
 		if ( mCurTime >= mActP->t ) {
 			mCurPos = mNexP->p;
@@ -180,26 +200,28 @@ void Interpolation1d::update( const Time& Elapsed ) {
 	}
 }
 
-void Interpolation1d::setTotalTime( const Time & TotTime ) {
+Interpolation1d& Interpolation1d::setTotalTime( const Time & TotTime ) {
 	Float tdist = mTotDist;
 
 	if ( tdist == 0.0f ) {
 		mPoints.clear();
-		return;
+		return *this;
 	}
 
 	if ( mLoop ) {
 		tdist += eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p );
-		mPoints[ mPoints.size() - 1 ].t = eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p ) * TotTime.asMilliseconds() / tdist;
+		mPoints[ mPoints.size() - 1 ].t = Milliseconds( eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p ) * TotTime.asMilliseconds() / tdist );
 	}
 
 	for ( unsigned int i = 0; i < mPoints.size() - 1; i++) {
 		Float CurDist = eeabs( mPoints[i].p - mPoints[i + 1].p );
-		mPoints[i].t = CurDist * TotTime.asMilliseconds() / tdist;
+		mPoints[i].t = Milliseconds( CurDist * TotTime.asMilliseconds() / tdist );
 	}
+
+	return *this;
 }
 
-void Interpolation1d::setSpeed( const Float Speed ) {
+Interpolation1d& Interpolation1d::setSpeed( const Float Speed ) {
 	Float tdist = mTotDist;
 	mSpeed = Speed;
 	Float CurDist;
@@ -207,7 +229,7 @@ void Interpolation1d::setSpeed( const Float Speed ) {
 	if ( mPoints.size() ) {
 		if ( tdist == 0.0f ) {
 			mPoints.clear();
-			return;
+			return *this;
 		}
 
 		Float TotTime = tdist * ( 1000.f / mSpeed );
@@ -216,31 +238,43 @@ void Interpolation1d::setSpeed( const Float Speed ) {
 			CurDist = eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p );
 			tdist += CurDist;
 
-			mPoints[ mPoints.size() - 1 ].t = CurDist * TotTime / tdist;
+			mPoints[ mPoints.size() - 1 ].t = Milliseconds( CurDist * TotTime / tdist );
 			TotTime = tdist * ( 1000.f / mSpeed );
 		}
 
 		for ( unsigned int i = 0; i < mPoints.size() - 1; i++) {
 			CurDist = eeabs( mPoints[i].p - mPoints[i + 1].p );
-			mPoints[i].t = CurDist * TotTime / tdist;
+			mPoints[i].t = Milliseconds( CurDist * TotTime / tdist );
 		}
 	}
+
+	return *this;
 }
 
-void Interpolation1d::setType( Ease::Interpolation InterpolationType ) {
+Interpolation1d& Interpolation1d::setType( Ease::Interpolation InterpolationType ) {
 	mType = InterpolationType;
+	return *this;
 }
 
 const int& Interpolation1d::getType() const {
 	return mType;
 }
 
+UintPtr Interpolation1d::getData() const {
+	return mData;
+}
+
+void Interpolation1d::setData(const UintPtr & data) {
+	mData = data;
+}
+
 const bool& Interpolation1d::getLoop() const {
 	return mLoop;
 }
 
-void Interpolation1d::setLoop( const bool& loop ) {
+Interpolation1d& Interpolation1d::setLoop( const bool& loop ) {
 	mLoop = loop;
+	return *this;
 }
 
 const bool& Interpolation1d::ended() const {
@@ -255,7 +289,7 @@ Point1d * Interpolation1d::getCurrentNext() const {
 	return mNexP;
 }
 
-const Uint32& Interpolation1d::getCurrentPos() const {
+const Uint32& Interpolation1d::getCurrentPositionIndex() const {
 	return mCurPoint;
 }
 
@@ -271,8 +305,9 @@ const bool& Interpolation1d::isEnabled() const {
 	return mEnable;
 }
 
-void Interpolation1d::setEnabled( const bool& Enabled ) {
+Interpolation1d& Interpolation1d::setEnabled( const bool& Enabled ) {
 	mEnable = Enabled;
+	return *this;
 }
 
 }}

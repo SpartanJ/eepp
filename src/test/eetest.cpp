@@ -188,13 +188,13 @@ void EETest::init() {
 		}
 
 		WP.setType( Ease::QuarticInOut );
-		WP.addWaypoint( Vector2f(0,0), 100 );
-		WP.addWaypoint( Vector2f(800,0), 100 );
-		WP.addWaypoint( Vector2f(0,0), 100 );
-		WP.addWaypoint( Vector2f(1024,768), 100 );
-		WP.addWaypoint( Vector2f(0,600), 100 );
-		WP.editWaypoint( 2, Vector2f(800,600), 100 );
-		WP.eraseWaypoint( 3 );
+		WP.add( Vector2f(0,0), Milliseconds(100) );
+		WP.add( Vector2f(800,0), Milliseconds(100) );
+		WP.add( Vector2f(0,0), Milliseconds(100) );
+		WP.add( Vector2f(1024,768), Milliseconds(100) );
+		WP.add( Vector2f(0,600), Milliseconds(100) );
+		WP.edit( 2, Vector2f(800,600), Milliseconds(100) );
+		WP.erase( 3 );
 		WP.setLoop(true);
 		WP.setTotalTime( Milliseconds( 5000 ) );
 		WP.start();
@@ -1495,7 +1495,7 @@ void EETest::screen2() {
 
 	WP.update( et );
 	PR.setColor( Color(0, 255, 0, 255) );
-	PR.drawPoint( WP.getPos(), 10.f );
+	PR.drawPoint( WP.getPosition(), 10.f );
 }
 
 void EETest::screen3() {

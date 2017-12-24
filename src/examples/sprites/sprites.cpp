@@ -25,9 +25,9 @@ void spriteCallback( Uint32 Event, Sprite * Sprite, void * UserData ) {
 	} else if ( Event == USER_SPRITE_EVENT ) {
 		// Create an interpolation to change the angle of the sprite
 		Interpolation1d * RotationInterpolation = reinterpret_cast<Interpolation1d*>( UserData );
-		RotationInterpolation->clearWaypoints();
-		RotationInterpolation->addWaypoint( Sprite->getRotation() );
-		RotationInterpolation->addWaypoint( Sprite->getRotation() + 45.f );
+		RotationInterpolation->clear();
+		RotationInterpolation->add( Sprite->getRotation() );
+		RotationInterpolation->add( Sprite->getRotation() + 45.f );
 		RotationInterpolation->setTotalTime( Milliseconds( 500 ) );
 		RotationInterpolation->setType( Ease::BounceOut ); // Set the easing effect used for the interpolation
 		RotationInterpolation->start();
@@ -64,8 +64,8 @@ void mainLoop()
 	RockAngle.update( win->getElapsed() );
 
 	// Set the Planet and Rock angle from the interpolation
-	Planet.setRotation( PlanetAngle.getPos() );
-	Rock.setRotation( RockAngle.getPos() );
+	Planet.setRotation( PlanetAngle.getPosition() );
+	Rock.setRotation( RockAngle.getPosition() );
 
 	// Draw the static planet sprite
 	Planet.draw();
@@ -149,8 +149,8 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 							ScreenCenter.y - Blindy.getAABB().getSize().getHeight() / 2 ) );
 
 		// Set the planet angle interpolation
-		PlanetAngle.addWaypoint( 0 );
-		PlanetAngle.addWaypoint( 360 );
+		PlanetAngle.add( 0 );
+		PlanetAngle.add( 360 );
 		PlanetAngle.setTotalTime( Seconds( 10 ) );
 		PlanetAngle.setLoop( true );
 		PlanetAngle.start();
