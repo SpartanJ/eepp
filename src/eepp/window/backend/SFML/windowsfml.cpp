@@ -115,7 +115,7 @@ void WindowSFML::createPlatform() {
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
 	mPlatform = eeNew( Platform::OSXImpl, ( this ) );
 #else
-	Window::CreatePlatform();
+	Window::createPlatform();
 #endif
 }
 

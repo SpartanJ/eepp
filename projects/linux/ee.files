@@ -503,7 +503,6 @@
 ../../src/eepp/window/backend/null/cursornull.hpp
 ../../src/eepp/window/backend/null/cursormanagernull.hpp
 ../../src/eepp/window/backend/null/clipboardnull.hpp
-../../src/eepp/window/backend/null/backendnull.hpp
 ../../src/eepp/window/backend/null/windownull.cpp
 ../../src/eepp/window/backend/null/joysticknull.cpp
 ../../src/eepp/window/backend/null/joystickmanagernull.cpp
