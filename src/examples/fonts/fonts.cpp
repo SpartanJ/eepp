@@ -61,9 +61,9 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 
 		// Set the font color to a substring of the text
 		// Create a gradient
-		size_t size = Txt.size();
+		int size = (int)Txt.size();
 
-		for ( size_t i = 0; i < size; i++ ) {
+		for ( int i = 0; i < size; i++ ) {
 			text.setFillColor( Color(255*i/size,0,0,255), i, i+1 );
 		}
 

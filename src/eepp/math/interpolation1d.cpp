@@ -67,6 +67,7 @@ Interpolation1d &Interpolation1d::wait( const Float& pos, const Time& time ) {
 
 Interpolation1d &Interpolation1d::waitAndAdd(const EE::Float & pos, const EE::System::Time & waitTime, const EE::System::Time & addTime) {
 	add( pos, waitTime ).add( pos, addTime );
+	return *this;
 }
 
 Interpolation1d & Interpolation1d::reset() {

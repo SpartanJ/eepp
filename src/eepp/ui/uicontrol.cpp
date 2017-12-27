@@ -1656,7 +1656,7 @@ UIWindow * UIControl::getParentWindow() {
 }
 
 bool UIControl::isReverseDraw() const {
-	return mControlFlags & UI_CTRL_FLAG_REVERSE_DRAW;
+	return 0 != ( mControlFlags & UI_CTRL_FLAG_REVERSE_DRAW );
 }
 
 void UIControl::setReverseDraw( bool reverseDraw ) {
