@@ -9,7 +9,7 @@ namespace EE { namespace System {
 class EE_API FileSystem {
 	public:
 		/** @return The default slash path code of the current OS */
-		static std::string getOSlash();
+		static std::string getOSSlash();
 
 		/** @return True if the file exists ( false if is a directory, to know if directory exists use IsDirectory ) */
 		static bool fileExists( const std::string& Filepath );
@@ -67,6 +67,9 @@ class EE_API FileSystem {
 
 		/** If the directory path not end with a slash, it will add it. */
 		static void dirPathAddSlashAtEnd( std::string& path );
+
+		/** If the directory path ends with a slash, it will remove it. */
+		static void dirRemoveSlashAtEnd( std::string& dir );
 
 		/** Move up from directory tree */
 		static std::string removeLastFolderFromPath( std::string path );

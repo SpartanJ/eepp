@@ -228,7 +228,7 @@ Uint32 UICommonDialog::onMessage( const UIMessage * Msg ) {
 					std::string newPath = mCurPath + mList->getItemSelectedText();
 
 					if ( FileSystem::isDirectory( newPath ) ) {
-						mCurPath = newPath + FileSystem::getOSlash();
+						mCurPath = newPath + FileSystem::getOSSlash();
 						mPath->setText( mCurPath );
 						refreshFolder();
 					} else {

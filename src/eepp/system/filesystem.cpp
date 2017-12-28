@@ -26,7 +26,7 @@
 
 namespace EE { namespace System {
 
-std::string FileSystem::getOSlash() {
+std::string FileSystem::getOSSlash() {
 	#if EE_PLATFORM == EE_PLATFORM_WIN
 		return std::string( "\\" );
 	#else
@@ -168,7 +168,14 @@ Uint32 FileSystem::fileGetModificationDate( const std::string& Filepath ) {
 
 void FileSystem::dirPathAddSlashAtEnd( std::string& path ) {
 	if ( path.size() && path[ path.size() - 1 ] != '/' && path[ path.size() - 1 ] != '\\' )
-		path += getOSlash();
+		path += getOSSlash();
+}
+
+void FileSystem::dirRemoveSlashAtEnd(std::string & dir) {
+	if ( dir.size() > 1 && ( dir[ dir.size() - 1 ] == '/' || dir[ dir.size() - 1 ] == '\\' ) )
+	{
+		dir.erase( dir.size() - 1 );
+	}
 }
 
 std::string FileSystem::removeLastFolderFromPath( std::string path ) {
@@ -176,14 +183,14 @@ std::string FileSystem::removeLastFolderFromPath( std::string path ) {
 		path.resize( path.size() - 1 );
 	}
 
-	std::size_t pos = path.find_last_of( getOSlash() );
+	std::size_t pos = path.find_last_of( getOSSlash() );
 
 	if ( std::string::npos != pos ) {
 		std::string sstr;
-		std::size_t pos2 = path.find_first_of( getOSlash() );
+		std::size_t pos2 = path.find_first_of( getOSSlash() );
 
 		if ( pos2 != pos ) {
-			sstr = path.substr(0,pos) + getOSlash();
+			sstr = path.substr(0,pos) + getOSSlash();
 		} else {
 			if ( pos == pos2 ) {
 				sstr = path.substr(0,pos2+1);
@@ -330,7 +337,7 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 		String fpath( path );
 
 		if ( fpath[ fpath.size() - 1 ] != '/' && fpath[ fpath.size() - 1 ] != '\\' )
-			fpath += getOSlash();
+			fpath += getOSSlash();
 
 		std::list<String> folders;
 		std::list<String> file;
@@ -441,7 +448,7 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path, co
 		String fpath( path );
 
 		if ( fpath[ fpath.size() - 1 ] != '/' && fpath[ fpath.size() - 1 ] != '\\' )
-			fpath += getOSlash();
+			fpath += getOSSlash();
 
 		std::list<String> folders;
 		std::list<String> file;
@@ -480,7 +487,7 @@ Uint64 FileSystem::fileSize( const std::string& Filepath ) {
 
 bool FileSystem::fileExists( const std::string& Filepath ) {
 	struct stat st;
-	return ( stat( Filepath.c_str(), &st ) == 0 ) && !S_ISDIR( st.st_mode );
+	return ( stat( Filepath.c_str(), &st ) == 0 );
 }
 
 std::string FileSystem::sizeToString( const Int64& Size ) {

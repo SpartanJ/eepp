@@ -526,7 +526,7 @@ void Console::privVideoResize( EE::Window::Window * win ) {
 }
 
 void Console::getFilesFrom( std::string txt, const Uint32& curPos ) {
-	static char OSSlash = FileSystem::getOSlash().at(0);
+	static char OSSlash = FileSystem::getOSSlash().at(0);
 	size_t pos;
 
 	if ( std::string::npos != ( pos = txt.find_last_of( OSSlash ) ) && pos <= curPos ) {
@@ -594,7 +594,7 @@ void Console::getFilesFrom( std::string txt, const Uint32& curPos ) {
 				std::string slash = "";
 
 				if ( FileSystem::isDirectory( dir + files[lasti] ) ) {
-					slash = FileSystem::getOSlash();
+					slash = FileSystem::getOSSlash();
 				}
 
 				mTBuf->setBuffer( mTBuf->getBuffer().substr( 0, pos + 1 ) + files[lasti] + slash );
@@ -855,7 +855,7 @@ void Console::cmdSetVolume( const std::vector < String >& params ) {
 
 void Console::cmdDir( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
-		String Slash( FileSystem::getOSlash() );
+		String Slash( FileSystem::getOSSlash() );
 		String myPath = params[1];
 		String myOrder;
 
