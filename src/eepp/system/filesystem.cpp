@@ -2,6 +2,8 @@
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/sys.hpp>
 #include <sys/stat.h>
+#include <unistd.h>
+#include <climits>
 #include <list>
 #include <algorithm>
 
@@ -133,6 +135,13 @@ void FileSystem::filePathRemoveProcessPath( std::string& path ) {
 	}
 }
 
+void FileSystem::filePathRemoveCurrentWorkingDirectory( std::string& path ) {
+	std::string dirPath = getCurrentWorkingDirectory();
+
+	if ( String::startsWith( path, dirPath ) && dirPath.length() < path.size() ) {
+		path = path.substr( dirPath.length() );
+	}
+}
 
 bool FileSystem::fileWrite( const std::string& filepath, const Uint8* data, const Uint32& dataSize ) {
 	IOStreamFile fs( filepath, std::ios::out | std::ios::binary );
@@ -215,14 +224,8 @@ bool FileSystem::isDirectory( const String& path ) {
 
 bool FileSystem::isDirectory( const std::string& path ) {
 #ifndef EE_COMPILER_MSVC
-	DIR *dp = NULL;
-
-	bool isdir = !( ( dp = opendir( path.c_str() ) ) == NULL);
-
-	if ( NULL != dp )
-		closedir(dp);
-
-	return isdir;
+	struct stat st;
+	return ( stat( path.c_str(), &st ) == 0 ) && S_ISDIR( st.st_mode );
 #else
 	return 0 != ( GetFileAttributes( (LPCTSTR) path.c_str() ) & FILE_ATTRIBUTE_DIRECTORY );
 #endif
@@ -256,7 +259,7 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 		}
 
 		WIN32_FIND_DATA findFileData;
-		HANDLE hFind = FindFirstFile( (LPCWSTR)mPath.ToWideString().c_str(), &findFileData );
+		HANDLE hFind = FindFirstFile( (LPCWSTR)mPath.toWideString().c_str(), &findFileData );
 
 		if( hFind != INVALID_HANDLE_VALUE ) {
 			String tmpstr( findFileData.cFileName );
@@ -378,7 +381,7 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path, co
 		}
 
 		WIN32_FIND_DATA findFileData;
-		HANDLE hFind = FindFirstFile( (LPCWSTR)mPath.ToWideString().c_str(), &findFileData );
+		HANDLE hFind = FindFirstFile( (LPCWSTR)mPath.toWideString().c_str(), &findFileData );
 
 		if( hFind != INVALID_HANDLE_VALUE ) {
 			String tmpstr( findFileData.cFileName );
@@ -510,6 +513,36 @@ std::string FileSystem::sizeToString( const Int64& Size ) {
 	}
 
 	return std::string( String::toStr( mem ) + size );
+}
+
+bool FileSystem::changeWorkingDirectory( const std::string & path ) {
+	int res = -1;
+#ifdef EE_COMPILER_MSVC
+	#ifdef UNICODE
+	res = _wchdir( String::fromUtf8( path.c_str() ).toWideString() );
+	#else
+	res = _chdir( String::fromUtf8( path.c_str() ).toAnsiString() );
+	#endif
+#else
+	res = chdir( path.c_str() );
+#endif
+	return -1 != res;
+}
+
+std::string FileSystem::getCurrentWorkingDirectory() {
+#ifdef EE_COMPILER_MSVC
+	#if defined( UNICODE ) AND !defined( EE_NO_WIDECHAR )
+	wchar_t dir[_MAX_PATH];
+	return ( 0 != GetCurrentDirectoryW( _MAX_PATH, dir ) ) ? String( dir )::toUtf8() : std::string();
+	#else
+	char dir[_MAX_PATH];
+	return ( 0 != GetCurrentDirectory( _MAX_PATH, dir ) ) ? String( dir, std::locale() ).toUtf8() : std::string();
+	#endif
+#else
+	char dir[PATH_MAX + 1];
+	getcwd( dir, PATH_MAX + 1 );
+	return std::string( dir );
+#endif
 }
 
 }}

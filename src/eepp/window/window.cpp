@@ -361,6 +361,7 @@ void Window::logSuccessfulInit(const std::string& BackendName ) {
 							 "\n\tArch: " + Sys::getOSArchitecture() +
 							 "\n\tCPU Cores: " + String::toStr( Sys::getCPUCount() ) +
 							 "\n\tProcess Path: " + Sys::getProcessPath() +
+							 "\n\tCurrent Working Directory: " + FileSystem::getCurrentWorkingDirectory() +
 							 "\n\tDisk Free Space: " + String::toStr( FileSystem::sizeToString( Sys::getDiskFreeSpace( Sys::getProcessPath() ) ) ) +
 							 "\n\tWindow/Input Backend: " + BackendName +
 							 "\n\tGL Backend: " + GLi->versionStr() +

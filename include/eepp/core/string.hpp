@@ -309,13 +309,13 @@ class EE_API String {
 
 	/** @brief Implicit cast operator to std::string (ANSI string)
 	** The current global locale is used for conversion. If you
-	** want to explicitely specify a locale, see ToAnsiString.
+	** want to explicitely specify a locale, see toAnsiString.
 	** Characters that do not fit in the target encoding are
 	** discarded from the returned string.
 	** This operator is defined for convenience, and is equivalent
-	** to calling ToAnsiString().
+	** to calling toAnsiString().
 	** @return Converted ANSI string
-	** @see ToAnsiString, operator String
+	** @see toAnsiString, operator String
 	**/
 	operator std::string() const;
 
@@ -323,12 +323,12 @@ class EE_API String {
 	** The UTF-32 string is converted to an ANSI string in
 	** the encoding defined by \a locale. If you want to use
 	** the current global locale, see the other overload
-	** of ToAnsiString.
+	** of toAnsiString.
 	** Characters that do not fit in the target encoding are
 	** discarded from the returned string.
 	** @param locale Locale to use for conversion
 	** @return Converted ANSI string
-	** @see ToWideString, operator std::string
+	** @see toWideString, operator std::string
 	**/
 	std::string toAnsiString( const std::locale& locale = std::locale() ) const;
 
@@ -337,7 +337,7 @@ class EE_API String {
 	** Characters that do not fit in the target encoding are
 	** discarded from the returned string.
 	** @return Converted wide string
-	** @see ToAnsiString, operator String
+	** @see toAnsiString, operator String
 	**/
 	std::wstring toWideString() const;
 #endif
@@ -767,7 +767,7 @@ it is possible to use a custom locale if necessary:
 std::locale locale;
 EE::String s;
 ...
-std::string s1 = s.ToAnsiString(locale);
+std::string s1 = s.toAnsiString(locale);
 s = EE::String("hello", locale);
 @endcode
 

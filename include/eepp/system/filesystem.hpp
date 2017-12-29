@@ -97,6 +97,14 @@ class EE_API FileSystem {
 		*/
 		static std::string sizeToString(const Int64& Size );
 
+		/** Change the process current working directory */
+		static bool changeWorkingDirectory( const std::string& path );
+
+		/** Gets the current working directory */
+		static std::string getCurrentWorkingDirectory();
+
+		/** Removes the current working directory from a path */
+		static void filePathRemoveCurrentWorkingDirectory(std::string & path);
 };
 
 }}
