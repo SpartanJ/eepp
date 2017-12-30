@@ -353,6 +353,12 @@ int IniFile::getValueI ( std::string const keyname, std::string const valuename,
 	return atoi ( getValue ( keyname, valuename, svalue ).c_str() );
 }
 
+bool IniFile::getValueB(const std::string keyname, const std::string valuename, const bool defValue) const {
+   std::string val = getValue ( keyname, valuename, defValue ? "1" : "0" );
+   char fist = !val.empty() ? val[0] : '0';
+   return fist == '1' || fist == 't' || fist == 'y' || fist == 'T' || fist == 'Y';
+}
+
 double IniFile::getValueF ( std::string const keyname, std::string const valuename, double const defValue ) const {
 	char svalue[MAX_VALUEDATA];
 

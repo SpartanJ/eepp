@@ -95,15 +95,15 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 	// Check if created
 	if ( win->isOpen() ) {
-		// Get the application path
-		std::string AppPath = Sys::getProcessPath();
+		// Set the application current directory path
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
 		// Load the rock texture
-		Uint32 PlanetId	= TextureFactory::instance()->loadFromFile( AppPath + "assets/sprites/7.png" );
-		Uint32 RockId	= TextureFactory::instance()->loadFromFile( AppPath + "assets/sprites/5.png" );
+		Uint32 PlanetId	= TextureFactory::instance()->loadFromFile( "assets/sprites/7.png" );
+		Uint32 RockId	= TextureFactory::instance()->loadFromFile( "assets/sprites/5.png" );
 
 		// Load a previously generated texture atlas that contains the SubTextures needed to load an animated sprite
-		TextureAtlasLoader Blindies( AppPath + "assets/atlases/bnb.eta" );
+		TextureAtlasLoader Blindies( "assets/atlases/bnb.eta" );
 
 		// Create the animated rock spriteR
 		// Load the rock frames from the texture, adding the frames manually

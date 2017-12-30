@@ -44,14 +44,14 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 
 	// Check if created
 	if ( win->isOpen() ) {
-		// Get the application path
-		std::string AppPath = Sys::getProcessPath();
+		// Set the application current directory path
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
 		// Create a new text string
 		String Txt( "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." );
 
 		fontTest = FontTrueType::New( "DejaVuSansMono" );
-		fontTest->loadFromFile( AppPath + "assets/fonts/DejaVuSansMono.ttf" );
+		fontTest->loadFromFile( "assets/fonts/DejaVuSansMono.ttf" );
 
 		text.setFont( fontTest );
 		text.setCharacterSize( 24 );
@@ -68,7 +68,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		}
 
 		fontTest2 = FontTrueType::New( "NotoSans-Regular" );
-		fontTest2->loadFromFile( AppPath + "assets/fonts/NotoSans-Regular.ttf" );
+		fontTest2->loadFromFile( "assets/fonts/NotoSans-Regular.ttf" );
 
 		text2.setFont( fontTest2 );
 		text2.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );

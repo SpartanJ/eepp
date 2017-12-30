@@ -112,9 +112,7 @@ class EE_API IniFile {
 		int    getValueI ( std::string const keyname, std::string const valuename, int const defValue = 0 ) const;
 
 		/** Gets the value as boolean */
-		bool   getValueB ( std::string const keyname, std::string const valuename, bool const defValue = false ) const {
-			return 0 != ( getValueI ( keyname, valuename, int ( defValue ) ) );
-		}
+		bool   getValueB ( std::string const keyname, std::string const valuename, bool const defValue = false ) const;
 
 		/** Gets the value as double */
 		double   getValueF ( std::string const keyname, std::string const valuename, double const defValue = 0.0 ) const;

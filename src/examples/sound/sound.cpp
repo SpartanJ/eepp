@@ -1,15 +1,12 @@
 #include <eepp/ee.hpp>
 
-// Get the process path to be used to load the sounds ( it is safer )
-std::string AppPath = Sys::getProcessPath();
-
 /// Play a sound
 void playSound() {
 	// The sound manager class simplyfies the load of a SoundBuffer and the creation of the Sound
 	// It manages the sound playing, if the sound channel is already playing, it will open a new channel to play the sound
 	SoundManager SoundManager;
 
-	if ( SoundManager.loadFromFile( "sound", AppPath + "assets/sounds/sound.ogg" ) ) {
+	if ( SoundManager.loadFromFile( "sound", "assets/sounds/sound.ogg" ) ) {
 		// Get the sound buffer to display the buffer information
 		SoundBuffer& buffer = SoundManager.getBuffer( "sound" );
 
@@ -29,7 +26,7 @@ void playMusic() {
 	// Load an ogg music file
 	Music music;
 
-	if (!music.openFromFile( AppPath + "assets/sounds/music.ogg" ) )
+	if (!music.openFromFile( "assets/sounds/music.ogg" ) )
 		return;
 
 	// Display music informations
@@ -57,6 +54,9 @@ void playMusic() {
 /// Entry point of application
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
+	// Set the application current directory path
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
 	// Play a sound
 	playSound();
 
