@@ -3,6 +3,7 @@
 
 #include <eepp/window/base.hpp>
 #include <eepp/window/window.hpp>
+#include <eepp/window/platformhelper.hpp>
 #include <list>
 
 namespace EE { namespace System { class IniFile; class Pack; } }
@@ -117,11 +118,8 @@ class EE_API Engine {
 		/** @return The id of the thread that was used to initialize the OpenGL Context. */
 		Uint32 getMainThreadId();
 
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-		std::string getExternalStoragePath();
-
-		std::string getInternalStoragePath();
-#endif
+		/** @return The instance of platform class that provides some helpers for some platforms */
+		PlatformHelper * getPlatformHelper();
 	protected:
 		friend class Window;
 
@@ -130,6 +128,7 @@ class EE_API Engine {
 		EE::Window::Window *			mWindow;
 		bool				mSharedGLContext;
 		Uint32				mMainThreadId;
+		PlatformHelper *	mPlatformHelper;
 		Pack *				mZip;
 
 		Engine();

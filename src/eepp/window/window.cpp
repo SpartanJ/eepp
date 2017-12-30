@@ -520,30 +520,4 @@ void Window::runMainLoop( void (*func)(), int fps ) {
 #endif
 }
 
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-void * Window::getJNIEnv() {
-	return NULL;
-}
-
-void * Window::getActivity() {
-	return NULL;
-}
-
-int Window::getExternalStorageState() {
-	return 0;
-}
-
-std::string Window::getInternalStoragePath() {
-	return std::string("");
-}
-
-std::string Window::getExternalStoragePath() {
-	return std::string("");
-}
-
-std::string Window::getApkPath() {
-	return std::string("");
-}
-#endif
-
 }}

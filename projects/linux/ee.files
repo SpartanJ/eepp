@@ -436,7 +436,12 @@
 ../../include/eepp/window/cursor.hpp
 ../../include/eepp/window/clipboard.hpp
 ../../include/eepp/window/base.hpp
+../../src/eepp/window/backend/SDL2/platformhelpersdl2.cpp
+../../src/eepp/window/backend/SDL2/platformhelpersdl2.hpp
+../../src/eepp/window/backend/SFML/platformhelpersfml.cpp
+../../src/eepp/window/backend/SFML/platformhelpersfml.hpp
 ../../src/eepp/window/inputhelper.cpp
+../../src/eepp/window/platformhelper.hpp
 ../../src/eepp/window/window.cpp
 ../../src/eepp/window/view.cpp
 ../../src/eepp/window/platformimpl.cpp

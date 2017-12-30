@@ -515,7 +515,7 @@ static std::string sGetProcessPath() {
 
 	return FileSystem::fileRemoveFileName( std::string( info.name ) );
 #elif EE_PLATFORM == EE_PLATFORM_ANDROID
-	return Window::Engine::instance()->getExternalStoragePath() + "/";
+	return Window::Engine::instance()->getPlatformHelper()->getExternalStoragePath() + "/";
 #else
 	#warning Sys::GetProcessPath() not implemented on this platform. ( will return "./" )
 	return "./";
@@ -623,7 +623,7 @@ std::string Sys::getConfigPath( std::string appname ) {
 	#elif EE_PLATFORM == EE_PLATFORM_IOS
 		return GetProcessPath() + "config";
 	#elif EE_PLATFORM == EE_PLATFORM_ANDROID
-		return Window::Engine::instance()->getInternalStoragePath() + "/";
+		return Window::Engine::instance()->getPlatformHelper()->getInternalStoragePath() + "/";
 	#else
 		#warning Sys::GetConfigPath not implemented for this platform ( it will use HOME directory + /.appname )
 
@@ -649,11 +649,7 @@ std::string Sys::getTempPath() {
 			return std::string( "C:\\WINDOWS\\TEMP\\" );
 		}
 	#elif EE_PLATFORM == EE_PLATFORM_ANDROID
-		if ( NULL != Window::Engine::instance() ) {
-			String::strCopy( path, Window::Engine::instance()->getCurrentWindow()->getInternalStoragePath().c_str(), EE_MAX_CFG_PATH_LEN );
-		} else {
-			String::strCopy( path, "/tmp", EE_MAX_CFG_PATH_LEN );
-		}
+		String::strCopy( path, std::string( Window::Engine::instance()->getPlatformHelper()->getInternalStoragePath() + "/tmp/" ).c_str(), EE_MAX_CFG_PATH_LEN );
 	#else
 		char * tmpdir = getenv("TMPDIR");
 

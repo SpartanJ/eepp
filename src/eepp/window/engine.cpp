@@ -16,6 +16,8 @@
 #include <eepp/window/backend.hpp>
 #include <eepp/window/backend/SDL2/backendsdl2.hpp>
 #include <eepp/window/backend/SFML/backendsfml.hpp>
+#include <eepp/window/backend/SDL2/platformhelpersdl2.hpp>
+#include <eepp/window/backend/SFML/platformhelpersfml.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
@@ -43,11 +45,14 @@ Engine::Engine() :
 	mBackend( NULL ),
 	mWindow( NULL ),
 	mSharedGLContext( false ),
-	mMainThreadId( 0 )
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-	, mZip( NULL )
-#endif
+	mMainThreadId( 0 ),
+	mPlatformHelper( NULL )
 {
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	mZip = eeNew( Zip, () );
+	mZip->open( getPlatformHelper()->getApkPath() );
+#endif
+
 	TextureAtlasManager::createSingleton();
 }
 
@@ -87,6 +92,8 @@ Engine::~Engine() {
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	eeSAFE_DELETE( mZip );
 #endif
+
+	eeSAFE_DELETE( mPlatformHelper );
 
 	eeSAFE_DELETE( mBackend );
 }
@@ -334,25 +341,16 @@ Uint32 Engine::getMainThreadId() {
 	return mMainThreadId;
 }
 
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-std::string Engine::getExternalStoragePath() {
-	#if defined( EE_BACKEND_SDL2 )
-	if ( NULL == mZip ) {
-		mZip = eeNew( Zip, () );
-		mZip->open( Backend::SDL2::WindowSDL::SDL_AndroidGetApkPath() );
+PlatformHelper * Engine::getPlatformHelper() {
+	if ( NULL == mPlatformHelper ) {
+	#if DEFAULT_BACKEND == BACKEND_SDL2
+		mPlatformHelper = eeNew( Backend::SDL2::PlatformHelperSDL2, () );
+	#elif DEFAULT_BACKEND == BACKEND_SFML
+		mPlatform = eeNew( Backend::SFML::PlatformHelperSFML, () );
+	#endif
 	}
 
-	return SDL_AndroidGetExternalStoragePath();
-	#endif
-	return "";
+	return mPlatformHelper;
 }
-
-std::string Engine::getInternalStoragePath() {
-	#if defined( EE_BACKEND_SDL2 )
-	return SDL_AndroidGetExternalStoragePath();
-	#endif
-	return "";
-}
-#endif
 
 }}

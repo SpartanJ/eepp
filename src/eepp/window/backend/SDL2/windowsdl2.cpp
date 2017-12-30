@@ -23,52 +23,6 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-#include <eepp/system/zip.hpp>
-#include <jni.h>
-
-std::string WindowSDL::SDL_AndroidGetApkPath() {
-	static std::string apkPath = "";
-
-	if ( "" == apkPath ) {
-		jmethodID mid;
-		jobject context;
-		jobject fileObject;
-		const char *path;
-
-		JNIEnv *env = (JNIEnv*)SDL_AndroidGetJNIEnv();
-
-		jclass ActivityClass = env->GetObjectClass((jobject)SDL_AndroidGetActivity());
-
-		// context = SDLActivity.getContext();
-		mid = env->GetStaticMethodID(ActivityClass,"getContext","()Landroid/content/Context;");
-
-		context = env->CallStaticObjectMethod(ActivityClass, mid);
-
-		// fileObj = context.getFilesDir();
-		mid = env->GetMethodID(env->GetObjectClass(context),"getPackageCodePath", "()Ljava/lang/String;");
-
-		fileObject = env->CallObjectMethod(context, mid);
-
-		jboolean isCopy;
-		path = env->GetStringUTFChars((jstring)fileObject, &isCopy);
-
-		apkPath = std::string( path );
-	}
-
-	return apkPath;
-}
-
-std::string WindowSDL::SDL_AndroidGetExternalStoragePath() {
-	return std::string( SDL_AndroidGetExternalStoragePath() );
-}
-
-std::string WindowSDL::SDL_AndroidGetInternalStoragePath() {
-	return std::string( SDL_AndroidGetInternalStoragePath() );
-}
-
-#endif
-
 WindowSDL::WindowSDL( WindowSettings Settings, ContextSettings Context ) :
 	Window( Settings, Context, eeNew( ClipboardSDL, ( this ) ), eeNew( InputSDL, ( this ) ), eeNew( CursorManagerSDL, ( this ) ) ),
 	mSDLWindow( NULL ),
@@ -686,32 +640,6 @@ bool WindowSDL::isScreenKeyboardShown() {
 	return false;
 #endif
 }
-
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-void * WindowSDL::getJNIEnv() {
-	return SDL_AndroidGetJNIEnv();
-}
-
-void * WindowSDL::getActivity() {
-	return SDL_AndroidGetActivity();
-}
-
-int WindowSDL::getExternalStorageState() {
-	return SDL_AndroidGetExternalStorageState();
-}
-
-std::string WindowSDL::getInternalStoragePath() {
-	return std::string( SDL_AndroidGetInternalStoragePath() );
-}
-
-std::string WindowSDL::getExternalStoragePath() {
-	return std::string( SDL_AndroidGetExternalStoragePath() );
-}
-
-std::string WindowSDL::getApkPath() {
-	return SDL_AndroidGetApkPath();
-}
-#endif
 
 }}}}
 

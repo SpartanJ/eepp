@@ -148,13 +148,6 @@ class DisplayMode {
 	Uint32 ScreenIndex;
 };
 
-
-/* See the official Android developer guide for more information:
-   http://developer.android.com/guide/topics/data/data-storage.html
-*/
-#define EE_ANDROID_EXTERNAL_STORAGE_READ   0x01
-#define EE_ANDROID_EXTERNAL_STORAGE_WRITE  0x02
-
 class EE_API Window {
 	public:
 		typedef cb::Callback1<void, Window*>			WindowResizeCallback;
@@ -396,40 +389,6 @@ class EE_API Window {
 		* @sa hasScreenKeyboardSupport()
 		*/
 		virtual bool isScreenKeyboardShown();
-
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-		/** @return The JNI environment for the current thread
-		* This returns JNIEnv*, but the prototype is void* so we don't need jni.h
-		*/
-		virtual void * getJNIEnv();
-
-		/** @return The SDL Activity object for the application
-		* This returns jobject, but the prototype is void* so we don't need jni.h
-		*/
-		virtual void * getActivity();
-
-		/** @return The current state of external storage, a bitmask of these values:
-		* EE_ANDROID_EXTERNAL_STORAGE_READ
-		* EE_ANDROID_EXTERNAL_STORAGE_WRITE
-		* If external storage is currently unavailable, this will return 0.
-		*/
-		virtual int getExternalStorageState();
-
-		/** @return The path used for internal storage for this application.
-		* This path is unique to your application and cannot be written to
-		* by other applications.
-		*/
-		virtual std::string getInternalStoragePath();
-
-		/** @return The path used for external storage for this application.
-		* This path is unique to your application, but is public and can be
-		* written to by other applications.
-		*/
-		virtual std::string getExternalStoragePath();
-
-		/** @return The application APK file path */
-		virtual std::string getApkPath();
-#endif
 
 		/** @return True if the current window support a threaded GL Context. This means that supports OpenGL Shared Contexts ( multithreaded opengl contexts ).
 		**	Only supported with SDL2 backend.*/

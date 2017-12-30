@@ -13,20 +13,10 @@
 #define EE_USE_WMINFO
 #endif
 
-namespace EE { namespace System { class Zip; } }
-
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 class EE_API WindowSDL : public Window {
 	public:
-		#if EE_PLATFORM == EE_PLATFORM_ANDROID
-		static std::string SDL_AndroidGetApkPath();
-
-		static std::string SDL_AndroidGetExternalStoragePath();
-
-		static std::string SDL_AndroidGetInternalStoragePath();
-		#endif
-
 		WindowSDL( WindowSettings Settings, ContextSettings Context );
 		
 		virtual ~WindowSDL();
@@ -80,20 +70,6 @@ class EE_API WindowSDL : public Window {
 		bool hasScreenKeyboardSupport();
 
 		bool isScreenKeyboardShown();
-
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-		void * getJNIEnv();
-
-		void * getActivity();
-
-		int getExternalStorageState();
-
-		std::string getInternalStoragePath();
-
-		std::string getExternalStoragePath();
-
-		std::string getApkPath();
-#endif
 
 		bool isThreadedGLContext();
 

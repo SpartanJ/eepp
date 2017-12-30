@@ -432,10 +432,10 @@ static BlendMode toBlendMode( std::string val ) {
 
 	BlendMode blendMode;
 
-	if ( val == "add" ) blendMode == BlendAdd;
-	else if ( val == "alpha" ) blendMode == BlendAlpha;
-	else if ( val == "multiply" ) blendMode == BlendMultiply;
-	else if ( val == "none" ) blendMode == BlendNone;
+	if ( val == "add" ) blendMode = BlendAdd;
+	else if ( val == "alpha" ) blendMode = BlendAlpha;
+	else if ( val == "multiply" ) blendMode = BlendMultiply;
+	else if ( val == "none" ) blendMode = BlendNone;
 
 	return blendMode;
 }
