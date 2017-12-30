@@ -28,7 +28,7 @@ void spriteCallback( Uint32 Event, Sprite * Sprite, void * UserData ) {
 		RotationInterpolation->clear();
 		RotationInterpolation->add( Sprite->getRotation() );
 		RotationInterpolation->add( Sprite->getRotation() + 45.f );
-		RotationInterpolation->setTotalTime( Milliseconds( 500 ) );
+		RotationInterpolation->setDuration( Milliseconds( 500 ) );
 		RotationInterpolation->setType( Ease::BounceOut ); // Set the easing effect used for the interpolation
 		RotationInterpolation->start();
 
@@ -151,7 +151,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// Set the planet angle interpolation
 		PlanetAngle.add( 0 );
 		PlanetAngle.add( 360 );
-		PlanetAngle.setTotalTime( Seconds( 10 ) );
+		PlanetAngle.setDuration( Seconds( 10 ) );
 		PlanetAngle.setLoop( true );
 		PlanetAngle.start();
 

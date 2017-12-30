@@ -91,7 +91,7 @@ class EE_API Interpolation1d {
 		Interpolation1d& setEnabled( const bool& enabled );
 
 		/** Instead if setting the time between each waypoint, this set a total time for all the movement interpolation. */
-		Interpolation1d& setTotalTime( const Time& TotTime );
+		Interpolation1d& setDuration( const Time& TotTime );
 
 		/** @return the vector of points */
 		const std::vector<Point1d>& getPoints() const;

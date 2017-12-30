@@ -290,7 +290,7 @@ Interpolation2d * UIControlAnim::startScaleAnim( const Vector2f& From, const Vec
 	if ( NULL == mScaleAnim )
 		mScaleAnim = eeNew( Interpolation2d, () );
 
-	mScaleAnim->clear().add( From ).add( To ).setTotalTime( TotalTime ).setType( Type ).start( PathEndCallback );
+	mScaleAnim->clear().add( From ).add( To ).setDuration( TotalTime ).setType( Type ).start( PathEndCallback );
 
 	setScale( From );
 
@@ -305,7 +305,7 @@ Interpolation2d * UIControlAnim::startTranslation( const Vector2i& From, const V
 	if ( NULL == mMoveAnim )
 		mMoveAnim = eeNew( Interpolation2d, () );
 
-	mMoveAnim->clear().add( Vector2f( (Float)From.x, (Float)From.y ) ).add( Vector2f( (Float)To.x, (Float)To.y ) ).setType( Type ).setTotalTime( TotalTime ).start( PathEndCallback );
+	mMoveAnim->clear().add( Vector2f( (Float)From.x, (Float)From.y ) ).add( Vector2f( (Float)To.x, (Float)To.y ) ).setType( Type ).setDuration( TotalTime ).start( PathEndCallback );
 
 	setPosition( From );
 
@@ -316,7 +316,7 @@ Interpolation1d * UIControlAnim::startRotation( const Float& From, const Float& 
 	if ( NULL == mAngleAnim )
 		mAngleAnim = eeNew( Interpolation1d, () );
 
-	mAngleAnim->clear().add( From ).add( To ).setTotalTime( TotalTime ).setType( Type ).start( PathEndCallback );
+	mAngleAnim->clear().add( From ).add( To ).setDuration( TotalTime ).setType( Type ).start( PathEndCallback );
 
 	setRotation( From );
 

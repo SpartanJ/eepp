@@ -6,7 +6,7 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
-class PlatformHelperSFML : public PlatformHelper
+class EE_API PlatformHelperSFML : public PlatformHelper
 {
 	public:
 		PlatformHelperSFML();

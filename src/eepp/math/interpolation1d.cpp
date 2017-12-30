@@ -201,7 +201,7 @@ void Interpolation1d::update( const Time& Elapsed ) {
 	}
 }
 
-Interpolation1d& Interpolation1d::setTotalTime( const Time & TotTime ) {
+Interpolation1d& Interpolation1d::setDuration( const Time & TotTime ) {
 	Float tdist = mTotDist;
 
 	if ( tdist == 0.0f ) {

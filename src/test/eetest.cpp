@@ -198,7 +198,7 @@ void EETest::init() {
 		WP.edit( 2, Vector2f(800,600), Milliseconds(100) );
 		WP.erase( 3 );
 		WP.setLoop(true);
-		WP.setTotalTime( Milliseconds( 5000 ) );
+		WP.setDuration( Milliseconds( 5000 ) );
 		WP.start();
 
 		Batch.allocVertexs( 2048 );

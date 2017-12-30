@@ -84,7 +84,7 @@ class EE_API Interpolation2d {
 		bool ended() const;
 
 		/** Instead if setting the time between every waypoing, this set a total time for all the movement interpolation. */
-		Interpolation2d& setTotalTime( const Time & TotTime );
+		Interpolation2d& setDuration( const Time & TotTime );
 
 		/** @return The Current Node */
 		Point2d * getCurrentActual() const;

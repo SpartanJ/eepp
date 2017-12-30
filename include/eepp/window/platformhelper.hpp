@@ -6,7 +6,7 @@
 
 namespace EE { namespace Window {
 
-class PlatformHelper
+class EE_API PlatformHelper
 {
 	public:
 #if EE_PLATFORM == EE_PLATFORM_ANDROID

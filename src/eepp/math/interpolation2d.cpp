@@ -224,7 +224,7 @@ void Interpolation2d::update( const Time& Elapsed ) {
 	}
 }
 
-Interpolation2d& Interpolation2d::setTotalTime( const Time& TotTime ) {
+Interpolation2d& Interpolation2d::setDuration( const Time& TotTime ) {
 	unsigned int i;
 	Float tdist = mTotDist;
 

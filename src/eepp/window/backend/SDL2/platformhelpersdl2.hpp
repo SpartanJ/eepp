@@ -6,7 +6,7 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-class PlatformHelperSDL2 : public PlatformHelper
+class EE_API PlatformHelperSDL2 : public PlatformHelper
 {
 	public:
 		PlatformHelperSDL2();
