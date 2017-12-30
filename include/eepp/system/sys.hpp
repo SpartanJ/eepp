@@ -40,11 +40,11 @@ class EE_API Sys {
 		/** @return The OS Architecture */
 		static std::string getOSArchitecture();
 
+		/** @return The platform name. */
+		static std::string getPlatform();
+
 		/** @return The Number of CPUs of the system. */
 		static int getCPUCount();
-
-		/** @return Returns free disk space for a given path in bytes */
-		static Int64 getDiskFreeSpace(const std::string& path);
 
 		/** Dynamically load a shared object and return a pointer to the object handle.
 		**	@param sofile a system dependent name of the object file

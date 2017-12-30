@@ -357,12 +357,13 @@ void Window::sendVideoResizeCb() {
 void Window::logSuccessfulInit(const std::string& BackendName ) {
 	std::string msg( "Engine Initialized Succesfully.\n\tVersion: " + Version::getVersionName() + " (codename: \"" + Version::getCodename() + "\")" +
 							 "\n\tBuild time: " + Version::getBuildTime() +
+							 "\n\tPlatform: " + Sys::getPlatform() +
 							 "\n\tOS: " + Sys::getOSName(true) +
 							 "\n\tArch: " + Sys::getOSArchitecture() +
 							 "\n\tCPU Cores: " + String::toStr( Sys::getCPUCount() ) +
 							 "\n\tProcess Path: " + Sys::getProcessPath() +
 							 "\n\tCurrent Working Directory: " + FileSystem::getCurrentWorkingDirectory() +
-							 "\n\tDisk Free Space: " + String::toStr( FileSystem::sizeToString( Sys::getDiskFreeSpace( Sys::getProcessPath() ) ) ) +
+							 "\n\tDisk Free Space: " + String::toStr( FileSystem::sizeToString( FileSystem::getDiskFreeSpace( Sys::getProcessPath() ) ) ) +
 							 "\n\tWindow/Input Backend: " + BackendName +
 							 "\n\tGL Backend: " + GLi->versionStr() +
 							 "\n\tGL Vendor: " + GLi->getVendor() +

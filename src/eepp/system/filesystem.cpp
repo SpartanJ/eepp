@@ -26,6 +26,16 @@
 	#endif
 #endif
 
+#if defined( EE_PLATFORM_POSIX )
+	#if EE_PLATFORM != EE_PLATFORM_ANDROID
+		#include <sys/statvfs.h>
+	#else
+		#include <sys/vfs.h>
+		#define statvfs statfs
+		#define fstatvfs fstatfs
+	#endif
+#endif
+
 namespace EE { namespace System {
 
 std::string FileSystem::getOSSlash() {
@@ -542,6 +552,32 @@ std::string FileSystem::getCurrentWorkingDirectory() {
 	char dir[PATH_MAX + 1];
 	getcwd( dir, PATH_MAX + 1 );
 	return std::string( dir );
+#endif
+}
+
+Int64 FileSystem::getDiskFreeSpace(const std::string& path) {
+#if defined( EE_PLATFORM_POSIX )
+	struct statvfs data;
+	statvfs(path.c_str(),  &data);
+	#if EE_PLATFORM != EE_PLATFORM_MACOSX
+	return (Int64)data.f_bsize * (Int64)data.f_bfree;
+	#else
+	return (Int64)data.f_frsize * (Int64)data.f_bfree;
+	#endif
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+	Int64 AvailableBytes;
+	Int64 TotalBytes;
+	Int64 FreeBytes;
+	#ifdef UNICODE
+	GetDiskFreeSpaceEx((LPCWSTR)path.c_str(),(PULARGE_INTEGER) &AvailableBytes,
+	#else
+	GetDiskFreeSpaceEx(path.c_str(),(PULARGE_INTEGER) &AvailableBytes,
+	#endif
+	(PULARGE_INTEGER) &TotalBytes, (PULARGE_INTEGER) &FreeBytes);
+
+	return FreeBytes;
+#else
+	return -1;
 #endif
 }
 

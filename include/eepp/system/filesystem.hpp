@@ -105,6 +105,9 @@ class EE_API FileSystem {
 
 		/** Removes the current working directory from a path */
 		static void filePathRemoveCurrentWorkingDirectory(std::string & path);
+
+		/** @return Returns free disk space for a given path in bytes */
+		static Int64 getDiskFreeSpace(const std::string& path);
 };
 
 }}
