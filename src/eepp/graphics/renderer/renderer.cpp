@@ -4,7 +4,7 @@
 #include <eepp/graphics/renderer/renderergl3.hpp>
 #include <eepp/graphics/renderer/renderergl3cp.hpp>
 #include <eepp/graphics/renderer/renderergles2.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
+#include <SOIL2/src/SOIL2/SOIL2.h>
 
 namespace EE { namespace Graphics {
 

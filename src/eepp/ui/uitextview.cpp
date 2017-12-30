@@ -4,7 +4,7 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/window/clipboard.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 
 namespace EE { namespace UI {

@@ -2,7 +2,7 @@
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uimanager.hpp>
 

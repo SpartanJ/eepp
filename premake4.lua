@@ -281,14 +281,14 @@ static_backends = { }
 backend_selected = false
 
 function build_base_configuration( package_name )
-	includedirs { "src/eepp/helper/zlib" }
+	includedirs { "src/thirdparty/zlib" }
 
 	if not os.is("windows") then
 		buildoptions{ "-fPIC" }
 	end
 
 	if is_vs() then
-		includedirs { "src/eepp/helper/libzip/vs" }
+		includedirs { "src/thirdparty/libzip/vs" }
 	end
 
 	configuration "debug"
@@ -605,11 +605,11 @@ function set_ios_config()
 		linkoptions { sysroot_ver }
 		libdirs { framework_libs_path }
 		linkoptions { " -F" .. framework_path .. " -L" .. framework_libs_path .. " -isysroot " .. sysroot_path }
-		includedirs { "src/eepp/helper/SDL2/include" }
+		includedirs { "src/thirdparty/SDL2/include" }
 	end
 	
 	if _OPTIONS.platform == "ios-cross-arm7" or _OPTIONS.platform == "ios-cross-x86" then
-		includedirs { "src/eepp/helper/SDL2/include" }
+		includedirs { "src/thirdparty/SDL2/include" }
 	end
 end
 
@@ -679,7 +679,7 @@ function check_ssl_support()
 end
 
 function build_eepp( build_name )
-	includedirs { "include", "src", "src/eepp/helper/freetype2/include", "src/eepp/helper/zlib" }
+	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib" }
 	
 	set_ios_config()
 	set_xcode_config()
@@ -687,7 +687,7 @@ function build_eepp( build_name )
 	add_static_links()
 
 	if is_vs() then
-		includedirs { "src/eepp/helper/libzip/vs" }
+		includedirs { "src/thirdparty/libzip/vs" }
 	end
 
 	if not is_vs() then
@@ -795,9 +795,9 @@ solution "eepp"
 			language "C"
 		end
 
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/SOIL2/src/SOIL2/*.c" }
-		includedirs { "include/eepp/helper/SOIL2" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/SOIL2/src/SOIL2/*.c" }
+		includedirs { "include/thirdparty/SOIL2" }
 		build_base_configuration( "SOIL2" )
 
 	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
@@ -805,48 +805,48 @@ solution "eepp"
 			kind "StaticLib"
 			language "C"
 			defines { "GLEW_NO_GLU", "GLEW_STATIC" }
-			set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-			files { "src/eepp/helper/glew/*.c" }
-			includedirs { "include/eepp/helper/glew" }
+			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+			files { "src/thirdparty/glew/*.c" }
+			includedirs { "include/thirdparty/glew" }
 			build_base_configuration( "glew" )
 	end
 	
 	project "pugixml-static"
 		kind "StaticLib"
 		language "C++"
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/pugixml/*.cpp" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/pugixml/*.cpp" }
 		build_base_cpp_configuration( "pugixml" )
 
 	project "zlib-static"
 		kind "StaticLib"
 		language "C"
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/zlib/*.c" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/zlib/*.c" }
 		build_base_configuration( "zlib" )
 
 	project "libzip-static"
 		kind "StaticLib"
 		language "C"
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/libzip/*.c" }
-		includedirs { "src/eepp/helper/zlib" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/libzip/*.c" }
+		includedirs { "src/thirdparty/zlib" }
 		build_base_configuration( "libzip" )
 
 	project "freetype-static"
 		kind "StaticLib"
 		language "C"
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		defines { "FT2_BUILD_LIBRARY" }
-		files { "src/eepp/helper/freetype2/src/**.c" }
-		includedirs { "src/eepp/helper/freetype2/include" }
+		files { "src/thirdparty/freetype2/src/**.c" }
+		includedirs { "src/thirdparty/freetype2/include" }
 		build_base_configuration( "freetype" )
 	
 	project "stb_vorbis-static"
 		kind "StaticLib"
 		language "C"
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/stb_vorbis/*.c" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/stb_vorbis/*.c" }
 		build_base_configuration( "stb_vorbis" )
 		
 	project "chipmunk-static"
@@ -859,23 +859,23 @@ solution "eepp"
 			language "C"
 		end
 
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/chipmunk/*.c", "src/eepp/helper/chipmunk/constraints/*.c" }
-		includedirs { "include/eepp/helper/chipmunk" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/chipmunk/*.c", "src/thirdparty/chipmunk/constraints/*.c" }
+		includedirs { "include/eepp/thirdparty/chipmunk" }
 		build_base_configuration( "chipmunk" )
 
 	project "jpeg-compressor-static"
 		kind "StaticLib"
 		language "C++"
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/jpeg-compressor/*.cpp" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/jpeg-compressor/*.cpp" }
 		build_base_cpp_configuration( "jpeg-compressor" )
 
 	project "imageresampler-static"
 		kind "StaticLib"
 		language "C++"
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/imageresampler/*.cpp" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/imageresampler/*.cpp" }
 		build_base_cpp_configuration( "imageresampler" )
 
 	project "eepp-main"

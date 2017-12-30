@@ -3,11 +3,11 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/image_helper.h>
-#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
-#include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
-#include <eepp/helper/jpeg-compressor/jpge.h>
-#include <eepp/helper/imageresampler/resampler.h>
+#include <SOIL2/src/SOIL2/image_helper.h>
+#include <SOIL2/src/SOIL2/stb_image.h>
+#include <SOIL2/src/SOIL2/SOIL2.h>
+#include <jpeg-compressor/jpge.h>
+#include <imageresampler/resampler.h>
 #include <algorithm>
 
 namespace EE { namespace Graphics {

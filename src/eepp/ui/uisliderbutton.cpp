@@ -8,7 +8,7 @@ UISliderButton *UISliderButton::New() {
 }
 
 UISliderButton::UISliderButton() :
-	UIControlAnim()
+	UIWidget()
 {
 	applyDefaultTheme();
 }
@@ -17,7 +17,7 @@ UISliderButton::~UISliderButton() {
 }
 
 void UISliderButton::onPositionChange() {
-	UIControlAnim::onPositionChange();
+	UIWidget::onPositionChange();
 
 	UISlider * Slider = reinterpret_cast<UISlider*> ( mParentCtrl );
 	Slider->fixSliderPos();

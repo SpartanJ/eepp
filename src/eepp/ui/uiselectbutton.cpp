@@ -1,6 +1,6 @@
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 

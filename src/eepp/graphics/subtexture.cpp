@@ -1,8 +1,8 @@
 #include <eepp/graphics/subtexture.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
-#include <eepp/helper/jpeg-compressor/jpge.h>
+#include <SOIL2/src/SOIL2/SOIL2.h>
+#include <jpeg-compressor/jpge.h>
 #include <eepp/graphics/texturesaver.hpp>
 #include <eepp/graphics/renderer/opengl.hpp>
 using namespace EE::Graphics::Private;

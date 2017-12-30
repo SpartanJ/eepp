@@ -1,5 +1,5 @@
 #include <eepp/audio/soundfileogg.hpp>
-#include <eepp/helper/stb_vorbis/stb_vorbis.h>
+#include <stb_vorbis/stb_vorbis.h>
 
 namespace EE { namespace Audio {
 

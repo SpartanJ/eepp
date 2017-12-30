@@ -3,9 +3,9 @@
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/texture.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
-#include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
-#include <eepp/helper/jpeg-compressor/jpge.h>
+#include <SOIL2/src/SOIL2/stb_image.h>
+#include <SOIL2/src/SOIL2/SOIL2.h>
+#include <jpeg-compressor/jpge.h>
 
 namespace EE { namespace Graphics {
 

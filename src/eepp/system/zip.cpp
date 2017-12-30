@@ -1,6 +1,6 @@
 #include <eepp/system/zip.hpp>
-#include <eepp/helper/libzip/zip.h>
-#include <eepp/helper/libzip/zipint.h>
+#include <libzip/zip.h>
+#include <libzip/zipint.h>
 #include <eepp/system/filesystem.hpp>
 
 namespace EE { namespace System {

@@ -1,6 +1,6 @@
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uimanager.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 
 namespace EE { namespace UI {

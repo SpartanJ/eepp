@@ -2,7 +2,7 @@
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/font.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 

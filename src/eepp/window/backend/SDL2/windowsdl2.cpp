@@ -2,7 +2,7 @@
 
 #ifdef EE_BACKEND_SDL2
 
-#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
+#include <SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/platform/platformimpl.hpp>
 #include <eepp/window/backend/SDL2/windowsdl2.hpp>

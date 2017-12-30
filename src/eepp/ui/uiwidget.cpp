@@ -1,7 +1,7 @@
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -141,7 +141,7 @@ LayoutPositionRules UIWidget::getLayoutPositionRule() const {
 }
 
 void UIWidget::update() {
-	if ( mVisible && NULL != mTooltip && mTooltip->getText().size() ) {
+	if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
 		if ( isMouseOverMeOrChilds() ) {
 			UIManager * uiManager = UIManager::instance();
 			UIThemeManager * themeManager = UIThemeManager::instance();
@@ -285,6 +285,10 @@ UIControl * UIWidget::setSize( const Int32& Width, const Int32& Height ) {
 
 const Sizei& UIWidget::getSize() {
 	return UIControlAnim::getSize();
+}
+
+UITooltip * UIWidget::getTooltip() {
+	return mTooltip;
 }
 
 void UIWidget::onParentSizeChange( const Vector2i& SizeChange ) {

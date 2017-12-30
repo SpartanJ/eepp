@@ -1,6 +1,6 @@
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uimanager.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 

@@ -1,20 +1,22 @@
 LOCAL_PATH				:= $(call my-dir)
-MY_PATH					:= $(LOCAL_PATH)/../../../src/eepp
-INC_PATH				:= $(LOCAL_PATH)/../../../include
 BASE_PATH				:= $(LOCAL_PATH)/../../../src
+EEPP_PATH				:= $(LOCAL_PATH)/../../../src/eepp
+INC_PATH				:= $(LOCAL_PATH)/../../../include
+THIRD_PARTY_PATH		:= $(BASE_PATH)/thirdparty
 
-MY_SDL_PATH				:= $(MY_PATH)/helper/SDL2
-MY_SDL_MAIN_PATH		:= helper/SDL2/src/main/android/*.c
+SDL_PATH				:= $(THIRD_PARTY_PATH)/SDL2
+SDL_MAIN_PATH			:= thirdparty/SDL2/src/main/android/*.c
 
 MY_C_INCLUDES			:= \
-	$(MY_PATH)/helper/openal-soft/include/ \
-	$(MY_PATH)/helper/freetype2/include \
-	$(MY_SDL_PATH)/include \
-	$(MY_PATH)/helper/chipmunk \
-	$(INC_PATH)/eepp/helper/chipmunk \
-	$(MY_PATH)/helper/SOIL2/src/SOIL2 \
-	$(MY_PATH)/helper/stb_vorbis \
-	$(INC_PATH)/eepp/helper/chipmunk
+	$(THIRD_PARTY_PATH) \
+	$(THIRD_PARTY_PATH)/openal-soft/include/ \
+	$(THIRD_PARTY_PATH)/freetype2/include \
+	$(SDL_PATH)/include \
+	$(THIRD_PARTY_PATH)/chipmunk \
+	$(INC_PATH)/eepp/thirdparty \
+	$(INC_PATH)/eepp/thirdparty/chipmunk \
+	$(THIRD_PARTY_PATH)/SOIL2/src/SOIL2 \
+	$(THIRD_PARTY_PATH)/stb_vorbis
 
 MY_C_FLAGS				:= \
 	-Wl,--undefined=Java_org_libsdl_app_SDLActivity_nativeInit \
@@ -36,21 +38,20 @@ include $(call all-subdir-makefiles)
 #*************** EEPP ***************
 include $(CLEAR_VARS)
 
-LOCAL_PATH				:= $(MY_PATH)
+LOCAL_PATH				:= $(EEPP_PATH)
 
 LOCAL_MODULE			:= eepp
 
 LOCAL_CFLAGS			:= $(MY_C_FLAGS)
 
 CODE_SRCS				:=  \
-	helper/SOIL2/src/SOIL2/*.c \
-	helper/stb_vorbis/*.c \
-	helper/zlib/*.c \
-	helper/libzip/*.c \
-	helper/jpeg-compressor/*.cpp \
-	helper/imageresampler/*.cpp \
-	helper/haikuttf/*.cpp \
-	helper/pugixml/*.cpp \
+	../thirdparty/SOIL2/src/SOIL2/*.c \
+	../thirdparty/stb_vorbis/*.c \
+	../thirdparty/zlib/*.c \
+	../thirdparty/libzip/*.c \
+	../thirdparty/jpeg-compressor/*.cpp \
+	../thirdparty/imageresampler/*.cpp \
+	../thirdparty/pugixml/*.cpp \
 	system/*.cpp \
 	system/platform/posix/*.cpp \
 	network/*.cpp \
@@ -84,7 +85,7 @@ include $(BUILD_STATIC_LIBRARY)
 #*************** CHIPMUNK ***************
 include $(CLEAR_VARS)
 
-LOCAL_PATH				:= $(MY_PATH)
+LOCAL_PATH				:= $(THIRD_PARTY_PATH)
 
 LOCAL_MODULE			:= chipmunk
 
@@ -96,8 +97,8 @@ LOCAL_CFLAGS			:= \
 	-Wno-unknown-pragmas
 
 CHIPMUNK_SRCS			:=  \
-	helper/chipmunk/*.c \
-	helper/chipmunk/constraints/*.c
+	chipmunk/*.c \
+	chipmunk/constraints/*.c
 
 LOCAL_C_INCLUDES		:= $(MY_C_INCLUDES)
 
@@ -109,7 +110,7 @@ include $(BUILD_STATIC_LIBRARY)
 #*************** FREETYPE ***************
 include $(CLEAR_VARS)
 
-LOCAL_PATH				:= $(MY_PATH)/helper/freetype2
+LOCAL_PATH				:= $(THIRD_PARTY_PATH)/freetype2
 
 LOCAL_MODULE			:= freetype
 
@@ -126,7 +127,7 @@ include $(BUILD_STATIC_LIBRARY)
 #*************** OPENAL *****************
 include $(CLEAR_VARS)
 
-LOCAL_PATH				:= $(MY_PATH)/helper/openal-soft
+LOCAL_PATH				:= $(THIRD_PARTY_PATH)/openal-soft
 
 LOCAL_MODULE			:= openal
 
@@ -159,7 +160,7 @@ include $(BUILD_SHARED_LIBRARY)
 #**************** SDL 2 ***************
 include $(CLEAR_VARS)
 
-LOCAL_PATH				:= $(MY_SDL_PATH)
+LOCAL_PATH				:= $(SDL_PATH)
 
 LOCAL_MODULE			:= SDL2
 
@@ -205,7 +206,7 @@ include $(BUILD_STATIC_LIBRARY)
 #************* empty_window *************
 include $(CLEAR_VARS)
 
-LOCAL_PATH				:= $(MY_PATH)
+LOCAL_PATH				:= $(BASE_PATH)
 
 LOCAL_MODULE			:= empty_window
 
@@ -216,8 +217,8 @@ LOCAL_CFLAGS			:= $(MY_C_FLAGS)
 LOCAL_C_INCLUDES		:= $(MY_C_INCLUDES)
 
 CORE_SRCS				:=  \
-	$(MY_SDL_MAIN_PATH) \
-	../examples/empty_window/*.cpp
+	$(SDL_MAIN_PATH) \
+	examples/empty_window/*.cpp
 
 LOCAL_SRC_FILES			:= $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
@@ -229,7 +230,7 @@ include $(BUILD_SHARED_LIBRARY)
 #************* external_shader *************
 include $(CLEAR_VARS)
 
-LOCAL_PATH				:= $(MY_PATH)
+LOCAL_PATH				:= $(BASE_PATH)
 
 LOCAL_MODULE			:= external_shader
 
@@ -240,8 +241,8 @@ LOCAL_CFLAGS			:= $(MY_C_FLAGS)
 LOCAL_C_INCLUDES		:= $(MY_C_INCLUDES)
 
 CORE_SRCS				:=  \
-	$(MY_SDL_MAIN_PATH) \
-	../examples/external_shader/*.cpp
+	$(SDL_MAIN_PATH) \
+	examples/external_shader/*.cpp
 
 LOCAL_SRC_FILES			:= $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
@@ -253,7 +254,7 @@ include $(BUILD_SHARED_LIBRARY)
 #************* full_test *************
 include $(CLEAR_VARS)
 
-LOCAL_PATH				:= $(MY_PATH)
+LOCAL_PATH				:= $(BASE_PATH)
 
 LOCAL_MODULE			:= main
 
@@ -264,8 +265,8 @@ LOCAL_CFLAGS			:= $(MY_C_FLAGS)
 LOCAL_C_INCLUDES		:= $(MY_C_INCLUDES)
 
 CORE_SRCS				:=  \
-	$(MY_SDL_MAIN_PATH) \
-	../test/*.cpp
+	$(SDL_MAIN_PATH) \
+	test/*.cpp
 
 LOCAL_SRC_FILES			:= $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 

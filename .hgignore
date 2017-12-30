@@ -40,7 +40,7 @@ external_projects.lua
 .*\.DS_Store$
 .*.pdb$
 syntax: glob
-src/eepp/helper/SDL2/include/SDL2
+src/thirdparty/SDL2/include/SDL2
 projects/ios/eepp.app/assets
 projects/ios/eepp.app/eepp
 bin/libeepp-debug.dylib

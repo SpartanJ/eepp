@@ -3,7 +3,7 @@
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/system/filesystem.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
+#include <SOIL2/src/SOIL2/stb_image.h>
 
 namespace EE { namespace UI { namespace Tools {
 

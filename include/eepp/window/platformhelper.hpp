@@ -9,6 +9,8 @@ namespace EE { namespace Window {
 class EE_API PlatformHelper
 {
 	public:
+		virtual ~PlatformHelper() {}
+
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 		/** @return The Activity object for the application */
 		virtual void * getActivity() = 0;

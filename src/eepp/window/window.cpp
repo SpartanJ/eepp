@@ -11,7 +11,7 @@
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/version.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
+#include <SOIL2/src/SOIL2/SOIL2.h>
 
 #ifdef EE_GLES1_LATE_INCLUDE
 	#if EE_PLATFORM == EE_PLATFORM_IOS

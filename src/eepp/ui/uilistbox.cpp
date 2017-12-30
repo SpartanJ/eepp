@@ -3,7 +3,7 @@
 #include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
 #include <eepp/graphics/font.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
 

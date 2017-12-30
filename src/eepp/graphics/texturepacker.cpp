@@ -2,7 +2,7 @@
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/graphics/texturepackernode.hpp>
 #include <eepp/graphics/texturepackertex.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
+#include <SOIL2/src/SOIL2/stb_image.h>
 #include <algorithm>
 
 namespace EE { namespace Graphics {
