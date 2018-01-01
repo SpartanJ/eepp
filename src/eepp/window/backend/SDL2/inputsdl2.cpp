@@ -336,7 +336,7 @@ void InputSDL::init() {
 	mDPIScale = (Float)realX / (Float)scaledX;
 #endif
 
-#if SDL_VERSION_ATLEAST(2,0,4)
+#if SDL_VERSION_ATLEAST(2,0,5)
 	Vector2i mTempMouse;
 	Vector2i mTempWinPos;
 	Rect mBordersSize;
