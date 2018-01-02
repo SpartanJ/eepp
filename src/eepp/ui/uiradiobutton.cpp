@@ -17,14 +17,14 @@ UIRadioButton::UIRadioButton() :
 	mActive( false ),
 	mTextSeparation( 4 )
 {
-	mActiveButton 	= UIControlAnim::New();
+	mActiveButton 	= UINode::New();
 	mActiveButton->setVisible( false );
 	mActiveButton->setEnabled( true );
 	mActiveButton->setParent( this );
 	mActiveButton->setPosition( 0, 0 );
 	mActiveButton->setSize( 16, 16 );
 
-	mInactiveButton = UIControlAnim::New();
+	mInactiveButton = UINode::New();
 	mInactiveButton->setVisible( true );
 	mInactiveButton->setEnabled( true );
 	mInactiveButton->setParent( this );
@@ -137,7 +137,7 @@ void UIRadioButton::setActive( const bool& active ) {
 	}
 
 	if ( active && NULL != mParentCtrl ) {
-		UIControl * tChild = mParentCtrl->getFirstChild();
+		UINode * tChild = mParentCtrl->getFirstChild();
 
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
@@ -156,7 +156,7 @@ void UIRadioButton::setActive( const bool& active ) {
 
 bool UIRadioButton::checkActives() {
 	if ( NULL != mParentCtrl ) {
-		UIControl * tChild = mParentCtrl->getFirstChild();
+		UINode * tChild = mParentCtrl->getFirstChild();
 
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
@@ -179,7 +179,7 @@ void UIRadioButton::autoActivate() {
 	eeASSERT( NULL != mParentCtrl );
 
 	if ( NULL != mParentCtrl ) {
-		UIControl * tChild = mParentCtrl->getFirstChild();
+		UINode * tChild = mParentCtrl->getFirstChild();
 
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
@@ -210,11 +210,11 @@ void UIRadioButton::onPaddingChange() {
 	mRealPadding.Left = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPxI( mTextSeparation  );
 }
 
-UIControlAnim * UIRadioButton::getActiveButton() const {
+UINode * UIRadioButton::getActiveButton() const {
 	return mActiveButton;
 }
 
-UIControlAnim * UIRadioButton::getInactiveButton() const {
+UINode * UIRadioButton::getInactiveButton() const {
 	return mInactiveButton;
 }
 

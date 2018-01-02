@@ -483,7 +483,7 @@ void UITable::updateCollumnsPos() {
 }
 
 void UITable::onAlphaChange() {
-	UIControlAnim::onAlphaChange();
+	UINode::onAlphaChange();
 
 	mVScrollBar->setAlpha( mAlpha );
 	mHScrollBar->setAlpha( mAlpha );
@@ -561,7 +561,7 @@ Uint32 UITable::onMessage( const UIMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
 		case UIMessage::FocusLoss:
 		{
-			UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
+			UINode * FocusCtrl = UIManager::instance()->getFocusControl();
 
 			if ( this != FocusCtrl && !isParentOf( FocusCtrl ) ) {
 				onWidgetFocusLoss();

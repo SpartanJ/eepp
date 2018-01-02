@@ -24,9 +24,9 @@ class EE_API UIRadioButton : public UITextView {
 
 		void setActive( const bool& active );
 
-		UIControlAnim * getActiveButton() const;
+		UINode * getActiveButton() const;
 
-		UIControlAnim * getInactiveButton() const;
+		UINode * getInactiveButton() const;
 
 		Int32 getTextSeparation() const;
 
@@ -34,8 +34,8 @@ class EE_API UIRadioButton : public UITextView {
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
-		UIControlAnim *	mActiveButton;
-		UIControlAnim *	mInactiveButton;
+		UINode *	mActiveButton;
+		UINode *	mInactiveButton;
 		bool			mActive;
 		Uint32			mLastTick;
 		Int32			mTextSeparation;

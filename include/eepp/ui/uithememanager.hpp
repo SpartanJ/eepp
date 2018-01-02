@@ -6,7 +6,7 @@
 
 namespace EE { namespace UI {
 
-class UIControl;
+class UINode;
 
 class EE_API UIThemeManager : public ResourceManager<UITheme> {
 	SINGLETON_DECLARE_HEADERS(UIThemeManager)
@@ -28,7 +28,7 @@ class EE_API UIThemeManager : public ResourceManager<UITheme> {
 
 		UITheme * getDefaultTheme() const;
 
-		void applyDefaultTheme( UIControl * Control );
+		void applyDefaultTheme( UINode * Control );
 
 		void setAutoApplyDefaultTheme( const bool& apply );
 

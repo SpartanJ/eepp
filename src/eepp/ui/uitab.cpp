@@ -57,7 +57,7 @@ void UITab::setTheme( UITheme * Theme ) {
 		}
 	}
 
-	UIControl::setThemeSkin( Theme, tabPos );
+	UINode::setThemeSkin( Theme, tabPos );
 
 	onThemeLoaded();
 }
@@ -195,18 +195,18 @@ void UITab::loadFromXmlNode(const pugi::xml_node & node) {
 }
 
 void UITab::setOwnedControl() {
-	UIControl * ctrl = getParent()->getParent()->find( mOwnedName );
+	UINode * ctrl = getParent()->getParent()->find( mOwnedName );
 
 	if ( NULL != ctrl ) {
 		setControlOwned( ctrl );
 	}
 }
 
-UIControl * UITab::getControlOwned() const {
+UINode * UITab::getControlOwned() const {
 	return mControlOwned;
 }
 
-void UITab::setControlOwned(UIControl * controlOwned) {
+void UITab::setControlOwned(UINode * controlOwned) {
 	mControlOwned = controlOwned;
 
 	UITabWidget * tTabW = getTabWidget();

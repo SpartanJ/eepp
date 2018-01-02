@@ -15,7 +15,7 @@ UIScrollView::UIScrollView() :
 	mHScrollMode( UI_SCROLLBAR_AUTO ),
 	mVScroll( UIScrollBar::New( UI_VERTICAL ) ),
 	mHScroll( UIScrollBar::New( UI_HORIZONTAL ) ),
-	mContainer( UIControlAnim::New() ),
+	mContainer( UINode::New() ),
 	mScrollView( NULL ),
 	mSizeChangeCb( 0 )
 {
@@ -51,12 +51,12 @@ void UIScrollView::onAlphaChange() {
 	mHScroll->setAlpha( mAlpha );
 	mContainer->setAlpha( mAlpha );
 
-	if ( NULL != mScrollView && mScrollView->isAnimated() )
-		reinterpret_cast<UIControlAnim*>( mScrollView )->setAlpha( mAlpha );
+	if ( NULL != mScrollView )
+		mScrollView->setAlpha( mAlpha );
 }
 
 void UIScrollView::onChildCountChange() {
-	UIControl * child = mChild;
+	UINode * child = mChild;
 	bool found = false;
 
 	while ( NULL != child ) {
@@ -125,7 +125,7 @@ UIScrollBar * UIScrollView::getHorizontalScrollBar() const {
 	return mHScroll;
 }
 
-UIControlAnim * UIScrollView::getContainer() const {
+UINode * UIScrollView::getContainer() const {
 	return mContainer;
 }
 

@@ -44,7 +44,7 @@ class EE_API UIDropDownList : public UITextInput {
 
 		UIDropDownListStyleConfig mStyleConfig;
 		UIListBox *		mListBox;
-		UIControl *		mFriendCtrl;
+		UINode *		mFriendCtrl;
 
 		void onListBoxFocusLoss( const UIEvent * Event );
 
@@ -72,7 +72,7 @@ class EE_API UIDropDownList : public UITextInput {
 
 		virtual void onThemeLoaded();
 
-		void setFriendControl( UIControl * friendCtrl );
+		void setFriendControl( UINode * friendCtrl );
 
 		void destroyListBox();
 };

@@ -46,9 +46,9 @@ class EE_API UISpinBox : public UIWidget {
 
 		virtual void update();
 
-		UIControlAnim * getButtonPushUp() const;
+		UINode * getButtonPushUp() const;
 
-		UIControlAnim * getButtonPushDown() const;
+		UINode * getButtonPushDown() const;
 
 		UITextInput * getTextInput() const;
 
@@ -59,8 +59,8 @@ class EE_API UISpinBox : public UIWidget {
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		UITextInput * 		mInput;
-		UIControlAnim * 	mPushUp;
-		UIControlAnim * 	mPushDown;
+		UINode * 	mPushUp;
+		UINode * 	mPushDown;
 		Float				mMinValue;
 		Float				mMaxValue;
 		Float				mValue;

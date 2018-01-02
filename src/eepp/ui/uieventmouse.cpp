@@ -1,9 +1,9 @@
 #include <eepp/ui/uieventmouse.hpp>
-#include <eepp/ui/uicontrol.hpp>
+#include <eepp/ui/uinode.hpp>
 
 namespace EE { namespace UI {
 
-UIEventMouse::UIEventMouse( UIControl * Ctrl, const Uint32& EventNum, const Vector2i& Pos, const Uint32& Flags ) :
+UIEventMouse::UIEventMouse( UINode * Ctrl, const Uint32& EventNum, const Vector2i& Pos, const Uint32& Flags ) :
 	UIEvent( Ctrl, EventNum ),
 	mPos( Pos ),
 	mFlags( Flags )

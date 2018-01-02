@@ -92,7 +92,7 @@ void UIImage::calcDestSize() {
 }
 
 void UIImage::draw() {
-	UIControlAnim::draw();
+	UINode::draw();
 
 	if ( mVisible ) {
 		if ( NULL != mDrawable && 0.f != mAlpha ) {
@@ -106,7 +106,7 @@ void UIImage::draw() {
 }
 
 void UIImage::setAlpha( const Float& alpha ) {
-	UIControlAnim::setAlpha( alpha );
+	UINode::setAlpha( alpha );
 	mColor.a = (Uint8)alpha;
 }
 

@@ -33,9 +33,9 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		virtual UIControl * setSize( const Sizei& size );
+		virtual UINode * setSize( const Sizei& size );
 
-		UIControl * setSize( const Int32& Width, const Int32& Height );
+		UINode * setSize( const Int32& Width, const Int32& Height );
 
 		UIWindow * setSizeWithDecoration( const Int32& Width, const Int32& Height );
 
@@ -49,11 +49,11 @@ class EE_API UIWindow : public UIWidget {
 
 		UIWidget * getContainer() const;
 
-		UIControlAnim * getButtonClose() const;
+		UINode * getButtonClose() const;
 
-		UIControlAnim * getButtonMaximize() const;
+		UINode * getButtonMaximize() const;
 
-		UIControlAnim * getButtonMinimize() const;
+		UINode * getButtonMinimize() const;
 
 		virtual bool show();
 
@@ -150,15 +150,15 @@ class EE_API UIWindow : public UIWidget {
 
 		FrameBuffer * mFrameBuffer;
 		UIWindowStyleConfig	mStyleConfig;
-		UIControlAnim *	mWindowDecoration;
-		UIControlAnim *	mBorderLeft;
-		UIControlAnim *	mBorderRight;
-		UIControlAnim *	mBorderBottom;
+		UINode *	mWindowDecoration;
+		UINode *	mBorderLeft;
+		UINode *	mBorderRight;
+		UINode *	mBorderBottom;
 		UIWidget *	mContainer;
 
-		UIControlAnim *	mButtonClose;
-		UIControlAnim *	mButtonMinimize;
-		UIControlAnim *	mButtonMaximize;
+		UINode *	mButtonClose;
+		UINode *	mButtonMinimize;
+		UINode *	mButtonMaximize;
 		UITextView *		mTitle;
 
 		UIWidget *	mModalCtrl;
@@ -199,7 +199,7 @@ class EE_API UIWindow : public UIWidget {
 
 		void doResize( const UIMessage * Msg );
 
-		void decideResizeType( UIControl * Control );
+		void decideResizeType( UINode * Control );
 
 		void tryResize( const UI_RESIZE_TYPE& getType );
 

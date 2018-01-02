@@ -49,7 +49,7 @@ bool UITextView::isType( const Uint32& type ) const {
 
 void UITextView::draw() {
 	if ( mVisible && 0.f != mAlpha ) {
-		UIControlAnim::draw();
+		UINode::draw();
 
 		drawSelection( mTextCache );
 
@@ -223,7 +223,7 @@ UITextView * UITextView::setSelectionBackColor( const Color& color ) {
 
 void UITextView::setAlpha( const Float& alpha ) {
 	if ( mAlpha != alpha ) {
-		UIControlAnim::setAlpha( alpha );
+		UINode::setAlpha( alpha );
 		mFontStyleConfig.FontColor.a = (Uint8)alpha;
 		mFontStyleConfig.ShadowColor.a = (Uint8)alpha;
 
@@ -298,7 +298,7 @@ Uint32 UITextView::onFocusLoss() {
 
 void UITextView::onSizeChange() {
 	recalculate();
-	UIControlAnim::onSizeChange();
+	UINode::onSizeChange();
 }
 
 void UITextView::onTextChanged() {

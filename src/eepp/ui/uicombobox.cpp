@@ -39,7 +39,7 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 	}
 
 	if ( NULL == mButton ) {
-		mButton = UIControlAnim::New();
+		mButton = UINode::New();
 		mButton->setParent( this );
 		mButton->setVisible( true );
 		mButton->setEnabled( true );

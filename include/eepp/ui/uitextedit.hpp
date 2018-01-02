@@ -1,7 +1,7 @@
 #ifndef EE_UICUITEXTEDIT_HPP
 #define EE_UICUITEXTEDIT_HPP
 
-#include <eepp/ui/uicontrolanim.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 

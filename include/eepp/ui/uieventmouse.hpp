@@ -6,11 +6,11 @@
 
 namespace EE { namespace UI {
 
-class UIControl;
+class UINode;
 
 class EE_API UIEventMouse : public UIEvent {
 	public:
-		UIEventMouse( UIControl * getControl, const Uint32& EventNum, const Vector2i& getPosition, const Uint32& getFlags );
+		UIEventMouse( UINode * getControl, const Uint32& EventNum, const Vector2i& getPosition, const Uint32& getFlags );
 
 		~UIEventMouse();
 

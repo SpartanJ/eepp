@@ -31,13 +31,13 @@
 ../../include/eepp/math/interpolation2d.hpp
 ../../include/eepp/system/color.hpp
 ../../include/eepp/system/translator.hpp
-../../include/eepp/ui/uidragablecontrol.hpp
 ../../include/eepp/ui/uieventmouse.hpp
 ../../include/eepp/ui/uigridlayout.hpp
 ../../include/eepp/ui/uiimage.hpp
 ../../include/eepp/ui/uilayout.hpp
 ../../include/eepp/ui/uilinearlayout.hpp
 ../../include/eepp/ui/uimenuseparator.hpp
+../../include/eepp/ui/uinode.hpp
 ../../include/eepp/ui/uirelativelayout.hpp
 ../../include/eepp/ui/uiscrollview.hpp
 ../../include/eepp/ui/uisubtexture.hpp
@@ -81,13 +81,13 @@
 ../../src/eepp/math/interpolation2d.cpp
 ../../src/eepp/system/color.cpp
 ../../src/eepp/system/translator.cpp
-../../src/eepp/ui/uidragablecontrol.cpp
 ../../src/eepp/ui/uigridlayout.cpp
 ../../src/eepp/ui/uiimage.cpp
 ../../src/eepp/ui/uilayout.cpp
 ../../src/eepp/ui/uilinearlayout.cpp
 ../../src/eepp/ui/uiloader.cpp
 ../../src/eepp/ui/uimenuseparator.cpp
+../../src/eepp/ui/uinode.cpp
 ../../src/eepp/ui/uirelativelayout.cpp
 ../../src/eepp/ui/uiscrollview.cpp
 ../../src/eepp/ui/uisubtexture.cpp
@@ -342,8 +342,6 @@
 ../../include/eepp/ui/uieventkey.hpp
 ../../include/eepp/ui/uievent.hpp
 ../../include/eepp/ui/uidropdownlist.hpp
-../../include/eepp/ui/uicontrolanim.hpp
-../../include/eepp/ui/uicontrol.hpp
 ../../include/eepp/ui/uicommondialog.hpp
 ../../include/eepp/ui/uicombobox.hpp
 ../../include/eepp/ui/uicheckbox.hpp
@@ -390,8 +388,6 @@
 ../../src/eepp/ui/uieventkey.cpp
 ../../src/eepp/ui/uievent.cpp
 ../../src/eepp/ui/uidropdownlist.cpp
-../../src/eepp/ui/uicontrolanim.cpp
-../../src/eepp/ui/uicontrol.cpp
 ../../src/eepp/ui/uicommondialog.cpp
 ../../src/eepp/ui/uicombobox.cpp
 ../../src/eepp/ui/uicheckbox.cpp

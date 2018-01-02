@@ -159,7 +159,7 @@ class EETest : private Thread {
 		void createDecoratedWindow();
 		void createUIThemeTextureAtlas();
 
-		UIControlAnim * C;
+		UINode * C;
 		UIScrollBar * mScrollBar;
 		UITextView * mTextBoxValue;
 		UISlider * mSlider;

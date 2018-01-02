@@ -219,7 +219,7 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 		}
 		case UIMessage::FocusLoss:
 		{
-			UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
+			UINode * FocusCtrl = UIManager::instance()->getFocusControl();
 
 			if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
 				onWidgetFocusLoss();
@@ -256,7 +256,7 @@ UIPopUpMenu * UIWinMenu::getMenuFromButton( UISelectButton * Button ) {
 	return NULL;
 }
 
-bool UIWinMenu::isPopUpMenuChild( UIControl * Ctrl ) {
+bool UIWinMenu::isPopUpMenuChild( UINode * Ctrl ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
 		if ( it->second == Ctrl || it->second->isParentOf( Ctrl ) ) {
 			return true;
@@ -267,7 +267,7 @@ bool UIWinMenu::isPopUpMenuChild( UIControl * Ctrl ) {
 }
 
 void UIWinMenu::onMenuFocusLoss( const UIEvent * Event ) {
-	UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
+	UINode * FocusCtrl = UIManager::instance()->getFocusControl();
 
 	if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
 		onWidgetFocusLoss();

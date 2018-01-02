@@ -34,7 +34,7 @@ UISlider::UISlider( const UI_ORIENTATION& orientation ) :
 	else
 		bgSize = Sizei( 8, mSize.getHeight() - 16 );
 
-	mBackSlider = UIControlAnim::New();
+	mBackSlider = UINode::New();
 	mBackSlider->setParent( this );
 	mBackSlider->setVisible( true );
 	mBackSlider->setEnabled( true );
@@ -282,7 +282,7 @@ bool UISlider::isVertical() const {
 }
 
 void UISlider::update() {
-	UIControlAnim::update();
+	UINode::update();
 
 	if ( isMouseOver() || mBackSlider->isMouseOver() || mSlider->isMouseOver() ) {
 		manageClick( UIManager::instance()->getInput()->getClickTrigger() );
@@ -387,16 +387,16 @@ void UISlider::setPageStep(const Float & pageStep) {
 	setValue( mValue );
 }
 
-UIControl * UISlider::getBackSlider() const {
+UINode * UISlider::getBackSlider() const {
 	return mBackSlider;
 }
 
-UIDragableControl * UISlider::getSliderButton() const {
+UINode * UISlider::getSliderButton() const {
 	return mSlider;
 }
 
 void UISlider::onAlphaChange() {
-	UIControlAnim::onAlphaChange();
+	UINode::onAlphaChange();
 	
 	mBackSlider->setAlpha( mAlpha );
 	mSlider->setAlpha( mAlpha );

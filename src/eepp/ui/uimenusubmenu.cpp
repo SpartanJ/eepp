@@ -17,7 +17,7 @@ UIMenuSubMenu::UIMenuSubMenu() :
 	mCbId( 0 ),
 	mCbId2( 0 )
 {
-	mArrow = UIControlAnim::New();
+	mArrow = UINode::New();
 	mArrow->setParent( this );
 	mArrow->setFlags( UI_AUTO_SIZE );
 	mArrow->setVisible( true );
@@ -122,12 +122,12 @@ Uint32 UIMenuSubMenu::onMouseExit( const Vector2i &Pos, const Uint32 Flags ) {
 	return 1;
 }
 
-UIControl * UIMenuSubMenu::getArrow() const {
+UINode * UIMenuSubMenu::getArrow() const {
 	return mArrow;
 }
 
 void UIMenuSubMenu::onSubMenuFocusLoss( const UIEvent * Event ) {
-	UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
+	UINode * FocusCtrl = UIManager::instance()->getFocusControl();
 
 	if ( getParent() != FocusCtrl && !getParent()->isParentOf( FocusCtrl ) ) {
 		getParent()->setFocus();

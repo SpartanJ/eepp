@@ -5,7 +5,7 @@
 
 namespace EE { namespace UI {
 
-class UIControl;
+class UINode;
 
 class EE_API UIMessage {
 	public:
@@ -29,17 +29,17 @@ class EE_API UIMessage {
 			NoMessage = eeINDEX_NOT_FOUND
 		};
 
-		UIMessage( UIControl * Ctrl, const Uint32& getMsg, const Uint32& getFlags = NoMessage );
+		UIMessage( UINode * Ctrl, const Uint32& getMsg, const Uint32& getFlags = NoMessage );
 
 		~UIMessage();
 
-		UIControl * getSender() const;
+		UINode * getSender() const;
 
 		const Uint32& getMsg() const;
 
 		const Uint32& getFlags() const;
 	private:
-		UIControl *	mCtrl;
+		UINode *	mCtrl;
 		Uint32			mMsg;
 		Uint32			mFlags;
 };

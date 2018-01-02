@@ -121,7 +121,7 @@ Uint32 UIMenu::addSubMenu( const String& Text, Drawable * Icon, UIMenu * SubMenu
 	return add( createSubMenu( Text, Icon, SubMenu ) );
 }
 
-bool UIMenu::checkControlSize( UIControl * Control, const bool& Resize ) {
+bool UIMenu::checkControlSize( UINode * Control, const bool& Resize ) {
 	if ( Control->isType( UI_TYPE_MENUITEM ) ) {
 		UIMenuItem * tItem = reinterpret_cast<UIMenuItem*> ( Control );
 
@@ -161,7 +161,7 @@ bool UIMenu::checkControlSize( UIControl * Control, const bool& Resize ) {
 	return false;
 }
 
-Uint32 UIMenu::add( UIControl * Control ) {
+Uint32 UIMenu::add( UINode * Control ) {
 	if ( this != Control->getParent() )
 		Control->setParent( this );
 
@@ -180,7 +180,7 @@ Uint32 UIMenu::add( UIControl * Control ) {
 	return mItems.size() - 1;
 }
 
-void UIMenu::setControlSize( UIControl * Control, const Uint32& Pos ) {
+void UIMenu::setControlSize( UINode * Control, const Uint32& Pos ) {
 	Control->setPixelsSize( mRealSize.getWidth(), Control->getRealSize().getHeight() );
 }
 
@@ -199,12 +199,12 @@ Uint32 UIMenu::addSeparator() {
 	return mItems.size() - 1;
 }
 
-UIControl * UIMenu::getItem( const Uint32& Index ) {
+UINode * UIMenu::getItem( const Uint32& Index ) {
 	eeASSERT( Index < mItems.size() );
 	return mItems[ Index ];
 }
 
-UIControl * UIMenu::getItem( const String& Text ) {
+UINode * UIMenu::getItem( const String& Text ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i]->isType( UI_TYPE_MENUITEM ) ) {
 			UIMenuItem * tMenuItem = reinterpret_cast<UIMenuItem*>( mItems[i] );
@@ -217,7 +217,7 @@ UIControl * UIMenu::getItem( const String& Text ) {
 	return NULL;
 }
 
-Uint32 UIMenu::getItemIndex( UIControl * Item ) {
+Uint32 UIMenu::getItemIndex( UINode * Item ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i] == Item )
 			return i;
@@ -241,7 +241,7 @@ void UIMenu::remove( const Uint32& Index ) {
 	resizeControls();
 }
 
-void UIMenu::remove( UIControl * Ctrl ) {
+void UIMenu::remove( UINode * Ctrl ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i] == Ctrl ) {
 			remove( i );
@@ -266,7 +266,7 @@ void UIMenu::insert( const String& Text, Drawable * Icon, const Uint32& Index ) 
 	insert( createMenuItem( Text, Icon ), Index );
 }
 
-void UIMenu::insert( UIControl * Control, const Uint32& Index ) {
+void UIMenu::insert( UINode * Control, const Uint32& Index ) {
 	mItems.insert( mItems.begin() + Index, Control );
 
 	childAddAt( Control, Index );
@@ -275,7 +275,7 @@ void UIMenu::insert( UIControl * Control, const Uint32& Index ) {
 	resizeControls();
 }
 
-bool UIMenu::isSubMenu( UIControl * Ctrl ) {
+bool UIMenu::isSubMenu( UINode * Ctrl ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i]->isType( UI_TYPE_MENUSUBMENU ) ) {
 			UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( mItems[i] );
@@ -301,7 +301,7 @@ Uint32 UIMenu::onMessage( const UIMessage * Msg ) {
 		}
 		case UIMessage::FocusLoss:
 		{
-			UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
+			UINode * FocusCtrl = UIManager::instance()->getFocusControl();
 
 			if ( this != FocusCtrl && !isParentOf( FocusCtrl ) && !isSubMenu( FocusCtrl ) ) {
 				onWidgetFocusLoss();
@@ -350,7 +350,7 @@ void UIMenu::rePosControls() {
 	}
 
 	for ( i = 0; i < mItems.size(); i++ ) {
-		UIControl * ctrl = mItems[i];
+		UINode * ctrl = mItems[i];
 
 		ctrl->setPixelsPosition( PixelDensity::dpToPxI( mStyleConfig.Padding.Left ), PixelDensity::dpToPxI( mStyleConfig.Padding.Top ) + mNextPosY );
 
@@ -388,7 +388,7 @@ bool UIMenu::hide() {
 	return true;
 }
 
-void UIMenu::setItemSelected( UIControl * Item ) {
+void UIMenu::setItemSelected( UINode * Item ) {
 	if ( NULL != mItemSelected ) {
 		if ( mItemSelected->isType( UI_TYPE_MENUSUBMENU ) ) {
 			UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( mItemSelected );
@@ -409,7 +409,7 @@ void UIMenu::setItemSelected( UIControl * Item ) {
 	}
 }
 
-void UIMenu::trySelect( UIControl * Ctrl, bool Up ) {
+void UIMenu::trySelect( UINode * Ctrl, bool Up ) {
 	if ( mItems.size() ) {
 		if ( !Ctrl->isType( UI_TYPE_MENU_SEPARATOR ) ) {
 			setItemSelected( Ctrl );

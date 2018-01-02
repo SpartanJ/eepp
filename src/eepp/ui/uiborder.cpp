@@ -1,16 +1,16 @@
 #include <eepp/ui/uiborder.hpp>
-#include <eepp/ui/uicontrol.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/graphics/primitives.hpp>
 
 using namespace EE::Graphics;
 
 namespace EE { namespace UI {
 
-UIBorder * UIBorder::New( UIControl * control ) {
+UIBorder * UIBorder::New( UINode * control ) {
 	return eeNew( UIBorder, ( control ) );
 }
 
-UIBorder::UIBorder( UIControl * control ) :
+UIBorder::UIBorder( UINode * control ) :
 	mControl( control ),
 	mColor( Color::Black ),
 	mWidth( 1 )

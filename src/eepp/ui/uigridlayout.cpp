@@ -143,7 +143,7 @@ void UIGridLayout::pack() {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
 	}
 
-	UIControl * ChildLoop = mChild;
+	UINode * ChildLoop = mChild;
 
 	Vector2i pos(mPadding.Left,mPadding.Top);
 	Sizei targetSize( getTargetElementSize() );

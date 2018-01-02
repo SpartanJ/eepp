@@ -43,7 +43,7 @@ class EE_API MapEditor {
 		~MapEditor();
 	protected:
 		UIWindow *			mUIWindow;
-		UIControl *			mUIContainer;
+		UINode *			mUIContainer;
 		UITheme *			mTheme;
 		Private::UIMap *	mUIMap;
 		MapEditorCloseCb	mCloseCb;

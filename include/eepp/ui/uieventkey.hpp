@@ -6,11 +6,11 @@
 
 namespace EE { namespace UI {
 
-class UIControl;
+class UINode;
 
 class EE_API UIEventKey : public UIEvent {
 	public:
-		UIEventKey( UIControl * getControl, const Uint32& EventNum, const Uint32& getKeyCode, const Uint16& getChar, const Uint32& getMod );
+		UIEventKey( UINode * getControl, const Uint32& EventNum, const Uint32& getKeyCode, const Uint16& getChar, const Uint32& getMod );
 
 		~UIEventKey();
 

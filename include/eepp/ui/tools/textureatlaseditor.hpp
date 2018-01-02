@@ -26,10 +26,10 @@ class EE_API TextureAtlasEditor {
 
 		UISpinBox *			getSpinOffY() const { return mSpinOffY; }
 	protected:
-		class UITGEUpdater : public UIControl
+		class UITGEUpdater : public UINode
 		{
 			public:
-				UITGEUpdater( TextureAtlasEditor * TGEditor ) : UIControl(), mTGEditor( TGEditor ) {}
+				UITGEUpdater( TextureAtlasEditor * TGEditor ) : UINode(), mTGEditor( TGEditor ) {}
 
 				virtual void update() { mTGEditor->update(); }
 			protected:
@@ -38,7 +38,7 @@ class EE_API TextureAtlasEditor {
 		friend class UITGEUpdater;
 
 		UIWindow *			mUIWindow;
-		UIControl *			mUIContainer;
+		UINode *			mUIContainer;
 		UITheme *			mTheme;
 		TGEditorCloseCb		mCloseCb;
 		TexturePacker *		mTexturePacker;

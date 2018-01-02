@@ -128,7 +128,7 @@ void UITextInput::draw() {
 }
 
 Uint32 UITextInput::onFocus() {
-	UIControlAnim::onFocus();
+	UINode::onFocus();
 
 	if ( mAllowEditing ) {
 		mTextBuffer.setActive( true );
@@ -292,7 +292,7 @@ Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags 
 }
 
 Uint32 UITextInput::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	UIControl::onMouseExit( Pos, Flags );
+	UINode::onMouseExit( Pos, Flags );
 
 	UIManager::instance()->setCursor( EE_CURSOR_ARROW );
 

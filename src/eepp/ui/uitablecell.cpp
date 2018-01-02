@@ -32,7 +32,7 @@ UITable * UITableCell::gridParent() const {
 	return reinterpret_cast<UITable*> ( mParentCtrl->getParent() );
 }
 
-void UITableCell::setCell( const Uint32& CollumnIndex, UIControl * Ctrl ) {
+void UITableCell::setCell( const Uint32& CollumnIndex, UINode * Ctrl ) {
 	eeASSERT( CollumnIndex < gridParent()->getCollumnsCount() );
 
 	UITable * P = gridParent();
@@ -52,7 +52,7 @@ void UITableCell::setCell( const Uint32& CollumnIndex, UIControl * Ctrl ) {
 	Ctrl->setEnabled( true );
 }
 
-UIControl * UITableCell::getCell( const Uint32& CollumnIndex ) const {
+UINode * UITableCell::getCell( const Uint32& CollumnIndex ) const {
 	eeASSERT( CollumnIndex < gridParent()->getCollumnsCount() );
 
 	return mCells[ CollumnIndex ];
@@ -78,8 +78,8 @@ void UITableCell::update() {
 			setAlpha( MyParent->getAlpha() );
 
 			for ( Uint32 i = 0; i < mCells.size(); i++ ) {
-				if ( NULL != mCells[i] && mCells[i]->isAnimated() ) {
-					reinterpret_cast<UIControlAnim*>( mCells[i] )->setAlpha( MyParent->getAlpha() );
+				if ( NULL != mCells[i] ) {
+					mCells[i]->setAlpha( MyParent->getAlpha() );
 				}
 			}
 		}
@@ -127,7 +127,7 @@ bool UITableCell::isSelected() const {
 }
 
 Uint32 UITableCell::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	UIControl::onMouseExit( Pos, Flags );
+	UINode::onMouseExit( Pos, Flags );
 
 	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
 		setSkinState( UISkinState::StateSelected );

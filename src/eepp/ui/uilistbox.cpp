@@ -858,7 +858,7 @@ void UIListBox::selectNext() {
 }
 
 Uint32 UIListBox::onKeyDown( const UIEventKey &Event ) {
-	UIControlAnim::onKeyDown( Event );
+	UINode::onKeyDown( Event );
 
 	if ( !mSelected.size() || mFlags & UI_MULTI_SELECT )
 		return 0;
@@ -904,7 +904,7 @@ Uint32 UIListBox::onMessage( const UIMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
 		case UIMessage::FocusLoss:
 		{
-			UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
+			UINode * FocusCtrl = UIManager::instance()->getFocusControl();
 
 			if ( this != FocusCtrl && !isParentOf( FocusCtrl ) ) {
 				onWidgetFocusLoss();

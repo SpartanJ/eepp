@@ -40,9 +40,9 @@ class EE_API UISlider : public UIWidget {
 
 		virtual void update();
 
-		UIControl * getBackSlider() const;
+		UINode * getBackSlider() const;
 
-		UIDragableControl * getSliderButton() const;
+		UINode * getSliderButton() const;
 
 		void adjustChilds();
 
@@ -70,7 +70,7 @@ class EE_API UISlider : public UIWidget {
 
 		UI_ORIENTATION		mOrientation;
 		UISliderStyleConfig	mStyleConfig;
-		UIControlAnim *		mBackSlider;
+		UINode *		mBackSlider;
 		Private::UISliderButton * 	mSlider;
 		Float				mMinValue;
 		Float				mMaxValue;

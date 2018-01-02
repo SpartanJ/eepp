@@ -77,7 +77,7 @@ void UILinearLayout::packVertical() {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
 	}
 
-	UIControl * ChildLoop = mChild;
+	UINode * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
@@ -191,7 +191,7 @@ void UILinearLayout::packHorizontal() {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
 	}
 
-	UIControl * ChildLoop = mChild;
+	UINode * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->isWidget() ) {
@@ -297,7 +297,7 @@ void UILinearLayout::packHorizontal() {
 }
 
 Sizei UILinearLayout::getTotalUsedSize() {
-	UIControl * ChildLoop = mChild;
+	UINode * ChildLoop = mChild;
 	Sizei size( 0, 0 );
 
 	while ( NULL != ChildLoop ) {

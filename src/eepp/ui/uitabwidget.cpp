@@ -503,7 +503,7 @@ void UITabWidget::orderTabs() {
 	invalidateDraw();
 }
 
-UITab * UITabWidget::createTab( const String& Text, UIControl * CtrlOwned, Drawable * Icon ) {
+UITab * UITabWidget::createTab( const String& Text, UINode * CtrlOwned, Drawable * Icon ) {
 	UITab * tCtrl 	= UITab::New();
 	tCtrl->setParent( mTabContainer );
 	tCtrl->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE );
@@ -520,7 +520,7 @@ UITab * UITabWidget::createTab( const String& Text, UIControl * CtrlOwned, Drawa
 	return tCtrl;
 }
 
-UITabWidget * UITabWidget::add( const String& Text, UIControl * CtrlOwned, Drawable * Icon ) {
+UITabWidget * UITabWidget::add( const String& Text, UINode * CtrlOwned, Drawable * Icon ) {
 	return add( createTab( Text, CtrlOwned, Icon ) );
 }
 
@@ -619,7 +619,7 @@ void UITabWidget::removeAll() {
 	orderTabs();
 }
 
-void UITabWidget::insert( const String& Text, UIControl * CtrlOwned, Drawable * Icon, const Uint32& Index ) {
+void UITabWidget::insert( const String& Text, UINode * CtrlOwned, Drawable * Icon, const Uint32& Index ) {
 	insert( createTab( Text, CtrlOwned, Icon ), Index );
 }
 
@@ -711,7 +711,7 @@ void UITabWidget::onSizeChange() {
 }
 
 void UITabWidget::onChildCountChange() {
-	UIControl * child = mChild;
+	UINode * child = mChild;
 	bool found = false;
 
 	while ( NULL != child ) {

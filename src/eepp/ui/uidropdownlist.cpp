@@ -77,7 +77,7 @@ void UIDropDownList::onThemeLoaded() {
 	autoSizeControl();
 }
 
-void UIDropDownList::setFriendControl( UIControl * friendCtrl ) {
+void UIDropDownList::setFriendControl( UINode * friendCtrl ) {
 	mFriendCtrl = friendCtrl;
 }
 
@@ -116,8 +116,8 @@ void UIDropDownList::showList() {
 		} else if ( NULL != mFriendCtrl ) {
 			Pos = Vector2i( mFriendCtrl->getPosition().x, mFriendCtrl->getPosition().y + mFriendCtrl->getSize().getHeight() );
 		} else {
-			UIControl * ParentLoop = getParent();
-			UIControl * rp = getWindowContainer();
+			UINode * ParentLoop = getParent();
+			UINode * rp = getWindowContainer();
 			while ( rp != ParentLoop ) {
 				Pos += ParentLoop->getPosition();
 				ParentLoop = ParentLoop->getParent();
@@ -151,8 +151,8 @@ void UIDropDownList::showList() {
 				} else if ( NULL != mFriendCtrl ) {
 					Pos = Vector2i( mFriendCtrl->getPosition().x, mFriendCtrl->getPosition().y + mFriendCtrl->getSize().getHeight() );
 				} else {
-					UIControl * ParentLoop = getParent();
-					UIControl * rp = getWindowContainer();
+					UINode * ParentLoop = getParent();
+					UINode * rp = getWindowContainer();
 					while ( rp != ParentLoop ) {
 						Pos += ParentLoop->getPosition();
 						ParentLoop = ParentLoop->getParent();

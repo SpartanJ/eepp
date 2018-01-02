@@ -21,7 +21,7 @@ Uint32 UIMenuSeparator::getType() const {
 }
 
 bool UIMenuSeparator::isType( const Uint32& type ) const {
-	return UIMenuSeparator::getType() == type ? true : UIControlAnim::isType( type );
+	return UIMenuSeparator::getType() == type ? true : UINode::isType( type );
 }
 
 void UIMenuSeparator::setTheme( UITheme * Theme ) {

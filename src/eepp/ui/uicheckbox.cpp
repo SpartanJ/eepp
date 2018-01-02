@@ -15,14 +15,14 @@ UICheckBox::UICheckBox() :
 	mActive( false ),
 	mTextSeparation( 4 )
 {
-	mActiveButton 	= UIControlAnim::New();
+	mActiveButton 	= UINode::New();
 	mActiveButton->setVisible( false );
 	mActiveButton->setEnabled( true );
 	mActiveButton->setParent( this );
 	mActiveButton->setPosition( 0, 0 );
 	mActiveButton->setSize( 16, 16 );
 
-	mInactiveButton = UIControlAnim::New();
+	mInactiveButton = UINode::New();
 	mInactiveButton->setVisible( true );
 	mInactiveButton->setEnabled( true );
 	mInactiveButton->setParent( this );
@@ -150,11 +150,11 @@ void UICheckBox::onPaddingChange() {
 	mRealPadding.Left = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPxI( mTextSeparation );
 }
 
-UIControlAnim * UICheckBox::getActiveButton() const {
+UINode * UICheckBox::getActiveButton() const {
 	return mActiveButton;
 }
 
-UIControlAnim * UICheckBox::getInactiveButton() const {
+UINode * UICheckBox::getInactiveButton() const {
 	return mInactiveButton;
 }
 

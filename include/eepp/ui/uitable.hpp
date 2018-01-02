@@ -1,7 +1,7 @@
 #ifndef EE_UICUIGENERICGRID_HPP
 #define EE_UICUIGENERICGRID_HPP
 
-#include <eepp/ui/uicontrolanim.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>

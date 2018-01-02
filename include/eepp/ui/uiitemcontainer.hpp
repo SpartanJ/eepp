@@ -1,12 +1,12 @@
 #ifndef EE_UITUIITEMCONTAINER_HPP
 #define EE_UITUIITEMCONTAINER_HPP
 
-#include <eepp/ui/uicontrol.hpp>
+#include <eepp/ui/uinode.hpp>
 
 namespace EE { namespace UI {
 
 template<class TContainer>
-class UIItemContainer : public UIControl {
+class UIItemContainer : public UINode {
 	public:
 		UIItemContainer();
 
@@ -16,12 +16,12 @@ class UIItemContainer : public UIControl {
 
 		void drawChilds();
 	protected:
-		UIControl * overFind( const Vector2f& Point );
+		UINode * overFind( const Vector2f& Point );
 };
 
 template<class TContainer>
 UIItemContainer<TContainer>::UIItemContainer() :
-	UIControl()
+	UINode()
 {
 }
 
@@ -54,10 +54,10 @@ void UIItemContainer<TContainer>::drawChilds() {
 }
 
 template<class TContainer>
-UIControl * UIItemContainer<TContainer>::overFind( const Vector2f& Point ) {
+UINode * UIItemContainer<TContainer>::overFind( const Vector2f& Point ) {
 	TContainer * tParent = reinterpret_cast<TContainer*> ( getParent() );
 
-	UIControl * pOver = NULL;
+	UINode * pOver = NULL;
 
 	if ( mEnabled && mVisible && tParent->mItems.size() ) {
 		updateQuad();
@@ -67,7 +67,7 @@ UIControl * UIItemContainer<TContainer>::overFind( const Vector2f& Point ) {
 
 			for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ ) {
 				if ( NULL != tParent->mItems[i] ) {
-					UIControl * ChildOver = tParent->mItems[i]->overFind( Point );
+					UINode * ChildOver = tParent->mItems[i]->overFind( Point );
 
 					if ( NULL != ChildOver ) {
 						pOver = ChildOver;
@@ -78,7 +78,7 @@ UIControl * UIItemContainer<TContainer>::overFind( const Vector2f& Point ) {
 			}
 
 			if ( NULL == pOver )
-				pOver = const_cast<UIControl *>( reinterpret_cast<const UIControl *>( this ) );
+				pOver = const_cast<UINode *>( reinterpret_cast<const UINode *>( this ) );
 		}
 	}
 

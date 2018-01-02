@@ -18,8 +18,8 @@ UIScrollBar::UIScrollBar( const UI_ORIENTATION& orientation ) :
 {
 	mFlags |= UI_AUTO_SIZE;
 
-	mBtnDown	= UIControlAnim::New();
-	mBtnUp		= UIControlAnim::New();
+	mBtnDown	= UINode::New();
+	mBtnUp		= UINode::New();
 	mBtnUp->setParent( this );
 	mBtnUp->setSize( 16, 16 );
 	mBtnDown->setParent( this );
@@ -53,14 +53,14 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
 	if ( !isVertical() ) {
-		UIControl::setThemeSkin( Theme, "hscrollbar" );
+		UINode::setThemeSkin( Theme, "hscrollbar" );
 		mSlider->setThemeSkin( Theme, "hscrollbar_slider" );
 		mSlider->getBackSlider()->setThemeSkin( Theme, "hscrollbar_bg" );
 		mSlider->getSliderButton()->setThemeSkin( Theme, "hscrollbar_button" );
 		mBtnUp->setThemeSkin( Theme, "hscrollbar_btnup" );
 		mBtnDown->setThemeSkin( Theme, "hscrollbar_btndown" );
 	} else {
-		UIControl::setThemeSkin( Theme, "vscrollbar" );
+		UINode::setThemeSkin( Theme, "vscrollbar" );
 		mSlider->setThemeSkin( Theme, "vscrollbar_slider" );
 		mSlider->getBackSlider()->setThemeSkin( Theme, "vscrollbar_bg" );
 		mSlider->getSliderButton()->setThemeSkin( Theme, "vscrollbar_button" );
@@ -178,7 +178,7 @@ void UIScrollBar::adjustChilds() {
 }
 
 void UIScrollBar::update() {
-	UIControlAnim::update();
+	UINode::update();
 
 	if ( mBtnUp->isMouseOver() || mBtnDown->isMouseOver() ) {
 		manageClick( UIManager::instance()->getInput()->getClickTrigger() );
@@ -265,11 +265,11 @@ UISlider * UIScrollBar::getSlider() const {
 	return mSlider;
 }
 
-UIControlAnim * UIScrollBar::getButtonUp() const {
+UINode * UIScrollBar::getButtonUp() const {
 	return mBtnUp;
 }
 
-UIControlAnim * UIScrollBar::getButtonDown() const {
+UINode * UIScrollBar::getButtonDown() const {
 	return mBtnDown;
 }
 
@@ -309,7 +309,7 @@ UI_ORIENTATION UIScrollBar::getOrientation() const {
 	return mSlider->getOrientation();
 }
 
-UIControl * UIScrollBar::setOrientation( const UI_ORIENTATION & orientation ) {
+UINode * UIScrollBar::setOrientation( const UI_ORIENTATION & orientation ) {
 	mSlider->setOrientation( orientation );
 
 	applyDefaultTheme();
@@ -318,7 +318,7 @@ UIControl * UIScrollBar::setOrientation( const UI_ORIENTATION & orientation ) {
 }
 
 void UIScrollBar::onAlphaChange() {
-	UIControlAnim::onAlphaChange();
+	UINode::onAlphaChange();
 	
 	mSlider->setAlpha( mAlpha );
 	mBtnUp->setAlpha( mAlpha );

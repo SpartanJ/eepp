@@ -46,7 +46,7 @@ bool UIProgressBar::isType( const Uint32& type ) const {
 }
 
 void UIProgressBar::draw() {
-	UIControlAnim::draw();
+	UINode::draw();
 
 	if ( NULL == mFillerSkin )
 		return;
@@ -78,7 +78,7 @@ void UIProgressBar::draw() {
 }
 
 void UIProgressBar::update() {
-	UIControlAnim::update();
+	UINode::update();
 
 	if ( NULL == mFillerSkin )
 		return;
@@ -129,7 +129,7 @@ void UIProgressBar::onThemeLoaded() {
 }
 
 Uint32 UIProgressBar::onValueChange() {
-	UIControlAnim::onValueChange();
+	UINode::onValueChange();
 
 	onSizeChange();
 
@@ -248,7 +248,7 @@ void UIProgressBar::loadFromXmlNode(const pugi::xml_node & node) {
 }
 
 void UIProgressBar::onAlphaChange() {
-	UIControlAnim::onAlphaChange();
+	UINode::onAlphaChange();
 	
 	mTextBox->setAlpha( mAlpha );
 }

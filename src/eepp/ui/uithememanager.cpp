@@ -1,5 +1,5 @@
 #include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/uicontrol.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uimanager.hpp>
 
 namespace EE { namespace UI {
@@ -45,7 +45,7 @@ void UIThemeManager::setTheme( const std::string& Theme ) {
 }
 
 void UIThemeManager::setTheme( UITheme * Theme ) {
-	UIControl * MainCtrl = UIManager::instance()->getMainControl();
+	UINode * MainCtrl = UIManager::instance()->getMainControl();
 
 	if ( NULL != MainCtrl ) {
 		MainCtrl->setThemeToChilds( Theme );
@@ -74,7 +74,7 @@ UITheme * UIThemeManager::getDefaultTheme() const {
 	return mThemeDefault;
 }
 
-void UIThemeManager::applyDefaultTheme( UIControl * Control ) {
+void UIThemeManager::applyDefaultTheme( UINode * Control ) {
 	if ( mAutoApplyDefaultTheme && NULL != mThemeDefault && NULL != Control )
 		Control->setTheme( mThemeDefault );
 }

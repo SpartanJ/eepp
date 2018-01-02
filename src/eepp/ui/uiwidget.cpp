@@ -10,7 +10,7 @@ UIWidget * UIWidget::New() {
 }
 
 UIWidget::UIWidget() :
-	UIControlAnim(),
+	UINode(),
 	mTheme( NULL ),
 	mTooltip( NULL ),
 	mMinControlSize(),
@@ -36,7 +36,7 @@ Uint32 UIWidget::getType() const {
 }
 
 bool UIWidget::isType( const Uint32& type ) const {
-	return UIWidget::getType() == type ? true : UIControlAnim::isType( type );
+	return UIWidget::getType() == type ? true : UINode::isType( type );
 }
 
 void UIWidget::updateAnchorsDistances() {
@@ -190,7 +190,7 @@ void UIWidget::update() {
 		}
 	}
 
-	UIControlAnim::update();
+	UINode::update();
 }
 
 void UIWidget::createTooltip() {
@@ -227,7 +227,7 @@ void UIWidget::tooltipRemove() {
 	mTooltip = NULL;
 }
 
-UIControl * UIWidget::setSize( const Sizei& size ) {
+UINode * UIWidget::setSize( const Sizei& size ) {
 	Sizei s( size );
 
 	if ( s.x < mMinControlSize.x )
@@ -236,10 +236,10 @@ UIControl * UIWidget::setSize( const Sizei& size ) {
 	if ( s.y < mMinControlSize.y )
 		s.y = mMinControlSize.y;
 
-	return UIControlAnim::setSize( s );
+	return UINode::setSize( s );
 }
 
-UIControl * UIWidget::setFlags(const Uint32 & flags) {
+UINode * UIWidget::setFlags(const Uint32 & flags) {
 	if ( flags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) {
 		updateAnchorsDistances();
 	}
@@ -248,15 +248,15 @@ UIControl * UIWidget::setFlags(const Uint32 & flags) {
 		onAutoSize();
 	}
 
-	return UIControlAnim::setFlags( flags );
+	return UINode::setFlags( flags );
 }
 
-UIControl * UIWidget::unsetFlags(const Uint32 & flags) {
+UINode * UIWidget::unsetFlags(const Uint32 & flags) {
 	if ( flags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) {
 		updateAnchorsDistances();
 	}
 
-	return UIControlAnim::unsetFlags( flags );
+	return UINode::unsetFlags( flags );
 }
 
 UIWidget * UIWidget::setAnchors(const Uint32 & flags) {
@@ -271,20 +271,20 @@ void UIWidget::setTheme( UITheme * Theme ) {
 	invalidateDraw();
 }
 
-UIControl * UIWidget::setThemeSkin( const std::string& skinName ) {
+UINode * UIWidget::setThemeSkin( const std::string& skinName ) {
 	return setThemeSkin( NULL != mTheme ? mTheme : UIThemeManager::instance()->getDefaultTheme(), skinName );
 }
 
-UIControl * UIWidget::setThemeSkin( UITheme * Theme, const std::string& skinName ) {
-	return UIControl::setThemeSkin( Theme, skinName );
+UINode * UIWidget::setThemeSkin( UITheme * Theme, const std::string& skinName ) {
+	return UINode::setThemeSkin( Theme, skinName );
 }
 
-UIControl * UIWidget::setSize( const Int32& Width, const Int32& Height ) {
-	return UIControlAnim::setSize( Width, Height );
+UINode * UIWidget::setSize( const Int32& Width, const Int32& Height ) {
+	return UINode::setSize( Width, Height );
 }
 
 const Sizei& UIWidget::getSize() {
-	return UIControlAnim::getSize();
+	return UINode::getSize();
 }
 
 UITooltip * UIWidget::getTooltip() {
@@ -293,18 +293,18 @@ UITooltip * UIWidget::getTooltip() {
 
 void UIWidget::onParentSizeChange( const Vector2i& SizeChange ) {
 	updateAnchors( SizeChange );
-	UIControlAnim::onParentSizeChange( SizeChange );
+	UINode::onParentSizeChange( SizeChange );
 }
 
 void UIWidget::onPositionChange() {
 	updateAnchorsDistances();
-	UIControlAnim::onPositionChange();
+	UINode::onPositionChange();
 }
 
 void UIWidget::onVisibilityChange() {
 	updateAnchorsDistances();
 	notifyLayoutAttrChange();
-	UIControlAnim::onVisibilityChange();
+	UINode::onVisibilityChange();
 }
 
 void UIWidget::onAutoSize() {
@@ -630,7 +630,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 
 			std::string id = ait->as_string();
 
-			UIControl * control = getParent()->find( id );
+			UINode * control = getParent()->find( id );
 
 			if ( NULL != control && control->isWidget() ) {
 				UIWidget * widget = static_cast<UIWidget*>( control );

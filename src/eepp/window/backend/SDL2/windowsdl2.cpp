@@ -164,13 +164,11 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 			#endif
 		}
 	#else
-		#if SDL_VERSION_ATLEAST(2,0,0)
 		if ( GLv_3CP == Context.Version ) {
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 		}
-		#endif
 	#endif
 
 	#ifdef SDL2_THREADED_GLCONTEXT
@@ -390,9 +388,7 @@ void WindowSDL::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( isWindowed() && !Windowed ) {
 		mWinPos = getPosition();
 	} else {
-		#if SDL_VERSION_ATLEAST(2,0,0)
 		SDL_SetWindowFullscreen( mSDLWindow, Windowed ? 0 : SDL_WINDOW_FULLSCREEN );
-		#endif
 	}
 
 	SDL_SetWindowSize( mSDLWindow, Width, Height );
@@ -402,9 +398,7 @@ void WindowSDL::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 
 		setGLConfig();
 
-		#if SDL_VERSION_ATLEAST(2,0,0)
 		SDL_SetWindowFullscreen( mSDLWindow, Windowed ? 0 : SDL_WINDOW_FULLSCREEN );
-		#endif
 	}
 
 	if ( isWindowed() && Windowed ) {
@@ -576,12 +570,10 @@ Vector2i WindowSDL::getPosition() {
 }
 
 void WindowSDL::updateDesktopResolution() {
-#if SDL_VERSION_ATLEAST(2,0,0)
 	SDL_DisplayMode dpm;
 	SDL_GetDesktopDisplayMode( SDL_GetWindowDisplayIndex( mSDLWindow ), &dpm );
 
 	mWindow.DesktopResolution = Sizei( dpm.w, dpm.h );
-#endif
 }
 
 const Sizei& WindowSDL::getDesktopResolution() {
@@ -598,11 +590,7 @@ void WindowSDL::startTextInput() {
 }
 
 bool WindowSDL::isTextInputActive() {
-#if SDL_VERSION_ATLEAST(2,0,0)
 	return SDL_TRUE == SDL_IsTextInputActive();
-#else
-	return false;
-#endif
 }
 
 void WindowSDL::stopTextInput() {
@@ -626,19 +614,11 @@ void WindowSDL::setTextInputRect( Rect& rect ) {
 }
 
 bool WindowSDL::hasScreenKeyboardSupport() {
-#if SDL_VERSION_ATLEAST(2,0,0)
 	return SDL_TRUE == SDL_HasScreenKeyboardSupport();
-#else
-	return false;
-#endif
 }
 
 bool WindowSDL::isScreenKeyboardShown() {
-#if SDL_VERSION_ATLEAST(2,0,0)
 	return SDL_TRUE == SDL_IsScreenKeyboardShown( mSDLWindow );
-#else
-	return false;
-#endif
 }
 
 }}}}

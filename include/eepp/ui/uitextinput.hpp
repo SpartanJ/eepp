@@ -1,7 +1,7 @@
 #ifndef EE_UICUITEXTINPUT_H
 #define EE_UICUITEXTINPUT_H
 
-#include <eepp/ui/uicontrolanim.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/window/inputtextbuffer.hpp>
 

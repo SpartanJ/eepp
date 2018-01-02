@@ -59,7 +59,7 @@ void UISubTexture::onAutoSize() {
 }
 
 void UISubTexture::draw() {
-	UIControlAnim::draw();
+	UINode::draw();
 
 	if ( mVisible ) {
 		if ( NULL != mSubTexture && 0.f != mAlpha ) {

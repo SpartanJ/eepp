@@ -96,7 +96,7 @@ void UIListBoxItem::update() {
 }
 
 Uint32 UIListBoxItem::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	UIControl::onMouseExit( Pos, Flags );
+	UINode::onMouseExit( Pos, Flags );
 
 	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
 		setSkinState( UISkinState::StateSelected );

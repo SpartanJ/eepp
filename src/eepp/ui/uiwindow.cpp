@@ -107,7 +107,7 @@ void UIWindow::updateWinFlags() {
 
 	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) ) {
 		if ( NULL == mWindowDecoration ) {
-			mWindowDecoration = UIControlAnim::New();
+			mWindowDecoration = UINode::New();
 			mWindowDecoration->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
 		}
 
@@ -116,7 +116,7 @@ void UIWindow::updateWinFlags() {
 		mWindowDecoration->setEnabled( false );
 
 		if ( NULL == mBorderLeft ) {
-			mBorderLeft		= UIControlAnim::New();
+			mBorderLeft		= UINode::New();
 			mBorderLeft->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
 		}
 
@@ -125,7 +125,7 @@ void UIWindow::updateWinFlags() {
 		mBorderLeft->setVisible( true );
 
 		if ( NULL == mBorderRight ) {
-			mBorderRight	= UIControlAnim::New();
+			mBorderRight	= UINode::New();
 			mBorderRight->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
 		}
 
@@ -134,7 +134,7 @@ void UIWindow::updateWinFlags() {
 		mBorderRight->setVisible( true );
 
 		if ( NULL == mBorderBottom ) {
-			mBorderBottom	= UIControlAnim::New();
+			mBorderBottom	= UINode::New();
 			mBorderBottom->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
 		}
 
@@ -144,7 +144,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( mStyleConfig.WinFlags & UI_WIN_CLOSE_BUTTON ) {
 			if ( NULL == mButtonClose ) {
-				mButtonClose = UIControlAnim::New();
+				mButtonClose = UINode::New();
 				mButtonClose->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
 				needsUpdate = true;
 			}
@@ -163,7 +163,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( isMaximizable() ) {
 			if ( NULL == mButtonMaximize ) {
-				mButtonMaximize = UIControlAnim::New();
+				mButtonMaximize = UINode::New();
 				mButtonMaximize->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
 				needsUpdate = true;
 			}
@@ -182,7 +182,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( mStyleConfig.WinFlags & UI_WIN_MINIMIZE_BUTTON ) {
 			if ( NULL == mButtonMinimize ) {
-				mButtonMinimize = UIControlAnim::New();
+				mButtonMinimize = UINode::New();
 				mButtonMinimize->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
 				needsUpdate = true;
 			}
@@ -335,7 +335,7 @@ Sizei UIWindow::getFrameBufferSize() {
 }
 
 void UIWindow::createModalControl() {
-	UIControl * Ctrl = UIManager::instance()->getMainControl();
+	UINode * Ctrl = UIManager::instance()->getMainControl();
 
 	if ( NULL == mModalCtrl ) {
 		mModalCtrl = UIWidget::New();
@@ -356,7 +356,7 @@ void UIWindow::createModalControl() {
 
 void UIWindow::enableByModal() {
 	if ( isModal() ) {
-		UIControl * CtrlChild = UIManager::instance()->getMainControl()->getFirstChild();
+		UINode * CtrlChild = UIManager::instance()->getMainControl()->getFirstChild();
 
 		while ( NULL != CtrlChild )
 		{
@@ -375,7 +375,7 @@ void UIWindow::enableByModal() {
 
 void UIWindow::disableByModal() {
 	if ( isModal() ) {
-		UIControl * CtrlChild = UIManager::instance()->getMainControl()->getFirstChild();
+		UINode * CtrlChild = UIManager::instance()->getMainControl()->getFirstChild();
 
 		while ( NULL != CtrlChild )
 		{
@@ -551,7 +551,7 @@ void UIWindow::onSizeChange() {
 	}
 }
 
-UIControl * UIWindow::setSize( const Sizei& Size ) {
+UINode * UIWindow::setSize( const Sizei& Size ) {
 	if ( NULL != mWindowDecoration ) {
 		Sizei size = Size;
 
@@ -566,7 +566,7 @@ UIControl * UIWindow::setSize( const Sizei& Size ) {
 	return this;
 }
 
-UIControl * UIWindow::setSize( const Int32& Width, const Int32& Height ) {
+UINode * UIWindow::setSize( const Int32& Width, const Int32& Height ) {
 	setSize( Sizei( Width, Height ) );
 	return this;
 }
@@ -718,7 +718,7 @@ void UIWindow::doResize ( const UIMessage * Msg ) {
 	decideResizeType( Msg->getSender() );
 }
 
-void UIWindow::decideResizeType( UIControl * Control ) {
+void UIWindow::decideResizeType( UINode * Control ) {
 	Vector2i Pos = UIManager::instance()->getMousePos();
 
 	worldToControl( Pos );
@@ -860,14 +860,14 @@ void UIWindow::updateResize() {
 		case RESIZE_LEFT:
 		{
 			Pos.x -= mResizePos.x;
-			UIControl::setPixelsPosition( mRealPos.x + Pos.x, mRealPos.y );
+			UINode::setPixelsPosition( mRealPos.x + Pos.x, mRealPos.y );
 			internalSize( mRealSize.getWidth() - Pos.x, mRealSize.getHeight() );
 			break;
 		}
 		case RESIZE_TOP:
 		{
 			Pos.y -= mResizePos.y;
-			UIControl::setPixelsPosition( mRealPos.x, mRealPos.y + Pos.y );
+			UINode::setPixelsPosition( mRealPos.x, mRealPos.y + Pos.y );
 			internalSize( mRealSize.getWidth(), mRealSize.getHeight() - Pos.y );
 			break;
 		}
@@ -880,7 +880,7 @@ void UIWindow::updateResize() {
 		case RESIZE_TOPLEFT:
 		{
 			Pos -= mResizePos;
-			UIControl::setPixelsPosition( mRealPos.x + Pos.x, mRealPos.y + Pos.y );
+			UINode::setPixelsPosition( mRealPos.x + Pos.x, mRealPos.y + Pos.y );
 			internalSize( mRealSize.getWidth() - Pos.x, mRealSize.getHeight() - Pos.y );
 			break;
 		}
@@ -888,7 +888,7 @@ void UIWindow::updateResize() {
 		{
 			Pos.y -= mResizePos.y;
 			Pos.x += mResizePos.x;
-			UIControl::setPixelsPosition( mRealPos.x, mRealPos.y + Pos.y );
+			UINode::setPixelsPosition( mRealPos.x, mRealPos.y + Pos.y );
 			internalSize( Pos.x, mRealSize.getHeight() - Pos.y );
 			break;
 		}
@@ -896,7 +896,7 @@ void UIWindow::updateResize() {
 		{
 			Pos.x -= mResizePos.x;
 			Pos.y += mResizePos.y;
-			UIControl::setPixelsPosition( mRealPos.x + Pos.x, mRealPos.y );
+			UINode::setPixelsPosition( mRealPos.x + Pos.x, mRealPos.y );
 			internalSize( mRealSize.getWidth() - Pos.x, Pos.y );
 			break;
 		}
@@ -934,15 +934,15 @@ UIWidget * UIWindow::getContainer() const {
 	return mContainer;
 }
 
-UIControlAnim * UIWindow::getButtonClose() const {
+UINode * UIWindow::getButtonClose() const {
 	return mButtonClose;
 }
 
-UIControlAnim * UIWindow::getButtonMaximize() const {
+UINode * UIWindow::getButtonMaximize() const {
 	return mButtonMaximize;
 }
 
-UIControlAnim * UIWindow::getButtonMinimize() const {
+UINode * UIWindow::getButtonMinimize() const {
 	return mButtonMinimize;
 }
 
@@ -995,15 +995,10 @@ bool UIWindow::hide() {
 
 void UIWindow::onAlphaChange() {
 	if ( mStyleConfig.WinFlags & UI_WIN_SHARE_ALPHA_WITH_CHILDS ) {
-		UIControlAnim * AnimChild;
-		UIControl * CurChild = mChild;
+		UINode * CurChild = mChild;
 
 		while ( NULL != CurChild ) {
-			if ( CurChild->isAnimated() ) {
-				AnimChild = reinterpret_cast<UIControlAnim*> ( CurChild );
-				AnimChild->setAlpha( mAlpha );
-			}
-
+			CurChild->setAlpha( mAlpha );
 			CurChild = CurChild->getNextControl();
 		}
 	}
@@ -1015,7 +1010,7 @@ void UIWindow::onChildCountChange() {
 	if ( NULL == mContainer || UIManager::instance()->getMainControl() == this )
 		return;
 
-	UIControl * child = mChild;
+	UINode * child = mChild;
 	bool found = false;
 
 	while ( NULL != child ) {
@@ -1034,7 +1029,7 @@ void UIWindow::onChildCountChange() {
 
 void UIWindow::setBaseAlpha( const Uint8& Alpha ) {
 	if ( mAlpha == mStyleConfig.BaseAlpha ) {
-		UIControlAnim::setAlpha( Alpha );
+		UINode::setAlpha( Alpha );
 	}
 
 	mStyleConfig.BaseAlpha = Alpha;
@@ -1088,7 +1083,7 @@ UITextView * UIWindow::getTitleTextBox() const {
 }
 
 void UIWindow::maximize() {
-	UIControl * Ctrl = UIManager::instance()->getMainControl();
+	UINode * Ctrl = UIManager::instance()->getMainControl();
 
 	if ( Ctrl->getSize() == mSize ) {
 		setPixelsPosition( mNonMaxPos );
@@ -1329,7 +1324,7 @@ void UIWindow::resizeCursor() {
 
 	worldToControl( Pos );
 
-	const UIControl * Control = Man->getOverControl();
+	const UINode * Control = Man->getOverControl();
 
 	if ( Control == this ) {
 		if ( Pos.x <= mBorderLeft->getSize().getWidth() ) {

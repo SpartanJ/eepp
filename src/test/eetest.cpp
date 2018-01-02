@@ -312,12 +312,12 @@ void EETest::createShaders() {
 void EETest::onWinMouseUp( const UIEvent * Event ) {
 	const UIEventMouse * MEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
-	UIControlAnim * CtrlAnim;
+	UINode * CtrlAnim;
 
 	if ( Event->getControl()->isType( UI_TYPE_WINDOW ) ) {
-		CtrlAnim = reinterpret_cast<UIControlAnim*>( Event->getControl() );
+		CtrlAnim = reinterpret_cast<UINode*>( Event->getControl() );
 	} else {
-		CtrlAnim = reinterpret_cast<UIControlAnim*>( Event->getControl()->getParent() );
+		CtrlAnim = reinterpret_cast<UINode*>( Event->getControl()->getParent() );
 	}
 
 	if ( MEvent->getFlags() & EE_BUTTON_WUMASK ) {
@@ -560,7 +560,7 @@ void EETest::createUI() {
 	genGrid->setCollumnWidth( 1, 24 );
 	genGrid->setCollumnWidth( 2, 100 );
 
-	C = reinterpret_cast<UIControlAnim*> ( C->getParent() );
+	C = reinterpret_cast<UINode*> ( C->getParent() );
 
 	//createNewUI();
 
@@ -598,7 +598,7 @@ void EETest::createNewUI() {
 	relLay = UIRelativeLayout::New();
 	relLay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
 
-	UIControlAnim * container = UIControlAnim::New();
+	UINode * container = UINode::New();
 	container->setSize( relLay->getSize() - 32 );
 
 	UIScrollView * scrollView = UIScrollView::New();
@@ -910,13 +910,13 @@ void EETest::createCommonDialog() {
 }
 
 static void onWinDragStart( const UIEvent * event ) {
-	UIControl * ctrl = static_cast<UIControl*>( event->getControl() );
+	UINode * ctrl = static_cast<UINode*>( event->getControl() );
 	UIWindow * window = ctrl->isType(UI_TYPE_WINDOW) ? static_cast<UIWindow*>( ctrl ) : static_cast<UIWindow*>( ctrl->getWindowContainer()->getParent() );
 	window->startAlphaAnim( window->getAlpha(), 100, Seconds(0.2f) );
 }
 
 static void onWinDragStop( const UIEvent * event ) {
-	UIControl * ctrl = static_cast<UIControl*>( event->getControl() );
+	UINode * ctrl = static_cast<UINode*>( event->getControl() );
 	UIWindow * window = ctrl->isType(UI_TYPE_WINDOW) ? static_cast<UIWindow*>( ctrl ) : static_cast<UIWindow*>( ctrl->getWindowContainer()->getParent() );
 	window->startAlphaAnim( window->getAlpha(), 255, Seconds(0.2f) );
 }

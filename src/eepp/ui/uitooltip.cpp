@@ -10,7 +10,7 @@ UITooltip *UITooltip::New() {
 }
 
 UITooltip::UITooltip() :
-	UIControlAnim(),
+	UINode(),
 	mAlignOffset( 0.f, 0.f ),
 	mTooltipTime( Time::Zero ),
 	mTooltipOf()
@@ -50,7 +50,7 @@ Uint32 UITooltip::getType() const {
 }
 
 bool UITooltip::isType( const Uint32& type ) const {
-	return UITooltip::getType() == type ? true : UIControlAnim::isType( type );
+	return UITooltip::getType() == type ? true : UINode::isType( type );
 }
 
 void UITooltip::setTheme( UITheme * Theme ) {
@@ -91,7 +91,7 @@ void UITooltip::hide() {
 
 void UITooltip::draw() {
 	if ( mVisible && 0.f != mAlpha && mTextCache->getString().size() > 0 ) {
-		UIControlAnim::draw();
+		UINode::draw();
 
 		if ( mTextCache->getTextWidth() ) {
 			mTextCache->setAlign( getFlags() );
@@ -147,7 +147,7 @@ void UITooltip::setFontShadowColor( const Color& color ) {
 }
 
 void UITooltip::setAlpha( const Float& alpha ) {
-	UIControlAnim::setAlpha( alpha );
+	UINode::setAlpha( alpha );
 	mStyleConfig.FontColor.a = (Uint8)alpha;
 	mStyleConfig.ShadowColor.a = (Uint8)alpha;
 
@@ -197,7 +197,7 @@ void UITooltip::onSizeChange() {
 	onAutoSize();
 	autoAlign();
 
-	UIControlAnim::onSizeChange();
+	UINode::onSizeChange();
 }
 
 void UITooltip::onTextChanged() {
@@ -249,11 +249,11 @@ const Time& UITooltip::getTooltipTime() const {
 	return mTooltipTime;
 }
 
-UIControl * UITooltip::getTooltipOf() const {
+UINode * UITooltip::getTooltipOf() const {
 	return mTooltipOf;
 }
 
-void UITooltip::setTooltipOf(UIControl * tooltipOf) {
+void UITooltip::setTooltipOf(UINode * tooltipOf) {
 	mTooltipOf = tooltipOf;
 }
 

@@ -25,7 +25,7 @@ TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( TextureAtlasEditor *
 	mGfx->setVisible( true );
 	mGfx->setEnabled( true );
 
-	mDrag = UIDragableControl::New();
+	mDrag = UINode::New();
 	mDrag->setParent( this );
 	mDrag->setSize( 64000, 64000 );
 	mDrag->setEnabled( true );

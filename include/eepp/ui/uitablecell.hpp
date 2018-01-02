@@ -18,9 +18,9 @@ class EE_API UITableCell : public UIWidget {
 
 		virtual void setTheme( UITheme * Theme );
 
-		void setCell( const Uint32& CollumnIndex, UIControl * Ctrl );
+		void setCell( const Uint32& CollumnIndex, UINode * Ctrl );
 
-		UIControl * getCell( const Uint32& CollumnIndex ) const;
+		UINode * getCell( const Uint32& CollumnIndex ) const;
 
 		virtual void update();
 
@@ -35,7 +35,7 @@ class EE_API UITableCell : public UIWidget {
 		friend class UIItemContainer<UITable>;
 		friend class UITable;
 
-		std::vector<UIControl*> mCells;
+		std::vector<UINode*> mCells;
 
 		UITable * gridParent() const;
 

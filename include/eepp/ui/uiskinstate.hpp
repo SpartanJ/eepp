@@ -37,7 +37,7 @@ class EE_API UISkinState {
 
 		const Uint32& getPrevState() const;
 	protected:
-		friend class UIControl;
+		friend class UINode;
 
 		UISkin * 	mSkin;
 		Uint32 		mCurState;

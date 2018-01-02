@@ -1,7 +1,7 @@
 #ifndef EE_UIUIWIDGET_HPP
 #define EE_UIUIWIDGET_HPP
 
-#include <eepp/ui/uicontrolanim.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitooltip.hpp>
 
 namespace pugi {
@@ -10,7 +10,7 @@ class xml_node;
 
 namespace EE { namespace UI {
 
-class EE_API UIWidget : public UIControlAnim {
+class EE_API UIWidget : public UINode {
 	public:
 		static UIWidget * New();
 
@@ -24,21 +24,21 @@ class EE_API UIWidget : public UIControlAnim {
 
 		virtual void update();
 
-		virtual UIControl * setSize( const Sizei& size );
+		virtual UINode * setSize( const Sizei& size );
 
-		virtual UIControl * setFlags( const Uint32& flags );
+		virtual UINode * setFlags( const Uint32& flags );
 
-		virtual UIControl * unsetFlags( const Uint32& flags );
+		virtual UINode * unsetFlags( const Uint32& flags );
 
 		virtual UIWidget * setAnchors( const Uint32& flags );
 
 		virtual void setTheme( UITheme * Theme );
 
-		virtual UIControl * setThemeSkin( const std::string& skinName );
+		virtual UINode * setThemeSkin( const std::string& skinName );
 
-		virtual UIControl * setThemeSkin( UITheme * Theme, const std::string& skinName );
+		virtual UINode * setThemeSkin( UITheme * Theme, const std::string& skinName );
 
-		UIControl * setSize( const Int32& Width, const Int32& Height );
+		UINode * setSize( const Int32& Width, const Int32& Height );
 
 		const Sizei& getSize();
 

@@ -1,7 +1,7 @@
 #ifndef EE_UICUITOOLTIP_HPP
 #define EE_UICUITOOLTIP_HPP
 
-#include <eepp/ui/uicontrolanim.hpp>
+#include <eepp/ui/uinode.hpp>
 
 namespace EE { namespace Graphics {
 class Text;
@@ -9,7 +9,7 @@ class Text;
 
 namespace EE { namespace UI {
 
-class EE_API UITooltip : public UIControlAnim {
+class EE_API UITooltip : public UINode {
 	public:
 		static UITooltip * New();
 
@@ -71,9 +71,9 @@ class EE_API UITooltip : public UIControlAnim {
 
 		const Time & getTooltipTime() const;
 
-		UIControl * getTooltipOf() const;
+		UINode * getTooltipOf() const;
 
-		void setTooltipOf(UIControl * tooltipOf);
+		void setTooltipOf(UINode * tooltipOf);
 
 		UITooltipStyleConfig getStyleConfig() const;
 
@@ -84,7 +84,7 @@ class EE_API UITooltip : public UIControlAnim {
 		Vector2f 	mAlignOffset;
 		Rect		mRealPadding;
 		Time		mTooltipTime;
-		UIControl *	mTooltipOf;
+		UINode *	mTooltipOf;
 
 		virtual void onSizeChange();
 

@@ -20,13 +20,13 @@ UISpinBox::UISpinBox() :
 	mInput->setEnabled( true );
 	mInput->setParent( this );
 
-	mPushUp	= UIControlAnim::New();
+	mPushUp	= UINode::New();
 	mPushUp->setVisible( true );
 	mPushUp->setEnabled( true );
 	mPushUp->setParent( this );
 	mPushUp->setSize( 16, 16 );
 
-	mPushDown = UIControlAnim::New();
+	mPushDown = UINode::New();
 	mPushDown->setVisible( true );
 	mPushDown->setEnabled( true );
 	mPushDown->setParent( this );
@@ -211,7 +211,7 @@ const Float& UISpinBox::getMaxValue() const {
 void UISpinBox::update() {
 	bool Changed = mInput->getInputTextBuffer()->changedSinceLastUpdate();
 
-	UIControlAnim::update();
+	UINode::update();
 
 	if ( Changed ) {
 		if ( !mInput->getText().size() ) {
@@ -234,11 +234,11 @@ void UISpinBox::update() {
 	}
 }
 
-UIControlAnim * UISpinBox::getButtonPushUp() const {
+UINode * UISpinBox::getButtonPushUp() const {
 	return mPushUp;
 }
 
-UIControlAnim * UISpinBox::getButtonPushDown() const {
+UINode * UISpinBox::getButtonPushDown() const {
 	return mPushDown;
 }
 
@@ -257,7 +257,7 @@ bool UISpinBox::dotsInNumbersAllowed() {
 }
 
 void UISpinBox::onAlphaChange() {
-	UIControlAnim::onAlphaChange();
+	UINode::onAlphaChange();
 	
 	mInput->setAlpha( mAlpha );
 	mPushUp->setAlpha( mAlpha );

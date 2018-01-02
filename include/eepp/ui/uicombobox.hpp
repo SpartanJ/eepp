@@ -23,7 +23,7 @@ class EE_API UIComboBox : public UIWidget {
 
 		UIDropDownList * getDropDownList() const { return mDropDownList; }
 
-		UIControlAnim * getButton() const { return mButton; }
+		UINode * getButton() const { return mButton; }
 
 		InputTextBuffer * getInputTextBuffer();
 
@@ -32,7 +32,7 @@ class EE_API UIComboBox : public UIWidget {
 		void loadFromXmlNode(const pugi::xml_node & node);
 	protected:
 		UIDropDownList * mDropDownList;
-		UIControlAnim * mButton;
+		UINode * mButton;
 
 		void onButtonClick( const UIEvent * Event );
 

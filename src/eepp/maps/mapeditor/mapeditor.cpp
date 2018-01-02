@@ -29,7 +29,7 @@ using namespace EE::Maps::Private;
 
 namespace EE { namespace Maps {
 
-static UITextView * createTextBox( const String& Text = "", UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, const Uint32& fontStyle = Text::Regular ) {
+static UITextView * createTextBox( const String& Text = "", UINode * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, const Uint32& fontStyle = Text::Regular ) {
 	UITextView * Ctrl = UITextView::New();
 	Ctrl->setFontStyle( fontStyle );
 	Ctrl->resetFlags( Flags )->setParent( Parent )->setPosition( Pos )->setSize( Size )->setVisible( true )->setEnabled( false );

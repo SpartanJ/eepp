@@ -1,7 +1,7 @@
 #ifndef EE_UICUIMANAGER_H
 #define EE_UICUIMANAGER_H
 
-#include <eepp/ui/uicontrol.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
@@ -23,13 +23,13 @@ class EE_API UIManager {
 
 		UIWindow * getMainControl() const;
 
-		UIControl * getFocusControl() const;
+		UINode * getFocusControl() const;
 
-		void setFocusControl( UIControl * Ctrl );
+		void setFocusControl( UINode * Ctrl );
 
-		UIControl * getOverControl() const;
+		UINode * getOverControl() const;
 
-		void setOverControl( UIControl * Ctrl );
+		void setOverControl( UINode * Ctrl );
 
 		void init( Uint32 Flags = 0, EE::Window::Window * window = NULL );
 
@@ -43,7 +43,7 @@ class EE_API UIManager {
 
 		void resizeControl( EE::Window::Window * win );
 
-		void sendMsg( UIControl * Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
+		void sendMsg( UINode * Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
 
 		Vector2i getMousePos();
 
@@ -53,9 +53,9 @@ class EE_API UIManager {
 
 		const Uint32& getLastPressTrigger() const;
 
-		void clipSmartEnable( UIControl * ctrl, const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
+		void clipSmartEnable( UINode * ctrl, const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
 
-		void clipSmartDisable( UIControl * ctrl );
+		void clipSmartDisable( UINode * ctrl );
 
 		void sendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
 
@@ -105,18 +105,18 @@ class EE_API UIManager {
 
 		const Color& getHighlightOverColor() const;
 
-		void sendMouseClick( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
+		void sendMouseClick( UINode * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
 
-		void sendMouseUp( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
+		void sendMouseUp( UINode * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
 
-		void sendMouseDown( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
+		void sendMouseDown( UINode * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
 
 		EE::Window::Window * getWindow() const;
 
 		/** Control where the mouse click started to be down */
-		UIControl * getDownControl() const;
+		UINode * getDownControl() const;
 
-		UIControl * getLossFocusControl() const;
+		UINode * getLossFocusControl() const;
 
 		const bool& isShootingDown() const;
 
@@ -134,17 +134,17 @@ class EE_API UIManager {
 
 		void setCursor( EE_CURSOR_TYPE cursor );
 
-		UIWidget * loadLayoutFromFile( const std::string& layoutPath, UIControl * parent = NULL );
+		UIWidget * loadLayoutFromFile( const std::string& layoutPath, UINode * parent = NULL );
 
-		UIWidget * loadLayoutFromString( const std::string& layoutString, UIControl * parent = NULL );
+		UIWidget * loadLayoutFromString( const std::string& layoutString, UINode * parent = NULL );
 
-		UIWidget * loadLayoutFromMemory( const void * buffer, Int32 bufferSize, UIControl * parent = NULL );
+		UIWidget * loadLayoutFromMemory( const void * buffer, Int32 bufferSize, UINode * parent = NULL );
 
-		UIWidget * loadLayoutFromStream( IOStream& stream, UIControl * parent = NULL );
+		UIWidget * loadLayoutFromStream( IOStream& stream, UINode * parent = NULL );
 
-		UIWidget * loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, UIControl * parent = NULL );
+		UIWidget * loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, UINode * parent = NULL );
 
-		UIWidget * loadLayoutNodes( pugi::xml_node node, UIControl * parent );
+		UIWidget * loadLayoutNodes( pugi::xml_node node, UINode * parent );
 
 		void setTranslator( Translator translator );
 
@@ -153,18 +153,18 @@ class EE_API UIManager {
 		String getTranslatorString( const std::string& str );
 
 	protected:
-		friend class UIControl;
+		friend class UINode;
 		friend class UIWindow;
 
 		EE::Window::Window *mWindow;
 		Input *				mKM;
 		UIWindow *			mControl;
-		UIControl *			mFocusControl;
-		UIControl *			mOverControl;
-		UIControl * 		mDownControl;
-		UIControl *			mLossFocusControl;
+		UINode *			mFocusControl;
+		UINode *			mOverControl;
+		UINode * 		mDownControl;
+		UINode *			mLossFocusControl;
 		std::list<UIWindow*> mWindowsList;
-		std::list<UIControl*> mCloseList;
+		std::list<UINode*> mCloseList;
 		Clock				mClock;
 
 		Time	 			mElapsed;
@@ -201,7 +201,7 @@ class EE_API UIManager {
 
 		bool				windowExists( UIWindow * win );
 
-		void				addToCloseQueue( UIControl * Ctrl );
+		void				addToCloseQueue( UINode * Ctrl );
 
 		void				checkClose();
 };

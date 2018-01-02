@@ -25,7 +25,7 @@ UITextInputPassword::~UITextInputPassword() {
 
 void UITextInputPassword::draw() {
 	if ( mVisible && 0.f != mAlpha ) {
-		UIControlAnim::draw();
+		UINode::draw();
 
 		drawSelection( mPassCache );
 

@@ -30,7 +30,7 @@ class EE_API TextureAtlasSubTextureEditor : public UIWidget {
 	protected:
 		UITheme *				mTheme;
 		UISubTexture *					mGfx;
-		UIDragableControl *			mDrag;
+		UINode *			mDrag;
 		Vector2i				mUICenter;
 		TextureAtlasEditor *	mEditor;
 

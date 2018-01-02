@@ -13,9 +13,7 @@
 #include <eepp/ui/uiskincomplex.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/uicontrol.hpp>
-#include <eepp/ui/uidragablecontrol.hpp>
-#include <eepp/ui/uicontrolanim.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uitouchdragablewidget.hpp>
 #include <eepp/ui/uiimage.hpp>

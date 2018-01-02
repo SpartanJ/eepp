@@ -5,7 +5,7 @@
 
 namespace EE { namespace UI {
 
-class UIControl;
+class UINode;
 
 class EE_API UIEvent {
 	public:
@@ -56,15 +56,15 @@ class EE_API UIEvent {
 			NoEvent = eeINDEX_NOT_FOUND
 		};
 
-		UIEvent( UIControl * control, const Uint32& eventType = NoEvent );
+		UIEvent( UINode * control, const Uint32& eventType = NoEvent );
 
 		~UIEvent();
 
-		UIControl * getControl() const;
+		UINode * getControl() const;
 
 		const Uint32& getEventType() const;
 	protected:
-		UIControl	* 	mCtrl;
+		UINode	* 	mCtrl;
 		Uint32 			mEventType;
 };
 
