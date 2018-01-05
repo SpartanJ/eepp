@@ -66,10 +66,16 @@ class EE_API Zip : public Pack {
 
 		/** @return The file path of the opened package */
 		std::string getPackPath();
+
+		IOStream * getFileStream( const std::string& path );
 	protected:
+		friend class IOStreamZip;
+
 		struct zip * mZip;
 
 		std::string mZipPath;
+
+		struct zip * getZip();
 };
 
 }}

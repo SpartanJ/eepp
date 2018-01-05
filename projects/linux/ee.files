@@ -30,6 +30,7 @@
 ../../include/eepp/math/interpolation1d.hpp
 ../../include/eepp/math/interpolation2d.hpp
 ../../include/eepp/system/color.hpp
+../../include/eepp/system/iostreamzip.hpp
 ../../include/eepp/system/translator.hpp
 ../../include/eepp/ui/uieventmouse.hpp
 ../../include/eepp/ui/uigridlayout.hpp
@@ -80,6 +81,7 @@
 ../../src/eepp/math/interpolation1d.cpp
 ../../src/eepp/math/interpolation2d.cpp
 ../../src/eepp/system/color.cpp
+../../src/eepp/system/iostreamzip.cpp
 ../../src/eepp/system/translator.cpp
 ../../src/eepp/ui/uigridlayout.cpp
 ../../src/eepp/ui/uiimage.cpp

@@ -374,4 +374,8 @@ std::string Pak::getPackPath() {
 	return mPak.pakPath;
 }
 
+IOStream * Pak::getFileStream(const std::string & path) {
+	return NULL;
+}
+
 }}

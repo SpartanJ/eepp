@@ -67,6 +67,8 @@ class EE_API Pak : public Pack {
 
 		/** @return The file path of the opened package */
 		std::string getPackPath();
+
+		IOStream * getFileStream( const std::string& path );
 	protected:
 
 	private:

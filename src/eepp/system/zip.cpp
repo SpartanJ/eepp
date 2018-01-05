@@ -2,6 +2,7 @@
 #include <libzip/zip.h>
 #include <libzip/zipint.h>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/iostreamzip.hpp>
 
 namespace EE { namespace System {
 
@@ -248,6 +249,15 @@ std::vector<std::string> Zip::getFileList() {
 /** @return The file path of the opened package */
 std::string Zip::getPackPath() {
 	return mZipPath;
+}
+
+IOStream * Zip::getFileStream( const std::string & path ) {
+	return eeNew( IOStreamZip, ( this, path ) );
+}
+
+zip * Zip::getZip()
+{
+	return mZip;
 }
 
 }}

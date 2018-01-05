@@ -4,6 +4,7 @@
 #include <eepp/system/base.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/safedatapointer.hpp>
+#include <eepp/system/iostream.hpp>
 
 namespace EE { namespace System {
 
@@ -68,6 +69,9 @@ class EE_API Pack : protected Mutex {
 
 		/** @return The file path of the opened package */
 		virtual std::string getPackPath() = 0;
+
+		/** Open a file stream for reading */
+		virtual IOStream * getFileStream( const std::string& path ) = 0;
 	protected:
 		bool mIsOpen;
 };
