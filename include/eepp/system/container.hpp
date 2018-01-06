@@ -15,10 +15,10 @@ class Container {
 		virtual ~Container();
 
 		/** @brief Add to the list the resource. */
-		T * add( T * Resource );
+		T * add( T * resource );
 
 		/** @brief Remove from the list the resource. */
-		bool remove( T * Resource );
+		bool remove( T * resource );
 
 		/** @returns The number of resources added to the container. */
 		Uint32 count();
@@ -27,30 +27,26 @@ class Container {
 };
 
 template <class T>
-Container<T>::Container()
-{
-}
+Container<T>::Container() {}
 
 template <class T>
-Container<T>::~Container()
-{
-}
+Container<T>::~Container() {}
 
 template <class T>
-T * Container<T>::add( T * Resource ) {
-	if ( NULL != Resource ) {
-		mResources.push_back( Resource );
+T * Container<T>::add( T * resource ) {
+	if ( NULL != resource ) {
+		mResources.push_back( resource );
 
-		return Resource;
+		return resource;
 	}
 
 	return NULL;
 }
 
 template <class T>
-bool Container<T>::remove( T * Resource ) {
-	if ( NULL != Resource ) {
-		mResources.remove( Resource );
+bool Container<T>::remove( T * resource ) {
+	if ( NULL != resource ) {
+		mResources.remove( resource );
 
 		return true;
 	}

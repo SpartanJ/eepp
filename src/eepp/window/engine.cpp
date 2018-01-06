@@ -1,5 +1,6 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/system/inifile.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/fontmanager.hpp>
@@ -80,6 +81,8 @@ Engine::~Engine() {
 	Graphics::Private::FrameBufferManager::destroySingleton();
 
 	Graphics::Private::VertexBufferManager::destroySingleton();
+
+	VirtualFileSystem::destroySingleton();
 
 	Log::destroySingleton();
 

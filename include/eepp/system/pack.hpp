@@ -74,6 +74,10 @@ class EE_API Pack : protected Mutex {
 		virtual IOStream * getFileStream( const std::string& path ) = 0;
 	protected:
 		bool mIsOpen;
+
+		void onPackOpened();
+
+		void onPackClosed();
 };
 
 }}

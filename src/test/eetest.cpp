@@ -1171,14 +1171,13 @@ void EETest::loadTextures() {
 
 	Uint32 i;
 
-	PakTest = eeNew( Zip, () );
-
 	#ifndef EE_GLES
 
 	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
 	Engine::instance()->enableSharedGLContext();
 	#endif
 
+	PakTest = eeNew( Zip, () );
 	PakTest->open( MyPath + "test.zip" );
 
 	std::vector<std::string> files = PakTest->getFileList();

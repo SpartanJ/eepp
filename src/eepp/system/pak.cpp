@@ -70,6 +70,8 @@ bool Pak::open( const std::string& path ) {
 
 			mIsOpen = true;
 
+			onPackOpened();
+
 			return true;
 		}
 	}
@@ -84,6 +86,8 @@ bool Pak::close() {
 		mPakFiles.clear();
 
 		mIsOpen = false;
+
+		onPackClosed();
 
 		return true;
 	}

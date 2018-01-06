@@ -15,7 +15,7 @@ class EE_API IOStreamPak : public IOStream {
 		**	@param pack Pack to open from path
 		**	@param path Path of the file in the pack file
 		**/
-		IOStreamPak( Pak * pack, const std::string& path );
+		IOStreamPak( Pak * pack, const std::string& path, bool writeMode = false );
 
 		virtual ~IOStreamPak();
 

@@ -10,6 +10,8 @@ class EE_API SafeDataPointer {
 	public:
 		SafeDataPointer();
 
+		SafeDataPointer( Uint32 size );
+
 		SafeDataPointer( Uint8 * data, Uint32 size );
 
 		/** @brief The destructor deletes the buffer */

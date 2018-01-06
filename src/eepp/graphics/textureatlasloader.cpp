@@ -3,6 +3,7 @@
 #include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturepacker.hpp>
 #include <eepp/graphics/textureatlas.hpp>
+#include <eepp/system/packmanager.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/graphics/packerhelper.hpp>

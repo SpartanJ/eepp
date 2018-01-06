@@ -33,6 +33,7 @@
 ../../include/eepp/system/iostreampak.hpp
 ../../include/eepp/system/iostreamzip.hpp
 ../../include/eepp/system/translator.hpp
+../../include/eepp/system/virtualfilesystem.hpp
 ../../include/eepp/ui/uieventmouse.hpp
 ../../include/eepp/ui/uigridlayout.hpp
 ../../include/eepp/ui/uiimage.hpp
@@ -85,6 +86,7 @@
 ../../src/eepp/system/iostreampak.cpp
 ../../src/eepp/system/iostreamzip.cpp
 ../../src/eepp/system/translator.cpp
+../../src/eepp/system/virtualfilesystem.cpp
 ../../src/eepp/ui/uigridlayout.cpp
 ../../src/eepp/ui/uiimage.cpp
 ../../src/eepp/ui/uilayout.cpp

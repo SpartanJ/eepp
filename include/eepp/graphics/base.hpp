@@ -17,7 +17,6 @@ using namespace EE::Math;
 #include <eepp/system/pack.hpp>
 #include <eepp/system/resourcemanager.hpp>
 #include <eepp/system/container.hpp>
-#include <eepp/system/packmanager.hpp>
 #include <eepp/system/filesystem.hpp>
 using namespace EE::System;
 

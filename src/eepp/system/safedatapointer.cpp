@@ -10,6 +10,12 @@ SafeDataPointer::SafeDataPointer() :
 {
 }
 
+SafeDataPointer::SafeDataPointer( Uint32 size ) :
+	Data( eeNewArray( Uint8, size ) ),
+	DataSize( size )
+{
+}
+
 SafeDataPointer::SafeDataPointer( Uint8 *data, Uint32 size ) :
 	Data( data ),
 	DataSize( size )

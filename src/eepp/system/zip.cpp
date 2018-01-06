@@ -25,6 +25,8 @@ bool Zip::create( const std::string& path ) {
 
 			mIsOpen = true;
 
+			onPackOpened();
+
 			return true;
 		}
 	} else {
@@ -44,6 +46,8 @@ bool Zip::open( const std::string& path ) {
 
 			mIsOpen = true;
 
+			onPackOpened();
+
 			return true;
 		}
 	} else {
@@ -62,6 +66,8 @@ bool Zip::close() {
 		mZipPath = "";
 
 		mZip = NULL;
+
+		onPackClosed();
 
 		return true;
 	}
@@ -234,13 +240,14 @@ std::vector<std::string> Zip::getFileList() {
 
 	Int32 numfiles = zip_get_num_files( mZip );
 
-	tmpv.resize( numfiles );
-
 	for ( Int32 i = 0; i < numfiles; i++ ) {
 		struct zip_stat zs;
 
-		if ( -1 != zip_stat_index( mZip, i, 0, &zs ) )
-			tmpv[i] = std::string ( zs.name );
+		if ( -1 != zip_stat_index( mZip, i, 0, &zs ) ) {
+			if ( zs.size > 0 ) {
+				tmpv.push_back( std::string ( zs.name ) );
+			}
+		}
 	}
 
 	return tmpv;
