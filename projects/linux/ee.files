@@ -30,6 +30,7 @@
 ../../include/eepp/math/interpolation1d.hpp
 ../../include/eepp/math/interpolation2d.hpp
 ../../include/eepp/system/color.hpp
+../../include/eepp/system/directorypack.hpp
 ../../include/eepp/system/iostreampak.hpp
 ../../include/eepp/system/iostreamzip.hpp
 ../../include/eepp/system/translator.hpp
@@ -83,6 +84,7 @@
 ../../src/eepp/math/interpolation1d.cpp
 ../../src/eepp/math/interpolation2d.cpp
 ../../src/eepp/system/color.cpp
+../../src/eepp/system/directorypack.cpp
 ../../src/eepp/system/iostreampak.cpp
 ../../src/eepp/system/iostreamzip.cpp
 ../../src/eepp/system/translator.cpp

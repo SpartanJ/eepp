@@ -45,7 +45,7 @@ IniFile::IniFile( Pack * Pack, std::string iniPackPath, const bool& shouldReadFi
 }
 
 bool IniFile::loadFromPack( Pack * Pack, std::string iniPackPath ) {
-	if ( NULL != Pack && Pack->isOpen() && Pack->exists( iniPackPath ) ) {
+	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( iniPackPath ) ) {
 		SafeDataPointer PData;
 
 		Pack->extractFileToMemory( iniPackPath, PData );

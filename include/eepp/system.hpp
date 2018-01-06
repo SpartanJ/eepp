@@ -17,6 +17,7 @@
 #include <eepp/system/pack.hpp>
 #include <eepp/system/pak.hpp>
 #include <eepp/system/zip.hpp>
+#include <eepp/system/directorypack.hpp>
 #include <eepp/system/rc4.hpp>
 #include <eepp/system/objectloader.hpp>
 #include <eepp/system/resourceloader.hpp>
