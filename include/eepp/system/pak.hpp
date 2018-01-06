@@ -70,8 +70,8 @@ class EE_API Pak : public Pack {
 
 		IOStream * getFileStream( const std::string& path );
 	protected:
+		friend class IOStreamPak;
 
-	private:
 		typedef struct pakheader_t {
 			char head[4];		//! Header of the file ( default: 'PACK' )
 			Uint32 dir_offset; 	//! Offset to the first pakEntry on the pakFile
@@ -93,6 +93,8 @@ class EE_API Pak : public Pack {
 
 		pakFile					mPak;
 		std::vector<pakEntry>	mPakFiles;
+
+		pakEntry getPackEntry( Uint32 index );
 };
 
 }}

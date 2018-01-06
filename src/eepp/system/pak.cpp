@@ -1,6 +1,7 @@
 #include <eepp/system/pak.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/iostreampak.hpp>
 
 namespace EE { namespace System {
 
@@ -375,7 +376,15 @@ std::string Pak::getPackPath() {
 }
 
 IOStream * Pak::getFileStream(const std::string & path) {
-	return NULL;
+	return eeNew( IOStreamPak, ( this, path ) );
+}
+
+Pak::pakEntry Pak::getPackEntry( Uint32 index ) {
+	if ( isOpen() && index < mPakFiles.size() ) {
+		return mPakFiles[index];
+	}
+
+	return pakEntry();
 }
 
 }}
