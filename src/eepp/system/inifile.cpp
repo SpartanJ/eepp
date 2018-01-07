@@ -60,10 +60,9 @@ bool IniFile::loadFromMemory( const Uint8* RAWData, const Uint32& size ) {
 	std::string myfile;
 	myfile.assign( reinterpret_cast<const char*> (RAWData), size );
 
+	clear();
 	mLines.clear();
 	mLines = String::split( myfile );
-
-	mIniReaded = false;
 
 	return true;
 }
@@ -81,10 +80,9 @@ bool IniFile::loadFromFile( const std::string& iniPath ) {
 
 		f.read( (char*)&myfile[0], f.getSize() );
 
+		clear();
 		mLines.clear();
 		mLines = String::split( myfile );
-
-		mIniReaded = false;
 
 		return true;
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
@@ -421,13 +419,6 @@ bool IniFile::deleteKey ( std::string const keyname ) {
 	if ( keyID == noID )
 		return false;
 
-	// Now hopefully this destroys the vector lists within mKeys.
-	// Looking at <vector> source, this should be the case using the destructor.
-	// If not, I may have to do it explicitly. Memory leak check should tell.
-	// memleak_test.cpp shows that the following not required.
-	//mKeys[keyID].names.clear();
-	//mKeys[keyID].values.clear();
-
 	std::vector<std::string>::iterator npos = mNames.begin() + keyID;
 	std::vector<key>::iterator kpos = mKeys.begin() + keyID;
 	mNames.erase ( npos, npos + 1 );
@@ -437,12 +428,7 @@ bool IniFile::deleteKey ( std::string const keyname ) {
 }
 
 void IniFile::clear() {
-	// This loop not needed. The vector<> destructor seems to do
-	// all the work itself. memleak_test.cpp shows this.
-	//for ( unsigned i = 0; i < mKeys.size(); ++i) {
-	//  mKeys[i].names.clear();
-	//  mKeys[i].values.clear();
-	//}
+	mIniReaded = false;
 	mNames.clear();
 	mKeys.clear();
 	mComments.clear();

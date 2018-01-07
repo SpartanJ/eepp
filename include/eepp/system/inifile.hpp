@@ -218,6 +218,8 @@ class EE_API IniFile {
 		/** Delete all comments for a key. */
 		bool     deleteKeyComments ( unsigned const keyID );
 		bool     deleteKeyComments ( std::string const keyname );
+
+		bool	iniParsed()			{ return mIniReaded; }
 	private:
 		bool	mCaseInsensitive;
 		bool	mIniReaded;
