@@ -89,11 +89,11 @@ bool DirectoryPack::extractFileToMemory( const std::string& path, SafeDataPointe
 }
 
 Int32 DirectoryPack::exists( const std::string& path ) {
-	return FileSystem::fileExists( mPath + path ) ? 0 : -1;
+	return FileSystem::fileExists( mPath + path ) ? 1 : -1;
 }
 
 Int8 DirectoryPack::checkPack() {
-	return mPath.empty() ? -1 : 1;
+	return mPath.empty() ? -1 : 0;
 }
 
 void DirectoryPack::getDirectoryFiles( std::vector<std::string>& files, std::string directory ) {
