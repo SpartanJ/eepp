@@ -17,6 +17,7 @@
 #define CINIFILE_H
 
 #include <eepp/system/base.hpp>
+#include <eepp/system/iostream.hpp>
 
 #define MAX_KEYNAME    128
 #define MAX_VALUENAME  128
@@ -39,6 +40,9 @@ class EE_API IniFile {
 		/** Initialize and load the ini file from a pack file  */
 		IniFile (Pack * Pack, std::string iniPackPath, const bool& shouldReadFile = true );
 
+		/** Initialize and load the ini file from a stream  */
+		IniFile (IOStream& stream, const bool& shouldReadFile = true );
+
 		virtual ~IniFile() {}
 
 		/** Loads an ini file from path */
@@ -49,6 +53,9 @@ class EE_API IniFile {
 
 		/** Loads an ini file from a pack file */
 		bool loadFromPack( Pack * Pack, std::string iniPackPath );
+
+		/** Loads an ini file from a stream */
+		bool loadFromStream( IOStream& stream );
 
 		/** Sets whether or not keynames and valuenames should be case sensitive.
 		** The default is case insensitive. */

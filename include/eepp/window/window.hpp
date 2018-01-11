@@ -217,6 +217,9 @@ class EE_API Window {
 		/** @return The window size */
 		virtual Sizei getSize();
 
+		/** @return The window center point */
+		Vector2f getCenter();
+
 		/** @return The resolutions that support the video card */
 		virtual std::vector<DisplayMode> getDisplayModes() const = 0;
 
@@ -287,13 +290,13 @@ class EE_API Window {
 		const View& getDefaultView() const;
 
 		/** This will set the default rendering states and view to render in 2D mode */
-		void setup2D( const bool& KeepView = false );
+		void setup2D( const bool& KeepView = true );
 
 		/** Set a new 2D projection matrix */
 		void set2DProjection( const Uint32& Width, const Uint32& Height );
 
 		/** Set the current Viewport ( and creates a new ortho proyection if needed ) */
-		void setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix = true );
+		void setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
 
 		/** Set the window background color */
 		void setClearColor( const RGB& Color );

@@ -74,12 +74,6 @@ class EE_API FontTrueTypeLoader : public ObjectLoader {
 
 		std::string			mFontName;
 		std::string			mFilepath;
-		unsigned int		mSize;
-		Uint16				mNumCharsToGen;
-		RGB					mFontColor;
-		Uint8				mOutlineSize;
-		RGB					mOutlineColor;
-		bool				mAddPixelSeparator;
 		Pack *				mPack;
 		Uint8 *				mData;
 		unsigned int		mDataSize;

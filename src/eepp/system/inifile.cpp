@@ -44,6 +44,16 @@ IniFile::IniFile( Pack * Pack, std::string iniPackPath, const bool& shouldReadFi
 		readFile();
 }
 
+IniFile::IniFile( IOStream& stream, const bool& shouldReadFile ) :
+	mCaseInsensitive( true ),
+	mIniReaded( false )
+{
+	loadFromStream( stream );
+
+	if ( shouldReadFile )
+		readFile();
+}
+
 bool IniFile::loadFromPack( Pack * Pack, std::string iniPackPath ) {
 	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( iniPackPath ) ) {
 		SafeDataPointer PData;
@@ -56,9 +66,13 @@ bool IniFile::loadFromPack( Pack * Pack, std::string iniPackPath ) {
 	return false;
 }
 
-bool IniFile::loadFromMemory( const Uint8* RAWData, const Uint32& size ) {
-	std::string myfile;
-	myfile.assign( reinterpret_cast<const char*> (RAWData), size );
+bool IniFile::loadFromStream( IOStream& stream ) {
+	if ( !stream.isOpen() )
+		return false;
+
+	std::string myfile( (size_t)stream.getSize(), '\0' );
+
+	stream.read( (char*)&myfile[0], stream.getSize() );
 
 	clear();
 	mLines.clear();
@@ -67,24 +81,17 @@ bool IniFile::loadFromMemory( const Uint8* RAWData, const Uint32& size ) {
 	return true;
 }
 
+bool IniFile::loadFromMemory( const Uint8* RAWData, const Uint32& size ) {
+	IOStreamMemory f( reinterpret_cast<const char*>( RAWData ), size );
+	return loadFromStream( f );
+}
+
 bool IniFile::loadFromFile( const std::string& iniPath ) {
 	path ( iniPath );
 
 	if ( FileSystem::fileExists( iniPath ) ) {
 		IOStreamFile f( mPath );
-
-		if ( !f.isOpen() )
-			return false;
-
-		std::string myfile( (size_t)f.getSize(), '\0' );
-
-		f.read( (char*)&myfile[0], f.getSize() );
-
-		clear();
-		mLines.clear();
-		mLines = String::split( myfile );
-
-		return true;
+		return loadFromStream( f );
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string tPath( iniPath );
 

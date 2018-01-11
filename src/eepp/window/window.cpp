@@ -66,6 +66,10 @@ Sizei Window::getSize() {
 	return Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 }
 
+Vector2f Window::getCenter() {
+	return Sizef( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height ) * 0.5f;
+}
+
 const Uint32& Window::getWidth() const {
 	return mWindow.WindowConfig.Width;
 }
@@ -100,19 +104,18 @@ void Window::set2DProjection( const Uint32& Width, const Uint32& Height ) {
 	GLi->loadIdentity();
 }
 
-void Window::setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix ) {
+void Window::setViewport(const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
 	GLi->viewport( x, getHeight() - ( y + Height ), Width, Height );
-
-	if ( UpdateProjectionMatrix ) {
-		set2DProjection( Width, Height );
-	}
 }
 
 void Window::setView( const View& View ) {
 	mCurrentView = &View;
 
 	Rect RView = mCurrentView->getView();
+
 	setViewport( RView.Left, RView.Top, RView.Right, RView.Bottom );
+
+	set2DProjection( RView.Right, RView.Bottom );
 }
 
 const View& Window::getDefaultView() const {
