@@ -1642,18 +1642,21 @@ void EETest::render() {
 	if ( !MultiViewportMode ) {
 		Scenes[ Screen ]();
 	} else {
-		Views[0].setView( 0, 0, mWindow->getWidth(), static_cast<Uint32>( HHeight ) );
-		Views[1].setView( 0, static_cast<Int32> ( HHeight ), mWindow->getWidth(), static_cast<Uint32>( HHeight ) );
-
-		mWindow->setView( Views[1] );
-		Mouse = KM->getMousePosFromView( Views[1] );
-		Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
-		screen2();
+		Views[0].reset( Rectf( 0, 0, mWindow->getWidth(), HHeight ) );
+		Views[0].setViewport( Rectf( 0, 0, 1, 0.5f ) );
 
 		mWindow->setView( Views[0] );
-		Mouse = KM->getMousePosFromView( Views[0] );
-		Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
+		Mousef = KM->getMousePosFromView( Views[0] );
+		Mouse = Vector2i( Mousef.x, Mousef.y );
 		screen1();
+
+		Views[1].reset( Rectf( 0, 0, mWindow->getWidth(), HHeight ) );
+		Views[1].setViewport( Rectf( 0, 0.5f, 1, 0.5f ) );
+
+		mWindow->setView( Views[1] );
+		Mousef = KM->getMousePosFromView( Views[1] );
+		Mouse = Vector2i( Mousef.x, Mousef.y );
+		screen2();
 
 		mWindow->setView( mWindow->getDefaultView() );
 		GLi->getClippingMask()->clipEnable( (Int32)HWidth - 320, (Int32)HHeight - 240, 640, 480 );

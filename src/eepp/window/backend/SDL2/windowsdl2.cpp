@@ -214,7 +214,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	createView();
 
-	setup2D();
+	setup2D( false );
 
 	mWindow.Created = true;
 
@@ -349,9 +349,9 @@ void WindowSDL::onWindowResize( Uint32 Width, Uint32 Height ) {
 	mWindow.WindowConfig.Height	= Height;
 	mWindow.WindowSize = Sizei( Width, Height );
 
-	mDefaultView.setView( 0, 0, Width, Height );
+	mDefaultView.reset( Rectf( 0, 0, Width, Height ) );
 
-	setup2D();
+	setup2D( false );
 
 	SDL_PumpEvents();
 
@@ -407,9 +407,7 @@ void WindowSDL::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 
 	BitOp::setBitFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
 
-	mDefaultView.setView( 0, 0, Width, Height );
-
-	setup2D();
+	setup2D( false );
 
 	SDL_PumpEvents();
 

@@ -286,10 +286,8 @@ Vector2f Input::getMousePosf() {
 	return Vector2f( (Float)mMousePos.x, (Float)mMousePos.y );
 }
 
-Vector2i Input::getMousePosFromView( const View& View ) {
-	Vector2i RealMousePos = getMousePos();
-	Rect RView = View.getView();
-	return Vector2i( RealMousePos.x - RView.Left, RealMousePos.y - RView.Top );
+Vector2f Input::getMousePosFromView( const View& View ) {
+	return mWindow->mapPixelToCoords( getMousePos(), View );
 }
 
 Uint32 Input::pushCallback( const InputCallback& cb ) {

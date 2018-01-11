@@ -1,7 +1,9 @@
 #ifndef EE_WINDOWCVIEW_H
 #define EE_WINDOWCVIEW_H
 
-#include <eepp/window/base.hpp>
+#include <eepp/math/size.hpp>
+#include <eepp/math/transform.hpp>
+using namespace EE::Math;
 
 namespace EE { namespace Window {
 
@@ -10,51 +12,54 @@ class EE_API View {
 	public:
 		View();
 
-		View( const int& X, const int& Y, const int& Width, const int& Height );
+		explicit View(const Rectf& rectangle);
 
-		View( const Rect& View );
+		View(const Vector2f& center, const Vector2f& size);
 
-		~View();
+		void setCenter(float x, float y);
 
-		/** Offset the position */
-		void move( const int& OffsetX, const int& OffsetY );
+		void setCenter(const Vector2f& center);
 
-		/** Offset the position */
-		void move( const Vector2i& Offset );
+		void setSize(float width, float height);
 
-		/** Scale the current view (from center) */
-		void scale( const Float& Factor );
+		void setSize(const Sizef& size);
 
-		/** Scale the current view (from center) */
-		void scale( const Vector2f& Factor );
+		void setRotation(float angle);
 
-		/** @return The center position of the view */
-		Vector2i getCenter() const;
+		void setViewport(const Rectf& viewport);
 
-		/** Set the center position of the view ( will move it if is needed ) */
-		void setCenter( const Vector2i& center );
+		void reset(const Rectf& rectangle);
 
-		/** @return The current view ( Left = X, Right = Width, Top = Y, Bottom = Height ) */
-		Rect getView() const { return mView; }
+		const Vector2f& getCenter() const;
 
-		/** Set a new position to the view */
-		void setPosition( const int& X, const int& Y );
+		const Sizef & getSize() const;
 
-		/** Set a new size to the view */
-		void setSize( const int& Width, const int& Height );
+		float getRotation() const;
 
-		/** Creates a new view */
-		void setView( const int& X, const int& Y, const int& Width, const int& Height );
+		const Rectf& getViewport() const;
+
+		void move(float offsetX, float offsetY);
+
+		void move(const Vector2f& offset);
+
+		void rotate(float angle);
+
+		void zoom(float factor);
+
+		const Transform& getTransform() const;
+		
+		const Transform& getInverseTransform() const;
 	private:
 		friend class Window;
 
-		bool mNeedUpdate;
-		Rect mView;
-		Vector2f mCenter;
-
-		void calcCenter();
-
-		bool needUpdate() const;
+		Vector2f          mCenter;              ///< Center of the view, in scene coordinates
+		Sizef             mSize;                ///< Size of the view, in scene coordinates
+		float             mRotation;            ///< Angle of rotation of the view rectangle, in degrees
+		Rectf             mViewport;            ///< Viewport rectangle, expressed as a factor of the render-target's size
+		mutable Transform mTransform;           ///< Precomputed projection transform corresponding to the view
+		mutable Transform mInverseTransform;    ///< Precomputed inverse projection transform corresponding to the view
+		mutable bool      mTransformUpdated;    ///< Internal state telling if the transform needs to be updated
+		mutable bool      mInvTransformUpdated; ///< Internal state telling if the inverse transform needs to be updated
 };
 
 }}

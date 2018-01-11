@@ -116,7 +116,7 @@ class EE_API Input {
 		void setMousePos( const Vector2i& Pos );
 
 		/** @return The mouse position over the current view */
-		Vector2i getMousePosFromView( const View& View );
+		Vector2f getMousePosFromView( const View& View );
 
 		/** Set the mouse speed ( only affects grabed windows ) */
 		void setMouseSpeed( const Float& Speed );

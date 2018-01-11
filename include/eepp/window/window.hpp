@@ -295,8 +295,14 @@ class EE_API Window {
 		/** Set a new 2D projection matrix */
 		void set2DProjection( const Uint32& Width, const Uint32& Height );
 
+		/** Set a new projection matrix */
+		void setProjection( const Transform& transform );
+
 		/** Set the current Viewport ( and creates a new ortho proyection if needed ) */
 		void setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
+
+		/** @return The viewport in pixels of the view */
+		Rect getViewport(const View& view);
 
 		/** Set the window background color */
 		void setClearColor( const RGB& Color );
@@ -407,6 +413,14 @@ class EE_API Window {
 		**	@param func The main loop function
 		**	@param fps The desired FPS ( 0 = infinite ) */
 		void runMainLoop( void (*func)(), int fps = 0 );
+
+		Vector2f mapPixelToCoords(const Vector2i & point);
+
+		Vector2f mapPixelToCoords(const Vector2i & point, const View & view);
+
+		Vector2i mapCoordsToPixel(const Vector2f & point);
+
+		Vector2i mapCoordsToPixel(const Vector2f & point, const View & view);
 	protected:
 		friend class Engine;
 		friend class Input;
@@ -473,8 +487,6 @@ class EE_API Window {
 		void limitFps();
 
 		void getElapsedTime();
-
-		void viewCheckUpdate();
 
 		void logSuccessfulInit( const std::string& BackendName );
 

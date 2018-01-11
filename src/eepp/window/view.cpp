@@ -2,106 +2,151 @@
 
 namespace EE { namespace Window {
 
-View::View() : mNeedUpdate(true) {
-	mView.Left = 0;
-	mView.Right = 0;
-	mView.Top = 0;
-	mView.Bottom = 0;
-
-	calcCenter();
+View::View() :
+	mCenter             (),
+	mSize               (),
+	mRotation           (0),
+	mViewport           (0, 0, 1, 1),
+	mTransformUpdated   (false),
+	mInvTransformUpdated(false)
+{
+	reset(Rectf(0, 0, 1000, 1000));
 }
 
-View::View( const int& X, const int& Y, const int& Width, const int& Height ) : mNeedUpdate(true) {
-	setView( X, Y, Width, Height );
+View::View(const Rectf& rectangle) :
+	mCenter             (),
+	mSize               (),
+	mRotation           (0),
+	mViewport           (0, 0, 1, 1),
+	mTransformUpdated   (false),
+	mInvTransformUpdated(false)
+{
+	reset(rectangle);
 }
 
-View::View( const Rect& View ) : mNeedUpdate(true) {
-	mView = View;
+View::View(const Vector2f& center, const Vector2f& size) :
+	mCenter             (center),
+	mSize               (size),
+	mRotation           (0),
+	mViewport           (0, 0, 1, 1),
+	mTransformUpdated   (false),
+	mInvTransformUpdated(false)
+{}
 
-	calcCenter();
+void View::setCenter(float x, float y) {
+	mCenter.x = x;
+	mCenter.y = y;
+
+	mTransformUpdated    = false;
+	mInvTransformUpdated = false;
 }
 
-View::~View() {
+void View::setCenter(const Vector2f& center) {
+	setCenter(center.x, center.y);
 }
 
-void View::setView( const int& X, const int& Y, const int& Width, const int& Height ) {
-	mView.Left = X;
-	mView.Top = Y;
-	mView.Right = Width;
-	mView.Bottom = Height;
-	calcCenter();
-	mNeedUpdate = true;
+void View::setSize(float width, float height) {
+	mSize.x = width;
+	mSize.y = height;
+
+	mTransformUpdated    = false;
+	mInvTransformUpdated = false;
 }
 
-void View::calcCenter() {
-	mCenter.x = ( ( mView.Left + mView.Right ) - mView.Left ) * 0.5f;
-	mCenter.y = ( ( mView.Top + mView.Bottom ) - mView.Top ) * 0.5f;
+void View::setSize(const Sizef & size) {
+	setSize(size.x, size.y);
 }
 
-Vector2i View::getCenter() const {
-	return Vector2i( (int)mCenter.x, (Int32)mCenter.y );
+void View::setRotation(float angle) {
+	mRotation = static_cast<float>(fmod(angle, 360));
+	if (mRotation < 0)
+		mRotation += 360.f;
+
+	mTransformUpdated    = false;
+	mInvTransformUpdated = false;
 }
 
-void View::setCenter( const Vector2i& Center ) {
-	mCenter.x = (Float)Center.x;
-	mCenter.y = (Float)Center.y;
-	mView.Left = static_cast<int> ( mCenter.x - (Float)mView.Right * 0.5f );
-	mView.Top = static_cast<int> ( mCenter.y - (Float)mView.Bottom * 0.5f );
-
-	mNeedUpdate = true;
+void View::setViewport(const Rectf& viewport) {
+	mViewport = viewport;
 }
 
-void View::move( const int& OffsetX, const int& OffsetY ) {
-	mView.Left += OffsetX;
-	mView.Top += OffsetY;
+void View::reset(const Rectf& rectangle) {
+	mCenter.x = rectangle.Left + rectangle.Right / 2.f;
+	mCenter.y = rectangle.Top + rectangle.Bottom / 2.f;
+	mSize.x   = rectangle.Right;
+	mSize.y   = rectangle.Bottom;
+	mRotation = 0;
 
-	calcCenter();
-	mNeedUpdate = true;
+	mTransformUpdated    = false;
+	mInvTransformUpdated = false;
 }
 
-void View::move( const Vector2i& Offset ) {
-	move( Offset.x, Offset.y );
+const Vector2f& View::getCenter() const {
+	return mCenter;
 }
 
-void View::scale( const Vector2f& Factor ) {
-	Vector2f v( mView.Right * 0.5f, mView.Bottom * 0.5f );
-
-	mView.Left = mView.Left + static_cast<int> ( v.x - v.x * Factor.x );
-	mView.Top = mView.Top + static_cast<int> ( v.y - v.y * Factor.y );
-	mView.Right = static_cast<Int32>( (Float)mView.Right * Factor.x );
-	mView.Bottom = static_cast<Int32>( (Float)mView.Bottom * Factor.y );
-
-	calcCenter();
-	mNeedUpdate = true;
+const Sizef& View::getSize() const {
+	return mSize;
 }
 
-void View::scale( const Float& Factor ) {
-	scale( Vector2f( Factor, Factor ) );
+float View::getRotation() const {
+	return mRotation;
 }
 
-void View::setPosition( const int& X, const int& Y ) {
-	mView.Left = X;
-	mView.Top = Y;
-
-	calcCenter();
-	mNeedUpdate = true;
+const Rectf& View::getViewport() const {
+	return mViewport;
 }
 
-void View::setSize( const int& Width, const int& Height ) {
-	mView.Right = Width;
-	mView.Bottom = Height;
-
-	calcCenter();
-	mNeedUpdate = true;
+void View::move(float offsetX, float offsetY) {
+	setCenter(mCenter.x + offsetX, mCenter.y + offsetY);
 }
 
-bool View::needUpdate() const {
-	bool Need = mNeedUpdate;
+void View::move(const Vector2f& offset) {
+	setCenter(mCenter + offset);
+}
 
-	if ( Need )
-		const_cast<View*>(this)->mNeedUpdate = false;
+void View::rotate(float angle) {
+	setRotation(mRotation + angle);
+}
 
-	return Need;
+void View::zoom(float factor) {
+	setSize(mSize.x * factor, mSize.y * factor);
+}
+
+const Transform& View::getTransform() const {
+	// Recompute the matrix if needed
+	if (!mTransformUpdated) {
+		// Rotation components
+		float angle  = mRotation * 3.141592654f / 180.f;
+		float cosine = static_cast<float>(std::cos(angle));
+		float sine   = static_cast<float>(std::sin(angle));
+		float tx     = -mCenter.x * cosine - mCenter.y * sine + mCenter.x;
+		float ty     =  mCenter.x * sine - mCenter.y * cosine + mCenter.y;
+
+		// Projection components
+		float a =  2.f / mSize.x;
+		float b = -2.f / mSize.y;
+		float c = -a * mCenter.x;
+		float d = -b * mCenter.y;
+
+		// Rebuild the projection matrix
+		mTransform = Transform( a * cosine, a * sine,   a * tx + c,
+								-b * sine,   b * cosine, b * ty + d,
+								 0.f,        0.f,        1.f);
+		mTransformUpdated = true;
+	}
+
+	return mTransform;
+}
+
+const Transform& View::getInverseTransform() const {
+	// Recompute the matrix if needed
+	if (!mInvTransformUpdated) {
+		mInverseTransform = getTransform().getInverse();
+		mInvTransformUpdated = true;
+	}
+
+	return mInverseTransform;
 }
 
 }}

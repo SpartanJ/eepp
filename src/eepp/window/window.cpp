@@ -104,18 +104,69 @@ void Window::set2DProjection( const Uint32& Width, const Uint32& Height ) {
 	GLi->loadIdentity();
 }
 
-void Window::setViewport(const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
+void Window::setProjection(const Transform & transform) {
+	GLi->matrixMode( GL_PROJECTION );
+	GLi->loadMatrixf( transform.getMatrix() );
+
+	GLi->matrixMode( GL_MODELVIEW );
+	GLi->loadIdentity();
+}
+
+Vector2f Window::mapPixelToCoords(const Vector2i& point) {
+	return mapPixelToCoords(point, getView());
+}
+
+Vector2f Window::mapPixelToCoords(const Vector2i& point, const View& view) {
+	// First, convert from viewport coordinates to homogeneous coordinates
+	Vector2f normalized;
+	Rect viewport = getViewport(view);
+	normalized.x = -1.f + 2.f * (point.x - viewport.Left) / viewport.Right;
+	normalized.y =  1.f - 2.f * (point.y - viewport.Top)  / viewport.Bottom;
+
+	// Then transform by the inverse of the view matrix
+	return view.getInverseTransform().transformPoint(normalized);
+}
+
+Vector2i Window::mapCoordsToPixel(const Vector2f& point) {
+	return mapCoordsToPixel(point, getView());
+}
+
+Vector2i Window::mapCoordsToPixel(const Vector2f& point, const View& view) {
+	// First, transform the point by the view matrix
+	Vector2f normalized = view.getTransform().transformPoint(point);
+
+	// Then convert to viewport coordinates
+	Vector2i pixel;
+	Rect viewport = getViewport(view);
+	pixel.x = static_cast<int>(( normalized.x + 1.f) / 2.f * viewport.Right  + viewport.Left);
+	pixel.y = static_cast<int>((-normalized.y + 1.f) / 2.f * viewport.Bottom + viewport.Top);
+
+	return pixel;
+}
+
+void Window::setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
 	GLi->viewport( x, getHeight() - ( y + Height ), Width, Height );
+}
+
+Rect Window::getViewport( const View& view ) {
+	float width  = static_cast<float>(getSize().getWidth());
+	float height = static_cast<float>(getSize().getHeight());
+	const Rectf& viewport = view.getViewport();
+
+	return Rect(   static_cast<int>(0.5f + width  * viewport.Left),
+				   static_cast<int>(0.5f + height * viewport.Top),
+				   static_cast<int>(0.5f + width  * viewport.Right),
+				   static_cast<int>(0.5f + height * viewport.Bottom));
 }
 
 void Window::setView( const View& View ) {
 	mCurrentView = &View;
 
-	Rect RView = mCurrentView->getView();
+	Rect viewport = getViewport( *mCurrentView );
 
-	setViewport( RView.Left, RView.Top, RView.Right, RView.Bottom );
+	setViewport( viewport.Left, viewport.Top, viewport.Right, viewport.Bottom );
 
-	set2DProjection( RView.Right, RView.Bottom );
+	setProjection( View.getTransform() );
 }
 
 const View& Window::getDefaultView() const {
@@ -127,7 +178,7 @@ const View& Window::getView() const {
 }
 
 void Window::createView() {
-	mDefaultView.setView( 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+	mDefaultView.reset( Rectf( 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height ) );
 	mCurrentView = &mDefaultView;
 }
 
@@ -148,8 +199,6 @@ void Window::setup2D( const bool& KeepView ) {
 
 	if ( !KeepView ) {
 		setView( mDefaultView );
-
-		mCurrentView->needUpdate();
 	}
 
 	BlendMode::setMode( BlendAlpha, true );
@@ -298,21 +347,12 @@ void Window::limitFps() {
 	}
 }
 
-void Window::viewCheckUpdate() {
-	if ( mCurrentView->needUpdate() ) {
-		setView( *mCurrentView );
-	}
-}
-
 void Window::clear() {
 	GLi->clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 }
 
 void Window::display( bool clear ) {
 	GlobalBatchRenderer::instance()->draw();
-
-	if ( mCurrentView->needUpdate() )
-		setView( *mCurrentView );
 
 	swapBuffers();
 
