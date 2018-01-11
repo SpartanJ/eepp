@@ -5,6 +5,7 @@
 #include <jpeg-compressor/jpge.h>
 #include <eepp/graphics/texturesaver.hpp>
 #include <eepp/graphics/renderer/opengl.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {

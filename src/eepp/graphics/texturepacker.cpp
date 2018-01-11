@@ -1,5 +1,7 @@
 #include <eepp/graphics/texturepacker.hpp>
 #include <eepp/system/iostreamfile.hpp>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/sys.hpp>
 #include <eepp/graphics/texturepackernode.hpp>
 #include <eepp/graphics/texturepackertex.hpp>
 #include <SOIL2/src/SOIL2/stb_image.h>

@@ -1,4 +1,5 @@
 #include <eepp/graphics/scrollparallax.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 
 namespace EE { namespace Graphics {
 

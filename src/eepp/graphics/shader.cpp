@@ -5,6 +5,8 @@
 #include <eepp/graphics/renderer/renderergl3cp.hpp>
 #include <eepp/graphics/renderer/renderergles2.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/log.hpp>
 
 namespace EE { namespace Graphics {
 

@@ -3,8 +3,12 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/primitivetype.hpp>
+#include <eepp/graphics/blendmode.hpp>
 #include <eepp/math/polygon2.hpp>
 #include <eepp/math/originpoint.hpp>
+
+#include <eepp/system/color.hpp>
+using namespace EE::System;
 
 namespace EE { namespace Graphics {
 

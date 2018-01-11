@@ -4,6 +4,7 @@
 #include <eepp/graphics/renderer/opengl.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 #include <algorithm>
 #include <cmath>
 

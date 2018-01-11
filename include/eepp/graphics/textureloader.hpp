@@ -5,6 +5,10 @@
 #include <eepp/graphics/texture.hpp>
 #include <eepp/system/objectloader.hpp>
 
+#include <eepp/system/pack.hpp>
+#include <eepp/system/clock.hpp>
+using namespace EE::System;
+
 namespace EE { namespace Graphics {
 
 /** @brief The Texture loader loads a texture in synchronous or asynchronous mode.

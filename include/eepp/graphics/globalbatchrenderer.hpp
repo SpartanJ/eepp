@@ -4,6 +4,9 @@
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/batchrenderer.hpp>
 
+#include <eepp/system/singleton.hpp>
+using namespace EE::System;
+
 namespace EE { namespace Graphics {
 
 /** @brief The global Batch Renderer class. This class will be used by the engine for the rendering. */

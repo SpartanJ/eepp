@@ -3,16 +3,6 @@
 
 #include <eepp/core.hpp>
 
-#include <eepp/system/log.hpp>
-#include <eepp/system/pack.hpp>
-#include <eepp/system/thread.hpp>
-#include <eepp/system/filesystem.hpp>
-#include <eepp/system/time.hpp>
-using namespace EE::System;
-
-#include <eepp/math/vector3.hpp>
-using namespace EE::Math;
-
 /**
 This module is based on the sfml-audio module.
 

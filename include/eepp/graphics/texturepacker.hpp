@@ -31,9 +31,11 @@
 ** Implementation differs from the original, but i used the base texture atlas algorithm.
 */
 
+#include <list>
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/packerhelper.hpp>
 #include <eepp/graphics/image.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 
 namespace EE { namespace Graphics {
 

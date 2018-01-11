@@ -6,6 +6,7 @@
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <SOIL2/src/SOIL2/stb_image.h>
 #include <SOIL2/src/SOIL2/SOIL2.h>
 #include <jpeg-compressor/jpgd.h>

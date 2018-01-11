@@ -1,9 +1,14 @@
 #ifndef EECTEXTUREFACTORY_H
 #define EECTEXTUREFACTORY_H
 
+#include <list>
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/texture.hpp>
+
+#include <eepp/system/pack.hpp>
+#include <eepp/system/singleton.hpp>
 #include <eepp/system/mutex.hpp>
+using namespace EE::System;
 
 namespace EE { namespace Graphics {
 

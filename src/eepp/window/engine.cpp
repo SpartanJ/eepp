@@ -2,6 +2,7 @@
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/system/inifile.hpp>
+#include <eepp/system/thread.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>

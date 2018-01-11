@@ -3,6 +3,10 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/particle.hpp>
+#include <eepp/graphics/blendmode.hpp>
+
+#include <eepp/system/time.hpp>
+using namespace EE::System;
 
 namespace EE { namespace Graphics {
 

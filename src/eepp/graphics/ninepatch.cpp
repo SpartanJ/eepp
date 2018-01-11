@@ -1,5 +1,6 @@
 #include <eepp/graphics/ninepatch.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 
 namespace EE { namespace Graphics {
 

@@ -1,10 +1,12 @@
 #include <eepp/graphics/console.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/audio/audiolistener.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/window/window.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <algorithm>
 #include <cstdarg>
 

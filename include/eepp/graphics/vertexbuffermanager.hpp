@@ -4,6 +4,10 @@
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/vertexbuffer.hpp>
 
+#include <eepp/system/singleton.hpp>
+#include <eepp/system/container.hpp>
+using namespace EE::System;
+
 namespace EE { namespace Graphics { namespace Private {
 
 class EE_API VertexBufferManager : public Container<VertexBuffer> {

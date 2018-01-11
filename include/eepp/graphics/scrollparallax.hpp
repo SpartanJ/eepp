@@ -5,6 +5,9 @@
 #include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/subtexture.hpp>
 
+#include <eepp/system/clock.hpp>
+using namespace EE::System;
+
 namespace EE { namespace Graphics {
 
 /** @brief The scroll parallax renders a SubTexture to the screen from a position and a size specified. If the size is bigger than the SubTexture, the SubTexture is rendered as a repeated SubTexture until it covers all the size of the parallax, adding movement to more than one Scroll Parallax will generate the ilusion of depth.

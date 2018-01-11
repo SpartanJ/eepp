@@ -6,6 +6,7 @@
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/graphics/packerhelper.hpp>
 #include <SOIL2/src/SOIL2/stb_image.h>
 

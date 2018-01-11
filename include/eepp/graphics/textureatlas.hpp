@@ -3,6 +3,8 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/subtexture.hpp>
+#include <eepp/system/resourcemanager.hpp>
+using namespace EE::System;
 
 namespace EE { namespace Graphics {
 

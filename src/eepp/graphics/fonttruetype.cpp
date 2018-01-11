@@ -2,6 +2,7 @@
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 
 #include <ft2build.h>

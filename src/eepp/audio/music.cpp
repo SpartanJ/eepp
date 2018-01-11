@@ -1,6 +1,7 @@
 #include <eepp/audio/music.hpp>
 #include <eepp/audio/soundfile.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/filesystem.hpp>
 
 namespace EE { namespace Audio {
 

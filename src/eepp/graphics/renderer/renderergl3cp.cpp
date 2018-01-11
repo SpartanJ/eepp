@@ -3,6 +3,8 @@
 
 #ifdef EE_GL3_ENABLED
 
+#include <eepp/system/log.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/graphics/renderer/rendererstackhelper.hpp>
 
 namespace EE { namespace Graphics {

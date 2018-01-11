@@ -1,7 +1,9 @@
 #ifndef EE_AUDIOCSOUNDFILE_H
 #define EE_AUDIOCSOUNDFILE_H
 
-#include <eepp/audio/base.hpp>
+#include <eepp/core.hpp>
+#include <eepp/system/time.hpp>
+using namespace EE::System;
 
 namespace EE { namespace Audio {
 

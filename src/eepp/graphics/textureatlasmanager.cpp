@@ -1,6 +1,8 @@
 #include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
+#include <eepp/system/filesystem.hpp>
+
 namespace EE { namespace Graphics {
 
 SINGLETON_DECLARE_IMPLEMENTATION(TextureAtlasManager)

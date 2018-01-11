@@ -1,8 +1,11 @@
 #ifndef EE_AUDIOCSOUNDBUFFER_H
 #define EE_AUDIOCSOUNDBUFFER_H
 
-#include <eepp/audio/base.hpp>
 #include <set>
+#include <eepp/system/time.hpp>
+#include <eepp/system/pack.hpp>
+using namespace EE::System;
+
 
 namespace EE { namespace Audio {
 

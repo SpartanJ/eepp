@@ -6,6 +6,9 @@
 #include <eepp/graphics/subtexture.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 
+#include <eepp/system/time.hpp>
+using namespace EE::System;
+
 namespace EE { namespace Graphics {
 
 /** @brief A Sprite controller class, can hold and control sprites animations. */

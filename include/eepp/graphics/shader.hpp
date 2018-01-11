@@ -3,6 +3,9 @@
 
 #include <eepp/graphics/base.hpp>
 
+#include <eepp/system/pack.hpp>
+using namespace EE::System;
+
 namespace EE { namespace Graphics {
 
 /** @brief The basic shader class. */

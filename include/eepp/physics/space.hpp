@@ -1,6 +1,7 @@
 #ifndef EE_PHYSICS_CSPACE_HPP
 #define EE_PHYSICS_CSPACE_HPP
 
+#include <list>
 #include <eepp/physics/base.hpp>
 #include <eepp/physics/body.hpp>
 #include <eepp/physics/shape.hpp>

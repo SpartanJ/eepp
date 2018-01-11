@@ -29,6 +29,7 @@
 ../../include/eepp/graphics/vertexbufferhelper.hpp
 ../../include/eepp/math/interpolation1d.hpp
 ../../include/eepp/math/interpolation2d.hpp
+../../include/eepp/math/transform.hpp
 ../../include/eepp/system/color.hpp
 ../../include/eepp/system/directorypack.hpp
 ../../include/eepp/system/iostreampak.hpp
@@ -83,6 +84,7 @@
 ../../src/eepp/graphics/text.cpp
 ../../src/eepp/math/interpolation1d.cpp
 ../../src/eepp/math/interpolation2d.cpp
+../../src/eepp/math/transform.cpp
 ../../src/eepp/system/color.cpp
 ../../src/eepp/system/directorypack.cpp
 ../../src/eepp/system/iostreampak.cpp

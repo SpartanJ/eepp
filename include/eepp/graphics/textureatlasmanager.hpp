@@ -5,6 +5,10 @@
 #include <eepp/graphics/subtexture.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 
+#include <eepp/system/singleton.hpp>
+#include <eepp/system/pack.hpp>
+using namespace EE::System;
+
 namespace EE { namespace Graphics {
 
 /** @brief The Texture Atlas Manager is a singleton class that manages all the instances of Texture Atlases instanciated.

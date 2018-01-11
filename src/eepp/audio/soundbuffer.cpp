@@ -2,8 +2,9 @@
 #include <eepp/audio/sound.hpp>
 #include <eepp/audio/soundfile.hpp>
 #include <eepp/audio/audiodevice.hpp>
-#include <eepp/system/packmanager.hpp>
 #include <eepp/audio/openal.hpp>
+#include <eepp/system/packmanager.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <memory>
 
 namespace EE { namespace Audio {

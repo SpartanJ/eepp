@@ -5,6 +5,7 @@
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <algorithm>

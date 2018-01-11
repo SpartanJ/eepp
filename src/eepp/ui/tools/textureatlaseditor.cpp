@@ -7,6 +7,7 @@
 #include <eepp/ui/uicommondialog.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <algorithm>
 
 namespace EE { namespace UI { namespace Tools {
