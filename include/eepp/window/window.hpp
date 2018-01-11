@@ -2,7 +2,7 @@
 #define EE_WINDOWCWINDOW_HPP
 
 #include <eepp/window/base.hpp>
-#include <eepp/window/view.hpp>
+#include <eepp/graphics/view.hpp>
 #include <eepp/graphics/image.hpp>
 
 namespace EE { namespace Window {
@@ -281,7 +281,7 @@ class EE_API Window {
 		/** Set the current active view
 		@param View New view to use (pass GetDefaultView() to set the default view)
 		*/
-		void setView( const View& View );
+		void setView( const View& view );
 
 		/** Get the current view */
 		const View& getView() const;

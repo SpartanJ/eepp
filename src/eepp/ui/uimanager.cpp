@@ -279,7 +279,15 @@ UINode * UIManager::getDownControl() const {
 
 void UIManager::draw() {
 	GlobalBatchRenderer::instance()->draw();
+
+	const View& prevView = mWindow->getView();
+
+	mWindow->setView( mWindow->getDefaultView() );
+
 	mControl->internalDraw();
+
+	mWindow->setView( prevView );
+
 	GlobalBatchRenderer::instance()->draw();
 }
 

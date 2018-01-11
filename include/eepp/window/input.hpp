@@ -1,6 +1,7 @@
 #ifndef EE_WINDOWCINPUT_H
 #define EE_WINDOWCINPUT_H
 
+#include <eepp/graphics/view.hpp>
 #include <eepp/window/base.hpp>
 #include <eepp/window/window.hpp>
 #include <eepp/window/inputhelper.hpp>
@@ -9,9 +10,9 @@
 #include <eepp/window/inputfinger.hpp>
 #include <list>
 
-namespace EE { namespace Window {
+using namespace EE::Graphics;
 
-class View;
+namespace EE { namespace Window {
 
 /** @brief The basic input class. For mouse and keyboard. */
 class EE_API Input {

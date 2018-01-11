@@ -429,7 +429,7 @@
 ../../include/eepp/window/inputhelper.hpp
 ../../include/eepp/window/inputevent.hpp
 ../../include/eepp/window/window.hpp
-../../include/eepp/window/view.hpp
+../../include/eepp/graphics/view.hpp
 ../../include/eepp/window/cursorhelper.hpp
 ../../include/eepp/window/platformimpl.hpp
 ../../include/eepp/window/joystickmanager.hpp
@@ -449,7 +449,7 @@
 ../../src/eepp/window/inputhelper.cpp
 ../../src/eepp/window/platformhelper.hpp
 ../../src/eepp/window/window.cpp
-../../src/eepp/window/view.cpp
+../../src/eepp/graphics/view.cpp
 ../../src/eepp/window/platformimpl.cpp
 ../../src/eepp/window/joystickmanager.cpp
 ../../src/eepp/window/joystick.cpp

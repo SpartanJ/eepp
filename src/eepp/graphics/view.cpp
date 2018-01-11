@@ -1,6 +1,6 @@
-#include <eepp/window/view.hpp>
+#include <eepp/graphics/view.hpp>
 
-namespace EE { namespace Window {
+namespace EE { namespace Graphics {
 
 View::View() :
 	mCenter             (),

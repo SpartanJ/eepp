@@ -49,6 +49,7 @@ Window::Window( WindowSettings Settings, ContextSettings Context, Clipboard * Cl
 	mInput( Input ),
 	mCursorManager( CursorManager ),
 	mPlatform( NULL ),
+	mCurrentView( NULL ),
 	mNumCallBacks( 0 )
 {
 	mWindow.WindowConfig	= Settings;
@@ -159,14 +160,18 @@ Rect Window::getViewport( const View& view ) {
 				   static_cast<int>(0.5f + height * viewport.Bottom));
 }
 
-void Window::setView( const View& View ) {
-	mCurrentView = &View;
+void Window::setView( const View& view ) {
+	const View * viewPtr = &view;
 
-	Rect viewport = getViewport( *mCurrentView );
+	if ( viewPtr != mCurrentView ) {
+		mCurrentView = viewPtr;
 
-	setViewport( viewport.Left, viewport.Top, viewport.Right, viewport.Bottom );
+		Rect viewport = getViewport( *mCurrentView );
 
-	setProjection( View.getTransform() );
+		setViewport( viewport.Left, viewport.Top, viewport.Right, viewport.Bottom );
+
+		setProjection( viewPtr->getTransform() );
+	}
 }
 
 const View& Window::getDefaultView() const {
@@ -179,7 +184,7 @@ const View& Window::getView() const {
 
 void Window::createView() {
 	mDefaultView.reset( Rectf( 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height ) );
-	mCurrentView = &mDefaultView;
+	setView( mDefaultView );
 }
 
 void Window::setup2D( const bool& KeepView ) {

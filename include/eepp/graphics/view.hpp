@@ -1,11 +1,11 @@
-#ifndef EE_WINDOWCVIEW_H
-#define EE_WINDOWCVIEW_H
+#ifndef EE_GRAPHICS_VIEW_H
+#define EE_GRAPHICS_VIEW_H
 
 #include <eepp/math/size.hpp>
 #include <eepp/math/transform.hpp>
 using namespace EE::Math;
 
-namespace EE { namespace Window {
+namespace EE { namespace Graphics {
 
 /** @brief The class defines a view like a 2D camera ( position, size, move, scale ). Basically is a 2D proyection in pixels seted over a viewport. */
 class EE_API View {

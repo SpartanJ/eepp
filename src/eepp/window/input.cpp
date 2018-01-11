@@ -1,5 +1,4 @@
 #include <eepp/window/input.hpp>
-#include <eepp/window/view.hpp>
 
 namespace EE { namespace Window {
 

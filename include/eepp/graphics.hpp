@@ -1,6 +1,7 @@
 #ifndef EEPP_GRAPHICS_HPP
 #define EEPP_GRAPHICS_HPP
 
+#include <eepp/graphics/view.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/blendmode.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
