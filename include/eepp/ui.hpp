@@ -64,5 +64,6 @@
 #include <eepp/ui/actions/rotate.hpp>
 #include <eepp/ui/actions/scale.hpp>
 #include <eepp/ui/actions/fade.hpp>
+#include <eepp/ui/actions/marginmove.hpp>
 
 #endif

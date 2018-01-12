@@ -43,6 +43,7 @@
 ../../include/eepp/ui/actions/move.hpp
 ../../include/eepp/ui/actions/rotate.hpp
 ../../include/eepp/ui/actions/scale.hpp
+../../include/eepp/ui/marginmove/scale.hpp
 ../../include/eepp/ui/uiaction.hpp
 ../../include/eepp/ui/uiactionmanager.hpp
 ../../include/eepp/ui/uieventmouse.hpp
@@ -106,6 +107,7 @@
 ../../src/eepp/ui/actions/move.cpp
 ../../src/eepp/ui/actions/rotate.cpp
 ../../src/eepp/ui/actions/scale.cpp
+../../src/eepp/ui/actions/marginmove.cpp
 ../../src/eepp/ui/uiaction.cpp
 ../../src/eepp/ui/uiactionmanager.cpp
 ../../src/eepp/ui/uigridlayout.cpp
