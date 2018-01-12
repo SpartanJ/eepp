@@ -58,4 +58,11 @@
 
 #include <eepp/ui/uiwidgetcreator.hpp>
 
+#include <eepp/ui/actions/actioninterpolation1d.hpp>
+#include <eepp/ui/actions/actioninterpolation2d.hpp>
+#include <eepp/ui/actions/move.hpp>
+#include <eepp/ui/actions/rotate.hpp>
+#include <eepp/ui/actions/scale.hpp>
+#include <eepp/ui/actions/fade.hpp>
+
 #endif

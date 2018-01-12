@@ -68,7 +68,7 @@ UIWidget * UIWidgetCreator::createFromName( std::string widgetName ) {
 	else if ( widgetName == "selectbutton" )	return UISelectButton::New();
 	else if ( widgetName == "window" )			return UIWindow::New();
 	else if ( widgetName == "scrollview" )		return UIScrollView::New();
-	else if ( widgetName == "textureregion" )	return UITextureRegion::New();
+	else if ( widgetName == "textureregion" || widgetName == "subtexture" )	return UITextureRegion::New();
 	else if ( widgetName == "touchdragable" )	return UITouchDragableWidget::New();
 	else if ( widgetName == "gridlayout" )		return UIGridLayout::New();
 
