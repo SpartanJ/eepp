@@ -146,7 +146,7 @@ void UIImage::autoAlign() {
 }
 
 void UIImage::safeDeleteDrawable() {
-	if ( NULL != mDrawable && ( mControlFlags & UI_CTRL_FLAG_DRAWABLE_OWNER ) ) {
+	if ( NULL != mDrawable && ( mNodeFlags & UI_CTRL_FLAG_DRAWABLE_OWNER ) ) {
 		if ( mDrawable->getDrawableType() == Drawable::SPRITE ) {
 			Sprite * spr = reinterpret_cast<Sprite*>( mDrawable );
 			eeSAFE_DELETE( spr );

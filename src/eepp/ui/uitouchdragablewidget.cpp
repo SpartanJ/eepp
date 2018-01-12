@@ -31,7 +31,7 @@ UITouchDragableWidget * UITouchDragableWidget::setTouchDragEnabled( const bool& 
 }
 
 bool UITouchDragableWidget::isTouchDragging() const {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING );
+	return 0 != ( mNodeFlags & UI_CTRL_FLAG_TOUCH_DRAGGING );
 }
 
 UITouchDragableWidget * UITouchDragableWidget::setTouchDragging( const bool& dragging ) {
@@ -54,7 +54,7 @@ void UITouchDragableWidget::update() {
 			UIManager * manager = UIManager::instance();
 			Uint32 Press	= manager->getPressTrigger();
 
-			if ( ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING ) ) {
+			if ( ( mNodeFlags & UI_CTRL_FLAG_TOUCH_DRAGGING ) ) {
 				// Mouse Not Down
 				if ( !( Press & EE_BUTTON_LMASK ) ) {
 					writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 0 );

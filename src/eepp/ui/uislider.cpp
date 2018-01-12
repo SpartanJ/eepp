@@ -316,7 +316,7 @@ Uint32 UISlider::onKeyDown( const UIEventKey &Event ) {
 void UISlider::manageClick( const Uint32& Flags ) {
 	if ( Flags ) {
 		Vector2i ControlPos = UIManager::instance()->getMousePos();
-		mSlider->worldToControl( ControlPos );
+		mSlider->worldToNode( ControlPos );
 
 		if ( Flags & EE_BUTTON_LMASK && !mSlider->isMouseOver()  ) {
 			if ( UI_HORIZONTAL == mOrientation ) {

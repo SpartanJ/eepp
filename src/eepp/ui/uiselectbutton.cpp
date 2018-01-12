@@ -29,7 +29,7 @@ void UISelectButton::select() {
 
 	setSkinState( UISkinState::StateSelected );
 
-	mControlFlags |= UI_CTRL_FLAG_SELECTED;
+	mNodeFlags |= UI_CTRL_FLAG_SELECTED;
 
 	if ( !wasSelected ) {
 		UIMessage tMsg( this, UIMessage::Selected, 0 );
@@ -38,14 +38,14 @@ void UISelectButton::select() {
 }
 
 void UISelectButton::unselect() {
-	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
-		mControlFlags &= ~UI_CTRL_FLAG_SELECTED;
+	if ( mNodeFlags & UI_CTRL_FLAG_SELECTED )
+		mNodeFlags &= ~UI_CTRL_FLAG_SELECTED;
 
 	setSkinState( UISkinState::StateNormal );
 }
 
 bool UISelectButton::selected() const {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
+	return 0 != ( mNodeFlags & UI_CTRL_FLAG_SELECTED );
 }
 
 void UISelectButton::onStateChange() {

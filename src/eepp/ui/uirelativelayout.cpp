@@ -60,7 +60,7 @@ void UIRelativeLayout::fixChilds() {
 			fixChildPos( widget );
 		}
 
-		child = child->getNextControl();
+		child = child->getNextNode();
 	}
 }
 

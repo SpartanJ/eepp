@@ -720,7 +720,7 @@ void UITabWidget::onChildCountChange() {
 			break;
 		}
 
-		child = child->getNextControl();
+		child = child->getNextNode();
 	}
 
 	if ( found ) {

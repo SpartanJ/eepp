@@ -14,12 +14,13 @@
 #include <eepp/ui/uiskinsimple.hpp>
 #include <eepp/ui/uiskincomplex.hpp>
 #include <eepp/ui/uithememanager.hpp>
-
 namespace EE { namespace UI {
 
 class UITheme;
 class UIWindow;
 class UIManager;
+class UIAction;
+class UIActionManager;
 
 class EE_API UINode {
 	public:
@@ -31,13 +32,13 @@ class EE_API UINode {
 
 		virtual ~UINode();
 
-		void screenToControl( Vector2i& position ) const;
+		void screenToNode( Vector2i& position ) const;
 
-		void controlToScreen( Vector2i& position ) const;
+		void nodeToScreen( Vector2i& position ) const;
 
-		void worldToControl( Vector2i& pos ) const;
+		void worldToNode( Vector2i& pos ) const;
 
-		void controlToWorld( Vector2i& pos ) const;
+		void nodeToWorld( Vector2i& pos ) const;
 
 		virtual Uint32 getType() const;
 
@@ -46,6 +47,8 @@ class EE_API UINode {
 		virtual void messagePost( const UIMessage * Msg );
 
 		UINode * setPosition( const Vector2i& position );
+
+		UINode * setPosition(const Vector2f & Pos);
 
 		UINode * setPosition( const Int32& x, const Int32& y );
 
@@ -113,11 +116,11 @@ class EE_API UINode {
 
 		UIBorder * setBorderEnabled( bool enabled );
 
-		UINode * getNextControl() const;
+		UINode * getNextNode() const;
 
-		UINode * getPrevControl() const;
+		UINode * getPrevNode() const;
 
-		UINode * getNextControlLoop() const;
+		UINode * getNextNodeLoop() const;
 
 		UINode * setData( const UintPtr& data );
 
@@ -143,10 +146,10 @@ class EE_API UINode {
 
 		void toPosition( const Uint32& position );
 
-		const Uint32& getControlFlags() const;
+		const Uint32& getNodeFlags() const;
 
 		/** Use it at your own risk */
-		void setControlFlags( const Uint32& flags );
+		void setNodeFlags( const Uint32& flags );
 
 		Uint32 isWidget();
 
@@ -343,15 +346,11 @@ class EE_API UINode {
 
 		Interpolation1d * disableFadeOut( const Time & Time, const bool& alphaChilds = true, const Ease::Interpolation& type = Ease::Linear );
 
-		Interpolation1d * getRotationInterpolation();
-
-		Interpolation2d * getScaleInterpolation();
-
-		Interpolation1d * getAlphaInterpolation();
-
-		Interpolation2d * getTranslationInterpolation();
-
 		bool isFadingOut();
+
+		UIActionManager * getActionManager();
+
+		void runAction( UIAction * action );
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
 		friend class UIManager;
@@ -371,16 +370,16 @@ class EE_API UINode {
 
 		UINode *		mParentCtrl;
 		UIWindow *		mParentWindowCtrl;
-		UINode *		mChild;			//! Pointer to the first child of the control
-		UINode * 	mChildLast;		//! Pointer to the last child added
+		UINode *		mChild;			//! Pointer to the first child of the node
+		UINode *		mChildLast;		//! Pointer to the last child added
 		UINode *		mNext;			//! Pointer to the next child of the father
-		UINode * 	mPrev;			//! Pointer to the prev child of the father
+		UINode *		mPrev;			//! Pointer to the prev child of the father
 		UISkinState *	mSkinState;
 
 		UIBackground *	mBackground;
 		UIBorder *		mBorder;
 
-		Uint32			mControlFlags;
+		Uint32			mNodeFlags;
 		BlendMode		mBlend;
 		Uint16			mNumCallBacks;
 
@@ -403,8 +402,9 @@ class EE_API UINode {
 
 		Interpolation1d * 	mAngleAnim;
 		Interpolation2d *	mScaleAnim;
-		Interpolation1d * 	mAlphaAnim;
 		Interpolation2d * 	mMoveAnim;
+
+		UIActionManager *	mActionManager;
 
 		virtual Uint32 onMessage( const UIMessage * Msg );
 
@@ -480,7 +480,7 @@ class EE_API UINode {
 
 		virtual UINode * overFind( const Vector2f& Point );
 
-		virtual void onParentWindowControlChange();
+		virtual void onParentWindowChange();
 
 		virtual void clipMe();
 
@@ -538,7 +538,7 @@ class EE_API UINode {
 
 		void drawHighlightFocus();
 
-		void drawOverControl();
+		void drawOverNode();
 
 		void drawDebugData();
 

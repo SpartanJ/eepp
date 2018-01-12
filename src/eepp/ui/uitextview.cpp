@@ -338,7 +338,7 @@ const Vector2i& UITextView::getAlignOffset() const {
 Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		Vector2i controlPos( Pos );
-		worldToControl( controlPos );
+		worldToNode( controlPos );
 		controlPos = PixelDensity::dpToPxI( controlPos );
 
 		Int32 curPos = mTextCache->findCharacterFromPos( controlPos );
@@ -351,7 +351,7 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags )
 			selCurInit( tSelCurInit );
 			selCurEnd( tSelCurEnd );
 
-			mControlFlags &= ~UI_CTRL_FLAG_SELECTING;
+			mNodeFlags &= ~UI_CTRL_FLAG_SELECTING;
 		}
 	}
 
@@ -365,7 +365,7 @@ Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 			selCurEnd( -1 );
 		}
 
-		mControlFlags &= ~UI_CTRL_FLAG_SELECTING;
+		mNodeFlags &= ~UI_CTRL_FLAG_SELECTING;
 	}
 
 	return UIWidget::onMouseClick( Pos, Flags );
@@ -374,13 +374,13 @@ Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && UIManager::instance()->getDownControl() == this ) {
 		Vector2i controlPos( Pos );
-		worldToControl( controlPos );
+		worldToNode( controlPos );
 		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mRealAlignOffset.x, (Int32)mRealAlignOffset.y );
 
 		Int32 curPos = mTextCache->findCharacterFromPos( controlPos );
 
 		if ( -1 != curPos ) {
-			if ( -1 == selCurInit() || !( mControlFlags & UI_CTRL_FLAG_SELECTING ) ) {
+			if ( -1 == selCurInit() || !( mNodeFlags & UI_CTRL_FLAG_SELECTING ) ) {
 				selCurInit( curPos );
 				selCurEnd( curPos );
 			} else {
@@ -388,7 +388,7 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 			}
 		}
 
-		mControlFlags |= UI_CTRL_FLAG_SELECTING;
+		mNodeFlags |= UI_CTRL_FLAG_SELECTING;
 	}
 
 	return UIWidget::onMouseDown( Pos, Flags );

@@ -266,7 +266,7 @@ void UITextInput::updateText() {
 Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTON_LMASK ) {
 		Vector2i controlPos( Pos );
-		worldToControl( controlPos );
+		worldToNode( controlPos );
 		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mRealAlignOffset.x, (Int32)mRealAlignOffset.y );
 
 		Int32 curPos = mTextCache->findCharacterFromPos( controlPos );

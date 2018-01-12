@@ -101,11 +101,11 @@ void UITableCell::select() {
 		if ( NULL != MyParent->getItemSelected() )
 			MyParent->getItemSelected()->unselect();
 
-		bool wasSelected = 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
+		bool wasSelected = 0 != ( mNodeFlags & UI_CTRL_FLAG_SELECTED );
 
 		setSkinState( UISkinState::StateSelected );
 
-		mControlFlags |= UI_CTRL_FLAG_SELECTED;
+		mNodeFlags |= UI_CTRL_FLAG_SELECTED;
 
 		MyParent->mSelected = MyParent->getItemIndex( this );
 
@@ -116,20 +116,20 @@ void UITableCell::select() {
 }
 
 void UITableCell::unselect() {
-	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
-		mControlFlags &= ~UI_CTRL_FLAG_SELECTED;
+	if ( mNodeFlags & UI_CTRL_FLAG_SELECTED )
+		mNodeFlags &= ~UI_CTRL_FLAG_SELECTED;
 
 	setSkinState( UISkinState::StateNormal );
 }
 
 bool UITableCell::isSelected() const {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
+	return 0 != ( mNodeFlags & UI_CTRL_FLAG_SELECTED );
 }
 
 Uint32 UITableCell::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 	UINode::onMouseExit( Pos, Flags );
 
-	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
+	if ( mNodeFlags & UI_CTRL_FLAG_SELECTED )
 		setSkinState( UISkinState::StateSelected );
 
 	return 1;

@@ -2,12 +2,19 @@
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uiactionmanager.hpp>
+#include <eepp/ui/uiaction.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/window/engine.hpp>
+
+#include <eepp/ui/actions/fade.hpp>
+#include <eepp/ui/actions/scale.hpp>
+#include <eepp/ui/actions/rotate.hpp>
+#include <eepp/ui/actions/move.hpp>
 
 namespace EE { namespace UI {
 
@@ -32,7 +39,7 @@ UINode::UINode() :
 	mSkinState( NULL ),
 	mBackground( NULL ),
 	mBorder( NULL ),
-	mControlFlags( 0 ),
+	mNodeFlags( 0 ),
 	mBlend( BlendAlpha ),
 	mNumCallBacks( 0 ),
 	mVisible( true ),
@@ -41,10 +48,7 @@ UINode::UINode() :
 	mAngle(0.f),
 	mScale(1.f,1.f),
 	mAlpha(255.f),
-	mAngleAnim(NULL),
-	mScaleAnim(NULL),
-	mAlphaAnim(NULL),
-	mMoveAnim(NULL)
+	mActionManager(NULL)
 {
 	if ( NULL == mParentCtrl && NULL != UIManager::instance()->getMainControl() ) {
 		mParentCtrl = UIManager::instance()->getMainControl();
@@ -63,10 +67,7 @@ UINode::~UINode() {
 	removeSkin();
 	eeSAFE_DELETE( mBackground );
 	eeSAFE_DELETE( mBorder );
-	eeSAFE_DELETE( mAlphaAnim );
-	eeSAFE_DELETE( mAngleAnim );
-	eeSAFE_DELETE( mScaleAnim );
-	eeSAFE_DELETE( mMoveAnim );
+	eeSAFE_DELETE( mActionManager );
 
 	childDeleteAll();
 
@@ -82,7 +83,7 @@ UINode::~UINode() {
 	}
 }
 
-void UINode::screenToControl( Vector2i& Pos ) const {
+void UINode::screenToNode( Vector2i& Pos ) const {
 	UINode * ParentLoop = mParentCtrl;
 
 	Pos.x -= mRealPos.x;
@@ -98,7 +99,7 @@ void UINode::screenToControl( Vector2i& Pos ) const {
 	}
 }
 
-void UINode::controlToScreen( Vector2i& Pos ) const {
+void UINode::nodeToScreen( Vector2i& Pos ) const {
 	UINode * ParentLoop = mParentCtrl;
 
 	while ( NULL != ParentLoop ) {
@@ -139,6 +140,10 @@ void UINode::setInternalPosition( const Vector2i& Pos ) {
 	mRealPos = Vector2i( Pos.x * PixelDensity::getPixelDensity(), Pos.y * PixelDensity::getPixelDensity() );
 	updateScreenPos();
 	updateChildsScreenPos();
+}
+
+UINode * UINode::setPosition( const Vector2f& Pos ) {
+	return setPosition( Vector2i( Pos.x, Pos.y ) );
 }
 
 UINode * UINode::setPosition( const Vector2i& Pos ) {
@@ -316,7 +321,7 @@ UINode * UINode::setParent( UINode * parent ) {
 	onParentChange();
 
 	if ( mParentWindowCtrl != getParentWindow() )
-		onParentWindowControlChange();
+		onParentWindowChange();
 
 	return this;
 }
@@ -356,7 +361,7 @@ void UINode::center() {
 }
 
 void UINode::close() {
-	mControlFlags |= UI_CTRL_FLAG_CLOSE;
+	mNodeFlags |= UI_CTRL_FLAG_CLOSE;
 
 	UIManager::instance()->addToCloseQueue( this );
 }
@@ -372,7 +377,7 @@ void UINode::drawHighlightFocus() {
 	}
 }
 
-void UINode::drawOverControl() {
+void UINode::drawOverNode() {
 	if ( UIManager::instance()->getHighlightOver() && UIManager::instance()->getOverControl() == this ) {
 		Primitives P;
 		P.setFillMode( DRAW_LINE );
@@ -437,7 +442,7 @@ void UINode::draw() {
 
 		drawHighlightFocus();
 
-		drawOverControl();
+		drawOverNode();
 
 		drawDebugData();
 
@@ -446,46 +451,11 @@ void UINode::draw() {
 }
 
 void UINode::update() {
-	if ( NULL != mMoveAnim && mMoveAnim->isEnabled() ) {
-		mMoveAnim->update( getElapsed() );
-		setPosition( (int)mMoveAnim->getPosition().x, (int)mMoveAnim->getPosition().y );
+	if ( NULL != mActionManager ) {
+		mActionManager->update( getElapsed() );
 
-		if ( mMoveAnim->ended() )
-			eeSAFE_DELETE( mMoveAnim );
-	}
-
-	if ( NULL != mAlphaAnim && mAlphaAnim->isEnabled() ) {
-		mAlphaAnim->update( getElapsed() );
-		setAlpha( mAlphaAnim->getPosition() );
-
-		if ( mAlphaAnim->ended() ) {
-			if ( ( mControlFlags & UI_CTRL_FLAG_CLOSE_FO )  )
-				close();
-
-			if ( ( mControlFlags & UI_CTRL_FLAG_DISABLE_FADE_OUT ) ) {
-				mControlFlags &= ~UI_CTRL_FLAG_DISABLE_FADE_OUT;
-
-				setVisible( false );
-			}
-
-			eeSAFE_DELETE( mAlphaAnim );
-		}
-	}
-
-	if ( NULL != mScaleAnim && mScaleAnim->isEnabled() ) {
-		mScaleAnim->update( getElapsed() );
-		setScale( mScaleAnim->getPosition() );
-
-		if ( mScaleAnim->ended() )
-			eeSAFE_DELETE( mScaleAnim );
-	}
-
-	if ( NULL != mAngleAnim && mAngleAnim->isEnabled() ) {
-		mAngleAnim->update( getElapsed() );
-		setRotation( mAngleAnim->getPosition() );
-
-		if ( mAngleAnim->ended() )
-			eeSAFE_DELETE( mAngleAnim );
+		if ( mActionManager->isEmpty() )
+			eeSAFE_DELETE( mActionManager );
 	}
 
 	if ( isDragEnabled() && isDragging() ) {
@@ -522,7 +492,7 @@ void UINode::update() {
 		ChildLoop = ChildLoop->mNext;
 	}
 
-	if ( mControlFlags & UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD )
+	if ( mNodeFlags & UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD )
 		writeCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
 }
 
@@ -582,11 +552,11 @@ Uint32 UINode::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 }
 
 bool UINode::isMouseOver() {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_MOUSEOVER );
+	return 0 != ( mNodeFlags & UI_CTRL_FLAG_MOUSEOVER );
 }
 
 bool UINode::isMouseOverMeOrChilds() {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD );
+	return 0 != ( mNodeFlags & UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD );
 }
 
 Uint32 UINode::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
@@ -615,7 +585,7 @@ Uint32 UINode::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 }
 
 Uint32 UINode::onFocus() {
-	mControlFlags |= UI_CTRL_FLAG_HAS_FOCUS;
+	mNodeFlags |= UI_CTRL_FLAG_HAS_FOCUS;
 
 	sendCommonEvent( UIEvent::OnFocus );
 
@@ -625,7 +595,7 @@ Uint32 UINode::onFocus() {
 }
 
 Uint32 UINode::onFocusLoss() {
-	mControlFlags &= ~UI_CTRL_FLAG_HAS_FOCUS;
+	mNodeFlags &= ~UI_CTRL_FLAG_HAS_FOCUS;
 
 	sendCommonEvent( UIEvent::OnFocusLoss );
 
@@ -640,7 +610,7 @@ void UINode::onWidgetFocusLoss() {
 }
 
 bool UINode::hasFocus() const {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_HAS_FOCUS );
+	return 0 != ( mNodeFlags & UI_CTRL_FLAG_HAS_FOCUS );
 }
 
 Uint32 UINode::onValueChange() {
@@ -713,15 +683,15 @@ UIBorder * UINode::setBorderEnabled( bool enabled ) {
 	return mBorder;
 }
 
-UINode * UINode::getNextControl() const {
+UINode * UINode::getNextNode() const {
 	return mNext;
 }
 
-UINode * UINode::getPrevControl() const {
+UINode * UINode::getPrevNode() const {
 	return mPrev;
 }
 
-UINode * UINode::getNextControlLoop() const {
+UINode * UINode::getNextNodeLoop() const {
 	if ( NULL == mNext )
 		return getParent()->getFirstChild();
 	else
@@ -845,12 +815,12 @@ void UINode::drawBorder() {
 	}
 }
 
-const Uint32& UINode::getControlFlags() const {
-	return mControlFlags;
+const Uint32& UINode::getNodeFlags() const {
+	return mNodeFlags;
 }
 
-void UINode::setControlFlags( const Uint32& Flags ) {
-	mControlFlags = Flags;
+void UINode::setNodeFlags( const Uint32& Flags ) {
+	mNodeFlags = Flags;
 }
 
 void UINode::drawChilds() {
@@ -1182,13 +1152,13 @@ UINode * UINode::overFind( const Vector2f& Point ) {
 	return pOver;
 }
 
-void UINode::onParentWindowControlChange() {
+void UINode::onParentWindowChange() {
 	mParentWindowCtrl = getParentWindow();
 
 	UINode * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
-		ChildLoop->onParentWindowControlChange();
+		ChildLoop->onParentWindowChange();
 		ChildLoop = ChildLoop->mNext;
 	}
 }
@@ -1214,11 +1184,11 @@ UINode * UINode::childGetAt( Vector2i CtrlPos, unsigned int RecursiveLevel ) {
 }
 
 Uint32 UINode::isWidget() {
-	return mControlFlags & UI_CTRL_FLAG_WIDGET;
+	return mNodeFlags & UI_CTRL_FLAG_WIDGET;
 }
 
 Uint32 UINode::isWindow() {
-	return mControlFlags & UI_CTRL_FLAG_WINDOW;
+	return mNodeFlags & UI_CTRL_FLAG_WINDOW;
 }
 
 Uint32 UINode::isClipped() {
@@ -1226,15 +1196,15 @@ Uint32 UINode::isClipped() {
 }
 
 Uint32 UINode::isRotated() {
-	return mControlFlags & UI_CTRL_FLAG_ROTATED;
+	return mNodeFlags & UI_CTRL_FLAG_ROTATED;
 }
 
 Uint32 UINode::isScaled() {
-	return mControlFlags & UI_CTRL_FLAG_SCALED;
+	return mNodeFlags & UI_CTRL_FLAG_SCALED;
 }
 
 Uint32 UINode::isFrameBuffer() {
-	return mControlFlags & UI_CTRL_FLAG_FRAME_BUFFER;
+	return mNodeFlags & UI_CTRL_FLAG_FRAME_BUFFER;
 }
 
 bool UINode::isMeOrParentTreeRotated() {
@@ -1442,7 +1412,7 @@ UINode * UINode::setSkin( UISkin * skin ) {
 }
 
 void UINode::removeSkin() {
-	if ( NULL != mSkinState && ( mControlFlags & UI_CTRL_FLAG_SKIN_OWNER ) ) {
+	if ( NULL != mSkinState && ( mNodeFlags & UI_CTRL_FLAG_SKIN_OWNER ) ) {
 		UISkin * tSkin = mSkinState->getSkin();
 
 		eeSAFE_DELETE( tSkin );
@@ -1504,7 +1474,7 @@ void UINode::updateChildsScreenPos() {
 void UINode::updateScreenPos() {
 	Vector2i Pos( mRealPos );
 
-	controlToScreen( Pos );
+	nodeToScreen( Pos );
 
 	mScreenPos = Pos;
 	mScreenPosf = Vector2f( Pos.x, Pos.y );
@@ -1520,7 +1490,7 @@ UISkin * UINode::getSkin() {
 }
 
 void UINode::writeCtrlFlag( const Uint32& Flag, const Uint32& Val ) {
-	BitOp::setBitFlagValue( &mControlFlags, Flag, Val );
+	BitOp::setBitFlagValue( &mNodeFlags, Flag, Val );
 }
 
 void UINode::writeFlag( const Uint32& Flag, const Uint32& Val ) {
@@ -1657,7 +1627,7 @@ void UINode::onChildCountChange() {
 	invalidateDraw();
 }
 
-void UINode::worldToControl( Vector2i& pos ) const {
+void UINode::worldToNode( Vector2i& pos ) const {
 	Vector2f Pos( pos.x, pos.y );
 
 	std::list<UINode*> parents;
@@ -1698,7 +1668,7 @@ void UINode::worldToControl( Vector2i& pos ) const {
 	pos = Vector2i( Pos.x / PixelDensity::getPixelDensity(), Pos.y / PixelDensity::getPixelDensity() );
 }
 
-void UINode::controlToWorld( Vector2i& pos ) const {
+void UINode::nodeToWorld( Vector2i& pos ) const {
 	Vector2f Pos( (Float)pos.x * PixelDensity::getPixelDensity(), (Float)pos.y * PixelDensity::getPixelDensity() );
 
 	std::list<UINode*> parents;
@@ -1760,7 +1730,7 @@ UIWindow * UINode::getParentWindow() {
 }
 
 bool UINode::isReverseDraw() const {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_REVERSE_DRAW );
+	return 0 != ( mNodeFlags & UI_CTRL_FLAG_REVERSE_DRAW );
 }
 
 void UINode::setReverseDraw( bool reverseDraw ) {
@@ -1819,7 +1789,7 @@ void UINode::setDragEnabled( const bool& enable ) {
 }
 
 bool UINode::isDragging() const {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_DRAGGING );
+	return 0 != ( mNodeFlags & UI_CTRL_FLAG_DRAGGING );
 }
 
 void UINode::setDragging( const bool& dragging ) {
@@ -1870,34 +1840,6 @@ void UINode::updateOriginPoint() {
 	}
 }
 
-Interpolation1d * UINode::getRotationInterpolation() {
-	if ( NULL == mAngleAnim )
-		mAngleAnim = eeNew( Interpolation1d, () );
-
-	return mAngleAnim;
-}
-
-Interpolation2d * UINode::getScaleInterpolation() {
-	if ( NULL == mScaleAnim )
-		mScaleAnim = eeNew( Interpolation2d, () );
-
-	return mScaleAnim;
-}
-
-Interpolation1d * UINode::getAlphaInterpolation() {
-	if ( NULL == mAlphaAnim )
-		mAlphaAnim = eeNew( Interpolation1d, () );
-
-	return mAlphaAnim;
-}
-
-Interpolation2d * UINode::getTranslationInterpolation() {
-	if ( NULL == mMoveAnim )
-		mMoveAnim = eeNew( Interpolation2d, () );
-
-	return mMoveAnim;
-}
-
 void UINode::onAngleChange() {
 	sendCommonEvent( UIEvent::OnAngleChange );
 	invalidateDraw();
@@ -1918,42 +1860,48 @@ Color UINode::getColor( const Color& Col ) {
 }
 
 bool UINode::isFadingOut() {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_DISABLE_FADE_OUT );
+	return 0 != ( mNodeFlags & UI_CTRL_FLAG_DISABLE_FADE_OUT );
 }
 
 bool UINode::isAnimating() {
-	return ( NULL != mAlphaAnim && mAlphaAnim->isEnabled() ) || ( NULL != mAngleAnim && mAngleAnim->isEnabled() ) || ( NULL != mScaleAnim && mScaleAnim->isEnabled() ) || ( NULL != mMoveAnim && mMoveAnim->isEnabled() );
+	return NULL != mActionManager && !mActionManager->isEmpty();
+}
+
+static void UINode_onFadeDone( UIAction * action, const UIAction::ActionType& actionType ) {
+	UINode * node = action->getNode();
+
+	if ( NULL != node ) {
+		if ( ( node->getNodeFlags() & UI_CTRL_FLAG_CLOSE_FO )  )
+			node->close();
+
+		if ( ( node->getNodeFlags() & UI_CTRL_FLAG_DISABLE_FADE_OUT ) ) {
+			node->setNodeFlags( node->getNodeFlags() & ~UI_CTRL_FLAG_DISABLE_FADE_OUT );
+
+			node->setVisible( false );
+		}
+	}
 }
 
 Interpolation1d * UINode::startAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds, const Ease::Interpolation& Type, Interpolation1d::OnPathEndCallback PathEndCallback ) {
-	if ( NULL == mAlphaAnim )
-		mAlphaAnim = eeNew( Interpolation1d, () );
+	Action::Fade * action = Action::Fade::New( From, To, TotalTime, Type );
 
-	mAlphaAnim->clear().add( From, TotalTime ).add( To ).setType( Type ).start( PathEndCallback );
+	action->getInterpolation()->setPathEndCallback( PathEndCallback );
 
-	setAlpha( From );
+	action->addEventListener( UIAction::ActionType::OnDone, cb::Make2( &UINode_onFadeDone ) );
 
-	if ( AlphaChilds ) {
-		UINode * CurChild = mChild;
+	runAction( action );
 
-		while ( NULL != CurChild ) {
-			CurChild->startAlphaAnim( From, To, TotalTime, AlphaChilds );
-			CurChild = CurChild->getNextControl();
-		}
-	}
-
-	return mAlphaAnim;
+	return action->getInterpolation();
 }
 
 Interpolation2d * UINode::startScaleAnim( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation2d::OnPathEndCallback PathEndCallback ) {
-	if ( NULL == mScaleAnim )
-		mScaleAnim = eeNew( Interpolation2d, () );
+	Action::Scale * action = Action::Scale::New( From, To, TotalTime, Type );
 
-	mScaleAnim->clear().add( From ).add( To ).setDuration( TotalTime ).setType( Type ).start( PathEndCallback );
+	action->getInterpolation()->setPathEndCallback( PathEndCallback );
 
-	setScale( From );
+	runAction( action );
 
-	return mScaleAnim;
+	return action->getInterpolation();
 }
 
 Interpolation2d * UINode::startScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation2d::OnPathEndCallback PathEndCallback ) {
@@ -1961,25 +1909,23 @@ Interpolation2d * UINode::startScaleAnim( const Float& From, const Float& To, co
 }
 
 Interpolation2d * UINode::startTranslation( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation2d::OnPathEndCallback PathEndCallback ) {
-	if ( NULL == mMoveAnim )
-		mMoveAnim = eeNew( Interpolation2d, () );
+	Action::Move * action = Action::Move::New( Vector2f( From.x, From.y ), Vector2f( To.x, To.y ), TotalTime, Type );
 
-	mMoveAnim->clear().add( Vector2f( (Float)From.x, (Float)From.y ) ).add( Vector2f( (Float)To.x, (Float)To.y ) ).setType( Type ).setDuration( TotalTime ).start( PathEndCallback );
+	action->getInterpolation()->setPathEndCallback( PathEndCallback );
 
-	setPosition( From );
+	runAction( action );
 
-	return mMoveAnim;
+	return action->getInterpolation();
 }
 
 Interpolation1d * UINode::startRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation1d::OnPathEndCallback PathEndCallback ) {
-	if ( NULL == mAngleAnim )
-		mAngleAnim = eeNew( Interpolation1d, () );
+	Action::Rotate * action = Action::Rotate::New( From, To, TotalTime, Type );
 
-	mAngleAnim->clear().add( From ).add( To ).setDuration( TotalTime ).setType( Type ).start( PathEndCallback );
+	action->getInterpolation()->setPathEndCallback( PathEndCallback );
 
-	setRotation( From );
+	runAction( action );
 
-	return mAngleAnim;
+	return action->getInterpolation();
 }
 
 Interpolation1d * UINode::startAlphaAnim(const Float & To, const Time & TotalTime, const bool & alphaChilds, const Ease::Interpolation & type, Interpolation1d::OnPathEndCallback PathEndCallback) {
@@ -2011,19 +1957,17 @@ Interpolation1d * UINode::createFadeOut( const Time& time, const bool& AlphaChil
 }
 
 Interpolation1d * UINode::closeFadeOut( const Time& time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
-	startAlphaAnim	( mAlpha, 0.f, time, AlphaChilds, Type );
-	mControlFlags |= UI_CTRL_FLAG_CLOSE_FO;
-	return mAlphaAnim;
+	mNodeFlags |= UI_CTRL_FLAG_CLOSE_FO;
+
+	return startAlphaAnim( mAlpha, 0.f, time, AlphaChilds, Type );
 }
 
 Interpolation1d * UINode::disableFadeOut( const Time& time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
 	setEnabled( false );
 
-	startAlphaAnim	( mAlpha, 0.f, time, AlphaChilds, Type );
+	mNodeFlags |= UI_CTRL_FLAG_DISABLE_FADE_OUT;
 
-	mControlFlags |= UI_CTRL_FLAG_DISABLE_FADE_OUT;
-
-	return mAlphaAnim;
+	return startAlphaAnim( mAlpha, 0.f, time, AlphaChilds, Type );
 }
 
 const Float& UINode::getRotation() const {
@@ -2051,10 +1995,10 @@ void UINode::setRotation( const Float& angle ) {
 	mAngle = angle;
 
 	if ( mAngle != 0.f ) {
-		mControlFlags |= UI_CTRL_FLAG_ROTATED;
+		mNodeFlags |= UI_CTRL_FLAG_ROTATED;
 	} else {
-		if ( mControlFlags & UI_CTRL_FLAG_ROTATED )
-			mControlFlags &= ~UI_CTRL_FLAG_ROTATED;
+		if ( mNodeFlags & UI_CTRL_FLAG_ROTATED )
+			mNodeFlags &= ~UI_CTRL_FLAG_ROTATED;
 	}
 
 	onAngleChange();
@@ -2074,10 +2018,10 @@ void UINode::setScale( const Vector2f & scale ) {
 	mScale = scale;
 
 	if ( mScale != 1.f ) {
-		mControlFlags |= UI_CTRL_FLAG_SCALED;
+		mNodeFlags |= UI_CTRL_FLAG_SCALED;
 	} else {
-		if ( mControlFlags & UI_CTRL_FLAG_SCALED )
-			mControlFlags &= ~UI_CTRL_FLAG_SCALED;
+		if ( mNodeFlags & UI_CTRL_FLAG_SCALED )
+			mNodeFlags &= ~UI_CTRL_FLAG_SCALED;
 	}
 
 	onScaleChange();
@@ -2125,7 +2069,24 @@ void UINode::setChildsAlpha( const Float &alpha ) {
 	while ( NULL != CurChild ) {
 		CurChild->setAlpha( alpha );
 		CurChild->setChildsAlpha( alpha );
-		CurChild = CurChild->getNextControl();
+		CurChild = CurChild->getNextNode();
+	}
+}
+
+UIActionManager * UINode::getActionManager() {
+	if ( NULL == mActionManager )
+		mActionManager = eeNew( UIActionManager, () );
+
+	return mActionManager;
+}
+
+void UINode::runAction( UIAction * action ) {
+	if ( NULL != action ) {
+		action->setTarget( this );
+
+		action->start();
+
+		getActionManager()->addAction( action );
 	}
 }
 

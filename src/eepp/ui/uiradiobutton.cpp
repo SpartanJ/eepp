@@ -149,7 +149,7 @@ void UIRadioButton::setActive( const bool& active ) {
 				}
 			}
 
-			tChild = tChild->getNextControl();
+			tChild = tChild->getNextNode();
 		}
 	}
 }
@@ -168,7 +168,7 @@ bool UIRadioButton::checkActives() {
 				}
 			}
 
-			tChild = tChild->getNextControl();
+			tChild = tChild->getNextNode();
 		}
 	}
 
@@ -192,7 +192,7 @@ void UIRadioButton::autoActivate() {
 				}
 			}
 
-			tChild = tChild->getNextControl();
+			tChild = tChild->getNextNode();
 		}
 	}
 

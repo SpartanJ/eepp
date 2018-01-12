@@ -50,26 +50,26 @@ Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 void UIListBoxItem::select() {
 	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( getParent()->getParent() );
 
-	bool wasSelected = 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
+	bool wasSelected = 0 != ( mNodeFlags & UI_CTRL_FLAG_SELECTED );
 
 	if ( LBParent->isMultiSelect() ) {
 		if ( !wasSelected ) {
 			setSkinState( UISkinState::StateSelected );
 
-			mControlFlags |= UI_CTRL_FLAG_SELECTED;
+			mNodeFlags |= UI_CTRL_FLAG_SELECTED;
 
 			LBParent->mSelected.push_back( LBParent->getItemIndex( this ) );
 
 			LBParent->onSelected();
 		} else {
-			mControlFlags &= ~UI_CTRL_FLAG_SELECTED;
+			mNodeFlags &= ~UI_CTRL_FLAG_SELECTED;
 
 			LBParent->mSelected.remove( LBParent->getItemIndex( this ) );
 		}
 	} else {
 		setSkinState( UISkinState::StateSelected );
 
-		mControlFlags |= UI_CTRL_FLAG_SELECTED;
+		mNodeFlags |= UI_CTRL_FLAG_SELECTED;
 
 		LBParent->mSelected.clear();
 		LBParent->mSelected.push_back( LBParent->getItemIndex( this ) );
@@ -98,21 +98,21 @@ void UIListBoxItem::update() {
 Uint32 UIListBoxItem::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 	UINode::onMouseExit( Pos, Flags );
 
-	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
+	if ( mNodeFlags & UI_CTRL_FLAG_SELECTED )
 		setSkinState( UISkinState::StateSelected );
 
 	return 1;
 }
 
 void UIListBoxItem::unselect() {
-	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
-		mControlFlags &= ~UI_CTRL_FLAG_SELECTED;
+	if ( mNodeFlags & UI_CTRL_FLAG_SELECTED )
+		mNodeFlags &= ~UI_CTRL_FLAG_SELECTED;
 
 	setSkinState( UISkinState::StateNormal );
 }
 
 bool UIListBoxItem::isSelected() const {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
+	return 0 != ( mNodeFlags & UI_CTRL_FLAG_SELECTED );
 }
 
 void UIListBoxItem::onStateChange() {

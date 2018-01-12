@@ -101,12 +101,12 @@ void UIMenuSubMenu::showSubMenu() {
 	mSubMenu->setParent( getParent()->getParent() );
 
 	Vector2i Pos = this->getRealPosition();
-	controlToScreen( Pos );
+	nodeToScreen( Pos );
 	Pos.x += mRealSize.getWidth() + reinterpret_cast<UIMenu*> ( getParent() )->getPadding().Right;
 
 	UIMenu::fixMenuPos( Pos, mSubMenu, reinterpret_cast<UIMenu*> ( getParent() ), this );
 
-	mSubMenu->getParent()->worldToControl( Pos );
+	mSubMenu->getParent()->worldToNode( Pos );
 	mSubMenu->setPosition( Pos );
 
 	if ( !mSubMenu->isVisible() ) {

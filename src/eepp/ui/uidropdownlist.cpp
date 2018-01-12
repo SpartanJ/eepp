@@ -111,7 +111,7 @@ void UIDropDownList::showList() {
 		Vector2i Pos( mPos.x, mPos.y + mSize.getHeight() );
 
 		if ( mStyleConfig.PopUpToMainControl ) {
-			getParent()->controlToWorld( Pos );
+			getParent()->nodeToWorld( Pos );
 			Pos = PixelDensity::pxToDpI( Pos );
 		} else if ( NULL != mFriendCtrl ) {
 			Pos = Vector2i( mFriendCtrl->getPosition().x, mFriendCtrl->getPosition().y + mFriendCtrl->getSize().getHeight() );
@@ -146,7 +146,7 @@ void UIDropDownList::showList() {
 				Pos = Vector2i( mPos.x, mPos.y );
 
 				if ( mStyleConfig.PopUpToMainControl ) {
-					getParent()->controlToWorld( Pos );
+					getParent()->nodeToWorld( Pos );
 					Pos = PixelDensity::pxToDpI( Pos );
 				} else if ( NULL != mFriendCtrl ) {
 					Pos = Vector2i( mFriendCtrl->getPosition().x, mFriendCtrl->getPosition().y + mFriendCtrl->getSize().getHeight() );

@@ -175,7 +175,7 @@ void UIGridLayout::pack() {
 			}
 		}
 
-		ChildLoop = ChildLoop->getNextControl();
+		ChildLoop = ChildLoop->getNextNode();
 	}
 
 	if ( getLayoutHeightRules() == WRAP_CONTENT ) {

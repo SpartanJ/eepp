@@ -2,3 +2,7 @@
 ../../include/
 ../../src/thirdparty
 ../../include/eepp/thirdparty
+../../src/eepp/ui
+../../include/eepp/ui
+../../src/eepp/ui/actions
+../../include/eepp/ui/actions

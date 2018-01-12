@@ -43,7 +43,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 	mMinimizeListener(0),
 	mFrameBufferBound( false )
 {
-	mControlFlags |= UI_CTRL_FLAG_WINDOW;
+	mNodeFlags |= UI_CTRL_FLAG_WINDOW;
 
 	setHorizontalAlign( UI_HALIGN_CENTER );
 
@@ -279,7 +279,7 @@ void UIWindow::drawFrameBuffer() {
 }
 
 void UIWindow::drawHighlightInvalidation() {
-	if ( ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) && UIManager::instance()->getHighlightInvalidation() ) {
+	if ( ( mNodeFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) && UIManager::instance()->getHighlightInvalidation() ) {
 		UIWidget::matrixSet();
 
 		Primitives P;
@@ -362,13 +362,13 @@ void UIWindow::enableByModal() {
 		{
 			if ( CtrlChild != mModalCtrl &&
 				 CtrlChild != this &&
-				 CtrlChild->getControlFlags() & UI_CTRL_FLAG_DISABLED_BY_MODAL_WINDOW )
+				 CtrlChild->getNodeFlags() & UI_CTRL_FLAG_DISABLED_BY_MODAL_WINDOW )
 			{
 				CtrlChild->setEnabled( true );
 				CtrlChild->writeCtrlFlag( UI_CTRL_FLAG_DISABLED_BY_MODAL_WINDOW, 0 );
 			}
 
-			CtrlChild = CtrlChild->getNextControl();
+			CtrlChild = CtrlChild->getNextNode();
 		}
 	}
 }
@@ -387,7 +387,7 @@ void UIWindow::disableByModal() {
 				CtrlChild->writeCtrlFlag( UI_CTRL_FLAG_DISABLED_BY_MODAL_WINDOW, 1 );
 			}
 
-			CtrlChild = CtrlChild->getNextControl();
+			CtrlChild = CtrlChild->getNextNode();
 		}
 	}
 }
@@ -721,7 +721,7 @@ void UIWindow::doResize ( const UIMessage * Msg ) {
 void UIWindow::decideResizeType( UINode * Control ) {
 	Vector2i Pos = UIManager::instance()->getMousePos();
 
-	worldToControl( Pos );
+	worldToNode( Pos );
 
 	if ( Control == this ) {
 		if ( Pos.x <= mBorderLeft->getSize().getWidth() ) {
@@ -768,7 +768,7 @@ void UIWindow::tryResize( const UI_RESIZE_TYPE& Type ) {
 
 	Vector2i Pos = UIManager::instance()->getMousePos();
 
-	worldToControl( Pos );
+	worldToNode( Pos );
 	
 	mResizeType = Type;
 
@@ -842,7 +842,7 @@ void UIWindow::updateResize() {
 
 	Vector2i Pos = UIManager::instance()->getMousePos();
 
-	worldToControl( Pos );
+	worldToNode( Pos );
 
 	Pos = PixelDensity::dpToPxI( Pos );
 
@@ -999,7 +999,7 @@ void UIWindow::onAlphaChange() {
 
 		while ( NULL != CurChild ) {
 			CurChild->setAlpha( mAlpha );
-			CurChild = CurChild->getNextControl();
+			CurChild = CurChild->getNextNode();
 		}
 	}
 
@@ -1014,12 +1014,12 @@ void UIWindow::onChildCountChange() {
 	bool found = false;
 
 	while ( NULL != child ) {
-		if ( !( child->getControlFlags() & UI_CTRL_FLAG_OWNED_BY_WINDOW ) ) {
+		if ( !( child->getNodeFlags() & UI_CTRL_FLAG_OWNED_BY_WINDOW ) ) {
 			found = true;
 			break;
 		}
 
-		child = child->getNextControl();
+		child = child->getNextNode();
 	}
 
 	if ( found ) {
@@ -1163,7 +1163,7 @@ FrameBuffer * UIWindow::getFrameBuffer() const {
 }
 
 bool UIWindow::invalidated() {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_NEEDS_REDRAW );
+	return 0 != ( mNodeFlags & UI_CTRL_FLAG_NEEDS_REDRAW );
 }
 
 void UIWindow::matrixSet() {
@@ -1322,7 +1322,7 @@ void UIWindow::resizeCursor() {
 
 	Vector2i Pos = Man->getMousePos();
 
-	worldToControl( Pos );
+	worldToNode( Pos );
 
 	const UINode * Control = Man->getOverControl();
 

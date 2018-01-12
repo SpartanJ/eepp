@@ -68,6 +68,7 @@ CODE_SRCS				:=  \
 	physics/*.cpp \
 	physics/constraints/*.cpp \
 	ui/*.cpp \
+	ui/actions/*.cpp \
 	ui/tools/*.cpp \
 	maps/*.cpp \
 	maps/mapeditor/*.cpp

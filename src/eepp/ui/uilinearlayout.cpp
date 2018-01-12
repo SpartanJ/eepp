@@ -113,7 +113,7 @@ void UILinearLayout::packVertical() {
 			}
 		}
 
-		ChildLoop = ChildLoop->getNextControl();
+		ChildLoop = ChildLoop->getNextNode();
 	}
 
 	Int32 curY = 0;
@@ -158,7 +158,7 @@ void UILinearLayout::packVertical() {
 			maxX = eemax( maxX, (Int32)( widget->getSize().getWidth() + widget->getLayoutMargin().Left + widget->getLayoutMargin().Right ) );
 		}
 
-		ChildLoop = ChildLoop->getNextControl();
+		ChildLoop = ChildLoop->getNextNode();
 	}
 
 	if ( getLayoutHeightRules() == WRAP_CONTENT ) {
@@ -227,7 +227,7 @@ void UILinearLayout::packHorizontal() {
 			}
 		}
 
-		ChildLoop = ChildLoop->getNextControl();
+		ChildLoop = ChildLoop->getNextNode();
 	}
 
 	Int32 curX = 0;
@@ -272,7 +272,7 @@ void UILinearLayout::packHorizontal() {
 			maxY = eemax( maxY, (Int32)( widget->getSize().getHeight() + widget->getLayoutMargin().Top + widget->getLayoutMargin().Bottom ) );
 		}
 
-		ChildLoop = ChildLoop->getNextControl();
+		ChildLoop = ChildLoop->getNextNode();
 	}
 
 	if ( getLayoutWidthRules() == WRAP_CONTENT ) {
@@ -322,7 +322,7 @@ Sizei UILinearLayout::getTotalUsedSize() {
 			}
 		}
 
-		ChildLoop = ChildLoop->getNextControl();
+		ChildLoop = ChildLoop->getNextNode();
 	}
 
 	return size;
