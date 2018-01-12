@@ -14,7 +14,7 @@
 #include <eepp/graphics/textureloader.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/texturepacker.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>

@@ -9,8 +9,8 @@
 #include <eepp/maps/tilemaplayer.hpp>
 #include <eepp/maps/mapobjectlayer.hpp>
 #include <eepp/maps/gameobjectvirtual.hpp>
-#include <eepp/maps/gameobjectsubtexture.hpp>
-#include <eepp/maps/gameobjectsubtextureex.hpp>
+#include <eepp/maps/gameobjecttextureregion.hpp>
+#include <eepp/maps/gameobjecttextureregionex.hpp>
 #include <eepp/maps/gameobjectsprite.hpp>
 #include <eepp/maps/gameobjectobject.hpp>
 #include <eepp/maps/gameobjectpolygon.hpp>
@@ -177,19 +177,19 @@ void MapEditor::createETGMenu() {
 	Int32 ContPosX = mWinContainer->getSize().getWidth() - Width - DistToBorder;
 	Int32 DistFromTopMenu = 4;
 
-	mSubTextureCont = UIWidget::New();
-	mSubTextureCont->setParent( mWinContainer );
-	mSubTextureCont->setSize( Sizei( Width + DistToBorder, mWinContainer->getSize().getHeight() ) );
-	mSubTextureCont->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
+	mTextureRegionCont = UIWidget::New();
+	mTextureRegionCont->setParent( mWinContainer );
+	mTextureRegionCont->setSize( Sizei( Width + DistToBorder, mWinContainer->getSize().getHeight() ) );
+	mTextureRegionCont->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 
 	mLightCont = UIWidget::New();
 	mLightCont->setParent( mWinContainer );
-	mLightCont->setSize( mSubTextureCont->getSize() );
+	mLightCont->setSize( mTextureRegionCont->getSize() );
 	mLightCont->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 
 	mObjectCont = UIWidget::New();
 	mObjectCont->setParent( mWinContainer );
-	mObjectCont->setSize( mSubTextureCont->getSize() );
+	mObjectCont->setSize( mTextureRegionCont->getSize() );
 	mObjectCont->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 
 	mTabWidget = UITabWidget::New();
@@ -205,14 +205,14 @@ void MapEditor::createETGMenu() {
 
 	createLighContainer();
 
-	createSubTextureContainer( Width );
+	createTextureRegionContainer( Width );
 
 	createObjectsContainer();
 }
 
 void MapEditor::createTabs() {
 	mTabWidget->removeAll();
-	mTabWidget->add( "Sprites", mSubTextureCont );
+	mTabWidget->add( "Sprites", mTextureRegionCont );
 
 	if ( NULL != mUIMap && NULL != mUIMap->Map() ) {
 		if ( mUIMap->Map()->getLightsEnabled() ) {
@@ -241,28 +241,28 @@ void MapEditor::onTabSelected( const UIEvent * Event ) {
 
 void MapEditor::fillGotyList() {
 	std::vector<String> items;
-	items.push_back( "SubTexture" );
-	items.push_back( "SubTextureEx" );
+	items.push_back( "TextureRegion" );
+	items.push_back( "TextureRegionEx" );
 	items.push_back( "Sprite" );
 	mGOTypeList->getListBox()->clear();
 	mGOTypeList->getListBox()->addListBoxItems( items );
 	mGOTypeList->getListBox()->setSelected(0);
 }
 
-void MapEditor::createSubTextureContainer( Int32 Width ) {
+void MapEditor::createTextureRegionContainer( Int32 Width ) {
 	UITextView * Txt;
 	Uint32 TxtFlags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
-	Txt = createTextBox( "Add Game Object as...", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 4 ), TxtFlags, Text::Shadow );
+	Txt = createTextBox( "Add Game Object as...", mTextureRegionCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 4 ), TxtFlags, Text::Shadow );
 
 	mGOTypeList = UIDropDownList::New();
-	mGOTypeList->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setSize( Width - 26, 0 )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
+	mGOTypeList->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setSize( Width - 26, 0 )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 
 	mGOTypeList->addEventListener( UIEvent::OnItemSelected, cb::Make1( this, &MapEditor::onTypeChange ) );
 	fillGotyList();
 
 	mBtnGOTypeAdd = UIPushButton::New();
-	mBtnGOTypeAdd->setParent( mSubTextureCont )->setSize( 24, mGOTypeList->getSize().getHeight() )
+	mBtnGOTypeAdd->setParent( mTextureRegionCont )->setSize( 24, mGOTypeList->getSize().getHeight() )
 				 ->setPosition(  mGOTypeList->getPosition().x + mGOTypeList->getSize().getWidth() + 2, mGOTypeList->getPosition().y );
 	mBtnGOTypeAdd->setIcon( mTheme->getIconByName( "add" ) )->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mBtnGOTypeAdd->setTooltipText( "Adds a new game object type\nunknown by the map editor." );
@@ -271,66 +271,66 @@ void MapEditor::createSubTextureContainer( Int32 Width ) {
 	if ( NULL == mBtnGOTypeAdd->getIcon()->getDrawable() )
 		mBtnGOTypeAdd->setText( "..." );
 
-	Txt = createTextBox( "Layers:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mGOTypeList->getPosition().y + mGOTypeList->getSize().getHeight() + 4 ), TxtFlags, Text::Shadow );
+	Txt = createTextBox( "Layers:", mTextureRegionCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mGOTypeList->getPosition().y + mGOTypeList->getSize().getHeight() + 4 ), TxtFlags, Text::Shadow );
 
 	mLayerList = UIDropDownList::New();
-	mLayerList->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setSize( Width, 0 )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
+	mLayerList->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setSize( Width, 0 )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 
 	mLayerList->addEventListener( UIEvent::OnItemSelected, cb::Make1( this, &MapEditor::onLayerSelect ) );
 
-	Txt = createTextBox( "Game Object Flags:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mLayerList->getPosition().y + mLayerList->getSize().getHeight() + 4 ), TxtFlags, Text::Shadow );
+	Txt = createTextBox( "Game Object Flags:", mTextureRegionCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mLayerList->getPosition().y + mLayerList->getSize().getHeight() + 4 ), TxtFlags, Text::Shadow );
 
 	Uint32 ChkFlags = UI_CONTROL_DEFAULT_ALIGN | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
 	mChkMirrored = UICheckBox::New();
-	mChkMirrored->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkMirrored->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
 	mChkMirrored->setText( "Mirrored" );
 	mChkMirrored->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickMirrored ) );
 
 	mChkFliped = UICheckBox::New();
-	mChkFliped->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( mChkMirrored->getPosition().x + mChkMirrored->getSize().getWidth() + 32, mChkMirrored->getPosition().y  )->resetFlags( ChkFlags );
+	mChkFliped->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( mChkMirrored->getPosition().x + mChkMirrored->getSize().getWidth() + 32, mChkMirrored->getPosition().y  )->resetFlags( ChkFlags );
 	mChkFliped->setText( "Fliped" );
 	mChkFliped->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickFlipped ) );
 
 	mChkBlocked = UICheckBox::New();
-	mChkBlocked->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( mChkMirrored->getPosition().x, mChkMirrored->getPosition().y + mChkMirrored->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkBlocked->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( mChkMirrored->getPosition().x, mChkMirrored->getPosition().y + mChkMirrored->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
 	mChkBlocked->setText( "Blocked" );
 	mChkBlocked->setTooltipText( "Blocks the tile occupied by the sprite." );
 	mChkBlocked->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickBlocked ) );
 
 	mChkAnim = UICheckBox::New();
-	mChkAnim->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( mChkFliped->getPosition().x, mChkFliped->getPosition().y + mChkFliped->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkAnim->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( mChkFliped->getPosition().x, mChkFliped->getPosition().y + mChkFliped->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
 	mChkAnim->setText( "Animated" );
 	mChkAnim->setTooltipText( "Indicates if the Sprite is animated." );
 	mChkAnim->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickAnimated ) );
 
 	mChkRot90 = UICheckBox::New();
-	mChkRot90->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( mChkBlocked->getPosition().x, mChkBlocked->getPosition().y + mChkBlocked->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkRot90->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( mChkBlocked->getPosition().x, mChkBlocked->getPosition().y + mChkBlocked->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
 	mChkRot90->setText( String::fromUtf8( "Rotate 90º" ) );
 	mChkRot90->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickRot90 ) );
 
 	mChkAutoFix = UICheckBox::New();
-	mChkAutoFix->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( mChkAnim->getPosition().x, mChkAnim->getPosition().y + mChkAnim->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkAutoFix->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( mChkAnim->getPosition().x, mChkAnim->getPosition().y + mChkAnim->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
 	mChkAutoFix->setText( "AutoFix TilePos" );
 	mChkAutoFix->setTooltipText( "In a tiled layer if the sprite is moved,\nit will update the current tile position automatically." );
 	mChkAutoFix->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickAutoFix ) );
 
 	mChkBlendAdd = UICheckBox::New();
-	mChkBlendAdd->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( mChkRot90->getPosition().x, mChkRot90->getPosition().y + mChkRot90->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkBlendAdd->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( mChkRot90->getPosition().x, mChkRot90->getPosition().y + mChkRot90->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
 	mChkBlendAdd->setText( "Additive Blend" );
 	mChkBlendAdd->setTooltipText( "Use additive blend mode." );
 	mChkBlendAdd->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickAutoFix ) );
 
-	Txt = createTextBox( "Game Object Data:", mSubTextureCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mChkBlendAdd->getPosition().y + mChkBlendAdd->getSize().getHeight() + 8 ), TxtFlags, Text::Shadow );
+	Txt = createTextBox( "Game Object Data:", mTextureRegionCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mChkBlendAdd->getPosition().y + mChkBlendAdd->getSize().getHeight() + 8 ), TxtFlags, Text::Shadow );
 
 	mChkDI = UICheckBox::New();
-	mChkDI->setFontStyle( Text::Shadow )->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkDI->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
 	mChkDI->setText( "Add as DataId" );
 	mChkDI->setTooltipText( "If the resource it's not a sprite,\nyou can reference it with a data id" );
 	mChkDI->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickDI ) );
 
 	mSGCont = UIWidget::New();
-	mSGCont->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, mChkDI->getPosition().y + mChkDI->getSize().getHeight() + 8 )->setSize( Width, 400 );
+	mSGCont->setParent( mTextureRegionCont )->setPosition( TAB_CONT_X_DIST, mChkDI->getPosition().y + mChkDI->getSize().getHeight() + 8 )->setSize( Width, 400 );
 	mSGCont->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mSGCont->setEnabled( true );
 	mSGCont->setVisible( true );
@@ -341,23 +341,23 @@ void MapEditor::createSubTextureContainer( Int32 Width ) {
 	mTextureAtlasesList->setFontStyle( Text::Shadow )->setParent( mSGCont )->setSize( Width, 0 )->setPosition( 0, Txt->getPosition().y +Txt->getSize().getHeight() + 4 );
 	mTextureAtlasesList->addEventListener( UIEvent::OnItemSelected, cb::Make1( this, &MapEditor::onTextureAtlasChange ) );
 
-	mSubTextureList = UIListBox::New();
-	mSubTextureList->setParent( mSGCont )
+	mTextureRegionList = UIListBox::New();
+	mTextureRegionList->setParent( mSGCont )
 			->setPosition( 0, mTextureAtlasesList->getPosition().y + mTextureAtlasesList->getSize().getHeight() + 4 )
-			->setSize( Width, mSubTextureList->getRowHeight() * 9 + mSubTextureList->getContainerPadding().Top + mSubTextureList->getContainerPadding().Bottom );
-	mSubTextureList->setAnchors(UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	mSubTextureList->addEventListener( UIEvent::OnItemSelected, cb::Make1( this, &MapEditor::onSubTextureChange ) );
+			->setSize( Width, mTextureRegionList->getRowHeight() * 9 + mTextureRegionList->getContainerPadding().Top + mTextureRegionList->getContainerPadding().Bottom );
+	mTextureRegionList->setAnchors(UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
+	mTextureRegionList->addEventListener( UIEvent::OnItemSelected, cb::Make1( this, &MapEditor::onTextureRegionChange ) );
 
-	mGfxPreview = UISubTexture::New();
+	mGfxPreview = UITextureRegion::New();
 	mGfxPreview->setScaleType( UIScaleType::FitInside )
 			   ->resetFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP )
 			   ->setParent( mSGCont )->setSize( Width, Width )
-			   ->setPosition( 0, mSubTextureList->getPosition().y + mSubTextureList->getSize().getHeight() + 4 );
+			   ->setPosition( 0, mTextureRegionList->getPosition().y + mTextureRegionList->getSize().getHeight() + 4 );
 
 	mGfxPreview->setBorderEnabled( true )->setColor( Color( 0, 0, 0, 200 ) );
 
 	mDICont = UIWidget::New();
-	mDICont->setParent( mSubTextureCont )->setPosition( TAB_CONT_X_DIST, mChkDI->getPosition().y + mChkDI->getSize().getHeight() + 8 );
+	mDICont->setParent( mTextureRegionCont )->setPosition( TAB_CONT_X_DIST, mChkDI->getPosition().y + mChkDI->getSize().getHeight() + 8 );
 	mDICont->setSize(  Width, 400 );
 	mDICont->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mDICont->setEnabled( false );
@@ -690,17 +690,17 @@ void MapEditor::updateFlags() {
 }
 
 void MapEditor::onTypeChange( const UIEvent * Event ) {
-	if ( mGOTypeList->getText() == "SubTexture" )
-		mCurGOType = GAMEOBJECT_TYPE_SUBTEXTURE;
-	else if ( mGOTypeList->getText() == "SubTextureEx" )
-		mCurGOType = GAMEOBJECT_TYPE_SUBTEXTUREEX;
+	if ( mGOTypeList->getText() == "TextureRegion" )
+		mCurGOType = GAMEOBJECT_TYPE_TEXTUREREGION;
+	else if ( mGOTypeList->getText() == "TextureRegionEx" )
+		mCurGOType = GAMEOBJECT_TYPE_TEXTUREREGIONEX;
 	else if ( mGOTypeList->getText() == "Sprite" )
 		mCurGOType = GAMEOBJECT_TYPE_SPRITE;
 	else
 		mCurGOType = String::hash( mGOTypeList->getText().toUtf8() );
 
 	if ( NULL != mChkAnim && NULL != mGOTypeList && mChkAnim->isActive() && mGOTypeList->getText() != "Sprite" ) {
-		if ( mGOTypeList->getText() == "SubTexture" || mGOTypeList->getText() == "SubTextureEx" ) {
+		if ( mGOTypeList->getText() == "TextureRegion" || mGOTypeList->getText() == "TextureRegionEx" ) {
 			mChkAnim->setActive( false );
 		}
 	}
@@ -732,7 +732,7 @@ void MapEditor::chkClickAutoFix( const UIEvent * Event ) {
 void MapEditor::chkClickAnimated( const UIEvent * Event ) {
 	updateFlags();
 
-	if ( mChkAnim->isActive() && ( mGOTypeList->getText() == "SubTexture" || mGOTypeList->getText() == "SubTextureEx" ) ) {
+	if ( mChkAnim->isActive() && ( mGOTypeList->getText() == "TextureRegion" || mGOTypeList->getText() == "TextureRegionEx" ) ) {
 		mGOTypeList->getListBox()->setSelected( "Sprite" );
 	}
 }
@@ -780,43 +780,43 @@ void MapEditor::fillSGCombo() {
 	}
 }
 
-void MapEditor::fillSubTextureList() {
+void MapEditor::fillTextureRegionList() {
 	TextureAtlasManager * SGM = TextureAtlasManager::instance();
 	mCurSG = SGM->getByName( mTextureAtlasesList->getText() );
-	std::list<SubTexture*>& Res = mCurSG->getResources();
+	std::list<TextureRegion*>& Res = mCurSG->getResources();
 
-	mSubTextureList->clear();
+	mTextureRegionList->clear();
 
 	if ( NULL != mCurSG ) {
 		std::vector<String> items;
 
-		for ( std::list<SubTexture*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
+		for ( std::list<TextureRegion*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
 				items.push_back( (*it)->getName() );
 		}
 
 		if ( items.size() ) {
 			std::sort( items.begin(), items.end() );
 
-			mSubTextureList->addListBoxItems( items );
-			mSubTextureList->setSelected( 0 );
+			mTextureRegionList->addListBoxItems( items );
+			mTextureRegionList->setSelected( 0 );
 		}
 	}
 
-	mSubTextureList->getVerticalScrollBar()->setClickStep( 8.f / (Float)mSubTextureList->getCount() );
+	mTextureRegionList->getVerticalScrollBar()->setClickStep( 8.f / (Float)mTextureRegionList->getCount() );
 }
 
-void MapEditor::onSubTextureChange( const UIEvent * Event ) {
+void MapEditor::onTextureRegionChange( const UIEvent * Event ) {
 	if ( NULL != mCurSG ) {
-		SubTexture * tSubTexture = mCurSG->getByName( mSubTextureList->getItemSelectedText() );
+		TextureRegion * tTextureRegion = mCurSG->getByName( mTextureRegionList->getItemSelectedText() );
 
-		if ( NULL != tSubTexture ) {
-			mGfxPreview->setSubTexture( tSubTexture );
+		if ( NULL != tTextureRegion ) {
+			mGfxPreview->setTextureRegion( tTextureRegion );
 		}
 	}
 }
 
 void MapEditor::onTextureAtlasChange( const UIEvent * Event ) {
-	fillSubTextureList();
+	fillTextureRegionList();
 }
 
 void MapEditor::createNewMap() {
@@ -1229,25 +1229,25 @@ void MapEditor::windowClose( const UIEvent * Event ) {
 GameObject * MapEditor::createGameObject() {
 	GameObject * tObj	= NULL;
 
-	if ( GAMEOBJECT_TYPE_SUBTEXTURE == mCurGOType ) {
+	if ( GAMEOBJECT_TYPE_TEXTUREREGION == mCurGOType ) {
 
-		tObj = eeNew( GameObjectSubTexture, ( mCurGOFlags, mCurLayer, mGfxPreview->getSubTexture() ) );
+		tObj = eeNew( GameObjectTextureRegion, ( mCurGOFlags, mCurLayer, mGfxPreview->getTextureRegion() ) );
 
-	} else if ( GAMEOBJECT_TYPE_SUBTEXTUREEX == mCurGOType ) {
+	} else if ( GAMEOBJECT_TYPE_TEXTUREREGIONEX == mCurGOType ) {
 
-		tObj = eeNew( GameObjectSubTextureEx, ( mCurGOFlags, mCurLayer, mGfxPreview->getSubTexture() ) );
+		tObj = eeNew( GameObjectTextureRegionEx, ( mCurGOFlags, mCurLayer, mGfxPreview->getTextureRegion() ) );
 
 	} else if ( GAMEOBJECT_TYPE_SPRITE == mCurGOType ) {
 
 		if ( mChkAnim->isActive() ) {
 
-			Sprite * tAnimSprite = eeNew( Sprite, ( String::removeNumbersAtEnd( mGfxPreview->getSubTexture()->getName() ) ) );
+			Sprite * tAnimSprite = eeNew( Sprite, ( String::removeNumbersAtEnd( mGfxPreview->getTextureRegion()->getName() ) ) );
 			tObj = eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, tAnimSprite ) );
 			tAnimSprite->setAutoAnimate( false );
 
 		} else {
 
-			Sprite * tStatiSprite = eeNew( Sprite, ( mGfxPreview->getSubTexture() ) );
+			Sprite * tStatiSprite = eeNew( Sprite, ( mGfxPreview->getTextureRegion() ) );
 			tObj = eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, tStatiSprite ) );
 
 		}
@@ -1257,7 +1257,7 @@ GameObject * MapEditor::createGameObject() {
 		if ( mChkDI->isActive() )
 			tObj = eeNew( GameObjectVirtual, ( String::hash( mDataIdInput->getText().toUtf8() ), mCurLayer, mCurGOFlags, mCurGOType ) );
 		else
-			tObj = eeNew( GameObjectVirtual, ( mGfxPreview->getSubTexture(), mCurLayer, mCurGOFlags, mCurGOType ) );
+			tObj = eeNew( GameObjectVirtual, ( mGfxPreview->getTextureRegion(), mCurLayer, mCurGOFlags, mCurGOType ) );
 	}
 
 	return tObj;
@@ -1317,8 +1317,8 @@ GameObject * MapEditor::getCurrentGOOver() {
 void MapEditor::onMapMouseClick( const UIEvent * Event ) {
 	const UIEventMouse * MEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
-	if ( mSubTextureCont->isVisible() ) {
-		if ( NULL == mCurLayer || NULL == mGfxPreview->getSubTexture() || UIManager::instance()->getDownControl() != mUIMap ) {
+	if ( mTextureRegionCont->isVisible() ) {
+		if ( NULL == mCurLayer || NULL == mGfxPreview->getTextureRegion() || UIManager::instance()->getDownControl() != mUIMap ) {
 			if ( NULL == mCurLayer )
 				createNoLayerAlert( "No layers found" );
 
@@ -1362,8 +1362,8 @@ void MapEditor::onMapMouseClick( const UIEvent * Event ) {
 void MapEditor::onMapMouseDown( const UIEvent * Event ) {
 	const UIEventMouse * MEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
-	if ( mSubTextureCont->isVisible() ) {
-		if ( NULL == mCurLayer || NULL == mGfxPreview->getSubTexture() || UIManager::instance()->getDownControl() != mUIMap )
+	if ( mTextureRegionCont->isVisible() ) {
+		if ( NULL == mCurLayer || NULL == mGfxPreview->getTextureRegion() || UIManager::instance()->getDownControl() != mUIMap )
 			return;
 
 

@@ -46,7 +46,7 @@ class UIBlurredWindow : public UIWindow {
 					mFboBlur->resize( mRealSize.x / fboDiv, mRealSize.y / fboDiv );
 				}
 
-				SubTexture subTexture( curFBO->getTexture()->getId(),
+				TextureRegion textureRegion( curFBO->getTexture()->getId(),
 									   Rect(	mScreenPos.x, mScreenPos.y,
 												mScreenPos.x + mRealSize.x, mScreenPos.y + mRealSize.y
 				) );
@@ -55,7 +55,7 @@ class UIBlurredWindow : public UIWindow {
 				mFboBlur->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 0 ) );
 				mFboBlur->bind();
 				mFboBlur->clear();
-				subTexture.draw(Vector2f(0,0),mFboBlur->getSizef());
+				textureRegion.draw(Vector2f(0,0),mFboBlur->getSizef());
 				mFboBlur->unbind();
 
 				mBlurShader->bind();
@@ -1282,8 +1282,8 @@ void EETest::loadTextures() {
 	mBlindy.addFramesByPattern( "rn" );
 	mBlindy.setPosition( Vector2f( 320.f, 0.f ) );
 
-	mBoxSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( SubTexture, ( TN[3], "ilmare" ) ) ) ) );
-	mCircleSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( SubTexture, ( TN[1], "thecircle" ) ) ) ) );
+	mBoxSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( TextureRegion, ( TN[3], "ilmare" ) ) ) ) );
+	mCircleSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( TextureRegion, ( TN[1], "thecircle" ) ) ) ) );
 
 	eePRINTL( "Textures loading time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 

@@ -1,5 +1,5 @@
-#ifndef EE_GRAPHICSCSUBTEXTURE_H
-#define EE_GRAPHICSCSUBTEXTURE_H
+#ifndef EE_GRAPHICSTEXTUREREGION_HPP
+#define EE_GRAPHICSTEXTUREREGION_HPP
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/texture.hpp>
@@ -8,68 +8,68 @@
 
 namespace EE { namespace Graphics {
 
-/** @brief A SubTexture is a part of a texture that represent an sprite.*/
-class EE_API SubTexture : public DrawableResource {
+/** @brief A TextureRegion is a part of a texture that represent an sprite.*/
+class EE_API TextureRegion : public DrawableResource {
 	public:
-		/** Creates an empty SubTexture */
-		SubTexture();
+		/** Creates an empty TextureRegion */
+		TextureRegion();
 
-		/** Creates a SubTexture from a Texture. It will use the full Texture as a SubTexture.
+		/** Creates a TextureRegion from a Texture. It will use the full Texture as a TextureRegion.
 		*	@param TexId The texture id
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture( const Uint32& TexId, const std::string& name = "" );
+		TextureRegion( const Uint32& TexId, const std::string& name = "" );
 
-		/** Creates a SubTexture of the indicated part of the texture.
+		/** Creates a TextureRegion of the indicated part of the texture.
 		*	@param TexId The texture id
-		*	@param SrcRect The texture part that will be used as the SubTexture.
+		*	@param SrcRect The texture part that will be used as the TextureRegion.
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture( const Uint32& TexId, const Rect& srcRect, const std::string& name = "" );
+		TextureRegion( const Uint32& TexId, const Rect& srcRect, const std::string& name = "" );
 
-		/** Creates a SubTexture of the indicated part of the texture.
+		/** Creates a TextureRegion of the indicated part of the texture.
 		*	@param TexId The texture id
-		*	@param SrcRect The texture part that will be used as the SubTexture.
-		*	@param DestSize The destination size that the SubTexture will have when rendered.
+		*	@param SrcRect The texture part that will be used as the TextureRegion.
+		*	@param DestSize The destination size that the TextureRegion will have when rendered.
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const std::string& name = "" );
+		TextureRegion( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const std::string& name = "" );
 
-		/** Creates a SubTexture of the indicated part of the texture.
+		/** Creates a TextureRegion of the indicated part of the texture.
 		*	@param TexId The texture id
-		*	@param SrcRect The texture part that will be used as the SubTexture.
-		*	@param DestSize The destination size that the SubTexture will have when rendered.
+		*	@param SrcRect The texture part that will be used as the TextureRegion.
+		*	@param DestSize The destination size that the TextureRegion will have when rendered.
 		*	@param Offset The offset that will be added to the position passed when any Draw call is used.
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const Vector2i& offset, const std::string& name = "" );
+		TextureRegion( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const Vector2i& offset, const std::string& name = "" );
 
-		virtual ~SubTexture();
+		virtual ~TextureRegion();
 
-		/** @return The Texture Id that holds the SubTexture. */
+		/** @return The Texture Id that holds the TextureRegion. */
 		const Uint32& getTextureId();
 
-		/** Set the Texture Id that holds the SubTexture. */
+		/** Set the Texture Id that holds the TextureRegion. */
 		void setTextureId( const Uint32& TexId );
 
-		/** @return The Texture sector that represents the SubTexture */
+		/** @return The Texture sector that represents the TextureRegion */
 		const Rect& getSrcRect() const;
 
-		/** Sets the Texture sector that represents the SubTexture */
+		/** Sets the Texture sector that represents the TextureRegion */
 		void setSrcRect( const Rect& rect );
 
-		/** @return The Destination Size of the SubTexture. */
+		/** @return The Destination Size of the TextureRegion. */
 		const Sizef& getDestSize() const;
 
-		/** Sets the Destination Size of the SubTexture.
-		*	The size can be different from the original size of the SubTexture.
-		*	For example if the SubTexture width is 32 pixels, by default the destination width is 32 pixels, but it can be changed to anything want. */
+		/** Sets the Destination Size of the TextureRegion.
+		*	The size can be different from the original size of the TextureRegion.
+		*	For example if the TextureRegion width is 32 pixels, by default the destination width is 32 pixels, but it can be changed to anything want. */
 		void setDestSize( const Sizef& destSize );
 
-		/** @return The SubTexture default offset. The offset is added to the position passed when is drawed. */
+		/** @return The TextureRegion default offset. The offset is added to the position passed when is drawed. */
 		const Vector2i& getOffset() const;
 
-		/** Set the SubTexture offset. */
+		/** Set the TextureRegion offset. */
 		void setOffset( const Vector2i& offset );
 
 		void draw( const Float& X, const Float& Y, const Color& color = Color::White, const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const BlendMode& Blend = BlendAlpha, const RenderMode& Effect = RENDER_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter) );
@@ -84,10 +84,10 @@ class EE_API SubTexture : public DrawableResource {
 
 		virtual void draw(const Vector2f& position, const Sizef & size );
 
-		/** @return The texture instance used by the SubTexture. */
+		/** @return The texture instance used by the TextureRegion. */
 		Graphics::Texture * getTexture();
 
-		/** Replaces a color in the SubTexture ( needs Lock() ) */
+		/** Replaces a color in the TextureRegion ( needs Lock() ) */
 		void replaceColor( Color ColorKey, Color NewColor );
 
 		/** Creates a mask from a color.  */
@@ -102,16 +102,16 @@ class EE_API SubTexture : public DrawableResource {
 		/** Creates a copy in memory from the texture loaded in VRAM.  */
 		void cacheColors();
 
-		/** @return The alpha value that corresponds to the position indicated in the SubTexture.
-		*	If the SubTexture wasn't locked before this call, it will be locked automatically. */
+		/** @return The alpha value that corresponds to the position indicated in the TextureRegion.
+		*	If the TextureRegion wasn't locked before this call, it will be locked automatically. */
 		Uint8 getAlphaAt( const Int32& X, const Int32& Y );
 
-		/** @return The color that corresponds to the position indicated in the SubTexture.
-		*	If the SubTexture wasn't locked before this call, it will be locked automatically. */
+		/** @return The color that corresponds to the position indicated in the TextureRegion.
+		*	If the TextureRegion wasn't locked before this call, it will be locked automatically. */
 		Color getColorAt( const Int32& X, const Int32& Y );
 
-		/** @brief Set a color to the position indicated in the SubTexture.
-		*	If the SubTexture wasn't locked before this call, it will be locked automatically.
+		/** @brief Set a color to the position indicated in the TextureRegion.
+		*	If the TextureRegion wasn't locked before this call, it will be locked automatically.
 		*/
 		void setColorAt( const Int32& X, const Int32& Y, const Color& Color );
 
@@ -126,7 +126,7 @@ class EE_API SubTexture : public DrawableResource {
 		*	@see Texture::Unlock */
 		bool unlock( const bool& KeepData = false, const bool& Modified = false );
 
-		/** @return The SubTexture size in the texture. This is the source rect size. */
+		/** @return The TextureRegion size in the texture. This is the source rect size. */
 		Sizei getRealSize();
 
 		/** @return This is the same as Destination Size but with the values rounded as integers. */
@@ -135,11 +135,11 @@ class EE_API SubTexture : public DrawableResource {
 		/** @return A pixel pointer to the texture loaded in memory ( downloaded from VRAM doing Lock()/Unlock() ). */
 		const Uint8* getPixelsPtr();
 
-		/** Saves the SubTexture to a file in the file format specified.
+		/** Saves the TextureRegion to a file in the file format specified.
 		*	This will get the Texture from VRAM ( it will not work with OpenGL ES ) */
 		bool saveToFile( const std::string& filepath, const Image::SaveType& Format );
 
-		/** Sets the Destination Size as the Source Rect Size ( the real size of the SubTexture ) multiplied by the pixel density. */
+		/** Sets the Destination Size as the Source Rect Size ( the real size of the TextureRegion ) multiplied by the pixel density. */
 		void resetDestSize();
 
 		Float getPixelDensity() const;

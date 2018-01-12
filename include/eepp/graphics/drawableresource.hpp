@@ -9,7 +9,7 @@ namespace  EE { namespace Graphics {
 class EE_API DrawableResource : public Drawable
 {
 	public:
-		/** @return The DrawableResource Id. The Id is the String::hash of the SubTexture name. */
+		/** @return The DrawableResource Id. The Id is the String::hash of the name. */
 		const Uint32& getId() const;
 
 		/** @return The DrawableResource Name. */

@@ -1,5 +1,5 @@
 #include <eepp/ui/uimenuseparator.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 
 namespace EE { namespace UI {
 

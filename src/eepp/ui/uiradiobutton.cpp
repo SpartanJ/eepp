@@ -1,6 +1,6 @@
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uimanager.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/text.hpp>
 #include <pugixml/pugixml.hpp>
 

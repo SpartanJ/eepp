@@ -4,18 +4,18 @@
 #include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace Graphics {
-class SubTexture;
+class TextureRegion;
 }}
 
 namespace EE { namespace UI {
 
-class EE_API UISubTexture : public UIWidget {
+class EE_API UITextureRegion : public UIWidget {
 	public:
-		static UISubTexture * New();
+		static UITextureRegion * New();
 
-		UISubTexture();
+		UITextureRegion();
 
-		virtual ~UISubTexture();
+		virtual ~UITextureRegion();
 
 		virtual Uint32 getType() const;
 
@@ -25,9 +25,9 @@ class EE_API UISubTexture : public UIWidget {
 
 		virtual void setAlpha( const Float& alpha );
 
-		Graphics::SubTexture * getSubTexture() const;
+		Graphics::TextureRegion * getTextureRegion() const;
 
-		UISubTexture * setSubTexture( Graphics::SubTexture * subTexture );
+		UITextureRegion * setTextureRegion( Graphics::TextureRegion * TextureRegion );
 
 		const Color& getColor() const;
 
@@ -43,10 +43,10 @@ class EE_API UISubTexture : public UIWidget {
 
 		Uint32 getScaleType() const;
 
-		UISubTexture * setScaleType(const Uint32 & scaleType);
+		UITextureRegion * setScaleType(const Uint32 & scaleType);
 	protected:
 		Uint32					mScaleType;
-		Graphics::SubTexture * 	mSubTexture;
+		Graphics::TextureRegion * 	mTextureRegion;
 		Color					mColor;
 		RenderMode			mRender;
 		Vector2i				mAlignOffset;
@@ -59,7 +59,7 @@ class EE_API UISubTexture : public UIWidget {
 
 		void autoAlign();
 
-		void drawSubTexture();
+		void drawTextureRegion();
 };
 
 }}

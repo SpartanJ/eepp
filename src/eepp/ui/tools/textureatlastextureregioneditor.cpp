@@ -1,15 +1,15 @@
-#include <eepp/ui/tools/textureatlassubtextureeditor.hpp>
+#include <eepp/ui/tools/textureatlastextureregioneditor.hpp>
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/ui/uimanager.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
-TextureAtlasSubTextureEditor * TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor::New( TextureAtlasEditor * Editor ) {
-	return eeNew( TextureAtlasSubTextureEditor, ( Editor ) );
+TextureAtlasTextureRegionEditor * TextureAtlasTextureRegionEditor::TextureAtlasTextureRegionEditor::New( TextureAtlasEditor * Editor ) {
+	return eeNew( TextureAtlasTextureRegionEditor, ( Editor ) );
 }
 
-TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( TextureAtlasEditor * Editor ) :
+TextureAtlasTextureRegionEditor::TextureAtlasTextureRegionEditor( TextureAtlasEditor * Editor ) :
 	UIWidget(),
 	mGfx( NULL ),
 	mEditor( Editor )
@@ -20,7 +20,7 @@ TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( TextureAtlasEditor *
 
 	mTheme = UIThemeManager::instance()->getDefaultTheme();
 
-	mGfx = UISubTexture::New();
+	mGfx = UITextureRegion::New();
 	mGfx->setParent( this );
 	mGfx->setVisible( true );
 	mGfx->setEnabled( true );
@@ -36,10 +36,10 @@ TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( TextureAtlasEditor *
 	getCenter();
 }
 
-TextureAtlasSubTextureEditor::~TextureAtlasSubTextureEditor() {
+TextureAtlasTextureRegionEditor::~TextureAtlasTextureRegionEditor() {
 }
 
-void TextureAtlasSubTextureEditor::draw() {
+void TextureAtlasTextureRegionEditor::draw() {
 	Primitives P;
 	P.setColor( Color( 255, 0, 0, mAlpha ) );
 	P.setLineWidth( PixelDensity::dpToPx( 1.f ) );
@@ -52,42 +52,42 @@ void TextureAtlasSubTextureEditor::draw() {
 	UIWidget::draw();
 }
 
-void TextureAtlasSubTextureEditor::update() {
+void TextureAtlasTextureRegionEditor::update() {
 	Vector2i Pos = mDrag->getRealPosition();
 
 	UIWidget::update();
 
-	if ( NULL != mGfx->getSubTexture() && mDrag->isDragEnabled() && mDrag->isDragging() && Pos != mDrag->getRealPosition() ) {
+	if ( NULL != mGfx->getTextureRegion() && mDrag->isDragEnabled() && mDrag->isDragging() && Pos != mDrag->getRealPosition() ) {
 		Vector2i Diff = -( Pos - mDrag->getRealPosition() );
 
 		Diff = PixelDensity::pxToDpI( Diff );
 
-		mGfx->getSubTexture()->setOffset( Vector2i( mGfx->getSubTexture()->getOffset().x + Diff.x, mGfx->getSubTexture()->getOffset().y + Diff.y ) );
+		mGfx->getTextureRegion()->setOffset( Vector2i( mGfx->getTextureRegion()->getOffset().x + Diff.x, mGfx->getTextureRegion()->getOffset().y + Diff.y ) );
 
-		mEditor->getSpinOffX()->setValue( mGfx->getSubTexture()->getOffset().x );
-		mEditor->getSpinOffY()->setValue( mGfx->getSubTexture()->getOffset().y );
+		mEditor->getSpinOffX()->setValue( mGfx->getTextureRegion()->getOffset().x );
+		mEditor->getSpinOffY()->setValue( mGfx->getTextureRegion()->getOffset().y );
 	}
 
 	mGfx->setPosition( mUICenter );
 }
 
-void TextureAtlasSubTextureEditor::onSizeChange() {
+void TextureAtlasTextureRegionEditor::onSizeChange() {
 	getCenter();
 }
 
-Graphics::SubTexture * TextureAtlasSubTextureEditor::getSubTexture() const {
-	return mGfx->getSubTexture();
+Graphics::TextureRegion * TextureAtlasTextureRegionEditor::getTextureRegion() const {
+	return mGfx->getTextureRegion();
 }
 
-void TextureAtlasSubTextureEditor::setSubTexture( Graphics::SubTexture * subTexture ) {
-	mGfx->setSubTexture( subTexture );
+void TextureAtlasTextureRegionEditor::setTextureRegion( Graphics::TextureRegion * TextureRegion ) {
+	mGfx->setTextureRegion( TextureRegion );
 }
 
-UISubTexture * TextureAtlasSubTextureEditor::getGfx() const {
+UITextureRegion * TextureAtlasTextureRegionEditor::getGfx() const {
 	return mGfx;
 }
 
-void TextureAtlasSubTextureEditor::getCenter() {
+void TextureAtlasTextureRegionEditor::getCenter() {
 	mUICenter = Vector2i( mSize.getWidth() / 2, mSize.getHeight() / 2 );
 }
 

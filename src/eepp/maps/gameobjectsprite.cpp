@@ -32,10 +32,10 @@ bool GameObjectSprite::isType( const Uint32& type ) {
 
 void GameObjectSprite::draw() {
 	if ( NULL != mSprite ) {
-		SubTexture * subTexture = mSprite->getCurrentSubTexture();
-		Sizef destSizeO = subTexture->getDestSize();
-		Sizei realSize = subTexture->getRealSize();
-		subTexture->setDestSize( Sizef( (Float)realSize.getWidth(), (Float)realSize.getHeight() ) );
+		TextureRegion * TextureRegion = mSprite->getCurrentTextureRegion();
+		Sizef destSizeO = TextureRegion->getDestSize();
+		Sizei realSize = TextureRegion->getRealSize();
+		TextureRegion->setDestSize( Sizef( (Float)realSize.getWidth(), (Float)realSize.getHeight() ) );
 
 		mSprite->setRotation( getRotation() );
 
@@ -73,7 +73,7 @@ void GameObjectSprite::draw() {
 
 		mSprite->draw();
 
-		subTexture->setDestSize( destSizeO );
+		TextureRegion->setDestSize( destSizeO );
 	}
 }
 
@@ -106,7 +106,7 @@ void GameObjectSprite::setTilePosition( Vector2i pos ) {
 
 Sizei GameObjectSprite::getSize() {
 	if ( NULL != mSprite )
-		return mSprite->getSubTexture(0)->getRealSize();
+		return mSprite->getTextureRegion(0)->getRealSize();
 
 	return Sizei();
 }
@@ -132,27 +132,27 @@ void GameObjectSprite::setFlag( const Uint32& Flag ) {
 }
 
 Uint32 GameObjectSprite::getDataId() {
-	return mSprite->getSubTexture(0)->getId();
+	return mSprite->getTextureRegion(0)->getId();
 }
 
 void GameObjectSprite::setDataId( Uint32 Id ) {
 	Graphics::Sprite * tSprite = NULL;
 
 	if ( mFlags & GObjFlags::GAMEOBJECT_ANIMATED ) {
-		std::vector<SubTexture*> tSubTextureVec = TextureAtlasManager::instance()->getSubTexturesByPatternId( Id );
+		std::vector<TextureRegion*> tTextureRegionVec = TextureAtlasManager::instance()->getTextureRegionsByPatternId( Id );
 
-		if ( tSubTextureVec.size() ) {
+		if ( tTextureRegionVec.size() ) {
 			tSprite = eeNew( Graphics::Sprite, () );
 			tSprite->createAnimation();
-			tSprite->addFrames( tSubTextureVec );
+			tSprite->addFrames( tTextureRegionVec );
 
 			setSprite( tSprite );
 		}
 	} else {
-		Graphics::SubTexture * tSubTexture = TextureAtlasManager::instance()->getSubTextureById( Id );
+		Graphics::TextureRegion * tTextureRegion = TextureAtlasManager::instance()->getTextureRegionById( Id );
 
-		if ( NULL != tSubTexture ) {
-			setSprite( eeNew( Graphics::Sprite, ( tSubTexture ) ) );
+		if ( NULL != tTextureRegion ) {
+			setSprite( eeNew( Graphics::Sprite, ( tTextureRegion ) ) );
 		}
 	}
 }

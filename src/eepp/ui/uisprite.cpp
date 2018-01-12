@@ -14,7 +14,7 @@ UISprite::UISprite() :
 	mSprite( NULL ),
 	mRender( RENDER_NORMAL ),
 	mAlignOffset(0,0),
-	mSubTextureLast(NULL)
+	mTextureRegionLast(NULL)
 {
 }
 
@@ -50,21 +50,21 @@ void UISprite::draw() {
 
 	if ( mVisible ) {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
-			checkSubTextureUpdate();
+			checkTextureRegionUpdate();
 
 			mSprite->setPosition( Vector2f( (Float)( mScreenPos.x + mAlignOffset.x ), (Float)( mScreenPos.y + mAlignOffset.y ) ) );
 
-			SubTexture * subTexture = mSprite->getCurrentSubTexture();
+			TextureRegion * textureRegion = mSprite->getCurrentTextureRegion();
 
-			if ( NULL != subTexture ) {
-				Sizef oDestSize = subTexture->getDestSize();
-				Sizei pxSize = subTexture->getPxSize();
+			if ( NULL != textureRegion ) {
+				Sizef oDestSize = textureRegion->getDestSize();
+				Sizei pxSize = textureRegion->getPxSize();
 
-				subTexture->setDestSize( Sizef( (Float)pxSize.x, (Float)pxSize.y ) );
+				textureRegion->setDestSize( Sizef( (Float)pxSize.x, (Float)pxSize.y ) );
 
 				mSprite->draw( getBlendMode(), mRender );
 
-				subTexture->setDestSize( oDestSize );
+				textureRegion->setDestSize( oDestSize );
 			}
 		}
 	}
@@ -74,20 +74,20 @@ void UISprite::update() {
 	UIWidget::update();
 
 	if ( NULL != mSprite ) {
-		SubTexture * subTexture = mSprite->getCurrentSubTexture();
+		TextureRegion * textureRegion = mSprite->getCurrentTextureRegion();
 
 		mSprite->update();
 
-		if ( subTexture != mSprite->getCurrentSubTexture() )
+		if ( textureRegion != mSprite->getCurrentTextureRegion() )
 			invalidateDraw();
 	}
 }
 
-void UISprite::checkSubTextureUpdate() {
-	if ( NULL != mSprite && NULL != mSprite->getCurrentSubTexture() && mSprite->getCurrentSubTexture() != mSubTextureLast ) {
+void UISprite::checkTextureRegionUpdate() {
+	if ( NULL != mSprite && NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion() != mTextureRegionLast ) {
 		updateSize();
 		autoAlign();
-		mSubTextureLast = mSprite->getCurrentSubTexture();
+		mTextureRegionLast = mSprite->getCurrentTextureRegion();
 	}
 }
 
@@ -128,30 +128,30 @@ void UISprite::setRenderMode( const RenderMode& render ) {
 void UISprite::updateSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mSprite ) {
-			if ( NULL != mSprite->getCurrentSubTexture() && mSprite->getCurrentSubTexture()->getDpSize() != mSize )
-				setSize( mSprite->getCurrentSubTexture()->getDpSize() );
+			if ( NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion()->getDpSize() != mSize )
+				setSize( mSprite->getCurrentTextureRegion()->getDpSize() );
 		}
 	}
 }
 
 void UISprite::autoAlign() {
-	if ( NULL == mSprite || NULL == mSprite->getCurrentSubTexture() )
+	if ( NULL == mSprite || NULL == mSprite->getCurrentTextureRegion() )
 		return;
 
-	SubTexture * tSubTexture = mSprite->getCurrentSubTexture();
+	TextureRegion * tTextureRegion = mSprite->getCurrentTextureRegion();
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.getWidth() / 2 - tSubTexture->getDpSize().getWidth() / 2;
+		mAlignOffset.x = mSize.getWidth() / 2 - tTextureRegion->getDpSize().getWidth() / 2;
 	} else if ( fontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.getWidth() - tSubTexture->getDpSize().getWidth();
+		mAlignOffset.x =  mSize.getWidth() - tTextureRegion->getDpSize().getWidth();
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.getHeight() / 2 - tSubTexture->getDpSize().getHeight() / 2;
+		mAlignOffset.y = mSize.getHeight() / 2 - tTextureRegion->getDpSize().getHeight() / 2;
 	} else if ( fontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.getHeight() - tSubTexture->getDpSize().getHeight();
+		mAlignOffset.y = mSize.getHeight() - tTextureRegion->getDpSize().getHeight();
 	} else {
 		mAlignOffset.y = 0;
 	}

@@ -17,7 +17,7 @@
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uitouchdragablewidget.hpp>
 #include <eepp/ui/uiimage.hpp>
-#include <eepp/ui/uisubtexture.hpp>
+#include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextinputpassword.hpp>

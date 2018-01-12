@@ -12,7 +12,7 @@
 
 namespace EE { namespace UI { namespace Tools {
 
-class TextureAtlasSubTextureEditor;
+class TextureAtlasTextureRegionEditor;
 
 class EE_API TextureAtlasEditor {
 	public:
@@ -43,14 +43,14 @@ class EE_API TextureAtlasEditor {
 		TGEditorCloseCb		mCloseCb;
 		TexturePacker *		mTexturePacker;
 		TextureAtlasLoader *mTextureAtlasLoader;
-		SubTexture *		mCurSubTexture;
+		TextureRegion *		mCurTextureRegion;
 		UISpinBox *			mSpinOffX;
 		UISpinBox *			mSpinOffY;
 		UISpinBox *			mSpinDestW;
 		UISpinBox *			mSpinDestH;
-		UIListBox *			mSubTextureList;
+		UIListBox *			mTextureRegionList;
 		UIWinMenu *			mWinMenu;
-		TextureAtlasSubTextureEditor * mSubTextureEditor;
+		TextureAtlasTextureRegionEditor * mTextureRegionEditor;
 		UITGEUpdater *		mTGEU;
 
 		void windowClose( const UIEvent * Event );
@@ -65,11 +65,11 @@ class EE_API TextureAtlasEditor {
 
 		void onTextureAtlasClose( const UIEvent * Event );
 
-		void onSubTextureChange( const UIEvent * Event );
+		void onTextureRegionChange( const UIEvent * Event );
 
 		void updateControls();
 
-		void fillSubTextureList();
+		void fillTextureRegionList();
 
 		void onOffXChange( const UIEvent * Event );
 
@@ -91,7 +91,7 @@ class EE_API TextureAtlasEditor {
 
 		void update();
 
-		UIWidget * createTextureAtlasSubTextureEditor( std::string name );
+		UIWidget * createTextureAtlasTextureRegionEditor( std::string name );
 };
 
 }}}

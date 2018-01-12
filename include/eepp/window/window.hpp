@@ -281,7 +281,7 @@ class EE_API Window {
 		/** Set the current active view
 		@param View New view to use (pass GetDefaultView() to set the default view)
 		*/
-		void setView( const View& view );
+		void setView( const View& view, bool forceRefresh = false );
 
 		/** Get the current view */
 		const View& getView() const;

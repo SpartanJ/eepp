@@ -41,29 +41,29 @@ TextureAtlas * TextureAtlasManager::loadFromPack( Pack * Pack, const std::string
 	return loader.getTextureAtlas();
 }
 
-SubTexture * TextureAtlasManager::getSubTextureByName( const std::string& Name ) {
-	SubTexture * tSubTexture = getSubTextureById( String::hash( Name ) );
+TextureRegion * TextureAtlasManager::getTextureRegionByName( const std::string& Name ) {
+	TextureRegion * tTextureRegion = getTextureRegionById( String::hash( Name ) );
 
 	if ( mWarnings ) {
-		eePRINTC( NULL == tSubTexture, "TextureAtlasManager::GetSubTextureByName SubTexture '%s' not found\n", Name.c_str() );
+		eePRINTC( NULL == tTextureRegion, "TextureAtlasManager::getTextureRegionByName TextureRegion '%s' not found\n", Name.c_str() );
 	}
 
-	return tSubTexture;
+	return tTextureRegion;
 }
 
-SubTexture * TextureAtlasManager::getSubTextureById( const Uint32& Id ) {
+TextureRegion * TextureAtlasManager::getTextureRegionById( const Uint32& Id ) {
 	std::list<TextureAtlas*>::iterator it;
 
 	TextureAtlas * tSG = NULL;
-	SubTexture * tSubTexture = NULL;
+	TextureRegion * tTextureRegion = NULL;
 
 	for ( it = mResources.begin(); it != mResources.end(); it++ ) {
 		tSG = (*it);
 
-		tSubTexture = tSG->getById( Id );
+		tTextureRegion = tSG->getById( Id );
 
-		if ( NULL != tSubTexture )
-			return tSubTexture;
+		if ( NULL != tTextureRegion )
+			return tTextureRegion;
 	}
 
 	return NULL;
@@ -76,25 +76,25 @@ void TextureAtlasManager::printResources() {
 		(*it)->printNames();
 }
 
-std::vector<SubTexture*> TextureAtlasManager::getSubTexturesByPatternId( const Uint32& SubTextureId, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
-	SubTexture * tSubTexture 	= NULL;
+std::vector<TextureRegion*> TextureAtlasManager::getTextureRegionsByPatternId( const Uint32& TextureRegionId, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
+	TextureRegion * tTextureRegion 	= NULL;
 	std::string tName;
 
 	if ( NULL == SearchInTextureAtlas )
-		tSubTexture = getSubTextureById( SubTextureId );
+		tTextureRegion = getTextureRegionById( TextureRegionId );
 	else
-		tSubTexture = SearchInTextureAtlas->getById( SubTextureId );
+		tTextureRegion = SearchInTextureAtlas->getById( TextureRegionId );
 
-	if ( NULL != tSubTexture ) {
+	if ( NULL != tTextureRegion ) {
 		if ( extension.size() )
-			tName = String::removeNumbersAtEnd( FileSystem::fileRemoveExtension( tSubTexture->getName() ) ) + extension;
+			tName = String::removeNumbersAtEnd( FileSystem::fileRemoveExtension( tTextureRegion->getName() ) ) + extension;
 		else
-			tName = tSubTexture->getName();
+			tName = tTextureRegion->getName();
 
-		return getSubTexturesByPattern( String::removeNumbersAtEnd( tSubTexture->getName() ), "", SearchInTextureAtlas );
+		return getTextureRegionsByPattern( String::removeNumbersAtEnd( tTextureRegion->getName() ), "", SearchInTextureAtlas );
 	}
 
-	return std::vector<SubTexture*>();
+	return std::vector<TextureRegion*>();
 }
 
 void TextureAtlasManager::setPrintWarnings( const bool& warn ) {
@@ -105,11 +105,11 @@ const bool& TextureAtlasManager::getPrintWarnings() const {
 	return mWarnings;
 }
 
-std::vector<SubTexture*> TextureAtlasManager::getSubTexturesByPattern( const std::string& name, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
-	std::vector<SubTexture*> 	SubTextures;
+std::vector<TextureRegion*> TextureAtlasManager::getTextureRegionsByPattern( const std::string& name, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
+	std::vector<TextureRegion*> 	TextureRegions;
 	std::string 			search;
 	bool 					found 	= true;
-	SubTexture *				tSubTexture 	= NULL;
+	TextureRegion *				tTextureRegion 	= NULL;
 	std::string				realext = "";
 	int 					c 		= 0;
 	int					t		= 0;
@@ -123,11 +123,11 @@ std::vector<SubTexture*> TextureAtlasManager::getSubTexturesByPattern( const std
 		search = String::strFormated( "%s%d%s", name.c_str(), i, realext.c_str() );
 
 		if ( NULL == SearchInTextureAtlas )
-			tSubTexture = getSubTextureByName( search );
+			tTextureRegion = getTextureRegionByName( search );
 		else
-			tSubTexture = SearchInTextureAtlas->getByName( search );
+			tTextureRegion = SearchInTextureAtlas->getByName( search );
 
-		if ( NULL != tSubTexture ) {
+		if ( NULL != tTextureRegion ) {
 			t = 1;
 
 			break;
@@ -140,11 +140,11 @@ std::vector<SubTexture*> TextureAtlasManager::getSubTexturesByPattern( const std
 			search = String::strFormated( "%s%02d%s", name.c_str(), i, realext.c_str() );
 
 			if ( NULL == SearchInTextureAtlas )
-				tSubTexture = getSubTextureByName( search );
+				tTextureRegion = getTextureRegionByName( search );
 			else
-				tSubTexture = SearchInTextureAtlas->getByName( search );
+				tTextureRegion = SearchInTextureAtlas->getByName( search );
 
-			if ( NULL != tSubTexture ) {
+			if ( NULL != tTextureRegion ) {
 				t = 2;
 
 				break;
@@ -157,11 +157,11 @@ std::vector<SubTexture*> TextureAtlasManager::getSubTexturesByPattern( const std
 				search = String::strFormated( "%s%03d%s", name.c_str(), i, realext.c_str() );
 
 				if ( NULL == SearchInTextureAtlas )
-					tSubTexture = getSubTextureByName( search );
+					tTextureRegion = getTextureRegionByName( search );
 				else
-					tSubTexture = SearchInTextureAtlas->getByName( search );
+					tTextureRegion = SearchInTextureAtlas->getByName( search );
 
-				if ( NULL != tSubTexture ) {
+				if ( NULL != tTextureRegion ) {
 					t = 3;
 
 					break;
@@ -173,11 +173,11 @@ std::vector<SubTexture*> TextureAtlasManager::getSubTexturesByPattern( const std
 					search = String::strFormated( "%s%04d%s", name.c_str(), i, realext.c_str() );
 
 					if ( NULL == SearchInTextureAtlas )
-						tSubTexture = getSubTextureByName( search );
+						tTextureRegion = getTextureRegionByName( search );
 					else
-						tSubTexture = SearchInTextureAtlas->getByName( search );
+						tTextureRegion = SearchInTextureAtlas->getByName( search );
 
-					if ( NULL != tSubTexture ) {
+					if ( NULL != tTextureRegion ) {
 						t = 4;
 
 						break;
@@ -189,11 +189,11 @@ std::vector<SubTexture*> TextureAtlasManager::getSubTexturesByPattern( const std
 						search = String::strFormated( "%s%05d%s", name.c_str(), i, realext.c_str() );
 
 						if ( NULL == SearchInTextureAtlas )
-							tSubTexture = getSubTextureByName( search );
+							tTextureRegion = getTextureRegionByName( search );
 						else
-							tSubTexture = SearchInTextureAtlas->getByName( search );
+							tTextureRegion = SearchInTextureAtlas->getByName( search );
 
-						if ( NULL != tSubTexture ) {
+						if ( NULL != tTextureRegion ) {
 							t = 5;
 
 							break;
@@ -205,11 +205,11 @@ std::vector<SubTexture*> TextureAtlasManager::getSubTexturesByPattern( const std
 							search = String::strFormated( "%s%06d%s", name.c_str(), i, realext.c_str() );
 
 							if ( NULL == SearchInTextureAtlas )
-								tSubTexture = getSubTextureByName( search );
+								tTextureRegion = getTextureRegionByName( search );
 							else
-								tSubTexture = SearchInTextureAtlas->getByName( search );
+								tTextureRegion = SearchInTextureAtlas->getByName( search );
 
-							if ( NULL != tSubTexture ) {
+							if ( NULL != tTextureRegion ) {
 								t = 6;
 
 								break;
@@ -235,12 +235,12 @@ std::vector<SubTexture*> TextureAtlasManager::getSubTexturesByPattern( const std
 
 			if ( found ) {
 				if ( NULL == SearchInTextureAtlas )
-					tSubTexture = getSubTextureByName( search );
+					tTextureRegion = getTextureRegionByName( search );
 				else
-					tSubTexture = SearchInTextureAtlas->getByName( search );
+					tTextureRegion = SearchInTextureAtlas->getByName( search );
 
-				if ( NULL != tSubTexture ) {
-					SubTextures.push_back( tSubTexture );
+				if ( NULL != tTextureRegion ) {
+					TextureRegions.push_back( tTextureRegion );
 
 					found = true;
 				} else {
@@ -255,7 +255,7 @@ std::vector<SubTexture*> TextureAtlasManager::getSubTexturesByPattern( const std
 		} while ( found );
 	}
 
-	return SubTextures;
+	return TextureRegions;
 }
 
 }}

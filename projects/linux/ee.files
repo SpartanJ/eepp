@@ -26,6 +26,7 @@
 ../../include/eepp/graphics/renderer/rendererhelper.hpp
 ../../include/eepp/graphics/rendermode.hpp
 ../../include/eepp/graphics/text.hpp
+../../include/eepp/graphics/textureregion.hpp
 ../../include/eepp/graphics/vertexbufferhelper.hpp
 ../../include/eepp/math/interpolation1d.hpp
 ../../include/eepp/math/interpolation2d.hpp
@@ -45,7 +46,7 @@
 ../../include/eepp/ui/uinode.hpp
 ../../include/eepp/ui/uirelativelayout.hpp
 ../../include/eepp/ui/uiscrollview.hpp
-../../include/eepp/ui/uisubtexture.hpp
+../../include/eepp/ui/uitextureregion.hpp
 ../../include/eepp/ui/uitable.hpp
 ../../include/eepp/ui/uitablecell.hpp
 ../../include/eepp/ui/uitextview.hpp
@@ -100,7 +101,7 @@
 ../../src/eepp/ui/uinode.cpp
 ../../src/eepp/ui/uirelativelayout.cpp
 ../../src/eepp/ui/uiscrollview.cpp
-../../src/eepp/ui/uisubtexture.cpp
+../../src/eepp/ui/uitextureregion.cpp
 ../../src/eepp/ui/uitable.cpp
 ../../src/eepp/ui/uitablecell.cpp
 ../../src/eepp/ui/uitextview.cpp
@@ -192,8 +193,8 @@
 ../../include/eepp/maps/maplayer.hpp
 ../../include/eepp/maps/gameobjectvirtual.hpp
 ../../include/eepp/maps/gameobjectsprite.hpp
-../../include/eepp/maps/gameobjectsubtextureex.hpp
-../../include/eepp/maps/gameobjectsubtexture.hpp
+../../include/eepp/maps/gameobjecttextureregionex.hpp
+../../include/eepp/maps/gameobjecttextureregion.hpp
 ../../include/eepp/maps/gameobject.hpp
 ../../include/eepp/maps/base.hpp
 ../../src/eepp/maps/mapeditor/uimapnew.hpp
@@ -210,8 +211,8 @@
 ../../src/eepp/maps/maplayer.cpp
 ../../src/eepp/maps/gameobjectvirtual.cpp
 ../../src/eepp/maps/gameobjectsprite.cpp
-../../src/eepp/maps/gameobjectsubtextureex.cpp
-../../src/eepp/maps/gameobjectsubtexture.cpp
+../../src/eepp/maps/gameobjecttextureregionex.cpp
+../../src/eepp/maps/gameobjecttextureregion.cpp
 ../../src/eepp/maps/gameobject.cpp
 ../../src/eepp/maps/mapeditor/uimapnew.cpp
 ../../src/eepp/maps/mapeditor/uimap.cpp
@@ -242,7 +243,7 @@
 ../../include/eepp/graphics/sprite.hpp
 ../../include/eepp/graphics/textureatlasmanager.hpp
 ../../include/eepp/graphics/textureatlas.hpp
-../../include/eepp/graphics/subtexture.hpp
+../../include/eepp/graphics/textureregion.hpp
 ../../include/eepp/graphics/shaderprogrammanager.hpp
 ../../include/eepp/graphics/shaderprogram.hpp
 ../../include/eepp/graphics/shader.hpp
@@ -358,7 +359,7 @@
 ../../include/eepp/ui/uiborder.hpp
 ../../include/eepp/ui/uibackground.hpp
 ../../include/eepp/ui/base.hpp
-../../src/eepp/ui/tools/textureatlassubtextureeditor.hpp
+../../src/eepp/ui/tools/textureatlastextureregioneditor.hpp
 ../../src/eepp/ui/tools/textureatlasnew.hpp
 ../../include/eepp/ui/tools/textureatlaseditor.hpp
 ../../src/eepp/ui/uiwidgetcreator.cpp
@@ -403,7 +404,7 @@
 ../../src/eepp/ui/uicheckbox.cpp
 ../../src/eepp/ui/uiborder.cpp
 ../../src/eepp/ui/uibackground.cpp
-../../src/eepp/ui/tools/textureatlassubtextureeditor.cpp
+../../src/eepp/ui/tools/textureatlastextureregioneditor.cpp
 ../../src/eepp/ui/tools/textureatlasnew.cpp
 ../../src/eepp/ui/tools/textureatlaseditor.cpp
 ../../include/eepp/math/vector3.hpp
@@ -554,7 +555,7 @@
 ../../src/eepp/graphics/sprite.cpp
 ../../src/eepp/graphics/textureatlasmanager.cpp
 ../../src/eepp/graphics/textureatlas.cpp
-../../src/eepp/graphics/subtexture.cpp
+../../src/eepp/graphics/textureregion.cpp
 ../../src/eepp/graphics/shaderprogrammanager.cpp
 ../../src/eepp/graphics/shaderprogram.cpp
 ../../src/eepp/graphics/shader.cpp

@@ -4,7 +4,7 @@
 #include <eepp/maps/base.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uimenucheckbox.hpp>
-#include <eepp/ui/uisubtexture.hpp>
+#include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -49,8 +49,8 @@ class EE_API MapEditor {
 		MapEditorCloseCb	mCloseCb;
 		UIDropDownList *	mTextureAtlasesList;
 		UIWidget *	mWinContainer;
-		UIListBox *			mSubTextureList;
-		UISubTexture *				mGfxPreview;
+		UIListBox *			mTextureRegionList;
+		UITextureRegion *				mGfxPreview;
 		TextureAtlas *		mCurSG;
 		UIScrollBar *		mMapHScroll;
 		UIScrollBar *		mMapVScroll;
@@ -67,7 +67,7 @@ class EE_API MapEditor {
 		UIPushButton *		mBtnGOTypeAdd;
 		Uint32				mCurGOType;
 		Uint32				mCurGOFlags;
-		UIWidget *	mSubTextureCont;
+		UIWidget *	mTextureRegionCont;
 		UIWidget *	mLightCont;
 		UIWidget *	mObjectCont;
 		UIWidget *	mSGCont;
@@ -110,7 +110,7 @@ class EE_API MapEditor {
 
 		void createObjectsContainer();
 
-		void createSubTextureContainer( Int32 Width );
+		void createTextureRegionContainer( Int32 Width );
 
 		void windowClose( const UIEvent * Event );
 
@@ -126,7 +126,7 @@ class EE_API MapEditor {
 
 		void fillSGCombo();
 
-		void fillSubTextureList();
+		void fillTextureRegionList();
 
 		void createNewMap();
 
@@ -144,7 +144,7 @@ class EE_API MapEditor {
 
 		void mapSave( const UIEvent * Event );
 
-		void onSubTextureChange( const UIEvent * Event );
+		void onTextureRegionChange( const UIEvent * Event );
 
 		void onTypeChange( const UIEvent * Event );
 

@@ -622,7 +622,7 @@ void TexturePacker::save( const std::string& Filepath, const Image::SaveType& Fo
 
 	childSave( Format );
 
-	saveSubTextures();
+	saveTextureRegions();
 }
 
 Int32 TexturePacker::getChildCount() {
@@ -637,7 +637,7 @@ Int32 TexturePacker::getChildCount() {
 	return ChildCount;
 }
 
-void TexturePacker::saveSubTextures() {
+void TexturePacker::saveTextureRegions() {
 	if ( NULL != mParent )
 		return;
 
@@ -677,7 +677,7 @@ void TexturePacker::saveSubTextures() {
 		HdrPos++;
 	}
 
-	std::vector<sSubTextureHdr> tSubTexturesHdr;
+	std::vector<sTextureRegionHdr> tTextureRegionsHdr;
 
 	std::string path = FileSystem::fileRemoveExtension( mFilepath ) + EE_TEXTURE_ATLAS_EXTENSION;
 	IOStreamFile fs ( path , std::ios::out | std::ios::binary );
@@ -687,10 +687,10 @@ void TexturePacker::saveSubTextures() {
 
 		fs.write( reinterpret_cast<const char*> (&TexHdr[ 0 ]), sizeof(sTextureHdr) );
 
-		createSubTexturesHdr( this, tSubTexturesHdr );
+		createTextureRegionsHdr( this, tTextureRegionsHdr );
 
-		if ( tSubTexturesHdr.size() )
-			fs.write( reinterpret_cast<const char*> (&tSubTexturesHdr[ 0 ]), sizeof(sSubTextureHdr) * (std::streamsize)tSubTexturesHdr.size() );
+		if ( tTextureRegionsHdr.size() )
+			fs.write( reinterpret_cast<const char*> (&tTextureRegionsHdr[ 0 ]), sizeof(sTextureRegionHdr) * (std::streamsize)tTextureRegionsHdr.size() );
 
 		Int32 HdrPos 				= 1;
 		TexturePacker * Child 		= mChild;
@@ -698,10 +698,10 @@ void TexturePacker::saveSubTextures() {
 		while ( NULL != Child ) {
 			fs.write( reinterpret_cast<const char*> (&TexHdr[ HdrPos ]), sizeof(sTextureHdr) );
 
-			createSubTexturesHdr( Child, tSubTexturesHdr );
+			createTextureRegionsHdr( Child, tTextureRegionsHdr );
 
-			if ( tSubTexturesHdr.size() )
-				fs.write( reinterpret_cast<const char*> (&tSubTexturesHdr[ 0 ]), sizeof(sSubTextureHdr) * (std::streamsize)tSubTexturesHdr.size() );
+			if ( tTextureRegionsHdr.size() )
+				fs.write( reinterpret_cast<const char*> (&tTextureRegionsHdr[ 0 ]), sizeof(sTextureRegionHdr) * (std::streamsize)tTextureRegionsHdr.size() );
 
 			Child 				= Child->getChild();
 
@@ -710,17 +710,17 @@ void TexturePacker::saveSubTextures() {
 	}
 }
 
-void TexturePacker::createSubTexturesHdr( TexturePacker * Packer, std::vector<sSubTextureHdr>& SubTextures ) {
-	SubTextures.clear();
+void TexturePacker::createTextureRegionsHdr( TexturePacker * Packer, std::vector<sTextureRegionHdr>& TextureRegions ) {
+	TextureRegions.clear();
 
-	sSubTextureHdr tSubTextureHdr;
+	sTextureRegionHdr tTextureRegionHdr;
 	Uint32 c = 0;
 
 	std::list<TexturePackerTex*> tTextures = *(Packer->getTexturePackPtr());
 	std::list<TexturePackerTex*>::iterator it;
 	TexturePackerTex * tTex;
 
-	SubTextures.resize( tTextures.size() );
+	TextureRegions.resize( tTextures.size() );
 
 	for ( it = tTextures.begin(); it != tTextures.end(); it++ ) {
 		tTex = (*it);
@@ -728,31 +728,31 @@ void TexturePacker::createSubTexturesHdr( TexturePacker * Packer, std::vector<sS
 		if ( tTex->placed() ) {
 			std::string name = FileSystem::fileNameFromPath( tTex->name() );
 
-			memset( tSubTextureHdr.Name, 0, HDR_NAME_SIZE );
+			memset( tTextureRegionHdr.Name, 0, HDR_NAME_SIZE );
 
-			String::strCopy( tSubTextureHdr.Name, name.c_str(), HDR_NAME_SIZE );
+			String::strCopy( tTextureRegionHdr.Name, name.c_str(), HDR_NAME_SIZE );
 
 			if ( !mSaveExtensions )
 				name = FileSystem::fileRemoveExtension( name );
 
-			tSubTextureHdr.ResourceID	= String::hash( name );
-			tSubTextureHdr.Width 		= tTex->width();
-			tSubTextureHdr.Height 		= tTex->height();
-			tSubTextureHdr.Channels		= tTex->channels();
-			tSubTextureHdr.DestWidth 	= tTex->width();
-			tSubTextureHdr.DestHeight 	= tTex->height();
-			tSubTextureHdr.OffsetX		= 0;
-			tSubTextureHdr.OffsetY		= 0;
-			tSubTextureHdr.X			= tTex->x();
-			tSubTextureHdr.Y			= tTex->y();
-			tSubTextureHdr.Date			= FileSystem::fileGetModificationDate( tTex->name() );
-			tSubTextureHdr.Flags		= 0;
-			tSubTextureHdr.PixelDensity	= (Uint32)mPixelDensity;
+			tTextureRegionHdr.ResourceID	= String::hash( name );
+			tTextureRegionHdr.Width 		= tTex->width();
+			tTextureRegionHdr.Height 		= tTex->height();
+			tTextureRegionHdr.Channels		= tTex->channels();
+			tTextureRegionHdr.DestWidth 	= tTex->width();
+			tTextureRegionHdr.DestHeight 	= tTex->height();
+			tTextureRegionHdr.OffsetX		= 0;
+			tTextureRegionHdr.OffsetY		= 0;
+			tTextureRegionHdr.X			= tTex->x();
+			tTextureRegionHdr.Y			= tTex->y();
+			tTextureRegionHdr.Date			= FileSystem::fileGetModificationDate( tTex->name() );
+			tTextureRegionHdr.Flags		= 0;
+			tTextureRegionHdr.PixelDensity	= (Uint32)mPixelDensity;
 
 			if ( tTex->flipped() )
-				tSubTextureHdr.Flags |= HDR_SUBTEXTURE_FLAG_FLIPED;
+				tTextureRegionHdr.Flags |= HDR_TEXTUREREGION_FLAG_FLIPED;
 
-			SubTextures[c] = tSubTextureHdr;
+			TextureRegions[c] = tTextureRegionHdr;
 
 			c++;
 		}
@@ -770,7 +770,7 @@ sTextureHdr	TexturePacker::createTextureHdr( TexturePacker * Packer ) {
 
 	TexHdr.ResourceID 	= String::hash( name );
 	TexHdr.Size			= FileSystem::fileSize( Packer->getFilepath() );
-	TexHdr.SubTextureCount 	= Packer->getPlacedCount();
+	TexHdr.TextureRegionCount 	= Packer->getPlacedCount();
 
 	return TexHdr;
 }

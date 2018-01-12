@@ -10,12 +10,12 @@ namespace EE { namespace Graphics {
 bool DrawableSearcher::sPrintWarnings = false;
 
 static Drawable * getSprite( const std::string& sprite ) {
-	std::vector<SubTexture*> tSubTextureVec = TextureAtlasManager::instance()->getSubTexturesByPattern( sprite );
+	std::vector<TextureRegion*> tTextureRegionVec = TextureAtlasManager::instance()->getTextureRegionsByPattern( sprite );
 
-	if ( tSubTextureVec.size() ) {
+	if ( tTextureRegionVec.size() ) {
 		Sprite * tSprite = eeNew( Graphics::Sprite, () );
 		tSprite->createAnimation();
-		tSprite->addFrames( tSubTextureVec );
+		tSprite->addFrames( tTextureRegionVec );
 
 		return tSprite;
 	}
@@ -25,7 +25,7 @@ static Drawable * getSprite( const std::string& sprite ) {
 
 static Drawable * searchByNameInternal( const std::string& name ) {
 	Uint32 id = String::hash( name );
-	Drawable * drawable = TextureAtlasManager::instance()->getSubTextureById( id );
+	Drawable * drawable = TextureAtlasManager::instance()->getTextureRegionById( id );
 
 	if ( NULL == drawable) {
 		drawable = NinePatchManager::instance()->getById( id );
@@ -43,8 +43,8 @@ Drawable * DrawableSearcher::searchByName( const std::string& name ) {
 
 	if ( name.size() ) {
 		if ( name[0] == '@' ) {
-			if ( String::startsWith( name, "@subtexture/" ) ) {
-				drawable = TextureAtlasManager::instance()->getSubTextureByName( name.substr( 12 ) );
+			if ( String::startsWith( name, "@textureregion/" ) || String::startsWith( name, "@subtexture/" ) ) {
+				drawable = TextureAtlasManager::instance()->getTextureRegionByName( name.substr( 12 ) );
 			} else if ( String::startsWith( name, "@image/" ) ) {
 				drawable = TextureFactory::instance()->getByName( name.substr( 7 ) );
 			} else if ( String::startsWith( name, "@texture/" ) ) {
@@ -70,7 +70,7 @@ Drawable * DrawableSearcher::searchByName( const std::string& name ) {
 }
 
 Drawable * DrawableSearcher::searchById( const Uint32& id ) {
-	Drawable * drawable = TextureAtlasManager::instance()->getSubTextureById( id );
+	Drawable * drawable = TextureAtlasManager::instance()->getTextureRegionById( id );
 
 	if ( NULL == drawable ) {
 		drawable = TextureFactory::instance()->getByHash( id );

@@ -108,7 +108,6 @@ class EE_API FrameBuffer {
 		Texture *	mTexture;
 		ColorAf	mClearColor;
 		View		mView;
-		View 		mPrevView;
 		float		mProjMat[16];
 		float		mModelViewMat[16];
 

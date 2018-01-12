@@ -60,15 +60,15 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 
 	tTheme->setTextureAtlas( TextureAtlas );
 
-	std::list<SubTexture*>& resources = TextureAtlas->getResources();
-	std::list<SubTexture*>::iterator it;
+	std::list<TextureRegion*>& resources = TextureAtlas->getResources();
+	std::list<TextureRegion*>::iterator it;
 	std::string sAbbr( tTheme->getAbbr() + "_" );
 	std::map<std::string, bool> elemFound;
 
 	for ( it = resources.begin(); it != resources.end(); it++ ) {
-		SubTexture* subTexture = *it;
+		TextureRegion* TextureRegion = *it;
 
-		std::string name( subTexture->getName() );
+		std::string name( TextureRegion->getName() );
 
 		if ( String::startsWith( name, sAbbr ) ) {
 			std::vector<std::string> dotParts = String::split( name, '.' );
@@ -98,7 +98,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 
 				elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
 
-				NinePatchManager::instance()->add( eeNew( NinePatch, ( subTexture, l, t, r, b, realName ) ) );
+				NinePatchManager::instance()->add( eeNew( NinePatch, ( TextureRegion, l, t, r, b, realName ) ) );
 			} else {
 				std::vector<std::string> nameParts = String::split( name, '_' );
 
@@ -154,7 +154,7 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 
 		if ( !FileSystem::isDirectory( fpath ) ) {
 			if ( String::startsWith( name, sAbbrIcon ) ) {
-				tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
+				tSG->add( eeNew( TextureRegion, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
 			} else if ( String::startsWith( name, sAbbr ) ) {
 				std::vector<std::string> dotParts = String::split( name, '.' );
 
@@ -194,11 +194,11 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 						if ( UISkin::isStateName( nameParts[ lPart ] ) ) {
 							elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
 
-							tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
+							tSG->add( eeNew( TextureRegion, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
 						} else if ( UISkin::isStateName( nameParts[ llPart ] ) && UISkinComplex::isSideSuffix( nameParts[ lPart ] ) ) {
 							elemFound[ elemNameFromSkinComplex( nameParts ) ] = true;
 
-							tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
+							tSG->add( eeNew( TextureRegion, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
 						}
 					}
 				}

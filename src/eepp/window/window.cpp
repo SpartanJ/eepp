@@ -160,10 +160,10 @@ Rect Window::getViewport( const View& view ) {
 				   static_cast<int>(0.5f + height * viewport.Bottom));
 }
 
-void Window::setView( const View& view ) {
+void Window::setView( const View& view , bool forceRefresh ) {
 	const View * viewPtr = &view;
 
-	if ( viewPtr != mCurrentView ) {
+	if ( viewPtr != mCurrentView || forceRefresh ) {
 		mCurrentView = viewPtr;
 
 		Rect viewport = getViewport( *mCurrentView );
@@ -203,7 +203,7 @@ void Window::setup2D( const bool& KeepView ) {
 	}
 
 	if ( !KeepView ) {
-		setView( mDefaultView );
+		setView( mDefaultView, true );
 	}
 
 	BlendMode::setMode( BlendAlpha, true );

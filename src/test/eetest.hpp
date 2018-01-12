@@ -53,7 +53,7 @@ class EETest : private Thread {
 		std::vector<Uint32> TN;
 		std::vector<Texture *> TNP;
 
-		std::vector<SubTexture*> Tiles;
+		std::vector<TextureRegion*> Tiles;
 		std::vector<ParticleSystem> PS;
 
 		Vector2i Mouse;

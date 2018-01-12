@@ -1,6 +1,6 @@
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uimanager.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 
 namespace EE { namespace UI {
 

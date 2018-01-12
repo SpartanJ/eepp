@@ -4,7 +4,7 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
@@ -272,8 +272,8 @@ void UIWindow::drawFrameBuffer() {
 		if ( mFrameBuffer->hasColorBuffer() ) {
 			mFrameBuffer->draw( Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ), Rect( mScreenPos.x, mScreenPos.y, mScreenPos.x + mRealSize.getWidth(), mScreenPos.y + mRealSize.getHeight() ) );
 		} else {
-			SubTexture subTexture( mFrameBuffer->getTexture()->getId(), Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ) );
-			subTexture.draw( mScreenPosf.x, mScreenPosf.y, Color::White, mAngle, mScale );
+			TextureRegion textureRegion( mFrameBuffer->getTexture()->getId(), Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ) );
+			textureRegion.draw( mScreenPosf.x, mScreenPosf.y, Color::White, mAngle, mScale );
 		}
 	}
 }

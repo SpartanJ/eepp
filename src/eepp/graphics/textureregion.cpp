@@ -1,4 +1,4 @@
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <SOIL2/src/SOIL2/SOIL2.h>
@@ -10,8 +10,8 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-SubTexture::SubTexture() :
-	DrawableResource( Drawable::SUBTEXTURE ),
+TextureRegion::TextureRegion() :
+	DrawableResource( Drawable::TEXTUREREGION ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
 	mTexId(0),
@@ -24,8 +24,8 @@ SubTexture::SubTexture() :
 {
 }
 
-SubTexture::SubTexture( const Uint32& TexId, const std::string& name ) :
-	DrawableResource( Drawable::SUBTEXTURE, name ),
+TextureRegion::TextureRegion( const Uint32& TexId, const std::string& name ) :
+	DrawableResource( Drawable::TEXTUREREGION, name ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
 	mTexId( TexId ),
@@ -38,8 +38,8 @@ SubTexture::SubTexture( const Uint32& TexId, const std::string& name ) :
 {
 }
 
-SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const std::string& name ) :
-	DrawableResource( Drawable::SUBTEXTURE, name ),
+TextureRegion::TextureRegion( const Uint32& TexId, const Rect& SrcRect, const std::string& name ) :
+	DrawableResource( Drawable::TEXTUREREGION, name ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
 	mTexId( TexId ),
@@ -52,8 +52,8 @@ SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const std::str
 {
 }
 
-SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& name ) :
-	DrawableResource( Drawable::SUBTEXTURE, name ),
+TextureRegion::TextureRegion( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& name ) :
+	DrawableResource( Drawable::TEXTUREREGION, name ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
 	mTexId( TexId ),
@@ -66,8 +66,8 @@ SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const Sizef& D
 {
 }
 
-SubTexture::SubTexture(const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i &Offset, const std::string& name ) :
-	DrawableResource( Drawable::SUBTEXTURE, name ),
+TextureRegion::TextureRegion(const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i &Offset, const std::string& name ) :
+	DrawableResource( Drawable::TEXTUREREGION, name ),
 	mPixels(NULL),
 	mAlphaMask(NULL),
 	mTexId( TexId ),
@@ -80,24 +80,24 @@ SubTexture::SubTexture(const Uint32& TexId, const Rect& SrcRect, const Sizef& De
 {
 }
 
-SubTexture::~SubTexture() {
+TextureRegion::~TextureRegion() {
 	clearCache();
 }
 
-const Uint32& SubTexture::getTextureId() {
+const Uint32& TextureRegion::getTextureId() {
 	return mTexId;
 }
 
-void SubTexture::setTextureId( const Uint32& TexId ) {
+void TextureRegion::setTextureId( const Uint32& TexId ) {
 	mTexId		= TexId;
 	mTexture	= TextureFactory::instance()->getTexture( TexId );
 }
 
-const Rect& SubTexture::getSrcRect() const {
+const Rect& TextureRegion::getSrcRect() const {
 	return mSrcRect;
 }
 
-void SubTexture::setSrcRect( const Rect& rect ) {
+void TextureRegion::setSrcRect( const Rect& rect ) {
 	mSrcRect = rect;
 
 	if ( NULL != mPixels )
@@ -107,11 +107,11 @@ void SubTexture::setSrcRect( const Rect& rect ) {
 		cacheAlphaMask();
 }
 
-const Sizef& SubTexture::getDestSize() const {
+const Sizef& TextureRegion::getDestSize() const {
 	return mDestSize;
 }
 
-void SubTexture::setDestSize( const Sizef& destSize ) {
+void TextureRegion::setDestSize( const Sizef& destSize ) {
 	mDestSize = destSize;
 
 	if ( mOriDestSize.x == 0 && mOriDestSize.y == 0 ) {
@@ -119,49 +119,49 @@ void SubTexture::setDestSize( const Sizef& destSize ) {
 	}
 }
 
-const Vector2i& SubTexture::getOffset() const {
+const Vector2i& TextureRegion::getOffset() const {
 	return mOffset;
 }
 
-void SubTexture::setOffset( const Vector2i& offset ) {
+void TextureRegion::setOffset( const Vector2i& offset ) {
 	mOffset = offset;
 }
 
-void SubTexture::draw( const Float& X, const Float& Y, const Color& Color, const Float& Angle, const Vector2f& Scale, const BlendMode& Blend, const RenderMode& Effect, OriginPoint Center ) {
+void TextureRegion::draw( const Float& X, const Float& Y, const Color& Color, const Float& Angle, const Vector2f& Scale, const BlendMode& Blend, const RenderMode& Effect, OriginPoint Center ) {
 	if ( NULL != mTexture )
 		mTexture->drawEx( X + mOffset.x, Y + mOffset.y, mDestSize.x, mDestSize.y, Angle, Scale, Color, Color, Color, Color, Blend, Effect, Center, mSrcRect );
 }
 
-void SubTexture::draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const BlendMode& Blend, const RenderMode& Effect, OriginPoint Center ) {
+void TextureRegion::draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const BlendMode& Blend, const RenderMode& Effect, OriginPoint Center ) {
 	if ( NULL != mTexture )
 		mTexture->drawEx( X + mOffset.x, Y + mOffset.y, mDestSize.x, mDestSize.y, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, Center, mSrcRect );
 }
 
-void SubTexture::draw( const Quad2f Q, const Vector2f& Offset, const Float& Angle, const Vector2f& Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const BlendMode& Blend ) {
+void TextureRegion::draw( const Quad2f Q, const Vector2f& Offset, const Float& Angle, const Vector2f& Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const BlendMode& Blend ) {
 	if ( NULL != mTexture )
 		mTexture->drawQuadEx( Q, Offset, Angle, Scale, Color0, Color1, Color2, Color3, Blend, mSrcRect );
 }
 
-void SubTexture::draw() {
+void TextureRegion::draw() {
 	draw( mPosition );
 }
 
-void SubTexture::draw( const Vector2f& position ) {
+void TextureRegion::draw( const Vector2f& position ) {
 	draw( position.x, position.y, getColor() );
 }
 
-void SubTexture::draw( const Vector2f & position, const Sizef& size ) {
+void TextureRegion::draw( const Vector2f & position, const Sizef& size ) {
 	Sizef oldSize( mDestSize );
 	mDestSize = size;
 	draw( position.x, position.y, getColor() );
 	mDestSize = oldSize;
 }
 
-Graphics::Texture * SubTexture::getTexture() {
+Graphics::Texture * TextureRegion::getTexture() {
 	return mTexture;
 }
 
-void SubTexture::replaceColor( Color ColorKey, Color NewColor ) {
+void TextureRegion::replaceColor( Color ColorKey, Color NewColor ) {
 	mTexture->lock();
 
 	for ( int y = mSrcRect.Top; y < mSrcRect.Bottom; y++ ) {
@@ -174,15 +174,15 @@ void SubTexture::replaceColor( Color ColorKey, Color NewColor ) {
 	mTexture->unlock( false, true );
 }
 
-void SubTexture::createMaskFromColor(Color ColorKey, Uint8 Alpha) {
+void TextureRegion::createMaskFromColor(Color ColorKey, Uint8 Alpha) {
 	replaceColor( ColorKey, Color( ColorKey.r, ColorKey.g, ColorKey.b, Alpha ) );
 }
 
-void SubTexture::createMaskFromColor(RGB ColorKey, Uint8 Alpha) {
+void TextureRegion::createMaskFromColor(RGB ColorKey, Uint8 Alpha) {
 	createMaskFromColor( Color( ColorKey.r, ColorKey.g, ColorKey.b, 255 ), Alpha );
 }
 
-void SubTexture::cacheAlphaMask() {
+void TextureRegion::cacheAlphaMask() {
 	Uint32 size = ( mSrcRect.Right - mSrcRect.Left ) * ( mSrcRect.Bottom - mSrcRect.Top );
 
 	eeSAFE_DELETE_ARRAY( mAlphaMask );
@@ -207,7 +207,7 @@ void SubTexture::cacheAlphaMask() {
 	mTexture->unlock();
 }
 
-void SubTexture::cacheColors() {
+void TextureRegion::cacheColors() {
 	mTexture->lock();
 
 	Uint32 size =  ( mSrcRect.Right - mSrcRect.Left ) * ( mSrcRect.Bottom - mSrcRect.Top ) * mTexture->getChannels();
@@ -243,7 +243,7 @@ void SubTexture::cacheColors() {
 	mTexture->unlock();
 }
 
-Uint8 SubTexture::getAlphaAt( const Int32& X, const Int32& Y ) {
+Uint8 TextureRegion::getAlphaAt( const Int32& X, const Int32& Y ) {
 	if ( mTexture->hasLocalCopy() )
 		return mTexture->getPixel( mSrcRect.Left + X, mSrcRect.Right + Y ).a;
 
@@ -258,7 +258,7 @@ Uint8 SubTexture::getAlphaAt( const Int32& X, const Int32& Y ) {
 	return getAlphaAt( X, Y );
 }
 
-Color SubTexture::getColorAt( const Int32& X, const Int32& Y ) {
+Color TextureRegion::getColorAt( const Int32& X, const Int32& Y ) {
 	if ( mTexture->hasLocalCopy() )
 		return mTexture->getPixel( mSrcRect.Left + X, mSrcRect.Right + Y );
 
@@ -281,7 +281,7 @@ Color SubTexture::getColorAt( const Int32& X, const Int32& Y ) {
 	return getColorAt( X, Y );
 }
 
-void SubTexture::setColorAt( const Int32& X, const Int32& Y, const Color& Color ) {
+void TextureRegion::setColorAt( const Int32& X, const Int32& Y, const Color& Color ) {
 	if ( NULL != mPixels ) {
 		Uint32 Channels = mTexture->getChannels();
 		unsigned int Pos = ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * Channels;
@@ -296,18 +296,18 @@ void SubTexture::setColorAt( const Int32& X, const Int32& Y, const Color& Color 
 	}
 }
 
-void SubTexture::clearCache() {
+void TextureRegion::clearCache() {
 	eeSAFE_DELETE_ARRAY( mPixels );
 	eeSAFE_DELETE_ARRAY( mAlphaMask );
 }
 
-Uint8 * SubTexture::lock() {
+Uint8 * TextureRegion::lock() {
 	cacheColors();
 
 	return &mPixels[0];
 }
 
-bool SubTexture::unlock( const bool& KeepData, const bool& Modified ) {
+bool TextureRegion::unlock( const bool& KeepData, const bool& Modified ) {
 	if ( NULL != mPixels  && NULL != mTexture ) {
 		if ( Modified ) {
 			TextureSaver saver( mTexture->getHandle() );
@@ -335,15 +335,15 @@ bool SubTexture::unlock( const bool& KeepData, const bool& Modified ) {
 	return false;
 }
 
-Sizei SubTexture::getRealSize() {
+Sizei TextureRegion::getRealSize() {
 	return mSrcRect.getSize();
 }
 
-Sizef SubTexture::getSize() {
+Sizef TextureRegion::getSize() {
 	return Sizef( (Float)((Int32)( mOriDestSize.getWidth() / mPixelDensity )), (Float)((Int32)( mOriDestSize.getHeight() / mPixelDensity )) );
 }
 
-const Uint8* SubTexture::getPixelsPtr() {
+const Uint8* TextureRegion::getPixelsPtr() {
 	if ( mPixels == NULL ) {
 		lock();
 		unlock(true);
@@ -352,7 +352,7 @@ const Uint8* SubTexture::getPixelsPtr() {
 	return reinterpret_cast<const Uint8*> (&mPixels[0]);
 }
 
-bool SubTexture::saveToFile(const std::string& filepath, const Image::SaveType & Format) {
+bool TextureRegion::saveToFile(const std::string& filepath, const Image::SaveType & Format) {
 	bool Res = false;
 
 	lock();
@@ -372,32 +372,32 @@ bool SubTexture::saveToFile(const std::string& filepath, const Image::SaveType &
 	return Res;
 }
 
-void SubTexture::resetDestSize() {
+void TextureRegion::resetDestSize() {
 	mDestSize.x	= mOriDestSize.getWidth();
 	mDestSize.y = mOriDestSize.getHeight();
 }
 
-Float SubTexture::getPixelDensity() const {
+Float TextureRegion::getPixelDensity() const {
 	return mPixelDensity;
 }
 
-void SubTexture::setPixelDensity( const Float & pixelDensity ) {
+void TextureRegion::setPixelDensity( const Float & pixelDensity ) {
 	mPixelDensity = pixelDensity;
 }
 
-Sizei SubTexture::getDpSize() {
+Sizei TextureRegion::getDpSize() {
 	return Sizei( (Int32)( mOriDestSize.getWidth() / mPixelDensity ), (Int32)( mOriDestSize.getHeight() / mPixelDensity ) );
 }
 
-Sizei SubTexture::getPxSize() {
+Sizei TextureRegion::getPxSize() {
 	return Sizei( (Int32)( mOriDestSize.getWidth() / mPixelDensity * PixelDensity::getPixelDensity() ), (Int32)( mOriDestSize.getHeight() / mPixelDensity * PixelDensity::getPixelDensity() ) );
 }
 
-Sizef SubTexture::getOriDestSize() const {
+Sizef TextureRegion::getOriDestSize() const {
 	return mOriDestSize;
 }
 
-void SubTexture::setOriDestSize(const Sizef & oriDestSize) {
+void TextureRegion::setOriDestSize(const Sizef & oriDestSize) {
 	mOriDestSize = oriDestSize;
 }
 

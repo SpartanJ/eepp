@@ -14,7 +14,7 @@ class EE_API Drawable {
 	public:
 		enum Type {
 			TEXTURE,
-			SUBTEXTURE,
+			TEXTUREREGION,
 			SPRITE,
 			ARC,
 			RECTANGLE,

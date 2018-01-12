@@ -1,19 +1,19 @@
-#ifndef EE_MAPS_CGAMEOBJECTSUBTEXTURE_HPP
-#define EE_MAPS_CGAMEOBJECTSUBTEXTURE_HPP
+#ifndef EE_MAPS_CGAMEOBJECTTEXTUREREGION_HPP
+#define EE_MAPS_CGAMEOBJECTTEXTUREREGION_HPP
 
 #include <eepp/maps/base.hpp>
 #include <eepp/maps/gameobject.hpp>
 
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Maps {
 
-class EE_API GameObjectSubTexture : public GameObject {
+class EE_API GameObjectTextureRegion : public GameObject {
 	public:
-		GameObjectSubTexture( const Uint32& Flags, MapLayer * Layer, Graphics::SubTexture * SubTexture = NULL, const Vector2f& Pos = Vector2f() );
+		GameObjectTextureRegion( const Uint32& Flags, MapLayer * Layer, Graphics::TextureRegion * TextureRegion = NULL, const Vector2f& Pos = Vector2f() );
 
-		virtual ~GameObjectSubTexture();
+		virtual ~GameObjectTextureRegion();
 
 		virtual void draw();
 
@@ -27,9 +27,9 @@ class EE_API GameObjectSubTexture : public GameObject {
 
 		virtual Sizei getSize();
 
-		Graphics::SubTexture * getSubTexture() const;
+		Graphics::TextureRegion * getTextureRegion() const;
 
-		void setSubTexture( Graphics::SubTexture * subTexture );
+		void setTextureRegion( Graphics::TextureRegion * TextureRegion );
 
 		virtual Uint32 getType() const;
 
@@ -39,7 +39,7 @@ class EE_API GameObjectSubTexture : public GameObject {
 
 		virtual void setDataId( Uint32 Id );
 	protected:
-		Graphics::SubTexture *	mSubTexture;
+		Graphics::TextureRegion *	mTextureRegion;
 		Vector2f				mPos;
 		Vector2i				mTilePos;
 };

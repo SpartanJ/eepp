@@ -1,7 +1,7 @@
 #include <eepp/maps/tilemap.hpp>
 #include <eepp/maps/gameobjectvirtual.hpp>
-#include <eepp/maps/gameobjectsubtexture.hpp>
-#include <eepp/maps/gameobjectsubtextureex.hpp>
+#include <eepp/maps/gameobjecttextureregion.hpp>
+#include <eepp/maps/gameobjecttextureregionex.hpp>
 #include <eepp/maps/gameobjectsprite.hpp>
 #include <eepp/maps/gameobjectobject.hpp>
 #include <eepp/maps/gameobjectpolygon.hpp>
@@ -597,21 +597,21 @@ GameObjectPolyData& TileMap::getPolyObjData( Uint32 Id ) {
 
 GameObject * TileMap::createGameObject( const Uint32& Type, const Uint32& Flags, MapLayer * Layer, const Uint32& DataId ) {
 	switch ( Type ) {
-		case GAMEOBJECT_TYPE_SUBTEXTURE:
+		case GAMEOBJECT_TYPE_TEXTUREREGION:
 		{
-			GameObjectSubTexture * tSubTexture = eeNew( GameObjectSubTexture, ( Flags, Layer ) );
+			GameObjectTextureRegion * tTextureRegion = eeNew( GameObjectTextureRegion, ( Flags, Layer ) );
 
-			tSubTexture->setDataId( DataId );
+			tTextureRegion->setDataId( DataId );
 
-			return tSubTexture;
+			return tTextureRegion;
 		}
-		case GAMEOBJECT_TYPE_SUBTEXTUREEX:
+		case GAMEOBJECT_TYPE_TEXTUREREGIONEX:
 		{
-			GameObjectSubTextureEx * tSubTextureEx = eeNew( GameObjectSubTextureEx, ( Flags, Layer ) );
+			GameObjectTextureRegionEx * tTextureRegionEx = eeNew( GameObjectTextureRegionEx, ( Flags, Layer ) );
 
-			tSubTextureEx->setDataId( DataId );
+			tTextureRegionEx->setDataId( DataId );
 
-			return tSubTextureEx;
+			return tTextureRegionEx;
 		}
 		case GAMEOBJECT_TYPE_SPRITE:
 		{
@@ -651,10 +651,10 @@ GameObject * TileMap::createGameObject( const Uint32& Type, const Uint32& Flags,
 				return mCreateGOCb( Type, Flags, Layer, DataId );
 			} else {
 				GameObjectVirtual * tVirtual;
-				SubTexture * tIsSubTexture = TextureAtlasManager::instance()->getSubTextureById( DataId );
+				TextureRegion * tIsTextureRegion = TextureAtlasManager::instance()->getTextureRegionById( DataId );
 
-				if ( NULL != tIsSubTexture ) {
-					tVirtual = eeNew( GameObjectVirtual, ( tIsSubTexture, Layer, Flags, Type ) );
+				if ( NULL != tIsTextureRegion ) {
+					tVirtual = eeNew( GameObjectVirtual, ( tIsTextureRegion, Layer, Flags, Type ) );
 				} else {
 					tVirtual = eeNew( GameObjectVirtual, ( DataId, Layer, Flags, Type ) );
 				}
@@ -1231,7 +1231,7 @@ void TileMap::saveToStream( IOStream& IOS ) {
 
 							sMapTileGOHdr tTGOHdr;
 
-							//! The DataId should be the SubTexture hash name ( at least in the cases of type SubTexture, SubTextureEx and Sprite.
+							//! The DataId should be the TextureRegion hash name ( at least in the cases of type TextureRegion, TextureRegionEx and Sprite.
 							tTGOHdr.Id		= tObj->getDataId();
 
 							//! If the object type is virtual, means that the real type is stored elsewhere.
@@ -1268,7 +1268,7 @@ void TileMap::saveToStream( IOStream& IOS ) {
 
 					sMapObjGOHdr tOGOHdr;
 
-					//! The DataId should be the SubTexture hash name ( at least in the cases of type SubTexture, SubTextureEx and Sprite.
+					//! The DataId should be the TextureRegion hash name ( at least in the cases of type TextureRegion, TextureRegionEx and Sprite.
 					//! And for the Poly Obj should be an arbitrary value assigned by the map on the moment of creation
 					tOGOHdr.Id		= tObj->getDataId();
 

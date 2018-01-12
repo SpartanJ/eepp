@@ -3,7 +3,7 @@
 
 #include <eepp/core.hpp>
 #include <eepp/graphics/drawable.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -24,7 +24,7 @@ class EE_API NinePatch : public DrawableResource {
 
 		NinePatch( const Uint32& TexId, int left, int top, int right, int bottom, const Float& pixelDensity = 1, const std::string& name = "" );
 		
-		NinePatch( SubTexture * subTexture, int left, int top, int right, int bottom, const std::string& name = "" );
+		NinePatch( TextureRegion * textureRegion, int left, int top, int right, int bottom, const std::string& name = "" );
 
 		~NinePatch();
 		
@@ -36,9 +36,9 @@ class EE_API NinePatch : public DrawableResource {
 
 		virtual void draw( const Vector2f& position, const Sizef& size );
 
-		SubTexture *	getSubTexture( const int& side );
+		TextureRegion *	getTextureRegion( const int& side );
 	protected:
-		SubTexture * 	mDrawable[ SideCount ];
+		TextureRegion * 	mDrawable[ SideCount ];
 		Rect mRect;
 		Rectf mRectf;
 		Sizei mSize;

@@ -1,5 +1,5 @@
 #include <eepp/ui/uispinbox.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {

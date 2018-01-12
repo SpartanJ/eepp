@@ -1,5 +1,5 @@
 #include <eepp/ui/tools/textureatlaseditor.hpp>
-#include <eepp/ui/tools/textureatlassubtextureeditor.hpp>
+#include <eepp/ui/tools/textureatlastextureregioneditor.hpp>
 #include <eepp/ui/tools/textureatlasnew.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
@@ -12,9 +12,9 @@
 
 namespace EE { namespace UI { namespace Tools {
 
-UIWidget * TextureAtlasEditor::createTextureAtlasSubTextureEditor( std::string name ) {
-	mSubTextureEditor = TextureAtlasSubTextureEditor::New( this );
-	return mSubTextureEditor;
+UIWidget * TextureAtlasEditor::createTextureAtlasTextureRegionEditor( std::string name ) {
+	mTextureRegionEditor = TextureAtlasTextureRegionEditor::New( this );
+	return mTextureRegionEditor;
 }
 
 TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorCloseCb& callback ) :
@@ -22,7 +22,7 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	mCloseCb( callback ),
 	mTexturePacker( NULL ),
 	mTextureAtlasLoader( NULL ),
-	mCurSubTexture( NULL )
+	mCurTextureRegion( NULL )
 {
 	if ( NULL == UIThemeManager::instance()->getDefaultTheme() ) {
 		eePRINTL( "TextureAtlasEditor needs a default theme assigned to work." );
@@ -57,12 +57,12 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	"		</Menu>"
 	"	</WinMenu>"
 	"	<LinearLayout layout_width='match_parent' layout_height='match_parent' orientation='horizontal'>"
-	"		<TextureAtlasSubTextureEditor layout_width='match_parent' layout_height='match_parent' layout_weight='1' "
+	"		<TextureAtlasTextureRegionEditor layout_width='match_parent' layout_height='match_parent' layout_weight='1' "
 	"										flags='clip' backgroundColor='#00000032' borderWidth='1' borderColor='#000000FF' />"
 	"		<LinearLayout orientation='vertical' layout_width='205dp' layout_height='match_parent' layout_marginLeft='8dp' layout_marginRight='8dp'>"
-	"			<TextView text='SubTexture List:' fontStyle='shadow' layout_marginTop='4dp' layout_marginBottom='8dp' />"
-	"			<ListBox id='SubTextureList' layout_width='match_parent' layout_height='144dp' />"
-	"			<TextView text='Current SubTexture:' fontStyle='shadow' layout_marginTop='16dp' layout_marginBottom='16dp' />"
+	"			<TextView text='TextureRegion List:' fontStyle='shadow' layout_marginTop='4dp' layout_marginBottom='8dp' />"
+	"			<ListBox id='TextureRegionList' layout_width='match_parent' layout_height='144dp' />"
+	"			<TextView text='Current TextureRegion:' fontStyle='shadow' layout_marginTop='16dp' layout_marginBottom='16dp' />"
 	"			<LinearLayout orientation='horizontal' layout_width='match_parent' layout_height='wrap_content'>"
 	"				<TextView text='Offset X:' fontStyle='shadow' layout_width='match_parent' layout_height='wrap_content' layout_weight='1' "
 	"								layout_marginRight='8dp' layout_gravity='center' gravity='right|center_vertical' />"
@@ -91,14 +91,14 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	"	</LinearLayout>"
 	"</LinearLayout>";
 
-	UIWidgetCreator::addCustomWidgetCallback( "TextureAtlasSubTextureEditor", cb::Make1( this, &TextureAtlasEditor::createTextureAtlasSubTextureEditor ) );
+	UIWidgetCreator::addCustomWidgetCallback( "TextureAtlasTextureRegionEditor", cb::Make1( this, &TextureAtlasEditor::createTextureAtlasTextureRegionEditor ) );
 
 	UIManager::instance()->loadLayoutFromString( layout, mUIContainer );
 
-	UIWidgetCreator::removeCustomWidgetCallback( "TextureAtlasSubTextureEditor" );
+	UIWidgetCreator::removeCustomWidgetCallback( "TextureAtlasTextureRegionEditor" );
 
-	mUIContainer->bind( "SubTextureList", mSubTextureList );
-	mSubTextureList->addEventListener( UIEvent::OnItemSelected, cb::Make1( this, &TextureAtlasEditor::onSubTextureChange ) );
+	mUIContainer->bind( "TextureRegionList", mTextureRegionList );
+	mTextureRegionList->addEventListener( UIEvent::OnItemSelected, cb::Make1( this, &TextureAtlasEditor::onTextureRegionChange ) );
 
 	mUIContainer->bind( "offX", mSpinOffX );
 	mSpinOffX->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &TextureAtlasEditor::onOffXChange ) );
@@ -140,10 +140,10 @@ TextureAtlasEditor::~TextureAtlasEditor() {
 void TextureAtlasEditor::onResetDestSize( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
-	if ( NULL != mCurSubTexture && MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-		Sizef RealSize( mCurSubTexture->getRealSize().getWidth() * mCurSubTexture->getPixelDensity(), mCurSubTexture->getRealSize().getHeight() * mCurSubTexture->getPixelDensity() );
+	if ( NULL != mCurTextureRegion && MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+		Sizef RealSize( mCurTextureRegion->getRealSize().getWidth() * mCurTextureRegion->getPixelDensity(), mCurTextureRegion->getRealSize().getHeight() * mCurTextureRegion->getPixelDensity() );
 
-		mCurSubTexture->setOriDestSize( Sizef( RealSize.x, RealSize.y ) );
+		mCurTextureRegion->setOriDestSize( Sizef( RealSize.x, RealSize.y ) );
 
 		mSpinDestW->setValue( RealSize.getWidth() );
 		mSpinDestH->setValue( RealSize.getHeight() );
@@ -153,7 +153,7 @@ void TextureAtlasEditor::onResetDestSize( const UIEvent * Event ) {
 void TextureAtlasEditor::onResetOffset( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
-	if ( NULL != mCurSubTexture && MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+	if ( NULL != mCurTextureRegion && MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
 		mSpinOffX->setValue( 0 );
 		mSpinOffY->setValue( 0 );
 	}
@@ -162,8 +162,8 @@ void TextureAtlasEditor::onResetOffset( const UIEvent * Event ) {
 void TextureAtlasEditor::onCenterOffset( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
-	if ( NULL != mCurSubTexture && MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-		Sizei NSize( -( (Int32)mCurSubTexture->getDpSize().x / 2 ), -( (Int32)mCurSubTexture->getDpSize().y / 2 ) );
+	if ( NULL != mCurTextureRegion && MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+		Sizei NSize( -( (Int32)mCurTextureRegion->getDpSize().x / 2 ), -( (Int32)mCurTextureRegion->getDpSize().y / 2 ) );
 
 		mSpinOffX->setValue( NSize.x );
 		mSpinOffY->setValue( NSize.y );
@@ -173,8 +173,8 @@ void TextureAtlasEditor::onCenterOffset( const UIEvent * Event ) {
 void TextureAtlasEditor::onHBOffset( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
-	if ( NULL != mCurSubTexture && MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
-		Sizei NSize( -( (Int32)mCurSubTexture->getDpSize().x / 2 ), -(Int32)mCurSubTexture->getDpSize().y );
+	if ( NULL != mCurTextureRegion && MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+		Sizei NSize( -( (Int32)mCurTextureRegion->getDpSize().x / 2 ), -(Int32)mCurTextureRegion->getDpSize().y );
 
 		mSpinOffX->setValue( NSize.x );
 		mSpinOffY->setValue( NSize.y );
@@ -182,28 +182,28 @@ void TextureAtlasEditor::onHBOffset( const UIEvent * Event ) {
 }
 
 void TextureAtlasEditor::onOffXChange( const UIEvent * Event ) {
-	if ( NULL != mCurSubTexture ) {
-		mCurSubTexture->setOffset( Vector2i( (Int32)mSpinOffX->getValue(), mCurSubTexture->getOffset().y ) );
+	if ( NULL != mCurTextureRegion ) {
+		mCurTextureRegion->setOffset( Vector2i( (Int32)mSpinOffX->getValue(), mCurTextureRegion->getOffset().y ) );
 	}
 }
 
 void TextureAtlasEditor::onOffYChange( const UIEvent * Event ) {
-	if ( NULL != mCurSubTexture ) {
-		mCurSubTexture->setOffset( Vector2i( mCurSubTexture->getOffset().x, (Int32)mSpinOffY->getValue() ) );
+	if ( NULL != mCurTextureRegion ) {
+		mCurTextureRegion->setOffset( Vector2i( mCurTextureRegion->getOffset().x, (Int32)mSpinOffY->getValue() ) );
 	}
 }
 
 void TextureAtlasEditor::onDestWChange( const UIEvent * Event ) {
-	if ( NULL != mCurSubTexture ) {
-		mCurSubTexture->setOriDestSize( Sizef( (Int32)mSpinDestW->getValue(), mCurSubTexture->getDpSize().y ) );
-		mSubTextureEditor->getGfx()->setSize( (Int32)mSpinDestW->getValue(), mSubTextureEditor->getGfx()->getSize().getHeight() );
+	if ( NULL != mCurTextureRegion ) {
+		mCurTextureRegion->setOriDestSize( Sizef( (Int32)mSpinDestW->getValue(), mCurTextureRegion->getDpSize().y ) );
+		mTextureRegionEditor->getGfx()->setSize( (Int32)mSpinDestW->getValue(), mTextureRegionEditor->getGfx()->getSize().getHeight() );
 	}
 }
 
 void TextureAtlasEditor::onDestHChange( const UIEvent * Event ) {
-	if ( NULL != mCurSubTexture ) {
-		mCurSubTexture->setOriDestSize( Sizef( mCurSubTexture->getDpSize().x, (Int32)mSpinDestH->getValue() ) );
-		mSubTextureEditor->getGfx()->setSize( mSubTextureEditor->getGfx()->getSize().getWidth(), (Int32)mSpinDestH->getValue() );
+	if ( NULL != mCurTextureRegion ) {
+		mCurTextureRegion->setOriDestSize( Sizef( mCurTextureRegion->getDpSize().x, (Int32)mSpinDestH->getValue() ) );
+		mTextureRegionEditor->getGfx()->setSize( mTextureRegionEditor->getGfx()->getSize().getWidth(), (Int32)mSpinDestH->getValue() );
 	}
 }
 
@@ -265,44 +265,44 @@ void TextureAtlasEditor::onTextureAtlasCreate( TexturePacker * TexPacker ) {
 
 void TextureAtlasEditor::updateControls() {
 	if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->isLoaded()  ) {
-		fillSubTextureList();
+		fillTextureRegionList();
 	}
 }
 
-void TextureAtlasEditor::fillSubTextureList() {
+void TextureAtlasEditor::fillTextureRegionList() {
 	if ( NULL == mTextureAtlasLoader || NULL == mTextureAtlasLoader->getTextureAtlas() || !mTextureAtlasLoader->isLoaded()  )
 		return;
 
-	std::list<SubTexture*>& Res = mTextureAtlasLoader->getTextureAtlas()->getResources();
+	std::list<TextureRegion*>& Res = mTextureAtlasLoader->getTextureAtlas()->getResources();
 
-	mSubTextureList->clear();
+	mTextureRegionList->clear();
 
 	std::vector<String> items;
 
-	for ( std::list<SubTexture*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
+	for ( std::list<TextureRegion*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
 			items.push_back( (*it)->getName() );
 	}
 
 	if ( items.size() ) {
 		std::sort( items.begin(), items.end() );
 
-		mSubTextureList->addListBoxItems( items );
-		mSubTextureList->setSelected( 0 );
+		mTextureRegionList->addListBoxItems( items );
+		mTextureRegionList->setSelected( 0 );
 	}
 
-	mSubTextureList->getVerticalScrollBar()->setClickStep( 8.f / (Float)mSubTextureList->getCount() );
+	mTextureRegionList->getVerticalScrollBar()->setClickStep( 8.f / (Float)mTextureRegionList->getCount() );
 }
 
-void TextureAtlasEditor::onSubTextureChange( const UIEvent * Event ) {
+void TextureAtlasEditor::onTextureRegionChange( const UIEvent * Event ) {
 	if ( NULL != mTextureAtlasLoader && NULL != mTextureAtlasLoader->getTextureAtlas() ) {
-		mCurSubTexture = mTextureAtlasLoader->getTextureAtlas()->getByName( mSubTextureList->getItemSelectedText() );
+		mCurTextureRegion = mTextureAtlasLoader->getTextureAtlas()->getByName( mTextureRegionList->getItemSelectedText() );
 
-		if ( NULL != mCurSubTexture ) {
-			mSubTextureEditor->setSubTexture( mCurSubTexture );
-			mSpinOffX->setValue( mCurSubTexture->getOffset().x );
-			mSpinOffY->setValue( mCurSubTexture->getOffset().y );
-			mSpinDestW->setValue( mCurSubTexture->getDpSize().x );
-			mSpinDestH->setValue( mCurSubTexture->getDpSize().y );
+		if ( NULL != mCurTextureRegion ) {
+			mTextureRegionEditor->setTextureRegion( mCurTextureRegion );
+			mSpinOffX->setValue( mCurTextureRegion->getOffset().x );
+			mSpinOffY->setValue( mCurTextureRegion->getOffset().y );
+			mSpinDestW->setValue( mCurTextureRegion->getDpSize().x );
+			mSpinDestH->setValue( mCurTextureRegion->getDpSize().y );
 		}
 	}
 }
@@ -339,13 +339,13 @@ void TextureAtlasEditor::saveTextureAtlas( const UIEvent * Event ) {
 
 void TextureAtlasEditor::onTextureAtlasClose( const UIEvent * Event ) {
 	eeSAFE_DELETE( mTextureAtlasLoader );
-	mSubTextureList->clear();
+	mTextureRegionList->clear();
 	mSpinOffX->setValue( 0 );
 	mSpinOffY->setValue( 0 );
 	mSpinDestW->setValue( 0 );
 	mSpinDestH->setValue( 0 );
-	mSubTextureEditor->setSubTexture( NULL );
-	mCurSubTexture = NULL;
+	mTextureRegionEditor->setTextureRegion( NULL );
+	mCurTextureRegion = NULL;
 }
 
 }}}

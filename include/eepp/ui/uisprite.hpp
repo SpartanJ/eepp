@@ -5,7 +5,7 @@
 
 namespace EE { namespace Graphics {
 class Sprite;
-class SubTexture;
+class TextureRegion;
 }}
 
 namespace EE { namespace UI {
@@ -51,14 +51,14 @@ class EE_API UISprite : public UIWidget {
 		Graphics::Sprite * 	mSprite;
 		RenderMode 		mRender;
 		Vector2i			mAlignOffset;
-		SubTexture *		mSubTextureLast;
+		TextureRegion *		mTextureRegionLast;
 		bool				mDealloc;
 
 		void updateSize();
 
 		void autoAlign();
 
-		void checkSubTextureUpdate();
+		void checkTextureRegionUpdate();
 
 		virtual void onSizeChange();
 

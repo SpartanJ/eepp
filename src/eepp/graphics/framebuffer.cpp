@@ -82,7 +82,7 @@ void FrameBuffer::recoverView() {
 	sFBOActiveViews.remove(&mView);
 
 	if ( sFBOActiveViews.empty() ) {
-		mWindow->setView( mWindow->getView() );
+		mWindow->setView( mWindow->getView(), true );
 	} else {
 		const View* view = sFBOActiveViews.back();
 		GLi->viewport( 0, 0, view->getSize().getWidth(), view->getSize().getHeight() );
