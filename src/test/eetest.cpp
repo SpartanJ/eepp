@@ -1347,7 +1347,7 @@ void EETest::screen2() {
 	Batch.setTexture( TNP[2] );
 	Batch.quadsBegin();
 	Batch.quadsSetColor( Color(150,150,150,100) );
-	Batch.quadsSetSubset( 0.0f, 0.0f, 0.5f, 0.5f );
+	Batch.quadsSetTexCoord( 0.0f, 0.0f, 0.5f, 0.5f );
 
 	Batch.setBatchRotation( ang );
 	Batch.setBatchScale( scale );

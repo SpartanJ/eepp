@@ -96,14 +96,14 @@ class EE_API BatchRenderer {
 		/** Add to the batch a quad with the vertex freely seted ( this will change your batch rendering method to PRIMITIVE_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
 		void batchQuadFreeEx( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2, const Float& x3, const Float& y3, const Float& Angle = 0.0f, const Float& Scale = 1.0f );
 
-		/** This will set as the default batch rendering to GL_QUADS. WIll reset the texture subset rendering to the whole texture. Will reset the default color rendering to ColorA(255,255,255,255). */
+		/** This will set as the default batch rendering to GL_QUADS. WIll reset the texture TexCoord rendering to the whole texture. Will reset the default color rendering to ColorA(255,255,255,255). */
 		void quadsBegin();
 
 		/** Set the texture sector to be rendered */
-		void quadsSetSubset( const Float& tl_u, const Float& tl_v, const Float& br_u, const Float& br_v );
+		void quadsSetTexCoord( const Float& tl_u, const Float& tl_v, const Float& br_u, const Float& br_v );
 
 		/** Set the texture sector to be rendered but freely seted */
-		void quadsSetSubsetFree( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2, const Float& x3, const Float& y3 );
+		void quadsSetTexCoordFree( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2, const Float& x3, const Float& y3 );
 
 		/** Set the quad color */
 		void quadsSetColor( const Color& Color );
@@ -116,6 +116,9 @@ class EE_API BatchRenderer {
 
 		/** Set the point color */
 		void pointSetColor( const Color& Color );
+
+		/** Set the texture sector to be rendered */
+		void pointSetTexCoord(const Float & x, const Float & y);
 
 		/** Add to the batch a point ( this will change your batch rendering method to PRIMITIVE_POINTS, so if you were using another one will Draw all the batched vertexs first ) */
 		void batchPoint( const Float& x, const Float& y );
@@ -184,7 +187,7 @@ class EE_API BatchRenderer {
 		void triangleFanSetColorFree( const Color& Color0, const Color& Color1, const Color& Color2 );
 
 		/** Set the texture sector to be rendered but freely seted */
-		void triangleFanSetSubset( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );
+		void triangleFanSetTexCoord( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );
 
 		/** Add to the batch a triangle fan ( this will change your batch rendering method to PRIMITIVE_TRIANGLE_FAN, so if you were using another one will Draw all the batched vertexs first ) */
 		void batchTriangleFan( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );
@@ -202,7 +205,7 @@ class EE_API BatchRenderer {
 		void trianglesSetColorFree( const Color& Color0, const Color& Color1, const Color& Color2 );
 
 		/** Set the texture sector to be rendered but freely seted */
-		void trianglesSetSubset( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );
+		void trianglesSetTexCoord( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );
 
 		/** Add to the batch a triangle ( this will change your batch rendering method to PRIMITIVE_TRIANGLES, so if you were using another one will Draw all the batched vertexs first ) */
 		void batchTriangle( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );

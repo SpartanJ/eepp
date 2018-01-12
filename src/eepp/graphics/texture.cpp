@@ -539,7 +539,7 @@ void Texture::drawFast( const Float& x, const Float& y, const Float& Angle, cons
 	if ( getClampMode() == CLAMP_REPEAT ) {
 		Float iw = (Float)getImageWidth();
 		Float ih = (Float)getImageHeight();
-		sBR->quadsSetSubsetFree( 0, 0, 0, height / ih, width / iw, height / ih, width / iw, 0 );
+		sBR->quadsSetTexCoordFree( 0, 0, 0, height / ih, width / iw, height / ih, width / iw, 0 );
 	}
 
 	sBR->batchQuadEx( x, y, w, h, Angle, Scale );
@@ -577,7 +577,7 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &
 		if ( getClampMode() == CLAMP_REPEAT ) {
 			if ( Effect == RENDER_NORMAL ) {
 				if ( renderSector ) {
-					sBR->quadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
+					sBR->quadsSetTexCoordFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
 
 					Float sw = (Float)( Sector.Right - Sector.Left );
 					Float sh = (Float)( Sector.Bottom - Sector.Top );
@@ -618,7 +618,7 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &
 						Float swn = ( Sector.Right - Sector.Left ) * ( tx - (Float)ttx );
 						Float tor = Sector.Left + swn ;
 
-						sBR->quadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, tor / w, Sector.Bottom / h, tor / w, Sector.Top / h );
+						sBR->quadsSetTexCoordFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, tor / w, Sector.Bottom / h, tor / w, Sector.Top / h );
 
 						for ( Int32 tmpY = 0; tmpY < tty; tmpY++ ) {
 							sBR->batchQuad( x + ttx * sw, y + tmpY * sh, swn, sh );
@@ -629,7 +629,7 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &
 						Float shn = ( Sector.Bottom - Sector.Top ) * ( ty - (Float)tty );
 						Float tob = Sector.Top + shn;
 
-						sBR->quadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, tob / h, Sector.Right / w, tob / h, Sector.Right / w, Sector.Top / h );
+						sBR->quadsSetTexCoordFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, tob / h, Sector.Right / w, tob / h, Sector.Right / w, Sector.Top / h );
 
 						for ( Int32 tmpX = 0; tmpX < ttx; tmpX++ ) {
 							sBR->batchQuad( x + tmpX * sw, y + tty * sh, sw, shn );
@@ -643,41 +643,41 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &
 
 					return;
 				} else {
-					sBR->quadsSetSubsetFree( 0, 0, 0, height / h, width / w, height / h, width / w, 0 );
+					sBR->quadsSetTexCoordFree( 0, 0, 0, height / h, width / w, height / h, width / w, 0 );
 				}
 			} else if ( Effect == RENDER_MIRROR ) {
-				sBR->quadsSetSubsetFree( width / w, 0, width / w, height / h, 0, height / h, 0, 0 );
+				sBR->quadsSetTexCoordFree( width / w, 0, width / w, height / h, 0, height / h, 0, 0 );
 			} else if ( Effect == RENDER_FLIPPED ) {
-				sBR->quadsSetSubsetFree( 0, height / h, 0, 0, width / w, 0, width / w, height / h );
+				sBR->quadsSetTexCoordFree( 0, height / h, 0, 0, width / w, 0, width / w, height / h );
 			} else {
-				sBR->quadsSetSubsetFree( width / w, height / h, width / w, 0, 0, 0, 0, height / h );
+				sBR->quadsSetTexCoordFree( width / w, height / h, width / w, 0, 0, 0, 0, height / h );
 			}
 		} else {
 			if ( Effect == RENDER_NORMAL ) {
 				if ( renderSector )
-					sBR->quadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
+					sBR->quadsSetTexCoordFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
 			} else if ( Effect == RENDER_MIRROR ) {
 				if ( renderSector )
-					sBR->quadsSetSubsetFree( Sector.Right / w, Sector.Top / h, Sector.Right / w, Sector.Bottom / h, Sector.Left / w, Sector.Bottom / h, Sector.Left / w, Sector.Top / h );
+					sBR->quadsSetTexCoordFree( Sector.Right / w, Sector.Top / h, Sector.Right / w, Sector.Bottom / h, Sector.Left / w, Sector.Bottom / h, Sector.Left / w, Sector.Top / h );
 				else
-					sBR->quadsSetSubsetFree( 1, 0, 1, 1, 0, 1, 0, 0 );
+					sBR->quadsSetTexCoordFree( 1, 0, 1, 1, 0, 1, 0, 0 );
 			} else if ( Effect == RENDER_FLIPPED ) {
 				if ( renderSector )
-					sBR->quadsSetSubsetFree( Sector.Left / w, Sector.Bottom / h, Sector.Left / w, Sector.Top / h, Sector.Right / w, Sector.Top / h, Sector.Right / w, Sector.Bottom / h );
+					sBR->quadsSetTexCoordFree( Sector.Left / w, Sector.Bottom / h, Sector.Left / w, Sector.Top / h, Sector.Right / w, Sector.Top / h, Sector.Right / w, Sector.Bottom / h );
 				else
-					sBR->quadsSetSubsetFree( 0, 1, 0, 0, 1, 0, 1, 1 );
+					sBR->quadsSetTexCoordFree( 0, 1, 0, 0, 1, 0, 1, 1 );
 			} else if ( Effect == RENDER_FLIPPED_MIRRORED ) {
 				if ( renderSector )
-					sBR->quadsSetSubsetFree( Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h, Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h );
+					sBR->quadsSetTexCoordFree( Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h, Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h );
 				else
-					sBR->quadsSetSubsetFree( 1, 1, 1, 0, 0, 0, 0, 1 );
+					sBR->quadsSetTexCoordFree( 1, 1, 1, 0, 0, 0, 0, 1 );
 			}
 		}
 
 		sBR->batchQuadEx( x, y, width, height, Angle, Scale, Center );
 	} else {
 		if ( renderSector )
-			sBR->quadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
+			sBR->quadsSetTexCoordFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
 
 		Rectf TmpR( x, y, x + width, y + height );
 		Quad2f Q = Quad2f( Vector2f( TmpR.Left, TmpR.Top ), Vector2f( TmpR.Left, TmpR.Bottom ), Vector2f( TmpR.Right, TmpR.Bottom ), Vector2f( TmpR.Right, TmpR.Top ) );
@@ -745,9 +745,9 @@ void Texture::drawQuadEx( Quad2f Q, const Vector2f& Offset, const Float &Angle, 
 	}
 
 	if ( getClampMode() == CLAMP_REPEAT ) {
-		sBR->quadsSetSubsetFree( 0, 0, 0, ( Q.V[0].y - Q.V[0].y ) / h, ( Q.V[0].x - Q.V[0].x ) / w, ( Q.V[0].y - Q.V[0].y ) / h, ( Q.V[0].x - Q.V[0].x ) / w, 0 );
+		sBR->quadsSetTexCoordFree( 0, 0, 0, ( Q.V[0].y - Q.V[0].y ) / h, ( Q.V[0].x - Q.V[0].x ) / w, ( Q.V[0].y - Q.V[0].y ) / h, ( Q.V[0].x - Q.V[0].x ) / w, 0 );
 	} else if ( renderSector ) {
-		sBR->quadsSetSubsetFree( texSector.Left / w, texSector.Top / h, texSector.Left / w, texSector.Bottom / h, texSector.Right / w, texSector.Bottom / h, texSector.Right / w, texSector.Top / h );
+		sBR->quadsSetTexCoordFree( texSector.Left / w, texSector.Top / h, texSector.Left / w, texSector.Bottom / h, texSector.Right / w, texSector.Bottom / h, texSector.Right / w, texSector.Top / h );
 	}
 
 	Q.move( Offset );
