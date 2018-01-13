@@ -9,7 +9,7 @@ using namespace EE::Math;
 
 namespace EE { namespace UI { namespace Action {
 
-class MarginMove : public UIAction {
+class EE_API MarginMove : public UIAction {
 	public:
 		static MarginMove * New( const Rect& start, const Rect& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear );
 

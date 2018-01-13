@@ -23,6 +23,26 @@ Interpolation1d::Interpolation1d() :
 {
 }
 
+Interpolation1d::Interpolation1d( std::vector<Point1d> points ) :
+	mData(0),
+	mType(Ease::Linear),
+	mEnable(false),
+	mUpdate(true),
+	mLoop(false),
+	mEnded(false),
+	mTotDist(0.f),
+	mCurPos(0.f),
+	mCurPoint(0),
+	mCurTime(Time::Zero),
+	mSpeed(1.3f),
+	mActP(NULL),
+	mNexP(NULL),
+	mPoints(points),
+	mOnPathEndCallback(),
+	mOnStepCallback()
+{
+}
+
 Interpolation1d::~Interpolation1d() {
 }
 
@@ -300,6 +320,16 @@ const Uint32& Interpolation1d::getCurrentPositionIndex() const {
 
 const std::vector<Point1d>& Interpolation1d::getPoints() const {
 	return mPoints;
+}
+
+std::vector<Point1d> Interpolation1d::getReversePoints() {
+	std::vector<Point1d> reversed;
+
+	for ( auto it = mPoints.rbegin(); it != mPoints.rend(); ++it ) {
+		reversed.push_back( *it );
+	}
+
+	return reversed;
 }
 
 const Float& Interpolation1d::getSpeed() const {

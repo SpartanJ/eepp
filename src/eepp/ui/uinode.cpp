@@ -1868,7 +1868,7 @@ bool UINode::isAnimating() {
 }
 
 static void UINode_onFadeDone( UIAction * action, const UIAction::ActionType& actionType ) {
-	UINode * node = action->getNode();
+	UINode * node = action->getTarget();
 
 	if ( NULL != node ) {
 		if ( ( node->getNodeFlags() & UI_CTRL_FLAG_CLOSE_FO )  )

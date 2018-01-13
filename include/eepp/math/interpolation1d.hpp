@@ -25,6 +25,8 @@ class EE_API Interpolation1d {
 	public:
 		Interpolation1d();
 
+		Interpolation1d( std::vector<Point1d> points );
+
 		~Interpolation1d();
 
 		typedef cb::Callback1<void,Interpolation1d&> OnPathEndCallback;
@@ -98,6 +100,9 @@ class EE_API Interpolation1d {
 
 		/** @return the vector of points */
 		const std::vector<Point1d>& getPoints() const;
+
+		/** @return the vector of points reversed */
+		std::vector<Point1d> getReversePoints();
 
 		/** @return The Current Node */
 		Point1d* getCurrentActual() const;

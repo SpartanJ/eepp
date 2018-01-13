@@ -65,5 +65,8 @@
 #include <eepp/ui/actions/scale.hpp>
 #include <eepp/ui/actions/fade.hpp>
 #include <eepp/ui/actions/marginmove.hpp>
+#include <eepp/ui/actions/sequence.hpp>
+#include <eepp/ui/actions/spawn.hpp>
+#include <eepp/ui/actions/delay.hpp>
 
 #endif

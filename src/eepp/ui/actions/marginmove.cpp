@@ -11,48 +11,39 @@ MarginMove * MarginMove::New( const Rect & start, const Rect & end, const Time& 
 MarginMove::MarginMove()
 {}
 
-Interpolation1d MarginMove::getInterpolationBottom() const
-{
+Interpolation1d MarginMove::getInterpolationBottom() const {
 	return mInterpolationBottom;
 }
 
-void MarginMove::setInterpolationBottom(const Interpolation1d & interpolationBottom)
-{
+void MarginMove::setInterpolationBottom(const Interpolation1d & interpolationBottom) {
 	mInterpolationBottom = interpolationBottom;
 }
 
-Interpolation1d MarginMove::getInterpolationTop() const
-{
+Interpolation1d MarginMove::getInterpolationTop() const {
 	return mInterpolationTop;
 }
 
-void MarginMove::setInterpolationTop(const Interpolation1d & interpolationTop)
-{
+void MarginMove::setInterpolationTop(const Interpolation1d & interpolationTop) {
 	mInterpolationTop = interpolationTop;
 }
 
-Interpolation1d MarginMove::getInterpolationRight() const
-{
+Interpolation1d MarginMove::getInterpolationRight() const {
 	return mInterpolationRight;
 }
 
-void MarginMove::setInterpolationRight(const Interpolation1d & interpolationRight)
-{
+void MarginMove::setInterpolationRight(const Interpolation1d & interpolationRight) {
 	mInterpolationRight = interpolationRight;
 }
 
-Interpolation1d MarginMove::getInterpolationLeft() const
-{
+Interpolation1d MarginMove::getInterpolationLeft() const {
 	return mInterpolationLeft;
 }
 
-void MarginMove::setInterpolationLeft(const Interpolation1d & interpolationLeft)
-{
+void MarginMove::setInterpolationLeft(const Interpolation1d & interpolationLeft) {
 	mInterpolationLeft = interpolationLeft;
 }
 
-MarginMove::MarginMove( const Rect& start, const Rect & end, const Time& duration, const Ease::Interpolation& type )
-{
+MarginMove::MarginMove( const Rect& start, const Rect & end, const Time& duration, const Ease::Interpolation& type ) {
 	mInterpolationLeft.clear().add( start.Left, duration ).add( end.Left ).setType( type );
 	mInterpolationRight.clear().add( start.Right, duration ).add( end.Right ).setType( type );
 	mInterpolationTop.clear().add( start.Top, duration ).add( end.Top ).setType( type );

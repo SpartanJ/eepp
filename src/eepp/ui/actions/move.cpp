@@ -10,8 +10,7 @@ Move * Move::New( const Vector2f& start, const Vector2f& end, const Time& durati
 Move::Move()
 {}
 
-Move::Move( const Vector2f & start, const Vector2f & end, const Time& duration, const Ease::Interpolation& type )
-{
+Move::Move( const Vector2f & start, const Vector2f & end, const Time& duration, const Ease::Interpolation& type ) {
 	mInterpolation.clear().add( start, duration ).add( end ).setType( type );
 }
 
@@ -34,7 +33,9 @@ UIAction * Move::clone() const {
 }
 
 UIAction * Move::reverse() const {
-	return NULL;
+	Move * action = eeNew( Move, () );
+	action->setInterpolation( Interpolation2d( mInterpolation.getReversePoints() ) );
+	return action;
 }
 
 }}} 

@@ -10,8 +10,7 @@ Rotate * Rotate::New( const Float & start, const Float & end, const Time& durati
 Rotate::Rotate()
 {}
 
-Rotate::Rotate( const Float & start, const Float & end, const Time& duration, const Ease::Interpolation& type )
-{
+Rotate::Rotate( const Float & start, const Float & end, const Time& duration, const Ease::Interpolation& type ) {
 	mInterpolation.clear().add( start, duration ).add( end ).setType( type );
 }
 
@@ -34,7 +33,9 @@ UIAction * Rotate::clone() const {
 }
 
 UIAction * Rotate::reverse() const {
-	return NULL;
+	Rotate * action = eeNew( Rotate, () );
+	action->setInterpolation( Interpolation1d( mInterpolation.getReversePoints() ) );
+	return action;
 }
 
 }}} 

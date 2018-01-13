@@ -74,10 +74,6 @@ void UIAction::sendEvent( const ActionType& actionType ) {
 	}
 }
 
-UINode * UIAction::getNode() const {
-	return mNode;
-}
-
 void UIAction::onStart() {}
 
 void UIAction::onStop() {}

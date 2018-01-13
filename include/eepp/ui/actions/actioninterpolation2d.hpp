@@ -7,7 +7,7 @@ using namespace EE::Math;
 
 namespace EE { namespace UI { namespace Action {
 
-class ActionInterpolation2d : public UIAction {
+class EE_API ActionInterpolation2d : public UIAction {
 	public:
 		void start() override;
 
@@ -19,7 +19,7 @@ class ActionInterpolation2d : public UIAction {
 
 		Interpolation2d * getInterpolation();
 	protected:
-		Interpolation2d mInterpolation;
+		mutable Interpolation2d mInterpolation;
 
 		ActionInterpolation2d();
 

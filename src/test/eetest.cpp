@@ -1106,6 +1106,8 @@ void EETest::onMainClick( const UIEvent * Event ) {
 	}
 }
 
+using namespace EE::UI::Action;
+
 void EETest::onButtonClick( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
@@ -1113,12 +1115,12 @@ void EETest::onButtonClick( const UIEvent * Event ) {
 		UIImage * Gfx = UIImage::New();
 		Gfx->setDrawable( mTheme->getIconByName( "ok" ) );
 		Gfx->setEnabled( false );
-
+		Gfx->runAction( Sequence::New( Scale::New( Vector2f(1.f,1.f), Vector2f(2.f,2.f), Seconds( 0.5f ) ),
+									   Scale::New( Vector2f(2.f,2.f), Vector2f(1.f,1.f), Seconds( 0.5f ) )
+						) );
 		Gfx->startRotation( 0, 2500, Milliseconds( 2500 ) );
 		Gfx->startTranslation( Vector2i( Math::randi( 0, mWindow->getWidth() ), -64 ), Vector2i( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ), Milliseconds( 2500 ) );
 		Gfx->closeFadeOut( Milliseconds( 3500 ) );
-
-		//mListBox->addListBoxItem( "Test ListBox " + String::toStr( mListBox->getCount() + 1 ) + " testing it right now!" );
 	}
 }
 

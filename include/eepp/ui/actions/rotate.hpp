@@ -6,7 +6,7 @@
 
 namespace EE { namespace UI { namespace Action {
 
-class Rotate : public ActionInterpolation1d {
+class EE_API Rotate : public ActionInterpolation1d {
 	public:
 		static Rotate * New( const Float& start, const Float& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear );
 

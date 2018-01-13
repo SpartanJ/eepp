@@ -26,6 +26,8 @@ class EE_API Interpolation2d {
 	public:
 		Interpolation2d();
 
+		Interpolation2d( std::vector<Point2d> points );
+
 		~Interpolation2d();
 
 		typedef cb::Callback1<void,Interpolation2d&> OnPathEndCallback;
@@ -100,6 +102,9 @@ class EE_API Interpolation2d {
 
 		/** @return the vector of waypoints */
 		const std::vector<Point2d>& getPoints() const;
+
+		/** @return the vector of waypoints reversed */
+		std::vector<Point2d> getReversePoints();
 
 		/** Set the current interpolation speed ( This will destroy the time of the interpolation and create one depending on the speed ) ( pixels per second ) */
 		Interpolation2d& setSpeed( const Float& speed );

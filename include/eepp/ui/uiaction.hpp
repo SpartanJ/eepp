@@ -10,13 +10,14 @@ namespace EE { namespace UI {
 
 class UINode;
 
-class UIAction {
+class EE_API UIAction {
 	public:
 		enum ActionType
 		{
 			OnStart,
 			OnStop,
-			OnDone
+			OnDone,
+			OnStep
 		};
 
 		typedef cb::Callback2<void,UIAction*,const ActionType&> ActionCallback;
@@ -53,7 +54,7 @@ class UIAction {
 
 		void sendEvent( const ActionType & actionType );
 
-		UINode * getNode() const;
+		void setTarget( UINode * target );
 	protected:
 		friend class UINode;
 		typedef std::map< ActionType, std::map<Uint32, ActionCallback> > ActionCallbackMap;
@@ -63,8 +64,6 @@ class UIAction {
 		Uint32 mTag;
 		Uint32 mNumCallBacks;
 		ActionCallbackMap mCallbacks;
-
-		void setTarget( UINode * target );
 
 		virtual void onStart();
 

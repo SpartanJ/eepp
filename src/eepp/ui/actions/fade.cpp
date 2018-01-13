@@ -46,7 +46,10 @@ UIAction * Fade::clone() const {
 }
 
 UIAction * Fade::reverse() const {
-	return NULL;
+	Fade * action = eeNew( Fade, () );
+	action->mAffectChilds = mAffectChilds;
+	action->setInterpolation( Interpolation1d( mInterpolation.getReversePoints() ) );
+	return action;
 }
 
 }}} 

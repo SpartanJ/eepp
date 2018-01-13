@@ -20,6 +20,23 @@ Interpolation2d::Interpolation2d() :
 {
 }
 
+Interpolation2d::Interpolation2d( std::vector<Point2d> points ) :
+	mData(0),
+	mType(Ease::Linear),
+	mEnable(false),
+	mUpdate(true),
+	mLoop(false),
+	mEnded(false),
+	mTotDist(0.f),
+	mCurPoint(0),
+	mCurTime(Time::Zero),
+	mSpeed(1.3f),
+	mPoints(points),
+	mOnPathEndCallback(),
+	mOnStepCallback()
+{
+}
+
 Interpolation2d::~Interpolation2d() {
 }
 
@@ -298,6 +315,16 @@ const Uint32& Interpolation2d::getCurrentPositionIndex() const {
 
 const std::vector<Point2d>& Interpolation2d::getPoints() const {
 	return mPoints;
+}
+
+std::vector<Point2d> Interpolation2d::getReversePoints() {
+	std::vector<Point2d> reversed;
+
+	for ( auto it = mPoints.rbegin(); it != mPoints.rend(); ++it ) {
+		reversed.push_back( *it );
+	}
+
+	return reversed;
 }
 
 const Float& Interpolation2d::getSpeed() const {

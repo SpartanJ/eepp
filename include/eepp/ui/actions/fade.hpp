@@ -6,7 +6,7 @@
 
 namespace EE { namespace UI { namespace Action {
 
-class Fade : public ActionInterpolation1d {
+class EE_API Fade : public ActionInterpolation1d {
 	public:
 		static Fade * New( const Float& start, const Float& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear, const bool& alphaChilds = true );
 

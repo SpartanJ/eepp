@@ -10,8 +10,7 @@ Scale * Scale::New( const Vector2f& start, const Vector2f& end, const Time& dura
 Scale::Scale()
 {}
 
-Scale::Scale( const Vector2f & start, const Vector2f & end, const Time& duration, const Ease::Interpolation& type )
-{
+Scale::Scale( const Vector2f & start, const Vector2f & end, const Time& duration, const Ease::Interpolation& type ) {
 	mInterpolation.clear().add( start, duration ).add( end ).setType( type );
 }
 
@@ -34,7 +33,9 @@ UIAction * Scale::clone() const {
 }
 
 UIAction * Scale::reverse() const {
-	return NULL;
+	Scale * action = eeNew( Scale, () );
+	action->setInterpolation( mInterpolation.getReversePoints() );
+	return action;
 }
 
 }}} 

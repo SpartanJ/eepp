@@ -10,7 +10,7 @@ namespace EE { namespace UI {
 
 class UIAction;
 
-class UIActionManager {
+class EE_API UIActionManager {
 	public:
 		UIActionManager();
 

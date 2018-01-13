@@ -6,7 +6,7 @@
 
 namespace EE { namespace UI { namespace Action {
 
-class Move : public ActionInterpolation2d {
+class EE_API Move : public ActionInterpolation2d {
 	public:
 		static Move * New( const Vector2f& start, const Vector2f& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear );
 
