@@ -18,19 +18,16 @@ Interpolation1d::Interpolation1d() :
 	mSpeed(1.3f),
 	mActP(NULL),
 	mNexP(NULL),
-	mOnPathEndCallback(NULL),
-	mOnStepCallback(NULL)
+	mOnPathEndCallback(),
+	mOnStepCallback()
 {
 }
 
 Interpolation1d::~Interpolation1d() {
 }
 
-Interpolation1d& Interpolation1d::start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback) {
+Interpolation1d& Interpolation1d::start() {
 	mEnable				= true;
-	mOnPathEndCallback	= PathEndCallback;
-	mOnStepCallback		= StepCallback;
-
 	if ( mPoints.size() ) {
 		mActP = &mPoints[ 0 ];
 
@@ -42,6 +39,13 @@ Interpolation1d& Interpolation1d::start( OnPathEndCallback PathEndCallback, OnSt
 		mEnable = false;
 	}
 
+	return *this;
+}
+
+Interpolation1d& Interpolation1d::start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback) {
+	start();
+	mOnPathEndCallback	= PathEndCallback;
+	mOnStepCallback		= StepCallback;
 	return *this;
 }
 
@@ -79,8 +83,8 @@ Interpolation1d & Interpolation1d::reset() {
 	mUpdate	= true;
 	mEnded = false;
 	mCurTime = Time::Zero;
-	mOnPathEndCallback = NULL;
-	mOnStepCallback = NULL;
+	mOnPathEndCallback = OnPathEndCallback();
+	mOnStepCallback = OnStepCallback();
 
 	if ( mPoints.size() )
 		mCurPos = mPoints[0].p;

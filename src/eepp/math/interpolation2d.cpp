@@ -15,18 +15,16 @@ Interpolation2d::Interpolation2d() :
 	mCurPoint(0),
 	mCurTime(Time::Zero),
 	mSpeed(1.3f),
-	mOnPathEndCallback(NULL),
-	mOnStepCallback(NULL)
+	mOnPathEndCallback(),
+	mOnStepCallback()
 {
 }
 
 Interpolation2d::~Interpolation2d() {
 }
 
-Interpolation2d& Interpolation2d::start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback ) {
+Interpolation2d& Interpolation2d::start() {
 	mEnable				= true;
-	mOnPathEndCallback	= PathEndCallback;
-	mOnStepCallback		= StepCallback;
 
 	if ( mPoints.size() ) {
 		mActP = &mPoints[ 0 ];
@@ -39,6 +37,13 @@ Interpolation2d& Interpolation2d::start( OnPathEndCallback PathEndCallback, OnSt
 		mEnable = false;
 	}
 
+	return *this;
+}
+
+Interpolation2d& Interpolation2d::start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback ) {
+	start();
+	mOnPathEndCallback	= PathEndCallback;
+	mOnStepCallback		= StepCallback;
 	return *this;
 }
 
@@ -65,8 +70,8 @@ Interpolation2d& Interpolation2d::reset() {
 	mCurTime = Time::Zero;
 	mUpdate = true;
 	mEnded = false;
-	mOnPathEndCallback = NULL;
-	mOnStepCallback = NULL;
+	mOnPathEndCallback = OnPathEndCallback();
+	mOnStepCallback = OnStepCallback();
 
 	if ( mPoints.size() )
 		mCurPos = mPoints[0].p;

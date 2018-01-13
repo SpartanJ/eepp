@@ -47,7 +47,10 @@ class EE_API Interpolation1d {
 		Interpolation1d& waitAndAdd( const Float& pos, const Time& waitTime, const Time& addTime );
 
 		/** Start the animation */
-		Interpolation1d& start( OnPathEndCallback PathEndCallback = OnPathEndCallback(), OnStepCallback StepCallback = OnStepCallback() );
+		Interpolation1d& start();
+
+		/** Start the animation */
+		Interpolation1d& start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback = OnStepCallback() );
 
 		/** Stop the animation */
 		Interpolation1d& stop();

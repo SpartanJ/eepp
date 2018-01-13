@@ -47,11 +47,14 @@ class EE_API Interpolation2d {
 		/** Same as add( pos, waitTime ).add( pos, addTime ); */
 		Interpolation2d& waitAndAdd( const Vector2f& pos, const Time& waitTime, const Time& addTime );
 
+		/** Start the animation ( will reset the current state, and start from the beginning ) */
+		Interpolation2d& start();
+
 		/** Start the animation ( will reset the current state, and start from the beginning )
 		*	@param PathEndCallback An optional callback fired when the animation ends.
 		*	@param StepCallback An optional callback that is fired every time that a step is completed.
 		*/
-		Interpolation2d& start( OnPathEndCallback PathEndCallback = OnPathEndCallback(), OnStepCallback StepCallback = OnStepCallback() );
+		Interpolation2d& start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback = OnStepCallback() );
 
 		/** Stop the animation ( Enable = false ) */
 		Interpolation2d& stop();
