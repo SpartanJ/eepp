@@ -55,7 +55,6 @@ void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 
 	mInit			= true;
 
-
 	UIWindowStyleConfig windowStyleConfig;
 	windowStyleConfig.WinFlags = UI_WIN_NO_BORDER | UI_WIN_RESIZEABLE;
 
@@ -213,7 +212,7 @@ void UIManager::update() {
 
 	mControl->update();
 
-	UINode * pOver = mControl->overFind( mKM->getMousePosf() );
+	UINode * pOver = mControl->overFind( mKM->getMousePosFromView( mWindow->getDefaultView() ) );
 
 	if ( pOver != mOverControl ) {
 		if ( NULL != mOverControl ) {
