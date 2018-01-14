@@ -454,7 +454,7 @@ class EE_API UINode {
 
 		virtual void drawBorder();
 
-		virtual void updateQuad();
+		virtual void updateWorldPolygon();
 
 		virtual void updateCenter();
 

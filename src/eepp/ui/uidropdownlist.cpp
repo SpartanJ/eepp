@@ -137,7 +137,7 @@ void UIDropDownList::showList() {
 				mListBox->setSize( NULL != mFriendCtrl ? mFriendCtrl->getSize().getWidth() : mSize.getWidth(), (Int32)( mListBox->getCount() * mListBox->getRowHeight() ) + tPadding.Top + tPadding.Bottom );
 			}
 
-			mListBox->updateQuad();
+			mListBox->updateWorldPolygon();
 
 			Rectf aabb( mListBox->getPolygon().getBounds() );
 			Rect aabbi( aabb.Left, aabb.Top, aabb.Right, aabb.Bottom );

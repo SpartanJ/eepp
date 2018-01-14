@@ -1118,7 +1118,7 @@ UINode * UINode::overFind( const Vector2f& Point ) {
 
 	if ( mEnabled && mVisible ) {
 		if ( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY )
-			updateQuad();
+			updateWorldPolygon();
 
 		if ( mPoly.pointInside( Point ) ) {
 			writeCtrlFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
@@ -1255,19 +1255,19 @@ bool UINode::isMeOrParentTreeScaledOrRotatedOrFrameBuffer() {
 
 Polygon2f& UINode::getPolygon() {
 	if ( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY )
-		updateQuad();
+		updateWorldPolygon();
 
 	return mPoly;
 }
 
 Vector2f UINode::getPolygonCenter() {
 	if ( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY )
-		updateQuad();
+		updateWorldPolygon();
 
 	return mPoly.getBounds().getCenter();
 }
 
-void UINode::updateQuad() {
+void UINode::updateWorldPolygon() {
 	if ( !( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY ) &&
 		 !( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY ) ) {
 		return;
@@ -1285,10 +1285,8 @@ void UINode::updateQuad() {
 	UINode * tParent = getParent();
 
 	while ( tParent ) {
-		UINode * tP = reinterpret_cast<UINode *> ( tParent );
-
-		mPoly.rotate( tP->getRotation(), tP->getRotationCenter() );
-		mPoly.scale( tP->getScale(), tP->getScaleCenter() );
+		mPoly.rotate( tParent->getRotation(), tParent->getRotationCenter() );
+		mPoly.scale( tParent->getScale(), tParent->getScaleCenter() );
 
 		tParent = tParent->getParent();
 	};
@@ -1649,23 +1647,22 @@ void UINode::worldToNode( Vector2i& pos ) const {
 	Vector2f scale(1,1);
 
 	for ( std::list<UINode*>::iterator it = parents.begin(); it != parents.end(); it++ ) {
-		UINode * tParent	= (*it);
-		UINode * tP			= reinterpret_cast<UINode *> ( tParent );
-		Vector2f pPos			( tParent->mRealPos.x * scale.x			, tParent->mRealPos.y * scale.y			);
+		UINode * tParent = (*it);
+		Vector2f pPos( tParent->mRealPos.x * scale.x			, tParent->mRealPos.y * scale.y			);
 		Vector2f Center;
 
-		if ( NULL != tP && 1.f != tP->getScale() ) {
-			Center = tP->getScaleOriginPoint() * scale;
-			scale *= tP->getScale();
+		if ( NULL != tParent && 1.f != tParent->getScale() ) {
+			Center = tParent->getScaleOriginPoint() * scale;
+			scale *= tParent->getScale();
 
 			pPos.scale( scale, pPos + Center );
 		}
 
 		Pos -= pPos;
 
-		if ( NULL != tP && 0.f != tP->getRotation() ) {
-			Center = tP->getRotationOriginPoint() * scale;
-			Pos.rotate( -tP->getRotation(), Center );
+		if ( NULL != tParent && 0.f != tParent->getRotation() ) {
+			Center = tParent->getRotationOriginPoint() * scale;
+			Pos.rotate( -tParent->getRotation(), Center );
 		}
 	}
 
@@ -1688,8 +1685,8 @@ void UINode::nodeToWorld( Vector2i& pos ) const {
 	parents.push_front( const_cast<UINode*>( reinterpret_cast<const UINode*>( this ) ) );
 
 	for ( std::list<UINode*>::iterator it = parents.begin(); it != parents.end(); it++ ) {
-		UINode * tParent	= (*it);
-		Vector2f pPos			( tParent->mRealPos.x					, tParent->mRealPos.y					);
+		UINode * tParent = (*it);
+		Vector2f pPos( tParent->mRealPos.x					, tParent->mRealPos.y					);
 
 		Pos += pPos;
 

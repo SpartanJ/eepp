@@ -60,7 +60,7 @@ UINode * UIItemContainer<TContainer>::overFind( const Vector2f& Point ) {
 	UINode * pOver = NULL;
 
 	if ( mEnabled && mVisible && tParent->mItems.size() ) {
-		updateQuad();
+		updateWorldPolygon();
 
 		if ( mPoly.pointInside( Point ) ) {
 			writeCtrlFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
