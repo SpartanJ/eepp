@@ -43,7 +43,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 	mMinimizeListener(0),
 	mFrameBufferBound( false )
 {
-	mNodeFlags |= UI_CTRL_FLAG_WINDOW;
+	mNodeFlags |= NODE_FLAG_WINDOW;
 
 	setHorizontalAlign( UI_HALIGN_CENTER );
 
@@ -63,7 +63,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 	}
 
 	mContainer->setLayoutSizeRules( FIXED, FIXED );
-	mContainer->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
+	mContainer->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
 	mContainer->setParent( this );
 	mContainer->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS | UI_CLIP_ENABLE );
 	mContainer->setSize( mSize );
@@ -91,10 +91,11 @@ UIWindow::~UIWindow() {
 void UIWindow::updateWinFlags() {
 	bool needsUpdate = false;
 
-	writeCtrlFlag( UI_CTRL_FLAG_FRAME_BUFFER, ( mStyleConfig.WinFlags & UI_WIN_FRAME_BUFFER ) ? 1 : 0 );
+	writeCtrlFlag( NODE_FLAG_FRAME_BUFFER, ( mStyleConfig.WinFlags & UI_WIN_FRAME_BUFFER ) ? 1 : 0 );
 
-	if ( ( mStyleConfig.WinFlags & UI_WIN_FRAME_BUFFER ) && NULL == mFrameBuffer ) {
-		createFrameBuffer();
+	if ( ( mStyleConfig.WinFlags & UI_WIN_FRAME_BUFFER ) ) {
+		if ( NULL == mFrameBuffer )
+			createFrameBuffer();
 	} else {
 		eeSAFE_DELETE( mFrameBuffer );
 	}
@@ -108,7 +109,7 @@ void UIWindow::updateWinFlags() {
 	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) ) {
 		if ( NULL == mWindowDecoration ) {
 			mWindowDecoration = UINode::New();
-			mWindowDecoration->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
+			mWindowDecoration->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
 		}
 
 		mWindowDecoration->setParent( this );
@@ -117,7 +118,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( NULL == mBorderLeft ) {
 			mBorderLeft		= UINode::New();
-			mBorderLeft->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
+			mBorderLeft->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
 		}
 
 		mBorderLeft->setParent( this );
@@ -126,7 +127,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( NULL == mBorderRight ) {
 			mBorderRight	= UINode::New();
-			mBorderRight->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
+			mBorderRight->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
 		}
 
 		mBorderRight->setParent( this );
@@ -135,7 +136,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( NULL == mBorderBottom ) {
 			mBorderBottom	= UINode::New();
-			mBorderBottom->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
+			mBorderBottom->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
 		}
 
 		mBorderBottom->setParent( this );
@@ -145,7 +146,7 @@ void UIWindow::updateWinFlags() {
 		if ( mStyleConfig.WinFlags & UI_WIN_CLOSE_BUTTON ) {
 			if ( NULL == mButtonClose ) {
 				mButtonClose = UINode::New();
-				mButtonClose->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
+				mButtonClose->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
 				needsUpdate = true;
 			}
 
@@ -164,7 +165,7 @@ void UIWindow::updateWinFlags() {
 		if ( isMaximizable() ) {
 			if ( NULL == mButtonMaximize ) {
 				mButtonMaximize = UINode::New();
-				mButtonMaximize->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
+				mButtonMaximize->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
 				needsUpdate = true;
 			}
 
@@ -183,7 +184,7 @@ void UIWindow::updateWinFlags() {
 		if ( mStyleConfig.WinFlags & UI_WIN_MINIMIZE_BUTTON ) {
 			if ( NULL == mButtonMinimize ) {
 				mButtonMinimize = UINode::New();
-				mButtonMinimize->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
+				mButtonMinimize->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
 				needsUpdate = true;
 			}
 
@@ -197,6 +198,11 @@ void UIWindow::updateWinFlags() {
 		} else if ( NULL != mButtonMinimize ) {
 			mButtonMinimize->setVisible( false )->setEnabled( false )->close();
 			mButtonMinimize = NULL;
+		}
+
+		if ( NULL != mTitle ) {
+			mTitle->setVisible( true );
+			mTitle->toFront();
 		}
 
 		setDragEnabled( true );
@@ -247,6 +253,9 @@ void UIWindow::updateWinFlags() {
 		if ( NULL != mContainer )
 			mContainer->setPosition( 0, 0 );
 
+		if ( NULL != mTitle )
+			mTitle->setVisible( false );
+
 		fixChildsSize();
 	}
 
@@ -279,7 +288,7 @@ void UIWindow::drawFrameBuffer() {
 }
 
 void UIWindow::drawHighlightInvalidation() {
-	if ( ( mNodeFlags & UI_CTRL_FLAG_NEEDS_REDRAW ) && UIManager::instance()->getHighlightInvalidation() ) {
+	if ( ( mNodeFlags & NODE_FLAG_NEEDS_REDRAW ) && UIManager::instance()->getHighlightInvalidation() ) {
 		UIWidget::matrixSet();
 
 		Primitives P;
@@ -339,7 +348,7 @@ void UIWindow::createModalControl() {
 
 	if ( NULL == mModalCtrl ) {
 		mModalCtrl = UIWidget::New();
-		mModalCtrl->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
+		mModalCtrl->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
 		mModalCtrl->setParent( Ctrl )->setPosition(0,0)->setSize( Ctrl->getSize() );
 		mModalCtrl->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	} else {
@@ -362,10 +371,10 @@ void UIWindow::enableByModal() {
 		{
 			if ( CtrlChild != mModalCtrl &&
 				 CtrlChild != this &&
-				 CtrlChild->getNodeFlags() & UI_CTRL_FLAG_DISABLED_BY_MODAL_WINDOW )
+				 CtrlChild->getNodeFlags() & NODE_FLAG_DISABLED_BY_MODAL_WINDOW )
 			{
 				CtrlChild->setEnabled( true );
-				CtrlChild->writeCtrlFlag( UI_CTRL_FLAG_DISABLED_BY_MODAL_WINDOW, 0 );
+				CtrlChild->writeCtrlFlag( NODE_FLAG_DISABLED_BY_MODAL_WINDOW, 0 );
 			}
 
 			CtrlChild = CtrlChild->getNextNode();
@@ -384,7 +393,7 @@ void UIWindow::disableByModal() {
 				 CtrlChild->isEnabled() )
 			{
 				CtrlChild->setEnabled( false );
-				CtrlChild->writeCtrlFlag( UI_CTRL_FLAG_DISABLED_BY_MODAL_WINDOW, 1 );
+				CtrlChild->writeCtrlFlag( NODE_FLAG_DISABLED_BY_MODAL_WINDOW, 1 );
 			}
 
 			CtrlChild = CtrlChild->getNextNode();
@@ -1014,7 +1023,7 @@ void UIWindow::onChildCountChange() {
 	bool found = false;
 
 	while ( NULL != child ) {
-		if ( !( child->getNodeFlags() & UI_CTRL_FLAG_OWNED_BY_WINDOW ) ) {
+		if ( !( child->getNodeFlags() & NODE_FLAG_OWNED_BY_WINDOW ) ) {
 			found = true;
 			break;
 		}
@@ -1043,7 +1052,7 @@ void UIWindow::setTitle( const String& text ) {
 	if ( NULL == mTitle ) {
 		mTitle = UITextView::New();
 		mTitle->setLayoutSizeRules( FIXED, FIXED );
-		mTitle->writeCtrlFlag( UI_CTRL_FLAG_OWNED_BY_WINDOW, 1 );
+		mTitle->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
 		mTitle->setParent( this );
 		mTitle->setHorizontalAlign( getHorizontalAlign() );
 		mTitle->setVerticalAlign( getVerticalAlign() );
@@ -1113,6 +1122,8 @@ Uint32 UIWindow::onKeyDown( const UIEventKey &Event ) {
 
 void UIWindow::internalDraw() {
 	if ( mVisible && 0 != mAlpha ) {
+		updateScreenPos();
+
 		preDraw();
 
 		drawShadow();
@@ -1145,13 +1156,13 @@ void UIWindow::internalDraw() {
 
 		drawHighlightInvalidation();
 
-		writeCtrlFlag( UI_CTRL_FLAG_NEEDS_REDRAW, 0 );
+		writeCtrlFlag( NODE_FLAG_NEEDS_REDRAW, 0 );
 	}
 }
 
 void UIWindow::invalidate() {
 	if ( mVisible && mAlpha != 0.f ) {
-		writeCtrlFlag( UI_CTRL_FLAG_NEEDS_REDRAW, 1 );
+		writeCtrlFlag( NODE_FLAG_NEEDS_REDRAW, 1 );
 
 		if ( NULL != mParentWindowCtrl )
 			mParentWindowCtrl->invalidateDraw();
@@ -1163,7 +1174,7 @@ FrameBuffer * UIWindow::getFrameBuffer() const {
 }
 
 bool UIWindow::invalidated() {
-	return 0 != ( mNodeFlags & UI_CTRL_FLAG_NEEDS_REDRAW );
+	return 0 != ( mNodeFlags & NODE_FLAG_NEEDS_REDRAW );
 }
 
 void UIWindow::matrixSet() {

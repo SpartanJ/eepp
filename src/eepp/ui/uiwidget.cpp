@@ -22,7 +22,7 @@ UIWidget::UIWidget() :
 	mLayoutPositionRuleWidget(NULL),
 	mPropertiesTransactionCount(0)
 {
-	mNodeFlags |= UI_CTRL_FLAG_WIDGET;
+	mNodeFlags |= NODE_FLAG_WIDGET;
 
 	updateAnchorsDistances();
 }

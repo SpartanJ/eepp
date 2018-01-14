@@ -45,7 +45,6 @@ class EE_API Transform {
 
 		static const Transform Identity;
 	private:
-
 		float mMatrix[16];
 };
 

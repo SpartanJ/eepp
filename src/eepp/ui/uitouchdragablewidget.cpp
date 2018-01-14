@@ -31,11 +31,11 @@ UITouchDragableWidget * UITouchDragableWidget::setTouchDragEnabled( const bool& 
 }
 
 bool UITouchDragableWidget::isTouchDragging() const {
-	return 0 != ( mNodeFlags & UI_CTRL_FLAG_TOUCH_DRAGGING );
+	return 0 != ( mNodeFlags & NODE_FLAG_TOUCH_DRAGGING );
 }
 
 UITouchDragableWidget * UITouchDragableWidget::setTouchDragging( const bool& dragging ) {
-	writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, true == dragging );
+	writeCtrlFlag( NODE_FLAG_TOUCH_DRAGGING, true == dragging );
 	return this;
 }
 
@@ -54,10 +54,10 @@ void UITouchDragableWidget::update() {
 			UIManager * manager = UIManager::instance();
 			Uint32 Press	= manager->getPressTrigger();
 
-			if ( ( mNodeFlags & UI_CTRL_FLAG_TOUCH_DRAGGING ) ) {
+			if ( ( mNodeFlags & NODE_FLAG_TOUCH_DRAGGING ) ) {
 				// Mouse Not Down
 				if ( !( Press & EE_BUTTON_LMASK ) ) {
-					writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 0 );
+					writeCtrlFlag( NODE_FLAG_TOUCH_DRAGGING, 0 );
 					manager->setControlDragging( false );
 					return;
 				}
@@ -83,7 +83,7 @@ void UITouchDragableWidget::update() {
 				// Mouse Down
 				if ( isTouchOverAllowedChilds() && !manager->isControlDragging() ) {
 					if ( Press & EE_BUTTON_LMASK ) {
-						writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 1 );
+						writeCtrlFlag( NODE_FLAG_TOUCH_DRAGGING, 1 );
 
 						mTouchDragPoint			= Vector2f( manager->getMousePos().x, manager->getMousePos().y );
 						mTouchDragAcceleration	= Vector2f(0,0);

@@ -63,7 +63,7 @@ UINode * UIItemContainer<TContainer>::overFind( const Vector2f& Point ) {
 		updateQuad();
 
 		if ( mPoly.pointInside( Point ) ) {
-			writeCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
+			writeCtrlFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
 
 			for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ ) {
 				if ( NULL != tParent->mItems[i] ) {

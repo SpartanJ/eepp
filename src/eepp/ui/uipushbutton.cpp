@@ -51,7 +51,7 @@ UIPushButton::UIPushButton() :
 	mTextBox->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 
 	if ( mStyleConfig.IconAutoMargin )
-		mNodeFlags |= UI_CTRL_FLAG_FREE_USE;
+		mNodeFlags |= NODE_FLAG_FREE_USE;
 
 	onSizeChange();
 
@@ -133,7 +133,7 @@ void UIPushButton::onThemeLoaded() {
 	if ( NULL != mTextBox && NULL == mTextBox->getFont() && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() )
 		mTextBox->setFont( mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() );
 
-	if ( mNodeFlags & UI_CTRL_FLAG_FREE_USE ) {
+	if ( mNodeFlags & NODE_FLAG_FREE_USE ) {
 		Rect RMargin = makePadding( true, false, false, false, true );
 		mStyleConfig.IconHorizontalMargin = RMargin.Left;
 	}

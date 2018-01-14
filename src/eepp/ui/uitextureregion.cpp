@@ -59,9 +59,9 @@ void UITextureRegion::onAutoSize() {
 }
 
 void UITextureRegion::draw() {
-	UINode::draw();
-
 	if ( mVisible ) {
+		UINode::draw();
+
 		if ( NULL != mTextureRegion && 0.f != mAlpha ) {
 			Sizef oDestSize	= mTextureRegion->getDestSize();
 			Vector2i oOff	= mTextureRegion->getOffset();

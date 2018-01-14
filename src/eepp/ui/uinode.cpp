@@ -39,7 +39,7 @@ UINode::UINode() :
 	mSkinState( NULL ),
 	mBackground( NULL ),
 	mBorder( NULL ),
-	mNodeFlags( 0 ),
+	mNodeFlags( NODE_FLAG_POSITION_DIRTY | NODE_FLAG_TRANFORM_DIRTY | NODE_FLAG_TRANFORM_INVERT_DIRTY ),
 	mBlend( BlendAlpha ),
 	mNumCallBacks( 0 ),
 	mVisible( true ),
@@ -57,10 +57,6 @@ UINode::UINode() :
 
 	if ( NULL != mParentCtrl )
 		mParentCtrl->childAdd( this );
-
-	updateScreenPos();
-	updateQuad();
-	updateOriginPoint();
 }
 
 UINode::~UINode() {
@@ -138,8 +134,7 @@ Uint32 UINode::onMessage( const UIMessage * Msg ) {
 void UINode::setInternalPosition( const Vector2i& Pos ) {
 	mPos = Pos;
 	mRealPos = Vector2i( Pos.x * PixelDensity::getPixelDensity(), Pos.y * PixelDensity::getPixelDensity() );
-	updateScreenPos();
-	updateChildsScreenPos();
+	setDirty();
 }
 
 UINode * UINode::setPosition( const Vector2f& Pos ) {
@@ -163,8 +158,7 @@ void UINode::setPixelsPosition( const Vector2i& Pos ) {
 	if ( mRealPos != Pos ) {
 		mPos = Vector2i( PixelDensity::pxToDpI( Pos.x ), PixelDensity::pxToDpI( Pos.y ) );
 		mRealPos = Pos;
-		updateScreenPos();
-		updateChildsScreenPos();
+		setDirty();
 		onPositionChange();
 	}
 }
@@ -312,11 +306,7 @@ UINode * UINode::setParent( UINode * parent ) {
 	if ( NULL != mParentCtrl )
 		mParentCtrl->childAdd( this );
 
-	updateScreenPos();
-
-	updateChildsScreenPos();
-
-	updateQuad();
+	setDirty();
 
 	onParentChange();
 
@@ -361,7 +351,7 @@ void UINode::center() {
 }
 
 void UINode::close() {
-	mNodeFlags |= UI_CTRL_FLAG_CLOSE;
+	mNodeFlags |= NODE_FLAG_CLOSE;
 
 	UIManager::instance()->addToCloseQueue( this );
 }
@@ -492,8 +482,8 @@ void UINode::update() {
 		ChildLoop = ChildLoop->mNext;
 	}
 
-	if ( mNodeFlags & UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD )
-		writeCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
+	if ( mNodeFlags & NODE_FLAG_MOUSEOVER_ME_OR_CHILD )
+		writeCtrlFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
 }
 
 void UINode::sendMouseEvent( const Uint32& Event, const Vector2i& Pos, const Uint32& Flags ) {
@@ -552,11 +542,11 @@ Uint32 UINode::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 }
 
 bool UINode::isMouseOver() {
-	return 0 != ( mNodeFlags & UI_CTRL_FLAG_MOUSEOVER );
+	return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER );
 }
 
 bool UINode::isMouseOverMeOrChilds() {
-	return 0 != ( mNodeFlags & UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD );
+	return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER_ME_OR_CHILD );
 }
 
 Uint32 UINode::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
@@ -565,7 +555,7 @@ Uint32 UINode::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
 }
 
 Uint32 UINode::onMouseEnter( const Vector2i& Pos, const Uint32 Flags ) {
-	writeCtrlFlag( UI_CTRL_FLAG_MOUSEOVER, 1 );
+	writeCtrlFlag( NODE_FLAG_MOUSEOVER, 1 );
 
 	sendMouseEvent( UIEvent::MouseEnter, Pos, Flags );
 
@@ -575,7 +565,7 @@ Uint32 UINode::onMouseEnter( const Vector2i& Pos, const Uint32 Flags ) {
 }
 
 Uint32 UINode::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	writeCtrlFlag( UI_CTRL_FLAG_MOUSEOVER, 0 );
+	writeCtrlFlag( NODE_FLAG_MOUSEOVER, 0 );
 
 	sendMouseEvent( UIEvent::MouseExit, Pos, Flags );
 
@@ -585,7 +575,7 @@ Uint32 UINode::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 }
 
 Uint32 UINode::onFocus() {
-	mNodeFlags |= UI_CTRL_FLAG_HAS_FOCUS;
+	mNodeFlags |= NODE_FLAG_HAS_FOCUS;
 
 	sendCommonEvent( UIEvent::OnFocus );
 
@@ -595,7 +585,7 @@ Uint32 UINode::onFocus() {
 }
 
 Uint32 UINode::onFocusLoss() {
-	mNodeFlags &= ~UI_CTRL_FLAG_HAS_FOCUS;
+	mNodeFlags &= ~NODE_FLAG_HAS_FOCUS;
 
 	sendCommonEvent( UIEvent::OnFocusLoss );
 
@@ -610,7 +600,7 @@ void UINode::onWidgetFocusLoss() {
 }
 
 bool UINode::hasFocus() const {
-	return 0 != ( mNodeFlags & UI_CTRL_FLAG_HAS_FOCUS );
+	return 0 != ( mNodeFlags & NODE_FLAG_HAS_FOCUS );
 }
 
 Uint32 UINode::onValueChange() {
@@ -849,6 +839,9 @@ void UINode::drawChilds() {
 
 void UINode::internalDraw() {
 	if ( mVisible ) {
+		if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
+			updateScreenPos();
+
 		matrixSet();
 
 		clipMe();
@@ -1124,10 +1117,11 @@ UINode * UINode::overFind( const Vector2f& Point ) {
 	UINode * pOver = NULL;
 
 	if ( mEnabled && mVisible ) {
-		updateQuad();
+		if ( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY )
+			updateQuad();
 
 		if ( mPoly.pointInside( Point ) ) {
-			writeCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
+			writeCtrlFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
 
 			UINode * ChildLoop = mChildLast;
 
@@ -1184,11 +1178,11 @@ UINode * UINode::childGetAt( Vector2i CtrlPos, unsigned int RecursiveLevel ) {
 }
 
 Uint32 UINode::isWidget() {
-	return mNodeFlags & UI_CTRL_FLAG_WIDGET;
+	return mNodeFlags & NODE_FLAG_WIDGET;
 }
 
 Uint32 UINode::isWindow() {
-	return mNodeFlags & UI_CTRL_FLAG_WINDOW;
+	return mNodeFlags & NODE_FLAG_WINDOW;
 }
 
 Uint32 UINode::isClipped() {
@@ -1196,15 +1190,15 @@ Uint32 UINode::isClipped() {
 }
 
 Uint32 UINode::isRotated() {
-	return mNodeFlags & UI_CTRL_FLAG_ROTATED;
+	return mNodeFlags & NODE_FLAG_ROTATED;
 }
 
 Uint32 UINode::isScaled() {
-	return mNodeFlags & UI_CTRL_FLAG_SCALED;
+	return mNodeFlags & NODE_FLAG_SCALED;
 }
 
 Uint32 UINode::isFrameBuffer() {
-	return mNodeFlags & UI_CTRL_FLAG_FRAME_BUFFER;
+	return mNodeFlags & NODE_FLAG_FRAME_BUFFER;
 }
 
 bool UINode::isMeOrParentTreeRotated() {
@@ -1260,14 +1254,29 @@ bool UINode::isMeOrParentTreeScaledOrRotatedOrFrameBuffer() {
 }
 
 Polygon2f& UINode::getPolygon() {
+	if ( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY )
+		updateQuad();
+
 	return mPoly;
 }
 
-const Vector2f& UINode::getPolygonCenter() const {
-	return mCenter;
+Vector2f UINode::getPolygonCenter() {
+	if ( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY )
+		updateQuad();
+
+	return mPoly.getBounds().getCenter();
 }
 
 void UINode::updateQuad() {
+	if ( !( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY ) &&
+		 !( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY ) ) {
+		return;
+	}
+
+	if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY ) {
+		updateScreenPos();
+	}
+
 	mPoly		= Polygon2f( Rectf( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mRealSize.getWidth(), mScreenPosf.y + mRealSize.getHeight() ) );
 
 	mPoly.rotate( mAngle, getRotationCenter() );
@@ -1283,6 +1292,8 @@ void UINode::updateQuad() {
 
 		tParent = tParent->getParent();
 	};
+
+	mNodeFlags &= ~NODE_FLAG_TRANFORM_DIRTY | NODE_FLAG_TRANFORM_INVERT_DIRTY;
 }
 
 void UINode::updateCenter() {
@@ -1378,7 +1389,7 @@ UINode * UINode::setThemeSkin( UITheme * Theme, const std::string& skinName ) {
 UINode * UINode::setSkin( const UISkin& Skin ) {
 	removeSkin();
 
-	writeCtrlFlag( UI_CTRL_FLAG_SKIN_OWNER, 1 );
+	writeCtrlFlag( NODE_FLAG_SKIN_OWNER, 1 );
 
 	UISkin * SkinCopy = const_cast<UISkin*>( &Skin )->clone();
 
@@ -1412,7 +1423,7 @@ UINode * UINode::setSkin( UISkin * skin ) {
 }
 
 void UINode::removeSkin() {
-	if ( NULL != mSkinState && ( mNodeFlags & UI_CTRL_FLAG_SKIN_OWNER ) ) {
+	if ( NULL != mSkinState && ( mNodeFlags & NODE_FLAG_SKIN_OWNER ) ) {
 		UISkin * tSkin = mSkinState->getSkin();
 
 		eeSAFE_DELETE( tSkin );
@@ -1460,18 +1471,10 @@ void UINode::setThemeToChilds( UITheme * Theme ) {
 	}
 }
 
-void UINode::updateChildsScreenPos() {
-	UINode * ChildLoop = mChild;
-
-	while ( NULL != ChildLoop ) {
-		ChildLoop->updateScreenPos();
-		ChildLoop->updateChildsScreenPos();
-
-		ChildLoop = ChildLoop->mNext;
-	}
-}
-
 void UINode::updateScreenPos() {
+	if ( !(mNodeFlags & NODE_FLAG_POSITION_DIRTY) )
+		return;
+
 	Vector2i Pos( mRealPos );
 
 	nodeToScreen( Pos );
@@ -1480,6 +1483,8 @@ void UINode::updateScreenPos() {
 	mScreenPosf = Vector2f( Pos.x, Pos.y );
 
 	updateCenter();
+
+	mNodeFlags &= ~NODE_FLAG_POSITION_DIRTY;
 }
 
 UISkin * UINode::getSkin() {
@@ -1730,11 +1735,11 @@ UIWindow * UINode::getParentWindow() {
 }
 
 bool UINode::isReverseDraw() const {
-	return 0 != ( mNodeFlags & UI_CTRL_FLAG_REVERSE_DRAW );
+	return 0 != ( mNodeFlags & NODE_FLAG_REVERSE_DRAW );
 }
 
 void UINode::setReverseDraw( bool reverseDraw ) {
-	writeCtrlFlag( UI_CTRL_FLAG_REVERSE_DRAW, reverseDraw ? 1 : 0 );
+	writeCtrlFlag( NODE_FLAG_REVERSE_DRAW, reverseDraw ? 1 : 0 );
 	invalidateDraw();
 }
 
@@ -1789,11 +1794,11 @@ void UINode::setDragEnabled( const bool& enable ) {
 }
 
 bool UINode::isDragging() const {
-	return 0 != ( mNodeFlags & UI_CTRL_FLAG_DRAGGING );
+	return 0 != ( mNodeFlags & NODE_FLAG_DRAGGING );
 }
 
 void UINode::setDragging( const bool& dragging ) {
-	writeCtrlFlag( UI_CTRL_FLAG_DRAGGING, dragging );
+	writeCtrlFlag( NODE_FLAG_DRAGGING, dragging );
 
 	if ( dragging ) {
 		UIMessage tMsg( this, UIMessage::DragStart, 0 );
@@ -1838,6 +1843,31 @@ void UINode::updateOriginPoint() {
 			break;
 		default: {}
 	}
+
+	setDirty();
+}
+
+void UINode::setDirty() {
+	if ( ( mNodeFlags & NODE_FLAG_POSITION_DIRTY ) &&
+		 ( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY ) &&
+		 ( mNodeFlags & NODE_FLAG_TRANFORM_INVERT_DIRTY ) )
+	{
+		return;
+	}
+
+	mNodeFlags |= NODE_FLAG_POSITION_DIRTY | NODE_FLAG_TRANFORM_DIRTY | NODE_FLAG_TRANFORM_INVERT_DIRTY;
+
+	setChildsDirty();
+}
+
+void UINode::setChildsDirty() {
+	UINode * ChildLoop = mChild;
+
+	while ( NULL != ChildLoop ) {
+		ChildLoop->setDirty();
+
+		ChildLoop = ChildLoop->mNext;
+	}
 }
 
 void UINode::onAngleChange() {
@@ -1860,7 +1890,7 @@ Color UINode::getColor( const Color& Col ) {
 }
 
 bool UINode::isFadingOut() {
-	return 0 != ( mNodeFlags & UI_CTRL_FLAG_DISABLE_FADE_OUT );
+	return 0 != ( mNodeFlags & NODE_FLAG_DISABLE_DELAYED );
 }
 
 bool UINode::isAnimating() {
@@ -1871,11 +1901,11 @@ static void UINode_onFadeDone( UIAction * action, const UIAction::ActionType& ac
 	UINode * node = action->getTarget();
 
 	if ( NULL != node ) {
-		if ( ( node->getNodeFlags() & UI_CTRL_FLAG_CLOSE_FO )  )
+		if ( ( node->getNodeFlags() & NODE_FLAG_CLOSE_DELAYED )  )
 			node->close();
 
-		if ( ( node->getNodeFlags() & UI_CTRL_FLAG_DISABLE_FADE_OUT ) ) {
-			node->setNodeFlags( node->getNodeFlags() & ~UI_CTRL_FLAG_DISABLE_FADE_OUT );
+		if ( ( node->getNodeFlags() & NODE_FLAG_DISABLE_DELAYED ) ) {
+			node->setNodeFlags( node->getNodeFlags() & ~NODE_FLAG_DISABLE_DELAYED );
 
 			node->setVisible( false );
 		}
@@ -1957,7 +1987,7 @@ Interpolation1d * UINode::createFadeOut( const Time& time, const bool& AlphaChil
 }
 
 Interpolation1d * UINode::closeFadeOut( const Time& time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
-	mNodeFlags |= UI_CTRL_FLAG_CLOSE_FO;
+	mNodeFlags |= NODE_FLAG_CLOSE_DELAYED;
 
 	return startAlphaAnim( mAlpha, 0.f, time, AlphaChilds, Type );
 }
@@ -1965,7 +1995,7 @@ Interpolation1d * UINode::closeFadeOut( const Time& time, const bool& AlphaChild
 Interpolation1d * UINode::disableFadeOut( const Time& time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
 	setEnabled( false );
 
-	mNodeFlags |= UI_CTRL_FLAG_DISABLE_FADE_OUT;
+	mNodeFlags |= NODE_FLAG_DISABLE_DELAYED;
 
 	return startAlphaAnim( mAlpha, 0.f, time, AlphaChilds, Type );
 }
@@ -1995,11 +2025,13 @@ void UINode::setRotation( const Float& angle ) {
 	mAngle = angle;
 
 	if ( mAngle != 0.f ) {
-		mNodeFlags |= UI_CTRL_FLAG_ROTATED;
+		mNodeFlags |= NODE_FLAG_ROTATED;
 	} else {
-		if ( mNodeFlags & UI_CTRL_FLAG_ROTATED )
-			mNodeFlags &= ~UI_CTRL_FLAG_ROTATED;
+		if ( mNodeFlags & NODE_FLAG_ROTATED )
+			mNodeFlags &= ~NODE_FLAG_ROTATED;
 	}
+
+	setDirty();
 
 	onAngleChange();
 }
@@ -2007,7 +2039,7 @@ void UINode::setRotation( const Float& angle ) {
 void UINode::setRotation( const Float& angle , const OriginPoint & center ) {
 	mRotationOriginPoint = center;
 	updateOriginPoint();
-	this->setRotation( angle );
+	setRotation( angle );
 }
 
 const Vector2f& UINode::getScale() const {
@@ -2018,11 +2050,13 @@ void UINode::setScale( const Vector2f & scale ) {
 	mScale = scale;
 
 	if ( mScale != 1.f ) {
-		mNodeFlags |= UI_CTRL_FLAG_SCALED;
+		mNodeFlags |= NODE_FLAG_SCALED;
 	} else {
-		if ( mNodeFlags & UI_CTRL_FLAG_SCALED )
-			mNodeFlags &= ~UI_CTRL_FLAG_SCALED;
+		if ( mNodeFlags & NODE_FLAG_SCALED )
+			mNodeFlags &= ~NODE_FLAG_SCALED;
 	}
+
+	setDirty();
 
 	onScaleChange();
 }
@@ -2047,11 +2081,11 @@ Vector2f UINode::getScaleCenter() {
 void UINode::setScale( const Vector2f& scale, const OriginPoint& center ) {
 	mScaleOriginPoint = center;
 	updateOriginPoint();
-	this->setScale( scale );
+	setScale( scale );
 }
 
 void UINode::setScale( const Float& scale, const OriginPoint& center ) {
-	this->setScale( Vector2f( scale, scale ), center );
+	setScale( Vector2f( scale, scale ), center );
 }
 
 const Float& UINode::getAlpha() const {

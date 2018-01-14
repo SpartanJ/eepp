@@ -32,7 +32,7 @@ bool UISprite::isType( const Uint32& type ) const {
 }
 
 Uint32 UISprite::deallocSprite() {
-	return mNodeFlags & UI_CTRL_FLAG_FREE_USE;
+	return mNodeFlags & NODE_FLAG_FREE_USE;
 }
 
 void UISprite::setSprite( Graphics::Sprite * sprite ) {
@@ -162,11 +162,11 @@ const Vector2i& UISprite::getAlignOffset() const {
 }
 
 void UISprite::setDeallocSprite( const bool& dealloc ) {
-	writeCtrlFlag( UI_CTRL_FLAG_FREE_USE, dealloc ? 1 : 0 );
+	writeCtrlFlag( NODE_FLAG_FREE_USE, dealloc ? 1 : 0 );
 }
 
 bool UISprite::getDeallocSprite() {
-	return 0 != ( mNodeFlags & UI_CTRL_FLAG_FREE_USE );
+	return 0 != ( mNodeFlags & NODE_FLAG_FREE_USE );
 }
 
 void UISprite::onSizeChange() {

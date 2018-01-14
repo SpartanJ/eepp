@@ -207,7 +207,7 @@ class EE_API UINode {
 
 		Polygon2f& getPolygon();
 
-		const Vector2f& getPolygonCenter() const;
+		Vector2f getPolygonCenter();
 
 		void setSkinState( const Uint32& State );
 
@@ -383,7 +383,7 @@ class EE_API UINode {
 		BlendMode		mBlend;
 		Uint16			mNumCallBacks;
 
-		Polygon2f		mPoly;
+		mutable Polygon2f		mPoly;
 		Vector2f 		mCenter;
 
 		UIEventsMap		mEvents;
@@ -516,8 +516,6 @@ class EE_API UINode {
 
 		virtual void updateScreenPos();
 
-		void updateChildsScreenPos();
-
 		void writeCtrlFlag( const Uint32& Flag, const Uint32& Val );
 
 		void writeFlag( const Uint32& Flag, const Uint32& Val );
@@ -561,6 +559,10 @@ class EE_API UINode {
 		UIWindow * getParentWindow();
 
 		void updateOriginPoint();
+
+		void setDirty();
+
+		void setChildsDirty();
 };
 
 }}

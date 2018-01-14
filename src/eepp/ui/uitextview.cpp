@@ -351,7 +351,7 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags )
 			selCurInit( tSelCurInit );
 			selCurEnd( tSelCurEnd );
 
-			mNodeFlags &= ~UI_CTRL_FLAG_SELECTING;
+			mNodeFlags &= ~NODE_FLAG_SELECTING;
 		}
 	}
 
@@ -365,7 +365,7 @@ Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 			selCurEnd( -1 );
 		}
 
-		mNodeFlags &= ~UI_CTRL_FLAG_SELECTING;
+		mNodeFlags &= ~NODE_FLAG_SELECTING;
 	}
 
 	return UIWidget::onMouseClick( Pos, Flags );
@@ -380,7 +380,7 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 		Int32 curPos = mTextCache->findCharacterFromPos( controlPos );
 
 		if ( -1 != curPos ) {
-			if ( -1 == selCurInit() || !( mNodeFlags & UI_CTRL_FLAG_SELECTING ) ) {
+			if ( -1 == selCurInit() || !( mNodeFlags & NODE_FLAG_SELECTING ) ) {
 				selCurInit( curPos );
 				selCurEnd( curPos );
 			} else {
@@ -388,7 +388,7 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 			}
 		}
 
-		mNodeFlags |= UI_CTRL_FLAG_SELECTING;
+		mNodeFlags |= NODE_FLAG_SELECTING;
 	}
 
 	return UIWidget::onMouseDown( Pos, Flags );

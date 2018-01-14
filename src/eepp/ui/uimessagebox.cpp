@@ -99,10 +99,7 @@ Uint32 UIMessageBox::onMessage( const UIMessage * Msg ) {
 		case UIMessage::Click:
 		{
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
-				Vector2i mousei( UIManager::instance()->getMousePos() );
-				Vector2f mouse( mousei.x, mousei.y );
-
-				if ( Msg->getSender() == mButtonOK && mButtonOK->getPolygon().pointInside( mouse ) ) {
+				if ( Msg->getSender() == mButtonOK ) {
 					sendCommonEvent( UIEvent::MsgBoxConfirmClick );
 
 					closeWindow();

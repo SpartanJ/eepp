@@ -40,6 +40,8 @@ TextureAtlasTextureRegionEditor::~TextureAtlasTextureRegionEditor() {
 }
 
 void TextureAtlasTextureRegionEditor::draw() {
+	UIWidget::draw();
+
 	Primitives P;
 	P.setColor( Color( 255, 0, 0, mAlpha ) );
 	P.setLineWidth( PixelDensity::dpToPx( 1.f ) );
@@ -48,8 +50,6 @@ void TextureAtlasTextureRegionEditor::draw() {
 
 	P.drawLine( Line2f( Vector2f( mScreenPos.x, mScreenPos.y + uiCenterPx.y ), Vector2f( mScreenPos.x + mRealSize.getWidth(), mScreenPos.y + uiCenterPx.y ) ) );
 	P.drawLine( Line2f( Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y ), Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y + mRealSize.getHeight() ) ) );
-
-	UIWidget::draw();
 }
 
 void TextureAtlasTextureRegionEditor::update() {
