@@ -440,9 +440,9 @@ void UINode::draw() {
 	}
 }
 
-void UINode::update() {
+void UINode::update( const Time& time ) {
 	if ( NULL != mActionManager ) {
-		mActionManager->update( getElapsed() );
+		mActionManager->update( time );
 
 		if ( mActionManager->isEmpty() )
 			eeSAFE_DELETE( mActionManager );
@@ -478,7 +478,7 @@ void UINode::update() {
 	UINode * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
-		ChildLoop->update();
+		ChildLoop->update( time );
 		ChildLoop = ChildLoop->mNext;
 	}
 
@@ -1296,10 +1296,6 @@ void UINode::updateWorldPolygon() {
 
 void UINode::updateCenter() {
 	mCenter = Vector2f( mScreenPosf.x + (Float)mRealSize.getWidth() * 0.5f, mScreenPosf.y + (Float)mRealSize.getHeight() * 0.5f );
-}
-
-Time UINode::getElapsed() {
-	return UIManager::instance()->getElapsed();
 }
 
 Uint32 UINode::addEventListener( const Uint32& EventType, const UIEventCallback& Callback ) {

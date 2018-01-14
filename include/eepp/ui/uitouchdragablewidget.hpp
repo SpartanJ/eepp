@@ -11,7 +11,7 @@ class EE_API UITouchDragableWidget : public UIWidget {
 		
 		UITouchDragableWidget();
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		virtual Uint32 getType() const;
 

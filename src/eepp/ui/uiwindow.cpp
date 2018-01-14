@@ -931,10 +931,10 @@ void UIWindow::internalSize( Sizei Size ) {
 	}
 }
 
-void UIWindow::update() {
+void UIWindow::update( const Time& time ) {
 	resizeCursor();
 
-	UIWidget::update();
+	UIWidget::update( time );
 
 	updateResize();
 }

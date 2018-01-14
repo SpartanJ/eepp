@@ -22,7 +22,7 @@ class EE_API UIWidget : public UINode {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		virtual UINode * setSize( const Sizei& size );
 

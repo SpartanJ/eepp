@@ -48,7 +48,7 @@ UITouchDragableWidget * UITouchDragableWidget::setTouchDragDeceleration( const V
 	return this;
 }
 
-void UITouchDragableWidget::update() {
+void UITouchDragableWidget::update( const Time& time ) {
 	if ( mEnabled && mVisible ) {
 		if ( mFlags & UI_TOUCH_DRAG_ENABLED ) {
 			UIManager * manager = UIManager::instance();
@@ -62,7 +62,7 @@ void UITouchDragableWidget::update() {
 					return;
 				}
 
-				Float ms = getElapsed().asSeconds();
+				Float ms = time.asSeconds();
 				Vector2f elapsed( ms, ms );
 				Vector2f Pos( manager->getMousePos().x, manager->getMousePos().y );
 
@@ -92,7 +92,7 @@ void UITouchDragableWidget::update() {
 
 				// Deaccelerate
 				if ( mTouchDragAcceleration.x != 0 || mTouchDragAcceleration.y != 0 ) {
-					Float ms = getElapsed().asSeconds();
+					Float ms = time.asSeconds();
 
 					if ( 0 != mTouchDragAcceleration.x ) {
 						bool wasPositiveX = mTouchDragAcceleration.x >= 0;
@@ -126,7 +126,7 @@ void UITouchDragableWidget::update() {
 		}
 	}
 
-	UIWidget::update();
+	UIWidget::update( time );
 }
 
 void UITouchDragableWidget::onTouchDragValueChange( Vector2f diff )

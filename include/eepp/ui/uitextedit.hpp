@@ -31,7 +31,7 @@ class EE_API UITextEdit : public UIWidget {
 
 		UIScrollBar * getVScrollBar() const;
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		void setAllowEditing( const bool& allow );
 

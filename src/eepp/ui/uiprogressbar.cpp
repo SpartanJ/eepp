@@ -77,15 +77,15 @@ void UIProgressBar::draw() {
 	UIManager::instance()->clipSmartDisable( this );
 }
 
-void UIProgressBar::update() {
-	UINode::update();
+void UIProgressBar::update( const Time& time ) {
+	UINode::update( time );
 
 	if ( NULL == mFillerSkin )
 		return;
 
 	Vector2f offset( mOffset );
 
-	mOffset += mStyleConfig.MovementSpeed * (Float)( getElapsed().asSeconds() );
+	mOffset += mStyleConfig.MovementSpeed * (Float)( time.asSeconds() );
 
 	Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize() ) );
 

@@ -37,6 +37,8 @@ class EE_API UIManager {
 
 		void update();
 
+		void update( const Time& elapsed );
+
 		void draw();
 
 		const Time& getElapsed() const;

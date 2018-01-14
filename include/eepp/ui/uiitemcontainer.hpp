@@ -12,7 +12,7 @@ class UIItemContainer : public UINode {
 
 		~UIItemContainer();
 
-		void update();
+		void update( const Time& time );
 
 		void drawChilds();
 	protected:
@@ -31,13 +31,13 @@ UIItemContainer<TContainer>::~UIItemContainer()
 }
 
 template<class TContainer>
-void UIItemContainer<TContainer>::update() {
+void UIItemContainer<TContainer>::update( const Time& time ) {
 	TContainer * tParent = reinterpret_cast<TContainer*> ( getParent() );
 
 	if ( tParent->mItems.size() ) {
 		for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ ) {
 			if ( NULL != tParent->mItems[i] )
-				tParent->mItems[i]->update();
+				tParent->mItems[i]->update( time );
 		}
 	}
 }

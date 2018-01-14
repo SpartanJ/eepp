@@ -100,7 +100,7 @@ class EE_API UINode {
 
 		virtual void draw();
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		Uint32 getHorizontalAlign() const;
 
@@ -521,8 +521,6 @@ class EE_API UINode {
 		void writeFlag( const Uint32& Flag, const Uint32& Val );
 
 		void sendParentSizeChange( const Vector2i& SizeChange );
-
-		Time getElapsed();
 
 		Rect makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
 

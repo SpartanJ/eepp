@@ -391,8 +391,8 @@ void UITextEdit::shrinkText( const Uint32& Width ) {
 	}
 }
 
-void UITextEdit::update() {
-	UIWidget::update();
+void UITextEdit::update( const Time& time ) {
+	UIWidget::update( time );
 
 	if ( mTextInput->isEnabled() && mTextInput->isVisible() && mTextInput->isMouseOver() && mVScrollBar->isVisible() ) {
 		Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();

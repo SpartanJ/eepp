@@ -100,8 +100,8 @@ void UIMap::updateScreenPos() {
 	}
 }
 
-void UIMap::update() {
-	UIWindow::update();
+void UIMap::update( const Time& time ) {
+	UIWindow::update( time );
 
 	if ( NULL != mMap ) {
 		invalidate();

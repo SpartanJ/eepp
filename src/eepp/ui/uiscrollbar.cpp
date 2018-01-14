@@ -177,8 +177,8 @@ void UIScrollBar::adjustChilds() {
 	}
 }
 
-void UIScrollBar::update() {
-	UINode::update();
+void UIScrollBar::update( const Time& time ) {
+	UINode::update( time );
 
 	if ( mBtnUp->isMouseOver() || mBtnDown->isMouseOver() ) {
 		manageClick( UIManager::instance()->getInput()->getClickTrigger() );

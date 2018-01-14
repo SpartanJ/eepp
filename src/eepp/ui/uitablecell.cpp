@@ -69,7 +69,7 @@ void UITableCell::fixCell() {
 	}
 }
 
-void UITableCell::update() {
+void UITableCell::update( const Time& time ) {
 	if ( mEnabled && mVisible ) {
 		UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
 		Uint32 Flags				= UIManager::instance()->getInput()->getClickTrigger();
@@ -91,7 +91,7 @@ void UITableCell::update() {
 		}
 	}
 
-	UIWidget::update();
+	UIWidget::update( time );
 }
 
 void UITableCell::select() {

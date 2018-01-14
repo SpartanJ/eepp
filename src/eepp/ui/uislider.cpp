@@ -281,8 +281,8 @@ bool UISlider::isVertical() const {
 	return mOrientation == UI_VERTICAL;
 }
 
-void UISlider::update() {
-	UINode::update();
+void UISlider::update( const Time& time ) {
+	UINode::update( time );
 
 	if ( isMouseOver() || mBackSlider->isMouseOver() || mSlider->isMouseOver() ) {
 		manageClick( UIManager::instance()->getInput()->getClickTrigger() );

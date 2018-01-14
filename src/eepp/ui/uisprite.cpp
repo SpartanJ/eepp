@@ -70,13 +70,13 @@ void UISprite::draw() {
 	}
 }
 
-void UISprite::update() {
-	UIWidget::update();
+void UISprite::update( const Time& time ) {
+	UIWidget::update( time );
 
 	if ( NULL != mSprite ) {
 		TextureRegion * textureRegion = mSprite->getCurrentTextureRegion();
 
-		mSprite->update();
+		mSprite->update( time );
 
 		if ( textureRegion != mSprite->getCurrentTextureRegion() )
 			invalidateDraw();

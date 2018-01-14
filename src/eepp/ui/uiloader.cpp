@@ -52,12 +52,12 @@ void UILoader::draw() {
 	clippingMask->stencilMaskDisable();
 }
 
-void UILoader::update() {
-	UIWidget::update();
+void UILoader::update( const Time& time ) {
+	UIWidget::update( time );
 
 	if ( mIndeterminate ) {
-		mArcAngle += getElapsed().asMilliseconds() * mAnimationSpeed * mOp;
-		mArcStartAngle += getElapsed().asMilliseconds() * (mAnimationSpeed*1.5f);
+		mArcAngle += time.asMilliseconds() * mAnimationSpeed * mOp;
+		mArcStartAngle += time.asMilliseconds() * (mAnimationSpeed*1.5f);
 
 		if ( mOp == 1 && mArcAngle > 340 ) {
 			mOp = -1;
@@ -68,7 +68,7 @@ void UILoader::update() {
 		mArc.setArcAngle( mArcAngle );
 		mArc.setArcStartAngle( mArcStartAngle );
 	} else {
-		mArcStartAngle += getElapsed().asMilliseconds() * (mAnimationSpeed*1.5f);
+		mArcStartAngle += time.asMilliseconds() * (mAnimationSpeed*1.5f);
 		mArc.setArcStartAngle( mArcStartAngle );
 	}
 }

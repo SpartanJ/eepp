@@ -24,7 +24,7 @@ class EE_API UISprite : public UIWidget {
 
 		virtual void draw();
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		virtual void setAlpha( const Float& alpha );
 

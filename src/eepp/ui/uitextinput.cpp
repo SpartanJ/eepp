@@ -41,12 +41,12 @@ bool UITextInput::isType( const Uint32& type ) const {
 	return UITextInput::getType() == type ? true : UITextView::isType( type );
 }
 
-void UITextInput::update() {
+void UITextInput::update( const Time& time ) {
 	if ( isMouseOverMeOrChilds() ) {
 		UIManager::instance()->setCursor( EE_CURSOR_IBEAM );
 	}
 
-	UITextView::update();
+	UITextView::update( time );
 
 	if ( mTextBuffer.changedSinceLastUpdate() ) {
 		Vector2f offSet = mRealAlignOffset;
@@ -78,7 +78,7 @@ void UITextInput::update() {
 		onCursorPosChange();
 	}
 
-	updateWaitingCursor();
+	updateWaitingCursor( time );
 }
 
 void UITextInput::onCursorPosChange() {
@@ -109,9 +109,9 @@ void UITextInput::drawWaitingCursor() {
 	}
 }
 
-void UITextInput::updateWaitingCursor() {
+void UITextInput::updateWaitingCursor( const Time& time ) {
 	if ( mVisible && mTextBuffer.isActive() && mTextBuffer.isFreeEditingEnabled() ) {
-		mWaitCursorTime += getElapsed().asMilliseconds();
+		mWaitCursorTime += time.asMilliseconds();
 
 		if ( mWaitCursorTime >= 500.f ) {
 			mShowingWait = !mShowingWait;

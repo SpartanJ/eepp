@@ -208,10 +208,10 @@ const Float& UISpinBox::getMaxValue() const {
 	return mMaxValue;
 }
 
-void UISpinBox::update() {
+void UISpinBox::update( const Time& time ) {
 	bool Changed = mInput->getInputTextBuffer()->changedSinceLastUpdate();
 
-	UINode::update();
+	UINode::update( time );
 
 	if ( Changed ) {
 		if ( !mInput->getText().size() ) {

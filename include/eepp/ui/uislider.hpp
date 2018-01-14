@@ -38,7 +38,7 @@ class EE_API UISlider : public UIWidget {
 
 		bool isVertical() const;
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		UINode * getBackSlider() const;
 

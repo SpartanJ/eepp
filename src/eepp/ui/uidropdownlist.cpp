@@ -256,7 +256,7 @@ void UIDropDownList::hide() {
 	}
 }
 
-void UIDropDownList::update() {
+void UIDropDownList::update( const Time& time ) {
 	if ( mEnabled && mVisible ) {
 		if ( isMouseOver() ) {
 			Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
@@ -271,7 +271,7 @@ void UIDropDownList::update() {
 		}
 	}
 
-	UITextInput::update();
+	UITextInput::update( time );
 }
 
 Uint32 UIDropDownList::onKeyDown( const UIEventKey &Event ) {

@@ -31,7 +31,7 @@ class EE_API TextureAtlasEditor {
 			public:
 				UITGEUpdater( TextureAtlasEditor * TGEditor ) : UINode(), mTGEditor( TGEditor ) {}
 
-				virtual void update() { mTGEditor->update(); }
+				virtual void update( const Time& time ) { mTGEditor->update(); }
 			protected:
 				TextureAtlasEditor * mTGEditor;
 		};

@@ -47,7 +47,7 @@ class EE_API UIScrollBar : public UIWidget {
 
 		bool isVertical() const;
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		UISlider * getSlider() const;
 

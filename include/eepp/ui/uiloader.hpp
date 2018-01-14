@@ -19,7 +19,7 @@ class EE_API UILoader : public UIWidget {
 
 		virtual void draw();
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		UILoader * setOutlineThickness( const Float& thickness );
 

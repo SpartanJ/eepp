@@ -206,11 +206,15 @@ void UIManager::sendMsg( UINode * Ctrl, const Uint32& Msg, const Uint32& Flags )
 }
 
 void UIManager::update() {
-	mElapsed = mClock.getElapsed();
+	update( mClock.getElapsed() );
+}
+
+void UIManager::update( const Time& elapsed ) {
+	mElapsed = elapsed;
 
 	bool wasDraggingControl = isControlDragging();
 
-	mControl->update();
+	mControl->update( elapsed );
 
 	UINode * pOver = mControl->overFind( mKM->getMousePosFromView( mWindow->getDefaultView() ) );
 

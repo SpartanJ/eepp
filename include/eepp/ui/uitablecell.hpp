@@ -22,7 +22,7 @@ class EE_API UITableCell : public UIWidget {
 
 		UINode * getCell( const Uint32& CollumnIndex ) const;
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		bool isSelected() const;
 

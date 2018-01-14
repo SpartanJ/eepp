@@ -29,7 +29,7 @@ class EE_API UITab : public UISelectButton {
 
 		virtual UIPushButton * setText( const String& text );
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:

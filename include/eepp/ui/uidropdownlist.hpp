@@ -22,7 +22,7 @@ class EE_API UIDropDownList : public UITextInput {
 
 		UIListBox * getListBox() const;
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		void showList();
 

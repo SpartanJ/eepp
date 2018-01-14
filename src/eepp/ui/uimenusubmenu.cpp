@@ -87,7 +87,7 @@ Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
 	UIMenuItem::onMouseMove( Pos, Flags );
 
 	if ( NULL != mSubMenu && !mSubMenu->isVisible() ) {
-		mTimeOver += getElapsed().asMilliseconds();
+		mTimeOver += UIManager::instance()->getElapsed().asMilliseconds();
 
 		if ( mTimeOver >= mMaxTime ) {
 			showSubMenu();

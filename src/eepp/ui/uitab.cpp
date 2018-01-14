@@ -148,8 +148,8 @@ void UITab::onAutoSize() {
 	}
 }
 
-void UITab::update() {
-	UISelectButton::update();
+void UITab::update( const Time& time ) {
+	UISelectButton::update( time );
 
 	if ( mEnabled && mVisible ) {
 		if ( NULL == mControlOwned && !mOwnedName.empty() ) {

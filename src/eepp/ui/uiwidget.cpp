@@ -140,7 +140,7 @@ LayoutPositionRules UIWidget::getLayoutPositionRule() const {
 	return mLayoutPositionRule;
 }
 
-void UIWidget::update() {
+void UIWidget::update( const Time& time ) {
 	if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
 		if ( isMouseOverMeOrChilds() ) {
 			UIManager * uiManager = UIManager::instance();
@@ -165,7 +165,7 @@ void UIWidget::update() {
 				mTooltip->show();
 			} else {
 				if ( -1.f != mTooltip->getTooltipTime().asMilliseconds() ) {
-					mTooltip->addTooltipTime( getElapsed() );
+					mTooltip->addTooltipTime( time );
 				}
 
 				if ( mTooltip->getTooltipTime() >= themeManager->getTooltipTimeToShow() ) {
@@ -190,7 +190,7 @@ void UIWidget::update() {
 		}
 	}
 
-	UINode::update();
+	UINode::update( time );
 }
 
 void UIWidget::createTooltip() {

@@ -80,8 +80,8 @@ void UIListBoxItem::select() {
 	}
 }
 
-void UIListBoxItem::update() {
-	UITextView::update();
+void UIListBoxItem::update( const Time& time ) {
+	UITextView::update( time );
 
 	if ( mEnabled && mVisible ) {
 		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( getParent()->getParent() );
