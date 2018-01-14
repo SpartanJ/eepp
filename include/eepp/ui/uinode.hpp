@@ -400,10 +400,6 @@ class EE_API UINode {
 		OriginPoint			mScaleOriginPoint;
 		Float				mAlpha;
 
-		Interpolation1d * 	mAngleAnim;
-		Interpolation2d *	mScaleAnim;
-		Interpolation2d * 	mMoveAnim;
-
 		UIActionManager *	mActionManager;
 
 		virtual Uint32 onMessage( const UIMessage * Msg );

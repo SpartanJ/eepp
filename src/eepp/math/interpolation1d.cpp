@@ -35,9 +35,9 @@ Interpolation1d::Interpolation1d( std::vector<Point1d> points ) :
 	mCurPoint(0),
 	mCurTime(Time::Zero),
 	mSpeed(1.3f),
+	mPoints(points),
 	mActP(NULL),
 	mNexP(NULL),
-	mPoints(points),
 	mOnPathEndCallback(),
 	mOnStepCallback()
 {
