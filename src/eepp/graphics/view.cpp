@@ -149,4 +149,8 @@ const Transform& View::getInverseTransform() const {
 	return mInverseTransform;
 }
 
+bool View::isDirty() const {
+	return !mTransformUpdated;
+}
+
 }}

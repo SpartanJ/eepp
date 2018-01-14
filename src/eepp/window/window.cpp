@@ -163,7 +163,7 @@ Rect Window::getViewport( const View& view ) {
 void Window::setView( const View& view , bool forceRefresh ) {
 	const View * viewPtr = &view;
 
-	if ( viewPtr != mCurrentView || forceRefresh ) {
+	if ( viewPtr != mCurrentView || viewPtr->isDirty() || forceRefresh ) {
 		mCurrentView = viewPtr;
 
 		Rect viewport = getViewport( *mCurrentView );
@@ -360,6 +360,9 @@ void Window::display( bool clear ) {
 	GlobalBatchRenderer::instance()->draw();
 
 	swapBuffers();
+
+	if ( mCurrentView->isDirty() )
+		setView( *mCurrentView );
 
 	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	if ( clear )

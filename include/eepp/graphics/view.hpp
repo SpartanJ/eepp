@@ -49,6 +49,8 @@ class EE_API View {
 		const Transform& getTransform() const;
 		
 		const Transform& getInverseTransform() const;
+
+		bool isDirty() const;
 	private:
 		friend class Window;
 
