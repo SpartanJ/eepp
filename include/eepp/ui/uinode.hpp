@@ -290,11 +290,11 @@ class EE_API UINode {
 
 		void setRotation( const Float& angle, const OriginPoint& center );
 
-		const OriginPoint& getRotationOriginPoint() const;
+		const OriginPoint& getRotationOrigin() const;
 
-		void setRotationOriginPoint( const OriginPoint& center );
+		void setRotationOrigin( const OriginPoint& center );
 
-		Vector2f getRotationCenter();
+		Vector2f getRotationOrigin();
 
 		const Vector2f& getScale() const;
 
@@ -304,11 +304,11 @@ class EE_API UINode {
 
 		void setScale( const Float& scale , const OriginPoint & center = OriginPoint::OriginCenter );
 
-		const OriginPoint& getScaleOriginPoint() const;
+		const OriginPoint& getScaleOrigin() const;
 
-		void setScaleOriginPoint( const OriginPoint& center );
+		void setScaleOrigin( const OriginPoint& center );
 
-		Vector2f getScaleCenter();
+		Vector2f getScaleOrigin();
 
 		const Float& getAlpha() const;
 
@@ -394,10 +394,10 @@ class EE_API UINode {
 		Vector2i 	mDragPoint;
 		Uint32 		mDragButton;
 
-		Float				mAngle;
-		OriginPoint			mRotationOriginPoint;
+		Float				mRotation;
+		OriginPoint			mRotationOrigin;
 		Vector2f 			mScale;
-		OriginPoint			mScaleOriginPoint;
+		OriginPoint			mScaleOrigin;
 		Float				mAlpha;
 
 		UIActionManager *	mActionManager;
@@ -556,7 +556,9 @@ class EE_API UINode {
 
 		UIWindow * getParentWindow();
 
-		void updateOriginPoint();
+		void updateRotationOrigin();
+
+		void updateScaleOrigin();
 
 		void setDirty();
 

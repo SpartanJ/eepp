@@ -77,7 +77,7 @@ class UIBlurredWindow : public UIWindow {
 
 				mBlurShader->unbind();
 
-				mFboBlur->getTexture()->draw(mScreenPosf,Sizef(mRealSize.x,mRealSize.y));
+				mFboBlur->getTexture()->draw(Vector2f(mScreenPos.x,mScreenPos.y),Sizef(mRealSize.x,mRealSize.y));
 			}
 		}
 };
