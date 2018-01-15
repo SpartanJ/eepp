@@ -390,7 +390,7 @@ void EETest::createUI() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
+	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW /*| UI_WIN_FRAME_BUFFER*/;
 	windowStyleConfig.MinWindowSize = Sizei( 530, 405 );
 	windowStyleConfig.BaseAlpha = 200;
 	tWin->setStyleConfig( windowStyleConfig );
@@ -484,6 +484,53 @@ void EETest::createUI() {
 	comboBox->getListBox()->addListBoxItems( combostrs );
 	comboBox->getListBox()->setSelected( 0 );
 
+	UITextEdit * TextEdit = UITextEdit::New();
+	TextEdit->setParent( C )->setPosition( 5, 245 )->setSize( 315, 130 );
+	TextEdit->setText( mBuda );
+
+	UITable * genGrid = UITable::New();
+	genGrid->setSmoothScroll( true )->setFlags( UI_TOUCH_DRAG_ENABLED );
+	genGrid->setParent( C )->setPosition( 325, 245 )->setSize( 200, 130 );
+	genGrid->setCollumnsCount( 3 )->setRowHeight( 24 );
+
+	for ( Uint32 i = 0; i < 15; i++ ) {
+		UITableCell * Cell			= UITableCell::New();
+		UITextView * TxtBox			= UITextView::New();
+		UITextInput * TxtInput		= UITextInput::New();
+		UIImage * TxtGfx			= UIImage::New();
+
+		Cell->setParent( genGrid->getContainer() );
+
+		TxtGfx->setVerticalAlign( UI_VALIGN_CENTER );
+		TxtGfx->setDrawable( mTheme->getIconByName( "ok" ) );
+		TxtBox->setText( "Test " + String::toStr( i+1 ) );
+
+		Cell->setCell( 0, TxtBox );
+		Cell->setCell( 1, TxtGfx );
+		Cell->setCell( 2, TxtInput );
+
+		genGrid->add( Cell );
+	}
+
+	genGrid->setCollumnWidth( 0, 50 );
+	genGrid->setCollumnWidth( 1, 24 );
+	genGrid->setCollumnWidth( 2, 100 );
+
+	UIWidget * w = UIWidget::New();
+	w->setParent( C )->setSize( 20, 20 )->setPosition( 260, 130 )->setBackgroundFillEnabled( true )->setColor( Color::Green );
+	w->setRotation( 45 );
+	w->addEventListener( UIEvent::MouseEnter, cb::Make1<void, const UIEvent*>( [] ( const UIEvent* event ) {
+		event->getControl()->getBackground()->setColor( Color::Yellow );
+	} ) );
+	w->addEventListener( UIEvent::MouseExit, cb::Make1<void, const UIEvent*>( [] ( const UIEvent* event ) {
+		event->getControl()->getBackground()->setColor( Color::Green );
+	} ) );
+	w->addEventListener( UIEvent::MouseClick, cb::Make1<void, const UIEvent*>( [] ( const UIEvent* event ) {
+		event->getControl()->getBackground()->setColor( Color::Red );
+	} ) );
+
+	C = reinterpret_cast<UINode*> ( C->getParent() );
+
 	Menu = UIPopUpMenu::New();
 	Menu->add( "New", mTheme->getIconByName( "document-new" ) );
 
@@ -527,40 +574,6 @@ void EETest::createUI() {
 	Menu->addEventListener( UIEvent::OnItemClicked, cb::Make1( this, &EETest::onItemClick ) );
 	Menu->getItem( "Quit" )->addEventListener( UIEvent::MouseUp, cb::Make1( this, &EETest::onQuitClick ) );
 	UIManager::instance()->getMainControl()->addEventListener( UIEvent::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
-
-	UITextEdit * TextEdit = UITextEdit::New();
-	TextEdit->setParent( C )->setPosition( 5, 245 )->setSize( 315, 130 );
-	TextEdit->setText( mBuda );
-
-	UITable * genGrid = UITable::New();
-	genGrid->setSmoothScroll( true )->setFlags( UI_TOUCH_DRAG_ENABLED );
-	genGrid->setParent( C )->setPosition( 325, 245 )->setSize( 200, 130 );
-	genGrid->setCollumnsCount( 3 )->setRowHeight( 24 );
-
-	for ( Uint32 i = 0; i < 15; i++ ) {
-		UITableCell * Cell			= UITableCell::New();
-		UITextView * TxtBox			= UITextView::New();
-		UITextInput * TxtInput		= UITextInput::New();
-		UIImage * TxtGfx			= UIImage::New();
-
-		Cell->setParent( genGrid->getContainer() );
-
-		TxtGfx->setVerticalAlign( UI_VALIGN_CENTER );
-		TxtGfx->setDrawable( mTheme->getIconByName( "ok" ) );
-		TxtBox->setText( "Test " + String::toStr( i+1 ) );
-
-		Cell->setCell( 0, TxtBox );
-		Cell->setCell( 1, TxtGfx );
-		Cell->setCell( 2, TxtInput );
-
-		genGrid->add( Cell );
-	}
-
-	genGrid->setCollumnWidth( 0, 50 );
-	genGrid->setCollumnWidth( 1, 24 );
-	genGrid->setCollumnWidth( 2, 100 );
-
-	C = reinterpret_cast<UINode*> ( C->getParent() );
 
 	//createNewUI();
 
@@ -1046,7 +1059,7 @@ void EETest::onItemClick( const UIEvent * Event ) {
 			C->startRotation( 0, 360, Milliseconds( 500.f ), Ease::SineOut );
 		} else {
 			C->startScaleAnim( C->getScale(), Vector2f::Zero, Milliseconds( 500.f ), Ease::SineIn );
-			C->startAlphaAnim( C->getAlpha(), 0.f, Milliseconds( 500.f ) );
+			C->disableFadeOut( Milliseconds( 500.f ) );
 			C->startRotation( 0, 360, Milliseconds( 500.f ), Ease::SineIn );
 		}
 	} else if ( "Show Window 2" == txt ) {

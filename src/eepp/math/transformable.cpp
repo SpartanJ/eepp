@@ -116,6 +116,8 @@ const Transform& Transformable::getTransform() const {
 	if (mTransformNeedUpdate) {
 		Transform t;
 
+		t.translate( mPosition );
+
 		if ( 1.f != mScale ) {
 			t.translate( mScaleOrigin );
 			t.scale( mScale );
@@ -123,12 +125,10 @@ const Transform& Transformable::getTransform() const {
 		}
 
 		if ( 0.f != mRotation ) {
-			t.translate( mRotationOrigin );
+			t.translate(  mRotationOrigin );
 			t.rotate( mRotation );
 			t.translate( -mRotationOrigin );
 		}
-
-		t.translate( mPosition );
 
 		mTransform = t;
 	}

@@ -458,8 +458,8 @@ void UITabWidget::setTabContainerSize() {
 
 void UITabWidget::posTabs() {
 	Uint32 w	= 0;
-	Uint32 h	= 0;
-	Uint32 VA	= VAlignGet( mFlags );
+	Int32 h	= 0;
+	Int32 VA	= VAlignGet( mFlags );
 
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
 		switch ( VA )

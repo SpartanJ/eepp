@@ -14,6 +14,8 @@
 #include <eepp/ui/uiskinsimple.hpp>
 #include <eepp/ui/uiskincomplex.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/math/transformable.hpp>
+
 namespace EE { namespace UI {
 
 class UITheme;
@@ -22,7 +24,7 @@ class UIManager;
 class UIAction;
 class UIActionManager;
 
-class EE_API UINode {
+class EE_API UINode : public Transformable {
 	public:
 		static UINode * New();
 
@@ -36,9 +38,9 @@ class EE_API UINode {
 
 		void nodeToScreen( Vector2i& position ) const;
 
-		void worldToNode( Vector2i& pos ) const;
+		void worldToNode( Vector2i& pos );
 
-		void nodeToWorld( Vector2i& pos ) const;
+		void nodeToWorld( Vector2i& pos );
 
 		virtual Uint32 getType() const;
 
@@ -284,9 +286,7 @@ class EE_API UINode {
 
 		const Uint32& getDragButton() const;
 
-		const Float& getRotation() const;
-
-		void setRotation( const Float& angle );
+		void setRotation( float angle );
 
 		void setRotation( const Float& angle, const OriginPoint& center );
 
@@ -295,8 +295,6 @@ class EE_API UINode {
 		void setRotationOriginPoint( const OriginPoint& center );
 
 		Vector2f getRotationCenter();
-
-		const Vector2f& getScale() const;
 
 		void setScale( const Vector2f& scale );
 
@@ -309,6 +307,14 @@ class EE_API UINode {
 		void setScaleOriginPoint( const OriginPoint& center );
 
 		Vector2f getScaleCenter();
+
+		virtual void setPosition(float x, float y);
+
+		virtual void setScale(float factorX, float factorY);
+
+		virtual void setScaleOrigin(float x, float y);
+
+		virtual void setRotationOrigin(float x, float y);
 
 		const Float& getAlpha() const;
 
@@ -351,6 +357,18 @@ class EE_API UINode {
 		UIActionManager * getActionManager();
 
 		void runAction( UIAction * action );
+
+		Transform getLocalTransform();
+
+		Transform getGlobalTransform();
+
+		Transform getNodeToWorldTransform();
+
+		Transform getWorldToNodeTransform();
+
+		Vector2f convertToNodeSpace(const Vector2f& worldPoint);
+
+		Vector2f convertToWorldSpace(const Vector2f& nodePoint);
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
 		friend class UIManager;
@@ -394,9 +412,7 @@ class EE_API UINode {
 		Vector2i 	mDragPoint;
 		Uint32 		mDragButton;
 
-		Float				mRotation;
 		OriginPoint			mRotationOriginPoint;
-		Vector2f 			mScale;
 		OriginPoint			mScaleOriginPoint;
 		Float				mAlpha;
 
@@ -526,7 +542,9 @@ class EE_API UINode {
 
 		Sizei getSkinSize( UISkin * Skin, const Uint32& State = UISkinState::StateNormal );
 
-		Rectf getRectf();
+		Rectf getScreenBounds();
+
+		Rectf getLocalBounds();
 
 		void drawHighlightFocus();
 
