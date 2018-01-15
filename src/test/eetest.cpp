@@ -1046,7 +1046,7 @@ void EETest::onItemClick( const UIEvent * Event ) {
 			C->startRotation( 0, 360, Milliseconds( 500.f ), Ease::SineOut );
 		} else {
 			C->startScaleAnim( C->getScale(), Vector2f::Zero, Milliseconds( 500.f ), Ease::SineIn );
-			C->startAlphaAnim( C->getAlpha(), 0.f, Milliseconds( 500.f ) );
+			C->disableFadeOut( Milliseconds( 500.f ) );
 			C->startRotation( 0, 360, Milliseconds( 500.f ), Ease::SineIn );
 		}
 	} else if ( "Show Window 2" == txt ) {

@@ -157,6 +157,7 @@ void UINode::setPixelsPosition( const Vector2i& Pos ) {
 	if ( mRealPos != Pos ) {
 		mPos = Vector2i( PixelDensity::pxToDpI( Pos.x ), PixelDensity::pxToDpI( Pos.y ) );
 		mRealPos = Pos;
+		Transformable::setPosition( mRealPos.x, mRealPos.y );
 		setDirty();
 		onPositionChange();
 	}
@@ -857,21 +858,21 @@ void UINode::internalDraw() {
 
 void UINode::clipMe() {
 	if ( mVisible && ( mFlags & UI_CLIP_ENABLE ) ) {
-		if ( mFlags & UI_BORDER )
+		/*if ( mFlags & UI_BORDER )
 			UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() + 1 );
 		else
-			UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() );
+			UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() );*/
 	}
 }
 
 void UINode::clipDisable() {
 	if ( mVisible && ( mFlags & UI_CLIP_ENABLE ) ) {
-		UIManager::instance()->clipSmartDisable( this );
+		//UIManager::instance()->clipSmartDisable( this );
 	}
 }
 
 void UINode::matrixSet() {
-	if ( getScale() != 1.f || getRotation() != 0.f ) {
+	/*if ( getScale() != 1.f || getRotation() != 0.f )*/ {
 		GlobalBatchRenderer::instance()->draw();
 
 		GLi->pushMatrix();
@@ -886,12 +887,14 @@ void UINode::matrixSet() {
 		GLi->rotatef( getRotation(), 0.0f, 0.0f, 1.0f );
 		GLi->translatef( -rotationCenter.x, -rotationCenter.y, 0.f );
 
-		//GLi->loadMatrixf( getGlobalTransform().getMatrix() );
+		GLi->translatef( mRealPos.x, mRealPos.y, 0.f );
+
+		GLi->loadMatrixf( getGlobalTransform().getMatrix() );
 	}
 }
 
 void UINode::matrixUnset() {
-	if ( getScale() != 1.f || getRotation() != 0.f ) {
+	/*if ( getScale() != 1.f || getRotation() != 0.f )*/ {
 		GlobalBatchRenderer::instance()->draw();
 
 		GLi->popMatrix();
@@ -1121,7 +1124,7 @@ UINode * UINode::overFind( const Vector2f& Point ) {
 		if ( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY )
 			updateWorldPolygon();
 
-		if ( mPoly.pointInside( Point ) ) {
+		if ( /*mPoly.pointInside( Point )*/ getRectf().contains( convertToNodeSpace( Point ) ) ) {
 			writeCtrlFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
 
 			UINode * ChildLoop = mChildLast;
@@ -1470,16 +1473,14 @@ void UINode::updateScreenPos() {
 	if ( !(mNodeFlags & NODE_FLAG_POSITION_DIRTY) )
 		return;
 
-	Vector2i Pos( mRealPos );
+	Vector2i Pos( 0, 0 );
 
-	nodeToScreen( Pos );
+	//nodeToScreen( Pos );
 
 	mScreenPos = Pos;
 	mScreenPosf = Vector2f( Pos.x, Pos.y );
 
 	updateCenter();
-
-	Transformable::setPosition( mScreenPosf.x, mScreenPosf.y );
 
 	mNodeFlags &= ~NODE_FLAG_POSITION_DIRTY;
 }
@@ -1631,6 +1632,8 @@ void UINode::onChildCountChange() {
 
 void UINode::worldToNode( Vector2i& pos ) {
 	Vector2f PosTest( convertToNodeSpace( Vector2f( pos.x, pos.y ) ) );
+	pos = Vector2i( PosTest.x, PosTest.y );
+	return;
 
 	Vector2f Pos( pos.x, pos.y );
 
@@ -1672,6 +1675,10 @@ void UINode::worldToNode( Vector2i& pos ) {
 }
 
 void UINode::nodeToWorld( Vector2i& pos ) {
+	Vector2f PosTest( convertToWorldSpace( Vector2f( pos.x, pos.y ) ) );
+	pos = Vector2i( PosTest.x, PosTest.y );
+	return;
+
 	Vector2f Pos( (Float)pos.x * PixelDensity::getPixelDensity(), (Float)pos.y * PixelDensity::getPixelDensity() );
 
 	std::list<UINode*> parents;
@@ -2005,7 +2012,7 @@ const OriginPoint& UINode::getRotationOriginPoint() const {
 void UINode::setRotationOriginPoint( const OriginPoint & center ) {
 	mRotationOriginPoint = PixelDensity::dpToPx( center );
 	updateOriginPoint();
-	Transformable::setRotationOrigin( getRotationCenter().x, getRotationCenter().y );
+	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
 }
 
 Vector2f UINode::getRotationCenter() {
@@ -2020,7 +2027,7 @@ void UINode::setRotation( float angle ) {
 	Transformable::setRotation( angle );
 
 	updateOriginPoint();
-	Transformable::setRotationOrigin( getRotationCenter().x, getRotationCenter().y );
+	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
 
 	if ( getRotation() != 0.f ) {
 		mNodeFlags |= NODE_FLAG_ROTATED;
@@ -2044,7 +2051,7 @@ void UINode::setScale( const Vector2f & scale ) {
 	Transformable::setScale( scale.x, scale.y );
 
 	updateOriginPoint();
-	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
+	Transformable::setScaleOrigin( getScaleOriginPoint().x, getScaleOriginPoint().y );
 
 	if ( getScale() != 1.f ) {
 		mNodeFlags |= NODE_FLAG_SCALED;
@@ -2080,7 +2087,7 @@ void UINode::setScale( const Vector2f& scale, const OriginPoint& center ) {
 	mScaleOriginPoint = PixelDensity::dpToPx( center );
 	updateOriginPoint();
 	Transformable::setScale( scale.x, scale.y );
-	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
+	Transformable::setScaleOrigin( getScaleOriginPoint().x, getScaleOriginPoint().y );
 }
 
 void UINode::setScale( const Float& scale, const OriginPoint& center ) {
