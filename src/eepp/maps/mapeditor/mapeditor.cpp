@@ -483,8 +483,8 @@ void MapEditor::createUIMap() {
 	UISkin * HScrollSkin = mTheme->getSkin( "hscrollbar_bg" );
 	UISkin * VScrollSkin = mTheme->getSkin( "vscrollbar_bg" );
 
-	Float ScrollH = 16;
-	Float ScrollV = 16;
+	Int32 ScrollH = 16;
+	Int32 ScrollV = 16;
 
 	if ( NULL != HScrollSkin ) {
 		ScrollH = HScrollSkin->getSize().getHeight();

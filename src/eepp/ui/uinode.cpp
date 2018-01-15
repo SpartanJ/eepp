@@ -45,8 +45,6 @@ UINode::UINode() :
 	mVisible( true ),
 	mEnabled( true ),
 	mDragButton( EE_BUTTON_LMASK ),
-	mRotation(0.f),
-	mScale(1.f,1.f),
 	mAlpha(255.f),
 	mActionManager(NULL)
 {
@@ -134,6 +132,7 @@ Uint32 UINode::onMessage( const UIMessage * Msg ) {
 void UINode::setInternalPosition( const Vector2i& Pos ) {
 	mPos = Pos;
 	mRealPos = Vector2i( Pos.x * PixelDensity::getPixelDensity(), Pos.y * PixelDensity::getPixelDensity() );
+	Transformable::setPosition( mRealPos.x, mRealPos.y );
 	setDirty();
 }
 
@@ -872,25 +871,27 @@ void UINode::clipDisable() {
 }
 
 void UINode::matrixSet() {
-	if ( mScale != 1.f || mRotation != 0.f ) {
+	if ( getScale() != 1.f || getRotation() != 0.f ) {
 		GlobalBatchRenderer::instance()->draw();
 
 		GLi->pushMatrix();
 
 		Vector2f scaleCenter = getScaleCenter();
 		GLi->translatef( scaleCenter.x , scaleCenter.y, 0.f );
-		GLi->scalef( mScale.x, mScale.y, 1.0f );
+		GLi->scalef( getScale().x, getScale().y, 1.0f );
 		GLi->translatef( -scaleCenter.x, -scaleCenter.y, 0.f );
 
 		Vector2f rotationCenter = getRotationCenter();
 		GLi->translatef( rotationCenter.x , rotationCenter.y, 0.f );
-		GLi->rotatef( mRotation, 0.0f, 0.0f, 1.0f );
+		GLi->rotatef( getRotation(), 0.0f, 0.0f, 1.0f );
 		GLi->translatef( -rotationCenter.x, -rotationCenter.y, 0.f );
+
+		//GLi->loadMatrixf( getGlobalTransform().getMatrix() );
 	}
 }
 
 void UINode::matrixUnset() {
-	if ( mScale != 1.f || mRotation != 0.f ) {
+	if ( getScale() != 1.f || getRotation() != 0.f ) {
 		GlobalBatchRenderer::instance()->draw();
 
 		GLi->popMatrix();
@@ -1279,8 +1280,8 @@ void UINode::updateWorldPolygon() {
 
 	mPoly		= Polygon2f( Rectf( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mRealSize.getWidth(), mScreenPosf.y + mRealSize.getHeight() ) );
 
-	mPoly.rotate( mRotation, getRotationCenter() );
-	mPoly.scale( mScale, getScaleCenter() );
+	mPoly.rotate( getRotation(), getRotationCenter() );
+	mPoly.scale( getScale(), getScaleCenter() );
 
 	UINode * tParent = getParent();
 
@@ -1478,6 +1479,8 @@ void UINode::updateScreenPos() {
 
 	updateCenter();
 
+	Transformable::setPosition( mScreenPosf.x, mScreenPosf.y );
+
 	mNodeFlags &= ~NODE_FLAG_POSITION_DIRTY;
 }
 
@@ -1626,7 +1629,9 @@ void UINode::onChildCountChange() {
 	invalidateDraw();
 }
 
-void UINode::worldToNode( Vector2i& pos ) const {
+void UINode::worldToNode( Vector2i& pos ) {
+	Vector2f PosTest( convertToNodeSpace( Vector2f( pos.x, pos.y ) ) );
+
 	Vector2f Pos( pos.x, pos.y );
 
 	std::list<UINode*> parents;
@@ -1666,7 +1671,7 @@ void UINode::worldToNode( Vector2i& pos ) const {
 	pos = Vector2i( Pos.x / PixelDensity::getPixelDensity(), Pos.y / PixelDensity::getPixelDensity() );
 }
 
-void UINode::nodeToWorld( Vector2i& pos ) const {
+void UINode::nodeToWorld( Vector2i& pos ) {
 	Vector2f Pos( (Float)pos.x * PixelDensity::getPixelDensity(), (Float)pos.y * PixelDensity::getPixelDensity() );
 
 	std::list<UINode*> parents;
@@ -1956,11 +1961,11 @@ Interpolation1d * UINode::startAlphaAnim(const Float & To, const Time & TotalTim
 }
 
 Interpolation2d * UINode::startScaleAnim(const Vector2f & To, const Time & TotalTime, const Ease::Interpolation & type, Interpolation2d::OnPathEndCallback PathEndCallback) {
-	return startScaleAnim( mScale, To, TotalTime, type, PathEndCallback );
+	return startScaleAnim( getScale(), To, TotalTime, type, PathEndCallback );
 }
 
 Interpolation2d * UINode::startScaleAnim(const Float & To, const Time & TotalTime, const Ease::Interpolation & type, Interpolation2d::OnPathEndCallback PathEndCallback) {
-	return startScaleAnim( mScale, Vector2f(To,To), TotalTime, type, PathEndCallback );
+	return startScaleAnim( getScale(), Vector2f(To,To), TotalTime, type, PathEndCallback );
 }
 
 Interpolation2d * UINode::startTranslation(const Vector2i & To, const Time & TotalTime, const Ease::Interpolation & type, Interpolation2d::OnPathEndCallback PathEndCallback) {
@@ -1968,7 +1973,7 @@ Interpolation2d * UINode::startTranslation(const Vector2i & To, const Time & Tot
 }
 
 Interpolation1d * UINode::startRotation(const Float & To, const Time & TotalTime, const Ease::Interpolation & type, Interpolation1d::OnPathEndCallback PathEndCallback) {
-	return startRotation( mRotation, To, TotalTime, type, PathEndCallback );
+	return startRotation( getRotation(), To, TotalTime, type, PathEndCallback );
 }
 
 Interpolation1d * UINode::createFadeIn( const Time& time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
@@ -1993,10 +1998,6 @@ Interpolation1d * UINode::disableFadeOut( const Time& time, const bool& AlphaChi
 	return startAlphaAnim( mAlpha, 0.f, time, AlphaChilds, Type );
 }
 
-const Float& UINode::getRotation() const {
-	return mRotation;
-}
-
 const OriginPoint& UINode::getRotationOriginPoint() const {
 	return mRotationOriginPoint;
 }
@@ -2004,6 +2005,7 @@ const OriginPoint& UINode::getRotationOriginPoint() const {
 void UINode::setRotationOriginPoint( const OriginPoint & center ) {
 	mRotationOriginPoint = PixelDensity::dpToPx( center );
 	updateOriginPoint();
+	Transformable::setRotationOrigin( getRotationCenter().x, getRotationCenter().y );
 }
 
 Vector2f UINode::getRotationCenter() {
@@ -2014,10 +2016,13 @@ Vector2f UINode::getRotationCenter() {
 	}
 }
 
-void UINode::setRotation( const Float& angle ) {
-	mRotation = angle;
+void UINode::setRotation( float angle ) {
+	Transformable::setRotation( angle );
 
-	if ( mRotation != 0.f ) {
+	updateOriginPoint();
+	Transformable::setRotationOrigin( getRotationCenter().x, getRotationCenter().y );
+
+	if ( getRotation() != 0.f ) {
 		mNodeFlags |= NODE_FLAG_ROTATED;
 	} else {
 		if ( mNodeFlags & NODE_FLAG_ROTATED )
@@ -2030,19 +2035,18 @@ void UINode::setRotation( const Float& angle ) {
 }
 
 void UINode::setRotation( const Float& angle , const OriginPoint & center ) {
-	mRotationOriginPoint = center;
+	mRotationOriginPoint = PixelDensity::dpToPx( center );
 	updateOriginPoint();
 	setRotation( angle );
 }
 
-const Vector2f& UINode::getScale() const {
-	return mScale;
-}
-
 void UINode::setScale( const Vector2f & scale ) {
-	mScale = scale;
+	Transformable::setScale( scale.x, scale.y );
 
-	if ( mScale != 1.f ) {
+	updateOriginPoint();
+	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
+
+	if ( getScale() != 1.f ) {
 		mNodeFlags |= NODE_FLAG_SCALED;
 	} else {
 		if ( mNodeFlags & NODE_FLAG_SCALED )
@@ -2061,6 +2065,7 @@ const OriginPoint& UINode::getScaleOriginPoint() const {
 void UINode::setScaleOriginPoint( const OriginPoint & center ) {
 	mScaleOriginPoint = PixelDensity::dpToPx( center );
 	updateOriginPoint();
+	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
 }
 
 Vector2f UINode::getScaleCenter() {
@@ -2072,9 +2077,10 @@ Vector2f UINode::getScaleCenter() {
 }
 
 void UINode::setScale( const Vector2f& scale, const OriginPoint& center ) {
-	mScaleOriginPoint = center;
+	mScaleOriginPoint = PixelDensity::dpToPx( center );
 	updateOriginPoint();
-	setScale( scale );
+	Transformable::setScale( scale.x, scale.y );
+	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
 }
 
 void UINode::setScale( const Float& scale, const OriginPoint& center ) {
@@ -2116,5 +2122,46 @@ void UINode::runAction( UIAction * action ) {
 		getActionManager()->addAction( action );
 	}
 }
+
+Transform UINode::getLocalTransform() {
+	return getTransform();
+}
+
+Transform UINode::getGlobalTransform() {
+	return NULL != mParentCtrl ? mParentCtrl->getGlobalTransform() * getTransform() : getTransform();
+}
+
+Transform UINode::getNodeToWorldTransform() {
+	return getGlobalTransform();
+}
+
+Transform UINode::getWorldToNodeTransform() {
+	return getNodeToWorldTransform().getInverse();
+}
+
+Vector2f UINode::convertToNodeSpace(const Vector2f& worldPoint) {
+	return getWorldToNodeTransform().transformPoint(worldPoint.x, worldPoint.y);
+}
+
+Vector2f UINode::convertToWorldSpace(const Vector2f& nodePoint) {
+	return getNodeToWorldTransform().transformPoint(nodePoint.x, nodePoint.y);
+}
+
+void UINode::setPosition(float x, float y) {
+	setPosition( Vector2f( x, y ) );
+}
+
+void UINode::setScale(float factorX, float factorY) {
+	setScale( Vector2f( factorX, factorY ) );
+}
+
+void UINode::setScaleOrigin(float x, float y) {
+	setScaleOriginPoint( OriginPoint( x, y ) );
+}
+
+void UINode::setRotationOrigin(float x, float y) {
+	setRotationOriginPoint( OriginPoint( x, y ) );
+}
+
 
 }}

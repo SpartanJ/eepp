@@ -282,7 +282,7 @@ void UIWindow::drawFrameBuffer() {
 			mFrameBuffer->draw( Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ), Rect( mScreenPos.x, mScreenPos.y, mScreenPos.x + mRealSize.getWidth(), mScreenPos.y + mRealSize.getHeight() ) );
 		} else {
 			TextureRegion textureRegion( mFrameBuffer->getTexture()->getId(), Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ) );
-			textureRegion.draw( mScreenPos.x, mScreenPos.y, Color::White, mRotation, mScale );
+			textureRegion.draw( mScreenPos.x, mScreenPos.y, Color::White, getRotation(), getScale() );
 		}
 	}
 }

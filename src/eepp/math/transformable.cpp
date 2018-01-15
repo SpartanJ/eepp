@@ -114,7 +114,7 @@ void Transformable::scale(const Vector2f& factor) {
 const Transform& Transformable::getTransform() const {
 	// Recompute the combined transform if needed
 	if (mTransformNeedUpdate) {
-		Transform t;
+		/*Transform t;
 
 		if ( 1.f != mScale ) {
 			t.translate( mScaleOrigin );
@@ -123,14 +123,26 @@ const Transform& Transformable::getTransform() const {
 		}
 
 		if ( 0.f != mRotation ) {
-			t.translate( mRotationOrigin );
+			t.translate(  mRotationOrigin );
 			t.rotate( mRotation );
 			t.translate( -mRotationOrigin );
 		}
 
 		t.translate( mPosition );
 
-		mTransform = t;
+		mTransform = t;*/
+
+		float angle  = -mRotation * EE_PI_180;
+		float cosine = eecos(angle);
+		float sine   = eesin(angle);
+		float sxc    = mScale.x * cosine;
+		float syc    = mScale.y * cosine;
+		float sxs    = mScale.x * sine;
+		float sys    = mScale.y * sine;
+		float tx     = -mRotationOrigin.x * sxc - mRotationOrigin.y * sys + mPosition.x;
+		float ty     =  mRotationOrigin.x * sxs - mRotationOrigin.y * syc + mPosition.y;
+
+		mTransform = Transform( sxc, sys, tx, -sxs, syc, ty, 0.f, 0.f, 1.f );
 	}
 
 	return mTransform;
