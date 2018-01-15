@@ -13,7 +13,8 @@ static Uint32	KeyCodesTable[ SDL_NUM_SCANCODES ];
 static bool		KeyCodesTableInit = false;
 
 InputSDL::InputSDL( EE::Window::Window * window ) :
-	Input( window, eeNew( JoystickManagerSDL, () ) )
+	Input( window, eeNew( JoystickManagerSDL, () ) ),
+	mDPIScale(1.f)
 {
 	#if defined( EE_X11_PLATFORM )
 	mMouseSpeed = 1.75f;
@@ -23,11 +24,11 @@ InputSDL::InputSDL( EE::Window::Window * window ) :
 InputSDL::~InputSDL() {
 }
 
-void InputSDL::Update() {
+void InputSDL::update() {
 	SDL_Event 	SDLEvent;
 	InputEvent 	EEEvent;
 
-	CleanStates();
+	cleanStates();
 
 	while ( SDL_PollEvent( &SDLEvent ) ) {
 		switch( SDLEvent.type ) {
@@ -37,8 +38,8 @@ void InputSDL::Update() {
 					case SDL_WINDOWEVENT_RESIZED:
 					{
 						EEEvent.Type = InputEvent::VideoResize;
-						EEEvent.resize.w = SDLEvent.window.data1;
-						EEEvent.resize.h = SDLEvent.window.data2;
+						EEEvent.resize.w = SDLEvent.window.data1 * mDPIScale;
+						EEEvent.resize.h = SDLEvent.window.data2 * mDPIScale;
 						break;
 					}
 					case SDL_WINDOWEVENT_EXPOSED:
@@ -95,13 +96,17 @@ void InputSDL::Update() {
 			}
 			case SDL_TEXTINPUT:
 			{
-				String txt = String::FromUtf8( SDLEvent.text.text );
+				String txt = String::fromUtf8( SDLEvent.text.text );
 
 				EEEvent.Type = InputEvent::TextInput;
+				#if SDL_VERSION_ATLEAST(2,0,0)
 				EEEvent.text.timestamp = SDLEvent.text.timestamp;
+				#else
+				EEEvent.text.timestamp = Sys::getTicks();
+				#endif
 				EEEvent.text.text = txt[0];
 
-				ProcessEvent( &EEEvent );
+				processEvent( &EEEvent );
 
 				EEEvent.Type = InputEvent::KeyDown;
 				EEEvent.key.state = SDLEvent.key.state;
@@ -141,10 +146,10 @@ void InputSDL::Update() {
 				EEEvent.Type = InputEvent::MouseMotion;
 				EEEvent.motion.which = SDLEvent.motion.windowID;
 				EEEvent.motion.state = SDLEvent.motion.state;
-				EEEvent.motion.x = SDLEvent.motion.x;
-				EEEvent.motion.y = SDLEvent.motion.y;
-				EEEvent.motion.xrel = SDLEvent.motion.xrel;
-				EEEvent.motion.yrel = SDLEvent.motion.yrel;
+				EEEvent.motion.x = SDLEvent.motion.x * mDPIScale;
+				EEEvent.motion.y = SDLEvent.motion.y * mDPIScale;
+				EEEvent.motion.xrel = SDLEvent.motion.xrel * mDPIScale;
+				EEEvent.motion.yrel = SDLEvent.motion.yrel * mDPIScale;
 				break;
 			}
 			case SDL_MOUSEBUTTONDOWN:
@@ -191,7 +196,7 @@ void InputSDL::Update() {
 
 				EEEvent.Type = InputEvent::MouseButtonDown;
 				EEEvent.button.state = 1;
-				ProcessEvent( &EEEvent );
+				processEvent( &EEEvent );
 
 				EEEvent.Type = InputEvent::MouseButtonUp;
 				EEEvent.button.state = 0;
@@ -304,39 +309,54 @@ void InputSDL::Update() {
 		}
 
 		if ( InputEvent::NoEvent != EEEvent.Type ) {
-			ProcessEvent( &EEEvent );
+			processEvent( &EEEvent );
 		}
 	}
 }
 
-bool InputSDL::GrabInput() {
+bool InputSDL::grabInput() {
 	return ( SDL_GetWindowGrab( reinterpret_cast<WindowSDL*> ( mWindow )->GetSDLWindow() ) == SDL_TRUE ) ? true : false;
 }
 
-void InputSDL::GrabInput( const bool& Grab ) {
+void InputSDL::grabInput( const bool& Grab ) {
 	SDL_SetWindowGrab( reinterpret_cast<WindowSDL*> ( mWindow )->GetSDLWindow(), Grab ? SDL_TRUE : SDL_FALSE );
 }
 
-void InputSDL::InjectMousePos( const Uint16& x, const Uint16& y ) {
+void InputSDL::injectMousePos( const Uint16& x, const Uint16& y ) {
 	SDL_WarpMouseInWindow( reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow(), x, y );
 }
 
-void InputSDL::Init() {
-	Vector2if mTempMouse;
+void InputSDL::init() {
+#if SDL_VERSION_ATLEAST(2,0,1)
+	int realX, realY;
+	int scaledX, scaledY;
+	SDL_Window * sdlw = reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow();
+	SDL_GL_GetDrawableSize(sdlw, &realX, &realY);
+	SDL_GetWindowSize(sdlw, &scaledX, &scaledY);
+	mDPIScale = (Float)realX / (Float)scaledX;
+#endif
 
-	SDL_GetMouseState( &mTempMouse.x, &mTempMouse.y );
+#if SDL_VERSION_ATLEAST(2,0,4)
+	Vector2i mTempMouse;
+	Vector2i mTempWinPos;
+	Rect mBordersSize;
 
-	mMousePos.x = (int)mTempMouse.x;
-	mMousePos.y = (int)mTempMouse.y;
+	SDL_GetGlobalMouseState( &mTempMouse.x, &mTempMouse.y );
+	SDL_GetWindowPosition( sdlw, &mTempWinPos.x, &mTempWinPos.y );
+	SDL_GetWindowBordersSize( sdlw, &mBordersSize.Top, &mBordersSize.Left, &mBordersSize.Bottom, &mBordersSize.Right );
 
-	InitializeTables();
+	mMousePos.x = (int)mTempMouse.x - mTempWinPos.x - mBordersSize.Left;
+	mMousePos.y = (int)mTempMouse.y - mTempWinPos.y - mBordersSize.Top;
+#endif
+
+	initializeTables();
 
 	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-	mJoystickManager->Open();
+	mJoystickManager->open();
 	#endif
 }
 
-void InputSDL::InitializeTables() {
+void InputSDL::initializeTables() {
 	if ( KeyCodesTableInit )
 		return;
 

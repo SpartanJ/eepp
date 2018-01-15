@@ -9,15 +9,15 @@ Time::Time() :
 {
 }
 
-double Time::AsSeconds() const {
+double Time::asSeconds() const {
 	return mMicroseconds / 1000000.0;
 }
 
-double Time::AsMilliseconds() const {
+double Time::asMilliseconds() const {
 	return mMicroseconds / 1000.0;
 }
 
-Int64 Time::AsMicroseconds() const {
+Int64 Time::asMicroseconds() const {
 	return mMicroseconds;
 }
 
@@ -39,35 +39,35 @@ Time Microseconds(Int64 amount) {
 }
 
 bool operator ==(Time left, Time right) {
-	return left.AsMicroseconds() == right.AsMicroseconds();
+	return left.asMicroseconds() == right.asMicroseconds();
 }
 
 bool operator !=(Time left, Time right) {
-	return left.AsMicroseconds() != right.AsMicroseconds();
+	return left.asMicroseconds() != right.asMicroseconds();
 }
 
 bool operator <(Time left, Time right) {
-	return left.AsMicroseconds() < right.AsMicroseconds();
+	return left.asMicroseconds() < right.asMicroseconds();
 }
 
 bool operator >(Time left, Time right) {
-	return left.AsMicroseconds() > right.AsMicroseconds();
+	return left.asMicroseconds() > right.asMicroseconds();
 }
 
 bool operator <=(Time left, Time right) {
-	return left.AsMicroseconds() <= right.AsMicroseconds();
+	return left.asMicroseconds() <= right.asMicroseconds();
 }
 
 bool operator >=(Time left, Time right) {
-	return left.AsMicroseconds() >= right.AsMicroseconds();
+	return left.asMicroseconds() >= right.asMicroseconds();
 }
 
 Time operator -(Time right) {
-	return Microseconds(-right.AsMicroseconds());
+	return Microseconds(-right.asMicroseconds());
 }
 
 Time operator +(Time left, Time right) {
-	return Microseconds(left.AsMicroseconds() + right.AsMicroseconds());
+	return Microseconds(left.asMicroseconds() + right.asMicroseconds());
 }
 
 Time& operator +=(Time& left, Time right) {
@@ -75,7 +75,7 @@ Time& operator +=(Time& left, Time right) {
 }
 
 Time operator -(Time left, Time right) {
-	return Microseconds(left.AsMicroseconds() - right.AsMicroseconds());
+	return Microseconds(left.asMicroseconds() - right.asMicroseconds());
 }
 
 Time& operator -=(Time& left, Time right) {
@@ -83,11 +83,11 @@ Time& operator -=(Time& left, Time right) {
 }
 
 Time operator *(Time left, Time right) {
-	return Microseconds(left.AsMicroseconds() * right.AsMicroseconds());
+	return Microseconds(left.asMicroseconds() * right.asMicroseconds());
 }
 
 Time operator *(Time left, double right) {
-	return Seconds(left.AsSeconds() * right);
+	return Seconds(left.asSeconds() * right);
 }
 
 Time operator *(double left, Time right) {
@@ -95,7 +95,7 @@ Time operator *(double left, Time right) {
 }
 
 Time operator *(Time left, Int64 right) {
-	return Microseconds(left.AsMicroseconds() * right);
+	return Microseconds(left.asMicroseconds() * right);
 }
 
 Time operator *(Int64 left, Time right) {
@@ -115,15 +115,15 @@ Time& operator *=(Time& left, Int64 right) {
 }
 
 Time operator /(Time left, Time right) {
-	return Microseconds(left.AsMicroseconds() / right.AsMicroseconds());
+	return Microseconds(left.asMicroseconds() / right.asMicroseconds());
 }
 
 Time operator /(Time left, double right) {
-	return Seconds(left.AsSeconds() / right);
+	return Seconds(left.asSeconds() / right);
 }
 
 Time operator /(Time left, Int64 right) {
-	return Microseconds(left.AsMicroseconds() / right);
+	return Microseconds(left.asMicroseconds() / right);
 }
 
 Time& operator /=(Time& left, Time right) {
@@ -135,7 +135,7 @@ Time& operator /=(Time& left, Int64 right) {
 }
 
 Time operator %(Time left, Time right) {
-	return Microseconds(left.AsMicroseconds() % right.AsMicroseconds());
+	return Microseconds(left.asMicroseconds() % right.asMicroseconds());
 }
 
 Time& operator %=(Time& left, Time right) {

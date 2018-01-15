@@ -7,10 +7,10 @@
 #include <eepp/math/rect.hpp>
 using namespace EE::Math;
 
-#include <eepp/system/colors.hpp>
+#include <eepp/system/color.hpp>
 using namespace EE::System;
 
-#include <eepp/graphics/renders.hpp>
+#include <eepp/graphics/rendermode.hpp>
 
 namespace EE { namespace System {
 class Pack;
@@ -21,20 +21,60 @@ namespace EE { namespace Graphics {
 /** @brief A simple image class to manipulate them. */
 class EE_API Image {
 	public:
+		/** @enum PixelFormat Format Pixel formats to write into a texture image. */
+		enum PixelFormat {
+			PIXEL_FORMAT_RED,
+			PIXEL_FORMAT_RG,
+			PIXEL_FORMAT_RGB,
+			PIXEL_FORMAT_BGR,
+			PIXEL_FORMAT_RGBA,
+			PIXEL_FORMAT_BGRA
+		};
+
+		/** @enum ResamplerFilter ºººFilter The filter used to resample/resize an image. */
+		enum ResamplerFilter {
+			RESAMPLER_BOX,
+			RESAMPLER_TENT,
+			RESAMPLER_BELL,
+			RESAMPLER_BSPLINE,
+			RESAMPLER_MITCHELL,
+			RESAMPLER_LANCZOS3,
+			RESAMPLER_BLACKMAN,
+			RESAMPLER_LANCZOS4,
+			RESAMPLER_LANCZOS6,
+			RESAMPLER_LANCZOS12,
+			RESAMPLER_KAISER,
+			RESAMPLER_GAUSSIAN,
+			RESAMPLER_CATMULLROM,
+			RESAMPLER_QUADRATIC_INTERP,
+			RESAMPLER_QUADRATIC_APPROX,
+			RESAMPLER_QUADRATIC_MIX
+		};
+
+		/** @enum SaveType Defines the format to save a texture. */
+		enum SaveType {
+			SAVE_TYPE_UNKNOWN	= -1,
+			SAVE_TYPE_TGA		= 0,
+			SAVE_TYPE_BMP		= 1,
+			SAVE_TYPE_PNG		= 2,
+			SAVE_TYPE_DDS		= 3,
+			SAVE_TYPE_JPG		= 4
+		};
+
 		/** @return The current Jpeg save quality */
-		static Uint32 JpegQuality();
+		static Uint32 jpegQuality();
 
 		/** Set the save quality of Jpeg files ( between 0 and 100 )  */
-		static void JpegQuality( Uint32 level );
+		static void jpegQuality( Uint32 level );
 
 		/** @return The File Extension of a Save Type */
-		static std::string SaveTypeToExtension( const Int32& Format );
+		static std::string saveTypeToExtension( const Int32& Format );
 
-		/** @return The save type from a given extension ( example: "png" => SAVE_TYPE_PNG ) */
-		static EE_SAVE_TYPE ExtensionToSaveType( const std::string& Extension );
+		/** @return The save type from a given extension ( example: "png" => SaveType::SAVE_TYPE_PNG ) */
+		static SaveType extensionToSaveType( const std::string& Extension );
 
 		/** @return Convert the number of channels to a pixel format */
-		static EE_PIXEL_FORMAT ChannelsToPixelFormat( const Uint32& channels );
+		static PixelFormat channelsToPixelFormat( const Uint32& channels );
 
 		/** @return True if success to get the info.
 		* @param path the image path
@@ -42,15 +82,20 @@ class EE_API Image {
 		* @param height the var to store the image height
 		* @param channels the var to store the image channels count
 		*/
-		static bool GetInfo( const std::string& path, int * width, int * height, int * channels );
+		static bool getInfo( const std::string& path, int * width, int * height, int * channels );
 
-		/** @return True if the file is a valid image
+		/** @return True if the file is a valid image ( reads the file header to know if the file is an image file format supported )
 		* @param path the image path
 		*/
-		static bool IsImage( const std::string& path );
+		static bool isImage( const std::string& path );
+
+		/** @return If the path or file name has a supported image file extension
+		*   @param path the image path or file name
+		*/
+		static bool isImageExtension( const std::string& path );
 
 		/** @return The last failure image loading/info reason */
-		static std::string GetLastFailureReason();
+		static std::string getLastFailureReason();
 
 		Image();
 
@@ -58,13 +103,13 @@ class EE_API Image {
 		Image( Graphics::Image * image );
 
 		/** Use an existing image ( and appropriates the data passed ) */
-		Image( Uint8* data, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels );
+		Image( Uint8* data, const unsigned int& width, const unsigned int& height, const unsigned int& channels );
 
 		/** Copy a image data to create the image */
-		Image( const Uint8* data, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels );
+		Image( const Uint8* data, const unsigned int& width, const unsigned int& height, const unsigned int& channels );
 
 		/** Create an empty image */
-		Image( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const ColorA& DefaultColor = ColorA(0,0,0,0), const bool& initWithDefaultColor = true );
+		Image( const Uint32& width, const Uint32& height, const Uint32& channels, const Color& DefaultColor = Color(0,0,0,0), const bool& initWithDefaultColor = true );
 
 		/** Load an image from path
 		* @param Path The path to the file.
@@ -82,94 +127,94 @@ class EE_API Image {
 		virtual ~Image();
 
 		/** Create an empty image data */
-		void Create( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const ColorA &DefaultColor = ColorA(0,0,0,0), const bool& initWithDefaultColor = true );
+		void create( const Uint32& width, const Uint32& height, const Uint32& channels, const Color &DefaultColor = Color(0,0,0,0), const bool& initWithDefaultColor = true );
 
 		/** Return the pixel color from the image. \n You must have a copy of the image on local memory. For that you need to Lock the image first. */
-		virtual ColorA GetPixel(const unsigned int& x, const unsigned int& y);
+		virtual Color getPixel(const unsigned int& x, const unsigned int& y);
 
 		/** Set the pixel color to the image. \n You must have a copy of the image on local memory. For that you need to Lock the image first. */
-		virtual void SetPixel(const unsigned int& x, const unsigned int& y, const ColorA& Color);
+		virtual void setPixel(const unsigned int& x, const unsigned int& y, const Color& Color);
 
 		/** Assign a new array of pixels to the image in local memory ( it has to be exactly of the same size of the image ) */
-		virtual void SetPixels( const Uint8* data );
+		virtual void setPixels( const Uint8* data );
 
 		/** @return A pointer to the first pixel of the image. */
-		virtual const Uint8* GetPixelsPtr();
+		virtual const Uint8* getPixelsPtr();
 
 		/** Return the pointer to the array containing the image */
-		Uint8 * GetPixels() const;
+		Uint8 * getPixels() const;
 
 		/** Set the image Width */
-		void Width( const unsigned int& width );
+		void setWidth( const unsigned int& width );
 
 		/** @return The image Width */
-		unsigned int Width() const;
+		unsigned int getWidth() const;
 
 		/** Set the image Height */
-		void Height( const unsigned int& height );
+		void setHeight( const unsigned int& height );
 
 		/** @return The image Height */
-		unsigned int Height() const;
+		unsigned int getHeight() const;
 
 		/** @return The number of channels used by the image */
-		unsigned int Channels() const;
+		unsigned int getChannels() const;
 
 		/** Set the number of channels of the image */
-		void Channels( const unsigned int& channels );
+		void setChannels( const unsigned int& setChannels );
 
 		/** Clears the current image cache if exists */
-		void ClearCache();
+		void clearCache();
 
 		/** @return The Image Size on Memory (in bytes) */
-		unsigned int MemSize() const;
+		unsigned int getMemSize() const;
 
 		/** @return The image dimensions */
-		Sizei Size();
+		Sizei getSize();
 
 		/** Save the Image to a new File in a specific format */
-		virtual bool SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format );
+		virtual bool saveToFile( const std::string& filepath, const SaveType& Format );
 
 		/** Create an Alpha mask from a Color */
-		virtual void CreateMaskFromColor( const ColorA& ColorKey, Uint8 Alpha );
+		virtual void createMaskFromColor( const Color& ColorKey, Uint8 Alpha );
 
 		/** Create an Alpha mask from a Color */
-		void CreateMaskFromColor( const RGB& ColorKey, Uint8 Alpha );
+		void createMaskFromColor( const RGB& ColorKey, Uint8 Alpha );
 
 		/** Replace a color on the image */
-		virtual void ReplaceColor( const ColorA& ColorKey, const ColorA& NewColor );
+		virtual void replaceColor( const Color& ColorKey, const Color& NewColor );
 
 		/** Fill the image with a color */
-		virtual void FillWithColor( const ColorA& Color );
+		virtual void fillWithColor( const Color& Color );
 
 		/** Copy the image to this image data, starting from the position x,y */
-		virtual void CopyImage( Graphics::Image * image, const Uint32& x = 0, const Uint32& y = 0 );
+		virtual void copyImage( Graphics::Image * image, const Uint32& x = 0, const Uint32& y = 0 );
 
 		/** Scale the image */
-		virtual void Scale( const Float& scale, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
+		virtual void scale( const Float& scale, ResamplerFilter filter = ResamplerFilter::RESAMPLER_LANCZOS4 );
 
 		/** Resize the image */
-		virtual void Resize( const Uint32& newWidth, const Uint32& newHeight, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
+		virtual void resize(const Uint32& newWidth, const Uint32& newHeight, ResamplerFilter filter = ResamplerFilter::RESAMPLER_LANCZOS4 );
 
 		/** Flip the image ( rotate the image 90º ) */
-		virtual void Flip();
+		virtual void flip();
 
 		/** Create a thumnail of the image */
-		Graphics::Image * Thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
+		Graphics::Image * thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, ResamplerFilter filter = ResamplerFilter::RESAMPLER_LANCZOS4 );
 
 		/** Creates a cropped image from the current image */
-		Graphics::Image * Crop( Recti rect );
+		Graphics::Image * crop( Rect rect );
 
 		/** Set as true if you dont want to free the image data in the Image destruction ( false as default ). */
-		void AvoidFreeImage( const bool& AvoidFree );
+		void avoidFreeImage( const bool& AvoidFree );
 
 		/** Blit the image passed onto the current image
 		**	@param image The source image to blit onto the image
 		**	@param x The x position to start drawing the image
 		**	@param y The y position to start drawing the image */
-		void Blit( Graphics::Image * image, const Uint32& x = 0, const Uint32& y = 0 );
+		void blit( Graphics::Image * image, const Uint32& x = 0, const Uint32& y = 0 );
 
 		/** @return A copy of the original image */
-		Graphics::Image * Copy();
+		Graphics::Image * copy();
 
 		/** Overload the assigment operator to ensure the image copy */
 		Graphics::Image& operator =(const Image& right);
@@ -184,9 +229,9 @@ class EE_API Image {
 		bool			mAvoidFree;
 		bool			mLoadedFromStbi;
 
-		void 			Allocate( const Uint32& size, ColorA DefaultColor = ColorA(0,0,0,0), bool memsetData = true );
+		void 			allocate( const Uint32& size, Color DefaultColor = Color(0,0,0,0), bool memsetData = true );
 
-		void			LoadFromPack( Pack * Pack, const std::string& FilePackPath );
+		void			loadFromPack( Pack * Pack, const std::string& FilePackPath );
 };
 
 }}

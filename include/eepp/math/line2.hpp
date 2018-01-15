@@ -18,12 +18,12 @@ class Line2 {
 
 		Vector2<T>& p2() { return V[1]; }
 
-		Vector2<T> GetNormal();
+		Vector2<T> getNormal();
 
 		/** @return The angle of the line against the x axis-aligned line */
-		T GetAngle();
+		T getAngle();
 
-		bool Intersect( Line2<T>& line, T* X = NULL, T* Y = NULL );
+		bool intersect( Line2<T>& line, T* X = NULL, T* Y = NULL );
 };
 
 template <typename T>
@@ -39,14 +39,14 @@ Line2<T>::Line2( const Vector2<T>& v1, const Vector2<T>& v2 ) {
 }
 
 template <typename T>
-Vector2<T> Line2<T>::GetNormal() {
+Vector2<T> Line2<T>::getNormal() {
 	Vector2<T> tV = Vector2<T>( -(V[1].y - V[0].y) , V[1].x - V[0].x );
-	tV.Normalize();
+	tV.normalize();
 	return tV;
 }
 
 template <typename T>
-T Line2<T>::GetAngle() {
+T Line2<T>::getAngle() {
 	return eeatan2( (V[1].y - V[0].y), (V[1].x - V[0].x) ) * EE_180_PI;
 }
 
@@ -58,7 +58,7 @@ T Line2<T>::GetAngle() {
 * @return True if the lines are intersecting
 */
 template <typename T>
-bool Line2<T>::Intersect( Line2<T>& line, T* X, T* Y ) {
+bool Line2<T>::intersect( Line2<T>& line, T* X, T* Y ) {
 	T distAB, theCos, theSin, newX, ABpos;
 
 	if ( ( V[0].x==V[1].x && V[0].y==V[1].y ) || ( line.V[0].x==line.V[1].x && line.V[0].y==line.V[1].y ) ) return false;

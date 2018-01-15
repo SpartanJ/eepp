@@ -4,10 +4,6 @@
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uiskinstate.hpp>
 
-namespace EE { namespace Graphics {
-class SubTexture;
-}}
-
 namespace EE { namespace UI {
 
 class UITheme;
@@ -20,37 +16,47 @@ class EE_API UISkin {
 			SkinTypeCount
 		};
 
-		static const char * GetSkinStateName( const Uint32& State );
+		static const char * getSkinStateName( const Uint32& State );
 
-		UISkin( const std::string& Name, const Uint32& Type );
+		static bool isStateName( const std::string& State );
+
+		UISkin( const std::string& name, const Uint32& Type );
 
 		virtual ~UISkin();
 
-		virtual void Draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State ) = 0;
+		virtual void draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State ) = 0;
 
-		virtual void SetSkin( const Uint32& State ) = 0;
+		virtual void setSkin( const Uint32& State ) = 0;
 
-		virtual SubTexture * GetSubTexture( const Uint32& State ) const = 0;
+		virtual Sizei getSize( const Uint32& state ) = 0;
 
-		virtual void SetColor( const Uint32& State, const ColorA& Color );
+		virtual Sizei getSize();
 
-		virtual const ColorA& GetColor( const Uint32& State ) const;
+		virtual bool stateExists( const Uint32& State ) = 0;
 
-		virtual void SetSkins();
+		virtual void setColor( const Uint32& State, const Color& Color );
 
-		const std::string& Name() const;
+		virtual const Color& getColor( const Uint32& State ) const;
 
-		void Name( const std::string& name );
+		virtual void setSkins();
 
-		const Uint32& Id() const;
+		const std::string& getName() const;
 
-		UITheme * Theme() const;
+		void setName( const std::string& name );
 
-		void Theme( UITheme * theme );
+		const Uint32& getId() const;
 
-		virtual UISkin * Copy() = 0;
+		UITheme * getTheme() const;
 
-		const Uint32& GetType() const;
+		void setTheme( UITheme * theme );
+
+		virtual UISkin * clone() = 0;
+
+		const Uint32& getType() const;
+
+		virtual Rect getBorderSize( const Uint32 & state ) = 0;
+
+		virtual Rect getBorderSize();
 	protected:
 		friend class UIControl;
 		friend class UISkinState;
@@ -59,16 +65,16 @@ class EE_API UISkin {
 		std::string mName;
 		Uint32		mNameHash;
 		Uint32		mColorDefault;
-		ColorA 	mColor[ UISkinState::StateCount ];
+		Color 	mColor[ UISkinState::StateCount ];
 		UITheme * 	mTheme;
 
-		void StateBack( const Uint32& State );
+		void stateBack( const Uint32& State );
 
-		void SetPrevState();
+		void setPrevState();
 
-		bool GetColorDefault( const Uint32& State );
+		bool getColorDefault( const Uint32& State );
 
-		virtual void StateNormalToState( const Uint32& State ) = 0;
+		virtual void stateNormalToState( const Uint32& State ) = 0;
 };
 
 }}

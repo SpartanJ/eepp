@@ -15,15 +15,15 @@ UIEventKey::~UIEventKey()
 {
 }
 
-const Uint32& UIEventKey::KeyCode() const {
+const Uint32& UIEventKey::getKeyCode() const {
 	return mKeyCode;
 }
 
-const Uint16& UIEventKey::Char() const {
+const Uint16& UIEventKey::getChar() const {
 	return mChar;
 }
 
-const Uint32& UIEventKey::Mod() const {
+const Uint32& UIEventKey::getMod() const {
 	return mMod;
 }
 

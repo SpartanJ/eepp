@@ -33,7 +33,7 @@ class ThreadLocalPtr : private ThreadLocal
 		/** @brief Assignment operator for a raw pointer parameter
 		**  @param value Pointer to assign
 		**  @return Reference to self */
-		ThreadLocalPtr<T>& operator =(T* value);
+		ThreadLocalPtr<T>& operator =(T* setValue);
 
 		/** @brief Assignment operator for a ThreadLocalPtr parameter
 		**  @param right ThreadLocalPtr to assign
@@ -49,28 +49,28 @@ ThreadLocalPtr<T>::ThreadLocalPtr(T* value) :
 
 template <typename T>
 T& ThreadLocalPtr<T>::operator *() const {
-	return *static_cast<T*>(Value());
+	return *static_cast<T*>(getValue());
 }
 
 template <typename T>
 T* ThreadLocalPtr<T>::operator ->() const {
-	return static_cast<T*>(Value());
+	return static_cast<T*>(getValue());
 }
 
 template <typename T>
 ThreadLocalPtr<T>::operator T*() const {
-	return static_cast<T*>(Value());
+	return static_cast<T*>(getValue());
 }
 
 template <typename T>
-ThreadLocalPtr<T>& ThreadLocalPtr<T>::operator =(T* value) {
-	Value(value);
+ThreadLocalPtr<T>& ThreadLocalPtr<T>::operator =(T* val) {
+	setValue(val);
 	return *this;
 }
 
 template <typename T>
 ThreadLocalPtr<T>& ThreadLocalPtr<T>::operator =(const ThreadLocalPtr<T>& right) {
-	Value(right.Value());
+	setValue(right.getValue());
 	return *this;
 }
 

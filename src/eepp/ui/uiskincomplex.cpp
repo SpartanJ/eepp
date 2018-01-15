@@ -1,5 +1,6 @@
 #include <eepp/ui/uiskincomplex.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
+#include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/drawablesearcher.hpp>
 
 namespace EE { namespace UI {
 
@@ -7,189 +8,273 @@ static const char SideSuffix[ UISkinComplex::SideCount ][4] = {
 	"ml", "mr","d","u","ul","ur","dl","dr","m"
 };
 
-std::string UISkinComplex::GetSideSuffix( const Uint32& Side ) {
+UISkinComplex * UISkinComplex::New(const std::string & name) {
+	return eeNew( UISkinComplex, ( name ) );
+}
+
+std::string UISkinComplex::getSideSuffix( const Uint32& Side ) {
 	eeASSERT( Side < UISkinComplex::SideCount );
 
 	return std::string( SideSuffix[ Side ] );
 }
 
-UISkinComplex::UISkinComplex( const std::string& Name ) :
-	UISkin( Name, SkinComplex )
+bool UISkinComplex::isSideSuffix( const std::string& suffix ) {
+	for ( int i = 0; i < UISkinComplex::SideCount; i++ ) {
+		if ( suffix == SideSuffix[i] ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+UISkinComplex::UISkinComplex(const std::string& name ) :
+	UISkin( name, SkinComplex )
 {
 	for ( Int32 x = 0; x < UISkinState::StateCount; x++ )
 		for ( Int32 y = 0; y < SideCount; y++ )
-			mSubTexture[ x ][ y ] = NULL;
+			mDrawable[ x ][ y ] = NULL;
 
-	SetSkins();
+	setSkins();
+	cacheSize();
 }
 
 UISkinComplex::~UISkinComplex() {
 
 }
 
-void UISkinComplex::Draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State ) {
+#define DRAWABLE_PX_SIZE PixelDensity::dpToPx( tDrawable->getSize() ).ceil()
+
+void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State ) {
 	if ( 0 == Alpha )
 		return;
 
-	SubTexture * tSubTexture = mSubTexture[ State ][ UpLeft ];
 	mTempColor		= mColor[ State ];
 
-	if ( mTempColor.Alpha != Alpha ) {
-		mTempColor.Alpha = (Uint8)( (Float)mTempColor.Alpha * ( (Float)Alpha / 255.f ) );
+	if ( mTempColor.a != Alpha ) {
+		mTempColor.a = (Uint8)( (Float)mTempColor.a * ( (Float)Alpha / 255.f ) );
 	}
 
-	Sizei uls;
+	Drawable * tDrawable = mDrawable[ State ][ UpLeft ];
 
-	if ( NULL != tSubTexture ) {
-		uls = tSubTexture->RealSize();
+	Sizef uls;
 
-		tSubTexture->Draw( X, Y, mTempColor );
+	if ( NULL != tDrawable ) {
+		uls = DRAWABLE_PX_SIZE;
+
+		tDrawable->setColor( mTempColor );
+		tDrawable->draw( Vector2f( X, Y ), uls );
+		tDrawable->clearColor();
 	}
 
-	tSubTexture = mSubTexture[ State ][ DownLeft ];
+	tDrawable = mDrawable[ State ][ DownLeft ];
 
-	Sizei dls;
+	Sizef dls;
 
-	if ( NULL != tSubTexture ) {
-		dls = tSubTexture->RealSize();
+	if ( NULL != tDrawable ) {
+		dls = DRAWABLE_PX_SIZE;
 
-		tSubTexture->Draw( X, Y + Height - dls.Height(), mTempColor );
+		tDrawable->setColor( mTempColor );
+		tDrawable->draw( Vector2f( X, Y + Height - dls.getHeight() ), dls );
+		tDrawable->clearColor();
 	}
 
-	tSubTexture = mSubTexture[ State ][ UpRight ];
+	tDrawable = mDrawable[ State ][ UpRight ];
 
-	Sizei urs;
+	Sizef urs;
 
-	if ( NULL != tSubTexture ) {
-		urs = tSubTexture->RealSize();
+	if ( NULL != tDrawable ) {
+		urs = DRAWABLE_PX_SIZE;
 
-		tSubTexture->Draw( X + Width - urs.Width(), Y, mTempColor );
+		tDrawable->setColor( mTempColor );
+		tDrawable->draw( Vector2f( X + Width - urs.getWidth() , Y ), urs );
+		tDrawable->clearColor();
 	}
 
-	tSubTexture = mSubTexture[ State ][ DownRight ];
+	tDrawable = mDrawable[ State ][ DownRight ];
 
-	Sizei drs;
+	Sizef drs;
 
-	if ( NULL != tSubTexture ) {
-		drs = tSubTexture->RealSize();
+	if ( NULL != tDrawable ) {
+		drs = DRAWABLE_PX_SIZE;
 
-		tSubTexture->Draw( X + Width - drs.Width(), Y + Height - drs.Height(), mTempColor );
+		tDrawable->setColor( mTempColor );
+		tDrawable->draw( Vector2f( X + Width - drs.getWidth(), Y + Height - drs.getHeight() ), drs );
+		tDrawable->clearColor();
 	}
 
-	tSubTexture = mSubTexture[ State ][ Left ];
+	tDrawable = mDrawable[ State ][ Left ];
 
-	if ( NULL != tSubTexture ) {
-		tSubTexture->DestSize( Sizef( tSubTexture->DestSize().x, Height - uls.Height() - dls.Height() ) );
+	if ( NULL != tDrawable ) {
+		Sizef dpxs( DRAWABLE_PX_SIZE );
+		Sizef ns( dpxs.getWidth(), Height - uls.getHeight() - dls.getHeight() );
 
-		tSubTexture->Draw( X, Y + uls.Height(), mTempColor );
+		tDrawable->setColor( mTempColor );
+		tDrawable->draw( Vector2f( X, Y + uls.getHeight() ), ns );
+		tDrawable->clearColor();
 
-		tSubTexture->ResetDestSize();
-
-		if ( uls.Width() == 0 )
-			uls.x = tSubTexture->RealSize().Width();
+		if ( uls.getWidth() == 0 )
+			uls.x = dpxs.getWidth();
 	}
 
-	tSubTexture = mSubTexture[ State ][ Up ];
+	tDrawable = mDrawable[ State ][ Up ];
 
-	if ( NULL != tSubTexture ) {
-		tSubTexture->DestSize( Sizef( Width - uls.Width() - urs.Width(), tSubTexture->DestSize().y ) );
+	if ( NULL != tDrawable ) {
+		Sizef dpxs( DRAWABLE_PX_SIZE );
+		Sizef ns( Width - uls.getWidth() - urs.getWidth(), dpxs.getHeight() );
 
-		tSubTexture->Draw( X + uls.Width(), Y, mTempColor );
+		tDrawable->setColor( mTempColor );
+		tDrawable->draw( Vector2f( X + uls.getWidth(), Y ), ns );
+		tDrawable->clearColor();
 
-		tSubTexture->ResetDestSize();
+		if ( urs.getHeight() == 0 )
+			urs.y = dpxs.getHeight();
 
-		if ( urs.Height() == 0 )
-			urs.y = tSubTexture->RealSize().Height();
-
-		if ( uls.Height() == 0 )
-			uls.y = tSubTexture->RealSize().Height();
+		if ( uls.getHeight() == 0 )
+			uls.y = dpxs.getHeight();
 	}
 
-	tSubTexture = mSubTexture[ State ][ Right ];
+	tDrawable = mDrawable[ State ][ Right ];
 
-	if ( NULL != tSubTexture ) {
-		if ( urs.Width() == 0 )
-			urs.x = tSubTexture->RealSize().Width();
+	if ( NULL != tDrawable ) {
+		Sizef dpxs( DRAWABLE_PX_SIZE );
 
-		tSubTexture->DestSize( Sizef( tSubTexture->DestSize().x, Height - urs.Height() - drs.Height() ) );
+		if ( urs.getWidth() == 0 )
+			urs.x = dpxs.getWidth();
 
-		tSubTexture->Draw( X + Width - tSubTexture->RealSize().Width(), Y + urs.Height(), mTempColor );
+		Sizef ns( dpxs.x, Height - urs.getHeight() - drs.getHeight() );
 
-		tSubTexture->ResetDestSize();
+		tDrawable->setColor( mTempColor );
+		tDrawable->draw( Vector2f( X + Width - dpxs.getWidth(), Y + urs.getHeight() ), ns );
+		tDrawable->clearColor();
 	}
 
-	tSubTexture = mSubTexture[ State ][ Down ];
+	tDrawable = mDrawable[ State ][ Down ];
 
-	if ( NULL != tSubTexture ) {
-		tSubTexture->DestSize( Sizef( Width - dls.Width() - drs.Width(), tSubTexture->DestSize().y ) );
+	if ( NULL != tDrawable ) {
+		Sizef dpxs( DRAWABLE_PX_SIZE );
+		Sizef ns( Width - dls.getWidth() - drs.getWidth(), dpxs.getHeight() );
 
-		tSubTexture->Draw( X + dls.Width(), Y + Height - tSubTexture->RealSize().Height(), mTempColor );
+		tDrawable->setColor( mTempColor );
+		tDrawable->draw( Vector2f( X + dls.getWidth(), Y + Height - dpxs.getHeight() ), ns );
+		tDrawable->clearColor();
 
-		tSubTexture->ResetDestSize();
-
-		if ( dls.Height() == 0 && drs.Height() == 0 )
-			dls.Height( tSubTexture->RealSize().Height() );
+		if ( dls.getHeight() == 0 && drs.getHeight() == 0 )
+			dls.setHeight( dpxs.getHeight() );
 	}
 
-	tSubTexture = mSubTexture[ State ][ Center ];
+	tDrawable = mDrawable[ State ][ Center ];
 
-	if ( NULL != tSubTexture ) {
-		tSubTexture->DestSize( Sizef( Width - uls.Width() - urs.Width(), Height - uls.Height() - dls.Height() ) );
+	if ( NULL != tDrawable ) {
+		Sizef ns( Width - uls.getWidth() - urs.getWidth(), Height - uls.getHeight() - dls.getHeight() );
 
-		tSubTexture->Draw( X + uls.Width(), Y + uls.Height(), mTempColor );
-
-		tSubTexture->ResetDestSize();
+		tDrawable->setColor( mTempColor );
+		tDrawable->draw( Vector2f( X + uls.getWidth(), Y + uls.getHeight() ), ns );
+		tDrawable->clearColor();
 	}
 }
 
-void UISkinComplex::SetSkin( const Uint32& State ) {
+void UISkinComplex::setSkin( const Uint32& State ) {
 	eeASSERT ( State < UISkinState::StateCount );
 
 	for ( Uint32 Side = 0; Side < SideCount; Side++ ) {
+		Drawable * tDrawable = DrawableSearcher::searchByName( std::string( mName + "_" + UISkin::getSkinStateName( State ) + "_" + SideSuffix[ Side ] ) );
 
-		SubTexture * SubTexture = TextureAtlasManager::instance()->GetSubTextureByName( std::string( mName + "_" + UISkin::GetSkinStateName( State ) + "_" + SideSuffix[ Side ] ) );
-
-		if ( NULL != SubTexture )
-			mSubTexture[ State ][ Side ] = SubTexture;
+		if ( NULL != tDrawable )
+			mDrawable[ State ][ Side ] = tDrawable;
 	}
 }
 
-SubTexture * UISkinComplex::GetSubTexture( const Uint32& State ) const {
-	eeASSERT ( State < UISkinState::StateCount );
-
-	return mSubTexture[ State ][ Center ];
+bool UISkinComplex::stateExists( const Uint32 & state ) {
+	return NULL != mDrawable[ state ];
 }
 
-SubTexture * UISkinComplex::GetSubTextureSide( const Uint32& State, const Uint32& Side ) {
+Sizei UISkinComplex::getSideSize( const Uint32& State, const Uint32& Side ) {
 	eeASSERT ( State < UISkinState::StateCount && Side < UISkinComplex::SideCount );
 
-	return mSubTexture[ State ][ Side ];
+	if ( NULL != mDrawable[ State ][ Side ] ) {
+		Sizef ns( mDrawable[ State ][ Side ]->getSize() );
+		return Sizei( (Int32)ns.x, (Int32)ns.y );
+	}
+	return Sizei();
 }
 
-void UISkinComplex::StateNormalToState( const Uint32& State ) {
-	if ( NULL == mSubTexture[ State ][ 0 ] ) {
+void UISkinComplex::stateNormalToState( const Uint32& State ) {
+	if ( NULL == mDrawable[ State ][ Center ] ) {
 		for ( Uint32 Side = 0; Side < SideCount; Side++ ) {
-			mSubTexture[ State ][ Side ] = mSubTexture[ UISkinState::StateNormal ][ Side ];
+			mDrawable[ State ][ Side ] = mDrawable[ UISkinState::StateNormal ][ Side ];
 		}
 	}
 }
 
-UISkinComplex * UISkinComplex::Copy( const std::string& NewName, const bool& CopyColorsState ) {
-	UISkinComplex * SkinC = eeNew( UISkinComplex, ( NewName ) );
+UISkinComplex * UISkinComplex::clone( const std::string& NewName, const bool& CopyColorsState ) {
+	UISkinComplex * SkinC = UISkinComplex::New( NewName );
 
 	if ( CopyColorsState ) {
 		SkinC->mColorDefault = mColorDefault;
 
-		memcpy( &SkinC->mColor[0], &mColor[0], UISkinState::StateCount * sizeof(ColorA) );
+		memcpy( &SkinC->mColor[0], &mColor[0], UISkinState::StateCount * sizeof(Color) );
 	}
 
-	memcpy( &SkinC->mSubTexture[0], &mSubTexture[0], UISkinState::StateCount * SideCount * sizeof(SubTexture*) );
+	memcpy( &SkinC->mDrawable[0], &mDrawable[0], UISkinState::StateCount * SideCount * sizeof(Drawable*) );
 
 	return SkinC;
 }
 
-UISkin * UISkinComplex::Copy() {
-	return Copy( mName, true );
+UISkin * UISkinComplex::clone() {
+	return clone( mName, true );
+}
+
+Sizei UISkinComplex::getSize( const Uint32 & state ) {
+	return mSize[ state ];
+}
+
+Rect UISkinComplex::getBorderSize(const Uint32 & state) {
+	return mBorderSize[ state ];
+}
+
+void UISkinComplex::cacheSize() {
+	for ( Int32 state = UISkinState::StateNormal; state < UISkinState::StateCount; state++ ) {
+		Int32 w = 0;
+		Int32 h = 0;
+
+		Drawable * tDrawable = mDrawable[ state ][ Center ];
+
+		if ( NULL != tDrawable ) {
+			w += tDrawable->getSize().x;
+			h += tDrawable->getSize().y;
+		}
+
+		tDrawable = mDrawable[ state ][ Up ];
+
+		if ( NULL != tDrawable ) {
+			h += tDrawable->getSize().y;
+			mBorderSize[ state ].Top = tDrawable->getSize().y;
+		}
+
+		tDrawable = mDrawable[ state ][ Down ];
+
+		if ( NULL != tDrawable ) {
+			h += tDrawable->getSize().y;
+			mBorderSize[ state ].Bottom = tDrawable->getSize().y;
+		}
+
+		tDrawable = mDrawable[ state ][ Left ];
+
+		if ( NULL != tDrawable ) {
+			w += tDrawable->getSize().x;
+			mBorderSize[ state ].Left = tDrawable->getSize().x;
+		}
+
+		tDrawable = mDrawable[ state ][ Right ];
+
+		if ( NULL != tDrawable ) {
+			w += tDrawable->getSize().x;
+			mBorderSize[ state ].Right = tDrawable->getSize().x;
+		}
+
+		mSize[ state ] = Sizei( w, h );
+	}
 }
 
 }}

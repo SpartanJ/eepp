@@ -14,59 +14,59 @@ ObjectLoader::~ObjectLoader()
 {
 }
 
-void ObjectLoader::Load() {
+void ObjectLoader::load() {
 	if ( mLoaded ) {
-		SetLoaded();
+		setLoaded();
 	}
 
-	Launch();
+	launch();
 }
 
-void ObjectLoader::Load( ObjLoadCallback Cb ) {
+void ObjectLoader::load( ObjLoadCallback Cb ) {
 	if ( Cb.IsSet() ) {
 		mLoadCbs.push_back( Cb );
 	}
 
-	Load();
+	load();
 }
 
-void ObjectLoader::Launch() {
+void ObjectLoader::launch() {
 	if ( mThreaded ) {
-		Thread::Launch();
+		Thread::launch();
 	 } else {
-		Run();
+		run();
 	}
 }
 
-void ObjectLoader::Start() {
+void ObjectLoader::start() {
 	mLoading = true;
 }
 
-void ObjectLoader::Update() {
+void ObjectLoader::update() {
 
 }
 
-bool ObjectLoader::IsLoaded() {
+bool ObjectLoader::isLoaded() {
 	return mLoaded;
 }
 
-bool ObjectLoader::IsLoading() {
+bool ObjectLoader::isLoading() {
 	return mLoading;
 }
 
-bool ObjectLoader::Threaded() const {
+bool ObjectLoader::isThreaded() const {
 	return mThreaded;
 }
 
-void ObjectLoader::Threaded( const bool& threaded ) {
+void ObjectLoader::setThreaded( const bool& threaded ) {
 	mThreaded = threaded;
 }
 
-void ObjectLoader::Run() {
-	Start();
+void ObjectLoader::run() {
+	start();
 }
 
-void ObjectLoader::SetLoaded() {
+void ObjectLoader::setLoaded() {
 	mLoaded = true;
 	mLoading = false;
 
@@ -81,11 +81,11 @@ void ObjectLoader::SetLoaded() {
 	}
 }
 
-const Uint32& ObjectLoader::Type() const {
+const Uint32& ObjectLoader::type() const {
 	return mObjType;
 }
 
-void ObjectLoader::Reset() {
+void ObjectLoader::reset() {
 	mLoaded		= false;
 	mLoading	= false;
 }

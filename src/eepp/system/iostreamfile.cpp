@@ -9,43 +9,43 @@ IOStreamFile::IOStreamFile( const std::string& path, std::ios_base::openmode mod
 }
 
 IOStreamFile::~IOStreamFile() {
-	if ( IsOpen() ) {
+	if ( isOpen() ) {
 		mFS.close();
 	}
 }
 
-ios_size IOStreamFile::Read( char * data, ios_size size ) {
-	if ( IsOpen() ) {
+ios_size IOStreamFile::read( char * data, ios_size size ) {
+	if ( isOpen() ) {
 		mFS.read( data, size );
 	}
 
 	return size;
 }
 
-ios_size IOStreamFile::Write( const char * data, ios_size size ) {
-	if ( IsOpen() ) {
+ios_size IOStreamFile::write( const char * data, ios_size size ) {
+	if ( isOpen() ) {
 		mFS.write( data, size );
 	}
 
 	return size;
 }
 
-ios_size IOStreamFile::Seek( ios_size position ) {
-	if ( IsOpen() ) {
+ios_size IOStreamFile::seek( ios_size position ) {
+	if ( isOpen() ) {
 		mFS.seekg( position , std::ios::beg );
 	}
 
 	return position;
 }
 
-ios_size IOStreamFile::Tell() {
+ios_size IOStreamFile::tell() {
 	return mFS.tellg();
 }
 
-ios_size IOStreamFile::GetSize() {
-	if ( IsOpen() ) {
+ios_size IOStreamFile::getSize() {
+	if ( isOpen() ) {
 		if ( 0 == mSize ) {
-			ios_size Pos = Tell();
+			ios_size Pos = tell();
 
 			mFS.seekg ( 0, std::ios::end );
 
@@ -60,11 +60,11 @@ ios_size IOStreamFile::GetSize() {
 	return 0;
 }
 
-bool IOStreamFile::IsOpen() {
+bool IOStreamFile::isOpen() {
 	return mFS.is_open();
 }
 
-void IOStreamFile::Flush() {
+void IOStreamFile::flush() {
 	mFS.flush();
 }
 

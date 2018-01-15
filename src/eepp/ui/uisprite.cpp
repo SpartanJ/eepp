@@ -1,142 +1,200 @@
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/graphics/sprite.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
+#include <eepp/graphics/globaltextureatlas.hpp>
 
 namespace EE { namespace UI {
 
-UISprite::UISprite( const UISprite::CreateParams& Params ) :
-	UIComplexControl( Params ),
-	mSprite( Params.Sprite ),
-	mRender( Params.SpriteRender ),
+UISprite * UISprite::New() {
+	return eeNew( UISprite, () );
+}
+
+UISprite::UISprite() :
+	UIWidget(),
+	mSprite( NULL ),
+	mRender( RENDER_NORMAL ),
 	mAlignOffset(0,0),
 	mSubTextureLast(NULL)
 {
-	if ( Params.DealloSprite )
-		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
-
-	if ( ( Flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) {
-		if ( NULL != mSprite && NULL != mSprite->GetCurrentSubTexture() ) {
-			Size( mSprite->GetCurrentSubTexture()->Size() );
-		}
-	}
 }
 
 UISprite::~UISprite() {
-	if ( DealloSprite() )
+	if ( deallocSprite() )
 		eeSAFE_DELETE( mSprite );
 }
 
-Uint32 UISprite::Type() const {
+Uint32 UISprite::getType() const {
 	return UI_TYPE_SPRITE;
 }
 
-bool UISprite::IsType( const Uint32& type ) const {
-	return UISprite::Type() == type ? true : UIComplexControl::IsType( type );
+bool UISprite::isType( const Uint32& type ) const {
+	return UISprite::getType() == type ? true : UIWidget::isType( type );
 }
 
-Uint32 UISprite::DealloSprite() {
+Uint32 UISprite::deallocSprite() {
 	return mControlFlags & UI_CTRL_FLAG_FREE_USE;
 }
 
-void UISprite::Sprite( Graphics::Sprite * sprite ) {
-	if ( DealloSprite() )
+void UISprite::setSprite( Graphics::Sprite * sprite ) {
+	if ( deallocSprite() )
 		eeSAFE_DELETE( mSprite );
 
 	mSprite = sprite;
+	mSprite->setAutoAnimate( false );
 	
-	UpdateSize();
+	updateSize();
 }
 
-void UISprite::Draw() {
-	UIControlAnim::Draw();
+void UISprite::draw() {
+	UIWidget::draw();
 
 	if ( mVisible ) {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
-			CheckSubTextureUpdate();
-			mSprite->Position( (Float)( mScreenPos.x + mAlignOffset.x ), (Float)( mScreenPos.y + mAlignOffset.y ) );
-			mSprite->Draw( Blend(), mRender );
+			checkSubTextureUpdate();
+
+			mSprite->setPosition( Vector2f( (Float)( mScreenPos.x + mAlignOffset.x ), (Float)( mScreenPos.y + mAlignOffset.y ) ) );
+
+			SubTexture * subTexture = mSprite->getCurrentSubTexture();
+
+			if ( NULL != subTexture ) {
+				Sizef oDestSize = subTexture->getDestSize();
+				Sizei pxSize = subTexture->getPxSize();
+
+				subTexture->setDestSize( Sizef( (Float)pxSize.x, (Float)pxSize.y ) );
+
+				mSprite->draw( getBlendMode(), mRender );
+
+				subTexture->setDestSize( oDestSize );
+			}
 		}
 	}
 }
 
-void UISprite::CheckSubTextureUpdate() {
-	if ( NULL != mSprite && NULL != mSprite->GetCurrentSubTexture() && mSprite->GetCurrentSubTexture() != mSubTextureLast ) {
-		UpdateSize();
-		AutoAlign();
-		mSubTextureLast = mSprite->GetCurrentSubTexture();
+void UISprite::update() {
+	UIWidget::update();
+
+	if ( NULL != mSprite ) {
+		SubTexture * subTexture = mSprite->getCurrentSubTexture();
+
+		mSprite->update();
+
+		if ( subTexture != mSprite->getCurrentSubTexture() )
+			invalidateDraw();
 	}
 }
 
-void UISprite::Alpha( const Float& alpha ) {
-	UIControlAnim::Alpha( alpha );
-	
-	if ( NULL != mSprite )
-		mSprite->Alpha( alpha );
+void UISprite::checkSubTextureUpdate() {
+	if ( NULL != mSprite && NULL != mSprite->getCurrentSubTexture() && mSprite->getCurrentSubTexture() != mSubTextureLast ) {
+		updateSize();
+		autoAlign();
+		mSubTextureLast = mSprite->getCurrentSubTexture();
+	}
 }
 
-Graphics::Sprite * UISprite::Sprite() const {
+void UISprite::setAlpha( const Float& alpha ) {
+	if ( NULL != mSprite )
+		mSprite->setAlpha( alpha );
+
+	UIWidget::setAlpha( alpha );
+}
+
+Graphics::Sprite * UISprite::getSprite() const {
 	return mSprite;
 }
 
-ColorA UISprite::Color() const {
+Color UISprite::getColor() const {
 	if ( NULL != mSprite )
-		return mSprite->Color();
+		return mSprite->getColor();
 
-	return ColorA();
+	return Color::White;
 }
 
-void UISprite::Color( const ColorA& color ) {
+void UISprite::setColor( const Color& color ) {
 	if ( NULL != mSprite )
-		mSprite->Color( color );
+		mSprite->setColor( color );
 	
-	Alpha( color.A() );
+	setAlpha( color.a );
 }
 
-const EE_RENDER_MODE& UISprite::RenderMode() const {
+const RenderMode& UISprite::getRenderMode() const {
 	return mRender;
 }
 
-void UISprite::RenderMode( const EE_RENDER_MODE& render ) {
+void UISprite::setRenderMode( const RenderMode& render ) {
 	mRender = render;
+	invalidateDraw();
 }
 
-void UISprite::UpdateSize() {
-	if ( Flags() & UI_AUTO_SIZE ) {
+void UISprite::updateSize() {
+	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mSprite ) {
-			if ( NULL != mSprite->GetCurrentSubTexture() && mSprite->GetCurrentSubTexture()->Size() != mSize )
-				Size( mSprite->GetCurrentSubTexture()->Size() );
+			if ( NULL != mSprite->getCurrentSubTexture() && mSprite->getCurrentSubTexture()->getDpSize() != mSize )
+				setSize( mSprite->getCurrentSubTexture()->getDpSize() );
 		}
 	}
 }
 
-void UISprite::AutoAlign() {
-	if ( NULL == mSprite || NULL == mSprite->GetCurrentSubTexture() )
+void UISprite::autoAlign() {
+	if ( NULL == mSprite || NULL == mSprite->getCurrentSubTexture() )
 		return;
 
-	SubTexture * tSubTexture = mSprite->GetCurrentSubTexture();
+	SubTexture * tSubTexture = mSprite->getCurrentSubTexture();
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.Width() / 2 - tSubTexture->Size().Width() / 2;
-	} else if ( FontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.Width() - tSubTexture->Size().Width();
+		mAlignOffset.x = mSize.getWidth() / 2 - tSubTexture->getDpSize().getWidth() / 2;
+	} else if ( fontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
+		mAlignOffset.x =  mSize.getWidth() - tSubTexture->getDpSize().getWidth();
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.Height() / 2 - tSubTexture->Size().Height() / 2;
-	} else if ( FontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.Height() - tSubTexture->Size().Height();
+		mAlignOffset.y = mSize.getHeight() / 2 - tSubTexture->getDpSize().getHeight() / 2;
+	} else if ( fontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
+		mAlignOffset.y = mSize.getHeight() - tSubTexture->getDpSize().getHeight();
 	} else {
 		mAlignOffset.y = 0;
 	}
 }
 
-const Vector2i& UISprite::AlignOffset() const {
+const Vector2i& UISprite::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-void UISprite::OnSizeChange() {
-	AutoAlign();
+void UISprite::setDeallocSprite( const bool& dealloc ) {
+	writeCtrlFlag( UI_CTRL_FLAG_FREE_USE, dealloc ? 1 : 0 );
+}
+
+bool UISprite::getDeallocSprite() {
+	return 0 != ( mControlFlags & UI_CTRL_FLAG_FREE_USE );
+}
+
+void UISprite::onSizeChange() {
+	autoAlign();
+	notifyLayoutAttrChange();
+	UIWidget::onSizeChange();
+}
+
+void UISprite::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
+	UIWidget::loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "src" == name ) {
+			std::string val = ait->as_string();
+
+			if ( val.size() ) {
+				setDeallocSprite( true );
+				setSprite( eeNew( Sprite, ( val ) ) );
+			}
+		}
+	}
+
+	endPropertiesTransaction();
 }
 
 }}

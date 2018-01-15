@@ -19,17 +19,17 @@ class CursorX11 : public Cursor {
 
 		X11Cursor	mCursor;
 
-		CursorX11( Texture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+		CursorX11( Texture * tex, const Vector2i& hotspot, const std::string& getName, EE::Window::Window * window );
 
-		CursorX11( Graphics::Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+		CursorX11( Graphics::Image * img, const Vector2i& hotspot, const std::string& getName, EE::Window::Window * window );
 
-		CursorX11( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+		CursorX11( const std::string& path, const Vector2i& hotspot, const std::string& getName, EE::Window::Window * window );
 
 		~CursorX11();
 
-		void Create();
+		void create();
 
-		X11Impl * GetPlatform();
+		X11Impl * getPlatform();
 };
 
 }}}

@@ -3,7 +3,7 @@
 #include <eepp/helper/chipmunk/chipmunk_unsafe.h>
 
 #ifdef PHYSICS_RENDERER_ENABLED
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/primitives.hpp>
 using namespace EE::Graphics;
 #endif
@@ -15,35 +15,35 @@ ShapeCircle * ShapeCircle::New( Physics::Body * body, cpFloat radius, cVect offs
 }
 
 ShapeCircle::ShapeCircle( Physics::Body * body, cpFloat radius, cVect offset ) {
-	mShape	= cpCircleShapeNew( body->GetBody(), radius, tocpv( offset ) );
-	SetData();
+	mShape	= cpCircleShapeNew( body->getBody(), radius, tocpv( offset ) );
+	setData();
 }
 
-cVect ShapeCircle::Offset() {
+cVect ShapeCircle::getOffset() {
 	return tovect( cpCircleShapeGetOffset( mShape ) );
 }
 
-void ShapeCircle::Offset( const cVect &offset ) {
+void ShapeCircle::setOffset( const cVect &offset ) {
 	cpCircleShapeSetOffset( mShape, tocpv( offset ) );
 }
 
-cpFloat ShapeCircle::Radius() {
+cpFloat ShapeCircle::getRadius() {
 	return cpCircleShapeGetRadius( mShape );
 }
 
-void ShapeCircle::Radius( const cpFloat& radius ) {
+void ShapeCircle::setRadius( const cpFloat& radius ) {
 	cpCircleShapeSetRadius( mShape, radius );
 }
 
 
-void ShapeCircle::Draw( Space * space ) {
+void ShapeCircle::draw( Space * space ) {
 	#ifdef PHYSICS_RENDERER_ENABLED
 	Primitives p;
 
 	cpCircleShape * cs = (cpCircleShape*)mShape;
-	p.SetColor( ColorForShape( mShape, space->GetSpace() ) );
+	p.setColor( colorForShape( mShape, space->getSpace() ) );
 
-	p.DrawCircle( Vector2f( cs->CP_PRIVATE(tc).x, cs->CP_PRIVATE(tc).y ), cs->CP_PRIVATE(r) );
+	p.drawCircle( Vector2f( cs->CP_PRIVATE(tc).x, cs->CP_PRIVATE(tc).y ), cs->CP_PRIVATE(r) );
 	#endif
 }
 

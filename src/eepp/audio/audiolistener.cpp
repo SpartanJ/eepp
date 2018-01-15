@@ -3,7 +3,7 @@
 
 namespace EE { namespace Audio {
 
-void AudioListener::GlobalVolume( const float& Volume ) {
+void AudioListener::setGlobalVolume( const float& Volume ) {
 	EnsureALInit();
 
 	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
@@ -11,7 +11,7 @@ void AudioListener::GlobalVolume( const float& Volume ) {
 	#endif
 }
 
-float AudioListener::GlobalVolume() {
+float AudioListener::getGlobalVolume() {
 	EnsureALInit();
 
 	float Volume = 0.f;
@@ -21,17 +21,17 @@ float AudioListener::GlobalVolume() {
 	return Volume * 100.f;
 }
 
-void AudioListener::Position( const float& X, const float& Y, const float& Z ) {
+void AudioListener::setPosition( const float& X, const float& Y, const float& Z ) {
 	EnsureALInit();
 
 	ALCheck( alListener3f( AL_POSITION, X, Y, Z ) );
 }
 
-void AudioListener::Position(const Vector3ff& Position) {
-	AudioListener::Position( Position.x, Position.y, Position.z );
+void AudioListener::setPosition(const Vector3ff& Position) {
+	AudioListener::setPosition( Position.x, Position.y, Position.z );
 }
 
-Vector3ff AudioListener::Position() {
+Vector3ff AudioListener::getPosition() {
 	EnsureALInit();
 
 	Vector3ff Position;
@@ -40,18 +40,18 @@ Vector3ff AudioListener::Position() {
 	return Position;
 }
 
-void AudioListener::Target( const float& X, const float& Y, const float& Z ) {
+void AudioListener::setDirection( const float& X, const float& Y, const float& Z ) {
 	EnsureALInit();
 
 	float Orientation[] = {X, Y, Z, 0.f, 1.f, 0.f};
 	ALCheck( alListenerfv( AL_ORIENTATION, Orientation ) );
 }
 
-void AudioListener::Target(const Vector3ff& Target) {
-	AudioListener::Target( Target.x, Target.y, Target.z );
+void AudioListener::setDirection(const Vector3ff& Target) {
+	AudioListener::setDirection( Target.x, Target.y, Target.z );
 }
 
-Vector3ff AudioListener::Target() {
+Vector3ff AudioListener::getDirection() {
 	EnsureALInit();
 
 	float Orientation[6];

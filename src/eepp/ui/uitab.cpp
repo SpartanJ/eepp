@@ -1,149 +1,221 @@
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
-UITab::UITab( UISelectButton::CreateParams& Params, UIControl * CtrlOwned ) :
-	UISelectButton( Params ),
-	mCtrlOwned( CtrlOwned )
+UITab *UITab::New() {
+	return eeNew( UITab, () );
+}
+
+UITab::UITab() :
+	UISelectButton(),
+	mControlOwned( NULL )
 {
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UITab::~UITab() {
 }
 
-Uint32 UITab::Type() const {
+Uint32 UITab::getType() const {
 	return UI_TYPE_TAB;
 }
 
-bool UITab::IsType( const Uint32& type ) const {
-	return UITab::Type() == type ? true : UISelectButton::IsType( type );
+bool UITab::isType( const Uint32& type ) const {
+	return UITab::getType() == type ? true : UISelectButton::isType( type );
 }
 
-UITabWidget * UITab::GetTabWidget() {
-	if ( Parent()->Parent()->IsType( UI_TYPE_TABWIDGET ) ) {
-		return reinterpret_cast<UITabWidget*> ( Parent()->Parent() );
+UITabWidget * UITab::getTabWidget() {
+	if ( NULL != getParent() && NULL != getParent()->getParent() && getParent()->getParent()->isType( UI_TYPE_TABWIDGET ) ) {
+		return reinterpret_cast<UITabWidget*> ( getParent()->getParent() );
 	}
 
 	return NULL;
 }
 
-void UITab::SetTheme( UITheme * Theme ) {
+void UITab::onParentChange() {
+	applyDefaultTheme();
+	UISelectButton::onParentChange();
+}
+
+void UITab::setTheme( UITheme * Theme ) {
+	UIWidget::setTheme( Theme );
+
 	std::string tabPos = "tab";
 
-	UITabWidget * tTabW = GetTabWidget();
+	UITabWidget * tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
-		if ( tTabW->mSpecialBorderTabs ) {
-			if ( 0 == tTabW->GetTabIndex( this ) ) {
+		if ( tTabW->getSpecialBorderTabs() ) {
+			if ( 0 == tTabW->getTabIndex( this ) ) {
 				tabPos = "tab_left";
-			} else if ( tTabW->Count() > 0 && ( tTabW->Count() - 1 ) == tTabW->GetTabIndex( this ) ) {
+			} else if ( tTabW->getCount() > 0 && ( tTabW->getCount() - 1 ) == tTabW->getTabIndex( this ) ) {
 				tabPos = "tab_right";
 			}
 		}
 	}
 
-	UIControl::SetThemeControl( Theme, tabPos );
+	UIControl::setThemeSkin( Theme, tabPos );
 
-	DoAfterSetTheme();
+	onThemeLoaded();
 }
 
-Uint32 UITab::OnMouseClick( const Vector2i &Pos, const Uint32 Flags ) {
-	UISelectButton::OnMouseClick( Pos, Flags );
+Uint32 UITab::onMouseClick( const Vector2i &Pos, const Uint32 Flags ) {
+	UISelectButton::onMouseClick( Pos, Flags );
 
-	UITabWidget * tTabW = GetTabWidget();
+	UITabWidget * tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
 		if ( Flags & EE_BUTTON_LMASK ) {
-			tTabW->SetTabSelected( this );
+			tTabW->setTabSelected( this );
 		}
 	}
 
 	return 1;
 }
 
-void UITab::OnStateChange() {
-	UISelectButton::OnStateChange();
+void UITab::onStateChange() {
+	UISelectButton::onStateChange();
 
-	UITabWidget * tTabW = GetTabWidget();
+	UITabWidget * tTabW = getTabWidget();
 
-	if ( NULL != tTabW ) {
-		Size( mSize.Width(), GetSkinSize( GetSkin(), mSkinState->GetState() ).Height() );
+	if ( NULL != tTabW && NULL != mSkinState ) {
+		Int32 skinSize = getSkinSize( getSkin(), mSkinState->getState() ).getHeight();
 
-		if ( mSkinState->GetState() == UISkinState::StateSelected ) {
-			mTextBox->Color( tTabW->mFontSelectedColor );
-		} else if ( mSkinState->GetState() == UISkinState::StateMouseEnter ) {
-			mTextBox->Color( tTabW->mFontOverColor );
+		if ( 0 == skinSize ) {
+			skinSize = getSkinSize().getHeight();
+		}
+
+		setSize( mSize.getWidth(), skinSize );
+
+		if ( mSkinState->getState() == UISkinState::StateSelected ) {
+			mTextBox->setFontColor( tTabW->getFontSelectedColor() );
+		} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
+			mTextBox->setFontColor( tTabW->getFontOverColor() );
 		} else {
-			mTextBox->Color( tTabW->mFontColor );
+			mTextBox->setFontColor( tTabW->getFontColor() );
 		}
 	}
 }
 
-const String& UITab::Text() {
-	return UIPushButton::Text();
+const String& UITab::getText() {
+	return UIPushButton::getText();
 }
 
-void UITab::Text( const String &text ) {
-	UITabWidget * tTabW = GetTabWidget();
+UIPushButton * UITab::setText( const String &text ) {
+	UITabWidget * tTabW = getTabWidget();
 
 	if ( NULL != tTabW ) {
-		if ( text.size() > tTabW->mMaxTextLength ) {
-			UIPushButton::Text( text.substr( 0, tTabW->mMaxTextLength ) );
+		if ( text.size() > tTabW->getMaxTextLength() ) {
+			UIPushButton::setText( text.substr( 0, tTabW->getMaxTextLength() ) );
 
-			SetRealSize();
+			onAutoSize();
 
-			return;
+			tTabW->orderTabs();
+
+			tTabW->setTabSelected( tTabW->getSelectedTab() );
+
+			return this;
 		}
+
 	}
 
-	UIPushButton::Text( text );
+	UIPushButton::setText( text );
 
-	SetRealSize();
+	onAutoSize();
+
+	tTabW->orderTabs();
+
+	tTabW->setTabSelected( tTabW->getSelectedTab() );
+
+	return this;
 }
 
-void UITab::SetRealSize() {
+void UITab::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Uint32 w = mTextBox->GetTextWidth() + GetSkinSize().Width();
+		Uint32 w = PixelDensity::pxToDpI( mTextBox->getTextWidth() ) + mStyleConfig.IconHorizontalMargin + ( NULL != mIcon ? mIcon->getSize().getWidth() : 0 ) + getSkinSize().getWidth();
 
-		UITabWidget * tTabW = GetTabWidget();
+		UITabWidget * tTabW = getTabWidget();
 
 		if ( NULL != tTabW ) {
-			w = eemax( w, tTabW->mMinTabWidth );
-			w = eemin( w, tTabW->mMaxTabWidth );
+			w = eemax( w, tTabW->getMinTabWidth() );
+			w = eemin( w, tTabW->getMaxTabWidth() );
 		}
 
-		Size( w, mSize.Height() );
+		setSize( w, mSize.getHeight() );
 	}
 }
 
-UIControl * UITab::CtrlOwned() const {
-	return mCtrlOwned;
-}
-
-void UITab::Update() {
-	UISelectButton::Update();
+void UITab::update() {
+	UISelectButton::update();
 
 	if ( mEnabled && mVisible ) {
-		if ( IsMouseOver() ) {
-			UITabWidget * tTabW	= GetTabWidget();
+		if ( NULL == mControlOwned && !mOwnedName.empty() ) {
+			setOwnedControl();
+		}
+
+		if ( isMouseOver() ) {
+			UITabWidget * tTabW	= getTabWidget();
 
 			if ( NULL != tTabW ) {
-				Uint32 Flags 			= UIManager::instance()->GetInput()->ClickTrigger();
+				Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
 
 				if ( Flags & EE_BUTTONS_WUWD ) {
 					if ( Flags & EE_BUTTON_WUMASK ) {
-						tTabW->SelectPrev();
+						tTabW->selectPrev();
 					} else if ( Flags & EE_BUTTON_WDMASK ) {
-						tTabW->SelectNext();
+						tTabW->selectNext();
 					}
-				} else if ( tTabW->mTabsClosable && ( Flags & EE_BUTTON_MMASK ) ) {
-					tTabW->Remove( this );
+				} else if ( tTabW->getTabsClosable() && ( Flags & EE_BUTTON_MMASK ) ) {
+					tTabW->remove( this );
 				}
 			}
 		}
+	}
+}
+
+void UITab::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
+	UISelectButton::loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "controlowned" == name || "owns" == name ) {
+			mOwnedName = ait->as_string();
+			setOwnedControl();
+		}
+	}
+
+	endPropertiesTransaction();
+}
+
+void UITab::setOwnedControl() {
+	UIControl * ctrl = getParent()->getParent()->find( mOwnedName );
+
+	if ( NULL != ctrl ) {
+		setControlOwned( ctrl );
+	}
+}
+
+UIControl * UITab::getControlOwned() const {
+	return mControlOwned;
+}
+
+void UITab::setControlOwned(UIControl * controlOwned) {
+	mControlOwned = controlOwned;
+
+	UITabWidget * tTabW = getTabWidget();
+
+	if ( NULL != tTabW ) {
+		tTabW->refreshControlOwned( this );
+
+		if ( NULL == tTabW->mTabSelected )
+			tTabW->setTabSelected( this );
 	}
 }
 

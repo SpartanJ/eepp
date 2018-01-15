@@ -11,11 +11,11 @@ Pak::Pak() :
 }
 
 Pak::~Pak() {
-	Close();
+	close();
 }
 
-bool Pak::Create( const std::string& path ) {
-	if ( !FileSystem::FileExists(path) ) {
+bool Pak::create( const std::string& path ) {
+	if ( !FileSystem::fileExists(path) ) {
 		pakFile Pak;
 
 		Pak.header.head[0] = 'P';
@@ -30,39 +30,39 @@ bool Pak::Create( const std::string& path ) {
 
 		mPak.fs = eeNew( IOStreamFile, ( path , std::ios::out | std::ios::binary ) ); // Open the PAK file
 
-		mPak.fs->Write( reinterpret_cast<const char*> (&Pak.header), sizeof(Pak.header) );
+		mPak.fs->write( reinterpret_cast<const char*> (&Pak.header), sizeof(Pak.header) );
 
 		eeSAFE_DELETE( mPak.fs );
 
-		Open( path );
+		open( path );
 
 		return true;
 	} else {
-		return Open( path );
+		return open( path );
 	}
 
 	return false;
 }
 
-bool Pak::Open( const std::string& path ) {
-	if ( FileSystem::FileExists(path) ) {
+bool Pak::open( const std::string& path ) {
+	if ( FileSystem::fileExists(path) ) {
 		mPak.pakPath = path;
 
 		eeSAFE_DELETE( mPak.fs );
 
 		mPak.fs = eeNew( IOStreamFile, ( path , std::ios::in | std::ios::out | std::ios::binary ) ); // Open the PAK file
 
-		mPak.fs->Read( reinterpret_cast<char*> (&mPak.header), sizeof(pakHeader) ); // Read the PAK header
+		mPak.fs->read( reinterpret_cast<char*> (&mPak.header), sizeof(pakHeader) ); // Read the PAK header
 
-		if ( CheckPack() == 0 ) {
+		if ( checkPack() == 0 ) {
 			mPak.pakFilesNum = mPak.header.dir_length / 64; // Number of files in the PAK
 
-			mPak.fs->Seek( mPak.header.dir_offset ); // Seek to read the pakEntrys
+			mPak.fs->seek( mPak.header.dir_offset ); // Seek to read the pakEntrys
 
 			for ( Uint32 i = 0; i < mPak.pakFilesNum; i++ ) { // Read all the pakEntrys
 				pakEntry Entry;
 
-				mPak.fs->Read( reinterpret_cast<char*> (&Entry), sizeof(pakEntry) );
+				mPak.fs->read( reinterpret_cast<char*> (&Entry), sizeof(pakEntry) );
 
 				mPakFiles.push_back( Entry );
 			}
@@ -76,7 +76,7 @@ bool Pak::Open( const std::string& path ) {
 	return false;
 }
 
-bool Pak::Close() {
+bool Pak::close() {
 	if ( mIsOpen ) {
 		eeSAFE_DELETE( mPak.fs );
 
@@ -90,8 +90,8 @@ bool Pak::Close() {
 	return false;
 }
 
-Int8 Pak::CheckPack() {
-	if ( NULL != mPak.fs && mPak.fs->IsOpen() ) {
+Int8 Pak::checkPack() {
+	if ( NULL != mPak.fs && mPak.fs->isOpen() ) {
 		if ( mPak.header.head[0] != 'P' || mPak.header.head[1] != 'A' || mPak.header.head[2] != 'C' || mPak.header.head[3] != 'K')
 			return -1;	// Ident corrupt
 
@@ -102,8 +102,8 @@ Int8 Pak::CheckPack() {
 	return 0;
 }
 
-Int32 Pak::Exists( const std::string& path ) {
-	if ( IsOpen() ) {
+Int32 Pak::exists( const std::string& path ) {
+	if ( isOpen() ) {
 		for ( Uint32 i = 0; i < mPakFiles.size(); i++ )
 			if ( strcmp( path.c_str(), mPakFiles[i].filename ) == 0 )
 				return i;
@@ -112,114 +112,114 @@ Int32 Pak::Exists( const std::string& path ) {
 	return -1;
 }
 
-bool Pak::ExtractFile( const std::string& path , const std::string& dest ) {
-	if ( NULL == mPak.fs || !mPak.fs->IsOpen() ) {
+bool Pak::extractFile( const std::string& path , const std::string& dest ) {
+	if ( NULL == mPak.fs || !mPak.fs->isOpen() ) {
 		return false;
 	}
 
-	Lock();
+	lock();
 
 	bool Ret = false;
 
-	Int32 Pos = Exists( path );
+	Int32 Pos = exists( path );
 
 	if ( Pos != -1 ) {
 		SafeDataPointer data;
 
-		if ( ExtractFileToMemory( path, data ) ) {
-			FileSystem::FileWrite( path, data.Data, data.DataSize );
+		if ( extractFileToMemory( path, data ) ) {
+			FileSystem::fileWrite( path, data.Data, data.DataSize );
 		}
 
 		Ret = true;
 	}
 
-	Unlock();
+	unlock();
 
 	return Ret;
 }
 
-bool Pak::ExtractFileToMemory( const std::string& path, std::vector<Uint8>& data ) {
-	if ( NULL == mPak.fs || !mPak.fs->IsOpen() ) {
+bool Pak::extractFileToMemory( const std::string& path, std::vector<Uint8>& data ) {
+	if ( NULL == mPak.fs || !mPak.fs->isOpen() ) {
 		return false;
 	}
 
-	Lock();
+	lock();
 
 	bool Ret = false;
 
-	Int32 Pos = Exists( path );
+	Int32 Pos = exists( path );
 
 	if ( Pos != -1 ) {
 		data.clear();
 		data.resize( mPakFiles[Pos].file_length );
 
-		mPak.fs->Seek( mPakFiles[Pos].file_position );
-		mPak.fs->Read( reinterpret_cast<char*> (&data[0]), mPakFiles[Pos].file_length );
+		mPak.fs->seek( mPakFiles[Pos].file_position );
+		mPak.fs->read( reinterpret_cast<char*> (&data[0]), mPakFiles[Pos].file_length );
 
 		Ret = true;
 	}
 
-	Unlock();
+	unlock();
 
 	return Ret;
 }
 
-bool Pak::ExtractFileToMemory( const std::string& path, SafeDataPointer& data ) {
-	if ( NULL == mPak.fs || !mPak.fs->IsOpen() ) {
+bool Pak::extractFileToMemory( const std::string& path, SafeDataPointer& data ) {
+	if ( NULL == mPak.fs || !mPak.fs->isOpen() ) {
 		return false;
 	}
 
-	Lock();
+	lock();
 
 	bool Ret = false;
 
-	Int32 Pos = Exists( path );
+	Int32 Pos = exists( path );
 
 	if ( Pos != -1 ) {
 		data.DataSize	= mPakFiles[Pos].file_length;
 		data.Data		= eeNewArray( Uint8, ( data.DataSize ) );
 
-		mPak.fs->Seek( mPakFiles[Pos].file_position );
-		mPak.fs->Read( reinterpret_cast<char*> ( data.Data ), mPakFiles[Pos].file_length );
+		mPak.fs->seek( mPakFiles[Pos].file_position );
+		mPak.fs->read( reinterpret_cast<char*> ( data.Data ), mPakFiles[Pos].file_length );
 
 		Ret = true;
 	}
 
-	Unlock();
+	unlock();
 
 	return Ret;
 }
 
-bool Pak::AddFile( const Uint8 * data, const Uint32& dataSize, const std::string& inpack ) {
+bool Pak::addFile( const Uint8 * data, const Uint32& dataSize, const std::string& inpack ) {
 	if ( dataSize < 1 )
 		return false;
 
 	Uint32 fsize = dataSize;
 
-	if ( NULL != mPak.fs && mPak.fs->IsOpen() ) {
+	if ( NULL != mPak.fs && mPak.fs->isOpen() ) {
 		if ( mPak.header.dir_length == 1 ) {
 			mPak.header.dir_offset = sizeof(pakHeader) + fsize;
 			mPak.header.dir_length = sizeof(pakEntry);
 			mPak.pakFilesNum = 1;
 
-			mPak.fs->Seek( 4 ); // seek after head (PACK)
-			mPak.fs->Write( reinterpret_cast<const char*> (&mPak.header.dir_offset), sizeof( mPak.header.dir_offset ) );
-			mPak.fs->Write( reinterpret_cast<const char*> (&mPak.header.dir_length), sizeof( mPak.header.dir_length ) );
+			mPak.fs->seek( 4 ); // seek after head (PACK)
+			mPak.fs->write( reinterpret_cast<const char*> (&mPak.header.dir_offset), sizeof( mPak.header.dir_offset ) );
+			mPak.fs->write( reinterpret_cast<const char*> (&mPak.header.dir_length), sizeof( mPak.header.dir_length ) );
 
-			mPak.fs->Write( reinterpret_cast<const char*> (&data[0]), fsize );
+			mPak.fs->write( reinterpret_cast<const char*> (&data[0]), fsize );
 
 			pakEntry newFile;
-			String::StrCopy( newFile.filename, inpack.c_str(), 56 );
+			String::strCopy( newFile.filename, inpack.c_str(), 56 );
 			newFile.file_position = sizeof(pakHeader);
 			newFile.file_length = fsize;
 
-			mPak.fs->Write( reinterpret_cast<const char*> (&newFile), sizeof( pakEntry ) );
+			mPak.fs->write( reinterpret_cast<const char*> (&newFile), sizeof( pakEntry ) );
 
 			mPakFiles.push_back( newFile );
 
 			return true;
 		} else {
-			if ( Exists( inpack ) != -1 ) // If the file already exists exit
+			if ( exists( inpack ) != -1 ) // If the file already exists exit
 				return false;
 
 			if ( mPak.header.dir_length % 64 != 0 ) // Corrupted file?
@@ -228,27 +228,27 @@ bool Pak::AddFile( const Uint8 * data, const Uint32& dataSize, const std::string
 			std::vector<pakEntry> pakE;
 			pakE.resize( mPak.pakFilesNum + 1 );	// Alloc space for all the pakEntrys and the new one
 
-			mPak.fs->Seek( mPak.header.dir_offset ); 	// seek to the file pakEntrys
-			mPak.fs->Read( reinterpret_cast<char*> (&pakE[0]), sizeof(pakEntry) * mPak.pakFilesNum ); 	// get all the pakEntrys
+			mPak.fs->seek( mPak.header.dir_offset ); 	// seek to the file pakEntrys
+			mPak.fs->read( reinterpret_cast<char*> (&pakE[0]), sizeof(pakEntry) * mPak.pakFilesNum ); 	// get all the pakEntrys
 
 			mPak.header.dir_offset = mPak.header.dir_offset + fsize; 	// Update the new dir_offset
 			mPak.header.dir_length = mPak.header.dir_length + sizeof(pakEntry); // Update the new dir_length
 
-			mPak.fs->Seek( 4 ); // Update the new dir_offset and dir_length to the pakFile
-			mPak.fs->Write( reinterpret_cast<const char*> (&mPak.header.dir_offset), sizeof( mPak.header.dir_offset ) );
-			mPak.fs->Write( reinterpret_cast<const char*> (&mPak.header.dir_length), sizeof( mPak.header.dir_length ) );
+			mPak.fs->seek( 4 ); // Update the new dir_offset and dir_length to the pakFile
+			mPak.fs->write( reinterpret_cast<const char*> (&mPak.header.dir_offset), sizeof( mPak.header.dir_offset ) );
+			mPak.fs->write( reinterpret_cast<const char*> (&mPak.header.dir_length), sizeof( mPak.header.dir_length ) );
 
-			mPak.fs->Seek( mPak.header.dir_offset - fsize ); // Seek to the file allocation zone
-			mPak.fs->Write( reinterpret_cast<const char*> (&data[0]), fsize ); // Alloc the file
+			mPak.fs->seek( mPak.header.dir_offset - fsize ); // Seek to the file allocation zone
+			mPak.fs->write( reinterpret_cast<const char*> (&data[0]), fsize ); // Alloc the file
 
 			// Fill the new file data on the pakEntry
-			String::StrCopy (pakE[ mPak.pakFilesNum ].filename, inpack.c_str(), 56 );
+			String::strCopy (pakE[ mPak.pakFilesNum ].filename, inpack.c_str(), 56 );
 
 			pakE[ mPak.pakFilesNum ].file_position = mPak.header.dir_offset - fsize;
 			pakE[ mPak.pakFilesNum ].file_length = fsize;
 
 			// Update the new pakEntrys on pakFile
-			mPak.fs->Write( reinterpret_cast<const char*>(&pakE[0]), (std::streamsize)( sizeof(pakEntry) * pakE.size() ) );
+			mPak.fs->write( reinterpret_cast<const char*>(&pakE[0]), (std::streamsize)( sizeof(pakEntry) * pakE.size() ) );
 
 			mPakFiles.push_back( pakE[ mPak.pakFilesNum ] );
 			mPak.pakFilesNum += 1;
@@ -262,36 +262,36 @@ bool Pak::AddFile( const Uint8 * data, const Uint32& dataSize, const std::string
 	return false;
 }
 
-bool Pak::AddFile( std::vector<Uint8>& data, const std::string& inpack ) {
-	return AddFile( reinterpret_cast<const Uint8*> ( &data[0] ), (Uint32)data.size(), inpack );
+bool Pak::addFile( std::vector<Uint8>& data, const std::string& inpack ) {
+	return addFile( reinterpret_cast<const Uint8*> ( &data[0] ), (Uint32)data.size(), inpack );
 }
 
-bool Pak::AddFile( const std::string& path, const std::string& inpack ) {
+bool Pak::addFile( const std::string& path, const std::string& inpack ) {
 	if ( path.size() > 56 )
 		return false;
 
 	SafeDataPointer file;
 
-	FileSystem::FileGet( path, file );
+	FileSystem::fileGet( path, file );
 
-	return AddFile( file.Data, file.DataSize, inpack );
+	return addFile( file.Data, file.DataSize, inpack );
 }
 
-bool Pak::AddFiles( std::map<std::string, std::string> paths ) {
+bool Pak::addFiles( std::map<std::string, std::string> paths ) {
 	for( std::map<std::string, std::string>::iterator itr = paths.begin(); itr != paths.end(); itr++)
-		if ( !AddFile( itr->first, itr->second ) )
+		if ( !addFile( itr->first, itr->second ) )
 			return false;
 	return true;
 }
 
-bool Pak::EraseFile( const std::string& path ) {
+bool Pak::eraseFile( const std::string& path ) {
 	std::vector<std::string> tmpv;
 	tmpv.push_back( path );
 
-	return EraseFiles( tmpv );
+	return eraseFiles( tmpv );
 }
 
-bool Pak::EraseFiles( const std::vector<std::string>& paths ) {
+bool Pak::eraseFiles( const std::vector<std::string>& paths ) {
 	std::vector<Int32> files;
 	Int32 Ex;
 	Uint32 total_offset = 0, i = 0;
@@ -300,7 +300,7 @@ bool Pak::EraseFiles( const std::vector<std::string>& paths ) {
 	bool Remove;
 
 	for ( i = 0; i < paths.size(); i++ ) {
-		Ex = Exists( paths[i] );
+		Ex = exists( paths[i] );
 		if ( Ex  == -1 )
 			return false;
 		else
@@ -330,32 +330,32 @@ bool Pak::EraseFiles( const std::vector<std::string>& paths ) {
 	nPf.header.dir_offset = total_offset + sizeof(pakHeader);
 	nPf.header.dir_length = (Uint32)uEntry.size() * sizeof( pakEntry );
 
-	nPf.fs->Write( reinterpret_cast<const char*>(&nPf.header), sizeof(pakHeader) );
+	nPf.fs->write( reinterpret_cast<const char*>(&nPf.header), sizeof(pakHeader) );
 
 	std::vector<Uint8> data;
 	for ( i = 0; i < uEntry.size(); i++ )
-		if ( ExtractFileToMemory( std::string( uEntry[i].filename ), data ) ) {
-			uEntry[i].file_position = nPf.fs->Tell();
+		if ( extractFileToMemory( std::string( uEntry[i].filename ), data ) ) {
+			uEntry[i].file_position = nPf.fs->tell();
 			uEntry[i].file_length = (Uint32)data.size();
-			nPf.fs->Write( reinterpret_cast<const char*>(&data[0]), (std::streamsize)data.size() );
+			nPf.fs->write( reinterpret_cast<const char*>(&data[0]), (std::streamsize)data.size() );
 		}
 
-	nPf.fs->Write( reinterpret_cast<const char*>(&uEntry[0]), (std::streamsize)( sizeof(pakEntry) * uEntry.size() ) );
+	nPf.fs->write( reinterpret_cast<const char*>(&uEntry[0]), (std::streamsize)( sizeof(pakEntry) * uEntry.size() ) );
 
 	eeSAFE_DELETE( nPf.fs );
 
 	remove( mPak.pakPath.c_str() );
 	rename( nPf.pakPath.c_str(), mPak.pakPath.c_str() );
 
-	Close();
+	close();
 
-	Open( mPak.pakPath );
+	open( mPak.pakPath );
 
 	return true;
 
 }
 
-std::vector<std::string> Pak::GetFileList() {
+std::vector<std::string> Pak::getFileList() {
 	std::vector<std::string> tmpv;
 
 	tmpv.resize( mPakFiles.size() );
@@ -366,11 +366,11 @@ std::vector<std::string> Pak::GetFileList() {
 	return tmpv;
 }
 
-bool Pak::IsOpen() const {
+bool Pak::isOpen() const {
 	return mIsOpen;
 }
 
-std::string Pak::GetPackPath() {
+std::string Pak::getPackPath() {
 	return mPak.pakPath;
 }
 

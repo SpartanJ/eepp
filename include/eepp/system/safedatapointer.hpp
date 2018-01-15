@@ -15,6 +15,8 @@ class EE_API SafeDataPointer {
 		/** @brief The destructor deletes the buffer */
 		~SafeDataPointer();
 
+		void clear();
+
 		/** Pointer to the buffer */
 		Uint8 * Data;
 

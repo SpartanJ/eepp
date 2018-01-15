@@ -2,6 +2,7 @@
 #define EE_GRAPHICSCBATCHRENDERER_H
 
 #include <eepp/graphics/base.hpp>
+#include <eepp/graphics/primitivetype.hpp>
 #include <eepp/math/polygon2.hpp>
 #include <eepp/math/originpoint.hpp>
 
@@ -15,7 +16,7 @@ struct eeTexCoord {
 struct eeVertex {
 	Vector2f pos;
 	eeTexCoord tex;
-	ColorA color;
+	Color color;
 };
 
 class TextureFactory;
@@ -32,205 +33,205 @@ class EE_API BatchRenderer {
 		BatchRenderer( const unsigned int& Prealloc );
 
 		/** Allocate space for vertexs */
-		void AllocVertexs( const unsigned int& size );
+		void allocVertexs( const unsigned int& size );
 
 		/** Set the current texture to render on the batch ( if you change the texture and you have batched something, this will be renderer immediately ) */
-		void SetTexture( const Texture * Tex );
+		void setTexture( const Texture * Tex );
 
 		/** Set the predefined blending function to use on the batch */
-		void SetBlendMode( const EE_BLEND_MODE& Blend );
+		void setBlendMode( const BlendMode& Blend );
 
 		/** Set if every batch call have to be immediately rendered */
-		void BatchForceRendering( const bool& force ) { mForceRendering = force; }
+		void setBatchForceRendering( const bool& force ) { mForceRendering = force; }
 
 		/** Get if the rendering is force on every batch call */
-		bool BatchForceRendering() const { return mForceRendering; }
+		bool getBatchForceRendering() const { return mForceRendering; }
 
 		/** Force the batch rendering */
-		void Draw();
+		void draw();
 
 		/** Force the batch rendering only if BatchForceRendering is enable */
-		void DrawOpt();
+		void drawOpt();
 
 		/** Set the rotation of the rendered vertex. */
-		void BatchRotation( const Float& Rotation ) { mRotation = Rotation; }
+		void setBatchRotation( const Float& Rotation ) { mRotation = Rotation; }
 
 		/** Get the rotation of the rendered vertex. */
-		Float BatchRotation() const { return mRotation; }
+		Float getBatchRotation() const { return mRotation; }
 
 		/** Set the scale of the rendered vertex. */
-		void BatchScale( const Vector2f& Scale ) { mScale = Scale; }
+		void setBatchScale( const Vector2f& Scale ) { mScale = Scale; }
 
 		/** Set the scale of the rendered vertex. */
-		void BatchScale( const Float& Scale ) { mScale = Vector2f( Scale, Scale ); }
+		void setBatchScale( const Float& Scale ) { mScale = Vector2f( Scale, Scale ); }
 
 		/** Get the scale of the rendered vertex. */
-		Vector2f BatchScale() const { return mScale; }
+		Vector2f getBatchScale() const { return mScale; }
 
 		/** The batch position */
-		void BatchPosition( const Vector2f Pos ) { mPosition = Pos; }
+		void setBatchPosition( const Vector2f Pos ) { mPosition = Pos; }
 
 		/** @return The batch position */
-		Vector2f BatchPosition() const { return mPosition; }
+		Vector2f getBatchPosition() const { return mPosition; }
 
 		/** This will set a center position for rotating and scaling the batched vertex. */
-		void BatchCenter( const Vector2f Pos ) { mCenter = Pos; }
+		void setBatchCenter( const Vector2f Pos ) { mCenter = Pos; }
 
 		/** @return The batch center position */
-		Vector2f BatchCenter() const { return mCenter; }
+		Vector2f getBatchCenter() const { return mCenter; }
 
-		/** Add to the batch a quad ( this will change your batch rendering method to DM_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchQuadEx( Float x, Float y, Float width, Float height, Float angle = 0.0f, Vector2f scale = Vector2f::One, OriginPoint originPoint = OriginPoint(OriginPoint::OriginCenter) );
+		/** Add to the batch a quad ( this will change your batch rendering method to PRIMITIVE_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchQuadEx( Float x, Float y, Float width, Float height, Float angle = 0.0f, Vector2f scale = Vector2f::One, OriginPoint originPoint = OriginPoint(OriginPoint::OriginCenter) );
 
-		/** Add to the batch a quad ( this will change your batch rendering method to DM_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchQuad( const Float& x, const Float& y, const Float& width, const Float& height, const Float& angle = 0.0f );
+		/** Add to the batch a quad ( this will change your batch rendering method to PRIMITIVE_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchQuad( const Float& x, const Float& y, const Float& width, const Float& height, const Float& angle = 0.0f );
 
-		/** Add to the batch a quad with the vertex freely seted ( this will change your batch rendering method to DM_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchQuadFree( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2, const Float& x3, const Float& y3 );
+		/** Add to the batch a quad with the vertex freely seted ( this will change your batch rendering method to PRIMITIVE_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchQuadFree( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2, const Float& x3, const Float& y3 );
 
-		/** Add to the batch a quad with the vertex freely seted ( this will change your batch rendering method to DM_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchQuadFreeEx( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2, const Float& x3, const Float& y3, const Float& Angle = 0.0f, const Float& Scale = 1.0f );
+		/** Add to the batch a quad with the vertex freely seted ( this will change your batch rendering method to PRIMITIVE_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchQuadFreeEx( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2, const Float& x3, const Float& y3, const Float& Angle = 0.0f, const Float& Scale = 1.0f );
 
 		/** This will set as the default batch rendering to GL_QUADS. WIll reset the texture subset rendering to the whole texture. Will reset the default color rendering to ColorA(255,255,255,255). */
-		void QuadsBegin();
+		void quadsBegin();
 
 		/** Set the texture sector to be rendered */
-		void QuadsSetSubset( const Float& tl_u, const Float& tl_v, const Float& br_u, const Float& br_v );
+		void quadsSetSubset( const Float& tl_u, const Float& tl_v, const Float& br_u, const Float& br_v );
 
 		/** Set the texture sector to be rendered but freely seted */
-		void QuadsSetSubsetFree( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2, const Float& x3, const Float& y3 );
+		void quadsSetSubsetFree( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2, const Float& x3, const Float& y3 );
 
 		/** Set the quad color */
-		void QuadsSetColor( const ColorA& Color );
+		void quadsSetColor( const Color& Color );
 
 		/** Set the quad color per vertex */
-		void QuadsSetColorFree( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 );
+		void quadsSetColorFree( const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3 );
 
-		/** This will set as the default batch rendering to DM_POINTS. And will reset the point color to ColorA(255,255,255,255). */
-		void PointsBegin();
+		/** This will set as the default batch rendering to PRIMITIVE_POINTS. And will reset the point color to ColorA(255,255,255,255). */
+		void pointsBegin();
 
 		/** Set the point color */
-		void PointSetColor( const ColorA& Color );
+		void pointSetColor( const Color& Color );
 
-		/** Add to the batch a point ( this will change your batch rendering method to DM_POINTS, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchPoint( const Float& x, const Float& y );
+		/** Add to the batch a point ( this will change your batch rendering method to PRIMITIVE_POINTS, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchPoint( const Float& x, const Float& y );
 
-		/** This will set as the default batch rendering to DM_LINES. And will reset the line color to ColorA(255,255,255,255). */
-		void LinesBegin();
+		/** This will set as the default batch rendering to PRIMITIVE_LINES. And will reset the line color to ColorA(255,255,255,255). */
+		void linesBegin();
 
 		/** Set the line color */
-		void LinesSetColor( const ColorA& Color );
+		void linesSetColor( const Color& Color );
 
 		/** Set the line color, per vertex */
-		void LinesSetColorFree( const ColorA& Color0, const ColorA& Color1 );
+		void linesSetColorFree( const Color& Color0, const Color& Color1 );
 
-		/** Add to the batch a line ( this will change your batch rendering method to DM_LINES, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchLine( const Float& x0, const Float& y0, const Float& x1, const Float& y1 );
+		/** Add to the batch a line ( this will change your batch rendering method to PRIMITIVE_LINES, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchLine( const Float& x0, const Float& y0, const Float& x1, const Float& y1 );
 
 		/** This will set as the default batch rendering to GL_LINE_LOOP. And will reset the line color to ColorA(255,255,255,255). */
-		void LineLoopBegin();
+		void lineLoopBegin();
 
 		/** Set the line color */
-		void LineLoopSetColor( const ColorA& Color );
+		void lineLoopSetColor( const Color& Color );
 
 		/** Set the line color, per vertex */
-		void LineLoopSetColorFree( const ColorA& Color0, const ColorA& Color1 );
+		void lineLoopSetColorFree( const Color& Color0, const Color& Color1 );
 
-		/** Add to the batch a line ( this will change your batch rendering method to DM_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchLineLoop( const Float& x0, const Float& y0, const Float& x1, const Float& y1 );
+		/** Add to the batch a line ( this will change your batch rendering method to PRIMITIVE_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchLineLoop( const Float& x0, const Float& y0, const Float& x1, const Float& y1 );
 
-		/** Add to the batch a point to the line loop batch ( this will change your batch rendering method to DM_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchLineLoop( const Float& x0, const Float& y0 );
+		/** Add to the batch a point to the line loop batch ( this will change your batch rendering method to PRIMITIVE_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchLineLoop( const Float& x0, const Float& y0 );
 
-		/** Add to the batch a line ( this will change your batch rendering method to DM_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchLineLoop( const Vector2f& vector1, const Vector2f& vector2 );
+		/** Add to the batch a line ( this will change your batch rendering method to PRIMITIVE_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchLineLoop( const Vector2f& vector1, const Vector2f& vector2 );
 
-		/** Add to the batch a point to the line loop batch ( this will change your batch rendering method to DM_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchLineLoop( const Vector2f& vector1 );
+		/** Add to the batch a point to the line loop batch ( this will change your batch rendering method to PRIMITIVE_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchLineLoop( const Vector2f& vector1 );
 
-		/** This will set as the default batch rendering to DM_LINE_STRIP. And will reset the line color to ColorA(255,255,255,255). */
-		void LineStripBegin();
+		/** This will set as the default batch rendering to PRIMITIVE_LINE_STRIP. And will reset the line color to ColorA(255,255,255,255). */
+		void lineStripBegin();
 
 		/** Set the line color */
-		void LineStripSetColor( const ColorA& Color );
+		void lineStripSetColor( const Color& Color );
 
 		/** Set the line color, per vertex */
-		void LineStripSetColorFree( const ColorA& Color0, const ColorA& Color1 );
+		void lineStripSetColorFree( const Color& Color0, const Color& Color1 );
 
-		/** Add to the batch a line ( this will change your batch rendering method to DM_LINE_STRIP, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchLineStrip( const Float& x0, const Float& y0, const Float& x1, const Float& y1 );
+		/** Add to the batch a line ( this will change your batch rendering method to PRIMITIVE_LINE_STRIP, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchLineStrip( const Float& x0, const Float& y0, const Float& x1, const Float& y1 );
 
-		/** Add to the batch a point to the line strip batch ( this will change your batch rendering method to DM_LINE_STRIP, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchLineStrip( const Float& x0, const Float& y0 );
+		/** Add to the batch a point to the line strip batch ( this will change your batch rendering method to PRIMITIVE_LINE_STRIP, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchLineStrip( const Float& x0, const Float& y0 );
 
-		/** Add to the batch a line ( this will change your batch rendering method to DM_LINE_STRIP, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchLineStrip( const Vector2f& vector1, const Vector2f& vector2 );
+		/** Add to the batch a line ( this will change your batch rendering method to PRIMITIVE_LINE_STRIP, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchLineStrip( const Vector2f& vector1, const Vector2f& vector2 );
 
-		/** Add to the batch a point to the line strip batch ( this will change your batch rendering method to DM_LINE_STRIP, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchLineStrip( const Vector2f& vector1 );
+		/** Add to the batch a point to the line strip batch ( this will change your batch rendering method to PRIMITIVE_LINE_STRIP, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchLineStrip( const Vector2f& vector1 );
 
-		/** This will set as the default batch rendering to DM_TRIANGLE_FAN. And will reset the line color to ColorA(255,255,255,255). */
-		void TriangleFanBegin();
+		/** This will set as the default batch rendering to PRIMITIVE_TRIANGLE_FAN. And will reset the line color to ColorA(255,255,255,255). */
+		void triangleFanBegin();
 
 		/** Set the triangle fan color */
-		void TriangleFanSetColor( const ColorA& Color );
+		void triangleFanSetColor( const Color& Color );
 
 		/** Set the triangle fan color, per vertex */
-		void TriangleFanSetColorFree( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2 );
+		void triangleFanSetColorFree( const Color& Color0, const Color& Color1, const Color& Color2 );
 
 		/** Set the texture sector to be rendered but freely seted */
-		void TriangleFanSetSubset( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );
+		void triangleFanSetSubset( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );
 
-		/** Add to the batch a triangle fan ( this will change your batch rendering method to DM_TRIANGLE_FAN, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchTriangleFan( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );
+		/** Add to the batch a triangle fan ( this will change your batch rendering method to PRIMITIVE_TRIANGLE_FAN, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchTriangleFan( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );
 
-		/** Add to the batch a triangle fan ( this will change your batch rendering method to DM_TRIANGLE_FAN, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchTriangleFan( const Float& x0, const Float& y0 );
+		/** Add to the batch a triangle fan ( this will change your batch rendering method to PRIMITIVE_TRIANGLE_FAN, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchTriangleFan( const Float& x0, const Float& y0 );
 
-		/** This will set as the default batch rendering to DM_TRIANGLES. And will reset the line color to ColorA(255,255,255,255). */
-		void TrianglesBegin();
+		/** This will set as the default batch rendering to PRIMITIVE_TRIANGLES. And will reset the line color to ColorA(255,255,255,255). */
+		void trianglesBegin();
 
 		/** Set the triangles color */
-		void TrianglesSetColor( const ColorA& Color );
+		void trianglesSetColor( const Color& Color );
 
 		/** Set the triangles color, per vertex */
-		void TrianglesSetColorFree( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2 );
+		void trianglesSetColorFree( const Color& Color0, const Color& Color1, const Color& Color2 );
 
 		/** Set the texture sector to be rendered but freely seted */
-		void TrianglesSetSubset( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );
+		void trianglesSetSubset( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );
 
-		/** Add to the batch a triangle ( this will change your batch rendering method to DM_TRIANGLES, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchTriangle( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );
+		/** Add to the batch a triangle ( this will change your batch rendering method to PRIMITIVE_TRIANGLES, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchTriangle( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 );
 
 		/** Set the polygon color */
-		void PolygonSetColor( const ColorA& Color );
+		void polygonSetColor( const Color& Color );
 
-		/** Add to the batch a polygon ( this will change your batch rendering method to DM_POLYGON, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchPolygon( const Polygon2f& Polygon );
+		/** Add to the batch a polygon ( this will change your batch rendering method to PRIMITIVE_POLYGON, so if you were using another one will Draw all the batched vertexs first ) */
+		void batchPolygon( const Polygon2f& Polygon );
 
 		/** Set the line width */
-		void SetLineWidth( const Float& lineWidth );
+		void setLineWidth( const Float& lineWidth );
 
 		/** @return The current line width */
-		Float GetLineWidth();
+		Float getLineWidth();
 
 		/** Set the point size */
-		void SetPointSize( const Float& pointSize );
+		void setPointSize( const Float& pointSize );
 
 		/** @return The current point size */
-		Float GetPointSize();
+		Float getPointSize();
 
 		/** Batch a poligon adding one by one vector */
-		void BatchPolygonByPoint( const Float& x, const Float& y );
+		void batchPolygonByPoint( const Float& x, const Float& y );
 
 		/** Batch a poligon adding one by one vector */
-		void BatchPolygonByPoint( const Vector2f& Vector );
+		void batchPolygonByPoint( const Vector2f& Vector );
 
 		/** Foce the blending mode change, ignoring if it's the same that before ( so you can change the blend mode and restore it without problems ) */
-		void ForceBlendModeChange( const bool& Force );
+		void setForceBlendModeChange( const bool& Force );
 
 		/** @return If the blending mode switch is forced */
-		const bool& ForceBlendModeChange() const;
+		const bool& getForceBlendModeChange() const;
 	protected:
 		eeVertex *			mVertex;
 		unsigned int				mVertexSize;
@@ -239,12 +240,12 @@ class EE_API BatchRenderer {
 
 		const Texture *	mTexture;
 		TextureFactory *	mTF;
-		EE_BLEND_MODE		mBlend;
+		BlendMode		mBlend;
 
 		eeTexCoord			mTexCoord[4];
-		ColorA			mVerColor[4];
+		Color			mVerColor[4];
 
-		EE_DRAW_MODE		mCurrentMode;
+		PrimitiveType		mCurrentMode;
 
 		Float				mRotation;
 		Vector2f			mScale;
@@ -254,15 +255,15 @@ class EE_API BatchRenderer {
 		bool				mForceRendering;
 		bool				mForceBlendMode;
 
-		void Flush();
+		void flush();
 
-		void Init();
+		void init();
 
-		void AddVertexs( const unsigned int& num );
+		void addVertexs( const unsigned int& num );
 
-		void Rotate( const Vector2f& center, Vector2f* point, const Float& angle );
+		void rotate( const Vector2f& center, Vector2f* point, const Float& angle );
 
-		void SetBlendMode( EE_DRAW_MODE Mode, const bool& Force );
+		void setDrawMode( const PrimitiveType & Mode, const bool& Force );
 };
 
 }}

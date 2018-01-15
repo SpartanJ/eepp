@@ -4,31 +4,40 @@
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uiskin.hpp>
 
+namespace EE { namespace Graphics {
+class Drawable;
+}}
+
 namespace EE { namespace UI {
 
 class EE_API UISkinSimple : public UISkin {
 	public:
-		UISkinSimple( const std::string& Name );
+		static UISkinSimple * New( const std::string& name );
+
+		UISkinSimple( const std::string& name );
 
 		virtual ~UISkinSimple();
 
-		virtual void Draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State );
+		virtual void draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State );
 
-		void SetSkin( const Uint32& State );
+		void setSkin( const Uint32& State );
 
-		SubTexture * GetSubTexture( const Uint32& State ) const;
+		bool stateExists( const Uint32& state );
 
-		UISkinSimple * Copy( const std::string& NewName, const bool& CopyColorsState = true );
+		UISkinSimple * clone( const std::string& NewName, const bool& CopyColorsState = true );
 
-		virtual UISkin * Copy();
+		virtual UISkin * clone();
+
+		Sizei getSize( const Uint32& state );
+
+		Rect getBorderSize( const Uint32 & state );
 	protected:
-		SubTexture * 	mSubTexture[ UISkinState::StateCount ];
-		ColorA		mTempColor;
+		Drawable * 	mDrawable[ UISkinState::StateCount ];
+		Color		mTempColor;
 
-		void StateNormalToState( const Uint32& State );
+		void stateNormalToState( const Uint32& State );
 };
 
 }}
 
 #endif
-

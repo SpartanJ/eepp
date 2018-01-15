@@ -17,15 +17,15 @@ class EE_API AudioDevice {
 		~AudioDevice();
 
 		/** Get the OpenAL format that matches the given number of channels */
-		static int GetFormatFromChannelCount( unsigned int ChannelCount );
+		static int getFormatFromChannelCount( unsigned int ChannelCount );
 
 		/** Checks if a AL or ALC extension is supported */
-		static bool IsExtensionSupported( const std::string& extension );
+		static bool isExtensionSupported( const std::string& extension );
 
 		/** @return True if the audio device was initialized */
-		static bool IsAvailable();
+		static bool isAvailable();
 	private :
-		void PrintInfo();
+		void printInfo();
 };
 
 }}

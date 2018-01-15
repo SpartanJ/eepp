@@ -13,7 +13,7 @@ class WinImpl;
 
 class CursorWin : public Cursor {
 	public:
-		void *		GetCursor() const;
+		void *		getCursor() const;
 	protected:
 		friend class WinImpl;
 
@@ -27,9 +27,9 @@ class CursorWin : public Cursor {
 
 		~CursorWin();
 
-		void Create();
+		void create();
 
-		WinImpl * GetPlatform();
+		WinImpl * getPlatform();
 };
 
 }}}

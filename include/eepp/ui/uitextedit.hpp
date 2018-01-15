@@ -7,82 +7,81 @@
 
 namespace EE { namespace UI {
 
-class EE_API UITextEdit : public UIComplexControl {
-	public:			
-		class CreateParams : public UITextBox::CreateParams {
-			public:
-				inline CreateParams() : UITextBox::CreateParams(),
-					HScrollBar( UI_SCROLLBAR_AUTO ),
-					VScrollBar( UI_SCROLLBAR_AUTO ),
-					WordWrap( true )
-				{
-				}
+class EE_API UITextEdit : public UIWidget {
+	public:
+		static UITextEdit * New();
 
-				inline ~CreateParams() {}
-
-				UI_SCROLLBAR_MODE	HScrollBar;
-				UI_SCROLLBAR_MODE	VScrollBar;
-				bool				WordWrap;
-		};
-
-		UITextEdit( UITextEdit::CreateParams& Params );
+		UITextEdit();
 
 		virtual ~UITextEdit();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		const String& Text() const;
+		const String& getText() const;
 
-		void Text( const String& Txt );
+		void setText( const String& Txt );
 
-		UITextInput * TextInput() const;
+		UITextInput * getTextInput() const;
 
-		UIScrollBar * HScrollBar() const;
+		UIScrollBar * getHScrollBar() const;
 
-		UIScrollBar * VScrollBar() const;
+		UIScrollBar * getVScrollBar() const;
 
-		virtual void Update();
+		virtual void update();
 
-		void AllowEditing( const bool& allow );
+		void setAllowEditing( const bool& allow );
 
-		const bool& AllowEditing() const;
+		const bool& isEditingAllowed() const;
+
+		void setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+
+		const UI_SCROLLBAR_MODE& getVerticalScrollMode();
+
+		void setHorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+
+		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
+
+		UIFontStyleConfig getFontStyleConfig() const;
+
+		void setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig);
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		UITextInput *		mTextInput;
 		UIScrollBar *		mHScrollBar;
 		UIScrollBar *		mVScrollBar;
 		UI_SCROLLBAR_MODE	mHScrollBarMode;
 		UI_SCROLLBAR_MODE	mVScrollBarMode;
-		Recti				mPadding;
-		String				mText;
 		bool				mSkipValueChange;
+		Rect				mContainerPadding;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 
-		virtual void OnParentSizeChange( const Vector2i& SizeChange );
+		virtual void onParentSizeChange( const Vector2i& SizeChange );
 
-		void OnVScrollValueChange( const UIEvent * Event );
+		void onVScrollValueChange( const UIEvent * Event );
 
-		void OnHScrollValueChange( const UIEvent * Event );
+		void onHScrollValueChange( const UIEvent * Event );
 
-		void OnInputSizeChange( const UIEvent * Event = NULL );
+		void onInputSizeChange( const UIEvent * Event = NULL );
 
-		void OnCursorPosChange( const UIEvent * Event );
+		void onCursorPosChange( const UIEvent * Event );
 
-		void AutoPadding();
+		void autoPadding();
 
-		void ScrollbarsSet();
+		void scrollbarsSet();
 
-		void FixScroll();
+		void fixScroll();
 
-		void FixScrollToCursor();
+		void fixScrollToCursor();
 
-		void ShrinkText( const Uint32& Width );
+		void shrinkText( const Uint32& Width );
 };
 
 }}

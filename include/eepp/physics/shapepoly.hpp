@@ -15,21 +15,21 @@ class CP_API ShapePoly : public Shape {
 
 		ShapePoly( Physics::Body * body, cpFloat width, cpFloat height );
 
-		static bool Validate( const cVect * verts, const int numVerts );
+		static bool validate( const cVect * verts, const int numVerts );
 
-		int GetNumVerts();
+		int getNumVerts();
 
-		cVect GetVert( int idx );
+		cVect getVert( int idx );
 
-		void SetVerts( int numVerts, cVect *verts, cVect offset );
+		void setVerts( int numVerts, cVect *verts, cVect offset );
 
-		virtual void Draw( Space * space );
+		virtual void draw( Space * space );
 
-		virtual void DrawBorder( Space * space );
+		virtual void drawBorder( Space * space );
 
-		static void Recenter( int numVerts, cVect * verts );
+		static void recenter( int numVerts, cVect * verts );
 
-		static cVect Centroid( int numVerts, const cVect * verts );
+		static cVect centroid( int numVerts, const cVect * verts );
 };
 
 CP_NAMESPACE_END

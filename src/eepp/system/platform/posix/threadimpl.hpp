@@ -15,17 +15,17 @@ namespace Platform {
 
 class ThreadImpl {
 	public:
-		static UintPtr GetCurrentThreadId();
+		static UintPtr getCurrentThreadId();
 
 		ThreadImpl( Thread * owner );
 		
-		void Wait();
+		void wait();
 		
-		void Terminate();
+		void terminate();
 
-		UintPtr Id();
+		UintPtr getId();
 	protected:
-		static void *	EntryPoint( void* userData );
+		static void *	entryPoint( void* userData );
 
 		pthread_t		mThread;
 		bool			mIsActive;

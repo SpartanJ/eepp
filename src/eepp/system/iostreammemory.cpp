@@ -21,7 +21,7 @@ IOStreamMemory::IOStreamMemory( char * data, ios_size size ) :
 IOStreamMemory::~IOStreamMemory() {
 }
 
-ios_size IOStreamMemory::Read( char * data, ios_size size ) {
+ios_size IOStreamMemory::read( char * data, ios_size size ) {
 	if ( mPos + size <= mSize ) {
 		memcpy( data, mReadPtr + mPos, size );
 
@@ -39,7 +39,7 @@ ios_size IOStreamMemory::Read( char * data, ios_size size ) {
 	return 0;
 }
 
-ios_size IOStreamMemory::Write( const char * data, ios_size size ) {
+ios_size IOStreamMemory::write( const char * data, ios_size size ) {
 	if ( NULL != mWritePtr && mPos + size <= mSize ) {
 		memcpy( mWritePtr + mPos, data, size );
 
@@ -49,22 +49,22 @@ ios_size IOStreamMemory::Write( const char * data, ios_size size ) {
 	return mPos;
 }
 
-ios_size IOStreamMemory::Seek( ios_size position ) {
+ios_size IOStreamMemory::seek( ios_size position ) {
 	if ( position < mSize )
 		mPos = position;
 
 	return mPos;
 }
 
-ios_size IOStreamMemory::Tell() {
+ios_size IOStreamMemory::tell() {
 	return mPos;
 }
 
-ios_size IOStreamMemory::GetSize() {
+ios_size IOStreamMemory::getSize() {
 	return mSize;
 }
 
-bool IOStreamMemory::IsOpen() {
+bool IOStreamMemory::isOpen() {
 	return NULL != mReadPtr;
 }
 

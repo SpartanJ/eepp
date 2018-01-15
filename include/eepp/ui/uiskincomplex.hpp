@@ -4,11 +4,19 @@
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uiskin.hpp>
 
+namespace EE { namespace Graphics {
+class Drawable;
+}}
+
 namespace EE { namespace UI {
 
 class EE_API UISkinComplex : public UISkin {
 	public:
-		static std::string GetSideSuffix( const Uint32& Side );
+		static UISkinComplex * New( const std::string& name );
+
+		static std::string getSideSuffix( const Uint32& Side );
+
+		static bool isSideSuffix( const std::string& suffix );
 
 		enum UISkinComplexSides {
 			Left = 0,
@@ -23,26 +31,34 @@ class EE_API UISkinComplex : public UISkin {
 			SideCount
 		};
 
-		UISkinComplex( const std::string& Name );
+		UISkinComplex( const std::string& name );
 
 		virtual ~UISkinComplex();
 
-		virtual void Draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State );
+		virtual void draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State );
 
-		void SetSkin( const Uint32& State );
+		void setSkin( const Uint32& State );
 
-		SubTexture * GetSubTexture( const Uint32& State ) const;
+		bool stateExists( const Uint32& state );
 
-		SubTexture * GetSubTextureSide( const Uint32& State, const Uint32& Side );
+		Sizei getSideSize( const Uint32& State, const Uint32& Side );
 
-		UISkinComplex * Copy( const std::string& NewName, const bool& CopyColorsState = true );
+		UISkinComplex * clone( const std::string& NewName, const bool& CopyColorsState = true );
 
-		virtual UISkin * Copy();
+		virtual UISkin * clone();
+
+		Sizei getSize( const Uint32& state );
+
+		Rect getBorderSize( const Uint32 &state );
 	protected:
-		SubTexture * 	mSubTexture[ UISkinState::StateCount ][ SideCount ];
-		ColorA		mTempColor;
+		Drawable * 	mDrawable[ UISkinState::StateCount ][ SideCount ];
+		Color		mTempColor;
+		Sizei		mSize[ UISkinState::StateCount ];
+		Rect		mBorderSize[ UISkinState::StateCount ];
 
-		void StateNormalToState( const Uint32& State );
+		void cacheSize();
+
+		void stateNormalToState( const Uint32& State );
 };
 
 }}

@@ -89,106 +89,106 @@ class EE_API URI {
 		URI& operator = (const char* uri);
 
 		/** Swaps the URI with another one. */
-		void Swap(URI& uri);
+		void swap(URI& uri);
 
 		/** Clears all parts of the URI. */
-		void Clear();
+		void clear();
 
 		/** @returns a string representation of the URI.
 		* Characters in the path, query and fragment parts will be percent-encoded as necessary. */
-		std::string ToString() const;
+		std::string toString() const;
 
 		/** @returns the scheme part of the URI. */
-		const std::string& GetScheme() const;
+		const std::string& getScheme() const;
 
 		/** Sets the scheme part of the URI. The given scheme is converted to lower-case.
 		* A list of registered URI schemes can be found at <http://www.iana.org/assignments/uri-schemes>. */
-		void SetScheme(const std::string& scheme);
+		void setScheme(const std::string& scheme);
 
 		/** @returns the user-info part of the URI. */
-		const std::string& GetUserInfo() const;
+		const std::string& getUserInfo() const;
 
 		/** Sets the user-info part of the URI. */
-		void SetUserInfo(const std::string& userInfo);
+		void setUserInfo(const std::string& userInfo);
 
 		/** @returns the host part of the URI. */
-		const std::string& GetHost() const;
+		const std::string& getHost() const;
 
 		/** Sets the host part of the URI. */
-		void SetHost(const std::string& host);
+		void getHost(const std::string& host);
 
 		/** @returns the port number part of the URI.
 		* If no port number (0) has been specified, the
 		* well-known port number (e.g., 80 for http) for
 		* the given scheme is returned if it is known.
 		* Otherwise, 0 is returned. */
-		unsigned short GetPort() const;
+		unsigned short getPort() const;
 
 		/** Sets the port number part of the URI. */
-		void SetPort(unsigned short port);
+		void getPort(unsigned short port);
 
 		/** @returns the authority part (userInfo, host and port) of the URI.
 		* If the port number is a well-known port
 		* number for the given scheme (e.g., 80 for http), it
 		* is not included in the authority. */
-		std::string GetAuthority() const;
+		std::string getAuthority() const;
 
 		/** Parses the given authority part for the URI and sets
 		* the user-info, host, port components accordingly. */
-		void SetAuthority(const std::string& authority);
+		void setAuthority(const std::string& authority);
 
 		/** @returns The scheme and authority of the URI. */
-		std::string GetSchemeAndAuthority();
+		std::string getSchemeAndAuthority();
 
 		/** @returns The path part of the URI. */
-		const std::string& GetPath() const;
+		const std::string& getPath() const;
 
 		/** Sets the path part of the URI. */
-		void SetPath(const std::string& path);
+		void getPath(const std::string& path);
 
 		/** @returns the query part of the URI. */
-		std::string GetQuery() const;
+		std::string getQuery() const;
 
 		/** Sets the query part of the URI. */
-		void SetQuery(const std::string& query);
+		void setQuery(const std::string& query);
 
 		/** @returns the unencoded query part of the URI. */
-		const std::string& GetRawQuery() const;
+		const std::string& getRawQuery() const;
 
 		/** Sets the query part of the URI. */
-		void SetRawQuery(const std::string& query);
+		void setRawQuery(const std::string& query);
 
 		/** @returns the fragment part of the URI. */
-		const std::string& GetFragment() const;
+		const std::string& getFragment() const;
 
 		/** Sets the fragment part of the URI. */
-		void GetFragment(const std::string& fragment);
+		void getFragment(const std::string& fragment);
 
 		/** Sets the path, query and fragment parts of the URI. */
-		void SetPathEtc(const std::string& pathEtc);
+		void setPathEtc(const std::string& pathEtc);
 
 		/** @returns the path, query and fragment parts of the URI. */
-		std::string GetPathEtc() const;
+		std::string getPathEtc() const;
 
 		/** @returns the path and query parts of the URI. */
-		std::string GetPathAndQuery() const;
+		std::string getPathAndQuery() const;
 
 		/** Resolves the given relative URI against the base URI.
 		* See section 5.2 of RFC 3986 for the algorithm used. */
-		void Resolve(const std::string& relativeURI);
+		void resolve(const std::string& relativeURI);
 
 		/** Resolves the given relative URI against the base URI.
 		* See section 5.2 of RFC 3986 for the algorithm used. */
-		void Resolve(const URI& relativeURI);
+		void resolve(const URI& relativeURI);
 
 		/** @returns true if the URI is a relative reference, false otherwise.
 		* A relative reference does not contain a scheme identifier.
 		* Relative references are usually resolved against an absolute
 		* base reference. */
-		bool IsRelative() const;
+		bool isRelative() const;
 
 		/** @returns true if the URI is empty, false otherwise. */
-		bool Empty() const;
+		bool empty() const;
 
 		/** @returns true if both URIs are identical, false otherwise.
 		* Two URIs are identical if their scheme, authority,
@@ -208,64 +208,64 @@ class EE_API URI {
 		* If the first path segment in a relative path contains a colon (:),
 		* such as in a Windows path containing a drive letter, a dot segment (./)
 		* is prepended in accordance with section 3.3 of RFC 3986. */
-		void Normalize();
+		void normalize();
 
 		/** Places the single path segments (delimited by slashes) into the given vector. */
-		void GetPathSegments(std::vector<std::string>& segments);
+		void getPathSegments(std::vector<std::string>& segments);
 
 		/** URI-encodes the given string by escaping reserved and non-ASCII
 		* characters. The encoded string is appended to encodedStr. */
-		static void Encode(const std::string& str, const std::string& reserved, std::string& encodedStr);
+		static void encode(const std::string& str, const std::string& reserved, std::string& encodedStr);
 
 		/** URI-decodes the given string by replacing percent-encoded
 		* characters with the actual character. The decoded string
 		* is appended to decodedStr. */
-		static void Decode(const std::string& str, std::string& decodedStr);
+		static void decode(const std::string& str, std::string& decodedStr);
 	protected:
 		/** @returns true if both uri's are equivalent. */
-		bool Equals(const URI& uri) const;
+		bool equals(const URI& uri) const;
 
 		/** @returns true if the URI's port number is a well-known one
 		* (for example, 80, if the scheme is http). */
-		bool IsWellKnownPort() const;
+		bool isWellKnownPort() const;
 
 		/** @returns the well-known port number for the URI's scheme,
 		* or 0 if the port number is not known. */
-		unsigned short GetWellKnownPort() const;
+		unsigned short getWellKnownPort() const;
 
 		/** Parses and assigns an URI from the given string. Throws a
 		* SyntaxException if the uri is not valid. */
-		void Parse(const std::string& uri);
+		void parse(const std::string& uri);
 
 		/** Parses and sets the user-info, host and port from the given data. */
-		void ParseAuthority(std::string::const_iterator& it, const std::string::const_iterator& end);
+		void parseAuthority(std::string::const_iterator& it, const std::string::const_iterator& end);
 
 		/** Parses and sets the host and port from the given data. */
-		void ParseHostAndPort(std::string::const_iterator& it, const std::string::const_iterator& end);
+		void parseHostAndPort(std::string::const_iterator& it, const std::string::const_iterator& end);
 
 		/** Parses and sets the path from the given data. */
-		void ParsePath(std::string::const_iterator& it, const std::string::const_iterator& end);
+		void parsePath(std::string::const_iterator& it, const std::string::const_iterator& end);
 
 		/** Parses and sets the path, query and fragment from the given data. */
-		void ParsePathEtc(std::string::const_iterator& it, const std::string::const_iterator& end);
+		void parsePathEtc(std::string::const_iterator& it, const std::string::const_iterator& end);
 
 		/** Parses and sets the query from the given data. */
-		void ParseQuery(std::string::const_iterator& it, const std::string::const_iterator& end);
+		void parseQuery(std::string::const_iterator& it, const std::string::const_iterator& end);
 
 		/** Parses and sets the fragment from the given data. */
-		void ParseFragment(std::string::const_iterator& it, const std::string::const_iterator& end);
+		void parseFragment(std::string::const_iterator& it, const std::string::const_iterator& end);
 
 		/** Appends a path to the URI's path. */
-		void MergePath(const std::string& path);
+		void mergePath(const std::string& path);
 
 		/** Removes all dot segments from the path. */
-		void RemoveDotSegments(bool removeLeading = true);
+		void removeDotSegments(bool removeLeading = true);
 
 		/** Places the single path segments (delimited by slashes) into the given vector. */
-		static void GetPathSegments(const std::string& path, std::vector<std::string>& segments);
+		static void getPathSegments(const std::string& path, std::vector<std::string>& segments);
 
 		/** Builds the path from the given segments. */
-		void BuildPath(const std::vector<std::string>& segments, bool leadingSlash, bool trailingSlash);
+		void buildPath(const std::vector<std::string>& segments, bool leadingSlash, bool trailingSlash);
 
 		static const std::string RESERVED_PATH;
 		static const std::string RESERVED_QUERY;
@@ -281,32 +281,32 @@ class EE_API URI {
 		std::string		mFragment;
 };
 
-inline const std::string& URI::GetScheme() const {
+inline const std::string& URI::getScheme() const {
 	return mScheme;
 }
 
-inline const std::string& URI::GetUserInfo() const {
+inline const std::string& URI::getUserInfo() const {
 	return mUserInfo;
 }
 
-inline const std::string& URI::GetHost() const {
+inline const std::string& URI::getHost() const {
 	return mHost;
 }
 
-inline const std::string& URI::GetPath() const {
+inline const std::string& URI::getPath() const {
 	return mPath;
 }
 
-inline const std::string& URI::GetRawQuery() const {
+inline const std::string& URI::getRawQuery() const {
 	return mQuery;
 }
 
-inline const std::string& URI::GetFragment() const {
+inline const std::string& URI::getFragment() const {
 	return mFragment;
 }
 
-inline void Swap(URI& u1, URI& u2) {
-	u1.Swap(u2);
+inline void swap(URI& u1, URI& u2) {
+	u1.swap(u2);
 }
 
 }}

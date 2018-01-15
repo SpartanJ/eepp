@@ -147,11 +147,11 @@ newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
 newoption { trigger = "use-frameworks", description = "In Mac OS X it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link agains SDL2.framework." }
 newoption { 
 	trigger = "with-backend", 
-	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.\n\t\t\tIt's possible to build with more than one backend support.\n\t\t\t\tUse comma to separate the backends to build ( you can't mix SDL and SDL2, you'll get random crashes ).\n\t\t\t\tExample: --with-backend=SDL2,SFML",
+	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
 	allowed = {
-		{ "SDL",    "SDL 1.2" },
 		{ "SDL2",  "SDL2 (default and recommended)" },
-		{ "SFML",  "SFML2 ( SFML 1.6 not supported )" }
+		{ "SFML",  "SFML2" },
+		{ "SDL2,SFML", "SDL2+SFML" }
 	}
 }
 
@@ -191,6 +191,12 @@ end
 
 function os.is_real( os_name )
 	return os.get_real() == os_name
+end
+
+if os.is_real("haiku") then
+	premake.gcc.cc = "gcc-x86"
+	premake.gcc.cxx = "g++-x86"
+	premake.gcc.ar = "ar-x86"
 end
 
 function print_table( table_ref )
@@ -332,8 +338,12 @@ end
 
 function add_cross_config_links()
 	if not is_vs() then
-		if os.is_real("mingw32") or os.is_real("ios") then -- if is crosscompiling from *nix
+		if os.is_real("mingw32") or os.is_real("windows") or os.is_real("ios") then -- if is crosscompiling from *nix
 			linkoptions { "-static-libgcc", "-static-libstdc++" }
+		end
+
+		if os.is_real("mingw32") then
+			linkoptions { "-Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic" }
 		end
 	end
 end
@@ -342,8 +352,10 @@ function fix_shared_lib_linking_path( package_name, libname )
 	if ( "4.4-beta5" == _PREMAKE_VERSION or "HEAD" == _PREMAKE_VERSION ) and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
 		if os.is("macosx") then
 			linkoptions { "-install_name " .. libname .. ".dylib" }
-		elseif os.is("linux") or os.is("freebsd") or os.is("haiku") then
+		elseif os.is("linux") or os.is("freebsd") then
 			linkoptions { "-Wl,-soname=\"" .. libname .. "\"" }
+		elseif os.is("haiku") then
+			linkoptions { "-Wl,-soname=\"" .. libname .. ".so" .. "\"" }
 		end
 	end
 end
@@ -358,7 +370,11 @@ function build_link_configuration( package_name, use_ee_icon )
 	elseif package_name == "eepp-static" then
 		defines { "EE_STATIC" }
 	end
-	
+
+	if not is_vs() then
+		buildoptions{ "-std=c++11" }
+	end
+
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then
 		if not _OPTIONS["with-static-eepp"] then
 			links { "eepp-shared" }
@@ -396,7 +412,7 @@ function build_link_configuration( package_name, use_ee_icon )
 			extension = ".x86.ios"
 		end
 	end
-	
+
 	configuration "debug"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
 		flags { "Symbols" }
@@ -429,8 +445,8 @@ function build_link_configuration( package_name, use_ee_icon )
 		add_cross_config_links()
 	
 	configuration "emscripten"
-		linkoptions{ "-O1 -s TOTAL_MEMORY=67108864 -s ASM_JS=1 -s VERBOSE=1 -s DISABLE_EXCEPTION_CATCHING=0" }
-		buildoptions { "-fno-strict-aliasing -O2 -ffast-math" }
+		linkoptions{ "-O2 -s TOTAL_MEMORY=67108864 -s ASM_JS=1 -s VERBOSE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s USE_SDL=2" }
+		buildoptions { "-fno-strict-aliasing -O2 -s USE_SDL=2 -s PRECISE_F32=1" }
 
 		if _OPTIONS["with-gles1"] and ( not _OPTIONS["with-gles2"] or _OPTIONS["force-gles1"] ) then
 			linkoptions{ "-s LEGACY_GL_EMULATION=1" }
@@ -460,7 +476,7 @@ function generate_os_links()
 	elseif os.is_real("freebsd") then
 		multiple_insert( os_links, { "rt", "pthread", "X11", "openal", "GL", "Xcursor" } )
 	elseif os.is_real("haiku") then
-		multiple_insert( os_links, { "openal", "GL" } )
+		multiple_insert( os_links, { "openal", "GL", "network" } )
 	elseif os.is_real("ios") then
 		multiple_insert( os_links, { "OpenGLES.framework", "OpenAL.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework" } )
 	elseif os.is_real("emscripten") then
@@ -489,9 +505,8 @@ function add_static_links()
 		end
 	end
 	
-	links { "haikuttf-static" }
-	
 	if _OPTIONS["with-static-freetype"] or not os_findlib("freetype") then
+		print("Enabled static freetype")
 		links { "freetype-static" }
 	end
 	
@@ -501,7 +516,8 @@ function add_static_links()
 			"stb_vorbis-static",
 			"jpeg-compressor-static",
 			"zlib-static",
-			"imageresampler-static"
+			"imageresampler-static",
+			"pugixml-static"
 	}
 	
 	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
@@ -521,6 +537,7 @@ function insert_static_backend( name )
 end
 
 function add_sdl2()
+	print("Using SDL2 backend");
 	files { "src/eepp/window/backend/SDL2/*.cpp" }
 	defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_2" }
 	
@@ -531,14 +548,8 @@ function add_sdl2()
 	end
 end
 
-function add_sdl()
-	--- SDL is LGPL. It can't be build as static library
-	table.insert( link_list, get_backend_link_name( "SDL" ) )
-	files { "src/eepp/window/backend/SDL/*.cpp" }
-	defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_1_2" }
-end
-
 function add_sfml()
+	print("Using SFML backend");
 	files { "src/eepp/window/backend/SFML/*.cpp" }
 	defines { "EE_BACKEND_SFML_ACTIVE" }
 	
@@ -552,7 +563,7 @@ function add_sfml()
 end
 
 function set_xcode_config()
-	if is_xcode() then
+	if is_xcode() or _OPTIONS["use-frameworks"] then
 		linkoptions { "-F/Library/Frameworks" }
 		includedirs { "/Library/Frameworks/SDL2.framework/Headers" }
 		defines { "EE_SDL2_FROM_ROOTPATH" }
@@ -602,7 +613,7 @@ function set_ios_config()
 	end
 end
 
-function backend_is( name )
+function backend_is( name, libname )
 	if not _OPTIONS["with-backend"] then
 		_OPTIONS["with-backend"] = "SDL2"
 	end
@@ -613,7 +624,7 @@ function backend_is( name )
 	
 	local backend_sel = table.contains( backends, name )
 
-	local ret_val = os_findlib( name ) and backend_sel
+	local ret_val = os_findlib( libname ) and backend_sel
 
 	if os.is_real("mingw32") or os.is_real("emscripten") then
 		ret_val = backend_sel
@@ -627,25 +638,21 @@ function backend_is( name )
 end
 
 function select_backend()	
-	if backend_is( "SDL2" ) then
+	if backend_is("SDL2", "SDL2") then
+		print("Selected SDL2")
 		add_sdl2()
 	end
-	
-	if backend_is( "SDL" ) then
-		add_sdl()
-	end
 
-	if backend_is( "SFML" ) then
+	if backend_is("SFML", "sfml-window") then
+		print("Selected SFML")
 		add_sfml()
 	end
-	
+
 	-- If the selected backend is not present, try to find one present
 	if not backend_selected then
-		if os_findlib("SDL") then
-			add_sdl()
-		elseif os_findlib("SDL2") then
+		if os_findlib("SDL2", "SDL2") then
 			add_sdl2()
-		elseif os_findlib("SFML") then
+		elseif os_findlib("SFML", "sfml-window") then
 			add_sfml()
 		else
 			print("ERROR: Couldnt find any backend. Forced SDL2.")
@@ -656,6 +663,7 @@ end
 
 function check_ssl_support()
 	if _OPTIONS["with-ssl"] then
+		print("Enabled SSL support")
 		if os.is("windows") then
 			table.insert( link_list, get_backend_link_name( "libssl" ) )
 			table.insert( link_list, get_backend_link_name( "libcrypto" ) )
@@ -682,6 +690,10 @@ function build_eepp( build_name )
 		includedirs { "src/eepp/helper/libzip/vs" }
 	end
 
+	if not is_vs() then
+		buildoptions{ "-std=c++11" }
+	end
+
 	if os.is("windows") then
 		files { "src/eepp/system/platform/win/*.cpp" }
 		files { "src/eepp/network/platform/win/*.cpp" }
@@ -704,8 +716,8 @@ function build_eepp( build_name )
 			"src/eepp/ui/tools/*.cpp",
 			"src/eepp/physics/*.cpp",
 			"src/eepp/physics/constraints/*.cpp",
-			"src/eepp/gaming/*.cpp",
-			"src/eepp/gaming/mapeditor/*.cpp"
+			"src/eepp/maps/*.cpp",
+			"src/eepp/maps/mapeditor/*.cpp"
 	}
 	
 	check_ssl_support()
@@ -717,6 +729,7 @@ function build_eepp( build_name )
 	end
 	
 	if _OPTIONS["with-libsndfile"] then
+		print("Enabled libsndfile")
 		defines { "EE_LIBSNDFILE_ENABLED" }
 		
 		if os.is("windows") then
@@ -731,7 +744,7 @@ function build_eepp( build_name )
 	links { link_list }
 	
 	build_link_configuration( build_name )
-	
+
 	configuration "windows"
 		files { "src/eepp/window/platform/win/*.cpp" }
 		add_cross_config_links()
@@ -798,6 +811,13 @@ solution "eepp"
 			build_base_configuration( "glew" )
 	end
 	
+	project "pugixml-static"
+		kind "StaticLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
+		files { "src/eepp/helper/pugixml/*.cpp" }
+		build_base_cpp_configuration( "pugixml" )
+
 	project "zlib-static"
 		kind "StaticLib"
 		language "C"
@@ -843,14 +863,6 @@ solution "eepp"
 		files { "src/eepp/helper/chipmunk/*.c", "src/eepp/helper/chipmunk/constraints/*.c" }
 		includedirs { "include/eepp/helper/chipmunk" }
 		build_base_configuration( "chipmunk" )
-
-	project "haikuttf-static"
-		kind "StaticLib"
-		language "C++"
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/haikuttf/*.cpp" }
-		includedirs { "src/eepp/helper/freetype2/include" }
-		build_base_cpp_configuration( "haikuttf" )
 
 	project "jpeg-compressor-static"
 		kind "StaticLib"

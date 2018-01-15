@@ -10,63 +10,63 @@ NullImpl::NullImpl( EE::Window::Window * window ) :
 NullImpl::~NullImpl() {
 }
 
-void NullImpl::MinimizeWindow() {
+void NullImpl::minimizeWindow() {
 }
 
-void NullImpl::MaximizeWindow() {
+void NullImpl::maximizeWindow() {
 }
 
-bool NullImpl::IsWindowMaximized() {
+bool NullImpl::isWindowMaximized() {
 	return false;
 }
 
-void NullImpl::HideWindow() {
+void NullImpl::hideWindow() {
 }
 
-void NullImpl::RaiseWindow() {
+void NullImpl::raiseWindow() {
 }
 
-void NullImpl::ShowWindow() {
+void NullImpl::showWindow() {
 }
 
-void NullImpl::MoveWindow( int left, int top ) {
+void NullImpl::moveWindow( int left, int top ) {
 }
 
-void NullImpl::SetContext( eeWindowContex Context ) {
+void NullImpl::setContext( eeWindowContex Context ) {
 }
 
-Vector2i NullImpl::Position() {
+Vector2i NullImpl::getPosition() {
 	return Vector2i(0,0);
 }
 
-void NullImpl::ShowMouseCursor() {
+void NullImpl::showMouseCursor() {
 }
 
-void NullImpl::HideMouseCursor() {
+void NullImpl::hideMouseCursor() {
 }
 
-Cursor * NullImpl::CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * NullImpl::createMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-Cursor * NullImpl::CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * NullImpl::createMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-Cursor * NullImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
+Cursor * NullImpl::createMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-void NullImpl::SetMouseCursor( Cursor * cursor ) {
+void NullImpl::setMouseCursor( Cursor * cursor ) {
 }
 
-void NullImpl::SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
+void NullImpl::setSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
 }
 
-void NullImpl::RestoreCursor() {
+void NullImpl::restoreCursor() {
 }
 
-eeWindowContex NullImpl::GetWindowContext() {
+eeWindowContex NullImpl::getWindowContext() {
 	return 0;
 }
 

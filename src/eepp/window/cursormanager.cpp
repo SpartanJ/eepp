@@ -7,10 +7,10 @@ CursorManager::CursorManager( EE::Window::Window * window ) :
 	mCurrent( NULL ),
 	mSysCursor( SYS_CURSOR_NONE ),
 	mCursors(),
-	mCurSysCursor( SYS_CURSOR_NONE ),
+	mCurSysCursor( false ),
 	mVisible( true )
 {
-	InitGlobalCursors();
+	initGlobalCursors();
 }
 
 CursorManager::~CursorManager() {
@@ -20,38 +20,38 @@ CursorManager::~CursorManager() {
 	}
 }
 
-Cursor * CursorManager::Add( Cursor * cursor ) {
+Cursor * CursorManager::add( Cursor * cursor ) {
 	mCursors.insert( cursor );
 	return cursor;
 }
 
-void CursorManager::Remove( Cursor * cursor, bool Delete ) {
+void CursorManager::remove( Cursor * cursor, bool Delete ) {
 	mCursors.erase( cursor );
 
 	if ( Delete )
 		eeSAFE_DELETE( cursor );
 }
 
-void CursorManager::Remove( const std::string& name, bool Delete ) {
-	Remove( String::Hash( name ), Delete );
+void CursorManager::remove( const std::string& name, bool Delete ) {
+	remove( String::hash( name ), Delete );
 }
 
-void CursorManager::Remove( const Uint32& id, bool Delete ) {
+void CursorManager::remove( const Uint32& id, bool Delete ) {
 	for ( CursorsList::iterator it = mCursors.begin(); it != mCursors.end(); ++it ) {
-		if ( (*it)->Id() == id ) {
-			Remove( (*it), Delete );
+		if ( (*it)->getId() == id ) {
+			remove( (*it), Delete );
 			break;	
 		}
 	}
 }
 
-Cursor * CursorManager::Get( const std::string& name ) {
-	return GetById( String::Hash( name ) );
+Cursor * CursorManager::get( const std::string& name ) {
+	return getById( String::hash( name ) );
 }
 
-Cursor * CursorManager::GetById( const Uint32& id ) {
+Cursor * CursorManager::getById( const Uint32& id ) {
 	for ( CursorsList::iterator it = mCursors.begin(); it != mCursors.end(); ++it ) {
-		if ( (*it)->Id() == id ) {
+		if ( (*it)->getId() == id ) {
 			return (*it);
 		}
 	}
@@ -59,62 +59,62 @@ Cursor * CursorManager::GetById( const Uint32& id ) {
 	return NULL;
 }
 
-void CursorManager::Set( const std::string& name ) {
-	SetById( String::Hash( name ) );
+void CursorManager::set( const std::string& name ) {
+	setById( String::hash( name ) );
 }
 
-void CursorManager::SetById( const Uint32& id ) {
+void CursorManager::setById( const Uint32& id ) {
 	for ( CursorsList::iterator it = mCursors.begin(); it != mCursors.end(); ++it ) {
-		if ( (*it)->Id() == id ) {
-			Set( *it );
+		if ( (*it)->getId() == id ) {
+			set( *it );
 			break;	
 		}
 	}
 }
 
-void CursorManager::SetGlobalCursor( EE_CURSOR_TYPE cursor, Cursor * fromCursor ) {
+void CursorManager::setGlobalCursor( EE_CURSOR_TYPE cursor, Cursor * fromCursor ) {
 	if ( cursor < EE_CURSOR_COUNT ) {
 		mGlobalCursors[ cursor ].SysCur	= SYS_CURSOR_NONE;
 		mGlobalCursors[ cursor ].Cur	= fromCursor;
 	}
 }
 
-void CursorManager::SetGlobalCursor( EE_CURSOR_TYPE cursor, EE_SYSTEM_CURSOR fromCursor ) {
+void CursorManager::setGlobalCursor( EE_CURSOR_TYPE cursor, EE_SYSTEM_CURSOR fromCursor ) {
 	if ( cursor < EE_CURSOR_COUNT ) {
 		mGlobalCursors[ cursor ].SysCur	= fromCursor;
 		mGlobalCursors[ cursor ].Cur	= NULL;
 	}
 }
 
-void CursorManager::Set( EE_CURSOR_TYPE cursor ) {
+void CursorManager::set( EE_CURSOR_TYPE cursor ) {
 	if ( cursor < EE_CURSOR_COUNT ) {
 		GlobalCursor& Cursor = mGlobalCursors[ cursor ];
 
 		if ( SYS_CURSOR_NONE != Cursor.SysCur ) {
-			Set( Cursor.SysCur );
+			set( Cursor.SysCur );
 		} else if ( NULL != Cursor.Cur ) {
-			Set( Cursor.Cur );
+			set( Cursor.Cur );
 		}
 	}
 }
 
-bool CursorManager::Visible() {
+bool CursorManager::getVisible() {
 	return mVisible;	
 }
 
-Cursor * CursorManager::Current() const {
+Cursor * CursorManager::getCurrent() const {
 	return mCurrent;
 }
 
-EE_SYSTEM_CURSOR CursorManager::CurrentSysCursor() const {
+EE_SYSTEM_CURSOR CursorManager::getCurrentSysCursor() const {
 	return mSysCursor;
 }
 
-bool CursorManager::CurrentIsSysCursor() const {
+bool CursorManager::currentIsSysCursor() const {
 	return mCurSysCursor;
 }
 
-void CursorManager::InitGlobalCursors() {
+void CursorManager::initGlobalCursors() {
 	for ( int i = 0; i < EE_CURSOR_COUNT; i++ ) {
 		mGlobalCursors[ i ].SysCur = static_cast<EE_SYSTEM_CURSOR>( i );
 	}

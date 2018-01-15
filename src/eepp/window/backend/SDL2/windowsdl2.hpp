@@ -13,8 +13,6 @@
 #define EE_USE_WMINFO
 #endif
 
-namespace EE { namespace System { class Zip; } }
-
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 class EE_API WindowSDL : public Window {
@@ -23,75 +21,61 @@ class EE_API WindowSDL : public Window {
 		
 		virtual ~WindowSDL();
 		
-		bool Create( WindowSettings Settings, ContextSettings Context );
+		bool create( WindowSettings Settings, ContextSettings Context );
 		
-		void ToggleFullscreen();
+		void toggleFullscreen();
 		
-		void Caption( const std::string& Caption );
+		void setCaption( const std::string& setCaption );
 
-		bool Icon( const std::string& Path );
+		bool setIcon( const std::string& Path );
 
-		bool Active();
+		bool isActive();
 
-		bool Visible();
+		bool isVisible();
 
-		void Size( Uint32 Width, Uint32 Height, bool Windowed );
+		void setSize( Uint32 Width, Uint32 Height, bool isWindowed );
 
-		std::vector<DisplayMode> GetDisplayModes() const;
+		std::vector<DisplayMode> getDisplayModes() const;
 
-		void SetGamma( Float Red, Float Green, Float Blue );
+		void setGamma( Float Red, Float Green, Float Blue );
 
-		eeWindowHandle	GetWindowHandler();
+		eeWindowHandle	getWindowHandler();
 
-		virtual void Minimize();
+		virtual void minimize();
 
-		virtual void Maximize();
+		virtual void maximize();
 
-		virtual void Hide();
+		virtual void hide();
 
-		virtual void Raise();
+		virtual void raise();
 
-		virtual void Show();
+		virtual void show();
 
-		virtual void Position( Int16 Left, Int16 Top );
+		virtual void setPosition( Int16 Left, Int16 Top );
 
-		virtual Vector2i Position();
+		virtual Vector2i getPosition();
 
-		const Sizei& GetDesktopResolution();
+		const Sizei& getDesktopResolution();
 
 		SDL_Window *	GetSDLWindow() const;
 
-		void StartTextInput();
+		void startTextInput();
 
-		bool IsTextInputActive();
+		bool isTextInputActive();
 
-		void StopTextInput();
+		void stopTextInput();
 
-		void SetTextInputRect( Recti& rect );
+		void setTextInputRect( Rect& rect );
 
-		bool HasScreenKeyboardSupport();
+		bool hasScreenKeyboardSupport();
 
-		bool IsScreenKeyboardShown();
+		bool isScreenKeyboardShown();
 
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-		void * GetJNIEnv();
+		bool isThreadedGLContext();
 
-		void * GetActivity();
+		void setGLContextThread();
 
-		int GetExternalStorageState();
-
-		std::string GetInternalStoragePath();
-
-		std::string GetExternalStoragePath();
-
-		std::string GetApkPath();
-#endif
-
-		bool IsThreadedGLContext();
-
-		void SetGLContextThread();
-
-		void UnsetGLContextThread();
+		void unsetGLContextThread();
 	protected:
 		friend class ClipboardSDL;
 
@@ -103,21 +87,19 @@ class EE_API WindowSDL : public Window {
 		WMInfo *		mWMinfo;
 		#endif
 
-		#if EE_PLATFORM == EE_PLATFORM_ANDROID
-		Zip *			mZip;
-		#endif
-
 		Vector2i		mWinPos;
 
-		void CreatePlatform();
+		void createPlatform();
 
-		void SwapBuffers();
+		void swapBuffers();
 
-		void SetGLConfig();
+		void setGLConfig();
 
-		std::string GetVersion();
+		std::string getVersion();
 
-		void UpdateDesktopResolution();
+		void updateDesktopResolution();
+
+		void onWindowResize( Uint32 Width, Uint32 Height );
 };
 
 }}}}

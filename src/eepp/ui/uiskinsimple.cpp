@@ -1,75 +1,100 @@
 #include <eepp/ui/uiskinsimple.hpp>
-#include <eepp/graphics/textureatlasmanager.hpp>
+#include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/ninepatch.hpp>
+#include <eepp/graphics/drawablesearcher.hpp>
 
 namespace EE { namespace UI {
 
-UISkinSimple::UISkinSimple( const std::string& Name ) :
-	UISkin( Name, SkinSimple )
+UISkinSimple * UISkinSimple::New( const std::string& name ) {
+	return eeNew( UISkinSimple, ( name ) );
+}
+
+UISkinSimple::UISkinSimple(const std::string& name ) :
+	UISkin( name, SkinSimple )
 {
 	for ( Int32 i = 0; i < UISkinState::StateCount; i++ )
-		mSubTexture[ i ] = NULL;
+		mDrawable[ i ] = NULL;
 
-	SetSkins();
+	setSkins();
 }
 
 UISkinSimple::~UISkinSimple() {
 }
 
-void UISkinSimple::Draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State ) {
+void UISkinSimple::draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State ) {
 	if ( 0 == Alpha )
 		return;
 
-	SubTexture * tSubTexture = mSubTexture[ State ];
-	mTempColor		= mColor[ State ];
+	Drawable * tDrawable = mDrawable[ State ];
+	mTempColor	= mColor[ State ];
 
-	if ( NULL != tSubTexture ) {
-		tSubTexture->DestSize( Sizef( Width, Height ) );
-
-		if ( mTempColor.Alpha != Alpha ) {
-			mTempColor.Alpha = (Uint8)( (Float)mTempColor.Alpha * ( (Float)Alpha / 255.f ) );
+	if ( NULL != tDrawable ) {
+		if ( mTempColor.a != Alpha ) {
+			mTempColor.a = (Uint8)( (Float)mTempColor.a * ( (Float)Alpha / 255.f ) );
 		}
 
-		tSubTexture->Draw( X, Y, mTempColor );
-
-		tSubTexture->ResetDestSize();
+		tDrawable->setColor( mTempColor );
+		tDrawable->draw( Vector2f( X, Y ), Sizef( Width, Height ) );
+		tDrawable->clearColor();
 	}
 }
 
-void UISkinSimple::SetSkin( const Uint32& State ) {
+void UISkinSimple::setSkin( const Uint32& State ) {
 	eeASSERT ( State < UISkinState::StateCount );
 
-	std::string Name( mName + "_" + UISkin::GetSkinStateName( State ) );
+	std::string Name( mName + "_" + UISkin::getSkinStateName( State ) );
 
-	mSubTexture[ State ] = TextureAtlasManager::instance()->GetSubTextureByName( Name );
+	mDrawable[ State ] = DrawableSearcher::searchByName( Name );
 }
 
-SubTexture * UISkinSimple::GetSubTexture( const Uint32& State ) const {
-	eeASSERT ( State < UISkinState::StateCount );
-
-	return mSubTexture[ State ];
+bool UISkinSimple::stateExists( const Uint32 & state ) {
+	return NULL != mDrawable[ state ];
 }
 
-void UISkinSimple::StateNormalToState( const Uint32& State ) {
-	if ( NULL == mSubTexture[ State ] )
-		mSubTexture[ State ] = mSubTexture[ UISkinState::StateNormal ];
+void UISkinSimple::stateNormalToState( const Uint32& State ) {
+	if ( NULL == mDrawable[ State ] )
+		mDrawable[ State ] = mDrawable[ UISkinState::StateNormal ];
 }
 
-UISkinSimple * UISkinSimple::Copy( const std::string& NewName, const bool& CopyColorsState ) {
-	UISkinSimple * SkinS = eeNew( UISkinSimple, ( NewName ) );
+UISkinSimple * UISkinSimple::clone( const std::string& NewName, const bool& CopyColorsState ) {
+	UISkinSimple * SkinS = UISkinSimple::New( NewName );
 
 	if ( CopyColorsState ) {
 		SkinS->mColorDefault = mColorDefault;
 
-		memcpy( &SkinS->mColor[0], &mColor[0], UISkinState::StateCount * sizeof(ColorA) );
+		memcpy( &SkinS->mColor[0], &mColor[0], UISkinState::StateCount * sizeof(Color) );
 	}
 
-	memcpy( &SkinS->mSubTexture[0], &mSubTexture[0], UISkinState::StateCount * sizeof(SubTexture*) );
+	memcpy( &SkinS->mDrawable[0], &mDrawable[0], UISkinState::StateCount * sizeof(Drawable*) );
 
 	return SkinS;
 }
 
-UISkin * UISkinSimple::Copy() {
-	return Copy( mName, true );
+UISkin * UISkinSimple::clone() {
+	return clone( mName, true );
+}
+
+Sizei UISkinSimple::getSize( const Uint32 & state ) {
+	if ( NULL != mDrawable[ state ] ) {
+		Sizef s( mDrawable[ state ]->getSize() );
+		return Sizei( (Int32)s.x, (Int32)s.y );
+	}
+
+	return Sizei();
+}
+
+Rect UISkinSimple::getBorderSize( const Uint32 & state ) {
+	if ( NULL != mDrawable[ state ] && mDrawable[ state ]->getDrawableType() == Drawable::NINEPATCH ) {
+		NinePatch * ninePatch( static_cast<NinePatch*>( mDrawable[ state ] ) );
+		SubTexture * stl( ninePatch->getSubTexture( NinePatch::Left ) );
+		SubTexture * str( ninePatch->getSubTexture( NinePatch::Right ) );
+		SubTexture * stt( ninePatch->getSubTexture( NinePatch::Up ) );
+		SubTexture * stb( ninePatch->getSubTexture( NinePatch::Down ) );
+		Rect size( stl->getSize().getWidth(), stt->getSize().getHeight(), str->getSize().getWidth(), stb->getSize().getHeight() );
+		return size;
+	}
+
+	return Rect();
 }
 
 }}

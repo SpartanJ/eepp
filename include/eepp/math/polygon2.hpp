@@ -34,75 +34,63 @@ class Polygon2 {
 		Polygon2( const std::vector< Vector2<T> >& theVecs );
 
 		/** Adds a new Vector2 to the polygon */
-		Uint32 PushBack( const Vector2<T>& V );
+		Uint32 pushBack( const Vector2<T>& V );
 
 		/** Removes the las Vector2 from the polygon */
-		void PopBack();
+		void popBack();
 
 		/** Clear the polygon vectors */
-		void Clear();
+		void clear();
 
 		/** @return The polygon Vector2 from the position ( from 0 to polygon size -1 ) */
 		const Vector2<T>& operator[] ( const Uint32& Pos ) const;
 
 		/** @return The polygon Vector2 from the position ( from 0 to polygon size -1 ) */
-		Vector2<T>& GetAt( const Uint32& Pos )
+		Vector2<T>& getAt( const Uint32& Pos )
 		{
 			return Vector[Pos];
 		}
 
 		/** Change the polygon vector in the position specified
 		**	@return The Vector2 changed */
-		Vector2<T>& SetAt( const Uint32& Pos, Vector2<T> newPos )
+		Vector2<T>& setAt( const Uint32& Pos, Vector2<T> newPos )
 		{
 			Vector[Pos] = newPos;
 			return Vector[Pos];
 		}
 
 		/** @return The number of vectors of the polygon */
-		std::size_t Size() const;
+		std::size_t getSize() const;
 
 		/** @return The position of the polygon ( also known as the offset of the polygon ) */
-		Vector2<T> Position() { return Vector2<T>(OffsetX, OffsetY); }
+		Vector2<T> getPosition() const { return Position; }
 
 		/** Move the polygon Vector2s, add to every point the distance specified  */
-		void Move( Vector2<T> dist );
-
-		/** @return The X position of the polygon ( the X-axis Offset ) */
-		T X() const { return OffsetX; }
-
-		/** @return The Y position of the polygon ( the Y-axis Offset ) */
-		T Y() const { return OffsetY; }
+		void move( Vector2<T> dist );
 
 		/** @return The position of the polygon  ( the offset )*/
-		void Position( const Vector2<T>& V ) { OffsetX = V.x; OffsetY = V.y; }
-
-		/** Set the new position of the x-axis ( the x-axis offset ) */
-		T X( const T& x ) { OffsetX = x; }
-
-		/** Set the new position of the y-axis ( the y-axis offset ) */
-		T Y( const T& y ) { OffsetY = y; }
+		void setPosition( const Vector2<T>& pos ) { Position = pos; }
 
 		/** @return True if the polygons intersect */
-		bool Intersect( const Polygon2<T>& p1 );
+		bool intersect( const Polygon2<T>& p1 );
 
 		/** Rotates the polygon from a rotation center */
-		void Rotate( const T& Angle, const Vector2<T>& Center );
+		void rotate( const T& angle, const Vector2<T>& center );
 
 		/** Scale the polygon from a center point */
-		void Scale( const T& scale, const Vector2<T>& Center );
+		void scale( const T& scale, const Vector2<T>& center );
 
 		/** Scale the polygon from a center point */
-		void Scale( const Vector2<T>& scale, const Vector2<T>& Center );
+		void scale( const Vector2<T>& scale, const Vector2<T>& center );
 
 		/** @return True if the point is inside the polygon */
-		bool PointInside( const Vector2<T>& point );
+		bool pointInside( const Vector2<T>& point );
 
 		/** @return The polygon axis-aligned bounding box */
-		tRECT<T> ToAABB();
+		tRECT<T> getBounds();
 
 		/** Creates a rounded rectangle polygon */
-		static Polygon2<T> CreateRoundedRectangle( const T& x, const T& y, const T& width, const T& height, const unsigned int& Radius = 8 );
+		static Polygon2<T> createRoundedRectangle( const T& x, const T& y, const T& width, const T& height, const unsigned int& Radius = 8 );
 
 		/** @brief Intersect to Quads
 		**	Convert the two quads in two polygons, and execute a polygon to polygon collition.
@@ -110,53 +98,50 @@ class Polygon2 {
 		**	@param q1 Second quad
 		**	@param q0Pos The q0 quad polygon offset
 		**	@param q1Pos The q1 quad polygon offset */
-		static bool IntersectQuad2( const Quad2<T>& q0, const Quad2<T>& q1, const Vector2<T>& q0Pos = Vector2<T>(0,0), const Vector2<T>& q1Pos = Vector2<T>(0,0) );
+		static bool intersectQuad2( const Quad2<T>& q0, const Quad2<T>& q1, const Vector2<T>& q0Pos = Vector2<T>(0,0), const Vector2<T>& q1Pos = Vector2<T>(0,0) );
 
 		/** @return Th closest polygon point to the point (to).
 		**	@param to The point
 		**	@param distance A pointer that returns the distance between the point and the closest point to the point */
-		Uint32 ClosestPoint( const Vector2<T> &to, T * distance = NULL );
+		Uint32 closestPoint( const Vector2<T> &to, T * distance = NULL );
 	private:
 		std::vector< Vector2<T> > Vector;
-		T OffsetX, OffsetY;
+		Vector2<T> Position;
 };
 
 template <typename T>
-Polygon2<T>::Polygon2() :
-	OffsetX(0),
-	OffsetY(0)
+Polygon2<T>::Polygon2()
 {
-	Clear();
+	clear();
 }
 
 template <typename T>
 Polygon2<T>::Polygon2( const Polygon2<T>& fromPoly ) :
 	Vector( fromPoly.Vector ),
-	OffsetX( fromPoly.OffsetX ),
-	OffsetY( fromPoly.OffsetY )
+	Position( fromPoly.Position )
 {
 }
 
 template <typename T>
-Polygon2<T>::Polygon2( const std::vector< Vector2<T> >& theVecs ) : OffsetX(0), OffsetY(0) {
+Polygon2<T>::Polygon2( const std::vector< Vector2<T> >& theVecs ) {
 	for (Uint32 i = 0; i < theVecs.size(); i++)
-		PushBack ( theVecs[i] );
+		pushBack ( theVecs[i] );
 }
 
 template <typename T>
-Polygon2<T>::Polygon2( const Triangle2<T>& fromTrig ) : OffsetX(0), OffsetY(0) {
+Polygon2<T>::Polygon2( const Triangle2<T>& fromTrig ) {
 	for (Uint8 i = 0; i < 3; i++)
-		PushBack ( fromTrig.V[i] );
+		pushBack ( fromTrig.V[i] );
 }
 
 template <typename T>
-Polygon2<T>::Polygon2( const Quad2<T>& fromQuad ) : OffsetX(0), OffsetY(0) {
+Polygon2<T>::Polygon2( const Quad2<T>& fromQuad ) {
 	for (Uint8 i = 0; i < 4; i++)
-		PushBack ( fromQuad.V[i] );
+		pushBack ( fromQuad.V[i] );
 }
 
 template<typename T>
-Polygon2<T>::Polygon2( const tRECT<T>& fromRect ) : OffsetX(0), OffsetY(0) {
+Polygon2<T>::Polygon2( const tRECT<T>& fromRect ) {
 	Vector.push_back( Vector2<T>( fromRect.Left, fromRect.Top ) );
 	Vector.push_back( Vector2<T>( fromRect.Left, fromRect.Bottom ) );
 	Vector.push_back( Vector2<T>( fromRect.Right, fromRect.Bottom ) );
@@ -165,22 +150,22 @@ Polygon2<T>::Polygon2( const tRECT<T>& fromRect ) : OffsetX(0), OffsetY(0) {
 
 template <typename T>
 Polygon2<T>::~Polygon2() {
-	Clear();
+	clear();
 }
 
 template <typename T>
-void Polygon2<T>::Clear() {
+void Polygon2<T>::clear() {
 	Vector.clear();
 }
 
 template <typename T>
-Uint32 Polygon2<T>::PushBack( const Vector2<T>& V ) {
+Uint32 Polygon2<T>::pushBack( const Vector2<T>& V ) {
 	Vector.push_back( V );
 	return (Uint32)Vector.size() - 1;
 }
 
 template <typename T>
-void Polygon2<T>::PopBack() {
+void Polygon2<T>::popBack() {
 	Vector.pop_back();
 }
 
@@ -192,44 +177,44 @@ const Vector2<T>& Polygon2<T>::operator[] ( const Uint32& Pos ) const {
 }
 
 template <typename T>
-std::size_t Polygon2<T>::Size() const {
+std::size_t Polygon2<T>::getSize() const {
 	return Vector.size();
 }
 
 template <typename T>
-void Polygon2<T>::Rotate( const T& Angle, const Vector2<T>& Center ) {
-	if ( Angle == 0.f )
+void Polygon2<T>::rotate(const T& angle, const Vector2<T>& center ) {
+	if ( angle == 0.f )
 		return;
 
 	for ( unsigned int i = 0; i < Vector.size(); i++ )
-		Vector[ i ].Rotate( Angle, Center );
+		Vector[ i ].rotate( angle, center );
 }
 
 template <typename T>
-void Polygon2<T>::Scale( const Vector2<T>& scale, const Vector2<T>& Center ) {
+void Polygon2<T>::scale(const Vector2<T>& scale, const Vector2<T>& center ) {
 	if ( scale == 1.0f )
 		return;
 
 	for ( Uint32 i = 0; i < Vector.size(); i++ ) {
-		if ( Vector[i].x < Center.x )
-			Vector[i].x = Center.x - eeabs( Center.x - Vector[i].x ) * scale.x;
+		if ( Vector[i].x < center.x )
+			Vector[i].x = center.x - eeabs( center.x - Vector[i].x ) * scale.x;
 		else
-			Vector[i].x = Center.x + eeabs( Center.x - Vector[i].x ) * scale.x;
+			Vector[i].x = center.x + eeabs( center.x - Vector[i].x ) * scale.x;
 
-		if ( Vector[i].y < Center.y )
-			Vector[i].y = Center.y - eeabs( Center.y - Vector[i].y ) * scale.y;
+		if ( Vector[i].y < center.y )
+			Vector[i].y = center.y - eeabs( center.y - Vector[i].y ) * scale.y;
 		else
-			Vector[i].y = Center.y + eeabs( Center.y - Vector[i].y ) * scale.y;
+			Vector[i].y = center.y + eeabs( center.y - Vector[i].y ) * scale.y;
 	}
 }
 
 template <typename T>
-void Polygon2<T>::Scale( const T& scale, const Vector2<T>& Center ) {
-	Scale( Vector2<T>( scale, scale ), Center );
+void Polygon2<T>::scale(const T& scale, const Vector2<T>& center ) {
+	scale( Vector2<T>( scale, scale ), center );
 }
 
 template<typename T>
-Polygon2<T> Polygon2<T>::CreateRoundedRectangle( const T& x, const T& y, const T& width, const T& height, const unsigned int& Radius ) {
+Polygon2<T> Polygon2<T>::createRoundedRectangle( const T& x, const T& y, const T& width, const T& height, const unsigned int& Radius ) {
 	T PI05 = (T)EE_PI * 0.5f;
 	T PI15 = (T)EE_PI * 1.5f;
 	T PI20 = (T)EE_PI2;
@@ -238,44 +223,44 @@ Polygon2<T> Polygon2<T>::CreateRoundedRectangle( const T& x, const T& y, const T
 
 	Polygon2<T> Poly;
 
-	Poly.PushBack( Vector2<T>( x, y + height - Radius) );
-	Poly.PushBack( Vector2<T>( x, y + Radius ) );
+	Poly.pushBack( Vector2<T>( x, y + height - Radius) );
+	Poly.pushBack( Vector2<T>( x, y + Radius ) );
 
 	for( t = (T)EE_PI; t < PI15; t += 0.1f ) {
 		sx = x + Radius + (Float)cosf(t) * Radius;
 		sy = y + Radius + (Float)sinf(t) * Radius;
 
-		Poly.PushBack( Vector2<T> (sx, sy) );
+		Poly.pushBack( Vector2<T> (sx, sy) );
 	}
 
-	Poly.PushBack( Vector2<T>( x + Radius, y ) );
-	Poly.PushBack( Vector2<T>( x + width - Radius, y ) );
+	Poly.pushBack( Vector2<T>( x + Radius, y ) );
+	Poly.pushBack( Vector2<T>( x + width - Radius, y ) );
 
 	for( t = PI15; t < PI20; t += 0.1f ) {
 		sx = x + width - Radius + (Float)cosf(t) * Radius;
 		sy = y + Radius + (Float)sinf(t) * Radius;
 
-		Poly.PushBack( Vector2<T> (sx, sy) );
+		Poly.pushBack( Vector2<T> (sx, sy) );
 	}
 
-	Poly.PushBack( Vector2<T> ( x + width, y + Radius ) );
-	Poly.PushBack( Vector2<T> ( x + width, y + height - Radius ) );
+	Poly.pushBack( Vector2<T> ( x + width, y + Radius ) );
+	Poly.pushBack( Vector2<T> ( x + width, y + height - Radius ) );
 
 	for( t = 0; t < PI05; t += 0.1f ){
 		sx = x + width - Radius + (Float)cosf(t) * Radius;
 		sy = y + height -Radius + (Float)sinf(t) * Radius;
 
-		Poly.PushBack( Vector2<T> (sx, sy) );
+		Poly.pushBack( Vector2<T> (sx, sy) );
 	}
 
-	Poly.PushBack( Vector2<T> ( x + width - Radius, y + height ) );
-	Poly.PushBack( Vector2<T> ( x + Radius, y + height ) );
+	Poly.pushBack( Vector2<T> ( x + width - Radius, y + height ) );
+	Poly.pushBack( Vector2<T> ( x + Radius, y + height ) );
 
 	for( t = PI05; t < (T)EE_PI; t += 0.1f ) {
 		sx = x + Radius + (Float)cosf(t) * Radius;
 		sy = y + height - Radius + (Float)sinf(t) * Radius;
 
-		Poly.PushBack( Vector2<T> (sx, sy) );
+		Poly.pushBack( Vector2<T> (sx, sy) );
 	}
 
 	return Poly;
@@ -293,9 +278,9 @@ The name of W. Randolph Franklin may not be used to endorse or promote products 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 template<typename T>
-bool Polygon2<T>::PointInside( const Vector2<T>& point ) {
+bool Polygon2<T>::pointInside( const Vector2<T>& point ) {
 	int i, j, c = 0;
-	int nvert = (int)Size();
+	int nvert = (int)getSize();
 
 	for ( i = 0, j = nvert - 1; i < nvert; j = i++ ) {
 		if ( ( ( Vector[i].y > point.y ) != ( Vector[j].y > point.y ) ) &&
@@ -310,36 +295,36 @@ bool Polygon2<T>::PointInside( const Vector2<T>& point ) {
 
 /** Polygon Polygon Collision ( SAT ) */
 template <typename T>
-bool Polygon2<T>::Intersect( const Polygon2<T>& p1 ) {
+bool Polygon2<T>::intersect( const Polygon2<T>& p1 ) {
 	T min0, max0, min1, max1, sOffset, t;
 	Vector2<T> vAxis, vOffset;
-	unsigned int i = 0, j = 0, n, size = Size();
+	unsigned int i = 0, j = 0, n, size = this->getSize();
 
-	vOffset = Vector2<T>( X() - p1.X(), Y() - p1.Y() );
+	vOffset = getPosition() - p1.getPosition();
 
 	for (i = 0; i < size; i++) {
 		n = i + 1;
-		if ( n >= Size() ) n = 0;
+		if ( n >= this->getSize() ) n = 0;
 
-		vAxis = Line2<T>( Vector[i], Vector[n] ).GetNormal();
+		vAxis = Line2<T>( Vector[i], Vector[n] ).getNormal();
 
-		min0 = vAxis.Dot( Vector[0] );
+		min0 = vAxis.dot( Vector[0] );
 		max0 = min0;
-		for (j = 1; j < Size(); j++) {
-			t = vAxis.Dot( Vector[j] );
+		for (j = 1; j < this->getSize(); j++) {
+			t = vAxis.dot( Vector[j] );
 			if (t < min0) min0 = t;
 			if (t > max0) max0 = t;
 		}
 
-		min1 = vAxis.Dot( p1[0] );
+		min1 = vAxis.dot( p1[0] );
 		max1 = min1;
-		for (j = 1; j < p1.Size(); j++) {
-			t = vAxis.Dot( p1[j] );
+		for (j = 1; j < p1.getSize(); j++) {
+			t = vAxis.dot( p1[j] );
 			if (t < min1) min1 = t;
 			if (t > max1) max1 = t;
 		}
 
-		sOffset = vAxis.Dot( vOffset );
+		sOffset = vAxis.dot( vOffset );
 		min0 += sOffset;
 		max0 += sOffset;
 
@@ -348,29 +333,29 @@ bool Polygon2<T>::Intersect( const Polygon2<T>& p1 ) {
 		}
 	}
 
-	for (i = 0; i < p1.Size(); i++) {
+	for (i = 0; i < p1.getSize(); i++) {
 		n = i + 1;
-		if ( n >= p1.Size() ) n = 0;
+		if ( n >= p1.getSize() ) n = 0;
 
-		vAxis = Line2<T>( p1[i], p1[n] ).GetNormal();
+		vAxis = Line2<T>( p1[i], p1[n] ).getNormal();
 
-		min0 = vAxis.Dot( Vector[0] );
+		min0 = vAxis.dot( Vector[0] );
 		max0 = min0;
-		for (j = 1; j < Size(); j++) {
-			t = vAxis.Dot( Vector[j] );
+		for (j = 1; j < this->getSize(); j++) {
+			t = vAxis.dot( Vector[j] );
 			if (t < min0) min0 = t;
 			if (t > max0) max0 = t;
 		}
 
-		min1 = vAxis.Dot( p1[0] );
+		min1 = vAxis.dot( p1[0] );
 		max1 = min1;
-		for (j = 1; j < p1.Size(); j++) {
-			t = vAxis.Dot( p1[j] );
+		for (j = 1; j < p1.getSize(); j++) {
+			t = vAxis.dot( p1[j] );
 			if (t < min1) min1 = t;
 			if (t > max1) max1 = t;
 		}
 
-		sOffset = vAxis.Dot( vOffset );
+		sOffset = vAxis.dot( vOffset );
 		min0 += sOffset;
 		max0 += sOffset;
 
@@ -385,18 +370,18 @@ bool Polygon2<T>::Intersect( const Polygon2<T>& p1 ) {
 
 /** Quad Quad Collision */
 template <typename T>
-bool Polygon2<T>::IntersectQuad2( const Quad2<T>& q0, const Quad2<T>& q1, const Vector2<T>& q0Pos, const Vector2<T>& q1Pos ) {
+bool Polygon2<T>::intersectQuad2( const Quad2<T>& q0, const Quad2<T>& q1, const Vector2<T>& q0Pos, const Vector2<T>& q1Pos ) {
 	Polygon2<T> Tmp1 = Polygon2<T>( q0 );
 	Polygon2<T> Tmp2 = Polygon2<T>( q1 );
 
-	Tmp1.Position( q0Pos );
-	Tmp1.Position( q1Pos );
+	Tmp1.setPosition( q0Pos );
+	Tmp1.setPosition( q1Pos );
 
-	return Tmp1.Intersect( Tmp2 );
+	return Tmp1.intersect( Tmp2 );
 }
 
 template <typename T>
-tRECT<T> Polygon2<T>::ToAABB() {
+tRECT<T> Polygon2<T>::getBounds() {
 	tRECT<T> TmpR;
 
 	if ( Vector.size() < 4 ) {
@@ -412,23 +397,23 @@ tRECT<T> Polygon2<T>::ToAABB() {
 		if ( MaxY < Vector[i].y ) MaxY = Vector[i].y;
 	}
 
-	TmpR.Left	= MinX + OffsetX;
-	TmpR.Right	= MaxX + OffsetX;
-	TmpR.Top	= MinY + OffsetY;
-	TmpR.Bottom	= MaxY + OffsetY;
+	TmpR.Left	= MinX + Position.x;
+	TmpR.Right	= MaxX + Position.x;
+	TmpR.Top	= MinY + Position.y;
+	TmpR.Bottom	= MaxY + Position.y;
 
 	return TmpR;
 }
 
 template <typename T>
-void Polygon2<T>::Move( Vector2<T> dist ) {
+void Polygon2<T>::move( Vector2<T> dist ) {
 	for ( Uint32 i = 0; i < Vector.size(); i++ ) {
 		Vector[i] += dist;
 	}
 }
 
 template <typename T>
-Uint32 Polygon2<T>::ClosestPoint( const Vector2<T>& to, T * distance ) {
+Uint32 Polygon2<T>::closestPoint( const Vector2<T>& to, T * distance ) {
 	Uint32 Index	= 0;
 	T Dist			= (T)99999999;
 	T tDist;
@@ -438,7 +423,7 @@ Uint32 Polygon2<T>::ClosestPoint( const Vector2<T>& to, T * distance ) {
 	}
 
 	for ( Uint32 i = 0; i < Vector.size(); i++ ) {
-		tDist = Vector[i].Distance( to );
+		tDist = Vector[i].distance( to );
 
 		if ( tDist < Dist  ) {
 			Index	= i;

@@ -8,21 +8,21 @@ CursorSDL::CursorSDL( Texture * tex, const Vector2i& hotspot, const std::string&
 	Cursor( tex, hotspot, name, window ),
 	mCursor( NULL )
 {
-	Create();
+	create();
 }
 
 CursorSDL::CursorSDL( Graphics::Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( img, hotspot, name, window ),
 	mCursor( NULL )
 {
-	Create();
+	create();
 }
 
 CursorSDL::CursorSDL( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( path, hotspot, name, window ),
 	mCursor( NULL )
 {
-	Create();
+	create();
 }
 
 CursorSDL::~CursorSDL() {
@@ -30,7 +30,7 @@ CursorSDL::~CursorSDL() {
 		SDL_FreeCursor( mCursor );
 }
 
-void CursorSDL::Create() {
+void CursorSDL::create() {
 	if ( NULL == mImage )
 		return;
 
@@ -46,13 +46,13 @@ void CursorSDL::Create() {
 		bmask = 0x00ff0000;
 		amask = 0xff000000;
 	#endif
-	SDL_Surface * TempGlyphSheet = SDL_CreateRGBSurface( SDL_SWSURFACE, mImage->Width(), mImage->Height(), mImage->Channels() * 8, rmask, gmask, bmask, amask );
+	SDL_Surface * TempGlyphSheet = SDL_CreateRGBSurface( SDL_SWSURFACE, mImage->getWidth(), mImage->getHeight(), mImage->getChannels() * 8, rmask, gmask, bmask, amask );
 
 	SDL_LockSurface( TempGlyphSheet );
 
-	Uint32 ssize = TempGlyphSheet->w * TempGlyphSheet->h * mImage->Channels();
+	Uint32 ssize = TempGlyphSheet->w * TempGlyphSheet->h * mImage->getChannels();
 
-	Uint8 * Ptr = mImage->GetPixels();
+	Uint8 * Ptr = mImage->getPixels();
 
 	for ( Uint32 i=0; i < ssize; i++ ) {
 		( static_cast<Uint8*>( TempGlyphSheet->pixels ) )[i] = Ptr[i];

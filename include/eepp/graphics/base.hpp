@@ -9,7 +9,7 @@
 #include <eepp/math/math.hpp>
 using namespace EE::Math;
 
-#include <eepp/system/colors.hpp>
+#include <eepp/system/color.hpp>
 #include <eepp/system/bitop.hpp>
 #include <eepp/system/clock.hpp>
 #include <eepp/system/singleton.hpp>
@@ -21,7 +21,12 @@ using namespace EE::Math;
 #include <eepp/system/filesystem.hpp>
 using namespace EE::System;
 
-#include <eepp/graphics/renders.hpp>
+#include <eepp/graphics/rendermode.hpp>
 #include <eepp/graphics/blendmode.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
+
+#ifndef EE_MAX_TEXTURE_UNITS
+#define EE_MAX_TEXTURE_UNITS 4
+#endif
 
 #endif

@@ -14,21 +14,21 @@ Http::Request::Request(const std::string& uri, Method method, const std::string&
 	mValidateCertificate( validateCertificate ),
 	mValidateHostname( validateHostname )
 {
-	SetMethod(method);
-	SetUri(uri);
-	SetHttpVersion(1, 0);
-	SetBody(body);
+	setMethod(method);
+	setUri(uri);
+	setHttpVersion(1, 0);
+	setBody(body);
 }
 
-void Http::Request::SetField(const std::string& field, const std::string& value) {
-	mFields[String::ToLower(field)] = value;
+void Http::Request::setField(const std::string& field, const std::string& value) {
+	mFields[String::toLower(field)] = value;
 }
 
-void Http::Request::SetMethod(Http::Request::Method method) {
+void Http::Request::setMethod(Http::Request::Method method) {
 	mMethod = method;
 }
 
-void Http::Request::SetUri(const std::string& uri) {
+void Http::Request::setUri(const std::string& uri) {
 	mUri = uri;
 
 	// Make sure it starts with a '/'
@@ -36,36 +36,36 @@ void Http::Request::SetUri(const std::string& uri) {
 		mUri.insert(0, "/");
 }
 
-void Http::Request::SetHttpVersion(unsigned int major, unsigned int minor) {
+void Http::Request::setHttpVersion(unsigned int major, unsigned int minor) {
 	mMajorVersion = major;
 	mMinorVersion = minor;
 }
 
-void Http::Request::SetBody(const std::string& body) {
+void Http::Request::setBody(const std::string& body) {
 	mBody = body;
 }
 
-const std::string &Http::Request::GetUri() const {
+const std::string &Http::Request::getUri() const {
 	return mUri;
 }
 
-const bool& Http::Request::ValidateCertificate() const {
+const bool& Http::Request::getValidateCertificate() const {
 	return mValidateCertificate;
 }
 
-void Http::Request::ValidateCertificate(bool enable) {
+void Http::Request::setValidateCertificate(bool enable) {
 	mValidateCertificate = enable;
 }
 
-const bool &Http::Request::ValidateHostname() const {
+const bool &Http::Request::getValidateHostname() const {
 	return mValidateHostname;
 }
 
-void Http::Request::ValidateHostname(bool enable) {
+void Http::Request::setValidateHostname(bool enable) {
 	mValidateHostname = enable;
 }
 
-std::string Http::Request::Prepare() const {
+std::string Http::Request::prepare() const {
 	std::ostringstream out;
 
 	// Convert the method to its string representation
@@ -97,8 +97,8 @@ std::string Http::Request::Prepare() const {
 	return out.str();
 }
 
-bool Http::Request::HasField(const std::string& field) const {
-	return mFields.find(String::ToLower(field)) != mFields.end();
+bool Http::Request::hasField(const std::string& field) const {
+	return mFields.find(String::toLower(field)) != mFields.end();
 }
 
 Http::Response::Response() :
@@ -108,8 +108,8 @@ Http::Response::Response() :
 {
 }
 
-const std::string& Http::Response::GetField(const std::string& field) const {
-	FieldTable::const_iterator it = mFields.find(String::ToLower(field));
+const std::string& Http::Response::getField(const std::string& field) const {
+	FieldTable::const_iterator it = mFields.find(String::toLower(field));
 	if (it != mFields.end()) {
 		return it->second;
 	} else {
@@ -118,23 +118,23 @@ const std::string& Http::Response::GetField(const std::string& field) const {
 	}
 }
 
-Http::Response::Status Http::Response::GetStatus() const {
+Http::Response::Status Http::Response::getStatus() const {
 	return mStatus;
 }
 
-unsigned int Http::Response::GetMajorHttpVersion() const {
+unsigned int Http::Response::getMajorHttpVersion() const {
 	return mMajorVersion;
 }
 
-unsigned int Http::Response::GetMinorHttpVersion() const {
+unsigned int Http::Response::getMinorHttpVersion() const {
 	return mMinorVersion;
 }
 
-const std::string& Http::Response::GetBody() const {
+const std::string& Http::Response::getBody() const {
 	return mBody;
 }
 
-void Http::Response::Parse(const std::string& data) {
+void Http::Response::parse(const std::string& data) {
 	std::istringstream in(data);
 
 	// Extract the HTTP version from the first line
@@ -143,7 +143,7 @@ void Http::Response::Parse(const std::string& data) {
 	if (in >> version) {
 		std::locale loc;
 		if ((version.size() >= 8) && (version[6] == '.') &&
-			(String::ToLower(version.substr(0, 5)) == "http/")   &&
+			(String::toLower(version.substr(0, 5)) == "http/")   &&
 			 std::isdigit(version[5],loc) && std::isdigit(version[7],loc)) {
 			mMajorVersion = version[5] - '0';
 			mMinorVersion = version[7] - '0';
@@ -169,13 +169,13 @@ void Http::Response::Parse(const std::string& data) {
 	in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
 	// Parse the other lines, which contain fields, one by one
-	ParseFields(in);
+	parseFields(in);
 
 	// Finally extract the body
 	mBody.clear();
 
 	// Determine whether the transfer is chunked
-	if (String::ToLower(GetField("transfer-encoding")) != "chunked") {
+	if (String::toLower(getField("transfer-encoding")) != "chunked") {
 		// Not chunked - everything at once
 		std::copy(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>(), std::back_inserter(mBody));
 	} else {
@@ -197,11 +197,11 @@ void Http::Response::Parse(const std::string& data) {
 		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
 		// Read all trailers (if present)
-		ParseFields(in);
+		parseFields(in);
 	}
 }
 
-void Http::Response::ParseFields(std::istream &in) {
+void Http::Response::parseFields(std::istream &in) {
 	std::string line;
 	while (std::getline(in, line) && (line.size() > 2)) {
 		std::string::size_type pos = line.find(": ");
@@ -216,7 +216,7 @@ void Http::Response::ParseFields(std::istream &in) {
 				value.erase(value.size() - 1);
 
 			// Add the field
-			mFields[String::ToLower(field)] = value;
+			mFields[String::toLower(field)] = value;
 		}
 	}
 }
@@ -233,7 +233,7 @@ Http::Http(const std::string& host, unsigned short port, bool useSSL) :
 	mConnection( NULL ),
 	mIsSSL( false )
 {
-	SetHost(host, port, useSSL);
+	setHost(host, port, useSSL);
 }
 
 Http::~Http() {
@@ -241,7 +241,7 @@ Http::~Http() {
 
 	// First we wait to finish any request pending
 	for ( itt = mThreads.begin(); itt != mThreads.end(); itt++ ) {
-		(*itt)->Wait();
+		(*itt)->wait();
 	}
 
 	for ( itt = mThreads.begin(); itt != mThreads.end(); itt++ ) {
@@ -254,13 +254,13 @@ Http::~Http() {
 	eeSAFE_DELETE( tcp );
 }
 
-void Http::SetHost(const std::string& host, unsigned short port, bool useSSL) {
+void Http::setHost(const std::string& host, unsigned short port, bool useSSL) {
 	// Check the protocol
-	if (String::ToLower(host.substr(0, 7)) == "http://") {
+	if (String::toLower(host.substr(0, 7)) == "http://") {
 		// HTTP protocol
 		mHostName = host.substr(7);
 		mPort	 = (port != 0 ? port : 80);
-	} else if (String::ToLower(host.substr(0, 8)) == "https://") {
+	} else if (String::toLower(host.substr(0, 8)) == "https://") {
 		// HTTPS protocol
 		#ifdef EE_SSL_SUPPORT
 		mIsSSL		= true;
@@ -288,72 +288,72 @@ void Http::SetHost(const std::string& host, unsigned short port, bool useSSL) {
 	mHost = IpAddress(mHostName);
 }
 
-Http::Response Http::SendRequest(const Http::Request& request, Time timeout) {
-	if ( 0 == mHost.ToInteger() ) {
+Http::Response Http::sendRequest(const Http::Request& request, Time timeout) {
+	if ( 0 == mHost.toInteger() ) {
 		return Response();
 	}
 
 	if ( NULL == mConnection ) {
-		TcpSocket * Conn	= mIsSSL ? eeNew( SSLSocket, ( mHostName, request.ValidateCertificate(), request.ValidateHostname() ) ) : eeNew( TcpSocket, () );
+		TcpSocket * Conn	= mIsSSL ? eeNew( SSLSocket, ( mHostName, request.getValidateCertificate(), request.getValidateHostname() ) ) : eeNew( TcpSocket, () );
 		mConnection			= Conn;
 	}
 
 	// First make sure that the request is valid -- add missing mandatory fields
 	Request toSend(request);
 
-	if (!toSend.HasField("From")) {
-		toSend.SetField("From", "user@eepp.com.ar");
+	if (!toSend.hasField("From")) {
+		toSend.setField("From", "user@eepp.com.ar");
 	}
 
-	if (!toSend.HasField("User-Agent")) {
-		toSend.SetField("User-Agent", "eepp-network");
+	if (!toSend.hasField("User-Agent")) {
+		toSend.setField("User-Agent", "eepp-network");
 	}
 
-	if (!toSend.HasField("Host")) {
-		toSend.SetField("Host", mHostName);
+	if (!toSend.hasField("Host")) {
+		toSend.setField("Host", mHostName);
 	}
 
-	if (!toSend.HasField("Content-Length")) {
+	if (!toSend.hasField("Content-Length")) {
 		std::ostringstream out;
 		out << toSend.mBody.size();
-		toSend.SetField("Content-Length", out.str());
+		toSend.setField("Content-Length", out.str());
 	}
 
-	if ((toSend.mMethod == Request::Post) && !toSend.HasField("Content-Type")) {
-		toSend.SetField("Content-Type", "application/x-www-form-urlencoded");
+	if ((toSend.mMethod == Request::Post) && !toSend.hasField("Content-Type")) {
+		toSend.setField("Content-Type", "application/x-www-form-urlencoded");
 	}
 
-	if ((toSend.mMajorVersion * 10 + toSend.mMinorVersion >= 11) && !toSend.HasField("Connection")) {
-		toSend.SetField("Connection", "close");
+	if ((toSend.mMajorVersion * 10 + toSend.mMinorVersion >= 11) && !toSend.hasField("Connection")) {
+		toSend.setField("Connection", "close");
 	}
 
 	// Prepare the response
 	Response received;
 
 	// Connect the socket to the host
-	if (mConnection->Connect(mHost, mPort, timeout) == Socket::Done) {
+	if (mConnection->connect(mHost, mPort, timeout) == Socket::Done) {
 		// Convert the request to string and send it through the connected socket
-		std::string requestStr = toSend.Prepare();
+		std::string requestStr = toSend.prepare();
 
 		if (!requestStr.empty()) {
 			// Send it through the socket
-			if (mConnection->Send(requestStr.c_str(), requestStr.size()) == Socket::Done) {
+			if (mConnection->send(requestStr.c_str(), requestStr.size()) == Socket::Done) {
 				// Wait for the server's response
 				std::string receivedStr;
 				std::size_t size = 0;
 				char buffer[1024];
 
-				while (mConnection->Receive(buffer, sizeof(buffer), size) == Socket::Done) {
+				while (mConnection->receive(buffer, sizeof(buffer), size) == Socket::Done) {
 					receivedStr.append(buffer, buffer + size);
 				}
 
 				// Build the Response object from the received data
-				received.Parse(receivedStr);
+				received.parse(receivedStr);
 			}
 		}
 
 		// Close the connection
-		mConnection->Disconnect();
+		mConnection->disconnect();
 	}
 
 	return received;
@@ -368,8 +368,8 @@ Http::AsyncRequest::AsyncRequest(Http *http, AsyncResponseCallback cb, Http::Req
 {
 }
 
-void Http::AsyncRequest::Run() {
-	Http::Response response = mHttp->SendRequest( mRequest, mTimeout );
+void Http::AsyncRequest::run() {
+	Http::Response response = mHttp->sendRequest( mRequest, mTimeout );
 
 	mCb( *mHttp, mRequest, response );
 
@@ -381,7 +381,7 @@ void Http::AsyncRequest::Run() {
 	mRunning = false;
 }
 
-void Http::RemoveOldThreads() {
+void Http::removeOldThreads() {
 	std::list<AsyncRequest*> remove;
 
 	std::list<AsyncRequest*>::iterator it = mThreads.begin();
@@ -391,7 +391,7 @@ void Http::RemoveOldThreads() {
 
 		if ( !ar->mRunning ) {
 			// We need to be sure, since the state is set in the thread, this will not block the thread anyway
-			ar->Wait();
+			ar->wait();
 
 			eeDelete( ar );
 
@@ -404,28 +404,28 @@ void Http::RemoveOldThreads() {
 	}
 }
 
-void Http::SendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, Time timeout ) {
+void Http::sendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, Time timeout ) {
 	AsyncRequest * thread = eeNew( AsyncRequest, ( this, cb, request, timeout ) );
 
-	thread->Launch();
+	thread->launch();
 
 	// Clean old threads
 	Lock l( mThreadsMutex );
 
-	RemoveOldThreads();
+	removeOldThreads();
 
 	mThreads.push_back( thread );
 }
 
-const IpAddress &Http::GetHost() const {
+const IpAddress &Http::getHost() const {
 	return mHost;
 }
 
-const std::string &Http::GetHostName() const {
+const std::string &Http::getHostName() const {
 	return mHostName;
 }
 
-const unsigned short& Http::GetPort() const {
+const unsigned short& Http::getPort() const {
 	return mPort;
 }
 

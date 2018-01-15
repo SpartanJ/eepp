@@ -23,98 +23,124 @@ UIThemeManager::UIThemeManager() :
 UIThemeManager::~UIThemeManager() {
 }
 
-void UIThemeManager::DefaultFont( Font * Font ) {
+void UIThemeManager::setDefaultFont( Font * Font ) {
 	mFont = Font;
-}
 
-Font * UIThemeManager::DefaultFont() const {
-	return mFont;
-}
+	if ( NULL != mThemeDefault ) {
+		UITooltipStyleConfig fontStyleConfig = mThemeDefault->getFontStyleConfig();
 
-void UIThemeManager::SetTheme( const std::string& Theme ) {
-	SetTheme( GetByName( Theme ) );
-}
-
-void UIThemeManager::SetTheme( UITheme * Theme ) {
-	UIControl * MainCtrl = UIManager::instance()->MainControl();
-
-	if ( NULL != MainCtrl ) {
-		MainCtrl->SetThemeToChilds( Theme );
-		MainCtrl->SetTheme( Theme );
+		if ( NULL == fontStyleConfig.getFont() && NULL != mFont ) {
+			fontStyleConfig.Font = mFont;
+			mThemeDefault->setFontStyleConfig( fontStyleConfig );
+		}
 	}
 }
 
-void UIThemeManager::DefaultTheme( UITheme * Theme ) {
+Font * UIThemeManager::getDefaultFont() const {
+	return mFont;
+}
+
+void UIThemeManager::setTheme( const std::string& Theme ) {
+	setTheme( getByName( Theme ) );
+}
+
+void UIThemeManager::setTheme( UITheme * Theme ) {
+	UIControl * MainCtrl = UIManager::instance()->getMainControl();
+
+	if ( NULL != MainCtrl ) {
+		MainCtrl->setThemeToChilds( Theme );
+		MainCtrl->setTheme( Theme );
+	}
+}
+
+void UIThemeManager::setDefaultTheme( UITheme * Theme ) {
 	mThemeDefault = Theme;
+
+	if ( NULL != mThemeDefault ) {
+		UITooltipStyleConfig fontStyleConfig = mThemeDefault->getFontStyleConfig();
+
+		if ( NULL == fontStyleConfig.getFont() && NULL != mFont ) {
+			fontStyleConfig.Font = mFont;
+			mThemeDefault->setFontStyleConfig( fontStyleConfig );
+		}
+	}
 }
 
-void UIThemeManager::DefaultTheme( const std::string& Theme ) {
-	DefaultTheme( UIThemeManager::instance()->GetByName( Theme ) );
+void UIThemeManager::setDefaultTheme( const std::string& Theme ) {
+	setDefaultTheme( UIThemeManager::instance()->getByName( Theme ) );
 }
 
-UITheme * UIThemeManager::DefaultTheme() const {
+UITheme * UIThemeManager::getDefaultTheme() const {
 	return mThemeDefault;
 }
 
-void UIThemeManager::ApplyDefaultTheme( UIControl * Control ) {
+void UIThemeManager::applyDefaultTheme( UIControl * Control ) {
 	if ( mAutoApplyDefaultTheme && NULL != mThemeDefault && NULL != Control )
-		Control->SetTheme( mThemeDefault );
+		Control->setTheme( mThemeDefault );
 }
 
-void UIThemeManager::AutoApplyDefaultTheme( const bool& apply ) {
+void UIThemeManager::setAutoApplyDefaultTheme( const bool& apply ) {
 	mAutoApplyDefaultTheme = apply;
 }
 
-const bool& UIThemeManager::AutoApplyDefaultTheme() const {
+const bool& UIThemeManager::getAutoApplyDefaultTheme() const {
 	return mAutoApplyDefaultTheme;
 }
 
-void UIThemeManager::DefaultEffectsEnabled( const bool& Enabled ) {
+void UIThemeManager::setDefaultEffectsEnabled( const bool& Enabled ) {
 	mEnableDefaultEffects = Enabled;
 }
 
-const bool& UIThemeManager::DefaultEffectsEnabled() const {
+const bool& UIThemeManager::getDefaultEffectsEnabled() const {
 	return mEnableDefaultEffects;
 }
 
-const Time& UIThemeManager::ControlsFadeInTime() const {
+const Time& UIThemeManager::getControlsFadeInTime() const {
 	return mFadeInTime;
 }
 
-void UIThemeManager::ControlsFadeInTime( const Time& Time ) {
+void UIThemeManager::setControlsFadeInTime( const Time& Time ) {
 	mFadeInTime = Time;
 }
 
-const Time& UIThemeManager::ControlsFadeOutTime() const {
+const Time& UIThemeManager::getControlsFadeOutTime() const {
 	return mFadeOutTime;
 }
 
-void UIThemeManager::ControlsFadeOutTime( const Time& Time ) {
+void UIThemeManager::setControlsFadeOutTime( const Time& Time ) {
 	mFadeOutTime = Time;
 }
 
-void UIThemeManager::TooltipTimeToShow( const Time& Time ) {
+void UIThemeManager::setTooltipTimeToShow( const Time& Time ) {
 	mTooltipTimeToShow = Time;
 }
 
-const Time& UIThemeManager::TooltipTimeToShow() const {
+const Time& UIThemeManager::getTooltipTimeToShow() const {
 	return mTooltipTimeToShow;
 }
 
-void UIThemeManager::TooltipFollowMouse( const bool& Follow ) {
+void UIThemeManager::setTooltipFollowMouse( const bool& Follow ) {
 	mTooltipFollowMouse = Follow;
 }
 
-const bool& UIThemeManager::TooltipFollowMouse() const {
+const bool& UIThemeManager::getTooltipFollowMouse() const {
 	return mTooltipFollowMouse;
 }
 
-void UIThemeManager::CursorSize( const Sizei& Size ) {
+void UIThemeManager::setCursorSize( const Sizei& Size ) {
 	mCursorSize = Size;
 }
 
-const Sizei& UIThemeManager::CursorSize() const {
+const Sizei& UIThemeManager::getCursorSize() const {
 	return mCursorSize;
+}
+
+UIFontStyleConfig UIThemeManager::getDefaultFontStyleConfig() {
+	if ( NULL != getDefaultTheme() ) {
+		return getDefaultTheme()->getFontStyleConfig();
+	}
+
+	return UIFontStyleConfig();
 }
 
 }}

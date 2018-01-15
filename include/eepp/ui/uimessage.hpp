@@ -11,32 +11,33 @@ class EE_API UIMessage {
 	public:
 		enum Message
 		{
-			MsgClick = 0,
-			MsgDoubleClick,
-			MsgMouseEnter,
-			MsgMouseExit,
-			MsgMouseDown,
-			MsgMouseUp,
-			MsgWindowResize,
-			MsgFocus,
-			MsgFocusLoss,
-			MsgCellClicked,
-			MsgSelected,
-			MsgDragStart,
-			MsgDragEnd,
-			MsgUser,
-			MsgForceDWord = eeINDEX_NOT_FOUND
+			Click = 0,
+			DoubleClick,
+			MouseEnter,
+			MouseExit,
+			MouseDown,
+			MouseUp,
+			WindowResize,
+			Focus,
+			FocusLoss,
+			CellClicked,
+			Selected,
+			DragStart,
+			DragStop,
+			LayoutAttributeChange,
+			UserMessage,
+			NoMessage = eeINDEX_NOT_FOUND
 		};
 
-		UIMessage( UIControl * Ctrl, const Uint32& Msg, const Uint32& Flags = MsgForceDWord );
+		UIMessage( UIControl * Ctrl, const Uint32& getMsg, const Uint32& getFlags = NoMessage );
 
 		~UIMessage();
 
-		UIControl * Sender() const;
+		UIControl * getSender() const;
 
-		const Uint32& Msg() const;
+		const Uint32& getMsg() const;
 
-		const Uint32& Flags() const;
+		const Uint32& getFlags() const;
 	private:
 		UIControl *	mCtrl;
 		Uint32			mMsg;

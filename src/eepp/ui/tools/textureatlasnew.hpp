@@ -23,24 +23,23 @@ class EE_API TextureAtlasNew {
 		TGCreateCb			mNewTGCb;
 		UIComboBox *		mComboWidth;
 		UIComboBox *		mComboHeight;
-		UISpinBox *		mPixelSpace;
+		UISpinBox *			mPixelSpace;
 		UITextInput *		mTGPath;
 		UIPushButton *		mSetPathButton;
 		UIDropDownList *	mSaveFileType;
+		UIDropDownList *	mPixelDensity;
 
-		void WindowClose( const UIEvent * Event );
+		void windowClose( const UIEvent * Event );
 
-		void CancelClick( const UIEvent * Event );
+		void cancelClick( const UIEvent * Event );
 
-		void OKClick( const UIEvent * Event );
+		void okClick( const UIEvent * Event );
 
-		UITextBox * CreateTxtBox( Vector2i Pos, const String& Text );
+		void onDialogFolderSelect( const UIEvent * Event );
 
-		void OnDialogFolderSelect( const UIEvent * Event );
+		void onSelectFolder( const UIEvent * Event );
 
-		void OnSelectFolder( const UIEvent * Event );
-
-		void TextureAtlasSave( const UIEvent * Event );
+		void textureAtlasSave( const UIEvent * Event );
 };
 
 }}}

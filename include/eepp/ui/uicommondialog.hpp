@@ -2,7 +2,7 @@
 #define EE_UICUICOMMONDIALOG_HPP
 
 #include <eepp/ui/base.hpp>
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uitextinput.hpp>
@@ -13,96 +13,81 @@ namespace EE { namespace UI {
 
 class EE_API UICommonDialog : public UIWindow {
 	public:
-		class CreateParams : public UIWindow::CreateParams {
-			public:
-				inline CreateParams() :
-					UIWindow::CreateParams(),
-					DefaultDirectory( Sys::GetProcessPath() ),
-					DefaultFilePattern( "*" ),
-					CDLFlags( UI_CDL_DEFAULT_FLAGS )
-				{
-				}
+		static UICommonDialog * New( Uint32 CDLFlags = UI_CDL_DEFAULT_FLAGS, std::string DefaultFilePattern = "*", std::string DefaultDirectory = Sys::getProcessPath() );
 
-				inline ~CreateParams() {}
-
-				std::string DefaultDirectory;
-				std::string	DefaultFilePattern;
-				Uint32		CDLFlags;
-		};
-
-		UICommonDialog( const UICommonDialog::CreateParams& Params );
+		UICommonDialog( Uint32 CDLFlags = UI_CDL_DEFAULT_FLAGS, std::string DefaultFilePattern = "*", std::string DefaultDirectory = Sys::getProcessPath() );
 
 		virtual ~UICommonDialog();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void		SetTheme( UITheme * Theme );
+		virtual void		setTheme( UITheme * Theme );
 
-		void				RefreshFolder();
+		void				refreshFolder();
 
-		virtual Uint32		OnMessage( const UIMessage *Msg );
+		virtual Uint32		onMessage( const UIMessage *Msg );
 
-		virtual void		Open();
+		virtual void		open();
 
-		virtual void		Save();
+		virtual void		save();
 
-		std::string			GetCurPath() const;
+		std::string			getCurPath() const;
 
-		std::string			GetCurFile() const;
+		std::string			getCurFile() const;
 
-		std::string			GetFullPath();
+		std::string			getFullPath();
 
-		UIPushButton *		GetButtonOpen() const;
+		UIPushButton *		getButtonOpen() const;
 
-		UIPushButton *		GetButtonCancel() const;
+		UIPushButton *		getButtonCancel() const;
 
-		UIPushButton *		GetButtonUp() const;
+		UIPushButton *		getButtonUp() const;
 
-		UIListBox *		GetList() const;
+		UIListBox *			getList() const;
 
-		UITextInput *		GetPathInput() const;
+		UITextInput *		getPathInput() const;
 
-		UITextInput *		GetFileInput() const;
+		UITextInput *		getFileInput() const;
 
-		UIDropDownList *	GetFiletypeList() const;
+		UIDropDownList *	getFiletypeList() const;
 
-		void				AddFilePattern( std::string pattern, bool select = false );
+		void				addFilePattern( std::string pattern, bool select = false );
 
-		bool				IsSaveDialog();
+		bool				isSaveDialog();
 
-		bool				SortAlphabetically();
+		bool				getSortAlphabetically();
 
-		bool				FoldersFirst();
+		bool				getFoldersFirst();
 
-		bool				AllowFolderSelect();
+		bool				getAllowFolderSelect();
 
-		void				SortAlphabetically( const bool& sortAlphabetically );
+		void				setSortAlphabetically( const bool& sortAlphabetically );
 
-		void				FoldersFirst( const bool& foldersFirst );
+		void				setFoldersFirst( const bool& foldersFirst );
 
-		void				AllowFolderSelect( const bool& allowFolderSelect );
+		void				setAllowFolderSelect( const bool& allowFolderSelect );
 	protected:
 		std::string			mCurPath;
 		UIPushButton *		mButtonOpen;
 		UIPushButton *		mButtonCancel;
 		UIPushButton *		mButtonUp;
-		UIListBox *		mList;
+		UIListBox *			mList;
 		UITextInput *		mPath;
 		UITextInput *		mFile;
 		UIDropDownList *	mFiletype;
 		Uint32				mCDLFlags;
 
-		void OnPressEnter( const UIEvent * Event );
+		void onPressEnter( const UIEvent * Event );
 
-		void OnPressFileEnter( const UIEvent * Event );
+		void onPressFileEnter( const UIEvent * Event );
 
-		void OpenSaveClick();
+		void openSaveClick();
 
-		std::string			GetTempFullPath();
+		std::string			getTempFullPath();
 
-		void DisableButtons();
+		void disableButtons();
 };
 
 }}

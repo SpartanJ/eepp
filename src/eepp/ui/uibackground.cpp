@@ -1,49 +1,46 @@
 #include <eepp/ui/uibackground.hpp>
+#include <eepp/ui/uicontrol.hpp>
+#include <eepp/graphics/primitives.hpp>
+
+using namespace EE::Graphics;
 
 namespace EE { namespace UI {
 
-UIBackground::UIBackground() :
-	mBlendMode( ALPHA_NORMAL ),
-	mCorners(0)
-{
-	mColor.push_back( ColorA(0xFF404040) );
+UIBackground * UIBackground::New( UIControl * control ) {
+	return eeNew( UIBackground, ( control ) );
 }
 
-UIBackground::UIBackground( const UIBackground& Back ) :
-	mBlendMode( ALPHA_NORMAL ),
-	mCorners( Back.Corners() )
+UIBackground::UIBackground( UIControl * control ) :
+	mControl( control ),
+	mBlendMode( BlendAlpha ),
+	mCorners(0),
+	mDrawable( NULL ),
+	mOwnIt( false )
 {
-	UIBackground * b = const_cast<UIBackground *> ( &Back ); // cheating
-	mColor = b->Colors();
+	mColor.push_back( Color::Transparent );
 }
 
-UIBackground::UIBackground( const ColorA& Color, const unsigned int& Corners, const EE_BLEND_MODE& BlendMode ) :
-	mBlendMode( BlendMode ),
-	mCorners( Corners )
-{
-	mColor.push_back( Color );
+UIBackground::~UIBackground() {
+	if ( mOwnIt )
+		eeSAFE_DELETE( mDrawable );
 }
 
-UIBackground::UIBackground( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor, const unsigned int& Corners, const EE_BLEND_MODE& BlendMode ) :
-	mBlendMode( BlendMode ),
-	mCorners( Corners )
-{
-	Colors( TopLeftColor, BottomLeftColor, BottomRightColor, TopRightColor );
-}
-
-ColorA& UIBackground::Color( const unsigned int& index  ) {
+Color& UIBackground::getColor( const unsigned int& index  ) {
 	if ( index < mColor.size() )
 		return	mColor[ index ];
 
 	return mColor[ 0 ];
 }
 
-void UIBackground::ColorsTo( const ColorA& Color ) {
+UIBackground * UIBackground::setColorsTo( const Color& Color ) {
 	for ( unsigned int i = 0; i < mColor.size(); i++ )
 		mColor[i] = Color;
+
+	mControl->invalidateDraw();
+	return this;
 }
 
-void UIBackground::Colors( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor ) {
+UIBackground * UIBackground::setColors( const Color& TopLeftColor, const Color& BottomLeftColor, const Color& BottomRightColor, const Color& TopRightColor ) {
 	mColor[0] = TopLeftColor;
 
 	if ( mColor.size() < 2 )
@@ -60,30 +57,105 @@ void UIBackground::Colors( const ColorA& TopLeftColor, const ColorA& BottomLeftC
 		mColor.push_back( TopRightColor );
 	else
 		mColor[3] = TopRightColor;
+
+	mControl->invalidateDraw();
+	return this;
 }
 
-const std::vector<ColorA>& UIBackground::Colors() {
+const std::vector<Color>& UIBackground::getColors() {
 	return	mColor;
 }
 
-void UIBackground::Color( const ColorA& Col ) {
+UIBackground * UIBackground::setColor( const Color& Col ) {
 	mColor[0] = Col;
+	mControl->invalidateDraw();
+	return this;
 }
 
-const EE_BLEND_MODE& UIBackground::Blend() const {
+const BlendMode& UIBackground::getBlendMode() const {
 	return mBlendMode;
 }
 
-void UIBackground::Blend( const EE_BLEND_MODE& blend ) {
+UIBackground * UIBackground::setBlendMode( const BlendMode& blend ) {
 	mBlendMode = blend;
+	mControl->invalidateDraw();
+	return this;
 }
 
-const unsigned int& UIBackground::Corners() const {
+const unsigned int& UIBackground::getCorners() const {
 	return mCorners;
 }
 
-void UIBackground::Corners( const unsigned int& corners ) {
+UIBackground * UIBackground::setCorners( const unsigned int& corners ) {
 	mCorners = corners;
+	mControl->invalidateDraw();
+	return this;
+}
+
+void UIBackground::draw( Rectf R, const Float& alpha ) {
+	if ( mColor[0] != Color::Transparent || mColor.size() > 1 ) {
+		Primitives P;
+		P.setBlendMode( mBlendMode );
+
+		if ( 255 == alpha ) {
+			P.setColor( mColor[0] );
+
+			if ( 4 == mColor.size() ) {
+				if ( mCorners ) {
+					P.drawRoundedRectangle( R, mColor[0], mColor[1], mColor[2], mColor[3], mCorners );
+				} else {
+					P.drawRectangle( R, mColor[0], mColor[1], mColor[2], mColor[3] );
+				}
+			} else {
+				if ( mCorners ) {
+					P.drawRoundedRectangle( R, 0.f, Vector2f::One, mCorners );
+				} else {
+					P.drawRectangle( R );
+				}
+			}
+		} else {
+			std::vector<Color> color( mColor );
+
+			color[0].a = static_cast<Uint8>( (Float)color[0].a * ( alpha / 255.f ) );
+
+			P.setColor( color[0] );
+
+			if ( 4 == mColor.size() ) {
+				for ( size_t i = 0; i < color.size(); i++ )
+					color[i].a = static_cast<Uint8>( (Float)color[i].a * ( alpha / 255.f ) );
+
+				if ( mCorners ) {
+					P.drawRoundedRectangle( R, color[0], color[1], color[2], color[3], mCorners );
+				} else {
+					P.drawRectangle( R, color[0], color[1], color[2], color[3] );
+				}
+			} else {
+				if ( mCorners ) {
+					P.drawRoundedRectangle( R, 0.f, Vector2f::One, mCorners );
+				} else {
+					P.drawRectangle( R );
+				}
+			}
+		}
+	}
+
+	if ( NULL != mDrawable ) {
+		mDrawable->setAlpha( alpha );
+		mDrawable->draw( R.getPosition(), R.getSize() );
+	}
+}
+
+Drawable * UIBackground::getDrawable() const {
+	return mDrawable;
+}
+
+void UIBackground::setDrawable( Drawable * drawable , bool ownIt ) {
+	if ( mOwnIt )
+		eeSAFE_DELETE( mDrawable );
+
+	mDrawable = drawable;
+	mOwnIt = ownIt;
+	mControl->invalidateDraw();
 }
 
 }}

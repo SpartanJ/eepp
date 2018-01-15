@@ -19,9 +19,9 @@ class ClockImpl {
 
 		~ClockImpl();
 
-		void Restart();
+		void restart();
 
-		unsigned long GetElapsedTime();
+		unsigned long getElapsedTime();
 	private:
 		#ifdef EE_HAVE_CLOCK_GETTIME
 		struct timespec mStart;

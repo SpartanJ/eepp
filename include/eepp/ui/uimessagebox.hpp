@@ -2,54 +2,42 @@
 #define EE_UICUIMESSAGEBOX_HPP
 
 #include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 
 namespace EE { namespace UI {
 
 class EE_API UIMessageBox : public UIWindow {
 	public:
-		class CreateParams : public UIWindow::CreateParams {
-			public:
-				inline CreateParams() :
-					UIWindow::CreateParams(),
-					Type( MSGBOX_OKCANCEL ),
-					CloseWithKey( KEY_UNKNOWN )
-				{
-				}
+		static UIMessageBox * New( UI_MSGBOX_TYPE type, String message );
 
-				inline ~CreateParams() {}
-
-				UI_MSGBOX_TYPE	Type;
-				String			Message;
-				Uint32			CloseWithKey;
-		};
-
-		UIMessageBox( const UIMessageBox::CreateParams& Params );
+		UIMessageBox( UI_MSGBOX_TYPE type, String message );
 
 		virtual ~UIMessageBox();
 
-		virtual Uint32		OnMessage( const UIMessage * Msg );
+		virtual Uint32		onMessage( const UIMessage * Msg );
 
-		virtual void		SetTheme( UITheme * Theme );
+		virtual void		setTheme( UITheme * Theme );
 
-		UITextBox *		TextBox() const;
+		UITextView *			getTextBox() const;
 
-		UIPushButton *		ButtonOK() const;
+		UIPushButton *		getButtonOK() const;
 
-		UIPushButton *		ButtonCancel() const;
+		UIPushButton *		getButtonCancel() const;
 
-		virtual bool		Show();
+		virtual bool		show();
+
+		Uint32 getCloseWithKey() const;
+
+		void setCloseWithKey(const Uint32 & closeWithKey);
 	protected:
 		UI_MSGBOX_TYPE		mMsgBoxType;
-		UITextBox *		mTextBox;
+		UITextView *			mTextBox;
 		UIPushButton *		mButtonOK;
 		UIPushButton *		mButtonCancel;
 		Uint32				mCloseWithKey;
 
-		void				AutoSize();
-
-		virtual Uint32 OnKeyUp( const UIEventKey& Event );
+		virtual Uint32 onKeyUp( const UIEventKey& Event );
 };
 
 }}

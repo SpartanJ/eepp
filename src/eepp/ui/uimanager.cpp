@@ -2,6 +2,10 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/framebuffer.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
+#include <eepp/ui/uiwidgetcreator.hpp>
 #include <algorithm>
 
 namespace EE { namespace UI {
@@ -21,6 +25,7 @@ UIManager::UIManager() :
 	mFlags( 0 ),
 	mHighlightFocusColor( 234, 195, 123, 255 ),
 	mHighlightOverColor( 195, 123, 234, 255 ),
+	mHighlightInvalidationColor( 220, 0, 0, 255 ),
 	mInit( false ),
 	mFirstPress( false ),
 	mShootingDown( false ),
@@ -30,56 +35,67 @@ UIManager::UIManager() :
 }
 
 UIManager::~UIManager() {
-	Shutdown();
+	shutdown();
 }
 
-void UIManager::Init( Uint32 Flags, EE::Window::Window * window ) {
+void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 	if ( mInit )
-		Shutdown();
+		shutdown();
 
 	mWindow		= window;
 	mFlags		= Flags;
 
 	if ( NULL == mWindow ) {
-		mWindow = Engine::instance()->GetCurrentWindow();
+		mWindow = Engine::instance()->getCurrentWindow();
 	}
 
-	mKM				= mWindow->GetInput();
+	mKM				= mWindow->getInput();
 
 	mInit			= true;
 
-	UIWindow::CreateParams Params;
-	Params.Parent( NULL );
-	Params.PosSet( 0, 0 );
-	Params.SizeSet( Engine::instance()->GetWidth(), Engine::instance()->GetHeight() );
-	Params.Flags = UI_CONTROL_DEFAULT_FLAGS | UI_REPORT_SIZE_CHANGE_TO_CHILDS;
-	Params.WinFlags = UI_WIN_NO_BORDER | UI_WIN_RESIZEABLE;
-	Params.MinWindowSize = Sizei( 0, 0 );
-	Params.DecorationSize = Sizei( 0, 0 );
-	Params.DecorationAutoSize = false;
 
-	mControl		= eeNew( UIWindow, ( Params ) );
-	mControl->Visible( true );
-	mControl->Enabled( true );
-	mControl->Container()->Enabled( false );
-	mControl->Container()->Visible( false );
+	UIWindowStyleConfig windowStyleConfig;
+	windowStyleConfig.WinFlags = UI_WIN_NO_BORDER | UI_WIN_RESIZEABLE;
+
+	if ( isMainControlInFrameBuffer() )
+		windowStyleConfig.WinFlags |= UI_WIN_FRAME_BUFFER;
+
+	windowStyleConfig.MinWindowSize = Sizei( 0, 0 );
+	windowStyleConfig.DecorationSize = Sizei( 0, 0 );
+	windowStyleConfig.DecorationAutoSize = false;
+	mControl = UIWindow::New();
+	mControl->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
+	mControl->setStyleConfig( windowStyleConfig );
+	mControl->setSize( (Float)mWindow->getWidth() / PixelDensity::getPixelDensity(), (Float)mWindow->getHeight() / PixelDensity::getPixelDensity() );
+	mControl->setVisible( true );
+	mControl->setEnabled( true );
+	mControl->getContainer()->setEnabled( false );
+	mControl->getContainer()->setVisible( false );
+
+	if ( mControl->ownsFrameBuffer() ) {
+		mControl->getFrameBuffer()->setName( "uimain" );
+		RGB cc = mWindow->getClearColor();
+		mControl->getFrameBuffer()->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 0 ) );
+	}
 
 	mFocusControl	= mControl;
 	mOverControl	= mControl;
 
-	mCbId = mKM->PushCallback( cb::Make1( this, &UIManager::InputCallback ) );
-	mResizeCb = mWindow->PushResizeCallback( cb::Make1( this, &UIManager::ResizeControl ) );
+	mCbId = mKM->pushCallback( cb::Make1( this, &UIManager::inputCallback ) );
+	mResizeCb = mWindow->pushResizeCallback( cb::Make1( this, &UIManager::resizeControl ) );
+
+	mClock.restart();
 }
 
-void UIManager::Shutdown() {
+void UIManager::shutdown() {
 	if ( mInit ) {
 		if ( -1 != mCbId &&
-			NULL != Engine::ExistsSingleton() &&
-			Engine::instance()->ExistsWindow( mWindow )
+			NULL != Engine::existsSingleton() &&
+			Engine::instance()->existsWindow( mWindow )
 		)
 		{
-			mKM->PopCallback( mCbId );
-			mWindow->PopResizeCallback( mResizeCb );
+			mKM->popCallback( mCbId );
+			mWindow->popResizeCallback( mResizeCb );
 		}
 
 		mShootingDown = true;
@@ -94,152 +110,156 @@ void UIManager::Shutdown() {
 		mInit = false;
 	}
 
-	UIThemeManager::DestroySingleton();
+	UIThemeManager::destroySingleton();
 }
 
-void UIManager::InputCallback( InputEvent * Event ) {
+void UIManager::inputCallback( InputEvent * Event ) {
 	switch( Event->Type ) {
 		case InputEvent::KeyUp:
-			SendKeyUp( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
+			sendKeyUp( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
 			break;
 		case InputEvent::KeyDown:
-			SendKeyDown( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
+			sendKeyDown( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
 
-			CheckTabPress( Event->key.keysym.sym );
+			checkTabPress( Event->key.keysym.sym );
 			break;
+		case InputEvent::SysWM:
+		case InputEvent::VideoResize:
+		case InputEvent::VideoExpose:
+		{
+			if ( NULL != mControl )
+				mControl->invalidate();
+		}
 	}
 }
 
-void UIManager::ResizeControl( EE::Window::Window * win ) {
-	mControl->Size( mWindow->GetWidth(), mWindow->GetHeight() );
-	SendMsg( mControl, UIMessage::MsgWindowResize );
+void UIManager::resizeControl( EE::Window::Window * win ) {
+	mControl->setSize( (Float)mWindow->getWidth() / PixelDensity::getPixelDensity(), (Float)mWindow->getHeight() / PixelDensity::getPixelDensity() );
+	sendMsg( mControl, UIMessage::WindowResize );
 
 	std::list<UIWindow*>::iterator it;
 
 	for ( it = mWindowsList.begin(); it != mWindowsList.end(); it++ ) {
-		SendMsg( *it, UIMessage::MsgWindowResize );
+		sendMsg( *it, UIMessage::WindowResize );
 	}
 }
 
-void UIManager::SendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
-	UIEventKey	KeyEvent	= UIEventKey( mFocusControl, UIEvent::EventKeyUp, KeyCode, Char, Mod );
+void UIManager::sendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
+	UIEventKey	KeyEvent	= UIEventKey( mFocusControl, UIEvent::KeyUp, KeyCode, Char, Mod );
 	UIControl * CtrlLoop	= mFocusControl;
 
 	while( NULL != CtrlLoop ) {
-		if ( CtrlLoop->Enabled() && CtrlLoop->OnKeyUp( KeyEvent ) )
+		if ( CtrlLoop->isEnabled() && CtrlLoop->onKeyUp( KeyEvent ) )
 			break;
 
-		CtrlLoop = CtrlLoop->Parent();
+		CtrlLoop = CtrlLoop->getParent();
 	}
 }
 
-void UIManager::SendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
-	UIEventKey	KeyEvent	= UIEventKey( mFocusControl, UIEvent::EventKeyDown, KeyCode, Char, Mod );
+void UIManager::sendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
+	UIEventKey	KeyEvent	= UIEventKey( mFocusControl, UIEvent::KeyDown, KeyCode, Char, Mod );
 	UIControl * CtrlLoop	= mFocusControl;
 
 	while( NULL != CtrlLoop ) {
-		if ( CtrlLoop->Enabled() && CtrlLoop->OnKeyDown( KeyEvent ) )
+		if ( CtrlLoop->isEnabled() && CtrlLoop->onKeyDown( KeyEvent ) )
 			break;
 
-		CtrlLoop = CtrlLoop->Parent();
+		CtrlLoop = CtrlLoop->getParent();
 	}
 }
 
-UIControl * UIManager::FocusControl() const {
+UIControl * UIManager::getFocusControl() const {
 	return mFocusControl;
 }
 
-UIControl * UIManager::LossFocusControl() const {
+UIControl * UIManager::getLossFocusControl() const {
 	return mLossFocusControl;
 }
 
-void UIManager::FocusControl( UIControl * Ctrl ) {
+void UIManager::setFocusControl( UIControl * Ctrl ) {
 	if ( NULL != mFocusControl && NULL != Ctrl && Ctrl != mFocusControl ) {
 		mLossFocusControl = mFocusControl;
 
 		mFocusControl = Ctrl;
 
-		mLossFocusControl->OnFocusLoss();
-		SendMsg( mLossFocusControl, UIMessage::MsgFocusLoss );
+		mLossFocusControl->onFocusLoss();
+		sendMsg( mLossFocusControl, UIMessage::FocusLoss );
 
-		mFocusControl->OnFocus();
-		SendMsg( mFocusControl, UIMessage::MsgFocus );
+		mFocusControl->onFocus();
+		sendMsg( mFocusControl, UIMessage::Focus );
 	}
 }
 
-UIControl * UIManager::OverControl() const {
+UIControl * UIManager::getOverControl() const {
 	return mOverControl;
 }
 
-void UIManager::OverControl( UIControl * Ctrl ) {
+void UIManager::setOverControl( UIControl * Ctrl ) {
 	mOverControl = Ctrl;
 }
 
-void UIManager::SendMsg( UIControl * Ctrl, const Uint32& Msg, const Uint32& Flags ) {
+void UIManager::sendMsg( UIControl * Ctrl, const Uint32& Msg, const Uint32& Flags ) {
 	UIMessage tMsg( Ctrl, Msg, Flags );
 
-	Ctrl->MessagePost( &tMsg );
+	Ctrl->messagePost( &tMsg );
 }
 
-void UIManager::Update() {
-	mElapsed = mWindow->Elapsed();
+void UIManager::update() {
+	mElapsed = mClock.getElapsed();
 
-	bool wasDraggingControl = IsControlDragging();
+	bool wasDraggingControl = isControlDragging();
 
-	mControl->Update();
+	mControl->update();
 
-	UIControl * pOver = mControl->OverFind( mKM->GetMousePosf() );
+	UIControl * pOver = mControl->overFind( mKM->getMousePosf() );
 
 	if ( pOver != mOverControl ) {
 		if ( NULL != mOverControl ) {
-			SendMsg( mOverControl, UIMessage::MsgMouseExit );
-			mOverControl->OnMouseExit( mKM->GetMousePos(), 0 );
+			sendMsg( mOverControl, UIMessage::MouseExit );
+			mOverControl->onMouseExit( mKM->getMousePos(), 0 );
 		}
 
 		mOverControl = pOver;
 
 		if ( NULL != mOverControl ) {
-			SendMsg( mOverControl, UIMessage::MsgMouseEnter );
-			mOverControl->OnMouseEnter( mKM->GetMousePos(), 0 );
+			sendMsg( mOverControl, UIMessage::MouseEnter );
+			mOverControl->onMouseEnter( mKM->getMousePos(), 0 );
 		}
 	} else {
 		if ( NULL != mOverControl )
-			mOverControl->OnMouseMove( mKM->GetMousePos(), mKM->PressTrigger() );
+			mOverControl->onMouseMove( mKM->getMousePos(), mKM->getPressTrigger() );
 	}
 
-	if ( mKM->PressTrigger() ) {
-		/*if ( !wasDraggingControl && mOverControl != mFocusControl )
-			FocusControl( mOverControl );*/
-
+	if ( mKM->getPressTrigger() ) {
 		if ( NULL != mOverControl ) {
-			mOverControl->OnMouseDown( mKM->GetMousePos(), mKM->PressTrigger() );
-			SendMsg( mOverControl, UIMessage::MsgMouseDown, mKM->PressTrigger() );
+			mOverControl->onMouseDown( mKM->getMousePos(), mKM->getPressTrigger() );
+			sendMsg( mOverControl, UIMessage::MouseDown, mKM->getPressTrigger() );
 		}
 
 		if ( !mFirstPress ) {
 			mDownControl = mOverControl;
-			mMouseDownPos = mKM->GetMousePos();
+			mMouseDownPos = mKM->getMousePos();
 
 			mFirstPress = true;
 		}
 	}
 
-	if ( mKM->ReleaseTrigger() ) {
+	if ( mKM->getReleaseTrigger() ) {
 		if ( NULL != mFocusControl ) {
 			if ( !wasDraggingControl ) {
 				if ( mOverControl != mFocusControl )
-					FocusControl( mOverControl );
+					setFocusControl( mOverControl );
 
-				mFocusControl->OnMouseUp( mKM->GetMousePos(), mKM->ReleaseTrigger() );
-				SendMsg( mFocusControl, UIMessage::MsgMouseUp, mKM->ReleaseTrigger() );
+				mFocusControl->onMouseUp( mKM->getMousePos(), mKM->getReleaseTrigger() );
+				sendMsg( mFocusControl, UIMessage::MouseUp, mKM->getReleaseTrigger() );
 
-				if ( mKM->ClickTrigger() ) { // mDownControl == mOverControl &&
-					SendMsg( mFocusControl, UIMessage::MsgClick, mKM->ClickTrigger() );
-					mFocusControl->OnMouseClick( mKM->GetMousePos(), mKM->ClickTrigger() );
+				if ( mKM->getClickTrigger() ) {
+					sendMsg( mFocusControl, UIMessage::Click, mKM->getClickTrigger() );
+					mFocusControl->onMouseClick( mKM->getMousePos(), mKM->getClickTrigger() );
 
-					if ( mKM->DoubleClickTrigger() ) {
-						SendMsg( mFocusControl, UIMessage::MsgDoubleClick, mKM->DoubleClickTrigger() );
-						mFocusControl->OnMouseDoubleClick( mKM->GetMousePos(), mKM->DoubleClickTrigger() );
+					if ( mKM->getDoubleClickTrigger() ) {
+						sendMsg( mFocusControl, UIMessage::DoubleClick, mKM->getDoubleClickTrigger() );
+						mFocusControl->onMouseDoubleClick( mKM->getMousePos(), mKM->getDoubleClickTrigger() );
 					}
 				}
 			}
@@ -248,121 +268,185 @@ void UIManager::Update() {
 		mFirstPress = false;
 	}
 
-	CheckClose();
+	checkClose();
 }
 
-UIControl * UIManager::DownControl() const {
+UIControl * UIManager::getDownControl() const {
 	return mDownControl;
 }
 
-void UIManager::Draw() {
-	GlobalBatchRenderer::instance()->Draw();
-	mControl->InternalDraw();
-	GlobalBatchRenderer::instance()->Draw();
+void UIManager::draw() {
+	GlobalBatchRenderer::instance()->draw();
+	mControl->internalDraw();
+	GlobalBatchRenderer::instance()->draw();
 }
 
-UIWindow * UIManager::MainControl() const {
+UIWindow * UIManager::getMainControl() const {
 	return mControl;
 }
 
-const Time& UIManager::Elapsed() const {
+const Time& UIManager::getElapsed() const {
 	return mElapsed;
 }
 
-Vector2i UIManager::GetMousePos() {
-	return mKM->GetMousePos();
+Vector2i UIManager::getMousePos() {
+	return mKM->getMousePos();
 }
 
-Input * UIManager::GetInput() const {
+Input * UIManager::getInput() const {
 	return mKM;
 }
 
-const Uint32& UIManager::PressTrigger() const {
-	return mKM->PressTrigger();
+const Uint32& UIManager::getPressTrigger() const {
+	return mKM->getPressTrigger();
 }
 
-const Uint32& UIManager::LastPressTrigger() const {
-	return mKM->LastPressTrigger();
+const Uint32& UIManager::getLastPressTrigger() const {
+	return mKM->getLastPressTrigger();
 }
 
-void UIManager::ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
-	mWindow->ClipPlaneEnable( x, y, Width, Height );
+void UIManager::clipSmartEnable(UIControl * ctrl, const Int32 & x, const Int32 & y, const Uint32 & Width, const Uint32 & Height) {
+	if ( ctrl->isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
+		GLi->getClippingMask()->clipPlaneEnable( x, y, Width, Height );
+	} else {
+		GLi->getClippingMask()->clipEnable( x, y, Width, Height );
+	}
 }
 
-void UIManager::ClipDisable() {
-	mWindow->ClipPlaneDisable();
+void UIManager::clipSmartDisable(UIControl * ctrl) {
+	if ( ctrl->isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
+		GLi->getClippingMask()->clipPlaneDisable();
+	} else {
+		GLi->getClippingMask()->clipDisable();
+	}
 }
 
-void UIManager::HighlightFocus( bool Highlight ) {
-	BitOp::SetBitFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_FOCUS, Highlight ? 1 : 0 );
+void UIManager::setHighlightFocus( bool Highlight ) {
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_FOCUS, Highlight ? 1 : 0 );
 }
 
-bool UIManager::HighlightFocus() const {
+bool UIManager::getHighlightFocus() const {
 	return 0 != ( mFlags & UI_MANAGER_HIGHLIGHT_FOCUS );
 }
 
-void UIManager::HighlightFocusColor( const ColorA& Color ) {
+void UIManager::setHighlightInvalidation( bool Invalidation ) {
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_INVALIDATION, Invalidation ? 1 : 0 );
+}
+
+bool UIManager::getHighlightInvalidation() const {
+	return 0 != ( mFlags & UI_MANAGER_HIGHLIGHT_INVALIDATION );
+}
+
+void UIManager::setDrawDebugData( bool debug ) {
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_DRAW_DEBUG_DATA, debug ? 1 : 0 );
+}
+
+bool UIManager::getDrawDebugData() const {
+	return 0 != ( mFlags & UI_MANAGER_DRAW_DEBUG_DATA );
+}
+
+void UIManager::setDrawBoxes( bool draw ) {
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_DRAW_BOXES, draw ? 1 : 0 );
+}
+
+bool UIManager::getDrawBoxes() const {
+	return 0 != ( mFlags & UI_MANAGER_DRAW_BOXES );
+}
+
+void UIManager::setHighlightFocusColor( const Color& Color ) {
 	mHighlightFocusColor = Color;
 }
 
-const ColorA& UIManager::HighlightFocusColor() const {
+bool UIManager::usesInvalidation() {
+	return 0 != ( mFlags & UI_MANAGER_USE_DRAW_INVALIDATION );
+}
+
+void UIManager::setUseInvalidation( const bool& use ) {
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_USE_DRAW_INVALIDATION, use ? 1 : 0 );
+}
+
+const Color& UIManager::getHighlightFocusColor() const {
 	return mHighlightFocusColor;
 }
 
-void UIManager::HighlightOver( bool Highlight ) {
-	BitOp::SetBitFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_OVER, Highlight ? 1 : 0 );
+void UIManager::setHighlightOver( bool Highlight ) {
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_OVER, Highlight ? 1 : 0 );
 }
 
-bool UIManager::HighlightOver() const {
+bool UIManager::getHighlightOver() const {
 	return 0 != ( mFlags & UI_MANAGER_HIGHLIGHT_OVER );
 }
 
-void UIManager::HighlightOverColor( const ColorA& Color ) {
+void UIManager::setHighlightOverColor( const Color& Color ) {
 	mHighlightOverColor = Color;
 }
 
-const ColorA& UIManager::HighlightOverColor() const {
+void UIManager::setMainControlInFrameBuffer(const bool& set) {
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER, set ? 1 : 0 );
+
+	if ( NULL != mControl ) {
+		mControl->setWinFlags( mControl->getWinFlags() | ( set ? UI_WIN_FRAME_BUFFER : 0 ) );
+	}
+}
+
+bool UIManager::isMainControlInFrameBuffer() const {
+	return 0 != ( mFlags & UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER );
+}
+
+void UIManager::setMainControlInColorBuffer(const bool& set) {
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_MAIN_CONTROL_IN_COLOR_BUFFER, set ? 1 : 0 );
+
+	if ( NULL != mControl ) {
+		mControl->setWinFlags( mControl->getWinFlags() | ( set ? UI_WIN_COLOR_BUFFER : 0 ) );
+	}
+}
+
+bool UIManager::isMainControlInColorBuffer() const {
+	return 0 != ( mFlags & UI_MANAGER_MAIN_CONTROL_IN_COLOR_BUFFER );
+}
+
+const Color& UIManager::getHighlightOverColor() const {
 	return mHighlightOverColor;
 }
 
-void UIManager::CheckTabPress( const Uint32& KeyCode ) {
+void UIManager::checkTabPress( const Uint32& KeyCode ) {
 	eeASSERT( NULL != mFocusControl );
 
 	if ( KeyCode == KEY_TAB ) {
-		UIControl * Ctrl = mFocusControl->NextComplexControl();
+		UIControl * Ctrl = mFocusControl->getNextWidget();
 
 		if ( NULL != Ctrl )
-			Ctrl->SetFocus();
+			Ctrl->setFocus();
 	}
 }
 
-void UIManager::SendMouseClick( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
-	SendMsg( ToCtrl, UIMessage::MsgClick, Flags );
-	ToCtrl->OnMouseClick( Pos, Flags );
+void UIManager::sendMouseClick( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
+	sendMsg( ToCtrl, UIMessage::Click, Flags );
+	ToCtrl->onMouseClick( Pos, Flags );
 }
 
-void UIManager::SendMouseUp( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
-	SendMsg( ToCtrl, UIMessage::MsgMouseUp, Flags );
-	ToCtrl->OnMouseUp( Pos, Flags );
+void UIManager::sendMouseUp( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
+	sendMsg( ToCtrl, UIMessage::MouseUp, Flags );
+	ToCtrl->onMouseUp( Pos, Flags );
 }
 
-void UIManager::SendMouseDown( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
-	SendMsg( ToCtrl, UIMessage::MsgMouseDown, Flags );
-	ToCtrl->OnMouseDown( Pos, Flags );
+void UIManager::sendMouseDown( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
+	sendMsg( ToCtrl, UIMessage::MouseDown, Flags );
+	ToCtrl->onMouseDown( Pos, Flags );
 }
 
-EE::Window::Window * UIManager::GetWindow() const {
+EE::Window::Window * UIManager::getWindow() const {
 	return mWindow;
 }
 
-void UIManager::SetFocusLastWindow( UIWindow * window ) {
+void UIManager::setFocusLastWindow( UIWindow * window ) {
 	if ( !mWindowsList.empty() && window != mWindowsList.front() ) {
-		FocusControl( mWindowsList.front() );
+		setFocusControl( mWindowsList.front() );
 	}
 }
 
-void UIManager::WindowAdd( UIWindow * win ) {
-	if ( !WindowExists( win ) ) {
+void UIManager::windowAdd( UIWindow * win ) {
+	if ( !windowExists( win ) ) {
 		mWindowsList.push_front( win );
 	} else {
 		//! Send to front
@@ -371,25 +455,25 @@ void UIManager::WindowAdd( UIWindow * win ) {
 	}
 }
 
-void UIManager::WindowRemove( UIWindow * win ) {
-	if ( WindowExists( win ) ) {
+void UIManager::windowRemove( UIWindow * win ) {
+	if ( windowExists( win ) ) {
 		mWindowsList.remove( win );
 	}
 }
 
-bool UIManager::WindowExists( UIWindow * win ) {
+bool UIManager::windowExists( UIWindow * win ) {
 	return mWindowsList.end() != std::find( mWindowsList.begin(), mWindowsList.end(), win );
 }
 
-const bool& UIManager::IsShootingDown() const {
+const bool& UIManager::isShootingDown() const {
 	return mShootingDown;
 }
 
-const Vector2i &UIManager::GetMouseDownPos() const {
+const Vector2i &UIManager::getMouseDownPos() const {
 	return mMouseDownPos;
 }
 
-void UIManager::AddToCloseQueue( UIControl * Ctrl ) {
+void UIManager::addToCloseQueue( UIControl * Ctrl ) {
 	eeASSERT( NULL != Ctrl );
 
 	std::list<UIControl*>::iterator it;
@@ -398,7 +482,7 @@ void UIManager::AddToCloseQueue( UIControl * Ctrl ) {
 	for ( it = mCloseList.begin(); it != mCloseList.end(); it++ ) {
 		itCtrl = *it;
 
-		if ( NULL != itCtrl && itCtrl->IsParentOf( Ctrl ) ) {
+		if ( NULL != itCtrl && itCtrl->isParentOf( Ctrl ) ) {
 			// If a parent will be removed, means that the control
 			// that we are trying to queue will be removed by the father
 			// so we skip it
@@ -411,7 +495,7 @@ void UIManager::AddToCloseQueue( UIControl * Ctrl ) {
 	for ( it = mCloseList.begin(); it != mCloseList.end(); it++ ) {
 		itCtrl = *it;
 
-		if ( NULL != itCtrl && Ctrl->IsParentOf( itCtrl ) ) {
+		if ( NULL != itCtrl && Ctrl->isParentOf( itCtrl ) ) {
 			// if the control added is parent of another control already added,
 			// we remove the already added control because it will be deleted
 			// by its parent
@@ -432,7 +516,7 @@ void UIManager::AddToCloseQueue( UIControl * Ctrl ) {
 	mCloseList.push_back( Ctrl );
 }
 
-void UIManager::CheckClose() {
+void UIManager::checkClose() {
 	if ( !mCloseList.empty() ) {
 		for ( std::list<UIControl*>::iterator it = mCloseList.begin(); it != mCloseList.end(); it++ ) {
 			eeDelete( *it );
@@ -442,26 +526,163 @@ void UIManager::CheckClose() {
 	}
 }
 
-void UIManager::SetControlDragging( bool dragging ) {
+void UIManager::setControlDragging( bool dragging ) {
 	mControlDragging = dragging;
 }
 
-const bool& UIManager::IsControlDragging() const {
+const bool& UIManager::isControlDragging() const {
 	return mControlDragging;
 }
 
-void UIManager::UseGlobalCursors( const bool& use ) {
+void UIManager::setUseGlobalCursors( const bool& use ) {
 	mUseGlobalCursors = use;
 }
 
-const bool& UIManager::UseGlobalCursors() {
+const bool& UIManager::getUseGlobalCursors() {
 	return mUseGlobalCursors;
 }
 
-void UIManager::SetCursor( EE_CURSOR_TYPE cursor ) {
+void UIManager::setCursor( EE_CURSOR_TYPE cursor ) {
 	if ( mUseGlobalCursors ) {
-		mWindow->GetCursorManager()->Set( cursor );
+		mWindow->getCursorManager()->set( cursor );
 	}
+}
+
+void UIManager::setTranslator( Translator translator ) {
+	mTranslator = translator;
+}
+
+String UIManager::getTranslatorString( const std::string & str ) {
+	if ( String::startsWith( str, "@string/" ) ) {
+		String tstr = mTranslator.getString( str.substr( 8 ) );
+
+		if ( !tstr.empty() )
+			return tstr;
+	}
+
+	return String( str );
+}
+
+const Color& UIManager::getHighlightInvalidationColor() const {
+	return mHighlightInvalidationColor;
+}
+
+void UIManager::setHighlightInvalidationColor(const Color & highlightInvalidationColor) {
+	mHighlightInvalidationColor = highlightInvalidationColor;
+}
+
+UIWidget * UIManager::loadLayoutNodes( pugi::xml_node node, UIControl * parent ) {
+	UIWidget * firstWidget = NULL;
+
+	if ( NULL == parent )
+		parent = getMainControl();
+
+	for ( pugi::xml_node widget = node; widget; widget = widget.next_sibling() ) {
+		UIWidget * uiwidget = UIWidgetCreator::createFromName( widget.name() );
+
+		if ( NULL != uiwidget ) {
+			if ( NULL == firstWidget ) {
+				firstWidget = uiwidget;
+			}
+
+			uiwidget->setParent( parent );
+			uiwidget->loadFromXmlNode( widget );
+
+			if ( widget.first_child() ) {
+				loadLayoutNodes( widget.first_child(), uiwidget );
+			}
+
+			uiwidget->onWidgetCreated();
+		}
+	}
+
+	return firstWidget;
+}
+
+UIWidget * UIManager::loadLayoutFromFile( const std::string& layoutPath, UIControl * parent ) {
+	if ( FileSystem::fileExists( layoutPath ) ) {
+		pugi::xml_document doc;
+		pugi::xml_parse_result result = doc.load_file( layoutPath.c_str() );
+
+		if ( result ) {
+			return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : getMainControl() );
+		} else {
+			eePRINTL( "Error: Couldn't load UI Layout: %s", layoutPath.c_str() );
+			eePRINTL( "Error description: %s", result.description() );
+			eePRINTL( "Error offset: %d", result.offset );
+		}
+	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
+		std::string path( layoutPath );
+		Pack * pack = PackManager::instance()->exists( path );
+
+		if ( NULL != pack ) {
+			return loadLayoutFromPack( pack, path, parent );
+		}
+	}
+
+	return NULL;
+}
+
+UIWidget * UIManager::loadLayoutFromString( const std::string& layoutString, UIControl * parent ) {
+	pugi::xml_document doc;
+	pugi::xml_parse_result result = doc.load_string( layoutString.c_str() );
+
+	if ( result ) {
+		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : getMainControl() );
+	} else {
+		eePRINTL( "Error: Couldn't load UI Layout from string: %s", layoutString.c_str() );
+		eePRINTL( "Error description: %s", result.description() );
+		eePRINTL( "Error offset: %d", result.offset );
+	}
+
+	return NULL;
+}
+
+UIWidget * UIManager::loadLayoutFromMemory( const void * buffer, Int32 bufferSize, UIControl * parent ) {
+	pugi::xml_document doc;
+	pugi::xml_parse_result result = doc.load_buffer( buffer, bufferSize);
+
+	if ( result ) {
+		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : getMainControl() );
+	} else {
+		eePRINTL( "Error: Couldn't load UI Layout from buffer" );
+		eePRINTL( "Error description: %s", result.description() );
+		eePRINTL( "Error offset: %d", result.offset );
+	}
+
+	return NULL;
+}
+
+UIWidget * UIManager::loadLayoutFromStream( IOStream& stream, UIControl * parent ) {
+	if ( !stream.isOpen() )
+		return NULL;
+
+	ios_size bufferSize = stream.getSize();
+	SafeDataPointer safeDataPointer( eeNewArray( Uint8, bufferSize ), bufferSize );
+	stream.read( reinterpret_cast<char*>( safeDataPointer.Data ), safeDataPointer.DataSize );
+
+	pugi::xml_document doc;
+	pugi::xml_parse_result result = doc.load_buffer( safeDataPointer.Data, safeDataPointer.DataSize );
+
+	if ( result ) {
+		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : getMainControl() );
+	} else {
+		eePRINTL( "Error: Couldn't load UI Layout from stream" );
+		eePRINTL( "Error description: %s", result.description() );
+		eePRINTL( "Error offset: %d", result.offset );
+	}
+
+	return NULL;
+}
+
+UIWidget * UIManager::loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, UIControl * parent ) {
+	SafeDataPointer PData;
+
+	if ( pack->isOpen() && pack->extractFileToMemory( FilePackPath, PData ) ) {
+		return loadLayoutFromMemory( PData.Data, PData.DataSize, parent );
+	}
+
+	return NULL;
 }
 
 }}

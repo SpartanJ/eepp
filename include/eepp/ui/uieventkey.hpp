@@ -10,15 +10,15 @@ class UIControl;
 
 class EE_API UIEventKey : public UIEvent {
 	public:
-		UIEventKey( UIControl * Ctrl, const Uint32& EventNum, const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
+		UIEventKey( UIControl * getControl, const Uint32& EventNum, const Uint32& getKeyCode, const Uint16& getChar, const Uint32& getMod );
 
 		~UIEventKey();
 
-		const Uint32& KeyCode() const;
+		const Uint32& getKeyCode() const;
 
-		const Uint16& Char() const;
+		const Uint16& getChar() const;
 
-		const Uint32& Mod() const;
+		const Uint32& getMod() const;
 	protected:
 		Uint32	mKeyCode;
 		Uint16	mChar;

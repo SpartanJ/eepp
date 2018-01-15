@@ -3,8 +3,8 @@
 #include <eepp/helper/chipmunk/chipmunk_unsafe.h>
 
 #ifdef PHYSICS_RENDERER_ENABLED
-#include <eepp/graphics/glextensions.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/opengl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/primitives.hpp>
 using namespace EE::Graphics;
 #endif
@@ -16,47 +16,47 @@ ShapeSegment * ShapeSegment::New( Physics::Body * body, cVect a, cVect b, cpFloa
 }
 
 ShapeSegment::ShapeSegment( Physics::Body * body, cVect a, cVect b, cpFloat radius ) {
-	mShape = cpSegmentShapeNew( body->GetBody(), tocpv( a ), tocpv( b ), radius );
-	SetData();
+	mShape = cpSegmentShapeNew( body->getBody(), tocpv( a ), tocpv( b ), radius );
+	setData();
 }
 
-cVect ShapeSegment::A() {
+cVect ShapeSegment::getA() {
 	return tovect( cpSegmentShapeGetA( mShape ) );
 }
 
-cVect ShapeSegment::B() {
+cVect ShapeSegment::getB() {
 	return tovect( cpSegmentShapeGetB( mShape ) );
 }
 
-cVect ShapeSegment::Normal() {
+cVect ShapeSegment::getNormal() {
 	return tovect( cpSegmentShapeGetNormal( mShape ) );
 }
 
-cpFloat ShapeSegment::Radius() {
+cpFloat ShapeSegment::getRadius() {
 	return cpSegmentShapeGetRadius( mShape );
 }
 
-void ShapeSegment::Radius( const cpFloat& radius ) {
+void ShapeSegment::setRadius( const cpFloat& radius ) {
 	cpSegmentShapeSetRadius( mShape, radius );
 }
 
-void ShapeSegment::Endpoints( const cVect& a, const cVect& b ) {
+void ShapeSegment::setEndpoints( const cVect& a, const cVect& b ) {
 	cpSegmentShapeSetEndpoints( mShape, tocpv( a ), tocpv( b ) );
 }
 
-bool ShapeSegment::Query( cVect a, cVect b, cpSegmentQueryInfo * info ) {
+bool ShapeSegment::query( cVect a, cVect b, cpSegmentQueryInfo * info ) {
 	return 0 != cpShapeSegmentQuery( mShape, tocpv( a ), tocpv( b ), info );
 }
 
-cVect ShapeSegment::QueryHitPoint( const cVect start, const cVect end, const cpSegmentQueryInfo info ) {
+cVect ShapeSegment::queryHitPoint( const cVect start, const cVect end, const cpSegmentQueryInfo info ) {
 	return tovect( cpSegmentQueryHitPoint( tocpv( start ), tocpv( end ), info ) );
 }
 
-cpFloat ShapeSegment::QueryHitDist( const cVect start, const cVect end, const cpSegmentQueryInfo info ) {
+cpFloat ShapeSegment::queryHitDist( const cVect start, const cVect end, const cpSegmentQueryInfo info ) {
 	return cpSegmentQueryHitDist( tocpv( start ), tocpv( end ), info );
 }
 
-void ShapeSegment::Draw( Space * space ) {
+void ShapeSegment::draw( Space * space ) {
 	#ifdef PHYSICS_RENDERER_ENABLED
 	static const float pillVAR[] = {
 		 0.0000f,  1.0000f, 1.0f,
@@ -94,12 +94,12 @@ void ShapeSegment::Draw( Space * space ) {
 	cVect b = tovect( seg->CP_PRIVATE(tb) );
 
 	if ( seg->CP_PRIVATE(r) ) {
-		GLi->Disable( GL_TEXTURE_2D );
-		GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
+		GLi->disable( GL_TEXTURE_2D );
+		GLi->disableClientState( GL_TEXTURE_COORD_ARRAY );
 
-		std::vector<ColorA> tcolors( pillVAR_count * 4 );
+		std::vector<Color> tcolors( pillVAR_count * 4 );
 
-		GLi->PushMatrix();
+		GLi->pushMatrix();
 
 		cVect d = b - a;
 		cVect r = d * ( seg->CP_PRIVATE(r) / cpvlength( tocpv( d ) ) );
@@ -111,33 +111,33 @@ void ShapeSegment::Draw( Space * space ) {
 			(float)a.x	, (float)a.y, 0.0f, 1.0f,
 		};
 
-		GLi->MultMatrixf( matrix );
+		GLi->multMatrixf( matrix );
 
-		GLi->VertexPointer( 3, GL_FLOAT, 0, pillVAR, pillVAR_count * sizeof(float) * 3 );
+		GLi->vertexPointer( 3, GL_FLOAT, 0, pillVAR, pillVAR_count * sizeof(float) * 3 );
 
 		if( !seg->CP_PRIVATE(shape).sensor ) {
-			ColorA C = ColorForShape( mShape, space->GetSpace() );
+			Color C = colorForShape( mShape, space->getSpace() );
 
 			tcolors.assign( tcolors.size(), C );
 
-			GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), pillVAR_count * 4 );
+			GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), pillVAR_count * 4 );
 
-			GLi->DrawArrays( GL_TRIANGLE_FAN, 0, pillVAR_count );
+			GLi->drawArrays( GL_TRIANGLE_FAN, 0, pillVAR_count );
 		}
 
-		tcolors.assign( tcolors.size(), ColorA( 102, 102, 102, 255 ) );
+		tcolors.assign( tcolors.size(), Color( 102, 102, 102, 255 ) );
 
-		GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), pillVAR_count *  4 );
+		GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), pillVAR_count *  4 );
 
-		GLi->DrawArrays( GL_LINE_LOOP, 0, pillVAR_count );
+		GLi->drawArrays( GL_LINE_LOOP, 0, pillVAR_count );
 
-		GLi->PopMatrix();
+		GLi->popMatrix();
 
-		GLi->Enable( GL_TEXTURE_2D );
-		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
+		GLi->enable( GL_TEXTURE_2D );
+		GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
 	} else {
 		Primitives p;
-		p.DrawLine( Line2f( Vector2f( a.x, a.y ), Vector2f( b.x, b.y ) ) );
+		p.drawLine( Line2f( Vector2f( a.x, a.y ), Vector2f( b.x, b.y ) ) );
 	}
 	#endif
 }

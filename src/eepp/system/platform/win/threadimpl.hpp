@@ -18,19 +18,19 @@ namespace Platform {
 
 class ThreadImpl {
 	public:
-		static UintPtr GetCurrentThreadId();
+		static UintPtr getCurrentThreadId();
 
 		ThreadImpl( Thread * owner );
 
 		~ThreadImpl();
 		
-		void Wait();
+		void wait();
 		
-		void Terminate();
+		void terminate();
 
-		UintPtr Id();
+		UintPtr getId();
 	protected:
-		static unsigned int __stdcall EntryPoint(void* userData);
+		static unsigned int __stdcall entryPoint(void* userData);
 
 		HANDLE			mThread;
 		unsigned int	mThreadId;

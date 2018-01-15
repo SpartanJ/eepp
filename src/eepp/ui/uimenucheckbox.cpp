@@ -3,100 +3,111 @@
 
 namespace EE { namespace UI {
 
-UIMenuCheckBox::UIMenuCheckBox( UIMenuCheckBox::CreateParams& Params ) :
-	UIMenuItem( Params ),
+UIMenuCheckBox * UIMenuCheckBox::New() {
+	return eeNew( UIMenuCheckBox, () );
+}
+
+UIMenuCheckBox::UIMenuCheckBox() :
+	UIMenuItem(),
 	mActive( false ),
 	mSkinActive( NULL ),
 	mSkinInactive( NULL )
 {
-	ApplyDefaultTheme();
+	applyDefaultTheme();
+	mIcon->setFlags( UI_SKIN_KEEP_SIZE_ON_DRAW );
 }
 
 UIMenuCheckBox::~UIMenuCheckBox() {
 }
 
-Uint32 UIMenuCheckBox::Type() const {
+Uint32 UIMenuCheckBox::getType() const {
 	return UI_TYPE_MENUCHECKBOX;
 }
 
-bool UIMenuCheckBox::IsType( const Uint32& type ) const {
-	return UIMenuCheckBox::Type() == type ? true : UIMenuItem::IsType( type );
+bool UIMenuCheckBox::isType( const Uint32& type ) const {
+	return UIMenuCheckBox::getType() == type ? true : UIMenuItem::isType( type );
 }
 
-void UIMenuCheckBox::SetTheme( UITheme * Theme ) {
-	UIControl::SetThemeControl( Theme, "menuitem" );
+void UIMenuCheckBox::setTheme( UITheme * Theme ) {
+	UIWidget::setTheme( Theme );
 
-	mSkinActive		= Theme->GetByName( Theme->Abbr() + "_" + "menucheckbox_active" );
-	mSkinInactive	= Theme->GetByName( Theme->Abbr() + "_" + "menucheckbox_inactive" );
+	setThemeSkin( Theme, "menuitem" );
 
-	Active( mActive );
+	mSkinActive		= Theme->getSkin( "menucheckbox_active" );
+	mSkinInactive	= Theme->getSkin( "menucheckbox_inactive" );
 
-	DoAfterSetTheme();
+	setActive( mActive );
+
+	onThemeLoaded();
 }
 
-const bool& UIMenuCheckBox::Active() const {
+const bool& UIMenuCheckBox::isActive() const {
 	return mActive;
 }
 
-const bool& UIMenuCheckBox::IsActive() const {
-	return Active();
-}
-
-void UIMenuCheckBox::Active( const bool& active ) {
+void UIMenuCheckBox::setActive( const bool& active ) {
 	bool oActive = mActive;
 	mActive = active;
 
 	if ( mActive ) {
 		if ( NULL != mSkinActive ) {
-			if ( mSkinState->GetState() == UISkinState::StateSelected )
-				Icon( mSkinActive->GetSubTexture( UISkinState::StateMouseEnter ) );
+			if ( NULL == mIcon->getSkin() || mIcon->getSkin()->getName() != mSkinActive->getName() )
+				mIcon->setSkin( mSkinActive );
+
+			if ( mSkinState->getState() == UISkinState::StateSelected )
+				mIcon->setSkinState( UISkinState::StateMouseEnter );
 			else
-				Icon( mSkinActive->GetSubTexture( UISkinState::StateNormal ) );
-		} else
-			mIcon->SubTexture( NULL );
+				mIcon->setSkinState( UISkinState::StateNormal );
+		} else {
+			mIcon->removeSkin();
+		}
 	} else {
-		if ( NULL != mSkinInactive )
-			if ( mSkinState->GetState() == UISkinState::StateSelected )
-				Icon( mSkinInactive->GetSubTexture( UISkinState::StateMouseEnter ) );
+		if ( NULL != mSkinInactive ) {
+			if ( NULL == mIcon->getSkin() || mIcon->getSkin()->getName() != mSkinInactive->getName() )
+				mIcon->setSkin( mSkinInactive );
+
+			if ( mSkinState->getState() == UISkinState::StateSelected )
+				mIcon->setSkinState( UISkinState::StateMouseEnter );
 			else
-				Icon( mSkinInactive->GetSubTexture( UISkinState::StateNormal ) );
-		else
-			mIcon->SubTexture( NULL );
+				mIcon->setSkinState( UISkinState::StateNormal );
+		} else {
+			mIcon->removeSkin();
+		}
 	}
 
 	if ( oActive != active ) {
-		UIMenu * Menu = reinterpret_cast<UIMenu*> ( Parent() );
+		UIMenu * Menu = reinterpret_cast<UIMenu*> ( getParent() );
 
-		if ( !Menu->CheckControlSize( this ) ) {
-			if ( NULL != Icon()->SubTexture() ) {
-				Padding( Recti( 0, 0, 0, 0 ) );
+		if ( !Menu->checkControlSize( this ) ) {
+			if ( NULL != getIcon()->getDrawable() ) {
+				setPadding( Rect( 0, 0, 0, 0 ) );
 			}
 		}
 
-		OnValueChange();
+		onValueChange();
 	}
 }
 
-void UIMenuCheckBox::SwitchActive() {
-	Active( !mActive );
+void UIMenuCheckBox::switchActive() {
+	setActive( !mActive );
 }
 
-Uint32 UIMenuCheckBox::OnMouseUp( const Vector2i &Pos, const Uint32 Flags ) {
-	UIMenuItem::OnMouseUp( Pos, Flags );
+Uint32 UIMenuCheckBox::onMouseUp( const Vector2i &Pos, const Uint32 Flags ) {
+	UIMenuItem::onMouseUp( Pos, Flags );
 
-	if ( Parent()->Visible() && ( Flags & EE_BUTTONS_LRM ) )
-		SwitchActive();
+	if ( getParent()->isVisible() && ( Flags & EE_BUTTONS_LRM ) )
+		switchActive();
 
 	return 1;
 }
 
-void UIMenuCheckBox::OnStateChange() {
-	UIMenuItem::OnStateChange();
+void UIMenuCheckBox::onStateChange() {
+	UIMenuItem::onStateChange();
 
-	Active( mActive );
+	setActive( mActive );
 }
 
-bool UIMenuCheckBox::InheritsFrom( const Uint32 Type ) {
+bool UIMenuCheckBox::inheritsFrom( const Uint32 Type ) {
 	if ( Type == UI_TYPE_MENUITEM )
 		return true;
 

@@ -14,11 +14,11 @@ UIEventMouse::~UIEventMouse()
 {
 }
 
-const Vector2i& UIEventMouse::Pos() const {
+const Vector2i& UIEventMouse::getPosition() const {
 	return mPos;
 }
 
-const Uint32& UIEventMouse::Flags() const {
+const Uint32& UIEventMouse::getFlags() const {
 	return mFlags;
 }
 

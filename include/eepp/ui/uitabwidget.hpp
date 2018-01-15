@@ -1,159 +1,178 @@
 #ifndef EE_UICUITABWIDGET_HPP
 #define EE_UICUITABWIDGET_HPP
 
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <deque>
 
 namespace EE { namespace UI {
 
-class EE_API UITabWidget : public UIComplexControl {
+class EE_API UITabWidget : public UIWidget {
 	public:
-		class CreateParams : public UIComplexControl::CreateParams {
-			public:
-				inline CreateParams() :
-					UIComplexControl::CreateParams(),
-					Font( NULL ),
-					FontColor( 0, 0, 0, 255 ),
-					FontOverColor( 0, 0, 0, 255 ),
-					FontSelectedColor( 0, 0, 0, 255 ),
-					TabSeparation( 0 ),
-					MaxTextLength( 30 ),
-					TabWidgetHeight( 0 ),
-					TabTextAlign( UI_HALIGN_CENTER | UI_VALIGN_CENTER ),
-					MinTabWidth( 32 ),
-					MaxTabWidth( 210 ),
-					TabsClosable( false ),
-					SpecialBorderTabs( false ),
-					DrawLineBelowTabs( false ),
-					LineBewowTabsYOffset( 0 )
-				{
-					Flags = ( UI_VALIGN_BOTTOM | UI_HALIGN_LEFT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
+		static UITabWidget * New();
 
-					UITheme * Theme = UIThemeManager::instance()->DefaultTheme();
-
-					if ( NULL != Theme ) {
-						Font				= Theme->Font();
-						FontColor			= Theme->FontColor();
-						FontShadowColor		= Theme->FontShadowColor();
-						FontOverColor		= Theme->FontOverColor();
-						FontSelectedColor	= Theme->FontSelectedColor();
-					}
-
-					if ( NULL == Font )
-						Font = UIThemeManager::instance()->DefaultFont();
-				}
-
-				inline ~CreateParams() {}
-
-				Graphics::Font * 	Font;
-				ColorA				FontColor;
-				ColorA				FontShadowColor;
-				ColorA				FontOverColor;
-				ColorA				FontSelectedColor;
-				Int32		TabSeparation;
-				Uint32		MaxTextLength;
-				Uint32		TabWidgetHeight;
-				Uint32		TabTextAlign;
-				Uint32		MinTabWidth;
-				Uint32		MaxTabWidth;
-				bool		TabsClosable;
-				bool		SpecialBorderTabs; //! Indicates if the periferical tabs ( the left and right border tab ) are different from the central tabs.
-				bool		DrawLineBelowTabs;
-				ColorA		LineBelowTabsColor;
-				Int32		LineBewowTabsYOffset;
-
-		};
-
-		UITabWidget( UITabWidget::CreateParams& Params );
+		UITabWidget();
 
 		virtual ~UITabWidget();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		Uint32 Add( const String& Text, UIControl * CtrlOwned, SubTexture * Icon = NULL );
+		UITabWidget * add( const String& Text, UIControl * CtrlOwned, Drawable * Icon = NULL );
 
-		Uint32 Add( UITab * Tab );
+		UITabWidget * add( UITab * Tab );
 
-		UITab * GetTab( const Uint32& Index );
+		UITab * getTab( const Uint32& Index );
 
-		UITab * GetTab( const String& Text );
+		UITab * getTab( const String& Text );
 
-		Uint32 GetTabIndex( UITab * Tab );
+		Uint32 getTabIndex( UITab * Tab );
 
-		Uint32 Count() const;
+		Uint32 getCount() const;
 
-		void Remove( const Uint32& Index );
+		void remove( const Uint32& Index );
 
-		void Remove( UITab * Tab );
+		void remove( UITab * Tab );
 
-		void RemoveAll();
+		void removeAll();
 
-		void Insert( const String& Text, UIControl * CtrlOwned, SubTexture * Icon, const Uint32& Index );
+		void insert( const String& Text, UIControl * CtrlOwned, Drawable * Icon, const Uint32& Index );
 
-		void Insert( UITab * Tab, const Uint32& Index );
+		void insert( UITab * Tab, const Uint32& Index );
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		UITab * GetSelectedTab() const;
+		UITab * getSelectedTab() const;
 
-		Uint32 GetSelectedTabIndex() const;
+		Uint32 getSelectedTabIndex() const;
 
-		UIComplexControl * TabContainer() const;
+		UIWidget * getTabContainer() const;
 
-		UIComplexControl * ControlContainer() const;
+		UIWidget * getControlContainer() const;
 
-		virtual void Draw();
+		virtual void draw();
+
+		Font * getFont() const;
+
+		void setFont(Font * font);
+
+		Color getFontColor() const;
+
+		void setFontColor(const Color & fontColor);
+
+		Color getFontShadowColor() const;
+
+		void setFontShadowColor(const Color & fontShadowColor);
+
+		Color getFontOverColor() const;
+
+		void setFontOverColor(const Color & fontOverColor);
+
+		Color getFontSelectedColor() const;
+
+		void setFontSelectedColor(const Color & fontSelectedColor);
+
+		Uint32 getCharacterSize();
+
+		void setCharacterSize(const Uint32 & characterSize);
+
+		const Uint32& getFontStyle() const;
+
+		UITabWidget * setFontStyle( const Uint32& fontStyle );
+
+		const Float & getOutlineThickness() const;
+
+		UITabWidget * setOutlineThickness( const Float& outlineThickness );
+
+		const Color& getOutlineColor() const;
+
+		UITabWidget * setOutlineColor( const Color& outlineColor );
+
+		Int32 getTabSeparation() const;
+
+		void setTabSeparation(const Int32 & tabSeparation);
+
+		Uint32 getMaxTextLength() const;
+
+		void setMaxTextLength(const Uint32 & maxTextLength);
+
+		Uint32 getTabWidgetHeight() const;
+
+		Uint32 getMinTabWidth() const;
+
+		void setMinTabWidth(const Uint32 & minTabWidth);
+
+		Uint32 getMaxTabWidth() const;
+
+		void setMaxTabWidth(const Uint32 & maxTabWidth);
+
+		bool getTabsClosable() const;
+
+		void setTabsClosable(bool tabsClosable);
+
+		bool getSpecialBorderTabs() const;
+
+		void setSpecialBorderTabs(bool specialBorderTabs);
+
+		bool getDrawLineBelowTabs() const;
+
+		void setDrawLineBelowTabs(bool drawLineBelowTabs);
+
+		Color getLineBelowTabsColor() const;
+
+		void setLineBelowTabsColor(const Color & lineBelowTabsColor);
+
+		Int32 getLineBelowTabsYOffset() const;
+
+		void setLineBelowTabsYOffset(const Int32 & lineBelowTabsYOffset);
+
+		UITooltipStyleConfig getFontStyleConfig() const;
+
+		void setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig);
+
+		UITabWidgetStyleConfig getStyleConfig() const;
+
+		void setStyleConfig(const UITabWidgetStyleConfig & styleConfig);
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		friend class UITab;
 
-		UIComplexControl *		mCtrlContainer;
-		UIComplexControl *		mTabContainer;
-		Font *					mFont;
-		ColorA				mFontColor;
-		ColorA				mFontShadowColor;
-		ColorA				mFontOverColor;
-		ColorA				mFontSelectedColor;
-		Int32					mTabSeparation;
-		Uint32					mMaxTextLength;
-		Uint32					mTabWidgetHeight;
-		Uint32					mMinTabWidth;
-		Uint32					mMaxTabWidth;
-		bool					mTabsClosable;
-		bool					mSpecialBorderTabs;
-		bool					mDrawLineBelowTabs;
-		ColorA				mLineBelowTabsColor;
-		Int32					mLineBewowTabsYOffset;
-
+		UIWidget *		mCtrlContainer;
+		UIWidget *		mTabContainer;
+		UITabWidgetStyleConfig	mStyleConfig;
 		std::deque<UITab*>		mTabs;
-		UITab *				mTabSelected;
+		UITab *					mTabSelected;
 		Uint32					mTabSelectedIndex;
 
-		void DoAfterSetTheme();
+		void onThemeLoaded();
 
-		UITab * CreateTab( const String& Text, UIControl * CtrlOwned, SubTexture * Icon );
+		UITab * createTab( const String& Text, UIControl * CtrlOwned, Drawable * Icon );
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		void SetTabSelected( UITab * Tab );
+		virtual void onChildCountChange();
 
-		void SetTabContainerSize();
+		void setTabSelected( UITab * Tab );
 
-		void SeContainerSize();
+		void setTabContainerSize();
 
-		void PosTabs();
+		void seContainerSize();
 
-		void ZOrderTabs();
+		void posTabs();
 
-		void OrderTabs();
+		void zorderTabs();
 
-		void SelectPrev();
+		void orderTabs();
 
-		void SelectNext();
+		void selectPrev();
 
-		void ApplyThemeToTabs();
+		void selectNext();
+
+		void applyThemeToTabs();
+
+		void refreshControlOwned( UITab * tab );
 };
 
 }}

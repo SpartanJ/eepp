@@ -11,47 +11,47 @@ class CP_API Arbiter {
 	public:
 		Arbiter( cpArbiter * arbiter );
 
-		cVect TotalImpulse();
+		cVect totalImpulse();
 
-		cVect TotalImpulseWithFriction();
+		cVect totalImpulseWithFriction();
 
-		void Ignore();
+		void ignore();
 
-		void GetShapes( Shape ** a, Shape ** b );
+		void getShapes( Shape ** a, Shape ** b );
 
-		void GetBodies( Body ** a, Body ** b);
+		void getBodies( Body ** a, Body ** b);
 
-		bool IsFirstContact();
+		bool isFirstContact();
 
-		int GetCount();
+		int getCount();
 
-		cVect GetNormal( int i );
+		cVect getNormal( int i );
 
-		cVect GetPoint( int i );
+		cVect getPoint( int i );
 
-		cpFloat GetDepth( int i );
+		cpFloat getDepth( int i );
 
-		cpContactPointSet ContactPointSet();
+		cpContactPointSet getContactPointSet();
 
-		void ContactPointSet( cpContactPointSet * contact );
+		void setContactPointSet( cpContactPointSet * contact );
 
-		cpArbiter *	GetArbiter() const;
+		cpArbiter *	getArbiter() const;
 
-		cpFloat Elasticity();
+		cpFloat getElasticity();
 
-		void Elasticity( cpFloat value );
+		void setElasticity( cpFloat value );
 
-		cpFloat Friction();
+		cpFloat getFriction();
 
-		void Friction( cpFloat value );
+		void setFriction( cpFloat value );
 
-		cVect SurfaceVelocity();
+		cVect getSurfaceVelocity();
 
-		void SurfaceVelocity( cVect value );
+		void setSurfaceVelocity( cVect value );
 
-		void UserData( cpDataPointer value );
+		void setUserData( cpDataPointer value );
 
-		cpDataPointer UserData() const;
+		cpDataPointer getUserData() const;
 	protected:
 		cpArbiter *		mArbiter;
 };

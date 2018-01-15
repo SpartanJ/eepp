@@ -23,7 +23,7 @@ Entropia Engine++
 
   * Batch Renderer ( all the rendering is automatically batched by the engine ).
 
-  * TTF and Texture fonts support.
+  * True type fonts support.
 
   * Frame Buffer support.
 
@@ -38,6 +38,8 @@ Entropia Engine++
   * Animated Sprites.
 
   * Texture Atlas support ( automatic creation and update of the texture atlas ).
+  
+  * Clipping Masks ( stencil, scissors, planes )
 
 
 **Window Module:**
@@ -45,11 +47,11 @@ Entropia Engine++
 
   * Backend based module, this means that you can easily create a backend for the window/input handling.
 
-  * Currently supports SDL 1.2, SDL 2 and SFML as backends.
+  * Currently supports SDL 2 and SFML as backends.
 
-  * Clipboard support ( SDL 2 backend and partial support with SDL 1.2 ).
+  * Clipboard support ( SDL 2 backend ).
 
-  * Color hardware cursors ( SDL 2 fully supported, partial support with SDL 1.2 and SFML ).
+  * Color hardware cursors ( SDL 2 fully supported, partial support with SFML ).
   
   * Multiple windows
 
@@ -74,7 +76,7 @@ Entropia Engine++
   * Provides all the basics stuffs for the full multi-threading support of the engine, file formats support for packing, clocks, resource manager, and much more.
 
 
-*Core Module:*
+**Core Module:**
 --------------
 
   * Customizable Memory Manager. Used by default in debug mode to track memory leaks.
@@ -114,10 +116,14 @@ Entropia Engine++
   
   * All the basic controls are implemented ( button, textbox, combobox, inputbox, menu, listbox, scrollbars, etc ).
   
+  * Layout system similar to Androids layouts.
+  
   * Features as text selection and key bindings.
+  
+  * Load layouts from XMLs
 
 
-**Gaming Module:**
+**Maps Module:**
 ------------------
 
   * Tiled Maps with software dynamic lights.

@@ -15,7 +15,7 @@ class EE_API Thread : NonCopyable {
 		typedef void (*FuncType)(void*);
 
 		/** @return The current thread id */
-		static Uint32 GetCurrentThreadId();
+		static Uint32 getCurrentThreadId();
 
 		/** @brief Construct the thread from a functor with no argument
 		**	This constructor works for function objects, as well
@@ -86,7 +86,7 @@ class EE_API Thread : NonCopyable {
 		**	thread's constructor, and returns immediately.
 		**	After this function returns, the thread's function is
 		**	running in parallel to the calling code. */
-		virtual void	Launch();
+		virtual void	launch();
 
 		/** @brief Wait until the thread finishes.
 		**	This function will block the execution until the
@@ -95,7 +95,7 @@ class EE_API Thread : NonCopyable {
 		**	thread will block forever.
 		**	If this function is called from its owner thread, it
 		**	returns without doing anything. */
-		void			Wait();
+		void			wait();
 
 		/** @brief Terminate the thread
 		**	This function immediately stops the thread, without waiting
@@ -104,17 +104,17 @@ class EE_API Thread : NonCopyable {
 		**	and can lead to local variables not being destroyed
 		**	on some operating systems. You should rather try to make
 		**	the thread function terminate by itself. */
-		void			Terminate();
+		void			terminate();
 
 		/** @return The id of the thread */
-		Uint32			Id();
+		Uint32			getId();
 	protected:
 		Thread();
 	private:
 		friend class Platform::ThreadImpl;
 
 		/** The virtual function to run in the thread */
-		virtual void	Run();
+		virtual void	run();
 
 		Platform::ThreadImpl *		mThreadImpl; ///< OS-specific implementation of the thread
 		Private::ThreadFunc *		mEntryPoint; ///< Abstraction of the function to run

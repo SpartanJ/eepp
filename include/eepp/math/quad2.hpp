@@ -31,37 +31,37 @@ class Quad2 {
 		Vector2<T> V[3]; //! Right - Top Vector2
 		@return The center point of the quad
 		*/
-		Vector2<T> GetCenter();
+		Vector2<T> getCenter();
 
 		/** @return The Vector2 from the position index ( from 0 to 3 ) */
-		Vector2<T>& GetAt( Uint32 Index ) { return V[Index]; }
+		Vector2<T>& getAt( Uint32 Index ) { return V[Index]; }
 
 		/** Creates a quad from a rectangle */
-		static Quad2<T> FromAABB( const tRECT<T>& R );
+		static Quad2<T> fromAABB( const tRECT<T>& R );
 
 		/** @return The Axis-Aligned bounding box of the Quad */
-		tRECT<T> ToAABB( const T& OffsetX = 0, const T& OffsetY = 0 );
+		tRECT<T> toAABB( const T& OffsetX = 0, const T& OffsetY = 0 );
 
 		/** Rotates the quad from a rotation center */
-		void Rotate( const T& Angle, const Vector2<T>& Center );
+		void rotate( const T& Angle, const Vector2<T>& Center );
 
 		/** Rotates the quad from its rotation center */
-		void Rotate( const T& Angle );
+		void rotate( const T& Angle );
 
 		/** Scale the quad from its rotation center */
-		void Scale( const T& scale );
+		void scale( const T& scale );
 
 		/** Scale the quad from an specified center */
-		void Scale( const T& scale, const Vector2<T>& Center );
+		void scale(const T& scale, const Vector2<T>& center );
 
 		/** Scale the quad from its rotation center */
-		void Scale( const Vector2<T>& scale );
+		void scale( const Vector2<T>& scale );
 
 		/** Scale the quad from an specified center */
-		void Scale( const Vector2<T>& scale, const Vector2<T>& Center );
+		void scale( const Vector2<T>& scale, const Vector2<T>& center );
 
 		/** Move the polygon Vector2s, add to every point the distance specified  */
-		void Move( Vector2<T> dist );
+		void move( Vector2<T> dist );
 };
 
 template <typename T>
@@ -89,57 +89,57 @@ Quad2<T>::Quad2( const tRECT<T>& R ) {
 }
 
 template <typename T>
-void Quad2<T>::Rotate( const T& Angle ) {
-	Rotate( Angle, GetCenter() );
+void Quad2<T>::rotate( const T& Angle ) {
+	rotate( Angle, getCenter() );
 }
 
 template <typename T>
-void Quad2<T>::Rotate( const T& Angle, const Vector2<T>& Center ) {
+void Quad2<T>::rotate( const T& Angle, const Vector2<T>& Center ) {
 	if ( Angle == 0.f )
 		return;
 
-	V[0].Rotate( Angle, Center );
-	V[1].Rotate( Angle, Center );
-	V[2].Rotate( Angle, Center );
-	V[3].Rotate( Angle, Center );
+	V[0].rotate( Angle, Center );
+	V[1].rotate( Angle, Center );
+	V[2].rotate( Angle, Center );
+	V[3].rotate( Angle, Center );
 }
 
 
 template <typename T>
-void Quad2<T>::Scale( const Vector2<T>& scale, const Vector2<T>& Center ) {
+void Quad2<T>::scale(const Vector2<T>& scale, const Vector2<T>& center ) {
 	if ( scale == 1.0f )
 		return;
 
 	for ( Uint32 i = 0; i < 4; i++ ) {
-		if ( V[i].x < Center.x )
-			V[i].x = Center.x - eeabs( Center.x - V[i].x ) * scale.x;
+		if ( V[i].x < center.x )
+			V[i].x = center.x - eeabs( center.x - V[i].x ) * scale.x;
 		else
-			V[i].x = Center.x + eeabs( Center.x - V[i].x ) * scale.x;
+			V[i].x = center.x + eeabs( center.x - V[i].x ) * scale.x;
 
-		if ( V[i].y < Center.y )
-			V[i].y = Center.y - eeabs( Center.y - V[i].y ) * scale.y;
+		if ( V[i].y < center.y )
+			V[i].y = center.y - eeabs( center.y - V[i].y ) * scale.y;
 		else
-			V[i].y = Center.y + eeabs( Center.y - V[i].y ) * scale.y;
+			V[i].y = center.y + eeabs( center.y - V[i].y ) * scale.y;
 	}
 }
 
 template <typename T>
-void Quad2<T>::Scale( const Vector2<T>& scale ) {
-	Scale( scale, GetCenter() );
+void Quad2<T>::scale( const Vector2<T>& scale ) {
+	this->scale( scale, getCenter() );
 }
 
 template <typename T>
-void Quad2<T>::Scale( const T& scale, const Vector2<T>& Center ) {
-	Scale( Vector2<T>( scale, scale ), Center );
+void Quad2<T>::scale( const T& scale, const Vector2<T>& center ) {
+	this->scale( Vector2<T>( scale, scale ), center );
 }
 
 template <typename T>
-void Quad2<T>::Scale( const T& scale ) {
-	Scale( scale, GetCenter() );
+void Quad2<T>::scale( const T& scale ) {
+	this->scale( scale, getCenter() );
 }
 
 template <typename T>
-Vector2<T> Quad2<T>::GetCenter() {
+Vector2<T> Quad2<T>::getCenter() {
 	Float MinX = V[0].x, MaxX = V[0].x, MinY = V[0].y, MaxY = V[0].y;
 
 	for (Uint8 i = 1; i < 4; i++ ) {
@@ -153,12 +153,12 @@ Vector2<T> Quad2<T>::GetCenter() {
 }
 
 template <typename T>
-Quad2<T> Quad2<T>::FromAABB( const tRECT<T>& R ) {
+Quad2<T> Quad2<T>::fromAABB( const tRECT<T>& R ) {
 	return Quad2<T>( Vector2<T>( R.Left, R.Top ), Vector2<T>( R.Left, R.Bottom ), Vector2<T>( R.Right, R.Bottom ), Vector2<T>( R.Right, R.Top ) );
 }
 
 template <typename T>
-tRECT<T> Quad2<T>::ToAABB( const T& OffsetX, const T& OffsetY ) {
+tRECT<T> Quad2<T>::toAABB( const T& OffsetX, const T& OffsetY ) {
 	tRECT<T> TmpR;
 
 	Float MinX = V[0].x, MaxX = V[0].x, MinY = V[0].y, MaxY = V[0].y;
@@ -187,7 +187,7 @@ const Vector2<T>& Quad2<T>::operator[] ( const Uint32& Pos ) const {
 }
 
 template <typename T>
-void Quad2<T>::Move( Vector2<T> dist ) {
+void Quad2<T>::move( Vector2<T> dist ) {
 	if ( dist.x == 0 && dist.y == 0 )
 		return;
 

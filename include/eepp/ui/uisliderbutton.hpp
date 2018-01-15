@@ -7,11 +7,13 @@ namespace EE { namespace UI { namespace Private {
 
 class EE_API UISliderButton : public UIControlAnim {
 	public:
-		UISliderButton( const UIControlAnim::CreateParams& Params );
+		static UISliderButton * New();
+
+		UISliderButton();
 
 		virtual ~UISliderButton();
 	protected:
-		virtual void OnPosChange();
+		virtual void onPositionChange();
 };
 
 }}}

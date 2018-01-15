@@ -1,140 +1,131 @@
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/graphics/subtexture.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
-UISpinBox::UISpinBox( const UISpinBox::CreateParams& Params ) :
-	UIComplexControl( Params ),
+UISpinBox * UISpinBox::New() {
+	return eeNew( UISpinBox, () );
+}
+
+UISpinBox::UISpinBox() :
+	UIWidget(),
 	mMinValue( 0.f ),
 	mMaxValue( 1024.f ),
-	mValue( Params.DefaultValue ),
+	mValue( 0 ),
 	mClickStep( 1.f )
 {
-	UITextInput::CreateParams InputParams( Params );
-	InputParams.PosSet( 0, 0 );
-	InputParams.Parent( this );
+	mInput	= UITextInput::New();
+	mInput->setVisible( true );
+	mInput->setEnabled( true );
+	mInput->setParent( this );
 
-	if ( InputParams.Flags & UI_AUTO_SIZE )
-		InputParams.Flags &= ~UI_AUTO_SIZE;
+	mPushUp	= UIControlAnim::New();
+	mPushUp->setVisible( true );
+	mPushUp->setEnabled( true );
+	mPushUp->setParent( this );
+	mPushUp->setSize( 16, 16 );
 
-	if ( InputParams.Flags & UI_TEXT_SELECTION_ENABLED )
-		InputParams.Flags |= UI_TEXT_SELECTION_ENABLED;
+	mPushDown = UIControlAnim::New();
+	mPushDown->setVisible( true );
+	mPushDown->setEnabled( true );
+	mPushDown->setParent( this );
+	mPushDown->setSize( 16, 16 );
 
-	InputParams.Flags |= UI_AUTO_PADDING;
+	mInput->getInputTextBuffer()->setAllowOnlyNumbers( true, false );
 
-	mInput		= eeNew( UITextInput, ( InputParams ) );
+	internalValue( mValue, true );
 
-	UIControlAnim::CreateParams BtnParams( Params );
-	BtnParams.Parent( this );
-	BtnParams.Size = Sizei( 16, 16 );
+	adjustChilds();
 
-	if ( BtnParams.Flags & UI_CLIP_ENABLE )
-		BtnParams.Flags &= ~UI_CLIP_ENABLE;
-
-	mPushUp		= eeNew( UIControlAnim, ( BtnParams ) );
-	mPushDown 	= eeNew( UIControlAnim, ( BtnParams ) );
-
-	mInput->Visible		( true );
-	mInput->Enabled		( true );
-	mPushUp->Visible	( true );
-	mPushUp->Enabled	( true );
-	mPushDown->Visible	( true );
-	mPushDown->Enabled	( true );
-
-	mInput->GetInputTextBuffer()->AllowOnlyNumbers( true, Params.AllowDotsInNumbers );
-
-	InternalValue( mValue, true );
-
-	AdjustChilds();
-
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UISpinBox::~UISpinBox() {
 }
 
-Uint32 UISpinBox::Type() const {
+Uint32 UISpinBox::getType() const {
 	return UI_TYPE_SPINBOX;
 }
 
-bool UISpinBox::IsType( const Uint32& type ) const {
-	return UISpinBox::Type() == type ? true : UIComplexControl::IsType( type );
+bool UISpinBox::isType( const Uint32& type ) const {
+	return UISpinBox::getType() == type ? true : UIWidget::isType( type );
 }
 
-void UISpinBox::SetTheme( UITheme * Theme ) {
-	UIControl::SetThemeControl		( Theme, "spinbox" );
+void UISpinBox::setTheme( UITheme * Theme ) {
+	UIWidget::setTheme( Theme );
 
-	mInput->SetThemeControl		( Theme, "spinbox_input" );
-	mPushUp->SetThemeControl		( Theme, "spinbox_btnup" );
-	mPushDown->SetThemeControl	( Theme, "spinbox_btndown" );
+	setThemeSkin( Theme, "spinbox" );
 
-	SubTexture * tSubTexture = NULL;
+	mInput->setThemeSkin( Theme, "spinbox_input" );
+	mPushUp->setThemeSkin( Theme, "spinbox_btnup" );
+	mPushDown->setThemeSkin( Theme, "spinbox_btndown" );
+
 	UISkin * tSkin = NULL;
 
-	tSkin = mPushUp->GetSkin();
+	tSkin = mPushUp->getSkin();
 
 	if ( NULL != tSkin ) {
-		tSubTexture = tSkin->GetSubTexture( UISkinState::StateNormal );
-
-		if ( NULL != tSubTexture ) {
-			mPushUp->Size( tSubTexture->RealSize() );
-		}
+		mPushUp->setSize( tSkin->getSize() );
 	}
 
-	tSkin = mPushDown->GetSkin();
+	tSkin = mPushDown->getSkin();
 
 	if ( NULL != tSkin ) {
-		tSubTexture = tSkin->GetSubTexture( UISkinState::StateNormal );
-
-		if ( NULL != tSubTexture ) {
-			mPushDown->Size( tSubTexture->RealSize() );
-		}
+		mPushDown->setSize( tSkin->getSize() );
 	}
 
-	if ( mFlags & UI_AUTO_SIZE ) {
-		mSize.Height( mInput->GetSkinSize().Height() );
+	adjustChilds();
+}
+
+void UISpinBox::adjustChilds() {
+	mInput->setSize( mSize.getWidth() - mPushUp->getSize().getWidth(), mInput->getSize().getHeight() );
+
+	if ( mInput->getSize().getHeight() < mInput->getSkinSize().getHeight() ) {
+		mInput->setSize( mSize.getWidth() - mPushUp->getSize().getWidth(), mInput->getSkinSize().getHeight() );
 	}
 
-	AdjustChilds();
+	if ( ( mFlags & UI_AUTO_SIZE ) || mSize.getHeight() < mInput->getSize().getHeight() ) {
+		setInternalHeight( mInput->getSkinSize().getHeight() );
+	}
+
+	mInput->centerVertical();
+
+	mPushUp->setPosition( mSize.getWidth() - mPushUp->getSize().getWidth(), mInput->getPosition().y );
+	mPushDown->setPosition( mSize.getWidth() - mPushDown->getSize().getWidth(), mInput->getPosition().y + mPushUp->getSize().getHeight() );
 }
 
-void UISpinBox::AdjustChilds() {
-	mPushUp->Pos( mSize.Width() - mPushUp->Size().Width(), 0 );
-	mPushDown->Pos( mSize.Width() - mPushDown->Size().Width(), mPushUp->Size().Height() );
-	mInput->Size( mSize.Width() - mPushUp->Size().Width(), mSize.Height() );
+void UISpinBox::setPadding( const Rect& padding ) {
+	mInput->setPadding( padding );
 }
 
-void UISpinBox::Padding( const Recti& padding ) {
-	mInput->Padding( padding );
+const Rect& UISpinBox::getPadding() const {
+	return mInput->getPadding();
 }
 
-const Recti& UISpinBox::Padding() const {
-	return mInput->Padding();
-}
-
-void UISpinBox::ClickStep( const Float& step ) {
+void UISpinBox::setClickStep( const Float& step ) {
 	mClickStep = step;
 }
 
-const Float& UISpinBox::ClickStep() const {
+const Float& UISpinBox::getClickStep() const {
 	return mClickStep;
 }
 
-Uint32 UISpinBox::OnMessage( const UIMessage * Msg ) {
-	switch ( Msg->Msg() ) {
-		case UIMessage::MsgClick:
+Uint32 UISpinBox::onMessage( const UIMessage * Msg ) {
+	switch ( Msg->getMsg() ) {
+		case UIMessage::Click:
 		{
-			if ( Msg->Flags() & EE_BUTTON_LMASK ) {
-				if ( Msg->Sender() == mPushUp ) {
-					AddValue( mClickStep );
-				} else if ( Msg->Sender() == mPushDown ) {
-					AddValue( -mClickStep );
+			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
+				if ( Msg->getSender() == mPushUp ) {
+					addValue( mClickStep );
+				} else if ( Msg->getSender() == mPushDown ) {
+					addValue( -mClickStep );
 				}
-			} else if ( Msg->Flags() & EE_BUTTONS_WUWD ) {
-				if ( Msg->Flags() & EE_BUTTON_WUMASK )
-					AddValue( mClickStep );
+			} else if ( Msg->getFlags() & EE_BUTTONS_WUWD ) {
+				if ( Msg->getFlags() & EE_BUTTON_WUMASK )
+					addValue( mClickStep );
 				else
-					AddValue( -mClickStep );
+					addValue( -mClickStep );
 			}
 
 			return 1;
@@ -144,106 +135,158 @@ Uint32 UISpinBox::OnMessage( const UIMessage * Msg ) {
 	return 0;
 }
 
-void UISpinBox::AddValue( const Float& value ) {
-	if ( !mInput->Text().size() )
-		mInput->Text( String::ToStr( static_cast<Int32>( mMinValue ) ) );
+void UISpinBox::addValue( const Float& value ) {
+	if ( !mInput->getText().size() )
+		mInput->setText( String::toStr( static_cast<Int32>( mMinValue ) ) );
 
-	Value( mValue + value );
+	this->setValue( mValue + value );
 }
 
-void UISpinBox::InternalValue( const Float& Val, const bool& Force ) {
+void UISpinBox::internalValue( const Float& Val, const bool& Force ) {
 	if ( Force || Val != mValue ) {
 		if ( Val >= mMinValue && Val <= mMaxValue ) {
 			Float iValN	= (Float)(Int32) Val;
 			Float fValN 	= (Float)iValN;
 
 			if ( fValN == Val ) {
-				mInput->Text( String::ToStr( iValN ) );
+				mInput->setText( String::toStr( iValN ) );
 			} else {
-				mInput->Text( String::ToStr( Val ) );
+				mInput->setText( String::toStr( Val ) );
 			}
 
 			mValue = Val;
 
-			OnValueChange();
+			onValueChange();
 		}
 	}
 }
 
-void UISpinBox::Value( const Float& Val ) {
-	InternalValue( Val, false );
+void UISpinBox::onSizeChange() {
+	UIWidget::onSizeChange();
+
+	adjustChilds();
 }
 
-const Float& UISpinBox::Value() const {
+void UISpinBox::onPositionChange() {
+	UIWidget::onPositionChange();
+
+	adjustChilds();
+}
+
+UISpinBox * UISpinBox::setValue( const Float& Val ) {
+	internalValue( Val, false );
+	return this;
+}
+
+const Float& UISpinBox::getValue() const {
 	return mValue;
 }
 
-void UISpinBox::MinValue( const Float& MinVal ) {
+UISpinBox * UISpinBox::setMinValue( const Float& MinVal ) {
 	mMinValue = MinVal;
 
 	if ( mValue < mMinValue )
 		mValue = mMinValue;
+
+	return this;
 }
 
-const Float& UISpinBox::MinValue() const {
+const Float& UISpinBox::getMinValue() const {
 	return mMinValue;
 }
 
-void UISpinBox::MaxValue( const Float& MaxVal ) {
+UISpinBox * UISpinBox::setMaxValue( const Float& MaxVal ) {
 	mMaxValue = MaxVal;
 
 	if ( mValue > mMaxValue )
 		mValue = mMaxValue;
+
+	return this;
 }
 
-const Float& UISpinBox::MaxValue() const {
+const Float& UISpinBox::getMaxValue() const {
 	return mMaxValue;
 }
 
-void UISpinBox::Update() {
-	bool Changed = mInput->GetInputTextBuffer()->ChangedSinceLastUpdate();
+void UISpinBox::update() {
+	bool Changed = mInput->getInputTextBuffer()->changedSinceLastUpdate();
 
-	UIControlAnim::Update();
+	UIControlAnim::update();
 
 	if ( Changed ) {
-		if ( !mInput->Text().size() ) {
-			Value( 0 );
+		if ( !mInput->getText().size() ) {
+			setValue( 0 );
 		} else {
 			Float Val = mValue;
 
-			if ( '.' == mInput->Text()[ mInput->Text().size() - 1 ] ) {
-				Uint32 pos = (Uint32)mInput->Text().find_first_of( "." );
+			if ( '.' == mInput->getText()[ mInput->getText().size() - 1 ] ) {
+				Uint32 pos = (Uint32)mInput->getText().find_first_of( "." );
 
-				if ( pos != mInput->Text().size() - 1 )
-					mInput->Text( mInput->Text().substr( 0, mInput->Text().size() - 1 ) );
+				if ( pos != mInput->getText().size() - 1 )
+					mInput->setText( mInput->getText().substr( 0, mInput->getText().size() - 1 ) );
 			} else {
-				bool Res 	= String::FromString<Float>( Val, mInput->Text() );
+				bool Res 	= String::fromString<Float>( Val, mInput->getText() );
 
 				if ( Res )
-					Value( Val );
+					setValue( Val );
 			}
 		}
 	}
 }
 
-UIControlAnim * UISpinBox::ButtonPushUp() const {
+UIControlAnim * UISpinBox::getButtonPushUp() const {
 	return mPushUp;
 }
 
-UIControlAnim * UISpinBox::ButtonPushDown() const {
+UIControlAnim * UISpinBox::getButtonPushDown() const {
 	return mPushDown;
 }
 
-UITextInput * UISpinBox::TextInput() const {
+UITextInput * UISpinBox::getTextInput() const {
 	return mInput;
 }
 
-void UISpinBox::OnAlphaChange() {
-	UIControlAnim::OnAlphaChange();
+UISpinBox * UISpinBox::setAllowOnlyNumbers(bool allow) {
+	mInput->getInputTextBuffer()->setAllowOnlyNumbers( true, allow );
+
+	return this;
+}
+
+bool UISpinBox::dotsInNumbersAllowed() {
+	return mInput->getInputTextBuffer()->dotsInNumbersAllowed();
+}
+
+void UISpinBox::onAlphaChange() {
+	UIControlAnim::onAlphaChange();
 	
-	mInput->Alpha( mAlpha );
-	mPushUp->Alpha( mAlpha );
-	mPushDown->Alpha( mAlpha );
+	mInput->setAlpha( mAlpha );
+	mPushUp->setAlpha( mAlpha );
+	mPushDown->setAlpha( mAlpha );
+}
+
+void UISpinBox::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
+	UIWidget::loadFromXmlNode( node );
+
+	mInput->loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "minvalue" == name ) {
+			setMinValue( ait->as_float() );
+		} else if ( "maxvalue" == name ) {
+			setMaxValue( ait->as_float() );
+		} else if ( "value" == name ) {
+			setValue( ait->as_float() );
+		} else if ( "clickstep" == name ) {
+			setClickStep( ait->as_float() );
+		}
+	}
+
+	endPropertiesTransaction();
 }
 
 }}

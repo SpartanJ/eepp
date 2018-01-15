@@ -40,12 +40,12 @@ class EE_API Socket : NonCopyable {
 		**  By default, all sockets are blocking.
 		**  @param blocking True to set the socket as blocking, false for non-blocking
 		**  @see IsBlocking */
-		void SetBlocking(bool blocking);
+		void setBlocking(bool blocking);
 
 		/** @brief Tell whether the socket is in blocking or non-blocking mode
 		**  @return True if the socket is blocking, false otherwise
 		**  @see SetBlocking */
-		bool IsBlocking() const;
+		bool isBlocking() const;
 protected :
 	/** @brief Types of protocols that the socket can use */
 	enum Type
@@ -64,22 +64,22 @@ protected :
 	**  was not created yet (or already destroyed).
 	**  This function can only be accessed by derived classes.
 	**  @return The internal (OS-specific) handle of the socket */
-	SocketHandle GetHandle() const;
+	SocketHandle getHandle() const;
 
 	/** @brief Create the internal representation of the socket
 	///
 	**  This function can only be accessed by derived classes. */
-	void Create();
+	void create();
 
 
 	/** @brief Create the internal representation of the socket from a socket handle
 	**  This function can only be accessed by derived classes.
 	**  @param handle OS-specific handle of the socket to wrap */
-	void Create(SocketHandle handle);
+	void create(SocketHandle handle);
 
 	/** @brief Close the socket gracefully
 	**  This function can only be accessed by derived classes. */
-	void Close();
+	void close();
 protected :
 	friend class SocketSelector;
 	// Member data

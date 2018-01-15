@@ -1,95 +1,94 @@
 #ifndef EE_UIUISlider_HPP
 #define EE_UIUISlider_HPP
 
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uisliderbutton.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UISlider : public UIComplexControl {
+class EE_API UISlider : public UIWidget {
 	public:
-		class CreateParams : public UIComplexControl::CreateParams {
-			public:
-				inline CreateParams() :
-					UIComplexControl::CreateParams(),
-					VerticalSlider( false ),
-					AllowHalfSliderOut( true ),
-					ExpandBackground( false )
-				{
-				}
+		static UISlider * New( const UI_ORIENTATION& orientation = UI_HORIZONTAL );
 
-				inline ~CreateParams() {}
-
-				bool 	VerticalSlider;
-				bool	AllowHalfSliderOut;
-				bool	ExpandBackground;
-		};
-
-		UISlider( const UISlider::CreateParams& Params );
+		UISlider( const UI_ORIENTATION& orientation = UI_HORIZONTAL );
 
 		virtual ~UISlider();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		virtual void Value( Float Val );
+		virtual void setValue( Float Val );
 
-		const Float& Value() const;
+		const Float& getValue() const;
 
-		virtual void MinValue( const Float& MinVal );
+		virtual void setMinValue( const Float& MinVal );
 
-		const Float& MinValue() const;
+		const Float& getMinValue() const;
 
-		virtual void MaxValue( const Float& MaxVal );
+		virtual void setMaxValue( const Float& MaxVal );
 
-		const Float& MaxValue() const;
+		const Float& getMaxValue() const;
 
-		virtual void ClickStep( const Float& step );
+		virtual void setClickStep( const Float& step );
 
-		const Float& ClickStep() const;
+		const Float& getClickStep() const;
 
-		const bool& IsVertical() const;
+		bool isVertical() const;
 
-		virtual void Update();
+		virtual void update();
 
-		UIControl * GetBackSlider() const;
+		UIControl * getBackSlider() const;
 
-		UIDragable * GetSliderButton() const;
+		UIDragableControl * getSliderButton() const;
 
-		void AdjustChilds();
+		void adjustChilds();
 
-		const bool& AllowHalfSliderOut() const;
+		void manageClick( const Uint32& flags );
 
-		const bool& ExpandBackground() const;
+		UI_ORIENTATION getOrientation() const;
 
-		void ManageClick( const Uint32& Flags );
+		UISlider * setOrientation( const UI_ORIENTATION & orientation );
+
+		bool getAllowHalfSliderOut() const;
+
+		void setAllowHalfSliderOut( bool allowHalfSliderOut );
+
+		bool getExpandBackground() const;
+
+		void setExpandBackground( bool expandBackground );
+
+		Float getPageStep() const;
+
+		void setPageStep( const Float & pageStep );
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		friend class Private::UISliderButton;
 
-		bool				mVertical;
-		bool				mAllowHalfSliderOut;
-		bool				mExpandBackground;
-		UIControlAnim *	mBackSlider;
-		UIControlAnim * 	mSlider;
+		UI_ORIENTATION		mOrientation;
+		UISliderStyleConfig	mStyleConfig;
+		UIControlAnim *		mBackSlider;
+		Private::UISliderButton * 	mSlider;
 		Float				mMinValue;
 		Float				mMaxValue;
 		Float				mValue;
 		Float				mClickStep;
+		Float				mPageStep;
 
 		bool				mOnPosChange;
 
 		Uint32				mLastTickMove;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		void FixSliderPos();
+		void fixSliderPos();
 
-		virtual Uint32 OnKeyDown( const UIEventKey &Event );
+		virtual Uint32 onKeyDown( const UIEventKey &Event );
 		
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 };
 
 }}

@@ -11,23 +11,23 @@ namespace EE { namespace Graphics {
 */
 class EE_API VertexBufferVBO : public VertexBuffer {
 	public:
-		VertexBufferVBO( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, EE_DRAW_MODE DrawType = DM_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
+		VertexBufferVBO( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, PrimitiveType DrawType = PRIMITIVE_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
 
 		virtual ~VertexBufferVBO();
 
-		void Bind();
+		void bind();
 
-		void Draw();
+		void draw();
 
-		bool Compile();
+		bool compile();
 
-		void Update( const Uint32& Types, bool Indices );
+		void update( const Uint32& Types, bool Indices );
 
-		void Reload();
+		void reload();
 
-		void Unbind();
+		void unbind();
 
-		void Clear();
+		void clear();
 	protected:
 		bool mCompiled;
 		bool mBuffersSet;
@@ -36,7 +36,7 @@ class EE_API VertexBufferVBO : public VertexBuffer {
 		Uint32 mElementHandle;
 		Uint32 mArrayHandle[ VERTEX_FLAGS_COUNT ];
 
-		void SetVertexStates();
+		void setVertexStates();
 };
 
 }}

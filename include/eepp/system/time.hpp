@@ -18,17 +18,17 @@ class EE_API Time
 		/** @brief Return the time value as a number of seconds
 		**	@return Time in seconds
 		**	@see AsMilliseconds, AsMicroseconds */
-		double AsSeconds() const;
+		double asSeconds() const;
 
 		/** @brief Return the time value as a number of milliseconds
 		**	@return Time in milliseconds
 		**	@see AsSeconds, AsMicroseconds */
-		double AsMilliseconds() const;
+		double asMilliseconds() const;
 
 		/** @brief Return the time value as a number of microseconds
 		**	@return Time in microseconds
 		**	@see asSeconds, asMilliseconds */
-		Int64 AsMicroseconds() const;
+		Int64 asMicroseconds() const;
 
 		static const Time Zero; ///< Predefined "zero" time value
 	private :

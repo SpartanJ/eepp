@@ -13,14 +13,14 @@ JoystickSFML::JoystickSFML( const Uint32& index ) :
 	Joystick( index ),
 	mHat( HAT_CENTERED )
 {
-	Open();
+	open();
 }
 
 JoystickSFML::~JoystickSFML() {
 }
 
-void JoystickSFML::Open() {
-	mName		= "Joystick " + String::ToStr( mIndex );
+void JoystickSFML::open() {
+	mName		= "Joystick " + String::toStr( mIndex );
 	mHats		= 0;
 	mButtons	= eemin( sf::Joystick::getButtonCount( mIndex ), (unsigned int)32 );
 	mAxes		= sf::Joystick::AxisCount;
@@ -29,20 +29,20 @@ void JoystickSFML::Open() {
 	mButtonDown	= mButtonDownLast = mButtonUp = 0;
 }
 
-void JoystickSFML::Close() {
+void JoystickSFML::close() {
 }
 
-void JoystickSFML::Update() {
-	ClearStates();
+void JoystickSFML::update() {
+	clearStates();
 
 	for ( Int32 i = 0; i < mButtons; i++ ) {
-		UpdateButton( i, sf::Joystick::isButtonPressed( mIndex, i ) );
+		updateButton( i, sf::Joystick::isButtonPressed( mIndex, i ) );
 	}
 
-	CalcHat();
+	calcHat();
 }
 
-void JoystickSFML::CalcHat() {
+void JoystickSFML::calcHat() {
 	Float hatX = sf::Joystick::getAxisPosition( mIndex, sf::Joystick::PovX );
 	Float hatY = sf::Joystick::getAxisPosition( mIndex, sf::Joystick::PovY );
 
@@ -55,11 +55,11 @@ void JoystickSFML::CalcHat() {
 	else if ( hatY > 0 ) mHat |= HAT_DOWN;
 }
 
-Uint8 JoystickSFML::GetHat( const Int32& index ) {
+Uint8 JoystickSFML::getHat( const Int32& index ) {
 	return mHat;
 }
 
-Float JoystickSFML::GetAxis( const Int32& axis ) {
+Float JoystickSFML::getAxis( const Int32& axis ) {
 	sf::Joystick::Axis raxis = sf::Joystick::X;
 
 	switch ( axis )
@@ -73,11 +73,11 @@ Float JoystickSFML::GetAxis( const Int32& axis ) {
 	return sf::Joystick::getAxisPosition( mIndex, raxis ) * 0.01;
 }
 
-Vector2i JoystickSFML::GetBallMotion( const Int32& ball ) {
+Vector2i JoystickSFML::getBallMotion( const Int32& ball ) {
 	return Vector2i();
 }
 
-bool JoystickSFML::Plugged() const {
+bool JoystickSFML::isPlugged() const {
 	return sf::Joystick::isConnected( mIndex );
 }
 

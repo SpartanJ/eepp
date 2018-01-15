@@ -20,42 +20,42 @@ class EE_API PerlinNoise {
 		~PerlinNoise();
 
 		/** Reset the initial values */
-		void Init();
+		void init();
 
 		/** @return The noise value for the 2D coordinates */
-		Float PerlinNoise2D(Float x, Float y);
+		Float getPerlinNoise2D(Float x, Float y);
 
-		void Octaves( const int& octaves ) { mOctaves = octaves; }
+		void setOctaves( const int& octaves ) { mOctaves = octaves; }
 		
-		void Persistence( const Float& pers)  { mPersistence = pers; }
+		void setPersistence( const Float& pers)  { mPersistence = pers; }
 
-		void Frequency( const Float& freq ) { mFrequency = freq; }
+		void setFrequency( const Float& freq ) { mFrequency = freq; }
 
-		void Amplitude( const Float& amp ) { mAmplitude = amp; }
+		void setAmplitude( const Float& amp ) { mAmplitude = amp; }
 		
-		void FrequencyOctaveDep( const bool& dep ) { mFreqOctaveDep =  dep; }
+		void setFrequencyOctaveDep( const bool& dep ) { mFreqOctaveDep =  dep; }
 		
-		void AmplitudeOctaveDep( const bool& dep ) { mAmpOctaveDep = dep; }
+		void setAmplitudeOctaveDep( const bool& dep ) { mAmpOctaveDep = dep; }
 
-		int Octaves() const { return mOctaves; }
+		int getOctaves() const { return mOctaves; }
 		
-		Float Persistence() const { return mPersistence; }
+		Float getPersistence() const { return mPersistence; }
 		
-		Float Frequency() const { return mFrequency; }
+		Float getFrequency() const { return mFrequency; }
 		
-		Float Amplitude() const { return mAmplitude; }
+		Float getAmplitude() const { return mAmplitude; }
 		
-		bool FrequencyOctaveDep() const { return mFreqOctaveDep; }
+		bool getFrequencyOctaveDep() const { return mFreqOctaveDep; }
 		
-		bool AmplitudeOctaveDep() const { return mAmpOctaveDep; }
+		bool getAmplitudeOctaveDep() const { return mAmpOctaveDep; }
 	protected:
-		Float Noise2D(Int32 x, Int32 y);
+		Float noise2D(Int32 x, Int32 y);
 		
-		Float SmoothedNoise2D(Float x, Float y);
+		Float smoothedNoise2D(Float x, Float y);
 		
-		Float Interpolate(Float a, Float b, Float x);
+		Float interpolate(Float a, Float b, Float x);
 		
-		Float InterpolatedNoise2D(Float x, Float y);
+		Float interpolatedNoise2D(Float x, Float y);
 
 		Float	mCurrSeed;
 		Float	mPersistence;

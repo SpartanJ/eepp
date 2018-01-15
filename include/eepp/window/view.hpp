@@ -12,49 +12,49 @@ class EE_API View {
 
 		View( const int& X, const int& Y, const int& Width, const int& Height );
 
-		View( const Recti& View );
+		View( const Rect& View );
 
 		~View();
 
 		/** Offset the position */
-		void Move( const int& OffsetX, const int& OffsetY );
+		void move( const int& OffsetX, const int& OffsetY );
 
 		/** Offset the position */
-		void Move( const Vector2i& Offset );
+		void move( const Vector2i& Offset );
 
 		/** Scale the current view (from center) */
-		void Scale( const Float& Factor );
+		void scale( const Float& Factor );
 
 		/** Scale the current view (from center) */
-		void Scale( const Vector2f& Factor );
+		void scale( const Vector2f& Factor );
 
 		/** @return The center position of the view */
-		Vector2i Center() const;
+		Vector2i getCenter() const;
 
 		/** Set the center position of the view ( will move it if is needed ) */
-		void Center( const Vector2i& Center );
+		void setCenter( const Vector2i& center );
 
 		/** @return The current view ( Left = X, Right = Width, Top = Y, Bottom = Height ) */
-		Recti GetView() const { return mView; }
+		Rect getView() const { return mView; }
 
 		/** Set a new position to the view */
-		void SetPosition( const int& X, const int& Y );
+		void setPosition( const int& X, const int& Y );
 
 		/** Set a new size to the view */
-		void SetSize( const int& Width, const int& Height );
+		void setSize( const int& Width, const int& Height );
 
 		/** Creates a new view */
-		void SetView( const int& X, const int& Y, const int& Width, const int& Height );
+		void setView( const int& X, const int& Y, const int& Width, const int& Height );
 	private:
 		friend class Window;
 
 		bool mNeedUpdate;
-		Recti mView;
+		Rect mView;
 		Vector2f mCenter;
 
-		void CalcCenter();
+		void calcCenter();
 
-		bool NeedUpdate() const;
+		bool needUpdate() const;
 };
 
 }}

@@ -1,187 +1,155 @@
 #include <eepp/ui/uimenu.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/font.hpp>
+#include <eepp/graphics/drawablesearcher.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
+#include <eepp/ui/uimanager.hpp>
 
 namespace EE { namespace UI {
 
-UIMenu::UIMenu( UIMenu::CreateParams& Params ) :
-	UIComplexControl( Params ),
-	mPadding( Params.PaddingContainer ),
-	mFont( Params.Font ),
-	mFontColor( Params.FontColor ),
-	mFontShadowColor( Params.FontShadowColor ),
-	mFontOverColor( Params.FontOverColor ),
-	mFontSelectedColor( Params.FontSelectedColor ),
-	mMinWidth( Params.MinWidth ),
-	mMinSpaceForIcons( Params.MinSpaceForIcons ),
-	mMinRightMargin( Params.MinRightMargin ),
+UIMenu *UIMenu::New() {
+	return eeNew( UIMenu, () );
+}
+
+UIMenu::UIMenu() :
+	UIWidget(),
 	mMaxWidth( 0 ),
-	mRowHeight( Params.RowHeight ),
 	mNextPosY( 0 ),
-	mBiggestIcon( mMinSpaceForIcons ),
+	mBiggestIcon( 0 ),
 	mItemSelected( NULL ),
 	mItemSelectedIndex( eeINDEX_NOT_FOUND ),
 	mClickHide( false ),
 	mLastTickMove( 0 )
 {
-	OnSizeChange();
+	mFlags |= UI_AUTO_SIZE;
 
-	ApplyDefaultTheme();
+	mStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
+
+	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
+
+	if ( NULL != Theme ) {
+		mStyleConfig = Theme->getMenuStyleConfig();
+		mBiggestIcon = mStyleConfig.MinSpaceForIcons;
+	}
+
+	onSizeChange();
+
+	applyDefaultTheme();
 }
 
 UIMenu::~UIMenu() {
 }
 
-Uint32 UIMenu::Type() const {
+Uint32 UIMenu::getType() const {
 	return UI_TYPE_MENU;
 }
 
-bool UIMenu::IsType( const Uint32& type ) const {
-	return UIMenu::Type() == type ? true : UIComplexControl::IsType( type );
+bool UIMenu::isType( const Uint32& type ) const {
+	return UIMenu::getType() == type ? true : UIWidget::isType( type );
 }
 
-void UIMenu::SetTheme( UITheme * Theme ) {
-	UIControl::SetThemeControl( Theme, "menu" );
-	DoAfterSetTheme();
+void UIMenu::setTheme( UITheme * Theme ) {
+	UIWidget::setTheme( Theme );
+
+	setThemeSkin( Theme, "menu" );
+	onThemeLoaded();
 }
 
-void UIMenu::DoAfterSetTheme() {
-	AutoPadding();
+void UIMenu::onThemeLoaded() {
+	UIWidget::onThemeLoaded();
 
-	OnSizeChange();
+	autoPadding();
+
+	onSizeChange();
 }
 
-UIMenuItem * UIMenu::CreateMenuItem( const String& Text, SubTexture * Icon ) {
-	UIMenuItem::CreateParams Params;
-	Params.Parent( this );
-	Params.Font 			= mFont;
-	Params.FontColor 		= mFontColor;
-	Params.FontShadowColor 	= mFontShadowColor;
-	Params.FontOverColor 	= mFontOverColor;
-	Params.Icon				= Icon;
+UIMenuItem * UIMenu::createMenuItem( const String& Text, Drawable * Icon ) {
+	UIPushButtonStyleConfig styleConfig( mStyleConfig );
+	styleConfig.IconMinSize = Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
-	if ( mRowHeight < mMinSpaceForIcons )
-		Params.IconMinSize		= Sizei( mMinSpaceForIcons, mRowHeight );
-	else
-		Params.IconMinSize		= Sizei( mMinSpaceForIcons, mMinSpaceForIcons );
-
-	if ( mFlags & UI_AUTO_SIZE ) {
-		Params.Flags		= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	} else {
-		Params.Flags		= UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	}
-
-	UIMenuItem * tCtrl 	= eeNew( UIMenuItem, ( Params ) );
-
-	tCtrl->Text( Text );
-	tCtrl->Visible( true );
-	tCtrl->Enabled( true );
+	UIMenuItem * tCtrl 	= UIMenuItem::New();
+	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
+	tCtrl->setParent( this );
+	tCtrl->setStyleConfig( styleConfig );
+	tCtrl->setIcon( Icon );
+	tCtrl->setText( Text );
 
 	return tCtrl;
 }
 
-Uint32 UIMenu::Add( const String& Text, SubTexture * Icon ) {
-	return Add( CreateMenuItem( Text, Icon ) );
+Uint32 UIMenu::add( const String& Text, Drawable * Icon ) {
+	return add( createMenuItem( Text, Icon ) );
 }
 
-UIMenuCheckBox * UIMenu::CreateMenuCheckBox( const String& Text, const bool &Active ) {
-	UIMenuCheckBox::CreateParams Params;
-	Params.Parent( this );
-	Params.Font 			= mFont;
-	Params.FontColor 		= mFontColor;
-	Params.FontShadowColor 	= mFontShadowColor;
-	Params.FontOverColor	= mFontOverColor;
-	Params.Size				= Sizei( 0, mRowHeight );
+UIMenuCheckBox * UIMenu::createMenuCheckBox( const String& Text, const bool &Active ) {
+	UIPushButtonStyleConfig styleConfig( mStyleConfig );
+	styleConfig.IconMinSize = Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
-	if ( mRowHeight < mMinSpaceForIcons )
-		Params.IconMinSize		= Sizei( mMinSpaceForIcons, mRowHeight );
-	else
-		Params.IconMinSize		= Sizei( mMinSpaceForIcons, mMinSpaceForIcons );
-
-	if ( mFlags & UI_AUTO_SIZE ) {
-		Params.Flags		= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	} else {
-		Params.Flags		= UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	}
-
-	UIMenuCheckBox * tCtrl 	= eeNew( UIMenuCheckBox, ( Params ) );
-
-	tCtrl->Text( Text );
-	tCtrl->Visible( true );
-	tCtrl->Enabled( true );
+	UIMenuCheckBox * tCtrl 	= UIMenuCheckBox::New();
+	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
+	tCtrl->setParent( this );
+	tCtrl->setStyleConfig( styleConfig );
+	tCtrl->setText( Text );
 
 	if ( Active )
-		tCtrl->Active( Active );
+		tCtrl->setActive( Active );
 
 	return tCtrl;
 }
 
-Uint32 UIMenu::AddCheckBox( const String& Text, const bool& Active ) {
-	return Add( CreateMenuCheckBox( Text, Active ) );
+Uint32 UIMenu::addCheckBox( const String& Text, const bool& Active ) {
+	return add( createMenuCheckBox( Text, Active ) );
 }
 
-UIMenuSubMenu * UIMenu::CreateSubMenu( const String& Text, SubTexture * Icon, UIMenu * SubMenu ) {
-	UIMenuSubMenu::CreateParams Params;
-	Params.Parent( this );
-	Params.Font 			= mFont;
-	Params.FontColor 		= mFontColor;
-	Params.FontShadowColor 	= mFontShadowColor;
-	Params.FontOverColor 	= mFontOverColor;
-	Params.SubMenu			= SubMenu;
-	Params.Icon				= Icon;
+UIMenuSubMenu * UIMenu::createSubMenu( const String& Text, Drawable * Icon, UIMenu * SubMenu ) {
+	UIPushButtonStyleConfig styleConfig( mStyleConfig );
+	styleConfig.IconMinSize = Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
 
-	if ( mRowHeight < mMinSpaceForIcons )
-		Params.IconMinSize		= Sizei( mMinSpaceForIcons, mRowHeight );
-	else
-		Params.IconMinSize		= Sizei( mMinSpaceForIcons, mMinSpaceForIcons );
-
-	if ( mFlags & UI_AUTO_SIZE ) {
-		Params.Flags		= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	} else {
-		Params.Flags		= UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	}
-
-	UIMenuSubMenu * tCtrl 	= eeNew( UIMenuSubMenu, ( Params ) );
-
-	tCtrl->Text( Text );
-	tCtrl->Visible( true );
-	tCtrl->Enabled( true );
+	UIMenuSubMenu * tCtrl 	= UIMenuSubMenu::New();
+	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
+	tCtrl->setParent( this );
+	tCtrl->setStyleConfig( styleConfig );
+	tCtrl->setIcon( Icon );
+	tCtrl->setText( Text );
+	tCtrl->setSubMenu( SubMenu );
 
 	return tCtrl;
 }
 
-Uint32 UIMenu::AddSubMenu( const String& Text, SubTexture * Icon, UIMenu * SubMenu ) {
-	return Add( CreateSubMenu( Text, Icon, SubMenu ) );
+Uint32 UIMenu::addSubMenu( const String& Text, Drawable * Icon, UIMenu * SubMenu ) {
+	return add( createSubMenu( Text, Icon, SubMenu ) );
 }
 
-bool UIMenu::CheckControlSize( UIControl * Control, const bool& Resize ) {
-	if ( Control->IsType( UI_TYPE_MENUITEM ) ) {
+bool UIMenu::checkControlSize( UIControl * Control, const bool& Resize ) {
+	if ( Control->isType( UI_TYPE_MENUITEM ) ) {
 		UIMenuItem * tItem = reinterpret_cast<UIMenuItem*> ( Control );
 
-		if ( NULL != tItem->Icon() && tItem->IconHorizontalMargin() + tItem->Icon()->Size().Width() > (Int32)mBiggestIcon ) {
-			mBiggestIcon = tItem->IconHorizontalMargin() + tItem->Icon()->Size().Width();
+		if ( NULL != tItem->getIcon() && tItem->getIconHorizontalMargin() + tItem->getIcon()->getSize().getWidth() > (Int32)mBiggestIcon ) {
+			mBiggestIcon = tItem->getIconHorizontalMargin() + tItem->getIcon()->getSize().getWidth();
 		}
 
 		if ( mFlags & UI_AUTO_SIZE ) {
-			if ( Control->IsType( UI_TYPE_MENUSUBMENU ) ) {
+			if ( Control->isType( UI_TYPE_MENUSUBMENU ) ) {
+				Int32 textWidth = tItem->getTextBox()->getTextWidth();
+
 				UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( tItem );
 
-				if ( tMenu->TextBox()->GetTextWidth() + mBiggestIcon + tMenu->Arrow()->Size().Width() + mMinRightMargin > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
-					mMaxWidth = tMenu->TextBox()->GetTextWidth() + mBiggestIcon + mPadding.Left + mPadding.Right + tMenu->Arrow()->Size().Width() + mMinRightMargin;
+				if ( textWidth + PixelDensity::dpToPxI( mBiggestIcon ) + tMenu->getArrow()->getRealSize().getWidth() + PixelDensity::dpToPxI( mStyleConfig.MinRightMargin ) > (Int32)mMaxWidth ) {
+					mMaxWidth = textWidth + PixelDensity::dpToPxI( mBiggestIcon + mStyleConfig.Padding.Left + mStyleConfig.Padding.Right + mStyleConfig.MinRightMargin ) + tMenu->getArrow()->getRealSize().getWidth();
 
 					if ( Resize ) {
-						ResizeControls();
+						resizeControls();
 
 						return true;
 					}
 				}
-			}
-			else {
-				if ( tItem->TextBox()->GetTextWidth() + mBiggestIcon + mMinRightMargin > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
-					mMaxWidth = tItem->TextBox()->GetTextWidth() + mBiggestIcon + mPadding.Left + mPadding.Right + mMinRightMargin;
+			} else {
+				if ( Control->getRealSize().getWidth() > (Int32)mMaxWidth ) {
+					mMaxWidth = Control->getRealSize().getWidth();
 
 					if ( Resize ) {
-						ResizeControls();
+						resizeControls();
 
 						return true;
 					}
@@ -193,64 +161,55 @@ bool UIMenu::CheckControlSize( UIControl * Control, const bool& Resize ) {
 	return false;
 }
 
-Uint32 UIMenu::Add( UIControl * Control ) {
-	if ( this != Control->Parent() )
-		Control->Parent( this );
+Uint32 UIMenu::add( UIControl * Control ) {
+	if ( this != Control->getParent() )
+		Control->setParent( this );
 
-	CheckControlSize( Control );
+	checkControlSize( Control );
 
-	SetControlSize( Control, Count() );
+	setControlSize( Control, getCount() );
 
-	Control->Pos( mPadding.Left, mPadding.Top + mNextPosY );
+	Control->setPixelsPosition( PixelDensity::dpToPxI( mStyleConfig.Padding.Left ), PixelDensity::dpToPxI( mStyleConfig.Padding.Top ) + mNextPosY );
 
-	mNextPosY += mRowHeight;
+	mNextPosY += Control->getRealSize().getHeight();
 
 	mItems.push_back( Control );
 
-	ResizeMe();
+	resizeMe();
 
 	return mItems.size() - 1;
 }
 
-void UIMenu::SetControlSize( UIControl * Control, const Uint32& Pos ) {
-	if ( Control->IsType( UI_TYPE_MENUITEM ) ) {
-		Control->Size( mSize.Width() - mPadding.Left - mPadding.Right, mRowHeight );
-	} else {
-		Control->Size( mSize.Width() - mPadding.Left - mPadding.Right, Control->Size().Height() );
-	}
+void UIMenu::setControlSize( UIControl * Control, const Uint32& Pos ) {
+	Control->setPixelsSize( mRealSize.getWidth(), Control->getRealSize().getHeight() );
 }
 
-Uint32 UIMenu::AddSeparator() {
-	UISeparator::CreateParams Params;
-	Params.Parent( this );
-	Params.PosSet( mPadding.Left, mPadding.Top + mNextPosY );
-	Params.Size = Sizei( mSize.Width() - mPadding.Left - mPadding.Right, 3 );
+Uint32 UIMenu::addSeparator() {
+	UIMenuSeparator * Control = UIMenuSeparator::New();
+	Control->setParent( this );
+	Control->setPixelsPosition( PixelDensity::dpToPxI( mStyleConfig.Padding.Left ), PixelDensity::dpToPxI( mStyleConfig.Padding.Top ) + mNextPosY );
+	Control->setPixelsSize( mRealSize.getWidth() - PixelDensity::dpToPxI( mStyleConfig.Padding.Left - mStyleConfig.Padding.Right ), PixelDensity::dpToPxI( Control->getSkinSize().getHeight() ) );
 
-	UISeparator * Control = eeNew( UISeparator, ( Params ) );
-
-	Control->Visible( true );
-	Control->Enabled( true );
-
-	mNextPosY += Control->Size().Height();
+	mNextPosY += Control->getRealSize().getHeight();
 
 	mItems.push_back( Control );
 
-	ResizeMe();
+	resizeMe();
 
 	return mItems.size() - 1;
 }
 
-UIControl * UIMenu::GetItem( const Uint32& Index ) {
+UIControl * UIMenu::getItem( const Uint32& Index ) {
 	eeASSERT( Index < mItems.size() );
 	return mItems[ Index ];
 }
 
-UIControl * UIMenu::GetItem( const String& Text ) {
+UIControl * UIMenu::getItem( const String& Text ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-		if ( mItems[i]->IsType( UI_TYPE_MENUITEM ) ) {
+		if ( mItems[i]->isType( UI_TYPE_MENUITEM ) ) {
 			UIMenuItem * tMenuItem = reinterpret_cast<UIMenuItem*>( mItems[i] );
 			
-			if ( tMenuItem->Text() == Text )
+			if ( tMenuItem->getText() == Text )
 				return tMenuItem;
 		}
 	}
@@ -258,7 +217,7 @@ UIControl * UIMenu::GetItem( const String& Text ) {
 	return NULL;
 }
 
-Uint32 UIMenu::GetItemIndex( UIControl * Item ) {
+Uint32 UIMenu::getItemIndex( UIControl * Item ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i] == Item )
 			return i;
@@ -267,31 +226,31 @@ Uint32 UIMenu::GetItemIndex( UIControl * Item ) {
 	return eeINDEX_NOT_FOUND;
 }
 
-Uint32 UIMenu::Count() const {
+Uint32 UIMenu::getCount() const {
 	return mItems.size();
 }
 
-void UIMenu::Remove( const Uint32& Index ) {
+void UIMenu::remove( const Uint32& Index ) {
 	eeASSERT( Index < mItems.size() );
 
 	eeSAFE_DELETE( mItems[ Index ] );
 
 	mItems.erase( mItems.begin() + Index );
 
-	ReposControls();
-	ResizeControls();
+	rePosControls();
+	resizeControls();
 }
 
-void UIMenu::Remove( UIControl * Ctrl ) {
+void UIMenu::remove( UIControl * Ctrl ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i] == Ctrl ) {
-			Remove( i );
+			remove( i );
 			break;
 		}
 	}
 }
 
-void UIMenu::RemoveAll() {
+void UIMenu::removeAll() {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		eeSAFE_DELETE( mItems[ i ] );
 	}
@@ -300,28 +259,28 @@ void UIMenu::RemoveAll() {
 	mNextPosY = 0;
 	mMaxWidth = 0;
 
-	ResizeMe();
+	resizeMe();
 }
 
-void UIMenu::Insert( const String& Text, SubTexture * Icon, const Uint32& Index ) {
-	Insert( CreateMenuItem( Text, Icon ), Index );
+void UIMenu::insert( const String& Text, Drawable * Icon, const Uint32& Index ) {
+	insert( createMenuItem( Text, Icon ), Index );
 }
 
-void UIMenu::Insert( UIControl * Control, const Uint32& Index ) {
+void UIMenu::insert( UIControl * Control, const Uint32& Index ) {
 	mItems.insert( mItems.begin() + Index, Control );
 
-	ChildAddAt( Control, Index );
+	childAddAt( Control, Index );
 
-	ReposControls();
-	ResizeControls();
+	rePosControls();
+	resizeControls();
 }
 
-bool UIMenu::IsSubMenu( UIControl * Ctrl ) {
+bool UIMenu::isSubMenu( UIControl * Ctrl ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-		if ( mItems[i]->IsType( UI_TYPE_MENUSUBMENU ) ) {
+		if ( mItems[i]->isType( UI_TYPE_MENUSUBMENU ) ) {
 			UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( mItems[i] );
 
-			if ( tMenu->SubMenu() == Ctrl )
+			if ( tMenu->getSubMenu() == Ctrl )
 				return true;
 		}
 	}
@@ -329,23 +288,23 @@ bool UIMenu::IsSubMenu( UIControl * Ctrl ) {
 	return false;
 }
 
-Uint32 UIMenu::OnMessage( const UIMessage * Msg ) {
-	switch ( Msg->Msg() ) {
-		case UIMessage::MsgMouseUp:
+Uint32 UIMenu::onMessage( const UIMessage * Msg ) {
+	switch ( Msg->getMsg() ) {
+		case UIMessage::MouseUp:
 		{
-			if ( Msg->Sender()->Parent() == this && ( Msg->Flags() & EE_BUTTONS_LRM ) ) {
-				UIEvent ItemEvent( Msg->Sender(), UIEvent::EventOnItemClicked );
-				SendEvent( &ItemEvent );
+			if ( Msg->getSender()->getParent() == this && ( Msg->getFlags() & EE_BUTTONS_LRM ) ) {
+				UIEvent ItemEvent( Msg->getSender(), UIEvent::OnItemClicked );
+				sendEvent( &ItemEvent );
 			}
 
 			return 1;
 		}
-		case UIMessage::MsgFocusLoss:
+		case UIMessage::FocusLoss:
 		{
-			UIControl * FocusCtrl = UIManager::instance()->FocusControl();
+			UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
 
-			if ( this != FocusCtrl && !IsParentOf( FocusCtrl ) && !IsSubMenu( FocusCtrl ) ) {
-				OnComplexControlFocusLoss();
+			if ( this != FocusCtrl && !isParentOf( FocusCtrl ) && !isSubMenu( FocusCtrl ) ) {
+				onWidgetFocusLoss();
 			}
 
 			return 1;
@@ -355,72 +314,73 @@ Uint32 UIMenu::OnMessage( const UIMessage * Msg ) {
 	return 0;
 }
 
-void UIMenu::OnSizeChange() {
-	if ( NULL != mFont && ( ( mFlags & UI_AUTO_SIZE ) || 0 == mRowHeight ) ) {
-		mRowHeight = mFont->GetFontHeight() + 8;
+void UIMenu::onSizeChange() {
+	if ( 0 != mStyleConfig.MinWidth && mSize.getWidth() < (Int32)mStyleConfig.MinWidth ) {
+		setSize( mStyleConfig.MinWidth, PixelDensity::pxToDpI( mNextPosY ) + mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom );
 	}
 
-	if ( 0 != mMinWidth && mSize.Width() < (Int32)mMinWidth ) {
-		Size( mMinWidth, mNextPosY + mPadding.Top + mPadding.Bottom );
-	}
+	UIWidget::onSizeChange();
 }
 
-void UIMenu::AutoPadding() {
+void UIMenu::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mPadding = MakePadding();
+		mStyleConfig.Padding = makePadding();
 	}
 }
 
-void UIMenu::ResizeControls() {
-	ResizeMe();
+void UIMenu::resizeControls() {
+	resizeMe();
 
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-		SetControlSize( mItems[i], i );
+		setControlSize( mItems[i], i );
 	}
 }
 
-void UIMenu::ReposControls() {
+void UIMenu::rePosControls() {
 	Uint32 i;
 	mNextPosY = 0;
-	mBiggestIcon = mMinSpaceForIcons;
+	mBiggestIcon = mStyleConfig.MinSpaceForIcons;
 
 	if ( mFlags & UI_AUTO_SIZE ) {
 		mMaxWidth = 0;
 
 		for ( i = 0; i < mItems.size(); i++ ) {
-			CheckControlSize( mItems[i], false );
+			checkControlSize( mItems[i], false );
 		}
 	}
 
 	for ( i = 0; i < mItems.size(); i++ ) {
-		mItems[i]->Pos( mPadding.Left, mPadding.Top + mNextPosY );
+		UIControl * ctrl = mItems[i];
 
-		mNextPosY += mItems[i]->Size().Height();
+		ctrl->setPixelsPosition( PixelDensity::dpToPxI( mStyleConfig.Padding.Left ), PixelDensity::dpToPxI( mStyleConfig.Padding.Top ) + mNextPosY );
+
+		mNextPosY += ctrl->getRealSize().getHeight();
 	}
 
-	ResizeMe();
+	resizeMe();
+	invalidateDraw();
 }
 
-void UIMenu::ResizeMe() {
+void UIMenu::resizeMe() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Size( mMaxWidth, mNextPosY + mPadding.Top + mPadding.Bottom );
+		setPixelsSize( mMaxWidth, mNextPosY + PixelDensity::dpToPxI( mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom ) );
 	} else {
-		Size( mSize.Width(), mNextPosY + mPadding.Top + mPadding.Bottom );
+		setPixelsSize( mRealSize.getWidth(), mNextPosY + PixelDensity::dpToPxI( mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom ) );
 	}
 }
 
-bool UIMenu::Show() {
-	Enabled( true );
-	Visible( true );
+bool UIMenu::show() {
+	setEnabled( true );
+	setVisible( true );
 	return true;
 }
 
-bool UIMenu::Hide() {
-	Enabled( false );
-	Visible( false );
+bool UIMenu::hide() {
+	setEnabled( false );
+	setVisible( false );
 
 	if ( NULL != mItemSelected )
-		mItemSelected->SetSkinState( UISkinState::StateNormal );
+		mItemSelected->setSkinState( UISkinState::StateNormal );
 
 	mItemSelected		= NULL;
 	mItemSelectedIndex	= eeINDEX_NOT_FOUND;
@@ -428,198 +388,263 @@ bool UIMenu::Hide() {
 	return true;
 }
 
-void UIMenu::SetItemSelected( UIControl * Item ) {
+void UIMenu::setItemSelected( UIControl * Item ) {
 	if ( NULL != mItemSelected ) {
-		if ( mItemSelected->IsType( UI_TYPE_MENUSUBMENU ) ) {
+		if ( mItemSelected->isType( UI_TYPE_MENUSUBMENU ) ) {
 			UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( mItemSelected );
 
-			if ( NULL != tMenu->SubMenu() )
-				tMenu->SubMenu()->Hide();
+			if ( NULL != tMenu->getSubMenu() )
+				tMenu->getSubMenu()->hide();
 		}
 
-		mItemSelected->SetSkinState( UISkinState::StateNormal );
+		mItemSelected->setSkinState( UISkinState::StateNormal );
 	}
 
 	if ( NULL != Item )
-		Item->SetSkinState( UISkinState::StateSelected );
+		Item->setSkinState( UISkinState::StateSelected );
 
 	if ( mItemSelected != Item ) {
 		mItemSelected		= Item;
-		mItemSelectedIndex	= GetItemIndex( mItemSelected );
+		mItemSelectedIndex	= getItemIndex( mItemSelected );
 	}
 }
 
-void UIMenu::TrySelect( UIControl * Ctrl, bool Up ) {
+void UIMenu::trySelect( UIControl * Ctrl, bool Up ) {
 	if ( mItems.size() ) {
-		if ( !Ctrl->IsType( UI_TYPE_SEPARATOR ) ) {
-			SetItemSelected( Ctrl );
+		if ( !Ctrl->isType( UI_TYPE_MENU_SEPARATOR ) ) {
+			setItemSelected( Ctrl );
 		} else {
-			Uint32 Index = GetItemIndex( Ctrl );
+			Uint32 Index = getItemIndex( Ctrl );
 
 			if ( Index != eeINDEX_NOT_FOUND ) {
 				if ( Up ) {
 					if ( Index > 0 ) {
 						for ( Int32 i = (Int32)Index - 1; i >= 0; i-- ) {
-							if ( !mItems[i]->IsType( UI_TYPE_SEPARATOR ) ) {
-								SetItemSelected( mItems[i] );
+							if ( !mItems[i]->isType( UI_TYPE_MENU_SEPARATOR ) ) {
+								setItemSelected( mItems[i] );
 								return;
 							}
 						}
 					}
 
-					SetItemSelected( mItems[ mItems.size() ] );
+					setItemSelected( mItems[ mItems.size() ] );
 				} else {
 					for ( Uint32 i = Index + 1; i < mItems.size(); i++ ) {
-						if ( !mItems[i]->IsType( UI_TYPE_SEPARATOR ) ) {
-							SetItemSelected( mItems[i] );
+						if ( !mItems[i]->isType( UI_TYPE_MENU_SEPARATOR ) ) {
+							setItemSelected( mItems[i] );
 							return;
 						}
 					}
 
-					SetItemSelected( mItems[0] );
+					setItemSelected( mItems[0] );
 				}
 			}
 		}
 	}
 }
 
-void UIMenu::NextSel() {
+void UIMenu::nextSel() {
 	if ( mItems.size() ) {
 		if ( mItemSelectedIndex != eeINDEX_NOT_FOUND ) {
 			if ( mItemSelectedIndex + 1 < mItems.size() ) {
-				TrySelect( mItems[ mItemSelectedIndex + 1 ], false );
+				trySelect( mItems[ mItemSelectedIndex + 1 ], false );
 			} else {
-				TrySelect( mItems[0], false );
+				trySelect( mItems[0], false );
 			}
 		} else {
-			TrySelect( mItems[0], false );
+			trySelect( mItems[0], false );
 		}
 	}
 }
 
-void UIMenu::PrevSel() {
+void UIMenu::prevSel() {
 	if ( mItems.size() ) {
 		if (  mItemSelectedIndex != eeINDEX_NOT_FOUND  ) {
 			if ( mItemSelectedIndex >= 1 ) {
-				TrySelect( mItems[ mItemSelectedIndex - 1 ], true );
+				trySelect( mItems[ mItemSelectedIndex - 1 ], true );
 			} else {
-				TrySelect( mItems[ mItems.size() - 1 ], true );
+				trySelect( mItems[ mItems.size() - 1 ], true );
 			}
 		} else {
-			TrySelect( mItems[0], true );
+			trySelect( mItems[0], true );
 		}
 	}
 }
 
-Uint32 UIMenu::OnKeyDown( const UIEventKey& Event ) {
-	if ( Sys::GetTicks() - mLastTickMove > 50 ) {
-		switch ( Event.KeyCode() ) {
+Uint32 UIMenu::onKeyDown( const UIEventKey& Event ) {
+	if ( Sys::getTicks() - mLastTickMove > 50 ) {
+		switch ( Event.getKeyCode() ) {
 			case KEY_DOWN:
-				mLastTickMove = Sys::GetTicks();
-				NextSel();
+				mLastTickMove = Sys::getTicks();
+				nextSel();
 
 				break;
 			case KEY_UP:
-				mLastTickMove = Sys::GetTicks();
-				PrevSel();
+				mLastTickMove = Sys::getTicks();
+				prevSel();
 
 				break;
 			case KEY_RIGHT:
-				if ( NULL != mItemSelected && ( mItemSelected->IsType( UI_TYPE_MENUSUBMENU ) ) ) {
+				if ( NULL != mItemSelected && ( mItemSelected->isType( UI_TYPE_MENUSUBMENU ) ) ) {
 					UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( mItemSelected );
 
-					tMenu->ShowSubMenu();
+					tMenu->showSubMenu();
 				}
 
 				break;
 			case KEY_LEFT:
-				Hide();
+				hide();
 
 				break;
 			case KEY_ESCAPE:
-				Hide();
+				hide();
 
 				break;
 			case KEY_RETURN:
 				if ( NULL != mItemSelected ) {
-					mItemSelected->SendMouseEvent(UIEvent::EventMouseClick, UIManager::instance()->GetMousePos(), EE_BUTTONS_ALL );
+					mItemSelected->sendMouseEvent(UIEvent::MouseClick, UIManager::instance()->getMousePos(), EE_BUTTONS_ALL );
 
-					UIMessage Msg( mItemSelected, UIMessage::MsgMouseUp, EE_BUTTONS_ALL );
-					mItemSelected->MessagePost( &Msg );
+					UIMessage Msg( mItemSelected, UIMessage::MouseUp, EE_BUTTONS_ALL );
+					mItemSelected->messagePost( &Msg );
 				}
 
 				break;
 		}
 	}
 
-	return UIComplexControl::OnKeyDown( Event );
+	return UIWidget::onKeyDown( Event );
 }
 
-const Recti& UIMenu::Padding() const {
-	return mPadding;
+const Rect& UIMenu::getPadding() const {
+	return mStyleConfig.Padding;
 }
 
-void UIMenu::FixMenuPos( Vector2i& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {
-	eeAABB qScreen( 0.f, 0.f, UIManager::instance()->MainControl()->Size().Width(), UIManager::instance()->MainControl()->Size().Height() );
-	eeAABB qPos( Pos.x, Pos.y, Pos.x + Menu->Size().Width(), Pos.y + Menu->Size().Height() );
+Uint32 UIMenu::getMinRightMargin() const {
+	return mStyleConfig.MinRightMargin;
+}
+
+void UIMenu::setMinRightMargin(const Uint32 & minRightMargin) {
+	mStyleConfig.MinRightMargin = minRightMargin;
+	rePosControls();
+}
+
+UITooltipStyleConfig UIMenu::getFontStyleConfig() const {
+	return mStyleConfig;
+}
+
+void UIMenu::setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig) {
+	mStyleConfig = fontStyleConfig;
+}
+
+static Drawable * getIconDrawable( const std::string& name ) {
+	Drawable * iconDrawable = NULL;
+	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
+
+	if ( NULL != theme )
+		iconDrawable = theme->getIconByName( name );
+
+	if ( NULL == iconDrawable )
+		iconDrawable = DrawableSearcher::searchByName( name );
+
+	return iconDrawable;
+}
+
+void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
+	beginPropertiesTransaction();
+
+	UIWidget::loadFromXmlNode( node );
+
+	for ( pugi::xml_node item = node.first_child(); item; item = item.next_sibling() ) {
+		std::string name( item.name() );
+		String::toLowerInPlace( name );
+
+		if ( name == "menuitem" || name == "item" ) {
+			std::string text( item.attribute("text").as_string() );
+			std::string icon( item.attribute("icon").as_string() );
+			add( UIManager::instance()->getTranslatorString( text ), getIconDrawable( icon ) );
+		} else if ( name == "menuseparator" || name == "separator" ) {
+			addSeparator();
+		} else if ( name == "menucheckbox" || name == "checkbox" ) {
+			std::string text( item.attribute("text").as_string() );
+			bool active( item.attribute("active").as_bool() );
+
+			addCheckBox( UIManager::instance()->getTranslatorString( text ), active );
+		} else if ( name == "menusubmenu" || name == "submenu" ) {
+			std::string text( item.attribute("text").as_string() );
+			std::string icon( item.attribute("icon").as_string() );
+
+			UIPopUpMenu * subMenu = UIPopUpMenu::New();
+
+			subMenu->loadFromXmlNode( item );
+
+			addSubMenu( UIManager::instance()->getTranslatorString( text ), getIconDrawable( icon ), subMenu );
+		}
+	}
+
+	endPropertiesTransaction();
+}
+
+void UIMenu::fixMenuPos( Vector2i& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {
+	Rectf qScreen( 0.f, 0.f, UIManager::instance()->getMainControl()->getRealSize().getWidth(), UIManager::instance()->getMainControl()->getRealSize().getHeight() );
+	Rectf qPos( Pos.x, Pos.y, Pos.x + Menu->getRealSize().getWidth(), Pos.y + Menu->getRealSize().getHeight() );
 
 	if ( NULL != Parent && NULL != SubMenu ) {
 		Vector2i addToPos( 0, 0 );
 
 		if ( NULL != SubMenu ) {
-			addToPos.y = SubMenu->Size().Height();
+			addToPos.y = SubMenu->getRealSize().getHeight();
 		}
 
-		Vector2i sPos = SubMenu->Pos();
-		SubMenu->ControlToScreen( sPos );
+		Vector2i sPos = SubMenu->getRealPosition();
+		SubMenu->controlToScreen( sPos );
 
-		Vector2i pPos = Parent->Pos();
-		Parent->ControlToScreen( pPos );
+		Vector2i pPos = Parent->getRealPosition();
+		Parent->controlToScreen( pPos );
 
-		eeAABB qParent( pPos.x, pPos.y, pPos.x + Parent->Size().Width(), pPos.y + Parent->Size().Height() );
+		Rectf qParent( pPos.x, pPos.y, pPos.x + Parent->getRealSize().getWidth(), pPos.y + Parent->getRealSize().getHeight() );
 
 		Pos.x		= qParent.Right;
 		Pos.y		= sPos.y;
 		qPos.Left	= Pos.x;
-		qPos.Right	= qPos.Left + Menu->Size().Width();
+		qPos.Right	= qPos.Left + Menu->getRealSize().getWidth();
 		qPos.Top	= Pos.y;
-		qPos.Bottom	= qPos.Top + Menu->Size().Height();
+		qPos.Bottom	= qPos.Top + Menu->getRealSize().getHeight();
 
-		if ( !qScreen.Contains( qPos ) ) {
-			Pos.y		= sPos.y + SubMenu->Size().Height() - Menu->Size().Height();
+		if ( !qScreen.contains( qPos ) ) {
+			Pos.y		= sPos.y + SubMenu->getRealSize().getHeight() - Menu->getRealSize().getHeight();
 			qPos.Top	= Pos.y;
-			qPos.Bottom	= qPos.Top + Menu->Size().Height();
+			qPos.Bottom	= qPos.Top + Menu->getRealSize().getHeight();
 
-			if ( !qScreen.Contains( qPos ) ) {
-				Pos.x 		= qParent.Left - Menu->Size().Width();
+			if ( !qScreen.contains( qPos ) ) {
+				Pos.x 		= qParent.Left - Menu->getRealSize().getWidth();
 				Pos.y 		= sPos.y;
 				qPos.Left	= Pos.x;
-				qPos.Right	= qPos.Left + Menu->Size().Width();
+				qPos.Right	= qPos.Left + Menu->getRealSize().getWidth();
 				qPos.Top	= Pos.y;
-				qPos.Bottom	= qPos.Top + Menu->Size().Height();
+				qPos.Bottom	= qPos.Top + Menu->getRealSize().getHeight();
 
-				if ( !qScreen.Contains( qPos ) ) {
-					Pos.y		= sPos.y + SubMenu->Size().Height() - Menu->Size().Height();
+				if ( !qScreen.contains( qPos ) ) {
+					Pos.y		= sPos.y + SubMenu->getRealSize().getHeight() - Menu->getRealSize().getHeight();
 					qPos.Top	= Pos.y;
-					qPos.Bottom	= qPos.Top + Menu->Size().Height();
+					qPos.Bottom	= qPos.Top + Menu->getRealSize().getHeight();
 				}
 			}
 		}
 	} else {
-		if ( !qScreen.Contains( qPos ) ) {
-			Pos.y		-= Menu->Size().Height();
-			qPos.Top	-= Menu->Size().Height();
-			qPos.Bottom	-= Menu->Size().Height();
+		if ( !qScreen.contains( qPos ) ) {
+			Pos.y		-= Menu->getRealSize().getHeight();
+			qPos.Top	-= Menu->getRealSize().getHeight();
+			qPos.Bottom	-= Menu->getRealSize().getHeight();
 
-			if ( !qScreen.Contains( qPos ) ) {
-				Pos.x		-= Menu->Size().Width();
-				qPos.Left	-= Menu->Size().Width();
-				qPos.Right	-= Menu->Size().Width();
+			if ( !qScreen.contains( qPos ) ) {
+				Pos.x		-= Menu->getRealSize().getWidth();
+				qPos.Left	-= Menu->getRealSize().getWidth();
+				qPos.Right	-= Menu->getRealSize().getWidth();
 
-				if ( !qScreen.Contains( qPos ) ) {
-					Pos.y		+= Menu->Size().Height();
-					qPos.Top	+= Menu->Size().Height();
-					qPos.Bottom	+= Menu->Size().Height();
+				if ( !qScreen.contains( qPos ) ) {
+					Pos.y		+= Menu->getRealSize().getHeight();
+					qPos.Top	+= Menu->getRealSize().getHeight();
+					qPos.Bottom	+= Menu->getRealSize().getHeight();
 				}
 			}
 		}

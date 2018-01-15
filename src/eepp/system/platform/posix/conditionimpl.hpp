@@ -15,23 +15,23 @@ class ConditionImpl {
 		
 		~ConditionImpl();
 		
-		void Lock();
+		void lock();
 		
-		void Unlock();
+		void unlock();
 		
-		bool WaitAndRetain( int value );
+		bool waitAndRetain( int value );
 		
-		void Release( int value );
+		void release( int value );
 		
-		void SetValue( int value );
+		void setValue( int value );
 		
-		int Value() const;
+		int value() const;
 		
-		void Signal();
+		void signal();
 		
-		void Invalidate();
+		void invalidate();
 		
-		void Restore();
+		void restore();
 	private:
 		int mIsInvalid;
 		int mConditionnedVar;

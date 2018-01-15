@@ -12,19 +12,29 @@ const char * UISkinStatesNames[] = {
 	"mdown"
 };
 
-const char * UISkin::GetSkinStateName( const Uint32& State ) {
+const char * UISkin::getSkinStateName( const Uint32& State ) {
 	return UISkinStatesNames[ State ];
 }
 
-UISkin::UISkin( const std::string& Name, const Uint32& Type ) :
+bool UISkin::isStateName( const std::string& State ) {
+	for ( int i = 0; i < UISkinState::StateCount; i++ ) {
+		if ( State == UISkinStatesNames[i] ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+UISkin::UISkin( const std::string& name, const Uint32& Type ) :
 	mType( Type ),
-	mName( Name ),
-	mNameHash( String::Hash( mName ) ),
+	mName( name ),
+	mNameHash( String::hash( mName ) ),
 	mTheme(NULL)
 {
-	ColorA tColor( 255, 255, 255, 255 );
+	Color tColor( 255, 255, 255, 255 );
 
-	mColorDefault	= tColor.GetValue();
+	mColorDefault	= tColor.getValue();
 
 	for ( Int32 i = 0; i < UISkinState::StateCount; i++ ) {
 		mColor[ i ] = tColor;
@@ -34,52 +44,60 @@ UISkin::UISkin( const std::string& Name, const Uint32& Type ) :
 UISkin::~UISkin() {
 }
 
-void UISkin::SetColor( const Uint32& State, const ColorA& Color ) {
+Sizei UISkin::getSize() {
+	return getSize( UISkinState::StateNormal );
+}
+
+void UISkin::setColor( const Uint32& State, const Color& Color ) {
 	eeASSERT ( State < UISkinState::StateCount );
 
-	BitOp::WriteBitKey( &mColorDefault, State, 0 );
+	BitOp::writeBitKey( &mColorDefault, State, 0 );
 
 	mColor[ State ] = Color;
 }
 
-const ColorA& UISkin::GetColor( const Uint32& State ) const {
+const Color& UISkin::getColor( const Uint32& State ) const {
 	eeASSERT ( State < UISkinState::StateCount );
 
 	return mColor[ State ];
 }
 
-const std::string& UISkin::Name() const {
+const std::string& UISkin::getName() const {
 	return mName;
 }
 
-void UISkin::Name( const std::string& name ) {
+void UISkin::setName( const std::string& name ) {
 	mName = name;
-	mNameHash = String::Hash( mName );
+	mNameHash = String::hash( mName );
 }
 
-const Uint32& UISkin::Id() const {
+const Uint32& UISkin::getId() const {
 	return mNameHash;
 }
 
-void UISkin::SetSkins() {
+void UISkin::setSkins() {
 	for ( Int32 i = 0; i < UISkinState::StateCount; i++ )
-		SetSkin( i );
+		setSkin( i );
 }
 
-UITheme * UISkin::Theme() const {
+UITheme * UISkin::getTheme() const {
 	return mTheme;
 }
 
-void UISkin::Theme( UITheme * theme ) {
+void UISkin::setTheme( UITheme * theme ) {
 	mTheme = theme;
 }
 
-const Uint32& UISkin::GetType() const {
+const Uint32& UISkin::getType() const {
 	return mType;
 }
 
-bool UISkin::GetColorDefault( const Uint32& State ) {
-	return BitOp::ReadBitKey( &mColorDefault, State );
+Rect UISkin::getBorderSize() {
+	return getBorderSize( UISkinState::StateNormal );
+}
+
+bool UISkin::getColorDefault( const Uint32& State ) {
+	return BitOp::readBitKey( &mColorDefault, State );
 }
 
 }}

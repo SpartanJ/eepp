@@ -1,190 +1,193 @@
 #include <eepp/graphics/subtexture.hpp>
 #include <eepp/graphics/texturefactory.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 #include <eepp/helper/jpeg-compressor/jpge.h>
 #include <eepp/graphics/texturesaver.hpp>
+#include <eepp/graphics/renderer/opengl.hpp>
 using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
 SubTexture::SubTexture() :
+	DrawableResource( Drawable::SUBTEXTURE ),
 	mPixels(NULL),
-	mAlpha(NULL),
-	mId(0),
+	mAlphaMask(NULL),
 	mTexId(0),
 	mTexture(NULL),
-	mSrcRect( Recti(0,0,0,0) ),
+	mSrcRect( Rect(0,0,0,0) ),
+	mOriDestSize(0,0),
 	mDestSize(0,0),
-	mOffset(0,0)
+	mOffset(0,0),
+	mPixelDensity(1)
 {
-	CreateUnnamed();
 }
 
-SubTexture::SubTexture( const Uint32& TexId, const std::string& Name ) :
+SubTexture::SubTexture( const Uint32& TexId, const std::string& name ) :
+	DrawableResource( Drawable::SUBTEXTURE, name ),
 	mPixels(NULL),
-	mAlpha(NULL),
-	mName( Name ),
-	mId( String::Hash( mName ) ),
+	mAlphaMask(NULL),
 	mTexId( TexId ),
-	mTexture( TextureFactory::instance()->GetTexture( TexId ) ),
-	mSrcRect( Recti( 0, 0, NULL != mTexture ? mTexture->ImgWidth() : 0, NULL != mTexture ? mTexture->ImgHeight() : 0 ) ),
-	mDestSize( (Float)mSrcRect.Size().Width(), (Float)mSrcRect.Size().Height() ),
-	mOffset(0,0)
+	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
+	mSrcRect( Rect( 0, 0, NULL != mTexture ? mTexture->getImageWidth() : 0, NULL != mTexture ? mTexture->getImageHeight() : 0 ) ),
+	mOriDestSize( (Float)mSrcRect.getSize().getWidth(), (Float)mSrcRect.getSize().getHeight() ),
+	mDestSize( mOriDestSize ),
+	mOffset(0,0),
+	mPixelDensity(1)
 {
-	CreateUnnamed();
 }
 
-SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const std::string& Name ) :
+SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const std::string& name ) :
+	DrawableResource( Drawable::SUBTEXTURE, name ),
 	mPixels(NULL),
-	mAlpha(NULL),
-	mName( Name ),
-	mId( String::Hash( mName ) ),
+	mAlphaMask(NULL),
 	mTexId( TexId ),
-	mTexture( TextureFactory::instance()->GetTexture( TexId ) ),
+	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect( SrcRect ),
-	mDestSize( (Float)( mSrcRect.Right - mSrcRect.Left ), (Float)( mSrcRect.Bottom - mSrcRect.Top ) ),
-	mOffset(0,0)
+	mOriDestSize( (Float)( mSrcRect.Right - mSrcRect.Left ), (Float)( mSrcRect.Bottom - mSrcRect.Top ) ),
+	mDestSize( mOriDestSize ),
+	mOffset(0,0),
+	mPixelDensity(1)
 {
-	CreateUnnamed();
 }
 
-SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const std::string& Name ) :
+SubTexture::SubTexture( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& name ) :
+	DrawableResource( Drawable::SUBTEXTURE, name ),
 	mPixels(NULL),
-	mAlpha(NULL),
-	mName( Name ),
-	mId( String::Hash( mName ) ),
+	mAlphaMask(NULL),
 	mTexId( TexId ),
-	mTexture( TextureFactory::instance()->GetTexture( TexId ) ),
+	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect(SrcRect),
+	mOriDestSize(DestSize),
 	mDestSize(DestSize),
-	mOffset(0,0)
+	mOffset(0,0),
+	mPixelDensity(1)
 {
-	CreateUnnamed();
 }
 
-SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const Vector2i &Offset, const std::string& Name ) :
+SubTexture::SubTexture(const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i &Offset, const std::string& name ) :
+	DrawableResource( Drawable::SUBTEXTURE, name ),
 	mPixels(NULL),
-	mAlpha(NULL),
-	mName( Name ),
-	mId( String::Hash( mName ) ),
+	mAlphaMask(NULL),
 	mTexId( TexId ),
-	mTexture( TextureFactory::instance()->GetTexture( TexId ) ),
+	mTexture( TextureFactory::instance()->getTexture( TexId ) ),
 	mSrcRect(SrcRect),
+	mOriDestSize(DestSize),
 	mDestSize(DestSize),
-	mOffset(Offset)
+	mOffset(Offset),
+	mPixelDensity(1)
 {
-	CreateUnnamed();
 }
 
 SubTexture::~SubTexture() {
-	ClearCache();
+	clearCache();
 }
 
-void SubTexture::CreateUnnamed() {
-	if ( !mName.size() )
-		Name( std::string( "unnamed" ) );
-}
-
-const Uint32& SubTexture::Id() const {
-	return mId;
-}
-
-const std::string SubTexture::Name() const {
-	return mName;
-}
-
-void SubTexture::Name( const std::string& name ) {
-	mName = name;
-	mId = String::Hash( mName );
-}
-
-const Uint32& SubTexture::Texture() {
+const Uint32& SubTexture::getTextureId() {
 	return mTexId;
 }
 
-void SubTexture::Texture( const Uint32& TexId ) {
+void SubTexture::setTextureId( const Uint32& TexId ) {
 	mTexId		= TexId;
-	mTexture	= TextureFactory::instance()->GetTexture( TexId );
+	mTexture	= TextureFactory::instance()->getTexture( TexId );
 }
 
-const Recti& SubTexture::SrcRect() const {
+const Rect& SubTexture::getSrcRect() const {
 	return mSrcRect;
 }
 
-void SubTexture::SrcRect( const Recti& Rect ) {
-	mSrcRect = Rect;
+void SubTexture::setSrcRect( const Rect& rect ) {
+	mSrcRect = rect;
 
 	if ( NULL != mPixels )
-		CacheColors();
+		cacheColors();
 
-	if ( NULL != mAlpha )
-		CacheAlphaMask();
+	if ( NULL != mAlphaMask )
+		cacheAlphaMask();
 }
 
-const Sizef& SubTexture::DestSize() const {
+const Sizef& SubTexture::getDestSize() const {
 	return mDestSize;
 }
 
-void SubTexture::DestSize( const Sizef& destSize ) {
+void SubTexture::setDestSize( const Sizef& destSize ) {
 	mDestSize = destSize;
+
+	if ( mOriDestSize.x == 0 && mOriDestSize.y == 0 ) {
+		mOriDestSize = destSize;
+	}
 }
 
-const Vector2i& SubTexture::Offset() const {
+const Vector2i& SubTexture::getOffset() const {
 	return mOffset;
 }
 
-void SubTexture::Offset( const Vector2i& offset ) {
+void SubTexture::setOffset( const Vector2i& offset ) {
 	mOffset = offset;
 }
 
-void SubTexture::Draw( const Float& X, const Float& Y, const ColorA& Color, const Float& Angle, const Vector2f& Scale, const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect, OriginPoint Center ) {
+void SubTexture::draw( const Float& X, const Float& Y, const Color& Color, const Float& Angle, const Vector2f& Scale, const BlendMode& Blend, const RenderMode& Effect, OriginPoint Center ) {
 	if ( NULL != mTexture )
-		mTexture->DrawEx( X + mOffset.x, Y + mOffset.y, mDestSize.x, mDestSize.y, Angle, Scale, Color, Color, Color, Color, Blend, Effect, Center, mSrcRect );
+		mTexture->drawEx( X + mOffset.x, Y + mOffset.y, mDestSize.x, mDestSize.y, Angle, Scale, Color, Color, Color, Color, Blend, Effect, Center, mSrcRect );
 }
 
-void SubTexture::Draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect, OriginPoint Center ) {
+void SubTexture::draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const BlendMode& Blend, const RenderMode& Effect, OriginPoint Center ) {
 	if ( NULL != mTexture )
-		mTexture->DrawEx( X + mOffset.x, Y + mOffset.y, mDestSize.x, mDestSize.y, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, Center, mSrcRect );
+		mTexture->drawEx( X + mOffset.x, Y + mOffset.y, mDestSize.x, mDestSize.y, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, Center, mSrcRect );
 }
 
-void SubTexture::Draw( const Quad2f Q, const Vector2f& Offset, const Float& Angle, const Vector2f& Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE& Blend ) {
+void SubTexture::draw( const Quad2f Q, const Vector2f& Offset, const Float& Angle, const Vector2f& Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const BlendMode& Blend ) {
 	if ( NULL != mTexture )
-		mTexture->DrawQuadEx( Q, Offset, Angle, Scale, Color0, Color1, Color2, Color3, Blend, mSrcRect );
+		mTexture->drawQuadEx( Q, Offset, Angle, Scale, Color0, Color1, Color2, Color3, Blend, mSrcRect );
 }
 
-Graphics::Texture * SubTexture::GetTexture() {
+void SubTexture::draw() {
+	draw( mPosition );
+}
+
+void SubTexture::draw( const Vector2f& position ) {
+	draw( position.x, position.y, getColor() );
+}
+
+void SubTexture::draw( const Vector2f & position, const Sizef& size ) {
+	Sizef oldSize( mDestSize );
+	mDestSize = size;
+	draw( position.x, position.y, getColor() );
+	mDestSize = oldSize;
+}
+
+Graphics::Texture * SubTexture::getTexture() {
 	return mTexture;
 }
 
-void SubTexture::ReplaceColor( ColorA ColorKey, ColorA NewColor ) {
-	mTexture->Lock();
+void SubTexture::replaceColor( Color ColorKey, Color NewColor ) {
+	mTexture->lock();
 
 	for ( int y = mSrcRect.Top; y < mSrcRect.Bottom; y++ ) {
 		for ( int x = mSrcRect.Left; x < mSrcRect.Right; x++ ) {
-			if ( mTexture->GetPixel( x, y ) == ColorKey )
-				mTexture->SetPixel( x, y, NewColor );
+			if ( mTexture->getPixel( x, y ) == ColorKey )
+				mTexture->setPixel( x, y, NewColor );
 		}
 	}
 
-	mTexture->Unlock( false, true );
+	mTexture->unlock( false, true );
 }
 
-void SubTexture::CreateMaskFromColor(ColorA ColorKey, Uint8 Alpha) {
-	ReplaceColor( ColorKey, ColorA( ColorKey.R(), ColorKey.G(), ColorKey.B(), Alpha ) );
+void SubTexture::createMaskFromColor(Color ColorKey, Uint8 Alpha) {
+	replaceColor( ColorKey, Color( ColorKey.r, ColorKey.g, ColorKey.b, Alpha ) );
 }
 
-void SubTexture::CreateMaskFromColor(RGB ColorKey, Uint8 Alpha) {
-	CreateMaskFromColor( ColorA( ColorKey.R(), ColorKey.G(), ColorKey.B(), 255 ), Alpha );
+void SubTexture::createMaskFromColor(RGB ColorKey, Uint8 Alpha) {
+	createMaskFromColor( Color( ColorKey.r, ColorKey.g, ColorKey.b, 255 ), Alpha );
 }
 
-void SubTexture::CacheAlphaMask() {
+void SubTexture::cacheAlphaMask() {
 	Uint32 size = ( mSrcRect.Right - mSrcRect.Left ) * ( mSrcRect.Bottom - mSrcRect.Top );
 
-	eeSAFE_DELETE_ARRAY( mAlpha );
-	mAlpha = eeNewArray( Uint8, size );
+	eeSAFE_DELETE_ARRAY( mAlphaMask );
+	mAlphaMask = eeNewArray( Uint8, size );
 
-	mTexture->Lock();
+	mTexture->lock();
 
 	int rY = 0;
 	int rX = 0;
@@ -196,17 +199,17 @@ void SubTexture::CacheAlphaMask() {
 		for ( int x = mSrcRect.Left; x < mSrcRect.Right; x++ ) {
 			rX = x - mSrcRect.Left;
 
-			mAlpha[ rX + rY * rW ] = mTexture->GetPixel( x, y ).A();
+			mAlphaMask[ rX + rY * rW ] = mTexture->getPixel( x, y ).a;
 		}
 	}
 
-	mTexture->Unlock();
+	mTexture->unlock();
 }
 
-void SubTexture::CacheColors() {
-	mTexture->Lock();
+void SubTexture::cacheColors() {
+	mTexture->lock();
 
-	Uint32 size =  ( mSrcRect.Right - mSrcRect.Left ) * ( mSrcRect.Bottom - mSrcRect.Top ) * mTexture->Channels();
+	Uint32 size =  ( mSrcRect.Right - mSrcRect.Left ) * ( mSrcRect.Bottom - mSrcRect.Top ) * mTexture->getChannels();
 
 	eeSAFE_DELETE_ARRAY( mPixels );
 
@@ -215,8 +218,8 @@ void SubTexture::CacheColors() {
 	int rY = 0;
 	int rX = 0;
 	int rW = mSrcRect.Right - mSrcRect.Left;
-	ColorA tColor;
-	Uint32 Channels = mTexture->Channels();
+	Color tColor;
+	Uint32 Channels = mTexture->getChannels();
 	int Pos;
 
 	for ( int y = mSrcRect.Top; y < mSrcRect.Bottom; y++ ) {
@@ -225,90 +228,90 @@ void SubTexture::CacheColors() {
 		for ( int x = mSrcRect.Left; x < mSrcRect.Right; x++ ) {
 			rX = x - mSrcRect.Left;
 
-			tColor = mTexture->GetPixel( x, y );
+			tColor = mTexture->getPixel( x, y );
 
 			Pos = ( rX + rY * rW ) * Channels;
 
-			if ( Channels >= 1 ) mPixels[ Pos ]		= tColor.R();
-			if ( Channels >= 2 ) mPixels[ Pos + 1 ]	= tColor.G();
-			if ( Channels >= 3 ) mPixels[ Pos + 2 ]	= tColor.B();
-			if ( Channels >= 4 ) mPixels[ Pos + 3 ]	= tColor.A();
+			if ( Channels >= 1 ) mPixels[ Pos ]		= tColor.r;
+			if ( Channels >= 2 ) mPixels[ Pos + 1 ]	= tColor.g;
+			if ( Channels >= 3 ) mPixels[ Pos + 2 ]	= tColor.b;
+			if ( Channels >= 4 ) mPixels[ Pos + 3 ]	= tColor.a;
 		}
 	}
 
-	mTexture->Unlock();
+	mTexture->unlock();
 }
 
-Uint8 SubTexture::GetAlphaAt( const Int32& X, const Int32& Y ) {
-	if ( mTexture->LocalCopy() )
-		return mTexture->GetPixel( mSrcRect.Left + X, mSrcRect.Right + Y ).A();
+Uint8 SubTexture::getAlphaAt( const Int32& X, const Int32& Y ) {
+	if ( mTexture->hasLocalCopy() )
+		return mTexture->getPixel( mSrcRect.Left + X, mSrcRect.Right + Y ).a;
 
-	if ( NULL != mAlpha )
-		return mAlpha[ X + Y * ( mSrcRect.Right - mSrcRect.Left ) ];
+	if ( NULL != mAlphaMask )
+		return mAlphaMask[ X + Y * ( mSrcRect.Right - mSrcRect.Left ) ];
 
 	if ( NULL != mPixels )
-		return mPixels[ ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * mTexture->Channels() + 3 ];
+		return mPixels[ ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * mTexture->getChannels() + 3 ];
 
-	CacheAlphaMask();
+	cacheAlphaMask();
 
-	return GetAlphaAt( X, Y );
+	return getAlphaAt( X, Y );
 }
 
-ColorA SubTexture::GetColorAt( const Int32& X, const Int32& Y ) {
-	if ( mTexture->LocalCopy() )
-		return mTexture->GetPixel( mSrcRect.Left + X, mSrcRect.Right + Y );
+Color SubTexture::getColorAt( const Int32& X, const Int32& Y ) {
+	if ( mTexture->hasLocalCopy() )
+		return mTexture->getPixel( mSrcRect.Left + X, mSrcRect.Right + Y );
 
 	if ( NULL != mPixels ) {
-		Uint32 Channels = mTexture->Channels();
+		Uint32 Channels = mTexture->getChannels();
 		unsigned int Pos = ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * Channels;
 
 		if ( 4 == Channels )
-			return ColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], mPixels[ Pos + 3 ] );
+			return Color( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], mPixels[ Pos + 3 ] );
 		else if ( 3 == Channels )
-			return ColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], 255 );
+			return Color( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], 255 );
 		else if ( 2 == Channels )
-			return ColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], 255, 255 );
+			return Color( mPixels[ Pos ], mPixels[ Pos + 1 ], 255, 255 );
 		else
-			return ColorA( mPixels[ Pos ], 255, 255, 255 );
+			return Color( mPixels[ Pos ], 255, 255, 255 );
 	}
 
-	CacheColors();
+	cacheColors();
 
-	return GetColorAt( X, Y );
+	return getColorAt( X, Y );
 }
 
-void SubTexture::SetColorAt( const Int32& X, const Int32& Y, const ColorA& Color ) {
+void SubTexture::setColorAt( const Int32& X, const Int32& Y, const Color& Color ) {
 	if ( NULL != mPixels ) {
-		Uint32 Channels = mTexture->Channels();
+		Uint32 Channels = mTexture->getChannels();
 		unsigned int Pos = ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * Channels;
 
-		if ( Channels >= 1 ) mPixels[ Pos ]		= Color.R();
-		if ( Channels >= 2 ) mPixels[ Pos + 1 ]	= Color.G();
-		if ( Channels >= 3 ) mPixels[ Pos + 2 ]	= Color.B();
-		if ( Channels >= 4 ) mPixels[ Pos + 3 ]	= Color.A();
+		if ( Channels >= 1 ) mPixels[ Pos ]		= Color.r;
+		if ( Channels >= 2 ) mPixels[ Pos + 1 ]	= Color.g;
+		if ( Channels >= 3 ) mPixels[ Pos + 2 ]	= Color.b;
+		if ( Channels >= 4 ) mPixels[ Pos + 3 ]	= Color.a;
 	} else {
-		CacheColors();
-		SetColorAt( X, Y, Color );
+		cacheColors();
+		setColorAt( X, Y, Color );
 	}
 }
 
-void SubTexture::ClearCache() {
+void SubTexture::clearCache() {
 	eeSAFE_DELETE_ARRAY( mPixels );
-	eeSAFE_DELETE_ARRAY( mAlpha );
+	eeSAFE_DELETE_ARRAY( mAlphaMask );
 }
 
-Uint8 * SubTexture::Lock() {
-	CacheColors();
+Uint8 * SubTexture::lock() {
+	cacheColors();
 
 	return &mPixels[0];
 }
 
-bool SubTexture::Unlock( const bool& KeepData, const bool& Modified ) {
+bool SubTexture::unlock( const bool& KeepData, const bool& Modified ) {
 	if ( NULL != mPixels  && NULL != mTexture ) {
 		if ( Modified ) {
-			TextureSaver saver( mTexture->Handle() );
+			TextureSaver saver( mTexture->getHandle() );
 
-			Uint32 Channels = mTexture->Channels();
+			Uint32 Channels = mTexture->getChannels();
 			Uint32 Channel = GL_RGBA;
 
 			if ( 3 == Channels )
@@ -318,7 +321,7 @@ bool SubTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 			else if ( 1 == Channels )
 				Channel = GL_ALPHA;
 
-			glTexSubImage2D( GL_TEXTURE_2D, 0, mSrcRect.Left, mSrcRect.Top, mSrcRect.Size().Width(), mSrcRect.Size().Height(), Channel, GL_UNSIGNED_BYTE, reinterpret_cast<const void *> ( &mPixels[0] ) );
+			glTexSubImage2D( GL_TEXTURE_2D, 0, mSrcRect.Left, mSrcRect.Top, mSrcRect.getSize().getWidth(), mSrcRect.getSize().getHeight(), Channel, GL_UNSIGNED_BYTE, reinterpret_cast<const void *> ( &mPixels[0] ) );
 		}
 
 		if ( !KeepData ) {
@@ -331,47 +334,70 @@ bool SubTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 	return false;
 }
 
-Sizei SubTexture::RealSize() {
-	return mSrcRect.Size();
+Sizei SubTexture::getRealSize() {
+	return mSrcRect.getSize();
 }
 
-Sizei SubTexture::Size() {
-	return Sizei( (Int32)mDestSize.x, (Int32)mDestSize.y );
+Sizef SubTexture::getSize() {
+	return Sizef( (Float)((Int32)( mOriDestSize.getWidth() / mPixelDensity )), (Float)((Int32)( mOriDestSize.getHeight() / mPixelDensity )) );
 }
 
-const Uint8* SubTexture::GetPixelsPtr() {
+const Uint8* SubTexture::getPixelsPtr() {
 	if ( mPixels == NULL ) {
-		Lock();
-		Unlock(true);
+		lock();
+		unlock(true);
 	}
 
 	return reinterpret_cast<const Uint8*> (&mPixels[0]);
 }
 
-bool SubTexture::SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& Format) {
+bool SubTexture::saveToFile(const std::string& filepath, const Image::SaveType & Format) {
 	bool Res = false;
 
-	Lock();
+	lock();
 
 	if ( NULL != mTexture ) {
-		if ( SAVE_TYPE_JPG != Format ) {
-			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, RealSize().Width(), RealSize().Height(), mTexture->Channels(), GetPixelsPtr() ) );
+		if ( Image::SaveType::SAVE_TYPE_JPG != Format ) {
+			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, getRealSize().getWidth(), getRealSize().getHeight(), mTexture->getChannels(), getPixelsPtr() ) );
 		} else {
 			jpge::params params;
-			params.m_quality = Image::JpegQuality();
-			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), RealSize().Width(), RealSize().Height(), mTexture->Channels(), GetPixelsPtr(), params);
+			params.m_quality = Image::jpegQuality();
+			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), getRealSize().getWidth(), getRealSize().getHeight(), mTexture->getChannels(), getPixelsPtr(), params);
 		}
 	}
 
-	Unlock();
+	unlock();
 
 	return Res;
 }
 
-void SubTexture::ResetDestSize() {
-	Sizei Size = mSrcRect.Size();
-	mDestSize.x	= (Float)Size.Width();
-	mDestSize.y = (Float)Size.Height();
+void SubTexture::resetDestSize() {
+	mDestSize.x	= mOriDestSize.getWidth();
+	mDestSize.y = mOriDestSize.getHeight();
+}
+
+Float SubTexture::getPixelDensity() const {
+	return mPixelDensity;
+}
+
+void SubTexture::setPixelDensity( const Float & pixelDensity ) {
+	mPixelDensity = pixelDensity;
+}
+
+Sizei SubTexture::getDpSize() {
+	return Sizei( (Int32)( mOriDestSize.getWidth() / mPixelDensity ), (Int32)( mOriDestSize.getHeight() / mPixelDensity ) );
+}
+
+Sizei SubTexture::getPxSize() {
+	return Sizei( (Int32)( mOriDestSize.getWidth() / mPixelDensity * PixelDensity::getPixelDensity() ), (Int32)( mOriDestSize.getHeight() / mPixelDensity * PixelDensity::getPixelDensity() ) );
+}
+
+Sizef SubTexture::getOriDestSize() const {
+	return mOriDestSize;
+}
+
+void SubTexture::setOriDestSize(const Sizef & oriDestSize) {
+	mOriDestSize = oriDestSize;
 }
 
 }}

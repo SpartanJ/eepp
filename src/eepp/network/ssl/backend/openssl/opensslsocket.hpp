@@ -25,21 +25,21 @@ namespace EE { namespace Network { namespace SSL {
 
 class OpenSSLSocket : public SSLSocketImpl {
 	public:
-		static bool Init();
+		static bool init();
 
-		static bool End();
+		static bool end();
 
 		OpenSSLSocket( SSLSocket * socket );
 
 		~OpenSSLSocket();
 
-		Socket::Status Connect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero);
+		Socket::Status connect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero);
 
-		void Disconnect();
+		void disconnect();
 
-		Socket::Status Send(const void* data, std::size_t size);
+		Socket::Status send(const void* data, std::size_t size);
 
-		Socket::Status Receive(void* data, std::size_t size, std::size_t& received);
+		Socket::Status receive(void* data, std::size_t size, std::size_t& received);
 	protected:
 		SSL_CTX *		mCTX;
 		::SSL *			mSSL;
@@ -50,15 +50,15 @@ class OpenSSLSocket : public SSLSocketImpl {
 		int				mMaxCertChainDepth;
 
 	private:
-		static int CertVerifyCb(X509_STORE_CTX *x509_ctx, void *arg);
+		static int certVerifyCb(X509_STORE_CTX *x509_ctx, void *arg);
 
-		static bool MatchHostname(const char *name, const char *hostname);
+		static bool matchHostname(const char *name, const char *hostname);
 
-		static bool MatchCommonName(const char *hostname, const X509 *server_cert);
+		static bool matchCommonName(const char *hostname, const X509 *server_cert);
 
-		static bool MatchSubjectAlternativeName(const char *hostname, const X509 *server_cert);
+		static bool matchSubjectAlternativeName(const char *hostname, const X509 *server_cert);
 
-		void _print_error(int err);
+		void printError(int err);
 };
 
 }}}

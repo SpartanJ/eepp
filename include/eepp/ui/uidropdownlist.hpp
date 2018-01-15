@@ -8,68 +8,73 @@ namespace EE { namespace UI {
 
 class EE_API UIDropDownList : public UITextInput {
 	public:
-		class CreateParams : public UITextInput::CreateParams {
-			public:
-				inline CreateParams() :
-					UITextInput::CreateParams(),
-					ListBox( NULL ),
-					MinNumVisibleItems( 6 ),
-					PopUpToMainControl( false )
-				{
-				}
+		static UIDropDownList * New();
 
-				inline ~CreateParams() {}
-
-				UIListBox * 	ListBox;
-				Uint32			MinNumVisibleItems;
-				bool			PopUpToMainControl;
-		};
-
-		UIDropDownList( UIDropDownList::CreateParams& Params );
+		UIDropDownList();
 
 		virtual ~UIDropDownList();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		UIListBox * ListBox() const;
+		UIListBox * getListBox() const;
 
-		virtual void Update();
+		virtual void update();
+
+		void showList();
+
+		bool getPopUpToMainControl() const;
+
+		void setPopUpToMainControl(bool popUpToMainControl);
+
+		Uint32 getMaxNumVisibleItems() const;
+
+		void setMaxNumVisibleItems(const Uint32 & maxNumVisibleItems);
+
+		UIDropDownListStyleConfig getStyleConfig() const;
+
+		void setStyleConfig(const UIDropDownListStyleConfig & styleConfig);
+
+		void loadFromXmlNode(const pugi::xml_node & node);
 	protected:
-		UIListBox *	mListBox;
-		Uint32			mMinNumVisibleItems;
-		bool			mPopUpToMainControl;
+		friend class UIComboBox;
 
-		void ShowListBox();
+		UIDropDownListStyleConfig mStyleConfig;
+		UIListBox *		mListBox;
+		UIControl *		mFriendCtrl;
 
-		void OnListBoxFocusLoss( const UIEvent * Event );
+		void onListBoxFocusLoss( const UIEvent * Event );
 
-		virtual void OnItemSelected( const UIEvent * Event );
+		virtual void onItemSelected( const UIEvent * Event );
 
-		virtual void Show();
+		virtual void show();
 
-		virtual void Hide();
+		virtual void hide();
 
-		Uint32 OnMouseClick( const Vector2i& Pos, const Uint32 Flags );
+		Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
 
-		virtual void OnItemClicked( const UIEvent * Event );
+		virtual void onItemClicked( const UIEvent * Event );
 
-		virtual void OnItemKeyDown( const UIEvent * Event );
+		virtual void onItemKeyDown( const UIEvent * Event );
 
-		virtual void OnControlClear( const UIEvent * Event );
+		virtual void onControlClear( const UIEvent * Event );
 
-		Uint32 OnKeyDown( const UIEventKey &Event );
+		Uint32 onKeyDown( const UIEventKey &Event );
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		virtual void AutoSize();
+		virtual void onAutoSize();
 
-		virtual void AutoSizeControl();
+		virtual void autoSizeControl();
 
-		void DestroyListBox();
+		virtual void onThemeLoaded();
+
+		void setFriendControl( UIControl * friendCtrl );
+
+		void destroyListBox();
 };
 
 }}

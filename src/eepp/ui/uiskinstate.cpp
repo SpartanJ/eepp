@@ -3,6 +3,10 @@
 
 namespace EE { namespace UI {
 
+UISkinState *UISkinState::New( UISkin * skin ) {
+	return eeNew( UISkinState, (  skin ) );
+}
+
 UISkinState::UISkinState( UISkin * Skin ) :
 	mSkin( Skin ),
 	mCurState(0),
@@ -14,12 +18,12 @@ UISkinState::UISkinState( UISkin * Skin ) :
 UISkinState::~UISkinState() {
 }
 
-void UISkinState::Draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha ) {
+void UISkinState::draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha ) {
 	if ( NULL != mSkin )
-		mSkin->Draw( X, Y, Width, Height, Alpha, mCurState );
+		mSkin->draw( X, Y, Width, Height, Alpha, mCurState );
 }
 
-void UISkinState::StateBack( const Uint32& State ) {
+void UISkinState::stateBack( const Uint32& State ) {
 	if ( ( StateFocus == State ) && StateMouseEnter == mCurState && StateNormal == mLastState ) {
 		return;
 	}
@@ -34,7 +38,7 @@ void UISkinState::StateBack( const Uint32& State ) {
 	}
 }
 
-void UISkinState::SetPrevState() {
+void UISkinState::setPrevState() {
 	if ( StateMouseDown == mCurState ) {
 		Uint32 State = mCurState;
 		mCurState = mLastState;
@@ -42,65 +46,58 @@ void UISkinState::SetPrevState() {
 	}
 }
 
-const Uint32& UISkinState::GetPrevState() const {
+const Uint32& UISkinState::getPrevState() const {
 	return mLastState;
 }
 
-const Uint32& UISkinState::GetState() const {
+const Uint32& UISkinState::getState() const {
 	return mCurState;
 }
 
-void UISkinState::SetState( const Uint32& State ) {
+void UISkinState::setState( const Uint32& State ) {
 	eeASSERT ( State < UISkinState::StateCount );
 
-	switch ( mSkin->GetType() )
+	switch ( mSkin->getType() )
 	{
 		case UISkin::SkinSimple:
 		case UISkin::SkinComplex:
-			SetStateTypeSimple( State );
+			setStateTypeSimple( State );
 			break;
 		default:
-			SetStateTypeDefault( State );
+			setStateTypeDefault( State );
 	}
 }
 
-void UISkinState::SetStateTypeSimple( const Uint32& State ) {
+void UISkinState::setStateTypeSimple( const Uint32& State ) {
 	eeASSERT ( State < UISkinState::StateCount );
 
 	if ( mCurState == State )
 		return;
 
-	if ( !mSkin->GetColorDefault( State ) || NULL != mSkin->GetSubTexture( State ) ) {
-		mSkin->StateNormalToState( State );
+	if ( !mSkin->getColorDefault( State ) || stateExists( State ) ) {
+		mSkin->stateNormalToState( State );
 
 		mLastState	= mCurState;
 		mCurState	= State;
 	} else
-		StateBack( State );
+		stateBack( State );
 }
 
-void UISkinState::SetStateTypeDefault( const Uint32& State ) {
+void UISkinState::setStateTypeDefault( const Uint32& State ) {
 	eeASSERT ( State < UISkinState::StateCount );
 
-	if ( !mSkin->GetColorDefault( State ) )
+	if ( !mSkin->getColorDefault( State ) )
 		mCurState = State;
 	else
-		StateBack( State );
+		stateBack( State );
 }
 
-UISkin * UISkinState::GetSkin() const {
+UISkin * UISkinState::getSkin() const {
 	return mSkin;
 }
 
-bool UISkinState::StateExists( const Uint32& State ) {
-	switch ( mSkin->GetType() )
-	{
-		case UISkin::SkinSimple:
-		case UISkin::SkinComplex:
-			return NULL != mSkin->GetSubTexture( State );
-	}
-
-	return true;
+bool UISkinState::stateExists( const Uint32& State ) {
+	return mSkin->stateExists( State );
 }
 
 }}

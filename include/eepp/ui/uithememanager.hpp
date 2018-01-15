@@ -14,51 +14,53 @@ class EE_API UIThemeManager : public ResourceManager<UITheme> {
 	public:
 		virtual ~UIThemeManager();
 
-		void DefaultFont( Font * Font );
+		void setDefaultFont( Font * Font );
 
-		Font * DefaultFont() const;
+		Font * getDefaultFont() const;
 
-		void SetTheme( const std::string& Theme );
+		void setTheme( const std::string& Theme );
 
-		void SetTheme( UITheme * Theme );
+		void setTheme( UITheme * Theme );
 
-		void DefaultTheme( UITheme * Theme );
+		void setDefaultTheme( UITheme * Theme );
 
-		void DefaultTheme( const std::string& Theme );
+		void setDefaultTheme( const std::string& Theme );
 
-		UITheme * DefaultTheme() const;
+		UITheme * getDefaultTheme() const;
 
-		void ApplyDefaultTheme( UIControl * Control );
+		void applyDefaultTheme( UIControl * Control );
 
-		void AutoApplyDefaultTheme( const bool& apply );
+		void setAutoApplyDefaultTheme( const bool& apply );
 
-		const bool& AutoApplyDefaultTheme() const;
+		const bool& getAutoApplyDefaultTheme() const;
 
-		void DefaultEffectsEnabled( const bool& Enabled );
+		void setDefaultEffectsEnabled( const bool& Enabled );
 
-		const bool& DefaultEffectsEnabled() const;
+		const bool& getDefaultEffectsEnabled() const;
 
-		const Time& ControlsFadeInTime() const;
+		const Time& getControlsFadeInTime() const;
 
-		void ControlsFadeInTime( const Time & Time );
+		void setControlsFadeInTime( const Time & Time );
 
-		const Time& ControlsFadeOutTime() const;
+		const Time& getControlsFadeOutTime() const;
 
-		void ControlsFadeOutTime( const Time& Time );
+		void setControlsFadeOutTime( const Time& Time );
 
-		void TooltipTimeToShow( const Time & Time );
+		void setTooltipTimeToShow( const Time & Time );
 
-		const Time& TooltipTimeToShow() const;
+		const Time& getTooltipTimeToShow() const;
 
-		void TooltipFollowMouse( const bool& Follow );
+		void setTooltipFollowMouse( const bool& Follow );
 
-		const bool& TooltipFollowMouse() const;
+		const bool& getTooltipFollowMouse() const;
 
-		void CursorSize( const Sizei& Size );
+		void setCursorSize( const Sizei& Size );
 
-		const Sizei& CursorSize() const;
+		const Sizei& getCursorSize() const;
+
+		UIFontStyleConfig getDefaultFontStyleConfig();
 	protected:
-		Font * 			mFont;
+		Font *				mFont;
 		UITheme * 			mThemeDefault;
 		bool				mAutoApplyDefaultTheme;
 

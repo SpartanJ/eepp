@@ -1,77 +1,93 @@
 #ifndef EE_UICUISCROLLBAR_HPP
 #define EE_UICUISCROLLBAR_HPP
 
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uislider.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIScrollBar : public UIComplexControl {
+class EE_API UIScrollBar : public UIWidget {
 	public:
-		class CreateParams : public UIComplexControl::CreateParams {
-			public:
-				inline CreateParams() :
-					UIComplexControl::CreateParams(),
-					VerticalScrollBar( false )
-				{
-				}
-
-				inline ~CreateParams() {}
-
-				bool 	VerticalScrollBar;
+		enum ScrollBarType {
+			TwoButtons,
+			NoButtons
 		};
 
-		UIScrollBar( const UIScrollBar::CreateParams& Params );
+		static UIScrollBar * New( const UI_ORIENTATION & orientation = UI_VERTICAL );
+
+		UIScrollBar( const UI_ORIENTATION& orientation = UI_VERTICAL );
 
 		virtual ~UIScrollBar();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void Value( Float Val );
+		virtual void setValue( Float Val );
 
-		const Float& Value() const;
+		const Float& getValue() const;
 
-		virtual void MinValue( const Float& MinVal );
+		virtual void setMinValue( const Float& MinVal );
 
-		const Float& MinValue() const;
+		const Float& getMinValue() const;
 
-		virtual void MaxValue( const Float& MaxVal );
+		virtual void setMaxValue( const Float& MaxVal );
 
-		const Float& MaxValue() const;
+		const Float& getMaxValue() const;
 
-		virtual void ClickStep( const Float& step );
+		virtual void setClickStep( const Float& step );
 
-		const Float& ClickStep() const;
+		const Float& getClickStep() const;
 
-		virtual void SetTheme( UITheme * Theme );
+		Float getPageStep() const;
 
-		const bool& IsVertical() const;
+		void setPageStep( const Float& pageStep );
 
-		virtual void Update();
+		virtual void setTheme( UITheme * Theme );
 
-		UISlider * Slider() const;
+		bool isVertical() const;
 
-		UIControlAnim * ButtonUp() const;
+		virtual void update();
 
-		UIControlAnim * ButtonDown() const;
+		UISlider * getSlider() const;
+
+		UIControlAnim * getButtonUp() const;
+
+		UIControlAnim * getButtonDown() const;
+
+		UI_ORIENTATION getOrientation() const;
+
+		UIControl * setOrientation( const UI_ORIENTATION & orientation );
+
+		ScrollBarType getScrollBarType() const;
+
+		void setScrollBarType(const ScrollBarType & scrollBarType);
+
+		bool getExpandBackground() const;
+
+		void setExpandBackground( bool expandBackground );
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
+
 	protected:
+		ScrollBarType	mScrollBarType;
 		UISlider * 		mSlider;
 		UIControlAnim *	mBtnUp;
-		UIControlAnim * 	mBtnDown;
+		UIControlAnim * mBtnDown;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		void AdjustChilds();
+		virtual void onAutoSize();
 
-		void OnValueChangeCb( const UIEvent * Event );
+		void adjustChilds();
 
-		virtual void OnAlphaChange();
+		void onValueChangeCb( const UIEvent * Event );
 
-		virtual Uint32 OnMessage( const UIMessage * Msg );
+		virtual void onAlphaChange();
 
-		void ManageClick( const Uint32& Flags );
+		virtual Uint32 onMessage( const UIMessage * Msg );
+
+		void manageClick( const Uint32& flags );
 };
 
 }}

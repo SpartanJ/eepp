@@ -18,89 +18,89 @@ ShapePoly * ShapePoly::New( Physics::Body * body, cpFloat width, cpFloat height 
 }
 
 ShapePoly::ShapePoly( Physics::Body * body, int numVerts, cVect *verts, cVect offset ) {
-	mShape = cpPolyShapeNew( body->GetBody(), numVerts, casttocpv( verts ), tocpv( offset ) );
-	SetData();
+	mShape = cpPolyShapeNew( body->getBody(), numVerts, casttocpv( verts ), tocpv( offset ) );
+	setData();
 }
 
 ShapePoly::ShapePoly( Physics::Body * body, cpFloat width, cpFloat height ) :
 	Shape()
 {
-	mShape = cpBoxShapeNew( body->GetBody(), width, height );
-	SetData();
+	mShape = cpBoxShapeNew( body->getBody(), width, height );
+	setData();
 }
 
-bool ShapePoly::Validate( const cVect * verts, const int numVerts ) {
+bool ShapePoly::validate( const cVect * verts, const int numVerts ) {
 	return 0 != cpPolyValidate( constcasttocpv( verts ),  numVerts );
 }
 
-int ShapePoly::GetNumVerts() {
+int ShapePoly::getNumVerts() {
 	return cpPolyShapeGetNumVerts( mShape );
 }
 
-cVect ShapePoly::GetVert( int idx ) {
+cVect ShapePoly::getVert( int idx ) {
 	return tovect( cpPolyShapeGetVert( mShape, idx ) );
 }
 
-void ShapePoly::SetVerts( int numVerts, cVect *verts, cVect offset ) {
+void ShapePoly::setVerts( int numVerts, cVect *verts, cVect offset ) {
 	cpPolyShapeSetVerts( mShape, numVerts, casttocpv( verts ), tocpv( offset ) );
 }
 
-void ShapePoly::Recenter( int numVerts, cVect *verts ) {
+void ShapePoly::recenter( int numVerts, cVect *verts ) {
 	cpRecenterPoly( numVerts, casttocpv( verts ) );
 }
 
-cVect ShapePoly::Centroid( int numVerts, const cVect * verts ) {
+cVect ShapePoly::centroid( int numVerts, const cVect * verts ) {
 	return tovect( cpCentroidForPoly( numVerts, constcasttocpv( verts ) ) );
 }
 
-void ShapePoly::Draw( Space * space ) {
+void ShapePoly::draw( Space * space ) {
 	#ifdef PHYSICS_RENDERER_ENABLED
 	cpPolyShape * poly = (cpPolyShape*)mShape;
 
 	BatchRenderer * BR = GlobalBatchRenderer::instance();
 
-	BR->SetTexture( NULL );
+	BR->setTexture( NULL );
 
-	ColorA Col = ColorForShape( (cpShape *)poly, space->GetSpace() );
+	Color Col = colorForShape( (cpShape *)poly, space->getSpace() );
 
 	if( !poly->CP_PRIVATE(shape).sensor ){
 		if ( 4 != poly->CP_PRIVATE(numVerts) ) {
-			BR->PointsBegin();
-			BR->PolygonSetColor( Col );
+			BR->pointsBegin();
+			BR->polygonSetColor( Col );
 
 			for ( int i = 0; i < poly->CP_PRIVATE(numVerts); i++ ) {
-				BR->BatchPolygonByPoint( poly->CP_PRIVATE(tVerts)[i].x, poly->CP_PRIVATE(tVerts)[i].y );
+				BR->batchPolygonByPoint( poly->CP_PRIVATE(tVerts)[i].x, poly->CP_PRIVATE(tVerts)[i].y );
 			}
 		} else {
-			BR->QuadsBegin();
-			BR->QuadsSetColor( Col );
+			BR->quadsBegin();
+			BR->quadsSetColor( Col );
 
-			BR->BatchQuadFreeEx(poly->CP_PRIVATE(tVerts)[0].x, poly->CP_PRIVATE(tVerts)[0].y, poly->CP_PRIVATE(tVerts)[1].x, poly->CP_PRIVATE(tVerts)[1].y, poly->CP_PRIVATE(tVerts)[2].x, poly->CP_PRIVATE(tVerts)[2].y, poly->CP_PRIVATE(tVerts)[3].x, poly->CP_PRIVATE(tVerts)[3].y );
+			BR->batchQuadFreeEx(poly->CP_PRIVATE(tVerts)[0].x, poly->CP_PRIVATE(tVerts)[0].y, poly->CP_PRIVATE(tVerts)[1].x, poly->CP_PRIVATE(tVerts)[1].y, poly->CP_PRIVATE(tVerts)[2].x, poly->CP_PRIVATE(tVerts)[2].y, poly->CP_PRIVATE(tVerts)[3].x, poly->CP_PRIVATE(tVerts)[3].y );
 		}
 
-		BR->DrawOpt();
+		BR->drawOpt();
 	}
 
 
 	#endif
 }
 
-void ShapePoly::DrawBorder( Space *space ) {
+void ShapePoly::drawBorder( Space *space ) {
 #ifdef PHYSICS_RENDERER_ENABLED
 	cpPolyShape * poly = (cpPolyShape*)mShape;
 
 	BatchRenderer * BR = GlobalBatchRenderer::instance();
 
-	ColorA Col = ColorForShape( (cpShape *)poly, space->GetSpace() );
+	Color Col = colorForShape( (cpShape *)poly, space->getSpace() );
 
-	BR->LineLoopBegin();
-	BR->LineLoopSetColor( Col );
+	BR->lineLoopBegin();
+	BR->lineLoopSetColor( Col );
 
 	for ( int i = 0; i < poly->CP_PRIVATE(numVerts); i++ ) {
-		BR->BatchLineLoop( poly->CP_PRIVATE(tVerts)[i].x, poly->CP_PRIVATE(tVerts)[i].y );
+		BR->batchLineLoop( poly->CP_PRIVATE(tVerts)[i].x, poly->CP_PRIVATE(tVerts)[i].y );
 	}
 
-	BR->Draw();
+	BR->draw();
 #endif
 }
 

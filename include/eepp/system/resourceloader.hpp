@@ -23,43 +23,43 @@ class EE_API ResourceLoader {
 		**	Once an object loader is added to the resource loader, the instance of that object will be managed and released by the loader.
 		**	@param Object The instance object loader to load
 		*/
-		void			Add( ObjectLoader * Object );
+		void			add( ObjectLoader * Object );
 
 		/** @brief Starts loading the resources.
 		**	@param Cb A callback that is called when the resources finished loading. */
-		void 			Load( ResLoadCallback Cb );
+		void 			load( ResLoadCallback Cb );
 
 		/** @brief Starts loading the resources. */
-		void 			Load();
+		void 			load();
 
 		/** @brief Unload all the resources already loaded. */
-		void			Unload();
+		void			unload();
 
 		/** @brief Update must be called from the thread that started the loading to update the state of the resource loader. */
-		virtual void 	Update();
+		virtual void 	update();
 
 		/** @returns If the resources were loaded. */
-		virtual bool	IsLoaded();
+		virtual bool	isLoaded();
 
 		/** @returns If the resources are still loading. */
-		virtual bool	IsLoading();
+		virtual bool	isLoading();
 
 		/** @returns If the resource loader is asynchronous */
-		bool			Threaded() const;
+		bool			isThreaded() const;
 
 		/** @brief Sets if the resource loader is asynchronous.
 		**	This must be called before the load starts. */
-		void			Threaded( const bool& threaded );
+		void			setThreaded( const bool& setThreaded );
 
 		/** @brief Clears the resources added to load that werent loaded, and delete the instances of the loaders.
 		**	@param ClearObjectsLoaded Sets if the objects loader that were already loaded must be also deleted ( it will not unload the loaded resources, but the instance of the object loader ). */
-		bool			Clear( const bool& ClearObjectsLoaded = true );
+		bool			clear( const bool& ClearObjectsLoaded = true );
 
 		/** @return The aproximate percent of progress ( between 0 and 100 ) */
-		Float			Progress();
+		Float			getProgress();
 
 		/** @returns The number of resources added to load. */
-		Uint32			Count() const;
+		Uint32			getCount() const;
 	protected:
 		bool			mLoaded;
 		bool			mLoading;
@@ -70,9 +70,9 @@ class EE_API ResourceLoader {
 		std::list<ObjectLoader *>	mObjs;
 		std::list<ObjectLoader *>	mObjsLoaded;
 
-		void			SetThreads();
+		void			setThreads();
 
-		virtual void	SetLoaded();
+		virtual void	setLoaded();
 };
 
 }}

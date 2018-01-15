@@ -7,19 +7,21 @@ namespace EE { namespace UI {
 
 class EE_API UIMenuItem : public UIPushButton {
 	public:
-		UIMenuItem( UIMenuItem::CreateParams& Params );
+		static UIMenuItem * New();
+
+		UIMenuItem();
 
 		virtual ~UIMenuItem();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 	protected:
-		virtual Uint32 OnMouseEnter( const Vector2i &Pos, const Uint32 Flags );
+		virtual Uint32 onMouseEnter( const Vector2i &position, const Uint32 flags );
 
-		virtual void OnStateChange();
+		virtual void onStateChange();
 };
 
 }}

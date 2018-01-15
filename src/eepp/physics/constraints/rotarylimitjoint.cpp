@@ -3,27 +3,27 @@
 CP_NAMESPACE_BEGIN
 
 RotaryLimitJoint::RotaryLimitJoint( Body * a, Body * b, cpFloat min, cpFloat max ) {
-	mConstraint = cpRotaryLimitJointNew( a->GetBody(), b->GetBody(), min, max );
-	SetData();
+	mConstraint = cpRotaryLimitJointNew( a->getBody(), b->getBody(), min, max );
+	setData();
 }
 
-cpFloat RotaryLimitJoint::Min() {
+cpFloat RotaryLimitJoint::getMin() {
 	return cpRotaryLimitJointGetMin( mConstraint );
 }
 
-void RotaryLimitJoint::Min( const cpFloat& min ) {
+void RotaryLimitJoint::setMin( const cpFloat& min ) {
 	cpRotaryLimitJointSetMin( mConstraint, min );
 }
 
-cpFloat RotaryLimitJoint::Max() {
+cpFloat RotaryLimitJoint::getMax() {
 	return cpRotaryLimitJointGetMax( mConstraint );
 }
 
-void RotaryLimitJoint::Max( const cpFloat& max ) {
+void RotaryLimitJoint::setMax( const cpFloat& max ) {
 	cpRotaryLimitJointSetMax( mConstraint, max );
 }
 
-void RotaryLimitJoint::Draw() {
+void RotaryLimitJoint::draw() {
 	// Not implemented
 }
 

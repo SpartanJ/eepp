@@ -23,9 +23,9 @@ class ClockImpl {
 
 		~ClockImpl();
 
-		void Restart();
+		void restart();
 
-		unsigned long GetElapsedTime();
+		unsigned long getElapsedTime();
 	private:
 		unsigned long		mStartTick;
 		LONGLONG			mLastTime;

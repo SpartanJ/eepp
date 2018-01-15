@@ -2,100 +2,99 @@
 #define EE_UICUITEXTINPUT_H
 
 #include <eepp/ui/uicontrolanim.hpp>
-#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/window/inputtextbuffer.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UITextInput : public UITextBox {
+class EE_API UITextInput : public UITextView {
 	public:
-		class CreateParams : public UITextBox::CreateParams {
-			public:
-				inline CreateParams() :
-					UITextBox::CreateParams(),
-					SupportFreeEditing( true ),
-					MaxLength( 256 ),
-					PassInput( false )
-				{
-				}
+		static UITextInput * New();
 
-				inline ~CreateParams() {}
-
-				bool SupportFreeEditing;
-				Uint32 MaxLength;
-				bool PassInput;
-		};
-
-		UITextInput( const UITextInput::CreateParams& Params );
+		UITextInput();
 
 		virtual ~UITextInput();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void Update();
+		virtual void update();
 
-		virtual void Draw();
+		virtual void draw();
 
-		void PushIgnoredChar( const Uint32& ch );
+		void pushIgnoredChar( const Uint32& ch );
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		InputTextBuffer * GetInputTextBuffer();
+		InputTextBuffer * getInputTextBuffer();
 
-		void AllowEditing( const bool& allow );
+		UITextInput * setAllowEditing( const bool& allow );
 
-		const bool& AllowEditing() const;
+		const bool& getAllowEditing() const;
 
-		virtual const String& Text();
+		virtual const String& getText();
 
-		virtual void Text( const String& text );
+		virtual UITextView * setText( const String& text );
 
-		virtual void ShrinkText( const Uint32& MaxWidth );
+		virtual void shrinkText( const Uint32& MaxWidth );
+
+		UITextInput * setMaxLength( Uint32 maxLength );
+
+		Uint32 getMaxLength();
+
+		UITextInput * setFreeEditing( bool support );
+
+		bool isFreeEditingEnabled();
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		InputTextBuffer	mTextBuffer;
-		Float				mWaitCursorTime;
-		Vector2f			mCurPos;
+		Float			mWaitCursorTime;
+		Vector2f		mCurPos;
 		int				mCursorPos;
-		bool				mAllowEditing;
-		bool				mShowingWait;
+		bool			mAllowEditing;
+		bool			mShowingWait;
 
-		void ResetWaitCursor();
+		void resetWaitCursor();
 
-		virtual void AlignFix();
+		virtual void alignFix();
 
-		virtual void AutoSize();
+		virtual void onAutoSize();
 
-		void PrivOnPressEnter();
+		void privOnPressEnter();
 
-		void AutoPadding();
+		void autoPadding();
 
-		virtual Uint32 OnMouseClick( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnMouseExit( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseExit( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 OnFocus();
+		virtual Uint32 onFocus();
 
-		virtual Uint32 OnFocusLoss();
+		virtual Uint32 onFocusLoss();
 
-		virtual Uint32 OnPressEnter();
+		virtual Uint32 onPressEnter();
 
-		virtual void OnCursorPosChange();
+		void onThemeLoaded();
 
-		void DrawWaitingCursor();
+		virtual void onCursorPosChange();
 
-		virtual void UpdateText();
+		void drawWaitingCursor();
 
-		virtual void SelCurInit( const Int32& init );
+		void updateWaitingCursor();
 
-		virtual void SelCurEnd( const Int32& end );
+		virtual void updateText();
 
-		virtual Int32 SelCurInit();
+		virtual void selCurInit( const Int32& init );
 
-		virtual Int32 SelCurEnd();
+		virtual void selCurEnd( const Int32& end );
+
+		virtual Int32 selCurInit();
+
+		virtual Int32 selCurEnd();
 };
 
 }}

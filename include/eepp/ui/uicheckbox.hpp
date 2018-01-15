@@ -1,53 +1,60 @@
 #ifndef EE_UICUICHECKBOX_H
 #define EE_UICUICHECKBOX_H
 
-#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UICheckBox : public UITextBox {
+class EE_API UICheckBox : public UITextView {
 	public:
-		UICheckBox( const UITextBox::CreateParams& Params );
+		static UICheckBox * New();
+
+		UICheckBox();
 
 		virtual ~UICheckBox();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		const bool& IsActive() const;
+		const bool& isActive() const;
 
-		void Active( const bool& active );
+		void setActive( const bool& active );
 
-		const bool& Active() const;
+		UIControlAnim * getActiveButton() const;
 
-		virtual void Padding( const Recti& padding );
+		UIControlAnim * getInactiveButton() const;
 
-		UIControlAnim * ActiveButton() const;
+		Int32 getTextSeparation() const;
 
-		UIControlAnim * InactiveButton() const;
+		void setTextSeparation(const Int32 & textSeparation);
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		UIControlAnim *	mActiveButton;
 		UIControlAnim *	mInactiveButton;
-		bool				mActive;
-		Uint32				mLastTick;
+		bool			mActive;
+		Uint32			mLastTick;
+		Int32			mTextSeparation;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		void SwitchState();
+		void switchState();
 
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 
-		virtual Uint32 OnKeyDown( const UIEventKey& Event );
+		virtual Uint32 onKeyDown( const UIEventKey& Event );
 
-		virtual Uint32 OnMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const UIMessage * Msg );
 
-		void DoAfterSetTheme();
+		virtual void onThemeLoaded();
 
-		virtual void AutoSize();
+		virtual void onAutoSize();
+
+		virtual void onPaddingChange();
 };
 
 }}

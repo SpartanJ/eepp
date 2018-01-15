@@ -15,11 +15,11 @@ class MutexImpl {
 
 		~MutexImpl();
 
-		void Lock();
+		void lock();
 
-		void Unlock();
+		void unlock();
 
-		int TryLock();
+		int tryLock();
 	private:
 		pthread_mutex_t mMutex;
 };

@@ -24,15 +24,15 @@ class CP_API ShapePolySprite : public ShapePoly {
 
 		virtual ~ShapePolySprite();
 
-		virtual void Draw( Space * space );
+		virtual void draw( Space * space );
 
-		Sprite * GetSprite() const;
+		Sprite * getSprite() const;
 	protected:
 		Sprite *	mSprite;
 		bool		mSpriteAutoDelete;
 		Vector2i	mOffset;
 
-		void OffsetSet( cVect center );
+		void offsetSet( cVect center );
 };
 
 CP_NAMESPACE_END

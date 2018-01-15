@@ -1,3 +1,7 @@
 #!/bin/sh
+cd $(dirname "$0")
 
-rm -rf bin libs obj gen
+rm -rf ./build
+rm -rf ./app/build
+rm -rf ./app/.externalNativeBuild
+rm -rf ./.gradle

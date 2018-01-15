@@ -1,107 +1,115 @@
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/subtexture.hpp>
-#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/text.hpp>
+#include <eepp/helper/pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
-UICheckBox::UICheckBox( const UITextBox::CreateParams& Params ) :
-	UITextBox( Params ),
-	mActive( false )
-{
-	UIControlAnim::CreateParams ButtonParams( Params );
-
-	ButtonParams.Parent( this );
-	ButtonParams.PosSet( Vector2i( 0, 0 ) );
-	ButtonParams.Size = Sizei( 16, 16 );
-
-	mActiveButton 	= eeNew( UIControlAnim, ( ButtonParams ) );
-	mActiveButton->Visible( false );
-	mActiveButton->Enabled( true );
-
-	mInactiveButton = eeNew( UIControlAnim, ( ButtonParams ) );
-	mInactiveButton->Visible( true );
-	mInactiveButton->Enabled( true );
-
-	Padding( Recti(0,0,0,0) );
-
-	ApplyDefaultTheme();
+UICheckBox * UICheckBox::New() {
+	return eeNew( UICheckBox, () );
 }
+
+UICheckBox::UICheckBox() :
+	UITextView(),
+	mActive( false ),
+	mTextSeparation( 4 )
+{
+	mActiveButton 	= UIControlAnim::New();
+	mActiveButton->setVisible( false );
+	mActiveButton->setEnabled( true );
+	mActiveButton->setParent( this );
+	mActiveButton->setPosition( 0, 0 );
+	mActiveButton->setSize( 16, 16 );
+
+	mInactiveButton = UIControlAnim::New();
+	mInactiveButton->setVisible( true );
+	mInactiveButton->setEnabled( true );
+	mInactiveButton->setParent( this );
+	mInactiveButton->setPosition( 0, 0 );
+	mInactiveButton->setSize( 16, 16 );
+
+	onPaddingChange();
+
+	applyDefaultTheme();
+}
+
 
 UICheckBox::~UICheckBox() {
 }
 
-Uint32 UICheckBox::Type() const {
+Uint32 UICheckBox::getType() const {
 	return UI_TYPE_CHECKBOX;
 }
 
-bool UICheckBox::IsType( const Uint32& type ) const {
-	return UICheckBox::Type() == type ? true : UITextBox::IsType( type );
+bool UICheckBox::isType( const Uint32& type ) const {
+	return UICheckBox::getType() == type ? true : UITextView::isType( type );
 }
 
-void UICheckBox::SetTheme( UITheme * Theme ) {
-	UIControl::SetThemeControl( Theme, "checkbox" );
+void UICheckBox::setTheme( UITheme * Theme ) {
+	UIWidget::setTheme( Theme );
 
-	mActiveButton->SetThemeControl	( Theme, "checkbox_active" );
-	mInactiveButton->SetThemeControl( Theme, "checkbox_inactive" );
+	setThemeSkin( Theme, "checkbox" );
 
-	DoAfterSetTheme();
+	mActiveButton->setThemeSkin	( Theme, "checkbox_active" );
+	mInactiveButton->setThemeSkin( Theme, "checkbox_inactive" );
+
+	onThemeLoaded();
 }
 
-void UICheckBox::DoAfterSetTheme() {
-	SubTexture * tSubTexture = NULL;
-	UISkin * tSkin = mActiveButton->GetSkin();
+void UICheckBox::onThemeLoaded() {
+	UISkin * tSkin = mActiveButton->getSkin();
 
 	if ( tSkin ) {
-		tSubTexture = tSkin->GetSubTexture( UISkinState::StateNormal );
-
-		if ( NULL != tSubTexture ) {
-			mActiveButton->Size( tSubTexture->RealSize() );
-			mActiveButton->CenterVertical();
-		}
+		mActiveButton->setSize( tSkin->getSize() );
+		mActiveButton->centerVertical();
 	}
 
-	tSkin = mInactiveButton->GetSkin();
+	tSkin = mInactiveButton->getSkin();
 
 	if ( NULL != tSkin ) {
-		tSubTexture = tSkin->GetSubTexture( UISkinState::StateNormal );
-
-		if ( NULL != tSubTexture ) {
-			mInactiveButton->Size( tSubTexture->RealSize() );
-			mInactiveButton->CenterVertical();
-		}
+		mInactiveButton->setSize( tSkin->getSize() );
+		mInactiveButton->centerVertical();
 	}
 
-	Padding( Recti(0,0,0,0) );
+	mMinControlSize = mActiveButton->getSkinSize();
+
+	onPaddingChange();
+
+	UIWidget::onThemeLoaded();
 }
 
-void UICheckBox::AutoSize() {
-	UITextBox::AutoSize();
-
+void UICheckBox::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mActiveButton->CenterVertical();
-		mInactiveButton->CenterVertical();
+		if ( mSize.getWidth() == 0 ) {
+			setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() + mTextSeparation );
+		}
 
-		mSize.Width( (int)mTextCache->GetTextWidth() + mActiveButton->Size().Width() );
+		if ( mSize.getHeight() == 0 ) {
+			setInternalHeight( mActiveButton->getSize().getHeight() );
+		}
+
+		mActiveButton->centerVertical();
+		mInactiveButton->centerVertical();
 	}
 }
 
-void UICheckBox::OnSizeChange() {
-	UITextBox::OnSizeChange();
+void UICheckBox::onSizeChange() {
+	UITextView::onSizeChange();
 
-	mActiveButton->CenterVertical();
-	mInactiveButton->CenterVertical();
+	mActiveButton->centerVertical();
+	mInactiveButton->centerVertical();
 }
 
-Uint32 UICheckBox::OnMessage( const UIMessage * Msg ) {
-	switch ( Msg->Msg() ) {
-		case UIMessage::MsgClick: {
-			if ( Msg->Flags() & EE_BUTTON_LMASK ) {
-				SwitchState();
+Uint32 UICheckBox::onMessage( const UIMessage * Msg ) {
+	switch ( Msg->getMsg() ) {
+		case UIMessage::Click: {
+			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
+				switchState();
 			}
 
-			if ( Msg->Sender() == mActiveButton || Msg->Sender() == mInactiveButton ) {
-				SendMouseEvent( UIEvent::EventMouseClick, UIManager::instance()->GetMousePos(), UIManager::instance()->PressTrigger() );
+			if ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) {
+				sendMouseEvent( UIEvent::MouseClick, UIManager::instance()->getMousePos(), UIManager::instance()->getPressTrigger() );
 			}
 
 			return 1;
@@ -111,66 +119,91 @@ Uint32 UICheckBox::OnMessage( const UIMessage * Msg ) {
 	return 0;
 }
 
-void UICheckBox::SwitchState() {
-	Active( !mActive );
+void UICheckBox::switchState() {
+	setActive( !mActive );
 }
 
-void UICheckBox::Active( const bool& active ) {
+void UICheckBox::setActive( const bool& active ) {
 	if ( !active ) {
-		mActiveButton->Visible( false );
-		mInactiveButton->Visible( true );
+		mActiveButton->setVisible( false );
+		mInactiveButton->setVisible( true );
 
 		mActive = false;
 	} else {
-		mActiveButton->Visible( true );
-		mInactiveButton->Visible( false );
+		mActiveButton->setVisible( true );
+		mInactiveButton->setVisible( false );
 
 		mActive = true;
 	}
 
-	OnValueChange();
+	onValueChange();
 }
 
-const bool& UICheckBox::Active() const {
+const bool& UICheckBox::isActive() const {
 	return mActive;
 }
 
-const bool& UICheckBox::IsActive() const {
-	return Active();
+void UICheckBox::onPaddingChange() {
+	mActiveButton->setPosition( mPadding.Left, mActiveButton->getPosition().y );
+	mInactiveButton->setPosition( mPadding.Left, mInactiveButton->getPosition().y );
+
+	mRealPadding.Left = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPxI( mTextSeparation );
 }
 
-void UICheckBox::Padding( const Recti& padding ) {
-	mPadding = padding;
-	mPadding.Left = mPadding.Left + mActiveButton->Size().Width();
-}
-
-UIControlAnim * UICheckBox::ActiveButton() const {
+UIControlAnim * UICheckBox::getActiveButton() const {
 	return mActiveButton;
 }
 
-UIControlAnim * UICheckBox::InactiveButton() const {
+UIControlAnim * UICheckBox::getInactiveButton() const {
 	return mInactiveButton;
 }
 
-Uint32 UICheckBox::OnKeyDown( const UIEventKey& Event ) {
-	UITextBox::OnKeyDown( Event );
+Int32 UICheckBox::getTextSeparation() const {
+	return mTextSeparation;
+}
 
-	if ( Event.KeyCode() == KEY_SPACE ) {
-		if ( Sys::GetTicks() - mLastTick > 250 ) {
-			mLastTick = Sys::GetTicks();
+void UICheckBox::setTextSeparation(const Int32 & textSeparation) {
+	mTextSeparation = textSeparation;
 
-			Active( !mActive );
+	setPadding( getPadding() );
+}
+
+void UICheckBox::loadFromXmlNode(const pugi::xml_node & node) {
+	beginPropertiesTransaction();
+
+	UIWidget::loadFromXmlNode( node );
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		std::string name = ait->name();
+		String::toLowerInPlace( name );
+
+		if ( "selected" == name || "active" == name ) {
+			setActive( ait->as_bool() );
+		}
+	}
+
+	endPropertiesTransaction();
+}
+
+Uint32 UICheckBox::onKeyDown( const UIEventKey& Event ) {
+	UITextView::onKeyDown( Event );
+
+	if ( Event.getKeyCode() == KEY_SPACE ) {
+		if ( Sys::getTicks() - mLastTick > 250 ) {
+			mLastTick = Sys::getTicks();
+
+			setActive( !mActive );
 		}
 	}
 
 	return 1;
 }
 
-void UICheckBox::OnAlphaChange() {
-	UITextBox::OnAlphaChange();
+void UICheckBox::onAlphaChange() {
+	UITextView::onAlphaChange();
 	
-	mActiveButton->Alpha( mAlpha );
-	mInactiveButton->Alpha( mAlpha );
+	mActiveButton->setAlpha( mAlpha );
+	mInactiveButton->setAlpha( mAlpha );
 }
 
 }}

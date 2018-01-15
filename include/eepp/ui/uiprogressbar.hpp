@@ -2,89 +2,73 @@
 #define EE_UICPROGRESSBAR_HPP
 
 #include <eepp/ui/uicontrolanim.hpp>
-#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/graphics/scrollparallax.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIProgressBar : public UIComplexControl {
+class EE_API UIProgressBar : public UIWidget {
 	public:
-		class CreateParams : public UITextBox::CreateParams {
-			public:
-				inline CreateParams() :
-					UITextBox::CreateParams(),
-					DisplayPercent( false ),
-					VerticalExpand( false ),
-					MovementSpeed( 64.f, 0.f )
-				{
-				}
+		static UIProgressBar * New();
 
-				inline ~CreateParams() {}
-
-				bool DisplayPercent;
-				bool VerticalExpand;
-				Vector2f MovementSpeed;
-				Rectf FillerMargin;
-		};
-
-		UIProgressBar( const UIProgressBar::CreateParams& Params );
+		UIProgressBar();
 
 		virtual ~UIProgressBar();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		virtual void Progress( Float Val );
+		virtual void setProgress( Float Val );
 
-		const Float& Progress() const;
+		const Float& getProgress() const;
 
-		virtual void TotalSteps( const Float& Steps );
+		virtual void setTotalSteps( const Float& Steps );
 
-		const Float& TotalSteps() const;
+		const Float& getTotalSteps() const;
 
-		virtual void Draw();
+		virtual void draw();
 
-		void MovementSpeed( const Vector2f& Speed );
+		virtual void update();
 
-		const Vector2f& MovementSpeed() const;
+		void setMovementSpeed( const Vector2f& Speed );
 
-		void VerticalExpand( const bool& VerticalExpand );
+		const Vector2f& getMovementSpeed() const;
 
-		const bool& VerticalExpand() const;
+		void setVerticalExpand( const bool& verticalExpand );
 
-		void FillerMargin( const Rectf& margin );
+		const bool& getVerticalExpand() const;
 
-		const Rectf& FillerMargin() const;
+		void setFillerPadding( const Rectf& padding );
 
-		void DisplayPercent( const bool& DisplayPercent );
+		const Rectf& getFillerPadding() const;
 
-		const bool& DisplayPercent() const;
+		void setDisplayPercent( const bool& displayPercent );
+
+		const bool& getDisplayPercent() const;
 		
-		UITextBox * TextBox() const;
-		
+		UITextView * getTextBox() const;
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
-		bool				mVerticalExpand;
-		Vector2f			mSpeed;
-		Rectf 			mFillerMargin;
-		bool				mDisplayPercent;
-
+		UIProgressBarStyleConfig mStyleConfig;
 		Float				mProgress;
 		Float				mTotalSteps;
+		UITextView * 		mTextBox;
+		Vector2f			mOffset;
+		UISkin *			mFillerSkin;
 
-		ScrollParallax *	mParallax;
+		virtual Uint32 onValueChange();
 
-		UITextBox * 		mTextBox;
+		virtual void onSizeChange();
 
-		virtual Uint32 OnValueChange();
-
-		virtual void OnSizeChange();
+		virtual void onThemeLoaded();
 		
-		void UpdateTextBox();
+		void updateTextBox();
 		
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 };
 
 }}

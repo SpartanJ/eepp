@@ -9,60 +9,53 @@ class UIMenu;
 
 class EE_API UIMenuSubMenu : public UIMenuItem {
 	public:
-		class CreateParams : public UIMenuItem::CreateParams {
-			public:
-				inline CreateParams() :
-					UIMenuItem::CreateParams(),
-					SubMenu( NULL ),
-					MouseOverTimeShowMenu( 200.f )
-				{
-				}
+		static UIMenuSubMenu * New();
 
-				inline ~CreateParams() {}
-
-				UIMenu * SubMenu;
-				Float MouseOverTimeShowMenu;
-		};
-
-		UIMenuSubMenu( UIMenuSubMenu::CreateParams& Params );
+		UIMenuSubMenu();
 
 		virtual ~UIMenuSubMenu();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		void SubMenu( UIMenu * SubMenu );
+		void setSubMenu( UIMenu * subMenu );
 
-		UIMenu * SubMenu() const;
+		UIMenu * getSubMenu() const;
 
-		UIGfx * Arrow() const;
+		UIControl * getArrow() const;
 
-		void ShowSubMenu();
+		void showSubMenu();
 
-		virtual bool InheritsFrom( const Uint32 Type );
+		virtual bool inheritsFrom( const Uint32 getType );
+
+		Float getMouseOverTimeShowMenu() const;
+
+		void setMouseOverTimeShowMenu(const Float & maxTime);
+
 	protected:
 		UIMenu *	mSubMenu;
-		UISkin *	mSkinArrow;
-		UIGfx	*	mArrow;
+		UIControlAnim *	mArrow;
 		Float		mTimeOver;
 		Float		mMaxTime;
 		Uint32		mCbId;
 		Uint32		mCbId2;
 
-		virtual Uint32 OnMouseExit( const Vector2i &Pos, const Uint32 Flags );
+		virtual Uint32 onMouseExit( const Vector2i &position, const Uint32 flags );
 
-		virtual Uint32 OnMouseMove( const Vector2i &Pos, const Uint32 Flags );
+		virtual Uint32 onMouseMove( const Vector2i &position, const Uint32 getFlags );
 
-		virtual void OnStateChange();
+		virtual void onStateChange();
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		void OnSubMenuFocusLoss( const UIEvent * Event );
+		virtual void onAlphaChange();
 
-		void OnHideByClick( const UIEvent * Event );
+		void onSubMenuFocusLoss( const UIEvent * Event );
+
+		void onHideByClick( const UIEvent * Event );
 };
 
 }}

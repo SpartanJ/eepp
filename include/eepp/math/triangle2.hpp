@@ -18,7 +18,7 @@ class Triangle2 {
 		Vector2<T> V[3];
 
 		/** @return The vector index ( between 0 and 2 ) */
-		Vector2<T>& GetAt( Uint32 Index ) { return V[Index]; }
+		Vector2<T>& getAt( Uint32 Index ) { return V[Index]; }
 };
 
 template <typename T>

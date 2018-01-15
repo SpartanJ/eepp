@@ -16,15 +16,15 @@ class EE_API Clock {
 		~Clock();
 
 		/** Restarts the timer */
-		void Restart();
+		void restart();
 
 		/** @returns time since initialisation or last reset */
-		Time GetElapsedTime() const;
+		Time getElapsedTime() const;
 
 		/** Time in time elapsed between this call and the last call to Elapsed()
 		* This is the equivalent to call GetElapsedTime() and then Restart().
 		*/
-		Time Elapsed();
+		Time getElapsed();
 	private:
 		Platform::ClockImpl *	mClockImpl;
 };

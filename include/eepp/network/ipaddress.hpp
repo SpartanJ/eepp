@@ -48,7 +48,7 @@ class EE_API IpAddress
 		**  This constructor uses the internal representation of
 		**  the address directly. It should be used for optimization
 		**  purposes, and only if you got that representation from
-		**  IpAddress::ToInteger().
+		**  IpAddress::toInteger().
 		**  @param address 4 bytes of the address packed into a 32-bits integer
 		**  @see ToInteger */
 		explicit IpAddress(Uint32 address);
@@ -59,7 +59,7 @@ class EE_API IpAddress
 		**  from a host name.
 		**  @return String representation of the address
 		**  @see ToInteger */
-		std::string ToString() const;
+		std::string toString() const;
 
 		/** @brief Get an integer representation of the address
 		**  The returned number is the internal representation of the
@@ -69,7 +69,7 @@ class EE_API IpAddress
 		**  back to a IpAddress with the proper constructor.
 		**  @return 32-bits unsigned integer representation of the address
 		**  @see ToString */
-		Uint32 ToInteger() const;
+		Uint32 toInteger() const;
 
 		/** @brief Get the computer's local address
 		**  The local address is the address of the computer from the
@@ -79,7 +79,7 @@ class EE_API IpAddress
 		**  used safely anywhere.
 		**  @return Local IP address of the computer
 		**  @see GetPublicAddress */
-		static IpAddress GetLocalAddress();
+		static IpAddress getLocalAddress();
 
 		/** @brief Get the computer's public address
 		**  The public address is the address of the computer from the
@@ -96,15 +96,23 @@ class EE_API IpAddress
 		**  @param timeout Maximum time to wait
 		**  @return Public IP address of the computer
 		**  @see GetLocalAddress */
-		static IpAddress GetPublicAddress(Time timeout = Time::Zero);
+		static IpAddress getPublicAddress(Time timeout = Time::Zero);
 
 		// Static member data
 		static const IpAddress None;	  ///< Value representing an empty/invalid address
+		static const IpAddress Any;       ///< Value representing any address (0.0.0.0)
 		static const IpAddress LocalHost; ///< The "localhost" address (for connecting a computer to itself locally)
 		static const IpAddress Broadcast; ///< The "broadcast" address (for sending UDP messages to everyone on a local network)
 	private :
+		friend EE_API bool operator <(const IpAddress& left, const IpAddress& right);
+
+		/** @brief Resolve the given address string
+		**  @param address Address string */
+		void resolve(const std::string& address);
+
 		// Member data
 		Uint32 mAddress; ///< Address stored as an unsigned 32 bits integer
+		bool   mValid;   ///< Is the address valid?
 };
 
 /** @brief Overload of == operator to compare two IP addresses
@@ -177,8 +185,8 @@ IpAddress a4(192, 168, 1, 56);					// a local address
 IpAddress a5("my_computer");					  // a local address created from a network name
 IpAddress a6("89.54.1.169");					  // a distant address
 IpAddress a7("www.google.com");				   // a distant address created from a network name
-IpAddress a8 = IpAddress::GetLocalAddress();  // my address on the local network
-IpAddress a9 = IpAddress::GetPublicAddress(); // my address on the internet
+IpAddress a8 = IpAddress::getLocalAddress();  // my address on the local network
+IpAddress a9 = IpAddress::getPublicAddress(); // my address on the internet
 @endcode
 Note that IpAddress currently doesn't support IPv6
 nor other types of network addresses.

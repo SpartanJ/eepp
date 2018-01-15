@@ -9,15 +9,15 @@ class CP_API GearJoint : public Constraint {
 	public:
 		GearJoint( Body * a, Body * b, cpFloat phase, cpFloat ratio );
 
-		cpFloat Phase();
+		cpFloat getPhase();
 
-		void Phase( const cpFloat& phase );
+		void setPhase( const cpFloat& phase );
 
-		cpFloat Ratio();
+		cpFloat getRatio();
 
-		void Ratio( const cpFloat& ratio );
+		void setRatio( const cpFloat& ratio );
 
-		virtual void Draw();
+		virtual void draw();
 };
 
 CP_NAMESPACE_END

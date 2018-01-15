@@ -12,16 +12,16 @@ Mutex::~Mutex() {
 	delete mMutexImpl;
 }
 
-void Mutex::Lock() {
-	mMutexImpl->Lock();
+void Mutex::lock() {
+	mMutexImpl->lock();
 }
 
-void Mutex::Unlock() {
-	mMutexImpl->Unlock();
+void Mutex::unlock() {
+	mMutexImpl->unlock();
 }
 
-int Mutex::TryLock() {
-	return mMutexImpl->TryLock();
+int Mutex::tryLock() {
+	return mMutexImpl->tryLock();
 }
 
 }}

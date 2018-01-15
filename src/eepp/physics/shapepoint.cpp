@@ -19,50 +19,50 @@ ShapePoint::ShapePoint( Physics::Body * body, cpFloat radius, cVect offset )
 	: mDrawRadius( radius )
 #endif
 {
-	mShape	= cpCircleShapeNew( body->GetBody(), radius, tocpv( offset ) );
-	SetData();
+	mShape	= cpCircleShapeNew( body->getBody(), radius, tocpv( offset ) );
+	setData();
 }
 
-cVect ShapePoint::Offset() {
+cVect ShapePoint::getOffset() {
 	return tovect( cpCircleShapeGetOffset( mShape ) );
 }
 
-void ShapePoint::Offset( const cVect &offset ) {
+void ShapePoint::setOffset( const cVect &offset ) {
 	cpCircleShapeSetOffset( mShape, tocpv( offset ) );
 }
 
-cpFloat ShapePoint::Radius() {
+cpFloat ShapePoint::getRadius() {
 	return cpCircleShapeGetRadius( mShape );
 }
 
-void ShapePoint::Radius( const cpFloat& radius ) {
+void ShapePoint::setRadius( const cpFloat& radius ) {
 	cpCircleShapeSetRadius( mShape, radius );
 }
 
-void ShapePoint::Draw( Space * space ) {
+void ShapePoint::draw( Space * space ) {
 	#ifdef PHYSICS_RENDERER_ENABLED
 	BatchRenderer * BR = GlobalBatchRenderer::instance();
 
-	BR->SetPointSize( mDrawRadius );
+	BR->setPointSize( mDrawRadius );
 
-	BR->SetTexture( NULL );
-	BR->PointsBegin();
-	BR->PointSetColor( ColorForShape( mShape, space->GetSpace() ) );
+	BR->setTexture( NULL );
+	BR->pointsBegin();
+	BR->pointSetColor( colorForShape( mShape, space->getSpace() ) );
 
 	cpCircleShape * cs = (cpCircleShape*)mShape;
 
-	BR->BatchPoint( cs->CP_PRIVATE(tc).x, cs->CP_PRIVATE(tc).y );
+	BR->batchPoint( cs->CP_PRIVATE(tc).x, cs->CP_PRIVATE(tc).y );
 
-	BR->DrawOpt();
+	BR->drawOpt();
 	#endif
 }
 
 #ifdef PHYSICS_RENDERER_ENABLED
-cpFloat ShapePoint::DrawRadius() {
+cpFloat ShapePoint::getDrawRadius() {
 	return mDrawRadius;
 }
 
-void ShapePoint::DrawRadius( const cpFloat& radius ) {
+void ShapePoint::setDrawRadius( const cpFloat& radius ) {
 	mDrawRadius = radius;
 }
 #endif

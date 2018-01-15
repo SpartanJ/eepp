@@ -9,13 +9,13 @@ TcpListener::TcpListener() :
 {
 }
 
-unsigned short TcpListener::GetLocalPort() const {
-	if (GetHandle() != Private::SocketImpl::InvalidSocket()) {
+unsigned short TcpListener::getLocalPort() const {
+	if (getHandle() != Private::SocketImpl::invalidSocket()) {
 		// Retrieve informations about the local end of the socket
 		sockaddr_in address;
 		Private::SocketImpl::AddrLength size = sizeof(address);
 
-		if (getsockname(GetHandle(), reinterpret_cast<sockaddr*>(&address), &size) != -1) {
+		if (getsockname(getHandle(), reinterpret_cast<sockaddr*>(&address), &size) != -1) {
 			return ntohs(address.sin_port);
 		}
 	}
@@ -24,20 +24,24 @@ unsigned short TcpListener::GetLocalPort() const {
 	return 0;
 }
 
-Socket::Status TcpListener::Listen(unsigned short port) {
+Socket::Status TcpListener::listen(unsigned short port, const IpAddress& address) {
 	// Create the internal socket if it doesn't exist
-	Create();
+	create();
+
+	// Check if the address is valid
+	if ((address == IpAddress::None) || (address == IpAddress::Broadcast))
+		return Error;
 
 	// Bind the socket to the specified port
-	sockaddr_in address = Private::SocketImpl::CreateAddress(INADDR_ANY, port);
-	if (bind(GetHandle(), reinterpret_cast<sockaddr*>(&address), sizeof(address)) == -1) {
+	sockaddr_in addr = Private::SocketImpl::createAddress(address.toInteger(), port);
+	if (bind(getHandle(), reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == -1) {
 		// Not likely to happen, but...
 		eePRINTL( "Failed to bind listener socket to port %d", port );
 		return Error;
 	}
 
 	// Listen to the bound port
-	if (::listen(GetHandle(), 0) == -1) {
+	if (::listen(getHandle(), 0) == -1) {
 		// Oops, socket is deaf
 		eePRINTL( "Failed to Listen to port %d", port );
 		return Error;
@@ -46,14 +50,14 @@ Socket::Status TcpListener::Listen(unsigned short port) {
 	return Done;
 }
 
-void TcpListener::Close() {
+void TcpListener::close() {
 	// Simply close the socket
-	Socket::Close();
+	Socket::close();
 }
 
-Socket::Status TcpListener::Accept(TcpSocket& socket) {
+Socket::Status TcpListener::accept(TcpSocket& socket) {
 	// Make sure that we're listening
-	if (GetHandle() == Private::SocketImpl::InvalidSocket()) {
+	if (getHandle() == Private::SocketImpl::invalidSocket()) {
 		eePRINTL( "Failed to accept a new connection, the socket is not listening" );
 		return Error;
 	}
@@ -61,15 +65,15 @@ Socket::Status TcpListener::Accept(TcpSocket& socket) {
 	// Accept a new connection
 	sockaddr_in address;
 	Private::SocketImpl::AddrLength length = sizeof(address);
-	SocketHandle remote = ::accept(GetHandle(), reinterpret_cast<sockaddr*>(&address), &length);
+	SocketHandle remote = ::accept(getHandle(), reinterpret_cast<sockaddr*>(&address), &length);
 
 	// Check for errors
-	if (remote == Private::SocketImpl::InvalidSocket())
-		return Private::SocketImpl::GetErrorStatus();
+	if (remote == Private::SocketImpl::invalidSocket())
+		return Private::SocketImpl::getErrorStatus();
 
 	// Initialize the new connected socket
-	socket.Close();
-	socket.Create(remote);
+	socket.close();
+	socket.create(remote);
 
 	return Done;
 }

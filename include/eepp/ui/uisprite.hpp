@@ -1,74 +1,68 @@
 #ifndef EE_UICUISPRITE_HPP
 #define EE_UICUISPRITE_HPP
 
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace Graphics {
 class Sprite;
+class SubTexture;
 }}
 
 namespace EE { namespace UI {
 
-class EE_API UISprite : public UIComplexControl {
+class EE_API UISprite : public UIWidget {
 	public:
-		class CreateParams : public UIComplexControl::CreateParams {
-			public:
-				inline CreateParams() :
-					UIComplexControl::CreateParams(),
-					Sprite( NULL ),
-					SpriteRender( RN_NORMAL ),
-					DealloSprite( true )
-				{
-				}
+		static UISprite * New();
 
-				inline ~CreateParams() {}
-
-				Graphics::Sprite * 	Sprite;
-				EE_RENDER_MODE		SpriteRender;
-				bool				DealloSprite;
-		};
-
-		UISprite( const UISprite::CreateParams& Params );
+		UISprite();
 
 		virtual ~UISprite();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual void Alpha( const Float& alpha );
+		virtual void update();
 
-		Graphics::Sprite * Sprite() const;
+		virtual void setAlpha( const Float& alpha );
 
-		void Sprite( Graphics::Sprite * sprite );
+		Graphics::Sprite * getSprite() const;
 
-		ColorA Color() const;
+		void setSprite( Graphics::Sprite * sprite );
 
-		void Color( const ColorA& color );
+		Color getColor() const;
 
-		const EE_RENDER_MODE& RenderMode() const;
+		void setColor( const Color& color );
 
-		void RenderMode( const EE_RENDER_MODE& render );
+		const RenderMode& getRenderMode() const;
 
-		const Vector2i& AlignOffset() const;
+		void setRenderMode( const RenderMode& render );
+
+		const Vector2i& getAlignOffset() const;
+
+		void setDeallocSprite( const bool& dealloc );
+
+		bool getDeallocSprite();
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		Graphics::Sprite * 	mSprite;
-		EE_RENDER_MODE 		mRender;
+		RenderMode 		mRender;
 		Vector2i			mAlignOffset;
 		SubTexture *		mSubTextureLast;
 		bool				mDealloc;
 
-		void UpdateSize();
+		void updateSize();
 
-		void AutoAlign();
+		void autoAlign();
 
-		void CheckSubTextureUpdate();
+		void checkSubTextureUpdate();
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		Uint32 DealloSprite();
+		Uint32 deallocSprite();
 };
 
 }}

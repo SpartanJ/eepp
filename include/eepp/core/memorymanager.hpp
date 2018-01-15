@@ -25,66 +25,66 @@ typedef AllocatedPointerMap::iterator 		AllocatedPointerMapIt;
 
 class EE_API MemoryManager {
 	public:
-		static void * AddPointer( const AllocatedPointer& aAllocatedPointer );
+		static void * addPointer( const AllocatedPointer& aAllocatedPointer );
 
-		static void * AddPointerInPlace( void * Place, const AllocatedPointer& aAllocatedPointer );
+		static void * addPointerInPlace( void * Place, const AllocatedPointer& aAllocatedPointer );
 
-		static bool RemovePointer( void * Data );
+		static bool removePointer( void * Data );
 
-		static void ShowResults();
+		static void showResults();
 
 		template<class T>
-		static T* Delete( T * Data ) {
+		static T* deletePtr( T * Data ) {
 			delete Data;
 			return Data;
 		}
 
 		template<class T>
-		static T* DeleteArray( T * Data ) {
+		static T* deleteArrayPtr( T * Data ) {
 			delete [] Data;
 			return Data;
 		}
 
 		template<class T>
-		static T * Free( T * Data ) {
-			free( Data );
+		static T * free( T * Data ) {
+			::free( Data );
 			return Data;
 		}
 
-		inline static void * Allocate( size_t size ) {
+		inline static void * allocate( size_t size ) {
 			return malloc( size );
 		}
 
-		static size_t GetPeakMemoryUsage();
+		static size_t getPeakMemoryUsage();
 
-		static size_t GetTotalMemoryUsage();
+		static size_t getTotalMemoryUsage();
 
-		static const AllocatedPointer&	GetBiggestAllocation();
+		static const AllocatedPointer&	getBiggestAllocation();
 };
 
 #ifdef EE_MEMORY_MANAGER
 	#define eeNew( classType, constructor ) \
-			( classType *)EE::MemoryManager::AddPointer( EE::AllocatedPointer( new classType constructor ,__FILE__,__LINE__, sizeof(classType) ) )
+			( classType *)EE::MemoryManager::addPointer( EE::AllocatedPointer( new classType constructor ,__FILE__,__LINE__, sizeof(classType) ) )
 
 	#define eeNewInPlace( place, classType, constructor ) \
-			( classType *)EE::MemoryManager::AddPointerInPlace( place, EE::AllocatedPointer( new place classType constructor ,__FILE__,__LINE__, sizeof(classType) ) )
+			( classType *)EE::MemoryManager::addPointerInPlace( place, EE::AllocatedPointer( new place classType constructor ,__FILE__,__LINE__, sizeof(classType) ) )
 
 	#define eeNewArray( classType, amount ) \
-			( classType *) EE::MemoryManager::AddPointer( EE::AllocatedPointer( new classType [ amount ], __FILE__, __LINE__, amount * sizeof( classType ) ) )
+			( classType *) EE::MemoryManager::addPointer( EE::AllocatedPointer( new classType [ amount ], __FILE__, __LINE__, amount * sizeof( classType ) ) )
 
 	#define eeMalloc(amount) \
-			EE::MemoryManager::AddPointer( EE::AllocatedPointer( EE::MemoryManager::Allocate( amount ), __FILE__, __LINE__, amount ) )
+			EE::MemoryManager::addPointer( EE::AllocatedPointer( EE::MemoryManager::allocate( amount ), __FILE__, __LINE__, amount ) )
 
 	#define eeDelete( data ){ \
-			if( EE::MemoryManager::RemovePointer( EE::MemoryManager::Delete( data ) ) == false ) printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ ); \
+			if( EE::MemoryManager::removePointer( EE::MemoryManager::deletePtr( data ) ) == false ) printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ ); \
 			}
 
 	#define eeDeleteArray( data ){ \
-			if ( EE::MemoryManager::RemovePointer( EE::MemoryManager::DeleteArray( data ) ) == false ) printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ ); \
+			if ( EE::MemoryManager::removePointer( EE::MemoryManager::deleteArrayPtr( data ) ) == false ) printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ ); \
 			}
 
 	#define eeFree( data ){ \
-			if( EE::MemoryManager::RemovePointer( EE::MemoryManager::Free( data ) ) == false ) printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ ); \
+			if( EE::MemoryManager::removePointer( EE::MemoryManager::free( data ) ) == false ) printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ ); \
 			}
 #else
 	#define eeNew( classType, constructor ) \

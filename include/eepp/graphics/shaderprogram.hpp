@@ -13,124 +13,124 @@ namespace EE { namespace Graphics {
 class EE_API ShaderProgram {
 	public:
 		/** Creates an empty shader program */
-		static ShaderProgram * New( const std::string& name = "" );
+		static ShaderProgram * New( const std::string& Name = "" );
 
 		/** Creates a program shader with a vector of shaders and link them. */
-		static ShaderProgram * New( const std::vector<Shader*>& Shaders, const std::string& name = "" );
+		static ShaderProgram * New( const std::vector<Shader*>& Shaders, const std::string& Name = "" );
 
 		/** Creates a VertexShader from file and a Fragment Shader from file, and link them. */
-		static ShaderProgram * New( const std::string& VertexShaderFile, const std::string& FragmentShaderFile, const std::string& name = "" );
+		static ShaderProgram * New( const std::string& VertexShaderFile, const std::string& FragmentShaderFile, const std::string& Name = "" );
 
 		/** Creates a VertexShader from memory and a Fragment Shader from memory, and link them. */
-		static ShaderProgram * New( const char * VertexShaderData, const Uint32& VertexShaderDataSize, const char * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& name = "" );
+		static ShaderProgram * New( const char * VertexShaderData, const Uint32& VertexShaderDataSize, const char * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& Name = "" );
 
 		/** Creates the vertex shader and fragment shader from two files inside a pack */
-		static ShaderProgram * New( Pack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name = "" );
+		static ShaderProgram * New( Pack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& Name = "" );
 
 		/** Creates the vertex and fragment shader from an array of strings */
-		static ShaderProgram * New( const char ** VertexShaderData, const Uint32& NumLinesVS, const char ** FragmentShaderData, const Uint32& NumLinesFS, const std::string& name = "" );
+		static ShaderProgram * New( const char ** VertexShaderData, const Uint32& NumLinesVS, const char ** FragmentShaderData, const Uint32& NumLinesFS, const std::string& Name = "" );
 
 		typedef cb::Callback1<void, ShaderProgram*> ShaderProgramReloadCb;
 
 		virtual ~ShaderProgram();
 
 		/** Add a new shader */
-		void AddShader( Shader* Shader );
+		void addShader( Shader* Shader );
 
 		/** Add a vector of shaders */
-		void AddShaders( const std::vector<Shader*>& Shaders );
+		void addShaders( const std::vector<Shader*>& Shaders );
 
-		virtual bool Link();
+		virtual bool link();
 
 		/** @return If the shader program is valid */
-		bool IsValid() const { return mValid; }
+		bool isValid() const { return mValid; }
 
 		/** @return THe link log */
-		std::string GetLinkLog() const { return mLinkLog; }
+		std::string getLinkLog() const { return mLinkLog; }
 
 		/** Binds the shader program so that it will be used for anything that is rendered */
-		virtual void Bind() const;
+		virtual void bind() const;
 
 		/**  Unbind the program. Anything rendered after Unbind() call will be rendered using the fixed-function pipeline */
-		virtual void Unbind() const;
+		virtual void unbind() const;
 
 		/** @return The location of the location name */
-		Int32 UniformLocation( const std::string& Name );
+		Int32 getUniformLocation( const std::string& Name );
 
 		/** @return The location of the attribute name */
-		Int32 AttributeLocation( const std::string& Name );
+		Int32 getAttributeLocation( const std::string& Name );
 
 		/** Clear the locations */
-		void InvalidateLocations();
+		void invalidateLocations();
 
 		/** Sets the uniform with the given name to the given value and returns true.
 		* If there is no uniform with such name then false is returned.
 		* Note that the program has to be bound before this method can be used.
 		*/
-		bool SetUniform( const std::string& Name, float Value );
+		bool setUniform( const std::string& Name, float Value );
 
 		/** @overload */
-		bool SetUniform( const std::string& Name, Vector2ff Value );
+		bool setUniform( const std::string& Name, Vector2ff Value );
 
 		/** @overload */
-		bool SetUniform( const std::string& Name, Vector3ff Value );
+		bool setUniform( const std::string& Name, Vector3ff Value );
 
 		/** @overload */
-		bool SetUniform( const std::string& Name, float x, float y, float z, float w );
+		bool setUniform( const std::string& Name, float x, float y, float z, float w );
 
 		/** @overload */
-		bool SetUniform( const std::string& Name, Int32 Value );
+		bool setUniform( const std::string& Name, Int32 Value );
 
 		/** @overload */
-		bool SetUniform( const Int32& Location, Int32 Value );
+		bool setUniform( const Int32& Location, Int32 Value );
 
 		/** @overload */
-		bool SetUniform( const Int32& Location, float Value );
+		bool setUniform( const Int32& Location, float Value );
 
 		/** @overload */
-		bool SetUniform( const Int32& Location, Vector2ff Value );
+		bool setUniform( const Int32& Location, Vector2ff Value );
 
 		/** @overload */
-		bool SetUniform( const Int32& Location, Vector3ff Value );
+		bool setUniform( const Int32& Location, Vector3ff Value );
 
 		/** @overload */
-		bool SetUniform( const Int32& Location, float x, float y, float z, float w );
+		bool setUniform( const Int32& Location, float x, float y, float z, float w );
 
 		/** Sets an uniform matrix from its name. */
-		bool SetUniformMatrix( const std::string Name, const float * Value );
+		bool setUniformMatrix( const std::string Name, const float * Value );
 
 		/** Sets an uniform matrix from its location. */
-		bool SetUniformMatrix( const Int32& Location, const float * Value );
+		bool setUniformMatrix( const Int32& Location, const float * Value );
 
 		/** @return The id of the program (the handle) */
-		const Uint32& Handler() const { return mHandler; }
+		const Uint32& getHandler() const { return mHandler; }
 
 		/** @return The Id of the program ( hash of the program name ) */
-		const Uint32& Id() const { return mId; }
+		const Uint32& getId() const { return mId; }
 
 		/** Reloads the shaders */
-		void Reload();
+		void reload();
 
 		/** @return Name of the shader program */
-		const std::string& Name() const;
+		const std::string& getName() const;
 
 		/** Set the name of the shader program */
-		void Name( const std::string& name );
+		void setName( const std::string& Name );
 
 		/** Set a reload callback ( needed to reset shader states ). */
-		void SetReloadCb( ShaderProgramReloadCb Cb );
+		void setReloadCb( ShaderProgramReloadCb Cb );
 
 		/** Enable a vertex attribute array */
-		void EnableVertexAttribArray( const std::string& Name );
+		void enableVertexAttribArray( const std::string& Name );
 
 		/** Enable a vertex attribute array */
-		void EnableVertexAttribArray( const Int32& Location );
+		void enableVertexAttribArray( const Int32& Location );
 
 		/** Disable a vertex attribute array */
-		void DisableVertexAttribArray( const std::string& Name );
+		void disableVertexAttribArray( const std::string& Name );
 
 		/** Disable a vertex attribute array */
-		void DisableVertexAttribArray( const Int32& Location );
+		void disableVertexAttribArray( const Int32& Location );
 	protected:
 		std::string mName;
 		Uint32 mHandler;
@@ -145,29 +145,29 @@ class EE_API ShaderProgram {
 
 		ShaderProgramReloadCb mReloadCb;
 
-		void Init();
+		void init();
 
-		void AddToManager( const std::string& name );
+		void addToManager( const std::string& Name );
 
-		void RemoveFromManager();
+		void removeFromManager();
 
 		/** Creates an empty shader program */
-		ShaderProgram( const std::string& name = "" );
+		ShaderProgram( const std::string& Name = "" );
 
 		/** Construct a program shader with a vector of shaders and link them. */
-		ShaderProgram( const std::vector<Shader*>& Shaders, const std::string& name = "" );
+		ShaderProgram( const std::vector<Shader*>& Shaders, const std::string& Name = "" );
 
 		/** Constructor that creates a VertexShader from file and a Fragment Shader from file, and link them. */
-		ShaderProgram( const std::string& VertexShaderFile, const std::string& FragmentShaderFile, const std::string& name = "" );
+		ShaderProgram( const std::string& VertexShaderFile, const std::string& FragmentShaderFile, const std::string& Name = "" );
 
 		/** Constructor that creates a VertexShader from memory and a Fragment Shader from memory, and link them. */
-		ShaderProgram( const char * VertexShaderData, const Uint32& VertexShaderDataSize, const char * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& name = "" );
+		ShaderProgram( const char * VertexShaderData, const Uint32& VertexShaderDataSize, const char * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& Name = "" );
 
 		/** Constructor that creates the vertex shader and fragment shader from two files inside a pack */
-		ShaderProgram( Pack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name = "" );
+		ShaderProgram( Pack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& Name = "" );
 
 		/** Constructor that creates the vertex and fragment shader from an array of strings */
-		ShaderProgram( const char ** VertexShaderData, const Uint32& NumLinesVS, const char ** FragmentShaderData, const Uint32& NumLinesFS, const std::string& name = "" );
+		ShaderProgram( const char ** VertexShaderData, const Uint32& NumLinesVS, const char ** FragmentShaderData, const Uint32& NumLinesFS, const std::string& Name = "" );
 };
 
 }}

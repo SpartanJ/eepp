@@ -2,6 +2,8 @@
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/sys.hpp>
 #include <sys/stat.h>
+#include <unistd.h>
+#include <climits>
 #include <list>
 #include <algorithm>
 
@@ -26,7 +28,7 @@
 
 namespace EE { namespace System {
 
-std::string FileSystem::GetOSlash() {
+std::string FileSystem::getOSSlash() {
 	#if EE_PLATFORM == EE_PLATFORM_WIN
 		return std::string( "\\" );
 	#else
@@ -34,16 +36,16 @@ std::string FileSystem::GetOSlash() {
 	#endif
 }
 
-bool FileSystem::FileGet( const std::string& path, SafeDataPointer& data ) {
-	if ( FileExists( path ) ) {
+bool FileSystem::fileGet( const std::string& path, SafeDataPointer& data ) {
+	if ( fileExists( path ) ) {
 		IOStreamFile fs ( path , std::ios::in | std::ios::binary );
 
 		eeSAFE_DELETE( data.Data );
 
-		data.DataSize	= FileSize( path );
+		data.DataSize	= fileSize( path );
 		data.Data		= eeNewArray( Uint8, ( data.DataSize ) );
 
-		fs.Read( reinterpret_cast<char*> ( data.Data ), data.DataSize  );
+		fs.read( reinterpret_cast<char*> ( data.Data ), data.DataSize  );
 
 		return true;
 	}
@@ -51,15 +53,15 @@ bool FileSystem::FileGet( const std::string& path, SafeDataPointer& data ) {
 	return false;
 }
 
-bool FileSystem::FileGet( const std::string& path, std::vector<Uint8>& data ) {
-	if ( FileExists( path ) ) {
+bool FileSystem::fileGet( const std::string& path, std::vector<Uint8>& data ) {
+	if ( fileExists( path ) ) {
 		IOStreamFile fs ( path, std::ios::in | std::ios::binary );
-		Uint32 fsize = FileSize( path );
+		Uint32 fsize = fileSize( path );
 
 		data.clear();
 		data.resize( fsize );
 
-		fs.Read( reinterpret_cast<char*> (&data[0]), fsize  );
+		fs.read( reinterpret_cast<char*> (&data[0]), fsize  );
 
 		return true;
 	}
@@ -67,10 +69,10 @@ bool FileSystem::FileGet( const std::string& path, std::vector<Uint8>& data ) {
 	return false;
 }
 
-bool FileSystem::FileCopy( const std::string& src, const std::string& dst ) {
-	if ( FileExists( src ) ) {
+bool FileSystem::fileCopy( const std::string& src, const std::string& dst ) {
+	if ( fileExists( src ) ) {
 		Int64	chunksize	= EE_1MB;
-		Int64	size		= FileSize( src );
+		Int64	size		= fileSize( src );
 		Int64	size_left	= (Int32)size;
 		Int64	allocate	= ( size < chunksize ) ? size : chunksize;
 		Int64	copysize	= 0;
@@ -83,7 +85,7 @@ bool FileSystem::FileCopy( const std::string& src, const std::string& dst ) {
 		IOStreamFile in( src, std::ios::binary | std::ios::in );
 		IOStreamFile out( dst, std::ios::binary | std::ios::out );
 
-		if ( in.IsOpen() && out.IsOpen() && size > 0 ) {
+		if ( in.isOpen() && out.isOpen() && size > 0 ) {
 			do {
 				if ( size_left - chunksize < 0 ) {
 					copysize = size_left;
@@ -91,8 +93,8 @@ bool FileSystem::FileCopy( const std::string& src, const std::string& dst ) {
 					copysize = chunksize;
 				}
 
-				in.Read		( &buff[0], copysize );
-				out.Write	( (const char*)&buff[0], copysize );
+				in.read		( &buff[0], copysize );
+				out.write	( (const char*)&buff[0], copysize );
 
 				size_left -= copysize;
 			} while ( size_left > 0 );
@@ -104,42 +106,49 @@ bool FileSystem::FileCopy( const std::string& src, const std::string& dst ) {
 	return false;
 }
 
-std::string FileSystem::FileExtension( const std::string& filepath, const bool& lowerExt ) {
+std::string FileSystem::fileExtension( const std::string& filepath, const bool& lowerExt ) {
 	std::string tstr( filepath.substr( filepath.find_last_of(".") + 1 ) );
 
 	if ( lowerExt )
-		String::ToLowerInPlace( tstr );
+		String::toLowerInPlace( tstr );
 
 	return tstr;
 }
 
-std::string FileSystem::FileRemoveExtension( const std::string& filepath ) {
+std::string FileSystem::fileRemoveExtension( const std::string& filepath ) {
 	return filepath.substr( 0, filepath.find_last_of(".") );
 }
 
-std::string FileSystem::FileNameFromPath( const std::string& filepath ) {
+std::string FileSystem::fileNameFromPath( const std::string& filepath ) {
 	return filepath.substr( filepath.find_last_of("/\\") + 1 );
 }
 
-std::string FileSystem::FileRemoveFileName( const std::string& filepath ) {
+std::string FileSystem::fileRemoveFileName( const std::string& filepath ) {
 	return filepath.substr( 0, filepath.find_last_of("/\\") + 1 );
 }
 
-void FileSystem::FilePathRemoveProcessPath( std::string& path ) {
-	static std::string ProcessPath = Sys::GetProcessPath();
+void FileSystem::filePathRemoveProcessPath( std::string& path ) {
+	std::string ProcessPath = Sys::getProcessPath();
 
-	if ( String::StartsWith( path, ProcessPath ) && ProcessPath.length() < path.size() ) {
+	if ( String::startsWith( path, ProcessPath ) && ProcessPath.length() < path.size() ) {
 		path = path.substr( ProcessPath.length() );
 	}
 }
 
+void FileSystem::filePathRemoveCurrentWorkingDirectory( std::string& path ) {
+	std::string dirPath = getCurrentWorkingDirectory();
 
-bool FileSystem::FileWrite( const std::string& filepath, const Uint8* data, const Uint32& dataSize ) {
+	if ( String::startsWith( path, dirPath ) && dirPath.length() < path.size() ) {
+		path = path.substr( dirPath.length() );
+	}
+}
+
+bool FileSystem::fileWrite( const std::string& filepath, const Uint8* data, const Uint32& dataSize ) {
 	IOStreamFile fs( filepath, std::ios::out | std::ios::binary );
 
-	if ( fs.IsOpen() ) {
+	if ( fs.isOpen() ) {
 		if ( dataSize ) {
-			fs.Write( reinterpret_cast<const char*> (data), dataSize );
+			fs.write( reinterpret_cast<const char*> (data), dataSize );
 		}
 
 		return true;
@@ -148,15 +157,15 @@ bool FileSystem::FileWrite( const std::string& filepath, const Uint8* data, cons
 	return false;
 }
 
-bool FileSystem::FileWrite( const std::string& filepath, const std::vector<Uint8>& data ) {
-	return FileWrite( filepath, reinterpret_cast<const Uint8*> ( &data[0] ), (Uint32)data.size() );
+bool FileSystem::fileWrite( const std::string& filepath, const std::vector<Uint8>& data ) {
+	return fileWrite( filepath, reinterpret_cast<const Uint8*> ( &data[0] ), (Uint32)data.size() );
 }
 
-bool FileSystem::FileRemove( const std::string& filepath ) {
+bool FileSystem::fileRemove( const std::string& filepath ) {
 	return 0 == remove( filepath.c_str() );
 }
 
-Uint32 FileSystem::FileGetModificationDate( const std::string& Filepath ) {
+Uint32 FileSystem::fileGetModificationDate( const std::string& Filepath ) {
 	struct stat st;
 	int res = stat( Filepath.c_str(), &st );
 
@@ -166,24 +175,31 @@ Uint32 FileSystem::FileGetModificationDate( const std::string& Filepath ) {
 	return 0;
 }
 
-void FileSystem::DirPathAddSlashAtEnd( std::string& path ) {
+void FileSystem::dirPathAddSlashAtEnd( std::string& path ) {
 	if ( path.size() && path[ path.size() - 1 ] != '/' && path[ path.size() - 1 ] != '\\' )
-		path += GetOSlash();
+		path += getOSSlash();
 }
 
-std::string FileSystem::RemoveLastFolderFromPath( std::string path ) {
+void FileSystem::dirRemoveSlashAtEnd(std::string & dir) {
+	if ( dir.size() > 1 && ( dir[ dir.size() - 1 ] == '/' || dir[ dir.size() - 1 ] == '\\' ) )
+	{
+		dir.erase( dir.size() - 1 );
+	}
+}
+
+std::string FileSystem::removeLastFolderFromPath( std::string path ) {
 	if ( path.size() > 1 && ( path[ path.size() - 1 ] == '/' || path[ path.size() - 1 ] == '\\' ) ) {
 		path.resize( path.size() - 1 );
 	}
 
-	std::size_t pos = path.find_last_of( GetOSlash() );
+	std::size_t pos = path.find_last_of( getOSSlash() );
 
 	if ( std::string::npos != pos ) {
 		std::string sstr;
-		std::size_t pos2 = path.find_first_of( GetOSlash() );
+		std::size_t pos2 = path.find_first_of( getOSSlash() );
 
 		if ( pos2 != pos ) {
-			sstr = path.substr(0,pos) + GetOSlash();
+			sstr = path.substr(0,pos) + getOSSlash();
 		} else {
 			if ( pos == pos2 ) {
 				sstr = path.substr(0,pos2+1);
@@ -191,37 +207,31 @@ std::string FileSystem::RemoveLastFolderFromPath( std::string path ) {
 		}
 
 		if ( sstr.size() ) {
-			DirPathAddSlashAtEnd( sstr );
+			dirPathAddSlashAtEnd( sstr );
 
 			return sstr;
 		}
 	}
 
-	DirPathAddSlashAtEnd( path );
+	dirPathAddSlashAtEnd( path );
 
 	return path;
 }
 
-bool FileSystem::IsDirectory( const String& path ) {
-	return IsDirectory( path.ToUtf8() );
+bool FileSystem::isDirectory( const String& path ) {
+	return isDirectory( path.toUtf8() );
 }
 
-bool FileSystem::IsDirectory( const std::string& path ) {
+bool FileSystem::isDirectory( const std::string& path ) {
 #ifndef EE_COMPILER_MSVC
-	DIR *dp = NULL;
-
-	bool isdir = !( ( dp = opendir( path.c_str() ) ) == NULL);
-
-	if ( NULL != dp )
-		closedir(dp);
-
-	return isdir;
+	struct stat st;
+	return ( stat( path.c_str(), &st ) == 0 ) && S_ISDIR( st.st_mode );
 #else
 	return 0 != ( GetFileAttributes( (LPCTSTR) path.c_str() ) & FILE_ATTRIBUTE_DIRECTORY );
 #endif
 }
 
-bool FileSystem::MakeDir( const std::string& path, const Uint16& mode ) {
+bool FileSystem::makeDir( const std::string& path, const Uint16& mode ) {
 	Int16 v;
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	#ifdef EE_COMPILER_MSVC
@@ -235,7 +245,7 @@ bool FileSystem::MakeDir( const std::string& path, const Uint16& mode ) {
 	return v == 0;
 }
 
-std::vector<String> FileSystem::FilesGetInPath( const String& path, const bool& sortByName, const bool& foldersFirst ) {
+std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& sortByName, const bool& foldersFirst ) {
 	std::vector<String> files;
 
 #ifdef EE_COMPILER_MSVC
@@ -249,7 +259,7 @@ std::vector<String> FileSystem::FilesGetInPath( const String& path, const bool& 
 		}
 
 		WIN32_FIND_DATA findFileData;
-		HANDLE hFind = FindFirstFile( (LPCWSTR)mPath.ToWideString().c_str(), &findFileData );
+		HANDLE hFind = FindFirstFile( (LPCWSTR)mPath.toWideString().c_str(), &findFileData );
 
 		if( hFind != INVALID_HANDLE_VALUE ) {
 			String tmpstr( findFileData.cFileName );
@@ -276,16 +286,16 @@ std::vector<String> FileSystem::FilesGetInPath( const String& path, const bool& 
 		}
 
 		WIN32_FIND_DATA findFileData;
-		HANDLE hFind = FindFirstFile( (LPCTSTR) mPath.ToAnsiString().c_str(), &findFileData );
+		HANDLE hFind = FindFirstFile( (LPCTSTR) mPath.toAnsiString().c_str(), &findFileData );
 
 		if( hFind != INVALID_HANDLE_VALUE ) {
-			String tmpstr( String::FromUtf8( findFileData.cFileName ) );
+			String tmpstr( String::fromUtf8( findFileData.cFileName ) );
 
 			if ( tmpstr != "." && tmpstr != ".." )
 					files.push_back( tmpstr );
 
 			while( FindNextFile( hFind, &findFileData ) ) {
-					tmpstr = String::FromUtf8( findFileData.cFileName );
+					tmpstr = String::fromUtf8( findFileData.cFileName );
 
 					if ( tmpstr != "." && tmpstr != ".." )
 							files.push_back( tmpstr );
@@ -298,7 +308,7 @@ std::vector<String> FileSystem::FilesGetInPath( const String& path, const bool& 
 	DIR *dp;
 	struct dirent *dirp;
 
-	if( ( dp = opendir( path.ToUtf8().c_str() ) ) == NULL )
+	if( ( dp = opendir( path.toUtf8().c_str() ) ) == NULL )
 		return files;
 
 	while ( ( dirp = readdir(dp) ) != NULL) {
@@ -330,13 +340,13 @@ std::vector<String> FileSystem::FilesGetInPath( const String& path, const bool& 
 		String fpath( path );
 
 		if ( fpath[ fpath.size() - 1 ] != '/' && fpath[ fpath.size() - 1 ] != '\\' )
-			fpath += GetOSlash();
+			fpath += getOSSlash();
 
 		std::list<String> folders;
 		std::list<String> file;
 
 		for ( size_t i = 0; i < files.size(); i++ ) {
-			if ( FileSystem::IsDirectory( fpath + files[i] ) ) {
+			if ( FileSystem::isDirectory( fpath + files[i] ) ) {
 				folders.push_back( files[i] );
 			} else {
 				file.push_back( files[i] );
@@ -357,12 +367,12 @@ std::vector<String> FileSystem::FilesGetInPath( const String& path, const bool& 
 	return files;
 }
 
-std::vector<std::string> FileSystem::FilesGetInPath( const std::string& path, const bool& sortByName, const bool& foldersFirst ) {
+std::vector<std::string> FileSystem::filesGetInPath( const std::string& path, const bool& sortByName, const bool& foldersFirst ) {
 	std::vector<std::string> files;
 
 #ifdef EE_COMPILER_MSVC
 	#ifdef UNICODE
-		String mPath( String::FromUtf8( path ) );
+		String mPath( String::fromUtf8( path ) );
 
 		if ( mPath[ mPath.size() - 1 ] == '/' || mPath[ mPath.size() - 1 ] == '\\' ) {
 			mPath += "*";
@@ -371,19 +381,19 @@ std::vector<std::string> FileSystem::FilesGetInPath( const std::string& path, co
 		}
 
 		WIN32_FIND_DATA findFileData;
-		HANDLE hFind = FindFirstFile( (LPCWSTR)mPath.ToWideString().c_str(), &findFileData );
+		HANDLE hFind = FindFirstFile( (LPCWSTR)mPath.toWideString().c_str(), &findFileData );
 
 		if( hFind != INVALID_HANDLE_VALUE ) {
 			String tmpstr( findFileData.cFileName );
 
 			if ( tmpstr != "." && tmpstr != ".." )
-				files.push_back( tmpstr.ToUtf8() );
+				files.push_back( tmpstr.toUtf8() );
 
 			while( FindNextFile(hFind, &findFileData ) ) {
 				tmpstr = String( findFileData.cFileName );
 
 				if ( tmpstr != "." && tmpstr != ".." )
-					files.push_back( String( findFileData.cFileName ).ToUtf8() );
+					files.push_back( String( findFileData.cFileName ).toUtf8() );
 			}
 
 			FindClose( hFind );
@@ -441,13 +451,13 @@ std::vector<std::string> FileSystem::FilesGetInPath( const std::string& path, co
 		String fpath( path );
 
 		if ( fpath[ fpath.size() - 1 ] != '/' && fpath[ fpath.size() - 1 ] != '\\' )
-			fpath += GetOSlash();
+			fpath += getOSSlash();
 
 		std::list<String> folders;
 		std::list<String> file;
 
 		for ( size_t i = 0; i < files.size(); i++ ) {
-			if ( FileSystem::IsDirectory( fpath + files[i] ) ) {
+			if ( FileSystem::isDirectory( fpath + files[i] ) ) {
 				folders.push_back( files[i] );
 			} else {
 				file.push_back( files[i] );
@@ -468,7 +478,7 @@ std::vector<std::string> FileSystem::FilesGetInPath( const std::string& path, co
 	return files;
 }
 
-Uint64 FileSystem::FileSize( const std::string& Filepath ) {
+Uint64 FileSystem::fileSize( const std::string& Filepath ) {
 	struct stat st;
 	int res = stat( Filepath.c_str(), &st );
 
@@ -478,12 +488,12 @@ Uint64 FileSystem::FileSize( const std::string& Filepath ) {
 	return 0;
 }
 
-bool FileSystem::FileExists( const std::string& Filepath ) {
+bool FileSystem::fileExists( const std::string& Filepath ) {
 	struct stat st;
-	return ( stat( Filepath.c_str(), &st ) == 0 ) && !S_ISDIR( st.st_mode );
+	return ( stat( Filepath.c_str(), &st ) == 0 );
 }
 
-std::string FileSystem::SizeToString( const Int64& Size ) {
+std::string FileSystem::sizeToString( const Int64& Size ) {
 	double mem = static_cast<double>( Size );
 	std::string size;
 	Uint8 c = 0;
@@ -502,7 +512,37 @@ std::string FileSystem::SizeToString( const Int64& Size ) {
 		default: size = " WTF";
 	}
 
-	return std::string( String::ToStr( mem ) + size );
+	return std::string( String::toStr( mem ) + size );
+}
+
+bool FileSystem::changeWorkingDirectory( const std::string & path ) {
+	int res = -1;
+#ifdef EE_COMPILER_MSVC
+	#ifdef UNICODE
+	res = _wchdir( String::fromUtf8( path.c_str() ).toWideString() );
+	#else
+	res = _chdir( String::fromUtf8( path.c_str() ).toAnsiString() );
+	#endif
+#else
+	res = chdir( path.c_str() );
+#endif
+	return -1 != res;
+}
+
+std::string FileSystem::getCurrentWorkingDirectory() {
+#ifdef EE_COMPILER_MSVC
+	#if defined( UNICODE ) AND !defined( EE_NO_WIDECHAR )
+	wchar_t dir[_MAX_PATH];
+	return ( 0 != GetCurrentDirectoryW( _MAX_PATH, dir ) ) ? String( dir )::toUtf8() : std::string();
+	#else
+	char dir[_MAX_PATH];
+	return ( 0 != GetCurrentDirectory( _MAX_PATH, dir ) ) ? String( dir, std::locale() ).toUtf8() : std::string();
+	#endif
+#else
+	char dir[PATH_MAX + 1];
+	getcwd( dir, PATH_MAX + 1 );
+	return std::string( dir );
+#endif
 }
 
 }}

@@ -1,127 +1,113 @@
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
 
 namespace EE { namespace UI {
 
-UIMessageBox::UIMessageBox( const UIMessageBox::CreateParams& Params ) :
-	UIWindow( Params ),
-	mMsgBoxType( Params.Type ),
-	mCloseWithKey( Params.CloseWithKey )
+UIMessageBox * UIMessageBox::New(UI_MSGBOX_TYPE type, String message) {
+	return eeNew( UIMessageBox, ( type, message ) );
+}
+
+UIMessageBox::UIMessageBox( UI_MSGBOX_TYPE type , String message ) :
+	UIWindow(),
+	mMsgBoxType( type ),
+	mCloseWithKey( KEY_UNKNOWN )
 {
-	UITheme * Theme = UIThemeManager::instance()->DefaultTheme();
+	mStyleConfig.WinFlags &= ~UI_WIN_RESIZEABLE;
 
-	if ( NULL == Theme )
-	{
-		UIPushButton::CreateParams ButtonParams;
-		ButtonParams.Parent( Container() );
-		ButtonParams.SizeSet( 90, 22 );
-		ButtonParams.PosSet( Container()->Size().Width() - 96, Container()->Size().Height() - ButtonParams.Size.Height() - 8 );
-		ButtonParams.Flags = UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE;
-		mButtonOK = eeNew( UIPushButton, ( ButtonParams ) );
-		mButtonOK->Visible( true );
-		mButtonOK->Enabled( true );
+	updateWinFlags();
 
-		ButtonParams.Pos.x = mButtonOK->Pos().x - mButtonOK->Size().Width() - 8;
-		mButtonCancel = eeNew( UIPushButton, ( ButtonParams ) );
-		mButtonCancel->Visible( true );
-		mButtonCancel->Enabled( true );
-	}
-	else
-	{
-		mButtonOK = Theme->CreatePushButton( Container(),
-								 Sizei( 90, 22 ),
-								 Vector2i( Container()->Size().Width() - 96, Container()->Size().Height() - 22 - 8 ),
-								 UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE );
+	UILinearLayout * rlay = UILinearLayout::New();
+	rlay->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )->setParent( mContainer );
 
-		mButtonCancel = Theme->CreatePushButton( Container(),
-								 mButtonOK->Size(),
-								 Vector2i( mButtonOK->Pos().x - mButtonOK->Size().Width() - 8, mButtonOK->Pos().y ),
-								 mButtonOK->Flags() );
-	}
+	UILinearLayout * vlay = UILinearLayout::NewVertical();
+	vlay->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )
+		->setLayoutMargin( Rect( 8, 8, 8, 8) )->setParent( rlay );
 
-	UITextBox::CreateParams TxtParams;
-	TxtParams.Parent( Container() );
-	TxtParams.Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM;
-	TxtParams.SizeSet( Container()->Size().Width(), mButtonOK->Pos().y  );
+	mTextBox = UITextView::New();
+	mTextBox->setText( message )
+			->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )
+			->setParent( vlay );
 
-	mTextBox = eeNew( UITextBox, ( TxtParams ) );
-	mTextBox->Visible( true );
-	mTextBox->Enabled( true );
-	mTextBox->Text( Params.Message );
+	UILinearLayout * hlay = UILinearLayout::NewHorizontal();
+	hlay->setLayoutMargin( Rect( 0, 8, 0, 0 ) )
+		->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )
+		->setLayoutGravity( UI_HALIGN_RIGHT | UI_VALIGN_CENTER )
+		->setParent( vlay );
+
+	mButtonOK = UIPushButton::New();
+	mButtonOK->setSize( 90, 0 )->setParent( hlay );
+
+	mButtonCancel = UIPushButton::New();
+	mButtonCancel->setLayoutMargin( Rect( 8, 0, 0, 0 ) )->setSize( 90, 0 )->setParent( hlay );
 
 	switch ( mMsgBoxType ) {
 		case MSGBOX_OKCANCEL:
 		{
-			mButtonOK->Text( "OK" );
-			mButtonCancel->Text( "Cancel" );
+			mButtonOK->setText( "OK" );
+			mButtonCancel->setText( "Cancel" );
 			break;
 		}
 		case MSGBOX_YESNO:
 		{
-			mButtonOK->Text( "Yes" );
-			mButtonCancel->Text( "No" );
+			mButtonOK->setText( "Yes" );
+			mButtonCancel->setText( "No" );
 			break;
 		}
 		case MSGBOX_RETRYCANCEL:
 		{
-			mButtonOK->Text( "Retry" );
-			mButtonCancel->Text( "Cancel" );
+			mButtonOK->setText( "Retry" );
+			mButtonCancel->setText( "Cancel" );
 			break;
 		}
 		case MSGBOX_OK:
 		{
-			mButtonOK->Text( "OK" );
-			mButtonCancel->Visible( false );
-			mButtonCancel->Enabled( false );
+			mButtonOK->setText( "OK" );
+			mButtonCancel->setVisible( false );
+			mButtonCancel->setEnabled( false );
 			break;
 		}
 	}
 
-	mButtonCancel->ToFront();
-	mButtonOK->ToFront();
+	applyDefaultTheme();
 
-	AutoSize();
-
-	ApplyDefaultTheme();
+	setMinWindowSize( rlay->getSize() );
 }
 
 UIMessageBox::~UIMessageBox() {
 }
 
-void UIMessageBox::SetTheme( UITheme * Theme ) {
-	UIWindow::SetTheme( Theme );
+void UIMessageBox::setTheme( UITheme * Theme ) {
+	UIWindow::setTheme( Theme );
 
-	if ( "Retry" != mButtonOK->Text() ) {
-		SubTexture * OKIcon = Theme->GetIconByName( "ok" );
-		SubTexture * CancelIcon = Theme->GetIconByName( "cancel" );
+	if ( "Retry" != mButtonOK->getText() ) {
+		Drawable * OKIcon = Theme->getIconByName( "ok" );
+		Drawable * CancelIcon = Theme->getIconByName( "cancel" );
 
 		if ( NULL != OKIcon ) {
-			mButtonOK->Icon( OKIcon );
+			mButtonOK->setIcon( OKIcon );
 		}
 
 		if ( NULL != CancelIcon ) {
-			mButtonCancel->Icon( CancelIcon );
+			mButtonCancel->setIcon( CancelIcon );
 		}
 	}
-
-	mButtonOK->Pos( mButtonOK->Pos().x, Container()->Size().Height() - mButtonOK->Size().Height() - 8 );
-	mButtonCancel->Pos( mButtonCancel->Pos().x, mButtonOK->Pos().y );
 }
 
-Uint32 UIMessageBox::OnMessage( const UIMessage * Msg ) {
-	switch ( Msg->Msg() ) {
-		case UIMessage::MsgClick:
+Uint32 UIMessageBox::onMessage( const UIMessage * Msg ) {
+	switch ( Msg->getMsg() ) {
+		case UIMessage::Click:
 		{
-			if ( Msg->Flags() & EE_BUTTON_LMASK ) {
-				Vector2i mousei( UIManager::instance()->GetMousePos() );
+			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
+				Vector2i mousei( UIManager::instance()->getMousePos() );
 				Vector2f mouse( mousei.x, mousei.y );
 
-				if ( Msg->Sender() == mButtonOK && mButtonOK->GetPolygon().PointInside( mouse ) ) {
-					SendCommonEvent( UIEvent::EventMsgBoxConfirmClick );
+				if ( Msg->getSender() == mButtonOK && mButtonOK->getPolygon().pointInside( mouse ) ) {
+					sendCommonEvent( UIEvent::MsgBoxConfirmClick );
 
-					CloseWindow();
-				} else if ( Msg->Sender() == mButtonCancel ) {
-					CloseWindow();
+					closeWindow();
+				} else if ( Msg->getSender() == mButtonCancel ) {
+					closeWindow();
 				}
 			}
 
@@ -129,53 +115,43 @@ Uint32 UIMessageBox::OnMessage( const UIMessage * Msg ) {
 		}
 	}
 
-	return UIWindow::OnMessage( Msg );
+	return UIWindow::onMessage( Msg );
 }
 
-UITextBox * UIMessageBox::TextBox() const {
+UITextView * UIMessageBox::getTextBox() const {
 	return mTextBox;
 }
 
-UIPushButton *	UIMessageBox::ButtonOK() const {
+UIPushButton *	UIMessageBox::getButtonOK() const {
 	return mButtonOK;
 }
 
-UIPushButton * UIMessageBox::ButtonCancel() const {
+UIPushButton * UIMessageBox::getButtonCancel() const {
 	return mButtonCancel;
 }
 
-void UIMessageBox::AutoSize() {
-	Sizei nSize( mTextBox->GetTextWidth() + 48, mTextBox->GetTextHeight() + mButtonOK->Size().Height() + mDecoSize.Height() + 8 );
-
-	if ( !( nSize.Width() > Container()->Size().Width() ) ) {
-		nSize.x = Container()->Size().Width();
-	}
-
-	if ( !( nSize.Height() > Container()->Size().Height() ) ) {
-		nSize.y = Container()->Size().Height();
-	}
-
-	if ( nSize.x != Container()->Size().Width() || nSize.y != Container()->Size().Height() ) {
-		Size( nSize );
-
-		mMinWindowSize = nSize;
-	}
-}
-
-Uint32 UIMessageBox::OnKeyUp( const UIEventKey & Event ) {
-	if ( mCloseWithKey && Event.KeyCode() == mCloseWithKey ) {
-		CloseWindow();
+Uint32 UIMessageBox::onKeyUp( const UIEventKey & Event ) {
+	if ( mCloseWithKey && Event.getKeyCode() == mCloseWithKey ) {
+		closeWindow();
 	}
 
 	return 1;
 }
 
-bool UIMessageBox::Show() {
-	bool b = UIWindow::Show();
+bool UIMessageBox::show() {
+	bool b = UIWindow::show();
 
-	mButtonOK->SetFocus();
+	mButtonOK->setFocus();
 
 	return b;
+}
+
+Uint32 UIMessageBox::getCloseWithKey() const {
+	return mCloseWithKey;
+}
+
+void UIMessageBox::setCloseWithKey(const Uint32 & closeWithKey) {
+	mCloseWithKey = closeWithKey;
 }
 
 }}

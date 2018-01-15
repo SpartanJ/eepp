@@ -1,102 +1,119 @@
 #ifndef EE_UICUIWINDOW_HPP
 #define EE_UICUIWINDOW_HPP
 
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uipushbutton.hpp>
-#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uitextview.hpp>
+
+namespace EE { namespace Graphics {
+class FrameBuffer;
+}}
 
 namespace EE { namespace UI {
 
-class EE_API UIWindow : public UIComplexControl {
+class EE_API UIWindow : public UIWidget {
 	public:
-		class CreateParams : public UIComplexControl::CreateParams {
-			public:
-				inline CreateParams() :
-					UIComplexControl::CreateParams(),
-					WinFlags( UI_WIN_DEFAULT_FLAGS ),
-					ButtonsSeparation( 4 ),
-					MinCornerDistance( 24 ),
-					TitleFontColor( 255, 255, 255, 255 ),
-					BaseAlpha( 255 ),
-					DecorationAutoSize( true ),
-					BorderAutoSize( true )
-				{
-				}
-
-				inline ~CreateParams() {}
-
-				Uint32		WinFlags;
-				Sizei		DecorationSize;
-				Sizei		BorderSize;
-				Sizei		MinWindowSize;
-				Vector2i	ButtonsPositionFixer;
-				Uint32		ButtonsSeparation;
-				Int32		MinCornerDistance;
-				ColorA	TitleFontColor;
-				Uint8		BaseAlpha;
-				bool		DecorationAutoSize;
-				bool		BorderAutoSize;
+		enum WindowBaseContainerType {
+			SIMPLE_LAYOUT,
+			LINEAR_LAYOUT,
+			RELATIVE_LAYOUT
 		};
 
-		UIWindow( const UIWindow::CreateParams& Params );
+		static UIWindow * New( WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig );
+
+		static UIWindow * New( WindowBaseContainerType type = SIMPLE_LAYOUT );
+
+		UIWindow( WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig );
+
+		UIWindow( WindowBaseContainerType type = SIMPLE_LAYOUT );
 
 		virtual ~UIWindow();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void Size( const Sizei& Size );
+		virtual UIControl * setSize( const Sizei& size );
 
-		void Size( const Int32& Width, const Int32& Height );
+		UIControl * setSize( const Int32& Width, const Int32& Height );
 
-		const Sizei& Size();
+		UIWindow * setSizeWithDecoration( const Int32& Width, const Int32& Height );
 
-		virtual void SetTheme( UITheme * Theme );
+		UIWindow * setSizeWithDecoration( const Sizei& size );
 
-		virtual Uint32 OnMessage( const UIMessage *Msg );
+		const Sizei& getSize();
 
-		UIControlAnim * Container() const;
+		virtual void setTheme( UITheme * Theme );
 
-		UIComplexControl * ButtonClose() const;
+		virtual Uint32 onMessage( const UIMessage *Msg );
 
-		UIComplexControl * ButtonMaximize() const;
+		UIWidget * getContainer() const;
 
-		UIComplexControl * ButtonMinimize() const;
+		UIControlAnim * getButtonClose() const;
 
-		virtual void Draw();
+		UIControlAnim * getButtonMaximize() const;
 
-		virtual bool Show();
+		UIControlAnim * getButtonMinimize() const;
 
-		virtual bool Hide();
+		virtual bool show();
 
-		virtual void Update();
+		virtual bool hide();
 
-		virtual void CloseWindow();
+		virtual void update();
 
-		virtual void Close();
+		virtual void closeWindow();
 
-		void BaseAlpha( const Uint8& Alpha );
+		virtual void close();
 
-		const Uint8& BaseAlpha() const;
+		void setBaseAlpha( const Uint8& alpha );
 
-		void Title( const String& Text );
+		const Uint8& getBaseAlpha() const;
 
-		String Title() const;
+		void setTitle( const String& Text );
 
-		UITextBox * TitleTextBox() const;
+		String getTitle() const;
 
-		bool AddShortcut( const Uint32& KeyCode, const Uint32& Mod, UIPushButton * Button );
+		UITextView * getTitleTextBox() const;
 
-		bool RemoveShortcut( const Uint32& KeyCode, const Uint32& Mod );
+		bool addShortcut( const Uint32& KeyCode, const Uint32& Mod, UIPushButton * Button );
 
-		bool IsModal();
+		bool removeShortcut( const Uint32& KeyCode, const Uint32& Mod );
 
-		UIControlAnim * GetModalControl() const;
+		bool isModal();
 
-		void Maximize();
+		UIWidget * getModalControl() const;
 
-		bool IsMaximixable();
+		void maximize();
+
+		bool isMaximizable();
+
+		bool isResizeable();
+
+		Uint32 getWinFlags() const;
+
+		UIWindow * setWinFlags(const Uint32 & winFlags);
+
+		UIWindowStyleConfig getStyleConfig() const;
+
+		UIWindow * setStyleConfig(const UIWindowStyleConfig & styleConfig);
+
+		UIWindow * setMinWindowSize( Sizei size );
+
+		UIWindow * setMinWindowSize( const Int32& width, const Int32& height );
+
+		const Sizei& getMinWindowSize();
+
+		bool ownsFrameBuffer();
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
+
+		virtual void internalDraw();
+
+		void invalidate();
+
+		bool invalidated();
+
+		FrameBuffer * getFrameBuffer() const;
 	protected:
 		class KeyboardShortcut {
 			public:
@@ -131,89 +148,104 @@ class EE_API UIWindow : public UIComplexControl {
 			RESIZE_TOPRIGHT
 		};
 
-		Uint32				mWinFlags;
-
+		FrameBuffer * mFrameBuffer;
+		UIWindowStyleConfig	mStyleConfig;
 		UIControlAnim *	mWindowDecoration;
 		UIControlAnim *	mBorderLeft;
 		UIControlAnim *	mBorderRight;
 		UIControlAnim *	mBorderBottom;
-		UIComplexControl *	mContainer;
+		UIWidget *	mContainer;
 
-		UIComplexControl *	mButtonClose;
-		UIComplexControl *	mButtonMinimize;
-		UIComplexControl *	mButtonMaximize;
-		UITextBox *		mTitle;
+		UIControlAnim *	mButtonClose;
+		UIControlAnim *	mButtonMinimize;
+		UIControlAnim *	mButtonMaximize;
+		UITextView *		mTitle;
 
-		UIControlAnim *	mModalCtrl;
+		UIWidget *	mModalCtrl;
 
-		Sizei				mDecoSize;
-		Sizei				mBorderSize;
-		Sizei				mMinWindowSize;
 		Vector2i			mNonMaxPos;
 		Sizei				mNonMaxSize;
-		Vector2i			mButtonsPositionFixer;
-		Uint32				mButtonsSeparation;
-		Int32				mMinCornerDistance;
-
 		UI_RESIZE_TYPE		mResizeType;
 		Vector2i			mResizePos;
-
-		ColorA			mTitleFontColor;
-
 		KeyboardShortcuts	mKbShortcuts;
 
-		Uint8				mBaseAlpha;
+		Uint32				mCloseListener;
+		Uint32				mMaximizeListener;
+		Uint32				mMinimizeListener;
 
-		bool				mDecoAutoSize;
-		bool				mBorderAutoSize;
+		bool				mFrameBufferBound;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 
-		virtual Uint32 OnKeyDown( const UIEventKey &Event );
+		virtual void onChildCountChange();
 
-		void ButtonCloseClick( const UIEvent * Event );
+		virtual Uint32 onKeyDown( const UIEventKey &Event );
 
-		void ButtonMaximizeClick( const UIEvent * Event );
+		virtual void matrixSet();
 
-		void ButtonMinimizeClick( const UIEvent * Event );
+		virtual void matrixUnset();
 
-		void ContainerPosChange( const UIEvent * Event );
+		void onButtonCloseClick( const UIEvent * Event );
 
-		void FixChildsSize();
+		void onButtonMaximizeClick( const UIEvent * Event );
 
-		void DoResize ( const UIMessage * Msg );
+		void onButtonMinimizeClick( const UIEvent * Event );
 
-		void DecideResizeType( UIControl * Control );
+		void onContainerPosChange( const UIEvent * Event );
 
-		void TryResize( const UI_RESIZE_TYPE& Type );
+		void fixChildsSize();
 
-		void EndResize();
+		void doResize( const UIMessage * Msg );
 
-		void UpdateResize();
+		void decideResizeType( UIControl * Control );
 
-		void InternalSize( Sizei Size );
+		void tryResize( const UI_RESIZE_TYPE& getType );
 
-		void InternalSize( const Int32& w, const Int32& h );
+		void endResize();
 
-		void GetMinWinSize();
+		void updateResize();
 
-		void FixTitleSize();
+		void internalSize( Sizei size );
 
-		Uint32 OnMouseDoubleClick( const Vector2i &Pos, const Uint32 Flags );
+		void internalSize( const Int32& w, const Int32& h );
 
-		void CheckShortcuts( const Uint32& KeyCode, const Uint32& Mod );
+		void calcMinWinSize();
 
-		KeyboardShortcuts::iterator ExistsShortcut( const Uint32& KeyCode, const Uint32& Mod );
+		void fixTitleSize();
 
-		void CreateModalControl();
+		Uint32 onMouseDoubleClick( const Vector2i &position, const Uint32 flags );
 
-		void EnableByModal();
+		void checkShortcuts( const Uint32& KeyCode, const Uint32& Mod );
 
-		void DisableByModal();
+		KeyboardShortcuts::iterator existsShortcut( const Uint32& KeyCode, const Uint32& Mod );
 
-		void ResizeCursor();
+		void createModalControl();
+
+		void enableByModal();
+
+		void disableByModal();
+
+		void resizeCursor();
+
+		void applyMinWinSize();
+
+		void updateWinFlags();
+
+		void createFrameBuffer();
+
+		void drawFrameBuffer();
+
+		void drawHighlightInvalidation();
+
+		virtual void drawShadow();
+
+		virtual void preDraw();
+
+		virtual void postDraw();
+
+		Sizei getFrameBufferSize();
 };
 
 }}

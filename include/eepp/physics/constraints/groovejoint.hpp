@@ -9,24 +9,24 @@ class CP_API GrooveJoint : public Constraint {
 	public:
 		GrooveJoint( Body * a, Body * b, cVect groove_a, cVect groove_b, cVect anchr2 );
 
-		cVect Anchr2();
+		cVect getAnchr2();
 
-		void Anchr2( const cVect& anchr2 );
+		void setAnchr2( const cVect& anchr2 );
 
-		cVect GrooveA();
+		cVect getGrooveA();
 
-		void GrooveA( const cVect& groove_a );
+		void setGrooveA( const cVect& groove_a );
 
-		cVect GrooveB();
+		cVect getGrooveB();
 
-		void GrooveB( const cVect& groove_b );
+		void setGrooveB( const cVect& groove_b );
 
-		virtual void Draw();
+		virtual void draw();
 
 #ifdef PHYSICS_RENDERER_ENABLED
-		cpFloat DrawPointSize();
+		cpFloat getDrawPointSize();
 
-		virtual void DrawPointSize( const cpFloat& size );
+		virtual void setDrawPointSize( const cpFloat& size );
 	protected:
 		cpFloat mDrawPointSize;
 #endif

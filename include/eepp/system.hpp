@@ -1,7 +1,7 @@
 #ifndef EEPP_SYSTEM_HPP
 #define EEPP_SYSTEM_HPP
 
-#include <eepp/system/colors.hpp>
+#include <eepp/system/color.hpp>
 #include <eepp/system/bitop.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -26,5 +26,6 @@
 #include <eepp/system/threadlocalptr.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/md5.hpp>
+#include <eepp/system/translator.hpp>
 
 #endif

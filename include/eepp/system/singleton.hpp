@@ -8,19 +8,19 @@
 #define SINGLETON_DECLARE_HEADERS( T ) \
 public: \
 \
-		static T * CreateSingleton(); \
+		static T * createSingleton(); \
 \
-		static T * ExistsSingleton(); \
+		static T * existsSingleton(); \
 \
 		static T * instance(); \
 \
-		static void DestroySingleton();
+		static void destroySingleton();
 
 #define SINGLETON_DECLARE_IMPLEMENTATION( T ) \
 \
 static T* ms_singleton = NULL; \
 \
-T* T::CreateSingleton() { \
+T* T::createSingleton() { \
 	if ( NULL == ms_singleton ) { \
 		ms_singleton = eeNew( T, () ); \
 	} \
@@ -28,15 +28,15 @@ T* T::CreateSingleton() { \
 	return ms_singleton; \
 } \
 \
-T * T::ExistsSingleton() { \
+T * T::existsSingleton() { \
 	return ms_singleton; \
 } \
 \
 T * T::instance() { \
-	return CreateSingleton(); \
+	return createSingleton(); \
 } \
 \
-void T::DestroySingleton() { \
+void T::destroySingleton() { \
 	eeSAFE_DELETE(ms_singleton) ; \
 }
 
@@ -50,7 +50,7 @@ class Singleton {
 
 	public:
 		/** Get the singleton pointer */
-		static T* CreateSingleton() {
+		static T* createSingleton() {
 			if ( NULL == ms_singleton ) {
 				ms_singleton = eeNew( T, () );
 			}
@@ -59,17 +59,17 @@ class Singleton {
 		}
 
 		/** Get the singleton pointer (without instance verification) */
-		static T* ExistsSingleton() {
+		static T* existsSingleton() {
 			return ms_singleton;
 		}
 
 		/** Get the singleton pointer */
 		static T* instance() {
-			return CreateSingleton();
+			return createSingleton();
 		}
 
 		/** Destroy the singleton instance */
-		static void DestroySingleton() {
+		static void destroySingleton() {
 			eeSAFE_DELETE(ms_singleton);
 		}
 };

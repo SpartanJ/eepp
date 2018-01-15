@@ -25,7 +25,7 @@ Constraint * mMouseJoint;
 #define GRABABLE_MASK_BIT (1<<31)
 #define NOT_GRABABLE_MASK (~GRABABLE_MASK_BIT)
 
-void CreateJointAndBody() {
+void createJointAndBody() {
 	mMouseJoint	= NULL;
 	mMouseBody	= eeNew( Body, ( INFINITY, INFINITY ) );
 }
@@ -33,8 +33,8 @@ void CreateJointAndBody() {
 EE::Window::Window * mWindow;
 Input * KM;
 
-void DefaultDrawOptions() {
-	PhysicsManager::DrawSpaceOptions * DSO = PhysicsManager::instance()->GetDrawOptions();
+void defaultDrawOptions() {
+	PhysicsManager::DrawSpaceOptions * DSO = PhysicsManager::instance()->getDrawOptions();
 	DSO->DrawBBs			= false;
 	DSO->DrawShapes			= true;
 	DSO->DrawShapesBorders	= true;
@@ -43,7 +43,7 @@ void DefaultDrawOptions() {
 	DSO->LineThickness		= 1;
 }
 
-void DestroyDemo() {
+void destroyDemo() {
 	eeSAFE_DELETE( mMouseBody );
 	eeSAFE_DELETE( mSpace );
 }
@@ -95,41 +95,41 @@ int get_pixel(int x, int y) {
 Shape * make_ball( cpFloat x, cpFloat y ) {
 	Body * body = Body::New( 1.0, INFINITY );
 
-	body->Pos( cVectNew( x, y ) );
+	body->setPos( cVectNew( x, y ) );
 
 	ShapePoint * shape = ShapePoint::New( body, 0.95, cVectZero );
 
-	shape->DrawRadius( 4 );
-	shape->Elasticity( 0.0 );
-	shape->Friction( 0.0 );
+	shape->setDrawRadius( 4 );
+	shape->setElasticity( 0.0 );
+	shape->setFriction( 0.0 );
 
 	return shape;
 }
 
 static int bodyCount = 0;
 
-void Demo1Create() {
-	DefaultDrawOptions();
+void demo1Create() {
+	defaultDrawOptions();
 
-	CreateJointAndBody();
+	createJointAndBody();
 
-	mWindow->Caption( "eepp - Physics - Logo Smash" );
+	mWindow->setCaption( "eepp - Physics - Logo Smash" );
 
 	mSpace = Physics::Space::New();
-	mSpace->Iterations( 1 );
+	mSpace->setIterations( 1 );
 
 	// The space will contain a very large number of similary sized objects.
 	// This is the perfect candidate for using the spatial hash.
 	// Generally you will never need to do this.
-	mSpace->UseSpatialHash( 2.0, 10000 );
+	mSpace->useSpatialHash( 2.0, 10000 );
 
 	bodyCount = 0;
 
 	Body * body;
 	Shape * shape;
 
-	Float pX = mWindow->GetWidth()	/ 2 - ( image_width		* 4 ) / 2;
-	Float pY = mWindow->GetHeight()	/ 2 - ( image_height	* 4 ) / 2;
+	Float pX = mWindow->getWidth()	/ 2 - ( image_width		* 4 ) / 2;
+	Float pY = mWindow->getHeight()	/ 2 - ( image_height	* 4 ) / 2;
 
 	for(int y=0; y<image_height; y++){
 		for(int x=0; x<image_width; x++){
@@ -137,96 +137,96 @@ void Demo1Create() {
 
 			shape = make_ball( pX + x * 4, pY + y * 4 );
 
-			mSpace->AddBody( shape->Body() );
-			mSpace->AddShape( shape );
+			mSpace->addBody( shape->getBody() );
+			mSpace->addShape( shape );
 
 			bodyCount++;
 		}
 	}
 
-	body = mSpace->AddBody( Body::New( INFINITY, INFINITY ) );
-	body->Pos( cVectNew( 0, mWindow->GetHeight() / 2 + 16 ) );
-	body->Vel( cVectNew( 400, 0 ) );
+	body = mSpace->addBody( Body::New( INFINITY, INFINITY ) );
+	body->setPos( cVectNew( 0, mWindow->getHeight() / 2 + 16 ) );
+	body->setVel( cVectNew( 400, 0 ) );
 
-	shape = mSpace->AddShape( ShapeCircle::New( body, 8.0f, cVectZero ) );
-	shape->Elasticity( 0.0 );
-	shape->Friction( 0.0 );
-	shape->Layers( NOT_GRABABLE_MASK );
+	shape = mSpace->addShape( ShapeCircle::New( body, 8.0f, cVectZero ) );
+	shape->setElasticity( 0.0 );
+	shape->setFriction( 0.0 );
+	shape->setLayers( NOT_GRABABLE_MASK );
 
 	bodyCount++;
 }
 
-void Demo1Update(){
+void demo1Update(){
 }
 
-void Demo1Destroy() {
-	DestroyDemo();
+void demo1Destroy() {
+	destroyDemo();
 }
 
-void Demo2Create() {
-	DefaultDrawOptions();
+void demo2Create() {
+	defaultDrawOptions();
 
-	CreateJointAndBody();
+	createJointAndBody();
 
-	mWindow->Caption( "eepp - Physics - Pyramid Stack" );
+	mWindow->setCaption( "eepp - Physics - Pyramid Stack" );
 
-	Shape::ResetShapeIdCounter();
+	Shape::resetShapeIdCounter();
 
 	mSpace = Physics::Space::New();
-	mSpace->Gravity( cVectNew( 0, 100 ) );
-	mSpace->SleepTimeThreshold( 0.5f );
+	mSpace->setGravity( cVectNew( 0, 100 ) );
+	mSpace->setSleepTimeThreshold( 0.5f );
 
-	Body *body, *statiBody = mSpace->StatiBody();
+	Body *body, *statiBody = mSpace->getStaticBody();
 	Shape * shape;
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, mWindow->GetHeight() ), cVectNew( mWindow->GetWidth(), mWindow->GetHeight() ), 0.0f ) );
-	shape->e( 1.0f );
-	shape->u( 1.0f );
-	shape->Layers( NOT_GRABABLE_MASK );
+	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( 0, mWindow->getHeight() ), cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
+	shape->setE( 1.0f );
+	shape->setU( 1.0f );
+	shape->setLayers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( mWindow->GetWidth(), 0 ), cVectNew( mWindow->GetWidth(), mWindow->GetHeight() ), 0.0f ) );
-	shape->e( 1.0f );
-	shape->u( 1.0f );
-	shape->Layers( NOT_GRABABLE_MASK );
+	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( mWindow->getWidth(), 0 ), cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
+	shape->setE( 1.0f );
+	shape->setU( 1.0f );
+	shape->setLayers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( 0, mWindow->GetHeight() ), 0.0f ) );
-	shape->e( 1.0f );
-	shape->u( 1.0f );
-	shape->Layers( NOT_GRABABLE_MASK );
+	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( 0, mWindow->getHeight() ), 0.0f ) );
+	shape->setE( 1.0f );
+	shape->setU( 1.0f );
+	shape->setLayers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( mWindow->GetWidth(), 0 ), 0.0f ) );
-	shape->e( 1.0f );
-	shape->u( 1.0f );
-	shape->Layers( NOT_GRABABLE_MASK );
+	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( mWindow->getWidth(), 0 ), 0.0f ) );
+	shape->setE( 1.0f );
+	shape->setU( 1.0f );
+	shape->setLayers( NOT_GRABABLE_MASK );
 
-	Float hw = mWindow->GetWidth() / 2;
+	Float hw = mWindow->getWidth() / 2;
 
 	for(int i=0; i<14; i++){
 		for(int j=0; j<=i; j++){
-			body = mSpace->AddBody( Body::New( 1.0f, Moment::ForBox( 1.0f, 30.0f, 30.0f ) ) );
-			body->Pos( cVectNew( hw + j * 32 - i * 16, 100 + i * 32 ) );
+			body = mSpace->addBody( Body::New( 1.0f, Moment::forBox( 1.0f, 30.0f, 30.0f ) ) );
+			body->setPos( cVectNew( hw + j * 32 - i * 16, 100 + i * 32 ) );
 
-			shape = mSpace->AddShape( ShapePoly::New( body, 30.f, 30.f ) );
-			shape->e( 0.0f );
-			shape->u( 0.8f );
+			shape = mSpace->addShape( ShapePoly::New( body, 30.f, 30.f ) );
+			shape->setE( 0.0f );
+			shape->setU( 0.8f );
 		}
 	}
 
 	cpFloat radius = 15.0f;
 
-	body = mSpace->AddBody( Body::New( 10.0f, Moment::ForCircle( 10.0f, 0.0f, radius, cVectZero ) ) );
-	body->Pos( cVectNew( hw, mWindow->GetHeight() - radius - 5 ) );
+	body = mSpace->addBody( Body::New( 10.0f, Moment::forCircle( 10.0f, 0.0f, radius, cVectZero ) ) );
+	body->setPos( cVectNew( hw, mWindow->getHeight() - radius - 5 ) );
 
-	shape = mSpace->AddShape( ShapeCircle::New( body, radius, cVectZero ) );
-	shape->e( 0.0f );
-	shape->u( 0.9f );
+	shape = mSpace->addShape( ShapeCircle::New( body, radius, cVectZero ) );
+	shape->setE( 0.0f );
+	shape->setU( 0.9f );
 }
 
-void Demo2Update() {
+void demo2Update() {
 }
 
-void Demo2Destroy() {
-	DestroyDemo();
+void demo2Destroy() {
+	destroyDemo();
 }
 
 enum CollisionTypes {
@@ -244,9 +244,9 @@ Emitter emitterInstance;
 
 cpBool blockerBegin( Arbiter *arb, Space *space, void *unused ) {
 	Shape * a, * b;
-	arb->GetShapes( &a, &b );
+	arb->getShapes( &a, &b );
 
-	Emitter *emitter = (Emitter *) a->Data();
+	Emitter *emitter = (Emitter *) a->getData();
 
 	emitter->blocked++;
 
@@ -255,9 +255,9 @@ cpBool blockerBegin( Arbiter *arb, Space *space, void *unused ) {
 
 void blockerSeparate( Arbiter *arb, Space * space, void *unused ) {
 	Shape * a, * b;
-	arb->GetShapes( &a, &b );
+	arb->getShapes( &a, &b );
 
-	Emitter *emitter = (Emitter *) a->Data();
+	Emitter *emitter = (Emitter *) a->getData();
 
 	emitter->blocked--;
 }
@@ -265,91 +265,91 @@ void blockerSeparate( Arbiter *arb, Space * space, void *unused ) {
 void postStepRemove( Space *space, void * tshape, void * unused ) {
 	Shape * shape = reinterpret_cast<Shape*>( tshape );
 
-	if ( NULL != mMouseJoint && ( mMouseJoint->A() == shape->Body() || mMouseJoint->B() == shape->Body() ) ) {
-		space->RemoveConstraint( mMouseJoint );
+	if ( NULL != mMouseJoint && ( mMouseJoint->getA() == shape->getBody() || mMouseJoint->getB() == shape->getBody() ) ) {
+		space->removeConstraint( mMouseJoint );
 		eeSAFE_DELETE( mMouseJoint );
 	}
 
-	space->RemoveBody( shape->Body() );
-	space->RemoveShape( shape );
+	space->removeBody( shape->getBody() );
+	space->removeShape( shape );
 
 	Shape::Free( shape, true );
 }
 
 cpBool catcherBarBegin(Arbiter *arb, Space *space, void *unused) {
 	Shape * a, * b;
-	arb->GetShapes( &a, &b );
+	arb->getShapes( &a, &b );
 
-	Emitter *emitter = (Emitter *) a->Data();
+	Emitter *emitter = (Emitter *) a->getData();
 
 	emitter->queue++;
 
-	space->AddPostStepCallback( cb::Make3( &postStepRemove ), b, NULL );
+	space->addPostStepCallback( cb::Make3( &postStepRemove ), b, NULL );
 
 	return cpFalse;
 }
 
-void Demo3Create() {
-	DefaultDrawOptions();
+void demo3Create() {
+	defaultDrawOptions();
 
-	CreateJointAndBody();
+	createJointAndBody();
 
-	mWindow->Caption( "eepp - Physics - Sensor" );
+	mWindow->setCaption( "eepp - Physics - Sensor" );
 
-	Shape::ResetShapeIdCounter();
+	Shape::resetShapeIdCounter();
 
 	mSpace = Physics::Space::New();
-	mSpace->Iterations( 10 );
-	mSpace->Gravity( cVectNew( 0, 100 ) );
+	mSpace->setIterations( 10 );
+	mSpace->setGravity( cVectNew( 0, 100 ) );
 
-	Body * statiBody = mSpace->StatiBody();
+	Body * statiBody = mSpace->getStaticBody();
 	Shape * shape;
 
 	emitterInstance.queue = 5;
 	emitterInstance.blocked = 0;
-	emitterInstance.position = cVectNew( mWindow->GetWidth() / 2 , 150);
+	emitterInstance.position = cVectNew( mWindow->getWidth() / 2 , 150);
 
-	shape = mSpace->AddShape( ShapeCircle::New( statiBody, 15.0f, emitterInstance.position ) );
-	shape->Sensor( 1 );
-	shape->CollisionType( BLOCKING_SENSOR_TYPE );
-	shape->Data( &emitterInstance );
+	shape = mSpace->addShape( ShapeCircle::New( statiBody, 15.0f, emitterInstance.position ) );
+	shape->setSensor( 1 );
+	shape->setCollisionType( BLOCKING_SENSOR_TYPE );
+	shape->setData( &emitterInstance );
 
 	// Create our catch sensor to requeue the balls when they reach the bottom of the screen
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew(-4000, 600), cVectNew(4000, 600), 15.0f ) );
-	shape->Sensor( 1 );
-	shape->CollisionType( CATCH_SENSOR_TYPE );
-	shape->Data( &emitterInstance );
+	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew(-4000, 600), cVectNew(4000, 600), 15.0f ) );
+	shape->setSensor( 1 );
+	shape->setCollisionType( CATCH_SENSOR_TYPE );
+	shape->setData( &emitterInstance );
 
-	Space::cCollisionHandler handler;
+	Space::CollisionHandler handler;
 	handler.a			= BLOCKING_SENSOR_TYPE;
 	handler.b			= BALL_TYPE;
 	handler.begin		= cb::Make3( &blockerBegin );
 	handler.separate	= cb::Make3( &blockerSeparate );
-	mSpace->AddCollisionHandler( handler );
+	mSpace->addCollisionHandler( handler );
 
 	handler.Reset(); // Reset all the values and the callbacks ( set the callbacks as !IsSet()
 
 	handler.a			= CATCH_SENSOR_TYPE;
 	handler.b			= BALL_TYPE;
 	handler.begin		= cb::Make3( &catcherBarBegin );
-	mSpace->AddCollisionHandler( handler );
+	mSpace->addCollisionHandler( handler );
 }
 
-void Demo3Update() {
+void demo3Update() {
 	if( !emitterInstance.blocked && emitterInstance.queue ){
 		emitterInstance.queue--;
 
-		Body * body = mSpace->AddBody( Body::New( 1.0f, Moment::ForCircle(1.0f, 15.0f, 0.0f, cVectZero ) ) );
-		body->Pos( emitterInstance.position );
-		body->Vel( cVectNew( Math::Randf(-1,1), Math::Randf(-1,1) ) * (cpFloat)100 );
+		Body * body = mSpace->addBody( Body::New( 1.0f, Moment::forCircle(1.0f, 15.0f, 0.0f, cVectZero ) ) );
+		body->setPos( emitterInstance.position );
+		body->setVel( cVectNew( Math::randf(-1,1), Math::randf(-1,1) ) * (cpFloat)100 );
 
-		Shape *shape = mSpace->AddShape( ShapeCircle::New( body, 15.0f, cVectZero ) );
-		shape->CollisionType( BALL_TYPE );
+		Shape *shape = mSpace->addShape( ShapeCircle::New( body, 15.0f, cVectZero ) );
+		shape->setCollisionType( BALL_TYPE );
 	}
 }
 
-void Demo3Destroy() {
-	DestroyDemo();
+void demo3Destroy() {
+	destroyDemo();
 }
 
 enum {
@@ -358,13 +358,13 @@ enum {
 
 #define STICK_SENSOR_THICKNESS 2.5f
 
-void PostStepAddJoint(Space *space, void *key, void *data)
+void postStepAddJoint(Space *space, void *key, void *data)
 {
 	Constraint *joint = (Constraint *)key;
-	space->AddConstraint( joint );
+	space->addConstraint( joint );
 }
 
-cpBool StickyPreSolve( Arbiter *arb, Space *space, void *data )
+cpBool stickyPreSolve( Arbiter *arb, Space *space, void *data )
 {
 	// We want to fudge the collisions a bit to allow shapes to overlap more.
 	// This simulates their squishy sticky surface, and more importantly
@@ -374,7 +374,7 @@ cpBool StickyPreSolve( Arbiter *arb, Space *space, void *data )
 	cpFloat deepest = INFINITY;
 
 	// Grab the contact set and iterate over them.
-	cpContactPointSet contacts = arb->ContactPointSet();
+	cpContactPointSet contacts = arb->getContactPointSet();
 
 	for(int i=0; i<contacts.count; i++){
 		// Increase the distance (negative means overlaping) of the
@@ -386,29 +386,29 @@ cpBool StickyPreSolve( Arbiter *arb, Space *space, void *data )
 	}
 
 	// Set the new contact point data.
-	arb->ContactPointSet( &contacts );
+	arb->setContactPointSet( &contacts );
 
 	// If the shapes are overlapping enough, then create a
 	// joint that sticks them together at the first contact point.
 
-	if(!arb->UserData() && deepest <= 0.0f){
+	if(!arb->getUserData() && deepest <= 0.0f){
 		Body *bodyA, *bodyB;
-		arb->GetBodies( &bodyA, &bodyB );
+		arb->getBodies( &bodyA, &bodyB );
 
 		// Create a joint at the contact point to hold the body in place.
 		PivotJoint * joint = cpNew( PivotJoint, ( bodyA, bodyB, tovect( contacts.points[0].point ) ) );
 
 		// Dont draw the constraint
-		joint->DrawPointSize( 0 );
+		joint->setDrawPointSize( 0 );
 
 		// Give it a finite force for the stickyness.
-		joint->MaxForce( 3e3 );
+		joint->setMaxForce( 3e3 );
 
 		// Schedule a post-step() callback to add the joint.
-		space->AddPostStepCallback( cb::Make3( &PostStepAddJoint ), joint, NULL );
+		space->addPostStepCallback( cb::Make3( &postStepAddJoint ), joint, NULL );
 
 		// Store the joint on the arbiter so we can remove it later.
-		arb->UserData(joint);
+		arb->setUserData(joint);
 	}
 
 	// Position correction and velocity are handled separately so changing
@@ -423,34 +423,34 @@ cpBool StickyPreSolve( Arbiter *arb, Space *space, void *data )
 	// * Track a joint for each contact point. (more complicated since you only get one data pointer).
 }
 
-void PostStepRemoveJoint(Space *space, void *key, void *data)
+void postStepRemoveJoint(Space *space, void *key, void *data)
 {
 	Constraint *joint = (Constraint *)key;
-	space->RemoveConstraint( joint );
+	space->removeConstraint( joint );
 	Constraint::Free( joint );
 }
 
-void StickySeparate(Arbiter *arb, Space *space, void *data)
+void stickySeparate(Arbiter *arb, Space *space, void *data)
 {
-	Constraint *joint = (Constraint *)arb->UserData();
+	Constraint *joint = (Constraint *)arb->getUserData();
 
 	if(joint){
 		// The joint won't be removed until the step is done.
 		// Need to disable it so that it won't apply itself.
 		// Setting the force to 0 will do just that
-		joint->MaxForce( 0.0f );
+		joint->setMaxForce( 0.0f );
 
 		// Perform the removal in a post-step() callback.
-		space->AddPostStepCallback( cb::Make3( &PostStepRemoveJoint ), joint, NULL );
+		space->addPostStepCallback( cb::Make3( &postStepRemoveJoint ), joint, NULL );
 
 		// NULL out the reference to the joint.
 		// Not required, but it's a good practice.
-		arb->UserData( NULL );
+		arb->setUserData( NULL );
 	}
 }
 
-void Demo4Create() {
-	PhysicsManager::DrawSpaceOptions * DSO = PhysicsManager::instance()->GetDrawOptions();
+void demo4Create() {
+	PhysicsManager::DrawSpaceOptions * DSO = PhysicsManager::instance()->getDrawOptions();
 	DSO->DrawBBs			= false;
 	DSO->DrawShapes			= true;
 	DSO->DrawShapesBorders	= false;
@@ -458,73 +458,73 @@ void Demo4Create() {
 	DSO->BodyPointSize		= 0;
 	DSO->LineThickness		= 0;
 
-	CreateJointAndBody();
+	createJointAndBody();
 
-	mWindow->Caption( "eepp - Physics - Sticky collisions using the Arbiter data pointer." );
+	mWindow->setCaption( "eepp - Physics - Sticky collisions using the Arbiter data pointer." );
 
 	mSpace = Space::New();
-	mSpace->Iterations( 10 );
-	mSpace->Gravity( cVectNew( 0, 1000 ) );
-	mSpace->CollisionSlop( 2.0 );
+	mSpace->setIterations( 10 );
+	mSpace->setGravity( cVectNew( 0, 1000 ) );
+	mSpace->setCollisionSlop( 2.0 );
 
-	Body * statiBody = mSpace->StatiBody();
+	Body * statiBody = mSpace->getStaticBody();
 	Shape * shape;
 
 	cpFloat x = 500;
 	cpFloat y = 400;
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( x + -340, y -260 ), cVectNew( x -340, y + 260 ), 20.0f ) );
-	shape->Elasticity( 1.0f );
-	shape->Friction( 1.0f );
-	shape->CollisionType( COLLIDE_STICK_SENSOR );
-	shape->Layers( NOT_GRABABLE_MASK );
+	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( x + -340, y -260 ), cVectNew( x -340, y + 260 ), 20.0f ) );
+	shape->setElasticity( 1.0f );
+	shape->setFriction( 1.0f );
+	shape->setCollisionType( COLLIDE_STICK_SENSOR );
+	shape->setLayers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( x + 340, y -260 ), cVectNew( x + 340, y + 260 ), 20.0f ) );
-	shape->Elasticity( 1.0f );
-	shape->Friction( 1.0f );
-	shape->CollisionType( COLLIDE_STICK_SENSOR );
-	shape->Layers( NOT_GRABABLE_MASK );
+	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( x + 340, y -260 ), cVectNew( x + 340, y + 260 ), 20.0f ) );
+	shape->setElasticity( 1.0f );
+	shape->setFriction( 1.0f );
+	shape->setCollisionType( COLLIDE_STICK_SENSOR );
+	shape->setLayers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( x -340, y -260 ), cVectNew( x + 340, y -260 ), 20.0f ) );
-	shape->Elasticity( 1.0f );
-	shape->Friction( 1.0f );
-	shape->CollisionType( COLLIDE_STICK_SENSOR );
-	shape->Layers( NOT_GRABABLE_MASK );
+	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( x -340, y -260 ), cVectNew( x + 340, y -260 ), 20.0f ) );
+	shape->setElasticity( 1.0f );
+	shape->setFriction( 1.0f );
+	shape->setCollisionType( COLLIDE_STICK_SENSOR );
+	shape->setLayers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( x -340, y + 260 ), cVectNew( x + 340, y + 260 ), 20.0f ) );
-	shape->Elasticity( 1.0f );
-	shape->Friction( 1.0f );
-	shape->CollisionType( COLLIDE_STICK_SENSOR );
-	shape->Layers( NOT_GRABABLE_MASK );
+	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( x -340, y + 260 ), cVectNew( x + 340, y + 260 ), 20.0f ) );
+	shape->setElasticity( 1.0f );
+	shape->setFriction( 1.0f );
+	shape->setCollisionType( COLLIDE_STICK_SENSOR );
+	shape->setLayers( NOT_GRABABLE_MASK );
 
 	for(int i=0; i<200; i++){
 		cpFloat mass = 0.15f;
 		cpFloat radius = 10.0f;
 
-		Body * body = mSpace->AddBody( Body::New( mass, Moment::ForCircle( mass, 0.0f, radius, cVectZero ) ) );
-		body->Pos( cVectNew( x + easing::LinearInterpolation( Math::Randf(), -150.0f, 150.0f, 1 ),
-							 y + easing::LinearInterpolation( Math::Randf(), -150.0f, 150.0f, 1 )
+		Body * body = mSpace->addBody( Body::New( mass, Moment::forCircle( mass, 0.0f, radius, cVectZero ) ) );
+		body->setPos( cVectNew( x + easing::linearInterpolation( Math::randf(), -150.0f, 150.0f, 1 ),
+							 y + easing::linearInterpolation( Math::randf(), -150.0f, 150.0f, 1 )
 					) );
 
-		Shape * shape = mSpace->AddShape( ShapeCircle::New( body, radius + STICK_SENSOR_THICKNESS, cVectZero ) );
-		shape->Friction( 0.9f );
-		shape->CollisionType( COLLIDE_STICK_SENSOR );
+		Shape * shape = mSpace->addShape( ShapeCircle::New( body, radius + STICK_SENSOR_THICKNESS, cVectZero ) );
+		shape->setFriction( 0.9f );
+		shape->setCollisionType( COLLIDE_STICK_SENSOR );
 	}
 
-	Space::cCollisionHandler c;
+	Space::CollisionHandler c;
 	c.a = COLLIDE_STICK_SENSOR;
 	c.b = COLLIDE_STICK_SENSOR;
-	c.preSolve = cb::Make3( &StickyPreSolve );
-	c.separate = cb::Make3( &StickySeparate );
+	c.preSolve = cb::Make3( &stickyPreSolve );
+	c.separate = cb::Make3( &stickySeparate );
 
-	mSpace->AddCollisionHandler( c );
+	mSpace->addCollisionHandler( c );
 }
 
-void Demo4Update() {
+void demo4Update() {
 }
 
-void Demo4Destroy() {
-	DestroyDemo();
+void demo4Destroy() {
+	destroyDemo();
 }
 
 void ChangeDemo( int num ) {
@@ -538,113 +538,113 @@ void ChangeDemo( int num ) {
 	}
 }
 
-void PhysicsCreate() {
+void physicsCreate() {
 	// Initialize the physics engine
-	PhysicsManager::CreateSingleton();
+	PhysicsManager::createSingleton();
 
 	mDemo.clear();
 
 	// Add the demos
 	physicDemo demo;
 
-	demo.init		= cb::Make0( &Demo1Create );
-	demo.update		= cb::Make0( &Demo1Update );
-	demo.destroy	= cb::Make0( &Demo1Destroy );
+	demo.init		= cb::Make0( &demo1Create );
+	demo.update		= cb::Make0( &demo1Update );
+	demo.destroy	= cb::Make0( &demo1Destroy );
 	mDemo.push_back( demo );
 
-	demo.init		= cb::Make0( &Demo2Create );
-	demo.update		= cb::Make0( &Demo2Update );
-	demo.destroy	= cb::Make0( &Demo2Destroy );
+	demo.init		= cb::Make0( &demo2Create );
+	demo.update		= cb::Make0( &demo2Update );
+	demo.destroy	= cb::Make0( &demo2Destroy );
 	mDemo.push_back( demo );
 
-	demo.init		= cb::Make0( &Demo3Create );
-	demo.update		= cb::Make0( &Demo3Update );
-	demo.destroy	= cb::Make0( &Demo3Destroy );
+	demo.init		= cb::Make0( &demo3Create );
+	demo.update		= cb::Make0( &demo3Update );
+	demo.destroy	= cb::Make0( &demo3Destroy );
 	mDemo.push_back( demo );
 
-	demo.init		= cb::Make0( &Demo4Create );
-	demo.update		= cb::Make0( &Demo4Update );
-	demo.destroy	= cb::Make0( &Demo4Destroy );
+	demo.init		= cb::Make0( &demo4Create );
+	demo.update		= cb::Make0( &demo4Update );
+	demo.destroy	= cb::Make0( &demo4Destroy );
 	mDemo.push_back( demo );
 
 	ChangeDemo( 0 );
 }
 
-void PhysicsUpdate() {
+void physicsUpdate() {
 	// Creates a joint to drag any grabable object on the scene
-	mMousePoint = cVectNew( KM->GetMousePosf().x, KM->GetMousePosf().y );
+	mMousePoint = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
 	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
-	mMouseBody->Pos( newPoint );
-	mMouseBody->Vel( ( newPoint - mMousePoint_last ) * (cpFloat)mWindow->FPS() );
+	mMouseBody->setPos( newPoint );
+	mMouseBody->setVel( ( newPoint - mMousePoint_last ) * (cpFloat)mWindow->getFPS() );
 	mMousePoint_last = newPoint;
 
-	if ( KM->MouseLeftPressed() ) {
+	if ( KM->isMouseLeftPressed() ) {
 		if ( NULL == mMouseJoint ) {
-			cVect point = cVectNew( KM->GetMousePosf().x, KM->GetMousePosf().y );
+			cVect point = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
 
-			Shape * shape = mSpace->PointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
+			Shape * shape = mSpace->pointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
 
 			if( NULL != shape ){
-				mMouseJoint = eeNew( PivotJoint, ( mMouseBody, shape->Body(), cVectZero, shape->Body()->World2Local( point ) ) );
+				mMouseJoint = eeNew( PivotJoint, ( mMouseBody, shape->getBody(), cVectZero, shape->getBody()->world2Local( point ) ) );
 
-				mMouseJoint->MaxForce( 50000.0f );
-				mSpace->AddConstraint( mMouseJoint );
+				mMouseJoint->setMaxForce( 50000.0f );
+				mSpace->addConstraint( mMouseJoint );
 			}
 		}
 	} else if ( NULL != mMouseJoint ) {
-		mSpace->RemoveConstraint( mMouseJoint );
+		mSpace->removeConstraint( mMouseJoint );
 		eeSAFE_DELETE( mMouseJoint );
 	}
 
 	mDemo[ mCurDemo ].update();
-	mSpace->Update();
-	mSpace->Draw();
+	mSpace->update();
+	mSpace->draw();
 }
 
-void PhysicsDestroy() {
+void physicsDestroy() {
 	mDemo[ mCurDemo ].destroy();
 }
 
-void MainLoop()
+void mainLoop()
 {
-	mWindow->Clear();
+	mWindow->clear();
 
-	KM->Update();
+	KM->update();
 
-	if ( KM->IsKeyDown( KEY_ESCAPE ) ) {
-		mWindow->Close();
+	if ( KM->isKeyDown( KEY_ESCAPE ) ) {
+		mWindow->close();
 	}
 
-	PhysicsUpdate();
+	physicsUpdate();
 
-	if ( KM->IsKeyUp( KEY_LEFT ) || KM->IsKeyUp( KEY_A ) ) {
+	if ( KM->isKeyUp( KEY_LEFT ) || KM->isKeyUp( KEY_A ) ) {
 		ChangeDemo( mCurDemo - 1 );
-	} else if ( KM->IsKeyUp( KEY_RIGHT ) || KM->IsKeyUp( KEY_D ) ) {
+	} else if ( KM->isKeyUp( KEY_RIGHT ) || KM->isKeyUp( KEY_D ) ) {
 		ChangeDemo( mCurDemo + 1 );
 	}
 
-	mWindow->Display();
+	mWindow->display();
 }
 
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
-	mWindow = Engine::instance()->CreateWindow( WindowSettings( 1024, 768, "eepp - Physics" ), ContextSettings( true ) );
+	mWindow = Engine::instance()->createWindow( WindowSettings( 1024, 768, "eepp - Physics" ), ContextSettings( true ) );
 
-	if ( mWindow->Created() ) {
-		KM = mWindow->GetInput();
+	if ( mWindow->isOpen() ) {
+		KM = mWindow->getInput();
 
-		mWindow->BackColor( RGB( 255, 255, 255 ) );
+		mWindow->setClearColor( RGB( 255, 255, 255 ) );
 
-		PhysicsCreate();
+		physicsCreate();
 
-		mWindow->RunMainLoop( &MainLoop );
+		mWindow->runMainLoop( &mainLoop );
 
-		PhysicsDestroy();
+		physicsDestroy();
 	}
 
-	Engine::DestroySingleton();
+	Engine::destroySingleton();
 
-	MemoryManager::ShowResults();
+	MemoryManager::showResults();
 
 	return EXIT_SUCCESS;
 }

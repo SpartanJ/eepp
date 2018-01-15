@@ -2,11 +2,10 @@
 #define EE_GRAPHICSCTEXTURELOADER
 
 #include <eepp/graphics/base.hpp>
+#include <eepp/graphics/texture.hpp>
 #include <eepp/system/objectloader.hpp>
 
 namespace EE { namespace Graphics {
-
-class Texture;
 
 /** @brief The Texture loader loads a texture in synchronous or asynchronous mode.
 @see ObjectLoader
@@ -20,7 +19,7 @@ class EE_API TextureLoader : public ObjectLoader {
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		*/
-		TextureLoader( IOStream& Stream, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		TextureLoader( IOStream& Stream, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a Texture from a file path
 		* @param Filepath The path for the texture
@@ -29,7 +28,7 @@ class EE_API TextureLoader : public ObjectLoader {
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		*/
-		TextureLoader( const std::string& Filepath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		TextureLoader( const std::string& filepath, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a texture from memory
 		* @param ImagePtr The image data in memory just as if it were still in a file
@@ -39,7 +38,7 @@ class EE_API TextureLoader : public ObjectLoader {
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		*/
-		TextureLoader( const unsigned char * ImagePtr, const unsigned int& Size, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		TextureLoader( const unsigned char * ImagePtr, const unsigned int& Size, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a texture from a Pack file
 		* @param Pack Pointer to the pack instance
@@ -49,7 +48,7 @@ class EE_API TextureLoader : public ObjectLoader {
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		*/
-		TextureLoader( Pack * Pack, const std::string& FilePackPath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		TextureLoader( Pack * Pack, const std::string& FilePackPath, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Loads a RAW Texture from Memory
 		* @param Pixels The Texture array
@@ -62,28 +61,28 @@ class EE_API TextureLoader : public ObjectLoader {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @param FileName A filename to recognize the texture ( the path in case that was loaded from outside the texture factory ).
 		*/
-		TextureLoader( const unsigned char * Pixels, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
+		TextureLoader( const unsigned char * Pixels, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
 
 		virtual ~TextureLoader();
 
 		/** A color key can be set to be transparent in the texture. This must be set before the loading is done. */
-		void			SetColorKey( RGB Color );
+		void			setColorKey( RGB Color );
 
 		/** This must be called for the asynchronous mode to update the texture data to the GPU, the call must be done from the same thread that the GL context was created ( the main thread ).
 		** @see ObjectLoader::Update */
-		void 			Update();
+		void 			update();
 
 		/** @brief Releases the texture loaded ( if was already loaded ), it will destroy the texture from memory. */
-		void			Unload();
+		void			unload();
 
 		/** @return The file path to the texture ( if any ) */
-		const std::string&	Filepath() const;
+		const std::string&	filepath() const;
 
 		/** @return The texture internal id  */
-		const Uint32& 	Id() const;
+		const Uint32& 	getId() const;
 
 		/** @return The texture instance ( if it was loaded ). */
-		Texture *		GetTexture() const;
+		Texture *		getTexture() const;
 	protected:
 		Uint32			mLoadType; 	// From memory, from path, from pack
 		Uint8 * 		mPixels;	// Texture Info
@@ -96,7 +95,7 @@ class EE_API TextureLoader : public ObjectLoader {
 		unsigned int 			mHeight;
 		bool 			mMipmap;
 		Int32 			mChannels;
-		EE_CLAMP_MODE 	mClampMode;
+		Texture::ClampMode 	mClampMode;
 		bool 			mCompressTexture;
 		bool 			mLocalCopy;
 		Pack * 		mPack;
@@ -107,9 +106,9 @@ class EE_API TextureLoader : public ObjectLoader {
 
 		RGB *		mColorKey;
 
-		void 			Start();
+		void 			start();
 
-		void			Reset();
+		void			reset();
 	private:
 		bool			mTexLoaded;
 		bool			mDirectUpload;
@@ -118,12 +117,12 @@ class EE_API TextureLoader : public ObjectLoader {
 
 		Clock			mTE;
 
-		void			LoadFile();
-		void 			LoadFromPath();
-		void			LoadFromMemory();
-		void			LoadFromPack();
-		void 			LoadFromPixels();
-		void			LoadFromStream();
+		void			loadFile();
+		void 			loadFromFile();
+		void			loadFromMemory();
+		void			loadFromPack();
+		void 			loadFromPixels();
+		void			loadFromStream();
 };
 
 }}

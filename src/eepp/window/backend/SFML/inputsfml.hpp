@@ -15,13 +15,13 @@ class EE_API InputSFML : public Input {
 	public:
 		virtual ~InputSFML();
 		
-		void Update();
+		void update();
 
-		bool GrabInput();
+		bool grabInput();
 
-		void GrabInput( const bool& Grab );
+		void grabInput( const bool& Grab );
 
-		void InjectMousePos( const Uint16& x, const Uint16& y );
+		void injectMousePos( const Uint16& x, const Uint16& y );
 	protected:
 		friend class WindowSFML;
 
@@ -29,13 +29,13 @@ class EE_API InputSFML : public Input {
 
 		InputSFML( EE::Window::Window * window );
 		
-		virtual void Init();
+		virtual void init();
 
-		Uint32 GetButton( const Uint32& sfmlBut );
+		Uint32 getButton( const Uint32& sfmlBut );
 
-		Uint32 SetMod( sf::Event::KeyEvent& key );
+		Uint32 setMod( sf::Event::KeyEvent& key );
 
-		void InitializeTables();
+		void initializeTables();
 };
 
 }}}}

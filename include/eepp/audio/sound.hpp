@@ -22,78 +22,75 @@ class EE_API Sound {
 		~Sound();
 
 		/** Construct the sound with a buffer. */
-		Sound( const SoundBuffer& Buffer, const bool& Loop = false, const float& Pitch = 1.f, const float& Volume = 100.f, const Vector3ff& Position = Vector3ff(0, 0, 0) );
+		Sound( const SoundBuffer& buffer, const bool& loop = false, const float& pitch = 1.f, const float& volume = 100.f, const Vector3ff& position = Vector3ff(0, 0, 0) );
 
 		/** Copy constructor */
 		Sound(const Sound& Copy);
 
 		/** Play the Sound */
-		void Play();
+		void play();
 
 		/** Pause the Sound */
-		void Pause();
+		void pause();
 
 		/** Stop the Sound */
-		void Stop();
+		void stop();
 
 		/** Set the Sound Source Buffer */
-		void Buffer( const SoundBuffer& Buffer );
-
-		/** Set the Sound Loop State */
-		void Loop( const bool& Loop );
-
-		/** Set the Sound Pitch */
-		void Pitch( const float& Pitch );
-
-		/** Set the Sound Volume */
-		void Volume( const float& Volume );
-
-		/** Set the Sound Position. The default position is (0, 0, 0) */
-		void Position( const float& X, const float& Y, const float& Z );
-
-		/** Set the Sound Position from a 3D Vector. The default position is (0, 0, 0) */
-		void Position( const Vector3ff& Position );
-
-		/** Set the minimum distance - closer than this distance, \n the listener will hear the sound at its maximum volume. \n The default minimum distance is 1.0. */
-		void MinDistance( const float& MinDistance );
-
-		/** Set the attenuation factor. \n The higher the attenuation, the more the sound will be attenuated with distance from listener. \n The default attenuation factor 1.0. */
-		void Attenuation( const float& Attenuation );
+		void setBuffer( const SoundBuffer& buffer );
 
 		/** Get the Sound Source Buffer */
-		const SoundBuffer* Buffer() const;
+		const SoundBuffer* getBuffer() const;
+
+		/** Set the Sound Loop State */
+		void setLoop( const bool& loop );
 
 		/** Get the Sound Loop State */
-		bool Loop() const;
+		bool getLoop() const;
+
+		/** Set the Sound Pitch */
+		void setPitch( const float& pitch );
 
 		/** Get the Sound Pitch */
-		float Pitch() const;
+		float getPitch() const;
+
+		/** Set the Sound Volume */
+		void setVolume( const float& volume );
 
 		/** Get the Sound Volume */
-		float Volume() const;
+		float getVolume() const;
+
+		/** Set the Sound Position. The default position is (0, 0, 0) */
+		void setPosition( const float& X, const float& Y, const float& Z );
+
+		/** Set the Sound Position from a 3D Vector. The default position is (0, 0, 0) */
+		void setPosition( const Vector3ff& position );
 
 		/** Get the Sound Position */
-		Vector3ff Position() const;
+		Vector3ff getPosition() const;
+
+		/** Set the minimum distance - closer than this distance, \n the listener will hear the sound at its maximum volume. \n The default minimum distance is 1.0. */
+		void setMinDistance( const float& minDistance );
 
 		/** Get the Minimun Distance */
-		float MinDistance() const;
+		float getMinDistance() const;
+
+		/** Set the attenuation factor. \n The higher the attenuation, the more the sound will be attenuated with distance from listener. \n The default attenuation factor 1.0. */
+		void setAttenuation( const float& attenuation );
 
 		/** Get the Sound Attenuation */
-		float Attenuation() const;
+		float getAttenuation() const;
 
 		/** Get the Sound State */
-		Status GetState() const;
-
-		/** Get the Sound State */
-		Status State() const;
+		Status getState() const;
 
 		/** Get the current playing position of the sound */
-		virtual Time PlayingOffset() const;
+		virtual Time getPlayingOffset() const;
 
 		/** Set the current playing position of the sound
 		* @param TimeOffset : New playing position
 		*/
-		virtual void PlayingOffset( const Time &TimeOffset );
+		virtual void setPlayingOffset( const Time &TimeOffset );
 
 		/** Assignment operator */
 		Sound& operator =(const Sound& Other);
@@ -101,23 +98,23 @@ class EE_API Sound {
 		/** Make the sound's position relative to the listener's position, or absolute. The default value is false (absolute)
 		* @param Relative : True to set the position relative, false to set it absolute
 		*/
-		void SetRelativeToListener( const bool& Relative );
+		void setRelativeToListener( const bool& Relative );
 
 		/** Tell if the sound's position is relative to the listener's position, or if it's absolute
 		* @return True if the position is relative, false if it's absolute
 		*/
-		bool IsRelativeToListener() const;
+		bool isRelativeToListener() const;
 
 		/** \brief Reset the internal buffer of the sound
 		* This function is for internal use only, you don't have
 		* to use it. It is called by the SoundBuffer that
 		* this sound uses, when it is destroyed in order to prevent
 		* the sound from using a dead buffer. */
-		void ResetBuffer();
+		void resetBuffer();
 	private :
 		friend class SoundStream;
 
-		unsigned int			mSource; 	///< OpenAL source identifier
+		unsigned int mSource; 	///< OpenAL source identifier
 		const SoundBuffer *	mBuffer; 	///< Sound buffer bound to the source
 };
 

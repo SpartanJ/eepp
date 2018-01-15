@@ -9,19 +9,19 @@ class CP_API DampedRotarySpring : public Constraint {
 	public:
 		DampedRotarySpring( Body * a, Body * b, cpFloat restAngle, cpFloat stiffness, cpFloat damping );
 
-		cpFloat RestAngle();
+		cpFloat getRestAngle();
 
-		void RestAngle( const cpFloat& restangle );
+		void setRestAngle( const cpFloat& restangle );
 
-		cpFloat Stiffness();
+		cpFloat getStiffness();
 
-		void Stiffness( const cpFloat& stiffness );
+		void setStiffness( const cpFloat& stiffness );
 
-		cpFloat Damping();
+		cpFloat getDamping();
 
-		void Damping( const cpFloat& damping );
+		void setDamping( const cpFloat& damping );
 
-		virtual void Draw();
+		virtual void draw();
 };
 
 CP_NAMESPACE_END

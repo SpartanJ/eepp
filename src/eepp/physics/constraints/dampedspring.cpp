@@ -1,8 +1,8 @@
 #include <eepp/physics/constraints/dampedspring.hpp>
 
 #ifdef PHYSICS_RENDERER_ENABLED
-#include <eepp/graphics/glextensions.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/opengl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 using namespace EE::Graphics;
 #endif
@@ -15,51 +15,51 @@ DampedSpring::DampedSpring( Body * a, Body * b, cVect anchr1, cVect anchr2, cpFl
 	: mDrawPointSize( 5.f )
 #endif
 {
-	mConstraint = cpDampedSpringNew( a->GetBody(), b->GetBody(), tocpv( anchr1 ), tocpv( anchr2 ), restLength, stiffness, damping );
-	SetData();
+	mConstraint = cpDampedSpringNew( a->getBody(), b->getBody(), tocpv( anchr1 ), tocpv( anchr2 ), restLength, stiffness, damping );
+	setData();
 }
 
-cVect DampedSpring::Anchr1() {
+cVect DampedSpring::getAnchr1() {
 	return tovect( cpDampedSpringGetAnchr1( mConstraint ) );
 }
 
-void DampedSpring::Anchr1( const cVect& anchr1 ) {
+void DampedSpring::setAnchr1( const cVect& anchr1 ) {
 	cpDampedSpringSetAnchr1( mConstraint, tocpv( anchr1 ) );
 }
 
-cVect DampedSpring::Anchr2() {
+cVect DampedSpring::getAnchr2() {
 	return tovect( cpDampedSpringGetAnchr2( mConstraint ) );
 }
 
-void DampedSpring::Anchr2( const cVect& anchr2 ) {
+void DampedSpring::setAnchr2( const cVect& anchr2 ) {
 	cpDampedSpringSetAnchr2( mConstraint, tocpv( anchr2 ) );
 }
 
-cpFloat DampedSpring::RestLength() {
+cpFloat DampedSpring::getRestLength() {
 	return cpDampedSpringGetRestLength( mConstraint );
 }
 
-void DampedSpring::RestLength( const cpFloat& restlength ) {
+void DampedSpring::setRestLength( const cpFloat& restlength ) {
 	cpDampedSpringSetRestLength( mConstraint, restlength );
 }
 
-cpFloat DampedSpring::Stiffness() {
+cpFloat DampedSpring::getStiffness() {
 	return cpDampedSpringGetStiffness( mConstraint );
 }
 
-void DampedSpring::Stiffness( const cpFloat& stiffness ) {
+void DampedSpring::setStiffness( const cpFloat& stiffness ) {
 	cpDampedSpringSetStiffness( mConstraint, stiffness );
 }
 
-cpFloat DampedSpring::Damping() {
+cpFloat DampedSpring::getDamping() {
 	return cpDampedSpringGetDamping( mConstraint );
 }
 
-void DampedSpring::Damping( const cpFloat& damping ) {
+void DampedSpring::setDamping( const cpFloat& damping ) {
 	cpDampedSpringSetDamping( mConstraint, damping );
 }
 
-void DampedSpring::Draw() {
+void DampedSpring::draw() {
 	#ifdef PHYSICS_RENDERER_ENABLED
 	static const float springVAR[] = {
 		0.00f, 0.0f,
@@ -90,25 +90,25 @@ void DampedSpring::Draw() {
 	cVect a = tovect( cpvadd(body_a->p, cpvrotate(spring->anchr1, body_a->rot)) );
 	cVect b = tovect( cpvadd(body_b->p, cpvrotate(spring->anchr2, body_b->rot)) );
 
-	GLi->PointSize( mDrawPointSize );
+	GLi->pointSize( mDrawPointSize );
 
 	BatchRenderer * BR = GlobalBatchRenderer::instance();
-	BR->SetTexture( NULL );
-	BR->PointsBegin();
-	BR->BatchPoint( a.x, a.y );
-	BR->BatchPoint( b.x, b.y );
-	BR->Draw();
+	BR->setTexture( NULL );
+	BR->pointsBegin();
+	BR->batchPoint( a.x, a.y );
+	BR->batchPoint( b.x, b.y );
+	BR->draw();
 
 	cVect delta = b - a;
 
-	GLi->Disable( GL_TEXTURE_2D );
-	GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
+	GLi->disable( GL_TEXTURE_2D );
+	GLi->disableClientState( GL_TEXTURE_COORD_ARRAY );
 
-	std::vector<ColorA> tcolors( springVAR_count * 4, ColorA( 0, 255, 0, 255 ) );
-	GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), springVAR_count * 4 );
-	GLi->VertexPointer( 2, GL_FLOAT, 0, springVAR, springVAR_count * sizeof(float) * 2 );
+	std::vector<Color> tcolors( springVAR_count * 4, Color( 0, 255, 0, 255 ) );
+	GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), springVAR_count * 4 );
+	GLi->vertexPointer( 2, GL_FLOAT, 0, springVAR, springVAR_count * sizeof(float) * 2 );
 
-	GLi->PushMatrix();
+	GLi->pushMatrix();
 
 	float x = a.x;
 	float y = a.y;
@@ -122,24 +122,24 @@ void DampedSpring::Draw() {
 		0.0f	, 0.0f		, 1.0f, 0.0f,
 		 x		, y			, 0.0f, 1.0f,
 	};
-	GLi->MultMatrixf( matrix );
+	GLi->multMatrixf( matrix );
 
-	GLi->DrawArrays( GL_LINE_STRIP, 0, springVAR_count );
+	GLi->drawArrays( GL_LINE_STRIP, 0, springVAR_count );
 
-	GLi->PopMatrix();
+	GLi->popMatrix();
 
-	GLi->Enable( GL_TEXTURE_2D );
-	GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
+	GLi->enable( GL_TEXTURE_2D );
+	GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
 	#endif
 }
 
 
 #ifdef PHYSICS_RENDERER_ENABLED
-cpFloat DampedSpring::DrawPointSize() {
+cpFloat DampedSpring::getDrawPointSize() {
 	return mDrawPointSize;
 }
 
-void DampedSpring::DrawPointSize( const cpFloat& size ) {
+void DampedSpring::setDrawPointSize( const cpFloat& size ) {
 	mDrawPointSize = size;
 }
 #endif

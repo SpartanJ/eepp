@@ -12,8 +12,8 @@ PivotJoint::PivotJoint( Body * a, Body * b, cVect pivot )
 	: mDrawPointSize( 10.f )
 #endif
 {
-	mConstraint = cpPivotJointNew( a->GetBody(), b->GetBody(), tocpv( pivot ) );
-	SetData();
+	mConstraint = cpPivotJointNew( a->getBody(), b->getBody(), tocpv( pivot ) );
+	setData();
 }
 
 PivotJoint::PivotJoint( Body * a, Body * b, cVect anchr1, cVect anchr2 )
@@ -21,27 +21,27 @@ PivotJoint::PivotJoint( Body * a, Body * b, cVect anchr1, cVect anchr2 )
 	: mDrawPointSize( 10.f )
 #endif
 {
-	mConstraint = cpPivotJointNew2( a->GetBody(), b->GetBody(), tocpv( anchr1 ), tocpv( anchr2 ) );
-	SetData();
+	mConstraint = cpPivotJointNew2( a->getBody(), b->getBody(), tocpv( anchr1 ), tocpv( anchr2 ) );
+	setData();
 }
 
-cVect PivotJoint::Anchr1() {
+cVect PivotJoint::getAnchr1() {
 	return tovect( cpPivotJointGetAnchr1( mConstraint ) );
 }
 
-void PivotJoint::Anchr1( const cVect& anchr1 ) {
+void PivotJoint::setAnchr1( const cVect& anchr1 ) {
 	cpPivotJointSetAnchr1( mConstraint, tocpv( anchr1 ) );
 }
 
-cVect PivotJoint::Anchr2() {
+cVect PivotJoint::getAnchr2() {
 	return tovect( cpPivotJointGetAnchr2( mConstraint ) );
 }
 
-void PivotJoint::Anchr2( const cVect& anchr2 ) {
+void PivotJoint::setAnchr2( const cVect& anchr2 ) {
 	cpPivotJointSetAnchr2( mConstraint, tocpv( anchr2 ) );
 }
 
-void PivotJoint::Draw() {
+void PivotJoint::draw() {
 	#ifdef PHYSICS_RENDERER_ENABLED
 	if ( mDrawPointSize <= 0 )
 		return;
@@ -53,24 +53,24 @@ void PivotJoint::Draw() {
 	cVect b				= tovect( cpvadd(body_b->p, cpvrotate(joint->anchr2, body_b->rot)) );
 	BatchRenderer * BR = GlobalBatchRenderer::instance();
 
-	cpFloat ps = BR->GetPointSize();
-	BR->SetTexture( NULL );
-	BR->SetPointSize( mDrawPointSize );
-	BR->PointsBegin();
-	BR->PointSetColor( ColorA( 128, 255, 128, 255 ) );
-	BR->BatchPoint( a.x, a.y );
-	BR->BatchPoint( b.x, b.y );
-	BR->Draw();
-	BR->SetPointSize( ps );
+	cpFloat ps = BR->getPointSize();
+	BR->setTexture( NULL );
+	BR->setPointSize( mDrawPointSize );
+	BR->pointsBegin();
+	BR->pointSetColor( Color( 128, 255, 128, 255 ) );
+	BR->batchPoint( a.x, a.y );
+	BR->batchPoint( b.x, b.y );
+	BR->draw();
+	BR->setPointSize( ps );
 	#endif
 }
 
 #ifdef PHYSICS_RENDERER_ENABLED
-cpFloat PivotJoint::DrawPointSize() {
+cpFloat PivotJoint::getDrawPointSize() {
 	return mDrawPointSize;
 }
 
-void PivotJoint::DrawPointSize( const cpFloat& size ) {
+void PivotJoint::setDrawPointSize( const cpFloat& size ) {
 	mDrawPointSize = size;
 }
 #endif

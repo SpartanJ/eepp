@@ -9,16 +9,16 @@ ResourceLoader::ResourceLoader( const Uint32& MaxThreads ) :
 	mThreaded(true),
 	mThreads(MaxThreads)
 {
-	SetThreads();
+	setThreads();
 }
 
 ResourceLoader::~ResourceLoader() {
-	Clear();
+	clear();
 }
 
-void ResourceLoader::SetThreads() {
+void ResourceLoader::setThreads() {
 	if ( THREADS_AUTO == mThreads ) {
-		mThreads = Sys::GetCPUCount();
+		mThreads = Sys::getCPUCount();
 
 		if ( 1 == mThreads ) {
 			mThreaded = false;
@@ -26,25 +26,25 @@ void ResourceLoader::SetThreads() {
 	}
 }
 
-bool ResourceLoader::Threaded() const {
+bool ResourceLoader::isThreaded() const {
 	return mThreaded;
 }
 
-Uint32 ResourceLoader::Count() const {
+Uint32 ResourceLoader::getCount() const {
 	return mObjs.size();
 }
 
-void ResourceLoader::Threaded( const bool& threaded ) {
+void ResourceLoader::setThreaded( const bool& threaded ) {
 	if ( !mLoading ) {
 		mThreaded = threaded;
 	}
 }
 
-void ResourceLoader::Add( ObjectLoader * Object ) {
+void ResourceLoader::add( ObjectLoader * Object ) {
 	mObjs.push_front( Object );
 }
 
-bool ResourceLoader::Clear( const bool& ClearObjectsLoaded ) {
+bool ResourceLoader::clear( const bool& ClearObjectsLoaded ) {
 	if ( !mLoading ) {
 		mLoaded = false;
 		mLoading = false;
@@ -69,14 +69,14 @@ bool ResourceLoader::Clear( const bool& ClearObjectsLoaded ) {
 	return false;
 }
 
-void ResourceLoader::Load( ResLoadCallback Cb ) {
+void ResourceLoader::load( ResLoadCallback Cb ) {
 	if ( Cb.IsSet() )
 		mLoadCbs.push_back( Cb );
 
-	Load();
+	load();
 }
 
-void ResourceLoader::Load() {
+void ResourceLoader::load() {
 	if ( mLoaded )
 		return;
 
@@ -94,20 +94,20 @@ void ResourceLoader::Load() {
 		Obj = (*it);
 
 		if ( NULL != Obj ) {
-			Obj->Threaded( mThreaded );
+			Obj->setThreaded( mThreaded );
 
-			if ( !Obj->IsLoaded() ) {
-				if ( !Obj->IsLoading() ) {
-					Obj->Load();
+			if ( !Obj->isLoaded() ) {
+				if ( !Obj->isLoading() ) {
+					Obj->load();
 				}
 
-				if ( Obj->IsLoading() ) {
+				if ( Obj->isLoading() ) {
 					count++;
 				}
 
-				Obj->Update();
+				Obj->update();
 
-				if ( !Obj->IsLoaded() ) {
+				if ( !Obj->isLoaded() ) {
 					AllLoaded = false;
 				} else {
 					ObjsErase.push_back( Obj );
@@ -128,35 +128,35 @@ void ResourceLoader::Load() {
 	}
 
 	if ( AllLoaded ) {
-		SetLoaded();
+		setLoaded();
 	}
 }
 
-void ResourceLoader::Update() {
-	Load();
+void ResourceLoader::update() {
+	load();
 }
 
-void ResourceLoader::Unload() {
+void ResourceLoader::unload() {
 	if ( mLoaded ) {
 		std::list<ObjectLoader *>::iterator it;
 
 		for ( it = mObjs.begin(); it != mObjs.end(); it++ ) {
-			(*it)->Unload();
+			(*it)->unload();
 		}
 
 		mLoaded = false;
 	}
 }
 
-bool ResourceLoader::IsLoaded() {
+bool ResourceLoader::isLoaded() {
 	return mLoaded;
 }
 
-bool ResourceLoader::IsLoading() {
+bool ResourceLoader::isLoading() {
 	return mLoading;
 }
 
-void ResourceLoader::SetLoaded() {
+void ResourceLoader::setLoaded() {
 	mLoaded		= true;
 	mLoading	= false;
 
@@ -171,7 +171,7 @@ void ResourceLoader::SetLoaded() {
 	}
 }
 
-Float ResourceLoader::Progress() {
+Float ResourceLoader::getProgress() {
 	return ( (Float)mObjsLoaded.size() / (Float)( mObjs.size() + mObjsLoaded.size() ) ) * 100.f;
 }
 

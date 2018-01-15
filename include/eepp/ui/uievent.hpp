@@ -10,57 +10,59 @@ class UIControl;
 class EE_API UIEvent {
 	public:
 		enum Event {
-			EventKeyDown = 0,
-			EventKeyUp,
-			EventMouseMove,
-			EventMouseDown,
-			EventMouseClick,
-			EventMouseDoubleClick,
-			EventMouseUp,
-			EventMouseEnter,
-			EventMouseExit,
-			EventOnFocus,
-			EventOnFocusLoss,
-			EventOnVisibleChange,
-			EventOnEnabledChange,
-			EventOnPosChange,
-			EventOnSizeChange,
-			EventOnAngleChange,
-			EventOnScaleChange,
-			EventOnAlphaChange,
-			EventOnTextChanged,
-			EventOnFontChanged,
-			EventOnPressEnter,
-			EventOnValueChange,
-			EventOnComplexControlFocusLoss,
-			EventOnItemClicked,
-			EventOnHideByClick,
-			EventOnItemKeyDown,
-			EventOnItemKeyUp,
-			EventOnItemSelected,
-			EventOnCursorPosChange,
-			EventOnParentSizeChange,
-			EventOnWindowClose,
-			EventOnWindowCloseClick,
-			EventOnWindowMaximizeClick,
-			EventOnWindowMinimizeClick,
-			EventOpenFile,
-			EventSaveFile,
-			EventOnControlClear,
-			EventMsgBoxConfirmClick,
-			EventOnTabSelected,
-			EventOnClose, // Warning: Only some controls will report this event.
-			EventUser,
-			EventForceDWord = eeINDEX_NOT_FOUND
+			KeyDown = 0,
+			KeyUp,
+			MouseMove,
+			MouseDown,
+			MouseClick,
+			MouseDoubleClick,
+			MouseUp,
+			MouseEnter,
+			MouseExit,
+			OnFocus,
+			OnFocusLoss,
+			OnVisibleChange,
+			OnEnabledChange,
+			OnPosChange,
+			OnSizeChange,
+			OnAngleChange,
+			OnScaleChange,
+			OnAlphaChange,
+			OnTextChanged,
+			OnFontChanged,
+			OnPressEnter,
+			OnValueChange,
+			OnWidgetFocusLoss,
+			OnItemClicked,
+			OnHideByClick,
+			OnItemKeyDown,
+			OnItemKeyUp,
+			OnItemSelected,
+			OnCursorPosChange,
+			OnParentSizeChange,
+			OnWindowClose,
+			OnWindowCloseClick,
+			OnWindowMaximizeClick,
+			OnWindowMinimizeClick,
+			OpenFile,
+			SaveFile,
+			OnControlClear,
+			MsgBoxConfirmClick,
+			OnTabSelected,
+			OnClose, // Warning: Only some controls will report this event.
+			OnDragStart,
+			OnDragStop,
+			UserEvent,
+			NoEvent = eeINDEX_NOT_FOUND
 		};
 
-		UIEvent( UIControl * Ctrl, const Uint32& EventType = EventForceDWord );
+		UIEvent( UIControl * control, const Uint32& eventType = NoEvent );
 
 		~UIEvent();
 
-		UIControl * Ctrl() const;
+		UIControl * getControl() const;
 
-		const Uint32& EventType() const;
+		const Uint32& getEventType() const;
 	protected:
 		UIControl	* 	mCtrl;
 		Uint32 			mEventType;

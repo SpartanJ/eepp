@@ -8,7 +8,7 @@
 namespace EE { namespace Math {
 
 /** Set a Random Seed to the Randomizer */
-inline Uint32 SetRandomSeed( Uint32 seed ) {
+inline Uint32 setRandomSeed( Uint32 seed ) {
 	srand(seed);
 	return seed;
 }
@@ -18,7 +18,7 @@ inline Uint32 SetRandomSeed( Uint32 seed ) {
 * @param fMax the maximun value
 * @return The random number generated
 */
-inline Float Randf( const Float& fMin = 0.0f, const Float& fMax = 1.0f ) {
+inline Float randf( const Float& fMin = 0.0f, const Float& fMax = 1.0f ) {
 	return (fMin + (fMax - fMin) * ( rand() / ( (Float) RAND_MAX + 1) ) );
 }
 
@@ -27,7 +27,7 @@ inline Float Randf( const Float& fMin = 0.0f, const Float& fMax = 1.0f ) {
 * @param fMax the maximun value
 * @return The random number generated
 */
-inline int Randi( const int& fMin = 0, const int& fMax = 1 ) {
+inline int randi( const int& fMin = 0, const int& fMax = 1 ) {
 	return (int)(fMin + (fMax - fMin + 1) * ( rand() / ( (Float) RAND_MAX + 1) ) );
 }
 
@@ -46,18 +46,18 @@ inline Float tanAng( const Float& Ang ) {
 }
 
 /** Convert an Angle from Degrees to Radians */
-inline Float Radians( const Float& Ang ) {
+inline Float radians( const Float& Ang ) {
 	return Ang * EE_PI_180;
 }
 
 /** Convert an Angle from Math::Radians to Degrees */
-inline Float Degrees( const Float& Radians ) {
+inline Float degrees( const Float& Radians ) {
 	return Radians * EE_180_PI;
 }
 
 /** @return The next power of two of the given Size */
 template <typename T>
-T NextPowOfTwo( T Size ) {
+T nextPowOfTwo( T Size ) {
 	T p = 1;
 
 	while ( p < Size )
@@ -68,19 +68,19 @@ T NextPowOfTwo( T Size ) {
 
 /** @return If the number given is power of two */
 template <typename T>
-T IsPow2( T v ) {
+T isPow2( T v ) {
 	return ( ( v & ( v - 1 ) ) == 0 );
 }
 
 /** Round the number */
 template <typename T>
-inline T Round( T r ) {
+inline T round( T r ) {
 	return (r > 0.0f) ? floor(r + 0.5f) : ceil(r - 0.5f);
 }
 
 /** Round the number always to the upper value */
 template <typename T >
-inline T RoundUp( T r ) {
+inline T roundUp( T r ) {
 	return (r > 0.0f) ? ceil(r) : ceil(r - 0.5f);
 }
 

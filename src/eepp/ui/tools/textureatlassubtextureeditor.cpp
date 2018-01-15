@@ -5,77 +5,90 @@
 
 namespace EE { namespace UI { namespace Tools {
 
-TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( const UIComplexControl::CreateParams& Params, TextureAtlasEditor * Editor ) :
-	UIComplexControl( Params ),
+TextureAtlasSubTextureEditor * TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor::New( TextureAtlasEditor * Editor ) {
+	return eeNew( TextureAtlasSubTextureEditor, ( Editor ) );
+}
+
+TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( TextureAtlasEditor * Editor ) :
+	UIWidget(),
 	mGfx( NULL ),
 	mEditor( Editor )
 {
-	if ( NULL == UIThemeManager::instance()->DefaultTheme() ) {
+	if ( NULL == UIThemeManager::instance()->getDefaultTheme() ) {
 		return;
 	}
 
-	mTheme = UIThemeManager::instance()->DefaultTheme();
+	mTheme = UIThemeManager::instance()->getDefaultTheme();
 
-	mGfx = mTheme->CreateGfx( NULL, this );
+	mGfx = UISubTexture::New();
+	mGfx->setParent( this );
+	mGfx->setVisible( true );
+	mGfx->setEnabled( true );
 
-	UIDragable::CreateParams DragParams;
-	DragParams.Parent( this );
-	DragParams.SizeSet( 500000, 500000 );
-	mDrag = eeNew( UIDragable, ( DragParams ) );
-	mDrag->Enabled( true );
-	mDrag->Visible( true );
-	mDrag->DragEnable( true );
+	mDrag = UIDragableControl::New();
+	mDrag->setParent( this );
+	mDrag->setSize( 64000, 64000 );
+	mDrag->setEnabled( true );
+	mDrag->setVisible( true );
+	mDrag->setDragEnabled( true );
+	mDrag->center();
 
-	GetCenter();
+	getCenter();
 }
 
 TextureAtlasSubTextureEditor::~TextureAtlasSubTextureEditor() {
 }
 
-void TextureAtlasSubTextureEditor::Draw() {
+void TextureAtlasSubTextureEditor::draw() {
 	Primitives P;
-	P.SetColor( ColorA( 255, 0, 0, mAlpha ) );
-	P.DrawLine( Line2f( Vector2f( mScreenPos.x, mScreenPos.y + mUICenter.y ), Vector2f( mScreenPos.x + mSize.Width(), mScreenPos.y + mUICenter.y ) ) );
-	P.DrawLine( Line2f( Vector2f( mScreenPos.x + mUICenter.x, mScreenPos.y ), Vector2f( mScreenPos.x + mUICenter.x, mScreenPos.y + mSize.Height() ) ) );
+	P.setColor( Color( 255, 0, 0, mAlpha ) );
+	P.setLineWidth( PixelDensity::dpToPx( 1.f ) );
 
-	UIComplexControl::Draw();
+	Vector2i uiCenterPx = PixelDensity::dpToPxI( mUICenter );
+
+	P.drawLine( Line2f( Vector2f( mScreenPos.x, mScreenPos.y + uiCenterPx.y ), Vector2f( mScreenPos.x + mRealSize.getWidth(), mScreenPos.y + uiCenterPx.y ) ) );
+	P.drawLine( Line2f( Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y ), Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y + mRealSize.getHeight() ) ) );
+
+	UIWidget::draw();
 }
 
-void TextureAtlasSubTextureEditor::Update() {
-	Vector2i Pos = mDrag->Pos();
+void TextureAtlasSubTextureEditor::update() {
+	Vector2i Pos = mDrag->getRealPosition();
 
-	UIComplexControl::Update();
+	UIWidget::update();
 
-	if ( NULL != mGfx->SubTexture() && mDrag->DragEnable() && mDrag->Dragging() && Pos != mDrag->Pos() ) {
-		Vector2i Diff = -( Pos - mDrag->Pos() );
+	if ( NULL != mGfx->getSubTexture() && mDrag->isDragEnabled() && mDrag->isDragging() && Pos != mDrag->getRealPosition() ) {
+		Vector2i Diff = -( Pos - mDrag->getRealPosition() );
 
-		mGfx->SubTexture()->Offset( Vector2i( mGfx->SubTexture()->Offset().x + Diff.x, mGfx->SubTexture()->Offset().y + Diff.y ) );
+		Diff = PixelDensity::pxToDpI( Diff );
 
-		mEditor->SpinOffX()->Value( mGfx->SubTexture()->Offset().x );
-		mEditor->SpinOffY()->Value( mGfx->SubTexture()->Offset().y );
+		mGfx->getSubTexture()->setOffset( Vector2i( mGfx->getSubTexture()->getOffset().x + Diff.x, mGfx->getSubTexture()->getOffset().y + Diff.y ) );
+
+		mEditor->getSpinOffX()->setValue( mGfx->getSubTexture()->getOffset().x );
+		mEditor->getSpinOffY()->setValue( mGfx->getSubTexture()->getOffset().y );
 	}
 
-	mGfx->Pos( mUICenter );
+	mGfx->setPosition( mUICenter );
 }
 
-void TextureAtlasSubTextureEditor::OnSizeChange() {
-	GetCenter();
+void TextureAtlasSubTextureEditor::onSizeChange() {
+	getCenter();
 }
 
-Graphics::SubTexture * TextureAtlasSubTextureEditor::SubTexture() const {
-	return mGfx->SubTexture();
+Graphics::SubTexture * TextureAtlasSubTextureEditor::getSubTexture() const {
+	return mGfx->getSubTexture();
 }
 
-void TextureAtlasSubTextureEditor::SubTexture( Graphics::SubTexture * subTexture ) {
-	mGfx->SubTexture( subTexture );
+void TextureAtlasSubTextureEditor::setSubTexture( Graphics::SubTexture * subTexture ) {
+	mGfx->setSubTexture( subTexture );
 }
 
-UIGfx * TextureAtlasSubTextureEditor::Gfx() const {
+UISubTexture * TextureAtlasSubTextureEditor::getGfx() const {
 	return mGfx;
 }
 
-void TextureAtlasSubTextureEditor::GetCenter() {
-	mUICenter = Vector2i( mSize.Width() / 2, mSize.Height() / 2 );
+void TextureAtlasSubTextureEditor::getCenter() {
+	mUICenter = Vector2i( mSize.getWidth() / 2, mSize.getHeight() / 2 );
 }
 
 }}}

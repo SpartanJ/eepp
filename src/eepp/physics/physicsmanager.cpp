@@ -36,65 +36,65 @@ PhysicsManager::~PhysicsManager() {
 	}
 }
 
-PhysicsManager::DrawSpaceOptions * PhysicsManager::GetDrawOptions() {
+PhysicsManager::DrawSpaceOptions * PhysicsManager::getDrawOptions() {
 	return &mOptions;
 }
 
-void PhysicsManager::MemoryManager( bool MemoryManager ) {
+void PhysicsManager::setMemoryManager( bool MemoryManager ) {
 	mMemoryManager = MemoryManager;
 }
 
-const bool& PhysicsManager::MemoryManager() const {
+const bool& PhysicsManager::isMemoryManagerEnabled() const {
 	return mMemoryManager;
 }
 
-void PhysicsManager::AddBodyFree( Body * body ) {
+void PhysicsManager::addBodyFree( Body * body ) {
 	if ( mMemoryManager ) {
 		if ( std::find( mBodysFree.begin(), mBodysFree.end(), body ) == mBodysFree.end() )
 			mBodysFree.push_back( body );
 	}
 }
 
-void PhysicsManager::RemoveBodyFree( Body * body ) {
+void PhysicsManager::removeBodyFree( Body * body ) {
 	if ( mMemoryManager ) {
 		mBodysFree.remove( body );
 	}
 }
 
-void PhysicsManager::AddShapeFree( Shape * shape ) {
+void PhysicsManager::addShapeFree( Shape * shape ) {
 	if ( mMemoryManager ) {
 		if ( std::find( mShapesFree.begin(), mShapesFree.end(), shape ) == mShapesFree.end() )
 			mShapesFree.push_back( shape );
 	}
 }
 
-void PhysicsManager::RemoveShapeFree( Shape * shape ) {
+void PhysicsManager::removeShapeFree( Shape * shape ) {
 	if ( mMemoryManager ) {
 		mShapesFree.remove( shape );
 	}
 }
 
-void PhysicsManager::AddConstraintFree( Constraint * constraint ) {
+void PhysicsManager::addConstraintFree( Constraint * constraint ) {
 	if ( mMemoryManager ) {
 		if ( std::find( mConstraintFree.begin(), mConstraintFree.end(), constraint ) == mConstraintFree.end() )
 			mConstraintFree.push_back( constraint );
 	}
 }
 
-void PhysicsManager::RemoveConstraintFree( Constraint * constraint ) {
+void PhysicsManager::removeConstraintFree( Constraint * constraint ) {
 	if ( mMemoryManager ) {
 		mConstraintFree.remove( constraint );
 	}
 }
 
-void PhysicsManager::AddSpace( Space * space ) {
+void PhysicsManager::addSpace( Space * space ) {
 	if ( mMemoryManager ) {
 		if ( std::find( mSpaces.begin(), mSpaces.end(), space ) == mSpaces.end() )
 			mSpaces.push_back( space );
 	}
 }
 
-void PhysicsManager::RemoveSpace( Space * space ) {
+void PhysicsManager::removeSpace( Space * space ) {
 	if ( mMemoryManager ) {
 		mSpaces.remove( space );
 	}

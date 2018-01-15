@@ -6,65 +6,57 @@
 
 namespace EE { namespace UI {
 
-class EE_API UISpinBox : public UIComplexControl {
+class EE_API UISpinBox : public UIWidget {
 	public:
-		class CreateParams : public UITextInput::CreateParams {
-			public:
-				inline CreateParams() :
-					UITextInput::CreateParams(),
-					DefaultValue( 0.f ),
-					AllowDotsInNumbers( false )
-				{
-					MaxLength = 24;
-				}
+		static UISpinBox * New();
 
-				inline ~CreateParams() {}
-
-				Float DefaultValue;
-				bool AllowDotsInNumbers;
-		};
-
-		UISpinBox( const UISpinBox::CreateParams& Params );
+		UISpinBox();
 
 		virtual ~UISpinBox();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		virtual void Padding( const Recti& padding );
+		virtual void setPadding( const Rect& padding );
 
-		const Recti& Padding() const;
+		const Rect& getPadding() const;
 
-		virtual void ClickStep( const Float& step );
+		virtual void setClickStep( const Float& step );
 
-		const Float& ClickStep() const;
+		const Float& getClickStep() const;
 
-		virtual Uint32 OnMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const UIMessage * Msg );
 
-		void AddValue( const Float& value );
+		void addValue( const Float& value );
 
-		virtual void MinValue( const Float& MinVal );
+		virtual UISpinBox * setMinValue( const Float& MinVal );
 
-		const Float& MinValue() const;
+		const Float& getMinValue() const;
 
-		virtual void MaxValue( const Float& MaxVal );
+		virtual UISpinBox * setMaxValue( const Float& MaxVal );
 
-		const Float& MaxValue() const;
+		const Float& getMaxValue() const;
 
-		virtual void Value( const Float& Val );
+		virtual UISpinBox * setValue( const Float& Val );
 
-		const Float& Value() const;
+		const Float& getValue() const;
 
-		virtual void Update();
+		virtual void update();
 
-		UIControlAnim * ButtonPushUp() const;
+		UIControlAnim * getButtonPushUp() const;
 
-		UIControlAnim * ButtonPushDown() const;
+		UIControlAnim * getButtonPushDown() const;
 
-		UITextInput * TextInput() const;
+		UITextInput * getTextInput() const;
+
+		UISpinBox * setAllowOnlyNumbers( bool allow );
+
+		bool dotsInNumbersAllowed();
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		UITextInput * 		mInput;
 		UIControlAnim * 	mPushUp;
@@ -74,11 +66,15 @@ class EE_API UISpinBox : public UIComplexControl {
 		Float				mValue;
 		Float				mClickStep;
 
-		void AdjustChilds();
+		void adjustChilds();
 
-		void InternalValue( const Float& Val, const bool& Force = false );
+		void internalValue( const Float& Val, const bool& Force = false );
+
+		virtual void onSizeChange();
+
+		virtual void onPositionChange();
 		
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 };
 
 }}

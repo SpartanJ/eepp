@@ -4,124 +4,133 @@
 
 namespace EE { namespace UI {
 
-UIListBoxItem::UIListBoxItem( const UITextBox::CreateParams& Params ) :
-	UITextBox( Params )
+UIListBoxItem * UIListBoxItem::New() {
+	return eeNew( UIListBoxItem, () );
+}
+
+UIListBoxItem::UIListBoxItem() :
+	UITextView()
 {
-	ApplyDefaultTheme();
+	setLayoutSizeRules( FIXED, FIXED );
+	applyDefaultTheme();
 }
 
 UIListBoxItem::~UIListBoxItem() {
-	if ( UIManager::instance()->FocusControl() == this )
-		mParentCtrl->SetFocus();
+	if ( UIManager::instance()->getFocusControl() == this )
+		mParentCtrl->setFocus();
 
-	if ( UIManager::instance()->OverControl() == this )
-		UIManager::instance()->OverControl( mParentCtrl );
+	if ( UIManager::instance()->getOverControl() == this )
+		UIManager::instance()->setOverControl( mParentCtrl );
 }
 
-Uint32 UIListBoxItem::Type() const {
+Uint32 UIListBoxItem::getType() const {
 	return UI_TYPE_LISTBOXITEM;
 }
 
-bool UIListBoxItem::IsType( const Uint32& type ) const {
-	return UIListBoxItem::Type() == type ? true : UITextBox::IsType( type );
+bool UIListBoxItem::isType( const Uint32& type ) const {
+	return UIListBoxItem::getType() == type ? true : UITextView::isType( type );
 }
 
-void UIListBoxItem::SetTheme( UITheme * Theme ) {
-	UIControl::SetThemeControl( Theme, "listboxitem" );
+void UIListBoxItem::setTheme( UITheme * Theme ) {
+	UIWidget::setTheme( Theme );
+
+	setThemeSkin( Theme, "listboxitem" );
 }
 
-Uint32 UIListBoxItem::OnMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTONS_LRM ) {
-		reinterpret_cast<UIListBox*> ( Parent()->Parent() )->ItemClicked( this );
+		reinterpret_cast<UIListBox*> ( getParent()->getParent() )->itemClicked( this );
 
-		Select();
+		select();
 	}
 
 	return 1;
 }
 
-void UIListBoxItem::Select() {
-	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( Parent()->Parent() );
+void UIListBoxItem::select() {
+	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( getParent()->getParent() );
 
 	bool wasSelected = 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
 
-	if ( LBParent->IsMultiSelect() ) {
+	if ( LBParent->isMultiSelect() ) {
 		if ( !wasSelected ) {
-			SetSkinState( UISkinState::StateSelected );
+			setSkinState( UISkinState::StateSelected );
 
 			mControlFlags |= UI_CTRL_FLAG_SELECTED;
 
-			LBParent->mSelected.push_back( LBParent->GetItemIndex( this ) );
+			LBParent->mSelected.push_back( LBParent->getItemIndex( this ) );
 
-			LBParent->OnSelected();
+			LBParent->onSelected();
 		} else {
 			mControlFlags &= ~UI_CTRL_FLAG_SELECTED;
 
-			LBParent->mSelected.remove( LBParent->GetItemIndex( this ) );
+			LBParent->mSelected.remove( LBParent->getItemIndex( this ) );
 		}
 	} else {
-		SetSkinState( UISkinState::StateSelected );
+		setSkinState( UISkinState::StateSelected );
 
 		mControlFlags |= UI_CTRL_FLAG_SELECTED;
 
 		LBParent->mSelected.clear();
-		LBParent->mSelected.push_back( LBParent->GetItemIndex( this ) );
+		LBParent->mSelected.push_back( LBParent->getItemIndex( this ) );
 
 		if ( !wasSelected ) {
-			LBParent->OnSelected();
+			LBParent->onSelected();
 		}
 	}
 }
 
-void UIListBoxItem::Update() {
-	UITextBox::Update();
+void UIListBoxItem::update() {
+	UITextView::update();
 
 	if ( mEnabled && mVisible ) {
-		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( Parent()->Parent() );
-		Uint32 Flags 			= UIManager::instance()->GetInput()->ClickTrigger();
+		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( getParent()->getParent() );
+		Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
 
-		if ( IsMouseOver() ) {
-			if ( Flags & EE_BUTTONS_WUWD && LBParent->VerticalScrollBar()->Visible() ) {
-				LBParent->VerticalScrollBar()->Slider()->ManageClick( Flags );
+		if ( isMouseOver() ) {
+			if ( Flags & EE_BUTTONS_WUWD && LBParent->getVerticalScrollBar()->isVisible() ) {
+				LBParent->getVerticalScrollBar()->getSlider()->manageClick( Flags );
 			}
 		}
 	}
 }
 
-Uint32 UIListBoxItem::OnMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	UIControl::OnMouseExit( Pos, Flags );
+Uint32 UIListBoxItem::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
+	UIControl::onMouseExit( Pos, Flags );
 
 	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
-		SetSkinState( UISkinState::StateSelected );
+		setSkinState( UISkinState::StateSelected );
 
 	return 1;
 }
 
-void UIListBoxItem::Unselect() {
+void UIListBoxItem::unselect() {
 	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
 		mControlFlags &= ~UI_CTRL_FLAG_SELECTED;
 
-	SetSkinState( UISkinState::StateNormal );
+	setSkinState( UISkinState::StateNormal );
 }
 
-bool UIListBoxItem::Selected() const {
+bool UIListBoxItem::isSelected() const {
 	return 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
 }
 
-void UIListBoxItem::OnStateChange() {
-	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( Parent()->Parent() );
+void UIListBoxItem::onStateChange() {
+	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( getParent()->getParent() );
 
-	if ( Selected() && mSkinState->GetState() != UISkinState::StateSelected ) {
-		SetSkinState( UISkinState::StateSelected );
+	if ( isSelected() && mSkinState->getState() != UISkinState::StateSelected ) {
+		setSkinState( UISkinState::StateSelected );
 	}
 
-	if ( mSkinState->GetState() == UISkinState::StateSelected ) {
-		Color( LBParent->FontSelectedColor() );
-	} else if ( mSkinState->GetState() == UISkinState::StateMouseEnter ) {
-		Color( LBParent->FontOverColor() );
+	if ( mSkinState->getState() == UISkinState::StateSelected ) {
+		setFontColor( LBParent->getFontSelectedColor() );
+	} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
+		setFontColor( LBParent->getFontOverColor() );
 	} else {
-		Color( LBParent->FontColor() );
+		setFontColor( LBParent->getFontColor() );
 	}
+
+	UITextView::onStateChange();
 }
 
 }}

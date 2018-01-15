@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI {
 
-UIEvent::UIEvent( UIControl * Ctrl, const Uint32& EventType ) :
-	mCtrl( Ctrl ),
-	mEventType( EventType )
+UIEvent::UIEvent(UIControl * control, const Uint32& eventType ) :
+	mCtrl( control ),
+	mEventType( eventType )
 {
 }
 
@@ -13,11 +13,11 @@ UIEvent::~UIEvent()
 {
 }
 
-UIControl * UIEvent::Ctrl() const {
+UIControl * UIEvent::getControl() const {
 	return mCtrl;
 }
 
-const Uint32& UIEvent::EventType() const {
+const Uint32& UIEvent::getEventType() const {
 	return mEventType;
 }
 

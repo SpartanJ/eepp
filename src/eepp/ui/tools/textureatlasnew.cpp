@@ -1,8 +1,9 @@
 #include <eepp/ui/tools/textureatlasnew.hpp>
 #include <eepp/ui/uicommondialog.hpp>
 #include <eepp/ui/uimessagebox.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
+#include <eepp/ui/uimanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 
 namespace EE { namespace UI { namespace Tools {
 
@@ -11,182 +12,200 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	mUIWindow( NULL ),
 	mNewTGCb( NewTGCb )
 {
-	mTheme		= UIThemeManager::instance()->DefaultTheme();
+	mTheme		= UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL == mTheme )
 		return;
 
-	mUIWindow	= mTheme->CreateWindow( NULL, Sizei( 378, 244 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL );
-	mUIWindow->AddEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &TextureAtlasNew::WindowClose ) );
-	mUIWindow->Title( "New Texture Atlas" );
+	mUIWindow	= UIWindow::New();
+	mUIWindow->setSizeWithDecoration( 378, 263 )
+			 ->setMinWindowSize( 378, 263 )
+			 ->setWinFlags( UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_SHARE_ALPHA_WITH_CHILDS | UI_WIN_MODAL );
 
-	Int32 PosX = mUIWindow->Container()->Size().Width() - 110;
+	mUIWindow->addEventListener( UIEvent::OnWindowClose, cb::Make1( this, &TextureAtlasNew::windowClose ) );
+	mUIWindow->setTitle( "New Texture Atlas" );
 
-	CreateTxtBox( Vector2i( 10, 20 ), "Save File Format:" );
-	mSaveFileType = mTheme->CreateDropDownList( mUIWindow->Container(), Sizei( 100, 22 ), Vector2i( PosX, 20 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE );
+	std::string layout =
+	"<LinearLayout id='container' layout_width='match_parent' layout_height='wrap_content' layout_marginLeft='8dp' layout_marginRight='8dp' layout_marginTop='8dp'>"
+	 "	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
+	 "		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Save File Format:' />"
+	 "		<DropDownList id='saveType' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' selectedText='PNG'>"
+	 "			<item>TGA</item>"
+	 "			<item>BMP</item>"
+	 "			<item>PNG</item>"
+	 "			<item>DDS</item>"
+	 "			<item>JPG</item>"
+	 "		</DropDownList>"
+	 "	</LinearLayout>"
+	 "	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
+	 "		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Max. Texture Atlas Width:' />"
+	 "		<ComboBox id='maxTAWidth' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' onlyNumbers='true' />"
+	 "	</LinearLayout>"
+	 "	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
+	 "		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Max. Texture Atlas Height:' />"
+	 "		<ComboBox id='maxTAHeight' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' onlyNumbers='true' />"
+	 "	</LinearLayout>"
+	 "	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
+	 "		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Space between sub textures (pixels):' />"
+	 "		<SpinBox id='pixelSpace' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' />"
+	 "	</LinearLayout>"
+	 "	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
+	 "		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Pixel Density:' />"
+	 "		<DropDownList id='pixelDensity' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' selectedText='MDPI'>"
+	 "			<item>MDPI</item>"
+	 "			<item>HDPI</item>"
+	 "			<item>XHDPI</item>"
+	 "			<item>XXHDPI</item>"
+	 "			<item>XXXHDPI</item>"
+	 "		</DropDownList>"
+	 "	</LinearLayout>"
+	 "	<TextView layout_width='match_parent' layout_height='wrap_content' layout_gravity='center_vertical' text='TextureAtlas Folder Path:' />"
+	"	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
+	"		<TextInput id='pathInput' layout_width='match_parent' layout_height='match_parent' layout_weight='1' allowEditing='false' />"
+	"		<PushButton id='openPath' layout_width='32dp' layout_height='wrap_content' text='...'  />"
+	"	</LinearLayout>"
+	"	<LinearLayout layout_gravity='center_vertical|right' layout_width='wrap_content' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='16dp'>"
+	"		<PushButton id='okButton' layout_width='wrap_content' layout_height='wrap_content' layout_weight='0.2' icon='ok' text='OK' layout_marginRight='4dp' />"
+	"		<PushButton id='cancelButton' layout_width='wrap_content' layout_height='wrap_content' layout_weight='0.2' icon='cancel' text='Cancel'  />"
+	"	</LinearLayout>"
+	 "</LinearLayout>";
 
-	std::vector<String> FileTypes;
-	FileTypes.push_back( "TGA" );
-	FileTypes.push_back( "BMP" );
-	FileTypes.push_back( "PNG" );
-	FileTypes.push_back( "DDS" );
+	UIManager::instance()->loadLayoutFromString( layout, mUIWindow->getContainer() );
 
-	mSaveFileType->ListBox()->AddListBoxItems( FileTypes );
-	mSaveFileType->ListBox()->SetSelected( "PNG" );
-
-	CreateTxtBox( Vector2i( 10, 50 ), "Max. Texture Atlas Width:" );
-	mComboWidth = mTheme->CreateComboBox( mUIWindow->Container(), Sizei( 100, 22 ), Vector2i( PosX, 50 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE );
-
-	CreateTxtBox( Vector2i( 10, 80 ), "Max. Texture Atlas Height:" );
-	mComboHeight = mTheme->CreateComboBox( mUIWindow->Container(), Sizei( 100, 22 ), Vector2i( PosX, 80 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE );
+	mUIWindow->bind( "saveType", mSaveFileType );
+	mUIWindow->bind( "maxTAWidth", mComboWidth );
+	mUIWindow->bind( "maxTAHeight", mComboHeight );
+	mUIWindow->bind( "pixelSpace", mPixelSpace );
+	mUIWindow->bind( "pixelDensity", mPixelDensity );
+	mUIWindow->bind( "pathInput", mTGPath );
+	mUIWindow->bind( "openPath", mSetPathButton ) ;
 
 	std::vector<String> Sizes;
 
-	for ( Uint32 i = 6; i < 14; i++ ) {
-		Sizes.push_back( String::ToStr( 1 << i ) );
+	for ( Uint32 i = 8; i < 15; i++ ) {
+		Sizes.push_back( String::toStr( 1 << i ) );
 	}
 
-	mComboWidth->ListBox()->AddListBoxItems( Sizes );
-	mComboHeight->ListBox()->AddListBoxItems( Sizes );
-	mComboWidth->GetInputTextBuffer()->AllowOnlyNumbers( true );
-	mComboHeight->GetInputTextBuffer()->AllowOnlyNumbers( true );
-	mComboWidth->ListBox()->SetSelected( "512" );
-	mComboHeight->ListBox()->SetSelected( "512" );
+	mComboWidth->getListBox()->addListBoxItems( Sizes );
+	mComboHeight->getListBox()->addListBoxItems( Sizes );
+	mComboWidth->getListBox()->setSelected( "2048" );
+	mComboHeight->getListBox()->setSelected( "2048" );
 
-	CreateTxtBox( Vector2i( 10, 110 ), "Space between sub textures (pixels):" );
-	mPixelSpace = mTheme->CreateSpinBox( mUIWindow->Container(), Sizei( 100, 22 ), Vector2i( PosX, 110 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED, 0, false );
+	mSetPathButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TextureAtlasNew::onDialogFolderSelect ) );
+	mUIWindow->find<UIPushButton>( "okButton" )->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TextureAtlasNew::okClick ) );
+	mUIWindow->find<UIPushButton>( "cancelButton" )->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TextureAtlasNew::cancelClick ) );
 
-	CreateTxtBox( Vector2i( 10, 140 ), "Texture Atlas Folder Path:" );
-	mTGPath = mTheme->CreateTextInput( mUIWindow->Container(), Sizei( mUIWindow->Container()->Size().Width() - 60, 22 ), Vector2i( 10, 160 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE , false, 512 );
-	mTGPath->AllowEditing( false );
-
-	mSetPathButton = mTheme->CreatePushButton( mUIWindow->Container(), Sizei( 32, 32 ), Vector2i( mUIWindow->Container()->Size().Width() - 10 - 32, 160 ) );
-	mSetPathButton->Text( "..." );
-	mSetPathButton->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasNew::OnDialogFolderSelect ) );
-
-	UIPushButton * OKButton = mTheme->CreatePushButton( mUIWindow->Container(), Sizei( 80, 22 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->GetIconByName( "ok" ) );
-	OKButton->Pos( mUIWindow->Container()->Size().Width() - OKButton->Size().Width() - 4, mUIWindow->Container()->Size().Height() - OKButton->Size().Height() - 4 );
-	OKButton->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasNew::OKClick ) );
-	OKButton->Text( "OK" );
-
-	UIPushButton * CancelButton = mTheme->CreatePushButton( mUIWindow->Container(), OKButton->Size(), Vector2i( OKButton->Pos().x - OKButton->Size().Width() - 4, OKButton->Pos().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->GetIconByName( "cancel" ) );
-	CancelButton->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasNew::CancelClick ) );
-	CancelButton->Text( "Cancel" );
-
-	mUIWindow->Center();
-	mUIWindow->Show();
+	mUIWindow->setSizeWithDecoration( mUIWindow->getContainer()->find( "container" )->getSize() );
+	mUIWindow->center();
+	mUIWindow->show();
 }
 
 TextureAtlasNew::~TextureAtlasNew() {
 }
 
-UITextBox * TextureAtlasNew::CreateTxtBox( Vector2i Pos, const String& Text ) {
-	return mTheme->CreateTextBox( Text, mUIWindow->Container(), Sizei(), Pos, UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-}
-
-void TextureAtlasNew::OKClick( const UIEvent * Event ) {
+void TextureAtlasNew::okClick( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*>( Event );
 
-	if ( MouseEvent->Flags() & EE_BUTTON_LMASK ) {
-		std::string ext( mSaveFileType->Text() );
-		String::ToLowerInPlace( ext );
+	if ( MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+		std::string ext( mSaveFileType->getText() );
+		String::toLowerInPlace( ext );
 
-		UICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, Sizei(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*." + ext );
-
-		TGDialog->Title( "Save Texture Atlas" );
-		TGDialog->AddEventListener( UIEvent::EventSaveFile, cb::Make1( this, &TextureAtlasNew::TextureAtlasSave ) );
-		TGDialog->Center();
-		TGDialog->Show();
+		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*." + ext );
+		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+		TGDialog->setTitle( "Save Texture Atlas" );
+		TGDialog->addEventListener( UIEvent::SaveFile, cb::Make1( this, &TextureAtlasNew::textureAtlasSave ) );
+		TGDialog->center();
+		TGDialog->show();
 	}
 }
 
-void TextureAtlasNew::CancelClick( const UIEvent * Event ) {
+void TextureAtlasNew::cancelClick( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*>( Event );
 
-	if ( MouseEvent->Flags() & EE_BUTTON_LMASK ) {
-		mUIWindow->CloseWindow();
+	if ( MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+		mUIWindow->closeWindow();
 	}
 }
 
-void TextureAtlasNew::WindowClose( const UIEvent * Event ) {
+void TextureAtlasNew::windowClose( const UIEvent * Event ) {
 	eeDelete( this );
 }
 
-static bool IsValidExtension( const std::string& ext ) {
-	return ext == "png" || ext == "bmp" || ext == "dds" || ext == "tga";
+static bool isValidExtension( const std::string& ext ) {
+	return ext == "png" || ext == "bmp" || ext == "dds" || ext == "tga" || ext == "jpg";
 }
 
-void TextureAtlasNew::TextureAtlasSave( const UIEvent * Event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->Ctrl() );
-	std::string FPath( CDL->GetFullPath() );
+void TextureAtlasNew::textureAtlasSave( const UIEvent * Event ) {
+	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->getControl() );
+	std::string FPath( CDL->getFullPath() );
 
-	if ( !FileSystem::IsDirectory( FPath ) ) {
+	if ( !FileSystem::isDirectory( FPath ) ) {
 		Int32 w = 0, h = 0, b;
-		bool Res1 = String::FromString<Int32>( w, mComboWidth->Text() );
-		bool Res2 = String::FromString<Int32>( h, mComboHeight->Text() );
-		b = static_cast<Int32>( mPixelSpace->Value() );
+		bool Res1 = String::fromString<Int32>( w, mComboWidth->getText() );
+		bool Res2 = String::fromString<Int32>( h, mComboHeight->getText() );
+		b = static_cast<Int32>( mPixelSpace->getValue() );
 
 		if ( Res1 && Res2 ) {
-			Graphics::TexturePacker * TexturePacker = eeNew( Graphics::TexturePacker, ( w, h, false, b ) );
+			Graphics::TexturePacker * TexturePacker = eeNew( Graphics::TexturePacker, ( w, h, PixelDensity::fromString( mPixelDensity->getText() ), false, b ) );
 
-			TexturePacker->AddTexturesPath( mTGPath->Text() );
+			TexturePacker->addTexturesPath( mTGPath->getText() );
 
-			TexturePacker->PackTextures();
+			TexturePacker->packTextures();
 
-			std::string ext = FileSystem::FileExtension( FPath, true );
+			std::string ext = FileSystem::fileExtension( FPath, true );
 
-			if ( !IsValidExtension( ext ) ) {
-				FPath = FileSystem::FileRemoveExtension( FPath );
+			if ( !isValidExtension( ext ) ) {
+				FPath = FileSystem::fileRemoveExtension( FPath );
 
-				ext = mSaveFileType->Text();
+				ext = mSaveFileType->getText();
 
-				String::ToLowerInPlace( ext );
+				String::toLowerInPlace( ext );
 
 				FPath += "." + ext;
 			}
 
-			TexturePacker->Save( FPath, static_cast<EE_SAVE_TYPE> ( mSaveFileType->ListBox()->GetItemSelectedIndex() ) );
+			TexturePacker->save( FPath, static_cast<Image::SaveType> ( mSaveFileType->getListBox()->getItemSelectedIndex() ) );
 
 			if ( mNewTGCb.IsSet() )
 				mNewTGCb( TexturePacker );
 
-			mUIWindow->CloseWindow();
+			mUIWindow->closeWindow();
 		}
 	}
 }
 
-void TextureAtlasNew::OnDialogFolderSelect( const UIEvent * Event ) {
+void TextureAtlasNew::onDialogFolderSelect( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*>( Event );
 
-	if ( MouseEvent->Flags() & EE_BUTTON_LMASK ) {
-		UICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, Sizei(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_ALLOW_FOLDER_SELECT, "*" );
-
-		TGDialog->Title( "Create Texture Atlas ( Select Folder Containing Textures )" );
-		TGDialog->AddEventListener( UIEvent::EventOpenFile, cb::Make1( this, &TextureAtlasNew::OnSelectFolder ) );
-		TGDialog->Center();
-		TGDialog->Show();
+	if ( MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS | CDL_FLAG_ALLOW_FOLDER_SELECT, "*" );
+		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+		TGDialog->setTitle( "Create Texture Atlas ( Select Folder Containing Textures )" );
+		TGDialog->addEventListener( UIEvent::OpenFile, cb::Make1( this, &TextureAtlasNew::onSelectFolder ) );
+		TGDialog->center();
+		TGDialog->show();
 	}
 }
 
-void TextureAtlasNew::OnSelectFolder( const UIEvent * Event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->Ctrl() );
+void TextureAtlasNew::onSelectFolder( const UIEvent * Event ) {
+	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->getControl() );
 	UIMessageBox * MsgBox;
-	std::string FPath( CDL->GetFullPath() );
-	FileSystem::DirPathAddSlashAtEnd( FPath );
+	std::string FPath( CDL->getFullPath() );
+	FileSystem::dirPathAddSlashAtEnd( FPath );
 
-	if ( !FileSystem::IsDirectory( FPath ) ) {
-		FPath = CDL->GetCurPath();
-		FileSystem::DirPathAddSlashAtEnd( FPath );
+	if ( !FileSystem::isDirectory( FPath ) ) {
+		FPath = CDL->getCurPath();
+		FileSystem::dirPathAddSlashAtEnd( FPath );
 	}
 
-	if ( FileSystem::IsDirectory( FPath ) ) {
-		std::vector<std::string> files = FileSystem::FilesGetInPath( FPath );
+	if ( FileSystem::isDirectory( FPath ) ) {
+		std::vector<std::string> files = FileSystem::filesGetInPath( FPath );
 
 		int x,y,c, count = 0;
 		for ( Uint32 i = 0; i < files.size(); i++ ) {
 			std::string ImgPath( FPath + files[i] );
 
-			if ( !FileSystem::IsDirectory( ImgPath ) ) {
+			if ( !FileSystem::isDirectory( ImgPath ) ) {
 				int res = stbi_info( ImgPath.c_str(), &x, &y, &c );
 
 				if ( res ) {
@@ -198,18 +217,18 @@ void TextureAtlasNew::OnSelectFolder( const UIEvent * Event ) {
 
 		//! All OK
 		if ( count ) {
-			mTGPath->Text( FPath );
+			mTGPath->setText( FPath );
 		} else {
-			MsgBox = mTheme->CreateMessageBox( MSGBOX_OK, "The folder must contain at least one image!" );
-			MsgBox->Title( "Error" );
-			MsgBox->Center();
-			MsgBox->Show();
+			MsgBox = UIMessageBox::New( MSGBOX_OK, "The folder must contain at least one image!" );
+			MsgBox->setTitle( "Error" );
+			MsgBox->center();
+			MsgBox->show();
 		}
 	} else {
-		MsgBox = mTheme->CreateMessageBox( MSGBOX_OK, "You must select a folder!" );
-		MsgBox->Title( "Error" );
-		MsgBox->Center();
-		MsgBox->Show();
+		MsgBox = UIMessageBox::New( MSGBOX_OK, "You must select a folder!" );
+		MsgBox->setTitle( "Error" );
+		MsgBox->center();
+		MsgBox->show();
 	}
 }
 

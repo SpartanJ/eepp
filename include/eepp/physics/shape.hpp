@@ -13,88 +13,88 @@ class Space;
 
 class CP_API Shape {
 	public:
-		static void ResetShapeIdCounter();
+		static void resetShapeIdCounter();
 
 		static void Free( Shape * shape, bool DeleteBody = false );
 
-		cpShape * GetShape() const;
+		cpShape * getShape() const;
 
 		virtual ~Shape();
 
-		Physics::Body * Body() const;
+		Physics::Body * getBody() const;
 
-		void Body( Physics::Body * body );
+		void setBody( Physics::Body * body );
 
-		cBB BB() const;
+		cBB getBB() const;
 
-		void BB( const cBB& bb );
+		void setBB( const cBB& bb );
 
-		bool Sensor();
+		bool isSensor();
 
-		void Sensor( const bool& sensor );
+		void setSensor( const bool& sensor );
 
-		cpFloat e() const;
+		cpFloat getE() const;
 
-		void e( const cpFloat& e );
+		void setE( const cpFloat& e );
 
-		cpFloat Elasticity() const;
+		cpFloat getElasticity() const;
 
-		void Elasticity( const cpFloat& e );
+		void setElasticity( const cpFloat& e );
 
-		cpFloat u() const;
+		cpFloat getU() const;
 
-		void u( const cpFloat& u );
+		void setU( const cpFloat& u );
 
-		cpFloat Friction() const;
+		cpFloat getFriction() const;
 
-		void Friction( const cpFloat& u );
+		void setFriction( const cpFloat& u );
 
-		cVect SurfaceVel() const;
+		cVect getSurfaceVel() const;
 
-		void SurfaceVel( const cVect& vel );
+		void getSurfaceVel( const cVect& vel );
 
-		cpCollisionType CollisionType()	 const;
+		cpCollisionType getCollisionType()	 const;
 
-		void CollisionType( const cpCollisionType& type );
+		void setCollisionType( const cpCollisionType& type );
 
-		cpGroup Group() const;
+		cpGroup getGroup() const;
 
-		void Group( const cpGroup& group );
+		void setGroup( const cpGroup& group );
 
-		cpLayers Layers() const;
+		cpLayers getLayers() const;
 
-		void Layers( const cpLayers& layers );
+		void setLayers( const cpLayers& layers );
 
-		cBB CacheBB();
+		cBB cacheBB();
 
-		cBB Update( cVect pos, cVect rot );
+		cBB update( cVect pos, cVect rot );
 
-		bool PointQuery( cVect p );
+		bool pointQuery( cVect p );
 
-		cpShapeType Type() const;
+		cpShapeType getType() const;
 
-		ShapePoly * GetAsPoly();
+		ShapePoly * getAsPoly();
 
-		ShapeCircle * GetAsCircle();
+		ShapeCircle * getAsCircle();
 
-		ShapeSegment * GetAsSegment();
+		ShapeSegment * getAsSegment();
 
-		virtual void Draw( Space * space );
+		virtual void draw( Space * space );
 
-		virtual void DrawBorder( Space * space );
+		virtual void drawBorder( Space * space );
 
-		virtual void DrawBB();
+		virtual void drawBB();
 
-		void * Data() const;
+		void * getData() const;
 
-		void Data( void * data );
+		void setData( void * data );
 	protected:
 		Shape();
 
 		cpShape *		mShape;
 		void *			mData;
 
-		void SetData();
+		void setData();
 };
 
 CP_NAMESPACE_END

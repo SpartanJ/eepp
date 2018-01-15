@@ -5,31 +5,48 @@
 
 namespace EE { namespace UI {
 
-class EE_API UIComboBox : public UIDropDownList {
+class EE_API UIComboBox : public UIWidget {
 	public:
-		UIComboBox( UIComboBox::CreateParams& Params );
+		static UIComboBox * New();
+
+		UIComboBox();
 
 		virtual ~UIComboBox();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
+
+		UIListBox * getListBox();
+
+		UIDropDownList * getDropDownList() const { return mDropDownList; }
+
+		UIControlAnim * getButton() const { return mButton; }
+
+		InputTextBuffer * getInputTextBuffer();
+
+		const String& getText();
+
+		void loadFromXmlNode(const pugi::xml_node & node);
 	protected:
-		UIControl * mButton;
+		UIDropDownList * mDropDownList;
+		UIControlAnim * mButton;
 
-		void OnButtonClick( const UIEvent * Event );
+		void onButtonClick( const UIEvent * Event );
 
-		void OnButtonEnter( const UIEvent * Event );
+		void onButtonEnter( const UIEvent * Event );
 
-		void OnButtonExit( const UIEvent * Event );
+		void onButtonExit( const UIEvent * Event );
 
-		Uint32 OnMouseClick( const Vector2i& Pos, const Uint32 Flags );
+		void updateControls();
 
-		void CreateButton();
+		virtual void onSizeChange();
 
-		virtual void OnControlClear( const UIEvent *Event );
+		virtual void onPositionChange();
+
+		virtual void onAutoSize();
 };
 
 }}

@@ -13,21 +13,21 @@ class EE_API JoystickSFML : public Joystick {
 
 		virtual ~JoystickSFML();
 
-		void 		Close();
+		void 		close();
 
-		void 		Open();
+		void 		open();
 
-		void		Update();
+		void		update();
 
-		Uint8		GetHat( const Int32& index );
+		Uint8		getHat( const Int32& index );
 
-		Float		GetAxis( const Int32& axis );
+		Float		getAxis( const Int32& axis );
 
-		Vector2i	GetBallMotion( const Int32& ball );
+		Vector2i	getBallMotion( const Int32& ball );
 
-		bool		Plugged() const;
+		bool		isPlugged() const;
 	protected:
-		void		CalcHat();
+		void		calcHat();
 
 		Uint8		mHat;
 };

@@ -2,8 +2,8 @@
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
-#include <eepp/graphics/glextensions.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/openglext.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/math/polygon2.hpp>
 #include <eepp/graphics/texturesaver.hpp>
 using namespace EE::Graphics::Private;
@@ -12,16 +12,30 @@ namespace EE { namespace Graphics {
 
 static BatchRenderer * sBR = NULL;
 
+Uint32 Texture::getMaximumSize() {
+	static bool checked = false;
+	static GLint size = 0;
+
+	if (!checked) {
+		checked = true;
+		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &size);
+	}
+
+	return static_cast<Uint32>(size);
+}
+
 Texture::Texture() :
 	Image(),
+	Drawable( Drawable::TEXTURE ),
 	mFilepath(""),
+	mName(""),
 	mId(0),
 	mTexture(0),
 	mImgWidth(0),
 	mImgHeight(0),
 	mFlags(0),
-	mClampMode( CLAMP_TO_EDGE ),
-	mFilter( TEX_FILTER_LINEAR )
+	mClampMode(  CLAMP_TO_EDGE ),
+	mFilter( TEXTURE_FILTER_LINEAR )
 {
 	if ( NULL == sBR ) {
 		sBR = GlobalBatchRenderer::instance();
@@ -30,7 +44,9 @@ Texture::Texture() :
 
 Texture::Texture( const Texture& Copy ) :
 	Image(),
+	Drawable( Drawable::TEXTURE ),
 	mFilepath( Copy.mFilepath ),
+	mName( Copy.mName ),
 	mId( Copy.mId ),
 	mTexture( Copy.mTexture ),
 	mImgWidth( Copy.mImgWidth ),
@@ -44,18 +60,24 @@ Texture::Texture( const Texture& Copy ) :
 	mChannels 	= Copy.mChannels;
 	mSize 		= Copy.mSize;
 
-	SetPixels( reinterpret_cast<const Uint8*>( &Copy.mPixels[0] ) );
+	setPixels( reinterpret_cast<const Uint8*>( &Copy.mPixels[0] ) );
+}
+
+Texture::Texture( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const Texture::ClampMode& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) :
+	Drawable( Drawable::TEXTURE )
+{
+	create( texture, width, height, imgwidth, imgheight, UseMipmap, Channels, filepath, ClampMode, CompressedTexture, MemSize, data );
 }
 
 Texture::~Texture() {
-	DeleteTexture();
+	deleteTexture();
 
-	if ( !TextureFactory::instance()->IsErasing() ) {
-		TextureFactory::instance()->RemoveReference( this );
+	if ( !TextureFactory::instance()->isErasing() ) {
+		TextureFactory::instance()->removeReference( this );
 	}
 }
 
-void Texture::DeleteTexture() {
+void Texture::deleteTexture() {
 	if ( mTexture ) {
 		unsigned int Texture = static_cast<unsigned int>(mTexture);
 		glDeleteTextures(1, &Texture);
@@ -63,17 +85,14 @@ void Texture::DeleteTexture() {
 		mTexture = 0;
 		mFlags = 0;
 
-		ClearCache();
+		clearCache();
 	}
 }
 
-Texture::Texture( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
-	Create( texture, width, height, imgwidth, imgheight, UseMipmap, Channels, filepath, ClampMode, CompressedTexture, MemSize, data );
-}
-
-void Texture::Create( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
+void Texture::create( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const Texture::ClampMode& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
 	mFilepath 	= filepath;
-	mId 		= String::Hash( mFilepath );
+	mName		= mFilepath;
+	mId 		= String::hash( mName );
 	mTexture 	= texture;
 	mWidth 		= width;
 	mHeight 	= height;
@@ -82,7 +101,7 @@ void Texture::Create( const Uint32& texture, const unsigned int& width, const un
 	mImgHeight 	= imgheight;
 	mSize 		= MemSize;
 	mClampMode 	= ClampMode;
-	mFilter 	= TEX_FILTER_LINEAR;
+	mFilter 	= TEXTURE_FILTER_LINEAR;
 
 	if ( UseMipmap )
 		mFlags |= TEX_FLAG_MIPMAP;
@@ -90,11 +109,20 @@ void Texture::Create( const Uint32& texture, const unsigned int& width, const un
 	if ( CompressedTexture )
 		mFlags |= TEX_FLAG_COMPRESSED;
 
-	SetPixels( data );
+	setPixels( data );
+}
+
+std::string Texture::getName() const {
+	return mName;
+}
+
+void Texture::setName(const std::string & name) {
+	mName = name;
+	mId = String::hash( name );
 }
 
 Uint8 * Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
-	#ifndef EE_GLES
+#ifndef EE_GLES
 	if ( !( mFlags & TEX_FLAG_LOCKED ) ) {
 		if ( ForceRGBA )
 			mChannels = 4;
@@ -114,7 +142,7 @@ Uint8 * Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
 			glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &size );
 		}
 
-		Allocate( (unsigned int)size );
+		allocate( (unsigned int)size );
 
 		if ( KeepFormat && ( mFlags & TEX_FLAG_COMPRESSED ) ) {
 			glGetCompressedTexImage( GL_TEXTURE_2D, 0, reinterpret_cast<Uint8*> (&mPixels[0]) );
@@ -135,16 +163,39 @@ Uint8 * Texture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
 	}
 
 	return &mPixels[0];
-	#else
+#else
+	if ( !( mFlags & TEX_FLAG_LOCKED ) ) {
+		TextureSaver saver( mTexture );
+
+		GLuint frameBuffer = 0;
+		GLi->genFramebuffers(1, &frameBuffer);
+
+		if ( frameBuffer ) {
+			allocate( mWidth * mHeight * 4 );
+
+			GLint previousFrameBuffer;
+			glGetIntegerv( GL_FRAMEBUFFER_BINDING, &previousFrameBuffer );
+			GLi->bindFramebuffer( GL_FRAMEBUFFER, frameBuffer );
+			GLi->framebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture, 0 );
+			glReadPixels( 0, 0, mWidth, mHeight, GL_RGBA, GL_UNSIGNED_BYTE, &mPixels[0] );
+			GLi->deleteFramebuffers(1, &frameBuffer);
+			GLi->bindFramebuffer( GL_FRAMEBUFFER, previousFrameBuffer );
+
+			mFlags |= TEX_FLAG_LOCKED;
+
+			return &mPixels[0];
+		}
+	}
+
 	return NULL;
-	#endif
+#endif
 }
 
-Uint8 * Texture::Lock( const bool& ForceRGBA ) {
+Uint8 * Texture::lock( const bool& ForceRGBA ) {
 	return iLock( ForceRGBA, false );
 }
 
-bool Texture::Unlock( const bool& KeepData, const bool& Modified ) {
+bool Texture::unlock( const bool& KeepData, const bool& Modified ) {
 	#ifndef EE_GLES
 	if ( ( mFlags & TEX_FLAG_LOCKED ) ) {
 		Int32 width = mWidth, height = mHeight;
@@ -167,7 +218,7 @@ bool Texture::Unlock( const bool& KeepData, const bool& Modified ) {
 		}
 
 		if ( !KeepData )
-			ClearCache();
+			clearCache();
 
 		mFlags &= ~TEX_FLAG_LOCKED;
 
@@ -181,135 +232,135 @@ bool Texture::Unlock( const bool& KeepData, const bool& Modified ) {
 	#endif
 }
 
-const Uint8 * Texture::GetPixelsPtr() {
-	if ( !LocalCopy() ) {
-		Lock();
-		Unlock(true);
+const Uint8 * Texture::getPixelsPtr() {
+	if ( !hasLocalCopy() ) {
+		lock();
+		unlock(true);
 	}
 
-	return Image::GetPixelsPtr();
+	return Image::getPixelsPtr();
 }
 
-void Texture::SetPixel( const unsigned int& x, const unsigned int& y, const ColorA& Color ) {
-	Image::SetPixel( x, y, Color );
+void Texture::setPixel( const unsigned int& x, const unsigned int& y, const Color& Color ) {
+	Image::setPixel( x, y, Color );
 
 	mFlags |= TEX_FLAG_MODIFIED;
 }
 
-void Texture::Bind() {
-	TextureFactory::instance()->Bind( this );
+void Texture::bind() {
+	TextureFactory::instance()->bind( this );
 }
 
-bool Texture::SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format ) {
+bool Texture::saveToFile(const std::string& filepath, const SaveType & Format ) {
 	bool Res = false;
 
 	if ( mTexture ) {
-		Lock();
+		lock();
 
-		Res = Image::SaveToFile( filepath, Format );
+		Res = Image::saveToFile( filepath, Format );
 
-		Unlock();
+		unlock();
 	}
 
 	return Res;
 }
 
-void Texture::Filter(const EE_TEX_FILTER& filter) {
+void Texture::setFilter(const TextureFilter& filter) {
 	if ( mFilter != filter ) {
 		iTextureFilter( filter );
 	}
 }
 
-void Texture::iTextureFilter( const EE_TEX_FILTER& filter ) {
+void Texture::iTextureFilter( const TextureFilter& filter ) {
 	if (mTexture) {
 		mFilter = filter;
 
 		TextureSaver saver( mTexture );
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (mFilter == TEXTURE_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
 
 		if ( mFlags & TEX_FLAG_MIPMAP )
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEXTURE_FILTER_LINEAR) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
 		else
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEXTURE_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
 	}
 }
 
-const EE_TEX_FILTER& Texture::Filter() const {
+const Texture::TextureFilter& Texture::getFilter() const {
 	return mFilter;
 }
 
-void Texture::ReplaceColor( const ColorA& ColorKey, const ColorA& NewColor ) {
-	Lock();
+void Texture::replaceColor( const Color& ColorKey, const Color& NewColor ) {
+	lock();
 
-	Image::ReplaceColor( ColorKey, NewColor );
+	Image::replaceColor( ColorKey, NewColor );
 
-	Unlock( false, true );
+	unlock( false, true );
 }
 
-void Texture::CreateMaskFromColor( const ColorA& ColorKey, Uint8 Alpha ) {
-	Lock( true );
+void Texture::createMaskFromColor( const Color& ColorKey, Uint8 Alpha ) {
+	lock( true );
 
-	Image::ReplaceColor( ColorKey, ColorA( ColorKey.R(), ColorKey.G(), ColorKey.B(), Alpha ) );
+	Image::replaceColor( ColorKey, Color( ColorKey.r, ColorKey.g, ColorKey.b, Alpha ) );
 
-	Unlock( false, true );
+	unlock( false, true );
 }
 
-void Texture::FillWithColor( const ColorA& Color ) {
-	Lock();
+void Texture::fillWithColor( const Color& Color ) {
+	lock();
 
-	Image::FillWithColor( Color );
+	Image::fillWithColor( Color );
 
-	Unlock( false, true );
+	unlock( false, true );
 }
 
-void Texture::Resize( const Uint32& newWidth, const Uint32& newHeight , EE_RESAMPLER_FILTER filter ) {
-	Lock();
+void Texture::resize( const Uint32& newWidth, const Uint32& newHeight , ResamplerFilter filter ) {
+	lock();
 
-	Image::Resize( newWidth, newHeight, filter );
+	Image::resize( newWidth, newHeight, filter );
 
-	Unlock( false, true );
+	unlock( false, true );
 }
 
-void Texture::Scale( const Float& scale, EE_RESAMPLER_FILTER filter ) {
-	Lock();
+void Texture::scale( const Float& scale, ResamplerFilter filter ) {
+	lock();
 
-	Image::Scale( scale, filter );
+	Image::scale( scale, filter );
 
-	Unlock( false, true );
+	unlock( false, true );
 }
 
-void Texture::CopyImage(Image * image, const Uint32& x, const Uint32& y ) {
-	Lock();
+void Texture::copyImage(Image * image, const Uint32& x, const Uint32& y ) {
+	lock();
 
-	Image::CopyImage( image, x, y );
+	Image::copyImage( image, x, y );
 
-	Unlock( false, true );
+	unlock( false, true );
 }
 
-void Texture::Flip() {
-	Lock();
+void Texture::flip() {
+	lock();
 
-	Image::Flip();
+	Image::flip();
 
-	Unlock( false, true );
+	unlock( false, true );
 
 	mImgWidth 	= mWidth;
 	mImgHeight 	= mHeight;
 }
 
-bool Texture::LocalCopy() {
+bool Texture::hasLocalCopy() {
 	return ( mPixels != NULL );
 }
 
-void Texture::ClampMode( const EE_CLAMP_MODE& clampmode ) {
+void Texture::setClampMode( const Texture::ClampMode& clampmode ) {
 	if ( mClampMode != clampmode ) {
 		mClampMode = clampmode;
-		ApplyClampMode();
+		applyClampMode();
 	}
 }
 
-void Texture::ApplyClampMode() {
+void Texture::applyClampMode() {
 	if (mTexture) {
 		TextureSaver saver( mTexture );
 
@@ -324,16 +375,16 @@ void Texture::ApplyClampMode() {
 	}
 }
 
-void Texture::Id( const Uint32& id ) {
+void Texture::setId( const Uint32& id ) {
 	mTexId = id;
 }
 
-const Uint32& Texture::Id() const {
+const Uint32& Texture::getId() const {
 	return mTexId;
 }
 
-void Texture::Reload()  {
-	if ( LocalCopy() ) {
+void Texture::reload()  {
+	if ( hasLocalCopy() ) {
 		Int32 width = (Int32)mWidth;
 		Int32 height = (Int32)mHeight;
 
@@ -343,7 +394,7 @@ void Texture::Reload()  {
 		flags = (mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 
 		if ( ( mFlags & TEX_FLAG_COMPRESSED ) ) {
-			if ( Grabed() )
+			if ( isGrabed() )
 				mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8 *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags | SOIL_FLAG_COMPRESS_TO_DXT );
 			else
 				glCompressedTexImage2D( mTexture, 0, mInternalFormat, width, height, 0, mSize, &mPixels[0] );
@@ -354,7 +405,7 @@ void Texture::Reload()  {
 
 			mSize = mWidth * mHeight * mChannels;
 
-			if ( Mipmap() ) {
+			if ( getMipmap() ) {
 				int w = mWidth;
 				int h = mHeight;
 
@@ -371,32 +422,74 @@ void Texture::Reload()  {
 		iTextureFilter( mFilter );
 	} else {
 		iLock(false,true);
-		Reload();
-		Unlock();
+		reload();
+		unlock();
 	}
 }
 
-void Texture::Update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x, Uint32 y, EE_PIXEL_FORMAT pf ) {
+static unsigned int convertPixelFormatToGLFormat( Image::PixelFormat pf ) {
+	switch ( pf ) {
+		case Image::PixelFormat::PIXEL_FORMAT_RED: return 0x1903;
+		case Image::PixelFormat::PIXEL_FORMAT_RG: return 0x8227;
+		case Image::PixelFormat::PIXEL_FORMAT_RGB: return 0x1907;
+		case Image::PixelFormat::PIXEL_FORMAT_BGR: return 0x80E0;
+		case Image::PixelFormat::PIXEL_FORMAT_BGRA: return 0x80E1;
+		case Image::PixelFormat::PIXEL_FORMAT_RGBA: return 0x1908;
+		default: return 0x1908;
+	}
+}
+
+void Texture::update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x, Uint32 y, PixelFormat pf ) {
 	if ( NULL != pixels && mTexture && x + width <= mWidth && y + height <= mHeight ) {
 		TextureSaver saver( mTexture );
 
-		glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, (unsigned int)pf, GL_UNSIGNED_BYTE, pixels );
+		glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, (unsigned int)convertPixelFormatToGLFormat( pf ), GL_UNSIGNED_BYTE, pixels );
+
+		if ( hasLocalCopy() ) {
+			Image image( pixels, width, height, mChannels );
+
+			Image::copyImage( &image, x, y );
+		}
 	}
 }
 
-void Texture::Update( const Uint8* pixels ) {
-	Update( pixels, mWidth, mHeight, 0, 0, ChannelsToPixelFormat( mChannels ) );
+void Texture::update( const Uint8* pixels ) {
+	update( pixels, mWidth, mHeight, 0, 0, channelsToPixelFormat( mChannels ) );
 }
 
-void Texture::Update( Image *image, Uint32 x, Uint32 y ) {
-	Update( image->GetPixelsPtr(), image->Width(), image->Height(), x, y, ChannelsToPixelFormat( image->Channels() ) );
+void Texture::update( Image *image, Uint32 x, Uint32 y ) {
+	update( image->getPixelsPtr(), image->getWidth(), image->getHeight(), x, y, channelsToPixelFormat( image->getChannels() ) );
 }
 
-const Uint32& Texture::HashName() const {
+void Texture::replace( Image * image ) {
+	Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
+	flags = (mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
+
+	TextureSaver textureSaver;
+
+	Int32 width = (Int32)image->getWidth();
+	Int32 height = (Int32)image->getHeight();
+	mTexture = SOIL_create_OGL_texture( image->getPixelsPtr(), &width, &height, image->getChannels(), mTexture, flags );
+	mWidth = mImgWidth = width;
+	mHeight = mImgHeight = height;
+	mChannels = image->getChannels();
+
+	TextureFactory::instance()->mMemSize -= mSize;
+	mSize = mWidth * mHeight * mChannels;
+	TextureFactory::instance()->mMemSize += mSize;
+
+	if ( hasLocalCopy() ) {
+		// Renew the local copy
+		allocate( image->getMemSize(), Color(0,0,0,0), false );
+		Image::copyImage( image );
+	}
+}
+
+const Uint32& Texture::getHashName() const {
 	return mId;
 }
 
-void Texture::Mipmap( const bool& UseMipmap ) {
+void Texture::setMipmap( const bool& UseMipmap ) {
 	if ( mFlags & TEX_FLAG_MIPMAP ) {
 		if ( !UseMipmap )
 			mFlags &= ~TEX_FLAG_MIPMAP;
@@ -406,11 +499,11 @@ void Texture::Mipmap( const bool& UseMipmap ) {
 	}
 }
 
-bool Texture::Mipmap() const {
+bool Texture::getMipmap() const {
 	return mFlags & TEX_FLAG_MIPMAP;
 }
 
-void Texture::Grabed( const bool& isGrabed ) {
+void Texture::setGrabed( const bool& isGrabed ) {
 	if ( mFlags & TEX_FLAG_GRABED ) {
 		if ( !isGrabed )
 			mFlags &= ~TEX_FLAG_GRABED;
@@ -420,42 +513,44 @@ void Texture::Grabed( const bool& isGrabed ) {
 	}
 }
 
-bool Texture::Grabed() const {
+bool Texture::isGrabed() const {
 	return 0 != ( mFlags & TEX_FLAG_GRABED );
 }
 
-bool Texture::IsCompressed() const {
+bool Texture::isCompressed() const {
 	return 0 != ( mFlags & TEX_FLAG_COMPRESSED );
 }
 
-void Texture::Draw( const Float &x, const Float &y, const Float &Angle, const Vector2f &Scale, const ColorA& Color, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, OriginPoint Center, const Recti& texSector) {
-	DrawEx( x, y, 0, 0, Angle, Scale, Color, Color, Color, Color, Blend, Effect, Center, texSector );
+void Texture::draw( const Float &x, const Float &y, const Float &Angle, const Vector2f &Scale, const Color& Color, const BlendMode &Blend, const RenderMode &Effect, OriginPoint Center, const Rect& texSector) {
+	drawEx( x, y, 0, 0, Angle, Scale, Color, Color, Color, Color, Blend, Effect, Center, texSector );
 }
 
-void Texture::DrawFast( const Float& x, const Float& y, const Float& Angle, const Vector2f& Scale, const ColorA& Color, const EE_BLEND_MODE &Blend, const Float &width, const Float &height ) {
-	Float w = 0.f != width	? width		: (Float)ImgWidth();
-	Float h = 0.f != height	? height	: (Float)ImgHeight();
+void Texture::drawFast( const Float& x, const Float& y, const Float& Angle, const Vector2f& Scale, const Color& Color, const BlendMode &Blend, const Float &width, const Float &height ) {
+	Float w = 0.f != width	? width		: (Float)getImageWidth();
+	Float h = 0.f != height	? height	: (Float)getImageHeight();
 
-	sBR->SetTexture( this );
-	sBR->SetBlendMode( Blend );
+	sBR->setTexture( this );
+	sBR->setBlendMode( Blend );
 
-	sBR->QuadsBegin();
-	sBR->QuadsSetColor( Color );
+	sBR->quadsBegin();
+	sBR->quadsSetColor( Color );
 
-	if ( ClampMode() == CLAMP_REPEAT ) {
-		sBR->QuadsSetSubsetFree( 0, 0, 0, height / h, width / w, height / h, width / w, 0 );
+	if ( getClampMode() == CLAMP_REPEAT ) {
+		Float iw = (Float)getImageWidth();
+		Float ih = (Float)getImageHeight();
+		sBR->quadsSetSubsetFree( 0, 0, 0, height / ih, width / iw, height / ih, width / iw, 0 );
 	}
 
-	sBR->BatchQuadEx( x, y, w, h, Angle, Scale );
+	sBR->batchQuadEx( x, y, w, h, Angle, Scale );
 
-	sBR->DrawOpt();
+	sBR->drawOpt();
 }
 
-void Texture::DrawEx( Float x, Float y, Float width, Float height, const Float &Angle, const Vector2f &Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, OriginPoint Center, const Recti& texSector ) {
+void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &Angle, const Vector2f &Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const BlendMode &Blend, const RenderMode &Effect, OriginPoint Center, const Rect& texSector ) {
 	bool renderSector	= true;
-	Recti Sector		= texSector;
-	Float w			= (Float)ImgWidth();
-	Float h			= (Float)ImgHeight();
+	Rect Sector		= texSector;
+	Float w			= (Float)getImageWidth();
+	Float h			= (Float)getImageHeight();
 
 	if ( Sector.Right == 0 && Sector.Bottom == 0 ) {
 		Sector.Left		= 0;
@@ -471,17 +566,17 @@ void Texture::DrawEx( Float x, Float y, Float width, Float height, const Float &
 
 	renderSector = !( Sector.Left == 0 && Sector.Top == 0 && Sector.Right == w && Sector.Bottom == h );
 
-	sBR->SetTexture( this );
-	sBR->SetBlendMode( Blend );
+	sBR->setTexture( this );
+	sBR->setBlendMode( Blend );
 
-	sBR->QuadsBegin();
-	sBR->QuadsSetColorFree( Color0, Color1, Color2, Color3 );
+	sBR->quadsBegin();
+	sBR->quadsSetColorFree( Color0, Color1, Color2, Color3 );
 
-	if ( Effect <= RN_FLIPMIRROR ) {
-		if ( ClampMode() == CLAMP_REPEAT ) {
-			if ( Effect == RN_NORMAL ) {
+	if ( Effect <= RENDER_FLIPPED_MIRRORED ) {
+		if ( getClampMode() == CLAMP_REPEAT ) {
+			if ( Effect == RENDER_NORMAL ) {
 				if ( renderSector ) {
-					sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
+					sBR->quadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
 
 					Float sw = (Float)( Sector.Right - Sector.Left );
 					Float sh = (Float)( Sector.Bottom - Sector.Top );
@@ -492,10 +587,10 @@ void Texture::DrawEx( Float x, Float y, Float width, Float height, const Float &
 					Int32 tmpY;
 					Int32 tmpX;
 
-					sBR->Draw();
-					Vector2f oCenter( sBR->BatchCenter() );
-					Float oAngle = sBR->BatchRotation();
-					Vector2f oScale = sBR->BatchScale();
+					sBR->draw();
+					Vector2f oCenter( sBR->getBatchCenter() );
+					Float oAngle = sBR->getBatchRotation();
+					Vector2f oScale = sBR->getBatchScale();
 
 					if ( Center.OriginType == OriginPoint::OriginCenter ) {
 						Center.x = x + width  * 0.5f;
@@ -508,13 +603,13 @@ void Texture::DrawEx( Float x, Float y, Float width, Float height, const Float &
 						Center.y += y;
 					}
 
-					sBR->BatchCenter( Center );
-					sBR->BatchRotation( Angle );
-					sBR->BatchScale( Scale );
+					sBR->setBatchCenter( Center );
+					sBR->setBatchRotation( Angle );
+					sBR->setBatchScale( Scale );
 
 					for ( tmpY = 0; tmpY < tty; tmpY++ ) {
 						for ( tmpX = 0; tmpX < ttx; tmpX++ ) {
-							sBR->BatchQuad( x + tmpX * sw, y + tmpY * sh, sw, sh );
+							sBR->batchQuad( x + tmpX * sw, y + tmpY * sh, sw, sh );
 						}
 					}
 
@@ -522,10 +617,10 @@ void Texture::DrawEx( Float x, Float y, Float width, Float height, const Float &
 						Float swn = ( Sector.Right - Sector.Left ) * ( tx - (Float)ttx );
 						Float tor = Sector.Left + swn ;
 
-						sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, tor / w, Sector.Bottom / h, tor / w, Sector.Top / h );
+						sBR->quadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, tor / w, Sector.Bottom / h, tor / w, Sector.Top / h );
 
 						for ( Int32 tmpY = 0; tmpY < tty; tmpY++ ) {
-							sBR->BatchQuad( x + ttx * sw, y + tmpY * sh, swn, sh );
+							sBR->batchQuad( x + ttx * sw, y + tmpY * sh, swn, sh );
 						}
 					}
 
@@ -533,132 +628,152 @@ void Texture::DrawEx( Float x, Float y, Float width, Float height, const Float &
 						Float shn = ( Sector.Bottom - Sector.Top ) * ( ty - (Float)tty );
 						Float tob = Sector.Top + shn;
 
-						sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, tob / h, Sector.Right / w, tob / h, Sector.Right / w, Sector.Top / h );
+						sBR->quadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, tob / h, Sector.Right / w, tob / h, Sector.Right / w, Sector.Top / h );
 
 						for ( Int32 tmpX = 0; tmpX < ttx; tmpX++ ) {
-							sBR->BatchQuad( x + tmpX * sw, y + tty * sh, sw, shn );
+							sBR->batchQuad( x + tmpX * sw, y + tty * sh, sw, shn );
 						}
 					}
 
-					sBR->Draw();
-					sBR->BatchCenter( oCenter );
-					sBR->BatchRotation( oAngle );
-					sBR->BatchScale( oScale );
+					sBR->draw();
+					sBR->setBatchCenter( oCenter );
+					sBR->setBatchRotation( oAngle );
+					sBR->setBatchScale( oScale );
 
 					return;
 				} else {
-					sBR->QuadsSetSubsetFree( 0, 0, 0, height / h, width / w, height / h, width / w, 0 );
+					sBR->quadsSetSubsetFree( 0, 0, 0, height / h, width / w, height / h, width / w, 0 );
 				}
-			} else if ( Effect == RN_MIRROR ) {
-				sBR->QuadsSetSubsetFree( width / w, 0, width / w, height / h, 0, height / h, 0, 0 );
-			} else if ( RN_FLIP ) {
-				sBR->QuadsSetSubsetFree( 0, height / h, 0, 0, width / w, 0, width / w, height / h );
+			} else if ( Effect == RENDER_MIRROR ) {
+				sBR->quadsSetSubsetFree( width / w, 0, width / w, height / h, 0, height / h, 0, 0 );
+			} else if ( Effect == RENDER_FLIPPED ) {
+				sBR->quadsSetSubsetFree( 0, height / h, 0, 0, width / w, 0, width / w, height / h );
 			} else {
-				sBR->QuadsSetSubsetFree( width / w, height / h, width / w, 0, 0, 0, 0, height / h );
+				sBR->quadsSetSubsetFree( width / w, height / h, width / w, 0, 0, 0, 0, height / h );
 			}
 		} else {
-			if ( Effect == RN_NORMAL ) {
+			if ( Effect == RENDER_NORMAL ) {
 				if ( renderSector )
-					sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
-			} else if ( Effect == RN_MIRROR ) {
+					sBR->quadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
+			} else if ( Effect == RENDER_MIRROR ) {
 				if ( renderSector )
-					sBR->QuadsSetSubsetFree( Sector.Right / w, Sector.Top / h, Sector.Right / w, Sector.Bottom / h, Sector.Left / w, Sector.Bottom / h, Sector.Left / w, Sector.Top / h );
+					sBR->quadsSetSubsetFree( Sector.Right / w, Sector.Top / h, Sector.Right / w, Sector.Bottom / h, Sector.Left / w, Sector.Bottom / h, Sector.Left / w, Sector.Top / h );
 				else
-					sBR->QuadsSetSubsetFree( 1, 0, 1, 1, 0, 1, 0, 0 );
-			} else if ( Effect == RN_FLIP ) {
+					sBR->quadsSetSubsetFree( 1, 0, 1, 1, 0, 1, 0, 0 );
+			} else if ( Effect == RENDER_FLIPPED ) {
 				if ( renderSector )
-					sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Bottom / h, Sector.Left / w, Sector.Top / h, Sector.Right / w, Sector.Top / h, Sector.Right / w, Sector.Bottom / h );
+					sBR->quadsSetSubsetFree( Sector.Left / w, Sector.Bottom / h, Sector.Left / w, Sector.Top / h, Sector.Right / w, Sector.Top / h, Sector.Right / w, Sector.Bottom / h );
 				else
-					sBR->QuadsSetSubsetFree( 0, 1, 0, 0, 1, 0, 1, 1 );
-			} else if ( Effect == RN_FLIPMIRROR ) {
+					sBR->quadsSetSubsetFree( 0, 1, 0, 0, 1, 0, 1, 1 );
+			} else if ( Effect == RENDER_FLIPPED_MIRRORED ) {
 				if ( renderSector )
-					sBR->QuadsSetSubsetFree( Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h, Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h );
+					sBR->quadsSetSubsetFree( Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h, Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h );
 				else
-					sBR->QuadsSetSubsetFree( 1, 1, 1, 0, 0, 0, 0, 1 );
+					sBR->quadsSetSubsetFree( 1, 1, 1, 0, 0, 0, 0, 1 );
 			}
 		}
 
-		sBR->BatchQuadEx( x, y, width, height, Angle, Scale, Center );
+		sBR->batchQuadEx( x, y, width, height, Angle, Scale, Center );
 	} else {
 		if ( renderSector )
-			sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
+			sBR->quadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
 
 		Rectf TmpR( x, y, x + width, y + height );
 		Quad2f Q = Quad2f( Vector2f( TmpR.Left, TmpR.Top ), Vector2f( TmpR.Left, TmpR.Bottom ), Vector2f( TmpR.Right, TmpR.Bottom ), Vector2f( TmpR.Right, TmpR.Top ) );
 
-		if ( Effect == RN_ISOMETRIC ) {
+		if ( Effect == RENDER_ISOMETRIC ) {
 			Q.V[0].x += ( TmpR.Right - TmpR.Left );
 			Q.V[1].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 			Q.V[3].x += ( TmpR.Right - TmpR.Left );
 			Q.V[3].y += ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
-		} else if ( Effect == RN_ISOMETRICVERTICAL ) {
+		} else if ( Effect == RENDER_ISOMETRIC_VERTICAL ) {
 			Q.V[0].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 			Q.V[1].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
-		} else if ( Effect == RN_ISOMETRICVERTICALNEGATIVE ) {
+		} else if ( Effect == RENDER_ISOMETRIC_VERTICAL_NEGATIVE ) {
 			Q.V[2].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 			Q.V[3].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 		}
 
 		if ( Angle != 0.f || Scale != 1.f ) {
 			if ( Center.OriginType == OriginPoint::OriginCenter ) {
-				Center = TmpR.Center();
+				Center = TmpR.getCenter();
 			} else if ( Center.OriginType == OriginPoint::OriginTopLeft ) {
-				Center = TmpR.Pos();
+				Center = TmpR.getPosition();
 			} else {
-				Center += TmpR.Pos();
+				Center += TmpR.getPosition();
 			}
 
-			Q.Rotate( Angle, Center );
-			Q.Scale( Scale, Center );
+			Q.rotate( Angle, Center );
+			Q.scale( Scale, Center );
 		}
 
-		sBR->BatchQuadFree( Q[0].x, Q[0].y, Q[1].x, Q[1].y, Q[2].x, Q[2].y, Q[3].x, Q[3].y );
+		sBR->batchQuadFree( Q[0].x, Q[0].y, Q[1].x, Q[1].y, Q[2].x, Q[2].y, Q[3].x, Q[3].y );
 	}
 
-	sBR->DrawOpt();
+	sBR->drawOpt();
 }
 
-void Texture::DrawQuad( const Quad2f& Q, const Vector2f& Offset, const Float &Angle, const Vector2f &Scale, const ColorA& Color, const EE_BLEND_MODE &Blend, const Recti& texSector) {
-	DrawQuadEx( Q, Offset, Angle, Scale, Color, Color, Color, Color, Blend, texSector );
+void Texture::drawQuad( const Quad2f& Q, const Vector2f& Offset, const Float &Angle, const Vector2f &Scale, const Color& Color, const BlendMode &Blend, const Rect& texSector) {
+	drawQuadEx( Q, Offset, Angle, Scale, Color, Color, Color, Color, Blend, texSector );
 }
 
-void Texture::DrawQuadEx( Quad2f Q, const Vector2f& Offset, const Float &Angle, const Vector2f &Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE &Blend, Recti texSector ) {
+void Texture::drawQuadEx( Quad2f Q, const Vector2f& Offset, const Float &Angle, const Vector2f &Scale, const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3, const BlendMode &Blend, Rect texSector ) {
 	bool renderSector = true;
-	Float w =	(Float)ImgWidth();
-	Float h = (Float)ImgHeight();
+	Float w =	(Float)getImageWidth();
+	Float h = (Float)getImageHeight();
 
 	if ( texSector.Right == 0 && texSector.Bottom == 0 ) {
 		texSector.Left		= 0;
 		texSector.Top		= 0;
-		texSector.Right		= ImgWidth();
-		texSector.Bottom	= ImgHeight();
+		texSector.Right		= getImageWidth();
+		texSector.Bottom	= getImageHeight();
 	}
 
 	renderSector = !( texSector.Left == 0 && texSector.Top == 0 && texSector.Right == w && texSector.Bottom == h );
 
-	sBR->SetTexture( this );
-	sBR->SetBlendMode( Blend );
+	sBR->setTexture( this );
+	sBR->setBlendMode( Blend );
 
-	sBR->QuadsBegin();
-	sBR->QuadsSetColorFree( Color0, Color1, Color2, Color3 );
+	sBR->quadsBegin();
+	sBR->quadsSetColorFree( Color0, Color1, Color2, Color3 );
 
 	if ( Angle != 0 ||  Scale != 1.0f ) {
-		Vector2f QCenter( Q.GetCenter() );
-		Q.Rotate( Angle, QCenter );
-		Q.Scale( Scale, QCenter );
+		Vector2f QCenter( Q.getCenter() );
+		Q.rotate( Angle, QCenter );
+		Q.scale( Scale, QCenter );
 	}
 
-	if ( ClampMode() == CLAMP_REPEAT ) {
-		sBR->QuadsSetSubsetFree( 0, 0, 0, ( Q.V[0].y - Q.V[0].y ) / h, ( Q.V[0].x - Q.V[0].x ) / w, ( Q.V[0].y - Q.V[0].y ) / h, ( Q.V[0].x - Q.V[0].x ) / w, 0 );
+	if ( getClampMode() == CLAMP_REPEAT ) {
+		sBR->quadsSetSubsetFree( 0, 0, 0, ( Q.V[0].y - Q.V[0].y ) / h, ( Q.V[0].x - Q.V[0].x ) / w, ( Q.V[0].y - Q.V[0].y ) / h, ( Q.V[0].x - Q.V[0].x ) / w, 0 );
 	} else if ( renderSector ) {
-		sBR->QuadsSetSubsetFree( texSector.Left / w, texSector.Top / h, texSector.Left / w, texSector.Bottom / h, texSector.Right / w, texSector.Bottom / h, texSector.Right / w, texSector.Top / h );
+		sBR->quadsSetSubsetFree( texSector.Left / w, texSector.Top / h, texSector.Left / w, texSector.Bottom / h, texSector.Right / w, texSector.Bottom / h, texSector.Right / w, texSector.Top / h );
 	}
 
-	Q.Move( Offset );
+	Q.move( Offset );
 
-	sBR->BatchQuadFreeEx( Q[0].x, Q[0].y, Q[1].x, Q[1].y, Q[2].x, Q[2].y, Q[3].x, Q[3].y );
+	sBR->batchQuadFreeEx( Q[0].x, Q[0].y, Q[1].x, Q[1].y, Q[2].x, Q[2].y, Q[3].x, Q[3].y );
 
-	sBR->DrawOpt();
+	sBR->drawOpt();
+}
+
+Sizef Texture::getSize() {
+	return Sizef( PixelDensity::pxToDp( mImgWidth ), PixelDensity::pxToDp( mImgHeight ) );
+}
+
+Sizei Texture::getPixelSize() {
+	return Sizei( mImgWidth, mImgHeight );
+}
+
+void Texture::draw() {
+	drawFast( mPosition.x, mPosition.y );
+}
+
+void Texture::draw( const Vector2f & position ) {
+	drawFast( position.x, position.y );
+}
+
+void Texture::draw(const Vector2f & position, const Sizef & size) {
+	drawFast( position.x, position.y, 0, Vector2f::One, mColor, BlendAlpha, size.x, size.y );
 }
 
 }}

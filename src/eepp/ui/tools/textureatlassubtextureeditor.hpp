@@ -2,39 +2,41 @@
 #define EE_UITOOLSCTEXTUREATLASSUBTEXTUREEDITOR_HPP
 
 #include <eepp/ui/base.hpp>
-#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uiwidget.hpp>
 #include <eepp/graphics/subtexture.hpp>
-#include <eepp/ui/uigfx.hpp>
+#include <eepp/ui/uisubtexture.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
 class TextureAtlasEditor;
 
-class EE_API TextureAtlasSubTextureEditor : public UIComplexControl {
+class EE_API TextureAtlasSubTextureEditor : public UIWidget {
 	public:
-		TextureAtlasSubTextureEditor( const UIComplexControl::CreateParams& Params, TextureAtlasEditor * Editor );
+		static TextureAtlasSubTextureEditor * New( TextureAtlasEditor * Editor );
+
+		TextureAtlasSubTextureEditor( TextureAtlasEditor * Editor );
 
 		virtual ~TextureAtlasSubTextureEditor();
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual void Update();
+		virtual void update();
 
-		Graphics::SubTexture * SubTexture() const;
+		Graphics::SubTexture * getSubTexture() const;
 
-		void SubTexture( Graphics::SubTexture * subTexture );
+		void setSubTexture( Graphics::SubTexture * subTexture );
 
-		UIGfx * Gfx() const;
+		UISubTexture * getGfx() const;
 	protected:
 		UITheme *				mTheme;
-		UIGfx *				mGfx;
-		UIDragable *			mDrag;
+		UISubTexture *					mGfx;
+		UIDragableControl *			mDrag;
 		Vector2i				mUICenter;
 		TextureAtlasEditor *	mEditor;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		void GetCenter();
+		void getCenter();
 };
 
 }}}

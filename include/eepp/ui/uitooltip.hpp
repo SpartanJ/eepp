@@ -4,114 +4,95 @@
 #include <eepp/ui/uicontrolanim.hpp>
 
 namespace EE { namespace Graphics {
-class TextCache;
+class Text;
 }}
 
 namespace EE { namespace UI {
 
 class EE_API UITooltip : public UIControlAnim {
 	public:
-		class CreateParams : public UIControlAnim::CreateParams {
-			public:
-				inline CreateParams() :
-					UIControlAnim::CreateParams(),
-					Font( NULL ),
-					FontColor( 0, 0, 0, 255 ),
-					FontShadowColor( 255, 255, 255, 150 )
-				{
-					UITheme * Theme = UIThemeManager::instance()->DefaultTheme();
+		static UITooltip * New();
 
-					if ( NULL != Theme ) {
-						Font			= Theme->Font();
-						FontColor		= Theme->FontColor();
-						FontShadowColor	= Theme->FontShadowColor();
-					}
-
-					if ( NULL == Font )
-						Font = UIThemeManager::instance()->DefaultFont();
-				}
-
-				inline ~CreateParams() {}
-
-				Graphics::Font * 	Font;
-				ColorA				FontColor;
-				ColorA				FontShadowColor;
-				Recti				Padding;
-		};
-
-		UITooltip( UITooltip::CreateParams& Params, UIControl * TooltipOf );
+		UITooltip();
 
 		virtual ~UITooltip();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		void Show();
+		void show();
 
-		void Hide();
+		void hide();
 
-		virtual void Draw();
+		virtual void draw();
 
-		virtual void Alpha( const Float& alpha );
+		virtual void setAlpha( const Float& alpha );
 
-		Graphics::Font * Font() const;
+		Graphics::Font * getFont() const;
 
-		void Font( Graphics::Font * font );
+		void setFont( Graphics::Font * font );
 
-		virtual const String& Text();
+		virtual const String& getText();
 
-		virtual void Text( const String& text );
+		virtual void setText( const String& text );
 
-		const ColorA& Color() const;
+		const Color& getFontColor() const;
 
-		void Color( const ColorA& color );
+		void setFontColor( const Color& color );
 
-		const ColorA& ShadowColor() const;
+		const Color& getFontShadowColor() const;
 
-		void ShadowColor( const ColorA& color );
+		void setFontShadowColor( const Color& color );
 
-		virtual void OnTextChanged();
+		virtual void onTextChanged();
 
-		virtual void OnFontChanged();
+		virtual void onFontChanged();
 
-		virtual void Padding( const Recti& padding );
+		virtual void setPadding( const Rect& padding );
 
-		const Recti& Padding() const;
+		const Rect& getPadding() const;
 
-		TextCache * GetTextCache();
+		Text * getTextCache();
 
-		Float GetTextWidth();
+		Float getTextWidth();
 
-		Float GetTextHeight();
+		Float getTextHeight();
 
-		const int& GetNumLines() const;
+		const int& getNumLines() const;
 
-		const Vector2f& AlignOffset() const;
+		Vector2f getAlignOffset();
 
-		void TooltipTime( const Time& Time );
+		void setTooltipTime( const Time& Time );
 
-		void TooltipTimeAdd( const Time & Time );
+		void addTooltipTime( const Time & Time );
 
-		const Time & TooltipTime() const;
+		const Time & getTooltipTime() const;
+
+		UIControl * getTooltipOf() const;
+
+		void setTooltipOf(UIControl * tooltipOf);
+
+		UITooltipStyleConfig getStyleConfig() const;
+
+		void setStyleConfig(const UITooltipStyleConfig & styleConfig);
 	protected:
-		TextCache *	mTextCache;
-		ColorA 		mFontColor;
-		ColorA 		mFontShadowColor;
-		Vector2f 		mAlignOffset;
-		Recti			mPadding;
-		Time			mTooltipTime;
+		Text *	mTextCache;
+		UITooltipStyleConfig mStyleConfig;
+		Vector2f 	mAlignOffset;
+		Rect		mRealPadding;
+		Time		mTooltipTime;
 		UIControl *	mTooltipOf;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		virtual void AutoSize();
+		virtual void onAutoSize();
 
-		virtual void AutoAlign();
+		virtual void autoAlign();
 
-		virtual void AutoPadding();
+		virtual void autoPadding();
 };
 
 }}

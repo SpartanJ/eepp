@@ -2,36 +2,51 @@
 #define EE_UICUIBACKGROUND_HPP
 
 #include <eepp/ui/base.hpp>
+#include <eepp/graphics/drawable.hpp>
 
 namespace EE { namespace UI {
 
+class UIControl;
+
 class EE_API UIBackground {
 	public:
-		UIBackground();
-		UIBackground( const ColorA& Color, const unsigned int& Corners = 0, const EE_BLEND_MODE& BlendMode = ALPHA_NORMAL );
-		UIBackground( const UIBackground& Back );
-		UIBackground( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor, const unsigned int& Corners, const EE_BLEND_MODE& BlendMode );
+		static UIBackground * New( UIControl * control );
 
-		ColorA& Color( const unsigned int& index = 0 );
+		UIBackground( UIControl * control );
 
-		void Color( const ColorA& Col );
+		~UIBackground();
 
-		const std::vector<ColorA>& Colors();
+		Color& getColor( const unsigned int& index = 0 );
 
-		void Colors( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor );
+		UIBackground * setColor( const Color& Col );
 
-		void ColorsTo( const ColorA& Color );
+		const std::vector<Color>& getColors();
 
-		const EE_BLEND_MODE& Blend() const;
-		void Blend( const EE_BLEND_MODE& blend );
+		UIBackground * setColors( const Color& TopLeftColor, const Color& BottomLeftColor, const Color& BottomRightColor, const Color& TopRightColor );
 
-		const unsigned int& Corners() const;
-		void Corners( const unsigned int& corners );
+		UIBackground * setColorsTo( const Color& color );
+
+		const BlendMode& getBlendMode() const;
+
+		UIBackground * setBlendMode( const BlendMode& blend );
+
+		const unsigned int& getCorners() const;
+
+		UIBackground * setCorners( const unsigned int& corners );
+
+		void draw( Rectf R, const Float& alpha );
+
+		Drawable * getDrawable() const;
+
+		void setDrawable( Drawable * drawable, bool ownIt );
+
 	protected:
-		std::vector<ColorA>	mColor;
-
-		EE_BLEND_MODE		mBlendMode;
-		unsigned int					mCorners;
+		std::vector<Color>	mColor;
+		UIControl *			mControl;
+		BlendMode		mBlendMode;
+		unsigned int		mCorners;
+		Drawable *			mDrawable;
+		bool				mOwnIt;
 };
 
 }}

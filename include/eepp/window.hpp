@@ -12,6 +12,7 @@
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/window/joystick.hpp>
 #include <eepp/window/joystickmanager.hpp>
+#include <eepp/window/platformhelper.hpp>
 #include <eepp/window/engine.hpp>
 
 #endif

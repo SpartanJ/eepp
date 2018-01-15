@@ -3,27 +3,27 @@
 CP_NAMESPACE_BEGIN
 
 GearJoint::GearJoint( Body * a, Body * b, cpFloat phase, cpFloat ratio ) {
-	mConstraint = cpGearJointNew( a->GetBody(), b->GetBody(), phase, ratio );
-	SetData();
+	mConstraint = cpGearJointNew( a->getBody(), b->getBody(), phase, ratio );
+	setData();
 }
 
-cpFloat GearJoint::Phase() {
+cpFloat GearJoint::getPhase() {
 	return cpGearJointGetPhase( mConstraint );
 }
 
-void GearJoint::Phase( const cpFloat& phase ) {
+void GearJoint::setPhase( const cpFloat& phase ) {
 	cpGearJointSetPhase( mConstraint, phase );
 }
 
-cpFloat GearJoint::Ratio() {
+cpFloat GearJoint::getRatio() {
 	return cpGearJointGetRatio( mConstraint );
 }
 
-void GearJoint::Ratio( const cpFloat& ratio ) {
+void GearJoint::setRatio( const cpFloat& ratio ) {
 	cpGearJointSetRatio( mConstraint, ratio );
 }
 
-void GearJoint::Draw() {
+void GearJoint::draw() {
 	// Not implemented
 }
 

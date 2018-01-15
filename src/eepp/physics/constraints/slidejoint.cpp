@@ -12,43 +12,43 @@ SlideJoint::SlideJoint( Body * a, Body *b, cVect anchr1, cVect anchr2, cpFloat m
 	: mDrawPointSize( 5.f )
 #endif
 {
-	mConstraint = cpSlideJointNew( a->GetBody(), b->GetBody(), tocpv( anchr1 ), tocpv( anchr2 ), min, max );
-	SetData();
+	mConstraint = cpSlideJointNew( a->getBody(), b->getBody(), tocpv( anchr1 ), tocpv( anchr2 ), min, max );
+	setData();
 }
 
-cVect SlideJoint::Anchr1() {
+cVect SlideJoint::getAnchr1() {
 	return tovect( cpSlideJointGetAnchr1( mConstraint ) );
 }
 
-void SlideJoint::Anchr1( const cVect& anchr1 ) {
+void SlideJoint::setAnchr1( const cVect& anchr1 ) {
 	cpSlideJointSetAnchr1( mConstraint, tocpv( anchr1 ) );
 }
 
-cVect SlideJoint::Anchr2() {
+cVect SlideJoint::getAnchr2() {
 	return tovect( cpSlideJointGetAnchr2( mConstraint ) );
 }
 
-void SlideJoint::Anchr2( const cVect& anchr2 ) {
+void SlideJoint::setAnchr2( const cVect& anchr2 ) {
 	cpSlideJointSetAnchr2( mConstraint, tocpv( anchr2 ) );
 }
 
-cpFloat SlideJoint::Min() {
+cpFloat SlideJoint::getMin() {
 	return cpSlideJointGetMin( mConstraint );
 }
 
-void SlideJoint::Min( const cpFloat& min ) {
+void SlideJoint::setMin( const cpFloat& min ) {
 	cpSlideJointSetMin( mConstraint, min );
 }
 
-cpFloat SlideJoint::Max() {
+cpFloat SlideJoint::getMax() {
 	return cpSlideJointGetMax( mConstraint );
 }
 
-void SlideJoint::Max( const cpFloat& max ) {
+void SlideJoint::setMax( const cpFloat& max ) {
 	cpSlideJointSetMax( mConstraint, max );
 }
 
-void SlideJoint::Draw() {
+void SlideJoint::draw() {
 	#ifdef PHYSICS_RENDERER_ENABLED
 	if ( mDrawPointSize <= 0 )
 		return;
@@ -60,28 +60,28 @@ void SlideJoint::Draw() {
 	cVect b				= tovect( cpvadd( body_b->p, cpvrotate( joint->anchr2, body_b->rot ) ) );
 
 	BatchRenderer * BR = GlobalBatchRenderer::instance();
-	cpFloat ps			= BR->GetPointSize();
+	cpFloat ps			= BR->getPointSize();
 
-	BR->SetTexture( NULL );
-	BR->SetPointSize( mDrawPointSize );
-	BR->PointsBegin();
-	BR->PointSetColor( ColorA( 128, 255, 128, 255 ) );
-	BR->BatchPoint( a.x, a.y );
-	BR->BatchPoint( b.x, b.y );
-	BR->Draw();
-	BR->LinesBegin();
-	BR->BatchLine( a.x, a.y, b.x, b.y );
-	BR->Draw();
-	BR->SetPointSize( ps );
+	BR->setTexture( NULL );
+	BR->setPointSize( mDrawPointSize );
+	BR->pointsBegin();
+	BR->pointSetColor( Color( 128, 255, 128, 255 ) );
+	BR->batchPoint( a.x, a.y );
+	BR->batchPoint( b.x, b.y );
+	BR->draw();
+	BR->linesBegin();
+	BR->batchLine( a.x, a.y, b.x, b.y );
+	BR->draw();
+	BR->setPointSize( ps );
 	#endif
 }
 
 #ifdef PHYSICS_RENDERER_ENABLED
-cpFloat SlideJoint::DrawPointSize() {
+cpFloat SlideJoint::getDrawPointSize() {
 	return mDrawPointSize;
 }
 
-void SlideJoint::DrawPointSize( const cpFloat& size ) {
+void SlideJoint::setDrawPointSize( const cpFloat& size ) {
 	mDrawPointSize = size;
 }
 #endif

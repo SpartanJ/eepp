@@ -1,5 +1,6 @@
 #include <eepp/graphics/texturesaver.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/opengl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 
 namespace EE { namespace Graphics { namespace Private {
 
@@ -10,12 +11,12 @@ TextureSaver::TextureSaver( int textureBind ) :
 	glGetIntegerv( GL_TEXTURE_BINDING_2D, &mTextureBinded );
 
 	if ( mTextureToBind > 0 && mTextureBinded != mTextureToBind )
-		GLi->BindTexture( GL_TEXTURE_2D, mTextureToBind );
+		GLi->bindTexture( GL_TEXTURE_2D, mTextureToBind );
 }
 
 TextureSaver::~TextureSaver() {
 	if ( mTextureBinded != mTextureToBind )
-		GLi->BindTexture( GL_TEXTURE_2D, mTextureBinded );
+		GLi->bindTexture( GL_TEXTURE_2D, mTextureBinded );
 }
 
 }}} 

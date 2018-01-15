@@ -10,25 +10,25 @@ class MD5 {
 		typedef struct {
 			std::vector<Uint8> digest;
 
-			std::string ToHexString() {
-				return MD5::HexDigest( digest );
+			std::string toHexString() {
+				return MD5::hexDigest( digest );
 			}
 		} Result;
 
 		/** @return Calculates the md5 hash from a stream */
-		static Result FromStream( IOStream& stream );
+		static Result fromStream( IOStream& stream );
 
 		/** Calculates the md5 hash from a file */
-		static Result FromFile( std::string path );
+		static Result fromFile( std::string path );
 
 		/** Calculates the md5 hash from memory */
-		static Result FromMemory( const Uint8* data, Uint64 size );
+		static Result fromMemory( const Uint8* data, Uint64 size );
 
 		/** Calculates the md5 hash from a string */
-		static Result FromString( const std::string& str );
+		static Result fromString( const std::string& str );
 
 		/** Calculates the md5 hash from a string */
-		static Result FromString( const String& str );
+		static Result fromString( const String& str );
 	protected:
 		typedef unsigned int MD5_u32plus;
 
@@ -39,15 +39,15 @@ class MD5 {
 			MD5_u32plus block[16];
 		} Context;
 
-		static const void * Body( Context *ctx, const void *data, unsigned long size );
+		static const void * body( Context *ctx, const void *data, unsigned long size );
 
-		static void Init( Context * ctx );
+		static void init( Context * ctx );
 
-		static void Update( Context * ctx, const void *data, unsigned long size );
+		static void update( Context * ctx, const void *data, unsigned long size );
 
-		static void Final( unsigned char *result, Context * ctx );
+		static void final( unsigned char *result, Context * ctx );
 
-		static std::string HexDigest( std::vector<Uint8>& digest );
+		static std::string hexDigest( std::vector<Uint8>& digest );
 };
 
 }}

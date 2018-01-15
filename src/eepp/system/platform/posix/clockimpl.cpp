@@ -10,7 +10,7 @@ ClockImpl::ClockImpl() {
 ClockImpl::~ClockImpl() {
 }
 
-void ClockImpl::Restart() {
+void ClockImpl::restart() {
 #ifdef EE_HAVE_CLOCK_GETTIME
 	clock_gettime( CLOCK_MONOTONIC, &mStart );
 #else
@@ -18,7 +18,7 @@ void ClockImpl::Restart() {
 #endif
 }
 
-unsigned long ClockImpl::GetElapsedTime() {
+unsigned long ClockImpl::getElapsedTime() {
 #ifdef EE_HAVE_CLOCK_GETTIME
 	timespec time;
 	clock_gettime( CLOCK_MONOTONIC, &time );

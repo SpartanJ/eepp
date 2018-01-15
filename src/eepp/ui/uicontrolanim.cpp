@@ -1,13 +1,17 @@
 #include <eepp/ui/uicontrolanim.hpp>
 #include <eepp/ui/uimanager.hpp>
-#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/primitives.hpp>
 
 namespace EE { namespace UI {
 
-UIControlAnim::UIControlAnim( const CreateParams& Params ) :
-	UIDragable( Params ),
+UIControlAnim * UIControlAnim::New() {
+	return eeNew( UIControlAnim, () );
+}
+
+UIControlAnim::UIControlAnim() :
+	UIDragableControl(),
 	mAngle(0.f),
 	mScale(1.f,1.f),
 	mAlpha(255.f),
@@ -18,7 +22,7 @@ UIControlAnim::UIControlAnim( const CreateParams& Params ) :
 {
 	mControlFlags |= UI_CTRL_FLAG_ANIM;
 
-	UpdateOriginPoint();
+	updateOriginPoint();
 }
 
 UIControlAnim::~UIControlAnim() {
@@ -28,57 +32,59 @@ UIControlAnim::~UIControlAnim() {
 	eeSAFE_DELETE( mMoveAnim );
 }
 
-Uint32 UIControlAnim::Type() const {
+Uint32 UIControlAnim::getType() const {
 	return UI_TYPE_CONTROL_ANIM;
 }
 
-bool UIControlAnim::IsType( const Uint32& type ) const {
-	return UIControlAnim::Type() == type ? true : UIControl::IsType( type );
+bool UIControlAnim::isType( const Uint32& type ) const {
+	return UIControlAnim::getType() == type ? true : UIControl::isType( type );
 }
 
-void UIControlAnim::Draw() {
-	if ( mVisible && 0.f != mAlpha ) {
-		if ( mFlags & UI_FILL_BACKGROUND )
-			BackgroundDraw();
+void UIControlAnim::drawSkin() {
+	if ( NULL != mSkinState ) {
+		if ( mFlags & UI_SKIN_KEEP_SIZE_ON_DRAW ) {
+			Sizei rSize = PixelDensity::dpToPxI( mSkinState->getSkin()->getSize( mSkinState->getState() ) );
+			Sizei diff = ( mRealSize - rSize ) / 2;
 
-		if ( mFlags & UI_BORDER )
-			BorderDraw();
-
-		if ( NULL != mSkinState )
-			mSkinState->Draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.Width(), (Float)mSize.Height(), (Uint32)mAlpha );
-
-		if ( UIManager::instance()->HighlightFocus() && UIManager::instance()->FocusControl() == this ) {
-			Primitives P;
-			P.FillMode( DRAW_LINE );
-			P.BlendMode( Blend() );
-			P.SetColor( UIManager::instance()->HighlightFocusColor() );
-			P.DrawRectangle( GetRectf() );
-		}
-
-		if ( UIManager::instance()->HighlightOver() && UIManager::instance()->OverControl() == this ) {
-			Primitives P;
-			P.FillMode( DRAW_LINE );
-			P.BlendMode( Blend() );
-			P.SetColor( UIManager::instance()->HighlightOverColor() );
-			P.DrawRectangle( GetRectf() );
+			mSkinState->draw( mScreenPosf.x + diff.x, mScreenPosf.y + diff.y, (Float)rSize.getWidth(), (Float)rSize.getHeight(), (Uint32)mAlpha );
+		} else {
+			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight(), (Uint32)mAlpha );
 		}
 	}
 }
 
-const Float& UIControlAnim::Angle() const {
+void UIControlAnim::draw() {
+	if ( mVisible && 0.f != mAlpha ) {
+		drawBackground();
+
+		drawBorder();
+
+		drawSkin();
+
+		drawHighlightFocus();
+
+		drawOverControl();
+
+		drawDebugData();
+
+		drawBox();
+	}
+}
+
+const Float& UIControlAnim::getRotation() const {
 	return mAngle;
 }
 
-const OriginPoint& UIControlAnim::RotationOriginPoint() const {
+const OriginPoint& UIControlAnim::getRotationOriginPoint() const {
 	return mRotationOriginPoint;
 }
 
-void UIControlAnim::RotationOriginPoint( const OriginPoint & center ) {
-	mRotationOriginPoint = center;
-	UpdateOriginPoint();
+void UIControlAnim::setRotationOriginPoint( const OriginPoint & center ) {
+	mRotationOriginPoint = PixelDensity::dpToPx( center );
+	updateOriginPoint();
 }
 
-Vector2f UIControlAnim::RotationCenter() {
+Vector2f UIControlAnim::getRotationCenter() {
 	switch ( mRotationOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter: return mCenter;
 		case OriginPoint::OriginTopLeft: return mScreenPosf;
@@ -86,36 +92,52 @@ Vector2f UIControlAnim::RotationCenter() {
 	}
 }
 
-void UIControlAnim::Angle( const Float& angle ) {
+void UIControlAnim::setRotation( const Float& angle ) {
 	mAngle = angle;
-	OnAngleChange();
+
+	if ( mAngle != 0.f ) {
+		mControlFlags |= UI_CTRL_FLAG_ROTATED;
+	} else {
+		if ( mControlFlags & UI_CTRL_FLAG_ROTATED )
+			mControlFlags &= ~UI_CTRL_FLAG_ROTATED;
+	}
+
+	onAngleChange();
 }
 
-void UIControlAnim::Angle( const Float& angle , const OriginPoint & center ) {
+void UIControlAnim::setRotation( const Float& angle , const OriginPoint & center ) {
 	mRotationOriginPoint = center;
-	UpdateOriginPoint();
-	Angle( angle );
+	updateOriginPoint();
+	this->setRotation( angle );
 }
 
-const Vector2f& UIControlAnim::Scale() const {
+const Vector2f& UIControlAnim::getScale() const {
 	return mScale;
 }
 
-void UIControlAnim::Scale( const Vector2f & scale ) {
+void UIControlAnim::setScale( const Vector2f & scale ) {
 	mScale = scale;
-	OnScaleChange();
+
+	if ( mScale != 1.f ) {
+		mControlFlags |= UI_CTRL_FLAG_SCALED;
+	} else {
+		if ( mControlFlags & UI_CTRL_FLAG_SCALED )
+			mControlFlags &= ~UI_CTRL_FLAG_SCALED;
+	}
+
+	onScaleChange();
 }
 
-const OriginPoint& UIControlAnim::ScaleOriginPoint() const {
+const OriginPoint& UIControlAnim::getScaleOriginPoint() const {
 	return mScaleOriginPoint;
 }
 
-void UIControlAnim::ScaleOriginPoint( const OriginPoint & center ) {
-	mScaleOriginPoint = center;
-	UpdateOriginPoint();
+void UIControlAnim::setScaleOriginPoint( const OriginPoint & center ) {
+	mScaleOriginPoint = PixelDensity::dpToPx( center );
+	updateOriginPoint();
 }
 
-Vector2f UIControlAnim::ScaleCenter() {
+Vector2f UIControlAnim::getScaleCenter() {
 	switch ( mScaleOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter: return mCenter;
 		case OriginPoint::OriginTopLeft: return mScreenPosf;
@@ -123,307 +145,275 @@ Vector2f UIControlAnim::ScaleCenter() {
 	}
 }
 
-void UIControlAnim::Scale( const Vector2f& scale, const OriginPoint& center ) {
+void UIControlAnim::setScale( const Vector2f& scale, const OriginPoint& center ) {
 	mScaleOriginPoint = center;
-	UpdateOriginPoint();
-	Scale( scale );
+	updateOriginPoint();
+	this->setScale( scale );
 }
 
-void UIControlAnim::Scale( const Float& scale, const OriginPoint& center ) {
-	Scale( Vector2f( scale, scale ), center );
+void UIControlAnim::setScale( const Float& scale, const OriginPoint& center ) {
+	this->setScale( Vector2f( scale, scale ), center );
 }
 
-const Float& UIControlAnim::Alpha() const {
+const Float& UIControlAnim::getAlpha() const {
 	return mAlpha;
 }
 
-void UIControlAnim::Alpha( const Float& alpha ) {
+void UIControlAnim::setAlpha( const Float& alpha ) {
 	mAlpha = alpha;
-	OnAlphaChange();
+	onAlphaChange();
 }
 
-void UIControlAnim::AlphaChilds( const Float &alpha ) {
+void UIControlAnim::setChildsAlpha( const Float &alpha ) {
 	UIControlAnim * AnimChild;
 	UIControl * CurChild = mChild;
 
 	while ( NULL != CurChild ) {
-		if ( CurChild->IsAnimated() ) {
+		if ( CurChild->isAnimated() ) {
 			AnimChild = reinterpret_cast<UIControlAnim*> ( CurChild );
 
-			AnimChild->Alpha( alpha );
-			AnimChild->AlphaChilds( alpha );
+			AnimChild->setAlpha( alpha );
+			AnimChild->setChildsAlpha( alpha );
 		}
 
-		CurChild = CurChild->NextGet();
+		CurChild = CurChild->getNextControl();
 	}
 }
 
-void UIControlAnim::MatrixSet() {
+void UIControlAnim::matrixSet() {
 	if ( mScale != 1.f || mAngle != 0.f ) {
-		GlobalBatchRenderer::instance()->Draw();
+		GlobalBatchRenderer::instance()->draw();
 
-		GLi->PushMatrix();
+		GLi->pushMatrix();
 
-		Vector2f scaleCenter = ScaleCenter();
-		GLi->Translatef( scaleCenter.x , scaleCenter.y, 0.f );
-		GLi->Scalef( mScale.x, mScale.y, 1.0f );
-		GLi->Translatef( -scaleCenter.x, -scaleCenter.y, 0.f );
+		Vector2f scaleCenter = getScaleCenter();
+		GLi->translatef( scaleCenter.x , scaleCenter.y, 0.f );
+		GLi->scalef( mScale.x, mScale.y, 1.0f );
+		GLi->translatef( -scaleCenter.x, -scaleCenter.y, 0.f );
 
-		Vector2f rotationCenter = RotationCenter();
-		GLi->Translatef( rotationCenter.x , rotationCenter.y, 0.f );
-		GLi->Rotatef( mAngle, 0.0f, 0.0f, 1.0f );
-		GLi->Translatef( -rotationCenter.x, -rotationCenter.y, 0.f );
+		Vector2f rotationCenter = getRotationCenter();
+		GLi->translatef( rotationCenter.x , rotationCenter.y, 0.f );
+		GLi->rotatef( mAngle, 0.0f, 0.0f, 1.0f );
+		GLi->translatef( -rotationCenter.x, -rotationCenter.y, 0.f );
 	}
 }
 
-void UIControlAnim::MatrixUnset() {
+void UIControlAnim::matrixUnset() {
 	if ( mScale != 1.f || mAngle != 0.f ) {
-		GlobalBatchRenderer::instance()->Draw();
+		GlobalBatchRenderer::instance()->draw();
 
-		GLi->PopMatrix();
+		GLi->popMatrix();
 	}
 }
 
-void UIControlAnim::Update() {
-	UIDragable::Update();
+void UIControlAnim::update() {
+	UIDragableControl::update();
 
-	if ( NULL != mMoveAnim && mMoveAnim->Enabled() ) {
-		mMoveAnim->Update( Elapsed() );
-		Pos( (int)mMoveAnim->GetPos().x, (int)mMoveAnim->GetPos().y );
+	if ( NULL != mMoveAnim && mMoveAnim->isEnabled() ) {
+		mMoveAnim->update( getElapsed() );
+		setPosition( (int)mMoveAnim->getPosition().x, (int)mMoveAnim->getPosition().y );
 
-		if ( mMoveAnim->Ended() )
+		if ( mMoveAnim->ended() )
 			eeSAFE_DELETE( mMoveAnim );
 	}
 
-	if ( NULL != mAlphaAnim && mAlphaAnim->Enabled() ) {
-		mAlphaAnim->Update( Elapsed() );
-		Alpha( mAlphaAnim->GetRealPos() );
+	if ( NULL != mAlphaAnim && mAlphaAnim->isEnabled() ) {
+		mAlphaAnim->update( getElapsed() );
+		setAlpha( mAlphaAnim->getPosition() );
 
-		if ( mAlphaAnim->Ended() ) {
+		if ( mAlphaAnim->ended() ) {
 			if ( ( mControlFlags & UI_CTRL_FLAG_CLOSE_FO )  )
-				Close();
+				close();
 
 			if ( ( mControlFlags & UI_CTRL_FLAG_DISABLE_FADE_OUT ) ) {
 				mControlFlags &= ~UI_CTRL_FLAG_DISABLE_FADE_OUT;
 
-				Visible( false );
+				setVisible( false );
 			}
 
 			eeSAFE_DELETE( mAlphaAnim );
 		}
 	}
 
-	if ( NULL != mScaleAnim && mScaleAnim->Enabled() ) {
-		mScaleAnim->Update( Elapsed() );
-		Scale( mScaleAnim->GetPos() );
+	if ( NULL != mScaleAnim && mScaleAnim->isEnabled() ) {
+		mScaleAnim->update( getElapsed() );
+		setScale( mScaleAnim->getPosition() );
 
-		if ( mScaleAnim->Ended() )
+		if ( mScaleAnim->ended() )
 			eeSAFE_DELETE( mScaleAnim );
 	}
 
-	if ( NULL != mAngleAnim && mAngleAnim->Enabled() ) {
-		mAngleAnim->Update( Elapsed() );
-		Angle( mAngleAnim->GetRealPos() );
+	if ( NULL != mAngleAnim && mAngleAnim->isEnabled() ) {
+		mAngleAnim->update( getElapsed() );
+		setRotation( mAngleAnim->getPosition() );
 
-		if ( mAngleAnim->Ended() )
+		if ( mAngleAnim->ended() )
 			eeSAFE_DELETE( mAngleAnim );
 	}
 }
 
-bool UIControlAnim::FadingOut() {
+bool UIControlAnim::isFadingOut() {
 	return 0 != ( mControlFlags & UI_CTRL_FLAG_DISABLE_FADE_OUT );
 }
 
-bool UIControlAnim::Animating() {
-	return ( NULL != mAlphaAnim && mAlphaAnim->Enabled() ) || ( NULL != mAngleAnim && mAngleAnim->Enabled() ) || ( NULL != mScaleAnim && mScaleAnim->Enabled() ) || ( NULL != mMoveAnim && mMoveAnim->Enabled() );
+bool UIControlAnim::isAnimating() {
+	return ( NULL != mAlphaAnim && mAlphaAnim->isEnabled() ) || ( NULL != mAngleAnim && mAngleAnim->isEnabled() ) || ( NULL != mScaleAnim && mScaleAnim->isEnabled() ) || ( NULL != mMoveAnim && mMoveAnim->isEnabled() );
 }
 
-Interpolation * UIControlAnim::StartAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds, const Ease::Interpolation& Type, Interpolation::OnPathEndCallback PathEndCallback ) {
+Interpolation1d * UIControlAnim::startAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds, const Ease::Interpolation& Type, Interpolation1d::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mAlphaAnim )
-		mAlphaAnim = eeNew( Interpolation, () );
+		mAlphaAnim = eeNew( Interpolation1d, () );
 
-	mAlphaAnim->ClearWaypoints();
-	mAlphaAnim->AddWaypoint( From );
-	mAlphaAnim->AddWaypoint( To );
-	mAlphaAnim->SetTotalTime( TotalTime );
-	mAlphaAnim->Start( PathEndCallback );
-	mAlphaAnim->Type( Type );
+	mAlphaAnim->clear().add( From, TotalTime ).add( To ).setType( Type ).start( PathEndCallback );
 
-	Alpha( From );
+	setAlpha( From );
 
 	if ( AlphaChilds ) {
 		UIControlAnim * AnimChild;
 		UIControl * CurChild = mChild;
 
 		while ( NULL != CurChild ) {
-			if ( CurChild->IsAnimated() ) {
+			if ( CurChild->isAnimated() ) {
 				AnimChild = reinterpret_cast<UIControlAnim*> ( CurChild );
 
-				AnimChild->StartAlphaAnim( From, To, TotalTime, AlphaChilds );
+				AnimChild->startAlphaAnim( From, To, TotalTime, AlphaChilds );
 			}
 
-			CurChild = CurChild->NextGet();
+			CurChild = CurChild->getNextControl();
 		}
 	}
 
 	return mAlphaAnim;
 }
 
-Waypoints * UIControlAnim::StartScaleAnim( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation::OnPathEndCallback PathEndCallback ) {
+Interpolation2d * UIControlAnim::startScaleAnim( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation2d::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mScaleAnim )
-		mScaleAnim = eeNew( Waypoints, () );
+		mScaleAnim = eeNew( Interpolation2d, () );
 
-	mScaleAnim->ClearWaypoints();
-	mScaleAnim->AddWaypoint( From );
-	mScaleAnim->AddWaypoint( To );
-	mScaleAnim->SetTotalTime( TotalTime );
-	mScaleAnim->Start( PathEndCallback );
-	mScaleAnim->Type( Type );
+	mScaleAnim->clear().add( From ).add( To ).setDuration( TotalTime ).setType( Type ).start( PathEndCallback );
 
-	Scale( From );
+	setScale( From );
 
 	return mScaleAnim;
 }
 
-Waypoints * UIControlAnim::StartScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation::OnPathEndCallback PathEndCallback ) {
-	return StartScaleAnim( Vector2f( From, From ), Vector2f( To, To ), TotalTime, Type, PathEndCallback );
+Interpolation2d * UIControlAnim::startScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation2d::OnPathEndCallback PathEndCallback ) {
+	return startScaleAnim( Vector2f( From, From ), Vector2f( To, To ), TotalTime, Type, PathEndCallback );
 }
 
-Waypoints * UIControlAnim::StartMovement( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& Type, Waypoints::OnPathEndCallback PathEndCallback ) {
+Interpolation2d * UIControlAnim::startTranslation( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation2d::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mMoveAnim )
-		mMoveAnim = eeNew( Waypoints, () );
+		mMoveAnim = eeNew( Interpolation2d, () );
 
-	mMoveAnim->ClearWaypoints();
-	mMoveAnim->AddWaypoint( Vector2f( (Float)From.x, (Float)From.y ) );
-	mMoveAnim->AddWaypoint( Vector2f( (Float)To.x, (Float)To.y ) );
-	mMoveAnim->SetTotalTime( TotalTime );
-	mMoveAnim->Start( PathEndCallback );
-	mMoveAnim->Type( Type );
+	mMoveAnim->clear().add( Vector2f( (Float)From.x, (Float)From.y ) ).add( Vector2f( (Float)To.x, (Float)To.y ) ).setType( Type ).setDuration( TotalTime ).start( PathEndCallback );
 
-	Pos( From );
+	setPosition( From );
 
 	return mMoveAnim;
 }
 
-Interpolation * UIControlAnim::StartRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation::OnPathEndCallback PathEndCallback ) {
+Interpolation1d * UIControlAnim::startRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation1d::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mAngleAnim )
-		mAngleAnim = eeNew( Interpolation, () );
+		mAngleAnim = eeNew( Interpolation1d, () );
 
-	mAngleAnim->ClearWaypoints();
-	mAngleAnim->AddWaypoint( From );
-	mAngleAnim->AddWaypoint( To );
-	mAngleAnim->SetTotalTime( TotalTime );
-	mAngleAnim->Start( PathEndCallback );
-	mAngleAnim->Type( Type );
+	mAngleAnim->clear().add( From ).add( To ).setDuration( TotalTime ).setType( Type ).start( PathEndCallback );
 
-	Angle( From );
+	setRotation( From );
 
 	return mAngleAnim;
 }
 
-Interpolation * UIControlAnim::CreateFadeIn( const Time& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
-	return StartAlphaAnim( mAlpha, 255.f, Time, AlphaChilds, Type );
+Interpolation1d * UIControlAnim::startAlphaAnim(const Float & To, const Time & TotalTime, const bool & alphaChilds, const Ease::Interpolation & type, Interpolation1d::OnPathEndCallback PathEndCallback) {
+	return startAlphaAnim( mAlpha, To, TotalTime, alphaChilds, type, PathEndCallback );
 }
 
-Interpolation * UIControlAnim::CreateFadeOut( const Time& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
-	return StartAlphaAnim( 255.f, mAlpha, Time, AlphaChilds, Type );
+Interpolation2d * UIControlAnim::startScaleAnim(const Vector2f & To, const Time & TotalTime, const Ease::Interpolation & type, Interpolation2d::OnPathEndCallback PathEndCallback) {
+	return startScaleAnim( mScale, To, TotalTime, type, PathEndCallback );
 }
 
-Interpolation * UIControlAnim::CloseFadeOut( const Time& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
-	StartAlphaAnim	( mAlpha, 0.f, Time, AlphaChilds, Type );
+Interpolation2d * UIControlAnim::startScaleAnim(const Float & To, const Time & TotalTime, const Ease::Interpolation & type, Interpolation2d::OnPathEndCallback PathEndCallback) {
+	return startScaleAnim( mScale, Vector2f(To,To), TotalTime, type, PathEndCallback );
+}
+
+Interpolation2d * UIControlAnim::startTranslation(const Vector2i & To, const Time & TotalTime, const Ease::Interpolation & type, Interpolation2d::OnPathEndCallback PathEndCallback) {
+	return startTranslation( mPos, To, TotalTime, type, PathEndCallback );
+}
+
+Interpolation1d * UIControlAnim::startRotation(const Float & To, const Time & TotalTime, const Ease::Interpolation & type, Interpolation1d::OnPathEndCallback PathEndCallback) {
+	return startRotation( mAngle, To, TotalTime, type, PathEndCallback );
+}
+
+Interpolation1d * UIControlAnim::createFadeIn( const Time& time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
+	return startAlphaAnim( mAlpha, 255.f, time, AlphaChilds, Type );
+}
+
+Interpolation1d * UIControlAnim::createFadeOut( const Time& time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
+	return startAlphaAnim( 255.f, mAlpha, time, AlphaChilds, Type );
+}
+
+Interpolation1d * UIControlAnim::closeFadeOut( const Time& time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
+	startAlphaAnim	( mAlpha, 0.f, time, AlphaChilds, Type );
 	mControlFlags |= UI_CTRL_FLAG_CLOSE_FO;
 	return mAlphaAnim;
 }
 
-Interpolation * UIControlAnim::DisableFadeOut( const Time& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
-	Enabled( false );
+Interpolation1d * UIControlAnim::disableFadeOut( const Time& time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
+	setEnabled( false );
 
-	StartAlphaAnim	( mAlpha, 0.f, Time, AlphaChilds, Type );
+	startAlphaAnim	( mAlpha, 0.f, time, AlphaChilds, Type );
 
 	mControlFlags |= UI_CTRL_FLAG_DISABLE_FADE_OUT;
 
 	return mAlphaAnim;
 }
 
-void UIControlAnim::BackgroundDraw() {
-	Primitives P;
-	Rectf R = GetRectf();
-	P.BlendMode( mBackground->Blend() );
-	P.SetColor( GetColor( mBackground->Color() ) );
-
-	if ( 4 == mBackground->Colors().size() ) {
-		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( R, GetColor( mBackground->Colors()[0] ), GetColor( mBackground->Colors()[1] ), GetColor( mBackground->Colors()[2] ), GetColor( mBackground->Colors()[3] ), mBackground->Corners() );
-		} else {
-			P.DrawRectangle( R, GetColor( mBackground->Colors()[0] ), GetColor( mBackground->Colors()[1] ), GetColor( mBackground->Colors()[2] ), GetColor( mBackground->Colors()[3] ) );
-		}
-	} else {
-		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->Corners() );
-		} else {
-			P.DrawRectangle( R );
-		}
+void UIControlAnim::drawBackground() {
+	if ( mFlags & UI_FILL_BACKGROUND ) {
+		mBackground->draw( getRectf(), mAlpha );
 	}
 }
 
-void UIControlAnim::BorderDraw() {
-	Primitives P;
-	P.FillMode( DRAW_LINE );
-	P.BlendMode( Blend() );
-	P.LineWidth( (Float)mBorder->Width() );
-	P.SetColor( GetColor( mBorder->Color() ) );
-
-	//! @TODO: Check why was this +0.1f -0.1f?
-	if ( mFlags & UI_CLIP_ENABLE ) {
-		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.Width() - 0.1f, (Float)mSize.Height() - 0.1f ) );
-
-		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
-		} else {
-			P.DrawRectangle( R );
-		}
-	} else {
-		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
-		} else {
-			P.DrawRectangle( GetRectf() );
-		}
+void UIControlAnim::drawBorder() {
+	if ( mFlags & UI_BORDER ) {
+		mBorder->draw( getRectf(), mAlpha, mBackground->getCorners(), ( mFlags & UI_CLIP_ENABLE ) != 0 );
 	}
 }
 
-ColorA UIControlAnim::GetColor( const ColorA& Col ) {
-	return ColorA( Col.R(), Col.G(), Col.B(), static_cast<Uint8>( (Float)Col.A() * ( mAlpha / 255.f ) ) );
+Color UIControlAnim::getColor( const Color& Col ) {
+	return Color( Col.r, Col.g, Col.b, static_cast<Uint8>( (Float)Col.a * ( mAlpha / 255.f ) ) );
 }
 
-void UIControlAnim::UpdateQuad() {
-	mPoly		= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mSize.Width(), mScreenPosf.y + mSize.Height() ) );
+void UIControlAnim::updateQuad() {
+	mPoly		= Polygon2f( Rectf( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mRealSize.getWidth(), mScreenPosf.y + mRealSize.getHeight() ) );
 
-	mPoly.Rotate( mAngle, RotationCenter() );
-	mPoly.Scale( mScale, ScaleCenter() );
+	mPoly.rotate( mAngle, getRotationCenter() );
+	mPoly.scale( mScale, getScaleCenter() );
 
-	UIControl * tParent = Parent();
+	UIControl * tParent = getParent();
 
 	while ( tParent ) {
-		if ( tParent->IsAnimated() ) {
+		if ( tParent->isAnimated() ) {
 			UIControlAnim * tP = reinterpret_cast<UIControlAnim *> ( tParent );
 
-			mPoly.Rotate( tP->Angle(), tP->RotationCenter() );
-			mPoly.Scale( tP->Scale(), tP->ScaleCenter() );
+			mPoly.rotate( tP->getRotation(), tP->getRotationCenter() );
+			mPoly.scale( tP->getScale(), tP->getScaleCenter() );
 		}
 
-		tParent = tParent->Parent();
+		tParent = tParent->getParent();
 	};
 }
 
-void UIControlAnim::OnSizeChange() {
-	UpdateOriginPoint();
+void UIControlAnim::onSizeChange() {
+	UIDragableControl::onSizeChange();
+
+	updateOriginPoint();
 }
 
-void UIControlAnim::UpdateOriginPoint() {
+void UIControlAnim::updateOriginPoint() {
 	switch ( mRotationOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter:
-			mRotationOriginPoint.x = mSize.x * 0.5f;
-			mRotationOriginPoint.y = mSize.y * 0.5f;
+			mRotationOriginPoint.x = mRealSize.x * 0.5f;
+			mRotationOriginPoint.y = mRealSize.y * 0.5f;
 			break;
 		case OriginPoint::OriginTopLeft:
 			mRotationOriginPoint.x = mRotationOriginPoint.y = 0;
@@ -433,8 +423,8 @@ void UIControlAnim::UpdateOriginPoint() {
 
 	switch ( mScaleOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter:
-			mScaleOriginPoint.x = mSize.x * 0.5f;
-			mScaleOriginPoint.y = mSize.y * 0.5f;
+			mScaleOriginPoint.x = mRealSize.x * 0.5f;
+			mScaleOriginPoint.y = mRealSize.y * 0.5f;
 			break;
 		case OriginPoint::OriginTopLeft:
 			mScaleOriginPoint.x = mScaleOriginPoint.y = 0;
@@ -443,44 +433,47 @@ void UIControlAnim::UpdateOriginPoint() {
 	}
 }
 
-Interpolation * UIControlAnim::RotationInterpolation() {
+Interpolation1d * UIControlAnim::getRotationInterpolation() {
 	if ( NULL == mAngleAnim )
-		mAngleAnim = eeNew( Interpolation, () );
+		mAngleAnim = eeNew( Interpolation1d, () );
 
 	return mAngleAnim;
 }
 
-Waypoints * UIControlAnim::ScaleInterpolation() {
+Interpolation2d * UIControlAnim::getScaleInterpolation() {
 	if ( NULL == mScaleAnim )
-		mScaleAnim = eeNew( Waypoints, () );
+		mScaleAnim = eeNew( Interpolation2d, () );
 
 	return mScaleAnim;
 }
 
-Interpolation * UIControlAnim::AlphaInterpolation() {
+Interpolation1d * UIControlAnim::getAlphaInterpolation() {
 	if ( NULL == mAlphaAnim )
-		mAlphaAnim = eeNew( Interpolation, () );
+		mAlphaAnim = eeNew( Interpolation1d, () );
 
 	return mAlphaAnim;
 }
 
-Waypoints * UIControlAnim::MovementInterpolation() {
+Interpolation2d * UIControlAnim::getTranslationInterpolation() {
 	if ( NULL == mMoveAnim )
-		mMoveAnim = eeNew( Waypoints, () );
+		mMoveAnim = eeNew( Interpolation2d, () );
 
 	return mMoveAnim;
 }
 
-void UIControlAnim::OnAngleChange() {
-	SendCommonEvent( UIEvent::EventOnAngleChange );
+void UIControlAnim::onAngleChange() {
+	sendCommonEvent( UIEvent::OnAngleChange );
+	invalidateDraw();
 }
 
-void UIControlAnim::OnScaleChange() {
-	SendCommonEvent( UIEvent::EventOnScaleChange );
+void UIControlAnim::onScaleChange() {
+	sendCommonEvent( UIEvent::OnScaleChange );
+	invalidateDraw();
 }
 
-void UIControlAnim::OnAlphaChange() {
-	SendCommonEvent( UIEvent::EventOnAlphaChange );
+void UIControlAnim::onAlphaChange() {
+	sendCommonEvent( UIEvent::OnAlphaChange );
+	invalidateDraw();
 }
 
 }}

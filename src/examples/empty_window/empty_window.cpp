@@ -2,43 +2,43 @@
 
 EE::Window::Window * win = NULL;
 
-void MainLoop()
+void mainLoop()
 {
 	// Clear the screen buffer
-	win->Clear();
+	win->clear();
 
 	// Create an instance of the primitive renderer
 	Primitives p;
 
 	// Change the color
-	p.SetColor( ColorA( 0, 255, 0, 150 ) );
+	p.setColor( Color( 0, 255, 0, 150 ) );
 
 	// Update the input
-	win->GetInput()->Update();
+	win->getInput()->update();
 
 	// Check if ESCAPE key is pressed
-	if ( win->GetInput()->IsKeyDown( KEY_ESCAPE ) ) {
+	if ( win->getInput()->isKeyDown( KEY_ESCAPE ) ) {
 		// Close the window
-		win->Close();
+		win->close();
 	}
 
 	// Draw a circle
-	p.DrawCircle( Vector2f( win->GetWidth() * 0.5f, win->GetHeight() * 0.5f ), 200, 50 );
+	p.drawCircle( Vector2f( win->getWidth() * 0.5f, win->getHeight() * 0.5f ), 200, 60 );
 
 	// Draw frame
-	win->Display();
+	win->display();
 }
 
 // EE_MAIN_FUNC is needed by some platforms to be able to find the real application main
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window with vsync enabled
-	win = Engine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - Empty Window" ), ContextSettings( true ) );
+	win = Engine::instance()->createWindow( WindowSettings( 960, 640, "eepp - Empty Window" ), ContextSettings( true ) );
 
 	// Check if created
-	if ( win->Created() ) {
+	if ( win->isOpen() ) {
 		// Set window background color
-		win->BackColor( RGB( 50, 50, 50 ) );
+		win->setClearColor( RGB( 50, 50, 50 ) );
 
 		// Set the MainLoop function and run it
 		// This is the application loop, it will loop until the window is closed.
@@ -48,14 +48,14 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// {
 		//		MainLoop();
 		// }
-		win->RunMainLoop( &MainLoop );
+		win->runMainLoop( &mainLoop );
 	}
 
 	// Destroy the engine instance. Destroys all the windows and engine singletons.
-	Engine::DestroySingleton();
+	Engine::destroySingleton();
 
 	// If was compiled in debug mode it will print the memory manager report
-	MemoryManager::ShowResults();
+	MemoryManager::showResults();
 
 	return EXIT_SUCCESS;
 }

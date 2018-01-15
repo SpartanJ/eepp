@@ -25,41 +25,41 @@ Log::Log() :
 	mLiveWrite( false ),
 	mFS( NULL )
 {
-	Write("...::: Entropia Engine++ Loaded :::...");
-	Write( "Loaded on " + Sys::GetDateTimeStr() + "\n" );
+	write("...::: Entropia Engine++ Loaded :::...");
+	write( "Loaded on " + Sys::getDateTimeStr() + "\n" );
 }
 
 Log::~Log() {
-	Write( "\nUnloaded on " + Sys::GetDateTimeStr() );
-	Write( "...::: Entropia Engine++ Unloaded :::...\n" );
+	write( "\nUnloaded on " + Sys::getDateTimeStr() );
+	write( "...::: Entropia Engine++ Unloaded :::...\n" );
 
 	if ( mSave && !mLiveWrite ) {
-		OpenFS();
+		openFS();
 
-		mFS->Write( mData.c_str(), mData.size() );
+		mFS->write( mData.c_str(), mData.size() );
 	}
 
-	CloseFS();
+	closeFS();
 }
 
-void Log::Save( const std::string& filepath ) {
+void Log::save( const std::string& filepath ) {
 	if ( filepath.size() ) {
 		mFilePath	= filepath;
 	} else {
-		mFilePath	= Sys::GetProcessPath();
+		mFilePath	= Sys::getProcessPath();
 	}
 
 	mSave		= true;
 }
 
-void Log::Write( std::string Text, const bool& newLine ) {
+void Log::write( std::string Text, const bool& newLine ) {
 	if ( newLine ) {
 		Text += '\n';
 	}
 
 	mData += Text;
 
-	WriteToReaders( Text );
+	writeToReaders( Text );
 
 	if ( mConsoleOutput ) {
 	#if EE_PLATFORM == EE_PLATFORM_ANDROID
@@ -72,17 +72,17 @@ void Log::Write( std::string Text, const bool& newLine ) {
 	}
 	
 	if ( mLiveWrite ) {
-		OpenFS();
+		openFS();
 
-		mFS->Write( Text.c_str(), Text.size() );
+		mFS->write( Text.c_str(), Text.size() );
 
-		mFS->Flush();
+		mFS->flush();
 	}
 }
 
-void Log::OpenFS() {
+void Log::openFS() {
 	if ( mFilePath.empty() ) {
-		mFilePath = Sys::GetProcessPath();
+		mFilePath = Sys::getProcessPath();
 	}
 
 	if ( NULL == mFS ) {
@@ -92,15 +92,15 @@ void Log::OpenFS() {
 	}
 }
 
-void Log::CloseFS() {
-	Lock();
+void Log::closeFS() {
+	lock();
 
 	eeSAFE_DELETE( mFS );
 
-	Unlock();
+	unlock();
 }
 
-void Log::Writef( const char* format, ... ) {
+void Log::writef( const char* format, ... ) {
 	int n, size = 256;
 	std::string tstr( size, '\0' );
 
@@ -117,7 +117,7 @@ void Log::Writef( const char* format, ... ) {
 
 			mData += tstr;
 
-			WriteToReaders( tstr );
+			writeToReaders( tstr );
 
 			if ( mConsoleOutput ) {
 			#if EE_PLATFORM == EE_PLATFORM_ANDROID
@@ -130,11 +130,11 @@ void Log::Writef( const char* format, ... ) {
 			}
 
 			if ( mLiveWrite ) {
-				OpenFS();
+				openFS();
 
-				mFS->Write( tstr.c_str(), tstr.size() );
+				mFS->write( tstr.c_str(), tstr.size() );
 
-				mFS->Flush();
+				mFS->flush();
 			}
 
 			va_end( args );
@@ -151,15 +151,15 @@ void Log::Writef( const char* format, ... ) {
 	}
 }
 
-std::string Log::Buffer() const {
+std::string Log::getBuffer() const {
 	return mData;
 }
 
-const bool& Log::ConsoleOutput() const {
+const bool& Log::isConsoleOutput() const {
 	return mConsoleOutput;
 }
 
-void Log::ConsoleOutput( const bool& output ) {
+void Log::setConsoleOutput( const bool& output ) {
 	bool OldOutput = mConsoleOutput;
 
 	mConsoleOutput = output;
@@ -167,30 +167,30 @@ void Log::ConsoleOutput( const bool& output ) {
 	if ( !OldOutput && output ) {
 		std::string data( mData );
 		mData = "";
-		Write( data, false );
+		write( data, false );
 	}
 
 }
 
-const bool& Log::LiveWrite() const {
+const bool& Log::isLiveWrite() const {
 	return mLiveWrite;
 }
 
-void Log::LiveWrite( const bool& lw ) {
+void Log::setLiveWrite( const bool& lw ) {
 	mLiveWrite = lw;
 }
 
-void Log::AddLogReader( LogReaderInterface * reader ) {
+void Log::addLogReader( LogReaderInterface * reader ) {
 	mReaders.push_back( reader );
 }
 
-void Log::RemoveLogReader( LogReaderInterface * reader ) {
+void Log::removeLogReader( LogReaderInterface * reader ) {
 	mReaders.remove( reader );
 }
 
-void Log::WriteToReaders( std::string& text ) {
+void Log::writeToReaders( std::string& text ) {
 	for ( std::list<LogReaderInterface*>::iterator it = mReaders.begin(); it != mReaders.end(); it++ ) {
-		(*it)->WriteLog( text );
+		(*it)->writeLog( text );
 	}
 }
 

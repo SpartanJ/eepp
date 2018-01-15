@@ -78,7 +78,7 @@ namespace EE { namespace System {
  * This processes one or more 64-byte data blocks, but does NOT update
  * the bit counters.  There are no alignment requirements.
  */
-const void * MD5::Body(MD5::Context *ctx, const void *data, unsigned long size)
+const void * MD5::body(MD5::Context *ctx, const void *data, unsigned long size)
 {
 	const unsigned char *ptr;
 	MD5_u32plus a, b, c, d;
@@ -185,7 +185,7 @@ const void * MD5::Body(MD5::Context *ctx, const void *data, unsigned long size)
 	return ptr;
 }
 
-std::string MD5::HexDigest( std::vector<Uint8>& digest ) {
+std::string MD5::hexDigest( std::vector<Uint8>& digest ) {
 	char buf[33];
 	size_t size = digest.size();
 
@@ -198,7 +198,7 @@ std::string MD5::HexDigest( std::vector<Uint8>& digest ) {
 	return std::string( buf );
 }
 
-void MD5::Init(MD5::Context * ctx) {
+void MD5::init(MD5::Context * ctx) {
 	ctx->a = 0x67452301;
 	ctx->b = 0xefcdab89;
 	ctx->c = 0x98badcfe;
@@ -208,7 +208,7 @@ void MD5::Init(MD5::Context * ctx) {
 	ctx->hi = 0;
 }
 
-void MD5::Update(MD5::Context * ctx, const void * data, unsigned long size) {
+void MD5::update(MD5::Context * ctx, const void * data, unsigned long size) {
 	MD5_u32plus saved_lo;
 	unsigned long used, available;
 
@@ -230,18 +230,18 @@ void MD5::Update(MD5::Context * ctx, const void * data, unsigned long size) {
 		memcpy(&ctx->buffer[used], data, available);
 		data = (const unsigned char *)data + available;
 		size -= available;
-		Body(ctx, ctx->buffer, 64);
+		body(ctx, ctx->buffer, 64);
 	}
 
 	if (size >= 64) {
-		data = Body(ctx, data, size & ~(unsigned long)0x3f);
+		data = body(ctx, data, size & ~(unsigned long)0x3f);
 		size &= 0x3f;
 	}
 
 	memcpy(ctx->buffer, data, size);
 }
 
-void MD5::Final( unsigned char * result, MD5::Context * ctx) {
+void MD5::final( unsigned char * result, MD5::Context * ctx) {
 	unsigned long used, available;
 
 	used = ctx->lo & 0x3f;
@@ -252,7 +252,7 @@ void MD5::Final( unsigned char * result, MD5::Context * ctx) {
 
 	if (available < 8) {
 		memset(&ctx->buffer[used], 0, available);
-		Body(ctx, ctx->buffer, 64);
+		body(ctx, ctx->buffer, 64);
 		used = 0;
 		available = 64;
 	}
@@ -269,7 +269,7 @@ void MD5::Final( unsigned char * result, MD5::Context * ctx) {
 	ctx->buffer[62] = ctx->hi >> 16;
 	ctx->buffer[63] = ctx->hi >> 24;
 
-	Body(ctx, ctx->buffer, 64);
+	body(ctx, ctx->buffer, 64);
 
 	result[0] = ctx->a;
 	result[1] = ctx->a >> 8;
@@ -291,24 +291,24 @@ void MD5::Final( unsigned char * result, MD5::Context * ctx) {
 	memset(ctx, 0, sizeof(*ctx));
 }
 
-MD5::Result MD5::FromStream( IOStream & stream ) {
+MD5::Result MD5::fromStream( IOStream & stream ) {
 	Result res;
 	Context ctx;
 	Int64 buff_size = 512;
-	Int64 size = (Int64)stream.GetSize();
-	char data[buff_size];
+	Int64 size = (Int64)stream.getSize();
+	char data[512];
 
-	Init( &ctx );
+	init( &ctx );
 
 	while ( size > 0 ) {
 		if ( size > buff_size ) {
-			stream.Read( data, buff_size );
+			stream.read( data, buff_size );
 
-			Update( &ctx, data, buff_size );
+			update( &ctx, data, buff_size );
 		} else {
-			stream.Read( data, size );
+			stream.read( data, size );
 
-			Update( &ctx, data, size );
+			update( &ctx, data, size );
 		}
 
 		size -= buff_size;
@@ -316,38 +316,38 @@ MD5::Result MD5::FromStream( IOStream & stream ) {
 
 	res.digest.resize(16);
 
-	Final( &res.digest[0], &ctx );
+	final( &res.digest[0], &ctx );
 
 	return res;
 }
 
-MD5::Result MD5::FromFile( std::string path ) {
+MD5::Result MD5::fromFile( std::string path ) {
 	IOStreamFile file( path, std::ios::in | std::ios::binary );
-	return FromStream( file );
+	return fromStream( file );
 }
 
-MD5::Result MD5::FromMemory( const Uint8 * data, Uint64 size ) {
+MD5::Result MD5::fromMemory( const Uint8 * data, Uint64 size ) {
 	Result res;
 
 	Context ctx;
 
-	Init( &ctx );
+	init( &ctx );
 
-	Update( &ctx, data, size );
+	update( &ctx, data, size );
 
 	res.digest.resize(16);
 
-	Final( &res.digest[0], &ctx );
+	final( &res.digest[0], &ctx );
 
 	return res;
 }
 
-MD5::Result MD5::FromString( const std::string & str ) {
-	return FromMemory( (const Uint8 *)str.c_str(), str.size() );
+MD5::Result MD5::fromString( const std::string & str ) {
+	return fromMemory( (const Uint8 *)str.c_str(), str.size() );
 }
 
-MD5::Result MD5::FromString( const String & str ) {
-	return FromMemory( (const Uint8 *)str.c_str(), str.size() );
+MD5::Result MD5::fromString( const String & str ) {
+	return fromMemory( (const Uint8 *)str.c_str(), str.size() );
 }
 
 }}

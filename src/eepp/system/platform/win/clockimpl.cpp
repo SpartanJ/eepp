@@ -1,6 +1,7 @@
 #include <eepp/system/platform/win/clockimpl.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
+#include <algorithm>
 
 namespace EE { namespace System { namespace Platform { 
 
@@ -12,7 +13,7 @@ ClockImpl::ClockImpl() :
 ClockImpl::~ClockImpl() {
 }
 
-void ClockImpl::Restart() {
+void ClockImpl::restart() {
 	// Get the current process core mask
 	DWORD procMask;
 	DWORD sysMask;
@@ -51,7 +52,7 @@ void ClockImpl::Restart() {
 	mLastTime	= 0;
 }
 
-unsigned long ClockImpl::GetElapsedTime() {
+unsigned long ClockImpl::getElapsedTime() {
 	LARGE_INTEGER curTime;
 
 	HANDLE thread = GetCurrentThread();
@@ -76,7 +77,7 @@ unsigned long ClockImpl::GetElapsedTime() {
 	signed long msecOff = (signed long)(newTicks - check);
 	if (msecOff < -100 || msecOff > 100) {
 		// We must keep the timer running forward :)
-		LONGLONG adjust = (std::min)(msecOff * mFrequency.QuadPart / 1000, newTime - mLastTime);
+		LONGLONG adjust = std::min(msecOff * mFrequency.QuadPart / 1000, newTime - mLastTime);
 		mStartTime.QuadPart += adjust;
 		newTime -= adjust;
 	}

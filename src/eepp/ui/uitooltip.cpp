@@ -1,249 +1,279 @@
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uimanager.hpp>
-#include <eepp/ui/uicomplexcontrol.hpp>
-#include <eepp/graphics/textcache.hpp>
+#include <eepp/ui/uiwidget.hpp>
+#include <eepp/graphics/text.hpp>
 
 namespace EE { namespace UI {
 
-UITooltip::UITooltip( UITooltip::CreateParams& Params, UIControl * TooltipOf ) :
-	UIControlAnim( Params ),
-	mFontColor( Params.FontColor ),
-	mFontShadowColor( Params.FontShadowColor ),
-	mAlignOffset( 0.f, 0.f ),
-	mPadding( Params.Padding ),
-	mTooltipTime( Time::Zero ),
-	mTooltipOf( TooltipOf )
-{
-	mTextCache = eeNew( TextCache, () );
-	mTextCache->Font( Params.Font );
-	mTextCache->Color( mFontColor );
-	mTextCache->ShadowColor( mFontShadowColor );
+UITooltip *UITooltip::New() {
+	return eeNew( UITooltip, () );
+}
 
-	if ( NULL == Params.Font ) {
-		if ( NULL != UIThemeManager::instance()->DefaultFont() )
-			mTextCache->Font( UIThemeManager::instance()->DefaultFont() );
-		else
-			eePRINTL( "UITooltip::UITextBox : Created a UI TextBox without a defined font." );
+UITooltip::UITooltip() :
+	UIControlAnim(),
+	mAlignOffset( 0.f, 0.f ),
+	mTooltipTime( Time::Zero ),
+	mTooltipOf()
+{
+	setFlags( UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
+
+	mTextCache = eeNew( Text, () );
+
+	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
+
+	if ( NULL != theme ) {
+		setStyleConfig( theme->getTooltipStyleConfig() );
 	}
 
-	AutoPadding();
+	if ( NULL == getFont() ) {
+		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
+			setFont( UIThemeManager::instance()->getDefaultFont() );
+		else
+			eePRINTL( "UITooltip::UITooltip : Created a UI TextBox without a defined font." );
+	}
 
-	if ( Params.ParentCtrl != UIManager::instance()->MainControl() )
-		Parent( UIManager::instance()->MainControl() );
+	autoPadding();
 
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UITooltip::~UITooltip() {
 	eeSAFE_DELETE( mTextCache );
 
-	if ( NULL != mTooltipOf && mTooltipOf->IsComplex() ) {
-		reinterpret_cast<UIComplexControl*>( mTooltipOf )->TooltipRemove();
+	if ( NULL != mTooltipOf && mTooltipOf->isWidget() ) {
+		reinterpret_cast<UIWidget*>( mTooltipOf )->tooltipRemove();
 	}
 }
 
-Uint32 UITooltip::Type() const {
+Uint32 UITooltip::getType() const {
 	return UI_TYPE_TOOLTIP;
 }
 
-bool UITooltip::IsType( const Uint32& type ) const {
-	return UITooltip::Type() == type ? true : UIControlAnim::IsType( type );
+bool UITooltip::isType( const Uint32& type ) const {
+	return UITooltip::getType() == type ? true : UIControlAnim::isType( type );
 }
 
-void UITooltip::SetTheme( UITheme * Theme ) {
-	UIControl::SetThemeControl( Theme, "tooltip" );
+void UITooltip::setTheme( UITheme * Theme ) {
+	setThemeSkin( Theme, "tooltip" );
 
-	AutoPadding();
+	autoPadding();
+}
 
-	if ( NULL == mTextCache->Font() && NULL != Theme->Font() ) {
-		mTextCache->Font( Theme->Font() );
+void UITooltip::autoPadding() {
+	if ( ( mFlags & UI_AUTO_PADDING ) && mStyleConfig.Padding == Rect() ) {
+		setPadding( makePadding( true, true, true, true ) );
 	}
 }
 
-void UITooltip::AutoPadding() {
-	if ( mFlags & UI_AUTO_PADDING ) {
-		mPadding = MakePadding( true, true, true, true );
-	}
-}
+void UITooltip::show() {
+	if ( !isVisible() || 0 == mAlpha ) {
+		toFront();
 
-void UITooltip::Show() {
-	if ( !Visible() || 0 == mAlpha ) {
-		ToFront();
+		setVisible( true );
+		setEnabled( true );
 
-		Visible( true );
-
-		if ( UIThemeManager::instance()->DefaultEffectsEnabled() ) {
-			StartAlphaAnim( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->ControlsFadeInTime() );
+		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
+			startAlphaAnim( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->getControlsFadeInTime() );
 		}
 	}
 }
 
-void UITooltip::Hide() {
-	if ( Visible() ) {
-		if ( UIThemeManager::instance()->DefaultEffectsEnabled() ) {
-			DisableFadeOut( UIThemeManager::instance()->ControlsFadeOutTime() );
+void UITooltip::hide() {
+	if ( isVisible() ) {
+		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
+			disableFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
 		} else {
-			Visible( false );
+			setVisible( false );
+			setEnabled( false );
 		}
 	}
 }
 
-void UITooltip::Draw() {
-	if ( mVisible && 0.f != mAlpha ) {
-		UIControlAnim::Draw();
+void UITooltip::draw() {
+	if ( mVisible && 0.f != mAlpha && mTextCache->getString().size() > 0 ) {
+		UIControlAnim::draw();
 
-		if ( mTextCache->GetTextWidth() ) {
-			mTextCache->Flags( Flags() );
-			mTextCache->Draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, Vector2f::One, 0.f, Blend() );
+		if ( mTextCache->getTextWidth() ) {
+			mTextCache->setAlign( getFlags() );
+			mTextCache->draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, Vector2f::One, 0.f, getBlendMode() );
 		}
 	}
 }
 
-Graphics::Font * UITooltip::Font() const {
-	return mTextCache->Font();
+Graphics::Font * UITooltip::getFont() const {
+	return mTextCache->getFont();
 }
 
-void UITooltip::Font( Graphics::Font * font ) {
-	if ( mTextCache->Font() != font ) {
-		mTextCache->Font( font );
-		AutoPadding();
-		AutoSize();
-		AutoAlign();
-		OnFontChanged();
+void UITooltip::setFont( Graphics::Font * font ) {
+	if ( mTextCache->getFont() != font ) {
+		mTextCache->setFont( font );
+		autoPadding();
+		onAutoSize();
+		autoAlign();
+		onFontChanged();
 	}
 }
 
-const String& UITooltip::Text() {
-	return mTextCache->Text();
+const String& UITooltip::getText() {
+	return mTextCache->getString();
 }
 
-void UITooltip::Text( const String& text ) {
-	mTextCache->Text( text );
-	AutoPadding();
-	AutoSize();
-	AutoAlign();
-	OnTextChanged();
+void UITooltip::setText( const String& text ) {
+	mTextCache->setString( text );
+	autoPadding();
+	onAutoSize();
+	autoAlign();
+	onTextChanged();
 }
 
-const ColorA& UITooltip::Color() const {
-	return mFontColor;
+const Color& UITooltip::getFontColor() const {
+	return mStyleConfig.FontColor;
 }
 
-void UITooltip::Color( const ColorA& color ) {
-	mFontColor = color;
-	Alpha( color.A() );
+void UITooltip::setFontColor( const Color& color ) {
+	mStyleConfig.FontColor = color;
+	mTextCache->setFillColor( mStyleConfig.FontColor );
+	setAlpha( color.a );
 }
 
-const ColorA& UITooltip::ShadowColor() const {
-	return mFontShadowColor;
+const Color& UITooltip::getFontShadowColor() const {
+	return mStyleConfig.ShadowColor;
 }
 
-void UITooltip::ShadowColor( const ColorA& color ) {
-	mFontShadowColor = color;
-	Alpha( color.A() );
-	mTextCache->ShadowColor( mFontColor );
+void UITooltip::setFontShadowColor( const Color& color ) {
+	mStyleConfig.ShadowColor = color;
+	setAlpha( color.a );
+	mTextCache->setShadowColor( mStyleConfig.ShadowColor );
 }
 
-void UITooltip::Alpha( const Float& alpha ) {
-	UIControlAnim::Alpha( alpha );
-	mFontColor.Alpha = (Uint8)alpha;
-	mFontShadowColor.Alpha = (Uint8)alpha;
+void UITooltip::setAlpha( const Float& alpha ) {
+	UIControlAnim::setAlpha( alpha );
+	mStyleConfig.FontColor.a = (Uint8)alpha;
+	mStyleConfig.ShadowColor.a = (Uint8)alpha;
 
-	mTextCache->Color( mFontColor );
+	mTextCache->setFillColor( mStyleConfig.FontColor );
 }
 
-void UITooltip::AutoSize() {
+void UITooltip::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mSize.Width( (int)mTextCache->GetTextWidth() + mPadding.Left + mPadding.Right );
-		mSize.Height( (int)mTextCache->GetTextHeight() + mPadding.Top + mPadding.Bottom );
+		setPixelsSize(
+			(int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right,
+			(int)mTextCache->getTextHeight() + mRealPadding.Top + mRealPadding.Bottom
+		);
 	}
 }
 
-void UITooltip::AutoAlign() {
-	Uint32 Width	= mSize.Width()		- mPadding.Left - mPadding.Right;
-	Uint32 Height	= mSize.Height()	- mPadding.Top	- mPadding.Bottom;
+void UITooltip::autoAlign() {
+	Uint32 Width	= mRealSize.getWidth()	- mRealPadding.Left - mRealPadding.Right;
+	Uint32 Height	= mRealSize.getHeight()	- mRealPadding.Top	- mRealPadding.Bottom;
 
-	switch ( FontHAlignGet( Flags() ) ) {
+	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mAlignOffset.x = mPadding.Left + (Float)( (Int32)( Width - mTextCache->GetTextWidth() ) / 2 );
+			mAlignOffset.x = mRealPadding.Left + (Float)( (Int32)( Width - mTextCache->getTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
-			mAlignOffset.x = ( (Float)Width - (Float)mTextCache->GetTextWidth() ) - mPadding.Right;
+			mAlignOffset.x = ( (Float)Width - (Float)mTextCache->getTextWidth() ) - mRealPadding.Right;
 			break;
 		case UI_HALIGN_LEFT:
-			mAlignOffset.x = mPadding.Left;
+			mAlignOffset.x = mRealPadding.Left;
 			break;
 	}
 
-	switch ( FontVAlignGet( Flags() ) ) {
+	switch ( fontVAlignGet( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
-			mAlignOffset.y = mPadding.Top + (Float)( ( (Int32)( Height - mTextCache->GetTextHeight() ) ) / 2 );
+			mAlignOffset.y = mRealPadding.Top + (Float)( ( (Int32)( Height - mTextCache->getTextHeight() ) ) / 2 );
 			break;
 		case UI_VALIGN_BOTTOM:
-			mAlignOffset.y = ( (Float)Height - (Float)mTextCache->GetTextHeight() ) - mPadding.Bottom;
+			mAlignOffset.y = ( (Float)Height - (Float)mTextCache->getTextHeight() ) - mRealPadding.Bottom;
 			break;
 		case UI_VALIGN_TOP:
-			mAlignOffset.y = mPadding.Top;
+			mAlignOffset.y = mRealPadding.Top;
 			break;
 	}
 }
 
-void UITooltip::OnSizeChange() {
-	AutoPadding();
-	AutoSize();
-	AutoAlign();
+void UITooltip::onSizeChange() {
+	autoPadding();
+	onAutoSize();
+	autoAlign();
 
-	UIControlAnim::OnSizeChange();
-
-	mTextCache->Cache();
+	UIControlAnim::onSizeChange();
 }
 
-void UITooltip::OnTextChanged() {
-	SendCommonEvent( UIEvent::EventOnTextChanged );
+void UITooltip::onTextChanged() {
+	sendCommonEvent( UIEvent::OnTextChanged );
 }
 
-void UITooltip::OnFontChanged() {
-	SendCommonEvent( UIEvent::EventOnFontChanged );
+void UITooltip::onFontChanged() {
+	sendCommonEvent( UIEvent::OnFontChanged );
 }
 
-void UITooltip::Padding( const Recti& padding ) {
-	mPadding = padding;
+void UITooltip::setPadding( const Rect& padding ) {
+	mStyleConfig.Padding = padding;
+	mRealPadding = PixelDensity::dpToPxI( mStyleConfig.Padding );
 }
 
-const Recti& UITooltip::Padding() const {
-	return mPadding;
+const Rect& UITooltip::getPadding() const {
+	return mStyleConfig.Padding;
 }
 
-TextCache * UITooltip::GetTextCache() {
+Text * UITooltip::getTextCache() {
 	return mTextCache;
 }
 
-Float UITooltip::GetTextWidth() {
-	return mTextCache->GetTextWidth();
+Float UITooltip::getTextWidth() {
+	return mTextCache->getTextWidth();
 }
 
-Float UITooltip::GetTextHeight() {
-	return mTextCache->GetTextHeight();
+Float UITooltip::getTextHeight() {
+	return mTextCache->getTextHeight();
 }
 
-const int& UITooltip::GetNumLines() const {
-	return mTextCache->GetNumLines();
+const int& UITooltip::getNumLines() const {
+	return mTextCache->getNumLines();
 }
 
-const Vector2f& UITooltip::AlignOffset() const {
-	return mAlignOffset;
+Vector2f UITooltip::getAlignOffset() {
+	return PixelDensity::pxToDp( mAlignOffset );
 }
 
-void UITooltip::TooltipTime( const Time& Time ) {
+void UITooltip::setTooltipTime( const Time& Time ) {
 	mTooltipTime = Time;
 }
 
-void UITooltip::TooltipTimeAdd( const Time& Time ) {
+void UITooltip::addTooltipTime( const Time& Time ) {
 	mTooltipTime += Time;
 }
 
-const Time& UITooltip::TooltipTime() const {
+const Time& UITooltip::getTooltipTime() const {
 	return mTooltipTime;
+}
+
+UIControl * UITooltip::getTooltipOf() const {
+	return mTooltipOf;
+}
+
+void UITooltip::setTooltipOf(UIControl * tooltipOf) {
+	mTooltipOf = tooltipOf;
+}
+
+UITooltipStyleConfig UITooltip::getStyleConfig() const {
+	return mStyleConfig;
+}
+
+void UITooltip::setStyleConfig(const UITooltipStyleConfig & styleConfig) {
+	mStyleConfig = styleConfig;
+
+	if ( mStyleConfig.Padding != Rect() )
+		setPadding( mStyleConfig.Padding );
+
+	setFont( mStyleConfig.Font );
+	setFontColor( mStyleConfig.FontColor );
+	setFontShadowColor( mStyleConfig.ShadowColor );
+	mTextCache->setCharacterSize( mStyleConfig.CharacterSize );
+	mTextCache->setStyle( mStyleConfig.Style );
+	mTextCache->setOutlineThickness( mStyleConfig.OutlineThickness );
+	mTextCache->setOutlineColor( mStyleConfig.OutlineColor );
 }
 
 }}

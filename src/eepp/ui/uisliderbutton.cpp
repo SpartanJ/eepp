@@ -3,20 +3,24 @@
 
 namespace EE { namespace UI { namespace Private {
 
-UISliderButton::UISliderButton( const UIControlAnim::CreateParams& Params ) :
-	UIControlAnim( Params )
+UISliderButton *UISliderButton::New() {
+	return eeNew( UISliderButton, () );
+}
+
+UISliderButton::UISliderButton() :
+	UIControlAnim()
 {
-	ApplyDefaultTheme();
+	applyDefaultTheme();
 }
 
 UISliderButton::~UISliderButton() {
 }
 
-void UISliderButton::OnPosChange() {
-	UIControlAnim::OnPosChange();
+void UISliderButton::onPositionChange() {
+	UIControlAnim::onPositionChange();
 
 	UISlider * Slider = reinterpret_cast<UISlider*> ( mParentCtrl );
-	Slider->FixSliderPos();
+	Slider->fixSliderPos();
 }
 
 }}}

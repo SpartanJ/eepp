@@ -5,56 +5,6 @@
 
 namespace Demo_Test {
 
-class UITest : public UIControlAnim {
-	public:
-		UITest( UIControlAnim::CreateParams& Params ) : UIControlAnim( Params ) 	{ mOldColor = mBackground->Colors(); }
-
-		virtual Uint32 OnMouseEnter( const Vector2i& Pos, const Uint32 Flags )	{
-			if ( 4 == mOldColor.size() ) {
-				mBackground->Colors( ColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ),
-									ColorA( mOldColor[1].R(), mOldColor[1].G(), mOldColor[1].B(), 200 ),
-									ColorA( mOldColor[2].R(), mOldColor[2].G(), mOldColor[2].B(), 200 ),
-									ColorA( mOldColor[3].R(), mOldColor[3].G(), mOldColor[3].B(), 200 )
-								);
-			} else {
-				mBackground->Color( ColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ) );
-			}
-
-			return 1;
-		}
-
-		virtual Uint32 OnMouseExit( const Vector2i& Pos, const Uint32 Flags )	{
-			if ( 4 == mOldColor.size() ) {
-				mBackground->Colors( mOldColor[0], mOldColor[1], mOldColor[2], mOldColor[3] );
-			} else {
-				mBackground->Color( mOldColor[0] );
-			}
-
-			return 1;
-		}
-
-		virtual Uint32 OnMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
-			UIDragable::OnMouseUp( Pos, Flags );
-
-			if ( Engine::instance()->GetCurrentWindow()->GetInput()->MouseWheelUp() )
-				Scale( Scale() + 0.1f );
-			else if ( Engine::instance()->GetCurrentWindow()->GetInput()->MouseWheelDown() )
-				Scale( Scale() - 0.1f );
-
-			return 1;
-		}
-
-		virtual Uint32 OnFocus() {
-			ToFront();
-
-			return 1;
-		}
-
-		const std::vector<ColorA>& OldColor() { return mOldColor; }
-	protected:
-		std::vector<ColorA> mOldColor;
-};
-
 enum CollisionTypes {
 	BALL_TYPE,
 	BLOCKING_SENSOR_TYPE,
@@ -71,19 +21,19 @@ class EETest : private Thread {
 	public:
 		typedef cb::Callback0<void> SceneCb;
 
-		void Init();
-		void Update();
-		void End();
-		void Process();
-		void Render();
-		void Input();
-		void ParticlesCallback(Particle* P, ParticleSystem* Me);
+		void init();
+		void update();
+		void end();
+		void process();
+		void render();
+		void input();
+		void particlesCallback(Particle* P, ParticleSystem* Me);
 
-		void ParticlesThread();
-		void Particles();
-		void UpdateParticles();
-		void LoadTextures();
-		void CmdSetPartsNum ( const std::vector < String >& params );
+		void particlesThread();
+		void particles();
+		void updateParticles();
+		void loadTextures();
+		void cmdSetPartsNum ( const std::vector < String >& params );
 
 		Clock cElapsed;
 		Time PSElapsed;
@@ -93,7 +43,6 @@ class EETest : private Thread {
 		TextureFactory* TF;
 		System::Log* Log;
 		EE::Window::Input* KM;
-		InputTextBuffer InBuf;
 
 		bool side, aside;
 		Float ang, scale, alpha, Ang;
@@ -112,10 +61,7 @@ class EETest : private Thread {
 
 		Sprite SP;
 		Sprite CL1, CL2;
-		Font * FF;
-		Font * FF2;
 		Font * TTF;
-		Font * TTFB;
 
 		Primitives PR;
 		bool iL1, iL2;
@@ -127,7 +73,7 @@ class EETest : private Thread {
 		bool DrawBack;
 
 		Console Con;
-		virtual void Run();
+		virtual void run();
 
 		Vector2f Point;
 
@@ -138,18 +84,18 @@ class EETest : private Thread {
 
 		Uint8 Screen;
 		SceneCb Scenes[6];
-		void Screen1();
-		void Screen2();
-		void Screen3();
-		void Screen4();
-		void Screen5();
+		void screen1();
+		void screen2();
+		void screen3();
+		void screen4();
+		void screen5();
 
 		Zip * PakTest;
 
 		std::vector<Uint8> tmpv;
 		std::vector<Uint8> MySong;
 
-		Waypoints WP;
+		Interpolation2d WP;
 		Int32 PartsNum;
 		Uint32 Cursor[1];
 		Texture * CursorP[1];
@@ -164,11 +110,13 @@ class EETest : private Thread {
 		View Views[2];
 
 		ShaderProgram * mShaderProgram;
+		ShaderProgram * mBlur;
 
 		Float mBlurFactor;
 		bool mUseShaders;
 		bool mJoyEnabled;
 		bool mMusEnabled;
+		bool mDebugUI;
 
 		Uint32 mLastFPSLimit;
 		bool mWasMinimized;
@@ -176,15 +124,15 @@ class EETest : private Thread {
 		String mBuda;
 
 		ResourceLoader mResLoad;
-		void OnTextureLoaded( ResourceLoader * ObjLoaded );
+		void onTextureLoaded( ResourceLoader * ObjLoaded );
 
-		void CreateUI();
-		void CreateShaders();
+		void createUI();
+		void createShaders();
 
-		void LoadFonts();
+		void loadFonts();
 
 		ResourceLoader mFontLoader;
-		void OnFontLoaded( ResourceLoader * ObjLoaded );
+		void onFontLoaded( ResourceLoader * ObjLoaded );
 
 		JoystickManager * JM;
 		Float mAxisX;
@@ -197,23 +145,23 @@ class EETest : private Thread {
 		VertexBuffer * mVBO;
 
 		Clock	mFTE;
+		Translator mTranslator;
 
-		void CreateCommonDialog();
-		void ItemClick( const UIEvent * Event );
-		void MainClick( const UIEvent * Event );
-		void QuitClick( const UIEvent * Event );
-		void CloseClick( const UIEvent * Event );
-		void ButtonClick( const UIEvent * Event );
-		void OnValueChange( const UIEvent * Event );
-		void OnSliderValueChange( const UIEvent * Event );
-		void OnWinMouseUp( const UIEvent * Event );
-		void CreateDecoratedWindow();
-		void CreateWinMenu();
-		void CreateUIThemeTextureAtlas();
+		void createCommonDialog();
+		void onItemClick( const UIEvent * Event );
+		void onMainClick( const UIEvent * Event );
+		void onQuitClick( const UIEvent * Event );
+		void onCloseClick( const UIEvent * Event );
+		void onButtonClick( const UIEvent * Event );
+		void onValueChange( const UIEvent * Event );
+		void onSliderValueChange( const UIEvent * Event );
+		void onWinMouseUp( const UIEvent * Event );
+		void createDecoratedWindow();
+		void createUIThemeTextureAtlas();
 
 		UIControlAnim * C;
 		UIScrollBar * mScrollBar;
-		UITextBox * mTextBoxValue;
+		UITextView * mTextBoxValue;
 		UISlider * mSlider;
 		UIProgressBar * mProgressBar;
 		UIListBox * mListBox;
@@ -222,9 +170,11 @@ class EETest : private Thread {
 		MapEditor * mMapEditor;
 		TextureAtlasEditor * mETGEditor;
 
-		TextCache mEEText;
-		TextCache mFBOText;
-		TextCache mInfoText;
+		Text mEEText;
+		Text mFBOText;
+		Text mInfoText;
+
+		std::string mThemeName;
 
 		Space * mSpace;
 
@@ -240,30 +190,30 @@ class EETest : private Thread {
 		Constraint * mMouseJoint[ EE_MAX_FINGERS ];
 		#endif
 
-		void PhysicsCreate();
-		void PhysicsUpdate();
-		void PhysicsDestroy();
+		void physicsCreate();
+		void physicsUpdate();
+		void physicsDestroy();
 
-		void SetScreen( Uint32 num );
+		void setScreen( Uint32 num );
 
 		cpBool blockerBegin( Arbiter *arb, Space *space, void *unused );
 		void blockerSeparate( Arbiter *arb, Space *space, void *unused );
 		void postStepRemove( Space *space, void * tshape, void *unused );
 		cpBool catcherBarBegin( Arbiter *arb, Space *space, void *unused );
 
-		void Demo1Create();
-		void Demo1Update();
-		void Demo1Destroy();
+		void demo1Create();
+		void demo1Update();
+		void demo1Destroy();
 
-		void Demo2Create();
-		void Demo2Update();
-		void Demo2Destroy();
+		void demo2Create();
+		void demo2Update();
+		void demo2Destroy();
 
-		void ShowMenu();
+		void showMenu();
 
 		Emitter emitterInstance;
 
-		void ChangeDemo( Uint32 num );
+		void changeDemo( Uint32 num );
 
 		struct physicDemo {
 			SceneCb init;
@@ -281,22 +231,27 @@ class EETest : private Thread {
 		bool					mTerrainUp;
 		UIPushButton *			mShowMenu;
 		UIPushButton *			mTerrainBut;
+		UIRelativeLayout *		relLay;
 
-		void CreateMapEditor();
+		DrawableGroup drawableGroup;
 
-		void OnMapEditorClose();
+		void createMapEditor();
 
-		void OnETGEditorClose();
+		void onMapEditorClose();
 
-		void CreateETGEditor();
+		void onETGEditorClose();
 
-		void CreateJointAndBody();
+		void createETGEditor();
 
-		void DestroyBody();
+		void createJointAndBody();
 
-		void OnShowMenu( const UIEvent * Event );
+		void destroyBody();
 
-		void OnWindowResize( EE::Window::Window * win );
+		void onShowMenu( const UIEvent * Event );
+
+		void onWindowResize( EE::Window::Window * win );
+
+		void createNewUI();
 };
 
 }

@@ -17,20 +17,20 @@ class EE_API TextureAtlas : public ResourceManager<SubTexture> {
 		~TextureAtlas();
 
 		/** Adds a SubTexture to the Texture Atlas */
-		SubTexture * Add( SubTexture * subTexture );
+		SubTexture * add( SubTexture * subTexture );
 
 		/** Creates and add to the texture atlas a SubTexture from a Texture. It will use the full Texture as a SubTexture.
 		*	@param TexId The texture id
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture * Add( const Uint32& TexId, const std::string& Name = "" );
+		SubTexture * add( const Uint32& TexId, const std::string& Name = "" );
 
 		/** Creates and add to the texture atlas a SubTexture of the indicated part of the texture.
 		*	@param TexId The texture id
 		*	@param SrcRect The texture part that will be used as the SubTexture.
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture * Add( const Uint32& TexId, const Recti& SrcRect, const std::string& Name = "" );
+		SubTexture * add( const Uint32& TexId, const Rect& SrcRect, const std::string& Name = "" );
 
 		/** Creates and add to the texture atlas a SubTexture of the indicated part of the texture.
 		*	@param TexId The texture id
@@ -38,7 +38,7 @@ class EE_API TextureAtlas : public ResourceManager<SubTexture> {
 		*	@param DestSize The destination size that the SubTexture will have when rendered.
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture * Add( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const std::string& Name = "" );
+		SubTexture * add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& Name = "" );
 
 		/** Creates and add to the texture atlas a SubTexture of the indicated part of the texture.
 		*	@param TexId The texture id
@@ -47,25 +47,25 @@ class EE_API TextureAtlas : public ResourceManager<SubTexture> {
 		*	@param Offset The offset that will be added to the position passed when any Draw call is used.
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture * Add( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const Vector2i& Offset, const std::string& Name = "" );
+		SubTexture * add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i& Offset, const std::string& Name = "" );
 
 		/** @return The texture atlas name. */
-		const std::string& Name() const;
+		const std::string& getName() const;
 
 		/** Sets the texture atlas name. */
-		void Name( const std::string& name );
+		void setName( const std::string& name );
 
 		/** @return The texture atlas path. */
-		const std::string& Path() const;
+		const std::string& getPath() const;
 
 		/** Sets the texture atlas path. */
-		void Path( const std::string& path );
+		void setPath( const std::string& path );
 
-		/** @return The texture atlas Id. The Id is the String::Hash of the texture atlas name. */
-		const Uint32& Id() const;
+		/** @return The texture atlas Id. The Id is the String::hash of the texture atlas name. */
+		const Uint32& getId() const;
 		
 		/** @return The number of SubTextures inside the texture atlas. */
-		Uint32 Count();
+		Uint32 getCount();
 
 		/** @return The texture that corresponds to the texture atlas.
 		* @param texnum The texture index. A texture atlas can use more than one texture, so it can be 0 to GetTexturesLoadedCount(). Usually a texture atlas corresponds to only one texture, so the texture index is 0.
@@ -73,10 +73,10 @@ class EE_API TextureAtlas : public ResourceManager<SubTexture> {
 		* The texture atlases loaded from a file always will be linked to a texture. \n
 		* The Global Texture Atlas for example doesn't have any texture linked to it.
 		*/
-		Texture * GetTexture( const Uint32& texnum = 0 ) const;
+		Texture * getTexture( const Uint32& texnum = 0 ) const;
 
 		/** @return The number of textures linked to the texture atlas. */
-		Uint32 GetTexturesCount();
+		Uint32 getTexturesCount();
 	protected:
 		friend class TextureAtlasLoader;
 
@@ -85,7 +85,7 @@ class EE_API TextureAtlas : public ResourceManager<SubTexture> {
 		std::string				mPath;
 		std::vector<Texture*>	mTextures;
 
-		void SetTextures( std::vector<Texture*> textures );
+		void setTextures( std::vector<Texture*> textures );
 };
 
 }}

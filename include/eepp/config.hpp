@@ -24,14 +24,6 @@
 		#pragma warning(disable : 4312)
 		#pragma warning(disable : 4068)
 	#endif
-
-	#ifdef CreateWindow
-		#undef CreateWindow
-	#endif
-
-	#ifdef CreateCursor
-		#undef CreateCursor
-	#endif
 #elif defined( __APPLE_CC__ ) || defined ( __APPLE__ )
 
 	#include <TargetConditionals.h>
@@ -131,6 +123,12 @@
 #define EE_LITTLE_ENDIAN	1
 #define EE_BIG_ENDIAN		2
 
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+#define EE_ENDIAN EE_LITTLE_ENDIAN
+#endif
+
+#ifndef EE_ENDIAN
+
 #if	   defined(__386__) || defined(i386)    || defined(__i386__)  \
 	|| defined(__X86)   || defined(_M_IX86)                       \
 	|| defined(_M_X64)  || defined(__x86_64__)                    \
@@ -143,6 +141,8 @@
 	#define EE_ENDIAN EE_LITTLE_ENDIAN
 #else
 	#define EE_ENDIAN EE_BIG_ENDIAN
+#endif
+
 #endif
 
 #ifndef EE_STATIC

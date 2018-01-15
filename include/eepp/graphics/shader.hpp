@@ -9,10 +9,10 @@ namespace EE { namespace Graphics {
 class EE_API Shader {
 	public:
 		/** Activates/Deactivates shader convertion from fixed pipeline to programmable pipeline ( activated by default ) */
-		static void Ensure( bool ensure );
+		static void ensure( bool ensure );
 
 		/** @return If automatic Shader conversion is activated */
-		static bool Ensure();
+		static bool ensure();
 
 		/** Constructor with type of shader, next you'll need to set the source and compile it. */
 		Shader( const Uint32& Type );
@@ -32,37 +32,37 @@ class EE_API Shader {
 		virtual ~Shader();
 
 		/** Set the shader source */
-		void SetSource( const std::string& Source );
+		void setSource( const std::string& Source );
 
 		/** Set the shader source */
-		void SetSource( const std::vector<Uint8>& Source );
+		void setSource( const std::vector<Uint8>& Source );
 
 		/** Set the shader source */
-		void SetSource( const char * Data, const Uint32& DataSize );
+		void setSource( const char * Data, const Uint32& DataSize );
 
 		/** Set the shader source */
-		void SetSource( const char** Data, const Uint32& NumLines );
+		void setSource( const char** Data, const Uint32& NumLines );
 
 		/** Compile the shader */
-		bool Compile();
+		bool compile();
 
 		/** @return If the shader is valid */
-		bool IsValid() const;
+		bool isValid() const;
 
 		/** @return If the shader is compiled */
-		bool IsCompiled() const;
+		bool isCompiled() const;
 
 		/** @return The log of the compilation */
-		std::string CompileLog() const;
+		std::string compileLog() const;
 
 		/** @return The Shader Type */
-		Uint32 GetType() const;
+		Uint32 getType() const;
 
 		/** @return The Shader Id */
-		Uint32 GetId() const;
+		Uint32 getId() const;
 
 		/** Reloads the Shader. */
-		void Reload();
+		void reload();
 	protected:
 		friend class RendererGL3;
 		static bool			sEnsure;
@@ -76,9 +76,9 @@ class EE_API Shader {
 
 		void Init( const Uint32& Type );
 
-		std::string GetName();
+		std::string getName();
 
-		void EnsureVersion();
+		void ensureVersion();
 };
 
 /** @brief Prebuild Vertex Shader class */

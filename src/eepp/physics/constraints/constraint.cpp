@@ -11,7 +11,7 @@ Constraint::Constraint( cpConstraint * Constraint ) :
 	mData( NULL )
 {
 	mConstraint = Constraint;
-	SetData();
+	setData();
 }
 
 Constraint::Constraint() :
@@ -23,63 +23,63 @@ Constraint::Constraint() :
 Constraint::~Constraint() {
 	cpConstraintFree( mConstraint );
 
-	PhysicsManager::instance()->RemoveConstraintFree( this );
+	PhysicsManager::instance()->removeConstraintFree( this );
 }
 
-void Constraint::SetData() {
+void Constraint::setData() {
 	mConstraint->data = (void*)this;
-	PhysicsManager::instance()->AddConstraintFree( this );
+	PhysicsManager::instance()->addConstraintFree( this );
 }
 
-cpConstraint * Constraint::GetConstraint() const {
+cpConstraint * Constraint::getConstraint() const {
 	return mConstraint;
 }
 
-Body * Constraint::A() {
+Body * Constraint::getA() {
 	return reinterpret_cast<Body*>( mConstraint->a->data );
 }
 
-Body * Constraint::B() {
+Body * Constraint::getB() {
 	return reinterpret_cast<Body*>( mConstraint->b->data );
 }
 
-cpFloat Constraint::MaxForce() {
+cpFloat Constraint::getMaxForce() {
 	return mConstraint->maxForce;
 }
 
-void Constraint::MaxForce( const cpFloat& maxforce ) {
+void Constraint::setMaxForce( const cpFloat& maxforce ) {
 	mConstraint->maxForce = maxforce;
 }
 
-cpFloat Constraint::MaxBias() {
+cpFloat Constraint::getMaxBias() {
 	return mConstraint->maxBias;
 }
 
-void Constraint::MaxBias( const cpFloat& maxbias ) {
+void Constraint::setMaxBias( const cpFloat& maxbias ) {
 	mConstraint->maxBias = maxbias;
 }
 
-cpFloat Constraint::ErrorBias() {
+cpFloat Constraint::getErrorBias() {
 	return cpConstraintGetErrorBias( mConstraint );
 }
 
-void Constraint::ErrorBias( cpFloat value ) {
+void Constraint::setErrorBias( cpFloat value ) {
 	cpConstraintSetErrorBias( mConstraint, value );
 }
 
-void Constraint::Data( void * data ) {
+void Constraint::setData( void * data ) {
 	mData = data;
 }
 
-void * Constraint::Data() const {
+void * Constraint::getData() const {
 	return mData;
 }
 
-cpFloat Constraint::Impulse() {
+cpFloat Constraint::getImpulse() {
 	return cpConstraintGetImpulse( mConstraint );
 }
 
-void Constraint::Draw() {
+void Constraint::draw() {
 }
 
 CP_NAMESPACE_END

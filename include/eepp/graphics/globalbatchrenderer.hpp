@@ -1,5 +1,5 @@
-#ifndef EE_GAMINGCGLOBALBATCHRENDERER_H
-#define EE_GAMINGCGLOBALBATCHRENDERER_H
+#ifndef EE_MAPS_CGLOBALBATCHRENDERER_H
+#define EE_MAPS_CGLOBALBATCHRENDERER_H
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/batchrenderer.hpp>

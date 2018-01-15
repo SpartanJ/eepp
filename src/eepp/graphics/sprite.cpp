@@ -11,16 +11,15 @@ using namespace EE::Window;
 namespace EE { namespace Graphics {
 
 Sprite::Sprite() :
+	Drawable( Drawable::SPRITE ),
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
-	mPos(),
-	mAngle( 0.f ),
+	mRotation( 0.f ),
 	mScale( 1.f, 1.f ),
 	mAnimSpeed( 16.f ),
-	mColor( 255,255,255,255 ),
 	mVertexColors( NULL ),
-	mRepeations( -1 ),
-	mBlend( ALPHA_NORMAL ),
-	mEffect( RN_NORMAL ),
+	mRepetitions( -1 ),
+	mBlend( BlendAlpha ),
+	mEffect( RENDER_NORMAL ),
 	mCurrentFrame( 0 ),
 	mfCurrentFrame( 0.f ),
 	mCurrentSubFrame( 0 ),
@@ -32,16 +31,15 @@ Sprite::Sprite() :
 }
 
 Sprite::Sprite( const std::string& name, const std::string& extension, TextureAtlas * SearchInTextureAtlas )  :
+	Drawable( Drawable::SPRITE ),
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
-	mPos(),
-	mAngle( 0.f ),
+	mRotation( 0.f ),
 	mScale( 1.f, 1.f ),
 	mAnimSpeed( 16.f ),
-	mColor( 255,255,255,255 ),
 	mVertexColors( NULL ),
-	mRepeations( -1 ),
-	mBlend( ALPHA_NORMAL ),
-	mEffect( RN_NORMAL ),
+	mRepetitions( -1 ),
+	mBlend( BlendAlpha ),
+	mEffect( RENDER_NORMAL ),
 	mCurrentFrame( 0 ),
 	mfCurrentFrame( 0.f ),
 	mCurrentSubFrame( 0 ),
@@ -50,20 +48,19 @@ Sprite::Sprite( const std::string& name, const std::string& extension, TextureAt
 	mUserData( NULL )
 {
 	mCb.Reset();
-	AddFramesByPattern( name, extension, SearchInTextureAtlas );
+	addFramesByPattern( name, extension, SearchInTextureAtlas );
 }
 
 Sprite::Sprite( SubTexture * SubTexture ) :
+	Drawable( Drawable::SPRITE ),
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
-	mPos(),
-	mAngle( 0.f ),
+	mRotation( 0.f ),
 	mScale( 1.f, 1.f ),
 	mAnimSpeed( 16.f ),
-	mColor( 255,255,255,255 ),
 	mVertexColors( NULL ),
-	mRepeations( -1 ),
-	mBlend( ALPHA_NORMAL ),
-	mEffect( RN_NORMAL ),
+	mRepetitions( -1 ),
+	mBlend( BlendAlpha ),
+	mEffect( RENDER_NORMAL ),
 	mCurrentFrame( 0 ),
 	mfCurrentFrame( 0.f ),
 	mCurrentSubFrame( 0 ),
@@ -72,20 +69,19 @@ Sprite::Sprite( SubTexture * SubTexture ) :
 	mUserData( NULL )
 {
 	mCb.Reset();
-	CreateStatic( SubTexture );
+	createStatic( SubTexture );
 }
 
-Sprite::Sprite( const Uint32& TexId, const Sizef &DestSize, const Vector2i &Offset, const Recti& TexSector ) :
+Sprite::Sprite( const Uint32& TexId, const Sizef &DestSize, const Vector2i &Offset, const Rect& TexSector ) :
+	Drawable( Drawable::SPRITE ),
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
-	mPos(),
-	mAngle( 0.f ),
+	mRotation( 0.f ),
 	mScale( 1.f, 1.f ),
 	mAnimSpeed( 16.f ),
-	mColor( 255,255,255,255 ),
 	mVertexColors( NULL ),
-	mRepeations( -1 ),
-	mBlend( ALPHA_NORMAL ),
-	mEffect( RN_NORMAL ),
+	mRepetitions( -1 ),
+	mBlend( BlendAlpha ),
+	mEffect( RENDER_NORMAL ),
 	mCurrentFrame( 0 ),
 	mfCurrentFrame( 0.f ),
 	mCurrentSubFrame( 0 ),
@@ -94,7 +90,7 @@ Sprite::Sprite( const Uint32& TexId, const Sizef &DestSize, const Vector2i &Offs
 	mUserData( NULL )
 {
 	mCb.Reset();
-	CreateStatic( TexId, DestSize, Offset, TexSector );
+	createStatic( TexId, DestSize, Offset, TexSector );
 }
 
 Sprite::~Sprite() {
@@ -102,14 +98,15 @@ Sprite::~Sprite() {
 }
 
 Sprite& Sprite::operator =( const Sprite& Other ) {
+	mDrawableType		= Other.mDrawableType;
 	mFrames				= Other.mFrames;
 	mFlags				= Other.mFlags;
-	mPos				= Other.mPos;
-	mAngle				= Other.mAngle;
+	mColor				= Other.mColor;
+	mPosition			= Other.mPosition;
+	mRotation			= Other.mRotation;
 	mScale				= Other.mScale;
 	mAnimSpeed			= Other.mAnimSpeed;
-	mColor				= Other.mColor;
-	mRepeations			= Other.mRepeations;
+	mRepetitions		= Other.mRepetitions;
 	mBlend				= Other.mBlend;
 	mEffect				= Other.mEffect;
 	mCurrentFrame		= Other.mCurrentFrame;
@@ -120,7 +117,7 @@ Sprite& Sprite::operator =( const Sprite& Other ) {
 	mCb					= Other.mCb;
 
 	if ( NULL != Other.mVertexColors ) {
-		mVertexColors		= eeNewArray( ColorA, 4 );
+		mVertexColors		= eeNewArray( Color, 4 );
 		mVertexColors[0]	= Other.mVertexColors[0];
 		mVertexColors[1]	= Other.mVertexColors[1];
 		mVertexColors[2]	= Other.mVertexColors[2];
@@ -132,60 +129,62 @@ Sprite& Sprite::operator =( const Sprite& Other ) {
 	return *this;
 }
 
-Sprite * Sprite::Copy() {
-	Sprite * Spr = eeNew( Sprite, () );
+Sprite Sprite::clone() {
+	Sprite Spr;
 
-	Spr->mFrames			= mFrames;
-	Spr->mFlags				= mFlags;
-	Spr->mPos				= mPos;
-	Spr->mAngle				= mAngle;
-	Spr->mScale				= mScale;
-	Spr->mAnimSpeed			= mAnimSpeed;
-	Spr->mColor				= mColor;
-	Spr->mRepeations		= mRepeations;
-	Spr->mBlend				= mBlend;
-	Spr->mEffect			= mEffect;
-	Spr->mCurrentFrame		= mCurrentFrame;
-	Spr->mfCurrentFrame		= mfCurrentFrame;
-	Spr->mCurrentSubFrame	= mCurrentSubFrame;
-	Spr->mSubFrames			= mSubFrames;
-	Spr->mAnimTo			= mAnimTo;
-	Spr->mCb				= mCb;
+	Spr.mDrawableType		= mDrawableType;
+	Spr.mColor				= mColor;
+	Spr.mFrames				= mFrames;
+	Spr.mFlags				= mFlags;
+	Spr.mPosition			= mPosition;
+	Spr.mRotation			= mRotation;
+	Spr.mScale				= mScale;
+	Spr.mAnimSpeed			= mAnimSpeed;
+	Spr.mRepetitions		= mRepetitions;
+	Spr.mBlend				= mBlend;
+	Spr.mEffect				= mEffect;
+	Spr.mCurrentFrame		= mCurrentFrame;
+	Spr.mfCurrentFrame		= mfCurrentFrame;
+	Spr.mCurrentSubFrame	= mCurrentSubFrame;
+	Spr.mSubFrames			= mSubFrames;
+	Spr.mAnimTo				= mAnimTo;
+	Spr.mCb					= mCb;
+	Spr.mUserData			= mUserData;
 
 	if ( NULL != mVertexColors ) {
-		Spr->mVertexColors		= eeNewArray( ColorA, 4 );
-		Spr->mVertexColors[0]	= mVertexColors[0];
-		Spr->mVertexColors[1]	= mVertexColors[1];
-		Spr->mVertexColors[2]	= mVertexColors[2];
-		Spr->mVertexColors[3]	= mVertexColors[3];
+		Spr.mVertexColors		= eeNewArray( Color, 4 );
+		Spr.mVertexColors[0]	= mVertexColors[0];
+		Spr.mVertexColors[1]	= mVertexColors[1];
+		Spr.mVertexColors[2]	= mVertexColors[2];
+		Spr.mVertexColors[3]	= mVertexColors[3];
 	} else {
-		Spr->mVertexColors		= NULL;
+		Spr.mVertexColors		= NULL;
 	}
 
 	return Spr;
 }
 
-void Sprite::ClearFrame() {
+void Sprite::clearFrame() {
 	for ( unsigned int i = 0; i < mFrames.size(); i++ )
 		mFrames[i].Spr.clear();
 
 	mFrames.clear();
 }
 
-void Sprite::Reset() {
-	ClearFrame();
+void Sprite::reset() {
+	clearFrame();
 
 	mFlags				= SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED;
 
 	mAnimSpeed			= 16.f;
 	mScale				= Vector2f::One;
-	mRepeations			= -1;
+	mRepetitions		= -1;
 
-	mAngle				= 0;
-	mColor				= ColorA(255, 255, 255, 255);
+	mRotation			= 0;
+	mColor				= Color::White;
 
-	mBlend				= ALPHA_NORMAL;
-	mEffect				= RN_NORMAL;
+	mBlend				= BlendAlpha;
+	mEffect				= RENDER_NORMAL;
 
 	mCurrentFrame		= 0;
 	mCurrentSubFrame 	= 0;
@@ -193,10 +192,10 @@ void Sprite::Reset() {
 	mSubFrames			= 1;
 	mAnimTo				= 0;
 
-	DisableVertexColors();
+	disableVertexColors();
 }
 
-void Sprite::CurrentFrame ( unsigned int CurFrame ) {
+void Sprite::setCurrentFrame ( unsigned int CurFrame ) {
 	if ( CurFrame )
 		CurFrame--;
 
@@ -214,19 +213,19 @@ void Sprite::CurrentFrame ( unsigned int CurFrame ) {
 	}
 }
 
-void Sprite::CurrentSubFrame( const unsigned int& CurSubFrame ) {
+void Sprite::setCurrentSubFrame( const unsigned int& CurSubFrame ) {
 	if ( CurSubFrame < mSubFrames )
 		mCurrentSubFrame = CurSubFrame;
 }
 
-Quad2f Sprite::GetQuad() {
+Quad2f Sprite::getQuad() {
 	SubTexture * S;
 
-	if ( mFrames.size() && ( S = GetCurrentSubTexture() ) ) {
-		Rectf TmpR( mPos.x,
-					  mPos.y,
-					  mPos.x + S->DestSize().x,
-					  mPos.y + S->DestSize().y
+	if ( mFrames.size() && ( S = getCurrentSubTexture() ) ) {
+		Rectf TmpR( mPosition.x,
+					  mPosition.y,
+					  mPosition.x + S->getDestSize().x,
+					  mPosition.y + S->getDestSize().y
 					);
 
 		Quad2f Q = Quad2f( Vector2f( TmpR.Left, TmpR.Top ),
@@ -238,37 +237,37 @@ Quad2f Sprite::GetQuad() {
 		Vector2f Center;
 
 		if ( mOrigin.OriginType == OriginPoint::OriginCenter ) {
-			Center	= TmpR.Center();
+			Center	= TmpR.getCenter();
 		} else if ( mOrigin.OriginType == OriginPoint::OriginTopLeft ) {
-			Center	= mPos;
+			Center	= mPosition;
 		} else {
-			Center	+= mPos;
+			Center	+= mPosition;
 		}
 
 		switch ( mEffect ) {
-			case RN_NORMAL:
-			case RN_MIRROR:
-			case RN_FLIP:
-			case RN_FLIPMIRROR:
+			case RENDER_NORMAL:
+			case RENDER_MIRROR:
+			case RENDER_FLIPPED:
+			case RENDER_FLIPPED_MIRRORED:
 				break;
-			case RN_ISOMETRIC:
+			case RENDER_ISOMETRIC:
 				Q.V[0].x += ( TmpR.Right - TmpR.Left );
 				Q.V[1].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 				Q.V[3].x += ( TmpR.Right - TmpR.Left );
 				Q.V[3].y += ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 				break;
-			case RN_ISOMETRICVERTICAL:
+			case RENDER_ISOMETRIC_VERTICAL:
 				Q.V[0].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 				Q.V[1].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 				break;
-			case RN_ISOMETRICVERTICALNEGATIVE:
+			case RENDER_ISOMETRIC_VERTICAL_NEGATIVE:
 				Q.V[2].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 				Q.V[3].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
 				break;
 		}
 
-		Q.Rotate( mAngle, Center );
-		Q.Scale( mScale, Center );
+		Q.rotate( mRotation, Center );
+		Q.scale( mScale, Center );
 
 		return Q;
 	}
@@ -276,49 +275,36 @@ Quad2f Sprite::GetQuad() {
 	return Quad2f();
 }
 
-eeAABB Sprite::GetAABB() {
-	eeAABB TmpR;
+Rectf Sprite::getAABB() {
+	Rectf TmpR;
 	SubTexture * S;
 
-	if ( mFrames.size() && ( S = GetCurrentSubTexture() ) ) {
-		if ( mAngle != 0 || mEffect >= 4 ) {
-			return GetQuad().ToAABB();
+	if ( mFrames.size() && ( S = getCurrentSubTexture() ) ) {
+		if ( mRotation != 0 || mEffect >= 4 ) {
+			return getQuad().toAABB();
 		} else { // The method used if mAngle != 0 works for mAngle = 0, but i prefer to use the faster way
-			TmpR = Rectf( mPos.x, mPos.y, mPos.x + S->DestSize().x, mPos.y + S->DestSize().y );
+			TmpR = Rectf( mPosition.x, mPosition.y, mPosition.x + S->getDestSize().x, mPosition.y + S->getDestSize().y );
 
 			Vector2f Center;
 
 			if ( mOrigin.OriginType == OriginPoint::OriginCenter ) {
-				Center	= TmpR.Center();
+				Center	= TmpR.getCenter();
 			} else if ( mOrigin.OriginType == OriginPoint::OriginTopLeft ) {
-				Center	= mPos;
+				Center	= mPosition;
 			} else {
-				Center	= mPos + mOrigin;
+				Center	= mPosition + mOrigin;
 			}
 
-			TmpR.Scale( mScale, Center );
+			TmpR.scale( mScale, Center );
 		}
 	}
 
 	return TmpR;
 }
 
-const Vector2f Sprite::Position() const {
-	return mPos;
-}
-
-void Sprite::Position(const Float& x, const Float& y) {
-	mPos.x = x;
-	mPos.y = y;
-}
-
-void Sprite::Position( const Vector2f& NewPos ) {
-	mPos = NewPos;
-}
-
-void Sprite::UpdateVertexColors( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 ) {
+void Sprite::updateVertexColors( const Color& Color0, const Color& Color1, const Color& Color2, const Color& Color3 ) {
 	if ( NULL == mVertexColors )
-		mVertexColors		= eeNewArray( ColorA, 4 );
+		mVertexColors		= eeNewArray( Color, 4 );
 
 	mVertexColors[0]	= Color0;
 	mVertexColors[1]	= Color1;
@@ -326,28 +312,28 @@ void Sprite::UpdateVertexColors( const ColorA& Color0, const ColorA& Color1, con
 	mVertexColors[3]	= Color3;
 }
 
-void Sprite::DisableVertexColors() {
+void Sprite::disableVertexColors() {
 	eeSAFE_DELETE_ARRAY( mVertexColors );
 }
 
-unsigned int Sprite::FramePos() {
+unsigned int Sprite::framePos() {
 	mFrames.push_back( Frame() );
 	return (unsigned int)mFrames.size() - 1;
 }
 
-bool Sprite::CreateStatic( SubTexture * SubTexture ) {
-	Reset();
+bool Sprite::createStatic( SubTexture * SubTexture ) {
+	reset();
 
-	AddFrame( SubTexture );
+	addFrame( SubTexture );
 
 	return true;
 }
 
-bool Sprite::CreateStatic( const Uint32& TexId, const Sizef& DestSize, const Vector2i& Offset, const Recti& TexSector ) {
-	if ( TextureFactory::instance()->TextureIdExists( TexId ) ) {
-		Reset();
+bool Sprite::createStatic( const Uint32& TexId, const Sizef& DestSize, const Vector2i& Offset, const Rect& TexSector ) {
+	if ( TextureFactory::instance()->existsId( TexId ) ) {
+		reset();
 
-		AddFrame( TexId, DestSize, Offset, TexSector );
+		addFrame( TexId, DestSize, Offset, TexSector );
 
 		return true;
 	}
@@ -355,8 +341,8 @@ bool Sprite::CreateStatic( const Uint32& TexId, const Sizef& DestSize, const Vec
 	return false;
 }
 
-void Sprite::CreateAnimation( const unsigned int& SubFramesNum ) {
-	Reset();
+void Sprite::createAnimation( const unsigned int& SubFramesNum ) {
+	reset();
 
 	if ( SubFramesNum < 1 )
 		mSubFrames = 1;
@@ -364,11 +350,11 @@ void Sprite::CreateAnimation( const unsigned int& SubFramesNum ) {
 		mSubFrames = SubFramesNum;
 }
 
-bool Sprite::AddFrames( const std::vector<SubTexture*> SubTextures ) {
+bool Sprite::addFrames( const std::vector<SubTexture*> SubTextures ) {
 	if ( SubTextures.size() ) {
 		for ( unsigned int i = 0; i < SubTextures.size(); i++ ) {
 			if ( NULL != SubTextures[i] ) {
-				AddFrame( SubTextures[i] );
+				addFrame( SubTextures[i] );
 			}
 		}
 
@@ -378,11 +364,11 @@ bool Sprite::AddFrames( const std::vector<SubTexture*> SubTextures ) {
 	return false;
 }
 
-bool Sprite::AddFramesByPatternId( const Uint32& SubTextureId, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
-	std::vector<SubTexture*> SubTextures = TextureAtlasManager::instance()->GetSubTexturesByPatternId( SubTextureId, extension, SearchInTextureAtlas );
+bool Sprite::addFramesByPatternId( const Uint32& SubTextureId, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
+	std::vector<SubTexture*> SubTextures = TextureAtlasManager::instance()->getSubTexturesByPatternId( SubTextureId, extension, SearchInTextureAtlas );
 
 	if ( SubTextures.size() ) {
-		AddFrames( SubTextures );
+		addFrames( SubTextures );
 
 		return true;
 	}
@@ -392,11 +378,11 @@ bool Sprite::AddFramesByPatternId( const Uint32& SubTextureId, const std::string
 	return false;
 }
 
-bool Sprite::AddFramesByPattern( const std::string& name, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
-	std::vector<SubTexture*> SubTextures = TextureAtlasManager::instance()->GetSubTexturesByPattern( name, extension, SearchInTextureAtlas );
+bool Sprite::addFramesByPattern( const std::string& name, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
+	std::vector<SubTexture*> SubTextures = TextureAtlasManager::instance()->getSubTexturesByPattern( name, extension, SearchInTextureAtlas );
 
 	if ( SubTextures.size() ) {
-		AddFrames( SubTextures );
+		addFrames( SubTextures );
 
 		return true;
 	}
@@ -406,7 +392,7 @@ bool Sprite::AddFramesByPattern( const std::string& name, const std::string& ext
 	return false;
 }
 
-bool Sprite::AddSubFrame( SubTexture * SubTexture, const unsigned int& NumFrame, const unsigned int& NumSubFrame ) {
+bool Sprite::addSubFrame( SubTexture * SubTexture, const unsigned int& NumFrame, const unsigned int& NumSubFrame ) {
 	unsigned int NF, NSF;
 
 	if ( NumFrame >= mFrames.size() )
@@ -431,70 +417,70 @@ bool Sprite::AddSubFrame( SubTexture * SubTexture, const unsigned int& NumFrame,
 	return false;
 }
 
-unsigned int Sprite::AddFrame( SubTexture * SubTexture ) {
-	unsigned int id = FramePos();
+unsigned int Sprite::addFrame( SubTexture * SubTexture ) {
+	unsigned int id = framePos();
 
-	AddSubFrame( SubTexture, id, mCurrentSubFrame );
+	addSubFrame( SubTexture, id, mCurrentSubFrame );
 
 	return id;
 }
 
-unsigned int Sprite::AddFrame( const Uint32& TexId, const Sizef& DestSize, const Vector2i& Offset, const Recti& TexSector ) {
-	unsigned int id = FramePos();
+unsigned int Sprite::addFrame( const Uint32& TexId, const Sizef& DestSize, const Vector2i& Offset, const Rect& TexSector ) {
+	unsigned int id = framePos();
 
-	if ( AddSubFrame( TexId, id, mCurrentSubFrame, DestSize, Offset, TexSector ) )
+	if ( addSubFrame( TexId, id, mCurrentSubFrame, DestSize, Offset, TexSector ) )
 		return id;
 
 	return 0;
 }
 
-bool Sprite::AddSubFrame(const Uint32& TexId, const unsigned int& NumFrame, const unsigned int& NumSubFrame, const Sizef& DestSize, const Vector2i& Offset, const Recti& TexSector) {
-	if ( !TextureFactory::instance()->TextureIdExists( TexId ) )
+bool Sprite::addSubFrame(const Uint32& TexId, const unsigned int& NumFrame, const unsigned int& NumSubFrame, const Sizef& DestSize, const Vector2i& Offset, const Rect& TexSector) {
+	if ( !TextureFactory::instance()->existsId( TexId ) )
 		return false;
 
-	Texture * Tex = TextureFactory::instance()->GetTexture( TexId );
-	SubTexture * S = GlobalTextureAtlas::instance()->Add( eeNew( SubTexture, () ) );
+	Texture * Tex = TextureFactory::instance()->getTexture( TexId );
+	SubTexture * S = GlobalTextureAtlas::instance()->add( eeNew( SubTexture, () ) );
 
-	S->Texture( TexId );
+	S->setTextureId( TexId );
 
 	if ( TexSector.Right > 0 && TexSector.Bottom > 0 )
-		S->SrcRect( TexSector );
+		S->setSrcRect( TexSector );
 	else
-		S->SrcRect( Recti( 0, 0, (Int32)Tex->ImgWidth(), (Int32)Tex->ImgHeight() ) );
+		S->setSrcRect( Rect( 0, 0, (Int32)Tex->getImageWidth(), (Int32)Tex->getImageHeight() ) );
 
 	Sizef destSize( DestSize );
 
 	if ( destSize.x <= 0 ) {
-		destSize.x = static_cast<Float> ( S->SrcRect().Right - S->SrcRect().Left );
+		destSize.x = static_cast<Float> ( S->getSrcRect().Right - S->getSrcRect().Left );
 	}
 
 	if ( destSize.y <= 0 ) {
-		destSize.y = static_cast<Float> ( S->SrcRect().Bottom - S->SrcRect().Top );
+		destSize.y = static_cast<Float> ( S->getSrcRect().Bottom - S->getSrcRect().Top );
 	}
 
-	S->DestSize( destSize );
-	S->Offset( Offset );
+	S->setDestSize( destSize );
+	S->setOffset( Offset );
 
-	AddSubFrame( S, NumFrame, NumSubFrame );
+	addSubFrame( S, NumFrame, NumSubFrame );
 
 	return true;
 }
 
-void Sprite::Update() {
-	Update( Engine::instance()->Elapsed() );
+void Sprite::update() {
+	update( Engine::instance()->getCurrentWindow()->getElapsed() );
 }
 
-void Sprite::Update( const Time& ElapsedTime ) {
+void Sprite::update( const Time& ElapsedTime ) {
 	if ( mFrames.size() > 1 && !SPR_FGET( SPRITE_FLAG_ANIM_PAUSED ) && Time::Zero != ElapsedTime ) {
 		unsigned int Size		= (unsigned int)mFrames.size() - 1;
 
-		if ( mRepeations == 0 )
+		if ( mRepetitions == 0 )
 			return;
 
 		if ( !SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) )
-			mfCurrentFrame += mAnimSpeed * ElapsedTime.AsSeconds();
+			mfCurrentFrame += mAnimSpeed * ElapsedTime.asSeconds();
 		else
-			mfCurrentFrame -= mAnimSpeed * ElapsedTime.AsSeconds();
+			mfCurrentFrame -= mAnimSpeed * ElapsedTime.asSeconds();
 
 		mCurrentFrame = (unsigned int)mfCurrentFrame;
 
@@ -502,46 +488,46 @@ void Sprite::Update( const Time& ElapsedTime ) {
 			if ( mAnimTo == mCurrentFrame ) {
 				mFlags &= ~SPRITE_FLAG_ANIM_TO_FRAME_AND_STOP;
 
-				GoToAndStop( mAnimTo );
+				goToAndStop( mAnimTo );
 
-				FireEvent( SPRITE_EVENT_END_ANIM_TO );
+				fireEvent( SPRITE_EVENT_END_ANIM_TO );
 
 				return;
 			}
 		}
 
 		if ( !SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) && mfCurrentFrame >= Size + 1.0f ) {
-			if ( mRepeations < 0 ) {
+			if ( mRepetitions < 0 ) {
 				mfCurrentFrame = 0.0f;
 				mCurrentFrame = 0;
-				FireEvent( SPRITE_EVENT_FIRST_FRAME );
+				fireEvent( SPRITE_EVENT_FIRST_FRAME );
 			} else {
-				if ( mRepeations == 0 ) {
+				if ( mRepetitions == 0 ) {
 					mfCurrentFrame = (Float)Size;
 					mCurrentFrame = Size;
-					FireEvent( SPRITE_EVENT_LAST_FRAME );
+					fireEvent( SPRITE_EVENT_LAST_FRAME );
 				} else {
 					mfCurrentFrame = 0.0f;
 					mCurrentFrame = 0;
-					mRepeations--;
-					FireEvent( SPRITE_EVENT_FIRST_FRAME );
+					mRepetitions--;
+					fireEvent( SPRITE_EVENT_FIRST_FRAME );
 				}
 			}
 		} else if ( SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) && mfCurrentFrame < 0.0f ) {
-			if ( mRepeations < 0 ) {
+			if ( mRepetitions < 0 ) {
 				mfCurrentFrame = Size + 1.0f;
 				mCurrentFrame = Size;
-				FireEvent( SPRITE_EVENT_LAST_FRAME );
+				fireEvent( SPRITE_EVENT_LAST_FRAME );
 			} else {
-				if ( mRepeations == 0 ) {
+				if ( mRepetitions == 0 ) {
 					mfCurrentFrame = 0.0f;
 					mCurrentFrame = 0;
-					FireEvent( SPRITE_EVENT_FIRST_FRAME );
+					fireEvent( SPRITE_EVENT_FIRST_FRAME );
 				} else {
 					mfCurrentFrame = Size + 1.0f;
 					mCurrentFrame = Size;
-					mRepeations--;
-					FireEvent( SPRITE_EVENT_LAST_FRAME );
+					mRepetitions--;
+					fireEvent( SPRITE_EVENT_LAST_FRAME );
 				}
 			}
 		}
@@ -550,17 +536,17 @@ void Sprite::Update( const Time& ElapsedTime ) {
 			if ( SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) ) {
 				mfCurrentFrame = 0.0f;
 				mCurrentFrame = 0;
-				FireEvent( SPRITE_EVENT_FIRST_FRAME );
+				fireEvent( SPRITE_EVENT_FIRST_FRAME );
 			} else {
 				mfCurrentFrame = (Float)Size;
 				mCurrentFrame = Size;
-				FireEvent( SPRITE_EVENT_LAST_FRAME );
+				fireEvent( SPRITE_EVENT_LAST_FRAME );
 			}
 		}
 	}
 }
 
-unsigned int Sprite::GetEndFrame() {
+unsigned int Sprite::getEndFrame() {
 	if ( SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) ) {
 		return 0;
 	} else {
@@ -568,7 +554,7 @@ unsigned int Sprite::GetEndFrame() {
 	}
 }
 
-void Sprite::SetReverseFromStart() {
+void Sprite::setReverseFromStart() {
 	if ( !SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) )
 		mFlags |= SPRITE_FLAG_REVERSE_ANIM;
 
@@ -578,34 +564,55 @@ void Sprite::SetReverseFromStart() {
 	mCurrentFrame = Size;
 }
 
-void Sprite::Draw( const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect ) {
+void Sprite::draw( const BlendMode& Blend, const RenderMode& Effect ) {
 	if ( SPR_FGET( SPRITE_FLAG_AUTO_ANIM ) )
-		Update();
+		update();
 
-	SubTexture * S = GetCurrentSubTexture();
+	SubTexture * S = getCurrentSubTexture();
 
 	if ( S == NULL )
 		return;
 
 	if ( NULL == mVertexColors )
-		S->Draw( mPos.x, mPos.y, mColor, mAngle, mScale, Blend, Effect, mOrigin );
+		S->draw( mPosition.x, mPosition.y, mColor, mRotation, mScale, Blend, Effect, mOrigin );
 	else
-		S->Draw( mPos.x, mPos.y, mAngle, mScale, mVertexColors[0], mVertexColors[1], mVertexColors[2], mVertexColors[3], Blend, Effect, mOrigin );
+		S->draw( mPosition.x, mPosition.y, mRotation, mScale, mVertexColors[0], mVertexColors[1], mVertexColors[2], mVertexColors[3], Blend, Effect, mOrigin );
 }
 
-void Sprite::Draw() {
-	Draw( mBlend, mEffect );
+void Sprite::draw() {
+	draw( mBlend, mEffect );
 }
 
-void Sprite::Draw( const EE_BLEND_MODE& Blend ) {
-	Draw( Blend, mEffect );
+void Sprite::draw( const Vector2f& position ) {
+	draw( position, Sizef::Zero );
 }
 
-void Sprite::Draw( const EE_RENDER_MODE& Effect ) {
-	Draw( mBlend, Effect );
+void Sprite::draw( const Vector2f& position, const Sizef& size ) {
+	if ( SPR_FGET( SPRITE_FLAG_AUTO_ANIM ) )
+		update();
+
+	SubTexture * S = getCurrentSubTexture();
+
+	if ( S == NULL )
+		return;
+
+	Sizef oldSize = S->getDestSize();
+
+	if ( size != Sizef::Zero ) {
+		S->setDestSize( size );
+	}
+
+	if ( NULL == mVertexColors )
+		S->draw( position.x, position.y, getColor(), mRotation, mScale, mBlend, mEffect, mOrigin );
+	else
+		S->draw( position.x, position.y, mRotation, mScale, getColor(), getColor(), getColor(), getColor(), mBlend, mEffect, mOrigin );
+
+	if ( size != Sizef::Zero ) {
+		S->setDestSize( oldSize );
+	}
 }
 
-unsigned int Sprite::GetFrame( const unsigned int& FrameNum ) {
+unsigned int Sprite::getFrame( const unsigned int& FrameNum ) {
 	unsigned int FN;
 
 	if ( FrameNum >= mFrames.size() )
@@ -616,7 +623,7 @@ unsigned int Sprite::GetFrame( const unsigned int& FrameNum ) {
 	return FN;
 }
 
-unsigned int Sprite::GetSubFrame( const unsigned int& SubFrame ) {
+unsigned int Sprite::getSubFrame( const unsigned int& SubFrame ) {
 	unsigned int SFN;
 
 	if ( SubFrame >= mSubFrames )
@@ -627,44 +634,44 @@ unsigned int Sprite::GetSubFrame( const unsigned int& SubFrame ) {
 	return SFN;
 }
 
-Vector2i Sprite::Offset() {
-	SubTexture* S = GetCurrentSubTexture();
+Vector2i Sprite::getOffset() {
+	SubTexture* S = getCurrentSubTexture();
 
 	if ( S != NULL )
-		return S->Offset();
+		return S->getOffset();
 
 	return Vector2i();
 }
 
-void Sprite::Offset( const Vector2i& offset ) {
-	SubTexture* S = GetCurrentSubTexture();
+void Sprite::setOffset( const Vector2i& offset ) {
+	SubTexture* S = getCurrentSubTexture();
 
 	if ( S != NULL ) {
-		S->Offset( offset );
+		S->setOffset( offset );
 	}
 }
 
-void Sprite::Size( const Sizef& Size, const unsigned int& FrameNum, const unsigned int& SubFrame ) {
-	mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->DestSize( Size );
+void Sprite::setSize( const Sizef& Size, const unsigned int& FrameNum, const unsigned int& SubFrame ) {
+	mFrames[ getFrame(FrameNum) ].Spr[ getSubFrame(SubFrame) ]->setDestSize( Size );
 }
 
-void Sprite::Size( const Sizef& Size ) {
-	mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->DestSize( Size );
+void Sprite::setSize( const Sizef& Size ) {
+	mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->setDestSize( Size );
 }
 
-Sizef Sprite::Size( const unsigned int& FrameNum, const unsigned int& SubFrame ) {
-	return mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->DestSize();
+Sizef Sprite::setSize( const unsigned int& FrameNum, const unsigned int& SubFrame ) {
+	return mFrames[ getFrame(FrameNum) ].Spr[ getSubFrame(SubFrame) ]->getDestSize();
 }
 
-Sizef Sprite::Size() {
-	return mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->DestSize();
+Sizef Sprite::getSize() {
+	return mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->getSize();
 }
 
-void Sprite::SetRepeations( const int& Repeations ) {
-	mRepeations = Repeations;
+void Sprite::setRepetitions( const int& Repeations ) {
+	mRepetitions = Repeations;
 }
 
-void Sprite::AutoAnimate( const bool& Autoanim ) {
+void Sprite::setAutoAnimate( const bool& Autoanim ) {
 	if ( Autoanim ) {
 		if ( !SPR_FGET( SPRITE_FLAG_AUTO_ANIM ) )
 			mFlags |= SPRITE_FLAG_AUTO_ANIM;
@@ -675,80 +682,64 @@ void Sprite::AutoAnimate( const bool& Autoanim ) {
 
 }
 
-bool Sprite::AutoAnimate() const {
+bool Sprite::getAutoAnimate() const {
 	return 0 != SPR_FGET( SPRITE_FLAG_AUTO_ANIM );
 }
 
-SubTexture* Sprite::GetCurrentSubTexture() {
+SubTexture* Sprite::getCurrentSubTexture() {
 	if ( mFrames.size() )
 		return mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ];
 
 	return NULL;
 }
 
-SubTexture * Sprite::GetSubTexture( const unsigned int& frame ) {
+SubTexture * Sprite::getSubTexture( const unsigned int& frame ) {
 	if ( frame < mFrames.size() )
 		return mFrames[ frame ].Spr[ mCurrentSubFrame ];
 
 	return NULL;
 }
 
-SubTexture * Sprite::GetSubTexture( const unsigned int& frame, const unsigned int& SubFrame ) {
+SubTexture * Sprite::getSubTexture( const unsigned int& frame, const unsigned int& SubFrame ) {
 	if ( frame < mFrames.size() )
 		return mFrames[ frame ].Spr[ SubFrame ];
 
 	return NULL;
 }
 
-void Sprite::X( const Float& X ) {
-	mPos.x = X;
+void Sprite::setRotation( const Float& rotation ) {
+	mRotation = rotation;
 }
 
-Float Sprite::X() const {
-	return mPos.x;
+Float Sprite::getRotation() const {
+	return mRotation;
 }
 
-void Sprite::Y( const Float& Y ) {
-	mPos.y = Y;
+void Sprite::setScale( const Float& Scale ) {
+	this->setScale( Vector2f( Scale, Scale ) );
 }
 
-Float Sprite::Y() const {
-	return mPos.y;
-}
-
-void Sprite::Angle( const Float& Angle) {
-	mAngle = Angle;
-}
-
-Float Sprite::Angle() const {
-	return mAngle;
-}
-
-void Sprite::Scale( const Float& Scale ) {
-	this->Scale( Vector2f( Scale, Scale ) );
-}
-
-void Sprite::Scale( const Vector2f& Scale ) {
+void Sprite::setScale( const Vector2f& Scale ) {
 	mScale = Scale;
 }
 
-const Vector2f& Sprite::Scale() const {
+const Vector2f& Sprite::getScale() const {
 	return mScale;
 }
 
-void Sprite::AnimSpeed( const Float& AnimSpeed ) {
+void Sprite::setAnimationSpeed( const Float& AnimSpeed ) {
 	mAnimSpeed = AnimSpeed;
 }
 
-Float Sprite::AnimSpeed() const {
+Float Sprite::getAnimationSpeed() const {
 	return mAnimSpeed;
 }
 
-bool Sprite::AnimPaused() const {
+bool Sprite::isAnimationPaused() const {
 	return 0 != SPR_FGET( SPRITE_FLAG_ANIM_PAUSED );
 }
 
-void Sprite::AnimPaused( const bool& Pause )	{
+void Sprite::setAnimationPaused( const bool& Pause )	{
 	if ( Pause ) {
 		if ( !SPR_FGET( SPRITE_FLAG_ANIM_PAUSED ) )
 			mFlags |= SPRITE_FLAG_ANIM_PAUSED;
@@ -758,55 +749,39 @@ void Sprite::AnimPaused( const bool& Pause )	{
 	}
 }
 
-void Sprite::Color( const ColorA& Color) {
-	mColor = Color;
-}
-
-const ColorA& Sprite::Color() const {
-	return mColor;
-}
-
-void Sprite::Alpha( const Uint8& Alpha ) {
-	mColor.Alpha = Alpha;
-}
-
-const Uint8& Sprite::Alpha() const {
-	return mColor.Alpha;
-}
-
-const unsigned int& Sprite::CurrentFrame() const {
+const unsigned int& Sprite::getCurrentFrame() const {
 	return mCurrentFrame;
 }
 
-const Float& Sprite::ExactCurrentFrame() const {
+const Float& Sprite::getExactCurrentFrame() const {
 	return mfCurrentFrame;
 }
 
-void Sprite::ExactCurrentFrame( const Float& CurrentFrame ) {
+void Sprite::setExactCurrentFrame( const Float& CurrentFrame ) {
 	mfCurrentFrame = CurrentFrame;
 }
 
-const unsigned int& Sprite::CurrentSubFrame() const {
+const unsigned int& Sprite::getCurrentSubFrame() const {
 	return mCurrentSubFrame;
 }
 
-void Sprite::RenderMode( const EE_RENDER_MODE& Effect ) {
+void Sprite::setRenderMode( const RenderMode& Effect ) {
 	mEffect = Effect;
 }
 
-const EE_RENDER_MODE& Sprite::RenderMode() const {
+const RenderMode& Sprite::getRenderMode() const {
 	return mEffect;
 }
 
-void Sprite::BlendMode( const EE_BLEND_MODE& Blend ) {
+void Sprite::setBlendMode( const BlendMode& Blend ) {
 	mBlend = Blend;
 }
 
-const EE_BLEND_MODE& Sprite::BlendMode() const {
+const BlendMode& Sprite::getBlendMode() const {
 	return mBlend;
 }
 
-void Sprite::ReverseAnim( const bool& Reverse ) {
+void Sprite::setReverseAnimation( const bool& Reverse ) {
 	if ( Reverse ) {
 		if ( !SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) )
 			mFlags |= SPRITE_FLAG_REVERSE_ANIM;
@@ -816,15 +791,15 @@ void Sprite::ReverseAnim( const bool& Reverse ) {
 	}
 }
 
-bool Sprite::ReverseAnim() const {
+bool Sprite::getReverseAnimation() const {
 	return 0 != SPR_FGET( SPRITE_FLAG_REVERSE_ANIM );
 }
 
-Uint32 Sprite::GetNumFrames() {
+Uint32 Sprite::getNumFrames() {
 	return (Uint32)mFrames.size();
 }
 
-void Sprite::GoToAndPlay( Uint32 GoTo ) {
+void Sprite::goToAndPlay( Uint32 GoTo ) {
 	if ( GoTo )
 		GoTo--;
 
@@ -832,16 +807,16 @@ void Sprite::GoToAndPlay( Uint32 GoTo ) {
 		mCurrentFrame	= GoTo;
 		mfCurrentFrame	= (Float)GoTo;
 
-		AnimPaused( false );
+		setAnimationPaused( false );
 	}
 }
 
-void Sprite::GoToAndStop( Uint32 GoTo ) {
-	GoToAndPlay( GoTo );
-	AnimPaused( true );
+void Sprite::goToAndStop( Uint32 GoTo ) {
+	goToAndPlay( GoTo );
+	setAnimationPaused( true );
 }
 
-void Sprite::AnimToFrameAndStop( Uint32 GoTo ) {
+void Sprite::animToFrameAndStop( Uint32 GoTo ) {
 	if ( GoTo )
 		GoTo--;
 
@@ -850,35 +825,35 @@ void Sprite::AnimToFrameAndStop( Uint32 GoTo ) {
 
 		mFlags |= SPRITE_FLAG_ANIM_TO_FRAME_AND_STOP;
 
-		AnimPaused( false );
+		setAnimationPaused( false );
 	}
 }
 
-void Sprite::SetEventsCallback(const SpriteCallback& Cb , void * UserData ) {
+void Sprite::setEventsCallback(const SpriteCallback& Cb , void * UserData ) {
 	mCb			= Cb;
 	mUserData	= UserData;
 }
 
-void Sprite::ClearCallback() {
+void Sprite::clearCallback() {
 	mCb.Reset();
 }
 
-void Sprite::FireEvent( const Uint32& Event ) {
+void Sprite::fireEvent( const Uint32& Event ) {
 	if ( SPR_FGET( SPRITE_FLAG_EVENTS_ENABLED ) && mCb.IsSet() ) {
 		mCb( Event, this, mUserData );
 	}
 }
 
-void Sprite::Origin( const OriginPoint& origin ) {
+void Sprite::setOrigin( const OriginPoint& origin ) {
 	mOrigin = origin;
 }
 
-const OriginPoint& Sprite:: Origin() const {
+const OriginPoint& Sprite:: getOrigin() const {
 	return mOrigin;
 }
 
-void Sprite::Rotate( const Float& angle ) {
-	mAngle += angle;
+void Sprite::rotate( const Float& angle ) {
+	mRotation += angle;
 }
 
 }}

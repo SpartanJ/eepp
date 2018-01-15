@@ -6,6 +6,12 @@
 #include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
 #include <eepp/window/cursorhelper.hpp>
+#include <eepp/system/pack.hpp>
+#include <eepp/system/translator.hpp>
+
+namespace pugi {
+class xml_node;
+}
 
 namespace EE { namespace UI {
 
@@ -15,111 +21,160 @@ class EE_API UIManager {
 	public:
 		~UIManager();
 
-		UIWindow * MainControl() const;
+		UIWindow * getMainControl() const;
 
-		UIControl * FocusControl() const;
+		UIControl * getFocusControl() const;
 
-		void FocusControl( UIControl * Ctrl );
+		void setFocusControl( UIControl * Ctrl );
 
-		UIControl * OverControl() const;
+		UIControl * getOverControl() const;
 
-		void OverControl( UIControl * Ctrl );
+		void setOverControl( UIControl * Ctrl );
 
-		void Init( Uint32 Flags = 0, EE::Window::Window * window = NULL );
+		void init( Uint32 Flags = 0, EE::Window::Window * window = NULL );
 
-		void Shutdown();
+		void shutdown();
 
-		void Update();
+		void update();
 
-		void Draw();
+		void draw();
 
-		const Time& Elapsed() const;
+		const Time& getElapsed() const;
 
-		void ResizeControl( EE::Window::Window * win );
+		void resizeControl( EE::Window::Window * win );
 
-		void SendMsg( UIControl * Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
+		void sendMsg( UIControl * Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
 
-		Vector2i GetMousePos();
+		Vector2i getMousePos();
 
-		Input * GetInput() const;
+		Input * getInput() const;
 
-		const Uint32& PressTrigger() const;
+		const Uint32& getPressTrigger() const;
 
-		const Uint32& LastPressTrigger() const;
+		const Uint32& getLastPressTrigger() const;
 
-		void ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
+		void clipSmartEnable( UIControl * ctrl, const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
 
-		void ClipDisable();
+		void clipSmartDisable( UIControl * ctrl );
 
-		void SendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
+		void sendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
 
-		void SendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
+		void sendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
 
-		void HighlightFocus( bool Highlight );
+		void setHighlightFocus( bool Highlight );
 
-		bool HighlightFocus() const;
+		bool getHighlightFocus() const;
 
-		void HighlightFocusColor( const ColorA& Color );
+		void setHighlightInvalidation( bool Invalidation );
 
-		const ColorA& HighlightFocusColor() const;
+		bool getHighlightInvalidation() const;
 
-		void HighlightOver( bool Highlight );
+		void setDrawDebugData( bool debug );
 
-		bool HighlightOver() const;
+		bool getDrawDebugData() const;
 
-		void HighlightOverColor( const ColorA& Color );
+		void setDrawBoxes( bool draw );
 
-		const ColorA& HighlightOverColor() const;
+		bool getDrawBoxes() const;
 
-		void SendMouseClick( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
+		void setHighlightFocusColor( const Color& Color );
 
-		void SendMouseUp( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
+		bool usesInvalidation();
 
-		void SendMouseDown( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
+		void setUseInvalidation( const bool& use );
 
-		EE::Window::Window * GetWindow() const;
+		const Color& getHighlightFocusColor() const;
+
+		void setHighlightOver( bool Highlight );
+
+		bool getHighlightOver() const;
+
+		void setHighlightOverColor( const Color& Color );
+
+		const Color& getHighlightInvalidationColor() const;
+
+		void setHighlightInvalidationColor( const Color& highlightInvalidationColor );
+
+		void setMainControlInFrameBuffer( const bool& set );
+
+		bool isMainControlInFrameBuffer() const;
+
+		void setMainControlInColorBuffer( const bool& set );
+
+		bool isMainControlInColorBuffer() const;
+
+		const Color& getHighlightOverColor() const;
+
+		void sendMouseClick( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
+
+		void sendMouseUp( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
+
+		void sendMouseDown( UIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
+
+		EE::Window::Window * getWindow() const;
 
 		/** Control where the mouse click started to be down */
-		UIControl * DownControl() const;
+		UIControl * getDownControl() const;
 
-		UIControl * LossFocusControl() const;
+		UIControl * getLossFocusControl() const;
 
-		const bool& IsShootingDown() const;
+		const bool& isShootingDown() const;
 
 		/** @return The position of the mouse when the event MouseDown was fired last time.
 		**	Useful to compare the mouse position of the MouseClick event */
-		const Vector2i& GetMouseDownPos() const;
+		const Vector2i& getMouseDownPos() const;
 
-		void SetControlDragging( bool dragging );
+		void setControlDragging( bool dragging );
 
-		const bool& IsControlDragging() const;
+		const bool& isControlDragging() const;
 
-		void UseGlobalCursors( const bool& use );
+		void setUseGlobalCursors( const bool& use );
 
-		const bool& UseGlobalCursors();
+		const bool& getUseGlobalCursors();
 
-		void SetCursor( EE_CURSOR_TYPE cursor );
+		void setCursor( EE_CURSOR_TYPE cursor );
+
+		UIWidget * loadLayoutFromFile( const std::string& layoutPath, UIControl * parent = NULL );
+
+		UIWidget * loadLayoutFromString( const std::string& layoutString, UIControl * parent = NULL );
+
+		UIWidget * loadLayoutFromMemory( const void * buffer, Int32 bufferSize, UIControl * parent = NULL );
+
+		UIWidget * loadLayoutFromStream( IOStream& stream, UIControl * parent = NULL );
+
+		UIWidget * loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, UIControl * parent = NULL );
+
+		UIWidget * loadLayoutNodes( pugi::xml_node node, UIControl * parent );
+
+		void setTranslator( Translator translator );
+
+		Translator& getTranslator();
+
+		String getTranslatorString( const std::string& str );
+
 	protected:
 		friend class UIControl;
 		friend class UIWindow;
 
-		EE::Window::Window *			mWindow;
-		Input *			mKM;
+		EE::Window::Window *mWindow;
+		Input *				mKM;
 		UIWindow *			mControl;
-		UIControl *		mFocusControl;
-		UIControl *		mOverControl;
+		UIControl *			mFocusControl;
+		UIControl *			mOverControl;
 		UIControl * 		mDownControl;
-		UIControl *		mLossFocusControl;
+		UIControl *			mLossFocusControl;
 		std::list<UIWindow*> mWindowsList;
 		std::list<UIControl*> mCloseList;
+		Clock				mClock;
 
 		Time	 			mElapsed;
 		Int32 				mCbId;
 		Uint32				mResizeCb;
 
 		Uint32				mFlags;
-		ColorA			mHighlightFocusColor;
-		ColorA			mHighlightOverColor;
+		Color				mHighlightFocusColor;
+		Color				mHighlightOverColor;
+		Color				mHighlightInvalidationColor;
 		Vector2i			mMouseDownPos;
 
 		bool				mInit;
@@ -128,25 +183,27 @@ class EE_API UIManager {
 		bool				mControlDragging;
 		bool				mUseGlobalCursors;
 
+		Translator			mTranslator;
+
 		UIManager();
 
-		void				InputCallback( InputEvent * Event );
+		void				inputCallback( InputEvent * Event );
 
-		void				CheckTabPress( const Uint32& KeyCode );
+		void				checkTabPress( const Uint32& KeyCode );
 
-		void				SetActiveWindow( UIWindow * window );
+		void				setActiveWindow( UIWindow * window );
 
-		void				SetFocusLastWindow( UIWindow * window  );
+		void				setFocusLastWindow( UIWindow * window  );
 
-		void				WindowAdd( UIWindow * win );
+		void				windowAdd( UIWindow * win );
 
-		void				WindowRemove( UIWindow * win );
+		void				windowRemove( UIWindow * win );
 
-		bool				WindowExists( UIWindow * win );
+		bool				windowExists( UIWindow * win );
 
-		void				AddToCloseQueue( UIControl * Ctrl );
+		void				addToCloseQueue( UIControl * Ctrl );
 
-		void				CheckClose();
+		void				checkClose();
 };
 
 }}

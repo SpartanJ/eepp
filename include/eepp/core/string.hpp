@@ -55,98 +55,104 @@ class EE_API String {
 	static const std::size_t InvalidPos; ///< Represents an invalid position in the string
 
 	/** @return string hash */
-	static Uint32 Hash( const Uint8 * str );
+	static Uint32 hash( const Uint8 * str );
 
 	/** @return string hash */
-	static Uint32 Hash( const char * str );
+	static Uint32 hash( const char * str );
 
 	/** @return string hash */
-	static Uint32 Hash( const std::string& str );
+	static Uint32 hash( const std::string& str );
 
-	/** @return string hash. Note: String::Hash( std::string( "text" ) ) is != to String::Hash( String( "text" ) ) */
-	static Uint32 Hash( const String& str );
+	/** @return string hash. Note: String::hash( std::string( "text" ) ) is != to String::hash( String( "text" ) ) */
+	static Uint32 hash( const String& str );
 
 	/** @return If the value passed is a character */
-	static bool IsCharacter( const int& mValue );
+	static bool isCharacter( const int& mValue );
 
 	/** @return If the value passed is a number */
-	static bool IsNumber( const int& mValue, bool AllowDot = false );
+	static bool isNumber( const int& mValue, bool AllowDot = false );
 
 	/** @return If the value passed is a letter */
-	static bool IsLetter( const int& mValue );
+	static bool isLetter( const int& mValue );
 
 	/** Split a String and hold it on a vector */
-	static std::vector < String > Split( const String& str, const Uint32& splitchar = '\n', const bool& pushEmptyString = false );
+	static std::vector < String > split( const String& str, const Uint32& splitchar = '\n', const bool& pushEmptyString = false );
 
 	/** Split a string and hold it on a vector */
-	static std::vector < std::string > Split( const std::string& str, const Int8& splitchar = '\n', const bool& pushEmptyString = false );
+	static std::vector < std::string > split( const std::string& str, const Int8& splitchar = '\n', const bool& pushEmptyString = false );
+
+	/** Joins a string vector into a single string */
+	static std::string join( const std::vector<std::string>& strArray, const Int8& joinchar = ' ', const bool& appendLastJoinChar = false );
+
+	/** Joins a string vector into a single string */
+	static String join( const std::vector<String>& strArray, const Int8& joinchar = ' ', const bool& appendLastJoinChar = false );
 
 	/** Remove the first space ( or the specified character ) on the string */
-	static std::string LTrim( const std::string & str, char character = ' ' );
+	static std::string lTrim( const std::string & str, char character = ' ' );
 
 	/** Removes all spaces ( or the specified character ) on the string */
-	static std::string Trim( const std::string & str, char character = ' ' );
+	static std::string trim( const std::string & str, char character = ' ' );
 
 	/** Remove the first space ( or the specified character ) on the string */
-	static String LTrim(const String & str, char character = ' ' );
+	static String lTrim(const String & str, char character = ' ' );
 
 	/** Removes all spaces ( or the specified character ) on the string */
-	static String Trim( const String & str, char character = ' ' );
+	static String trim( const String & str, char character = ' ' );
 
 	/** Convert the string into upper case string */
-	static void ToUpperInPlace( std::string & str );
+	static void toUpperInPlace( std::string & str );
 
 	/** Convert a string to lower case */
-	static std::string ToUpper( std::string str );
+	static std::string toUpper( std::string str );
 
 	/** Convert the reference of a string into lower case string */
-	static void ToLowerInPlace( std::string & str );
+	static void toLowerInPlace( std::string & str );
 
 	/** Convert a string to lower case */
-	static std::string ToLower( std::string str );
+	static std::string toLower( std::string str );
 
 	/** Convert the string to an std::vector<Uint8> */
-	static std::vector<Uint8> StringToUint8( const std::string& str );
+	static std::vector<Uint8> stringToUint8( const std::string& str );
 
 	/** Convert the std::vector<Uint8> to an string */
 	static std::string Uint8ToString( const std::vector<Uint8> & v );
 
 	/** Insert a char into String on pos (added this function to avoid a bug on String) */
-	static void InsertChar( String& str, const unsigned int& pos, const Uint32& tchar );
+	static void insertChar( String& str, const unsigned int& pos, const Uint32& tchar );
 
 	/** Copy a string to another
 	* @param Dst Destination String
 	* @param Src Source String
 	* @param DstSize Destination Size
 	*/
-	static void StrCopy( char * Dst, const char * Src, unsigned int DstSize );
+	static void strCopy( char * Dst, const char * Src, unsigned int DstSize );
 
 	/** Compare two strings from its beginning.
 	* @param haystack The string to search in.
 	* @param needle The searched string.
 	* @return true if string starts with the substring
 	*/
-	static bool StartsWith( const std::string& haystack, const std::string& needle );
+	static bool startsWith( const std::string& haystack, const std::string& needle );
 
 	/** Compare two strings from its beginning.
 	* @param haystack The string to search in.
 	* @param needle The searched string.
 	* @return true if string starts with the substring
 	*/
-	static bool StartsWith( const String& haystack, const String& needle );
+	static bool startsWith( const String& haystack, const String& needle );
 
 	/** Replace all occurrences of the search string with the replacement string. */
-	static void ReplaceAll( std::string &target, const std::string& that, const std::string& with );
+	static void replaceAll( std::string &target, const std::string& that, const std::string& with );
 
 	/** Replace the first ocurrence of the search string with the replacement string. */
-	static void Replace( std::string& target, const std::string& that, const std::string& with );
+	static void replace( std::string& target, const std::string& that, const std::string& with );
 
 	/** Removes the numbers at the end of the string */
-	static std::string RemoveNumbersAtEnd( std::string txt );
+	static std::string removeNumbersAtEnd( std::string txt );
 
 	/** Converts from any basic type to std::string */
 	template <class T>
-	static std::string ToStr(const T& i) {
+	static std::string toStr(const T& i) {
 		std::ostringstream ss;
 		ss << i;
 		return ss.str();
@@ -154,20 +160,20 @@ class EE_API String {
 
 	/** Converts from a string to type */
 	template <class T>
-	static bool FromString(T& t, const std::string& s, std::ios_base& (*f)(std::ios_base&) = std::dec  ) {
+	static bool fromString(T& t, const std::string& s, std::ios_base& (*f)(std::ios_base&) = std::dec  ) {
 		std::istringstream iss(s);
 		return !(iss >> f >> t).fail();
 	}
 
 	/** Converts from a String to type */
 	template <class T>
-	static bool FromString(T& t, const String& s, std::ios_base& (*f)(std::ios_base&) = std::dec ) {
-		std::istringstream iss( s.ToUtf8() );
+	static bool fromString(T& t, const String& s, std::ios_base& (*f)(std::ios_base&) = std::dec ) {
+		std::istringstream iss( s.toUtf8() );
 		return !(iss >> f >> t).fail();
 	}
 
 	/** Returning a std::string from a formated string */
-	static std::string StrFormated( const char* format, ... )
+	static std::string strFormated( const char* format, ... )
 	#ifdef __GNUC__
 		/* This attribute is nice: it even works through gettext invokation. For
 		   example, gcc will complain that StrFormat(_("%s"), 42) is ill-formed. */
@@ -176,12 +182,12 @@ class EE_API String {
 	;
 
 	/** Format a char buffer */
-	static void StrFormat( char * Buffer, int BufferSize, const char * format, ... );
+	static void strFormat( char * Buffer, int BufferSize, const char * format, ... );
 
 	/** @brief Construct from an UTF-8 string to UTF-32 according
 	** @param utf8String UTF-8 string to convert
 	**/
-	static String FromUtf8( const std::string& utf8String );
+	static String fromUtf8( const std::string& utf8String );
 
 	/** @brief Default constructor
 	** This constructor creates an empty string.
@@ -271,9 +277,9 @@ class EE_API String {
 	**  @return A String containing the source string
 	**  @see FromUtf16, FromUtf32 */
 	template <typename T>
-	static String FromUtf8(T begin, T end) {
+	static String fromUtf8(T begin, T end) {
 		String string;
-		Utf8::ToUtf32(begin, end, std::back_inserter(string.mString));
+		Utf8::toUtf32(begin, end, std::back_inserter(string.mString));
 		return string;
 	}
 
@@ -283,9 +289,9 @@ class EE_API String {
 	**  @return A String containing the source string
 	**  @see FromUtf8, FromUtf32 */
 	template <typename T>
-	static String FromUtf16(T begin, T end) {
+	static String fromUtf16(T begin, T end) {
 		String string;
-		Utf16::ToUtf32(begin, end, std::back_inserter(string.mString));
+		Utf16::toUtf32(begin, end, std::back_inserter(string.mString));
 		return string;
 	}
 
@@ -295,21 +301,21 @@ class EE_API String {
 	**  @return A String containing the source string
 	**  @see FromUtf8, FromUtf32 */
 	template <typename T>
-	static String FromUtf32(T begin, T end) {
+	static String fromUtf32(T begin, T end) {
 		String string;
-		Utf32::ToUtf32(begin, end, std::back_inserter(string.mString));
+		Utf32::toUtf32(begin, end, std::back_inserter(string.mString));
 		return string;
 	}
 
 	/** @brief Implicit cast operator to std::string (ANSI string)
 	** The current global locale is used for conversion. If you
-	** want to explicitely specify a locale, see ToAnsiString.
+	** want to explicitely specify a locale, see toAnsiString.
 	** Characters that do not fit in the target encoding are
 	** discarded from the returned string.
 	** This operator is defined for convenience, and is equivalent
-	** to calling ToAnsiString().
+	** to calling toAnsiString().
 	** @return Converted ANSI string
-	** @see ToAnsiString, operator String
+	** @see toAnsiString, operator String
 	**/
 	operator std::string() const;
 
@@ -317,33 +323,33 @@ class EE_API String {
 	** The UTF-32 string is converted to an ANSI string in
 	** the encoding defined by \a locale. If you want to use
 	** the current global locale, see the other overload
-	** of ToAnsiString.
+	** of toAnsiString.
 	** Characters that do not fit in the target encoding are
 	** discarded from the returned string.
 	** @param locale Locale to use for conversion
 	** @return Converted ANSI string
-	** @see ToWideString, operator std::string
+	** @see toWideString, operator std::string
 	**/
-	std::string ToAnsiString( const std::locale& locale = std::locale() ) const;
+	std::string toAnsiString( const std::locale& locale = std::locale() ) const;
 
 #ifndef EE_NO_WIDECHAR
 	/** @brief Convert the unicode string to a wide string
 	** Characters that do not fit in the target encoding are
 	** discarded from the returned string.
 	** @return Converted wide string
-	** @see ToAnsiString, operator String
+	** @see toAnsiString, operator String
 	**/
-	std::wstring ToWideString() const;
+	std::wstring toWideString() const;
 #endif
 
 	/** Convert the string to a UTF-8 string */
-	std::string ToUtf8() const;
+	std::string toUtf8() const;
 
 	/** Convert the string to a UTF-16 string */
-	std::basic_string<Uint16> ToUtf16() const;
+	std::basic_string<Uint16> toUtf16() const;
 
 	/** @return The hash code of the String */
-	Uint32 GetHash() const;
+	Uint32 getHash() const;
 
 	/** @brief Overload of assignment operator
 	** @param right Instance to assign
@@ -761,7 +767,7 @@ it is possible to use a custom locale if necessary:
 std::locale locale;
 EE::String s;
 ...
-std::string s1 = s.ToAnsiString(locale);
+std::string s1 = s.toAnsiString(locale);
 s = EE::String("hello", locale);
 @endcode
 

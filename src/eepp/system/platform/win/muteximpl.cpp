@@ -12,15 +12,15 @@ MutexImpl::~MutexImpl() {
 	DeleteCriticalSection(&mMutex);
 }
 
-void MutexImpl::Lock() {
+void MutexImpl::lock() {
 	EnterCriticalSection(&mMutex);
 }
 
-void MutexImpl::Unlock() {
+void MutexImpl::unlock() {
 	LeaveCriticalSection(&mMutex);
 }
 
-int MutexImpl::TryLock() {
+int MutexImpl::tryLock() {
 	return TryEnterCriticalSection(&mMutex);
 }
 

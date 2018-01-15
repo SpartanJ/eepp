@@ -5,67 +5,67 @@ namespace EE { namespace Graphics {
 TextureAtlas::TextureAtlas( const std::string& name ) :
 	ResourceManager<SubTexture> ( true )
 {
-	Name( name );
+	setName( name );
 }
 
 TextureAtlas::~TextureAtlas() {
 }
 
-const std::string& TextureAtlas::Name() const {
+const std::string& TextureAtlas::getName() const {
 	return mName;
 }
 
-void TextureAtlas::Name( const std::string& name ) {
+void TextureAtlas::setName( const std::string& name ) {
 	mName = name;
-	mId = String::Hash( mName );
+	mId = String::hash( mName );
 }
 
-const std::string& TextureAtlas::Path() const {
+const std::string& TextureAtlas::getPath() const {
 	return mPath;
 }
 
-void TextureAtlas::Path( const std::string& path ) {
+void TextureAtlas::setPath( const std::string& path ) {
 	mPath = path;
 }
 
-const Uint32& TextureAtlas::Id() const {
+const Uint32& TextureAtlas::getId() const {
 	return mId;
 }
 
-SubTexture * TextureAtlas::Add( SubTexture * subTexture ) {
-	return ResourceManager<SubTexture>::Add( subTexture );
+SubTexture * TextureAtlas::add( SubTexture * subTexture ) {
+	return ResourceManager<SubTexture>::add( subTexture );
 }
 
-SubTexture * TextureAtlas::Add( const Uint32& TexId, const std::string& Name ) {
-	return Add( eeNew( SubTexture, ( TexId, Name ) ) );
+SubTexture * TextureAtlas::add( const Uint32& TexId, const std::string& Name ) {
+	return add( eeNew( SubTexture, ( TexId, Name ) ) );
 }
 
-SubTexture * TextureAtlas::Add( const Uint32& TexId, const Recti& SrcRect, const std::string& Name ) {
-	return Add( eeNew( SubTexture, ( TexId, SrcRect, Name ) ) );
+SubTexture * TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const std::string& Name ) {
+	return add( eeNew( SubTexture, ( TexId, SrcRect, Name ) ) );
 }
 
-SubTexture * TextureAtlas::Add( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const std::string& Name ) {
-	return Add( eeNew ( SubTexture, ( TexId, SrcRect, DestSize, Name ) ) );
+SubTexture * TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& Name ) {
+	return add( eeNew ( SubTexture, ( TexId, SrcRect, DestSize, Name ) ) );
 }
 
-SubTexture * TextureAtlas::Add( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const Vector2i& Offset, const std::string& Name ) {
-	return Add( eeNew ( SubTexture, ( TexId, SrcRect, DestSize, Offset, Name ) ) );
+SubTexture * TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i& Offset, const std::string& Name ) {
+	return add( eeNew ( SubTexture, ( TexId, SrcRect, DestSize, Offset, Name ) ) );
 }
 
-Uint32 TextureAtlas::Count() {
-	return ResourceManager<SubTexture>::Count();
+Uint32 TextureAtlas::getCount() {
+	return ResourceManager<SubTexture>::getCount();
 }
 
-void TextureAtlas::SetTextures( std::vector<Texture*> textures ) {
+void TextureAtlas::setTextures( std::vector<Texture*> textures ) {
 	mTextures = textures;
 }
 
-Texture * TextureAtlas::GetTexture( const Uint32& texnum ) const {
+Texture * TextureAtlas::getTexture( const Uint32& texnum ) const {
 	eeASSERT( texnum < mTextures.size() );
 	return mTextures[ texnum ];
 }
 
-Uint32 TextureAtlas::GetTexturesCount() {
+Uint32 TextureAtlas::getTexturesCount() {
 	return mTextures.size();
 }
 

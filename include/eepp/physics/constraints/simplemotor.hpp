@@ -9,11 +9,11 @@ class CP_API SimpleMotor : public Constraint {
 	public:
 		SimpleMotor( Body * a, Body * b, cpFloat rate );
 
-		cpFloat Rate();
+		cpFloat getRate();
 
-		void Rate( const cpFloat& rate );
+		void setRate( const cpFloat& rate );
 
-		virtual void Draw();
+		virtual void draw();
 };
 
 CP_NAMESPACE_END

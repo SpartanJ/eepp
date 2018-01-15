@@ -17,7 +17,7 @@ static bool ssl_initialized = false;
 std::string SSLSocket::CertificatesPath	= "";
 static Mutex sMutex;
 
-bool SSLSocket::Init() {
+bool SSLSocket::init() {
 	Lock l( sMutex );
 
 	bool ret = false;
@@ -26,35 +26,35 @@ bool SSLSocket::Init() {
 		if ( CertificatesPath.empty() ) {
 			#if EE_PLATFORM == EE_PLATFORM_LINUX
 			// Debian Systems
-			if ( FileSystem::FileExists( "/etc/ssl/certs/ca-certificates.crt" ) ) {
+			if ( FileSystem::fileExists( "/etc/ssl/certs/ca-certificates.crt" ) ) {
 				CertificatesPath = "/etc/ssl/certs/ca-certificates.crt";
 			// SuSE Systems
-			} else if ( FileSystem::FileExists( "/etc/ssl/ca-bundle.pem" ) ) {
+			} else if ( FileSystem::fileExists( "/etc/ssl/ca-bundle.pem" ) ) {
 				CertificatesPath = "/etc/ssl/ca-bundle.pem";
 			// Redhat and Mandriva Systems
-			} else if ( FileSystem::FileExists( "/etc/pki/tls/certs/ca-bundle.crt" ) ) {
+			} else if ( FileSystem::fileExists( "/etc/pki/tls/certs/ca-bundle.crt" ) ) {
 				CertificatesPath = "/etc/pki/tls/certs/ca-bundle.crt";
 			// older Redhat Systems
-			} else if ( FileSystem::FileExists( "/usr/share/ssl/certs/ca-bundle.crt" ) ) {
+			} else if ( FileSystem::fileExists( "/usr/share/ssl/certs/ca-bundle.crt" ) ) {
 				CertificatesPath = "/usr/share/ssl/certs/ca-bundle.crt";
 			}
 			#elif EE_PLATFORM == EE_PLATFORM_BSD
 			// FreeBSD
-			if ( FileSystem::FileExists( "/usr/local/share/certs/ca-root.crt" ) ) {
+			if ( FileSystem::fileExists( "/usr/local/share/certs/ca-root.crt" ) ) {
 				CertificatesPath = "/usr/local/share/certs/ca-root.crt";
 			// OpenBSD
-			} else if ( FileSystem::FileExists( "/etc/ssl/cert.pem" ) ) {
+			} else if ( FileSystem::fileExists( "/etc/ssl/cert.pem" ) ) {
 				CertificatesPath = "/etc/ssl/cert.pem";
 			}
 			#elif EE_PLATFORM == EE_PLATFORM_HAIKU
-			if ( FileSystem::FileExists( "/boot/common/data/ssl/cert.pem" ) ) {
+			if ( FileSystem::fileExists( "/boot/common/data/ssl/cert.pem" ) ) {
 				CertificatesPath = "/boot/common/data/ssl/cert.pem";
 			}
 			#endif
 		}
 
 		#ifdef EE_OPENSSL
-		ret = OpenSSLSocket::Init();
+		ret = OpenSSLSocket::init();
 		#endif
 
 		ssl_initialized = true;
@@ -63,14 +63,14 @@ bool SSLSocket::Init() {
 	return ret;
 }
 
-bool SSLSocket::End() {
+bool SSLSocket::end() {
 	Lock l( sMutex );
 
 	bool ret = false;
 
 	if ( ssl_initialized ) {
 		#ifdef EE_OPENSSL
-		ret = OpenSSLSocket::End();
+		ret = OpenSSLSocket::end();
 		#endif
 		
 		ssl_initialized = false;
@@ -79,7 +79,7 @@ bool SSLSocket::End() {
 	return ret;
 }
 
-bool SSLSocket::IsSupported() {
+bool SSLSocket::isSupported() {
 #ifdef EE_SSL_SUPPORT
 	return true;
 #else
@@ -97,50 +97,42 @@ SSLSocket::SSLSocket( std::string hostname , bool validateCertificate, bool vali
 	mValidateCertificate( validateCertificate ),
 	mValidateHostname( validateHostname )
 {
-	Init();
+	init();
 }
 
 SSLSocket::~SSLSocket() {
 	eeSAFE_DELETE( mImpl );
 }
 
-Socket::Status SSLSocket::Connect( const IpAddress& remoteAddress, unsigned short remotePort, Time timeout ) {
+Socket::Status SSLSocket::connect( const IpAddress& remoteAddress, unsigned short remotePort, Time timeout ) {
 	Status status = Socket::Disconnected;
 	
-	if ( ( status = TcpSocket::Connect( remoteAddress, remotePort, timeout ) ) == Socket::Done ) {
-		status = mImpl->Connect( remoteAddress, remotePort, timeout );
+	if ( ( status = TcpSocket::connect( remoteAddress, remotePort, timeout ) ) == Socket::Done ) {
+		status = mImpl->connect( remoteAddress, remotePort, timeout );
 	}
 	
 	return status;
 }
 
-void SSLSocket::Disconnect() {
-	mImpl->Disconnect();
-	TcpSocket::Disconnect();
+void SSLSocket::disconnect() {
+	mImpl->disconnect();
+	TcpSocket::disconnect();
 }
 
-Socket::Status SSLSocket::Send(const void* data, std::size_t size) {
-	return mImpl->Send( data, size );
+Socket::Status SSLSocket::send(const void* data, std::size_t size) {
+	return mImpl->send( data, size );
 }
 
-Socket::Status SSLSocket::Receive(void* data, std::size_t size, std::size_t& received) {
-	return mImpl->Receive( data, size, received );
+Socket::Status SSLSocket::receive(void* data, std::size_t size, std::size_t& received) {
+	return mImpl->receive( data, size, received );
 }
 
-Socket::Status SSLSocket::Send(Packet& packet) {
-	return TcpSocket::Send( packet );
+Socket::Status SSLSocket::send(Packet& packet) {
+	return TcpSocket::send( packet );
 }
 
-Socket::Status SSLSocket::Receive(Packet& packet) {
-	return TcpSocket::Receive( packet );
-}
-
-Socket::Status SSLSocket::TcpSend(const void* data, std::size_t size) {
-	return TcpSocket::Send( data, size );
-}
-
-Socket::Status SSLSocket::TcpReceive(void* data, std::size_t size, std::size_t& received) {
-	return TcpSocket::Receive( data, size, received );
+Socket::Status SSLSocket::receive(Packet& packet) {
+	return TcpSocket::receive( packet );
 }
 
 }}}

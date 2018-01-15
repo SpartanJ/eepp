@@ -9,33 +9,44 @@ class UITabWidget;
 
 class EE_API UITab : public UISelectButton {
 	public:
-		UITab( UISelectButton::CreateParams& Params, UIControl * CtrlOwned );
+		static UITab * New();
 
-		UIControl * CtrlOwned() const;
+		UITab();
+
+		UIControl * getControlOwned() const;
+
+		void setControlOwned( UIControl * controlOwned );
 
 		virtual ~UITab();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		virtual const String& Text();
+		virtual const String& getText();
 
-		virtual void Text( const String& text );
+		virtual UIPushButton * setText( const String& text );
 
-		virtual void Update();
+		virtual void update();
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
-		UIControl *	mCtrlOwned;
+		UIControl *	mControlOwned;
+		std::string mOwnedName;
 
-		virtual Uint32 OnMouseClick( const Vector2i &Pos, const Uint32 Flags );
+		virtual Uint32 onMouseClick( const Vector2i &position, const Uint32 flags );
 
-		virtual void OnStateChange();
+		virtual void onStateChange();
 
-		void SetRealSize();
+		virtual void onAutoSize();
 
-		UITabWidget * GetTabWidget();
+		UITabWidget * getTabWidget();
+
+		virtual void onParentChange();
+
+		void setOwnedControl();
 };
 
 }}

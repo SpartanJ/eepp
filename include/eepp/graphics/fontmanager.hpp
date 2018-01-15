@@ -16,7 +16,7 @@ class EE_API FontManager : public ResourceManager<Font> {
 		virtual ~FontManager();
 
 		/** @brief Adds a new font to the manager */
-		Graphics::Font * Add( Graphics::Font * Font );
+		Graphics::Font * add( Graphics::Font * Font );
 	protected:
 		FontManager();
 };

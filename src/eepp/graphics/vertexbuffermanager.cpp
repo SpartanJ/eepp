@@ -12,11 +12,11 @@ VertexBufferManager::~VertexBufferManager()
 {
 }
 
-void VertexBufferManager::Reload() {
+void VertexBufferManager::reload() {
 	std::list<VertexBuffer*>::iterator it;
 
 	for ( it = mResources.begin(); it != mResources.end(); it++ )
-		(*it)->Reload();
+		(*it)->reload();
 }
 
 }}}

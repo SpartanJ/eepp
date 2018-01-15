@@ -1,0 +1,55 @@
+apply plugin: 'com.android.application'
+
+def getProcessesCountArg() {
+    def procCount = Runtime.runtime.availableProcessors()
+
+    Gradle gradle = getGradle()
+    def isClean = gradle.getStartParameter().getTaskNames().find { it ==~ /.*clean.*/ }
+    if (isClean) {
+        procCount = 1
+    }
+
+    return "-j" + procCount
+}
+
+android {
+    compileSdkVersion 26
+    buildToolsVersion "26.0.2"
+    defaultConfig {
+        applicationId "com.ensoft.eepp"
+        minSdkVersion 14
+        targetSdkVersion 26
+        versionCode 1
+        versionName "1.0"
+        ndk {
+            abiFilters 'x86', 'armeabi-v7a'
+        }
+        externalNativeBuild {
+            ndkBuild {
+                arguments "APP_PLATFORM=android-19"
+                arguments getProcessesCountArg()
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    sourceSets.main {
+        jniLibs.srcDir 'libs'
+    }
+    externalNativeBuild {
+        ndkBuild {
+            path 'jni/Android.mk'
+        }
+    }
+    lintOptions {
+        abortOnError false
+    }
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+}

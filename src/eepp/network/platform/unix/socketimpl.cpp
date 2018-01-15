@@ -8,7 +8,7 @@
 
 namespace EE { namespace Network { namespace Private {
 
-sockaddr_in SocketImpl::CreateAddress(Uint32 address, unsigned short port) {
+sockaddr_in SocketImpl::createAddress(Uint32 address, unsigned short port) {
 	sockaddr_in addr;
 	std::memset(&addr, 0, sizeof(addr));
 	addr.sin_addr.s_addr = htonl(address);
@@ -22,15 +22,15 @@ sockaddr_in SocketImpl::CreateAddress(Uint32 address, unsigned short port) {
 	return addr;
 }
 
-SocketHandle SocketImpl::InvalidSocket() {
+SocketHandle SocketImpl::invalidSocket() {
 	return -1;
 }
 
-void SocketImpl::Close(SocketHandle sock) {
+void SocketImpl::close(SocketHandle sock) {
 	::close(sock);
 }
 
-void SocketImpl::SetBlocking(SocketHandle sock, bool block) {
+void SocketImpl::setBlocking(SocketHandle sock, bool block) {
 	int status = fcntl(sock, F_GETFL);
 	if (block)
 		fcntl(sock, F_SETFL, status & ~O_NONBLOCK);
@@ -38,7 +38,7 @@ void SocketImpl::SetBlocking(SocketHandle sock, bool block) {
 		fcntl(sock, F_SETFL, status | O_NONBLOCK);
 }
 
-Socket::Status SocketImpl::GetErrorStatus() {
+Socket::Status SocketImpl::getErrorStatus() {
 	// The followings are sometimes equal to EWOULDBLOCK,
 	// so we have to make a special case for them in order
 	// to avoid having double values in the switch case

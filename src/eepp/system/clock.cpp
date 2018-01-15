@@ -6,24 +6,24 @@ namespace EE { namespace System {
 Clock::Clock() :
 	mClockImpl( new Platform::ClockImpl() )
 {
-	Restart();
+	restart();
 }
 
 Clock::~Clock() {
 	delete mClockImpl;
 }
 
-void Clock::Restart() {
-	mClockImpl->Restart();
+void Clock::restart() {
+	mClockImpl->restart();
 }
 
-Time Clock::GetElapsedTime() const {
-	return Microseconds( mClockImpl->GetElapsedTime() );
+Time Clock::getElapsedTime() const {
+	return Microseconds( mClockImpl->getElapsedTime() );
 }
 
-Time Clock::Elapsed() {
-	Time r = GetElapsedTime();
-	Restart();
+Time Clock::getElapsed() {
+	Time r = getElapsedTime();
+	restart();
 	return r;
 }
 

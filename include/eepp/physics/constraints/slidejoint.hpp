@@ -9,28 +9,28 @@ class CP_API SlideJoint : public Constraint {
 	public:
 		SlideJoint( Body * a, Body *b, cVect anchr1, cVect anchr2, cpFloat min, cpFloat max );
 
-		cVect Anchr1();
+		cVect getAnchr1();
 
-		void Anchr1( const cVect& anchr1 );
+		void setAnchr1( const cVect& anchr1 );
 
-		cVect Anchr2();
+		cVect getAnchr2();
 
-		void Anchr2( const cVect& anchr2 );
+		void setAnchr2( const cVect& anchr2 );
 
-		cpFloat Min();
+		cpFloat getMin();
 
-		void Min( const cpFloat& min );
+		void setMin( const cpFloat& min );
 
-		cpFloat Max();
+		cpFloat getMax();
 
-		void Max( const cpFloat& max );
+		void setMax( const cpFloat& max );
 
-		virtual void Draw();
+		virtual void draw();
 
 #ifdef PHYSICS_RENDERER_ENABLED
-		cpFloat DrawPointSize();
+		cpFloat getDrawPointSize();
 
-		virtual void DrawPointSize( const cpFloat& size );
+		virtual void setDrawPointSize( const cpFloat& size );
 	protected:
 		cpFloat mDrawPointSize;
 #endif

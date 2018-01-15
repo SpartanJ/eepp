@@ -19,63 +19,63 @@ CursorX11::CursorX11( Texture * tex, const Vector2i& hotspot, const std::string&
 	Cursor( tex, hotspot, name, window ),
 	mCursor( None )
 {
-	Create();
+	create();
 }
 
 CursorX11::CursorX11( Graphics::Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( img, hotspot, name, window ),
 	mCursor( None )
 {
-	Create();
+	create();
 }
 
 CursorX11::CursorX11( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( path, hotspot, name, window ),
 	mCursor( None )
 {
-	Create();
+	create();
 }
 
 CursorX11::~CursorX11() {
 	if ( None != mCursor )
-		XFreeCursor( GetPlatform()->GetDisplay(), mCursor );
+		XFreeCursor( getPlatform()->GetDisplay(), mCursor );
 }
 
-void CursorX11::Create() {
-	if ( NULL == mImage || 0 == mImage->MemSize() )
+void CursorX11::create() {
+	if ( NULL == mImage || 0 == mImage->getMemSize() )
 		return;
 
 	XcursorImage * image;
 	unsigned int c, ix, iy;
 
-	image = XcursorImageCreate( mImage->Width(), mImage->Height() );
+	image = XcursorImageCreate( mImage->getWidth(), mImage->getHeight() );
 
 	if ( image == None )
 	  return;
 
 	c = 0;
-	for ( iy = 0; iy < mImage->Height(); iy++ ) {
-		for ( ix = 0; ix < mImage->Width(); ix++ ) {
-			ColorA C = mImage->GetPixel( ix, iy );
+	for ( iy = 0; iy < mImage->getHeight(); iy++ ) {
+		for ( ix = 0; ix < mImage->getWidth(); ix++ ) {
+			Color C = mImage->getPixel( ix, iy );
 
-			image->pixels[c++] = ( C.A() << 24 ) | ( C.R() << 16 ) | ( C.G() <<8 ) | ( C.B() );
+			image->pixels[c++] = ( C.a << 24 ) | ( C.r << 16 ) | ( C.g <<8 ) | ( C.b );
 		}
 	}
 
 	image->xhot = mHotSpot.x;
 	image->yhot = mHotSpot.y;
 
-	GetPlatform()->Lock();
+	getPlatform()->Lock();
 
-	mCursor = XcursorImageLoadCursor( GetPlatform()->GetDisplay(), image );
+	mCursor = XcursorImageLoadCursor( getPlatform()->GetDisplay(), image );
 
-	GetPlatform()->Unlock();
+	getPlatform()->Unlock();
 
 	XcursorImageDestroy( image );
 }
 
-X11Impl * CursorX11::GetPlatform() {
-	return reinterpret_cast<X11Impl*>( mWindow->GetPlatform() );
+X11Impl * CursorX11::getPlatform() {
+	return reinterpret_cast<X11Impl*>( mWindow->getPlatform() );
 }
 
 X11Cursor CursorX11::GetCursor() const {

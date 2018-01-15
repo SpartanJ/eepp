@@ -8,9 +8,11 @@ namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 static SDL_Cursor * SDL_SYS_CURSORS[ SYS_CURSOR_COUNT ] = {0};
 
-static SDL_Cursor * GetLoadCursor( const EE_SYSTEM_CURSOR& cursor ) {
+static SDL_Cursor * getLoadCursor( const EE_SYSTEM_CURSOR& cursor ) {
 	if ( 0 == SDL_SYS_CURSORS[ cursor ] ) {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		SDL_SYS_CURSORS[ cursor ] = SDL_CreateSystemCursor( (SDL_SystemCursor)cursor );
+#endif
 	}
 
 	return SDL_SYS_CURSORS[ cursor ];
@@ -21,19 +23,19 @@ CursorManagerSDL::CursorManagerSDL( EE::Window::Window * window ) :
 {
 }
 
-Cursor * CursorManagerSDL::Create( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerSDL::create( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorSDL, ( tex, hotspot, name, mWindow ) );
 }
 
-Cursor * CursorManagerSDL::Create( Image * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerSDL::create( Image * img, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorSDL, ( img, hotspot, name, mWindow ) );
 }
 
-Cursor * CursorManagerSDL::Create( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerSDL::create( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorSDL, ( path, hotspot, name, mWindow ) );
 }
 
-void CursorManagerSDL::Set( Cursor * cursor ) {
+void CursorManagerSDL::set( Cursor * cursor ) {
 	if ( NULL != cursor && cursor != mCurrent ) {
 		SDL_SetCursor( reinterpret_cast<CursorSDL*>( cursor )->GetCursor() );
 
@@ -43,9 +45,9 @@ void CursorManagerSDL::Set( Cursor * cursor ) {
 	}
 }
 
-void CursorManagerSDL::Set( EE_SYSTEM_CURSOR syscurid ) {
+void CursorManagerSDL::set( EE_SYSTEM_CURSOR syscurid ) {
 	if ( syscurid != mSysCursor ) {
-		SDL_SetCursor( GetLoadCursor( syscurid ) );
+		SDL_SetCursor( getLoadCursor( syscurid ) );
 		
 		mCurrent		= NULL;
 		mCurSysCursor	= true;
@@ -53,15 +55,15 @@ void CursorManagerSDL::Set( EE_SYSTEM_CURSOR syscurid ) {
 	}
 }
 
-void CursorManagerSDL::Show() {
-	Visible( true );
+void CursorManagerSDL::show() {
+	setVisible( true );
 }
 
-void CursorManagerSDL::Hide() {
-	Visible( false );
+void CursorManagerSDL::hide() {
+	setVisible( false );
 }
 
-void CursorManagerSDL::Visible( bool visible ) {
+void CursorManagerSDL::setVisible( bool visible ) {
 	if ( visible ) {
 		SDL_ShowCursor( SDL_ENABLE );
 		mVisible = true;
@@ -71,21 +73,21 @@ void CursorManagerSDL::Visible( bool visible ) {
 	}
 }
 
-void CursorManagerSDL::Remove( Cursor * cursor, bool Delete ) {
-	CursorManager::Remove( cursor, Delete );
+void CursorManagerSDL::remove( Cursor * cursor, bool Delete ) {
+	CursorManager::remove( cursor, Delete );
 }
 
-void CursorManagerSDL::Reload() {
+void CursorManagerSDL::reload() {
 	if ( mVisible ) {
-		Show();
+		show();
 
 		if ( mCurSysCursor ) {
-			Set( mSysCursor );
+			set( mSysCursor );
 		} else {
-			Set( mCurrent );
+			set( mCurrent );
 		}
 	} else {
-		Hide();
+		hide();
 	}
 }
 

@@ -1,114 +1,101 @@
 #ifndef EE_UICUIPUSHBUTTON_HPP
 #define EE_UICUIPUSHBUTTON_HPP
 
-#include <eepp/ui/uicomplexcontrol.hpp>
-#include <eepp/ui/uitextbox.hpp>
-#include <eepp/ui/uigfx.hpp>
+#include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uiimage.hpp>
 
 namespace EE { namespace UI {
 
-class EE_API UIPushButton : public UIComplexControl {
+class EE_API UIPushButton : public UIWidget {
 	public:
-		class CreateParams : public UITextBox::CreateParams {
-			public:
-				inline CreateParams() :
-					UITextBox::CreateParams(),
-					Font( NULL ),
-					FontColor( 0, 0, 0, 255 ),
-					FontShadowColor( 0, 0, 0, 255 ),
-					FontOverColor( 0, 0, 0, 255 ),
-					Icon( NULL ),
-					IconHorizontalMargin( 0 ),
-					IconAutoMargin( true ),
-					IconMinSize( 0, 0 )
-				{
-					UITheme * Theme = UIThemeManager::instance()->DefaultTheme();
+		static UIPushButton * New();
 
-					if ( NULL != Theme ) {
-						Font			= Theme->Font();
-						FontColor		= Theme->FontColor();
-						FontShadowColor	= Theme->FontShadowColor();
-						FontOverColor	= Theme->FontOverColor();
-					}
-
-					if ( NULL == Font )
-						Font = UIThemeManager::instance()->DefaultFont();
-				}
-
-				inline ~CreateParams() {}
-
-				inline void SetIcon( SubTexture * icon ) {
-					Icon = icon;
-
-					if ( !IconHorizontalMargin )
-						IconHorizontalMargin = 4;
-				}
-
-				Graphics::Font * 	Font;
-				ColorA				FontColor;
-				ColorA				FontShadowColor;
-				ColorA				FontOverColor;
-				SubTexture *		Icon;
-				Int32				IconHorizontalMargin;
-				bool				IconAutoMargin;
-				Sizei				IconMinSize;
-		};
-
-		UIPushButton( const UIPushButton::CreateParams& Params );
+		UIPushButton();
 
 		virtual ~UIPushButton();
 
-		virtual Uint32 Type() const;
+		virtual Uint32 getType() const;
 
-		virtual bool IsType( const Uint32& type ) const;
+		virtual bool isType( const Uint32& type ) const;
 
-		virtual void SetTheme( UITheme * Theme );
+		virtual void setTheme( UITheme * Theme );
 
-		virtual void Icon( SubTexture * Icon );
+		virtual UIPushButton * setIcon( Drawable * icon );
 
-		virtual UIGfx * Icon() const;
+		virtual UIImage * getIcon() const;
 
-		virtual void Text( const String& text );
+		virtual UIPushButton * setText( const String& text );
 
-		virtual const String& Text();
+		virtual const String& getText();
 
-		void Padding( const Recti& padding );
+		void setPadding( const Rect& padding );
 
-		const Recti& Padding() const;
+		const Rect& getPadding() const;
 
-		void IconHorizontalMargin( Int32 margin );
+		void setIconHorizontalMargin( Int32 margin );
 
-		const Int32& IconHorizontalMargin() const;
+		const Int32& getIconHorizontalMargin() const;
 
-		UITextBox * TextBox() const;
+		UITextView * getTextBox() const;
 
-		const ColorA& FontColor() const;
+		void setFont( Font * font );
 
-		void FontColor( const ColorA& color );
+		Font * getFont();
 
-		const ColorA& FontOverColor() const;
+		const Color& getFontColor() const;
 
-		void FontOverColor( const ColorA& color );
+		void setFontColor( const Color& color );
+
+		const Color& getFontOverColor() const;
+
+		void setFontOverColor( const Color& color );
+
+		const Color& getFontShadowColor() const;
+
+		void setFontShadowColor( const Color& color );
+
+		Uint32 getCharacterSize();
+
+		void setCharacterSize( const Uint32& characterSize );
+
+		const Uint32& getFontStyle() const;
+
+		UIPushButton * setFontStyle( const Uint32& fontStyle );
+
+		const Float & getOutlineThickness() const;
+
+		UIPushButton * setOutlineThickness( const Float& outlineThickness );
+
+		const Color& getOutlineColor() const;
+
+		UIPushButton * setOutlineColor( const Color& outlineColor );
+
+		UITooltipStyleConfig getStyleConfig() const;
+
+		void setStyleConfig(const UIPushButtonStyleConfig & styleConfig);
+
+		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
-		ColorA		mFontColor;
-		ColorA		mFontOverColor;
-		UIGfx * 		mIcon;
-		UITextBox * 	mTextBox;
-		Int32			mIconSpace;
+		UIPushButtonStyleConfig mStyleConfig;
+		UIImage * 	mIcon;
+		UITextView * 	mTextBox;
 
-		virtual void OnSizeChange();
+		virtual void onSizeChange();
 
-		void AutoPadding();
+		void autoPadding();
 
-		virtual void OnAlphaChange();
+		virtual void onAlphaChange();
 
-		virtual void OnStateChange();
+		virtual void onStateChange();
 
-		virtual void DoAfterSetTheme();
+		virtual void onAlignChange();
 
-		virtual Uint32 OnKeyDown( const UIEventKey& Event );
+		virtual void onThemeLoaded();
 
-		virtual Uint32 OnKeyUp( const UIEventKey& Event );
+		virtual Uint32 onKeyDown( const UIEventKey& Event );
+
+		virtual Uint32 onKeyUp( const UIEventKey& Event );
 };
 
 }}

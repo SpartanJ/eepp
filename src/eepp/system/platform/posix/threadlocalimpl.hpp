@@ -16,9 +16,9 @@ class ThreadLocalImpl : NonCopyable {
 
 		~ThreadLocalImpl();
 
-		void Value(void* value);
+		void setValue(void* val);
 
-		void* Value() const;
+		void* getValue() const;
 	private :
 		pthread_key_t mKey;
 };

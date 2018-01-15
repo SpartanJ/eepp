@@ -11,13 +11,13 @@ using namespace EE::Graphics;
 
 CP_NAMESPACE_BEGIN
 
-void Shape::ResetShapeIdCounter() {
+void Shape::resetShapeIdCounter() {
 	cpResetShapeIdCounter();
 }
 
 void Shape::Free( Shape * shape, bool DeleteBody ) {
 	if ( DeleteBody ) {
-		Physics::Body * b = shape->Body();
+		Physics::Body * b = shape->getBody();
 		cpSAFE_DELETE( b );
 	}
 
@@ -32,164 +32,164 @@ Shape::Shape() :
 Shape::~Shape() {
 	cpShapeFree( mShape );
 
-	PhysicsManager::instance()->RemoveShapeFree( this );
+	PhysicsManager::instance()->removeShapeFree( this );
 }
 
-void Shape::SetData() {
+void Shape::setData() {
 	mShape->data	= (void*)this;
-	PhysicsManager::instance()->AddShapeFree( this );
+	PhysicsManager::instance()->addShapeFree( this );
 }
 
-cpShape * Shape::GetShape() const {
+cpShape * Shape::getShape() const {
 	return mShape;
 }
 
-cBB Shape::CacheBB() {
+cBB Shape::cacheBB() {
 	return tocbb( cpShapeCacheBB( mShape ) );
 }
 
-cBB Shape::Update( cVect pos, cVect rot ) {
+cBB Shape::update( cVect pos, cVect rot ) {
 	return tocbb( cpShapeUpdate( mShape, tocpv( pos ), tocpv( rot ) ) );
 }
 
-bool Shape::PointQuery( cVect p ) {
+bool Shape::pointQuery( cVect p ) {
 	return 0 != cpShapePointQuery( mShape, tocpv( p ) );
 }
 
-Physics::Body * Shape::Body() const {
+Physics::Body * Shape::getBody() const {
 	return reinterpret_cast<Physics::Body*>( mShape->body->data );
 }
 
-void Shape::Body( Physics::Body * body ) {
-	mShape->body = body->GetBody();
+void Shape::setBody( Physics::Body * body ) {
+	mShape->body = body->getBody();
 }
 
-cBB Shape::BB() const {
+cBB Shape::getBB() const {
 	return tocbb( mShape->bb );
 }
 
-void Shape::BB( const cBB& bb ) {
+void Shape::setBB( const cBB& bb ) {
 	mShape->bb = tocpbb( bb );
 }
 
-bool Shape::Sensor() {
+bool Shape::isSensor() {
 	return 0 != mShape->sensor;
 }
 
-void Shape::Sensor( const bool& sensor ) {
+void Shape::setSensor( const bool& sensor ) {
 	mShape->sensor = sensor ? 1 : 0;
 }
 
-cpFloat Shape::e() const {
+cpFloat Shape::getE() const {
 	return mShape->e;
 }
 
-void Shape::e( const cpFloat& e ) {
+void Shape::setE( const cpFloat& e ) {
 	mShape->e = e;
 }
 
-cpFloat Shape::Elasticity() const {
-	return e();
+cpFloat Shape::getElasticity() const {
+	return getE();
 }
 
-void Shape::Elasticity( const cpFloat& e ) {
-	this->e( e );
+void Shape::setElasticity( const cpFloat& e ) {
+	this->setE( e );
 }
 
-cpFloat Shape::u() const {
+cpFloat Shape::getU() const {
 	return mShape->u;
 }
 
-void Shape::u( const cpFloat& u ) {
+void Shape::setU( const cpFloat& u ) {
 	mShape->u = u;
 }
 
-cpFloat Shape::Friction() const {
-	return u();
+cpFloat Shape::getFriction() const {
+	return getU();
 }
 
-void Shape::Friction( const cpFloat& u ) {
-	this->u( u );
+void Shape::setFriction( const cpFloat& u ) {
+	this->setU( u );
 }
 
-cVect Shape::SurfaceVel() const {
+cVect Shape::getSurfaceVel() const {
 	return tovect( mShape->surface_v );
 }
 
-void Shape::SurfaceVel( const cVect& vel ) {
+void Shape::getSurfaceVel( const cVect& vel ) {
 	mShape->surface_v = tocpv( vel );
 }
 
-cpCollisionType Shape::CollisionType()	 const {
+cpCollisionType Shape::getCollisionType()	 const {
 	return mShape->collision_type;
 }
 
-void Shape::CollisionType( const cpCollisionType& type ) {
+void Shape::setCollisionType( const cpCollisionType& type ) {
 	mShape->collision_type = type;
 }
 
-cpGroup Shape::Group() const {
+cpGroup Shape::getGroup() const {
 	return mShape->group;
 }
 
-void Shape::Group( const cpGroup& group ) {
+void Shape::setGroup( const cpGroup& group ) {
 	mShape->group = group;
 }
 
-cpLayers Shape::Layers() const {
+cpLayers Shape::getLayers() const {
 	return mShape->layers;
 }
 
-void Shape::Layers( const cpLayers& layers ) {
+void Shape::setLayers( const cpLayers& layers ) {
 	mShape->layers = layers;
 }
 
-cpShapeType Shape::Type() const {
+cpShapeType Shape::getType() const {
 	return mShape->CP_PRIVATE(klass)->type;
 }
 
-ShapePoly * Shape::GetAsPoly() {
-	eeASSERT( Type() == CP_POLY_SHAPE );
+ShapePoly * Shape::getAsPoly() {
+	eeASSERT( getType() == CP_POLY_SHAPE );
 
 	return reinterpret_cast<ShapePoly*>( this );
 }
 
-ShapeCircle * Shape::GetAsCircle() {
-	eeASSERT( Type() == CP_CIRCLE_SHAPE );
+ShapeCircle * Shape::getAsCircle() {
+	eeASSERT( getType() == CP_CIRCLE_SHAPE );
 
 	return reinterpret_cast<ShapeCircle*>( this );
 }
 
-ShapeSegment * Shape::GetAsSegment() {
-	eeASSERT( Type() == CP_SEGMENT_SHAPE );
+ShapeSegment * Shape::getAsSegment() {
+	eeASSERT( getType() == CP_SEGMENT_SHAPE );
 
 	return reinterpret_cast<ShapeSegment*>( this );
 }
 
-void Shape::DrawBB() {
+void Shape::drawBB() {
 	#ifdef PHYSICS_RENDERER_ENABLED
 	Primitives P;
-	P.SetColor( ColorA( 76, 128, 76, 255 ) );
-	P.ForceDraw( false );
-	P.DrawLine( Line2f( Vector2f( mShape->bb.l, mShape->bb.t ), Vector2f( mShape->bb.r, mShape->bb.t ) ) );
-	P.DrawLine( Line2f( Vector2f( mShape->bb.l, mShape->bb.t ), Vector2f( mShape->bb.l, mShape->bb.b ) ) );
-	P.DrawLine( Line2f( Vector2f( mShape->bb.l, mShape->bb.b ), Vector2f( mShape->bb.r, mShape->bb.b ) ) );
-	P.DrawLine( Line2f( Vector2f( mShape->bb.r, mShape->bb.t ), Vector2f( mShape->bb.r, mShape->bb.b ) ) );
+	P.setColor( Color( 76, 128, 76, 255 ) );
+	P.setForceDraw( false );
+	P.drawLine( Line2f( Vector2f( mShape->bb.l, mShape->bb.t ), Vector2f( mShape->bb.r, mShape->bb.t ) ) );
+	P.drawLine( Line2f( Vector2f( mShape->bb.l, mShape->bb.t ), Vector2f( mShape->bb.l, mShape->bb.b ) ) );
+	P.drawLine( Line2f( Vector2f( mShape->bb.l, mShape->bb.b ), Vector2f( mShape->bb.r, mShape->bb.b ) ) );
+	P.drawLine( Line2f( Vector2f( mShape->bb.r, mShape->bb.t ), Vector2f( mShape->bb.r, mShape->bb.b ) ) );
 	#endif
 }
 
-void * Shape::Data() const {
+void * Shape::getData() const {
 	return mData;
 }
 
-void Shape::Data( void * data ) {
+void Shape::setData( void * data ) {
 	mData = data;
 }
 
-void Shape::Draw( Space * space ) {
+void Shape::draw( Space * space ) {
 }
 
-void Shape::DrawBorder( Space * space ) {
+void Shape::drawBorder( Space * space ) {
 }
 
 CP_NAMESPACE_END
