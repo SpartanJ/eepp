@@ -296,7 +296,7 @@ void UIWindow::drawHighlightInvalidation() {
 		P.setBlendMode( getBlendMode() );
 		P.setColor( UIManager::instance()->getHighlightInvalidationColor() );
 		P.setLineWidth( PixelDensity::dpToPxI( 2 ) );
-		P.drawRectangle( getRectf() );
+		P.drawRectangle( getScreenBounds() );
 
 		UIWidget::matrixUnset();
 	}

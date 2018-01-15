@@ -542,7 +542,9 @@ class EE_API UINode : public Transformable {
 
 		Sizei getSkinSize( UISkin * Skin, const Uint32& State = UISkinState::StateNormal );
 
-		Rectf getRectf();
+		Rectf getScreenBounds();
+
+		Rectf getLocalBounds();
 
 		void drawHighlightFocus();
 

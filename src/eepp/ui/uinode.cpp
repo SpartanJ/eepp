@@ -39,7 +39,7 @@ UINode::UINode() :
 	mSkinState( NULL ),
 	mBackground( NULL ),
 	mBorder( NULL ),
-	mNodeFlags( NODE_FLAG_POSITION_DIRTY | NODE_FLAG_TRANFORM_DIRTY | NODE_FLAG_TRANFORM_INVERT_DIRTY ),
+	mNodeFlags( NODE_FLAG_POSITION_DIRTY | NODE_FLAG_POLYGON_DIRTY ),
 	mBlend( BlendAlpha ),
 	mNumCallBacks( 0 ),
 	mVisible( true ),
@@ -363,7 +363,7 @@ void UINode::drawHighlightFocus() {
 		P.setBlendMode( getBlendMode() );
 		P.setColor( UIManager::instance()->getHighlightFocusColor() );
 		P.setLineWidth( PixelDensity::dpToPxI( 1 ) );
-		P.drawRectangle( getRectf() );
+		P.drawRectangle( getScreenBounds() );
 	}
 }
 
@@ -374,7 +374,7 @@ void UINode::drawOverNode() {
 		P.setBlendMode( getBlendMode() );
 		P.setColor( UIManager::instance()->getHighlightOverColor() );
 		P.setLineWidth( PixelDensity::dpToPxI( 1 ) );
-		P.drawRectangle( getRectf() );
+		P.drawRectangle( getScreenBounds() );
 	}
 }
 
@@ -405,7 +405,7 @@ void UINode::drawBox() {
 		P.setBlendMode( getBlendMode() );
 		P.setColor( Color::fromPointer( this ) );
 		P.setLineWidth( PixelDensity::dpToPxI( 1 ) );
-		P.drawRectangle( getRectf() );
+		P.drawRectangle( getScreenBounds() );
 	}
 }
 
@@ -789,19 +789,23 @@ void UINode::onSizeChange() {
 	invalidateDraw();
 }
 
-Rectf UINode::getRectf() {
+Rectf UINode::getScreenBounds() {
 	return Rectf( mScreenPosf, Sizef( (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight() ) );
+}
+
+Rectf UINode::getLocalBounds() {
+	return Rectf( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() );
 }
 
 void UINode::drawBackground() {
 	if ( mFlags & UI_FILL_BACKGROUND ) {
-		mBackground->draw( getRectf(), mAlpha );
+		mBackground->draw( getScreenBounds(), mAlpha );
 	}
 }
 
 void UINode::drawBorder() {
 	if ( mFlags & UI_BORDER ) {
-		mBorder->draw( getRectf(), mAlpha, mBackground->getCorners(), ( mFlags & UI_CLIP_ENABLE ) != 0 );
+		mBorder->draw( getScreenBounds(), mAlpha, mBackground->getCorners(), ( mFlags & UI_CLIP_ENABLE ) != 0 );
 	}
 }
 
@@ -858,21 +862,21 @@ void UINode::internalDraw() {
 
 void UINode::clipMe() {
 	if ( mVisible && ( mFlags & UI_CLIP_ENABLE ) ) {
-		/*if ( mFlags & UI_BORDER )
+		if ( mFlags & UI_BORDER )
 			UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() + 1 );
 		else
-			UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() );*/
+			UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() );
 	}
 }
 
 void UINode::clipDisable() {
 	if ( mVisible && ( mFlags & UI_CLIP_ENABLE ) ) {
-		//UIManager::instance()->clipSmartDisable( this );
+		UIManager::instance()->clipSmartDisable( this );
 	}
 }
 
 void UINode::matrixSet() {
-	/*if ( getScale() != 1.f || getRotation() != 0.f )*/ {
+	if ( getScale() != 1.f || getRotation() != 0.f ) {
 		GlobalBatchRenderer::instance()->draw();
 
 		GLi->pushMatrix();
@@ -886,15 +890,11 @@ void UINode::matrixSet() {
 		GLi->translatef( rotationCenter.x , rotationCenter.y, 0.f );
 		GLi->rotatef( getRotation(), 0.0f, 0.0f, 1.0f );
 		GLi->translatef( -rotationCenter.x, -rotationCenter.y, 0.f );
-
-		GLi->translatef( mRealPos.x, mRealPos.y, 0.f );
-
-		GLi->loadMatrixf( getGlobalTransform().getMatrix() );
 	}
 }
 
 void UINode::matrixUnset() {
-	/*if ( getScale() != 1.f || getRotation() != 0.f )*/ {
+	if ( getScale() != 1.f || getRotation() != 0.f ) {
 		GlobalBatchRenderer::instance()->draw();
 
 		GLi->popMatrix();
@@ -1121,10 +1121,10 @@ UINode * UINode::overFind( const Vector2f& Point ) {
 	UINode * pOver = NULL;
 
 	if ( mEnabled && mVisible ) {
-		if ( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY )
+		if ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY )
 			updateWorldPolygon();
 
-		if ( /*mPoly.pointInside( Point )*/ getRectf().contains( convertToNodeSpace( Point ) ) ) {
+		if ( mPoly.pointInside( Point ) ) {
 			writeCtrlFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
 
 			UINode * ChildLoop = mChildLast;
@@ -1258,28 +1258,25 @@ bool UINode::isMeOrParentTreeScaledOrRotatedOrFrameBuffer() {
 }
 
 Polygon2f& UINode::getPolygon() {
-	if ( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY )
+	if ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY )
 		updateWorldPolygon();
 
 	return mPoly;
 }
 
 Vector2f UINode::getPolygonCenter() {
-	if ( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY )
+	if ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY )
 		updateWorldPolygon();
 
 	return mPoly.getBounds().getCenter();
 }
 
 void UINode::updateWorldPolygon() {
-	if ( !( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY ) &&
-		 !( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY ) ) {
+	if ( !( mNodeFlags & NODE_FLAG_POLYGON_DIRTY ) )
 		return;
-	}
 
-	if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY ) {
+	if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
 		updateScreenPos();
-	}
 
 	mPoly		= Polygon2f( Rectf( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mRealSize.getWidth(), mScreenPosf.y + mRealSize.getHeight() ) );
 
@@ -1295,7 +1292,7 @@ void UINode::updateWorldPolygon() {
 		tParent = tParent->getParent();
 	};
 
-	mNodeFlags &= ~NODE_FLAG_TRANFORM_DIRTY | NODE_FLAG_TRANFORM_INVERT_DIRTY;
+	mNodeFlags &= ~NODE_FLAG_POLYGON_DIRTY;
 }
 
 void UINode::updateCenter() {
@@ -1473,9 +1470,9 @@ void UINode::updateScreenPos() {
 	if ( !(mNodeFlags & NODE_FLAG_POSITION_DIRTY) )
 		return;
 
-	Vector2i Pos( 0, 0 );
+	Vector2i Pos( mRealPos.x, mRealPos.y );
 
-	//nodeToScreen( Pos );
+	nodeToScreen( Pos );
 
 	mScreenPos = Pos;
 	mScreenPosf = Vector2f( Pos.x, Pos.y );
@@ -1631,81 +1628,13 @@ void UINode::onChildCountChange() {
 }
 
 void UINode::worldToNode( Vector2i& pos ) {
-	Vector2f PosTest( convertToNodeSpace( Vector2f( pos.x, pos.y ) ) );
-	pos = Vector2i( PosTest.x, PosTest.y );
-	return;
-
-	Vector2f Pos( pos.x, pos.y );
-
-	std::list<UINode*> parents;
-
-	UINode * ParentLoop = mParentCtrl;
-
-	while ( NULL != ParentLoop ) {
-		parents.push_front( ParentLoop );
-		ParentLoop = ParentLoop->getParent();
-	}
-
-	parents.push_back( const_cast<UINode*>( reinterpret_cast<const UINode*>( this ) ) );
-
-	Vector2f scale(1,1);
-
-	for ( std::list<UINode*>::iterator it = parents.begin(); it != parents.end(); it++ ) {
-		UINode * tParent = (*it);
-		Vector2f pPos( tParent->mRealPos.x * scale.x			, tParent->mRealPos.y * scale.y			);
-		Vector2f Center;
-
-		if ( NULL != tParent && 1.f != tParent->getScale() ) {
-			Center = tParent->getScaleOriginPoint() * scale;
-			scale *= tParent->getScale();
-
-			pPos.scale( scale, pPos + Center );
-		}
-
-		Pos -= pPos;
-
-		if ( NULL != tParent && 0.f != tParent->getRotation() ) {
-			Center = tParent->getRotationOriginPoint() * scale;
-			Pos.rotate( -tParent->getRotation(), Center );
-		}
-	}
-
-	Pos = Vector2f( Pos.x / scale.x, Pos.y / scale.y );
-	pos = Vector2i( Pos.x / PixelDensity::getPixelDensity(), Pos.y / PixelDensity::getPixelDensity() );
+	Vector2f toPos( convertToNodeSpace( Vector2f( pos.x, pos.y ) ) );
+	pos = Vector2i( toPos.x  / PixelDensity::getPixelDensity(), toPos.y  / PixelDensity::getPixelDensity() );
 }
 
 void UINode::nodeToWorld( Vector2i& pos ) {
-	Vector2f PosTest( convertToWorldSpace( Vector2f( pos.x, pos.y ) ) );
-	pos = Vector2i( PosTest.x, PosTest.y );
-	return;
-
-	Vector2f Pos( (Float)pos.x * PixelDensity::getPixelDensity(), (Float)pos.y * PixelDensity::getPixelDensity() );
-
-	std::list<UINode*> parents;
-
-	UINode * ParentLoop = mParentCtrl;
-
-	while ( NULL != ParentLoop ) {
-		parents.push_back( ParentLoop );
-		ParentLoop = ParentLoop->getParent();
-	}
-
-	parents.push_front( const_cast<UINode*>( reinterpret_cast<const UINode*>( this ) ) );
-
-	for ( std::list<UINode*>::iterator it = parents.begin(); it != parents.end(); it++ ) {
-		UINode * tParent = (*it);
-		Vector2f pPos( tParent->mRealPos.x					, tParent->mRealPos.y					);
-
-		Pos += pPos;
-
-		Vector2f CenterAngle( pPos.x + tParent->mRotationOriginPoint.x, pPos.y + tParent->mRotationOriginPoint.y );
-		Vector2f CenterScale( pPos.x + tParent->mScaleOriginPoint.x, pPos.y + tParent->mScaleOriginPoint.y );
-
-		Pos.rotate( tParent->getRotation(), CenterAngle );
-		Pos.scale( tParent->getScale(), CenterScale );
-	}
-
-	pos = Vector2i( eeceil( Pos.x ), eeceil( Pos.y ) );
+	Vector2f toPos( convertToWorldSpace( Vector2f( pos.x * PixelDensity::getPixelDensity(), pos.y * PixelDensity::getPixelDensity() ) ) );
+	pos = Vector2i( toPos.x, toPos.y );
 }
 
 UINode * UINode::getWindowContainer() {
@@ -1854,13 +1783,10 @@ void UINode::updateOriginPoint() {
 
 void UINode::setDirty() {
 	if ( ( mNodeFlags & NODE_FLAG_POSITION_DIRTY ) &&
-		 ( mNodeFlags & NODE_FLAG_TRANFORM_DIRTY ) &&
-		 ( mNodeFlags & NODE_FLAG_TRANFORM_INVERT_DIRTY ) )
-	{
+		 ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY ) )
 		return;
-	}
 
-	mNodeFlags |= NODE_FLAG_POSITION_DIRTY | NODE_FLAG_TRANFORM_DIRTY | NODE_FLAG_TRANFORM_INVERT_DIRTY;
+	mNodeFlags |= NODE_FLAG_POSITION_DIRTY | NODE_FLAG_POLYGON_DIRTY;
 
 	setChildsDirty();
 }
@@ -2169,6 +2095,5 @@ void UINode::setScaleOrigin(float x, float y) {
 void UINode::setRotationOrigin(float x, float y) {
 	setRotationOriginPoint( OriginPoint( x, y ) );
 }
-
 
 }}
