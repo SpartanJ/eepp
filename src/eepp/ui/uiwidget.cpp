@@ -647,9 +647,9 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 		} else if ( "scale" == name ) {
 			setScale( ait->as_float() );
 		} else if ( "rotationoriginpoint" == name ) {
-			setRotationOrigin( toOriginPoint( ait->as_string() ) );
+			setRotationOriginPoint( toOriginPoint( ait->as_string() ) );
 		} else if ( "scaleoriginpoint" == name ) {
-			setScaleOrigin( toOriginPoint( ait->as_string() ) );
+			setScaleOriginPoint( toOriginPoint( ait->as_string() ) );
 		} else if ( "blendmode" == name ) {
 			setBlendMode( toBlendMode( ait->as_string() ) );
 		} else if ( "backgroundblendmode" == name ) {

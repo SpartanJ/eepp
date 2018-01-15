@@ -784,8 +784,8 @@ void UINode::onPositionChange() {
 }
 
 void UINode::onSizeChange() {
-	updateRotationOrigin();
-	updateScaleOrigin();
+	updateOriginPoint();
+
 	invalidateDraw();
 }
 
@@ -877,12 +877,12 @@ void UINode::matrixSet() {
 
 		GLi->pushMatrix();
 
-		Vector2f scaleCenter = getScaleOrigin();
+		Vector2f scaleCenter = getScaleCenter();
 		GLi->translatef( scaleCenter.x , scaleCenter.y, 0.f );
 		GLi->scalef( mScale.x, mScale.y, 1.0f );
 		GLi->translatef( -scaleCenter.x, -scaleCenter.y, 0.f );
 
-		Vector2f rotationCenter = getRotationOrigin();
+		Vector2f rotationCenter = getRotationCenter();
 		GLi->translatef( rotationCenter.x , rotationCenter.y, 0.f );
 		GLi->rotatef( mRotation, 0.0f, 0.0f, 1.0f );
 		GLi->translatef( -rotationCenter.x, -rotationCenter.y, 0.f );
@@ -1279,14 +1279,14 @@ void UINode::updateWorldPolygon() {
 
 	mPoly		= Polygon2f( Rectf( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mRealSize.getWidth(), mScreenPosf.y + mRealSize.getHeight() ) );
 
-	mPoly.rotate( mRotation, getRotationOrigin() );
-	mPoly.scale( mScale, getScaleOrigin() );
+	mPoly.rotate( mRotation, getRotationCenter() );
+	mPoly.scale( mScale, getScaleCenter() );
 
 	UINode * tParent = getParent();
 
 	while ( tParent ) {
-		mPoly.rotate( tParent->getRotation(), tParent->getRotationOrigin() );
-		mPoly.scale( tParent->getScale(), tParent->getScaleOrigin() );
+		mPoly.rotate( tParent->getRotation(), tParent->getRotationCenter() );
+		mPoly.scale( tParent->getScale(), tParent->getScaleCenter() );
 
 		tParent = tParent->getParent();
 	};
@@ -1648,7 +1648,7 @@ void UINode::worldToNode( Vector2i& pos ) const {
 		Vector2f Center;
 
 		if ( NULL != tParent && 1.f != tParent->getScale() ) {
-			Center = tParent->getScaleOrigin() * scale;
+			Center = tParent->getScaleOriginPoint() * scale;
 			scale *= tParent->getScale();
 
 			pPos.scale( scale, pPos + Center );
@@ -1657,7 +1657,7 @@ void UINode::worldToNode( Vector2i& pos ) const {
 		Pos -= pPos;
 
 		if ( NULL != tParent && 0.f != tParent->getRotation() ) {
-			Center = tParent->getRotationOrigin() * scale;
+			Center = tParent->getRotationOriginPoint() * scale;
 			Pos.rotate( -tParent->getRotation(), Center );
 		}
 	}
@@ -1686,8 +1686,8 @@ void UINode::nodeToWorld( Vector2i& pos ) const {
 
 		Pos += pPos;
 
-		Vector2f CenterAngle( pPos.x + tParent->mRotationOrigin.x, pPos.y + tParent->mRotationOrigin.y );
-		Vector2f CenterScale( pPos.x + tParent->mScaleOrigin.x, pPos.y + tParent->mScaleOrigin.y );
+		Vector2f CenterAngle( pPos.x + tParent->mRotationOriginPoint.x, pPos.y + tParent->mRotationOriginPoint.y );
+		Vector2f CenterScale( pPos.x + tParent->mScaleOriginPoint.x, pPos.y + tParent->mScaleOriginPoint.y );
 
 		Pos.rotate( tParent->getRotation(), CenterAngle );
 		Pos.scale( tParent->getScale(), CenterScale );
@@ -1814,29 +1814,25 @@ const Uint32& UINode::getDragButton() const {
 	return mDragButton;
 }
 
-void UINode::updateRotationOrigin() {
-	switch ( mRotationOrigin.OriginType ) {
+void UINode::updateOriginPoint() {
+	switch ( mRotationOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter:
-			mRotationOrigin.x = mRealSize.x * 0.5f;
-			mRotationOrigin.y = mRealSize.y * 0.5f;
+			mRotationOriginPoint.x = mRealSize.x * 0.5f;
+			mRotationOriginPoint.y = mRealSize.y * 0.5f;
 			break;
 		case OriginPoint::OriginTopLeft:
-			mRotationOrigin.x = mRotationOrigin.y = 0;
+			mRotationOriginPoint.x = mRotationOriginPoint.y = 0;
 			break;
 		default: {}
 	}
 
-	setDirty();
-}
-
-void UINode::updateScaleOrigin() {
-	switch ( mScaleOrigin.OriginType ) {
+	switch ( mScaleOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter:
-			mScaleOrigin.x = mRealSize.x * 0.5f;
-			mScaleOrigin.y = mRealSize.y * 0.5f;
+			mScaleOriginPoint.x = mRealSize.x * 0.5f;
+			mScaleOriginPoint.y = mRealSize.y * 0.5f;
 			break;
 		case OriginPoint::OriginTopLeft:
-			mScaleOrigin.x = mScaleOrigin.y = 0;
+			mScaleOriginPoint.x = mScaleOriginPoint.y = 0;
 			break;
 		default: {}
 	}
@@ -2001,20 +1997,20 @@ const Float& UINode::getRotation() const {
 	return mRotation;
 }
 
-const OriginPoint& UINode::getRotationOrigin() const {
-	return mRotationOrigin;
+const OriginPoint& UINode::getRotationOriginPoint() const {
+	return mRotationOriginPoint;
 }
 
-void UINode::setRotationOrigin( const OriginPoint & center ) {
-	mRotationOrigin = PixelDensity::dpToPx( center );
-	updateRotationOrigin();
+void UINode::setRotationOriginPoint( const OriginPoint & center ) {
+	mRotationOriginPoint = PixelDensity::dpToPx( center );
+	updateOriginPoint();
 }
 
-Vector2f UINode::getRotationOrigin() {
-	switch ( mRotationOrigin.OriginType ) {
+Vector2f UINode::getRotationCenter() {
+	switch ( mRotationOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter: return mCenter;
 		case OriginPoint::OriginTopLeft: return mScreenPosf;
-		case OriginPoint::OriginCustom: default: return mScreenPosf + mRotationOrigin;
+		case OriginPoint::OriginCustom: default: return mScreenPosf + mRotationOriginPoint;
 	}
 }
 
@@ -2034,8 +2030,8 @@ void UINode::setRotation( const Float& angle ) {
 }
 
 void UINode::setRotation( const Float& angle , const OriginPoint & center ) {
-	mRotationOrigin = center;
-	updateRotationOrigin();
+	mRotationOriginPoint = center;
+	updateOriginPoint();
 	setRotation( angle );
 }
 
@@ -2058,26 +2054,26 @@ void UINode::setScale( const Vector2f & scale ) {
 	onScaleChange();
 }
 
-const OriginPoint& UINode::getScaleOrigin() const {
-	return mScaleOrigin;
+const OriginPoint& UINode::getScaleOriginPoint() const {
+	return mScaleOriginPoint;
 }
 
-void UINode::setScaleOrigin( const OriginPoint & center ) {
-	mScaleOrigin = PixelDensity::dpToPx( center );
-	updateScaleOrigin();
+void UINode::setScaleOriginPoint( const OriginPoint & center ) {
+	mScaleOriginPoint = PixelDensity::dpToPx( center );
+	updateOriginPoint();
 }
 
-Vector2f UINode::getScaleOrigin() {
-	switch ( mScaleOrigin.OriginType ) {
+Vector2f UINode::getScaleCenter() {
+	switch ( mScaleOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter: return mCenter;
 		case OriginPoint::OriginTopLeft: return mScreenPosf;
-		case OriginPoint::OriginCustom: default: return mScreenPosf + mScaleOrigin;
+		case OriginPoint::OriginCustom: default: return mScreenPosf + mScaleOriginPoint;
 	}
 }
 
 void UINode::setScale( const Vector2f& scale, const OriginPoint& center ) {
-	mScaleOrigin = center;
-	updateScaleOrigin();
+	mScaleOriginPoint = center;
+	updateOriginPoint();
 	setScale( scale );
 }
 
