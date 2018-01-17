@@ -121,7 +121,7 @@ class EE_API BatchRenderer {
 		void pointSetTexCoord(const Float & x, const Float & y);
 
 		/** Add to the batch a point ( this will change your batch rendering method to PRIMITIVE_POINTS, so if you were using another one will Draw all the batched vertexs first ) */
-		void batchPoint( const Float& x, const Float& y );
+		void batchPoint( const Float& x, const Float& y, const PrimitiveType& primitiveType = PRIMITIVE_POINTS );
 
 		/** This will set as the default batch rendering to PRIMITIVE_LINES. And will reset the line color to ColorA(255,255,255,255). */
 		void linesBegin();

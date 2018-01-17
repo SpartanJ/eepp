@@ -478,11 +478,11 @@ void BatchRenderer::pointSetTexCoord( const Float& x, const Float& y ) {
 	mTexCoord[0].u = x; mTexCoord[0].v = y;
 }
 
-void BatchRenderer::batchPoint( const Float& x, const Float& y ) {
+void BatchRenderer::batchPoint( const Float& x, const Float& y , const PrimitiveType & primitiveType ) {
 	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
-	setDrawMode( PRIMITIVE_POINTS, mForceBlendMode );
+	setDrawMode( primitiveType, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x;
