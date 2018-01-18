@@ -106,6 +106,7 @@ class EE_API RendererGLES2 : public Renderer {
 		Private::MatrixStack *	mStack;
 		int					mProjectionMatrix_id;	// cpu-side hook to shader uniform
 		int					mModelViewMatrix_id;	// cpu-side hook to shader uniform
+		int					mTextureMatrix_id;   	// cpu-side hook to shader uniform
 		unsigned int					mCurrentMode;
 		ShaderProgram *		mShaders[ EEGLES2_SHADERS_COUNT ];
 		ShaderProgram *		mCurShader;

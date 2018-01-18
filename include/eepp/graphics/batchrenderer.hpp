@@ -10,6 +10,8 @@
 #include <eepp/system/color.hpp>
 using namespace EE::System;
 
+#include <eepp/graphics/texture.hpp>
+
 namespace EE { namespace Graphics {
 
 struct eeTexCoord {
@@ -22,9 +24,6 @@ struct eeVertex {
 	eeTexCoord tex;
 	Color color;
 };
-
-class TextureFactory;
-class Texture;
 
 /** @brief A batch rendering class. */
 class EE_API BatchRenderer {
@@ -40,7 +39,7 @@ class EE_API BatchRenderer {
 		void allocVertexs( const unsigned int& size );
 
 		/** Set the current texture to render on the batch ( if you change the texture and you have batched something, this will be renderer immediately ) */
-		void setTexture( const Texture * Tex );
+		void setTexture( const Texture * texture, Texture::CoordinateType coordinateType = Texture::CoordinateType::Normalized );
 
 		/** Set the predefined blending function to use on the batch */
 		void setBlendMode( const BlendMode& Blend );
@@ -246,7 +245,6 @@ class EE_API BatchRenderer {
 		unsigned int				mNumVertex;
 
 		const Texture *	mTexture;
-		TextureFactory *	mTF;
 		BlendMode		mBlend;
 
 		eeTexCoord			mTexCoord[4];
@@ -258,6 +256,8 @@ class EE_API BatchRenderer {
 		Vector2f			mScale;
 		Vector2f			mPosition;
 		Vector2f			mCenter;
+
+		Texture::CoordinateType mCoordinateType;
 
 		bool				mForceRendering;
 		bool				mForceBlendMode;

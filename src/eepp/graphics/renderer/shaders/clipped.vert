@@ -7,6 +7,7 @@
 "#define MAX_CLIP_PLANES 6\n\
 uniform				mat4 dgl_ProjectionMatrix;\n\
 uniform				mat4 dgl_ModelViewMatrix;\n\
+uniform				mat4 dgl_TextureMatrix;\n\
 #ifndef GL_ES\n\
 uniform				int			dgl_ClippingEnabled;\n\
 uniform				int			dgl_ClipEnabled[ MAX_CLIP_PLANES ];\n\
@@ -28,7 +29,7 @@ varying				float dgl_ClipDistance[ MAX_CLIP_PLANES ];\n\
 void main(void)\n\
 {\n\
 	dgl_Color		= dgl_FrontColor;\n\
-	dgl_TexCoord[0]	= dgl_MultiTexCoord0;\n\
+	dgl_TexCoord[0]	= dgl_TextureMatrix * dgl_MultiTexCoord0;\n\
 	vec4 vEye		= dgl_ModelViewMatrix * dgl_Vertex;\n\
 	gl_Position		= dgl_ProjectionMatrix * vEye;\n\
 	if ( 1 == dgl_ClippingEnabled ) {\n\

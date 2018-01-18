@@ -14,14 +14,19 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 	public:
 		/** @enum TextureFilter Defines the texture filter used. */
 		enum TextureFilter {
-			TEXTURE_FILTER_LINEAR, 			//!< Linear filtering (Smoothed Zoom)
-			TEXTURE_FILTER_NEAREST 			//!< No filtering (Pixeled Zoom)
+			Linear, 			//!< Linear filtering (Smoothed Zoom)
+			Nearest 			//!< No filtering (Pixeled Zoom)
 		};
 
 		/** @enum ClampMode Set the clamp mode of the texture. */
 		enum ClampMode {
-			CLAMP_TO_EDGE,
-			CLAMP_REPEAT
+			ClampToEdge,
+			ClampRepeat
+		};
+
+		enum CoordinateType {
+			Normalized, ///< Texture coordinates in range [0 .. 1]
+			Pixels      ///< Texture coordinates in range [0 .. size]
 		};
 
 		static Uint32 getMaximumSize();
@@ -250,8 +255,11 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 		/** Set a pixel to the locked texture. */
 		void setPixel( const unsigned int& x, const unsigned int& y, const Color& Color );
 
-		/** Bind the texture. Activate the texture for rendering. */
-		void bind();
+		/** Bind the texture. Activate the texture for rendering.
+		* @param coordinateType Type of texture coordinates to use
+		* @param textureUnit The Texture unit that want to be used to bind ( usually 0 )
+		*/
+		void bind( CoordinateType coordinateType = Texture::CoordinateType::Normalized, const Uint32 & textureUnit = 0 );
 
 		std::string getName() const;
 

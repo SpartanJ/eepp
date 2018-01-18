@@ -35,8 +35,8 @@ Texture::Texture() :
 	mImgWidth(0),
 	mImgHeight(0),
 	mFlags(0),
-	mClampMode(  CLAMP_TO_EDGE ),
-	mFilter( TEXTURE_FILTER_LINEAR )
+	mClampMode(  ClampToEdge ),
+	mFilter( Linear )
 {
 	if ( NULL == sBR ) {
 		sBR = GlobalBatchRenderer::instance();
@@ -102,7 +102,7 @@ void Texture::create( const Uint32& texture, const unsigned int& width, const un
 	mImgHeight 	= imgheight;
 	mSize 		= MemSize;
 	mClampMode 	= ClampMode;
-	mFilter 	= TEXTURE_FILTER_LINEAR;
+	mFilter 	= Linear;
 
 	if ( UseMipmap )
 		mFlags |= TEX_FLAG_MIPMAP;
@@ -206,7 +206,7 @@ bool Texture::unlock( const bool& KeepData, const bool& Modified ) {
 			TextureSaver saver( mTexture );
 
 			Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
-			flags = (mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
+			flags = (mClampMode == ClampRepeat) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 
 			NTexId = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>(&mPixels[0]), &width, &height, mChannels, mTexture, flags );
 
@@ -248,8 +248,8 @@ void Texture::setPixel( const unsigned int& x, const unsigned int& y, const Colo
 	mFlags |= TEX_FLAG_MODIFIED;
 }
 
-void Texture::bind() {
-	TextureFactory::instance()->bind( this );
+void Texture::bind( CoordinateType coordinateType , const Uint32& textureUnit ) {
+	TextureFactory::instance()->bind( this, coordinateType, textureUnit );
 }
 
 bool Texture::saveToFile(const std::string& filepath, const SaveType & Format ) {
@@ -278,12 +278,12 @@ void Texture::iTextureFilter( const TextureFilter& filter ) {
 
 		TextureSaver saver( mTexture );
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (mFilter == TEXTURE_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (mFilter == Linear) ? GL_LINEAR : GL_NEAREST);
 
 		if ( mFlags & TEX_FLAG_MIPMAP )
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEXTURE_FILTER_LINEAR) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == Linear) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
 		else
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEXTURE_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == Linear) ? GL_LINEAR : GL_NEAREST);
 	}
 }
 
@@ -365,7 +365,7 @@ void Texture::applyClampMode() {
 	if (mTexture) {
 		TextureSaver saver( mTexture );
 
-		if( mClampMode == CLAMP_REPEAT ) {
+		if( mClampMode == ClampRepeat ) {
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
 		} else {
@@ -392,7 +392,7 @@ void Texture::reload()  {
 		TextureSaver saver( mTexture );
 
 		Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
-		flags = (mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
+		flags = (mClampMode == ClampRepeat) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 
 		if ( ( mFlags & TEX_FLAG_COMPRESSED ) ) {
 			if ( isGrabed() )
@@ -464,7 +464,7 @@ void Texture::update( Image *image, Uint32 x, Uint32 y ) {
 
 void Texture::replace( Image * image ) {
 	Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
-	flags = (mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
+	flags = (mClampMode == ClampRepeat) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 
 	TextureSaver textureSaver;
 
@@ -536,7 +536,7 @@ void Texture::drawFast( const Float& x, const Float& y, const Float& Angle, cons
 	sBR->quadsBegin();
 	sBR->quadsSetColor( Color );
 
-	if ( getClampMode() == CLAMP_REPEAT ) {
+	if ( getClampMode() == ClampRepeat ) {
 		Float iw = (Float)getImageWidth();
 		Float ih = (Float)getImageHeight();
 		sBR->quadsSetTexCoordFree( 0, 0, 0, height / ih, width / iw, height / ih, width / iw, 0 );
@@ -574,7 +574,7 @@ void Texture::drawEx( Float x, Float y, Float width, Float height, const Float &
 	sBR->quadsSetColorFree( Color0, Color1, Color2, Color3 );
 
 	if ( Effect <= RENDER_FLIPPED_MIRRORED ) {
-		if ( getClampMode() == CLAMP_REPEAT ) {
+		if ( getClampMode() == ClampRepeat ) {
 			if ( Effect == RENDER_NORMAL ) {
 				if ( renderSector ) {
 					sBR->quadsSetTexCoordFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
@@ -744,7 +744,7 @@ void Texture::drawQuadEx( Quad2f Q, const Vector2f& Offset, const Float &Angle, 
 		Q.scale( Scale, QCenter );
 	}
 
-	if ( getClampMode() == CLAMP_REPEAT ) {
+	if ( getClampMode() == ClampRepeat ) {
 		sBR->quadsSetTexCoordFree( 0, 0, 0, ( Q.V[0].y - Q.V[0].y ) / h, ( Q.V[0].x - Q.V[0].x ) / w, ( Q.V[0].y - Q.V[0].y ) / h, ( Q.V[0].x - Q.V[0].x ) / w, 0 );
 	} else if ( renderSector ) {
 		sBR->quadsSetTexCoordFree( texSector.Left / w, texSector.Top / h, texSector.Left / w, texSector.Bottom / h, texSector.Right / w, texSector.Bottom / h, texSector.Right / w, texSector.Top / h );

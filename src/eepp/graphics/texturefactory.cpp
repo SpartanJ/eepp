@@ -15,12 +15,17 @@ SINGLETON_DECLARE_IMPLEMENTATION(TextureFactory)
 TextureFactory::TextureFactory() :
 	mLastBlend(BlendAlpha),
 	mMemSize(0),
+	mLastCoordinateType( Texture::CoordinateType::Normalized ),
 	mErasing(false)
 {
 	mTextures.clear();
 	mTextures.push_back( NULL );
 
 	memset( &mCurrentTexture[0], 0, EE_MAX_TEXTURE_UNITS );
+}
+
+const Texture::CoordinateType & TextureFactory::getLastCoordinateType() const {
+	return mLastCoordinateType;
 }
 
 TextureFactory::~TextureFactory() {
@@ -104,22 +109,51 @@ Uint32 TextureFactory::findFreeSlot() {
 	return (Uint32)mTextures.size() - 1;
 }
 
-void TextureFactory::bind( const Texture* Tex, const Uint32& TextureUnit ) {
-	if( NULL != Tex && mCurrentTexture[ TextureUnit ] != (Int32)Tex->getHandle() ) {
+void TextureFactory::bind( const Texture* texture, Texture::CoordinateType coordinateType, const Uint32& TextureUnit ) {
+	if( NULL != texture ) {
+		if ( mCurrentTexture[ TextureUnit ] == (Int32)texture->getHandle() )
+			return;
+
 		if ( TextureUnit && GLi->isExtension( EEGL_ARB_multitexture ) )
 			setActiveTextureUnit( TextureUnit );
 
-		GLi->bindTexture( GL_TEXTURE_2D, Tex->getHandle() );
+		GLi->bindTexture( GL_TEXTURE_2D, texture->getHandle() );
 
-		mCurrentTexture[ TextureUnit ] = Tex->getHandle();
+		mCurrentTexture[ TextureUnit ] = texture->getHandle();
 
 		if ( TextureUnit && GLi->isExtension( EEGL_ARB_multitexture ) )
 			setActiveTextureUnit( 0 );
+
+		if ( coordinateType == Texture::CoordinateType::Pixels ) {
+			GLfloat matrix[16] = {1.f, 0.f, 0.f, 0.f,
+								  0.f, 1.f, 0.f, 0.f,
+								  0.f, 0.f, 1.f, 0.f,
+								  0.f, 0.f, 0.f, 1.f};
+
+			matrix[0] = 1.f / const_cast<Texture*>( texture )->getPixelSize().x;
+			matrix[5] = 1.f / const_cast<Texture*>( texture )->getPixelSize().y;
+
+			GLi->matrixMode(GL_TEXTURE);
+			GLi->loadMatrixf(matrix);
+			GLi->matrixMode(GL_MODELVIEW);
+
+			mLastCoordinateType = coordinateType;
+
+			return;
+		}
+	}
+
+	if ( Texture::CoordinateType::Normalized != mLastCoordinateType ) {
+		mLastCoordinateType = coordinateType;
+
+		GLi->matrixMode(GL_TEXTURE);
+		GLi->loadIdentity();
+		GLi->matrixMode(GL_MODELVIEW);
 	}
 }
 
-void TextureFactory::bind( const Uint32& TexId, const Uint32& TextureUnit ) {
-	bind( getTexture( TexId ), TextureUnit );
+void TextureFactory::bind( const Uint32& TexId, Texture::CoordinateType coordinateType, const Uint32& textureUnit ) {
+	bind( getTexture( TexId ), coordinateType, textureUnit );
 }
 
 void TextureFactory::unloadTextures() {

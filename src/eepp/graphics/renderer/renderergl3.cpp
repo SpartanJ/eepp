@@ -47,6 +47,7 @@ const GLchar * EEGL3_SHADER_BASE_FS =
 RendererGL3::RendererGL3() :
 	mProjectionMatrix_id(0),
 	mModelViewMatrix_id(0),
+	mTextureMatrix_id(0),
 	mCurrentMode(0),
 	mCurShader(NULL),
 	mShaderPrev(NULL),
@@ -66,6 +67,7 @@ RendererGL3::RendererGL3() :
 	mStack = eeNew( MatrixStack, () );
 	mStack->mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 	mStack->mModelViewMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
+	mStack->mTextureMatrix.push( glm::mat4( 1.0f ) ); // identity matrix
 
 	Renderer::enable( GL_VERTEX_PROGRAM_POINT_SIZE );
 }
@@ -169,6 +171,7 @@ void RendererGL3::setShader( ShaderProgram * Shader ) {
 	mCurShader				= Shader;
 	mProjectionMatrix_id	= mCurShader->getUniformLocation( "dgl_ProjectionMatrix" );
 	mModelViewMatrix_id		= mCurShader->getUniformLocation( "dgl_ModelViewMatrix" );
+	mTextureMatrix_id		= mCurShader->getUniformLocation( "dgl_TextureMatrix" );
 	mTexActiveLoc			= mCurShader->getUniformLocation( "dgl_TexActive" );
 	mPointSpriteLoc			= mCurShader->getUniformLocation( "dgl_PointSpriteActive" );
 	mClippingEnabledLoc		= mCurShader->getUniformLocation( "dgl_ClippingEnabled" );
@@ -442,6 +445,14 @@ void RendererGL3::updateMatrix() {
 
 			break;
 		}
+		case GL_TEXTURE:
+		{
+			if ( -1 != mTextureMatrix_id ) {
+				mCurShader->setUniformMatrix( mTextureMatrix_id, &mStack->mTextureMatrix.top()[0][0] );
+			}
+
+			break;
+		}
 	}
 }
 
@@ -519,6 +530,12 @@ void RendererGL3::getCurrentMatrix( unsigned int mode, float * m ) {
 			fromGLMmat4( mStack->mModelViewMatrix.top(), m );
 			break;
 		}
+		case GL_TEXTURE:
+		case GL_TEXTURE_MATRIX:
+		{
+			fromGLMmat4( mStack->mTextureMatrix.top(), m );
+			break;
+		}
 	}
 }
 
@@ -540,6 +557,12 @@ void RendererGL3::matrixMode(unsigned int mode) {
 		case GL_MODELVIEW_MATRIX:
 		{
 			mStack->mCurMatrix = &mStack->mModelViewMatrix;
+			break;
+		}
+		case GL_TEXTURE:
+		case GL_TEXTURE_MATRIX:
+		{
+			mStack->mCurMatrix = &mStack->mTextureMatrix;
 			break;
 		}
 	}

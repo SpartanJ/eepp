@@ -66,6 +66,7 @@ RendererGLES2::RendererGLES2() :
 	mStack( eeNew( MatrixStack, () ) ),
 	mProjectionMatrix_id(0),
 	mModelViewMatrix_id(0),
+	mTextureMatrix_id(0),
 	mCurrentMode(0),
 	mCurShader(NULL),
 	mShaderPrev(NULL),
@@ -84,6 +85,7 @@ RendererGLES2::RendererGLES2() :
 
 	mStack->mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 	mStack->mModelViewMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
+	mStack->mTextureMatrix.push( glm::mat4( 1.0f ) ); // identity matrix
 }
 
 RendererGLES2::~RendererGLES2() {
@@ -217,6 +219,7 @@ void RendererGLES2::setShader( ShaderProgram * Shader ) {
 
 	mProjectionMatrix_id	= mCurShader->getUniformLocation( "dgl_ProjectionMatrix" );
 	mModelViewMatrix_id		= mCurShader->getUniformLocation( "dgl_ModelViewMatrix" );
+	mTextureMatrix_id		= mCurShader->getUniformLocation( "dgl_TextureMatrix" );
 	mTexActiveLoc			= mCurShader->getUniformLocation( "dgl_TexActive" );
 	mClippingEnabledLoc		= mCurShader->getUniformLocation( "dgl_ClippingEnabled" );
 	mCurActiveTex			= 0;
@@ -526,6 +529,14 @@ void RendererGLES2::updateMatrix() {
 
 			break;
 		}
+		case GL_TEXTURE:
+		{
+			if ( -1 != mTextureMatrix_id ) {
+				mCurShader->setUniformMatrix( mTextureMatrix_id, &mStack->mTextureMatrix.top()[0][0] );
+			}
+
+			break;
+		}
 	}
 }
 
@@ -603,6 +614,12 @@ void RendererGLES2::getCurrentMatrix( unsigned int mode, float * m ) {
 			fromGLMmat4( mStack->mModelViewMatrix.top(), m );
 			break;
 		}
+		case GL_TEXTURE:
+		case GL_TEXTURE_MATRIX:
+		{
+			fromGLMmat4( mStack->mTextureMatrix.top(), m );
+			break;
+		}
 	}
 }
 
@@ -624,6 +641,12 @@ void RendererGLES2::matrixMode(unsigned int mode) {
 		case GL_MODELVIEW_MATRIX:
 		{
 			mStack->mCurMatrix = &mStack->mModelViewMatrix;
+			break;
+		}
+		case GL_TEXTURE:
+		case GL_TEXTURE_MATRIX:
+		{
+			mStack->mCurMatrix = &mStack->mTextureMatrix;
 			break;
 		}
 	}

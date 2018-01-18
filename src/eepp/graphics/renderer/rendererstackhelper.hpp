@@ -25,6 +25,7 @@ class MatrixStack
 	public:
 		std::stack<glm::mat4>	mProjectionMatrix;		// cpu-side
 		std::stack<glm::mat4>	mModelViewMatrix;		// cpu-side
+		std::stack<glm::mat4>	mTextureMatrix;			// cpu-side
 		std::stack<glm::mat4>*	mCurMatrix;
 };
 

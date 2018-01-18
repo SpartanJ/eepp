@@ -371,7 +371,7 @@ void EETest::createUI() {
 	Uint32 UI_MAN_OPS = 0;
 	if ( mDebugUI )
 		UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_INVALIDATION;
-	UIManager::instance()->init(UI_MAN_OPS | UI_MANAGER_USE_DRAW_INVALIDATION | UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER);
+	UIManager::instance()->init(UI_MAN_OPS | UI_MANAGER_USE_DRAW_INVALIDATION /*| UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER*/);
 	UIManager::instance()->setTranslator( mTranslator );
 
 	//mTheme = UITheme::loadFromDirectory( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
@@ -1214,7 +1214,7 @@ void EETest::loadTextures() {
 	TNP.resize(12);
 
 	for ( i = 0; i <= 6; i++ ) {
-		TN[i] = TF->loadFromFile( MyPath + "sprites/" + String::toStr(i+1) + ".png", (i+1) == 7 ? true : false, ( (i+1) == 4 ) ? Texture::ClampMode::CLAMP_REPEAT : Texture::ClampMode::CLAMP_TO_EDGE );
+		TN[i] = TF->loadFromFile( MyPath + "sprites/" + String::toStr(i+1) + ".png", (i+1) == 7 ? true : false, ( (i+1) == 4 ) ? Texture::ClampMode::ClampRepeat : Texture::ClampMode::ClampToEdge );
 		TNP[i] = TF->getTexture( TN[i] );
 	}
 

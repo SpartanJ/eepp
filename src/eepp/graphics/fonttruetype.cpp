@@ -680,7 +680,7 @@ FontTrueType::Page::Page() :
 			image.setPixel(x, y, Color(255, 255, 255, 255));
 
 	// Create the texture
-	Uint32 texId = TextureFactory::instance()->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(), image.getChannels(), false, Texture::ClampMode::CLAMP_TO_EDGE, false, true );
+	Uint32 texId = TextureFactory::instance()->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(), image.getChannels(), false, Texture::ClampMode::ClampToEdge, false, true );
 	texture = TextureFactory::instance()->getTexture( texId );
 }
 

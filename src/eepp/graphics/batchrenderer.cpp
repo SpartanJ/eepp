@@ -1,6 +1,5 @@
 #include <eepp/graphics/batchrenderer.hpp>
 #include <eepp/graphics/texture.hpp>
-#include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
@@ -13,17 +12,17 @@ BatchRenderer::BatchRenderer() :
 	mTVertex( NULL ),
 	mNumVertex(0),
 	mTexture(NULL),
-	mTF( TextureFactory::instance() ),
 	mBlend(BlendAlpha),
 	mCurrentMode(PRIMITIVE_QUADS),
 	mRotation(0.0f),
 	mScale(1.0f,1.0f),
 	mPosition(0.0f, 0.0f),
 	mCenter(0.0f, 0.0f),
+	mCoordinateType(Texture::CoordinateType::Normalized),
 	mForceRendering(false),
 	mForceBlendMode(true)
 {
-	allocVertexs( 1024 );
+	allocVertexs( 4096 );
 	init();
 }
 
@@ -33,13 +32,13 @@ BatchRenderer::BatchRenderer( const unsigned int& Prealloc ) :
 	mTVertex( NULL ),
 	mNumVertex(0),
 	mTexture(NULL),
-	mTF( TextureFactory::instance() ),
 	mBlend(BlendAlpha),
 	mCurrentMode(PRIMITIVE_QUADS),
 	mRotation(0.0f),
 	mScale(1.0f,1.0f),
 	mPosition(0.0f, 0.0f),
 	mCenter(0.0f, 0.0f),
+	mCoordinateType(Texture::CoordinateType::Normalized),
 	mForceRendering(false),
 	mForceBlendMode(true)
 {
@@ -71,11 +70,12 @@ void BatchRenderer::draw() {
 	flush();
 }
 
-void BatchRenderer::setTexture( const Texture * Tex ) {
-	if ( mTexture != Tex )
+void BatchRenderer::setTexture(const Texture * texture , Texture::CoordinateType coordinateType ) {
+	if ( mTexture != texture || mCoordinateType != coordinateType )
 		flush();
 
-	mTexture = Tex;
+	mTexture = texture;
+	mCoordinateType = coordinateType;
 }
 
 void BatchRenderer::setBlendMode( const BlendMode& Blend ) {
@@ -131,7 +131,7 @@ void BatchRenderer::flush() {
 	Uint32 alloc	= sizeof(eeVertex) * NumVertex;
 
 	if ( NULL != mTexture ) {
-		mTF->bind( mTexture );
+		const_cast<Texture*>( mTexture )->bind( mCoordinateType );
 		GLi->texCoordPointer( 2, GL_FP			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(Vector2f)						, alloc		);
 	} else {
 		GLi->disable( GL_TEXTURE_2D );
