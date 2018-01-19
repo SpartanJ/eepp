@@ -47,3 +47,4 @@ bin/libeepp-debug.dylib
 bin/libeepp.dylib
 *.iml
 .idea
+eepp.kdev4

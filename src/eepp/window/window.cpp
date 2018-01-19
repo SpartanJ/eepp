@@ -421,8 +421,7 @@ void Window::logSuccessfulInit(const std::string& BackendName ) {
 							 "\n\tGL Renderer: " + GLi->getRenderer() +
 							 "\n\tGL Version: " + GLi->getVersion() +
 							 "\n\tGL Shading Language Version: " + GLi->getShadingLanguageVersion() +
-							 "\n\tResolution: " + String::toStr( getWidth() ) + "x" + String::toStr( getHeight() ) +
-							 "\n\tGL extensions supported:\n\t\t" + GLi->getExtensions()
+							 "\n\tResolution: " + String::toStr( getWidth() ) + "x" + String::toStr( getHeight() )
 	);
 
 	#ifndef EE_SILENT

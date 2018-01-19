@@ -240,15 +240,15 @@ class EE_API BatchRenderer {
 		const bool& getForceBlendModeChange() const;
 	protected:
 		eeVertex *			mVertex;
-		unsigned int				mVertexSize;
+		unsigned int		mVertexSize;
 		eeVertex *			mTVertex;
-		unsigned int				mNumVertex;
+		unsigned int		mNumVertex;
 
-		const Texture *	mTexture;
-		BlendMode		mBlend;
+		const Texture *		mTexture;
+		BlendMode			mBlend;
 
 		eeTexCoord			mTexCoord[4];
-		Color			mVerColor[4];
+		Color				mVerColor[4];
 
 		PrimitiveType		mCurrentMode;
 

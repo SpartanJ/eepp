@@ -88,8 +88,13 @@ void BatchRenderer::setBlendMode( const BlendMode& Blend ) {
 void BatchRenderer::addVertexs( const unsigned int& num ) {
 	mNumVertex += num;
 
-	if ( ( mNumVertex + num ) >= mVertexSize )
-		flush();
+	if ( ( mNumVertex + num ) >= mVertexSize ) {
+		eeVertex * newVertex = eeNewArray( eeVertex, mVertexSize * 2 );
+		memcpy( &mVertex[0], &newVertex[0], mVertexSize * sizeof(eeVertex) );
+		eeSAFE_DELETE_ARRAY( mVertex );
+		mVertex = newVertex;
+		mVertexSize = mVertexSize * 2;
+	}
 }
 
 void BatchRenderer::setDrawMode( const PrimitiveType& Mode, const bool& Force ) {
