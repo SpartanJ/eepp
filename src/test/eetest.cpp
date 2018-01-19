@@ -371,7 +371,7 @@ void EETest::createUI() {
 	Uint32 UI_MAN_OPS = 0;
 	if ( mDebugUI )
 		UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_INVALIDATION;
-	UIManager::instance()->init(UI_MAN_OPS | UI_MANAGER_USE_DRAW_INVALIDATION /*| UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER*/);
+	UIManager::instance()->init(UI_MAN_OPS | UI_MANAGER_USE_DRAW_INVALIDATION | UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER);
 	UIManager::instance()->setTranslator( mTranslator );
 
 	//mTheme = UITheme::loadFromDirectory( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
@@ -390,7 +390,7 @@ void EETest::createUI() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW /*| UI_WIN_FRAME_BUFFER*/;
+	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizei( 530, 405 );
 	windowStyleConfig.BaseAlpha = 200;
 	tWin->setStyleConfig( windowStyleConfig );
