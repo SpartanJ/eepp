@@ -108,7 +108,7 @@ bool Zip::addFile( std::vector<Uint8>& data, const std::string& inpack ) {
 }
 
 bool Zip::addFiles( std::map<std::string, std::string> paths ) {
-	for( std::map<std::string, std::string>::iterator itr = paths.begin(); itr != paths.end(); itr++)
+	for( std::map<std::string, std::string>::iterator itr = paths.begin(); itr != paths.end(); ++itr )
 		if ( !addFile( itr->first, itr->second ) )
 			return false;
 	return true;

@@ -1102,7 +1102,7 @@ void TileMap::saveToStream( IOStream& IOS ) {
 		IOS.write( (const char*)&MapHdr, sizeof(sMapHdr) );
 
 		//! Writes the properties of the map
-		for ( TileMap::PropertiesMap::iterator it = mProperties.begin(); it != mProperties.end(); it++ ) {
+		for ( TileMap::PropertiesMap::iterator it = mProperties.begin(); it != mProperties.end(); ++it ) {
 			sPropertyHdr tProp;
 
 			memset( tProp.Name, 0, MAP_PROPERTY_SIZE );
@@ -1126,7 +1126,7 @@ void TileMap::saveToStream( IOStream& IOS ) {
 		}
 
 		//! Writes the names of the virtual object types created in the map editor
-		for ( GOTypesList::iterator votit = mObjTypes.begin(); votit != mObjTypes.end(); votit++ ) {
+		for ( GOTypesList::iterator votit = mObjTypes.begin(); votit != mObjTypes.end(); ++votit ) {
 			sVirtualObj tVObjH;
 
 			memset( tVObjH.Name, 0, MAP_PROPERTY_SIZE );
@@ -1163,7 +1163,7 @@ void TileMap::saveToStream( IOStream& IOS ) {
 			IOS.write( (const char*)&tLayerH, sizeof(sLayerHdr) );
 
 			//! Writes the properties of the current layer
-			for ( MapLayer::PropertiesMap::iterator lit = tLayerProp.begin(); lit != tLayerProp.end(); lit++ ) {
+			for ( MapLayer::PropertiesMap::iterator lit = tLayerProp.begin(); lit != tLayerProp.end(); ++lit ) {
 				sPropertyHdr tProp;
 
 				memset( tProp.Name, 0, MAP_PROPERTY_SIZE );
@@ -1263,7 +1263,7 @@ void TileMap::saveToStream( IOStream& IOS ) {
 
 				MapObjectLayer::ObjList ObjList = tOLayer->getObjectList();
 
-				for ( MapObjectLayer::ObjList::iterator MapObjIt = ObjList.begin(); MapObjIt != ObjList.end(); MapObjIt++ ) {
+				for ( MapObjectLayer::ObjList::iterator MapObjIt = ObjList.begin(); MapObjIt != ObjList.end(); ++MapObjIt ) {
 					tObj = (*MapObjIt);
 
 					sMapObjGOHdr tOGOHdr;
@@ -1312,7 +1312,7 @@ void TileMap::saveToStream( IOStream& IOS ) {
 						IOS.write( (const char*)&tObjObjHdr, sizeof(sMapObjObjHdr) );
 
 						//! Writes the properties of the current polygon object
-						for ( GameObjectObject::PropertiesMap::iterator ooit = tObjObjProp.begin(); ooit != tObjObjProp.end(); ooit++ ) {
+						for ( GameObjectObject::PropertiesMap::iterator ooit = tObjObjProp.begin(); ooit != tObjObjProp.end(); ++ooit ) {
 							sPropertyHdr tProp;
 
 							memset( tProp.Name, 0, MAP_PROPERTY_SIZE );
@@ -1340,7 +1340,7 @@ void TileMap::saveToStream( IOStream& IOS ) {
 		if ( MapHdr.LightsCount && NULL != mLightManager ) {
 			MapLightManager::LightsList& Lights = mLightManager->getLights();
 
-			for ( MapLightManager::LightsList::iterator LightsIt = Lights.begin(); LightsIt != Lights.end(); LightsIt++ ) {
+			for ( MapLightManager::LightsList::iterator LightsIt = Lights.begin(); LightsIt != Lights.end(); ++LightsIt ) {
 				MapLight * Light = (*LightsIt);
 
 				sMapLightHdr tLightHdr;
@@ -1377,7 +1377,7 @@ std::vector<std::string> TileMap::getTextureAtlases() {
 	Uint32 Restricted1 = String::hash( std::string( "global" ) );
 	Uint32 Restricted2 = String::hash( UI::UIThemeManager::instance()->getDefaultTheme()->getTextureAtlas()->getName() );
 
-	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
+	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); ++it ) {
 		if ( (*it)->getId() != Restricted1 && (*it)->getId() != Restricted2 )
 			items.push_back( (*it)->getPath() );
 	}

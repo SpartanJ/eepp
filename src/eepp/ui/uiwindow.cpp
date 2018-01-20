@@ -1222,7 +1222,7 @@ bool UIWindow::ownsFrameBuffer() {
 }
 
 void UIWindow::checkShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {
-	for ( KeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end(); it++ ) {
+	for ( KeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end(); ++it ) {
 		KeyboardShortcut kb = (*it);
 
 		if ( KeyCode == kb.KeyCode && ( Mod & kb.Mod ) ) {
@@ -1233,7 +1233,7 @@ void UIWindow::checkShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {
 }
 
 UIWindow::KeyboardShortcuts::iterator UIWindow::existsShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
-	for ( KeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end(); it++ ) {
+	for ( KeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end(); ++it ) {
 		if ( (*it).KeyCode == KeyCode && (*it).Mod == Mod )
 			return it;
 	}

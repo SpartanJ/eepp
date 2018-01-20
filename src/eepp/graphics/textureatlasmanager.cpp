@@ -57,7 +57,7 @@ TextureRegion * TextureAtlasManager::getTextureRegionById( const Uint32& Id ) {
 	TextureAtlas * tSG = NULL;
 	TextureRegion * tTextureRegion = NULL;
 
-	for ( it = mResources.begin(); it != mResources.end(); it++ ) {
+	for ( it = mResources.begin(); it != mResources.end(); ++it ) {
 		tSG = (*it);
 
 		tTextureRegion = tSG->getById( Id );
@@ -72,7 +72,7 @@ TextureRegion * TextureAtlasManager::getTextureRegionById( const Uint32& Id ) {
 void TextureAtlasManager::printResources() {
 	std::list<TextureAtlas*>::iterator it;
 
-	for ( it = mResources.begin(); it != mResources.end(); it++ )
+	for ( it = mResources.begin(); it != mResources.end(); ++it )
 		(*it)->printNames();
 }
 

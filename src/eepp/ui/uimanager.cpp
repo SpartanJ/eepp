@@ -140,7 +140,7 @@ void UIManager::resizeControl( EE::Window::Window * win ) {
 
 	std::list<UIWindow*>::iterator it;
 
-	for ( it = mWindowsList.begin(); it != mWindowsList.end(); it++ ) {
+	for ( it = mWindowsList.begin(); it != mWindowsList.end(); ++it ) {
 		sendMsg( *it, UIMessage::WindowResize );
 	}
 }
@@ -492,7 +492,7 @@ void UIManager::addToCloseQueue( UINode * Ctrl ) {
 	std::list<UINode*>::iterator it;
 	UINode * itCtrl = NULL;
 
-	for ( it = mCloseList.begin(); it != mCloseList.end(); it++ ) {
+	for ( it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 		itCtrl = *it;
 
 		if ( NULL != itCtrl && itCtrl->isParentOf( Ctrl ) ) {
@@ -505,7 +505,7 @@ void UIManager::addToCloseQueue( UINode * Ctrl ) {
 
 	std::list< std::list<UINode*>::iterator > itEraseList;
 
-	for ( it = mCloseList.begin(); it != mCloseList.end(); it++ ) {
+	for ( it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 		itCtrl = *it;
 
 		if ( NULL != itCtrl && Ctrl->isParentOf( itCtrl ) ) {
@@ -522,7 +522,7 @@ void UIManager::addToCloseQueue( UINode * Ctrl ) {
 	// because of the new added control to the queue
 	std::list< std::list<UINode*>::iterator >::iterator ite;
 
-	for ( ite = itEraseList.begin(); ite != itEraseList.end(); ite++ ) {
+	for ( ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
 		mCloseList.erase( *ite );
 	}
 
@@ -531,7 +531,7 @@ void UIManager::addToCloseQueue( UINode * Ctrl ) {
 
 void UIManager::checkClose() {
 	if ( !mCloseList.empty() ) {
-		for ( std::list<UINode*>::iterator it = mCloseList.begin(); it != mCloseList.end(); it++ ) {
+		for ( std::list<UINode*>::iterator it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 			eeDelete( *it );
 		}
 

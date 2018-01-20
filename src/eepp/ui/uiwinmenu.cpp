@@ -67,7 +67,7 @@ void UIWinMenu::setTheme( UITheme * Theme ) {
 
 	setThemeSkin( Theme, "winmenu" );
 
-	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
+	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		it->first->setThemeSkin( Theme, "winmenubutton" );
 	}
 
@@ -81,7 +81,7 @@ void UIWinMenu::setTheme( UITheme * Theme ) {
 }
 
 void UIWinMenu::removeMenuButton( const String& ButtonText ) {
-	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
+	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		if ( it->first->getText() == ButtonText ) {
 			it->second->close();
 
@@ -93,7 +93,7 @@ void UIWinMenu::removeMenuButton( const String& ButtonText ) {
 }
 
 UISelectButton * UIWinMenu::getButton( const String& ButtonText ) {
-	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
+	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		if ( it->first->getText() == ButtonText ) {
 			return it->first;
 		}
@@ -103,7 +103,7 @@ UISelectButton * UIWinMenu::getButton( const String& ButtonText ) {
 }
 
 UIPopUpMenu * UIWinMenu::getPopUpMenu( const String& ButtonText ) {
-	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
+	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		if ( it->first->getText() == ButtonText ) {
 			return it->second;
 		}
@@ -162,7 +162,7 @@ void UIWinMenu::refreshButtons() {
 		}
 	}
 
-	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
+	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		UISelectButton * pbut	= it->first;
 		UITextView * tbox		= pbut->getTextBox();
 
@@ -209,7 +209,7 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 		}
 		case UIMessage::Selected:
 		{
-			for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
+			for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 				if ( it->first != Msg->getSender() ) {
 					it->first->unselect();
 				}
@@ -241,13 +241,13 @@ void UIWinMenu::onParentChange() {
 }
 
 void UIWinMenu::unselectButtons() {
-	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
+	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		it->first->unselect();
 	}
 }
 
 UIPopUpMenu * UIWinMenu::getMenuFromButton( UISelectButton * Button ) {
-	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
+	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		if ( it->first == Button ) {
 			return it->second;
 		}
@@ -257,7 +257,7 @@ UIPopUpMenu * UIWinMenu::getMenuFromButton( UISelectButton * Button ) {
 }
 
 bool UIWinMenu::isPopUpMenuChild( UINode * Ctrl ) {
-	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
+	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		if ( it->second == Ctrl || it->second->isParentOf( Ctrl ) ) {
 			return true;
 		}
@@ -288,7 +288,7 @@ void UIWinMenu::onWidgetFocusLoss() {
 
 void UIWinMenu::destroyMenues() {
 	if ( !UIManager::instance()->isShootingDown() ) {
-		for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
+		for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 			it->second->close();
 		}
 	}

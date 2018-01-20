@@ -55,7 +55,7 @@ void TexturePacker::close() {
 
 	std::list<TexturePackerTex*>::iterator it;
 
-	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 		eeSAFE_DELETE( (*it) );
 	}
 
@@ -69,7 +69,7 @@ void TexturePacker::reset() {
 	TexturePackerTex * t = NULL;
 	std::list<TexturePackerTex*>::iterator it;
 
-	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 		t = (*it);
 		t->placed( false );
 	}
@@ -97,7 +97,7 @@ Uint32 TexturePacker::getAtlasNumChannels() {
 	TexturePackerTex * t = NULL;
 	std::list<TexturePackerTex*>::iterator it;
 
-	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 		t = (*it);
 
 		if ( t->placed() ) {
@@ -186,7 +186,7 @@ TexturePackerTex * TexturePacker::getLonguestEdge() {
 	TexturePackerTex * t = NULL;
 	std::list<TexturePackerTex*>::iterator it;
 
-	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 		if ( !(*it)->placed() ) {
 			t = (*it);
 			break;
@@ -200,7 +200,7 @@ TexturePackerTex * TexturePacker::getShortestEdge() {
 	TexturePackerTex * t = NULL;
 	std::list<TexturePackerTex*>::reverse_iterator it;
 
-	for ( it = mTextures.rbegin(); it != mTextures.rend(); it++ ) {
+	for ( it = mTextures.rbegin(); it != mTextures.rend(); ++it ) {
 		if ( !(*it)->placed() ) {
 			t = (*it);
 			break;
@@ -216,7 +216,7 @@ void TexturePacker::addBorderToTextures( const Int32& BorderSize ) {
 	if ( 0 != BorderSize ) {
 		std::list<TexturePackerTex*>::iterator it;
 
-		for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+		for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 			t = (*it);
 
 			t->width	( t->width() 	+ BorderSize );
@@ -377,7 +377,7 @@ void TexturePacker::createChild() {
 
 	TexturePackerTex * t = NULL;
 
-	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 		t = (*it);
 
 		if ( !t->placed() ) {
@@ -395,7 +395,7 @@ void TexturePacker::createChild() {
 	// Removes the non-placed textures from the pack
 	std::list< std::list<TexturePackerTex*>::iterator >::iterator itit;
 
-	for ( itit = remove.begin(); itit != remove.end(); itit++ ) {
+	for ( itit = remove.begin(); itit != remove.end(); ++itit ) {
 		mTextures.erase( *itit );
 	}
 
@@ -435,7 +435,7 @@ bool TexturePacker::addPackerTex( TexturePackerTex * TPack ) {
 
 			bool Added = false;
 
-			for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+			for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 				if ( (*it)->area() < TPack->area() ) {
 					mTextures.insert( it, TPack );
 					Added = true;
@@ -479,7 +479,7 @@ Int32 TexturePacker::packTextures() { // pack the textures, the return code is t
 
 	// We must place each texture
 	std::list<TexturePackerTex*>::iterator it;
-	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 		// For the texture with the longest edge we place it according to this criteria.
 		//   (1) If it is a perfect match, we always accept it as it causes the least amount of fragmentation.
 		//   (2) A match of one edge with the minimum area left over after the split.
@@ -547,7 +547,7 @@ Int32 TexturePacker::packTextures() { // pack the textures, the return code is t
 
 	mPacked = true;
 
-	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 		if ( !(*it)->placed() )
 			mTotalArea -= (*it)->area();
 	}
@@ -575,7 +575,7 @@ void TexturePacker::save( const std::string& Filepath, const Image::SaveType& Fo
 	int w, h, c;
 	std::list<TexturePackerTex*>::iterator it;
 
-	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 		t = (*it);
 
 		if ( t->placed() ) {
@@ -722,7 +722,7 @@ void TexturePacker::createTextureRegionsHdr( TexturePacker * Packer, std::vector
 
 	TextureRegions.resize( tTextures.size() );
 
-	for ( it = tTextures.begin(); it != tTextures.end(); it++ ) {
+	for ( it = tTextures.begin(); it != tTextures.end(); ++it ) {
 		tTex = (*it);
 
 		if ( tTex->placed() ) {

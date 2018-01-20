@@ -123,7 +123,7 @@ void MapLayerProperties::saveProperties() {
 void MapLayerProperties::loadProperties() {
 	MapLayer::PropertiesMap& Proper = mLayer->getProperties();
 
-	for ( MapLayer::PropertiesMap::iterator it = Proper.begin(); it != Proper.end(); it++ ) {
+	for ( MapLayer::PropertiesMap::iterator it = Proper.begin(); it != Proper.end(); ++it ) {
 		UITableCell * Cell = createCell();
 
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->getCell( 1 ) );

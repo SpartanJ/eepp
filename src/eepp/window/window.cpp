@@ -400,7 +400,7 @@ void Window::popResizeCallback( const Uint32& CallbackId ) {
 }
 
 void Window::sendVideoResizeCb() {
-	for ( std::map<Uint32, WindowResizeCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end(); i++ ) {
+	for ( std::map<Uint32, WindowResizeCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end(); ++i ) {
 		i->second( this );
 	}
 }

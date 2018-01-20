@@ -105,7 +105,7 @@ Engine::~Engine() {
 void Engine::destroy() {
 	std::list<Window*>::iterator it;
 
-	for ( it = mWindows.begin(); it != mWindows.end(); it++ ) {
+	for ( it = mWindows.begin(); it != mWindows.end(); ++it ) {
 		eeSAFE_DELETE( *it );
 	}
 
@@ -207,7 +207,7 @@ void Engine::destroyWindow( EE::Window::Window * window ) {
 bool Engine::existsWindow( EE::Window::Window * window ) {
 	std::list<Window*>::iterator it;
 
-	for ( it = mWindows.begin(); it != mWindows.end(); it++ ) {
+	for ( it = mWindows.begin(); it != mWindows.end(); ++it ) {
 		if ( (*it) == window )
 			return true;
 	}

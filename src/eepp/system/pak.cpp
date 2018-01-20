@@ -283,7 +283,7 @@ bool Pak::addFile( const std::string& path, const std::string& inpack ) {
 }
 
 bool Pak::addFiles( std::map<std::string, std::string> paths ) {
-	for( std::map<std::string, std::string>::iterator itr = paths.begin(); itr != paths.end(); itr++)
+	for( std::map<std::string, std::string>::iterator itr = paths.begin(); itr != paths.end(); ++itr )
 		if ( !addFile( itr->first, itr->second ) )
 			return false;
 	return true;

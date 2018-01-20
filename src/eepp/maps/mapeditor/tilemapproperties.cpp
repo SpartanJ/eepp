@@ -190,7 +190,7 @@ void TileMapProperties::saveProperties() {
 void TileMapProperties::loadProperties() {
 	TileMap::PropertiesMap& Proper = mMap->getProperties();
 
-	for ( TileMap::PropertiesMap::iterator it = Proper.begin(); it != Proper.end(); it++ ) {
+	for ( TileMap::PropertiesMap::iterator it = Proper.begin(); it != Proper.end(); ++it ) {
 		UITableCell * Cell = createCell();
 
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->getCell( 1 ) );

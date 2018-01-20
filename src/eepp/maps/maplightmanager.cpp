@@ -46,7 +46,7 @@ void MapLightManager::updateByVertex() {
 	if ( !mLights.size() )
 		return;
 
-	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
+	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); ++it ) {
 		MapLight * Light = (*it);
 
 		if ( firstLight || VisibleArea.intersect( Light->getAABB() ) ) {
@@ -99,7 +99,7 @@ void MapLightManager::updateByTile() {
 	if ( !mLights.size() )
 		return;
 
-	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
+	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); ++it ) {
 		MapLight * Light = (*it);
 
 		if (  firstLight || VisibleArea.intersect( Light->getAABB() ) ) {
@@ -133,7 +133,7 @@ Color MapLightManager::getColorFromPos( const Vector2f& Pos ) {
 	if ( !mLights.size() )
 		return Col;
 
-	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
+	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); ++it ) {
 		MapLight * Light = (*it);
 
 		if ( Light->getAABB().contains( Pos ) ) {
@@ -156,7 +156,7 @@ void MapLightManager::removeLight( MapLight * Light ) {
 }
 
 void MapLightManager::removeLight( const Vector2f& OverPos ) {
-	for ( LightsList::reverse_iterator it = mLights.rbegin(); it != mLights.rend(); it++ ) {
+	for ( LightsList::reverse_iterator it = mLights.rbegin(); it != mLights.rend(); ++it ) {
 		MapLight * Light = (*it);
 
 		if ( Light->getAABB().contains( OverPos ) ) {
@@ -221,7 +221,7 @@ void MapLightManager::deallocateColors() {
 }
 
 void MapLightManager::destroyLights() {
-	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
+	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); ++it ) {
 		MapLight * Light = (*it);
 		eeSAFE_DELETE( Light );
 	}
@@ -240,7 +240,7 @@ MapLight * MapLightManager::getLightOver( const Vector2f& OverPos, MapLight * Li
 	MapLight * LastLight	= NULL;
 	MapLight * FirstLight = NULL;
 
-	for ( LightsList::reverse_iterator it = mLights.rbegin(); it != mLights.rend(); it++ ) {
+	for ( LightsList::reverse_iterator it = mLights.rbegin(); it != mLights.rend(); ++it ) {
 		MapLight * Light = (*it);
 
 		if ( Light->getAABB().contains( OverPos ) ) {

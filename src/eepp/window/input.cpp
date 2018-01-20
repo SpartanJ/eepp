@@ -33,7 +33,7 @@ void Input::cleanStates() {
 }
 
 void Input::sendEvent( InputEvent * Event ) {
-	for ( std::map<Uint32, InputCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end(); i++ ) {
+	for ( std::map<Uint32, InputCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end(); ++i ) {
 		i->second( Event );
 	}
 }

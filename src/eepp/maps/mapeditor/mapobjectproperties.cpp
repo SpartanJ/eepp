@@ -129,7 +129,7 @@ void MapObjectProperties::saveProperties() {
 void MapObjectProperties::loadProperties() {
 	GameObjectObject::PropertiesMap& Proper = mObj->getProperties();
 
-	for ( GameObjectObject::PropertiesMap::iterator it = Proper.begin(); it != Proper.end(); it++ ) {
+	for ( GameObjectObject::PropertiesMap::iterator it = Proper.begin(); it != Proper.end(); ++it ) {
 		UITableCell * Cell = createCell();
 
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->getCell( 1 ) );

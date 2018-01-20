@@ -468,7 +468,7 @@ void MapEditor::onObjectModeSel( const UIEvent * Event ) {
 	UISelectButton * Button = static_cast<UISelectButton*>( Event->getControl() );
 	UISelectButton * ButtonT = NULL;
 
-	for ( std::list<UISelectButton*>::iterator it = mObjContButton.begin(); it != mObjContButton.end(); it++ ) {
+	for ( std::list<UISelectButton*>::iterator it = mObjContButton.begin(); it != mObjContButton.end(); ++it ) {
 		ButtonT = *it;
 
 		ButtonT->unselect();
@@ -766,7 +766,7 @@ void MapEditor::fillSGCombo() {
 	Uint32 Restricted1 = String::hash( std::string( "global" ) );
 	Uint32 Restricted2 = String::hash( mTheme->getTextureAtlas()->getName() );
 
-	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
+	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); ++it ) {
 		if ( (*it)->getId() != Restricted1 && (*it)->getId() != Restricted2 )
 			items.push_back( (*it)->getName() );
 	}
@@ -790,7 +790,7 @@ void MapEditor::fillTextureRegionList() {
 	if ( NULL != mCurSG ) {
 		std::vector<String> items;
 
-		for ( std::list<TextureRegion*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
+		for ( std::list<TextureRegion*>::iterator it = Res.begin(); it != Res.end(); ++it ) {
 				items.push_back( (*it)->getName() );
 		}
 
@@ -1144,7 +1144,7 @@ void MapEditor::removeLayer() {
 void MapEditor::refreshGotyList() {
 	TileMap::GOTypesList& GOList = mUIMap->Map()->getVirtualObjectTypes();
 
-	for ( TileMap::GOTypesList::iterator it = GOList.begin(); it != GOList.end(); it++ ) {
+	for ( TileMap::GOTypesList::iterator it = GOList.begin(); it != GOList.end(); ++it ) {
 		mGOTypeList->getListBox()->addListBoxItem( (*it) );
 	}
 }

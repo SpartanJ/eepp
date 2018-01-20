@@ -65,7 +65,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 	std::string sAbbr( tTheme->getAbbr() + "_" );
 	std::map<std::string, bool> elemFound;
 
-	for ( it = resources.begin(); it != resources.end(); it++ ) {
+	for ( it = resources.begin(); it != resources.end(); ++it ) {
 		TextureRegion* TextureRegion = *it;
 
 		std::string name( TextureRegion->getName() );
@@ -116,7 +116,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 		}
 	}
 
-	for ( std::map<std::string, bool>::iterator it = elemFound.begin(); it != elemFound.end(); it++ ) {
+	for ( std::map<std::string, bool>::iterator it = elemFound.begin(); it != elemFound.end(); ++it ) {
 		if ( it->second )
 			tTheme->add( UISkinComplex::New( it->first ) );
 		else
@@ -148,7 +148,7 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 	std::string sAbbrIcon( tTheme->getAbbr() + "_icon_" );
 	std::map<std::string, bool> elemFound;
 
-	for ( it = resources.begin(); it != resources.end(); it++ ) {
+	for ( it = resources.begin(); it != resources.end(); ++it ) {
 		std::string fpath( RPath + (*it) );
 		std::string name( FileSystem::fileRemoveExtension( *it ) );
 
@@ -211,7 +211,7 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 	else
 		eeSAFE_DELETE( tSG );
 
-	for ( std::map<std::string, bool>::iterator it = elemFound.begin(); it != elemFound.end(); it++ ) {
+	for ( std::map<std::string, bool>::iterator it = elemFound.begin(); it != elemFound.end(); ++it ) {
 		if ( it->second )
 			tTheme->add( UISkinComplex::New( it->first ) );
 		else

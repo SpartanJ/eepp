@@ -279,7 +279,7 @@ void TextureAtlasEditor::fillTextureRegionList() {
 
 	std::vector<String> items;
 
-	for ( std::list<TextureRegion*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
+	for ( std::list<TextureRegion*>::iterator it = Res.begin(); it != Res.end(); ++it ) {
 			items.push_back( (*it)->getName() );
 	}
 

@@ -189,7 +189,7 @@ void Log::removeLogReader( LogReaderInterface * reader ) {
 }
 
 void Log::writeToReaders( std::string& text ) {
-	for ( std::list<LogReaderInterface*>::iterator it = mReaders.begin(); it != mReaders.end(); it++ ) {
+	for ( std::list<LogReaderInterface*>::iterator it = mReaders.begin(); it != mReaders.end(); ++it ) {
 		(*it)->writeLog( text );
 	}
 }

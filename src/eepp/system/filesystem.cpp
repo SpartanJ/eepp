@@ -367,10 +367,10 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 
 		std::list<String>::iterator it;
 
-		for ( it = folders.begin(); it != folders.end(); it++ )
+		for ( it = folders.begin(); it != folders.end(); ++it )
 			files.push_back( *it );
 
-		for ( it = file.begin(); it != file.end(); it++ )
+		for ( it = file.begin(); it != file.end(); ++it )
 			files.push_back( *it );
 	}
 
@@ -478,10 +478,10 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path, co
 
 		std::list<String>::iterator it;
 
-		for ( it = folders.begin(); it != folders.end(); it++ )
+		for ( it = folders.begin(); it != folders.end(); ++it )
 			files.push_back( *it );
 
-		for ( it = file.begin(); it != file.end(); it++ )
+		for ( it = file.begin(); it != file.end(); ++it )
 			files.push_back( *it );
 	}
 
