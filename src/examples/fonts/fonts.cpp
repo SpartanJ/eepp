@@ -1,13 +1,13 @@
 #include <eepp/ee.hpp>
-#include <eepp/graphics/fonttruetype.hpp>
-#include <eepp/graphics/text.hpp>
 
 EE::Window::Window * win			= NULL;
 FontTrueType * fontTest;
 FontTrueType * fontTest2;
+FontBMFont * fontBMFont;
 Text text;
 Text text2;
 Text text3;
+Text text4;
 
 void mainLoop() {
 	// Clear the screen buffer
@@ -31,13 +31,15 @@ void mainLoop() {
 
 	text3.draw( ( win->getWidth() - text3.getTextWidth() ) * 0.5f, 560 );
 
+	text4.draw( ( win->getWidth() - text4.getTextWidth() ) * 0.5f, 590 );
+
 	// Draw frame
 	win->display();
 }
 
 EE_MAIN_FUNC int main (int argc, char * argv []) {
 	// Create a new window
-	win = Engine::instance()->createWindow( WindowSettings( 960, 640, "eepp - Fonts" ), ContextSettings( true ) );
+	win = Engine::instance()->createWindow( WindowSettings( 1024, 768, "eepp - Fonts" ), ContextSettings( true ) );
 
 	// Set window background color
 	win->setClearColor( RGB(230,230,230) );
@@ -81,6 +83,14 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		text3.setCharacterSize( 24 );
 		text3.setFillColor( Color(255,255,255,255) );
 		text3.setOutlineColor( Color(0,0,0,255) );
+
+		fontBMFont = FontBMFont::New( "bmfont" );
+		fontBMFont->loadFromFile( "assets/fonts/bmfont.fnt" );
+
+		text4.setFont( fontBMFont );
+		text4.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
+		text4.setCharacterSize( 45 );
+		text4.setFillColor( Color::Black );
 
 		// Application loop
 		win->runMainLoop( &mainLoop );

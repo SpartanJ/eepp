@@ -8,6 +8,7 @@
 ../../include/eepp/graphics/font.hpp
 ../../include/eepp/graphics/fontstyleconfig.hpp
 ../../include/eepp/graphics/fonttruetype.hpp
+../../include/eepp/graphics/fontbmfont.hpp
 ../../include/eepp/graphics/fonttruetypeloader.hpp
 ../../include/eepp/graphics/ninepatch.hpp
 ../../include/eepp/graphics/ninepatchmanager.hpp
@@ -94,6 +95,7 @@
 ../../src/eepp/graphics/drawablesearcher.cpp
 ../../src/eepp/graphics/fonttruetype.cpp
 ../../src/eepp/graphics/fonttruetypeloader.cpp
+../../src/eepp/graphics/fontbmfont.cpp
 ../../src/eepp/graphics/globalbatchrenderer.cpp
 ../../src/eepp/graphics/pixeldensity.cpp
 ../../src/eepp/graphics/pixelperfect.cpp
@@ -268,8 +270,6 @@
 ../../include/eepp/graphics/vertexbufferogl.hpp
 ../../src/eepp/graphics/vertexbuffermanager.hpp
 ../../include/eepp/graphics/vertexbuffer.hpp
-../../include/eepp/graphics/ttffontloader.hpp
-../../include/eepp/graphics/ttffont.hpp
 ../../src/eepp/graphics/texturepackertex.hpp
 ../../src/eepp/graphics/texturepackernode.hpp
 ../../include/eepp/graphics/texturepacker.hpp
@@ -580,8 +580,6 @@
 ../../src/eepp/graphics/vertexbufferogl.cpp
 ../../src/eepp/graphics/vertexbuffermanager.cpp
 ../../src/eepp/graphics/vertexbuffer.cpp
-../../src/eepp/graphics/ttffontloader.cpp
-../../src/eepp/graphics/ttffont.cpp
 ../../src/eepp/graphics/texturepackertex.cpp
 ../../src/eepp/graphics/texturepackernode.cpp
 ../../src/eepp/graphics/texturepacker.cpp

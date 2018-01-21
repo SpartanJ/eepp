@@ -5,7 +5,7 @@ namespace EE { namespace Graphics {
 
 enum EE_FONT_TYPE {
 	FONT_TYPE_TTF = 1,
-	FONT_TYPE_TEX = 2
+	FONT_TYPE_BMF = 2
 };
 
 enum EE_FONT_HALIGN {

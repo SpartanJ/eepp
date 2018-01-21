@@ -111,18 +111,17 @@ Uint32 TextureFactory::findFreeSlot() {
 
 void TextureFactory::bind( const Texture* texture, Texture::CoordinateType coordinateType, const Uint32& TextureUnit ) {
 	if( NULL != texture ) {
-		if ( mCurrentTexture[ TextureUnit ] == (Int32)texture->getHandle() )
-			return;
+		if ( mCurrentTexture[ TextureUnit ] != (Int32)texture->getHandle() ) {
+			if ( TextureUnit && GLi->isExtension( EEGL_ARB_multitexture ) )
+				setActiveTextureUnit( TextureUnit );
 
-		if ( TextureUnit && GLi->isExtension( EEGL_ARB_multitexture ) )
-			setActiveTextureUnit( TextureUnit );
+			GLi->bindTexture( GL_TEXTURE_2D, texture->getHandle() );
 
-		GLi->bindTexture( GL_TEXTURE_2D, texture->getHandle() );
+			mCurrentTexture[ TextureUnit ] = texture->getHandle();
 
-		mCurrentTexture[ TextureUnit ] = texture->getHandle();
-
-		if ( TextureUnit && GLi->isExtension( EEGL_ARB_multitexture ) )
-			setActiveTextureUnit( 0 );
+			if ( TextureUnit && GLi->isExtension( EEGL_ARB_multitexture ) )
+				setActiveTextureUnit( 0 );
+		}
 
 		if ( coordinateType == Texture::CoordinateType::Pixels ) {
 			GLfloat matrix[16] = {1.f, 0.f, 0.f, 0.f,
@@ -141,6 +140,8 @@ void TextureFactory::bind( const Texture* texture, Texture::CoordinateType coord
 
 			return;
 		}
+	} else {
+		mCurrentTexture[ TextureUnit ] = 0;
 	}
 
 	if ( Texture::CoordinateType::Normalized != mLastCoordinateType ) {
