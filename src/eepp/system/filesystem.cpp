@@ -2,7 +2,6 @@
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/sys.hpp>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <climits>
 #include <list>
 #include <algorithm>
@@ -15,6 +14,8 @@
 		#define NOMINMAX
 	#endif
 	#include <windows.h>
+#else
+	#include <unistd.h>
 #endif
 
 #ifndef EE_COMPILER_MSVC
@@ -529,9 +530,9 @@ bool FileSystem::changeWorkingDirectory( const std::string & path ) {
 	int res = -1;
 #ifdef EE_COMPILER_MSVC
 	#ifdef UNICODE
-	res = _wchdir( String::fromUtf8( path.c_str() ).toWideString() );
+	res = _wchdir( String::fromUtf8( path.c_str() ).toWideString().c_str() );
 	#else
-	res = _chdir( String::fromUtf8( path.c_str() ).toAnsiString() );
+	res = _chdir( String::fromUtf8( path.c_str() ).toAnsiString().c_str() );
 	#endif
 #else
 	res = chdir( path.c_str() );
