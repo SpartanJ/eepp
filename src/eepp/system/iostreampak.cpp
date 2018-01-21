@@ -37,7 +37,7 @@ ios_size IOStreamPak::read( char * data, ios_size size ) {
 }
 
 ios_size IOStreamPak::write( const char * data, ios_size size)  {
-	if ( isOpen() && mPos + size < mEntry.file_length ) {
+	if ( isOpen() && static_cast<Uint32>( mPos ) + size < mEntry.file_length ) {
 		mFile->write( data, size );
 	}
 
