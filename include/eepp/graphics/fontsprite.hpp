@@ -1,5 +1,5 @@
-#ifndef EE_GRAPHICS_FONTBMFONT_HPP
-#define EE_GRAPHICS_FONTBMFONT_HPP
+#ifndef EE_GRAPHICS_FONTSPRITE_HPP
+#define EE_GRAPHICS_FONTSPRITE_HPP
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/texture.hpp>
@@ -12,20 +12,20 @@ class IOStream;
 
 namespace EE { namespace Graphics {
 
-/** @brief Implementation of AngelCode BMFont fonts. */
-class EE_API FontBMFont : public Font {
+/** @brief Implementation of XNA Font Sprites */
+class EE_API FontSprite : public Font {
 	public:
-		static FontBMFont * New( const std::string FontName ) ;
+		static FontSprite * New( const std::string FontName ) ;
 
-		~FontBMFont();
+		~FontSprite();
 
-		bool loadFromFile(const std::string& filename);
+		bool loadFromFile(const std::string& filename, Color key = Color::Magenta, Uint32 firstChar = 32, int spacing = 0);
 
-		bool loadFromMemory(const void* data, std::size_t sizeInBytes, const std::string & imageFileBasePath);
+		bool loadFromMemory(const void* data, std::size_t sizeInBytes, Color key = Color::Magenta, Uint32 firstChar = 32, int spacing = 0);
 
-		bool loadFromStream( IOStream& stream );
+		bool loadFromStream( IOStream& stream, Color key = Color::Magenta, Uint32 firstChar = 32, int spacing = 0 );
 
-		bool loadFromPack( Pack * pack, std::string filePackPath );
+		bool loadFromPack( Pack * pack, std::string filePackPath, Color key = Color::Magenta, Uint32 firstChar = 32, int spacing = 0 );
 
 		const Font::Info& getInfo() const;
 
@@ -43,9 +43,9 @@ class EE_API FontBMFont : public Font {
 
 		Texture * getTexture(unsigned int characterSize) const;
 
-		FontBMFont& operator =(const FontBMFont& right);
+		FontSprite& operator =(const FontSprite& right);
 	protected:
-		FontBMFont(const std::string FontName);
+		FontSprite(const std::string FontName);
 
 		typedef std::map<Uint64, Glyph> GlyphTable; ///< Table mapping a codepoint to its glyph
 

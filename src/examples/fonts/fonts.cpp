@@ -4,10 +4,12 @@ EE::Window::Window * win			= NULL;
 FontTrueType * fontTest;
 FontTrueType * fontTest2;
 FontBMFont * fontBMFont;
+FontSprite * fontSprite;
 Text text;
 Text text2;
 Text text3;
 Text text4;
+Text text5;
 
 void mainLoop() {
 	// Clear the screen buffer
@@ -32,6 +34,8 @@ void mainLoop() {
 	text3.draw( ( win->getWidth() - text3.getTextWidth() ) * 0.5f, 560 );
 
 	text4.draw( ( win->getWidth() - text4.getTextWidth() ) * 0.5f, 590 );
+
+	text5.draw( ( win->getWidth() - text5.getTextWidth() ) * 0.5f, 640 );
 
 	// Draw frame
 	win->display();
@@ -91,6 +95,14 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		text4.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
 		text4.setCharacterSize( 45 );
 		text4.setFillColor( Color::Black );
+
+		fontSprite = FontSprite::New( "alagard" ); // Alagard - Hewett Tsoi ( https://www.dafont.com/alagard.font )
+		fontSprite->loadFromFile( "assets/fonts/custom_alagard.png", Color::Magenta, 32, -4 );
+
+		text5.setFont( fontSprite );
+		text5.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
+		text5.setCharacterSize( 38 );
+		//text5.setFillColor( Color::Black );
 
 		// Application loop
 		win->runMainLoop( &mainLoop );

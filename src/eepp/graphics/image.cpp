@@ -357,6 +357,42 @@ Image::Image( Pack * Pack, std::string FilePackPath, const unsigned int& forceCh
 	loadFromPack( Pack, FilePackPath );
 }
 
+Image::Image( IOStream & stream, const unsigned int& forceChannels ) :
+	mPixels(NULL),
+	mWidth(0),
+	mHeight(0),
+	mChannels(forceChannels),
+	mSize(0),
+	mAvoidFree(false),
+	mLoadedFromStbi(false)
+{
+	if ( stream.isOpen() ) {
+		SafeDataPointer PData( stream.getSize() );
+
+		stream.read( (char*)PData.Data, PData.DataSize );
+
+		int w, h, c;
+		Uint8 * data = stbi_load_from_memory( PData.Data, PData.DataSize, &w, &h, &c, mChannels );
+
+		if ( NULL != data ) {
+			mPixels		= data;
+			mWidth		= (unsigned int)w;
+			mHeight		= (unsigned int)h;
+
+			if ( STBI_default == mChannels )
+				mChannels	= (unsigned int)c;
+
+			mSize	= mWidth * mHeight * mChannels;
+
+			mLoadedFromStbi = true;
+		} else {
+			eePRINTL( "Failed to load image. Reason: %s", stbi_failure_reason() );
+		}
+	} else {
+		eePRINTL( "Failed to load image from stream." );
+	}
+}
+
 Image::~Image() {
 	if ( !mAvoidFree )
 		clearCache();
@@ -383,7 +419,7 @@ void Image::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 
 			mLoadedFromStbi = true;
 		} else {
-			eePRINTL( "Failed to load image %s. Reason: %s", stbi_failure_reason(), FilePackPath.c_str() );
+			eePRINTL( "Failed to load image %s. Reason: %s", FilePackPath.c_str(), stbi_failure_reason() );
 		}
 	} else {
 		eePRINTL( "Failed to load image %s from pack.", FilePackPath.c_str() );

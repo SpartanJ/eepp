@@ -14,6 +14,7 @@ using namespace EE::System;
 
 namespace EE { namespace System {
 class Pack;
+class IOStream;
 }}
 
 namespace EE { namespace Graphics {
@@ -123,6 +124,12 @@ class EE_API Image {
 		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
 		*/
 		Image( Pack * Pack, std::string FilePackPath, const unsigned int& forceChannels = 0 );
+
+		/** Load an image from stream
+		* @param stream The stream to read the image
+		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
+		*/
+		Image( IOStream& stream, const unsigned int& forceChannels = 0 );
 
 		virtual ~Image();
 

@@ -6,6 +6,7 @@
 ../../include/eepp/graphics/drawableresource.hpp
 ../../include/eepp/graphics/drawablesearcher.hpp
 ../../include/eepp/graphics/font.hpp
+../../include/eepp/graphics/fontsprite.hpp
 ../../include/eepp/graphics/fontstyleconfig.hpp
 ../../include/eepp/graphics/fonttruetype.hpp
 ../../include/eepp/graphics/fontbmfont.hpp
@@ -74,6 +75,7 @@
 ../../src/eepp/graphics/convexshapedrawable.cpp
 ../../src/eepp/graphics/drawablegroup.cpp
 ../../src/eepp/graphics/drawableresource.cpp
+../../src/eepp/graphics/fontsprite.cpp
 ../../src/eepp/graphics/ninepatch.cpp
 ../../src/eepp/graphics/ninepatchmanager.cpp
 ../../src/eepp/graphics/renderer/shaders/base.frag.h

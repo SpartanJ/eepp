@@ -53,9 +53,9 @@ bool FontBMFont::loadFromFile( const std::string& filename ) {
 	return false;
 }
 
-bool FontBMFont::loadFromMemory( const void * data, std::size_t sizeInBytes ) {
+bool FontBMFont::loadFromMemory(const void * data, std::size_t sizeInBytes , const std::string& imageFileBasePath) {
 	cleanup();
-	mFilePath = FileSystem::getCurrentWorkingDirectory();
+	mFilePath = imageFileBasePath.empty() ? FileSystem::getCurrentWorkingDirectory() : imageFileBasePath;
 	IOStreamMemory stream( (const char*)data, sizeInBytes );
 	return loadFromStream( stream );
 }
@@ -70,6 +70,7 @@ bool FontBMFont::loadFromStream( IOStream& stream ) {
 
 	std::vector<std::string> lines = String::split( myfile );
 
+	/** Implementation specification taken from raylib ( LICENSE zlib/libpng ). Copyright (c) Ramon Santamaria (@raysan5) */
 	if ( lines.size() > 4 ) {
 		const char *searchPoint = NULL;
 		int fontSize; int base; int texWidth; int texHeight;

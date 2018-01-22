@@ -26,6 +26,7 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/fontbmfont.hpp>
+#include <eepp/graphics/fontsprite.hpp>
 #include <eepp/graphics/fonttruetypeloader.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
