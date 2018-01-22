@@ -236,7 +236,7 @@ bool FontTrueType::loadFromPack( Pack * pack, std::string filePackPath ) {
 	mMemCopy.clear();
 
 	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, mMemCopy ) ) {
-		Ret = loadFromMemory( mMemCopy.Data, mMemCopy.DataSize );
+		Ret = loadFromMemory( mMemCopy.data, mMemCopy.size );
 	}
 
 	return Ret;

@@ -20,10 +20,10 @@ class EE_API SafeDataPointer {
 		void clear();
 
 		/** Pointer to the buffer */
-		Uint8 * Data;
+		Uint8 * data;
 
 		/** Buffer size */
-		Uint32	DataSize;
+		Uint32	size;
 };
 
 }}

@@ -672,10 +672,10 @@ UIWidget * UIManager::loadLayoutFromStream( IOStream& stream, UINode * parent ) 
 
 	ios_size bufferSize = stream.getSize();
 	SafeDataPointer safeDataPointer( eeNewArray( Uint8, bufferSize ), bufferSize );
-	stream.read( reinterpret_cast<char*>( safeDataPointer.Data ), safeDataPointer.DataSize );
+	stream.read( reinterpret_cast<char*>( safeDataPointer.data ), safeDataPointer.size );
 
 	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_buffer( safeDataPointer.Data, safeDataPointer.DataSize );
+	pugi::xml_parse_result result = doc.load_buffer( safeDataPointer.data, safeDataPointer.size );
 
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : getMainControl() );
@@ -692,7 +692,7 @@ UIWidget * UIManager::loadLayoutFromPack( Pack * pack, const std::string& FilePa
 	SafeDataPointer PData;
 
 	if ( pack->isOpen() && pack->extractFileToMemory( FilePackPath, PData ) ) {
-		return loadLayoutFromMemory( PData.Data, PData.DataSize, parent );
+		return loadLayoutFromMemory( PData.data, PData.size, parent );
 	}
 
 	return NULL;

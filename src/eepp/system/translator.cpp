@@ -114,11 +114,11 @@ void Translator::loadFromStream( IOStream& stream, std::string lang ) {
 		return;
 
 	ios_size bufferSize = stream.getSize();
-	SafeDataPointer safeDataPointer( eeNewArray( Uint8, bufferSize ), bufferSize );
-	stream.read( reinterpret_cast<char*>( safeDataPointer.Data ), safeDataPointer.DataSize );
+	SafeDataPointer safeDataPointer( bufferSize );
+	stream.read( reinterpret_cast<char*>( safeDataPointer.data ), safeDataPointer.size );
 
 	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_buffer( safeDataPointer.Data, safeDataPointer.DataSize );
+	pugi::xml_parse_result result = doc.load_buffer( safeDataPointer.data, safeDataPointer.size );
 
 	if ( result ) {
 		loadNodes( doc.first_child(), lang );
@@ -135,7 +135,7 @@ void Translator::loadFromPack( Pack * pack, const std::string& FilePackPath, std
 	if ( pack->isOpen() && pack->extractFileToMemory( FilePackPath, PData ) ) {
 		lang = lang.size() == 2 ? lang : FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( FilePackPath ) );
 
-		loadFromMemory( PData.Data, PData.DataSize, lang );
+		loadFromMemory( PData.data, PData.size, lang );
 	}
 }
 

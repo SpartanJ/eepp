@@ -54,8 +54,8 @@ ios_size IOStreamZip::seek( ios_size position ) {
 			mFile = zip_fopen_index( mZip, zs.index, 0 );
 
 			if ( 0 != position ) {
-				SafeDataPointer ptr( eeNewArray( Uint8, position ), position );
-				read( (char*)ptr.Data, position );
+				SafeDataPointer ptr( position );
+				read( (char*)ptr.data, position );
 			}
 
 			mPos = position;

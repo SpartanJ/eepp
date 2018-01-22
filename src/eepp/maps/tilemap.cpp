@@ -1060,7 +1060,7 @@ bool TileMap::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 
 		Pack->extractFileToMemory( FilePackPath, PData );
 
-		return loadFromMemory( reinterpret_cast<const char*> ( PData.Data ), PData.DataSize );
+		return loadFromMemory( reinterpret_cast<const char*> ( PData.data ), PData.size );
 	}
 
 	return false;

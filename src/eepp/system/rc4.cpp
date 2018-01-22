@@ -76,9 +76,9 @@ bool RC4::encryptFile( const std::string& SourceFile, const std::string& DestFil
 
 	FileSystem::fileGet( SourceFile, data );
 
-	encryptByte( data.Data, data.DataSize );
+	encryptByte( data.data, data.size );
 
-	FileSystem::fileWrite( DestFile, data.Data, data.DataSize );
+	FileSystem::fileWrite( DestFile, data.data, data.size );
 
 	return true;
 }

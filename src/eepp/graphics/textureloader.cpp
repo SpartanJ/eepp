@@ -311,8 +311,8 @@ void TextureLoader::loadFromPack() {
 	SafeDataPointer PData;
 
 	if ( NULL != mPack && mPack->isOpen() && mPack->extractFileToMemory( mFilepath, PData ) ) {
-		mImagePtr	= PData.Data;
-		mSize		= PData.DataSize;
+		mImagePtr	= PData.data;
+		mSize		= PData.size;
 
 		loadFromMemory();
 	}
@@ -498,7 +498,11 @@ void TextureLoader::loadFromPixels() {
 
 				mTexId = TextureFactory::instance()->pushTexture( mFilepath, tTexId, width, height, mImgWidth, mImgHeight, mMipmap, mChannels, mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
 
-				eePRINTL( "Texture %s loaded in %4.3f ms.", mFilepath.c_str(), mTE.getElapsed().asMilliseconds() );
+				if ( mFilepath.empty() ) {
+					eePRINTL( "Texture ID %d loaded in %4.3f ms.", mTexId, mTE.getElapsed().asMilliseconds() );
+				} else {
+					eePRINTL( "Texture %s loaded in %4.3f ms.", mFilepath.c_str(), mTE.getElapsed().asMilliseconds() );
+				}
 			} else {
 				eePRINTL( "Failed to create texture. Reason: %s", SOIL_last_result() );
 			}
@@ -543,7 +547,7 @@ void TextureLoader::setColorKey( RGB Color ) {
 	mColorKey = eeNew( RGB, ( Color.r, Color.g, Color.b ) );
 }
 
-const std::string& TextureLoader::filepath() const {
+const std::string& TextureLoader::getFilepath() const {
 	return mFilepath;
 }
 

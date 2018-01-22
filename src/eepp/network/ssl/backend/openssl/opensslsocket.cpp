@@ -155,10 +155,10 @@ bool OpenSSLSocket::init() {
 		SafeDataPointer data;
 		FileSystem::fileGet( SSLSocket::CertificatesPath, data );
 
-		if ( data.DataSize > 0 ) {
+		if ( data.size > 0 ) {
 			BIO* mem = BIO_new(BIO_s_mem());
 
-			BIO_puts( mem, (const char*) data.Data );
+			BIO_puts( mem, (const char*) data.data );
 
 			while( true ) {
 				X509 * cert = PEM_read_bio_X509(mem, NULL, 0, NULL);

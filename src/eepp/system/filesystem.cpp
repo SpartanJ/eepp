@@ -51,12 +51,12 @@ bool FileSystem::fileGet( const std::string& path, SafeDataPointer& data ) {
 	if ( fileExists( path ) ) {
 		IOStreamFile fs ( path , std::ios::in | std::ios::binary );
 
-		eeSAFE_DELETE( data.Data );
+		eeSAFE_DELETE( data.data );
 
-		data.DataSize	= fileSize( path );
-		data.Data		= eeNewArray( Uint8, ( data.DataSize ) );
+		data.size	= fileSize( path );
+		data.data		= eeNewArray( Uint8, ( data.size ) );
 
-		fs.read( reinterpret_cast<char*> ( data.Data ), data.DataSize  );
+		fs.read( reinterpret_cast<char*> ( data.data ), data.size  );
 
 		return true;
 	}
@@ -89,9 +89,9 @@ bool FileSystem::fileCopy( const std::string& src, const std::string& dst ) {
 		Int64	copysize	= 0;
 
 		SafeDataPointer data;
-		data.DataSize	= (Uint32)allocate;
-		data.Data		= eeNewArray( Uint8, ( data.DataSize ) );
-		char * buff		= (char*)data.Data;
+		data.size	= (Uint32)allocate;
+		data.data		= eeNewArray( Uint8, ( data.size ) );
+		char * buff		= (char*)data.data;
 
 		IOStreamFile in( src, std::ios::binary | std::ios::in );
 		IOStreamFile out( dst, std::ios::binary | std::ios::out );

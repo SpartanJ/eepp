@@ -60,7 +60,7 @@ bool IniFile::loadFromPack( Pack * Pack, std::string iniPackPath ) {
 
 		Pack->extractFileToMemory( iniPackPath, PData );
 
-		return loadFromMemory( PData.Data, PData.DataSize );
+		return loadFromMemory( PData.data, PData.size );
 	}
 
 	return false;

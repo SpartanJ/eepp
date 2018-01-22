@@ -80,7 +80,7 @@ class EE_API TextureLoader : public ObjectLoader {
 		void			unload();
 
 		/** @return The file path to the texture ( if any ) */
-		const std::string&	filepath() const;
+		const std::string&	getFilepath() const;
 
 		/** @return The texture internal id  */
 		const Uint32& 	getId() const;

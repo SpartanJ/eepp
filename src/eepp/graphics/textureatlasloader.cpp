@@ -163,7 +163,7 @@ void TextureAtlasLoader::loadFromPack( Pack * Pack, const std::string& FilePackP
 
 		Pack->extractFileToMemory( FilePackPath, PData );
 
-		loadFromMemory( reinterpret_cast<const Uint8*> ( PData.Data ), PData.DataSize, FilePackPath );
+		loadFromMemory( reinterpret_cast<const Uint8*> ( PData.data ), PData.size, FilePackPath );
 	}
 }
 

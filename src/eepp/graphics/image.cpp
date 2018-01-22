@@ -213,7 +213,7 @@ bool Image::getInfo( const std::string& path, int * width, int * height, int * c
 
 			tPack->extractFileToMemory( npath, PData );
 
-			res = 0 != stbi_info_from_memory( PData.Data, PData.DataSize, width, height, channels );
+			res = 0 != stbi_info_from_memory( PData.data, PData.size, width, height, channels );
 		}
 	}
 
@@ -369,10 +369,10 @@ Image::Image( IOStream & stream, const unsigned int& forceChannels ) :
 	if ( stream.isOpen() ) {
 		SafeDataPointer PData( stream.getSize() );
 
-		stream.read( (char*)PData.Data, PData.DataSize );
+		stream.read( (char*)PData.data, PData.size );
 
 		int w, h, c;
-		Uint8 * data = stbi_load_from_memory( PData.Data, PData.DataSize, &w, &h, &c, mChannels );
+		Uint8 * data = stbi_load_from_memory( PData.data, PData.size, &w, &h, &c, mChannels );
 
 		if ( NULL != data ) {
 			mPixels		= data;
@@ -405,7 +405,7 @@ void Image::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 		Pack->extractFileToMemory( FilePackPath, PData );
 
 		int w, h, c;
-		Uint8 * data = stbi_load_from_memory( PData.Data, PData.DataSize, &w, &h, &c, mChannels );
+		Uint8 * data = stbi_load_from_memory( PData.data, PData.size, &w, &h, &c, mChannels );
 
 		if ( NULL != data ) {
 			mPixels		= data;

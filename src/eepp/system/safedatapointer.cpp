@@ -5,20 +5,20 @@
 namespace EE { namespace System {
 
 SafeDataPointer::SafeDataPointer() :
-	Data( NULL ),
-	DataSize( 0 )
+	data( NULL ),
+	size( 0 )
 {
 }
 
 SafeDataPointer::SafeDataPointer( Uint32 size ) :
-	Data( eeNewArray( Uint8, size ) ),
-	DataSize( size )
+	data( eeNewArray( Uint8, size ) ),
+	size( size )
 {
 }
 
 SafeDataPointer::SafeDataPointer( Uint8 *data, Uint32 size ) :
-	Data( data ),
-	DataSize( size )
+	data( data ),
+	size( size )
 {
 }
 
@@ -27,7 +27,7 @@ SafeDataPointer::~SafeDataPointer() {
 }
 
 void SafeDataPointer::clear() {
-	eeSAFE_DELETE_ARRAY( Data );
+	eeSAFE_DELETE_ARRAY( data );
 }
 
 }}

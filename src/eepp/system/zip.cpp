@@ -80,7 +80,7 @@ bool Zip::addFile( const std::string& path, const std::string& inpack ) {
 
 	FileSystem::fileGet( path, file );
 
-	return addFile( file.Data, file.DataSize, inpack );
+	return addFile( file.data, file.size, inpack );
 }
 
 bool Zip::addFile( const Uint8 * data, const Uint32& dataSize, const std::string& inpack ) {
@@ -149,7 +149,7 @@ bool Zip::extractFile( const std::string& path , const std::string& dest ) {
 	Ret = extractFileToMemory( path, data );
 
 	if ( Ret )
-		FileSystem::fileWrite( dest, data.Data, data.DataSize );
+		FileSystem::fileWrite( dest, data.data, data.size );
 
 	unlock();
 
@@ -206,10 +206,10 @@ bool Zip::extractFileToMemory( const std::string& path, SafeDataPointer& data ) 
 			struct zip_file * zf = zip_fopen_index( mZip, zs.index, 0 );
 
 			if ( NULL != zf ) {
-				data.DataSize	= (Uint32)zs.size;
-				data.Data		= eeNewArray( Uint8, ( data.DataSize ) );
+				data.size	= (Uint32)zs.size;
+				data.data		= eeNewArray( Uint8, ( data.size ) );
 
-				Result = (Int32)zip_fread( zf, (void*)data.Data, data.DataSize );
+				Result = (Int32)zip_fread( zf, (void*)data.data, data.size );
 
 				zip_fclose(zf);
 
