@@ -130,6 +130,9 @@ bool FontSprite::loadFromStream( IOStream& stream, Color key, Uint32 firstChar, 
 
 	mPages[ mFontSize ].texture = TextureFactory::instance()->getTexture( texId );
 
+	if ( NULL != mPages[ mFontSize ].texture )
+		mPages[ mFontSize ].texture->setFilter( Texture::TextureFilter::Nearest );
+
 	return true;
 }
 

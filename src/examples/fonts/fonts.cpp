@@ -102,7 +102,6 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		text5.setFont( fontSprite );
 		text5.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
 		text5.setCharacterSize( 38 );
-		//text5.setFillColor( Color::Black );
 
 		// Application loop
 		win->runMainLoop( &mainLoop );
