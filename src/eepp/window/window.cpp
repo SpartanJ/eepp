@@ -517,7 +517,7 @@ void Window::createPlatform() {
 void Window::setCurrent() {
 }
 
-void Window::centerToScreen() {
+void Window::centerToDisplay() {
 	if ( isWindowed() ) {
 		setPosition( mWindow.DesktopResolution.getWidth() / 2 - mWindow.WindowConfig.Width / 2, mWindow.DesktopResolution.getHeight() / 2 - mWindow.WindowConfig.Height / 2 );
 	}
@@ -557,6 +557,27 @@ void Window::setGLContextThread() {
 }
 
 void Window::unsetGLContextThread() {
+}
+
+Float Window::getCurrentDisplayDPI() {
+	return 92.f;
+}
+
+EE_PIXEL_DENSITY Window::getDisplayPixelDensity() {
+	EE_PIXEL_DENSITY pd = PD_MDPI;
+	Float dpi = getCurrentDisplayDPI();
+
+	if ( dpi > 105 && dpi < 150 ) {
+		pd = PD_HDPI;
+	} else if ( dpi >= 150 && dpi < 200 ) {
+		pd = PD_XHDPI;
+	} else if ( dpi > 200 && dpi < 300 ) {
+		pd = PD_XXHDPI;
+	} else if ( dpi >= 300 ) {
+		pd = PD_XXXHDPI;
+	}
+
+	return pd;
 }
 
 void Window::runMainLoop( void (*func)(), int fps ) {

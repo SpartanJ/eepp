@@ -1754,7 +1754,7 @@ void EETest::input() {
 		MultiViewportMode = !MultiViewportMode;
 
 	if ( KM->isAltPressed() && KM->isKeyUp( KEY_C ) )
-		mWindow->centerToScreen();
+		mWindow->centerToDisplay();
 
 	if ( KM->isAltPressed() && KM->isKeyUp( KEY_M ) && !Con.isActive() ) {
 		if ( !mWindow->isMaximized() )

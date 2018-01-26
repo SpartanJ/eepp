@@ -177,6 +177,7 @@ void WindowSFML::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 	sf::Vector2u v( Width, Height );
 
 	mSFMLWindow.setSize( v );
+	mDefaultView.reset( Rectf( 0, 0, Width, Height ) );
 }
 
 void WindowSFML::videoResize( Uint32 Width, Uint32 Height ) {

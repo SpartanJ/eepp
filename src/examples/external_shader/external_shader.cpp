@@ -108,7 +108,7 @@ void mainLoop()
 			win->setSize( win->getDesktopResolution().getWidth(), win->getDesktopResolution().getHeight(), false );
 		} else {
 			win->setSize( 960, 640, true );
-			win->centerToScreen();
+			win->centerToDisplay();
 		}
 	}
 

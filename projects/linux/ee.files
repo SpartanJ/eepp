@@ -1,3 +1,4 @@
+../../src/tools/textureatlaseditor/textureatlaseditor.cpp
 ../../include/eepp/graphics/arcdrawable.hpp
 ../../include/eepp/graphics/circledrawable.hpp
 ../../include/eepp/graphics/convexshapedrawable.hpp

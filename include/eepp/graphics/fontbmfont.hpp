@@ -15,7 +15,9 @@ namespace EE { namespace Graphics {
 /** @brief Implementation of AngelCode BMFont fonts. */
 class EE_API FontBMFont : public Font {
 	public:
-		static FontBMFont * New( const std::string FontName ) ;
+		static FontBMFont * New( const std::string FontName );
+
+		static  FontBMFont * New( const std::string FontName, const std::string& filename );
 
 		~FontBMFont();
 

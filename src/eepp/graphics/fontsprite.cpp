@@ -13,6 +13,12 @@ FontSprite * FontSprite::New( const std::string FontName ) {
 	return eeNew( FontSprite, ( FontName ) );
 }
 
+FontSprite * FontSprite::New(const std::string FontName, const std::string & filename) {
+	FontSprite * fontSprite = New( FontName );
+	fontSprite->loadFromFile( filename );
+	return fontSprite;
+}
+
 FontSprite::FontSprite( const std::string FontName ) :
 	Font( FONT_TYPE_SPRITE, FontName ),
 	mInfo(),

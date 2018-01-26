@@ -17,6 +17,8 @@ class EE_API FontSprite : public Font {
 	public:
 		static FontSprite * New( const std::string FontName ) ;
 
+		static  FontSprite * New( const std::string FontName, const std::string& filename );
+
 		~FontSprite();
 
 		bool loadFromFile(const std::string& filename, Color key = Color::Magenta, Uint32 firstChar = 32, int spacing = 0);

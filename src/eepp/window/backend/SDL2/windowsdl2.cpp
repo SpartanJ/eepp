@@ -251,6 +251,20 @@ void WindowSDL::unsetGLContextThread() {
 	SDL_GL_MakeCurrent( mSDLWindow, NULL );
 }
 
+Float WindowSDL::getCurrentDisplayDPI() {
+#if SDL_VERSION_ATLEAST(2,0,4)
+	float ddpi, hdpi, vdpi;
+	int index = SDL_GetWindowDisplayIndex( mSDLWindow );
+
+	if ( index < 0 ) index = 0;
+
+	if ( 0 == SDL_GetDisplayDPI( index, &ddpi, &hdpi, &vdpi ) )
+		return ddpi;
+#endif
+
+	return Window::getCurrentDisplayDPI();
+}
+
 std::string WindowSDL::getVersion() {
 	SDL_version ver;
 
@@ -340,7 +354,7 @@ bool WindowSDL::isVisible() {
 }
 
 void WindowSDL::onWindowResize( Uint32 Width, Uint32 Height ) {
-	if ( mWindow.WindowConfig.Width && Height == mWindow.WindowConfig.Height )
+	if ( Width == mWindow.WindowConfig.Width && Height == mWindow.WindowConfig.Height )
 		return;
 
 	eePRINTL( "onWindowResize: %d Height %d.", Width, Height );
@@ -406,6 +420,8 @@ void WindowSDL::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 	}
 
 	BitOp::setBitFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
+
+	mDefaultView.reset( Rectf( 0, 0, Width, Height ) );
 
 	setup2D( false );
 

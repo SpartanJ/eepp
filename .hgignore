@@ -31,6 +31,7 @@ eephysics*
 eestrobe*
 eeiv*
 eehttp-request*
+eepp-TextureAtlasEditor*
 ee.tag
 log.log
 external_projects.lua

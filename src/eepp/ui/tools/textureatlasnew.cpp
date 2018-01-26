@@ -18,8 +18,8 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 		return;
 
 	mUIWindow	= UIWindow::New();
-	mUIWindow->setSizeWithDecoration( 378, 263 )
-			 ->setMinWindowSize( 378, 263 )
+	mUIWindow->setSizeWithDecoration( 378, 283 )
+			 ->setMinWindowSize( 378, 283 )
 			 ->setWinFlags( UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_SHARE_ALPHA_WITH_CHILDS | UI_WIN_MODAL );
 
 	mUIWindow->addEventListener( UIEvent::OnWindowClose, cb::Make1( this, &TextureAtlasNew::windowClose ) );

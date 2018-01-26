@@ -4,6 +4,7 @@
 #include <eepp/window/base.hpp>
 #include <eepp/graphics/view.hpp>
 #include <eepp/graphics/image.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 
 namespace EE { namespace Window {
 
@@ -267,7 +268,7 @@ class EE_API Window {
 		virtual const Sizei& getDesktopResolution();
 
 		/** Center the window to the desktop ( if windowed ) */
-		virtual void centerToScreen();
+		virtual void centerToDisplay();
 
 		/** @return If the aplication is running returns true ( If you Init correctly the window and is running ). */
 		bool isRunning() const;
@@ -408,6 +409,10 @@ class EE_API Window {
 
 		/** Deactviates the shared GL context in the current thread. */
 		virtual void unsetGLContextThread();
+
+		virtual Float getCurrentDisplayDPI();
+
+		EE_PIXEL_DENSITY getDisplayPixelDensity();
 
 		/** Runs the main loop function passed as parameter
 		**	@param func The main loop function

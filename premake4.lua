@@ -952,6 +952,13 @@ solution "eepp"
 		files { "src/examples/http_request/*.cpp" }
 		build_link_configuration( "eehttp-request", true )
 
+	-- Tools
+	project "eepp-textureatlaseditor"
+		set_kind()
+		language "C++"
+		files { "src/tools/textureatlaseditor/*.cpp" }
+		build_link_configuration( "eepp-TextureAtlasEditor", true )
+
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")
 end

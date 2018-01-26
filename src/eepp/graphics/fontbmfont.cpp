@@ -13,6 +13,12 @@ FontBMFont * FontBMFont::New( const std::string FontName ) {
 	return eeNew( FontBMFont, ( FontName ) );
 }
 
+FontBMFont * FontBMFont::New(const std::string FontName, const std::string & filename) {
+	FontBMFont * fontBMFont = New( FontName );
+	fontBMFont->loadFromFile( filename );
+	return fontBMFont;
+}
+
 FontBMFont::FontBMFont( const std::string FontName ) :
 	Font( FONT_TYPE_BMF, FontName ),
 	mInfo(),
