@@ -122,6 +122,10 @@ class EE_API TextureAtlasLoader {
 
 		/** Sets a load notification callback. */
 		void					setLoadCallback( GLLoadCallback LoadCallback );
+
+		sTextureAtlasHdr		getTextureAtlasHeader();
+
+		void					setTextureFilter( const Texture::TextureFilter& textureFilter );
 	protected:
 		ResourceLoader			mRL;
 		std::string				mTextureAtlasPath;
@@ -132,7 +136,7 @@ class EE_API TextureAtlasLoader {
 		bool					mIsLoading;
 		TextureAtlas *			mTextureAtlas;
 		GLLoadCallback			mLoadCallback;
-		std::vector<Texture*>	mTexuresLoaded;
+		std::vector<Texture*>	mTexturesLoaded;
 
 		typedef struct sTempTexAtlasS {
 			sTextureHdr 			Texture;

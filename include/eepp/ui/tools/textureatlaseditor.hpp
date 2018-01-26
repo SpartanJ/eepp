@@ -5,6 +5,7 @@
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uilistbox.hpp>
+#include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
 #include <eepp/graphics/texturepacker.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
@@ -52,6 +53,7 @@ class EE_API TextureAtlasEditor {
 		UISpinBox *			mSpinDestH;
 		UIListBox *			mTextureRegionList;
 		UIWinMenu *			mWinMenu;
+		UIDropDownList *	mTextureFilterList;
 		TextureAtlasTextureRegionEditor * mTextureRegionEditor;
 		UITGEUpdater *		mTGEU;
 
@@ -88,6 +90,8 @@ class EE_API TextureAtlasEditor {
 		void onCenterOffset( const UIEvent * Event );
 
 		void onHBOffset( const UIEvent * Event );
+
+		void onTextureFilterChange( const UIEvent * Event );
 
 		void onTextureAtlasLoaded( TextureAtlasLoader * TGLoader );
 

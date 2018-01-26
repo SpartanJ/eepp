@@ -35,6 +35,7 @@
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/packerhelper.hpp>
 #include <eepp/graphics/image.hpp>
+#include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 
 namespace EE { namespace Graphics {
@@ -55,11 +56,12 @@ class EE_API TexturePacker {
 		*	@param MaxWidth The maximum width that the texture atlas will use.
 		*	@param MaxHeight The maximum height that the texture atlas will use.
 		*	@param PixelDensity Indicates the device pixel density that represents the resources that will the packer pack.
+		*	@param textureFilter Indicates with texture filter should be used when the texture of the atlas is loaded
 		*	@param ForcePowOfTwo Indicates that if the max with and height must be adjusted to fit a power of two texture.
 		*	@param PixelBorder Indicates how many pixels will be added to separate one image to another in the texture atlas. Usefull to avoid artifacts when rendered scaled TextureRegions. Use at least 1 pixel to separate images if you will scale any TextureRegion.
 		*	@param AllowFlipping Indicates if the images can be flipped inside the texture atlas. This is not compatible with eepp ( since it can't flip the textures back to the original orientation ). So avoid it for eepp.
 		*/
-		TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity = PD_MDPI, const bool& ForcePowOfTwo = true, const Uint32& PixelBorder = 0, const bool& AllowFlipping = false );
+		TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity = PD_MDPI, const bool& ForcePowOfTwo = true, const Uint32& PixelBorder = 0, const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear, const bool& AllowFlipping = false );
 
 		~TexturePacker();
 
@@ -92,11 +94,12 @@ class EE_API TexturePacker {
 		*	@param MaxWidth The maximum width that the texture atlas will use.
 		*	@param MaxHeight The maximum height that the texture atlas will use.
 		*	@param PixelDensity Indicates the device pixel density that represents the resources that will the packer pack.
-		*	@param ForcePowOfTwo Indicates that if the max with and height must be adjusted to fit a power of two texture.
+		*	@param textureFilter Indicates with texture filter should be used when the texture of the atlas is loaded
 		*	@param PixelBorder Indicates how many pixels will be added to separate one image to another in the texture atlas. Usefull to avoid artifacts when rendered scaled TextureRegions. Use at least 1 pixel to separate images if you will scale any TextureRegion.
+		*	@param ForcePowOfTwo Indicates that if the max with and height must be adjusted to fit a power of two texture.
 		*	@param AllowFlipping Indicates if the images can be flipped inside the texture atlas. This is not compatible with eepp ( since it can't flip the textures back to the original orientation ). So avoid it for eepp.
 		*/
-		void setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity = PD_MDPI, const bool& ForcePowOfTwo = true, const Uint32& PixelBorder = 0, const bool& AllowFlipping = false );
+		void setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity = PD_MDPI, const bool& ForcePowOfTwo = true, const Uint32& PixelBorder = 0, const Texture::TextureFilter& textureFilter = Texture::TextureFilter::Linear, const bool& AllowFlipping = false );
 
 		/** @return The texture atlas to generate width. */
 		const Int32& getWidth() const;
@@ -131,8 +134,9 @@ class EE_API TexturePacker {
 		bool							mForcePowOfTwo;
 		Int32							mPixelBorder;
 		EE_PIXEL_DENSITY				mPixelDensity;
+		Texture::TextureFilter			mTextureFilter;
 		bool							mSaveExtensions;
-		Image::SaveType			mFormat;
+		Image::SaveType					mFormat;
 
 		TexturePacker * 				getChild() const;
 

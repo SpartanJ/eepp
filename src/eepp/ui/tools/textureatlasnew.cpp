@@ -18,8 +18,8 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 		return;
 
 	mUIWindow	= UIWindow::New();
-	mUIWindow->setSizeWithDecoration( 378, 283 )
-			 ->setMinWindowSize( 378, 283 )
+	mUIWindow->setSizeWithDecoration( 378, 303 )
+			 ->setMinWindowSize( 378, 303 )
 			 ->setWinFlags( UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_SHARE_ALPHA_WITH_CHILDS | UI_WIN_MODAL );
 
 	mUIWindow->addEventListener( UIEvent::OnWindowClose, cb::Make1( this, &TextureAtlasNew::windowClose ) );
@@ -27,39 +27,46 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 
 	std::string layout =
 	"<LinearLayout id='container' layout_width='match_parent' layout_height='wrap_content' layout_marginLeft='8dp' layout_marginRight='8dp' layout_marginTop='8dp'>"
-	 "	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
-	 "		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Save File Format:' />"
-	 "		<DropDownList id='saveType' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' selectedText='PNG'>"
-	 "			<item>TGA</item>"
-	 "			<item>BMP</item>"
-	 "			<item>PNG</item>"
-	 "			<item>DDS</item>"
-	 "			<item>JPG</item>"
-	 "		</DropDownList>"
-	 "	</LinearLayout>"
-	 "	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
-	 "		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Max. Texture Atlas Width:' />"
-	 "		<ComboBox id='maxTAWidth' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' onlyNumbers='true' />"
-	 "	</LinearLayout>"
-	 "	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
-	 "		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Max. Texture Atlas Height:' />"
-	 "		<ComboBox id='maxTAHeight' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' onlyNumbers='true' />"
-	 "	</LinearLayout>"
-	 "	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
-	 "		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Space between sub textures (pixels):' />"
-	 "		<SpinBox id='pixelSpace' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' />"
-	 "	</LinearLayout>"
-	 "	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
-	 "		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Pixel Density:' />"
-	 "		<DropDownList id='pixelDensity' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' selectedText='MDPI'>"
-	 "			<item>MDPI</item>"
-	 "			<item>HDPI</item>"
-	 "			<item>XHDPI</item>"
-	 "			<item>XXHDPI</item>"
-	 "			<item>XXXHDPI</item>"
-	 "		</DropDownList>"
-	 "	</LinearLayout>"
-	 "	<TextView layout_width='match_parent' layout_height='wrap_content' layout_gravity='center_vertical' text='TextureAtlas Folder Path:' />"
+	"	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
+	"		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Save File Format:' />"
+	"		<DropDownList id='saveType' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' selectedText='PNG'>"
+	"			<item>TGA</item>"
+	"			<item>BMP</item>"
+	"			<item>PNG</item>"
+	"			<item>DDS</item>"
+	"			<item>JPG</item>"
+	"		</DropDownList>"
+	"	</LinearLayout>"
+	"	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
+	"		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Max. Texture Atlas Width:' />"
+	"		<ComboBox id='maxTAWidth' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' onlyNumbers='true' />"
+	"	</LinearLayout>"
+	"	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
+	"		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Max. Texture Atlas Height:' />"
+	"		<ComboBox id='maxTAHeight' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' onlyNumbers='true' />"
+	"	</LinearLayout>"
+	"	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
+	"		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Space between sub textures (pixels):' />"
+	"		<SpinBox id='pixelSpace' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' />"
+	"	</LinearLayout>"
+	"	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
+	"		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Pixel Density:' />"
+	"		<DropDownList id='pixelDensity' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' selectedText='MDPI'>"
+	"			<item>MDPI</item>"
+	"			<item>HDPI</item>"
+	"			<item>XHDPI</item>"
+	"			<item>XXHDPI</item>"
+	"			<item>XXXHDPI</item>"
+	"		</DropDownList>"
+	"	</LinearLayout>"
+	"	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
+	"		<TextView layout_width='match_parent' layout_weight='0.7' layout_height='wrap_content' layout_gravity='center_vertical' text='Save File Format:' />"
+	"		<DropDownList id='textureFilter' layout_width='match_parent' layout_weight='0.3' layout_height='wrap_content' layout_gravity='center_vertical' selectedText='Linear'>"
+	"			<item>Linear</item>"
+	"			<item>Nearest</item>"
+	"		</DropDownList>"
+	"	</LinearLayout>"
+	"	<TextView layout_width='match_parent' layout_height='wrap_content' layout_gravity='center_vertical' text='TextureAtlas Folder Path:' />"
 	"	<LinearLayout layout_width='match_parent' layout_height='wrap_content' orientation='horizontal' layout_marginBottom='8dp'>"
 	"		<TextInput id='pathInput' layout_width='match_parent' layout_height='match_parent' layout_weight='1' allowEditing='false' />"
 	"		<PushButton id='openPath' layout_width='32dp' layout_height='wrap_content' text='...'  />"
@@ -79,6 +86,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	mUIWindow->bind( "pixelDensity", mPixelDensity );
 	mUIWindow->bind( "pathInput", mTGPath );
 	mUIWindow->bind( "openPath", mSetPathButton ) ;
+	mUIWindow->bind( "textureFilter", mTextureFilter );
 
 	std::vector<String> Sizes;
 
@@ -144,13 +152,14 @@ void TextureAtlasNew::textureAtlasSave( const UIEvent * Event ) {
 		bool Res1 = String::fromString<Int32>( w, mComboWidth->getText() );
 		bool Res2 = String::fromString<Int32>( h, mComboHeight->getText() );
 		b = static_cast<Int32>( mPixelSpace->getValue() );
+		Texture::TextureFilter textureFilter = mTextureFilter->getText() == "Nearest" ? Texture::TextureFilter::Nearest : Texture::TextureFilter::Linear;
 
 		if ( Res1 && Res2 ) {
-			Graphics::TexturePacker * TexturePacker = eeNew( Graphics::TexturePacker, ( w, h, PixelDensity::fromString( mPixelDensity->getText() ), false, b ) );
+			TexturePacker * texturePacker = eeNew( TexturePacker, ( w, h, PixelDensity::fromString( mPixelDensity->getText() ), false, b, textureFilter ) );
 
-			TexturePacker->addTexturesPath( mTGPath->getText() );
+			texturePacker->addTexturesPath( mTGPath->getText() );
 
-			TexturePacker->packTextures();
+			texturePacker->packTextures();
 
 			std::string ext = FileSystem::fileExtension( FPath, true );
 
@@ -164,10 +173,10 @@ void TextureAtlasNew::textureAtlasSave( const UIEvent * Event ) {
 				FPath += "." + ext;
 			}
 
-			TexturePacker->save( FPath, static_cast<Image::SaveType> ( mSaveFileType->getListBox()->getItemSelectedIndex() ) );
+			texturePacker->save( FPath, static_cast<Image::SaveType> ( mSaveFileType->getListBox()->getItemSelectedIndex() ) );
 
 			if ( mNewTGCb.IsSet() )
-				mNewTGCb( TexturePacker );
+				mNewTGCb( texturePacker );
 
 			mUIWindow->closeWindow();
 		}

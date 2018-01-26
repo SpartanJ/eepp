@@ -64,7 +64,12 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	"		<TextureAtlasTextureRegionEditor layout_width='match_parent' layout_height='match_parent' layout_weight='1' "
 	"										flags='clip' backgroundColor='#00000032' borderWidth='1' borderColor='#000000FF' />"
 	"		<LinearLayout orientation='vertical' layout_width='205dp' layout_height='match_parent' layout_marginLeft='8dp' layout_marginRight='8dp'>"
-	"			<TextView text='TextureRegion List:' fontStyle='shadow' layout_marginTop='4dp' layout_marginBottom='8dp' />"
+	"			<TextView text='Texture Filter:' fontStyle='shadow' layout_marginTop='4dp' layout_marginBottom='4dp' />"
+	"			<DropDownList id='textureFilter' layout_width='match_parent' layout_height='wrap_content' layout_gravity='center_vertical' selectedText='Linear'>"
+	"				<item>Linear</item>"
+	"				<item>Nearest</item>"
+	"			</DropDownList>"
+	"			<TextView text='TextureRegion List:' fontStyle='shadow' layout_marginTop='8dp' layout_marginBottom='8dp' />"
 	"			<ListBox id='TextureRegionList' layout_width='match_parent' layout_height='144dp' />"
 	"			<TextView text='Current TextureRegion:' fontStyle='shadow' layout_marginTop='16dp' layout_marginBottom='16dp' />"
 	"			<LinearLayout orientation='horizontal' layout_width='match_parent' layout_height='wrap_content'>"
@@ -115,6 +120,9 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	mUIContainer->bind( "destH", mSpinDestH );
 	mSpinDestH->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &TextureAtlasEditor::onDestHChange ) );
+
+	mUIContainer->bind( "textureFilter", mTextureFilterList );
+	mTextureFilterList->addEventListener( UIEvent::OnItemSelected, cb::Make1( this, &TextureAtlasEditor::onTextureFilterChange ) );
 
 	mUIContainer->find<UIPushButton>( "resetDest" )->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TextureAtlasEditor::onResetDestSize ) );
 
@@ -256,6 +264,15 @@ void TextureAtlasEditor::fileMenuClick( const UIEvent * Event ) {
 	}
 }
 
+void TextureAtlasEditor::onTextureFilterChange( const UIEvent * Event ) {
+	if ( NULL == mTextureAtlasLoader || NULL == mTextureAtlasLoader->getTextureAtlas() || !mTextureAtlasLoader->isLoaded() )
+		return;
+
+	Texture::TextureFilter textureFilter = mTextureFilterList->getText() == "Nearest" ? Texture::TextureFilter::Nearest : Texture::TextureFilter::Linear;
+
+	mTextureAtlasLoader->setTextureFilter( textureFilter );
+}
+
 void TextureAtlasEditor::onTextureAtlasCreate( TexturePacker * TexPacker ) {
 	eeSAFE_DELETE( mTexturePacker );
 	mTexturePacker = TexPacker;
@@ -269,6 +286,8 @@ void TextureAtlasEditor::onTextureAtlasCreate( TexturePacker * TexPacker ) {
 
 void TextureAtlasEditor::updateControls() {
 	if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->isLoaded()  ) {
+		mTextureFilterList->getListBox()->setSelected( mTextureAtlasLoader->getTextureAtlasHeader().TextureFilter );
+
 		fillTextureRegionList();
 	}
 }

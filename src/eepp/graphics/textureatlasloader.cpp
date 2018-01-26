@@ -83,6 +83,21 @@ void TextureAtlasLoader::setLoadCallback( GLLoadCallback LoadCallback ) {
 	mLoadCallback = LoadCallback;
 }
 
+sTextureAtlasHdr TextureAtlasLoader::getTextureAtlasHeader() {
+	return mTexGrHdr;
+}
+
+void TextureAtlasLoader::setTextureFilter(const Texture::TextureFilter & textureFilter) {
+	mTexGrHdr.TextureFilter = (char)textureFilter;
+
+	size_t count = getTextureAtlas()->getTexturesCount() == 0;
+
+	if ( count > 0 ) {
+		for ( size_t i = 0; i < count; i++ )
+			getTextureAtlas()->getTexture( i )->setFilter( textureFilter );
+	}
+}
+
 void TextureAtlasLoader::update() {
 	mRL.update();
 
@@ -196,7 +211,7 @@ void TextureAtlasLoader::createTextureRegions() {
 		Texture * tTex 			= TextureFactory::instance()->getByName( path );
 
 		if ( NULL != tTex )
-			mTexuresLoaded.push_back( tTex );
+			mTexturesLoaded.push_back( tTex );
 
 		// Create the Texture Atlas with the name of the real texture, not the Childs ( example load 1.png and not 1_ch1.png )
 		if ( 0 == z ) {
@@ -250,8 +265,11 @@ void TextureAtlasLoader::createTextureRegions() {
 		}
 	}
 
-	if ( NULL != mTextureAtlas && mTexuresLoaded.size() ) {
-		mTextureAtlas->setTextures( mTexuresLoaded );
+	if ( NULL != mTextureAtlas && mTexturesLoaded.size() ) {
+		for ( size_t i = 0; i < mTexturesLoaded.size(); i++ )
+			mTexturesLoaded[i]->setFilter( (Texture::TextureFilter)mTexGrHdr.TextureFilter );
+
+		mTextureAtlas->setTextures( mTexturesLoaded );
 	}
 
 	mLoaded = true;
@@ -278,12 +296,12 @@ const bool& TextureAtlasLoader::isLoading() const {
 }
 
 Texture * TextureAtlasLoader::getTexture( const Uint32& texnum ) const {
-	eeASSERT( texnum < mTexuresLoaded.size() );
-	return mTexuresLoaded[ texnum ];
+	eeASSERT( texnum < mTexturesLoaded.size() );
+	return mTexturesLoaded[ texnum ];
 }
 
 Uint32 TextureAtlasLoader::getTexturesLoadedCount() {
-	return mTexuresLoaded.size();
+	return mTexturesLoaded.size();
 }
 
 bool TextureAtlasLoader::updateTextureAtlas() {
@@ -414,7 +432,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 		std::string tapath( FileSystem::fileRemoveExtension( TextureAtlasPath ) + "." + Image::saveTypeToExtension( mTexGrHdr.Format ) );
 
 		if ( 2 == NeedUpdate ) {
-			TexturePacker tp( mTexGrHdr.Width, mTexGrHdr.Height, pixelDensity, 0 != ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_POW_OF_TWO ), mTexGrHdr.PixelBorder, mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_ALLOW_FLIPPING );
+			TexturePacker tp( mTexGrHdr.Width, mTexGrHdr.Height, pixelDensity, 0 != ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_POW_OF_TWO ), mTexGrHdr.PixelBorder, (Texture::TextureFilter)mTexGrHdr.TextureFilter, mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_ALLOW_FLIPPING );
 
 			tp.addTexturesPath( ImagesPath );
 

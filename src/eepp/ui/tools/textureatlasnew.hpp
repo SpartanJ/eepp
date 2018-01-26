@@ -28,6 +28,7 @@ class EE_API TextureAtlasNew {
 		UIPushButton *		mSetPathButton;
 		UIDropDownList *	mSaveFileType;
 		UIDropDownList *	mPixelDensity;
+		UIDropDownList *	mTextureFilter;
 
 		void windowClose( const UIEvent * Event );
 

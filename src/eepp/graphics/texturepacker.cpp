@@ -9,7 +9,7 @@
 
 namespace EE { namespace Graphics {
 
-TexturePacker::TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const bool& AllowFlipping ) :
+TexturePacker::TexturePacker(const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const Texture::TextureFilter& textureFilter, const bool& AllowFlipping ) :
 	mTotalArea(0),
 	mFreeList(NULL),
 	mWidth(128),
@@ -22,9 +22,13 @@ TexturePacker::TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, c
 	mParent(NULL),
 	mPlacedCount(0),
 	mForcePowOfTwo(true),
-	mPixelBorder(0)
+	mPixelBorder(0),
+	mPixelDensity(PixelDensity),
+	mTextureFilter(textureFilter),
+	mSaveExtensions(false),
+	mFormat(Image::SaveType::SAVE_TYPE_PNG)
 {
-	setOptions( MaxWidth, MaxHeight, PixelDensity, ForcePowOfTwo, PixelBorder, AllowFlipping );
+	setOptions( MaxWidth, MaxHeight, PixelDensity, ForcePowOfTwo, PixelBorder, textureFilter, AllowFlipping );
 }
 
 TexturePacker::TexturePacker() :
@@ -41,9 +45,12 @@ TexturePacker::TexturePacker() :
 	mParent(NULL),
 	mPlacedCount(0),
 	mForcePowOfTwo(true),
-	mPixelBorder(0)
-{
-}
+	mPixelBorder(0),
+	mPixelDensity(PD_MDPI),
+	mTextureFilter(Texture::TextureFilter::Linear),
+	mSaveExtensions(false),
+	mFormat(Image::SaveType::SAVE_TYPE_PNG)
+{}
 
 TexturePacker::~TexturePacker()
 {
@@ -108,7 +115,7 @@ Uint32 TexturePacker::getAtlasNumChannels() {
 	return maxChannels;
 }
 
-void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const bool& AllowFlipping ) {
+void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const Texture::TextureFilter& textureFilter, const bool& AllowFlipping ) {
 	if ( !mTextures.size() ) { // only can change the dimensions before adding any texture
 		mMaxSize.x = MaxWidth;
 		mMaxSize.y = MaxHeight;
@@ -123,6 +130,7 @@ void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight,
 		mAllowFlipping 	= AllowFlipping;
 		mPixelBorder	= PixelBorder;
 		mPixelDensity = PixelDensity;
+		mTextureFilter = textureFilter;
 	}
 }
 
@@ -370,7 +378,7 @@ void TexturePacker::insertTexture( TexturePackerTex * t, TexturePackerNode * bes
 }
 
 void TexturePacker::createChild() {
-	mChild = eeNew( TexturePacker, ( mWidth, mHeight, mPixelDensity, mForcePowOfTwo, mPixelBorder, mAllowFlipping ) );
+	mChild = eeNew( TexturePacker, ( mWidth, mHeight, mPixelDensity, mForcePowOfTwo, mPixelBorder, mTextureFilter, mAllowFlipping ) );
 
 	std::list<TexturePackerTex*>::iterator it;
 	std::list< std::list<TexturePackerTex*>::iterator > remove;
@@ -652,8 +660,10 @@ void TexturePacker::saveTextureRegions() {
 	TexGrHdr.Height			= mHeight;
 	TexGrHdr.PixelBorder	= mPixelBorder;
 	TexGrHdr.Flags			= 0;
+	TexGrHdr.TextureFilter	= mTextureFilter;
 
-	memset( TexGrHdr.Reserved, 0, 16 );
+	int reservedSize = eeARRAY_SIZE(TexGrHdr.Reserved);
+	memset( TexGrHdr.Reserved, 0, reservedSize );
 
 	if ( mAllowFlipping )
 		TexGrHdr.Flags |= HDR_TEXTURE_ATLAS_ALLOW_FLIPPING;
