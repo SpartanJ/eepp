@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,6 +20,7 @@
 */
 #include "../SDL_internal.h"
 #include "SDL_power.h"
+#include "SDL_syspower.h"
 
 /*
  * Returns SDL_TRUE if we have a definitive answer.
@@ -28,16 +29,6 @@
 typedef SDL_bool
     (*SDL_GetPowerInfo_Impl) (SDL_PowerState * state, int *seconds,
                               int *percent);
-
-SDL_bool SDL_GetPowerInfo_Linux_proc_acpi(SDL_PowerState *, int *, int *);
-SDL_bool SDL_GetPowerInfo_Linux_proc_apm(SDL_PowerState *, int *, int *);
-SDL_bool SDL_GetPowerInfo_Windows(SDL_PowerState *, int *, int *);
-SDL_bool SDL_GetPowerInfo_MacOSX(SDL_PowerState *, int *, int *);
-SDL_bool SDL_GetPowerInfo_Haiku(SDL_PowerState *, int *, int *);
-SDL_bool SDL_GetPowerInfo_UIKit(SDL_PowerState *, int *, int *);
-SDL_bool SDL_GetPowerInfo_Android(SDL_PowerState *, int *, int *);
-SDL_bool SDL_GetPowerInfo_PSP(SDL_PowerState *, int *, int *);
-SDL_bool SDL_GetPowerInfo_WinRT(SDL_PowerState *, int *, int *);
 
 #ifndef SDL_POWER_DISABLED
 #ifdef SDL_POWER_HARDWIRED
@@ -57,6 +48,8 @@ SDL_GetPowerInfo_Hardwired(SDL_PowerState * state, int *seconds, int *percent)
 static SDL_GetPowerInfo_Impl implementations[] = {
 #ifndef SDL_POWER_DISABLED
 #ifdef SDL_POWER_LINUX          /* in order of preference. More than could work. */
+    SDL_GetPowerInfo_Linux_org_freedesktop_upower,
+    SDL_GetPowerInfo_Linux_sys_class_power_supply,
     SDL_GetPowerInfo_Linux_proc_acpi,
     SDL_GetPowerInfo_Linux_proc_apm,
 #endif
@@ -81,6 +74,9 @@ static SDL_GetPowerInfo_Impl implementations[] = {
 #ifdef SDL_POWER_WINRT          /* handles WinRT */
     SDL_GetPowerInfo_WinRT,
 #endif
+#ifdef SDL_POWER_EMSCRIPTEN     /* handles Emscripten */
+    SDL_GetPowerInfo_Emscripten,
+#endif
 
 #ifdef SDL_POWER_HARDWIRED
     SDL_GetPowerInfo_Hardwired,
@@ -93,7 +89,7 @@ SDL_GetPowerInfo(int *seconds, int *percent)
 {
     const int total = sizeof(implementations) / sizeof(implementations[0]);
     int _seconds, _percent;
-    SDL_PowerState retval;
+    SDL_PowerState retval = SDL_POWERSTATE_UNKNOWN;
     int i;
 
     /* Make these never NULL for platform-specific implementations. */
@@ -106,7 +102,7 @@ SDL_GetPowerInfo(int *seconds, int *percent)
     }
 
     for (i = 0; i < total; i++) {
-        if (implementations[i] (&retval, seconds, percent)) {
+        if (implementations[i](&retval, seconds, percent)) {
             return retval;
         }
     }

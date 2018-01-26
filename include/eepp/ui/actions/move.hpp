@@ -10,15 +10,15 @@ class EE_API Move : public ActionInterpolation2d {
 	public:
 		static Move * New( const Vector2f& start, const Vector2f& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear );
 
-		UIAction * clone() const;
+		UIAction * clone() const override;
 
-		UIAction * reverse() const;
+		UIAction * reverse() const override;
 	protected:
 		Move( const Vector2f& start, const Vector2f& end, const Time& duration, const Ease::Interpolation& type );
 
-		void onStart();
+		void onStart() override;
 
-		void onUpdate( const Time& time );
+		void onUpdate( const Time& time ) override;
 	private:
 		Move();
 };

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,8 +21,8 @@
 
 #include "../../SDL_internal.h"
 
-#ifndef _SDL_waylandvideo_h
-#define _SDL_waylandvideo_h
+#ifndef SDL_waylandvideo_h_
+#define SDL_waylandvideo_h_
 
 #include <EGL/egl.h>
 #include "wayland-util.h"
@@ -40,18 +40,13 @@ typedef struct {
     struct wl_display *display;
     struct wl_registry *registry;
     struct wl_compositor *compositor;
-    struct wl_output *output;
     struct wl_shm *shm;
     struct wl_cursor_theme *cursor_theme;
-    struct wl_cursor *default_cursor;
     struct wl_pointer *pointer;
     struct wl_shell *shell;
-
-    struct {
-        int32_t x, y, width, height;
-    } screen_allocation;
-
-    struct wl_list modes_list;
+    struct zwp_relative_pointer_manager_v1 *relative_pointer_manager;
+    struct zwp_pointer_constraints_v1 *pointer_constraints;
+    struct wl_data_device_manager *data_device_manager;
 
     EGLDisplay edpy;
     EGLContext context;
@@ -59,16 +54,18 @@ typedef struct {
 
     struct xkb_context *xkb_context;
     struct SDL_WaylandInput *input;
-    
-#ifdef SDL_VIDEO_DRIVER_WAYLAND_QT_TOUCH    
+
+#ifdef SDL_VIDEO_DRIVER_WAYLAND_QT_TOUCH
     struct SDL_WaylandTouch *touch;
     struct qt_surface_extension *surface_extension;
     struct qt_windowmanager *windowmanager;
 #endif /* SDL_VIDEO_DRIVER_WAYLAND_QT_TOUCH */
 
-    uint32_t shm_formats;
+    char *classname;
+
+    int relative_mouse_mode;
 } SDL_VideoData;
 
-#endif /* _SDL_nullvideo_h */
+#endif /* SDL_waylandvideo_h_ */
 
 /* vi: set ts=4 sw=4 expandtab: */

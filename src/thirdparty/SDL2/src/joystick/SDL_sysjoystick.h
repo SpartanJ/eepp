@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,19 +20,31 @@
 */
 #include "../SDL_internal.h"
 
+#ifndef SDL_sysjoystick_h_
+#define SDL_sysjoystick_h_
+
 /* This is the system specific header for the SDL joystick API */
 
 #include "SDL_joystick.h"
 #include "SDL_joystick_c.h"
 
 /* The SDL joystick structure */
+typedef struct _SDL_JoystickAxisInfo
+{
+    Sint16 initial_value;       /* Initial axis state */
+    Sint16 value;               /* Current axis state */
+    Sint16 zero;                /* Zero point on the axis (-32768 for triggers) */
+    SDL_bool has_initial_value; /* Whether we've seen a value on the axis yet */
+    SDL_bool sent_initial_value; /* Whether we've sent the initial axis value */
+} SDL_JoystickAxisInfo;
+
 struct _SDL_Joystick
 {
     SDL_JoystickID instance_id; /* Device instance, monotonically increasing from 0 */
     char *name;                 /* Joystick name - system dependent */
 
     int naxes;                  /* Number of axis controls on the joystick */
-    Sint16 *axes;               /* Current axis states */
+    SDL_JoystickAxisInfo *axes;
 
     int nhats;                  /* Number of hats on the joystick */
     Uint8 *hats;                /* Current hat states */
@@ -50,10 +62,14 @@ struct _SDL_Joystick
 
     int ref_count;              /* Reference count for multiple opens */
 
-    Uint8 closed;               /* 1 if this device is no longer valid */
-    Uint8 uncentered;           /* 1 if this device needs to have its state reset to 0 */
+    SDL_bool is_game_controller;
+    SDL_bool force_recentering; /* SDL_TRUE if this device needs to have its state reset to 0 */
+    SDL_JoystickPowerLevel epowerlevel; /* power level of this joystick, SDL_JOYSTICK_POWER_UNKNOWN if not supported */
     struct _SDL_Joystick *next; /* pointer to next joystick we have allocated */
 };
+
+/* Macro to combine a USB vendor ID and product ID into a single Uint32 value */
+#define MAKE_VIDPID(VID, PID)   (((Uint32)(VID))<<16|(PID))
 
 /* Function to scan the system for joysticks.
  * Joystick 0 should be the system default joystick.
@@ -63,13 +79,10 @@ struct _SDL_Joystick
 extern int SDL_SYS_JoystickInit(void);
 
 /* Function to return the number of joystick devices plugged in right now */
-extern int SDL_SYS_NumJoysticks();
+extern int SDL_SYS_NumJoysticks(void);
 
 /* Function to cause any queued joystick insertions to be processed */
-extern void SDL_SYS_JoystickDetect();
-
-/* Function to determine if the joystick loop needs to run right now */
-extern SDL_bool SDL_SYS_JoystickNeedsPolling();
+extern void SDL_SYS_JoystickDetect(void);
 
 /* Function to get the device-dependent name of a joystick */
 extern const char *SDL_SYS_JoystickNameForDeviceIndex(int device_index);
@@ -78,14 +91,14 @@ extern const char *SDL_SYS_JoystickNameForDeviceIndex(int device_index);
 extern SDL_JoystickID SDL_SYS_GetInstanceIdOfDeviceIndex(int device_index);
 
 /* Function to open a joystick for use.
-   The joystick to open is specified by the index field of the joystick.
+   The joystick to open is specified by the device index.
    This should fill the nbuttons and naxes fields of the joystick structure.
    It returns 0, or -1 if there is an error.
  */
 extern int SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index);
 
 /* Function to query if the joystick is currently attached
- *   It returns 1 if attached, 0 otherwise.
+ * It returns SDL_TRUE if attached, SDL_FALSE otherwise.
  */
 extern SDL_bool SDL_SYS_JoystickAttached(SDL_Joystick * joystick);
 
@@ -108,10 +121,16 @@ extern SDL_JoystickGUID SDL_SYS_JoystickGetDeviceGUID(int device_index);
 /* Function to return the stable GUID for a opened joystick */
 extern SDL_JoystickGUID SDL_SYS_JoystickGetGUID(SDL_Joystick * joystick);
 
-#if defined(SDL_JOYSTICK_DINPUT) || defined(SDL_JOYSTICK_XINPUT)
-/* Function to get the current instance id of the joystick located at device_index */
-extern SDL_bool SDL_SYS_IsXInputDeviceIndex( int device_index );
-extern SDL_bool SDL_SYS_IsXInputJoystick(SDL_Joystick * joystick);
+#if SDL_JOYSTICK_XINPUT
+/* Function returns SDL_TRUE if this device is an XInput gamepad */
+extern SDL_bool SDL_SYS_IsXInputGamepad_DeviceIndex(int device_index);
 #endif
+
+#if defined(__ANDROID__)
+/* Function returns SDL_TRUE if this device is a DPAD (maybe a TV remote) */
+extern SDL_bool SDL_SYS_IsDPAD_DeviceIndex(int device_index);
+#endif
+
+#endif /* SDL_sysjoystick_h_ */
 
 /* vi: set ts=4 sw=4 expandtab: */

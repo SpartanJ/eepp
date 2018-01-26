@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,13 +25,14 @@
 /* Handle the BeApp specific portions of the application */
 
 #include <AppKit.h>
+#include <storage/AppFileInfo.h>
 #include <storage/Path.h>
 #include <storage/Entry.h>
+#include <storage/File.h>
 #include <unistd.h>
 
 #include "SDL_BApp.h"	/* SDL_BApp class definition */
 #include "SDL_BeApp.h"
-#include "SDL_thread.h"
 #include "SDL_timer.h"
 #include "SDL_error.h"
 
@@ -40,8 +41,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "../../thread/SDL_systhread.h"
+
 /* Flag to tell whether or not the Be application is active or not */
-int SDL_BeAppActive = 0;
+static int SDL_BeAppActive = 0;
 static SDL_Thread *SDL_AppThread = NULL;
 
 static int
@@ -49,7 +53,24 @@ StartBeApp(void *unused)
 {
     BApplication *App;
 
-    App = new SDL_BApp("application/x-SDL-executable");
+	// default application signature
+	const char *signature = "application/x-SDL-executable";
+	// dig resources for correct signature
+	image_info info;
+	int32 cookie = 0;
+	if (get_next_image_info(B_CURRENT_TEAM, &cookie, &info) == B_OK) {
+		BFile f(info.name, O_RDONLY);
+		if (f.InitCheck() == B_OK) {
+			BAppFileInfo app_info(&f);
+			if (app_info.InitCheck() == B_OK) {
+				char sig[B_MIME_TYPE_LENGTH];
+				if (app_info.GetSignature(sig) == B_OK)
+					signature = strndup(sig, B_MIME_TYPE_LENGTH);
+			}
+		}
+	}
+
+	App = new SDL_BApp(signature);
 
     App->Run();
     delete App;
@@ -62,7 +83,7 @@ SDL_InitBeApp(void)
 {
     /* Create the BApplication that handles appserver interaction */
     if (SDL_BeAppActive <= 0) {
-        SDL_AppThread = SDL_CreateThread(StartBeApp, "SDLApplication", NULL);
+        SDL_AppThread = SDL_CreateThreadInternal(StartBeApp, "SDLApplication", 0, NULL);
         if (SDL_AppThread == NULL) {
             return SDL_SetError("Couldn't create BApplication thread");
         }

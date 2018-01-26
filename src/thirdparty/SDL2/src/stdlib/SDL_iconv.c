@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -18,6 +18,11 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
+
+#if defined(__clang_analyzer__) && !defined(SDL_DISABLE_ANALYZE_MACROS)
+#define SDL_DISABLE_ANALYZE_MACROS 1
+#endif
+
 #include "../SDL_internal.h"
 
 /* This file contains portable iconv functions for SDL */
@@ -25,14 +30,17 @@
 #include "SDL_stdinc.h"
 #include "SDL_endian.h"
 
-#ifdef HAVE_ICONV
+#if defined(HAVE_ICONV) && defined(HAVE_ICONV_H)
+#include <iconv.h>
 
 /* Depending on which standard the iconv() was implemented with,
    iconv() may or may not use const char ** for the inbuf param.
    If we get this wrong, it's just a warning, so no big deal.
 */
 #if defined(_XGP6) || defined(__APPLE__) || \
-    (defined(__GLIBC__) && ((__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2)))
+    defined(__EMSCRIPTEN__) || \
+    (defined(__GLIBC__) && ((__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2)) || \
+    (defined(_NEWLIB_VERSION)))
 #define ICONV_INBUF_NONCONST
 #endif
 
@@ -790,6 +798,7 @@ SDL_iconv(SDL_iconv_t cd,
             if (ch > 0x10FFFF) {
                 ch = UNKNOWN_UNICODE;
             }
+            /* fallthrough */
         case ENCODING_UCS4BE:
             if (ch > 0x7FFFFFFF) {
                 ch = UNKNOWN_UNICODE;
@@ -811,6 +820,7 @@ SDL_iconv(SDL_iconv_t cd,
             if (ch > 0x10FFFF) {
                 ch = UNKNOWN_UNICODE;
             }
+            /* fallthrough */
         case ENCODING_UCS4LE:
             if (ch > 0x7FFFFFFF) {
                 ch = UNKNOWN_UNICODE;

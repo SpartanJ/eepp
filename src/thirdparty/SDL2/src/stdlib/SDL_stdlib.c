@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -18,6 +18,11 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
+
+#if defined(__clang_analyzer__) && !defined(SDL_DISABLE_ANALYZE_MACROS)
+#define SDL_DISABLE_ANALYZE_MACROS 1
+#endif
+
 #include "../SDL_internal.h"
 
 /* This file contains portable stdlib functions for SDL */
@@ -29,11 +34,21 @@
 double
 SDL_atan(double x)
 {
-#ifdef HAVE_ATAN
+#if defined(HAVE_ATAN)
     return atan(x);
 #else
     return SDL_uclibc_atan(x);
-#endif /* HAVE_ATAN */
+#endif
+}
+
+float
+SDL_atanf(float x)
+{
+#if defined(HAVE_ATANF)
+    return atanf(x);
+#else
+    return (float)SDL_atan((double)x);
+#endif
 }
 
 double
@@ -43,7 +58,17 @@ SDL_atan2(double x, double y)
     return atan2(x, y);
 #else
     return SDL_uclibc_atan2(x, y);
-#endif /* HAVE_ATAN2 */
+#endif
+}
+
+float
+SDL_atan2f(float x, float y)
+{
+#if defined(HAVE_ATAN2F)
+    return atan2f(x, y);
+#else
+    return (float)SDL_atan2((double)x, (double)y);
+#endif
 }
 
 double
@@ -66,6 +91,16 @@ SDL_acos(double val)
 #endif
 }
 
+float
+SDL_acosf(float val)
+{
+#if defined(HAVE_ACOSF)
+    return acosf(val);
+#else
+    return (float)SDL_acos((double)val);
+#endif
+}
+
 double
 SDL_asin(double val)
 {
@@ -82,10 +117,20 @@ SDL_asin(double val)
 #endif
 }
 
+float
+SDL_asinf(float val)
+{
+#if defined(HAVE_ASINF)
+    return asinf(val);
+#else
+    return (float)SDL_asin((double)val);
+#endif
+}
+
 double
 SDL_ceil(double x)
 {
-#ifdef HAVE_CEIL
+#if defined(HAVE_CEIL)
     return ceil(x);
 #else
     double integer = SDL_floor(x);
@@ -97,6 +142,16 @@ SDL_ceil(double x)
 #endif /* HAVE_CEIL */
 }
 
+float
+SDL_ceilf(float x)
+{
+#if defined(HAVE_CEILF)
+    return ceilf(x);
+#else
+    return (float)SDL_ceil((float)x);
+#endif
+}
+
 double
 SDL_copysign(double x, double y)
 {
@@ -104,9 +159,25 @@ SDL_copysign(double x, double y)
     return copysign(x, y);
 #elif defined(HAVE__COPYSIGN)
     return _copysign(x, y);
+#elif defined(__WATCOMC__) && defined(__386__)
+    /* this is nasty as hell, but it works.. */
+    unsigned int *xi = (unsigned int *) &x,
+                 *yi = (unsigned int *) &y;
+    xi[1] = (yi[1] & 0x80000000) | (xi[1] & 0x7fffffff);
+    return x;
 #else
     return SDL_uclibc_copysign(x, y);
 #endif /* HAVE_COPYSIGN */
+}
+
+float
+SDL_copysignf(float x, float y)
+{
+#if defined(HAVE_COPYSIGNF)
+    return copysignf(x, y);
+#else
+    return (float)SDL_copysign((double)x, (double)y);
+#endif
 }
 
 double
@@ -116,13 +187,13 @@ SDL_cos(double x)
     return cos(x);
 #else
     return SDL_uclibc_cos(x);
-#endif /* HAVE_COS */
+#endif
 }
 
 float
 SDL_cosf(float x)
 {
-#ifdef HAVE_COSF
+#if defined(HAVE_COSF)
     return cosf(x);
 #else
     return (float)SDL_cos((double)x);
@@ -136,7 +207,17 @@ SDL_fabs(double x)
     return fabs(x); 
 #else
     return SDL_uclibc_fabs(x);
-#endif /* HAVE_FABS */
+#endif
+}
+
+float
+SDL_fabsf(float x)
+{
+#if defined(HAVE_FABSF)
+    return fabsf(x); 
+#else
+    return (float)SDL_fabs((double)x);
+#endif
 }
 
 double
@@ -146,7 +227,37 @@ SDL_floor(double x)
     return floor(x);
 #else
     return SDL_uclibc_floor(x);
-#endif /* HAVE_FLOOR */
+#endif
+}
+
+float
+SDL_floorf(float x)
+{
+#if defined(HAVE_FLOORF)
+    return floorf(x);
+#else
+    return (float)SDL_floor((double)x);
+#endif
+}
+
+double
+SDL_fmod(double x, double y)
+{
+#if defined(HAVE_FMOD)
+    return fmod(x, y);
+#else
+    return SDL_uclibc_fmod(x, y);
+#endif
+}
+
+float
+SDL_fmodf(float x, float y)
+{
+#if defined(HAVE_FMODF)
+    return fmodf(x, y);
+#else
+    return (float)SDL_fmod((double)x, (double)y);
+#endif
 }
 
 double
@@ -156,7 +267,17 @@ SDL_log(double x)
     return log(x);
 #else
     return SDL_uclibc_log(x);
-#endif /* HAVE_LOG */
+#endif
+}
+
+float
+SDL_logf(float x)
+{
+#if defined(HAVE_LOGF)
+    return logf(x);
+#else
+    return (float)SDL_log((double)x);
+#endif
 }
 
 double
@@ -166,7 +287,17 @@ SDL_pow(double x, double y)
     return pow(x, y);
 #else
     return SDL_uclibc_pow(x, y);
-#endif /* HAVE_POW */
+#endif
+}
+
+float
+SDL_powf(float x, float y)
+{
+#if defined(HAVE_POWF)
+    return powf(x, y);
+#else
+    return (float)SDL_pow((double)x, (double)y);
+#endif
 }
 
 double
@@ -176,9 +307,23 @@ SDL_scalbn(double x, int n)
     return scalbn(x, n);
 #elif defined(HAVE__SCALB)
     return _scalb(x, n);
+#elif defined(HAVE_LIBC) && defined(HAVE_FLOAT_H) && (FLT_RADIX == 2)
+/* from scalbn(3): If FLT_RADIX equals 2 (which is
+ * usual), then scalbn() is equivalent to ldexp(3). */
+    return ldexp(x, n);
 #else
     return SDL_uclibc_scalbn(x, n);
-#endif /* HAVE_SCALBN */
+#endif
+}
+
+float
+SDL_scalbnf(float x, int n)
+{
+#if defined(HAVE_SCALBNF)
+    return scalbnf(x, n);
+#else
+    return (float)SDL_scalbn((double)x, n);
+#endif
 }
 
 double
@@ -188,17 +333,17 @@ SDL_sin(double x)
     return sin(x);
 #else
     return SDL_uclibc_sin(x);
-#endif /* HAVE_SIN */
+#endif
 }
 
 float 
 SDL_sinf(float x)
 {
-#ifdef HAVE_SINF
+#if defined(HAVE_SINF)
     return sinf(x);
 #else
     return (float)SDL_sin((double)x);
-#endif /* HAVE_SINF */
+#endif
 }
 
 double
@@ -211,16 +356,46 @@ SDL_sqrt(double x)
 #endif
 }
 
+float
+SDL_sqrtf(float x)
+{
+#if defined(HAVE_SQRTF)
+    return sqrtf(x);
+#else
+    return (float)SDL_sqrt((double)x);
+#endif
+}
+
+double
+SDL_tan(double x)
+{
+#if defined(HAVE_TAN)
+    return tan(x);
+#else
+    return SDL_uclibc_tan(x);
+#endif
+}
+
+float
+SDL_tanf(float x)
+{
+#if defined(HAVE_TANF)
+    return tanf(x);
+#else
+    return (float)SDL_tan((double)x);
+#endif
+}
+
 int SDL_abs(int x)
 {
-#ifdef HAVE_ABS
+#if defined(HAVE_ABS)
     return abs(x);
 #else
     return ((x) < 0 ? -(x) : (x));
 #endif
 }
 
-#ifdef HAVE_CTYPE_H
+#if defined(HAVE_CTYPE_H)
 int SDL_isdigit(int x) { return isdigit(x); }
 int SDL_isspace(int x) { return isspace(x); }
 int SDL_toupper(int x) { return toupper(x); }
@@ -243,8 +418,8 @@ int SDL_tolower(int x) { return ((x) >= 'A') && ((x) <= 'Z') ? ('a'+((x)-'A')) :
 __declspec(selectany) int _fltused = 1;
 #endif
 
-/* The optimizer on Visual Studio 2010/2012 generates memcpy() calls */
-#if _MSC_VER >= 1600 && defined(_WIN64) && !defined(_DEBUG)
+/* The optimizer on Visual Studio 2005 and later generates memcpy() calls */
+#if (_MSC_VER >= 1400) && defined(_WIN64) && !defined(_DEBUG) && !(_MSC_VER >= 1900 && defined(_MT))
 #include <intrin.h>
 
 #pragma function(memcpy)
@@ -347,34 +522,25 @@ _allmul()
 {
     /* *INDENT-OFF* */
     __asm {
-        push        ebp
-        mov         ebp,esp
-        push        edi
-        push        esi
+        mov         eax, dword ptr[esp+8]
+        mov         ecx, dword ptr[esp+10h]
+        or          ecx, eax
+        mov         ecx, dword ptr[esp+0Ch]
+        jne         hard
+        mov         eax, dword ptr[esp+4]
+        mul         ecx
+        ret         10h
+hard:
         push        ebx
-        sub         esp,0Ch
-        mov         eax,dword ptr [ebp+10h]
-        mov         edi,dword ptr [ebp+8]
-        mov         ebx,eax
-        mov         esi,eax
-        sar         esi,1Fh
-        mov         eax,dword ptr [ebp+8]
-        mul         ebx
-        imul        edi,esi
-        mov         ecx,edx
-        mov         dword ptr [ebp-18h],eax
-        mov         edx,dword ptr [ebp+0Ch]
-        add         ecx,edi
-        imul        ebx,edx
-        mov         eax,dword ptr [ebp-18h]
-        lea         ebx,[ebx+ecx]
-        mov         dword ptr [ebp-14h],ebx
-        mov         edx,dword ptr [ebp-14h]
-        add         esp,0Ch
+        mul         ecx
+        mov         ebx, eax
+        mov         eax, dword ptr[esp+8]
+        mul         dword ptr[esp+14h]
+        add         ebx, eax
+        mov         eax, dword ptr[esp+8]
+        mul         ecx
+        add         edx, ebx
         pop         ebx
-        pop         esi
-        pop         edi
-        pop         ebp
         ret         10h
     }
     /* *INDENT-ON* */
@@ -888,8 +1054,8 @@ _allshr()
 {
     /* *INDENT-OFF* */
     __asm {
-        cmp         cl,40h
-        jae         RETZERO
+        cmp         cl,3Fh
+        jae         RETSIGN
         cmp         cl,20h
         jae         MORE32
         shrd        eax,edx,cl
@@ -897,13 +1063,13 @@ _allshr()
         ret
 MORE32:
         mov         eax,edx
-        xor         edx,edx
+        sar         edx,1Fh
         and         cl,1Fh
         sar         eax,cl
         ret
-RETZERO:
-        xor         eax,eax
-        xor         edx,edx
+RETSIGN:
+        sar         edx,1Fh
+        mov         eax,edx
         ret
     }
     /* *INDENT-ON* */

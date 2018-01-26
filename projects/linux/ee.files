@@ -1,3 +1,5 @@
+../../src/eepp/graphics/renderer/shaders/basegl3cp.gles2.frag.h
+../../src/eepp/graphics/renderer/shaders/basegl3cp.gles2.vert.h
 ../../src/tools/textureatlaseditor/textureatlaseditor.cpp
 ../../include/eepp/graphics/arcdrawable.hpp
 ../../include/eepp/graphics/circledrawable.hpp

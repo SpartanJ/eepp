@@ -168,13 +168,13 @@ LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/include
 
 LOCAL_CFLAGS			:= -D__ANDROID__ -DANDROID -DGL_GLEXT_PROTOTYPES $(EE_GLES_VERSION)
 
-LOCAL_SRC_FILES			:= \
+LOCAL_SRC_FILES := \
 	$(subst $(LOCAL_PATH)/,, \
 	$(wildcard $(LOCAL_PATH)/src/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/audio/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/audio/android/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/audio/dummy/*.c) \
-	$(LOCAL_PATH)/src/atomic/SDL_atomic.c \
+	$(LOCAL_PATH)/src/atomic/SDL_atomic.c.arm \
 	$(LOCAL_PATH)/src/atomic/SDL_spinlock.c.arm \
 	$(wildcard $(LOCAL_PATH)/src/core/android/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/cpuinfo/*.c) \
@@ -182,13 +182,14 @@ LOCAL_SRC_FILES			:= \
 	$(wildcard $(LOCAL_PATH)/src/events/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/file/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/haptic/*.c) \
-	$(wildcard $(LOCAL_PATH)/src/haptic/dummy/*.c) \
+	$(wildcard $(LOCAL_PATH)/src/haptic/android/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/joystick/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/joystick/android/*.c) \
+	$(LOCAL_PATH)/src/joystick/steam/SDL_steamcontroller.c \
 	$(wildcard $(LOCAL_PATH)/src/loadso/dlopen/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/power/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/power/android/*.c) \
-	$(wildcard $(LOCAL_PATH)/src/filesystem/dummy/*.c) \
+	$(wildcard $(LOCAL_PATH)/src/filesystem/android/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/render/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/render/*/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/stdlib/*.c) \
@@ -198,7 +199,8 @@ LOCAL_SRC_FILES			:= \
 	$(wildcard $(LOCAL_PATH)/src/timer/unix/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/video/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/video/android/*.c) \
-    $(wildcard $(LOCAL_PATH)/src/test/*.c))
+	$(wildcard $(LOCAL_PATH)/src/video/yuv2rgb/*.c) \
+	$(wildcard $(LOCAL_PATH)/src/test/*.c))
 
 include $(BUILD_STATIC_LIBRARY)
 #**************** SDL 2 ***************

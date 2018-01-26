@@ -21,9 +21,9 @@ class EE_API MarginMove : public UIAction {
 
 		bool isDone() override;
 
-		UIAction * clone() const;
+		UIAction * clone() const override;
 
-		UIAction * reverse() const;
+		UIAction * reverse() const override;
 
 		Interpolation1d getInterpolationLeft() const;
 
@@ -44,9 +44,9 @@ class EE_API MarginMove : public UIAction {
 	protected:
 		MarginMove( const Rect & start, const Rect & end, const Time & duration, const Ease::Interpolation & type );
 
-		void onStart();
+		void onStart() override;
 
-		void onUpdate( const Time& time );
+		void onUpdate( const Time& time ) override;
 	private:
 		MarginMove();
 

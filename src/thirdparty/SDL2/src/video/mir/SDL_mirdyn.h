@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -19,8 +19,8 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-#ifndef _SDL_mirdyn_h
-#define _SDL_mirdyn_h
+#ifndef SDL_mirdyn_h_
+#define SDL_mirdyn_h_
 
 #include "../../SDL_internal.h"
 
@@ -36,18 +36,18 @@ int SDL_MIR_LoadSymbols(void);
 void SDL_MIR_UnloadSymbols(void);
 
 /* Declare all the function pointers and wrappers... */
-#define SDL_MIR_MODULE(modname)
 #define SDL_MIR_SYM(rc,fn,params) \
     typedef rc (*SDL_DYNMIRFN_##fn) params; \
     extern SDL_DYNMIRFN_##fn MIR_##fn;
+#define SDL_MIR_SYM_CONST(type, name) \
+    typedef type SDL_DYMMIRCONST_##name; \
+    extern SDL_DYMMIRCONST_##name MIR_##name;
 #include "SDL_mirsym.h"
-#undef SDL_MIR_MODULE
-#undef SDL_MIR_SYM
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* !defined _SDL_mirdyn_h */
+#endif /* !defined SDL_mirdyn_h_ */
 
 /* vi: set ts=4 sw=4 expandtab: */

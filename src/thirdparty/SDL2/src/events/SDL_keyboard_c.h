@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,8 +20,8 @@
 */
 #include "../SDL_internal.h"
 
-#ifndef _SDL_keyboard_c_h
-#define _SDL_keyboard_c_h
+#ifndef SDL_keyboard_c_h_
+#define SDL_keyboard_c_h_
 
 #include "SDL_keycode.h"
 #include "SDL_events.h"
@@ -62,6 +62,9 @@ extern void SDL_KeyboardQuit(void);
 /* Convert to UTF-8 */
 extern char *SDL_UCS4ToUTF8(Uint32 ch, char *dst);
 
-#endif /* _SDL_keyboard_c_h */
+/* Toggle on or off pieces of the keyboard mod state. */
+extern void SDL_ToggleModState(const SDL_Keymod modstate, const SDL_bool toggle);
+
+#endif /* SDL_keyboard_c_h_ */
 
 /* vi: set ts=4 sw=4 expandtab: */

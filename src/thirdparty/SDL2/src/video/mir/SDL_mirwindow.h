@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,21 +23,21 @@
   Contributed by Brandon Schaefer, <brandon.schaefer@canonical.com>
 */
 
-#ifndef _SDL_mirwindow_h
-#define _SDL_mirwindow_h
+#ifndef SDL_mirwindow_h_
+#define SDL_mirwindow_h_
 
 #include "../SDL_sysvideo.h"
 #include "SDL_syswm.h"
 
 #include "SDL_mirvideo.h"
 
-typedef struct {
+struct MIR_Window {
     SDL_Window* sdl_window;
-    MIR_Data* mir_data;
+    MIR_Data*   mir_data;
 
-    MirSurface* surface;
-    EGLSurface egl_surface;
-} MIR_Window;
+    MirWindow*  window;
+    EGLSurface  egl_surface;
+};
 
 
 extern int
@@ -60,10 +60,34 @@ MIR_MinimizeWindow(_THIS, SDL_Window* window);
 extern void
 MIR_RestoreWindow(_THIS, SDL_Window* window);
 
+extern void
+MIR_HideWindow(_THIS, SDL_Window* window);
+
 extern SDL_bool
 MIR_GetWindowWMInfo(_THIS, SDL_Window* window, SDL_SysWMinfo* info);
 
-#endif /* _SDL_mirwindow */
+extern void
+MIR_SetWindowSize(_THIS, SDL_Window* window);
+
+extern void
+MIR_SetWindowMinimumSize(_THIS, SDL_Window* window);
+
+extern void
+MIR_SetWindowMaximumSize(_THIS, SDL_Window* window);
+
+extern void
+MIR_SetWindowTitle(_THIS, SDL_Window* window);
+
+extern void
+MIR_SetWindowGrab(_THIS, SDL_Window* window, SDL_bool grabbed);
+
+extern int
+MIR_SetWindowGammaRamp(_THIS, SDL_Window* window, Uint16 const* ramp);
+
+extern int
+MIR_GetWindowGammaRamp(_THIS, SDL_Window* window, Uint16* ramp);
+
+#endif /* SDL_mirwindow_h_ */
 
 /* vi: set ts=4 sw=4 expandtab: */
 

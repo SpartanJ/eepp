@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -29,22 +29,26 @@
 #include "SDL_events.h"
 #include "SDL_androidwindow.h"
 
-void android_egl_context_backup();
-void android_egl_context_restore();
+/* Can't include sysaudio "../../audio/android/SDL_androidaudio.h"
+ * because of THIS redefinition */
+extern void ANDROIDAUDIO_ResumeDevices(void);
+extern void ANDROIDAUDIO_PauseDevices(void);
 
-void 
+static void 
 android_egl_context_restore() 
 {
+    SDL_Event event;
     SDL_WindowData *data = (SDL_WindowData *) Android_Window->driverdata;
     if (SDL_GL_MakeCurrent(Android_Window, (SDL_GLContext) data->egl_context) < 0) {
         /* The context is no longer valid, create a new one */
-        /* FIXME: Notify the user that the context changed and textures need to be re created */
         data->egl_context = (EGLContext) SDL_GL_CreateContext(Android_Window);
         SDL_GL_MakeCurrent(Android_Window, (SDL_GLContext) data->egl_context);
+        event.type = SDL_RENDER_DEVICE_RESET;
+        SDL_PushEvent(&event);
     }
 }
 
-void 
+static void 
 android_egl_context_backup() 
 {
     /* Keep a copy of the EGL Context so we can try to restore it when we resume */
@@ -72,13 +76,14 @@ Android_PumpEvents(_THIS)
     if (isPaused && !isPausing) {
         /* Make sure this is the last thing we do before pausing */
         android_egl_context_backup();
+        ANDROIDAUDIO_PauseDevices();
         if(SDL_SemWait(Android_ResumeSem) == 0) {
 #else
     if (isPaused) {
         if(SDL_SemTryWait(Android_ResumeSem) == 0) {
 #endif
             isPaused = 0;
-            
+            ANDROIDAUDIO_ResumeDevices();
             /* Restore the GL Context from here, as this operation is thread dependent */
             if (!SDL_HasEvent(SDL_QUIT)) {
                 android_egl_context_restore();
@@ -101,6 +106,7 @@ Android_PumpEvents(_THIS)
 #else
         if(SDL_SemTryWait(Android_PauseSem) == 0) {
             android_egl_context_backup();
+            ANDROIDAUDIO_PauseDevices();
             isPaused = 1;
         }
 #endif

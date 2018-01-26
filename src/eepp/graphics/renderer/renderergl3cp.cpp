@@ -54,9 +54,9 @@ const GLchar * GL3CP_SHADER_HEAD = "#version 330\n";
 
 #else
 
-#include "shaders/basegl3.vert.h"
+#include "shaders/basegl3cp.gles2.vert.h"
 
-#include "shaders/basegl3.frag.h"
+#include "shaders/basegl3cp.gles2.frag.h"
 
 #endif
 
@@ -107,13 +107,8 @@ void RendererGL3CP::init() {
 		std::string vs( GL3CP_SHADER_HEAD );
 		std::string fs( GL3CP_SHADER_HEAD );
 
-		#if !defined( EE_GLES2 )
 		vs += EEGL3CP_SHADER_BASE_VS;
 		fs += EEGL3CP_SHADER_BASE_FS;
-		#else
-		vs += EEGL3_SHADER_BASE_VS;
-		fs += EEGL3_SHADER_BASE_FS;
-		#endif
 
 		mBaseVertexShader = vs;
 

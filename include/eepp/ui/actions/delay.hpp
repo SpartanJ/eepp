@@ -19,9 +19,9 @@ class EE_API Delay : public UIAction {
 
 		bool isDone() override;
 
-		UIAction * clone() const;
+		UIAction * clone() const override;
 
-		UIAction * reverse() const;
+		UIAction * reverse() const override;
 
 	protected:
 		Clock mClock;

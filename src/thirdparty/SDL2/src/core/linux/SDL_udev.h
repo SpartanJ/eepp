@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,8 +21,8 @@
 
 #include "../../SDL_internal.h"
 
-#ifndef _SDL_udev_h
-#define _SDL_udev_h
+#ifndef SDL_udev_h_
+#define SDL_udev_h_
 
 #if HAVE_LIBUDEV_H
 
@@ -42,17 +42,19 @@
 
 typedef enum
 {
-    SDL_UDEV_DEVICEADDED = 0x0001,
+    SDL_UDEV_DEVICEADDED = 1,
     SDL_UDEV_DEVICEREMOVED
 } SDL_UDEV_deviceevent;
 
 /* A device can be any combination of these classes */
 typedef enum
 {
+    SDL_UDEV_DEVICE_UNKNOWN     = 0x0000,
     SDL_UDEV_DEVICE_MOUSE       = 0x0001,
     SDL_UDEV_DEVICE_KEYBOARD    = 0x0002,
     SDL_UDEV_DEVICE_JOYSTICK    = 0x0004,
-    SDL_UDEV_DEVICE_SOUND       = 0x0008
+    SDL_UDEV_DEVICE_SOUND       = 0x0008,
+    SDL_UDEV_DEVICE_TOUCHSCREEN = 0x0010
 } SDL_UDEV_deviceclass;
 
 typedef void (*SDL_UDEV_Callback)(SDL_UDEV_deviceevent udev_type, int udev_class, const char *devpath);
@@ -75,7 +77,9 @@ typedef struct SDL_UDEV_PrivateData
     const char *(*udev_device_get_action)(struct udev_device *);
     const char *(*udev_device_get_devnode)(struct udev_device *);
     const char *(*udev_device_get_subsystem)(struct udev_device *);
+	struct udev_device *(*udev_device_get_parent_with_subsystem_devtype)(struct udev_device *udev_device, const char *subsystem, const char *devtype);
     const char *(*udev_device_get_property_value)(struct udev_device *, const char *);
+	const char *(*udev_device_get_sysattr_value)(struct udev_device *udev_device, const char *sysattr);
     struct udev_device *(*udev_device_new_from_syspath)(struct udev *, const char *);
     void (*udev_device_unref)(struct udev_device *);
     int (*udev_enumerate_add_match_property)(struct udev_enumerate *, const char *, const char *);
@@ -112,4 +116,6 @@ extern void SDL_UDEV_DelCallback(SDL_UDEV_Callback cb);
 
 #endif /* HAVE_LIBUDEV_H */
 
-#endif /* _SDL_udev_h */
+#endif /* SDL_udev_h_ */
+
+/* vi: set ts=4 sw=4 expandtab: */

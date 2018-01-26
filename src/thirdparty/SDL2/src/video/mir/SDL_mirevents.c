@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -53,67 +53,79 @@ HandleKeyText(int32_t key_code)
     }
 }
 
-static void
-CheckKeyboardFocus(SDL_Window* sdl_window)
-{
-    SDL_Window* keyboard_window = SDL_GetKeyboardFocus();
-
-    if (keyboard_window != sdl_window)
-        SDL_SetKeyboardFocus(sdl_window);
-}
-
-
 /* FIXME
    Mir still needs to implement its IM API, for now we assume
    a single key press produces a character.
 */
 static void
-HandleKeyEvent(MirKeyEvent const ev, SDL_Window* window)
+HandleKeyEvent(MirKeyboardEvent const* key_event, SDL_Window* window)
 {
-    uint32_t scancode = SDL_SCANCODE_UNKNOWN;
-    Uint8 key_state = ev.action == mir_key_action_up ? SDL_RELEASED : SDL_PRESSED;
+    xkb_keysym_t key_code;
+    Uint8 key_state;
+    int event_scancode;
+    uint32_t sdl_scancode = SDL_SCANCODE_UNKNOWN;
 
-    CheckKeyboardFocus(window);
+    MirKeyboardAction action = MIR_mir_keyboard_event_action(key_event);
 
-    if (ev.scan_code < SDL_arraysize(xfree86_scancode_table2))
-        scancode = xfree86_scancode_table2[ev.scan_code];
+    key_state      = SDL_PRESSED;
+    key_code       = MIR_mir_keyboard_event_key_code(key_event);
+    event_scancode = MIR_mir_keyboard_event_scan_code(key_event);
 
-    if (scancode != SDL_SCANCODE_UNKNOWN)
-        SDL_SendKeyboardKey(key_state, scancode);
+    if (action == mir_keyboard_action_up)
+        key_state = SDL_RELEASED;
+
+    if (event_scancode < SDL_arraysize(xfree86_scancode_table2))
+        sdl_scancode = xfree86_scancode_table2[event_scancode];
+
+    if (sdl_scancode != SDL_SCANCODE_UNKNOWN)
+        SDL_SendKeyboardKey(key_state, sdl_scancode);
 
     if (key_state == SDL_PRESSED)
-        HandleKeyText(ev.key_code);
+        HandleKeyText(key_code);
 }
 
 static void
-HandleMouseButton(SDL_Window* sdl_window, Uint8 state, MirMotionButton button_state)
+HandleMouseButton(SDL_Window* sdl_window, Uint8 state, MirPointerEvent const* pointer)
 {
-    static uint32_t last_sdl_button;
-    uint32_t sdl_button;
+    uint32_t sdl_button           = SDL_BUTTON_LEFT;
+    MirPointerButton button_state = mir_pointer_button_primary;
+
+    static uint32_t old_button_states = 0;
+    uint32_t new_button_states = MIR_mir_pointer_event_buttons(pointer);
+
+    // XOR on our old button states vs our new states to get the newley pressed/released button
+    button_state = new_button_states ^ old_button_states;
 
     switch (button_state) {
-        case mir_motion_button_primary:
+        case mir_pointer_button_primary:
             sdl_button = SDL_BUTTON_LEFT;
             break;
-        case mir_motion_button_secondary:
+        case mir_pointer_button_secondary:
             sdl_button = SDL_BUTTON_RIGHT;
             break;
-        case mir_motion_button_tertiary:
+        case mir_pointer_button_tertiary:
             sdl_button = SDL_BUTTON_MIDDLE;
             break;
-        case mir_motion_button_forward:
+        case mir_pointer_button_forward:
             sdl_button = SDL_BUTTON_X1;
             break;
-        case mir_motion_button_back:
+        case mir_pointer_button_back:
             sdl_button = SDL_BUTTON_X2;
             break;
         default:
-            sdl_button = last_sdl_button;
             break;
     }
 
-    last_sdl_button = sdl_button;
+    old_button_states = new_button_states;
+
     SDL_SendMouseButton(sdl_window, 0, state, sdl_button);
+}
+
+static void
+HandleMouseMotion(SDL_Window* sdl_window, int x, int y)
+{
+    SDL_Mouse* mouse = SDL_GetMouse();
+    SDL_SendMouseMotion(sdl_window, 0, mouse->relative_mode, x, y);
 }
 
 static void
@@ -129,15 +141,9 @@ HandleTouchMotion(int device_id, int source_id, float x, float y, float pressure
 }
 
 static void
-HandleMouseMotion(SDL_Window* sdl_window, int x, int y)
+HandleMouseScroll(SDL_Window* sdl_window, float hscroll, float vscroll)
 {
-    SDL_SendMouseMotion(sdl_window, 0, 0, x, y);
-}
-
-static void
-HandleMouseScroll(SDL_Window* sdl_window, int hscroll, int vscroll)
-{
-    SDL_SendMouseWheel(sdl_window, 0, hscroll, vscroll);
+    SDL_SendMouseWheel(sdl_window, 0, hscroll, vscroll, SDL_MOUSEWHEEL_NORMAL);
 }
 
 static void
@@ -148,73 +154,102 @@ AddTouchDevice(int device_id)
 }
 
 static void
-HandleTouchEvent(MirMotionEvent const motion, int cord_index, SDL_Window* sdl_window)
+HandleTouchEvent(MirTouchEvent const* touch, int device_id, SDL_Window* sdl_window)
 {
-    int device_id = motion.device_id;
-    int id = motion.pointer_coordinates[cord_index].id;
+    int i, point_count;
+    point_count = MIR_mir_touch_event_point_count(touch);
 
-    int width  = sdl_window->w;
-    int height = sdl_window->h;
-    float x   = motion.pointer_coordinates[cord_index].x;
-    float y   = motion.pointer_coordinates[cord_index].y;
+    AddTouchDevice(device_id);
 
-    float n_x = x / width;
-    float n_y = y / height;
-    float pressure = motion.pointer_coordinates[cord_index].pressure;
+    for (i = 0; i < point_count; i++) {
+        int id = MIR_mir_touch_event_id(touch, i);
 
-    AddTouchDevice(motion.device_id);
+        int width  = sdl_window->w;
+        int height = sdl_window->h;
 
-    switch (motion.action) {
-        case mir_motion_action_down:
-        case mir_motion_action_pointer_down:
-            HandleTouchPress(device_id, id, SDL_TRUE, n_x, n_y, pressure);
-            break;
-        case mir_motion_action_up:
-        case mir_motion_action_pointer_up:
-            HandleTouchPress(device_id, id, SDL_FALSE, n_x, n_y, pressure);
-            break;
-        case mir_motion_action_hover_move:
-        case mir_motion_action_move:
-            HandleTouchMotion(device_id, id, n_x, n_y, pressure);
-            break;
-        default:
-            break;
+        float x = MIR_mir_touch_event_axis_value(touch, i, mir_touch_axis_x);
+        float y = MIR_mir_touch_event_axis_value(touch, i, mir_touch_axis_y);
+
+        float n_x = x / width;
+        float n_y = y / height;
+
+        float pressure = MIR_mir_touch_event_axis_value(touch, i, mir_touch_axis_pressure);
+
+        switch (MIR_mir_touch_event_action(touch, i)) {
+            case mir_touch_action_up:
+                HandleTouchPress(device_id, id, SDL_FALSE, n_x, n_y, pressure);
+                break;
+            case mir_touch_action_down:
+                HandleTouchPress(device_id, id, SDL_TRUE, n_x, n_y, pressure);
+                break;
+            case mir_touch_action_change:
+                HandleTouchMotion(device_id, id, n_x, n_y, pressure);
+                break;
+            case mir_touch_actions:
+                break;
+        }
     }
 }
 
 static void
-HandleMouseEvent(MirMotionEvent const motion, int cord_index, SDL_Window* sdl_window)
+HandleMouseEvent(MirPointerEvent const* pointer, SDL_Window* sdl_window)
 {
     SDL_SetMouseFocus(sdl_window);
 
-    switch (motion.action) {
-        case mir_motion_action_down:
-        case mir_motion_action_pointer_down:
-            HandleMouseButton(sdl_window, SDL_PRESSED, motion.button_state);
+    switch (MIR_mir_pointer_event_action(pointer)) {
+        case mir_pointer_action_button_down:
+            HandleMouseButton(sdl_window, SDL_PRESSED, pointer);
             break;
-        case mir_motion_action_up:
-        case mir_motion_action_pointer_up:
-            HandleMouseButton(sdl_window, SDL_RELEASED, motion.button_state);
+        case mir_pointer_action_button_up:
+            HandleMouseButton(sdl_window, SDL_RELEASED, pointer);
             break;
-        case mir_motion_action_hover_move:
-        case mir_motion_action_move:
-            HandleMouseMotion(sdl_window,
-                              motion.pointer_coordinates[cord_index].x,
-                              motion.pointer_coordinates[cord_index].y);
+        case mir_pointer_action_motion: {
+            int x, y;
+            float hscroll, vscroll;
+            SDL_Mouse* mouse = SDL_GetMouse();
+            x = MIR_mir_pointer_event_axis_value(pointer, mir_pointer_axis_x);
+            y = MIR_mir_pointer_event_axis_value(pointer, mir_pointer_axis_y);
+
+            if (mouse) {
+                if (mouse->relative_mode) {
+                    int relative_x = MIR_mir_pointer_event_axis_value(pointer, mir_pointer_axis_relative_x);
+                    int relative_y = MIR_mir_pointer_event_axis_value(pointer, mir_pointer_axis_relative_y);
+                    HandleMouseMotion(sdl_window, relative_x, relative_y);
+                }
+                else if (mouse->x != x || mouse->y != y) {
+                    HandleMouseMotion(sdl_window, x, y);
+                }
+            }
+
+            hscroll = MIR_mir_pointer_event_axis_value(pointer, mir_pointer_axis_hscroll);
+            vscroll = MIR_mir_pointer_event_axis_value(pointer, mir_pointer_axis_vscroll);
+            if (vscroll != 0 || hscroll != 0)
+                HandleMouseScroll(sdl_window, hscroll, vscroll);
+        }
             break;
-        case mir_motion_action_outside:
+        case mir_pointer_action_leave:
             SDL_SetMouseFocus(NULL);
             break;
-#if 0  /* !!! FIXME: needs a newer set of dev headers than Ubuntu 13.10 is shipping atm. */
-        case mir_motion_action_scroll:
-            HandleMouseScroll(sdl_window,
-                              motion.pointer_coordinates[cord_index].hscroll,
-                              motion.pointer_coordinates[cord_index].vscroll);
+        case mir_pointer_action_enter:
+        default:
             break;
-#endif
-        case mir_motion_action_cancel:
-        case mir_motion_action_hover_enter:
-        case mir_motion_action_hover_exit:
+    }
+}
+
+static void
+HandleInput(MirInputEvent const* input_event, SDL_Window* window)
+{
+    switch (MIR_mir_input_event_get_type(input_event)) {
+        case (mir_input_event_type_key):
+            HandleKeyEvent(MIR_mir_input_event_get_keyboard_event(input_event), window);
+            break;
+        case (mir_input_event_type_pointer):
+            HandleMouseEvent(MIR_mir_input_event_get_pointer_event(input_event), window);
+            break;
+        case (mir_input_event_type_touch):
+            HandleTouchEvent(MIR_mir_input_event_get_touch_event(input_event),
+                             MIR_mir_input_event_get_device_id(input_event),
+                             window);
             break;
         default:
             break;
@@ -222,36 +257,62 @@ HandleMouseEvent(MirMotionEvent const motion, int cord_index, SDL_Window* sdl_wi
 }
 
 static void
-HandleMotionEvent(MirMotionEvent const motion, SDL_Window* sdl_window)
+HandleResize(MirResizeEvent const* resize_event, SDL_Window* window)
 {
-    int cord_index;
-    for (cord_index = 0; cord_index < motion.pointer_count; cord_index++) {
-#if 0  /* !!! FIXME: needs a newer set of dev headers than Ubuntu 13.10 is shipping atm. */
-        if (motion.pointer_coordinates[cord_index].tool_type == mir_motion_tool_type_mouse) {
-            HandleMouseEvent(motion, cord_index, sdl_window);
+    int new_w = MIR_mir_resize_event_get_width (resize_event);
+    int new_h = MIR_mir_resize_event_get_height(resize_event);
+
+    int old_w = window->w;
+    int old_h = window->h;
+
+    if (new_w != old_w || new_h != old_h)
+        SDL_SendWindowEvent(window, SDL_WINDOWEVENT_RESIZED, new_w, new_h);
+}
+
+static void
+HandleWindow(MirWindowEvent const* event, SDL_Window* window)
+{
+    MirWindowAttrib attrib = MIR_mir_window_event_get_attribute(event);
+    int value              = MIR_mir_window_event_get_attribute_value(event);
+
+    if (attrib == mir_window_attrib_focus) {
+        if (value == mir_window_focus_state_focused) {
+            SDL_SetKeyboardFocus(window);
         }
-        else if (motion.pointer_coordinates[cord_index].tool_type == mir_motion_tool_type_finger) {
-            HandleTouchEvent(motion, cord_index, sdl_window);
+        else if (value == mir_window_focus_state_unfocused) {
+            SDL_SetKeyboardFocus(NULL);
         }
-#else
-        HandleMouseEvent(motion, cord_index, sdl_window);
-#endif
     }
 }
 
+static void
+MIR_HandleClose(SDL_Window* window) {
+    SDL_SendWindowEvent(window, SDL_WINDOWEVENT_CLOSE, 0, 0);
+}
+
 void
-MIR_HandleInput(MirSurface* surface, MirEvent const* ev, void* context)
+MIR_HandleEvent(MirWindow* mirwindow, MirEvent const* ev, void* context)
 {
-    SDL_Window* window = (SDL_Window*)context;
-    switch (ev->type) {
-        case (mir_event_type_key):
-            HandleKeyEvent(ev->key, window);
-            break;
-        case (mir_event_type_motion):
-            HandleMotionEvent(ev->motion, window);
-            break;
-        default:
-            break;
+    MirEventType event_type = MIR_mir_event_get_type(ev);
+    SDL_Window* window      = (SDL_Window*)context;
+
+    if (window) {
+        switch (event_type) {
+            case (mir_event_type_input):
+                HandleInput(MIR_mir_event_get_input_event(ev), window);
+                break;
+            case (mir_event_type_resize):
+                HandleResize(MIR_mir_event_get_resize_event(ev), window);
+                break;
+            case (mir_event_type_window):
+                HandleWindow(MIR_mir_event_get_window_event(ev), window);
+                break;
+            case (mir_event_type_close_window):
+                MIR_HandleClose(window);
+                break;
+            default:
+                break;
+        }
     }
 }
 

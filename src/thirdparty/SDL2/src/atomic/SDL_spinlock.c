@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -28,6 +28,19 @@
 #include "SDL_mutex.h"
 #include "SDL_timer.h"
 
+#if !defined(HAVE_GCC_ATOMICS) && defined(__SOLARIS__)
+#include <atomic.h>
+#endif
+
+#if defined(__WATCOMC__) && defined(__386__)
+SDL_COMPILE_TIME_ASSERT(locksize, 4==sizeof(SDL_SpinLock));
+extern _inline int _SDL_xchg_watcom(volatile int *a, int v);
+#pragma aux _SDL_xchg_watcom = \
+  "xchg [ecx], eax" \
+  parm [ecx] [eax] \
+  value [eax] \
+  modify exact [eax];
+#endif /* __WATCOMC__ && __386__ */
 
 /* This function is where all the magic happens... */
 SDL_bool
@@ -54,6 +67,9 @@ SDL_AtomicTryLock(SDL_SpinLock *lock)
 #elif defined(_MSC_VER)
     SDL_COMPILE_TIME_ASSERT(locksize, sizeof(*lock) == sizeof(long));
     return (InterlockedExchange((long*)lock, 1) == 0);
+
+#elif defined(__WATCOMC__) && defined(__386__)
+    return _SDL_xchg_watcom(lock, 1) == 0;
 
 #elif HAVE_GCC_ATOMICS || HAVE_GCC_SYNC_LOCK_TEST_AND_SET
     return (__sync_lock_test_and_set(lock, 1) == 0);
@@ -86,9 +102,13 @@ SDL_AtomicTryLock(SDL_SpinLock *lock)
     /* Maybe used for PowerPC, but the Intel asm or gcc atomics are favored. */
     return OSAtomicCompareAndSwap32Barrier(0, 1, lock);
 
-#elif HAVE_PTHREAD_SPINLOCK
-    /* pthread instructions */
-    return (pthread_spin_trylock(lock) == 0);
+#elif defined(__SOLARIS__) && defined(_LP64)
+    /* Used for Solaris with non-gcc compilers. */
+    return (SDL_bool) ((int) atomic_cas_64((volatile uint64_t*)lock, 0, 1) == 0);
+
+#elif defined(__SOLARIS__) && !defined(_LP64)
+    /* Used for Solaris with non-gcc compilers. */
+    return (SDL_bool) ((int) atomic_cas_32((volatile uint32_t*)lock, 0, 1) == 0);
 
 #else
 #error Please implement for your platform.
@@ -112,11 +132,17 @@ SDL_AtomicUnlock(SDL_SpinLock *lock)
     _ReadWriteBarrier();
     *lock = 0;
 
+#elif defined(__WATCOMC__) && defined(__386__)
+    SDL_CompilerBarrier ();
+    *lock = 0;
+
 #elif HAVE_GCC_ATOMICS || HAVE_GCC_SYNC_LOCK_TEST_AND_SET
     __sync_lock_release(lock);
 
-#elif HAVE_PTHREAD_SPINLOCK
-    pthread_spin_unlock(lock);
+#elif defined(__SOLARIS__)
+    /* Used for Solaris when not using gcc. */
+    *lock = 0;
+    membar_producer();
 
 #else
     *lock = 0;

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,12 +25,6 @@
 
 #if !SDL_DYNAMIC_API
 #error You should not be here.
-#endif
-
-/* so annoying. */
-#if defined(__thumb__) && (defined(__ARM_ARCH_6__) || defined(__ARM_ARCH_6J__) || defined(__ARM_ARCH_6K__) || defined(__ARM_ARCH_6T2__) || defined(__ARM_ARCH_6Z__) || defined(__ARM_ARCH_6ZK__))
-#define SDL_MemoryBarrierRelease SDL_MemoryBarrierRelease_REAL
-#define SDL_MemoryBarrierAcquire SDL_MemoryBarrierAcquire_REAL
 #endif
 
 #define SDL_SetError SDL_SetError_REAL
@@ -445,6 +439,8 @@
 #define SDL_iconv_close SDL_iconv_close_REAL
 #define SDL_iconv SDL_iconv_REAL
 #define SDL_iconv_string SDL_iconv_string_REAL
+#define SDL_CreateRGBSurfaceWithFormat SDL_CreateRGBSurfaceWithFormat_REAL
+#define SDL_CreateRGBSurfaceWithFormatFrom SDL_CreateRGBSurfaceWithFormatFrom_REAL
 #define SDL_CreateRGBSurface SDL_CreateRGBSurface_REAL
 #define SDL_CreateRGBSurfaceFrom SDL_CreateRGBSurfaceFrom_REAL
 #define SDL_FreeSurface SDL_FreeSurface_REAL
@@ -505,6 +501,7 @@
 #define SDL_GetNumVideoDisplays SDL_GetNumVideoDisplays_REAL
 #define SDL_GetDisplayName SDL_GetDisplayName_REAL
 #define SDL_GetDisplayBounds SDL_GetDisplayBounds_REAL
+#define SDL_GetDisplayDPI SDL_GetDisplayDPI_REAL
 #define SDL_GetNumDisplayModes SDL_GetNumDisplayModes_REAL
 #define SDL_GetDisplayMode SDL_GetDisplayMode_REAL
 #define SDL_GetDesktopDisplayMode SDL_GetDesktopDisplayMode_REAL
@@ -575,3 +572,96 @@
 #define SDL_GetDefaultAssertionHandler SDL_GetDefaultAssertionHandler_REAL
 #define SDL_GetAssertionHandler SDL_GetAssertionHandler_REAL
 #define SDL_DXGIGetOutputInfo SDL_DXGIGetOutputInfo_REAL
+#define SDL_RenderIsClipEnabled SDL_RenderIsClipEnabled_REAL
+#define SDL_WinRTRunApp SDL_WinRTRunApp_REAL
+#define SDL_WarpMouseGlobal SDL_WarpMouseGlobal_REAL
+#define SDL_WinRTGetFSPathUNICODE SDL_WinRTGetFSPathUNICODE_REAL
+#define SDL_WinRTGetFSPathUTF8 SDL_WinRTGetFSPathUTF8_REAL
+#define SDL_WinRTRunApp SDL_WinRTRunApp_REAL
+#define SDL_sqrtf SDL_sqrtf_REAL
+#define SDL_tan SDL_tan_REAL
+#define SDL_tanf SDL_tanf_REAL
+#define SDL_CaptureMouse SDL_CaptureMouse_REAL
+#define SDL_SetWindowHitTest SDL_SetWindowHitTest_REAL
+#define SDL_GetGlobalMouseState SDL_GetGlobalMouseState_REAL
+#define SDL_HasAVX2 SDL_HasAVX2_REAL
+#define SDL_QueueAudio SDL_QueueAudio_REAL
+#define SDL_GetQueuedAudioSize SDL_GetQueuedAudioSize_REAL
+#define SDL_ClearQueuedAudio SDL_ClearQueuedAudio_REAL
+#define SDL_GetGrabbedWindow SDL_GetGrabbedWindow_REAL
+#define SDL_SetWindowsMessageHook SDL_SetWindowsMessageHook_REAL
+#define SDL_JoystickCurrentPowerLevel SDL_JoystickCurrentPowerLevel_REAL
+#define SDL_GameControllerFromInstanceID SDL_GameControllerFromInstanceID_REAL
+#define SDL_JoystickFromInstanceID SDL_JoystickFromInstanceID_REAL
+#define SDL_GetDisplayUsableBounds SDL_GetDisplayUsableBounds_REAL
+#define SDL_GetWindowBordersSize SDL_GetWindowBordersSize_REAL
+#define SDL_SetWindowOpacity SDL_SetWindowOpacity_REAL
+#define SDL_GetWindowOpacity SDL_GetWindowOpacity_REAL
+#define SDL_SetWindowInputFocus SDL_SetWindowInputFocus_REAL
+#define SDL_SetWindowModalFor SDL_SetWindowModalFor_REAL
+#define SDL_RenderSetIntegerScale SDL_RenderSetIntegerScale_REAL
+#define SDL_RenderGetIntegerScale SDL_RenderGetIntegerScale_REAL
+#define SDL_DequeueAudio SDL_DequeueAudio_REAL
+#define SDL_SetWindowResizable SDL_SetWindowResizable_REAL
+#define SDL_CreateRGBSurfaceWithFormat SDL_CreateRGBSurfaceWithFormat_REAL
+#define SDL_CreateRGBSurfaceWithFormatFrom SDL_CreateRGBSurfaceWithFormatFrom_REAL
+#define SDL_GetHintBoolean SDL_GetHintBoolean_REAL
+#define SDL_JoystickGetDeviceVendor SDL_JoystickGetDeviceVendor_REAL
+#define SDL_JoystickGetDeviceProduct SDL_JoystickGetDeviceProduct_REAL
+#define SDL_JoystickGetDeviceProductVersion SDL_JoystickGetDeviceProductVersion_REAL
+#define SDL_JoystickGetVendor SDL_JoystickGetVendor_REAL
+#define SDL_JoystickGetProduct SDL_JoystickGetProduct_REAL
+#define SDL_JoystickGetProductVersion SDL_JoystickGetProductVersion_REAL
+#define SDL_GameControllerGetVendor SDL_GameControllerGetVendor_REAL
+#define SDL_GameControllerGetProduct SDL_GameControllerGetProduct_REAL
+#define SDL_GameControllerGetProductVersion SDL_GameControllerGetProductVersion_REAL
+#define SDL_HasNEON SDL_HasNEON_REAL
+#define SDL_GameControllerNumMappings SDL_GameControllerNumMappings_REAL
+#define SDL_GameControllerMappingForIndex SDL_GameControllerMappingForIndex_REAL
+#define SDL_JoystickGetAxisInitialState SDL_JoystickGetAxisInitialState_REAL
+#define SDL_JoystickGetDeviceType SDL_JoystickGetDeviceType_REAL
+#define SDL_JoystickGetType SDL_JoystickGetType_REAL
+#define SDL_MemoryBarrierReleaseFunction SDL_MemoryBarrierReleaseFunction_REAL
+#define SDL_MemoryBarrierAcquireFunction SDL_MemoryBarrierAcquireFunction_REAL
+#define SDL_JoystickGetDeviceInstanceID SDL_JoystickGetDeviceInstanceID_REAL
+#define SDL_utf8strlen SDL_utf8strlen_REAL
+#define SDL_LoadFile_RW SDL_LoadFile_RW_REAL
+#define SDL_wcscmp SDL_wcscmp_REAL
+#define SDL_ComposeCustomBlendMode SDL_ComposeCustomBlendMode_REAL
+#define SDL_DuplicateSurface SDL_DuplicateSurface_REAL
+#define SDL_Vulkan_LoadLibrary SDL_Vulkan_LoadLibrary_REAL
+#define SDL_Vulkan_GetVkGetInstanceProcAddr SDL_Vulkan_GetVkGetInstanceProcAddr_REAL
+#define SDL_Vulkan_UnloadLibrary SDL_Vulkan_UnloadLibrary_REAL
+#define SDL_Vulkan_GetInstanceExtensions SDL_Vulkan_GetInstanceExtensions_REAL
+#define SDL_Vulkan_CreateSurface SDL_Vulkan_CreateSurface_REAL
+#define SDL_Vulkan_GetDrawableSize SDL_Vulkan_GetDrawableSize_REAL
+#define SDL_LockJoysticks SDL_LockJoysticks_REAL
+#define SDL_UnlockJoysticks SDL_UnlockJoysticks_REAL
+#define SDL_GetMemoryFunctions SDL_GetMemoryFunctions_REAL
+#define SDL_SetMemoryFunctions SDL_SetMemoryFunctions_REAL
+#define SDL_GetNumAllocations SDL_GetNumAllocations_REAL
+#define SDL_NewAudioStream SDL_NewAudioStream_REAL
+#define SDL_AudioStreamPut SDL_AudioStreamPut_REAL
+#define SDL_AudioStreamGet SDL_AudioStreamGet_REAL
+#define SDL_AudioStreamClear SDL_AudioStreamClear_REAL
+#define SDL_AudioStreamAvailable SDL_AudioStreamAvailable_REAL
+#define SDL_FreeAudioStream SDL_FreeAudioStream_REAL
+#define SDL_AudioStreamFlush SDL_AudioStreamFlush_REAL
+#define SDL_acosf SDL_acosf_REAL
+#define SDL_asinf SDL_asinf_REAL
+#define SDL_atanf SDL_atanf_REAL
+#define SDL_atan2f SDL_atan2f_REAL
+#define SDL_ceilf SDL_ceilf_REAL
+#define SDL_copysignf SDL_copysignf_REAL
+#define SDL_fabsf SDL_fabsf_REAL
+#define SDL_floorf SDL_floorf_REAL
+#define SDL_logf SDL_logf_REAL
+#define SDL_powf SDL_powf_REAL
+#define SDL_scalbnf SDL_scalbnf_REAL
+#define SDL_fmod SDL_fmod_REAL
+#define SDL_fmodf SDL_fmodf_REAL
+#define SDL_SetYUVConversionMode SDL_SetYUVConversionMode_REAL
+#define SDL_GetYUVConversionMode SDL_GetYUVConversionMode_REAL
+#define SDL_GetYUVConversionModeForResolution SDL_GetYUVConversionModeForResolution_REAL
+#define SDL_RenderGetMetalLayer SDL_RenderGetMetalLayer_REAL
+#define SDL_RenderGetMetalCommandEncoder SDL_RenderGetMetalCommandEncoder_REAL

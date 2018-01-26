@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -73,6 +73,35 @@ xinput2_version_atleast(const int version, const int wantmajor, const int wantmi
 {
     return ( version >= ((wantmajor * 1000) + wantminor) );
 }
+
+#if SDL_VIDEO_DRIVER_X11_XINPUT2_SUPPORTS_MULTITOUCH
+static void
+xinput2_normalize_touch_coordinates(SDL_VideoData *videodata, Window window,
+    double in_x, double in_y, float *out_x, float *out_y)
+{
+    int i;
+    for (i = 0; i < videodata->numwindows; i++) {
+        SDL_WindowData *d = videodata->windowlist[i];
+        if (d->xwindow == window) {
+            if (d->window->w == 1) {
+                *out_x = 0.5f;
+            } else {
+                *out_x = in_x / (d->window->w - 1);
+            }
+            if (d->window->h == 1) {
+                *out_y = 0.5f;
+            } else {
+                *out_y = in_y / (d->window->h - 1);
+            }
+            return;
+        }
+    }
+    // couldn't find the window...
+    *out_x = in_x;
+    *out_y = in_y;
+}
+#endif /* SDL_VIDEO_DRIVER_X11_XINPUT2_SUPPORTS_MULTITOUCH */
+
 #endif /* SDL_VIDEO_DRIVER_X11_XINPUT2 */
 
 void
@@ -118,6 +147,8 @@ X11_InitXinput2(_THIS)
     eventmask.mask = mask;
 
     XISetMask(mask, XI_RawMotion);
+    XISetMask(mask, XI_RawButtonPress);
+    XISetMask(mask, XI_RawButtonRelease);
 
     if (X11_XISelectEvents(data->display,DefaultRootWindow(data->display),&eventmask,1) != Success) {
         return;
@@ -136,37 +167,61 @@ X11_HandleXinput2Event(SDL_VideoData *videodata,XGenericEventCookie *cookie)
         case XI_RawMotion: {
             const XIRawEvent *rawev = (const XIRawEvent*)cookie->data;
             SDL_Mouse *mouse = SDL_GetMouse();
-            double relative_cords[2];
+            double relative_coords[2];
+            static Time prev_time = 0;
+            static double prev_rel_coords[2];
+
+            videodata->global_mouse_changed = SDL_TRUE;
 
             if (!mouse->relative_mode || mouse->relative_mode_warp) {
                 return 0;
             }
 
             parse_valuators(rawev->raw_values,rawev->valuators.mask,
-                            rawev->valuators.mask_len,relative_cords,2);
-            SDL_SendMouseMotion(mouse->focus,mouse->mouseID,1,(int)relative_cords[0],(int)relative_cords[1]);
+                            rawev->valuators.mask_len,relative_coords,2);
+
+            if ((rawev->time == prev_time) && (relative_coords[0] == prev_rel_coords[0]) && (relative_coords[1] == prev_rel_coords[1])) {
+                return 0;  /* duplicate event, drop it. */
+            }
+
+            SDL_SendMouseMotion(mouse->focus,mouse->mouseID,1,(int)relative_coords[0],(int)relative_coords[1]);
+            prev_rel_coords[0] = relative_coords[0];
+            prev_rel_coords[1] = relative_coords[1];
+            prev_time = rawev->time;
             return 1;
             }
             break;
+
+        case XI_RawButtonPress:
+        case XI_RawButtonRelease:
+            videodata->global_mouse_changed = SDL_TRUE;
+            break;
+
 #if SDL_VIDEO_DRIVER_X11_XINPUT2_SUPPORTS_MULTITOUCH
         case XI_TouchBegin: {
             const XIDeviceEvent *xev = (const XIDeviceEvent *) cookie->data;
-            SDL_SendTouch(xev->sourceid,xev->detail,
-                      SDL_TRUE, xev->event_x, xev->event_y, 1.0);
+            float x, y;
+            xinput2_normalize_touch_coordinates(videodata, xev->event,
+                                  xev->event_x, xev->event_y, &x, &y);
+            SDL_SendTouch(xev->sourceid,xev->detail, SDL_TRUE, x, y, 1.0);
             return 1;
             }
             break;
         case XI_TouchEnd: {
             const XIDeviceEvent *xev = (const XIDeviceEvent *) cookie->data;
-            SDL_SendTouch(xev->sourceid,xev->detail,
-                      SDL_FALSE, xev->event_x, xev->event_y, 1.0);
+            float x, y;
+            xinput2_normalize_touch_coordinates(videodata, xev->event,
+                                  xev->event_x, xev->event_y, &x, &y);
+            SDL_SendTouch(xev->sourceid,xev->detail, SDL_FALSE, x, y, 1.0);
             return 1;
             }
             break;
         case XI_TouchUpdate: {
             const XIDeviceEvent *xev = (const XIDeviceEvent *) cookie->data;
-            SDL_SendTouchMotion(xev->sourceid,xev->detail,
-                                xev->event_x, xev->event_y, 1.0);
+            float x, y;
+            xinput2_normalize_touch_coordinates(videodata, xev->event,
+                                  xev->event_x, xev->event_y, &x, &y);
+            SDL_SendTouchMotion(xev->sourceid,xev->detail, x, y, 1.0);
             return 1;
             }
             break;
@@ -183,7 +238,7 @@ X11_InitXinput2Multitouch(_THIS)
     SDL_VideoData *data = (SDL_VideoData *) _this->driverdata;
     XIDeviceInfo *info;
     int ndevices,i,j;
-    info = X11_XIQueryDevice(data->display, XIAllMasterDevices, &ndevices);
+    info = X11_XIQueryDevice(data->display, XIAllDevices, &ndevices);
 
     for (i = 0; i < ndevices; i++) {
         XIDeviceInfo *dev = &info[i];
@@ -197,9 +252,7 @@ X11_InitXinput2Multitouch(_THIS)
                 continue;
 
             touchId = t->sourceid;
-            if (!SDL_GetTouch(touchId)) {
-                SDL_AddTouch(touchId, dev->name);
-            }
+            SDL_AddTouch(touchId, dev->name);
         }
     }
     X11_XIFreeDeviceInfo(info);

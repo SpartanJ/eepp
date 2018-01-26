@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -66,7 +66,7 @@ PSP_Create()
     SDL_GLDriverData *gldata;
     int status;
 
-    /* Check if pandora could be initialized */
+    /* Check if PSP could be initialized */
     status = PSP_Available();
     if (status == 0) {
         /* PSP could not be used */
@@ -80,7 +80,7 @@ PSP_Create()
         return NULL;
     }
 
-    /* Initialize internal Pandora specific data */
+    /* Initialize internal PSP specific data */
     phdata = (SDL_VideoData *) SDL_calloc(1, sizeof(SDL_VideoData));
     if (phdata == NULL) {
         SDL_OutOfMemory();
@@ -92,6 +92,7 @@ PSP_Create()
     if (gldata == NULL) {
         SDL_OutOfMemory();
         SDL_free(device);
+        SDL_free(phdata);
         return NULL;
     }
     device->gl_data = gldata;
@@ -101,7 +102,7 @@ PSP_Create()
     phdata->egl_initialized = SDL_TRUE;
 
 
-    /* Setup amount of available displays and current display */
+    /* Setup amount of available displays */
     device->num_displays = 0;
 
     /* Set device free function */
@@ -112,8 +113,8 @@ PSP_Create()
     device->VideoQuit = PSP_VideoQuit;
     device->GetDisplayModes = PSP_GetDisplayModes;
     device->SetDisplayMode = PSP_SetDisplayMode;
-    device->CreateWindow = PSP_CreateWindow;
-    device->CreateWindowFrom = PSP_CreateWindowFrom;
+    device->CreateSDLWindow = PSP_CreateWindow;
+    device->CreateSDLWindowFrom = PSP_CreateWindowFrom;
     device->SetWindowTitle = PSP_SetWindowTitle;
     device->SetWindowIcon = PSP_SetWindowIcon;
     device->SetWindowPosition = PSP_SetWindowPosition;
@@ -126,7 +127,9 @@ PSP_Create()
     device->RestoreWindow = PSP_RestoreWindow;
     device->SetWindowGrab = PSP_SetWindowGrab;
     device->DestroyWindow = PSP_DestroyWindow;
+#if 0
     device->GetWindowWMInfo = PSP_GetWindowWMInfo;
+#endif
     device->GL_LoadLibrary = PSP_GL_LoadLibrary;
     device->GL_GetProcAddress = PSP_GL_GetProcAddress;
     device->GL_UnloadLibrary = PSP_GL_UnloadLibrary;
@@ -234,7 +237,7 @@ PSP_CreateWindow(_THIS, SDL_Window * window)
 int
 PSP_CreateWindowFrom(_THIS, SDL_Window * window, const void *data)
 {
-    return -1;
+    return SDL_Unsupported();
 }
 
 void
@@ -290,13 +293,14 @@ PSP_DestroyWindow(_THIS, SDL_Window * window)
 /*****************************************************************************/
 /* SDL Window Manager function                                               */
 /*****************************************************************************/
+#if 0
 SDL_bool
 PSP_GetWindowWMInfo(_THIS, SDL_Window * window, struct SDL_SysWMinfo *info)
 {
     if (info->version.major <= SDL_MAJOR_VERSION) {
         return SDL_TRUE;
     } else {
-        SDL_SetError("application not compiled with SDL %d.%d\n",
+        SDL_SetError("Application not compiled with SDL %d.%d",
                      SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
         return SDL_FALSE;
     }
@@ -304,6 +308,7 @@ PSP_GetWindowWMInfo(_THIS, SDL_Window * window, struct SDL_SysWMinfo *info)
     /* Failed to get window manager information */
     return SDL_FALSE;
 }
+#endif
 
 
 /* TO Write Me */

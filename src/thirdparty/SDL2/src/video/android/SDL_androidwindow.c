@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -22,12 +22,14 @@
 
 #if SDL_VIDEO_DRIVER_ANDROID
 
+#include "SDL_syswm.h"
 #include "../SDL_sysvideo.h"
 #include "../../events/SDL_keyboard_c.h"
 #include "../../events/SDL_mouse_c.h"
 
 #include "SDL_androidvideo.h"
 #include "SDL_androidwindow.h"
+#include "SDL_hints.h"
 
 int
 Android_CreateWindow(_THIS, SDL_Window * window)
@@ -40,6 +42,9 @@ Android_CreateWindow(_THIS, SDL_Window * window)
     
     Android_PauseSem = SDL_CreateSemaphore(0);
     Android_ResumeSem = SDL_CreateSemaphore(0);
+
+    /* Set orientation */
+    Android_JNI_SetOrientation(window->w, window->h, window->flags & SDL_WINDOW_RESIZABLE, SDL_GetHint(SDL_HINT_ORIENTATIONS));
 
     /* Adjust the window data to match the screen */
     window->x = 0;
@@ -68,13 +73,17 @@ Android_CreateWindow(_THIS, SDL_Window * window)
         SDL_free(data);
         return SDL_SetError("Could not fetch native window");
     }
-    
-    data->egl_surface = SDL_EGL_CreateSurface(_this, (NativeWindowType) data->native_window);
 
-    if (data->egl_surface == EGL_NO_SURFACE) {
-        ANativeWindow_release(data->native_window);
-        SDL_free(data);
-        return SDL_SetError("Could not create GLES window surface");
+    /* Do not create EGLSurface for Vulkan window since it will then make the window
+       incompatible with vkCreateAndroidSurfaceKHR */
+    if ((window->flags & SDL_WINDOW_VULKAN) == 0) {
+        data->egl_surface = SDL_EGL_CreateSurface(_this, (NativeWindowType) data->native_window);
+
+        if (data->egl_surface == EGL_NO_SURFACE) {
+            ANativeWindow_release(data->native_window);
+            SDL_free(data);
+            return SDL_SetError("Could not create GLES window surface");
+        }
     }
 
     window->driverdata = data;
@@ -106,12 +115,30 @@ Android_DestroyWindow(_THIS, SDL_Window * window)
             if (data->egl_surface != EGL_NO_SURFACE) {
                 SDL_EGL_DestroySurface(_this, data->egl_surface);
             }
-            if(data->native_window) {
+            if (data->native_window) {
                 ANativeWindow_release(data->native_window);
             }
             SDL_free(window->driverdata);
             window->driverdata = NULL;
         }
+    }
+}
+
+SDL_bool
+Android_GetWindowWMInfo(_THIS, SDL_Window * window, SDL_SysWMinfo * info)
+{
+    SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
+
+    if (info->version.major == SDL_MAJOR_VERSION &&
+        info->version.minor == SDL_MINOR_VERSION) {
+        info->subsystem = SDL_SYSWM_ANDROID;
+        info->info.android.window = data->native_window;
+        info->info.android.surface = data->egl_surface;
+        return SDL_TRUE;
+    } else {
+        SDL_SetError("Application not compiled with SDL %d.%d",
+                     SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
+        return SDL_FALSE;
     }
 }
 

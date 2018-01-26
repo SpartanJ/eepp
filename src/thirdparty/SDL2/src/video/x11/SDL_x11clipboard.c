@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -40,13 +40,31 @@
 static Window
 GetWindow(_THIS)
 {
-    SDL_Window *window;
+    SDL_VideoData *data = (SDL_VideoData *) _this->driverdata;
 
-    window = _this->windows;
-    if (window) {
-        return ((SDL_WindowData *) window->driverdata)->xwindow;
+    /* We create an unmapped window that exists just to manage the clipboard,
+       since X11 selection data is tied to a specific window and dies with it.
+       We create the window on demand, so apps that don't use the clipboard
+       don't have to keep an unnecessary resource around. */
+    if (data->clipboard_window == None) {
+        Display *dpy = data->display;
+        Window parent = RootWindow(dpy, DefaultScreen(dpy));
+        XSetWindowAttributes xattr;
+        data->clipboard_window = X11_XCreateWindow(dpy, parent, -10, -10, 1, 1, 0,
+                                                   CopyFromParent, InputOnly,
+                                                   CopyFromParent, 0, &xattr);
+        X11_XFlush(data->display);
     }
-    return None;
+
+    return data->clipboard_window;
+}
+
+/* We use our own cut-buffer for intermediate storage instead of  
+   XA_CUT_BUFFER0 because their use isn't really defined for holding UTF8. */ 
+Atom
+X11_GetSDLCutBufferClipboardType(Display *display)
+{
+    return X11_XInternAtom(display, "SDL_CUTBUFFER", False);
 }
 
 int
@@ -66,7 +84,7 @@ X11_SetClipboardText(_THIS, const char *text)
     /* Save the selection on the root window */
     format = TEXT_FORMAT;
     X11_XChangeProperty(display, DefaultRootWindow(display),
-        XA_CUT_BUFFER0, format, 8, PropModeReplace,
+        X11_GetSDLCutBufferClipboardType(display), format, 8, PropModeReplace,
         (const unsigned char *)text, SDL_strlen(text));
 
     if (XA_CLIPBOARD != None &&
@@ -109,9 +127,14 @@ X11_GetClipboardText(_THIS)
     window = GetWindow(_this);
     format = TEXT_FORMAT;
     owner = X11_XGetSelectionOwner(display, XA_CLIPBOARD);
-    if ((owner == None) || (owner == window)) {
+    if (owner == None) {
+        /* Fall back to ancient X10 cut-buffers which do not support UTF8 strings*/
         owner = DefaultRootWindow(display);
         selection = XA_CUT_BUFFER0;
+        format = XA_STRING;
+    } else if (owner == window) {
+        owner = DefaultRootWindow(display);
+        selection = X11_GetSDLCutBufferClipboardType(display);
     } else {
         /* Request that the selection owner copy the data to our window */
         owner = window;

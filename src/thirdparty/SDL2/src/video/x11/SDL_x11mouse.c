@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -309,13 +309,27 @@ X11_ShowCursor(SDL_Cursor * cursor)
 }
 
 static void
+WarpMouseInternal(Window xwindow, const int x, const int y)
+{
+    SDL_VideoData *videodata = (SDL_VideoData *) SDL_GetVideoDevice()->driverdata;
+    Display *display = videodata->display;
+    X11_XWarpPointer(display, None, xwindow, 0, 0, 0, 0, x, y);
+    X11_XSync(display, False);
+    videodata->global_mouse_changed = SDL_TRUE;
+}
+
+static void
 X11_WarpMouse(SDL_Window * window, int x, int y)
 {
     SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
-    Display *display = data->videodata->display;
+    WarpMouseInternal(data->xwindow, x, y);
+}
 
-    X11_XWarpPointer(display, None, data->xwindow, 0, 0, 0, 0, x, y);
-    X11_XSync(display, False);
+static int
+X11_WarpMouseGlobal(int x, int y)
+{
+    WarpMouseInternal(DefaultRootWindow(GetDisplay()), x, y);
+    return 0;
 }
 
 static int
@@ -330,6 +344,81 @@ X11_SetRelativeMouseMode(SDL_bool enabled)
     return -1;
 }
 
+static int
+X11_CaptureMouse(SDL_Window *window)
+{
+    Display *display = GetDisplay();
+
+    if (window) {
+        SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
+        const unsigned int mask = ButtonPressMask | ButtonReleaseMask | PointerMotionMask | FocusChangeMask;
+        const int rc = X11_XGrabPointer(display, data->xwindow, False,
+                                        mask, GrabModeAsync, GrabModeAsync,
+                                        None, None, CurrentTime);
+        if (rc != GrabSuccess) {
+            return SDL_SetError("X server refused mouse capture");
+        }
+    } else {
+        X11_XUngrabPointer(display, CurrentTime);
+    }
+
+    X11_XSync(display, False);
+
+    return 0;
+}
+
+static Uint32
+X11_GetGlobalMouseState(int *x, int *y)
+{
+    SDL_VideoData *videodata = (SDL_VideoData *) SDL_GetVideoDevice()->driverdata;
+    Display *display = GetDisplay();
+    const int num_screens = SDL_GetNumVideoDisplays();
+    int i;
+
+    /* !!! FIXME: should we XSync() here first? */
+
+#if !SDL_VIDEO_DRIVER_X11_XINPUT2
+    videodata->global_mouse_changed = SDL_TRUE;
+#endif
+
+    /* check if we have this cached since XInput last saw the mouse move. */
+    /* !!! FIXME: can we just calculate this from XInput's events? */
+    if (videodata->global_mouse_changed) {
+        for (i = 0; i < num_screens; i++) {
+            SDL_DisplayData *data = (SDL_DisplayData *) SDL_GetDisplayDriverData(i);
+            if (data != NULL) {
+                Window root, child;
+                int rootx, rooty, winx, winy;
+                unsigned int mask;
+                if (X11_XQueryPointer(display, RootWindow(display, data->screen), &root, &child, &rootx, &rooty, &winx, &winy, &mask)) {
+                    XWindowAttributes root_attrs;
+                    Uint32 buttons = 0;
+                    buttons |= (mask & Button1Mask) ? SDL_BUTTON_LMASK : 0;
+                    buttons |= (mask & Button2Mask) ? SDL_BUTTON_MMASK : 0;
+                    buttons |= (mask & Button3Mask) ? SDL_BUTTON_RMASK : 0;
+                    /* SDL_DisplayData->x,y point to screen origin, and adding them to mouse coordinates relative to root window doesn't do the right thing
+                     * (observed on dual monitor setup with primary display being the rightmost one - mouse was offset to the right).
+                     *
+                     * Adding root position to root-relative coordinates seems to be a better way to get absolute position. */
+                    X11_XGetWindowAttributes(display, root, &root_attrs);
+                    videodata->global_mouse_position.x = root_attrs.x + rootx;
+                    videodata->global_mouse_position.y = root_attrs.y + rooty;
+                    videodata->global_mouse_buttons = buttons;
+                    videodata->global_mouse_changed = SDL_FALSE;
+                    break;
+                }
+            }
+        }
+    }
+
+    SDL_assert(!videodata->global_mouse_changed);  /* The pointer wasn't on any X11 screen?! */
+
+    *x = videodata->global_mouse_position.x;
+    *y = videodata->global_mouse_position.y;
+    return videodata->global_mouse_buttons;
+}
+
+
 void
 X11_InitMouse(_THIS)
 {
@@ -340,7 +429,10 @@ X11_InitMouse(_THIS)
     mouse->ShowCursor = X11_ShowCursor;
     mouse->FreeCursor = X11_FreeCursor;
     mouse->WarpMouse = X11_WarpMouse;
+    mouse->WarpMouseGlobal = X11_WarpMouseGlobal;
     mouse->SetRelativeMouseMode = X11_SetRelativeMouseMode;
+    mouse->CaptureMouse = X11_CaptureMouse;
+    mouse->GetGlobalMouseState = X11_GetGlobalMouseState;
 
     SDL_SetDefaultCursor(X11_CreateDefaultCursor());
 }

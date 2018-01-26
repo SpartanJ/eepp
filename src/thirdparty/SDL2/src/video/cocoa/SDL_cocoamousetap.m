@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,8 +32,8 @@
 #if SDL_MAC_NO_SANDBOX
 
 #include "SDL_keyboard.h"
-#include "SDL_thread.h"
 #include "SDL_cocoavideo.h"
+#include "../../thread/SDL_systhread.h"
 
 #include "../../events/SDL_mouse_c.h"
 
@@ -67,12 +67,14 @@ Cocoa_MouseTapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event
     NSRect windowRect;
     CGPoint eventLocation;
 
-    switch (type)
-    {
+    switch (type) {
         case kCGEventTapDisabledByTimeout:
-        case kCGEventTapDisabledByUserInput:
             {
                 CGEventTapEnable(tapdata->tap, true);
+                return NULL;
+            }
+        case kCGEventTapDisabledByUserInput:
+            {
                 return NULL;
             }
         default:
@@ -97,7 +99,7 @@ Cocoa_MouseTapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event
     eventLocation = CGEventGetUnflippedLocation(event);
     windowRect = [nswindow contentRectForFrameRect:[nswindow frame]];
 
-    if (!NSPointInRect(NSPointFromCGPoint(eventLocation), windowRect)) {
+    if (!NSMouseInRect(NSPointFromCGPoint(eventLocation), windowRect, NO)) {
 
         /* This is in CGs global screenspace coordinate system, which has a
          * flipped Y.
@@ -110,15 +112,14 @@ Cocoa_MouseTapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event
             newLocation.x = NSMaxX(windowRect) - 1.0;
         }
 
-        if (eventLocation.y < NSMinY(windowRect)) {
+        if (eventLocation.y <= NSMinY(windowRect)) {
             newLocation.y -= (NSMinY(windowRect) - eventLocation.y + 1);
-        } else if (eventLocation.y >= NSMaxY(windowRect)) {
-            newLocation.y += (eventLocation.y - NSMaxY(windowRect) + 1);
+        } else if (eventLocation.y > NSMaxY(windowRect)) {
+            newLocation.y += (eventLocation.y - NSMaxY(windowRect));
         }
 
-        CGSetLocalEventsSuppressionInterval(0);
         CGWarpMouseCursorPosition(newLocation);
-        CGSetLocalEventsSuppressionInterval(0.25);
+        CGAssociateMouseAndMouseCursorPosition(YES);
 
         if ((CGEventMaskBit(type) & movementEventsMask) == 0) {
             /* For click events, we just constrain the event to the window, so
@@ -144,15 +145,12 @@ Cocoa_MouseTapThread(void *data)
 {
     SDL_MouseEventTapData *tapdata = (SDL_MouseEventTapData*)data;
 
-    /* Create a tap. */
-    CFMachPortRef eventTap = CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap,
-                                              kCGEventTapOptionDefault, allGrabbedEventsMask,
-                                              &Cocoa_MouseTapCallback, tapdata);
+    /* Tap was created on main thread but we own it now. */
+    CFMachPortRef eventTap = tapdata->tap;
     if (eventTap) {
         /* Try to create a runloop source we can schedule. */
         CFRunLoopSourceRef runloopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0);
         if  (runloopSource) {
-            tapdata->tap = eventTap;
             tapdata->runloopSource = runloopSource;
         } else {
             CFRelease(eventTap);
@@ -204,15 +202,32 @@ Cocoa_InitMouseEventTap(SDL_MouseData* driverdata)
 
     tapdata->runloopStartedSemaphore = SDL_CreateSemaphore(0);
     if (tapdata->runloopStartedSemaphore) {
-        tapdata->thread = SDL_CreateThread(&Cocoa_MouseTapThread, "Event Tap Loop", tapdata);
-        if (!tapdata->thread) {
-            SDL_DestroySemaphore(tapdata->runloopStartedSemaphore);
+        tapdata->tap = CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap,
+                                        kCGEventTapOptionDefault, allGrabbedEventsMask,
+                                        &Cocoa_MouseTapCallback, tapdata);
+        if (tapdata->tap) {
+            /* Tap starts disabled, until app requests mouse grab */
+            CGEventTapEnable(tapdata->tap, false);
+            tapdata->thread = SDL_CreateThreadInternal(&Cocoa_MouseTapThread, "Event Tap Loop", 512 * 1024, tapdata);
+            if (tapdata->thread) {
+                /* Success - early out. Ownership transferred to thread. */
+            	return;
+            }
+            CFRelease(tapdata->tap);
         }
+        SDL_DestroySemaphore(tapdata->runloopStartedSemaphore);
     }
+    SDL_free(driverdata->tapdata);
+    driverdata->tapdata = NULL;
+}
 
-    if (!tapdata->thread) {
-        SDL_free(driverdata->tapdata);
-        driverdata->tapdata = NULL;
+void
+Cocoa_EnableMouseEventTap(SDL_MouseData *driverdata, SDL_bool enabled)
+{
+    SDL_MouseEventTapData *tapdata = (SDL_MouseEventTapData*)driverdata->tapdata;
+    if (tapdata && tapdata->tap)
+    {
+        CGEventTapEnable(tapdata->tap, !!enabled);
     }
 }
 
@@ -244,6 +259,11 @@ Cocoa_QuitMouseEventTap(SDL_MouseData *driverdata)
 
 void
 Cocoa_InitMouseEventTap(SDL_MouseData *unused)
+{
+}
+
+void
+Cocoa_EnableMouseEventTap(SDL_MouseData *driverdata, SDL_bool enabled)
 {
 }
 

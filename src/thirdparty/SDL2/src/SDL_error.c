@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -49,8 +49,10 @@ SDL_LookupString(const char *key)
 
 /* Public functions */
 
+static char *SDL_GetErrorMsg(char *errstr, int maxlen);
+
 int
-SDL_SetError(const char *fmt, ...)
+SDL_SetError(SDL_PRINTF_FORMAT_STRING const char *fmt, ...)
 {
     va_list ap;
     SDL_error *error;
@@ -110,93 +112,17 @@ SDL_SetError(const char *fmt, ...)
     }
     va_end(ap);
 
-    /* If we are in debug mode, print out an error message */
-    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "%s", SDL_GetError());
-
-    return -1;
-}
-
-/* This function has a bit more overhead than most error functions
-   so that it supports internationalization and thread-safe errors.
-*/
-static char *
-SDL_GetErrorMsg(char *errstr, unsigned int maxlen)
-{
-    SDL_error *error;
-
-    /* Clear the error string */
-    *errstr = '\0';
-    --maxlen;
-
-    /* Get the thread-safe error, and print it out */
-    error = SDL_GetErrBuf();
-    if (error->error) {
-        const char *fmt;
-        char *msg = errstr;
-        int len;
-        int argi;
-
-        fmt = SDL_LookupString(error->key);
-        argi = 0;
-        while (*fmt && (maxlen > 0)) {
-            if (*fmt == '%') {
-                char tmp[32], *spot = tmp;
-                *spot++ = *fmt++;
-                while ((*fmt == '.' || (*fmt >= '0' && *fmt <= '9'))
-                       && spot < (tmp + SDL_arraysize(tmp) - 2)) {
-                    *spot++ = *fmt++;
-                }
-                *spot++ = *fmt++;
-                *spot++ = '\0';
-                switch (spot[-2]) {
-                case '%':
-                    *msg++ = '%';
-                    maxlen -= 1;
-                    break;
-                case 'c':
-                case 'i':
-                case 'd':
-                case 'u':
-                case 'o':
-                case 'x':
-                case 'X':
-                    len =
-                        SDL_snprintf(msg, maxlen, tmp,
-                                     error->args[argi++].value_i);
-                    msg += len;
-                    maxlen -= len;
-                    break;
-                case 'f':
-                    len =
-                        SDL_snprintf(msg, maxlen, tmp,
-                                     error->args[argi++].value_f);
-                    msg += len;
-                    maxlen -= len;
-                    break;
-                case 'p':
-                    len =
-                        SDL_snprintf(msg, maxlen, tmp,
-                                     error->args[argi++].value_ptr);
-                    msg += len;
-                    maxlen -= len;
-                    break;
-                case 's':
-                    len =
-                        SDL_snprintf(msg, maxlen, tmp,
-                                     SDL_LookupString(error->args[argi++].
-                                                      buf));
-                    msg += len;
-                    maxlen -= len;
-                    break;
-                }
-            } else {
-                *msg++ = *fmt++;
-                maxlen -= 1;
-            }
-        }
-        *msg = 0;               /* NULL terminate the string */
+    if (SDL_LogGetPriority(SDL_LOG_CATEGORY_ERROR) <= SDL_LOG_PRIORITY_DEBUG) {
+        /* If we are in debug mode, print out an error message
+         * Avoid stomping on the static buffer in GetError, just
+         * in case this is called while processing a ShowMessageBox to
+         * show an error already in that static buffer.
+         */
+        char errmsg[SDL_ERRBUFIZE];
+        SDL_GetErrorMsg(errmsg, sizeof(errmsg));
+        SDL_LogDebug(SDL_LOG_CATEGORY_ERROR, "%s", errmsg);
     }
-    return (errstr);
+    return -1;
 }
 
 /* Available for backwards compatibility */
@@ -253,5 +179,115 @@ main(int argc, char *argv[])
     exit(0);
 }
 #endif
+
+
+/* keep this at the end of the file so it works with GCC builds that don't
+   support "#pragma GCC diagnostic push" ... we'll just leave the warning
+   disabled after this. */
+/* this pragma arrived in GCC 4.2 and causes a warning on older GCCs! Sigh. */
+#if defined(__clang__) || (defined(__GNUC__) && ((__GNUC__ > 4) || (__GNUC__ == 4 && (__GNUC_MINOR__ >= 2))))
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+
+/* This function has a bit more overhead than most error functions
+   so that it supports internationalization and thread-safe errors.
+*/
+static char *
+SDL_GetErrorMsg(char *errstr, int maxlen)
+{
+    SDL_error *error;
+
+    /* Clear the error string */
+    *errstr = '\0';
+    --maxlen;
+
+    /* Get the thread-safe error, and print it out */
+    error = SDL_GetErrBuf();
+    if (error->error) {
+        const char *fmt;
+        char *msg = errstr;
+        int len;
+        int argi;
+
+        fmt = SDL_LookupString(error->key);
+        argi = 0;
+        while (*fmt && (maxlen > 0)) {
+            if (*fmt == '%') {
+                char tmp[32], *spot = tmp;
+                *spot++ = *fmt++;
+                while ((*fmt == '.' || (*fmt >= '0' && *fmt <= '9'))
+                       && spot < (tmp + SDL_arraysize(tmp) - 2)) {
+                    *spot++ = *fmt++;
+                }
+                *spot++ = *fmt++;
+                *spot++ = '\0';
+                switch (spot[-2]) {
+                case '%':
+                    *msg++ = '%';
+                    maxlen -= 1;
+                    break;
+                case 'c':
+                case 'i':
+                case 'd':
+                case 'u':
+                case 'o':
+                case 'x':
+                case 'X':
+                    len =
+                        SDL_snprintf(msg, maxlen, tmp,
+                                     error->args[argi++].value_i);
+                    if (len > 0) {
+                        msg += len;
+                        maxlen -= len;
+                    }
+                    break;
+
+                case 'f':
+                    len =
+                        SDL_snprintf(msg, maxlen, tmp,
+                                     error->args[argi++].value_f);
+                    if (len > 0) {
+                        msg += len;
+                        maxlen -= len;
+                    }
+                    break;
+
+                case 'p':
+                    len =
+                        SDL_snprintf(msg, maxlen, tmp,
+                                     error->args[argi++].value_ptr);
+                    if (len > 0) {
+                        msg += len;
+                        maxlen -= len;
+                    }
+                    break;
+
+                case 's':
+                    len =
+                        SDL_snprintf(msg, maxlen, tmp,
+                                     SDL_LookupString(error->args[argi++].
+                                                      buf));
+                    if (len > 0) {
+                        msg += len;
+                        maxlen -= len;
+                    }
+                    break;
+
+                }
+            } else {
+                *msg++ = *fmt++;
+                maxlen -= 1;
+            }
+        }
+
+        /* slide back if we've overshot the end of our buffer. */
+        if (maxlen < 0) {
+            msg -= (-maxlen) + 1;
+        }
+
+        *msg = 0;               /* NULL terminate the string */
+    }
+    return (errstr);
+}
 
 /* vi: set ts=4 sw=4 expandtab: */

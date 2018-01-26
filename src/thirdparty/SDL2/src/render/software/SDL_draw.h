@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -51,11 +51,12 @@ do { \
 
 #define DRAW_SETPIXEL_BLEND(getpixel, setpixel) \
 do { \
-    unsigned sr, sg, sb, sa; (void) sa; \
+    unsigned sr, sg, sb, sa = 0xFF; \
     getpixel; \
     sr = DRAW_MUL(inva, sr) + r; \
     sg = DRAW_MUL(inva, sg) + g; \
     sb = DRAW_MUL(inva, sb) + b; \
+    sa = DRAW_MUL(inva, sa) + a; \
     setpixel; \
 } while (0)
 
@@ -561,10 +562,10 @@ do { \
     while (height--) { \
         { int n = (width+3)/4; \
             switch (width & 3) { \
-            case 0: do {   op; pixel++; \
-            case 3:        op; pixel++; \
-            case 2:        op; pixel++; \
-            case 1:        op; pixel++; \
+            case 0: do {   op; pixel++; /* fallthrough */ \
+            case 3:        op; pixel++; /* fallthrough */ \
+            case 2:        op; pixel++; /* fallthrough */ \
+            case 1:        op; pixel++; /* fallthrough */ \
                     } while ( --n > 0 ); \
             } \
         } \
