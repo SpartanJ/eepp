@@ -567,13 +567,13 @@ EE_PIXEL_DENSITY Window::getDisplayPixelDensity() {
 	EE_PIXEL_DENSITY pd = PD_MDPI;
 	Float dpi = getCurrentDisplayDPI();
 
-	if ( dpi > 105 && dpi < 150 ) {
+	if ( dpi > 105 && dpi < 160 ) {
 		pd = PD_HDPI;
-	} else if ( dpi >= 150 && dpi < 200 ) {
+	} else if ( dpi >= 160 && dpi < 240 ) {
 		pd = PD_XHDPI;
-	} else if ( dpi > 200 && dpi < 300 ) {
+	} else if ( dpi > 240 && dpi < 320 ) {
 		pd = PD_XXHDPI;
-	} else if ( dpi >= 300 ) {
+	} else if ( dpi >= 320 ) {
 		pd = PD_XXXHDPI;
 	}
 
