@@ -596,10 +596,10 @@ void UIMenu::fixMenuPos( Vector2i& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSu
 		}
 
 		Vector2i sPos = SubMenu->getRealPosition();
-		SubMenu->nodeToScreen( sPos );
+		SubMenu->nodeToWorldTranslation( sPos );
 
 		Vector2i pPos = Parent->getRealPosition();
-		Parent->nodeToScreen( pPos );
+		Parent->nodeToWorldTranslation( pPos );
 
 		Rectf qParent( pPos.x, pPos.y, pPos.x + Parent->getRealSize().getWidth(), pPos.y + Parent->getRealSize().getHeight() );
 

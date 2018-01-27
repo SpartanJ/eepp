@@ -77,7 +77,7 @@ UINode::~UINode() {
 	}
 }
 
-void UINode::screenToNode( Vector2i& Pos ) const {
+void UINode::worldToNodeTranslation( Vector2i& Pos ) const {
 	UINode * ParentLoop = mParentCtrl;
 
 	Pos.x -= mRealPos.x;
@@ -93,7 +93,7 @@ void UINode::screenToNode( Vector2i& Pos ) const {
 	}
 }
 
-void UINode::nodeToScreen( Vector2i& Pos ) const {
+void UINode::nodeToWorldTranslation( Vector2i& Pos ) const {
 	UINode * ParentLoop = mParentCtrl;
 
 	while ( NULL != ParentLoop ) {
@@ -426,17 +426,7 @@ void UINode::draw() {
 	if ( mVisible && 0.f != mAlpha ) {
 		drawBackground();
 
-		drawBorder();
-
 		drawSkin();
-
-		drawHighlightFocus();
-
-		drawOverNode();
-
-		drawDebugData();
-
-		drawBox();
 	}
 }
 
@@ -805,7 +795,7 @@ void UINode::drawBackground() {
 
 void UINode::drawBorder() {
 	if ( mFlags & UI_BORDER ) {
-		mBorder->draw( getScreenBounds(), mAlpha, mBackground->getCorners(), ( mFlags & UI_CLIP_ENABLE ) != 0 );
+		mBorder->draw( getScreenBounds(), mAlpha, mBackground->getCorners() );
 	}
 }
 
@@ -856,16 +846,23 @@ void UINode::internalDraw() {
 
 		clipDisable();
 
+		drawBorder();
+
+		drawHighlightFocus();
+
+		drawOverNode();
+
+		drawDebugData();
+
+		drawBox();
+
 		matrixUnset();
 	}
 }
 
 void UINode::clipMe() {
 	if ( mVisible && ( mFlags & UI_CLIP_ENABLE ) ) {
-		if ( mFlags & UI_BORDER )
-			UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() + 1 );
-		else
-			UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() );
+		UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() );
 	}
 }
 
@@ -1472,7 +1469,7 @@ void UINode::updateScreenPos() {
 
 	Vector2i Pos( mRealPos.x, mRealPos.y );
 
-	nodeToScreen( Pos );
+	nodeToWorldTranslation( Pos );
 
 	mScreenPos = Pos;
 	mScreenPosf = Vector2f( Pos.x, Pos.y );

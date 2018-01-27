@@ -34,9 +34,9 @@ class EE_API UINode : public Transformable {
 
 		virtual ~UINode();
 
-		void screenToNode( Vector2i& position ) const;
+		void worldToNodeTranslation( Vector2i& position ) const;
 
-		void nodeToScreen( Vector2i& position ) const;
+		void nodeToWorldTranslation( Vector2i& position ) const;
 
 		void worldToNode( Vector2i& pos );
 
