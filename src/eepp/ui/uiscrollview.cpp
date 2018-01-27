@@ -212,7 +212,7 @@ void UIScrollView::onTouchDragValueChange( Vector2f diff ) {
 
 bool UIScrollView::isTouchOverAllowedChilds() {
 	bool ret = mViewType == Exclusive ? !mVScroll->isMouseOverMeOrChilds() && !mHScroll->isMouseOverMeOrChilds() : true;
-	return isMouseOverMeOrChilds() && mScrollView->isMouseOver() && ret;
+	return isMouseOverMeOrChilds() && mScrollView->isMouseOverMeOrChilds() && ret;
 }
 
 void UIScrollView::loadFromXmlNode( const pugi::xml_node& node ) {

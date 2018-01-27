@@ -28,7 +28,7 @@ UITabWidgetStyleConfig UIThemeDefault::getTabWidgetStyleConfig() {
 	tabWidgetStyleConfig.TabSeparation = -1;
 	tabWidgetStyleConfig.FontSelectedColor = Color( 255, 255, 255, 255 );
 	tabWidgetStyleConfig.DrawLineBelowTabs = true;
-	tabWidgetStyleConfig.LineBelowTabsColor = Color( 0, 0, 0, 255 );
+	tabWidgetStyleConfig.LineBelowTabsColor = Color( "#2f3030" );
 	tabWidgetStyleConfig.LineBelowTabsYOffset = -1;
 	return tabWidgetStyleConfig;
 }

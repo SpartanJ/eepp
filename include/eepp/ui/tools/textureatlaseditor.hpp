@@ -5,6 +5,7 @@
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uilistbox.hpp>
+#include <eepp/ui/uigridlayout.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
 #include <eepp/graphics/texturepacker.hpp>
@@ -52,6 +53,7 @@ class EE_API TextureAtlasEditor {
 		UISpinBox *			mSpinDestW;
 		UISpinBox *			mSpinDestH;
 		UIListBox *			mTextureRegionList;
+		UIGridLayout *		mTextureRegionGrid;
 		UIWinMenu *			mWinMenu;
 		UIDropDownList *	mTextureFilterList;
 		TextureAtlasTextureRegionEditor * mTextureRegionEditor;

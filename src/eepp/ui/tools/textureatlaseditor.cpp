@@ -46,59 +46,67 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 		mUIContainer = mUIWindow->getContainer();
 	}
 
-	std::string layout =
-	"<LinearLayout orientation='vertical' layout_width='match_parent' layout_height='match_parent'>"
-	"	<WinMenu layout_width='match_parent' layout_height='wrap_content'>"
-	"		<Menu id='fileMenu' text='File'>"
-	"			<item text='New...' icon='document-new' />"
-	"			<item text='Open...' icon='document-open' />"
-	"			<separator />"
-	"			<item text='Save' icon='document-save' />"
-	"			<separator />"
-	"			<item text='Close' icon='document-close' />"
-	"			<separator />"
-	"			<item text='Quit' icon='quit' />"
-	"		</Menu>"
-	"	</WinMenu>"
-	"	<LinearLayout layout_width='match_parent' layout_height='match_parent' orientation='horizontal'>"
-	"		<TextureAtlasTextureRegionEditor layout_width='match_parent' layout_height='match_parent' layout_weight='1' "
-	"										flags='clip' backgroundColor='#00000032' borderWidth='1' borderColor='#000000FF' />"
-	"		<LinearLayout orientation='vertical' layout_width='205dp' layout_height='match_parent' layout_marginLeft='8dp' layout_marginRight='8dp'>"
-	"			<TextView text='Texture Filter:' fontStyle='shadow' layout_marginTop='4dp' layout_marginBottom='4dp' />"
-	"			<DropDownList id='textureFilter' layout_width='match_parent' layout_height='wrap_content' layout_gravity='center_vertical' selectedText='Linear'>"
-	"				<item>Linear</item>"
-	"				<item>Nearest</item>"
-	"			</DropDownList>"
-	"			<TextView text='TextureRegion List:' fontStyle='shadow' layout_marginTop='8dp' layout_marginBottom='8dp' />"
-	"			<ListBox id='TextureRegionList' layout_width='match_parent' layout_height='144dp' />"
-	"			<TextView text='Current TextureRegion:' fontStyle='shadow' layout_marginTop='16dp' layout_marginBottom='16dp' />"
-	"			<LinearLayout orientation='horizontal' layout_width='match_parent' layout_height='wrap_content'>"
-	"				<TextView text='Offset X:' fontStyle='shadow' layout_width='match_parent' layout_height='wrap_content' layout_weight='1' "
-	"								layout_marginRight='8dp' layout_gravity='center' gravity='right|center_vertical' />"
-	"				<SpinBox id='offX' layout_width='100dp' layout_height='wrap_content' minValue='-32000' maxValue='32000' />"
-	"			</LinearLayout>"
-	"			<LinearLayout orientation='horizontal' layout_width='match_parent' layout_height='wrap_content'>"
-	"				<TextView text='Offset Y:' fontStyle='shadow' layout_width='match_parent' layout_height='wrap_content' layout_weight='1' "
-	"								layout_marginRight='8dp' layout_gravity='center' gravity='right|center_vertical' />"
-	"				<SpinBox id='offY' layout_width='100dp' layout_height='wrap_content' minValue='-32000' maxValue='32000' />"
-	"			</LinearLayout>"
-	"			<LinearLayout orientation='horizontal' layout_width='match_parent' layout_height='wrap_content'>"
-	"				<TextView text='Dest. Width' fontStyle='shadow' layout_width='match_parent' layout_height='wrap_content' layout_weight='1' "
-	"								layout_marginRight='8dp' layout_gravity='center' gravity='right|center_vertical' />"
-	"				<SpinBox id='destW' layout_width='100dp' layout_height='wrap_content' minValue='0' maxValue='32000' />"
-	"			</LinearLayout>"
-	"			<LinearLayout orientation='horizontal' layout_width='match_parent' layout_height='wrap_content'>"
-	"				<TextView text='Dest. Height' fontStyle='shadow' layout_width='match_parent' layout_height='wrap_content' layout_weight='1' "
-	"								layout_marginRight='8dp' layout_gravity='center' gravity='right|center_vertical' />"
-	"				<SpinBox id='destH' layout_width='100dp' layout_height='wrap_content' minValue='0' maxValue='32000' />"
-	"			</LinearLayout>"
-	"			<PushButton id='resetDest' text='Reset Dest. Size' layout_width='match_parent' layout_height='wrap_content' layout_marginBottom='8dp' layout_marginTop='8dp' />"
-	"			<PushButton id='resetOff' text='Reset Offset' layout_width='match_parent' layout_height='wrap_content' layout_marginBottom='8dp' />"
-	"			<PushButton id='centerOff' text='Centered Offset' layout_width='match_parent' layout_height='wrap_content' layout_marginBottom='8dp' />"
-	"			<PushButton id='hbotOff' text='Half-Bottom Offset' layout_width='match_parent' layout_height='wrap_content' layout_marginBottom='8dp' />"
-	"		</LinearLayout>"
-	"	</LinearLayout>"
-	"</LinearLayout>";
+	std::string layout = R"xml(
+	<LinearLayout orientation="vertical" layout_width="match_parent" layout_height="match_parent">
+		<WinMenu layout_width="match_parent" layout_height="wrap_content">
+			<Menu id="fileMenu" text="File">
+				<item text="New..." icon="document-new" />
+				<item text="Open..." icon="document-open" />
+				<separator />
+				<item text="Save" icon="document-save" />
+				<separator />
+				<item text="Close" icon="document-close" />
+				<separator />
+				<item text="Quit" icon="quit" />
+			</Menu>
+		</WinMenu>
+		<LinearLayout layout_width="match_parent" layout_height="0dp" layout_weight="1" orientation="horizontal">
+			<TextureAtlasTextureRegionEditor layout_width="match_parent" layout_height="match_parent" layout_weight="1"
+											flags="clip" backgroundColor="#00000032" borderWidth="1" borderColor="#000000FF" />
+			<LinearLayout orientation="vertical" layout_width="208dp" layout_height="match_parent" layout_marginLeft="8dp" layout_marginRight="8dp">
+				<TextView text="Texture Filter:" fontStyle="shadow" layout_marginTop="4dp" layout_marginBottom="4dp" />
+				<DropDownList id="textureFilter" layout_width="match_parent" layout_height="wrap_content" layout_gravity="center_vertical" selectedText="Linear">
+					<item>Linear</item>
+					<item>Nearest</item>
+				</DropDownList>
+				<TextView text="TextureRegion List:" fontStyle="shadow" layout_marginTop="8dp" layout_marginBottom="8dp" />
+				<TabWidget layout_width="match_parent" layout_height="0dp" layout_weight="1">
+					<ScrollView id="GridView" layout_width="match_parent" layout_height="144dp" touchdrag="true">
+						<GridLayout columnMode="size" rowMode="size" columnWidth="64dp" rowHeight="64dp" layout_width="match_parent" layout_height="wrap_content" id="gridlayout" />
+					</ScrollView>
+					<ListBox id="TextureRegionList" layout_width="match_parent" layout_height="144dp" touchDrag="true" />
+					<Tab name="List" owns="TextureRegionList" />
+					<Tab name="Grid" owns="GridView" />
+				</TabWidget>
+				<TextView text="Current TextureRegion:" fontStyle="shadow" layout_marginTop="16dp" layout_marginBottom="16dp" />
+				<LinearLayout orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
+					<TextView text="Offset X:" fontStyle="shadow" layout_width="match_parent" layout_height="wrap_content" layout_weight="1"
+									layout_marginRight="8dp" layout_gravity="center" gravity="right|center_vertical" />
+					<SpinBox id="offX" layout_width="100dp" layout_height="wrap_content" minValue="-32000" maxValue="32000" />
+				</LinearLayout>
+				<LinearLayout orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
+					<TextView text="Offset Y:" fontStyle="shadow" layout_width="match_parent" layout_height="wrap_content" layout_weight="1"
+									layout_marginRight="8dp" layout_gravity="center" gravity="right|center_vertical" />
+					<SpinBox id="offY" layout_width="100dp" layout_height="wrap_content" minValue="-32000" maxValue="32000" />
+				</LinearLayout>
+				<LinearLayout orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
+					<TextView text="Dest. Width" fontStyle="shadow" layout_width="match_parent" layout_height="wrap_content" layout_weight="1"
+									layout_marginRight="8dp" layout_gravity="center" gravity="right|center_vertical" />
+					<SpinBox id="destW" layout_width="100dp" layout_height="wrap_content" minValue="0" maxValue="32000" />
+				</LinearLayout>
+				<LinearLayout orientation="horizontal" layout_width="match_parent" layout_height="wrap_content">
+					<TextView text="Dest. Height" fontStyle="shadow" layout_width="match_parent" layout_height="wrap_content" layout_weight="1"
+									layout_marginRight="8dp" layout_gravity="center" gravity="right|center_vertical" />
+					<SpinBox id="destH" layout_width="100dp" layout_height="wrap_content" minValue="0" maxValue="32000" />
+				</LinearLayout>
+				<PushButton id="resetDest" text="Reset Dest. Size" layout_width="match_parent" layout_height="wrap_content" layout_marginBottom="8dp" layout_marginTop="8dp" />
+				<PushButton id="resetOff" text="Reset Offset" layout_width="match_parent" layout_height="wrap_content" layout_marginBottom="8dp" />
+				<PushButton id="centerOff" text="Centered Offset" layout_width="match_parent" layout_height="wrap_content" layout_marginBottom="8dp" />
+				<PushButton id="hbotOff" text="Half-Bottom Offset" layout_width="match_parent" layout_height="wrap_content" layout_marginBottom="8dp" />
+			</LinearLayout>
+		</LinearLayout>
+	</LinearLayout>
+	)xml";
 
 	UIWidgetCreator::addCustomWidgetCallback( "TextureAtlasTextureRegionEditor", cb::Make1( this, &TextureAtlasEditor::createTextureAtlasTextureRegionEditor ) );
 
@@ -108,6 +116,8 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	mUIContainer->bind( "TextureRegionList", mTextureRegionList );
 	mTextureRegionList->addEventListener( UIEvent::OnItemSelected, cb::Make1( this, &TextureAtlasEditor::onTextureRegionChange ) );
+
+	mUIContainer->bind( "gridlayout", mTextureRegionGrid );
 
 	mUIContainer->bind( "offX", mSpinOffX );
 	mSpinOffX->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &TextureAtlasEditor::onOffXChange ) );
@@ -314,11 +324,48 @@ void TextureAtlasEditor::fillTextureRegionList() {
 	}
 
 	mTextureRegionList->getVerticalScrollBar()->setClickStep( 8.f / (Float)mTextureRegionList->getCount() );
+
+	if ( Res.size() > 0 ) {
+		mTextureRegionGrid->childsCloseAll();
+
+		for ( auto it = Res.begin(); it != Res.end(); ++it ) {
+			TextureRegion * tr = (*it);
+
+			UIImage::New()
+					->setDrawable( tr )
+					->setScaleType( UIScaleType::FitInside )
+					->setTooltipText( tr->getName() )
+					->setGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
+					->setParent( mTextureRegionGrid )
+					->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TextureAtlasEditor::onTextureRegionChange ) );;
+		}
+	}
 }
 
 void TextureAtlasEditor::onTextureRegionChange( const UIEvent * Event ) {
 	if ( NULL != mTextureAtlasLoader && NULL != mTextureAtlasLoader->getTextureAtlas() ) {
-		mCurTextureRegion = mTextureAtlasLoader->getTextureAtlas()->getByName( mTextureRegionList->getItemSelectedText() );
+		mCurTextureRegion = Event->getControl()->isType( UI_TYPE_IMAGE ) ?
+							mTextureAtlasLoader->getTextureAtlas()->getByName( static_cast<UIWidget*>( Event->getControl() )->getTooltipText() ) :
+							mTextureAtlasLoader->getTextureAtlas()->getByName( mTextureRegionList->getItemSelectedText() );
+
+		if ( Event->getControl()->isType( UI_TYPE_IMAGE ) )
+			mTextureRegionList->setSelected( static_cast<UIImage*>( Event->getControl() )->getTooltipText() );
+
+		UINode * node = mTextureRegionGrid->getFirstChild();
+
+		while ( node ) {
+			if ( node->isType( UI_TYPE_IMAGE ) ) {
+				UIImage * curImage = static_cast<UIImage*>( node );
+
+				if ( curImage->getDrawable() == mCurTextureRegion ) {
+					curImage->setBackgroundFillEnabled( true )->setColor( Color( "#00000033" ) );
+				} else {
+					curImage->setBackgroundFillEnabled( false );
+				}
+			}
+
+			node = node->getNextNode();
+		};
 
 		if ( NULL != mCurTextureRegion ) {
 			mTextureRegionEditor->setTextureRegion( mCurTextureRegion );

@@ -216,34 +216,37 @@ void UIManager::update( const Time& elapsed ) {
 
 	mControl->update( elapsed );
 
-	UINode * pOver = mControl->overFind( mKM->getMousePosFromView( mWindow->getDefaultView() ) );
+	Vector2f mousePosf( mKM->getMousePosFromView( mWindow->getDefaultView() ) );
+	mMousePos = Vector2i( mousePosf.x, mousePosf.y );
+
+	UINode * pOver = mControl->overFind( mousePosf );
 
 	if ( pOver != mOverControl ) {
 		if ( NULL != mOverControl ) {
 			sendMsg( mOverControl, UIMessage::MouseExit );
-			mOverControl->onMouseExit( mKM->getMousePos(), 0 );
+			mOverControl->onMouseExit( mMousePos, 0 );
 		}
 
 		mOverControl = pOver;
 
 		if ( NULL != mOverControl ) {
 			sendMsg( mOverControl, UIMessage::MouseEnter );
-			mOverControl->onMouseEnter( mKM->getMousePos(), 0 );
+			mOverControl->onMouseEnter( mMousePos, 0 );
 		}
 	} else {
 		if ( NULL != mOverControl )
-			mOverControl->onMouseMove( mKM->getMousePos(), mKM->getPressTrigger() );
+			mOverControl->onMouseMove( mMousePos, mKM->getPressTrigger() );
 	}
 
 	if ( mKM->getPressTrigger() ) {
 		if ( NULL != mOverControl ) {
-			mOverControl->onMouseDown( mKM->getMousePos(), mKM->getPressTrigger() );
+			mOverControl->onMouseDown( mMousePos, mKM->getPressTrigger() );
 			sendMsg( mOverControl, UIMessage::MouseDown, mKM->getPressTrigger() );
 		}
 
 		if ( !mFirstPress ) {
 			mDownControl = mOverControl;
-			mMouseDownPos = mKM->getMousePos();
+			mMouseDownPos = mMousePos;
 
 			mFirstPress = true;
 		}
@@ -255,16 +258,16 @@ void UIManager::update( const Time& elapsed ) {
 				if ( mOverControl != mFocusControl )
 					setFocusControl( mOverControl );
 
-				mFocusControl->onMouseUp( mKM->getMousePos(), mKM->getReleaseTrigger() );
+				mFocusControl->onMouseUp( mMousePos, mKM->getReleaseTrigger() );
 				sendMsg( mFocusControl, UIMessage::MouseUp, mKM->getReleaseTrigger() );
 
 				if ( mKM->getClickTrigger() ) {
 					sendMsg( mFocusControl, UIMessage::Click, mKM->getClickTrigger() );
-					mFocusControl->onMouseClick( mKM->getMousePos(), mKM->getClickTrigger() );
+					mFocusControl->onMouseClick( mMousePos, mKM->getClickTrigger() );
 
 					if ( mKM->getDoubleClickTrigger() ) {
 						sendMsg( mFocusControl, UIMessage::DoubleClick, mKM->getDoubleClickTrigger() );
-						mFocusControl->onMouseDoubleClick( mKM->getMousePos(), mKM->getDoubleClickTrigger() );
+						mFocusControl->onMouseDoubleClick( mMousePos, mKM->getDoubleClickTrigger() );
 					}
 				}
 			}
@@ -303,7 +306,7 @@ const Time& UIManager::getElapsed() const {
 }
 
 Vector2i UIManager::getMousePos() {
-	return mKM->getMousePos();
+	return mMousePos;
 }
 
 Input * UIManager::getInput() const {

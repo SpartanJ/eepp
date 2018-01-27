@@ -177,6 +177,7 @@ class EE_API UIManager {
 		Color				mHighlightFocusColor;
 		Color				mHighlightOverColor;
 		Color				mHighlightInvalidationColor;
+		Vector2i			mMousePos;
 		Vector2i			mMouseDownPos;
 
 		bool				mInit;

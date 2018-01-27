@@ -185,7 +185,9 @@ void UITab::loadFromXmlNode(const pugi::xml_node & node) {
 		std::string name = ait->name();
 		String::toLowerInPlace( name );
 
-		if ( "controlowned" == name || "owns" == name ) {
+		if ( "name" == name || "text" == name ) {
+			setText( ait->as_string() );
+		} else if ( "controlowned" == name || "owns" == name ) {
 			mOwnedName = ait->as_string();
 			setOwnedControl();
 		}

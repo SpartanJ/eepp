@@ -81,8 +81,8 @@ void UITouchDragableWidget::update( const Time& time ) {
 				}
 			} else {
 				// Mouse Down
-				if ( isTouchOverAllowedChilds() && !manager->isControlDragging() ) {
-					if ( Press & EE_BUTTON_LMASK ) {
+				if ( Press & EE_BUTTON_LMASK ) {
+					if ( isTouchOverAllowedChilds() && !manager->isControlDragging() ) {
 						writeCtrlFlag( NODE_FLAG_TOUCH_DRAGGING, 1 );
 
 						mTouchDragPoint			= Vector2f( manager->getMousePos().x, manager->getMousePos().y );
