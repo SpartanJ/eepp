@@ -122,8 +122,6 @@ void EETest::init() {
 
 	MyPath 				= "assets/";
 
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
 	IniFile Ini( MyPath + "ee.ini" );
 
 	PartsNum			= Ini.getValueI( "EEPP", "ParticlesNum", 1000 );

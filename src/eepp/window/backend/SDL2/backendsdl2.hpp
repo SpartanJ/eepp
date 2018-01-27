@@ -7,6 +7,7 @@
 #ifdef EE_BACKEND_SDL2
 
 #include <eepp/window/backend/SDL2/windowsdl2.hpp>
+#include <eepp/window/backend/SDL2/displaymanagersdl2.hpp>
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 

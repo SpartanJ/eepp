@@ -22,18 +22,14 @@ void mainLoop() {
 }
 
 EE_MAIN_FUNC int main (int argc, char * argv []) {
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	Display * currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex(0);
+	Float pixelDensity = PixelDensity::toFloat( currentDisplay->getPixelDensity() );
+	DisplayMode currentMode = currentDisplay->getCurrentMode();
 
-	win = Engine::instance()->createWindow( WindowSettings( 1280, 720, "eepp - Texture Atlas Editor", WindowStyle::Default, WindowBackend::Default, 32, "assets/icon/ee.png" ), ContextSettings( true, GLv_default, true, 24, 1, 0, false ) );
+	Uint32 width = eemin( currentMode.Width, (Uint32)( 1280 * pixelDensity ) );
+	Uint32 height = eemin( currentMode.Height, (Uint32)( 720 * pixelDensity ) );
 
-	PixelDensity::setPixelDensity( win->getDisplayPixelDensity() );
-
-	if ( PixelDensity::getPixelDensity() > 1.f && win->isWindowed() ) {
-		Uint32 width = eemin( (Uint32)win->getWindowInfo()->DesktopResolution.getWidth(), (Uint32)( win->getWidth() * PixelDensity::getPixelDensity() ) );
-		Uint32 height = eemin( (Uint32)win->getWindowInfo()->DesktopResolution.getHeight(), (Uint32)( win->getHeight() * PixelDensity::getPixelDensity() ) );
-		win->setSize( width, height );
-		win->centerToDisplay();
-	}
+	win = Engine::instance()->createWindow( WindowSettings( width, height, "eepp - Texture Atlas Editor", WindowStyle::Default, WindowBackend::Default, 32, "assets/icon/ee.png", pixelDensity ), ContextSettings( true, GLv_default, true, 24, 1, 0, false ) );
 
 	if ( win->isOpen() ) {
 		UIManager::instance()->init( UI_MANAGER_USE_DRAW_INVALIDATION );

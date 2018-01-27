@@ -1,5 +1,11 @@
+../../include/eepp/window/displaymanager.hpp
 ../../src/eepp/graphics/renderer/shaders/basegl3cp.gles2.frag.h
 ../../src/eepp/graphics/renderer/shaders/basegl3cp.gles2.vert.h
+../../src/eepp/window/backend/SDL2/displaymanagersdl2.cpp
+../../src/eepp/window/backend/SDL2/displaymanagersdl2.hpp
+../../src/eepp/window/backend/SFML/displaymanagersfml.cpp
+../../src/eepp/window/backend/SFML/displaymanagersfml.hpp
+../../src/eepp/window/displaymanager.cpp
 ../../src/tools/textureatlaseditor/textureatlaseditor.cpp
 ../../include/eepp/graphics/arcdrawable.hpp
 ../../include/eepp/graphics/circledrawable.hpp

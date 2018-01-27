@@ -1,6 +1,7 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/inifile.hpp>
 #include <eepp/system/thread.hpp>
 #include <eepp/graphics/texturefactory.hpp>
@@ -48,12 +49,15 @@ Engine::Engine() :
 	mWindow( NULL ),
 	mSharedGLContext( false ),
 	mMainThreadId( 0 ),
-	mPlatformHelper( NULL )
+	mPlatformHelper( NULL ),
+	mDisplayManager( NULL )
 {
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	mZip = eeNew( Zip, () );
 	mZip->open( getPlatformHelper()->getApkPath() );
 #endif
+
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
 	TextureAtlasManager::createSingleton();
 }
@@ -98,6 +102,8 @@ Engine::~Engine() {
 #endif
 
 	eeSAFE_DELETE( mPlatformHelper );
+
+	eeSAFE_DELETE( mDisplayManager );
 
 	eeSAFE_DELETE( mBackend );
 }
@@ -356,5 +362,32 @@ PlatformHelper * Engine::getPlatformHelper() {
 
 	return mPlatformHelper;
 }
+
+DisplayManager * Engine::getDisplayManager() {
+	if ( NULL == mDisplayManager ) {
+	#if DEFAULT_BACKEND == BACKEND_SDL2
+		mDisplayManager = eeNew( Backend::SDL2::DisplayManagerSDL2, () );
+	#elif DEFAULT_BACKEND == BACKEND_SFML
+		mDisplayManager = eeNew( Backend::SFML::DisplayManagerSFML, () );
+	#endif
+	}
+
+	return mDisplayManager;
+}
+
+struct EngineInitializer
+{
+	EngineInitializer()
+	{
+		Engine::createSingleton();
+	}
+
+	~EngineInitializer()
+	{
+		Engine::destroySingleton();
+	}
+};
+
+EngineInitializer engineInitializer;
 
 }}

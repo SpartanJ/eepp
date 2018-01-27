@@ -54,9 +54,6 @@ void playMusic() {
 /// Entry point of application
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
-	// Set the application current directory path
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
 	// Play a sound
 	playSound();
 
