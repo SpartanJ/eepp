@@ -169,10 +169,6 @@ class EE_API UIWindow : public UIWidget {
 		Vector2i			mResizePos;
 		KeyboardShortcuts	mKbShortcuts;
 
-		Uint32				mCloseListener;
-		Uint32				mMaximizeListener;
-		Uint32				mMinimizeListener;
-
 		bool				mFrameBufferBound;
 
 		virtual void onSizeChange();
@@ -186,14 +182,6 @@ class EE_API UIWindow : public UIWidget {
 		virtual void matrixSet();
 
 		virtual void matrixUnset();
-
-		void onButtonCloseClick( const UIEvent * Event );
-
-		void onButtonMaximizeClick( const UIEvent * Event );
-
-		void onButtonMinimizeClick( const UIEvent * Event );
-
-		void onContainerPosChange( const UIEvent * Event );
 
 		void fixChildsSize();
 

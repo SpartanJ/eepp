@@ -43,7 +43,6 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 		mButton->setParent( this );
 		mButton->setVisible( true );
 		mButton->setEnabled( true );
-		mButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIComboBox::onButtonClick ) );
 	}
 
 	mDropDownList->setThemeSkin( Theme, "combobox" );
@@ -84,6 +83,14 @@ void UIComboBox::loadFromXmlNode(const pugi::xml_node& node) {
 	endPropertiesTransaction();
 }
 
+Uint32 UIComboBox::onMessage( const UIMessage * Msg ) {
+	if ( Msg->getMsg() == UIMessage::Click && Msg->getSender() == mButton && ( Msg->getFlags() & EE_BUTTON_LMASK ) ) {
+		mDropDownList->showList();
+	}
+
+	return UIWidget::onMessage( Msg );
+}
+
 void UIComboBox::updateControls() {
 	if ( ( mFlags & UI_AUTO_SIZE ) || mSize.getHeight() < mDropDownList->getSkinSize().getHeight() ) {
 		onAutoSize();
@@ -96,14 +103,6 @@ void UIComboBox::updateControls() {
 
 	mButton->setPosition( mSize.getWidth() - mButton->getSize().getWidth(), 0 );
 	mButton->centerVertical();
-}
-
-void UIComboBox::onButtonClick( const UIEvent * Event ) {
-	const UIEventMouse * MEvent = reinterpret_cast<const UIEventMouse*> ( Event );
-
-	if ( MEvent->getFlags() & EE_BUTTON_LMASK ) {
-		mDropDownList->showList();
-	}
 }
 
 void UIComboBox::onSizeChange() {

@@ -34,11 +34,7 @@ class EE_API UIComboBox : public UIWidget {
 		UIDropDownList * mDropDownList;
 		UINode * mButton;
 
-		void onButtonClick( const UIEvent * Event );
-
-		void onButtonEnter( const UIEvent * Event );
-
-		void onButtonExit( const UIEvent * Event );
+		Uint32 onMessage(const UIMessage *Msg);
 
 		void updateControls();
 

@@ -23,7 +23,7 @@ class EE_API UIEvent {
 			OnFocusLoss,
 			OnVisibleChange,
 			OnEnabledChange,
-			OnPosChange,
+			OnPositionChange,
 			OnSizeChange,
 			OnAngleChange,
 			OnScaleChange,

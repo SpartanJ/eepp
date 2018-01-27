@@ -38,9 +38,6 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 	mTitle( NULL ),
 	mModalCtrl( NULL ),
 	mResizeType( RESIZE_NONE ),
-	mCloseListener(0),
-	mMaximizeListener(0),
-	mMinimizeListener(0),
 	mFrameBufferBound( false )
 {
 	mNodeFlags |= NODE_FLAG_WINDOW;
@@ -67,7 +64,6 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 	mContainer->setParent( this );
 	mContainer->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS | UI_CLIP_ENABLE );
 	mContainer->setSize( mSize );
-	mContainer->addEventListener( UIEvent::OnPosChange, cb::Make1( this, &UIWindow::onContainerPosChange ) );
 
 	updateWinFlags();
 
@@ -153,10 +149,6 @@ void UIWindow::updateWinFlags() {
 			mButtonClose->setParent( this );
 			mButtonClose->setVisible( true );
 			mButtonClose->setEnabled( true );
-
-			if ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS && 0 == mCloseListener ) {
-				mCloseListener = mButtonClose->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIWindow::onButtonCloseClick ) );
-			}
 		} else if ( NULL != mButtonClose ) {
 			mButtonClose->setVisible( false )->setEnabled( false )->close();
 			mButtonClose = NULL;
@@ -172,10 +164,6 @@ void UIWindow::updateWinFlags() {
 			mButtonMaximize->setParent( this );
 			mButtonMaximize->setVisible( true );
 			mButtonMaximize->setEnabled( true );
-
-			if ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS && 0 == mMaximizeListener ) {
-				mMaximizeListener = mButtonMaximize->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIWindow::onButtonMaximizeClick ) );
-			}
 		} else if ( NULL != mButtonMaximize ) {
 			mButtonMaximize->setVisible( false )->setEnabled( false )->close();
 			mButtonMaximize = NULL;
@@ -191,10 +179,6 @@ void UIWindow::updateWinFlags() {
 			mButtonMinimize->setParent( this );
 			mButtonMinimize->setVisible( true );
 			mButtonMinimize->setEnabled( true );
-
-			if ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS && 0 == mMinimizeListener ) {
-				mMinimizeListener = mButtonMinimize->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIWindow::onButtonMinimizeClick ) );
-			}
 		} else if ( NULL != mButtonMinimize ) {
 			mButtonMinimize->setVisible( false )->setEnabled( false )->close();
 			mButtonMinimize = NULL;
@@ -230,19 +214,16 @@ void UIWindow::updateWinFlags() {
 		if ( NULL != mButtonClose ) {
 			mButtonClose->close();
 			mButtonClose = NULL;
-			mCloseListener = 0;
 		}
 
 		if ( NULL != mButtonMaximize ) {
 			mButtonMaximize->close();
 			mButtonMaximize = NULL;
-			mMaximizeListener = 0;
 		}
 
 		if ( NULL != mButtonMinimize ) {
 			mButtonMinimize->close();
 			mButtonMinimize = NULL;
-			mMinimizeListener = 0;
 		}
 
 		if ( NULL != mButtonClose ) {
@@ -409,25 +390,6 @@ bool UIWindow::isType( const Uint32& type ) const {
 	return UIWindow::getType() == type ? true : UIWidget::isType( type );
 }
 
-void UIWindow::onContainerPosChange( const UIEvent * Event ) {
-	if ( NULL == mContainer )
-		return;
-
-	Vector2i PosDiff = mContainer->getPosition() - Vector2i( NULL != mBorderLeft ? mBorderLeft->getSize().getWidth() : 0, NULL != mWindowDecoration ? mWindowDecoration->getSize().getHeight() : 0 );
-
-	if ( PosDiff.x != 0 || PosDiff.y != 0 ) {
-		mContainer->setPosition( NULL != mBorderLeft ? mBorderLeft->getSize().getWidth() : 0, NULL != mWindowDecoration ? mWindowDecoration->getSize().getHeight() : 0 );
-
-		setPosition( mPos + PosDiff );
-	}
-}
-
-void UIWindow::onButtonCloseClick( const UIEvent * Event ) {
-	closeWindow();
-
-	sendCommonEvent( UIEvent::OnWindowCloseClick );
-}
-
 void UIWindow::closeWindow() {
 	if ( NULL != mButtonClose )
 		mButtonClose->setEnabled( false );
@@ -453,18 +415,6 @@ void UIWindow::close() {
 	UIWidget::close();
 
 	enableByModal();
-}
-
-void UIWindow::onButtonMaximizeClick( const UIEvent * Event ) {
-	maximize();
-
-	sendCommonEvent( UIEvent::OnWindowMaximizeClick );
-}
-
-void UIWindow::onButtonMinimizeClick( const UIEvent * Event ) {
-	hide();
-
-	sendCommonEvent( UIEvent::OnWindowMinimizeClick );
 }
 
 void UIWindow::setTheme( UITheme * Theme ) {
@@ -706,6 +656,26 @@ Uint32 UIWindow::onMessage( const UIMessage * Msg ) {
 		case UIMessage::DragStop:
 		{
 			UIManager::instance()->setCursor( EE_CURSOR_ARROW );
+			break;
+		}
+		case UIMessage::Click:
+		{
+			if ( ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) && ( Msg->getFlags() & EE_BUTTON_LMASK ) ) {
+				if ( Msg->getSender() == mButtonClose ) {
+					closeWindow();
+
+					sendCommonEvent( UIEvent::OnWindowCloseClick );
+				} else if ( Msg->getSender() == mButtonMaximize ) {
+					maximize();
+
+					sendCommonEvent( UIEvent::OnWindowMaximizeClick );
+				} else if ( Msg->getSender() == mButtonMinimize ) {
+					hide();
+
+					sendCommonEvent( UIEvent::OnWindowMinimizeClick );
+				}
+			}
+
 			break;
 		}
 	}
@@ -1108,7 +1078,9 @@ void UIWindow::maximize() {
 
 Uint32 UIWindow::onMouseDoubleClick( const Vector2i &Pos, const Uint32 Flags ) {
 	if ( isResizeable() && ( NULL != mButtonMaximize ) && ( Flags & EE_BUTTON_LMASK ) ) {
-		onButtonMaximizeClick( NULL );
+		maximize();
+
+		sendCommonEvent( UIEvent::OnWindowMaximizeClick );
 	}
 
 	return 1;

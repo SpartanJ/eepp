@@ -779,7 +779,7 @@ void UINode::onEnabledChange() {
 }
 
 void UINode::onPositionChange() {
-	sendCommonEvent( UIEvent::OnPosChange );
+	sendCommonEvent( UIEvent::OnPositionChange );
 	invalidateDraw();
 }
 
