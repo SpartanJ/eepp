@@ -559,27 +559,6 @@ void Window::setGLContextThread() {
 void Window::unsetGLContextThread() {
 }
 
-Float Window::getCurrentDisplayDPI() {
-	return 92.f;
-}
-
-EE_PIXEL_DENSITY Window::getDisplayPixelDensity() {
-	EE_PIXEL_DENSITY pd = PD_MDPI;
-	Float dpi = getCurrentDisplayDPI();
-
-	if ( dpi > 105 && dpi < 160 ) {
-		pd = PD_HDPI;
-	} else if ( dpi >= 160 && dpi < 240 ) {
-		pd = PD_XHDPI;
-	} else if ( dpi > 240 && dpi < 320 ) {
-		pd = PD_XXHDPI;
-	} else if ( dpi >= 320 ) {
-		pd = PD_XXXHDPI;
-	}
-
-	return pd;
-}
-
 void Window::runMainLoop( void (*func)(), int fps ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	emscripten_set_main_loop(func, fps, 1);
@@ -590,6 +569,10 @@ void Window::runMainLoop( void (*func)(), int fps ) {
 		func();
 	}
 #endif
+}
+
+int Window::getCurrentDisplayIndex() {
+	return 0;
 }
 
 }}

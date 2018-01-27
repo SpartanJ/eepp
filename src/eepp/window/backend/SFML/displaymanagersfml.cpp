@@ -53,8 +53,10 @@ DisplayMode DisplaySFML::getClosestDisplayMode( DisplayMode wantedMode ) {
 
 		for ( size_t i = 0; i < displayModes.size(); i++ ) {
 			Vector2f cur( displayModes[i].Width, displayModes[i].Height );
+			Float dist;
 
-			if ( wanted.distance( cur ) < closestDistance ) {
+			if ( ( dist = wanted.distance( cur ) ) < closestDistance ) {
+				closestDistance = dist;
 				closestIndex = i;
 			}
 		}

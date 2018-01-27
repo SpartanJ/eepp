@@ -251,18 +251,8 @@ void WindowSDL::unsetGLContextThread() {
 	SDL_GL_MakeCurrent( mSDLWindow, NULL );
 }
 
-Float WindowSDL::getCurrentDisplayDPI() {
-#if SDL_VERSION_ATLEAST(2,0,4)
-	float ddpi, hdpi, vdpi;
-	int index = SDL_GetWindowDisplayIndex( mSDLWindow );
-
-	if ( index < 0 ) index = 0;
-
-	if ( 0 == SDL_GetDisplayDPI( index, &ddpi, &hdpi, &vdpi ) )
-		return ddpi;
-#endif
-
-	return Window::getCurrentDisplayDPI();
+int WindowSDL::getCurrentDisplayIndex() {
+	return SDL_GetWindowDisplayIndex( mSDLWindow );
 }
 
 std::string WindowSDL::getVersion() {

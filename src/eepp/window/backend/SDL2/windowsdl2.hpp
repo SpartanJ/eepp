@@ -77,7 +77,7 @@ class EE_API WindowSDL : public Window {
 
 		void unsetGLContextThread();
 
-		Float getCurrentDisplayDPI();
+		int getCurrentDisplayIndex();
 	protected:
 		friend class ClipboardSDL;
 

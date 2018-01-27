@@ -410,14 +410,12 @@ class EE_API Window {
 		/** Deactviates the shared GL context in the current thread. */
 		virtual void unsetGLContextThread();
 
-		virtual Float getCurrentDisplayDPI();
-
-		EE_PIXEL_DENSITY getDisplayPixelDensity();
-
 		/** Runs the main loop function passed as parameter
 		**	@param func The main loop function
 		**	@param fps The desired FPS ( 0 = infinite ) */
 		void runMainLoop( void (*func)(), int fps = 0 );
+
+		virtual int getCurrentDisplayIndex();
 
 		Vector2f mapPixelToCoords(const Vector2i & point);
 
