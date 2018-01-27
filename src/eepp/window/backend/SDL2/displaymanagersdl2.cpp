@@ -105,4 +105,13 @@ Display * DisplayManagerSDL2::getDisplayIndex( int index ) {
 	return index >= 0 && index < (Int32)displays.size() ? displays[ index ] : NULL;
 }
 
+
+void DisplayManagerSDL2::enableScreenSaver() {
+	SDL_EnableScreenSaver();
+}
+
+void DisplayManagerSDL2::disableScreenSaver() {
+	SDL_DisableScreenSaver();
+}
+
 }}}}

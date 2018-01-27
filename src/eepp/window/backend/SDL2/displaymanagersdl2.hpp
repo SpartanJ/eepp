@@ -31,6 +31,10 @@ class EE_API DisplayManagerSDL2 : public DisplayManager {
 		int getDisplayCount();
 		
 		Display * getDisplayIndex( int index );
+
+		void enableScreenSaver();
+
+		void disableScreenSaver();
 };
 
 }}}}

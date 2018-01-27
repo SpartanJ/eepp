@@ -18,4 +18,8 @@ DisplayManager::~DisplayManager() {
 	}
 }
 
+void DisplayManager::enableScreenSaver() {}
+
+void DisplayManager::disableScreenSaver() {}
+
 }}

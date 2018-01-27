@@ -43,6 +43,10 @@ class EE_API DisplayManager {
 		
 		virtual Display * getDisplayIndex( int index ) = 0;
 
+		virtual void enableScreenSaver();
+
+		virtual void disableScreenSaver();
+
 		virtual ~DisplayManager();
 	protected:
 		std::vector<Display*> displays;
