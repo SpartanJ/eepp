@@ -37,6 +37,10 @@ static UITextView * createTextBox( const String& Text = "", UINode * Parent = NU
 	return Ctrl;
 }
 
+MapEditor *MapEditor::New(UIWindow * AttatchTo, const MapEditor::MapEditorCloseCb & callback) {
+	return eeNew( MapEditor, ( AttatchTo, callback ) );
+}
+
 MapEditor::MapEditor( UIWindow * AttatchTo, const MapEditorCloseCb& callback ) :
 	mUIWindow( AttatchTo ),
 	mTheme( UIThemeManager::instance()->getDefaultTheme() ),

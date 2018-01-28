@@ -49,3 +49,4 @@ bin/libeepp.dylib
 *.iml
 .idea
 eepp.kdev4
+bin/eepp-MapEditor*

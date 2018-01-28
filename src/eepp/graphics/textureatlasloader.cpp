@@ -319,7 +319,7 @@ bool TextureAtlasLoader::updateTextureAtlas() {
 
 			if ( NULL != tTextureRegion ) {
 				tSh->OffsetX = tTextureRegion->getOffset().x;
-				tSh->OffsetY = tTextureRegion->getOffset().x;
+				tSh->OffsetY = tTextureRegion->getOffset().y;
 				tSh->DestWidth = (Int32)tTextureRegion->getDestSize().x;
 				tSh->DestHeight = (Int32)tTextureRegion->getDestSize().y;
 			}

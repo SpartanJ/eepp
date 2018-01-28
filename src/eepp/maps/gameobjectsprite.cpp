@@ -32,10 +32,14 @@ bool GameObjectSprite::isType( const Uint32& type ) {
 
 void GameObjectSprite::draw() {
 	if ( NULL != mSprite ) {
-		TextureRegion * TextureRegion = mSprite->getCurrentTextureRegion();
-		Sizef destSizeO = TextureRegion->getDestSize();
-		Sizei realSize = TextureRegion->getRealSize();
-		TextureRegion->setDestSize( Sizef( (Float)realSize.getWidth(), (Float)realSize.getHeight() ) );
+		TextureRegion * textureRegion = mSprite->getCurrentTextureRegion();
+
+		if ( NULL == textureRegion )
+			return;
+
+		Sizef destSizeO = textureRegion->getDestSize();
+		Sizei realSize = textureRegion->getRealSize();
+		textureRegion->setDestSize( Sizef( (Float)realSize.getWidth(), (Float)realSize.getHeight() ) );
 
 		mSprite->setRotation( getRotation() );
 
@@ -73,7 +77,7 @@ void GameObjectSprite::draw() {
 
 		mSprite->draw();
 
-		TextureRegion->setDestSize( destSizeO );
+		textureRegion->setDestSize( destSizeO );
 	}
 }
 

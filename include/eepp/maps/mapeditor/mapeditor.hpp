@@ -38,6 +38,8 @@ class EE_API MapEditor {
 	public:
 		typedef cb::Callback0<void> MapEditorCloseCb;
 
+		static MapEditor * New( UIWindow * AttatchTo = NULL, const MapEditorCloseCb& callback = MapEditorCloseCb() );
+
 		MapEditor( UIWindow * AttatchTo = NULL, const MapEditorCloseCb& callback = MapEditorCloseCb() );
 
 		~MapEditor();

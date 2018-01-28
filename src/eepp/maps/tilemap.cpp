@@ -10,6 +10,7 @@
 #include <eepp/maps/mapobjectlayer.hpp>
 
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/graphics/renderer/opengl.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/primitives.hpp>
@@ -836,7 +837,15 @@ bool TileMap::loadFromStream( IOStream& IOS ) {
 					if ( NULL == TextureAtlasManager::instance()->getByName( sgname ) ) {
 						TextureAtlasLoader * tgl = eeNew( TextureAtlasLoader, () );
 
-						tgl->loadFromFile( Sys::getProcessPath() + TextureAtlases[i] );
+						if ( !VirtualFileSystem::instance()->fileExists( TextureAtlases[i] ) && !FileSystem::fileExists( TextureAtlases[i] ) ) {
+							std::string path( FileSystem::fileRemoveFileName( mPath ) );
+
+							if ( FileSystem::fileExists( path + TextureAtlases[i] ) || VirtualFileSystem::instance()->fileExists( path + TextureAtlases[i] ) ) {
+								TextureAtlases[i] = path + TextureAtlases[i];
+							}
+						}
+
+						tgl->loadFromFile( TextureAtlases[i] );
 
 						eeSAFE_DELETE( tgl );
 					}
@@ -1046,7 +1055,6 @@ bool TileMap::loadFromFile( const std::string& path ) {
 		Pack * tPack = PackManager::instance()->exists( tPath ) ;
 
 		if ( NULL != tPack ) {
-			mPath = tPath;
 			return loadFromPack( tPack, tPath );
 		}
 	}
@@ -1059,6 +1067,8 @@ bool TileMap::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 		SafeDataPointer PData;
 
 		Pack->extractFileToMemory( FilePackPath, PData );
+
+		mPath = FilePackPath;
 
 		return loadFromMemory( reinterpret_cast<const char*> ( PData.data ), PData.size );
 	}
@@ -1119,6 +1129,10 @@ void TileMap::saveToStream( IOStream& IOS ) {
 			sMapTextureAtlas tSG;
 
 			memset( tSG.Path, 0, MAP_TEXTUREATLAS_PATH_SIZE );
+
+			if ( !mPath.empty() && String::startsWith( TextureAtlases[i], FileSystem::fileRemoveFileName( mPath ) ) ) {
+				TextureAtlases[i] = TextureAtlases[i].substr( FileSystem::fileRemoveFileName( mPath ).size() );
+			}
 
 			String::strCopy( tSG.Path, TextureAtlases[i].c_str(), MAP_TEXTUREATLAS_PATH_SIZE );
 
@@ -1359,11 +1373,11 @@ void TileMap::saveToStream( IOStream& IOS ) {
 
 void TileMap::saveToFile( const std::string& path ) {
 	if ( !FileSystem::isDirectory( path ) ) {
+		mPath = path;
+
 		IOStreamFile IOS( path, std::ios::out | std::ios::binary );
 
 		saveToStream( IOS );
-
-		mPath = path;
 	}
 }
 

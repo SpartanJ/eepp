@@ -959,6 +959,12 @@ solution "eepp"
 		files { "src/tools/textureatlaseditor/*.cpp" }
 		build_link_configuration( "eepp-TextureAtlasEditor", true )
 
+	project "eepp-mapeditor"
+		set_kind()
+		language "C++"
+		files { "src/tools/mapeditor/*.cpp" }
+		build_link_configuration( "eepp-MapEditor", true )
+		
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")
 end

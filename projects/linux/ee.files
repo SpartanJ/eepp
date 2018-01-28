@@ -6,6 +6,7 @@
 ../../src/eepp/window/backend/SFML/displaymanagersfml.cpp
 ../../src/eepp/window/backend/SFML/displaymanagersfml.hpp
 ../../src/eepp/window/displaymanager.cpp
+../../src/tools/mapeditor/mapeditor.cpp
 ../../src/tools/textureatlaseditor/textureatlaseditor.cpp
 ../../include/eepp/graphics/arcdrawable.hpp
 ../../include/eepp/graphics/circledrawable.hpp
