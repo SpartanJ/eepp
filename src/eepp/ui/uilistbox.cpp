@@ -513,7 +513,7 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 					Item = mItems[i];
 				}
 
-				Item->setPosition( mHScrollInit, ItemPos - RelPos );
+				Item->setPosition( mHScrollInit, ItemPos - (Int32)RelPos );
 				Item->setEnabled( true );
 				Item->setVisible( true );
 
@@ -548,7 +548,7 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 
 		for ( i = 0; i < mItems.size(); i++ ) {
 			Item = mItems[i];
-			ItemPos = mRowHeight * ( i - RelPos );
+			ItemPos = mRowHeight * ( (Int32)i - (Int32)RelPos );
 
 			if ( i >= RelPos && i < RelPosMax ) {
 				if ( NULL == Item ) {

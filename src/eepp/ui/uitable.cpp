@@ -263,7 +263,7 @@ void UITable::updateScroll( bool FromScrollChange ) {
 			ItemPosMax = ItemPos + mRowHeight;
 
 			if ( ( ItemPos >= (Int32)RelPos || ItemPosMax >= (Int32)RelPos ) && ( ItemPos <= (Int32)RelPosMax ) ) {
-				Item->setPosition( mHScrollInit, ItemPos - RelPos );
+				Item->setPosition( mHScrollInit, ItemPos - (Int32)RelPos );
 				Item->setEnabled( true );
 				Item->setVisible( true );
 
@@ -293,7 +293,7 @@ void UITable::updateScroll( bool FromScrollChange ) {
 
 		for ( i = 0; i < mItems.size(); i++ ) {
 			Item = mItems[i];
-			ItemPos = mRowHeight * ( i - RelPos );
+			ItemPos = mRowHeight * ( (Int32)i - (Int32)RelPos );
 
 			if ( i >= RelPos && i < RelPosMax ) {
 				if ( Clipped )

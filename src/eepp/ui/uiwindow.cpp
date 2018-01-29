@@ -277,7 +277,7 @@ void UIWindow::drawHighlightInvalidation() {
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
 		P.setColor( UIManager::instance()->getHighlightInvalidationColor() );
-		P.setLineWidth( PixelDensity::dpToPxI( 2 ) );
+		P.setLineWidth( PixelDensity::dpToPx( 2 ) );
 		P.drawRectangle( getScreenBounds() );
 
 		UIWidget::matrixUnset();
@@ -559,7 +559,7 @@ const Sizei& UIWindow::getSize() {
 }
 
 void UIWindow::fixChildsSize() {
-	if ( mRealSize.getWidth() < PixelDensity::dpToPxI( mStyleConfig.MinWindowSize.getWidth() ) || mRealSize.getHeight() < PixelDensity::dpToPxI( mStyleConfig.MinWindowSize.getHeight() ) ) {
+	if ( mRealSize.getWidth() < PixelDensity::dpToPx( mStyleConfig.MinWindowSize.getWidth() ) || mRealSize.getHeight() < PixelDensity::dpToPx( mStyleConfig.MinWindowSize.getHeight() ) ) {
 		internalSize( eemin( mRealSize.getWidth(), PixelDensity::dpToPxI( mStyleConfig.MinWindowSize.getWidth() ) ), eemin( mRealSize.getHeight(), PixelDensity::dpToPxI( mStyleConfig.MinWindowSize.getHeight() ) ) );
 	}
 
@@ -574,22 +574,22 @@ void UIWindow::fixChildsSize() {
 		decoSize = mStyleConfig.DecorationSize = Sizei( mSize.getWidth(), mWindowDecoration->getSkinSize().getHeight() );
 	}
 
-	mWindowDecoration->setPixelsSize( mRealSize.getWidth(), PixelDensity::dpToPxI( mStyleConfig.DecorationSize.getHeight() ) );
+	mWindowDecoration->setPixelsSize( mRealSize.getWidth(), PixelDensity::dpToPx( mStyleConfig.DecorationSize.getHeight() ) );
 
 	if ( mStyleConfig.BorderAutoSize ) {
-		mBorderBottom->setPixelsSize( mRealSize.getWidth(), PixelDensity::dpToPxI( mBorderBottom->getSkinSize().getHeight() ) );
+		mBorderBottom->setPixelsSize( mRealSize.getWidth(), PixelDensity::dpToPx( mBorderBottom->getSkinSize().getHeight() ) );
 	} else {
-		mBorderBottom->setPixelsSize( mRealSize.getWidth(), PixelDensity::dpToPxI( mStyleConfig.BorderSize.getHeight() ) );
+		mBorderBottom->setPixelsSize( mRealSize.getWidth(), PixelDensity::dpToPx( mStyleConfig.BorderSize.getHeight() ) );
 	}
 
-	Uint32 BorderHeight = mRealSize.getHeight() - PixelDensity::dpToPxI( decoSize.getHeight() ) - mBorderBottom->getRealSize().getHeight();
+	Uint32 BorderHeight = mRealSize.getHeight() - PixelDensity::dpToPx( decoSize.getHeight() ) - mBorderBottom->getRealSize().getHeight();
 
 	if ( mStyleConfig.BorderAutoSize ) {
-		mBorderLeft->setPixelsSize( PixelDensity::dpToPxI( mBorderLeft->getSkinSize().getWidth() ), BorderHeight );
-		mBorderRight->setPixelsSize( PixelDensity::dpToPxI( mBorderRight->getSkinSize().getWidth() ), BorderHeight );
+		mBorderLeft->setPixelsSize( PixelDensity::dpToPx( mBorderLeft->getSkinSize().getWidth() ), BorderHeight );
+		mBorderRight->setPixelsSize( PixelDensity::dpToPx( mBorderRight->getSkinSize().getWidth() ), BorderHeight );
 	} else {
-		mBorderLeft->setPixelsSize( PixelDensity::dpToPxI( mStyleConfig.BorderSize.getWidth() ), BorderHeight );
-		mBorderRight->setPixelsSize( PixelDensity::dpToPxI( mStyleConfig.BorderSize.getWidth() ), BorderHeight );
+		mBorderLeft->setPixelsSize( PixelDensity::dpToPx( mStyleConfig.BorderSize.getWidth() ), BorderHeight );
+		mBorderRight->setPixelsSize( PixelDensity::dpToPx( mStyleConfig.BorderSize.getWidth() ), BorderHeight );
 	}
 
 	mBorderLeft->setPixelsPosition( 0, mWindowDecoration->getRealSize().getHeight() );
@@ -601,7 +601,7 @@ void UIWindow::fixChildsSize() {
 							   mRealSize.getHeight() - mWindowDecoration->getRealSize().getHeight() - mBorderBottom->getRealSize().getHeight() );
 
 	Uint32 yPos;
-	Vector2i posFix( PixelDensity::dpToPxI( mStyleConfig.ButtonsPositionFixer ) );
+	Vector2f posFix( PixelDensity::dpToPx( Vector2f( mStyleConfig.ButtonsPositionFixer.x, mStyleConfig.ButtonsPositionFixer.y ) ) );
 
 	if ( NULL != mButtonClose ) {
 		yPos = mWindowDecoration->getRealSize().getHeight() / 2 - mButtonClose->getRealSize().getHeight() / 2 + posFix.y;
@@ -613,7 +613,7 @@ void UIWindow::fixChildsSize() {
 		yPos = mWindowDecoration->getRealSize().getHeight() / 2 - mButtonMaximize->getRealSize().getHeight() / 2 + posFix.y;
 
 		if ( NULL != mButtonClose ) {
-			mButtonMaximize->setPixelsPosition( mButtonClose->getRealPosition().x - PixelDensity::dpToPxI( mStyleConfig.ButtonsSeparation ) - mButtonMaximize->getRealSize().getWidth(), yPos );
+			mButtonMaximize->setPixelsPosition( mButtonClose->getRealPosition().x - PixelDensity::dpToPx( mStyleConfig.ButtonsSeparation ) - mButtonMaximize->getRealSize().getWidth(), yPos );
 		} else {
 			mButtonMaximize->setPixelsPosition( mWindowDecoration->getRealSize().getWidth() - mBorderRight->getRealSize().getWidth() - mButtonMaximize->getRealSize().getWidth() + posFix.x, yPos );
 		}
@@ -623,10 +623,10 @@ void UIWindow::fixChildsSize() {
 		yPos = mWindowDecoration->getRealSize().getHeight() / 2 - mButtonMinimize->getRealSize().getHeight() / 2 + posFix.y;
 
 		if ( NULL != mButtonMaximize ) {
-			mButtonMinimize->setPixelsPosition( mButtonMaximize->getRealPosition().x - PixelDensity::dpToPxI( mStyleConfig.ButtonsSeparation ) - mButtonMinimize->getRealSize().getWidth(), yPos );
+			mButtonMinimize->setPixelsPosition( mButtonMaximize->getRealPosition().x - PixelDensity::dpToPx( mStyleConfig.ButtonsSeparation ) - mButtonMinimize->getRealSize().getWidth(), yPos );
 		} else {
 			if ( NULL != mButtonClose ) {
-				mButtonMinimize->setPixelsPosition( mButtonClose->getRealPosition().x - PixelDensity::dpToPxI( mStyleConfig.ButtonsSeparation ) - mButtonMinimize->getRealSize().getWidth(), yPos );
+				mButtonMinimize->setPixelsPosition( mButtonClose->getRealPosition().x - PixelDensity::dpToPx( mStyleConfig.ButtonsSeparation ) - mButtonMinimize->getRealSize().getWidth(), yPos );
 			} else {
 				mButtonMinimize->setPixelsPosition( mWindowDecoration->getRealSize().getWidth() - mBorderRight->getRealSize().getWidth() - mButtonMinimize->getRealSize().getWidth() + posFix.x, yPos );
 			}
@@ -759,13 +759,13 @@ void UIWindow::tryResize( const UI_RESIZE_TYPE& Type ) {
 
 	setDragEnabled( false );
 
-	Vector2i Pos = UIManager::instance()->getMousePos();
+	Vector2f Pos = UIManager::instance()->getMousePosf();
 
 	worldToNode( Pos );
 	
 	mResizeType = Type;
 
-	Pos = PixelDensity::dpToPxI( Pos );
+	Pos = PixelDensity::dpToPx( Pos );
 
 	switch ( mResizeType )
 	{
@@ -833,11 +833,11 @@ void UIWindow::updateResize() {
 		return;
 	}
 
-	Vector2i Pos = UIManager::instance()->getMousePos();
+	Vector2f Pos = UIManager::instance()->getMousePosf();
 
 	worldToNode( Pos );
 
-	Pos = PixelDensity::dpToPxI( Pos );
+	Pos = PixelDensity::dpToPx( Pos );
 
 	switch ( mResizeType ) {
 		case RESIZE_RIGHT:
@@ -1174,7 +1174,7 @@ void UIWindow::matrixSet() {
 				mFrameBuffer->clear();
 			}
 
-			if ( 0.f != mScreenPos ) {
+			if ( 0 != mScreenPosi ) {
 				GLi->pushMatrix();
 				GLi->translatef( -mScreenPosi.x , -mScreenPosi.y, 0.f );
 			}
@@ -1188,7 +1188,7 @@ void UIWindow::matrixUnset() {
 	if ( ownsFrameBuffer() ) {
 		GlobalBatchRenderer::instance()->draw();
 
-		if ( 0.f != mScreenPos )
+		if ( 0 != mScreenPosi )
 			GLi->popMatrix();
 
 		if ( mFrameBufferBound ) {

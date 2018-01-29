@@ -166,7 +166,7 @@ class EE_API UIWindow : public UIWidget {
 		Vector2f			mNonMaxPos;
 		Sizei				mNonMaxSize;
 		UI_RESIZE_TYPE		mResizeType;
-		Vector2i			mResizePos;
+		Vector2f			mResizePos;
 		KeyboardShortcuts	mKbShortcuts;
 
 		bool				mFrameBufferBound;
