@@ -64,6 +64,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 	mContainer->setParent( this );
 	mContainer->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS | UI_CLIP_ENABLE );
 	mContainer->setSize( mSize );
+	mContainer->addEventListener( UIEvent::OnPositionChange, cb::Make1( this, &UIWindow::onContainerPositionChange ) );
 
 	updateWinFlags();
 
@@ -388,6 +389,19 @@ Uint32 UIWindow::getType() const {
 
 bool UIWindow::isType( const Uint32& type ) const {
 	return UIWindow::getType() == type ? true : UIWidget::isType( type );
+}
+
+void UIWindow::onContainerPositionChange( const UIEvent * Event ) {
+	if ( NULL == mContainer )
+		return;
+
+	Vector2i PosDiff = mContainer->getPosition() - Vector2i( NULL != mBorderLeft ? mBorderLeft->getSize().getWidth() : 0, NULL != mWindowDecoration ? mWindowDecoration->getSize().getHeight() : 0 );
+
+	if ( PosDiff.x != 0 || PosDiff.y != 0 ) {
+		mContainer->setPosition( NULL != mBorderLeft ? mBorderLeft->getSize().getWidth() : 0, NULL != mWindowDecoration ? mWindowDecoration->getSize().getHeight() : 0 );
+
+		setPosition( mPos + PosDiff );
+	}
 }
 
 void UIWindow::closeWindow() {

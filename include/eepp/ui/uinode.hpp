@@ -42,6 +42,10 @@ class EE_API UINode : public Transformable {
 
 		void nodeToWorld( Vector2i& pos );
 
+		void worldToNode( Vector2f& pos );
+
+		void nodeToWorld( Vector2f& pos );
+
 		virtual Uint32 getType() const;
 
 		virtual bool isType( const Uint32& type ) const;
@@ -207,9 +211,7 @@ class EE_API UINode : public Transformable {
 
 		bool isMouseOverMeOrChilds();
 
-		Polygon2f& getPolygon();
-
-		Vector2f getPolygonCenter();
+		Polygon2f& getWorldPolygon();
 
 		void setSkinState( const Uint32& State );
 
@@ -230,8 +232,6 @@ class EE_API UINode : public Transformable {
 		UINode * getNextWidget();
 
 		void applyDefaultTheme();
-
-		Rect getScreenRect();
 
 		void childsCloseAll();
 
@@ -369,6 +369,8 @@ class EE_API UINode : public Transformable {
 		Vector2f convertToNodeSpace(const Vector2f& worldPoint);
 
 		Vector2f convertToWorldSpace(const Vector2f& nodePoint);
+
+		Rectf getLocalBounds();
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
 		friend class UIManager;
@@ -543,8 +545,6 @@ class EE_API UINode : public Transformable {
 		Sizei getSkinSize( UISkin * Skin, const Uint32& State = UISkinState::StateNormal );
 
 		Rectf getScreenBounds();
-
-		Rectf getLocalBounds();
 
 		void drawHighlightFocus();
 

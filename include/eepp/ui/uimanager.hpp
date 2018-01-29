@@ -49,6 +49,8 @@ class EE_API UIManager {
 
 		Vector2i getMousePos();
 
+		Vector2f getMousePosf();
+
 		Input * getInput() const;
 
 		const Uint32& getPressTrigger() const;

@@ -137,33 +137,6 @@ void UIDropDownList::showList() {
 				mListBox->setSize( NULL != mFriendCtrl ? mFriendCtrl->getSize().getWidth() : mSize.getWidth(), (Int32)( mListBox->getCount() * mListBox->getRowHeight() ) + tPadding.Top + tPadding.Bottom );
 			}
 
-			mListBox->updateWorldPolygon();
-
-			Rectf aabb( mListBox->getPolygon().getBounds() );
-			Rect aabbi( aabb.Left, aabb.Top, aabb.Right, aabb.Bottom );
-
-			if ( !UIManager::instance()->getMainControl()->getScreenRect().contains( aabbi ) ) {
-				Pos = Vector2i( mPos.x, mPos.y );
-
-				if ( mStyleConfig.PopUpToMainControl ) {
-					getParent()->nodeToWorld( Pos );
-					Pos = PixelDensity::pxToDpI( Pos );
-				} else if ( NULL != mFriendCtrl ) {
-					Pos = Vector2i( mFriendCtrl->getPosition().x, mFriendCtrl->getPosition().y + mFriendCtrl->getSize().getHeight() );
-				} else {
-					UINode * ParentLoop = getParent();
-					UINode * rp = getWindowContainer();
-					while ( rp != ParentLoop ) {
-						Pos += ParentLoop->getPosition();
-						ParentLoop = ParentLoop->getParent();
-					}
-				}
-
-				Pos.y -= mListBox->getSize().getHeight();
-
-				mListBox->setPosition( Pos );
-			}
-
 			mListBox->getVerticalScrollBar()->setValue( sliderValue );
 
 			show();

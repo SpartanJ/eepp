@@ -183,6 +183,8 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual void matrixUnset();
 
+		void onContainerPositionChange( const UIEvent * Event );
+
 		void fixChildsSize();
 
 		void doResize( const UIMessage * Msg );

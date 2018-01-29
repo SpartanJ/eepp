@@ -71,9 +71,9 @@ Engine::~Engine() {
 
 	NinePatchManager::destroySingleton();
 
-	FontManager::destroySingleton();
-
 	UI::UIManager::destroySingleton();
+
+	FontManager::destroySingleton();
 
 	TextureFactory::destroySingleton();
 

@@ -1118,10 +1118,7 @@ UINode * UINode::overFind( const Vector2f& Point ) {
 	UINode * pOver = NULL;
 
 	if ( mEnabled && mVisible ) {
-		if ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY )
-			updateWorldPolygon();
-
-		if ( mPoly.pointInside( Point ) ) {
+		if ( getLocalBounds().contains( convertToNodeSpace( Point ) ) ) {
 			writeCtrlFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
 
 			UINode * ChildLoop = mChildLast;
@@ -1254,18 +1251,11 @@ bool UINode::isMeOrParentTreeScaledOrRotatedOrFrameBuffer() {
 	return false;
 }
 
-Polygon2f& UINode::getPolygon() {
+Polygon2f& UINode::getWorldPolygon() {
 	if ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY )
 		updateWorldPolygon();
 
 	return mPoly;
-}
-
-Vector2f UINode::getPolygonCenter() {
-	if ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY )
-		updateWorldPolygon();
-
-	return mPoly.getBounds().getCenter();
 }
 
 void UINode::updateWorldPolygon() {
@@ -1503,10 +1493,6 @@ void UINode::applyDefaultTheme() {
 	UIThemeManager::instance()->applyDefaultTheme( this );
 }
 
-Rect UINode::getScreenRect() {
-	return Rect( mScreenPos, mRealSize );
-}
-
 Rect UINode::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom, bool SkipFlags ) {
 	Rect tPadding( 0, 0, 0, 0 );
 
@@ -1626,12 +1612,22 @@ void UINode::onChildCountChange() {
 
 void UINode::worldToNode( Vector2i& pos ) {
 	Vector2f toPos( convertToNodeSpace( Vector2f( pos.x, pos.y ) ) );
-	pos = Vector2i( toPos.x  / PixelDensity::getPixelDensity(), toPos.y  / PixelDensity::getPixelDensity() );
+	pos = Vector2i( toPos.x  / PixelDensity::getPixelDensity(), toPos.y / PixelDensity::getPixelDensity() );
 }
 
 void UINode::nodeToWorld( Vector2i& pos ) {
 	Vector2f toPos( convertToWorldSpace( Vector2f( pos.x * PixelDensity::getPixelDensity(), pos.y * PixelDensity::getPixelDensity() ) ) );
 	pos = Vector2i( toPos.x, toPos.y );
+}
+
+void UINode::worldToNode( Vector2f& pos ) {
+	Vector2f toPos( convertToNodeSpace( pos ) );
+	pos = Vector2f( toPos.x  / PixelDensity::getPixelDensity(), toPos.y / PixelDensity::getPixelDensity() );
+}
+
+void UINode::nodeToWorld( Vector2f& pos ) {
+	Vector2f toPos( convertToWorldSpace( Vector2f( pos.x * PixelDensity::getPixelDensity(), pos.y * PixelDensity::getPixelDensity() ) ) );
+	pos = Vector2f( toPos.x, toPos.y );
 }
 
 UINode * UINode::getWindowContainer() {

@@ -309,6 +309,10 @@ Vector2i UIManager::getMousePos() {
 	return mMousePos;
 }
 
+Vector2f UIManager::getMousePosf() {
+	return Vector2f( mMousePos.x, mMousePos.y );
+}
+
 Input * UIManager::getInput() const {
 	return mKM;
 }

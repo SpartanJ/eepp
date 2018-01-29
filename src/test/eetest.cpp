@@ -329,9 +329,11 @@ void EETest::onShowMenu( const UIEvent * Event ) {
 	UIPushButton * PB = static_cast<UIPushButton*>( Event->getControl() );
 
 	if ( Menu->show() ) {
-		Vector2i Pos = Vector2i( (Int32)PB->getPolygon()[0].x, (Int32)PB->getPolygon()[0].y - 2 );
-		UIMenu::fixMenuPos( Pos , Menu );
-		Menu->setPosition( Sizei( (Float)Pos.x / PixelDensity::getPixelDensity(), (Float)Pos.y / PixelDensity::getPixelDensity() ) );
+		Vector2f pos( Vector2f::Zero );
+		PB->nodeToWorld( pos );
+		pos = PixelDensity::pxToDp( pos );
+		pos.y -= Menu->getSize().y;
+		Menu->setPosition( pos );
 	}
 }
 
@@ -592,7 +594,7 @@ void EETest::createUI() {
 	Sizei skinSize = mShowMenu->getSkinSize();
 
 	mShowMenu->setSize( mShowMenu->getSkinSize() )
-			->setPosition( screenSize.getWidth() - skinSize.getWidth() - 20,
+			->setPosition( screenSize.getWidth() - skinSize.getWidth() - 40,
 						   screenSize.getHeight() - skinSize.getHeight() - 10 );
 
 	mShowMenu->setText( "Show Menu" );

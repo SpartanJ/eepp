@@ -131,6 +131,7 @@ const Transform& Transformable::getTransform() const {
 		}
 
 		mTransform = t;
+		mTransformNeedUpdate = false;
 	}
 
 	return mTransform;
