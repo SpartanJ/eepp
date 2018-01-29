@@ -82,7 +82,7 @@ class EE_API UITooltip : public UINode {
 		Text *	mTextCache;
 		UITooltipStyleConfig mStyleConfig;
 		Vector2f 	mAlignOffset;
-		Rect		mRealPadding;
+		Rectf		mRealPadding;
 		Time		mTooltipTime;
 		UINode *	mTooltipOf;
 

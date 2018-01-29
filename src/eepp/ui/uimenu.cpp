@@ -169,7 +169,7 @@ Uint32 UIMenu::add( UINode * Control ) {
 
 	setControlSize( Control, getCount() );
 
-	Control->setPixelsPosition( PixelDensity::dpToPxI( mStyleConfig.Padding.Left ), PixelDensity::dpToPxI( mStyleConfig.Padding.Top ) + mNextPosY );
+	Control->setPixelsPosition( PixelDensity::dpToPx( mStyleConfig.Padding.Left ), PixelDensity::dpToPx( mStyleConfig.Padding.Top ) + mNextPosY );
 
 	mNextPosY += Control->getRealSize().getHeight();
 
@@ -187,7 +187,7 @@ void UIMenu::setControlSize( UINode * Control, const Uint32& Pos ) {
 Uint32 UIMenu::addSeparator() {
 	UIMenuSeparator * Control = UIMenuSeparator::New();
 	Control->setParent( this );
-	Control->setPixelsPosition( PixelDensity::dpToPxI( mStyleConfig.Padding.Left ), PixelDensity::dpToPxI( mStyleConfig.Padding.Top ) + mNextPosY );
+	Control->setPixelsPosition( PixelDensity::dpToPx( mStyleConfig.Padding.Left ), PixelDensity::dpToPx( mStyleConfig.Padding.Top ) + mNextPosY );
 	Control->setPixelsSize( mRealSize.getWidth() - PixelDensity::dpToPxI( mStyleConfig.Padding.Left - mStyleConfig.Padding.Right ), PixelDensity::dpToPxI( Control->getSkinSize().getHeight() ) );
 
 	mNextPosY += Control->getRealSize().getHeight();
@@ -352,7 +352,7 @@ void UIMenu::rePosControls() {
 	for ( i = 0; i < mItems.size(); i++ ) {
 		UINode * ctrl = mItems[i];
 
-		ctrl->setPixelsPosition( PixelDensity::dpToPxI( mStyleConfig.Padding.Left ), PixelDensity::dpToPxI( mStyleConfig.Padding.Top ) + mNextPosY );
+		ctrl->setPixelsPosition( PixelDensity::dpToPx( mStyleConfig.Padding.Left ), PixelDensity::dpToPx( mStyleConfig.Padding.Top ) + mNextPosY );
 
 		mNextPosY += ctrl->getRealSize().getHeight();
 	}

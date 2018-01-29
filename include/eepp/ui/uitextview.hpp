@@ -90,7 +90,7 @@ class EE_API UITextView : public UIWidget {
 		Int32			mSelCurInit;
 		Int32			mSelCurEnd;
 		Rect		mPadding;
-		Rect		mRealPadding;
+		Rectf		mRealPadding;
 		struct SelPosCache
 		{
 			SelPosCache( Vector2f ip, Vector2f ep ) :

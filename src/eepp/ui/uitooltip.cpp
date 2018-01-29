@@ -210,7 +210,7 @@ void UITooltip::onFontChanged() {
 
 void UITooltip::setPadding( const Rect& padding ) {
 	mStyleConfig.Padding = padding;
-	mRealPadding = PixelDensity::dpToPxI( mStyleConfig.Padding );
+	mRealPadding = PixelDensity::dpToPx( Rectf( padding.Left, padding.Top, padding.Right, padding.Bottom ) );
 }
 
 const Rect& UITooltip::getPadding() const {

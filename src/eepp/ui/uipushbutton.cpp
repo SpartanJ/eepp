@@ -105,7 +105,7 @@ void UIPushButton::onSizeChange() {
 					Uint32 txtOff = mTextBox->getPosition().x + mTextBox->getAlignOffset().x;
 
 					if ( iconPos >= txtOff) {
-						Int32 px = PixelDensity::dpToPxI(1);
+						Float px = PixelDensity::dpToPx(1);
 
 						mTextBox->setPosition( iconPos + px, mTextBox->getPosition().y );
 

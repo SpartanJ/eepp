@@ -136,12 +136,11 @@ void UINode::setInternalPosition( const Vector2f& Pos ) {
 	setDirty();
 }
 
-UINode * UINode::setPosition( const Vector2f& Pos ) {
+void UINode::setPosition( const Vector2f& Pos ) {
 	if ( Pos != mDpPos ) {
 		setInternalPosition( Pos );
 		onPositionChange();
 	}
-	return this;
 }
 
 UINode * UINode::setPosition( const Float& x, const Float& y ) {
@@ -2059,42 +2058,6 @@ void UINode::setScaleOrigin(float x, float y) {
 
 void UINode::setRotationOrigin(float x, float y) {
 	setRotationOriginPoint( OriginPoint( x, y ) );
-}
-
-float UINode::getRotation() const {
-	return Transformable::getRotation();
-}
-
-const Vector2f& UINode::getScale() const {
-	return Transformable::getScale();
-}
-
-const Vector2f& UINode::getScaleOrigin() const {
-	return Transformable::getScaleOrigin();
-}
-
-const Vector2f& UINode::getRotationOrigin() const {
-	return Transformable::getRotationOrigin();
-}
-
-void UINode::move(float offsetX, float offsetY) {
-	setPosition(getPosition().x + offsetX, getPosition().y + offsetY);
-}
-
-void UINode::move(const Vector2f& offset) {
-	setPosition(getPosition().x + offset.x, getPosition().y + offset.y);
-}
-
-void UINode::rotate(float angle) {
-	setRotation(getRotation() + angle);
-}
-
-void UINode::scale(float factorX, float factorY) {
-	setScale(getScale().x * factorX, getScale().y * factorY);
-}
-
-void UINode::scale(const Vector2f& factor) {
-	setScale(getScale().x * factor.x, getScale().y * factor.y);
 }
 
 }}

@@ -57,7 +57,7 @@ class EE_API UITextEdit : public UIWidget {
 		UI_SCROLLBAR_MODE	mHScrollBarMode;
 		UI_SCROLLBAR_MODE	mVScrollBarMode;
 		bool				mSkipValueChange;
-		Rect				mContainerPadding;
+		Rectf				mContainerPadding;
 
 		virtual void onSizeChange();
 

@@ -93,7 +93,7 @@ class EE_API UIWidget : public UINode {
 		Sizei		mMinControlSize;
 		Rect		mDistToBorder;
 		Rect		mLayoutMargin;
-		Rect		mRealMargin;
+		Rectf		mRealMargin;
 		Float		mLayoutWeight;
 		Uint32		mLayoutGravity;
 		LayoutSizeRules mLayoutWidthRules;

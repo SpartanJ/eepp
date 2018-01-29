@@ -24,7 +24,7 @@ class UIManager;
 class UIAction;
 class UIActionManager;
 
-class EE_API UINode : private Transformable {
+class EE_API UINode : public Transformable {
 	public:
 		static UINode * New();
 
@@ -52,7 +52,7 @@ class EE_API UINode : private Transformable {
 
 		void messagePost( const UIMessage * Msg );
 
-		UINode * setPosition( const Vector2f& Pos );
+		void setPosition( const Vector2f& Pos );
 
 		UINode * setPosition( const Float& x, const Float& y );
 
@@ -365,24 +365,6 @@ class EE_API UINode : private Transformable {
 		Vector2f convertToWorldSpace(const Vector2f& nodePoint);
 
 		Rectf getLocalBounds();
-
-		const Vector2f& getRotationOrigin() const;
-
-		float getRotation() const;
-
-		const Vector2f& getScale() const;
-
-		const Vector2f& getScaleOrigin() const;
-
-		void move(float offsetX, float offsetY);
-
-		void move(const Vector2f& offset);
-
-		void rotate(float angle);
-
-		void scale(float factorX, float factorY);
-
-		void scale(const Vector2f& factor);
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
 		friend class UIManager;

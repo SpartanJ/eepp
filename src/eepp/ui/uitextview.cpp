@@ -337,11 +337,11 @@ const Vector2i& UITextView::getAlignOffset() const {
 
 Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
-		Vector2i controlPos( Pos );
+		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( controlPos );
-		controlPos = PixelDensity::dpToPxI( controlPos );
+		controlPos = PixelDensity::dpToPx( controlPos );
 
-		Int32 curPos = mTextCache->findCharacterFromPos( controlPos );
+		Int32 curPos = mTextCache->findCharacterFromPos( Vector2i( controlPos.x, controlPos.y ) );
 
 		if ( -1 != curPos ) {
 			Int32 tSelCurInit, tSelCurEnd;
@@ -373,11 +373,11 @@ Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 
 Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && UIManager::instance()->getDownControl() == this ) {
-		Vector2i controlPos( Pos );
+		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( controlPos );
-		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mRealAlignOffset.x, (Int32)mRealAlignOffset.y );
+		controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset;
 
-		Int32 curPos = mTextCache->findCharacterFromPos( controlPos );
+		Int32 curPos = mTextCache->findCharacterFromPos( Vector2i( controlPos.x, controlPos.y ) );
 
 		if ( -1 != curPos ) {
 			if ( -1 == selCurInit() || !( mNodeFlags & NODE_FLAG_SELECTING ) ) {
@@ -512,7 +512,7 @@ const Rect& UITextView::getPadding() const {
 UITextView * UITextView::setPadding(const Rect & padding) {
 	if ( padding != mPadding ) {
 		mPadding = padding;
-		mRealPadding = PixelDensity::dpToPxI( mPadding );
+		mRealPadding = PixelDensity::dpToPx( Rectf( mPadding.Left, mPadding.Top, mPadding.Right, mPadding.Bottom ) );
 		onPaddingChange();
 		notifyLayoutAttrChange();
 	}

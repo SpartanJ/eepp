@@ -52,7 +52,7 @@ Rect UIWidget::getLayoutMargin() const {
 UIWidget * UIWidget::setLayoutMargin(const Rect & margin) {
 	if ( mLayoutMargin != margin ) {
 		mLayoutMargin = margin;
-		mRealMargin = PixelDensity::dpToPxI( margin );
+		mRealMargin = PixelDensity::dpToPx( Rectf( margin.Left, margin.Top, margin.Right, margin.Bottom ) );
 		notifyLayoutAttrChange();
 	}
 
