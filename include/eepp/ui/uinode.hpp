@@ -50,7 +50,7 @@ class EE_API UINode : public Transformable {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		virtual void messagePost( const UIMessage * Msg );
+		void messagePost( const UIMessage * Msg );
 
 		UINode * setPosition( const Vector2i& position );
 
