@@ -853,14 +853,14 @@ void UIWindow::updateResize() {
 		case RESIZE_LEFT:
 		{
 			Pos.x -= mResizePos.x;
-			UINode::setPixelsPosition( mRealPos.x + Pos.x, mRealPos.y );
+			UINode::setPixelsPosition( mPosition.x + Pos.x, mPosition.y );
 			internalSize( mRealSize.getWidth() - Pos.x, mRealSize.getHeight() );
 			break;
 		}
 		case RESIZE_TOP:
 		{
 			Pos.y -= mResizePos.y;
-			UINode::setPixelsPosition( mRealPos.x, mRealPos.y + Pos.y );
+			UINode::setPixelsPosition( mPosition.x, mPosition.y + Pos.y );
 			internalSize( mRealSize.getWidth(), mRealSize.getHeight() - Pos.y );
 			break;
 		}
@@ -873,7 +873,7 @@ void UIWindow::updateResize() {
 		case RESIZE_TOPLEFT:
 		{
 			Pos -= mResizePos;
-			UINode::setPixelsPosition( mRealPos.x + Pos.x, mRealPos.y + Pos.y );
+			UINode::setPixelsPosition( mPosition.x + Pos.x, mPosition.y + Pos.y );
 			internalSize( mRealSize.getWidth() - Pos.x, mRealSize.getHeight() - Pos.y );
 			break;
 		}
@@ -881,7 +881,7 @@ void UIWindow::updateResize() {
 		{
 			Pos.y -= mResizePos.y;
 			Pos.x += mResizePos.x;
-			UINode::setPixelsPosition( mRealPos.x, mRealPos.y + Pos.y );
+			UINode::setPixelsPosition( mPosition.x, mPosition.y + Pos.y );
 			internalSize( Pos.x, mRealSize.getHeight() - Pos.y );
 			break;
 		}
@@ -889,7 +889,7 @@ void UIWindow::updateResize() {
 		{
 			Pos.x -= mResizePos.x;
 			Pos.y += mResizePos.y;
-			UINode::setPixelsPosition( mRealPos.x + Pos.x, mRealPos.y );
+			UINode::setPixelsPosition( mPosition.x + Pos.x, mPosition.y );
 			internalSize( mRealSize.getWidth() - Pos.x, Pos.y );
 			break;
 		}
@@ -1082,7 +1082,7 @@ void UIWindow::maximize() {
 		setPixelsPosition( mNonMaxPos );
 		internalSize( mNonMaxSize );
 	} else {
-		mNonMaxPos	= mRealPos;
+		mNonMaxPos	= mPosition;
 		mNonMaxSize = mRealSize;
 
 		setPosition( 0, 0 );

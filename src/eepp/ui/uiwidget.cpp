@@ -41,7 +41,7 @@ bool UIWidget::isType( const Uint32& type ) const {
 
 void UIWidget::updateAnchorsDistances() {
 	if ( NULL != mParentCtrl ) {
-		mDistToBorder	= Rect( mRealPos.x, mRealPos.y, mParentCtrl->getRealSize().x - ( mRealPos.x + mRealSize.x ), mParentCtrl->getRealSize().y - ( mRealPos.y + mRealSize.y ) );
+		mDistToBorder	= Rect( mPosition.x, mPosition.y, mParentCtrl->getRealSize().x - ( mPosition.x + mRealSize.x ), mParentCtrl->getRealSize().y - ( mPosition.y + mRealSize.y ) );
 	}
 }
 

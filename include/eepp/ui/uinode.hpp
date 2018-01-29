@@ -373,7 +373,6 @@ class EE_API UINode : public Transformable {
 		std::string		mId;
 		Uint32			mIdHash;
 		Vector2f		mDpPos;
-		Vector2f		mRealPos;
 		Vector2f		mScreenPos;
 		Vector2i		mScreenPosi;
 		Sizei			mSize;

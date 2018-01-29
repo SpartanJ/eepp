@@ -25,7 +25,6 @@ UINode * UINode::New() {
 UINode::UINode() :
 	mIdHash( 0 ),
 	mDpPos( 0, 0 ),
-	mRealPos( 0, 0 ),
 	mSize( 0, 0 ),
 	mRealSize( 0, 0 ),
 	mFlags( UI_CONTROL_DEFAULT_FLAGS ),
@@ -80,14 +79,12 @@ UINode::~UINode() {
 void UINode::worldToNodeTranslation( Vector2f& Pos ) const {
 	UINode * ParentLoop = mParentCtrl;
 
-	Pos.x -= mRealPos.x;
-	Pos.y -= mRealPos.y;
+	Pos -= mPosition;
 
 	while ( NULL != ParentLoop ) {
 		const Vector2f& ParentPos = ParentLoop->getRealPosition();
 
-		Pos.x -= ParentPos.x;
-		Pos.y -= ParentPos.y;
+		Pos -= ParentPos;
 
 		ParentLoop = ParentLoop->getParent();
 	}
@@ -99,8 +96,7 @@ void UINode::nodeToWorldTranslation( Vector2f& Pos ) const {
 	while ( NULL != ParentLoop ) {
 		const Vector2f& ParentPos = ParentLoop->getRealPosition();
 
-		Pos.x += ParentPos.x;
-		Pos.y += ParentPos.y;
+		Pos += ParentPos;
 
 		ParentLoop = ParentLoop->getParent();
 	}
@@ -131,8 +127,7 @@ Uint32 UINode::onMessage( const UIMessage * Msg ) {
 
 void UINode::setInternalPosition( const Vector2f& Pos ) {
 	mDpPos = Pos;
-	mRealPos = Vector2f( Pos.x * PixelDensity::getPixelDensity(), Pos.y * PixelDensity::getPixelDensity() );
-	Transformable::setPosition( mRealPos.x, mRealPos.y );
+	Transformable::setPosition( Pos.x * PixelDensity::getPixelDensity(), Pos.y * PixelDensity::getPixelDensity() );
 	setDirty();
 }
 
@@ -149,10 +144,9 @@ UINode * UINode::setPosition( const Float& x, const Float& y ) {
 }
 
 void UINode::setPixelsPosition( const Vector2f& Pos ) {
-	if ( mRealPos != Pos ) {
-		mDpPos = Vector2f( PixelDensity::pxToDp( Pos.x ), PixelDensity::pxToDp( Pos.y ) );
-		mRealPos = Pos;
-		Transformable::setPosition( mRealPos.x, mRealPos.y );
+	if ( mPosition != Pos ) {
+		mDpPos = PixelDensity::pxToDp( Pos );
+		Transformable::setPosition( Pos.x, Pos.y );
 		setDirty();
 		onPositionChange();
 	}
@@ -167,7 +161,7 @@ const Vector2f& UINode::getPosition() const {
 }
 
 const Vector2f &UINode::getRealPosition() const {
-	return mRealPos;
+	return mPosition;
 }
 
 void UINode::setInternalSize( const Sizei& size ) {
@@ -449,7 +443,7 @@ void UINode::update( const Time& time ) {
 				dragDiff.x = (Float)( mDragPoint.x - Pos.x );
 				dragDiff.y = (Float)( mDragPoint.y - Pos.y );
 
-				setPixelsPosition( mRealPos - dragDiff );
+				setPixelsPosition( mPosition - dragDiff );
 
 				mDragPoint = Pos;
 
@@ -1432,7 +1426,7 @@ void UINode::updateScreenPos() {
 	if ( !(mNodeFlags & NODE_FLAG_POSITION_DIRTY) )
 		return;
 
-	Vector2f Pos( mRealPos.x, mRealPos.y );
+	Vector2f Pos( mPosition );
 
 	nodeToWorldTranslation( Pos );
 

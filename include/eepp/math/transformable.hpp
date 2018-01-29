@@ -54,7 +54,7 @@ class EE_API Transformable {
 		const Transform& getTransform() const;
 
 		const Transform& getInverseTransform() const;
-	private:
+	protected:
 
 		Vector2f          mScaleOrigin;                ///< Origin of scaling of the object
 		Vector2f          mRotationOrigin;             ///< Origin of rotation of the object
