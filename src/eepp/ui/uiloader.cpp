@@ -37,7 +37,7 @@ bool UILoader::isType( const Uint32& type ) const {
 void UILoader::draw() {
 	UIWidget::draw();
 
-	Rectf rect( Vector2f( mScreenPos.x, mScreenPos.y ), Sizef( mRealSize.x, mRealSize.y ) );
+	Rectf rect( Vector2f( mScreenPosi.x, mScreenPosi.y ), Sizef( mRealSize.x, mRealSize.y ) );
 	mArc.setPosition( rect.getCenter() );
 	mCircle.setPosition( rect.getCenter() );
 

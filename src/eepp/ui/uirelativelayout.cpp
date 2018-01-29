@@ -39,7 +39,7 @@ void UIRelativeLayout::onParentSizeChange( const Vector2i& SizeChange ) {
 }
 
 void UIRelativeLayout::fixChilds() {
-	setInternalPosition( Vector2i( mLayoutMargin.Left, mLayoutMargin.Top ) );
+	setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 
 	if ( getLayoutWidthRules() == MATCH_PARENT ) {
 		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
@@ -65,7 +65,7 @@ void UIRelativeLayout::fixChilds() {
 }
 
 void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
-	Vector2i pos( widget->getPosition() );
+	Vector2f pos( widget->getPosition() );
 
 	if ( widget->getLayoutPositionRule() != NONE && widget->getParent() == widget->getLayoutPositionRuleWidget()->getParent() ) {
 		UIWidget * of = widget->getLayoutPositionRuleWidget();

@@ -584,7 +584,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 	endPropertiesTransaction();
 }
 
-void UIMenu::fixMenuPos( Vector2i& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {
+void UIMenu::fixMenuPos( Vector2f& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {
 	Rectf qScreen( 0.f, 0.f, UIManager::instance()->getMainControl()->getRealSize().getWidth(), UIManager::instance()->getMainControl()->getRealSize().getHeight() );
 	Rectf qPos( Pos.x, Pos.y, Pos.x + Menu->getRealSize().getWidth(), Pos.y + Menu->getRealSize().getHeight() );
 
@@ -595,10 +595,10 @@ void UIMenu::fixMenuPos( Vector2i& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSu
 			addToPos.y = SubMenu->getRealSize().getHeight();
 		}
 
-		Vector2i sPos = SubMenu->getRealPosition();
+		Vector2f sPos = SubMenu->getRealPosition();
 		SubMenu->nodeToWorldTranslation( sPos );
 
-		Vector2i pPos = Parent->getRealPosition();
+		Vector2f pPos = Parent->getRealPosition();
 		Parent->nodeToWorldTranslation( pPos );
 
 		Rectf qParent( pPos.x, pPos.y, pPos.x + Parent->getRealSize().getWidth(), pPos.y + Parent->getRealSize().getHeight() );

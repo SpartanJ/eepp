@@ -52,7 +52,7 @@ UIMap::~UIMap() {
 	eeSAFE_DELETE( mMap );
 }
 
-Uint32 UIMap::onDrag( const Vector2i& Pos ) {
+Uint32 UIMap::onDrag( const Vector2f& Pos ) {
 
 	if (	( EDITING_OBJECT == mEditingMode && NULL != mSelObj ) ||
 			( EDITING_LIGHT == mEditingMode && NULL != mSelLight ) ) {
@@ -60,7 +60,7 @@ Uint32 UIMap::onDrag( const Vector2i& Pos ) {
 		return 0;
 	}
 
-	Vector2i nPos( -( mDragPoint - Pos ) );
+	Vector2f nPos( -( mDragPoint - Pos ) );
 	Vector2f nPosf( nPos.x, nPos.y );
 
 	mMap->move( nPosf );
@@ -96,7 +96,7 @@ void UIMap::updateScreenPos() {
 	UIWindow::updateScreenPos();
 
 	if ( NULL != mMap ) {
-		mMap->setPosition( mScreenPos );
+		mMap->setPosition( Vector2i( mScreenPos.x, mScreenPos.y ) );
 	}
 }
 
@@ -329,7 +329,7 @@ void UIMap::tryToSelectLight() {
 
 void UIMap::onSizeChange() {
 	if ( NULL != mMap ) {
-		mMap->setPosition( mScreenPos );
+		mMap->setPosition( Vector2i( mScreenPos.x, mScreenPos.y ) );
 		mMap->setViewSize( mRealSize );
 	}
 
@@ -585,9 +585,9 @@ void UIMap::createObjPopUpMenu() {
 	Menu->addEventListener( UIEvent::OnItemClicked, cb::Make1( this, &UIMap::objItemClick ) );
 
 	if ( Menu->show() ) {
-		Vector2i Pos = UIManager::instance()->getInput()->getMousePos();
+		Vector2f Pos = UIManager::instance()->getInput()->getMousePosf();
 		UIMenu::fixMenuPos( Pos , Menu );
-		Pos = PixelDensity::pxToDpI( Pos );
+		Pos = PixelDensity::pxToDp( Pos );
 		Menu->setPosition( Pos );
 	}
 }

@@ -98,12 +98,12 @@ void UITabWidget::draw() {
 
 		P.setLineWidth( PixelDensity::dpToPx( 1 ) );
 		P.setColor( Color( mStyleConfig.LineBelowTabsColor, mAlpha ) );
-		P.drawLine( Line2f( Vector2f( p1.x, p1.y ), Vector2f( p2.x, p2.y ) ) );
+		P.drawLine( Line2f( Vector2f( (int)p1.x, (int)p1.y ), Vector2f( (int)p2.x, (int)p2.y ) ) );
 
 		Vector2i p3( mScreenPos.x + mTabContainer->getRealPosition().x + mTabContainer->getRealSize().getWidth(), mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
 		Vector2i p4( mScreenPos.x + mRealSize.getWidth(), p3.y );
 
-		P.drawLine( Line2f( Vector2f( p3.x, p3.y ), Vector2f( p4.x, p4.y ) ) );
+		P.drawLine( Line2f( Vector2f( (int)p3.x, (int)p3.y ), Vector2f( (int)p4.x, (int)p4.y ) ) );
 
 		if ( smooth ) GLi->lineSmooth( true );
 	}

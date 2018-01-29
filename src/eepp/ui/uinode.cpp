@@ -24,7 +24,7 @@ UINode * UINode::New() {
 
 UINode::UINode() :
 	mIdHash( 0 ),
-	mPos( 0, 0 ),
+	mDpPos( 0, 0 ),
 	mRealPos( 0, 0 ),
 	mSize( 0, 0 ),
 	mRealSize( 0, 0 ),
@@ -77,14 +77,14 @@ UINode::~UINode() {
 	}
 }
 
-void UINode::worldToNodeTranslation( Vector2i& Pos ) const {
+void UINode::worldToNodeTranslation( Vector2f& Pos ) const {
 	UINode * ParentLoop = mParentCtrl;
 
 	Pos.x -= mRealPos.x;
 	Pos.y -= mRealPos.y;
 
 	while ( NULL != ParentLoop ) {
-		const Vector2i& ParentPos = ParentLoop->getRealPosition();
+		const Vector2f& ParentPos = ParentLoop->getRealPosition();
 
 		Pos.x -= ParentPos.x;
 		Pos.y -= ParentPos.y;
@@ -93,11 +93,11 @@ void UINode::worldToNodeTranslation( Vector2i& Pos ) const {
 	}
 }
 
-void UINode::nodeToWorldTranslation( Vector2i& Pos ) const {
+void UINode::nodeToWorldTranslation( Vector2f& Pos ) const {
 	UINode * ParentLoop = mParentCtrl;
 
 	while ( NULL != ParentLoop ) {
-		const Vector2i& ParentPos = ParentLoop->getRealPosition();
+		const Vector2f& ParentPos = ParentLoop->getRealPosition();
 
 		Pos.x += ParentPos.x;
 		Pos.y += ParentPos.y;
@@ -129,33 +129,29 @@ Uint32 UINode::onMessage( const UIMessage * Msg ) {
 	return 0;
 }
 
-void UINode::setInternalPosition( const Vector2i& Pos ) {
-	mPos = Pos;
-	mRealPos = Vector2i( Pos.x * PixelDensity::getPixelDensity(), Pos.y * PixelDensity::getPixelDensity() );
+void UINode::setInternalPosition( const Vector2f& Pos ) {
+	mDpPos = Pos;
+	mRealPos = Vector2f( Pos.x * PixelDensity::getPixelDensity(), Pos.y * PixelDensity::getPixelDensity() );
 	Transformable::setPosition( mRealPos.x, mRealPos.y );
 	setDirty();
 }
 
 UINode * UINode::setPosition( const Vector2f& Pos ) {
-	return setPosition( Vector2i( Pos.x, Pos.y ) );
-}
-
-UINode * UINode::setPosition( const Vector2i& Pos ) {
-	if ( Pos != mPos ) {
+	if ( Pos != mDpPos ) {
 		setInternalPosition( Pos );
 		onPositionChange();
 	}
 	return this;
 }
 
-UINode * UINode::setPosition( const Int32& x, const Int32& y ) {
-	setPosition( Vector2i( x, y ) );
+UINode * UINode::setPosition( const Float& x, const Float& y ) {
+	setPosition( Vector2f( x, y ) );
 	return this;
 }
 
-void UINode::setPixelsPosition( const Vector2i& Pos ) {
+void UINode::setPixelsPosition( const Vector2f& Pos ) {
 	if ( mRealPos != Pos ) {
-		mPos = Vector2i( PixelDensity::pxToDpI( Pos.x ), PixelDensity::pxToDpI( Pos.y ) );
+		mDpPos = Vector2f( PixelDensity::pxToDp( Pos.x ), PixelDensity::pxToDp( Pos.y ) );
 		mRealPos = Pos;
 		Transformable::setPosition( mRealPos.x, mRealPos.y );
 		setDirty();
@@ -163,15 +159,15 @@ void UINode::setPixelsPosition( const Vector2i& Pos ) {
 	}
 }
 
-void UINode::setPixelsPosition( const Int32& x, const Int32& y ) {
-	setPixelsPosition( Vector2i( x, y ) );
+void UINode::setPixelsPosition( const Float& x, const Float& y ) {
+	setPixelsPosition( Vector2f( x, y ) );
 }
 
-const Vector2i& UINode::getPosition() const {
-	return mPos;
+const Vector2f& UINode::getPosition() const {
+	return mDpPos;
 }
 
-const Vector2i &UINode::getRealPosition() const {
+const Vector2f &UINode::getRealPosition() const {
 	return mRealPos;
 }
 
@@ -247,7 +243,7 @@ void UINode::setInternalPixelsHeight( const Int32& height ) {
 }
 
 Rect UINode::getRect() const {
-	return Rect( mPos, mSize );
+	return Rect( Vector2i( mDpPos.x, mDpPos.y ), mSize );
 }
 
 const Sizei& UINode::getSize() {
@@ -335,14 +331,14 @@ void UINode::centerHorizontal() {
 	UINode * Ctrl = getParent();
 
 	if ( NULL != Ctrl )
-		setPosition( ( Ctrl->getSize().getWidth() - mSize.getWidth() ) / 2, mPos.y );
+		setPosition( ( Ctrl->getSize().getWidth() - mSize.getWidth() ) / 2, mDpPos.y );
 }
 
 void UINode::centerVertical(){
 	UINode * Ctrl = getParent();
 
 	if ( NULL != Ctrl )
-		setPosition( mPos.x, ( Ctrl->getSize().getHeight() - mSize.getHeight() ) / 2 );
+		setPosition( mDpPos.x, ( Ctrl->getSize().getHeight() - mSize.getHeight() ) / 2 );
 }
 
 void UINode::center() {
@@ -384,7 +380,7 @@ void UINode::drawDebugData() {
 			UIWidget * me = static_cast<UIWidget*>( this );
 
 			if ( UIManager::instance()->getOverControl() == this ) {
-				String text( String::strFormated( "X: %d Y: %d\nW: %d H: %d", mPos.x, mPos.y, mSize.x, mSize.y ) );
+				String text( String::strFormated( "X: %2.4f Y: %2.4f\nW: %d H: %d", mDpPos.x, mDpPos.y, mSize.x, mSize.y ) );
 
 				if ( !mId.empty() ) {
 					text = "ID: " + mId + "\n" + text;
@@ -415,9 +411,9 @@ void UINode::drawSkin() {
 			Sizei rSize = PixelDensity::dpToPxI( mSkinState->getSkin()->getSize( mSkinState->getState() ) );
 			Sizei diff = ( mRealSize - rSize ) / 2;
 
-			mSkinState->draw( mScreenPosf.x + diff.x, mScreenPosf.y + diff.y, (Float)rSize.getWidth(), (Float)rSize.getHeight(), (Uint32)mAlpha );
+			mSkinState->draw( mScreenPosi.x + diff.x, mScreenPosi.y + diff.y, (Float)rSize.getWidth(), (Float)rSize.getHeight(), (Uint32)mAlpha );
 		} else {
-			mSkinState->draw( mScreenPosf.x, mScreenPosf.y, (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight(), (Uint32)mAlpha );
+			mSkinState->draw( mScreenPosi.x, mScreenPosi.y, (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight(), (Uint32)mAlpha );
 		}
 	}
 }
@@ -445,16 +441,16 @@ void UINode::update( const Time& time ) {
 			return;
 		}
 
-		Vector2i Pos( UIManager::instance()->getMousePos() );
+		Vector2f Pos( UIManager::instance()->getMousePosf() );
 
-		if ( mDragPoint != Pos && ( abs( mDragPoint.x - Pos.x ) > PixelDensity::getPixelDensity() || abs( mDragPoint.y - Pos.y ) > PixelDensity::getPixelDensity() ) ) {
+		if ( mDragPoint != Pos && ( abs( mDragPoint.x - Pos.x ) > 1 || abs( mDragPoint.y - Pos.y ) > 1 ) ) {
 			if ( onDrag( Pos ) ) {
-				Sizei dragDiff;
+				Sizef dragDiff;
 
-				dragDiff.x = (Int32)( (Float)( mDragPoint.x - Pos.x ) / PixelDensity::getPixelDensity() );
-				dragDiff.y = (Int32)( (Float)( mDragPoint.y - Pos.y ) / PixelDensity::getPixelDensity() );
+				dragDiff.x = (Float)( mDragPoint.x - Pos.x );
+				dragDiff.y = (Float)( mDragPoint.y - Pos.y );
 
-				setInternalPosition( mPos - dragDiff );
+				setPixelsPosition( mRealPos - dragDiff );
 
 				mDragPoint = Pos;
 
@@ -504,7 +500,7 @@ Uint32 UINode::onMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
 Uint32 UINode::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( !( UIManager::instance()->getLastPressTrigger() & mDragButton ) && ( Flags & mDragButton ) && isDragEnabled() && !isDragging() ) {
 		setDragging( true );
-		mDragPoint = Pos;
+		mDragPoint = Vector2f( Pos.x, Pos.y );
 	}
 
 	sendMouseEvent( UIEvent::MouseDown, Pos, Flags );
@@ -780,7 +776,7 @@ void UINode::onSizeChange() {
 }
 
 Rectf UINode::getScreenBounds() {
-	return Rectf( mScreenPosf, Sizef( (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight() ) );
+	return Rectf( Vector2f( mScreenPosi.x, mScreenPosi.y ), Sizef( (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight() ) );
 }
 
 Rectf UINode::getLocalBounds() {
@@ -1155,26 +1151,6 @@ void UINode::onParentWindowChange() {
 	}
 }
 
-UINode * UINode::childGetAt( Vector2i CtrlPos, unsigned int RecursiveLevel ) {
-	UINode * Ctrl = NULL;
-
-	for( UINode * pLoop = mChild; NULL != pLoop && NULL == Ctrl; pLoop = pLoop->mNext )
-	{
-		if ( !pLoop->isVisible() )
-			continue;
-
-		if ( pLoop->getRect().contains( CtrlPos ) ) {
-			if ( RecursiveLevel )
-				Ctrl = childGetAt( CtrlPos - pLoop->getPosition(), RecursiveLevel - 1 );
-
-			if ( NULL == Ctrl )
-				Ctrl = pLoop;
-		}
-	}
-
-	return Ctrl;
-}
-
 Uint32 UINode::isWidget() {
 	return mNodeFlags & NODE_FLAG_WIDGET;
 }
@@ -1265,7 +1241,7 @@ void UINode::updateWorldPolygon() {
 	if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
 		updateScreenPos();
 
-	mPoly		= Polygon2f( Rectf( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mRealSize.getWidth(), mScreenPosf.y + mRealSize.getHeight() ) );
+	mPoly		= Polygon2f( Rectf( mScreenPos.x, mScreenPos.y, mScreenPos.x + mRealSize.getWidth(), mScreenPos.y + mRealSize.getHeight() ) );
 
 	mPoly.rotate( getRotation(), getRotationCenter() );
 	mPoly.scale( getScale(), getScaleCenter() );
@@ -1283,7 +1259,7 @@ void UINode::updateWorldPolygon() {
 }
 
 void UINode::updateCenter() {
-	mCenter = Vector2f( mScreenPosf.x + (Float)mRealSize.getWidth() * 0.5f, mScreenPosf.y + (Float)mRealSize.getHeight() * 0.5f );
+	mCenter = Vector2f( mScreenPos.x + (Float)mRealSize.getWidth() * 0.5f, mScreenPos.y + (Float)mRealSize.getHeight() * 0.5f );
 }
 
 Uint32 UINode::addEventListener( const Uint32& EventType, const UIEventCallback& Callback ) {
@@ -1457,12 +1433,12 @@ void UINode::updateScreenPos() {
 	if ( !(mNodeFlags & NODE_FLAG_POSITION_DIRTY) )
 		return;
 
-	Vector2i Pos( mRealPos.x, mRealPos.y );
+	Vector2f Pos( mRealPos.x, mRealPos.y );
 
 	nodeToWorldTranslation( Pos );
 
 	mScreenPos = Pos;
-	mScreenPosf = Vector2f( Pos.x, Pos.y );
+	mScreenPosi = Vector2i( Pos.x, Pos.y );
 
 	updateCenter();
 
@@ -1690,15 +1666,15 @@ UIWindow * UINode::getOwnerWindow() {
 	return mParentWindowCtrl;
 }
 
-const Vector2i& UINode::getDragPoint() const {
+const Vector2f& UINode::getDragPoint() const {
 	return mDragPoint;
 }
 
-void UINode::setDragPoint( const Vector2i& Point ) {
+void UINode::setDragPoint( const Vector2f& Point ) {
 	mDragPoint = Point;
 }
 
-Uint32 UINode::onDrag( const Vector2i& Pos ) {
+Uint32 UINode::onDrag( const Vector2f& Pos ) {
 	return 1;
 }
 
@@ -1862,8 +1838,8 @@ Interpolation2d * UINode::startScaleAnim( const Float& From, const Float& To, co
 	return startScaleAnim( Vector2f( From, From ), Vector2f( To, To ), TotalTime, Type, PathEndCallback );
 }
 
-Interpolation2d * UINode::startTranslation( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation2d::OnPathEndCallback PathEndCallback ) {
-	Action::Move * action = Action::Move::New( Vector2f( From.x, From.y ), Vector2f( To.x, To.y ), TotalTime, Type );
+Interpolation2d * UINode::startTranslation( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation2d::OnPathEndCallback PathEndCallback ) {
+	Action::Move * action = Action::Move::New( From, To, TotalTime, Type );
 
 	action->getInterpolation()->setPathEndCallback( PathEndCallback );
 
@@ -1894,8 +1870,8 @@ Interpolation2d * UINode::startScaleAnim(const Float & To, const Time & TotalTim
 	return startScaleAnim( getScale(), Vector2f(To,To), TotalTime, type, PathEndCallback );
 }
 
-Interpolation2d * UINode::startTranslation(const Vector2i & To, const Time & TotalTime, const Ease::Interpolation & type, Interpolation2d::OnPathEndCallback PathEndCallback) {
-	return startTranslation( mPos, To, TotalTime, type, PathEndCallback );
+Interpolation2d * UINode::startTranslation(const Vector2f& To, const Time & TotalTime, const Ease::Interpolation & type, Interpolation2d::OnPathEndCallback PathEndCallback) {
+	return startTranslation( mDpPos, To, TotalTime, type, PathEndCallback );
 }
 
 Interpolation1d * UINode::startRotation(const Float & To, const Time & TotalTime, const Ease::Interpolation & type, Interpolation1d::OnPathEndCallback PathEndCallback) {
@@ -1937,8 +1913,8 @@ void UINode::setRotationOriginPoint( const OriginPoint & center ) {
 Vector2f UINode::getRotationCenter() {
 	switch ( mRotationOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter: return mCenter;
-		case OriginPoint::OriginTopLeft: return mScreenPosf;
-		case OriginPoint::OriginCustom: default: return mScreenPosf + mRotationOriginPoint;
+		case OriginPoint::OriginTopLeft: return mScreenPos;
+		case OriginPoint::OriginCustom: default: return mScreenPos + mRotationOriginPoint;
 	}
 }
 
@@ -1997,8 +1973,8 @@ void UINode::setScaleOriginPoint( const OriginPoint & center ) {
 Vector2f UINode::getScaleCenter() {
 	switch ( mScaleOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter: return mCenter;
-		case OriginPoint::OriginTopLeft: return mScreenPosf;
-		case OriginPoint::OriginCustom: default: return mScreenPosf + mScaleOriginPoint;
+		case OriginPoint::OriginTopLeft: return mScreenPos;
+		case OriginPoint::OriginCustom: default: return mScreenPos + mScaleOriginPoint;
 	}
 }
 
@@ -2073,10 +2049,6 @@ Vector2f UINode::convertToWorldSpace(const Vector2f& nodePoint) {
 	return getNodeToWorldTransform().transformPoint(nodePoint.x, nodePoint.y);
 }
 
-void UINode::setPosition(float x, float y) {
-	setPosition( Vector2f( x, y ) );
-}
-
 void UINode::setScale(float factorX, float factorY) {
 	setScale( Vector2f( factorX, factorY ) );
 }
@@ -2087,6 +2059,42 @@ void UINode::setScaleOrigin(float x, float y) {
 
 void UINode::setRotationOrigin(float x, float y) {
 	setRotationOriginPoint( OriginPoint( x, y ) );
+}
+
+float UINode::getRotation() const {
+	return Transformable::getRotation();
+}
+
+const Vector2f& UINode::getScale() const {
+	return Transformable::getScale();
+}
+
+const Vector2f& UINode::getScaleOrigin() const {
+	return Transformable::getScaleOrigin();
+}
+
+const Vector2f& UINode::getRotationOrigin() const {
+	return Transformable::getRotationOrigin();
+}
+
+void UINode::move(float offsetX, float offsetY) {
+	setPosition(getPosition().x + offsetX, getPosition().y + offsetY);
+}
+
+void UINode::move(const Vector2f& offset) {
+	setPosition(getPosition().x + offset.x, getPosition().y + offset.y);
+}
+
+void UINode::rotate(float angle) {
+	setRotation(getRotation() + angle);
+}
+
+void UINode::scale(float factorX, float factorY) {
+	setScale(getScale().x * factorX, getScale().y * factorY);
+}
+
+void UINode::scale(const Vector2f& factor) {
+	setScale(getScale().x * factor.x, getScale().y * factor.y);
 }
 
 }}

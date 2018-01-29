@@ -476,8 +476,16 @@ Vector2i TileMap::getMouseTilePosCoords() {
 	return getTileCoords( getMouseTilePos() );
 }
 
+Vector2f TileMap::getMouseTilePosCoordsf() {
+	return getTileCoords( Vector2f( getMouseTilePos().x, getMouseTilePos().y ) );
+}
+
 Vector2i TileMap::getTileCoords( const Vector2i& TilePos ) {
 	return ( TilePos * mTileSize );
+}
+
+Vector2f TileMap::getTileCoords( const Vector2f& TilePos ) {
+	return ( TilePos * Vector2f( mTileSize.x, mTileSize.y ) );
 }
 
 void TileMap::setViewSize( const Sizei& viewSize ) {

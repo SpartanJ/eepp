@@ -108,13 +108,13 @@ void UIDropDownList::showList() {
 
 		mListBox->toFront();
 
-		Vector2i Pos( mPos.x, mPos.y + mSize.getHeight() );
+		Vector2f Pos( mDpPos.x, mDpPos.y + mSize.getHeight() );
 
 		if ( mStyleConfig.PopUpToMainControl ) {
 			getParent()->nodeToWorld( Pos );
-			Pos = PixelDensity::pxToDpI( Pos );
+			Pos = PixelDensity::pxToDp( Pos );
 		} else if ( NULL != mFriendCtrl ) {
-			Pos = Vector2i( mFriendCtrl->getPosition().x, mFriendCtrl->getPosition().y + mFriendCtrl->getSize().getHeight() );
+			Pos = Vector2f( mFriendCtrl->getPosition().x, mFriendCtrl->getPosition().y + mFriendCtrl->getSize().getHeight() );
 		} else {
 			UINode * ParentLoop = getParent();
 			UINode * rp = getWindowContainer();

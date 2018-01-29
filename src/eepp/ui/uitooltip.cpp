@@ -95,7 +95,7 @@ void UITooltip::draw() {
 
 		if ( mTextCache->getTextWidth() ) {
 			mTextCache->setAlign( getFlags() );
-			mTextCache->draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, Vector2f::One, 0.f, getBlendMode() );
+			mTextCache->draw( (Float)mScreenPosi.x + (int)mAlignOffset.x, (Float)mScreenPosi.y + (int)mAlignOffset.y, Vector2f::One, 0.f, getBlendMode() );
 		}
 	}
 }

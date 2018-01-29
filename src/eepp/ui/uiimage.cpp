@@ -99,7 +99,7 @@ void UIImage::draw() {
 			calcDestSize();
 
 			mDrawable->setColor( mColor );
-			mDrawable->draw( Vector2f( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y ), mDestSize );
+			mDrawable->draw( Vector2f( (Float)mScreenPosi.x + (int)mAlignOffset.x, (Float)mScreenPosi.y + (int)mAlignOffset.y ), mDestSize );
 			mDrawable->clearColor();
 		}
 	}

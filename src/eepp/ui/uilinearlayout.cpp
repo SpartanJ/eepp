@@ -60,7 +60,7 @@ void UILinearLayout::onChildCountChange() {
 }
 
 void UILinearLayout::pack() {
-	setInternalPosition( Vector2i( mLayoutMargin.Left, mLayoutMargin.Top ) );
+	setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 
 	if ( mOrientation == UI_VERTICAL )
 		packVertical();
@@ -129,7 +129,7 @@ void UILinearLayout::packVertical() {
 
 			curY += margin.Top;
 
-			Vector2i pos( 0, curY );
+			Vector2f pos( 0, curY );
 
 			if ( widget->getLayoutWeight() != 0 ) {
 				Int32 totSize = ( getLayoutHeightRules() == MATCH_PARENT ) ? mSize.getHeight() : getParent()->getSize().getHeight() - mLayoutMargin.Bottom - mLayoutMargin.Top;
@@ -243,7 +243,7 @@ void UILinearLayout::packHorizontal() {
 
 			curX += margin.Left;
 
-			Vector2i pos( curX, 0 );
+			Vector2f pos( curX, 0 );
 
 			if ( widget->getLayoutWeight() != 0 ) {
 				Int32 totSize = ( getLayoutWidthRules() == MATCH_PARENT ) ? mSize.getWidth() : getParent()->getSize().getWidth() - mLayoutMargin.Right - mLayoutMargin.Left;

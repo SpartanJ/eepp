@@ -136,7 +136,11 @@ class EE_API TileMap {
 
 		Vector2i getMouseTilePosCoords();
 
+		Vector2f getMouseTilePosCoordsf();
+
 		Vector2i getTileCoords( const Vector2i& TilePos );
+
+		Vector2f getTileCoords( const Vector2f& TilePos );
 
 		const Vector2i& getRealMouseTilePos() const;
 

@@ -264,7 +264,7 @@ void UIWindow::drawFrameBuffer() {
 			mFrameBuffer->draw( Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ), Rect( mScreenPos.x, mScreenPos.y, mScreenPos.x + mRealSize.getWidth(), mScreenPos.y + mRealSize.getHeight() ) );
 		} else {
 			TextureRegion textureRegion( mFrameBuffer->getTexture()->getId(), Rect( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() ) );
-			textureRegion.draw( mScreenPos.x, mScreenPos.y, Color::White, getRotation(), getScale() );
+			textureRegion.draw( mScreenPosi.x, mScreenPosi.y, Color::White, getRotation(), getScale() );
 		}
 	}
 }
@@ -295,7 +295,7 @@ void UIWindow::drawShadow() {
 		Color EndC( 0, 0, 0, 0 );
 		Float SSize = PixelDensity::dpToPx( 16.f );
 
-		Vector2i ShadowPos = mScreenPos + Vector2i( 0, SSize );
+		Vector2f ShadowPos = mScreenPos + Vector2f( 0, SSize );
 
 		P.drawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y ), Sizef( mRealSize.getWidth(), mRealSize.getHeight() ) ), BeginC, BeginC, BeginC, BeginC );
 
@@ -395,12 +395,12 @@ void UIWindow::onContainerPositionChange( const UIEvent * Event ) {
 	if ( NULL == mContainer )
 		return;
 
-	Vector2i PosDiff = mContainer->getPosition() - Vector2i( NULL != mBorderLeft ? mBorderLeft->getSize().getWidth() : 0, NULL != mWindowDecoration ? mWindowDecoration->getSize().getHeight() : 0 );
+	Vector2f PosDiff = mContainer->getPosition() - Vector2f( NULL != mBorderLeft ? mBorderLeft->getSize().getWidth() : 0, NULL != mWindowDecoration ? mWindowDecoration->getSize().getHeight() : 0 );
 
 	if ( PosDiff.x != 0 || PosDiff.y != 0 ) {
 		mContainer->setPosition( NULL != mBorderLeft ? mBorderLeft->getSize().getWidth() : 0, NULL != mWindowDecoration ? mWindowDecoration->getSize().getHeight() : 0 );
 
-		setPosition( mPos + PosDiff );
+		setPosition( mDpPos + PosDiff );
 	}
 }
 
@@ -1174,9 +1174,9 @@ void UIWindow::matrixSet() {
 				mFrameBuffer->clear();
 			}
 
-			if ( 0 != mScreenPos ) {
+			if ( 0.f != mScreenPos ) {
 				GLi->pushMatrix();
-				GLi->translatef( -mScreenPos.x , -mScreenPos.y, 0.f );
+				GLi->translatef( -mScreenPosi.x , -mScreenPosi.y, 0.f );
 			}
 		}
 	} else {
@@ -1188,7 +1188,7 @@ void UIWindow::matrixUnset() {
 	if ( ownsFrameBuffer() ) {
 		GlobalBatchRenderer::instance()->draw();
 
-		if ( 0 != mScreenPos )
+		if ( 0.f != mScreenPos )
 			GLi->popMatrix();
 
 		if ( mFrameBufferBound ) {

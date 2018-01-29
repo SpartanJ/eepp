@@ -390,7 +390,7 @@ void EETest::createUI() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
+	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW/* | UI_WIN_FRAME_BUFFER*/;
 	windowStyleConfig.MinWindowSize = Sizei( 530, 405 );
 	windowStyleConfig.BaseAlpha = 200;
 	tWin->setStyleConfig( windowStyleConfig );
@@ -884,7 +884,7 @@ void EETest::createMapEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW/* | UI_WIN_FRAME_BUFFER*/;
 	windowStyleConfig.MinWindowSize = Sizei( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -901,7 +901,7 @@ void EETest::createETGEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW/* | UI_WIN_FRAME_BUFFER*/;
 	windowStyleConfig.MinWindowSize = Sizei( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -936,7 +936,7 @@ static void onWinDragStop( const UIEvent * event ) {
 
 void EETest::createDecoratedWindow() {
 	mUIWindow = UIBlurredWindow::New( mBlur );
-	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER )
+	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW/* | UI_WIN_FRAME_BUFFER*/ )
 			->setMinWindowSize( 530, 350 )->setPosition( 200, 50 );
 
 	mUIWindow->addEventListener( UIEvent::OnWindowClose, cb::Make1( this, &EETest::onCloseClick ) );
@@ -1105,9 +1105,9 @@ void EETest::onQuitClick( const UIEvent * Event ) {
 
 void EETest::showMenu() {
 	if ( Menu->show() ) {
-		Vector2i Pos = mWindow->getInput()->getMousePos();
+		Vector2f Pos = mWindow->getInput()->getMousePosf();
 		UIMenu::fixMenuPos( Pos , Menu );
-		Menu->setPosition( Sizei( (Float)Pos.x / PixelDensity::getPixelDensity(), (Float)Pos.y / PixelDensity::getPixelDensity() ) );
+		Menu->setPosition( Vector2f( Pos.x / PixelDensity::getPixelDensity(), Pos.y / PixelDensity::getPixelDensity() ) );
 	}
 }
 
@@ -1131,8 +1131,8 @@ void EETest::onButtonClick( const UIEvent * Event ) {
 		Gfx->runAction( Sequence::New( Scale::New( Vector2f(1.f,1.f), Vector2f(2.f,2.f), Seconds( 0.5f ) ),
 									   Scale::New( Vector2f(2.f,2.f), Vector2f(1.f,1.f), Seconds( 0.5f ) )
 						) );
-		Gfx->startRotation( 0, 2500, Milliseconds( 2500 ) );
-		Gfx->startTranslation( Vector2i( Math::randi( 0, mWindow->getWidth() ), -64 ), Vector2i( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ), Milliseconds( 2500 ) );
+		Gfx->startRotation( 0.f, 2500.f, Milliseconds( 2500 ) );
+		Gfx->startTranslation( Vector2f( Math::randi( 0, mWindow->getWidth() ), -64 ), Vector2f( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ), Milliseconds( 2500 ) );
 		Gfx->closeFadeOut( Milliseconds( 3500 ) );
 	}
 }

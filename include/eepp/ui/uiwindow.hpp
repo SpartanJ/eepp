@@ -163,7 +163,7 @@ class EE_API UIWindow : public UIWidget {
 
 		UIWidget *	mModalCtrl;
 
-		Vector2i			mNonMaxPos;
+		Vector2f			mNonMaxPos;
 		Sizei				mNonMaxSize;
 		UI_RESIZE_TYPE		mResizeType;
 		Vector2i			mResizePos;

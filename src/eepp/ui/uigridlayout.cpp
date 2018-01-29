@@ -145,7 +145,7 @@ void UIGridLayout::pack() {
 
 	UINode * ChildLoop = mChild;
 
-	Vector2i pos(mPadding.Left,mPadding.Top);
+	Vector2f pos(mPadding.Left,mPadding.Top);
 	Sizei targetSize( getTargetElementSize() );
 
 	if ( getHorizontalAlign() == UI_HALIGN_RIGHT )

@@ -52,7 +52,7 @@ void UISprite::draw() {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
 			checkTextureRegionUpdate();
 
-			mSprite->setPosition( Vector2f( (Float)( mScreenPos.x + mAlignOffset.x ), (Float)( mScreenPos.y + mAlignOffset.y ) ) );
+			mSprite->setPosition( Vector2f( (Float)( mScreenPosi.x + (int)mAlignOffset.x ), (Float)( mScreenPosi.y + (int)mAlignOffset.y ) ) );
 
 			TextureRegion * textureRegion = mSprite->getCurrentTextureRegion();
 

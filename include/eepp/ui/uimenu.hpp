@@ -14,7 +14,7 @@ class EE_API UIMenu : public UIWidget {
 	public:
 		static UIMenu * New();
 
-		static void fixMenuPos( Vector2i& position, UIMenu * Menu, UIMenu * parent = NULL, UIMenuSubMenu * SubMenu = NULL );
+		static void fixMenuPos( Vector2f& position, UIMenu * Menu, UIMenu * parent = NULL, UIMenuSubMenu * SubMenu = NULL );
 
 		UIMenu();
 

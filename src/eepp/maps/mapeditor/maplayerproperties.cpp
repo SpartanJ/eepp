@@ -74,7 +74,7 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 	mGenGrid->setCollumnWidth( 3, 175 );
 	mGenGrid->setCollumnWidth( 4, 10 );
 
-	Vector2i Pos( mGenGrid->getPosition().x + mGenGrid->getSize().getWidth() + 10, mGenGrid->getPosition().y );
+	Vector2f Pos( mGenGrid->getPosition().x + mGenGrid->getSize().getWidth() + 10, mGenGrid->getPosition().y );
 
 	UIPushButton * AddButton = UIPushButton::New();
 	AddButton->setParent( mUIWindow->getContainer() )->setSize( 24, 0 )->setPosition( Pos );
