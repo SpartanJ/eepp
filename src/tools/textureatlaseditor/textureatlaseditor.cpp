@@ -1,12 +1,29 @@
 #include <eepp/ee.hpp>
 
 EE::Window::Window * win = NULL;
+UIMessageBox * MsgBox = NULL;
+TextureAtlasEditor * Editor = NULL;
+
+bool onCloseRequestCallback( EE::Window::Window * w ) {
+	if ( NULL != Editor && Editor->isEdited() ) {
+		MsgBox = UIMessageBox::New( MSGBOX_OKCANCEL, "Do you really want to close the texture atlas editor?\nAll changes will be lost." );
+		MsgBox->addEventListener( UIEvent::MsgBoxConfirmClick, cb::Make1<void, const UIEvent*>( []( const UIEvent * event ) { win->close(); } ) );
+		MsgBox->addEventListener( UIEvent::OnClose, cb::Make1<void, const UIEvent*>( []( const UIEvent * event ) { MsgBox = NULL; } ) );
+		MsgBox->setTitle( "Close Texture Atlas Editor?" );
+		MsgBox->center();
+		MsgBox->show();
+		return false;
+	} else {
+		return true;
+	}
+}
 
 void mainLoop() {
 	win->getInput()->update();
 
-	if ( win->getInput()->isKeyDown( KEY_ESCAPE ) )
+	if ( win->getInput()->isKeyUp( KEY_ESCAPE ) && NULL == MsgBox && onCloseRequestCallback( win ) ) {
 		win->close();
+	}
 
 	UIManager::instance()->update();
 
@@ -32,6 +49,8 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 	win = Engine::instance()->createWindow( WindowSettings( width, height, "eepp - Texture Atlas Editor", WindowStyle::Default, WindowBackend::Default, 32, "assets/icon/ee.png", pixelDensity ), ContextSettings( true, GLv_default, true, 24, 1, 0, false ) );
 
 	if ( win->isOpen() ) {
+		win->setCloseRequestCallback( cb::Make1( onCloseRequestCallback ) );
+
 		UIManager::instance()->init( UI_MANAGER_USE_DRAW_INVALIDATION );
 
 		{
@@ -48,7 +67,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 			UIThemeManager::instance()->setDefaultEffectsEnabled( true )->setDefaultTheme( theme )->setDefaultFont( font )->add( theme );
 		}
 
-		TextureAtlasEditor::New();
+		Editor = TextureAtlasEditor::New();
 
 		win->runMainLoop( &mainLoop );
 	}

@@ -26,7 +26,8 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	mCloseCb( callback ),
 	mTexturePacker( NULL ),
 	mTextureAtlasLoader( NULL ),
-	mCurTextureRegion( NULL )
+	mCurTextureRegion( NULL ),
+	mEdited( false )
 {
 	if ( NULL == UIThemeManager::instance()->getDefaultTheme() ) {
 		eePRINTL( "TextureAtlasEditor needs a default theme assigned to work." );
@@ -169,6 +170,7 @@ void TextureAtlasEditor::onResetDestSize( const UIEvent * Event ) {
 
 		mSpinDestW->setValue( RealSize.getWidth() );
 		mSpinDestH->setValue( RealSize.getHeight() );
+		mEdited = true;
 	}
 }
 
@@ -178,6 +180,7 @@ void TextureAtlasEditor::onResetOffset( const UIEvent * Event ) {
 	if ( NULL != mCurTextureRegion && MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
 		mSpinOffX->setValue( 0 );
 		mSpinOffY->setValue( 0 );
+		mEdited = true;
 	}
 }
 
@@ -189,6 +192,7 @@ void TextureAtlasEditor::onCenterOffset( const UIEvent * Event ) {
 
 		mSpinOffX->setValue( NSize.x );
 		mSpinOffY->setValue( NSize.y );
+		mEdited = true;
 	}
 }
 
@@ -200,18 +204,21 @@ void TextureAtlasEditor::onHBOffset( const UIEvent * Event ) {
 
 		mSpinOffX->setValue( NSize.x );
 		mSpinOffY->setValue( NSize.y );
+		mEdited = true;
 	}
 }
 
 void TextureAtlasEditor::onOffXChange( const UIEvent * Event ) {
 	if ( NULL != mCurTextureRegion ) {
 		mCurTextureRegion->setOffset( Vector2i( (Int32)mSpinOffX->getValue(), mCurTextureRegion->getOffset().y ) );
+		mEdited = true;
 	}
 }
 
 void TextureAtlasEditor::onOffYChange( const UIEvent * Event ) {
 	if ( NULL != mCurTextureRegion ) {
 		mCurTextureRegion->setOffset( Vector2i( mCurTextureRegion->getOffset().x, (Int32)mSpinOffY->getValue() ) );
+		mEdited = true;
 	}
 }
 
@@ -219,6 +226,7 @@ void TextureAtlasEditor::onDestWChange( const UIEvent * Event ) {
 	if ( NULL != mCurTextureRegion ) {
 		mCurTextureRegion->setOriDestSize( Sizef( (Int32)mSpinDestW->getValue(), mCurTextureRegion->getDpSize().y ) );
 		mTextureRegionEditor->getGfx()->setSize( (Int32)mSpinDestW->getValue(), mTextureRegionEditor->getGfx()->getSize().getHeight() );
+		mEdited = true;
 	}
 }
 
@@ -226,6 +234,7 @@ void TextureAtlasEditor::onDestHChange( const UIEvent * Event ) {
 	if ( NULL != mCurTextureRegion ) {
 		mCurTextureRegion->setOriDestSize( Sizef( mCurTextureRegion->getDpSize().x, (Int32)mSpinDestH->getValue() ) );
 		mTextureRegionEditor->getGfx()->setSize( mTextureRegionEditor->getGfx()->getSize().getWidth(), (Int32)mSpinDestH->getValue() );
+		mEdited = true;
 	}
 }
 

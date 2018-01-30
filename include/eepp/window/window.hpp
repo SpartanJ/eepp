@@ -152,6 +152,7 @@ class DisplayMode {
 class EE_API Window {
 	public:
 		typedef cb::Callback1<void, Window*>			WindowResizeCallback;
+		typedef cb::Callback1<bool, Window*>			WindowRequestCloseCallback;
 
 		Window( WindowSettings Settings, ContextSettings Context, Clipboard * Clipboard, Input * Input, CursorManager * CursorManager );
 		
@@ -424,6 +425,8 @@ class EE_API Window {
 		Vector2i mapCoordsToPixel(const Vector2f & point);
 
 		Vector2i mapCoordsToPixel(const Vector2f & point, const View & view);
+
+		void setCloseRequestCallback( const WindowRequestCloseCallback& closeRequestCallback );
 	protected:
 		friend class Engine;
 		friend class Input;
@@ -437,6 +440,7 @@ class EE_API Window {
 		const View * mCurrentView;
 		Uint32 mNumCallBacks;
 		std::map<Uint32, WindowResizeCallback> mCallbacks;
+		WindowRequestCloseCallback mCloseRequestCallback;
 		
 		class FrameData {
 			public:
@@ -494,6 +498,8 @@ class EE_API Window {
 		void logSuccessfulInit( const std::string& BackendName );
 
 		void logFailureInit( const std::string& ClassName, const std::string& BackendName );
+
+		void onCloseRequest();
 };
 
 }}

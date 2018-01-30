@@ -145,6 +145,10 @@ Vector2i Window::mapCoordsToPixel(const Vector2f& point, const View& view) {
 	return pixel;
 }
 
+void Window::setCloseRequestCallback( const WindowRequestCloseCallback & closeRequestCallback ) {
+	mCloseRequestCallback = closeRequestCallback;
+}
+
 void Window::setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
 	GLi->viewport( x, getHeight() - ( y + Height ), Width, Height );
 }
@@ -433,6 +437,14 @@ void Window::logSuccessfulInit(const std::string& BackendName ) {
 
 void Window::logFailureInit( const std::string& ClassName, const std::string& BackendName ) {
 	eePRINTL( "Error on %s::Init. Backend %s failed to start.", ClassName.c_str(), BackendName.c_str() );
+}
+
+void Window::onCloseRequest() {
+	if ( mCloseRequestCallback.IsSet() && !mCloseRequestCallback.Call( this ) ) {
+		return;
+	}
+
+	close();
 }
 
 std::string Window::getCaption() {
