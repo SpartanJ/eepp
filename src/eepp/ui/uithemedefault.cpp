@@ -75,7 +75,7 @@ UISliderStyleConfig UIThemeDefault::getSliderStyleConfig() {
 UITooltipStyleConfig UIThemeDefault::getTooltipStyleConfig() {
 	UITooltipStyleConfig tooltipStyleConfig = UITheme::getTooltipStyleConfig();
 	tooltipStyleConfig.FontColor = Color( 0, 0, 0, 255 );
-	tooltipStyleConfig.Padding = Rect( 4, 6, 4, 6 );
+	tooltipStyleConfig.Padding = Rectf( 4, 6, 4, 6 );
 	return tooltipStyleConfig;
 }
 

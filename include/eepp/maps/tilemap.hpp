@@ -36,7 +36,7 @@ class EE_API TileMap {
 
 		virtual ~TileMap();
 
-		virtual void create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags = 0, Sizei viewSize = Sizei( 800, 600 ), EE::Window::Window * Window = NULL );
+		virtual void create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags = 0, Sizef viewSize = Sizef( 800, 600 ), EE::Window::Window * Window = NULL );
 
 		virtual MapLayer * addLayer( Uint32 Type, Uint32 flags, std::string name );
 
@@ -72,9 +72,9 @@ class EE_API TileMap {
 
 		const Uint32& getMaxLayers() const;
 
-		const Sizei& getViewSize() const;
+		const Sizef& getViewSize() const;
 
-		void setViewSize( const Sizei& viewSize );
+		void setViewSize( const Sizef& viewSize );
 
 		const Vector2f& getOffset() const;
 
@@ -255,7 +255,7 @@ class EE_API TileMap {
 		Sizei			mSize;
 		Sizei			mPixelSize;
 		Sizei			mTileSize;
-		Sizei			mViewSize;
+		Sizef			mViewSize;
 		Vector2f		mOffset;
 		Vector2i		mScreenPos;
 		Vector2i		mStartTile;

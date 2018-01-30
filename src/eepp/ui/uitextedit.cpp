@@ -98,7 +98,7 @@ void UITextEdit::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
-void UITextEdit::onParentSizeChange( const Vector2i& SizeChange ) {
+void UITextEdit::onParentSizeChange( const Vector2f& SizeChange ) {
 	UIWidget::onParentSizeChange( SizeChange );
 
 	onInputSizeChange( NULL );
@@ -241,8 +241,7 @@ void UITextEdit::scrollbarsSet() {
 
 void UITextEdit::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		Rect padding = makePadding();
-		mContainerPadding = PixelDensity::dpToPx( Rectf( padding.Left, padding.Top, padding.Right, padding.Bottom ) );
+		mContainerPadding = PixelDensity::dpToPx( makePadding() );
 	}
 }
 

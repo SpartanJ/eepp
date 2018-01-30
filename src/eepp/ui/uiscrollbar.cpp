@@ -91,9 +91,9 @@ void UIScrollBar::onAutoSize() {
 	UISkin * tSkin = mSlider->getBackSlider()->getSkin();
 
 	if ( NULL != tSkin ) {
-		Sizei size = tSkin->getSize();
+		Sizef size = tSkin->getSize();
 
-		mMinControlSize = PixelDensity::pxToDpI( size );
+		mMinControlSize = PixelDensity::pxToDp( size );
 
 		if ( mFlags & UI_AUTO_SIZE ) {
 			if ( mSlider->isVertical() ) {
@@ -108,7 +108,7 @@ void UIScrollBar::onAutoSize() {
 		UISkin * tSkin = mSlider->getSliderButton()->getSkin();
 
 		if ( NULL != tSkin ) {
-			Sizei size = tSkin->getSize();
+			Sizef size = tSkin->getSize();
 
 			if ( mFlags & UI_AUTO_SIZE ) {
 				if ( mSlider->isVertical() ) {

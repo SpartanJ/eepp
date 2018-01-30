@@ -251,6 +251,8 @@ class EETest : private Thread {
 
 		void onWindowResize( EE::Window::Window * win );
 
+		void createBaseUI();
+
 		void createNewUI();
 };
 

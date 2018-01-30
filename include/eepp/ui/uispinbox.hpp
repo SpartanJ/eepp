@@ -20,9 +20,9 @@ class EE_API UISpinBox : public UIWidget {
 
 		virtual void setTheme( UITheme * Theme );
 
-		virtual void setPadding( const Rect& padding );
+		virtual void setPadding( const Rectf& padding );
 
-		const Rect& getPadding() const;
+		const Rectf& getPadding() const;
 
 		virtual void setClickStep( const Float& step );
 

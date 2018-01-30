@@ -60,8 +60,8 @@ void UITabWidget::setTheme( UITheme * Theme ) {
 		UISkin * tSkin		= Theme->getSkin( "tab" );
 
 		if ( NULL != tSkin ) {
-			Sizei tSize1		= getSkinSize( tSkin );
-			Sizei tSize2		= getSkinSize( tSkin, UISkinState::StateSelected );
+			Sizef tSize1		= getSkinSize( tSkin );
+			Sizef tSize2		= getSkinSize( tSkin, UISkinState::StateSelected );
 
 			mStyleConfig.TabWidgetHeight	= eemax( tSize1.getHeight(), tSize2.getHeight() );
 
@@ -93,15 +93,15 @@ void UITabWidget::draw() {
 		if ( smooth ) GLi->lineSmooth( false );
 
 		Primitives P;
-		Vector2i p1( mScreenPos.x, mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
-		Vector2i p2( mScreenPos.x + mTabContainer->getRealPosition().x, p1.y );
+		Vector2f p1( mScreenPos.x, mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
+		Vector2f p2( mScreenPos.x + mTabContainer->getRealPosition().x, p1.y );
 
 		P.setLineWidth( PixelDensity::dpToPx( 1 ) );
 		P.setColor( Color( mStyleConfig.LineBelowTabsColor, mAlpha ) );
 		P.drawLine( Line2f( Vector2f( (int)p1.x, (int)p1.y ), Vector2f( (int)p2.x, (int)p2.y ) ) );
 
-		Vector2i p3( mScreenPos.x + mTabContainer->getRealPosition().x + mTabContainer->getRealSize().getWidth(), mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
-		Vector2i p4( mScreenPos.x + mRealSize.getWidth(), p3.y );
+		Vector2f p3( mScreenPos.x + mTabContainer->getRealPosition().x + mTabContainer->getRealSize().getWidth(), mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
+		Vector2f p4( mScreenPos.x + mRealSize.getWidth(), p3.y );
 
 		P.drawLine( Line2f( Vector2f( (int)p3.x, (int)p3.y ), Vector2f( (int)p4.x, (int)p4.y ) ) );
 

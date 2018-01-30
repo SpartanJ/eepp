@@ -128,8 +128,8 @@ void UISprite::setRenderMode( const RenderMode& render ) {
 void UISprite::updateSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mSprite ) {
-			if ( NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion()->getDpSize() != mSize )
-				setSize( mSprite->getCurrentTextureRegion()->getDpSize() );
+			if ( NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion()->getDpSize().asFloat() != mSize )
+				setSize( mSprite->getCurrentTextureRegion()->getDpSize().asFloat() );
 		}
 	}
 }
@@ -157,7 +157,7 @@ void UISprite::autoAlign() {
 	}
 }
 
-const Vector2i& UISprite::getAlignOffset() const {
+const Vector2f& UISprite::getAlignOffset() const {
 	return mAlignOffset;
 }
 

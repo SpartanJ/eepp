@@ -64,17 +64,17 @@ class EE_API UINode : public Transformable {
 
 		const Vector2f& getRealPosition() const;
 
-		virtual UINode * setSize( const Sizei& size );
+		virtual UINode * setSize( const Sizef& size );
 
-		UINode * setSize( const Int32& Width, const Int32& Height );
+		UINode * setSize( const Float& Width, const Float& Height );
 
-		void setPixelsSize( const Sizei& size );
+		void setPixelsSize( const Sizef& size );
 
-		void setPixelsSize( const Int32& x, const Int32& y );
+		void setPixelsSize( const Float& x, const Float& y );
 
-		const Sizei& getSize();
+		const Sizef& getSize();
 
-		const Sizei& getRealSize();
+		const Sizef& getRealSize();
 
 		Rect getRect() const;
 
@@ -223,7 +223,7 @@ class EE_API UINode : public Transformable {
 
 		void sendCommonEvent( const Uint32& Event );
 
-		Sizei getSkinSize();
+		Sizef getSkinSize();
 
 		UINode * getNextWidget();
 
@@ -375,8 +375,8 @@ class EE_API UINode : public Transformable {
 		Vector2f		mDpPos;
 		Vector2f		mScreenPos;
 		Vector2i		mScreenPosi;
-		Sizei			mSize;
-		Sizei			mRealSize;
+		Sizef			mSize;
+		Sizef			mRealSize;
 
 		Uint32			mFlags;
 		UintPtr			mData;
@@ -449,7 +449,7 @@ class EE_API UINode : public Transformable {
 
 		virtual void onSizeChange();
 
-		virtual void onParentSizeChange( const Vector2i& SizeChange );
+		virtual void onParentSizeChange( const Vector2f& SizeChange );
 
 		virtual void onStateChange();
 
@@ -531,11 +531,11 @@ class EE_API UINode : public Transformable {
 
 		void writeFlag( const Uint32& Flag, const Uint32& Val );
 
-		void sendParentSizeChange( const Vector2i& SizeChange );
+		void sendParentSizeChange( const Vector2f& SizeChange );
 
-		Rect makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
+		Rectf makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
 
-		Sizei getSkinSize( UISkin * Skin, const Uint32& State = UISkinState::StateNormal );
+		Sizef getSkinSize( UISkin * Skin, const Uint32& State = UISkinState::StateNormal );
 
 		Rectf getScreenBounds();
 
@@ -549,17 +549,17 @@ class EE_API UINode : public Transformable {
 
 		void setInternalPosition( const Vector2f& Pos );
 
-		void setInternalSize( const Sizei& size );
+		void setInternalSize(const Sizef& size );
 
-		void setInternalWidth( const Int32& width );
+		void setInternalWidth(const Float& width );
 
-		void setInternalHeight( const Int32& height );
+		void setInternalHeight( const Float& height );
 
-		void setInternalPixelsSize( const Sizei& size );
+		void setInternalPixelsSize( const Sizef& size );
 
-		void setInternalPixelsWidth( const Int32& width );
+		void setInternalPixelsWidth( const Float& width );
 
-		void setInternalPixelsHeight( const Int32& height );
+		void setInternalPixelsHeight( const Float& height );
 
 		Color getColor( const Color& Col );
 

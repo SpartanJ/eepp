@@ -2,7 +2,7 @@
 
 namespace EE { namespace Maps { namespace Private {
 
-static UITextView * createTextBox( const String& Text = "", UINode * Parent = NULL, const Sizei& Size = Sizei(), const Vector2f& Pos = Vector2f(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, const Uint32& fontStyle = Text::Regular ) {
+static UITextView * createTextBox( const String& Text = "", UINode * Parent = NULL, const Sizef& Size = Sizef(), const Vector2f& Pos = Vector2f(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, const Uint32& fontStyle = Text::Regular ) {
 	UITextView * Ctrl = UITextView::New();
 	Ctrl->setFontStyle( fontStyle );
 	Ctrl->resetFlags( Flags )->setParent( Parent )->setSize( Size )->setVisible( true )->setEnabled( false )->setPosition( Pos );
@@ -38,7 +38,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	if ( mMap->getLightsEnabled() ) {
 		DiffIfLights = 100;
 
-		UITextView * Txt = createTextBox( "Map Base Color:", mUIWindow->getContainer(), Sizei(), Vector2f( 50, 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		UITextView * Txt = createTextBox( "Map Base Color:", mUIWindow->getContainer(), Sizef(), Vector2f( 50, 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 		mUIBaseColor = UIWidget::New();
 		mUIBaseColor->setFlags( UI_FILL_BACKGROUND | UI_BORDER );
@@ -48,16 +48,16 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 		mUIBaseColor->getBackground()->setColor( mMap->getBaseColor() );
 		mUIBaseColor->getBorder()->setColor( Color( 100, 100, 100, 200 ) );
 
-		Txt = createTextBox( "Red Color:", mUIWindow->getContainer(), Sizei(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		Txt = createTextBox( "Red Color:", mUIWindow->getContainer(), Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 		mUIRedSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
 		mUIRedSlider->setParent( mUIWindow->getContainer() )->setSize( 255, 20 )->setPosition( Txt->getPosition().x + Txt->getSize().getWidth() + 16, Txt->getPosition().y );
 		mUIRedSlider->setMaxValue( 255 );
 		mUIRedSlider->setValue( mMap->getBaseColor().r );
 		mUIRedSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &TileMapProperties::onRedChange ) );
 
-		mUIRedTxt = createTextBox( String::toStr( (Uint32)mMap->getBaseColor().r ), mUIWindow->getContainer(), Sizei(), Vector2f( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		mUIRedTxt = createTextBox( String::toStr( (Uint32)mMap->getBaseColor().r ), mUIWindow->getContainer(), Sizef(), Vector2f( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
-		Txt = createTextBox( "Green Color:", mUIWindow->getContainer(), Sizei(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		Txt = createTextBox( "Green Color:", mUIWindow->getContainer(), Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 		mUIGreenSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
 		mUIGreenSlider->setParent( mUIWindow->getContainer() )->setSize( 255, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
@@ -65,21 +65,21 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 		mUIGreenSlider->setValue( mMap->getBaseColor().g );
 		mUIGreenSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &TileMapProperties::onGreenChange ) );
 
-		mUIGreenTxt = createTextBox( String::toStr( (Uint32)mMap->getBaseColor().g ), mUIWindow->getContainer(), Sizei(), Vector2f( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		mUIGreenTxt = createTextBox( String::toStr( (Uint32)mMap->getBaseColor().g ), mUIWindow->getContainer(), Sizef(), Vector2f( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
-		Txt = createTextBox( "Blue Color:", mUIWindow->getContainer(), Sizei(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		Txt = createTextBox( "Blue Color:", mUIWindow->getContainer(), Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 		mUIBlueSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
 		mUIBlueSlider->setParent( mUIWindow->getContainer() )->setSize( 255, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 		mUIBlueSlider->setMaxValue( 255 );
 		mUIBlueSlider->setValue( mMap->getBaseColor().b );
 		mUIBlueSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &TileMapProperties::onBlueChange ) );
 
-		mUIBlueTxt = createTextBox( String::toStr( (Uint32)mMap->getBaseColor().b ), mUIWindow->getContainer(), Sizei(), Vector2f( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4, mUIBlueSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+		mUIBlueTxt = createTextBox( String::toStr( (Uint32)mMap->getBaseColor().b ), mUIWindow->getContainer(), Sizef(), Vector2f( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4, mUIBlueSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 	}
 
 	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
-	UITextView * TxtBox = createTextBox( "Property Name", mUIWindow->getContainer(), Sizei(192, 24), Vector2f( 50, 10 + DiffIfLights ), TxtBoxFlags, Text::Shadow );
-	createTextBox( "Property Value", mUIWindow->getContainer(), Sizei(192, 24), Vector2f(50+192, TxtBox->getPosition().y ), TxtBoxFlags );
+	UITextView * TxtBox = createTextBox( "Property Name", mUIWindow->getContainer(), Sizef(192, 24), Vector2f( 50, 10 + DiffIfLights ), TxtBoxFlags, Text::Shadow );
+	createTextBox( "Property Value", mUIWindow->getContainer(), Sizef(192, 24), Vector2f(50+192, TxtBox->getPosition().y ), TxtBoxFlags );
 
 	UIPushButton * OKButton = UIPushButton::New();
 	OKButton->setParent(  mUIWindow->getContainer() )->setSize( 80, 0 );

@@ -248,7 +248,7 @@ void UITextView::shrinkText( const Uint32& MaxWidth ) {
 
 void UITextView::onAutoSize() {
 	if ( ( mFlags & UI_AUTO_SIZE && 0 == mSize.getWidth() ) ) {
-		setInternalPixelsSize( Sizei( (int)mTextCache->getTextWidth(), (int)mTextCache->getTextHeight() ) );
+		setInternalPixelsSize( Sizef( mTextCache->getTextWidth(), mTextCache->getTextHeight() ) );
 	}
 
 	if ( mLayoutWidthRules == WRAP_CONTENT ) {
@@ -285,7 +285,7 @@ void UITextView::alignFix() {
 			break;
 	}
 
-	mAlignOffset = PixelDensity::pxToDpI( mRealAlignOffset );
+	mAlignOffset = PixelDensity::pxToDp( mRealAlignOffset );
 }
 
 Uint32 UITextView::onFocusLoss() {
@@ -331,7 +331,7 @@ const int& UITextView::getNumLines() const {
 	return mTextCache->getNumLines();
 }
 
-const Vector2i& UITextView::getAlignOffset() const {
+const Vector2f& UITextView::getAlignOffset() const {
 	return mAlignOffset;
 }
 
@@ -505,14 +505,14 @@ void UITextView::setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig
 	setOutlineColor( mFontStyleConfig.getOutlineColor() );
 }
 
-const Rect& UITextView::getPadding() const {
+const Rectf& UITextView::getPadding() const {
 	return mPadding;
 }
 
-UITextView * UITextView::setPadding(const Rect & padding) {
+UITextView * UITextView::setPadding(const Rectf& padding) {
 	if ( padding != mPadding ) {
 		mPadding = padding;
-		mRealPadding = PixelDensity::dpToPx( Rectf( mPadding.Left, mPadding.Top, mPadding.Right, mPadding.Bottom ) );
+		mRealPadding = PixelDensity::dpToPx( mPadding );
 		onPaddingChange();
 		notifyLayoutAttrChange();
 	}
@@ -587,15 +587,15 @@ void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
 			setOutlineColor( Color::fromString( ait->as_string() ) );
 		} else if ( "padding" == name ) {
 			int val = PixelDensity::toDpFromStringI( ait->as_string() );
-			setPadding( Rect( val, val, val, val ) );
+			setPadding( Rectf( val, val, val, val ) );
 		} else if ( "paddingleft" == name ) {
-			setPadding( Rect( PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
+			setPadding( Rectf( PixelDensity::toDpFromString( ait->as_string() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
 		} else if ( "paddingright" == name ) {
-			setPadding( Rect( mPadding.Left, mPadding.Top, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Bottom ) );
+			setPadding( Rectf( mPadding.Left, mPadding.Top, PixelDensity::toDpFromString( ait->as_string() ), mPadding.Bottom ) );
 		} else if ( "paddingtop" == name ) {
-			setPadding( Rect( mPadding.Left, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Right, mPadding.Bottom ) );
+			setPadding( Rectf( mPadding.Left, PixelDensity::toDpFromString( ait->as_string() ), mPadding.Right, mPadding.Bottom ) );
 		} else if ( "paddingbottom" == name ) {
-			setPadding( Rect( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
+			setPadding( Rectf( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromString( ait->as_string() ) ) );
 		}
 	}
 

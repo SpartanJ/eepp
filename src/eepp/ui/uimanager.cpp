@@ -61,7 +61,7 @@ void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 	if ( isMainControlInFrameBuffer() )
 		windowStyleConfig.WinFlags |= UI_WIN_FRAME_BUFFER;
 
-	windowStyleConfig.MinWindowSize = Sizei( 0, 0 );
+	windowStyleConfig.MinWindowSize = Sizef( 0, 0 );
 	windowStyleConfig.DecorationSize = Sizei( 0, 0 );
 	windowStyleConfig.DecorationAutoSize = false;
 	mControl = UIWindow::New();

@@ -37,7 +37,7 @@ UIPushButton::UIPushButton() :
 	mIcon->unsetFlags( UI_AUTO_SIZE );
 
 	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
-		mIcon->setSize( mStyleConfig.IconMinSize );
+		mIcon->setSize( mStyleConfig.IconMinSize.asFloat() );
 	}
 
 	mIcon->setVisible( true );
@@ -134,7 +134,7 @@ void UIPushButton::onThemeLoaded() {
 		mTextBox->setFont( mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() );
 
 	if ( mNodeFlags & NODE_FLAG_FREE_USE ) {
-		Rect RMargin = makePadding( true, false, false, false, true );
+		Rectf RMargin = makePadding( true, false, false, false, true );
 		mStyleConfig.IconHorizontalMargin = RMargin.Left;
 	}
 
@@ -175,11 +175,11 @@ const String& UIPushButton::getText() {
 	return mTextBox->getText();
 }
 
-void UIPushButton::setPadding( const Rect& padding ) {
+void UIPushButton::setPadding( const Rectf& padding ) {
 	mTextBox->setPadding( padding );
 }
 
-const Rect& UIPushButton::getPadding() const {
+const Rectf& UIPushButton::getPadding() const {
 	return mTextBox->getPadding();
 }
 
@@ -332,7 +332,7 @@ void UIPushButton::setStyleConfig(const UIPushButtonStyleConfig & styleConfig) {
 	mTextBox->setFontStyleConfig( styleConfig );
 
 	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
-		Sizei minSize( eemax( mSize.x, mStyleConfig.IconMinSize.x ), eemax( mSize.y, mStyleConfig.IconMinSize.y ) );
+		Sizef minSize( eemax( mSize.x, (Float)mStyleConfig.IconMinSize.x ), eemax( mSize.y, (Float)mStyleConfig.IconMinSize.y ) );
 
 		if ( minSize != mSize ) {
 			mIcon->setSize( minSize );

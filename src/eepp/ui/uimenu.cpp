@@ -515,7 +515,7 @@ Uint32 UIMenu::onKeyDown( const UIEventKey& Event ) {
 	return UIWidget::onKeyDown( Event );
 }
 
-const Rect& UIMenu::getPadding() const {
+const Rectf& UIMenu::getPadding() const {
 	return mStyleConfig.Padding;
 }
 
@@ -589,12 +589,6 @@ void UIMenu::fixMenuPos( Vector2f& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSu
 	Rectf qPos( Pos.x, Pos.y, Pos.x + Menu->getRealSize().getWidth(), Pos.y + Menu->getRealSize().getHeight() );
 
 	if ( NULL != Parent && NULL != SubMenu ) {
-		Vector2i addToPos( 0, 0 );
-
-		if ( NULL != SubMenu ) {
-			addToPos.y = SubMenu->getRealSize().getHeight();
-		}
-
 		Vector2f sPos = SubMenu->getRealPosition();
 		SubMenu->nodeToWorldTranslation( sPos );
 

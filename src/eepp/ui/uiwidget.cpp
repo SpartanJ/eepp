@@ -227,8 +227,8 @@ void UIWidget::tooltipRemove() {
 	mTooltip = NULL;
 }
 
-UINode * UIWidget::setSize( const Sizei& size ) {
-	Sizei s( size );
+UINode * UIWidget::setSize( const Sizef& size ) {
+	Sizef s( size );
 
 	if ( s.x < mMinControlSize.x )
 		s.x = mMinControlSize.x;
@@ -279,11 +279,11 @@ UINode * UIWidget::setThemeSkin( UITheme * Theme, const std::string& skinName ) 
 	return UINode::setThemeSkin( Theme, skinName );
 }
 
-UINode * UIWidget::setSize( const Int32& Width, const Int32& Height ) {
+UINode * UIWidget::setSize( const Float& Width, const Float& Height ) {
 	return UINode::setSize( Width, Height );
 }
 
-const Sizei& UIWidget::getSize() {
+const Sizef& UIWidget::getSize() {
 	return UINode::getSize();
 }
 
@@ -291,7 +291,7 @@ UITooltip * UIWidget::getTooltip() {
 	return mTooltip;
 }
 
-void UIWidget::onParentSizeChange( const Vector2i& SizeChange ) {
+void UIWidget::onParentSizeChange( const Vector2f& SizeChange ) {
 	updateAnchors( SizeChange );
 	UINode::onParentSizeChange( SizeChange );
 }
@@ -327,11 +327,11 @@ void UIWidget::notifyLayoutAttrChangeParent() {
 	}
 }
 
-void UIWidget::updateAnchors( const Vector2i& SizeChange ) {
+void UIWidget::updateAnchors( const Vector2f& SizeChange ) {
 	if ( !( mFlags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) )
 		return;
 
-	Sizei newSize( mSize );
+	Sizef newSize( mSize );
 
 	if ( !( mFlags & UI_ANCHOR_LEFT ) ) {
 		setInternalPosition( Vector2f( mDpPos.x += SizeChange.x, mDpPos.y ) );

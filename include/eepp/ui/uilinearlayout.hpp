@@ -33,7 +33,7 @@ class EE_API UILinearLayout : public UILayout {
 
 		virtual void onSizeChange();
 
-		virtual void onParentSizeChange( const Vector2i& SizeChange );
+		virtual void onParentSizeChange( const Vector2f& SizeChange );
 
 		virtual void onChildCountChange();
 

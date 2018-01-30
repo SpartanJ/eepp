@@ -64,7 +64,7 @@ void UITouchDragableWidget::update( const Time& time ) {
 
 				Float ms = time.asSeconds();
 				Vector2f elapsed( ms, ms );
-				Vector2f Pos( manager->getMousePos().x, manager->getMousePos().y );
+				Vector2f Pos( manager->getMousePosf() );
 
 				if ( mTouchDragPoint != Pos ) {
 					Vector2f diff = -( mTouchDragPoint - Pos );

@@ -33,15 +33,15 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		virtual UINode * setSize( const Sizei& size );
+		virtual UINode * setSize( const Sizef& size );
 
-		UINode * setSize( const Int32& Width, const Int32& Height );
+		UINode * setSize( const Float& Width, const Float& Height );
 
-		UIWindow * setSizeWithDecoration( const Int32& Width, const Int32& Height );
+		UIWindow * setSizeWithDecoration( const Float& Width, const Float& Height );
 
-		UIWindow * setSizeWithDecoration( const Sizei& size );
+		UIWindow * setSizeWithDecoration( const Sizef& size );
 
-		const Sizei& getSize();
+		const Sizef& getSize();
 
 		virtual void setTheme( UITheme * Theme );
 
@@ -97,11 +97,11 @@ class EE_API UIWindow : public UIWidget {
 
 		UIWindow * setStyleConfig(const UIWindowStyleConfig & styleConfig);
 
-		UIWindow * setMinWindowSize( Sizei size );
+		UIWindow * setMinWindowSize( Sizef size );
 
-		UIWindow * setMinWindowSize( const Int32& width, const Int32& height );
+		UIWindow * setMinWindowSize( const Float& width, const Float& height );
 
-		const Sizei& getMinWindowSize();
+		const Sizef& getMinWindowSize();
 
 		bool ownsFrameBuffer();
 
@@ -164,7 +164,7 @@ class EE_API UIWindow : public UIWidget {
 		UIWidget *	mModalCtrl;
 
 		Vector2f			mNonMaxPos;
-		Sizei				mNonMaxSize;
+		Sizef				mNonMaxSize;
 		UI_RESIZE_TYPE		mResizeType;
 		Vector2f			mResizePos;
 		KeyboardShortcuts	mKbShortcuts;
@@ -197,9 +197,9 @@ class EE_API UIWindow : public UIWidget {
 
 		void updateResize();
 
-		void internalSize( Sizei size );
+		void internalSize( Sizef size );
 
-		void internalSize( const Int32& w, const Int32& h );
+		void internalSize( const Float& w, const Float& h );
 
 		void calcMinWinSize();
 

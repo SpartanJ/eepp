@@ -140,7 +140,7 @@ class UIWindowStyleConfig : public UIFontStyleConfig {
 		Uint32		WinFlags = UI_WIN_DEFAULT_FLAGS;
 		Sizei		DecorationSize;
 		Sizei		BorderSize;
-		Sizei		MinWindowSize;
+		Sizef		MinWindowSize;
 		Vector2i	ButtonsPositionFixer;
 		Uint32		ButtonsSeparation = 4;
 		Int32		MinCornerDistance = 24;
@@ -158,7 +158,7 @@ class UIMenuStyleConfig : public UIFontStyleConfig {
 			UIFontStyleConfig( fontStyleConfig )
 		{}
 
-		Rect				Padding = Rect(0, 0, 0, 0);
+		Rectf				Padding = Rectf(0, 0, 0, 0);
 		Uint32				MinWidth = 0;
 		Uint32				MinSpaceForIcons = 0;
 		Uint32				MinRightMargin = 0;
@@ -194,7 +194,7 @@ class UITooltipStyleConfig : public UIFontStyleConfig {
 			UIFontStyleConfig( fontStyleConfig )
 		{}
 
-		Rect		Padding;
+		Rectf		Padding;
 };
 
 class UIScaleType {

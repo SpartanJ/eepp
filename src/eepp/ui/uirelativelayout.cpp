@@ -34,7 +34,7 @@ void UIRelativeLayout::onChildCountChange() {
 	fixChilds();
 }
 
-void UIRelativeLayout::onParentSizeChange( const Vector2i& SizeChange ) {
+void UIRelativeLayout::onParentSizeChange( const Vector2f& SizeChange ) {
 	fixChilds();
 }
 

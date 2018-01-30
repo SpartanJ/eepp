@@ -133,7 +133,7 @@ void UIScrollView::containerUpdate() {
 	if ( NULL == mScrollView )
 		return;
 
-	Sizei size = mSize;
+	Sizef size = mSize;
 
 	if ( Exclusive == mViewType ) {
 		if ( mVScroll->isVisible() )
@@ -189,8 +189,8 @@ void UIScrollView::containerUpdate() {
 
 void UIScrollView::updateScroll() {
 	mScrollView->setPosition(
-		mHScroll->isVisible() ? -( mHScroll->getSlider()->getValue() * eemax( 0, mScrollView->getSize().getWidth() - mSize.getWidth() ) ) : 0 ,
-		mVScroll->isVisible() ? -( mVScroll->getSlider()->getValue() * eemax( 0, mScrollView->getSize().getHeight() - mSize.getHeight() ) ) : 0
+		mHScroll->isVisible() ? -( mHScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getWidth() - mSize.getWidth() ) ) : 0.f ,
+		mVScroll->isVisible() ? -( mVScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getHeight() - mSize.getHeight() ) ) : 0.f
 	);
 }
 

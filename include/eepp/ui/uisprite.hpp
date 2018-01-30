@@ -40,7 +40,7 @@ class EE_API UISprite : public UIWidget {
 
 		void setRenderMode( const RenderMode& render );
 
-		const Vector2i& getAlignOffset() const;
+		const Vector2f& getAlignOffset() const;
 
 		void setDeallocSprite( const bool& dealloc );
 
@@ -49,8 +49,8 @@ class EE_API UISprite : public UIWidget {
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		Graphics::Sprite * 	mSprite;
-		RenderMode 		mRender;
-		Vector2i			mAlignOffset;
+		RenderMode			mRender;
+		Vector2f			mAlignOffset;
 		TextureRegion *		mTextureRegionLast;
 		bool				mDealloc;
 

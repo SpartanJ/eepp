@@ -127,7 +127,7 @@ void UIDropDownList::showList() {
 		mListBox->setPosition( Pos );
 
 		if ( mListBox->getCount() ) {
-			Rect tPadding = mListBox->getContainerPadding();
+			Rectf tPadding = mListBox->getContainerPadding();
 
 			Float sliderValue = mListBox->getVerticalScrollBar()->getValue();
 

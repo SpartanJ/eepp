@@ -164,25 +164,25 @@ const Vector2f &UINode::getRealPosition() const {
 	return mPosition;
 }
 
-void UINode::setInternalSize( const Sizei& size ) {
+void UINode::setInternalSize( const Sizef& size ) {
 	mSize = size;
-	mRealSize = Sizei( size.x * PixelDensity::getPixelDensity(), size.y * PixelDensity::getPixelDensity() );
+	mRealSize = Sizef( size.x * PixelDensity::getPixelDensity(), size.y * PixelDensity::getPixelDensity() );
 	updateCenter();
 	sendCommonEvent( UIEvent::OnSizeChange );
 	invalidateDraw();
 }
 
-void UINode::setInternalPixelsSize( const Sizei& size ) {
-	mSize = PixelDensity::pxToDpI( size );
+void UINode::setInternalPixelsSize( const Sizef& size ) {
+	mSize = PixelDensity::pxToDp( size );
 	mRealSize = size;
 	updateCenter();
 	sendCommonEvent( UIEvent::OnSizeChange );
 	invalidateDraw();
 }
 
-UINode * UINode::setSize( const Sizei& Size ) {
+UINode * UINode::setSize( const Sizef & Size ) {
 	if ( Size != mSize ) {
-		Vector2i sizeChange( Size.x - mSize.x, Size.y - mSize.y );
+		Vector2f sizeChange( Size.x - mSize.x, Size.y - mSize.y );
 
 		setInternalSize( Size );
 
@@ -196,54 +196,54 @@ UINode * UINode::setSize( const Sizei& Size ) {
 	return this;
 }
 
-UINode * UINode::setSize( const Int32& Width, const Int32& Height ) {
-	setSize( Sizei( Width, Height ) );
+UINode * UINode::setSize( const Float & Width, const Float & Height ) {
+	setSize( Sizef( Width, Height ) );
 	return this;
 }
 
-void UINode::setPixelsSize( const Sizei & size ) {
+void UINode::setPixelsSize( const Sizef& size ) {
 	if ( size != mRealSize ) {
-		Vector2i sizeChange( size.x - mRealSize.x, size.y - mRealSize.y );
+		Vector2f sizeChange( size.x - mRealSize.x, size.y - mRealSize.y );
 
 		setInternalPixelsSize( size );
 
 		onSizeChange();
 
 		if ( mFlags & UI_REPORT_SIZE_CHANGE_TO_CHILDS ) {
-			sendParentSizeChange( PixelDensity::pxToDpI( sizeChange ) );
+			sendParentSizeChange( PixelDensity::pxToDp( sizeChange ) );
 		}
 	}
 }
 
-void UINode::setPixelsSize( const Int32& x, const Int32& y ) {
-	setPixelsSize( Sizei( x, y ) );
+void UINode::setPixelsSize(const Float & x, const Float & y ) {
+	setPixelsSize( Sizef( x, y ) );
 }
 
-void UINode::setInternalWidth( const Int32& width ) {
-	setInternalSize( Sizei( width, mSize.getHeight() ) );
+void UINode::setInternalWidth( const Float& width ) {
+	setInternalSize( Sizef( width, mSize.getHeight() ) );
 }
 
-void UINode::setInternalHeight( const Int32& height ) {
-	setInternalSize( Sizei( mSize.getWidth(), height ) );
+void UINode::setInternalHeight( const Float& height ) {
+	setInternalSize( Sizef( mSize.getWidth(), height ) );
 }
 
-void UINode::setInternalPixelsWidth( const Int32& width ) {
-	setInternalPixelsSize( Sizei( width, mRealSize.y ) );
+void UINode::setInternalPixelsWidth( const Float& width ) {
+	setInternalPixelsSize( Sizef( width, mRealSize.y ) );
 }
 
-void UINode::setInternalPixelsHeight( const Int32& height ) {
-	setInternalPixelsSize( Sizei( mRealSize.x, height ) );
+void UINode::setInternalPixelsHeight( const Float& height ) {
+	setInternalPixelsSize( Sizef( mRealSize.x, height ) );
 }
 
 Rect UINode::getRect() const {
-	return Rect( Vector2i( mDpPos.x, mDpPos.y ), mSize );
+	return Rect( Vector2i( mDpPos.x, mDpPos.y ), Sizei( mSize.x, mSize.y ) );
 }
 
-const Sizei& UINode::getSize() {
+const Sizef& UINode::getSize() {
 	return mSize;
 }
 
-const Sizei& UINode::getRealSize() {
+const Sizef& UINode::getRealSize() {
 	return mRealSize;
 }
 
@@ -324,19 +324,21 @@ void UINode::centerHorizontal() {
 	UINode * Ctrl = getParent();
 
 	if ( NULL != Ctrl )
-		setPosition( ( Ctrl->getSize().getWidth() - mSize.getWidth() ) / 2, mDpPos.y );
+		setPosition( eefloor( ( Ctrl->getSize().getWidth() - mSize.getWidth() ) * 0.5f ), mDpPos.y );
 }
 
 void UINode::centerVertical(){
 	UINode * Ctrl = getParent();
 
 	if ( NULL != Ctrl )
-		setPosition( mDpPos.x, ( Ctrl->getSize().getHeight() - mSize.getHeight() ) / 2 );
+		setPosition( mDpPos.x, eefloor( Ctrl->getSize().getHeight() - mSize.getHeight() ) * 0.5f );
 }
 
 void UINode::center() {
-	centerHorizontal();
-	centerVertical();
+	UINode * Ctrl = getParent();
+
+	if ( NULL != Ctrl )
+		setPosition( eefloor( ( Ctrl->getSize().getWidth() - mSize.getWidth() ) * 0.5f ), eefloor( Ctrl->getSize().getHeight() - mSize.getHeight() ) * 0.5f );
 }
 
 void UINode::close() {
@@ -373,7 +375,7 @@ void UINode::drawDebugData() {
 			UIWidget * me = static_cast<UIWidget*>( this );
 
 			if ( UIManager::instance()->getOverControl() == this ) {
-				String text( String::strFormated( "X: %2.4f Y: %2.4f\nW: %d H: %d", mDpPos.x, mDpPos.y, mSize.x, mSize.y ) );
+				String text( String::strFormated( "X: %2.4f Y: %2.4f\nW: %2.4f H: %2.4f", mDpPos.x, mDpPos.y, mSize.x, mSize.y ) );
 
 				if ( !mId.empty() ) {
 					text = "ID: " + mId + "\n" + text;
@@ -401,12 +403,12 @@ void UINode::drawBox() {
 void UINode::drawSkin() {
 	if ( NULL != mSkinState ) {
 		if ( mFlags & UI_SKIN_KEEP_SIZE_ON_DRAW ) {
-			Sizei rSize = PixelDensity::dpToPxI( mSkinState->getSkin()->getSize( mSkinState->getState() ) );
-			Sizei diff = ( mRealSize - rSize ) / 2;
+			Sizef rSize = PixelDensity::dpToPx( mSkinState->getSkin()->getSize( mSkinState->getState() ) );
+			Sizef diff = ( mRealSize - rSize ) * 0.5f;
 
-			mSkinState->draw( mScreenPosi.x + diff.x, mScreenPosi.y + diff.y, (Float)rSize.getWidth(), (Float)rSize.getHeight(), (Uint32)mAlpha );
+			mSkinState->draw( mScreenPosi.x + eefloor(diff.x), mScreenPosi.y + eefloor(diff.y), eefloor(rSize.getWidth()), eefloor(rSize.getHeight()), (Uint32)mAlpha );
 		} else {
-			mSkinState->draw( mScreenPosi.x, mScreenPosi.y, (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight(), (Uint32)mAlpha );
+			mSkinState->draw( mScreenPosi.x, mScreenPosi.y, eefloor(mRealSize.getWidth()), eefloor(mRealSize.getHeight()), (Uint32)mAlpha );
 		}
 	}
 }
@@ -769,7 +771,7 @@ void UINode::onSizeChange() {
 }
 
 Rectf UINode::getScreenBounds() {
-	return Rectf( Vector2f( mScreenPosi.x, mScreenPosi.y ), Sizef( (Float)mRealSize.getWidth(), (Float)mRealSize.getHeight() ) );
+	return Rectf( Vector2f( mScreenPosi.x, mScreenPosi.y ), Sizef( (Float)(int)mRealSize.getWidth(), (Float)(int)mRealSize.getHeight() ) );
 }
 
 Rectf UINode::getLocalBounds() {
@@ -1462,12 +1464,12 @@ void UINode::applyDefaultTheme() {
 	UIThemeManager::instance()->applyDefaultTheme( this );
 }
 
-Rect UINode::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom, bool SkipFlags ) {
-	Rect tPadding( 0, 0, 0, 0 );
+Rectf UINode::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom, bool SkipFlags ) {
+	Rectf tPadding( 0, 0, 0, 0 );
 
 	if ( mFlags & UI_AUTO_PADDING || SkipFlags ) {
 		if ( NULL != mSkinState && NULL != mSkinState->getSkin() ) {
-			Rect rPadding = mSkinState->getSkin()->getBorderSize( UISkinState::StateNormal );
+			Rectf rPadding = mSkinState->getSkin()->getBorderSize( UISkinState::StateNormal );
 
 			if ( PadLeft ) {
 				tPadding.Left = rPadding.Left;
@@ -1494,7 +1496,7 @@ void UINode::setFocus() {
 	UIManager::instance()->setFocusControl( this );
 }
 
-void UINode::sendParentSizeChange( const Vector2i& SizeChange ) {
+void UINode::sendParentSizeChange( const Vector2f& SizeChange ) {
 	if ( mFlags & UI_REPORT_SIZE_CHANGE_TO_CHILDS )	{
 		UINode * ChildLoop = mChild;
 
@@ -1505,25 +1507,25 @@ void UINode::sendParentSizeChange( const Vector2i& SizeChange ) {
 	}
 }
 
-void UINode::onParentSizeChange( const Vector2i& SizeChange ) {
+void UINode::onParentSizeChange( const Vector2f& SizeChange ) {
 	sendCommonEvent( UIEvent::OnParentSizeChange );
 	invalidateDraw();
 }
 
-Sizei UINode::getSkinSize( UISkin * Skin, const Uint32& State ) {
+Sizef UINode::getSkinSize( UISkin * Skin, const Uint32& State ) {
 	if ( NULL != Skin ) {
 		return Skin->getSize( State );
 	}
 
-	return Sizei::Zero;
+	return Sizef::Zero;
 }
 
-Sizei UINode::getSkinSize() {
+Sizef UINode::getSkinSize() {
 	if ( NULL != getSkin() ) {
 		return getSkin()->getSize();
 	}
 
-	return Sizei::Zero;
+	return Sizef::Zero;
 }
 
 UINode * UINode::getNextWidget() {

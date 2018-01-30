@@ -10,7 +10,7 @@ class UINode;
 
 class EE_API UIEventMouse : public UIEvent {
 	public:
-		UIEventMouse( UINode * getControl, const Uint32& EventNum, const Vector2i& getPosition, const Uint32& getFlags );
+		UIEventMouse( UINode * getControl, const Uint32& EventNum, const Vector2i& Pos, const Uint32& getFlags );
 
 		~UIEventMouse();
 

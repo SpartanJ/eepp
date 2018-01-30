@@ -322,7 +322,7 @@ void UIWindow::drawShadow() {
 }
 
 Sizei UIWindow::getFrameBufferSize() {
-	return isResizeable() && this != UIManager::instance()->getMainControl() ? Sizei( Math::nextPowOfTwo( mRealSize.getWidth() ), Math::nextPowOfTwo( mRealSize.getHeight() ) ) : mRealSize;
+	return isResizeable() && this != UIManager::instance()->getMainControl() ? Sizei( Math::nextPowOfTwo( (int)mRealSize.getWidth() ), Math::nextPowOfTwo( (int)mRealSize.getHeight() ) ) : mRealSize.ceil().asInt();
 }
 
 void UIWindow::createModalControl() {
@@ -493,9 +493,9 @@ void UIWindow::applyMinWinSize() {
 	if ( mSize.x < mStyleConfig.MinWindowSize.x && mSize.y < mStyleConfig.MinWindowSize.y ) {
 		setSize( mStyleConfig.MinWindowSize );
 	} else if ( mSize.x < mStyleConfig.MinWindowSize.x ) {
-		setSize( Sizei( mStyleConfig.MinWindowSize.x, mSize.y ) );
+		setSize( Sizef( mStyleConfig.MinWindowSize.x, mSize.y ) );
 	} else if ( mSize.y < mStyleConfig.MinWindowSize.y ) {
-		setSize( Sizei( mSize.x, mStyleConfig.MinWindowSize.y ) );
+		setSize( Sizef( mSize.x, mStyleConfig.MinWindowSize.y ) );
 	}
 }
 
@@ -504,9 +504,9 @@ void UIWindow::onSizeChange() {
 		if ( mSize.x < mStyleConfig.MinWindowSize.x && mSize.y < mStyleConfig.MinWindowSize.y ) {
 			setSize( mStyleConfig.MinWindowSize );
 		} else if ( mSize.x < mStyleConfig.MinWindowSize.x ) {
-			setSize( Sizei( mStyleConfig.MinWindowSize.x, mSize.y ) );
+			setSize( Sizef( mStyleConfig.MinWindowSize.x, mSize.y ) );
 		} else {
-			setSize( Sizei( mSize.x, mStyleConfig.MinWindowSize.y ) );
+			setSize( Sizef( mSize.x, mStyleConfig.MinWindowSize.y ) );
 		}
 	} else {
 		fixChildsSize();
@@ -524,9 +524,9 @@ void UIWindow::onSizeChange() {
 	}
 }
 
-UINode * UIWindow::setSize( const Sizei& Size ) {
+UINode * UIWindow::setSize( const Sizef& Size ) {
 	if ( NULL != mWindowDecoration ) {
-		Sizei size = Size;
+		Sizef size = Size;
 
 		size.x += mBorderLeft->getSize().getWidth() + mBorderRight->getSize().getWidth();
 		size.y += mWindowDecoration->getSize().getHeight() + mBorderBottom->getSize().getHeight();
@@ -539,28 +539,28 @@ UINode * UIWindow::setSize( const Sizei& Size ) {
 	return this;
 }
 
-UINode * UIWindow::setSize( const Int32& Width, const Int32& Height ) {
-	setSize( Sizei( Width, Height ) );
+UINode * UIWindow::setSize( const Float& Width, const Float& Height ) {
+	setSize( Sizef( Width, Height ) );
 	return this;
 }
 
-UIWindow *UIWindow::setSizeWithDecoration(const Int32 & Width, const Int32 & Height) {
-	setSizeWithDecoration( Sizei( Width, Height ) );
+UIWindow *UIWindow::setSizeWithDecoration( const Float& Width, const Float& Height) {
+	setSizeWithDecoration( Sizef( Width, Height ) );
 	return this;
 }
 
-UIWindow *UIWindow::setSizeWithDecoration(const Sizei & size) {
+UIWindow *UIWindow::setSizeWithDecoration( const Sizef & size ) {
 	UIWidget::setSize( size );
 	return this;
 }
 
-const Sizei& UIWindow::getSize() {
+const Sizef& UIWindow::getSize() {
 	return UIWidget::getSize();
 }
 
 void UIWindow::fixChildsSize() {
 	if ( mRealSize.getWidth() < PixelDensity::dpToPx( mStyleConfig.MinWindowSize.getWidth() ) || mRealSize.getHeight() < PixelDensity::dpToPx( mStyleConfig.MinWindowSize.getHeight() ) ) {
-		internalSize( eemin( mRealSize.getWidth(), PixelDensity::dpToPxI( mStyleConfig.MinWindowSize.getWidth() ) ), eemin( mRealSize.getHeight(), PixelDensity::dpToPxI( mStyleConfig.MinWindowSize.getHeight() ) ) );
+		internalSize( eemin( mRealSize.getWidth(), PixelDensity::dpToPx( mStyleConfig.MinWindowSize.getWidth() ) ), eemin( mRealSize.getHeight(), PixelDensity::dpToPx( mStyleConfig.MinWindowSize.getHeight() ) ) );
 	}
 
 	if ( NULL == mWindowDecoration && NULL != mContainer ) {
@@ -594,7 +594,7 @@ void UIWindow::fixChildsSize() {
 
 	mBorderLeft->setPixelsPosition( 0, mWindowDecoration->getRealSize().getHeight() );
 	mBorderRight->setPixelsPosition( mRealSize.getWidth() - mBorderRight->getRealSize().getWidth(), mWindowDecoration->getRealSize().getHeight() );
-	mBorderBottom->setPixelsPosition( 0, mRealSize.getHeight() - mBorderBottom->getRealSize().getHeight() );
+	mBorderBottom->setPixelsPosition( 0, mWindowDecoration->getRealSize().getHeight() + mBorderLeft->getRealSize().getHeight() );
 
 	mContainer->setPixelsPosition( mBorderLeft->getRealSize().getWidth(), mWindowDecoration->getRealSize().getHeight() );
 	mContainer->setPixelsSize( mRealSize.getWidth() - mBorderLeft->getRealSize().getWidth() - mBorderRight->getRealSize().getWidth(),
@@ -899,12 +899,12 @@ void UIWindow::updateResize() {
 	}
 }
 
-void UIWindow::internalSize( const Int32& w, const Int32& h ) {
-	internalSize( Sizei( w, h ) );
+void UIWindow::internalSize(const Float & w, const Float & h ) {
+	internalSize( Sizef( w, h ) );
 }
 
-void UIWindow::internalSize( Sizei Size ) {
-	Sizei realMin = PixelDensity::dpToPxI( mStyleConfig.MinWindowSize );
+void UIWindow::internalSize( Sizef Size ) {
+	Sizef realMin = PixelDensity::dpToPx( mStyleConfig.MinWindowSize );
 
 	Size.x = eemax( realMin.x, Size.x );
 	Size.y = eemax( realMin.y, Size.y );
@@ -1287,11 +1287,11 @@ UIWindow * UIWindow::setStyleConfig(const UIWindowStyleConfig & styleConfig) {
 	return this;
 }
 
-UIWindow * UIWindow::setMinWindowSize( const Int32& width, const Int32& height ) {
-	return setMinWindowSize( Sizei( width, height ) );
+UIWindow * UIWindow::setMinWindowSize( const Float& width, const Float& height ) {
+	return setMinWindowSize( Sizef( width, height ) );
 }
 
-UIWindow * UIWindow::setMinWindowSize( Sizei size ) {
+UIWindow * UIWindow::setMinWindowSize( Sizef size ) {
 	mStyleConfig.MinWindowSize = size;
 
 	applyMinWinSize();
@@ -1299,7 +1299,7 @@ UIWindow * UIWindow::setMinWindowSize( Sizei size ) {
 	return this;
 }
 
-const Sizei& UIWindow::getMinWindowSize() {
+const Sizef& UIWindow::getMinWindowSize() {
 	return mStyleConfig.MinWindowSize;
 }
 
