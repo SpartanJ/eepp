@@ -90,8 +90,10 @@ void MapEditor::createWinMenu() {
 	WinMenu->setParent( mUIContainer );
 
 	mTileBox = createTextBox( "", mUIContainer, Sizef(), Vector2f(), UI_HALIGN_RIGHT | UI_VALIGN_CENTER | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
+	mTileBox->setLayoutSizeRules( FIXED, FIXED );
 	mTileBox->setSize( 100, WinMenu->getSize().getHeight() );
 	mTileBox->setPosition( Vector2f( mUIContainer->getSize().getWidth() - mTileBox->getSize().getWidth(), 0 ) );
+	mTileBox->setVisible( true );
 	mTileBox->updateAnchorsDistances();
 
 	UIPopUpMenu * PU1 = UIPopUpMenu::New();

@@ -89,7 +89,7 @@ Rectf UISkinSimple::getBorderSize( const Uint32 & state ) {
 		TextureRegion * str( ninePatch->getTextureRegion( NinePatch::Right ) );
 		TextureRegion * stt( ninePatch->getTextureRegion( NinePatch::Up ) );
 		TextureRegion * stb( ninePatch->getTextureRegion( NinePatch::Down ) );
-		Rectf size( stl->getSize().getWidth(), stt->getSize().getHeight(), str->getSize().getWidth(), stb->getSize().getHeight() );
+		Rectf size( stl->getPxSize().getWidth(), stt->getPxSize().getHeight(), str->getPxSize().getWidth(), stb->getPxSize().getHeight() );
 		return size;
 	}
 

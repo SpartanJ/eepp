@@ -158,7 +158,7 @@ class EE_API UITabWidget : public UIWidget {
 
 		void setTabContainerSize();
 
-		void seContainerSize();
+		void setContainerSize();
 
 		void posTabs();
 
