@@ -161,7 +161,7 @@ class EE_API UIManager {
 		friend class UIWindow;
 
 		EE::Window::Window *mWindow;
-		Input *				mKM;
+		Input *				mInput;
 		UIWindow *			mControl;
 		UINode *			mFocusControl;
 		UINode *			mOverControl;
@@ -179,7 +179,8 @@ class EE_API UIManager {
 		Color				mHighlightFocusColor;
 		Color				mHighlightOverColor;
 		Color				mHighlightInvalidationColor;
-		Vector2i			mMousePos;
+		Vector2f			mMousePos;
+		Vector2i			mMousePosi;
 		Vector2i			mMouseDownPos;
 
 		bool				mInit;

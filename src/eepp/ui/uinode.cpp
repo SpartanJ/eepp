@@ -1109,7 +1109,9 @@ UINode * UINode::overFind( const Vector2f& Point ) {
 	UINode * pOver = NULL;
 
 	if ( mEnabled && mVisible ) {
-		if ( getLocalBounds().contains( convertToNodeSpace( Point ) ) ) {
+		updateWorldPolygon();
+
+		if ( mWorldBounds.contains( Point ) && mPoly.pointInside( Point ) ) {
 			writeCtrlFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
 
 			UINode * ChildLoop = mChildLast;
@@ -1222,11 +1224,18 @@ bool UINode::isMeOrParentTreeScaledOrRotatedOrFrameBuffer() {
 	return false;
 }
 
-Polygon2f& UINode::getWorldPolygon() {
+const Polygon2f & UINode::getWorldPolygon() {
 	if ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY )
 		updateWorldPolygon();
 
 	return mPoly;
+}
+
+const Rectf& UINode::getWorldBounds() {
+	if ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY )
+		updateWorldPolygon();
+
+	return mWorldBounds;
 }
 
 void UINode::updateWorldPolygon() {
@@ -1249,6 +1258,8 @@ void UINode::updateWorldPolygon() {
 
 		tParent = tParent->getParent();
 	};
+
+	mWorldBounds = mPoly.getBounds();
 
 	mNodeFlags &= ~NODE_FLAG_POLYGON_DIRTY;
 }

@@ -207,7 +207,9 @@ class EE_API UINode : public Transformable {
 
 		bool isMouseOverMeOrChilds();
 
-		Polygon2f& getWorldPolygon();
+		const Polygon2f& getWorldPolygon();
+
+		const Rectf& getWorldBounds();
 
 		void setSkinState( const Uint32& State );
 
@@ -397,6 +399,7 @@ class EE_API UINode : public Transformable {
 		Uint16			mNumCallBacks;
 
 		mutable Polygon2f		mPoly;
+		mutable Rectf	mWorldBounds;
 		Vector2f 		mCenter;
 
 		UIEventsMap		mEvents;
