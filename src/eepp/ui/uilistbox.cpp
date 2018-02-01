@@ -33,7 +33,7 @@ UIListBox::UIListBox() :
 	mVisibleLast(0),
 	mSmoothScroll( true )
 {
-	setFlags( UI_CLIP_ENABLE | UI_AUTO_PADDING );
+	setFlags( UI_AUTO_PADDING );
 
 	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 
@@ -44,6 +44,7 @@ UIListBox::UIListBox() :
 	mContainer->setEnabled( true );
 	mContainer->setFlags( mFlags );
 	mContainer->setPosition( 0, 0 );
+	mContainer->clipEnable();
 
 	mVScrollBar = UIScrollBar::New();
 	mVScrollBar->setOrientation( UI_VERTICAL );

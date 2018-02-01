@@ -135,10 +135,6 @@ class EE_API UINode : public Node {
 
 		Node * getWindowContainer();
 
-		void setClipEnabled();
-
-		void setClipDisabled();
-
 		bool isDragging() const;
 
 		void setDragging( const bool& dragging );
@@ -218,7 +214,7 @@ class EE_API UINode : public Node {
 
 		virtual void onChildCountChange();
 
-		virtual void clipMe();
+		virtual void clipStart();
 
 		virtual Uint32 onDrag( const Vector2f& position );
 
@@ -236,7 +232,7 @@ class EE_API UINode : public Node {
 
 		virtual void internalDraw();
 
-		virtual void clipDisable();
+		virtual void clipEnd();
 
 		virtual void onWidgetFocusLoss();
 

@@ -434,13 +434,13 @@ void UINode::internalDraw() {
 
 		matrixSet();
 
-		clipMe();
+		clipStart();
 
 		draw();
 
 		drawChilds();
 
-		clipDisable();
+		clipEnd();
 
 		drawBorder();
 
@@ -456,14 +456,14 @@ void UINode::internalDraw() {
 	}
 }
 
-void UINode::clipMe() {
-	if ( mVisible && ( mFlags & UI_CLIP_ENABLE ) ) {
+void UINode::clipStart() {
+	if ( mVisible && isClipped() ) {
 		UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
 	}
 }
 
-void UINode::clipDisable() {
-	if ( mVisible && ( mFlags & UI_CLIP_ENABLE ) ) {
+void UINode::clipEnd() {
+	if ( mVisible && isClipped() ) {
 		UIManager::instance()->clipSmartDisable( this );
 	}
 }
@@ -711,14 +711,6 @@ Node * UINode::getWindowContainer() {
 	}
 
 	return NULL;
-}
-
-void UINode::setClipEnabled() {
-	writeFlag( UI_CLIP_ENABLE, 1 );
-}
-
-void UINode::setClipDisabled() {
-	writeFlag( UI_CLIP_ENABLE, 0 );
 }
 
 const Vector2f& UINode::getDragPoint() const {

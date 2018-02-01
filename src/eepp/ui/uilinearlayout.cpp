@@ -19,7 +19,7 @@ UILinearLayout::UILinearLayout() :
 	UILayout(),
 	mOrientation( UI_VERTICAL )
 {
-	setFlags( UI_CLIP_ENABLE );
+	clipEnable();
 }
 
 Uint32 UILinearLayout::getType() const {

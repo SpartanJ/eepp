@@ -466,22 +466,22 @@ void Node::internalDraw() {
 
 		matrixSet();
 
-		clipMe();
+		clipStart();
 
 		draw();
 
 		drawChilds();
 
-		clipDisable();
+		clipEnd();
 
 		matrixUnset();
 	}
 }
 
-void Node::clipMe() {
+void Node::clipStart() {
 }
 
-void Node::clipDisable() {
+void Node::clipEnd() {
 }
 
 void Node::matrixSet() {
@@ -778,7 +778,7 @@ Uint32 Node::isWindow() {
 }
 
 Uint32 Node::isClipped() {
-	return 0; //mFlags & UI_CLIP_ENABLE;
+	return mNodeFlags & NODE_FLAG_CLIP_ENABLE;
 }
 
 Uint32 Node::isRotated() {
@@ -988,14 +988,6 @@ void Node::invalidateDraw() {
 	} else if ( NULL == mParentCtrl && isWindow() ) {
 		static_cast<UIWindow*>( this )->invalidate();
 	}
-}
-
-void Node::setClipEnabled() {
-	//writeFlag( UI_CLIP_ENABLE, 1 );
-}
-
-void Node::setClipDisabled() {
-	//writeFlag( UI_CLIP_ENABLE, 0 );
 }
 
 UIWindow * Node::getOwnerWindow() {
@@ -1359,6 +1351,16 @@ void Node::center() {
 
 	if ( NULL != Ctrl )
 		setPosition( eefloor( ( Ctrl->getSize().getWidth() - getSize().getWidth() ) * 0.5f ), eefloor( Ctrl->getSize().getHeight() - getSize().getHeight() ) * 0.5f );
+}
+
+Node * Node::clipEnable() {
+	writeCtrlFlag( NODE_FLAG_CLIP_ENABLE, 1 );
+	return this;
+}
+
+Node * Node::clipDisable() {
+	writeCtrlFlag( NODE_FLAG_CLIP_ENABLE, 0 );
+	return this;
 }
 
 }}

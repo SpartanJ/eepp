@@ -19,12 +19,14 @@ UITextEdit::UITextEdit() :
 	mVScrollBarMode( UI_SCROLLBAR_AUTO ),
 	mSkipValueChange( false )
 {
-	setFlags( UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED | UI_CLIP_ENABLE | UI_WORD_WRAP );
+	setFlags( UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED | UI_WORD_WRAP );
+	clipEnable();
 
 	mTextInput	= UITextInput::New();
 	mTextInput->setParent( this );
 	mTextInput->setFlags( UI_TEXT_SELECTION_ENABLED | UI_TEXT_SELECTION_ENABLED | UI_VALIGN_TOP );
-	mTextInput->unsetFlags( UI_CLIP_ENABLE | UI_VALIGN_CENTER );
+	mTextInput->unsetFlags( UI_VALIGN_CENTER );
+	mTextInput->clipDisable();
 	mTextInput->getInputTextBuffer()->isNewLineEnabled( true );
 	mTextInput->setVisible( true );
 	mTextInput->setEnabled( true );

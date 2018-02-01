@@ -19,7 +19,8 @@ UITextInput::UITextInput() :
 	mAllowEditing( true ),
 	mShowingWait( true )
 {
-	setFlags( UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED );
+	setFlags( UI_AUTO_PADDING | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED );
+	clipEnable();
 
 	mTextBuffer.start();
 	mTextBuffer.setActive( false );

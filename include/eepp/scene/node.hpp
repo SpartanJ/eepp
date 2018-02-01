@@ -187,10 +187,6 @@ class EE_API Node : public Transformable {
 
 		void invalidateDraw();
 
-		virtual void setClipEnabled();
-
-		virtual void setClipDisabled();
-
 		void setRotation( float angle );
 
 		void setRotation( const Float& angle, const OriginPoint& center );
@@ -262,6 +258,10 @@ class EE_API Node : public Transformable {
 		void centerVertical();
 
 		void center();
+
+		Node * clipEnable();
+
+		Node * clipDisable();
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
 		friend class EE::UI::UIManager;
@@ -354,7 +354,7 @@ class EE_API Node : public Transformable {
 
 		virtual void onParentWindowChange();
 
-		virtual void clipMe();
+		virtual void clipStart();
 
 		virtual Uint32 onFocus();
 
@@ -362,7 +362,7 @@ class EE_API Node : public Transformable {
 
 		virtual void internalDraw();
 
-		virtual void clipDisable();
+		virtual void clipEnd();
 
 		virtual void updateScreenPos();
 

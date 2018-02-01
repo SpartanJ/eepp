@@ -13,7 +13,8 @@ UIDropDownList::UIDropDownList() :
 	mListBox( NULL ),
 	mFriendCtrl( NULL )
 {
-	setFlags( UI_CLIP_ENABLE | UI_AUTO_SIZE | UI_AUTO_PADDING );
+	clipEnable();
+	setFlags( UI_AUTO_SIZE | UI_AUTO_PADDING );
 	unsetFlags( UI_TEXT_SELECTION_ENABLED );
 
 	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();

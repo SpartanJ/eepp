@@ -27,12 +27,12 @@ UITabWidget::UITabWidget() :
 	mTabContainer = UIWidget::New();
 	mTabContainer->setPixelsSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight )
 			->setParent( this )->setPosition( 0, 0 );
-	mTabContainer->setFlags( UI_CLIP_ENABLE );
+	mTabContainer->clipEnable();
 
 	mCtrlContainer = UIWidget::New();
 	mCtrlContainer->setPixelsSize( mSize.getWidth(), mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) )
 			->setParent( this )->setPosition( 0, mStyleConfig.TabWidgetHeight );
-	mCtrlContainer->setFlags( UI_CLIP_ENABLE );
+	mCtrlContainer->clipEnable();
 
 	onSizeChange();
 

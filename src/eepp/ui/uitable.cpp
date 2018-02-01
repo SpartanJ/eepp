@@ -586,9 +586,9 @@ UITable * UITable::setSmoothScroll(bool smoothScroll) {
 	mSmoothScroll = smoothScroll;
 
 	if ( mSmoothScroll ) {
-		mContainer->setFlags( UI_CLIP_ENABLE );
+		mContainer->clipEnable();
 	} else {
-		mContainer->unsetFlags( UI_CLIP_ENABLE );
+		mContainer->clipDisable();
 	}
 
 	return this;

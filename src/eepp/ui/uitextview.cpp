@@ -55,7 +55,7 @@ void UITextView::draw() {
 		drawSelection( mTextCache );
 
 		if ( mTextCache->getTextWidth() ) {
-			if ( mFlags & UI_CLIP_ENABLE ) {
+			if ( isClipped() ) {
 				UIManager::instance()->clipSmartEnable(
 						this,
 						mScreenPos.x + mRealPadding.Left,
@@ -68,7 +68,7 @@ void UITextView::draw() {
 			mTextCache->setAlign( getFlags() );
 			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left, (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
 
-			if ( mFlags & UI_CLIP_ENABLE ) {
+			if ( isClipped() ) {
 				UIManager::instance()->clipSmartDisable( this );
 			}
 		}

@@ -533,7 +533,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 						setFlags( UI_AUTO_SIZE );
 						notifyLayoutAttrChange();
 					} else if ( "clip" == cur ) {
-						setFlags( UI_CLIP_ENABLE );
+						clipEnable();
 					} else if ( "word_wrap" == cur || "wordwrap" == cur ) {
 						setFlags( UI_WORD_WRAP );
 					} else if ( "multi" == cur ) {
@@ -639,9 +639,9 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			}
 		} else if ( "clip" == name ) {
 			if ( ait->as_bool() )
-				setFlags( UI_CLIP_ENABLE );
+				clipEnable();
 			else
-				unsetFlags( UI_CLIP_ENABLE );
+				clipDisable();
 		} else if ( "rotation" == name ) {
 			setRotation( ait->as_float() );
 		} else if ( "scale" == name ) {

@@ -62,7 +62,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 	mContainer->setLayoutSizeRules( FIXED, FIXED );
 	mContainer->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
 	mContainer->setParent( this );
-	mContainer->setFlags( UI_CLIP_ENABLE );
+	mContainer->clipEnable();
 	mContainer->enableReportSizeChangeToChilds();
 	mContainer->setSize( mDpSize );
 	mContainer->addEventListener( UIEvent::OnPositionChange, cb::Make1( this, &UIWindow::onContainerPositionChange ) );
@@ -1125,13 +1125,13 @@ void UIWindow::internalDraw() {
 		matrixSet();
 
 		if ( !ownsFrameBuffer() || !UIManager::instance()->usesInvalidation() || invalidated() ) {
-			clipMe();
+			clipStart();
 
 			draw();
 
 			drawChilds();
 
-			clipDisable();
+			clipEnd();
 		}
 
 		matrixUnset();

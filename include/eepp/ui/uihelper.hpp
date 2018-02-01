@@ -25,11 +25,12 @@ enum NODE_FLAGS_VALUES {
 	NODE_FLAG_OWNED_BY_WINDOW					= (1<<17),
 	NODE_FLAG_REVERSE_DRAW						= (1<<18),
 	NODE_FLAG_FRAME_BUFFER						= (1<<19),
-	NODE_FLAG_UINODE							= (1<<20),
-	NODE_FLAG_WIDGET							= (1<<21),
-	NODE_FLAG_WINDOW							= (1<<22),
-	NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS		= (1<<23),
-	NODE_FLAG_FREE_USE							= (1<<24)
+	NODE_FLAG_CLIP_ENABLE						= (1<<20),
+	NODE_FLAG_UINODE							= (1<<21),
+	NODE_FLAG_WIDGET							= (1<<22),
+	NODE_FLAG_WINDOW							= (1<<23),
+	NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS		= (1<<24),
+	NODE_FLAG_FREE_USE							= (1<<25)
 };
 
 #define UI_HALIGN_LEFT		TEXT_ALIGN_LEFT
@@ -55,17 +56,16 @@ enum UI_FLAGS {
 	UI_FILL_BACKGROUND				= (1 << 6),
 	UI_BORDER						= (1 << 7),
 	UI_TAB_STOP						= (1 << 8),
-	UI_CLIP_ENABLE					= (1 << 9),
-	UI_WORD_WRAP					= (1 << 10),
-	UI_MULTI_SELECT					= (1 << 11),
-	UI_AUTO_PADDING					= (1 << 12),
-	UI_DRAG_ENABLE					= (1 << 13),
-	UI_ANCHOR_TOP					= (1 << 15),
-	UI_ANCHOR_BOTTOM				= (1 << 16),
-	UI_ANCHOR_LEFT					= (1 << 17),
-	UI_ANCHOR_RIGHT					= (1 << 18),
-	UI_TOUCH_DRAG_ENABLED			= (1 << 19),
-	UI_TEXT_SELECTION_ENABLED		= (1 << 20)
+	UI_WORD_WRAP					= (1 << 9),
+	UI_MULTI_SELECT					= (1 << 10),
+	UI_AUTO_PADDING					= (1 << 11),
+	UI_DRAG_ENABLE					= (1 << 12),
+	UI_ANCHOR_TOP					= (1 << 13),
+	UI_ANCHOR_BOTTOM				= (1 << 14),
+	UI_ANCHOR_LEFT					= (1 << 15),
+	UI_ANCHOR_RIGHT					= (1 << 16),
+	UI_TOUCH_DRAG_ENABLED			= (1 << 17),
+	UI_TEXT_SELECTION_ENABLED		= (1 << 18)
 };
 
 enum UI_CONTROL_TYPES {
