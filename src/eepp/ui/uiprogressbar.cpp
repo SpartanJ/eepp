@@ -53,15 +53,15 @@ void UIProgressBar::draw() {
 
 	Rectf fillerPadding = PixelDensity::dpToPx( mStyleConfig.FillerPadding );
 
-	Float Height = (Float)mRealSize.getHeight();
+	Float Height = (Float)mSize.getHeight();
 
 	if ( !mStyleConfig.VerticalExpand )
 		Height = (Float)mFillerSkin->getSize().getHeight();
 
-	if ( Height > mRealSize.getHeight() )
-		Height = mRealSize.getHeight();
+	if ( Height > mSize.getHeight() )
+		Height = mSize.getHeight();
 
-	Sizef fSize( ( ( mRealSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) / mTotalSteps, Height - fillerPadding.Top - fillerPadding.Bottom );
+	Sizef fSize( ( ( mSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) / mTotalSteps, Height - fillerPadding.Top - fillerPadding.Bottom );
 	Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize() ) );
 	Sizei numTiles( (Int32)eeceil( (Float)fSize.getWidth() / (Float)rSize.getWidth() + 2 ),
 				(Int32)eeceil( (Float)fSize.getHeight() / (Float)rSize.getHeight() ) + 2 );
@@ -122,7 +122,7 @@ void UIProgressBar::onThemeLoaded() {
 	mMinControlSize.y = eemax( mMinControlSize.y, getSkinSize().getHeight() );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		setSize( mSize.x, getSkinSize().getHeight() );
+		setSize( mDpSize.x, getSkinSize().getHeight() );
 	}
 
 	UIWidget::onThemeLoaded();

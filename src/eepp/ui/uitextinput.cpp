@@ -99,8 +99,8 @@ void UITextInput::drawWaitingCursor() {
 		Float CurPosX = mScreenPos.x + mRealAlignOffset.x + mCurPos.x + PixelDensity::dpToPx( 1.f ) + mRealPadding.Left;
 		Float CurPosY = mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mRealPadding.Top;
 
-		if ( CurPosX > (Float)mScreenPos.x + (Float)mRealSize.x )
-			CurPosX = (Float)mScreenPos.x + (Float)mRealSize.x;
+		if ( CurPosX > (Float)mScreenPos.x + (Float)mSize.x )
+			CurPosX = (Float)mScreenPos.x + (Float)mSize.x;
 
 		P.drawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->getFont()->getLineSpacing( mTextCache->getCharacterSizePx() ) ) ) );
 
@@ -182,8 +182,8 @@ void UITextInput::alignFix() {
 		if ( !mTextBuffer.setSupportNewLine() ) {
 			if ( tX < 0.f )
 				mRealAlignOffset.x = -( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
-			else if ( tX > mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right )
-				mRealAlignOffset.x = mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right - ( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
+			else if ( tX > mSize.getWidth() - mRealPadding.Left - mRealPadding.Right )
+				mRealAlignOffset.x = mSize.getWidth() - mRealPadding.Left - mRealPadding.Right - ( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
 		}
 	}
 }
@@ -208,8 +208,8 @@ void UITextInput::onThemeLoaded() {
 }
 
 void UITextInput::onAutoSize() {
-	if ( ( mFlags & UI_AUTO_SIZE ) && 0 == mSize.getHeight() ) {
-		setSize( mSize.x, getSkinSize().getHeight() );
+	if ( ( mFlags & UI_AUTO_SIZE ) && 0 == mDpSize.getHeight() ) {
+		setSize( mDpSize.x, getSkinSize().getHeight() );
 	}
 }
 

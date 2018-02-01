@@ -97,11 +97,11 @@ void UIScrollBar::onAutoSize() {
 
 		if ( mFlags & UI_AUTO_SIZE ) {
 			if ( mSlider->isVertical() ) {
-				mSlider->setSize( size.getWidth() , mSize.getHeight() );
-				setSize( size.getWidth(), mSize.getHeight() );
+				mSlider->setSize( size.getWidth() , mDpSize.getHeight() );
+				setSize( size.getWidth(), mDpSize.getHeight() );
 			} else {
-				mSlider->setSize( mSize.getWidth(), size.getHeight() );
-				setSize( mSize.getWidth(), size.getHeight() );
+				mSlider->setSize( mDpSize.getWidth(), size.getHeight() );
+				setSize( mDpSize.getWidth(), size.getHeight() );
 			}
 		}
 	} else if ( NULL != mSlider->getSliderButton() ) {
@@ -112,9 +112,9 @@ void UIScrollBar::onAutoSize() {
 
 			if ( mFlags & UI_AUTO_SIZE ) {
 				if ( mSlider->isVertical() ) {
-					setSize( size.getWidth(), mSize.getHeight() );
+					setSize( size.getWidth(), mDpSize.getHeight() );
 				} else {
-					setSize( mSize.getWidth(), size.getHeight() );
+					setSize( mDpSize.getWidth(), size.getHeight() );
 				}
 			}
 		}
@@ -141,9 +141,9 @@ void UIScrollBar::adjustChilds() {
 			mBtnUp->setVisible( false )->setEnabled( false );
 
 			if ( !isVertical() ) {
-				mSlider->setSize( mSize )->setPosition( 0, 0 )->centerVertical();
+				mSlider->setSize( mDpSize )->setPosition( 0, 0 )->centerVertical();
 			} else {
-				mSlider->setSize( mSize )->setPosition( 0, 0 )->centerHorizontal();
+				mSlider->setSize( mDpSize )->setPosition( 0, 0 )->centerHorizontal();
 			}
 
 			break;
@@ -155,16 +155,16 @@ void UIScrollBar::adjustChilds() {
 			mBtnUp->setVisible( true )->setEnabled( true );
 
 			if ( !isVertical() ) {
-				mBtnDown->setPosition( mSize.getWidth() - mBtnDown->getSize().getWidth(), 0 );
-				mSlider->setSize( mSize.getWidth() - mBtnDown->getSize().getWidth() - mBtnUp->getSize().getWidth(), mSize.getHeight() );
+				mBtnDown->setPosition( mDpSize.getWidth() - mBtnDown->getSize().getWidth(), 0 );
+				mSlider->setSize( mDpSize.getWidth() - mBtnDown->getSize().getWidth() - mBtnUp->getSize().getWidth(), mDpSize.getHeight() );
 				mSlider->setPosition( mBtnUp->getSize().getWidth(), 0 );
 
 				mBtnDown->centerVertical();
 				mBtnUp->centerVertical();
 				mSlider->centerVertical();
 			} else {
-				mBtnDown->setPosition( 0, mSize.getHeight() - mBtnDown->getSize().getHeight() );
-				mSlider->setSize( mSize.getWidth(), mSize.getHeight() - mBtnDown->getSize().getHeight() - mBtnUp->getSize().getHeight() );
+				mBtnDown->setPosition( 0, mDpSize.getHeight() - mBtnDown->getSize().getHeight() );
+				mSlider->setSize( mDpSize.getWidth(), mDpSize.getHeight() - mBtnDown->getSize().getHeight() - mBtnUp->getSize().getHeight() );
 				mSlider->setPosition( 0, mBtnUp->getSize().getHeight() );
 
 				mBtnDown->centerHorizontal();

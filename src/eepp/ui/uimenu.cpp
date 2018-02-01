@@ -181,14 +181,14 @@ Uint32 UIMenu::add( UINode * Control ) {
 }
 
 void UIMenu::setControlSize( UINode * Control, const Uint32& Pos ) {
-	Control->setPixelsSize( mRealSize.getWidth(), Control->getRealSize().getHeight() );
+	Control->setPixelsSize( mSize.getWidth(), Control->getRealSize().getHeight() );
 }
 
 Uint32 UIMenu::addSeparator() {
 	UIMenuSeparator * Control = UIMenuSeparator::New();
 	Control->setParent( this );
 	Control->setPixelsPosition( PixelDensity::dpToPx( mStyleConfig.Padding.Left ), PixelDensity::dpToPx( mStyleConfig.Padding.Top ) + mNextPosY );
-	Control->setPixelsSize( mRealSize.getWidth() - PixelDensity::dpToPxI( mStyleConfig.Padding.Left - mStyleConfig.Padding.Right ), PixelDensity::dpToPxI( Control->getSkinSize().getHeight() ) );
+	Control->setPixelsSize( mSize.getWidth() - PixelDensity::dpToPxI( mStyleConfig.Padding.Left - mStyleConfig.Padding.Right ), PixelDensity::dpToPxI( Control->getSkinSize().getHeight() ) );
 
 	mNextPosY += Control->getRealSize().getHeight();
 
@@ -315,7 +315,7 @@ Uint32 UIMenu::onMessage( const UIMessage * Msg ) {
 }
 
 void UIMenu::onSizeChange() {
-	if ( 0 != mStyleConfig.MinWidth && mSize.getWidth() < (Int32)mStyleConfig.MinWidth ) {
+	if ( 0 != mStyleConfig.MinWidth && mDpSize.getWidth() < (Int32)mStyleConfig.MinWidth ) {
 		setSize( mStyleConfig.MinWidth, PixelDensity::pxToDpI( mNextPosY ) + mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom );
 	}
 
@@ -365,7 +365,7 @@ void UIMenu::resizeMe() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		setPixelsSize( mMaxWidth, mNextPosY + PixelDensity::dpToPxI( mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom ) );
 	} else {
-		setPixelsSize( mRealSize.getWidth(), mNextPosY + PixelDensity::dpToPxI( mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom ) );
+		setPixelsSize( mSize.getWidth(), mNextPosY + PixelDensity::dpToPxI( mStyleConfig.Padding.Top + mStyleConfig.Padding.Bottom ) );
 	}
 }
 

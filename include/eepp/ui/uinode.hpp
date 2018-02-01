@@ -377,8 +377,8 @@ class EE_API UINode : public Transformable {
 		Vector2f		mDpPos;
 		Vector2f		mScreenPos;
 		Vector2i		mScreenPosi;
+		Sizef			mDpSize;
 		Sizef			mSize;
-		Sizef			mRealSize;
 
 		Uint32			mFlags;
 		UintPtr			mData;

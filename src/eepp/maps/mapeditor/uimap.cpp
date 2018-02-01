@@ -40,7 +40,7 @@ UIMap::UIMap( UITheme * Theme, TileMap * Map ) :
 	mMap->setGridLinesColor( Color( 150, 150, 150, 150 ) );
 	mMap->setScale( PixelDensity::getPixelDensity() );
 	mMap->setDrawCallback( cb::Make0( this, &UIMap::mapDraw ) );
-	mMap->setViewSize( mRealSize );
+	mMap->setViewSize( mSize );
 
 	mDragButton = EE_BUTTON_MMASK;
 	setDragEnabled( true );
@@ -330,7 +330,7 @@ void UIMap::tryToSelectLight() {
 void UIMap::onSizeChange() {
 	if ( NULL != mMap ) {
 		mMap->setPosition( Vector2i( mScreenPos.x, mScreenPos.y ) );
-		mMap->setViewSize( mRealSize );
+		mMap->setViewSize( mSize );
 	}
 
 	UIWindow::onSizeChange();

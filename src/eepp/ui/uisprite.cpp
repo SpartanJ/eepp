@@ -128,7 +128,7 @@ void UISprite::setRenderMode( const RenderMode& render ) {
 void UISprite::updateSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mSprite ) {
-			if ( NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion()->getDpSize().asFloat() != mSize )
+			if ( NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion()->getDpSize().asFloat() != mDpSize )
 				setSize( mSprite->getCurrentTextureRegion()->getDpSize().asFloat() );
 		}
 	}
@@ -141,17 +141,17 @@ void UISprite::autoAlign() {
 	TextureRegion * tTextureRegion = mSprite->getCurrentTextureRegion();
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.getWidth() / 2 - tTextureRegion->getDpSize().getWidth() / 2;
+		mAlignOffset.x = mDpSize.getWidth() / 2 - tTextureRegion->getDpSize().getWidth() / 2;
 	} else if ( fontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.getWidth() - tTextureRegion->getDpSize().getWidth();
+		mAlignOffset.x =  mDpSize.getWidth() - tTextureRegion->getDpSize().getWidth();
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.getHeight() / 2 - tTextureRegion->getDpSize().getHeight() / 2;
+		mAlignOffset.y = mDpSize.getHeight() / 2 - tTextureRegion->getDpSize().getHeight() / 2;
 	} else if ( fontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.getHeight() - tTextureRegion->getDpSize().getHeight();
+		mAlignOffset.y = mDpSize.getHeight() - tTextureRegion->getDpSize().getHeight();
 	} else {
 		mAlignOffset.y = 0;
 	}

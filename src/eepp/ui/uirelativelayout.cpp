@@ -93,10 +93,10 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 	} else {
 		switch ( fontHAlignGet( widget->getLayoutGravity() ) ) {
 			case UI_HALIGN_CENTER:
-				pos.x = ( mSize.getWidth() - widget->getSize().getWidth() ) / 2 + widget->getLayoutMargin().Left;
+				pos.x = ( mDpSize.getWidth() - widget->getSize().getWidth() ) / 2 + widget->getLayoutMargin().Left;
 				break;
 			case UI_HALIGN_RIGHT:
-				pos.x = mSize.getWidth() - widget->getSize().getWidth() - widget->getLayoutMargin().Right;
+				pos.x = mDpSize.getWidth() - widget->getSize().getWidth() - widget->getLayoutMargin().Right;
 				break;
 			case UI_HALIGN_LEFT:
 			default:
@@ -106,10 +106,10 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 
 		switch ( fontVAlignGet( widget->getLayoutGravity() ) ) {
 			case UI_VALIGN_CENTER:
-				pos.y = ( mSize.getHeight() - widget->getSize().getHeight() ) / 2 + widget->getLayoutMargin().Top;
+				pos.y = ( mDpSize.getHeight() - widget->getSize().getHeight() ) / 2 + widget->getLayoutMargin().Top;
 				break;
 			case UI_VALIGN_BOTTOM:
-				pos.y = mSize.getHeight() - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom;
+				pos.y = mDpSize.getHeight() - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom;
 				break;
 			case UI_VALIGN_TOP:
 			default:
@@ -130,7 +130,7 @@ void UIRelativeLayout::fixChildSize( UIWidget * widget ) {
 		}
 		case MATCH_PARENT:
 		{
-			widget->setSize( mSize.getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right, widget->getSize().getHeight() );
+			widget->setSize( mDpSize.getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right, widget->getSize().getHeight() );
 			break;
 		}
 		case FIXED:
@@ -147,7 +147,7 @@ void UIRelativeLayout::fixChildSize( UIWidget * widget ) {
 		}
 		case MATCH_PARENT:
 		{
-			widget->setSize( widget->getSize().getWidth(), mSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom );
+			widget->setSize( widget->getSize().getWidth(), mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom );
 			break;
 		}
 		case FIXED:

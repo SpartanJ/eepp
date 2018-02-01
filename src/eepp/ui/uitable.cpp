@@ -35,19 +35,19 @@ UITable::UITable() :
 	mContainer->setEnabled( true );
 	mContainer->setParent( this );
 	mContainer->setPosition( mContainerPadding.Left, mContainerPadding.Top );
-	mContainer->setSize( mSize.getWidth() - mContainerPadding.Right - mContainerPadding.Left, mSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom );
+	mContainer->setSize( mDpSize.getWidth() - mContainerPadding.Right - mContainerPadding.Left, mDpSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom );
 
 	mVScrollBar = UIScrollBar::New();
 	mVScrollBar->setOrientation( UI_VERTICAL );
 	mVScrollBar->setParent( this );
-	mVScrollBar->setPosition( mSize.getWidth() - 16, 0 );
-	mVScrollBar->setSize( 16, mSize.getHeight() );
+	mVScrollBar->setPosition( mDpSize.getWidth() - 16, 0 );
+	mVScrollBar->setSize( 16, mDpSize.getHeight() );
 
 	mHScrollBar = UIScrollBar::New();
 	mHScrollBar->setOrientation( UI_HORIZONTAL );
 	mHScrollBar->setParent( this );
-	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
-	mHScrollBar->setPosition( 0, mSize.getHeight() - 16 );
+	mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
+	mHScrollBar->setPosition( 0, mDpSize.getHeight() - 16 );
 
 	mHScrollBar->setVisible( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode );
 	mHScrollBar->setEnabled( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode );
@@ -120,11 +120,11 @@ void UITable::autoPadding() {
 }
 
 void UITable::onSizeChange() {
-	mVScrollBar->setPosition( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 0 );
-	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), mSize.getHeight() );
+	mVScrollBar->setPosition( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), 0 );
+	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), mDpSize.getHeight() );
 
-	mHScrollBar->setPosition( 0, mSize.getHeight() - mHScrollBar->getSize().getHeight() );
-	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), mHScrollBar->getSize().getHeight() );
+	mHScrollBar->setPosition( 0, mDpSize.getHeight() - mHScrollBar->getSize().getHeight() );
+	mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), mHScrollBar->getSize().getHeight() );
 
 	if ( mContainer->isClipped() && UI_SCROLLBAR_AUTO == mHScrollMode ) {
 		if ( (Int32)mTotalWidth <= mContainer->getSize().getWidth() ) {
@@ -143,9 +143,9 @@ void UITable::containerResize() {
 	mContainer->setPosition( mContainerPadding.Left, mContainerPadding.Top );
 
 	if( mHScrollBar->isVisible() )
-		mContainer->setSize( mSize.getWidth() - mContainerPadding.Right, mSize.getHeight() - mContainerPadding.Top - mHScrollBar->getSize().getHeight() );
+		mContainer->setSize( mDpSize.getWidth() - mContainerPadding.Right, mDpSize.getHeight() - mContainerPadding.Top - mHScrollBar->getSize().getHeight() );
 	else
-		mContainer->setSize( mSize.getWidth() - mContainerPadding.Right, mSize.getHeight() - mContainerPadding.Bottom - mContainerPadding.Top );
+		mContainer->setSize( mDpSize.getWidth() - mContainerPadding.Right, mDpSize.getHeight() - mContainerPadding.Bottom - mContainerPadding.Top );
 
 	if ( mVScrollBar->isVisible() )
 		mContainer->setSize( mContainer->getSize().getWidth() - mVScrollBar->getSize().getWidth(), mContainer->getSize().getHeight() );
@@ -318,11 +318,11 @@ void UITable::updateScroll( bool FromScrollChange ) {
 	}
 
 	if ( mHScrollBar->isVisible() && !mVScrollBar->isVisible() ) {
-		mHScrollBar->setPosition( 0, mSize.getHeight() - mHScrollBar->getSize().getHeight() );
-		mHScrollBar->setSize( mSize.getWidth(), mHScrollBar->getSize().getHeight() );
+		mHScrollBar->setPosition( 0, mDpSize.getHeight() - mHScrollBar->getSize().getHeight() );
+		mHScrollBar->setSize( mDpSize.getWidth(), mHScrollBar->getSize().getHeight() );
 	} else {
-		mHScrollBar->setPosition( 0, mSize.getHeight() - mHScrollBar->getSize().getHeight() );
-		mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), mHScrollBar->getSize().getHeight() );
+		mHScrollBar->setPosition( 0, mDpSize.getHeight() - mHScrollBar->getSize().getHeight() );
+		mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), mHScrollBar->getSize().getHeight() );
 	}
 
 	setHScrollStep();

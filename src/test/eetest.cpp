@@ -41,14 +41,14 @@ class UIBlurredWindow : public UIWindow {
 				static int fboDiv = 2;
 
 				if ( NULL == mFboBlur ) {
-					mFboBlur = FrameBuffer::New( mRealSize.x / fboDiv, mRealSize.y / fboDiv );
-				} else if ( mFboBlur->getSize().getWidth() != mRealSize.x / fboDiv || mFboBlur->getSize().getHeight() != mRealSize.y / fboDiv ) {
-					mFboBlur->resize( mRealSize.x / fboDiv, mRealSize.y / fboDiv );
+					mFboBlur = FrameBuffer::New( mSize.x / fboDiv, mSize.y / fboDiv );
+				} else if ( mFboBlur->getSize().getWidth() != mSize.x / fboDiv || mFboBlur->getSize().getHeight() != mSize.y / fboDiv ) {
+					mFboBlur->resize( mSize.x / fboDiv, mSize.y / fboDiv );
 				}
 
 				TextureRegion textureRegion( curFBO->getTexture()->getId(),
 									   Rect(	mScreenPos.x, mScreenPos.y,
-												mScreenPos.x + mRealSize.x, mScreenPos.y + mRealSize.y
+												mScreenPos.x + mSize.x, mScreenPos.y + mSize.y
 				) );
 
 				RGB cc = UIManager::instance()->getWindow()->getClearColor();
@@ -77,7 +77,7 @@ class UIBlurredWindow : public UIWindow {
 
 				mBlurShader->unbind();
 
-				mFboBlur->getTexture()->draw(Vector2f(mScreenPos.x,mScreenPos.y),Sizef(mRealSize.x,mRealSize.y));
+				mFboBlur->getTexture()->draw(Vector2f(mScreenPos.x,mScreenPos.y),Sizef(mSize.x,mSize.y));
 			}
 		}
 };

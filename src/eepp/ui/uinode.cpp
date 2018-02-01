@@ -25,8 +25,8 @@ UINode * UINode::New() {
 UINode::UINode() :
 	mIdHash( 0 ),
 	mDpPos( 0, 0 ),
+	mDpSize( 0, 0 ),
 	mSize( 0, 0 ),
-	mRealSize( 0, 0 ),
 	mFlags( UI_CONTROL_DEFAULT_FLAGS ),
 	mData( 0 ),
 	mParentCtrl( NULL ),
@@ -165,24 +165,24 @@ const Vector2f &UINode::getRealPosition() const {
 }
 
 void UINode::setInternalSize( const Sizef& size ) {
-	mSize = size;
-	mRealSize = Sizef( size.x * PixelDensity::getPixelDensity(), size.y * PixelDensity::getPixelDensity() );
+	mDpSize = size;
+	mSize = Sizef( size.x * PixelDensity::getPixelDensity(), size.y * PixelDensity::getPixelDensity() );
 	updateCenter();
 	sendCommonEvent( UIEvent::OnSizeChange );
 	invalidateDraw();
 }
 
 void UINode::setInternalPixelsSize( const Sizef& size ) {
-	mSize = PixelDensity::pxToDp( size );
-	mRealSize = size;
+	mDpSize = PixelDensity::pxToDp( size );
+	mSize = size;
 	updateCenter();
 	sendCommonEvent( UIEvent::OnSizeChange );
 	invalidateDraw();
 }
 
 UINode * UINode::setSize( const Sizef & Size ) {
-	if ( Size != mSize ) {
-		Vector2f sizeChange( Size.x - mSize.x, Size.y - mSize.y );
+	if ( Size != mDpSize ) {
+		Vector2f sizeChange( Size.x - mDpSize.x, Size.y - mDpSize.y );
 
 		setInternalSize( Size );
 
@@ -202,8 +202,8 @@ UINode * UINode::setSize( const Float & Width, const Float & Height ) {
 }
 
 void UINode::setPixelsSize( const Sizef& size ) {
-	if ( size != mRealSize ) {
-		Vector2f sizeChange( size.x - mRealSize.x, size.y - mRealSize.y );
+	if ( size != mSize ) {
+		Vector2f sizeChange( size.x - mSize.x, size.y - mSize.y );
 
 		setInternalPixelsSize( size );
 
@@ -220,31 +220,31 @@ void UINode::setPixelsSize(const Float & x, const Float & y ) {
 }
 
 void UINode::setInternalWidth( const Float& width ) {
-	setInternalSize( Sizef( width, mSize.getHeight() ) );
+	setInternalSize( Sizef( width, mDpSize.getHeight() ) );
 }
 
 void UINode::setInternalHeight( const Float& height ) {
-	setInternalSize( Sizef( mSize.getWidth(), height ) );
+	setInternalSize( Sizef( mDpSize.getWidth(), height ) );
 }
 
 void UINode::setInternalPixelsWidth( const Float& width ) {
-	setInternalPixelsSize( Sizef( width, mRealSize.y ) );
+	setInternalPixelsSize( Sizef( width, mSize.y ) );
 }
 
 void UINode::setInternalPixelsHeight( const Float& height ) {
-	setInternalPixelsSize( Sizef( mRealSize.x, height ) );
+	setInternalPixelsSize( Sizef( mSize.x, height ) );
 }
 
 Rect UINode::getRect() const {
-	return Rect( Vector2i( mDpPos.x, mDpPos.y ), Sizei( mSize.x, mSize.y ) );
+	return Rect( Vector2i( mDpPos.x, mDpPos.y ), Sizei( mDpSize.x, mDpSize.y ) );
 }
 
 const Sizef& UINode::getSize() {
-	return mSize;
+	return mDpSize;
 }
 
 const Sizef& UINode::getRealSize() {
-	return mRealSize;
+	return mSize;
 }
 
 UINode * UINode::setVisible( const bool& visible ) {
@@ -324,21 +324,21 @@ void UINode::centerHorizontal() {
 	UINode * Ctrl = getParent();
 
 	if ( NULL != Ctrl )
-		setPosition( eefloor( ( Ctrl->getSize().getWidth() - mSize.getWidth() ) * 0.5f ), mDpPos.y );
+		setPosition( eefloor( ( Ctrl->getSize().getWidth() - mDpSize.getWidth() ) * 0.5f ), mDpPos.y );
 }
 
 void UINode::centerVertical(){
 	UINode * Ctrl = getParent();
 
 	if ( NULL != Ctrl )
-		setPosition( mDpPos.x, eefloor( Ctrl->getSize().getHeight() - mSize.getHeight() ) * 0.5f );
+		setPosition( mDpPos.x, eefloor( Ctrl->getSize().getHeight() - mDpSize.getHeight() ) * 0.5f );
 }
 
 void UINode::center() {
 	UINode * Ctrl = getParent();
 
 	if ( NULL != Ctrl )
-		setPosition( eefloor( ( Ctrl->getSize().getWidth() - mSize.getWidth() ) * 0.5f ), eefloor( Ctrl->getSize().getHeight() - mSize.getHeight() ) * 0.5f );
+		setPosition( eefloor( ( Ctrl->getSize().getWidth() - mDpSize.getWidth() ) * 0.5f ), eefloor( Ctrl->getSize().getHeight() - mDpSize.getHeight() ) * 0.5f );
 }
 
 void UINode::close() {
@@ -375,7 +375,7 @@ void UINode::drawDebugData() {
 			UIWidget * me = static_cast<UIWidget*>( this );
 
 			if ( UIManager::instance()->getOverControl() == this ) {
-				String text( String::strFormated( "X: %2.4f Y: %2.4f\nW: %2.4f H: %2.4f", mDpPos.x, mDpPos.y, mSize.x, mSize.y ) );
+				String text( String::strFormated( "X: %2.4f Y: %2.4f\nW: %2.4f H: %2.4f", mDpPos.x, mDpPos.y, mDpSize.x, mDpSize.y ) );
 
 				if ( !mId.empty() ) {
 					text = "ID: " + mId + "\n" + text;
@@ -404,11 +404,11 @@ void UINode::drawSkin() {
 	if ( NULL != mSkinState ) {
 		if ( mFlags & UI_SKIN_KEEP_SIZE_ON_DRAW ) {
 			Sizef rSize = PixelDensity::dpToPx( mSkinState->getSkin()->getSize( mSkinState->getState() ) );
-			Sizef diff = ( mRealSize - rSize ) * 0.5f;
+			Sizef diff = ( mSize - rSize ) * 0.5f;
 
 			mSkinState->draw( mScreenPosi.x + eefloor(diff.x), mScreenPosi.y + eefloor(diff.y), eefloor(rSize.getWidth()), eefloor(rSize.getHeight()), (Uint32)mAlpha );
 		} else {
-			mSkinState->draw( mScreenPosi.x, mScreenPosi.y, eefloor(mRealSize.getWidth()), eefloor(mRealSize.getHeight()), (Uint32)mAlpha );
+			mSkinState->draw( mScreenPosi.x, mScreenPosi.y, eefloor(mSize.getWidth()), eefloor(mSize.getHeight()), (Uint32)mAlpha );
 		}
 	}
 }
@@ -771,11 +771,11 @@ void UINode::onSizeChange() {
 }
 
 Rectf UINode::getScreenBounds() {
-	return Rectf( Vector2f( mScreenPosi.x, mScreenPosi.y ), Sizef( (Float)(int)mRealSize.getWidth(), (Float)(int)mRealSize.getHeight() ) );
+	return Rectf( Vector2f( mScreenPosi.x, mScreenPosi.y ), Sizef( (Float)(int)mSize.getWidth(), (Float)(int)mSize.getHeight() ) );
 }
 
 Rectf UINode::getLocalBounds() {
-	return Rectf( 0, 0, mRealSize.getWidth(), mRealSize.getHeight() );
+	return Rectf( 0, 0, mSize.getWidth(), mSize.getHeight() );
 }
 
 void UINode::drawBackground() {
@@ -853,7 +853,7 @@ void UINode::internalDraw() {
 
 void UINode::clipMe() {
 	if ( mVisible && ( mFlags & UI_CLIP_ENABLE ) ) {
-		UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mRealSize.getWidth(), mRealSize.getHeight() );
+		UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
 	}
 }
 
@@ -1245,7 +1245,7 @@ void UINode::updateWorldPolygon() {
 	if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
 		updateScreenPos();
 
-	mPoly		= Polygon2f( Rectf( mScreenPos.x, mScreenPos.y, mScreenPos.x + mRealSize.getWidth(), mScreenPos.y + mRealSize.getHeight() ) );
+	mPoly		= Polygon2f( Rectf( mScreenPos.x, mScreenPos.y, mScreenPos.x + mSize.getWidth(), mScreenPos.y + mSize.getHeight() ) );
 
 	mPoly.rotate( getRotation(), getRotationCenter() );
 	mPoly.scale( getScale(), getScaleCenter() );
@@ -1265,7 +1265,7 @@ void UINode::updateWorldPolygon() {
 }
 
 void UINode::updateCenter() {
-	mCenter = Vector2f( mScreenPos.x + (Float)mRealSize.getWidth() * 0.5f, mScreenPos.y + (Float)mRealSize.getHeight() * 0.5f );
+	mCenter = Vector2f( mScreenPos.x + (Float)mSize.getWidth() * 0.5f, mScreenPos.y + (Float)mSize.getHeight() * 0.5f );
 }
 
 Uint32 UINode::addEventListener( const Uint32& EventType, const UIEventCallback& Callback ) {
@@ -1733,8 +1733,8 @@ const Uint32& UINode::getDragButton() const {
 void UINode::updateOriginPoint() {
 	switch ( mRotationOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter:
-			mRotationOriginPoint.x = mRealSize.x * 0.5f;
-			mRotationOriginPoint.y = mRealSize.y * 0.5f;
+			mRotationOriginPoint.x = mSize.x * 0.5f;
+			mRotationOriginPoint.y = mSize.y * 0.5f;
 			break;
 		case OriginPoint::OriginTopLeft:
 			mRotationOriginPoint.x = mRotationOriginPoint.y = 0;
@@ -1744,8 +1744,8 @@ void UINode::updateOriginPoint() {
 
 	switch ( mScaleOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter:
-			mScaleOriginPoint.x = mRealSize.x * 0.5f;
-			mScaleOriginPoint.y = mRealSize.y * 0.5f;
+			mScaleOriginPoint.x = mSize.x * 0.5f;
+			mScaleOriginPoint.y = mSize.y * 0.5f;
 			break;
 		case OriginPoint::OriginTopLeft:
 			mScaleOriginPoint.x = mScaleOriginPoint.y = 0;

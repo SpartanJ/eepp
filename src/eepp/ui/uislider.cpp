@@ -30,9 +30,9 @@ UISlider::UISlider( const UI_ORIENTATION& orientation ) :
 	Sizef bgSize;
 
 	if ( UI_HORIZONTAL == mOrientation )
-		bgSize = Sizef( mSize.getWidth() - 16, 8 );
+		bgSize = Sizef( mDpSize.getWidth() - 16, 8 );
 	else
-		bgSize = Sizef( 8, mSize.getHeight() - 16 );
+		bgSize = Sizef( 8, mDpSize.getHeight() - 16 );
 
 	mBackSlider = UINode::New();
 	mBackSlider->setParent( this );
@@ -105,11 +105,11 @@ void UISlider::adjustChilds() {
 			Float percent = ( mPageStep / ( mMaxValue - mMinValue ) );
 
 			if ( UI_HORIZONTAL == mOrientation ) {
-				Float size = eemax( ( (Float)mSize.getWidth() * percent ), tSkin->getSize().getWidth() );
+				Float size = eemax( ( (Float)mDpSize.getWidth() * percent ), tSkin->getSize().getWidth() );
 
 				mSlider->setSize( size, tSkin->getSize().getHeight() );
 			} else {
-				Float size = eemax( ( (Float)mSize.getHeight() * percent ), tSkin->getSize().getHeight() );
+				Float size = eemax( ( (Float)mDpSize.getHeight() * percent ), tSkin->getSize().getHeight() );
 
 				mSlider->setSize( tSkin->getSize().getWidth(), size );
 			}
@@ -129,26 +129,26 @@ void UISlider::adjustChilds() {
 			Float Height;
 
 			if ( mStyleConfig.ExpandBackground )
-				Height = mSize.getHeight();
+				Height = mDpSize.getHeight();
 			else
 				Height = tSkin->getSize().getHeight();
 
 			if ( mStyleConfig.AllowHalfSliderOut )
-				mBackSlider->setSize( Sizef( mSize.getWidth() - mSlider->getSize().getWidth(), Height ) );
+				mBackSlider->setSize( Sizef( mDpSize.getWidth() - mSlider->getSize().getWidth(), Height ) );
 			else
-				mBackSlider->setSize( Sizef( mSize.getWidth(), Height ) );
+				mBackSlider->setSize( Sizef( mDpSize.getWidth(), Height ) );
 		} else {
 			Float Width;
 
 			if ( mStyleConfig.ExpandBackground )
-				Width = mSize.getWidth();
+				Width = mDpSize.getWidth();
 			else
 				Width = tSkin->getSize().getWidth();
 
 			if ( mStyleConfig.AllowHalfSliderOut )
-				mBackSlider->setSize( Sizef( Width, mSize.getHeight() - mSlider->getSize().getHeight() ) );
+				mBackSlider->setSize( Sizef( Width, mDpSize.getHeight() - mSlider->getSize().getHeight() ) );
 			else
-				mBackSlider->setSize( Sizef( Width, mSize.getHeight() ) );
+				mBackSlider->setSize( Sizef( Width, mDpSize.getHeight() ) );
 		}
 
 		mBackSlider->center();
@@ -180,7 +180,7 @@ void UISlider::fixSliderPos() {
 			if ( mStyleConfig.AllowHalfSliderOut )
 				setValue( mMinValue + (Float)mSlider->getPosition().x * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getWidth() );
 			else
-				setValue( mMinValue + (Float)mSlider->getPosition().x * ( mMaxValue - mMinValue ) / ( (Float)mSize.getWidth() - mSlider->getSize().getWidth() ) );
+				setValue( mMinValue + (Float)mSlider->getPosition().x * ( mMaxValue - mMinValue ) / ( (Float)mDpSize.getWidth() - mSlider->getSize().getWidth() ) );
 		} else {
 			mSlider->setPosition( 0, mSlider->getPosition().y );
 
@@ -201,7 +201,7 @@ void UISlider::fixSliderPos() {
 			if ( mStyleConfig.AllowHalfSliderOut )
 				setValue( mMinValue + (Float)mSlider->getPosition().y * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getHeight() );
 			else
-				setValue( mMinValue + (Float)mSlider->getPosition().y * ( mMaxValue - mMinValue ) / ( (Float)mSize.getHeight() - mSlider->getSize().getHeight() ) );
+				setValue( mMinValue + (Float)mSlider->getPosition().y * ( mMaxValue - mMinValue ) / ( (Float)mDpSize.getHeight() - mSlider->getSize().getHeight() ) );
 		}
 
 		mOnPosChange = false;
@@ -224,12 +224,12 @@ void UISlider::setValue( Float Val ) {
 				if ( mStyleConfig.AllowHalfSliderOut )
 					mSlider->setPosition( (Int32)( (Float)mBackSlider->getSize().getWidth() * Percent ), mSlider->getPosition().y );
 				else
-					mSlider->setPosition( (Int32)( ( (Float)mSize.getWidth() - mSlider->getSize().getWidth() ) * Percent ), mSlider->getPosition().y );
+					mSlider->setPosition( (Int32)( ( (Float)mDpSize.getWidth() - mSlider->getSize().getWidth() ) * Percent ), mSlider->getPosition().y );
 			} else {
 				if ( mStyleConfig.AllowHalfSliderOut )
 					mSlider->setPosition( mSlider->getPosition().x, (Int32)( (Float)mBackSlider->getSize().getHeight() * Percent ) );
 				else
-					mSlider->setPosition( mSlider->getPosition().x, (Int32)( ( (Float)mSize.getHeight() - mSlider->getSize().getHeight() ) * Percent ) );
+					mSlider->setPosition( mSlider->getPosition().x, (Int32)( ( (Float)mDpSize.getHeight() - mSlider->getSize().getHeight() ) * Percent ) );
 			}
 
 			mOnPosChange = false;

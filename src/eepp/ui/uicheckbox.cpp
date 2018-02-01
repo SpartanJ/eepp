@@ -81,11 +81,11 @@ void UICheckBox::onThemeLoaded() {
 
 void UICheckBox::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		if ( mSize.getWidth() == 0 ) {
+		if ( mDpSize.getWidth() == 0 ) {
 			setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() + mTextSeparation );
 		}
 
-		if ( mSize.getHeight() == 0 ) {
+		if ( mDpSize.getHeight() == 0 ) {
 			setInternalHeight( mActiveButton->getSize().getHeight() );
 		}
 

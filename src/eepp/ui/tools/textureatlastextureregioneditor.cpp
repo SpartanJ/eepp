@@ -48,8 +48,8 @@ void TextureAtlasTextureRegionEditor::draw() {
 
 	Vector2f uiCenterPx = PixelDensity::dpToPx( mUICenter );
 
-	P.drawLine( Line2f( Vector2f( mScreenPos.x, mScreenPos.y + uiCenterPx.y ), Vector2f( mScreenPos.x + mRealSize.getWidth(), mScreenPos.y + uiCenterPx.y ) ) );
-	P.drawLine( Line2f( Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y ), Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y + mRealSize.getHeight() ) ) );
+	P.drawLine( Line2f( Vector2f( mScreenPos.x, mScreenPos.y + uiCenterPx.y ), Vector2f( mScreenPos.x + mSize.getWidth(), mScreenPos.y + uiCenterPx.y ) ) );
+	P.drawLine( Line2f( Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y ), Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y + mSize.getHeight() ) ) );
 }
 
 void TextureAtlasTextureRegionEditor::update( const Time& time ) {
@@ -88,7 +88,7 @@ UITextureRegion * TextureAtlasTextureRegionEditor::getGfx() const {
 }
 
 void TextureAtlasTextureRegionEditor::getCenter() {
-	mUICenter = Vector2f( mSize.getWidth() / 2, mSize.getHeight() / 2 );
+	mUICenter = Vector2f( mDpSize.getWidth() / 2, mDpSize.getHeight() / 2 );
 }
 
 }}}

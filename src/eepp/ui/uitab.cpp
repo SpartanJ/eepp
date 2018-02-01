@@ -88,7 +88,7 @@ void UITab::onStateChange() {
 			skinSize = getSkinSize().getHeight();
 		}
 
-		setSize( mSize.getWidth(), skinSize );
+		setSize( mDpSize.getWidth(), skinSize );
 
 		if ( mSkinState->getState() == UISkinState::StateSelected ) {
 			mTextBox->setFontColor( tTabW->getFontSelectedColor() );
@@ -144,7 +144,7 @@ void UITab::onAutoSize() {
 			w = eemin( w, tTabW->getMaxTabWidth() );
 		}
 
-		setSize( w, mSize.getHeight() );
+		setSize( w, mDpSize.getHeight() );
 	}
 }
 

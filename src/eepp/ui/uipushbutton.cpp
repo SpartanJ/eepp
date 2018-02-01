@@ -70,7 +70,7 @@ bool UIPushButton::isType( const Uint32& type ) const {
 }
 
 void UIPushButton::onSizeChange() {	
-	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() && 0 == mSize.getHeight() ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() && 0 == mDpSize.getHeight() ) {
 		setInternalHeight( getSkinSize().getHeight() );
 	}
 
@@ -80,13 +80,13 @@ void UIPushButton::onSizeChange() {
 						+ mStyleConfig.IconHorizontalMargin + mTextBox->getPadding().Left + mTextBox->getPadding().Right +
 						(  NULL != getSkin() ? getSkin()->getBorderSize().Left + getSkin()->getBorderSize().Right : 0 );
 
-		if ( minSize > mSize.getWidth() ) {
+		if ( minSize > mDpSize.getWidth() ) {
 			setInternalWidth( minSize );
 		}
 	}
 
 	if ( NULL != mTextBox ) {
-		mTextBox->setSize( mSize );
+		mTextBox->setSize( mDpSize );
 		mTextBox->setPosition( 0, 0 );
 	}
 
@@ -97,7 +97,7 @@ void UIPushButton::onSizeChange() {
 		switch ( fontHAlignGet( getFlags() ) ) {
 			case UI_HALIGN_LEFT:
 				mTextBox->setPosition( mIcon->getPosition().x + mIcon->getSize().getWidth(), 0 );
-				mTextBox->setSize( mSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth(), mSize.getHeight() );
+				mTextBox->setSize( mDpSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth(), mDpSize.getHeight() );
 				break;
 			case UI_HALIGN_CENTER:
 				if ( NULL != mIcon->getDrawable() ) {
@@ -109,7 +109,7 @@ void UIPushButton::onSizeChange() {
 
 						mTextBox->setPosition( iconPos + px, mTextBox->getPosition().y );
 
-						mTextBox->setSize( mSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth() - px, mSize.getHeight() );
+						mTextBox->setSize( mDpSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth() - px, mDpSize.getHeight() );
 					}
 				}
 
@@ -332,9 +332,9 @@ void UIPushButton::setStyleConfig(const UIPushButtonStyleConfig & styleConfig) {
 	mTextBox->setFontStyleConfig( styleConfig );
 
 	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
-		Sizef minSize( eemax( mSize.x, (Float)mStyleConfig.IconMinSize.x ), eemax( mSize.y, (Float)mStyleConfig.IconMinSize.y ) );
+		Sizef minSize( eemax( mDpSize.x, (Float)mStyleConfig.IconMinSize.x ), eemax( mDpSize.y, (Float)mStyleConfig.IconMinSize.y ) );
 
-		if ( minSize != mSize ) {
+		if ( minSize != mDpSize ) {
 			mIcon->setSize( minSize );
 			onSizeChange();
 		}

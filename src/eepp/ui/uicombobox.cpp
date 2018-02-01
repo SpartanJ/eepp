@@ -92,16 +92,16 @@ Uint32 UIComboBox::onMessage( const UIMessage * Msg ) {
 }
 
 void UIComboBox::updateControls() {
-	if ( ( mFlags & UI_AUTO_SIZE ) || mSize.getHeight() < mDropDownList->getSkinSize().getHeight() ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) || mDpSize.getHeight() < mDropDownList->getSkinSize().getHeight() ) {
 		onAutoSize();
 	}
 
 	mDropDownList->setPosition( 0, 0 );
-	mDropDownList->setSize( mSize.getWidth() - mButton->getSize().getWidth(), 0 );
-	mDropDownList->getListBox()->setSize( mSize.getWidth(), mDropDownList->getListBox()->getSize().getHeight() );
+	mDropDownList->setSize( mDpSize.getWidth() - mButton->getSize().getWidth(), 0 );
+	mDropDownList->getListBox()->setSize( mDpSize.getWidth(), mDropDownList->getListBox()->getSize().getHeight() );
 	mDropDownList->centerVertical();
 
-	mButton->setPosition( mSize.getWidth() - mButton->getSize().getWidth(), 0 );
+	mButton->setPosition( mDpSize.getWidth() - mButton->getSize().getWidth(), 0 );
 	mButton->centerVertical();
 }
 

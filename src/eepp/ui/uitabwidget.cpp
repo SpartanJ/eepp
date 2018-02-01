@@ -25,12 +25,12 @@ UITabWidget::UITabWidget() :
 	}
 
 	mTabContainer = UIWidget::New();
-	mTabContainer->setParent( this )->setPosition( 0, 0 )->setPixelsSize( mRealSize.getWidth(), mStyleConfig.TabWidgetHeight );
+	mTabContainer->setParent( this )->setPosition( 0, 0 )->setPixelsSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight );
 	mTabContainer->setFlags( UI_CLIP_ENABLE );
 
 	mCtrlContainer = UIWidget::New();
 	mCtrlContainer->setParent( this )->setPosition( 0, mStyleConfig.TabWidgetHeight )
-			->setPixelsSize( mRealSize.getWidth(), mRealSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) );
+			->setPixelsSize( mSize.getWidth(), mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) );
 	mCtrlContainer->setFlags( UI_CLIP_ENABLE );
 
 	onSizeChange();
@@ -80,9 +80,9 @@ void UITabWidget::onThemeLoaded() {
 }
 
 void UITabWidget::setContainerSize() {
-	mTabContainer->setPixelsSize( mRealSize.getWidth(), mStyleConfig.TabWidgetHeight );
+	mTabContainer->setPixelsSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight );
 	mCtrlContainer->setPosition( 0, mStyleConfig.TabWidgetHeight );
-	mCtrlContainer->setPixelsSize( mRealSize.getWidth(), mRealSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) );
+	mCtrlContainer->setPixelsSize( mSize.getWidth(), mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) );
 }
 
 void UITabWidget::draw() {
@@ -101,7 +101,7 @@ void UITabWidget::draw() {
 		P.drawLine( Line2f( Vector2f( (int)p1.x, (int)p1.y ), Vector2f( (int)p2.x, (int)p2.y ) ) );
 
 		Vector2f p3( mScreenPos.x + mTabContainer->getRealPosition().x + mTabContainer->getRealSize().getWidth(), mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
-		Vector2f p4( mScreenPos.x + mRealSize.getWidth(), p3.y );
+		Vector2f p4( mScreenPos.x + mSize.getWidth(), p3.y );
 
 		P.drawLine( Line2f( Vector2f( (int)p3.x, (int)p3.y ), Vector2f( (int)p4.x, (int)p4.y ) ) );
 
@@ -451,7 +451,7 @@ void UITabWidget::setTabContainerSize() {
 			mTabContainer->centerHorizontal();
 			break;
 		case UI_HALIGN_RIGHT:
-			mTabContainer->setPosition( mSize.getWidth() - mTabContainer->getSize().getWidth(), 0 );
+			mTabContainer->setPosition( mDpSize.getWidth() - mTabContainer->getSize().getWidth(), 0 );
 			break;
 	}
 }

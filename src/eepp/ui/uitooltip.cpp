@@ -164,8 +164,8 @@ void UITooltip::onAutoSize() {
 }
 
 void UITooltip::autoAlign() {
-	Uint32 Width	= mRealSize.getWidth()	- mRealPadding.Left - mRealPadding.Right;
-	Uint32 Height	= mRealSize.getHeight()	- mRealPadding.Top	- mRealPadding.Bottom;
+	Uint32 Width	= mSize.getWidth()	- mRealPadding.Left - mRealPadding.Right;
+	Uint32 Height	= mSize.getHeight()	- mRealPadding.Top	- mRealPadding.Bottom;
 
 	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:

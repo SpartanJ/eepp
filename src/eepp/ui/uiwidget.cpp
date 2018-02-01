@@ -41,7 +41,7 @@ bool UIWidget::isType( const Uint32& type ) const {
 
 void UIWidget::updateAnchorsDistances() {
 	if ( NULL != mParentCtrl ) {
-		mDistToBorder	= Rect( mPosition.x, mPosition.y, mParentCtrl->getRealSize().x - ( mPosition.x + mRealSize.x ), mParentCtrl->getRealSize().y - ( mPosition.y + mRealSize.y ) );
+		mDistToBorder	= Rect( mPosition.x, mPosition.y, mParentCtrl->getRealSize().x - ( mPosition.x + mSize.x ), mParentCtrl->getRealSize().y - ( mPosition.y + mSize.y ) );
 	}
 }
 
@@ -331,7 +331,7 @@ void UIWidget::updateAnchors( const Vector2f& SizeChange ) {
 	if ( !( mFlags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) )
 		return;
 
-	Sizef newSize( mSize );
+	Sizef newSize( mDpSize );
 
 	if ( !( mFlags & UI_ANCHOR_LEFT ) ) {
 		setInternalPosition( Vector2f( mDpPos.x += SizeChange.x, mDpPos.y ) );
@@ -359,7 +359,7 @@ void UIWidget::updateAnchors( const Vector2f& SizeChange ) {
 		}
 	}
 
-	if ( newSize != mSize )
+	if ( newSize != mDpSize )
 		setSize( newSize );
 }
 
@@ -368,7 +368,7 @@ void UIWidget::alignAgainstLayout() {
 
 	switch ( fontHAlignGet( mLayoutGravity ) ) {
 		case UI_HALIGN_CENTER:
-			pos.x = ( getParent()->getSize().getWidth() - mSize.getWidth() ) / 2;
+			pos.x = ( getParent()->getSize().getWidth() - mDpSize.getWidth() ) / 2;
 			break;
 		case UI_HALIGN_RIGHT:
 			pos.x = getParent()->getSize().getWidth() - mLayoutMargin.Right;
@@ -380,7 +380,7 @@ void UIWidget::alignAgainstLayout() {
 
 	switch ( fontVAlignGet( mLayoutGravity ) ) {
 		case UI_VALIGN_CENTER:
-			pos.y = ( getParent()->getSize().getHeight() - mSize.getHeight() ) / 2;
+			pos.y = ( getParent()->getSize().getHeight() - mDpSize.getHeight() ) / 2;
 			break;
 		case UI_VALIGN_BOTTOM:
 			pos.y = getParent()->getSize().getHeight() - mLayoutMargin.Bottom;

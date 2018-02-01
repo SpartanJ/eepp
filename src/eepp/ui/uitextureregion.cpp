@@ -37,7 +37,7 @@ UITextureRegion * UITextureRegion::setTextureRegion( Graphics::TextureRegion * T
 
 	onAutoSize();
 
-	if ( NULL != mTextureRegion && mSize.x == 0 && mSize.y == 0 ) {
+	if ( NULL != mTextureRegion && mDpSize.x == 0 && mDpSize.y == 0 ) {
 		setSize( mTextureRegion->getDpSize().asFloat() );
 	}
 
@@ -51,7 +51,7 @@ UITextureRegion * UITextureRegion::setTextureRegion( Graphics::TextureRegion * T
 }
 
 void UITextureRegion::onAutoSize() {
-	if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == mSize ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == mDpSize ) {
 		if ( NULL != mTextureRegion ) {
 			setSize( mTextureRegion->getDpSize().asFloat() );
 		}
@@ -68,7 +68,7 @@ void UITextureRegion::draw() {
 
 			if ( mScaleType == UIScaleType::Expand ) {
 				mTextureRegion->setOffset( Vector2i( 0, 0 ) );
-				mTextureRegion->setDestSize( Vector2f( (int)mRealSize.x, (int)mRealSize.y ) );
+				mTextureRegion->setDestSize( Vector2f( (int)mSize.x, (int)mSize.y ) );
 
 				autoAlign();
 
@@ -78,8 +78,8 @@ void UITextureRegion::draw() {
 				mTextureRegion->setOffset( Vector2i( 0, 0 ) );
 
 				Sizei pxSize = mTextureRegion->getPxSize();
-				Float Scale1 = mRealSize.x / (Float)pxSize.x;
-				Float Scale2 = mRealSize.y / (Float)pxSize.y;
+				Float Scale1 = mSize.x / (Float)pxSize.x;
+				Float Scale2 = mSize.y / (Float)pxSize.y;
 
 				if ( Scale1 < 1 || Scale2 < 1 ) {
 					if ( Scale2 < Scale1 )
@@ -152,17 +152,17 @@ void UITextureRegion::autoAlign() {
 		return;
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mRealSize.getWidth() / 2 - mTextureRegion->getDestSize().x / 2;
+		mAlignOffset.x = mSize.getWidth() / 2 - mTextureRegion->getDestSize().x / 2;
 	} else if ( fontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mRealSize.getWidth() - mTextureRegion->getDestSize().x;
+		mAlignOffset.x =  mSize.getWidth() - mTextureRegion->getDestSize().x;
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mRealSize.getHeight() / 2 - mTextureRegion->getDestSize().y / 2;
+		mAlignOffset.y = mSize.getHeight() / 2 - mTextureRegion->getDestSize().y / 2;
 	} else if ( fontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mRealSize.getHeight() - mTextureRegion->getDestSize().y;
+		mAlignOffset.y = mSize.getHeight() - mTextureRegion->getDestSize().y;
 	} else {
 		mAlignOffset.y = 0;
 	}

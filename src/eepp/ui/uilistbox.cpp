@@ -39,7 +39,7 @@ UIListBox::UIListBox() :
 
 	mContainer = eeNew( UIItemContainer<UIListBox>, () );
 	mContainer->setParent( this );
-	mContainer->setSize( mSize.getWidth(), mSize.getHeight() );
+	mContainer->setSize( mDpSize.getWidth(), mDpSize.getHeight() );
 	mContainer->setVisible( true );
 	mContainer->setEnabled( true );
 	mContainer->setFlags( mFlags );
@@ -48,15 +48,15 @@ UIListBox::UIListBox() :
 	mVScrollBar = UIScrollBar::New();
 	mVScrollBar->setOrientation( UI_VERTICAL );
 	mVScrollBar->setParent( this );
-	mVScrollBar->setPosition( mSize.getWidth() - 16, 0 );
-	mVScrollBar->setSize( 16, mSize.getHeight() );
+	mVScrollBar->setPosition( mDpSize.getWidth() - 16, 0 );
+	mVScrollBar->setSize( 16, mDpSize.getHeight() );
 	mVScrollBar->setEnabled( false )->setVisible( false );
 
 	mHScrollBar = UIScrollBar::New();
 	mHScrollBar->setOrientation( UI_HORIZONTAL );
 	mHScrollBar->setParent( this );
-	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
-	mHScrollBar->setPosition( 0, mSize.getHeight() - 16 );
+	mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
+	mHScrollBar->setPosition( 0, mDpSize.getHeight() - 16 );
 	mHScrollBar->setEnabled( false )->setVisible( false );
 
 	mVScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIListBox::onScrollValueChange ) );
@@ -272,11 +272,11 @@ void UIListBox::onHScrollValueChange( const UIEvent * Event ) {
 }
 
 void UIListBox::onSizeChange() {
-	mVScrollBar->setPosition( mSize.getWidth() - mVScrollBar->getSize().getWidth() + mVScrollPadding.Left, mVScrollPadding.Top );
-	mVScrollBar->setSize( mVScrollBar->getSize().getWidth() + mVScrollPadding.Right, mSize.getHeight() + mVScrollPadding.Bottom );
+	mVScrollBar->setPosition( mDpSize.getWidth() - mVScrollBar->getSize().getWidth() + mVScrollPadding.Left, mVScrollPadding.Top );
+	mVScrollBar->setSize( mVScrollBar->getSize().getWidth() + mVScrollPadding.Right, mDpSize.getHeight() + mVScrollPadding.Bottom );
 
-	mHScrollBar->setPosition( mHScrollPadding.Left, mSize.getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
-	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
+	mHScrollBar->setPosition( mHScrollPadding.Left, mDpSize.getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
+	mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
 
 	if ( mContainer->isClipped() && UI_SCROLLBAR_AUTO == mHScrollMode ) {
 		if ( (Int32)mMaxTextWidth <= mContainer->getRealSize().getWidth() ) {
@@ -396,9 +396,9 @@ void UIListBox::containerResize() {
 	mContainer->setPosition( mContainerPadding.Left, mContainerPadding.Top );
 
 	if( mHScrollBar->isVisible() )
-		mContainer->setSize( mSize.getWidth() - mContainerPadding.Right - mContainerPadding.Left, mSize.getHeight() - mContainerPadding.Top - mHScrollBar->getSize().getHeight() );
+		mContainer->setSize( mDpSize.getWidth() - mContainerPadding.Right - mContainerPadding.Left, mDpSize.getHeight() - mContainerPadding.Top - mHScrollBar->getSize().getHeight() );
 	else
-		mContainer->setSize( mSize.getWidth() - mContainerPadding.Right - mContainerPadding.Left, mSize.getHeight() - mContainerPadding.Bottom - mContainerPadding.Top );
+		mContainer->setSize( mDpSize.getWidth() - mContainerPadding.Right - mContainerPadding.Left, mDpSize.getHeight() - mContainerPadding.Bottom - mContainerPadding.Top );
 }
 
 void UIListBox::createItemIndex( const Uint32& i ) {
@@ -584,11 +584,11 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 	
 	
 	if ( mHScrollBar->isVisible() && !mVScrollBar->isVisible() ) {
-		mHScrollBar->setPosition( mHScrollPadding.Left, mSize.getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
-		mHScrollBar->setSize( mSize.getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
+		mHScrollBar->setPosition( mHScrollPadding.Left, mDpSize.getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
+		mHScrollBar->setSize( mDpSize.getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
 	} else {
-		mHScrollBar->setPosition( mHScrollPadding.Left, mSize.getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
-		mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
+		mHScrollBar->setPosition( mHScrollPadding.Left, mDpSize.getHeight() - mHScrollBar->getSize().getHeight() + mHScrollPadding.Top );
+		mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
 	}
 
 	setHScrollStep();

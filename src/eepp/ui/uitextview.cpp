@@ -60,8 +60,8 @@ void UITextView::draw() {
 						this,
 						mScreenPos.x + mRealPadding.Left,
 						mScreenPos.y + mRealPadding.Top,
-						mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-						mRealSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
+						mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+						mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
 				);
 			}
 
@@ -234,7 +234,7 @@ void UITextView::setAlpha( const Float& alpha ) {
 
 void UITextView::autoShrink() {
 	if ( mFlags & UI_WORD_WRAP ) {
-		shrinkText( mRealSize.getWidth() );
+		shrinkText( mSize.getWidth() );
 	}
 }
 
@@ -248,7 +248,7 @@ void UITextView::shrinkText( const Uint32& MaxWidth ) {
 }
 
 void UITextView::onAutoSize() {
-	if ( ( mFlags & UI_AUTO_SIZE && 0 == mSize.getWidth() ) ) {
+	if ( ( mFlags & UI_AUTO_SIZE && 0 == mDpSize.getWidth() ) ) {
 		setInternalPixelsSize( Sizef( mTextCache->getTextWidth(), mTextCache->getTextHeight() ) );
 	}
 
@@ -264,10 +264,10 @@ void UITextView::onAutoSize() {
 void UITextView::alignFix() {
 	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mRealAlignOffset.x = (Float)( (Int32)( mRealSize.x / 2 - mTextCache->getTextWidth() / 2 ) );
+			mRealAlignOffset.x = (Float)( (Int32)( mSize.x / 2 - mTextCache->getTextWidth() / 2 ) );
 			break;
 		case UI_HALIGN_RIGHT:
-			mRealAlignOffset.x = ( (Float)mRealSize.x - (Float)mTextCache->getTextWidth() );
+			mRealAlignOffset.x = ( (Float)mSize.x - (Float)mTextCache->getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
 			mRealAlignOffset.x = 0.f;
@@ -276,10 +276,10 @@ void UITextView::alignFix() {
 
 	switch ( fontVAlignGet( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
-			mRealAlignOffset.y = (Float)( (Int32)( mRealSize.y / 2 - mTextCache->getTextHeight() / 2 ) ) - 1;
+			mRealAlignOffset.y = (Float)( (Int32)( mSize.y / 2 - mTextCache->getTextHeight() / 2 ) ) - 1;
 			break;
 		case UI_VALIGN_BOTTOM:
-			mRealAlignOffset.y = ( (Float)mRealSize.y - (Float)mTextCache->getTextHeight() );
+			mRealAlignOffset.y = ( (Float)mSize.y - (Float)mTextCache->getTextHeight() );
 			break;
 		case UI_VALIGN_TOP:
 			mRealAlignOffset.y = 0.f;

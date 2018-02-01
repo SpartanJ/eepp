@@ -133,7 +133,7 @@ void UIScrollView::containerUpdate() {
 	if ( NULL == mScrollView )
 		return;
 
-	Sizef size = mSize;
+	Sizef size = mDpSize;
 
 	if ( Exclusive == mViewType ) {
 		if ( mVScroll->isVisible() )
@@ -171,11 +171,11 @@ void UIScrollView::containerUpdate() {
 		mVScroll->setEnabled( visible );
 	}
 
-	mVScroll->setPosition( mSize.getWidth() - mVScroll->getSize().getWidth(), 0 );
-	mHScroll->setPosition( 0, mSize.getHeight() - mHScroll->getSize().getHeight() );
+	mVScroll->setPosition( mDpSize.getWidth() - mVScroll->getSize().getWidth(), 0 );
+	mHScroll->setPosition( 0, mDpSize.getHeight() - mHScroll->getSize().getHeight() );
 
-	mVScroll->setSize( mVScroll->getSize().getWidth(), mSize.getHeight() );
-	mHScroll->setSize( mSize.getWidth() - ( mVScroll->isVisible() ? mVScroll->getSize().getWidth() : 0 ), mHScroll->getSize().getHeight() );
+	mVScroll->setSize( mVScroll->getSize().getWidth(), mDpSize.getHeight() );
+	mHScroll->setSize( mDpSize.getWidth() - ( mVScroll->isVisible() ? mVScroll->getSize().getWidth() : 0 ), mHScroll->getSize().getHeight() );
 
 	if ( mVScroll->isVisible() && 0 != mScrollView->getSize().getHeight() )
 		mVScroll->setPageStep( (Float)mContainer->getSize().getHeight() / (Float)mScrollView->getSize().getHeight() );
@@ -189,8 +189,8 @@ void UIScrollView::containerUpdate() {
 
 void UIScrollView::updateScroll() {
 	mScrollView->setPosition(
-		mHScroll->isVisible() ? -( mHScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getWidth() - mSize.getWidth() ) ) : 0.f ,
-		mVScroll->isVisible() ? -( mVScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getHeight() - mSize.getHeight() ) ) : 0.f
+		mHScroll->isVisible() ? -( mHScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getWidth() - mDpSize.getWidth() ) ) : 0.f ,
+		mVScroll->isVisible() ? -( mVScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getHeight() - mDpSize.getHeight() ) ) : 0.f
 	);
 }
 

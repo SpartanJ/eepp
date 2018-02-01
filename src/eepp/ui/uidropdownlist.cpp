@@ -27,7 +27,7 @@ UIDropDownList::UIDropDownList() :
 	applyDefaultTheme();
 
 	mListBox = UIListBox::New();
-	mListBox->setSize( mSize.getWidth(), mStyleConfig.MaxNumVisibleItems * mSize.getHeight() );
+	mListBox->setSize( mDpSize.getWidth(), mStyleConfig.MaxNumVisibleItems * mDpSize.getHeight() );
 	mListBox->setEnabled( false );
 	mListBox->setVisible( false );
 
@@ -66,8 +66,8 @@ void UIDropDownList::onSizeChange() {
 }
 
 void UIDropDownList::autoSizeControl() {
-	if ( ( mFlags & UI_AUTO_SIZE || 0 == mSize.getHeight() ) && 0 != getSkinSize().getHeight() ) {
-		setSize( mSize.x, getSkinSize().getHeight() );
+	if ( ( mFlags & UI_AUTO_SIZE || 0 == mDpSize.getHeight() ) && 0 != getSkinSize().getHeight() ) {
+		setSize( mDpSize.x, getSkinSize().getHeight() );
 	}
 }
 
@@ -108,7 +108,7 @@ void UIDropDownList::showList() {
 
 		mListBox->toFront();
 
-		Vector2f Pos( mDpPos.x, mDpPos.y + mSize.getHeight() );
+		Vector2f Pos( mDpPos.x, mDpPos.y + mDpSize.getHeight() );
 
 		if ( mStyleConfig.PopUpToMainControl ) {
 			getParent()->nodeToWorld( Pos );
@@ -132,9 +132,9 @@ void UIDropDownList::showList() {
 			Float sliderValue = mListBox->getVerticalScrollBar()->getValue();
 
 			if ( mStyleConfig.MaxNumVisibleItems < mListBox->getCount() )
-				mListBox->setSize( NULL != mFriendCtrl ? mFriendCtrl->getSize().getWidth() : mSize.getWidth(), (Int32)( mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() ) + tPadding.Top + tPadding.Bottom );
+				mListBox->setSize( NULL != mFriendCtrl ? mFriendCtrl->getSize().getWidth() : mDpSize.getWidth(), (Int32)( mStyleConfig.MaxNumVisibleItems * mListBox->getRowHeight() ) + tPadding.Top + tPadding.Bottom );
 			else {
-				mListBox->setSize( NULL != mFriendCtrl ? mFriendCtrl->getSize().getWidth() : mSize.getWidth(), (Int32)( mListBox->getCount() * mListBox->getRowHeight() ) + tPadding.Top + tPadding.Bottom );
+				mListBox->setSize( NULL != mFriendCtrl ? mFriendCtrl->getSize().getWidth() : mDpSize.getWidth(), (Int32)( mListBox->getCount() * mListBox->getRowHeight() ) + tPadding.Top + tPadding.Bottom );
 			}
 
 			mListBox->getVerticalScrollBar()->setValue( sliderValue );
@@ -163,7 +163,7 @@ Uint32 UIDropDownList::getMaxNumVisibleItems() const {
 void UIDropDownList::setMaxNumVisibleItems(const Uint32 & maxNumVisibleItems) {
 	mStyleConfig.MaxNumVisibleItems = maxNumVisibleItems;
 
-	mListBox->setSize( mSize.getWidth(), mStyleConfig.MaxNumVisibleItems * mSize.getHeight() );
+	mListBox->setSize( mDpSize.getWidth(), mStyleConfig.MaxNumVisibleItems * mDpSize.getHeight() );
 }
 
 UIDropDownListStyleConfig UIDropDownList::getStyleConfig() const {

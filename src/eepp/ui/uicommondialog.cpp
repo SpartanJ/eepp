@@ -20,14 +20,14 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern
 	mCurPath( DefaultDirectory ),
 	mCDLFlags( CDLFlags )
 {
-	if ( mSize.getWidth() < CDLG_MIN_WIDTH ) {
-		mSize.x = CDLG_MIN_WIDTH;
-		mRealSize.x = PixelDensity::dpToPxI( CDLG_MIN_WIDTH );
+	if ( mDpSize.getWidth() < CDLG_MIN_WIDTH ) {
+		mDpSize.x = CDLG_MIN_WIDTH;
+		mSize.x = PixelDensity::dpToPxI( CDLG_MIN_WIDTH );
 	}
 
-	if ( mSize.getHeight() < CDLG_MIN_HEIGHT ) {
-		mSize.y = CDLG_MIN_HEIGHT;
-		mRealSize.y = PixelDensity::dpToPxI( CDLG_MIN_HEIGHT );
+	if ( mDpSize.getHeight() < CDLG_MIN_HEIGHT ) {
+		mDpSize.y = CDLG_MIN_HEIGHT;
+		mSize.y = PixelDensity::dpToPxI( CDLG_MIN_HEIGHT );
 	}
 
 	if ( mStyleConfig.MinWindowSize.getWidth() < CDLG_MIN_WIDTH )
@@ -36,7 +36,7 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern
 	if ( mStyleConfig.MinWindowSize.getHeight() < CDLG_MIN_HEIGHT )
 		mStyleConfig.MinWindowSize.setHeight( CDLG_MIN_HEIGHT );
 
-	mContainer->setSize( mSize );
+	mContainer->setSize( mDpSize );
 
 	if ( getAllowFolderSelect() ) {
 		setTitle( "Select a folder" );
