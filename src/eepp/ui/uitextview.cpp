@@ -19,7 +19,8 @@ UITextView::UITextView() :
 	mSelCurInit( -1 ),
 	mSelCurEnd( -1 ),
 	mLastSelCurInit( -1 ),
-	mLastSelCurEnd( -1 )
+	mLastSelCurEnd( -1 ),
+	mSelecting( false )
 {
 	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 
@@ -351,7 +352,7 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags )
 			selCurInit( tSelCurInit );
 			selCurEnd( tSelCurEnd );
 
-			mNodeFlags &= ~NODE_FLAG_SELECTING;
+			mSelecting = false;
 		}
 	}
 
@@ -365,7 +366,7 @@ Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 			selCurEnd( -1 );
 		}
 
-		mNodeFlags &= ~NODE_FLAG_SELECTING;
+		mSelecting = false;
 	}
 
 	return UIWidget::onMouseClick( Pos, Flags );
@@ -380,7 +381,7 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 		Int32 curPos = mTextCache->findCharacterFromPos( Vector2i( controlPos.x, controlPos.y ) );
 
 		if ( -1 != curPos ) {
-			if ( -1 == selCurInit() || !( mNodeFlags & NODE_FLAG_SELECTING ) ) {
+			if ( -1 == selCurInit() || !mSelecting ) {
 				selCurInit( curPos );
 				selCurEnd( curPos );
 			} else {
@@ -388,7 +389,7 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 			}
 		}
 
-		mNodeFlags |= NODE_FLAG_SELECTING;
+		mSelecting = true;
 	}
 
 	return UIWidget::onMouseDown( Pos, Flags );

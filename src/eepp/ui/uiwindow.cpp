@@ -270,7 +270,7 @@ void UIWindow::drawFrameBuffer() {
 }
 
 void UIWindow::drawHighlightInvalidation() {
-	if ( ( mNodeFlags & NODE_FLAG_NEEDS_REDRAW ) && UIManager::instance()->getHighlightInvalidation() ) {
+	if ( ( mNodeFlags & NODE_FLAG_VIEW_DIRTY ) && UIManager::instance()->getHighlightInvalidation() ) {
 		UIWidget::matrixSet();
 
 		Primitives P;
@@ -1142,13 +1142,13 @@ void UIWindow::internalDraw() {
 
 		drawHighlightInvalidation();
 
-		writeCtrlFlag( NODE_FLAG_NEEDS_REDRAW, 0 );
+		writeCtrlFlag( NODE_FLAG_VIEW_DIRTY, 0 );
 	}
 }
 
 void UIWindow::invalidate() {
 	if ( mVisible && mAlpha != 0.f ) {
-		writeCtrlFlag( NODE_FLAG_NEEDS_REDRAW, 1 );
+		writeCtrlFlag( NODE_FLAG_VIEW_DIRTY, 1 );
 
 		if ( NULL != mParentWindowCtrl )
 			mParentWindowCtrl->invalidateDraw();
@@ -1160,7 +1160,7 @@ FrameBuffer * UIWindow::getFrameBuffer() const {
 }
 
 bool UIWindow::invalidated() {
-	return 0 != ( mNodeFlags & NODE_FLAG_NEEDS_REDRAW );
+	return 0 != ( mNodeFlags & NODE_FLAG_VIEW_DIRTY );
 }
 
 void UIWindow::matrixSet() {

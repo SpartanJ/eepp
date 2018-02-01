@@ -42,6 +42,7 @@ class EE_API UIImage : public UIWidget {
 		Color			mColor;
 		Vector2f		mAlignOffset;
 		Vector2f		mDestSize;
+		bool			mDrawableOwner;
 
 		virtual void onSizeChange();
 

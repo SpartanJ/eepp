@@ -104,6 +104,7 @@ class EE_API UITextView : public UIWidget {
 		std::vector<SelPosCache> mSelPosCache;
 		Int32		mLastSelCurInit;
 		Int32		mLastSelCurEnd;
+		bool		mSelecting;
 
 		virtual void drawSelection(Text * textCache);
 

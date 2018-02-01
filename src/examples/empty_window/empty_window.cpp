@@ -44,7 +44,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// This is the application loop, it will loop until the window is closed.
 		// This is only a requirement if you want to support Emscripten builds ( WebGL + Canvas ).
 		// This is the same as, except for Emscripten.
-		// while ( win->Running() )
+		// while ( win->isRunning() )
 		// {
 		//		MainLoop();
 		// }

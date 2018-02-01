@@ -15,7 +15,8 @@ UIImage::UIImage() :
 	mScaleType( 0 ),
 	mDrawable( NULL ),
 	mColor(),
-	mAlignOffset(0,0)
+	mAlignOffset(0,0),
+	mDrawableOwner(false)
 {
 	mFlags |= UI_AUTO_SIZE;
 
@@ -148,13 +149,13 @@ void UIImage::autoAlign() {
 }
 
 void UIImage::safeDeleteDrawable() {
-	if ( NULL != mDrawable && ( mNodeFlags & NODE_FLAG_DRAWABLE_OWNER ) ) {
+	if ( NULL != mDrawable && mDrawableOwner ) {
 		if ( mDrawable->getDrawableType() == Drawable::SPRITE ) {
 			Sprite * spr = reinterpret_cast<Sprite*>( mDrawable );
 			eeSAFE_DELETE( spr );
 		}
 
-		writeCtrlFlag( NODE_FLAG_DRAWABLE_OWNER, 0 );
+		mDrawableOwner = false;
 	}
 }
 
@@ -188,7 +189,7 @@ void UIImage::loadFromXmlNode(const pugi::xml_node & node) {
 
 			if ( NULL != ( res = DrawableSearcher::searchByName( ait->as_string() ) ) ) {
 				if ( res->getDrawableType() == Drawable::SPRITE )
-					writeCtrlFlag( NODE_FLAG_DRAWABLE_OWNER, 1 );
+					mDrawableOwner = true;
 
 				setDrawable( res );
 			}
