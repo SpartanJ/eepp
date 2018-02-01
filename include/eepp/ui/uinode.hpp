@@ -16,13 +16,17 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/math/transformable.hpp>
 
+namespace EE { namespace Scene {
+class Action;
+class ActionManager;
+}}
+using namespace EE::Scene;
+
 namespace EE { namespace UI {
 
 class UITheme;
 class UIWindow;
 class UIManager;
-class UIAction;
-class UIActionManager;
 
 class EE_API UINode : public Transformable {
 	public:
@@ -350,9 +354,9 @@ class EE_API UINode : public Transformable {
 
 		bool isFadingOut();
 
-		UIActionManager * getActionManager();
+		ActionManager * getActionManager();
 
-		void runAction( UIAction * action );
+		void runAction( Action * action );
 
 		Transform getLocalTransform();
 
@@ -414,7 +418,7 @@ class EE_API UINode : public Transformable {
 		OriginPoint			mScaleOriginPoint;
 		Float				mAlpha;
 
-		UIActionManager *	mActionManager;
+		ActionManager *	mActionManager;
 
 		virtual Uint32 onMessage( const UIMessage * Msg );
 

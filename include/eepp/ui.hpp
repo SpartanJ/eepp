@@ -58,15 +58,18 @@
 
 #include <eepp/ui/uiwidgetcreator.hpp>
 
-#include <eepp/ui/actions/actioninterpolation1d.hpp>
-#include <eepp/ui/actions/actioninterpolation2d.hpp>
-#include <eepp/ui/actions/move.hpp>
-#include <eepp/ui/actions/rotate.hpp>
-#include <eepp/ui/actions/scale.hpp>
-#include <eepp/ui/actions/fade.hpp>
-#include <eepp/ui/actions/marginmove.hpp>
-#include <eepp/ui/actions/sequence.hpp>
-#include <eepp/ui/actions/spawn.hpp>
-#include <eepp/ui/actions/delay.hpp>
+#include <eepp/scene/actions/actioninterpolation1d.hpp>
+#include <eepp/scene/actions/actioninterpolation2d.hpp>
+#include <eepp/scene/actions/move.hpp>
+#include <eepp/scene/actions/rotate.hpp>
+#include <eepp/scene/actions/scale.hpp>
+#include <eepp/scene/actions/fade.hpp>
+#include <eepp/scene/actions/marginmove.hpp>
+#include <eepp/scene/actions/sequence.hpp>
+#include <eepp/scene/actions/spawn.hpp>
+#include <eepp/scene/actions/delay.hpp>
+#include <eepp/scene/action.hpp>
+#include <eepp/scene/actionmanager.hpp>
+using namespace EE::Scene;
 
 #endif

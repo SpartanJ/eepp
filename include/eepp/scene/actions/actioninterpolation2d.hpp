@@ -1,13 +1,13 @@
-#ifndef EE_UI_ACTIONINTERPOLATION2D_HPP
-#define EE_UI_ACTIONINTERPOLATION2D_HPP
+#ifndef EE_SCENE_ACTIONINTERPOLATION2D_HPP
+#define EE_SCENE_ACTIONINTERPOLATION2D_HPP
 
-#include <eepp/ui/uiaction.hpp>
+#include <eepp/scene/action.hpp>
 #include <eepp/math/interpolation2d.hpp>
 using namespace EE::Math;
 
-namespace EE { namespace UI { namespace Action {
+namespace EE { namespace Scene { namespace Actions {
 
-class EE_API ActionInterpolation2d : public UIAction {
+class EE_API ActionInterpolation2d : public Action {
 	public:
 		void start() override;
 

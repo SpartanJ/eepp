@@ -1,8 +1,8 @@
-#include <eepp/ui/actions/marginmove.hpp>
+#include <eepp/scene/actions/marginmove.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
-namespace EE { namespace UI { namespace Action {
+namespace EE { namespace Scene { namespace Actions {
 
 MarginMove * MarginMove::New( const Rect & start, const Rect & end, const Time& duration, const Ease::Interpolation& type ) {
 	return eeNew( MarginMove, ( start, end, duration, type ) );
@@ -106,7 +106,7 @@ void MarginMove::onUpdate( const Time& time ) {
 	}
 }
 
-UIAction * MarginMove::clone() const {
+Action * MarginMove::clone() const {
 	MarginMove * action = eeNew( MarginMove, () );
 	action->setInterpolationLeft( mInterpolationLeft );
 	action->setInterpolationRight( mInterpolationRight );
@@ -115,7 +115,7 @@ UIAction * MarginMove::clone() const {
 	return action;
 }
 
-UIAction * MarginMove::reverse() const {
+Action * MarginMove::reverse() const {
 	return NULL;
 }
 

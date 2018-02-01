@@ -1,7 +1,7 @@
-#include <eepp/ui/actions/fade.hpp>
+#include <eepp/scene/actions/fade.hpp>
 #include <eepp/ui/uinode.hpp>
 
-namespace EE { namespace UI { namespace Action {
+namespace EE { namespace Scene { namespace Actions {
 
 Fade * Fade::New( const Float & start, const Float & end, const Time& duration, const Ease::Interpolation& type, const bool& alphaChilds ) {
 	return eeNew( Fade, ( start, end, duration, type, alphaChilds ) );
@@ -38,14 +38,14 @@ void Fade::onUpdate( const Time& time ) {
 	}
 }
 
-UIAction * Fade::clone() const {
+Action * Fade::clone() const {
 	Fade * action = eeNew( Fade, () );
 	action->mAffectChilds = mAffectChilds;
 	action->setInterpolation( mInterpolation );
 	return action;
 }
 
-UIAction * Fade::reverse() const {
+Action * Fade::reverse() const {
 	Fade * action = eeNew( Fade, () );
 	action->mAffectChilds = mAffectChilds;
 	action->setInterpolation( Interpolation1d( mInterpolation.getReversePoints() ) );

@@ -1,18 +1,18 @@
-#ifndef EE_UI_ACTION_SCALE_HPP
-#define EE_UI_ACTION_SCALE_HPP
+#ifndef EE_SCENE_ACTION_SCALE_HPP
+#define EE_SCENE_ACTION_SCALE_HPP
 
-#include <eepp/ui/uiaction.hpp>
-#include <eepp/ui/actions/actioninterpolation2d.hpp>
+#include <eepp/scene/action.hpp>
+#include <eepp/scene/actions/actioninterpolation2d.hpp>
 
-namespace EE { namespace UI { namespace Action {
+namespace EE { namespace Scene { namespace Actions {
 
 class EE_API Scale : public ActionInterpolation2d {
 	public:
 		static Scale * New( const Vector2f& start, const Vector2f& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear );
 
-		UIAction * clone() const override;
+		Action * clone() const override;
 
-		UIAction * reverse() const override;
+		Action * reverse() const override;
 	protected:
 		Scale( const Vector2f& start, const Vector2f& end, const Time& duration, const Ease::Interpolation& type );
 

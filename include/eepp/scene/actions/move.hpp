@@ -1,18 +1,18 @@
-#ifndef EE_UI_ACTION_MOVE_HPP
-#define EE_UI_ACTION_MOVE_HPP
+#ifndef EE_SCENE_ACTION_MOVE_HPP
+#define EE_SCENE_ACTION_MOVE_HPP
 
-#include <eepp/ui/uiaction.hpp>
-#include <eepp/ui/actions/actioninterpolation2d.hpp>
+#include <eepp/scene/action.hpp>
+#include <eepp/scene/actions/actioninterpolation2d.hpp>
 
-namespace EE { namespace UI { namespace Action {
+namespace EE { namespace Scene { namespace Actions {
 
 class EE_API Move : public ActionInterpolation2d {
 	public:
 		static Move * New( const Vector2f& start, const Vector2f& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear );
 
-		UIAction * clone() const override;
+		Action * clone() const override;
 
-		UIAction * reverse() const override;
+		Action * reverse() const override;
 	protected:
 		Move( const Vector2f& start, const Vector2f& end, const Time& duration, const Ease::Interpolation& type );
 

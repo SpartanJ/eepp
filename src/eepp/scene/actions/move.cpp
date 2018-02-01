@@ -1,7 +1,7 @@
-#include <eepp/ui/actions/move.hpp>
+#include <eepp/scene/actions/move.hpp>
 #include <eepp/ui/uinode.hpp>
 
-namespace EE { namespace UI { namespace Action {
+namespace EE { namespace Scene { namespace Actions {
 
 Move * Move::New( const Vector2f& start, const Vector2f& end, const Time& duration, const Ease::Interpolation& type ) {
 	return eeNew( Move, ( start, end, duration, type ) );
@@ -26,13 +26,13 @@ void Move::onUpdate( const Time& time ) {
 	}
 }
 
-UIAction * Move::clone() const {
+Action * Move::clone() const {
 	Move * action = eeNew( Move, () );
 	action->setInterpolation( mInterpolation );
 	return action;
 }
 
-UIAction * Move::reverse() const {
+Action * Move::reverse() const {
 	Move * action = eeNew( Move, () );
 	action->setInterpolation( Interpolation2d( mInterpolation.getReversePoints() ) );
 	return action;

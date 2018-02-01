@@ -1,40 +1,40 @@
-#include <eepp/ui/actions/spawn.hpp>
+#include <eepp/scene/actions/spawn.hpp>
 
-namespace EE { namespace UI { namespace Action {
+namespace EE { namespace Scene { namespace Actions {
 
-Spawn * Spawn::New( const std::vector<UIAction *> spawn ) {
+Spawn * Spawn::New( const std::vector<Action *> spawn ) {
 	return eeNew( Spawn, ( spawn ) );
 }
 
-Spawn * Spawn::New( UIAction * action, UIAction * action2 ) {
+Spawn * Spawn::New( Action * action, Action * action2 ) {
 	return New( { action, action2 } );
 }
 
-Spawn * Spawn::New( UIAction * action, UIAction * action2, UIAction * action3 ) {
+Spawn * Spawn::New( Action * action, Action * action2, Action * action3 ) {
 	return New( { action, action2, action3 } );
 }
 
-Spawn * Spawn::New( UIAction * action, UIAction * action2, UIAction * action3, UIAction * action4 ) {
+Spawn * Spawn::New( Action * action, Action * action2, Action * action3, Action * action4 ) {
 	return New( { action, action2, action3, action4 } );
 }
 
-Spawn * Spawn::New( UIAction * action, UIAction * action2, UIAction * action3, UIAction * action4, UIAction * action5 ) {
+Spawn * Spawn::New( Action * action, Action * action2, Action * action3, Action * action4, Action * action5 ) {
 	return New( { action, action2, action3, action4, action5 } );
 }
 
-Spawn * Spawn::New( UIAction * action, UIAction * action2, UIAction * action3, UIAction * action4, UIAction * action5, UIAction * action6 ) {
+Spawn * Spawn::New( Action * action, Action * action2, Action * action3, Action * action4, Action * action5, Action * action6 ) {
 	return New( { action, action2, action3, action4, action5, action6 } );
 }
 
-Spawn * Spawn::New( UIAction * action, UIAction * action2, UIAction * action3, UIAction * action4, UIAction * action5, UIAction * action6, UIAction * action7 ) {
+Spawn * Spawn::New( Action * action, Action * action2, Action * action3, Action * action4, Action * action5, Action * action6, Action * action7 ) {
 	return New( { action, action2, action3, action4, action5, action6, action7 } );
 }
 
-Spawn * Spawn::New( UIAction * action, UIAction * action2, UIAction * action3, UIAction * action4, UIAction * action5, UIAction * action6, UIAction * action7, UIAction * action8 ) {
+Spawn * Spawn::New( Action * action, Action * action2, Action * action3, Action * action4, Action * action5, Action * action6, Action * action7, Action * action8 ) {
 	return New( { action, action2, action3, action4, action5, action6, action7, action8 } );
 }
 
-Spawn * Spawn::New( UIAction * action, UIAction * action2, UIAction * action3, UIAction * action4, UIAction * action5, UIAction * action6, UIAction * action7, UIAction * action8, UIAction * action9 ) {
+Spawn * Spawn::New( Action * action, Action * action2, Action * action3, Action * action4, Action * action5, Action * action6, Action * action7, Action * action8, Action * action9 ) {
 	return New( { action, action2, action3, action4, action5, action6, action7, action8, action9 } );
 }
 
@@ -75,12 +75,12 @@ bool Spawn::isDone() {
 	return mAllDone;
 }
 
-UIAction * Spawn::clone() const {
+Action * Spawn::clone() const {
 	return Spawn::New( mSpawn );
 }
 
-UIAction * Spawn::reverse() const {
-	std::vector<UIAction*> reversed;
+Action * Spawn::reverse() const {
+	std::vector<Action*> reversed;
 
 	for ( auto it = mSpawn.rbegin(); it != mSpawn.rend(); ++it ) {
 		reversed.push_back( *it );
@@ -91,12 +91,12 @@ UIAction * Spawn::reverse() const {
 
 Spawn::~Spawn() {
 	for ( size_t i = 0; i < mSpawn.size(); i++ ) {
-		UIAction * action = mSpawn[ i ];
+		Action * action = mSpawn[ i ];
 		eeSAFE_DELETE( action );
 	}
 }
 
-Spawn::Spawn( const std::vector<UIAction*> spawn ) :
+Spawn::Spawn( const std::vector<Action*> spawn ) :
 	mSpawn( spawn )
 {}
 

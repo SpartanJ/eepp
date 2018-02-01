@@ -1,5 +1,5 @@
-#ifndef EE_UIACTION_HPP
-#define EE_UIACTION_HPP
+#ifndef EE_SCENEACTION_HPP
+#define EE_SCENEACTION_HPP
 
 #include <cstdlib>
 #include <eepp/core.hpp>
@@ -7,10 +7,13 @@
 using namespace EE::System;
 
 namespace EE { namespace UI {
-
 class UINode;
+}}
+using namespace EE::UI;
 
-class EE_API UIAction {
+namespace EE { namespace Scene {
+
+class EE_API Action {
 	public:
 		enum ActionType
 		{
@@ -20,11 +23,11 @@ class EE_API UIAction {
 			OnStep
 		};
 
-		typedef cb::Callback2<void,UIAction*,const ActionType&> ActionCallback;
+		typedef cb::Callback2<void,Action*,const ActionType&> ActionCallback;
 
-		UIAction();
+		Action();
 
-		virtual ~UIAction();
+		virtual ~Action();
 
 		virtual void start() = 0;
 
@@ -34,9 +37,9 @@ class EE_API UIAction {
 
 		virtual bool isDone() = 0;
 
-		virtual UIAction * clone() const;
+		virtual Action * clone() const;
 
-		virtual UIAction * reverse() const;
+		virtual Action * reverse() const;
 
 		Uint32 getFlags() const;
 

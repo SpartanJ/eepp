@@ -1,6 +1,6 @@
-#include <eepp/ui/actions/delay.hpp>
+#include <eepp/scene/actions/delay.hpp>
 
-namespace EE { namespace UI { namespace Action {
+namespace EE { namespace Scene { namespace Actions {
 
 Delay * Delay::New(const Time & time) {
 	return eeNew( Delay, ( time ) );
@@ -24,11 +24,11 @@ bool Delay::isDone() {
 	return mClock.getElapsedTime() >= mTime;
 }
 
-UIAction *Delay::clone() const {
+Action *Delay::clone() const {
 	return New( mTime );
 }
 
-UIAction *Delay::reverse() const {
+Action *Delay::reverse() const {
 	return NULL; // or a time machine
 }
 

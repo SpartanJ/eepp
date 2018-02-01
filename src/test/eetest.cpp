@@ -1123,7 +1123,7 @@ void EETest::onMainClick( const UIEvent * Event ) {
 	}
 }
 
-using namespace EE::UI::Action;
+using namespace EE::Scene::Actions;
 
 void EETest::onButtonClick( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );

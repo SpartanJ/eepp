@@ -1,7 +1,7 @@
-#include <eepp/ui/actions/scale.hpp>
+#include <eepp/scene/actions/scale.hpp>
 #include <eepp/ui/uinode.hpp>
 
-namespace EE { namespace UI { namespace Action {
+namespace EE { namespace Scene { namespace Actions {
 
 Scale * Scale::New( const Vector2f& start, const Vector2f& end, const Time& duration, const Ease::Interpolation& type ) {
 	return eeNew( Scale, ( start, end, duration, type ) );
@@ -26,13 +26,13 @@ void Scale::onUpdate( const Time& time ) {
 	}
 }
 
-UIAction * Scale::clone() const {
+Action * Scale::clone() const {
 	Scale * action = eeNew( Scale, () );
 	action->setInterpolation( mInterpolation );
 	return action;
 }
 
-UIAction * Scale::reverse() const {
+Action * Scale::reverse() const {
 	Scale * action = eeNew( Scale, () );
 	action->setInterpolation( mInterpolation.getReversePoints() );
 	return action;

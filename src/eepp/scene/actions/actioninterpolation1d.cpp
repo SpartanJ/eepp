@@ -1,7 +1,7 @@
-#include <eepp/ui/actions/actioninterpolation1d.hpp>
+#include <eepp/scene/actions/actioninterpolation1d.hpp>
 #include <eepp/ui/uinode.hpp>
 
-namespace EE { namespace UI { namespace Action {
+namespace EE { namespace Scene { namespace Actions {
 
 ActionInterpolation1d::ActionInterpolation1d()
 {}

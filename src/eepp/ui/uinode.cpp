@@ -2,8 +2,8 @@
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uimanager.hpp>
-#include <eepp/ui/uiactionmanager.hpp>
-#include <eepp/ui/uiaction.hpp>
+#include <eepp/scene/actionmanager.hpp>
+#include <eepp/scene/action.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
@@ -11,10 +11,10 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/window/engine.hpp>
 
-#include <eepp/ui/actions/fade.hpp>
-#include <eepp/ui/actions/scale.hpp>
-#include <eepp/ui/actions/rotate.hpp>
-#include <eepp/ui/actions/move.hpp>
+#include <eepp/scene/actions/fade.hpp>
+#include <eepp/scene/actions/scale.hpp>
+#include <eepp/scene/actions/rotate.hpp>
+#include <eepp/scene/actions/move.hpp>
 
 namespace EE { namespace UI {
 
@@ -1803,7 +1803,7 @@ bool UINode::isAnimating() {
 	return NULL != mActionManager && !mActionManager->isEmpty();
 }
 
-static void UINode_onFadeDone( UIAction * action, const UIAction::ActionType& actionType ) {
+static void UINode_onFadeDone( Action * action, const Action::ActionType& actionType ) {
 	UINode * node = action->getTarget();
 
 	if ( NULL != node ) {
@@ -1819,11 +1819,11 @@ static void UINode_onFadeDone( UIAction * action, const UIAction::ActionType& ac
 }
 
 Interpolation1d * UINode::startAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds, const Ease::Interpolation& Type, Interpolation1d::OnPathEndCallback PathEndCallback ) {
-	Action::Fade * action = Action::Fade::New( From, To, TotalTime, Type );
+	Actions::Fade * action = Actions::Fade::New( From, To, TotalTime, Type );
 
 	action->getInterpolation()->setPathEndCallback( PathEndCallback );
 
-	action->addEventListener( UIAction::ActionType::OnDone, cb::Make2( &UINode_onFadeDone ) );
+	action->addEventListener( Action::ActionType::OnDone, cb::Make2( &UINode_onFadeDone ) );
 
 	runAction( action );
 
@@ -1831,7 +1831,7 @@ Interpolation1d * UINode::startAlphaAnim( const Float& From, const Float& To, co
 }
 
 Interpolation2d * UINode::startScaleAnim( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation2d::OnPathEndCallback PathEndCallback ) {
-	Action::Scale * action = Action::Scale::New( From, To, TotalTime, Type );
+	Actions::Scale * action = Actions::Scale::New( From, To, TotalTime, Type );
 
 	action->getInterpolation()->setPathEndCallback( PathEndCallback );
 
@@ -1845,7 +1845,7 @@ Interpolation2d * UINode::startScaleAnim( const Float& From, const Float& To, co
 }
 
 Interpolation2d * UINode::startTranslation( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation2d::OnPathEndCallback PathEndCallback ) {
-	Action::Move * action = Action::Move::New( From, To, TotalTime, Type );
+	Actions::Move * action = Actions::Move::New( From, To, TotalTime, Type );
 
 	action->getInterpolation()->setPathEndCallback( PathEndCallback );
 
@@ -1855,7 +1855,7 @@ Interpolation2d * UINode::startTranslation( const Vector2f& From, const Vector2f
 }
 
 Interpolation1d * UINode::startRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation1d::OnPathEndCallback PathEndCallback ) {
-	Action::Rotate * action = Action::Rotate::New( From, To, TotalTime, Type );
+	Actions::Rotate * action = Actions::Rotate::New( From, To, TotalTime, Type );
 
 	action->getInterpolation()->setPathEndCallback( PathEndCallback );
 
@@ -2014,14 +2014,14 @@ void UINode::setChildsAlpha( const Float &alpha ) {
 	}
 }
 
-UIActionManager * UINode::getActionManager() {
+ActionManager * UINode::getActionManager() {
 	if ( NULL == mActionManager )
-		mActionManager = eeNew( UIActionManager, () );
+		mActionManager = eeNew( ActionManager, () );
 
 	return mActionManager;
 }
 
-void UINode::runAction( UIAction * action ) {
+void UINode::runAction( Action * action ) {
 	if ( NULL != action ) {
 		action->setTarget( this );
 

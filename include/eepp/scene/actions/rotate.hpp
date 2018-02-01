@@ -1,18 +1,18 @@
-#ifndef EE_UI_ACTION_ROTATE_HPP
-#define EE_UI_ACTION_ROTATE_HPP
+#ifndef EE_SCENE_ACTION_ROTATE_HPP
+#define EE_SCENE_ACTION_ROTATE_HPP
 
-#include <eepp/ui/uiaction.hpp>
-#include <eepp/ui/actions/actioninterpolation1d.hpp>
+#include <eepp/scene/action.hpp>
+#include <eepp/scene/actions/actioninterpolation1d.hpp>
 
-namespace EE { namespace UI { namespace Action {
+namespace EE { namespace Scene { namespace Actions {
 
 class EE_API Rotate : public ActionInterpolation1d {
 	public:
 		static Rotate * New( const Float& start, const Float& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear );
 
-		UIAction * clone() const override;
+		Action * clone() const override;
 
-		UIAction * reverse() const override;
+		Action * reverse() const override;
 	protected:
 		Rotate( const Float & start, const Float & end, const Time & duration, const Ease::Interpolation & type );
 

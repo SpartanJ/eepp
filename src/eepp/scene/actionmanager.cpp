@@ -1,22 +1,22 @@
-#include <eepp/ui/uiactionmanager.hpp>
-#include <eepp/ui/uiaction.hpp>
+#include <eepp/scene/actionmanager.hpp>
+#include <eepp/scene/action.hpp>
 #include <eepp/core.hpp>
 #include <algorithm>
 
-namespace EE { namespace UI {
+namespace EE { namespace Scene {
 
-UIActionManager::UIActionManager() {
+ActionManager::ActionManager() {
 }
 
-UIActionManager::~UIActionManager() {
+ActionManager::~ActionManager() {
 	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
-		UIAction * action = (*it);
+		Action * action = (*it);
 
 		eeSAFE_DELETE( action );
 	}
 }
 
-void UIActionManager::addAction( UIAction * action ) {
+void ActionManager::addAction( Action * action ) {
 	bool found = (std::find(mActions.begin(), mActions.end(), action) != mActions.end());
 
 	if ( !found ) {
@@ -24,9 +24,9 @@ void UIActionManager::addAction( UIAction * action ) {
 	}
 }
 
-UIAction * UIActionManager::getActionByTag( const Uint32& tag ) {
+Action * ActionManager::getActionByTag( const Uint32& tag ) {
 	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
-		UIAction * action = (*it);
+		Action * action = (*it);
 
 		if ( action->getTag() == tag )
 			return action;
@@ -35,23 +35,23 @@ UIAction * UIActionManager::getActionByTag( const Uint32& tag ) {
 	return NULL;
 }
 
-void UIActionManager::removeActionByTag( const Uint32& tag ) {
+void ActionManager::removeActionByTag( const Uint32& tag ) {
 	removeAction( getActionByTag( tag ) );
 }
 
-void UIActionManager::update( const Time& time ) {
+void ActionManager::update( const Time& time ) {
 	if ( isEmpty() )
 		return;
 
-	std::list<UIAction*> removeList;
+	std::list<Action*> removeList;
 
 	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
-		UIAction * action = (*it);
+		Action * action = (*it);
 
 		action->update( time );
 
 		if ( action->isDone() ) {
-			action->sendEvent( UIAction::ActionType::OnDone );
+			action->sendEvent( Action::ActionType::OnDone );
 
 			removeList.push_back( action );
 		}
@@ -61,15 +61,15 @@ void UIActionManager::update( const Time& time ) {
 		removeAction( (*it) );
 }
 
-std::size_t UIActionManager::count() const {
+std::size_t ActionManager::count() const {
 	return mActions.size();
 }
 
-bool UIActionManager::isEmpty() const {
+bool ActionManager::isEmpty() const {
 	return mActions.empty();
 }
 
-void UIActionManager::removeAction( UIAction * action ) {
+void ActionManager::removeAction( Action * action ) {
 	if ( NULL != action ) {
 		mActions.remove( action );
 

@@ -1,18 +1,18 @@
-#ifndef EE_UI_ACTION_FADE_HPP
-#define EE_UI_ACTION_FADE_HPP
+#ifndef EE_SCENE_ACTION_FADE_HPP
+#define EE_SCENE_ACTION_FADE_HPP
 
-#include <eepp/ui/uiaction.hpp>
-#include <eepp/ui/actions/actioninterpolation1d.hpp>
+#include <eepp/scene/action.hpp>
+#include <eepp/scene/actions/actioninterpolation1d.hpp>
 
-namespace EE { namespace UI { namespace Action {
+namespace EE { namespace Scene { namespace Actions {
 
 class EE_API Fade : public ActionInterpolation1d {
 	public:
 		static Fade * New( const Float& start, const Float& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear, const bool& alphaChilds = true );
 
-		UIAction * clone() const override;
+		Action * clone() const override;
 
-		UIAction * reverse() const override;
+		Action * reverse() const override;
 	protected:
 		Fade( const Float & start, const Float & end, const Time & duration, const Ease::Interpolation & type, const bool& alphaChilds );
 

@@ -1,15 +1,15 @@
-#ifndef EE_UI_ACTION_MARGINMOVE_HPP
-#define EE_UI_ACTION_MARGINMOVE_HPP
+#ifndef EE_SCENE_ACTION_MARGINMOVE_HPP
+#define EE_SCENE_ACTION_MARGINMOVE_HPP
 
-#include <eepp/ui/uiaction.hpp>
+#include <eepp/scene/action.hpp>
 
 #include <eepp/math/interpolation1d.hpp>
 #include <eepp/math/rect.hpp>
 using namespace EE::Math;
 
-namespace EE { namespace UI { namespace Action {
+namespace EE { namespace Scene { namespace Actions {
 
-class EE_API MarginMove : public UIAction {
+class EE_API MarginMove : public Action {
 	public:
 		static MarginMove * New( const Rect& start, const Rect& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear );
 
@@ -21,9 +21,9 @@ class EE_API MarginMove : public UIAction {
 
 		bool isDone() override;
 
-		UIAction * clone() const override;
+		Action * clone() const override;
 
-		UIAction * reverse() const override;
+		Action * reverse() const override;
 
 		Interpolation1d getInterpolationLeft() const;
 

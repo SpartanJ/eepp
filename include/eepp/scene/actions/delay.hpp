@@ -1,13 +1,13 @@
-#ifndef EE_UI_ACTION_DELAY_HPP
-#define EE_UI_ACTION_DELAY_HPP
+#ifndef EE_SCENE_ACTION_DELAY_HPP
+#define EE_SCENE_ACTION_DELAY_HPP
 
-#include <eepp/ui/uiaction.hpp>
+#include <eepp/scene/action.hpp>
 #include <eepp/system/clock.hpp>
 using namespace EE::System;
 
-namespace EE { namespace UI { namespace Action {
+namespace EE { namespace Scene { namespace Actions {
 
-class EE_API Delay : public UIAction {
+class EE_API Delay : public Action {
 	public:
 		static Delay * New( const Time& time );
 		
@@ -19,9 +19,9 @@ class EE_API Delay : public UIAction {
 
 		bool isDone() override;
 
-		UIAction * clone() const override;
+		Action * clone() const override;
 
-		UIAction * reverse() const override;
+		Action * reverse() const override;
 
 	protected:
 		Clock mClock;
