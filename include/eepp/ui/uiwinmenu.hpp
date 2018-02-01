@@ -56,7 +56,7 @@ class EE_API UIWinMenu : public UIWidget {
 
 		UIPopUpMenu * getMenuFromButton( UISelectButton * Button );
 
-		bool isPopUpMenuChild( UINode * Ctrl );
+		bool isPopUpMenuChild( Node * Ctrl );
 
 		void onMenuFocusLoss( const UIEvent * Event );
 

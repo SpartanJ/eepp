@@ -34,22 +34,24 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 	Txt->setText( "Layer name:" );
 
 	mUIInput = UITextInput::New()->setMaxLength( 64 );
-	mUIInput->setParent( mUIWindow->getContainer() )->setSize( 120, 0 )->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
+	mUIInput->setSize( 120, 0 )->setParent( mUIWindow->getContainer() )->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
 	mUIInput->setText( mLayer->getName() );
 	mUIInput->addEventListener( UIEvent::OnPressEnter, cb::Make1( this, &MapLayerProperties::onOKClick ) );
 
 	UITextView * TxtBox = UITextView::New();
-	TxtBox->setFontStyle( Text::Shadow )->setParent( mUIWindow->getContainer() )->setSize( 192, 24 )->setHorizontalAlign( UI_HALIGN_CENTER )
-		  ->setPosition( 50, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 );
+	TxtBox->setFontStyle( Text::Shadow )->setHorizontalAlign( UI_HALIGN_CENTER )
+		  ->setPosition( 50, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 )
+		  ->setSize( 192, 24 )->setParent( mUIWindow->getContainer() );
 	TxtBox->setText( "Property Name" );
 
 	TxtBox = UITextView::New();
-	TxtBox->setFontStyle( Text::Shadow )->setParent( mUIWindow->getContainer() )->setSize( 192, 24 )->setHorizontalAlign( UI_HALIGN_CENTER )
-		  ->setPosition( 50+192, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 );
+	TxtBox->setFontStyle( Text::Shadow )->setHorizontalAlign( UI_HALIGN_CENTER )
+		  ->setPosition( 50+192, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 )
+		  ->setParent( mUIWindow->getContainer() )->setSize( 192, 24 );
 	TxtBox->setText( "Property Value" );
 
 	UIPushButton * OKButton = UIPushButton::New();
-	OKButton->setParent(  mUIWindow->getContainer() )->setSize( 80, 0 );
+	OKButton->setSize( 80, 0 )->setParent(  mUIWindow->getContainer() );
 	OKButton->setIcon( mUITheme->getIconByName( "ok" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
 	OKButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &MapLayerProperties::onOKClick ) );

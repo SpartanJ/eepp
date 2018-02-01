@@ -48,7 +48,7 @@ class EE_API UIScrollView : public UITouchDragableWidget {
 		UIScrollBar * mVScroll;
 		UIScrollBar * mHScroll;
 		UINode * mContainer;
-		UINode * mScrollView;
+		Node * mScrollView;
 		Uint32 mSizeChangeCb;
 
 		virtual void onSizeChange();

@@ -6,12 +6,9 @@
 #include <eepp/system/time.hpp>
 using namespace EE::System;
 
-namespace EE { namespace UI {
-class UINode;
-}}
-using namespace EE::UI;
-
 namespace EE { namespace Scene {
+
+class Node;
 
 class EE_API Action {
 	public:
@@ -49,7 +46,7 @@ class EE_API Action {
 
 		void setTag(const Uint32 & tag);
 
-		UINode * getTarget() const;
+		Node * getTarget() const;
 
 		Uint32 addEventListener( const ActionType & actionType, const ActionCallback & callback );
 
@@ -57,12 +54,12 @@ class EE_API Action {
 
 		void sendEvent( const ActionType & actionType );
 
-		void setTarget( UINode * target );
+		void setTarget( Node * target );
 	protected:
-		friend class UINode;
+		friend class Node;
 		typedef std::map< ActionType, std::map<Uint32, ActionCallback> > ActionCallbackMap;
 
-		UINode * mNode;
+		Node * mNode;
 		Uint32 mFlags;
 		Uint32 mTag;
 		Uint32 mNumCallBacks;

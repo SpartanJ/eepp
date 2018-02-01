@@ -275,7 +275,7 @@ void UIMenu::insert( UINode * Control, const Uint32& Index ) {
 	resizeControls();
 }
 
-bool UIMenu::isSubMenu( UINode * Ctrl ) {
+bool UIMenu::isSubMenu( Node * Ctrl ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i]->isType( UI_TYPE_MENUSUBMENU ) ) {
 			UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( mItems[i] );
@@ -301,7 +301,7 @@ Uint32 UIMenu::onMessage( const UIMessage * Msg ) {
 		}
 		case UIMessage::FocusLoss:
 		{
-			UINode * FocusCtrl = UIManager::instance()->getFocusControl();
+			Node * FocusCtrl = UIManager::instance()->getFocusControl();
 
 			if ( this != FocusCtrl && !isParentOf( FocusCtrl ) && !isSubMenu( FocusCtrl ) ) {
 				onWidgetFocusLoss();

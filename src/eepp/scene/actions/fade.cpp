@@ -22,7 +22,7 @@ void Fade::onStart() {
 		mNode->setAlpha( mInterpolation.getPosition() );
 
 		if ( mAffectChilds ) {
-			UINode * CurChild = mNode->getFirstChild();
+			Node * CurChild = mNode->getFirstChild();
 
 			while ( NULL != CurChild ) {
 				CurChild->runAction( clone() );

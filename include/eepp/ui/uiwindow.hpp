@@ -189,7 +189,7 @@ class EE_API UIWindow : public UIWidget {
 
 		void doResize( const UIMessage * Msg );
 
-		void decideResizeType( UINode * Control );
+		void decideResizeType( Node * Control );
 
 		void tryResize( const UI_RESIZE_TYPE& getType );
 

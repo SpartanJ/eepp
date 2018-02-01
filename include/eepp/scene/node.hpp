@@ -35,17 +35,17 @@ class EE_API Node : public Transformable {
 
 		virtual ~Node();
 
-		void worldToNodeTranslation( Vector2f& position ) const;
+		virtual void worldToNodeTranslation( Vector2f& position ) const;
 
-		void nodeToWorldTranslation( Vector2f& position ) const;
+		virtual void nodeToWorldTranslation( Vector2f& position ) const;
 
-		void worldToNode( Vector2i& pos );
+		virtual void worldToNode( Vector2i& pos );
 
-		void nodeToWorld( Vector2i& pos );
+		virtual void nodeToWorld( Vector2i& pos );
 
-		void worldToNode( Vector2f& pos );
+		virtual void worldToNode( Vector2f& pos );
 
-		void nodeToWorld( Vector2f& pos );
+		virtual void nodeToWorld( Vector2f& pos );
 
 		virtual Uint32 getType() const;
 
@@ -53,13 +53,17 @@ class EE_API Node : public Transformable {
 
 		void messagePost( const UIMessage * Msg );
 
-		void setPosition( const Vector2f& Pos );
+		virtual void setPosition( const Vector2f& Pos );
 
-		Node * setPosition( const Float& x, const Float& y );
+		virtual Node * setPosition( const Float& x, const Float& y );
 
 		virtual Node * setSize( const Sizef& size );
 
-		const Sizef& getSize();
+		Node * setSize( const Float& Width, const Float& Height );
+
+		virtual const Sizef& getSize();
+
+		virtual const Sizef& getRealSize();
 
 		Node * setVisible( const bool& visible );
 
@@ -76,12 +80,6 @@ class EE_API Node : public Transformable {
 		Node * getParent() const;
 
 		Node * setParent( Node * parent );
-
-		void centerHorizontal();
-
-		void centerVertical();
-
-		void center();
 
 		virtual void close();
 
@@ -113,6 +111,8 @@ class EE_API Node : public Transformable {
 
 		/** Use it at your own risk */
 		void setNodeFlags( const Uint32& flags );
+
+		Uint32 isUINode();
 
 		Uint32 isWidget();
 
@@ -187,9 +187,9 @@ class EE_API Node : public Transformable {
 
 		void invalidateDraw();
 
-		void setClipEnabled();
+		virtual void setClipEnabled();
 
-		void setClipDisabled();
+		virtual void setClipDisabled();
 
 		void setRotation( float angle );
 
@@ -244,10 +244,28 @@ class EE_API Node : public Transformable {
 		Rectf getLocalBounds();
 
 		UIWindow * getOwnerWindow();
+
+		bool hasFocus() const;
+
+		virtual void setFocus();
+
+		Node * getNextWidget();
+
+		void enableReportSizeChangeToChilds();
+
+		void disableReportSizeChangeToChilds();
+
+		bool reportSizeChangeToChilds();
+
+		void centerHorizontal();
+
+		void centerVertical();
+
+		void center();
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
-		friend class UIManager;
-		friend class UIWindow;
+		friend class EE::UI::UIManager;
+		friend class EE::UI::UIWindow;
 
 		std::string		mId;
 		Uint32			mIdHash;
@@ -338,9 +356,21 @@ class EE_API Node : public Transformable {
 
 		virtual void clipMe();
 
-		void checkClose();
+		virtual Uint32 onFocus();
+
+		virtual Uint32 onFocusLoss();
 
 		virtual void internalDraw();
+
+		virtual void clipDisable();
+
+		virtual void updateScreenPos();
+
+		virtual void setInternalSize(const Sizef& size );
+
+		void checkClose();
+
+		void sendParentSizeChange( const Vector2f& SizeChange );
 
 		void childDeleteAll();
 
@@ -362,17 +392,11 @@ class EE_API Node : public Transformable {
 
 		Node * childNext( Node * Ctrl, bool Loop = false ) const;
 
-		virtual void clipDisable();
-
-		virtual void updateScreenPos();
-
 		void writeCtrlFlag( const Uint32& Flag, const Uint32& Val );
 
 		Rectf getScreenBounds();
 
 		void setInternalPosition( const Vector2f& Pos );
-
-		void setInternalSize(const Sizef& size );
 
 		void setInternalWidth(const Float& width );
 

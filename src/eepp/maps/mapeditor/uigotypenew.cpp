@@ -27,10 +27,10 @@ UIGOTypeNew::UIGOTypeNew( cb::Callback2<void, std::string, Uint32> Cb ) :
 	Txt->setText( "GameObject Type Name" );
 
 	mUIInput = UITextInput::New()->setMaxLength( 64 );
-	mUIInput->setParent( mUIWindow->getContainer() )->setSize( 120, 0 )->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
+	mUIInput->setSize( 120, 0 )->setParent( mUIWindow->getContainer() )->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
 
 	UIPushButton * OKButton = UIPushButton::New();
-	OKButton->setParent(  mUIWindow->getContainer() )->setSize( 80, 0 );
+	OKButton->setSize( 80, 0 )->setParent(  mUIWindow->getContainer() );
 	OKButton->setIcon( mUITheme->getIconByName( "add" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
 	OKButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIGOTypeNew::onOKClick ) );

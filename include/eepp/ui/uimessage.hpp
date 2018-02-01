@@ -3,9 +3,9 @@
 
 #include <eepp/ui/base.hpp>
 
-namespace EE { namespace UI {
+namespace EE { namespace Scene {
 
-class UINode;
+class Node;
 
 class EE_API UIMessage {
 	public:
@@ -29,19 +29,19 @@ class EE_API UIMessage {
 			NoMessage = eeINDEX_NOT_FOUND
 		};
 
-		UIMessage( UINode * Ctrl, const Uint32& getMsg, const Uint32& getFlags = NoMessage );
+		UIMessage( Node * Ctrl, const Uint32& getMsg, const Uint32& getFlags = NoMessage );
 
 		~UIMessage();
 
-		UINode * getSender() const;
+		Node * getSender() const;
 
 		const Uint32& getMsg() const;
 
 		const Uint32& getFlags() const;
 	private:
-		UINode *	mCtrl;
-		Uint32			mMsg;
-		Uint32			mFlags;
+		Node *	mCtrl;
+		Uint32	mMsg;
+		Uint32	mFlags;
 };
 
 }}

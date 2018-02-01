@@ -2,7 +2,7 @@
 
 namespace EE { namespace Maps { namespace Private {
 
-static UITextView * createTextBox( const String& Text = "", UINode * Parent = NULL, const Sizef& Size = Sizef(), const Vector2f& Pos = Vector2f(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, const Uint32& fontStyle = Text::Regular ) {
+static UITextView * createTextBox( const String& Text = "", Node * Parent = NULL, const Sizef& Size = Sizef(), const Vector2f& Pos = Vector2f(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, const Uint32& fontStyle = Text::Regular ) {
 	UITextView * Ctrl = UITextView::New();
 	Ctrl->setFontStyle( fontStyle );
 	Ctrl->resetFlags( Flags )->setParent( Parent )->setSize( Size )->setVisible( true )->setEnabled( false )->setPosition( Pos );
@@ -82,7 +82,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	createTextBox( "Property Value", mUIWindow->getContainer(), Sizef(192, 24), Vector2f(50+192, TxtBox->getPosition().y ), TxtBoxFlags );
 
 	UIPushButton * OKButton = UIPushButton::New();
-	OKButton->setParent(  mUIWindow->getContainer() )->setSize( 80, 0 );
+	OKButton->setSize( 80, 0 )->setParent(  mUIWindow->getContainer() );
 	OKButton->setIcon( mUITheme->getIconByName( "ok" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
 	OKButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TileMapProperties::onOKClick ) );
@@ -110,7 +110,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	Vector2f Pos( mGenGrid->getPosition().x + mGenGrid->getSize().getWidth() + 10, mGenGrid->getPosition().y );
 
 	UIPushButton * AddButton = UIPushButton::New();
-	AddButton->setParent( mUIWindow->getContainer() )->setSize( 24, 0 )->setPosition( Pos );
+	AddButton->setSize( 24, 0 )->setParent( mUIWindow->getContainer() )->setPosition( Pos );
 	AddButton->setIcon( mUITheme->getIconByName( "add" ) );
 	AddButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	AddButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TileMapProperties::onAddCellClick ) );
@@ -121,7 +121,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 	Pos.y += AddButton->getSize().getHeight() + 5;
 
 	UIPushButton * RemoveButton = UIPushButton::New();
-	RemoveButton->setParent( mUIWindow->getContainer() )->setSize( 24, 0 )->setPosition( Pos );
+	RemoveButton->setSize( 24, 0 )->setParent( mUIWindow->getContainer() )->setPosition( Pos );
 	RemoveButton->setIcon( mUITheme->getIconByName( "remove" ) );
 	RemoveButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	RemoveButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TileMapProperties::onRemoveCellClick ) );

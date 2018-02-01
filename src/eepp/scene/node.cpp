@@ -31,7 +31,7 @@ Node::Node() :
 	mActionManager(NULL)
 {
 	if ( NULL == mParentCtrl && NULL != UIManager::instance()->getMainControl() ) {
-		//mParentCtrl = UIManager::instance()->getMainControl();
+		mParentCtrl = UIManager::instance()->getMainControl();
 		mParentWindowCtrl = getParentWindow();
 	}
 
@@ -46,6 +46,14 @@ Node::~Node() {
 
 	if ( NULL != mParentCtrl )
 		mParentCtrl->childRemove( this );
+
+	if ( UIManager::instance()->getFocusControl() == this && UIManager::instance()->getMainControl() != this ) {
+		UIManager::instance()->setFocusControl( UIManager::instance()->getMainControl() );
+	}
+
+	if ( UIManager::instance()->getOverControl() == this && UIManager::instance()->getMainControl() != this ) {
+		UIManager::instance()->setOverControl( UIManager::instance()->getMainControl() );
+	}
 }
 
 void Node::worldToNodeTranslation( Vector2f& Pos ) const {
@@ -98,7 +106,7 @@ Uint32 Node::onMessage( const UIMessage * Msg ) {
 }
 
 void Node::setInternalPosition( const Vector2f& Pos ) {
-	Transformable::setPosition( Pos.x * PixelDensity::getPixelDensity(), Pos.y * PixelDensity::getPixelDensity() );
+	Transformable::setPosition( Pos.x, Pos.y );
 	setDirty();
 }
 
@@ -133,16 +141,24 @@ Node * Node::setSize( const Sizef & Size ) {
 	return this;
 }
 
+Node * Node::setSize( const Float& Width, const Float& Height ) {
+	return setSize( Vector2f( Width, Height ) );
+}
+
 void Node::setInternalWidth( const Float& width ) {
-	setInternalSize( Sizef( width, mSize.getHeight() ) );
+	setInternalSize( Sizef( width, getSize().getHeight() ) );
 }
 
 void Node::setInternalHeight( const Float& height ) {
-	setInternalSize( Sizef( mSize.getWidth(), height ) );
+	setInternalSize( Sizef( getSize().getWidth(), height ) );
 }
 
 const Sizef& Node::getSize() {
 	return mSize;
+}
+
+const Sizef& Node::getRealSize() {
+	return getSize();
 }
 
 Node * Node::setVisible( const bool& visible ) {
@@ -218,31 +234,10 @@ bool Node::isParentOf( Node * Ctrl ) {
 	return false;
 }
 
-void Node::centerHorizontal() {
-	Node * Ctrl = getParent();
-
-	if ( NULL != Ctrl )
-		setPosition( eefloor( ( Ctrl->getSize().getWidth() - mSize.getWidth() ) * 0.5f ), getPosition().y );
-}
-
-void Node::centerVertical(){
-	Node * Ctrl = getParent();
-
-	if ( NULL != Ctrl )
-		setPosition( getPosition().x, eefloor( Ctrl->getSize().getHeight() - mSize.getHeight() ) * 0.5f );
-}
-
-void Node::center() {
-	Node * Ctrl = getParent();
-
-	if ( NULL != Ctrl )
-		setPosition( eefloor( ( Ctrl->getSize().getWidth() - mSize.getWidth() ) * 0.5f ), eefloor( Ctrl->getSize().getHeight() - mSize.getHeight() ) * 0.5f );
-}
-
 void Node::close() {
 	mNodeFlags |= NODE_FLAG_CLOSE;
 
-	//UIManager::instance()->addToCloseQueue( this );
+	UIManager::instance()->addToCloseQueue( this );
 }
 
 void Node::draw() {
@@ -267,13 +262,13 @@ void Node::update( const Time& time ) {
 }
 
 void Node::sendMouseEvent( const Uint32& Event, const Vector2i& Pos, const Uint32& Flags ) {
-	//UIEventMouse MouseEvent( this, Event, Pos, Flags );
-	//sendEvent( &MouseEvent );
+	UIEventMouse MouseEvent( this, Event, Pos, Flags );
+	sendEvent( &MouseEvent );
 }
 
 void Node::sendCommonEvent( const Uint32& Event ) {
-	//UIEvent CommonEvent( this, Event );
-	//sendEvent( &CommonEvent );
+	UIEvent CommonEvent( this, Event );
+	sendEvent( &CommonEvent );
 }
 
 Uint32 Node::onKeyDown( const UIEventKey& Event ) {
@@ -399,6 +394,12 @@ void Node::onVisibilityChange() {
 }
 
 void Node::onEnabledChange() {
+	if ( !isEnabled() && NULL != UIManager::instance()->getFocusControl() ) {
+		if ( isChild( UIManager::instance()->getFocusControl() ) ) {
+			UIManager::instance()->setFocusControl( NULL );
+		}
+	}
+
 	sendCommonEvent( UIEvent::OnEnabledChange );
 	invalidateDraw();
 }
@@ -428,6 +429,10 @@ const Uint32& Node::getNodeFlags() const {
 
 void Node::setNodeFlags( const Uint32& Flags ) {
 	mNodeFlags = Flags;
+}
+
+Uint32 Node::isUINode() {
+	return mNodeFlags & NODE_FLAG_UINODE;
 }
 
 void Node::drawChilds() {
@@ -474,17 +479,9 @@ void Node::internalDraw() {
 }
 
 void Node::clipMe() {
-	//if ( mVisible && ( mFlags & UI_CLIP_ENABLE ) ) {
-	if ( false ) {
-	//	UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
-	}
 }
 
 void Node::clipDisable() {
-	//if ( mVisible && ( mFlags & UI_CLIP_ENABLE ) ) {
-	if ( false ) {
-	//	UIManager::instance()->clipSmartDisable( this );
-	}
 }
 
 void Node::matrixSet() {
@@ -958,21 +955,21 @@ void Node::onChildCountChange() {
 
 void Node::worldToNode( Vector2i& pos ) {
 	Vector2f toPos( convertToNodeSpace( Vector2f( pos.x, pos.y ) ) );
-	pos = Vector2i( toPos.x  / PixelDensity::getPixelDensity(), toPos.y / PixelDensity::getPixelDensity() );
+	pos = Vector2i( toPos.x, toPos.y );
 }
 
 void Node::nodeToWorld( Vector2i& pos ) {
-	Vector2f toPos( convertToWorldSpace( Vector2f( pos.x * PixelDensity::getPixelDensity(), pos.y * PixelDensity::getPixelDensity() ) ) );
+	Vector2f toPos( convertToWorldSpace( Vector2f( pos.x, pos.y ) ) );
 	pos = Vector2i( toPos.x, toPos.y );
 }
 
 void Node::worldToNode( Vector2f& pos ) {
 	Vector2f toPos( convertToNodeSpace( pos ) );
-	pos = Vector2f( toPos.x  / PixelDensity::getPixelDensity(), toPos.y / PixelDensity::getPixelDensity() );
+	pos = Vector2f( toPos.x, toPos.y );
 }
 
 void Node::nodeToWorld( Vector2f& pos ) {
-	Vector2f toPos( convertToWorldSpace( Vector2f( pos.x * PixelDensity::getPixelDensity(), pos.y * PixelDensity::getPixelDensity() ) ) );
+	Vector2f toPos( convertToWorldSpace( Vector2f( pos.x, pos.y ) ) );
 	pos = Vector2f( toPos.x, toPos.y );
 }
 
@@ -989,7 +986,7 @@ void Node::invalidateDraw() {
 	if ( NULL != mParentWindowCtrl ) {
 		mParentWindowCtrl->invalidate();
 	} else if ( NULL == mParentCtrl && isWindow() ) {
-	//	static_cast<UIWindow*>( this )->invalidate();
+		static_cast<UIWindow*>( this )->invalidate();
 	}
 }
 
@@ -1005,8 +1002,17 @@ UIWindow * Node::getOwnerWindow() {
 	return mParentWindowCtrl;
 }
 
-UIWindow *Node::getParentWindow() {
-	return mParentWindowCtrl;
+UIWindow * Node::getParentWindow() {
+	Node * Ctrl = mParentCtrl;
+
+	while ( Ctrl != NULL ) {
+		if ( Ctrl->isType( UI_TYPE_WINDOW ) )
+			return static_cast<UIWindow*>( Ctrl );
+
+		Ctrl = Ctrl->getParent();
+	}
+
+	return NULL;
 }
 
 void Node::updateOriginPoint() {
@@ -1190,13 +1196,13 @@ ActionManager * Node::getActionManager() {
 }
 
 void Node::runAction( Action * action ) {
-	/*if ( NULL != action ) {
+	if ( NULL != action ) {
 		action->setTarget( this );
 
 		action->start();
 
 		getActionManager()->addAction( action );
-	}*/
+	}
 }
 
 Transform Node::getLocalTransform() {
@@ -1233,6 +1239,124 @@ void Node::setScaleOrigin(float x, float y) {
 
 void Node::setRotationOrigin(float x, float y) {
 	setRotationOriginPoint( OriginPoint( x, y ) );
+}
+
+Uint32 Node::onFocus() {
+	mNodeFlags |= NODE_FLAG_HAS_FOCUS;
+
+	sendCommonEvent( UIEvent::OnFocus );
+
+	return 1;
+}
+
+Uint32 Node::onFocusLoss() {
+	mNodeFlags &= ~NODE_FLAG_HAS_FOCUS;
+
+	sendCommonEvent( UIEvent::OnFocusLoss );
+
+	invalidateDraw();
+
+	return 1;
+}
+
+bool Node::hasFocus() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_HAS_FOCUS );
+}
+
+void Node::setFocus() {
+}
+
+Node * Node::getNextWidget() {
+	Node * Found		= NULL;
+	Node * ChildLoop	= mChild;
+
+	while( NULL != ChildLoop ) {
+		if ( ChildLoop->isVisible() && ChildLoop->isEnabled() ) {
+			if ( ChildLoop->isWidget() ) {
+				return ChildLoop;
+			} else {
+				Found = ChildLoop->getNextWidget();
+
+				if ( NULL != Found ) {
+					return Found;
+				}
+			}
+		}
+
+		ChildLoop = ChildLoop->getNextNode();
+	}
+
+	if ( NULL != mNext ) {
+		if ( mNext->isVisible() && mNext->isEnabled() && mNext->isWidget() ) {
+			return mNext;
+		} else {
+			return mNext->getNextWidget();
+		}
+	} else {
+		ChildLoop = mParentCtrl;
+
+		while ( NULL != ChildLoop ) {
+			if ( NULL != ChildLoop->getNextNode() ) {
+				if ( ChildLoop->getNextNode()->isVisible() &&
+					 ChildLoop->getNextNode()->isEnabled() &&
+					 ChildLoop->getNextNode()->isWidget() ) {
+					return ChildLoop->getNextNode();
+				} else {
+					return ChildLoop->getNextNode()->getNextWidget();
+				}
+			}
+
+			ChildLoop = ChildLoop->getParent();
+		}
+	}
+
+	return UIManager::instance()->getMainControl();
+}
+
+void Node::sendParentSizeChange( const Vector2f& SizeChange ) {
+	if ( reportSizeChangeToChilds() )	{
+		Node * ChildLoop = mChild;
+
+		while( NULL != ChildLoop ) {
+			ChildLoop->onParentSizeChange( SizeChange );
+			ChildLoop = ChildLoop->getNextNode();
+		}
+	}
+}
+
+bool Node::reportSizeChangeToChilds() {
+	return mNodeFlags & NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS;
+}
+
+void Node::enableReportSizeChangeToChilds() {
+	writeCtrlFlag( NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS, 1 );
+}
+
+void Node::disableReportSizeChangeToChilds() {
+	writeCtrlFlag( NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS, 0 );
+}
+
+void Node::centerHorizontal() {
+	Node * Ctrl = getParent();
+
+	if ( NULL != Ctrl ) {
+		setPosition( eefloor( ( Ctrl->getSize().getWidth() - getSize().getWidth() ) * 0.5f ), getPosition().y );
+	}
+}
+
+void Node::centerVertical(){
+	Node * Ctrl = getParent();
+
+	if ( NULL != Ctrl ) {
+		setPosition( getPosition().x, eefloor( Ctrl->getSize().getHeight() - getSize().getHeight() ) * 0.5f );
+	}
+}
+
+void Node::center() {
+	Node * Ctrl = getParent();
+
+	if ( NULL != Ctrl )
+		setPosition( eefloor( ( Ctrl->getSize().getWidth() - getSize().getWidth() ) * 0.5f ), eefloor( Ctrl->getSize().getHeight() - getSize().getHeight() ) * 0.5f );
 }
 
 }}

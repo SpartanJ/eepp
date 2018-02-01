@@ -24,7 +24,7 @@ class EE_API UIWidget : public UINode {
 
 		virtual void update( const Time& time );
 
-		virtual UINode * setSize( const Sizef& size );
+		virtual Node * setSize( const Sizef& size );
 
 		virtual UINode * setFlags( const Uint32& flags );
 
@@ -38,7 +38,7 @@ class EE_API UIWidget : public UINode {
 
 		virtual UINode * setThemeSkin( UITheme * Theme, const std::string& skinName );
 
-		UINode * setSize( const Float& Width, const Float& Height );
+		virtual Node * setSize( const Float& Width, const Float& Height );
 
 		const Sizef& getSize();
 

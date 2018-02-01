@@ -904,7 +904,7 @@ Uint32 UIListBox::onMessage( const UIMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
 		case UIMessage::FocusLoss:
 		{
-			UINode * FocusCtrl = UIManager::instance()->getFocusControl();
+			Node * FocusCtrl = UIManager::instance()->getFocusControl();
 
 			if ( this != FocusCtrl && !isParentOf( FocusCtrl ) ) {
 				onWidgetFocusLoss();

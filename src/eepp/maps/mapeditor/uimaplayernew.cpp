@@ -33,11 +33,11 @@ UIMapLayerNew::UIMapLayerNew( UIMap * Map, EE_LAYER_TYPE Type, NewLayerCb newLay
 	Txt->setText( "Layer Name" );
 
 	mUILayerName = UITextInput::New()->setMaxLength( 64 );
-	mUILayerName->setParent( mUIWindow->getContainer() )->setSize( 120, 0 )->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
+	mUILayerName->setSize( 120, 0 )->setParent( mUIWindow->getContainer() )->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
 	mUILayerName->setText( "Layer " + String::toStr( mUIMap->Map()->getLayerCount() + 1 ) );
 
 	UIPushButton * OKButton = UIPushButton::New();
-	OKButton->setParent(  mUIWindow->getContainer() )->setSize( 80, 0 );
+	OKButton->setSize( 80, 0 )->setParent(  mUIWindow->getContainer() );
 	OKButton->setIcon( mTheme->getIconByName( "add" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
 	OKButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIMapLayerNew::onOKClick ) );

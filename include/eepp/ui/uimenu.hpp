@@ -108,7 +108,7 @@ class EE_API UIMenu : public UIWidget {
 
 		bool checkControlSize( UINode * Control, const bool& Resize = true );
 
-		bool isSubMenu( UINode * Ctrl );
+		bool isSubMenu( Node * Ctrl );
 
 		void setItemSelected( UINode * Item );
 

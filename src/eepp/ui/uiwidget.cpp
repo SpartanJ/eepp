@@ -227,7 +227,7 @@ void UIWidget::tooltipRemove() {
 	mTooltip = NULL;
 }
 
-UINode * UIWidget::setSize( const Sizef& size ) {
+Node * UIWidget::setSize( const Sizef& size ) {
 	Sizef s( size );
 
 	if ( s.x < mMinControlSize.x )
@@ -279,7 +279,7 @@ UINode * UIWidget::setThemeSkin( UITheme * Theme, const std::string& skinName ) 
 	return UINode::setThemeSkin( Theme, skinName );
 }
 
-UINode * UIWidget::setSize( const Float& Width, const Float& Height ) {
+Node * UIWidget::setSize( const Float& Width, const Float& Height ) {
 	return UINode::setSize( Width, Height );
 }
 
@@ -542,7 +542,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 						setFlags( UI_AUTO_PADDING );
 						notifyLayoutAttrChange();
 					} else if ( "reportsizechangetochilds" == cur || "report_size_change_to_childs" == cur ) {
-						setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
+						enableReportSizeChangeToChilds();
 					}
 				}
 			}
@@ -630,7 +630,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 
 			std::string id = ait->as_string();
 
-			UINode * control = getParent()->find( id );
+			Node * control = getParent()->find( id );
 
 			if ( NULL != control && control->isWidget() ) {
 				UIWidget * widget = static_cast<UIWidget*>( control );

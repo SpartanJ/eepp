@@ -310,12 +310,12 @@ void EETest::createShaders() {
 void EETest::onWinMouseUp( const UIEvent * Event ) {
 	const UIEventMouse * MEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
-	UINode * CtrlAnim;
+	Node * CtrlAnim;
 
 	if ( Event->getControl()->isType( UI_TYPE_WINDOW ) ) {
-		CtrlAnim = reinterpret_cast<UINode*>( Event->getControl() );
+		CtrlAnim = reinterpret_cast<Node*>( Event->getControl() );
 	} else {
-		CtrlAnim = reinterpret_cast<UINode*>( Event->getControl()->getParent() );
+		CtrlAnim = reinterpret_cast<Node*>( Event->getControl()->getParent() );
 	}
 
 	if ( MEvent->getFlags() & EE_BUTTON_WUMASK ) {
@@ -360,12 +360,12 @@ void EETest::createBaseUI() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
+	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW/*| UI_WIN_FRAME_BUFFER*/;
 	windowStyleConfig.MinWindowSize = Sizef( 530, 405 );
 	windowStyleConfig.BaseAlpha = 200;
 	tWin->setStyleConfig( windowStyleConfig );
 
-	C = tWin->getContainer();
+	C = static_cast<UINode*>( tWin->getContainer() );
 	tWin->setVisible( false )->setEnabled( false );
 
 	tWin->setTitle( "Controls Test" );
@@ -381,7 +381,7 @@ void EETest::createBaseUI() {
 	sprite->setDeallocSprite( true );
 
 	UITextView * Text = UITextView::New();
-	Text->setLayoutSizeRules( FIXED, FIXED )->setParent( C )->setEnabled( false )->setSize( 320, 240 )->setHorizontalAlign( UI_HALIGN_RIGHT )->setVerticalAlign( UI_VALIGN_TOP );
+	Text->setLayoutSizeRules( FIXED, FIXED )->setHorizontalAlign( UI_HALIGN_RIGHT )->setVerticalAlign( UI_VALIGN_TOP )->setParent( C )->setEnabled( false )->setSize( 320, 240 );
 	Text->setText( "Turn around\nJust Turn Around\nAround!" );
 
 	UITextInput::New()->setParent( C )->setPosition( 20, 216 )->setSize( 200, 0 );
@@ -423,12 +423,13 @@ void EETest::createBaseUI() {
 	mProgressBar->setParent( C )->setSize( 200, 24 )->setPosition( 20, 190 );
 
 	mTextBoxValue = UITextView::New();
-	mTextBoxValue->setParent( C )->setPosition( 20, 0 )->setFlags( UI_AUTO_SIZE );
-	mTextBoxValue->setVisible( true );
+	mTextBoxValue->setParent( C )->setPosition( 20, 0 );
+	mTextBoxValue->setFlags( UI_AUTO_SIZE )->setVisible( true );
 	onValueChange( NULL );
 
 	mListBox = UIListBox::New();
-	mListBox->setParent( C )->setPosition( 325, 8 )->setSize( 200, 224 )->setFlags( UI_TOUCH_DRAG_ENABLED );
+	mListBox->setParent( C )->setPosition( 325, 8 )->setSize( 200, 224 );
+	mListBox->setFlags( UI_TOUCH_DRAG_ENABLED );
 	mListBox->addListBoxItems( str );
 
 	UIDropDownList * dropDownList = UIDropDownList::New();
@@ -487,16 +488,17 @@ void EETest::createBaseUI() {
 	genGrid->setCollumnWidth( 2, 100 );
 
 	UIWidget * w = UIWidget::New();
-	w->setParent( C )->setSize( 20, 20 )->setPosition( 260, 130 )->setBackgroundFillEnabled( true )->setColor( Color::Green );
+	w->setParent( C )->setSize( 20, 20 )->setPosition( 260, 130 );
+	w->setBackgroundFillEnabled( true )->setColor( Color::Green );
 	w->setRotation( 45 );
 	w->addEventListener( UIEvent::MouseEnter, cb::Make1<void, const UIEvent*>( [] ( const UIEvent* event ) {
-		event->getControl()->getBackground()->setColor( Color::Yellow );
+		static_cast<UIWidget*>( event->getControl() )->getBackground()->setColor( Color::Yellow );
 	} ) );
 	w->addEventListener( UIEvent::MouseExit, cb::Make1<void, const UIEvent*>( [] ( const UIEvent* event ) {
-		event->getControl()->getBackground()->setColor( Color::Green );
+		static_cast<UIWidget*>( event->getControl() )->getBackground()->setColor( Color::Green );
 	} ) );
 	w->addEventListener( UIEvent::MouseClick, cb::Make1<void, const UIEvent*>( [] ( const UIEvent* event ) {
-		event->getControl()->getBackground()->setColor( Color::Red );
+		static_cast<UIWidget*>( event->getControl() )->getBackground()->setColor( Color::Red );
 	} ) );
 
 	C = reinterpret_cast<UINode*> ( C->getParent() );
@@ -592,6 +594,7 @@ void EETest::createUI() {
 	UIManager::instance()->init(UI_MAN_OPS | UI_MANAGER_USE_DRAW_INVALIDATION | UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER);
 	UIManager::instance()->setTranslator( mTranslator );
 
+	eePRINTL("Node size: %d", sizeof(Node));
 	eePRINTL("UINode size: %d", sizeof(UINode));
 	//mTheme = UITheme::loadFromDirectory( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
 
@@ -604,7 +607,7 @@ void EETest::createUI() {
 	UIThemeManager::instance()->setDefaultTheme( mThemeName );
 
 	createBaseUI();
-	//createNewUI();
+	createNewUI();
 
 	eePRINTL( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 }
@@ -630,8 +633,8 @@ void EETest::createNewUI() {
 			->setRadius( 25 )
 			->setPosition( 800, 0 )
 			->setSize( 100, 100 )
-			->setParent( container )
-			->setBackgroundFillEnabled( true )->setColor( 0xCCCCCCCC );
+			->setParent( container );
+	loader->setBackgroundFillEnabled( true )->setColor( 0xCCCCCCCC );
 
 	UIRadioButton * ctrl = UIRadioButton::New();
 	ctrl->setPosition( 50, 100 )->setSize( 200, 32 )->setParent( container );
@@ -869,13 +872,15 @@ void EETest::createNewUI() {
 
 		if ( textures.size() > 0 ) {
 			for ( std::size_t i = 0; i < textures.size(); i++ ) {
-				UIImage::New()
-						->setDrawable( textures[i] )
+				UIImage * img = UIImage::New();
+						img->setDrawable( textures[i] )
 						->setScaleType( UIScaleType::FitInside )
 						->setGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
 						->setEnabled( false )
-						->setParent( gridLayout )->setBackgroundFillEnabled( true )
-							->setColor( Color::fromPointer( textures[i] ) );
+						->setParent( gridLayout );
+
+				img->setBackgroundFillEnabled( true )
+						->setColor( Color::fromPointer( textures[i] ) );
 			}
 		}
 	}
@@ -888,7 +893,7 @@ void EETest::createMapEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW/*| UI_WIN_FRAME_BUFFER*/;
 	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -905,7 +910,7 @@ void EETest::createETGEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW/*| UI_WIN_FRAME_BUFFER*/;
 	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -940,7 +945,7 @@ static void onWinDragStop( const UIEvent * event ) {
 
 void EETest::createDecoratedWindow() {
 	mUIWindow = UIBlurredWindow::New( mBlur );
-	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER )
+	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW/*| UI_WIN_FRAME_BUFFER*/ )
 			->setMinWindowSize( 530, 350 )->setPosition( 200, 50 );
 
 	mUIWindow->addEventListener( UIEvent::OnWindowClose, cb::Make1( this, &EETest::onCloseClick ) );
@@ -998,7 +1003,8 @@ void EETest::createDecoratedWindow() {
 	TabWidget->setLayoutMargin( Rect( 5, 5, 5, 5 ) )
 			->setLayoutWeight( 1 )
 			->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )
-			->setParent( lay )->setFlags( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
+			->setFlags( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
+			->setParent( lay );
 
 	UITextEdit * TEdit = UITextEdit::New();
 	TEdit->setParent( TabWidget );

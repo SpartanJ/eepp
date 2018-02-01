@@ -29,7 +29,7 @@ using namespace EE::Maps::Private;
 
 namespace EE { namespace Maps {
 
-static UITextView * createTextBox( const String& Text = "", UINode * Parent = NULL, const Sizef& Size = Sizef(), const Vector2f& Pos = Vector2f(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, const Uint32& fontStyle = Text::Regular ) {
+static UITextView * createTextBox( const String& Text = "", Node * Parent = NULL, const Sizef& Size = Sizef(), const Vector2f& Pos = Vector2f(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, const Uint32& fontStyle = Text::Regular ) {
 	UITextView * Ctrl = UITextView::New();
 	Ctrl->setFontStyle( fontStyle );
 	Ctrl->resetFlags( Flags )->setParent( Parent )->setSize( Size )->setVisible( true )->setEnabled( false )->setPosition( Pos );
@@ -170,7 +170,7 @@ void MapEditor::createWinMenu() {
 	PU6->addEventListener( UIEvent::OnItemClicked, cb::Make1( this, &MapEditor::mapMenuClick ) );
 
 	mWinContainer = UIWidget::New();
-	mWinContainer->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
+	mWinContainer->enableReportSizeChangeToChilds();
 	mWinContainer->setParent( mUIContainer );
 	mWinContainer->setPosition( 0, WinMenu->getSize().getHeight() );
 	mWinContainer->setSize( mUIContainer->getSize().getWidth(), mUIContainer->getSize().getHeight() - WinMenu->getSize().getHeight() );
@@ -200,10 +200,10 @@ void MapEditor::createETGMenu() {
 
 	mTabWidget = UITabWidget::New();
 
-	mTabWidget->setParent( mWinContainer )->
-				setSize( Width + DistToBorder, mWinContainer->getSize().getHeight() - DistFromTopMenu )->
-				setPosition( ContPosX, DistFromTopMenu )->resetFlags()->
-				setFlags( UI_HALIGN_CENTER | UI_VALIGN_BOTTOM | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM );
+	mTabWidget->setFlags( UI_HALIGN_CENTER | UI_VALIGN_BOTTOM | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM )->
+				setParent( mWinContainer )->setSize( Width + DistToBorder, mWinContainer->getSize().getHeight() - DistFromTopMenu )->
+				setPosition( ContPosX, DistFromTopMenu );
+	mTabWidget->resetFlags();
 
 	mTabWidget->addEventListener( UIEvent::OnTabSelected, cb::Make1( this, &MapEditor::onTabSelected ) );
 
@@ -289,40 +289,40 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 	Uint32 ChkFlags = UI_CONTROL_DEFAULT_ALIGN | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
 	mChkMirrored = UICheckBox::New();
-	mChkMirrored->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkMirrored->setFontStyle( Text::Shadow )->resetFlags( ChkFlags )->setParent( mTextureRegionCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 	mChkMirrored->setText( "Mirrored" );
 	mChkMirrored->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickMirrored ) );
 
 	mChkFliped = UICheckBox::New();
-	mChkFliped->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( mChkMirrored->getPosition().x + mChkMirrored->getSize().getWidth() + 32, mChkMirrored->getPosition().y  )->resetFlags( ChkFlags );
+	mChkFliped->setFontStyle( Text::Shadow )->resetFlags( ChkFlags )->setParent( mTextureRegionCont )->setPosition( mChkMirrored->getPosition().x + mChkMirrored->getSize().getWidth() + 32, mChkMirrored->getPosition().y  );
 	mChkFliped->setText( "Fliped" );
 	mChkFliped->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickFlipped ) );
 
 	mChkBlocked = UICheckBox::New();
-	mChkBlocked->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( mChkMirrored->getPosition().x, mChkMirrored->getPosition().y + mChkMirrored->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkBlocked->setFontStyle( Text::Shadow )->resetFlags( ChkFlags )->setParent( mTextureRegionCont )->setPosition( mChkMirrored->getPosition().x, mChkMirrored->getPosition().y + mChkMirrored->getSize().getHeight() + 4 );
 	mChkBlocked->setText( "Blocked" );
 	mChkBlocked->setTooltipText( "Blocks the tile occupied by the sprite." );
 	mChkBlocked->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickBlocked ) );
 
 	mChkAnim = UICheckBox::New();
-	mChkAnim->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( mChkFliped->getPosition().x, mChkFliped->getPosition().y + mChkFliped->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkAnim->setFontStyle( Text::Shadow )->resetFlags( ChkFlags )->setParent( mTextureRegionCont )->setPosition( mChkFliped->getPosition().x, mChkFliped->getPosition().y + mChkFliped->getSize().getHeight() + 4 );
 	mChkAnim->setText( "Animated" );
 	mChkAnim->setTooltipText( "Indicates if the Sprite is animated." );
 	mChkAnim->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickAnimated ) );
 
 	mChkRot90 = UICheckBox::New();
-	mChkRot90->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( mChkBlocked->getPosition().x, mChkBlocked->getPosition().y + mChkBlocked->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkRot90->setFontStyle( Text::Shadow )->resetFlags( ChkFlags )->setParent( mTextureRegionCont )->setPosition( mChkBlocked->getPosition().x, mChkBlocked->getPosition().y + mChkBlocked->getSize().getHeight() + 4 );
 	mChkRot90->setText( String::fromUtf8( "Rotate 90º" ) );
 	mChkRot90->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickRot90 ) );
 
 	mChkAutoFix = UICheckBox::New();
-	mChkAutoFix->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( mChkAnim->getPosition().x, mChkAnim->getPosition().y + mChkAnim->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkAutoFix->setFontStyle( Text::Shadow )->resetFlags( ChkFlags )->setParent( mTextureRegionCont )->setPosition( mChkAnim->getPosition().x, mChkAnim->getPosition().y + mChkAnim->getSize().getHeight() + 4 );
 	mChkAutoFix->setText( "AutoFix TilePos" );
 	mChkAutoFix->setTooltipText( "In a tiled layer if the sprite is moved,\nit will update the current tile position automatically." );
 	mChkAutoFix->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickAutoFix ) );
 
 	mChkBlendAdd = UICheckBox::New();
-	mChkBlendAdd->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( mChkRot90->getPosition().x, mChkRot90->getPosition().y + mChkRot90->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkBlendAdd->setFontStyle( Text::Shadow )->resetFlags( ChkFlags )->setParent( mTextureRegionCont )->setPosition( mChkRot90->getPosition().x, mChkRot90->getPosition().y + mChkRot90->getSize().getHeight() + 4 );
 	mChkBlendAdd->setText( "Additive Blend" );
 	mChkBlendAdd->setTooltipText( "Use additive blend mode." );
 	mChkBlendAdd->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickAutoFix ) );
@@ -330,7 +330,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 	Txt = createTextBox( "Game Object Data:", mTextureRegionCont, Sizef( Width, 16 ), Vector2f( TAB_CONT_X_DIST, mChkBlendAdd->getPosition().y + mChkBlendAdd->getSize().getHeight() + 8 ), TxtFlags, Text::Shadow );
 
 	mChkDI = UICheckBox::New();
-	mChkDI->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
+	mChkDI->setFontStyle( Text::Shadow )->resetFlags( ChkFlags )->setParent( mTextureRegionCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 	mChkDI->setText( "Add as DataId" );
 	mChkDI->setTooltipText( "If the resource it's not a sprite,\nyou can reference it with a data id" );
 	mChkDI->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickDI ) );
@@ -430,7 +430,7 @@ void MapEditor::createLighContainer() {
 	mLightRadius->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::onLightRadiusChangeVal ) );
 
 	mLightTypeChk = UICheckBox::New();
-	mLightTypeChk->setParent( mLightCont )->setPosition( mLightRadius->getPosition().x, mLightRadius->getPosition().y + mLightRadius->getSize().getHeight() + 8 )->setFlags( UI_AUTO_SIZE );
+	mLightTypeChk->setFlags( UI_AUTO_SIZE )->setParent( mLightCont )->setPosition( mLightRadius->getPosition().x, mLightRadius->getPosition().y + mLightRadius->getSize().getHeight() + 8 );
 	mLightTypeChk->setText( "Isometric Light" );
 	mLightTypeChk->setActive( false );
 	mLightTypeChk->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::onLightTypeChange ) );
@@ -438,8 +438,8 @@ void MapEditor::createLighContainer() {
 
 UISelectButton * MapEditor::addObjContButton( String text, Uint32 mode ) {
 	UISelectButton * Button = UISelectButton::New();
-	Button->setParent( mObjectCont );
-	Button->setSize( mObjectCont->getSize().getWidth() - TAB_CONT_X_DIST * 2, 0 )->setPosition( TAB_CONT_X_DIST, mLastSelButtonY )->setFlags( UI_AUTO_SIZE );
+	Button->setFlags( UI_AUTO_SIZE )->setParent( mObjectCont );
+	Button->setSize( mObjectCont->getSize().getWidth() - TAB_CONT_X_DIST * 2, 0 )->setPosition( TAB_CONT_X_DIST, mLastSelButtonY );
 	Button->setText( text );
 	Button->setData( mode );
 
@@ -464,7 +464,7 @@ void MapEditor::createObjectsContainer() {
 	Uint32 ChkFlags = UI_CONTROL_DEFAULT_ALIGN | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
 	mChkClampToTile = UICheckBox::New();
-	mChkClampToTile->setParent( mObjectCont )->setPosition( 12, nextY )->resetFlags( ChkFlags );
+	mChkClampToTile->resetFlags( ChkFlags )->setParent( mObjectCont )->setPosition( 12, nextY );
 	mChkClampToTile->setText( "Clamp Position to Tile" );
 	mChkClampToTile->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickClampToTile ) );
 	mChkClampToTile->setActive( true );

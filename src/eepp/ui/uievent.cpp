@@ -1,9 +1,9 @@
 #include <eepp/ui/uievent.hpp>
-#include <eepp/ui/uinode.hpp>
+#include <eepp/scene/node.hpp>
 
-namespace EE { namespace UI {
+namespace EE { namespace Scene {
 
-UIEvent::UIEvent(UINode * control, const Uint32& eventType ) :
+UIEvent::UIEvent( Node * control, const Uint32& eventType ) :
 	mCtrl( control ),
 	mEventType( eventType )
 {
@@ -13,7 +13,7 @@ UIEvent::~UIEvent()
 {
 }
 
-UINode * UIEvent::getControl() const {
+Node * UIEvent::getControl() const {
 	return mCtrl;
 }
 

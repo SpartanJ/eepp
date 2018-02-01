@@ -45,7 +45,7 @@ class EE_API MapEditor {
 		~MapEditor();
 	protected:
 		UIWindow *			mUIWindow;
-		UINode *			mUIContainer;
+		Node *				mUIContainer;
 		UITheme *			mTheme;
 		Private::UIMap *	mUIMap;
 		MapEditorCloseCb	mCloseCb;

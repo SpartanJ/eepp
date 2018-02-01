@@ -1,5 +1,5 @@
 #include <eepp/scene/action.hpp>
-#include <eepp/ui/uinode.hpp>
+#include <eepp/scene/node.hpp>
 
 namespace EE { namespace Scene {
 
@@ -30,11 +30,11 @@ void Action::setTag( const Uint32 & tag ) {
 	mTag = tag;
 }
 
-void Action::setTarget( UINode * target ) {
+void Action::setTarget( Node * target ) {
 	mNode = target;
 }
 
-UINode * Action::getTarget() const {
+Node * Action::getTarget() const {
 	return mNode;
 }
 

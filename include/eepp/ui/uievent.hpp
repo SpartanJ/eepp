@@ -3,9 +3,9 @@
 
 #include <eepp/ui/base.hpp>
 
-namespace EE { namespace UI {
+namespace EE { namespace Scene {
 
-class UINode;
+class Node;
 
 class EE_API UIEvent {
 	public:
@@ -56,16 +56,16 @@ class EE_API UIEvent {
 			NoEvent = eeINDEX_NOT_FOUND
 		};
 
-		UIEvent( UINode * control, const Uint32& eventType = NoEvent );
+		UIEvent( Node * control, const Uint32& eventType = NoEvent );
 
 		~UIEvent();
 
-		UINode * getControl() const;
+		Node * getControl() const;
 
 		const Uint32& getEventType() const;
 	protected:
-		UINode	* 	mCtrl;
-		Uint32 			mEventType;
+		Node	* 	mCtrl;
+		Uint32 		mEventType;
 };
 
 }}

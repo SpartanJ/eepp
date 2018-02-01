@@ -1,9 +1,9 @@
 #include <eepp/ui/uieventkey.hpp>
 #include <eepp/ui/uinode.hpp>
 
-namespace EE { namespace UI {
+namespace EE { namespace Scene {
 
-UIEventKey::UIEventKey( UINode * Ctrl, const Uint32& EventNum, const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) :
+UIEventKey::UIEventKey( Node * Ctrl, const Uint32& EventNum, const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) :
 	UIEvent( Ctrl, EventNum ),
 	mKeyCode( KeyCode ),
 	mChar( Char ),

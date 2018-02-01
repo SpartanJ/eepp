@@ -23,66 +23,30 @@ UINode * UINode::New() {
 }
 
 UINode::UINode() :
-	mIdHash( 0 ),
-	mDpPos( 0, 0 ),
-	mDpSize( 0, 0 ),
-	mSize( 0, 0 ),
+	Node(),
 	mFlags( UI_CONTROL_DEFAULT_FLAGS ),
-	mData( 0 ),
-	mParentCtrl( NULL ),
-	mParentWindowCtrl( NULL ),
-	mChild( NULL ),
-	mChildLast( NULL ),
-	mNext( NULL ),
-	mPrev( NULL ),
 	mSkinState( NULL ),
 	mBackground( NULL ),
 	mBorder( NULL ),
-	mNodeFlags( NODE_FLAG_POSITION_DIRTY | NODE_FLAG_POLYGON_DIRTY ),
-	mBlend( BlendAlpha ),
-	mNumCallBacks( 0 ),
-	mVisible( true ),
-	mEnabled( true ),
-	mDragButton( EE_BUTTON_LMASK ),
-	mAlpha(255.f),
-	mActionManager(NULL)
+	mDragButton( EE_BUTTON_LMASK )
 {
-	if ( NULL == mParentCtrl && NULL != UIManager::instance()->getMainControl() ) {
-		mParentCtrl = UIManager::instance()->getMainControl();
-		mParentWindowCtrl = getParentWindow();
-	}
-
-	if ( NULL != mParentCtrl )
-		mParentCtrl->childAdd( this );
+	mNodeFlags |= NODE_FLAG_UINODE;
 }
 
 UINode::~UINode() {
 	removeSkin();
+
 	eeSAFE_DELETE( mBackground );
 	eeSAFE_DELETE( mBorder );
-	eeSAFE_DELETE( mActionManager );
-
-	childDeleteAll();
-
-	if ( NULL != mParentCtrl )
-		mParentCtrl->childRemove( this );
-
-	if ( UIManager::instance()->getFocusControl() == this && UIManager::instance()->getMainControl() != this ) {
-		UIManager::instance()->setFocusControl( UIManager::instance()->getMainControl() );
-	}
-
-	if ( UIManager::instance()->getOverControl() == this && UIManager::instance()->getMainControl() != this ) {
-		UIManager::instance()->setOverControl( UIManager::instance()->getMainControl() );
-	}
 }
 
 void UINode::worldToNodeTranslation( Vector2f& Pos ) const {
-	UINode * ParentLoop = mParentCtrl;
+	Node * ParentLoop = mParentCtrl;
 
 	Pos -= mPosition;
 
 	while ( NULL != ParentLoop ) {
-		const Vector2f& ParentPos = ParentLoop->getRealPosition();
+		const Vector2f& ParentPos = ParentLoop->isUINode() ? static_cast<UINode*>( ParentLoop )->getRealPosition() : ParentLoop->getPosition();
 
 		Pos -= ParentPos;
 
@@ -91,10 +55,10 @@ void UINode::worldToNodeTranslation( Vector2f& Pos ) const {
 }
 
 void UINode::nodeToWorldTranslation( Vector2f& Pos ) const {
-	UINode * ParentLoop = mParentCtrl;
+	Node * ParentLoop = mParentCtrl;
 
 	while ( NULL != ParentLoop ) {
-		const Vector2f& ParentPos = ParentLoop->getRealPosition();
+		const Vector2f& ParentPos = ParentLoop->isUINode() ? static_cast<UINode*>( ParentLoop )->getRealPosition() : ParentLoop->getPosition();
 
 		Pos += ParentPos;
 
@@ -103,31 +67,16 @@ void UINode::nodeToWorldTranslation( Vector2f& Pos ) const {
 }
 
 Uint32 UINode::getType() const {
-	return UI_TYPE_NODE;
+	return UI_TYPE_UINODE;
 }
 
 bool UINode::isType( const Uint32& type ) const {
-	return UINode::getType() == type;
-}
-
-void UINode::messagePost( const UIMessage * Msg ) {
-	UINode * Ctrl = this;
-
-	while( NULL != Ctrl ) {
-		if ( Ctrl->onMessage( Msg ) )
-			break;
-
-		Ctrl = Ctrl->getParent();
-	}
-}
-
-Uint32 UINode::onMessage( const UIMessage * Msg ) {
-	return 0;
+	return UINode::getType() == type || Node::isType( type );
 }
 
 void UINode::setInternalPosition( const Vector2f& Pos ) {
 	mDpPos = Pos;
-	Transformable::setPosition( Pos.x * PixelDensity::getPixelDensity(), Pos.y * PixelDensity::getPixelDensity() );
+	Transformable::setPosition( PixelDensity::dpToPx( Pos ) );
 	setDirty();
 }
 
@@ -138,7 +87,7 @@ void UINode::setPosition( const Vector2f& Pos ) {
 	}
 }
 
-UINode * UINode::setPosition( const Float& x, const Float& y ) {
+Node * UINode::setPosition( const Float& x, const Float& y ) {
 	setPosition( Vector2f( x, y ) );
 	return this;
 }
@@ -146,8 +95,7 @@ UINode * UINode::setPosition( const Float& x, const Float& y ) {
 void UINode::setPixelsPosition( const Vector2f& Pos ) {
 	if ( mPosition != Pos ) {
 		mDpPos = PixelDensity::pxToDp( Pos );
-		Transformable::setPosition( Pos.x, Pos.y );
-		setDirty();
+		Transformable::setPosition( Pos );
 		onPositionChange();
 	}
 }
@@ -166,7 +114,7 @@ const Vector2f &UINode::getRealPosition() const {
 
 void UINode::setInternalSize( const Sizef& size ) {
 	mDpSize = size;
-	mSize = Sizef( size.x * PixelDensity::getPixelDensity(), size.y * PixelDensity::getPixelDensity() );
+	mSize = PixelDensity::dpToPx( size );
 	updateCenter();
 	sendCommonEvent( UIEvent::OnSizeChange );
 	invalidateDraw();
@@ -180,7 +128,7 @@ void UINode::setInternalPixelsSize( const Sizef& size ) {
 	invalidateDraw();
 }
 
-UINode * UINode::setSize( const Sizef & Size ) {
+Node * UINode::setSize( const Sizef & Size ) {
 	if ( Size != mDpSize ) {
 		Vector2f sizeChange( Size.x - mDpSize.x, Size.y - mDpSize.y );
 
@@ -188,7 +136,7 @@ UINode * UINode::setSize( const Sizef & Size ) {
 
 		onSizeChange();
 
-		if ( mFlags & UI_REPORT_SIZE_CHANGE_TO_CHILDS ) {
+		if ( reportSizeChangeToChilds() ) {
 			sendParentSizeChange( sizeChange );
 		}
 	}
@@ -196,12 +144,11 @@ UINode * UINode::setSize( const Sizef & Size ) {
 	return this;
 }
 
-UINode * UINode::setSize( const Float & Width, const Float & Height ) {
-	setSize( Sizef( Width, Height ) );
-	return this;
+Node * UINode::setSize(const Float & Width, const Float & Height) {
+	return setSize( Vector2f( Width, Height ) );
 }
 
-void UINode::setPixelsSize( const Sizef& size ) {
+UINode * UINode::setPixelsSize( const Sizef& size ) {
 	if ( size != mSize ) {
 		Vector2f sizeChange( size.x - mSize.x, size.y - mSize.y );
 
@@ -209,22 +156,16 @@ void UINode::setPixelsSize( const Sizef& size ) {
 
 		onSizeChange();
 
-		if ( mFlags & UI_REPORT_SIZE_CHANGE_TO_CHILDS ) {
+		if ( reportSizeChangeToChilds() ) {
 			sendParentSizeChange( PixelDensity::pxToDp( sizeChange ) );
 		}
 	}
+
+	return this;
 }
 
-void UINode::setPixelsSize(const Float & x, const Float & y ) {
-	setPixelsSize( Sizef( x, y ) );
-}
-
-void UINode::setInternalWidth( const Float& width ) {
-	setInternalSize( Sizef( width, mDpSize.getHeight() ) );
-}
-
-void UINode::setInternalHeight( const Float& height ) {
-	setInternalSize( Sizef( mDpSize.getWidth(), height ) );
+UINode * UINode::setPixelsSize(const Float & x, const Float & y ) {
+	return setPixelsSize( Sizef( x, y ) );
 }
 
 void UINode::setInternalPixelsWidth( const Float& width ) {
@@ -245,106 +186,6 @@ const Sizef& UINode::getSize() {
 
 const Sizef& UINode::getRealSize() {
 	return mSize;
-}
-
-UINode * UINode::setVisible( const bool& visible ) {
-	if ( mVisible != visible ) {
-		mVisible = visible;
-		onVisibilityChange();
-	}
-	return this;
-}
-
-bool UINode::isVisible() const {
-	return mVisible;
-}
-
-bool UINode::isHided() const {
-	return !mVisible;
-}
-
-UINode * UINode::setEnabled( const bool& enabled ) {
-	if ( mEnabled != enabled ) {
-		mEnabled = enabled;
-		onEnabledChange();
-	}
-	return this;
-}
-
-bool UINode::isEnabled() const {
-	return mEnabled;
-}
-
-bool UINode::isDisabled() const {
-	return !mEnabled;
-}
-
-UINode * UINode::getParent() const {
-	return mParentCtrl;
-}
-
-UINode * UINode::setParent( UINode * parent ) {
-	if ( parent == mParentCtrl )
-		return this;
-
-	if ( NULL != mParentCtrl )
-		mParentCtrl->childRemove( this );
-
-	mParentCtrl = parent;
-
-	if ( NULL != mParentCtrl )
-		mParentCtrl->childAdd( this );
-
-	setDirty();
-
-	onParentChange();
-
-	if ( mParentWindowCtrl != getParentWindow() )
-		onParentWindowChange();
-
-	return this;
-}
-
-bool UINode::isParentOf( UINode * Ctrl ) {
-	eeASSERT( NULL != Ctrl );
-
-	UINode * tParent = Ctrl->getParent();
-
-	while ( NULL != tParent ) {
-		if ( this == tParent )
-			return true;
-
-		tParent = tParent->getParent();
-	}
-
-	return false;
-}
-
-void UINode::centerHorizontal() {
-	UINode * Ctrl = getParent();
-
-	if ( NULL != Ctrl )
-		setPosition( eefloor( ( Ctrl->getSize().getWidth() - mDpSize.getWidth() ) * 0.5f ), mDpPos.y );
-}
-
-void UINode::centerVertical(){
-	UINode * Ctrl = getParent();
-
-	if ( NULL != Ctrl )
-		setPosition( mDpPos.x, eefloor( Ctrl->getSize().getHeight() - mDpSize.getHeight() ) * 0.5f );
-}
-
-void UINode::center() {
-	UINode * Ctrl = getParent();
-
-	if ( NULL != Ctrl )
-		setPosition( eefloor( ( Ctrl->getSize().getWidth() - mDpSize.getWidth() ) * 0.5f ), eefloor( Ctrl->getSize().getHeight() - mDpSize.getHeight() ) * 0.5f );
-}
-
-void UINode::close() {
-	mNodeFlags |= NODE_FLAG_CLOSE;
-
-	UIManager::instance()->addToCloseQueue( this );
 }
 
 void UINode::drawHighlightFocus() {
@@ -422,13 +263,6 @@ void UINode::draw() {
 }
 
 void UINode::update( const Time& time ) {
-	if ( NULL != mActionManager ) {
-		mActionManager->update( time );
-
-		if ( mActionManager->isEmpty() )
-			eeSAFE_DELETE( mActionManager );
-	}
-
 	if ( isDragEnabled() && isDragging() ) {
 		if ( !( UIManager::instance()->getPressTrigger() & mDragButton ) ) {
 			setDragging( false );
@@ -456,40 +290,7 @@ void UINode::update( const Time& time ) {
 		}
 	}
 
-	UINode * ChildLoop = mChild;
-
-	while ( NULL != ChildLoop ) {
-		ChildLoop->update( time );
-		ChildLoop = ChildLoop->mNext;
-	}
-
-	if ( mNodeFlags & NODE_FLAG_MOUSEOVER_ME_OR_CHILD )
-		writeCtrlFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
-}
-
-void UINode::sendMouseEvent( const Uint32& Event, const Vector2i& Pos, const Uint32& Flags ) {
-	UIEventMouse MouseEvent( this, Event, Pos, Flags );
-	sendEvent( &MouseEvent );
-}
-
-void UINode::sendCommonEvent( const Uint32& Event ) {
-	UIEvent CommonEvent( this, Event );
-	sendEvent( &CommonEvent );
-}
-
-Uint32 UINode::onKeyDown( const UIEventKey& Event ) {
-	sendEvent( &Event );
-	return 0;
-}
-
-Uint32 UINode::onKeyUp( const UIEventKey& Event ) {
-	sendEvent( &Event );
-	return 0;
-}
-
-Uint32 UINode::onMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
-	sendMouseEvent( UIEvent::MouseMove, Pos, Flags );
-	return 1;
+	Node::update( time );
 }
 
 Uint32 UINode::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
@@ -498,11 +299,9 @@ Uint32 UINode::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 		mDragPoint = Vector2f( Pos.x, Pos.y );
 	}
 
-	sendMouseEvent( UIEvent::MouseDown, Pos, Flags );
-
 	setSkinState( UISkinState::StateMouseDown );
 
-	return 1;
+	return Node::onMouseDown( Pos, Flags );
 }
 
 Uint32 UINode::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
@@ -510,90 +309,15 @@ Uint32 UINode::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
 		setDragging( false );
 	}
 
-	sendMouseEvent( UIEvent::MouseUp, Pos, Flags );
-
 	setPrevSkinState();
 
-	return 1;
-}
-
-Uint32 UINode::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
-	sendMouseEvent( UIEvent::MouseClick, Pos, Flags );
-	return 1;
-}
-
-bool UINode::isMouseOver() {
-	return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER );
-}
-
-bool UINode::isMouseOverMeOrChilds() {
-	return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER_ME_OR_CHILD );
-}
-
-Uint32 UINode::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
-	sendMouseEvent( UIEvent::MouseDoubleClick, Pos, Flags );
-	return 1;
-}
-
-Uint32 UINode::onMouseEnter( const Vector2i& Pos, const Uint32 Flags ) {
-	writeCtrlFlag( NODE_FLAG_MOUSEOVER, 1 );
-
-	sendMouseEvent( UIEvent::MouseEnter, Pos, Flags );
-
-	setSkinState( UISkinState::StateMouseEnter );
-
-	return 1;
-}
-
-Uint32 UINode::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	writeCtrlFlag( NODE_FLAG_MOUSEOVER, 0 );
-
-	sendMouseEvent( UIEvent::MouseExit, Pos, Flags );
-
-	setSkinState( UISkinState::StateMouseExit );
-
-	return 1;
-}
-
-Uint32 UINode::onFocus() {
-	mNodeFlags |= NODE_FLAG_HAS_FOCUS;
-
-	sendCommonEvent( UIEvent::OnFocus );
-
-	setSkinState( UISkinState::StateFocus );
-
-	return 1;
-}
-
-Uint32 UINode::onFocusLoss() {
-	mNodeFlags &= ~NODE_FLAG_HAS_FOCUS;
-
-	sendCommonEvent( UIEvent::OnFocusLoss );
-
-	invalidateDraw();
-
-	return 1;
-}
-
-void UINode::onWidgetFocusLoss() {
-	sendCommonEvent( UIEvent::OnWidgetFocusLoss );
-	invalidateDraw();
-}
-
-bool UINode::hasFocus() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_HAS_FOCUS );
+	return Node::onMouseUp( Pos, Flags );
 }
 
 Uint32 UINode::onValueChange() {
 	sendCommonEvent( UIEvent::OnValueChange );
 	invalidateDraw();
-
 	return 1;
-}
-
-void UINode::onClose() {
-	sendCommonEvent( UIEvent::OnClose );
-	invalidateDraw();
 }
 
 Uint32 UINode::getHorizontalAlign() const {
@@ -654,30 +378,6 @@ UIBorder * UINode::setBorderEnabled( bool enabled ) {
 	return mBorder;
 }
 
-UINode * UINode::getNextNode() const {
-	return mNext;
-}
-
-UINode * UINode::getPrevNode() const {
-	return mPrev;
-}
-
-UINode * UINode::getNextNodeLoop() const {
-	if ( NULL == mNext )
-		return getParent()->getFirstChild();
-	else
-		return mNext;
-}
-
-UINode * UINode::setData(const UintPtr& data ) {
-	mData = data;
-	return this;
-}
-
-const UintPtr& UINode::getData() const {
-	return mData;
-}
-
 const Uint32& UINode::getFlags() const {
 	return mFlags;
 }
@@ -714,70 +414,6 @@ UINode *UINode::resetFlags( Uint32 newFlags ) {
 	return this;
 }
 
-UINode * UINode::setBlendMode( const BlendMode& blend ) {
-	mBlend = blend;
-	invalidateDraw();
-	return this;
-}
-
-BlendMode UINode::getBlendMode() {
-	return mBlend;
-}
-
-void UINode::toFront() {
-	if ( NULL != mParentCtrl && mParentCtrl->mChildLast != this ) {
-		mParentCtrl->childRemove( this );
-		mParentCtrl->childAdd( this );
-	}
-}
-
-void UINode::toBack() {
-	if ( NULL != mParentCtrl ) {
-		mParentCtrl->childAddAt( this, 0 );
-	}
-}
-
-void UINode::toPosition( const Uint32& Pos ) {
-	if ( NULL != mParentCtrl ) {
-		mParentCtrl->childAddAt( this, Pos );
-	}
-}
-
-void UINode::onVisibilityChange() {
-	sendCommonEvent( UIEvent::OnVisibleChange );
-	invalidateDraw();
-}
-
-void UINode::onEnabledChange() {
-	if ( !isEnabled() && NULL != UIManager::instance()->getFocusControl() ) {
-		if ( isChild( UIManager::instance()->getFocusControl() ) ) {
-			UIManager::instance()->setFocusControl( NULL );
-		}
-	}
-
-	sendCommonEvent( UIEvent::OnEnabledChange );
-	invalidateDraw();
-}
-
-void UINode::onPositionChange() {
-	sendCommonEvent( UIEvent::OnPositionChange );
-	invalidateDraw();
-}
-
-void UINode::onSizeChange() {
-	updateOriginPoint();
-
-	invalidateDraw();
-}
-
-Rectf UINode::getScreenBounds() {
-	return Rectf( Vector2f( mScreenPosi.x, mScreenPosi.y ), Sizef( (Float)(int)mSize.getWidth(), (Float)(int)mSize.getHeight() ) );
-}
-
-Rectf UINode::getLocalBounds() {
-	return Rectf( 0, 0, mSize.getWidth(), mSize.getHeight() );
-}
-
 void UINode::drawBackground() {
 	if ( mFlags & UI_FILL_BACKGROUND ) {
 		mBackground->draw( getScreenBounds(), mAlpha );
@@ -787,38 +423,6 @@ void UINode::drawBackground() {
 void UINode::drawBorder() {
 	if ( mFlags & UI_BORDER ) {
 		mBorder->draw( getScreenBounds(), mAlpha, mBackground->getCorners() );
-	}
-}
-
-const Uint32& UINode::getNodeFlags() const {
-	return mNodeFlags;
-}
-
-void UINode::setNodeFlags( const Uint32& Flags ) {
-	mNodeFlags = Flags;
-}
-
-void UINode::drawChilds() {
-	if ( isReverseDraw() ) {
-		UINode * ChildLoop = mChildLast;
-
-		while ( NULL != ChildLoop ) {
-			if ( ChildLoop->mVisible ) {
-				ChildLoop->internalDraw();
-			}
-
-			ChildLoop = ChildLoop->mPrev;
-		}
-	} else {
-		UINode * ChildLoop = mChild;
-
-		while ( NULL != ChildLoop ) {
-			if ( ChildLoop->mVisible ) {
-				ChildLoop->internalDraw();
-			}
-
-			ChildLoop = ChildLoop->mNext;
-		}
 	}
 }
 
@@ -860,442 +464,6 @@ void UINode::clipMe() {
 void UINode::clipDisable() {
 	if ( mVisible && ( mFlags & UI_CLIP_ENABLE ) ) {
 		UIManager::instance()->clipSmartDisable( this );
-	}
-}
-
-void UINode::matrixSet() {
-	if ( getScale() != 1.f || getRotation() != 0.f ) {
-		GlobalBatchRenderer::instance()->draw();
-
-		GLi->pushMatrix();
-
-		Vector2f scaleCenter = getScaleCenter();
-		GLi->translatef( scaleCenter.x , scaleCenter.y, 0.f );
-		GLi->scalef( getScale().x, getScale().y, 1.0f );
-		GLi->translatef( -scaleCenter.x, -scaleCenter.y, 0.f );
-
-		Vector2f rotationCenter = getRotationCenter();
-		GLi->translatef( rotationCenter.x , rotationCenter.y, 0.f );
-		GLi->rotatef( getRotation(), 0.0f, 0.0f, 1.0f );
-		GLi->translatef( -rotationCenter.x, -rotationCenter.y, 0.f );
-	}
-}
-
-void UINode::matrixUnset() {
-	if ( getScale() != 1.f || getRotation() != 0.f ) {
-		GlobalBatchRenderer::instance()->draw();
-
-		GLi->popMatrix();
-	}
-}
-
-void UINode::childDeleteAll() {
-	while( NULL != mChild ) {
-		eeDelete( mChild );
-	}
-}
-
-void UINode::childAdd( UINode * ChildCtrl ) {
-	if ( NULL == mChild ) {
-		mChild 		= ChildCtrl;
-		mChildLast 	= ChildCtrl;
-	} else {
-		mChildLast->mNext 		= ChildCtrl;
-		ChildCtrl->mPrev		= mChildLast;
-		ChildCtrl->mNext		= NULL;
-		mChildLast 				= ChildCtrl;
-	}
-
-	onChildCountChange();
-}
-
-void UINode::childAddAt( UINode * ChildCtrl, Uint32 Pos ) {
-	eeASSERT( NULL != ChildCtrl );
-
-	UINode * ChildLoop = mChild;
-	
-	ChildCtrl->setParent( this );
-
-	childRemove( ChildCtrl );
-
-	ChildCtrl->mParentCtrl = this;
-	ChildCtrl->mParentWindowCtrl = ChildCtrl->getParentWindow();
-	
-	if ( ChildLoop == NULL ) {
-		mChild 				= ChildCtrl;
-		mChildLast			= ChildCtrl;
-		ChildCtrl->mNext 	= NULL;
-		ChildCtrl->mPrev 	= NULL;
-	} else {
-		if( Pos == 0 ) {
-			if ( NULL != mChild ) {
-				mChild->mPrev		= ChildCtrl;
-			}
-
-			ChildCtrl->mNext 	= mChild;
-			ChildCtrl->mPrev	= NULL;
-			mChild 				= ChildCtrl;
-		} else {
-			Uint32 i = 0;
-
-			while ( NULL != ChildLoop->mNext && i < Pos ) {
-				ChildLoop = ChildLoop->mNext;
-				i++;
-			}
-
-			UINode * ChildTmp = ChildLoop->mNext;
-			ChildLoop->mNext 	= ChildCtrl;
-			ChildCtrl->mPrev 	= ChildLoop;
-			ChildCtrl->mNext 	= ChildTmp;
-
-			if ( NULL != ChildTmp ) {
-				ChildTmp->mPrev = ChildCtrl;
-			} else {
-				mChildLast		= ChildCtrl;
-			}
-		}
-	}
-
-	onChildCountChange();
-}
-
-void UINode::childRemove( UINode * ChildCtrl ) {
-	if ( ChildCtrl == mChild ) {
-		mChild 			= mChild->mNext;
-
-		if ( NULL != mChild ) {
-			mChild->mPrev 	= NULL;
-
-			if ( ChildCtrl == mChildLast )
-				mChildLast		= mChild;
-		} else {
-			mChildLast		= NULL;
-		}
-	} else {
-		if ( mChildLast == ChildCtrl )
-			mChildLast = mChildLast->mPrev;
-
-		ChildCtrl->mPrev->mNext = ChildCtrl->mNext;
-
-		if ( NULL != ChildCtrl->mNext ) {
-			ChildCtrl->mNext->mPrev = ChildCtrl->mPrev;
-			ChildCtrl->mNext = NULL;
-		}
-
-		ChildCtrl->mPrev = NULL;
-	}
-
-	onChildCountChange();
-}
-
-void UINode::childsCloseAll() {
-	UINode * ChildLoop = mChild;
-
-	while ( NULL != ChildLoop ) {
-		ChildLoop->close();
-		ChildLoop = ChildLoop->mNext;
-	}
-}
-
-std::string UINode::getId() const {
-	return mId;
-}
-
-UINode * UINode::setId(const std::string & id) {
-	mId = id;
-	mIdHash = String::hash( id );
-	return this;
-}
-
-Uint32 UINode::getIdHash() const {
-	return mIdHash;
-}
-
-UINode * UINode::findIdHash( const Uint32& idHash ) {
-	if ( mIdHash == idHash ) {
-		return this;
-	} else {
-		UINode * child = mChild;
-
-		while ( NULL != child ) {
-			UINode * foundCtrl = child->findIdHash( idHash );
-
-			if ( NULL != foundCtrl )
-				return foundCtrl;
-
-			child = child->mNext;
-		}
-	}
-
-	return NULL;
-}
-
-UINode * UINode::find( const std::string& id ) {
-	return findIdHash( String::hash( id ) );
-}
-
-bool UINode::isChild( UINode * ChildCtrl ) const {
-	UINode * ChildLoop = mChild;
-
-	while ( NULL != ChildLoop ) {
-		if ( ChildCtrl == ChildLoop )
-			return true;
-
-		ChildLoop = ChildLoop->mNext;
-	}
-
-	return false;
-}
-
-bool UINode::inParentTreeOf( UINode * Child ) const {
-	UINode * ParentLoop = Child->mParentCtrl;
-
-	while ( NULL != ParentLoop ) {
-		if ( ParentLoop == this )
-			return true;
-
-		ParentLoop = ParentLoop->mParentCtrl;
-	}
-
-	return false;
-}
-
-Uint32 UINode::childCount() const {
-	UINode * ChildLoop = mChild;
-	Uint32 Count = 0;
-
-	while( NULL != ChildLoop ) {
-		ChildLoop = ChildLoop->mNext;
-		Count++;
-	}
-
-	return Count;
-}
-
-UINode * UINode::childAt( Uint32 Index ) const {
-	UINode * ChildLoop = mChild;
-
-	while( NULL != ChildLoop && Index ) {
-		ChildLoop = ChildLoop->mNext;
-		Index--;
-	}
-
-	return ChildLoop;
-}
-
-UINode * UINode::childPrev( UINode * Ctrl, bool Loop ) const {
-	if ( Loop && Ctrl == mChild && NULL != mChild->mNext )
-		return mChildLast;
-
-	return Ctrl->mPrev;
-}
-
-UINode * UINode::childNext( UINode * Ctrl, bool Loop ) const {
-	if ( NULL == Ctrl->mNext && Loop )
-		return mChild;
-
-	return Ctrl->mNext;
-}
-
-UINode * UINode::getFirstChild() const {
-	return mChild;
-}
-
-UINode * UINode::getLastChild() const {
-	return mChildLast;
-}
-
-UINode * UINode::overFind( const Vector2f& Point ) {
-	UINode * pOver = NULL;
-
-	if ( mEnabled && mVisible ) {
-		updateWorldPolygon();
-
-		if ( mWorldBounds.contains( Point ) && mPoly.pointInside( Point ) ) {
-			writeCtrlFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
-
-			UINode * ChildLoop = mChildLast;
-
-			while ( NULL != ChildLoop ) {
-				UINode * ChildOver = ChildLoop->overFind( Point );
-
-				if ( NULL != ChildOver ) {
-					pOver = ChildOver;
-
-					break; // Search from top to bottom, so the first over will be the topmost
-				}
-
-				ChildLoop = ChildLoop->mPrev;
-			}
-
-
-			if ( NULL == pOver )
-				pOver = this;
-		}
-	}
-
-	return pOver;
-}
-
-void UINode::onParentWindowChange() {
-	mParentWindowCtrl = getParentWindow();
-
-	UINode * ChildLoop = mChild;
-
-	while ( NULL != ChildLoop ) {
-		ChildLoop->onParentWindowChange();
-		ChildLoop = ChildLoop->mNext;
-	}
-}
-
-Uint32 UINode::isWidget() {
-	return mNodeFlags & NODE_FLAG_WIDGET;
-}
-
-Uint32 UINode::isWindow() {
-	return mNodeFlags & NODE_FLAG_WINDOW;
-}
-
-Uint32 UINode::isClipped() {
-	return mFlags & UI_CLIP_ENABLE;
-}
-
-Uint32 UINode::isRotated() {
-	return mNodeFlags & NODE_FLAG_ROTATED;
-}
-
-Uint32 UINode::isScaled() {
-	return mNodeFlags & NODE_FLAG_SCALED;
-}
-
-Uint32 UINode::isFrameBuffer() {
-	return mNodeFlags & NODE_FLAG_FRAME_BUFFER;
-}
-
-bool UINode::isMeOrParentTreeRotated() {
-	UINode * Ctrl = this;
-
-	while( NULL != Ctrl ) {
-		if ( Ctrl->isRotated() )
-			return true;
-
-		Ctrl = Ctrl->getParent();
-	}
-
-	return false;
-}
-
-bool UINode::isMeOrParentTreeScaled() {
-	UINode * Ctrl = this;
-
-	while( NULL != Ctrl ) {
-		if ( Ctrl->isScaled() )
-			return true;
-
-		Ctrl = Ctrl->getParent();
-	}
-
-	return false;
-}
-
-bool UINode::isMeOrParentTreeScaledOrRotated() {
-	UINode * Ctrl = this;
-
-	while( NULL != Ctrl ) {
-		if ( Ctrl->isScaled() || Ctrl->isRotated() )
-			return true;
-
-		Ctrl = Ctrl->getParent();
-	}
-
-	return false;
-}
-
-bool UINode::isMeOrParentTreeScaledOrRotatedOrFrameBuffer() {
-	UINode * Ctrl = this;
-
-	while( NULL != Ctrl ) {
-		if ( Ctrl->isScaled() || Ctrl->isRotated() || Ctrl->isFrameBuffer() )
-			return true;
-
-		Ctrl = Ctrl->getParent();
-	}
-
-	return false;
-}
-
-const Polygon2f & UINode::getWorldPolygon() {
-	if ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY )
-		updateWorldPolygon();
-
-	return mPoly;
-}
-
-const Rectf& UINode::getWorldBounds() {
-	if ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY )
-		updateWorldPolygon();
-
-	return mWorldBounds;
-}
-
-void UINode::updateWorldPolygon() {
-	if ( !( mNodeFlags & NODE_FLAG_POLYGON_DIRTY ) )
-		return;
-
-	if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
-		updateScreenPos();
-
-	mPoly		= Polygon2f( Rectf( mScreenPos.x, mScreenPos.y, mScreenPos.x + mSize.getWidth(), mScreenPos.y + mSize.getHeight() ) );
-
-	mPoly.rotate( getRotation(), getRotationCenter() );
-	mPoly.scale( getScale(), getScaleCenter() );
-
-	UINode * tParent = getParent();
-
-	while ( tParent ) {
-		mPoly.rotate( tParent->getRotation(), tParent->getRotationCenter() );
-		mPoly.scale( tParent->getScale(), tParent->getScaleCenter() );
-
-		tParent = tParent->getParent();
-	};
-
-	mWorldBounds = mPoly.getBounds();
-
-	mNodeFlags &= ~NODE_FLAG_POLYGON_DIRTY;
-}
-
-void UINode::updateCenter() {
-	mCenter = Vector2f( mScreenPos.x + (Float)mSize.getWidth() * 0.5f, mScreenPos.y + (Float)mSize.getHeight() * 0.5f );
-}
-
-Uint32 UINode::addEventListener( const Uint32& EventType, const UIEventCallback& Callback ) {
-	mNumCallBacks++;
-
-	mEvents[ EventType ][ mNumCallBacks ] = Callback;
-
-	return mNumCallBacks;
-}
-
-void UINode::removeEventListener( const Uint32& CallbackId ) {
-	UIEventsMap::iterator it;
-
-	for ( it = mEvents.begin(); it != mEvents.end(); ++it ) {
-		std::map<Uint32, UIEventCallback> event = it->second;
-
-		if ( event.erase( CallbackId ) )
-			break;
-	}
-}
-
-void UINode::sendEvent( const UIEvent * Event ) {
-	if ( 0 != mEvents.count( Event->getEventType() ) ) {
-		std::map<Uint32, UIEventCallback>			event = mEvents[ Event->getEventType() ];
-		std::map<Uint32, UIEventCallback>::iterator it;
-
-		if ( event.begin() != event.end() ) {
-			for ( it = event.begin(); it != event.end(); ++it )
-				it->second( Event );
-		}
 	}
 }
 
@@ -1400,10 +568,6 @@ void UINode::onStateChange() {
 	invalidateDraw();
 }
 
-void UINode::onParentChange() {
-	invalidateDraw();
-}
-
 void UINode::onAlignChange() {
 	invalidateDraw();
 }
@@ -1425,30 +589,17 @@ void UINode::setPrevSkinState() {
 }
 
 void UINode::setThemeToChilds( UITheme * Theme ) {
-	UINode * ChildLoop = mChild;
+	Node * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
-		ChildLoop->setThemeToChilds( Theme );
-		ChildLoop->setTheme( Theme );	// First set the theme to childs to let the father override the childs forced themes
+		if ( ChildLoop->isUINode() ) {
+			UINode * node = static_cast<UINode*>( ChildLoop );
+			node->setThemeToChilds( Theme );
+			node->setTheme( Theme );	// First set the theme to childs to let the father override the childs forced themes
+		}
 
-		ChildLoop = ChildLoop->mNext;
+		ChildLoop = ChildLoop->getNextNode();
 	}
-}
-
-void UINode::updateScreenPos() {
-	if ( !(mNodeFlags & NODE_FLAG_POSITION_DIRTY) )
-		return;
-
-	Vector2f Pos( mPosition );
-
-	nodeToWorldTranslation( Pos );
-
-	mScreenPos = Pos;
-	mScreenPosi = Vector2i( Pos.x, Pos.y );
-
-	updateCenter();
-
-	mNodeFlags &= ~NODE_FLAG_POSITION_DIRTY;
 }
 
 UISkin * UINode::getSkin() {
@@ -1456,10 +607,6 @@ UISkin * UINode::getSkin() {
 		return mSkinState->getSkin();
 
 	return NULL;
-}
-
-void UINode::writeCtrlFlag( const Uint32& Flag, const Uint32& Val ) {
-	BitOp::setBitFlagValue( &mNodeFlags, Flag, Val );
 }
 
 void UINode::writeFlag( const Uint32& Flag, const Uint32& Val ) {
@@ -1503,26 +650,6 @@ Rectf UINode::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBot
 	return tPadding;
 }
 
-void UINode::setFocus() {
-	UIManager::instance()->setFocusControl( this );
-}
-
-void UINode::sendParentSizeChange( const Vector2f& SizeChange ) {
-	if ( mFlags & UI_REPORT_SIZE_CHANGE_TO_CHILDS )	{
-		UINode * ChildLoop = mChild;
-
-		while( NULL != ChildLoop ) {
-			ChildLoop->onParentSizeChange( SizeChange );
-			ChildLoop = ChildLoop->mNext;
-		}
-	}
-}
-
-void UINode::onParentSizeChange( const Vector2f& SizeChange ) {
-	sendCommonEvent( UIEvent::OnParentSizeChange );
-	invalidateDraw();
-}
-
 Sizef UINode::getSkinSize( UISkin * Skin, const Uint32& State ) {
 	if ( NULL != Skin ) {
 		return Skin->getSize( State );
@@ -1537,51 +664,6 @@ Sizef UINode::getSkinSize() {
 	}
 
 	return Sizef::Zero;
-}
-
-UINode * UINode::getNextWidget() {
-	UINode * Found		= NULL;
-	UINode * ChildLoop	= mChild;
-
-	while( NULL != ChildLoop ) {
-		if ( ChildLoop->isVisible() && ChildLoop->isEnabled() ) {
-			if ( ChildLoop->isWidget() ) {
-				return ChildLoop;
-			} else {
-				Found = ChildLoop->getNextWidget();
-
-				if ( NULL != Found ) {
-					return Found;
-				}
-			}
-		}
-
-		ChildLoop = ChildLoop->mNext;
-	}
-
-	if ( NULL != mNext ) {
-		if ( mNext->isVisible() && mNext->isEnabled() && mNext->isWidget() ) {
-			return mNext;
-		} else {
-			return mNext->getNextWidget();
-		}
-	} else {
-		ChildLoop = mParentCtrl;
-
-		while ( NULL != ChildLoop ) {
-			if ( NULL != ChildLoop->mNext ) {
-				if ( ChildLoop->mNext->isVisible() && ChildLoop->mNext->isEnabled() && ChildLoop->mNext->isWidget() ) {
-					return ChildLoop->mNext;
-				} else {
-					return ChildLoop->mNext->getNextWidget();
-				}
-			}
-
-			ChildLoop = ChildLoop->mParentCtrl;
-		}
-	}
-
-	return UIManager::instance()->getMainControl();
 }
 
 void UINode::onThemeLoaded() {
@@ -1612,8 +694,8 @@ void UINode::nodeToWorld( Vector2f& pos ) {
 	pos = Vector2f( toPos.x, toPos.y );
 }
 
-UINode * UINode::getWindowContainer() {
-	UINode * Ctrl = this;
+Node * UINode::getWindowContainer() {
+	Node * Ctrl = this;
 
 	while ( Ctrl != NULL ) {
 		if ( Ctrl->isType( UI_TYPE_WINDOW ) ) {
@@ -1630,46 +712,12 @@ UINode * UINode::getWindowContainer() {
 	return NULL;
 }
 
-UIWindow * UINode::getParentWindow() {
-	UINode * Ctrl = mParentCtrl;
-
-	while ( Ctrl != NULL ) {
-		if ( Ctrl->isType( UI_TYPE_WINDOW ) )
-			return static_cast<UIWindow*>( Ctrl );
-
-		Ctrl = Ctrl->getParent();
-	}
-
-	return NULL;
-}
-
-bool UINode::isReverseDraw() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_REVERSE_DRAW );
-}
-
-void UINode::setReverseDraw( bool reverseDraw ) {
-	writeCtrlFlag( NODE_FLAG_REVERSE_DRAW, reverseDraw ? 1 : 0 );
-	invalidateDraw();
-}
-
-void UINode::invalidateDraw() {
-	if ( NULL != mParentWindowCtrl ) {
-		mParentWindowCtrl->invalidate();
-	} else if ( NULL == mParentCtrl && isWindow() ) {
-		static_cast<UIWindow*>( this )->invalidate();
-	}
-}
-
 void UINode::setClipEnabled() {
 	writeFlag( UI_CLIP_ENABLE, 1 );
 }
 
 void UINode::setClipDisabled() {
 	writeFlag( UI_CLIP_ENABLE, 0 );
-}
-
-UIWindow * UINode::getOwnerWindow() {
-	return mParentWindowCtrl;
 }
 
 const Vector2f& UINode::getDragPoint() const {
@@ -1692,6 +740,18 @@ Uint32 UINode::onDragStart( const Vector2i& Pos ) {
 Uint32 UINode::onDragStop( const Vector2i& Pos ) {
 	sendCommonEvent( UIEvent::OnDragStop );
 	return 1;
+}
+
+Uint32 UINode::onMouseEnter(const Vector2i & position, const Uint32 flags) {
+	setSkinState( UISkinState::StateMouseEnter );
+
+	return Node::onMouseEnter( position, flags );
+}
+
+Uint32 UINode::onMouseExit(const Vector2i & position, const Uint32 flags) {
+	setSkinState( UISkinState::StateMouseExit );
+
+	return Node::onMouseExit( position, flags );
 }
 
 bool UINode::isDragEnabled() const {
@@ -1730,71 +790,6 @@ const Uint32& UINode::getDragButton() const {
 	return mDragButton;
 }
 
-void UINode::updateOriginPoint() {
-	switch ( mRotationOriginPoint.OriginType ) {
-		case OriginPoint::OriginCenter:
-			mRotationOriginPoint.x = mSize.x * 0.5f;
-			mRotationOriginPoint.y = mSize.y * 0.5f;
-			break;
-		case OriginPoint::OriginTopLeft:
-			mRotationOriginPoint.x = mRotationOriginPoint.y = 0;
-			break;
-		default: {}
-	}
-
-	switch ( mScaleOriginPoint.OriginType ) {
-		case OriginPoint::OriginCenter:
-			mScaleOriginPoint.x = mSize.x * 0.5f;
-			mScaleOriginPoint.y = mSize.y * 0.5f;
-			break;
-		case OriginPoint::OriginTopLeft:
-			mScaleOriginPoint.x = mScaleOriginPoint.y = 0;
-			break;
-		default: {}
-	}
-
-	setDirty();
-}
-
-void UINode::setDirty() {
-	if ( ( mNodeFlags & NODE_FLAG_POSITION_DIRTY ) &&
-		 ( mNodeFlags & NODE_FLAG_POLYGON_DIRTY ) )
-		return;
-
-	mNodeFlags |= NODE_FLAG_POSITION_DIRTY | NODE_FLAG_POLYGON_DIRTY;
-
-	setChildsDirty();
-}
-
-void UINode::setChildsDirty() {
-	UINode * ChildLoop = mChild;
-
-	while ( NULL != ChildLoop ) {
-		ChildLoop->setDirty();
-
-		ChildLoop = ChildLoop->mNext;
-	}
-}
-
-void UINode::onAngleChange() {
-	sendCommonEvent( UIEvent::OnAngleChange );
-	invalidateDraw();
-}
-
-void UINode::onScaleChange() {
-	sendCommonEvent( UIEvent::OnScaleChange );
-	invalidateDraw();
-}
-
-void UINode::onAlphaChange() {
-	sendCommonEvent( UIEvent::OnAlphaChange );
-	invalidateDraw();
-}
-
-Color UINode::getColor( const Color& Col ) {
-	return Color( Col.r, Col.g, Col.b, static_cast<Uint8>( (Float)Col.a * ( mAlpha / 255.f ) ) );
-}
-
 bool UINode::isFadingOut() {
 	return 0 != ( mNodeFlags & NODE_FLAG_DISABLE_DELAYED );
 }
@@ -1804,7 +799,7 @@ bool UINode::isAnimating() {
 }
 
 static void UINode_onFadeDone( Action * action, const Action::ActionType& actionType ) {
-	UINode * node = action->getTarget();
+	Node * node = action->getTarget();
 
 	if ( NULL != node ) {
 		if ( ( node->getNodeFlags() & NODE_FLAG_CLOSE_DELAYED )  )
@@ -1906,165 +901,19 @@ Interpolation1d * UINode::disableFadeOut( const Time& time, const bool& AlphaChi
 	return startAlphaAnim( mAlpha, 0.f, time, AlphaChilds, Type );
 }
 
-const OriginPoint& UINode::getRotationOriginPoint() const {
-	return mRotationOriginPoint;
+void UINode::onWidgetFocusLoss() {
+	sendCommonEvent( UIEvent::OnWidgetFocusLoss );
+	invalidateDraw();
 }
 
-void UINode::setRotationOriginPoint( const OriginPoint & center ) {
-	mRotationOriginPoint = PixelDensity::dpToPx( center );
-	updateOriginPoint();
-	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
+void UINode::setFocus() {
+	UIManager::instance()->setFocusControl( this );
 }
 
-Vector2f UINode::getRotationCenter() {
-	switch ( mRotationOriginPoint.OriginType ) {
-		case OriginPoint::OriginCenter: return mCenter;
-		case OriginPoint::OriginTopLeft: return mScreenPos;
-		case OriginPoint::OriginCustom: default: return mScreenPos + mRotationOriginPoint;
-	}
-}
+Uint32 UINode::onFocus() {
+	setSkinState( UISkinState::StateFocus );
 
-void UINode::setRotation( float angle ) {
-	Transformable::setRotation( angle );
-
-	updateOriginPoint();
-	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
-
-	if ( getRotation() != 0.f ) {
-		mNodeFlags |= NODE_FLAG_ROTATED;
-	} else {
-		if ( mNodeFlags & NODE_FLAG_ROTATED )
-			mNodeFlags &= ~NODE_FLAG_ROTATED;
-	}
-
-	setDirty();
-
-	onAngleChange();
-}
-
-void UINode::setRotation( const Float& angle , const OriginPoint & center ) {
-	mRotationOriginPoint = PixelDensity::dpToPx( center );
-	updateOriginPoint();
-	setRotation( angle );
-}
-
-void UINode::setScale( const Vector2f & scale ) {
-	Transformable::setScale( scale.x, scale.y );
-
-	updateOriginPoint();
-	Transformable::setScaleOrigin( getScaleOriginPoint().x, getScaleOriginPoint().y );
-
-	if ( getScale() != 1.f ) {
-		mNodeFlags |= NODE_FLAG_SCALED;
-	} else {
-		if ( mNodeFlags & NODE_FLAG_SCALED )
-			mNodeFlags &= ~NODE_FLAG_SCALED;
-	}
-
-	setDirty();
-
-	onScaleChange();
-}
-
-const OriginPoint& UINode::getScaleOriginPoint() const {
-	return mScaleOriginPoint;
-}
-
-void UINode::setScaleOriginPoint( const OriginPoint & center ) {
-	mScaleOriginPoint = PixelDensity::dpToPx( center );
-	updateOriginPoint();
-	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
-}
-
-Vector2f UINode::getScaleCenter() {
-	switch ( mScaleOriginPoint.OriginType ) {
-		case OriginPoint::OriginCenter: return mCenter;
-		case OriginPoint::OriginTopLeft: return mScreenPos;
-		case OriginPoint::OriginCustom: default: return mScreenPos + mScaleOriginPoint;
-	}
-}
-
-void UINode::setScale( const Vector2f& scale, const OriginPoint& center ) {
-	mScaleOriginPoint = PixelDensity::dpToPx( center );
-	updateOriginPoint();
-	Transformable::setScale( scale.x, scale.y );
-	Transformable::setScaleOrigin( getScaleOriginPoint().x, getScaleOriginPoint().y );
-}
-
-void UINode::setScale( const Float& scale, const OriginPoint& center ) {
-	setScale( Vector2f( scale, scale ), center );
-}
-
-const Float& UINode::getAlpha() const {
-	return mAlpha;
-}
-
-void UINode::setAlpha( const Float& alpha ) {
-	mAlpha = alpha;
-	onAlphaChange();
-}
-
-void UINode::setChildsAlpha( const Float &alpha ) {
-	UINode * CurChild = mChild;
-
-	while ( NULL != CurChild ) {
-		CurChild->setAlpha( alpha );
-		CurChild->setChildsAlpha( alpha );
-		CurChild = CurChild->getNextNode();
-	}
-}
-
-ActionManager * UINode::getActionManager() {
-	if ( NULL == mActionManager )
-		mActionManager = eeNew( ActionManager, () );
-
-	return mActionManager;
-}
-
-void UINode::runAction( Action * action ) {
-	if ( NULL != action ) {
-		action->setTarget( this );
-
-		action->start();
-
-		getActionManager()->addAction( action );
-	}
-}
-
-Transform UINode::getLocalTransform() {
-	return getTransform();
-}
-
-Transform UINode::getGlobalTransform() {
-	return NULL != mParentCtrl ? mParentCtrl->getGlobalTransform() * getTransform() : getTransform();
-}
-
-Transform UINode::getNodeToWorldTransform() {
-	return getGlobalTransform();
-}
-
-Transform UINode::getWorldToNodeTransform() {
-	return getNodeToWorldTransform().getInverse();
-}
-
-Vector2f UINode::convertToNodeSpace(const Vector2f& worldPoint) {
-	return getWorldToNodeTransform().transformPoint(worldPoint.x, worldPoint.y);
-}
-
-Vector2f UINode::convertToWorldSpace(const Vector2f& nodePoint) {
-	return getNodeToWorldTransform().transformPoint(nodePoint.x, nodePoint.y);
-}
-
-void UINode::setScale(float factorX, float factorY) {
-	setScale( Vector2f( factorX, factorY ) );
-}
-
-void UINode::setScaleOrigin(float x, float y) {
-	setScaleOriginPoint( OriginPoint( x, y ) );
-}
-
-void UINode::setRotationOrigin(float x, float y) {
-	setRotationOriginPoint( OriginPoint( x, y ) );
+	return Node::onFocus();
 }
 
 }}

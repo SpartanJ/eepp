@@ -40,7 +40,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 	mResizeType( RESIZE_NONE ),
 	mFrameBufferBound( false )
 {
-	mNodeFlags |= NODE_FLAG_WINDOW;
+	mNodeFlags |= NODE_FLAG_WINDOW | NODE_FLAG_VIEW_DIRTY;
 
 	setHorizontalAlign( UI_HALIGN_CENTER );
 
@@ -62,7 +62,8 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 	mContainer->setLayoutSizeRules( FIXED, FIXED );
 	mContainer->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
 	mContainer->setParent( this );
-	mContainer->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS | UI_CLIP_ENABLE );
+	mContainer->setFlags( UI_CLIP_ENABLE );
+	mContainer->enableReportSizeChangeToChilds();
 	mContainer->setSize( mDpSize );
 	mContainer->addEventListener( UIEvent::OnPositionChange, cb::Make1( this, &UIWindow::onContainerPositionChange ) );
 
@@ -347,7 +348,7 @@ void UIWindow::createModalControl() {
 
 void UIWindow::enableByModal() {
 	if ( isModal() ) {
-		UINode * CtrlChild = UIManager::instance()->getMainControl()->getFirstChild();
+		Node * CtrlChild = UIManager::instance()->getMainControl()->getFirstChild();
 
 		while ( NULL != CtrlChild )
 		{
@@ -366,7 +367,7 @@ void UIWindow::enableByModal() {
 
 void UIWindow::disableByModal() {
 	if ( isModal() ) {
-		UINode * CtrlChild = UIManager::instance()->getMainControl()->getFirstChild();
+		Node * CtrlChild = UIManager::instance()->getMainControl()->getFirstChild();
 
 		while ( NULL != CtrlChild )
 		{
@@ -711,7 +712,7 @@ void UIWindow::doResize ( const UIMessage * Msg ) {
 	decideResizeType( Msg->getSender() );
 }
 
-void UIWindow::decideResizeType( UINode * Control ) {
+void UIWindow::decideResizeType( Node * Control ) {
 	Vector2i Pos = UIManager::instance()->getMousePos();
 
 	worldToNode( Pos );
@@ -988,7 +989,7 @@ bool UIWindow::hide() {
 
 void UIWindow::onAlphaChange() {
 	if ( mStyleConfig.WinFlags & UI_WIN_SHARE_ALPHA_WITH_CHILDS ) {
-		UINode * CurChild = mChild;
+		Node * CurChild = mChild;
 
 		while ( NULL != CurChild ) {
 			CurChild->setAlpha( mAlpha );
@@ -1003,7 +1004,7 @@ void UIWindow::onChildCountChange() {
 	if ( NULL == mContainer || UIManager::instance()->getMainControl() == this )
 		return;
 
-	UINode * child = mChild;
+	Node * child = mChild;
 	bool found = false;
 
 	while ( NULL != child ) {
@@ -1321,7 +1322,7 @@ void UIWindow::resizeCursor() {
 
 	worldToNode( Pos );
 
-	const UINode * Control = Man->getOverControl();
+	const Node * Control = Man->getOverControl();
 
 	if ( Control == this ) {
 		if ( Pos.x <= mBorderLeft->getSize().getWidth() ) {

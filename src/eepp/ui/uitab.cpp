@@ -197,18 +197,18 @@ void UITab::loadFromXmlNode(const pugi::xml_node & node) {
 }
 
 void UITab::setOwnedControl() {
-	UINode * ctrl = getParent()->getParent()->find( mOwnedName );
+	Node * ctrl = getParent()->getParent()->find( mOwnedName );
 
 	if ( NULL != ctrl ) {
 		setControlOwned( ctrl );
 	}
 }
 
-UINode * UITab::getControlOwned() const {
+Node * UITab::getControlOwned() const {
 	return mControlOwned;
 }
 
-void UITab::setControlOwned(UINode * controlOwned) {
+void UITab::setControlOwned( Node * controlOwned ) {
 	mControlOwned = controlOwned;
 
 	UITabWidget * tTabW = getTabWidget();

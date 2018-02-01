@@ -1,9 +1,9 @@
 #include <eepp/ui/uimessage.hpp>
 #include <eepp/ui/uinode.hpp>
 
-namespace EE { namespace UI {
+namespace EE { namespace Scene {
 
-UIMessage::UIMessage( UINode * Ctrl, const Uint32& Msg, const Uint32& Flags ) :
+UIMessage::UIMessage( Node * Ctrl, const Uint32& Msg, const Uint32& Flags ) :
 	mCtrl( Ctrl ),
 	mMsg( Msg ),
 	mFlags( Flags )
@@ -14,7 +14,7 @@ UIMessage::~UIMessage()
 {
 }
 
-UINode * UIMessage::getSender() const {
+Node * UIMessage::getSender() const {
 	return mCtrl;
 }
 

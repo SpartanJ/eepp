@@ -25,12 +25,13 @@ UITabWidget::UITabWidget() :
 	}
 
 	mTabContainer = UIWidget::New();
-	mTabContainer->setParent( this )->setPosition( 0, 0 )->setPixelsSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight );
+	mTabContainer->setPixelsSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight )
+			->setParent( this )->setPosition( 0, 0 );
 	mTabContainer->setFlags( UI_CLIP_ENABLE );
 
 	mCtrlContainer = UIWidget::New();
-	mCtrlContainer->setParent( this )->setPosition( 0, mStyleConfig.TabWidgetHeight )
-			->setPixelsSize( mSize.getWidth(), mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) );
+	mCtrlContainer->setPixelsSize( mSize.getWidth(), mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) )
+			->setParent( this )->setPosition( 0, mStyleConfig.TabWidgetHeight );
 	mCtrlContainer->setFlags( UI_CLIP_ENABLE );
 
 	onSizeChange();
@@ -711,7 +712,7 @@ void UITabWidget::onSizeChange() {
 }
 
 void UITabWidget::onChildCountChange() {
-	UINode * child = mChild;
+	Node * child = mChild;
 	bool found = false;
 
 	while ( NULL != child ) {

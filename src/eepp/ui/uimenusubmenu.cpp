@@ -127,7 +127,7 @@ UINode * UIMenuSubMenu::getArrow() const {
 }
 
 void UIMenuSubMenu::onSubMenuFocusLoss( const UIEvent * Event ) {
-	UINode * FocusCtrl = UIManager::instance()->getFocusControl();
+	Node * FocusCtrl = UIManager::instance()->getFocusControl();
 
 	if ( getParent() != FocusCtrl && !getParent()->isParentOf( FocusCtrl ) ) {
 		getParent()->setFocus();

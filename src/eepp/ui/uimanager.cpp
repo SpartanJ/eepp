@@ -1,4 +1,5 @@
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
@@ -65,7 +66,7 @@ void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 	windowStyleConfig.DecorationSize = Sizei( 0, 0 );
 	windowStyleConfig.DecorationAutoSize = false;
 	mControl = UIWindow::New();
-	mControl->setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
+	mControl->enableReportSizeChangeToChilds();
 	mControl->setStyleConfig( windowStyleConfig );
 	mControl->setSize( (Float)mWindow->getWidth() / PixelDensity::getPixelDensity(), (Float)mWindow->getHeight() / PixelDensity::getPixelDensity() );
 	mControl->setVisible( true );
@@ -147,7 +148,7 @@ void UIManager::resizeControl( EE::Window::Window * win ) {
 
 void UIManager::sendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
 	UIEventKey	KeyEvent	= UIEventKey( mFocusControl, UIEvent::KeyUp, KeyCode, Char, Mod );
-	UINode * CtrlLoop	= mFocusControl;
+	Node * CtrlLoop	= mFocusControl;
 
 	while( NULL != CtrlLoop ) {
 		if ( CtrlLoop->isEnabled() && CtrlLoop->onKeyUp( KeyEvent ) )
@@ -159,7 +160,7 @@ void UIManager::sendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint
 
 void UIManager::sendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
 	UIEventKey	KeyEvent	= UIEventKey( mFocusControl, UIEvent::KeyDown, KeyCode, Char, Mod );
-	UINode * CtrlLoop	= mFocusControl;
+	Node * CtrlLoop	= mFocusControl;
 
 	while( NULL != CtrlLoop ) {
 		if ( CtrlLoop->isEnabled() && CtrlLoop->onKeyDown( KeyEvent ) )
@@ -169,15 +170,15 @@ void UIManager::sendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Ui
 	}
 }
 
-UINode * UIManager::getFocusControl() const {
+Node * UIManager::getFocusControl() const {
 	return mFocusControl;
 }
 
-UINode * UIManager::getLossFocusControl() const {
+Node * UIManager::getLossFocusControl() const {
 	return mLossFocusControl;
 }
 
-void UIManager::setFocusControl( UINode * Ctrl ) {
+void UIManager::setFocusControl( Node * Ctrl ) {
 	if ( NULL != mFocusControl && NULL != Ctrl && Ctrl != mFocusControl ) {
 		mLossFocusControl = mFocusControl;
 
@@ -191,15 +192,15 @@ void UIManager::setFocusControl( UINode * Ctrl ) {
 	}
 }
 
-UINode * UIManager::getOverControl() const {
+Node * UIManager::getOverControl() const {
 	return mOverControl;
 }
 
-void UIManager::setOverControl( UINode * Ctrl ) {
+void UIManager::setOverControl( Node * Ctrl ) {
 	mOverControl = Ctrl;
 }
 
-void UIManager::sendMsg( UINode * Ctrl, const Uint32& Msg, const Uint32& Flags ) {
+void UIManager::sendMsg( Node * Ctrl, const Uint32& Msg, const Uint32& Flags ) {
 	UIMessage tMsg( Ctrl, Msg, Flags );
 
 	Ctrl->messagePost( &tMsg );
@@ -219,7 +220,7 @@ void UIManager::update( const Time& elapsed ) {
 	mMousePos = mInput->getMousePosFromView( mWindow->getDefaultView() );
 	mMousePosi = mMousePos.asInt();
 
-	UINode * pOver = mControl->overFind( mMousePos );
+	Node * pOver = mControl->overFind( mMousePos );
 
 	if ( pOver != mOverControl ) {
 		if ( NULL != mOverControl ) {
@@ -260,7 +261,7 @@ void UIManager::update( const Time& elapsed ) {
 
 				// The focused control can change after the MouseUp ( since the control can call "setFocus()" on other control
 				// And the Click would be received by the new focused control instead of the real one
-				UINode * lastFocusControl = mFocusControl;
+				Node * lastFocusControl = mFocusControl;
 
 				lastFocusControl->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
 				sendMsg( lastFocusControl, UIMessage::MouseUp, mInput->getReleaseTrigger() );
@@ -283,7 +284,7 @@ void UIManager::update( const Time& elapsed ) {
 	checkClose();
 }
 
-UINode * UIManager::getDownControl() const {
+Node * UIManager::getDownControl() const {
 	return mDownControl;
 }
 
@@ -329,7 +330,7 @@ const Uint32& UIManager::getLastPressTrigger() const {
 	return mInput->getLastPressTrigger();
 }
 
-void UIManager::clipSmartEnable(UINode * ctrl, const Int32 & x, const Int32 & y, const Uint32 & Width, const Uint32 & Height) {
+void UIManager::clipSmartEnable(Node * ctrl, const Int32 & x, const Int32 & y, const Uint32 & Width, const Uint32 & Height) {
 	if ( ctrl->isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
 		GLi->getClippingMask()->clipPlaneEnable( x, y, Width, Height );
 	} else {
@@ -337,7 +338,7 @@ void UIManager::clipSmartEnable(UINode * ctrl, const Int32 & x, const Int32 & y,
 	}
 }
 
-void UIManager::clipSmartDisable(UINode * ctrl) {
+void UIManager::clipSmartDisable(Node * ctrl) {
 	if ( ctrl->isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
 		GLi->getClippingMask()->clipPlaneDisable();
 	} else {
@@ -436,25 +437,25 @@ const Color& UIManager::getHighlightOverColor() const {
 void UIManager::checkTabPress( const Uint32& KeyCode ) {
 	eeASSERT( NULL != mFocusControl );
 
-	if ( KeyCode == KEY_TAB ) {
-		UINode * Ctrl = mFocusControl->getNextWidget();
+	if ( KeyCode == KEY_TAB && mFocusControl->isUINode() ) {
+		Node * Ctrl = static_cast<UINode*>( mFocusControl )->getNextWidget();
 
 		if ( NULL != Ctrl )
 			Ctrl->setFocus();
 	}
 }
 
-void UIManager::sendMouseClick( UINode * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
+void UIManager::sendMouseClick( Node * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
 	sendMsg( ToCtrl, UIMessage::Click, Flags );
 	ToCtrl->onMouseClick( Pos, Flags );
 }
 
-void UIManager::sendMouseUp( UINode * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
+void UIManager::sendMouseUp( Node * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
 	sendMsg( ToCtrl, UIMessage::MouseUp, Flags );
 	ToCtrl->onMouseUp( Pos, Flags );
 }
 
-void UIManager::sendMouseDown( UINode * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
+void UIManager::sendMouseDown( Node * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
 	sendMsg( ToCtrl, UIMessage::MouseDown, Flags );
 	ToCtrl->onMouseDown( Pos, Flags );
 }
@@ -497,11 +498,11 @@ const Vector2i &UIManager::getMouseDownPos() const {
 	return mMouseDownPos;
 }
 
-void UIManager::addToCloseQueue( UINode * Ctrl ) {
+void UIManager::addToCloseQueue( Node * Ctrl ) {
 	eeASSERT( NULL != Ctrl );
 
-	std::list<UINode*>::iterator it;
-	UINode * itCtrl = NULL;
+	std::list<Node*>::iterator it;
+	Node * itCtrl = NULL;
 
 	for ( it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 		itCtrl = *it;
@@ -514,7 +515,7 @@ void UIManager::addToCloseQueue( UINode * Ctrl ) {
 		}
 	}
 
-	std::list< std::list<UINode*>::iterator > itEraseList;
+	std::list< std::list<Node*>::iterator > itEraseList;
 
 	for ( it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 		itCtrl = *it;
@@ -531,7 +532,7 @@ void UIManager::addToCloseQueue( UINode * Ctrl ) {
 
 	// We delete all the controls that don't need to be deleted
 	// because of the new added control to the queue
-	std::list< std::list<UINode*>::iterator >::iterator ite;
+	std::list< std::list<Node*>::iterator >::iterator ite;
 
 	for ( ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
 		mCloseList.erase( *ite );
@@ -542,7 +543,7 @@ void UIManager::addToCloseQueue( UINode * Ctrl ) {
 
 void UIManager::checkClose() {
 	if ( !mCloseList.empty() ) {
-		for ( std::list<UINode*>::iterator it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
+		for ( std::list<Node*>::iterator it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 			eeDelete( *it );
 		}
 
@@ -595,7 +596,7 @@ void UIManager::setHighlightInvalidationColor(const Color & highlightInvalidatio
 	mHighlightInvalidationColor = highlightInvalidationColor;
 }
 
-UIWidget * UIManager::loadLayoutNodes( pugi::xml_node node, UINode * parent ) {
+UIWidget * UIManager::loadLayoutNodes( pugi::xml_node node, Node * parent ) {
 	UIWidget * firstWidget = NULL;
 
 	if ( NULL == parent )
@@ -623,7 +624,7 @@ UIWidget * UIManager::loadLayoutNodes( pugi::xml_node node, UINode * parent ) {
 	return firstWidget;
 }
 
-UIWidget * UIManager::loadLayoutFromFile( const std::string& layoutPath, UINode * parent ) {
+UIWidget * UIManager::loadLayoutFromFile( const std::string& layoutPath, Node * parent ) {
 	if ( FileSystem::fileExists( layoutPath ) ) {
 		pugi::xml_document doc;
 		pugi::xml_parse_result result = doc.load_file( layoutPath.c_str() );
@@ -647,7 +648,7 @@ UIWidget * UIManager::loadLayoutFromFile( const std::string& layoutPath, UINode 
 	return NULL;
 }
 
-UIWidget * UIManager::loadLayoutFromString( const std::string& layoutString, UINode * parent ) {
+UIWidget * UIManager::loadLayoutFromString( const std::string& layoutString, Node * parent ) {
 	pugi::xml_document doc;
 	pugi::xml_parse_result result = doc.load_string( layoutString.c_str() );
 
@@ -662,7 +663,7 @@ UIWidget * UIManager::loadLayoutFromString( const std::string& layoutString, UIN
 	return NULL;
 }
 
-UIWidget * UIManager::loadLayoutFromMemory( const void * buffer, Int32 bufferSize, UINode * parent ) {
+UIWidget * UIManager::loadLayoutFromMemory( const void * buffer, Int32 bufferSize, Node * parent ) {
 	pugi::xml_document doc;
 	pugi::xml_parse_result result = doc.load_buffer( buffer, bufferSize);
 
@@ -677,7 +678,7 @@ UIWidget * UIManager::loadLayoutFromMemory( const void * buffer, Int32 bufferSiz
 	return NULL;
 }
 
-UIWidget * UIManager::loadLayoutFromStream( IOStream& stream, UINode * parent ) {
+UIWidget * UIManager::loadLayoutFromStream( IOStream& stream, Node * parent ) {
 	if ( !stream.isOpen() )
 		return NULL;
 
@@ -699,7 +700,7 @@ UIWidget * UIManager::loadLayoutFromStream( IOStream& stream, UINode * parent ) 
 	return NULL;
 }
 
-UIWidget * UIManager::loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, UINode * parent ) {
+UIWidget * UIManager::loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, Node * parent ) {
 	SafeDataPointer PData;
 
 	if ( pack->isOpen() && pack->extractFileToMemory( FilePackPath, PData ) ) {

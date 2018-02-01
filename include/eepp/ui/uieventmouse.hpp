@@ -4,13 +4,11 @@
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uievent.hpp>
 
-namespace EE { namespace UI {
-
-class UINode;
+namespace EE { namespace Scene {
 
 class EE_API UIEventMouse : public UIEvent {
 	public:
-		UIEventMouse( UINode * getControl, const Uint32& EventNum, const Vector2i& Pos, const Uint32& getFlags );
+		UIEventMouse( Node * getControl, const Uint32& EventNum, const Vector2i& Pos, const Uint32& getFlags );
 
 		~UIEventMouse();
 

@@ -360,7 +360,7 @@ void TextureAtlasEditor::onTextureRegionChange( const UIEvent * Event ) {
 		if ( Event->getControl()->isType( UI_TYPE_IMAGE ) )
 			mTextureRegionList->setSelected( static_cast<UIImage*>( Event->getControl() )->getTooltipText() );
 
-		UINode * node = mTextureRegionGrid->getFirstChild();
+		Node * node = mTextureRegionGrid->getFirstChild();
 
 		while ( node ) {
 			if ( node->isType( UI_TYPE_IMAGE ) ) {

@@ -116,8 +116,8 @@ void UIDropDownList::showList() {
 		} else if ( NULL != mFriendCtrl ) {
 			Pos = Vector2f( mFriendCtrl->getPosition().x, mFriendCtrl->getPosition().y + mFriendCtrl->getSize().getHeight() );
 		} else {
-			UINode * ParentLoop = getParent();
-			UINode * rp = getWindowContainer();
+			Node * ParentLoop = getParent();
+			Node * rp = getWindowContainer();
 			while ( rp != ParentLoop ) {
 				Pos += ParentLoop->getPosition();
 				ParentLoop = ParentLoop->getParent();

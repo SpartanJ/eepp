@@ -2,7 +2,7 @@
 
 namespace EE { namespace Maps { namespace Private {
 
-static UITextView * createTextBox( const String& Text = "", UINode * Parent = NULL, const Sizef& Size = Sizef(), const Vector2f& Pos = Vector2f(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, const Uint32& fontStyle = Text::Regular ) {
+static UITextView * createTextBox( const String& Text = "", Node * Parent = NULL, const Sizef& Size = Sizef(), const Vector2f& Pos = Vector2f(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, const Uint32& fontStyle = Text::Regular ) {
 	UITextView * Ctrl = UITextView::New();
 	Ctrl->setFontStyle( fontStyle );
 	Ctrl->resetFlags( Flags )->setParent( Parent )->setSize( Size )->setVisible( true )->setEnabled( false )->setPosition( Pos );
@@ -91,9 +91,8 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	Txt = createTextBox( "Map Flags:", mUIWindow->getContainer(), Sizef(), Vector2f( Txt->getPosition().x, mUIMapMaxLayers->getPosition().y + mUIMapMaxLayers->getSize().getHeight() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 	mUILightsEnabled = UICheckBox::New();
-	mUILightsEnabled->setParent( mUIWindow->getContainer() )
-			->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + Txt->getSize().getHeight() + 16 )
-			->setFlags( UI_AUTO_SIZE );
+	mUILightsEnabled->setFlags( UI_AUTO_SIZE )->setParent( mUIWindow->getContainer() )
+			->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + Txt->getSize().getHeight() + 16 );
 	mUILightsEnabled->setText( "Lights Enabled" );
 	mUILightsEnabled->setActive( true );
 
@@ -102,9 +101,8 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	}
 
 	mUILightsByVertex = UICheckBox::New();
-	mUILightsByVertex->setParent( mUIWindow->getContainer() )
-			->setPosition( mUIWindow->getContainer()->getSize().getWidth() / 2, mUILightsEnabled->getPosition().y )
-			->setFlags( UI_AUTO_SIZE );
+	mUILightsByVertex->setFlags( UI_AUTO_SIZE )->setParent( mUIWindow->getContainer() )
+			->setPosition( mUIWindow->getContainer()->getSize().getWidth() / 2, mUILightsEnabled->getPosition().y );
 	mUILightsByVertex->setText( "Lights By Vertex" );
 	mUILightsByVertex->setActive( true );
 
@@ -113,9 +111,8 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	}
 
 	mUIClampBorders = UICheckBox::New();
-	mUIClampBorders->setParent( mUIWindow->getContainer() )
-			->setPosition( Txt->getPosition().x + DistFromTitle, mUILightsEnabled->getPosition().y + mUILightsEnabled->getSize().getHeight() + 16 )
-			->setFlags( UI_AUTO_SIZE );
+	mUIClampBorders->setFlags( UI_AUTO_SIZE )->setParent( mUIWindow->getContainer() )
+			->setPosition( Txt->getPosition().x + DistFromTitle, mUILightsEnabled->getPosition().y + mUILightsEnabled->getSize().getHeight() + 16 );
 	mUIClampBorders->setText( "Clamp Borders" );
 	mUIClampBorders->setActive( true );
 
@@ -124,9 +121,8 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	}
 
 	mUIClipArea = UICheckBox::New();
-	mUIClipArea->setParent( mUIWindow->getContainer() )
-			->setPosition( mUIWindow->getContainer()->getSize().getWidth() / 2, mUIClampBorders->getPosition().y )
-			->setFlags( UI_AUTO_SIZE );
+	mUIClipArea->setFlags( UI_AUTO_SIZE )->setParent( mUIWindow->getContainer() )
+			->setPosition( mUIWindow->getContainer()->getSize().getWidth() / 2, mUIClampBorders->getPosition().y );
 	mUIClipArea->setText( "Clip View Area" );
 	mUIClipArea->setActive( true );
 

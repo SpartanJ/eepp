@@ -49,7 +49,7 @@ void UIRelativeLayout::fixChilds() {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
 	}
 
-	UINode * child = mChild;
+	Node * child = mChild;
 
 	while ( NULL != child ) {
 		if ( child->isWidget() ) {

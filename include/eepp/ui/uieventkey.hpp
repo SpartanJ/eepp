@@ -4,13 +4,11 @@
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uievent.hpp>
 
-namespace EE { namespace UI {
-
-class UINode;
+namespace EE { namespace Scene {
 
 class EE_API UIEventKey : public UIEvent {
 	public:
-		UIEventKey( UINode * getControl, const Uint32& EventNum, const Uint32& getKeyCode, const Uint16& getChar, const Uint32& getMod );
+		UIEventKey( Node * Control, const Uint32& EventNum, const Uint32& getKeyCode, const Uint16& getChar, const Uint32& getMod );
 
 		~UIEventKey();
 
