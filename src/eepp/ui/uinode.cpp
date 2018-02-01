@@ -96,6 +96,7 @@ void UINode::setPixelsPosition( const Vector2f& Pos ) {
 	if ( mPosition != Pos ) {
 		mDpPos = PixelDensity::pxToDp( Pos );
 		Transformable::setPosition( Pos );
+		setDirty();
 		onPositionChange();
 	}
 }

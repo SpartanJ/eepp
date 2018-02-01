@@ -1246,6 +1246,8 @@ Uint32 Node::onFocus() {
 
 	sendCommonEvent( UIEvent::OnFocus );
 
+	invalidateDraw();
+
 	return 1;
 }
 
