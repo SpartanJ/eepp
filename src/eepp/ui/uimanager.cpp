@@ -16,7 +16,7 @@ SINGLETON_DECLARE_IMPLEMENTATION(UIManager)
 
 UIManager::UIManager() :
 	mWindow( NULL ),
-	mKM( NULL ),
+	mInput( NULL ),
 	mControl( NULL ),
 	mFocusControl( NULL ),
 	mOverControl( NULL ),
@@ -51,7 +51,7 @@ void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 		mWindow = Engine::instance()->getCurrentWindow();
 	}
 
-	mKM				= mWindow->getInput();
+	mInput				= mWindow->getInput();
 
 	mInit			= true;
 
@@ -61,7 +61,7 @@ void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 	if ( isMainControlInFrameBuffer() )
 		windowStyleConfig.WinFlags |= UI_WIN_FRAME_BUFFER;
 
-	windowStyleConfig.MinWindowSize = Sizei( 0, 0 );
+	windowStyleConfig.MinWindowSize = Sizef( 0, 0 );
 	windowStyleConfig.DecorationSize = Sizei( 0, 0 );
 	windowStyleConfig.DecorationAutoSize = false;
 	mControl = UIWindow::New();
@@ -82,7 +82,7 @@ void UIManager::init( Uint32 Flags, EE::Window::Window * window ) {
 	mFocusControl	= mControl;
 	mOverControl	= mControl;
 
-	mCbId = mKM->pushCallback( cb::Make1( this, &UIManager::inputCallback ) );
+	mCbId = mInput->pushCallback( cb::Make1( this, &UIManager::inputCallback ) );
 	mResizeCb = mWindow->pushResizeCallback( cb::Make1( this, &UIManager::resizeControl ) );
 
 	mClock.restart();
@@ -95,7 +95,7 @@ void UIManager::shutdown() {
 			Engine::instance()->existsWindow( mWindow )
 		)
 		{
-			mKM->popCallback( mCbId );
+			mInput->popCallback( mCbId );
 			mWindow->popResizeCallback( mResizeCb );
 		}
 
@@ -216,58 +216,62 @@ void UIManager::update( const Time& elapsed ) {
 
 	mControl->update( elapsed );
 
-	Vector2f mousePosf( mKM->getMousePosFromView( mWindow->getDefaultView() ) );
-	mMousePos = Vector2i( mousePosf.x, mousePosf.y );
+	mMousePos = mInput->getMousePosFromView( mWindow->getDefaultView() );
+	mMousePosi = mMousePos.asInt();
 
-	UINode * pOver = mControl->overFind( mousePosf );
+	UINode * pOver = mControl->overFind( mMousePos );
 
 	if ( pOver != mOverControl ) {
 		if ( NULL != mOverControl ) {
 			sendMsg( mOverControl, UIMessage::MouseExit );
-			mOverControl->onMouseExit( mMousePos, 0 );
+			mOverControl->onMouseExit( mMousePosi, 0 );
 		}
 
 		mOverControl = pOver;
 
 		if ( NULL != mOverControl ) {
 			sendMsg( mOverControl, UIMessage::MouseEnter );
-			mOverControl->onMouseEnter( mMousePos, 0 );
+			mOverControl->onMouseEnter( mMousePosi, 0 );
 		}
 	} else {
 		if ( NULL != mOverControl )
-			mOverControl->onMouseMove( mMousePos, mKM->getPressTrigger() );
+			mOverControl->onMouseMove( mMousePosi, mInput->getPressTrigger() );
 	}
 
-	if ( mKM->getPressTrigger() ) {
+	if ( mInput->getPressTrigger() ) {
 		if ( NULL != mOverControl ) {
-			mOverControl->onMouseDown( mMousePos, mKM->getPressTrigger() );
-			sendMsg( mOverControl, UIMessage::MouseDown, mKM->getPressTrigger() );
+			mOverControl->onMouseDown( mMousePosi, mInput->getPressTrigger() );
+			sendMsg( mOverControl, UIMessage::MouseDown, mInput->getPressTrigger() );
 		}
 
 		if ( !mFirstPress ) {
 			mDownControl = mOverControl;
-			mMouseDownPos = mMousePos;
+			mMouseDownPos = mMousePosi;
 
 			mFirstPress = true;
 		}
 	}
 
-	if ( mKM->getReleaseTrigger() ) {
+	if ( mInput->getReleaseTrigger() ) {
 		if ( NULL != mFocusControl ) {
 			if ( !wasDraggingControl ) {
 				if ( mOverControl != mFocusControl )
 					setFocusControl( mOverControl );
 
-				mFocusControl->onMouseUp( mMousePos, mKM->getReleaseTrigger() );
-				sendMsg( mFocusControl, UIMessage::MouseUp, mKM->getReleaseTrigger() );
+				// The focused control can change after the MouseUp ( since the control can call "setFocus()" on other control
+				// And the Click would be received by the new focused control instead of the real one
+				UINode * lastFocusControl = mFocusControl;
 
-				if ( mKM->getClickTrigger() ) {
-					sendMsg( mFocusControl, UIMessage::Click, mKM->getClickTrigger() );
-					mFocusControl->onMouseClick( mMousePos, mKM->getClickTrigger() );
+				lastFocusControl->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
+				sendMsg( lastFocusControl, UIMessage::MouseUp, mInput->getReleaseTrigger() );
 
-					if ( mKM->getDoubleClickTrigger() ) {
-						sendMsg( mFocusControl, UIMessage::DoubleClick, mKM->getDoubleClickTrigger() );
-						mFocusControl->onMouseDoubleClick( mMousePos, mKM->getDoubleClickTrigger() );
+				if ( mInput->getClickTrigger() ) {
+					sendMsg( lastFocusControl, UIMessage::Click, mInput->getClickTrigger() );
+					lastFocusControl->onMouseClick( mMousePosi, mInput->getClickTrigger() );
+
+					if ( mInput->getDoubleClickTrigger() ) {
+						sendMsg( lastFocusControl, UIMessage::DoubleClick, mInput->getDoubleClickTrigger() );
+						lastFocusControl->onMouseDoubleClick( mMousePosi, mInput->getDoubleClickTrigger() );
 					}
 				}
 			}
@@ -306,23 +310,23 @@ const Time& UIManager::getElapsed() const {
 }
 
 Vector2i UIManager::getMousePos() {
-	return mMousePos;
+	return mMousePosi;
 }
 
 Vector2f UIManager::getMousePosf() {
-	return Vector2f( mMousePos.x, mMousePos.y );
+	return mMousePos;
 }
 
 Input * UIManager::getInput() const {
-	return mKM;
+	return mInput;
 }
 
 const Uint32& UIManager::getPressTrigger() const {
-	return mKM->getPressTrigger();
+	return mInput->getPressTrigger();
 }
 
 const Uint32& UIManager::getLastPressTrigger() const {
-	return mKM->getLastPressTrigger();
+	return mInput->getLastPressTrigger();
 }
 
 void UIManager::clipSmartEnable(UINode * ctrl, const Int32 & x, const Int32 & y, const Uint32 & Width, const Uint32 & Height) {

@@ -87,7 +87,7 @@ void UITextEdit::onSizeChange() {
 	mHScrollBar->setSize( mSize.getWidth(), mHScrollBar->getSize().getHeight() );
 	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), mSize.getHeight() );
 
-	mTextInput->setPosition( PixelDensity::pxToDpI( mContainerPadding.Left ), PixelDensity::pxToDpI( mContainerPadding.Top ) );
+	mTextInput->setPosition( PixelDensity::pxToDp( mContainerPadding.Left ), PixelDensity::pxToDp( mContainerPadding.Top ) );
 
 	onInputSizeChange( NULL );
 
@@ -98,7 +98,7 @@ void UITextEdit::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
-void UITextEdit::onParentSizeChange( const Vector2i& SizeChange ) {
+void UITextEdit::onParentSizeChange( const Vector2f& SizeChange ) {
 	UIWidget::onParentSizeChange( SizeChange );
 
 	onInputSizeChange( NULL );
@@ -241,7 +241,7 @@ void UITextEdit::scrollbarsSet() {
 
 void UITextEdit::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mContainerPadding = PixelDensity::dpToPxI( makePadding() );
+		mContainerPadding = makePadding();
 	}
 }
 

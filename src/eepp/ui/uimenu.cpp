@@ -169,7 +169,7 @@ Uint32 UIMenu::add( UINode * Control ) {
 
 	setControlSize( Control, getCount() );
 
-	Control->setPixelsPosition( PixelDensity::dpToPxI( mStyleConfig.Padding.Left ), PixelDensity::dpToPxI( mStyleConfig.Padding.Top ) + mNextPosY );
+	Control->setPixelsPosition( PixelDensity::dpToPx( mStyleConfig.Padding.Left ), PixelDensity::dpToPx( mStyleConfig.Padding.Top ) + mNextPosY );
 
 	mNextPosY += Control->getRealSize().getHeight();
 
@@ -187,7 +187,7 @@ void UIMenu::setControlSize( UINode * Control, const Uint32& Pos ) {
 Uint32 UIMenu::addSeparator() {
 	UIMenuSeparator * Control = UIMenuSeparator::New();
 	Control->setParent( this );
-	Control->setPixelsPosition( PixelDensity::dpToPxI( mStyleConfig.Padding.Left ), PixelDensity::dpToPxI( mStyleConfig.Padding.Top ) + mNextPosY );
+	Control->setPixelsPosition( PixelDensity::dpToPx( mStyleConfig.Padding.Left ), PixelDensity::dpToPx( mStyleConfig.Padding.Top ) + mNextPosY );
 	Control->setPixelsSize( mRealSize.getWidth() - PixelDensity::dpToPxI( mStyleConfig.Padding.Left - mStyleConfig.Padding.Right ), PixelDensity::dpToPxI( Control->getSkinSize().getHeight() ) );
 
 	mNextPosY += Control->getRealSize().getHeight();
@@ -352,7 +352,7 @@ void UIMenu::rePosControls() {
 	for ( i = 0; i < mItems.size(); i++ ) {
 		UINode * ctrl = mItems[i];
 
-		ctrl->setPixelsPosition( PixelDensity::dpToPxI( mStyleConfig.Padding.Left ), PixelDensity::dpToPxI( mStyleConfig.Padding.Top ) + mNextPosY );
+		ctrl->setPixelsPosition( PixelDensity::dpToPx( mStyleConfig.Padding.Left ), PixelDensity::dpToPx( mStyleConfig.Padding.Top ) + mNextPosY );
 
 		mNextPosY += ctrl->getRealSize().getHeight();
 	}
@@ -515,7 +515,7 @@ Uint32 UIMenu::onKeyDown( const UIEventKey& Event ) {
 	return UIWidget::onKeyDown( Event );
 }
 
-const Rect& UIMenu::getPadding() const {
+const Rectf& UIMenu::getPadding() const {
 	return mStyleConfig.Padding;
 }
 
@@ -584,21 +584,15 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 	endPropertiesTransaction();
 }
 
-void UIMenu::fixMenuPos( Vector2i& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {
+void UIMenu::fixMenuPos( Vector2f& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {
 	Rectf qScreen( 0.f, 0.f, UIManager::instance()->getMainControl()->getRealSize().getWidth(), UIManager::instance()->getMainControl()->getRealSize().getHeight() );
 	Rectf qPos( Pos.x, Pos.y, Pos.x + Menu->getRealSize().getWidth(), Pos.y + Menu->getRealSize().getHeight() );
 
 	if ( NULL != Parent && NULL != SubMenu ) {
-		Vector2i addToPos( 0, 0 );
-
-		if ( NULL != SubMenu ) {
-			addToPos.y = SubMenu->getRealSize().getHeight();
-		}
-
-		Vector2i sPos = SubMenu->getRealPosition();
+		Vector2f sPos = SubMenu->getRealPosition();
 		SubMenu->nodeToWorldTranslation( sPos );
 
-		Vector2i pPos = Parent->getRealPosition();
+		Vector2f pPos = Parent->getRealPosition();
 		Parent->nodeToWorldTranslation( pPos );
 
 		Rectf qParent( pPos.x, pPos.y, pPos.x + Parent->getRealSize().getWidth(), pPos.y + Parent->getRealSize().getHeight() );

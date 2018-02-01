@@ -29,7 +29,7 @@ class EE_API UIImage : public UIWidget {
 
 		UIImage * setColor( const Color& col );
 
-		const Vector2i& getAlignOffset() const;
+		const Vector2f& getAlignOffset() const;
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 
@@ -40,7 +40,7 @@ class EE_API UIImage : public UIWidget {
 		Uint32			mScaleType;
 		Drawable *		mDrawable;
 		Color			mColor;
-		Vector2i		mAlignOffset;
+		Vector2f		mAlignOffset;
 		Vector2f		mDestSize;
 
 		virtual void onSizeChange();

@@ -74,27 +74,26 @@ UISkin * UISkinSimple::clone() {
 	return clone( mName, true );
 }
 
-Sizei UISkinSimple::getSize( const Uint32 & state ) {
+Sizef UISkinSimple::getSize( const Uint32 & state ) {
 	if ( NULL != mDrawable[ state ] ) {
-		Sizef s( mDrawable[ state ]->getSize() );
-		return Sizei( (Int32)s.x, (Int32)s.y );
+		return mDrawable[ state ]->getSize();
 	}
 
-	return Sizei();
+	return Sizef();
 }
 
-Rect UISkinSimple::getBorderSize( const Uint32 & state ) {
+Rectf UISkinSimple::getBorderSize( const Uint32 & state ) {
 	if ( NULL != mDrawable[ state ] && mDrawable[ state ]->getDrawableType() == Drawable::NINEPATCH ) {
 		NinePatch * ninePatch( static_cast<NinePatch*>( mDrawable[ state ] ) );
 		TextureRegion * stl( ninePatch->getTextureRegion( NinePatch::Left ) );
 		TextureRegion * str( ninePatch->getTextureRegion( NinePatch::Right ) );
 		TextureRegion * stt( ninePatch->getTextureRegion( NinePatch::Up ) );
 		TextureRegion * stb( ninePatch->getTextureRegion( NinePatch::Down ) );
-		Rect size( stl->getSize().getWidth(), stt->getSize().getHeight(), str->getSize().getWidth(), stb->getSize().getHeight() );
+		Rectf size( stl->getPxSize().getWidth(), stt->getPxSize().getHeight(), str->getPxSize().getWidth(), stb->getPxSize().getHeight() );
 		return size;
 	}
 
-	return Rect();
+	return Rectf();
 }
 
 }}

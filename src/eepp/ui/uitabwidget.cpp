@@ -25,13 +25,13 @@ UITabWidget::UITabWidget() :
 	}
 
 	mTabContainer = UIWidget::New();
-	mTabContainer->setParent( this )->setPosition( 0, 0 )->setSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight );
+	mTabContainer->setParent( this )->setPosition( 0, 0 )->setPixelsSize( mRealSize.getWidth(), mStyleConfig.TabWidgetHeight );
 	mTabContainer->setFlags( UI_CLIP_ENABLE );
 
 	mCtrlContainer = UIWidget::New();
 	mCtrlContainer->setParent( this )->setPosition( 0, mStyleConfig.TabWidgetHeight )
-			->setSize( mSize.getWidth(), mSize.getHeight() - mStyleConfig.TabWidgetHeight )
-			->setFlags( UI_CLIP_ENABLE );
+			->setPixelsSize( mRealSize.getWidth(), mRealSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) );
+	mCtrlContainer->setFlags( UI_CLIP_ENABLE );
 
 	onSizeChange();
 
@@ -60,12 +60,12 @@ void UITabWidget::setTheme( UITheme * Theme ) {
 		UISkin * tSkin		= Theme->getSkin( "tab" );
 
 		if ( NULL != tSkin ) {
-			Sizei tSize1		= getSkinSize( tSkin );
-			Sizei tSize2		= getSkinSize( tSkin, UISkinState::StateSelected );
+			Sizef tSize1		= getSkinSize( tSkin );
+			Sizef tSize2		= getSkinSize( tSkin, UISkinState::StateSelected );
 
 			mStyleConfig.TabWidgetHeight	= eemax( tSize1.getHeight(), tSize2.getHeight() );
 
-			seContainerSize();
+			setContainerSize();
 			orderTabs();
 		}
 	}
@@ -79,10 +79,10 @@ void UITabWidget::onThemeLoaded() {
 	UIWidget::onThemeLoaded();
 }
 
-void UITabWidget::seContainerSize() {
-	mTabContainer->setSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight );
+void UITabWidget::setContainerSize() {
+	mTabContainer->setPixelsSize( mRealSize.getWidth(), mStyleConfig.TabWidgetHeight );
 	mCtrlContainer->setPosition( 0, mStyleConfig.TabWidgetHeight );
-	mCtrlContainer->setSize( mSize.getWidth(), mSize.getHeight() - mStyleConfig.TabWidgetHeight );
+	mCtrlContainer->setPixelsSize( mRealSize.getWidth(), mRealSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) );
 }
 
 void UITabWidget::draw() {
@@ -93,17 +93,17 @@ void UITabWidget::draw() {
 		if ( smooth ) GLi->lineSmooth( false );
 
 		Primitives P;
-		Vector2i p1( mScreenPos.x, mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
-		Vector2i p2( mScreenPos.x + mTabContainer->getRealPosition().x, p1.y );
+		Vector2f p1( mScreenPos.x, mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
+		Vector2f p2( mScreenPos.x + mTabContainer->getRealPosition().x, p1.y );
 
 		P.setLineWidth( PixelDensity::dpToPx( 1 ) );
 		P.setColor( Color( mStyleConfig.LineBelowTabsColor, mAlpha ) );
-		P.drawLine( Line2f( Vector2f( p1.x, p1.y ), Vector2f( p2.x, p2.y ) ) );
+		P.drawLine( Line2f( Vector2f( (int)p1.x, (int)p1.y ), Vector2f( (int)p2.x, (int)p2.y ) ) );
 
-		Vector2i p3( mScreenPos.x + mTabContainer->getRealPosition().x + mTabContainer->getRealSize().getWidth(), mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
-		Vector2i p4( mScreenPos.x + mRealSize.getWidth(), p3.y );
+		Vector2f p3( mScreenPos.x + mTabContainer->getRealPosition().x + mTabContainer->getRealSize().getWidth(), mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
+		Vector2f p4( mScreenPos.x + mRealSize.getWidth(), p3.y );
 
-		P.drawLine( Line2f( Vector2f( p3.x, p3.y ), Vector2f( p4.x, p4.y ) ) );
+		P.drawLine( Line2f( Vector2f( (int)p3.x, (int)p3.y ), Vector2f( (int)p4.x, (int)p4.y ) ) );
 
 		if ( smooth ) GLi->lineSmooth( true );
 	}
@@ -179,7 +179,7 @@ void UITabWidget::setStyleConfig(const UITabWidgetStyleConfig & styleConfig) {
 	Uint32		tabWidgetHeight = mStyleConfig.TabWidgetHeight;
 	mStyleConfig = styleConfig;
 	mStyleConfig.TabWidgetHeight = tabWidgetHeight;
-	seContainerSize();
+	setContainerSize();
 	setTabContainerSize();
 	orderTabs();
 }
@@ -434,13 +434,13 @@ void UITabWidget::setTabContainerSize() {
 
 	if ( mTabs.size() > 0 ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			s += mTabs[i]->getSize().getWidth() + mStyleConfig.TabSeparation;
+			s += mTabs[i]->getRealSize().getWidth() + mStyleConfig.TabSeparation;
 		}
 
 		s -= mStyleConfig.TabSeparation;
 	}
 
-	mTabContainer->setSize( s, mStyleConfig.TabWidgetHeight );
+	mTabContainer->setPixelsSize( s, PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) );
 
 	switch ( HAlignGet( mFlags ) )
 	{
@@ -699,7 +699,7 @@ Uint32 UITabWidget::getSelectedTabIndex() const {
 }
 
 void UITabWidget::onSizeChange() {
-	seContainerSize();
+	setContainerSize();
 	setTabContainerSize();
 	posTabs();
 

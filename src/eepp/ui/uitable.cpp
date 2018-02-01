@@ -115,7 +115,7 @@ void UITable::setTheme( UITheme * Theme ) {
 
 void UITable::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mContainerPadding = makePadding();
+		mContainerPadding = PixelDensity::pxToDp( makePadding() );
 	}
 }
 
@@ -263,7 +263,7 @@ void UITable::updateScroll( bool FromScrollChange ) {
 			ItemPosMax = ItemPos + mRowHeight;
 
 			if ( ( ItemPos >= (Int32)RelPos || ItemPosMax >= (Int32)RelPos ) && ( ItemPos <= (Int32)RelPosMax ) ) {
-				Item->setPosition( mHScrollInit, ItemPos - RelPos );
+				Item->setPosition( mHScrollInit, ItemPos - (Int32)RelPos );
 				Item->setEnabled( true );
 				Item->setVisible( true );
 
@@ -293,7 +293,7 @@ void UITable::updateScroll( bool FromScrollChange ) {
 
 		for ( i = 0; i < mItems.size(); i++ ) {
 			Item = mItems[i];
-			ItemPos = mRowHeight * ( i - RelPos );
+			ItemPos = mRowHeight * ( (Int32)i - (Int32)RelPos );
 
 			if ( i >= RelPos && i < RelPosMax ) {
 				if ( Clipped )
@@ -594,11 +594,11 @@ UITable * UITable::setSmoothScroll(bool smoothScroll) {
 	return this;
 }
 
-Rect UITable::getContainerPadding() const {
+Rectf UITable::getContainerPadding() const {
 	return mContainerPadding;
 }
 
-void UITable::setContainerPadding(const Rect & containerPadding) {
+void UITable::setContainerPadding(const Rectf& containerPadding) {
 	if ( containerPadding != mContainerPadding ) {
 		mContainerPadding = containerPadding;
 		containerResize();
@@ -630,15 +630,15 @@ void UITable::loadFromXmlNode(const pugi::xml_node & node) {
 			setRowHeight( ait->as_int() );
 		} else if ( "padding" == name ) {
 			int val = ait->as_int();
-			setContainerPadding( Rect( val, val, val, val ) );
+			setContainerPadding( Rectf( val, val, val, val ) );
 		} else if ( "paddingleft" == name ) {
-			setContainerPadding( Rect( ait->as_int(), mContainerPadding.Top, mContainerPadding.Right, mContainerPadding.Bottom ) );
+			setContainerPadding( Rectf( ait->as_int(), mContainerPadding.Top, mContainerPadding.Right, mContainerPadding.Bottom ) );
 		} else if ( "paddingright" == name ) {
-			setContainerPadding( Rect( mContainerPadding.Left, mContainerPadding.Top, ait->as_int(), mContainerPadding.Bottom ) );
+			setContainerPadding( Rectf( mContainerPadding.Left, mContainerPadding.Top, ait->as_int(), mContainerPadding.Bottom ) );
 		} else if ( "paddingtop" == name ) {
-			setContainerPadding( Rect( mContainerPadding.Left, ait->as_int(), mContainerPadding.Right, mContainerPadding.Bottom ) );
+			setContainerPadding( Rectf( mContainerPadding.Left, ait->as_int(), mContainerPadding.Right, mContainerPadding.Bottom ) );
 		} else if ( "paddingbottom" == name ) {
-			setContainerPadding( Rect( mContainerPadding.Left, mContainerPadding.Top, mContainerPadding.Right, ait->as_int() ) );
+			setContainerPadding( Rectf( mContainerPadding.Left, mContainerPadding.Top, mContainerPadding.Right, ait->as_int() ) );
 		} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {
 			std::string val = ait->as_string();
 			if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );

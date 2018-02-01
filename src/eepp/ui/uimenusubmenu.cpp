@@ -49,7 +49,7 @@ void UIMenuSubMenu::setTheme( UITheme * Theme ) {
 void UIMenuSubMenu::onSizeChange() {
 	UIMenuItem::onSizeChange();
 
-	mArrow->setPosition( getParent()->getSize().getWidth() - mArrow->getSize().getWidth() - PixelDensity::dpToPxI( 1 ), 0 );
+	mArrow->setPosition( getParent()->getSize().getWidth() - mArrow->getSize().getWidth() - PixelDensity::dpToPx( 1 ), 0 );
 	mArrow->centerVertical();
 }
 
@@ -100,7 +100,7 @@ Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
 void UIMenuSubMenu::showSubMenu() {
 	mSubMenu->setParent( getParent()->getParent() );
 
-	Vector2i Pos = this->getRealPosition();
+	Vector2f Pos = getRealPosition();
 	nodeToWorldTranslation( Pos );
 	Pos.x += mRealSize.getWidth() + reinterpret_cast<UIMenu*> ( getParent() )->getPadding().Right;
 

@@ -29,6 +29,8 @@ class EE_API TextureAtlasEditor {
 		UISpinBox *			getSpinOffX() const { return mSpinOffX; }
 
 		UISpinBox *			getSpinOffY() const { return mSpinOffY; }
+
+		bool				isEdited() { return mEdited; }
 	protected:
 		class UITGEUpdater : public UINode
 		{
@@ -58,6 +60,7 @@ class EE_API TextureAtlasEditor {
 		UIDropDownList *	mTextureFilterList;
 		TextureAtlasTextureRegionEditor * mTextureRegionEditor;
 		UITGEUpdater *		mTGEU;
+		bool mEdited;
 
 		void windowClose( const UIEvent * Event );
 

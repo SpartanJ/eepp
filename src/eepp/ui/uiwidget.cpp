@@ -41,7 +41,7 @@ bool UIWidget::isType( const Uint32& type ) const {
 
 void UIWidget::updateAnchorsDistances() {
 	if ( NULL != mParentCtrl ) {
-		mDistToBorder	= Rect( mRealPos.x, mRealPos.y, mParentCtrl->getRealSize().x - ( mRealPos.x + mRealSize.x ), mParentCtrl->getRealSize().y - ( mRealPos.y + mRealSize.y ) );
+		mDistToBorder	= Rect( mPosition.x, mPosition.y, mParentCtrl->getRealSize().x - ( mPosition.x + mRealSize.x ), mParentCtrl->getRealSize().y - ( mPosition.y + mRealSize.y ) );
 	}
 }
 
@@ -52,7 +52,7 @@ Rect UIWidget::getLayoutMargin() const {
 UIWidget * UIWidget::setLayoutMargin(const Rect & margin) {
 	if ( mLayoutMargin != margin ) {
 		mLayoutMargin = margin;
-		mRealMargin = PixelDensity::dpToPxI( margin );
+		mRealMargin = PixelDensity::dpToPx( Rectf( margin.Left, margin.Top, margin.Right, margin.Bottom ) );
 		notifyLayoutAttrChange();
 	}
 
@@ -146,7 +146,7 @@ void UIWidget::update( const Time& time ) {
 			UIManager * uiManager = UIManager::instance();
 			UIThemeManager * themeManager = UIThemeManager::instance();
 
-			Vector2i Pos = uiManager->getMousePos();
+			Vector2f Pos = uiManager->getMousePosf();
 			Pos.x += themeManager->getCursorSize().x;
 			Pos.y += themeManager->getCursorSize().y;
 
@@ -160,7 +160,7 @@ void UIWidget::update( const Time& time ) {
 
 			if ( Time::Zero == themeManager->getTooltipTimeToShow() ) {
 				if ( !mTooltip->isVisible() || themeManager->getTooltipFollowMouse() )
-					mTooltip->setPosition( PixelDensity::pxToDpI( Pos ) );
+					mTooltip->setPosition( PixelDensity::pxToDp( Pos ) );
 
 				mTooltip->show();
 			} else {
@@ -170,7 +170,7 @@ void UIWidget::update( const Time& time ) {
 
 				if ( mTooltip->getTooltipTime() >= themeManager->getTooltipTimeToShow() ) {
 					if ( mTooltip->getTooltipTime().asMilliseconds() != -1.f ) {
-						mTooltip->setPosition( PixelDensity::pxToDpI( Pos ) );
+						mTooltip->setPosition( PixelDensity::pxToDp( Pos ) );
 
 						mTooltip->show();
 
@@ -180,7 +180,7 @@ void UIWidget::update( const Time& time ) {
 			}
 
 			if ( themeManager->getTooltipFollowMouse() ) {
-				mTooltip->setPosition( PixelDensity::pxToDpI( Pos ) );
+				mTooltip->setPosition( PixelDensity::pxToDp( Pos ) );
 			}
 		} else {
 			mTooltip->setTooltipTime( Milliseconds( 0.f ) );
@@ -227,8 +227,8 @@ void UIWidget::tooltipRemove() {
 	mTooltip = NULL;
 }
 
-UINode * UIWidget::setSize( const Sizei& size ) {
-	Sizei s( size );
+UINode * UIWidget::setSize( const Sizef& size ) {
+	Sizef s( size );
 
 	if ( s.x < mMinControlSize.x )
 		s.x = mMinControlSize.x;
@@ -279,11 +279,11 @@ UINode * UIWidget::setThemeSkin( UITheme * Theme, const std::string& skinName ) 
 	return UINode::setThemeSkin( Theme, skinName );
 }
 
-UINode * UIWidget::setSize( const Int32& Width, const Int32& Height ) {
+UINode * UIWidget::setSize( const Float& Width, const Float& Height ) {
 	return UINode::setSize( Width, Height );
 }
 
-const Sizei& UIWidget::getSize() {
+const Sizef& UIWidget::getSize() {
 	return UINode::getSize();
 }
 
@@ -291,7 +291,7 @@ UITooltip * UIWidget::getTooltip() {
 	return mTooltip;
 }
 
-void UIWidget::onParentSizeChange( const Vector2i& SizeChange ) {
+void UIWidget::onParentSizeChange( const Vector2f& SizeChange ) {
 	updateAnchors( SizeChange );
 	UINode::onParentSizeChange( SizeChange );
 }
@@ -327,19 +327,19 @@ void UIWidget::notifyLayoutAttrChangeParent() {
 	}
 }
 
-void UIWidget::updateAnchors( const Vector2i& SizeChange ) {
+void UIWidget::updateAnchors( const Vector2f& SizeChange ) {
 	if ( !( mFlags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) )
 		return;
 
-	Sizei newSize( mSize );
+	Sizef newSize( mSize );
 
 	if ( !( mFlags & UI_ANCHOR_LEFT ) ) {
-		setInternalPosition( Vector2i( mPos.x += SizeChange.x, mPos.y ) );
+		setInternalPosition( Vector2f( mDpPos.x += SizeChange.x, mDpPos.y ) );
 	}
 
 	if ( mFlags & UI_ANCHOR_RIGHT ) {
 		if ( NULL != mParentCtrl ) {
-			newSize.x = mParentCtrl->getSize().getWidth() - mPos.x - PixelDensity::pxToDpI( mDistToBorder.Right );
+			newSize.x = mParentCtrl->getSize().getWidth() - mDpPos.x - PixelDensity::pxToDpI( mDistToBorder.Right );
 
 			if ( newSize.x < mMinControlSize.getWidth() )
 				newSize.x = mMinControlSize.getWidth();
@@ -347,12 +347,12 @@ void UIWidget::updateAnchors( const Vector2i& SizeChange ) {
 	}
 
 	if ( !( mFlags & UI_ANCHOR_TOP ) ) {
-		setInternalPosition( Vector2i( mPos.x, mPos.y += SizeChange.y ) );
+		setInternalPosition( Vector2f( mDpPos.x, mDpPos.y += SizeChange.y ) );
 	}
 
 	if ( mFlags & UI_ANCHOR_BOTTOM ) {
 		if ( NULL != mParentCtrl ) {
-			newSize.y = mParentCtrl->getSize().y - mPos.y - PixelDensity::pxToDpI( mDistToBorder.Bottom );
+			newSize.y = mParentCtrl->getSize().y - mDpPos.y - PixelDensity::pxToDpI( mDistToBorder.Bottom );
 
 			if ( newSize.y < mMinControlSize.getHeight() )
 				newSize.y = mMinControlSize.getHeight();
@@ -364,7 +364,7 @@ void UIWidget::updateAnchors( const Vector2i& SizeChange ) {
 }
 
 void UIWidget::alignAgainstLayout() {
-	Vector2i pos = mPos;
+	Vector2f pos = mDpPos;
 
 	switch ( fontHAlignGet( mLayoutGravity ) ) {
 		case UI_HALIGN_CENTER:
@@ -456,9 +456,9 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 		if ( "id" == name ) {
 			setId( ait->value() );
 		} else if ( "x" == name ) {
-			setInternalPosition( Vector2i( PixelDensity::toDpFromStringI( ait->as_string() ), mPos.y ) );
+			setInternalPosition( Vector2f( PixelDensity::toDpFromString( ait->as_string() ), mDpPos.y ) );
 		} else if ( "y" == name ) {
-			setInternalPosition( Vector2i( mPos.x, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
+			setInternalPosition( Vector2f( mDpPos.x, PixelDensity::toDpFromString( ait->as_string() ) ) );
 		} else if ( "width" == name ) {
 			setInternalWidth( PixelDensity::toDpFromStringI( ait->as_string() ) );
 			notifyLayoutAttrChange();

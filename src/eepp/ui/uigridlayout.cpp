@@ -125,13 +125,13 @@ void UIGridLayout::onChildCountChange() {
 	UIWidget::onChildCountChange();
 }
 
-void UIGridLayout::onParentSizeChange(const Vector2i & SizeChange) {
+void UIGridLayout::onParentSizeChange(const Vector2f& SizeChange) {
 	pack();
 	UIWidget::onParentSizeChange( SizeChange );
 }
 
 void UIGridLayout::pack() {
-	Sizei oldSize( mSize );
+	Sizef oldSize( mSize );
 
 	//setInternalPosition( Vector2i( mLayoutMargin.Left, mLayoutMargin.Top ) );
 
@@ -145,8 +145,8 @@ void UIGridLayout::pack() {
 
 	UINode * ChildLoop = mChild;
 
-	Vector2i pos(mPadding.Left,mPadding.Top);
-	Sizei targetSize( getTargetElementSize() );
+	Vector2f pos(mPadding.Left,mPadding.Top);
+	Sizef targetSize( getTargetElementSize() );
 
 	if ( getHorizontalAlign() == UI_HALIGN_RIGHT )
 		pos.x = mSize.getWidth() - mPadding.Right;
@@ -201,8 +201,8 @@ Uint32 UIGridLayout::onMessage(const UIMessage * Msg) {
 	return 0;
 }
 
-Sizei UIGridLayout::getTargetElementSize() {
-	return Sizei( mColumnMode == Size ? mColumnWidth : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getWidth() : mSize.getWidth() ) - mPadding.Left - mPadding.Right ) * mColumnWeight,
+Sizef UIGridLayout::getTargetElementSize() {
+	return Sizef( mColumnMode == Size ? mColumnWidth : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getWidth() : mSize.getWidth() ) - mPadding.Left - mPadding.Right ) * mColumnWeight,
 				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getHeight() : mSize.getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
 }
 

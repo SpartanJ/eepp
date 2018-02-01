@@ -23,7 +23,7 @@ class EE_API UIRelativeLayout : public UILayout {
 
 		virtual void onChildCountChange();
 
-		virtual void onParentSizeChange( const Vector2i& SizeChange );
+		virtual void onParentSizeChange( const Vector2f& SizeChange );
 
 		void fixChilds();
 

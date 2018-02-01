@@ -338,7 +338,7 @@ void EETest::onShowMenu( const UIEvent * Event ) {
 }
 
 void EETest::onWindowResize(EE::Window::Window * win) {
-	Map.setViewSize( win->getSize() );
+	Map.setViewSize( win->getSize().asFloat() );
 }
 
 static std::vector<String> getTestStringArr() {
@@ -353,37 +353,7 @@ static std::vector<String> getTestStringArr() {
 	return str;
 }
 
-void EETest::createUI() {
-	Clock TE;
-
-	mThemeName = "uitheme";
-
-	if ( PixelDensity::getPixelDensity() > 1.5 ) {
-		mThemeName = "uitheme2x";
-	} else if ( PixelDensity::getPixelDensity() >= 1.1 ) {
-		mThemeName = "uitheme1.5x";
-	}
-
-	createUIThemeTextureAtlas();
-
-	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
-
-	Uint32 UI_MAN_OPS = 0;
-	if ( mDebugUI )
-		UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_INVALIDATION;
-	UIManager::instance()->init(UI_MAN_OPS | UI_MANAGER_USE_DRAW_INVALIDATION | UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER);
-	UIManager::instance()->setTranslator( mTranslator );
-
-	//mTheme = UITheme::loadFromDirectory( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
-
-	TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
-	mTheme = UITheme::loadFromTextureAtlas( UIThemeDefault::New( mThemeName, mThemeName ), TextureAtlasManager::instance()->getByName( mThemeName ) );
-
-	UIThemeManager::instance()->add( mTheme );
-	UIThemeManager::instance()->setDefaultEffectsEnabled( true );
-	UIThemeManager::instance()->setDefaultFont( TTF );
-	UIThemeManager::instance()->setDefaultTheme( mThemeName );
-
+void EETest::createBaseUI() {
 	std::vector<String> str = getTestStringArr();
 
 	/**/
@@ -391,7 +361,7 @@ void EETest::createUI() {
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
-	windowStyleConfig.MinWindowSize = Sizei( 530, 405 );
+	windowStyleConfig.MinWindowSize = Sizef( 530, 405 );
 	windowStyleConfig.BaseAlpha = 200;
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -575,8 +545,6 @@ void EETest::createUI() {
 	Menu->getItem( "Quit" )->addEventListener( UIEvent::MouseUp, cb::Make1( this, &EETest::onQuitClick ) );
 	UIManager::instance()->getMainControl()->addEventListener( UIEvent::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
 
-	//createNewUI();
-
 #ifdef EE_PLATFORM_TOUCH
 	TextureAtlas * SG = GlobalTextureAtlas::instance();
 
@@ -601,6 +569,42 @@ void EETest::createUI() {
 	mShowMenu->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	mShowMenu->addEventListener( UIEvent::MouseClick, cb::Make1( this, &EETest::onShowMenu ) );
 #endif
+}
+
+void EETest::createUI() {
+	Clock TE;
+
+	mThemeName = "uitheme";
+
+	if ( PixelDensity::getPixelDensity() > 1.5 ) {
+		mThemeName = "uitheme2x";
+	} else if ( PixelDensity::getPixelDensity() >= 1.1 ) {
+		mThemeName = "uitheme1.5x";
+	}
+
+	createUIThemeTextureAtlas();
+
+	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
+
+	Uint32 UI_MAN_OPS = 0;
+	if ( mDebugUI )
+		UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_INVALIDATION;
+	UIManager::instance()->init(UI_MAN_OPS | UI_MANAGER_USE_DRAW_INVALIDATION | UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER);
+	UIManager::instance()->setTranslator( mTranslator );
+
+	eePRINTL("UINode size: %d", sizeof(UINode));
+	//mTheme = UITheme::loadFromDirectory( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
+
+	TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
+	mTheme = UITheme::loadFromTextureAtlas( UIThemeDefault::New( mThemeName, mThemeName ), TextureAtlasManager::instance()->getByName( mThemeName ) );
+
+	UIThemeManager::instance()->add( mTheme );
+	UIThemeManager::instance()->setDefaultEffectsEnabled( true );
+	UIThemeManager::instance()->setDefaultFont( TTF );
+	UIThemeManager::instance()->setDefaultTheme( mThemeName );
+
+	createBaseUI();
+	//createNewUI();
 
 	eePRINTL( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 }
@@ -612,7 +616,7 @@ void EETest::createNewUI() {
 	relLay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
 
 	UINode * container = UINode::New();
-	container->setSize( relLay->getSize() - 32 );
+	container->setSize( relLay->getSize() - 32.f );
 
 	UIScrollView * scrollView = UIScrollView::New();
 	scrollView->setTouchDragEnabled( true );
@@ -885,7 +889,7 @@ void EETest::createMapEditor() {
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
-	windowStyleConfig.MinWindowSize = Sizei( 1024, 768 );
+	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
 	mMapEditor = eeNew( MapEditor, ( tWin, cb::Make0( this, &EETest::onMapEditorClose ) ) );
@@ -902,7 +906,7 @@ void EETest::createETGEditor() {
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
-	windowStyleConfig.MinWindowSize = Sizei( 1024, 768 );
+	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
 	mETGEditor = eeNew ( Tools::TextureAtlasEditor, ( tWin, cb::Make0( this, &EETest::onETGEditorClose ) ) );
@@ -1105,9 +1109,9 @@ void EETest::onQuitClick( const UIEvent * Event ) {
 
 void EETest::showMenu() {
 	if ( Menu->show() ) {
-		Vector2i Pos = mWindow->getInput()->getMousePos();
+		Vector2f Pos = mWindow->getInput()->getMousePosf();
 		UIMenu::fixMenuPos( Pos , Menu );
-		Menu->setPosition( Sizei( (Float)Pos.x / PixelDensity::getPixelDensity(), (Float)Pos.y / PixelDensity::getPixelDensity() ) );
+		Menu->setPosition( Vector2f( Pos.x / PixelDensity::getPixelDensity(), Pos.y / PixelDensity::getPixelDensity() ) );
 	}
 }
 
@@ -1131,8 +1135,8 @@ void EETest::onButtonClick( const UIEvent * Event ) {
 		Gfx->runAction( Sequence::New( Scale::New( Vector2f(1.f,1.f), Vector2f(2.f,2.f), Seconds( 0.5f ) ),
 									   Scale::New( Vector2f(2.f,2.f), Vector2f(1.f,1.f), Seconds( 0.5f ) )
 						) );
-		Gfx->startRotation( 0, 2500, Milliseconds( 2500 ) );
-		Gfx->startTranslation( Vector2i( Math::randi( 0, mWindow->getWidth() ), -64 ), Vector2i( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ), Milliseconds( 2500 ) );
+		Gfx->startRotation( 0.f, 2500.f, Milliseconds( 2500 ) );
+		Gfx->startTranslation( Vector2f( Math::randi( 0, mWindow->getWidth() ), -64 ), Vector2f( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ), Milliseconds( 2500 ) );
 		Gfx->closeFadeOut( Milliseconds( 3500 ) );
 	}
 }
@@ -1306,7 +1310,7 @@ void EETest::loadTextures() {
 	Map.setDrawGrid( false );
 	Map.setClipedArea( false );
 	Map.setDrawBackground( false );
-	Map.setViewSize( mWindow->getSize() );
+	Map.setViewSize( mWindow->getSize().asFloat() );
 
 	eePRINTL( "Map creation time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 }

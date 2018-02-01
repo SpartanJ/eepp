@@ -41,7 +41,7 @@ void UITextInputPassword::draw() {
 			}
 
 			mPassCache->setAlign( getFlags() );
-			mPassCache->draw( (Float)mScreenPos.x + mRealAlignOffset.x + (Float)mRealPadding.Left, (Float)mScreenPos.y + mRealAlignOffset.y + (Float)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
+			mPassCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left, (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				UIManager::instance()->clipSmartDisable( this );

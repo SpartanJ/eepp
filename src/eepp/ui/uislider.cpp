@@ -27,12 +27,12 @@ UISlider::UISlider( const UI_ORIENTATION& orientation ) :
 		mStyleConfig = theme->getSliderStyleConfig();
 	}
 
-	Sizei bgSize;
+	Sizef bgSize;
 
 	if ( UI_HORIZONTAL == mOrientation )
-		bgSize = Sizei( mSize.getWidth() - 16, 8 );
+		bgSize = Sizef( mSize.getWidth() - 16, 8 );
 	else
-		bgSize = Sizei( 8, mSize.getHeight() - 16 );
+		bgSize = Sizef( 8, mSize.getHeight() - 16 );
 
 	mBackSlider = UINode::New();
 	mBackSlider->setParent( this );
@@ -105,11 +105,11 @@ void UISlider::adjustChilds() {
 			Float percent = ( mPageStep / ( mMaxValue - mMinValue ) );
 
 			if ( UI_HORIZONTAL == mOrientation ) {
-				Int32 size = eemax( (Int32)( (Float)mSize.getWidth() * percent ), tSkin->getSize().getWidth() );
+				Float size = eemax( ( (Float)mSize.getWidth() * percent ), tSkin->getSize().getWidth() );
 
 				mSlider->setSize( size, tSkin->getSize().getHeight() );
 			} else {
-				Int32 size = eemax( (Int32)( (Float)mSize.getHeight() * percent ), tSkin->getSize().getHeight() );
+				Float size = eemax( ( (Float)mSize.getHeight() * percent ), tSkin->getSize().getHeight() );
 
 				mSlider->setSize( tSkin->getSize().getWidth(), size );
 			}
@@ -126,7 +126,7 @@ void UISlider::adjustChilds() {
 
 	if ( NULL != tSkin ) {
 		if ( UI_HORIZONTAL == mOrientation ) {
-			Int32 Height;
+			Float Height;
 
 			if ( mStyleConfig.ExpandBackground )
 				Height = mSize.getHeight();
@@ -134,11 +134,11 @@ void UISlider::adjustChilds() {
 				Height = tSkin->getSize().getHeight();
 
 			if ( mStyleConfig.AllowHalfSliderOut )
-				mBackSlider->setSize( Sizei( mSize.getWidth() - mSlider->getSize().getWidth(), Height ) );
+				mBackSlider->setSize( Sizef( mSize.getWidth() - mSlider->getSize().getWidth(), Height ) );
 			else
-				mBackSlider->setSize( Sizei( mSize.getWidth(), Height ) );
+				mBackSlider->setSize( Sizef( mSize.getWidth(), Height ) );
 		} else {
-			Int32 Width;
+			Float Width;
 
 			if ( mStyleConfig.ExpandBackground )
 				Width = mSize.getWidth();
@@ -146,9 +146,9 @@ void UISlider::adjustChilds() {
 				Width = tSkin->getSize().getWidth();
 
 			if ( mStyleConfig.AllowHalfSliderOut )
-				mBackSlider->setSize( Sizei( Width, mSize.getHeight() - mSlider->getSize().getHeight() ) );
+				mBackSlider->setSize( Sizef( Width, mSize.getHeight() - mSlider->getSize().getHeight() ) );
 			else
-				mBackSlider->setSize( Sizei( Width, mSize.getHeight() ) );
+				mBackSlider->setSize( Sizef( Width, mSize.getHeight() ) );
 		}
 
 		mBackSlider->center();
@@ -315,7 +315,7 @@ Uint32 UISlider::onKeyDown( const UIEventKey &Event ) {
 
 void UISlider::manageClick( const Uint32& Flags ) {
 	if ( Flags ) {
-		Vector2i ControlPos = UIManager::instance()->getMousePos();
+		Vector2f ControlPos = UIManager::instance()->getMousePosf();
 		mSlider->worldToNode( ControlPos );
 
 		if ( Flags & EE_BUTTON_LMASK && !mSlider->isMouseOver()  ) {

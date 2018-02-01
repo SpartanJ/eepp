@@ -46,21 +46,21 @@ void TextureAtlasTextureRegionEditor::draw() {
 	P.setColor( Color( 255, 0, 0, mAlpha ) );
 	P.setLineWidth( PixelDensity::dpToPx( 1.f ) );
 
-	Vector2i uiCenterPx = PixelDensity::dpToPxI( mUICenter );
+	Vector2f uiCenterPx = PixelDensity::dpToPx( mUICenter );
 
 	P.drawLine( Line2f( Vector2f( mScreenPos.x, mScreenPos.y + uiCenterPx.y ), Vector2f( mScreenPos.x + mRealSize.getWidth(), mScreenPos.y + uiCenterPx.y ) ) );
 	P.drawLine( Line2f( Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y ), Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y + mRealSize.getHeight() ) ) );
 }
 
 void TextureAtlasTextureRegionEditor::update( const Time& time ) {
-	Vector2i Pos = mDrag->getRealPosition();
+	Vector2f Pos = mDrag->getRealPosition();
 
 	UIWidget::update( time );
 
 	if ( NULL != mGfx->getTextureRegion() && mDrag->isDragEnabled() && mDrag->isDragging() && Pos != mDrag->getRealPosition() ) {
-		Vector2i Diff = -( Pos - mDrag->getRealPosition() );
+		Vector2f Diff = -( Pos - mDrag->getRealPosition() );
 
-		Diff = PixelDensity::pxToDpI( Diff );
+		Diff = PixelDensity::pxToDp( Diff );
 
 		mGfx->getTextureRegion()->setOffset( Vector2i( mGfx->getTextureRegion()->getOffset().x + Diff.x, mGfx->getTextureRegion()->getOffset().y + Diff.y ) );
 
@@ -88,7 +88,7 @@ UITextureRegion * TextureAtlasTextureRegionEditor::getGfx() const {
 }
 
 void TextureAtlasTextureRegionEditor::getCenter() {
-	mUICenter = Vector2i( mSize.getWidth() / 2, mSize.getHeight() / 2 );
+	mUICenter = Vector2f( mSize.getWidth() / 2, mSize.getHeight() / 2 );
 }
 
 }}}

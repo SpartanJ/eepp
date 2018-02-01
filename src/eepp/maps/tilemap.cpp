@@ -61,7 +61,7 @@ void TileMap::reset() {
 	mFlags	= 0;
 	mMaxLayers	= 0;
 	mMouseOver = false;
-	mViewSize = Sizei( 800, 600 );
+	mViewSize = Sizef( 800, 600 );
 	mBaseColor = Color( 255, 255, 255, 255 );
 }
 
@@ -85,7 +85,7 @@ void TileMap::deleteLayers() {
 	mLayerCount = 0;
 }
 
-void TileMap::create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags, Sizei viewSize, EE::Window::Window * Window ) {
+void TileMap::create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags, Sizef viewSize, EE::Window::Window * Window ) {
 	reset();
 
 	mWindow		= Window;
@@ -452,7 +452,7 @@ void TileMap::update() {
 		mUpdateCb();
 }
 
-const Sizei& TileMap::getViewSize() const {
+const Sizef& TileMap::getViewSize() const {
 	return mViewSize;
 }
 
@@ -476,11 +476,19 @@ Vector2i TileMap::getMouseTilePosCoords() {
 	return getTileCoords( getMouseTilePos() );
 }
 
+Vector2f TileMap::getMouseTilePosCoordsf() {
+	return getTileCoords( Vector2f( getMouseTilePos().x, getMouseTilePos().y ) );
+}
+
 Vector2i TileMap::getTileCoords( const Vector2i& TilePos ) {
 	return ( TilePos * mTileSize );
 }
 
-void TileMap::setViewSize( const Sizei& viewSize ) {
+Vector2f TileMap::getTileCoords( const Vector2f& TilePos ) {
+	return ( TilePos * Vector2f( mTileSize.x, mTileSize.y ) );
+}
+
+void TileMap::setViewSize( const Sizef& viewSize ) {
 	mViewSize = viewSize;
 
 	clamp();

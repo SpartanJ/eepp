@@ -37,7 +37,7 @@ class EE_API UITextureRegion : public UIWidget {
 
 		void setRenderMode( const RenderMode& render );
 
-		const Vector2i& getAlignOffset() const;
+		const Vector2f& getAlignOffset() const;
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 
@@ -48,8 +48,8 @@ class EE_API UITextureRegion : public UIWidget {
 		Uint32					mScaleType;
 		Graphics::TextureRegion * 	mTextureRegion;
 		Color					mColor;
-		RenderMode			mRender;
-		Vector2i				mAlignOffset;
+		RenderMode				mRender;
+		Vector2f				mAlignOffset;
 
 		virtual void onSizeChange();
 

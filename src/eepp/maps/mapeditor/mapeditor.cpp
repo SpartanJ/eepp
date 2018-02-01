@@ -29,10 +29,10 @@ using namespace EE::Maps::Private;
 
 namespace EE { namespace Maps {
 
-static UITextView * createTextBox( const String& Text = "", UINode * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, const Uint32& fontStyle = Text::Regular ) {
+static UITextView * createTextBox( const String& Text = "", UINode * Parent = NULL, const Sizef& Size = Sizef(), const Vector2f& Pos = Vector2f(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, const Uint32& fontStyle = Text::Regular ) {
 	UITextView * Ctrl = UITextView::New();
 	Ctrl->setFontStyle( fontStyle );
-	Ctrl->resetFlags( Flags )->setParent( Parent )->setPosition( Pos )->setSize( Size )->setVisible( true )->setEnabled( false );
+	Ctrl->resetFlags( Flags )->setParent( Parent )->setSize( Size )->setVisible( true )->setEnabled( false )->setPosition( Pos );
 	Ctrl->setText( Text );
 	return Ctrl;
 }
@@ -89,9 +89,11 @@ void MapEditor::createWinMenu() {
 	UIWinMenu * WinMenu = UIWinMenu::New();
 	WinMenu->setParent( mUIContainer );
 
-	mTileBox = createTextBox( "", mUIContainer, Sizei(), Vector2i(), UI_HALIGN_RIGHT | UI_VALIGN_CENTER | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
+	mTileBox = createTextBox( "", mUIContainer, Sizef(), Vector2f(), UI_HALIGN_RIGHT | UI_VALIGN_CENTER | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
+	mTileBox->setLayoutSizeRules( FIXED, FIXED );
 	mTileBox->setSize( 100, WinMenu->getSize().getHeight() );
-	mTileBox->setPosition( Vector2i( mUIContainer->getSize().getWidth() - mTileBox->getSize().getWidth(), 0 ) );
+	mTileBox->setPosition( Vector2f( mUIContainer->getSize().getWidth() - mTileBox->getSize().getWidth(), 0 ) );
+	mTileBox->setVisible( true );
 	mTileBox->updateAnchorsDistances();
 
 	UIPopUpMenu * PU1 = UIPopUpMenu::New();
@@ -183,7 +185,7 @@ void MapEditor::createETGMenu() {
 
 	mTextureRegionCont = UIWidget::New();
 	mTextureRegionCont->setParent( mWinContainer );
-	mTextureRegionCont->setSize( Sizei( Width + DistToBorder, mWinContainer->getSize().getHeight() ) );
+	mTextureRegionCont->setSize( Sizef( Width + DistToBorder, mWinContainer->getSize().getHeight() ) );
 	mTextureRegionCont->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 
 	mLightCont = UIWidget::New();
@@ -257,7 +259,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 	UITextView * Txt;
 	Uint32 TxtFlags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
-	Txt = createTextBox( "Add Game Object as...", mTextureRegionCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 4 ), TxtFlags, Text::Shadow );
+	Txt = createTextBox( "Add Game Object as...", mTextureRegionCont, Sizef( Width, 16 ), Vector2f( TAB_CONT_X_DIST, 4 ), TxtFlags, Text::Shadow );
 
 	mGOTypeList = UIDropDownList::New();
 	mGOTypeList->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setSize( Width - 26, 0 )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
@@ -275,14 +277,14 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 	if ( NULL == mBtnGOTypeAdd->getIcon()->getDrawable() )
 		mBtnGOTypeAdd->setText( "..." );
 
-	Txt = createTextBox( "Layers:", mTextureRegionCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mGOTypeList->getPosition().y + mGOTypeList->getSize().getHeight() + 4 ), TxtFlags, Text::Shadow );
+	Txt = createTextBox( "Layers:", mTextureRegionCont, Sizef( Width, 16 ), Vector2f( TAB_CONT_X_DIST, mGOTypeList->getPosition().y + mGOTypeList->getSize().getHeight() + 4 ), TxtFlags, Text::Shadow );
 
 	mLayerList = UIDropDownList::New();
 	mLayerList->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setSize( Width, 0 )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 
 	mLayerList->addEventListener( UIEvent::OnItemSelected, cb::Make1( this, &MapEditor::onLayerSelect ) );
 
-	Txt = createTextBox( "Game Object Flags:", mTextureRegionCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mLayerList->getPosition().y + mLayerList->getSize().getHeight() + 4 ), TxtFlags, Text::Shadow );
+	Txt = createTextBox( "Game Object Flags:", mTextureRegionCont, Sizef( Width, 16 ), Vector2f( TAB_CONT_X_DIST, mLayerList->getPosition().y + mLayerList->getSize().getHeight() + 4 ), TxtFlags, Text::Shadow );
 
 	Uint32 ChkFlags = UI_CONTROL_DEFAULT_ALIGN | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
@@ -325,7 +327,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 	mChkBlendAdd->setTooltipText( "Use additive blend mode." );
 	mChkBlendAdd->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::chkClickAutoFix ) );
 
-	Txt = createTextBox( "Game Object Data:", mTextureRegionCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, mChkBlendAdd->getPosition().y + mChkBlendAdd->getSize().getHeight() + 8 ), TxtFlags, Text::Shadow );
+	Txt = createTextBox( "Game Object Data:", mTextureRegionCont, Sizef( Width, 16 ), Vector2f( TAB_CONT_X_DIST, mChkBlendAdd->getPosition().y + mChkBlendAdd->getSize().getHeight() + 8 ), TxtFlags, Text::Shadow );
 
 	mChkDI = UICheckBox::New();
 	mChkDI->setFontStyle( Text::Shadow )->setParent( mTextureRegionCont )->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->resetFlags( ChkFlags );
@@ -339,7 +341,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 	mSGCont->setEnabled( true );
 	mSGCont->setVisible( true );
 
-	Txt = createTextBox( "Texture Atlases:", mSGCont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 0 ), TxtFlags, Text::Shadow );
+	Txt = createTextBox( "Texture Atlases:", mSGCont, Sizef( Width, 16 ), Vector2f( TAB_CONT_X_DIST, 0 ), TxtFlags, Text::Shadow );
 
 	mTextureAtlasesList = UIDropDownList::New();
 	mTextureAtlasesList->setFontStyle( Text::Shadow )->setParent( mSGCont )->setSize( Width, 0 )->setPosition( 0, Txt->getPosition().y +Txt->getSize().getHeight() + 4 );
@@ -367,7 +369,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 	mDICont->setEnabled( false );
 	mDICont->setVisible( false );
 
-	Txt = createTextBox( "DataId String:", mDICont, Sizei( Width, 16 ), Vector2i( TAB_CONT_X_DIST, 0 ), TxtFlags, Text::Shadow );
+	Txt = createTextBox( "DataId String:", mDICont, Sizef( Width, 16 ), Vector2f( TAB_CONT_X_DIST, 0 ), TxtFlags, Text::Shadow );
 
 	mDataIdInput = UITextInput::New();
 	mDataIdInput->setParent( mDICont )->setSize( Width / 4 * 3, 0 )->setPosition( TAB_CONT_X_DIST + 8, Txt->getPosition().y + Txt->getSize().getHeight() + 8 );
@@ -381,7 +383,7 @@ void MapEditor::createLighContainer() {
 	NewLightBut->setText( "New Light" );
 	NewLightBut->addEventListener( UIEvent::MouseClick, cb::Make1( this, &MapEditor::onNewLight ) );
 
-	UITextView * Txt = createTextBox( "Light Color:", mLightCont, Sizei(), Vector2i( TAB_CONT_X_DIST, 32 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+	UITextView * Txt = createTextBox( "Light Color:", mLightCont, Sizef(), Vector2f( TAB_CONT_X_DIST, 32 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	Txt->setFontStyle( Text::Shadow );
 
 	mUIBaseColor = UIWidget::New();
@@ -392,7 +394,7 @@ void MapEditor::createLighContainer() {
 	mUIBaseColor->getBackground()->setColor( Color(255,255,255,255) );
 	mUIBaseColor->getBorder()->setColor( Color( 100, 100, 100, 200 ) );
 
-	Txt = createTextBox( "R:", mLightCont, Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+	Txt = createTextBox( "R:", mLightCont, Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 	mUIRedSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
 	mUIRedSlider->setParent( mLightCont )->setSize( 100, 20 )->setPosition( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y );
@@ -400,27 +402,27 @@ void MapEditor::createLighContainer() {
 	mUIRedSlider->setValue( 255 );
 	mUIRedSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::onRedChange ) );
 
-	mUIRedTxt = createTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+	mUIRedTxt = createTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizef(), Vector2f( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
-	Txt = createTextBox( "G:", mLightCont, Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+	Txt = createTextBox( "G:", mLightCont, Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIRedSlider->getPosition().y + mUIRedSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 	mUIGreenSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
 	mUIGreenSlider->setParent( mLightCont )->setSize( 100, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIGreenSlider->setMaxValue( 255 );
 	mUIGreenSlider->setValue( 255 );
 	mUIGreenSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::onGreenChange ) );
 
-	mUIGreenTxt = createTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+	mUIGreenTxt = createTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizef(), Vector2f( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
-	Txt = createTextBox( "B:", mLightCont, Sizei(), Vector2i( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+	Txt = createTextBox( "B:", mLightCont, Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y + mUIGreenSlider->getSize().getHeight() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 	mUIBlueSlider = UISlider::New()->setOrientation( UI_HORIZONTAL );
 	mUIBlueSlider->setParent( mLightCont )->setSize( 100, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIBlueSlider->setMaxValue( 255 );
 	mUIBlueSlider->setValue( 255 );
 	mUIBlueSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &MapEditor::onBlueChange ) );
 
-	mUIBlueTxt = createTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4, mUIBlueSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+	mUIBlueTxt = createTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizef(), Vector2f( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4, mUIBlueSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
-	Txt = createTextBox( "Light Radius:", mLightCont, Sizei(), Vector2i( TAB_CONT_X_DIST, mUIBlueTxt->getPosition().y + mUIBlueTxt->getSize().getHeight() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
+	Txt = createTextBox( "Light Radius:", mLightCont, Sizef(), Vector2f( TAB_CONT_X_DIST, mUIBlueTxt->getPosition().y + mUIBlueTxt->getSize().getHeight() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
 	mLightRadius = UISpinBox::New()->setAllowOnlyNumbers( false )->setValue( 100 );
 	mLightRadius->setParent( mLightCont )->setSize( 100, 0 )->setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 8 );
@@ -589,7 +591,7 @@ void MapEditor::onNewLight( const UIEvent * Event ) {
 	const UIEventMouse * MEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( MEvent->getFlags() & EE_BUTTON_LMASK ) {
-		Vector2i Pos = mUIMap->Map()->getMouseMapPos();
+		Vector2f Pos = mUIMap->Map()->getMouseMapPosf();
 		mUIMap->addLight( eeNew( MapLight, ( mLightRadius->getValue(), Pos.x, Pos.y, mUIBaseColor->getBackground()->getColor().toRGB(), mLightTypeChk->isActive() ? LIGHT_ISOMETRIC : LIGHT_NORMAL ) ) );
 	}
 }
@@ -1115,6 +1117,7 @@ void MapEditor::layerMenuClick( const UIEvent * Event ) {
 
 UIMessageBox * MapEditor::createAlert( const String& title, const String& text ) {
 	UIMessageBox * MsgBox = UIMessageBox::New( MSGBOX_OK, text );
+	MsgBox->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MODAL );
 	MsgBox->setTitle( title );
 	MsgBox->center();
 	MsgBox->show();
@@ -1296,10 +1299,10 @@ void MapEditor::addGameObject() {
 		if ( tObj->getType() == GAMEOBJECT_TYPE_VIRTUAL )
 			reinterpret_cast<GameObjectVirtual*> ( tObj )->setLayer( tLayer );
 
-		Vector2i p( tMap->getMouseMapPos() );
+		Vector2f p( tMap->getMouseMapPosf() );
 
 		if ( UIManager::instance()->getInput()->isKeyDown( KEY_LCTRL ) ) {
-			p = tMap->getMouseTilePosCoords();
+			p = tMap->getMouseTilePosCoordsf();
 		}
 
 		tObj->setPosition( Vector2f( p.x, p.y ) );

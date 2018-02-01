@@ -68,11 +68,11 @@ class EE_API UIGridLayout : public UILayout {
 		
 		virtual void onChildCountChange();
 		
-		virtual void onParentSizeChange( const Vector2i& SizeChange );
+		virtual void onParentSizeChange( const Vector2f& SizeChange );
 
 		virtual Uint32 onMessage( const UIMessage * Msg );
 
-		Sizei getTargetElementSize();
+		Sizef getTargetElementSize();
 
 		void pack();
 };

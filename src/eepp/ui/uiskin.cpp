@@ -44,7 +44,7 @@ UISkin::UISkin( const std::string& name, const Uint32& Type ) :
 UISkin::~UISkin() {
 }
 
-Sizei UISkin::getSize() {
+Sizef UISkin::getSize() {
 	return getSize( UISkinState::StateNormal );
 }
 
@@ -92,7 +92,7 @@ const Uint32& UISkin::getType() const {
 	return mType;
 }
 
-Rect UISkin::getBorderSize() {
+Rectf UISkin::getBorderSize() {
 	return getBorderSize( UISkinState::StateNormal );
 }
 

@@ -42,7 +42,7 @@ UIImage * UIImage::setDrawable( Drawable * drawable ) {
 	onAutoSize();
 
 	if ( NULL != mDrawable && mSize.x == 0 && mSize.y == 0 ) {
-		setSize( Sizei( (Int32)mDrawable->getSize().x, (Int32)mDrawable->getSize().y ) );
+		setSize( mDrawable->getSize() );
 	}
 
 	autoAlign();
@@ -55,9 +55,9 @@ UIImage * UIImage::setDrawable( Drawable * drawable ) {
 }
 
 void UIImage::onAutoSize() {
-	if ( ( mFlags & UI_AUTO_SIZE ) && Sizei::Zero == mSize ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == mSize ) {
 		if ( NULL != mDrawable ) {
-			setSize( Sizei( (Int32)mDrawable->getSize().x, (Int32)mDrawable->getSize().y ) );
+			setSize( mDrawable->getSize() );
 		}
 	}
 }
@@ -88,6 +88,8 @@ void UIImage::calcDestSize() {
 		mDestSize = PixelDensity::dpToPx( mDrawable->getSize() );
 	}
 
+	mDestSize = mDestSize.floor();
+
 	autoAlign();
 }
 
@@ -99,7 +101,7 @@ void UIImage::draw() {
 			calcDestSize();
 
 			mDrawable->setColor( mColor );
-			mDrawable->draw( Vector2f( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y ), mDestSize );
+			mDrawable->draw( Vector2f( (Float)mScreenPosi.x + (int)mAlignOffset.x, (Float)mScreenPosi.y + (int)mAlignOffset.y ), mDestSize );
 			mDrawable->clearColor();
 		}
 	}
@@ -168,7 +170,7 @@ void UIImage::onAlignChange() {
 	calcDestSize();
 }
 
-const Vector2i& UIImage::getAlignOffset() const {
+const Vector2f& UIImage::getAlignOffset() const {
 	return mAlignOffset;
 }
 

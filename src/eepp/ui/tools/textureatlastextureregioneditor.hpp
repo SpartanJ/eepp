@@ -31,7 +31,7 @@ class EE_API TextureAtlasTextureRegionEditor : public UIWidget {
 		UITheme *				mTheme;
 		UITextureRegion *					mGfx;
 		UINode *			mDrag;
-		Vector2i				mUICenter;
+		Vector2f				mUICenter;
 		TextureAtlasEditor *	mEditor;
 
 		virtual void onSizeChange();

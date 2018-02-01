@@ -143,7 +143,7 @@ class EE_API UIMap : public UIWindow {
 
 		virtual void onAlphaChange();
 
-		virtual Uint32 onDrag( const Vector2i& getPosition );
+		virtual Uint32 onDrag( const Vector2f& Pos );
 
 		void objItemClick( const UIEvent * Event );
 

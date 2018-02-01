@@ -183,7 +183,7 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 				UISelectButton * tbut	= reinterpret_cast<UISelectButton*> ( Msg->getSender() );
 				UIPopUpMenu * tpop		= getMenuFromButton( tbut );
 
-				Vector2i pos( tbut->getPosition().x, tbut->getPosition().y + tbut->getSize().getHeight() );
+				Vector2f pos( tbut->getPosition().x, tbut->getPosition().y + tbut->getSize().getHeight() );
 				tpop->setPosition( pos );
 
 				if ( Msg->getMsg() == UIMessage::MouseEnter ) {

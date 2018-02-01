@@ -38,7 +38,7 @@ UITextureRegion * UITextureRegion::setTextureRegion( Graphics::TextureRegion * T
 	onAutoSize();
 
 	if ( NULL != mTextureRegion && mSize.x == 0 && mSize.y == 0 ) {
-		setSize( mTextureRegion->getDpSize() );
+		setSize( mTextureRegion->getDpSize().asFloat() );
 	}
 
 	autoAlign();
@@ -51,9 +51,9 @@ UITextureRegion * UITextureRegion::setTextureRegion( Graphics::TextureRegion * T
 }
 
 void UITextureRegion::onAutoSize() {
-	if ( ( mFlags & UI_AUTO_SIZE ) && Sizei::Zero == mSize ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == mSize ) {
 		if ( NULL != mTextureRegion ) {
-			setSize( mTextureRegion->getDpSize() );
+			setSize( mTextureRegion->getDpSize().asFloat() );
 		}
 	}
 }
@@ -68,7 +68,7 @@ void UITextureRegion::draw() {
 
 			if ( mScaleType == UIScaleType::Expand ) {
 				mTextureRegion->setOffset( Vector2i( 0, 0 ) );
-				mTextureRegion->setDestSize( Vector2f( mRealSize.x, mRealSize.y ) );
+				mTextureRegion->setDestSize( Vector2f( (int)mRealSize.x, (int)mRealSize.y ) );
 
 				autoAlign();
 
@@ -85,7 +85,8 @@ void UITextureRegion::draw() {
 					if ( Scale2 < Scale1 )
 						Scale1 = Scale2;
 
-					mTextureRegion->setDestSize( Sizef( pxSize.x * Scale1, pxSize.y * Scale1 ) );
+					Sizef dst( pxSize.x * Scale1, pxSize.y * Scale1 );
+					mTextureRegion->setDestSize( dst.floor() );
 
 					autoAlign();
 
@@ -116,7 +117,7 @@ void UITextureRegion::draw() {
 }
 
 void UITextureRegion::drawTextureRegion() {
-	mTextureRegion->draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, mColor, 0.f, Vector2f::One, getBlendMode(), mRender );
+	mTextureRegion->draw( (Float)mScreenPosi.x + (int)mAlignOffset.x, (Float)mScreenPosi.y + (int)mAlignOffset.y, mColor, 0.f, Vector2f::One, getBlendMode(), mRender );
 }
 
 void UITextureRegion::setAlpha( const Float& alpha ) {
@@ -178,7 +179,7 @@ void UITextureRegion::onAlignChange() {
 	autoAlign();
 }
 
-const Vector2i& UITextureRegion::getAlignOffset() const {
+const Vector2f& UITextureRegion::getAlignOffset() const {
 	return mAlignOffset;
 }
 

@@ -52,7 +52,7 @@ void UISprite::draw() {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
 			checkTextureRegionUpdate();
 
-			mSprite->setPosition( Vector2f( (Float)( mScreenPos.x + mAlignOffset.x ), (Float)( mScreenPos.y + mAlignOffset.y ) ) );
+			mSprite->setPosition( Vector2f( (Float)( mScreenPosi.x + (int)mAlignOffset.x ), (Float)( mScreenPosi.y + (int)mAlignOffset.y ) ) );
 
 			TextureRegion * textureRegion = mSprite->getCurrentTextureRegion();
 
@@ -128,8 +128,8 @@ void UISprite::setRenderMode( const RenderMode& render ) {
 void UISprite::updateSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mSprite ) {
-			if ( NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion()->getDpSize() != mSize )
-				setSize( mSprite->getCurrentTextureRegion()->getDpSize() );
+			if ( NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion()->getDpSize().asFloat() != mSize )
+				setSize( mSprite->getCurrentTextureRegion()->getDpSize().asFloat() );
 		}
 	}
 }
@@ -157,7 +157,7 @@ void UISprite::autoAlign() {
 	}
 }
 
-const Vector2i& UISprite::getAlignOffset() const {
+const Vector2f& UISprite::getAlignOffset() const {
 	return mAlignOffset;
 }
 

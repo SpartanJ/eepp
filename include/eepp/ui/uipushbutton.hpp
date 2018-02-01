@@ -29,9 +29,9 @@ class EE_API UIPushButton : public UIWidget {
 
 		virtual const String& getText();
 
-		void setPadding( const Rect& padding );
+		void setPadding( const Rectf& padding );
 
-		const Rect& getPadding() const;
+		const Rectf& getPadding() const;
 
 		void setIconHorizontalMargin( Int32 margin );
 

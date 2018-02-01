@@ -15,31 +15,31 @@ class EE_API Transformable {
 
 		virtual void setPosition(float x, float y);
 
-		void setPosition(const Vector2f& position);
+		virtual void setPosition(const Vector2f& position);
 
 		virtual void setRotation(float angle);
 
 		virtual void setScale(float factorX, float factorY);
 
-		void setScale(const Vector2f& factors);
+		virtual void setScale(const Vector2f& factors);
 
 		virtual void setScaleOrigin(float x, float y);
 
-		void setScaleOrigin(const Vector2f& origin);
+		virtual void setScaleOrigin(const Vector2f& origin);
 
 		virtual void setRotationOrigin(float x, float y);
 
-		void setRotationOrigin(const Vector2f & origin);
+		virtual void setRotationOrigin(const Vector2f & origin);
 
-		const Vector2f& getRotationOrigin() const;
+		virtual const Vector2f& getRotationOrigin() const;
 
-		const Vector2f& getPosition() const;
+		virtual const Vector2f& getPosition() const;
 
-		float getRotation() const;
+		virtual float getRotation() const;
 
-		const Vector2f& getScale() const;
+		virtual const Vector2f& getScale() const;
 
-		const Vector2f& getScaleOrigin() const;
+		virtual const Vector2f& getScaleOrigin() const;
 
 		void move(float offsetX, float offsetY);
 
@@ -54,7 +54,7 @@ class EE_API Transformable {
 		const Transform& getTransform() const;
 
 		const Transform& getInverseTransform() const;
-	private:
+	protected:
 
 		Vector2f          mScaleOrigin;                ///< Origin of scaling of the object
 		Vector2f          mRotationOrigin;             ///< Origin of rotation of the object

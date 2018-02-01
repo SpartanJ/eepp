@@ -51,9 +51,9 @@ class EE_API UITooltip : public UINode {
 
 		virtual void onFontChanged();
 
-		virtual void setPadding( const Rect& padding );
+		virtual void setPadding( const Rectf& padding );
 
-		const Rect& getPadding() const;
+		const Rectf& getPadding() const;
 
 		Text * getTextCache();
 
@@ -82,7 +82,7 @@ class EE_API UITooltip : public UINode {
 		Text *	mTextCache;
 		UITooltipStyleConfig mStyleConfig;
 		Vector2f 	mAlignOffset;
-		Rect		mRealPadding;
+		Rectf		mRealPadding;
 		Time		mTooltipTime;
 		UINode *	mTooltipOf;
 

@@ -34,9 +34,9 @@ class EE_API UINode : public Transformable {
 
 		virtual ~UINode();
 
-		void worldToNodeTranslation( Vector2i& position ) const;
+		void worldToNodeTranslation( Vector2f& position ) const;
 
-		void nodeToWorldTranslation( Vector2i& position ) const;
+		void nodeToWorldTranslation( Vector2f& position ) const;
 
 		void worldToNode( Vector2i& pos );
 
@@ -52,31 +52,29 @@ class EE_API UINode : public Transformable {
 
 		void messagePost( const UIMessage * Msg );
 
-		UINode * setPosition( const Vector2i& position );
+		void setPosition( const Vector2f& Pos );
 
-		UINode * setPosition(const Vector2f & Pos);
+		UINode * setPosition( const Float& x, const Float& y );
 
-		UINode * setPosition( const Int32& x, const Int32& y );
+		void setPixelsPosition(const Vector2f & position );
 
-		void setPixelsPosition( const Vector2i& position );
+		void setPixelsPosition( const Float& x, const Float& y );
 
-		void setPixelsPosition( const Int32& x, const Int32& y );
+		const Vector2f& getPosition() const;
 
-		const Vector2i& getPosition() const;
+		const Vector2f& getRealPosition() const;
 
-		const Vector2i& getRealPosition() const;
+		virtual UINode * setSize( const Sizef& size );
 
-		virtual UINode * setSize( const Sizei& size );
+		UINode * setSize( const Float& Width, const Float& Height );
 
-		UINode * setSize( const Int32& Width, const Int32& Height );
+		void setPixelsSize( const Sizef& size );
 
-		void setPixelsSize( const Sizei& size );
+		void setPixelsSize( const Float& x, const Float& y );
 
-		void setPixelsSize( const Int32& x, const Int32& y );
+		const Sizef& getSize();
 
-		const Sizei& getSize();
-
-		const Sizei& getRealSize();
+		const Sizef& getRealSize();
 
 		Rect getRect() const;
 
@@ -131,8 +129,6 @@ class EE_API UINode : public Transformable {
 		UINode * setData( const UintPtr& data );
 
 		const UintPtr& getData() const;
-
-		UINode * childGetAt( Vector2i CtrlPos, unsigned int RecursiveLevel = 0 );
 
 		const Uint32& getFlags() const;
 
@@ -211,7 +207,9 @@ class EE_API UINode : public Transformable {
 
 		bool isMouseOverMeOrChilds();
 
-		Polygon2f& getWorldPolygon();
+		const Polygon2f& getWorldPolygon();
+
+		const Rectf& getWorldBounds();
 
 		void setSkinState( const Uint32& State );
 
@@ -227,7 +225,7 @@ class EE_API UINode : public Transformable {
 
 		void sendCommonEvent( const Uint32& Event );
 
-		Sizei getSkinSize();
+		Sizef getSkinSize();
 
 		UINode * getNextWidget();
 
@@ -274,9 +272,9 @@ class EE_API UINode : public Transformable {
 
 		void setDragging( const bool& dragging );
 
-		const Vector2i& getDragPoint() const;
+		const Vector2f& getDragPoint() const;
 
-		void setDragPoint( const Vector2i& Point );
+		void setDragPoint( const Vector2f& Point );
 
 		bool isDragEnabled() const;
 
@@ -308,8 +306,6 @@ class EE_API UINode : public Transformable {
 
 		Vector2f getScaleCenter();
 
-		virtual void setPosition(float x, float y);
-
 		virtual void setScale(float factorX, float factorY);
 
 		virtual void setScaleOrigin(float x, float y);
@@ -330,7 +326,7 @@ class EE_API UINode : public Transformable {
 
 		Interpolation2d * startScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
 
-		Interpolation2d * startTranslation( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
+		Interpolation2d * startTranslation( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
 
 		Interpolation1d * startRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation1d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
 
@@ -340,7 +336,7 @@ class EE_API UINode : public Transformable {
 
 		Interpolation2d * startScaleAnim( const Float& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
 
-		Interpolation2d * startTranslation( const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
+		Interpolation2d * startTranslation( const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
 
 		Interpolation1d * startRotation( const Float& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation1d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
 
@@ -378,12 +374,11 @@ class EE_API UINode : public Transformable {
 
 		std::string		mId;
 		Uint32			mIdHash;
-		Vector2i		mPos;
-		Vector2i		mRealPos;
-		Vector2i		mScreenPos;
-		Vector2f		mScreenPosf;
-		Sizei			mSize;
-		Sizei			mRealSize;
+		Vector2f		mDpPos;
+		Vector2f		mScreenPos;
+		Vector2i		mScreenPosi;
+		Sizef			mSize;
+		Sizef			mRealSize;
 
 		Uint32			mFlags;
 		UintPtr			mData;
@@ -404,6 +399,7 @@ class EE_API UINode : public Transformable {
 		Uint16			mNumCallBacks;
 
 		mutable Polygon2f		mPoly;
+		mutable Rectf	mWorldBounds;
 		Vector2f 		mCenter;
 
 		UIEventsMap		mEvents;
@@ -411,7 +407,7 @@ class EE_API UINode : public Transformable {
 		bool			mVisible;
 		bool			mEnabled;
 
-		Vector2i 	mDragPoint;
+		Vector2f 	mDragPoint;
 		Uint32 		mDragButton;
 
 		OriginPoint			mRotationOriginPoint;
@@ -456,7 +452,7 @@ class EE_API UINode : public Transformable {
 
 		virtual void onSizeChange();
 
-		virtual void onParentSizeChange( const Vector2i& SizeChange );
+		virtual void onParentSizeChange( const Vector2f& SizeChange );
 
 		virtual void onStateChange();
 
@@ -498,7 +494,7 @@ class EE_API UINode : public Transformable {
 
 		virtual void clipMe();
 
-		virtual Uint32 onDrag( const Vector2i& position );
+		virtual Uint32 onDrag( const Vector2f& position );
 
 		virtual Uint32 onDragStart( const Vector2i& position );
 
@@ -538,11 +534,11 @@ class EE_API UINode : public Transformable {
 
 		void writeFlag( const Uint32& Flag, const Uint32& Val );
 
-		void sendParentSizeChange( const Vector2i& SizeChange );
+		void sendParentSizeChange( const Vector2f& SizeChange );
 
-		Rect makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
+		Rectf makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
 
-		Sizei getSkinSize( UISkin * Skin, const Uint32& State = UISkinState::StateNormal );
+		Sizef getSkinSize( UISkin * Skin, const Uint32& State = UISkinState::StateNormal );
 
 		Rectf getScreenBounds();
 
@@ -554,19 +550,19 @@ class EE_API UINode : public Transformable {
 
 		void drawBox();
 
-		void setInternalPosition( const Vector2i& Pos );
+		void setInternalPosition( const Vector2f& Pos );
 
-		void setInternalSize( const Sizei& size );
+		void setInternalSize(const Sizef& size );
 
-		void setInternalWidth( const Int32& width );
+		void setInternalWidth(const Float& width );
 
-		void setInternalHeight( const Int32& height );
+		void setInternalHeight( const Float& height );
 
-		void setInternalPixelsSize( const Sizei& size );
+		void setInternalPixelsSize( const Sizef& size );
 
-		void setInternalPixelsWidth( const Int32& width );
+		void setInternalPixelsWidth( const Float& width );
 
-		void setInternalPixelsHeight( const Int32& height );
+		void setInternalPixelsHeight( const Float& height );
 
 		Color getColor( const Color& Col );
 

@@ -24,7 +24,7 @@ class EE_API UIWidget : public UINode {
 
 		virtual void update( const Time& time );
 
-		virtual UINode * setSize( const Sizei& size );
+		virtual UINode * setSize( const Sizef& size );
 
 		virtual UINode * setFlags( const Uint32& flags );
 
@@ -38,9 +38,9 @@ class EE_API UIWidget : public UINode {
 
 		virtual UINode * setThemeSkin( UITheme * Theme, const std::string& skinName );
 
-		UINode * setSize( const Int32& Width, const Int32& Height );
+		UINode * setSize( const Float& Width, const Float& Height );
 
-		const Sizei& getSize();
+		const Sizef& getSize();
 
 		UITooltip * getTooltip();
 
@@ -90,10 +90,10 @@ class EE_API UIWidget : public UINode {
 
 		UITheme *	mTheme;
 		UITooltip *	mTooltip;
-		Sizei		mMinControlSize;
+		Sizef		mMinControlSize;
 		Rect		mDistToBorder;
 		Rect		mLayoutMargin;
-		Rect		mRealMargin;
+		Rectf		mRealMargin;
 		Float		mLayoutWeight;
 		Uint32		mLayoutGravity;
 		LayoutSizeRules mLayoutWidthRules;
@@ -104,7 +104,7 @@ class EE_API UIWidget : public UINode {
 
 		void createTooltip();
 
-		virtual void onParentSizeChange( const Vector2i& SizeChange );
+		virtual void onParentSizeChange( const Vector2f& SizeChange );
 
 		virtual void onPositionChange();
 
@@ -118,7 +118,7 @@ class EE_API UIWidget : public UINode {
 
 		void endPropertiesTransaction();
 
-		void updateAnchors( const Vector2i & SizeChange );
+		void updateAnchors( const Vector2f & SizeChange );
 
 		void alignAgainstLayout();
 };

@@ -41,20 +41,20 @@ class EE_API UISkinComplex : public UISkin {
 
 		bool stateExists( const Uint32& state );
 
-		Sizei getSideSize( const Uint32& State, const Uint32& Side );
+		Sizef getSideSize( const Uint32& State, const Uint32& Side );
 
 		UISkinComplex * clone( const std::string& NewName, const bool& CopyColorsState = true );
 
 		virtual UISkin * clone();
 
-		Sizei getSize( const Uint32& state );
+		Sizef getSize( const Uint32& state );
 
-		Rect getBorderSize( const Uint32 &state );
+		Rectf getBorderSize( const Uint32 &state );
 	protected:
 		Drawable * 	mDrawable[ UISkinState::StateCount ][ SideCount ];
 		Color		mTempColor;
-		Sizei		mSize[ UISkinState::StateCount ];
-		Rect		mBorderSize[ UISkinState::StateCount ];
+		Sizef		mSize[ UISkinState::StateCount ];
+		Rectf		mBorderSize[ UISkinState::StateCount ];
 
 		void cacheSize();
 
