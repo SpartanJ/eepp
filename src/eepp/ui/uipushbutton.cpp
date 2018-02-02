@@ -3,6 +3,7 @@
 #include <pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -230,9 +231,9 @@ void UIPushButton::onAlignChange() {
 	mTextBox->setVerticalAlign( getVerticalAlign() );
 }
 
-Uint32 UIPushButton::onKeyDown( const UIEventKey& Event ) {
+Uint32 UIPushButton::onKeyDown( const KeyEvent& Event ) {
 	if ( Event.getKeyCode() == KEY_RETURN ) {
-		UIMessage Msg( this, UIMessage::Click, EE_BUTTON_LMASK );
+		NodeMessage Msg( this, NodeMessage::Click, EE_BUTTON_LMASK );
 		messagePost( &Msg );
 		onMouseClick( Vector2i(0,0), EE_BUTTON_LMASK );
 
@@ -242,7 +243,7 @@ Uint32 UIPushButton::onKeyDown( const UIEventKey& Event ) {
 	return UIWidget::onKeyDown( Event );
 }
 
-Uint32 UIPushButton::onKeyUp( const UIEventKey& Event ) {
+Uint32 UIPushButton::onKeyUp( const KeyEvent& Event ) {
 	if ( Event.getKeyCode() == KEY_RETURN ) {
 		setPrevSkinState();
 	}

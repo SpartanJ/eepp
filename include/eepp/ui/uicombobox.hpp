@@ -34,7 +34,7 @@ class EE_API UIComboBox : public UIWidget {
 		UIDropDownList * mDropDownList;
 		UINode * mButton;
 
-		Uint32 onMessage(const UIMessage *Msg);
+		Uint32 onMessage(const NodeMessage *Msg);
 
 		void updateControls();
 

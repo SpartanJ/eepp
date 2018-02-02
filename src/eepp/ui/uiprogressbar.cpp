@@ -1,5 +1,6 @@
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 

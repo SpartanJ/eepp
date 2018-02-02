@@ -30,7 +30,7 @@ class EE_API UITableCell : public UIWidget {
 
 		void select();
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 	protected:
 		friend class UIItemContainer<UITable>;
 		friend class UITable;

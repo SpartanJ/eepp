@@ -1,5 +1,5 @@
-#ifndef EE_UICUIMESSAGE_HPP
-#define EE_UICUIMESSAGE_HPP
+#ifndef EE_SCENENODEMESSAGE_HPP
+#define EE_SCENENODEMESSAGE_HPP
 
 #include <eepp/ui/base.hpp>
 
@@ -7,7 +7,7 @@ namespace EE { namespace Scene {
 
 class Node;
 
-class EE_API UIMessage {
+class EE_API NodeMessage {
 	public:
 		enum Message
 		{
@@ -29,9 +29,9 @@ class EE_API UIMessage {
 			NoMessage = eeINDEX_NOT_FOUND
 		};
 
-		UIMessage( Node * Ctrl, const Uint32& getMsg, const Uint32& getFlags = NoMessage );
+		NodeMessage( Node * node, const Uint32& getMsg, const Uint32& getFlags = NoMessage );
 
-		~UIMessage();
+		~NodeMessage();
 
 		Node * getSender() const;
 

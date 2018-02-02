@@ -303,12 +303,12 @@ void UITextView::onSizeChange() {
 }
 
 void UITextView::onTextChanged() {
-	sendCommonEvent( UIEvent::OnTextChanged );
+	sendCommonEvent( Event::OnTextChanged );
 	invalidateDraw();
 }
 
 void UITextView::onFontChanged() {
-	sendCommonEvent( UIEvent::OnFontChanged );
+	sendCommonEvent( Event::OnFontChanged );
 	invalidateDraw();
 }
 

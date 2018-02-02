@@ -48,7 +48,7 @@ class EE_API UIWinMenu : public UIWidget {
 
 		void refreshButtons();
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		virtual void onParentChange();
 
@@ -58,7 +58,7 @@ class EE_API UIWinMenu : public UIWidget {
 
 		bool isPopUpMenuChild( Node * Ctrl );
 
-		void onMenuFocusLoss( const UIEvent * Event );
+		void onMenuFocusLoss( const Event * Event );
 
 		void unselectButtons();
 

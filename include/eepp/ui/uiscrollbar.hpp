@@ -81,11 +81,11 @@ class EE_API UIScrollBar : public UIWidget {
 
 		void adjustChilds();
 
-		void onValueChangeCb( const UIEvent * Event );
+		void onValueChangeCb( const Event * Event );
 
 		virtual void onAlphaChange();
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		void manageClick( const Uint32& flags );
 };

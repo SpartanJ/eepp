@@ -2,6 +2,7 @@
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/font.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/graphics/fontmanager.hpp>
@@ -60,8 +61,8 @@ UIListBox::UIListBox() :
 	mHScrollBar->setPosition( 0, mDpSize.getHeight() - 16 );
 	mHScrollBar->setEnabled( false )->setVisible( false );
 
-	mVScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIListBox::onScrollValueChange ) );
-	mHScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIListBox::onHScrollValueChange ) );
+	mVScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UIListBox::onScrollValueChange ) );
+	mHScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UIListBox::onHScrollValueChange ) );
 
 	setSmoothScroll( true );
 
@@ -233,7 +234,7 @@ void UIListBox::clear() {
 	updateScroll();
 	updateListBoxItemsSize();
 
-	sendCommonEvent( UIEvent::OnControlClear );
+	sendCommonEvent( Event::OnControlClear );
 }
 
 Uint32 UIListBox::removeListBoxItem( Uint32 ItemIndex ) {
@@ -264,11 +265,11 @@ Uint32 UIListBox::getListBoxItemIndex( UIListBoxItem * Item ) {
 	return eeINDEX_NOT_FOUND;
 }
 
-void UIListBox::onScrollValueChange( const UIEvent * Event ) {
+void UIListBox::onScrollValueChange( const Event * Event ) {
 	updateScroll( true );
 }
 
-void UIListBox::onHScrollValueChange( const UIEvent * Event ) {
+void UIListBox::onHScrollValueChange( const Event * Event ) {
 	updateScroll( true );
 }
 
@@ -597,13 +598,13 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 	invalidateDraw();
 }
 
-void UIListBox::itemKeyEvent( const UIEventKey &Event ) {
-	UIEventKey ItemEvent( Event.getControl(), UIEvent::OnItemKeyDown, Event.getKeyCode(), Event.getChar(), Event.getMod() );
+void UIListBox::itemKeyEvent( const KeyEvent &Event ) {
+	KeyEvent ItemEvent( Event.getNode(), Event::OnItemKeyDown, Event.getKeyCode(), Event.getChar(), Event.getMod() );
 	sendEvent( &ItemEvent );
 }
 
 void UIListBox::itemClicked( UIListBoxItem * Item ) {
-	UIEvent ItemEvent( Item, UIEvent::OnItemClicked );
+	Event ItemEvent( Item, Event::OnItemClicked );
 	sendEvent( &ItemEvent );
 
 	if ( !( isMultiSelect() && UIManager::instance()->getInput()->isKeyDown( KEY_LCTRL ) ) )
@@ -611,10 +612,10 @@ void UIListBox::itemClicked( UIListBoxItem * Item ) {
 }
 
 Uint32 UIListBox::onSelected() {
-	UIMessage tMsg( this, UIMessage::Selected, 0 );
+	NodeMessage tMsg( this, NodeMessage::Selected, 0 );
 	messagePost( &tMsg );
 
-	sendCommonEvent( UIEvent::OnItemSelected );
+	sendCommonEvent( Event::OnItemSelected );
 
 	return 1;
 }
@@ -858,7 +859,7 @@ void UIListBox::selectNext() {
 	}
 }
 
-Uint32 UIListBox::onKeyDown( const UIEventKey &Event ) {
+Uint32 UIListBox::onKeyDown( const KeyEvent &Event ) {
 	UINode::onKeyDown( Event );
 
 	if ( !mSelected.size() || mFlags & UI_MULTI_SELECT )
@@ -901,9 +902,9 @@ Uint32 UIListBox::onKeyDown( const UIEventKey &Event ) {
 	return 1;
 }
 
-Uint32 UIListBox::onMessage( const UIMessage * Msg ) {
+Uint32 UIListBox::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::FocusLoss:
+		case NodeMessage::FocusLoss:
 		{
 			Node * FocusCtrl = UIManager::instance()->getFocusControl();
 

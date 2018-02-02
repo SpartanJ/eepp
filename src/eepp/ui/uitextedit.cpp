@@ -32,10 +32,10 @@ UITextEdit::UITextEdit() :
 	mTextInput->setEnabled( true );
 	mTextInput->setSize( mDpSize );
 
-	mTextInput->addEventListener( UIEvent::OnSizeChange		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
-	mTextInput->addEventListener( UIEvent::OnTextChanged		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
-	mTextInput->addEventListener( UIEvent::OnPressEnter		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
-	mTextInput->addEventListener( UIEvent::OnCursorPosChange	, cb::Make1( this, &UITextEdit::onCursorPosChange ) );
+	mTextInput->addEventListener( Event::OnSizeChange		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
+	mTextInput->addEventListener( Event::OnTextChanged		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
+	mTextInput->addEventListener( Event::OnPressEnter		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
+	mTextInput->addEventListener( Event::OnCursorPosChange	, cb::Make1( this, &UITextEdit::onCursorPosChange ) );
 
 	mVScrollBar = UIScrollBar::New();
 	mVScrollBar->setOrientation( UI_VERTICAL );
@@ -50,8 +50,8 @@ UITextEdit::UITextEdit() :
 	mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
 	mHScrollBar->setPosition( 0, mDpSize.getHeight() - 16 );
 
-	mVScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UITextEdit::onVScrollValueChange ) );
-	mHScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UITextEdit::onHScrollValueChange ) );
+	mVScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UITextEdit::onVScrollValueChange ) );
+	mHScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UITextEdit::onHScrollValueChange ) );
 
 	autoPadding();
 
@@ -247,12 +247,12 @@ void UITextEdit::autoPadding() {
 	}
 }
 
-void UITextEdit::onVScrollValueChange( const UIEvent * Event ) {
+void UITextEdit::onVScrollValueChange( const Event * Event ) {
 	if ( !mSkipValueChange )
 		fixScroll();
 }
 
-void UITextEdit::onHScrollValueChange( const UIEvent * Event ) {
+void UITextEdit::onHScrollValueChange( const Event * Event ) {
 	if ( !mSkipValueChange )
 		fixScroll();
 }
@@ -281,12 +281,12 @@ void UITextEdit::setText( const String& Txt ) {
 	onSizeChange();
 }
 
-void UITextEdit::onInputSizeChange( const UIEvent * Event ) {
+void UITextEdit::onInputSizeChange( const Event * Event ) {
 	int Width	= mSize.getWidth()	- mContainerPadding.Left - mContainerPadding.Right;
 	int Height	= mSize.getHeight()	- mContainerPadding.Top	- mContainerPadding.Bottom;
 
 	if ( NULL != Event ) {
-		if ( Event->getEventType() == UIEvent::OnPressEnter ) {
+		if ( Event->getType() == Event::OnPressEnter ) {
 			mHScrollBar->setValue( 0 );
 		}
 	}
@@ -336,7 +336,7 @@ void UITextEdit::onInputSizeChange( const UIEvent * Event ) {
 	fixScrollToCursor();
 }
 
-void UITextEdit::onCursorPosChange( const UIEvent * Event ) {
+void UITextEdit::onCursorPosChange( const Event * Event ) {
 	fixScrollToCursor();
 }
 

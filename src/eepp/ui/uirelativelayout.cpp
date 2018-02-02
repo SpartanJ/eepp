@@ -157,9 +157,9 @@ void UIRelativeLayout::fixChildSize( UIWidget * widget ) {
 	}
 }
 
-Uint32 UIRelativeLayout::onMessage(const UIMessage * Msg) {
+Uint32 UIRelativeLayout::onMessage(const NodeMessage * Msg) {
 	switch( Msg->getMsg() ) {
-		case UIMessage::LayoutAttributeChange:
+		case NodeMessage::LayoutAttributeChange:
 		{
 			fixChilds();
 			break;

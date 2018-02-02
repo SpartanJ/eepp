@@ -101,15 +101,15 @@ void UICheckBox::onSizeChange() {
 	mInactiveButton->centerVertical();
 }
 
-Uint32 UICheckBox::onMessage( const UIMessage * Msg ) {
+Uint32 UICheckBox::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::Click: {
+		case NodeMessage::Click: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				switchState();
 			}
 
 			if ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) {
-				sendMouseEvent( UIEvent::MouseClick, UIManager::instance()->getMousePos(), UIManager::instance()->getPressTrigger() );
+				sendMouseEvent( Event::MouseClick, UIManager::instance()->getMousePos(), UIManager::instance()->getPressTrigger() );
 			}
 
 			return 1;
@@ -185,7 +185,7 @@ void UICheckBox::loadFromXmlNode(const pugi::xml_node & node) {
 	endPropertiesTransaction();
 }
 
-Uint32 UICheckBox::onKeyDown( const UIEventKey& Event ) {
+Uint32 UICheckBox::onKeyDown( const KeyEvent& Event ) {
 	UITextView::onKeyDown( Event );
 
 	if ( Event.getKeyCode() == KEY_SPACE ) {

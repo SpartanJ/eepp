@@ -29,7 +29,7 @@ class EE_API UILinearLayout : public UILayout {
 	protected:
 		UI_ORIENTATION mOrientation;
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		virtual void onSizeChange();
 

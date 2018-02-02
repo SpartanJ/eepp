@@ -74,8 +74,8 @@ void UIMenuSubMenu::setSubMenu( UIMenu * SubMenu ) {
 	mSubMenu = SubMenu;
 
 	if ( NULL != mSubMenu ) {
-		mCbId	= mSubMenu->addEventListener( UIEvent::OnEnabledChange, cb::Make1( this, &UIMenuSubMenu::onSubMenuFocusLoss ) );
-		mCbId2	= mSubMenu->addEventListener( UIEvent::OnHideByClick, cb::Make1( this, &UIMenuSubMenu::onHideByClick ) );
+		mCbId	= mSubMenu->addEventListener( Event::OnEnabledChange, cb::Make1( this, &UIMenuSubMenu::onSubMenuFocusLoss ) );
+		mCbId2	= mSubMenu->addEventListener( Event::OnHideByClick, cb::Make1( this, &UIMenuSubMenu::onHideByClick ) );
 	}
 }
 
@@ -126,7 +126,7 @@ UINode * UIMenuSubMenu::getArrow() const {
 	return mArrow;
 }
 
-void UIMenuSubMenu::onSubMenuFocusLoss( const UIEvent * Event ) {
+void UIMenuSubMenu::onSubMenuFocusLoss( const Event * Event ) {
 	Node * FocusCtrl = UIManager::instance()->getFocusControl();
 
 	if ( getParent() != FocusCtrl && !getParent()->isParentOf( FocusCtrl ) ) {
@@ -140,7 +140,7 @@ void UIMenuSubMenu::onSubMenuFocusLoss( const UIEvent * Event ) {
 	}
 }
 
-void UIMenuSubMenu::onHideByClick( const UIEvent * Event ) {
+void UIMenuSubMenu::onHideByClick( const Event * Event ) {
 	UIMenu * tMenu = reinterpret_cast<UIMenu *>( getParent() );
 
 	tMenu->mClickHide = true;

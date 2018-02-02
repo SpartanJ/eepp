@@ -3,10 +3,10 @@
 
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uihelper.hpp>
-#include <eepp/ui/uimessage.hpp>
-#include <eepp/ui/uievent.hpp>
-#include <eepp/ui/uieventkey.hpp>
-#include <eepp/ui/uieventmouse.hpp>
+#include <eepp/scene/nodemessage.hpp>
+#include <eepp/scene/event.hpp>
+#include <eepp/scene/keyevent.hpp>
+#include <eepp/scene/mouseevent.hpp>
 #include <eepp/math/transformable.hpp>
 #include <eepp/graphics/blendmode.hpp>
 
@@ -29,7 +29,7 @@ class EE_API Node : public Transformable {
 	public:
 		static Node * New();
 
-		typedef cb::Callback1<void, const UIEvent*> UIEventCallback;
+		typedef cb::Callback1<void, const Event*> UIEventCallback;
 
 		Node();
 
@@ -51,7 +51,7 @@ class EE_API Node : public Transformable {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		void messagePost( const UIMessage * Msg );
+		void messagePost( const NodeMessage * Msg );
 
 		virtual void setPosition( const Vector2f& Pos );
 
@@ -152,7 +152,7 @@ class EE_API Node : public Transformable {
 
 		bool isParentOf( Node * Ctrl );
 
-		void sendEvent( const UIEvent * Event );
+		void sendEvent( const Event * Event );
 
 		void sendMouseEvent( const Uint32& Event, const Vector2i& position, const Uint32& flags );
 
@@ -298,11 +298,11 @@ class EE_API Node : public Transformable {
 
 		ActionManager *		mActionManager;
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
-		virtual Uint32 onKeyDown( const UIEventKey& Event );
+		virtual Uint32 onKeyDown( const KeyEvent& Event );
 
-		virtual Uint32 onKeyUp( const UIEventKey& Event );
+		virtual Uint32 onKeyUp( const KeyEvent& Event );
 
 		virtual Uint32 onMouseMove( const Vector2i& position, const Uint32 flags );
 

@@ -144,9 +144,9 @@ class EE_API UIListBox : public UITouchDragableWidget {
 
 		void updateScroll( bool FromScrollChange = false );
 
-		void onScrollValueChange( const UIEvent * Event );
+		void onScrollValueChange( const Event * Event );
 
-		void onHScrollValueChange( const UIEvent * Event );
+		void onHScrollValueChange( const Event * Event );
 
 		virtual void onSizeChange();
 
@@ -178,11 +178,11 @@ class EE_API UIListBox : public UITouchDragableWidget {
 
 		virtual void onAlphaChange();
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
-		virtual Uint32 onKeyDown( const UIEventKey &Event );
+		virtual Uint32 onKeyDown( const KeyEvent &Event );
 
-		void itemKeyEvent( const UIEventKey &Event );
+		void itemKeyEvent( const KeyEvent &Event );
 
 		void setHScrollStep();
 

@@ -45,7 +45,7 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual void setTheme( UITheme * Theme );
 
-		virtual Uint32 onMessage( const UIMessage *Msg );
+		virtual Uint32 onMessage( const NodeMessage *Msg );
 
 		UIWidget * getContainer() const;
 
@@ -177,17 +177,17 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual void onChildCountChange();
 
-		virtual Uint32 onKeyDown( const UIEventKey &Event );
+		virtual Uint32 onKeyDown( const KeyEvent &Event );
 
 		virtual void matrixSet();
 
 		virtual void matrixUnset();
 
-		void onContainerPositionChange( const UIEvent * Event );
+		void onContainerPositionChange( const Event * Event );
 
 		void fixChildsSize();
 
-		void doResize( const UIMessage * Msg );
+		void doResize( const NodeMessage * Msg );
 
 		void decideResizeType( Node * Control );
 

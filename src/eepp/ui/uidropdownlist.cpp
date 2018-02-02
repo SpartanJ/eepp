@@ -1,5 +1,6 @@
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -32,12 +33,12 @@ UIDropDownList::UIDropDownList() :
 	mListBox->setEnabled( false );
 	mListBox->setVisible( false );
 
-	mListBox->addEventListener( UIEvent::OnWidgetFocusLoss, cb::Make1( this, &UIDropDownList::onListBoxFocusLoss ) );
-	mListBox->addEventListener( UIEvent::OnItemSelected	, cb::Make1( this, &UIDropDownList::onItemSelected ) );
-	mListBox->addEventListener( UIEvent::OnItemClicked, cb::Make1( this, &UIDropDownList::onItemClicked ) );
-	mListBox->addEventListener( UIEvent::OnItemKeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
-	mListBox->addEventListener( UIEvent::KeyDown		, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
-	mListBox->addEventListener( UIEvent::OnControlClear, cb::Make1( this, &UIDropDownList::onControlClear ) );
+	mListBox->addEventListener( Event::OnWidgetFocusLoss, cb::Make1( this, &UIDropDownList::onListBoxFocusLoss ) );
+	mListBox->addEventListener( Event::OnItemSelected	, cb::Make1( this, &UIDropDownList::onItemSelected ) );
+	mListBox->addEventListener( Event::OnItemClicked, cb::Make1( this, &UIDropDownList::onItemClicked ) );
+	mListBox->addEventListener( Event::OnItemKeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
+	mListBox->addEventListener( Event::KeyDown		, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
+	mListBox->addEventListener( Event::OnControlClear, cb::Make1( this, &UIDropDownList::onControlClear ) );
 }
 
 UIDropDownList::~UIDropDownList() {
@@ -178,18 +179,18 @@ void UIDropDownList::setStyleConfig(const UIDropDownListStyleConfig & styleConfi
 	setMaxNumVisibleItems( mStyleConfig.MaxNumVisibleItems );
 }
 
-void UIDropDownList::onControlClear( const UIEvent * Event ) {
+void UIDropDownList::onControlClear( const Event * Event ) {
 	setText( "" );
 }
 
-void UIDropDownList::onItemKeyDown( const UIEvent * Event ) {
-	const UIEventKey * KEvent = reinterpret_cast<const UIEventKey*> ( Event );
+void UIDropDownList::onItemKeyDown( const Event * Event ) {
+	const KeyEvent * KEvent = reinterpret_cast<const KeyEvent*> ( Event );
 
 	if ( KEvent->getKeyCode() == KEY_RETURN )
 		onItemClicked( Event );
 }
 
-void UIDropDownList::onListBoxFocusLoss( const UIEvent * Event ) {
+void UIDropDownList::onListBoxFocusLoss( const Event * Event ) {
 	bool frienIsFocus = NULL != mFriendCtrl && mFriendCtrl == UIManager::instance()->getFocusControl();
 	bool isChildFocus = isChild( UIManager::instance()->getFocusControl() );
 
@@ -198,18 +199,18 @@ void UIDropDownList::onListBoxFocusLoss( const UIEvent * Event ) {
 	}
 }
 
-void UIDropDownList::onItemClicked( const UIEvent * Event ) {
+void UIDropDownList::onItemClicked( const Event * Event ) {
 	hide();
 	setFocus();
 }
 
-void UIDropDownList::onItemSelected( const UIEvent * Event ) {
+void UIDropDownList::onItemSelected( const Event * Event ) {
 	setText( mListBox->getItemSelectedText() );
 
-	UIMessage Msg( this, UIMessage::Selected, mListBox->getItemSelectedIndex() );
+	NodeMessage Msg( this, NodeMessage::Selected, mListBox->getItemSelectedIndex() );
 	messagePost( &Msg );
 
-	sendCommonEvent( UIEvent::OnItemSelected );
+	sendCommonEvent( Event::OnItemSelected );
 }
 
 void UIDropDownList::show() {
@@ -248,7 +249,7 @@ void UIDropDownList::update( const Time& time ) {
 	UITextInput::update( time );
 }
 
-Uint32 UIDropDownList::onKeyDown( const UIEventKey &Event ) {
+Uint32 UIDropDownList::onKeyDown( const KeyEvent &Event ) {
 	mListBox->onKeyDown( Event );
 
 	return UITextInput::onKeyDown( Event );

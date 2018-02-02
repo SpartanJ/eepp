@@ -1,5 +1,6 @@
 #include <eepp/ui/uiwinmenu.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <pugixml/pugixml.hpp>
 
@@ -55,7 +56,7 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	Menu->setVisible( false );
 	Menu->setEnabled( false );
 	Menu->setParent( getWindowContainer() );
-	Menu->addEventListener( UIEvent::OnWidgetFocusLoss, cb::Make1( this, &UIWinMenu::onMenuFocusLoss ) );
+	Menu->addEventListener( Event::OnWidgetFocusLoss, cb::Make1( this, &UIWinMenu::onMenuFocusLoss ) );
 
 	mButtons.push_back( std::make_pair( Button, Menu ) );
 
@@ -174,10 +175,10 @@ void UIWinMenu::refreshButtons() {
 	}
 }
 
-Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
+Uint32 UIWinMenu::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::MouseUp:
-		case UIMessage::MouseEnter:
+		case NodeMessage::MouseUp:
+		case NodeMessage::MouseEnter:
 		{
 			if ( Msg->getSender()->isType( UI_TYPE_SELECTBUTTON ) ) {
 				UISelectButton * tbut	= reinterpret_cast<UISelectButton*> ( Msg->getSender() );
@@ -186,7 +187,7 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 				Vector2f pos( tbut->getPosition().x, tbut->getPosition().y + tbut->getSize().getHeight() );
 				tpop->setPosition( pos );
 
-				if ( Msg->getMsg() == UIMessage::MouseEnter ) {
+				if ( Msg->getMsg() == NodeMessage::MouseEnter ) {
 					if ( NULL != mCurrentMenu ) {
 						mCurrentMenu = tpop;
 
@@ -207,7 +208,7 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 
 			break;
 		}
-		case UIMessage::Selected:
+		case NodeMessage::Selected:
 		{
 			for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 				if ( it->first != Msg->getSender() ) {
@@ -217,7 +218,7 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 
 			return 1;
 		}
-		case UIMessage::FocusLoss:
+		case NodeMessage::FocusLoss:
 		{
 			Node * FocusCtrl = UIManager::instance()->getFocusControl();
 
@@ -266,7 +267,7 @@ bool UIWinMenu::isPopUpMenuChild( Node * Ctrl ) {
 	return false;
 }
 
-void UIWinMenu::onMenuFocusLoss( const UIEvent * Event ) {
+void UIWinMenu::onMenuFocusLoss( const Event * Event ) {
 	Node * FocusCtrl = UIManager::instance()->getFocusControl();
 
 	if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {

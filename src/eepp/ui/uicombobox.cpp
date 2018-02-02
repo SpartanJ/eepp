@@ -83,8 +83,8 @@ void UIComboBox::loadFromXmlNode(const pugi::xml_node& node) {
 	endPropertiesTransaction();
 }
 
-Uint32 UIComboBox::onMessage( const UIMessage * Msg ) {
-	if ( Msg->getMsg() == UIMessage::Click && Msg->getSender() == mButton && ( Msg->getFlags() & EE_BUTTON_LMASK ) ) {
+Uint32 UIComboBox::onMessage( const NodeMessage * Msg ) {
+	if ( Msg->getMsg() == NodeMessage::Click && Msg->getSender() == mButton && ( Msg->getFlags() & EE_BUTTON_LMASK ) ) {
 		mDropDownList->showList();
 	}
 

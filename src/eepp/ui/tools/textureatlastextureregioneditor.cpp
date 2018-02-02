@@ -2,6 +2,7 @@
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 

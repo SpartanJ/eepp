@@ -70,7 +70,7 @@ class EE_API UIGridLayout : public UILayout {
 		
 		virtual void onParentSizeChange( const Vector2f& SizeChange );
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		Sizef getTargetElementSize();
 

@@ -1,5 +1,6 @@
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <pugixml/pugixml.hpp>
 
@@ -315,14 +316,14 @@ void UIWidget::onWidgetCreated() {
 
 void UIWidget::notifyLayoutAttrChange() {
 	if ( 0 == mPropertiesTransactionCount ) {
-		UIMessage msg( this, UIMessage::LayoutAttributeChange );
+		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
 		messagePost( &msg );
 	}
 }
 
 void UIWidget::notifyLayoutAttrChangeParent() {
 	if ( 0 == mPropertiesTransactionCount && NULL != mParentCtrl ) {
-		UIMessage msg( this, UIMessage::LayoutAttributeChange );
+		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
 		mParentCtrl->messagePost( &msg );
 	}
 }

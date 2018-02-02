@@ -2,6 +2,7 @@
 #define EE_UICUITOOLTIP_HPP
 
 #include <eepp/ui/uinode.hpp>
+#include <eepp/ui/uithemeconfig.hpp>
 
 namespace EE { namespace Graphics {
 class Text;

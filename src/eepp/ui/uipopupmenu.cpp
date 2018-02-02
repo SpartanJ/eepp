@@ -1,5 +1,6 @@
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -85,15 +86,15 @@ void UIPopUpMenu::onWidgetFocusLoss() {
 	UIMenu::onWidgetFocusLoss();
 }
 
-Uint32 UIPopUpMenu::onMessage( const UIMessage * Msg ) {
+Uint32 UIPopUpMenu::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::MouseUp:
+		case NodeMessage::MouseUp:
 		{
 			#ifdef EE_PLATFORM_TOUCH
 			if ( mTE.getElapsed().asMilliseconds() > 250.f ) {
 			#endif
 				if ( !Msg->getSender()->isType( UI_TYPE_MENUSUBMENU ) && ( Msg->getFlags() & EE_BUTTONS_LRM ) ) {
-					sendCommonEvent( UIEvent::OnHideByClick );
+					sendCommonEvent( Event::OnHideByClick );
 
 					if ( isVisible() )
 						UIManager::instance()->getMainControl()->setFocus();

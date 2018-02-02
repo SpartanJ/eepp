@@ -2,15 +2,18 @@
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uimanager.hpp>
-#include <eepp/scene/actionmanager.hpp>
-#include <eepp/scene/action.hpp>
+#include <eepp/ui/uiskinstate.hpp>
+#include <eepp/ui/uiskinsimple.hpp>
+#include <eepp/ui/uiskincomplex.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/window/engine.hpp>
-
+#include <eepp/scene/actionmanager.hpp>
+#include <eepp/scene/action.hpp>
 #include <eepp/scene/actions/fade.hpp>
 #include <eepp/scene/actions/scale.hpp>
 #include <eepp/scene/actions/rotate.hpp>
@@ -117,7 +120,7 @@ void UINode::setInternalSize( const Sizef& size ) {
 	mDpSize = size;
 	mSize = PixelDensity::dpToPx( size );
 	updateCenter();
-	sendCommonEvent( UIEvent::OnSizeChange );
+	sendCommonEvent( Event::OnSizeChange );
 	invalidateDraw();
 }
 
@@ -125,7 +128,7 @@ void UINode::setInternalPixelsSize( const Sizef& size ) {
 	mDpSize = PixelDensity::pxToDp( size );
 	mSize = size;
 	updateCenter();
-	sendCommonEvent( UIEvent::OnSizeChange );
+	sendCommonEvent( Event::OnSizeChange );
 	invalidateDraw();
 }
 
@@ -316,7 +319,7 @@ Uint32 UINode::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
 }
 
 Uint32 UINode::onValueChange() {
-	sendCommonEvent( UIEvent::OnValueChange );
+	sendCommonEvent( Event::OnValueChange );
 	invalidateDraw();
 	return 1;
 }
@@ -726,12 +729,12 @@ Uint32 UINode::onDrag( const Vector2f& Pos ) {
 }
 
 Uint32 UINode::onDragStart( const Vector2i& Pos ) {
-	sendCommonEvent( UIEvent::OnDragStart );
+	sendCommonEvent( Event::OnDragStart );
 	return 1;
 }
 
 Uint32 UINode::onDragStop( const Vector2i& Pos ) {
-	sendCommonEvent( UIEvent::OnDragStop );
+	sendCommonEvent( Event::OnDragStop );
 	return 1;
 }
 
@@ -763,12 +766,12 @@ void UINode::setDragging( const bool& dragging ) {
 	writeCtrlFlag( NODE_FLAG_DRAGGING, dragging );
 
 	if ( dragging ) {
-		UIMessage tMsg( this, UIMessage::DragStart, 0 );
+		NodeMessage tMsg( this, NodeMessage::DragStart, 0 );
 		messagePost( &tMsg );
 
 		onDragStart( UIManager::instance()->getMousePos() );
 	} else {
-		UIMessage tMsg( this, UIMessage::DragStop, 0 );
+		NodeMessage tMsg( this, NodeMessage::DragStop, 0 );
 		messagePost( &tMsg );
 
 		onDragStop( UIManager::instance()->getMousePos() );
@@ -895,7 +898,7 @@ Interpolation1d * UINode::disableFadeOut( const Time& time, const bool& AlphaChi
 }
 
 void UINode::onWidgetFocusLoss() {
-	sendCommonEvent( UIEvent::OnWidgetFocusLoss );
+	sendCommonEvent( Event::OnWidgetFocusLoss );
 	invalidateDraw();
 }
 

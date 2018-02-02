@@ -189,9 +189,9 @@ void UIGridLayout::pack() {
 	invalidateDraw();
 }
 
-Uint32 UIGridLayout::onMessage(const UIMessage * Msg) {
+Uint32 UIGridLayout::onMessage(const NodeMessage * Msg) {
 	switch( Msg->getMsg() ) {
-		case UIMessage::LayoutAttributeChange:
+		case NodeMessage::LayoutAttributeChange:
 		{
 			pack();
 			break;

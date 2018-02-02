@@ -351,9 +351,9 @@ void UILinearLayout::loadFromXmlNode(const pugi::xml_node & node) {
 	endPropertiesTransaction();
 }
 
-Uint32 UILinearLayout::onMessage(const UIMessage * Msg) {
+Uint32 UILinearLayout::onMessage(const NodeMessage * Msg) {
 	switch( Msg->getMsg() ) {
-		case UIMessage::LayoutAttributeChange:
+		case NodeMessage::LayoutAttributeChange:
 		{
 			pack();
 			break;

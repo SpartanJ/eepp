@@ -2,6 +2,7 @@
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -199,11 +200,11 @@ void UITooltip::onSizeChange() {
 }
 
 void UITooltip::onTextChanged() {
-	sendCommonEvent( UIEvent::OnTextChanged );
+	sendCommonEvent( Event::OnTextChanged );
 }
 
 void UITooltip::onFontChanged() {
-	sendCommonEvent( UIEvent::OnFontChanged );
+	sendCommonEvent( Event::OnFontChanged );
 }
 
 void UITooltip::setPadding( const Rectf& padding ) {

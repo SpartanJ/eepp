@@ -1,15 +1,15 @@
 #ifndef EE_UICUIEVENT_HPP
 #define EE_UICUIEVENT_HPP
 
-#include <eepp/ui/base.hpp>
+#include <eepp/config.hpp>
 
 namespace EE { namespace Scene {
 
 class Node;
 
-class EE_API UIEvent {
+class EE_API Event {
 	public:
-		enum Event {
+		enum EventType {
 			KeyDown = 0,
 			KeyUp,
 			MouseMove,
@@ -56,13 +56,13 @@ class EE_API UIEvent {
 			NoEvent = eeINDEX_NOT_FOUND
 		};
 
-		UIEvent( Node * control, const Uint32& eventType = NoEvent );
+		Event( Node * control, const Uint32& eventType = NoEvent );
 
-		~UIEvent();
+		~Event();
 
-		Node * getControl() const;
+		Node * getNode() const;
 
-		const Uint32& getEventType() const;
+		const Uint32& getType() const;
 	protected:
 		Node	* 	mCtrl;
 		Uint32 		mEventType;

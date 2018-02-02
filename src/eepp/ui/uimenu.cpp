@@ -5,6 +5,7 @@
 #include <pugixml/pugixml.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -288,18 +289,18 @@ bool UIMenu::isSubMenu( Node * Ctrl ) {
 	return false;
 }
 
-Uint32 UIMenu::onMessage( const UIMessage * Msg ) {
+Uint32 UIMenu::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::MouseUp:
+		case NodeMessage::MouseUp:
 		{
 			if ( Msg->getSender()->getParent() == this && ( Msg->getFlags() & EE_BUTTONS_LRM ) ) {
-				UIEvent ItemEvent( Msg->getSender(), UIEvent::OnItemClicked );
+				Event ItemEvent( Msg->getSender(), Event::OnItemClicked );
 				sendEvent( &ItemEvent );
 			}
 
 			return 1;
 		}
-		case UIMessage::FocusLoss:
+		case NodeMessage::FocusLoss:
 		{
 			Node * FocusCtrl = UIManager::instance()->getFocusControl();
 
@@ -471,7 +472,7 @@ void UIMenu::prevSel() {
 	}
 }
 
-Uint32 UIMenu::onKeyDown( const UIEventKey& Event ) {
+Uint32 UIMenu::onKeyDown( const KeyEvent& Event ) {
 	if ( Sys::getTicks() - mLastTickMove > 50 ) {
 		switch ( Event.getKeyCode() ) {
 			case KEY_DOWN:
@@ -502,9 +503,9 @@ Uint32 UIMenu::onKeyDown( const UIEventKey& Event ) {
 				break;
 			case KEY_RETURN:
 				if ( NULL != mItemSelected ) {
-					mItemSelected->sendMouseEvent(UIEvent::MouseClick, UIManager::instance()->getMousePos(), EE_BUTTONS_ALL );
+					mItemSelected->sendMouseEvent(Event::MouseClick, UIManager::instance()->getMousePos(), EE_BUTTONS_ALL );
 
-					UIMessage Msg( mItemSelected, UIMessage::MouseUp, EE_BUTTONS_ALL );
+					NodeMessage Msg( mItemSelected, NodeMessage::MouseUp, EE_BUTTONS_ALL );
 					mItemSelected->messagePost( &Msg );
 				}
 

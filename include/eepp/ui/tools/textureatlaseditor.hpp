@@ -62,41 +62,41 @@ class EE_API TextureAtlasEditor {
 		UITGEUpdater *		mTGEU;
 		bool mEdited;
 
-		void windowClose( const UIEvent * Event );
+		void windowClose( const Event * Event );
 
-		void fileMenuClick( const UIEvent * Event );
+		void fileMenuClick( const Event * Event );
 
 		void onTextureAtlasCreate( TexturePacker * TexPacker );
 
-		void openTextureAtlas( const UIEvent * Event );
+		void openTextureAtlas( const Event * Event );
 
-		void saveTextureAtlas( const UIEvent * Event );
+		void saveTextureAtlas( const Event * Event );
 
-		void onTextureAtlasClose( const UIEvent * Event );
+		void onTextureAtlasClose( const Event * Event );
 
-		void onTextureRegionChange( const UIEvent * Event );
+		void onTextureRegionChange( const Event * Event );
 
 		void updateControls();
 
 		void fillTextureRegionList();
 
-		void onOffXChange( const UIEvent * Event );
+		void onOffXChange( const Event * Event );
 
-		void onOffYChange( const UIEvent * Event );
+		void onOffYChange( const Event * Event );
 
-		void onDestWChange( const UIEvent * Event );
+		void onDestWChange( const Event * Event );
 
-		void onDestHChange( const UIEvent * Event );
+		void onDestHChange( const Event * Event );
 
-		void onResetDestSize( const UIEvent * Event );
+		void onResetDestSize( const Event * Event );
 
-		void onResetOffset( const UIEvent * Event );
+		void onResetOffset( const Event * Event );
 
-		void onCenterOffset( const UIEvent * Event );
+		void onCenterOffset( const Event * Event );
 
-		void onHBOffset( const UIEvent * Event );
+		void onHBOffset( const Event * Event );
 
-		void onTextureFilterChange( const UIEvent * Event );
+		void onTextureFilterChange( const Event * Event );
 
 		void onTextureAtlasLoaded( TextureAtlasLoader * TGLoader );
 

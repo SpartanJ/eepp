@@ -1,5 +1,6 @@
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uinode.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
@@ -137,21 +138,21 @@ void UIManager::inputCallback( InputEvent * Event ) {
 
 void UIManager::resizeControl( EE::Window::Window * win ) {
 	mControl->setSize( (Float)mWindow->getWidth() / PixelDensity::getPixelDensity(), (Float)mWindow->getHeight() / PixelDensity::getPixelDensity() );
-	sendMsg( mControl, UIMessage::WindowResize );
+	sendMsg( mControl, NodeMessage::WindowResize );
 
 	std::list<UIWindow*>::iterator it;
 
 	for ( it = mWindowsList.begin(); it != mWindowsList.end(); ++it ) {
-		sendMsg( *it, UIMessage::WindowResize );
+		sendMsg( *it, NodeMessage::WindowResize );
 	}
 }
 
 void UIManager::sendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
-	UIEventKey	KeyEvent	= UIEventKey( mFocusControl, UIEvent::KeyUp, KeyCode, Char, Mod );
+	KeyEvent	keyEvent	= KeyEvent( mFocusControl, Event::KeyUp, KeyCode, Char, Mod );
 	Node * CtrlLoop	= mFocusControl;
 
 	while( NULL != CtrlLoop ) {
-		if ( CtrlLoop->isEnabled() && CtrlLoop->onKeyUp( KeyEvent ) )
+		if ( CtrlLoop->isEnabled() && CtrlLoop->onKeyUp( keyEvent ) )
 			break;
 
 		CtrlLoop = CtrlLoop->getParent();
@@ -159,11 +160,11 @@ void UIManager::sendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint
 }
 
 void UIManager::sendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
-	UIEventKey	KeyEvent	= UIEventKey( mFocusControl, UIEvent::KeyDown, KeyCode, Char, Mod );
+	KeyEvent	keyEvent	= KeyEvent( mFocusControl, Event::KeyDown, KeyCode, Char, Mod );
 	Node * CtrlLoop	= mFocusControl;
 
 	while( NULL != CtrlLoop ) {
-		if ( CtrlLoop->isEnabled() && CtrlLoop->onKeyDown( KeyEvent ) )
+		if ( CtrlLoop->isEnabled() && CtrlLoop->onKeyDown( keyEvent ) )
 			break;
 
 		CtrlLoop = CtrlLoop->getParent();
@@ -185,10 +186,10 @@ void UIManager::setFocusControl( Node * Ctrl ) {
 		mFocusControl = Ctrl;
 
 		mLossFocusControl->onFocusLoss();
-		sendMsg( mLossFocusControl, UIMessage::FocusLoss );
+		sendMsg( mLossFocusControl, NodeMessage::FocusLoss );
 
 		mFocusControl->onFocus();
-		sendMsg( mFocusControl, UIMessage::Focus );
+		sendMsg( mFocusControl, NodeMessage::Focus );
 	}
 }
 
@@ -201,7 +202,7 @@ void UIManager::setOverControl( Node * Ctrl ) {
 }
 
 void UIManager::sendMsg( Node * Ctrl, const Uint32& Msg, const Uint32& Flags ) {
-	UIMessage tMsg( Ctrl, Msg, Flags );
+	NodeMessage tMsg( Ctrl, Msg, Flags );
 
 	Ctrl->messagePost( &tMsg );
 }
@@ -224,14 +225,14 @@ void UIManager::update( const Time& elapsed ) {
 
 	if ( pOver != mOverControl ) {
 		if ( NULL != mOverControl ) {
-			sendMsg( mOverControl, UIMessage::MouseExit );
+			sendMsg( mOverControl, NodeMessage::MouseExit );
 			mOverControl->onMouseExit( mMousePosi, 0 );
 		}
 
 		mOverControl = pOver;
 
 		if ( NULL != mOverControl ) {
-			sendMsg( mOverControl, UIMessage::MouseEnter );
+			sendMsg( mOverControl, NodeMessage::MouseEnter );
 			mOverControl->onMouseEnter( mMousePosi, 0 );
 		}
 	} else {
@@ -242,7 +243,7 @@ void UIManager::update( const Time& elapsed ) {
 	if ( mInput->getPressTrigger() ) {
 		if ( NULL != mOverControl ) {
 			mOverControl->onMouseDown( mMousePosi, mInput->getPressTrigger() );
-			sendMsg( mOverControl, UIMessage::MouseDown, mInput->getPressTrigger() );
+			sendMsg( mOverControl, NodeMessage::MouseDown, mInput->getPressTrigger() );
 		}
 
 		if ( !mFirstPress ) {
@@ -264,14 +265,14 @@ void UIManager::update( const Time& elapsed ) {
 				Node * lastFocusControl = mFocusControl;
 
 				lastFocusControl->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
-				sendMsg( lastFocusControl, UIMessage::MouseUp, mInput->getReleaseTrigger() );
+				sendMsg( lastFocusControl, NodeMessage::MouseUp, mInput->getReleaseTrigger() );
 
 				if ( mInput->getClickTrigger() ) {
-					sendMsg( lastFocusControl, UIMessage::Click, mInput->getClickTrigger() );
+					sendMsg( lastFocusControl, NodeMessage::Click, mInput->getClickTrigger() );
 					lastFocusControl->onMouseClick( mMousePosi, mInput->getClickTrigger() );
 
 					if ( mInput->getDoubleClickTrigger() ) {
-						sendMsg( lastFocusControl, UIMessage::DoubleClick, mInput->getDoubleClickTrigger() );
+						sendMsg( lastFocusControl, NodeMessage::DoubleClick, mInput->getDoubleClickTrigger() );
 						lastFocusControl->onMouseDoubleClick( mMousePosi, mInput->getDoubleClickTrigger() );
 					}
 				}
@@ -448,17 +449,17 @@ void UIManager::checkTabPress( const Uint32& KeyCode ) {
 }
 
 void UIManager::sendMouseClick( Node * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
-	sendMsg( ToCtrl, UIMessage::Click, Flags );
+	sendMsg( ToCtrl, NodeMessage::Click, Flags );
 	ToCtrl->onMouseClick( Pos, Flags );
 }
 
 void UIManager::sendMouseUp( Node * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
-	sendMsg( ToCtrl, UIMessage::MouseUp, Flags );
+	sendMsg( ToCtrl, NodeMessage::MouseUp, Flags );
 	ToCtrl->onMouseUp( Pos, Flags );
 }
 
 void UIManager::sendMouseDown( Node * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
-	sendMsg( ToCtrl, UIMessage::MouseDown, Flags );
+	sendMsg( ToCtrl, NodeMessage::MouseDown, Flags );
 	ToCtrl->onMouseDown( Pos, Flags );
 }
 

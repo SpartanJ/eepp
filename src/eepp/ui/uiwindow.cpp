@@ -1,5 +1,6 @@
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/framebuffer.hpp>
@@ -65,7 +66,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 	mContainer->clipEnable();
 	mContainer->enableReportSizeChangeToChilds();
 	mContainer->setSize( mDpSize );
-	mContainer->addEventListener( UIEvent::OnPositionChange, cb::Make1( this, &UIWindow::onContainerPositionChange ) );
+	mContainer->addEventListener( Event::OnPositionChange, cb::Make1( this, &UIWindow::onContainerPositionChange ) );
 
 	updateWinFlags();
 
@@ -79,7 +80,7 @@ UIWindow::~UIWindow() {
 
 	UIManager::instance()->setFocusLastWindow( this );
 
-	sendCommonEvent( UIEvent::OnWindowClose );
+	sendCommonEvent( Event::OnWindowClose );
 
 	onClose();
 
@@ -392,7 +393,7 @@ bool UIWindow::isType( const Uint32& type ) const {
 	return UIWindow::getType() == type ? true : UIWidget::isType( type );
 }
 
-void UIWindow::onContainerPositionChange( const UIEvent * Event ) {
+void UIWindow::onContainerPositionChange( const Event * Event ) {
 	if ( NULL == mContainer )
 		return;
 
@@ -637,19 +638,19 @@ void UIWindow::fixChildsSize() {
 	fixTitleSize();
 }
 
-Uint32 UIWindow::onMessage( const UIMessage * Msg ) {
+Uint32 UIWindow::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::Focus:
+		case NodeMessage::Focus:
 		{
 			toFront();
 			break;
 		}
-		case UIMessage::MouseDown:
+		case NodeMessage::MouseDown:
 		{
 			doResize( Msg );
 			break;
 		}
-		case UIMessage::WindowResize:
+		case NodeMessage::WindowResize:
 		{
 			if ( isModal() && NULL != mModalCtrl ) {
 				mModalCtrl->setSize( UIManager::instance()->getMainControl()->getSize() );
@@ -657,37 +658,37 @@ Uint32 UIWindow::onMessage( const UIMessage * Msg ) {
 
 			break;
 		}
-		case UIMessage::MouseExit:
+		case NodeMessage::MouseExit:
 		{
 			UIManager::instance()->setCursor( EE_CURSOR_ARROW );
 			break;
 		}
-		case UIMessage::DragStart:
+		case NodeMessage::DragStart:
 		{
 			UIManager::instance()->setCursor( EE_CURSOR_HAND );
 			toFront();
 			break;
 		}
-		case UIMessage::DragStop:
+		case NodeMessage::DragStop:
 		{
 			UIManager::instance()->setCursor( EE_CURSOR_ARROW );
 			break;
 		}
-		case UIMessage::Click:
+		case NodeMessage::Click:
 		{
 			if ( ( mStyleConfig.WinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) && ( Msg->getFlags() & EE_BUTTON_LMASK ) ) {
 				if ( Msg->getSender() == mButtonClose ) {
 					closeWindow();
 
-					sendCommonEvent( UIEvent::OnWindowCloseClick );
+					sendCommonEvent( Event::OnWindowCloseClick );
 				} else if ( Msg->getSender() == mButtonMaximize ) {
 					maximize();
 
-					sendCommonEvent( UIEvent::OnWindowMaximizeClick );
+					sendCommonEvent( Event::OnWindowMaximizeClick );
 				} else if ( Msg->getSender() == mButtonMinimize ) {
 					hide();
 
-					sendCommonEvent( UIEvent::OnWindowMinimizeClick );
+					sendCommonEvent( Event::OnWindowMinimizeClick );
 				}
 			}
 
@@ -698,7 +699,7 @@ Uint32 UIWindow::onMessage( const UIMessage * Msg ) {
 	return UIWidget::onMessage( Msg );
 }
 
-void UIWindow::doResize ( const UIMessage * Msg ) {
+void UIWindow::doResize ( const NodeMessage * Msg ) {
 	if ( NULL == mWindowDecoration )
 		return;
 
@@ -1095,13 +1096,13 @@ Uint32 UIWindow::onMouseDoubleClick( const Vector2i &Pos, const Uint32 Flags ) {
 	if ( isResizeable() && ( NULL != mButtonMaximize ) && ( Flags & EE_BUTTON_LMASK ) ) {
 		maximize();
 
-		sendCommonEvent( UIEvent::OnWindowMaximizeClick );
+		sendCommonEvent( Event::OnWindowMaximizeClick );
 	}
 
 	return 1;
 }
 
-Uint32 UIWindow::onKeyDown( const UIEventKey &Event ) {
+Uint32 UIWindow::onKeyDown( const KeyEvent &Event ) {
 	checkShortcuts( Event.getKeyCode(), Event.getMod() );
 
 	return UIWidget::onKeyDown( Event );

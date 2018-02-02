@@ -90,7 +90,7 @@ bool Node::isType( const Uint32& type ) const {
 	return Node::getType() == type;
 }
 
-void Node::messagePost( const UIMessage * Msg ) {
+void Node::messagePost( const NodeMessage * Msg ) {
 	Node * Ctrl = this;
 
 	while( NULL != Ctrl ) {
@@ -101,7 +101,7 @@ void Node::messagePost( const UIMessage * Msg ) {
 	}
 }
 
-Uint32 Node::onMessage( const UIMessage * Msg ) {
+Uint32 Node::onMessage( const NodeMessage * Msg ) {
 	return 0;
 }
 
@@ -125,7 +125,7 @@ Node * Node::setPosition( const Float& x, const Float& y ) {
 void Node::setInternalSize( const Sizef& size ) {
 	mSize = size;
 	updateCenter();
-	sendCommonEvent( UIEvent::OnSizeChange );
+	sendCommonEvent( Event::OnSizeChange );
 	invalidateDraw();
 }
 
@@ -262,42 +262,42 @@ void Node::update( const Time& time ) {
 }
 
 void Node::sendMouseEvent( const Uint32& Event, const Vector2i& Pos, const Uint32& Flags ) {
-	UIEventMouse MouseEvent( this, Event, Pos, Flags );
+	MouseEvent MouseEvent( this, Event, Pos, Flags );
 	sendEvent( &MouseEvent );
 }
 
-void Node::sendCommonEvent( const Uint32& Event ) {
-	UIEvent CommonEvent( this, Event );
+void Node::sendCommonEvent( const Uint32& event ) {
+	Event CommonEvent( this, event );
 	sendEvent( &CommonEvent );
 }
 
-Uint32 Node::onKeyDown( const UIEventKey& Event ) {
+Uint32 Node::onKeyDown( const KeyEvent& Event ) {
 	sendEvent( &Event );
 	return 0;
 }
 
-Uint32 Node::onKeyUp( const UIEventKey& Event ) {
+Uint32 Node::onKeyUp( const KeyEvent& Event ) {
 	sendEvent( &Event );
 	return 0;
 }
 
 Uint32 Node::onMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
-	sendMouseEvent( UIEvent::MouseMove, Pos, Flags );
+	sendMouseEvent( Event::MouseMove, Pos, Flags );
 	return 1;
 }
 
 Uint32 Node::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
-	sendMouseEvent( UIEvent::MouseDown, Pos, Flags );
+	sendMouseEvent( Event::MouseDown, Pos, Flags );
 	return 1;
 }
 
 Uint32 Node::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
-	sendMouseEvent( UIEvent::MouseUp, Pos, Flags );
+	sendMouseEvent( Event::MouseUp, Pos, Flags );
 	return 1;
 }
 
 Uint32 Node::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
-	sendMouseEvent( UIEvent::MouseClick, Pos, Flags );
+	sendMouseEvent( Event::MouseClick, Pos, Flags );
 	return 1;
 }
 
@@ -310,14 +310,14 @@ bool Node::isMouseOverMeOrChilds() {
 }
 
 Uint32 Node::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
-	sendMouseEvent( UIEvent::MouseDoubleClick, Pos, Flags );
+	sendMouseEvent( Event::MouseDoubleClick, Pos, Flags );
 	return 1;
 }
 
 Uint32 Node::onMouseEnter( const Vector2i& Pos, const Uint32 Flags ) {
 	writeCtrlFlag( NODE_FLAG_MOUSEOVER, 1 );
 
-	sendMouseEvent( UIEvent::MouseEnter, Pos, Flags );
+	sendMouseEvent( Event::MouseEnter, Pos, Flags );
 
 	return 1;
 }
@@ -325,13 +325,13 @@ Uint32 Node::onMouseEnter( const Vector2i& Pos, const Uint32 Flags ) {
 Uint32 Node::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 	writeCtrlFlag( NODE_FLAG_MOUSEOVER, 0 );
 
-	sendMouseEvent( UIEvent::MouseExit, Pos, Flags );
+	sendMouseEvent( Event::MouseExit, Pos, Flags );
 
 	return 1;
 }
 
 void Node::onClose() {
-	sendCommonEvent( UIEvent::OnClose );
+	sendCommonEvent( Event::OnClose );
 	invalidateDraw();
 }
 
@@ -389,7 +389,7 @@ void Node::toPosition( const Uint32& Pos ) {
 }
 
 void Node::onVisibilityChange() {
-	sendCommonEvent( UIEvent::OnVisibleChange );
+	sendCommonEvent( Event::OnVisibleChange );
 	invalidateDraw();
 }
 
@@ -400,12 +400,12 @@ void Node::onEnabledChange() {
 		}
 	}
 
-	sendCommonEvent( UIEvent::OnEnabledChange );
+	sendCommonEvent( Event::OnEnabledChange );
 	invalidateDraw();
 }
 
 void Node::onPositionChange() {
-	sendCommonEvent( UIEvent::OnPositionChange );
+	sendCommonEvent( Event::OnPositionChange );
 	invalidateDraw();
 }
 
@@ -908,9 +908,9 @@ void Node::removeEventListener( const Uint32& CallbackId ) {
 	}
 }
 
-void Node::sendEvent( const UIEvent * Event ) {
-	if ( 0 != mEvents.count( Event->getEventType() ) ) {
-		std::map<Uint32, UIEventCallback>			event = mEvents[ Event->getEventType() ];
+void Node::sendEvent( const Event * Event ) {
+	if ( 0 != mEvents.count( Event->getType() ) ) {
+		std::map<Uint32, UIEventCallback>			event = mEvents[ Event->getType() ];
 		std::map<Uint32, UIEventCallback>::iterator it;
 
 		if ( event.begin() != event.end() ) {
@@ -945,7 +945,7 @@ void Node::writeCtrlFlag( const Uint32& Flag, const Uint32& Val ) {
 }
 
 void Node::onParentSizeChange( const Vector2f& SizeChange ) {
-	sendCommonEvent( UIEvent::OnParentSizeChange );
+	sendCommonEvent( Event::OnParentSizeChange );
 	invalidateDraw();
 }
 
@@ -1054,17 +1054,17 @@ void Node::setChildsDirty() {
 }
 
 void Node::onAngleChange() {
-	sendCommonEvent( UIEvent::OnAngleChange );
+	sendCommonEvent( Event::OnAngleChange );
 	invalidateDraw();
 }
 
 void Node::onScaleChange() {
-	sendCommonEvent( UIEvent::OnScaleChange );
+	sendCommonEvent( Event::OnScaleChange );
 	invalidateDraw();
 }
 
 void Node::onAlphaChange() {
-	sendCommonEvent( UIEvent::OnAlphaChange );
+	sendCommonEvent( Event::OnAlphaChange );
 	invalidateDraw();
 }
 
@@ -1236,7 +1236,7 @@ void Node::setRotationOrigin(float x, float y) {
 Uint32 Node::onFocus() {
 	mNodeFlags |= NODE_FLAG_HAS_FOCUS;
 
-	sendCommonEvent( UIEvent::OnFocus );
+	sendCommonEvent( Event::OnFocus );
 
 	invalidateDraw();
 
@@ -1246,7 +1246,7 @@ Uint32 Node::onFocus() {
 Uint32 Node::onFocusLoss() {
 	mNodeFlags &= ~NODE_FLAG_HAS_FOCUS;
 
-	sendCommonEvent( UIEvent::OnFocusLoss );
+	sendCommonEvent( Event::OnFocusLoss );
 
 	invalidateDraw();
 

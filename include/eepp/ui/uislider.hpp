@@ -86,7 +86,7 @@ class EE_API UISlider : public UIWidget {
 
 		void fixSliderPos();
 
-		virtual Uint32 onKeyDown( const UIEventKey &Event );
+		virtual Uint32 onKeyDown( const KeyEvent &Event );
 		
 		virtual void onAlphaChange();
 };

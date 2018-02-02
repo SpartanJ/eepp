@@ -46,9 +46,9 @@ class EE_API UICheckBox : public UITextView {
 
 		virtual void onAlphaChange();
 
-		virtual Uint32 onKeyDown( const UIEventKey& Event );
+		virtual Uint32 onKeyDown( const KeyEvent& Event );
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		virtual void onThemeLoaded();
 

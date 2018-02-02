@@ -55,7 +55,7 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern
 
 	mPath = UITextInput::New();
 	mPath->setText( mCurPath )->setLayoutSizeRules( WRAP_CONTENT, MATCH_PARENT )->setLayoutWeight( 1 )->setParent( hLayout );
-	mPath->addEventListener( UIEvent::OnPressEnter, cb::Make1( this, &UICommonDialog::onPressEnter ) );
+	mPath->addEventListener( Event::OnPressEnter, cb::Make1( this, &UICommonDialog::onPressEnter ) );
 
 	mButtonUp = UIPushButton::New();
 	mButtonUp->setText( "Up" )->setLayoutSizeRules( WRAP_CONTENT, MATCH_PARENT )->setParent( hLayout );
@@ -72,7 +72,7 @@ UICommonDialog::UICommonDialog( Uint32 CDLFlags , std::string DefaultFilePattern
 	mFile = UITextInput::New();
 	mFile->setLayoutSizeRules( WRAP_CONTENT, MATCH_PARENT )->setLayoutWeight( 1 )->setParent( hLayout );
 	mFile->setLayoutMargin( Rect( 0, 0, 4, 0 ) );
-	mFile->addEventListener( UIEvent::OnPressEnter, cb::Make1( this, &UICommonDialog::onPressFileEnter ) );
+	mFile->addEventListener( Event::OnPressEnter, cb::Make1( this, &UICommonDialog::onPressFileEnter ) );
 
 	mButtonOpen = UIPushButton::New();
 	mButtonOpen->setText( isSaveDialog() ? "Save" : "Open" )->setLayoutSizeRules( FIXED, WRAP_CONTENT )->setSize(80,0)->setParent( hLayout );
@@ -182,7 +182,7 @@ void UICommonDialog::openSaveClick() {
 	}
 }
 
-void UICommonDialog::onPressFileEnter( const UIEvent * Event ) {
+void UICommonDialog::onPressFileEnter( const Event * Event ) {
 	openSaveClick();
 }
 
@@ -201,9 +201,9 @@ void UICommonDialog::disableButtons() {
 		mButtonMaximize->setEnabled( false );
 }
 
-Uint32 UICommonDialog::onMessage( const UIMessage * Msg ) {
+Uint32 UICommonDialog::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::Click:
+		case NodeMessage::Click:
 		{
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender() == mButtonOpen ) {
@@ -221,7 +221,7 @@ Uint32 UICommonDialog::onMessage( const UIMessage * Msg ) {
 
 			break;
 		}
-		case UIMessage::DoubleClick:
+		case NodeMessage::DoubleClick:
 		{
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender()->isType( UI_TYPE_LISTBOXITEM ) ) {
@@ -239,7 +239,7 @@ Uint32 UICommonDialog::onMessage( const UIMessage * Msg ) {
 
 			break;
 		}
-		case UIMessage::Selected:
+		case NodeMessage::Selected:
 		{
 			if ( Msg->getSender() == mList ) {
 				if ( !isSaveDialog() ) {
@@ -267,7 +267,7 @@ Uint32 UICommonDialog::onMessage( const UIMessage * Msg ) {
 }
 
 void UICommonDialog::save() {
-	sendCommonEvent( UIEvent::SaveFile );
+	sendCommonEvent( Event::SaveFile );
 
 	disableButtons();
 
@@ -284,7 +284,7 @@ void UICommonDialog::open() {
 				return;
 		}
 
-		sendCommonEvent( UIEvent::OpenFile );
+		sendCommonEvent( Event::OpenFile );
 
 		disableButtons();
 
@@ -292,7 +292,7 @@ void UICommonDialog::open() {
 	}
 }
 
-void UICommonDialog::onPressEnter( const UIEvent * Event ) {
+void UICommonDialog::onPressEnter( const Event * Event ) {
 	if ( FileSystem::isDirectory( mPath->getText() ) ) {
 		std::string tpath = mPath->getText();
 		FileSystem::dirPathAddSlashAtEnd( tpath );

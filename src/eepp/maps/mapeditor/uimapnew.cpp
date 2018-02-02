@@ -1,4 +1,5 @@
 #include <eepp/maps/mapeditor/uimapnew.hpp>
+#include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace Maps { namespace Private {
 
@@ -27,7 +28,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 			->setWinFlags( UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_SHARE_ALPHA_WITH_CHILDS | UI_WIN_MODAL )
 			->setMinWindowSize( 320, 380 );
 
-	mUIWindow->addEventListener( UIEvent::OnWindowClose, cb::Make1( this, &UIMapNew::onWindowClose ) );
+	mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &UIMapNew::onWindowClose ) );
 
 	if ( !mResizeMap ) {
 		mUIWindow->setTitle( "New Map" );
@@ -144,7 +145,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	mUIRedSlider->setParent( mUIWindow->getContainer() )->setSize( 128, 20 )->setPosition( Txt->getPosition().x + Txt->getSize().getWidth() + 16, Txt->getPosition().y );
 	mUIRedSlider->setMaxValue( 255 );
 	mUIRedSlider->setValue( 255 );
-	mUIRedSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIMapNew::onRedChange ) );
+	mUIRedSlider->addEventListener( Event::OnValueChange, cb::Make1( this, &UIMapNew::onRedChange ) );
 
 	mUIRedTxt = createTextBox( String::toStr( 255 ), mUIWindow->getContainer(), Sizef(), Vector2f( mUIRedSlider->getPosition().x + mUIRedSlider->getSize().getWidth() + 4, mUIRedSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
@@ -158,7 +159,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	mUIGreenSlider->setParent( mUIWindow->getContainer() )->setSize( 128, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIGreenSlider->setMaxValue( 255 );
 	mUIGreenSlider->setValue( 255 );
-	mUIGreenSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIMapNew::onGreenChange ) );
+	mUIGreenSlider->addEventListener( Event::OnValueChange, cb::Make1( this, &UIMapNew::onGreenChange ) );
 
 	mUIGreenTxt = createTextBox( String::toStr( 255 ), mUIWindow->getContainer(), Sizef(), Vector2f( mUIGreenSlider->getPosition().x + mUIGreenSlider->getSize().getWidth() + 4, mUIGreenSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
@@ -172,7 +173,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	mUIBlueSlider->setParent( mUIWindow->getContainer() )->setSize( 128, 20 )->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIBlueSlider->setMaxValue( 255 );
 	mUIBlueSlider->setValue( 255 );
-	mUIBlueSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIMapNew::onBlueChange ) );
+	mUIBlueSlider->addEventListener( Event::OnValueChange, cb::Make1( this, &UIMapNew::onBlueChange ) );
 
 	mUIBlueTxt = createTextBox( String::toStr( 255 ), mUIWindow->getContainer(), Sizef(), Vector2f( mUIBlueSlider->getPosition().x + mUIBlueSlider->getSize().getWidth() + 4, mUIBlueSlider->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 
@@ -184,13 +185,13 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	OKButton->setParent(  mUIWindow->getContainer() )->setSize( 80, 0 );
 	OKButton->setIcon( mTheme->getIconByName( "ok" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
-	OKButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIMapNew::onOKClick ) );
+	OKButton->addEventListener( Event::MouseClick, cb::Make1( this, &UIMapNew::onOKClick ) );
 	OKButton->setText( "OK" );
 
 	UIPushButton * CancelButton = UIPushButton::New();
 	CancelButton->setParent( mUIWindow->getContainer() )->setSize( OKButton->getSize() )->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y );
 	CancelButton->setIcon( mTheme->getIconByName( "cancel" ) );
-	CancelButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIMapNew::onCancelClick ) );
+	CancelButton->addEventListener( Event::MouseClick, cb::Make1( this, &UIMapNew::onCancelClick ) );
 	CancelButton->setText( "Cancel" );
 
 	mUIWindow->center();
@@ -200,28 +201,28 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 UIMapNew::~UIMapNew() {
 }
 
-void UIMapNew::onRedChange( const UIEvent * Event ) {
+void UIMapNew::onRedChange( const Event * Event ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.r = (Uint8)mUIRedSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
 }
 
-void UIMapNew::onGreenChange( const UIEvent * Event ) {
+void UIMapNew::onGreenChange( const Event * Event ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.g = (Uint8)mUIGreenSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
 }
 
-void UIMapNew::onBlueChange( const UIEvent * Event ) {
+void UIMapNew::onBlueChange( const Event * Event ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.b = (Uint8)mUIBlueSlider->getValue();
 	mUIBaseColor->getBackground()->setColor( Col );
 	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
 }
 
-void UIMapNew::onOKClick( const UIEvent * Event ) {
+void UIMapNew::onOKClick( const Event * Event ) {
 	Int32 w = static_cast<Int32>( mUIMapWidth->getValue() );
 	Int32 h = static_cast<Int32>( mUIMapHeight->getValue() );
 	Int32 tw = static_cast<Int32>( mUIMapTWidth->getValue() );
@@ -271,11 +272,11 @@ void UIMapNew::onOKClick( const UIEvent * Event ) {
 	mUIWindow->closeWindow();
 }
 
-void UIMapNew::onCancelClick( const UIEvent * Event ) {
+void UIMapNew::onCancelClick( const Event * Event ) {
 	mUIWindow->closeWindow();
 }
 
-void UIMapNew::onWindowClose( const UIEvent * Event ) {
+void UIMapNew::onWindowClose( const Event * Event ) {
 	eeDelete( this );
 }
 

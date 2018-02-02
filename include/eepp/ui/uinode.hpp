@@ -5,16 +5,7 @@
 #include <eepp/ui/uihelper.hpp>
 #include <eepp/ui/uibackground.hpp>
 #include <eepp/ui/uiborder.hpp>
-#include <eepp/ui/uimessage.hpp>
-#include <eepp/ui/uievent.hpp>
-#include <eepp/ui/uieventkey.hpp>
-#include <eepp/ui/uieventmouse.hpp>
 #include <eepp/ui/uiskin.hpp>
-#include <eepp/ui/uiskinstate.hpp>
-#include <eepp/ui/uiskinsimple.hpp>
-#include <eepp/ui/uiskincomplex.hpp>
-#include <eepp/ui/uithememanager.hpp>
-#include <eepp/math/transformable.hpp>
 #include <eepp/scene/node.hpp>
 
 namespace EE { namespace Scene {
@@ -31,7 +22,7 @@ class EE_API UINode : public Node {
 	public:
 		static UINode * New();
 
-		typedef cb::Callback1<void, const UIEvent*> UIEventCallback;
+		typedef cb::Callback1<void, const Event*> UIEventCallback;
 
 		UINode();
 

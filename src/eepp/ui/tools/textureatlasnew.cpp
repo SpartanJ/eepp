@@ -2,6 +2,7 @@
 #include <eepp/ui/uicommondialog.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <SOIL2/src/SOIL2/stb_image.h>
 
@@ -22,7 +23,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 			 ->setMinWindowSize( 378, 303 )
 			 ->setWinFlags( UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_SHARE_ALPHA_WITH_CHILDS | UI_WIN_MODAL );
 
-	mUIWindow->addEventListener( UIEvent::OnWindowClose, cb::Make1( this, &TextureAtlasNew::windowClose ) );
+	mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &TextureAtlasNew::windowClose ) );
 	mUIWindow->setTitle( "New Texture Atlas" );
 
 	std::string layout = R"xml(
@@ -100,9 +101,9 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	mComboWidth->getListBox()->setSelected( "2048" );
 	mComboHeight->getListBox()->setSelected( "2048" );
 
-	mSetPathButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TextureAtlasNew::onDialogFolderSelect ) );
-	mUIWindow->find<UIPushButton>( "okButton" )->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TextureAtlasNew::okClick ) );
-	mUIWindow->find<UIPushButton>( "cancelButton" )->addEventListener( UIEvent::MouseClick, cb::Make1( this, &TextureAtlasNew::cancelClick ) );
+	mSetPathButton->addEventListener( Event::MouseClick, cb::Make1( this, &TextureAtlasNew::onDialogFolderSelect ) );
+	mUIWindow->find<UIPushButton>( "okButton" )->addEventListener( Event::MouseClick, cb::Make1( this, &TextureAtlasNew::okClick ) );
+	mUIWindow->find<UIPushButton>( "cancelButton" )->addEventListener( Event::MouseClick, cb::Make1( this, &TextureAtlasNew::cancelClick ) );
 
 	mUIWindow->setSizeWithDecoration( mUIWindow->getContainer()->find( "container" )->getSize() );
 	mUIWindow->center();
@@ -112,31 +113,31 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 TextureAtlasNew::~TextureAtlasNew() {
 }
 
-void TextureAtlasNew::okClick( const UIEvent * Event ) {
-	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*>( Event );
+void TextureAtlasNew::okClick( const Event * event ) {
+	const MouseEvent * mouseEvent = reinterpret_cast<const MouseEvent*>( event );
 
-	if ( MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+	if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
 		std::string ext( mSaveFileType->getText() );
 		String::toLowerInPlace( ext );
 
 		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*." + ext );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Save Texture Atlas" );
-		TGDialog->addEventListener( UIEvent::SaveFile, cb::Make1( this, &TextureAtlasNew::textureAtlasSave ) );
+		TGDialog->addEventListener( Event::SaveFile, cb::Make1( this, &TextureAtlasNew::textureAtlasSave ) );
 		TGDialog->center();
 		TGDialog->show();
 	}
 }
 
-void TextureAtlasNew::cancelClick( const UIEvent * Event ) {
-	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*>( Event );
+void TextureAtlasNew::cancelClick( const Event * event ) {
+	const MouseEvent * mouseEvent = reinterpret_cast<const MouseEvent*>( event );
 
-	if ( MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+	if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
 		mUIWindow->closeWindow();
 	}
 }
 
-void TextureAtlasNew::windowClose( const UIEvent * Event ) {
+void TextureAtlasNew::windowClose( const Event * Event ) {
 	eeDelete( this );
 }
 
@@ -144,8 +145,8 @@ static bool isValidExtension( const std::string& ext ) {
 	return ext == "png" || ext == "bmp" || ext == "dds" || ext == "tga" || ext == "jpg";
 }
 
-void TextureAtlasNew::textureAtlasSave( const UIEvent * Event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->getControl() );
+void TextureAtlasNew::textureAtlasSave( const Event * Event ) {
+	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->getNode() );
 	std::string FPath( CDL->getFullPath() );
 
 	if ( !FileSystem::isDirectory( FPath ) ) {
@@ -184,21 +185,21 @@ void TextureAtlasNew::textureAtlasSave( const UIEvent * Event ) {
 	}
 }
 
-void TextureAtlasNew::onDialogFolderSelect( const UIEvent * Event ) {
-	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*>( Event );
+void TextureAtlasNew::onDialogFolderSelect( const Event * event ) {
+	const MouseEvent * mouseEvent = reinterpret_cast<const MouseEvent*>( event );
 
-	if ( MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+	if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
 		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS | CDL_FLAG_ALLOW_FOLDER_SELECT, "*" );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Create Texture Atlas ( Select Folder Containing Textures )" );
-		TGDialog->addEventListener( UIEvent::OpenFile, cb::Make1( this, &TextureAtlasNew::onSelectFolder ) );
+		TGDialog->addEventListener( Event::OpenFile, cb::Make1( this, &TextureAtlasNew::onSelectFolder ) );
 		TGDialog->center();
 		TGDialog->show();
 	}
 }
 
-void TextureAtlasNew::onSelectFolder( const UIEvent * Event ) {
-	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->getControl() );
+void TextureAtlasNew::onSelectFolder( const Event * Event ) {
+	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->getNode() );
 	UIMessageBox * MsgBox;
 	std::string FPath( CDL->getFullPath() );
 	FileSystem::dirPathAddSlashAtEnd( FPath );

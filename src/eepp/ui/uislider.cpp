@@ -1,5 +1,6 @@
 #include <eepp/ui/uislider.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <pugixml/pugixml.hpp>
 
@@ -289,7 +290,7 @@ void UISlider::update( const Time& time ) {
 	}
 }
 
-Uint32 UISlider::onKeyDown( const UIEventKey &Event ) {
+Uint32 UISlider::onKeyDown( const KeyEvent &Event ) {
 	if ( Sys::getTicks() - mLastTickMove > 100 ) {
 		if ( Event.getKeyCode() == KEY_DOWN ) {
 			mLastTickMove = Sys::getTicks();

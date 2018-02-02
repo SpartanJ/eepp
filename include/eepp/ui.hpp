@@ -3,10 +3,6 @@
 
 #include <eepp/ui/uibackground.hpp>
 #include <eepp/ui/uiborder.hpp>
-#include <eepp/ui/uievent.hpp>
-#include <eepp/ui/uieventkey.hpp>
-#include <eepp/ui/uieventmouse.hpp>
-#include <eepp/ui/uimessage.hpp>
 #include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/ui/uiskinsimple.hpp>
@@ -70,6 +66,11 @@
 #include <eepp/scene/actions/delay.hpp>
 #include <eepp/scene/action.hpp>
 #include <eepp/scene/actionmanager.hpp>
+#include <eepp/scene/event.hpp>
+#include <eepp/scene/keyevent.hpp>
+#include <eepp/scene/mouseevent.hpp>
+#include <eepp/scene/nodemessage.hpp>
+#include <eepp/scene/node.hpp>
 using namespace EE::Scene;
 
 #endif

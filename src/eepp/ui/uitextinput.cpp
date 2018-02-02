@@ -83,7 +83,7 @@ void UITextInput::update( const Time& time ) {
 }
 
 void UITextInput::onCursorPosChange() {
-	sendCommonEvent( UIEvent::OnCursorPosChange );
+	sendCommonEvent( Event::OnCursorPosChange );
 	invalidateDraw();
 }
 
@@ -146,7 +146,7 @@ Uint32 UITextInput::onFocusLoss() {
 }
 
 Uint32 UITextInput::onPressEnter() {
-	sendCommonEvent( UIEvent::OnPressEnter );
+	sendCommonEvent( Event::OnPressEnter );
 	return 0;
 }
 

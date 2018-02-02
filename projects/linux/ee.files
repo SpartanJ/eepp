@@ -1,6 +1,12 @@
+../../include/eepp/scene/event.hpp
+../../include/eepp/scene/keyevent.hpp
+../../include/eepp/scene/mouseevent.hpp
 ../../include/eepp/window/displaymanager.hpp
 ../../src/eepp/graphics/renderer/shaders/basegl3cp.gles2.frag.h
 ../../src/eepp/graphics/renderer/shaders/basegl3cp.gles2.vert.h
+../../src/eepp/scene/event.cpp
+../../src/eepp/scene/keyevent.cpp
+../../src/eepp/scene/mouseevent.cpp
 ../../src/eepp/window/backend/SDL2/displaymanagersdl2.cpp
 ../../src/eepp/window/backend/SDL2/displaymanagersdl2.hpp
 ../../src/eepp/window/backend/SFML/displaymanagersfml.cpp
@@ -66,7 +72,6 @@
 ../../include/eepp/ui/marginmove/scale.hpp
 ../../include/eepp/scene/action.hpp
 ../../include/eepp/scene/actionmanager.hpp
-../../include/eepp/ui/uieventmouse.hpp
 ../../include/eepp/ui/uigridlayout.hpp
 ../../include/eepp/ui/uiimage.hpp
 ../../include/eepp/ui/uilayout.hpp
@@ -395,7 +400,7 @@
 ../../include/eepp/ui/uiprogressbar.hpp
 ../../include/eepp/ui/uipopupmenu.hpp
 ../../include/eepp/ui/uimessagebox.hpp
-../../include/eepp/ui/uimessage.hpp
+../../include/eepp/scene/nodemessage.hpp
 ../../include/eepp/ui/uimenusubmenu.hpp
 ../../include/eepp/ui/uimenuitem.hpp
 ../../include/eepp/ui/uimenucheckbox.hpp
@@ -403,9 +408,6 @@
 ../../include/eepp/ui/uimanager.hpp
 ../../include/eepp/ui/uilistboxitem.hpp
 ../../include/eepp/ui/uilistbox.hpp
-../../include/eepp/ui/uieventmouse.hpp
-../../include/eepp/ui/uieventkey.hpp
-../../include/eepp/ui/uievent.hpp
 ../../include/eepp/ui/uidropdownlist.hpp
 ../../include/eepp/ui/uicommondialog.hpp
 ../../include/eepp/ui/uicombobox.hpp
@@ -441,7 +443,7 @@
 ../../src/eepp/ui/uiprogressbar.cpp
 ../../src/eepp/ui/uipopupmenu.cpp
 ../../src/eepp/ui/uimessagebox.cpp
-../../src/eepp/ui/uimessage.cpp
+../../src/eepp/scene/nodemessage.cpp
 ../../src/eepp/ui/uimenusubmenu.cpp
 ../../src/eepp/ui/uimenuitem.cpp
 ../../src/eepp/ui/uimenucheckbox.cpp
@@ -449,9 +451,6 @@
 ../../src/eepp/ui/uimanager.cpp
 ../../src/eepp/ui/uilistboxitem.cpp
 ../../src/eepp/ui/uilistbox.cpp
-../../src/eepp/ui/uieventmouse.cpp
-../../src/eepp/ui/uieventkey.cpp
-../../src/eepp/ui/uievent.cpp
 ../../src/eepp/ui/uidropdownlist.cpp
 ../../src/eepp/ui/uicommondialog.cpp
 ../../src/eepp/ui/uicombobox.cpp

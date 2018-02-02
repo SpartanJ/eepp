@@ -148,14 +148,14 @@ class EETest : private Thread {
 		Translator mTranslator;
 
 		void createCommonDialog();
-		void onItemClick( const UIEvent * Event );
-		void onMainClick( const UIEvent * Event );
-		void onQuitClick( const UIEvent * Event );
-		void onCloseClick( const UIEvent * Event );
-		void onButtonClick( const UIEvent * Event );
-		void onValueChange( const UIEvent * Event );
-		void onSliderValueChange( const UIEvent * Event );
-		void onWinMouseUp( const UIEvent * Event );
+		void onItemClick( const Event * Event );
+		void onMainClick( const Event * Event );
+		void onQuitClick( const Event * Event );
+		void onCloseClick( const Event * Event );
+		void onButtonClick( const Event * Event );
+		void onValueChange( const Event * Event );
+		void onSliderValueChange( const Event * Event );
+		void onWinMouseUp( const Event * Event );
 		void createDecoratedWindow();
 		void createUIThemeTextureAtlas();
 
@@ -247,7 +247,7 @@ class EETest : private Thread {
 
 		void destroyBody();
 
-		void onShowMenu( const UIEvent * Event );
+		void onShowMenu( const Event * Event );
 
 		void onWindowResize( EE::Window::Window * win );
 

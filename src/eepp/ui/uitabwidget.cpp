@@ -1,5 +1,6 @@
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/fontmanager.hpp>
@@ -666,7 +667,7 @@ void UITabWidget::setTabSelected( UITab * Tab ) {
 
 		orderTabs();
 
-		sendCommonEvent( UIEvent::OnTabSelected );
+		sendCommonEvent( Event::OnTabSelected );
 	}
 }
 

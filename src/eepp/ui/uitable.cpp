@@ -54,8 +54,8 @@ UITable::UITable() :
 	mVScrollBar->setVisible( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
 	mVScrollBar->setEnabled( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
 
-	mVScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UITable::onScrollValueChange ) );
-	mHScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UITable::onScrollValueChange ) );
+	mVScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UITable::onScrollValueChange ) );
+	mHScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UITable::onScrollValueChange ) );
 
 	applyDefaultTheme();
 }
@@ -99,7 +99,7 @@ void UITable::setDefaultCollumnsWidth() {
 	updateCells();
 }
 
-void UITable::onScrollValueChange( const UIEvent * Event ) {
+void UITable::onScrollValueChange( const Event * Event ) {
 	updateScroll( true );
 }
 
@@ -541,7 +541,7 @@ Uint32 UITable::getItemIndex( UITableCell * Item ) {
 }
 
 Uint32 UITable::onSelected() {
-	sendCommonEvent( UIEvent::OnItemSelected );
+	sendCommonEvent( Event::OnItemSelected );
 
 	return 1;
 }
@@ -557,9 +557,9 @@ Uint32 UITable::getItemSelectedIndex() const {
 	return mSelected;
 }
 
-Uint32 UITable::onMessage( const UIMessage * Msg ) {
+Uint32 UITable::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::FocusLoss:
+		case NodeMessage::FocusLoss:
 		{
 			Node * FocusCtrl = UIManager::instance()->getFocusControl();
 
