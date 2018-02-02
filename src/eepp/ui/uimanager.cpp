@@ -255,7 +255,7 @@ void UIManager::update( const Time& elapsed ) {
 
 	if ( mInput->getReleaseTrigger() ) {
 		if ( NULL != mFocusControl ) {
-			if ( !wasDraggingControl ) {
+			if ( !wasDraggingControl || mMousePos == mLastMousePos ) {
 				if ( mOverControl != mFocusControl )
 					setFocusControl( mOverControl );
 
@@ -280,6 +280,8 @@ void UIManager::update( const Time& elapsed ) {
 
 		mFirstPress = false;
 	}
+
+	mLastMousePos = mMousePos;
 
 	checkClose();
 }

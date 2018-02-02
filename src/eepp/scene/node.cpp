@@ -729,7 +729,7 @@ Node * Node::getLastChild() const {
 Node * Node::overFind( const Vector2f& Point ) {
 	Node * pOver = NULL;
 
-	if ( mEnabled && mVisible ) {
+	if ( ( mNodeFlags & NODE_FLAG_OVER_FIND_ALLOWED ) && mEnabled && mVisible ) {
 		updateWorldPolygon();
 
 		if ( mWorldBounds.contains( Point ) && mPoly.pointInside( Point ) ) {

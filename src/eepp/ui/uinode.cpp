@@ -30,7 +30,7 @@ UINode::UINode() :
 	mBorder( NULL ),
 	mDragButton( EE_BUTTON_LMASK )
 {
-	mNodeFlags |= NODE_FLAG_UINODE;
+	mNodeFlags |= NODE_FLAG_UINODE | NODE_FLAG_OVER_FIND_ALLOWED;
 }
 
 UINode::~UINode() {

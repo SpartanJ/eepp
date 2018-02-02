@@ -182,6 +182,7 @@ class EE_API UIManager {
 		Color				mHighlightInvalidationColor;
 		Vector2f			mMousePos;
 		Vector2i			mMousePosi;
+		Vector2f			mLastMousePos;
 		Vector2i			mMouseDownPos;
 
 		bool				mInit;

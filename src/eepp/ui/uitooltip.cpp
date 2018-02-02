@@ -70,7 +70,6 @@ void UITooltip::show() {
 		toFront();
 
 		setVisible( true );
-		setEnabled( true );
 
 		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
 			startAlphaAnim( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->getControlsFadeInTime() );
@@ -84,7 +83,6 @@ void UITooltip::hide() {
 			disableFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
 		} else {
 			setVisible( false );
-			setEnabled( false );
 		}
 	}
 }
