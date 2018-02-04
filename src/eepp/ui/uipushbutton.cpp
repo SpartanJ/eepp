@@ -2,8 +2,8 @@
 #include <eepp/graphics/text.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -357,7 +357,8 @@ void UIPushButton::loadFromXmlNode(const pugi::xml_node & node) {
 		String::toLowerInPlace( name );
 
 		if ( "text" == name ) {
-			setText( UIManager::instance()->getTranslatorString( ait->as_string() ) );
+			if ( NULL != getSceneNode() )
+				setText( static_cast<UISceneNode*>( getSceneNode() )->getTranslatorString( ait->as_string() ) );
 		} else if ( "textovercolor" == name ) {
 			setFontOverColor( Color::fromString( ait->as_string() ) );
 		} else if ( "icon" == name ) {

@@ -6,7 +6,6 @@
 #include <eepp/ui/uimenucheckbox.hpp>
 #include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
 #include <eepp/ui/uipopupmenu.hpp>

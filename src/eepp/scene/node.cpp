@@ -1,10 +1,9 @@
 #include <eepp/scene/node.hpp>
+#include <eepp/scene/scenenode.hpp>
 #include <eepp/scene/actionmanager.hpp>
 #include <eepp/scene/action.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
-#include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uimanager.hpp>
 
 namespace EE { namespace Scene {
 
@@ -17,7 +16,7 @@ Node::Node() :
 	mSize( 0, 0 ),
 	mData( 0 ),
 	mParentCtrl( NULL ),
-	mParentWindowCtrl( NULL ),
+	mSceneNode( NULL ),
 	mChild( NULL ),
 	mChildLast( NULL ),
 	mNext( NULL ),
@@ -30,13 +29,6 @@ Node::Node() :
 	mAlpha(255.f),
 	mActionManager(NULL)
 {
-	if ( NULL == mParentCtrl && NULL != UIManager::instance()->getMainControl() ) {
-		mParentCtrl = UIManager::instance()->getMainControl();
-		mParentWindowCtrl = getParentWindow();
-	}
-
-	if ( NULL != mParentCtrl )
-		mParentCtrl->childAdd( this );
 }
 
 Node::~Node() {
@@ -47,12 +39,16 @@ Node::~Node() {
 	if ( NULL != mParentCtrl )
 		mParentCtrl->childRemove( this );
 
-	if ( UIManager::instance()->getFocusControl() == this && UIManager::instance()->getMainControl() != this ) {
-		UIManager::instance()->setFocusControl( UIManager::instance()->getMainControl() );
-	}
+	EventDispatcher * eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
 
-	if ( UIManager::instance()->getOverControl() == this && UIManager::instance()->getMainControl() != this ) {
-		UIManager::instance()->setOverControl( UIManager::instance()->getMainControl() );
+	if ( NULL != mSceneNode && NULL != eventDispatcher ) {
+		if ( eventDispatcher->getFocusControl() == this && mSceneNode != this ) {
+			eventDispatcher->setFocusControl( mSceneNode );
+		}
+
+		if ( eventDispatcher->getOverControl() == this && mSceneNode != this ) {
+			eventDispatcher->setOverControl( mSceneNode );
+		}
 	}
 }
 
@@ -83,7 +79,7 @@ void Node::nodeToWorldTranslation( Vector2f& Pos ) const {
 }
 
 Uint32 Node::getType() const {
-	return UI_TYPE_NODE;
+	return 0;
 }
 
 bool Node::isType( const Uint32& type ) const {
@@ -198,6 +194,8 @@ Node * Node::getParent() const {
 }
 
 Node * Node::setParent( Node * parent ) {
+	eeASSERT( NULL != parent );
+
 	if ( parent == mParentCtrl )
 		return this;
 
@@ -213,8 +211,8 @@ Node * Node::setParent( Node * parent ) {
 
 	onParentChange();
 
-	if ( mParentWindowCtrl != getParentWindow() )
-		onParentWindowChange();
+	if ( mSceneNode != getSceneNode() )
+		onSceneChange();
 
 	return this;
 }
@@ -237,7 +235,9 @@ bool Node::isParentOf( Node * Ctrl ) {
 void Node::close() {
 	mNodeFlags |= NODE_FLAG_CLOSE;
 
-	UIManager::instance()->addToCloseQueue( this );
+	if ( NULL != mSceneNode ) {
+		mSceneNode->addToCloseQueue( this );
+	}
 }
 
 void Node::draw() {
@@ -394,9 +394,11 @@ void Node::onVisibilityChange() {
 }
 
 void Node::onEnabledChange() {
-	if ( !isEnabled() && NULL != UIManager::instance()->getFocusControl() ) {
-		if ( isChild( UIManager::instance()->getFocusControl() ) ) {
-			UIManager::instance()->setFocusControl( NULL );
+	EventDispatcher * eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
+
+	if ( !isEnabled() && NULL != eventDispatcher && NULL != eventDispatcher->getFocusControl() ) {
+		if ( isChild( eventDispatcher->getFocusControl() ) ) {
+			eventDispatcher->setFocusControl( NULL );
 		}
 	}
 
@@ -429,6 +431,14 @@ const Uint32& Node::getNodeFlags() const {
 
 void Node::setNodeFlags( const Uint32& Flags ) {
 	mNodeFlags = Flags;
+}
+
+Uint32 Node::isSceneNode() {
+	return mNodeFlags & NODE_FLAG_SCENENODE;
+}
+
+Uint32 Node::isUISceneNode() {
+	return mNodeFlags & NODE_FLAG_UISCENENODE;
 }
 
 Uint32 Node::isUINode() {
@@ -480,21 +490,13 @@ void Node::internalDraw() {
 
 void Node::clipStart() {
 	if ( mVisible && isClipped() ) {
-		if ( isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
-			GLi->getClippingMask()->clipPlaneEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
-		} else {
-			GLi->getClippingMask()->clipEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
-		}
+		clipSmartEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
 	}
 }
 
 void Node::clipEnd() {
 	if ( mVisible && isClipped() ) {
-		if ( isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
-			GLi->getClippingMask()->clipPlaneDisable();
-		} else {
-			GLi->getClippingMask()->clipDisable();
-		}
+		clipSmartDisable();
 	}
 }
 
@@ -554,7 +556,7 @@ void Node::childAddAt( Node * ChildCtrl, Uint32 Pos ) {
 	childRemove( ChildCtrl );
 
 	ChildCtrl->mParentCtrl = this;
-	ChildCtrl->mParentWindowCtrl = ChildCtrl->getParentWindow();
+	ChildCtrl->mSceneNode = ChildCtrl->getSceneNode();
 	
 	if ( ChildLoop == NULL ) {
 		mChild 				= ChildCtrl;
@@ -772,13 +774,13 @@ Node * Node::overFind( const Vector2f& Point ) {
 	return pOver;
 }
 
-void Node::onParentWindowChange() {
-	mParentWindowCtrl = getParentWindow();
+void Node::onSceneChange() {
+	mSceneNode = getSceneNode();
 
 	Node * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
-		ChildLoop->onParentWindowChange();
+		ChildLoop->onSceneChange();
 		ChildLoop = ChildLoop->mNext;
 	}
 }
@@ -903,7 +905,7 @@ void Node::updateCenter() {
 	mCenter = Vector2f( mScreenPos.x + (Float)mSize.getWidth() * 0.5f, mScreenPos.y + (Float)mSize.getHeight() * 0.5f );
 }
 
-Uint32 Node::addEventListener( const Uint32& EventType, const UIEventCallback& Callback ) {
+Uint32 Node::addEventListener( const Uint32& EventType, const EventCallback& Callback ) {
 	mNumCallBacks++;
 
 	mEvents[ EventType ][ mNumCallBacks ] = Callback;
@@ -912,10 +914,10 @@ Uint32 Node::addEventListener( const Uint32& EventType, const UIEventCallback& C
 }
 
 void Node::removeEventListener( const Uint32& CallbackId ) {
-	UIEventsMap::iterator it;
+	EventsMap::iterator it;
 
 	for ( it = mEvents.begin(); it != mEvents.end(); ++it ) {
-		std::map<Uint32, UIEventCallback> event = it->second;
+		std::map<Uint32, EventCallback> event = it->second;
 
 		if ( event.erase( CallbackId ) )
 			break;
@@ -924,8 +926,8 @@ void Node::removeEventListener( const Uint32& CallbackId ) {
 
 void Node::sendEvent( const Event * Event ) {
 	if ( 0 != mEvents.count( Event->getType() ) ) {
-		std::map<Uint32, UIEventCallback>			event = mEvents[ Event->getType() ];
-		std::map<Uint32, UIEventCallback>::iterator it;
+		std::map<Uint32, EventCallback>			event = mEvents[ Event->getType() ];
+		std::map<Uint32, EventCallback>::iterator it;
 
 		if ( event.begin() != event.end() ) {
 			for ( it = event.begin(); it != event.end(); ++it )
@@ -997,28 +999,28 @@ void Node::setReverseDraw( bool reverseDraw ) {
 }
 
 void Node::invalidateDraw() {
-	if ( NULL != mParentWindowCtrl ) {
-		mParentWindowCtrl->invalidate();
-	} else if ( NULL == mParentCtrl && isWindow() ) {
-		static_cast<UIWindow*>( this )->invalidate();
+	if ( NULL != mSceneNode ) {
+		mSceneNode->invalidate();
+	} else if ( NULL == mParentCtrl && isSceneNode() ) {
+		static_cast<SceneNode*>( this )->invalidate();
 	}
 }
 
-UIWindow * Node::getOwnerWindow() {
-	return mParentWindowCtrl;
-}
-
-UIWindow * Node::getParentWindow() {
+SceneNode * Node::getSceneNode() {
 	Node * Ctrl = mParentCtrl;
 
 	while ( Ctrl != NULL ) {
-		if ( Ctrl->isType( UI_TYPE_WINDOW ) )
-			return static_cast<UIWindow*>( Ctrl );
+		if ( Ctrl->isSceneNode() )
+			return static_cast<SceneNode*>( Ctrl );
 
 		Ctrl = Ctrl->getParent();
 	}
 
-	return NULL;
+	return isSceneNode() ? reinterpret_cast<SceneNode*>( this ) : NULL;
+}
+
+EventDispatcher * Node::getEventDispatcher() {
+	return NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
 }
 
 void Node::updateOriginPoint() {
@@ -1318,7 +1320,7 @@ Node * Node::getNextWidget() {
 		}
 	}
 
-	return UIManager::instance()->getMainControl();
+	return mSceneNode;
 }
 
 void Node::sendParentSizeChange( const Vector2f& SizeChange ) {
@@ -1375,6 +1377,22 @@ Node * Node::clipEnable() {
 Node * Node::clipDisable() {
 	writeCtrlFlag( NODE_FLAG_CLIP_ENABLE, 0 );
 	return this;
+}
+
+void Node::clipSmartEnable( const Int32 & x, const Int32 & y, const Uint32 & Width, const Uint32 & Height ) {
+	if ( isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
+		GLi->getClippingMask()->clipPlaneEnable( x, y, Width, Height );
+	} else {
+		GLi->getClippingMask()->clipEnable( x, y, Width, Height );
+	}
+}
+
+void Node::clipSmartDisable() {
+	if ( isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
+		GLi->getClippingMask()->clipPlaneDisable();
+	} else {
+		GLi->getClippingMask()->clipDisable();
+	}
 }
 
 }}

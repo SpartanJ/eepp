@@ -1,5 +1,4 @@
 #include <eepp/ui/uilistbox.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -7,6 +6,8 @@
 #include <pugixml/pugixml.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -607,7 +608,7 @@ void UIListBox::itemClicked( UIListBoxItem * Item ) {
 	Event ItemEvent( Item, Event::OnItemClicked );
 	sendEvent( &ItemEvent );
 
-	if ( !( isMultiSelect() && UIManager::instance()->getInput()->isKeyDown( KEY_LCTRL ) ) )
+	if ( !( isMultiSelect() && NULL != getEventDispatcher() && getEventDispatcher()->getInput()->isKeyDown( KEY_LCTRL ) ) )
 		resetItemsStates();
 }
 
@@ -906,13 +907,15 @@ Uint32 UIListBox::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::FocusLoss:
 		{
-			Node * FocusCtrl = UIManager::instance()->getFocusControl();
+			if ( NULL != getEventDispatcher() ) {
+				Node * FocusCtrl = getEventDispatcher()->getFocusControl();
 
-			if ( this != FocusCtrl && !isParentOf( FocusCtrl ) ) {
-				onWidgetFocusLoss();
+				if ( this != FocusCtrl && !isParentOf( FocusCtrl ) ) {
+					onWidgetFocusLoss();
+				}
+
+				return 1;
 			}
-			
-			return 1;
 		}
 	}
 
@@ -988,7 +991,8 @@ void UIListBox::loadFromXmlNode(const pugi::xml_node & node) {
 		std::string data = item.text().as_string();
 
 		if ( data.size() ) {
-			items.push_back( UIManager::instance()->getTranslatorString( data ) );
+			if ( NULL != getSceneNode() && getSceneNode()->isUISceneNode() )
+				items.push_back( static_cast<UISceneNode*>( getSceneNode() )->getTranslatorString( data ) );
 		}
 	}
 

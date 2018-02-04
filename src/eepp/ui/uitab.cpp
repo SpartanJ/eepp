@@ -1,6 +1,5 @@
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitabwidget.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -159,8 +158,8 @@ void UITab::update( const Time& time ) {
 		if ( isMouseOver() ) {
 			UITabWidget * tTabW	= getTabWidget();
 
-			if ( NULL != tTabW ) {
-				Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
+			if ( NULL != tTabW && NULL != getEventDispatcher() ) {
+				Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
 
 				if ( Flags & EE_BUTTONS_WUWD ) {
 					if ( Flags & EE_BUTTON_WUMASK ) {

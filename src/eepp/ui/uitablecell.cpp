@@ -1,6 +1,5 @@
 #include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uitable.hpp>
-#include <eepp/ui/uimanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -15,11 +14,13 @@ UITableCell::UITableCell() :
 }
 
 UITableCell::~UITableCell() {
-	if ( UIManager::instance()->getFocusControl() == this )
-		mParentCtrl->setFocus();
+	if ( NULL != getEventDispatcher() ) {
+		if ( getEventDispatcher()->getFocusControl() == this )
+			mParentCtrl->setFocus();
 
-	if ( UIManager::instance()->getOverControl() == this )
-		UIManager::instance()->setOverControl( mParentCtrl );
+		if ( getEventDispatcher()->getOverControl() == this )
+			getEventDispatcher()->setOverControl( mParentCtrl );
+	}
 }
 
 void UITableCell::setTheme( UITheme * Theme ) {
@@ -70,9 +71,9 @@ void UITableCell::fixCell() {
 }
 
 void UITableCell::update( const Time& time ) {
-	if ( mEnabled && mVisible ) {
+	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
 		UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
-		Uint32 Flags				= UIManager::instance()->getInput()->getClickTrigger();
+		Uint32 Flags				= getEventDispatcher()->getClickTrigger();
 
 		if ( NULL != MyParent && MyParent->getAlpha() != mAlpha ) {
 			setAlpha( MyParent->getAlpha() );

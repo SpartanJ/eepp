@@ -1,6 +1,6 @@
 #include <eepp/ui/uipopupmenu.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/scene/scenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -96,8 +96,8 @@ Uint32 UIPopUpMenu::onMessage( const NodeMessage * Msg ) {
 				if ( !Msg->getSender()->isType( UI_TYPE_MENUSUBMENU ) && ( Msg->getFlags() & EE_BUTTONS_LRM ) ) {
 					sendCommonEvent( Event::OnHideByClick );
 
-					if ( isVisible() )
-						UIManager::instance()->getMainControl()->setFocus();
+					if ( isVisible() && NULL != getSceneNode() )
+						getSceneNode()->setFocus();
 
 					hide();
 				}

@@ -1,5 +1,4 @@
 #include <eepp/ui/uiscrollbar.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/textureregion.hpp>
 
 namespace EE { namespace UI {
@@ -180,8 +179,8 @@ void UIScrollBar::adjustChilds() {
 void UIScrollBar::update( const Time& time ) {
 	UINode::update( time );
 
-	if ( mBtnUp->isMouseOver() || mBtnDown->isMouseOver() ) {
-		manageClick( UIManager::instance()->getInput()->getClickTrigger() );
+	if ( NULL != getEventDispatcher() && ( mBtnUp->isMouseOver() || mBtnDown->isMouseOver() ) ) {
+		manageClick( getEventDispatcher()->getClickTrigger() );
 	}
 }
 

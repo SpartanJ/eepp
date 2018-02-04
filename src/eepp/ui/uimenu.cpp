@@ -1,11 +1,10 @@
 #include <eepp/ui/uimenu.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -302,13 +301,15 @@ Uint32 UIMenu::onMessage( const NodeMessage * Msg ) {
 		}
 		case NodeMessage::FocusLoss:
 		{
-			Node * FocusCtrl = UIManager::instance()->getFocusControl();
+			if ( NULL != getEventDispatcher() ) {
+				Node * FocusCtrl = getEventDispatcher()->getFocusControl();
 
-			if ( this != FocusCtrl && !isParentOf( FocusCtrl ) && !isSubMenu( FocusCtrl ) ) {
-				onWidgetFocusLoss();
+				if ( this != FocusCtrl && !isParentOf( FocusCtrl ) && !isSubMenu( FocusCtrl ) ) {
+					onWidgetFocusLoss();
+				}
+
+				return 1;
 			}
-
-			return 1;
 		}
 	}
 
@@ -502,8 +503,8 @@ Uint32 UIMenu::onKeyDown( const KeyEvent& Event ) {
 
 				break;
 			case KEY_RETURN:
-				if ( NULL != mItemSelected ) {
-					mItemSelected->sendMouseEvent(Event::MouseClick, UIManager::instance()->getMousePos(), EE_BUTTONS_ALL );
+				if ( NULL != mItemSelected && NULL != getEventDispatcher() ) {
+					mItemSelected->sendMouseEvent(Event::MouseClick, getEventDispatcher()->getMousePos(), EE_BUTTONS_ALL );
 
 					NodeMessage Msg( mItemSelected, NodeMessage::MouseUp, EE_BUTTONS_ALL );
 					mItemSelected->messagePost( &Msg );
@@ -555,6 +556,8 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 
 	UIWidget::loadFromXmlNode( node );
 
+
+
 	for ( pugi::xml_node item = node.first_child(); item; item = item.next_sibling() ) {
 		std::string name( item.name() );
 		String::toLowerInPlace( name );
@@ -562,14 +565,17 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 		if ( name == "menuitem" || name == "item" ) {
 			std::string text( item.attribute("text").as_string() );
 			std::string icon( item.attribute("icon").as_string() );
-			add( UIManager::instance()->getTranslatorString( text ), getIconDrawable( icon ) );
+
+			if ( NULL != getSceneNode() && getSceneNode()->isUISceneNode() )
+				add( static_cast<UISceneNode*>( getSceneNode() )->getTranslatorString( text ), getIconDrawable( icon ) );
 		} else if ( name == "menuseparator" || name == "separator" ) {
 			addSeparator();
 		} else if ( name == "menucheckbox" || name == "checkbox" ) {
 			std::string text( item.attribute("text").as_string() );
 			bool active( item.attribute("active").as_bool() );
 
-			addCheckBox( UIManager::instance()->getTranslatorString( text ), active );
+			if ( NULL != getSceneNode() && getSceneNode()->isUISceneNode() )
+				addCheckBox( static_cast<UISceneNode*>( getSceneNode() )->getTranslatorString( text ), active );
 		} else if ( name == "menusubmenu" || name == "submenu" ) {
 			std::string text( item.attribute("text").as_string() );
 			std::string icon( item.attribute("icon").as_string() );
@@ -578,7 +584,8 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 
 			subMenu->loadFromXmlNode( item );
 
-			addSubMenu( UIManager::instance()->getTranslatorString( text ), getIconDrawable( icon ), subMenu );
+			if ( NULL != getSceneNode() && getSceneNode()->isUISceneNode() )
+				addSubMenu( static_cast<UISceneNode*>( getSceneNode() )->getTranslatorString( text ), getIconDrawable( icon ), subMenu );
 		}
 	}
 
@@ -586,7 +593,12 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 }
 
 void UIMenu::fixMenuPos( Vector2f& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {
-	Rectf qScreen( 0.f, 0.f, UIManager::instance()->getMainControl()->getRealSize().getWidth(), UIManager::instance()->getMainControl()->getRealSize().getHeight() );
+	SceneNode * sceneNode = Menu->getSceneNode();
+
+	if ( NULL == sceneNode )
+		return;
+
+	Rectf qScreen( 0.f, 0.f, sceneNode->getRealSize().getWidth(), sceneNode->getRealSize().getHeight() );
 	Rectf qPos( Pos.x, Pos.y, Pos.x + Menu->getRealSize().getWidth(), Pos.y + Menu->getRealSize().getHeight() );
 
 	if ( NULL != Parent && NULL != SubMenu ) {

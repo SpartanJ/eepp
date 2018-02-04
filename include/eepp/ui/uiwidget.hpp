@@ -87,6 +87,7 @@ class EE_API UIWidget : public UINode {
 		void notifyLayoutAttrChangeParent();
 	protected:
 		friend class UIManager;
+		friend class UISceneNode;
 
 		UITheme *	mTheme;
 		UITooltip *	mTooltip;

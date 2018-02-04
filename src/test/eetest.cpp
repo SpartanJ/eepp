@@ -51,7 +51,7 @@ class UIBlurredWindow : public UIWindow {
 												mScreenPos.x + mSize.x, mScreenPos.y + mSize.y
 				) );
 
-				RGB cc = UIManager::instance()->getWindow()->getClearColor();
+				RGB cc = getSceneNode()->getWindow()->getClearColor();
 				mFboBlur->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 0 ) );
 				mFboBlur->bind();
 				mFboBlur->clear();
@@ -545,7 +545,7 @@ void EETest::createBaseUI() {
 
 	Menu->addEventListener( Event::OnItemClicked, cb::Make1( this, &EETest::onItemClick ) );
 	Menu->getItem( "Quit" )->addEventListener( Event::MouseUp, cb::Make1( this, &EETest::onQuitClick ) );
-	UIManager::instance()->getMainControl()->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
+	SceneManager::instance()->getUISceneNode()->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
 
 #ifdef EE_PLATFORM_TOUCH
 	TextureAtlas * SG = GlobalTextureAtlas::instance();
@@ -588,11 +588,15 @@ void EETest::createUI() {
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	Uint32 UI_MAN_OPS = 0;
+	/*Uint32 UI_MAN_OPS = 0;
 	if ( mDebugUI )
 		UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_INVALIDATION;
 	UIManager::instance()->init(UI_MAN_OPS | UI_MANAGER_USE_DRAW_INVALIDATION | UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER);
-	UIManager::instance()->setTranslator( mTranslator );
+	UIManager::instance()->setTranslator( mTranslator );*/
+
+	UISceneNode * sceneNode = UISceneNode::New();
+	sceneNode->setTranslator( mTranslator );
+	SceneManager::instance()->add( sceneNode );
 
 	eePRINTL("Node size: %d", sizeof(Node));
 	eePRINTL("UINode size: %d", sizeof(UINode));
@@ -834,7 +838,7 @@ void EETest::createNewUI() {
 
 	win2->show();
 
-	UIManager::instance()->loadLayoutFromString(
+	SceneManager::instance()->getUISceneNode()->loadLayoutFromString(
 		"<window layout_width='300dp' layout_height='300dp' winflags='default|maximize'>"
 		"	<LinearLayout id='testlayout' orientation='vertical' layout_width='match_parent' layout_height='match_parent' layout_margin='8dp'>"
 		"		<TextView text='Hello World!' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' backgroundColor='black' />"
@@ -854,7 +858,7 @@ void EETest::createNewUI() {
 		"</window>"
 	);
 
-	UIManager::instance()->loadLayoutFromString(
+	SceneManager::instance()->getUISceneNode()->loadLayoutFromString(
 		"<window layout_width='800dp' layout_height='600dp' winflags='default|maximize'>"
 		"	<LinearLayout layout_width='match_parent' layout_height='match_parent'>"
 		"		<ScrollView layout_width='match_parent' layout_height='match_parent' touchdrag='true'>"
@@ -865,7 +869,7 @@ void EETest::createNewUI() {
 	);
 
 	UIGridLayout * gridLayout = NULL;
-	UIManager::instance()->getMainControl()->bind( "gridlayout", gridLayout );
+	SceneManager::instance()->getUISceneNode()->bind( "gridlayout", gridLayout );
 
 	if ( NULL != gridLayout ) {
 		std::vector<Texture*> textures = TextureFactory::instance()->getTextures();
@@ -967,7 +971,7 @@ void EETest::createDecoratedWindow() {
 		if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 
-		UIMenuItem* menuItem = reinterpret_cast<UIMenuItem*> ( Event->getNode() );
+		/*UIMenuItem* menuItem = reinterpret_cast<UIMenuItem*> ( Event->getNode() );
 		const String& txt = menuItem->getText();
 		UIWindow * win = Event->getNode()->getOwnerWindow();
 
@@ -979,7 +983,7 @@ void EETest::createDecoratedWindow() {
 			menuItem->setText( "Hide Border" );
 		} else if ( "Close" == txt ) {
 			win->closeFadeOut( Milliseconds(250) );
-		}
+		}*/
 	} ) );
 
 	UIPopUpMenu * PopMenu2 = UIPopUpMenu::New();
@@ -1716,8 +1720,8 @@ void EETest::render() {
 
 	mInfoText.draw( 6.f, 6.f );
 
-	UIManager::instance()->update();
-	UIManager::instance()->draw();
+	SceneManager::instance()->update();
+	SceneManager::instance()->draw();
 
 	Con.draw();
 }

@@ -5,6 +5,7 @@
 #include <eepp/scene/event.hpp>
 #include <eepp/scene/keyevent.hpp>
 #include <eepp/scene/mouseevent.hpp>
+#include <eepp/scene/eventdispatcher.hpp>
 
 #include <eepp/graphics/blendmode.hpp>
 using namespace EE::Graphics;
@@ -20,14 +21,9 @@ using namespace EE::Math;
 namespace EE { namespace Scene {
 class Action;
 class ActionManager;
+class SceneNode;
 }}
 using namespace EE::Scene;
-
-namespace  EE { namespace UI {
-class UIWindow;
-class UIManager;
-}}
-using namespace EE::UI;
 
 namespace EE { namespace Scene {
 
@@ -53,19 +49,20 @@ enum NODE_FLAGS_VALUES {
 	NODE_FLAG_FRAME_BUFFER						= (1<<19),
 	NODE_FLAG_CLIP_ENABLE						= (1<<20),
 	NODE_FLAG_SCENENODE							= (1<<21),
-	NODE_FLAG_UINODE							= (1<<22),
-	NODE_FLAG_WIDGET							= (1<<23),
-	NODE_FLAG_WINDOW							= (1<<24),
-	NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS		= (1<<25),
-	NODE_FLAG_OVER_FIND_ALLOWED					= (1<<26),
-	NODE_FLAG_FREE_USE							= (1<<27)
+	NODE_FLAG_UISCENENODE						= (1<<22),
+	NODE_FLAG_UINODE							= (1<<24),
+	NODE_FLAG_WIDGET							= (1<<25),
+	NODE_FLAG_WINDOW							= (1<<26),
+	NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS		= (1<<27),
+	NODE_FLAG_OVER_FIND_ALLOWED					= (1<<28),
+	NODE_FLAG_FREE_USE							= (1<<29)
 };
 
 class EE_API Node : public Transformable {
 	public:
 		static Node * New();
 
-		typedef cb::Callback1<void, const Event*> UIEventCallback;
+		typedef cb::Callback1<void, const Event*> EventCallback;
 
 		Node();
 
@@ -148,6 +145,10 @@ class EE_API Node : public Transformable {
 		/** Use it at your own risk */
 		void setNodeFlags( const Uint32& flags );
 
+		Uint32 isSceneNode();
+
+		Uint32 isUISceneNode();
+
 		Uint32 isUINode();
 
 		Uint32 isWidget();
@@ -174,7 +175,7 @@ class EE_API Node : public Transformable {
 
 		bool isMeOrParentTreeScaledOrRotatedOrFrameBuffer();
 
-		Uint32 addEventListener( const Uint32& EventType, const UIEventCallback& Callback );
+		Uint32 addEventListener( const Uint32& EventType, const EventCallback& Callback );
 
 		void removeEventListener( const Uint32& CallbackId );
 
@@ -275,8 +276,6 @@ class EE_API Node : public Transformable {
 
 		Rectf getLocalBounds();
 
-		UIWindow * getOwnerWindow();
-
 		bool hasFocus() const;
 
 		virtual void setFocus();
@@ -298,10 +297,15 @@ class EE_API Node : public Transformable {
 		Node * clipEnable();
 
 		Node * clipDisable();
+
+		void writeCtrlFlag( const Uint32& Flag, const Uint32& Val );
+
+		SceneNode * getSceneNode();
+
+		EventDispatcher * getEventDispatcher();
 	protected:
-		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
-		friend class EE::UI::UIManager;
-		friend class EE::UI::UIWindow;
+		typedef std::map< Uint32, std::map<Uint32, EventCallback> > EventsMap;
+		friend class EE::Scene::EventDispatcher;
 
 		std::string		mId;
 		Uint32			mIdHash;
@@ -310,7 +314,7 @@ class EE_API Node : public Transformable {
 		Sizef			mSize;
 		UintPtr			mData;
 		Node *			mParentCtrl;
-		UIWindow *		mParentWindowCtrl;
+		SceneNode *		mSceneNode;
 		Node *			mChild;			//! Pointer to the first child of the node
 		Node *			mChildLast;		//! Pointer to the last child added
 		Node *			mNext;			//! Pointer to the next child of the father
@@ -323,7 +327,7 @@ class EE_API Node : public Transformable {
 		mutable Rectf	mWorldBounds;
 		Vector2f 		mCenter;
 
-		UIEventsMap		mEvents;
+		EventsMap		mEvents;
 
 		bool			mVisible;
 		bool			mEnabled;
@@ -388,7 +392,7 @@ class EE_API Node : public Transformable {
 
 		virtual Node * overFind( const Vector2f& Point );
 
-		virtual void onParentWindowChange();
+		virtual void onSceneChange();
 
 		virtual void clipStart();
 
@@ -428,8 +432,6 @@ class EE_API Node : public Transformable {
 
 		Node * childNext( Node * Ctrl, bool Loop = false ) const;
 
-		void writeCtrlFlag( const Uint32& Flag, const Uint32& Val );
-
 		Rectf getScreenBounds();
 
 		void setInternalPosition( const Vector2f& Pos );
@@ -442,13 +444,15 @@ class EE_API Node : public Transformable {
 
 		Node * findIdHash( const Uint32& idHash );
 
-		UIWindow * getParentWindow();
-
 		void updateOriginPoint();
 
 		void setDirty();
 
 		void setChildsDirty();
+
+		void clipSmartEnable( const Int32 & x, const Int32 & y, const Uint32 & Width, const Uint32 & Height );
+
+		void clipSmartDisable();
 };
 
 }}

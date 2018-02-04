@@ -1,7 +1,6 @@
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 #include <eepp/ui/tools/textureatlastextureregioneditor.hpp>
 #include <eepp/ui/tools/textureatlasnew.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uimenuitem.hpp>
 #include <eepp/ui/uicommondialog.hpp>
@@ -9,6 +8,8 @@
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <algorithm>
 
 namespace EE { namespace UI { namespace Tools {
@@ -38,12 +39,8 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	mTheme = UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL == mUIWindow ) {
-		mUIWindow = UIManager::instance()->getMainControl();
-		mUIWindow->setThemeSkin( mTheme, "winback" );
-	}
-
-	if ( UIManager::instance()->getMainControl() == mUIWindow ) {
-		mUIContainer = mUIWindow;
+		mUIContainer = SceneManager::instance()->getUISceneNode();
+		//mUIContainer->setThemeSkin( mTheme, "winback" );
 	} else {
 		mUIContainer = mUIWindow->getContainer();
 	}
@@ -112,7 +109,8 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	UIWidgetCreator::addCustomWidgetCallback( "TextureAtlasTextureRegionEditor", cb::Make1( this, &TextureAtlasEditor::createTextureAtlasTextureRegionEditor ) );
 
-	UIManager::instance()->loadLayoutFromString( layout, mUIContainer );
+	if ( NULL != mUIContainer->getSceneNode() && mUIContainer->getSceneNode()->isUISceneNode() )
+		static_cast<UISceneNode*>( mUIContainer->getSceneNode() )->loadLayoutFromString( layout, mUIContainer );
 
 	UIWidgetCreator::removeCustomWidgetCallback( "TextureAtlasTextureRegionEditor" );
 
@@ -146,8 +144,10 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	mUIContainer->find<UIPopUpMenu>("fileMenu")->addEventListener( Event::OnItemClicked, cb::Make1( this, &TextureAtlasEditor::fileMenuClick ) );
 
-	mUIWindow->setTitle( "Texture Atlas Editor" );
-	mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
+	if ( NULL != mUIWindow ) {
+		mUIWindow->setTitle( "Texture Atlas Editor" );
+		mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
+	}
 
 	mTGEU = eeNew( UITGEUpdater, ( this ) );
 }
@@ -156,7 +156,7 @@ TextureAtlasEditor::~TextureAtlasEditor() {
 	eeSAFE_DELETE( mTexturePacker );
 	eeSAFE_DELETE( mTextureAtlasLoader );
 
-	if ( !UIManager::instance()->isShootingDown() ) {
+	if ( !SceneManager::instance()->isShootingDown() ) {
 		mTGEU->close();
 	}
 }
@@ -276,8 +276,8 @@ void TextureAtlasEditor::fileMenuClick( const Event * Event ) {
 			onTextureAtlasClose( NULL );
 		}
 	} else if ( "Quit" == txt ) {
-		if ( mUIWindow == UIManager::instance()->getMainControl() ) {
-			UIManager::instance()->getWindow()->close();
+		if ( NULL == mUIWindow ) {
+			mUIContainer->getSceneNode()->getWindow()->close();
 		} else {
 			mUIWindow->closeWindow();
 		}

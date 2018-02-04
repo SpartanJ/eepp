@@ -11,6 +11,8 @@ class FrameBuffer;
 
 namespace EE { namespace UI {
 
+class UISceneNode;
+
 class EE_API UIWindow : public UIWidget {
 	public:
 		enum WindowBaseContainerType {
@@ -236,6 +238,8 @@ class EE_API UIWindow : public UIWidget {
 		virtual void postDraw();
 
 		Sizei getFrameBufferSize();
+
+		UISceneNode * getUISceneNode();
 };
 
 }}

@@ -1,6 +1,6 @@
 #include <eepp/ui/uimenusubmenu.hpp>
 #include <eepp/ui/uimenu.hpp>
-#include <eepp/ui/uimanager.hpp>
+#include <eepp/scene/scenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -86,8 +86,8 @@ UIMenu * UIMenuSubMenu::getSubMenu() const {
 Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
 	UIMenuItem::onMouseMove( Pos, Flags );
 
-	if ( NULL != mSubMenu && !mSubMenu->isVisible() ) {
-		mTimeOver += UIManager::instance()->getElapsed().asMilliseconds();
+	if ( NULL != getSceneNode() && NULL != mSubMenu && !mSubMenu->isVisible() ) {
+		mTimeOver += getSceneNode()->getElapsed().asMilliseconds();
 
 		if ( mTimeOver >= mMaxTime ) {
 			showSubMenu();
@@ -127,10 +127,12 @@ UINode * UIMenuSubMenu::getArrow() const {
 }
 
 void UIMenuSubMenu::onSubMenuFocusLoss( const Event * Event ) {
-	Node * FocusCtrl = UIManager::instance()->getFocusControl();
+	if ( NULL != getEventDispatcher() ) {
+		Node * FocusCtrl = getEventDispatcher()->getFocusControl();
 
-	if ( getParent() != FocusCtrl && !getParent()->isParentOf( FocusCtrl ) ) {
-		getParent()->setFocus();
+		if ( getParent() != FocusCtrl && !getParent()->isParentOf( FocusCtrl ) ) {
+			getParent()->setFocus();
+		}
 	}
 
 	if ( mSubMenu->mClickHide ) {

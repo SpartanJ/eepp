@@ -1,7 +1,8 @@
 #include <eepp/ui/uiwinmenu.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/textureregion.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -220,13 +221,15 @@ Uint32 UIWinMenu::onMessage( const NodeMessage * Msg ) {
 		}
 		case NodeMessage::FocusLoss:
 		{
-			Node * FocusCtrl = UIManager::instance()->getFocusControl();
+			if ( NULL != getEventDispatcher() ) {
+				Node * FocusCtrl = getEventDispatcher()->getFocusControl();
 
-			if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
-				onWidgetFocusLoss();
+				if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
+					onWidgetFocusLoss();
+				}
+
+				return 1;
 			}
-
-			return 1;
 		}
 	}
 
@@ -268,7 +271,7 @@ bool UIWinMenu::isPopUpMenuChild( Node * Ctrl ) {
 }
 
 void UIWinMenu::onMenuFocusLoss( const Event * Event ) {
-	Node * FocusCtrl = UIManager::instance()->getFocusControl();
+	Node * FocusCtrl = getEventDispatcher()->getFocusControl();
 
 	if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
 		onWidgetFocusLoss();
@@ -288,7 +291,7 @@ void UIWinMenu::onWidgetFocusLoss() {
 }
 
 void UIWinMenu::destroyMenues() {
-	if ( !UIManager::instance()->isShootingDown() ) {
+	if ( !SceneManager::instance()->isShootingDown() ) {
 		for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 			it->second->close();
 		}
@@ -311,7 +314,8 @@ void UIWinMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 
 			subMenu->loadFromXmlNode( item );
 
-			addMenuButton( UIManager::instance()->getTranslatorString( text ), subMenu );
+			if ( NULL != getSceneNode() && getSceneNode()->isUISceneNode() )
+				addMenuButton( static_cast<UISceneNode*>( getSceneNode() )->getTranslatorString( text ), subMenu );
 		}
 	}
 

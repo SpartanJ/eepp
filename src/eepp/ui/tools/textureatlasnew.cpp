@@ -1,7 +1,8 @@
 #include <eepp/ui/tools/textureatlasnew.hpp>
 #include <eepp/ui/uicommondialog.hpp>
 #include <eepp/ui/uimessagebox.hpp>
-#include <eepp/ui/uimanager.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <SOIL2/src/SOIL2/stb_image.h>
@@ -79,7 +80,8 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	 </LinearLayout>
 	 )xml";
 
-	UIManager::instance()->loadLayoutFromString( layout, mUIWindow->getContainer() );
+	if ( mUIWindow->getSceneNode()->isUISceneNode() )
+		static_cast<UISceneNode*>( mUIWindow->getSceneNode() )->loadLayoutFromString( layout, mUIWindow->getContainer() );
 
 	mUIWindow->bind( "saveType", mSaveFileType );
 	mUIWindow->bind( "maxTAWidth", mComboWidth );

@@ -1,5 +1,4 @@
 #include <eepp/ui/uiprogressbar.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
@@ -67,7 +66,7 @@ void UIProgressBar::draw() {
 	Sizei numTiles( (Int32)eeceil( (Float)fSize.getWidth() / (Float)rSize.getWidth() + 2 ),
 				(Int32)eeceil( (Float)fSize.getHeight() / (Float)rSize.getHeight() ) + 2 );
 
-	UIManager::instance()->clipSmartEnable( this, mScreenPos.x + fillerPadding.Left, mScreenPos.y + fillerPadding.Top, fSize.getWidth(), fSize.getHeight() );
+	clipSmartEnable( mScreenPos.x + fillerPadding.Left, mScreenPos.y + fillerPadding.Top, fSize.getWidth(), fSize.getHeight() );
 
 	for ( int y = -1; y < numTiles.y; y++ ) {
 		for ( int x = -1; x < numTiles.x; x++ ) {
@@ -75,7 +74,7 @@ void UIProgressBar::draw() {
 		}
 	}
 
-	UIManager::instance()->clipSmartDisable( this );
+	clipSmartDisable();
 }
 
 void UIProgressBar::update( const Time& time ) {
