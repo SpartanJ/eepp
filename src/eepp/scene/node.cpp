@@ -479,9 +479,23 @@ void Node::internalDraw() {
 }
 
 void Node::clipStart() {
+	if ( mVisible && isClipped() ) {
+		if ( isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
+			GLi->getClippingMask()->clipPlaneEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
+		} else {
+			GLi->getClippingMask()->clipEnable( mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
+		}
+	}
 }
 
 void Node::clipEnd() {
+	if ( mVisible && isClipped() ) {
+		if ( isMeOrParentTreeScaledOrRotatedOrFrameBuffer() ) {
+			GLi->getClippingMask()->clipPlaneDisable();
+		} else {
+			GLi->getClippingMask()->clipDisable();
+		}
+	}
 }
 
 void Node::matrixSet() {

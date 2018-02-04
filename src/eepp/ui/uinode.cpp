@@ -459,18 +459,6 @@ void UINode::internalDraw() {
 	}
 }
 
-void UINode::clipStart() {
-	if ( mVisible && isClipped() ) {
-		UIManager::instance()->clipSmartEnable( this, mScreenPos.x, mScreenPos.y, mSize.getWidth(), mSize.getHeight() );
-	}
-}
-
-void UINode::clipEnd() {
-	if ( mVisible && isClipped() ) {
-		UIManager::instance()->clipSmartDisable( this );
-	}
-}
-
 UIBackground * UINode::getBackground() {
 	if ( NULL == mBackground ) {
 		mBackground = UIBackground::New( this );

@@ -1,12 +1,14 @@
 ../../include/eepp/scene/event.hpp
 ../../include/eepp/scene/keyevent.hpp
 ../../include/eepp/scene/mouseevent.hpp
+../../include/eepp/scene/scenenode.hpp
 ../../include/eepp/window/displaymanager.hpp
 ../../src/eepp/graphics/renderer/shaders/basegl3cp.gles2.frag.h
 ../../src/eepp/graphics/renderer/shaders/basegl3cp.gles2.vert.h
 ../../src/eepp/scene/event.cpp
 ../../src/eepp/scene/keyevent.cpp
 ../../src/eepp/scene/mouseevent.cpp
+../../src/eepp/scene/scenenode.cpp
 ../../src/eepp/window/backend/SDL2/displaymanagersdl2.cpp
 ../../src/eepp/window/backend/SDL2/displaymanagersdl2.hpp
 ../../src/eepp/window/backend/SFML/displaymanagersfml.cpp

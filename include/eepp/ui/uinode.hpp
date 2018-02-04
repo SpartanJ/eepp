@@ -205,8 +205,6 @@ class EE_API UINode : public Node {
 
 		virtual void onChildCountChange();
 
-		virtual void clipStart();
-
 		virtual Uint32 onDrag( const Vector2f& position );
 
 		virtual Uint32 onDragStart( const Vector2i& position );
@@ -222,8 +220,6 @@ class EE_API UINode : public Node {
 		void checkClose();
 
 		virtual void internalDraw();
-
-		virtual void clipEnd();
 
 		virtual void onWidgetFocusLoss();
 

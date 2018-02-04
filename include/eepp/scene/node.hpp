@@ -1,16 +1,21 @@
 #ifndef EE_SCENE_NODE_HPP
 #define EE_SCENE_NODE_HPP
 
-#include <eepp/ui/base.hpp>
-#include <eepp/ui/uihelper.hpp>
 #include <eepp/scene/nodemessage.hpp>
 #include <eepp/scene/event.hpp>
 #include <eepp/scene/keyevent.hpp>
 #include <eepp/scene/mouseevent.hpp>
-#include <eepp/math/transformable.hpp>
-#include <eepp/graphics/blendmode.hpp>
 
-using namespace EE::UI;
+#include <eepp/graphics/blendmode.hpp>
+using namespace EE::Graphics;
+
+#include <eepp/math/transformable.hpp>
+#include <eepp/math/rect.hpp>
+#include <eepp/math/vector2.hpp>
+#include <eepp/math/polygon2.hpp>
+#include <eepp/math/math.hpp>
+#include <eepp/math/originpoint.hpp>
+using namespace EE::Math;
 
 namespace EE { namespace Scene {
 class Action;
@@ -22,8 +27,39 @@ namespace  EE { namespace UI {
 class UIWindow;
 class UIManager;
 }}
+using namespace EE::UI;
 
 namespace EE { namespace Scene {
+
+enum NODE_FLAGS_VALUES {
+	NODE_FLAG_VIEW_DIRTY						= (1<<1),
+	NODE_FLAG_POSITION_DIRTY					= (1<<2),
+	NODE_FLAG_POLYGON_DIRTY						= (1<<3),
+	NODE_FLAG_ROTATED							= (1<<4),
+	NODE_FLAG_SCALED							= (1<<5),
+	NODE_FLAG_CLOSE								= (1<<6),
+	NODE_FLAG_CLOSE_DELAYED						= (1<<7),
+	NODE_FLAG_MOUSEOVER							= (1<<8),
+	NODE_FLAG_HAS_FOCUS							= (1<<9),
+	NODE_FLAG_SELECTED							= (1<<10),
+	NODE_FLAG_DISABLE_DELAYED					= (1<<11),
+	NODE_FLAG_MOUSEOVER_ME_OR_CHILD				= (1<<12),
+	NODE_FLAG_DRAGGING							= (1<<13),
+	NODE_FLAG_SKIN_OWNER						= (1<<14),
+	NODE_FLAG_TOUCH_DRAGGING					= (1<<15),
+	NODE_FLAG_DISABLED_BY_MODAL_WINDOW			= (1<<16),
+	NODE_FLAG_OWNED_BY_WINDOW					= (1<<17),
+	NODE_FLAG_REVERSE_DRAW						= (1<<18),
+	NODE_FLAG_FRAME_BUFFER						= (1<<19),
+	NODE_FLAG_CLIP_ENABLE						= (1<<20),
+	NODE_FLAG_SCENENODE							= (1<<21),
+	NODE_FLAG_UINODE							= (1<<22),
+	NODE_FLAG_WIDGET							= (1<<23),
+	NODE_FLAG_WINDOW							= (1<<24),
+	NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS		= (1<<25),
+	NODE_FLAG_OVER_FIND_ALLOWED					= (1<<26),
+	NODE_FLAG_FREE_USE							= (1<<27)
+};
 
 class EE_API Node : public Transformable {
 	public:
