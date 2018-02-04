@@ -62,7 +62,6 @@ MapEditor::MapEditor( UIWindow * AttatchTo, const MapEditorCloseCb& callback ) :
 
 	if ( NULL == mUIWindow ) {
 		mUIContainer = SceneManager::instance()->getUISceneNode();
-		//mUIContainer->setThemeSkin( mTheme, "winback" );
 	} else {
 		mUIContainer = mUIWindow->getContainer();
 	}
@@ -70,6 +69,8 @@ MapEditor::MapEditor( UIWindow * AttatchTo, const MapEditorCloseCb& callback ) :
 	if ( NULL != mUIWindow ) {
 		mUIWindow->setTitle( "Map Editor" );
 		mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &MapEditor::windowClose ) );
+	} else {
+		mUIContainer->addEventListener( Event::OnClose, cb::Make1( this, &MapEditor::windowClose ) );
 	}
 
 	createME();
@@ -175,7 +176,8 @@ void MapEditor::createWinMenu() {
 	mWinContainer->setParent( mUIContainer );
 	mWinContainer->setPosition( 0, WinMenu->getSize().getHeight() );
 	mWinContainer->setSize( mUIContainer->getSize().getWidth(), mUIContainer->getSize().getHeight() - WinMenu->getSize().getHeight() );
-	mWinContainer->setAnchors(UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT  );
+	mWinContainer->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT );
+	mWinContainer->setThemeSkin( mTheme, "winback" );
 }
 
 void MapEditor::createETGMenu() {

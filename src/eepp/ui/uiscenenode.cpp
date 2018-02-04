@@ -216,4 +216,8 @@ const Sizef &UISceneNode::getSize() {
 	return mDpSize;
 }
 
+const Sizef &UISceneNode::getRealSize() {
+	return mSize;
+}
+
 }}

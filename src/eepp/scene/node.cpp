@@ -557,7 +557,6 @@ void Node::childAddAt( Node * ChildCtrl, Uint32 Pos ) {
 
 	ChildCtrl->mParentCtrl = this;
 	ChildCtrl->mSceneNode = ChildCtrl->getSceneNode();
-	
 	if ( ChildLoop == NULL ) {
 		mChild 				= ChildCtrl;
 		mChildLast			= ChildCtrl;

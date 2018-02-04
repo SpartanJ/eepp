@@ -40,13 +40,12 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	if ( NULL == mUIWindow ) {
 		mUIContainer = SceneManager::instance()->getUISceneNode();
-		//mUIContainer->setThemeSkin( mTheme, "winback" );
 	} else {
 		mUIContainer = mUIWindow->getContainer();
 	}
 
 	std::string layout = R"xml(
-	<LinearLayout orientation="vertical" layout_width="match_parent" layout_height="match_parent">
+	<LinearLayout id="texture_atlas_editor_root" orientation="vertical" layout_width="match_parent" layout_height="match_parent">
 		<WinMenu layout_width="match_parent" layout_height="wrap_content">
 			<Menu id="fileMenu" text="File">
 				<item text="New..." icon="document-new" />
@@ -147,6 +146,9 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	if ( NULL != mUIWindow ) {
 		mUIWindow->setTitle( "Texture Atlas Editor" );
 		mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
+	} else {
+		mUIContainer->addEventListener( Event::OnClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
+		static_cast<UINode*>( mUIContainer->find("texture_atlas_editor_root") )->setThemeSkin( mTheme, "winback" );
 	}
 
 	mTGEU = eeNew( UITGEUpdater, ( this ) );

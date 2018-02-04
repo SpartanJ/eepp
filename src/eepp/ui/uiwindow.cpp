@@ -11,6 +11,7 @@
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <pugixml/pugixml.hpp>
+#include <eepp/scene/scenemanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -78,7 +79,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 }
 
 UIWindow::~UIWindow() {
-	if ( NULL != getUISceneNode() ) {
+	if ( NULL != getUISceneNode() && !SceneManager::instance()->isShootingDown() ) {
 		getUISceneNode()->windowRemove( this );
 
 		getUISceneNode()->setFocusLastWindow( this );

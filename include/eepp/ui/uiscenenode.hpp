@@ -21,6 +21,8 @@ class EE_API UISceneNode : public SceneNode {
 
 		const Sizef& getSize();
 
+		virtual const Sizef& getRealSize();
+
 		void setTranslator( Translator translator );
 
 		Translator& getTranslator();

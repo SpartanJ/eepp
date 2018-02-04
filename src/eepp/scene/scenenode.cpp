@@ -32,6 +32,7 @@ SceneNode::SceneNode( EE::Window::Window * window ) :
 	mHighlightInvalidationColor( 220, 0, 0, 255 )
 {
 	mNodeFlags |= NODE_FLAG_SCENENODE;
+	mSceneNode = this;
 
 	enableReportSizeChangeToChilds();
 
@@ -45,11 +46,13 @@ SceneNode::SceneNode( EE::Window::Window * window ) :
 }
 
 SceneNode::~SceneNode() {
-	onClose();
-
 	if ( -1 != mResizeCb && NULL != Engine::existsSingleton() && Engine::instance()->existsWindow( mWindow ) ) {
 		mWindow->popResizeCallback( mResizeCb );
 	}
+
+	onClose();
+
+	eeSAFE_DELETE( mEventDispatcher );
 
 	eeSAFE_DELETE( mFrameBuffer );
 }
@@ -110,6 +113,8 @@ void SceneNode::onSizeChange() {
 			mFrameBuffer->resize( fboSize.getWidth(), fboSize.getHeight() );
 		}
 	}
+
+	Node::onSizeChange();
 }
 
 void SceneNode::addToCloseQueue( Node * Ctrl ) {

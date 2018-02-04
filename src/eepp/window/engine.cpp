@@ -22,6 +22,7 @@
 #include <eepp/window/backend/SDL2/platformhelpersdl2.hpp>
 #include <eepp/window/backend/SFML/platformhelpersfml.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/ui/uithememanager.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <eepp/system/zip.hpp>
@@ -72,6 +73,8 @@ Engine::~Engine() {
 	NinePatchManager::destroySingleton();
 
 	Scene::SceneManager::destroySingleton();
+
+	UIThemeManager::destroySingleton();
 
 	FontManager::destroySingleton();
 
