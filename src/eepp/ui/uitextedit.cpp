@@ -459,8 +459,8 @@ void UITextEdit::loadFromXmlNode(const pugi::xml_node & node) {
 		String::toLowerInPlace( name );
 
 		if ( "text" == name ) {
-			if ( NULL != getSceneNode() && getSceneNode()->isUISceneNode() ) {
-				setText( static_cast<UISceneNode*>( getSceneNode() )->getTranslatorString( ait->as_string() ) );
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
+				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( ait->as_string() ) );
 			}
 		} else if ( "allowediting" == name ) {
 			setAllowEditing( ait->as_bool() );

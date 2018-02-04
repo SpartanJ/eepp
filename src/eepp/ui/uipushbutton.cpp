@@ -357,8 +357,8 @@ void UIPushButton::loadFromXmlNode(const pugi::xml_node & node) {
 		String::toLowerInPlace( name );
 
 		if ( "text" == name ) {
-			if ( NULL != getSceneNode() )
-				setText( static_cast<UISceneNode*>( getSceneNode() )->getTranslatorString( ait->as_string() ) );
+			if ( NULL != mSceneNode )
+				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( ait->as_string() ) );
 		} else if ( "textovercolor" == name ) {
 			setFontOverColor( Color::fromString( ait->as_string() ) );
 		} else if ( "icon" == name ) {

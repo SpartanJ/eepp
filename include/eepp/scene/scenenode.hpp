@@ -3,6 +3,7 @@
 
 #include <eepp/scene/node.hpp>
 #include <eepp/window/cursorhelper.hpp>
+#include <eepp/system/translator.hpp>
 
 namespace EE { namespace Graphics {
 class FrameBuffer;
@@ -23,9 +24,29 @@ class EE_API SceneNode : public Node {
 
 		~SceneNode();
 
+		Node * loadLayoutFromFile( const std::string& layoutPath, Node * parent = NULL );
+
+		Node * loadLayoutFromString( const std::string& layoutString, Node * parent = NULL );
+
+		Node * loadLayoutFromMemory( const void * buffer, Int32 bufferSize, Node * parent = NULL );
+
+		Node * loadLayoutFromStream( IOStream& stream, Node * parent = NULL );
+
+		Node * loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, Node * parent = NULL );
+
+		Node * loadLayoutNodes( pugi::xml_node node, Node * parent );
+
+		void setTranslator( Translator translator );
+
+		Translator& getTranslator();
+
+		String getTranslatorString( const std::string& str );
+
 		void enableFrameBuffer();
 
 		void disableFrameBuffer();
+
+		bool ownsFrameBuffer() const;
 
 		virtual void draw();
 
@@ -33,13 +54,13 @@ class EE_API SceneNode : public Node {
 
 		bool invalidated();
 
+		void invalidate();
+
 		void enableDrawInvalidation();
 
 		void disableDrawInvalidation();
 
 		EE::Window::Window * getWindow();
-
-		void invalidate();
 
 		FrameBuffer * getFrameBuffer() const;
 
@@ -89,6 +110,7 @@ class EE_API SceneNode : public Node {
 
 		void setCursor( EE_CURSOR_TYPE cursor );
 
+		virtual bool isDrawInvalidator();
 	protected:
 		friend class Node;
 
@@ -115,6 +137,10 @@ class EE_API SceneNode : public Node {
 		virtual void matrixSet();
 
 		virtual void matrixUnset();
+
+		virtual void preDraw();
+
+		virtual void postDraw();
 
 		void sendMsg( Node * Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
 

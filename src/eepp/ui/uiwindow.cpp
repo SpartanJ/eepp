@@ -64,7 +64,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 	}
 
 	mContainer->setLayoutSizeRules( FIXED, FIXED );
-	mContainer->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+	mContainer->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 	mContainer->setParent( this );
 	mContainer->clipEnable();
 	mContainer->enableReportSizeChangeToChilds();
@@ -113,7 +113,7 @@ void UIWindow::updateWinFlags() {
 	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) ) {
 		if ( NULL == mWindowDecoration ) {
 			mWindowDecoration = UINode::New();
-			mWindowDecoration->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+			mWindowDecoration->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
 		mWindowDecoration->setParent( this );
@@ -122,7 +122,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( NULL == mBorderLeft ) {
 			mBorderLeft		= UINode::New();
-			mBorderLeft->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+			mBorderLeft->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
 		mBorderLeft->setParent( this );
@@ -131,7 +131,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( NULL == mBorderRight ) {
 			mBorderRight	= UINode::New();
-			mBorderRight->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+			mBorderRight->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
 		mBorderRight->setParent( this );
@@ -140,7 +140,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( NULL == mBorderBottom ) {
 			mBorderBottom	= UINode::New();
-			mBorderBottom->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+			mBorderBottom->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
 		mBorderBottom->setParent( this );
@@ -150,7 +150,7 @@ void UIWindow::updateWinFlags() {
 		if ( mStyleConfig.WinFlags & UI_WIN_CLOSE_BUTTON ) {
 			if ( NULL == mButtonClose ) {
 				mButtonClose = UINode::New();
-				mButtonClose->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+				mButtonClose->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 				needsUpdate = true;
 			}
 
@@ -165,7 +165,7 @@ void UIWindow::updateWinFlags() {
 		if ( isMaximizable() ) {
 			if ( NULL == mButtonMaximize ) {
 				mButtonMaximize = UINode::New();
-				mButtonMaximize->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+				mButtonMaximize->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 				needsUpdate = true;
 			}
 
@@ -180,7 +180,7 @@ void UIWindow::updateWinFlags() {
 		if ( mStyleConfig.WinFlags & UI_WIN_MINIMIZE_BUTTON ) {
 			if ( NULL == mButtonMinimize ) {
 				mButtonMinimize = UINode::New();
-				mButtonMinimize->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+				mButtonMinimize->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 				needsUpdate = true;
 			}
 
@@ -277,13 +277,13 @@ void UIWindow::drawFrameBuffer() {
 }
 
 void UIWindow::drawHighlightInvalidation() {
-	if ( ( mNodeFlags & NODE_FLAG_VIEW_DIRTY ) && NULL != getSceneNode() && getSceneNode()->getHighlightInvalidation() ) {
+	if ( ( mNodeFlags & NODE_FLAG_VIEW_DIRTY ) && NULL != mSceneNode && mSceneNode->getHighlightInvalidation() ) {
 		UIWidget::matrixSet();
 
 		Primitives P;
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
-		P.setColor( getSceneNode()->getHighlightInvalidationColor() );
+		P.setColor( mSceneNode->getHighlightInvalidationColor() );
 		P.setLineWidth( PixelDensity::dpToPx( 2 ) );
 		P.drawRectangle( getScreenBounds() );
 
@@ -329,22 +329,22 @@ void UIWindow::drawShadow() {
 }
 
 Sizei UIWindow::getFrameBufferSize() {
-	return isResizeable() && (Node*)this != (Node*)getSceneNode() ? Sizei( Math::nextPowOfTwo( (int)mSize.getWidth() ), Math::nextPowOfTwo( (int)mSize.getHeight() ) ) : mSize.ceil().asInt();
+	return isResizeable() && (Node*)this != mSceneNode ? Sizei( Math::nextPowOfTwo( (int)mSize.getWidth() ), Math::nextPowOfTwo( (int)mSize.getHeight() ) ) : mSize.ceil().asInt();
 }
 
 UISceneNode *UIWindow::getUISceneNode() {
-	return ( NULL != getSceneNode() && getSceneNode()->isUISceneNode() ) ? static_cast<UISceneNode*>( getSceneNode() ) : NULL;
+	return ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) ? static_cast<UISceneNode*>( mSceneNode ) : NULL;
 }
 
 void UIWindow::createModalControl() {
-	Node * Ctrl = getSceneNode();
+	Node * Ctrl = mSceneNode;
 
 	if ( NULL == Ctrl )
 		return;
 
 	if ( NULL == mModalCtrl ) {
 		mModalCtrl = UIWidget::New();
-		mModalCtrl->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+		mModalCtrl->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		mModalCtrl->setParent( Ctrl )->setPosition(0,0)->setSize( Ctrl->getSize() );
 		mModalCtrl->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	} else {
@@ -360,17 +360,17 @@ void UIWindow::createModalControl() {
 }
 
 void UIWindow::enableByModal() {
-	if ( isModal() && NULL != getSceneNode() ) {
-		Node * CtrlChild = getSceneNode()->getFirstChild();
+	if ( isModal() && NULL != mSceneNode ) {
+		Node * CtrlChild = mSceneNode->getFirstChild();
 
 		while ( NULL != CtrlChild )
 		{
 			if ( CtrlChild != mModalCtrl &&
 				 CtrlChild != this &&
-				 CtrlChild->getNodeFlags() & NODE_FLAG_DISABLED_BY_MODAL_WINDOW )
+				 CtrlChild->getNodeFlags() & NODE_FLAG_DISABLED_BY_NODE )
 			{
 				CtrlChild->setEnabled( true );
-				CtrlChild->writeCtrlFlag( NODE_FLAG_DISABLED_BY_MODAL_WINDOW, 0 );
+				CtrlChild->writeCtrlFlag( NODE_FLAG_DISABLED_BY_NODE, 0 );
 			}
 
 			CtrlChild = CtrlChild->getNextNode();
@@ -379,8 +379,8 @@ void UIWindow::enableByModal() {
 }
 
 void UIWindow::disableByModal() {
-	if ( isModal() && NULL != getSceneNode() ) {
-		Node * CtrlChild = getSceneNode()->getFirstChild();
+	if ( isModal() && NULL != mSceneNode ) {
+		Node * CtrlChild = mSceneNode->getFirstChild();
 
 		while ( NULL != CtrlChild )
 		{
@@ -389,7 +389,7 @@ void UIWindow::disableByModal() {
 				 CtrlChild->isEnabled() )
 			{
 				CtrlChild->setEnabled( false );
-				CtrlChild->writeCtrlFlag( NODE_FLAG_DISABLED_BY_MODAL_WINDOW, 1 );
+				CtrlChild->writeCtrlFlag( NODE_FLAG_DISABLED_BY_NODE, 1 );
 			}
 
 			CtrlChild = CtrlChild->getNextNode();
@@ -664,8 +664,8 @@ Uint32 UIWindow::onMessage( const NodeMessage * Msg ) {
 		}
 		case NodeMessage::WindowResize:
 		{
-			if ( isModal() && NULL != mModalCtrl && NULL != getSceneNode() ) {
-				mModalCtrl->setSize( getSceneNode()->getSize() );
+			if ( isModal() && NULL != mModalCtrl && NULL != mSceneNode ) {
+				mModalCtrl->setSize( mSceneNode->getSize() );
 			}
 
 			break;
@@ -995,8 +995,8 @@ bool UIWindow::hide() {
 			setVisible( false );
 		}
 
-		if ( NULL != getSceneNode() )
-			getSceneNode()->setFocus();
+		if ( NULL != mSceneNode )
+			mSceneNode->setFocus();
 
 		if ( NULL != mModalCtrl ) {
 			mModalCtrl->setEnabled( false );
@@ -1023,14 +1023,14 @@ void UIWindow::onAlphaChange() {
 }
 
 void UIWindow::onChildCountChange() {
-	if ( NULL == mContainer || (Node*)getSceneNode() == (Node*)this )
+	if ( NULL == mContainer )
 		return;
 
 	Node * child = mChild;
 	bool found = false;
 
 	while ( NULL != child ) {
-		if ( !( child->getNodeFlags() & NODE_FLAG_OWNED_BY_WINDOW ) ) {
+		if ( !( child->getNodeFlags() & NODE_FLAG_OWNED_BY_NODE ) ) {
 			found = true;
 			break;
 		}
@@ -1059,7 +1059,7 @@ void UIWindow::setTitle( const String& text ) {
 	if ( NULL == mTitle ) {
 		mTitle = UITextView::New();
 		mTitle->setLayoutSizeRules( FIXED, FIXED );
-		mTitle->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+		mTitle->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		mTitle->setParent( this );
 		mTitle->setHorizontalAlign( getHorizontalAlign() );
 		mTitle->setVerticalAlign( getVerticalAlign() );
@@ -1099,7 +1099,7 @@ UITextView * UIWindow::getTitleTextBox() const {
 }
 
 void UIWindow::maximize() {
-	Node * Ctrl = getSceneNode();
+	Node * Ctrl = mSceneNode;
 
 	if ( NULL == Ctrl )
 		return;
@@ -1149,7 +1149,7 @@ void UIWindow::internalDraw() {
 
 		matrixSet();
 
-		if ( !ownsFrameBuffer() || ( NULL != getSceneNode() && !getSceneNode()->usesInvalidation() ) || invalidated() ) {
+		if ( !ownsFrameBuffer() || ( NULL != mSceneNode && !mSceneNode->usesInvalidation() ) || invalidated() ) {
 			clipStart();
 
 			draw();
@@ -1185,6 +1185,10 @@ FrameBuffer * UIWindow::getFrameBuffer() const {
 	return mFrameBuffer;
 }
 
+bool UIWindow::isDrawInvalidator() {
+	return true;
+}
+
 bool UIWindow::invalidated() {
 	return 0 != ( mNodeFlags & NODE_FLAG_VIEW_DIRTY );
 }
@@ -1192,7 +1196,7 @@ bool UIWindow::invalidated() {
 void UIWindow::matrixSet() {
 	if ( ownsFrameBuffer() ) {
 		if ( NULL != mFrameBuffer ) {
-			if ( ( NULL != getSceneNode() && !getSceneNode()->usesInvalidation() ) || invalidated() ) {
+			if ( ( NULL != mSceneNode && !mSceneNode->usesInvalidation() ) || invalidated() ) {
 				mFrameBufferBound = true;
 
 				mFrameBuffer->bind();

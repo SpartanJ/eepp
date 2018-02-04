@@ -43,8 +43,8 @@ bool UITextInput::isType( const Uint32& type ) const {
 }
 
 void UITextInput::update( const Time& time ) {
-	if ( isMouseOverMeOrChilds() && NULL != getSceneNode() ) {
-		getSceneNode()->setCursor( EE_CURSOR_IBEAM );
+	if ( isMouseOverMeOrChilds() && NULL != mSceneNode ) {
+		mSceneNode->setCursor( EE_CURSOR_IBEAM );
 	}
 
 	UITextView::update( time );
@@ -295,8 +295,8 @@ Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags 
 Uint32 UITextInput::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 	UINode::onMouseExit( Pos, Flags );
 
-	if ( NULL != getSceneNode() )
-		getSceneNode()->setCursor( EE_CURSOR_ARROW );
+	if ( NULL != mSceneNode )
+		mSceneNode->setCursor( EE_CURSOR_ARROW );
 
 	return 1;
 }
@@ -349,8 +349,8 @@ void UITextInput::loadFromXmlNode(const pugi::xml_node & node) {
 		String::toLowerInPlace( name );
 
 		if ( "text" == name ) {
-			if ( NULL != getSceneNode() && getSceneNode()->isUISceneNode() ) {
-				setText( static_cast<UISceneNode*>( getSceneNode() )->getTranslatorString( ait->as_string() ) );
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
+				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( ait->as_string() ) );
 			}
 		} else if ( "allowediting" == name ) {
 			setAllowEditing( ait->as_bool() );

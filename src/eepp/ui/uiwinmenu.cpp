@@ -312,10 +312,13 @@ void UIWinMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 
 			UIPopUpMenu * subMenu = UIPopUpMenu::New();
 
+			if ( NULL != getDrawInvalidator() )
+				subMenu->setParent( getDrawInvalidator() );
+
 			subMenu->loadFromXmlNode( item );
 
-			if ( NULL != getSceneNode() && getSceneNode()->isUISceneNode() )
-				addMenuButton( static_cast<UISceneNode*>( getSceneNode() )->getTranslatorString( text ), subMenu );
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
+				addMenuButton( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ), subMenu );
 		}
 	}
 

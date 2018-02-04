@@ -17,6 +17,7 @@ Node::Node() :
 	mData( 0 ),
 	mParentCtrl( NULL ),
 	mSceneNode( NULL ),
+	mNodeDrawInvalidator( NULL ),
 	mChild( NULL ),
 	mChildLast( NULL ),
 	mNext( NULL ),
@@ -203,6 +204,7 @@ Node * Node::setParent( Node * parent ) {
 		mParentCtrl->childRemove( this );
 
 	mParentCtrl = parent;
+	mNodeDrawInvalidator = getDrawInvalidator();
 
 	if ( NULL != mParentCtrl )
 		mParentCtrl->childAdd( this );
@@ -211,7 +213,7 @@ Node * Node::setParent( Node * parent ) {
 
 	onParentChange();
 
-	if ( mSceneNode != getSceneNode() )
+	if ( mSceneNode != findSceneNode() )
 		onSceneChange();
 
 	return this;
@@ -433,18 +435,6 @@ void Node::setNodeFlags( const Uint32& Flags ) {
 	mNodeFlags = Flags;
 }
 
-Uint32 Node::isSceneNode() {
-	return mNodeFlags & NODE_FLAG_SCENENODE;
-}
-
-Uint32 Node::isUISceneNode() {
-	return mNodeFlags & NODE_FLAG_UISCENENODE;
-}
-
-Uint32 Node::isUINode() {
-	return mNodeFlags & NODE_FLAG_UINODE;
-}
-
 void Node::drawChilds() {
 	if ( isReverseDraw() ) {
 		Node * ChildLoop = mChildLast;
@@ -556,7 +546,8 @@ void Node::childAddAt( Node * ChildCtrl, Uint32 Pos ) {
 	childRemove( ChildCtrl );
 
 	ChildCtrl->mParentCtrl = this;
-	ChildCtrl->mSceneNode = ChildCtrl->getSceneNode();
+	ChildCtrl->mSceneNode = ChildCtrl->findSceneNode();
+
 	if ( ChildLoop == NULL ) {
 		mChild 				= ChildCtrl;
 		mChildLast			= ChildCtrl;
@@ -774,7 +765,7 @@ Node * Node::overFind( const Vector2f& Point ) {
 }
 
 void Node::onSceneChange() {
-	mSceneNode = getSceneNode();
+	mSceneNode = findSceneNode();
 
 	Node * ChildLoop = mChild;
 
@@ -806,6 +797,18 @@ Uint32 Node::isScaled() {
 
 Uint32 Node::isFrameBuffer() {
 	return mNodeFlags & NODE_FLAG_FRAME_BUFFER;
+}
+
+Uint32 Node::isSceneNode() {
+	return mNodeFlags & NODE_FLAG_SCENENODE;
+}
+
+Uint32 Node::isUISceneNode() {
+	return mNodeFlags & NODE_FLAG_UISCENENODE;
+}
+
+Uint32 Node::isUINode() {
+	return mNodeFlags & NODE_FLAG_UINODE;
 }
 
 bool Node::isMeOrParentTreeRotated() {
@@ -998,14 +1001,16 @@ void Node::setReverseDraw( bool reverseDraw ) {
 }
 
 void Node::invalidateDraw() {
-	if ( NULL != mSceneNode ) {
-		mSceneNode->invalidate();
-	} else if ( NULL == mParentCtrl && isSceneNode() ) {
-		static_cast<SceneNode*>( this )->invalidate();
+	if ( NULL != mNodeDrawInvalidator ) {
+		mNodeDrawInvalidator->invalidate();
 	}
 }
 
 SceneNode * Node::getSceneNode() {
+	return mSceneNode;
+}
+
+SceneNode * Node::findSceneNode() {
 	Node * Ctrl = mParentCtrl;
 
 	while ( Ctrl != NULL ) {
@@ -1319,7 +1324,7 @@ Node * Node::getNextWidget() {
 		}
 	}
 
-	return mSceneNode;
+	return NULL;
 }
 
 void Node::sendParentSizeChange( const Vector2f& SizeChange ) {
@@ -1392,6 +1397,33 @@ void Node::clipSmartDisable() {
 	} else {
 		GLi->getClippingMask()->clipDisable();
 	}
+}
+
+Node* Node::getDrawInvalidator() {
+	Node * Ctrl = mParentCtrl;
+
+	while ( Ctrl != NULL ) {
+		if ( Ctrl->isDrawInvalidator() )
+			return Ctrl;
+
+		Ctrl = Ctrl->getParent();
+	}
+
+	return isDrawInvalidator() ? this : NULL;
+}
+
+bool Node::isDrawInvalidator() {
+	return false;
+}
+
+void Node::invalidate() {
+	if ( mVisible && mAlpha != 0.f ) {
+		writeCtrlFlag( NODE_FLAG_VIEW_DIRTY, 1 );
+	}
+}
+
+bool Node::invalidated() {
+	return 0 != ( mNodeFlags & NODE_FLAG_VIEW_DIRTY );
 }
 
 }}

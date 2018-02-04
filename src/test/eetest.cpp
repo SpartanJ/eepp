@@ -35,14 +35,14 @@ class UIBlurredWindow : public UIWindow {
 			if ( !ownsFrameBuffer() )
 				return;
 
-			FrameBuffer * curFBO = FrameBufferManager::instance()->getFromName( "uimain" );
+			FrameBuffer * curFBO = getSceneNode()->getFrameBuffer();
 
 			if ( NULL != curFBO && NULL != curFBO->getTexture() && NULL != mBlurShader ) {
 				static int fboDiv = 2;
 
 				if ( NULL == mFboBlur ) {
 					mFboBlur = FrameBuffer::New( mSize.x / fboDiv, mSize.y / fboDiv );
-				} else if ( mFboBlur->getSize().getWidth() != mSize.x / fboDiv || mFboBlur->getSize().getHeight() != mSize.y / fboDiv ) {
+				} else if ( mFboBlur->getSize().getWidth() != (int)( mSize.x / fboDiv ) || mFboBlur->getSize().getHeight() != (int)( mSize.y / fboDiv ) ) {
 					mFboBlur->resize( mSize.x / fboDiv, mSize.y / fboDiv );
 				}
 
@@ -360,7 +360,7 @@ void EETest::createBaseUI() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW/*| UI_WIN_FRAME_BUFFER*/;
+	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizef( 530, 405 );
 	windowStyleConfig.BaseAlpha = 200;
 	tWin->setStyleConfig( windowStyleConfig );
@@ -588,14 +588,21 @@ void EETest::createUI() {
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	/*Uint32 UI_MAN_OPS = 0;
-	if ( mDebugUI )
-		UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_INVALIDATION;
-	UIManager::instance()->init(UI_MAN_OPS | UI_MANAGER_USE_DRAW_INVALIDATION | UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER);
-	UIManager::instance()->setTranslator( mTranslator );*/
-
 	UISceneNode * sceneNode = UISceneNode::New();
+
+	sceneNode->enableDrawInvalidation();
+	sceneNode->enableFrameBuffer();
+
+	if ( mDebugUI ) {
+		sceneNode->setDrawBoxes( true );
+		sceneNode->setDrawDebugData( true );
+		sceneNode->setHighlightFocus( true );
+		sceneNode->setHighlightOver( true );
+		sceneNode->setHighlightInvalidation( true );
+	}
+
 	sceneNode->setTranslator( mTranslator );
+
 	SceneManager::instance()->add( sceneNode );
 
 	eePRINTL("Node size: %d", sizeof(Node));
@@ -897,7 +904,7 @@ void EETest::createMapEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW/*| UI_WIN_FRAME_BUFFER*/;
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -914,7 +921,7 @@ void EETest::createETGEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW/*| UI_WIN_FRAME_BUFFER*/;
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -949,7 +956,7 @@ static void onWinDragStop( const Event * event ) {
 
 void EETest::createDecoratedWindow() {
 	mUIWindow = UIBlurredWindow::New( mBlur );
-	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW/*| UI_WIN_FRAME_BUFFER*/ )
+	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER )
 			->setMinWindowSize( 530, 350 )->setPosition( 200, 50 );
 
 	mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &EETest::onCloseClick ) );
@@ -971,9 +978,22 @@ void EETest::createDecoratedWindow() {
 		if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 
-		/*UIMenuItem* menuItem = reinterpret_cast<UIMenuItem*> ( Event->getNode() );
+		Node * node = Event->getNode();
+		UIWindow * win = NULL;
+
+		while ( NULL != node && NULL == win ) {
+			if ( node->isWindow() ) {
+				win = static_cast<UIWindow*>( node );
+			} else {
+				node = node->getParent();
+			}
+		}
+
+		if ( NULL == win )
+			return;
+
+		UIMenuItem* menuItem = reinterpret_cast<UIMenuItem*> ( Event->getNode() );
 		const String& txt = menuItem->getText();
-		UIWindow * win = Event->getNode()->getOwnerWindow();
 
 		if ( "Hide Border" == txt ) {
 			win->setWinFlags( win->getWinFlags() | UI_WIN_NO_BORDER );
@@ -983,7 +1003,7 @@ void EETest::createDecoratedWindow() {
 			menuItem->setText( "Hide Border" );
 		} else if ( "Close" == txt ) {
 			win->closeFadeOut( Milliseconds(250) );
-		}*/
+		}
 	} ) );
 
 	UIPopUpMenu * PopMenu2 = UIPopUpMenu::New();

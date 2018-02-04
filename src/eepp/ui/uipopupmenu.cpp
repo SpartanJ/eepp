@@ -96,8 +96,8 @@ Uint32 UIPopUpMenu::onMessage( const NodeMessage * Msg ) {
 				if ( !Msg->getSender()->isType( UI_TYPE_MENUSUBMENU ) && ( Msg->getFlags() & EE_BUTTONS_LRM ) ) {
 					sendCommonEvent( Event::OnHideByClick );
 
-					if ( isVisible() && NULL != getSceneNode() )
-						getSceneNode()->setFocus();
+					if ( isVisible() && NULL != mSceneNode )
+						mSceneNode->setFocus();
 
 					hide();
 				}

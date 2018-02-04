@@ -991,8 +991,8 @@ void UIListBox::loadFromXmlNode(const pugi::xml_node & node) {
 		std::string data = item.text().as_string();
 
 		if ( data.size() ) {
-			if ( NULL != getSceneNode() && getSceneNode()->isUISceneNode() )
-				items.push_back( static_cast<UISceneNode*>( getSceneNode() )->getTranslatorString( data ) );
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
+				items.push_back( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( data ) );
 		}
 	}
 

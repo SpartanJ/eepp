@@ -556,8 +556,6 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 
 	UIWidget::loadFromXmlNode( node );
 
-
-
 	for ( pugi::xml_node item = node.first_child(); item; item = item.next_sibling() ) {
 		std::string name( item.name() );
 		String::toLowerInPlace( name );
@@ -566,26 +564,29 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 			std::string text( item.attribute("text").as_string() );
 			std::string icon( item.attribute("icon").as_string() );
 
-			if ( NULL != getSceneNode() && getSceneNode()->isUISceneNode() )
-				add( static_cast<UISceneNode*>( getSceneNode() )->getTranslatorString( text ), getIconDrawable( icon ) );
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
+				add( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ), getIconDrawable( icon ) );
 		} else if ( name == "menuseparator" || name == "separator" ) {
 			addSeparator();
 		} else if ( name == "menucheckbox" || name == "checkbox" ) {
 			std::string text( item.attribute("text").as_string() );
 			bool active( item.attribute("active").as_bool() );
 
-			if ( NULL != getSceneNode() && getSceneNode()->isUISceneNode() )
-				addCheckBox( static_cast<UISceneNode*>( getSceneNode() )->getTranslatorString( text ), active );
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
+				addCheckBox( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ), active );
 		} else if ( name == "menusubmenu" || name == "submenu" ) {
 			std::string text( item.attribute("text").as_string() );
 			std::string icon( item.attribute("icon").as_string() );
 
 			UIPopUpMenu * subMenu = UIPopUpMenu::New();
 
+			if ( NULL != getDrawInvalidator() )
+				subMenu->setParent( getDrawInvalidator() );
+
 			subMenu->loadFromXmlNode( item );
 
-			if ( NULL != getSceneNode() && getSceneNode()->isUISceneNode() )
-				addSubMenu( static_cast<UISceneNode*>( getSceneNode() )->getTranslatorString( text ), getIconDrawable( icon ), subMenu );
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
+				addSubMenu( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ), getIconDrawable( icon ), subMenu );
 		}
 	}
 

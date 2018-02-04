@@ -198,29 +198,29 @@ const Sizef& UINode::getRealSize() {
 }
 
 void UINode::drawHighlightFocus() {
-	if ( NULL != getEventDispatcher() && getSceneNode()->getHighlightFocus() && getEventDispatcher()->getFocusControl() == this ) {
+	if ( NULL != getEventDispatcher() && mSceneNode->getHighlightFocus() && getEventDispatcher()->getFocusControl() == this ) {
 		Primitives P;
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
-		P.setColor( getSceneNode()->getHighlightFocusColor() );
+		P.setColor( mSceneNode->getHighlightFocusColor() );
 		P.setLineWidth( PixelDensity::dpToPxI( 1 ) );
 		P.drawRectangle( getScreenBounds() );
 	}
 }
 
 void UINode::drawOverNode() {
-	if ( NULL != getEventDispatcher() && getSceneNode()->getHighlightOver() && getEventDispatcher()->getOverControl() == this ) {
+	if ( NULL != getEventDispatcher() && mSceneNode->getHighlightOver() && getEventDispatcher()->getOverControl() == this ) {
 		Primitives P;
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
-		P.setColor( getSceneNode()->getHighlightOverColor() );
+		P.setColor( mSceneNode->getHighlightOverColor() );
 		P.setLineWidth( PixelDensity::dpToPxI( 1 ) );
 		P.drawRectangle( getScreenBounds() );
 	}
 }
 
 void UINode::drawDebugData() {
-	if ( NULL != getSceneNode() && getSceneNode()->getDrawDebugData() ) {
+	if ( NULL != mSceneNode && mSceneNode->getDrawDebugData() ) {
 		if ( isWidget() ) {
 			UIWidget * me = static_cast<UIWidget*>( this );
 
@@ -240,7 +240,7 @@ void UINode::drawDebugData() {
 }
 
 void UINode::drawBox() {
-	if ( NULL != getSceneNode() && getSceneNode()->getDrawBoxes() ) {
+	if ( NULL != mSceneNode && mSceneNode->getDrawBoxes() ) {
 		Primitives P;
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
@@ -698,11 +698,9 @@ Node * UINode::getWindowContainer() {
 
 	while ( Ctrl != NULL ) {
 		if ( Ctrl->isType( UI_TYPE_WINDOW ) ) {
-			if ( getSceneNode() == Ctrl ) {
-				return Ctrl;
-			} else {
-				return static_cast<UIWindow*>( Ctrl )->getContainer();
-			}
+			return static_cast<UIWindow*>( Ctrl )->getContainer();
+		} else if ( mSceneNode == Ctrl ) {
+			return mSceneNode;
 		}
 
 		Ctrl = Ctrl->getParent();
@@ -808,7 +806,7 @@ static void UINode_onFadeDone( Action * action, const Action::ActionType& action
 }
 
 Interpolation1d * UINode::startAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds, const Ease::Interpolation& Type, Interpolation1d::OnPathEndCallback PathEndCallback ) {
-	Actions::Fade * action = Actions::Fade::New( From, To, TotalTime, Type );
+	Actions::Fade * action = Actions::Fade::New( From, To, TotalTime, Type, AlphaChilds );
 
 	action->getInterpolation()->setPathEndCallback( PathEndCallback );
 

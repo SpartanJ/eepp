@@ -107,7 +107,7 @@ void UIDropDownList::showList() {
 		if ( !mStyleConfig.PopUpToMainControl )
 			mListBox->setParent( NULL != mFriendCtrl ? mFriendCtrl->getParent() : getWindowContainer() );
 		else
-			mListBox->setParent( getSceneNode() );
+			mListBox->setParent( mSceneNode );
 
 		mListBox->toFront();
 

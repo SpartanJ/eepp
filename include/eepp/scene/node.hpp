@@ -22,6 +22,7 @@ namespace EE { namespace Scene {
 class Action;
 class ActionManager;
 class SceneNode;
+class NodeDrawInvalidator;
 }}
 using namespace EE::Scene;
 
@@ -43,19 +44,21 @@ enum NODE_FLAGS_VALUES {
 	NODE_FLAG_DRAGGING							= (1<<13),
 	NODE_FLAG_SKIN_OWNER						= (1<<14),
 	NODE_FLAG_TOUCH_DRAGGING					= (1<<15),
-	NODE_FLAG_DISABLED_BY_MODAL_WINDOW			= (1<<16),
-	NODE_FLAG_OWNED_BY_WINDOW					= (1<<17),
+	NODE_FLAG_DISABLED_BY_NODE					= (1<<16),
+	NODE_FLAG_OWNED_BY_NODE						= (1<<17),
 	NODE_FLAG_REVERSE_DRAW						= (1<<18),
 	NODE_FLAG_FRAME_BUFFER						= (1<<19),
 	NODE_FLAG_CLIP_ENABLE						= (1<<20),
-	NODE_FLAG_SCENENODE							= (1<<21),
-	NODE_FLAG_UISCENENODE						= (1<<22),
-	NODE_FLAG_UINODE							= (1<<24),
-	NODE_FLAG_WIDGET							= (1<<25),
-	NODE_FLAG_WINDOW							= (1<<26),
-	NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS		= (1<<27),
-	NODE_FLAG_OVER_FIND_ALLOWED					= (1<<28),
-	NODE_FLAG_FREE_USE							= (1<<29)
+	NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS		= (1<<21),
+	NODE_FLAG_OVER_FIND_ALLOWED					= (1<<22),
+
+	NODE_FLAG_SCENENODE							= (1<<23),
+	NODE_FLAG_UISCENENODE						= (1<<24),
+	NODE_FLAG_UINODE							= (1<<25),
+	NODE_FLAG_WIDGET							= (1<<26),
+	NODE_FLAG_WINDOW							= (1<<27),
+
+	NODE_FLAG_FREE_USE							= (1<<28)
 };
 
 class EE_API Node : public Transformable {
@@ -303,6 +306,12 @@ class EE_API Node : public Transformable {
 		SceneNode * getSceneNode();
 
 		EventDispatcher * getEventDispatcher();
+
+		virtual bool isDrawInvalidator();
+
+		virtual bool invalidated();
+
+		virtual void invalidate();
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, EventCallback> > EventsMap;
 		friend class EE::Scene::EventDispatcher;
@@ -315,6 +324,7 @@ class EE_API Node : public Transformable {
 		UintPtr			mData;
 		Node *			mParentCtrl;
 		SceneNode *		mSceneNode;
+		Node *			mNodeDrawInvalidator;
 		Node *			mChild;			//! Pointer to the first child of the node
 		Node *			mChildLast;		//! Pointer to the last child added
 		Node *			mNext;			//! Pointer to the next child of the father
@@ -453,6 +463,10 @@ class EE_API Node : public Transformable {
 		void clipSmartEnable( const Int32 & x, const Int32 & y, const Uint32 & Width, const Uint32 & Height );
 
 		void clipSmartDisable();
+
+		Node * getDrawInvalidator();
+
+		SceneNode * findSceneNode();
 };
 
 }}

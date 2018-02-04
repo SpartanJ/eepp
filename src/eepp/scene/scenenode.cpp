@@ -64,6 +64,12 @@ void SceneNode::enableFrameBuffer() {
 
 void SceneNode::disableFrameBuffer() {
 	eeSAFE_DELETE( mFrameBuffer );
+
+	writeCtrlFlag( NODE_FLAG_FRAME_BUFFER, 0 );
+}
+
+bool SceneNode::ownsFrameBuffer() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_FRAME_BUFFER );
 }
 
 void SceneNode::draw() {
@@ -73,19 +79,36 @@ void SceneNode::draw() {
 
 	mWindow->setView( mWindow->getDefaultView() );
 
-	if ( mVisible ) {
-		if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
-			updateScreenPos();
+	if ( mVisible && 0 != mAlpha ) {
+		updateScreenPos();
+
+		preDraw();
+
+		ClippingMask * clippingMask = GLi->getClippingMask();
+
+		std::list<Rectf> clips = clippingMask->getPlanesClipped();
+
+		if ( !clips.empty() )
+			clippingMask->clipPlaneDisable();
 
 		matrixSet();
 
-		clipStart();
+		if ( NULL == mFrameBuffer || !usesInvalidation() || invalidated() ) {
+			clipStart();
 
-		drawChilds();
+			drawChilds();
 
-		clipEnd();
+			clipEnd();
+		}
 
 		matrixUnset();
+
+		if ( !clips.empty() )
+			clippingMask->setPlanesClipped( clips );
+
+		postDraw();
+
+		writeCtrlFlag( NODE_FLAG_VIEW_DIRTY, 0 );
 	}
 
 	mWindow->setView( prevView );
@@ -175,11 +198,12 @@ Sizei SceneNode::getFrameBufferSize() {
 }
 
 void SceneNode::createFrameBuffer() {
+	writeCtrlFlag( NODE_FLAG_FRAME_BUFFER, 1 );
 	eeSAFE_DELETE( mFrameBuffer );
 	Sizei fboSize( getFrameBufferSize() );
 	if ( fboSize.getWidth() < 1 ) fboSize.setWidth(1);
 	if ( fboSize.getHeight() < 1 ) fboSize.setHeight(1);
-	mFrameBuffer = FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight(), true, false, true );
+	mFrameBuffer = FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight(), true, false, false, 4, mWindow );
 }
 
 void SceneNode::drawFrameBuffer() {
@@ -359,6 +383,16 @@ void SceneNode::setCursor( EE_CURSOR_TYPE cursor ) {
 	if ( mUseGlobalCursors ) {
 		mWindow->getCursorManager()->set( cursor );
 	}
+}
+
+bool SceneNode::isDrawInvalidator() {
+	return NULL != mFrameBuffer;
+}
+
+void SceneNode::preDraw() {
+}
+
+void SceneNode::postDraw() {
 }
 
 }}
