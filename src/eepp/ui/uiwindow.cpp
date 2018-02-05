@@ -1186,7 +1186,7 @@ FrameBuffer * UIWindow::getFrameBuffer() const {
 }
 
 bool UIWindow::isDrawInvalidator() {
-	return true;
+	return NULL != mFrameBuffer;
 }
 
 bool UIWindow::invalidated() {

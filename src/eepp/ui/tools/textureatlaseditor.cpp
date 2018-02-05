@@ -61,7 +61,7 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 		<LinearLayout layout_width="match_parent" layout_height="0dp" layout_weight="1" orientation="horizontal">
 			<TextureAtlasTextureRegionEditor layout_width="match_parent" layout_height="match_parent" layout_weight="1"
 											flags="clip" backgroundColor="#00000032" borderWidth="1" borderColor="#000000FF" />
-			<LinearLayout orientation="vertical" layout_width="208dp" layout_height="match_parent" layout_marginLeft="8dp" layout_marginRight="8dp">
+			<LinearLayout orientation="vertical" layout_width="210dp" layout_height="match_parent" layout_marginLeft="8dp" layout_marginRight="8dp">
 				<TextView text="Texture Filter:" fontStyle="shadow" layout_marginTop="4dp" layout_marginBottom="4dp" />
 				<DropDownList id="textureFilter" layout_width="match_parent" layout_height="wrap_content" layout_gravity="center_vertical" selectedText="Linear">
 					<item>Linear</item>
@@ -343,8 +343,8 @@ void TextureAtlasEditor::fillTextureRegionList() {
 		for ( auto it = Res.begin(); it != Res.end(); ++it ) {
 			TextureRegion * tr = (*it);
 
-			UIImage::New()
-					->setDrawable( tr )
+			UITextureRegion::New()
+					->setTextureRegion( tr )
 					->setScaleType( UIScaleType::FitInside )
 					->setTooltipText( tr->getName() )
 					->setGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
@@ -356,20 +356,20 @@ void TextureAtlasEditor::fillTextureRegionList() {
 
 void TextureAtlasEditor::onTextureRegionChange( const Event * Event ) {
 	if ( NULL != mTextureAtlasLoader && NULL != mTextureAtlasLoader->getTextureAtlas() ) {
-		mCurTextureRegion = Event->getNode()->isType( UI_TYPE_IMAGE ) ?
+		mCurTextureRegion = Event->getNode()->isType( UI_TYPE_TEXTUREREGION ) ?
 							mTextureAtlasLoader->getTextureAtlas()->getByName( static_cast<UIWidget*>( Event->getNode() )->getTooltipText() ) :
 							mTextureAtlasLoader->getTextureAtlas()->getByName( mTextureRegionList->getItemSelectedText() );
 
-		if ( Event->getNode()->isType( UI_TYPE_IMAGE ) )
-			mTextureRegionList->setSelected( static_cast<UIImage*>( Event->getNode() )->getTooltipText() );
+		if ( Event->getNode()->isType( UI_TYPE_TEXTUREREGION ) )
+			mTextureRegionList->setSelected( static_cast<UITextureRegion*>( Event->getNode() )->getTooltipText() );
 
 		Node * node = mTextureRegionGrid->getFirstChild();
 
 		while ( node ) {
-			if ( node->isType( UI_TYPE_IMAGE ) ) {
-				UIImage * curImage = static_cast<UIImage*>( node );
+			if ( node->isType( UI_TYPE_TEXTUREREGION ) ) {
+				UITextureRegion * curImage = static_cast<UITextureRegion*>( node );
 
-				if ( curImage->getDrawable() == mCurTextureRegion ) {
+				if ( curImage->getTextureRegion() == mCurTextureRegion ) {
 					curImage->setBackgroundFillEnabled( true )->setColor( Color( "#00000033" ) );
 				} else {
 					curImage->setBackgroundFillEnabled( false );

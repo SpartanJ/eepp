@@ -386,7 +386,7 @@ void SceneNode::setCursor( EE_CURSOR_TYPE cursor ) {
 }
 
 bool SceneNode::isDrawInvalidator() {
-	return NULL != mFrameBuffer;
+	return true;
 }
 
 void SceneNode::preDraw() {

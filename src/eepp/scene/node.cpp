@@ -1399,7 +1399,7 @@ void Node::clipSmartDisable() {
 	}
 }
 
-Node* Node::getDrawInvalidator() {
+Node * Node::getDrawInvalidator() {
 	Node * Ctrl = mParentCtrl;
 
 	while ( Ctrl != NULL ) {
