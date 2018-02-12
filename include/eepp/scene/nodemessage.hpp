@@ -39,7 +39,7 @@ class EE_API NodeMessage {
 
 		const Uint32& getFlags() const;
 	private:
-		Node *	mCtrl;
+		Node *	mNode;
 		Uint32	mMsg;
 		Uint32	mFlags;
 };

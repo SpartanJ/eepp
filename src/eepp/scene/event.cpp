@@ -3,8 +3,8 @@
 
 namespace EE { namespace Scene {
 
-Event::Event( Node * control, const Uint32& eventType ) :
-	mCtrl( control ),
+Event::Event( Node * node, const Uint32& eventType ) :
+	mNode( node ),
 	mEventType( eventType )
 {
 }
@@ -14,7 +14,7 @@ Event::~Event()
 }
 
 Node * Event::getNode() const {
-	return mCtrl;
+	return mNode;
 }
 
 const Uint32& Event::getType() const {

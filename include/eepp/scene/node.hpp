@@ -314,7 +314,7 @@ class EE_API Node : public Transformable {
 		virtual void invalidate();
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, EventCallback> > EventsMap;
-		friend class EE::Scene::EventDispatcher;
+		friend class EventDispatcher;
 
 		std::string		mId;
 		Uint32			mIdHash;

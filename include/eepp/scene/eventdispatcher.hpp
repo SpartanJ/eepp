@@ -19,7 +19,7 @@ namespace EE { namespace Scene {
 class Node;
 class SceneNode;
 
-class EventDispatcher {
+class EE_API EventDispatcher {
 	public:
 		static EventDispatcher * New( SceneNode * sceneNode );
 
@@ -75,7 +75,7 @@ class EventDispatcher {
 	protected:
 		EE::Window::Window *mWindow;
 		Input *				mInput;
-		SceneNode *			mControl;
+		SceneNode *			mSceneNode;
 		Node *				mFocusControl;
 		Node *				mOverControl;
 		Node *				mDownControl;

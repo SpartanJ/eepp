@@ -14,7 +14,7 @@ EventDispatcher * EventDispatcher::New( SceneNode * sceneNode ) {
 EventDispatcher::EventDispatcher( SceneNode * sceneNode ) :
 	mWindow( sceneNode->getWindow() ),
 	mInput( mWindow->getInput() ),
-	mControl( sceneNode ),
+	mSceneNode( sceneNode ),
 	mFocusControl( sceneNode ),
 	mOverControl( NULL ),
 	mDownControl( NULL ),
@@ -46,8 +46,8 @@ void EventDispatcher::inputCallback( InputEvent * Event ) {
 		case InputEvent::VideoResize:
 		case InputEvent::VideoExpose:
 		{
-			if ( NULL != mControl )
-				mControl->invalidate();
+			if ( NULL != mSceneNode )
+				mSceneNode->invalidate();
 		}
 	}
 }
@@ -58,7 +58,7 @@ void EventDispatcher::update( const Time& elapsed ) {
 	mMousePos = mInput->getMousePosFromView( mWindow->getDefaultView() );
 	mMousePosi = mMousePos.asInt();
 
-	Node * pOver = mControl->overFind( mMousePos );
+	Node * pOver = mSceneNode->overFind( mMousePos );
 
 	if ( pOver != mOverControl ) {
 		if ( NULL != mOverControl ) {
@@ -238,7 +238,7 @@ Vector2f EventDispatcher::getMousePosf() {
 }
 
 SceneNode *EventDispatcher::getSceneNode() const {
-	return mControl;
+	return mSceneNode;
 }
 
 }}

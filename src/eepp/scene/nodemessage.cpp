@@ -4,7 +4,7 @@
 namespace EE { namespace Scene {
 
 NodeMessage::NodeMessage( Node * node, const Uint32& Msg, const Uint32& Flags ) :
-	mCtrl( node ),
+	mNode( node ),
 	mMsg( Msg ),
 	mFlags( Flags )
 {
@@ -15,7 +15,7 @@ NodeMessage::~NodeMessage()
 }
 
 Node * NodeMessage::getSender() const {
-	return mCtrl;
+	return mNode;
 }
 
 const Uint32& NodeMessage::getMsg() const {

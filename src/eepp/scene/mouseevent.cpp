@@ -3,16 +3,14 @@
 
 namespace EE { namespace Scene {
 
-MouseEvent::MouseEvent( Node * Ctrl, const Uint32& EventNum, const Vector2i& Pos, const Uint32& Flags ) :
-	Event( Ctrl, EventNum ),
+MouseEvent::MouseEvent( Node * node, const Uint32& EventNum, const Vector2i& Pos, const Uint32& Flags ) :
+	Event( node, EventNum ),
 	mPos( Pos ),
 	mFlags( Flags )
-{
-}
+{}
 
 MouseEvent::~MouseEvent()
-{
-}
+{}
 
 const Vector2i& MouseEvent::getPosition() const {
 	return mPos;

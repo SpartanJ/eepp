@@ -16,7 +16,7 @@ namespace EE { namespace Scene {
 
 class SceneNode;
 
-class SceneManager : public Container<SceneNode> {
+class EE_API SceneManager : public Container<SceneNode> {
 	SINGLETON_DECLARE_HEADERS(SceneManager)
 	public:
 		SceneManager();
