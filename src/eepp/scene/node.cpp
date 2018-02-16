@@ -103,7 +103,7 @@ Uint32 Node::onMessage( const NodeMessage * Msg ) {
 }
 
 void Node::setInternalPosition( const Vector2f& Pos ) {
-	Transformable::setPosition( Pos.x, Pos.y );
+	Transformable::setPosition( Vector2f( Pos.x, Pos.y ) );
 	setDirty();
 }
 

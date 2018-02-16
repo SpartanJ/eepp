@@ -71,6 +71,10 @@ class EE_API EventDispatcher {
 
 		Vector2f getMousePosf();
 
+		Vector2i getMouseDownPos();
+
+		Vector2f getLastMousePos();
+
 		SceneNode * getSceneNode() const;
 	protected:
 		EE::Window::Window *mWindow;

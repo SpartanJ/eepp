@@ -237,7 +237,15 @@ Vector2f EventDispatcher::getMousePosf() {
 	return mMousePos;
 }
 
-SceneNode *EventDispatcher::getSceneNode() const {
+Vector2i EventDispatcher::getMouseDownPos() {
+	return mMouseDownPos;
+}
+
+Vector2f EventDispatcher::getLastMousePos() {
+	return mLastMousePos;
+}
+
+SceneNode * EventDispatcher::getSceneNode() const {
 	return mSceneNode;
 }
 
