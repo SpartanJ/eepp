@@ -1,5 +1,4 @@
 #include <eepp/ui/uiradiobutton.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/text.hpp>
 #include <pugixml/pugixml.hpp>
@@ -102,8 +101,10 @@ Uint32 UIRadioButton::onMessage( const NodeMessage * Msg ) {
 				switchState();
 			}
 
-			if ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) {
-				sendMouseEvent( Event::MouseClick, UIManager::instance()->getMousePos(), UIManager::instance()->getPressTrigger() );
+			if ( NULL != getEventDispatcher() ) {
+				if ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) {
+					sendMouseEvent( Event::MouseClick, getEventDispatcher()->getMousePos(), getEventDispatcher()->getPressTrigger() );
+				}
 			}
 
 			return 1;

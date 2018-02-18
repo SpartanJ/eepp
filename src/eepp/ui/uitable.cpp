@@ -1,5 +1,4 @@
 #include <eepp/ui/uitable.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -561,13 +560,15 @@ Uint32 UITable::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::FocusLoss:
 		{
-			Node * FocusCtrl = UIManager::instance()->getFocusControl();
+			if ( NULL != getEventDispatcher() ) {
+				Node * FocusCtrl = getEventDispatcher()->getFocusControl();
 
-			if ( this != FocusCtrl && !isParentOf( FocusCtrl ) ) {
-				onWidgetFocusLoss();
+				if ( this != FocusCtrl && !isParentOf( FocusCtrl ) ) {
+					onWidgetFocusLoss();
+				}
+
+				return 1;
 			}
-
-			return 1;
 		}
 	}
 

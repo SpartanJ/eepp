@@ -1,5 +1,4 @@
 #include <eepp/ui/uicommondialog.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uilinearlayout.hpp>

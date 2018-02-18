@@ -1,7 +1,6 @@
 #ifndef EE_SYSTEMCPACK_HPP
 #define EE_SYSTEMCPACK_HPP
 
-#include <eepp/system/base.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/safedatapointer.hpp>
 #include <eepp/system/iostream.hpp>

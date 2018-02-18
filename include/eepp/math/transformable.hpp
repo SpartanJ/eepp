@@ -13,8 +13,6 @@ class EE_API Transformable {
 
 		virtual ~Transformable();
 
-		virtual void setPosition(float x, float y);
-
 		virtual void setPosition(const Vector2f& position);
 
 		virtual void setRotation(float angle);

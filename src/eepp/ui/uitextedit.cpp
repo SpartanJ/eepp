@@ -1,5 +1,5 @@
 #include <eepp/ui/uitextedit.hpp>
-#include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/font.hpp>
 #include <pugixml/pugixml.hpp>
@@ -396,8 +396,8 @@ void UITextEdit::shrinkText( const Uint32& Width ) {
 void UITextEdit::update( const Time& time ) {
 	UIWidget::update( time );
 
-	if ( mTextInput->isEnabled() && mTextInput->isVisible() && mTextInput->isMouseOver() && mVScrollBar->isVisible() ) {
-		Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
+	if ( NULL != getEventDispatcher() && mTextInput->isEnabled() && mTextInput->isVisible() && mTextInput->isMouseOver() && mVScrollBar->isVisible() ) {
+		Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
 
 		if ( Flags & EE_BUTTONS_WUWD )
 			mVScrollBar->getSlider()->manageClick( Flags );
@@ -459,7 +459,9 @@ void UITextEdit::loadFromXmlNode(const pugi::xml_node & node) {
 		String::toLowerInPlace( name );
 
 		if ( "text" == name ) {
-			setText( UIManager::instance()->getTranslatorString( ait->as_string() ) );
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
+				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( ait->as_string() ) );
+			}
 		} else if ( "allowediting" == name ) {
 			setAllowEditing( ait->as_bool() );
 		} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {

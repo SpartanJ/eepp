@@ -44,7 +44,7 @@ class EE_API TextureAtlasEditor {
 		friend class UITGEUpdater;
 
 		UIWindow *			mUIWindow;
-		UINode *			mUIContainer;
+		Node *				mUIContainer;
 		UITheme *			mTheme;
 		TGEditorCloseCb		mCloseCb;
 		TexturePacker *		mTexturePacker;

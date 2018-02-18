@@ -1,7 +1,6 @@
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uiskinstate.hpp>
 #include <eepp/ui/uiskinsimple.hpp>
 #include <eepp/ui/uiskincomplex.hpp>
@@ -12,12 +11,15 @@
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/scene/scenenode.hpp>
 #include <eepp/scene/actionmanager.hpp>
 #include <eepp/scene/action.hpp>
 #include <eepp/scene/actions/fade.hpp>
 #include <eepp/scene/actions/scale.hpp>
 #include <eepp/scene/actions/rotate.hpp>
 #include <eepp/scene/actions/move.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -34,6 +36,9 @@ UINode::UINode() :
 	mDragButton( EE_BUTTON_LMASK )
 {
 	mNodeFlags |= NODE_FLAG_UINODE | NODE_FLAG_OVER_FIND_ALLOWED;
+
+	if ( NULL != SceneManager::instance()->getUISceneNode() )
+		setParent( (Node*)SceneManager::instance()->getUISceneNode() );
 }
 
 UINode::~UINode() {
@@ -193,33 +198,33 @@ const Sizef& UINode::getRealSize() {
 }
 
 void UINode::drawHighlightFocus() {
-	if ( UIManager::instance()->getHighlightFocus() && UIManager::instance()->getFocusControl() == this ) {
+	if ( NULL != getEventDispatcher() && mSceneNode->getHighlightFocus() && getEventDispatcher()->getFocusControl() == this ) {
 		Primitives P;
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
-		P.setColor( UIManager::instance()->getHighlightFocusColor() );
+		P.setColor( mSceneNode->getHighlightFocusColor() );
 		P.setLineWidth( PixelDensity::dpToPxI( 1 ) );
 		P.drawRectangle( getScreenBounds() );
 	}
 }
 
 void UINode::drawOverNode() {
-	if ( UIManager::instance()->getHighlightOver() && UIManager::instance()->getOverControl() == this ) {
+	if ( NULL != getEventDispatcher() && mSceneNode->getHighlightOver() && getEventDispatcher()->getOverControl() == this ) {
 		Primitives P;
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
-		P.setColor( UIManager::instance()->getHighlightOverColor() );
+		P.setColor( mSceneNode->getHighlightOverColor() );
 		P.setLineWidth( PixelDensity::dpToPxI( 1 ) );
 		P.drawRectangle( getScreenBounds() );
 	}
 }
 
 void UINode::drawDebugData() {
-	if ( UIManager::instance()->getDrawDebugData() ) {
+	if ( NULL != mSceneNode && mSceneNode->getDrawDebugData() ) {
 		if ( isWidget() ) {
 			UIWidget * me = static_cast<UIWidget*>( this );
 
-			if ( UIManager::instance()->getOverControl() == this ) {
+			if ( NULL != getEventDispatcher() && getEventDispatcher()->getOverControl() == this ) {
 				String text( String::strFormated( "X: %2.4f Y: %2.4f\nW: %2.4f H: %2.4f", mDpPos.x, mDpPos.y, mDpSize.x, mDpSize.y ) );
 
 				if ( !mId.empty() ) {
@@ -235,7 +240,7 @@ void UINode::drawDebugData() {
 }
 
 void UINode::drawBox() {
-	if ( UIManager::instance()->getDrawBoxes() ) {
+	if ( NULL != mSceneNode && mSceneNode->getDrawBoxes() ) {
 		Primitives P;
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
@@ -267,14 +272,16 @@ void UINode::draw() {
 }
 
 void UINode::update( const Time& time ) {
-	if ( isDragEnabled() && isDragging() ) {
-		if ( !( UIManager::instance()->getPressTrigger() & mDragButton ) ) {
+	if ( isDragEnabled() && isDragging() && NULL != getEventDispatcher() ) {
+		EventDispatcher * eventDispatcher = getEventDispatcher();
+
+		if ( !( eventDispatcher->getPressTrigger() & mDragButton ) ) {
 			setDragging( false );
-			UIManager::instance()->setControlDragging( false );
+			eventDispatcher->setControlDragging( false );
 			return;
 		}
 
-		Vector2f Pos( UIManager::instance()->getMousePosf() );
+		Vector2f Pos( eventDispatcher->getMousePosf() );
 
 		if ( mDragPoint != Pos && ( abs( mDragPoint.x - Pos.x ) > 1 || abs( mDragPoint.y - Pos.y ) > 1 ) ) {
 			if ( onDrag( Pos ) ) {
@@ -289,7 +296,7 @@ void UINode::update( const Time& time ) {
 
 				onPositionChange();
 
-				UIManager::instance()->setControlDragging( true );
+				eventDispatcher->setControlDragging( true );
 			}
 		}
 	}
@@ -298,7 +305,7 @@ void UINode::update( const Time& time ) {
 }
 
 Uint32 UINode::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
-	if ( !( UIManager::instance()->getLastPressTrigger() & mDragButton ) && ( Flags & mDragButton ) && isDragEnabled() && !isDragging() ) {
+	if ( NULL != getEventDispatcher() && !( getEventDispatcher()->getLastPressTrigger() & mDragButton ) && ( Flags & mDragButton ) && isDragEnabled() && !isDragging() ) {
 		setDragging( true );
 		mDragPoint = Vector2f( Pos.x, Pos.y );
 	}
@@ -691,17 +698,15 @@ Node * UINode::getWindowContainer() {
 
 	while ( Ctrl != NULL ) {
 		if ( Ctrl->isType( UI_TYPE_WINDOW ) ) {
-			if ( UIManager::instance()->getMainControl() == Ctrl ) {
-				return Ctrl;
-			} else {
-				return static_cast<UIWindow*>( Ctrl )->getContainer();
-			}
+			return static_cast<UIWindow*>( Ctrl )->getContainer();
+		} else if ( mSceneNode == Ctrl ) {
+			return mSceneNode;
 		}
 
 		Ctrl = Ctrl->getParent();
 	}
 
-	return NULL;
+	return mSceneNode;
 }
 
 const Vector2f& UINode::getDragPoint() const {
@@ -751,18 +756,21 @@ bool UINode::isDragging() const {
 }
 
 void UINode::setDragging( const bool& dragging ) {
+	if ( NULL == getEventDispatcher() )
+		return;
+
 	writeCtrlFlag( NODE_FLAG_DRAGGING, dragging );
 
 	if ( dragging ) {
 		NodeMessage tMsg( this, NodeMessage::DragStart, 0 );
 		messagePost( &tMsg );
 
-		onDragStart( UIManager::instance()->getMousePos() );
+		onDragStart( getEventDispatcher()->getMousePos() );
 	} else {
 		NodeMessage tMsg( this, NodeMessage::DragStop, 0 );
 		messagePost( &tMsg );
 
-		onDragStop( UIManager::instance()->getMousePos() );
+		onDragStop( getEventDispatcher()->getMousePos() );
 	}
 }
 
@@ -798,7 +806,7 @@ static void UINode_onFadeDone( Action * action, const Action::ActionType& action
 }
 
 Interpolation1d * UINode::startAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds, const Ease::Interpolation& Type, Interpolation1d::OnPathEndCallback PathEndCallback ) {
-	Actions::Fade * action = Actions::Fade::New( From, To, TotalTime, Type );
+	Actions::Fade * action = Actions::Fade::New( From, To, TotalTime, Type, AlphaChilds );
 
 	action->getInterpolation()->setPathEndCallback( PathEndCallback );
 
@@ -891,7 +899,8 @@ void UINode::onWidgetFocusLoss() {
 }
 
 void UINode::setFocus() {
-	UIManager::instance()->setFocusControl( this );
+	if ( NULL != getEventDispatcher() )
+		getEventDispatcher()->setFocusControl( this );
 }
 
 Uint32 UINode::onFocus() {

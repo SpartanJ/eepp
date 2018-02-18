@@ -1,8 +1,8 @@
 #ifndef EE_SYSTEMCTHREAD_H
 #define EE_SYSTEMCTHREAD_H
 
-#include <eepp/system/base.hpp>
 #include <eepp/core/noncopyable.hpp>
+#include <cstddef>
 
 namespace EE { namespace System {
 

@@ -1,7 +1,8 @@
 #ifndef EE_SYSTEMCIOSTREAM_HPP
 #define EE_SYSTEMCIOSTREAM_HPP
 
-#include <eepp/system/base.hpp>
+#include <eepp/config.hpp>
+#include <ios>
 
 namespace EE {
 	typedef std::streamsize ios_size;

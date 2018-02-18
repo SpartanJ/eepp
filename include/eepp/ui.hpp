@@ -3,13 +3,13 @@
 
 #include <eepp/ui/uibackground.hpp>
 #include <eepp/ui/uiborder.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/ui/uiskinsimple.hpp>
 #include <eepp/ui/uiskincomplex.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uinode.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uitouchdragablewidget.hpp>
 #include <eepp/ui/uiimage.hpp>
@@ -71,6 +71,8 @@
 #include <eepp/scene/mouseevent.hpp>
 #include <eepp/scene/nodemessage.hpp>
 #include <eepp/scene/node.hpp>
+#include <eepp/scene/scenenode.hpp>
+#include <eepp/scene/scenemanager.hpp>
 using namespace EE::Scene;
 
 #endif

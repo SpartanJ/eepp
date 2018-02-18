@@ -1,5 +1,4 @@
 #include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
@@ -9,7 +8,10 @@
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
+#include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <pugixml/pugixml.hpp>
+#include <eepp/scene/scenemanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -45,7 +47,8 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 
 	setHorizontalAlign( UI_HALIGN_CENTER );
 
-	UIManager::instance()->windowAdd( this );
+	if ( NULL != getUISceneNode() )
+		getUISceneNode()->windowAdd( this );
 
 	switch ( type ) {
 		case LINEAR_LAYOUT:
@@ -61,7 +64,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 	}
 
 	mContainer->setLayoutSizeRules( FIXED, FIXED );
-	mContainer->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+	mContainer->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 	mContainer->setParent( this );
 	mContainer->clipEnable();
 	mContainer->enableReportSizeChangeToChilds();
@@ -76,9 +79,11 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 }
 
 UIWindow::~UIWindow() {
-	UIManager::instance()->windowRemove( this );
+	if ( NULL != getUISceneNode() && !SceneManager::instance()->isShootingDown() ) {
+		getUISceneNode()->windowRemove( this );
 
-	UIManager::instance()->setFocusLastWindow( this );
+		getUISceneNode()->setFocusLastWindow( this );
+	}
 
 	sendCommonEvent( Event::OnWindowClose );
 
@@ -108,7 +113,7 @@ void UIWindow::updateWinFlags() {
 	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) ) {
 		if ( NULL == mWindowDecoration ) {
 			mWindowDecoration = UINode::New();
-			mWindowDecoration->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+			mWindowDecoration->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
 		mWindowDecoration->setParent( this );
@@ -117,7 +122,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( NULL == mBorderLeft ) {
 			mBorderLeft		= UINode::New();
-			mBorderLeft->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+			mBorderLeft->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
 		mBorderLeft->setParent( this );
@@ -126,7 +131,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( NULL == mBorderRight ) {
 			mBorderRight	= UINode::New();
-			mBorderRight->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+			mBorderRight->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
 		mBorderRight->setParent( this );
@@ -135,7 +140,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( NULL == mBorderBottom ) {
 			mBorderBottom	= UINode::New();
-			mBorderBottom->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+			mBorderBottom->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
 		mBorderBottom->setParent( this );
@@ -145,7 +150,7 @@ void UIWindow::updateWinFlags() {
 		if ( mStyleConfig.WinFlags & UI_WIN_CLOSE_BUTTON ) {
 			if ( NULL == mButtonClose ) {
 				mButtonClose = UINode::New();
-				mButtonClose->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+				mButtonClose->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 				needsUpdate = true;
 			}
 
@@ -160,7 +165,7 @@ void UIWindow::updateWinFlags() {
 		if ( isMaximizable() ) {
 			if ( NULL == mButtonMaximize ) {
 				mButtonMaximize = UINode::New();
-				mButtonMaximize->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+				mButtonMaximize->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 				needsUpdate = true;
 			}
 
@@ -175,7 +180,7 @@ void UIWindow::updateWinFlags() {
 		if ( mStyleConfig.WinFlags & UI_WIN_MINIMIZE_BUTTON ) {
 			if ( NULL == mButtonMinimize ) {
 				mButtonMinimize = UINode::New();
-				mButtonMinimize->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+				mButtonMinimize->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 				needsUpdate = true;
 			}
 
@@ -272,13 +277,13 @@ void UIWindow::drawFrameBuffer() {
 }
 
 void UIWindow::drawHighlightInvalidation() {
-	if ( ( mNodeFlags & NODE_FLAG_VIEW_DIRTY ) && UIManager::instance()->getHighlightInvalidation() ) {
+	if ( ( mNodeFlags & NODE_FLAG_VIEW_DIRTY ) && NULL != mSceneNode && mSceneNode->getHighlightInvalidation() ) {
 		UIWidget::matrixSet();
 
 		Primitives P;
 		P.setFillMode( DRAW_LINE );
 		P.setBlendMode( getBlendMode() );
-		P.setColor( UIManager::instance()->getHighlightInvalidationColor() );
+		P.setColor( mSceneNode->getHighlightInvalidationColor() );
 		P.setLineWidth( PixelDensity::dpToPx( 2 ) );
 		P.drawRectangle( getScreenBounds() );
 
@@ -324,15 +329,22 @@ void UIWindow::drawShadow() {
 }
 
 Sizei UIWindow::getFrameBufferSize() {
-	return isResizeable() && this != UIManager::instance()->getMainControl() ? Sizei( Math::nextPowOfTwo( (int)mSize.getWidth() ), Math::nextPowOfTwo( (int)mSize.getHeight() ) ) : mSize.ceil().asInt();
+	return isResizeable() && (Node*)this != mSceneNode ? Sizei( Math::nextPowOfTwo( (int)mSize.getWidth() ), Math::nextPowOfTwo( (int)mSize.getHeight() ) ) : mSize.ceil().asInt();
+}
+
+UISceneNode *UIWindow::getUISceneNode() {
+	return ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) ? static_cast<UISceneNode*>( mSceneNode ) : NULL;
 }
 
 void UIWindow::createModalControl() {
-	UINode * Ctrl = UIManager::instance()->getMainControl();
+	Node * Ctrl = mSceneNode;
+
+	if ( NULL == Ctrl )
+		return;
 
 	if ( NULL == mModalCtrl ) {
 		mModalCtrl = UIWidget::New();
-		mModalCtrl->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+		mModalCtrl->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		mModalCtrl->setParent( Ctrl )->setPosition(0,0)->setSize( Ctrl->getSize() );
 		mModalCtrl->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	} else {
@@ -348,17 +360,17 @@ void UIWindow::createModalControl() {
 }
 
 void UIWindow::enableByModal() {
-	if ( isModal() ) {
-		Node * CtrlChild = UIManager::instance()->getMainControl()->getFirstChild();
+	if ( isModal() && NULL != mSceneNode ) {
+		Node * CtrlChild = mSceneNode->getFirstChild();
 
 		while ( NULL != CtrlChild )
 		{
 			if ( CtrlChild != mModalCtrl &&
 				 CtrlChild != this &&
-				 CtrlChild->getNodeFlags() & NODE_FLAG_DISABLED_BY_MODAL_WINDOW )
+				 CtrlChild->getNodeFlags() & NODE_FLAG_DISABLED_BY_NODE )
 			{
 				CtrlChild->setEnabled( true );
-				CtrlChild->writeCtrlFlag( NODE_FLAG_DISABLED_BY_MODAL_WINDOW, 0 );
+				CtrlChild->writeCtrlFlag( NODE_FLAG_DISABLED_BY_NODE, 0 );
 			}
 
 			CtrlChild = CtrlChild->getNextNode();
@@ -367,8 +379,8 @@ void UIWindow::enableByModal() {
 }
 
 void UIWindow::disableByModal() {
-	if ( isModal() ) {
-		Node * CtrlChild = UIManager::instance()->getMainControl()->getFirstChild();
+	if ( isModal() && NULL != mSceneNode ) {
+		Node * CtrlChild = mSceneNode->getFirstChild();
 
 		while ( NULL != CtrlChild )
 		{
@@ -377,7 +389,7 @@ void UIWindow::disableByModal() {
 				 CtrlChild->isEnabled() )
 			{
 				CtrlChild->setEnabled( false );
-				CtrlChild->writeCtrlFlag( NODE_FLAG_DISABLED_BY_MODAL_WINDOW, 1 );
+				CtrlChild->writeCtrlFlag( NODE_FLAG_DISABLED_BY_NODE, 1 );
 			}
 
 			CtrlChild = CtrlChild->getNextNode();
@@ -652,26 +664,31 @@ Uint32 UIWindow::onMessage( const NodeMessage * Msg ) {
 		}
 		case NodeMessage::WindowResize:
 		{
-			if ( isModal() && NULL != mModalCtrl ) {
-				mModalCtrl->setSize( UIManager::instance()->getMainControl()->getSize() );
+			if ( isModal() && NULL != mModalCtrl && NULL != mSceneNode ) {
+				mModalCtrl->setSize( mSceneNode->getSize() );
 			}
 
 			break;
 		}
 		case NodeMessage::MouseExit:
 		{
-			UIManager::instance()->setCursor( EE_CURSOR_ARROW );
+			if ( getUISceneNode() != NULL )
+				getUISceneNode()->setCursor( EE_CURSOR_ARROW );
 			break;
 		}
 		case NodeMessage::DragStart:
 		{
-			UIManager::instance()->setCursor( EE_CURSOR_HAND );
+			if ( getUISceneNode() != NULL )
+				getUISceneNode()->setCursor( EE_CURSOR_HAND );
+
 			toFront();
+
 			break;
 		}
 		case NodeMessage::DragStop:
 		{
-			UIManager::instance()->setCursor( EE_CURSOR_ARROW );
+			if ( getUISceneNode() != NULL )
+				getUISceneNode()->setCursor( EE_CURSOR_ARROW );
 			break;
 		}
 		case NodeMessage::Click:
@@ -700,13 +717,13 @@ Uint32 UIWindow::onMessage( const NodeMessage * Msg ) {
 }
 
 void UIWindow::doResize ( const NodeMessage * Msg ) {
-	if ( NULL == mWindowDecoration )
+	if ( NULL == mWindowDecoration || NULL == getEventDispatcher() )
 		return;
 
 	if (	!isResizeable() ||
 			!( Msg->getFlags() & EE_BUTTON_LMASK ) ||
 			RESIZE_NONE != mResizeType ||
-			( UIManager::instance()->getLastPressTrigger() & EE_BUTTON_LMASK )
+			( getEventDispatcher()->getLastPressTrigger() & EE_BUTTON_LMASK )
 	)
 		return;
 
@@ -714,7 +731,10 @@ void UIWindow::doResize ( const NodeMessage * Msg ) {
 }
 
 void UIWindow::decideResizeType( Node * Control ) {
-	Vector2i Pos = UIManager::instance()->getMousePos();
+	if ( NULL == getEventDispatcher() )
+		return;
+
+	Vector2i Pos = getEventDispatcher()->getMousePos();
 
 	worldToNode( Pos );
 
@@ -756,12 +776,12 @@ void UIWindow::decideResizeType( Node * Control ) {
 }
 
 void UIWindow::tryResize( const UI_RESIZE_TYPE& Type ) {
-	if ( RESIZE_NONE != mResizeType )
+	if ( RESIZE_NONE != mResizeType || NULL == getEventDispatcher() )
 		return;
 
 	setDragEnabled( false );
 
-	Vector2f Pos = UIManager::instance()->getMousePosf();
+	Vector2f Pos = getEventDispatcher()->getMousePosf();
 
 	worldToNode( Pos );
 	
@@ -826,16 +846,16 @@ void UIWindow::endResize() {
 }
 
 void UIWindow::updateResize() {
-	if ( RESIZE_NONE == mResizeType )
+	if ( RESIZE_NONE == mResizeType || NULL == getEventDispatcher() )
 		return;
 
-	if ( !( UIManager::instance()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+	if ( !( getEventDispatcher()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
 		endResize();
 		setDragEnabled( true );
 		return;
 	}
 
-	Vector2f Pos = UIManager::instance()->getMousePosf();
+	Vector2f Pos = getEventDispatcher()->getMousePosf();
 
 	worldToNode( Pos );
 
@@ -975,7 +995,8 @@ bool UIWindow::hide() {
 			setVisible( false );
 		}
 
-		UIManager::instance()->getMainControl()->setFocus();
+		if ( NULL != mSceneNode )
+			mSceneNode->setFocus();
 
 		if ( NULL != mModalCtrl ) {
 			mModalCtrl->setEnabled( false );
@@ -1002,14 +1023,14 @@ void UIWindow::onAlphaChange() {
 }
 
 void UIWindow::onChildCountChange() {
-	if ( NULL == mContainer || UIManager::instance()->getMainControl() == this )
+	if ( NULL == mContainer )
 		return;
 
 	Node * child = mChild;
 	bool found = false;
 
 	while ( NULL != child ) {
-		if ( !( child->getNodeFlags() & NODE_FLAG_OWNED_BY_WINDOW ) ) {
+		if ( !( child->getNodeFlags() & NODE_FLAG_OWNED_BY_NODE ) ) {
 			found = true;
 			break;
 		}
@@ -1038,7 +1059,7 @@ void UIWindow::setTitle( const String& text ) {
 	if ( NULL == mTitle ) {
 		mTitle = UITextView::New();
 		mTitle->setLayoutSizeRules( FIXED, FIXED );
-		mTitle->writeCtrlFlag( NODE_FLAG_OWNED_BY_WINDOW, 1 );
+		mTitle->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		mTitle->setParent( this );
 		mTitle->setHorizontalAlign( getHorizontalAlign() );
 		mTitle->setVerticalAlign( getVerticalAlign() );
@@ -1078,7 +1099,10 @@ UITextView * UIWindow::getTitleTextBox() const {
 }
 
 void UIWindow::maximize() {
-	UINode * Ctrl = UIManager::instance()->getMainControl();
+	Node * Ctrl = mSceneNode;
+
+	if ( NULL == Ctrl )
+		return;
 
 	if ( Ctrl->getSize() == mDpSize ) {
 		setPixelsPosition( mNonMaxPos );
@@ -1088,7 +1112,7 @@ void UIWindow::maximize() {
 		mNonMaxSize = mSize;
 
 		setPosition( 0, 0 );
-		internalSize( UIManager::instance()->getMainControl()->getRealSize() );
+		internalSize( Ctrl->getRealSize() );
 	}
 }
 
@@ -1125,7 +1149,7 @@ void UIWindow::internalDraw() {
 
 		matrixSet();
 
-		if ( !ownsFrameBuffer() || !UIManager::instance()->usesInvalidation() || invalidated() ) {
+		if ( !ownsFrameBuffer() || ( NULL != mSceneNode && !mSceneNode->usesInvalidation() ) || invalidated() ) {
 			clipStart();
 
 			draw();
@@ -1152,13 +1176,17 @@ void UIWindow::invalidate() {
 	if ( mVisible && mAlpha != 0.f ) {
 		writeCtrlFlag( NODE_FLAG_VIEW_DIRTY, 1 );
 
-		if ( NULL != mParentWindowCtrl )
-			mParentWindowCtrl->invalidateDraw();
+		if ( NULL != mSceneNode )
+			mSceneNode->invalidateDraw();
 	}
 }
 
 FrameBuffer * UIWindow::getFrameBuffer() const {
 	return mFrameBuffer;
+}
+
+bool UIWindow::isDrawInvalidator() {
+	return NULL != mFrameBuffer;
 }
 
 bool UIWindow::invalidated() {
@@ -1168,7 +1196,7 @@ bool UIWindow::invalidated() {
 void UIWindow::matrixSet() {
 	if ( ownsFrameBuffer() ) {
 		if ( NULL != mFrameBuffer ) {
-			if ( !UIManager::instance()->usesInvalidation() || invalidated() ) {
+			if ( ( NULL != mSceneNode && !mSceneNode->usesInvalidation() ) || invalidated() ) {
 				mFrameBufferBound = true;
 
 				mFrameBuffer->bind();
@@ -1210,12 +1238,15 @@ bool UIWindow::ownsFrameBuffer() {
 }
 
 void UIWindow::checkShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {
+	if ( NULL == getEventDispatcher() )
+		return;
+
 	for ( KeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end(); ++it ) {
 		KeyboardShortcut kb = (*it);
 
 		if ( KeyCode == kb.KeyCode && ( Mod & kb.Mod ) ) {
-			UIManager::instance()->sendMouseUp( kb.Button, Vector2i(0,0), EE_BUTTON_LMASK );
-			UIManager::instance()->sendMouseClick( kb.Button, Vector2i(0,0), EE_BUTTON_LMASK );
+			getEventDispatcher()->sendMouseUp( kb.Button, Vector2i(0,0), EE_BUTTON_LMASK );
+			getEventDispatcher()->sendMouseClick( kb.Button, Vector2i(0,0), EE_BUTTON_LMASK );
 		}
 	}
 }
@@ -1314,52 +1345,54 @@ UIWidget * UIWindow::getModalControl() const {
 }
 
 void UIWindow::resizeCursor() {
-	UIManager * Man = UIManager::instance();
+	UISceneNode * sceneNode = getUISceneNode();
 
-	if ( !isMouseOverMeOrChilds() || !Man->getUseGlobalCursors() || ( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) || !isResizeable() )
+	if ( NULL == sceneNode || !isMouseOverMeOrChilds() || !sceneNode->getUseGlobalCursors() || ( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) || !isResizeable() )
 		return;
 
-	Vector2i Pos = Man->getMousePos();
+	EventDispatcher * eventDispatcher = sceneNode->getEventDispatcher();
+
+	Vector2i Pos = eventDispatcher->getMousePos();
 
 	worldToNode( Pos );
 
-	const Node * Control = Man->getOverControl();
+	const Node * Control = eventDispatcher->getOverControl();
 
 	if ( Control == this ) {
 		if ( Pos.x <= mBorderLeft->getSize().getWidth() ) {
-			Man->setCursor( EE_CURSOR_SIZENWSE ); // RESIZE_TOPLEFT
+			sceneNode->setCursor( EE_CURSOR_SIZENWSE ); // RESIZE_TOPLEFT
 		} else if ( Pos.x >= ( mDpSize.getWidth() - mBorderRight->getSize().getWidth() ) ) {
-			Man->setCursor( EE_CURSOR_SIZENESW ); // RESIZE_TOPRIGHT
+			sceneNode->setCursor( EE_CURSOR_SIZENESW ); // RESIZE_TOPRIGHT
 		} else if ( Pos.y <= mBorderBottom->getSize().getHeight() ) {
 			if ( Pos.x < mStyleConfig.MinCornerDistance ) {
-				Man->setCursor( EE_CURSOR_SIZENWSE ); // RESIZE_TOPLEFT
+				sceneNode->setCursor( EE_CURSOR_SIZENWSE ); // RESIZE_TOPLEFT
 			} else if ( Pos.x > mDpSize.getWidth() - mStyleConfig.MinCornerDistance ) {
-				Man->setCursor( EE_CURSOR_SIZENESW ); // RESIZE_TOPRIGHT
+				sceneNode->setCursor( EE_CURSOR_SIZENESW ); // RESIZE_TOPRIGHT
 			} else {
-				Man->setCursor( EE_CURSOR_SIZENS ); // RESIZE_TOP
+				sceneNode->setCursor( EE_CURSOR_SIZENS ); // RESIZE_TOP
 			}
-		} else if ( !( UIManager::instance()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
-			Man->setCursor( EE_CURSOR_ARROW );
+		} else if ( !( eventDispatcher->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+			sceneNode->setCursor( EE_CURSOR_ARROW );
 		}
 	} else if ( Control == mBorderBottom ) {
 		if ( Pos.x < mStyleConfig.MinCornerDistance ) {
-			Man->setCursor( EE_CURSOR_SIZENESW ); // RESIZE_LEFTBOTTOM
+			sceneNode->setCursor( EE_CURSOR_SIZENESW ); // RESIZE_LEFTBOTTOM
 		} else if ( Pos.x > mDpSize.getWidth() - mStyleConfig.MinCornerDistance ) {
-			Man->setCursor( EE_CURSOR_SIZENWSE ); // RESIZE_RIGHTBOTTOM
+			sceneNode->setCursor( EE_CURSOR_SIZENWSE ); // RESIZE_RIGHTBOTTOM
 		} else {
-			Man->setCursor( EE_CURSOR_SIZENS ); // RESIZE_BOTTOM
+			sceneNode->setCursor( EE_CURSOR_SIZENS ); // RESIZE_BOTTOM
 		}
 	} else if ( Control == mBorderLeft )  {
 		if ( Pos.y >= mDpSize.getHeight() - mStyleConfig.MinCornerDistance ) {
-			Man->setCursor( EE_CURSOR_SIZENESW ); // RESIZE_LEFTBOTTOM
+			sceneNode->setCursor( EE_CURSOR_SIZENESW ); // RESIZE_LEFTBOTTOM
 		} else {
-			Man->setCursor( EE_CURSOR_SIZEWE ); // RESIZE_LEFT
+			sceneNode->setCursor( EE_CURSOR_SIZEWE ); // RESIZE_LEFT
 		}
 	} else if ( Control == mBorderRight ) {
 		if ( Pos.y >= mDpSize.getHeight() - mStyleConfig.MinCornerDistance ) {
-			Man->setCursor( EE_CURSOR_SIZENWSE ); // RESIZE_RIGHTBOTTOM
+			sceneNode->setCursor( EE_CURSOR_SIZENWSE ); // RESIZE_RIGHTBOTTOM
 		} else {
-			Man->setCursor( EE_CURSOR_SIZEWE ); // RESIZE_RIGHT
+			sceneNode->setCursor( EE_CURSOR_SIZEWE ); // RESIZE_RIGHT
 		}
 	}
 }

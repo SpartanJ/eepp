@@ -11,6 +11,8 @@ class FrameBuffer;
 
 namespace EE { namespace UI {
 
+class UISceneNode;
+
 class EE_API UIWindow : public UIWidget {
 	public:
 		enum WindowBaseContainerType {
@@ -114,6 +116,8 @@ class EE_API UIWindow : public UIWidget {
 		bool invalidated();
 
 		FrameBuffer * getFrameBuffer() const;
+
+		virtual bool isDrawInvalidator();
 	protected:
 		class KeyboardShortcut {
 			public:
@@ -236,6 +240,8 @@ class EE_API UIWindow : public UIWidget {
 		virtual void postDraw();
 
 		Sizei getFrameBufferSize();
+
+		UISceneNode * getUISceneNode();
 };
 
 }}

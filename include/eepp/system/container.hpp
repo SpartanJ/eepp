@@ -1,7 +1,6 @@
 #ifndef EE_SYSTEMTCONTAINER_HPP
 #define EE_SYSTEMTCONTAINER_HPP
 
-#include <eepp/system/base.hpp>
 #include <list>
 
 namespace EE { namespace System {

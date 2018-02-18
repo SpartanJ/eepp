@@ -9,7 +9,7 @@ namespace EE { namespace Scene {
 
 class EE_API MouseEvent : public Event {
 	public:
-		MouseEvent( Node * getNode, const Uint32& EventNum, const Vector2i& Pos, const Uint32& getFlags );
+		MouseEvent( Node * node, const Uint32& EventNum, const Vector2i& Pos, const Uint32& getFlags );
 
 		~MouseEvent();
 

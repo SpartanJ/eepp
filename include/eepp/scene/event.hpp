@@ -56,7 +56,7 @@ class EE_API Event {
 			NoEvent = eeINDEX_NOT_FOUND
 		};
 
-		Event( Node * control, const Uint32& eventType = NoEvent );
+		Event( Node * node, const Uint32& eventType = NoEvent );
 
 		~Event();
 
@@ -64,7 +64,7 @@ class EE_API Event {
 
 		const Uint32& getType() const;
 	protected:
-		Node	* 	mCtrl;
+		Node	* 	mNode;
 		Uint32 		mEventType;
 };
 

@@ -1,7 +1,6 @@
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 #include <eepp/ui/tools/textureatlastextureregioneditor.hpp>
 #include <eepp/ui/tools/textureatlasnew.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uimenuitem.hpp>
 #include <eepp/ui/uicommondialog.hpp>
@@ -9,6 +8,8 @@
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <algorithm>
 
 namespace EE { namespace UI { namespace Tools {
@@ -38,18 +39,13 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 	mTheme = UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL == mUIWindow ) {
-		mUIWindow = UIManager::instance()->getMainControl();
-		mUIWindow->setThemeSkin( mTheme, "winback" );
-	}
-
-	if ( UIManager::instance()->getMainControl() == mUIWindow ) {
-		mUIContainer = mUIWindow;
+		mUIContainer = SceneManager::instance()->getUISceneNode();
 	} else {
 		mUIContainer = mUIWindow->getContainer();
 	}
 
 	std::string layout = R"xml(
-	<LinearLayout orientation="vertical" layout_width="match_parent" layout_height="match_parent">
+	<LinearLayout id="texture_atlas_editor_root" orientation="vertical" layout_width="match_parent" layout_height="match_parent">
 		<WinMenu layout_width="match_parent" layout_height="wrap_content">
 			<Menu id="fileMenu" text="File">
 				<item text="New..." icon="document-new" />
@@ -65,7 +61,7 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 		<LinearLayout layout_width="match_parent" layout_height="0dp" layout_weight="1" orientation="horizontal">
 			<TextureAtlasTextureRegionEditor layout_width="match_parent" layout_height="match_parent" layout_weight="1"
 											flags="clip" backgroundColor="#00000032" borderWidth="1" borderColor="#000000FF" />
-			<LinearLayout orientation="vertical" layout_width="208dp" layout_height="match_parent" layout_marginLeft="8dp" layout_marginRight="8dp">
+			<LinearLayout orientation="vertical" layout_width="210dp" layout_height="match_parent" layout_marginLeft="8dp" layout_marginRight="8dp">
 				<TextView text="Texture Filter:" fontStyle="shadow" layout_marginTop="4dp" layout_marginBottom="4dp" />
 				<DropDownList id="textureFilter" layout_width="match_parent" layout_height="wrap_content" layout_gravity="center_vertical" selectedText="Linear">
 					<item>Linear</item>
@@ -112,7 +108,8 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	UIWidgetCreator::addCustomWidgetCallback( "TextureAtlasTextureRegionEditor", cb::Make1( this, &TextureAtlasEditor::createTextureAtlasTextureRegionEditor ) );
 
-	UIManager::instance()->loadLayoutFromString( layout, mUIContainer );
+	if ( NULL != mUIContainer->getSceneNode() && mUIContainer->getSceneNode()->isUISceneNode() )
+		static_cast<UISceneNode*>( mUIContainer->getSceneNode() )->loadLayoutFromString( layout, mUIContainer );
 
 	UIWidgetCreator::removeCustomWidgetCallback( "TextureAtlasTextureRegionEditor" );
 
@@ -146,8 +143,13 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 
 	mUIContainer->find<UIPopUpMenu>("fileMenu")->addEventListener( Event::OnItemClicked, cb::Make1( this, &TextureAtlasEditor::fileMenuClick ) );
 
-	mUIWindow->setTitle( "Texture Atlas Editor" );
-	mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
+	if ( NULL != mUIWindow ) {
+		mUIWindow->setTitle( "Texture Atlas Editor" );
+		mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
+	} else {
+		mUIContainer->addEventListener( Event::OnClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
+		static_cast<UINode*>( mUIContainer->find("texture_atlas_editor_root") )->setThemeSkin( mTheme, "winback" );
+	}
 
 	mTGEU = eeNew( UITGEUpdater, ( this ) );
 }
@@ -156,7 +158,7 @@ TextureAtlasEditor::~TextureAtlasEditor() {
 	eeSAFE_DELETE( mTexturePacker );
 	eeSAFE_DELETE( mTextureAtlasLoader );
 
-	if ( !UIManager::instance()->isShootingDown() ) {
+	if ( !SceneManager::instance()->isShootingDown() ) {
 		mTGEU->close();
 	}
 }
@@ -276,8 +278,8 @@ void TextureAtlasEditor::fileMenuClick( const Event * Event ) {
 			onTextureAtlasClose( NULL );
 		}
 	} else if ( "Quit" == txt ) {
-		if ( mUIWindow == UIManager::instance()->getMainControl() ) {
-			UIManager::instance()->getWindow()->close();
+		if ( NULL == mUIWindow ) {
+			mUIContainer->getSceneNode()->getWindow()->close();
 		} else {
 			mUIWindow->closeWindow();
 		}
@@ -341,8 +343,8 @@ void TextureAtlasEditor::fillTextureRegionList() {
 		for ( auto it = Res.begin(); it != Res.end(); ++it ) {
 			TextureRegion * tr = (*it);
 
-			UIImage::New()
-					->setDrawable( tr )
+			UITextureRegion::New()
+					->setTextureRegion( tr )
 					->setScaleType( UIScaleType::FitInside )
 					->setTooltipText( tr->getName() )
 					->setGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
@@ -354,20 +356,20 @@ void TextureAtlasEditor::fillTextureRegionList() {
 
 void TextureAtlasEditor::onTextureRegionChange( const Event * Event ) {
 	if ( NULL != mTextureAtlasLoader && NULL != mTextureAtlasLoader->getTextureAtlas() ) {
-		mCurTextureRegion = Event->getNode()->isType( UI_TYPE_IMAGE ) ?
+		mCurTextureRegion = Event->getNode()->isType( UI_TYPE_TEXTUREREGION ) ?
 							mTextureAtlasLoader->getTextureAtlas()->getByName( static_cast<UIWidget*>( Event->getNode() )->getTooltipText() ) :
 							mTextureAtlasLoader->getTextureAtlas()->getByName( mTextureRegionList->getItemSelectedText() );
 
-		if ( Event->getNode()->isType( UI_TYPE_IMAGE ) )
-			mTextureRegionList->setSelected( static_cast<UIImage*>( Event->getNode() )->getTooltipText() );
+		if ( Event->getNode()->isType( UI_TYPE_TEXTUREREGION ) )
+			mTextureRegionList->setSelected( static_cast<UITextureRegion*>( Event->getNode() )->getTooltipText() );
 
 		Node * node = mTextureRegionGrid->getFirstChild();
 
 		while ( node ) {
-			if ( node->isType( UI_TYPE_IMAGE ) ) {
-				UIImage * curImage = static_cast<UIImage*>( node );
+			if ( node->isType( UI_TYPE_TEXTUREREGION ) ) {
+				UITextureRegion * curImage = static_cast<UITextureRegion*>( node );
 
-				if ( curImage->getDrawable() == mCurTextureRegion ) {
+				if ( curImage->getTextureRegion() == mCurTextureRegion ) {
 					curImage->setBackgroundFillEnabled( true )->setColor( Color( "#00000033" ) );
 				} else {
 					curImage->setBackgroundFillEnabled( false );

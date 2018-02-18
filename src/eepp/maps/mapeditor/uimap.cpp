@@ -3,7 +3,6 @@
 #include <eepp/maps/gameobjectobject.hpp>
 #include <eepp/maps/mapobjectlayer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 
 namespace EE { namespace Maps { namespace Private {
@@ -110,7 +109,7 @@ void UIMap::update( const Time& time ) {
 		mMap->update();
 
 		if ( mEnabled && mVisible && isMouseOver() ) {
-			Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
+			Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
 
 			if ( EDITING_LIGHT == mEditingMode ) {
 				if ( NULL != mSelLight ) {
@@ -145,7 +144,7 @@ void UIMap::update( const Time& time ) {
 						}
 					}
 
-					Flags = UIManager::instance()->getInput()->getPressTrigger();
+					Flags = getEventDispatcher()->getPressTrigger();
 
 					if ( Flags & EE_BUTTON_MMASK ) {
 						mSelLight->setPosition( mMap->getMouseMapPosf() );
@@ -231,8 +230,8 @@ void UIMap::dragPoly( Uint32 Flags, Uint32 PFlags ) {
 }
 
 void UIMap::manageObject( Uint32 Flags ) {
-	Uint32 PFlags	= UIManager::instance()->getInput()->getPressTrigger();
-	Uint32 LPFlags	= UIManager::instance()->getInput()->getLastPressTrigger();
+	Uint32 PFlags	= getEventDispatcher()->getPressTrigger();
+	Uint32 LPFlags	= getEventDispatcher()->getLastPressTrigger();
 
 	switch ( mEditingObjMode )
 	{
@@ -585,7 +584,7 @@ void UIMap::createObjPopUpMenu() {
 	Menu->addEventListener( Event::OnItemClicked, cb::Make1( this, &UIMap::objItemClick ) );
 
 	if ( Menu->show() ) {
-		Vector2f Pos = UIManager::instance()->getInput()->getMousePosf();
+		Vector2f Pos = getEventDispatcher()->getMousePosf();
 		UIMenu::fixMenuPos( Pos , Menu );
 		Pos = PixelDensity::pxToDp( Pos );
 		Menu->setPosition( Pos );

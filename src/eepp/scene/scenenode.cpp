@@ -1,6 +1,7 @@
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/window/window.hpp>
 #include <eepp/window/engine.hpp>
+#include <eepp/window/cursormanager.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/framebuffer.hpp>
@@ -16,16 +17,42 @@ SceneNode::SceneNode( EE::Window::Window * window ) :
 	Node(),
 	mWindow( window ),
 	mFrameBuffer( NULL ),
+	mEventDispatcher( NULL ),
 	mFrameBufferBound( false ),
-	mUseInvalidation( false )
+	mUseInvalidation( false ),
+	mUseGlobalCursors( true ),
+	mResizeCb( -1 ),
+	mDrawDebugData( false ),
+	mDrawBoxes( false ),
+	mHighlightOver( false ),
+	mHighlightFocus( false ),
+	mHighlightInvalidation( false ),
+	mHighlightFocusColor( 234, 195, 123, 255 ),
+	mHighlightOverColor( 195, 123, 234, 255 ),
+	mHighlightInvalidationColor( 220, 0, 0, 255 )
 {
+	mNodeFlags |= NODE_FLAG_SCENENODE;
+	mSceneNode = this;
+
+	enableReportSizeChangeToChilds();
+
 	if ( NULL == mWindow ) {
 		mWindow = Engine::instance()->getCurrentWindow();
 	}
+
+	mResizeCb = mWindow->pushResizeCallback( cb::Make1( this, &SceneNode::resizeControl ) );
+
+	resizeControl( window );
 }
 
 SceneNode::~SceneNode() {
+	if ( -1 != mResizeCb && NULL != Engine::existsSingleton() && Engine::instance()->existsWindow( mWindow ) ) {
+		mWindow->popResizeCallback( mResizeCb );
+	}
+
 	onClose();
+
+	eeSAFE_DELETE( mEventDispatcher );
 
 	eeSAFE_DELETE( mFrameBuffer );
 }
@@ -37,6 +64,12 @@ void SceneNode::enableFrameBuffer() {
 
 void SceneNode::disableFrameBuffer() {
 	eeSAFE_DELETE( mFrameBuffer );
+
+	writeCtrlFlag( NODE_FLAG_FRAME_BUFFER, 0 );
+}
+
+bool SceneNode::ownsFrameBuffer() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_FRAME_BUFFER );
 }
 
 void SceneNode::draw() {
@@ -46,21 +79,36 @@ void SceneNode::draw() {
 
 	mWindow->setView( mWindow->getDefaultView() );
 
-	if ( mVisible ) {
-		if ( mNodeFlags & NODE_FLAG_POSITION_DIRTY )
-			updateScreenPos();
+	if ( mVisible && 0 != mAlpha ) {
+		updateScreenPos();
+
+		preDraw();
+
+		ClippingMask * clippingMask = GLi->getClippingMask();
+
+		std::list<Rectf> clips = clippingMask->getPlanesClipped();
+
+		if ( !clips.empty() )
+			clippingMask->clipPlaneDisable();
 
 		matrixSet();
 
-		clipStart();
+		if ( NULL == mFrameBuffer || !usesInvalidation() || invalidated() ) {
+			clipStart();
 
-		draw();
+			drawChilds();
 
-		drawChilds();
-
-		clipEnd();
+			clipEnd();
+		}
 
 		matrixUnset();
+
+		if ( !clips.empty() )
+			clippingMask->setPlanesClipped( clips );
+
+		postDraw();
+
+		writeCtrlFlag( NODE_FLAG_VIEW_DIRTY, 0 );
 	}
 
 	mWindow->setView( prevView );
@@ -69,6 +117,10 @@ void SceneNode::draw() {
 }
 
 void SceneNode::update( const Time& elapsed ) {
+	mElapsed = elapsed;
+
+	if ( NULL != mEventDispatcher )
+		mEventDispatcher->update( elapsed );
 
 	checkClose();
 
@@ -84,6 +136,8 @@ void SceneNode::onSizeChange() {
 			mFrameBuffer->resize( fboSize.getWidth(), fboSize.getHeight() );
 		}
 	}
+
+	Node::onSizeChange();
 }
 
 void SceneNode::addToCloseQueue( Node * Ctrl ) {
@@ -144,11 +198,12 @@ Sizei SceneNode::getFrameBufferSize() {
 }
 
 void SceneNode::createFrameBuffer() {
+	writeCtrlFlag( NODE_FLAG_FRAME_BUFFER, 1 );
 	eeSAFE_DELETE( mFrameBuffer );
 	Sizei fboSize( getFrameBufferSize() );
 	if ( fboSize.getWidth() < 1 ) fboSize.setWidth(1);
 	if ( fboSize.getHeight() < 1 ) fboSize.setHeight(1);
-	mFrameBuffer = FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight(), true, false, true );
+	mFrameBuffer = FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight(), true, false, false, 4, mWindow );
 }
 
 void SceneNode::drawFrameBuffer() {
@@ -162,16 +217,16 @@ void SceneNode::drawFrameBuffer() {
 	}
 }
 
-bool SceneNode::invalidated() {
-	return 0 != ( mNodeFlags & NODE_FLAG_VIEW_DIRTY );
-}
-
 void SceneNode::enableDrawInvalidation() {
 	mUseInvalidation = true;
 }
 
 void SceneNode::disableDrawInvalidation() {
 	mUseInvalidation = false;
+}
+
+EE::Window::Window * SceneNode::getWindow() {
+	return mWindow;
 }
 
 void SceneNode::matrixSet() {
@@ -210,6 +265,134 @@ void SceneNode::matrixUnset() {
 	} else {
 		Node::matrixUnset();
 	}
+}
+
+void SceneNode::sendMsg( Node * Ctrl, const Uint32& Msg, const Uint32& Flags ) {
+	NodeMessage tMsg( Ctrl, Msg, Flags );
+	Ctrl->messagePost( &tMsg );
+}
+
+void SceneNode::resizeControl( EE::Window::Window * win ) {
+	setSize( (Float)mWindow->getWidth() , (Float)mWindow->getHeight() );
+	sendMsg( this, NodeMessage::WindowResize );
+}
+
+void SceneNode::invalidate() {
+	if ( mVisible && mAlpha != 0.f ) {
+		writeCtrlFlag( NODE_FLAG_VIEW_DIRTY, 1 );
+	}
+}
+
+bool SceneNode::invalidated() {
+	return 0 != ( mNodeFlags & NODE_FLAG_VIEW_DIRTY );
+}
+
+FrameBuffer * SceneNode::getFrameBuffer() const {
+	return mFrameBuffer;
+}
+
+void SceneNode::setEventDispatcher( EventDispatcher * eventDispatcher ) {
+	mEventDispatcher = eventDispatcher;
+}
+
+EventDispatcher * SceneNode::getEventDispatcher() const {
+	return mEventDispatcher;
+}
+
+void SceneNode::setDrawDebugData( bool debug ) {
+	mDrawDebugData = debug;
+}
+
+bool SceneNode::getDrawDebugData() const {
+	return mDrawDebugData;
+}
+
+void SceneNode::setDrawBoxes( bool draw ) {
+	mDrawBoxes = draw;
+}
+
+bool SceneNode::getDrawBoxes() const {
+	return mDrawBoxes;
+}
+
+void SceneNode::setHighlightOver( bool Highlight ) {
+	mHighlightOver = Highlight;
+}
+
+bool SceneNode::getHighlightOver() const {
+	return mHighlightOver;
+}
+
+void SceneNode::setHighlightFocus( bool Highlight ) {
+	mHighlightFocus = Highlight;
+}
+
+bool SceneNode::getHighlightFocus() const {
+	return mHighlightFocus;
+}
+
+void SceneNode::setHighlightInvalidation( bool Highlight ) {
+	mHighlightInvalidation = Highlight;
+}
+
+bool SceneNode::getHighlightInvalidation() const {
+	return mHighlightInvalidation;
+}
+
+void SceneNode::setHighlightOverColor( const Color& color ) {
+	mHighlightOverColor = color;
+}
+
+const Color& SceneNode::getHighlightOverColor() const {
+	return mHighlightOverColor;
+}
+
+void SceneNode::setHighlightFocusColor( const Color& color ) {
+	mHighlightFocusColor = color;
+}
+
+const Color& SceneNode::getHighlightFocusColor() const {
+	return mHighlightFocusColor;
+}
+
+void SceneNode::setHighlightInvalidationColor( const Color& color ) {
+	mHighlightInvalidationColor = color;
+}
+
+const Color& SceneNode::getHighlightInvalidationColor() const {
+	return mHighlightInvalidationColor;
+}
+
+const Time &SceneNode::getElapsed() const {
+	return mElapsed;
+}
+
+bool SceneNode::usesInvalidation() {
+	return mUseInvalidation;
+}
+
+void SceneNode::setUseGlobalCursors( const bool& use ) {
+	mUseGlobalCursors = use;
+}
+
+const bool& SceneNode::getUseGlobalCursors() {
+	return mUseGlobalCursors;
+}
+
+void SceneNode::setCursor( EE_CURSOR_TYPE cursor ) {
+	if ( mUseGlobalCursors ) {
+		mWindow->getCursorManager()->set( cursor );
+	}
+}
+
+bool SceneNode::isDrawInvalidator() {
+	return true;
+}
+
+void SceneNode::preDraw() {
+}
+
+void SceneNode::postDraw() {
 }
 
 }}

@@ -1,5 +1,4 @@
 #include <eepp/ui/uitouchdragablewidget.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -49,22 +48,22 @@ UITouchDragableWidget * UITouchDragableWidget::setTouchDragDeceleration( const V
 }
 
 void UITouchDragableWidget::update( const Time& time ) {
-	if ( mEnabled && mVisible ) {
+	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
 		if ( mFlags & UI_TOUCH_DRAG_ENABLED ) {
-			UIManager * manager = UIManager::instance();
-			Uint32 Press	= manager->getPressTrigger();
+			EventDispatcher * eventDispatcher = getEventDispatcher();
+			Uint32 Press	= eventDispatcher->getPressTrigger();
 
 			if ( ( mNodeFlags & NODE_FLAG_TOUCH_DRAGGING ) ) {
 				// Mouse Not Down
 				if ( !( Press & EE_BUTTON_LMASK ) ) {
 					writeCtrlFlag( NODE_FLAG_TOUCH_DRAGGING, 0 );
-					manager->setControlDragging( false );
+					eventDispatcher->setControlDragging( false );
 					return;
 				}
 
 				Float ms = time.asSeconds();
 				Vector2f elapsed( ms, ms );
-				Vector2f Pos( manager->getMousePosf() );
+				Vector2f Pos( eventDispatcher->getMousePosf() );
 
 				if ( mTouchDragPoint != Pos ) {
 					Vector2f diff = -( mTouchDragPoint - Pos );
@@ -75,17 +74,17 @@ void UITouchDragableWidget::update( const Time& time ) {
 
 					mTouchDragPoint = Pos;
 
-					manager->setControlDragging( true );
+					eventDispatcher->setControlDragging( true );
 				} else {
 					mTouchDragAcceleration -= elapsed * mTouchDragDeceleration;
 				}
 			} else {
 				// Mouse Down
 				if ( Press & EE_BUTTON_LMASK ) {
-					if ( isTouchOverAllowedChilds() && !manager->isControlDragging() ) {
+					if ( isTouchOverAllowedChilds() && !eventDispatcher->isControlDragging() ) {
 						writeCtrlFlag( NODE_FLAG_TOUCH_DRAGGING, 1 );
 
-						mTouchDragPoint			= Vector2f( manager->getMousePos().x, manager->getMousePos().y );
+						mTouchDragPoint			= Vector2f( eventDispatcher->getMousePos().x, eventDispatcher->getMousePos().y );
 						mTouchDragAcceleration	= Vector2f(0,0);
 					}
 				}

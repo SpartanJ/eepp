@@ -1,6 +1,7 @@
 #include <eepp/scene/actions/marginmove.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uiwidget.hpp>
+using namespace EE::UI;
 
 namespace EE { namespace Scene { namespace Actions {
 

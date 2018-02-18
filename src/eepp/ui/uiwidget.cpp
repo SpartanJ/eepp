@@ -1,7 +1,7 @@
 #include <eepp/ui/uiwidget.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
+#include <eepp/scene/scenenode.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -144,19 +144,23 @@ LayoutPositionRules UIWidget::getLayoutPositionRule() const {
 void UIWidget::update( const Time& time ) {
 	if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
 		if ( isMouseOverMeOrChilds() ) {
-			UIManager * uiManager = UIManager::instance();
+			EventDispatcher * eventDispatcher = getEventDispatcher();
+
+			if ( NULL == eventDispatcher )
+				return;
+
 			UIThemeManager * themeManager = UIThemeManager::instance();
 
-			Vector2f Pos = uiManager->getMousePosf();
+			Vector2f Pos = eventDispatcher->getMousePosf();
 			Pos.x += themeManager->getCursorSize().x;
 			Pos.y += themeManager->getCursorSize().y;
 
-			if ( Pos.x + mTooltip->getRealSize().getWidth() > uiManager->getMainControl()->getRealSize().getWidth() ) {
-				Pos.x = uiManager->getMousePos().x - mTooltip->getRealSize().getWidth();
+			if ( Pos.x + mTooltip->getRealSize().getWidth() > eventDispatcher->getSceneNode()->getRealSize().getWidth() ) {
+				Pos.x = eventDispatcher->getMousePos().x - mTooltip->getRealSize().getWidth();
 			}
 
-			if ( Pos.y + mTooltip->getRealSize().getHeight() > uiManager->getMainControl()->getRealSize().getHeight() ) {
-				Pos.y = uiManager->getMousePos().y - mTooltip->getRealSize().getHeight();
+			if ( Pos.y + mTooltip->getRealSize().getHeight() > eventDispatcher->getSceneNode()->getRealSize().getHeight() ) {
+				Pos.y = eventDispatcher->getMousePos().y - mTooltip->getRealSize().getHeight();
 			}
 
 			if ( Time::Zero == themeManager->getTooltipTimeToShow() ) {

@@ -35,14 +35,14 @@ class UIBlurredWindow : public UIWindow {
 			if ( !ownsFrameBuffer() )
 				return;
 
-			FrameBuffer * curFBO = FrameBufferManager::instance()->getFromName( "uimain" );
+			FrameBuffer * curFBO = getSceneNode()->getFrameBuffer();
 
 			if ( NULL != curFBO && NULL != curFBO->getTexture() && NULL != mBlurShader ) {
 				static int fboDiv = 2;
 
 				if ( NULL == mFboBlur ) {
 					mFboBlur = FrameBuffer::New( mSize.x / fboDiv, mSize.y / fboDiv );
-				} else if ( mFboBlur->getSize().getWidth() != mSize.x / fboDiv || mFboBlur->getSize().getHeight() != mSize.y / fboDiv ) {
+				} else if ( mFboBlur->getSize().getWidth() != (int)( mSize.x / fboDiv ) || mFboBlur->getSize().getHeight() != (int)( mSize.y / fboDiv ) ) {
 					mFboBlur->resize( mSize.x / fboDiv, mSize.y / fboDiv );
 				}
 
@@ -51,7 +51,7 @@ class UIBlurredWindow : public UIWindow {
 												mScreenPos.x + mSize.x, mScreenPos.y + mSize.y
 				) );
 
-				RGB cc = UIManager::instance()->getWindow()->getClearColor();
+				RGB cc = getSceneNode()->getWindow()->getClearColor();
 				mFboBlur->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 0 ) );
 				mFboBlur->bind();
 				mFboBlur->clear();
@@ -360,7 +360,7 @@ void EETest::createBaseUI() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW/*| UI_WIN_FRAME_BUFFER*/;
+	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizef( 530, 405 );
 	windowStyleConfig.BaseAlpha = 200;
 	tWin->setStyleConfig( windowStyleConfig );
@@ -545,7 +545,7 @@ void EETest::createBaseUI() {
 
 	Menu->addEventListener( Event::OnItemClicked, cb::Make1( this, &EETest::onItemClick ) );
 	Menu->getItem( "Quit" )->addEventListener( Event::MouseUp, cb::Make1( this, &EETest::onQuitClick ) );
-	UIManager::instance()->getMainControl()->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
+	SceneManager::instance()->getUISceneNode()->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
 
 #ifdef EE_PLATFORM_TOUCH
 	TextureAtlas * SG = GlobalTextureAtlas::instance();
@@ -588,11 +588,22 @@ void EETest::createUI() {
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	Uint32 UI_MAN_OPS = 0;
-	if ( mDebugUI )
-		UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_INVALIDATION;
-	UIManager::instance()->init(UI_MAN_OPS | UI_MANAGER_USE_DRAW_INVALIDATION | UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER);
-	UIManager::instance()->setTranslator( mTranslator );
+	UISceneNode * sceneNode = UISceneNode::New();
+
+	sceneNode->enableDrawInvalidation();
+	sceneNode->enableFrameBuffer();
+
+	if ( mDebugUI ) {
+		sceneNode->setDrawBoxes( true );
+		sceneNode->setDrawDebugData( true );
+		sceneNode->setHighlightFocus( true );
+		sceneNode->setHighlightOver( true );
+		sceneNode->setHighlightInvalidation( true );
+	}
+
+	sceneNode->setTranslator( mTranslator );
+
+	SceneManager::instance()->add( sceneNode );
 
 	eePRINTL("Node size: %d", sizeof(Node));
 	eePRINTL("UINode size: %d", sizeof(UINode));
@@ -834,7 +845,7 @@ void EETest::createNewUI() {
 
 	win2->show();
 
-	UIManager::instance()->loadLayoutFromString(
+	SceneManager::instance()->getUISceneNode()->loadLayoutFromString(
 		"<window layout_width='300dp' layout_height='300dp' winflags='default|maximize'>"
 		"	<LinearLayout id='testlayout' orientation='vertical' layout_width='match_parent' layout_height='match_parent' layout_margin='8dp'>"
 		"		<TextView text='Hello World!' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' backgroundColor='black' />"
@@ -854,7 +865,7 @@ void EETest::createNewUI() {
 		"</window>"
 	);
 
-	UIManager::instance()->loadLayoutFromString(
+	SceneManager::instance()->getUISceneNode()->loadLayoutFromString(
 		"<window layout_width='800dp' layout_height='600dp' winflags='default|maximize'>"
 		"	<LinearLayout layout_width='match_parent' layout_height='match_parent'>"
 		"		<ScrollView layout_width='match_parent' layout_height='match_parent' touchdrag='true'>"
@@ -865,7 +876,7 @@ void EETest::createNewUI() {
 	);
 
 	UIGridLayout * gridLayout = NULL;
-	UIManager::instance()->getMainControl()->bind( "gridlayout", gridLayout );
+	SceneManager::instance()->getUISceneNode()->bind( "gridlayout", gridLayout );
 
 	if ( NULL != gridLayout ) {
 		std::vector<Texture*> textures = TextureFactory::instance()->getTextures();
@@ -893,7 +904,7 @@ void EETest::createMapEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW/*| UI_WIN_FRAME_BUFFER*/;
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -910,7 +921,7 @@ void EETest::createETGEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW/*| UI_WIN_FRAME_BUFFER*/;
+	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -945,7 +956,7 @@ static void onWinDragStop( const Event * event ) {
 
 void EETest::createDecoratedWindow() {
 	mUIWindow = UIBlurredWindow::New( mBlur );
-	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW/*| UI_WIN_FRAME_BUFFER*/ )
+	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER )
 			->setMinWindowSize( 530, 350 )->setPosition( 200, 50 );
 
 	mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &EETest::onCloseClick ) );
@@ -967,9 +978,22 @@ void EETest::createDecoratedWindow() {
 		if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 
+		Node * node = Event->getNode();
+		UIWindow * win = NULL;
+
+		while ( NULL != node && NULL == win ) {
+			if ( node->isWindow() ) {
+				win = static_cast<UIWindow*>( node );
+			} else {
+				node = node->getParent();
+			}
+		}
+
+		if ( NULL == win )
+			return;
+
 		UIMenuItem* menuItem = reinterpret_cast<UIMenuItem*> ( Event->getNode() );
 		const String& txt = menuItem->getText();
-		UIWindow * win = Event->getNode()->getOwnerWindow();
 
 		if ( "Hide Border" == txt ) {
 			win->setWinFlags( win->getWinFlags() | UI_WIN_NO_BORDER );
@@ -1716,8 +1740,8 @@ void EETest::render() {
 
 	mInfoText.draw( 6.f, 6.f );
 
-	UIManager::instance()->update();
-	UIManager::instance()->draw();
+	SceneManager::instance()->update();
+	SceneManager::instance()->draw();
 
 	Con.draw();
 }

@@ -1,5 +1,4 @@
 #include <eepp/ui/uitooltip.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/uithememanager.hpp>

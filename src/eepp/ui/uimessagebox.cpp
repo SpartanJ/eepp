@@ -1,5 +1,4 @@
 #include <eepp/ui/uimessagebox.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uitheme.hpp>
 

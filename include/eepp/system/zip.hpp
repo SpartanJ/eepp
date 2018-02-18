@@ -1,7 +1,6 @@
 #ifndef EE_SYSTEMCZIP_HPP
 #define EE_SYSTEMCZIP_HPP
 
-#include <eepp/system/base.hpp>
 #include <eepp/system/pack.hpp>
 
 struct zip;

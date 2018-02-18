@@ -1,5 +1,4 @@
 #include <eepp/ui/uitextinputpassword.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/font.hpp>
@@ -31,8 +30,7 @@ void UITextInputPassword::draw() {
 
 		if ( mPassCache->getTextWidth() ) {
 			if ( isClipped() ) {
-				UIManager::instance()->clipSmartEnable(
-						this,
+				clipSmartEnable(
 						mScreenPos.x + mRealPadding.Left,
 						mScreenPos.y + mRealPadding.Top,
 						mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
@@ -44,7 +42,7 @@ void UITextInputPassword::draw() {
 			mPassCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left, (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
 
 			if ( isClipped() ) {
-				UIManager::instance()->clipSmartDisable( this );
+				clipSmartDisable();
 			}
 		}
 	}

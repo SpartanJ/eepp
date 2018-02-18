@@ -25,12 +25,12 @@ void mainLoop() {
 		win->close();
 	}
 
-	UIManager::instance()->update();
+	SceneManager::instance()->update();
 
-	if ( UIManager::instance()->getMainControl()->invalidated() ) {
+	if ( SceneManager::instance()->getUISceneNode()->invalidated() ) {
 		win->clear();
 
-		UIManager::instance()->draw();
+		SceneManager::instance()->draw();
 
 		win->display();
 	} else {
@@ -51,7 +51,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 	if ( win->isOpen() ) {
 		win->setCloseRequestCallback( cb::Make1( onCloseRequestCallback ) );
 
-		UIManager::instance()->init( UI_MANAGER_USE_DRAW_INVALIDATION );
+		SceneManager::instance()->add( UISceneNode::New() );
 
 		{
 			std::string pd;

@@ -1,6 +1,7 @@
 #include <eepp/ui/uidropdownlist.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/scene/scenenode.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -106,7 +107,7 @@ void UIDropDownList::showList() {
 		if ( !mStyleConfig.PopUpToMainControl )
 			mListBox->setParent( NULL != mFriendCtrl ? mFriendCtrl->getParent() : getWindowContainer() );
 		else
-			mListBox->setParent( UIManager::instance()->getMainControl() );
+			mListBox->setParent( mSceneNode );
 
 		mListBox->toFront();
 
@@ -191,10 +192,13 @@ void UIDropDownList::onItemKeyDown( const Event * Event ) {
 }
 
 void UIDropDownList::onListBoxFocusLoss( const Event * Event ) {
-	bool frienIsFocus = NULL != mFriendCtrl && mFriendCtrl == UIManager::instance()->getFocusControl();
-	bool isChildFocus = isChild( UIManager::instance()->getFocusControl() );
+	if ( NULL == getEventDispatcher() )
+		return;
 
-	if ( UIManager::instance()->getFocusControl() != this && !isChildFocus && !frienIsFocus ) {
+	bool frienIsFocus = NULL != mFriendCtrl && mFriendCtrl == getEventDispatcher()->getFocusControl();
+	bool isChildFocus = isChild( getEventDispatcher()->getFocusControl() );
+
+	if ( getEventDispatcher()->getFocusControl() != this && !isChildFocus && !frienIsFocus ) {
 		hide();
 	}
 }
@@ -232,9 +236,9 @@ void UIDropDownList::hide() {
 }
 
 void UIDropDownList::update( const Time& time ) {
-	if ( mEnabled && mVisible ) {
+	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
 		if ( isMouseOver() ) {
-			Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
+			Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
 
 			if ( Flags & EE_BUTTONS_WUWD ) {
 				if ( Flags & EE_BUTTON_WUMASK ) {
@@ -256,7 +260,7 @@ Uint32 UIDropDownList::onKeyDown( const KeyEvent &Event ) {
 }
 
 void UIDropDownList::destroyListBox() {
-	if ( !UIManager::instance()->isShootingDown() ) {
+	if ( !SceneManager::instance()->isShootingDown() ) {
 		mListBox->close();
 	}
 }

@@ -20,6 +20,9 @@
 #include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
 
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+
 #include <algorithm>
 
 using namespace EE::Graphics;
@@ -58,18 +61,17 @@ MapEditor::MapEditor( UIWindow * AttatchTo, const MapEditorCloseCb& callback ) :
 	}
 
 	if ( NULL == mUIWindow ) {
-		mUIWindow = UIManager::instance()->getMainControl();
-		mUIWindow->setThemeSkin( mTheme, "winback" );
-	}
-
-	if ( UIManager::instance()->getMainControl() == mUIWindow ) {
-		mUIContainer = mUIWindow;
+		mUIContainer = SceneManager::instance()->getUISceneNode();
 	} else {
 		mUIContainer = mUIWindow->getContainer();
 	}
 
-	mUIWindow->setTitle( "Map Editor" );
-	mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &MapEditor::windowClose ) );
+	if ( NULL != mUIWindow ) {
+		mUIWindow->setTitle( "Map Editor" );
+		mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &MapEditor::windowClose ) );
+	} else {
+		mUIContainer->addEventListener( Event::OnClose, cb::Make1( this, &MapEditor::windowClose ) );
+	}
 
 	createME();
 }
@@ -174,7 +176,8 @@ void MapEditor::createWinMenu() {
 	mWinContainer->setParent( mUIContainer );
 	mWinContainer->setPosition( 0, WinMenu->getSize().getHeight() );
 	mWinContainer->setSize( mUIContainer->getSize().getWidth(), mUIContainer->getSize().getHeight() - WinMenu->getSize().getHeight() );
-	mWinContainer->setAnchors(UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT  );
+	mWinContainer->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT );
+	mWinContainer->setThemeSkin( mTheme, "winback" );
 }
 
 void MapEditor::createETGMenu() {
@@ -955,8 +958,8 @@ void MapEditor::fileMenuClick( const Event * Event ) {
 		MsgBox->center();
 		MsgBox->show();
 	} else if ( "Quit" == txt ) {
-		if ( mUIWindow == UIManager::instance()->getMainControl() ) {
-			UIManager::instance()->getWindow()->close();
+		if ( NULL == mUIWindow ) {
+			mUIContainer->getSceneNode()->getWindow()->close();
 		} else {
 			mUIWindow->closeWindow();
 		}
@@ -1300,7 +1303,7 @@ void MapEditor::addGameObject() {
 
 		Vector2f p( tMap->getMouseMapPosf() );
 
-		if ( UIManager::instance()->getInput()->isKeyDown( KEY_LCTRL ) ) {
+		if ( mUIContainer->getEventDispatcher()->getInput()->isKeyDown( KEY_LCTRL ) ) {
 			p = tMap->getMouseTilePosCoordsf();
 		}
 
@@ -1324,7 +1327,7 @@ void MapEditor::onMapMouseClick( const Event * Event ) {
 	const MouseEvent * MEvent = reinterpret_cast<const MouseEvent*> ( Event );
 
 	if ( mTextureRegionCont->isVisible() ) {
-		if ( NULL == mCurLayer || NULL == mGfxPreview->getTextureRegion() || UIManager::instance()->getDownControl() != mUIMap ) {
+		if ( NULL == mCurLayer || NULL == mGfxPreview->getTextureRegion() || mUIContainer->getEventDispatcher()->getDownControl() != mUIMap ) {
 			if ( NULL == mCurLayer )
 				createNoLayerAlert( "No layers found" );
 
@@ -1369,7 +1372,7 @@ void MapEditor::onMapMouseDown( const Event * Event ) {
 	const MouseEvent * MEvent = reinterpret_cast<const MouseEvent*> ( Event );
 
 	if ( mTextureRegionCont->isVisible() ) {
-		if ( NULL == mCurLayer || NULL == mGfxPreview->getTextureRegion() || UIManager::instance()->getDownControl() != mUIMap )
+		if ( NULL == mCurLayer || NULL == mGfxPreview->getTextureRegion() || mUIContainer->getEventDispatcher()->getDownControl() != mUIMap )
 			return;
 
 
