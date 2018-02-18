@@ -227,7 +227,6 @@
 ../../include/eepp/system/iostreamfile.hpp
 ../../include/eepp/system/iostream.hpp
 ../../include/eepp/system/inifile.hpp
-../../include/eepp/system/base.hpp
 ../../src/eepp/system/zip.cpp
 ../../src/eepp/system/clock.cpp
 ../../src/eepp/system/thread.cpp

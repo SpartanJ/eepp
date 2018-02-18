@@ -1,7 +1,9 @@
 #ifndef EE_SYSTEMCRC4_H
 #define EE_SYSTEMCRC4_H
 
-#include <eepp/system/base.hpp>
+#include <eepp/config.hpp>
+#include <string>
+#include <vector>
 
 namespace EE { namespace System {
 

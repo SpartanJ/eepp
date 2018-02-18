@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEM_SYSTEM_HPP
 #define EE_SYSTEM_SYSTEM_HPP
 
-#include <eepp/system/base.hpp>
+#include <string>
 #include <eepp/system/time.hpp>
 
 namespace EE { namespace System {
