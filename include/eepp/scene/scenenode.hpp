@@ -24,18 +24,6 @@ class EE_API SceneNode : public Node {
 
 		~SceneNode();
 
-		Node * loadLayoutFromFile( const std::string& layoutPath, Node * parent = NULL );
-
-		Node * loadLayoutFromString( const std::string& layoutString, Node * parent = NULL );
-
-		Node * loadLayoutFromMemory( const void * buffer, Int32 bufferSize, Node * parent = NULL );
-
-		Node * loadLayoutFromStream( IOStream& stream, Node * parent = NULL );
-
-		Node * loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, Node * parent = NULL );
-
-		Node * loadLayoutNodes( pugi::xml_node node, Node * parent );
-
 		void setTranslator( Translator translator );
 
 		Translator& getTranslator();
