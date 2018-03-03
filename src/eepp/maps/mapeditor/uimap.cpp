@@ -3,7 +3,6 @@
 #include <eepp/maps/gameobjectobject.hpp>
 #include <eepp/maps/mapobjectlayer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 
 namespace EE { namespace Maps { namespace Private {
@@ -110,7 +109,7 @@ void UIMap::update( const Time& time ) {
 		mMap->update();
 
 		if ( mEnabled && mVisible && isMouseOver() ) {
-			Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
+			Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
 
 			if ( EDITING_LIGHT == mEditingMode ) {
 				if ( NULL != mSelLight ) {
@@ -145,7 +144,7 @@ void UIMap::update( const Time& time ) {
 						}
 					}
 
-					Flags = UIManager::instance()->getInput()->getPressTrigger();
+					Flags = getEventDispatcher()->getPressTrigger();
 
 					if ( Flags & EE_BUTTON_MMASK ) {
 						mSelLight->setPosition( mMap->getMouseMapPosf() );
@@ -231,8 +230,8 @@ void UIMap::dragPoly( Uint32 Flags, Uint32 PFlags ) {
 }
 
 void UIMap::manageObject( Uint32 Flags ) {
-	Uint32 PFlags	= UIManager::instance()->getInput()->getPressTrigger();
-	Uint32 LPFlags	= UIManager::instance()->getInput()->getLastPressTrigger();
+	Uint32 PFlags	= getEventDispatcher()->getPressTrigger();
+	Uint32 LPFlags	= getEventDispatcher()->getLastPressTrigger();
 
 	switch ( mEditingObjMode )
 	{
@@ -543,8 +542,8 @@ void UIMap::setUpdateScrollCb( UpdateScrollCb Cb ) {
 	mUpdateScrollCb = Cb;
 }
 
-Uint32 UIMap::onMessage( const UIMessage * Msg ) {
-	if ( Msg->getMsg() == UIMessage::Click && Msg->getSender() == this && ( Msg->getFlags() & EE_BUTTON_RMASK ) ) {
+Uint32 UIMap::onMessage( const NodeMessage * Msg ) {
+	if ( Msg->getMsg() == NodeMessage::Click && Msg->getSender() == this && ( Msg->getFlags() & EE_BUTTON_RMASK ) ) {
 		if ( SELECT_OBJECTS == mEditingObjMode && NULL != mSelObj && mSelObj->pointInside( mMap->getMouseMapPosf() ) ) {
 			createObjPopUpMenu();
 		}
@@ -553,12 +552,12 @@ Uint32 UIMap::onMessage( const UIMessage * Msg ) {
 	return 0;
 }
 
-void UIMap::objItemClick( const UIEvent * Event ) {
-	if ( !Event->getControl()->isType( UI_TYPE_MENUITEM ) )
+void UIMap::objItemClick( const Event * Event ) {
+	if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
 	if ( NULL != mSelObj && NULL != mCurLayer && mCurLayer->getType() == MAP_LAYER_OBJECT && mSelObj->getLayer() == mCurLayer ) {
-		const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getControl() )->getText();
+		const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getNode() )->getText();
 
 		MapObjectLayer * tLayer = reinterpret_cast<MapObjectLayer*>( mCurLayer );
 
@@ -582,10 +581,10 @@ void UIMap::createObjPopUpMenu() {
 	Menu->add( "Remove Object" );
 	Menu->addSeparator();
 	Menu->add( "Object Properties..." );
-	Menu->addEventListener( UIEvent::OnItemClicked, cb::Make1( this, &UIMap::objItemClick ) );
+	Menu->addEventListener( Event::OnItemClicked, cb::Make1( this, &UIMap::objItemClick ) );
 
 	if ( Menu->show() ) {
-		Vector2f Pos = UIManager::instance()->getInput()->getMousePosf();
+		Vector2f Pos = getEventDispatcher()->getMousePosf();
 		UIMenu::fixMenuPos( Pos , Menu );
 		Pos = PixelDensity::pxToDp( Pos );
 		Menu->setPosition( Pos );

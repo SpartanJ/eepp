@@ -1,5 +1,4 @@
 #include <eepp/ui/uiscrollbar.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/textureregion.hpp>
 
 namespace EE { namespace UI {
@@ -31,7 +30,7 @@ UIScrollBar::UIScrollBar( const UI_ORIENTATION& orientation ) :
 	mSlider->setAllowHalfSliderOut( false );
 	mSlider->setExpandBackground( false );
 
-	mSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
+	mSlider->addEventListener( Event::OnValueChange, cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
 
 	adjustChilds();
 
@@ -180,8 +179,8 @@ void UIScrollBar::adjustChilds() {
 void UIScrollBar::update( const Time& time ) {
 	UINode::update( time );
 
-	if ( mBtnUp->isMouseOver() || mBtnDown->isMouseOver() ) {
-		manageClick( UIManager::instance()->getInput()->getClickTrigger() );
+	if ( NULL != getEventDispatcher() && ( mBtnUp->isMouseOver() || mBtnDown->isMouseOver() ) ) {
+		manageClick( getEventDispatcher()->getClickTrigger() );
 	}
 }
 
@@ -194,9 +193,9 @@ void UIScrollBar::manageClick( const Uint32& Flags ) {
 	}
 }
 
-Uint32 UIScrollBar::onMessage( const UIMessage * Msg ) {
+Uint32 UIScrollBar::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::Click:
+		case NodeMessage::Click:
 		{
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender() == mBtnUp ) {
@@ -257,7 +256,7 @@ bool UIScrollBar::isVertical() const {
 	return mSlider->isVertical();
 }
 
-void UIScrollBar::onValueChangeCb( const UIEvent * Event ) {
+void UIScrollBar::onValueChangeCb( const Event * Event ) {
 	onValueChange();
 }
 

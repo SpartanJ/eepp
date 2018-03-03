@@ -88,7 +88,7 @@ class EE_API UIMenu : public UIWidget {
 
 		void autoPadding();
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		void setControlSize( UINode * Control, const Uint32& position );
 		
@@ -108,11 +108,11 @@ class EE_API UIMenu : public UIWidget {
 
 		bool checkControlSize( UINode * Control, const bool& Resize = true );
 
-		bool isSubMenu( UINode * Ctrl );
+		bool isSubMenu( Node * Ctrl );
 
 		void setItemSelected( UINode * Item );
 
-		virtual Uint32 onKeyDown( const UIEventKey& Event );
+		virtual Uint32 onKeyDown( const KeyEvent& Event );
 
 		void prevSel();
 

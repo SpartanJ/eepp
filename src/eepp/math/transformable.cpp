@@ -18,15 +18,11 @@ Transformable::Transformable() :
 Transformable::~Transformable()
 {}
 
-void Transformable::setPosition(float x, float y) {
-	mPosition.x = x;
-	mPosition.y = y;
+void Transformable::setPosition(const Vector2f& position) {
+	mPosition.x = position.x;
+	mPosition.y = position.y;
 	mTransformNeedUpdate = true;
 	mInverseTransformNeedUpdate = true;
-}
-
-void Transformable::setPosition(const Vector2f& position) {
-	setPosition(position.x, position.y);
 }
 
 void Transformable::setRotation(float angle) {
@@ -92,11 +88,11 @@ const Vector2f& Transformable::getRotationOrigin() const {
 }
 
 void Transformable::move(float offsetX, float offsetY) {
-	setPosition(mPosition.x + offsetX, mPosition.y + offsetY);
+	setPosition(Vector2f(mPosition.x + offsetX, mPosition.y + offsetY));
 }
 
 void Transformable::move(const Vector2f& offset) {
-	setPosition(mPosition.x + offset.x, mPosition.y + offset.y);
+	setPosition(Vector2f(mPosition.x + offset.x, mPosition.y + offset.y));
 }
 
 void Transformable::rotate(float angle) {

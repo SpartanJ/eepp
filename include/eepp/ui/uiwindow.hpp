@@ -11,6 +11,8 @@ class FrameBuffer;
 
 namespace EE { namespace UI {
 
+class UISceneNode;
+
 class EE_API UIWindow : public UIWidget {
 	public:
 		enum WindowBaseContainerType {
@@ -45,7 +47,7 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual void setTheme( UITheme * Theme );
 
-		virtual Uint32 onMessage( const UIMessage *Msg );
+		virtual Uint32 onMessage( const NodeMessage *Msg );
 
 		UIWidget * getContainer() const;
 
@@ -114,6 +116,8 @@ class EE_API UIWindow : public UIWidget {
 		bool invalidated();
 
 		FrameBuffer * getFrameBuffer() const;
+
+		virtual bool isDrawInvalidator();
 	protected:
 		class KeyboardShortcut {
 			public:
@@ -177,19 +181,19 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual void onChildCountChange();
 
-		virtual Uint32 onKeyDown( const UIEventKey &Event );
+		virtual Uint32 onKeyDown( const KeyEvent &Event );
 
 		virtual void matrixSet();
 
 		virtual void matrixUnset();
 
-		void onContainerPositionChange( const UIEvent * Event );
+		void onContainerPositionChange( const Event * Event );
 
 		void fixChildsSize();
 
-		void doResize( const UIMessage * Msg );
+		void doResize( const NodeMessage * Msg );
 
-		void decideResizeType( UINode * Control );
+		void decideResizeType( Node * Control );
 
 		void tryResize( const UI_RESIZE_TYPE& getType );
 
@@ -236,6 +240,8 @@ class EE_API UIWindow : public UIWidget {
 		virtual void postDraw();
 
 		Sizei getFrameBufferSize();
+
+		UISceneNode * getUISceneNode();
 };
 
 }}

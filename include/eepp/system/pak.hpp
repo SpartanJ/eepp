@@ -1,7 +1,6 @@
 #ifndef EE_SYSTEMCPAK_HPP
 #define EE_SYSTEMCPAK_HPP
 
-#include <eepp/system/base.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/iostreamfile.hpp>
 

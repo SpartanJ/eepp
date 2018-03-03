@@ -1,6 +1,8 @@
 #include <eepp/ui/uiwinmenu.hpp>
-#include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/textureregion.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -55,7 +57,7 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	Menu->setVisible( false );
 	Menu->setEnabled( false );
 	Menu->setParent( getWindowContainer() );
-	Menu->addEventListener( UIEvent::OnWidgetFocusLoss, cb::Make1( this, &UIWinMenu::onMenuFocusLoss ) );
+	Menu->addEventListener( Event::OnWidgetFocusLoss, cb::Make1( this, &UIWinMenu::onMenuFocusLoss ) );
 
 	mButtons.push_back( std::make_pair( Button, Menu ) );
 
@@ -174,10 +176,10 @@ void UIWinMenu::refreshButtons() {
 	}
 }
 
-Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
+Uint32 UIWinMenu::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::MouseUp:
-		case UIMessage::MouseEnter:
+		case NodeMessage::MouseUp:
+		case NodeMessage::MouseEnter:
 		{
 			if ( Msg->getSender()->isType( UI_TYPE_SELECTBUTTON ) ) {
 				UISelectButton * tbut	= reinterpret_cast<UISelectButton*> ( Msg->getSender() );
@@ -186,7 +188,7 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 				Vector2f pos( tbut->getPosition().x, tbut->getPosition().y + tbut->getSize().getHeight() );
 				tpop->setPosition( pos );
 
-				if ( Msg->getMsg() == UIMessage::MouseEnter ) {
+				if ( Msg->getMsg() == NodeMessage::MouseEnter ) {
 					if ( NULL != mCurrentMenu ) {
 						mCurrentMenu = tpop;
 
@@ -207,7 +209,7 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 
 			break;
 		}
-		case UIMessage::Selected:
+		case NodeMessage::Selected:
 		{
 			for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 				if ( it->first != Msg->getSender() ) {
@@ -217,15 +219,17 @@ Uint32 UIWinMenu::onMessage( const UIMessage * Msg ) {
 
 			return 1;
 		}
-		case UIMessage::FocusLoss:
+		case NodeMessage::FocusLoss:
 		{
-			UINode * FocusCtrl = UIManager::instance()->getFocusControl();
+			if ( NULL != getEventDispatcher() ) {
+				Node * FocusCtrl = getEventDispatcher()->getFocusControl();
 
-			if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
-				onWidgetFocusLoss();
+				if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
+					onWidgetFocusLoss();
+				}
+
+				return 1;
 			}
-
-			return 1;
 		}
 	}
 
@@ -256,7 +260,7 @@ UIPopUpMenu * UIWinMenu::getMenuFromButton( UISelectButton * Button ) {
 	return NULL;
 }
 
-bool UIWinMenu::isPopUpMenuChild( UINode * Ctrl ) {
+bool UIWinMenu::isPopUpMenuChild( Node * Ctrl ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		if ( it->second == Ctrl || it->second->isParentOf( Ctrl ) ) {
 			return true;
@@ -266,8 +270,8 @@ bool UIWinMenu::isPopUpMenuChild( UINode * Ctrl ) {
 	return false;
 }
 
-void UIWinMenu::onMenuFocusLoss( const UIEvent * Event ) {
-	UINode * FocusCtrl = UIManager::instance()->getFocusControl();
+void UIWinMenu::onMenuFocusLoss( const Event * Event ) {
+	Node * FocusCtrl = getEventDispatcher()->getFocusControl();
 
 	if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
 		onWidgetFocusLoss();
@@ -287,7 +291,7 @@ void UIWinMenu::onWidgetFocusLoss() {
 }
 
 void UIWinMenu::destroyMenues() {
-	if ( !UIManager::instance()->isShootingDown() ) {
+	if ( !SceneManager::instance()->isShootingDown() ) {
 		for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 			it->second->close();
 		}
@@ -308,9 +312,13 @@ void UIWinMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 
 			UIPopUpMenu * subMenu = UIPopUpMenu::New();
 
+			if ( NULL != getDrawInvalidator() )
+				subMenu->setParent( getDrawInvalidator() );
+
 			subMenu->loadFromXmlNode( item );
 
-			addMenuButton( UIManager::instance()->getTranslatorString( text ), subMenu );
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
+				addMenuButton( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( text ), subMenu );
 		}
 	}
 

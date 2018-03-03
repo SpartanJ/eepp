@@ -712,6 +712,8 @@ function build_eepp( build_name )
 			"src/eepp/window/platform/null/*.cpp",
 			"src/eepp/network/*.cpp",
 			"src/eepp/network/ssl/*.cpp",
+			"src/eepp/scene/*.cpp",
+			"src/eepp/scene/actions/*.cpp",
 			"src/eepp/ui/*.cpp",
 			"src/eepp/ui/actions/*.cpp",
 			"src/eepp/ui/tools/*.cpp",

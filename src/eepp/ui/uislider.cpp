@@ -1,5 +1,5 @@
 #include <eepp/ui/uislider.hpp>
-#include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <pugixml/pugixml.hpp>
 
@@ -284,12 +284,12 @@ bool UISlider::isVertical() const {
 void UISlider::update( const Time& time ) {
 	UINode::update( time );
 
-	if ( isMouseOver() || mBackSlider->isMouseOver() || mSlider->isMouseOver() ) {
-		manageClick( UIManager::instance()->getInput()->getClickTrigger() );
+	if ( NULL != getEventDispatcher() && ( isMouseOver() || mBackSlider->isMouseOver() || mSlider->isMouseOver() ) ) {
+		manageClick( getEventDispatcher()->getClickTrigger() );
 	}
 }
 
-Uint32 UISlider::onKeyDown( const UIEventKey &Event ) {
+Uint32 UISlider::onKeyDown( const KeyEvent &Event ) {
 	if ( Sys::getTicks() - mLastTickMove > 100 ) {
 		if ( Event.getKeyCode() == KEY_DOWN ) {
 			mLastTickMove = Sys::getTicks();
@@ -314,8 +314,8 @@ Uint32 UISlider::onKeyDown( const UIEventKey &Event ) {
 }
 
 void UISlider::manageClick( const Uint32& Flags ) {
-	if ( Flags ) {
-		Vector2f ControlPos = UIManager::instance()->getMousePosf();
+	if ( Flags && NULL != getEventDispatcher() ) {
+		Vector2f ControlPos = getEventDispatcher()->getMousePosf();
 		mSlider->worldToNode( ControlPos );
 
 		if ( Flags & EE_BUTTON_LMASK && !mSlider->isMouseOver()  ) {

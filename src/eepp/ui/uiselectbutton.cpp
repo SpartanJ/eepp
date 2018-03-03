@@ -32,7 +32,7 @@ void UISelectButton::select() {
 	mNodeFlags |= NODE_FLAG_SELECTED;
 
 	if ( !wasSelected ) {
-		UIMessage tMsg( this, UIMessage::Selected, 0 );
+		NodeMessage tMsg( this, NodeMessage::Selected, 0 );
 		messagePost( &tMsg );
 	}
 }

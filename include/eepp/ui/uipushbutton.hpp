@@ -93,9 +93,9 @@ class EE_API UIPushButton : public UIWidget {
 
 		virtual void onThemeLoaded();
 
-		virtual Uint32 onKeyDown( const UIEventKey& Event );
+		virtual Uint32 onKeyDown( const KeyEvent& Event );
 
-		virtual Uint32 onKeyUp( const UIEventKey& Event );
+		virtual Uint32 onKeyUp( const KeyEvent& Event );
 };
 
 }}

@@ -1,7 +1,6 @@
 #ifndef EE_SYSTEMCRESOURCELOADER
 #define EE_SYSTEMCRESOURCELOADER
 
-#include <eepp/system/base.hpp>
 #include <eepp/system/objectloader.hpp>
 
 namespace EE { namespace System {

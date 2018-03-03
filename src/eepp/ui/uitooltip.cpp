@@ -1,7 +1,7 @@
 #include <eepp/ui/uitooltip.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -70,7 +70,6 @@ void UITooltip::show() {
 		toFront();
 
 		setVisible( true );
-		setEnabled( true );
 
 		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
 			startAlphaAnim( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->getControlsFadeInTime() );
@@ -84,7 +83,6 @@ void UITooltip::hide() {
 			disableFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
 		} else {
 			setVisible( false );
-			setEnabled( false );
 		}
 	}
 }
@@ -201,11 +199,11 @@ void UITooltip::onSizeChange() {
 }
 
 void UITooltip::onTextChanged() {
-	sendCommonEvent( UIEvent::OnTextChanged );
+	sendCommonEvent( Event::OnTextChanged );
 }
 
 void UITooltip::onFontChanged() {
-	sendCommonEvent( UIEvent::OnFontChanged );
+	sendCommonEvent( Event::OnFontChanged );
 }
 
 void UITooltip::setPadding( const Rectf& padding ) {

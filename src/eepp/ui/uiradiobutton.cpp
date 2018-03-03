@@ -1,5 +1,4 @@
 #include <eepp/ui/uiradiobutton.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/text.hpp>
 #include <pugixml/pugixml.hpp>
@@ -95,15 +94,17 @@ void UIRadioButton::onSizeChange() {
 	mInactiveButton->centerVertical();
 }
 
-Uint32 UIRadioButton::onMessage( const UIMessage * Msg ) {
+Uint32 UIRadioButton::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::Click: {
+		case NodeMessage::Click: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				switchState();
 			}
 
-			if ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) {
-				sendMouseEvent( UIEvent::MouseClick, UIManager::instance()->getMousePos(), UIManager::instance()->getPressTrigger() );
+			if ( NULL != getEventDispatcher() ) {
+				if ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) {
+					sendMouseEvent( Event::MouseClick, getEventDispatcher()->getMousePos(), getEventDispatcher()->getPressTrigger() );
+				}
 			}
 
 			return 1;
@@ -137,7 +138,7 @@ void UIRadioButton::setActive( const bool& active ) {
 	}
 
 	if ( active && NULL != mParentCtrl ) {
-		UINode * tChild = mParentCtrl->getFirstChild();
+		Node * tChild = mParentCtrl->getFirstChild();
 
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
@@ -156,7 +157,7 @@ void UIRadioButton::setActive( const bool& active ) {
 
 bool UIRadioButton::checkActives() {
 	if ( NULL != mParentCtrl ) {
-		UINode * tChild = mParentCtrl->getFirstChild();
+		Node * tChild = mParentCtrl->getFirstChild();
 
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
@@ -179,7 +180,7 @@ void UIRadioButton::autoActivate() {
 	eeASSERT( NULL != mParentCtrl );
 
 	if ( NULL != mParentCtrl ) {
-		UINode * tChild = mParentCtrl->getFirstChild();
+		Node * tChild = mParentCtrl->getFirstChild();
 
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
@@ -245,7 +246,7 @@ void UIRadioButton::loadFromXmlNode(const pugi::xml_node & node) {
 	endPropertiesTransaction();
 }
 
-Uint32 UIRadioButton::onKeyDown( const UIEventKey& Event ) {
+Uint32 UIRadioButton::onKeyDown( const KeyEvent& Event ) {
 	if ( Event.getKeyCode() == KEY_SPACE ) {
 		if ( Sys::getTicks() - mLastTick > 250 ) {
 			mLastTick = Sys::getTicks();

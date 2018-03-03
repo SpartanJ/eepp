@@ -143,7 +143,7 @@ void UIGridLayout::pack() {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
 	}
 
-	UINode * ChildLoop = mChild;
+	Node * ChildLoop = mChild;
 
 	Vector2f pos(mPadding.Left,mPadding.Top);
 	Sizef targetSize( getTargetElementSize() );
@@ -189,9 +189,9 @@ void UIGridLayout::pack() {
 	invalidateDraw();
 }
 
-Uint32 UIGridLayout::onMessage(const UIMessage * Msg) {
+Uint32 UIGridLayout::onMessage(const NodeMessage * Msg) {
 	switch( Msg->getMsg() ) {
-		case UIMessage::LayoutAttributeChange:
+		case NodeMessage::LayoutAttributeChange:
 		{
 			pack();
 			break;

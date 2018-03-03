@@ -111,9 +111,9 @@ const Float& UISpinBox::getClickStep() const {
 	return mClickStep;
 }
 
-Uint32 UISpinBox::onMessage( const UIMessage * Msg ) {
+Uint32 UISpinBox::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::Click:
+		case NodeMessage::Click:
 		{
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender() == mPushUp ) {

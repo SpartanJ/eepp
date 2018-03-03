@@ -1,6 +1,6 @@
 #include <eepp/ui/uimenusubmenu.hpp>
 #include <eepp/ui/uimenu.hpp>
-#include <eepp/ui/uimanager.hpp>
+#include <eepp/scene/scenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -74,8 +74,8 @@ void UIMenuSubMenu::setSubMenu( UIMenu * SubMenu ) {
 	mSubMenu = SubMenu;
 
 	if ( NULL != mSubMenu ) {
-		mCbId	= mSubMenu->addEventListener( UIEvent::OnEnabledChange, cb::Make1( this, &UIMenuSubMenu::onSubMenuFocusLoss ) );
-		mCbId2	= mSubMenu->addEventListener( UIEvent::OnHideByClick, cb::Make1( this, &UIMenuSubMenu::onHideByClick ) );
+		mCbId	= mSubMenu->addEventListener( Event::OnEnabledChange, cb::Make1( this, &UIMenuSubMenu::onSubMenuFocusLoss ) );
+		mCbId2	= mSubMenu->addEventListener( Event::OnHideByClick, cb::Make1( this, &UIMenuSubMenu::onHideByClick ) );
 	}
 }
 
@@ -86,8 +86,8 @@ UIMenu * UIMenuSubMenu::getSubMenu() const {
 Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
 	UIMenuItem::onMouseMove( Pos, Flags );
 
-	if ( NULL != mSubMenu && !mSubMenu->isVisible() ) {
-		mTimeOver += UIManager::instance()->getElapsed().asMilliseconds();
+	if ( NULL != mSceneNode && NULL != mSubMenu && !mSubMenu->isVisible() ) {
+		mTimeOver += mSceneNode->getElapsed().asMilliseconds();
 
 		if ( mTimeOver >= mMaxTime ) {
 			showSubMenu();
@@ -126,11 +126,13 @@ UINode * UIMenuSubMenu::getArrow() const {
 	return mArrow;
 }
 
-void UIMenuSubMenu::onSubMenuFocusLoss( const UIEvent * Event ) {
-	UINode * FocusCtrl = UIManager::instance()->getFocusControl();
+void UIMenuSubMenu::onSubMenuFocusLoss( const Event * Event ) {
+	if ( NULL != getEventDispatcher() ) {
+		Node * FocusCtrl = getEventDispatcher()->getFocusControl();
 
-	if ( getParent() != FocusCtrl && !getParent()->isParentOf( FocusCtrl ) ) {
-		getParent()->setFocus();
+		if ( getParent() != FocusCtrl && !getParent()->isParentOf( FocusCtrl ) ) {
+			getParent()->setFocus();
+		}
 	}
 
 	if ( mSubMenu->mClickHide ) {
@@ -140,7 +142,7 @@ void UIMenuSubMenu::onSubMenuFocusLoss( const UIEvent * Event ) {
 	}
 }
 
-void UIMenuSubMenu::onHideByClick( const UIEvent * Event ) {
+void UIMenuSubMenu::onHideByClick( const Event * Event ) {
 	UIMenu * tMenu = reinterpret_cast<UIMenu *>( getParent() );
 
 	tMenu->mClickHide = true;

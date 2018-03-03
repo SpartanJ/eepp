@@ -12,7 +12,7 @@
 #include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/framebuffermanager.hpp>
 #include <eepp/graphics/vertexbuffermanager.hpp>
-#include <eepp/ui/uimanager.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/audio/audiolistener.hpp>
 #include <eepp/physics/physicsmanager.hpp>
 #include <eepp/network/ssl/sslsocket.hpp>
@@ -22,6 +22,7 @@
 #include <eepp/window/backend/SDL2/platformhelpersdl2.hpp>
 #include <eepp/window/backend/SFML/platformhelpersfml.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/ui/uithememanager.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <eepp/system/zip.hpp>
@@ -71,7 +72,9 @@ Engine::~Engine() {
 
 	NinePatchManager::destroySingleton();
 
-	UI::UIManager::destroySingleton();
+	Scene::SceneManager::destroySingleton();
+
+	UIThemeManager::destroySingleton();
 
 	FontManager::destroySingleton();
 

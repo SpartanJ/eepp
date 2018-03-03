@@ -1,5 +1,4 @@
 #include <eepp/ui/uitable.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -54,8 +53,8 @@ UITable::UITable() :
 	mVScrollBar->setVisible( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
 	mVScrollBar->setEnabled( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
 
-	mVScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UITable::onScrollValueChange ) );
-	mHScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UITable::onScrollValueChange ) );
+	mVScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UITable::onScrollValueChange ) );
+	mHScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UITable::onScrollValueChange ) );
 
 	applyDefaultTheme();
 }
@@ -99,7 +98,7 @@ void UITable::setDefaultCollumnsWidth() {
 	updateCells();
 }
 
-void UITable::onScrollValueChange( const UIEvent * Event ) {
+void UITable::onScrollValueChange( const Event * Event ) {
 	updateScroll( true );
 }
 
@@ -541,7 +540,7 @@ Uint32 UITable::getItemIndex( UITableCell * Item ) {
 }
 
 Uint32 UITable::onSelected() {
-	sendCommonEvent( UIEvent::OnItemSelected );
+	sendCommonEvent( Event::OnItemSelected );
 
 	return 1;
 }
@@ -557,17 +556,19 @@ Uint32 UITable::getItemSelectedIndex() const {
 	return mSelected;
 }
 
-Uint32 UITable::onMessage( const UIMessage * Msg ) {
+Uint32 UITable::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::FocusLoss:
+		case NodeMessage::FocusLoss:
 		{
-			UINode * FocusCtrl = UIManager::instance()->getFocusControl();
+			if ( NULL != getEventDispatcher() ) {
+				Node * FocusCtrl = getEventDispatcher()->getFocusControl();
 
-			if ( this != FocusCtrl && !isParentOf( FocusCtrl ) ) {
-				onWidgetFocusLoss();
+				if ( this != FocusCtrl && !isParentOf( FocusCtrl ) ) {
+					onWidgetFocusLoss();
+				}
+
+				return 1;
 			}
-
-			return 1;
 		}
 	}
 
@@ -586,9 +587,9 @@ UITable * UITable::setSmoothScroll(bool smoothScroll) {
 	mSmoothScroll = smoothScroll;
 
 	if ( mSmoothScroll ) {
-		mContainer->setFlags( UI_CLIP_ENABLE );
+		mContainer->clipEnable();
 	} else {
-		mContainer->unsetFlags( UI_CLIP_ENABLE );
+		mContainer->clipDisable();
 	}
 
 	return this;

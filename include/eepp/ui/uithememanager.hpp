@@ -18,10 +18,6 @@ class EE_API UIThemeManager : public ResourceManager<UITheme> {
 
 		Font * getDefaultFont() const;
 
-		UIThemeManager * setTheme( const std::string& Theme );
-
-		UIThemeManager * setTheme( UITheme * Theme );
-
 		UIThemeManager * setDefaultTheme( UITheme * Theme );
 
 		UIThemeManager * setDefaultTheme( const std::string& Theme );

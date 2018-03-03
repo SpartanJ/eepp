@@ -16,7 +16,7 @@
 #ifndef CINIFILE_H
 #define CINIFILE_H
 
-#include <eepp/system/base.hpp>
+#include <vector>
 #include <eepp/system/iostream.hpp>
 
 #define MAX_KEYNAME    128

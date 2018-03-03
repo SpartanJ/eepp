@@ -34,13 +34,13 @@ class EE_API UIMapLayerNew {
 		UITextInput *		mUILayerName;
 		MapLayer *			mLayer;
 
-		void onWindowClose( const UIEvent * Event );
+		void onWindowClose( const Event * Event );
 
-		void onCancelClick( const UIEvent * Event );
+		void onCancelClick( const Event * Event );
 
-		void onOKClick( const UIEvent * Event );
+		void onOKClick( const Event * Event );
 
-		void onOnKeyUp( const UIEvent * Event );
+		void onOnKeyUp( const Event * Event );
 };
 
 }}}

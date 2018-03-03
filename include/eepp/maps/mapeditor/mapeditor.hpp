@@ -6,7 +6,6 @@
 #include <eepp/ui/uimenucheckbox.hpp>
 #include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
@@ -45,7 +44,7 @@ class EE_API MapEditor {
 		~MapEditor();
 	protected:
 		UIWindow *			mUIWindow;
-		UINode *			mUIContainer;
+		Node *				mUIContainer;
 		UITheme *			mTheme;
 		Private::UIMap *	mUIMap;
 		MapEditorCloseCb	mCloseCb;
@@ -100,11 +99,11 @@ class EE_API MapEditor {
 
 		std::list<UISelectButton*> mObjContButton;
 
-		void onRedChange( const UIEvent * Event );
+		void onRedChange( const Event * Event );
 
-		void onGreenChange( const UIEvent * Event );
+		void onGreenChange( const Event * Event );
 
-		void onBlueChange( const UIEvent * Event );
+		void onBlueChange( const Event * Event );
 
 		void createLighContainer();
 
@@ -114,9 +113,9 @@ class EE_API MapEditor {
 
 		void createTextureRegionContainer( Int32 Width );
 
-		void windowClose( const UIEvent * Event );
+		void windowClose( const Event * Event );
 
-		void cextureAtlasOpen( const UIEvent * Event );
+		void cextureAtlasOpen( const Event * Event );
 
 		void createME();
 
@@ -132,71 +131,71 @@ class EE_API MapEditor {
 
 		void createNewMap();
 
-		void fileMenuClick( const UIEvent * Event );
+		void fileMenuClick( const Event * Event );
 
-		void viewMenuClick( const UIEvent * Event );
+		void viewMenuClick( const Event * Event );
 
-		void mapMenuClick( const UIEvent * Event );
+		void mapMenuClick( const Event * Event );
 
-		void layerMenuClick( const UIEvent * Event );
+		void layerMenuClick( const Event * Event );
 
-		void onTextureAtlasChange( const UIEvent * Event );
+		void onTextureAtlasChange( const Event * Event );
 
-		void mapOpen( const UIEvent * Event );
+		void mapOpen( const Event * Event );
 
-		void mapSave( const UIEvent * Event );
+		void mapSave( const Event * Event );
 
-		void onTextureRegionChange( const UIEvent * Event );
+		void onTextureRegionChange( const Event * Event );
 
-		void onTypeChange( const UIEvent * Event );
+		void onTypeChange( const Event * Event );
 
-		void onScrollMapH( const UIEvent * Event );
+		void onScrollMapH( const Event * Event );
 
-		void onScrollMapV( const UIEvent * Event );
+		void onScrollMapV( const Event * Event );
 
-		void onMapSizeChange( const UIEvent * Event = NULL );
+		void onMapSizeChange( const Event * Event = NULL );
 
-		void onLayerSelect( const UIEvent * Event );
+		void onLayerSelect( const Event * Event );
 
 		void mapCreated();
 
-		void chkClickMirrored( const UIEvent * Event );
+		void chkClickMirrored( const Event * Event );
 
-		void chkClickFlipped( const UIEvent * Event );
+		void chkClickFlipped( const Event * Event );
 
-		void chkClickBlocked( const UIEvent * Event );
+		void chkClickBlocked( const Event * Event );
 
-		void chkClickAnimated( const UIEvent * Event );
+		void chkClickAnimated( const Event * Event );
 
-		void chkClickRot90( const UIEvent * Event );
+		void chkClickRot90( const Event * Event );
 
-		void chkClickAutoFix( const UIEvent * Event );
+		void chkClickAutoFix( const Event * Event );
 
-		void chkClickDI( const UIEvent * Event );
+		void chkClickDI( const Event * Event );
 
-		void chkClickClampToTile( const UIEvent * Event );
+		void chkClickClampToTile( const Event * Event );
 
-		void onMapMouseDown( const UIEvent * Event );
+		void onMapMouseDown( const Event * Event );
 
-		void onMapMouseClick( const UIEvent * Event );
+		void onMapMouseClick( const Event * Event );
 
 		void onLayerAdd( Private::UIMapLayerNew * UILayer );
 
-		void addNewGOType( const UIEvent * Event );
+		void addNewGOType( const Event * Event );
 
-		void onMapClose( const UIEvent * Event );
+		void onMapClose( const Event * Event );
 
-		void onNewLight( const UIEvent * Event );
+		void onNewLight( const Event * Event );
 
-		void onLightRadiusChangeVal( const UIEvent * Event );
+		void onLightRadiusChangeVal( const Event * Event );
 
-		void onLightTypeChange( const UIEvent * Event );
+		void onLightTypeChange( const Event * Event );
 
 		void onLightSelect( MapLight * Light );
 
 		void onLightRadiusChange( MapLight * Light );
 
-		void onObjectModeSel( const UIEvent * Event );
+		void onObjectModeSel( const Event * Event );
 
 		void onNewGOTypeAdded( std::string name, Uint32 hash );
 
@@ -242,7 +241,7 @@ class EE_API MapEditor {
 
 		UIMessageBox * createNoLayerAlert( const String title );
 
-		void onTabSelected( const UIEvent * Event );
+		void onTabSelected( const Event * Event );
 
 		void createTabs();
 

@@ -1,6 +1,5 @@
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitabwidget.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -159,8 +158,8 @@ void UITab::update( const Time& time ) {
 		if ( isMouseOver() ) {
 			UITabWidget * tTabW	= getTabWidget();
 
-			if ( NULL != tTabW ) {
-				Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
+			if ( NULL != tTabW && NULL != getEventDispatcher() ) {
+				Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
 
 				if ( Flags & EE_BUTTONS_WUWD ) {
 					if ( Flags & EE_BUTTON_WUMASK ) {
@@ -197,18 +196,18 @@ void UITab::loadFromXmlNode(const pugi::xml_node & node) {
 }
 
 void UITab::setOwnedControl() {
-	UINode * ctrl = getParent()->getParent()->find( mOwnedName );
+	Node * ctrl = getParent()->getParent()->find( mOwnedName );
 
 	if ( NULL != ctrl ) {
 		setControlOwned( ctrl );
 	}
 }
 
-UINode * UITab::getControlOwned() const {
+Node * UITab::getControlOwned() const {
 	return mControlOwned;
 }
 
-void UITab::setControlOwned(UINode * controlOwned) {
+void UITab::setControlOwned( Node * controlOwned ) {
 	mControlOwned = controlOwned;
 
 	UITabWidget * tTabW = getTabWidget();

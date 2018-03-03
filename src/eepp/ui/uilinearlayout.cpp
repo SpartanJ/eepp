@@ -19,7 +19,7 @@ UILinearLayout::UILinearLayout() :
 	UILayout(),
 	mOrientation( UI_VERTICAL )
 {
-	setFlags( UI_CLIP_ENABLE );
+	clipEnable();
 }
 
 Uint32 UILinearLayout::getType() const {
@@ -77,7 +77,7 @@ void UILinearLayout::packVertical() {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
 	}
 
-	UINode * ChildLoop = mChild;
+	Node * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
@@ -191,7 +191,7 @@ void UILinearLayout::packHorizontal() {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
 	}
 
-	UINode * ChildLoop = mChild;
+	Node * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->isWidget() ) {
@@ -297,7 +297,7 @@ void UILinearLayout::packHorizontal() {
 }
 
 Sizei UILinearLayout::getTotalUsedSize() {
-	UINode * ChildLoop = mChild;
+	Node * ChildLoop = mChild;
 	Sizei size( 0, 0 );
 
 	while ( NULL != ChildLoop ) {
@@ -351,9 +351,9 @@ void UILinearLayout::loadFromXmlNode(const pugi::xml_node & node) {
 	endPropertiesTransaction();
 }
 
-Uint32 UILinearLayout::onMessage(const UIMessage * Msg) {
+Uint32 UILinearLayout::onMessage(const NodeMessage * Msg) {
 	switch( Msg->getMsg() ) {
-		case UIMessage::LayoutAttributeChange:
+		case NodeMessage::LayoutAttributeChange:
 		{
 			pack();
 			break;

@@ -28,7 +28,7 @@ class EE_API UISpinBox : public UIWidget {
 
 		const Float& getClickStep() const;
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		void addValue( const Float& value );
 

@@ -1,6 +1,5 @@
 #include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uilistbox.hpp>
-#include <eepp/ui/uimanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -16,11 +15,15 @@ UIListBoxItem::UIListBoxItem() :
 }
 
 UIListBoxItem::~UIListBoxItem() {
-	if ( UIManager::instance()->getFocusControl() == this )
-		mParentCtrl->setFocus();
+	EventDispatcher * eventDispatcher = getEventDispatcher();
 
-	if ( UIManager::instance()->getOverControl() == this )
-		UIManager::instance()->setOverControl( mParentCtrl );
+	if ( NULL != eventDispatcher ) {
+		if ( eventDispatcher->getFocusControl() == this )
+			mParentCtrl->setFocus();
+
+		if ( eventDispatcher->getOverControl() == this )
+			eventDispatcher->setOverControl( mParentCtrl );
+	}
 }
 
 Uint32 UIListBoxItem::getType() const {
@@ -83,9 +86,9 @@ void UIListBoxItem::select() {
 void UIListBoxItem::update( const Time& time ) {
 	UITextView::update( time );
 
-	if ( mEnabled && mVisible ) {
+	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
 		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( getParent()->getParent() );
-		Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
+		Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
 
 		if ( isMouseOver() ) {
 			if ( Flags & EE_BUTTONS_WUWD && LBParent->getVerticalScrollBar()->isVisible() ) {

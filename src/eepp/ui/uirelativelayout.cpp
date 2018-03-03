@@ -49,7 +49,7 @@ void UIRelativeLayout::fixChilds() {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
 	}
 
-	UINode * child = mChild;
+	Node * child = mChild;
 
 	while ( NULL != child ) {
 		if ( child->isWidget() ) {
@@ -157,9 +157,9 @@ void UIRelativeLayout::fixChildSize( UIWidget * widget ) {
 	}
 }
 
-Uint32 UIRelativeLayout::onMessage(const UIMessage * Msg) {
+Uint32 UIRelativeLayout::onMessage(const NodeMessage * Msg) {
 	switch( Msg->getMsg() ) {
-		case UIMessage::LayoutAttributeChange:
+		case NodeMessage::LayoutAttributeChange:
 		{
 			fixChilds();
 			break;

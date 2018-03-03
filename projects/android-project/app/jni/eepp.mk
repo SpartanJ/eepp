@@ -67,6 +67,8 @@ CODE_SRCS				:=  \
 	graphics/renderer/*.cpp \
 	physics/*.cpp \
 	physics/constraints/*.cpp \
+	scene/*.cpp \
+	scene/actions/*.cpp \
 	ui/*.cpp \
 	ui/actions/*.cpp \
 	ui/tools/*.cpp \

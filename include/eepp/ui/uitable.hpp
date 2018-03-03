@@ -67,7 +67,7 @@ class EE_API UITable : public UITouchDragableWidget {
 
 		Uint32 getItemSelectedIndex() const;
 
-		Uint32 onMessage( const UIMessage * Msg );
+		Uint32 onMessage( const NodeMessage * Msg );
 
 		UIItemContainer<UITable> * getContainer() const;
 
@@ -118,7 +118,7 @@ class EE_API UITable : public UITouchDragableWidget {
 
 		void containerResize();
 
-		void onScrollValueChange( const UIEvent * Event );
+		void onScrollValueChange( const Event * Event );
 
 		void setDefaultCollumnsWidth();
 

@@ -7,8 +7,8 @@ MapEditor * Editor = NULL;
 bool onCloseRequestCallback( EE::Window::Window * w ) {
 	if ( NULL != Editor ) {
 		MsgBox = UIMessageBox::New( MSGBOX_OKCANCEL, "Do you really want to close the current map?\nAll changes will be lost." );
-		MsgBox->addEventListener( UIEvent::MsgBoxConfirmClick, cb::Make1<void, const UIEvent*>( []( const UIEvent * event ) { win->close(); } ) );
-		MsgBox->addEventListener( UIEvent::OnClose, cb::Make1<void, const UIEvent*>( []( const UIEvent * event ) { MsgBox = NULL; } ) );
+		MsgBox->addEventListener( Event::MsgBoxConfirmClick, cb::Make1<void, const Event*>( []( const Event * event ) { win->close(); } ) );
+		MsgBox->addEventListener( Event::OnClose, cb::Make1<void, const Event*>( []( const Event * event ) { MsgBox = NULL; } ) );
 		MsgBox->setTitle( "Close Map?" );
 		MsgBox->center();
 		MsgBox->show();
@@ -25,12 +25,12 @@ void mainLoop() {
 		win->close();
 	}
 
-	UIManager::instance()->update();
+	SceneManager::instance()->update();
 
-	if ( UIManager::instance()->getMainControl()->invalidated() ) {
+	if ( SceneManager::instance()->getUISceneNode()->invalidated() ) {
 		win->clear();
 
-		UIManager::instance()->draw();
+		SceneManager::instance()->draw();
 
 		win->display();
 	} else {
@@ -51,7 +51,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 	if ( win->isOpen() ) {
 		win->setCloseRequestCallback( cb::Make1( onCloseRequestCallback ) );
 
-		UIManager::instance()->init( UI_MANAGER_USE_DRAW_INVALIDATION );
+		SceneManager::instance()->add( UISceneNode::New() );
 
 		{
 			std::string pd;

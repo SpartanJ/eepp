@@ -19,15 +19,16 @@ UIScrollView::UIScrollView() :
 	mScrollView( NULL ),
 	mSizeChangeCb( 0 )
 {
-	setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
+	enableReportSizeChangeToChilds();
 
 	mVScroll->setParent( this );
 	mHScroll->setParent( this );
 	mContainer->setParent( this );
-	mContainer->setFlags( UI_CLIP_ENABLE | UI_REPORT_SIZE_CHANGE_TO_CHILDS );
+	mContainer->clipEnable();
+	mContainer->enableReportSizeChangeToChilds();
 
-	mVScroll->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIScrollView::onValueChangeCb ) );
-	mHScroll->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIScrollView::onValueChangeCb ) );
+	mVScroll->addEventListener( Event::OnValueChange, cb::Make1( this, &UIScrollView::onValueChangeCb ) );
+	mHScroll->addEventListener( Event::OnValueChange, cb::Make1( this, &UIScrollView::onValueChangeCb ) );
 
 	applyDefaultTheme();
 }
@@ -56,7 +57,7 @@ void UIScrollView::onAlphaChange() {
 }
 
 void UIScrollView::onChildCountChange() {
-	UINode * child = mChild;
+	Node * child = mChild;
 	bool found = false;
 
 	while ( NULL != child ) {
@@ -78,7 +79,7 @@ void UIScrollView::onChildCountChange() {
 
 		child->setParent( mContainer );
 		mScrollView = child;
-		mSizeChangeCb = mScrollView->addEventListener( UIEvent::OnSizeChange, cb::Make1( this, &UIScrollView::onScrollViewSizeChange ) );
+		mSizeChangeCb = mScrollView->addEventListener( Event::OnSizeChange, cb::Make1( this, &UIScrollView::onScrollViewSizeChange ) );
 
 		containerUpdate();
 	}
@@ -194,11 +195,11 @@ void UIScrollView::updateScroll() {
 	);
 }
 
-void UIScrollView::onValueChangeCb( const UIEvent * Event ) {
+void UIScrollView::onValueChangeCb( const Event * Event ) {
 	updateScroll();
 }
 
-void UIScrollView::onScrollViewSizeChange(const UIEvent * Event) {
+void UIScrollView::onScrollViewSizeChange(const Event * Event) {
 	containerUpdate();
 }
 

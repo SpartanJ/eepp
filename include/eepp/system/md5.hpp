@@ -2,6 +2,8 @@
 #define EE_SYSTEM_MD5_HPP
 
 #include <eepp/system/iostream.hpp>
+#include <eepp/core.hpp>
+#include <vector>
 
 namespace EE { namespace System {
 

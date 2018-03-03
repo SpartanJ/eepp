@@ -1,11 +1,11 @@
 #include <eepp/ui/uitextview.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/graphics/fontmanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -55,9 +55,8 @@ void UITextView::draw() {
 		drawSelection( mTextCache );
 
 		if ( mTextCache->getTextWidth() ) {
-			if ( mFlags & UI_CLIP_ENABLE ) {
-				UIManager::instance()->clipSmartEnable(
-						this,
+			if ( isClipped() ) {
+				clipSmartEnable(
 						mScreenPos.x + mRealPadding.Left,
 						mScreenPos.y + mRealPadding.Top,
 						mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
@@ -68,8 +67,8 @@ void UITextView::draw() {
 			mTextCache->setAlign( getFlags() );
 			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left, (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
 
-			if ( mFlags & UI_CLIP_ENABLE ) {
-				UIManager::instance()->clipSmartDisable( this );
+			if ( isClipped() ) {
+				clipSmartDisable();
 			}
 		}
 	}
@@ -303,12 +302,12 @@ void UITextView::onSizeChange() {
 }
 
 void UITextView::onTextChanged() {
-	sendCommonEvent( UIEvent::OnTextChanged );
+	sendCommonEvent( Event::OnTextChanged );
 	invalidateDraw();
 }
 
 void UITextView::onFontChanged() {
-	sendCommonEvent( UIEvent::OnFontChanged );
+	sendCommonEvent( Event::OnFontChanged );
 	invalidateDraw();
 }
 
@@ -373,7 +372,7 @@ Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 }
 
 Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
-	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && UIManager::instance()->getDownControl() == this ) {
+	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && getEventDispatcher()->getDownControl() == this ) {
 		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( controlPos );
 		controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset;
@@ -535,7 +534,8 @@ void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
 		String::toLowerInPlace( name );
 
 		if ( "text" == name ) {
-			setText( UIManager::instance()->getTranslatorString( ait->as_string() ) );
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
+				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( ait->as_string() ) );
 		} else if ( "textcolor" == name ) {
 			setFontColor( Color::fromString( ait->as_string() ) );
 		} else if ( "textshadowcolor" == name ) {

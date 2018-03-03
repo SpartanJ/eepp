@@ -27,7 +27,7 @@ class EE_API UICommonDialog : public UIWindow {
 
 		void				refreshFolder();
 
-		virtual Uint32		onMessage( const UIMessage *Msg );
+		virtual Uint32		onMessage( const NodeMessage *Msg );
 
 		virtual void		open();
 
@@ -79,9 +79,9 @@ class EE_API UICommonDialog : public UIWindow {
 		UIDropDownList *	mFiletype;
 		Uint32				mCDLFlags;
 
-		void onPressEnter( const UIEvent * Event );
+		void onPressEnter( const Event * Event );
 
-		void onPressFileEnter( const UIEvent * Event );
+		void onPressFileEnter( const Event * Event );
 
 		void openSaveClick();
 

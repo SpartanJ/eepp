@@ -16,7 +16,7 @@ class UIItemContainer : public UINode {
 
 		void drawChilds();
 	protected:
-		UINode * overFind( const Vector2f& Point );
+		Node * overFind( const Vector2f& Point );
 };
 
 template<class TContainer>
@@ -54,10 +54,10 @@ void UIItemContainer<TContainer>::drawChilds() {
 }
 
 template<class TContainer>
-UINode * UIItemContainer<TContainer>::overFind( const Vector2f& Point ) {
+Node * UIItemContainer<TContainer>::overFind( const Vector2f& Point ) {
 	TContainer * tParent = reinterpret_cast<TContainer*> ( getParent() );
 
-	UINode * pOver = NULL;
+	Node * pOver = NULL;
 
 	if ( mEnabled && mVisible && tParent->mItems.size() ) {
 		updateWorldPolygon();
@@ -67,7 +67,7 @@ UINode * UIItemContainer<TContainer>::overFind( const Vector2f& Point ) {
 
 			for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ ) {
 				if ( NULL != tParent->mItems[i] ) {
-					UINode * ChildOver = tParent->mItems[i]->overFind( Point );
+					Node * ChildOver = tParent->mItems[i]->overFind( Point );
 
 					if ( NULL != ChildOver ) {
 						pOver = ChildOver;
@@ -78,7 +78,7 @@ UINode * UIItemContainer<TContainer>::overFind( const Vector2f& Point ) {
 			}
 
 			if ( NULL == pOver )
-				pOver = const_cast<UINode *>( reinterpret_cast<const UINode *>( this ) );
+				pOver = const_cast<Node *>( reinterpret_cast<const Node *>( this ) );
 		}
 	}
 

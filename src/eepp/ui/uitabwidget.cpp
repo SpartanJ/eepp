@@ -1,5 +1,5 @@
 #include <eepp/ui/uitabwidget.hpp>
-#include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/fontmanager.hpp>
@@ -25,13 +25,14 @@ UITabWidget::UITabWidget() :
 	}
 
 	mTabContainer = UIWidget::New();
-	mTabContainer->setParent( this )->setPosition( 0, 0 )->setPixelsSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight );
-	mTabContainer->setFlags( UI_CLIP_ENABLE );
+	mTabContainer->setPixelsSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight )
+			->setParent( this )->setPosition( 0, 0 );
+	mTabContainer->clipEnable();
 
 	mCtrlContainer = UIWidget::New();
-	mCtrlContainer->setParent( this )->setPosition( 0, mStyleConfig.TabWidgetHeight )
-			->setPixelsSize( mSize.getWidth(), mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) );
-	mCtrlContainer->setFlags( UI_CLIP_ENABLE );
+	mCtrlContainer->setPixelsSize( mSize.getWidth(), mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) )
+			->setParent( this )->setPosition( 0, mStyleConfig.TabWidgetHeight );
+	mCtrlContainer->clipEnable();
 
 	onSizeChange();
 
@@ -665,7 +666,7 @@ void UITabWidget::setTabSelected( UITab * Tab ) {
 
 		orderTabs();
 
-		sendCommonEvent( UIEvent::OnTabSelected );
+		sendCommonEvent( Event::OnTabSelected );
 	}
 }
 
@@ -711,7 +712,7 @@ void UITabWidget::onSizeChange() {
 }
 
 void UITabWidget::onChildCountChange() {
-	UINode * child = mChild;
+	Node * child = mChild;
 	bool found = false;
 
 	while ( NULL != child ) {

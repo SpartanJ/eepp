@@ -1,6 +1,6 @@
 #include <eepp/ui/uimessagebox.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/ui/uitheme.hpp>
 
 namespace EE { namespace UI {
 
@@ -94,13 +94,13 @@ void UIMessageBox::setTheme( UITheme * Theme ) {
 	}
 }
 
-Uint32 UIMessageBox::onMessage( const UIMessage * Msg ) {
+Uint32 UIMessageBox::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::Click:
+		case NodeMessage::Click:
 		{
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender() == mButtonOK ) {
-					sendCommonEvent( UIEvent::MsgBoxConfirmClick );
+					sendCommonEvent( Event::MsgBoxConfirmClick );
 
 					closeWindow();
 				} else if ( Msg->getSender() == mButtonCancel ) {
@@ -127,7 +127,7 @@ UIPushButton * UIMessageBox::getButtonCancel() const {
 	return mButtonCancel;
 }
 
-Uint32 UIMessageBox::onKeyUp( const UIEventKey & Event ) {
+Uint32 UIMessageBox::onKeyUp( const KeyEvent & Event ) {
 	if ( mCloseWithKey && Event.getKeyCode() == mCloseWithKey ) {
 		closeWindow();
 	}

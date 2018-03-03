@@ -1,6 +1,7 @@
 #include <eepp/ui/uiwidget.hpp>
-#include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
+#include <eepp/scene/scenenode.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -143,19 +144,23 @@ LayoutPositionRules UIWidget::getLayoutPositionRule() const {
 void UIWidget::update( const Time& time ) {
 	if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
 		if ( isMouseOverMeOrChilds() ) {
-			UIManager * uiManager = UIManager::instance();
+			EventDispatcher * eventDispatcher = getEventDispatcher();
+
+			if ( NULL == eventDispatcher )
+				return;
+
 			UIThemeManager * themeManager = UIThemeManager::instance();
 
-			Vector2f Pos = uiManager->getMousePosf();
+			Vector2f Pos = eventDispatcher->getMousePosf();
 			Pos.x += themeManager->getCursorSize().x;
 			Pos.y += themeManager->getCursorSize().y;
 
-			if ( Pos.x + mTooltip->getRealSize().getWidth() > uiManager->getMainControl()->getRealSize().getWidth() ) {
-				Pos.x = uiManager->getMousePos().x - mTooltip->getRealSize().getWidth();
+			if ( Pos.x + mTooltip->getRealSize().getWidth() > eventDispatcher->getSceneNode()->getRealSize().getWidth() ) {
+				Pos.x = eventDispatcher->getMousePos().x - mTooltip->getRealSize().getWidth();
 			}
 
-			if ( Pos.y + mTooltip->getRealSize().getHeight() > uiManager->getMainControl()->getRealSize().getHeight() ) {
-				Pos.y = uiManager->getMousePos().y - mTooltip->getRealSize().getHeight();
+			if ( Pos.y + mTooltip->getRealSize().getHeight() > eventDispatcher->getSceneNode()->getRealSize().getHeight() ) {
+				Pos.y = eventDispatcher->getMousePos().y - mTooltip->getRealSize().getHeight();
 			}
 
 			if ( Time::Zero == themeManager->getTooltipTimeToShow() ) {
@@ -227,7 +232,7 @@ void UIWidget::tooltipRemove() {
 	mTooltip = NULL;
 }
 
-UINode * UIWidget::setSize( const Sizef& size ) {
+Node * UIWidget::setSize( const Sizef& size ) {
 	Sizef s( size );
 
 	if ( s.x < mMinControlSize.x )
@@ -279,7 +284,7 @@ UINode * UIWidget::setThemeSkin( UITheme * Theme, const std::string& skinName ) 
 	return UINode::setThemeSkin( Theme, skinName );
 }
 
-UINode * UIWidget::setSize( const Float& Width, const Float& Height ) {
+Node * UIWidget::setSize( const Float& Width, const Float& Height ) {
 	return UINode::setSize( Width, Height );
 }
 
@@ -315,14 +320,14 @@ void UIWidget::onWidgetCreated() {
 
 void UIWidget::notifyLayoutAttrChange() {
 	if ( 0 == mPropertiesTransactionCount ) {
-		UIMessage msg( this, UIMessage::LayoutAttributeChange );
+		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
 		messagePost( &msg );
 	}
 }
 
 void UIWidget::notifyLayoutAttrChangeParent() {
 	if ( 0 == mPropertiesTransactionCount && NULL != mParentCtrl ) {
-		UIMessage msg( this, UIMessage::LayoutAttributeChange );
+		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
 		mParentCtrl->messagePost( &msg );
 	}
 }
@@ -533,7 +538,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 						setFlags( UI_AUTO_SIZE );
 						notifyLayoutAttrChange();
 					} else if ( "clip" == cur ) {
-						setFlags( UI_CLIP_ENABLE );
+						clipEnable();
 					} else if ( "word_wrap" == cur || "wordwrap" == cur ) {
 						setFlags( UI_WORD_WRAP );
 					} else if ( "multi" == cur ) {
@@ -542,7 +547,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 						setFlags( UI_AUTO_PADDING );
 						notifyLayoutAttrChange();
 					} else if ( "reportsizechangetochilds" == cur || "report_size_change_to_childs" == cur ) {
-						setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
+						enableReportSizeChangeToChilds();
 					}
 				}
 			}
@@ -630,7 +635,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 
 			std::string id = ait->as_string();
 
-			UINode * control = getParent()->find( id );
+			Node * control = getParent()->find( id );
 
 			if ( NULL != control && control->isWidget() ) {
 				UIWidget * widget = static_cast<UIWidget*>( control );
@@ -639,9 +644,9 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			}
 		} else if ( "clip" == name ) {
 			if ( ait->as_bool() )
-				setFlags( UI_CLIP_ENABLE );
+				clipEnable();
 			else
-				unsetFlags( UI_CLIP_ENABLE );
+				clipDisable();
 		} else if ( "rotation" == name ) {
 			setRotation( ait->as_float() );
 		} else if ( "scale" == name ) {

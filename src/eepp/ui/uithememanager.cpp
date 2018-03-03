@@ -1,6 +1,5 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uinode.hpp>
-#include <eepp/ui/uimanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -40,21 +39,6 @@ UIThemeManager *  UIThemeManager::setDefaultFont( Font * Font ) {
 
 Font * UIThemeManager::getDefaultFont() const {
 	return mFont;
-}
-
-UIThemeManager *  UIThemeManager::setTheme( const std::string& Theme ) {
-	setTheme( getByName( Theme ) );
-	return this;
-}
-
-UIThemeManager *  UIThemeManager::setTheme( UITheme * Theme ) {
-	UINode * MainCtrl = UIManager::instance()->getMainControl();
-
-	if ( NULL != MainCtrl ) {
-		MainCtrl->setThemeToChilds( Theme );
-		MainCtrl->setTheme( Theme );
-	}
-	return this;
 }
 
 UIThemeManager *  UIThemeManager::setDefaultTheme( UITheme * Theme ) {

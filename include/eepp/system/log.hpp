@@ -2,7 +2,6 @@
 #define EECLOG_H
 
 #include <list>
-#include <eepp/system/base.hpp>
 #include <eepp/system/singleton.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/mutex.hpp>

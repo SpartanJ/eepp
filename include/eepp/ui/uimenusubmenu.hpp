@@ -53,9 +53,9 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
 		virtual void onAlphaChange();
 
-		void onSubMenuFocusLoss( const UIEvent * Event );
+		void onSubMenuFocusLoss( const Event * Event );
 
-		void onHideByClick( const UIEvent * Event );
+		void onHideByClick( const Event * Event );
 };
 
 }}

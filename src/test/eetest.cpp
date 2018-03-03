@@ -35,14 +35,14 @@ class UIBlurredWindow : public UIWindow {
 			if ( !ownsFrameBuffer() )
 				return;
 
-			FrameBuffer * curFBO = FrameBufferManager::instance()->getFromName( "uimain" );
+			FrameBuffer * curFBO = getSceneNode()->getFrameBuffer();
 
 			if ( NULL != curFBO && NULL != curFBO->getTexture() && NULL != mBlurShader ) {
 				static int fboDiv = 2;
 
 				if ( NULL == mFboBlur ) {
 					mFboBlur = FrameBuffer::New( mSize.x / fboDiv, mSize.y / fboDiv );
-				} else if ( mFboBlur->getSize().getWidth() != mSize.x / fboDiv || mFboBlur->getSize().getHeight() != mSize.y / fboDiv ) {
+				} else if ( mFboBlur->getSize().getWidth() != (int)( mSize.x / fboDiv ) || mFboBlur->getSize().getHeight() != (int)( mSize.y / fboDiv ) ) {
 					mFboBlur->resize( mSize.x / fboDiv, mSize.y / fboDiv );
 				}
 
@@ -51,7 +51,7 @@ class UIBlurredWindow : public UIWindow {
 												mScreenPos.x + mSize.x, mScreenPos.y + mSize.y
 				) );
 
-				RGB cc = UIManager::instance()->getWindow()->getClearColor();
+				RGB cc = getSceneNode()->getWindow()->getClearColor();
 				mFboBlur->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 0 ) );
 				mFboBlur->bind();
 				mFboBlur->clear();
@@ -307,15 +307,15 @@ void EETest::createShaders() {
 	}
 }
 
-void EETest::onWinMouseUp( const UIEvent * Event ) {
-	const UIEventMouse * MEvent = reinterpret_cast<const UIEventMouse*> ( Event );
+void EETest::onWinMouseUp( const Event * Event ) {
+	const MouseEvent * MEvent = reinterpret_cast<const MouseEvent*> ( Event );
 
-	UINode * CtrlAnim;
+	Node * CtrlAnim;
 
-	if ( Event->getControl()->isType( UI_TYPE_WINDOW ) ) {
-		CtrlAnim = reinterpret_cast<UINode*>( Event->getControl() );
+	if ( Event->getNode()->isType( UI_TYPE_WINDOW ) ) {
+		CtrlAnim = reinterpret_cast<Node*>( Event->getNode() );
 	} else {
-		CtrlAnim = reinterpret_cast<UINode*>( Event->getControl()->getParent() );
+		CtrlAnim = reinterpret_cast<Node*>( Event->getNode()->getParent() );
 	}
 
 	if ( MEvent->getFlags() & EE_BUTTON_WUMASK ) {
@@ -325,8 +325,8 @@ void EETest::onWinMouseUp( const UIEvent * Event ) {
 	}
 }
 
-void EETest::onShowMenu( const UIEvent * Event ) {
-	UIPushButton * PB = static_cast<UIPushButton*>( Event->getControl() );
+void EETest::onShowMenu( const Event * Event ) {
+	UIPushButton * PB = static_cast<UIPushButton*>( Event->getNode() );
 
 	if ( Menu->show() ) {
 		Vector2f pos( Vector2f::Zero );
@@ -365,13 +365,13 @@ void EETest::createBaseUI() {
 	windowStyleConfig.BaseAlpha = 200;
 	tWin->setStyleConfig( windowStyleConfig );
 
-	C = tWin->getContainer();
+	C = static_cast<UINode*>( tWin->getContainer() );
 	tWin->setVisible( false )->setEnabled( false );
 
 	tWin->setTitle( "Controls Test" );
 
-	tWin->addEventListener( UIEvent::MouseUp, cb::Make1( this, &EETest::onWinMouseUp ) );
-	C->addEventListener( UIEvent::MouseUp, cb::Make1( this, &EETest::onWinMouseUp ) );
+	tWin->addEventListener( Event::MouseUp, cb::Make1( this, &EETest::onWinMouseUp ) );
+	C->addEventListener( Event::MouseUp, cb::Make1( this, &EETest::onWinMouseUp ) );
 
 	UISprite * sprite = UISprite::New();
 	sprite->setFlags( UI_AUTO_SIZE );
@@ -381,7 +381,7 @@ void EETest::createBaseUI() {
 	sprite->setDeallocSprite( true );
 
 	UITextView * Text = UITextView::New();
-	Text->setLayoutSizeRules( FIXED, FIXED )->setParent( C )->setEnabled( false )->setSize( 320, 240 )->setHorizontalAlign( UI_HALIGN_RIGHT )->setVerticalAlign( UI_VALIGN_TOP );
+	Text->setLayoutSizeRules( FIXED, FIXED )->setHorizontalAlign( UI_HALIGN_RIGHT )->setVerticalAlign( UI_VALIGN_TOP )->setParent( C )->setEnabled( false )->setSize( 320, 240 );
 	Text->setText( "Turn around\nJust Turn Around\nAround!" );
 
 	UITextInput::New()->setParent( C )->setPosition( 20, 216 )->setSize( 200, 0 );
@@ -390,7 +390,7 @@ void EETest::createBaseUI() {
 	Button->setParent( C )->setPosition( 225, 215 )->setSize( 90, 0 );
 	Button->setIcon( mTheme->getIconByName( "ok" ) );
 	Button->setText( "Click Me" );
-	Button->addEventListener( UIEvent::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
+	Button->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 	Button->setTooltipText( "Click and see what happens..." );
 
 	UICheckBox * Checkbox = UICheckBox::New();
@@ -407,7 +407,7 @@ void EETest::createBaseUI() {
 
 	mSlider = UISlider::New();
 	mSlider->setOrientation( UI_HORIZONTAL )->setParent( C )->setPosition( 220, 80 )->setSize( 80, 24 );
-	mSlider->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &EETest::onSliderValueChange ) );
+	mSlider->addEventListener( Event::OnValueChange, cb::Make1( this, &EETest::onSliderValueChange ) );
 
 	UISlider::New()->setOrientation( UI_VERTICAL )->setParent( C )->setPosition( 40, 110 )->setSize( 24, 80 );
 
@@ -417,18 +417,19 @@ void EETest::createBaseUI() {
 
 	mScrollBar = UIScrollBar::New();
 	mScrollBar->setParent( C )->setSize( 0, 240 );
-	mScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &EETest::onValueChange ) );
+	mScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &EETest::onValueChange ) );
 
 	mProgressBar = UIProgressBar::New();
 	mProgressBar->setParent( C )->setSize( 200, 24 )->setPosition( 20, 190 );
 
 	mTextBoxValue = UITextView::New();
-	mTextBoxValue->setParent( C )->setPosition( 20, 0 )->setFlags( UI_AUTO_SIZE );
-	mTextBoxValue->setVisible( true );
+	mTextBoxValue->setParent( C )->setPosition( 20, 0 );
+	mTextBoxValue->setFlags( UI_AUTO_SIZE )->setVisible( true );
 	onValueChange( NULL );
 
 	mListBox = UIListBox::New();
-	mListBox->setParent( C )->setPosition( 325, 8 )->setSize( 200, 224 )->setFlags( UI_TOUCH_DRAG_ENABLED );
+	mListBox->setParent( C )->setPosition( 325, 8 )->setSize( 200, 224 );
+	mListBox->setFlags( UI_TOUCH_DRAG_ENABLED );
 	mListBox->addListBoxItems( str );
 
 	UIDropDownList * dropDownList = UIDropDownList::New();
@@ -487,16 +488,17 @@ void EETest::createBaseUI() {
 	genGrid->setCollumnWidth( 2, 100 );
 
 	UIWidget * w = UIWidget::New();
-	w->setParent( C )->setSize( 20, 20 )->setPosition( 260, 130 )->setBackgroundFillEnabled( true )->setColor( Color::Green );
+	w->setParent( C )->setSize( 20, 20 )->setPosition( 260, 130 );
+	w->setBackgroundFillEnabled( true )->setColor( Color::Green );
 	w->setRotation( 45 );
-	w->addEventListener( UIEvent::MouseEnter, cb::Make1<void, const UIEvent*>( [] ( const UIEvent* event ) {
-		event->getControl()->getBackground()->setColor( Color::Yellow );
+	w->addEventListener( Event::MouseEnter, cb::Make1<void, const Event*>( [] ( const Event* event ) {
+		static_cast<UIWidget*>( event->getNode() )->getBackground()->setColor( Color::Yellow );
 	} ) );
-	w->addEventListener( UIEvent::MouseExit, cb::Make1<void, const UIEvent*>( [] ( const UIEvent* event ) {
-		event->getControl()->getBackground()->setColor( Color::Green );
+	w->addEventListener( Event::MouseExit, cb::Make1<void, const Event*>( [] ( const Event* event ) {
+		static_cast<UIWidget*>( event->getNode() )->getBackground()->setColor( Color::Green );
 	} ) );
-	w->addEventListener( UIEvent::MouseClick, cb::Make1<void, const UIEvent*>( [] ( const UIEvent* event ) {
-		event->getControl()->getBackground()->setColor( Color::Red );
+	w->addEventListener( Event::MouseClick, cb::Make1<void, const Event*>( [] ( const Event* event ) {
+		static_cast<UIWidget*>( event->getNode() )->getBackground()->setColor( Color::Red );
 	} ) );
 
 	C = reinterpret_cast<UINode*> ( C->getParent() );
@@ -541,9 +543,9 @@ void EETest::createBaseUI() {
 	Menu->addSeparator();
 	Menu->add( "Quit" );
 
-	Menu->addEventListener( UIEvent::OnItemClicked, cb::Make1( this, &EETest::onItemClick ) );
-	Menu->getItem( "Quit" )->addEventListener( UIEvent::MouseUp, cb::Make1( this, &EETest::onQuitClick ) );
-	UIManager::instance()->getMainControl()->addEventListener( UIEvent::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
+	Menu->addEventListener( Event::OnItemClicked, cb::Make1( this, &EETest::onItemClick ) );
+	Menu->getItem( "Quit" )->addEventListener( Event::MouseUp, cb::Make1( this, &EETest::onQuitClick ) );
+	SceneManager::instance()->getUISceneNode()->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
 
 #ifdef EE_PLATFORM_TOUCH
 	TextureAtlas * SG = GlobalTextureAtlas::instance();
@@ -586,12 +588,24 @@ void EETest::createUI() {
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
-	Uint32 UI_MAN_OPS = 0;
-	if ( mDebugUI )
-		UI_MAN_OPS = UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER | UI_MANAGER_DRAW_DEBUG_DATA | UI_MANAGER_DRAW_BOXES | UI_MANAGER_HIGHLIGHT_INVALIDATION;
-	UIManager::instance()->init(UI_MAN_OPS | UI_MANAGER_USE_DRAW_INVALIDATION | UI_MANAGER_MAIN_CONTROL_IN_FRAME_BUFFER);
-	UIManager::instance()->setTranslator( mTranslator );
+	UISceneNode * sceneNode = UISceneNode::New();
 
+	sceneNode->enableDrawInvalidation();
+	sceneNode->enableFrameBuffer();
+
+	if ( mDebugUI ) {
+		sceneNode->setDrawBoxes( true );
+		sceneNode->setDrawDebugData( true );
+		sceneNode->setHighlightFocus( true );
+		sceneNode->setHighlightOver( true );
+		sceneNode->setHighlightInvalidation( true );
+	}
+
+	sceneNode->setTranslator( mTranslator );
+
+	SceneManager::instance()->add( sceneNode );
+
+	eePRINTL("Node size: %d", sizeof(Node));
 	eePRINTL("UINode size: %d", sizeof(UINode));
 	//mTheme = UITheme::loadFromDirectory( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
 
@@ -604,7 +618,7 @@ void EETest::createUI() {
 	UIThemeManager::instance()->setDefaultTheme( mThemeName );
 
 	createBaseUI();
-	//createNewUI();
+	createNewUI();
 
 	eePRINTL( "CreateUI time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 }
@@ -621,17 +635,17 @@ void EETest::createNewUI() {
 	UIScrollView * scrollView = UIScrollView::New();
 	scrollView->setTouchDragEnabled( true );
 	scrollView->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT )->setParent( relLay );
-	scrollView->getContainer()->addEventListener( UIEvent::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
+	scrollView->getContainer()->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
 	container->setParent( scrollView );
-	container->addEventListener( UIEvent::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
+	container->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
 
 	UILoader * loader = UILoader::New();
 	loader->setOutlineThickness( 4 )
 			->setRadius( 25 )
 			->setPosition( 800, 0 )
 			->setSize( 100, 100 )
-			->setParent( container )
-			->setBackgroundFillEnabled( true )->setColor( 0xCCCCCCCC );
+			->setParent( container );
+	loader->setBackgroundFillEnabled( true )->setColor( 0xCCCCCCCC );
 
 	UIRadioButton * ctrl = UIRadioButton::New();
 	ctrl->setPosition( 50, 100 )->setSize( 200, 32 )->setParent( container );
@@ -831,7 +845,7 @@ void EETest::createNewUI() {
 
 	win2->show();
 
-	UIManager::instance()->loadLayoutFromString(
+	SceneManager::instance()->getUISceneNode()->loadLayoutFromString(
 		"<window layout_width='300dp' layout_height='300dp' winflags='default|maximize'>"
 		"	<LinearLayout id='testlayout' orientation='vertical' layout_width='match_parent' layout_height='match_parent' layout_margin='8dp'>"
 		"		<TextView text='Hello World!' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' backgroundColor='black' />"
@@ -851,7 +865,7 @@ void EETest::createNewUI() {
 		"</window>"
 	);
 
-	UIManager::instance()->loadLayoutFromString(
+	SceneManager::instance()->getUISceneNode()->loadLayoutFromString(
 		"<window layout_width='800dp' layout_height='600dp' winflags='default|maximize'>"
 		"	<LinearLayout layout_width='match_parent' layout_height='match_parent'>"
 		"		<ScrollView layout_width='match_parent' layout_height='match_parent' touchdrag='true'>"
@@ -862,20 +876,22 @@ void EETest::createNewUI() {
 	);
 
 	UIGridLayout * gridLayout = NULL;
-	UIManager::instance()->getMainControl()->bind( "gridlayout", gridLayout );
+	SceneManager::instance()->getUISceneNode()->bind( "gridlayout", gridLayout );
 
 	if ( NULL != gridLayout ) {
 		std::vector<Texture*> textures = TextureFactory::instance()->getTextures();
 
 		if ( textures.size() > 0 ) {
 			for ( std::size_t i = 0; i < textures.size(); i++ ) {
-				UIImage::New()
-						->setDrawable( textures[i] )
+				UIImage * img = UIImage::New();
+						img->setDrawable( textures[i] )
 						->setScaleType( UIScaleType::FitInside )
 						->setGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
 						->setEnabled( false )
-						->setParent( gridLayout )->setBackgroundFillEnabled( true )
-							->setColor( Color::fromPointer( textures[i] ) );
+						->setParent( gridLayout );
+
+				img->setBackgroundFillEnabled( true )
+						->setColor( Color::fromPointer( textures[i] ) );
 			}
 		}
 	}
@@ -926,14 +942,14 @@ void EETest::createCommonDialog() {
 	CDialog->show();
 }
 
-static void onWinDragStart( const UIEvent * event ) {
-	UINode * ctrl = static_cast<UINode*>( event->getControl() );
+static void onWinDragStart( const Event * event ) {
+	UINode * ctrl = static_cast<UINode*>( event->getNode() );
 	UIWindow * window = ctrl->isType(UI_TYPE_WINDOW) ? static_cast<UIWindow*>( ctrl ) : static_cast<UIWindow*>( ctrl->getWindowContainer()->getParent() );
 	window->startAlphaAnim( window->getAlpha(), 100, Seconds(0.2f) );
 }
 
-static void onWinDragStop( const UIEvent * event ) {
-	UINode * ctrl = static_cast<UINode*>( event->getControl() );
+static void onWinDragStop( const Event * event ) {
+	UINode * ctrl = static_cast<UINode*>( event->getNode() );
 	UIWindow * window = ctrl->isType(UI_TYPE_WINDOW) ? static_cast<UIWindow*>( ctrl ) : static_cast<UIWindow*>( ctrl->getWindowContainer()->getParent() );
 	window->startAlphaAnim( window->getAlpha(), 255, Seconds(0.2f) );
 }
@@ -943,10 +959,10 @@ void EETest::createDecoratedWindow() {
 	mUIWindow->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER )
 			->setMinWindowSize( 530, 350 )->setPosition( 200, 50 );
 
-	mUIWindow->addEventListener( UIEvent::OnWindowClose, cb::Make1( this, &EETest::onCloseClick ) );
+	mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &EETest::onCloseClick ) );
 	mUIWindow->setTitle( "Test Window" );
-	mUIWindow->addEventListener( UIEvent::OnDragStart, cb::Make1( &onWinDragStart ) );
-	mUIWindow->addEventListener( UIEvent::OnDragStop, cb::Make1( &onWinDragStop ) );
+	mUIWindow->addEventListener( Event::OnDragStart, cb::Make1( &onWinDragStart ) );
+	mUIWindow->addEventListener( Event::OnDragStop, cb::Make1( &onWinDragStop ) );
 
 	UILinearLayout * lay = UILinearLayout::NewVertical();
 	lay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
@@ -958,13 +974,26 @@ void EETest::createDecoratedWindow() {
 	UIPopUpMenu * PopMenu = UIPopUpMenu::New();
 	PopMenu->add( "Hide Border" );
 	PopMenu->add( "Close" );
-	PopMenu->addEventListener( UIEvent::OnItemClicked, cb::Make1<void, const UIEvent*>( []( const UIEvent * Event ) {
-		if ( !Event->getControl()->isType( UI_TYPE_MENUITEM ) )
+	PopMenu->addEventListener( Event::OnItemClicked, cb::Make1<void, const Event*>( []( const Event * Event ) {
+		if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 
-		UIMenuItem* menuItem = reinterpret_cast<UIMenuItem*> ( Event->getControl() );
+		Node * node = Event->getNode();
+		UIWindow * win = NULL;
+
+		while ( NULL != node && NULL == win ) {
+			if ( node->isWindow() ) {
+				win = static_cast<UIWindow*>( node );
+			} else {
+				node = node->getParent();
+			}
+		}
+
+		if ( NULL == win )
+			return;
+
+		UIMenuItem* menuItem = reinterpret_cast<UIMenuItem*> ( Event->getNode() );
 		const String& txt = menuItem->getText();
-		UIWindow * win = Event->getControl()->getOwnerWindow();
 
 		if ( "Hide Border" == txt ) {
 			win->setWinFlags( win->getWinFlags() | UI_WIN_NO_BORDER );
@@ -990,7 +1019,7 @@ void EETest::createDecoratedWindow() {
 	Button->setLayoutMargin( Rect( 5, 5, 5, 5 ) );
 	Button->setText( "Click Me" );
 	Button->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setParent( lay );
-	Button->addEventListener( UIEvent::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
+	Button->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
 
 	mUIWindow->addShortcut( KEY_C, KEYMOD_ALT, Button );
 
@@ -998,7 +1027,8 @@ void EETest::createDecoratedWindow() {
 	TabWidget->setLayoutMargin( Rect( 5, 5, 5, 5 ) )
 			->setLayoutWeight( 1 )
 			->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )
-			->setParent( lay )->setFlags( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
+			->setFlags( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
+			->setParent( lay );
 
 	UITextEdit * TEdit = UITextEdit::New();
 	TEdit->setParent( TabWidget );
@@ -1019,15 +1049,15 @@ void EETest::createDecoratedWindow() {
 	TabWidget->add( "TextBox", txtBox );
 }
 
-void EETest::onCloseClick( const UIEvent * Event ) {
+void EETest::onCloseClick( const Event * Event ) {
 	mUIWindow = NULL;
 }
 
-void EETest::onItemClick( const UIEvent * Event ) {
-	if ( !Event->getControl()->isType( UI_TYPE_MENUITEM ) )
+void EETest::onItemClick( const Event * Event ) {
+	if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getControl() )->getText();
+	const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getNode() )->getText();
 
 	if ( "Show Screen 1" == txt ) {
 		setScreen( 0 );
@@ -1050,7 +1080,7 @@ void EETest::onItemClick( const UIEvent * Event ) {
 			mWindow->stopTextInput();
 		}
 	} else if ( "Show Window" == txt ) {
-		UIMenuCheckBox * Chk = reinterpret_cast<UIMenuCheckBox*> ( Event->getControl() );
+		UIMenuCheckBox * Chk = reinterpret_cast<UIMenuCheckBox*> ( Event->getNode() );
 
 		C->toFront();
 		C->setVisible( true );
@@ -1087,22 +1117,22 @@ void EETest::onItemClick( const UIEvent * Event ) {
 	}
 }
 
-void EETest::onValueChange( const UIEvent * Event ) {
+void EETest::onValueChange( const Event * Event ) {
 	mTextBoxValue->setText( "Scroll Value:\n" + String::toStr( mScrollBar->getValue() ) );
 
 	mProgressBar->setProgress( mScrollBar->getValue() * 100.f );
 }
 
-void EETest::onSliderValueChange( const UIEvent * Event ) {
-	UISlider * slider = static_cast<UISlider*>( Event->getControl() );
+void EETest::onSliderValueChange( const Event * Event ) {
+	UISlider * slider = static_cast<UISlider*>( Event->getNode() );
 
 	C->setRotation( slider->getValue() * 90.f );
 }
 
-void EETest::onQuitClick( const UIEvent * Event ) {
-	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
+void EETest::onQuitClick( const Event * event ) {
+	const MouseEvent * mouseEvent = reinterpret_cast<const MouseEvent*> ( event );
 
-	if ( MouseEvent->getFlags() & EE_BUTTON_LMASK ) {
+	if ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) {
 		mWindow->close();
 	}
 }
@@ -1115,20 +1145,20 @@ void EETest::showMenu() {
 	}
 }
 
-void EETest::onMainClick( const UIEvent * Event ) {
-	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
+void EETest::onMainClick( const Event * event ) {
+	const MouseEvent * mouseEvent = reinterpret_cast<const MouseEvent*> ( event );
 
-	if ( MouseEvent->getFlags() & EE_BUTTON_RMASK ) {
+	if ( mouseEvent->getFlags() & EE_BUTTON_RMASK ) {
 		showMenu();
 	}
 }
 
-using namespace EE::UI::Action;
+using namespace EE::Scene::Actions;
 
-void EETest::onButtonClick( const UIEvent * Event ) {
-	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
+void EETest::onButtonClick( const Event * event ) {
+	const MouseEvent * mouseEvent = reinterpret_cast<const MouseEvent*> ( event );
 
-	if ( MouseEvent->getFlags() & EE_BUTTONS_LRM ) {
+	if ( mouseEvent->getFlags() & EE_BUTTONS_LRM ) {
 		UIImage * Gfx = UIImage::New();
 		Gfx->setDrawable( mTheme->getIconByName( "ok" ) );
 		Gfx->setEnabled( false );
@@ -1710,8 +1740,8 @@ void EETest::render() {
 
 	mInfoText.draw( 6.f, 6.f );
 
-	UIManager::instance()->update();
-	UIManager::instance()->draw();
+	SceneManager::instance()->update();
+	SceneManager::instance()->draw();
 
 	Con.draw();
 }

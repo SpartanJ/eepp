@@ -208,6 +208,9 @@ void FrameBufferFBO::reload() {
 }
 
 void FrameBufferFBO::resize( const Uint32& Width, const Uint32& Height ) {
+	if ( Sizei( Width, Height ) == mSize )
+		return;
+
 	mSize.x = Width;
 	mSize.y = Height;
 

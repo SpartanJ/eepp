@@ -5,30 +5,24 @@
 #include <eepp/ui/uihelper.hpp>
 #include <eepp/ui/uibackground.hpp>
 #include <eepp/ui/uiborder.hpp>
-#include <eepp/ui/uimessage.hpp>
-#include <eepp/ui/uievent.hpp>
-#include <eepp/ui/uieventkey.hpp>
-#include <eepp/ui/uieventmouse.hpp>
 #include <eepp/ui/uiskin.hpp>
-#include <eepp/ui/uiskinstate.hpp>
-#include <eepp/ui/uiskinsimple.hpp>
-#include <eepp/ui/uiskincomplex.hpp>
-#include <eepp/ui/uithememanager.hpp>
-#include <eepp/math/transformable.hpp>
+#include <eepp/scene/node.hpp>
+
+namespace EE { namespace Scene {
+class Action;
+class ActionManager;
+}}
+using namespace EE::Scene;
 
 namespace EE { namespace UI {
 
 class UITheme;
-class UIWindow;
-class UIManager;
-class UIAction;
-class UIActionManager;
 
-class EE_API UINode : public Transformable {
+class EE_API UINode : public Node {
 	public:
 		static UINode * New();
 
-		typedef cb::Callback1<void, const UIEvent*> UIEventCallback;
+		typedef cb::Callback1<void, const Event*> EventCallback;
 
 		UINode();
 
@@ -50,11 +44,9 @@ class EE_API UINode : public Transformable {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		void messagePost( const UIMessage * Msg );
+		virtual void setPosition( const Vector2f& Pos );
 
-		void setPosition( const Vector2f& Pos );
-
-		UINode * setPosition( const Float& x, const Float& y );
+		virtual Node * setPosition( const Float& x, const Float& y );
 
 		void setPixelsPosition(const Vector2f & position );
 
@@ -64,43 +56,19 @@ class EE_API UINode : public Transformable {
 
 		const Vector2f& getRealPosition() const;
 
-		virtual UINode * setSize( const Sizef& size );
+		virtual Node * setSize( const Sizef& size );
 
-		UINode * setSize( const Float& Width, const Float& Height );
+		virtual Node * setSize( const Float& Width, const Float& Height );
 
-		void setPixelsSize( const Sizef& size );
+		UINode * setPixelsSize( const Sizef& size );
 
-		void setPixelsSize( const Float& x, const Float& y );
+		UINode * setPixelsSize( const Float& x, const Float& y );
 
 		const Sizef& getSize();
 
-		const Sizef& getRealSize();
+		virtual const Sizef& getRealSize();
 
 		Rect getRect() const;
-
-		UINode * setVisible( const bool& visible );
-
-		bool isVisible() const;
-
-		bool isHided() const;
-
-		UINode * setEnabled( const bool& enabled );
-
-		bool isEnabled() const;
-
-		bool isDisabled() const;
-
-		UINode * getParent() const;
-
-		UINode * setParent( UINode * parent );
-
-		void centerHorizontal();
-
-		void centerVertical();
-
-		void center();
-
-		virtual void close();
 
 		virtual void draw();
 
@@ -120,16 +88,6 @@ class EE_API UINode : public Transformable {
 
 		UIBorder * setBorderEnabled( bool enabled );
 
-		UINode * getNextNode() const;
-
-		UINode * getPrevNode() const;
-
-		UINode * getNextNodeLoop() const;
-
-		UINode * setData( const UintPtr& data );
-
-		const UintPtr& getData() const;
-
 		const Uint32& getFlags() const;
 
 		virtual UINode * setFlags( const Uint32& flags );
@@ -137,45 +95,6 @@ class EE_API UINode : public Transformable {
 		virtual UINode * unsetFlags( const Uint32& flags );
 
 		virtual UINode * resetFlags( Uint32 newFlags = 0 );
-
-		UINode * setBlendMode( const BlendMode& blend );
-
-		BlendMode getBlendMode();
-
-		void toFront();
-
-		void toBack();
-
-		void toPosition( const Uint32& position );
-
-		const Uint32& getNodeFlags() const;
-
-		/** Use it at your own risk */
-		void setNodeFlags( const Uint32& flags );
-
-		Uint32 isWidget();
-
-		Uint32 isWindow();
-
-		Uint32 isClipped();
-
-		Uint32 isRotated();
-
-		Uint32 isScaled();
-
-		Uint32 isFrameBuffer();
-
-		bool isMeOrParentTreeRotated();
-
-		bool isMeOrParentTreeScaled();
-
-		bool isMeOrParentTreeScaledOrRotated();
-
-		bool isMeOrParentTreeScaledOrRotatedOrFrameBuffer();
-
-		Uint32 addEventListener( const Uint32& EventType, const UIEventCallback& Callback );
-
-		void removeEventListener( const Uint32& CallbackId );
 
 		UIBackground * getBackground();
 
@@ -199,74 +118,13 @@ class EE_API UINode : public Transformable {
 
 		void removeSkin();
 
-		UINode * getFirstChild() const;
-
-		UINode * getLastChild() const;
-
-		bool isMouseOver();
-
-		bool isMouseOverMeOrChilds();
-
-		const Polygon2f& getWorldPolygon();
-
-		const Rectf& getWorldBounds();
-
 		void setSkinState( const Uint32& State );
-
-		bool hasFocus() const;
-
-		virtual void setFocus();
-
-		bool isParentOf( UINode * Ctrl );
-
-		void sendEvent( const UIEvent * Event );
-
-		void sendMouseEvent( const Uint32& Event, const Vector2i& position, const Uint32& flags );
-
-		void sendCommonEvent( const Uint32& Event );
 
 		Sizef getSkinSize();
 
-		UINode * getNextWidget();
-
 		void applyDefaultTheme();
 
-		void childsCloseAll();
-
-		std::string getId() const;
-
-		UINode * setId( const std::string & id );
-
-		Uint32 getIdHash() const;
-
-		UINode * getWindowContainer();
-
-		UINode * find( const std::string& id );
-
-		template<typename T>
-		T * find( const std::string& id )
-		{
-			return reinterpret_cast<T*>( find( id ) );
-		}
-
-		template<typename T>
-		T * bind( const std::string& id, T*& ctrl )
-		{
-			ctrl = find<T>( id );
-			return ctrl;
-		}
-
-		bool isReverseDraw() const;
-
-		void setReverseDraw( bool reverseDraw );
-
-		UIWindow * getOwnerWindow();
-
-		void invalidateDraw();
-
-		void setClipEnabled();
-
-		void setClipDisabled();
+		Node * getWindowContainer();
 
 		bool isDragging() const;
 
@@ -283,40 +141,6 @@ class EE_API UINode : public Transformable {
 		void setDragButton( const Uint32& Button );
 
 		const Uint32& getDragButton() const;
-
-		void setRotation( float angle );
-
-		void setRotation( const Float& angle, const OriginPoint& center );
-
-		const OriginPoint& getRotationOriginPoint() const;
-
-		void setRotationOriginPoint( const OriginPoint& center );
-
-		Vector2f getRotationCenter();
-
-		void setScale( const Vector2f& scale );
-
-		void setScale( const Vector2f& scale, const OriginPoint& center );
-
-		void setScale( const Float& scale , const OriginPoint & center = OriginPoint::OriginCenter );
-
-		const OriginPoint& getScaleOriginPoint() const;
-
-		void setScaleOriginPoint( const OriginPoint& center );
-
-		Vector2f getScaleCenter();
-
-		virtual void setScale(float factorX, float factorY);
-
-		virtual void setScaleOrigin(float x, float y);
-
-		virtual void setRotationOrigin(float x, float y);
-
-		const Float& getAlpha() const;
-
-		virtual void setAlpha( const Float& alpha );
-
-		virtual void setChildsAlpha( const Float& alpha );
 
 		bool isAnimating();
 
@@ -350,117 +174,26 @@ class EE_API UINode : public Transformable {
 
 		bool isFadingOut();
 
-		UIActionManager * getActionManager();
-
-		void runAction( UIAction * action );
-
-		Transform getLocalTransform();
-
-		Transform getGlobalTransform();
-
-		Transform getNodeToWorldTransform();
-
-		Transform getWorldToNodeTransform();
-
-		Vector2f convertToNodeSpace(const Vector2f& worldPoint);
-
-		Vector2f convertToWorldSpace(const Vector2f& nodePoint);
-
-		Rectf getLocalBounds();
+		virtual void setFocus();
 	protected:
-		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
-		friend class UIManager;
-		friend class UIWindow;
-
-		std::string		mId;
-		Uint32			mIdHash;
 		Vector2f		mDpPos;
-		Vector2f		mScreenPos;
-		Vector2i		mScreenPosi;
 		Sizef			mDpSize;
-		Sizef			mSize;
-
 		Uint32			mFlags;
-		UintPtr			mData;
-
-		UINode *		mParentCtrl;
-		UIWindow *		mParentWindowCtrl;
-		UINode *		mChild;			//! Pointer to the first child of the node
-		UINode *		mChildLast;		//! Pointer to the last child added
-		UINode *		mNext;			//! Pointer to the next child of the father
-		UINode *		mPrev;			//! Pointer to the prev child of the father
 		UISkinState *	mSkinState;
-
 		UIBackground *	mBackground;
 		UIBorder *		mBorder;
-
-		Uint32			mNodeFlags;
-		BlendMode		mBlend;
-		Uint16			mNumCallBacks;
-
-		mutable Polygon2f		mPoly;
-		mutable Rectf	mWorldBounds;
-		Vector2f 		mCenter;
-
-		UIEventsMap		mEvents;
-
-		bool			mVisible;
-		bool			mEnabled;
-
-		Vector2f 	mDragPoint;
-		Uint32 		mDragButton;
-
-		OriginPoint			mRotationOriginPoint;
-		OriginPoint			mScaleOriginPoint;
-		Float				mAlpha;
-
-		UIActionManager *	mActionManager;
-
-		virtual Uint32 onMessage( const UIMessage * Msg );
-
-		virtual Uint32 onKeyDown( const UIEventKey& Event );
-
-		virtual Uint32 onKeyUp( const UIEventKey& Event );
-
-		virtual Uint32 onMouseMove( const Vector2i& position, const Uint32 flags );
+		Vector2f		mDragPoint;
+		Uint32			mDragButton;
 
 		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32 flags );
 
-		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
-
-		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32 flags );
-
 		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32 flags );
-
-		virtual Uint32 onMouseEnter( const Vector2i& position, const Uint32 flags );
-
-		virtual Uint32 onMouseExit( const Vector2i& position, const Uint32 flags );
-
-		virtual Uint32 onFocus();
-
-		virtual Uint32 onFocusLoss();
-
-		virtual void onClose();
 
 		virtual Uint32 onValueChange();
 
-		virtual void onVisibilityChange();
-
-		virtual void onEnabledChange();
-
-		virtual void onPositionChange();
-
-		virtual void onSizeChange();
-
-		virtual void onParentSizeChange( const Vector2f& SizeChange );
-
 		virtual void onStateChange();
 
-		virtual void onParentChange();
-
 		virtual void onAlignChange();
-		
-		virtual void onWidgetFocusLoss();
 
 		virtual void drawSkin();
 
@@ -468,31 +201,9 @@ class EE_API UINode : public Transformable {
 
 		virtual void drawBorder();
 
-		virtual void updateWorldPolygon();
-
-		virtual void updateCenter();
-
-		virtual void matrixSet();
-
-		virtual void matrixUnset();
-
-		virtual void drawChilds();
-
 		virtual void onThemeLoaded();
 
 		virtual void onChildCountChange();
-
-		virtual void onAngleChange();
-
-		virtual void onScaleChange();
-
-		virtual void onAlphaChange();
-
-		virtual UINode * overFind( const Vector2f& Point );
-
-		virtual void onParentWindowChange();
-
-		virtual void clipMe();
 
 		virtual Uint32 onDrag( const Vector2f& position );
 
@@ -500,47 +211,25 @@ class EE_API UINode : public Transformable {
 
 		virtual Uint32 onDragStop( const Vector2i& position );
 
+		virtual Uint32 onMouseEnter( const Vector2i& position, const Uint32 flags );
+
+		virtual Uint32 onMouseExit( const Vector2i& position, const Uint32 flags );
+
+		virtual Uint32 onFocus();
+
 		void checkClose();
 
 		virtual void internalDraw();
 
-		void childDeleteAll();
-
-		void childAdd( UINode * ChildCtrl );
-
-		void childAddAt( UINode * ChildCtrl, Uint32 position );
-
-		void childRemove( UINode * ChildCtrl );
-
-		bool isChild( UINode * ChildCtrl ) const;
-
-		bool inParentTreeOf( UINode * Child ) const;
-
-		Uint32 childCount() const;
-
-		UINode * childAt( Uint32 Index ) const;
-
-		UINode * childPrev( UINode * Ctrl, bool Loop = false ) const;
-
-		UINode * childNext( UINode * Ctrl, bool Loop = false ) const;
-
-		virtual void clipDisable();
+		virtual void onWidgetFocusLoss();
 
 		void setPrevSkinState();
 
-		virtual void updateScreenPos();
-
-		void writeCtrlFlag( const Uint32& Flag, const Uint32& Val );
-
 		void writeFlag( const Uint32& Flag, const Uint32& Val );
-
-		void sendParentSizeChange( const Vector2f& SizeChange );
 
 		Rectf makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
 
 		Sizef getSkinSize( UISkin * Skin, const Uint32& State = UISkinState::StateNormal );
-
-		Rectf getScreenBounds();
 
 		void drawHighlightFocus();
 
@@ -552,11 +241,7 @@ class EE_API UINode : public Transformable {
 
 		void setInternalPosition( const Vector2f& Pos );
 
-		void setInternalSize(const Sizef& size );
-
-		void setInternalWidth(const Float& width );
-
-		void setInternalHeight( const Float& height );
+		virtual void setInternalSize(const Sizef& size );
 
 		void setInternalPixelsSize( const Sizef& size );
 
@@ -564,17 +249,6 @@ class EE_API UINode : public Transformable {
 
 		void setInternalPixelsHeight( const Float& height );
 
-		Color getColor( const Color& Col );
-
-		UINode * findIdHash( const Uint32& idHash );
-
-		UIWindow * getParentWindow();
-
-		void updateOriginPoint();
-
-		void setDirty();
-
-		void setChildsDirty();
 };
 
 }}
