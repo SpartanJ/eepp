@@ -38,7 +38,7 @@ class EE_API UIScrollView : public UITouchDragableWidget {
 
 		UIScrollBar * getHorizontalScrollBar() const;
 
-		UIControlAnim * getContainer() const;
+		UINode * getContainer() const;
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
@@ -47,8 +47,8 @@ class EE_API UIScrollView : public UITouchDragableWidget {
 		UI_SCROLLBAR_MODE mHScrollMode;
 		UIScrollBar * mVScroll;
 		UIScrollBar * mHScroll;
-		UIControlAnim * mContainer;
-		UIControl * mScrollView;
+		UINode * mContainer;
+		Node * mScrollView;
 		Uint32 mSizeChangeCb;
 
 		virtual void onSizeChange();
@@ -57,9 +57,9 @@ class EE_API UIScrollView : public UITouchDragableWidget {
 
 		virtual void onChildCountChange();
 
-		void onValueChangeCb( const UIEvent * Event );
+		void onValueChangeCb( const Event * Event );
 
-		void onScrollViewSizeChange( const UIEvent * Event );
+		void onScrollViewSizeChange( const Event * Event );
 
 		void containerUpdate();
 

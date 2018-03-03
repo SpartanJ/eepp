@@ -1,6 +1,5 @@
 #include <eepp/ui/uitouchdragablewidget.hpp>
-#include <eepp/ui/uimanager.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -31,11 +30,11 @@ UITouchDragableWidget * UITouchDragableWidget::setTouchDragEnabled( const bool& 
 }
 
 bool UITouchDragableWidget::isTouchDragging() const {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING );
+	return 0 != ( mNodeFlags & NODE_FLAG_TOUCH_DRAGGING );
 }
 
 UITouchDragableWidget * UITouchDragableWidget::setTouchDragging( const bool& dragging ) {
-	writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, true == dragging );
+	writeCtrlFlag( NODE_FLAG_TOUCH_DRAGGING, true == dragging );
 	return this;
 }
 
@@ -48,23 +47,23 @@ UITouchDragableWidget * UITouchDragableWidget::setTouchDragDeceleration( const V
 	return this;
 }
 
-void UITouchDragableWidget::update() {
-	if ( mEnabled && mVisible ) {
+void UITouchDragableWidget::update( const Time& time ) {
+	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
 		if ( mFlags & UI_TOUCH_DRAG_ENABLED ) {
-			UIManager * manager = UIManager::instance();
-			Uint32 Press	= manager->getPressTrigger();
+			EventDispatcher * eventDispatcher = getEventDispatcher();
+			Uint32 Press	= eventDispatcher->getPressTrigger();
 
-			if ( ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING ) ) {
+			if ( ( mNodeFlags & NODE_FLAG_TOUCH_DRAGGING ) ) {
 				// Mouse Not Down
 				if ( !( Press & EE_BUTTON_LMASK ) ) {
-					writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 0 );
-					manager->setControlDragging( false );
+					writeCtrlFlag( NODE_FLAG_TOUCH_DRAGGING, 0 );
+					eventDispatcher->setControlDragging( false );
 					return;
 				}
 
-				Float ms = getElapsed().asSeconds();
+				Float ms = time.asSeconds();
 				Vector2f elapsed( ms, ms );
-				Vector2f Pos( manager->getMousePos().x, manager->getMousePos().y );
+				Vector2f Pos( eventDispatcher->getMousePosf() );
 
 				if ( mTouchDragPoint != Pos ) {
 					Vector2f diff = -( mTouchDragPoint - Pos );
@@ -75,24 +74,24 @@ void UITouchDragableWidget::update() {
 
 					mTouchDragPoint = Pos;
 
-					manager->setControlDragging( true );
+					eventDispatcher->setControlDragging( true );
 				} else {
 					mTouchDragAcceleration -= elapsed * mTouchDragDeceleration;
 				}
 			} else {
 				// Mouse Down
-				if ( isTouchOverAllowedChilds() && !manager->isControlDragging() ) {
-					if ( Press & EE_BUTTON_LMASK ) {
-						writeCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 1 );
+				if ( Press & EE_BUTTON_LMASK ) {
+					if ( isTouchOverAllowedChilds() && !eventDispatcher->isControlDragging() ) {
+						writeCtrlFlag( NODE_FLAG_TOUCH_DRAGGING, 1 );
 
-						mTouchDragPoint			= Vector2f( manager->getMousePos().x, manager->getMousePos().y );
+						mTouchDragPoint			= Vector2f( eventDispatcher->getMousePos().x, eventDispatcher->getMousePos().y );
 						mTouchDragAcceleration	= Vector2f(0,0);
 					}
 				}
 
 				// Deaccelerate
 				if ( mTouchDragAcceleration.x != 0 || mTouchDragAcceleration.y != 0 ) {
-					Float ms = getElapsed().asSeconds();
+					Float ms = time.asSeconds();
 
 					if ( 0 != mTouchDragAcceleration.x ) {
 						bool wasPositiveX = mTouchDragAcceleration.x >= 0;
@@ -126,7 +125,7 @@ void UITouchDragableWidget::update() {
 		}
 	}
 
-	UIWidget::update();
+	UIWidget::update( time );
 }
 
 void UITouchDragableWidget::onTouchDragValueChange( Vector2f diff )

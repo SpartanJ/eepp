@@ -24,7 +24,7 @@ void MapObjectLayer::allocateLayer() {
 }
 
 void MapObjectLayer::deallocateLayer() {
-	for ( ObjList::iterator it = mObjects.begin(); it != mObjects.end(); it++ ) {
+	for ( ObjList::iterator it = mObjects.begin(); it != mObjects.end(); ++it ) {
 		eeSAFE_DELETE( *it );
 	}
 }
@@ -37,7 +37,7 @@ void MapObjectLayer::draw( const Vector2f &Offset ) {
 	GLi->pushMatrix();
 	GLi->translatef( mOffset.x, mOffset.y, 0.0f );
 
-	for ( it = mObjects.begin(); it != mObjects.end(); it++ ) {
+	for ( it = mObjects.begin(); it != mObjects.end(); ++it ) {
 		(*it)->draw();
 	}
 
@@ -46,7 +46,7 @@ void MapObjectLayer::draw( const Vector2f &Offset ) {
 	if ( mMap->getShowBlocked() && NULL != Tex ) {
 		Color Col( 255, 0, 0, 200 );
 
-		for ( it = mObjects.begin(); it != mObjects.end(); it++ ) {
+		for ( it = mObjects.begin(); it != mObjects.end(); ++it ) {
 			GameObject * Obj = (*it);
 
 			if ( Obj->isBlocked() ) {
@@ -61,7 +61,7 @@ void MapObjectLayer::draw( const Vector2f &Offset ) {
 }
 
 void MapObjectLayer::update( const Time& dt ) {
-	for ( ObjList::iterator it = mObjects.begin(); it != mObjects.end(); it++ ) {
+	for ( ObjList::iterator it = mObjects.begin(); it != mObjects.end(); ++it ) {
 		(*it)->update( dt );
 	}
 }
@@ -93,7 +93,7 @@ GameObject * MapObjectLayer::getObjectOver( const Vector2i& pos, SEARCH_TYPE typ
 	Vector2f tPos;
 	Sizei tSize;
 
-	for ( ObjList::reverse_iterator it = mObjects.rbegin(); it != mObjects.rend(); it++ ) {
+	for ( ObjList::reverse_iterator it = mObjects.rbegin(); it != mObjects.rend(); ++it ) {
 		tObj = (*it);
 
 		if ( type & SEARCH_POLY ) {

@@ -5,6 +5,7 @@
 
 #include <eepp/window/backend.hpp>
 #include <eepp/window/backend/SFML/windowsfml.hpp>
+#include <eepp/window/backend/SFML/displaymanagersfml.hpp>
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 

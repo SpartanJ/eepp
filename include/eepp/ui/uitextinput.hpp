@@ -1,7 +1,7 @@
 #ifndef EE_UICUITEXTINPUT_H
 #define EE_UICUITEXTINPUT_H
 
-#include <eepp/ui/uicontrolanim.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/window/inputtextbuffer.hpp>
 
@@ -19,7 +19,7 @@ class EE_API UITextInput : public UITextView {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		virtual void draw();
 
@@ -84,7 +84,7 @@ class EE_API UITextInput : public UITextView {
 
 		void drawWaitingCursor();
 
-		void updateWaitingCursor();
+		void updateWaitingCursor(const Time & time);
 
 		virtual void updateText();
 

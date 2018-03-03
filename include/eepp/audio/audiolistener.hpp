@@ -1,7 +1,8 @@
 #ifndef EE_AUDIOCLISTENER_H
 #define EE_AUDIOCLISTENER_H
 
-#include <eepp/audio/base.hpp>
+#include <eepp/math/vector3.hpp>
+using namespace EE::Math;
 
 namespace EE { namespace Audio {
 

@@ -5,6 +5,9 @@
 #include <eepp/graphics/primitivetype.hpp>
 #include <eepp/graphics/vertexbufferhelper.hpp>
 
+#include <eepp/system/color.hpp>
+using namespace EE::System;
+
 namespace EE { namespace Graphics {
 
 /** @brief The vertex buffer class holds vertex data. The vertex position, colors, texture coordinates and indexes.

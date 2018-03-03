@@ -4,7 +4,7 @@
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -208,6 +208,9 @@ void FrameBufferFBO::reload() {
 }
 
 void FrameBufferFBO::resize( const Uint32& Width, const Uint32& Height ) {
+	if ( Sizei( Width, Height ) == mSize )
+		return;
+
 	mSize.x = Width;
 	mSize.y = Height;
 
@@ -264,10 +267,10 @@ void FrameBufferFBO::draw( const Vector2f & position, const Sizef & size ) {
 
 void FrameBufferFBO::draw( Rect src, Rect dst ) {
 	if ( NULL != mTexture ) {
-		SubTexture subTexture( getTexture()->getId(), src );
+		TextureRegion textureRegion( getTexture()->getId(), src );
 		Sizei size( dst.getSize() );
-		subTexture.setDestSize( Sizef( size.x, size.y ) );
-		subTexture.draw( dst.Left, dst.Top, Color::White );
+		textureRegion.setDestSize( Sizef( size.x, size.y ) );
+		textureRegion.draw( dst.Left, dst.Top, Color::White );
 	} else if ( mColorBuffer ) {
 		GLi->bindFramebuffer(GL_READ_FRAMEBUFFER, mFrameBuffer);
 		GLi->bindFramebuffer(GL_DRAW_FRAMEBUFFER, mLastFB);

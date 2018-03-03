@@ -1,7 +1,6 @@
 #ifndef EE_SYSTEMCTIMER_H
 #define EE_SYSTEMCTIMER_H
 
-#include <eepp/system/base.hpp>
 #include <eepp/system/time.hpp>
 
 namespace EE { namespace System {

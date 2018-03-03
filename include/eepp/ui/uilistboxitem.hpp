@@ -22,7 +22,7 @@ class EE_API UIListBoxItem : public UITextView {
 
 		virtual void setTheme( UITheme * Theme );
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		bool isSelected() const;
 

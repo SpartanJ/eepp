@@ -1,8 +1,7 @@
 #include <eepp/ui/uicheckbox.hpp>
-#include <eepp/ui/uimanager.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/text.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -15,14 +14,14 @@ UICheckBox::UICheckBox() :
 	mActive( false ),
 	mTextSeparation( 4 )
 {
-	mActiveButton 	= UIControlAnim::New();
+	mActiveButton 	= UINode::New();
 	mActiveButton->setVisible( false );
 	mActiveButton->setEnabled( true );
 	mActiveButton->setParent( this );
 	mActiveButton->setPosition( 0, 0 );
 	mActiveButton->setSize( 16, 16 );
 
-	mInactiveButton = UIControlAnim::New();
+	mInactiveButton = UINode::New();
 	mInactiveButton->setVisible( true );
 	mInactiveButton->setEnabled( true );
 	mInactiveButton->setParent( this );
@@ -81,11 +80,11 @@ void UICheckBox::onThemeLoaded() {
 
 void UICheckBox::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		if ( mSize.getWidth() == 0 ) {
+		if ( mDpSize.getWidth() == 0 ) {
 			setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() + mTextSeparation );
 		}
 
-		if ( mSize.getHeight() == 0 ) {
+		if ( mDpSize.getHeight() == 0 ) {
 			setInternalHeight( mActiveButton->getSize().getHeight() );
 		}
 
@@ -101,15 +100,15 @@ void UICheckBox::onSizeChange() {
 	mInactiveButton->centerVertical();
 }
 
-Uint32 UICheckBox::onMessage( const UIMessage * Msg ) {
+Uint32 UICheckBox::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::Click: {
+		case NodeMessage::Click: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				switchState();
 			}
 
-			if ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) {
-				sendMouseEvent( UIEvent::MouseClick, UIManager::instance()->getMousePos(), UIManager::instance()->getPressTrigger() );
+			if ( NULL != getEventDispatcher() && ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) ) {
+				sendMouseEvent( Event::MouseClick, getEventDispatcher()->getMousePos(), getEventDispatcher()->getPressTrigger() );
 			}
 
 			return 1;
@@ -147,14 +146,14 @@ void UICheckBox::onPaddingChange() {
 	mActiveButton->setPosition( mPadding.Left, mActiveButton->getPosition().y );
 	mInactiveButton->setPosition( mPadding.Left, mInactiveButton->getPosition().y );
 
-	mRealPadding.Left = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPxI( mTextSeparation );
+	mRealPadding.Left = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
 }
 
-UIControlAnim * UICheckBox::getActiveButton() const {
+UINode * UICheckBox::getActiveButton() const {
 	return mActiveButton;
 }
 
-UIControlAnim * UICheckBox::getInactiveButton() const {
+UINode * UICheckBox::getInactiveButton() const {
 	return mInactiveButton;
 }
 
@@ -185,7 +184,7 @@ void UICheckBox::loadFromXmlNode(const pugi::xml_node & node) {
 	endPropertiesTransaction();
 }
 
-Uint32 UICheckBox::onKeyDown( const UIEventKey& Event ) {
+Uint32 UICheckBox::onKeyDown( const KeyEvent& Event ) {
 	UITextView::onKeyDown( Event );
 
 	if ( Event.getKeyCode() == KEY_SPACE ) {

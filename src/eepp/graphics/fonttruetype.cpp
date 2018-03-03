@@ -2,6 +2,7 @@
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 
 #include <ft2build.h>
@@ -35,6 +36,12 @@ namespace EE { namespace Graphics {
 
 FontTrueType * FontTrueType::New( const std::string FontName ) {
 	return eeNew( FontTrueType, ( FontName ) );
+}
+
+FontTrueType * FontTrueType::New(const std::string FontName, const std::string & filename) {
+	FontTrueType * fontTrueType = New( FontName );
+	fontTrueType->loadFromFile( filename );
+	return fontTrueType;
 }
 
 FontTrueType::FontTrueType( const std::string FontName ) :
@@ -235,7 +242,7 @@ bool FontTrueType::loadFromPack( Pack * pack, std::string filePackPath ) {
 	mMemCopy.clear();
 
 	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, mMemCopy ) ) {
-		Ret = loadFromMemory( mMemCopy.Data, mMemCopy.DataSize );
+		Ret = loadFromMemory( mMemCopy.data, mMemCopy.size );
 	}
 
 	return Ret;
@@ -679,7 +686,7 @@ FontTrueType::Page::Page() :
 			image.setPixel(x, y, Color(255, 255, 255, 255));
 
 	// Create the texture
-	Uint32 texId = TextureFactory::instance()->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(), image.getChannels(), false, Texture::ClampMode::CLAMP_TO_EDGE, false, true );
+	Uint32 texId = TextureFactory::instance()->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(), image.getChannels(), false, Texture::ClampMode::ClampToEdge, false, true );
 	texture = TextureFactory::instance()->getTexture( texId );
 }
 

@@ -1,7 +1,7 @@
 #ifndef EE_UICUIGENERICGRID_HPP
 #define EE_UICUIGENERICGRID_HPP
 
-#include <eepp/ui/uicontrolanim.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
@@ -67,7 +67,7 @@ class EE_API UITable : public UITouchDragableWidget {
 
 		Uint32 getItemSelectedIndex() const;
 
-		Uint32 onMessage( const UIMessage * Msg );
+		Uint32 onMessage( const NodeMessage * Msg );
 
 		UIItemContainer<UITable> * getContainer() const;
 
@@ -75,16 +75,16 @@ class EE_API UITable : public UITouchDragableWidget {
 
 		UITable * setSmoothScroll(bool smoothScroll);
 
-		Rect getContainerPadding() const;
+		Rectf getContainerPadding() const;
 
-		void setContainerPadding( const Rect & containerPadding);
+		void setContainerPadding( const Rectf& containerPadding );
 
 		void loadFromXmlNode(const pugi::xml_node & node);
 	protected:
 		friend class UIItemContainer<UITable>;
 		friend class UITableCell;
 
-		Rect						mContainerPadding;
+		Rectf						mContainerPadding;
 		UIItemContainer<UITable> *	mContainer;
 		UIScrollBar *				mVScrollBar;
 		UIScrollBar *				mHScrollBar;
@@ -118,7 +118,7 @@ class EE_API UITable : public UITouchDragableWidget {
 
 		void containerResize();
 
-		void onScrollValueChange( const UIEvent * Event );
+		void onScrollValueChange( const Event * Event );
 
 		void setDefaultCollumnsWidth();
 

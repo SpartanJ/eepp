@@ -28,9 +28,9 @@ class EE_API UISkin {
 
 		virtual void setSkin( const Uint32& State ) = 0;
 
-		virtual Sizei getSize( const Uint32& state ) = 0;
+		virtual Sizef getSize( const Uint32& state ) = 0;
 
-		virtual Sizei getSize();
+		virtual Sizef getSize();
 
 		virtual bool stateExists( const Uint32& State ) = 0;
 
@@ -54,9 +54,9 @@ class EE_API UISkin {
 
 		const Uint32& getType() const;
 
-		virtual Rect getBorderSize( const Uint32 & state ) = 0;
+		virtual Rectf getBorderSize( const Uint32 & state ) = 0;
 
-		virtual Rect getBorderSize();
+		virtual Rectf getBorderSize();
 	protected:
 		friend class UIControl;
 		friend class UISkinState;

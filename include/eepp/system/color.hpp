@@ -140,7 +140,7 @@ class tColor {
 
 		 //! @return The color represented as an Uint32 ( as 0xRRGGBBAA for Little Endian )
 		Uint32 getValue() const {
-			return Value;
+			return BitOp::swapBE32( Value );
 		}
 
 		/** @brief Assign the RGBA colors, from each component. */

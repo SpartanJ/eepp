@@ -32,15 +32,15 @@ Space::~Space() {
 	cpSpaceFree( mSpace );
 
 	std::list<Constraint*>::iterator itc = mConstraints.begin();
-	for ( ; itc != mConstraints.end(); itc++ )
+	for ( ; itc != mConstraints.end(); ++itc )
 		cpSAFE_DELETE( *itc );
 
 	std::list<Shape*>::iterator its = mShapes.begin();
-	for ( ; its != mShapes.end(); its++ )
+	for ( ; its != mShapes.end(); ++its )
 		cpSAFE_DELETE( *its );
 
 	std::list<Body*>::iterator itb = mBodys.begin();
-	for ( ; itb != mBodys.end(); itb++ )
+	for ( ; itb != mBodys.end(); ++itb )
 		cpSAFE_DELETE( *itb );
 
 	mStatiBody->mBody = NULL; // The body has been released by cpSpaceFree( mSpace )

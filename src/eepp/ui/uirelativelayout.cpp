@@ -34,12 +34,12 @@ void UIRelativeLayout::onChildCountChange() {
 	fixChilds();
 }
 
-void UIRelativeLayout::onParentSizeChange( const Vector2i& SizeChange ) {
+void UIRelativeLayout::onParentSizeChange( const Vector2f& SizeChange ) {
 	fixChilds();
 }
 
 void UIRelativeLayout::fixChilds() {
-	setInternalPosition( Vector2i( mLayoutMargin.Left, mLayoutMargin.Top ) );
+	setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 
 	if ( getLayoutWidthRules() == MATCH_PARENT ) {
 		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
@@ -49,7 +49,7 @@ void UIRelativeLayout::fixChilds() {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
 	}
 
-	UIControl * child = mChild;
+	Node * child = mChild;
 
 	while ( NULL != child ) {
 		if ( child->isWidget() ) {
@@ -60,12 +60,12 @@ void UIRelativeLayout::fixChilds() {
 			fixChildPos( widget );
 		}
 
-		child = child->getNextControl();
+		child = child->getNextNode();
 	}
 }
 
 void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
-	Vector2i pos( widget->getPosition() );
+	Vector2f pos( widget->getPosition() );
 
 	if ( widget->getLayoutPositionRule() != NONE && widget->getParent() == widget->getLayoutPositionRuleWidget()->getParent() ) {
 		UIWidget * of = widget->getLayoutPositionRuleWidget();
@@ -93,10 +93,10 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 	} else {
 		switch ( fontHAlignGet( widget->getLayoutGravity() ) ) {
 			case UI_HALIGN_CENTER:
-				pos.x = ( mSize.getWidth() - widget->getSize().getWidth() ) / 2 + widget->getLayoutMargin().Left;
+				pos.x = ( mDpSize.getWidth() - widget->getSize().getWidth() ) / 2 + widget->getLayoutMargin().Left;
 				break;
 			case UI_HALIGN_RIGHT:
-				pos.x = mSize.getWidth() - widget->getSize().getWidth() - widget->getLayoutMargin().Right;
+				pos.x = mDpSize.getWidth() - widget->getSize().getWidth() - widget->getLayoutMargin().Right;
 				break;
 			case UI_HALIGN_LEFT:
 			default:
@@ -106,10 +106,10 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 
 		switch ( fontVAlignGet( widget->getLayoutGravity() ) ) {
 			case UI_VALIGN_CENTER:
-				pos.y = ( mSize.getHeight() - widget->getSize().getHeight() ) / 2 + widget->getLayoutMargin().Top;
+				pos.y = ( mDpSize.getHeight() - widget->getSize().getHeight() ) / 2 + widget->getLayoutMargin().Top;
 				break;
 			case UI_VALIGN_BOTTOM:
-				pos.y = mSize.getHeight() - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom;
+				pos.y = mDpSize.getHeight() - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom;
 				break;
 			case UI_VALIGN_TOP:
 			default:
@@ -130,7 +130,7 @@ void UIRelativeLayout::fixChildSize( UIWidget * widget ) {
 		}
 		case MATCH_PARENT:
 		{
-			widget->setSize( mSize.getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right, widget->getSize().getHeight() );
+			widget->setSize( mDpSize.getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right, widget->getSize().getHeight() );
 			break;
 		}
 		case FIXED:
@@ -147,7 +147,7 @@ void UIRelativeLayout::fixChildSize( UIWidget * widget ) {
 		}
 		case MATCH_PARENT:
 		{
-			widget->setSize( widget->getSize().getWidth(), mSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom );
+			widget->setSize( widget->getSize().getWidth(), mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom );
 			break;
 		}
 		case FIXED:
@@ -157,9 +157,9 @@ void UIRelativeLayout::fixChildSize( UIWidget * widget ) {
 	}
 }
 
-Uint32 UIRelativeLayout::onMessage(const UIMessage * Msg) {
+Uint32 UIRelativeLayout::onMessage(const NodeMessage * Msg) {
 	switch( Msg->getMsg() ) {
-		case UIMessage::LayoutAttributeChange:
+		case NodeMessage::LayoutAttributeChange:
 		{
 			fixChilds();
 			break;

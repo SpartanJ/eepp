@@ -16,7 +16,7 @@ FrameBufferManager::~FrameBufferManager()
 void FrameBufferManager::reload() {
 	std::list<FrameBuffer*>::iterator it;
 
-	for ( it = mResources.begin(); it != mResources.end(); it++ )
+	for ( it = mResources.begin(); it != mResources.end(); ++it )
 		(*it)->reload();
 }
 
@@ -28,7 +28,7 @@ FrameBuffer * FrameBufferManager::getCurrentlyBound() {
 	if ( 0 != curFB ) {
 		std::list<FrameBuffer*>::iterator it;
 
-		for ( it = mResources.begin(); it != mResources.end(); it++ ) {
+		for ( it = mResources.begin(); it != mResources.end(); ++it ) {
 			if ( (*it)->getFrameBufferId() == curFB ) {
 				return (*it);
 			}
@@ -45,7 +45,7 @@ FrameBuffer * FrameBufferManager::getFromName( const std::string& name ) {
 FrameBuffer * FrameBufferManager::getFromId( const Uint32& id ) {
 	std::list<FrameBuffer*>::iterator it;
 
-	for ( it = mResources.begin(); it != mResources.end(); it++ ) {
+	for ( it = mResources.begin(); it != mResources.end(); ++it ) {
 		if ( (*it)->getId() == id ) {
 			return (*it);
 		}

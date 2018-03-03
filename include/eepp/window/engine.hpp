@@ -4,6 +4,7 @@
 #include <eepp/window/base.hpp>
 #include <eepp/window/window.hpp>
 #include <eepp/window/platformhelper.hpp>
+#include <eepp/window/displaymanager.hpp>
 #include <list>
 
 namespace EE { namespace System { class IniFile; class Pack; } }
@@ -120,6 +121,9 @@ class EE_API Engine {
 
 		/** @return The instance of platform class that provides some helpers for some platforms */
 		PlatformHelper * getPlatformHelper();
+
+		/** @return The display manager. Holds the physical displays information. */
+		DisplayManager * getDisplayManager();
 	protected:
 		friend class Window;
 
@@ -130,6 +134,7 @@ class EE_API Engine {
 		Uint32				mMainThreadId;
 		PlatformHelper *	mPlatformHelper;
 		Pack *				mZip;
+		DisplayManager *	mDisplayManager;
 
 		Engine();
 

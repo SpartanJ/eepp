@@ -1,13 +1,15 @@
 #include <eepp/graphics/texturepacker.hpp>
 #include <eepp/system/iostreamfile.hpp>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/sys.hpp>
 #include <eepp/graphics/texturepackernode.hpp>
 #include <eepp/graphics/texturepackertex.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
+#include <SOIL2/src/SOIL2/stb_image.h>
 #include <algorithm>
 
 namespace EE { namespace Graphics {
 
-TexturePacker::TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const bool& AllowFlipping ) :
+TexturePacker::TexturePacker(const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const Texture::TextureFilter& textureFilter, const bool& AllowFlipping ) :
 	mTotalArea(0),
 	mFreeList(NULL),
 	mWidth(128),
@@ -20,9 +22,13 @@ TexturePacker::TexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, c
 	mParent(NULL),
 	mPlacedCount(0),
 	mForcePowOfTwo(true),
-	mPixelBorder(0)
+	mPixelBorder(0),
+	mPixelDensity(PixelDensity),
+	mTextureFilter(textureFilter),
+	mSaveExtensions(false),
+	mFormat(Image::SaveType::SAVE_TYPE_PNG)
 {
-	setOptions( MaxWidth, MaxHeight, PixelDensity, ForcePowOfTwo, PixelBorder, AllowFlipping );
+	setOptions( MaxWidth, MaxHeight, PixelDensity, ForcePowOfTwo, PixelBorder, textureFilter, AllowFlipping );
 }
 
 TexturePacker::TexturePacker() :
@@ -39,9 +45,12 @@ TexturePacker::TexturePacker() :
 	mParent(NULL),
 	mPlacedCount(0),
 	mForcePowOfTwo(true),
-	mPixelBorder(0)
-{
-}
+	mPixelBorder(0),
+	mPixelDensity(PD_MDPI),
+	mTextureFilter(Texture::TextureFilter::Linear),
+	mSaveExtensions(false),
+	mFormat(Image::SaveType::SAVE_TYPE_PNG)
+{}
 
 TexturePacker::~TexturePacker()
 {
@@ -53,7 +62,7 @@ void TexturePacker::close() {
 
 	std::list<TexturePackerTex*>::iterator it;
 
-	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 		eeSAFE_DELETE( (*it) );
 	}
 
@@ -67,7 +76,7 @@ void TexturePacker::reset() {
 	TexturePackerTex * t = NULL;
 	std::list<TexturePackerTex*>::iterator it;
 
-	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 		t = (*it);
 		t->placed( false );
 	}
@@ -95,7 +104,7 @@ Uint32 TexturePacker::getAtlasNumChannels() {
 	TexturePackerTex * t = NULL;
 	std::list<TexturePackerTex*>::iterator it;
 
-	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 		t = (*it);
 
 		if ( t->placed() ) {
@@ -106,7 +115,7 @@ Uint32 TexturePacker::getAtlasNumChannels() {
 	return maxChannels;
 }
 
-void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const bool& AllowFlipping ) {
+void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const Texture::TextureFilter& textureFilter, const bool& AllowFlipping ) {
 	if ( !mTextures.size() ) { // only can change the dimensions before adding any texture
 		mMaxSize.x = MaxWidth;
 		mMaxSize.y = MaxHeight;
@@ -121,6 +130,7 @@ void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight,
 		mAllowFlipping 	= AllowFlipping;
 		mPixelBorder	= PixelBorder;
 		mPixelDensity = PixelDensity;
+		mTextureFilter = textureFilter;
 	}
 }
 
@@ -184,7 +194,7 @@ TexturePackerTex * TexturePacker::getLonguestEdge() {
 	TexturePackerTex * t = NULL;
 	std::list<TexturePackerTex*>::iterator it;
 
-	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 		if ( !(*it)->placed() ) {
 			t = (*it);
 			break;
@@ -198,7 +208,7 @@ TexturePackerTex * TexturePacker::getShortestEdge() {
 	TexturePackerTex * t = NULL;
 	std::list<TexturePackerTex*>::reverse_iterator it;
 
-	for ( it = mTextures.rbegin(); it != mTextures.rend(); it++ ) {
+	for ( it = mTextures.rbegin(); it != mTextures.rend(); ++it ) {
 		if ( !(*it)->placed() ) {
 			t = (*it);
 			break;
@@ -214,7 +224,7 @@ void TexturePacker::addBorderToTextures( const Int32& BorderSize ) {
 	if ( 0 != BorderSize ) {
 		std::list<TexturePackerTex*>::iterator it;
 
-		for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+		for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 			t = (*it);
 
 			t->width	( t->width() 	+ BorderSize );
@@ -368,14 +378,14 @@ void TexturePacker::insertTexture( TexturePackerTex * t, TexturePackerNode * bes
 }
 
 void TexturePacker::createChild() {
-	mChild = eeNew( TexturePacker, ( mWidth, mHeight, mPixelDensity, mForcePowOfTwo, mPixelBorder, mAllowFlipping ) );
+	mChild = eeNew( TexturePacker, ( mWidth, mHeight, mPixelDensity, mForcePowOfTwo, mPixelBorder, mTextureFilter, mAllowFlipping ) );
 
 	std::list<TexturePackerTex*>::iterator it;
 	std::list< std::list<TexturePackerTex*>::iterator > remove;
 
 	TexturePackerTex * t = NULL;
 
-	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 		t = (*it);
 
 		if ( !t->placed() ) {
@@ -393,7 +403,7 @@ void TexturePacker::createChild() {
 	// Removes the non-placed textures from the pack
 	std::list< std::list<TexturePackerTex*>::iterator >::iterator itit;
 
-	for ( itit = remove.begin(); itit != remove.end(); itit++ ) {
+	for ( itit = remove.begin(); itit != remove.end(); ++itit ) {
 		mTextures.erase( *itit );
 	}
 
@@ -433,7 +443,7 @@ bool TexturePacker::addPackerTex( TexturePackerTex * TPack ) {
 
 			bool Added = false;
 
-			for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+			for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 				if ( (*it)->area() < TPack->area() ) {
 					mTextures.insert( it, TPack );
 					Added = true;
@@ -477,7 +487,7 @@ Int32 TexturePacker::packTextures() { // pack the textures, the return code is t
 
 	// We must place each texture
 	std::list<TexturePackerTex*>::iterator it;
-	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 		// For the texture with the longest edge we place it according to this criteria.
 		//   (1) If it is a perfect match, we always accept it as it causes the least amount of fragmentation.
 		//   (2) A match of one edge with the minimum area left over after the split.
@@ -545,7 +555,7 @@ Int32 TexturePacker::packTextures() { // pack the textures, the return code is t
 
 	mPacked = true;
 
-	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 		if ( !(*it)->placed() )
 			mTotalArea -= (*it)->area();
 	}
@@ -573,7 +583,7 @@ void TexturePacker::save( const std::string& Filepath, const Image::SaveType& Fo
 	int w, h, c;
 	std::list<TexturePackerTex*>::iterator it;
 
-	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
 		t = (*it);
 
 		if ( t->placed() ) {
@@ -620,7 +630,7 @@ void TexturePacker::save( const std::string& Filepath, const Image::SaveType& Fo
 
 	childSave( Format );
 
-	saveSubTextures();
+	saveTextureRegions();
 }
 
 Int32 TexturePacker::getChildCount() {
@@ -635,7 +645,7 @@ Int32 TexturePacker::getChildCount() {
 	return ChildCount;
 }
 
-void TexturePacker::saveSubTextures() {
+void TexturePacker::saveTextureRegions() {
 	if ( NULL != mParent )
 		return;
 
@@ -650,8 +660,10 @@ void TexturePacker::saveSubTextures() {
 	TexGrHdr.Height			= mHeight;
 	TexGrHdr.PixelBorder	= mPixelBorder;
 	TexGrHdr.Flags			= 0;
+	TexGrHdr.TextureFilter	= mTextureFilter;
 
-	memset( TexGrHdr.Reserved, 0, 16 );
+	int reservedSize = eeARRAY_SIZE(TexGrHdr.Reserved);
+	memset( TexGrHdr.Reserved, 0, reservedSize );
 
 	if ( mAllowFlipping )
 		TexGrHdr.Flags |= HDR_TEXTURE_ATLAS_ALLOW_FLIPPING;
@@ -675,7 +687,7 @@ void TexturePacker::saveSubTextures() {
 		HdrPos++;
 	}
 
-	std::vector<sSubTextureHdr> tSubTexturesHdr;
+	std::vector<sTextureRegionHdr> tTextureRegionsHdr;
 
 	std::string path = FileSystem::fileRemoveExtension( mFilepath ) + EE_TEXTURE_ATLAS_EXTENSION;
 	IOStreamFile fs ( path , std::ios::out | std::ios::binary );
@@ -685,10 +697,10 @@ void TexturePacker::saveSubTextures() {
 
 		fs.write( reinterpret_cast<const char*> (&TexHdr[ 0 ]), sizeof(sTextureHdr) );
 
-		createSubTexturesHdr( this, tSubTexturesHdr );
+		createTextureRegionsHdr( this, tTextureRegionsHdr );
 
-		if ( tSubTexturesHdr.size() )
-			fs.write( reinterpret_cast<const char*> (&tSubTexturesHdr[ 0 ]), sizeof(sSubTextureHdr) * (std::streamsize)tSubTexturesHdr.size() );
+		if ( tTextureRegionsHdr.size() )
+			fs.write( reinterpret_cast<const char*> (&tTextureRegionsHdr[ 0 ]), sizeof(sTextureRegionHdr) * (std::streamsize)tTextureRegionsHdr.size() );
 
 		Int32 HdrPos 				= 1;
 		TexturePacker * Child 		= mChild;
@@ -696,10 +708,10 @@ void TexturePacker::saveSubTextures() {
 		while ( NULL != Child ) {
 			fs.write( reinterpret_cast<const char*> (&TexHdr[ HdrPos ]), sizeof(sTextureHdr) );
 
-			createSubTexturesHdr( Child, tSubTexturesHdr );
+			createTextureRegionsHdr( Child, tTextureRegionsHdr );
 
-			if ( tSubTexturesHdr.size() )
-				fs.write( reinterpret_cast<const char*> (&tSubTexturesHdr[ 0 ]), sizeof(sSubTextureHdr) * (std::streamsize)tSubTexturesHdr.size() );
+			if ( tTextureRegionsHdr.size() )
+				fs.write( reinterpret_cast<const char*> (&tTextureRegionsHdr[ 0 ]), sizeof(sTextureRegionHdr) * (std::streamsize)tTextureRegionsHdr.size() );
 
 			Child 				= Child->getChild();
 
@@ -708,49 +720,49 @@ void TexturePacker::saveSubTextures() {
 	}
 }
 
-void TexturePacker::createSubTexturesHdr( TexturePacker * Packer, std::vector<sSubTextureHdr>& SubTextures ) {
-	SubTextures.clear();
+void TexturePacker::createTextureRegionsHdr( TexturePacker * Packer, std::vector<sTextureRegionHdr>& TextureRegions ) {
+	TextureRegions.clear();
 
-	sSubTextureHdr tSubTextureHdr;
+	sTextureRegionHdr tTextureRegionHdr;
 	Uint32 c = 0;
 
 	std::list<TexturePackerTex*> tTextures = *(Packer->getTexturePackPtr());
 	std::list<TexturePackerTex*>::iterator it;
 	TexturePackerTex * tTex;
 
-	SubTextures.resize( tTextures.size() );
+	TextureRegions.resize( tTextures.size() );
 
-	for ( it = tTextures.begin(); it != tTextures.end(); it++ ) {
+	for ( it = tTextures.begin(); it != tTextures.end(); ++it ) {
 		tTex = (*it);
 
 		if ( tTex->placed() ) {
 			std::string name = FileSystem::fileNameFromPath( tTex->name() );
 
-			memset( tSubTextureHdr.Name, 0, HDR_NAME_SIZE );
+			memset( tTextureRegionHdr.Name, 0, HDR_NAME_SIZE );
 
-			String::strCopy( tSubTextureHdr.Name, name.c_str(), HDR_NAME_SIZE );
+			String::strCopy( tTextureRegionHdr.Name, name.c_str(), HDR_NAME_SIZE );
 
 			if ( !mSaveExtensions )
 				name = FileSystem::fileRemoveExtension( name );
 
-			tSubTextureHdr.ResourceID	= String::hash( name );
-			tSubTextureHdr.Width 		= tTex->width();
-			tSubTextureHdr.Height 		= tTex->height();
-			tSubTextureHdr.Channels		= tTex->channels();
-			tSubTextureHdr.DestWidth 	= tTex->width();
-			tSubTextureHdr.DestHeight 	= tTex->height();
-			tSubTextureHdr.OffsetX		= 0;
-			tSubTextureHdr.OffsetY		= 0;
-			tSubTextureHdr.X			= tTex->x();
-			tSubTextureHdr.Y			= tTex->y();
-			tSubTextureHdr.Date			= FileSystem::fileGetModificationDate( tTex->name() );
-			tSubTextureHdr.Flags		= 0;
-			tSubTextureHdr.PixelDensity	= (Uint32)mPixelDensity;
+			tTextureRegionHdr.ResourceID	= String::hash( name );
+			tTextureRegionHdr.Width 		= tTex->width();
+			tTextureRegionHdr.Height 		= tTex->height();
+			tTextureRegionHdr.Channels		= tTex->channels();
+			tTextureRegionHdr.DestWidth 	= tTex->width();
+			tTextureRegionHdr.DestHeight 	= tTex->height();
+			tTextureRegionHdr.OffsetX		= 0;
+			tTextureRegionHdr.OffsetY		= 0;
+			tTextureRegionHdr.X			= tTex->x();
+			tTextureRegionHdr.Y			= tTex->y();
+			tTextureRegionHdr.Date			= FileSystem::fileGetModificationDate( tTex->name() );
+			tTextureRegionHdr.Flags		= 0;
+			tTextureRegionHdr.PixelDensity	= (Uint32)mPixelDensity;
 
 			if ( tTex->flipped() )
-				tSubTextureHdr.Flags |= HDR_SUBTEXTURE_FLAG_FLIPED;
+				tTextureRegionHdr.Flags |= HDR_TEXTUREREGION_FLAG_FLIPED;
 
-			SubTextures[c] = tSubTextureHdr;
+			TextureRegions[c] = tTextureRegionHdr;
 
 			c++;
 		}
@@ -768,7 +780,7 @@ sTextureHdr	TexturePacker::createTextureHdr( TexturePacker * Packer ) {
 
 	TexHdr.ResourceID 	= String::hash( name );
 	TexHdr.Size			= FileSystem::fileSize( Packer->getFilepath() );
-	TexHdr.SubTextureCount 	= Packer->getPlacedCount();
+	TexHdr.TextureRegionCount 	= Packer->getPlacedCount();
 
 	return TexHdr;
 }

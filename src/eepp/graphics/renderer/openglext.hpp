@@ -8,7 +8,7 @@
 	#ifdef EE_GLEW_AVAILABLE
 		#define GLEW_STATIC
 		#define GLEW_NO_GLU
-		#include <eepp/helper/glew/glew.h>
+		#include <glew/glew.h>
 	#else
 		#ifndef GL_GLEXT_PROTOTYPES
 			#define GL_GLEXT_PROTOTYPES

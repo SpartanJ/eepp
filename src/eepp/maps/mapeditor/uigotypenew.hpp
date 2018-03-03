@@ -20,11 +20,11 @@ class EE_API UIGOTypeNew {
 		UITextInput *		mUIInput;
 		cb::Callback2<void, std::string, Uint32>	mCb;
 
-		void onWindowClose( const UIEvent * Event );
+		void onWindowClose( const Event * Event );
 
-		void onCancelClick( const UIEvent * Event );
+		void onCancelClick( const Event * Event );
 
-		void onOKClick( const UIEvent * Event );
+		void onOKClick( const Event * Event );
 };
 
 }}}

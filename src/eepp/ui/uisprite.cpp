@@ -1,6 +1,6 @@
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/graphics/sprite.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 
 namespace EE { namespace UI {
@@ -14,7 +14,7 @@ UISprite::UISprite() :
 	mSprite( NULL ),
 	mRender( RENDER_NORMAL ),
 	mAlignOffset(0,0),
-	mSubTextureLast(NULL)
+	mTextureRegionLast(NULL)
 {
 }
 
@@ -32,7 +32,7 @@ bool UISprite::isType( const Uint32& type ) const {
 }
 
 Uint32 UISprite::deallocSprite() {
-	return mControlFlags & UI_CTRL_FLAG_FREE_USE;
+	return mNodeFlags & NODE_FLAG_FREE_USE;
 }
 
 void UISprite::setSprite( Graphics::Sprite * sprite ) {
@@ -50,44 +50,44 @@ void UISprite::draw() {
 
 	if ( mVisible ) {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
-			checkSubTextureUpdate();
+			checkTextureRegionUpdate();
 
-			mSprite->setPosition( Vector2f( (Float)( mScreenPos.x + mAlignOffset.x ), (Float)( mScreenPos.y + mAlignOffset.y ) ) );
+			mSprite->setPosition( Vector2f( (Float)( mScreenPosi.x + (int)mAlignOffset.x ), (Float)( mScreenPosi.y + (int)mAlignOffset.y ) ) );
 
-			SubTexture * subTexture = mSprite->getCurrentSubTexture();
+			TextureRegion * textureRegion = mSprite->getCurrentTextureRegion();
 
-			if ( NULL != subTexture ) {
-				Sizef oDestSize = subTexture->getDestSize();
-				Sizei pxSize = subTexture->getPxSize();
+			if ( NULL != textureRegion ) {
+				Sizef oDestSize = textureRegion->getDestSize();
+				Sizei pxSize = textureRegion->getPxSize();
 
-				subTexture->setDestSize( Sizef( (Float)pxSize.x, (Float)pxSize.y ) );
+				textureRegion->setDestSize( Sizef( (Float)pxSize.x, (Float)pxSize.y ) );
 
 				mSprite->draw( getBlendMode(), mRender );
 
-				subTexture->setDestSize( oDestSize );
+				textureRegion->setDestSize( oDestSize );
 			}
 		}
 	}
 }
 
-void UISprite::update() {
-	UIWidget::update();
+void UISprite::update( const Time& time ) {
+	UIWidget::update( time );
 
 	if ( NULL != mSprite ) {
-		SubTexture * subTexture = mSprite->getCurrentSubTexture();
+		TextureRegion * textureRegion = mSprite->getCurrentTextureRegion();
 
-		mSprite->update();
+		mSprite->update( time );
 
-		if ( subTexture != mSprite->getCurrentSubTexture() )
+		if ( textureRegion != mSprite->getCurrentTextureRegion() )
 			invalidateDraw();
 	}
 }
 
-void UISprite::checkSubTextureUpdate() {
-	if ( NULL != mSprite && NULL != mSprite->getCurrentSubTexture() && mSprite->getCurrentSubTexture() != mSubTextureLast ) {
+void UISprite::checkTextureRegionUpdate() {
+	if ( NULL != mSprite && NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion() != mTextureRegionLast ) {
 		updateSize();
 		autoAlign();
-		mSubTextureLast = mSprite->getCurrentSubTexture();
+		mTextureRegionLast = mSprite->getCurrentTextureRegion();
 	}
 }
 
@@ -128,45 +128,45 @@ void UISprite::setRenderMode( const RenderMode& render ) {
 void UISprite::updateSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mSprite ) {
-			if ( NULL != mSprite->getCurrentSubTexture() && mSprite->getCurrentSubTexture()->getDpSize() != mSize )
-				setSize( mSprite->getCurrentSubTexture()->getDpSize() );
+			if ( NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion()->getDpSize().asFloat() != mDpSize )
+				setSize( mSprite->getCurrentTextureRegion()->getDpSize().asFloat() );
 		}
 	}
 }
 
 void UISprite::autoAlign() {
-	if ( NULL == mSprite || NULL == mSprite->getCurrentSubTexture() )
+	if ( NULL == mSprite || NULL == mSprite->getCurrentTextureRegion() )
 		return;
 
-	SubTexture * tSubTexture = mSprite->getCurrentSubTexture();
+	TextureRegion * tTextureRegion = mSprite->getCurrentTextureRegion();
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.getWidth() / 2 - tSubTexture->getDpSize().getWidth() / 2;
+		mAlignOffset.x = mDpSize.getWidth() / 2 - tTextureRegion->getDpSize().getWidth() / 2;
 	} else if ( fontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.getWidth() - tSubTexture->getDpSize().getWidth();
+		mAlignOffset.x =  mDpSize.getWidth() - tTextureRegion->getDpSize().getWidth();
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.getHeight() / 2 - tSubTexture->getDpSize().getHeight() / 2;
+		mAlignOffset.y = mDpSize.getHeight() / 2 - tTextureRegion->getDpSize().getHeight() / 2;
 	} else if ( fontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.getHeight() - tSubTexture->getDpSize().getHeight();
+		mAlignOffset.y = mDpSize.getHeight() - tTextureRegion->getDpSize().getHeight();
 	} else {
 		mAlignOffset.y = 0;
 	}
 }
 
-const Vector2i& UISprite::getAlignOffset() const {
+const Vector2f& UISprite::getAlignOffset() const {
 	return mAlignOffset;
 }
 
 void UISprite::setDeallocSprite( const bool& dealloc ) {
-	writeCtrlFlag( UI_CTRL_FLAG_FREE_USE, dealloc ? 1 : 0 );
+	writeCtrlFlag( NODE_FLAG_FREE_USE, dealloc ? 1 : 0 );
 }
 
 bool UISprite::getDeallocSprite() {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_FREE_USE );
+	return 0 != ( mNodeFlags & NODE_FLAG_FREE_USE );
 }
 
 void UISprite::onSizeChange() {

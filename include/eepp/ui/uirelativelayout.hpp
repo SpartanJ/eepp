@@ -17,13 +17,13 @@ class EE_API UIRelativeLayout : public UILayout {
 
 		UIRelativeLayout * add( UIWidget * widget );
 	protected:
-		virtual Uint32 onMessage(const UIMessage * Msg);
+		virtual Uint32 onMessage(const NodeMessage * Msg);
 
 		virtual void onSizeChange();
 
 		virtual void onChildCountChange();
 
-		virtual void onParentSizeChange( const Vector2i& SizeChange );
+		virtual void onParentSizeChange( const Vector2f& SizeChange );
 
 		void fixChilds();
 

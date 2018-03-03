@@ -25,7 +25,7 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
 		UIMenu * getSubMenu() const;
 
-		UIControl * getArrow() const;
+		UINode * getArrow() const;
 
 		void showSubMenu();
 
@@ -37,7 +37,7 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
 	protected:
 		UIMenu *	mSubMenu;
-		UIControlAnim *	mArrow;
+		UINode *	mArrow;
 		Float		mTimeOver;
 		Float		mMaxTime;
 		Uint32		mCbId;
@@ -53,9 +53,9 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
 		virtual void onAlphaChange();
 
-		void onSubMenuFocusLoss( const UIEvent * Event );
+		void onSubMenuFocusLoss( const Event * Event );
 
-		void onHideByClick( const UIEvent * Event );
+		void onHideByClick( const Event * Event );
 };
 
 }}

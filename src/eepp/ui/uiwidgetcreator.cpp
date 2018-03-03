@@ -8,7 +8,7 @@
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
-#include <eepp/ui/uisubtexture.hpp>
+#include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
@@ -68,7 +68,7 @@ UIWidget * UIWidgetCreator::createFromName( std::string widgetName ) {
 	else if ( widgetName == "selectbutton" )	return UISelectButton::New();
 	else if ( widgetName == "window" )			return UIWindow::New();
 	else if ( widgetName == "scrollview" )		return UIScrollView::New();
-	else if ( widgetName == "subtexture" )		return UISubTexture::New();
+	else if ( widgetName == "textureregion" || widgetName == "subtexture" )	return UITextureRegion::New();
 	else if ( widgetName == "touchdragable" )	return UITouchDragableWidget::New();
 	else if ( widgetName == "gridlayout" )		return UIGridLayout::New();
 

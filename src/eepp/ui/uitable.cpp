@@ -1,6 +1,5 @@
 #include <eepp/ui/uitable.hpp>
-#include <eepp/ui/uimanager.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -35,27 +34,27 @@ UITable::UITable() :
 	mContainer->setEnabled( true );
 	mContainer->setParent( this );
 	mContainer->setPosition( mContainerPadding.Left, mContainerPadding.Top );
-	mContainer->setSize( mSize.getWidth() - mContainerPadding.Right - mContainerPadding.Left, mSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom );
+	mContainer->setSize( mDpSize.getWidth() - mContainerPadding.Right - mContainerPadding.Left, mDpSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom );
 
 	mVScrollBar = UIScrollBar::New();
 	mVScrollBar->setOrientation( UI_VERTICAL );
 	mVScrollBar->setParent( this );
-	mVScrollBar->setPosition( mSize.getWidth() - 16, 0 );
-	mVScrollBar->setSize( 16, mSize.getHeight() );
+	mVScrollBar->setPosition( mDpSize.getWidth() - 16, 0 );
+	mVScrollBar->setSize( 16, mDpSize.getHeight() );
 
 	mHScrollBar = UIScrollBar::New();
 	mHScrollBar->setOrientation( UI_HORIZONTAL );
 	mHScrollBar->setParent( this );
-	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
-	mHScrollBar->setPosition( 0, mSize.getHeight() - 16 );
+	mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
+	mHScrollBar->setPosition( 0, mDpSize.getHeight() - 16 );
 
 	mHScrollBar->setVisible( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode );
 	mHScrollBar->setEnabled( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode );
 	mVScrollBar->setVisible( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
 	mVScrollBar->setEnabled( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode );
 
-	mVScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UITable::onScrollValueChange ) );
-	mHScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UITable::onScrollValueChange ) );
+	mVScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UITable::onScrollValueChange ) );
+	mHScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UITable::onScrollValueChange ) );
 
 	applyDefaultTheme();
 }
@@ -99,7 +98,7 @@ void UITable::setDefaultCollumnsWidth() {
 	updateCells();
 }
 
-void UITable::onScrollValueChange( const UIEvent * Event ) {
+void UITable::onScrollValueChange( const Event * Event ) {
 	updateScroll( true );
 }
 
@@ -115,16 +114,16 @@ void UITable::setTheme( UITheme * Theme ) {
 
 void UITable::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mContainerPadding = makePadding();
+		mContainerPadding = PixelDensity::pxToDp( makePadding() );
 	}
 }
 
 void UITable::onSizeChange() {
-	mVScrollBar->setPosition( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 0 );
-	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), mSize.getHeight() );
+	mVScrollBar->setPosition( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), 0 );
+	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), mDpSize.getHeight() );
 
-	mHScrollBar->setPosition( 0, mSize.getHeight() - mHScrollBar->getSize().getHeight() );
-	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), mHScrollBar->getSize().getHeight() );
+	mHScrollBar->setPosition( 0, mDpSize.getHeight() - mHScrollBar->getSize().getHeight() );
+	mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), mHScrollBar->getSize().getHeight() );
 
 	if ( mContainer->isClipped() && UI_SCROLLBAR_AUTO == mHScrollMode ) {
 		if ( (Int32)mTotalWidth <= mContainer->getSize().getWidth() ) {
@@ -143,9 +142,9 @@ void UITable::containerResize() {
 	mContainer->setPosition( mContainerPadding.Left, mContainerPadding.Top );
 
 	if( mHScrollBar->isVisible() )
-		mContainer->setSize( mSize.getWidth() - mContainerPadding.Right, mSize.getHeight() - mContainerPadding.Top - mHScrollBar->getSize().getHeight() );
+		mContainer->setSize( mDpSize.getWidth() - mContainerPadding.Right, mDpSize.getHeight() - mContainerPadding.Top - mHScrollBar->getSize().getHeight() );
 	else
-		mContainer->setSize( mSize.getWidth() - mContainerPadding.Right, mSize.getHeight() - mContainerPadding.Bottom - mContainerPadding.Top );
+		mContainer->setSize( mDpSize.getWidth() - mContainerPadding.Right, mDpSize.getHeight() - mContainerPadding.Bottom - mContainerPadding.Top );
 
 	if ( mVScrollBar->isVisible() )
 		mContainer->setSize( mContainer->getSize().getWidth() - mVScrollBar->getSize().getWidth(), mContainer->getSize().getHeight() );
@@ -263,7 +262,7 @@ void UITable::updateScroll( bool FromScrollChange ) {
 			ItemPosMax = ItemPos + mRowHeight;
 
 			if ( ( ItemPos >= (Int32)RelPos || ItemPosMax >= (Int32)RelPos ) && ( ItemPos <= (Int32)RelPosMax ) ) {
-				Item->setPosition( mHScrollInit, ItemPos - RelPos );
+				Item->setPosition( mHScrollInit, ItemPos - (Int32)RelPos );
 				Item->setEnabled( true );
 				Item->setVisible( true );
 
@@ -293,7 +292,7 @@ void UITable::updateScroll( bool FromScrollChange ) {
 
 		for ( i = 0; i < mItems.size(); i++ ) {
 			Item = mItems[i];
-			ItemPos = mRowHeight * ( i - RelPos );
+			ItemPos = mRowHeight * ( (Int32)i - (Int32)RelPos );
 
 			if ( i >= RelPos && i < RelPosMax ) {
 				if ( Clipped )
@@ -318,11 +317,11 @@ void UITable::updateScroll( bool FromScrollChange ) {
 	}
 
 	if ( mHScrollBar->isVisible() && !mVScrollBar->isVisible() ) {
-		mHScrollBar->setPosition( 0, mSize.getHeight() - mHScrollBar->getSize().getHeight() );
-		mHScrollBar->setSize( mSize.getWidth(), mHScrollBar->getSize().getHeight() );
+		mHScrollBar->setPosition( 0, mDpSize.getHeight() - mHScrollBar->getSize().getHeight() );
+		mHScrollBar->setSize( mDpSize.getWidth(), mHScrollBar->getSize().getHeight() );
 	} else {
-		mHScrollBar->setPosition( 0, mSize.getHeight() - mHScrollBar->getSize().getHeight() );
-		mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), mHScrollBar->getSize().getHeight() );
+		mHScrollBar->setPosition( 0, mDpSize.getHeight() - mHScrollBar->getSize().getHeight() );
+		mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), mHScrollBar->getSize().getHeight() );
 	}
 
 	setHScrollStep();
@@ -483,7 +482,7 @@ void UITable::updateCollumnsPos() {
 }
 
 void UITable::onAlphaChange() {
-	UIControlAnim::onAlphaChange();
+	UINode::onAlphaChange();
 
 	mVScrollBar->setAlpha( mAlpha );
 	mHScrollBar->setAlpha( mAlpha );
@@ -541,7 +540,7 @@ Uint32 UITable::getItemIndex( UITableCell * Item ) {
 }
 
 Uint32 UITable::onSelected() {
-	sendCommonEvent( UIEvent::OnItemSelected );
+	sendCommonEvent( Event::OnItemSelected );
 
 	return 1;
 }
@@ -557,17 +556,19 @@ Uint32 UITable::getItemSelectedIndex() const {
 	return mSelected;
 }
 
-Uint32 UITable::onMessage( const UIMessage * Msg ) {
+Uint32 UITable::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::FocusLoss:
+		case NodeMessage::FocusLoss:
 		{
-			UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
+			if ( NULL != getEventDispatcher() ) {
+				Node * FocusCtrl = getEventDispatcher()->getFocusControl();
 
-			if ( this != FocusCtrl && !isParentOf( FocusCtrl ) ) {
-				onWidgetFocusLoss();
+				if ( this != FocusCtrl && !isParentOf( FocusCtrl ) ) {
+					onWidgetFocusLoss();
+				}
+
+				return 1;
 			}
-
-			return 1;
 		}
 	}
 
@@ -586,19 +587,19 @@ UITable * UITable::setSmoothScroll(bool smoothScroll) {
 	mSmoothScroll = smoothScroll;
 
 	if ( mSmoothScroll ) {
-		mContainer->setFlags( UI_CLIP_ENABLE );
+		mContainer->clipEnable();
 	} else {
-		mContainer->unsetFlags( UI_CLIP_ENABLE );
+		mContainer->clipDisable();
 	}
 
 	return this;
 }
 
-Rect UITable::getContainerPadding() const {
+Rectf UITable::getContainerPadding() const {
 	return mContainerPadding;
 }
 
-void UITable::setContainerPadding(const Rect & containerPadding) {
+void UITable::setContainerPadding(const Rectf& containerPadding) {
 	if ( containerPadding != mContainerPadding ) {
 		mContainerPadding = containerPadding;
 		containerResize();
@@ -630,15 +631,15 @@ void UITable::loadFromXmlNode(const pugi::xml_node & node) {
 			setRowHeight( ait->as_int() );
 		} else if ( "padding" == name ) {
 			int val = ait->as_int();
-			setContainerPadding( Rect( val, val, val, val ) );
+			setContainerPadding( Rectf( val, val, val, val ) );
 		} else if ( "paddingleft" == name ) {
-			setContainerPadding( Rect( ait->as_int(), mContainerPadding.Top, mContainerPadding.Right, mContainerPadding.Bottom ) );
+			setContainerPadding( Rectf( ait->as_int(), mContainerPadding.Top, mContainerPadding.Right, mContainerPadding.Bottom ) );
 		} else if ( "paddingright" == name ) {
-			setContainerPadding( Rect( mContainerPadding.Left, mContainerPadding.Top, ait->as_int(), mContainerPadding.Bottom ) );
+			setContainerPadding( Rectf( mContainerPadding.Left, mContainerPadding.Top, ait->as_int(), mContainerPadding.Bottom ) );
 		} else if ( "paddingtop" == name ) {
-			setContainerPadding( Rect( mContainerPadding.Left, ait->as_int(), mContainerPadding.Right, mContainerPadding.Bottom ) );
+			setContainerPadding( Rectf( mContainerPadding.Left, ait->as_int(), mContainerPadding.Right, mContainerPadding.Bottom ) );
 		} else if ( "paddingbottom" == name ) {
-			setContainerPadding( Rect( mContainerPadding.Left, mContainerPadding.Top, mContainerPadding.Right, ait->as_int() ) );
+			setContainerPadding( Rectf( mContainerPadding.Left, mContainerPadding.Top, mContainerPadding.Right, ait->as_int() ) );
 		} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {
 			std::string val = ait->as_string();
 			if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );

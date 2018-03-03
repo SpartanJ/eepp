@@ -73,7 +73,7 @@ void ObjectLoader::setLoaded() {
 	if ( mLoadCbs.size() ) {
 		std::list<ObjLoadCallback>::iterator it;
 
-		for ( it = mLoadCbs.begin(); it != mLoadCbs.end(); it++ ) {
+		for ( it = mLoadCbs.begin(); it != mLoadCbs.end(); ++it ) {
 			(*it)( this );
 		}
 

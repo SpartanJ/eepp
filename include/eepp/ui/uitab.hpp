@@ -13,9 +13,9 @@ class EE_API UITab : public UISelectButton {
 
 		UITab();
 
-		UIControl * getControlOwned() const;
+		Node * getControlOwned() const;
 
-		void setControlOwned( UIControl * controlOwned );
+		void setControlOwned( Node * controlOwned );
 
 		virtual ~UITab();
 
@@ -29,11 +29,11 @@ class EE_API UITab : public UISelectButton {
 
 		virtual UIPushButton * setText( const String& text );
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
-		UIControl *	mControlOwned;
+		Node * mControlOwned;
 		std::string mOwnedName;
 
 		virtual Uint32 onMouseClick( const Vector2i &position, const Uint32 flags );

@@ -99,11 +99,7 @@ void InputSDL::update() {
 				String txt = String::fromUtf8( SDLEvent.text.text );
 
 				EEEvent.Type = InputEvent::TextInput;
-				#if SDL_VERSION_ATLEAST(2,0,0)
 				EEEvent.text.timestamp = SDLEvent.text.timestamp;
-				#else
-				EEEvent.text.timestamp = Sys::getTicks();
-				#endif
 				EEEvent.text.text = txt[0];
 
 				processEvent( &EEEvent );
@@ -336,7 +332,7 @@ void InputSDL::init() {
 	mDPIScale = (Float)realX / (Float)scaledX;
 #endif
 
-#if SDL_VERSION_ATLEAST(2,0,4)
+#if SDL_VERSION_ATLEAST(2,0,5)
 	Vector2i mTempMouse;
 	Vector2i mTempWinPos;
 	Rect mBordersSize;

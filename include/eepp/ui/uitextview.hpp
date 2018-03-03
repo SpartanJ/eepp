@@ -66,7 +66,7 @@ class EE_API UITextView : public UIWidget {
 
 		const int& getNumLines() const;
 
-		const Vector2i & getAlignOffset() const;
+		const Vector2f & getAlignOffset() const;
 
 		virtual void shrinkText( const Uint32& MaxWidth );
 
@@ -76,21 +76,21 @@ class EE_API UITextView : public UIWidget {
 
 		UITooltipStyleConfig getFontStyleConfig() const;
 
-		const Rect& getPadding() const;
+		const Rectf& getPadding() const;
 
-		UITextView * setPadding(const Rect & padding);
+		UITextView * setPadding(const Rectf& padding);
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		Text *		mTextCache;
 		String			mString;
 		UITooltipStyleConfig mFontStyleConfig;
-		Vector2i 		mAlignOffset;
+		Vector2f 		mAlignOffset;
 		Vector2f 		mRealAlignOffset;
 		Int32			mSelCurInit;
 		Int32			mSelCurEnd;
-		Rect		mPadding;
-		Rect		mRealPadding;
+		Rectf		mPadding;
+		Rectf		mRealPadding;
 		struct SelPosCache
 		{
 			SelPosCache( Vector2f ip, Vector2f ep ) :
@@ -104,6 +104,7 @@ class EE_API UITextView : public UIWidget {
 		std::vector<SelPosCache> mSelPosCache;
 		Int32		mLastSelCurInit;
 		Int32		mLastSelCurEnd;
+		bool		mSelecting;
 
 		virtual void drawSelection(Text * textCache);
 

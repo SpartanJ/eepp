@@ -1,6 +1,7 @@
 #include <eepp/graphics/particlesystem.hpp>
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/batchrenderer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
@@ -13,7 +14,7 @@ namespace EE { namespace Graphics {
 ParticleSystem::ParticleSystem() :
 	mParticle( NULL ),
 	mPCount( 0 ),
-	mTexId( 0 ),
+	mTexture( 0 ),
 	mPLeft( 0 ),
 	mLoops( 0 ),
 	mEffect( PSE_Nofx ),
@@ -44,7 +45,7 @@ void ParticleSystem::create( const EE_PARTICLE_EFFECT& Effect, const Uint32& Num
 	mEffect			= Effect;
 	mPos			= Pos;
 	mPCount			= NumParticles;
-	mTexId			= TexId;
+	mTexture		= TextureFactory::instance()->getTexture( TexId );
 	mLoop			= AnimLoop;
 	mLoops			= NumLoops;
 	mColor			= Color;
@@ -319,12 +320,16 @@ void ParticleSystem::draw() {
 	if ( !mUsed )
 		return;
 
-	TextureFactory * TF = TextureFactory::instance();
-
-	TF->bind( mTexId );
 	BlendMode::setMode( mBlend );
 
 	if ( mPointsSup ) {
+		if ( NULL != mTexture ) {
+			const_cast<Texture*>( mTexture )->bind();
+		} else {
+			GLi->disable( GL_TEXTURE_2D );
+			GLi->disableClientState( GL_TEXTURE_COORD_ARRAY );
+		}
+
 		GLi->enable( GL_POINT_SPRITE );
 		GLi->pointSize( mSize );
 
@@ -336,16 +341,13 @@ void ParticleSystem::draw() {
 		GLi->drawArrays( GL_POINTS, 0, (int)mPCount );
 
 		GLi->disable( GL_POINT_SPRITE );
+		GLi->enable( GL_TEXTURE_2D );
+		GLi->enableClientState( GL_TEXTURE_COORD_ARRAY );
 	} else {
-		Texture * Tex = TF->getTexture( mTexId );
-
-		if ( NULL == Tex )
-			return;
-
 		Particle* P;
 
 		BatchRenderer * BR = GlobalBatchRenderer::instance();
-		BR->setTexture( Tex );
+		BR->setTexture( mTexture );
 		BR->setBlendMode( mBlend );
 		BR->quadsBegin();
 

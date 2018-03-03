@@ -10,7 +10,7 @@
 #include <eepp/system/thread.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/lock.hpp>
-#include <eepp/helper/PlusCallback/callback.hpp>
+#include <eepp/thirdparty/PlusCallback/callback.hpp>
 #include <map>
 #include <string>
 #include <list>

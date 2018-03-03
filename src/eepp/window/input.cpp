@@ -1,5 +1,4 @@
 #include <eepp/window/input.hpp>
-#include <eepp/window/view.hpp>
 
 namespace EE { namespace Window {
 
@@ -34,7 +33,7 @@ void Input::cleanStates() {
 }
 
 void Input::sendEvent( InputEvent * Event ) {
-	for ( std::map<Uint32, InputCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end(); i++ ) {
+	for ( std::map<Uint32, InputCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end(); ++i ) {
 		i->second( Event );
 	}
 }
@@ -197,7 +196,7 @@ void Input::processEvent( InputEvent * Event ) {
 		}
 		case InputEvent::Quit:
 		{
-			mWindow->close();
+			mWindow->onCloseRequest();
 			break;
 		}
 	}
@@ -286,10 +285,8 @@ Vector2f Input::getMousePosf() {
 	return Vector2f( (Float)mMousePos.x, (Float)mMousePos.y );
 }
 
-Vector2i Input::getMousePosFromView( const View& View ) {
-	Vector2i RealMousePos = getMousePos();
-	Rect RView = View.getView();
-	return Vector2i( RealMousePos.x - RView.Left, RealMousePos.y - RView.Top );
+Vector2f Input::getMousePosFromView( const View& View ) {
+	return mWindow->mapPixelToCoords( getMousePos(), View );
 }
 
 Uint32 Input::pushCallback( const InputCallback& cb ) {

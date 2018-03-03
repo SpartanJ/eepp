@@ -1,8 +1,9 @@
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/graphics/text.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
-#include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -37,7 +38,7 @@ UIPushButton::UIPushButton() :
 	mIcon->unsetFlags( UI_AUTO_SIZE );
 
 	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
-		mIcon->setSize( mStyleConfig.IconMinSize );
+		mIcon->setSize( mStyleConfig.IconMinSize.asFloat() );
 	}
 
 	mIcon->setVisible( true );
@@ -51,7 +52,7 @@ UIPushButton::UIPushButton() :
 	mTextBox->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 
 	if ( mStyleConfig.IconAutoMargin )
-		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
+		mNodeFlags |= NODE_FLAG_FREE_USE;
 
 	onSizeChange();
 
@@ -70,7 +71,7 @@ bool UIPushButton::isType( const Uint32& type ) const {
 }
 
 void UIPushButton::onSizeChange() {	
-	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() && 0 == mSize.getHeight() ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() && 0 == mDpSize.getHeight() ) {
 		setInternalHeight( getSkinSize().getHeight() );
 	}
 
@@ -80,13 +81,13 @@ void UIPushButton::onSizeChange() {
 						+ mStyleConfig.IconHorizontalMargin + mTextBox->getPadding().Left + mTextBox->getPadding().Right +
 						(  NULL != getSkin() ? getSkin()->getBorderSize().Left + getSkin()->getBorderSize().Right : 0 );
 
-		if ( minSize > mSize.getWidth() ) {
+		if ( minSize > mDpSize.getWidth() ) {
 			setInternalWidth( minSize );
 		}
 	}
 
 	if ( NULL != mTextBox ) {
-		mTextBox->setSize( mSize );
+		mTextBox->setSize( mDpSize );
 		mTextBox->setPosition( 0, 0 );
 	}
 
@@ -97,7 +98,7 @@ void UIPushButton::onSizeChange() {
 		switch ( fontHAlignGet( getFlags() ) ) {
 			case UI_HALIGN_LEFT:
 				mTextBox->setPosition( mIcon->getPosition().x + mIcon->getSize().getWidth(), 0 );
-				mTextBox->setSize( mSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth(), mSize.getHeight() );
+				mTextBox->setSize( mDpSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth(), mDpSize.getHeight() );
 				break;
 			case UI_HALIGN_CENTER:
 				if ( NULL != mIcon->getDrawable() ) {
@@ -105,11 +106,11 @@ void UIPushButton::onSizeChange() {
 					Uint32 txtOff = mTextBox->getPosition().x + mTextBox->getAlignOffset().x;
 
 					if ( iconPos >= txtOff) {
-						Int32 px = PixelDensity::dpToPxI(1);
+						Float px = PixelDensity::dpToPx(1);
 
 						mTextBox->setPosition( iconPos + px, mTextBox->getPosition().y );
 
-						mTextBox->setSize( mSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth() - px, mSize.getHeight() );
+						mTextBox->setSize( mDpSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth() - px, mDpSize.getHeight() );
 					}
 				}
 
@@ -133,8 +134,8 @@ void UIPushButton::onThemeLoaded() {
 	if ( NULL != mTextBox && NULL == mTextBox->getFont() && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() )
 		mTextBox->setFont( mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() );
 
-	if ( mControlFlags & UI_CTRL_FLAG_FREE_USE ) {
-		Rect RMargin = makePadding( true, false, false, false, true );
+	if ( mNodeFlags & NODE_FLAG_FREE_USE ) {
+		Rectf RMargin = makePadding( true, false, false, false, true );
 		mStyleConfig.IconHorizontalMargin = RMargin.Left;
 	}
 
@@ -175,11 +176,11 @@ const String& UIPushButton::getText() {
 	return mTextBox->getText();
 }
 
-void UIPushButton::setPadding( const Rect& padding ) {
+void UIPushButton::setPadding( const Rectf& padding ) {
 	mTextBox->setPadding( padding );
 }
 
-const Rect& UIPushButton::getPadding() const {
+const Rectf& UIPushButton::getPadding() const {
 	return mTextBox->getPadding();
 }
 
@@ -230,9 +231,9 @@ void UIPushButton::onAlignChange() {
 	mTextBox->setVerticalAlign( getVerticalAlign() );
 }
 
-Uint32 UIPushButton::onKeyDown( const UIEventKey& Event ) {
+Uint32 UIPushButton::onKeyDown( const KeyEvent& Event ) {
 	if ( Event.getKeyCode() == KEY_RETURN ) {
-		UIMessage Msg( this, UIMessage::Click, EE_BUTTON_LMASK );
+		NodeMessage Msg( this, NodeMessage::Click, EE_BUTTON_LMASK );
 		messagePost( &Msg );
 		onMouseClick( Vector2i(0,0), EE_BUTTON_LMASK );
 
@@ -242,7 +243,7 @@ Uint32 UIPushButton::onKeyDown( const UIEventKey& Event ) {
 	return UIWidget::onKeyDown( Event );
 }
 
-Uint32 UIPushButton::onKeyUp( const UIEventKey& Event ) {
+Uint32 UIPushButton::onKeyUp( const KeyEvent& Event ) {
 	if ( Event.getKeyCode() == KEY_RETURN ) {
 		setPrevSkinState();
 	}
@@ -332,9 +333,9 @@ void UIPushButton::setStyleConfig(const UIPushButtonStyleConfig & styleConfig) {
 	mTextBox->setFontStyleConfig( styleConfig );
 
 	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
-		Sizei minSize( eemax( mSize.x, mStyleConfig.IconMinSize.x ), eemax( mSize.y, mStyleConfig.IconMinSize.y ) );
+		Sizef minSize( eemax( mDpSize.x, (Float)mStyleConfig.IconMinSize.x ), eemax( mDpSize.y, (Float)mStyleConfig.IconMinSize.y ) );
 
-		if ( minSize != mSize ) {
+		if ( minSize != mDpSize ) {
 			mIcon->setSize( minSize );
 			onSizeChange();
 		}
@@ -356,7 +357,8 @@ void UIPushButton::loadFromXmlNode(const pugi::xml_node & node) {
 		String::toLowerInPlace( name );
 
 		if ( "text" == name ) {
-			setText( UIManager::instance()->getTranslatorString( ait->as_string() ) );
+			if ( NULL != mSceneNode )
+				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( ait->as_string() ) );
 		} else if ( "textovercolor" == name ) {
 			setFontOverColor( Color::fromString( ait->as_string() ) );
 		} else if ( "icon" == name ) {

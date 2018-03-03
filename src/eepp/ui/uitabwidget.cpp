@@ -1,9 +1,9 @@
 #include <eepp/ui/uitabwidget.hpp>
-#include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/fontmanager.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -25,13 +25,14 @@ UITabWidget::UITabWidget() :
 	}
 
 	mTabContainer = UIWidget::New();
-	mTabContainer->setParent( this )->setPosition( 0, 0 )->setSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight );
-	mTabContainer->setFlags( UI_CLIP_ENABLE );
+	mTabContainer->setPixelsSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight )
+			->setParent( this )->setPosition( 0, 0 );
+	mTabContainer->clipEnable();
 
 	mCtrlContainer = UIWidget::New();
-	mCtrlContainer->setParent( this )->setPosition( 0, mStyleConfig.TabWidgetHeight )
-			->setSize( mSize.getWidth(), mSize.getHeight() - mStyleConfig.TabWidgetHeight )
-			->setFlags( UI_CLIP_ENABLE );
+	mCtrlContainer->setPixelsSize( mSize.getWidth(), mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) )
+			->setParent( this )->setPosition( 0, mStyleConfig.TabWidgetHeight );
+	mCtrlContainer->clipEnable();
 
 	onSizeChange();
 
@@ -60,12 +61,12 @@ void UITabWidget::setTheme( UITheme * Theme ) {
 		UISkin * tSkin		= Theme->getSkin( "tab" );
 
 		if ( NULL != tSkin ) {
-			Sizei tSize1		= getSkinSize( tSkin );
-			Sizei tSize2		= getSkinSize( tSkin, UISkinState::StateSelected );
+			Sizef tSize1		= getSkinSize( tSkin );
+			Sizef tSize2		= getSkinSize( tSkin, UISkinState::StateSelected );
 
 			mStyleConfig.TabWidgetHeight	= eemax( tSize1.getHeight(), tSize2.getHeight() );
 
-			seContainerSize();
+			setContainerSize();
 			orderTabs();
 		}
 	}
@@ -79,10 +80,10 @@ void UITabWidget::onThemeLoaded() {
 	UIWidget::onThemeLoaded();
 }
 
-void UITabWidget::seContainerSize() {
-	mTabContainer->setSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight );
+void UITabWidget::setContainerSize() {
+	mTabContainer->setPixelsSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight );
 	mCtrlContainer->setPosition( 0, mStyleConfig.TabWidgetHeight );
-	mCtrlContainer->setSize( mSize.getWidth(), mSize.getHeight() - mStyleConfig.TabWidgetHeight );
+	mCtrlContainer->setPixelsSize( mSize.getWidth(), mSize.getHeight() - PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) );
 }
 
 void UITabWidget::draw() {
@@ -93,17 +94,17 @@ void UITabWidget::draw() {
 		if ( smooth ) GLi->lineSmooth( false );
 
 		Primitives P;
-		Vector2i p1( mScreenPos.x, mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
-		Vector2i p2( mScreenPos.x + mTabContainer->getRealPosition().x, p1.y );
+		Vector2f p1( mScreenPos.x, mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
+		Vector2f p2( mScreenPos.x + mTabContainer->getRealPosition().x, p1.y );
 
 		P.setLineWidth( PixelDensity::dpToPx( 1 ) );
 		P.setColor( Color( mStyleConfig.LineBelowTabsColor, mAlpha ) );
-		P.drawLine( Line2f( Vector2f( p1.x, p1.y ), Vector2f( p2.x, p2.y ) ) );
+		P.drawLine( Line2f( Vector2f( (int)p1.x, (int)p1.y ), Vector2f( (int)p2.x, (int)p2.y ) ) );
 
-		Vector2i p3( mScreenPos.x + mTabContainer->getRealPosition().x + mTabContainer->getRealSize().getWidth(), mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
-		Vector2i p4( mScreenPos.x + mRealSize.getWidth(), p3.y );
+		Vector2f p3( mScreenPos.x + mTabContainer->getRealPosition().x + mTabContainer->getRealSize().getWidth(), mScreenPos.y + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
+		Vector2f p4( mScreenPos.x + mSize.getWidth(), p3.y );
 
-		P.drawLine( Line2f( Vector2f( p3.x, p3.y ), Vector2f( p4.x, p4.y ) ) );
+		P.drawLine( Line2f( Vector2f( (int)p3.x, (int)p3.y ), Vector2f( (int)p4.x, (int)p4.y ) ) );
 
 		if ( smooth ) GLi->lineSmooth( true );
 	}
@@ -179,7 +180,7 @@ void UITabWidget::setStyleConfig(const UITabWidgetStyleConfig & styleConfig) {
 	Uint32		tabWidgetHeight = mStyleConfig.TabWidgetHeight;
 	mStyleConfig = styleConfig;
 	mStyleConfig.TabWidgetHeight = tabWidgetHeight;
-	seContainerSize();
+	setContainerSize();
 	setTabContainerSize();
 	orderTabs();
 }
@@ -434,13 +435,13 @@ void UITabWidget::setTabContainerSize() {
 
 	if ( mTabs.size() > 0 ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			s += mTabs[i]->getSize().getWidth() + mStyleConfig.TabSeparation;
+			s += mTabs[i]->getRealSize().getWidth() + mStyleConfig.TabSeparation;
 		}
 
 		s -= mStyleConfig.TabSeparation;
 	}
 
-	mTabContainer->setSize( s, mStyleConfig.TabWidgetHeight );
+	mTabContainer->setPixelsSize( s, PixelDensity::dpToPx( mStyleConfig.TabWidgetHeight ) );
 
 	switch ( HAlignGet( mFlags ) )
 	{
@@ -451,15 +452,15 @@ void UITabWidget::setTabContainerSize() {
 			mTabContainer->centerHorizontal();
 			break;
 		case UI_HALIGN_RIGHT:
-			mTabContainer->setPosition( mSize.getWidth() - mTabContainer->getSize().getWidth(), 0 );
+			mTabContainer->setPosition( mDpSize.getWidth() - mTabContainer->getSize().getWidth(), 0 );
 			break;
 	}
 }
 
 void UITabWidget::posTabs() {
 	Uint32 w	= 0;
-	Uint32 h	= 0;
-	Uint32 VA	= VAlignGet( mFlags );
+	Int32 h	= 0;
+	Int32 VA	= VAlignGet( mFlags );
 
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
 		switch ( VA )
@@ -503,7 +504,7 @@ void UITabWidget::orderTabs() {
 	invalidateDraw();
 }
 
-UITab * UITabWidget::createTab( const String& Text, UIControl * CtrlOwned, Drawable * Icon ) {
+UITab * UITabWidget::createTab( const String& Text, UINode * CtrlOwned, Drawable * Icon ) {
 	UITab * tCtrl 	= UITab::New();
 	tCtrl->setParent( mTabContainer );
 	tCtrl->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE );
@@ -520,7 +521,7 @@ UITab * UITabWidget::createTab( const String& Text, UIControl * CtrlOwned, Drawa
 	return tCtrl;
 }
 
-UITabWidget * UITabWidget::add( const String& Text, UIControl * CtrlOwned, Drawable * Icon ) {
+UITabWidget * UITabWidget::add( const String& Text, UINode * CtrlOwned, Drawable * Icon ) {
 	return add( createTab( Text, CtrlOwned, Icon ) );
 }
 
@@ -619,7 +620,7 @@ void UITabWidget::removeAll() {
 	orderTabs();
 }
 
-void UITabWidget::insert( const String& Text, UIControl * CtrlOwned, Drawable * Icon, const Uint32& Index ) {
+void UITabWidget::insert( const String& Text, UINode * CtrlOwned, Drawable * Icon, const Uint32& Index ) {
 	insert( createTab( Text, CtrlOwned, Icon ), Index );
 }
 
@@ -665,7 +666,7 @@ void UITabWidget::setTabSelected( UITab * Tab ) {
 
 		orderTabs();
 
-		sendCommonEvent( UIEvent::OnTabSelected );
+		sendCommonEvent( Event::OnTabSelected );
 	}
 }
 
@@ -699,7 +700,7 @@ Uint32 UITabWidget::getSelectedTabIndex() const {
 }
 
 void UITabWidget::onSizeChange() {
-	seContainerSize();
+	setContainerSize();
 	setTabContainerSize();
 	posTabs();
 
@@ -711,7 +712,7 @@ void UITabWidget::onSizeChange() {
 }
 
 void UITabWidget::onChildCountChange() {
-	UIControl * child = mChild;
+	Node * child = mChild;
 	bool found = false;
 
 	while ( NULL != child ) {
@@ -720,7 +721,7 @@ void UITabWidget::onChildCountChange() {
 			break;
 		}
 
-		child = child->getNextControl();
+		child = child->getNextNode();
 	}
 
 	if ( found ) {

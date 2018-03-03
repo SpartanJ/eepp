@@ -14,14 +14,6 @@
 #if defined( EE_PLATFORM_POSIX )
 	#include <dlfcn.h>
 	#include <sys/utsname.h>
-
-	#if EE_PLATFORM != EE_PLATFORM_ANDROID
-		#include <sys/statvfs.h>
-	#else
-		#include <sys/vfs.h>
-		#define statvfs statfs
-		#define fstatvfs fstatfs
-	#endif
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
@@ -332,6 +324,40 @@ std::string Sys::getOSArchitecture() {
 	return "Unknown";
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	return GetWindowsArch();
+#else
+	return "Unknown";
+#endif
+}
+
+std::string Sys::getPlatform() {
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+	return "Linux";
+#elif EE_PLATFORM == EE_PLATFORM_ANDROID
+	return "Android";
+#elif EE_PLATFORM == EE_PLATFORM_BSD
+	#if defined( __FreeBSD__ )
+		return "FreeBSD";
+	#elif defined(__OpenBSD__)
+		return "OpenBSD";
+	#elif defined( __NetBSD__ )
+		return "NetBSD";
+	#elif defined( __DragonFly__ )
+		return "DragonFlyBSD";
+	#else
+		return "BSD";
+	#endif
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	return "Emscripten";
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	return "Haiku";
+#elif EE_PLATFORM == EE_PLATFORM_IOS
+	return "iOS";
+#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+	return "macOS";
+#elif EE_PLATFORM == EE_PLATFORM_SOLARIS
+	return "Solaris";
+#elif EE_PLATFORM_WIN
+	return "Windows";
 #else
 	return "Unknown";
 #endif
@@ -704,32 +730,6 @@ int Sys::getCPUCount() {
 		nprocs = 1;
 
 	return nprocs;
-}
-
-Int64 Sys::getDiskFreeSpace(const std::string& path) {
-#if defined( EE_PLATFORM_POSIX )
-	struct statvfs data;
-	statvfs(path.c_str(),  &data);
-	#if EE_PLATFORM != EE_PLATFORM_MACOSX
-	return (Int64)data.f_bsize * (Int64)data.f_bfree;
-	#else
-	return (Int64)data.f_frsize * (Int64)data.f_bfree;
-	#endif
-#elif EE_PLATFORM == EE_PLATFORM_WIN
-	Int64 AvailableBytes;
-	Int64 TotalBytes;
-	Int64 FreeBytes;
-	#ifdef UNICODE
-	GetDiskFreeSpaceEx((LPCWSTR)path.c_str(),(PULARGE_INTEGER) &AvailableBytes,
-	#else
-	GetDiskFreeSpaceEx(path.c_str(),(PULARGE_INTEGER) &AvailableBytes,
-	#endif
-	(PULARGE_INTEGER) &TotalBytes, (PULARGE_INTEGER) &FreeBytes);
-
-	return FreeBytes;
-#else
-	return -1;
-#endif
 }
 
 #if EE_PLATFORM == EE_PLATFORM_WIN

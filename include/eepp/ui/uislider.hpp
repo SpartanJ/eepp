@@ -38,11 +38,11 @@ class EE_API UISlider : public UIWidget {
 
 		bool isVertical() const;
 
-		virtual void update();
+		virtual void update( const Time& time );
 
-		UIControl * getBackSlider() const;
+		UINode * getBackSlider() const;
 
-		UIDragableControl * getSliderButton() const;
+		UINode * getSliderButton() const;
 
 		void adjustChilds();
 
@@ -70,7 +70,7 @@ class EE_API UISlider : public UIWidget {
 
 		UI_ORIENTATION		mOrientation;
 		UISliderStyleConfig	mStyleConfig;
-		UIControlAnim *		mBackSlider;
+		UINode *		mBackSlider;
 		Private::UISliderButton * 	mSlider;
 		Float				mMinValue;
 		Float				mMaxValue;
@@ -86,7 +86,7 @@ class EE_API UISlider : public UIWidget {
 
 		void fixSliderPos();
 
-		virtual Uint32 onKeyDown( const UIEventKey &Event );
+		virtual Uint32 onKeyDown( const KeyEvent &Event );
 		
 		virtual void onAlphaChange();
 };

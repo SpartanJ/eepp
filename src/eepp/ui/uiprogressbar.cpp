@@ -1,6 +1,6 @@
 #include <eepp/ui/uiprogressbar.hpp>
-#include <eepp/ui/uimanager.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 
 namespace EE { namespace UI {
@@ -46,46 +46,46 @@ bool UIProgressBar::isType( const Uint32& type ) const {
 }
 
 void UIProgressBar::draw() {
-	UIControlAnim::draw();
+	UINode::draw();
 
 	if ( NULL == mFillerSkin )
 		return;
 
 	Rectf fillerPadding = PixelDensity::dpToPx( mStyleConfig.FillerPadding );
 
-	Float Height = (Float)mRealSize.getHeight();
+	Float Height = (Float)mSize.getHeight();
 
 	if ( !mStyleConfig.VerticalExpand )
 		Height = (Float)mFillerSkin->getSize().getHeight();
 
-	if ( Height > mRealSize.getHeight() )
-		Height = mRealSize.getHeight();
+	if ( Height > mSize.getHeight() )
+		Height = mSize.getHeight();
 
-	Sizef fSize( ( ( mRealSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) / mTotalSteps, Height - fillerPadding.Top - fillerPadding.Bottom );
+	Sizef fSize( ( ( mSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) / mTotalSteps, Height - fillerPadding.Top - fillerPadding.Bottom );
 	Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize() ) );
 	Sizei numTiles( (Int32)eeceil( (Float)fSize.getWidth() / (Float)rSize.getWidth() + 2 ),
 				(Int32)eeceil( (Float)fSize.getHeight() / (Float)rSize.getHeight() ) + 2 );
 
-	UIManager::instance()->clipSmartEnable( this, mScreenPos.x + fillerPadding.Left, mScreenPos.y + fillerPadding.Top, fSize.getWidth(), fSize.getHeight() );
+	clipSmartEnable( mScreenPos.x + fillerPadding.Left, mScreenPos.y + fillerPadding.Top, fSize.getWidth(), fSize.getHeight() );
 
 	for ( int y = -1; y < numTiles.y; y++ ) {
 		for ( int x = -1; x < numTiles.x; x++ ) {
-			mFillerSkin->draw( (Int32)mOffset.x + mScreenPos.x + fillerPadding.Left + x * rSize.getWidth(), mOffset.y + mScreenPos.y + fillerPadding.Top + y * rSize.getHeight(), rSize.getWidth(), rSize.getHeight(), 255, UISkinState::StateNormal );
+			mFillerSkin->draw( (Int32)mOffset.x + mScreenPosi.x + fillerPadding.Left + x * rSize.getWidth(), mOffset.y + mScreenPosi.y + fillerPadding.Top + y * rSize.getHeight(), rSize.getWidth(), rSize.getHeight(), 255, UISkinState::StateNormal );
 		}
 	}
 
-	UIManager::instance()->clipSmartDisable( this );
+	clipSmartDisable();
 }
 
-void UIProgressBar::update() {
-	UIControlAnim::update();
+void UIProgressBar::update( const Time& time ) {
+	UINode::update( time );
 
 	if ( NULL == mFillerSkin )
 		return;
 
 	Vector2f offset( mOffset );
 
-	mOffset += mStyleConfig.MovementSpeed * (Float)( getElapsed().asSeconds() );
+	mOffset += mStyleConfig.MovementSpeed * (Float)( time.asSeconds() );
 
 	Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize() ) );
 
@@ -122,14 +122,14 @@ void UIProgressBar::onThemeLoaded() {
 	mMinControlSize.y = eemax( mMinControlSize.y, getSkinSize().getHeight() );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		setSize( mSize.x, getSkinSize().getHeight() );
+		setSize( mDpSize.x, getSkinSize().getHeight() );
 	}
 
 	UIWidget::onThemeLoaded();
 }
 
 Uint32 UIProgressBar::onValueChange() {
-	UIControlAnim::onValueChange();
+	UINode::onValueChange();
 
 	onSizeChange();
 
@@ -248,7 +248,7 @@ void UIProgressBar::loadFromXmlNode(const pugi::xml_node & node) {
 }
 
 void UIProgressBar::onAlphaChange() {
-	UIControlAnim::onAlphaChange();
+	UINode::onAlphaChange();
 	
 	mTextBox->setAlpha( mAlpha );
 }

@@ -101,7 +101,7 @@ INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.hpp
 
 RECURSIVE              = YES
-EXCLUDE                = ./include/eepp/helper
+EXCLUDE                = ./include/eepp/thirdparty
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 
 EXCLUDE_SYMBOLS        = 

@@ -1,9 +1,14 @@
 #ifndef EECTEXTUREFACTORY_H
 #define EECTEXTUREFACTORY_H
 
+#include <list>
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/texture.hpp>
+
+#include <eepp/system/pack.hpp>
+#include <eepp/system/singleton.hpp>
 #include <eepp/system/mutex.hpp>
+using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
@@ -23,7 +28,7 @@ class EE_API TextureFactory : protected Mutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return Internal Texture Id
 		*/
-		Uint32 createEmptyTexture( const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels = 4, const Color& DefaultColor = Color(0,0,0,255), const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 createEmptyTexture( const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels = 4, const Color& DefaultColor = Color(0,0,0,255), const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Loads a RAW Texture from Memory
 		* @param Pixels The Texture array
@@ -37,7 +42,7 @@ class EE_API TextureFactory : protected Mutex {
 		* @param FileName A filename to recognize the texture ( the path in case that was loaded from outside the texture factory ).
 		* @return Internal Texture Id
 		*/
-		Uint32 loadFromPixels( const unsigned char * Pixels, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
+		Uint32 loadFromPixels( const unsigned char * Pixels, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
 
 		/** Load a texture from Pack file
 		* @param Pack Pointer to the pack instance
@@ -48,7 +53,7 @@ class EE_API TextureFactory : protected Mutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return Internal Texture Id
 		*/
-		Uint32 loadFromPack( Pack* Pack, const std::string& FilePackPath, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 loadFromPack( Pack* Pack, const std::string& FilePackPath, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a texture from memory
 		* @param ImagePtr The image data in RAM just as if it were still in a file
@@ -59,7 +64,7 @@ class EE_API TextureFactory : protected Mutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return The internal Texture Id
 		*/
-		Uint32 loadFromMemory( const unsigned char* ImagePtr, const unsigned int& Size, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 loadFromMemory( const unsigned char* ImagePtr, const unsigned int& Size, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a Texture from stream
 		* @param Stream The IOStream instance
@@ -69,7 +74,7 @@ class EE_API TextureFactory : protected Mutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return The internal Texture Id
 		*/
-		Uint32 loadFromStream( IOStream& Stream, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 loadFromStream( IOStream& Stream, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a Texture from a file path
 		* @param Filepath The path for the texture
@@ -79,7 +84,7 @@ class EE_API TextureFactory : protected Mutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return The internal Texture Id
 		*/
-		Uint32 loadFromFile( const std::string& Filepath, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 loadFromFile( const std::string& Filepath, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Remove and Unload the Texture Id
 		* @param TexId
@@ -94,13 +99,13 @@ class EE_API TextureFactory : protected Mutex {
 		* @param TexId The internal Texture Id
 		* @param TextureUnit The Texture Unit binded
 		*/
-		void bind( const Uint32& TexId, const Uint32& TextureUnit = 0 );
+		void bind( const Uint32& TexId, Texture::CoordinateType coordinateType = Texture::CoordinateType::Normalized, const Uint32& textureUnit = 0 );
 
 		/** Bind the the Texture indicated. This is useful if you are rendering a texture outside this class.
 		* @param Tex The Texture Pointer
 		* @param TextureUnit The Texture Unit binded
 		*/
-		void bind( const Texture* Tex, const Uint32& TextureUnit = 0 );
+		void bind( const Texture* Tex, Texture::CoordinateType coordinateType = Texture::CoordinateType::Normalized, const Uint32& TextureUnit = 0 );
 
 		/**
 		* @param TexId The internal Texture Id
@@ -187,6 +192,8 @@ class EE_API TextureFactory : protected Mutex {
 		Texture * getByHash( const Uint32& Hash );
 
 		~TextureFactory();
+
+		const Texture::CoordinateType& getLastCoordinateType() const;
 	protected:
 		friend class Texture;
 
@@ -201,6 +208,8 @@ class EE_API TextureFactory : protected Mutex {
 		unsigned int mMemSize;
 
 		std::list<Uint32> mVectorFreeSlots;
+
+		Texture::CoordinateType mLastCoordinateType;
 
 		void unloadTextures();
 

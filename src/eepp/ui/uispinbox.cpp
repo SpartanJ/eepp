@@ -1,6 +1,6 @@
 #include <eepp/ui/uispinbox.hpp>
-#include <eepp/graphics/subtexture.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <eepp/graphics/textureregion.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -20,13 +20,13 @@ UISpinBox::UISpinBox() :
 	mInput->setEnabled( true );
 	mInput->setParent( this );
 
-	mPushUp	= UIControlAnim::New();
+	mPushUp	= UINode::New();
 	mPushUp->setVisible( true );
 	mPushUp->setEnabled( true );
 	mPushUp->setParent( this );
 	mPushUp->setSize( 16, 16 );
 
-	mPushDown = UIControlAnim::New();
+	mPushDown = UINode::New();
 	mPushDown->setVisible( true );
 	mPushDown->setEnabled( true );
 	mPushDown->setParent( this );
@@ -79,27 +79,27 @@ void UISpinBox::setTheme( UITheme * Theme ) {
 }
 
 void UISpinBox::adjustChilds() {
-	mInput->setSize( mSize.getWidth() - mPushUp->getSize().getWidth(), mInput->getSize().getHeight() );
+	mInput->setSize( mDpSize.getWidth() - mPushUp->getSize().getWidth(), mInput->getSize().getHeight() );
 
 	if ( mInput->getSize().getHeight() < mInput->getSkinSize().getHeight() ) {
-		mInput->setSize( mSize.getWidth() - mPushUp->getSize().getWidth(), mInput->getSkinSize().getHeight() );
+		mInput->setSize( mDpSize.getWidth() - mPushUp->getSize().getWidth(), mInput->getSkinSize().getHeight() );
 	}
 
-	if ( ( mFlags & UI_AUTO_SIZE ) || mSize.getHeight() < mInput->getSize().getHeight() ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) || mDpSize.getHeight() < mInput->getSize().getHeight() ) {
 		setInternalHeight( mInput->getSkinSize().getHeight() );
 	}
 
 	mInput->centerVertical();
 
-	mPushUp->setPosition( mSize.getWidth() - mPushUp->getSize().getWidth(), mInput->getPosition().y );
-	mPushDown->setPosition( mSize.getWidth() - mPushDown->getSize().getWidth(), mInput->getPosition().y + mPushUp->getSize().getHeight() );
+	mPushUp->setPosition( mDpSize.getWidth() - mPushUp->getSize().getWidth(), mInput->getPosition().y );
+	mPushDown->setPosition( mDpSize.getWidth() - mPushDown->getSize().getWidth(), mInput->getPosition().y + mPushUp->getSize().getHeight() );
 }
 
-void UISpinBox::setPadding( const Rect& padding ) {
+void UISpinBox::setPadding( const Rectf& padding ) {
 	mInput->setPadding( padding );
 }
 
-const Rect& UISpinBox::getPadding() const {
+const Rectf& UISpinBox::getPadding() const {
 	return mInput->getPadding();
 }
 
@@ -111,9 +111,9 @@ const Float& UISpinBox::getClickStep() const {
 	return mClickStep;
 }
 
-Uint32 UISpinBox::onMessage( const UIMessage * Msg ) {
+Uint32 UISpinBox::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::Click:
+		case NodeMessage::Click:
 		{
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				if ( Msg->getSender() == mPushUp ) {
@@ -208,10 +208,10 @@ const Float& UISpinBox::getMaxValue() const {
 	return mMaxValue;
 }
 
-void UISpinBox::update() {
+void UISpinBox::update( const Time& time ) {
 	bool Changed = mInput->getInputTextBuffer()->changedSinceLastUpdate();
 
-	UIControlAnim::update();
+	UINode::update( time );
 
 	if ( Changed ) {
 		if ( !mInput->getText().size() ) {
@@ -234,11 +234,11 @@ void UISpinBox::update() {
 	}
 }
 
-UIControlAnim * UISpinBox::getButtonPushUp() const {
+UINode * UISpinBox::getButtonPushUp() const {
 	return mPushUp;
 }
 
-UIControlAnim * UISpinBox::getButtonPushDown() const {
+UINode * UISpinBox::getButtonPushDown() const {
 	return mPushDown;
 }
 
@@ -257,7 +257,7 @@ bool UISpinBox::dotsInNumbersAllowed() {
 }
 
 void UISpinBox::onAlphaChange() {
-	UIControlAnim::onAlphaChange();
+	UINode::onAlphaChange();
 	
 	mInput->setAlpha( mAlpha );
 	mPushUp->setAlpha( mAlpha );

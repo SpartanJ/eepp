@@ -18,11 +18,11 @@ class EE_API UITableCell : public UIWidget {
 
 		virtual void setTheme( UITheme * Theme );
 
-		void setCell( const Uint32& CollumnIndex, UIControl * Ctrl );
+		void setCell( const Uint32& CollumnIndex, UINode * Ctrl );
 
-		UIControl * getCell( const Uint32& CollumnIndex ) const;
+		UINode * getCell( const Uint32& CollumnIndex ) const;
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		bool isSelected() const;
 
@@ -30,12 +30,12 @@ class EE_API UITableCell : public UIWidget {
 
 		void select();
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 	protected:
 		friend class UIItemContainer<UITable>;
 		friend class UITable;
 
-		std::vector<UIControl*> mCells;
+		std::vector<UINode*> mCells;
 
 		UITable * gridParent() const;
 

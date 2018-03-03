@@ -79,7 +79,7 @@ bool WindowSFML::create( WindowSettings Settings, ContextSettings Context ) {
 
 	createView();
 
-	setup2D();
+	setup2D( false );
 
 	mWindow.Created = true;
 	mVisible = true;
@@ -177,15 +177,16 @@ void WindowSFML::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 	sf::Vector2u v( Width, Height );
 
 	mSFMLWindow.setSize( v );
+	mDefaultView.reset( Rectf( 0, 0, Width, Height ) );
 }
 
 void WindowSFML::videoResize( Uint32 Width, Uint32 Height ) {
 	mWindow.WindowConfig.Width	= Width;
 	mWindow.WindowConfig.Height	= Height;
 
-	mDefaultView.setView( 0, 0, Width, Height );
+	mDefaultView.reset( Rectf( 0, 0, Width, Height ) );
 
-	setup2D();
+	setup2D( false );
 
 	mCursorManager->reload();
 

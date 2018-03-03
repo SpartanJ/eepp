@@ -240,11 +240,11 @@ Http::~Http() {
 	std::list<AsyncRequest*>::iterator itt;
 
 	// First we wait to finish any request pending
-	for ( itt = mThreads.begin(); itt != mThreads.end(); itt++ ) {
+	for ( itt = mThreads.begin(); itt != mThreads.end(); ++itt ) {
 		(*itt)->wait();
 	}
 
-	for ( itt = mThreads.begin(); itt != mThreads.end(); itt++ ) {
+	for ( itt = mThreads.begin(); itt != mThreads.end(); ++itt ) {
 		eeDelete( *itt );
 	}
 
@@ -386,7 +386,7 @@ void Http::removeOldThreads() {
 
 	std::list<AsyncRequest*>::iterator it = mThreads.begin();
 
-	for ( ; it != mThreads.end(); it++ ) {
+	for ( ; it != mThreads.end(); ++it ) {
 		AsyncRequest * ar = (*it);
 
 		if ( !ar->mRunning ) {
@@ -399,7 +399,7 @@ void Http::removeOldThreads() {
 		}
 	}
 
-	for ( it = remove.begin(); it != remove.end(); it++ ) {
+	for ( it = remove.begin(); it != remove.end(); ++it ) {
 		mThreads.remove( (*it) );
 	}
 }

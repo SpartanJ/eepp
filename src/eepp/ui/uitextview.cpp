@@ -1,11 +1,11 @@
 #include <eepp/ui/uitextview.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/window/clipboard.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 #include <eepp/graphics/fontmanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -19,7 +19,8 @@ UITextView::UITextView() :
 	mSelCurInit( -1 ),
 	mSelCurEnd( -1 ),
 	mLastSelCurInit( -1 ),
-	mLastSelCurEnd( -1 )
+	mLastSelCurEnd( -1 ),
+	mSelecting( false )
 {
 	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 
@@ -49,26 +50,25 @@ bool UITextView::isType( const Uint32& type ) const {
 
 void UITextView::draw() {
 	if ( mVisible && 0.f != mAlpha ) {
-		UIControlAnim::draw();
+		UINode::draw();
 
 		drawSelection( mTextCache );
 
 		if ( mTextCache->getTextWidth() ) {
-			if ( mFlags & UI_CLIP_ENABLE ) {
-				UIManager::instance()->clipSmartEnable(
-						this,
+			if ( isClipped() ) {
+				clipSmartEnable(
 						mScreenPos.x + mRealPadding.Left,
 						mScreenPos.y + mRealPadding.Top,
-						mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
-						mRealSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
+						mSize.getWidth() - mRealPadding.Left - mRealPadding.Right,
+						mSize.getHeight() - mRealPadding.Top - mRealPadding.Bottom
 				);
 			}
 
 			mTextCache->setAlign( getFlags() );
-			mTextCache->draw( (Float)mScreenPos.x + mRealAlignOffset.x + (Float)mRealPadding.Left, (Float)mScreenPos.y + mRealAlignOffset.y + (Float)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
+			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left, (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
 
-			if ( mFlags & UI_CLIP_ENABLE ) {
-				UIManager::instance()->clipSmartDisable( this );
+			if ( isClipped() ) {
+				clipSmartDisable();
 			}
 		}
 	}
@@ -223,7 +223,7 @@ UITextView * UITextView::setSelectionBackColor( const Color& color ) {
 
 void UITextView::setAlpha( const Float& alpha ) {
 	if ( mAlpha != alpha ) {
-		UIControlAnim::setAlpha( alpha );
+		UINode::setAlpha( alpha );
 		mFontStyleConfig.FontColor.a = (Uint8)alpha;
 		mFontStyleConfig.ShadowColor.a = (Uint8)alpha;
 
@@ -233,7 +233,7 @@ void UITextView::setAlpha( const Float& alpha ) {
 
 void UITextView::autoShrink() {
 	if ( mFlags & UI_WORD_WRAP ) {
-		shrinkText( mRealSize.getWidth() );
+		shrinkText( mSize.getWidth() );
 	}
 }
 
@@ -247,8 +247,8 @@ void UITextView::shrinkText( const Uint32& MaxWidth ) {
 }
 
 void UITextView::onAutoSize() {
-	if ( ( mFlags & UI_AUTO_SIZE && 0 == mSize.getWidth() ) ) {
-		setInternalPixelsSize( Sizei( (int)mTextCache->getTextWidth(), (int)mTextCache->getTextHeight() ) );
+	if ( ( mFlags & UI_AUTO_SIZE && 0 == mDpSize.getWidth() ) ) {
+		setInternalPixelsSize( Sizef( mTextCache->getTextWidth(), mTextCache->getTextHeight() ) );
 	}
 
 	if ( mLayoutWidthRules == WRAP_CONTENT ) {
@@ -263,10 +263,10 @@ void UITextView::onAutoSize() {
 void UITextView::alignFix() {
 	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mRealAlignOffset.x = (Float)( (Int32)( mRealSize.x / 2 - mTextCache->getTextWidth() / 2 ) );
+			mRealAlignOffset.x = (Float)( (Int32)( mSize.x / 2 - mTextCache->getTextWidth() / 2 ) );
 			break;
 		case UI_HALIGN_RIGHT:
-			mRealAlignOffset.x = ( (Float)mRealSize.x - (Float)mTextCache->getTextWidth() );
+			mRealAlignOffset.x = ( (Float)mSize.x - (Float)mTextCache->getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
 			mRealAlignOffset.x = 0.f;
@@ -275,17 +275,17 @@ void UITextView::alignFix() {
 
 	switch ( fontVAlignGet( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
-			mRealAlignOffset.y = (Float)( (Int32)( mRealSize.y / 2 - mTextCache->getTextHeight() / 2 ) ) - 1;
+			mRealAlignOffset.y = (Float)( (Int32)( mSize.y / 2 - mTextCache->getTextHeight() / 2 ) ) - 1;
 			break;
 		case UI_VALIGN_BOTTOM:
-			mRealAlignOffset.y = ( (Float)mRealSize.y - (Float)mTextCache->getTextHeight() );
+			mRealAlignOffset.y = ( (Float)mSize.y - (Float)mTextCache->getTextHeight() );
 			break;
 		case UI_VALIGN_TOP:
 			mRealAlignOffset.y = 0.f;
 			break;
 	}
 
-	mAlignOffset = PixelDensity::pxToDpI( mRealAlignOffset );
+	mAlignOffset = PixelDensity::pxToDp( mRealAlignOffset );
 }
 
 Uint32 UITextView::onFocusLoss() {
@@ -298,16 +298,16 @@ Uint32 UITextView::onFocusLoss() {
 
 void UITextView::onSizeChange() {
 	recalculate();
-	UIControlAnim::onSizeChange();
+	UINode::onSizeChange();
 }
 
 void UITextView::onTextChanged() {
-	sendCommonEvent( UIEvent::OnTextChanged );
+	sendCommonEvent( Event::OnTextChanged );
 	invalidateDraw();
 }
 
 void UITextView::onFontChanged() {
-	sendCommonEvent( UIEvent::OnFontChanged );
+	sendCommonEvent( Event::OnFontChanged );
 	invalidateDraw();
 }
 
@@ -331,17 +331,17 @@ const int& UITextView::getNumLines() const {
 	return mTextCache->getNumLines();
 }
 
-const Vector2i& UITextView::getAlignOffset() const {
+const Vector2f& UITextView::getAlignOffset() const {
 	return mAlignOffset;
 }
 
 Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
-		Vector2i controlPos( Pos );
-		worldToControl( controlPos );
-		controlPos = PixelDensity::dpToPxI( controlPos );
+		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
+		worldToNode( controlPos );
+		controlPos = PixelDensity::dpToPx( controlPos );
 
-		Int32 curPos = mTextCache->findCharacterFromPos( controlPos );
+		Int32 curPos = mTextCache->findCharacterFromPos( Vector2i( controlPos.x, controlPos.y ) );
 
 		if ( -1 != curPos ) {
 			Int32 tSelCurInit, tSelCurEnd;
@@ -351,7 +351,7 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags )
 			selCurInit( tSelCurInit );
 			selCurEnd( tSelCurEnd );
 
-			mControlFlags &= ~UI_CTRL_FLAG_SELECTING;
+			mSelecting = false;
 		}
 	}
 
@@ -365,22 +365,22 @@ Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 			selCurEnd( -1 );
 		}
 
-		mControlFlags &= ~UI_CTRL_FLAG_SELECTING;
+		mSelecting = false;
 	}
 
 	return UIWidget::onMouseClick( Pos, Flags );
 }
 
 Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
-	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && UIManager::instance()->getDownControl() == this ) {
-		Vector2i controlPos( Pos );
-		worldToControl( controlPos );
-		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mRealAlignOffset.x, (Int32)mRealAlignOffset.y );
+	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && getEventDispatcher()->getDownControl() == this ) {
+		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
+		worldToNode( controlPos );
+		controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset;
 
-		Int32 curPos = mTextCache->findCharacterFromPos( controlPos );
+		Int32 curPos = mTextCache->findCharacterFromPos( Vector2i( controlPos.x, controlPos.y ) );
 
 		if ( -1 != curPos ) {
-			if ( -1 == selCurInit() || !( mControlFlags & UI_CTRL_FLAG_SELECTING ) ) {
+			if ( -1 == selCurInit() || !mSelecting ) {
 				selCurInit( curPos );
 				selCurEnd( curPos );
 			} else {
@@ -388,7 +388,7 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 			}
 		}
 
-		mControlFlags |= UI_CTRL_FLAG_SELECTING;
+		mSelecting = true;
 	}
 
 	return UIWidget::onMouseDown( Pos, Flags );
@@ -505,14 +505,14 @@ void UITextView::setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig
 	setOutlineColor( mFontStyleConfig.getOutlineColor() );
 }
 
-const Rect& UITextView::getPadding() const {
+const Rectf& UITextView::getPadding() const {
 	return mPadding;
 }
 
-UITextView * UITextView::setPadding(const Rect & padding) {
+UITextView * UITextView::setPadding(const Rectf& padding) {
 	if ( padding != mPadding ) {
 		mPadding = padding;
-		mRealPadding = PixelDensity::dpToPxI( mPadding );
+		mRealPadding = PixelDensity::dpToPx( mPadding );
 		onPaddingChange();
 		notifyLayoutAttrChange();
 	}
@@ -534,7 +534,8 @@ void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
 		String::toLowerInPlace( name );
 
 		if ( "text" == name ) {
-			setText( UIManager::instance()->getTranslatorString( ait->as_string() ) );
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
+				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( ait->as_string() ) );
 		} else if ( "textcolor" == name ) {
 			setFontColor( Color::fromString( ait->as_string() ) );
 		} else if ( "textshadowcolor" == name ) {
@@ -587,15 +588,15 @@ void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
 			setOutlineColor( Color::fromString( ait->as_string() ) );
 		} else if ( "padding" == name ) {
 			int val = PixelDensity::toDpFromStringI( ait->as_string() );
-			setPadding( Rect( val, val, val, val ) );
+			setPadding( Rectf( val, val, val, val ) );
 		} else if ( "paddingleft" == name ) {
-			setPadding( Rect( PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
+			setPadding( Rectf( PixelDensity::toDpFromString( ait->as_string() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
 		} else if ( "paddingright" == name ) {
-			setPadding( Rect( mPadding.Left, mPadding.Top, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Bottom ) );
+			setPadding( Rectf( mPadding.Left, mPadding.Top, PixelDensity::toDpFromString( ait->as_string() ), mPadding.Bottom ) );
 		} else if ( "paddingtop" == name ) {
-			setPadding( Rect( mPadding.Left, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Right, mPadding.Bottom ) );
+			setPadding( Rectf( mPadding.Left, PixelDensity::toDpFromString( ait->as_string() ), mPadding.Right, mPadding.Bottom ) );
 		} else if ( "paddingbottom" == name ) {
-			setPadding( Rect( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
+			setPadding( Rectf( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromString( ait->as_string() ) ) );
 		}
 	}
 

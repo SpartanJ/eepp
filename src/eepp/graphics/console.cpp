@@ -1,10 +1,12 @@
 #include <eepp/graphics/console.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/audio/audiolistener.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/window/window.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <algorithm>
 #include <cstdarg>
 
@@ -461,7 +463,7 @@ String Console::getLastCommonSubStr( std::list<String>& cmds ) {
 		if ( strTry.size() + 1 <= strBeg.size() ) {
 			strTry = String( strBeg.substr( 0, strTry.size() + 1 ) );
 
-			for ( ite = ++cmds.begin(); ite != cmds.end(); ite++ ) {
+			for ( ite = ++cmds.begin(); ite != cmds.end(); ++ite ) {
 				String& strCur = (*ite);
 
 				if ( !( strTry.size() <= strCur.size() && strTry == strCur.substr( 0, strTry.size() ) ) ) {
@@ -484,7 +486,7 @@ void Console::printCommandsStartingWith( const String& start ) {
 	std::list<String> cmds;
 	std::map < String, ConsoleCallback >::iterator it;
 
-	for ( it = mCallbacks.begin(); it != mCallbacks.end(); it++ ) {
+	for ( it = mCallbacks.begin(); it != mCallbacks.end(); ++it ) {
 		if ( String::startsWith( it->first, start ) ) {
 			cmds.push_back( it->first );
 		}
@@ -495,7 +497,7 @@ void Console::printCommandsStartingWith( const String& start ) {
 
 		std::list<String>::iterator ite;
 
-		for ( ite = cmds.begin(); ite != cmds.end(); ite++ )
+		for ( ite = cmds.begin(); ite != cmds.end(); ++ite )
 			privPushText( (*ite) );
 
 		String newStr( getLastCommonSubStr( cmds ) );
@@ -764,7 +766,7 @@ void Console::cmdGetTextureMemory ( const std::vector < String >& params ) {
 
 void Console::cmdCmdList ( const std::vector < String >& params ) {
 	std::map < String, ConsoleCallback >::iterator itr;
-	for (itr = mCallbacks.begin(); itr != mCallbacks.end(); itr++) {
+	for (itr = mCallbacks.begin(); itr != mCallbacks.end(); ++itr) {
 		privPushText( "\t" + itr->first );
 	}
 }

@@ -31,21 +31,21 @@ class EE_API TileMapProperties {
 		UITextView *			mUIGreenTxt;
 		UITextView *			mUIBlueTxt;
 
-		void onWindowClose( const UIEvent * Event );
+		void onWindowClose( const Event * Event );
 
-		void onCancelClick( const UIEvent * Event );
+		void onCancelClick( const Event * Event );
 
-		void onOKClick( const UIEvent * Event );
+		void onOKClick( const Event * Event );
 
-		void onAddCellClick( const UIEvent * Event );
+		void onAddCellClick( const Event * Event );
 
-		void onRemoveCellClick( const UIEvent * Event );
+		void onRemoveCellClick( const Event * Event );
 
-		void onRedChange( const UIEvent * Event );
+		void onRedChange( const Event * Event );
 
-		void onGreenChange( const UIEvent * Event );
+		void onGreenChange( const Event * Event );
 
-		void onBlueChange( const UIEvent * Event );
+		void onBlueChange( const Event * Event );
 
 		void createGridElems();
 

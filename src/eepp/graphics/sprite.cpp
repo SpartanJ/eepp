@@ -51,7 +51,7 @@ Sprite::Sprite( const std::string& name, const std::string& extension, TextureAt
 	addFramesByPattern( name, extension, SearchInTextureAtlas );
 }
 
-Sprite::Sprite( SubTexture * SubTexture ) :
+Sprite::Sprite( TextureRegion * TextureRegion ) :
 	Drawable( Drawable::SPRITE ),
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
 	mRotation( 0.f ),
@@ -69,7 +69,7 @@ Sprite::Sprite( SubTexture * SubTexture ) :
 	mUserData( NULL )
 {
 	mCb.Reset();
-	createStatic( SubTexture );
+	createStatic( TextureRegion );
 }
 
 Sprite::Sprite( const Uint32& TexId, const Sizef &DestSize, const Vector2i &Offset, const Rect& TexSector ) :
@@ -219,9 +219,9 @@ void Sprite::setCurrentSubFrame( const unsigned int& CurSubFrame ) {
 }
 
 Quad2f Sprite::getQuad() {
-	SubTexture * S;
+	TextureRegion * S;
 
-	if ( mFrames.size() && ( S = getCurrentSubTexture() ) ) {
+	if ( mFrames.size() && ( S = getCurrentTextureRegion() ) ) {
 		Rectf TmpR( mPosition.x,
 					  mPosition.y,
 					  mPosition.x + S->getDestSize().x,
@@ -277,9 +277,9 @@ Quad2f Sprite::getQuad() {
 
 Rectf Sprite::getAABB() {
 	Rectf TmpR;
-	SubTexture * S;
+	TextureRegion * S;
 
-	if ( mFrames.size() && ( S = getCurrentSubTexture() ) ) {
+	if ( mFrames.size() && ( S = getCurrentTextureRegion() ) ) {
 		if ( mRotation != 0 || mEffect >= 4 ) {
 			return getQuad().toAABB();
 		} else { // The method used if mAngle != 0 works for mAngle = 0, but i prefer to use the faster way
@@ -321,10 +321,10 @@ unsigned int Sprite::framePos() {
 	return (unsigned int)mFrames.size() - 1;
 }
 
-bool Sprite::createStatic( SubTexture * SubTexture ) {
+bool Sprite::createStatic( TextureRegion * TextureRegion ) {
 	reset();
 
-	addFrame( SubTexture );
+	addFrame( TextureRegion );
 
 	return true;
 }
@@ -350,11 +350,11 @@ void Sprite::createAnimation( const unsigned int& SubFramesNum ) {
 		mSubFrames = SubFramesNum;
 }
 
-bool Sprite::addFrames( const std::vector<SubTexture*> SubTextures ) {
-	if ( SubTextures.size() ) {
-		for ( unsigned int i = 0; i < SubTextures.size(); i++ ) {
-			if ( NULL != SubTextures[i] ) {
-				addFrame( SubTextures[i] );
+bool Sprite::addFrames( const std::vector<TextureRegion*> TextureRegions ) {
+	if ( TextureRegions.size() ) {
+		for ( unsigned int i = 0; i < TextureRegions.size(); i++ ) {
+			if ( NULL != TextureRegions[i] ) {
+				addFrame( TextureRegions[i] );
 			}
 		}
 
@@ -364,25 +364,25 @@ bool Sprite::addFrames( const std::vector<SubTexture*> SubTextures ) {
 	return false;
 }
 
-bool Sprite::addFramesByPatternId( const Uint32& SubTextureId, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
-	std::vector<SubTexture*> SubTextures = TextureAtlasManager::instance()->getSubTexturesByPatternId( SubTextureId, extension, SearchInTextureAtlas );
+bool Sprite::addFramesByPatternId( const Uint32& TextureRegionId, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
+	std::vector<TextureRegion*> TextureRegions = TextureAtlasManager::instance()->getTextureRegionsByPatternId( TextureRegionId, extension, SearchInTextureAtlas );
 
-	if ( SubTextures.size() ) {
-		addFrames( SubTextures );
+	if ( TextureRegions.size() ) {
+		addFrames( TextureRegions );
 
 		return true;
 	}
 
-	eePRINTL( "Sprite::AddFramesByPatternId: Couldn't find any pattern with Id: %d", SubTextureId );
+	eePRINTL( "Sprite::AddFramesByPatternId: Couldn't find any pattern with Id: %d", TextureRegionId );
 
 	return false;
 }
 
 bool Sprite::addFramesByPattern( const std::string& name, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
-	std::vector<SubTexture*> SubTextures = TextureAtlasManager::instance()->getSubTexturesByPattern( name, extension, SearchInTextureAtlas );
+	std::vector<TextureRegion*> TextureRegions = TextureAtlasManager::instance()->getTextureRegionsByPattern( name, extension, SearchInTextureAtlas );
 
-	if ( SubTextures.size() ) {
-		addFrames( SubTextures );
+	if ( TextureRegions.size() ) {
+		addFrames( TextureRegions );
 
 		return true;
 	}
@@ -392,7 +392,7 @@ bool Sprite::addFramesByPattern( const std::string& name, const std::string& ext
 	return false;
 }
 
-bool Sprite::addSubFrame( SubTexture * SubTexture, const unsigned int& NumFrame, const unsigned int& NumSubFrame ) {
+bool Sprite::addSubFrame( TextureRegion * TextureRegion, const unsigned int& NumFrame, const unsigned int& NumSubFrame ) {
 	unsigned int NF, NSF;
 
 	if ( NumFrame >= mFrames.size() )
@@ -409,7 +409,7 @@ bool Sprite::addSubFrame( SubTexture * SubTexture, const unsigned int& NumFrame,
 		if ( mFrames[NF].Spr.size() != (unsigned int)mSubFrames )
 			mFrames[NF].Spr.resize( mSubFrames );
 
-		mFrames[NF].Spr[NSF] = SubTexture;
+		mFrames[NF].Spr[NSF] = TextureRegion;
 
 		return true;
 	}
@@ -417,10 +417,10 @@ bool Sprite::addSubFrame( SubTexture * SubTexture, const unsigned int& NumFrame,
 	return false;
 }
 
-unsigned int Sprite::addFrame( SubTexture * SubTexture ) {
+unsigned int Sprite::addFrame( TextureRegion * TextureRegion ) {
 	unsigned int id = framePos();
 
-	addSubFrame( SubTexture, id, mCurrentSubFrame );
+	addSubFrame( TextureRegion, id, mCurrentSubFrame );
 
 	return id;
 }
@@ -439,7 +439,7 @@ bool Sprite::addSubFrame(const Uint32& TexId, const unsigned int& NumFrame, cons
 		return false;
 
 	Texture * Tex = TextureFactory::instance()->getTexture( TexId );
-	SubTexture * S = GlobalTextureAtlas::instance()->add( eeNew( SubTexture, () ) );
+	TextureRegion * S = GlobalTextureAtlas::instance()->add( eeNew( TextureRegion, () ) );
 
 	S->setTextureId( TexId );
 
@@ -568,7 +568,7 @@ void Sprite::draw( const BlendMode& Blend, const RenderMode& Effect ) {
 	if ( SPR_FGET( SPRITE_FLAG_AUTO_ANIM ) )
 		update();
 
-	SubTexture * S = getCurrentSubTexture();
+	TextureRegion * S = getCurrentTextureRegion();
 
 	if ( S == NULL )
 		return;
@@ -591,7 +591,7 @@ void Sprite::draw( const Vector2f& position, const Sizef& size ) {
 	if ( SPR_FGET( SPRITE_FLAG_AUTO_ANIM ) )
 		update();
 
-	SubTexture * S = getCurrentSubTexture();
+	TextureRegion * S = getCurrentTextureRegion();
 
 	if ( S == NULL )
 		return;
@@ -635,7 +635,7 @@ unsigned int Sprite::getSubFrame( const unsigned int& SubFrame ) {
 }
 
 Vector2i Sprite::getOffset() {
-	SubTexture* S = getCurrentSubTexture();
+	TextureRegion* S = getCurrentTextureRegion();
 
 	if ( S != NULL )
 		return S->getOffset();
@@ -644,7 +644,7 @@ Vector2i Sprite::getOffset() {
 }
 
 void Sprite::setOffset( const Vector2i& offset ) {
-	SubTexture* S = getCurrentSubTexture();
+	TextureRegion* S = getCurrentTextureRegion();
 
 	if ( S != NULL ) {
 		S->setOffset( offset );
@@ -686,21 +686,21 @@ bool Sprite::getAutoAnimate() const {
 	return 0 != SPR_FGET( SPRITE_FLAG_AUTO_ANIM );
 }
 
-SubTexture* Sprite::getCurrentSubTexture() {
+TextureRegion* Sprite::getCurrentTextureRegion() {
 	if ( mFrames.size() )
 		return mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ];
 
 	return NULL;
 }
 
-SubTexture * Sprite::getSubTexture( const unsigned int& frame ) {
+TextureRegion * Sprite::getTextureRegion( const unsigned int& frame ) {
 	if ( frame < mFrames.size() )
 		return mFrames[ frame ].Spr[ mCurrentSubFrame ];
 
 	return NULL;
 }
 
-SubTexture * Sprite::getSubTexture( const unsigned int& frame, const unsigned int& SubFrame ) {
+TextureRegion * Sprite::getTextureRegion( const unsigned int& frame, const unsigned int& SubFrame ) {
 	if ( frame < mFrames.size() )
 		return mFrames[ frame ].Spr[ SubFrame ];
 

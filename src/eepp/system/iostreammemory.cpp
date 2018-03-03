@@ -1,4 +1,5 @@
 #include <eepp/system/iostreammemory.hpp>
+#include <cstring>
 
 namespace EE { namespace System {
 

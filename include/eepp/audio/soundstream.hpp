@@ -1,8 +1,9 @@
 #ifndef EE_AUDIOCSOUNDSTREAM_H
 #define EE_AUDIOCSOUNDSTREAM_H
 
-#include <eepp/audio/base.hpp>
 #include <eepp/audio/sound.hpp>
+#include <eepp/system/thread.hpp>
+using namespace EE::System;
 
 namespace EE { namespace Audio {
 

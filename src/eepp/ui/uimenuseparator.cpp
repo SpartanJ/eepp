@@ -1,5 +1,5 @@
 #include <eepp/ui/uimenuseparator.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 
 namespace EE { namespace UI {
 
@@ -21,7 +21,7 @@ Uint32 UIMenuSeparator::getType() const {
 }
 
 bool UIMenuSeparator::isType( const Uint32& type ) const {
-	return UIMenuSeparator::getType() == type ? true : UIControlAnim::isType( type );
+	return UIMenuSeparator::getType() == type ? true : UINode::isType( type );
 }
 
 void UIMenuSeparator::setTheme( UITheme * Theme ) {
@@ -29,7 +29,7 @@ void UIMenuSeparator::setTheme( UITheme * Theme ) {
 	setThemeSkin( Theme, "separator" );
 	
 	if ( NULL != getSkin() ) {
-		setSize( Sizei( mSize.getWidth(), getSkinSize().getHeight() ) );
+		setSize( Sizef( mDpSize.getWidth(), getSkinSize().getHeight() ) );
 	}
 }
 

@@ -5,6 +5,8 @@
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uilistbox.hpp>
+#include <eepp/ui/uigridlayout.hpp>
+#include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
 #include <eepp/graphics/texturepacker.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>
@@ -12,11 +14,13 @@
 
 namespace EE { namespace UI { namespace Tools {
 
-class TextureAtlasSubTextureEditor;
+class TextureAtlasTextureRegionEditor;
 
 class EE_API TextureAtlasEditor {
 	public:
 		typedef cb::Callback0<void> TGEditorCloseCb;
+
+		static TextureAtlasEditor * New( UIWindow * AttatchTo = NULL, const TGEditorCloseCb& callback = TGEditorCloseCb() );
 
 		TextureAtlasEditor( UIWindow * AttatchTo = NULL, const TGEditorCloseCb& callback = TGEditorCloseCb() );
 
@@ -25,73 +29,80 @@ class EE_API TextureAtlasEditor {
 		UISpinBox *			getSpinOffX() const { return mSpinOffX; }
 
 		UISpinBox *			getSpinOffY() const { return mSpinOffY; }
+
+		bool				isEdited() { return mEdited; }
 	protected:
-		class UITGEUpdater : public UIControl
+		class UITGEUpdater : public UINode
 		{
 			public:
-				UITGEUpdater( TextureAtlasEditor * TGEditor ) : UIControl(), mTGEditor( TGEditor ) {}
+				UITGEUpdater( TextureAtlasEditor * TGEditor ) : UINode(), mTGEditor( TGEditor ) {}
 
-				virtual void update() { mTGEditor->update(); }
+				virtual void update( const Time& time ) { mTGEditor->update(); }
 			protected:
 				TextureAtlasEditor * mTGEditor;
 		};
 		friend class UITGEUpdater;
 
 		UIWindow *			mUIWindow;
-		UIControl *			mUIContainer;
+		Node *				mUIContainer;
 		UITheme *			mTheme;
 		TGEditorCloseCb		mCloseCb;
 		TexturePacker *		mTexturePacker;
 		TextureAtlasLoader *mTextureAtlasLoader;
-		SubTexture *		mCurSubTexture;
+		TextureRegion *		mCurTextureRegion;
 		UISpinBox *			mSpinOffX;
 		UISpinBox *			mSpinOffY;
 		UISpinBox *			mSpinDestW;
 		UISpinBox *			mSpinDestH;
-		UIListBox *			mSubTextureList;
+		UIListBox *			mTextureRegionList;
+		UIGridLayout *		mTextureRegionGrid;
 		UIWinMenu *			mWinMenu;
-		TextureAtlasSubTextureEditor * mSubTextureEditor;
+		UIDropDownList *	mTextureFilterList;
+		TextureAtlasTextureRegionEditor * mTextureRegionEditor;
 		UITGEUpdater *		mTGEU;
+		bool mEdited;
 
-		void windowClose( const UIEvent * Event );
+		void windowClose( const Event * Event );
 
-		void fileMenuClick( const UIEvent * Event );
+		void fileMenuClick( const Event * Event );
 
 		void onTextureAtlasCreate( TexturePacker * TexPacker );
 
-		void openTextureAtlas( const UIEvent * Event );
+		void openTextureAtlas( const Event * Event );
 
-		void saveTextureAtlas( const UIEvent * Event );
+		void saveTextureAtlas( const Event * Event );
 
-		void onTextureAtlasClose( const UIEvent * Event );
+		void onTextureAtlasClose( const Event * Event );
 
-		void onSubTextureChange( const UIEvent * Event );
+		void onTextureRegionChange( const Event * Event );
 
 		void updateControls();
 
-		void fillSubTextureList();
+		void fillTextureRegionList();
 
-		void onOffXChange( const UIEvent * Event );
+		void onOffXChange( const Event * Event );
 
-		void onOffYChange( const UIEvent * Event );
+		void onOffYChange( const Event * Event );
 
-		void onDestWChange( const UIEvent * Event );
+		void onDestWChange( const Event * Event );
 
-		void onDestHChange( const UIEvent * Event );
+		void onDestHChange( const Event * Event );
 
-		void onResetDestSize( const UIEvent * Event );
+		void onResetDestSize( const Event * Event );
 
-		void onResetOffset( const UIEvent * Event );
+		void onResetOffset( const Event * Event );
 
-		void onCenterOffset( const UIEvent * Event );
+		void onCenterOffset( const Event * Event );
 
-		void onHBOffset( const UIEvent * Event );
+		void onHBOffset( const Event * Event );
+
+		void onTextureFilterChange( const Event * Event );
 
 		void onTextureAtlasLoaded( TextureAtlasLoader * TGLoader );
 
 		void update();
 
-		UIWidget * createTextureAtlasSubTextureEditor( std::string name );
+		UIWidget * createTextureAtlasTextureRegionEditor( std::string name );
 };
 
 }}}

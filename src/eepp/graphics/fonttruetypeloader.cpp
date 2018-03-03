@@ -40,7 +40,7 @@ FontTrueTypeLoader::FontTrueTypeLoader( const std::string& FontName, Uint8* TTFD
 
 FontTrueTypeLoader::FontTrueTypeLoader( const std::string& FontName, IOStream& stream ) :
 	ObjectLoader( FontLoader ),
-	mLoadType( TTF_LT_MEM ),
+	mLoadType( TTF_LT_STREAM ),
 	mFontName( FontName ),
 	mIOStream( &stream ),
 	mFontLoaded( false )

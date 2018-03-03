@@ -1,6 +1,7 @@
 #include <eepp/system/platform/posix/threadimpl.hpp>
 #include <eepp/system/thread.hpp>
 #include <iostream>
+#include <eepp/core.hpp>
 
 namespace EE { namespace System { namespace Platform {
 

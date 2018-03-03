@@ -1,7 +1,7 @@
 #ifndef EE_UICUILISTBOX_HPP
 #define EE_UICUILISTBOX_HPP
 
-#include <eepp/ui/uicontrolanim.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiitemcontainer.hpp>
 #include <eepp/ui/uilistboxitem.hpp>
@@ -77,9 +77,9 @@ class EE_API UIListBox : public UITouchDragableWidget {
 
 		Graphics::Font * getFont() const;
 
-		void setContainerPadding( const Rect& Padding );
+		void setContainerPadding( const Rectf& Padding );
 
-		const Rect& getContainerPadding() const;
+		const Rectf& getContainerPadding() const;
 
 		void setSmoothScroll( const bool& soft );
 
@@ -121,9 +121,9 @@ class EE_API UIListBox : public UITouchDragableWidget {
 		Uint32 				mRowHeight;
 		UI_SCROLLBAR_MODE	mVScrollMode;
 		UI_SCROLLBAR_MODE	mHScrollMode;
-		Rect				mContainerPadding;
-		Rect				mHScrollPadding;
-		Rect				mVScrollPadding;
+		Rectf				mContainerPadding;
+		Rectf				mHScrollPadding;
+		Rectf				mVScrollPadding;
 		UIItemContainer<UIListBox> * mContainer;
 		UIScrollBar * 		mVScrollBar;
 		UIScrollBar * 		mHScrollBar;
@@ -144,9 +144,9 @@ class EE_API UIListBox : public UITouchDragableWidget {
 
 		void updateScroll( bool FromScrollChange = false );
 
-		void onScrollValueChange( const UIEvent * Event );
+		void onScrollValueChange( const Event * Event );
 
-		void onHScrollValueChange( const UIEvent * Event );
+		void onHScrollValueChange( const Event * Event );
 
 		virtual void onSizeChange();
 
@@ -178,11 +178,11 @@ class EE_API UIListBox : public UITouchDragableWidget {
 
 		virtual void onAlphaChange();
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
-		virtual Uint32 onKeyDown( const UIEventKey &Event );
+		virtual Uint32 onKeyDown( const KeyEvent &Event );
 
-		void itemKeyEvent( const UIEventKey &Event );
+		void itemKeyEvent( const KeyEvent &Event );
 
 		void setHScrollStep();
 

@@ -1,6 +1,6 @@
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -29,23 +29,23 @@ void UISelectButton::select() {
 
 	setSkinState( UISkinState::StateSelected );
 
-	mControlFlags |= UI_CTRL_FLAG_SELECTED;
+	mNodeFlags |= NODE_FLAG_SELECTED;
 
 	if ( !wasSelected ) {
-		UIMessage tMsg( this, UIMessage::Selected, 0 );
+		NodeMessage tMsg( this, NodeMessage::Selected, 0 );
 		messagePost( &tMsg );
 	}
 }
 
 void UISelectButton::unselect() {
-	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
-		mControlFlags &= ~UI_CTRL_FLAG_SELECTED;
+	if ( mNodeFlags & NODE_FLAG_SELECTED )
+		mNodeFlags &= ~NODE_FLAG_SELECTED;
 
 	setSkinState( UISkinState::StateNormal );
 }
 
 bool UISelectButton::selected() const {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
+	return 0 != ( mNodeFlags & NODE_FLAG_SELECTED );
 }
 
 void UISelectButton::onStateChange() {

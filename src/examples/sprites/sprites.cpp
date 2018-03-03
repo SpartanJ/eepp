@@ -95,21 +95,18 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 	// Check if created
 	if ( win->isOpen() ) {
-		// Set the application current directory path
-		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
 		// Load the rock texture
 		Uint32 PlanetId	= TextureFactory::instance()->loadFromFile( "assets/sprites/7.png" );
 		Uint32 RockId	= TextureFactory::instance()->loadFromFile( "assets/sprites/5.png" );
 
-		// Load a previously generated texture atlas that contains the SubTextures needed to load an animated sprite
+		// Load a previously generated texture atlas that contains the TextureRegions needed to load an animated sprite
 		TextureAtlasLoader Blindies( "assets/atlases/bnb.eta" );
 
 		// Create the animated rock spriteR
 		// Load the rock frames from the texture, adding the frames manually
 		for ( Int32 my = 0; my < 4; my++ ) {
 			for( Int32 mx = 0; mx < 8; mx++ ) {
-				// DestSize as 0,0 will use the SubTexture size
+				// DestSize as 0,0 will use the TextureRegion size
 				Rock.addFrame( RockId, Sizef( 0, 0 ), Vector2i( 0, 0 ), Rect( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 			}
 		}
@@ -117,9 +114,9 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// Create a static sprite
 		Planet.createStatic( PlanetId );
 
-		// It will look for a SubTexture ( in any Texture Atlas loaded, or the GlobalTextureAtlas ) animation by its name, it will search
+		// It will look for a TextureRegion ( in any Texture Atlas loaded, or the GlobalTextureAtlas ) animation by its name, it will search
 		// for "gn00" to "gnXX" to create a new animation
-		// see TextureAtlasManager::GetSubTexturesByPattern for more information.
+		// see TextureAtlasManager::GetTextureRegionsByPattern for more information.
 		// This is the easiest way to load animated sprites.
 		Blindy.addFramesByPattern( "gn" );
 

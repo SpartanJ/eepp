@@ -1,7 +1,7 @@
 #ifndef EE_UICUITEXTEDIT_HPP
 #define EE_UICUITEXTEDIT_HPP
 
-#include <eepp/ui/uicontrolanim.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 
@@ -31,7 +31,7 @@ class EE_API UITextEdit : public UIWidget {
 
 		UIScrollBar * getVScrollBar() const;
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		void setAllowEditing( const bool& allow );
 
@@ -57,21 +57,21 @@ class EE_API UITextEdit : public UIWidget {
 		UI_SCROLLBAR_MODE	mHScrollBarMode;
 		UI_SCROLLBAR_MODE	mVScrollBarMode;
 		bool				mSkipValueChange;
-		Rect				mContainerPadding;
+		Rectf				mContainerPadding;
 
 		virtual void onSizeChange();
 
 		virtual void onAlphaChange();
 
-		virtual void onParentSizeChange( const Vector2i& SizeChange );
+		virtual void onParentSizeChange( const Vector2f& SizeChange );
 
-		void onVScrollValueChange( const UIEvent * Event );
+		void onVScrollValueChange( const Event * Event );
 
-		void onHScrollValueChange( const UIEvent * Event );
+		void onHScrollValueChange( const Event * Event );
 
-		void onInputSizeChange( const UIEvent * Event = NULL );
+		void onInputSizeChange( const Event * Event = NULL );
 
-		void onCursorPosChange( const UIEvent * Event );
+		void onCursorPosChange( const Event * Event );
 
 		void autoPadding();
 

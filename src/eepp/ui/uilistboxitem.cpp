@@ -1,6 +1,5 @@
 #include <eepp/ui/uilistboxitem.hpp>
 #include <eepp/ui/uilistbox.hpp>
-#include <eepp/ui/uimanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -16,11 +15,15 @@ UIListBoxItem::UIListBoxItem() :
 }
 
 UIListBoxItem::~UIListBoxItem() {
-	if ( UIManager::instance()->getFocusControl() == this )
-		mParentCtrl->setFocus();
+	EventDispatcher * eventDispatcher = getEventDispatcher();
 
-	if ( UIManager::instance()->getOverControl() == this )
-		UIManager::instance()->setOverControl( mParentCtrl );
+	if ( NULL != eventDispatcher ) {
+		if ( eventDispatcher->getFocusControl() == this )
+			mParentCtrl->setFocus();
+
+		if ( eventDispatcher->getOverControl() == this )
+			eventDispatcher->setOverControl( mParentCtrl );
+	}
 }
 
 Uint32 UIListBoxItem::getType() const {
@@ -50,26 +53,26 @@ Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 void UIListBoxItem::select() {
 	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( getParent()->getParent() );
 
-	bool wasSelected = 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
+	bool wasSelected = 0 != ( mNodeFlags & NODE_FLAG_SELECTED );
 
 	if ( LBParent->isMultiSelect() ) {
 		if ( !wasSelected ) {
 			setSkinState( UISkinState::StateSelected );
 
-			mControlFlags |= UI_CTRL_FLAG_SELECTED;
+			mNodeFlags |= NODE_FLAG_SELECTED;
 
 			LBParent->mSelected.push_back( LBParent->getItemIndex( this ) );
 
 			LBParent->onSelected();
 		} else {
-			mControlFlags &= ~UI_CTRL_FLAG_SELECTED;
+			mNodeFlags &= ~NODE_FLAG_SELECTED;
 
 			LBParent->mSelected.remove( LBParent->getItemIndex( this ) );
 		}
 	} else {
 		setSkinState( UISkinState::StateSelected );
 
-		mControlFlags |= UI_CTRL_FLAG_SELECTED;
+		mNodeFlags |= NODE_FLAG_SELECTED;
 
 		LBParent->mSelected.clear();
 		LBParent->mSelected.push_back( LBParent->getItemIndex( this ) );
@@ -80,12 +83,12 @@ void UIListBoxItem::select() {
 	}
 }
 
-void UIListBoxItem::update() {
-	UITextView::update();
+void UIListBoxItem::update( const Time& time ) {
+	UITextView::update( time );
 
-	if ( mEnabled && mVisible ) {
+	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
 		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( getParent()->getParent() );
-		Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
+		Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
 
 		if ( isMouseOver() ) {
 			if ( Flags & EE_BUTTONS_WUWD && LBParent->getVerticalScrollBar()->isVisible() ) {
@@ -96,23 +99,23 @@ void UIListBoxItem::update() {
 }
 
 Uint32 UIListBoxItem::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	UIControl::onMouseExit( Pos, Flags );
+	UINode::onMouseExit( Pos, Flags );
 
-	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
+	if ( mNodeFlags & NODE_FLAG_SELECTED )
 		setSkinState( UISkinState::StateSelected );
 
 	return 1;
 }
 
 void UIListBoxItem::unselect() {
-	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
-		mControlFlags &= ~UI_CTRL_FLAG_SELECTED;
+	if ( mNodeFlags & NODE_FLAG_SELECTED )
+		mNodeFlags &= ~NODE_FLAG_SELECTED;
 
 	setSkinState( UISkinState::StateNormal );
 }
 
 bool UIListBoxItem::isSelected() const {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
+	return 0 != ( mNodeFlags & NODE_FLAG_SELECTED );
 }
 
 void UIListBoxItem::onStateChange() {

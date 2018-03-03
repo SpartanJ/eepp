@@ -4,6 +4,10 @@
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/shaderprogram.hpp>
 
+#include <eepp/system/singleton.hpp>
+#include <eepp/system/resourcemanager.hpp>
+using namespace EE::System;
+
 namespace EE { namespace Graphics {
 
 /** @brief The Shader Program Manager is a singleton class that manages all the instances of Shader Programs instanciated.

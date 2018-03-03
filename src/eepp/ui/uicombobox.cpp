@@ -1,5 +1,5 @@
 #include <eepp/ui/uicombobox.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 
 namespace EE { namespace UI {
 
@@ -39,11 +39,10 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 	}
 
 	if ( NULL == mButton ) {
-		mButton = UIControlAnim::New();
+		mButton = UINode::New();
 		mButton->setParent( this );
 		mButton->setVisible( true );
 		mButton->setEnabled( true );
-		mButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &UIComboBox::onButtonClick ) );
 	}
 
 	mDropDownList->setThemeSkin( Theme, "combobox" );
@@ -84,26 +83,26 @@ void UIComboBox::loadFromXmlNode(const pugi::xml_node& node) {
 	endPropertiesTransaction();
 }
 
+Uint32 UIComboBox::onMessage( const NodeMessage * Msg ) {
+	if ( Msg->getMsg() == NodeMessage::Click && Msg->getSender() == mButton && ( Msg->getFlags() & EE_BUTTON_LMASK ) ) {
+		mDropDownList->showList();
+	}
+
+	return UIWidget::onMessage( Msg );
+}
+
 void UIComboBox::updateControls() {
-	if ( ( mFlags & UI_AUTO_SIZE ) || mSize.getHeight() < mDropDownList->getSkinSize().getHeight() ) {
+	if ( ( mFlags & UI_AUTO_SIZE ) || mDpSize.getHeight() < mDropDownList->getSkinSize().getHeight() ) {
 		onAutoSize();
 	}
 
 	mDropDownList->setPosition( 0, 0 );
-	mDropDownList->setSize( mSize.getWidth() - mButton->getSize().getWidth(), 0 );
-	mDropDownList->getListBox()->setSize( mSize.getWidth(), mDropDownList->getListBox()->getSize().getHeight() );
+	mDropDownList->setSize( mDpSize.getWidth() - mButton->getSize().getWidth(), 0 );
+	mDropDownList->getListBox()->setSize( mDpSize.getWidth(), mDropDownList->getListBox()->getSize().getHeight() );
 	mDropDownList->centerVertical();
 
-	mButton->setPosition( mSize.getWidth() - mButton->getSize().getWidth(), 0 );
+	mButton->setPosition( mDpSize.getWidth() - mButton->getSize().getWidth(), 0 );
 	mButton->centerVertical();
-}
-
-void UIComboBox::onButtonClick( const UIEvent * Event ) {
-	const UIEventMouse * MEvent = reinterpret_cast<const UIEventMouse*> ( Event );
-
-	if ( MEvent->getFlags() & EE_BUTTON_LMASK ) {
-		mDropDownList->showList();
-	}
 }
 
 void UIComboBox::onSizeChange() {

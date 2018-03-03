@@ -23,7 +23,7 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 	mUIWindow	= UIWindow::New();
 	mUIWindow->setSizeWithDecoration( 500, 500 )->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL )->setMinWindowSize( 500, 500 );
 
-	mUIWindow->addEventListener( UIEvent::OnWindowClose, cb::Make1( this, &MapLayerProperties::onWindowClose ) );
+	mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &MapLayerProperties::onWindowClose ) );
 	mUIWindow->setTitle( "Layer Properties" );
 
 	Int32 InitialY		= 16;
@@ -34,32 +34,34 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 	Txt->setText( "Layer name:" );
 
 	mUIInput = UITextInput::New()->setMaxLength( 64 );
-	mUIInput->setParent( mUIWindow->getContainer() )->setSize( 120, 0 )->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
+	mUIInput->setSize( 120, 0 )->setParent( mUIWindow->getContainer() )->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
 	mUIInput->setText( mLayer->getName() );
-	mUIInput->addEventListener( UIEvent::OnPressEnter, cb::Make1( this, &MapLayerProperties::onOKClick ) );
+	mUIInput->addEventListener( Event::OnPressEnter, cb::Make1( this, &MapLayerProperties::onOKClick ) );
 
 	UITextView * TxtBox = UITextView::New();
-	TxtBox->setFontStyle( Text::Shadow )->setParent( mUIWindow->getContainer() )->setSize( 192, 24 )->setHorizontalAlign( UI_HALIGN_CENTER )
-		  ->setPosition( 50, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 );
+	TxtBox->setFontStyle( Text::Shadow )->setHorizontalAlign( UI_HALIGN_CENTER )
+		  ->setPosition( 50, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 )
+		  ->setSize( 192, 24 )->setParent( mUIWindow->getContainer() );
 	TxtBox->setText( "Property Name" );
 
 	TxtBox = UITextView::New();
-	TxtBox->setFontStyle( Text::Shadow )->setParent( mUIWindow->getContainer() )->setSize( 192, 24 )->setHorizontalAlign( UI_HALIGN_CENTER )
-		  ->setPosition( 50+192, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 );
+	TxtBox->setFontStyle( Text::Shadow )->setHorizontalAlign( UI_HALIGN_CENTER )
+		  ->setPosition( 50+192, mUIInput->getPosition().y + mUIInput->getSize().getHeight() + 12 )
+		  ->setParent( mUIWindow->getContainer() )->setSize( 192, 24 );
 	TxtBox->setText( "Property Value" );
 
 	UIPushButton * OKButton = UIPushButton::New();
-	OKButton->setParent(  mUIWindow->getContainer() )->setSize( 80, 0 );
+	OKButton->setSize( 80, 0 )->setParent(  mUIWindow->getContainer() );
 	OKButton->setIcon( mUITheme->getIconByName( "ok" ) );
 	OKButton->setPosition( mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4, mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
-	OKButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &MapLayerProperties::onOKClick ) );
+	OKButton->addEventListener( Event::MouseClick, cb::Make1( this, &MapLayerProperties::onOKClick ) );
 	OKButton->setText( "OK" );
 	OKButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 
 	UIPushButton * CancelButton = UIPushButton::New();
 	CancelButton->setParent( mUIWindow->getContainer() )->setSize( OKButton->getSize() )->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4, OKButton->getPosition().y );
 	CancelButton->setIcon( mUITheme->getIconByName( "cancel" ) );
-	CancelButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &MapLayerProperties::onCancelClick ) );
+	CancelButton->addEventListener( Event::MouseClick, cb::Make1( this, &MapLayerProperties::onCancelClick ) );
 	CancelButton->setText( "Cancel" );
 	CancelButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 
@@ -74,13 +76,13 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 	mGenGrid->setCollumnWidth( 3, 175 );
 	mGenGrid->setCollumnWidth( 4, 10 );
 
-	Vector2i Pos( mGenGrid->getPosition().x + mGenGrid->getSize().getWidth() + 10, mGenGrid->getPosition().y );
+	Vector2f Pos( mGenGrid->getPosition().x + mGenGrid->getSize().getWidth() + 10, mGenGrid->getPosition().y );
 
 	UIPushButton * AddButton = UIPushButton::New();
 	AddButton->setParent( mUIWindow->getContainer() )->setSize( 24, 0 )->setPosition( Pos );
 	AddButton->setIcon( mUITheme->getIconByName( "add" ) );
 	AddButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	AddButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &MapLayerProperties::onAddCellClick ) );
+	AddButton->addEventListener( Event::MouseClick, cb::Make1( this, &MapLayerProperties::onAddCellClick ) );
 
 	if ( NULL == AddButton->getIcon()->getDrawable() )
 		AddButton->setText( "+" );
@@ -91,7 +93,7 @@ MapLayerProperties::MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb ) 
 	RemoveButton->setParent( mUIWindow->getContainer() )->setSize( 24, 0 )->setPosition( Pos );
 	RemoveButton->setIcon( mUITheme->getIconByName( "remove" ) );
 	RemoveButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	RemoveButton->addEventListener( UIEvent::MouseClick, cb::Make1( this, &MapLayerProperties::onRemoveCellClick ) );
+	RemoveButton->addEventListener( Event::MouseClick, cb::Make1( this, &MapLayerProperties::onRemoveCellClick ) );
 
 	if ( NULL == RemoveButton->getIcon()->getDrawable() )
 		RemoveButton->setText( "-" );
@@ -123,7 +125,7 @@ void MapLayerProperties::saveProperties() {
 void MapLayerProperties::loadProperties() {
 	MapLayer::PropertiesMap& Proper = mLayer->getProperties();
 
-	for ( MapLayer::PropertiesMap::iterator it = Proper.begin(); it != Proper.end(); it++ ) {
+	for ( MapLayer::PropertiesMap::iterator it = Proper.begin(); it != Proper.end(); ++it ) {
 		UITableCell * Cell = createCell();
 
 		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->getCell( 1 ) );
@@ -136,7 +138,7 @@ void MapLayerProperties::loadProperties() {
 	}
 }
 
-void MapLayerProperties::onOKClick( const UIEvent * Event ) {
+void MapLayerProperties::onOKClick( const Event * Event ) {
 	saveProperties();
 
 	mLayer->setName( mUIInput->getText().toUtf8() );
@@ -148,15 +150,15 @@ void MapLayerProperties::onOKClick( const UIEvent * Event ) {
 	mUIWindow->closeWindow();
 }
 
-void MapLayerProperties::onCancelClick( const UIEvent * Event ) {
+void MapLayerProperties::onCancelClick( const Event * Event ) {
 	mUIWindow->closeWindow();
 }
 
-void MapLayerProperties::onWindowClose( const UIEvent * Event ) {
+void MapLayerProperties::onWindowClose( const Event * Event ) {
 	eeDelete( this );
 }
 
-void MapLayerProperties::onAddCellClick( const UIEvent * Event ) {
+void MapLayerProperties::onAddCellClick( const Event * Event ) {
 	mGenGrid->add( createCell() );
 
 	Uint32 Index = mGenGrid->getItemSelectedIndex();
@@ -166,7 +168,7 @@ void MapLayerProperties::onAddCellClick( const UIEvent * Event ) {
 	}
 }
 
-void MapLayerProperties::onRemoveCellClick( const UIEvent * Event ) {
+void MapLayerProperties::onRemoveCellClick( const Event * Event ) {
 	Uint32 Index = mGenGrid->getItemSelectedIndex();
 
 	if ( eeINDEX_NOT_FOUND != Index ) {

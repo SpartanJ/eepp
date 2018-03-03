@@ -1,7 +1,6 @@
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitabwidget.hpp>
-#include <eepp/ui/uimanager.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -57,7 +56,7 @@ void UITab::setTheme( UITheme * Theme ) {
 		}
 	}
 
-	UIControl::setThemeSkin( Theme, tabPos );
+	UINode::setThemeSkin( Theme, tabPos );
 
 	onThemeLoaded();
 }
@@ -88,7 +87,7 @@ void UITab::onStateChange() {
 			skinSize = getSkinSize().getHeight();
 		}
 
-		setSize( mSize.getWidth(), skinSize );
+		setSize( mDpSize.getWidth(), skinSize );
 
 		if ( mSkinState->getState() == UISkinState::StateSelected ) {
 			mTextBox->setFontColor( tTabW->getFontSelectedColor() );
@@ -144,12 +143,12 @@ void UITab::onAutoSize() {
 			w = eemin( w, tTabW->getMaxTabWidth() );
 		}
 
-		setSize( w, mSize.getHeight() );
+		setSize( w, mDpSize.getHeight() );
 	}
 }
 
-void UITab::update() {
-	UISelectButton::update();
+void UITab::update( const Time& time ) {
+	UISelectButton::update( time );
 
 	if ( mEnabled && mVisible ) {
 		if ( NULL == mControlOwned && !mOwnedName.empty() ) {
@@ -159,8 +158,8 @@ void UITab::update() {
 		if ( isMouseOver() ) {
 			UITabWidget * tTabW	= getTabWidget();
 
-			if ( NULL != tTabW ) {
-				Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
+			if ( NULL != tTabW && NULL != getEventDispatcher() ) {
+				Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
 
 				if ( Flags & EE_BUTTONS_WUWD ) {
 					if ( Flags & EE_BUTTON_WUMASK ) {
@@ -185,7 +184,9 @@ void UITab::loadFromXmlNode(const pugi::xml_node & node) {
 		std::string name = ait->name();
 		String::toLowerInPlace( name );
 
-		if ( "controlowned" == name || "owns" == name ) {
+		if ( "name" == name || "text" == name ) {
+			setText( ait->as_string() );
+		} else if ( "controlowned" == name || "owns" == name ) {
 			mOwnedName = ait->as_string();
 			setOwnedControl();
 		}
@@ -195,18 +196,18 @@ void UITab::loadFromXmlNode(const pugi::xml_node & node) {
 }
 
 void UITab::setOwnedControl() {
-	UIControl * ctrl = getParent()->getParent()->find( mOwnedName );
+	Node * ctrl = getParent()->getParent()->find( mOwnedName );
 
 	if ( NULL != ctrl ) {
 		setControlOwned( ctrl );
 	}
 }
 
-UIControl * UITab::getControlOwned() const {
+Node * UITab::getControlOwned() const {
 	return mControlOwned;
 }
 
-void UITab::setControlOwned(UIControl * controlOwned) {
+void UITab::setControlOwned( Node * controlOwned ) {
 	mControlOwned = controlOwned;
 
 	UITabWidget * tTabW = getTabWidget();

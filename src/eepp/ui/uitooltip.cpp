@@ -1,7 +1,7 @@
 #include <eepp/ui/uitooltip.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -10,7 +10,7 @@ UITooltip *UITooltip::New() {
 }
 
 UITooltip::UITooltip() :
-	UIControlAnim(),
+	UINode(),
 	mAlignOffset( 0.f, 0.f ),
 	mTooltipTime( Time::Zero ),
 	mTooltipOf()
@@ -50,7 +50,7 @@ Uint32 UITooltip::getType() const {
 }
 
 bool UITooltip::isType( const Uint32& type ) const {
-	return UITooltip::getType() == type ? true : UIControlAnim::isType( type );
+	return UITooltip::getType() == type ? true : UINode::isType( type );
 }
 
 void UITooltip::setTheme( UITheme * Theme ) {
@@ -60,7 +60,7 @@ void UITooltip::setTheme( UITheme * Theme ) {
 }
 
 void UITooltip::autoPadding() {
-	if ( ( mFlags & UI_AUTO_PADDING ) && mStyleConfig.Padding == Rect() ) {
+	if ( ( mFlags & UI_AUTO_PADDING ) && mStyleConfig.Padding == Rectf() ) {
 		setPadding( makePadding( true, true, true, true ) );
 	}
 }
@@ -70,7 +70,6 @@ void UITooltip::show() {
 		toFront();
 
 		setVisible( true );
-		setEnabled( true );
 
 		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
 			startAlphaAnim( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->getControlsFadeInTime() );
@@ -84,18 +83,17 @@ void UITooltip::hide() {
 			disableFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
 		} else {
 			setVisible( false );
-			setEnabled( false );
 		}
 	}
 }
 
 void UITooltip::draw() {
 	if ( mVisible && 0.f != mAlpha && mTextCache->getString().size() > 0 ) {
-		UIControlAnim::draw();
+		UINode::draw();
 
 		if ( mTextCache->getTextWidth() ) {
 			mTextCache->setAlign( getFlags() );
-			mTextCache->draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, Vector2f::One, 0.f, getBlendMode() );
+			mTextCache->draw( (Float)mScreenPosi.x + (int)mAlignOffset.x, (Float)mScreenPosi.y + (int)mAlignOffset.y, Vector2f::One, 0.f, getBlendMode() );
 		}
 	}
 }
@@ -147,7 +145,7 @@ void UITooltip::setFontShadowColor( const Color& color ) {
 }
 
 void UITooltip::setAlpha( const Float& alpha ) {
-	UIControlAnim::setAlpha( alpha );
+	UINode::setAlpha( alpha );
 	mStyleConfig.FontColor.a = (Uint8)alpha;
 	mStyleConfig.ShadowColor.a = (Uint8)alpha;
 
@@ -164,8 +162,8 @@ void UITooltip::onAutoSize() {
 }
 
 void UITooltip::autoAlign() {
-	Uint32 Width	= mRealSize.getWidth()	- mRealPadding.Left - mRealPadding.Right;
-	Uint32 Height	= mRealSize.getHeight()	- mRealPadding.Top	- mRealPadding.Bottom;
+	Uint32 Width	= mSize.getWidth()	- mRealPadding.Left - mRealPadding.Right;
+	Uint32 Height	= mSize.getHeight()	- mRealPadding.Top	- mRealPadding.Bottom;
 
 	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
@@ -197,23 +195,23 @@ void UITooltip::onSizeChange() {
 	onAutoSize();
 	autoAlign();
 
-	UIControlAnim::onSizeChange();
+	UINode::onSizeChange();
 }
 
 void UITooltip::onTextChanged() {
-	sendCommonEvent( UIEvent::OnTextChanged );
+	sendCommonEvent( Event::OnTextChanged );
 }
 
 void UITooltip::onFontChanged() {
-	sendCommonEvent( UIEvent::OnFontChanged );
+	sendCommonEvent( Event::OnFontChanged );
 }
 
-void UITooltip::setPadding( const Rect& padding ) {
+void UITooltip::setPadding( const Rectf& padding ) {
 	mStyleConfig.Padding = padding;
-	mRealPadding = PixelDensity::dpToPxI( mStyleConfig.Padding );
+	mRealPadding = PixelDensity::dpToPx( padding );
 }
 
-const Rect& UITooltip::getPadding() const {
+const Rectf& UITooltip::getPadding() const {
 	return mStyleConfig.Padding;
 }
 
@@ -249,11 +247,11 @@ const Time& UITooltip::getTooltipTime() const {
 	return mTooltipTime;
 }
 
-UIControl * UITooltip::getTooltipOf() const {
+UINode * UITooltip::getTooltipOf() const {
 	return mTooltipOf;
 }
 
-void UITooltip::setTooltipOf(UIControl * tooltipOf) {
+void UITooltip::setTooltipOf(UINode * tooltipOf) {
 	mTooltipOf = tooltipOf;
 }
 
@@ -264,7 +262,7 @@ UITooltipStyleConfig UITooltip::getStyleConfig() const {
 void UITooltip::setStyleConfig(const UITooltipStyleConfig & styleConfig) {
 	mStyleConfig = styleConfig;
 
-	if ( mStyleConfig.Padding != Rect() )
+	if ( mStyleConfig.Padding != Rectf() )
 		setPadding( mStyleConfig.Padding );
 
 	setFont( mStyleConfig.Font );

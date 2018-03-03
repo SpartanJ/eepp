@@ -2,8 +2,9 @@
 #include <eepp/audio/sound.hpp>
 #include <eepp/audio/soundfile.hpp>
 #include <eepp/audio/audiodevice.hpp>
-#include <eepp/system/packmanager.hpp>
 #include <eepp/audio/openal.hpp>
+#include <eepp/system/packmanager.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <memory>
 
 namespace EE { namespace Audio {
@@ -92,7 +93,7 @@ bool SoundBuffer::loadFromPack( Pack* Pack, const std::string& FilePackPath ) {
 	SafeDataPointer PData;
 
 	if ( Pack->isOpen() && Pack->extractFileToMemory( FilePackPath, PData ) )
-		Ret = loadFromMemory( reinterpret_cast<const char*> ( PData.Data ), PData.DataSize );
+		Ret = loadFromMemory( reinterpret_cast<const char*> ( PData.data ), PData.size );
 
 	return Ret;
 }

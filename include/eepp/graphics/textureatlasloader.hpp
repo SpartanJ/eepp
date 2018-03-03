@@ -106,7 +106,7 @@ class EE_API TextureAtlasLoader {
 		*/
 		bool					updateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath );
 
-		/** Rewrites the texture atlas file. Usefull if the SubTextures where modified and need to be updated inside the texture atlas. */
+		/** Rewrites the texture atlas file. Usefull if the TextureRegions where modified and need to be updated inside the texture atlas. */
 		bool					updateTextureAtlas();
 
 		/** @return The texture that corresponds to the texture atlas.
@@ -122,6 +122,10 @@ class EE_API TextureAtlasLoader {
 
 		/** Sets a load notification callback. */
 		void					setLoadCallback( GLLoadCallback LoadCallback );
+
+		sTextureAtlasHdr		getTextureAtlasHeader();
+
+		void					setTextureFilter( const Texture::TextureFilter& textureFilter );
 	protected:
 		ResourceLoader			mRL;
 		std::string				mTextureAtlasPath;
@@ -132,17 +136,17 @@ class EE_API TextureAtlasLoader {
 		bool					mIsLoading;
 		TextureAtlas *			mTextureAtlas;
 		GLLoadCallback			mLoadCallback;
-		std::vector<Texture*>	mTexuresLoaded;
+		std::vector<Texture*>	mTexturesLoaded;
 
 		typedef struct sTempTexAtlasS {
 			sTextureHdr 			Texture;
-			std::vector<sSubTextureHdr>	SubTextures;
+			std::vector<sTextureRegionHdr>	TextureRegions;
 		} sTempTexAtlas;
 
 		sTextureAtlasHdr mTexGrHdr;
 		std::vector<sTempTexAtlas> mTempAtlass;
 
-		void createSubTextures();
+		void createTextureRegions();
 };
 
 }}

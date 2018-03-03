@@ -1,6 +1,7 @@
 #ifndef EEPP_GRAPHICS_HPP
 #define EEPP_GRAPHICS_HPP
 
+#include <eepp/graphics/view.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/blendmode.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
@@ -13,7 +14,7 @@
 #include <eepp/graphics/textureloader.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/texturepacker.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
@@ -24,6 +25,8 @@
 #include <eepp/graphics/fontstyleconfig.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/fontbmfont.hpp>
+#include <eepp/graphics/fontsprite.hpp>
 #include <eepp/graphics/fonttruetypeloader.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>

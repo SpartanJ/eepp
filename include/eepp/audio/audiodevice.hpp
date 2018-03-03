@@ -1,6 +1,7 @@
 #ifndef EE_AUDIOCAUDIODEVICE_H
 #define EE_AUDIOCAUDIODEVICE_H
 
+#include <string>
 #include <eepp/audio/audiolistener.hpp>
 
 namespace EE { namespace Audio {

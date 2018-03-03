@@ -11,7 +11,7 @@
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/version.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
+#include <SOIL2/src/SOIL2/SOIL2.h>
 
 #ifdef EE_GLES1_LATE_INCLUDE
 	#if EE_PLATFORM == EE_PLATFORM_IOS
@@ -49,6 +49,7 @@ Window::Window( WindowSettings Settings, ContextSettings Context, Clipboard * Cl
 	mInput( Input ),
 	mCursorManager( CursorManager ),
 	mPlatform( NULL ),
+	mCurrentView( NULL ),
 	mNumCallBacks( 0 )
 {
 	mWindow.WindowConfig	= Settings;
@@ -64,6 +65,10 @@ Window::~Window() {
 
 Sizei Window::getSize() {
 	return Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+}
+
+Vector2f Window::getCenter() {
+	return Sizef( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height ) * 0.5f;
 }
 
 const Uint32& Window::getWidth() const {
@@ -100,19 +105,77 @@ void Window::set2DProjection( const Uint32& Width, const Uint32& Height ) {
 	GLi->loadIdentity();
 }
 
-void Window::setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix ) {
-	GLi->viewport( x, getHeight() - ( y + Height ), Width, Height );
+void Window::setProjection(const Transform & transform) {
+	GLi->matrixMode( GL_PROJECTION );
+	GLi->loadMatrixf( transform.getMatrix() );
 
-	if ( UpdateProjectionMatrix ) {
-		set2DProjection( Width, Height );
-	}
+	GLi->matrixMode( GL_MODELVIEW );
+	GLi->loadIdentity();
 }
 
-void Window::setView( const View& View ) {
-	mCurrentView = &View;
+Vector2f Window::mapPixelToCoords(const Vector2i& point) {
+	return mapPixelToCoords(point, getView());
+}
 
-	Rect RView = mCurrentView->getView();
-	setViewport( RView.Left, RView.Top, RView.Right, RView.Bottom );
+Vector2f Window::mapPixelToCoords(const Vector2i& point, const View& view) {
+	// First, convert from viewport coordinates to homogeneous coordinates
+	Vector2f normalized;
+	Rect viewport = getViewport(view);
+	normalized.x = -1.f + 2.f * (point.x - viewport.Left) / viewport.Right;
+	normalized.y =  1.f - 2.f * (point.y - viewport.Top)  / viewport.Bottom;
+
+	// Then transform by the inverse of the view matrix
+	return view.getInverseTransform().transformPoint(normalized);
+}
+
+Vector2i Window::mapCoordsToPixel(const Vector2f& point) {
+	return mapCoordsToPixel(point, getView());
+}
+
+Vector2i Window::mapCoordsToPixel(const Vector2f& point, const View& view) {
+	// First, transform the point by the view matrix
+	Vector2f normalized = view.getTransform().transformPoint(point);
+
+	// Then convert to viewport coordinates
+	Vector2i pixel;
+	Rect viewport = getViewport(view);
+	pixel.x = static_cast<int>(( normalized.x + 1.f) / 2.f * viewport.Right  + viewport.Left);
+	pixel.y = static_cast<int>((-normalized.y + 1.f) / 2.f * viewport.Bottom + viewport.Top);
+
+	return pixel;
+}
+
+void Window::setCloseRequestCallback( const WindowRequestCloseCallback & closeRequestCallback ) {
+	mCloseRequestCallback = closeRequestCallback;
+}
+
+void Window::setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
+	GLi->viewport( x, getHeight() - ( y + Height ), Width, Height );
+}
+
+Rect Window::getViewport( const View& view ) {
+	float width  = static_cast<float>(getSize().getWidth());
+	float height = static_cast<float>(getSize().getHeight());
+	const Rectf& viewport = view.getViewport();
+
+	return Rect(   static_cast<int>(0.5f + width  * viewport.Left),
+				   static_cast<int>(0.5f + height * viewport.Top),
+				   static_cast<int>(0.5f + width  * viewport.Right),
+				   static_cast<int>(0.5f + height * viewport.Bottom));
+}
+
+void Window::setView( const View& view , bool forceRefresh ) {
+	const View * viewPtr = &view;
+
+	if ( viewPtr != mCurrentView || viewPtr->isDirty() || forceRefresh ) {
+		mCurrentView = viewPtr;
+
+		Rect viewport = getViewport( *mCurrentView );
+
+		setViewport( viewport.Left, viewport.Top, viewport.Right, viewport.Bottom );
+
+		setProjection( viewPtr->getTransform() );
+	}
 }
 
 const View& Window::getDefaultView() const {
@@ -124,8 +187,8 @@ const View& Window::getView() const {
 }
 
 void Window::createView() {
-	mDefaultView.setView( 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
-	mCurrentView = &mDefaultView;
+	mDefaultView.reset( Rectf( 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height ) );
+	setView( mDefaultView );
 }
 
 void Window::setup2D( const bool& KeepView ) {
@@ -144,14 +207,12 @@ void Window::setup2D( const bool& KeepView ) {
 	}
 
 	if ( !KeepView ) {
-		setView( mDefaultView );
-
-		mCurrentView->needUpdate();
+		setView( mDefaultView, true );
 	}
 
 	BlendMode::setMode( BlendAlpha, true );
 
-	if ( GLv_3 != GLi->version() && GLv_ES2 != GLi->version() ) {
+	if ( GLv_3CP != GLi->version() && GLv_3 != GLi->version() && GLv_ES2 != GLi->version() ) {
 		#if !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
 		glTexEnvi( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
 		#endif
@@ -295,12 +356,6 @@ void Window::limitFps() {
 	}
 }
 
-void Window::viewCheckUpdate() {
-	if ( mCurrentView->needUpdate() ) {
-		setView( *mCurrentView );
-	}
-}
-
 void Window::clear() {
 	GLi->clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 }
@@ -308,10 +363,10 @@ void Window::clear() {
 void Window::display( bool clear ) {
 	GlobalBatchRenderer::instance()->draw();
 
-	if ( mCurrentView->needUpdate() )
-		setView( *mCurrentView );
-
 	swapBuffers();
+
+	if ( mCurrentView->isDirty() )
+		setView( *mCurrentView );
 
 	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	if ( clear )
@@ -349,7 +404,7 @@ void Window::popResizeCallback( const Uint32& CallbackId ) {
 }
 
 void Window::sendVideoResizeCb() {
-	for ( std::map<Uint32, WindowResizeCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end(); i++ ) {
+	for ( std::map<Uint32, WindowResizeCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end(); ++i ) {
 		i->second( this );
 	}
 }
@@ -357,20 +412,20 @@ void Window::sendVideoResizeCb() {
 void Window::logSuccessfulInit(const std::string& BackendName ) {
 	std::string msg( "Engine Initialized Succesfully.\n\tVersion: " + Version::getVersionName() + " (codename: \"" + Version::getCodename() + "\")" +
 							 "\n\tBuild time: " + Version::getBuildTime() +
+							 "\n\tPlatform: " + Sys::getPlatform() +
 							 "\n\tOS: " + Sys::getOSName(true) +
 							 "\n\tArch: " + Sys::getOSArchitecture() +
 							 "\n\tCPU Cores: " + String::toStr( Sys::getCPUCount() ) +
 							 "\n\tProcess Path: " + Sys::getProcessPath() +
 							 "\n\tCurrent Working Directory: " + FileSystem::getCurrentWorkingDirectory() +
-							 "\n\tDisk Free Space: " + String::toStr( FileSystem::sizeToString( Sys::getDiskFreeSpace( Sys::getProcessPath() ) ) ) +
+							 "\n\tDisk Free Space: " + String::toStr( FileSystem::sizeToString( FileSystem::getDiskFreeSpace( Sys::getProcessPath() ) ) ) +
 							 "\n\tWindow/Input Backend: " + BackendName +
 							 "\n\tGL Backend: " + GLi->versionStr() +
 							 "\n\tGL Vendor: " + GLi->getVendor() +
 							 "\n\tGL Renderer: " + GLi->getRenderer() +
 							 "\n\tGL Version: " + GLi->getVersion() +
 							 "\n\tGL Shading Language Version: " + GLi->getShadingLanguageVersion() +
-							 "\n\tResolution: " + String::toStr( getWidth() ) + "x" + String::toStr( getHeight() ) +
-							 "\n\tGL extensions supported:\n\t\t" + GLi->getExtensions()
+							 "\n\tResolution: " + String::toStr( getWidth() ) + "x" + String::toStr( getHeight() )
 	);
 
 	#ifndef EE_SILENT
@@ -382,6 +437,14 @@ void Window::logSuccessfulInit(const std::string& BackendName ) {
 
 void Window::logFailureInit( const std::string& ClassName, const std::string& BackendName ) {
 	eePRINTL( "Error on %s::Init. Backend %s failed to start.", ClassName.c_str(), BackendName.c_str() );
+}
+
+void Window::onCloseRequest() {
+	if ( mCloseRequestCallback.IsSet() && !mCloseRequestCallback.Call( this ) ) {
+		return;
+	}
+
+	close();
 }
 
 std::string Window::getCaption() {
@@ -466,7 +529,7 @@ void Window::createPlatform() {
 void Window::setCurrent() {
 }
 
-void Window::centerToScreen() {
+void Window::centerToDisplay() {
 	if ( isWindowed() ) {
 		setPosition( mWindow.DesktopResolution.getWidth() / 2 - mWindow.WindowConfig.Width / 2, mWindow.DesktopResolution.getHeight() / 2 - mWindow.WindowConfig.Height / 2 );
 	}
@@ -518,6 +581,10 @@ void Window::runMainLoop( void (*func)(), int fps ) {
 		func();
 	}
 #endif
+}
+
+int Window::getCurrentDisplayIndex() {
+	return 0;
 }
 
 }}

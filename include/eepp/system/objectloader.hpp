@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEMCOBJECTLOADER
 #define EE_SYSTEMCOBJECTLOADER
 
-#include <eepp/system/base.hpp>
+#include <eepp/core.hpp>
 #include <eepp/system/thread.hpp>
 #include <list>
 

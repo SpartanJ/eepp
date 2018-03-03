@@ -1,5 +1,5 @@
 #include <eepp/ui/uigridlayout.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 	
@@ -125,13 +125,13 @@ void UIGridLayout::onChildCountChange() {
 	UIWidget::onChildCountChange();
 }
 
-void UIGridLayout::onParentSizeChange(const Vector2i & SizeChange) {
+void UIGridLayout::onParentSizeChange(const Vector2f& SizeChange) {
 	pack();
 	UIWidget::onParentSizeChange( SizeChange );
 }
 
 void UIGridLayout::pack() {
-	Sizei oldSize( mSize );
+	Sizef oldSize( mDpSize );
 
 	//setInternalPosition( Vector2i( mLayoutMargin.Left, mLayoutMargin.Top ) );
 
@@ -143,13 +143,13 @@ void UIGridLayout::pack() {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
 	}
 
-	UIControl * ChildLoop = mChild;
+	Node * ChildLoop = mChild;
 
-	Vector2i pos(mPadding.Left,mPadding.Top);
-	Sizei targetSize( getTargetElementSize() );
+	Vector2f pos(mPadding.Left,mPadding.Top);
+	Sizef targetSize( getTargetElementSize() );
 
 	if ( getHorizontalAlign() == UI_HALIGN_RIGHT )
-		pos.x = mSize.getWidth() - mPadding.Right;
+		pos.x = mDpSize.getWidth() - mPadding.Right;
 
 	bool usedLastRow = true;
 	while ( NULL != ChildLoop ) {
@@ -158,15 +158,15 @@ void UIGridLayout::pack() {
 			usedLastRow = true;
 
 			if ( widget->getLayoutWeight() != 0.f )
-				targetSize.x = widget->getLayoutWeight() * ( mSize.getWidth() - mPadding.Left - mPadding.Right );
+				targetSize.x = widget->getLayoutWeight() * ( mDpSize.getWidth() - mPadding.Left - mPadding.Right );
 
 			widget->setSize( targetSize );
 			widget->setPosition( pos );
 
 			pos.x += getHorizontalAlign() == UI_HALIGN_RIGHT ? -targetSize.getWidth() : targetSize.getWidth();
 
-			if ( pos.x < mPadding.Left || pos.x + targetSize.x > mSize.getWidth() - mPadding.Right || pos.x + targetSize.x + mSpan.x > mSize.getWidth() - mPadding.Right ) {
-				pos.x = getHorizontalAlign() == UI_HALIGN_RIGHT ? mSize.getWidth() - mPadding.Right : mPadding.Left;
+			if ( pos.x < mPadding.Left || pos.x + targetSize.x > mDpSize.getWidth() - mPadding.Right || pos.x + targetSize.x + mSpan.x > mDpSize.getWidth() - mPadding.Right ) {
+				pos.x = getHorizontalAlign() == UI_HALIGN_RIGHT ? mDpSize.getWidth() - mPadding.Right : mPadding.Left;
 
 				pos.y += targetSize.getHeight() + mSpan.y;
 				usedLastRow = false;
@@ -175,23 +175,23 @@ void UIGridLayout::pack() {
 			}
 		}
 
-		ChildLoop = ChildLoop->getNextControl();
+		ChildLoop = ChildLoop->getNextNode();
 	}
 
 	if ( getLayoutHeightRules() == WRAP_CONTENT ) {
 		setInternalHeight( pos.y + ( usedLastRow ? targetSize.getHeight() : 0 ) );
 	}
 
-	if ( oldSize != mSize ) {
+	if ( oldSize != mDpSize ) {
 		notifyLayoutAttrChangeParent();
 	}
 
 	invalidateDraw();
 }
 
-Uint32 UIGridLayout::onMessage(const UIMessage * Msg) {
+Uint32 UIGridLayout::onMessage(const NodeMessage * Msg) {
 	switch( Msg->getMsg() ) {
-		case UIMessage::LayoutAttributeChange:
+		case NodeMessage::LayoutAttributeChange:
 		{
 			pack();
 			break;
@@ -201,9 +201,9 @@ Uint32 UIGridLayout::onMessage(const UIMessage * Msg) {
 	return 0;
 }
 
-Sizei UIGridLayout::getTargetElementSize() {
-	return Sizei( mColumnMode == Size ? mColumnWidth : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getWidth() : mSize.getWidth() ) - mPadding.Left - mPadding.Right ) * mColumnWeight,
-				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getHeight() : mSize.getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
+Sizef UIGridLayout::getTargetElementSize() {
+	return Sizef( mColumnMode == Size ? mColumnWidth : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getWidth() : mDpSize.getWidth() ) - mPadding.Left - mPadding.Right ) * mColumnWeight,
+				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getHeight() : mDpSize.getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
 }
 
 void UIGridLayout::loadFromXmlNode(const pugi::xml_node & node) {

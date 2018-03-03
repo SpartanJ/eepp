@@ -22,7 +22,7 @@ class EE_API UIDropDownList : public UITextInput {
 
 		UIListBox * getListBox() const;
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		void showList();
 
@@ -44,11 +44,11 @@ class EE_API UIDropDownList : public UITextInput {
 
 		UIDropDownListStyleConfig mStyleConfig;
 		UIListBox *		mListBox;
-		UIControl *		mFriendCtrl;
+		UINode *		mFriendCtrl;
 
-		void onListBoxFocusLoss( const UIEvent * Event );
+		void onListBoxFocusLoss( const Event * Event );
 
-		virtual void onItemSelected( const UIEvent * Event );
+		virtual void onItemSelected( const Event * Event );
 
 		virtual void show();
 
@@ -56,13 +56,13 @@ class EE_API UIDropDownList : public UITextInput {
 
 		Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
 
-		virtual void onItemClicked( const UIEvent * Event );
+		virtual void onItemClicked( const Event * Event );
 
-		virtual void onItemKeyDown( const UIEvent * Event );
+		virtual void onItemKeyDown( const Event * Event );
 
-		virtual void onControlClear( const UIEvent * Event );
+		virtual void onControlClear( const Event * Event );
 
-		Uint32 onKeyDown( const UIEventKey &Event );
+		Uint32 onKeyDown( const KeyEvent &Event );
 
 		virtual void onSizeChange();
 
@@ -72,7 +72,7 @@ class EE_API UIDropDownList : public UITextInput {
 
 		virtual void onThemeLoaded();
 
-		void setFriendControl( UIControl * friendCtrl );
+		void setFriendControl( UINode * friendCtrl );
 
 		void destroyListBox();
 };

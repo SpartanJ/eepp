@@ -44,28 +44,46 @@ IniFile::IniFile( Pack * Pack, std::string iniPackPath, const bool& shouldReadFi
 		readFile();
 }
 
+IniFile::IniFile( IOStream& stream, const bool& shouldReadFile ) :
+	mCaseInsensitive( true ),
+	mIniReaded( false )
+{
+	loadFromStream( stream );
+
+	if ( shouldReadFile )
+		readFile();
+}
+
 bool IniFile::loadFromPack( Pack * Pack, std::string iniPackPath ) {
-	if ( NULL != Pack && Pack->isOpen() && Pack->exists( iniPackPath ) ) {
+	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( iniPackPath ) ) {
 		SafeDataPointer PData;
 
 		Pack->extractFileToMemory( iniPackPath, PData );
 
-		return loadFromMemory( PData.Data, PData.DataSize );
+		return loadFromMemory( PData.data, PData.size );
 	}
 
 	return false;
 }
 
-bool IniFile::loadFromMemory( const Uint8* RAWData, const Uint32& size ) {
-	std::string myfile;
-	myfile.assign( reinterpret_cast<const char*> (RAWData), size );
+bool IniFile::loadFromStream( IOStream& stream ) {
+	if ( !stream.isOpen() )
+		return false;
 
+	std::string myfile( (size_t)stream.getSize(), '\0' );
+
+	stream.read( (char*)&myfile[0], stream.getSize() );
+
+	clear();
 	mLines.clear();
 	mLines = String::split( myfile );
 
-	mIniReaded = false;
-
 	return true;
+}
+
+bool IniFile::loadFromMemory( const Uint8* RAWData, const Uint32& size ) {
+	IOStreamMemory f( reinterpret_cast<const char*>( RAWData ), size );
+	return loadFromStream( f );
 }
 
 bool IniFile::loadFromFile( const std::string& iniPath ) {
@@ -73,20 +91,7 @@ bool IniFile::loadFromFile( const std::string& iniPath ) {
 
 	if ( FileSystem::fileExists( iniPath ) ) {
 		IOStreamFile f( mPath );
-
-		if ( !f.isOpen() )
-			return false;
-
-		std::string myfile( (size_t)f.getSize(), '\0' );
-
-		f.read( (char*)&myfile[0], f.getSize() );
-
-		mLines.clear();
-		mLines = String::split( myfile );
-
-		mIniReaded = false;
-
-		return true;
+		return loadFromStream( f );
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string tPath( iniPath );
 
@@ -421,13 +426,6 @@ bool IniFile::deleteKey ( std::string const keyname ) {
 	if ( keyID == noID )
 		return false;
 
-	// Now hopefully this destroys the vector lists within mKeys.
-	// Looking at <vector> source, this should be the case using the destructor.
-	// If not, I may have to do it explicitly. Memory leak check should tell.
-	// memleak_test.cpp shows that the following not required.
-	//mKeys[keyID].names.clear();
-	//mKeys[keyID].values.clear();
-
 	std::vector<std::string>::iterator npos = mNames.begin() + keyID;
 	std::vector<key>::iterator kpos = mKeys.begin() + keyID;
 	mNames.erase ( npos, npos + 1 );
@@ -437,12 +435,7 @@ bool IniFile::deleteKey ( std::string const keyname ) {
 }
 
 void IniFile::clear() {
-	// This loop not needed. The vector<> destructor seems to do
-	// all the work itself. memleak_test.cpp shows this.
-	//for ( unsigned i = 0; i < mKeys.size(); ++i) {
-	//  mKeys[i].names.clear();
-	//  mKeys[i].values.clear();
-	//}
+	mIniReaded = false;
 	mNames.clear();
 	mKeys.clear();
 	mComments.clear();

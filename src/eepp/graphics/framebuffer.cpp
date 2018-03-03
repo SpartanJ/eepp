@@ -65,7 +65,7 @@ void FrameBuffer::setBufferView() {
 	GLi->getCurrentMatrix( GL_PROJECTION_MATRIX, mProjMat );
 	GLi->getCurrentMatrix( GL_MODELVIEW_MATRIX, mModelViewMat );
 
-	mView.setSize( mSize.getWidth(), mSize.getHeight() );
+	mView.reset( Rectf( 0, 0, mSize.getWidth(), mSize.getHeight() ) );
 	sFBOActiveViews.push_back(&mView);
 
 	GLi->viewport( 0, 0, mSize.getWidth(), mSize.getHeight() );
@@ -82,10 +82,10 @@ void FrameBuffer::recoverView() {
 	sFBOActiveViews.remove(&mView);
 
 	if ( sFBOActiveViews.empty() ) {
-		mWindow->setView( mWindow->getView() );
+		mWindow->setView( mWindow->getView(), true );
 	} else {
 		const View* view = sFBOActiveViews.back();
-		GLi->viewport( 0, 0, view->getView().getWidth(), view->getView().getHeight() );
+		GLi->viewport( 0, 0, view->getSize().getWidth(), view->getSize().getHeight() );
 	}
 
 	// Recover the user projection and modelview matrix

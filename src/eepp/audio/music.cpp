@@ -1,6 +1,7 @@
 #include <eepp/audio/music.hpp>
 #include <eepp/audio/soundfile.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/filesystem.hpp>
 
 namespace EE { namespace Audio {
 
@@ -18,7 +19,7 @@ Music::~Music() {
 
 bool Music::openFromPack( Pack* Pack, const std::string& FilePackPath ) {
 	if ( Pack->isOpen() && Pack->extractFileToMemory( FilePackPath, mData ) )
-		return openFromMemory( reinterpret_cast<const char*> ( mData.Data ), mData.DataSize );
+		return openFromMemory( reinterpret_cast<const char*> ( mData.data ), mData.size );
 
 	return false;
 }

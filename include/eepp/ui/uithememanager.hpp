@@ -6,7 +6,7 @@
 
 namespace EE { namespace UI {
 
-class UIControl;
+class UINode;
 
 class EE_API UIThemeManager : public ResourceManager<UITheme> {
 	SINGLETON_DECLARE_HEADERS(UIThemeManager)
@@ -14,47 +14,43 @@ class EE_API UIThemeManager : public ResourceManager<UITheme> {
 	public:
 		virtual ~UIThemeManager();
 
-		void setDefaultFont( Font * Font );
+		UIThemeManager * setDefaultFont( Font * Font );
 
 		Font * getDefaultFont() const;
 
-		void setTheme( const std::string& Theme );
+		UIThemeManager * setDefaultTheme( UITheme * Theme );
 
-		void setTheme( UITheme * Theme );
-
-		void setDefaultTheme( UITheme * Theme );
-
-		void setDefaultTheme( const std::string& Theme );
+		UIThemeManager * setDefaultTheme( const std::string& Theme );
 
 		UITheme * getDefaultTheme() const;
 
-		void applyDefaultTheme( UIControl * Control );
+		UIThemeManager * applyDefaultTheme( UINode * Control );
 
-		void setAutoApplyDefaultTheme( const bool& apply );
+		UIThemeManager * setAutoApplyDefaultTheme( const bool& apply );
 
 		const bool& getAutoApplyDefaultTheme() const;
 
-		void setDefaultEffectsEnabled( const bool& Enabled );
+		UIThemeManager * setDefaultEffectsEnabled( const bool& Enabled );
 
 		const bool& getDefaultEffectsEnabled() const;
 
 		const Time& getControlsFadeInTime() const;
 
-		void setControlsFadeInTime( const Time & Time );
+		UIThemeManager * setControlsFadeInTime( const Time & Time );
 
 		const Time& getControlsFadeOutTime() const;
 
-		void setControlsFadeOutTime( const Time& Time );
+		UIThemeManager * setControlsFadeOutTime( const Time& Time );
 
-		void setTooltipTimeToShow( const Time & Time );
+		UIThemeManager * setTooltipTimeToShow( const Time & Time );
 
 		const Time& getTooltipTimeToShow() const;
 
-		void setTooltipFollowMouse( const bool& Follow );
+		UIThemeManager * setTooltipFollowMouse( const bool& Follow );
 
 		const bool& getTooltipFollowMouse() const;
 
-		void setCursorSize( const Sizei& Size );
+		UIThemeManager * setCursorSize( const Sizei& Size );
 
 		const Sizei& getCursorSize() const;
 

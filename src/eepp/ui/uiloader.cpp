@@ -1,6 +1,6 @@
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -37,7 +37,7 @@ bool UILoader::isType( const Uint32& type ) const {
 void UILoader::draw() {
 	UIWidget::draw();
 
-	Rectf rect( mScreenPosf, Sizef( mRealSize.x, mRealSize.y ) );
+	Rectf rect( Vector2f( mScreenPosi.x, mScreenPosi.y ), Sizef( (int)mSize.x, (int)mSize.y ) );
 	mArc.setPosition( rect.getCenter() );
 	mCircle.setPosition( rect.getCenter() );
 
@@ -52,12 +52,12 @@ void UILoader::draw() {
 	clippingMask->stencilMaskDisable();
 }
 
-void UILoader::update() {
-	UIWidget::update();
+void UILoader::update( const Time& time ) {
+	UIWidget::update( time );
 
 	if ( mIndeterminate ) {
-		mArcAngle += getElapsed().asMilliseconds() * mAnimationSpeed * mOp;
-		mArcStartAngle += getElapsed().asMilliseconds() * (mAnimationSpeed*1.5f);
+		mArcAngle += time.asMilliseconds() * mAnimationSpeed * mOp;
+		mArcStartAngle += time.asMilliseconds() * (mAnimationSpeed*1.5f);
 
 		if ( mOp == 1 && mArcAngle > 340 ) {
 			mOp = -1;
@@ -68,7 +68,7 @@ void UILoader::update() {
 		mArc.setArcAngle( mArcAngle );
 		mArc.setArcStartAngle( mArcStartAngle );
 	} else {
-		mArcStartAngle += getElapsed().asMilliseconds() * (mAnimationSpeed*1.5f);
+		mArcStartAngle += time.asMilliseconds() * (mAnimationSpeed*1.5f);
 		mArc.setArcStartAngle( mArcStartAngle );
 	}
 }
@@ -108,7 +108,7 @@ const Color& UILoader::getFillColor() const {
 
 void UILoader::onSizeChange() {
 	if ( mRadius == 0 ) {
-		setRadius( eemin( mSize.x, mSize.y ) / 2.f );
+		setRadius( eemin( mDpSize.x, mDpSize.y ) / 2.f );
 	}
 }
 

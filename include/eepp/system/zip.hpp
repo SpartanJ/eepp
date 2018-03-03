@@ -1,7 +1,6 @@
 #ifndef EE_SYSTEMCZIP_HPP
 #define EE_SYSTEMCZIP_HPP
 
-#include <eepp/system/base.hpp>
 #include <eepp/system/pack.hpp>
 
 struct zip;
@@ -66,10 +65,16 @@ class EE_API Zip : public Pack {
 
 		/** @return The file path of the opened package */
 		std::string getPackPath();
+
+		IOStream * getFileStream( const std::string& path );
 	protected:
+		friend class IOStreamZip;
+
 		struct zip * mZip;
 
 		std::string mZipPath;
+
+		struct zip * getZip();
 };
 
 }}

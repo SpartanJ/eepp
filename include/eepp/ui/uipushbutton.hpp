@@ -29,9 +29,9 @@ class EE_API UIPushButton : public UIWidget {
 
 		virtual const String& getText();
 
-		void setPadding( const Rect& padding );
+		void setPadding( const Rectf& padding );
 
-		const Rect& getPadding() const;
+		const Rectf& getPadding() const;
 
 		void setIconHorizontalMargin( Int32 margin );
 
@@ -93,9 +93,9 @@ class EE_API UIPushButton : public UIWidget {
 
 		virtual void onThemeLoaded();
 
-		virtual Uint32 onKeyDown( const UIEventKey& Event );
+		virtual Uint32 onKeyDown( const KeyEvent& Event );
 
-		virtual Uint32 onKeyUp( const UIEventKey& Event );
+		virtual Uint32 onKeyUp( const KeyEvent& Event );
 };
 
 }}

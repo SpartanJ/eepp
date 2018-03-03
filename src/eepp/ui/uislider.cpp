@@ -1,7 +1,7 @@
 #include <eepp/ui/uislider.hpp>
-#include <eepp/ui/uimanager.hpp>
-#include <eepp/graphics/subtexture.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <eepp/graphics/textureregion.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -27,14 +27,14 @@ UISlider::UISlider( const UI_ORIENTATION& orientation ) :
 		mStyleConfig = theme->getSliderStyleConfig();
 	}
 
-	Sizei bgSize;
+	Sizef bgSize;
 
 	if ( UI_HORIZONTAL == mOrientation )
-		bgSize = Sizei( mSize.getWidth() - 16, 8 );
+		bgSize = Sizef( mDpSize.getWidth() - 16, 8 );
 	else
-		bgSize = Sizei( 8, mSize.getHeight() - 16 );
+		bgSize = Sizef( 8, mDpSize.getHeight() - 16 );
 
-	mBackSlider = UIControlAnim::New();
+	mBackSlider = UINode::New();
 	mBackSlider->setParent( this );
 	mBackSlider->setVisible( true );
 	mBackSlider->setEnabled( true );
@@ -105,11 +105,11 @@ void UISlider::adjustChilds() {
 			Float percent = ( mPageStep / ( mMaxValue - mMinValue ) );
 
 			if ( UI_HORIZONTAL == mOrientation ) {
-				Int32 size = eemax( (Int32)( (Float)mSize.getWidth() * percent ), tSkin->getSize().getWidth() );
+				Float size = eemax( ( (Float)mDpSize.getWidth() * percent ), tSkin->getSize().getWidth() );
 
 				mSlider->setSize( size, tSkin->getSize().getHeight() );
 			} else {
-				Int32 size = eemax( (Int32)( (Float)mSize.getHeight() * percent ), tSkin->getSize().getHeight() );
+				Float size = eemax( ( (Float)mDpSize.getHeight() * percent ), tSkin->getSize().getHeight() );
 
 				mSlider->setSize( tSkin->getSize().getWidth(), size );
 			}
@@ -126,29 +126,29 @@ void UISlider::adjustChilds() {
 
 	if ( NULL != tSkin ) {
 		if ( UI_HORIZONTAL == mOrientation ) {
-			Int32 Height;
+			Float Height;
 
 			if ( mStyleConfig.ExpandBackground )
-				Height = mSize.getHeight();
+				Height = mDpSize.getHeight();
 			else
 				Height = tSkin->getSize().getHeight();
 
 			if ( mStyleConfig.AllowHalfSliderOut )
-				mBackSlider->setSize( Sizei( mSize.getWidth() - mSlider->getSize().getWidth(), Height ) );
+				mBackSlider->setSize( Sizef( mDpSize.getWidth() - mSlider->getSize().getWidth(), Height ) );
 			else
-				mBackSlider->setSize( Sizei( mSize.getWidth(), Height ) );
+				mBackSlider->setSize( Sizef( mDpSize.getWidth(), Height ) );
 		} else {
-			Int32 Width;
+			Float Width;
 
 			if ( mStyleConfig.ExpandBackground )
-				Width = mSize.getWidth();
+				Width = mDpSize.getWidth();
 			else
 				Width = tSkin->getSize().getWidth();
 
 			if ( mStyleConfig.AllowHalfSliderOut )
-				mBackSlider->setSize( Sizei( Width, mSize.getHeight() - mSlider->getSize().getHeight() ) );
+				mBackSlider->setSize( Sizef( Width, mDpSize.getHeight() - mSlider->getSize().getHeight() ) );
 			else
-				mBackSlider->setSize( Sizei( Width, mSize.getHeight() ) );
+				mBackSlider->setSize( Sizef( Width, mDpSize.getHeight() ) );
 		}
 
 		mBackSlider->center();
@@ -180,7 +180,7 @@ void UISlider::fixSliderPos() {
 			if ( mStyleConfig.AllowHalfSliderOut )
 				setValue( mMinValue + (Float)mSlider->getPosition().x * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getWidth() );
 			else
-				setValue( mMinValue + (Float)mSlider->getPosition().x * ( mMaxValue - mMinValue ) / ( (Float)mSize.getWidth() - mSlider->getSize().getWidth() ) );
+				setValue( mMinValue + (Float)mSlider->getPosition().x * ( mMaxValue - mMinValue ) / ( (Float)mDpSize.getWidth() - mSlider->getSize().getWidth() ) );
 		} else {
 			mSlider->setPosition( 0, mSlider->getPosition().y );
 
@@ -201,7 +201,7 @@ void UISlider::fixSliderPos() {
 			if ( mStyleConfig.AllowHalfSliderOut )
 				setValue( mMinValue + (Float)mSlider->getPosition().y * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getHeight() );
 			else
-				setValue( mMinValue + (Float)mSlider->getPosition().y * ( mMaxValue - mMinValue ) / ( (Float)mSize.getHeight() - mSlider->getSize().getHeight() ) );
+				setValue( mMinValue + (Float)mSlider->getPosition().y * ( mMaxValue - mMinValue ) / ( (Float)mDpSize.getHeight() - mSlider->getSize().getHeight() ) );
 		}
 
 		mOnPosChange = false;
@@ -224,12 +224,12 @@ void UISlider::setValue( Float Val ) {
 				if ( mStyleConfig.AllowHalfSliderOut )
 					mSlider->setPosition( (Int32)( (Float)mBackSlider->getSize().getWidth() * Percent ), mSlider->getPosition().y );
 				else
-					mSlider->setPosition( (Int32)( ( (Float)mSize.getWidth() - mSlider->getSize().getWidth() ) * Percent ), mSlider->getPosition().y );
+					mSlider->setPosition( (Int32)( ( (Float)mDpSize.getWidth() - mSlider->getSize().getWidth() ) * Percent ), mSlider->getPosition().y );
 			} else {
 				if ( mStyleConfig.AllowHalfSliderOut )
 					mSlider->setPosition( mSlider->getPosition().x, (Int32)( (Float)mBackSlider->getSize().getHeight() * Percent ) );
 				else
-					mSlider->setPosition( mSlider->getPosition().x, (Int32)( ( (Float)mSize.getHeight() - mSlider->getSize().getHeight() ) * Percent ) );
+					mSlider->setPosition( mSlider->getPosition().x, (Int32)( ( (Float)mDpSize.getHeight() - mSlider->getSize().getHeight() ) * Percent ) );
 			}
 
 			mOnPosChange = false;
@@ -281,15 +281,15 @@ bool UISlider::isVertical() const {
 	return mOrientation == UI_VERTICAL;
 }
 
-void UISlider::update() {
-	UIControlAnim::update();
+void UISlider::update( const Time& time ) {
+	UINode::update( time );
 
-	if ( isMouseOver() || mBackSlider->isMouseOver() || mSlider->isMouseOver() ) {
-		manageClick( UIManager::instance()->getInput()->getClickTrigger() );
+	if ( NULL != getEventDispatcher() && ( isMouseOver() || mBackSlider->isMouseOver() || mSlider->isMouseOver() ) ) {
+		manageClick( getEventDispatcher()->getClickTrigger() );
 	}
 }
 
-Uint32 UISlider::onKeyDown( const UIEventKey &Event ) {
+Uint32 UISlider::onKeyDown( const KeyEvent &Event ) {
 	if ( Sys::getTicks() - mLastTickMove > 100 ) {
 		if ( Event.getKeyCode() == KEY_DOWN ) {
 			mLastTickMove = Sys::getTicks();
@@ -314,9 +314,9 @@ Uint32 UISlider::onKeyDown( const UIEventKey &Event ) {
 }
 
 void UISlider::manageClick( const Uint32& Flags ) {
-	if ( Flags ) {
-		Vector2i ControlPos = UIManager::instance()->getMousePos();
-		mSlider->worldToControl( ControlPos );
+	if ( Flags && NULL != getEventDispatcher() ) {
+		Vector2f ControlPos = getEventDispatcher()->getMousePosf();
+		mSlider->worldToNode( ControlPos );
 
 		if ( Flags & EE_BUTTON_LMASK && !mSlider->isMouseOver()  ) {
 			if ( UI_HORIZONTAL == mOrientation ) {
@@ -387,16 +387,16 @@ void UISlider::setPageStep(const Float & pageStep) {
 	setValue( mValue );
 }
 
-UIControl * UISlider::getBackSlider() const {
+UINode * UISlider::getBackSlider() const {
 	return mBackSlider;
 }
 
-UIDragableControl * UISlider::getSliderButton() const {
+UINode * UISlider::getSliderButton() const {
 	return mSlider;
 }
 
 void UISlider::onAlphaChange() {
-	UIControlAnim::onAlphaChange();
+	UINode::onAlphaChange();
 	
 	mBackSlider->setAlpha( mAlpha );
 	mSlider->setAlpha( mAlpha );

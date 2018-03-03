@@ -76,6 +76,8 @@ class EE_API WindowSDL : public Window {
 		void setGLContextThread();
 
 		void unsetGLContextThread();
+
+		int getCurrentDisplayIndex();
 	protected:
 		friend class ClipboardSDL;
 

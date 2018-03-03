@@ -1,7 +1,8 @@
 #ifndef EE_SYSTEMTRESOURCEMANAGER_HPP
 #define EE_SYSTEMTRESOURCEMANAGER_HPP
 
-#include <eepp/system/base.hpp>
+#include <eepp/core/string.hpp>
+#include <string>
 #include <list>
 
 namespace EE { namespace System {

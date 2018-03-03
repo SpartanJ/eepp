@@ -2,7 +2,7 @@
 
 #ifdef EE_BACKEND_SDL2
 
-#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
+#include <SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/platform/platformimpl.hpp>
 #include <eepp/window/backend/SDL2/windowsdl2.hpp>
@@ -164,13 +164,11 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 			#endif
 		}
 	#else
-		#if SDL_VERSION_ATLEAST(2,0,0)
 		if ( GLv_3CP == Context.Version ) {
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 		}
-		#endif
 	#endif
 
 	#ifdef SDL2_THREADED_GLCONTEXT
@@ -216,7 +214,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	createView();
 
-	setup2D();
+	setup2D( false );
 
 	mWindow.Created = true;
 
@@ -251,6 +249,10 @@ void WindowSDL::setGLContextThread() {
 
 void WindowSDL::unsetGLContextThread() {
 	SDL_GL_MakeCurrent( mSDLWindow, NULL );
+}
+
+int WindowSDL::getCurrentDisplayIndex() {
+	return SDL_GetWindowDisplayIndex( mSDLWindow );
 }
 
 std::string WindowSDL::getVersion() {
@@ -342,7 +344,7 @@ bool WindowSDL::isVisible() {
 }
 
 void WindowSDL::onWindowResize( Uint32 Width, Uint32 Height ) {
-	if ( mWindow.WindowConfig.Width && Height == mWindow.WindowConfig.Height )
+	if ( Width == mWindow.WindowConfig.Width && Height == mWindow.WindowConfig.Height )
 		return;
 
 	eePRINTL( "onWindowResize: %d Height %d.", Width, Height );
@@ -351,9 +353,9 @@ void WindowSDL::onWindowResize( Uint32 Width, Uint32 Height ) {
 	mWindow.WindowConfig.Height	= Height;
 	mWindow.WindowSize = Sizei( Width, Height );
 
-	mDefaultView.setView( 0, 0, Width, Height );
+	mDefaultView.reset( Rectf( 0, 0, Width, Height ) );
 
-	setup2D();
+	setup2D( false );
 
 	SDL_PumpEvents();
 
@@ -390,9 +392,7 @@ void WindowSDL::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( isWindowed() && !Windowed ) {
 		mWinPos = getPosition();
 	} else {
-		#if SDL_VERSION_ATLEAST(2,0,0)
 		SDL_SetWindowFullscreen( mSDLWindow, Windowed ? 0 : SDL_WINDOW_FULLSCREEN );
-		#endif
 	}
 
 	SDL_SetWindowSize( mSDLWindow, Width, Height );
@@ -402,9 +402,7 @@ void WindowSDL::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 
 		setGLConfig();
 
-		#if SDL_VERSION_ATLEAST(2,0,0)
 		SDL_SetWindowFullscreen( mSDLWindow, Windowed ? 0 : SDL_WINDOW_FULLSCREEN );
-		#endif
 	}
 
 	if ( isWindowed() && Windowed ) {
@@ -413,9 +411,9 @@ void WindowSDL::setSize( Uint32 Width, Uint32 Height, bool Windowed ) {
 
 	BitOp::setBitFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
 
-	mDefaultView.setView( 0, 0, Width, Height );
+	mDefaultView.reset( Rectf( 0, 0, Width, Height ) );
 
-	setup2D();
+	setup2D( false );
 
 	SDL_PumpEvents();
 
@@ -576,12 +574,10 @@ Vector2i WindowSDL::getPosition() {
 }
 
 void WindowSDL::updateDesktopResolution() {
-#if SDL_VERSION_ATLEAST(2,0,0)
 	SDL_DisplayMode dpm;
 	SDL_GetDesktopDisplayMode( SDL_GetWindowDisplayIndex( mSDLWindow ), &dpm );
 
 	mWindow.DesktopResolution = Sizei( dpm.w, dpm.h );
-#endif
 }
 
 const Sizei& WindowSDL::getDesktopResolution() {
@@ -598,11 +594,7 @@ void WindowSDL::startTextInput() {
 }
 
 bool WindowSDL::isTextInputActive() {
-#if SDL_VERSION_ATLEAST(2,0,0)
 	return SDL_TRUE == SDL_IsTextInputActive();
-#else
-	return false;
-#endif
 }
 
 void WindowSDL::stopTextInput() {
@@ -626,19 +618,11 @@ void WindowSDL::setTextInputRect( Rect& rect ) {
 }
 
 bool WindowSDL::hasScreenKeyboardSupport() {
-#if SDL_VERSION_ATLEAST(2,0,0)
 	return SDL_TRUE == SDL_HasScreenKeyboardSupport();
-#else
-	return false;
-#endif
 }
 
 bool WindowSDL::isScreenKeyboardShown() {
-#if SDL_VERSION_ATLEAST(2,0,0)
 	return SDL_TRUE == SDL_IsScreenKeyboardShown( mSDLWindow );
-#else
-	return false;
-#endif
 }
 
 }}}}

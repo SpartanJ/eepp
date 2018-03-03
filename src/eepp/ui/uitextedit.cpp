@@ -1,8 +1,8 @@
 #include <eepp/ui/uitextedit.hpp>
-#include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/font.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -19,37 +19,39 @@ UITextEdit::UITextEdit() :
 	mVScrollBarMode( UI_SCROLLBAR_AUTO ),
 	mSkipValueChange( false )
 {
-	setFlags( UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED | UI_CLIP_ENABLE | UI_WORD_WRAP );
+	setFlags( UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED | UI_WORD_WRAP );
+	clipEnable();
 
 	mTextInput	= UITextInput::New();
 	mTextInput->setParent( this );
 	mTextInput->setFlags( UI_TEXT_SELECTION_ENABLED | UI_TEXT_SELECTION_ENABLED | UI_VALIGN_TOP );
-	mTextInput->unsetFlags( UI_CLIP_ENABLE | UI_VALIGN_CENTER );
+	mTextInput->unsetFlags( UI_VALIGN_CENTER );
+	mTextInput->clipDisable();
 	mTextInput->getInputTextBuffer()->isNewLineEnabled( true );
 	mTextInput->setVisible( true );
 	mTextInput->setEnabled( true );
-	mTextInput->setSize( mSize );
+	mTextInput->setSize( mDpSize );
 
-	mTextInput->addEventListener( UIEvent::OnSizeChange		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
-	mTextInput->addEventListener( UIEvent::OnTextChanged		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
-	mTextInput->addEventListener( UIEvent::OnPressEnter		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
-	mTextInput->addEventListener( UIEvent::OnCursorPosChange	, cb::Make1( this, &UITextEdit::onCursorPosChange ) );
+	mTextInput->addEventListener( Event::OnSizeChange		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
+	mTextInput->addEventListener( Event::OnTextChanged		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
+	mTextInput->addEventListener( Event::OnPressEnter		, cb::Make1( this, &UITextEdit::onInputSizeChange ) );
+	mTextInput->addEventListener( Event::OnCursorPosChange	, cb::Make1( this, &UITextEdit::onCursorPosChange ) );
 
 	mVScrollBar = UIScrollBar::New();
 	mVScrollBar->setOrientation( UI_VERTICAL );
 	mVScrollBar->setParent( this );
-	mVScrollBar->setPosition( mSize.getWidth() - 16, 0 );
-	mVScrollBar->setSize( 16, mSize.getHeight() );
+	mVScrollBar->setPosition( mDpSize.getWidth() - 16, 0 );
+	mVScrollBar->setSize( 16, mDpSize.getHeight() );
 	mVScrollBar->setValue( 1 );
 
 	mHScrollBar = UIScrollBar::New();
 	mHScrollBar->setOrientation( UI_HORIZONTAL );
 	mHScrollBar->setParent( this );
-	mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
-	mHScrollBar->setPosition( 0, mSize.getHeight() - 16 );
+	mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), 16 );
+	mHScrollBar->setPosition( 0, mDpSize.getHeight() - 16 );
 
-	mVScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UITextEdit::onVScrollValueChange ) );
-	mHScrollBar->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UITextEdit::onHScrollValueChange ) );
+	mVScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UITextEdit::onVScrollValueChange ) );
+	mHScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UITextEdit::onHScrollValueChange ) );
 
 	autoPadding();
 
@@ -81,13 +83,13 @@ void UITextEdit::setTheme( UITheme * Theme ) {
 }
 
 void UITextEdit::onSizeChange() {
-	mHScrollBar->setPosition( 0, mSize.getHeight() - mHScrollBar->getSize().getHeight() );
-	mVScrollBar->setPosition( mSize.getWidth() - mVScrollBar->getSize().getWidth(), 0 );
+	mHScrollBar->setPosition( 0, mDpSize.getHeight() - mHScrollBar->getSize().getHeight() );
+	mVScrollBar->setPosition( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), 0 );
 
-	mHScrollBar->setSize( mSize.getWidth(), mHScrollBar->getSize().getHeight() );
-	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), mSize.getHeight() );
+	mHScrollBar->setSize( mDpSize.getWidth(), mHScrollBar->getSize().getHeight() );
+	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), mDpSize.getHeight() );
 
-	mTextInput->setPosition( PixelDensity::pxToDpI( mContainerPadding.Left ), PixelDensity::pxToDpI( mContainerPadding.Top ) );
+	mTextInput->setPosition( PixelDensity::pxToDp( mContainerPadding.Left ), PixelDensity::pxToDp( mContainerPadding.Top ) );
 
 	onInputSizeChange( NULL );
 
@@ -98,7 +100,7 @@ void UITextEdit::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
-void UITextEdit::onParentSizeChange( const Vector2i& SizeChange ) {
+void UITextEdit::onParentSizeChange( const Vector2f& SizeChange ) {
 	UIWidget::onParentSizeChange( SizeChange );
 
 	onInputSizeChange( NULL );
@@ -113,8 +115,8 @@ void UITextEdit::onAlphaChange() {
 }
 
 void UITextEdit::fixScroll() {
-	int Width	= mRealSize.getWidth()	- mContainerPadding.Left - mContainerPadding.Right;
-	int Height	= mRealSize.getHeight()	- mContainerPadding.Top	- mContainerPadding.Bottom;
+	int Width	= mSize.getWidth()	- mContainerPadding.Left - mContainerPadding.Right;
+	int Height	= mSize.getHeight()	- mContainerPadding.Top	- mContainerPadding.Bottom;
 
 	if ( mHScrollBar->isVisible() )
 		Height -= mHScrollBar->getRealSize().getHeight();
@@ -157,7 +159,7 @@ void UITextEdit::scrollbarsSet() {
 		}
 		case UI_SCROLLBAR_AUTO:
 		{
-			if ( mTextInput->getTextWidth() > mRealSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right ) {
+			if ( mTextInput->getTextWidth() > mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right ) {
 				mHScrollBar->setVisible( true );
 				mHScrollBar->setEnabled( true );
 			} else {
@@ -188,7 +190,7 @@ void UITextEdit::scrollbarsSet() {
 			if ( mHScrollBar->isVisible() )
 				extraH = mHScrollBar->getRealSize().getHeight();
 
-			if ( mTextInput->getTextHeight() > mRealSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom - extraH ) {
+			if ( mTextInput->getTextHeight() > mSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom - extraH ) {
 				mVScrollBar->setVisible( true );
 				mVScrollBar->setEnabled( true );
 			} else {
@@ -200,13 +202,13 @@ void UITextEdit::scrollbarsSet() {
 	}
 
 	if ( !mVScrollBar->isVisible() && mHScrollBar->isVisible() ) {
-		mHScrollBar->setSize( mSize.getWidth(), mHScrollBar->getSize().getHeight() );
+		mHScrollBar->setSize( mDpSize.getWidth(), mHScrollBar->getSize().getHeight() );
 	} else {
-		mHScrollBar->setSize( mSize.getWidth() - mVScrollBar->getSize().getWidth(), mHScrollBar->getSize().getHeight() );
+		mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth(), mHScrollBar->getSize().getHeight() );
 	}
 
 	if ( UI_SCROLLBAR_AUTO == mHScrollBarMode && mVScrollBar->isVisible() && !mHScrollBar->isVisible() ) {
-		if ( mTextInput->getTextWidth() > mRealSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right - mVScrollBar->getRealSize().getWidth() ) {
+		if ( mTextInput->getTextWidth() > mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right - mVScrollBar->getRealSize().getWidth() ) {
 			mHScrollBar->setVisible( true );
 			mHScrollBar->setEnabled( true );
 		}
@@ -219,7 +221,7 @@ void UITextEdit::scrollbarsSet() {
 		if ( mHScrollBar->isVisible() )
 			extraH = mHScrollBar->getRealSize().getHeight();
 
-		Int32 totH = mRealSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom - extraH;
+		Int32 totH = mSize.getHeight() - mContainerPadding.Top - mContainerPadding.Bottom - extraH;
 
 		if ( mTextInput->getTextHeight() > totH ) {
 			mVScrollBar->setPageStep( (Float)totH / (Float)mTextInput->getTextHeight() );
@@ -227,7 +229,7 @@ void UITextEdit::scrollbarsSet() {
 	}
 
 	if ( mHScrollBar->isVisible() ) {
-		Int32 totW = mRealSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right - mVScrollBar->getRealSize().getWidth();
+		Int32 totW = mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right - mVScrollBar->getRealSize().getWidth();
 
 		if ( mTextInput->getTextWidth() > totW && 0 != mTextInput->getTextWidth() ) {
 			mHScrollBar->setPageStep( (Float)totW / (Float)mTextInput->getTextWidth() );
@@ -241,16 +243,16 @@ void UITextEdit::scrollbarsSet() {
 
 void UITextEdit::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mContainerPadding = PixelDensity::dpToPxI( makePadding() );
+		mContainerPadding = makePadding();
 	}
 }
 
-void UITextEdit::onVScrollValueChange( const UIEvent * Event ) {
+void UITextEdit::onVScrollValueChange( const Event * Event ) {
 	if ( !mSkipValueChange )
 		fixScroll();
 }
 
-void UITextEdit::onHScrollValueChange( const UIEvent * Event ) {
+void UITextEdit::onHScrollValueChange( const Event * Event ) {
 	if ( !mSkipValueChange )
 		fixScroll();
 }
@@ -279,12 +281,12 @@ void UITextEdit::setText( const String& Txt ) {
 	onSizeChange();
 }
 
-void UITextEdit::onInputSizeChange( const UIEvent * Event ) {
-	int Width	= mRealSize.getWidth()	- mContainerPadding.Left - mContainerPadding.Right;
-	int Height	= mRealSize.getHeight()	- mContainerPadding.Top	- mContainerPadding.Bottom;
+void UITextEdit::onInputSizeChange( const Event * Event ) {
+	int Width	= mSize.getWidth()	- mContainerPadding.Left - mContainerPadding.Right;
+	int Height	= mSize.getHeight()	- mContainerPadding.Top	- mContainerPadding.Bottom;
 
 	if ( NULL != Event ) {
-		if ( Event->getEventType() == UIEvent::OnPressEnter ) {
+		if ( Event->getType() == Event::OnPressEnter ) {
 			mHScrollBar->setValue( 0 );
 		}
 	}
@@ -334,13 +336,13 @@ void UITextEdit::onInputSizeChange( const UIEvent * Event ) {
 	fixScrollToCursor();
 }
 
-void UITextEdit::onCursorPosChange( const UIEvent * Event ) {
+void UITextEdit::onCursorPosChange( const Event * Event ) {
 	fixScrollToCursor();
 }
 
 void UITextEdit::fixScrollToCursor() {
-	int Width	= mRealSize.getWidth()	- mContainerPadding.Left - mContainerPadding.Right;
-	int Height	= mRealSize.getHeight()	- mContainerPadding.Top	- mContainerPadding.Bottom;
+	int Width	= mSize.getWidth()	- mContainerPadding.Left - mContainerPadding.Right;
+	int Height	= mSize.getHeight()	- mContainerPadding.Top	- mContainerPadding.Bottom;
 
 	if ( mVScrollBar->isVisible() )
 		Width -= mVScrollBar->getRealSize().getWidth();
@@ -391,11 +393,11 @@ void UITextEdit::shrinkText( const Uint32& Width ) {
 	}
 }
 
-void UITextEdit::update() {
-	UIWidget::update();
+void UITextEdit::update( const Time& time ) {
+	UIWidget::update( time );
 
-	if ( mTextInput->isEnabled() && mTextInput->isVisible() && mTextInput->isMouseOver() && mVScrollBar->isVisible() ) {
-		Uint32 Flags 			= UIManager::instance()->getInput()->getClickTrigger();
+	if ( NULL != getEventDispatcher() && mTextInput->isEnabled() && mTextInput->isVisible() && mTextInput->isMouseOver() && mVScrollBar->isVisible() ) {
+		Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
 
 		if ( Flags & EE_BUTTONS_WUWD )
 			mVScrollBar->getSlider()->manageClick( Flags );
@@ -457,7 +459,9 @@ void UITextEdit::loadFromXmlNode(const pugi::xml_node & node) {
 		String::toLowerInPlace( name );
 
 		if ( "text" == name ) {
-			setText( UIManager::instance()->getTranslatorString( ait->as_string() ) );
+			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
+				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( ait->as_string() ) );
+			}
 		} else if ( "allowediting" == name ) {
 			setAllowEditing( ait->as_bool() );
 		} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {

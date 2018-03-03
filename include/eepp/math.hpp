@@ -16,5 +16,6 @@
 #include <eepp/math/math.hpp>
 #include <eepp/math/mtrand.hpp>
 #include <eepp/math/easing.hpp>
+#include <eepp/math/transform.hpp>
 
 #endif

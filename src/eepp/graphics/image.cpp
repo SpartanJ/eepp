@@ -3,11 +3,11 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/image_helper.h>
-#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
-#include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
-#include <eepp/helper/jpeg-compressor/jpge.h>
-#include <eepp/helper/imageresampler/resampler.h>
+#include <SOIL2/src/SOIL2/image_helper.h>
+#include <SOIL2/src/SOIL2/stb_image.h>
+#include <SOIL2/src/SOIL2/SOIL2.h>
+#include <jpeg-compressor/jpge.h>
+#include <imageresampler/resampler.h>
 #include <algorithm>
 
 namespace EE { namespace Graphics {
@@ -213,7 +213,7 @@ bool Image::getInfo( const std::string& path, int * width, int * height, int * c
 
 			tPack->extractFileToMemory( npath, PData );
 
-			res = 0 != stbi_info_from_memory( PData.Data, PData.DataSize, width, height, channels );
+			res = 0 != stbi_info_from_memory( PData.data, PData.size, width, height, channels );
 		}
 	}
 
@@ -357,19 +357,22 @@ Image::Image( Pack * Pack, std::string FilePackPath, const unsigned int& forceCh
 	loadFromPack( Pack, FilePackPath );
 }
 
-Image::~Image() {
-	if ( !mAvoidFree )
-		clearCache();
-}
+Image::Image( IOStream & stream, const unsigned int& forceChannels ) :
+	mPixels(NULL),
+	mWidth(0),
+	mHeight(0),
+	mChannels(forceChannels),
+	mSize(0),
+	mAvoidFree(false),
+	mLoadedFromStbi(false)
+{
+	if ( stream.isOpen() ) {
+		SafeDataPointer PData( stream.getSize() );
 
-void Image::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
-	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( FilePackPath ) ) {
-		SafeDataPointer PData;
-
-		Pack->extractFileToMemory( FilePackPath, PData );
+		stream.read( (char*)PData.data, PData.size );
 
 		int w, h, c;
-		Uint8 * data = stbi_load_from_memory( PData.Data, PData.DataSize, &w, &h, &c, mChannels );
+		Uint8 * data = stbi_load_from_memory( PData.data, PData.size, &w, &h, &c, mChannels );
 
 		if ( NULL != data ) {
 			mPixels		= data;
@@ -383,7 +386,40 @@ void Image::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 
 			mLoadedFromStbi = true;
 		} else {
-			eePRINTL( "Failed to load image %s. Reason: %s", stbi_failure_reason(), FilePackPath.c_str() );
+			eePRINTL( "Failed to load image. Reason: %s", stbi_failure_reason() );
+		}
+	} else {
+		eePRINTL( "Failed to load image from stream." );
+	}
+}
+
+Image::~Image() {
+	if ( !mAvoidFree )
+		clearCache();
+}
+
+void Image::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
+	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( FilePackPath ) ) {
+		SafeDataPointer PData;
+
+		Pack->extractFileToMemory( FilePackPath, PData );
+
+		int w, h, c;
+		Uint8 * data = stbi_load_from_memory( PData.data, PData.size, &w, &h, &c, mChannels );
+
+		if ( NULL != data ) {
+			mPixels		= data;
+			mWidth		= (unsigned int)w;
+			mHeight		= (unsigned int)h;
+
+			if ( STBI_default == mChannels )
+				mChannels	= (unsigned int)c;
+
+			mSize	= mWidth * mHeight * mChannels;
+
+			mLoadedFromStbi = true;
+		} else {
+			eePRINTL( "Failed to load image %s. Reason: %s", FilePackPath.c_str(), stbi_failure_reason() );
 		}
 	} else {
 		eePRINTL( "Failed to load image %s from pack.", FilePackPath.c_str() );

@@ -1,6 +1,6 @@
 #include <eepp/graphics/texturepackertex.hpp>
 #include <eepp/graphics/image.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
+#include <SOIL2/src/SOIL2/stb_image.h>
 
 namespace EE { namespace Graphics { namespace Private {
 

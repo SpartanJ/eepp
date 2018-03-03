@@ -19,19 +19,19 @@ PhysicsManager::~PhysicsManager() {
 		mMemoryManager = false;
 
 		std::list<Space*>::iterator its = mSpaces.begin();
-		for ( ; its != mSpaces.end(); its++ )
+		for ( ; its != mSpaces.end(); ++its )
 			cpSAFE_DELETE( *its );
 
 		std::list<Body*>::iterator itb = mBodysFree.begin();
-		for ( ; itb != mBodysFree.end(); itb++ )
+		for ( ; itb != mBodysFree.end(); ++itb )
 			cpSAFE_DELETE( *itb );
 
 		std::list<Shape*>::iterator itp = mShapesFree.begin();
-		for ( ; itp != mShapesFree.end(); itp++ )
+		for ( ; itp != mShapesFree.end(); ++itp )
 			cpSAFE_DELETE( *itp );
 
 		std::list<Constraint*>::iterator itc = mConstraintFree.begin();
-		for ( ; itc != mConstraintFree.end(); itc++ )
+		for ( ; itc != mConstraintFree.end(); ++itc )
 			cpSAFE_DELETE( *itc );
 	}
 }

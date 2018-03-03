@@ -20,15 +20,15 @@ class EE_API UISpinBox : public UIWidget {
 
 		virtual void setTheme( UITheme * Theme );
 
-		virtual void setPadding( const Rect& padding );
+		virtual void setPadding( const Rectf& padding );
 
-		const Rect& getPadding() const;
+		const Rectf& getPadding() const;
 
 		virtual void setClickStep( const Float& step );
 
 		const Float& getClickStep() const;
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		void addValue( const Float& value );
 
@@ -44,11 +44,11 @@ class EE_API UISpinBox : public UIWidget {
 
 		const Float& getValue() const;
 
-		virtual void update();
+		virtual void update( const Time& time );
 
-		UIControlAnim * getButtonPushUp() const;
+		UINode * getButtonPushUp() const;
 
-		UIControlAnim * getButtonPushDown() const;
+		UINode * getButtonPushDown() const;
 
 		UITextInput * getTextInput() const;
 
@@ -59,8 +59,8 @@ class EE_API UISpinBox : public UIWidget {
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
 		UITextInput * 		mInput;
-		UIControlAnim * 	mPushUp;
-		UIControlAnim * 	mPushDown;
+		UINode * 	mPushUp;
+		UINode * 	mPushDown;
 		Float				mMinValue;
 		Float				mMaxValue;
 		Float				mValue;

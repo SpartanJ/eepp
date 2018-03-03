@@ -26,6 +26,8 @@ class EE_API Interpolation2d {
 	public:
 		Interpolation2d();
 
+		Interpolation2d( std::vector<Point2d> points );
+
 		~Interpolation2d();
 
 		typedef cb::Callback1<void,Interpolation2d&> OnPathEndCallback;
@@ -47,11 +49,14 @@ class EE_API Interpolation2d {
 		/** Same as add( pos, waitTime ).add( pos, addTime ); */
 		Interpolation2d& waitAndAdd( const Vector2f& pos, const Time& waitTime, const Time& addTime );
 
+		/** Start the animation ( will reset the current state, and start from the beginning ) */
+		Interpolation2d& start();
+
 		/** Start the animation ( will reset the current state, and start from the beginning )
 		*	@param PathEndCallback An optional callback fired when the animation ends.
 		*	@param StepCallback An optional callback that is fired every time that a step is completed.
 		*/
-		Interpolation2d& start( OnPathEndCallback PathEndCallback = OnPathEndCallback(), OnStepCallback StepCallback = OnStepCallback() );
+		Interpolation2d& start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback = OnStepCallback() );
 
 		/** Stop the animation ( Enable = false ) */
 		Interpolation2d& stop();
@@ -97,6 +102,9 @@ class EE_API Interpolation2d {
 
 		/** @return the vector of waypoints */
 		const std::vector<Point2d>& getPoints() const;
+
+		/** @return the vector of waypoints reversed */
+		std::vector<Point2d> getReversePoints();
 
 		/** Set the current interpolation speed ( This will destroy the time of the interpolation and create one depending on the speed ) ( pixels per second ) */
 		Interpolation2d& setSpeed( const Float& speed );

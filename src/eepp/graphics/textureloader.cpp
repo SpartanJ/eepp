@@ -5,9 +5,11 @@
 #include <eepp/graphics/renderer/opengl.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/system/iostreamfile.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
-#include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
-#include <eepp/helper/jpeg-compressor/jpgd.h>
+#include <eepp/system/packmanager.hpp>
+#include <eepp/system/filesystem.hpp>
+#include <SOIL2/src/SOIL2/stb_image.h>
+#include <SOIL2/src/SOIL2/SOIL2.h>
+#include <jpeg-compressor/jpgd.h>
 using namespace EE::Window;
 
 #define TEX_LT_PATH 	(1)
@@ -309,8 +311,8 @@ void TextureLoader::loadFromPack() {
 	SafeDataPointer PData;
 
 	if ( NULL != mPack && mPack->isOpen() && mPack->extractFileToMemory( mFilepath, PData ) ) {
-		mImagePtr	= PData.Data;
-		mSize		= PData.DataSize;
+		mImagePtr	= PData.data;
+		mSize		= PData.size;
 
 		loadFromMemory();
 	}
@@ -421,7 +423,7 @@ void TextureLoader::loadFromPixels() {
 
 			Uint32 flags = mMipmap ? SOIL_FLAG_MIPMAPS | SOIL_FLAG_GL_MIPMAPS : 0;
 
-			flags = ( mClampMode == Texture::ClampMode::CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
+			flags = ( mClampMode == Texture::ClampMode::ClampRepeat) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 			flags = ( mCompressTexture ) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;
 
 			bool ForceGLThreaded = Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
@@ -496,7 +498,11 @@ void TextureLoader::loadFromPixels() {
 
 				mTexId = TextureFactory::instance()->pushTexture( mFilepath, tTexId, width, height, mImgWidth, mImgHeight, mMipmap, mChannels, mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
 
-				eePRINTL( "Texture %s loaded in %4.3f ms.", mFilepath.c_str(), mTE.getElapsed().asMilliseconds() );
+				if ( mFilepath.empty() ) {
+					eePRINTL( "Texture ID %d loaded in %4.3f ms.", mTexId, mTE.getElapsed().asMilliseconds() );
+				} else {
+					eePRINTL( "Texture %s loaded in %4.3f ms.", mFilepath.c_str(), mTE.getElapsed().asMilliseconds() );
+				}
 			} else {
 				eePRINTL( "Failed to create texture. Reason: %s", SOIL_last_result() );
 			}
@@ -541,7 +547,7 @@ void TextureLoader::setColorKey( RGB Color ) {
 	mColorKey = eeNew( RGB, ( Color.r, Color.g, Color.b ) );
 }
 
-const std::string& TextureLoader::filepath() const {
+const std::string& TextureLoader::getFilepath() const {
 	return mFilepath;
 }
 
