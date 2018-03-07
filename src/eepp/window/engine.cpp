@@ -56,9 +56,11 @@ Engine::Engine() :
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	mZip = eeNew( Zip, () );
 	mZip->open( getPlatformHelper()->getApkPath() );
-#endif
 
+	FileSystem::changeWorkingDirectory( getPlatformHelper()->getExternalStoragePath() );
+#else
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+#endif
 
 	TextureAtlasManager::createSingleton();
 }
@@ -378,6 +380,7 @@ DisplayManager * Engine::getDisplayManager() {
 	return mDisplayManager;
 }
 
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
 struct EngineInitializer
 {
 	EngineInitializer()
@@ -392,5 +395,6 @@ struct EngineInitializer
 };
 
 EngineInitializer engineInitializer;
+#endif
 
 }}
