@@ -561,7 +561,7 @@ void EETest::createBaseUI() {
 	mShowMenu = UIPushButton::New();
 	mShowMenu->setSkin( nSkin );
 
-	Sizei skinSize = mShowMenu->getSkinSize();
+	Sizef skinSize = mShowMenu->getSkinSize();
 
 	mShowMenu->setSize( mShowMenu->getSkinSize() )
 			->setPosition( screenSize.getWidth() - skinSize.getWidth() - 40,
@@ -569,7 +569,7 @@ void EETest::createBaseUI() {
 
 	mShowMenu->setText( "Show Menu" );
 	mShowMenu->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
-	mShowMenu->addEventListener( UIEvent::MouseClick, cb::Make1( this, &EETest::onShowMenu ) );
+	mShowMenu->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onShowMenu ) );
 #endif
 }
 
