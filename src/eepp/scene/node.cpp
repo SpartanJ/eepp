@@ -1173,8 +1173,8 @@ Vector2f Node::getScaleCenter() {
 void Node::setScale( const Vector2f& scale, const OriginPoint& center ) {
 	mScaleOriginPoint = PixelDensity::dpToPx( center );
 	updateOriginPoint();
-	Transformable::setScale( scale.x, scale.y );
 	Transformable::setScaleOrigin( getScaleOriginPoint().x, getScaleOriginPoint().y );
+	setScale( Vector2f( scale.x, scale.y ) );
 }
 
 void Node::setScale( const Float& scale, const OriginPoint& center ) {
