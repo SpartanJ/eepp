@@ -135,19 +135,30 @@ LOCAL_MODULE			:= openal
 
 LOCAL_CFLAGS			:= -O3 -DHAVE_CONFIG_H -DAL_ALEXT_PROTOTYPES -DHAVE_OPENSL
 
-LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/ $(LOCAL_PATH)/include $(LOCAL_PATH)/OpenAL32/Include
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/ $(LOCAL_PATH)/include $(LOCAL_PATH)/OpenAL32/Include $(LOCAL_PATH)/Alc $(LOCAL_PATH)/common
 
 LOCAL_SRC_FILES			:= \
 	$(subst $(LOCAL_PATH)/,, \
 	$(wildcard $(LOCAL_PATH)/OpenAL32/*.c) \
-	$(wildcard $(LOCAL_PATH)/Alc/AL*.c) \
-	$(wildcard $(LOCAL_PATH)/Alc/alc*.c) \
+	$(wildcard $(LOCAL_PATH)/common/*.c) \
+	$(wildcard $(LOCAL_PATH)/Alc/effects/*.c) \
+	$(LOCAL_PATH)/Alc/ALc.c \
+	$(LOCAL_PATH)/Alc/alconfig.c \
+	$(LOCAL_PATH)/Alc/ALu.c \
+	$(LOCAL_PATH)/Alc/ambdec.c \
+	$(LOCAL_PATH)/Alc/bformatdec.c \
 	$(LOCAL_PATH)/Alc/bs2b.c \
+	$(LOCAL_PATH)/Alc/converter.c \
 	$(LOCAL_PATH)/Alc/helpers.c \
 	$(LOCAL_PATH)/Alc/hrtf.c \
-	$(LOCAL_PATH)/Alc/mixer.c \
+	$(LOCAL_PATH)/Alc/mastering.c \
 	$(LOCAL_PATH)/Alc/mixer_c.c \
+	$(LOCAL_PATH)/Alc/mixer.c \
+	$(LOCAL_PATH)/Alc/nfcfilter.c \
 	$(LOCAL_PATH)/Alc/panning.c \
+	$(LOCAL_PATH)/Alc/ringbuffer.c \
+	$(LOCAL_PATH)/Alc/uhjfilter.c \
+	$(LOCAL_PATH)/Alc/backends/base.c \
 	$(LOCAL_PATH)/Alc/backends/opensl.c \
 	$(LOCAL_PATH)/Alc/backends/loopback.c \
 	$(LOCAL_PATH)/Alc/backends/wave.c \

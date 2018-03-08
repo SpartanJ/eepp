@@ -1,115 +1,85 @@
 #ifndef _AL_SOURCE_H_
 #define _AL_SOURCE_H_
 
-#define MAX_SENDS                 4
-
+#include "bool.h"
 #include "alMain.h"
 #include "alu.h"
-#include "alFilter.h"
+#include "hrtf.h"
+#include "atomic.h"
+
+#define MAX_SENDS      16
+#define DEFAULT_SENDS  2
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define SRC_HISTORY_BITS   (6)
-#define SRC_HISTORY_LENGTH (1<<SRC_HISTORY_BITS)
-#define SRC_HISTORY_MASK   (SRC_HISTORY_LENGTH-1)
-
-extern enum Resampler DefaultResampler;
-
-extern const ALsizei ResamplerPadding[ResamplerMax];
-extern const ALsizei ResamplerPrePadding[ResamplerMax];
+struct ALbuffer;
+struct ALsource;
 
 
-typedef struct ALbufferlistitem
-{
-    struct ALbuffer         *buffer;
-    struct ALbufferlistitem *next;
-    struct ALbufferlistitem *prev;
+typedef struct ALbufferlistitem {
+    ATOMIC(struct ALbufferlistitem*) next;
+    ALsizei num_buffers;
+    struct ALbuffer *buffers[];
 } ALbufferlistitem;
 
-typedef struct HrtfState {
-    ALboolean Moving;
-    ALuint Counter;
-    ALIGN(16) ALfloat History[MaxChannels][SRC_HISTORY_LENGTH];
-    ALIGN(16) ALfloat Values[MaxChannels][HRIR_LENGTH][2];
-    ALuint Offset;
-} HrtfState;
 
-typedef struct HrtfParams {
-    ALfloat Gain;
-    ALfloat Dir[3];
-    ALIGN(16) ALfloat Coeffs[MaxChannels][HRIR_LENGTH][2];
-    ALIGN(16) ALfloat CoeffStep[HRIR_LENGTH][2];
-    ALuint Delay[MaxChannels][2];
-    ALint DelayStep[2];
-    ALuint IrSize;
-} HrtfParams;
-
-typedef struct DirectParams {
-    ALfloat (*OutBuffer)[BUFFERSIZE];
-    ALfloat *ClickRemoval;
-    ALfloat *PendingClicks;
-
-    struct {
-        HrtfParams Params;
-        HrtfState *State;
-    } Hrtf;
-
-    /* A mixing matrix. First subscript is the channel number of the input data
-     * (regardless of channel configuration) and the second is the channel
-     * target (eg. FrontLeft). Not used with HRTF. */
-    ALfloat Gains[MaxChannels][MaxChannels];
-
-    /* A low-pass filter, using 2 chained one-pole filters. */
-    FILTER iirFilter;
-    ALfloat history[MaxChannels*2];
-} DirectParams;
-
-typedef struct SendParams {
-    struct ALeffectslot *Slot;
-
-    /* Gain control, which applies to all input channels to a single (mono)
-     * output buffer. */
-    ALfloat Gain;
-
-    /* A low-pass filter, using 2 chained one-pole filters. */
-    FILTER iirFilter;
-    ALfloat history[MaxChannels*2];
-} SendParams;
-
-
-typedef struct ALsource
-{
+typedef struct ALsource {
     /** Source properties. */
-    volatile ALfloat   Pitch;
-    volatile ALfloat   Gain;
-    volatile ALfloat   OuterGain;
-    volatile ALfloat   MinGain;
-    volatile ALfloat   MaxGain;
-    volatile ALfloat   InnerAngle;
-    volatile ALfloat   OuterAngle;
-    volatile ALfloat   RefDistance;
-    volatile ALfloat   MaxDistance;
-    volatile ALfloat   RollOffFactor;
-    volatile ALfloat   Position[3];
-    volatile ALfloat   Velocity[3];
-    volatile ALfloat   Orientation[3];
-    volatile ALboolean HeadRelative;
-    volatile ALboolean Looping;
-    volatile enum DistanceModel DistanceModel;
-    volatile ALboolean DirectChannels;
-
-    volatile ALboolean DryGainHFAuto;
-    volatile ALboolean WetGainAuto;
-    volatile ALboolean WetGainHFAuto;
-    volatile ALfloat   OuterGainHF;
-
-    volatile ALfloat AirAbsorptionFactor;
-    volatile ALfloat RoomRolloffFactor;
-    volatile ALfloat DopplerFactor;
-
+    ALfloat   Pitch;
+    ALfloat   Gain;
+    ALfloat   OuterGain;
+    ALfloat   MinGain;
+    ALfloat   MaxGain;
+    ALfloat   InnerAngle;
+    ALfloat   OuterAngle;
+    ALfloat   RefDistance;
+    ALfloat   MaxDistance;
+    ALfloat   RolloffFactor;
+    ALfloat   Position[3];
+    ALfloat   Velocity[3];
+    ALfloat   Direction[3];
+    ALfloat   Orientation[2][3];
+    ALboolean HeadRelative;
+    ALboolean Looping;
+    enum DistanceModel DistanceModel;
     enum Resampler Resampler;
+    ALboolean DirectChannels;
+    enum SpatializeMode Spatialize;
+
+    ALboolean DryGainHFAuto;
+    ALboolean WetGainAuto;
+    ALboolean WetGainHFAuto;
+    ALfloat   OuterGainHF;
+
+    ALfloat AirAbsorptionFactor;
+    ALfloat RoomRolloffFactor;
+    ALfloat DopplerFactor;
+
+    /* NOTE: Stereo pan angles are specified in radians, counter-clockwise
+     * rather than clockwise.
+     */
+    ALfloat StereoPan[2];
+
+    ALfloat Radius;
+
+    /** Direct filter and auxiliary send info. */
+    struct {
+        ALfloat Gain;
+        ALfloat GainHF;
+        ALfloat HFReference;
+        ALfloat GainLF;
+        ALfloat LFReference;
+    } Direct;
+    struct {
+        struct ALeffectslot *Slot;
+        ALfloat Gain;
+        ALfloat GainHF;
+        ALfloat HFReference;
+        ALfloat GainLF;
+        ALfloat LFReference;
+    } *Send;
 
     /**
      * Last user-specified offset, and the offset type (bytes, samples, or
@@ -119,67 +89,26 @@ typedef struct ALsource
     ALenum   OffsetType;
 
     /** Source type (static, streaming, or undetermined) */
-    volatile ALint SourceType;
+    ALint SourceType;
 
     /** Source state (initial, playing, paused, or stopped) */
-    volatile ALenum state;
-    ALenum new_state;
+    ALenum state;
 
-    /**
-     * Source offset in samples, relative to the currently playing buffer, NOT
-     * the whole queue, and the fractional (fixed-point) offset to the next
-     * sample.
-     */
-    ALuint position;
-    ALuint position_fraction;
-
-    /** Source Buffer Queue info. */
+    /** Source Buffer Queue head. */
     ALbufferlistitem *queue;
-    ALuint BuffersInQueue;
-    ALuint BuffersPlayed;
 
-    /** Current buffer sample info. */
-    ALuint NumChannels;
-    ALuint SampleSize;
+    ATOMIC_FLAG PropsClean;
 
-    /** Direct filter and auxiliary send info. */
-    ALfloat DirectGain;
-    ALfloat DirectGainHF;
-
-    struct {
-        struct ALeffectslot *Slot;
-        ALfloat Gain;
-        ALfloat GainHF;
-    } Send[MAX_SENDS];
-
-    /** HRTF info. */
-    HrtfState Hrtf;
-
-    /** Current target parameters used for mixing. */
-    struct {
-        ResamplerFunc Resample;
-        DryMixerFunc DryMix;
-        WetMixerFunc WetMix;
-
-        ALint Step;
-
-        DirectParams Direct;
-
-        SendParams Send[MAX_SENDS];
-    } Params;
-    /** Source needs to update its mixing parameters. */
-    volatile ALenum NeedsUpdate;
-
-    /** Method to update mixing parameters. */
-    ALvoid (*Update)(struct ALsource *self, const ALCcontext *context);
+    /* Index into the context's Voices array. Lazily updated, only checked and
+     * reset when looking up the voice.
+     */
+    ALint VoiceIdx;
 
     /** Self ID */
     ALuint id;
 } ALsource;
-#define ALsource_Update(s,a)                 ((s)->Update(s,a))
 
-ALvoid SetSourceState(ALsource *Source, ALCcontext *Context, ALenum state);
-ALboolean ApplyOffset(ALsource *Source);
+void UpdateAllSourceProps(ALCcontext *context);
 
 ALvoid ReleaseALSources(ALCcontext *Context);
 

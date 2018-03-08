@@ -13,8 +13,8 @@
  *
  * You should have received a copy of the GNU Library General Public
  *  License along with this library; if not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- *  Boston, MA  02111-1307, USA.
+ *  Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  * Or go to http://www.gnu.org/copyleft/lgpl.html
  */
 
@@ -22,10 +22,12 @@
 
 #include <sys/ioctl.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <memory.h>
 #include <unistd.h>
 #include <errno.h>
@@ -33,6 +35,12 @@
 
 #include "alMain.h"
 #include "alu.h"
+#include "alconfig.h"
+#include "ringbuffer.h"
+#include "threads.h"
+#include "compat.h"
+
+#include "backends/base.h"
 
 #include <sys/soundcard.h>
 
@@ -47,23 +55,176 @@
 #define SOUND_MIXER_WRITE MIXER_WRITE
 #endif
 
-static const ALCchar oss_device[] = "OSS Default";
+#if defined(SOUND_VERSION) && (SOUND_VERSION < 0x040000)
+#define ALC_OSS_COMPAT
+#endif
+#ifndef SNDCTL_AUDIOINFO
+#define ALC_OSS_COMPAT
+#endif
 
-static const char *oss_driver = "/dev/dsp";
-static const char *oss_capture = "/dev/dsp";
+/*
+ * FreeBSD strongly discourages the use of specific devices,
+ * such as those returned in oss_audioinfo.devnode
+ */
+#ifdef __FreeBSD__
+#define ALC_OSS_DEVNODE_TRUC
+#endif
 
-typedef struct {
-    int fd;
-    volatile int killNow;
-    ALvoid *thread;
+struct oss_device {
+    const ALCchar *handle;
+    const char *path;
+    struct oss_device *next;
+};
 
-    ALubyte *mix_data;
-    int data_size;
+static struct oss_device oss_playback = {
+    "OSS Default",
+    "/dev/dsp",
+    NULL
+};
 
-    RingBuffer *ring;
-    int doCapture;
-} oss_data;
+static struct oss_device oss_capture = {
+    "OSS Default",
+    "/dev/dsp",
+    NULL
+};
 
+#ifdef ALC_OSS_COMPAT
+
+#define DSP_CAP_OUTPUT 0x00020000
+#define DSP_CAP_INPUT 0x00010000
+static void ALCossListPopulate(struct oss_device *UNUSED(devlist), int UNUSED(type_flag))
+{
+}
+
+#else
+
+#ifndef HAVE_STRNLEN
+static size_t strnlen(const char *str, size_t maxlen)
+{
+    const char *end = memchr(str, 0, maxlen);
+    if(!end) return maxlen;
+    return end - str;
+}
+#endif
+
+static void ALCossListAppend(struct oss_device *list, const char *handle, size_t hlen, const char *path, size_t plen)
+{
+    struct oss_device *next;
+    struct oss_device *last;
+    size_t i;
+
+    /* skip the first item "OSS Default" */
+    last = list;
+    next = list->next;
+#ifdef ALC_OSS_DEVNODE_TRUC
+    for(i = 0;i < plen;i++)
+    {
+        if(path[i] == '.')
+        {
+            if(strncmp(path + i, handle + hlen + i - plen, plen - i) == 0)
+                hlen = hlen + i - plen;
+            plen = i;
+        }
+    }
+#else
+    (void)i;
+#endif
+    if(handle[0] == '\0')
+    {
+        handle = path;
+        hlen = plen;
+    }
+
+    while(next != NULL)
+    {
+        if(strncmp(next->path, path, plen) == 0)
+            return;
+        last = next;
+        next = next->next;
+    }
+
+    next = (struct oss_device*)malloc(sizeof(struct oss_device) + hlen + plen + 2);
+    next->handle = (char*)(next + 1);
+    next->path = next->handle + hlen + 1;
+    next->next = NULL;
+    last->next = next;
+
+    strncpy((char*)next->handle, handle, hlen);
+    ((char*)next->handle)[hlen] = '\0';
+    strncpy((char*)next->path, path, plen);
+    ((char*)next->path)[plen] = '\0';
+
+    TRACE("Got device \"%s\", \"%s\"\n", next->handle, next->path);
+}
+
+static void ALCossListPopulate(struct oss_device *devlist, int type_flag)
+{
+    struct oss_sysinfo si;
+    struct oss_audioinfo ai;
+    int fd, i;
+
+    if((fd=open("/dev/mixer", O_RDONLY)) < 0)
+    {
+        TRACE("Could not open /dev/mixer: %s\n", strerror(errno));
+        return;
+    }
+    if(ioctl(fd, SNDCTL_SYSINFO, &si) == -1)
+    {
+        TRACE("SNDCTL_SYSINFO failed: %s\n", strerror(errno));
+        goto done;
+    }
+    for(i = 0;i < si.numaudios;i++)
+    {
+        const char *handle;
+        size_t len;
+
+        ai.dev = i;
+        if(ioctl(fd, SNDCTL_AUDIOINFO, &ai) == -1)
+        {
+            ERR("SNDCTL_AUDIOINFO (%d) failed: %s\n", i, strerror(errno));
+            continue;
+        }
+        if(ai.devnode[0] == '\0')
+            continue;
+
+        if(ai.handle[0] != '\0')
+        {
+            len = strnlen(ai.handle, sizeof(ai.handle));
+            handle = ai.handle;
+        }
+        else
+        {
+            len = strnlen(ai.name, sizeof(ai.name));
+            handle = ai.name;
+        }
+        if((ai.caps&type_flag))
+            ALCossListAppend(devlist, handle, len, ai.devnode,
+                             strnlen(ai.devnode, sizeof(ai.devnode)));
+    }
+
+done:
+    close(fd);
+}
+
+#endif
+
+static void ALCossListFree(struct oss_device *list)
+{
+    struct oss_device *cur;
+    if(list == NULL)
+        return;
+
+    /* skip the first item "OSS Default" */
+    cur = list->next;
+    list->next = NULL;
+
+    while(cur != NULL)
+    {
+        struct oss_device *next = cur->next;
+        free(cur);
+        cur = next;
+    }
+}
 
 static int log2i(ALCuint x)
 {
@@ -76,121 +237,164 @@ static int log2i(ALCuint x)
     return y;
 }
 
+typedef struct ALCplaybackOSS {
+    DERIVE_FROM_TYPE(ALCbackend);
 
-static ALuint OSSProc(ALvoid *ptr)
+    int fd;
+
+    ALubyte *mix_data;
+    int data_size;
+
+    ATOMIC(ALenum) killNow;
+    althrd_t thread;
+} ALCplaybackOSS;
+
+static int ALCplaybackOSS_mixerProc(void *ptr);
+
+static void ALCplaybackOSS_Construct(ALCplaybackOSS *self, ALCdevice *device);
+static void ALCplaybackOSS_Destruct(ALCplaybackOSS *self);
+static ALCenum ALCplaybackOSS_open(ALCplaybackOSS *self, const ALCchar *name);
+static ALCboolean ALCplaybackOSS_reset(ALCplaybackOSS *self);
+static ALCboolean ALCplaybackOSS_start(ALCplaybackOSS *self);
+static void ALCplaybackOSS_stop(ALCplaybackOSS *self);
+static DECLARE_FORWARD2(ALCplaybackOSS, ALCbackend, ALCenum, captureSamples, ALCvoid*, ALCuint)
+static DECLARE_FORWARD(ALCplaybackOSS, ALCbackend, ALCuint, availableSamples)
+static DECLARE_FORWARD(ALCplaybackOSS, ALCbackend, ClockLatency, getClockLatency)
+static DECLARE_FORWARD(ALCplaybackOSS, ALCbackend, void, lock)
+static DECLARE_FORWARD(ALCplaybackOSS, ALCbackend, void, unlock)
+DECLARE_DEFAULT_ALLOCATORS(ALCplaybackOSS)
+DEFINE_ALCBACKEND_VTABLE(ALCplaybackOSS);
+
+
+static int ALCplaybackOSS_mixerProc(void *ptr)
 {
-    ALCdevice *Device = (ALCdevice*)ptr;
-    oss_data *data = (oss_data*)Device->ExtraData;
-    ALint frameSize;
+    ALCplaybackOSS *self = (ALCplaybackOSS*)ptr;
+    ALCdevice *device = STATIC_CAST(ALCbackend, self)->mDevice;
+    struct timeval timeout;
+    ALubyte *write_ptr;
+    ALint frame_size;
+    ALint to_write;
     ssize_t wrote;
+    fd_set wfds;
+    int sret;
 
     SetRTPriority();
+    althrd_setname(althrd_current(), MIXER_THREAD_NAME);
 
-    frameSize = FrameSizeFromDevFmt(Device->FmtChans, Device->FmtType);
+    frame_size = FrameSizeFromDevFmt(device->FmtChans, device->FmtType, device->AmbiOrder);
 
-    while(!data->killNow && Device->Connected)
+    ALCplaybackOSS_lock(self);
+    while(!ATOMIC_LOAD(&self->killNow, almemory_order_acquire) &&
+          ATOMIC_LOAD(&device->Connected, almemory_order_acquire))
     {
-        ALint len = data->data_size;
-        ALubyte *WritePtr = data->mix_data;
+        FD_ZERO(&wfds);
+        FD_SET(self->fd, &wfds);
+        timeout.tv_sec = 1;
+        timeout.tv_usec = 0;
 
-        aluMixData(Device, WritePtr, len/frameSize);
-        while(len > 0 && !data->killNow)
+        ALCplaybackOSS_unlock(self);
+        sret = select(self->fd+1, NULL, &wfds, NULL, &timeout);
+        ALCplaybackOSS_lock(self);
+        if(sret < 0)
         {
-            wrote = write(data->fd, WritePtr, len);
-            if(wrote < 0)
-            {
-                if(errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
-                {
-                    ERR("write failed: %s\n", strerror(errno));
-                    ALCdevice_Lock(Device);
-                    aluHandleDisconnect(Device);
-                    ALCdevice_Unlock(Device);
-                    break;
-                }
-
-                Sleep(1);
+            if(errno == EINTR)
                 continue;
-            }
-
-            len -= wrote;
-            WritePtr += wrote;
-        }
-    }
-
-    return 0;
-}
-
-static ALuint OSSCaptureProc(ALvoid *ptr)
-{
-    ALCdevice *Device = (ALCdevice*)ptr;
-    oss_data *data = (oss_data*)Device->ExtraData;
-    int frameSize;
-    int amt;
-
-    SetRTPriority();
-
-    frameSize = FrameSizeFromDevFmt(Device->FmtChans, Device->FmtType);
-
-    while(!data->killNow)
-    {
-        amt = read(data->fd, data->mix_data, data->data_size);
-        if(amt < 0)
-        {
-            ERR("read failed: %s\n", strerror(errno));
-            ALCdevice_Lock(Device);
-            aluHandleDisconnect(Device);
-            ALCdevice_Unlock(Device);
+            ERR("select failed: %s\n", strerror(errno));
+            aluHandleDisconnect(device, "Failed waiting for playback buffer: %s", strerror(errno));
             break;
         }
-        if(amt == 0)
+        else if(sret == 0)
         {
-            Sleep(1);
+            WARN("select timeout\n");
             continue;
         }
-        if(data->doCapture)
-            WriteRingBuffer(data->ring, data->mix_data, amt/frameSize);
+
+        write_ptr = self->mix_data;
+        to_write = self->data_size;
+        aluMixData(device, write_ptr, to_write/frame_size);
+        while(to_write > 0 && !ATOMIC_LOAD_SEQ(&self->killNow))
+        {
+            wrote = write(self->fd, write_ptr, to_write);
+            if(wrote < 0)
+            {
+                if(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
+                    continue;
+                ERR("write failed: %s\n", strerror(errno));
+                aluHandleDisconnect(device, "Failed writing playback samples: %s",
+                                    strerror(errno));
+                break;
+            }
+
+            to_write -= wrote;
+            write_ptr += wrote;
+        }
     }
+    ALCplaybackOSS_unlock(self);
 
     return 0;
 }
 
-static ALCenum oss_open_playback(ALCdevice *device, const ALCchar *deviceName)
+
+static void ALCplaybackOSS_Construct(ALCplaybackOSS *self, ALCdevice *device)
 {
-    oss_data *data;
+    ALCbackend_Construct(STATIC_CAST(ALCbackend, self), device);
+    SET_VTABLE2(ALCplaybackOSS, ALCbackend, self);
 
-    if(!deviceName)
-        deviceName = oss_device;
-    else if(strcmp(deviceName, oss_device) != 0)
-        return ALC_INVALID_VALUE;
+    self->fd = -1;
+    ATOMIC_INIT(&self->killNow, AL_FALSE);
+}
 
-    data = (oss_data*)calloc(1, sizeof(oss_data));
-    data->killNow = 0;
+static void ALCplaybackOSS_Destruct(ALCplaybackOSS *self)
+{
+    if(self->fd != -1)
+        close(self->fd);
+    self->fd = -1;
 
-    data->fd = open(oss_driver, O_WRONLY);
-    if(data->fd == -1)
+    ALCbackend_Destruct(STATIC_CAST(ALCbackend, self));
+}
+
+static ALCenum ALCplaybackOSS_open(ALCplaybackOSS *self, const ALCchar *name)
+{
+    struct oss_device *dev = &oss_playback;
+    ALCdevice *device = STATIC_CAST(ALCbackend, self)->mDevice;
+
+    if(!name || strcmp(name, dev->handle) == 0)
+        name = dev->handle;
+    else
     {
-        free(data);
-        ERR("Could not open %s: %s\n", oss_driver, strerror(errno));
+        if(!dev->next)
+        {
+            ALCossListPopulate(&oss_playback, DSP_CAP_OUTPUT);
+            dev = &oss_playback;
+        }
+        while(dev != NULL)
+        {
+            if (strcmp(dev->handle, name) == 0)
+                break;
+            dev = dev->next;
+        }
+        if(dev == NULL)
+        {
+            WARN("Could not find \"%s\" in device list\n", name);
+            return ALC_INVALID_VALUE;
+        }
+    }
+
+    self->fd = open(dev->path, O_WRONLY);
+    if(self->fd == -1)
+    {
+        ERR("Could not open %s: %s\n", dev->path, strerror(errno));
         return ALC_INVALID_VALUE;
     }
 
-    device->DeviceName = strdup(deviceName);
-    device->ExtraData = data;
+    alstr_copy_cstr(&device->DeviceName, name);
+
     return ALC_NO_ERROR;
 }
 
-static void oss_close_playback(ALCdevice *device)
+static ALCboolean ALCplaybackOSS_reset(ALCplaybackOSS *self)
 {
-    oss_data *data = (oss_data*)device->ExtraData;
-
-    close(data->fd);
-    free(data);
-    device->ExtraData = NULL;
-}
-
-static ALCboolean oss_reset_playback(ALCdevice *device)
-{
-    oss_data *data = (oss_data*)device->ExtraData;
+    ALCdevice *device = STATIC_CAST(ALCbackend, self)->mDevice;
     int numFragmentsLogSize;
     int log2FragmentSize;
     unsigned int periods;
@@ -221,18 +425,11 @@ static ALCboolean oss_reset_playback(ALCdevice *device)
     }
 
     periods = device->NumUpdates;
-    numChannels = ChannelsFromDevFmt(device->FmtChans);
-    frameSize = numChannels * BytesFromDevFmt(device->FmtType);
-
+    numChannels = ChannelsFromDevFmt(device->FmtChans, device->AmbiOrder);
     ossSpeed = device->Frequency;
-    log2FragmentSize = log2i(device->UpdateSize * frameSize);
-
-    /* according to the OSS spec, 16 bytes are the minimum */
-    if (log2FragmentSize < 4)
-        log2FragmentSize = 4;
-    /* Subtract one period since the temp mixing buffer counts as one. Still
-     * need at least two on the card, though. */
-    if(periods > 2) periods--;
+    frameSize = numChannels * BytesFromDevFmt(device->FmtType);
+    /* According to the OSS spec, 16 bytes (log2(16)) is the minimum. */
+    log2FragmentSize = maxi(log2i(device->UpdateSize*frameSize), 4);
     numFragmentsLogSize = (periods << 16) | log2FragmentSize;
 
 #define CHECKERR(func) if((func) < 0) {                                       \
@@ -241,11 +438,11 @@ static ALCboolean oss_reset_playback(ALCdevice *device)
 }
     /* Don't fail if SETFRAGMENT fails. We can handle just about anything
      * that's reported back via GETOSPACE */
-    ioctl(data->fd, SNDCTL_DSP_SETFRAGMENT, &numFragmentsLogSize);
-    CHECKERR(ioctl(data->fd, SNDCTL_DSP_SETFMT, &ossFormat));
-    CHECKERR(ioctl(data->fd, SNDCTL_DSP_CHANNELS, &numChannels));
-    CHECKERR(ioctl(data->fd, SNDCTL_DSP_SPEED, &ossSpeed));
-    CHECKERR(ioctl(data->fd, SNDCTL_DSP_GETOSPACE, &info));
+    ioctl(self->fd, SNDCTL_DSP_SETFRAGMENT, &numFragmentsLogSize);
+    CHECKERR(ioctl(self->fd, SNDCTL_DSP_SETFMT, &ossFormat));
+    CHECKERR(ioctl(self->fd, SNDCTL_DSP_CHANNELS, &numChannels));
+    CHECKERR(ioctl(self->fd, SNDCTL_DSP_SPEED, &ossSpeed));
+    CHECKERR(ioctl(self->fd, SNDCTL_DSP_GETOSPACE, &info));
     if(0)
     {
     err:
@@ -254,7 +451,7 @@ static ALCboolean oss_reset_playback(ALCdevice *device)
     }
 #undef CHECKERR
 
-    if((int)ChannelsFromDevFmt(device->FmtChans) != numChannels)
+    if((int)ChannelsFromDevFmt(device->FmtChans, device->AmbiOrder) != numChannels)
     {
         ERR("Failed to set %s, got %d channels instead\n", DevFmtChannelsString(device->FmtChans), numChannels);
         return ALC_FALSE;
@@ -270,77 +467,197 @@ static ALCboolean oss_reset_playback(ALCdevice *device)
 
     device->Frequency = ossSpeed;
     device->UpdateSize = info.fragsize / frameSize;
-    device->NumUpdates = info.fragments + 1;
+    device->NumUpdates = info.fragments;
 
     SetDefaultChannelOrder(device);
 
     return ALC_TRUE;
 }
 
-static ALCboolean oss_start_playback(ALCdevice *device)
+static ALCboolean ALCplaybackOSS_start(ALCplaybackOSS *self)
 {
-    oss_data *data = (oss_data*)device->ExtraData;
+    ALCdevice *device = STATIC_CAST(ALCbackend, self)->mDevice;
 
-    data->data_size = device->UpdateSize * FrameSizeFromDevFmt(device->FmtChans, device->FmtType);
-    data->mix_data = calloc(1, data->data_size);
+    self->data_size = device->UpdateSize * FrameSizeFromDevFmt(
+        device->FmtChans, device->FmtType, device->AmbiOrder
+    );
+    self->mix_data = calloc(1, self->data_size);
 
-    data->thread = StartThread(OSSProc, device);
-    if(data->thread == NULL)
+    ATOMIC_STORE_SEQ(&self->killNow, AL_FALSE);
+    if(althrd_create(&self->thread, ALCplaybackOSS_mixerProc, self) != althrd_success)
     {
-        free(data->mix_data);
-        data->mix_data = NULL;
+        free(self->mix_data);
+        self->mix_data = NULL;
         return ALC_FALSE;
     }
 
     return ALC_TRUE;
 }
 
-static void oss_stop_playback(ALCdevice *device)
+static void ALCplaybackOSS_stop(ALCplaybackOSS *self)
 {
-    oss_data *data = (oss_data*)device->ExtraData;
+    int res;
 
-    if(!data->thread)
+    if(ATOMIC_EXCHANGE_SEQ(&self->killNow, AL_TRUE))
         return;
+    althrd_join(self->thread, &res);
 
-    data->killNow = 1;
-    StopThread(data->thread);
-    data->thread = NULL;
-
-    data->killNow = 0;
-    if(ioctl(data->fd, SNDCTL_DSP_RESET) != 0)
+    if(ioctl(self->fd, SNDCTL_DSP_RESET) != 0)
         ERR("Error resetting device: %s\n", strerror(errno));
 
-    free(data->mix_data);
-    data->mix_data = NULL;
+    free(self->mix_data);
+    self->mix_data = NULL;
 }
 
 
-static ALCenum oss_open_capture(ALCdevice *device, const ALCchar *deviceName)
+typedef struct ALCcaptureOSS {
+    DERIVE_FROM_TYPE(ALCbackend);
+
+    int fd;
+
+    ll_ringbuffer_t *ring;
+
+    ATOMIC(ALenum) killNow;
+    althrd_t thread;
+} ALCcaptureOSS;
+
+static int ALCcaptureOSS_recordProc(void *ptr);
+
+static void ALCcaptureOSS_Construct(ALCcaptureOSS *self, ALCdevice *device);
+static void ALCcaptureOSS_Destruct(ALCcaptureOSS *self);
+static ALCenum ALCcaptureOSS_open(ALCcaptureOSS *self, const ALCchar *name);
+static DECLARE_FORWARD(ALCcaptureOSS, ALCbackend, ALCboolean, reset)
+static ALCboolean ALCcaptureOSS_start(ALCcaptureOSS *self);
+static void ALCcaptureOSS_stop(ALCcaptureOSS *self);
+static ALCenum ALCcaptureOSS_captureSamples(ALCcaptureOSS *self, ALCvoid *buffer, ALCuint samples);
+static ALCuint ALCcaptureOSS_availableSamples(ALCcaptureOSS *self);
+static DECLARE_FORWARD(ALCcaptureOSS, ALCbackend, ClockLatency, getClockLatency)
+static DECLARE_FORWARD(ALCcaptureOSS, ALCbackend, void, lock)
+static DECLARE_FORWARD(ALCcaptureOSS, ALCbackend, void, unlock)
+DECLARE_DEFAULT_ALLOCATORS(ALCcaptureOSS)
+DEFINE_ALCBACKEND_VTABLE(ALCcaptureOSS);
+
+
+static int ALCcaptureOSS_recordProc(void *ptr)
 {
+    ALCcaptureOSS *self = (ALCcaptureOSS*)ptr;
+    ALCdevice *device = STATIC_CAST(ALCbackend, self)->mDevice;
+    struct timeval timeout;
+    int frame_size;
+    fd_set rfds;
+    ssize_t amt;
+    int sret;
+
+    SetRTPriority();
+    althrd_setname(althrd_current(), RECORD_THREAD_NAME);
+
+    frame_size = FrameSizeFromDevFmt(device->FmtChans, device->FmtType, device->AmbiOrder);
+
+    while(!ATOMIC_LOAD_SEQ(&self->killNow))
+    {
+        ll_ringbuffer_data_t vec[2];
+
+        FD_ZERO(&rfds);
+        FD_SET(self->fd, &rfds);
+        timeout.tv_sec = 1;
+        timeout.tv_usec = 0;
+
+        sret = select(self->fd+1, &rfds, NULL, NULL, &timeout);
+        if(sret < 0)
+        {
+            if(errno == EINTR)
+                continue;
+            ERR("select failed: %s\n", strerror(errno));
+            aluHandleDisconnect(device, "Failed to check capture samples: %s", strerror(errno));
+            break;
+        }
+        else if(sret == 0)
+        {
+            WARN("select timeout\n");
+            continue;
+        }
+
+        ll_ringbuffer_get_write_vector(self->ring, vec);
+        if(vec[0].len > 0)
+        {
+            amt = read(self->fd, vec[0].buf, vec[0].len*frame_size);
+            if(amt < 0)
+            {
+                ERR("read failed: %s\n", strerror(errno));
+                ALCcaptureOSS_lock(self);
+                aluHandleDisconnect(device, "Failed reading capture samples: %s", strerror(errno));
+                ALCcaptureOSS_unlock(self);
+                break;
+            }
+            ll_ringbuffer_write_advance(self->ring, amt/frame_size);
+        }
+    }
+
+    return 0;
+}
+
+
+static void ALCcaptureOSS_Construct(ALCcaptureOSS *self, ALCdevice *device)
+{
+    ALCbackend_Construct(STATIC_CAST(ALCbackend, self), device);
+    SET_VTABLE2(ALCcaptureOSS, ALCbackend, self);
+
+    self->fd = -1;
+    self->ring = NULL;
+    ATOMIC_INIT(&self->killNow, AL_FALSE);
+}
+
+static void ALCcaptureOSS_Destruct(ALCcaptureOSS *self)
+{
+    if(self->fd != -1)
+        close(self->fd);
+    self->fd = -1;
+
+    ll_ringbuffer_free(self->ring);
+    self->ring = NULL;
+    ALCbackend_Destruct(STATIC_CAST(ALCbackend, self));
+}
+
+static ALCenum ALCcaptureOSS_open(ALCcaptureOSS *self, const ALCchar *name)
+{
+    ALCdevice *device = STATIC_CAST(ALCbackend, self)->mDevice;
+    struct oss_device *dev = &oss_capture;
     int numFragmentsLogSize;
     int log2FragmentSize;
     unsigned int periods;
     audio_buf_info info;
     ALuint frameSize;
     int numChannels;
-    oss_data *data;
     int ossFormat;
     int ossSpeed;
     char *err;
 
-    if(!deviceName)
-        deviceName = oss_device;
-    else if(strcmp(deviceName, oss_device) != 0)
-        return ALC_INVALID_VALUE;
-
-    data = (oss_data*)calloc(1, sizeof(oss_data));
-    data->killNow = 0;
-
-    data->fd = open(oss_capture, O_RDONLY);
-    if(data->fd == -1)
+    if(!name || strcmp(name, dev->handle) == 0)
+        name = dev->handle;
+    else
     {
-        free(data);
-        ERR("Could not open %s: %s\n", oss_capture, strerror(errno));
+        if(!dev->next)
+        {
+            ALCossListPopulate(&oss_capture, DSP_CAP_INPUT);
+            dev = &oss_capture;
+        }
+        while(dev != NULL)
+        {
+            if (strcmp(dev->handle, name) == 0)
+                break;
+            dev = dev->next;
+        }
+        if(dev == NULL)
+        {
+            WARN("Could not find \"%s\" in device list\n", name);
+            return ALC_INVALID_VALUE;
+        }
+    }
+
+    self->fd = open(dev->path, O_RDONLY);
+    if(self->fd == -1)
+    {
+        ERR("Could not open %s: %s\n", dev->path, strerror(errno));
         return ALC_INVALID_VALUE;
     }
 
@@ -359,13 +676,12 @@ static ALCenum oss_open_capture(ALCdevice *device, const ALCchar *deviceName)
         case DevFmtInt:
         case DevFmtUInt:
         case DevFmtFloat:
-            free(data);
             ERR("%s capture samples not supported\n", DevFmtTypeString(device->FmtType));
             return ALC_INVALID_VALUE;
     }
 
     periods = 4;
-    numChannels = ChannelsFromDevFmt(device->FmtChans);
+    numChannels = ChannelsFromDevFmt(device->FmtChans, device->AmbiOrder);
     frameSize = numChannels * BytesFromDevFmt(device->FmtType);
     ossSpeed = device->Frequency;
     log2FragmentSize = log2i(device->UpdateSize * device->NumUpdates *
@@ -380,26 +696,26 @@ static ALCenum oss_open_capture(ALCdevice *device, const ALCchar *deviceName)
     err = #func;                                                              \
     goto err;                                                                 \
 }
-    CHECKERR(ioctl(data->fd, SNDCTL_DSP_SETFRAGMENT, &numFragmentsLogSize));
-    CHECKERR(ioctl(data->fd, SNDCTL_DSP_SETFMT, &ossFormat));
-    CHECKERR(ioctl(data->fd, SNDCTL_DSP_CHANNELS, &numChannels));
-    CHECKERR(ioctl(data->fd, SNDCTL_DSP_SPEED, &ossSpeed));
-    CHECKERR(ioctl(data->fd, SNDCTL_DSP_GETISPACE, &info));
+    CHECKERR(ioctl(self->fd, SNDCTL_DSP_SETFRAGMENT, &numFragmentsLogSize));
+    CHECKERR(ioctl(self->fd, SNDCTL_DSP_SETFMT, &ossFormat));
+    CHECKERR(ioctl(self->fd, SNDCTL_DSP_CHANNELS, &numChannels));
+    CHECKERR(ioctl(self->fd, SNDCTL_DSP_SPEED, &ossSpeed));
+    CHECKERR(ioctl(self->fd, SNDCTL_DSP_GETISPACE, &info));
     if(0)
     {
     err:
         ERR("%s failed: %s\n", err, strerror(errno));
-        close(data->fd);
-        free(data);
+        close(self->fd);
+        self->fd = -1;
         return ALC_INVALID_VALUE;
     }
 #undef CHECKERR
 
-    if((int)ChannelsFromDevFmt(device->FmtChans) != numChannels)
+    if((int)ChannelsFromDevFmt(device->FmtChans, device->AmbiOrder) != numChannels)
     {
         ERR("Failed to set %s, got %d channels instead\n", DevFmtChannelsString(device->FmtChans), numChannels);
-        close(data->fd);
-        free(data);
+        close(self->fd);
+        self->fd = -1;
         return ALC_INVALID_VALUE;
     }
 
@@ -408,130 +724,155 @@ static ALCenum oss_open_capture(ALCdevice *device, const ALCchar *deviceName)
          (ossFormat == AFMT_S16_NE && device->FmtType == DevFmtShort)))
     {
         ERR("Failed to set %s samples, got OSS format %#x\n", DevFmtTypeString(device->FmtType), ossFormat);
-        close(data->fd);
-        free(data);
+        close(self->fd);
+        self->fd = -1;
         return ALC_INVALID_VALUE;
     }
 
-    data->ring = CreateRingBuffer(frameSize, device->UpdateSize * device->NumUpdates);
-    if(!data->ring)
+    self->ring = ll_ringbuffer_create(device->UpdateSize*device->NumUpdates, frameSize, false);
+    if(!self->ring)
     {
         ERR("Ring buffer create failed\n");
-        close(data->fd);
-        free(data);
+        close(self->fd);
+        self->fd = -1;
         return ALC_OUT_OF_MEMORY;
     }
 
-    data->data_size = info.fragsize;
-    data->mix_data = calloc(1, data->data_size);
+    alstr_copy_cstr(&device->DeviceName, name);
 
-    device->ExtraData = data;
-    data->thread = StartThread(OSSCaptureProc, device);
-    if(data->thread == NULL)
-    {
-        device->ExtraData = NULL;
-        free(data->mix_data);
-        free(data);
-        return ALC_OUT_OF_MEMORY;
-    }
-
-    device->DeviceName = strdup(deviceName);
     return ALC_NO_ERROR;
 }
 
-static void oss_close_capture(ALCdevice *device)
+static ALCboolean ALCcaptureOSS_start(ALCcaptureOSS *self)
 {
-    oss_data *data = (oss_data*)device->ExtraData;
-    data->killNow = 1;
-    StopThread(data->thread);
-
-    close(data->fd);
-
-    DestroyRingBuffer(data->ring);
-
-    free(data->mix_data);
-    free(data);
-    device->ExtraData = NULL;
-}
-
-static void oss_start_capture(ALCdevice *Device)
-{
-    oss_data *data = (oss_data*)Device->ExtraData;
-    data->doCapture = 1;
-}
-
-static void oss_stop_capture(ALCdevice *Device)
-{
-    oss_data *data = (oss_data*)Device->ExtraData;
-    data->doCapture = 0;
-}
-
-static ALCenum oss_capture_samples(ALCdevice *Device, ALCvoid *pBuffer, ALCuint lSamples)
-{
-    oss_data *data = (oss_data*)Device->ExtraData;
-    ReadRingBuffer(data->ring, pBuffer, lSamples);
-    return ALC_NO_ERROR;
-}
-
-static ALCuint oss_available_samples(ALCdevice *Device)
-{
-    oss_data *data = (oss_data*)Device->ExtraData;
-    return RingBufferSize(data->ring);
-}
-
-
-static const BackendFuncs oss_funcs = {
-    oss_open_playback,
-    oss_close_playback,
-    oss_reset_playback,
-    oss_start_playback,
-    oss_stop_playback,
-    oss_open_capture,
-    oss_close_capture,
-    oss_start_capture,
-    oss_stop_capture,
-    oss_capture_samples,
-    oss_available_samples,
-    ALCdevice_LockDefault,
-    ALCdevice_UnlockDefault,
-    ALCdevice_GetLatencyDefault
-};
-
-ALCboolean alc_oss_init(BackendFuncs *func_list)
-{
-    ConfigValueStr("oss", "device", &oss_driver);
-    ConfigValueStr("oss", "capture", &oss_capture);
-
-    *func_list = oss_funcs;
+    ATOMIC_STORE_SEQ(&self->killNow, AL_FALSE);
+    if(althrd_create(&self->thread, ALCcaptureOSS_recordProc, self) != althrd_success)
+        return ALC_FALSE;
     return ALC_TRUE;
 }
 
-void alc_oss_deinit(void)
+static void ALCcaptureOSS_stop(ALCcaptureOSS *self)
 {
+    int res;
+
+    if(ATOMIC_EXCHANGE_SEQ(&self->killNow, AL_TRUE))
+        return;
+
+    althrd_join(self->thread, &res);
+
+    if(ioctl(self->fd, SNDCTL_DSP_RESET) != 0)
+        ERR("Error resetting device: %s\n", strerror(errno));
 }
 
-void alc_oss_probe(enum DevProbe type)
+static ALCenum ALCcaptureOSS_captureSamples(ALCcaptureOSS *self, ALCvoid *buffer, ALCuint samples)
 {
+    ll_ringbuffer_read(self->ring, buffer, samples);
+    return ALC_NO_ERROR;
+}
+
+static ALCuint ALCcaptureOSS_availableSamples(ALCcaptureOSS *self)
+{
+    return ll_ringbuffer_read_space(self->ring);
+}
+
+
+typedef struct ALCossBackendFactory {
+    DERIVE_FROM_TYPE(ALCbackendFactory);
+} ALCossBackendFactory;
+#define ALCOSSBACKENDFACTORY_INITIALIZER { { GET_VTABLE2(ALCossBackendFactory, ALCbackendFactory) } }
+
+ALCbackendFactory *ALCossBackendFactory_getFactory(void);
+
+static ALCboolean ALCossBackendFactory_init(ALCossBackendFactory *self);
+static void ALCossBackendFactory_deinit(ALCossBackendFactory *self);
+static ALCboolean ALCossBackendFactory_querySupport(ALCossBackendFactory *self, ALCbackend_Type type);
+static void ALCossBackendFactory_probe(ALCossBackendFactory *self, enum DevProbe type);
+static ALCbackend* ALCossBackendFactory_createBackend(ALCossBackendFactory *self, ALCdevice *device, ALCbackend_Type type);
+DEFINE_ALCBACKENDFACTORY_VTABLE(ALCossBackendFactory);
+
+
+ALCbackendFactory *ALCossBackendFactory_getFactory(void)
+{
+    static ALCossBackendFactory factory = ALCOSSBACKENDFACTORY_INITIALIZER;
+    return STATIC_CAST(ALCbackendFactory, &factory);
+}
+
+
+ALCboolean ALCossBackendFactory_init(ALCossBackendFactory* UNUSED(self))
+{
+    ConfigValueStr(NULL, "oss", "device", &oss_playback.path);
+    ConfigValueStr(NULL, "oss", "capture", &oss_capture.path);
+
+    return ALC_TRUE;
+}
+
+void  ALCossBackendFactory_deinit(ALCossBackendFactory* UNUSED(self))
+{
+    ALCossListFree(&oss_playback);
+    ALCossListFree(&oss_capture);
+}
+
+
+ALCboolean ALCossBackendFactory_querySupport(ALCossBackendFactory* UNUSED(self), ALCbackend_Type type)
+{
+    if(type == ALCbackend_Playback || type == ALCbackend_Capture)
+        return ALC_TRUE;
+    return ALC_FALSE;
+}
+
+void ALCossBackendFactory_probe(ALCossBackendFactory* UNUSED(self), enum DevProbe type)
+{
+    struct oss_device *cur;
     switch(type)
     {
         case ALL_DEVICE_PROBE:
-        {
+            ALCossListFree(&oss_playback);
+            ALCossListPopulate(&oss_playback, DSP_CAP_OUTPUT);
+            cur = &oss_playback;
+            while(cur != NULL)
+            {
 #ifdef HAVE_STAT
-            struct stat buf;
-            if(stat(oss_driver, &buf) == 0)
+                struct stat buf;
+                if(stat(cur->path, &buf) == 0)
 #endif
-                AppendAllDevicesList(oss_device);
-        }
-        break;
+                    AppendAllDevicesList(cur->handle);
+                cur = cur->next;
+            }
+            break;
 
         case CAPTURE_DEVICE_PROBE:
-        {
+            ALCossListFree(&oss_capture);
+            ALCossListPopulate(&oss_capture, DSP_CAP_INPUT);
+            cur = &oss_capture;
+            while(cur != NULL)
+            {
 #ifdef HAVE_STAT
-            struct stat buf;
-            if(stat(oss_capture, &buf) == 0)
+                struct stat buf;
+                if(stat(cur->path, &buf) == 0)
 #endif
-                AppendCaptureDeviceList(oss_device);
-        }
-        break;
+                    AppendCaptureDeviceList(cur->handle);
+                cur = cur->next;
+            }
+            break;
     }
+}
+
+ALCbackend* ALCossBackendFactory_createBackend(ALCossBackendFactory* UNUSED(self), ALCdevice *device, ALCbackend_Type type)
+{
+    if(type == ALCbackend_Playback)
+    {
+        ALCplaybackOSS *backend;
+        NEW_OBJ(backend, ALCplaybackOSS)(device);
+        if(!backend) return NULL;
+        return STATIC_CAST(ALCbackend, backend);
+    }
+    if(type == ALCbackend_Capture)
+    {
+        ALCcaptureOSS *backend;
+        NEW_OBJ(backend, ALCcaptureOSS)(device);
+        if(!backend) return NULL;
+        return STATIC_CAST(ALCbackend, backend);
+    }
+
+    return NULL;
 }

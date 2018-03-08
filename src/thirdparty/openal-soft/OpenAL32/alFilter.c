@@ -13,8 +13,8 @@
  *
  * You should have received a copy of the GNU Library General Public
  *  License along with this library; if not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- *  Boston, MA  02111-1307, USA.
+ *  Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  * Or go to http://www.gnu.org/copyleft/lgpl.html
  */
 
@@ -25,91 +25,89 @@
 #include "alMain.h"
 #include "alu.h"
 #include "alFilter.h"
-#include "alThunk.h"
 #include "alError.h"
 
 
+extern inline void LockFilterList(ALCdevice *device);
+extern inline void UnlockFilterList(ALCdevice *device);
+extern inline void ALfilterState_clear(ALfilterState *filter);
+extern inline void ALfilterState_copyParams(ALfilterState *restrict dst, const ALfilterState *restrict src);
+extern inline void ALfilterState_processPassthru(ALfilterState *filter, const ALfloat *restrict src, ALsizei numsamples);
+extern inline ALfloat calc_rcpQ_from_slope(ALfloat gain, ALfloat slope);
+extern inline ALfloat calc_rcpQ_from_bandwidth(ALfloat f0norm, ALfloat bandwidth);
+
+static ALfilter *AllocFilter(ALCcontext *context);
+static void FreeFilter(ALCdevice *device, ALfilter *filter);
 static void InitFilterParams(ALfilter *filter, ALenum type);
+
+static inline ALfilter *LookupFilter(ALCdevice *device, ALuint id)
+{
+    FilterSubList *sublist;
+    ALuint lidx = (id-1) >> 6;
+    ALsizei slidx = (id-1) & 0x3f;
+
+    if(UNLIKELY(lidx >= VECTOR_SIZE(device->FilterList)))
+        return NULL;
+    sublist = &VECTOR_ELEM(device->FilterList, lidx);
+    if(UNLIKELY(sublist->FreeMask & (U64(1)<<slidx)))
+        return NULL;
+    return sublist->Filters + slidx;
+}
 
 
 AL_API ALvoid AL_APIENTRY alGenFilters(ALsizei n, ALuint *filters)
 {
-    ALCcontext *Context;
-    ALsizei    cur = 0;
+    ALCcontext *context;
+    ALsizei cur = 0;
 
-    Context = GetContextRef();
-    if(!Context) return;
+    context = GetContextRef();
+    if(!context) return;
 
-    al_try
+    if(!(n >= 0))
+        alSetError(context, AL_INVALID_VALUE, "Generating %d filters", n);
+    else for(cur = 0;cur < n;cur++)
     {
-        ALCdevice *device = Context->Device;
-        ALenum err;
-
-        CHECK_VALUE(Context, n >= 0);
-        for(cur = 0;cur < n;cur++)
+        ALfilter *filter = AllocFilter(context);
+        if(!filter)
         {
-            ALfilter *filter = calloc(1, sizeof(ALfilter));
-            if(!filter)
-                al_throwerr(Context, AL_OUT_OF_MEMORY);
-            InitFilterParams(filter, AL_FILTER_NULL);
-
-            err = NewThunkEntry(&filter->id);
-            if(err == AL_NO_ERROR)
-                err = InsertUIntMapEntry(&device->FilterMap, filter->id, filter);
-            if(err != AL_NO_ERROR)
-            {
-                FreeThunkEntry(filter->id);
-                memset(filter, 0, sizeof(ALfilter));
-                free(filter);
-
-                al_throwerr(Context, err);
-            }
-
-            filters[cur] = filter->id;
-        }
-    }
-    al_catchany()
-    {
-        if(cur > 0)
             alDeleteFilters(cur, filters);
-    }
-    al_endtry;
+            break;
+        }
 
-    ALCcontext_DecRef(Context);
+        filters[cur] = filter->id;
+    }
+
+    ALCcontext_DecRef(context);
 }
 
 AL_API ALvoid AL_APIENTRY alDeleteFilters(ALsizei n, const ALuint *filters)
 {
-    ALCcontext *Context;
-    ALfilter *Filter;
+    ALCdevice *device;
+    ALCcontext *context;
+    ALfilter *filter;
     ALsizei i;
 
-    Context = GetContextRef();
-    if(!Context) return;
+    context = GetContextRef();
+    if(!context) return;
 
-    al_try
+    device = context->Device;
+    LockFilterList(device);
+    if(!(n >= 0))
+        SETERR_GOTO(context, AL_INVALID_VALUE, done, "Deleting %d filters", n);
+    for(i = 0;i < n;i++)
     {
-        ALCdevice *device = Context->Device;
-        CHECK_VALUE(Context, n >= 0);
-        for(i = 0;i < n;i++)
-        {
-            if(filters[i] && LookupFilter(device, filters[i]) == NULL)
-                al_throwerr(Context, AL_INVALID_NAME);
-        }
-
-        for(i = 0;i < n;i++)
-        {
-            if((Filter=RemoveFilter(device, filters[i])) == NULL)
-                continue;
-            FreeThunkEntry(Filter->id);
-
-            memset(Filter, 0, sizeof(*Filter));
-            free(Filter);
-        }
+        if(filters[i] && LookupFilter(device, filters[i]) == NULL)
+            SETERR_GOTO(context, AL_INVALID_NAME, done, "Invalid filter ID %u", filters[i]);
     }
-    al_endtry;
+    for(i = 0;i < n;i++)
+    {
+        if((filter=LookupFilter(device, filters[i])) != NULL)
+            FreeFilter(device, filter);
+    }
 
-    ALCcontext_DecRef(Context);
+done:
+    UnlockFilterList(device);
+    ALCcontext_DecRef(context);
 }
 
 AL_API ALboolean AL_APIENTRY alIsFilter(ALuint filter)
@@ -120,8 +118,10 @@ AL_API ALboolean AL_APIENTRY alIsFilter(ALuint filter)
     Context = GetContextRef();
     if(!Context) return AL_FALSE;
 
+    LockFilterList(Context->Device);
     result = ((!filter || LookupFilter(Context->Device, filter)) ?
               AL_TRUE : AL_FALSE);
+    UnlockFilterList(Context->Device);
 
     ALCcontext_DecRef(Context);
 
@@ -138,23 +138,26 @@ AL_API ALvoid AL_APIENTRY alFilteri(ALuint filter, ALenum param, ALint value)
     if(!Context) return;
 
     Device = Context->Device;
+    LockFilterList(Device);
     if((ALFilter=LookupFilter(Device, filter)) == NULL)
-        alSetError(Context, AL_INVALID_NAME);
+        alSetError(Context, AL_INVALID_NAME, "Invalid filter ID %u", filter);
     else
     {
         if(param == AL_FILTER_TYPE)
         {
-            if(value == AL_FILTER_NULL || value == AL_FILTER_LOWPASS)
+            if(value == AL_FILTER_NULL || value == AL_FILTER_LOWPASS ||
+               value == AL_FILTER_HIGHPASS || value == AL_FILTER_BANDPASS)
                 InitFilterParams(ALFilter, value);
             else
-                alSetError(Context, AL_INVALID_VALUE);
+                alSetError(Context, AL_INVALID_VALUE, "Invalid filter type 0x%04x", value);
         }
         else
         {
             /* Call the appropriate handler */
-            ALfilter_SetParami(ALFilter, Context, param, value);
+            V(ALFilter,setParami)(Context, param, value);
         }
     }
+    UnlockFilterList(Device);
 
     ALCcontext_DecRef(Context);
 }
@@ -176,13 +179,15 @@ AL_API ALvoid AL_APIENTRY alFilteriv(ALuint filter, ALenum param, const ALint *v
     if(!Context) return;
 
     Device = Context->Device;
+    LockFilterList(Device);
     if((ALFilter=LookupFilter(Device, filter)) == NULL)
-        alSetError(Context, AL_INVALID_NAME);
+        alSetError(Context, AL_INVALID_NAME, "Invalid filter ID %u", filter);
     else
     {
         /* Call the appropriate handler */
-        ALfilter_SetParamiv(ALFilter, Context, param, values);
+        V(ALFilter,setParamiv)(Context, param, values);
     }
+    UnlockFilterList(Device);
 
     ALCcontext_DecRef(Context);
 }
@@ -197,13 +202,15 @@ AL_API ALvoid AL_APIENTRY alFilterf(ALuint filter, ALenum param, ALfloat value)
     if(!Context) return;
 
     Device = Context->Device;
+    LockFilterList(Device);
     if((ALFilter=LookupFilter(Device, filter)) == NULL)
-        alSetError(Context, AL_INVALID_NAME);
+        alSetError(Context, AL_INVALID_NAME, "Invalid filter ID %u", filter);
     else
     {
         /* Call the appropriate handler */
-        ALfilter_SetParamf(ALFilter, Context, param, value);
+        V(ALFilter,setParamf)(Context, param, value);
     }
+    UnlockFilterList(Device);
 
     ALCcontext_DecRef(Context);
 }
@@ -218,13 +225,15 @@ AL_API ALvoid AL_APIENTRY alFilterfv(ALuint filter, ALenum param, const ALfloat 
     if(!Context) return;
 
     Device = Context->Device;
+    LockFilterList(Device);
     if((ALFilter=LookupFilter(Device, filter)) == NULL)
-        alSetError(Context, AL_INVALID_NAME);
+        alSetError(Context, AL_INVALID_NAME, "Invalid filter ID %u", filter);
     else
     {
         /* Call the appropriate handler */
-        ALfilter_SetParamfv(ALFilter, Context, param, values);
+        V(ALFilter,setParamfv)(Context, param, values);
     }
+    UnlockFilterList(Device);
 
     ALCcontext_DecRef(Context);
 }
@@ -239,8 +248,9 @@ AL_API ALvoid AL_APIENTRY alGetFilteri(ALuint filter, ALenum param, ALint *value
     if(!Context) return;
 
     Device = Context->Device;
+    LockFilterList(Device);
     if((ALFilter=LookupFilter(Device, filter)) == NULL)
-        alSetError(Context, AL_INVALID_NAME);
+        alSetError(Context, AL_INVALID_NAME, "Invalid filter ID %u", filter);
     else
     {
         if(param == AL_FILTER_TYPE)
@@ -248,9 +258,10 @@ AL_API ALvoid AL_APIENTRY alGetFilteri(ALuint filter, ALenum param, ALint *value
         else
         {
             /* Call the appropriate handler */
-            ALfilter_GetParami(ALFilter, Context, param, value);
+            V(ALFilter,getParami)(Context, param, value);
         }
     }
+    UnlockFilterList(Device);
 
     ALCcontext_DecRef(Context);
 }
@@ -272,13 +283,15 @@ AL_API ALvoid AL_APIENTRY alGetFilteriv(ALuint filter, ALenum param, ALint *valu
     if(!Context) return;
 
     Device = Context->Device;
+    LockFilterList(Device);
     if((ALFilter=LookupFilter(Device, filter)) == NULL)
-        alSetError(Context, AL_INVALID_NAME);
+        alSetError(Context, AL_INVALID_NAME, "Invalid filter ID %u", filter);
     else
     {
         /* Call the appropriate handler */
-        ALfilter_GetParamiv(ALFilter, Context, param, values);
+        V(ALFilter,getParamiv)(Context, param, values);
     }
+    UnlockFilterList(Device);
 
     ALCcontext_DecRef(Context);
 }
@@ -293,13 +306,15 @@ AL_API ALvoid AL_APIENTRY alGetFilterf(ALuint filter, ALenum param, ALfloat *val
     if(!Context) return;
 
     Device = Context->Device;
+    LockFilterList(Device);
     if((ALFilter=LookupFilter(Device, filter)) == NULL)
-        alSetError(Context, AL_INVALID_NAME);
+        alSetError(Context, AL_INVALID_NAME, "Invalid filter ID %u", filter);
     else
     {
         /* Call the appropriate handler */
-        ALfilter_GetParamf(ALFilter, Context, param, value);
+        V(ALFilter,getParamf)(Context, param, value);
     }
+    UnlockFilterList(Device);
 
     ALCcontext_DecRef(Context);
 }
@@ -314,72 +329,132 @@ AL_API ALvoid AL_APIENTRY alGetFilterfv(ALuint filter, ALenum param, ALfloat *va
     if(!Context) return;
 
     Device = Context->Device;
+    LockFilterList(Device);
     if((ALFilter=LookupFilter(Device, filter)) == NULL)
-        alSetError(Context, AL_INVALID_NAME);
+        alSetError(Context, AL_INVALID_NAME, "Invalid filter ID %u", filter);
     else
     {
         /* Call the appropriate handler */
-        ALfilter_GetParamfv(ALFilter, Context, param, values);
+        V(ALFilter,getParamfv)(Context, param, values);
     }
+    UnlockFilterList(Device);
 
     ALCcontext_DecRef(Context);
 }
 
 
-ALfloat lpCoeffCalc(ALfloat g, ALfloat cw)
+void ALfilterState_setParams(ALfilterState *filter, ALfilterType type, ALfloat gain, ALfloat f0norm, ALfloat rcpQ)
 {
-    ALfloat a = 0.0f;
+    ALfloat alpha, sqrtgain_alpha_2;
+    ALfloat w0, sin_w0, cos_w0;
+    ALfloat a[3] = { 1.0f, 0.0f, 0.0f };
+    ALfloat b[3] = { 1.0f, 0.0f, 0.0f };
 
-    if(g < 0.9999f) /* 1-epsilon */
+    // Limit gain to -100dB
+    assert(gain > 0.00001f);
+
+    w0 = F_TAU * f0norm;
+    sin_w0 = sinf(w0);
+    cos_w0 = cosf(w0);
+    alpha = sin_w0/2.0f * rcpQ;
+
+    /* Calculate filter coefficients depending on filter type */
+    switch(type)
     {
-        /* Be careful with gains < 0.001, as that causes the coefficient head
-         * towards 1, which will flatten the signal */
-        g = maxf(g, 0.001f);
-        a = (1 - g*cw - sqrtf(2*g*(1-cw) - g*g*(1 - cw*cw))) /
-            (1 - g);
+        case ALfilterType_HighShelf:
+            sqrtgain_alpha_2 = 2.0f * sqrtf(gain) * alpha;
+            b[0] =       gain*((gain+1.0f) + (gain-1.0f)*cos_w0 + sqrtgain_alpha_2);
+            b[1] = -2.0f*gain*((gain-1.0f) + (gain+1.0f)*cos_w0                   );
+            b[2] =       gain*((gain+1.0f) + (gain-1.0f)*cos_w0 - sqrtgain_alpha_2);
+            a[0] =             (gain+1.0f) - (gain-1.0f)*cos_w0 + sqrtgain_alpha_2;
+            a[1] =  2.0f*     ((gain-1.0f) - (gain+1.0f)*cos_w0                   );
+            a[2] =             (gain+1.0f) - (gain-1.0f)*cos_w0 - sqrtgain_alpha_2;
+            break;
+        case ALfilterType_LowShelf:
+            sqrtgain_alpha_2 = 2.0f * sqrtf(gain) * alpha;
+            b[0] =       gain*((gain+1.0f) - (gain-1.0f)*cos_w0 + sqrtgain_alpha_2);
+            b[1] =  2.0f*gain*((gain-1.0f) - (gain+1.0f)*cos_w0                   );
+            b[2] =       gain*((gain+1.0f) - (gain-1.0f)*cos_w0 - sqrtgain_alpha_2);
+            a[0] =             (gain+1.0f) + (gain-1.0f)*cos_w0 + sqrtgain_alpha_2;
+            a[1] = -2.0f*     ((gain-1.0f) + (gain+1.0f)*cos_w0                   );
+            a[2] =             (gain+1.0f) + (gain-1.0f)*cos_w0 - sqrtgain_alpha_2;
+            break;
+        case ALfilterType_Peaking:
+            gain = sqrtf(gain);
+            b[0] =  1.0f + alpha * gain;
+            b[1] = -2.0f * cos_w0;
+            b[2] =  1.0f - alpha * gain;
+            a[0] =  1.0f + alpha / gain;
+            a[1] = -2.0f * cos_w0;
+            a[2] =  1.0f - alpha / gain;
+            break;
+
+        case ALfilterType_LowPass:
+            b[0] = (1.0f - cos_w0) / 2.0f;
+            b[1] =  1.0f - cos_w0;
+            b[2] = (1.0f - cos_w0) / 2.0f;
+            a[0] =  1.0f + alpha;
+            a[1] = -2.0f * cos_w0;
+            a[2] =  1.0f - alpha;
+            break;
+        case ALfilterType_HighPass:
+            b[0] =  (1.0f + cos_w0) / 2.0f;
+            b[1] = -(1.0f + cos_w0);
+            b[2] =  (1.0f + cos_w0) / 2.0f;
+            a[0] =   1.0f + alpha;
+            a[1] =  -2.0f * cos_w0;
+            a[2] =   1.0f - alpha;
+            break;
+        case ALfilterType_BandPass:
+            b[0] =  alpha;
+            b[1] =  0;
+            b[2] = -alpha;
+            a[0] =  1.0f + alpha;
+            a[1] = -2.0f * cos_w0;
+            a[2] =  1.0f - alpha;
+            break;
     }
 
-    return a;
+    filter->a1 = a[1] / a[0];
+    filter->a2 = a[2] / a[0];
+    filter->b0 = b[0] / a[0];
+    filter->b1 = b[1] / a[0];
+    filter->b2 = b[2] / a[0];
 }
 
 
-static void lp_SetParami(ALfilter *filter, ALCcontext *context, ALenum param, ALint val)
-{ (void)filter;(void)param;(void)val; alSetError(context, AL_INVALID_ENUM); }
-static void lp_SetParamiv(ALfilter *filter, ALCcontext *context, ALenum param, const ALint *vals)
-{ (void)filter;(void)param;(void)vals; alSetError(context, AL_INVALID_ENUM); }
-static void lp_SetParamf(ALfilter *filter, ALCcontext *context, ALenum param, ALfloat val)
+static void ALlowpass_setParami(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, ALint UNUSED(val))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid low-pass integer property 0x%04x", param); }
+static void ALlowpass_setParamiv(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, const ALint *UNUSED(vals))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid low-pass integer-vector property 0x%04x", param); }
+static void ALlowpass_setParamf(ALfilter *filter, ALCcontext *context, ALenum param, ALfloat val)
 {
     switch(param)
     {
         case AL_LOWPASS_GAIN:
-            if(val >= AL_LOWPASS_MIN_GAIN && val <= AL_LOWPASS_MAX_GAIN)
-                filter->Gain = val;
-            else
-                alSetError(context, AL_INVALID_VALUE);
+            if(!(val >= AL_LOWPASS_MIN_GAIN && val <= AL_LOWPASS_MAX_GAIN))
+                SETERR_RETURN(context, AL_INVALID_VALUE,, "Low-pass gain %f out of range", val);
+            filter->Gain = val;
             break;
 
         case AL_LOWPASS_GAINHF:
-            if(val >= AL_LOWPASS_MIN_GAINHF && val <= AL_LOWPASS_MAX_GAINHF)
-                filter->GainHF = val;
-            else
-                alSetError(context, AL_INVALID_VALUE);
+            if(!(val >= AL_LOWPASS_MIN_GAINHF && val <= AL_LOWPASS_MAX_GAINHF))
+                SETERR_RETURN(context, AL_INVALID_VALUE,, "Low-pass gainhf %f out of range", val);
+            filter->GainHF = val;
             break;
 
         default:
-            alSetError(context, AL_INVALID_ENUM);
-            break;
+            alSetError(context, AL_INVALID_ENUM, "Invalid low-pass float property 0x%04x", param);
     }
 }
-static void lp_SetParamfv(ALfilter *filter, ALCcontext *context, ALenum param, const ALfloat *vals)
-{
-    lp_SetParamf(filter, context, param, vals[0]);
-}
+static void ALlowpass_setParamfv(ALfilter *filter, ALCcontext *context, ALenum param, const ALfloat *vals)
+{ ALlowpass_setParamf(filter, context, param, vals[0]); }
 
-static void lp_GetParami(ALfilter *filter, ALCcontext *context, ALenum param, ALint *val)
-{ (void)filter;(void)param;(void)val; alSetError(context, AL_INVALID_ENUM); }
-static void lp_GetParamiv(ALfilter *filter, ALCcontext *context, ALenum param, ALint *vals)
-{ (void)filter;(void)param;(void)vals; alSetError(context, AL_INVALID_ENUM); }
-static void lp_GetParamf(ALfilter *filter, ALCcontext *context, ALenum param, ALfloat *val)
+static void ALlowpass_getParami(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, ALint *UNUSED(val))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid low-pass integer property 0x%04x", param); }
+static void ALlowpass_getParamiv(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, ALint *UNUSED(vals))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid low-pass integer-vector property 0x%04x", param); }
+static void ALlowpass_getParamf(ALfilter *filter, ALCcontext *context, ALenum param, ALfloat *val)
 {
     switch(param)
     {
@@ -392,48 +467,247 @@ static void lp_GetParamf(ALfilter *filter, ALCcontext *context, ALenum param, AL
             break;
 
         default:
-            alSetError(context, AL_INVALID_ENUM);
-            break;
+            alSetError(context, AL_INVALID_ENUM, "Invalid low-pass float property 0x%04x", param);
     }
 }
-static void lp_GetParamfv(ALfilter *filter, ALCcontext *context, ALenum param, ALfloat *vals)
+static void ALlowpass_getParamfv(ALfilter *filter, ALCcontext *context, ALenum param, ALfloat *vals)
+{ ALlowpass_getParamf(filter, context, param, vals); }
+
+DEFINE_ALFILTER_VTABLE(ALlowpass);
+
+
+static void ALhighpass_setParami(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, ALint UNUSED(val))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid high-pass integer property 0x%04x", param); }
+static void ALhighpass_setParamiv(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, const ALint *UNUSED(vals))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid high-pass integer-vector property 0x%04x", param); }
+static void ALhighpass_setParamf(ALfilter *filter, ALCcontext *context, ALenum param, ALfloat val)
 {
-    lp_GetParamf(filter, context, param, vals);
-}
-
-
-static void null_SetParami(ALfilter *filter, ALCcontext *context, ALenum param, ALint val)
-{ (void)filter;(void)param;(void)val; alSetError(context, AL_INVALID_ENUM); }
-static void null_SetParamiv(ALfilter *filter, ALCcontext *context, ALenum param, const ALint *vals)
-{ (void)filter;(void)param;(void)vals; alSetError(context, AL_INVALID_ENUM); }
-static void null_SetParamf(ALfilter *filter, ALCcontext *context, ALenum param, ALfloat val)
-{ (void)filter;(void)param;(void)val; alSetError(context, AL_INVALID_ENUM); }
-static void null_SetParamfv(ALfilter *filter, ALCcontext *context, ALenum param, const ALfloat *vals)
-{ (void)filter;(void)param;(void)vals; alSetError(context, AL_INVALID_ENUM); }
-
-static void null_GetParami(ALfilter *filter, ALCcontext *context, ALenum param, ALint *val)
-{ (void)filter;(void)param;(void)val; alSetError(context, AL_INVALID_ENUM); }
-static void null_GetParamiv(ALfilter *filter, ALCcontext *context, ALenum param, ALint *vals)
-{ (void)filter;(void)param;(void)vals; alSetError(context, AL_INVALID_ENUM); }
-static void null_GetParamf(ALfilter *filter, ALCcontext *context, ALenum param, ALfloat *val)
-{ (void)filter;(void)param;(void)val; alSetError(context, AL_INVALID_ENUM); }
-static void null_GetParamfv(ALfilter *filter, ALCcontext *context, ALenum param, ALfloat *vals)
-{ (void)filter;(void)param;(void)vals; alSetError(context, AL_INVALID_ENUM); }
-
-
-ALvoid ReleaseALFilters(ALCdevice *device)
-{
-    ALsizei i;
-    for(i = 0;i < device->FilterMap.size;i++)
+    switch(param)
     {
-        ALfilter *temp = device->FilterMap.array[i].value;
-        device->FilterMap.array[i].value = NULL;
+        case AL_HIGHPASS_GAIN:
+            if(!(val >= AL_HIGHPASS_MIN_GAIN && val <= AL_HIGHPASS_MAX_GAIN))
+                SETERR_RETURN(context, AL_INVALID_VALUE,, "High-pass gain out of range");
+            filter->Gain = val;
+            break;
 
-        // Release filter structure
-        FreeThunkEntry(temp->id);
-        memset(temp, 0, sizeof(ALfilter));
-        free(temp);
+        case AL_HIGHPASS_GAINLF:
+            if(!(val >= AL_HIGHPASS_MIN_GAINLF && val <= AL_HIGHPASS_MAX_GAINLF))
+                SETERR_RETURN(context, AL_INVALID_VALUE,, "High-pass gainlf out of range");
+            filter->GainLF = val;
+            break;
+
+        default:
+            alSetError(context, AL_INVALID_ENUM, "Invalid high-pass float property 0x%04x", param);
     }
+}
+static void ALhighpass_setParamfv(ALfilter *filter, ALCcontext *context, ALenum param, const ALfloat *vals)
+{ ALhighpass_setParamf(filter, context, param, vals[0]); }
+
+static void ALhighpass_getParami(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, ALint *UNUSED(val))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid high-pass integer property 0x%04x", param); }
+static void ALhighpass_getParamiv(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, ALint *UNUSED(vals))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid high-pass integer-vector property 0x%04x", param); }
+static void ALhighpass_getParamf(ALfilter *filter, ALCcontext *context, ALenum param, ALfloat *val)
+{
+    switch(param)
+    {
+        case AL_HIGHPASS_GAIN:
+            *val = filter->Gain;
+            break;
+
+        case AL_HIGHPASS_GAINLF:
+            *val = filter->GainLF;
+            break;
+
+        default:
+            alSetError(context, AL_INVALID_ENUM, "Invalid high-pass float property 0x%04x", param);
+    }
+}
+static void ALhighpass_getParamfv(ALfilter *filter, ALCcontext *context, ALenum param, ALfloat *vals)
+{ ALhighpass_getParamf(filter, context, param, vals); }
+
+DEFINE_ALFILTER_VTABLE(ALhighpass);
+
+
+static void ALbandpass_setParami(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, ALint UNUSED(val))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid band-pass integer property 0x%04x", param); }
+static void ALbandpass_setParamiv(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, const ALint *UNUSED(vals))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid band-pass integer-vector property 0x%04x", param); }
+static void ALbandpass_setParamf(ALfilter *filter, ALCcontext *context, ALenum param, ALfloat val)
+{
+    switch(param)
+    {
+        case AL_BANDPASS_GAIN:
+            if(!(val >= AL_BANDPASS_MIN_GAIN && val <= AL_BANDPASS_MAX_GAIN))
+                SETERR_RETURN(context, AL_INVALID_VALUE,, "Band-pass gain out of range");
+            filter->Gain = val;
+            break;
+
+        case AL_BANDPASS_GAINHF:
+            if(!(val >= AL_BANDPASS_MIN_GAINHF && val <= AL_BANDPASS_MAX_GAINHF))
+                SETERR_RETURN(context, AL_INVALID_VALUE,, "Band-pass gainhf out of range");
+            filter->GainHF = val;
+            break;
+
+        case AL_BANDPASS_GAINLF:
+            if(!(val >= AL_BANDPASS_MIN_GAINLF && val <= AL_BANDPASS_MAX_GAINLF))
+                SETERR_RETURN(context, AL_INVALID_VALUE,, "Band-pass gainlf out of range");
+            filter->GainLF = val;
+            break;
+
+        default:
+            alSetError(context, AL_INVALID_ENUM, "Invalid band-pass float property 0x%04x", param);
+    }
+}
+static void ALbandpass_setParamfv(ALfilter *filter, ALCcontext *context, ALenum param, const ALfloat *vals)
+{ ALbandpass_setParamf(filter, context, param, vals[0]); }
+
+static void ALbandpass_getParami(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, ALint *UNUSED(val))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid band-pass integer property 0x%04x", param); }
+static void ALbandpass_getParamiv(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, ALint *UNUSED(vals))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid band-pass integer-vector property 0x%04x", param); }
+static void ALbandpass_getParamf(ALfilter *filter, ALCcontext *context, ALenum param, ALfloat *val)
+{
+    switch(param)
+    {
+        case AL_BANDPASS_GAIN:
+            *val = filter->Gain;
+            break;
+
+        case AL_BANDPASS_GAINHF:
+            *val = filter->GainHF;
+            break;
+
+        case AL_BANDPASS_GAINLF:
+            *val = filter->GainLF;
+            break;
+
+        default:
+            alSetError(context, AL_INVALID_ENUM, "Invalid band-pass float property 0x%04x", param);
+    }
+}
+static void ALbandpass_getParamfv(ALfilter *filter, ALCcontext *context, ALenum param, ALfloat *vals)
+{ ALbandpass_getParamf(filter, context, param, vals); }
+
+DEFINE_ALFILTER_VTABLE(ALbandpass);
+
+
+static void ALnullfilter_setParami(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, ALint UNUSED(val))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid null filter property 0x%04x", param); }
+static void ALnullfilter_setParamiv(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, const ALint *UNUSED(vals))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid null filter property 0x%04x", param); }
+static void ALnullfilter_setParamf(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, ALfloat UNUSED(val))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid null filter property 0x%04x", param); }
+static void ALnullfilter_setParamfv(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, const ALfloat *UNUSED(vals))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid null filter property 0x%04x", param); }
+
+static void ALnullfilter_getParami(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, ALint *UNUSED(val))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid null filter property 0x%04x", param); }
+static void ALnullfilter_getParamiv(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, ALint *UNUSED(vals))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid null filter property 0x%04x", param); }
+static void ALnullfilter_getParamf(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, ALfloat *UNUSED(val))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid null filter property 0x%04x", param); }
+static void ALnullfilter_getParamfv(ALfilter *UNUSED(filter), ALCcontext *context, ALenum param, ALfloat *UNUSED(vals))
+{ alSetError(context, AL_INVALID_ENUM, "Invalid null filter property 0x%04x", param); }
+
+DEFINE_ALFILTER_VTABLE(ALnullfilter);
+
+
+static ALfilter *AllocFilter(ALCcontext *context)
+{
+    ALCdevice *device = context->Device;
+    FilterSubList *sublist, *subend;
+    ALfilter *filter = NULL;
+    ALsizei lidx = 0;
+    ALsizei slidx;
+
+    almtx_lock(&device->FilterLock);
+    sublist = VECTOR_BEGIN(device->FilterList);
+    subend = VECTOR_END(device->FilterList);
+    for(;sublist != subend;++sublist)
+    {
+        if(sublist->FreeMask)
+        {
+            slidx = CTZ64(sublist->FreeMask);
+            filter = sublist->Filters + slidx;
+            break;
+        }
+        ++lidx;
+    }
+    if(UNLIKELY(!filter))
+    {
+        const FilterSubList empty_sublist = { 0, NULL };
+        /* Don't allocate so many list entries that the 32-bit ID could
+         * overflow...
+         */
+        if(UNLIKELY(VECTOR_SIZE(device->FilterList) >= 1<<25))
+        {
+            almtx_unlock(&device->FilterLock);
+            alSetError(context, AL_OUT_OF_MEMORY, "Too many filters allocated");
+            return NULL;
+        }
+        lidx = (ALsizei)VECTOR_SIZE(device->FilterList);
+        VECTOR_PUSH_BACK(device->FilterList, empty_sublist);
+        sublist = &VECTOR_BACK(device->FilterList);
+        sublist->FreeMask = ~U64(0);
+        sublist->Filters = al_calloc(16, sizeof(ALfilter)*64);
+        if(UNLIKELY(!sublist->Filters))
+        {
+            VECTOR_POP_BACK(device->FilterList);
+            almtx_unlock(&device->FilterLock);
+            alSetError(context, AL_OUT_OF_MEMORY, "Failed to allocate filter batch");
+            return NULL;
+        }
+
+        slidx = 0;
+        filter = sublist->Filters + slidx;
+    }
+
+    memset(filter, 0, sizeof(*filter));
+    InitFilterParams(filter, AL_FILTER_NULL);
+
+    /* Add 1 to avoid filter ID 0. */
+    filter->id = ((lidx<<6) | slidx) + 1;
+
+    sublist->FreeMask &= ~(U64(1)<<slidx);
+    almtx_unlock(&device->FilterLock);
+
+    return filter;
+}
+
+static void FreeFilter(ALCdevice *device, ALfilter *filter)
+{
+    ALuint id = filter->id - 1;
+    ALsizei lidx = id >> 6;
+    ALsizei slidx = id & 0x3f;
+
+    memset(filter, 0, sizeof(*filter));
+
+    VECTOR_ELEM(device->FilterList, lidx).FreeMask |= U64(1) << slidx;
+}
+
+void ReleaseALFilters(ALCdevice *device)
+{
+    FilterSubList *sublist = VECTOR_BEGIN(device->FilterList);
+    FilterSubList *subend = VECTOR_END(device->FilterList);
+    size_t leftover = 0;
+    for(;sublist != subend;++sublist)
+    {
+        ALuint64 usemask = ~sublist->FreeMask;
+        while(usemask)
+        {
+            ALsizei idx = CTZ64(usemask);
+            ALfilter *filter = sublist->Filters + idx;
+
+            memset(filter, 0, sizeof(*filter));
+            ++leftover;
+
+            usemask &= ~(U64(1) << idx);
+        }
+        sublist->FreeMask = ~usemask;
+    }
+    if(leftover > 0)
+        WARN("(%p) Deleted "SZFMT" Filter%s\n", device, leftover, (leftover==1)?"":"s");
 }
 
 
@@ -443,26 +717,37 @@ static void InitFilterParams(ALfilter *filter, ALenum type)
     {
         filter->Gain = AL_LOWPASS_DEFAULT_GAIN;
         filter->GainHF = AL_LOWPASS_DEFAULT_GAINHF;
-
-        filter->SetParami  = lp_SetParami;
-        filter->SetParamiv = lp_SetParamiv;
-        filter->SetParamf  = lp_SetParamf;
-        filter->SetParamfv = lp_SetParamfv;
-        filter->GetParami  = lp_GetParami;
-        filter->GetParamiv = lp_GetParamiv;
-        filter->GetParamf  = lp_GetParamf;
-        filter->GetParamfv = lp_GetParamfv;
+        filter->HFReference = LOWPASSFREQREF;
+        filter->GainLF = 1.0f;
+        filter->LFReference = HIGHPASSFREQREF;
+        filter->vtbl = &ALlowpass_vtable;
+    }
+    else if(type == AL_FILTER_HIGHPASS)
+    {
+        filter->Gain = AL_HIGHPASS_DEFAULT_GAIN;
+        filter->GainHF = 1.0f;
+        filter->HFReference = LOWPASSFREQREF;
+        filter->GainLF = AL_HIGHPASS_DEFAULT_GAINLF;
+        filter->LFReference = HIGHPASSFREQREF;
+        filter->vtbl = &ALhighpass_vtable;
+    }
+    else if(type == AL_FILTER_BANDPASS)
+    {
+        filter->Gain = AL_BANDPASS_DEFAULT_GAIN;
+        filter->GainHF = AL_BANDPASS_DEFAULT_GAINHF;
+        filter->HFReference = LOWPASSFREQREF;
+        filter->GainLF = AL_BANDPASS_DEFAULT_GAINLF;
+        filter->LFReference = HIGHPASSFREQREF;
+        filter->vtbl = &ALbandpass_vtable;
     }
     else
     {
-        filter->SetParami  = null_SetParami;
-        filter->SetParamiv = null_SetParamiv;
-        filter->SetParamf  = null_SetParamf;
-        filter->SetParamfv = null_SetParamfv;
-        filter->GetParami  = null_GetParami;
-        filter->GetParamiv = null_GetParamiv;
-        filter->GetParamf  = null_GetParamf;
-        filter->GetParamfv = null_GetParamfv;
+        filter->Gain = 1.0f;
+        filter->GainHF = 1.0f;
+        filter->HFReference = LOWPASSFREQREF;
+        filter->GainLF = 1.0f;
+        filter->LFReference = HIGHPASSFREQREF;
+        filter->vtbl = &ALnullfilter_vtable;
     }
     filter->type = type;
 }

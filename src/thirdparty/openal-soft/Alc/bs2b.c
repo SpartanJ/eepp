@@ -27,119 +27,97 @@
 #include <string.h>
 
 #include "bs2b.h"
+#include "alu.h"
 
-#ifndef M_PI
-#define M_PI  3.14159265358979323846
-#endif
-
-/* Single pole IIR filter.
- * O[n] = a0*I[n] + a1*I[n-1] + b1*O[n-1]
- */
-
-/* Lowpass filter */
-#define lo_filter(in, out_1) (bs2b->a0_lo*(in) + bs2b->b1_lo*(out_1))
-
-/* Highboost filter */
-#define hi_filter(in, in_1, out_1) (bs2b->a0_hi*(in) + bs2b->a1_hi*(in_1) + bs2b->b1_hi*(out_1))
 
 /* Set up all data. */
 static void init(struct bs2b *bs2b)
 {
-    double Fc_lo, Fc_hi;
-    double G_lo,  G_hi;
-    double x;
-
-    if ((bs2b->srate > 192000) || (bs2b->srate < 2000))
-        bs2b->srate = BS2B_DEFAULT_SRATE;
+    float Fc_lo, Fc_hi;
+    float G_lo,  G_hi;
+    float x, g;
 
     switch(bs2b->level)
     {
     case BS2B_LOW_CLEVEL: /* Low crossfeed level */
-        Fc_lo = 360.0;
-        Fc_hi = 501.0;
-        G_lo  = 0.398107170553497;
-        G_hi  = 0.205671765275719;
+        Fc_lo = 360.0f;
+        Fc_hi = 501.0f;
+        G_lo  = 0.398107170553497f;
+        G_hi  = 0.205671765275719f;
         break;
 
     case BS2B_MIDDLE_CLEVEL: /* Middle crossfeed level */
-        Fc_lo = 500.0;
-        Fc_hi = 711.0;
-        G_lo  = 0.459726988530872;
-        G_hi  = 0.228208484414988;
+        Fc_lo = 500.0f;
+        Fc_hi = 711.0f;
+        G_lo  = 0.459726988530872f;
+        G_hi  = 0.228208484414988f;
         break;
 
     case BS2B_HIGH_CLEVEL: /* High crossfeed level (virtual speakers are closer to itself) */
-        Fc_lo = 700.0;
-        Fc_hi = 1021.0;
-        G_lo  = 0.530884444230988;
-        G_hi  = 0.250105790667544;
+        Fc_lo = 700.0f;
+        Fc_hi = 1021.0f;
+        G_lo  = 0.530884444230988f;
+        G_hi  = 0.250105790667544f;
         break;
 
     case BS2B_LOW_ECLEVEL: /* Low easy crossfeed level */
-        Fc_lo = 360.0;
-        Fc_hi = 494.0;
-        G_lo  = 0.316227766016838;
-        G_hi  = 0.168236228897329;
+        Fc_lo = 360.0f;
+        Fc_hi = 494.0f;
+        G_lo  = 0.316227766016838f;
+        G_hi  = 0.168236228897329f;
         break;
 
     case BS2B_MIDDLE_ECLEVEL: /* Middle easy crossfeed level */
-        Fc_lo = 500.0;
-        Fc_hi = 689.0;
-        G_lo  = 0.354813389233575;
-        G_hi  = 0.187169483835901;
+        Fc_lo = 500.0f;
+        Fc_hi = 689.0f;
+        G_lo  = 0.354813389233575f;
+        G_hi  = 0.187169483835901f;
         break;
 
     default: /* High easy crossfeed level */
         bs2b->level = BS2B_HIGH_ECLEVEL;
 
-        Fc_lo = 700.0;
-        Fc_hi = 975.0;
-        G_lo  = 0.398107170553497;
-        G_hi  = 0.205671765275719;
+        Fc_lo = 700.0f;
+        Fc_hi = 975.0f;
+        G_lo  = 0.398107170553497f;
+        G_hi  = 0.205671765275719f;
         break;
     } /* switch */
+
+    g = 1.0f / (1.0f - G_hi + G_lo);
 
     /* $fc = $Fc / $s;
      * $d  = 1 / 2 / pi / $fc;
      * $x  = exp(-1 / $d);
      */
-
-    x           = exp(-2.0 * M_PI * Fc_lo / bs2b->srate);
+    x           = expf(-2.0f * F_PI * Fc_lo / bs2b->srate);
     bs2b->b1_lo = x;
-    bs2b->a0_lo = G_lo * (1.0 - x);
+    bs2b->a0_lo = G_lo * (1.0f - x) * g;
 
-    x           = exp(-2.0 * M_PI * Fc_hi / bs2b->srate);
+    x           = expf(-2.0f * F_PI * Fc_hi / bs2b->srate);
     bs2b->b1_hi = x;
-    bs2b->a0_hi = 1.0 - G_hi * (1.0 - x);
-    bs2b->a1_hi = -x;
-
-    bs2b->gain  = 1.0f / (float)(1.0 - G_hi + G_lo);
+    bs2b->a0_hi = (1.0f - G_hi * (1.0f - x)) * g;
+    bs2b->a1_hi = -x * g;
 } /* init */
+
 
 /* Exported functions.
  * See descriptions in "bs2b.h"
  */
 
-void bs2b_set_level(struct bs2b *bs2b, int level)
+void bs2b_set_params(struct bs2b *bs2b, int level, int srate)
 {
-    if(level == bs2b->level)
-        return;
+    if(srate <= 0) srate = 1;
+
     bs2b->level = level;
+    bs2b->srate = srate;
     init(bs2b);
-} /* bs2b_set_level */
+} /* bs2b_set_params */
 
 int bs2b_get_level(struct bs2b *bs2b)
 {
     return bs2b->level;
 } /* bs2b_get_level */
-
-void bs2b_set_srate(struct bs2b *bs2b, int srate)
-{
-    if (srate == bs2b->srate)
-        return;
-    bs2b->srate = srate;
-    init(bs2b);
-} /* bs2b_set_srate */
 
 int bs2b_get_srate(struct bs2b *bs2b)
 {
@@ -151,35 +129,59 @@ void bs2b_clear(struct bs2b *bs2b)
     memset(&bs2b->last_sample, 0, sizeof(bs2b->last_sample));
 } /* bs2b_clear */
 
-void bs2b_cross_feed(struct bs2b *bs2b, float *sample)
+void bs2b_cross_feed(struct bs2b *bs2b, float *restrict Left, float *restrict Right, int SamplesToDo)
 {
-    /* Lowpass filter */
-    bs2b->last_sample.lo[0] = lo_filter(sample[0], bs2b->last_sample.lo[0]);
-    bs2b->last_sample.lo[1] = lo_filter(sample[1], bs2b->last_sample.lo[1]);
+    float lsamples[128][2];
+    float rsamples[128][2];
+    int base;
 
-    /* Highboost filter */
-    bs2b->last_sample.hi[0] = hi_filter(sample[0], bs2b->last_sample.asis[0], bs2b->last_sample.hi[0]);
-    bs2b->last_sample.hi[1] = hi_filter(sample[1], bs2b->last_sample.asis[1], bs2b->last_sample.hi[1]);
-    bs2b->last_sample.asis[0] = sample[0];
-    bs2b->last_sample.asis[1] = sample[1];
+    for(base = 0;base < SamplesToDo;)
+    {
+        int todo = mini(128, SamplesToDo-base);
+        int i;
 
-    /* Crossfeed */
-    sample[0] = (float)(bs2b->last_sample.hi[0] + bs2b->last_sample.lo[1]);
-    sample[1] = (float)(bs2b->last_sample.hi[1] + bs2b->last_sample.lo[0]);
+        /* Process left input */
+        lsamples[0][0] = bs2b->a0_lo*Left[0] +
+                         bs2b->b1_lo*bs2b->last_sample[0].lo;
+        lsamples[0][1] = bs2b->a0_hi*Left[0] +
+                         bs2b->a1_hi*bs2b->last_sample[0].asis +
+                         bs2b->b1_hi*bs2b->last_sample[0].hi;
+        for(i = 1;i < todo;i++)
+        {
+            lsamples[i][0] = bs2b->a0_lo*Left[i] +
+                             bs2b->b1_lo*lsamples[i-1][0];
+            lsamples[i][1] = bs2b->a0_hi*Left[i] +
+                             bs2b->a1_hi*Left[i-1] +
+                             bs2b->b1_hi*lsamples[i-1][1];
+        }
+        bs2b->last_sample[0].asis = Left[i-1];
+        bs2b->last_sample[0].lo = lsamples[i-1][0];
+        bs2b->last_sample[0].hi = lsamples[i-1][1];
 
-    /* Bass boost cause allpass attenuation */
-    sample[0] *= bs2b->gain;
-    sample[1] *= bs2b->gain;
+        /* Process right input */
+        rsamples[0][0] = bs2b->a0_lo*Right[0] +
+                         bs2b->b1_lo*bs2b->last_sample[1].lo;
+        rsamples[0][1] = bs2b->a0_hi*Right[0] +
+                         bs2b->a1_hi*bs2b->last_sample[1].asis +
+                         bs2b->b1_hi*bs2b->last_sample[1].hi;
+        for(i = 1;i < todo;i++)
+        {
+            rsamples[i][0] = bs2b->a0_lo*Right[i] +
+                             bs2b->b1_lo*rsamples[i-1][0];
+            rsamples[i][1] = bs2b->a0_hi*Right[i] +
+                             bs2b->a1_hi*Right[i-1] +
+                             bs2b->b1_hi*rsamples[i-1][1];
+        }
+        bs2b->last_sample[1].asis = Right[i-1];
+        bs2b->last_sample[1].lo = rsamples[i-1][0];
+        bs2b->last_sample[1].hi = rsamples[i-1][1];
 
-    /* Clipping of overloaded samples */
-#if 0
-    if (sample[0] > 1.0)
-        sample[0] = 1.0;
-    if (sample[0] < -1.0)
-        sample[0] = -1.0;
-    if (sample[1] > 1.0)
-        sample[1] = 1.0;
-    if (sample[1] < -1.0)
-        sample[1] = -1.0;
-#endif
+        /* Crossfeed */
+        for(i = 0;i < todo;i++)
+            *(Left++) = lsamples[i][1] + rsamples[i][0];
+        for(i = 0;i < todo;i++)
+            *(Right++) = rsamples[i][1] + lsamples[i][0];
+
+        base += todo;
+    }
 } /* bs2b_cross_feed */

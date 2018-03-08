@@ -13,8 +13,8 @@
  *
  * You should have received a copy of the GNU Library General Public
  *  License along with this library; if not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- *  Boston, MA  02111-1307, USA.
+ *  Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  * Or go to http://www.gnu.org/copyleft/lgpl.html
  */
 
@@ -35,52 +35,39 @@
 #include "AL/alc.h"
 
 
-const struct EffectList EffectList[] = {
-    { "eaxreverb", EAXREVERB, "AL_EFFECT_EAXREVERB",      AL_EFFECT_EAXREVERB },
-    { "reverb",    REVERB,    "AL_EFFECT_REVERB",         AL_EFFECT_REVERB },
-    { "echo",      ECHO,      "AL_EFFECT_ECHO",           AL_EFFECT_ECHO },
-    { "modulator", MODULATOR, "AL_EFFECT_RING_MODULATOR", AL_EFFECT_RING_MODULATOR },
-    { "dedicated", DEDICATED, "AL_EFFECT_DEDICATED_LOW_FREQUENCY_EFFECT", AL_EFFECT_DEDICATED_LOW_FREQUENCY_EFFECT },
-    { "dedicated", DEDICATED, "AL_EFFECT_DEDICATED_DIALOGUE", AL_EFFECT_DEDICATED_DIALOGUE },
-    { NULL, 0, NULL, (ALenum)0 }
-};
-
-
 AL_API ALboolean AL_APIENTRY alIsExtensionPresent(const ALchar *extName)
 {
     ALboolean ret = AL_FALSE;
-    ALCcontext *Context;
+    ALCcontext *context;
     const char *ptr;
     size_t len;
 
-    Context = GetContextRef();
-    if(!Context) return AL_FALSE;
+    context = GetContextRef();
+    if(!context) return AL_FALSE;
 
-    al_try
+    if(!extName)
+        SETERR_GOTO(context, AL_INVALID_VALUE, done, "NULL pointer");
+
+    len = strlen(extName);
+    ptr = context->ExtensionList;
+    while(ptr && *ptr)
     {
-        CHECK_VALUE(Context, extName);
-
-        len = strlen(extName);
-        ptr = Context->ExtensionList;
-        while(ptr && *ptr)
+        if(strncasecmp(ptr, extName, len) == 0 &&
+           (ptr[len] == '\0' || isspace(ptr[len])))
         {
-            if(strncasecmp(ptr, extName, len) == 0 &&
-               (ptr[len] == '\0' || isspace(ptr[len])))
-            {
-                ret = AL_TRUE;
-                break;
-            }
-            if((ptr=strchr(ptr, ' ')) != NULL)
-            {
-                do {
-                    ++ptr;
-                } while(isspace(*ptr));
-            }
+            ret = AL_TRUE;
+            break;
+        }
+        if((ptr=strchr(ptr, ' ')) != NULL)
+        {
+            do {
+                ++ptr;
+            } while(isspace(*ptr));
         }
     }
-    al_endtry;
 
-    ALCcontext_DecRef(Context);
+done:
+    ALCcontext_DecRef(context);
     return ret;
 }
 

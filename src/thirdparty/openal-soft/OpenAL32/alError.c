@@ -13,14 +13,20 @@
  *
  * You should have received a copy of the GNU Library General Public
  *  License along with this library; if not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- *  Boston, MA  02111-1307, USA.
+ *  Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  * Or go to http://www.gnu.org/copyleft/lgpl.html
  */
 
 #include "config.h"
 
 #include <signal.h>
+#include <stdarg.h>
+
+#ifdef HAVE_WINDOWS_H
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
 
 #include "alMain.h"
 #include "AL/alc.h"
@@ -28,8 +34,32 @@
 
 ALboolean TrapALError = AL_FALSE;
 
-ALvoid alSetError(ALCcontext *Context, ALenum errorCode)
+void alSetError(ALCcontext *context, ALenum errorCode, const char *msg, ...)
 {
+    ALenum curerr = AL_NO_ERROR;
+    char message[1024] = { 0 };
+    va_list args;
+    int msglen;
+
+    va_start(args, msg);
+    msglen = vsnprintf(message, sizeof(message), msg, args);
+    va_end(args);
+
+    if(msglen < 0 || (size_t)msglen >= sizeof(message))
+    {
+        message[sizeof(message)-1] = 0;
+        msglen = (int)strlen(message);
+    }
+    if(msglen > 0)
+        msg = message;
+    else
+    {
+        msg = "<internal error constructing message>";
+        msglen = (int)strlen(msg);
+    }
+
+    WARN("Error generated on context %p, code 0x%04x, \"%s\"\n",
+         context, errorCode, message);
     if(TrapALError)
     {
 #ifdef _WIN32
@@ -40,17 +70,30 @@ ALvoid alSetError(ALCcontext *Context, ALenum errorCode)
         raise(SIGTRAP);
 #endif
     }
-    CompExchangeInt(&Context->LastError, AL_NO_ERROR, errorCode);
+
+    ATOMIC_COMPARE_EXCHANGE_STRONG_SEQ(&context->LastError, &curerr, errorCode);
+    if((ATOMIC_LOAD(&context->EnabledEvts, almemory_order_relaxed)&EventType_Error))
+    {
+        ALbitfieldSOFT enabledevts;
+        almtx_lock(&context->EventCbLock);
+        enabledevts = ATOMIC_LOAD(&context->EnabledEvts, almemory_order_relaxed);
+        if((enabledevts&EventType_Error) && context->EventCb)
+            (*context->EventCb)(AL_EVENT_TYPE_ERROR_SOFT, 0, errorCode, msglen, msg,
+                                context->EventParam);
+        almtx_unlock(&context->EventCbLock);
+    }
 }
 
 AL_API ALenum AL_APIENTRY alGetError(void)
 {
-    ALCcontext *Context;
+    ALCcontext *context;
     ALenum errorCode;
 
-    Context = GetContextRef();
-    if(!Context)
+    context = GetContextRef();
+    if(!context)
     {
+        const ALenum deferror = AL_INVALID_OPERATION;
+        WARN("Querying error state on null context (implicitly 0x%04x)\n", deferror);
         if(TrapALError)
         {
 #ifdef _WIN32
@@ -60,12 +103,11 @@ AL_API ALenum AL_APIENTRY alGetError(void)
             raise(SIGTRAP);
 #endif
         }
-        return AL_INVALID_OPERATION;
+        return deferror;
     }
 
-    errorCode = ExchangeInt(&Context->LastError, AL_NO_ERROR);
+    errorCode = ATOMIC_EXCHANGE_SEQ(&context->LastError, AL_NO_ERROR);
 
-    ALCcontext_DecRef(Context);
-
+    ALCcontext_DecRef(context);
     return errorCode;
 }

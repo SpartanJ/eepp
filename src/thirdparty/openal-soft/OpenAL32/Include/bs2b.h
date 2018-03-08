@@ -51,39 +51,33 @@ struct bs2b {
     int srate;   /* Sample rate (Hz) */
 
     /* Lowpass IIR filter coefficients */
-    double a0_lo;
-    double b1_lo;
+    float a0_lo;
+    float b1_lo;
 
     /* Highboost IIR filter coefficients */
-    double a0_hi;
-    double a1_hi;
-    double b1_hi;
-
-    /* Global gain against overloading */
-    float gain;
+    float a0_hi;
+    float a1_hi;
+    float b1_hi;
 
     /* Buffer of last filtered sample.
      * [0] - first channel, [1] - second channel
      */
     struct t_last_sample {
-        double asis[2];
-        double lo[2];
-        double hi[2];
-    } last_sample;
+        float asis;
+        float lo;
+        float hi;
+    } last_sample[2];
 };
 
-/* Clear buffers and set new coefficients with new crossfeed level value.
+/* Clear buffers and set new coefficients with new crossfeed level and sample
+ * rate values.
  * level - crossfeed level of *LEVEL values.
+ * srate - sample rate by Hz.
  */
-void bs2b_set_level(struct bs2b *bs2b, int level);
+void bs2b_set_params(struct bs2b *bs2b, int level, int srate);
 
 /* Return current crossfeed level value */
 int bs2b_get_level(struct bs2b *bs2b);
-
-/* Clear buffers and set new coefficients with new sample rate value.
- * srate - sample rate by Hz.
- */
-void bs2b_set_srate(struct bs2b *bs2b, int srate);
 
 /* Return current sample rate value */
 int bs2b_get_srate(struct bs2b *bs2b);
@@ -91,13 +85,7 @@ int bs2b_get_srate(struct bs2b *bs2b);
 /* Clear buffer */
 void bs2b_clear(struct bs2b *bs2b);
 
-/* Crossfeeds one stereo sample that are pointed by sample.
- * [0] - first channel, [1] - second channel.
- * Returns crossfided samle by sample pointer.
- */
-
-/* sample poits to floats */
-void bs2b_cross_feed(struct bs2b *bs2b, float *sample);
+void bs2b_cross_feed(struct bs2b *bs2b, float *restrict Left, float *restrict Right, int SamplesToDo);
 
 #ifdef __cplusplus
 }    /* extern "C" */
