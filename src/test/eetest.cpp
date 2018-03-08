@@ -895,6 +895,9 @@ void EETest::createNewUI() {
 			}
 		}
 	}
+
+	if ( NULL != mShowMenu )
+		mShowMenu->toFront();
 }
 
 void EETest::createMapEditor() {
