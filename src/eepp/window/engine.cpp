@@ -395,7 +395,6 @@ struct EngineInitializer
 
 #if EE_PLATFORM != EE_PLATFORM_ANDROID && EE_PLATFORM != EE_PLATFORM_IOS
 
-EngineInitializer engineInitializer;
 #else
 
 extern "C" int EE_SDL_main( int argc, char *argv[] );
