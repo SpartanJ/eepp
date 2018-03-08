@@ -2,6 +2,10 @@
 
 #ifdef EE_BACKEND_SDL2
 
+#if ( EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS ) && defined( main )
+#undef main
+#endif
+
 #if EE_PLATFORM != EE_PLATFORM_ANDROID && EE_PLATFORM != EE_PLATFORM_IOS && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && !defined( EE_COMPILER_MSVC ) && !defined( EE_SDL2_FROM_ROOTPATH )
 	#include <SDL2/SDL.h>
 #else

@@ -100,7 +100,7 @@
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 	#if defined( EE_BACKEND_SDL_ACTIVE )
-		#define main	SDL_main
+		#define main	EE_SDL_main
 	#endif
 #endif
 

@@ -380,7 +380,6 @@ DisplayManager * Engine::getDisplayManager() {
 	return mDisplayManager;
 }
 
-#if EE_PLATFORM != EE_PLATFORM_ANDROID
 struct EngineInitializer
 {
 	EngineInitializer()
@@ -394,7 +393,18 @@ struct EngineInitializer
 	}
 };
 
+#if EE_PLATFORM != EE_PLATFORM_ANDROID && EE_PLATFORM != EE_PLATFORM_IOS
+
 EngineInitializer engineInitializer;
+#else
+
+extern "C" int EE_SDL_main( int argc, char *argv[] );
+
+extern "C" int SDL_main(int argc, char *argv[]) {
+	EngineInitializer engineInitializer;
+	return EE_SDL_main( argc, argv );
+}
+
 #endif
 
 }}
