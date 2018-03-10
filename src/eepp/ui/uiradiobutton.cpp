@@ -232,7 +232,7 @@ void UIRadioButton::setTextSeparation(const Int32 & textSeparation) {
 void UIRadioButton::loadFromXmlNode(const pugi::xml_node & node) {
 	beginPropertiesTransaction();
 
-	UIWidget::loadFromXmlNode( node );
+	UITextView::loadFromXmlNode( node );
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
 		std::string name = ait->name();

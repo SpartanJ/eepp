@@ -606,7 +606,9 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 				setLayoutWidthRules( WRAP_CONTENT );
 			} else if ( "fixed" == val ) {
 				setLayoutWidthRules( FIXED );
+				unsetFlags( UI_AUTO_SIZE );
 			} else {
+				unsetFlags( UI_AUTO_SIZE );
 				setLayoutWidthRules( FIXED );
 				setInternalWidth( PixelDensity::toDpFromStringI( val ) );
 				onSizeChange();
@@ -621,7 +623,9 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 				setLayoutHeightRules( WRAP_CONTENT );
 			} else if ( "fixed" == val ) {
 				setLayoutHeightRules( FIXED );
+				unsetFlags( UI_AUTO_SIZE );
 			} else {
+				unsetFlags( UI_AUTO_SIZE );
 				setLayoutHeightRules( FIXED );
 				setInternalHeight( PixelDensity::toDpFromStringI( val ) );
 				onSizeChange();
