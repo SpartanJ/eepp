@@ -6,6 +6,7 @@
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <algorithm>
 
 namespace EE { namespace Scene {
 
@@ -180,7 +181,9 @@ void SceneNode::addToCloseQueue( Node * Ctrl ) {
 		mCloseList.erase( *ite );
 	}
 
-	mCloseList.push_back( Ctrl );
+	if ( std::find(mCloseList.begin(), mCloseList.end(), Ctrl) == mCloseList.end() ) {
+		mCloseList.push_back( Ctrl );
+	}
 }
 
 void SceneNode::checkClose() {
