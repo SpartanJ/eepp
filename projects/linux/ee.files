@@ -1,3 +1,5 @@
+../../include/eepp/scene.hpp
+../../include/eepp/scene/actions/close.hpp
 ../../include/eepp/scene/event.hpp
 ../../include/eepp/scene/eventdispatcher.hpp
 ../../include/eepp/scene/scenemanager.hpp
@@ -5,6 +7,7 @@
 ../../include/eepp/scene/keyevent.hpp
 ../../include/eepp/scene/mouseevent.hpp
 ../../include/eepp/scene/scenenode.hpp
+../../src/eepp/scene/actions/close.cpp
 ../../src/eepp/scene/scenemanager.cpp
 ../../src/eepp/ui/uiscenenode.cpp
 ../../include/eepp/ui/uiscenenode.hpp

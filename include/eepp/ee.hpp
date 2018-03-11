@@ -89,6 +89,10 @@
 	using namespace EE::Network;
 	using namespace EE::Network::SSL;
 
+	// Scnee
+	#include <eepp/scene.hpp>
+	using namespace EE::Scene;
+
 	// UI
 	#include <eepp/ui.hpp>
 	using namespace EE::UI;

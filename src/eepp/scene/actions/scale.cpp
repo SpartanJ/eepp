@@ -1,5 +1,5 @@
 #include <eepp/scene/actions/scale.hpp>
-#include <eepp/ui/uinode.hpp>
+#include <eepp/scene/node.hpp>
 
 namespace EE { namespace Scene { namespace Actions {
 

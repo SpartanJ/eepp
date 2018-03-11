@@ -97,7 +97,8 @@ Spawn::~Spawn() {
 }
 
 Spawn::Spawn( const std::vector<Action*> spawn ) :
-	mSpawn( spawn )
+	mSpawn( spawn ),
+	mAllDone( false )
 {}
 
 }}} 
