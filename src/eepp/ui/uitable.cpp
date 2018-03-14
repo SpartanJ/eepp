@@ -114,7 +114,7 @@ void UITable::setTheme( UITheme * Theme ) {
 
 void UITable::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mContainerPadding = PixelDensity::pxToDp( makePadding() );
+		mContainerPadding = makePadding();
 	}
 }
 

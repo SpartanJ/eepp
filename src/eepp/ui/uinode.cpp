@@ -646,7 +646,7 @@ Rectf UINode::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBot
 		}
 	}
 
-	return tPadding;
+	return PixelDensity::pxToDp( tPadding );
 }
 
 Sizef UINode::getSkinSize( UISkin * Skin, const Uint32& State ) {
