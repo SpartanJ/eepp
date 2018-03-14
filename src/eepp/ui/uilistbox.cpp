@@ -95,7 +95,7 @@ void UIListBox::setTheme( UITheme * Theme ) {
 
 void UIListBox::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mContainerPadding = PixelDensity::pxToDp( makePadding() );
+		mContainerPadding = makePadding();
 	}
 }
 
