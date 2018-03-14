@@ -107,7 +107,7 @@ void UIMenuSubMenu::showSubMenu() {
 	UIMenu::fixMenuPos( Pos, mSubMenu, reinterpret_cast<UIMenu*> ( getParent() ), this );
 
 	mSubMenu->getParent()->worldToNode( Pos );
-	mSubMenu->setPosition( Pos );
+	mSubMenu->setPixelsPosition( Pos );
 
 	if ( !mSubMenu->isVisible() ) {
 		mSubMenu->show();
