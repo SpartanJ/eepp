@@ -996,13 +996,13 @@ solution "eepp"
 	project "eepp-uieditor"
 		set_kind()
 		language "C++"
-		includedirs { "src/thirdparty/efsw/include" }
+		includedirs { "src/thirdparty/efsw/include", "src/thirdparty" }
 		
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }
 		end
 		
-		links { "efsw-static" }
+		links { "efsw-static", "pugixml-static" }
 		files { "src/tools/uieditor/*.cpp" }
 		build_link_configuration( "eepp-UIEditor", true )
 		
