@@ -287,8 +287,10 @@ void mainLoop() {
 
 	if ( NULL != uiContainer && window->getInput()->isKeyUp( KEY_F1 ) ) {
 		Sizef size( uiContainer->getSize() );
-		Float scaleW = size.getWidth() > window->getWidth() ? window->getWidth() / size.getWidth() : 1.f;
-		Float scaleH = size.getHeight() > window->getHeight() ? window->getHeight() / size.getHeight() : 1.f;
+		DisplayMode displayMode = Engine::instance()->getDisplayManager()->getDisplayIndex(0)->getCurrentMode();
+
+		Float scaleW = size.getWidth() > displayMode.Width ? displayMode.Width / size.getWidth() : 1.f;
+		Float scaleH = size.getHeight() > displayMode.Height * 0.9f ? displayMode.Height * 0.9f / size.getHeight() : 1.f;
 		Float scale = scaleW < scaleH ? scaleW : scaleH;
 
 		window->setSize( (Uint32)( uiContainer->getSize().getWidth() * scale ), (Uint32)( uiContainer->getSize().getHeight() * scale ) );
