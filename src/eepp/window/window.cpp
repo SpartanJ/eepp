@@ -535,6 +535,10 @@ void Window::centerToDisplay() {
 	}
 }
 
+Rect Window::getBorderSize() {
+	return Rect();
+}
+
 Platform::PlatformImpl * Window::getPlatform() const {
 	return mPlatform;
 }

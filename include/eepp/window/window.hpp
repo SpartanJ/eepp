@@ -271,6 +271,9 @@ class EE_API Window {
 		/** Center the window to the desktop ( if windowed ) */
 		virtual void centerToDisplay();
 
+		/** @return The window borders size */
+		virtual Rect getBorderSize();
+
 		/** @return If the aplication is running returns true ( If you Init correctly the window and is running ). */
 		bool isRunning() const;
 

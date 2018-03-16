@@ -287,10 +287,13 @@ void mainLoop() {
 
 	if ( NULL != uiContainer && window->getInput()->isKeyUp( KEY_F1 ) ) {
 		Sizef size( uiContainer->getSize() );
-		DisplayMode displayMode = Engine::instance()->getDisplayManager()->getDisplayIndex(0)->getCurrentMode();
+		Rect borderSize( window->getBorderSize() );
+		Sizei displayMode = Engine::instance()->getDisplayManager()->getDisplayIndex(0)->getUsableBounds().getSize();
+		displayMode.x = displayMode.x - borderSize.Left - borderSize.Right;
+		displayMode.y = displayMode.y - borderSize.Top - borderSize.Bottom;
 
-		Float scaleW = size.getWidth() > displayMode.Width ? displayMode.Width / size.getWidth() : 1.f;
-		Float scaleH = size.getHeight() > displayMode.Height * 0.9f ? displayMode.Height * 0.9f / size.getHeight() : 1.f;
+		Float scaleW = size.getWidth() > displayMode.getWidth() ? displayMode.getWidth() / size.getWidth() : 1.f;
+		Float scaleH = size.getHeight() > displayMode.getHeight() ? displayMode.getHeight() / size.getHeight() : 1.f;
 		Float scale = scaleW < scaleH ? scaleW : scaleH;
 
 		window->setSize( (Uint32)( uiContainer->getSize().getWidth() * scale ), (Uint32)( uiContainer->getSize().getHeight() * scale ) );

@@ -57,6 +57,8 @@ class EE_API WindowSDL : public Window {
 
 		const Sizei& getDesktopResolution();
 
+		virtual Rect getBorderSize();
+
 		SDL_Window *	GetSDLWindow() const;
 
 		void startTextInput();

@@ -585,6 +585,16 @@ const Sizei& WindowSDL::getDesktopResolution() {
 	return Window::getDesktopResolution();
 }
 
+Rect WindowSDL::getBorderSize() {
+#if SDL_VERSION_ATLEAST(2,0,5)
+	Rect bordersSize;
+	SDL_GetWindowBordersSize( mSDLWindow, &bordersSize.Top, &bordersSize.Left, &bordersSize.Bottom, &bordersSize.Right );
+	return bordersSize;
+#else
+	return Rect();
+#endif
+}
+
 SDL_Window * WindowSDL::GetSDLWindow() const {
 	return mSDLWindow;
 }
