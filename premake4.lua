@@ -881,6 +881,32 @@ solution "eepp"
 		files { "src/thirdparty/imageresampler/*.cpp" }
 		build_base_cpp_configuration( "imageresampler" )
 
+	project "efsw-static"
+		kind "StaticLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		includedirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
+		
+		if os.is("windows") then
+			osfiles = "src/thirdparty/efsw/src/efsw/platform/win/*.cpp"
+		else
+			osfiles = "src/thirdparty/efsw/src/efsw/platform/posix/*.cpp"
+		end
+		
+		files { "src/thirdparty/efsw/src/efsw/*.cpp", osfiles }
+		
+		if os.is("windows") then
+			excludes { "src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
+		elseif os.is("linux") then
+			excludes { "src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/WatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
+		elseif os.is("macosx") then
+			excludes { "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/WatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp" }
+		elseif os.is("freebsd") then
+			excludes { "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/WatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
+		end
+		
+		build_base_cpp_configuration( "efsw" )
+
 	project "eepp-main"
 		kind "StaticLib"
 		language "C++"
@@ -966,6 +992,19 @@ solution "eepp"
 		language "C++"
 		files { "src/tools/mapeditor/*.cpp" }
 		build_link_configuration( "eepp-MapEditor", true )
+		
+	project "eepp-uieditor"
+		set_kind()
+		language "C++"
+		includedirs { "src/thirdparty/efsw/include" }
+		
+		if not os.is("windows") and not os.is("haiku") then
+			links { "pthread" }
+		end
+		
+		links { "efsw-static" }
+		files { "src/tools/uieditor/*.cpp" }
+		build_link_configuration( "eepp-UIEditor", true )
 		
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")

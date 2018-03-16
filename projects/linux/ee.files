@@ -1,3 +1,4 @@
+../../src/tools/uieditor/uieditor.cpp
 ../../include/eepp/scene.hpp
 ../../include/eepp/scene/actions/close.hpp
 ../../include/eepp/scene/event.hpp

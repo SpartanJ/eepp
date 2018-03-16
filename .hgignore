@@ -32,6 +32,7 @@ eestrobe*
 eeiv*
 eehttp-request*
 eepp-TextureAtlasEditor*
+eepp-UIEditor*
 ee.tag
 log.log
 external_projects.lua
