@@ -8,7 +8,6 @@ efsw::FileWatcher * fileWatcher = NULL;
 UITheme * theme = NULL;
 UIWidget * uiContainer = NULL;
 UIWinMenu * uiWinMenu = NULL;
-DirectoryPack * directoryPack = NULL;
 UISceneNode * uiSceneNode = NULL;
 std::string currentLayout;
 bool updateLayout = false;
@@ -25,13 +24,11 @@ class UpdateListener : public efsw::FileWatchListener
 public:
 	UpdateListener() {}
 
-	void handleFileAction( efsw::WatchID watchid, const std::string& dir, const std::string& filename, efsw::Action action, std::string oldFilename = "" )
-	{
+	void handleFileAction( efsw::WatchID watchid, const std::string& dir, const std::string& filename, efsw::Action action, std::string oldFilename = "" ) {
 		if ( action == efsw::Actions::Modified ) {
 			std::cout << "DIR (" << dir << ") FILE (" << filename << ") has event Modified" << std::endl;
 
-			if ( dir + filename == currentLayout )
-			{
+			if ( dir + filename == currentLayout ) {
 				updateLayout = true;
 				waitClock.restart();
 			}
@@ -132,6 +129,18 @@ static void refreshLayout() {
 	updateLayout = false;
 }
 
+void resizeCb(EE::Window::Window * window) {
+	Float scaleW = (Float)uiSceneNode->getSize().getWidth() / (Float)uiContainer->getSize().getWidth();
+	Float scaleH = (Float)uiSceneNode->getSize().getHeight() / (Float)uiContainer->getSize().getHeight();
+
+	uiContainer->setScale( scaleW < scaleH ? scaleW : scaleH );
+	uiContainer->center();
+}
+
+static UIWidget * createWidget( std::string widgetName ) {
+	return UIWidgetCreator::createFromName( widgetRegistered[ widgetName ] );
+}
+
 static std::string pathFix( std::string path ) {
 	if ( !path.empty() && path.at(0) != FileSystem::getOSSlash().at(0) ) {
 		return basePath + path;
@@ -155,8 +164,6 @@ static void loadProjectNodes( pugi::xml_node node ) {
 		std::string name = String::toLower( resources.name() );
 
 		if ( name == "uiproject" ) {
-			basePath = Sys::getProcessPath();
-
 			pugi::xml_node basePathNode = resources.child( "basepath" );
 
 			if ( !basePathNode.empty() ) {
@@ -199,6 +206,13 @@ static void loadProjectNodes( pugi::xml_node node ) {
 					std::string replacement( cwNode.attribute( "replacement" ).as_string() );
 					widgetRegistered[ String::toLower( name ) ] = replacement;
 				}
+
+				for ( auto it = widgetRegistered.begin(); it != widgetRegistered.end(); ++it ) {
+					if ( !UIWidgetCreator::existsCustomWidgetCallback( it->first ) ) {
+						UIWidgetCreator::addCustomWidgetCallback( it->first, cb::Make1( createWidget ) );
+					}
+				}
+
 			}
 
 			pugi::xml_node uiNode = resources.child( "uitheme" );
@@ -210,12 +224,30 @@ static void loadProjectNodes( pugi::xml_node node ) {
 					loadUITheme( uiThemePath );
 				}
 			}
+
+			pugi::xml_node layoutNode = resources.child( "layout" );
+
+			if ( !layoutNode.empty() ) {
+				Float width = layoutNode.attribute( "width" ).as_float();
+				Float height = layoutNode.attribute( "height" ).as_float();
+				std::string layoutPath( pathFix( layoutNode.text().as_string() ) );
+
+				if ( 0.f != width && 0.f != height ) {
+					uiContainer->setSize( width, height );
+					resizeCb( window );
+				}
+
+				if ( FileSystem::fileExists( layoutPath ) )
+					loadLayoutFromFile( layoutPath );
+			}
 		}
 	}
 }
 
 static void loadProject( std::string projectPath ) {
 	if ( FileSystem::fileExists( projectPath ) ) {
+		basePath = FileSystem::fileRemoveFileName( projectPath );
+
 		pugi::xml_document doc;
 		pugi::xml_parse_result result = doc.load_file( projectPath.c_str() );
 
@@ -230,12 +262,18 @@ static void loadProject( std::string projectPath ) {
 }
 
 bool onCloseRequestCallback( EE::Window::Window * w ) {
+	UITheme * prevTheme = UIThemeManager::instance()->getDefaultTheme();
+	UIThemeManager::instance()->setDefaultTheme( theme );
+
 	MsgBox = UIMessageBox::New( MSGBOX_OKCANCEL, "Do you really want to close the current file?\nAll changes will be lost." );
 	MsgBox->addEventListener( Event::MsgBoxConfirmClick, cb::Make1<void, const Event*>( []( const Event * event ) { window->close(); } ) );
 	MsgBox->addEventListener( Event::OnClose, cb::Make1<void, const Event*>( []( const Event * event ) { MsgBox = NULL; } ) );
 	MsgBox->setTitle( "Close Editor?" );
 	MsgBox->center();
 	MsgBox->show();
+
+	UIThemeManager::instance()->setDefaultTheme( prevTheme );
+
 	return false;
 }
 
@@ -244,6 +282,16 @@ void mainLoop() {
 
 	if ( window->getInput()->isKeyUp( KEY_ESCAPE ) && NULL == MsgBox && onCloseRequestCallback( window ) ) {
 		window->close();
+	}
+
+	if ( NULL != uiContainer && window->getInput()->isKeyUp( KEY_F1 ) ) {
+		Sizef size( uiContainer->getSize() );
+		Float scaleW = size.getWidth() > window->getWidth() ? window->getWidth() / size.getWidth() : 1.f;
+		Float scaleH = size.getHeight() > window->getHeight() ? window->getHeight() / size.getHeight() : 1.f;
+		Float scale = scaleW < scaleH ? scaleW : scaleH;
+
+		window->setSize( (Uint32)( uiContainer->getSize().getWidth() * scale ), (Uint32)( uiContainer->getSize().getHeight() * scale ) );
+		window->centerToDisplay();
 	}
 
 	if ( mousePos != window->getInput()->getMousePos() ) {
@@ -276,15 +324,6 @@ void mainLoop() {
 	}
 }
 
-void resizeCb(EE::Window::Window * window)
-{
-	Float scaleW = (Float)uiSceneNode->getSize().getWidth() / (Float)uiContainer->getSize().getWidth();
-	Float scaleH = (Float)uiSceneNode->getSize().getHeight() / (Float)uiContainer->getSize().getHeight();
-
-	uiContainer->setScale( scaleW < scaleH ? scaleW : scaleH );
-	uiContainer->center();
-}
-
 void imagePathOpen( const Event * event ) {
 	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( event->getNode() );
 
@@ -314,6 +353,9 @@ void fileMenuClick( const Event * Event ) {
 		return;
 
 	const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getNode() )->getText();
+
+	UITheme * prevTheme = UIThemeManager::instance()->getDefaultTheme();
+	UIThemeManager::instance()->setDefaultTheme( theme );
 
 	if ( "Open project..." == txt ) {
 		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*.xml" );
@@ -349,16 +391,11 @@ void fileMenuClick( const Event * Event ) {
 		TGDialog->center();
 		TGDialog->show();
 	}
-}
 
-UIWidget * createWidget( std::string widgetName ) {
-	return UIWidgetCreator::createFromName( widgetRegistered[ widgetName ] );
+	UIThemeManager::instance()->setDefaultTheme( prevTheme );
 }
 
 EE_MAIN_FUNC int main (int argc, char * argv []) {
-	directoryPack = eeNew( DirectoryPack, () );
-	directoryPack->create( Sys::getProcessPath() );
-
 	fileWatcher = new efsw::FileWatcher();
 	listener = new UpdateListener();
 	fileWatcher->watch();
@@ -395,8 +432,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		}
 
 		uiContainer = UIWidget::New();
-		uiContainer->setId( "appContainer" )->setSize( 1200, 1920 );
-		uiContainer->setBackgroundFillEnabled( true )->setColor( Color::Magenta );
+		uiContainer->setId( "appContainer" )->setSize( uiSceneNode->getSize() );
 		uiContainer->clipDisable();
 
 		uiWinMenu = UIWinMenu::New();
@@ -419,25 +455,12 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		uiWinMenu->addMenuButton( "Resources", uiResourceMenu );
 		uiResourceMenu->addEventListener( Event::OnItemClicked, cb::Make1( fileMenuClick ) );
 
-		widgetRegistered[ "screenform" ] = "RelativeLayout";
-
-		for ( auto it = widgetRegistered.begin(); it != widgetRegistered.end(); ++it )
-			UIWidgetCreator::addCustomWidgetCallback( it->first, cb::Make1( createWidget ) );
-
-		/*basePath = "/home/programming/santanderroulette/bin/assets/";
-		loadFontsFromFolder( basePath + "fonts" );
-		loadImagesFromFolder( basePath + "drawable" );
-		loadImagesFromFolder( basePath + "background" );
-		loadLayoutFromFile( basePath + "layout/layout_form.xml" );*/
-
 		resizeCb( window );
 
 		window->pushResizeCallback( cb::Make1( resizeCb ) );
 
 		window->runMainLoop( &mainLoop );
 	}
-
-	eeSAFE_DELETE( directoryPack );
 
 	Engine::destroySingleton();
 
