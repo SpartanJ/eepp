@@ -80,6 +80,10 @@ UIMessageBox::~UIMessageBox() {
 void UIMessageBox::setTheme( UITheme * Theme ) {
 	UIWindow::setTheme( Theme );
 
+	mTextBox->setTheme( Theme );
+	mButtonOK->setTheme( Theme );
+	mButtonCancel->setTheme( Theme );
+
 	if ( "Retry" != mButtonOK->getText() ) {
 		Drawable * OKIcon = Theme->getIconByName( "ok" );
 		Drawable * CancelIcon = Theme->getIconByName( "cancel" );

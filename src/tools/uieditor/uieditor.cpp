@@ -266,6 +266,7 @@ bool onCloseRequestCallback( EE::Window::Window * w ) {
 	UIThemeManager::instance()->setDefaultTheme( theme );
 
 	MsgBox = UIMessageBox::New( MSGBOX_OKCANCEL, "Do you really want to close the current file?\nAll changes will be lost." );
+	MsgBox->setTheme( theme );
 	MsgBox->addEventListener( Event::MsgBoxConfirmClick, cb::Make1<void, const Event*>( []( const Event * event ) { window->close(); } ) );
 	MsgBox->addEventListener( Event::OnClose, cb::Make1<void, const Event*>( []( const Event * event ) { MsgBox = NULL; } ) );
 	MsgBox->setTitle( "Close Editor?" );
@@ -359,6 +360,7 @@ void fileMenuClick( const Event * Event ) {
 
 	if ( "Open project..." == txt ) {
 		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*.xml" );
+		TGDialog->setTheme( theme );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open layout..." );
 		TGDialog->addEventListener( Event::OpenFile, cb::Make1( projectOpen ) );
@@ -366,6 +368,7 @@ void fileMenuClick( const Event * Event ) {
 		TGDialog->show();
 	} else if ( "Open layout..." == txt ) {
 		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*.xml" );
+		TGDialog->setTheme( theme );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open layout..." );
 		TGDialog->addEventListener( Event::OpenFile, cb::Make1( layoutOpen ) );
@@ -378,6 +381,7 @@ void fileMenuClick( const Event * Event ) {
 		onCloseRequestCallback( window );
 	} else if ( "Load images from path..." == txt ) {
 		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS | CDL_FLAG_ALLOW_FOLDER_SELECT );
+		TGDialog->setTheme( theme );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open images from folder..." );
 		TGDialog->addEventListener( Event::OpenFile, cb::Make1( imagePathOpen ) );
@@ -385,6 +389,7 @@ void fileMenuClick( const Event * Event ) {
 		TGDialog->show();
 	} else if ( "Load fonts from path..." == txt ) {
 		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS | CDL_FLAG_ALLOW_FOLDER_SELECT );
+		TGDialog->setTheme( theme );
 		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open fonts from folder..." );
 		TGDialog->addEventListener( Event::OpenFile, cb::Make1( fontPathOpen ) );

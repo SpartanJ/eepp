@@ -110,6 +110,14 @@ bool UICommonDialog::isType( const Uint32& type ) const {
 void UICommonDialog::setTheme( UITheme * Theme ) {
 	UIWindow::setTheme( Theme );
 
+	mButtonOpen->setTheme( Theme );
+	mButtonCancel->setTheme( Theme );
+	mButtonUp->setTheme( Theme );
+	mList->setTheme( Theme );
+	mPath->setTheme( Theme );
+	mFile->setTheme( Theme );
+	mFiletype->setTheme( Theme );
+
 	Drawable * Icon = Theme->getIconByName( "go-up" );
 
 	if ( NULL != Icon ) {

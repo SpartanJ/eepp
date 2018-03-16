@@ -86,6 +86,9 @@ bool UIListBox::isType( const Uint32& type ) const {
 void UIListBox::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
+	mVScrollBar->setTheme( Theme );
+	mHScrollBar->setTheme( Theme );
+
 	setThemeSkin( Theme, "listbox" );
 
 	autoPadding();
@@ -167,6 +170,7 @@ Uint32 UIListBox::addListBoxItem( const String& text ) {
 UIListBoxItem * UIListBox::createListBoxItem( const String& Name ) {
 	UIListBoxItem * tItem		= UIListBoxItem::New();
 	tItem->setParent( mContainer );
+	tItem->setTheme( mTheme );
 	tItem->setHorizontalAlign( UI_HALIGN_LEFT )->setVerticalAlign( UI_VALIGN_CENTER );
 	tItem->setFontStyleConfig( mFontStyleConfig );
 	tItem->setText( Name );

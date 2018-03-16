@@ -32,7 +32,7 @@ class EE_API UIMessageBox : public UIWindow {
 		void setCloseWithKey(const Uint32 & closeWithKey);
 	protected:
 		UI_MSGBOX_TYPE		mMsgBoxType;
-		UITextView *			mTextBox;
+		UITextView *		mTextBox;
 		UIPushButton *		mButtonOK;
 		UIPushButton *		mButtonCancel;
 		Uint32				mCloseWithKey;
