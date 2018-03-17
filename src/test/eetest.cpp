@@ -1764,7 +1764,7 @@ void EETest::input() {
 
 		mWindow->setFrameRateLimit( 10 );
 
-		if ( mMusEnabled && Mus->getState() == Sound::Playing )
+		if ( mMusEnabled && Mus->getStatus() == Sound::Playing )
 			Mus->pause();
 
 	} else {
@@ -1780,7 +1780,7 @@ void EETest::input() {
 
 		mWindow->setFrameRateLimit( mLastFPSLimit );
 
-		if ( mMusEnabled && Mus->getState() == Sound::Paused )
+		if ( mMusEnabled && Mus->getStatus() == Sound::Paused )
 			Mus->play();
 	}
 
