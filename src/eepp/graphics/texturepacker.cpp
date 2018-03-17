@@ -667,7 +667,6 @@ void TexturePacker::saveTextureRegions() {
 	TexGrHdr.PixelBorder	= mPixelBorder;
 	TexGrHdr.Flags			= 0;
 	TexGrHdr.TextureFilter	= mTextureFilter;
-	TexGrHdr.ScalableSVG	= mScalableSVG;
 
 	int reservedSize = eeARRAY_SIZE(TexGrHdr.Reserved);
 	memset( TexGrHdr.Reserved, 0, reservedSize );
@@ -680,6 +679,9 @@ void TexturePacker::saveTextureRegions() {
 
 	if ( mForcePowOfTwo )
 		TexGrHdr.Flags |= HDR_TEXTURE_ATLAS_POW_OF_TWO;
+
+	if ( mScalableSVG )
+		TexGrHdr.Flags |= HDR_TEXTURE_ATLAS_SCALABLE_SVG;
 
 	std::vector<sTextureHdr> TexHdr( TexGrHdr.TextureCount );
 

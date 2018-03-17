@@ -46,13 +46,13 @@ typedef struct sTextureAtlasHdrSN {
 	Uint32	PixelBorder;
 	Uint32	Flags;
 	char	TextureFilter;
-	bool	ScalableSVG;
-	char	Reserved[14];
+	char	Reserved[15];
 } sTextureAtlasHdr;
 
 #define HDR_TEXTURE_ATLAS_ALLOW_FLIPPING		( 1 << 0 )
 #define HDR_TEXTURE_ATLAS_REMOVE_EXTENSION		( 1 << 1 )
 #define HDR_TEXTURE_ATLAS_POW_OF_TWO			( 1 << 2 )
+#define HDR_TEXTURE_ATLAS_SCALABLE_SVG			( 1 << 3 )
 
 #define EE_TEXTURE_ATLAS_MAGIC		( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'T' << 16 ) | ( 'A' << 24 ) )
 #define EE_TEXTURE_ATLAS_EXTENSION ".eta"
