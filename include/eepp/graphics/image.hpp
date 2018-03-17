@@ -12,6 +12,8 @@ using namespace EE::System;
 
 #include <eepp/graphics/rendermode.hpp>
 
+struct NSVGimage;
+
 namespace EE { namespace System {
 class Pack;
 class IOStream;
@@ -117,6 +119,13 @@ class EE_API Image {
 		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
 		*/
 		Image( std::string Path, const unsigned int& forceChannels = 0 );
+
+		/** Load a compressed image from memory
+		* @param imageData The image data
+		* @param imageDataSize The image size
+		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
+		*/
+		Image( const Uint8* imageData, const unsigned int& imageDataSize, const unsigned int& forceChannels = 0 );
 
 		/** Load an image from pack
 		* @param Pack The pack file to use to load the image.
@@ -239,6 +248,8 @@ class EE_API Image {
 		void 			allocate( const Uint32& size, Color DefaultColor = Color(0,0,0,0), bool memsetData = true );
 
 		void			loadFromPack( Pack * Pack, const std::string& FilePackPath );
+
+		void			svgLoad( NSVGimage * image );
 };
 
 }}

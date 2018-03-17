@@ -44,7 +44,7 @@ ios_size IOStreamZip::write( const char * data, ios_size size ) {
 }
 
 ios_size IOStreamZip::seek( ios_size position ) {
-	if ( isOpen() ) {
+	if ( isOpen() && mPos != position ) {
 		zip_fclose( mFile );
 
 		struct zip_stat zs;
