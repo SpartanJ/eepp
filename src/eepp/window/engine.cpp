@@ -13,7 +13,6 @@
 #include <eepp/graphics/framebuffermanager.hpp>
 #include <eepp/graphics/vertexbuffermanager.hpp>
 #include <eepp/scene/scenemanager.hpp>
-#include <eepp/audio/audiolistener.hpp>
 #include <eepp/physics/physicsmanager.hpp>
 #include <eepp/network/ssl/sslsocket.hpp>
 #include <eepp/window/backend.hpp>

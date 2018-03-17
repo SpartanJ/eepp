@@ -1,4 +1,5 @@
 #include <eepp/ee.hpp>
+#include <iostream>
 
 void AsyncRequestCallback( const Http& http, Http::Request& request, Http::Response& response ) {
 	std::cout << "Got response from request: " << http.getHostName() << request.getUri() << std::endl;

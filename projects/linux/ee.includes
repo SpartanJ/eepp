@@ -3,3 +3,6 @@
 ../../src/thirdparty
 ../../include/eepp/thirdparty
 ../../src/thirdparty/efsw/include
+../../src/thirdparty/libvorbis/include
+../../src/eepp/audio
+../../include/eepp/audio

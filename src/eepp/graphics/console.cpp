@@ -2,7 +2,7 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
-#include <eepp/audio/audiolistener.hpp>
+#include <eepp/audio/listener.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/cursormanager.hpp>
 #include <eepp/window/window.hpp>
@@ -847,7 +847,7 @@ void Console::cmdSetVolume( const std::vector < String >& params ) {
 		bool Res = String::fromString<Float>( tFloat, params[1] );
 
 		if ( Res && ( tFloat >= 0.0f && tFloat <= 100.0f ) ) {
-			EE::Audio::AudioListener::setGlobalVolume( tFloat );
+			EE::Audio::Listener::setGlobalVolume( tFloat );
 			return;
 		}
 	}

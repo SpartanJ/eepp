@@ -1,5 +1,6 @@
 #include <eepp/system/log.hpp>
 #include <cstdarg>
+#include <iostream>
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	#include <android/log.h>

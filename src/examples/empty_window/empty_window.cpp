@@ -1,5 +1,9 @@
 #include <eepp/ee.hpp>
 
+#include <eepp/audio/sound.hpp>
+#include <eepp/audio/soundbuffer.hpp>
+#include <eepp/audio/music.hpp>
+
 EE::Window::Window * win = NULL;
 
 void mainLoop()

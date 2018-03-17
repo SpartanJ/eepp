@@ -517,7 +517,8 @@ function add_static_links()
 			"jpeg-compressor-static",
 			"zlib-static",
 			"imageresampler-static",
-			"pugixml-static"
+			"pugixml-static",
+			"vorbis-static"
 	}
 	
 	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
@@ -679,7 +680,7 @@ function check_ssl_support()
 end
 
 function build_eepp( build_name )
-	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib" }
+	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include" }
 	
 	set_ios_config()
 	set_xcode_config()
@@ -800,7 +801,7 @@ solution "eepp"
 
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		files { "src/thirdparty/SOIL2/src/SOIL2/*.c" }
-		includedirs { "include/thirdparty/SOIL2" }
+		includedirs { "src/thirdparty/SOIL2" }
 		build_base_configuration( "SOIL2" )
 
 	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
@@ -813,7 +814,15 @@ solution "eepp"
 			includedirs { "include/thirdparty/glew" }
 			build_base_configuration( "glew" )
 	end
-	
+
+	project "vorbis-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		includedirs { "src/thirdparty/libvorbis/lib/" }
+		files { "src/thirdparty/libogg/**.c", "src/thirdparty/libvorbis/**.c" }
+		build_base_cpp_configuration( "vorbis" )
+
 	project "pugixml-static"
 		kind "StaticLib"
 		language "C++"

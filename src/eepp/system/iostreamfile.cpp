@@ -3,20 +3,21 @@
 namespace EE { namespace System {
 
 IOStreamFile::IOStreamFile( const std::string& path, std::ios_base::openmode mode ) :
+	mFS(NULL),
 	mSize(0)
 {
-	mFS.open( path.c_str(), mode );
+	mFS = std::fopen(path.c_str(), "rb");;
 }
 
 IOStreamFile::~IOStreamFile() {
 	if ( isOpen() ) {
-		mFS.close();
+		std::fclose(mFS);
 	}
 }
 
 ios_size IOStreamFile::read( char * data, ios_size size ) {
 	if ( isOpen() ) {
-		mFS.read( data, size );
+		std::fread(data, 1, static_cast<std::size_t>(size), mFS);
 	}
 
 	return size;
@@ -24,7 +25,7 @@ ios_size IOStreamFile::read( char * data, ios_size size ) {
 
 ios_size IOStreamFile::write( const char * data, ios_size size ) {
 	if ( isOpen() ) {
-		mFS.write( data, size );
+		std::fwrite( data, 1, size, mFS );
 	}
 
 	return size;
@@ -32,26 +33,31 @@ ios_size IOStreamFile::write( const char * data, ios_size size ) {
 
 ios_size IOStreamFile::seek( ios_size position ) {
 	if ( isOpen() ) {
-		mFS.seekg( position , std::ios::beg );
+		std::fseek( mFS, position, SEEK_SET );
 	}
 
 	return position;
 }
 
 ios_size IOStreamFile::tell() {
-	return mFS.tellg();
+	if ( mFS ) {
+		ios_size Pos = std::ftell( mFS );
+		return Pos;
+	}
+
+	return -1;
 }
 
 ios_size IOStreamFile::getSize() {
 	if ( isOpen() ) {
-		if ( 0 == mSize ) {
-			ios_size Pos = tell();
+		if ( 0 == mSize && mFS ) {
+			Int64 position = tell();
 
-			mFS.seekg ( 0, std::ios::end );
+			std::fseek(mFS, 0, SEEK_END);
 
-			mSize = mFS.tellg();
+			mSize = tell();
 
-			mFS.seekg ( Pos, std::ios::beg );
+			seek(position);
 		}
 
 		return mSize;
@@ -61,11 +67,12 @@ ios_size IOStreamFile::getSize() {
 }
 
 bool IOStreamFile::isOpen() {
-	return mFS.is_open();
+	return NULL != mFS;
 }
 
 void IOStreamFile::flush() {
-	mFS.flush();
+	if ( mFS )
+		std::fflush( mFS );
 }
 
 }}

@@ -1,7 +1,6 @@
-#ifndef EE_AUDIOTSOUNDLOADER_HPP
-#define EE_AUDIOTSOUNDLOADER_HPP
+#ifndef EE_AUDIOT_SOUNDLOADER_HPP
+#define EE_AUDIOT_SOUNDLOADER_HPP
 
-#include <eepp/audio/base.hpp>
 #include <eepp/audio/soundmanager.hpp>
 #include <eepp/system/objectloader.hpp>
 

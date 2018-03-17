@@ -15,7 +15,10 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_INC_PATH)/eepp/thirdparty \
 	$(EEPP_INC_PATH)/eepp/thirdparty/chipmunk \
 	$(EEPP_THIRD_PARTY_PATH)/SOIL2/src/SOIL2 \
-	$(EEPP_THIRD_PARTY_PATH)/stb_vorbis
+	$(EEPP_THIRD_PARTY_PATH)/stb_vorbis \
+	$(EEPP_THIRD_PARTY_PATH)/libvorbis/lib \
+	$(EEPP_THIRD_PARTY_PATH)/libvorbis/include \
+	$(EEPP_THIRD_PARTY_PATH)/libogg/include
 
 EEPP_C_FLAGS				:= \
 	-Wl,--undefined=Java_org_libsdl_app_SDLActivity_nativeInit \
@@ -45,12 +48,13 @@ LOCAL_CFLAGS			:= $(EEPP_C_FLAGS)
 
 CODE_SRCS				:=  \
 	../thirdparty/SOIL2/src/SOIL2/*.c \
-	../thirdparty/stb_vorbis/*.c \
 	../thirdparty/zlib/*.c \
 	../thirdparty/libzip/*.c \
 	../thirdparty/jpeg-compressor/*.cpp \
 	../thirdparty/imageresampler/*.cpp \
 	../thirdparty/pugixml/*.cpp \
+	../thirdparty/libogg/src/*.c \
+	../thirdparty/libvorbis/lib/*.c \
 	system/*.cpp \
 	system/platform/posix/*.cpp \
 	network/*.cpp \

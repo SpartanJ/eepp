@@ -1,14 +1,15 @@
 #include <eepp/ee.hpp>
+#include <iostream>
 
 /// Play a sound
 void playSound() {
 	// The sound manager class simplyfies the load of a SoundBuffer and the creation of the Sound
 	// It manages the sound playing, if the sound channel is already playing, it will open a new channel to play the sound
-	SoundManager SoundManager;
+	SoundManager soundManager;
 
-	if ( SoundManager.loadFromFile( "sound", "assets/sounds/sound.ogg" ) ) {
+	if ( soundManager.loadFromFile( "sound", "assets/sounds/sound.ogg" ) ) {
 		// Get the sound buffer to display the buffer information
-		SoundBuffer& buffer = SoundManager.getBuffer( "sound" );
+		SoundBuffer& buffer = soundManager.getBuffer( "sound" );
 
 		// Display sound informations
 		std::cout << "sound.ogg :" << std::endl;
@@ -17,7 +18,15 @@ void playSound() {
 		std::cout << " " << buffer.getChannelCount()			<< " channels"		<< std::endl;
 
 		// Play the sound
-		SoundManager.play( "sound" );
+		Sound * sound = soundManager.play( "sound" );
+
+		while (sound->getStatus() == Sound::Playing) {
+			Sys::sleep( Milliseconds( 100) );
+
+			// Display the playing position
+			std::cout << "\rPlaying... " << sound->getPlayingOffset().asSeconds() << " sec        ";
+			std::cout << std::flush;
+		}
 	}
 }
 
@@ -39,9 +48,9 @@ void playMusic() {
 	music.play();
 
 	// Loop while the music is playing
-	while ( music.getState() == Sound::Playing ) {
+	while ( music.getStatus() == Sound::Playing ) {
 		// Leave some CPU time for other processes
-		Sys::sleep( 100 );
+		Sys::sleep( Milliseconds( 100) );
 
 		// Display the playing position
 		std::cout << "\rPlaying... " << music.getPlayingOffset().asSeconds() << " sec   ";
