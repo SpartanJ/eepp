@@ -2,7 +2,6 @@
 
 #ifdef EE_BACKEND_SDL2
 
-#include <SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/platform/platformimpl.hpp>
 #include <eepp/window/backend/SDL2/windowsdl2.hpp>
@@ -488,7 +487,7 @@ bool WindowSDL::setIcon( const std::string& Path ) {
 	int x, y, c;
 
 	if ( !mWindow.Created ) {
-		if ( stbi_info( Path.c_str(), &x, &y, &c ) ) {
+		if ( Image::getInfo( Path.c_str(), &x, &y, &c ) ) {
 			mWindow.WindowConfig.Icon 	= Path;
 
 			return true;

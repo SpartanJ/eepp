@@ -159,7 +159,7 @@ void TextureAtlasNew::textureAtlasSave( const Event * Event ) {
 		Texture::TextureFilter textureFilter = mTextureFilter->getText() == "Nearest" ? Texture::TextureFilter::Nearest : Texture::TextureFilter::Linear;
 
 		if ( Res1 && Res2 ) {
-			TexturePacker * texturePacker = eeNew( TexturePacker, ( w, h, PixelDensity::fromString( mPixelDensity->getText() ), false, b, textureFilter ) );
+			TexturePacker * texturePacker = eeNew( TexturePacker, ( w, h, PixelDensity::fromString( mPixelDensity->getText() ), false, false, b, textureFilter ) );
 
 			texturePacker->addTexturesPath( mTGPath->getText() );
 
@@ -219,7 +219,7 @@ void TextureAtlasNew::onSelectFolder( const Event * Event ) {
 			std::string ImgPath( FPath + files[i] );
 
 			if ( !FileSystem::isDirectory( ImgPath ) ) {
-				int res = stbi_info( ImgPath.c_str(), &x, &y, &c );
+				bool res = Image::getInfo( ImgPath.c_str(), &x, &y, &c );
 
 				if ( res ) {
 					count++;

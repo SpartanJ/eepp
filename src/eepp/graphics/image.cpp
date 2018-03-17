@@ -199,6 +199,16 @@ void Image::jpegQuality( Uint32 level ) {
 	sJpegQuality = level;
 }
 
+Float Image::sSVGScale = 1.0f;
+
+Float Image::svgScale() {
+	return sSVGScale;
+}
+
+void Image::svgScale( Float scale ) {
+	sSVGScale = scale;
+}
+
 std::string Image::saveTypeToExtension( const Int32& Format ) {
 	switch( Format ) {
 		case Image::SaveType::SAVE_TYPE_TGA: return "tga";
@@ -242,7 +252,19 @@ Image::PixelFormat Image::channelsToPixelFormat( const Uint32& channels ) {
 bool Image::getInfo( const std::string& path, int * width, int * height, int * channels ) {
 	bool res = stbi_info( path.c_str(), width, height, channels ) != 0;
 
-	if ( !res && PackManager::instance()->isFallbackToPacksActive() ) {
+	if ( !res && svg_test( path ) ) {
+		NSVGimage * image = nsvgParseFromFile( path.c_str(), "px", 96.0f );
+
+		if ( NULL != image ) {
+			*width = image->width * sSVGScale;
+			*height = image->height * sSVGScale;
+			*channels = 4;
+
+			nsvgDelete( image );
+
+			res = true;
+		}
+	} else if ( !res && PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string npath( path );
 		Pack * tPack = PackManager::instance()->exists( npath );
 
@@ -252,6 +274,24 @@ bool Image::getInfo( const std::string& path, int * width, int * height, int * c
 			tPack->extractFileToMemory( npath, PData );
 
 			res = 0 != stbi_info_from_memory( PData.data, PData.size, width, height, channels );
+
+			if ( !res && svg_test_from_memory( PData.data, PData.size ) ) {
+				SafeDataPointer data( PData.size + 1 );
+				memcpy( data.data, PData.data, PData.size );
+				data.data[PData.size] = '\0';
+
+				NSVGimage * image = nsvgParse( (char*)data.data, "px", 96.0f );
+
+				if ( NULL != image ) {
+					*width = image->width * sSVGScale;
+					*height = image->height * sSVGScale;
+					*channels = 4;
+
+					nsvgDelete( image );
+
+					res = true;
+				}
+			}
 		}
 	}
 
@@ -496,8 +536,8 @@ void Image::svgLoad( NSVGimage * image ) {
 	unsigned char* img = NULL;
 	int w, h;
 
-	w = (int)image->width * PixelDensity::getPixelDensity();
-	h = (int)image->height * PixelDensity::getPixelDensity();
+	w = (int)image->width * sSVGScale;
+	h = (int)image->height * sSVGScale;
 
 	rast = nsvgCreateRasterizer();
 
@@ -505,7 +545,7 @@ void Image::svgLoad( NSVGimage * image ) {
 		img = (unsigned char*)malloc(w*h*4);
 
 		if (img != NULL) {
-			nsvgRasterize(rast, image, 0, 0, PixelDensity::getPixelDensity(), img, w, h, w * 4);
+			nsvgRasterize(rast, image, 0, 0, sSVGScale, img, w, h, w * 4);
 
 			mPixels = img;
 			mWidth = w;

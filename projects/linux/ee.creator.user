@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.5.0, 2018-03-16T02:22:39. -->
+<!-- Written by QtCreator 4.5.0, 2018-03-17T02:27:33. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -1300,7 +1300,7 @@
     <value type="bool" key="ProjectExplorer.CustomExecutableRunConfiguration.UseTerminal">false</value>
     <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.WorkingDirectory">%{buildDir}../../../bin/</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">Run %{buildDir}../../../bin/eepp-TextureAtlasEditor-debug</value>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">eepp-TextureAtlasEditor</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">eepp-TextureAtlasEditor-debug</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="uint" key="RunConfiguration.QmlDebugServerPort">3768</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">true</value>
@@ -1356,7 +1356,7 @@
     <value type="bool" key="ProjectExplorer.CustomExecutableRunConfiguration.UseTerminal">false</value>
     <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.WorkingDirectory">%{buildDir}../../../bin/</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">Run %{buildDir}../../../bin/eepp-MapEditor-debug</value>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">eepp-MapEditor</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">eepp-MapEditor-debug</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="uint" key="RunConfiguration.QmlDebugServerPort">3768</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">true</value>
@@ -1412,7 +1412,7 @@
     <value type="bool" key="ProjectExplorer.CustomExecutableRunConfiguration.UseTerminal">false</value>
     <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.WorkingDirectory">%{buildDir}../../../bin/</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">Run %{buildDir}../../../bin/eepp-UIEditor-debug</value>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">eeuieditor-debug</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">eepp-UIEditor-debug</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="uint" key="RunConfiguration.QmlDebugServerPort">3768</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">true</value>

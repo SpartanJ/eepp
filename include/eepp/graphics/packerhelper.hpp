@@ -46,7 +46,8 @@ typedef struct sTextureAtlasHdrSN {
 	Uint32	PixelBorder;
 	Uint32	Flags;
 	char	TextureFilter;
-	char	Reserved[15];
+	bool	ScalableSVG;
+	char	Reserved[14];
 } sTextureAtlasHdr;
 
 #define HDR_TEXTURE_ATLAS_ALLOW_FLIPPING		( 1 << 0 )

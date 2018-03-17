@@ -8,7 +8,6 @@
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/graphics/packerhelper.hpp>
-#include <SOIL2/src/SOIL2/stb_image.h>
 
 namespace EE { namespace Graphics {
 
@@ -401,7 +400,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 
 					if ( FileSystem::fileSize( path ) ) {
 						if ( tSh->Date != FileSystem::fileGetModificationDate( path ) ) {
-							if ( stbi_info( path.c_str(), &x, &y, &c ) ) {
+							if ( Image::getInfo( path.c_str(), &x, &y, &c ) ) {
 								if ( 	( !( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPED ) && tSh->Width == x && tSh->Height == y ) || // If size or channels changed, the image need update
 										( ( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPED ) && tSh->Width == y && tSh->Height == x ) ||
 										tSh->Channels != c
@@ -432,7 +431,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 		std::string tapath( FileSystem::fileRemoveExtension( TextureAtlasPath ) + "." + Image::saveTypeToExtension( mTexGrHdr.Format ) );
 
 		if ( 2 == NeedUpdate ) {
-			TexturePacker tp( mTexGrHdr.Width, mTexGrHdr.Height, pixelDensity, 0 != ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_POW_OF_TWO ), mTexGrHdr.PixelBorder, (Texture::TextureFilter)mTexGrHdr.TextureFilter, mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_ALLOW_FLIPPING );
+			TexturePacker tp( mTexGrHdr.Width, mTexGrHdr.Height, pixelDensity, 0 != ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_POW_OF_TWO ), mTexGrHdr.ScalableSVG, mTexGrHdr.PixelBorder, (Texture::TextureFilter)mTexGrHdr.TextureFilter, mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_ALLOW_FLIPPING );
 
 			tp.addTexturesPath( ImagesPath );
 
@@ -454,12 +453,9 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 					tapath = FileSystem::fileRemoveExtension( TextureAtlasPath ) + "_ch" + String::toStr( z ) + "." + Image::saveTypeToExtension( mTexGrHdr.Format );
 				}
 
-				unsigned char * imgPtr = stbi_load( tapath.c_str(), &x, &y, &c, 0 );
+				Image Img( tapath );
 
-				if ( NULL != imgPtr ) {
-					Image Img( imgPtr, x, y, c );
-					Img.avoidFreeImage( true );
-
+				if ( NULL != Img.getPixelsPtr() ) {
 					sTempTexAtlas * tTexAtlas 	= &mTempAtlass[z];
 					sTextureHdr * tTexHdr 		= &tTexAtlas->Texture;
 
@@ -475,30 +471,22 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 						if ( tSh->Date != ModifDate ) {
 							tSh->Date = ModifDate;	// Update the sub texture hdr
 
-							unsigned char * imgCopyPtr = stbi_load( imgcopypath.c_str(), &x, &y, &c, 0 );
+							Image ImgCopy( imgcopypath );
 
-							if ( NULL != imgCopyPtr ) {
-								Image ImgCopy( imgCopyPtr, x, y, c );
-								ImgCopy.avoidFreeImage( true );
-
+							if ( NULL != ImgCopy.getPixelsPtr() ) {
 								Img.copyImage( &ImgCopy, tSh->X, tSh->Y );	// Update the image into the texture atlas
-
-								if ( imgCopyPtr )
-									free( imgCopyPtr );
-							} else
+							} else {
 								break;
+							}
 						}
 					}
 
 					fs.write( reinterpret_cast<const char*> (&tTexAtlas->TextureRegions[0]), sizeof(sTextureRegionHdr) * tTexHdr->TextureRegionCount );
 
 					Img.saveToFile( tapath, (Image::SaveType)mTexGrHdr.Format );
-
-					if ( imgPtr )
-						free( imgPtr );
-				}
-				else
+				} else {
 					return false; // fatal error
+				}
 			}
 		}
 	}

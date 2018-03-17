@@ -246,7 +246,7 @@ void EETest::createUIThemeTextureAtlas() {
 		if ( mThemeName.find( "2x" ) != std::string::npos ) PD = PD_XHDPI;
 		else if  ( mThemeName.find( "1.5x" ) != std::string::npos ) PD = PD_HDPI;
 
-		TexturePacker tp( 2048, 2048, PD, true, 2 );
+		TexturePacker tp( 2048, 2048, PD, true, false, 2 );
 		tp.addTexturesPath( Path );
 		tp.packTextures();
 		tp.save( tgpath + ".png", Image::SaveType::SAVE_TYPE_PNG );
@@ -1208,13 +1208,13 @@ void EETest::onTextureLoaded( ResourceLoader * ResLoaded ) {
 
 void EETest::loadTextures() {
 	if ( !FileSystem::fileExists( MyPath + "atlases/bnb.eta" ) ) {
-		TexturePacker tp( 1024, 512, PD_MDPI, true, 1 );
+		TexturePacker tp( 1024, 512, PD_MDPI, true, false, 1 );
 		tp.addTexturesPath( MyPath + "atlases/bnb/" );
 		tp.save( MyPath + "atlases/bnb.png" );
 	}
 
 	if ( !FileSystem::fileExists( MyPath + "atlases/tiles.eta" ) ) {
-		TexturePacker tp( 256, 32, PD_MDPI, true, 0 );
+		TexturePacker tp( 256, 32, PD_MDPI, true, false, 0 );
 		tp.addTexturesPath( MyPath + "atlases/tiles/" );
 		tp.save( MyPath + "atlases/tiles.png" );
 	}

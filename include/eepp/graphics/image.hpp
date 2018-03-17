@@ -70,6 +70,12 @@ class EE_API Image {
 		/** Set the save quality of Jpeg files ( between 0 and 100 )  */
 		static void jpegQuality( Uint32 level );
 
+		/** @return The current SVG default scale */
+		static Float svgScale();
+
+		/** Set the SVG default scale */
+		static void svgScale( Float scale );
+
 		/** @return The File Extension of a Save Type */
 		static std::string saveTypeToExtension( const Int32& Format );
 
@@ -236,6 +242,7 @@ class EE_API Image {
 		Graphics::Image& operator =(const Image& right);
 	protected:
 		static Uint32 sJpegQuality;
+		static Float sSVGScale;
 
 		Uint8 *			mPixels;
 		unsigned int 	mWidth;

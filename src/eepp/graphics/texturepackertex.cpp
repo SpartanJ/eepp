@@ -1,6 +1,5 @@
 #include <eepp/graphics/texturepackertex.hpp>
 #include <eepp/graphics/image.hpp>
-#include <SOIL2/src/SOIL2/stb_image.h>
 
 namespace EE { namespace Graphics { namespace Private {
 
@@ -19,7 +18,7 @@ TexturePackerTex::TexturePackerTex( const std::string& Name ) :
 	mDisabled(false),
 	mImg( NULL )
 {
-	if ( stbi_info( Name.c_str(), &mWidth, &mHeight, &mChannels ) ) {
+	if ( Image::getInfo( Name.c_str(), &mWidth, &mHeight, &mChannels ) ) {
 		mArea 			= mWidth * mHeight;
 		mLongestEdge 	= ( mWidth >= mHeight ) ? mWidth : mHeight;
 		mLoadedInfo 	= true;

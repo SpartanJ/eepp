@@ -4,12 +4,11 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/graphics/texturepackernode.hpp>
 #include <eepp/graphics/texturepackertex.hpp>
-#include <SOIL2/src/SOIL2/stb_image.h>
 #include <algorithm>
 
 namespace EE { namespace Graphics {
 
-TexturePacker::TexturePacker(const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const Texture::TextureFilter& textureFilter, const bool& AllowFlipping ) :
+TexturePacker::TexturePacker(const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const bool& scalableSVG, const Uint32& PixelBorder, const Texture::TextureFilter& textureFilter, const bool& AllowFlipping ) :
 	mTotalArea(0),
 	mFreeList(NULL),
 	mWidth(128),
@@ -26,9 +25,10 @@ TexturePacker::TexturePacker(const Uint32& MaxWidth, const Uint32& MaxHeight, co
 	mPixelDensity(PixelDensity),
 	mTextureFilter(textureFilter),
 	mSaveExtensions(false),
+	mScalableSVG(scalableSVG),
 	mFormat(Image::SaveType::SAVE_TYPE_PNG)
 {
-	setOptions( MaxWidth, MaxHeight, PixelDensity, ForcePowOfTwo, PixelBorder, textureFilter, AllowFlipping );
+	setOptions( MaxWidth, MaxHeight, PixelDensity, ForcePowOfTwo, scalableSVG, PixelBorder, textureFilter, AllowFlipping );
 }
 
 TexturePacker::TexturePacker() :
@@ -49,6 +49,7 @@ TexturePacker::TexturePacker() :
 	mPixelDensity(PD_MDPI),
 	mTextureFilter(Texture::TextureFilter::Linear),
 	mSaveExtensions(false),
+	mScalableSVG(false),
 	mFormat(Image::SaveType::SAVE_TYPE_PNG)
 {}
 
@@ -115,7 +116,7 @@ Uint32 TexturePacker::getAtlasNumChannels() {
 	return maxChannels;
 }
 
-void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const Texture::TextureFilter& textureFilter, const bool& AllowFlipping ) {
+void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const EE_PIXEL_DENSITY& PixelDensity, const bool& ForcePowOfTwo, const bool& scalableSVG, const Uint32& PixelBorder, const Texture::TextureFilter& textureFilter, const bool& AllowFlipping ) {
 	if ( !mTextures.size() ) { // only can change the dimensions before adding any texture
 		mMaxSize.x = MaxWidth;
 		mMaxSize.y = MaxHeight;
@@ -131,6 +132,7 @@ void TexturePacker::setOptions( const Uint32& MaxWidth, const Uint32& MaxHeight,
 		mPixelBorder	= PixelBorder;
 		mPixelDensity = PixelDensity;
 		mTextureFilter = textureFilter;
+		mScalableSVG = scalableSVG;
 	}
 }
 
@@ -378,7 +380,7 @@ void TexturePacker::insertTexture( TexturePackerTex * t, TexturePackerNode * bes
 }
 
 void TexturePacker::createChild() {
-	mChild = eeNew( TexturePacker, ( mWidth, mHeight, mPixelDensity, mForcePowOfTwo, mPixelBorder, mTextureFilter, mAllowFlipping ) );
+	mChild = eeNew( TexturePacker, ( mWidth, mHeight, mPixelDensity, mForcePowOfTwo, mScalableSVG, mPixelBorder, mTextureFilter, mAllowFlipping ) );
 
 	std::list<TexturePackerTex*>::iterator it;
 	std::list< std::list<TexturePackerTex*>::iterator > remove;
@@ -419,7 +421,7 @@ bool TexturePacker::addTexturesPath( std::string TexturesPath ) {
 
 		for ( Uint32 i = 0; i < files.size(); i++ ) {
 			std::string path( TexturesPath + files[i] );
-			if ( !FileSystem::isDirectory( path ) )
+			if ( !FileSystem::isDirectory( path ) && Image::isImageExtension( path ) )
 				addTexture( path );
 		}
 
@@ -463,13 +465,27 @@ bool TexturePacker::addPackerTex( TexturePackerTex * TPack ) {
 }
 
 bool TexturePacker::addImage( Image * Img, const std::string& Name ) {
+	Float oldSvgScale( Image::svgScale() );
+
+	Image::svgScale( mScalableSVG ? PixelDensity::toFloat( mPixelDensity ) : 1.f );
+
 	TexturePackerTex * TPack = eeNew( TexturePackerTex, ( Img, Name ) );
+
+	Image::svgScale( oldSvgScale );
+
 	return addPackerTex( TPack );
 }
 
 bool TexturePacker::addTexture( const std::string& TexturePath ) {
 	if ( FileSystem::fileExists( TexturePath ) ) {
+		Float oldSvgScale( Image::svgScale() );
+
+		Image::svgScale( mScalableSVG ? PixelDensity::toFloat( mPixelDensity ) : 1.f );
+
 		TexturePackerTex * TPack = eeNew( TexturePackerTex, ( TexturePath ) );
+
+		Image::svgScale( oldSvgScale );
+
 		return addPackerTex( TPack );
 	}
 
@@ -580,7 +596,6 @@ void TexturePacker::save( const std::string& Filepath, const Image::SaveType& Fo
 	Img.fillWithColor( Color(0,0,0,0) );
 
 	TexturePackerTex * t = NULL;
-	int w, h, c;
 	std::list<TexturePackerTex*>::iterator it;
 
 	for ( it = mTextures.begin(); it != mTextures.end(); ++it ) {
@@ -590,22 +605,13 @@ void TexturePacker::save( const std::string& Filepath, const Image::SaveType& Fo
 			Uint8 * data;
 
 			if ( NULL == t->getImage() ) {
-				data = stbi_load( t->name().c_str(), &w, &h, &c, 0 );
+				Image imageLoaded( t->name() );
 
-				if ( NULL != data && t->width() == w && t->height() == h ) {
-					Image * ImgCopy = eeNew( Image, ( data, w, h, c ) );
-
+				if ( NULL != imageLoaded.getPixelsPtr() && t->width() == (int)imageLoaded.getWidth() && t->height() == (int)imageLoaded.getHeight() ) {
 					if ( t->flipped() )
-						ImgCopy->flip();
+						imageLoaded.flip();
 
-					Img.copyImage( ImgCopy, t->x(), t->y() );
-
-					ImgCopy->avoidFreeImage( true );
-
-					eeSAFE_DELETE( ImgCopy );
-
-					if ( data )
-						free( data );
+					Img.copyImage( &imageLoaded, t->x(), t->y() );
 
 					mPlacedCount++;
 				}
@@ -661,6 +667,7 @@ void TexturePacker::saveTextureRegions() {
 	TexGrHdr.PixelBorder	= mPixelBorder;
 	TexGrHdr.Flags			= 0;
 	TexGrHdr.TextureFilter	= mTextureFilter;
+	TexGrHdr.ScalableSVG	= mScalableSVG;
 
 	int reservedSize = eeARRAY_SIZE(TexGrHdr.Reserved);
 	memset( TexGrHdr.Reserved, 0, reservedSize );
