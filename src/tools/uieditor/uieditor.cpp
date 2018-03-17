@@ -38,21 +38,6 @@ public:
 
 UpdateListener * listener = NULL;
 
-static bool isImage( const std::string& path ) {
-	std::string mPath = path;
-
-	if ( path.size() >= 4 ) {
-		std::string File = mPath.substr( mPath.find_last_of("/\\") + 1 );
-		std::string Ext = File.substr( File.find_last_of(".") + 1 );
-		String::toLowerInPlace( Ext );
-
-		if ( Ext == "png" || Ext == "tga" || Ext == "bmp" || Ext == "jpg" || Ext == "gif" || Ext == "jpeg" || Ext == "dds" || Ext == "psd" || Ext == "hdr" || Ext == "pic" || Ext == "pvr" || Ext == "pkm" )
-			return true;
-	}
-
-	return false;
-}
-
 static bool isFont( const std::string& path ) {
 	std::string mPath = path;
 
@@ -87,7 +72,7 @@ static void loadImagesFromFolder( std::string folderPath ) {
 	FileSystem::dirPathAddSlashAtEnd( folderPath );
 
 	for ( auto it = files.begin(); it != files.end(); ++it ) {
-		if ( isImage( *it ) ) {
+		if ( Image::isImageExtension( *it ) ) {
 			loadImage( folderPath + (*it) );
 		}
 	}
@@ -137,12 +122,27 @@ void resizeCb(EE::Window::Window * window) {
 	uiContainer->center();
 }
 
+void resizeWindowToLayout() {
+	Sizef size( uiContainer->getSize() );
+	Rect borderSize( window->getBorderSize() );
+	Sizei displayMode = Engine::instance()->getDisplayManager()->getDisplayIndex( window->getCurrentDisplayIndex() )->getUsableBounds().getSize();
+	displayMode.x = displayMode.x - borderSize.Left - borderSize.Right;
+	displayMode.y = displayMode.y - borderSize.Top - borderSize.Bottom;
+
+	Float scaleW = size.getWidth() > displayMode.getWidth() ? displayMode.getWidth() / size.getWidth() : 1.f;
+	Float scaleH = size.getHeight() > displayMode.getHeight() ? displayMode.getHeight() / size.getHeight() : 1.f;
+	Float scale = scaleW < scaleH ? scaleW : scaleH;
+
+	window->setSize( (Uint32)( uiContainer->getSize().getWidth() * scale ), (Uint32)( uiContainer->getSize().getHeight() * scale ) );
+	window->centerToDisplay();
+}
+
 static UIWidget * createWidget( std::string widgetName ) {
 	return UIWidgetCreator::createFromName( widgetRegistered[ widgetName ] );
 }
 
 static std::string pathFix( std::string path ) {
-	if ( !path.empty() && path.at(0) != FileSystem::getOSSlash().at(0) ) {
+	if ( !path.empty() && ( path.at(0) != '/' || !( Sys::getPlatform() == "Windows" && path.size() > 3 && path.at(1) != ':' ) ) ) {
 		return basePath + path;
 	}
 
@@ -192,8 +192,8 @@ static void loadProjectNodes( pugi::xml_node node ) {
 
 					if ( FileSystem::isDirectory( drawablePath ) ) {
 						loadImagesFromFolder( drawablePath );
-					} else if ( isImage( drawablePath ) ) {
-						loadFont( drawablePath );
+					} else if ( Image::isImageExtension( drawablePath ) ) {
+						loadImage( drawablePath );
 					}
 				}
 			}
@@ -212,7 +212,6 @@ static void loadProjectNodes( pugi::xml_node node ) {
 						UIWidgetCreator::addCustomWidgetCallback( it->first, cb::Make1( createWidget ) );
 					}
 				}
-
 			}
 
 			pugi::xml_node uiNode = resources.child( "uitheme" );
@@ -227,6 +226,8 @@ static void loadProjectNodes( pugi::xml_node node ) {
 
 			pugi::xml_node layoutNode = resources.child( "layout" );
 
+			bool loadedSizedLayout = false;
+
 			if ( !layoutNode.empty() ) {
 				Float width = layoutNode.attribute( "width" ).as_float();
 				Float height = layoutNode.attribute( "height" ).as_float();
@@ -237,8 +238,17 @@ static void loadProjectNodes( pugi::xml_node node ) {
 					resizeCb( window );
 				}
 
-				if ( FileSystem::fileExists( layoutPath ) )
+				if ( FileSystem::fileExists( layoutPath ) ) {
 					loadLayoutFromFile( layoutPath );
+
+					if ( width != 0 && height != 0 ) {
+						loadedSizedLayout = true;
+					}
+				}
+
+				if ( loadedSizedLayout ) {
+					resizeWindowToLayout();
+				}
 			}
 		}
 	}
@@ -286,18 +296,7 @@ void mainLoop() {
 	}
 
 	if ( NULL != uiContainer && window->getInput()->isKeyUp( KEY_F1 ) ) {
-		Sizef size( uiContainer->getSize() );
-		Rect borderSize( window->getBorderSize() );
-		Sizei displayMode = Engine::instance()->getDisplayManager()->getDisplayIndex(0)->getUsableBounds().getSize();
-		displayMode.x = displayMode.x - borderSize.Left - borderSize.Right;
-		displayMode.y = displayMode.y - borderSize.Top - borderSize.Bottom;
-
-		Float scaleW = size.getWidth() > displayMode.getWidth() ? displayMode.getWidth() / size.getWidth() : 1.f;
-		Float scaleH = size.getHeight() > displayMode.getHeight() ? displayMode.getHeight() / size.getHeight() : 1.f;
-		Float scale = scaleW < scaleH ? scaleW : scaleH;
-
-		window->setSize( (Uint32)( uiContainer->getSize().getWidth() * scale ), (Uint32)( uiContainer->getSize().getHeight() * scale ) );
-		window->centerToDisplay();
+		resizeWindowToLayout();
 	}
 
 	if ( mousePos != window->getInput()->getMousePos() ) {
