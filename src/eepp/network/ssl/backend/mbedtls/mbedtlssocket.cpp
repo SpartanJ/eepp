@@ -43,7 +43,7 @@ bool MbedTLSSocket::init() {
 		if ( err != 0 ) {
 			char errStr[ 1024 ];
 			mbedtls_strerror( err, errStr, eeARRAY_SIZE( errStr ) );
-			eePRINTL("Error parsing some certificates: %d. Description: %s",  err, errStr );
+			eePRINTL("Error parsing some certificates \"%s\": %d. Description: %s", SSLSocket::CertificatesPath.c_str(),  err, errStr );
 		}
 	}
 
