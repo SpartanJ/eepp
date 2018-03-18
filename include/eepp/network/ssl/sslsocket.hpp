@@ -33,9 +33,15 @@ class EE_API SSLSocket : public TcpSocket {
 		Status send(Packet& packet);
 
 		Status receive(Packet& packet);
+
 	protected:
 		friend class SSLSocketImpl;
 		friend class OpenSSLSocket;
+		friend class MbedTLSSocket;
+
+		Status tcp_receive(void* data, std::size_t size, std::size_t& received);
+
+		Status tcp_send(const void* data, std::size_t size, std::size_t& sent);
 		
 		SSLSocketImpl *			mImpl;
 		std::string				mHostName;

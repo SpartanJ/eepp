@@ -8,6 +8,10 @@
 #include <eepp/network/ssl/backend/openssl/opensslsocket.hpp>
 #endif
 
+#ifdef EE_MBEDTLS
+#include <eepp/network/ssl/backend/mbedtls/mbedtlssocket.hpp>
+#endif
+
 using namespace EE::System;
 
 namespace EE { namespace Network { namespace SSL {
@@ -51,10 +55,18 @@ bool SSLSocket::init() {
 				CertificatesPath = "/boot/common/data/ssl/cert.pem";
 			}
 			#endif
+
+			if ( CertificatesPath.empty() ) {
+				CertificatesPath = "assets/ca-bundle.pem";
+			}
 		}
 
 		#ifdef EE_OPENSSL
 		ret = OpenSSLSocket::init();
+		#endif
+
+		#ifdef EE_MBEDTLS
+		ret = MbedTLSSocket::init();
 		#endif
 
 		ssl_initialized = true;
@@ -72,7 +84,11 @@ bool SSLSocket::end() {
 		#ifdef EE_OPENSSL
 		ret = OpenSSLSocket::end();
 		#endif
-		
+
+		#ifdef EE_MBEDTLS
+		ret = MbedTLSSocket::end();
+		#endif
+
 		ssl_initialized = false;
 	}
 
@@ -88,7 +104,9 @@ bool SSLSocket::isSupported() {
 }
 
 SSLSocket::SSLSocket( std::string hostname , bool validateCertificate, bool validateHostname ) :
-#ifdef EE_OPENSSL
+#ifdef EE_MBEDTLS
+	mImpl( eeNew( MbedTLSSocket, ( this ) ) ),
+#elif defined( EE_OPENSSL )
 	mImpl( eeNew( OpenSSLSocket, ( this ) ) ),
 #else
 	mImpl( NULL ),
@@ -133,6 +151,14 @@ Socket::Status SSLSocket::send(Packet& packet) {
 
 Socket::Status SSLSocket::receive(Packet& packet) {
 	return TcpSocket::receive( packet );
+}
+
+Socket::Status SSLSocket::tcp_receive(void * data, std::size_t size, std::size_t & received) {
+	return TcpSocket::receive( data, size, received );
+}
+
+Socket::Status SSLSocket::tcp_send(const void * data, std::size_t size, std::size_t & sent) {
+	return TcpSocket::send( data, size, sent );
 }
 
 }}}

@@ -137,8 +137,8 @@ if _OPTIONS.platform then
 	premake.gcc.platforms['Native'] = premake.gcc.platforms[_OPTIONS.platform]
 end
 
-newoption { trigger = "with-ssl", description = "Enables SSL support for the Network module ( requires OpenSSL )." }
-newoption { trigger = "with-libsndfile", description = "Build with libsndfile support." }
+newoption { trigger = "with-ssl", description = "Enables SSL support for the Network module ( by default uses mbedtls. )" }
+newoption { trigger = "with-openssl", description = "Enables OpenSSL support ( and disables mbedtls backend )." }
 newoption { trigger = "with-static-freetype", description = "Build freetype as a static library." }
 newoption { trigger = "with-static-eepp", description = "Force to build the demos and tests with eepp compiled statically" }
 newoption { trigger = "with-static-backend", description = "It will try to compile the library with a static backend (only for gcc and mingw).\n\t\t\t\tThe backend should be placed in libs/your_platform/libYourBackend.a" }
@@ -520,6 +520,10 @@ function add_static_links()
 			"pugixml-static",
 			"vorbis-static"
 	}
+
+	if _OPTIONS["with-ssl"] and not _OPTIONS["with-openssl"] then
+		links { "mbedtls-static" }
+	end
 	
 	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
 		links{ "glew-static" }
@@ -665,17 +669,26 @@ end
 function check_ssl_support()
 	if _OPTIONS["with-ssl"] then
 		print("Enabled SSL support")
-		if os.is("windows") then
-			table.insert( link_list, get_backend_link_name( "libssl" ) )
-			table.insert( link_list, get_backend_link_name( "libcrypto" ) )
+
+		if _OPTIONS["with-openssl"] then
+			if os.is("windows") then
+				table.insert( link_list, get_backend_link_name( "libssl" ) )
+				table.insert( link_list, get_backend_link_name( "libcrypto" ) )
+			else
+				table.insert( link_list, get_backend_link_name( "ssl" ) )
+				table.insert( link_list, get_backend_link_name( "crypto" ) )
+			end
+
+			files { "src/eepp/network/ssl/backend/openssl/*.cpp" }
+
+			defines { "EE_OPENSSL" }
 		else
-			table.insert( link_list, get_backend_link_name( "ssl" ) )
-			table.insert( link_list, get_backend_link_name( "crypto" ) )
+			files { "src/eepp/network/ssl/backend/mbedtls/*.cpp" }
+
+			defines { "EE_MBEDTLS" }
 		end
-		
-		files { "src/eepp/network/ssl/backend/openssl/*.cpp" }
-		
-		defines { "EE_SSL_SUPPORT", "EE_OPENSSL" }
+
+		defines { "EE_SSL_SUPPORT" }
 	end
 end
 
@@ -731,18 +744,7 @@ function build_eepp( build_name )
 	if not _OPTIONS["with-static-freetype"] and os_findlib("freetype") then
 		table.insert( link_list, get_backend_link_name( "freetype" ) )
 	end
-	
-	if _OPTIONS["with-libsndfile"] then
-		print("Enabled libsndfile")
-		defines { "EE_LIBSNDFILE_ENABLED" }
-		
-		if os.is("windows") then
-			table.insert( link_list, "libsndfile-1" )
-		else
-			table.insert( link_list, "sndfile" )
-		end
-	end
-	
+
 	multiple_insert( link_list, os_links )
 
 	links { link_list }
@@ -813,6 +815,16 @@ solution "eepp"
 			files { "src/thirdparty/glew/*.c" }
 			includedirs { "include/thirdparty/glew" }
 			build_base_configuration( "glew" )
+	end
+
+	if _OPTIONS["with-ssl"] and not _OPTIONS["with-openssl"] then
+		project "mbedtls-static"
+			kind "StaticLib"
+			language "C"
+			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+			includedirs { "src/thirdparty/mbedtls/include/" }
+			files { "src/thirdparty/mbedtls/library/*.c" }
+			build_base_cpp_configuration( "mbedtls" )
 	end
 
 	project "vorbis-static"

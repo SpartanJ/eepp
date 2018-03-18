@@ -560,9 +560,15 @@
 ../../src/eepp/network/platform/win/socketimpl.hpp
 ../../src/eepp/network/socket.cpp
 ../../src/eepp/network/socketselector.cpp
+../../src/eepp/network/ssl/backend/mbedtls/mbedtlssocket.cpp
+../../src/eepp/network/ssl/backend/mbedtls/mbedtlssocket.hpp
+../../src/eepp/network/ssl/backend/openssl/curl_hostcheck.cpp
 ../../src/eepp/network/ssl/backend/openssl/curl_hostcheck.cpp
 ../../src/eepp/network/ssl/backend/openssl/curl_hostcheck.h
+../../src/eepp/network/ssl/backend/openssl/curl_hostcheck.h
 ../../src/eepp/network/ssl/backend/openssl/opensslsocket.cpp
+../../src/eepp/network/ssl/backend/openssl/opensslsocket.cpp
+../../src/eepp/network/ssl/backend/openssl/opensslsocket.hpp
 ../../src/eepp/network/ssl/backend/openssl/opensslsocket.hpp
 ../../src/eepp/network/ssl/sslsocket.cpp
 ../../src/eepp/network/ssl/sslsocketimpl.hpp

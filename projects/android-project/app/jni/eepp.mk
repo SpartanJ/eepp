@@ -18,7 +18,8 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_THIRD_PARTY_PATH)/stb_vorbis \
 	$(EEPP_THIRD_PARTY_PATH)/libvorbis/lib \
 	$(EEPP_THIRD_PARTY_PATH)/libvorbis/include \
-	$(EEPP_THIRD_PARTY_PATH)/libogg/include
+	$(EEPP_THIRD_PARTY_PATH)/libogg/include \
+	$(EEPP_THIRD_PARTY_PATH)/mbedtls/include
 
 EEPP_C_FLAGS				:= \
 	-Wl,--undefined=Java_org_libsdl_app_SDLActivity_nativeInit \
@@ -29,6 +30,8 @@ EEPP_C_FLAGS				:= \
 	-Wno-unknown-pragmas \
 	$(EE_GLES_VERSION) \
 	-DEE_NO_SNDFILE \
+	-DEE_SSL_SUPPORT \
+	-DEE_MBEDTLS \
 	-D$(EE_SDL_VERSION) \
 	-I$(EEPP_INC_PATH) \
 	-I$(EEPP_BASE_PATH)
@@ -55,11 +58,12 @@ CODE_SRCS				:=  \
 	../thirdparty/pugixml/*.cpp \
 	../thirdparty/libogg/src/*.c \
 	../thirdparty/libvorbis/lib/*.c \
+	../thirdparty/mbedtls/library/*.c \
 	system/*.cpp \
 	system/platform/posix/*.cpp \
 	network/*.cpp \
 	network/ssl/*.cpp \
-	network/ssl/backend/openssl/*.cpp \
+	network/ssl/backend/mbedtls/*.cpp \
 	network/platform/unix/*.cpp \
 	core/*.cpp \
 	math/*.cpp \

@@ -42,7 +42,7 @@ class EE_API Http : NonCopyable {
 			**  @param body   Content of the request's body
 			**  @param validateCertificate Enables certificate validation for https request
 			**  @param validateHostname Enables hostname validation for https request */
-			Request(const std::string& uri = "/", Method method = Get, const std::string& body = "", bool validateCertificate = false, bool validateHostname = false );
+			Request(const std::string& uri = "/", Method method = Get, const std::string& body = "", bool validateCertificate = true, bool validateHostname = true );
 
 			/** @brief Set the value of a field
 			**  The field is created if it doesn't exist. The name of
