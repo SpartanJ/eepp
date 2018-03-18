@@ -1023,7 +1023,12 @@ public class SDLActivity extends Activity {
     public static void clipboardSetText(String string) {
         mClipboardHandler.clipboardSetText(string);
     }
-
+	
+	@Override
+	public void onBackPressed()
+	{
+		moveTaskToBack( true );
+	}
 }
 
 /**
