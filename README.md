@@ -175,7 +175,8 @@ Module based on the SFML implementation.
 **General Features:**
 ---------------------
 
-Support for multi-threaded resource loading ( textures, sounds, fonts, etc ).
+  * Support for multi-threaded resource loading ( textures, sounds, fonts, etc ).
+
 
 **UI Screenshots:**
 --------------------
@@ -264,6 +265,7 @@ Having installed everything, you'll be able to build for *Visual Studio* as any 
 And for *mingw* just make the project with: `mingw32-make` or any equivalent.
 
 **_macOS_**
+
 You have two options to build the project: with XCode or with gcc/clang manually.
 To build with any of both options first you will also need to build the project files with [premake4](https://premake.github.io/download.html).
 Then you will need the prebuild binaries and development libraries of [*SDL2*](http://libsdl.org/download-2.0.php), OpenAL is included with the OS. Install the *SDL2* framework and you should be able to build the project.
@@ -300,6 +302,7 @@ The current state of the library/engine is decent. In terms of features should b
 
 
 **_Plans/ideas for the future:_**
+
 Improve documentation ( Scene, UI, Physics and Maps modules are undocumented ).
 Add more examples and also some tools.
 There's planned some kind of style-sheet support similar to QSS or CSS ( this would be *great* but seems a lot of work needs to be done ).
@@ -310,6 +313,7 @@ Rebuild the map editor with undo/redo support ( or deprecate it in favor of TMX,
 **Acknowledgements**
 -----------------------------
 **_Special thanks to:_**
+
   *  Sean  Barrett  for  stb_image and all the [stb](https://github.com/nothings/stb) libraries.
 
   *  Sam  Latinga  for [Simple DirectMedia Layer](https://www.libsdl.org/).
