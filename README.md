@@ -191,23 +191,23 @@ Module based on the SFML implementation.
 It should look really familiar to any Android developer. This is a window with the most basic controls in a vertical linear layout display.
 
 ```xml
-	<window layout_width="300dp" layout_height="300dp" winflags="default|maximize">
-		<LinearLayout id="testlayout" orientation="vertical" layout_width="match_parent" layout_height="match_parent" layout_margin="8dp">
-			<TextView text="Hello World!" gravity="center" layout_gravity="center_horizontal" layout_width="match_parent" layout_height="wrap_content" backgroundColor="black" />
-			<PushButton text="OK!" textSize="16dp" icon="ok" gravity="center" layout_gravity="center_horizontal" layout_width="match_parent" layout_height="wrap_content" />
-			<Image src="thecircle" layout_width="match_parent" layout_height="32dp" flags="clip" />
-			<Sprite src="gn" />
-			<TextInput text="test" layout_width="match_parent" layout_height="wrap_content" />
-			<DropDownList layout_width="match_parent" layout_height="wrap_content" selectedIndex="0">
-				<item>Test Item</item>
-				<item>@string/test_item</item>
-			</DropDownList>
-			<ListBox layout_width="match_parent" layout_height="match_parent" layout_weight="1">
-				<item>Hello!</item>
-				<item>World!</item>
-			</ListBox>
-		</LinearLayout>
-	</window>
+<window layout_width="300dp" layout_height="300dp" winflags="default|maximize">
+	<LinearLayout id="testlayout" orientation="vertical" layout_width="match_parent" layout_height="match_parent" layout_margin="8dp">
+		<TextView text="Hello World!" gravity="center" layout_gravity="center_horizontal" layout_width="match_parent" layout_height="wrap_content" backgroundColor="black" />
+		<PushButton text="OK!" textSize="16dp" icon="ok" gravity="center" layout_gravity="center_horizontal" layout_width="match_parent" layout_height="wrap_content" />
+		<Image src="thecircle" layout_width="match_parent" layout_height="32dp" flags="clip" />
+		<Sprite src="gn" />
+		<TextInput text="test" layout_width="match_parent" layout_height="wrap_content" />
+		<DropDownList layout_width="match_parent" layout_height="wrap_content" selectedIndex="0">
+			<item>Test Item</item>
+			<item>@string/test_item</item>
+		</DropDownList>
+		<ListBox layout_width="match_parent" layout_height="match_parent" layout_weight="1">
+			<item>Hello!</item>
+			<item>World!</item>
+		</ListBox>
+	</LinearLayout>
+</window>
 ```
 
 **UI Widgets with C++ example:**
@@ -215,11 +215,11 @@ It should look really familiar to any Android developer. This is a window with t
 How does it look with real code?
 
 ```c++
-	UITextView::New()->setText(  "Text  on  test  1"  )
-	                 ->setCharacterSize(  12  )
-	                 ->setLayoutMargin(  Rect(  10,  10,  10,  10  )  )
-	                 ->setLayoutSizeRules(  WRAP_CONTENT,  WRAP_CONTENT  )
-	                 ->setParent(  layout  );
+UITextView::New()->setText(  "Text  on  test  1"  )
+				 ->setCharacterSize(  12  )
+				 ->setLayoutMargin(  Rect(  10,  10,  10,  10  )  )
+				 ->setLayoutSizeRules(  WRAP_CONTENT,  WRAP_CONTENT  )
+				 ->setParent(  layout  );
 ```
 
 **How can i learn to use the library?**
