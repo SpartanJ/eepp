@@ -246,6 +246,7 @@ That's it. That will build the whole project.
 
 
 **_Windows_**
+
 You have two options: build with *Visual Studio* or with *mingw*. 
 To build with any of both options first you will need to build the project files with [premake4](https://premake.github.io/download.html). Then add the premake4.exe file to any of the executable paths defined in `PATH` ( or add one ).
 
@@ -276,12 +277,15 @@ And open the XCode project generated in `make/osx/`
 
 
 **_Android_**
+
 There's a gradle project in `projects/android-project/`. It will build the library with all the dependencies included. Use the example project as a base for your project. Notice that there's a `eepp.mk` project file that builds the library. That can be used in you projects.
 
 **_iOS_**
+
 I've compiled the project for *iOS* many times in the past but there's not a recent build of it, so it might fail. But you can get the scripts to build it in `projects/ios/`. You'll need some inspiration to make this work, but i promise that i'll work on make this easier in the near future.
 
 **_emscripten_**
+
 There's a script for building the *emscripten* project in `projects/emscripten/make.sh`. That should be enough in *GNU/Linux* or *macOS* ( only tested this on *Linux* ).
 
 **Author comment:**
@@ -293,6 +297,7 @@ Audio and Network modules are almost exactly the same that the ones in SFML2 wit
 If all this sounds interesting to you for some crazy reason, contact me and let me know if i can help you to get into the library, and may be, contribute to it in the future. This project needs *contributors* more than anything else.
 
 The current state of the library/engine is decent. In terms of features should be in a similar position than the most used 2d game engines out there. But lacks of course of the support+community that you can get from *Godot* or *cocos2d-x* to mention a couple. The idea of this library is to focus on a better general approach to develop heavily UI based apps/games than the other options, with cleaner code and implementation.
+
 
 **_Plans/ideas for the future:_**
 Improve documentation ( Scene, UI, Physics and Maps modules are undocumented ).
@@ -306,24 +311,42 @@ Rebuild the map editor with undo/redo support ( or deprecate it in favor of TMX,
 -----------------------------
 **_Special thanks to:_**
   *  Sean  Barrett  for  stb_image and all the [stb](https://github.com/nothings/stb) libraries.
+
   *  Sam  Latinga  for [Simple DirectMedia Layer](https://www.libsdl.org/).
   *  Jonathan  Dummer  for  the  [Simple  OpenGL  Image  Library](https://www.lonesock.net/soil.html).
+
   *  Laurent  Gomila  for [SFML](https://www.sfml-dev.org/)
+
   *  Lewis  Van  Winkle  for [PlusCallback](https://github.com/codeplea/pluscallback)
+
   *  Dieter  Baron  and  Thomas  Klausner  for [libbzip](https://libzip.org/)
+
   *  Jean-loup  Gailly  and  Mark  Adler  for [zlib](https://zlib.net/)
+
   *  Milan  Ikits  and  Marcelo  Magallon  for [GLEW](http://glew.sourceforge.net/)
+
   * Mikko Mononen for [nanosvg](https://github.com/memononen/nanosvg)
+
   * Scott Lembcke for [Chipmunk2D](https://github.com/slembcke/Chipmunk2D)
+
   * Christophe Riccio for [glm](https://github.com/g-truc/glm)
+
   * Rich Geldreich for [imageresampler](https://github.com/richgel999/imageresampler) and [jpeg-compressor](https://github.com/richgel999/jpeg-compressor)
+
   * Arseny Kapoulkine for [pugixml](https://github.com/zeux/pugixml)
+
   * Jason Perkins for [premake](https://premake.github.io/)
+
   * Martín Lucas Golini ( me ) and all the several contributors for [SOIL2](https://bitbucket.org/SpartanJ/soil2) and [efsw](https://bitbucket.org/SpartanJ/efsw)
+
   * The Xiph open source community for [libogg](https://xiph.org/ogg/) and [libvorbis](https://xiph.org/vorbis/)
+
   * The [ARMmbed](https://github.com/ARMmbed) community for [mbed TLS](https://tls.mbed.org/)
+
   * [kcat](https://github.com/kcat) for [openal-soft](http://kcat.strangesoft.net/openal.html)
+
   * The [FreeType Project](https://www.freetype.org/freetype2/docsindex.html)
+
   *  And  a  **lot**  more  people!
   
   
