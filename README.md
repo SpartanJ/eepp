@@ -190,7 +190,7 @@ Module based on the SFML implementation.
 --------------------
 It should look really familiar to any Android developer. This is a window with the most basic controls in a vertical linear layout display.
 
-	:::xml
+```xml
 	<window layout_width="300dp" layout_height="300dp" winflags="default|maximize">
 		<LinearLayout id="testlayout" orientation="vertical" layout_width="match_parent" layout_height="match_parent" layout_margin="8dp">
 			<TextView text="Hello World!" gravity="center" layout_gravity="center_horizontal" layout_width="match_parent" layout_height="wrap_content" backgroundColor="black" />
@@ -208,18 +208,19 @@ It should look really familiar to any Android developer. This is a window with t
 			</ListBox>
 		</LinearLayout>
 	</window>
-	
+```
+
 **UI Widgets with C++ example:**
 -------------------------------------
 How does it look with real code?
 
-	:::c++
+```c++
 	UITextView::New()->setText(  "Text  on  test  1"  )
 	                 ->setCharacterSize(  12  )
 	                 ->setLayoutMargin(  Rect(  10,  10,  10,  10  )  )
 	                 ->setLayoutSizeRules(  WRAP_CONTENT,  WRAP_CONTENT  )
 	                 ->setParent(  layout  );
-
+```
 
 **How can i learn to use the library?**
 ----------------------------------------------
