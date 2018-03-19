@@ -32,6 +32,7 @@
 						EE::Audio documented.
 						EE::Math documented.
 						EE::Network documented.
+						EE::Scene Not documented at all.
 						EE::UI Not documented at all.
 						EE::Physics Not documented at all, chipmunk documentation should help.
 						EE::Maps Not documented at all.
@@ -45,8 +46,6 @@
 						Copy-Paste will be moved for a middle to long term plan.
 
 	Middle-term plans:
-
-	@todo Add audio recording from the SFML implementation, adapted to the engine coding style.
 
 	@todo Add Scripting support ( squirrel or angel script or lua ), at least some parts of the engine. Binding everything seems too much work.
 				STATE:	I've binded some classes with lua+luabind and is awesome, but... luabind is bloated ( and for my needs it's the only good option ), and adds A LOT of compile time.
