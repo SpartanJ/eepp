@@ -97,15 +97,17 @@ class EE_API TextureFactory : protected Mutex {
 
 		/** Bind the the internal Texture Id indicated. This is useful if you are rendering a texture outside this class.
 		* @param TexId The internal Texture Id
+		* @param coordinateType Use normalized or pixel coordinates
 		* @param TextureUnit The Texture Unit binded
+		* @param forceRebind Force the texture bind
 		*/
-		void bind( const Uint32& TexId, Texture::CoordinateType coordinateType = Texture::CoordinateType::Normalized, const Uint32& textureUnit = 0 );
+		void bind( const Uint32& TexId, Texture::CoordinateType coordinateType = Texture::CoordinateType::Normalized, const Uint32& textureUnit = 0, const bool& forceRebind = false );
 
 		/** Bind the the Texture indicated. This is useful if you are rendering a texture outside this class.
 		* @param Tex The Texture Pointer
 		* @param TextureUnit The Texture Unit binded
 		*/
-		void bind( const Texture* Tex, Texture::CoordinateType coordinateType = Texture::CoordinateType::Normalized, const Uint32& TextureUnit = 0 );
+		void bind( const Texture* Tex, Texture::CoordinateType coordinateType = Texture::CoordinateType::Normalized, const Uint32& TextureUnit = 0, const bool& forceRebind = false );
 
 		/**
 		* @param TexId The internal Texture Id

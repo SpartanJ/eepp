@@ -109,9 +109,9 @@ Uint32 TextureFactory::findFreeSlot() {
 	return (Uint32)mTextures.size() - 1;
 }
 
-void TextureFactory::bind( const Texture* texture, Texture::CoordinateType coordinateType, const Uint32& TextureUnit ) {
+void TextureFactory::bind( const Texture* texture, Texture::CoordinateType coordinateType, const Uint32& TextureUnit, const bool& forceRebind ) {
 	if( NULL != texture ) {
-		if ( mCurrentTexture[ TextureUnit ] != (Int32)texture->getHandle() ) {
+		if ( mCurrentTexture[ TextureUnit ] != (Int32)texture->getHandle() || forceRebind ) {
 			if ( TextureUnit && GLi->isExtension( EEGL_ARB_multitexture ) )
 				setActiveTextureUnit( TextureUnit );
 
@@ -153,8 +153,8 @@ void TextureFactory::bind( const Texture* texture, Texture::CoordinateType coord
 	}
 }
 
-void TextureFactory::bind( const Uint32& TexId, Texture::CoordinateType coordinateType, const Uint32& textureUnit ) {
-	bind( getTexture( TexId ), coordinateType, textureUnit );
+void TextureFactory::bind( const Uint32& TexId, Texture::CoordinateType coordinateType, const Uint32& textureUnit, const bool& forceRebind ) {
+	bind( getTexture( TexId ), coordinateType, textureUnit, forceRebind );
 }
 
 void TextureFactory::unloadTextures() {

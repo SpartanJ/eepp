@@ -239,7 +239,7 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual void postDraw();
 
-		Sizei getFrameBufferSize();
+		virtual Sizei getFrameBufferSize();
 
 		UISceneNode * getUISceneNode();
 };
