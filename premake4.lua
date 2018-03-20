@@ -513,7 +513,6 @@ function add_static_links()
 	links { "SOIL2-static",
 			"chipmunk-static",
 			"libzip-static",
-			"stb_vorbis-static",
 			"jpeg-compressor-static",
 			"zlib-static",
 			"imageresampler-static",
@@ -831,7 +830,7 @@ solution "eepp"
 		kind "StaticLib"
 		language "C"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
-		includedirs { "src/thirdparty/libvorbis/lib/" }
+		includedirs { "src/thirdparty/libvorbis/lib/", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include" }
 		files { "src/thirdparty/libogg/**.c", "src/thirdparty/libvorbis/**.c" }
 		build_base_cpp_configuration( "vorbis" )
 
@@ -866,13 +865,6 @@ solution "eepp"
 		includedirs { "src/thirdparty/freetype2/include" }
 		build_base_configuration( "freetype" )
 	
-	project "stb_vorbis-static"
-		kind "StaticLib"
-		language "C"
-		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
-		files { "src/thirdparty/stb_vorbis/*.c" }
-		build_base_configuration( "stb_vorbis" )
-		
 	project "chipmunk-static"
 		kind "StaticLib"
 
