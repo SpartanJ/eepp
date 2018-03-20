@@ -1,6 +1,7 @@
 #include <eepp/network/ssl/sslsocket.hpp>
 #include <eepp/network/ssl/sslsocketimpl.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/sys.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/lock.hpp>
 
@@ -57,7 +58,11 @@ bool SSLSocket::init() {
 			#endif
 
 			if ( CertificatesPath.empty() ) {
-				CertificatesPath = "assets/ca-bundle.pem";
+				if ( FileSystem::fileExists( Sys::getProcessPath() + "assets/ca-bundle.pem" ) ) {
+					CertificatesPath = Sys::getProcessPath() + "assets/ca-bundle.pem";
+				} else {
+					CertificatesPath = "assets/ca-bundle.pem";
+				}
 			}
 		}
 

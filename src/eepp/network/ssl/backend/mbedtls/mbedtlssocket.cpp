@@ -29,22 +29,19 @@ bool MbedTLSSocket::init() {
 	}
 
 	if ( data.size > 0 ) {
-		const char * ptr = (const char*)data.data;
-		size_t size = data.size;
+		SafeDataPointer dataZeroEnded( data.size + 1 );
+		memcpy( dataZeroEnded.data, data.data, data.size );
+		dataZeroEnded.data[ data.size ] = '\0';
 
-		if( ( ptr = strstr( (const char *) data.data, "-----BEGIN " ) ) != NULL ) {
-			size = data.size - ( (const char*)data.data - ptr );
-		} else {
-			ptr = (const char*)data.data;
-		}
-
-		int err = mbedtls_x509_crt_parse( &sCACert, (const unsigned char*)ptr, size );
+		int err = mbedtls_x509_crt_parse( &sCACert, (const unsigned char*)dataZeroEnded.data, dataZeroEnded.size );
 
 		if ( err != 0 ) {
 			char errStr[ 1024 ];
 			mbedtls_strerror( err, errStr, eeARRAY_SIZE( errStr ) );
 			eePRINTL("Error parsing some certificates \"%s\": %d. Description: %s", SSLSocket::CertificatesPath.c_str(),  err, errStr );
 		}
+	} else {
+		eePRINTL( "No certificate provided for TLS/SSL requests" );
 	}
 
 	return true;
