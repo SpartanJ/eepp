@@ -128,7 +128,6 @@ Renderer::Renderer() :
 	mExtensions(0),
 	mStateFlags( 1 << RSF_LINE_SMOOTH ),
 	mQuadsSupported( true ),
-	mBlendEnabled( false ),
 	mQuadVertexs( 4 ),
 	mLineWidth( 1 ),
 	mCurVAO( 0 ),
@@ -343,38 +342,10 @@ void Renderer::viewport( int x, int y, int width, int height ) {
 }
 
 void Renderer::disable ( unsigned int cap ) {
-	switch ( cap )
-	{
-		case GL_BLEND:
-		{
-			if ( !mBlendEnabled ) {
-				return;
-			}
-
-			mBlendEnabled = false;
-
-			break;
-		}
-	}
-
 	glDisable( cap );
 }
 
 void Renderer::enable( unsigned int cap ) {
-	switch ( cap )
-	{
-		case GL_BLEND:
-		{
-			if ( mBlendEnabled ) {
-				return;
-			}
-
-			mBlendEnabled = true;
-
-			break;
-		}
-	}
-
 	glEnable( cap );
 }
 

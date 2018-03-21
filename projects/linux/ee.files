@@ -506,7 +506,7 @@
 ../../src/eepp/graphics/texturepackertex.hpp
 ../../src/eepp/graphics/textureregion.cpp
 ../../src/eepp/graphics/texturesaver.cpp
-../../src/eepp/graphics/texturesaver.hpp
+../../include/eepp/graphics/texturesaver.hpp
 ../../src/eepp/graphics/vertexbuffer.cpp
 ../../src/eepp/graphics/vertexbuffermanager.cpp
 ../../src/eepp/graphics/vertexbufferogl.cpp

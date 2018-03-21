@@ -5,7 +5,8 @@
 
 namespace EE { namespace Graphics { namespace Private {
 
-class TextureSaver {
+/** @brief binds a texture a restores previusly binded texture */
+class EE_API TextureSaver {
 	public:
 		TextureSaver( int textureBind = -1 /** with -1 as default it avoid the auto-binding */ );
 		

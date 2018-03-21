@@ -243,7 +243,6 @@ class EE_API Renderer {
 		Uint32	mExtensions;
 		Uint32	mStateFlags;
 		bool	mQuadsSupported;
-		bool	mBlendEnabled;
 		int		mQuadVertexs;
 		float mLineWidth;
 		unsigned int	mCurVAO;

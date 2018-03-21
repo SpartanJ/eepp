@@ -11,6 +11,7 @@
 #include <eepp/graphics/primitivetype.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/texture.hpp>
+#include <eepp/graphics/texturesaver.hpp>
 #include <eepp/graphics/textureloader.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/texturepacker.hpp>
