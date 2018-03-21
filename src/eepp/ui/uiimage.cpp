@@ -204,6 +204,8 @@ void UIImage::loadFromXmlNode(const pugi::xml_node & node) {
 			} else if ( "none" == val ) {
 				setScaleType( UIScaleType::None );
 			}
+		} else if ( "tint" == name ) {
+			setColor( Color::fromString( ait->as_string() ) );
 		}
 	}
 
