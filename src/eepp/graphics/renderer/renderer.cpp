@@ -600,13 +600,6 @@ void * Renderer::getProcAddress( std::string proc ) {
 	if ( NULL == addr )
 		addr = SOIL_GL_GetProcAddress( ( proc + "EXT" ).c_str()  );
 
-	#if EE_PLATFORM == EE_PLATFORM_WIN
-	if ( NULL == addr ) {
-		static void * OpenGLAddress = Sys::loadObject( "opengl32.dll" );
-		addr = System::Sys::loadFunction( OpenGLAddress, proc );
-	}
-	#endif
-
 	return addr;
 }
 
