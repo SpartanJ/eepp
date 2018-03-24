@@ -13,7 +13,7 @@ IOStreamPak::IOStreamPak( Pak * pack, const std::string & path, bool writeMode )
 	if ( -1 != ( index = pack->exists( path ) ) ) {
 		mEntry = pack->getPackEntry( (Uint32)index );
 
-		mFile = eeNew( IOStreamFile, ( pack->getPackPath(), ( writeMode ? std::ios::out : std::ios::in ) | std::ios::binary ) );
+		mFile = eeNew( IOStreamFile, ( pack->getPackPath(), ( writeMode ? "wb" : "rb" ) ) );
 
 		if ( mFile->isOpen() ) {
 			mFile->seek( mEntry.file_position );

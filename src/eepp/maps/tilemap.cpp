@@ -1055,7 +1055,7 @@ bool TileMap::loadFromFile( const std::string& path ) {
 	if ( FileSystem::fileExists( path ) ) {
 		mPath = path;
 
-		IOStreamFile IOS( mPath, std::ios::in | std::ios::binary );
+		IOStreamFile IOS( mPath );
 
 		return loadFromStream( IOS );
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
@@ -1383,7 +1383,7 @@ void TileMap::saveToFile( const std::string& path ) {
 	if ( !FileSystem::isDirectory( path ) ) {
 		mPath = path;
 
-		IOStreamFile IOS( path, std::ios::out | std::ios::binary );
+		IOStreamFile IOS( path, "wb" );
 
 		saveToStream( IOS );
 	}

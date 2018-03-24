@@ -49,7 +49,7 @@ std::string FileSystem::getOSSlash() {
 
 bool FileSystem::fileGet( const std::string& path, SafeDataPointer& data ) {
 	if ( fileExists( path ) ) {
-		IOStreamFile fs ( path , std::ios::in | std::ios::binary );
+		IOStreamFile fs ( path  );
 
 		eeSAFE_DELETE( data.data );
 
@@ -66,7 +66,7 @@ bool FileSystem::fileGet( const std::string& path, SafeDataPointer& data ) {
 
 bool FileSystem::fileGet( const std::string& path, std::vector<Uint8>& data ) {
 	if ( fileExists( path ) ) {
-		IOStreamFile fs ( path, std::ios::in | std::ios::binary );
+		IOStreamFile fs ( path );
 		Uint32 fsize = fileSize( path );
 
 		data.clear();
@@ -93,8 +93,8 @@ bool FileSystem::fileCopy( const std::string& src, const std::string& dst ) {
 		data.data		= eeNewArray( Uint8, ( data.size ) );
 		char * buff		= (char*)data.data;
 
-		IOStreamFile in( src, std::ios::binary | std::ios::in );
-		IOStreamFile out( dst, std::ios::binary | std::ios::out );
+		IOStreamFile in( src, "rb" );
+		IOStreamFile out( dst, "wb" );
 
 		if ( in.isOpen() && out.isOpen() && size > 0 ) {
 			do {
@@ -155,7 +155,7 @@ void FileSystem::filePathRemoveCurrentWorkingDirectory( std::string& path ) {
 }
 
 bool FileSystem::fileWrite( const std::string& filepath, const Uint8* data, const Uint32& dataSize ) {
-	IOStreamFile fs( filepath, std::ios::out | std::ios::binary );
+	IOStreamFile fs( filepath, "wb" );
 
 	if ( fs.isOpen() ) {
 		if ( dataSize ) {

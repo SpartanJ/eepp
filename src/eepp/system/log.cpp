@@ -89,7 +89,7 @@ void Log::openFS() {
 	if ( NULL == mFS ) {
 		std::string str = mFilePath + "log.log";
 
-		mFS = eeNew( IOStreamFile, ( str, std::ios::app | std::ios::out | std::ios::binary ) );
+		mFS = eeNew( IOStreamFile, ( str, "a" ) );
 	}
 }
 

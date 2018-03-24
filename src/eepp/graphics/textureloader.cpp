@@ -210,7 +210,7 @@ void TextureLoader::start() {
 }
 
 void TextureLoader::loadFile() {
-	IOStreamFile fs( mFilepath , std::ios::in | std::ios::binary );
+	IOStreamFile fs( mFilepath );
 
 	mSize		= FileSystem::fileSize( mFilepath );
 	mPixels		= (Uint8*) eeMalloc( mSize );

@@ -155,7 +155,7 @@ void TextureAtlasLoader::loadFromFile( const std::string& TextureAtlasPath ) {
 		mTextureAtlasPath = TextureAtlasPath;
 
 	if ( FileSystem::fileExists( mTextureAtlasPath ) ) {
-		IOStreamFile IOS( mTextureAtlasPath, std::ios::in | std::ios::binary );
+		IOStreamFile IOS( mTextureAtlasPath );
 
 		loadFromStream( IOS );
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
@@ -325,7 +325,7 @@ bool TextureAtlasLoader::updateTextureAtlas() {
 		}
 	}
 
-	IOStreamFile fs( mTextureAtlasPath, std::ios::out | std::ios::binary );
+	IOStreamFile fs( mTextureAtlasPath, "wb" );
 
 	if ( fs.isOpen() ) {
 		fs.write( reinterpret_cast<char*> (&mTexGrHdr), sizeof(sTextureAtlasHdr) );
@@ -441,7 +441,7 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 		} else if ( 1 == NeedUpdate ) {
 			std::string etapath = FileSystem::fileRemoveExtension( tapath ) + EE_TEXTURE_ATLAS_EXTENSION;
 
-			IOStreamFile fs( etapath , std::ios::out | std::ios::binary );
+			IOStreamFile fs( etapath, "wb" );
 
 			if ( !fs.isOpen() )
 				return false;

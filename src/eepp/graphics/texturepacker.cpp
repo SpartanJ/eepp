@@ -699,7 +699,7 @@ void TexturePacker::saveTextureRegions() {
 	std::vector<sTextureRegionHdr> tTextureRegionsHdr;
 
 	std::string path = FileSystem::fileRemoveExtension( mFilepath ) + EE_TEXTURE_ATLAS_EXTENSION;
-	IOStreamFile fs ( path , std::ios::out | std::ios::binary );
+	IOStreamFile fs ( path , "wb" );
 
 	if ( fs.isOpen() ) {
 		fs.write( reinterpret_cast<const char*> (&TexGrHdr), sizeof(sTextureAtlasHdr) );

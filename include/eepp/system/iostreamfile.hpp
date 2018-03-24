@@ -12,7 +12,7 @@ class EE_API IOStreamFile : public IOStream {
 		**	@param path File to open from path
 		**	@param mode The open mode that it will be used for the file ( default read-binary )
 		**/
-		IOStreamFile( const std::string& path, std::ios_base::openmode mode = std::ios::in | std::ios::binary );
+		IOStreamFile(const std::string& path, const char * modes = "rb" );
 
 		virtual ~IOStreamFile();
 

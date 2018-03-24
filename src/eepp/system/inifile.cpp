@@ -173,7 +173,7 @@ bool IniFile::readFile() {
 bool IniFile::writeFile() {
 	unsigned commentID, keyID, valueID;
 
-	IOStreamFile f( mPath, std::ios::out );
+	IOStreamFile f( mPath, "w" );
 
 	if ( !f.isOpen() )
 		return false;

@@ -312,6 +312,10 @@ class EE_API Node : public Transformable {
 		virtual bool invalidated();
 
 		virtual void invalidate();
+
+		Uint32 childCount() const;
+
+		Node * childAt( Uint32 Index ) const;
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, EventCallback> > EventsMap;
 		friend class EventDispatcher;
@@ -433,10 +437,6 @@ class EE_API Node : public Transformable {
 		bool isChild( Node * ChildCtrl ) const;
 
 		bool inParentTreeOf( Node * Child ) const;
-
-		Uint32 childCount() const;
-
-		Node * childAt( Uint32 Index ) const;
 
 		Node * childPrev( Node * Ctrl, bool Loop = false ) const;
 
