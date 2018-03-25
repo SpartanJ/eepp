@@ -85,9 +85,12 @@ void UIWinMenu::setTheme( UITheme * Theme ) {
 void UIWinMenu::removeMenuButton( const String& ButtonText ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 		if ( it->first->getText() == ButtonText ) {
+			it->first->close();
 			it->second->close();
 
 			mButtons.erase( it );
+
+			refreshButtons();
 
 			break;
 		}

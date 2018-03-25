@@ -2,6 +2,40 @@
 #include <efsw/efsw.hpp>
 #include <pugixml/pugixml.hpp>
 
+/**
+This is a real time visual editor for the UI module.
+The layout files can be edited with any editor, and the layout changes can be seen live with this editor.
+So this is a layout preview app.
+The layout is updated every time the layout file is modified by the user. So you'll need to save the file in your editor to see the changes.
+This was done in a rush for a personal project ( hence the horrendous code ), but it's quite useful and functional.
+Project files are created by hand for the moment, and they shuld look like this one:
+
+<uiproject>
+	<basepath>/optional/project/root/path</basepath>
+	<font>
+		<path>font</path>
+	</font>
+	<drawable>
+		<path>drawable</path>
+		<path>background</path>
+	</drawable>
+	<widget>
+		<customWidget name="ScreenGame" replacement="RelativeLayout" />
+	</widget>
+	<layout width="1920" height="1080">
+		<path>layout</path>
+	</layout>
+</uiproject>
+
+basepath is optional, otherwise it will take the base path from the xml file itself ( it xml is in /home/project.xml, basepath it going to be /home )
+
+Layout width and height are the default/target window size for the project.
+
+"path"s could be explicit files or directories.
+
+customWidget are defined in the case you use special widgets in your application, you'll need to indicate a valid replacement to be able to edit the file.
+*/
+
 EE::Window::Window * window = NULL;
 UIMessageBox * MsgBox = NULL;
 efsw::FileWatcher * fileWatcher = NULL;
@@ -19,22 +53,72 @@ std::string basePath;
 Vector2i mousePos;
 Clock mouseClock;
 
-class UpdateListener : public efsw::FileWatchListener
-{
-public:
-	UpdateListener() {}
+std::map<std::string,std::string> layouts;
+std::vector<std::string> recentProjects;
+IniFile ini;
+Uint32 recentProjectEventClickId = 0xFFFFFFFF;
 
-	void handleFileAction( efsw::WatchID watchid, const std::string& dir, const std::string& filename, efsw::Action action, std::string oldFilename = "" ) {
-		if ( action == efsw::Actions::Modified ) {
-			if ( dir + filename == currentLayout ) {
-				updateLayout = true;
-				waitClock.restart();
+std::map<Uint32,TextureRegion*> imagesLoaded;
+std::map<Font*,std::string> fontsLoaded;
+
+void closeProject();
+void updateRecentProjects();
+void loadProject(std::string projectPath);
+
+void loadConfig() {
+	std::string path( Sys::getConfigPath( "eepp-uieditor" ) );
+	if ( !FileSystem::fileExists( path ) ) FileSystem::makeDir( path );
+	FileSystem::dirPathAddSlashAtEnd( path );
+	path += "config.ini";
+
+	ini.loadFromFile( path );
+	ini.readFile();
+
+	std::string recent = ini.getValue( "UIEDITOR", "recentfiles", "" );
+	std::vector<std::string> files = String::split( recent, ';' );
+
+	recentProjects = files;
+}
+
+void saveConfig() {
+	std::string files = String::join( recentProjects, ';' );
+
+	ini.setValue( "UIEDITOR", "recentfiles", files );
+	ini.writeFile();
+}
+
+class UpdateListener : public efsw::FileWatchListener {
+	public:
+		UpdateListener() {}
+
+		void handleFileAction( efsw::WatchID watchid, const std::string& dir, const std::string& filename, efsw::Action action, std::string oldFilename = "" ) {
+			if ( action == efsw::Actions::Modified ) {
+				if ( dir + filename == currentLayout ) {
+					updateLayout = true;
+					waitClock.restart();
+				}
 			}
 		}
-	}
 };
 
 UpdateListener * listener = NULL;
+
+void unloadImages() {
+	for ( auto it = imagesLoaded.begin(); it != imagesLoaded.end(); ++it ) {
+		GlobalTextureAtlas::instance()->remove( it->second );
+		TextureFactory::instance()->remove( it->first );
+	}
+
+	imagesLoaded.clear();
+}
+
+void unloadFonts() {
+	for ( auto it = fontsLoaded.begin(); it != fontsLoaded.end(); ++it ) {
+		FontManager::instance()->remove( it->first );
+	}
+
+	fontsLoaded.clear();
+}
 
 static bool isFont( const std::string& path ) {
 	std::string mPath = path;
@@ -51,10 +135,29 @@ static bool isFont( const std::string& path ) {
 	return false;
 }
 
+static bool isXML( const std::string& path ) {
+	std::string mPath = path;
+
+	if ( path.size() >= 4 ) {
+		std::string File = mPath.substr( mPath.find_last_of("/\\") + 1 );
+		std::string Ext = File.substr( File.find_last_of(".") + 1 );
+		String::toLowerInPlace( Ext );
+
+		if ( Ext == "xml" ) return true;
+	}
+
+	return false;
+}
+
+
 static void loadImage( std::string path ) {
 	std::string filename( FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( path ) ) );
 
-	GlobalTextureAtlas::instance()->add( TextureFactory::instance()->loadFromFile( path ), filename );
+	Uint32 texId = TextureFactory::instance()->loadFromFile( path );
+
+	TextureRegion * texRegion = GlobalTextureAtlas::instance()->add( texId, filename );
+
+	imagesLoaded[ texId ] = texRegion;
 }
 
 static void loadFont( std::string path ) {
@@ -62,6 +165,8 @@ static void loadFont( std::string path ) {
 	FontTrueType * font = FontTrueType::New( filename );
 
 	font->loadFromFile( path );
+
+	fontsLoaded[ font ] = filename;
 }
 
 static void loadImagesFromFolder( std::string folderPath ) {
@@ -88,7 +193,19 @@ static void loadFontsFromFolder( std::string folderPath ) {
 	}
 }
 
-static void loadLayoutFromFile( std::string file ) {
+static void loadLayoutsFromFolder( std::string folderPath ) {
+	std::vector<std::string> files = FileSystem::filesGetInPath( folderPath );
+
+	FileSystem::dirPathAddSlashAtEnd( folderPath );
+
+	for ( auto it = files.begin(); it != files.end(); ++it ) {
+		if ( isXML( *it ) ) {
+			layouts[ FileSystem::fileRemoveExtension( (*it) ) ] = ( folderPath + (*it) );
+		}
+	}
+}
+
+static void loadLayout( std::string file ) {
 	if ( watch != 0 ) {
 		fileWatcher->removeWatch( watch );
 	}
@@ -106,10 +223,48 @@ static void loadLayoutFromFile( std::string file ) {
 
 static void refreshLayout() {
 	if ( !currentLayout.empty() && FileSystem::fileExists( currentLayout ) && uiContainer != NULL ) {
-		loadLayoutFromFile( currentLayout );
+		loadLayout( currentLayout );
 	}
 
 	updateLayout = false;
+}
+
+void onRecentProjectClick( const Event * event ) {
+	if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+		return;
+
+	const String& txt = reinterpret_cast<UIMenuItem*> ( event->getNode() )->getText();
+	std::string path( txt.toUtf8() );
+
+	if ( FileSystem::fileExists( path ) && !FileSystem::isDirectory( path ) ) {
+		loadProject( path );
+	}
+}
+
+void updateRecentProjects() {
+	if ( NULL == uiWinMenu )
+		return;
+
+	UIPopUpMenu * fileMenu = uiWinMenu->getPopUpMenu( "File" );
+
+	UINode * node = NULL;
+
+	if ( NULL != fileMenu  && ( node = fileMenu->getItem( "Recent projects" ) ) ) {
+		UIMenuSubMenu * uiMenuSubMenu = static_cast<UIMenuSubMenu*>( node );
+		UIMenu * menu = uiMenuSubMenu->getSubMenu();
+
+		menu->removeAll();
+
+		for ( size_t i = 0; i < recentProjects.size(); i++ ) {
+			menu->add( recentProjects[i] );
+		}
+
+		if ( 0xFFFFFFFF != recentProjectEventClickId ) {
+			menu->removeEventListener( recentProjectEventClickId );
+		}
+
+		recentProjectEventClickId = menu->addEventListener( Event::OnItemClicked, cb::Make1( &onRecentProjectClick ) );
+	}
 }
 
 void resizeCb(EE::Window::Window * window) {
@@ -155,6 +310,61 @@ static void loadUITheme( std::string themePath ) {
 	UITheme * theme = UITheme::loadFromTextureAtlas( UIThemeDefault::New( name, name ), TextureAtlasManager::instance()->getByName( name ) );
 
 	UIThemeManager::instance()->setDefaultTheme( theme )->add( theme );
+}
+
+void onLayoutSelected( const Event * event ) {
+	if ( !event->getNode()->isType( UI_TYPE_MENUCHECKBOX) )
+		return;
+
+	const String& txt = reinterpret_cast<UIMenuItem*> ( event->getNode() )->getText();
+
+	UIPopUpMenu * uiLayoutsMenu;
+
+	if ( ( uiLayoutsMenu = uiWinMenu->getPopUpMenu( "Layouts" ) ) && uiLayoutsMenu->getCount() > 0 ) {
+		for ( size_t i = 0; i < uiLayoutsMenu->getCount(); i++ ) {
+			UIMenuCheckBox * menuItem = static_cast<UIMenuCheckBox*>( uiLayoutsMenu->getItem( i ) );
+			menuItem->setActive( false );
+		}
+	}
+
+	UIMenuCheckBox * chk = static_cast<UIMenuCheckBox*>( event->getNode() );
+	chk->setActive( true );
+
+	std::map<std::string,std::string>::iterator it;
+
+	if ( ( it = layouts.find( txt.toUtf8() ) ) != layouts.end() ) {
+		loadLayout( it->second );
+	}
+
+}
+
+void refreshLayoutList() {
+	if ( NULL == uiWinMenu ) return;
+
+	if ( layouts.size() > 0 ) {
+		UIPopUpMenu * uiLayoutsMenu = NULL;
+
+		if ( uiWinMenu->getButton( "Layouts" ) == NULL ) {
+			uiLayoutsMenu = UIPopUpMenu::New();
+
+			uiWinMenu->addMenuButton( "Layouts", uiLayoutsMenu );
+
+			uiLayoutsMenu->addEventListener( Event::OnItemClicked, cb::Make1( &onLayoutSelected ) );
+		} else {
+			uiLayoutsMenu = uiWinMenu->getPopUpMenu( "Layouts" );
+		}
+
+		uiLayoutsMenu->removeAll();
+
+		for ( auto it = layouts.begin(); it != layouts.end(); ++it ) {
+			Uint32 idx = uiLayoutsMenu->addCheckBox( it->first );
+			UIMenuCheckBox * chk = static_cast<UIMenuCheckBox*>( uiLayoutsMenu->getItem( idx ) );
+
+			chk->setActive( currentLayout == it->second );
+		}
+	} else if ( uiWinMenu->getButton( "Layouts" ) == NULL ) {
+		uiWinMenu->removeMenuButton( "Layouts" );
+	}
 }
 
 static void loadProjectNodes( pugi::xml_node node ) {
@@ -224,20 +434,41 @@ static void loadProjectNodes( pugi::xml_node node ) {
 
 			pugi::xml_node layoutNode = resources.child( "layout" );
 
-			bool loadedSizedLayout = false;
-
 			if ( !layoutNode.empty() ) {
+				bool loaded = false;
+				bool loadedSizedLayout = false;
+
 				Float width = layoutNode.attribute( "width" ).as_float();
 				Float height = layoutNode.attribute( "height" ).as_float();
-				std::string layoutPath( pathFix( layoutNode.text().as_string() ) );
 
 				if ( 0.f != width && 0.f != height ) {
 					uiContainer->setSize( width, height );
 					resizeCb( window );
 				}
 
-				if ( FileSystem::fileExists( layoutPath ) ) {
-					loadLayoutFromFile( layoutPath );
+				layouts.clear();
+
+				for ( pugi::xml_node layNode = layoutNode.child("path"); layNode; layNode = layNode.next_sibling("path") ) {
+					std::string layoutPath( pathFix( layNode.text().as_string() ) );
+
+					if ( FileSystem::isDirectory( layoutPath ) ) {
+						loadLayoutsFromFolder( layoutPath );
+					} else if ( FileSystem::fileExists( layoutPath ) && isXML( layoutPath ) ) {
+						layouts[ FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( layoutPath ) ) ] = layoutPath;
+
+						if ( !loaded ) {
+							loadLayout( layoutPath );
+							loaded = true;
+						}
+
+						if ( width != 0 && height != 0 ) {
+							loadedSizedLayout = true;
+						}
+					}
+				}
+
+				if ( layouts.size() > 0 && !loaded ) {
+					loadLayout( layouts.begin()->second );
 
 					if ( width != 0 && height != 0 ) {
 						loadedSizedLayout = true;
@@ -248,25 +479,52 @@ static void loadProjectNodes( pugi::xml_node node ) {
 					resizeWindowToLayout();
 				}
 			}
+
+			refreshLayoutList();
 		}
 	}
 }
 
-static void loadProject( std::string projectPath ) {
+void loadProject( std::string projectPath ) {
 	if ( FileSystem::fileExists( projectPath ) ) {
+		closeProject();
+
 		basePath = FileSystem::fileRemoveFileName( projectPath );
 
 		pugi::xml_document doc;
 		pugi::xml_parse_result result = doc.load_file( projectPath.c_str() );
 
 		if ( result ) {
-			return loadProjectNodes( doc.first_child() );
+			loadProjectNodes( doc.first_child() );
+
+			if ( recentProjects.size() > 0 && recentProjects[0] == projectPath )
+				return;
+
+			recentProjects.insert( recentProjects.begin(), projectPath );
+
+			if ( recentProjects.size() > 10 ) {
+				recentProjects.resize( 10 );
+			}
+
+			updateRecentProjects();
 		} else {
 			eePRINTL( "Error: Couldn't load UI Layout: %s", projectPath.c_str() );
 			eePRINTL( "Error description: %s", result.description() );
 			eePRINTL( "Error offset: %d", result.offset );
 		}
 	}
+}
+
+void closeProject() {
+	currentLayout = "";
+	uiContainer->childsCloseAll();
+
+	layouts.clear();
+
+	refreshLayoutList();
+
+	unloadFonts();
+	unloadImages();
 }
 
 bool onCloseRequestCallback( EE::Window::Window * w ) {
@@ -351,11 +609,11 @@ void projectOpen( const Event * event ) {
 	loadProject( CDL->getFullPath() );
 }
 
-void fileMenuClick( const Event * Event ) {
-	if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
+void fileMenuClick( const Event * event ) {
+	if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const String& txt = reinterpret_cast<UIMenuItem*> ( Event->getNode() )->getText();
+	const String& txt = reinterpret_cast<UIMenuItem*> ( event->getNode() )->getText();
 
 	UITheme * prevTheme = UIThemeManager::instance()->getDefaultTheme();
 	UIThemeManager::instance()->setDefaultTheme( theme );
@@ -377,8 +635,7 @@ void fileMenuClick( const Event * Event ) {
 		TGDialog->center();
 		TGDialog->show();
 	} else if ( "Close" == txt ) {
-		currentLayout = "";
-		uiContainer->childsCloseAll();
+		closeProject();
 	} else if ( "Quit" == txt ) {
 		onCloseRequestCallback( window );
 	} else if ( "Load images from path..." == txt ) {
@@ -438,6 +695,8 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 			UIThemeManager::instance()->setDefaultEffectsEnabled( true )->setDefaultTheme( theme )->setDefaultFont( font )->add( theme );
 		}
 
+		loadConfig();
+
 		uiContainer = UIWidget::New();
 		uiContainer->setId( "appContainer" )->setSize( uiSceneNode->getSize() );
 		uiContainer->clipDisable();
@@ -448,6 +707,8 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		uiPopMenu->add( "Open project...", theme->getIconByName( "document-open" ) );
 		uiPopMenu->addSeparator();
 		uiPopMenu->add( "Open layout...", theme->getIconByName( "document-open" ) );
+		uiPopMenu->addSeparator();
+		uiPopMenu->addSubMenu( "Recent projects", NULL, UIPopUpMenu::New() );
 		uiPopMenu->addSeparator();
 		uiPopMenu->add( "Close", theme->getIconByName( "document-close" ) );
 		uiPopMenu->addSeparator();
@@ -462,12 +723,16 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		uiWinMenu->addMenuButton( "Resources", uiResourceMenu );
 		uiResourceMenu->addEventListener( Event::OnItemClicked, cb::Make1( fileMenuClick ) );
 
+		updateRecentProjects();
+
 		resizeCb( window );
 
 		window->pushResizeCallback( cb::Make1( resizeCb ) );
 
 		window->runMainLoop( &mainLoop );
 	}
+
+	saveConfig();
 
 	Engine::destroySingleton();
 
