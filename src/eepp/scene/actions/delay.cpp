@@ -9,11 +9,15 @@ Delay * Delay::New(const Time & time) {
 void Delay::start() {
 	mClock.restart();
 
+	onStart();
+
 	sendEvent( ActionType::OnStart );
 }
 
 void Delay::stop() {
 	// 'Cause none of them can stop the time
+	onStop();
+
 	sendEvent( ActionType::OnStop );
 }
 

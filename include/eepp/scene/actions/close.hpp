@@ -17,6 +17,8 @@ class EE_API Close : public Delay {
 
 	protected:
 		Close( const Time& time );
+
+		void onStart() override;
 		
 };
 

@@ -25,4 +25,8 @@ Close::Close(const Time & time) :
 	Delay( time )
 {}
 
+void Close::onStart() {
+	update(Seconds(0));
+}
+
 }}}

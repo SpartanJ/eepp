@@ -14,6 +14,8 @@ class EE_API Fade : public ActionInterpolation1d {
 
 		Action * reverse() const override;
 	protected:
+		Fade();
+
 		Fade( const Float & start, const Float & end, const Time & duration, const Ease::Interpolation & type, const bool& alphaChilds );
 
 		void onStart() override;
@@ -21,8 +23,42 @@ class EE_API Fade : public ActionInterpolation1d {
 		void onUpdate( const Time& time ) override;
 
 		bool mAffectChilds;
-	private:
-		Fade();
+};
+
+class EE_API FadeIn : public Fade {
+	public:
+		static FadeIn * New( const Time& duration, const Ease::Interpolation& type = Ease::Linear, const bool& alphaChilds = true );
+
+		void start() override;
+
+		Action * clone() const override;
+
+		Action * reverse() const override;
+	protected:
+		Time mDuration;
+		Ease::Interpolation mType;
+
+		FadeIn();
+
+		FadeIn( const Time & duration, const Ease::Interpolation & type, const bool& alphaChilds );
+};
+
+class EE_API FadeOut: public Fade {
+	public:
+		static FadeOut * New( const Time& duration, const Ease::Interpolation& type = Ease::Linear, const bool& alphaChilds = true );
+
+		void start() override;
+
+		Action * clone() const override;
+
+		Action * reverse() const override;
+	protected:
+		Time mDuration;
+		Ease::Interpolation mType;
+
+		FadeOut();
+
+		FadeOut( const Time & duration, const Ease::Interpolation & type, const bool& alphaChilds );
 };
 
 }}}
