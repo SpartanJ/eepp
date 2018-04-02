@@ -50,6 +50,16 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		Http::Response::Status status = response.getStatus();
 
 		if ( status == Http::Response::Ok ) {
+			Http::Response::FieldTable headers = response.getHeaders();
+
+			std::cout << "Headers: " << std::endl;
+
+			for ( auto head = headers.begin(); head != headers.end(); ++head ) {
+				std::cout << "\t" << head->first << ": " << head->second << std::endl;
+			}
+
+			std::cout << std::endl << "Body: " << std::endl;
+
 			std::cout << response.getBody() << std::endl;
 		} else {
 			std::cout << "Error " << status << std::endl;
