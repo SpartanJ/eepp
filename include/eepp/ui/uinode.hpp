@@ -88,6 +88,18 @@ class EE_API UINode : public Node {
 
 		UIBorder * setBorderEnabled( bool enabled );
 
+		UINode * setBackgroundDrawable( Drawable * drawable , bool ownIt = false );
+
+		UINode * setBackgroundColor( const Color& color );
+
+		UINode * setBackgroundCorners( const unsigned int& corners );
+
+		UINode * setBackgroundBlendMode( const BlendMode& blendMode );
+
+		UINode * setBorderColor( const Color& color );
+
+		UINode * setBorderWidth( const unsigned int& width );
+
 		const Uint32& getFlags() const;
 
 		virtual UINode * setFlags( const Uint32& flags );

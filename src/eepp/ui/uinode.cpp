@@ -386,7 +386,39 @@ UIBorder * UINode::setBorderEnabled( bool enabled ) {
 		}
 	}
 
+	invalidateDraw();
+
 	return mBorder;
+}
+
+UINode * UINode::setBackgroundDrawable( Drawable * drawable, bool ownIt ) {
+	setBackgroundFillEnabled( true )->setDrawable( drawable, ownIt );
+	return this;
+}
+
+UINode * UINode::setBackgroundColor( const Color& color ) {
+	setBackgroundFillEnabled( true )->setColor( color );
+	return this;
+}
+
+UINode * UINode::setBackgroundCorners( const unsigned int& corners ) {
+	setBackgroundFillEnabled( true )->setCorners( corners );
+	return this;
+}
+
+UINode * UINode::setBackgroundBlendMode( const BlendMode& blendMode ) {
+	setBackgroundFillEnabled( true )->setBlendMode( blendMode );
+	return this;
+}
+
+UINode * UINode::setBorderColor( const Color& color ) {
+	setBorderEnabled( true )->setColor( color );
+	return this;
+}
+
+UINode * UINode::setBorderWidth( const unsigned int& width ) {
+	setBorderEnabled( true )->setWidth( width );
+	return this;
 }
 
 const Uint32& UINode::getFlags() const {

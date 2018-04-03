@@ -471,18 +471,18 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			setInternalHeight( PixelDensity::toDpFromStringI( ait->as_string() ) );
 			notifyLayoutAttrChange();
 		} else if ( "backgroundcolor" == name ) {
-			setBackgroundFillEnabled( true )->setColor( Color::fromString( ait->as_string() ) );
+			setBackgroundColor( Color::fromString( ait->as_string() ) );
 		} else if ( "bordercolor" == name ) {
-			setBorderEnabled( true )->setColor( Color::fromString( ait->as_string() ) );
+			setBorderColor( Color::fromString( ait->as_string() ) );
 		} else if ( "borderwidth" == name ) {
-			setBorderEnabled( true )->setWidth( PixelDensity::toDpFromStringI( ait->as_string("1") ) );
+			setBorderWidth( PixelDensity::toDpFromStringI( ait->as_string("1") ) );
 		} else if ( "bordercorners" == name || "backgroundcorners" == name ) {
-			setBackgroundFillEnabled( true )->setCorners( 6 );
+			setBackgroundCorners( ait->as_uint() );
 		} else if ( "background" == name ) {
 			Drawable * res = NULL;
 
 			if ( NULL != ( res = DrawableSearcher::searchByName( ait->as_string() ) ) ) {
-				setBackgroundFillEnabled( true )->setDrawable( res, res->getDrawableType() == Drawable::SPRITE );
+				setBackgroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
 			}
 		} else if ( "visible" == name ) {
 			setVisible( ait->as_bool() );
@@ -664,7 +664,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 		} else if ( "blendmode" == name ) {
 			setBlendMode( toBlendMode( ait->as_string() ) );
 		} else if ( "backgroundblendmode" == name ) {
-			setBackgroundFillEnabled( true )->setBlendMode( toBlendMode( ait->as_string() ) );
+			setBackgroundBlendMode( toBlendMode( ait->as_string() ) );
 		}
 	}
 
