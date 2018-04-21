@@ -54,10 +54,10 @@ bool SoundFileReaderOgg::check(IOStream& stream) {
 }
 
 SoundFileReaderOgg::SoundFileReaderOgg() :
-	m_vorbis	  (),
-	m_channelCount(0)
+	mVorbis	  (),
+	mChannelCount(0)
 {
-	m_vorbis.datasource = NULL;
+	mVorbis.datasource = NULL;
 }
 
 SoundFileReaderOgg::~SoundFileReaderOgg() {
@@ -66,7 +66,7 @@ SoundFileReaderOgg::~SoundFileReaderOgg() {
 
 bool SoundFileReaderOgg::open(IOStream& stream, Info& info) {
 	// Open the Vorbis stream
-	int status = ov_open_callbacks(&stream, &m_vorbis, NULL, 0, callbacks);
+	int status = ov_open_callbacks(&stream, &mVorbis, NULL, 0, callbacks);
 	
 	if (status < 0) {
 		eePRINTL( "Failed to open Vorbis file for reading" );
@@ -74,32 +74,32 @@ bool SoundFileReaderOgg::open(IOStream& stream, Info& info) {
 	}
 
 	// Retrieve the music attributes
-	vorbis_info* vorbisInfo = ov_info(&m_vorbis, -1);
+	vorbis_info* vorbisInfo = ov_info(&mVorbis, -1);
 	info.channelCount = vorbisInfo->channels;
 	info.sampleRate = vorbisInfo->rate;
-	info.sampleCount = static_cast<std::size_t>(ov_pcm_total(&m_vorbis, -1) * vorbisInfo->channels);
+	info.sampleCount = static_cast<std::size_t>(ov_pcm_total(&mVorbis, -1) * vorbisInfo->channels);
 
 	// We must keep the channel count for the seek function
-	m_channelCount = info.channelCount;
+	mChannelCount = info.channelCount;
 
 	return true;
 }
 
 void SoundFileReaderOgg::seek(Uint64 sampleOffset) {
-	assert(m_vorbis.datasource);
+	assert(mVorbis.datasource);
 
-	ov_pcm_seek(&m_vorbis, sampleOffset / m_channelCount);
+	ov_pcm_seek(&mVorbis, sampleOffset / mChannelCount);
 }
 
 Uint64 SoundFileReaderOgg::read(Int16* samples, Uint64 maxCount)
 {
-	assert(m_vorbis.datasource);
+	assert(mVorbis.datasource);
 
 	// Try to read the requested number of samples, stop only on error or end of file
 	Uint64 count = 0;
 	while (count < maxCount) {
 		int bytesToRead = static_cast<int>(maxCount - count) * sizeof(Int16);
-		long bytesRead = ov_read(&m_vorbis, reinterpret_cast<char*>(samples), bytesToRead, 0, 2, 1, NULL);
+		long bytesRead = ov_read(&mVorbis, reinterpret_cast<char*>(samples), bytesToRead, 0, 2, 1, NULL);
 
 		if (bytesRead > 0) {
 			long samplesRead = bytesRead / sizeof(Int16);
@@ -115,10 +115,10 @@ Uint64 SoundFileReaderOgg::read(Int16* samples, Uint64 maxCount)
 }
 
 void SoundFileReaderOgg::close() {
-	if (m_vorbis.datasource) {
-		ov_clear(&m_vorbis);
-		m_vorbis.datasource = NULL;
-		m_channelCount = 0;
+	if (mVorbis.datasource) {
+		ov_clear(&mVorbis);
+		mVorbis.datasource = NULL;
+		mChannelCount = 0;
 	}
 }
 

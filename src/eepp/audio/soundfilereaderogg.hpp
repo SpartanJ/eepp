@@ -66,8 +66,8 @@ class SoundFileReaderOgg : public SoundFileReader {
 	private:
 		void close();
 
-		OggVorbis_File m_vorbis;	   // ogg/vorbis file handle
-		unsigned int   m_channelCount; // number of channels of the open sound file
+		OggVorbis_File mVorbis;	   // ogg/vorbis file handle
+		unsigned int   mChannelCount; // number of channels of the open sound file
 };
 
 }}}

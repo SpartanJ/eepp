@@ -17,10 +17,10 @@ IOStreamFile::~IOStreamFile() {
 
 ios_size IOStreamFile::read( char * data, ios_size size ) {
 	if ( isOpen() ) {
-		std::fread(data, 1, static_cast<std::size_t>(size), mFS);
+		return std::fread(data, 1, static_cast<std::size_t>(size), mFS);
 	}
 
-	return size;
+	return 0;
 }
 
 ios_size IOStreamFile::write( const char * data, ios_size size ) {
