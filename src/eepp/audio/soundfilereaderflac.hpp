@@ -1,13 +1,14 @@
-#ifndef EE_AUDIO_SOUNDFILEREADERMP3_HPP
-#define EE_AUDIO_SOUNDFILEREADERMP3_HPP
+#ifndef EE_AUDIO_SOUNDFILEREADERFLAC_HPP
+#define EE_AUDIO_SOUNDFILEREADERFLAC_HPP
 
 #include <eepp/audio/soundfilereader.hpp>
-#include <dr_libs/dr_mp3.h>
+
+#include <dr_libs/dr_flac.h>
 
 namespace EE { namespace Audio { namespace Private {
 
-/// \brief Implementation of sound file reader that handles MP3/Vorbis files
-class SoundFileReaderMp3 : public SoundFileReader {
+/// \brief Implementation of sound file reader that handles FLAC/Vorbis files
+class SoundFileReaderFlac : public SoundFileReader {
 	public:
 
 		////////////////////////////////////////////////////////////
@@ -21,9 +22,9 @@ class SoundFileReaderMp3 : public SoundFileReader {
 		static bool check(IOStream& stream);
 
 	public:
-		SoundFileReaderMp3();
+		SoundFileReaderFlac();
 
-		~SoundFileReaderMp3();
+		~SoundFileReaderFlac();
 
 		////////////////////////////////////////////////////////////
 		/// \brief Open a sound file for reading
@@ -66,7 +67,7 @@ class SoundFileReaderMp3 : public SoundFileReader {
 		void close();
 
 		unsigned int   mChannelCount; // number of channels of the open sound file
-		drmp3 * mMp3;
+		drflac * mFlac;
 };
 
 }}}

@@ -4,6 +4,7 @@
 #include <eepp/audio/soundfilereaderogg.hpp>
 #include <eepp/audio/soundfilewriterogg.hpp>
 #include <eepp/audio/soundfilereadermp3.hpp>
+#include <eepp/audio/soundfilereaderflac.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/mutex.hpp>
@@ -23,6 +24,7 @@ namespace
 		if (!registered) {
 			EE::Audio::SoundFileFactory::registerReader<EE::Audio::Private::SoundFileReaderWav>();
 			EE::Audio::SoundFileFactory::registerReader<EE::Audio::Private::SoundFileReaderOgg>();
+			EE::Audio::SoundFileFactory::registerReader<EE::Audio::Private::SoundFileReaderFlac>();
 			EE::Audio::SoundFileFactory::registerReader<EE::Audio::Private::SoundFileReaderMp3>();
 			EE::Audio::SoundFileFactory::registerWriter<EE::Audio::Private::SoundFileWriterWav>();
 			EE::Audio::SoundFileFactory::registerWriter<EE::Audio::Private::SoundFileWriterOgg>();

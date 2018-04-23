@@ -50,12 +50,14 @@ class Mp3Info {
 		int getFrequency();
 
 		int getBitrate();
+
+		bool isValidMp3() const;
 	protected:
 		IOStream& mStream;
 		Info mInfo;
-		bool mValidInfo;
+		bool mValidMp3;
 
-		int fetchInfo();
+		bool fetchInfo();
 		int getFirstHeader(long startpos);
 		int getHeader(Header * header);
 		int getNextHeader();

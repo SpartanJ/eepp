@@ -51,11 +51,11 @@ static int frame_length(Mp3Info::Header *header) {
 
 Mp3Info::Mp3Info( IOStream& stream ) :
 	mStream( stream ),
-	mValidInfo( false )
+	mValidMp3( false )
 {
 	memset(&mInfo,0,sizeof(Info));
 
-	fetchInfo();
+	mValidMp3 = fetchInfo();
 }
 
 Mp3Info::Info Mp3Info::getInfo() {
@@ -70,50 +70,60 @@ int Mp3Info::getBitrate() {
 	return header_bitrate( &mInfo.header );
 }
 
-int Mp3Info::fetchInfo() {
-	int had_error = 0;
-	int frame_type[15]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-	float seconds=0,total_rate=0;
-	int frames=0,frame_types=0,frames_so_far=0;
-	int vbr_median=-1;
+bool Mp3Info::isValidMp3() const {
+	return mValidMp3;
+}
+
+bool Mp3Info::fetchInfo() {
+	bool isValid = true;
+	int frameType[15]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	float seconds=0,totalRate=0;
+	int frames=0,frameTypes=0,framesSoFar=0;
+	int vbrMedian=-1;
 	int bitrate;
 	int counter=0;
 	Header header;
 
+	mStream.seek(0);
+
 	mInfo.datasize = mStream.getSize();
 
-	if( getFirstHeader( 0L ) ) {
+	if ( getFirstHeader( 0L ) ) {
 		while( ( bitrate = getNextHeader() ) ) {
-			frame_type[15-bitrate]++;
+			frameType[15-bitrate]++;
 			frames++;
 		}
 
 		memcpy( &header, &(mInfo.header), sizeof(Header) );
 
 		for(counter=0;counter<15;counter++) {
-			if(frame_type[counter]) {
-				frame_types++;
+			if(frameType[counter]) {
+				frameTypes++;
 				header.bitrate=counter;
-				frames_so_far += frame_type[counter];
-				seconds += (float)(frame_length(&header)*frame_type[counter])/
+				framesSoFar += frameType[counter];
+				seconds += (float)(frame_length(&header)*frameType[counter])/
 						   (float)(header_bitrate(&header)*125);
-				total_rate += (float)((header_bitrate(&header))*frame_type[counter]);
-				if((vbr_median == -1) && (frames_so_far >= frames/2))
-					vbr_median=counter;
+				totalRate += (float)((header_bitrate(&header))*frameType[counter]);
+				if((vbrMedian == -1) && (framesSoFar >= frames/2))
+					vbrMedian=counter;
 			}
 		}
 
 		mInfo.seconds=(int)(seconds+0.5);
-		mInfo.header.bitrate=vbr_median;
-		mInfo.vbr_average=total_rate/(float)frames;
+		mInfo.header.bitrate=vbrMedian;
+		mInfo.vbr_average=totalRate/(float)frames;
 		mInfo.frames=frames;
 
-		if(frame_types > 1) {
+		if(frameTypes > 1) {
 			mInfo.vbr=1;
 		}
+	} else {
+		isValid = false;
 	}
 
-	return had_error;
+	mStream.seek(0);
+
+	return isValid;
 }
 
 int Mp3Info::getFirstHeader( long startpos ) {
@@ -121,7 +131,7 @@ int Mp3Info::getFirstHeader( long startpos ) {
 	unsigned char val;
 	int c;
 	Header h, h2;
-	long valid_start=0;
+	long validStart=0;
 
 	mStream.seek( startpos );
 
@@ -138,6 +148,11 @@ int Mp3Info::getFirstHeader( long startpos ) {
 				break;
 			}
 
+			// If read 1MB and not 255 found, asume error
+			if ( mStream.tell() >= EE_1MB ) {
+				return 0;
+			}
+
 			mStream.read( (char*)&val, 1 );
 			c = val;
 		}
@@ -145,7 +160,7 @@ int Mp3Info::getFirstHeader( long startpos ) {
 		 if ( c == 255 ) {
 			if ( mStream.tell() > 0 && mStream.tell() != mStream.getSize() ) mStream.seek( mStream.tell() - 1 );
 
-			valid_start = mStream.tell();
+			validStart = mStream.tell();
 
 			if( ( l = getHeader( &h ) ) ) {
 				mStream.seek( mStream.tell() + l - FRAME_HEADER_SIZE );
@@ -157,7 +172,7 @@ int Mp3Info::getFirstHeader( long startpos ) {
 				}
 
 				if( k == MIN_CONSEC_GOOD_FRAMES ) {
-					mStream.seek( valid_start );
+					mStream.seek( validStart );
 					memcpy( &(mInfo.header), &h2, sizeof(Header) );
 					mInfo.header_isvalid=1;
 					return 1;
@@ -215,7 +230,7 @@ int Mp3Info::getHeader(Header *header) {
 }
 
 int Mp3Info::getNextHeader() {
-	int l=0,skip_bytes=0;
+	int l=0,skipBytes=0;
 	unsigned char val;
 	int c;
 	Header h;
@@ -233,7 +248,7 @@ int Mp3Info::getNextHeader() {
 				break;
 			}
 
-			skip_bytes++;
+			skipBytes++;
 			mStream.read( (char*)&val, 1 ); c = val;
 		}
 
@@ -241,16 +256,16 @@ int Mp3Info::getNextHeader() {
 			if ( mStream.tell() > 0 && mStream.tell() != mStream.getSize() ) mStream.seek( mStream.tell() - 1 );
 
 			if( ( l = getHeader(&h) ) ) {
-				if(skip_bytes) mInfo.badframes++;
+				if(skipBytes) mInfo.badframes++;
 
 				mStream.seek( mStream.tell() + l - FRAME_HEADER_SIZE );
 
 				return 15 - h.bitrate;
 			} else {
-				skip_bytes += FRAME_HEADER_SIZE;
+				skipBytes += FRAME_HEADER_SIZE;
 			}
 		} else {
-			if(skip_bytes) mInfo.badframes++;
+			if(skipBytes) mInfo.badframes++;
 			return 0;
 		}
 	}
