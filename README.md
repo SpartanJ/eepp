@@ -70,7 +70,7 @@ Entropia Engine++
 **Audio Module:**
 -----------------
 
-  * OpenAL audio engine with extendable file format support. OGG and Wav support. Audio module heavily based on the SFML implementation.
+  * OpenAL audio engine with extendable file format support. Read and write support for OGG and Wav, and read support for MP3 and FLAC. Audio module heavily based on the SFML implementation.
 
 
 **Physics Module:**
