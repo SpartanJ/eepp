@@ -82,7 +82,7 @@ Uint64 SoundFileReaderMp3::read(Int16* samples, Uint64 maxCount) {
 			long samplesRead = framesRead * mChannelCount;
 
 			for ( int i = 0; i < samplesRead; i++ )
-				samples[i] = ( ( ( rSamples[i] - (-1) ) * ( SHRT_MAX - SHRT_MIN ) ) / ( 1 - (-1) ) ) + SHRT_MIN;
+				samples[i] = rSamples[i] * 32768.f;
 
 			count += samplesRead;
 			samples += samplesRead;
