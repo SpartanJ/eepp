@@ -375,6 +375,8 @@
 ../../src/eepp/audio/audiolistener.cpp
 ../../src/eepp/audio/inputsoundfile.cpp
 ../../src/eepp/audio/listener.cpp
+../../src/eepp/audio/mp3info.cpp
+../../src/eepp/audio/mp3info.hpp
 ../../src/eepp/audio/music.cpp
 ../../src/eepp/audio/music.cpp
 ../../src/eepp/audio/openal.cpp
@@ -392,7 +394,10 @@
 ../../src/eepp/audio/soundfilefactory.cpp
 ../../src/eepp/audio/soundfileogg.cpp
 ../../src/eepp/audio/soundfileogg.hpp
+../../src/eepp/audio/soundfilereadermp3.cpp
+../../src/eepp/audio/soundfilereadermp3.hpp
 ../../src/eepp/audio/soundfilereaderogg.cpp
+../../src/eepp/audio/soundfilereaderogg.hpp
 ../../src/eepp/audio/soundfilereaderwav.cpp
 ../../src/eepp/audio/soundfilereaderwav.hpp
 ../../src/eepp/audio/soundfilewriterogg.cpp

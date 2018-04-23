@@ -31,15 +31,15 @@ void playSound() {
 }
 
 /// Play a music
-void playMusic() {
+void playMusic( std::string path = "assets/sounds/music.ogg" ) {
 	// Load an ogg music file
 	Music music;
 
-	if (!music.openFromFile( "assets/sounds/music.ogg" ) )
+	if (!music.openFromFile( path ) )
 		return;
 
 	// Display music informations
-	std::cout << "music.ogg :" << std::endl;
+	std::cout << FileSystem::fileNameFromPath( path ) << " :" << std::endl;
 	std::cout << " " << music.getDuration().asSeconds()		<< " seconds"		<< std::endl;
 	std::cout << " " << music.getSampleRate()				<< " samples / sec"	<< std::endl;
 	std::cout << " " << music.getChannelCount()				<< " channels"		<< std::endl;
@@ -61,13 +61,16 @@ void playMusic() {
 }
 
 /// Entry point of application
-EE_MAIN_FUNC int main (int argc, char * argv [])
-{
-	// Play a sound
-	playSound();
+EE_MAIN_FUNC int main (int argc, char * argv []) {
+	if ( argc >= 2 ) {
+		playMusic( argv[1] );
+	} else {
+		// Play a sound
+		playSound();
 
-	// Play a music
-	playMusic();
+		// Play a music
+		playMusic();
+	}
 
 	// Wait until the user presses 'enter' key
 	std::cout << "Press enter to exit..." << std::endl;
