@@ -61,7 +61,7 @@ bool SoundFileReaderMp3::open(IOStream& stream, Info& info) {
 
 void SoundFileReaderMp3::seek(Uint64 sampleOffset) {
 	if ( mMp3 ) {
-		drmp3_seek_to_frame( mMp3, sampleOffset );
+		drmp3_seek_to_frame( mMp3, sampleOffset / mChannelCount );
 	}
 }
 
