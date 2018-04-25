@@ -51,26 +51,34 @@ static int frame_length(Mp3Info::Header *header) {
 
 Mp3Info::Mp3Info( IOStream& stream ) :
 	mStream( stream ),
-	mValidMp3( false )
+	mValidMp3( false ),
+	mFetchedInfo( false )
 {
 	memset(&mInfo,0,sizeof(Info));
-
-	mValidMp3 = fetchInfo();
 }
 
 Mp3Info::Info Mp3Info::getInfo() {
+	if ( !mFetchedInfo ) fetchInfo();
 	return mInfo;
 }
 
 int Mp3Info::getFrequency() {
+	if ( !mFetchedInfo ) fetchInfo();
 	return header_frequency( &mInfo.header );
 }
 
 int Mp3Info::getBitrate() {
+	if ( !mFetchedInfo ) fetchInfo();
 	return header_bitrate( &mInfo.header );
 }
 
-bool Mp3Info::isValidMp3() const {
+bool Mp3Info::isValidMp3() {
+	if ( !mFetchedInfo ) {
+		bool ret = getFirstHeader( 0L );
+		mStream.seek( 0 );
+		return ret;
+	}
+
 	return mValidMp3;
 }
 
@@ -89,6 +97,8 @@ bool Mp3Info::fetchInfo() {
 	mInfo.datasize = mStream.getSize();
 
 	if ( getFirstHeader( 0L ) ) {
+		mValidMp3 = isValid;
+
 		while( ( bitrate = getNextHeader() ) ) {
 			frameType[15-bitrate]++;
 			frames++;
@@ -123,10 +133,12 @@ bool Mp3Info::fetchInfo() {
 
 	mStream.seek(0);
 
+	mFetchedInfo = true;
+
 	return isValid;
 }
 
-int Mp3Info::getFirstHeader( long startpos ) {
+bool Mp3Info::getFirstHeader( long startpos ) {
 	int k, l=0;
 	unsigned char val;
 	int c;
@@ -136,21 +148,21 @@ int Mp3Info::getFirstHeader( long startpos ) {
 	mStream.seek( startpos );
 
 	while ( 1 ) {
-		if ( mStream.tell() < mInfo.datasize ) {
+		if ( mStream.tell() < mStream.getSize() ) {
 			mStream.read( (char*)&val, 1 ); c = val;
 		} else {
 			c = EOF;
 		}
 
 		while( c != 255 ) {
-			if ( mStream.tell() >= mInfo.datasize ) {
+			if ( mStream.tell() >= mStream.getSize() ) {
 				c = EOF;
 				break;
 			}
 
 			// If read 1MB and not 255 found, asume error
 			if ( mStream.tell() >= EE_1MB ) {
-				return 0;
+				return false;
 			}
 
 			mStream.read( (char*)&val, 1 );
@@ -165,7 +177,7 @@ int Mp3Info::getFirstHeader( long startpos ) {
 			if( ( l = getHeader( &h ) ) ) {
 				mStream.seek( mStream.tell() + l - FRAME_HEADER_SIZE );
 
-				for( k = 1; ( k < MIN_CONSEC_GOOD_FRAMES ) && (mInfo.datasize - mStream.tell() >= FRAME_HEADER_SIZE ); k++) {
+				for( k = 1; ( k < MIN_CONSEC_GOOD_FRAMES ) && (mStream.getSize() - mStream.tell() >= FRAME_HEADER_SIZE ); k++) {
 					if ( !( l = getHeader( &h2 ) ) ) break;
 					if ( !is_same_constant( &h, &h2 ) ) break;
 					mStream.seek( mStream.tell() + l - FRAME_HEADER_SIZE );
@@ -175,15 +187,15 @@ int Mp3Info::getFirstHeader( long startpos ) {
 					mStream.seek( validStart );
 					memcpy( &(mInfo.header), &h2, sizeof(Header) );
 					mInfo.header_isvalid=1;
-					return 1;
+					return true;
 				}
 			}
 		 } else {
-			return 0;
+			return false;
 		 }
 	}
 
-	return 0;
+	return false;
 }
 
 int Mp3Info::getHeader(Header *header) {
@@ -236,14 +248,14 @@ int Mp3Info::getNextHeader() {
 	Header h;
 
 	while( 1 ) {
-		if ( mStream.tell() < mInfo.datasize ) {
+		if ( mStream.tell() < mStream.getSize() ) {
 			mStream.read( (char*)&val, 1 ); c = val;
 		} else {
 			c = EOF;
 		}
 
 		while( c != 255 ) {
-			if ( mStream.tell() >= mInfo.datasize ) {
+			if ( mStream.tell() >= mStream.getSize() ) {
 				c = EOF;
 				break;
 			}

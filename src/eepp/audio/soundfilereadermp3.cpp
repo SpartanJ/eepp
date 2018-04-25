@@ -28,9 +28,7 @@ static drmp3_bool32 drmp3_func_seek(void* data, int offset, drmp3_seek_origin wh
 namespace EE { namespace Audio { namespace Private {
 
 bool SoundFileReaderMp3::check(IOStream& stream) {
-	Mp3Info info( stream );
-	stream.seek(0);
-	return info.isValidMp3();
+	return Mp3Info( stream ).isValidMp3();
 }
 
 SoundFileReaderMp3::SoundFileReaderMp3() :
