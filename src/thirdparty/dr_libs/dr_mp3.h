@@ -1,5 +1,5 @@
 // MP3 audio decoder. Public domain. See "unlicense" statement at the end of this file.
-// dr_mp3 - v0.2 - 2018-04-21
+// dr_mp3 - v0.2.3 - 2018-04-29
 //
 // David Reid - mackron@gmail.com
 //
@@ -225,6 +225,7 @@ typedef struct
     size_t dataSize;
     size_t dataCapacity;
     drmp3_uint8* pData;
+    drmp3_bool32 atEnd : 1;
     struct
     {
         const drmp3_uint8* pData;
@@ -307,6 +308,11 @@ void drmp3_free(void* p);
 #include <string.h>
 #include <stdint.h>
 #include <limits.h> // For INT_MAX
+
+// Disable SIMD when compiling with TCC for now.
+#if defined(__TINYC__)
+#define DR_MP3_NO_SIMD
+#endif
 
 #define DRMP3_MAX_FREE_FORMAT_FRAME_SIZE  2304    /* more than ISO spec's */
 #define DRMP3_MAX_FRAME_SYNC_MATCHES      10
@@ -2290,6 +2296,10 @@ static drmp3_bool32 drmp3_decode_next_frame(drmp3* pMP3)
     drmp3_assert(pMP3 != NULL);
     drmp3_assert(pMP3->onRead != NULL);
 
+    if (pMP3->atEnd) {
+        return DRMP3_FALSE;
+    }
+
     do
     {
         // minimp3 recommends doing data submission in 16K chunks. If we don't have at least 16K bytes available, get more.
@@ -2305,10 +2315,16 @@ static drmp3_bool32 drmp3_decode_next_frame(drmp3* pMP3)
             }
 
             size_t bytesRead = pMP3->onRead(pMP3->pUserData, pMP3->pData + pMP3->dataSize, (pMP3->dataCapacity - pMP3->dataSize));
+            if (bytesRead == 0) {
+                pMP3->atEnd = DRMP3_TRUE;
+                return DRMP3_FALSE; // No data.
+            }
+
             pMP3->dataSize += bytesRead;
         }
 
         if (pMP3->dataSize > INT_MAX) {
+            pMP3->atEnd = DRMP3_TRUE;
             return DRMP3_FALSE; // File too big.
         }
 
@@ -2343,6 +2359,7 @@ static drmp3_bool32 drmp3_decode_next_frame(drmp3* pMP3)
             // Fill in a chunk.
             size_t bytesRead = pMP3->onRead(pMP3->pUserData, pMP3->pData + pMP3->dataSize, (pMP3->dataCapacity - pMP3->dataSize));
             if (bytesRead == 0) {
+                pMP3->atEnd = DRMP3_TRUE;
                 return DRMP3_FALSE; // Error reading more data.
             }
 
@@ -2411,9 +2428,13 @@ static drmp3_uint64 drmp3_read_src(drmp3_src* pSRC, drmp3_uint64 frameCount, voi
     return totalFramesRead;
 }
 
-drmp3_bool32 drmp3_init(drmp3* pMP3, drmp3_read_proc onRead, drmp3_seek_proc onSeek, void* pUserData, const drmp3_config* pConfig)
+drmp3_bool32 drmp3_init_internal(drmp3* pMP3, drmp3_read_proc onRead, drmp3_seek_proc onSeek, void* pUserData, const drmp3_config* pConfig)
 {
-    if (pMP3 == NULL || onRead == NULL) return DRMP3_FALSE;
+    drmp3_assert(pMP3 != NULL);
+    drmp3_assert(onRead != NULL);
+
+    // This function assumes the output object has already been reset to 0. Do not do that here, otherwise things will break.
+    drmp3dec_init(&pMP3->decoder);
 
     // The config can be null in which case we use defaults.
     drmp3_config config;
@@ -2422,9 +2443,6 @@ drmp3_bool32 drmp3_init(drmp3* pMP3, drmp3_read_proc onRead, drmp3_seek_proc onS
     } else {
         drmp3_zero_object(&config);
     }
-
-    drmp3_zero_object(pMP3);
-    drmp3dec_init(&pMP3->decoder);
 
     pMP3->channels = config.outputChannels;
     if (pMP3->channels == 0) {
@@ -2462,6 +2480,16 @@ drmp3_bool32 drmp3_init(drmp3* pMP3, drmp3_read_proc onRead, drmp3_seek_proc onS
     }
 
     return DRMP3_TRUE;
+}
+
+drmp3_bool32 drmp3_init(drmp3* pMP3, drmp3_read_proc onRead, drmp3_seek_proc onSeek, void* pUserData, const drmp3_config* pConfig)
+{
+    if (pMP3 == NULL || onRead == NULL) {
+        return DRMP3_FALSE;
+    }
+
+    drmp3_zero_object(pMP3);
+    return drmp3_init_internal(pMP3, onRead, onSeek, pUserData, pConfig);
 }
 
 
@@ -2515,7 +2543,10 @@ static drmp3_bool32 drmp3__on_seek_memory(void* pUserData, int byteOffset, drmp3
 
 drmp3_bool32 drmp3_init_memory(drmp3* pMP3, const void* pData, size_t dataSize, const drmp3_config* pConfig)
 {
-    if (pMP3 == NULL) return DRMP3_FALSE;
+    if (pMP3 == NULL) {
+        return DRMP3_FALSE;
+    }
+
     drmp3_zero_object(pMP3);
 
     if (pData == NULL || dataSize == 0) {
@@ -2526,7 +2557,7 @@ drmp3_bool32 drmp3_init_memory(drmp3* pMP3, const void* pData, size_t dataSize, 
     pMP3->memory.dataSize = dataSize;
     pMP3->memory.currentReadPos = 0;
 
-    return drmp3_init(pMP3, drmp3__on_read_memory, drmp3__on_seek_memory, pMP3, pConfig);
+    return drmp3_init_internal(pMP3, drmp3__on_read_memory, drmp3__on_seek_memory, pMP3, pConfig);
 }
 
 
@@ -2616,6 +2647,7 @@ drmp3_bool32 drmp3_seek_to_frame(drmp3* pMP3, drmp3_uint64 frameIndex)
     pMP3->framesConsumed = 0;
     pMP3->framesRemaining = 0;
     pMP3->dataSize = 0;
+    pMP3->atEnd = DRMP3_FALSE;
 
     // TODO: Optimize.
     //
@@ -2743,6 +2775,15 @@ void drmp3_free(void* p)
 
 // REVISION HISTORY
 // ===============
+//
+// v0.2.3 - 2018-04-29
+//   - Fix TCC build.
+//
+// v0.2.2 - 2018-04-28
+//   - Fix bug when opening a decoder from memory.
+//
+// v0.2.1 - 2018-04-27
+//   - Efficiency improvements when the decoder reaches the end of the stream.
 //
 // v0.2 - 2018-04-21
 //   - Bring up to date with minimp3.
