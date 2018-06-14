@@ -490,7 +490,7 @@ Float Text::getTextWidth() {
 Float Text::getTextHeight() {
 	cacheWidth();
 
-	return mFont->getLineSpacing(mRealCharacterSize) * ( 0 == mNumLines ? 1 : mNumLines );
+	return NULL != mFont ? mFont->getLineSpacing(mRealCharacterSize) * ( 0 == mNumLines ? 1 : mNumLines ) : 0;
 }
 
 void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const Float & Rotation, BlendMode Effect, const OriginPoint& rotationCenter, const OriginPoint& scaleCenter) {

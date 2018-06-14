@@ -470,7 +470,7 @@ Glyph FontTrueType::loadGlyph(Uint32 codePoint, unsigned int characterSize, bool
 			FT_Stroker stroker = static_cast<FT_Stroker>(mStroker);
 
 			FT_Stroker_Set(stroker, static_cast<FT_Fixed>(outlineThickness * static_cast<Float>(1 << 6)), FT_STROKER_LINECAP_ROUND, FT_STROKER_LINEJOIN_ROUND, 0);
-			FT_Glyph_Stroke(&glyphDesc, stroker, false);
+			FT_Glyph_Stroke(&glyphDesc, stroker, true);
 		}
 	}
 
