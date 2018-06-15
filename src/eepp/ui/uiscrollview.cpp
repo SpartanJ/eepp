@@ -189,6 +189,9 @@ void UIScrollView::containerUpdate() {
 }
 
 void UIScrollView::updateScroll() {
+	if ( NULL == mScrollView )
+		return;
+
 	mScrollView->setPosition(
 		mHScroll->isVisible() ? -( mHScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getWidth() - mDpSize.getWidth() ) ) : 0.f ,
 		mVScroll->isVisible() ? -( mVScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getHeight() - mDpSize.getHeight() ) ) : 0.f
@@ -204,6 +207,9 @@ void UIScrollView::onScrollViewSizeChange(const Event * Event) {
 }
 
 void UIScrollView::onTouchDragValueChange( Vector2f diff ) {
+	if ( NULL == mScrollView )
+		return;
+
 	if ( mVScroll->isEnabled() && 0 != mScrollView->getSize().getHeight() )
 		mVScroll->setValue( mVScroll->getValue() + ( -diff.y / (Float)( mScrollView->getSize().getHeight() ) ) );
 
