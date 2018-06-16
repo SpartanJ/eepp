@@ -73,18 +73,18 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 		switch ( widget->getLayoutPositionRule() ) {
 			case LEFT_OF:
 				pos.x = of->getPosition().x - widget->getSize().getWidth() - widget->getLayoutMargin().Right - of->getLayoutMargin().Left;
-				pos.y = of->getPosition().y;
+				pos.y = of->getPosition().y + widget->getLayoutMargin().Top;
 				break;
 			case RIGHT_OF:
 				pos.x = of->getPosition().x + of->getSize().getWidth() + widget->getLayoutMargin().Left + of->getLayoutMargin().Right;
-				pos.y = of->getPosition().y;
+				pos.y = of->getPosition().y + widget->getLayoutMargin().Top;
 				break;
 			case TOP_OF:
-				pos.x = of->getPosition().x;
+				pos.x = of->getPosition().x + widget->getLayoutMargin().Left;
 				pos.y = of->getPosition().y - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom - of->getLayoutMargin().Top;
 				break;
 			case BOTTOM_OF:
-				pos.x = of->getPosition().x;
+				pos.x = of->getPosition().x + widget->getLayoutMargin().Left;
 				pos.y = of->getPosition().y + of->getSize().getHeight() + widget->getLayoutMargin().Top + of->getLayoutMargin().Bottom;
 				break;
 			default:
