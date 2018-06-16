@@ -140,7 +140,7 @@ Float PixelDensity::toDpFromString( const std::string& str ) {
 	std::string unit;
 
 	for ( std::size_t i = 0; i < str.size(); i++ ) {
-		if ( String::isNumber( str[i], true ) ) {
+		if ( String::isNumber( str[i], true ) || ( '-' == str[i] && i == 0 ) ) {
 			num += str[i];
 		} else {
 			unit = str.substr( i );
