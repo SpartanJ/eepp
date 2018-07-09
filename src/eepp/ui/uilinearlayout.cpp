@@ -109,7 +109,7 @@ void UILinearLayout::packVertical() {
 			}
 
 			if ( widget->getLayoutHeightRules() == MATCH_PARENT && widget->getLayoutWeight() == 0 && widget->getSize().getHeight() != mDpSize.getHeight() ) {
-				widget->setSize( widget->getSize().getWidth(), mDpSize.getHeight() );
+				widget->setSize( widget->getSize().getWidth(), mDpSize.getHeight() - widget->getLayoutMargin().Top  - widget->getLayoutMargin().Bottom );
 			}
 		}
 
@@ -223,7 +223,7 @@ void UILinearLayout::packHorizontal() {
 			}
 
 			if ( widget->getLayoutWidthRules() == MATCH_PARENT && widget->getLayoutWeight() == 0 && widget->getSize().getWidth() != mDpSize.getWidth() ) {
-				widget->setSize( mDpSize.getWidth(), widget->getSize().getWidth() );
+				widget->setSize( mDpSize.getWidth(), widget->getSize().getWidth() - widget->getLayoutMargin().Left  - widget->getLayoutMargin().Top );
 			}
 		}
 
