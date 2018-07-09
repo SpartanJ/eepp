@@ -867,7 +867,6 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 		Int32 rpos	= from;
 		Int32 lpos	= 0;
 		Uint32 i;
-		Uint32 qsize = sizeof(Color) * GLi->quadVertexs();
 		String::StringBaseType curChar;
 
 		// Spaces, new lines and tabs are not rendered, and not counted as a color
@@ -902,20 +901,22 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 					rpos--;
 
 					if ( '\n' == curChar) {
-						if ( underlined ) {
-							memcpy( &(mColors[ rpos * GLi->quadVertexs() ]), &colors[0], qsize );
-							rpos++;
+						if ( underlined || strikeThrough ) {
+							for ( int i = 0; i < GLi->quadVertexs(); i++ )
+								mColors[ rpos * GLi->quadVertexs() + i ] = colors[i];
 						}
 
-						if ( strikeThrough ) {
-							memcpy( &(mColors[ rpos * GLi->quadVertexs() ]), &colors[0], qsize );
+						if ( underlined )
 							rpos++;
-						}
+
+						if ( strikeThrough )
+							rpos++;
 					}
 				}
 			}
 
-			memcpy( &(mColors[ lpos * GLi->quadVertexs() ]), &colors[0], qsize );
+			for ( int i = 0; i < GLi->quadVertexs(); i++ )
+				mColors[ lpos * GLi->quadVertexs() + i ] = colors[i];
 		}
 
 		if ( rto == s ) {
@@ -923,16 +924,20 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 				lpos++;
 				Uint32 pos = lpos * GLi->quadVertexs();
 
-				if ( pos < mColors.size() )
-					memcpy( &(mColors[ lpos * GLi->quadVertexs() ]), &colors[0], qsize );
+				if ( pos < mColors.size() ) {
+					for ( int i = 0; i < GLi->quadVertexs(); i++ )
+						mColors[ lpos * GLi->quadVertexs() + i ] = colors[i];
+				}
 			}
 
 			if ( strikeThrough ) {
 				lpos++;
 				Uint32 pos = lpos * GLi->quadVertexs();
 
-				if ( pos < mColors.size() )
-					memcpy( &(mColors[ lpos * GLi->quadVertexs() ]), &colors[0], qsize );
+				if ( pos < mColors.size() ) {
+					for ( int i = 0; i < GLi->quadVertexs(); i++ )
+						mColors[ lpos * GLi->quadVertexs() + i ] = colors[i];
+				}
 			}
 		}
 	}

@@ -212,7 +212,8 @@ UISkinComplex * UISkinComplex::clone( const std::string& NewName, const bool& Co
 	if ( CopyColorsState ) {
 		SkinC->mColorDefault = mColorDefault;
 
-		memcpy( &SkinC->mColor[0], &mColor[0], UISkinState::StateCount * sizeof(Color) );
+		for ( size_t i = 0; i < UISkinState::StateCount; i++ )
+			SkinC->mColor[i] = mColor[i];
 	}
 
 	memcpy( &SkinC->mDrawable[0], &mDrawable[0], UISkinState::StateCount * SideCount * sizeof(Drawable*) );

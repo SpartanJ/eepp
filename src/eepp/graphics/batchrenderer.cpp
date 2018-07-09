@@ -90,7 +90,10 @@ void BatchRenderer::addVertexs( const unsigned int& num ) {
 
 	if ( ( mNumVertex + num ) >= mVertexSize ) {
 		eeVertex * newVertex = eeNewArray( eeVertex, mVertexSize * 2 );
-		memcpy( &mVertex[0], &newVertex[0], mVertexSize * sizeof(eeVertex) );
+
+		for ( Uint32 i = 0; i < mVertexSize; i++ )
+			newVertex[i] = mVertex[i];
+
 		eeSAFE_DELETE_ARRAY( mVertex );
 		mVertex = newVertex;
 		mVertexSize = mVertexSize * 2;

@@ -607,7 +607,7 @@ const Uint8* Image::getPixelsPtr() {
 Color Image::getPixel( const unsigned int& x, const unsigned int& y ) {
 	eeASSERT( !( mPixels == NULL || x > mWidth || y > mHeight ) );
 	Color dst;
-	memcpy( &dst, &mPixels[ ( ( x + y * mWidth ) * mChannels ) ], mChannels );
+	memcpy( (void*)&dst, &mPixels[ ( ( x + y * mWidth ) * mChannels ) ], mChannels );
 	return dst;
 }
 
