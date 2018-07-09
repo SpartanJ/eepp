@@ -29,6 +29,8 @@ class EE_API ActionManager {
 		std::size_t count() const;
 
 		bool isEmpty() const;
+
+		void clear();
 	protected:
 		std::list<Action*> mActions;
 };

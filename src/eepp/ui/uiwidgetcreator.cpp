@@ -71,6 +71,7 @@ UIWidget * UIWidgetCreator::createFromName( std::string widgetName ) {
 	else if ( widgetName == "textureregion" || widgetName == "subtexture" )	return UITextureRegion::New();
 	else if ( widgetName == "touchdragable" )	return UITouchDragableWidget::New();
 	else if ( widgetName == "gridlayout" )		return UIGridLayout::New();
+	else if ( widgetName == "layout" )			return UILayout::New();
 
 	if ( registeredWidget.find( widgetName ) != registeredWidget.end() ) {
 		return registeredWidget[ widgetName ].Call();

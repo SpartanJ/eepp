@@ -29,7 +29,7 @@ class EE_API NodeMessage {
 			NoMessage = eeINDEX_NOT_FOUND
 		};
 
-		NodeMessage( Node * node, const Uint32& getMsg, const Uint32& getFlags = NoMessage );
+		NodeMessage( Node * node, const Uint32& Msg, const Uint32& Flags = NoMessage );
 
 		~NodeMessage();
 

@@ -9,11 +9,7 @@ ActionManager::ActionManager() {
 }
 
 ActionManager::~ActionManager() {
-	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
-		Action * action = (*it);
-
-		eeSAFE_DELETE( action );
-	}
+	clear();
 }
 
 void ActionManager::addAction( Action * action ) {
@@ -67,6 +63,16 @@ std::size_t ActionManager::count() const {
 
 bool ActionManager::isEmpty() const {
 	return mActions.empty();
+}
+
+void ActionManager::clear() {
+	for ( auto it = mActions.begin(); it != mActions.end(); ++it ) {
+		Action * action = (*it);
+
+		eeSAFE_DELETE( action );
+	}
+
+	mActions.clear();
 }
 
 void ActionManager::removeAction( Action * action ) {

@@ -2,6 +2,10 @@
 
 namespace EE { namespace UI {
 
+UILayout * UILayout::New() {
+	return eeNew( UILayout, () );
+}
+
 UILayout::UILayout() :
 	UIWidget()
 {
