@@ -28,7 +28,7 @@ static const int bitrate[2][3][15] = {
 };
 
 static bool is_same_constant(Mp3Info::Header *h1, Mp3Info::Header *h2) {
-	if ((*(uint*)h1) == (*(uint*)h2))
+	if ((*(unsigned int*)h1) == (*(unsigned int*)h2))
 		return true;
 
 	return ((h1->version       == h2->version         ) && (h1->layer         == h2->layer           ) &&
