@@ -213,38 +213,31 @@ UITextView * UIProgressBar::getTextBox() const {
 	return mTextBox;
 }
 
-void UIProgressBar::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UIProgressBar::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
-
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "totalsteps" == name ) {
-			setTotalSteps( ait->as_float() );
-		} else if ( "progress" == name ) {
-			setProgress( ait->as_float() );
-		} else if ( "verticalexpand" == name ) {
-			setVerticalExpand( ait->as_bool() );
-		} else if ( "displaypercent" == name ) {
-			setDisplayPercent( ait->as_bool() );
-		} else if ( "fillerpadding" == name ) {
-			Float val = PixelDensity::toDpFromString( ait->as_string() );
-			setFillerPadding( Rectf( val, val, val, val ) );
-		} else if ( "fillerpaddingleft" == name ) {
-			setFillerPadding( Rectf( PixelDensity::toDpFromString( ait->as_string() ), mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
-		} else if ( "fillerpaddingright" == name ) {
-			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, PixelDensity::toDpFromString( ait->as_string() ), mStyleConfig.FillerPadding.Bottom ) );
-		} else if ( "fillerpaddingtop" == name ) {
-			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, PixelDensity::toDpFromString( ait->as_string() ), mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
-		} else if ( "fillerpaddingbottom" == name ) {
-			setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, PixelDensity::toDpFromString( ait->as_string() ) ) );
-		}
+	if ( "totalsteps" == name ) {
+		setTotalSteps( attribute.asFloat() );
+	} else if ( "progress" == name ) {
+		setProgress( attribute.asFloat() );
+	} else if ( "verticalexpand" == name ) {
+		setVerticalExpand( attribute.asBool() );
+	} else if ( "displaypercent" == name ) {
+		setDisplayPercent( attribute.asBool() );
+	} else if ( "fillerpadding" == name ) {
+		Float val = PixelDensity::toDpFromString( attribute.asString() );
+		setFillerPadding( Rectf( val, val, val, val ) );
+	} else if ( "fillerpaddingleft" == name ) {
+		setFillerPadding( Rectf( PixelDensity::toDpFromString( attribute.asString() ), mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
+	} else if ( "fillerpaddingright" == name ) {
+		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, PixelDensity::toDpFromString( attribute.asString() ), mStyleConfig.FillerPadding.Bottom ) );
+	} else if ( "fillerpaddingtop" == name ) {
+		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, PixelDensity::toDpFromString( attribute.asString() ), mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
+	} else if ( "fillerpaddingbottom" == name ) {
+		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, PixelDensity::toDpFromString( attribute.asString() ) ) );
+	} else {
+		UIWidget::setAttribute( attribute );
 	}
-
-	endPropertiesTransaction();
 }
 
 void UIProgressBar::onAlphaChange() {

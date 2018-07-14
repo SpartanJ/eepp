@@ -282,14 +282,10 @@ void UIScrollBar::setExpandBackground( bool expandBackground ) {
 	adjustChilds();
 }
 
-void UIScrollBar::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UIScrollBar::setAttribute(const NodeAttribute & attribute) {
+	UIScrollBar::setAttribute( attribute );
 
-	UIWidget::loadFromXmlNode( node );
-
-	mSlider->loadFromXmlNode( node );
-
-	endPropertiesTransaction();
+	mSlider->setAttribute( attribute );
 }
 
 UIScrollBar::ScrollBarType UIScrollBar::getScrollBarType() const {

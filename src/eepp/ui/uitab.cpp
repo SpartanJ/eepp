@@ -1,5 +1,6 @@
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uitabwidget.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -175,24 +176,18 @@ void UITab::update( const Time& time ) {
 	}
 }
 
-void UITab::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UITab::setAttribute( const NodeAttribute& attribute ) {
+	std::string name = attribute.getName();
 
-	UISelectButton::loadFromXmlNode( node );
-
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "name" == name || "text" == name ) {
-			setText( ait->as_string() );
-		} else if ( "controlowned" == name || "owns" == name ) {
-			mOwnedName = ait->as_string();
-			setOwnedControl();
-		}
+	if ( "name" == name || "text" == name ) {
+		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
+			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
+	} else if ( "controlowned" == name || "owns" == name ) {
+		mOwnedName = attribute.asString();
+		setOwnedControl();
+	} else {
+		UISelectButton::setAttribute( attribute );
 	}
-
-	endPropertiesTransaction();
 }
 
 void UITab::setOwnedControl() {

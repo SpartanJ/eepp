@@ -89,21 +89,14 @@ const Color &UISelectButton::getFontSelectedColor() const {
 	return mStyleConfig.FontSelectedColor;
 }
 
-void UISelectButton::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UISelectButton::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIPushButton::loadFromXmlNode( node );
-
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "textselectedcolor" == name ) {
-			setFontSelectedColor( Color::fromString( ait->as_string() ) );
-		}
+	if ( "textselectedcolor" == name ) {
+		setFontSelectedColor( Color::fromString( attribute.asString() ) );
+	} else {
+		UIPushButton::setAttribute( attribute );
 	}
-
-	endPropertiesTransaction();
 }
 
 }}

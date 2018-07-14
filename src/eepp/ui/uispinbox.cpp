@@ -264,29 +264,22 @@ void UISpinBox::onAlphaChange() {
 	mPushDown->setAlpha( mAlpha );
 }
 
-void UISpinBox::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UISpinBox::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
-
-	mInput->loadFromXmlNode( node );
-
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "minvalue" == name ) {
-			setMinValue( ait->as_float() );
-		} else if ( "maxvalue" == name ) {
-			setMaxValue( ait->as_float() );
-		} else if ( "value" == name ) {
-			setValue( ait->as_float() );
-		} else if ( "clickstep" == name ) {
-			setClickStep( ait->as_float() );
-		}
+	if ( "minvalue" == name ) {
+		setMinValue(attribute.asFloat() );
+	} else if ( "maxvalue" == name ) {
+		setMaxValue(attribute.asFloat() );
+	} else if ( "value" == name ) {
+		setValue(attribute.asFloat() );
+	} else if ( "clickstep" == name ) {
+		setClickStep(attribute.asFloat() );
+	} else {
+		UIWidget::setAttribute( attribute );
 	}
 
-	endPropertiesTransaction();
+	mInput->setAttribute( attribute );
 }
 
 }}

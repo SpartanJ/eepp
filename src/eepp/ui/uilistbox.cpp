@@ -985,8 +985,69 @@ void UIListBox::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
 	setFontColor( mFontStyleConfig.FontColor );
 }
 
+void UIListBox::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
+
+	if ( "rowheight" == name ) {
+		setRowHeight( attribute.asInt() );
+	} else if ( "textcolor" == name ) {
+		setFontColor( Color::fromString( attribute.asString() ) );
+	} else if ( "textshadowcolor" == name ) {
+		mFontStyleConfig.ShadowColor = ( Color::fromString( attribute.asString() ) );
+	} else if ( "textovercolor" == name ) {
+		setFontOverColor( Color::fromString( attribute.asString() ) );
+	} else if ( "textselectedcolor" == name ) {
+		setFontSelectedColor( Color::fromString( attribute.asString() ) );
+	} else if ( "textselectionbackcolor" == name ) {
+		mFontStyleConfig.FontSelectionBackColor = ( Color::fromString( attribute.asString() ) );
+	} else if ( "fontfamily" == name || "fontname" == name ) {
+		Font * font = FontManager::instance()->getByName( attribute.asString() );
+
+		if ( NULL != font )
+			setFont( font );
+	} else if ( "padding" == name ) {
+		int val = attribute.asInt();
+		setContainerPadding( Rectf( val, val, val, val ) );
+	} else if ( "paddingleft" == name ) {
+		setContainerPadding( Rectf( attribute.asInt(), mContainerPadding.Top, mContainerPadding.Right, mContainerPadding.Bottom ) );
+	} else if ( "paddingright" == name ) {
+		setContainerPadding( Rectf( mContainerPadding.Left, mContainerPadding.Top, attribute.asInt(), mContainerPadding.Bottom ) );
+	} else if ( "paddingtop" == name ) {
+		setContainerPadding( Rectf( mContainerPadding.Left, attribute.asInt(), mContainerPadding.Right, mContainerPadding.Bottom ) );
+	} else if ( "paddingbottom" == name ) {
+		setContainerPadding( Rectf( mContainerPadding.Left, mContainerPadding.Top, mContainerPadding.Right, attribute.asInt() ) );
+	} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {
+		std::string val = attribute.asString();
+		if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
+		else if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+		else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+	} else if ( "horizontalscrollmode" == name || "hscrollmode" == name ) {
+		std::string val = attribute.asString();
+		if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
+		else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+		else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+	} else if ( "selectedindex" == name ) {
+		setSelected( attribute.asUint() );
+	} else if ( "selectedtext" == name ) {
+		setSelected( attribute.asString() );
+	} else if ( "scrollbartype" == name ) {
+		std::string val( attribute.asString() );
+		String::toLowerInPlace( val );
+
+		if ( "nobuttons" == val ) {
+			mVScrollBar->setScrollBarType( UIScrollBar::NoButtons );
+			mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
+		} else if ( "twobuttons" == val ) {
+			mVScrollBar->setScrollBarType( UIScrollBar::TwoButtons );
+			mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
+		}
+	} else {
+		UITouchDragableWidget::setAttribute( attribute );
+	}
+}
+
 void UIListBox::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+	beginAttributesTransaction();
 
 	UITouchDragableWidget::loadFromXmlNode( node );
 
@@ -1004,67 +1065,7 @@ void UIListBox::loadFromXmlNode(const pugi::xml_node & node) {
 		addListBoxItems( items );
 	}
 
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "rowheight" == name ) {
-			setRowHeight( ait->as_int() );
-		} else if ( "textcolor" == name ) {
-			setFontColor( Color::fromString( ait->as_string() ) );
-		} else if ( "textshadowcolor" == name ) {
-			mFontStyleConfig.ShadowColor = ( Color::fromString( ait->as_string() ) );
-		} else if ( "textovercolor" == name ) {
-			setFontOverColor( Color::fromString( ait->as_string() ) );
-		} else if ( "textselectedcolor" == name ) {
-			setFontSelectedColor( Color::fromString( ait->as_string() ) );
-		} else if ( "textselectionbackcolor" == name ) {
-			mFontStyleConfig.FontSelectionBackColor = ( Color::fromString( ait->as_string() ) );
-		} else if ( "fontfamily" == name || "fontname" == name ) {
-			Font * font = FontManager::instance()->getByName( ait->as_string() );
-
-			if ( NULL != font )
-				setFont( font );
-		} else if ( "padding" == name ) {
-			int val = ait->as_int();
-			setContainerPadding( Rectf( val, val, val, val ) );
-		} else if ( "paddingleft" == name ) {
-			setContainerPadding( Rectf( ait->as_int(), mContainerPadding.Top, mContainerPadding.Right, mContainerPadding.Bottom ) );
-		} else if ( "paddingright" == name ) {
-			setContainerPadding( Rectf( mContainerPadding.Left, mContainerPadding.Top, ait->as_int(), mContainerPadding.Bottom ) );
-		} else if ( "paddingtop" == name ) {
-			setContainerPadding( Rectf( mContainerPadding.Left, ait->as_int(), mContainerPadding.Right, mContainerPadding.Bottom ) );
-		} else if ( "paddingbottom" == name ) {
-			setContainerPadding( Rectf( mContainerPadding.Left, mContainerPadding.Top, mContainerPadding.Right, ait->as_int() ) );
-		} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {
-			std::string val = ait->as_string();
-			if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
-			else if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
-		} else if ( "horizontalscrollmode" == name || "hscrollmode" == name ) {
-			std::string val = ait->as_string();
-			if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
-			else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
-		} else if ( "selectedindex" == name ) {
-			setSelected( ait->as_uint() );
-		} else if ( "selectedtext" == name ) {
-			setSelected( ait->as_string() );
-		} else if ( "scrollbartype" == name ) {
-			std::string val( ait->as_string() );
-			String::toLowerInPlace( val );
-
-			if ( "nobuttons" == val ) {
-				mVScrollBar->setScrollBarType( UIScrollBar::NoButtons );
-				mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
-			} else if ( "twobuttons" == val ) {
-				mVScrollBar->setScrollBarType( UIScrollBar::TwoButtons );
-				mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
-			}
-		}
-	}
-
-	endPropertiesTransaction();
+	endAttributesTransaction();
 }
 
 }}

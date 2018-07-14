@@ -39,11 +39,11 @@ class EE_API UITextureRegion : public UIWidget {
 
 		const Vector2f& getAlignOffset() const;
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
-
 		Uint32 getScaleType() const;
 
 		UITextureRegion * setScaleType(const Uint32 & scaleType);
+
+		virtual void setAttribute( const NodeAttribute& attribute );
 	protected:
 		Uint32					mScaleType;
 		Graphics::TextureRegion * 	mTextureRegion;

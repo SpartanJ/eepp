@@ -183,38 +183,31 @@ const Vector2f& UITextureRegion::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-void UITextureRegion::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UITextureRegion::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
+	if ( "src" == name || "textureregion" == name || "subtexture" == name ) {
+		DrawableResource * res = NULL;
 
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "src" == name || "textureregion" == name || "subtexture" == name ) {
-			DrawableResource * res = NULL;
-
-			if ( NULL != ( res = GlobalTextureAtlas::instance()->getByName( ait->as_string() ) ) && res->getDrawableType() == Drawable::TEXTUREREGION ) {
-				setTextureRegion( static_cast<TextureRegion*>( res ) );
-			}
-		} else if ( "scaletype" == name ) {
-			std::string val = ait->as_string();
-			String::toLowerInPlace( val );
-
-			if ( "expand" == val ) {
-				setScaleType( UIScaleType::Expand );
-			} else if ( "fit_inside" == val || "fitinside" == val ) {
-				setScaleType( UIScaleType::FitInside );
-			} else if ( "none" == val ) {
-				setScaleType( UIScaleType::None );
-			}
-		} else if ( "tint" == name ) {
-			setColor( Color::fromString( ait->as_string() ) );
+		if ( NULL != ( res = GlobalTextureAtlas::instance()->getByName( attribute.asString() ) ) && res->getDrawableType() == Drawable::TEXTUREREGION ) {
+			setTextureRegion( static_cast<TextureRegion*>( res ) );
 		}
-	}
+	} else if ( "scaletype" == name ) {
+		std::string val = attribute.asString();
+		String::toLowerInPlace( val );
 
-	endPropertiesTransaction();
+		if ( "expand" == val ) {
+			setScaleType( UIScaleType::Expand );
+		} else if ( "fit_inside" == val || "fitinside" == val ) {
+			setScaleType( UIScaleType::FitInside );
+		} else if ( "none" == val ) {
+			setScaleType( UIScaleType::None );
+		}
+	} else if ( "tint" == name ) {
+		setColor( Color::fromString( attribute.asString() ) );
+	} else {
+		UIWidget::setAttribute( attribute );
+	}
 }
 
 Uint32 UITextureRegion::getScaleType() const {

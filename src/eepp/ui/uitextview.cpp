@@ -524,83 +524,76 @@ void UITextView::onPaddingChange() {
 	invalidateDraw();
 }
 
-void UITextView::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UITextView::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
+	if ( "text" == name ) {
+		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
+			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
+	} else if ( "textcolor" == name ) {
+		setFontColor( Color::fromString( attribute.asString() ) );
+	} else if ( "textshadowcolor" == name ) {
+		setFontShadowColor( Color::fromString( attribute.asString() ) );
+	} else if ( "textovercolor" == name ) {
+		mFontStyleConfig.FontOverColor = Color::fromString( attribute.asString() );
+	} else if ( "textselectedcolor" == name ) {
+		mFontStyleConfig.FontSelectedColor = Color::fromString( attribute.asString() );
+	} else if ( "textselectionbackcolor" == name ) {
+		setSelectionBackColor( Color::fromString( attribute.asString() ) );
+	} else if ( "fontfamily" == name || "fontname" == name ) {
+		Font * font = FontManager::instance()->getByName( attribute.asString() );
 
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
+		if ( NULL != font )
+			setFont( font );
+	} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
+		setCharacterSize( PixelDensity::toDpFromStringI( attribute.asString() ) );
+	} else if ( "textstyle" == name || "fontstyle" == name ) {
+		std::string valStr = attribute.asString();
+		String::toLowerInPlace( valStr );
+		std::vector<std::string> strings = String::split( valStr, '|' );
+		Uint32 flags = Text::Regular;
 
-		if ( "text" == name ) {
-			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
-				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( ait->as_string() ) );
-		} else if ( "textcolor" == name ) {
-			setFontColor( Color::fromString( ait->as_string() ) );
-		} else if ( "textshadowcolor" == name ) {
-			setFontShadowColor( Color::fromString( ait->as_string() ) );
-		} else if ( "textovercolor" == name ) {
-			mFontStyleConfig.FontOverColor = Color::fromString( ait->as_string() );
-		} else if ( "textselectedcolor" == name ) {
-			mFontStyleConfig.FontSelectedColor = Color::fromString( ait->as_string() );
-		} else if ( "textselectionbackcolor" == name ) {
-			setSelectionBackColor( Color::fromString( ait->as_string() ) );
-		} else if ( "fontfamily" == name || "fontname" == name ) {
-			Font * font = FontManager::instance()->getByName( ait->as_string() );
+		if ( strings.size() ) {
+			for ( std::size_t i = 0; i < strings.size(); i++ ) {
+				std::string cur = strings[i];
+				String::toLowerInPlace( cur );
 
-			if ( NULL != font )
-				setFont( font );
-		} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
-			setCharacterSize( PixelDensity::toDpFromStringI( ait->as_string() ) );
-		} else if ( "textstyle" == name || "fontstyle" == name ) {
-			std::string valStr = ait->as_string();
-			String::toLowerInPlace( valStr );
-			std::vector<std::string> strings = String::split( valStr, '|' );
-			Uint32 flags = Text::Regular;
-
-			if ( strings.size() ) {
-				for ( std::size_t i = 0; i < strings.size(); i++ ) {
-					std::string cur = strings[i];
-					String::toLowerInPlace( cur );
-
-					if ( "underlined" == cur || "underline" == cur )
-						flags |= Text::Underlined;
-					else if ( "bold" == cur )
-						flags |= Text::Bold;
-					else if ( "italic" == cur )
-						flags |= Text::Italic;
-					else if ( "strikethrough" == cur )
-						flags |= Text::StrikeThrough;
-					else if ( "shadowed" == cur || "shadow" == cur )
-						flags |= Text::Shadow;
-					else if ( "wordwrap" == cur ) {
-						mFlags |= UI_WORD_WRAP;
-						autoShrink();
-					}
+				if ( "underlined" == cur || "underline" == cur )
+					flags |= Text::Underlined;
+				else if ( "bold" == cur )
+					flags |= Text::Bold;
+				else if ( "italic" == cur )
+					flags |= Text::Italic;
+				else if ( "strikethrough" == cur )
+					flags |= Text::StrikeThrough;
+				else if ( "shadowed" == cur || "shadow" == cur )
+					flags |= Text::Shadow;
+				else if ( "wordwrap" == cur ) {
+					mFlags |= UI_WORD_WRAP;
+					autoShrink();
 				}
-
-				setFontStyle( flags );
 			}
-		} else if ( "fontoutlinethickness" == name ) {
-			setOutlineThickness( PixelDensity::toDpFromString( ait->as_string() ) );
-		} else if ( "fontoutlinecolor" == name ) {
-			setOutlineColor( Color::fromString( ait->as_string() ) );
-		} else if ( "padding" == name ) {
-			int val = PixelDensity::toDpFromStringI( ait->as_string() );
-			setPadding( Rectf( val, val, val, val ) );
-		} else if ( "paddingleft" == name ) {
-			setPadding( Rectf( PixelDensity::toDpFromString( ait->as_string() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
-		} else if ( "paddingright" == name ) {
-			setPadding( Rectf( mPadding.Left, mPadding.Top, PixelDensity::toDpFromString( ait->as_string() ), mPadding.Bottom ) );
-		} else if ( "paddingtop" == name ) {
-			setPadding( Rectf( mPadding.Left, PixelDensity::toDpFromString( ait->as_string() ), mPadding.Right, mPadding.Bottom ) );
-		} else if ( "paddingbottom" == name ) {
-			setPadding( Rectf( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromString( ait->as_string() ) ) );
-		}
-	}
 
-	endPropertiesTransaction();
+			setFontStyle( flags );
+		}
+	} else if ( "fontoutlinethickness" == name ) {
+		setOutlineThickness( PixelDensity::toDpFromString( attribute.asString() ) );
+	} else if ( "fontoutlinecolor" == name ) {
+		setOutlineColor( Color::fromString( attribute.asString() ) );
+	} else if ( "padding" == name ) {
+		int val = PixelDensity::toDpFromStringI( attribute.asString() );
+		setPadding( Rectf( val, val, val, val ) );
+	} else if ( "paddingleft" == name ) {
+		setPadding( Rectf( PixelDensity::toDpFromString( attribute.asString() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
+	} else if ( "paddingright" == name ) {
+		setPadding( Rectf( mPadding.Left, mPadding.Top, PixelDensity::toDpFromString( attribute.asString() ), mPadding.Bottom ) );
+	} else if ( "paddingtop" == name ) {
+		setPadding( Rectf( mPadding.Left, PixelDensity::toDpFromString( attribute.asString() ), mPadding.Right, mPadding.Bottom ) );
+	} else if ( "paddingbottom" == name ) {
+		setPadding( Rectf( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromString( attribute.asString() ) ) );
+	} else {
+		UIWidget::setAttribute( attribute );
+	}
 }
 
 }}

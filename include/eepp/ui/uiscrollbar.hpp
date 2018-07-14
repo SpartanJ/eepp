@@ -67,8 +67,7 @@ class EE_API UIScrollBar : public UIWidget {
 
 		void setExpandBackground( bool expandBackground );
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
-
+		virtual void setAttribute( const NodeAttribute& attribute );
 	protected:
 		ScrollBarType	mScrollBarType;
 		UISlider * 		mSlider;

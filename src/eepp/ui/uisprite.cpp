@@ -175,26 +175,19 @@ void UISprite::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
-void UISprite::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UISprite::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
+	if ( "src" == name ) {
+		std::string val = attribute.asString();
 
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "src" == name ) {
-			std::string val = ait->as_string();
-
-			if ( val.size() ) {
-				setDeallocSprite( true );
-				setSprite( eeNew( Sprite, ( val ) ) );
-			}
+		if ( val.size() ) {
+			setDeallocSprite( true );
+			setSprite( eeNew( Sprite, ( val ) ) );
 		}
+	} else {
+		UIWidget::setAttribute( attribute );
 	}
-
-	endPropertiesTransaction();
 }
 
 }}

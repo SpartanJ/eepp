@@ -135,23 +135,16 @@ bool UITouchDragableWidget::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds();
 }
 
-void UITouchDragableWidget::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UITouchDragableWidget::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
-
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "touchdrag" == name ) {
-			setTouchDragEnabled( ait->as_bool() );
-		} else if ( "touchdragdeceleration" == name ) {
-			setTouchDragDeceleration( Vector2f( ait->as_float(), ait->as_float() ) );
-		}
+	if ( "touchdrag" == name ) {
+		setTouchDragEnabled( attribute.asBool() );
+	} else if ( "touchdragdeceleration" == name ) {
+		setTouchDragDeceleration( Vector2f( attribute.asFloat(), attribute.asFloat() ) );
+	} else {
+		UIWidget::setAttribute( attribute );
 	}
-
-	endPropertiesTransaction();
 }
 
 }}

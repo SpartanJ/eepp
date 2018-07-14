@@ -344,36 +344,29 @@ void UIPushButton::setStyleConfig(const UIPushButtonStyleConfig & styleConfig) {
 	onStateChange();
 }
 
-void UIPushButton::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UIPushButton::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
+	if ( "text" == name ) {
+		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
+			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
+	} else if ( "textovercolor" == name ) {
+		setFontOverColor( Color::fromString( attribute.asString() ) );
+	} else if ( "icon" == name ) {
+		std::string val = attribute.asString();
+		Drawable * icon = NULL;
 
-	mTextBox->loadFromXmlNode( node );
-	mTextBox->setLayoutSizeRules( FIXED, FIXED );
-
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "text" == name ) {
-			if ( NULL != mSceneNode )
-				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( ait->as_string() ) );
-		} else if ( "textovercolor" == name ) {
-			setFontOverColor( Color::fromString( ait->as_string() ) );
-		} else if ( "icon" == name ) {
-			std::string val = ait->as_string();
-			Drawable * icon = NULL;
-
-			if ( NULL != mTheme && NULL != ( icon = mTheme->getIconByName( val ) ) ) {
-				setIcon( icon );
-			} else if ( NULL != ( icon = GlobalTextureAtlas::instance()->getByName( val ) ) ) {
-				setIcon( icon );
-			}
+		if ( NULL != mTheme && NULL != ( icon = mTheme->getIconByName( val ) ) ) {
+			setIcon( icon );
+		} else if ( NULL != ( icon = GlobalTextureAtlas::instance()->getByName( val ) ) ) {
+			setIcon( icon );
 		}
+	} else {
+		UIWidget::setAttribute( attribute );
 	}
 
-	endPropertiesTransaction();
+	mTextBox->setAttribute( attribute );
+	mTextBox->setLayoutSizeRules( FIXED, FIXED );
 }
 
 }}

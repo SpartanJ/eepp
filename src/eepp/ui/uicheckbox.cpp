@@ -167,21 +167,14 @@ void UICheckBox::setTextSeparation(const Int32 & textSeparation) {
 	setPadding( getPadding() );
 }
 
-void UICheckBox::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UICheckBox::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
-
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "selected" == name || "active" == name ) {
-			setActive( ait->as_bool() );
-		}
+	if ( "selected" == name || "active" == name ) {
+		setActive( attribute.asBool() );
+	} else {
+		UITextView::setAttribute( attribute );
 	}
-
-	endPropertiesTransaction();
 }
 
 Uint32 UICheckBox::onKeyDown( const KeyEvent& Event ) {

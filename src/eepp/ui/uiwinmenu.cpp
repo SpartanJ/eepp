@@ -302,7 +302,7 @@ void UIWinMenu::destroyMenues() {
 }
 
 void UIWinMenu::loadFromXmlNode( const pugi::xml_node& node ) {
-	beginPropertiesTransaction();
+	beginAttributesTransaction();
 
 	UIWidget::loadFromXmlNode( node );
 
@@ -325,7 +325,7 @@ void UIWinMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 		}
 	}
 
-	endPropertiesTransaction();
+	endAttributesTransaction();
 }
 
 }}

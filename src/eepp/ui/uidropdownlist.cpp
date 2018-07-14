@@ -265,25 +265,28 @@ void UIDropDownList::destroyListBox() {
 	}
 }
 
+void UIDropDownList::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
+
+	if ( "popuptomaincontrol" == name ) {
+		setPopUpToMainControl( attribute.asBool() );
+	} else if ( "maxnumvisibleitems" == name ) {
+		setMaxNumVisibleItems( attribute.asUint() );
+	} else {
+		UITextInput::setAttribute( attribute );
+	}
+
+	mListBox->setAttribute( attribute );
+}
+
 void UIDropDownList::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+	beginAttributesTransaction();
 
 	UITextInput::loadFromXmlNode( node );
 
 	mListBox->loadFromXmlNode( node );
 
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "popuptomaincontrol" == name ) {
-			setPopUpToMainControl( ait->as_bool() );
-		} else if ( "maxnumvisibleitems" == name ) {
-			setMaxNumVisibleItems( ait->as_uint() );
-		}
-	}
-
-	endPropertiesTransaction();
+	endAttributesTransaction();
 }
 
 }}

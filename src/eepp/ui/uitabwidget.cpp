@@ -185,79 +185,72 @@ void UITabWidget::setStyleConfig(const UITabWidgetStyleConfig & styleConfig) {
 	orderTabs();
 }
 
-void UITabWidget::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UITabWidget::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
+	if ( "textcolor" == name ) {
+		setFontColor( Color::fromString( attribute.asString() ) );
+	} else if ( "textshadowcolor" == name ) {
+		setFontShadowColor( Color::fromString( attribute.asString() ) );
+	} else if ( "textovercolor" == name ) {
+		setFontOverColor( Color::fromString( attribute.asString() ) );
+	} else if ( "textselectedcolor" == name ) {
+		setFontSelectedColor( Color::fromString( attribute.asString() ) );
+	} else if ( "fontfamily" == name || "fontname" == name ) {
+		Font * font = FontManager::instance()->getByName( attribute.asString() );
 
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
+		if ( NULL != font )
+			setFont( font );
+	} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
+		setCharacterSize( PixelDensity::toDpFromStringI( attribute.asString() ) );
+	} else if ( "textstyle" == name || "fontstyle" == name ) {
+		std::string valStr = attribute.asString();
+		String::toLowerInPlace( valStr );
+		std::vector<std::string> strings = String::split( valStr, '|' );
+		Uint32 flags = Text::Regular;
 
-		if ( "textcolor" == name ) {
-			setFontColor( Color::fromString( ait->as_string() ) );
-		} else if ( "textshadowcolor" == name ) {
-			setFontShadowColor( Color::fromString( ait->as_string() ) );
-		} else if ( "textovercolor" == name ) {
-			setFontOverColor( Color::fromString( ait->as_string() ) );
-		} else if ( "textselectedcolor" == name ) {
-			setFontSelectedColor( Color::fromString( ait->as_string() ) );
-		} else if ( "fontfamily" == name || "fontname" == name ) {
-			Font * font = FontManager::instance()->getByName( ait->as_string() );
+		if ( strings.size() ) {
+			for ( std::size_t i = 0; i < strings.size(); i++ ) {
+				std::string cur = strings[i];
+				String::toLowerInPlace( cur );
 
-			if ( NULL != font )
-				setFont( font );
-		} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
-			setCharacterSize( PixelDensity::toDpFromStringI( ait->as_string() ) );
-		} else if ( "textstyle" == name || "fontstyle" == name ) {
-			std::string valStr = ait->as_string();
-			String::toLowerInPlace( valStr );
-			std::vector<std::string> strings = String::split( valStr, '|' );
-			Uint32 flags = Text::Regular;
-
-			if ( strings.size() ) {
-				for ( std::size_t i = 0; i < strings.size(); i++ ) {
-					std::string cur = strings[i];
-					String::toLowerInPlace( cur );
-
-					if ( "underlined" == cur || "underline" == cur )
-						flags |= Text::Underlined;
-					else if ( "bold" == cur )
-						flags |= Text::Bold;
-					else if ( "italic" == cur )
-						flags |= Text::Italic;
-					else if ( "strikethrough" == cur )
-						flags |= Text::StrikeThrough;
-					else if ( "shadowed" == cur || "shadow" == cur )
-						flags |= Text::Shadow;
-				}
-
-				setFontStyle( flags );
+				if ( "underlined" == cur || "underline" == cur )
+					flags |= Text::Underlined;
+				else if ( "bold" == cur )
+					flags |= Text::Bold;
+				else if ( "italic" == cur )
+					flags |= Text::Italic;
+				else if ( "strikethrough" == cur )
+					flags |= Text::StrikeThrough;
+				else if ( "shadowed" == cur || "shadow" == cur )
+					flags |= Text::Shadow;
 			}
-		} else if ( "fontoutlinethickness" == name ) {
-			setOutlineThickness( PixelDensity::toDpFromString( ait->as_string() ) );
-		} else if ( "fontoutlinecolor" == name ) {
-			setOutlineColor( Color::fromString( ait->as_string() ) );
-		} else if ( "maxtextlength" == name ) {
-			setMaxTextLength( ait->as_uint(1) );
-		} else if ( "mintabwidth" == name ) {
-			setMinTabWidth( ait->as_uint(1) );
-		} else if ( "maxtabwidth" == name ) {
-			setMaxTabWidth( ait->as_uint() );
-		} else if ( "tabclosable" == name ) {
-			setTabsClosable( ait->as_bool() );
-		} else if ( "specialbordertabs" == name ) {
-			setSpecialBorderTabs( ait->as_bool() );
-		} else if ( "drawlinebelowtabs" == name ) {
-			setDrawLineBelowTabs( ait->as_bool() );
-		} else if ( "linebelowtabscolor" == name ) {
-			setLineBelowTabsColor( Color::fromString( ait->as_string() ) );
-		} else if ( "linebelowtabsyoffset" == name ) {
-			setLineBelowTabsYOffset( ait->as_int() );
-		}
-	}
 
-	endPropertiesTransaction();
+			setFontStyle( flags );
+		}
+	} else if ( "fontoutlinethickness" == name ) {
+		setOutlineThickness( PixelDensity::toDpFromString( attribute.asString() ) );
+	} else if ( "fontoutlinecolor" == name ) {
+		setOutlineColor( Color::fromString( attribute.asString() ) );
+	} else if ( "maxtextlength" == name ) {
+		setMaxTextLength( attribute.asUint(1) );
+	} else if ( "mintabwidth" == name ) {
+		setMinTabWidth( attribute.asUint(1) );
+	} else if ( "maxtabwidth" == name ) {
+		setMaxTabWidth( attribute.asUint() );
+	} else if ( "tabclosable" == name ) {
+		setTabsClosable( attribute.asBool() );
+	} else if ( "specialbordertabs" == name ) {
+		setSpecialBorderTabs( attribute.asBool() );
+	} else if ( "drawlinebelowtabs" == name ) {
+		setDrawLineBelowTabs( attribute.asBool() );
+	} else if ( "linebelowtabscolor" == name ) {
+		setLineBelowTabsColor( Color::fromString( attribute.asString() ) );
+	} else if ( "linebelowtabsyoffset" == name ) {
+		setLineBelowTabsYOffset( attribute.asInt() );
+	} else {
+		UIWidget::setAttribute( attribute );
+	}
 }
 
 Font * UITabWidget::getFont() const {

@@ -112,6 +112,8 @@ class EE_API UIListBox : public UITouchDragableWidget {
 		void setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig);
 
 		void loadFromXmlNode(const pugi::xml_node & node);
+
+		virtual void setAttribute( const NodeAttribute& attribute );
 	protected:
 		friend class UIListBoxItem;
 		friend class UIItemContainer<UIListBox>;

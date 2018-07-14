@@ -80,7 +80,7 @@ class EE_API UITextView : public UIWidget {
 
 		UITextView * setPadding(const Rectf& padding);
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+		virtual void setAttribute( const NodeAttribute& attribute );
 	protected:
 		Text *		mTextCache;
 		String			mString;

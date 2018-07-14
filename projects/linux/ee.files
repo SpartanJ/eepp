@@ -216,6 +216,7 @@
 ../../include/eepp/scene/keyevent.hpp
 ../../include/eepp/scene/mouseevent.hpp
 ../../include/eepp/scene/node.hpp
+../../include/eepp/scene/nodeattribute.hpp
 ../../include/eepp/scene/nodemessage.hpp
 ../../include/eepp/scene/scenemanager.hpp
 ../../include/eepp/scene/scenenode.hpp
@@ -625,6 +626,7 @@
 ../../src/eepp/scene/keyevent.cpp
 ../../src/eepp/scene/mouseevent.cpp
 ../../src/eepp/scene/node.cpp
+../../src/eepp/scene/nodeattribute.cpp
 ../../src/eepp/scene/nodemessage.cpp
 ../../src/eepp/scene/scenemanager.cpp
 ../../src/eepp/scene/scenenode.cpp

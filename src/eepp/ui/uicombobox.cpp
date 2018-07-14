@@ -74,13 +74,13 @@ const String& UIComboBox::getText() {
 }
 
 void UIComboBox::loadFromXmlNode(const pugi::xml_node& node) {
-	beginPropertiesTransaction();
+	beginAttributesTransaction();
 
 	UIWidget::loadFromXmlNode( node );
 
 	mDropDownList->loadFromXmlNode( node );
 
-	endPropertiesTransaction();
+	endAttributesTransaction();
 }
 
 Uint32 UIComboBox::onMessage( const NodeMessage * Msg ) {

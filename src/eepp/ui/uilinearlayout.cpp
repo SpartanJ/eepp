@@ -328,27 +328,20 @@ Sizei UILinearLayout::getTotalUsedSize() {
 	return size;
 }
 
-void UILinearLayout::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UILinearLayout::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
+	if ( "orientation" == name ) {
+		std::string val = attribute.asString();
+		String::toLowerInPlace( val );
 
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "orientation" == name ) {
-			std::string val = ait->as_string();
-			String::toLowerInPlace( val );
-
-			if ( "horizontal" == val )
-				setOrientation( UI_HORIZONTAL );
-			else if ( "vertical" == val )
-				setOrientation( UI_VERTICAL );
-		}
+		if ( "horizontal" == val )
+			setOrientation( UI_HORIZONTAL );
+		else if ( "vertical" == val )
+			setOrientation( UI_VERTICAL );
+	} else {
+		UILayout::setAttribute( attribute );
 	}
-
-	endPropertiesTransaction();
 }
 
 Uint32 UILinearLayout::onMessage(const NodeMessage * Msg) {

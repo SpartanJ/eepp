@@ -31,7 +31,7 @@ class EE_API UITab : public UISelectButton {
 
 		virtual void update( const Time& time );
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+		virtual void setAttribute( const NodeAttribute& attribute );
 	protected:
 		Node * mControlOwned;
 		std::string mOwnedName;

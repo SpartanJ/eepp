@@ -64,7 +64,7 @@ class EE_API UISlider : public UIWidget {
 
 		void setPageStep( const Float & pageStep );
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+		virtual void setAttribute( const NodeAttribute& attribute );
 	protected:
 		friend class Private::UISliderButton;
 

@@ -1,6 +1,7 @@
 #ifndef EE_UIUIWIDGET_HPP
 #define EE_UIUIWIDGET_HPP
 
+#include <eepp/scene/nodeattribute.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitooltip.hpp>
 
@@ -85,6 +86,10 @@ class EE_API UIWidget : public UINode {
 		void notifyLayoutAttrChange();
 
 		void notifyLayoutAttrChangeParent();
+
+		void setAttribute( const std::string& name, const std::string& value );
+
+		virtual void setAttribute( const NodeAttribute& attribute );
 	protected:
 		friend class UIManager;
 		friend class UISceneNode;
@@ -101,7 +106,8 @@ class EE_API UIWidget : public UINode {
 		LayoutSizeRules mLayoutHeightRules;
 		LayoutPositionRules mLayoutPositionRule;
 		UIWidget * mLayoutPositionRuleWidget;
-		int	mPropertiesTransactionCount;
+		int	mAttributesTransactionCount;
+		std::string mSkinName;
 
 		void createTooltip();
 
@@ -115,9 +121,9 @@ class EE_API UIWidget : public UINode {
 
 		virtual void onWidgetCreated();
 
-		void beginPropertiesTransaction();
+		void beginAttributesTransaction();
 
-		void endPropertiesTransaction();
+		void endAttributesTransaction();
 
 		void updateAnchors( const Vector2f & SizeChange );
 

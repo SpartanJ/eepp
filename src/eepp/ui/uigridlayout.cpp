@@ -206,54 +206,47 @@ Sizef UIGridLayout::getTargetElementSize() {
 				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getHeight() : mDpSize.getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
 }
 
-void UIGridLayout::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UIGridLayout::setAttribute( const NodeAttribute &attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
-
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "columnspan" == name ) {
-			setSpan( Sizei( ait->as_int(), mSpan.y ) );
-		} else if ( "rowspan" == name ) {
-			setSpan( Sizei( mSpan.x, ait->as_int() ) );
-		} else if ( "span" == name ) {
-			setSpan( Sizei( ait->as_int(), ait->as_int() ) );
-		} else if ( "columnmode" == name ) {
-			std::string val( ait->as_string() );
-			String::toLowerInPlace( val );
-			setColumnMode( "size" == val ? Size : Weight );
-		} else if ( "rowmode" == name ) {
-			std::string val( ait->as_string() );
-			String::toLowerInPlace( val );
-			setRowMode( "size" == val ? Size : Weight );
-		} else if ( "columnweight" == name ) {
-			setColumnWeight( ait->as_float() );
-		} else if ( "columnwidth" == name ) {
-			setColumnWidth( ait->as_int() );
-		} else if ( "rowweight" == name ) {
-			setRowWeight( ait->as_float() );
-		} else if ( "rowheight" == name ) {
-			setRowHeight( ait->as_int() );
-		} else if ( "padding" == name ) {
-			int val = PixelDensity::toDpFromStringI( ait->as_string() );
-			setPadding( Rect( val, val, val, val ) );
-		} else if ( "paddingleft" == name ) {
-			setPadding( Rect( PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
-		} else if ( "paddingright" == name ) {
-			setPadding( Rect( mPadding.Left, mPadding.Top, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Bottom ) );
-		} else if ( "paddingtop" == name ) {
-			setPadding( Rect( mPadding.Left, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Right, mPadding.Bottom ) );
-		} else if ( "paddingbottom" == name ) {
-			setPadding( Rect( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
-		} else if ( "reversedraw" == name ) {
-			setReverseDraw( ait->as_bool() );
-		}
+	if ( "columnspan" == name ) {
+		setSpan( Sizei( attribute.asInt(), mSpan.y ) );
+	} else if ( "rowspan" == name ) {
+		setSpan( Sizei( mSpan.x, attribute.asInt() ) );
+	} else if ( "span" == name ) {
+		setSpan( Sizei( attribute.asInt(), attribute.asInt() ) );
+	} else if ( "columnmode" == name ) {
+		std::string val( attribute.asString() );
+		String::toLowerInPlace( val );
+		setColumnMode( "size" == val ? Size : Weight );
+	} else if ( "rowmode" == name ) {
+		std::string val( attribute.asString() );
+		String::toLowerInPlace( val );
+		setRowMode( "size" == val ? Size : Weight );
+	} else if ( "columnweight" == name ) {
+		setColumnWeight( attribute.asFloat() );
+	} else if ( "columnwidth" == name ) {
+		setColumnWidth( attribute.asInt() );
+	} else if ( "rowweight" == name ) {
+		setRowWeight( attribute.asFloat() );
+	} else if ( "rowheight" == name ) {
+		setRowHeight( attribute.asInt() );
+	} else if ( "padding" == name ) {
+		int val = PixelDensity::toDpFromStringI( attribute.asString() );
+		setPadding( Rect( val, val, val, val ) );
+	} else if ( "paddingleft" == name ) {
+		setPadding( Rect( PixelDensity::toDpFromStringI( attribute.asString() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
+	} else if ( "paddingright" == name ) {
+		setPadding( Rect( mPadding.Left, mPadding.Top, PixelDensity::toDpFromStringI( attribute.asString() ), mPadding.Bottom ) );
+	} else if ( "paddingtop" == name ) {
+		setPadding( Rect( mPadding.Left, PixelDensity::toDpFromStringI( attribute.asString() ), mPadding.Right, mPadding.Bottom ) );
+	} else if ( "paddingbottom" == name ) {
+		setPadding( Rect( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromStringI( attribute.asString() ) ) );
+	} else if ( "reversedraw" == name ) {
+		setReverseDraw( attribute.asBool() );
+	} else {
+		UILayout::setAttribute( attribute );
 	}
-
-	endPropertiesTransaction();
 }
 
 }} 

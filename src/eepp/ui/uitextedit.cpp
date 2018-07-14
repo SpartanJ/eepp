@@ -447,37 +447,30 @@ void UITextEdit::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
 	}
 }
 
-void UITextEdit::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UITextEdit::setAttribute( const NodeAttribute &attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
-
-	mTextInput->loadFromXmlNode( node );
-
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "text" == name ) {
-			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
-				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( ait->as_string() ) );
-			}
-		} else if ( "allowediting" == name ) {
-			setAllowEditing( ait->as_bool() );
-		} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {
-			std::string val = ait->as_string();
-			if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
-			else if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
-		} else if ( "horizontalscrollmode" == name || "hscrollmode" == name ) {
-			std::string val = ait->as_string();
-			if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
-			else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+	if ( "text" == name ) {
+		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
+			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
 		}
+	} else if ( "allowediting" == name ) {
+		setAllowEditing( attribute.asBool() );
+	} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {
+		std::string val = attribute.asString();
+		if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
+		else if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+		else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+	} else if ( "horizontalscrollmode" == name || "hscrollmode" == name ) {
+		std::string val = attribute.asString();
+		if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
+		else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+		else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+	} else {
+		UIWidget::setAttribute( attribute );
 	}
 
-	endPropertiesTransaction();
+	mTextInput->setAttribute( attribute );
 }
 
 }}

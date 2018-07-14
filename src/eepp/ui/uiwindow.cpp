@@ -1397,56 +1397,53 @@ void UIWindow::resizeCursor() {
 	}
 }
 
-void UIWindow::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UIWindow::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
+	if ( "width" == name ) {
+		setSize( attribute.asInt(), mDpSize.getHeight() );
+	} else if ( "height" == name ) {
+		setSize( mDpSize.getWidth(), attribute.asInt() );
+	} else if ( "title" == name ) {
+		setTitle( attribute.asString() );
+	} else if ( "basealpha" == name ) {
+		unsigned int val = attribute.asUint();
+		if ( val <= 255 )
+			setBaseAlpha( (Uint8)val );
+	} else if ( "winflags" == name ) {
+		std::string flagsStr = attribute.asString();
+		String::toLowerInPlace( flagsStr );
+		std::vector<std::string> strings = String::split( flagsStr, '|' );
+		Uint32 winflags = 0;
 
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
+		if ( strings.size() ) {
+			for ( std::size_t i = 0; i < strings.size(); i++ ) {
+				std::string cur = strings[i];
 
-		if ( "width" == name ) {
-			setSize( ait->as_int(), mDpSize.getHeight() );
-		} else if ( "height" == name ) {
-			setSize( mDpSize.getWidth(), ait->as_int() );
-		} else if ( "title" == name ) {
-			setTitle( ait->as_string() );
-		} else if ( "basealpha" == name ) {
-			unsigned int val = ait->as_uint();
-			if ( val <= 255 )
-				setBaseAlpha( (Uint8)val );
-		} else if ( "winflags" == name ) {
-			std::string flagsStr = ait->as_string();
-			String::toLowerInPlace( flagsStr );
-			std::vector<std::string> strings = String::split( flagsStr, '|' );
-			Uint32 winflags = 0;
-
-			if ( strings.size() ) {
-				for ( std::size_t i = 0; i < strings.size(); i++ ) {
-					std::string cur = strings[i];
-
-					if ( "default" == cur ) winflags |= UI_WIN_DEFAULT_FLAGS;
-					else if ( "close" == cur ) winflags |= UI_WIN_CLOSE_BUTTON;
-					else if ( "maximize" == cur ) winflags |= UI_WIN_MAXIMIZE_BUTTON;
-					else if ( "minimize" == cur ) winflags |= UI_WIN_MINIMIZE_BUTTON;
-					else if ( "dragable" == cur ) winflags |= UI_WIN_DRAGABLE_CONTAINER;
-					else if ( "shadow" == cur ) winflags |= UI_WIN_SHADOW;
-					else if ( "modal" == cur ) winflags |= UI_WIN_MODAL;
-					else if ( "noborder" == cur || "borderless" == cur ) winflags |= UI_WIN_NO_BORDER;
-					else if ( "resizeable" == cur ) winflags |= UI_WIN_RESIZEABLE;
-					else if ( "sharealpha" == cur ) winflags |= UI_WIN_SHARE_ALPHA_WITH_CHILDS;
-					else if ( "buttonactions" == cur ) winflags |= UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS;
-					else if ( "framebuffer"== cur ) winflags |= UI_WIN_FRAME_BUFFER;
-					else if ( "colorbuffer"== cur ) winflags |= UI_WIN_COLOR_BUFFER;
-				}
-
-				setWinFlags( winflags );
+				if ( "default" == cur ) winflags |= UI_WIN_DEFAULT_FLAGS;
+				else if ( "close" == cur ) winflags |= UI_WIN_CLOSE_BUTTON;
+				else if ( "maximize" == cur ) winflags |= UI_WIN_MAXIMIZE_BUTTON;
+				else if ( "minimize" == cur ) winflags |= UI_WIN_MINIMIZE_BUTTON;
+				else if ( "dragable" == cur ) winflags |= UI_WIN_DRAGABLE_CONTAINER;
+				else if ( "shadow" == cur ) winflags |= UI_WIN_SHADOW;
+				else if ( "modal" == cur ) winflags |= UI_WIN_MODAL;
+				else if ( "noborder" == cur || "borderless" == cur ) winflags |= UI_WIN_NO_BORDER;
+				else if ( "resizeable" == cur ) winflags |= UI_WIN_RESIZEABLE;
+				else if ( "sharealpha" == cur ) winflags |= UI_WIN_SHARE_ALPHA_WITH_CHILDS;
+				else if ( "buttonactions" == cur ) winflags |= UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS;
+				else if ( "framebuffer"== cur ) winflags |= UI_WIN_FRAME_BUFFER;
+				else if ( "colorbuffer"== cur ) winflags |= UI_WIN_COLOR_BUFFER;
 			}
-		}
-	}
 
-	endPropertiesTransaction();
+			setWinFlags( winflags );
+		}
+	} else {
+		UIWidget::setAttribute( attribute );
+	}
+}
+
+void UIWindow::loadFromXmlNode(const pugi::xml_node & node) {
+	UIWidget::loadFromXmlNode( node );
 
 	show();
 }

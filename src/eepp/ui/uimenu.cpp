@@ -552,7 +552,7 @@ static Drawable * getIconDrawable( const std::string& name ) {
 }
 
 void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
-	beginPropertiesTransaction();
+	beginAttributesTransaction();
 
 	UIWidget::loadFromXmlNode( node );
 
@@ -590,7 +590,7 @@ void UIMenu::loadFromXmlNode( const pugi::xml_node& node ) {
 		}
 	}
 
-	endPropertiesTransaction();
+	endAttributesTransaction();
 }
 
 void UIMenu::fixMenuPos( Vector2f& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {

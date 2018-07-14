@@ -135,7 +135,7 @@ class EE_API UITabWidget : public UIWidget {
 
 		void setStyleConfig(const UITabWidgetStyleConfig & styleConfig);
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+		virtual void setAttribute( const NodeAttribute& attribute );
 	protected:
 		friend class UITab;
 

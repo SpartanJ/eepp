@@ -618,53 +618,46 @@ bool UITable::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds() && !mVScrollBar->isMouseOverMeOrChilds() && !mHScrollBar->isMouseOverMeOrChilds();
 }
 
-void UITable::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UITable::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UITouchDragableWidget::loadFromXmlNode( node );
+	if ( "rowheight" == name ) {
+		setRowHeight( attribute.asInt() );
+	} else if ( "padding" == name ) {
+		int val = attribute.asInt();
+		setContainerPadding( Rectf( val, val, val, val ) );
+	} else if ( "paddingleft" == name ) {
+		setContainerPadding( Rectf( attribute.asInt(), mContainerPadding.Top, mContainerPadding.Right, mContainerPadding.Bottom ) );
+	} else if ( "paddingright" == name ) {
+		setContainerPadding( Rectf( mContainerPadding.Left, mContainerPadding.Top, attribute.asInt(), mContainerPadding.Bottom ) );
+	} else if ( "paddingtop" == name ) {
+		setContainerPadding( Rectf( mContainerPadding.Left, attribute.asInt(), mContainerPadding.Right, mContainerPadding.Bottom ) );
+	} else if ( "paddingbottom" == name ) {
+		setContainerPadding( Rectf( mContainerPadding.Left, mContainerPadding.Top, mContainerPadding.Right, attribute.asInt() ) );
+	} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {
+		std::string val = attribute.asString();
+		if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
+		else if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+		else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+	} else if ( "horizontalscrollmode" == name || "hscrollmode" == name ) {
+		std::string val = attribute.asString();
+		if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
+		else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+		else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
+	} else if ( "scrollbartype" == name ) {
+		std::string val( attribute.asString() );
+		String::toLowerInPlace( val );
 
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "rowheight" == name ) {
-			setRowHeight( ait->as_int() );
-		} else if ( "padding" == name ) {
-			int val = ait->as_int();
-			setContainerPadding( Rectf( val, val, val, val ) );
-		} else if ( "paddingleft" == name ) {
-			setContainerPadding( Rectf( ait->as_int(), mContainerPadding.Top, mContainerPadding.Right, mContainerPadding.Bottom ) );
-		} else if ( "paddingright" == name ) {
-			setContainerPadding( Rectf( mContainerPadding.Left, mContainerPadding.Top, ait->as_int(), mContainerPadding.Bottom ) );
-		} else if ( "paddingtop" == name ) {
-			setContainerPadding( Rectf( mContainerPadding.Left, ait->as_int(), mContainerPadding.Right, mContainerPadding.Bottom ) );
-		} else if ( "paddingbottom" == name ) {
-			setContainerPadding( Rectf( mContainerPadding.Left, mContainerPadding.Top, mContainerPadding.Right, ait->as_int() ) );
-		} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {
-			std::string val = ait->as_string();
-			if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
-			else if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
-		} else if ( "horizontalscrollmode" == name || "hscrollmode" == name ) {
-			std::string val = ait->as_string();
-			if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
-			else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
-		} else if ( "scrollbartype" == name ) {
-			std::string val( ait->as_string() );
-			String::toLowerInPlace( val );
-
-			if ( "nobuttons" == val ) {
-				mVScrollBar->setScrollBarType( UIScrollBar::NoButtons );
-				mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
-			} else if ( "twobuttons" == val ) {
-				mVScrollBar->setScrollBarType( UIScrollBar::TwoButtons );
-				mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
-			}
+		if ( "nobuttons" == val ) {
+			mVScrollBar->setScrollBarType( UIScrollBar::NoButtons );
+			mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
+		} else if ( "twobuttons" == val ) {
+			mVScrollBar->setScrollBarType( UIScrollBar::TwoButtons );
+			mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
 		}
+	} else {
+		UITouchDragableWidget::setAttribute( attribute );
 	}
-
-	endPropertiesTransaction();
 }
 
 }}

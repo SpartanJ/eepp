@@ -402,37 +402,30 @@ void UISlider::onAlphaChange() {
 	mSlider->setAlpha( mAlpha );
 }
 
-void UISlider::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UISlider::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
+	if ( "orientation" == name ) {
+		std::string val = attribute.asString();
+		String::toLowerInPlace( val );
 
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "orientation" == name ) {
-			std::string val = ait->as_string();
-			String::toLowerInPlace( val );
-
-			if ( "horizontal" == val )
-				setOrientation( UI_HORIZONTAL );
-			else if ( "vertical" == val )
-				setOrientation( UI_VERTICAL );
-		} else if ( "minvalue" == name ) {
-			setMinValue( ait->as_float() );
-		} else if ( "maxvalue" == name ) {
-			setMaxValue( ait->as_float() );
-		} else if ( "value" == name ) {
-			setValue( ait->as_float() );
-		} else if ( "clickstep" == name ) {
-			setClickStep( ait->as_float() );
-		} else if ( "pagestep" == name ) {
-			setPageStep( ait->as_float() );
-		}
+		if ( "horizontal" == val )
+			setOrientation( UI_HORIZONTAL );
+		else if ( "vertical" == val )
+			setOrientation( UI_VERTICAL );
+	} else if ( "minvalue" == name ) {
+		setMinValue( attribute.asFloat() );
+	} else if ( "maxvalue" == name ) {
+		setMaxValue( attribute.asFloat() );
+	} else if ( "value" == name ) {
+		setValue( attribute.asFloat() );
+	} else if ( "clickstep" == name ) {
+		setClickStep( attribute.asFloat() );
+	} else if ( "pagestep" == name ) {
+		setPageStep( attribute.asFloat() );
+	} else {
+		UIWidget::setAttribute( attribute );
 	}
-
-	endPropertiesTransaction();
 }
 
 }}

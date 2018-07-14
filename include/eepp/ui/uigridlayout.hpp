@@ -53,7 +53,7 @@ class EE_API UIGridLayout : public UILayout {
 
 		void setPadding(const Rect & padding);
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+		virtual void setAttribute( const NodeAttribute& attribute );
 	protected:
 		Rect mPadding;
 		Sizei mSpan;

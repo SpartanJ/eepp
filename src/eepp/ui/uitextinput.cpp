@@ -339,33 +339,26 @@ bool UITextInput::isFreeEditingEnabled() {
 	return mTextBuffer.isFreeEditingEnabled();
 }
 
-void UITextInput::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UITextInput::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UITextView::loadFromXmlNode( node );
-
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "text" == name ) {
-			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
-				setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( ait->as_string() ) );
-			}
-		} else if ( "allowediting" == name ) {
-			setAllowEditing( ait->as_bool() );
-		} else if ( "maxlength" == name ) {
-			setMaxLength( ait->as_uint() );
-		} else if ( "freeediting" == name ) {
-			setFreeEditing( ait->as_bool() );
-		} else if ( "onlynumbers" == name ) {
-			getInputTextBuffer()->setAllowOnlyNumbers( ait->as_bool(), getInputTextBuffer()->dotsInNumbersAllowed() );
-		} else if ( "allowdot" == name ) {
-			getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), ait->as_bool() );
+	if ( "text" == name ) {
+		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
+			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
 		}
+	} else if ( "allowediting" == name ) {
+		setAllowEditing( attribute.asBool() );
+	} else if ( "maxlength" == name ) {
+		setMaxLength( attribute.asUint() );
+	} else if ( "freeediting" == name ) {
+		setFreeEditing( attribute.asBool() );
+	} else if ( "onlynumbers" == name ) {
+		getInputTextBuffer()->setAllowOnlyNumbers( attribute.asBool(), getInputTextBuffer()->dotsInNumbersAllowed() );
+	} else if ( "allowdot" == name ) {
+		getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), attribute.asBool() );
+	} else {
+		UITextView::setAttribute( attribute );
 	}
-
-	endPropertiesTransaction();
 }
 
 }}

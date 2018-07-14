@@ -175,41 +175,34 @@ const Vector2f& UIImage::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-void UIImage::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+void UIImage::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
+	if ( "src" == name ) {
+		Drawable * res = NULL;
 
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
+		if ( NULL != ( res = DrawableSearcher::searchByName( attribute.asString() ) ) ) {
+			if ( res->getDrawableType() == Drawable::SPRITE )
+				mDrawableOwner = true;
 
-		if ( "src" == name ) {
-			Drawable * res = NULL;
-
-			if ( NULL != ( res = DrawableSearcher::searchByName( ait->as_string() ) ) ) {
-				if ( res->getDrawableType() == Drawable::SPRITE )
-					mDrawableOwner = true;
-
-				setDrawable( res );
-			}
-		} else if ( "scaletype" == name ) {
-			std::string val = ait->as_string();
-			String::toLowerInPlace( val );
-
-			if ( "expand" == val ) {
-				setScaleType( UIScaleType::Expand );
-			} else if ( "fit_inside" == val || "fitinside" == val ) {
-				setScaleType( UIScaleType::FitInside );
-			} else if ( "none" == val ) {
-				setScaleType( UIScaleType::None );
-			}
-		} else if ( "tint" == name ) {
-			setColor( Color::fromString( ait->as_string() ) );
+			setDrawable( res );
 		}
-	}
+	} else if ( "scaletype" == name ) {
+		std::string val = attribute.asString();
+		String::toLowerInPlace( val );
 
-	endPropertiesTransaction();
+		if ( "expand" == val ) {
+			setScaleType( UIScaleType::Expand );
+		} else if ( "fit_inside" == val || "fitinside" == val ) {
+			setScaleType( UIScaleType::FitInside );
+		} else if ( "none" == val ) {
+			setScaleType( UIScaleType::None );
+		}
+	} else if ( "tint" == name ) {
+		setColor( Color::fromString( attribute.asString() ) );
+	} else {
+		UIWidget::setAttribute( attribute );
+	}
 }
 
 Uint32 UIImage::getScaleType() const {

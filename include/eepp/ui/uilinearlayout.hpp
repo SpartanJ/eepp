@@ -25,7 +25,7 @@ class EE_API UILinearLayout : public UILayout {
 
 		UILinearLayout * add( UIWidget * widget );
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+		virtual void setAttribute( const NodeAttribute& attribute );
 	protected:
 		UI_ORIENTATION mOrientation;
 
