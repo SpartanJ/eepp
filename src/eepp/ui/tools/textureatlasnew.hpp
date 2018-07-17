@@ -12,7 +12,7 @@ namespace EE { namespace UI { namespace Tools {
 
 class EE_API TextureAtlasNew {
 	public:
-		typedef cb::Callback1<void, TexturePacker *> TGCreateCb;
+		typedef std::function<void( TexturePacker * )> TGCreateCb;
 
 		TextureAtlasNew( TGCreateCb NewTGCb = TGCreateCb() );
 

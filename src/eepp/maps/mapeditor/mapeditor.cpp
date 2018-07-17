@@ -1229,7 +1229,7 @@ void MapEditor::onLayerSelect( const Event * Event ) {
 }
 
 void MapEditor::windowClose( const Event * Event ) {
-	if ( mCloseCb.IsSet() )
+	if ( mCloseCb )
 		mCloseCb();
 
 	eeDelete( this );

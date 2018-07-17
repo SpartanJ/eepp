@@ -17,7 +17,7 @@ class TextureAtlas;
 /** @brief The Texture Atlas Loader loads any previously created Texture Atlas. */
 class EE_API TextureAtlasLoader {
 	public:
-		typedef cb::Callback1<void, TextureAtlasLoader *> GLLoadCallback;
+		typedef std::function<void( TextureAtlasLoader * )> GLLoadCallback;
 
 		/** Creates an empty loader. The texture atlas can be loaded callin any Load* function. */
 		TextureAtlasLoader();

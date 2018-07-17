@@ -18,7 +18,7 @@ class TextureAtlasTextureRegionEditor;
 
 class EE_API TextureAtlasEditor {
 	public:
-		typedef cb::Callback0<void> TGEditorCloseCb;
+		typedef std::function<void()> TGEditorCloseCb;
 
 		static TextureAtlasEditor * New( UIWindow * AttatchTo = NULL, const TGEditorCloseCb& callback = TGEditorCloseCb() );
 

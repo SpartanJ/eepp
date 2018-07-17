@@ -23,7 +23,7 @@ void ObjectLoader::load() {
 }
 
 void ObjectLoader::load( ObjLoadCallback Cb ) {
-	if ( Cb.IsSet() ) {
+	if ( Cb ) {
 		mLoadCbs.push_back( Cb );
 	}
 

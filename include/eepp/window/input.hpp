@@ -17,7 +17,7 @@ namespace EE { namespace Window {
 /** @brief The basic input class. For mouse and keyboard. */
 class EE_API Input {
 	public:
-		typedef cb::Callback1<void, InputEvent*>	InputCallback;
+		typedef std::function<void( InputEvent* )>	InputCallback;
 		
 		virtual ~Input();
 

@@ -242,7 +242,7 @@ void TextureAtlasEditor::onDestHChange( const Event * Event ) {
 }
 
 void TextureAtlasEditor::windowClose( const Event * Event ) {
-	if ( mCloseCb.IsSet() )
+	if ( mCloseCb )
 		mCloseCb();
 
 	eeDelete( this );

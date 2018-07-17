@@ -12,16 +12,16 @@ CP_NAMESPACE_BEGIN
 
 class CP_API Space {
 	public:
-		typedef cb::Callback3<int	, Arbiter *, Space *	, void * >				CollisionBeginFunc;
-		typedef cb::Callback3<int	, Arbiter *, Space *	, void * >				CollisionPreSolveFunc;
-		typedef cb::Callback3<void	, Arbiter *, Space *	, void * >				CollisionPostSolveFunc;
-		typedef cb::Callback3<void	, Arbiter *, Space *	, void * >				CollisionSeparateFunc;
-		typedef cb::Callback3<void	, Space *	, void *	, void * >				PostStepCallback;
-		typedef cb::Callback2<void	, Shape *	, void * >							BBQueryFunc;
-		typedef cb::Callback4<void	, Shape *	, cpFloat	, cVect	, void * >		SegmentQueryFunc;
-		typedef cb::Callback2<void	, Shape *	, void * >							PointQueryFunc;
-		typedef cb::Callback3<void	, Space *	, Body *	, void * >				BodyIteratorFunc;
-		typedef cb::Callback3<void	, Space *	, Shape *	, void * >				ShapeIteratorFunc;
+		typedef std::function<int	( Arbiter *, Space *	, void * )>				CollisionBeginFunc;
+		typedef std::function<int	( Arbiter *, Space *	, void * )>				CollisionPreSolveFunc;
+		typedef std::function<void	( Arbiter *, Space *	, void * )>				CollisionPostSolveFunc;
+		typedef std::function<void	( Arbiter *, Space *	, void * )>				CollisionSeparateFunc;
+		typedef std::function<void	( Space *	, void *	, void * )>				PostStepCallback;
+		typedef std::function<void	( Shape *	, void * )>							BBQueryFunc;
+		typedef std::function<void	( Shape *	, cpFloat	, cVect	, void * )>		SegmentQueryFunc;
+		typedef std::function<void	( Shape *	, void * )>							PointQueryFunc;
+		typedef std::function<void	( Space *	, Body *	, void * )>				BodyIteratorFunc;
+		typedef std::function<void	( Space *	, Shape *	, void * )>				ShapeIteratorFunc;
 
 		class CollisionHandler {
 			public:
@@ -32,7 +32,7 @@ class CP_API Space {
 				{
 				}
 
-				inline void Reset() {
+				inline void reset() {
 					a			= 0;
 					b			= 0;
 					data		= NULL;

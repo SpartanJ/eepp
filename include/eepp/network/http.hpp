@@ -307,7 +307,7 @@ class EE_API Http : NonCopyable {
 		Response downloadRequest(const Request& request, std::string writePath, Time timeout = Time::Zero);
 
 		/** Definition of the async callback response */
-		typedef cb::Callback3<void, const Http&, Http::Request&, Http::Response&>		AsyncResponseCallback;
+		typedef std::function<void( const Http&, Http::Request&, Http::Response& )>		AsyncResponseCallback;
 
 		/** @brief Sends the request and creates a new thread, when got the response informs the result to the callback.
 		**	This function does not lock the caller thread.

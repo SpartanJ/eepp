@@ -191,7 +191,7 @@ void Body::updatePosition( cpFloat dt ) {
 void Body::bodyVelocityFuncWrapper( cpBody *body, cpVect gravity, cpFloat damping, cpFloat dt ) {
 	Body * tBody = reinterpret_cast<Body*>( body->data );
 
-	if ( tBody->mVelocityFunc.IsSet() ) {
+	if ( tBody->mVelocityFunc ) {
 		tBody->mVelocityFunc( reinterpret_cast<Body*>( body->data ), tovect( gravity ), damping, dt );
 	}
 }
@@ -205,7 +205,7 @@ void Body::velocityFunc( BodyVelocityFunc func ) {
 void Body::bodyPositionFuncWrapper( cpBody* body, cpFloat dt ) {
 	Body * tBody = reinterpret_cast<Body*>( body->data );
 
-	if ( tBody->mPositionFunc.IsSet() ) {
+	if ( tBody->mPositionFunc ) {
 		tBody->mPositionFunc( reinterpret_cast<Body*>( body->data ), dt );
 	}
 }
@@ -259,7 +259,7 @@ void Body::eachShape( ShapeIteratorFunc Func, void * data ) {
 }
 
 void Body::onEachShape( Shape * Shape, ShapeIterator * it ) {
-	if ( it->Func.IsSet() ) {
+	if ( it->Func ) {
 		it->Func( it->Body, Shape, it->Data );
 	}
 }
@@ -275,7 +275,7 @@ void Body::eachConstraint( ConstraintIteratorFunc Func, void * data ) {
 }
 
 void Body::onEachConstraint( Constraint * Constraint, ConstraintIterator * it ) {
-	if ( it->Func.IsSet() ) {
+	if ( it->Func ) {
 		it->Func( this, Constraint, it->Data );
 	}
 }
@@ -292,7 +292,7 @@ void Body::eachArbiter( ArbiterIteratorFunc Func, void * data ) {
 }
 
 void Body::onEachArbiter( Arbiter * Arbiter, ArbiterIterator * it ) {
-	if ( it->Func.IsSet() ) {
+	if ( it->Func ) {
 		it->Func( this, Arbiter, it->Data );
 	}
 }

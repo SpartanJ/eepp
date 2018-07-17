@@ -70,7 +70,7 @@ bool ResourceLoader::clear( const bool& ClearObjectsLoaded ) {
 }
 
 void ResourceLoader::load( ResLoadCallback Cb ) {
-	if ( Cb.IsSet() )
+	if ( Cb )
 		mLoadCbs.push_back( Cb );
 
 	load();

@@ -273,7 +273,7 @@ void TextureAtlasLoader::createTextureRegions() {
 
 	mLoaded = true;
 
-	if ( mLoadCallback.IsSet() ) {
+	if ( mLoadCallback ) {
 		mLoadCallback( this );
 	}
 }

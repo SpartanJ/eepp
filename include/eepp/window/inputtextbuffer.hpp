@@ -24,7 +24,7 @@ enum INPUT_TEXTBUFFER_FLAGS {
 /** @brief A class to keep a buffer of the user writed text */
 class EE_API InputTextBuffer {
 	public:
-		typedef cb::Callback0<void> EnterCallback;
+		typedef std::function<void()> EnterCallback;
 
 		InputTextBuffer( const bool& active, const bool& newLineEnabled, const bool& freeEditing, EE::Window::Window * window = NULL, const Uint32& maxLength = INPUT_LENGHT_MAX );
 

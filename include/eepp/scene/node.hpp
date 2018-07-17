@@ -65,7 +65,7 @@ class EE_API Node : public Transformable {
 	public:
 		static Node * New();
 
-		typedef cb::Callback1<void, const Event*> EventCallback;
+		typedef std::function<void( const Event* )> EventCallback;
 
 		Node();
 

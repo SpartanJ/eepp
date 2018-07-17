@@ -28,9 +28,9 @@ class EE_API TileMap {
 	public:
 		typedef std::map<std::string, std::string>	PropertiesMap;
 		typedef std::list<std::string>				GOTypesList;		//! Special object types used in this map
-		typedef cb::Callback4< GameObject *, const Uint32&, const Uint32&, MapLayer *, const Uint32&>		CreateGOCb;
-		typedef cb::Callback0<void>	MapDrawCb;
-		typedef cb::Callback0<void> MapUpdateCb;
+		typedef std::function< GameObject *( const Uint32&, const Uint32&, MapLayer *, const Uint32& )>		CreateGOCb;
+		typedef std::function<void()>	MapDrawCb;
+		typedef std::function<void()> MapUpdateCb;
 
 		TileMap();
 

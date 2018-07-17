@@ -151,8 +151,8 @@ class DisplayMode {
 
 class EE_API Window {
 	public:
-		typedef cb::Callback1<void, Window*>			WindowResizeCallback;
-		typedef cb::Callback1<bool, Window*>			WindowRequestCloseCallback;
+		typedef std::function<void( Window* )>			WindowResizeCallback;
+		typedef std::function<bool( Window* )>			WindowRequestCloseCallback;
 
 		Window( WindowSettings Settings, ContextSettings Context, Clipboard * Clipboard, Input * Input, CursorManager * CursorManager );
 		
