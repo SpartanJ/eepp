@@ -212,9 +212,7 @@ std::string FileSystem::removeLastFolderFromPath( std::string path ) {
 		if ( pos2 != pos ) {
 			sstr = path.substr(0,pos) + getOSSlash();
 		} else {
-			if ( pos == pos2 ) {
-				sstr = path.substr(0,pos2+1);
-			}
+			sstr = path.substr(0,pos2+1);
 		}
 
 		if ( sstr.size() ) {
@@ -527,7 +525,7 @@ std::string FileSystem::sizeToString( const Int64& Size ) {
 }
 
 bool FileSystem::changeWorkingDirectory( const std::string & path ) {
-	int res = -1;
+	int res;
 #ifdef EE_COMPILER_MSVC
 	#ifdef UNICODE
 	res = _wchdir( String::fromUtf8( path.c_str() ).toWideString().c_str() );

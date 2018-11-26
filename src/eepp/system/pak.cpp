@@ -302,7 +302,6 @@ bool Pak::eraseFiles( const std::vector<std::string>& paths ) {
 	Uint32 total_offset = 0, i = 0;
 	pakFile nPf;
 	std::vector<pakEntry> uEntry;
-	bool Remove;
 
 	for ( i = 0; i < paths.size(); i++ ) {
 		Ex = exists( paths[i] );
@@ -317,7 +316,7 @@ bool Pak::eraseFiles( const std::vector<std::string>& paths ) {
 	nPf.fs = eeNew( IOStreamFile, ( nPf.pakPath.c_str() , "wb" ) );
 
 	for ( i = 0; i < mPakFiles.size(); i++ ) {
-		Remove = false;
+		bool Remove = false;
 
 		for ( Uint32 u = 0; u < files.size(); u++ ) {
 			if ( files[u] == static_cast<Int32>(i) )

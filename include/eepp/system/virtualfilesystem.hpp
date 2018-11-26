@@ -29,7 +29,7 @@ class EE_API VirtualFileSystem : protected Container<Pack> {
 
 				vfsFile() {}
 
-				vfsFile( std::string path, Pack * pack ) :
+				vfsFile( const std::string& path, Pack * pack ) :
 					path( path ),
 					pack( pack )
 				{}

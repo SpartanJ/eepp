@@ -173,7 +173,7 @@ String Translator::getStringf( const char * key, ... ) {
 
 	const char * format = str.c_str();
 
-	int n, size = 256;
+	int size = 256;
 	std::string tstr( size, '\0' );
 
 	va_list args;
@@ -181,7 +181,7 @@ String Translator::getStringf( const char * key, ... ) {
 	while (1) {
 		va_start( args, key );
 
-		n = vsnprintf( &tstr[0], size, format, args );
+		int n = vsnprintf( &tstr[0], size, format, args );
 
 		if ( n > -1 && n < size ) {
 			tstr.resize( n );
