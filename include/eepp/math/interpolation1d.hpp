@@ -29,9 +29,9 @@ class EE_API Interpolation1d {
 
 		~Interpolation1d();
 
-		typedef cb::Callback1<void,Interpolation1d&> OnPathEndCallback;
+		typedef std::function<void(Interpolation1d&)> OnPathEndCallback;
 
-		typedef cb::Callback1<void,Interpolation1d&> OnStepCallback;
+		typedef std::function<void(Interpolation1d&)> OnStepCallback;
 
 		/** Add a new point */
 		Interpolation1d& add( const Float& pos, const Time& Time = Time::Zero );

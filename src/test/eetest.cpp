@@ -491,15 +491,18 @@ void EETest::createBaseUI() {
 	w->setParent( C )->setSize( 20, 20 )->setPosition( 260, 130 );
 	w->setBackgroundFillEnabled( true )->setColor( Color::Green );
 	w->setRotation( 45 );
-	w->addEventListener( Event::MouseEnter, cb::Make1<void, const Event*>( [] ( const Event* event ) {
+
+	w->addEventListener( Event::MouseEnter, [] ( const Event* event ) {
 		static_cast<UIWidget*>( event->getNode() )->getBackground()->setColor( Color::Yellow );
-	} ) );
-	w->addEventListener( Event::MouseExit, cb::Make1<void, const Event*>( [] ( const Event* event ) {
+	} );
+
+	w->addEventListener( Event::MouseExit, [] ( const Event* event ) {
 		static_cast<UIWidget*>( event->getNode() )->getBackground()->setColor( Color::Green );
-	} ) );
-	w->addEventListener( Event::MouseClick, cb::Make1<void, const Event*>( [] ( const Event* event ) {
+	} );
+
+	w->addEventListener( Event::MouseClick, [] ( const Event* event ) {
 		static_cast<UIWidget*>( event->getNode() )->getBackground()->setColor( Color::Red );
-	} ) );
+	} );
 
 	C = reinterpret_cast<UINode*> ( C->getParent() );
 
@@ -2199,7 +2202,7 @@ void EETest::demo2Create() {
 	handler.separate	= cb::Make3( this, &EETest::blockerSeparate );
 	mSpace->addCollisionHandler( handler );
 
-	handler.Reset(); // Reset all the values and the callbacks ( set the callbacks as !IsSet()
+	handler.reset(); // Reset all the values and the callbacks ( set the callbacks as !IsSet()
 
 	handler.a			= CATCH_SENSOR_TYPE;
 	handler.b			= BALL_TYPE;

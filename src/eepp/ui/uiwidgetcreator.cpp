@@ -74,11 +74,11 @@ UIWidget * UIWidgetCreator::createFromName( std::string widgetName ) {
 	else if ( widgetName == "layout" )			return UILayout::New();
 
 	if ( registeredWidget.find( widgetName ) != registeredWidget.end() ) {
-		return registeredWidget[ widgetName ].Call();
+		return registeredWidget[ widgetName ]();
 	}
 
 	if ( widgetCallback.find( widgetName ) != widgetCallback.end() ) {
-		return widgetCallback[ widgetName ].Call( widgetName );
+		return widgetCallback[ widgetName ]( widgetName );
 	}
 
 	return NULL;

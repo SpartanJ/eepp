@@ -1,5 +1,5 @@
 // FLAC audio decoder. Public domain. See "unlicense" statement at the end of this file.
-// dr_flac - v0.9.4 - 2018-06-14
+// dr_flac - v0.9.10 - 2018-08-07
 //
 // David Reid - mackron@gmail.com
 
@@ -111,7 +111,7 @@
 // - This has not been tested on big-endian architectures.
 // - Rice codes in unencoded binary form (see https://xiph.org/flac/format.html#rice_partition) has not been tested. If anybody
 //   knows where I can find some test files for this, let me know.
-// - dr_flac is not thread-safe, but it's APIs can be called from any thread so long as you do your own synchronization.
+// - dr_flac is not thread-safe, but its APIs can be called from any thread so long as you do your own synchronization.
 // - When using Ogg encapsulation, a corrupted metadata block will result in drflac_open_with_metadata() and drflac_open()
 //   returning inconsistent samples.
 
@@ -157,14 +157,8 @@ extern "C" {
 #endif
 
 // Check if we can enable 64-bit optimizations.
-#if defined(_WIN64)
+#if defined(_WIN64) || defined(_LP64) || defined(__LP64__)
 #define DRFLAC_64BIT
-#endif
-
-#if defined(__GNUC__)
-#if defined(__x86_64__) || defined(__ppc64__)
-#define DRFLAC_64BIT
-#endif
 #endif
 
 #ifdef DRFLAC_64BIT
@@ -467,7 +461,7 @@ typedef struct
     // value specified in the STREAMINFO block.
     drflac_uint8 channels;
 
-    // The bits per sample. Will be set to somthing like 16, 24, etc.
+    // The bits per sample. Will be set to something like 16, 24, etc.
     drflac_uint8 bitsPerSample;
 
     // The maximum block size, in samples. This number represents the number of samples in each channel (not combined).
@@ -579,7 +573,7 @@ drflac* drflac_open_relaxed(drflac_read_proc onRead, drflac_seek_proc onSeek, dr
 // See also: drflac_open_file_with_metadata(), drflac_open_memory_with_metadata(), drflac_open(), drflac_close()
 drflac* drflac_open_with_metadata(drflac_read_proc onRead, drflac_seek_proc onSeek, drflac_meta_proc onMeta, void* pUserData);
 
-// The same as drflac_open_with_metadata(), except attemps to open the stream even when a header block is not present.
+// The same as drflac_open_with_metadata(), except attempts to open the stream even when a header block is not present.
 //
 // See also: drflac_open_with_metadata(), drflac_open_relaxed()
 drflac* drflac_open_with_metadata_relaxed(drflac_read_proc onRead, drflac_seek_proc onSeek, drflac_meta_proc onMeta, drflac_container container, void* pUserData);
@@ -754,6 +748,16 @@ const char* drflac_next_vorbis_comment(drflac_vorbis_comment_iterator* pIter, dr
 //
 ///////////////////////////////////////////////////////////////////////////////
 #ifdef DR_FLAC_IMPLEMENTATION
+#ifdef __linux__
+    #ifndef _BSD_SOURCE
+    #define _BSD_SOURCE
+    #endif
+    #ifndef __USE_BSD
+    #define __USE_BSD
+    #endif
+    #include <endian.h>
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -776,18 +780,32 @@ const char* drflac_next_vorbis_comment(drflac_vorbis_comment_iterator* pIter, dr
                 __cpuid(info, fid);
             }
         #else
-        #define DRFLAC_NO_CPUID
+            #define DRFLAC_NO_CPUID
         #endif
     #else
         #if defined(__GNUC__) || defined(__clang__)
             static void drflac__cpuid(int info[4], int fid)
             {
-                __asm__ __volatile__ (
-                    "cpuid" : "=a"(info[0]), "=b"(info[1]), "=c"(info[2]), "=d"(info[3]) : "a"(fid), "c"(0)
-                );
+                // It looks like the -fPIC option uses the ebx register which GCC complains about. We can work around this by just using a different register, the
+                // specific register of which I'm letting the compiler decide on. The "k" prefix is used to specify a 32-bit register. The {...} syntax is for
+                // supporting different assembly dialects.
+                //
+                // What's basically happening is that we're saving and restoring the ebx register manually.
+                #if defined(DRFLAC_X86) && defined(__PIC__)
+                    __asm__ __volatile__ (
+                        "xchg{l} {%%}ebx, %k1;"
+                        "cpuid;"
+                        "xchg{l} {%%}ebx, %k1;"
+                        : "=a"(info[0]), "=&r"(info[1]), "=c"(info[2]), "=d"(info[3]) : "a"(fid), "c"(0)
+                    );
+                #else
+                    __asm__ __volatile__ (
+                        "cpuid" : "=a"(info[0]), "=b"(info[1]), "=c"(info[2]), "=d"(info[3]) : "a"(fid), "c"(0)
+                    );
+                #endif
             }
         #else
-        #define DRFLAC_NO_CPUID
+            #define DRFLAC_NO_CPUID
         #endif
     #endif
 #else
@@ -795,28 +813,37 @@ const char* drflac_next_vorbis_comment(drflac_vorbis_comment_iterator* pIter, dr
 #endif
 
 
-#ifdef __linux__
-#define _BSD_SOURCE
-#include <endian.h>
-#endif
-
 #if defined(_MSC_VER) && _MSC_VER >= 1500 && (defined(DRFLAC_X86) || defined(DRFLAC_X64))
-#define DRFLAC_HAS_LZCNT_INTRINSIC
+    #define DRFLAC_HAS_LZCNT_INTRINSIC
 #elif (defined(__GNUC__) && ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)))
-#define DRFLAC_HAS_LZCNT_INTRINSIC
+    #define DRFLAC_HAS_LZCNT_INTRINSIC
 #elif defined(__clang__)
     #if __has_builtin(__builtin_clzll) || __has_builtin(__builtin_clzl)
-    #define DRFLAC_HAS_LZCNT_INTRINSIC
+        #define DRFLAC_HAS_LZCNT_INTRINSIC
     #endif
 #endif
 
 #if defined(_MSC_VER) && _MSC_VER >= 1300
-#define DRFLAC_HAS_BYTESWAP_INTRINSIC
-#elif defined(__GNUC__) && ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3))
-#define DRFLAC_HAS_BYTESWAP_INTRINSIC
+    #define DRFLAC_HAS_BYTESWAP16_INTRINSIC
+    #define DRFLAC_HAS_BYTESWAP32_INTRINSIC
+    #define DRFLAC_HAS_BYTESWAP64_INTRINSIC
 #elif defined(__clang__)
-    #if __has_builtin(__builtin_bswap16) && __has_builtin(__builtin_bswap32) && __has_builtin(__builtin_bswap64)
-    #define DRFLAC_HAS_BYTESWAP_INTRINSIC
+    #if __has_builtin(__builtin_bswap16)
+        #define DRFLAC_HAS_BYTESWAP16_INTRINSIC
+    #endif
+    #if __has_builtin(__builtin_bswap32)
+        #define DRFLAC_HAS_BYTESWAP32_INTRINSIC
+    #endif
+    #if __has_builtin(__builtin_bswap64)
+        #define DRFLAC_HAS_BYTESWAP64_INTRINSIC
+    #endif
+#elif defined(__GNUC__)
+    #if ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3))
+        #define DRFLAC_HAS_BYTESWAP32_INTRINSIC
+        #define DRFLAC_HAS_BYTESWAP64_INTRINSIC
+    #endif
+    #if ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
+        #define DRFLAC_HAS_BYTESWAP16_INTRINSIC
     #endif
 #endif
 
@@ -914,7 +941,7 @@ static DRFLAC_INLINE drflac_bool32 drflac__is_little_endian()
 
 static DRFLAC_INLINE drflac_uint16 drflac__swap_endian_uint16(drflac_uint16 n)
 {
-#ifdef DRFLAC_HAS_BYTESWAP_INTRINSIC
+#ifdef DRFLAC_HAS_BYTESWAP16_INTRINSIC
     #if defined(_MSC_VER)
         return _byteswap_ushort(n);
     #elif defined(__GNUC__) || defined(__clang__)
@@ -930,7 +957,7 @@ static DRFLAC_INLINE drflac_uint16 drflac__swap_endian_uint16(drflac_uint16 n)
 
 static DRFLAC_INLINE drflac_uint32 drflac__swap_endian_uint32(drflac_uint32 n)
 {
-#ifdef DRFLAC_HAS_BYTESWAP_INTRINSIC
+#ifdef DRFLAC_HAS_BYTESWAP32_INTRINSIC
     #if defined(_MSC_VER)
         return _byteswap_ulong(n);
     #elif defined(__GNUC__) || defined(__clang__)
@@ -948,7 +975,7 @@ static DRFLAC_INLINE drflac_uint32 drflac__swap_endian_uint32(drflac_uint32 n)
 
 static DRFLAC_INLINE drflac_uint64 drflac__swap_endian_uint64(drflac_uint64 n)
 {
-#ifdef DRFLAC_HAS_BYTESWAP_INTRINSIC
+#ifdef DRFLAC_HAS_BYTESWAP64_INTRINSIC
     #if defined(_MSC_VER)
         return _byteswap_uint64(n);
     #elif defined(__GNUC__) || defined(__clang__)
@@ -1438,7 +1465,7 @@ static DRFLAC_INLINE drflac_bool32 drflac__read_uint32(drflac_bs* bs, unsigned i
 
     if (bitCount <= DRFLAC_CACHE_L1_BITS_REMAINING(bs)) {
         if (bitCount < DRFLAC_CACHE_L1_SIZE_BITS(bs)) {
-            *pResultOut = DRFLAC_CACHE_L1_SELECT_AND_SHIFT(bs, bitCount);
+            *pResultOut = (drflac_uint32)DRFLAC_CACHE_L1_SELECT_AND_SHIFT(bs, bitCount);
             bs->consumedBits += bitCount;
             bs->cache <<= bitCount;
         } else {
@@ -1451,13 +1478,13 @@ static DRFLAC_INLINE drflac_bool32 drflac__read_uint32(drflac_bs* bs, unsigned i
         // It straddles the cached data. It will never cover more than the next chunk. We just read the number in two parts and combine them.
         drflac_uint32 bitCountHi = DRFLAC_CACHE_L1_BITS_REMAINING(bs);
         drflac_uint32 bitCountLo = bitCount - bitCountHi;
-        drflac_uint32 resultHi = DRFLAC_CACHE_L1_SELECT_AND_SHIFT(bs, bitCountHi);
+        drflac_uint32 resultHi = (drflac_uint32)DRFLAC_CACHE_L1_SELECT_AND_SHIFT(bs, bitCountHi);
 
         if (!drflac__reload_cache(bs)) {
             return DRFLAC_FALSE;
         }
 
-        *pResultOut = (resultHi << bitCountLo) | DRFLAC_CACHE_L1_SELECT_AND_SHIFT(bs, bitCountLo);
+        *pResultOut = (resultHi << bitCountLo) | (drflac_uint32)DRFLAC_CACHE_L1_SELECT_AND_SHIFT(bs, bitCountLo);
         bs->consumedBits += bitCountLo;
         bs->cache <<= bitCountLo;
         return DRFLAC_TRUE;
@@ -1483,6 +1510,7 @@ static drflac_bool32 drflac__read_int32(drflac_bs* bs, unsigned int bitCount, dr
     return DRFLAC_TRUE;
 }
 
+#ifdef DRFLAC_64BIT
 static drflac_bool32 drflac__read_uint64(drflac_bs* bs, unsigned int bitCount, drflac_uint64* pResultOut)
 {
     drflac_assert(bitCount <= 64);
@@ -1501,6 +1529,7 @@ static drflac_bool32 drflac__read_uint64(drflac_bs* bs, unsigned int bitCount, d
     *pResultOut = (((drflac_uint64)resultHi) << 32) | ((drflac_uint64)resultLo);
     return DRFLAC_TRUE;
 }
+#endif
 
 // Function below is unused, but leaving it here in case I need to quickly add it again.
 #if 0
@@ -3175,10 +3204,10 @@ static drflac_bool32 drflac__seek_to_sample__brute_force(drflac* pFlac, drflac_u
 
     drflac_bool32 isMidFrame = DRFLAC_FALSE;
 
-    // If we are seeking foward we start from the current position. Otherwise we need to start all the way from the start of the file.
+    // If we are seeking forward we start from the current position. Otherwise we need to start all the way from the start of the file.
     drflac_uint64 runningSampleCount;
     if (sampleIndex >= pFlac->currentSample) {
-        // Seeking foward. Need to seek from the current position.
+        // Seeking forward. Need to seek from the current position.
         runningSampleCount = pFlac->currentSample;
 
         // The frame header for the first frame may not yet have been read. We need to do that if necessary.
@@ -3204,7 +3233,7 @@ static drflac_bool32 drflac__seek_to_sample__brute_force(drflac* pFlac, drflac_u
         }
     }
 
-    // We need to as quickly as possible find the frame that contains the target sample. To do this, we iterate over each frame and inspect it's
+    // We need to as quickly as possible find the frame that contains the target sample. To do this, we iterate over each frame and inspect its
     // header. If based on the header we can determine that the frame contains the sample, we do a full decode of that frame.
     for (;;) {
         drflac_uint64 firstSampleInFrame = 0;
@@ -3657,7 +3686,7 @@ drflac_bool32 drflac__read_and_decode_metadata(drflac_read_proc onRead, drflac_s
 
                     // Padding doesn't have anything meaningful in it, so just skip over it, but make sure the caller is aware of it by firing the callback.
                     if (!onSeek(pUserData, blockSize, drflac_seek_origin_current)) {
-                        isLastBlock = DRFLAC_TRUE;  // An error occured while seeking. Attempt to recover by treating this as the last block which will in turn terminate the loop.
+                        isLastBlock = DRFLAC_TRUE;  // An error occurred while seeking. Attempt to recover by treating this as the last block which will in turn terminate the loop.
                     } else {
                         onMeta(pUserDataMD, &metadata);
                     }
@@ -3669,7 +3698,7 @@ drflac_bool32 drflac__read_and_decode_metadata(drflac_read_proc onRead, drflac_s
                 // Invalid chunk. Just skip over this one.
                 if (onMeta) {
                     if (!onSeek(pUserData, blockSize, drflac_seek_origin_current)) {
-                        isLastBlock = DRFLAC_TRUE;  // An error occured while seeking. Attempt to recover by treating this as the last block which will in turn terminate the loop.
+                        isLastBlock = DRFLAC_TRUE;  // An error occurred while seeking. Attempt to recover by treating this as the last block which will in turn terminate the loop.
                     }
                 }
             } break;
@@ -4003,7 +4032,7 @@ drflac_result drflac_ogg__read_page_header(drflac_read_proc onRead, void* pUserD
 
 
 // The main part of the Ogg encapsulation is the conversion from the physical Ogg bitstream to the native FLAC bitstream. It works
-// in three general stages: Ogg Physical Bitstream -> Ogg/FLAC Logical Bitstream -> FLAC Native Bitstream. dr_flac is architecured
+// in three general stages: Ogg Physical Bitstream -> Ogg/FLAC Logical Bitstream -> FLAC Native Bitstream. dr_flac is designed
 // in such a way that the core sections assume everything is delivered in native format. Therefore, for each encapsulation type
 // dr_flac is supporting there needs to be a layer sitting on top of the onRead and onSeek callbacks that ensures the bits read from
 // the physical Ogg bitstream are converted and delivered in native FLAC format.
@@ -4351,13 +4380,13 @@ drflac_bool32 drflac_ogg__seek_to_sample(drflac* pFlac, drflac_uint64 sampleInde
         //
         // Another thing to consider is that using the Ogg framing system will perform direct seeking of the physical Ogg
         // bitstream. This is important to consider because it means we cannot read data from the drflac_bs object using the
-        // standard drflac__*() APIs because that will read in extra data for it's own internal caching which in turn breaks
+        // standard drflac__*() APIs because that will read in extra data for its own internal caching which in turn breaks
         // the positioning of the read pointer of the physical Ogg bitstream. Therefore, anything that would normally be read
         // using the native FLAC decoding APIs, such as drflac__read_next_frame_header(), need to be re-implemented so as to
         // avoid the use of the drflac_bs object.
         //
         // Considering these issues, I have decided to use the slower native FLAC decoding method for the following reasons:
-        //   1) Seeking is already partially accellerated using Ogg's paging system in the code block above.
+        //   1) Seeking is already partially accelerated using Ogg's paging system in the code block above.
         //   2) Seeking in an Ogg encapsulated FLAC stream is probably quite uncommon.
         //   3) Simplicity.
         if (!drflac__read_next_frame_header(&pFlac->bs, pFlac->bitsPerSample, &pFlac->currentFrame.header)) {
@@ -4550,7 +4579,7 @@ drflac_bool32 drflac__init_private__ogg(drflac_init_info* pInit, drflac_read_pro
 
 
     // If we get here it means we found a FLAC audio stream. We should be sitting on the first byte of the header of the next page. The next
-    // packets in the FLAC logical stream contain the metadata. The only thing left to do in the initialiation phase for Ogg is to create the
+    // packets in the FLAC logical stream contain the metadata. The only thing left to do in the initialization phase for Ogg is to create the
     // Ogg bistream object.
     pInit->hasMetadataBlocks = DRFLAC_TRUE;    // <-- Always have at least VORBIS_COMMENT metadata block.
     return DRFLAC_TRUE;
@@ -4699,8 +4728,8 @@ drflac* drflac_open_with_metadata_private(drflac_read_proc onRead, drflac_seek_p
     }
 
     drflac_oggbs oggbs;
+    drflac_zero_memory(&oggbs, sizeof(oggbs));
     if (init.container == drflac_container_ogg) {
-        drflac_zero_memory(&oggbs, sizeof(oggbs));
         oggbs.onRead = onRead;
         oggbs.onSeek = onSeek;
         oggbs.pUserData = pUserData;
@@ -4758,7 +4787,7 @@ drflac* drflac_open_with_metadata_private(drflac_read_proc onRead, drflac_seek_p
 
     pFlac->firstFramePos = firstFramePos;
 
-    // NOTE: Seektables are not currently compatible with Ogg encapsulation (Ogg has it's own accelerated seeking system). I may change this later, so I'm leaving this here for now.
+    // NOTE: Seektables are not currently compatible with Ogg encapsulation (Ogg has its own accelerated seeking system). I may change this later, so I'm leaving this here for now.
 #ifndef DR_FLAC_NO_OGG
     if (init.container == drflac_container_ogg)
     {
@@ -5469,14 +5498,16 @@ drflac_bool32 drflac_seek_to_sample(drflac* pFlac, drflac_uint64 sampleIndex)
 
 //// High Level APIs ////
 
-// I couldn't figure out where SIZE_MAX was defined for VC6. If anybody knows, let me know.
-#if defined(_MSC_VER) && _MSC_VER <= 1200
-#ifdef DRFLAC_64BIT
-#define SIZE_MAX    ((drflac_uint64)0xFFFFFFFFFFFFFFFF)
+#if defined(SIZE_MAX)
+    #define DRFLAC_SIZE_MAX  SIZE_MAX
 #else
-#define SIZE_MAX    0xFFFFFFFF
+    #if defined(DRFLAC_64BIT)
+        #define DRFLAC_SIZE_MAX  ((drflac_uint64)0xFFFFFFFFFFFFFFFF)
+    #else
+        #define DRFLAC_SIZE_MAX  0xFFFFFFFF
+    #endif
 #endif
-#endif
+
 
 // Using a macro as the definition of the drflac__full_decode_and_close_*() API family. Sue me.
 #define DRFLAC_DEFINE_FULL_DECODE_AND_CLOSE(extension, type) \
@@ -5518,7 +5549,7 @@ static type* drflac__full_decode_and_close_ ## extension (drflac* pFlac, unsigne
         drflac_zero_memory(pSampleData + totalSampleCount, (size_t)(sampleDataBufferSize - totalSampleCount*sizeof(type)));                                         \
     } else {                                                                                                                                                        \
         drflac_uint64 dataSize = totalSampleCount * sizeof(type);                                                                                                   \
-        if (dataSize > SIZE_MAX) {                                                                                                                                  \
+        if (dataSize > DRFLAC_SIZE_MAX) {                                                                                                                           \
             goto on_error;  /* The decoded data is too big. */                                                                                                      \
         }                                                                                                                                                           \
                                                                                                                                                                     \
@@ -5718,6 +5749,24 @@ const char* drflac_next_vorbis_comment(drflac_vorbis_comment_iterator* pIter, dr
 
 
 // REVISION HISTORY
+//
+// v0.9.10 - 2018-08-07
+//   - Improve 64-bit detection.
+//
+// v0.9.9 - 2018-08-05
+//   - Fix C++ build on older versions of GCC.
+//
+// v0.9.8 - 2018-07-24
+//   - Fix compilation errors.
+//
+// v0.9.7 - 2018-07-05
+//   - Fix a warning.
+//
+// v0.9.6 - 2018-06-29
+//   - Fix some typos.
+//
+// v0.9.5 - 2018-06-23
+//   - Fix some warnings.
 //
 // v0.9.4 - 2018-06-14
 //   - Optimizations to seeking.

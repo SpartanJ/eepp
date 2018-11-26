@@ -197,7 +197,7 @@ void ShaderProgram::reload() {
 
 	link();
 
-	if ( mReloadCb.IsSet() ) {
+	if ( mReloadCb ) {
 		mReloadCb( this );
 	}
 }

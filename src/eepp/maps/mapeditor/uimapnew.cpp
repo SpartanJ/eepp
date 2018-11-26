@@ -11,7 +11,7 @@ static UITextView * createTextBox( const String& Text = "", Node * Parent = NULL
 	return Ctrl;
 }
 
-UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) :
+UIMapNew::UIMapNew( UIMap * Map, std::function<void()> NewMapCb, bool ResizeMap ) :
 	mTheme( NULL ),
 	mUIWindow( NULL ),
 	mUIMap( Map ),
@@ -265,7 +265,7 @@ void UIMapNew::onOKClick( const Event * Event ) {
 			FileSystem::fileRemove( mapPath );
 		}
 
-		if ( mNewMapCb.IsSet() )
+		if ( mNewMapCb )
 			mNewMapCb();
 	}
 

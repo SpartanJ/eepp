@@ -143,7 +143,7 @@ void MapLayerProperties::onOKClick( const Event * Event ) {
 
 	mLayer->setName( mUIInput->getText().toUtf8() );
 
-	if ( mRefreshCb.IsSet() ) {
+	if ( mRefreshCb ) {
 		mRefreshCb();
 	}
 

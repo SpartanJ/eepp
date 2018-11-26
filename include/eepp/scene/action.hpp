@@ -20,7 +20,7 @@ class EE_API Action {
 			OnStep
 		};
 
-		typedef cb::Callback2<void,Action*,const ActionType&> ActionCallback;
+		typedef std::function<void(Action*,const ActionType&)> ActionCallback;
 
 		Action();
 

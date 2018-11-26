@@ -440,7 +440,7 @@ void Window::logFailureInit( const std::string& ClassName, const std::string& Ba
 }
 
 void Window::onCloseRequest() {
-	if ( mCloseRequestCallback.IsSet() && !mCloseRequestCallback.Call( this ) ) {
+	if ( mCloseRequestCallback && !mCloseRequestCallback( this ) ) {
 		return;
 	}
 

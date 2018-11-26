@@ -20,9 +20,10 @@ std::vector<std::string> VirtualFileSystem::filesGetInPath( std::string path ) {
 	std::vector<std::string> files;
 	std::vector<std::string> paths = vfsSplitPath( path );
 	vfsDirectory * curDir = &mRoot;
-	size_t pos = 0;
 
 	if ( paths.size() >= 1 ) {
+		size_t pos = 0;
+
 		do {
 			if ( pos < paths.size() ) {
 				if ( curDir->directories.find( paths[pos] ) == curDir->directories.end() ) {
@@ -47,9 +48,10 @@ std::vector<std::string> VirtualFileSystem::filesGetInPath( std::string path ) {
 Pack * VirtualFileSystem::getPackFromFile( std::string path ) {
 	std::vector<std::string> paths = vfsSplitPath( path );
 	vfsDirectory * curDir = &mRoot;
-	size_t pos = 0;
 
 	if ( paths.size() >= 1 ) {
+		size_t pos = 0;
+
 		do {
 			if ( pos == paths.size() - 1 ) {
 				if ( curDir->files.find( paths[pos] ) != curDir->files.end() ) {
@@ -97,9 +99,10 @@ void VirtualFileSystem::onResourceRemove( Pack * resource ) {
 void VirtualFileSystem::addFile( std::string path , Pack * pack ) {
 	std::vector<std::string> paths = vfsSplitPath( path );
 	vfsDirectory * curDir = &mRoot;
-	size_t pos = 0;
 
 	if ( paths.size() >= 1 ) {
+		size_t pos = 0;
+
 		do {
 			if ( pos == paths.size() - 1 ) {
 				curDir->files[ paths[pos] ] = vfsFile( path, pack );

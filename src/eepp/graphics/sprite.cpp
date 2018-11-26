@@ -27,7 +27,6 @@ Sprite::Sprite() :
 	mAnimTo( 0 ),
 	mUserData( NULL )
 {
-	mCb.Reset();
 }
 
 Sprite::Sprite( const std::string& name, const std::string& extension, TextureAtlas * SearchInTextureAtlas )  :
@@ -47,7 +46,6 @@ Sprite::Sprite( const std::string& name, const std::string& extension, TextureAt
 	mAnimTo( 0 ),
 	mUserData( NULL )
 {
-	mCb.Reset();
 	addFramesByPattern( name, extension, SearchInTextureAtlas );
 }
 
@@ -68,7 +66,6 @@ Sprite::Sprite( TextureRegion * TextureRegion ) :
 	mAnimTo( 0 ),
 	mUserData( NULL )
 {
-	mCb.Reset();
 	createStatic( TextureRegion );
 }
 
@@ -89,7 +86,6 @@ Sprite::Sprite( const Uint32& TexId, const Sizef &DestSize, const Vector2i &Offs
 	mAnimTo( 0 ),
 	mUserData( NULL )
 {
-	mCb.Reset();
 	createStatic( TexId, DestSize, Offset, TexSector );
 }
 
@@ -835,11 +831,11 @@ void Sprite::setEventsCallback(const SpriteCallback& Cb , void * UserData ) {
 }
 
 void Sprite::clearCallback() {
-	mCb.Reset();
+	mCb = nullptr;
 }
 
 void Sprite::fireEvent( const Uint32& Event ) {
-	if ( SPR_FGET( SPRITE_FLAG_EVENTS_ENABLED ) && mCb.IsSet() ) {
+	if ( SPR_FGET( SPRITE_FLAG_EVENTS_ENABLED ) && mCb ) {
 		mCb( Event, this, mUserData );
 	}
 }

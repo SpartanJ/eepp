@@ -15,7 +15,7 @@ namespace EE { namespace Graphics {
 class EE_API Sprite : public Drawable {
 	public:
 		/// Event ID - Sprite - User Data
-		typedef cb::Callback3< void, Uint32, Sprite *, void * > SpriteCallback;
+		typedef std::function<void( Uint32, Sprite *, void * )> SpriteCallback;
 
 		/** @brief SpriteEvents The events that can be reported by the Sprite */
 		enum SpriteEvents {

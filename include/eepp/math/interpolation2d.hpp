@@ -30,9 +30,9 @@ class EE_API Interpolation2d {
 
 		~Interpolation2d();
 
-		typedef cb::Callback1<void,Interpolation2d&> OnPathEndCallback;
+		typedef std::function<void(Interpolation2d&)> OnPathEndCallback;
 
-		typedef cb::Callback1<void,Interpolation2d&> OnStepCallback;
+		typedef std::function<void(Interpolation2d&)> OnStepCallback;
 
 		/** Add a new waypoint */
 		Interpolation2d& add(const Vector2f& pos, const Time& time = Time::Zero );

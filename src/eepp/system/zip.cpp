@@ -142,7 +142,7 @@ bool Zip::eraseFiles( const std::vector<std::string>& paths ) {
 bool Zip::extractFile( const std::string& path , const std::string& dest ) {
 	lock();
 
-	bool Ret = false;
+	bool Ret;
 
 	SafeDataPointer data;
 
@@ -161,9 +161,9 @@ bool Zip::extractFileToMemory( const std::string& path, std::vector<Uint8>& data
 
 	bool Ret = false;
 	Int32 Pos = exists( path );
-	int Result = 0;
 
 	if ( 0 == checkPack() && -1 != Pos ) {
+
 		data.clear();
 
 		struct zip_stat zs;
@@ -175,7 +175,7 @@ bool Zip::extractFileToMemory( const std::string& path, std::vector<Uint8>& data
 			if ( NULL != zf ) {
 				data.resize( zs.size );
 
-				Result = (Int32)zip_fread( zf, reinterpret_cast<void*> (&data[0]), data.size() );
+				int Result = (Int32)zip_fread( zf, reinterpret_cast<void*> (&data[0]), data.size() );
 
 				zip_fclose(zf);
 

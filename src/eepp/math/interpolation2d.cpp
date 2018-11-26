@@ -201,26 +201,26 @@ void Interpolation2d::update( const Time& Elapsed ) {
 			if ( mCurPoint + 1 < mPoints.size() ) {
 				mNexP = &mPoints[ mCurPoint + 1 ];
 
-				if ( mOnStepCallback.IsSet() )
+				if ( mOnStepCallback )
 					mOnStepCallback(*this);
 			} else {
-				if ( mOnStepCallback.IsSet() )
+				if ( mOnStepCallback )
 					mOnStepCallback(*this);
 
 				if ( mLoop ) {
 					mNexP = &mPoints[ 0 ];
 
-					if ( mOnPathEndCallback.IsSet() )
+					if ( mOnPathEndCallback )
 						mOnPathEndCallback(*this);
 				} else {
 					mEnable = false;
 					mEnded = true;
 
-					if ( mOnPathEndCallback.IsSet() ) {
+					if ( mOnPathEndCallback ) {
 						mOnPathEndCallback(*this);
 
 						if ( !mEnable )
-							mOnPathEndCallback.Reset();
+							mOnPathEndCallback = nullptr;
 					}
 					return;
 				}

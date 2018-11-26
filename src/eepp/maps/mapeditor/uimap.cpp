@@ -66,7 +66,7 @@ Uint32 UIMap::onDrag( const Vector2f& Pos ) {
 
 	mDragPoint = Pos;
 
-	if ( mUpdateScrollCb.IsSet() ) {
+	if ( mUpdateScrollCb ) {
 		mUpdateScrollCb();
 	}
 
@@ -120,7 +120,7 @@ void UIMap::update( const Time& time ) {
 							mSelLight->setRadius( mSelLight->getRadius() - 10 );
 						}
 
-						if ( mLightRadiusChangeCb.IsSet() )
+						if ( mLightRadiusChangeCb )
 							mLightRadiusChangeCb( mSelLight );
 					} else if ( Flags & EE_BUTTON_RMASK ) {
 						if ( mSelLight == mAddLight ) {
@@ -192,7 +192,7 @@ void UIMap::selectPolyObj() {
 			}
 		}
 	} else {
-		if ( mAlertCb.IsSet() ) {
+		if ( mAlertCb ) {
 			mAlertCb( "No layer found", "An Object Layer must be selected first." )->setFocus();
 		}
 	}
@@ -321,7 +321,7 @@ void UIMap::tryToSelectLight() {
 	mSelLight = mMap->getLightManager()->getLightOver( mMap->getMouseMapPosf(), mSelLight );
 
 	if ( NULL != mSelLight && mSelLight != tLight ) {
-		if ( mLightSelCb.IsSet() )
+		if ( mLightSelCb )
 			mLightSelCb( mSelLight );
 	}
 }
@@ -368,7 +368,7 @@ void UIMap::addLight( MapLight * Light ) {
 
 		mMap->getLightManager()->addLight( Light );
 
-		if ( mLightSelCb.IsSet() )
+		if ( mLightSelCb )
 			mLightSelCb( mSelLight );
 	}
 }

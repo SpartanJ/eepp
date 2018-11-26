@@ -179,7 +179,7 @@ void TextureAtlasNew::textureAtlasSave( const Event * Event ) {
 
 			texturePacker->save( FPath, static_cast<Image::SaveType> ( mSaveFileType->getListBox()->getItemSelectedIndex() ) );
 
-			if ( mNewTGCb.IsSet() )
+			if ( mNewTGCb )
 				mNewTGCb( texturePacker );
 
 			mUIWindow->closeWindow();

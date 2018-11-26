@@ -241,7 +241,7 @@ void TileMap::draw() {
 
 	mouseOverDraw();
 
-	if ( mDrawCb.IsSet() )
+	if ( mDrawCb )
 		mDrawCb();
 
 	GlobalBatchRenderer::instance()->draw();
@@ -448,7 +448,7 @@ void TileMap::update() {
 	for ( Uint32 i = 0; i < mLayerCount; i++ )
 		mLayers[i]->update( mWindow->getElapsed() );
 
-	if ( mUpdateCb.IsSet() )
+	if ( mUpdateCb )
 		mUpdateCb();
 }
 
@@ -656,7 +656,7 @@ GameObject * TileMap::createGameObject( const Uint32& Type, const Uint32& Flags,
 		}
 		default:
 		{
-			if ( mCreateGOCb.IsSet() ) {
+			if ( mCreateGOCb ) {
 				return mCreateGOCb( Type, Flags, Layer, DataId );
 			} else {
 				GameObjectVirtual * tVirtual;

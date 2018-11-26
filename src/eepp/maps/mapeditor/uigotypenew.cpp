@@ -3,7 +3,7 @@
 
 namespace EE { namespace Maps { namespace Private {
 
-UIGOTypeNew::UIGOTypeNew( cb::Callback2<void, std::string, Uint32> Cb ) :
+UIGOTypeNew::UIGOTypeNew( std::function<void( std::string, Uint32 )> Cb ) :
 	mUITheme( NULL ),
 	mUIWindow( NULL ),
 	mUIInput( NULL ),
@@ -57,7 +57,7 @@ UIGOTypeNew::~UIGOTypeNew() {
 
 void UIGOTypeNew::onOKClick( const Event * Event ) {
 	if ( mUIInput->getText().size() ) {
-		if ( mCb.IsSet() )
+		if ( mCb )
 			mCb( mUIInput->getText().toUtf8(), String::hash( mUIInput->getText().toUtf8() ) );
 	}
 

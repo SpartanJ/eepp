@@ -30,7 +30,7 @@ class EE_API ShaderProgram {
 		/** Creates the vertex and fragment shader from an array of strings */
 		static ShaderProgram * New( const char ** VertexShaderData, const Uint32& NumLinesVS, const char ** FragmentShaderData, const Uint32& NumLinesFS, const std::string& Name = "" );
 
-		typedef cb::Callback1<void, ShaderProgram*> ShaderProgramReloadCb;
+		typedef std::function<void( ShaderProgram* )> ShaderProgramReloadCb;
 
 		virtual ~ShaderProgram();
 

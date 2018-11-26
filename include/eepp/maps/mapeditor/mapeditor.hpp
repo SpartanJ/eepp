@@ -35,7 +35,7 @@ class UIMap;
 
 class EE_API MapEditor {
 	public:
-		typedef cb::Callback0<void> MapEditorCloseCb;
+		typedef std::function<void()> MapEditorCloseCb;
 
 		static MapEditor * New( UIWindow * AttatchTo = NULL, const MapEditorCloseCb& callback = MapEditorCloseCb() );
 

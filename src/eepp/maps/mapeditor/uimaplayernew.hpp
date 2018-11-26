@@ -12,7 +12,7 @@ namespace EE { namespace Maps { namespace Private {
 
 class EE_API UIMapLayerNew {
 	public:
-		typedef cb::Callback1<void, UIMapLayerNew*> NewLayerCb;
+		typedef std::function<void( UIMapLayerNew* )> NewLayerCb;
 
 		UIMapLayerNew( UIMap * Map, EE_LAYER_TYPE Type, NewLayerCb newLayerCb = NewLayerCb() );
 

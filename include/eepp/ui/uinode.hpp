@@ -22,7 +22,7 @@ class EE_API UINode : public Node {
 	public:
 		static UINode * New();
 
-		typedef cb::Callback1<void, const Event*> EventCallback;
+		typedef std::function<void( const Event* )> EventCallback;
 
 		UINode();
 

@@ -19,7 +19,7 @@ struct Emitter {
 
 class EETest : private Thread {
 	public:
-		typedef cb::Callback0<void> SceneCb;
+		typedef std::function<void()> SceneCb;
 
 		void init();
 		void update();

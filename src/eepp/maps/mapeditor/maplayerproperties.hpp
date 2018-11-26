@@ -16,7 +16,7 @@ class MapEditor;
 
 class EE_API MapLayerProperties {
 	public:
-		typedef cb::Callback0<void> RefreshLayerListCb;
+		typedef std::function<void()> RefreshLayerListCb;
 
 		MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb = RefreshLayerListCb() );
 

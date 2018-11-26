@@ -76,7 +76,7 @@ void UIMapLayerNew::onOKClick( const Event * event ) {
 	if ( mUILayerName->getText().size() ) {
 		mLayer = mUIMap->Map()->addLayer( mType, LAYER_FLAG_VISIBLE | LAYER_FLAG_LIGHTS_ENABLED, mUILayerName->getText() );
 
-		if ( mNewLayerCb.IsSet() )
+		if ( mNewLayerCb )
 			mNewLayerCb( this );
 	}
 
