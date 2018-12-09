@@ -53,7 +53,7 @@ class EE_API TextureFactory : protected Mutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return Internal Texture Id
 		*/
-		Uint32 loadFromPack( Pack* Pack, const std::string& FilePackPath, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 loadFromPack( Pack* Pack, const std::string& FilePackPath, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const Image::FormatConfiguration& imageformatConfiguration = Image::FormatConfiguration() );
 
 		/** Load a texture from memory
 		* @param ImagePtr The image data in RAM just as if it were still in a file
@@ -64,7 +64,7 @@ class EE_API TextureFactory : protected Mutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return The internal Texture Id
 		*/
-		Uint32 loadFromMemory( const unsigned char* ImagePtr, const unsigned int& Size, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 loadFromMemory( const unsigned char* ImagePtr, const unsigned int& Size, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const Image::FormatConfiguration& imageformatConfiguration = Image::FormatConfiguration() );
 
 		/** Load a Texture from stream
 		* @param Stream The IOStream instance
@@ -74,7 +74,7 @@ class EE_API TextureFactory : protected Mutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return The internal Texture Id
 		*/
-		Uint32 loadFromStream( IOStream& Stream, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 loadFromStream( IOStream& Stream, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const Image::FormatConfiguration& imageformatConfiguration = Image::FormatConfiguration() );
 
 		/** Load a Texture from a file path
 		* @param Filepath The path for the texture
@@ -84,7 +84,7 @@ class EE_API TextureFactory : protected Mutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return The internal Texture Id
 		*/
-		Uint32 loadFromFile( const std::string& Filepath, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 loadFromFile( const std::string& Filepath, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const Image::FormatConfiguration& imageformatConfiguration = Image::FormatConfiguration() );
 
 		/** Remove and Unload the Texture Id
 		* @param TexId
@@ -142,11 +142,6 @@ class EE_API TextureFactory : protected Mutex {
 		*/
 		unsigned int getValidTextureSize( const unsigned int& Size );
 
-		/**	Saves an image from an array of unsigned chars to disk
-		* @return False if failed, otherwise returns True
-		*/
-		bool saveImage( const std::string& filepath, const Image::SaveType& Format, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const unsigned char* data );
-
 		/** Determine if the TextureId passed exists */
 		bool existsId( const Uint32& TexId );
 
@@ -202,8 +197,6 @@ class EE_API TextureFactory : protected Mutex {
 		TextureFactory();
 
 		int mCurrentTexture[ EE_MAX_TEXTURE_UNITS ];
-
-		BlendMode mLastBlend;
 
 		std::vector<Texture*> mTextures;
 

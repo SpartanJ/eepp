@@ -3,7 +3,7 @@
 
 namespace EE { namespace Graphics { namespace Private {
 
-TexturePackerTex::TexturePackerTex( const std::string& Name ) :
+TexturePackerTex::TexturePackerTex( const std::string& Name, const Image::FormatConfiguration& imageFormatConfiguration ) :
 	mName(Name),
 	mWidth(0),
 	mHeight(0),
@@ -18,7 +18,7 @@ TexturePackerTex::TexturePackerTex( const std::string& Name ) :
 	mDisabled(false),
 	mImg( NULL )
 {
-	if ( Image::getInfo( Name.c_str(), &mWidth, &mHeight, &mChannels ) ) {
+	if ( Image::getInfo( Name.c_str(), &mWidth, &mHeight, &mChannels, imageFormatConfiguration ) ) {
 		mArea 			= mWidth * mHeight;
 		mLongestEdge 	= ( mWidth >= mHeight ) ? mWidth : mHeight;
 		mLoadedInfo 	= true;

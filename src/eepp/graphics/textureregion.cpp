@@ -352,7 +352,7 @@ const Uint8* TextureRegion::getPixelsPtr() {
 	return reinterpret_cast<const Uint8*> (&mPixels[0]);
 }
 
-bool TextureRegion::saveToFile(const std::string& filepath, const Image::SaveType & Format) {
+bool TextureRegion::saveToFile(const std::string& filepath, const Image::SaveType & Format, const Image::FormatConfiguration& imageFormatConfiguration ) {
 	bool Res = false;
 
 	lock();
@@ -362,7 +362,7 @@ bool TextureRegion::saveToFile(const std::string& filepath, const Image::SaveTyp
 			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, getRealSize().getWidth(), getRealSize().getHeight(), mTexture->getChannels(), getPixelsPtr() ) );
 		} else {
 			jpge::params params;
-			params.m_quality = Image::jpegQuality();
+			params.m_quality = imageFormatConfiguration.jpegSaveQuality();
 			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), getRealSize().getWidth(), getRealSize().getHeight(), mTexture->getChannels(), getPixelsPtr(), params);
 		}
 	}

@@ -188,27 +188,6 @@ static bool svg_test_from_stream( IOStream& stream ) {
 	return false;
 }
 
-Uint32 Image::sJpegQuality = 85;
-
-Uint32 Image::jpegQuality() {
-	return sJpegQuality;
-}
-
-void Image::jpegQuality( Uint32 level ) {
-	level = eemin<Uint32>( level, 100 );
-	sJpegQuality = level;
-}
-
-Float Image::sSVGScale = 1.0f;
-
-Float Image::svgScale() {
-	return sSVGScale;
-}
-
-void Image::svgScale( Float scale ) {
-	sSVGScale = scale;
-}
-
 std::string Image::saveTypeToExtension( const Int32& Format ) {
 	switch( Format ) {
 		case Image::SaveType::SAVE_TYPE_TGA: return "tga";
@@ -249,15 +228,15 @@ Image::PixelFormat Image::channelsToPixelFormat( const Uint32& channels ) {
 	return pf;
 }
 
-bool Image::getInfo( const std::string& path, int * width, int * height, int * channels ) {
+bool Image::getInfo( const std::string& path, int * width, int * height, int * channels, const FormatConfiguration& imageFormatConfiguration ) {
 	bool res = stbi_info( path.c_str(), width, height, channels ) != 0;
 
 	if ( !res && svg_test( path ) ) {
 		NSVGimage * image = nsvgParseFromFile( path.c_str(), "px", 96.0f );
 
 		if ( NULL != image ) {
-			*width = image->width * sSVGScale;
-			*height = image->height * sSVGScale;
+			*width = image->width * imageFormatConfiguration.svgScale();
+			*height = image->height * imageFormatConfiguration.svgScale();
 			*channels = 4;
 
 			nsvgDelete( image );
@@ -283,8 +262,8 @@ bool Image::getInfo( const std::string& path, int * width, int * height, int * c
 				NSVGimage * image = nsvgParse( (char*)data.data, "px", 96.0f );
 
 				if ( NULL != image ) {
-					*width = image->width * sSVGScale;
-					*height = image->height * sSVGScale;
+					*width = image->width * imageFormatConfiguration.svgScale();
+					*height = image->height * imageFormatConfiguration.svgScale();
 					*channels = 4;
 
 					nsvgDelete( image );
@@ -383,14 +362,15 @@ Image::Image( Uint8* data, const unsigned int& Width, const unsigned int& Height
 {
 }
 
-Image::Image( std::string Path, const unsigned int& forceChannels ) :
+Image::Image( std::string Path, const unsigned int& forceChannels, const FormatConfiguration& formatConfiguration ) :
 	mPixels(NULL),
 	mWidth(0),
 	mHeight(0),
 	mChannels(forceChannels),
 	mSize(0),
 	mAvoidFree(false),
-	mLoadedFromStbi(false)
+	mLoadedFromStbi(false),
+	mFormatConfiguration(formatConfiguration)
 {
 	int w, h, c;
 	Pack * tPack = NULL;
@@ -426,14 +406,15 @@ Image::Image( std::string Path, const unsigned int& forceChannels ) :
 	}
 }
 
-Image::Image( const Uint8 * imageData, const unsigned int & imageDataSize, const unsigned int & forceChannels ) :
+Image::Image( const Uint8 * imageData, const unsigned int & imageDataSize, const unsigned int & forceChannels, const FormatConfiguration& formatConfiguration ) :
 	mPixels(NULL),
 	mWidth(0),
 	mHeight(0),
 	mChannels(forceChannels),
 	mSize(0),
 	mAvoidFree(false),
-	mLoadedFromStbi(false)
+	mLoadedFromStbi(false),
+	mFormatConfiguration(formatConfiguration)
 {
 	int w, h, c;
 	Uint8 * data = stbi_load_from_memory( imageData, imageDataSize, &w, &h, &c, mChannels );
@@ -465,26 +446,28 @@ Image::Image( const Uint8 * imageData, const unsigned int & imageDataSize, const
 	}
 }
 
-Image::Image( Pack * Pack, std::string FilePackPath, const unsigned int& forceChannels ) :
+Image::Image( Pack * Pack, std::string FilePackPath, const unsigned int& forceChannels, const FormatConfiguration& formatConfiguration ) :
 	mPixels(NULL),
 	mWidth(0),
 	mHeight(0),
 	mChannels(forceChannels),
 	mSize(0),
 	mAvoidFree(false),
-	mLoadedFromStbi(false)
+	mLoadedFromStbi(false),
+	mFormatConfiguration(formatConfiguration)
 {
 	loadFromPack( Pack, FilePackPath );
 }
 
-Image::Image( IOStream & stream, const unsigned int& forceChannels ) :
+Image::Image( IOStream & stream, const unsigned int& forceChannels, const FormatConfiguration& formatConfiguration ) :
 	mPixels(NULL),
 	mWidth(0),
 	mHeight(0),
 	mChannels(forceChannels),
 	mSize(0),
 	mAvoidFree(false),
-	mLoadedFromStbi(false)
+	mLoadedFromStbi(false),
+	mFormatConfiguration(formatConfiguration)
 {
 	if ( stream.isOpen() ) {
 		stbi_io_callbacks callbacks;
@@ -536,8 +519,8 @@ void Image::svgLoad( NSVGimage * image ) {
 	unsigned char* img = NULL;
 	int w, h;
 
-	w = (int)image->width * sSVGScale;
-	h = (int)image->height * sSVGScale;
+	w = (int)image->width * mFormatConfiguration.svgScale();
+	h = (int)image->height * mFormatConfiguration.svgScale();
 
 	rast = nsvgCreateRasterizer();
 
@@ -545,7 +528,7 @@ void Image::svgLoad( NSVGimage * image ) {
 		img = (unsigned char*)malloc(w*h*4);
 
 		if (img != NULL) {
-			nsvgRasterize(rast, image, 0, 0, sSVGScale, img, w, h, w * 4);
+			nsvgRasterize(rast, image, 0, 0, mFormatConfiguration.svgScale(), img, w, h, w * 4);
 
 			mPixels = img;
 			mWidth = w;
@@ -693,7 +676,7 @@ bool Image::saveToFile(const std::string& filepath, const SaveType & Format ) {
 			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, (Int32)mWidth, (Int32)mHeight, mChannels, getPixelsPtr() ) );
 		} else {
 			jpge::params params;
-			params.m_quality = jpegQuality();
+			params.m_quality = mFormatConfiguration.jpegSaveQuality();
 			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), mWidth, mHeight, mChannels, getPixelsPtr(), params);
 		}
 	}
@@ -909,6 +892,14 @@ Graphics::Image &Image::operator =(const Image &right) {
 	}
 
 	return *this;
+}
+
+void Image::setImageFormatConfiguration( const Image::FormatConfiguration& imageFormatConfiguration ) {
+	mFormatConfiguration = imageFormatConfiguration;
+}
+
+const Image::FormatConfiguration &Image::getImageFormatConfiguration() const {
+	return mFormatConfiguration;
 }
 
 }}

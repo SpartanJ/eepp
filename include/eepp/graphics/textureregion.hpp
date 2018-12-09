@@ -137,7 +137,7 @@ class EE_API TextureRegion : public DrawableResource {
 
 		/** Saves the TextureRegion to a file in the file format specified.
 		*	This will get the Texture from VRAM ( it will not work with OpenGL ES ) */
-		bool saveToFile( const std::string& filepath, const Image::SaveType& Format );
+		bool saveToFile(const std::string& filepath, const Image::SaveType& Format , const Image::FormatConfiguration& imageFormatConfiguration = Image::FormatConfiguration() );
 
 		/** Sets the Destination Size as the Source Rect Size ( the real size of the TextureRegion ) multiplied by the pixel density. */
 		void resetDestSize();

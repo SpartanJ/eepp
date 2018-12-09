@@ -465,26 +465,18 @@ bool TexturePacker::addPackerTex( TexturePackerTex * TPack ) {
 }
 
 bool TexturePacker::addImage( Image * Img, const std::string& Name ) {
-	Float oldSvgScale( Image::svgScale() );
-
-	Image::svgScale( mScalableSVG ? PixelDensity::toFloat( mPixelDensity ) : 1.f );
-
 	TexturePackerTex * TPack = eeNew( TexturePackerTex, ( Img, Name ) );
-
-	Image::svgScale( oldSvgScale );
 
 	return addPackerTex( TPack );
 }
 
 bool TexturePacker::addTexture( const std::string& TexturePath ) {
 	if ( FileSystem::fileExists( TexturePath ) ) {
-		Float oldSvgScale( Image::svgScale() );
+		Image::FormatConfiguration imageFormatConfiguration;
 
-		Image::svgScale( mScalableSVG ? PixelDensity::toFloat( mPixelDensity ) : 1.f );
+		imageFormatConfiguration.svgScale( mScalableSVG ? PixelDensity::toFloat( mPixelDensity ) : 1.f );
 
-		TexturePackerTex * TPack = eeNew( TexturePackerTex, ( TexturePath ) );
-
-		Image::svgScale( oldSvgScale );
+		TexturePackerTex * TPack = eeNew( TexturePackerTex, ( TexturePath, imageFormatConfiguration ) );
 
 		return addPackerTex( TPack );
 	}

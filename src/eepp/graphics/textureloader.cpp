@@ -242,7 +242,7 @@ void TextureLoader::loadFromFile() {
 				mSize		= FileSystem::fileSize( mFilepath );
 			}
 
-			Image image( mFilepath, ( NULL != mColorKey ) ? STBI_rgb_alpha : STBI_default );
+			Image image( mFilepath, ( NULL != mColorKey ) ? STBI_rgb_alpha : STBI_default, mFormatConfiguration );
 			image.avoidFreeImage( true );
 			mPixels = image.getPixels(); mImgWidth = image.getWidth(); mImgHeight = image.getHeight(); mChannels = image.getChannels();
 		}
@@ -289,7 +289,7 @@ void TextureLoader::loadFromMemory() {
 		stbi__pkm_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels );
 		mIsCompressed = mDirectUpload = true;
 	} else {
-		Image image( mImagePtr, mSize, ( NULL != mColorKey ) ? STBI_rgb_alpha : STBI_default );
+		Image image( mImagePtr, mSize, ( NULL != mColorKey ) ? STBI_rgb_alpha : STBI_default, mFormatConfiguration );
 		image.avoidFreeImage( true );
 		mPixels = image.getPixels(); mImgWidth = image.getWidth(); mImgHeight = image.getHeight(); mChannels = image.getChannels();
 	}
@@ -337,7 +337,7 @@ void TextureLoader::loadFromStream() {
 		} else {
 			mStream->seek( 0 );
 
-			Image image( *mStream, ( NULL != mColorKey ) ? STBI_rgb_alpha : STBI_default );
+			Image image( *mStream, ( NULL != mColorKey ) ? STBI_rgb_alpha : STBI_default, mFormatConfiguration );
 			image.avoidFreeImage( true );
 			mPixels = image.getPixels(); mImgWidth = image.getWidth(); mImgHeight = image.getHeight(); mChannels = image.getChannels();
 
@@ -489,6 +489,14 @@ Texture * TextureLoader::getTexture() const {
 		return TextureFactory::instance()->getTexture( mTexId );
 
 	return NULL;
+}
+
+Image::FormatConfiguration TextureLoader::getFormatConfiguration() const {
+	return mFormatConfiguration;
+}
+
+void TextureLoader::setFormatConfiguration(const Image::FormatConfiguration & formatConfiguration ) {
+	mFormatConfiguration = formatConfiguration;
 }
 
 void TextureLoader::unload() {

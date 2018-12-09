@@ -87,6 +87,10 @@ class EE_API TextureLoader : public ObjectLoader {
 
 		/** @return The texture instance ( if it was loaded ). */
 		Texture *		getTexture() const;
+
+		Image::FormatConfiguration getFormatConfiguration() const;
+
+		void setFormatConfiguration(const Image::FormatConfiguration & formatConfiguration);
 	protected:
 		Uint32			mLoadType; 	// From memory, from path, from pack
 		Uint8 * 		mPixels;	// Texture Info
@@ -109,6 +113,7 @@ class EE_API TextureLoader : public ObjectLoader {
 		Uint32			mSize;
 
 		RGB *		mColorKey;
+		Image::FormatConfiguration mFormatConfiguration;
 
 		void 			start();
 
