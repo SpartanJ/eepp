@@ -448,8 +448,10 @@ void UITextEdit::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
 	}
 }
 
-void UITextEdit::setAttribute( const NodeAttribute &attribute ) {
+bool UITextEdit::setAttribute( const NodeAttribute &attribute ) {
 	const std::string& name = attribute.getName();
+
+	bool attributeSet = true;
 
 	if ( "text" == name ) {
 		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
@@ -468,10 +470,12 @@ void UITextEdit::setAttribute( const NodeAttribute &attribute ) {
 		else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
 		else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
 	} else {
-		UIWidget::setAttribute( attribute );
+		attributeSet = UIWidget::setAttribute( attribute );
 	}
 
 	mTextInput->setAttribute( attribute );
+
+	return attributeSet;
 }
 
 }}

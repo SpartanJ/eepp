@@ -505,7 +505,7 @@ void UITextView::setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig
 	setOutlineColor( mFontStyleConfig.getOutlineColor() );
 }
 
-void UITextView::setAttribute( const NodeAttribute& attribute ) {
+bool UITextView::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "text" == name ) {
@@ -562,8 +562,10 @@ void UITextView::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "fontoutlinecolor" == name ) {
 		setOutlineColor( Color::fromString( attribute.asString() ) );
 	} else {
-		UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 }}

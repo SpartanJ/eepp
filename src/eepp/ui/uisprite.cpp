@@ -175,7 +175,7 @@ void UISprite::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
-void UISprite::setAttribute( const NodeAttribute& attribute ) {
+bool UISprite::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "src" == name ) {
@@ -186,8 +186,10 @@ void UISprite::setAttribute( const NodeAttribute& attribute ) {
 			setSprite( eeNew( Sprite, ( val ) ) );
 		}
 	} else {
-		UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 }}

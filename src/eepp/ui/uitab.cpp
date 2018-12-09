@@ -176,7 +176,7 @@ void UITab::update( const Time& time ) {
 	}
 }
 
-void UITab::setAttribute( const NodeAttribute& attribute ) {
+bool UITab::setAttribute( const NodeAttribute& attribute ) {
 	std::string name = attribute.getName();
 
 	if ( "name" == name || "text" == name ) {
@@ -186,8 +186,10 @@ void UITab::setAttribute( const NodeAttribute& attribute ) {
 		mOwnedName = attribute.asString();
 		setOwnedControl();
 	} else {
-		UISelectButton::setAttribute( attribute );
+		return UISelectButton::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 void UITab::setOwnedControl() {

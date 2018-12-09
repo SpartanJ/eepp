@@ -213,7 +213,7 @@ UITextView * UIProgressBar::getTextBox() const {
 	return mTextBox;
 }
 
-void UIProgressBar::setAttribute( const NodeAttribute& attribute ) {
+bool UIProgressBar::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "totalsteps" == name ) {
@@ -236,8 +236,10 @@ void UIProgressBar::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "fillerpaddingbottom" == name ) {
 		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, PixelDensity::toDpFromString( attribute.asString() ) ) );
 	} else {
-		UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 void UIProgressBar::onAlphaChange() {

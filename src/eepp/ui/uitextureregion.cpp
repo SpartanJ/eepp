@@ -183,7 +183,7 @@ const Vector2f& UITextureRegion::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-void UITextureRegion::setAttribute( const NodeAttribute& attribute ) {
+bool UITextureRegion::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "src" == name || "textureregion" == name || "subtexture" == name ) {
@@ -206,8 +206,10 @@ void UITextureRegion::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "tint" == name ) {
 		setColor( Color::fromString( attribute.asString() ) );
 	} else {
-		UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 Uint32 UITextureRegion::getScaleType() const {

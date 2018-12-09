@@ -46,7 +46,7 @@ class EE_API UISprite : public UIWidget {
 
 		bool getDeallocSprite();
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		Graphics::Sprite * 	mSprite;
 		RenderMode			mRender;

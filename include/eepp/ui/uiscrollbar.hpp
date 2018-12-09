@@ -67,7 +67,7 @@ class EE_API UIScrollBar : public UIWidget {
 
 		void setExpandBackground( bool expandBackground );
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		ScrollBarType	mScrollBarType;
 		UISlider * 		mSlider;

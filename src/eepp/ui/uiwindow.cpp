@@ -1397,7 +1397,7 @@ void UIWindow::resizeCursor() {
 	}
 }
 
-void UIWindow::setAttribute( const NodeAttribute& attribute ) {
+bool UIWindow::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "width" == name ) {
@@ -1438,8 +1438,10 @@ void UIWindow::setAttribute( const NodeAttribute& attribute ) {
 			setWinFlags( winflags );
 		}
 	} else {
-		UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 void UIWindow::loadFromXmlNode(const pugi::xml_node & node) {

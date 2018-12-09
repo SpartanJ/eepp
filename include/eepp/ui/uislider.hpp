@@ -64,7 +64,7 @@ class EE_API UISlider : public UIWidget {
 
 		void setPageStep( const Float & pageStep );
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		friend class Private::UISliderButton;
 

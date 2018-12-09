@@ -51,7 +51,7 @@ class EE_API UIProgressBar : public UIWidget {
 		
 		UITextView * getTextBox() const;
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		UIProgressBarStyleConfig mStyleConfig;
 		Float				mProgress;

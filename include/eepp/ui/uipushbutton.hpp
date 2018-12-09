@@ -75,7 +75,7 @@ class EE_API UIPushButton : public UIWidget {
 
 		void setStyleConfig(const UIPushButtonStyleConfig & styleConfig);
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		UIPushButtonStyleConfig mStyleConfig;
 		UIImage * 	mIcon;

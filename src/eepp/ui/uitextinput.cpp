@@ -344,7 +344,7 @@ bool UITextInput::isFreeEditingEnabled() {
 	return mTextBuffer.isFreeEditingEnabled();
 }
 
-void UITextInput::setAttribute( const NodeAttribute& attribute ) {
+bool UITextInput::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "text" == name ) {
@@ -362,8 +362,10 @@ void UITextInput::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "allowdot" == name ) {
 		getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), attribute.asBool() );
 	} else {
-		UITextView::setAttribute( attribute );
+		return UITextView::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 UIWidget * UITextInput::setPadding( const Rectf& padding ) {

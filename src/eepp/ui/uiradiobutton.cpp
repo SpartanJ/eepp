@@ -252,14 +252,16 @@ void UIRadioButton::setTextSeparation(const Int32 & textSeparation) {
 	setPadding( getPadding() );
 }
 
-void UIRadioButton::setAttribute( const NodeAttribute& attribute ) {
+bool UIRadioButton::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "selected" == name || "active" == name ) {
 		setActive( attribute.asBool() );
 	} else {
-		UITextView::setAttribute( attribute );
+		return UITextView::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 Uint32 UIRadioButton::onKeyDown( const KeyEvent& Event ) {

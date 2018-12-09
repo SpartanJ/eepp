@@ -38,7 +38,7 @@ class EE_API UIDropDownList : public UITextInput {
 
 		void setStyleConfig(const UIDropDownListStyleConfig & styleConfig);
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 
 		virtual void loadFromXmlNode(const pugi::xml_node & node);
 	protected:

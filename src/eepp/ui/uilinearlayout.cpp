@@ -108,8 +108,9 @@ void UILinearLayout::packVertical() {
 				}
 			}
 
-			if ( widget->getLayoutHeightRules() == MATCH_PARENT && widget->getLayoutWeight() == 0 && widget->getSize().getHeight() != mDpSize.getHeight() ) {
-				widget->setSize( widget->getSize().getWidth(), mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom );
+			if ( widget->getLayoutHeightRules() == MATCH_PARENT && widget->getLayoutWeight() == 0 &&
+				 widget->getSize().getHeight() != mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom ) {
+				widget->setSize( widget->getSize().getWidth(), mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom );
 			}
 		}
 
@@ -225,8 +226,9 @@ void UILinearLayout::packHorizontal() {
 				}
 			}
 
-			if ( widget->getLayoutWidthRules() == MATCH_PARENT && widget->getLayoutWeight() == 0 && widget->getSize().getWidth() != mDpSize.getWidth() ) {
-				widget->setSize( mDpSize.getWidth(), widget->getSize().getWidth() - widget->getLayoutMargin().Left  - widget->getLayoutMargin().Top );
+			if ( widget->getLayoutWidthRules() == MATCH_PARENT && widget->getLayoutWeight() == 0 &&
+				 widget->getSize().getWidth() != mDpSize.getWidth() - widget->getLayoutMargin().Left  - widget->getLayoutMargin().Top - mPadding.Left - mPadding.Right ) {
+				widget->setSize( mDpSize.getWidth(), widget->getSize().getWidth() - widget->getLayoutMargin().Left  - widget->getLayoutMargin().Top - mPadding.Left - mPadding.Right );
 			}
 		}
 
@@ -334,7 +336,7 @@ Sizei UILinearLayout::getTotalUsedSize() {
 	return size;
 }
 
-void UILinearLayout::setAttribute( const NodeAttribute& attribute ) {
+bool UILinearLayout::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "orientation" == name ) {
@@ -346,8 +348,10 @@ void UILinearLayout::setAttribute( const NodeAttribute& attribute ) {
 		else if ( "vertical" == val )
 			setOrientation( UI_VERTICAL );
 	} else {
-		UILayout::setAttribute( attribute );
+		return UILayout::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 Uint32 UILinearLayout::onMessage(const NodeMessage * Msg) {

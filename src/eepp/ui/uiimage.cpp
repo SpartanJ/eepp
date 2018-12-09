@@ -183,7 +183,7 @@ const Vector2f& UIImage::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-void UIImage::setAttribute( const NodeAttribute& attribute ) {
+bool UIImage::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "src" == name ) {
@@ -209,8 +209,10 @@ void UIImage::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "tint" == name ) {
 		setColor( Color::fromString( attribute.asString() ) );
 	} else {
-		UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 Uint32 UIImage::getScaleType() const {

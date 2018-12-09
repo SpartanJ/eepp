@@ -985,7 +985,7 @@ void UIListBox::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
 	setFontColor( mFontStyleConfig.FontColor );
 }
 
-void UIListBox::setAttribute( const NodeAttribute& attribute ) {
+bool UIListBox::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "rowheight" == name ) {
@@ -1042,14 +1042,24 @@ void UIListBox::setAttribute( const NodeAttribute& attribute ) {
 			mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
 		}
 	} else {
-		UITouchDragableWidget::setAttribute( attribute );
+		return UITouchDragableWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 void UIListBox::loadFromXmlNode(const pugi::xml_node & node) {
 	beginAttributesTransaction();
 
 	UITouchDragableWidget::loadFromXmlNode( node );
+
+	loadItemsFromXmlNode( node );
+
+	endAttributesTransaction();
+}
+
+void UIListBox::loadItemsFromXmlNode( const pugi::xml_node& node ) {
+	beginAttributesTransaction();
 
 	std::vector<String> items;
 	for ( pugi::xml_node item = node.child("item"); item; item = item.next_sibling("item") ) {

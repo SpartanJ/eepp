@@ -31,7 +31,7 @@ class EE_API UIImage : public UIWidget {
 
 		const Vector2f& getAlignOffset() const;
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 
 		Uint32 getScaleType() const;
 

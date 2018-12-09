@@ -618,7 +618,7 @@ bool UITable::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds() && !mVScrollBar->isMouseOverMeOrChilds() && !mHScrollBar->isMouseOverMeOrChilds();
 }
 
-void UITable::setAttribute( const NodeAttribute& attribute ) {
+bool UITable::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "rowheight" == name ) {
@@ -656,8 +656,10 @@ void UITable::setAttribute( const NodeAttribute& attribute ) {
 			mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
 		}
 	} else {
-		UITouchDragableWidget::setAttribute( attribute );
+		return UITouchDragableWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 }}

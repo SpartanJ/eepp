@@ -468,12 +468,14 @@ static BlendMode toBlendMode( std::string val ) {
 	return blendMode;
 }
 
-void UIWidget::setAttribute( const std::string& name, const std::string& value ) {
-	setAttribute( NodeAttribute( name, value ) );
+bool UIWidget::setAttribute( const std::string& name, const std::string& value ) {
+	return setAttribute( NodeAttribute( name, value ) );
 }
 
-void UIWidget::setAttribute(const NodeAttribute & attribute) {
+bool UIWidget::setAttribute(const NodeAttribute & attribute) {
 	std::string name = attribute.getName();
+
+	bool attributeSet = true;
 
 	if ( "id" == name ) {
 		setId( attribute.value() );
@@ -693,7 +695,11 @@ void UIWidget::setAttribute(const NodeAttribute & attribute) {
 		setPadding( Rectf( mPadding.Left, PixelDensity::toDpFromString( attribute.asString() ), mPadding.Right, mPadding.Bottom ) );
 	} else if ( "paddingbottom" == name ) {
 		setPadding( Rectf( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromString( attribute.asString() ) ) );
+	} else {
+		attributeSet = false;
 	}
+
+	return attributeSet;
 }
 
 void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {

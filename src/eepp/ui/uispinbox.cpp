@@ -264,8 +264,10 @@ void UISpinBox::onAlphaChange() {
 	mPushDown->setAlpha( mAlpha );
 }
 
-void UISpinBox::setAttribute( const NodeAttribute& attribute ) {
+bool UISpinBox::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
+
+	bool attributeSet = true;
 
 	if ( "minvalue" == name ) {
 		setMinValue(attribute.asFloat() );
@@ -276,10 +278,12 @@ void UISpinBox::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "clickstep" == name ) {
 		setClickStep(attribute.asFloat() );
 	} else {
-		UIWidget::setAttribute( attribute );
+		attributeSet = UIWidget::setAttribute( attribute );
 	}
 
 	mInput->setAttribute( attribute );
+
+	return attributeSet;
 }
 
 }}

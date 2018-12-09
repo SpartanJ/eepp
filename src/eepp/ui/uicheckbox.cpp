@@ -185,14 +185,16 @@ void UICheckBox::setTextSeparation(const Int32 & textSeparation) {
 	setPadding( getPadding() );
 }
 
-void UICheckBox::setAttribute( const NodeAttribute& attribute ) {
+bool UICheckBox::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "selected" == name || "active" == name ) {
 		setActive( attribute.asBool() );
 	} else {
-		UITextView::setAttribute( attribute );
+		return UITextView::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 Uint32 UICheckBox::onKeyDown( const KeyEvent& Event ) {

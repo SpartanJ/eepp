@@ -42,11 +42,21 @@ void UIRelativeLayout::fixChilds() {
 	setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 
 	if ( getLayoutWidthRules() == MATCH_PARENT ) {
-		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right );
+		Rectf padding = Rectf();
+
+		if ( getParent()->isWidget() )
+			padding = static_cast<UIWidget*>( getParent() )->getPadding();
+
+		setInternalWidth( getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right - padding.Left - padding.Right );
 	}
 
 	if ( getLayoutHeightRules() == MATCH_PARENT ) {
-		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
+		Rectf padding = Rectf();
+
+		if ( getParent()->isWidget() )
+			padding = static_cast<UIWidget*>( getParent() )->getPadding();
+
+		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom - padding.Top - padding.Bottom );
 	}
 
 	Node * child = mChild;
@@ -96,11 +106,11 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 				pos.x = ( mDpSize.getWidth() - widget->getSize().getWidth() ) / 2 + widget->getLayoutMargin().Left;
 				break;
 			case UI_HALIGN_RIGHT:
-				pos.x = mDpSize.getWidth() - widget->getSize().getWidth() - widget->getLayoutMargin().Right;
+				pos.x = mDpSize.getWidth() - widget->getSize().getWidth() - widget->getLayoutMargin().Right - mPadding.Right;
 				break;
 			case UI_HALIGN_LEFT:
 			default:
-				pos.x = widget->getLayoutMargin().Left;
+				pos.x = widget->getLayoutMargin().Left + mPadding.Left;
 				break;
 		}
 
@@ -109,11 +119,11 @@ void UIRelativeLayout::fixChildPos( UIWidget * widget ) {
 				pos.y = ( mDpSize.getHeight() - widget->getSize().getHeight() ) / 2 + widget->getLayoutMargin().Top;
 				break;
 			case UI_VALIGN_BOTTOM:
-				pos.y = mDpSize.getHeight() - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom;
+				pos.y = mDpSize.getHeight() - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom - mPadding.Bottom;
 				break;
 			case UI_VALIGN_TOP:
 			default:
-				pos.y = widget->getLayoutMargin().Top;
+				pos.y = widget->getLayoutMargin().Top + mPadding.Top;
 				break;
 		}
 	}
@@ -130,7 +140,7 @@ void UIRelativeLayout::fixChildSize( UIWidget * widget ) {
 		}
 		case MATCH_PARENT:
 		{
-			widget->setSize( mDpSize.getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right, widget->getSize().getHeight() );
+			widget->setSize( mDpSize.getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right - mPadding.Left - mPadding.Right, widget->getSize().getHeight() );
 			break;
 		}
 		case FIXED:
@@ -147,7 +157,7 @@ void UIRelativeLayout::fixChildSize( UIWidget * widget ) {
 		}
 		case MATCH_PARENT:
 		{
-			widget->setSize( widget->getSize().getWidth(), mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom );
+			widget->setSize( widget->getSize().getWidth(), mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom );
 			break;
 		}
 		case FIXED:

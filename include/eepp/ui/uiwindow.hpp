@@ -109,7 +109,7 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 
 		virtual void internalDraw();
 

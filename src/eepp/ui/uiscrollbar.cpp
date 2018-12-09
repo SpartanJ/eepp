@@ -282,10 +282,12 @@ void UIScrollBar::setExpandBackground( bool expandBackground ) {
 	adjustChilds();
 }
 
-void UIScrollBar::setAttribute(const NodeAttribute & attribute) {
-	UIScrollBar::setAttribute( attribute );
+bool UIScrollBar::setAttribute(const NodeAttribute & attribute) {
+	bool attributeSet = UIScrollBar::setAttribute( attribute );
 
 	mSlider->setAttribute( attribute );
+
+	return attributeSet;
 }
 
 UIScrollBar::ScrollBarType UIScrollBar::getScrollBarType() const {

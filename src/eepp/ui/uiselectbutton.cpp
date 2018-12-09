@@ -89,14 +89,16 @@ const Color &UISelectButton::getFontSelectedColor() const {
 	return mStyleConfig.FontSelectedColor;
 }
 
-void UISelectButton::setAttribute( const NodeAttribute& attribute ) {
+bool UISelectButton::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "textselectedcolor" == name ) {
 		setFontSelectedColor( Color::fromString( attribute.asString() ) );
 	} else {
-		UIPushButton::setAttribute( attribute );
+		return UIPushButton::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 }}

@@ -402,7 +402,7 @@ void UISlider::onAlphaChange() {
 	mSlider->setAlpha( mAlpha );
 }
 
-void UISlider::setAttribute( const NodeAttribute& attribute ) {
+bool UISlider::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "orientation" == name ) {
@@ -424,8 +424,10 @@ void UISlider::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "pagestep" == name ) {
 		setPageStep( attribute.asFloat() );
 	} else {
-		UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 }}

@@ -118,7 +118,7 @@ void UIComboBox::onPositionChange() {
 }
 
 void UIComboBox::onAutoSize() {
-	setInternalHeight( mDropDownList->getSkinSize().getHeight() );
+	setInternalHeight( mDropDownList->getSkinSize().getHeight() + mDropDownList->getPadding().Top + mDropDownList->getPadding().Bottom );
 }
 
 }}

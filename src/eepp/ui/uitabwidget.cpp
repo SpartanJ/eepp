@@ -185,7 +185,7 @@ void UITabWidget::setStyleConfig(const UITabWidgetStyleConfig & styleConfig) {
 	orderTabs();
 }
 
-void UITabWidget::setAttribute( const NodeAttribute& attribute ) {
+bool UITabWidget::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "textcolor" == name ) {
@@ -249,8 +249,10 @@ void UITabWidget::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "linebelowtabsyoffset" == name ) {
 		setLineBelowTabsYOffset( attribute.asInt() );
 	} else {
-		UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 Font * UITabWidget::getFont() const {

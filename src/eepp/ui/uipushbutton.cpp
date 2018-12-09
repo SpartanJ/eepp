@@ -344,8 +344,10 @@ void UIPushButton::setStyleConfig(const UIPushButtonStyleConfig & styleConfig) {
 	onStateChange();
 }
 
-void UIPushButton::setAttribute( const NodeAttribute& attribute ) {
+bool UIPushButton::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
+
+	bool attributeSet = true;
 
 	if ( "text" == name ) {
 		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
@@ -362,11 +364,13 @@ void UIPushButton::setAttribute( const NodeAttribute& attribute ) {
 			setIcon( icon );
 		}
 	} else {
-		UIWidget::setAttribute( attribute );
+		attributeSet = UIWidget::setAttribute( attribute );
 	}
 
 	mTextBox->setAttribute( attribute );
 	mTextBox->setLayoutSizeRules( FIXED, FIXED );
+
+	return attributeSet;
 }
 
 }}

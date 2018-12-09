@@ -113,7 +113,9 @@ class EE_API UIListBox : public UITouchDragableWidget {
 
 		void loadFromXmlNode(const pugi::xml_node & node);
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		void loadItemsFromXmlNode(const pugi::xml_node & node);
+
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		friend class UIListBoxItem;
 		friend class UIItemContainer<UIListBox>;

@@ -55,6 +55,8 @@ void UILoader::draw() {
 void UILoader::update( const Time& time ) {
 	UIWidget::update( time );
 
+	invalidateDraw();
+
 	if ( mIndeterminate ) {
 		mArcAngle += time.asMilliseconds() * mAnimationSpeed * mOp;
 		mArcStartAngle += time.asMilliseconds() * (mAnimationSpeed*1.5f);
@@ -154,7 +156,7 @@ UILoader * UILoader::setAnimationSpeed( const Float& animationSpeed ) {
 	return this;
 }
 
-void UILoader::setAttribute( const NodeAttribute& attribute ) {
+bool UILoader::setAttribute( const NodeAttribute& attribute ) {
 	std::string name = attribute.getName();
 
 	if ( "indeterminate" == name ) {
@@ -174,8 +176,10 @@ void UILoader::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "arcstartangle" == name ) {
 		setArcStartAngle( attribute.asFloat() );
 	} else {
-		UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 Float UILoader::getArcStartAngle() const {

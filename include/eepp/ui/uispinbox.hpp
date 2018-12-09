@@ -56,7 +56,7 @@ class EE_API UISpinBox : public UIWidget {
 
 		bool dotsInNumbersAllowed();
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		UITextInput * 		mInput;
 		UINode * 	mPushUp;

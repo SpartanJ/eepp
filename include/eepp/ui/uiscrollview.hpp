@@ -40,7 +40,7 @@ class EE_API UIScrollView : public UITouchDragableWidget {
 
 		UINode * getContainer() const;
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		ScrollViewType mViewType;
 		UI_SCROLLBAR_MODE mVScrollMode;

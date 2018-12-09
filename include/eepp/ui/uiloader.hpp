@@ -49,7 +49,7 @@ class EE_API UILoader : public UIWidget {
 
 		UILoader * setAnimationSpeed( const Float& animationSpeed );
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 
 		Float getArcStartAngle() const;
 

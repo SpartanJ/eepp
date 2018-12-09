@@ -76,7 +76,7 @@ class EE_API UITextView : public UIWidget {
 
 		UITooltipStyleConfig getFontStyleConfig() const;
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		Text *		mTextCache;
 		String			mString;

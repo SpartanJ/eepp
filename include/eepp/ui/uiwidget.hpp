@@ -87,9 +87,9 @@ class EE_API UIWidget : public UINode {
 
 		void notifyLayoutAttrChangeParent();
 
-		void setAttribute( const std::string& name, const std::string& value );
+		bool setAttribute( const std::string& name, const std::string& value );
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 
 		const Rectf& getPadding() const;
 

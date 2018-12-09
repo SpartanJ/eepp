@@ -222,7 +222,7 @@ bool UIScrollView::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds() && mScrollView->isMouseOverMeOrChilds() && ret;
 }
 
-void UIScrollView::setAttribute( const NodeAttribute& attribute ) {
+bool UIScrollView::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "type" == name ) {
@@ -257,8 +257,10 @@ void UIScrollView::setAttribute( const NodeAttribute& attribute ) {
 			mHScroll->setScrollBarType( UIScrollBar::NoButtons );
 		}
 	} else {
-		UITouchDragableWidget::setAttribute( attribute );
+		return UITouchDragableWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 }}
