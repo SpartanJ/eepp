@@ -48,6 +48,8 @@ class EE_API UITextInput : public UITextView {
 		bool isFreeEditingEnabled();
 
 		virtual void setAttribute( const NodeAttribute& attribute );
+
+		virtual UIWidget * setPadding(const Rectf& padding);
 	protected:
 		InputTextBuffer	mTextBuffer;
 		Float			mWaitCursorTime;

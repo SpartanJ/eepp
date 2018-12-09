@@ -108,6 +108,34 @@ tRECT<T>& operator -=(tRECT<T>& R, T X) {
 	return R;
 }
 
+template <typename T>
+tRECT<T> operator +(const tRECT<T>& R, tRECT<T> X) {
+	return tRECT<T>(R.Left + X.Left, R.Top + X.Top, R.Right + X.Right, R.Bottom + X.Bottom);
+}
+
+template <typename T>
+tRECT<T>& operator +=(tRECT<T>& R, tRECT<T> X) {
+	R.Left += X.Left;
+	R.Top += X.Top;
+	R.Right += X.Right;
+	R.Bottom += X.Bottom;
+	return R;
+}
+
+template <typename T>
+tRECT<T> operator -(const tRECT<T>& R, tRECT<T> X) {
+	return tRECT<T>(R.Left - X.Left, R.Top - X.Top, R.Right - X.Right, R.Bottom - X.Bottom);
+}
+
+template <typename T>
+tRECT<T>& operator -=(tRECT<T>& R, tRECT<T> X) {
+	R.Left -= X.Left;
+	R.Top -= X.Top;
+	R.Right -= X.Right;
+	R.Bottom -= X.Bottom;
+	return R;
+}
+
 template <typename T, typename Y>
 tRECT<T> operator *(const tRECT<T>& R, Y X) {
 	return tRECT<T>((T)((Y)R.Left * X), (T)((Y)R.Top * X), (T)((Y)R.Right * X), (T)((Y)R.Bottom * X));

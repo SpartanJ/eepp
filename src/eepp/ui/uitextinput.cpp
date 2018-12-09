@@ -210,7 +210,12 @@ void UITextInput::onThemeLoaded() {
 
 void UITextInput::onAutoSize() {
 	if ( ( mFlags & UI_AUTO_SIZE ) && 0 == mDpSize.getHeight() ) {
-		setSize( mDpSize.x, getSkinSize().getHeight() );
+		setSize( mDpSize.x, getSkinSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+	}
+
+	if ( mLayoutHeightRules == WRAP_CONTENT ) {
+		int minHeight = eemax<int>( mTextCache->getTextHeight(), PixelDensity::dpToPxI( getSkinSize().getHeight() ) );
+		setInternalPixelsHeight( minHeight + mRealPadding.Top + mRealPadding.Bottom );
 	}
 }
 
@@ -359,6 +364,18 @@ void UITextInput::setAttribute( const NodeAttribute& attribute ) {
 	} else {
 		UITextView::setAttribute( attribute );
 	}
+}
+
+UIWidget * UITextInput::setPadding( const Rectf& padding ) {
+	Rectf autoPadding;
+
+	if ( mFlags & UI_AUTO_PADDING ) {
+		autoPadding = makePadding( true, true, false, false );
+	}
+
+	UITextView::setPadding( autoPadding + padding );
+
+	return this;
 }
 
 }}

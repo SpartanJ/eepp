@@ -59,6 +59,8 @@ class EE_API UIRadioButton : public UITextView {
 		virtual void onThemeLoaded();
 
 		virtual void onPaddingChange();
+
+		virtual void alignFix();
 };
 
 }}

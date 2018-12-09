@@ -758,7 +758,7 @@ void Texture::drawQuadEx( Quad2f Q, const Vector2f& Offset, const Float &Angle, 
 }
 
 Sizef Texture::getSize() {
-	return Sizef( PixelDensity::pxToDp( mImgWidth ), PixelDensity::pxToDp( mImgHeight ) );
+	return Sizef( PixelDensity::dpToPx( mImgWidth ), PixelDensity::dpToPx( mImgHeight ) );
 }
 
 Sizei Texture::getPixelSize() {

@@ -58,6 +58,17 @@ Drawable * DrawableSearcher::searchByName( const std::string& name ) {
 			} else {
 				drawable = searchByNameInternal( name );
 			}
+		} else if ( String::startsWith( name, "file://" ) ) {
+			std::string filePath( name.substr( 7 ) );
+
+			drawable = TextureFactory::instance()->getByName( filePath );
+
+			if ( NULL == drawable ) {
+				Uint32 texId = TextureFactory::instance()->loadFromFile( filePath );
+
+				if ( texId > 0 )
+					drawable = TextureFactory::instance()->getTexture( texId );
+			}
 		} else {
 			drawable = searchByNameInternal( name );
 		}

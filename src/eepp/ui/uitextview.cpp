@@ -252,36 +252,36 @@ void UITextView::onAutoSize() {
 	}
 
 	if ( mLayoutWidthRules == WRAP_CONTENT ) {
-		setInternalPixelsWidth( (int)mTextCache->getTextWidth() );
+		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right );
 	}
 
 	if ( mLayoutHeightRules == WRAP_CONTENT ) {
-		setInternalPixelsHeight( (int)mTextCache->getTextHeight() );
+		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mRealPadding.Top + mRealPadding.Bottom );
 	}
 }
 
 void UITextView::alignFix() {
 	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mRealAlignOffset.x = (Float)( (Int32)( mSize.x / 2 - mTextCache->getTextWidth() / 2 ) );
+			mRealAlignOffset.x = (Float)( (Int32)( ( mSize.x - mRealPadding.Left - mRealPadding.Right ) / 2 - mTextCache->getTextWidth() / 2 ) );
 			break;
 		case UI_HALIGN_RIGHT:
-			mRealAlignOffset.x = ( (Float)mSize.x - (Float)mTextCache->getTextWidth() );
+			mRealAlignOffset.x = ( (Float)mSize.x - mRealPadding.Left - mRealPadding.Right - (Float)mTextCache->getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
-			mRealAlignOffset.x = 0.f;
+			mRealAlignOffset.x = 0;
 			break;
 	}
 
 	switch ( fontVAlignGet( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
-			mRealAlignOffset.y = (Float)( (Int32)( mSize.y / 2 - mTextCache->getTextHeight() / 2 ) ) - 1;
+			mRealAlignOffset.y = (Float)( (Int32)( ( mSize.y - mRealPadding.Top - mRealPadding.Bottom ) / 2 - mTextCache->getTextHeight() / 2 ) ) - 1;
 			break;
 		case UI_VALIGN_BOTTOM:
-			mRealAlignOffset.y = ( (Float)mSize.y - (Float)mTextCache->getTextHeight() );
+			mRealAlignOffset.y = ( (Float)mSize.y - mRealPadding.Top - mRealPadding.Bottom - (Float)mTextCache->getTextHeight() );
 			break;
 		case UI_VALIGN_TOP:
-			mRealAlignOffset.y = 0.f;
+			mRealAlignOffset.y = 0;
 			break;
 	}
 
@@ -505,25 +505,6 @@ void UITextView::setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig
 	setOutlineColor( mFontStyleConfig.getOutlineColor() );
 }
 
-const Rectf& UITextView::getPadding() const {
-	return mPadding;
-}
-
-UITextView * UITextView::setPadding(const Rectf& padding) {
-	if ( padding != mPadding ) {
-		mPadding = padding;
-		mRealPadding = PixelDensity::dpToPx( mPadding );
-		onPaddingChange();
-		notifyLayoutAttrChange();
-	}
-
-	return this;
-}
-
-void UITextView::onPaddingChange() {
-	invalidateDraw();
-}
-
 void UITextView::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
@@ -580,17 +561,6 @@ void UITextView::setAttribute( const NodeAttribute& attribute ) {
 		setOutlineThickness( PixelDensity::toDpFromString( attribute.asString() ) );
 	} else if ( "fontoutlinecolor" == name ) {
 		setOutlineColor( Color::fromString( attribute.asString() ) );
-	} else if ( "padding" == name ) {
-		int val = PixelDensity::toDpFromStringI( attribute.asString() );
-		setPadding( Rectf( val, val, val, val ) );
-	} else if ( "paddingleft" == name ) {
-		setPadding( Rectf( PixelDensity::toDpFromString( attribute.asString() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
-	} else if ( "paddingright" == name ) {
-		setPadding( Rectf( mPadding.Left, mPadding.Top, PixelDensity::toDpFromString( attribute.asString() ), mPadding.Bottom ) );
-	} else if ( "paddingtop" == name ) {
-		setPadding( Rectf( mPadding.Left, PixelDensity::toDpFromString( attribute.asString() ), mPadding.Right, mPadding.Bottom ) );
-	} else if ( "paddingbottom" == name ) {
-		setPadding( Rectf( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromString( attribute.asString() ) ) );
 	} else {
 		UIWidget::setAttribute( attribute );
 	}

@@ -600,7 +600,7 @@ void fontPathOpen( const Event * event ) {
 void layoutOpen( const Event * event ) {
 	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( event->getNode() );
 
-	uiSceneNode->loadLayoutFromFile( CDL->getFullPath(), uiContainer );
+	loadLayout( CDL->getFullPath() );
 }
 
 void projectOpen( const Event * event ) {
@@ -728,6 +728,10 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		resizeCb( window );
 
 		window->pushResizeCallback( cb::Make1( resizeCb ) );
+
+		if ( argc >= 2 ) {
+			loadLayout( argv[1] );
+		}
 
 		window->runMainLoop( &mainLoop );
 	}

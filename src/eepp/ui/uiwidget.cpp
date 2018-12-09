@@ -53,7 +53,6 @@ Rect UIWidget::getLayoutMargin() const {
 UIWidget * UIWidget::setLayoutMargin(const Rect & margin) {
 	if ( mLayoutMargin != margin ) {
 		mLayoutMargin = margin;
-		mRealMargin = PixelDensity::dpToPx( Rectf( margin.Left, margin.Top, margin.Right, margin.Bottom ) );
 		notifyLayoutAttrChange();
 	}
 
@@ -398,6 +397,26 @@ void UIWidget::alignAgainstLayout() {
 	setInternalPosition( pos );
 }
 
+const Rectf& UIWidget::getPadding() const {
+	return mPadding;
+}
+
+UIWidget * UIWidget::setPadding(const Rectf& padding) {
+	if ( padding != mPadding ) {
+		mPadding = padding;
+		mRealPadding = PixelDensity::dpToPx( mPadding );
+		onAutoSize();
+		onPaddingChange();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+void UIWidget::onPaddingChange() {
+	invalidateDraw();
+}
+
 void UIWidget::beginAttributesTransaction() {
 	mAttributesTransactionCount++;
 }
@@ -663,6 +682,17 @@ void UIWidget::setAttribute(const NodeAttribute & attribute) {
 		setBlendMode( toBlendMode( attribute.asString() ) );
 	} else if ( "backgroundblendmode" == name ) {
 		setBackgroundBlendMode( toBlendMode( attribute.asString() ) );
+	} else if ( "padding" == name ) {
+		int val = PixelDensity::toDpFromStringI( attribute.asString() );
+		setPadding( Rectf( val, val, val, val ) );
+	} else if ( "paddingleft" == name ) {
+		setPadding( Rectf( PixelDensity::toDpFromString( attribute.asString() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
+	} else if ( "paddingright" == name ) {
+		setPadding( Rectf( mPadding.Left, mPadding.Top, PixelDensity::toDpFromString( attribute.asString() ), mPadding.Bottom ) );
+	} else if ( "paddingtop" == name ) {
+		setPadding( Rectf( mPadding.Left, PixelDensity::toDpFromString( attribute.asString() ), mPadding.Right, mPadding.Bottom ) );
+	} else if ( "paddingbottom" == name ) {
+		setPadding( Rectf( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromString( attribute.asString() ) ) );
 	}
 }
 
