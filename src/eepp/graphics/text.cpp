@@ -475,6 +475,10 @@ void Text::shrinkText( const Uint32& MaxWidth ) {
 	mColorsNeedUpdate = true;
 }
 
+void Text::invalidateColors() {
+	mColorsNeedUpdate = true;
+}
+
 Rectf Text::getLocalBounds() {
 	ensureGeometryUpdate();
 

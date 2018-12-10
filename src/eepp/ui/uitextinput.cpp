@@ -97,13 +97,13 @@ void UITextInput::drawWaitingCursor() {
 		Primitives P;
 		P.setColor( mFontStyleConfig.FontColor );
 
-		Float CurPosX = mScreenPos.x + mRealAlignOffset.x + mCurPos.x + PixelDensity::dpToPx( 1.f ) + mRealPadding.Left;
+		Float CurPosX = eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + PixelDensity::dpToPx( 1.f ) + mRealPadding.Left );
 		Float CurPosY = mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mRealPadding.Top;
 
 		if ( CurPosX > (Float)mScreenPos.x + (Float)mSize.x )
 			CurPosX = (Float)mScreenPos.x + (Float)mSize.x;
 
-		P.drawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->getFont()->getLineSpacing( mTextCache->getCharacterSizePx() ) ) ) );
+		P.drawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->getFont()->getFontHeight( mTextCache->getCharacterSizePx() ) ) ) );
 
 		if ( disableSmooth )
 			GLi->lineSmooth( true );

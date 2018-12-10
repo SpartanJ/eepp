@@ -98,6 +98,7 @@ class EE_API UITextView : public UIWidget {
 		std::vector<SelPosCache> mSelPosCache;
 		Int32		mLastSelCurInit;
 		Int32		mLastSelCurEnd;
+		Int32		mFontLineCenter;
 		bool		mSelecting;
 
 		virtual void drawSelection(Text * textCache);
@@ -131,6 +132,10 @@ class EE_API UITextView : public UIWidget {
 		virtual Int32 selCurEnd();
 
 		virtual void onAlignChange();
+
+		virtual void onSelectionChange();
+
+		const Int32& getFontLineCenter();
 
 		void recalculate();
 

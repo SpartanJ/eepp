@@ -34,17 +34,17 @@ namespace {
 
 namespace EE { namespace Graphics {
 
-FontTrueType * FontTrueType::New( const std::string FontName ) {
+FontTrueType * FontTrueType::New( const std::string& FontName ) {
 	return eeNew( FontTrueType, ( FontName ) );
 }
 
-FontTrueType * FontTrueType::New(const std::string FontName, const std::string & filename) {
+FontTrueType * FontTrueType::New( const std::string& FontName, const std::string& filename) {
 	FontTrueType * fontTrueType = New( FontName );
 	fontTrueType->loadFromFile( filename );
 	return fontTrueType;
 }
 
-FontTrueType::FontTrueType( const std::string FontName ) :
+FontTrueType::FontTrueType( const std::string& FontName ) :
 	Font( FONT_TYPE_TTF, FontName ),
 	mLibrary  (NULL),
 	mFace     (NULL),
