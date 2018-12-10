@@ -6,3 +6,4 @@
 ../../src/thirdparty/libvorbis/include
 ../../src/eepp/audio
 ../../include/eepp/audio
+/usr/include/freetype2/
