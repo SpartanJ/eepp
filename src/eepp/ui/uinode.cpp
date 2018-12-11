@@ -283,7 +283,7 @@ void UINode::update( const Time& time ) {
 
 		Vector2f Pos( eventDispatcher->getMousePosf() );
 
-		if ( mDragPoint != Pos && ( abs( mDragPoint.x - Pos.x ) > 1 || abs( mDragPoint.y - Pos.y ) > 1 ) ) {
+		if ( mDragPoint != Pos && ( std::abs( mDragPoint.x - Pos.x ) > 1.f || std::abs( mDragPoint.y - Pos.y ) > 1.f ) ) {
 			if ( onDrag( Pos ) ) {
 				Sizef dragDiff;
 

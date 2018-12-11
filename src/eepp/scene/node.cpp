@@ -194,6 +194,20 @@ Node * Node::getParent() const {
 	return mParentCtrl;
 }
 
+void Node::updateDrawInvalidator() {
+	mNodeDrawInvalidator = getDrawInvalidator();
+
+	if ( NULL != mChild && mChild->mNodeDrawInvalidator != mNodeDrawInvalidator ) {
+		Node * ChildLoop = mChild;
+
+		while ( NULL != ChildLoop ) {
+			ChildLoop->updateDrawInvalidator();
+
+			ChildLoop = ChildLoop->mNext;
+		}
+	}
+}
+
 Node * Node::setParent( Node * parent ) {
 	eeASSERT( NULL != parent );
 
@@ -204,7 +218,8 @@ Node * Node::setParent( Node * parent ) {
 		mParentCtrl->childRemove( this );
 
 	mParentCtrl = parent;
-	mNodeDrawInvalidator = getDrawInvalidator();
+
+	updateDrawInvalidator();
 
 	if ( NULL != mParentCtrl )
 		mParentCtrl->childAdd( this );

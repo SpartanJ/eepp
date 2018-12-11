@@ -1177,7 +1177,7 @@ void UIWindow::invalidate() {
 		writeCtrlFlag( NODE_FLAG_VIEW_DIRTY, 1 );
 
 		if ( NULL != mSceneNode )
-			mSceneNode->invalidateDraw();
+			mSceneNode->invalidate();
 	}
 }
 

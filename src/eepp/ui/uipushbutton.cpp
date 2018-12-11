@@ -236,8 +236,6 @@ void UIPushButton::onAlphaChange() {
 }
 
 void UIPushButton::onStateChange() {
-	UIWidget::onStateChange();
-
 	if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
 		mTextBox->setFontColor( mStyleConfig.FontOverColor );
 	} else {
@@ -245,6 +243,8 @@ void UIPushButton::onStateChange() {
 	}
 
 	mTextBox->setAlpha( mAlpha );
+
+	UIWidget::onStateChange();
 }
 
 void UIPushButton::onAlignChange() {

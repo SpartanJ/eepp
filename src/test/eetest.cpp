@@ -980,7 +980,7 @@ void EETest::createDecoratedWindow() {
 	UIPopUpMenu * PopMenu = UIPopUpMenu::New();
 	PopMenu->add( "Hide Border" );
 	PopMenu->add( "Close" );
-	PopMenu->addEventListener( Event::OnItemClicked, cb::Make1<void, const Event*>( []( const Event * Event ) {
+	PopMenu->addEventListener( Event::OnItemClicked, []( const Event * Event ) {
 		if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 
@@ -1010,7 +1010,7 @@ void EETest::createDecoratedWindow() {
 		} else if ( "Close" == txt ) {
 			win->closeFadeOut( Milliseconds(250) );
 		}
-	} ) );
+	} );
 
 	UIPopUpMenu * PopMenu2 = UIPopUpMenu::New();
 	PopMenu2->add( "Bla" );

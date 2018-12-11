@@ -513,6 +513,12 @@ UITab * UITabWidget::createTab( const String& Text, UINode * CtrlOwned, Drawable
 	CtrlOwned->setVisible( false );
 	CtrlOwned->setEnabled( true );
 
+	if ( CtrlOwned->isWidget() ) {
+		UIWidget * widgetOwned = static_cast<UIWidget*>( CtrlOwned );
+
+		widgetOwned->setLayoutSizeRules( FIXED, FIXED );
+	}
+
 	return tCtrl;
 }
 
