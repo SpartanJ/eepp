@@ -528,22 +528,7 @@ UINode * UINode::setThemeSkin( const std::string& skinName ) {
 
 UINode * UINode::setThemeSkin( UITheme * Theme, const std::string& skinName ) {
 	if ( NULL != Theme ) {
-		UISkin * tSkin = Theme->getSkin( skinName );
-
-		if ( NULL != tSkin ) {
-			Uint32 InitialState = UISkinState::StateNormal;
-
-			if ( NULL != mSkinState ) {
-				InitialState = mSkinState->getState();
-			}
-
-			removeSkin();
-
-			mSkinState = UISkinState::New( tSkin );
-			mSkinState->setState( InitialState );
-
-			onThemeLoaded();
-		}
+		setSkin( Theme->getSkin( skinName ) );
 	}
 
 	return this;

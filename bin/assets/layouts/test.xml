@@ -1,35 +1,37 @@
 <hbox layout_width="match_parent" layout_height="match_parent">
-  <vbox id="lvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" backgroundColor="#222" layout_marginTop="20dp" padding="12dp">
-    <TextView layout_width="wrap_content" layout_height="wrap_content" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#333" />
-    <TextView layout_width="wrap_content" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="24dp" padding="24dp" backgroundColor="#333" gravity="center" />
-    <CheckBox layout_width="wrap_content" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#333" />
-    <RadioButton layout_width="wrap_content" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#333" />
-    <TextInput layout_width="300dp" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="24dp" padding="24dp" />
-    <Image layout_width="wrap_content" layout_height="wrap_content" src="file://assets/tiles/1.png" backgroundColor="#444" layout_marginTop="8dp" scaleType="fit_inside" padding="8dp" />
-    <DropDownList layout_width="300dp" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="16dp" padding="8dp">
-      <item>Test</item>
-      <item>Test 2</item>
-      <item>Test 3</item>
-    </DropDownList>
-    <ComboBox layout_width="300dp" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="16dp" padding="8dp">
-      <item>Test</item>
-      <item>Test 2</item>
-      <item>Test 3</item>
-    </ComboBox>
-    <TextView layout_width="match_parent" layout_height="wrap_content" text="testing match_parent" layout_marginTop="8dp" textSize="24dp" backgroundColor="#333" gravity="center" />
-  </vbox>
-  <vbox id="rvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" backgroundColor="#323232" layout_marginTop="20dp" padding="12dp">
-    <RelativeLayout id="rrl" layout_width="match_parent" layout_height="match_parent" backgroundColor="#999" padding="24dp">
-      <TextView layout_width="match_parent" layout_height="match_parent" text="testing match_parent" textSize="24dp" padding="12dp" backgroundColor="#333" gravity="center" />
-      <TextView layout_width="wrap_content" layout_height="wrap_content" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#242424" />
-      <TextView layout_width="wrap_content" layout_height="wrap_content" text="testing margin" textSize="24dp" padding="12dp" backgroundColor="#242424" layout_gravity="top|right" layout_margin="12dp" />
-      <TextView id="tm" layout_width="wrap_content" layout_height="wrap_content" text="testing margin" textSize="24dp" backgroundColor="#242424" layout_gravity="bottom|left" layout_margin="12dp" />
-      <TextView id="tmp" layout_width="wrap_content" layout_height="wrap_content" text="testing margin padding" textSize="24dp" backgroundColor="#242424" layout_gravity="bottom|right" layout_margin="12dp" padding="12dp" />
-      <Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" fillColor="#999" />
-      <!--<Sprite layout_width="96dp" layout_height="96dp" src="bn" padding="8dp" backgroundColor="#888" gravity="center" layout_marginTop="56dp" gravity="right|bottom" />
-      <TextureRegion layout_width="96dp" layout_height="96dp" src="bn01" padding="8dp" backgroundColor="#787" gravity="center" layout_marginTop="162dp" gravity="right|bottom" />-->
-	  <PushButton layout_width="wrap_content" layout_height="wrap_content" text="testing padding" layout_gravity="bottom|right" gravity="center" padding="8dp" layout_to_top_of="tmp" />
-      <PushButton text="OK!" textSize="16dp" icon="ok" gravity="center" layout_gravity="left|bottom" gravity="center" layout_width="wrap_content" layout_height="wrap_content" layout_marginBottom="8dp" padding="8dp" layout_to_top_of="tm" />
-    </RelativeLayout>
-  </vbox>
+	<vbox id="lvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" backgroundColor="#222" layout_marginTop="20dp" padding="12dp">
+		<TextView layout_width="wrap_content" layout_height="wrap_content" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#333" />
+		<TextView layout_width="wrap_content" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="24dp" padding="24dp" backgroundColor="#333" gravity="center" />
+		<CheckBox layout_width="wrap_content" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#333" />
+		<RadioButton layout_width="wrap_content" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#333" />
+		<TextInput layout_width="300dp" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="24dp" padding="24dp" />
+		<Image layout_width="wrap_content" layout_height="wrap_content" src="file://assets/tiles/1.png" backgroundColor="#444" layout_marginTop="8dp" scaleType="fit_inside" padding="8dp" />
+		<DropDownList layout_width="300dp" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="16dp" padding="8dp">
+			<item>Test</item>
+			<item>Test 2</item>
+			<item>Test 3</item>
+		</DropDownList>
+		<ComboBox layout_width="300dp" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="16dp" padding="8dp">
+			<item>Test</item>
+			<item>Test 2</item>
+			<item>Test 3</item>
+		</ComboBox>
+		<TextView layout_width="match_parent" layout_height="wrap_content" text="testing match_parent" layout_marginTop="8dp" textSize="24dp" backgroundColor="#333" gravity="center" />
+	</vbox>
+	<vbox id="rvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" backgroundColor="#323232" layout_marginTop="20dp" padding="12dp">
+		<RelativeLayout id="rrl" layout_width="match_parent" layout_height="match_parent" backgroundColor="#999" padding="24dp">
+			<TextView layout_width="match_parent" layout_height="match_parent" text="testing match_parent" textSize="24dp" padding="12dp" backgroundColor="#333" gravity="center" />
+			<TextView layout_width="wrap_content" layout_height="wrap_content" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#242424" />
+			<TextView layout_width="wrap_content" layout_height="wrap_content" text="testing margin" textSize="24dp" padding="12dp" backgroundColor="#242424" layout_gravity="top|right" layout_margin="12dp" />
+			<TextView id="tm" layout_width="wrap_content" layout_height="wrap_content" text="testing margin" textSize="24dp" backgroundColor="#242424" layout_gravity="bottom|left" layout_margin="12dp" />
+			<TextView id="tmp" layout_width="wrap_content" layout_height="wrap_content" text="testing margin padding" textSize="24dp" backgroundColor="#242424" layout_gravity="bottom|right" layout_margin="12dp" padding="12dp" />
+			<Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" fillColor="#999" />
+			<!--
+			     <Sprite layout_width="96dp" layout_height="96dp" src="bn" padding="8dp" backgroundColor="#888" gravity="center" layout_marginTop="56dp" gravity="right|bottom" />
+			     <TextureRegion layout_width="96dp" layout_height="96dp" src="bn01" padding="8dp" backgroundColor="#787" gravity="center" layout_marginTop="162dp" gravity="right|bottom" />
+			-->
+			<PushButton layout_width="wrap_content" layout_height="wrap_content" text="testing padding" layout_gravity="bottom|right" gravity="center" padding="8dp" layout_to_top_of="tmp" />
+			<PushButton text="OK!" textSize="16dp" icon="ok" layout_gravity="left|bottom" gravity="center" layout_width="wrap_content" layout_height="wrap_content" layout_marginBottom="8dp" padding="8dp" layout_to_top_of="tm" />
+		</RelativeLayout>
+	</vbox>
 </hbox>

@@ -77,9 +77,7 @@ class EE_API UIListBox : public UITouchDragableWidget {
 
 		Graphics::Font * getFont() const;
 
-		void setContainerPadding( const Rectf& Padding );
-
-		const Rectf& getContainerPadding() const;
+		Rectf getContainerPadding() const;
 
 		void setSmoothScroll( const bool& soft );
 
@@ -153,6 +151,8 @@ class EE_API UIListBox : public UITouchDragableWidget {
 		void onHScrollValueChange( const Event * Event );
 
 		virtual void onSizeChange();
+
+		virtual void onPaddingChange();
 
 		void setRowHeight();
 

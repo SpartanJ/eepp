@@ -94,7 +94,7 @@ void EventDispatcher::update( const Time& elapsed ) {
 	if ( mInput->getReleaseTrigger() ) {
 		if ( NULL != mFocusControl ) {
 			if ( !wasDraggingControl || mMousePos == mLastMousePos ) {
-				if ( mOverControl != mFocusControl )
+				if ( mOverControl != mFocusControl && mInput->getReleaseTrigger() & (EE_BUTTON_LMASK|EE_BUTTON_RMASK) )
 					setFocusControl( mOverControl );
 
 				// The focused control can change after the MouseUp ( since the control can call "setFocus()" on other control

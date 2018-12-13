@@ -114,7 +114,7 @@ void UITable::setTheme( UITheme * Theme ) {
 
 void UITable::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mContainerPadding = makePadding();
+		mContainerPadding = PixelDensity::dpToPx( makePadding() );
 	}
 }
 
@@ -139,15 +139,17 @@ void UITable::onSizeChange() {
 }
 
 void UITable::containerResize() {
-	mContainer->setPosition( mContainerPadding.Left, mContainerPadding.Top );
+	Rectf padding = mContainerPadding + mRealPadding;
+
+	mContainer->setPosition( padding.Left, padding.Top );
 
 	if( mHScrollBar->isVisible() )
-		mContainer->setSize( mDpSize.getWidth() - mContainerPadding.Right, mDpSize.getHeight() - mContainerPadding.Top - mHScrollBar->getSize().getHeight() );
+		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left, mSize.getHeight() - padding.Top - mHScrollBar->getRealSize().getHeight() );
 	else
-		mContainer->setSize( mDpSize.getWidth() - mContainerPadding.Right, mDpSize.getHeight() - mContainerPadding.Bottom - mContainerPadding.Top );
+		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left, mSize.getHeight() - padding.Bottom - padding.Top );
 
 	if ( mVScrollBar->isVisible() )
-		mContainer->setSize( mContainer->getSize().getWidth() - mVScrollBar->getSize().getWidth(), mContainer->getSize().getHeight() );
+		mContainer->setPixelsSize( mContainer->getRealSize().getWidth() - mVScrollBar->getRealSize().getWidth(), mContainer->getRealSize().getHeight() );
 
 	setDefaultCollumnsWidth();
 }
@@ -596,14 +598,11 @@ UITable * UITable::setSmoothScroll(bool smoothScroll) {
 }
 
 Rectf UITable::getContainerPadding() const {
-	return mContainerPadding;
+	return PixelDensity::pxToDp( mContainerPadding + mRealPadding );
 }
 
-void UITable::setContainerPadding(const Rectf& containerPadding) {
-	if ( containerPadding != mContainerPadding ) {
-		mContainerPadding = containerPadding;
-		containerResize();
-	}
+void UITable::onPaddingChange() {
+	containerResize();
 }
 
 void UITable::onTouchDragValueChange( Vector2f diff ) {
@@ -623,17 +622,6 @@ bool UITable::setAttribute( const NodeAttribute& attribute ) {
 
 	if ( "rowheight" == name ) {
 		setRowHeight( attribute.asInt() );
-	} else if ( "padding" == name ) {
-		int val = attribute.asInt();
-		setContainerPadding( Rectf( val, val, val, val ) );
-	} else if ( "paddingleft" == name ) {
-		setContainerPadding( Rectf( attribute.asInt(), mContainerPadding.Top, mContainerPadding.Right, mContainerPadding.Bottom ) );
-	} else if ( "paddingright" == name ) {
-		setContainerPadding( Rectf( mContainerPadding.Left, mContainerPadding.Top, attribute.asInt(), mContainerPadding.Bottom ) );
-	} else if ( "paddingtop" == name ) {
-		setContainerPadding( Rectf( mContainerPadding.Left, attribute.asInt(), mContainerPadding.Right, mContainerPadding.Bottom ) );
-	} else if ( "paddingbottom" == name ) {
-		setContainerPadding( Rectf( mContainerPadding.Left, mContainerPadding.Top, mContainerPadding.Right, attribute.asInt() ) );
 	} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {
 		std::string val = attribute.asString();
 		if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );

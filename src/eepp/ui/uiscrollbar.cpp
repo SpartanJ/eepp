@@ -67,9 +67,7 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 		mBtnDown->setThemeSkin( Theme, "vscrollbar_btndown" );
 	}
 
-	UISkin * tSkin = NULL;
-
-	tSkin = mBtnUp->getSkin();
+	UISkin * tSkin = mBtnUp->getSkin();
 
 	if ( NULL != tSkin ) {
 		mBtnUp->setSize( tSkin->getSize() );
