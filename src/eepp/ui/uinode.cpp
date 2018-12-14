@@ -32,6 +32,7 @@ UINode::UINode() :
 	mFlags( UI_CONTROL_DEFAULT_FLAGS ),
 	mSkinState( NULL ),
 	mBackground( NULL ),
+	mForeground( NULL ),
 	mBorder( NULL ),
 	mDragButton( EE_BUTTON_LMASK )
 {
@@ -268,6 +269,8 @@ void UINode::draw() {
 		drawBackground();
 
 		drawSkin();
+
+		drawForeground();
 	}
 }
 
@@ -375,22 +378,6 @@ UIBackground * UINode::setBackgroundFillEnabled( bool enabled ) {
 	return mBackground;
 }
 
-UIBorder * UINode::setBorderEnabled( bool enabled ) {
-	writeFlag( UI_BORDER, enabled ? 1 : 0 );
-
-	if ( enabled && NULL == mBorder ) {
-		mBorder = UIBorder::New( this );
-
-		if ( NULL == mBackground ) {
-			mBackground = UIBackground::New( this );
-		}
-	}
-
-	invalidateDraw();
-
-	return mBorder;
-}
-
 UINode * UINode::setBackgroundDrawable( Drawable * drawable, bool ownIt ) {
 	setBackgroundFillEnabled( true )->setDrawable( drawable, ownIt );
 	return this;
@@ -411,6 +398,54 @@ UINode * UINode::setBackgroundBlendMode( const BlendMode& blendMode ) {
 	return this;
 }
 
+UIBackground * UINode::setForegroundFillEnabled( bool enabled ) {
+	writeFlag( UI_FILL_FOREGROUND, enabled ? 1 : 0 );
+
+	if ( enabled && NULL == mForeground ) {
+		mForeground = UIBackground::New( this );
+	}
+
+	invalidateDraw();
+
+	return mForeground;
+}
+
+UINode * UINode::setForegroundDrawable( Drawable * drawable, bool ownIt ) {
+	setForegroundFillEnabled( true )->setDrawable( drawable, ownIt );
+	return this;
+}
+
+UINode * UINode::setForegroundColor( const Color& color ) {
+	setForegroundFillEnabled( true )->setColor( color );
+	return this;
+}
+
+UINode * UINode::setForegroundCorners( const unsigned int& corners ) {
+	setForegroundFillEnabled( true )->setCorners( corners );
+	return this;
+}
+
+UINode * UINode::setForegroundBlendMode( const BlendMode& blendMode ) {
+	setForegroundFillEnabled( true )->setBlendMode( blendMode );
+	return this;
+}
+
+UIBorder * UINode::setBorderEnabled( bool enabled ) {
+	writeFlag( UI_BORDER, enabled ? 1 : 0 );
+
+	if ( enabled && NULL == mBorder ) {
+		mBorder = UIBorder::New( this );
+
+		if ( NULL == mBackground ) {
+			mBackground = UIBackground::New( this );
+		}
+	}
+
+	invalidateDraw();
+
+	return mBorder;
+}
+
 UINode * UINode::setBorderColor( const Color& color ) {
 	setBorderEnabled( true )->setColor( color );
 	return this;
@@ -427,7 +462,10 @@ const Uint32& UINode::getFlags() const {
 
 UINode * UINode::setFlags( const Uint32& flags ) {
 	if ( NULL == mBackground && ( flags & UI_FILL_BACKGROUND ) )
-		mBackground = UIBackground::New( this );
+		setBackgroundFillEnabled( true );
+
+	if ( NULL == mForeground && ( flags & UI_FILL_FOREGROUND ) )
+		setForegroundFillEnabled( true );
 
 	if ( NULL == mBorder && ( flags & UI_BORDER ) )
 		mBorder = UIBorder::New( this );
@@ -460,6 +498,12 @@ UINode *UINode::resetFlags( Uint32 newFlags ) {
 void UINode::drawBackground() {
 	if ( mFlags & UI_FILL_BACKGROUND ) {
 		mBackground->draw( getScreenBounds(), mAlpha );
+	}
+}
+
+void UINode::drawForeground() {
+	if ( mFlags & UI_FILL_FOREGROUND ) {
+		mForeground->draw( getScreenBounds(), mAlpha );
 	}
 }
 

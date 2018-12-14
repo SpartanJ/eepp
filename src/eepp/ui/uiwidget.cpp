@@ -489,20 +489,42 @@ bool UIWidget::setAttribute(const NodeAttribute & attribute) {
 	} else if ( "height" == name ) {
 		setInternalHeight( PixelDensity::toDpFromStringI( attribute.asString() ) );
 		notifyLayoutAttrChange();
+	} else if ( "background" == name ) {
+		Drawable * res = NULL;
+
+		const std::string attributeName( attribute.asString() );
+
+		if ( String::startsWith( attributeName, "#" ) ) {
+			setBackgroundColor( Color::fromString( attribute.asString() ) );
+		} else if ( NULL != ( res = DrawableSearcher::searchByName( attributeName ) ) ) {
+			setBackgroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
+		}
 	} else if ( "backgroundcolor" == name ) {
 		setBackgroundColor( Color::fromString( attribute.asString() ) );
+	} else if ( "backgroundblendmode" == name ) {
+		setBackgroundBlendMode( toBlendMode( attribute.asString() ) );
+	} else if ( "foreground" == name ) {
+		Drawable * res = NULL;
+
+		const std::string attributeName( attribute.asString() );
+
+		if ( String::startsWith( attributeName, "#" ) ) {
+			setForegroundColor( Color::fromString( attribute.asString() ) );
+		} else if ( NULL != ( res = DrawableSearcher::searchByName( attributeName ) ) ) {
+			setForegroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
+		}
+	} else if ( "foregroundcolor" == name ) {
+		setForegroundColor( Color::fromString( attribute.asString() ) );
+	} else if ( "foregroundblendmode" == name ) {
+		setForegroundBlendMode( toBlendMode( attribute.asString() ) );
+	} else if ( "foregroundcorners" == name ) {
+		setForegroundCorners( attribute.asUint() );
 	} else if ( "bordercolor" == name ) {
 		setBorderColor( Color::fromString( attribute.asString() ) );
 	} else if ( "borderwidth" == name ) {
 		setBorderWidth( PixelDensity::toDpFromStringI( attribute.asString("1") ) );
 	} else if ( "bordercorners" == name || "backgroundcorners" == name ) {
 		setBackgroundCorners( attribute.asUint() );
-	} else if ( "background" == name ) {
-		Drawable * res = NULL;
-
-		if ( NULL != ( res = DrawableSearcher::searchByName( attribute.asString() ) ) ) {
-			setBackgroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
-		}
 	} else if ( "visible" == name ) {
 		setVisible( attribute.asBool() );
 	} else if ( "enabled" == name ) {
@@ -682,8 +704,6 @@ bool UIWidget::setAttribute(const NodeAttribute & attribute) {
 		setScaleOriginPoint( toOriginPoint( attribute.asString() ) );
 	} else if ( "blendmode" == name ) {
 		setBlendMode( toBlendMode( attribute.asString() ) );
-	} else if ( "backgroundblendmode" == name ) {
-		setBackgroundBlendMode( toBlendMode( attribute.asString() ) );
 	} else if ( "padding" == name ) {
 		int val = PixelDensity::toDpFromStringI( attribute.asString() );
 		setPadding( Rectf( val, val, val, val ) );

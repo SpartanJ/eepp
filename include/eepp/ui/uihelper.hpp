@@ -26,18 +26,19 @@ enum UI_FLAGS {
 	UI_AUTO_SIZE					= (1 << 4),
 	UI_SKIN_KEEP_SIZE_ON_DRAW		= (1 << 5),
 	UI_FILL_BACKGROUND				= (1 << 6),
-	UI_BORDER						= (1 << 7),
-	UI_TAB_STOP						= (1 << 8),
-	UI_WORD_WRAP					= (1 << 9),
-	UI_MULTI_SELECT					= (1 << 10),
-	UI_AUTO_PADDING					= (1 << 11),
-	UI_DRAG_ENABLE					= (1 << 12),
-	UI_ANCHOR_TOP					= (1 << 13),
-	UI_ANCHOR_BOTTOM				= (1 << 14),
-	UI_ANCHOR_LEFT					= (1 << 15),
-	UI_ANCHOR_RIGHT					= (1 << 16),
-	UI_TOUCH_DRAG_ENABLED			= (1 << 17),
-	UI_TEXT_SELECTION_ENABLED		= (1 << 18)
+	UI_FILL_FOREGROUND				= (1 << 7),
+	UI_BORDER						= (1 << 8),
+	UI_TAB_STOP						= (1 << 9),
+	UI_WORD_WRAP					= (1 << 10),
+	UI_MULTI_SELECT					= (1 << 11),
+	UI_AUTO_PADDING					= (1 << 12),
+	UI_DRAG_ENABLE					= (1 << 13),
+	UI_ANCHOR_TOP					= (1 << 14),
+	UI_ANCHOR_BOTTOM				= (1 << 15),
+	UI_ANCHOR_LEFT					= (1 << 16),
+	UI_ANCHOR_RIGHT					= (1 << 17),
+	UI_TOUCH_DRAG_ENABLED			= (1 << 18),
+	UI_TEXT_SELECTION_ENABLED		= (1 << 19)
 };
 
 enum UI_CONTROL_TYPES {

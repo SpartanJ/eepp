@@ -86,8 +86,6 @@ class EE_API UINode : public Node {
 
 		UIBackground * setBackgroundFillEnabled( bool enabled );
 
-		UIBorder * setBorderEnabled( bool enabled );
-
 		UINode * setBackgroundDrawable( Drawable * drawable , bool ownIt = false );
 
 		UINode * setBackgroundColor( const Color& color );
@@ -95,6 +93,18 @@ class EE_API UINode : public Node {
 		UINode * setBackgroundCorners( const unsigned int& corners );
 
 		UINode * setBackgroundBlendMode( const BlendMode& blendMode );
+
+		UIBackground * setForegroundFillEnabled( bool enabled );
+
+		UINode * setForegroundDrawable( Drawable * drawable , bool ownIt = false );
+
+		UINode * setForegroundColor( const Color& color );
+
+		UINode * setForegroundCorners( const unsigned int& corners );
+
+		UINode * setForegroundBlendMode( const BlendMode& blendMode );
+
+		UIBorder * setBorderEnabled( bool enabled );
 
 		UINode * setBorderColor( const Color& color );
 
@@ -193,6 +203,7 @@ class EE_API UINode : public Node {
 		Uint32			mFlags;
 		UISkinState *	mSkinState;
 		UIBackground *	mBackground;
+		UIBackground *	mForeground;
 		UIBorder *		mBorder;
 		Vector2f		mDragPoint;
 		Uint32			mDragButton;
@@ -210,6 +221,8 @@ class EE_API UINode : public Node {
 		virtual void drawSkin();
 
 		virtual void drawBackground();
+
+		virtual void drawForeground();
 
 		virtual void drawBorder();
 
