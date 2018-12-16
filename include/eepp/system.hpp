@@ -17,6 +17,7 @@
 #include <eepp/system/pack.hpp>
 #include <eepp/system/pak.hpp>
 #include <eepp/system/zip.hpp>
+#include <eepp/system/directorypack.hpp>
 #include <eepp/system/rc4.hpp>
 #include <eepp/system/objectloader.hpp>
 #include <eepp/system/resourceloader.hpp>
@@ -27,5 +28,10 @@
 #include <eepp/system/base64.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/translator.hpp>
+#include <eepp/system/iostream.hpp>
+#include <eepp/system/iostreamfile.hpp>
+#include <eepp/system/iostreamzip.hpp>
+#include <eepp/system/iostreampak.hpp>
+#include <eepp/system/virtualfilesystem.hpp>
 
 #endif

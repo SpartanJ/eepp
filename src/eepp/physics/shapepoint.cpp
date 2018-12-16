@@ -1,6 +1,6 @@
 #include <eepp/physics/shapepoint.hpp>
 #include <eepp/physics/space.hpp>
-#include <eepp/helper/chipmunk/chipmunk_unsafe.h>
+#include <chipmunk/chipmunk_unsafe.h>
 
 #ifdef PHYSICS_RENDERER_ENABLED
 #include <eepp/graphics/primitives.hpp>

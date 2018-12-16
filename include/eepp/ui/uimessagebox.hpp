@@ -15,7 +15,7 @@ class EE_API UIMessageBox : public UIWindow {
 
 		virtual ~UIMessageBox();
 
-		virtual Uint32		onMessage( const UIMessage * Msg );
+		virtual Uint32		onMessage( const NodeMessage * Msg );
 
 		virtual void		setTheme( UITheme * Theme );
 
@@ -32,12 +32,12 @@ class EE_API UIMessageBox : public UIWindow {
 		void setCloseWithKey(const Uint32 & closeWithKey);
 	protected:
 		UI_MSGBOX_TYPE		mMsgBoxType;
-		UITextView *			mTextBox;
+		UITextView *		mTextBox;
 		UIPushButton *		mButtonOK;
 		UIPushButton *		mButtonCancel;
 		Uint32				mCloseWithKey;
 
-		virtual Uint32 onKeyUp( const UIEventKey& Event );
+		virtual Uint32 onKeyUp( const KeyEvent& Event );
 };
 
 }}

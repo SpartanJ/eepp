@@ -15,7 +15,7 @@ ShaderProgramManager::~ShaderProgramManager()
 void ShaderProgramManager::reload() {
 	std::list<ShaderProgram*>::iterator it;
 
-	for ( it = mResources.begin(); it != mResources.end(); it++ )
+	for ( it = mResources.begin(); it != mResources.end(); ++it )
 		(*it)->reload();
 }
 

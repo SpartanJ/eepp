@@ -4,6 +4,10 @@
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/font.hpp>
 
+#include <eepp/system/singleton.hpp>
+#include <eepp/system/resourcemanager.hpp>
+using namespace EE::System;
+
 namespace EE { namespace Graphics {
 
 /** @brief The Font Manager is a singleton class that manages all the instance of fonts instanciated.

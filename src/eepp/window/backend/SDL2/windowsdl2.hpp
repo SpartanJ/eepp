@@ -57,6 +57,8 @@ class EE_API WindowSDL : public Window {
 
 		const Sizei& getDesktopResolution();
 
+		virtual Rect getBorderSize();
+
 		SDL_Window *	GetSDLWindow() const;
 
 		void startTextInput();
@@ -76,6 +78,8 @@ class EE_API WindowSDL : public Window {
 		void setGLContextThread();
 
 		void unsetGLContextThread();
+
+		int getCurrentDisplayIndex();
 	protected:
 		friend class ClipboardSDL;
 

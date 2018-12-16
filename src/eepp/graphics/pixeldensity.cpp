@@ -5,6 +5,52 @@ namespace EE { namespace Graphics {
 
 Float PixelDensity::sPixelDensity = 1.f;
 
+Float PixelDensity::toFloat( EE_PIXEL_DENSITY pd ) {
+	switch ( pd )
+	{
+		case PD_MDPI: return 1.f;
+		case PD_HDPI: return 1.5f;
+		case PD_XHDPI: return 2.f;
+		case PD_XXHDPI: return 3.f;
+		case PD_XXXHDPI: return 4.f;
+		default: return 1.f;
+	}
+}
+
+Float PixelDensity::toFloat( Uint32 pd ) {
+	return toFloat( (EE_PIXEL_DENSITY)pd );
+}
+
+EE_PIXEL_DENSITY PixelDensity::fromString( std::string str ) {
+	String::toLowerInPlace( str );
+	if ( "mdpi" == str )			return PD_MDPI;
+	else if ( "hdpi" == str )		return PD_HDPI;
+	else if ( "xhdpi" == str )		return PD_XHDPI;
+	else if ( "xxhdpi" == str )		return PD_XXHDPI;
+	else if ( "xxxhdpi" == str )	return PD_XXXHDPI;
+	return PD_MDPI;
+}
+
+EE_PIXEL_DENSITY PixelDensity::fromString( String str ) {
+	return fromString( str.toUtf8() );
+}
+
+EE_PIXEL_DENSITY PixelDensity::fromDPI( Float dpi ) {
+	EE_PIXEL_DENSITY pd = PD_MDPI;
+
+	if ( dpi > 105 && dpi < 160 ) {
+		pd = PD_HDPI;
+	} else if ( dpi >= 160 && dpi < 240 ) {
+		pd = PD_XHDPI;
+	} else if ( dpi > 240 && dpi < 320 ) {
+		pd = PD_XXHDPI;
+	} else if ( dpi >= 320 ) {
+		pd = PD_XXXHDPI;
+	}
+
+	return pd;
+}
+
 const Float& PixelDensity::getPixelDensity() {
 	return sPixelDensity;
 }
@@ -94,7 +140,7 @@ Float PixelDensity::toDpFromString( const std::string& str ) {
 	std::string unit;
 
 	for ( std::size_t i = 0; i < str.size(); i++ ) {
-		if ( String::isNumber( str[i], true ) ) {
+		if ( String::isNumber( str[i], true ) || ( '-' == str[i] && i == 0 ) ) {
 			num += str[i];
 		} else {
 			unit = str.substr( i );

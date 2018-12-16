@@ -3,23 +3,17 @@
 
 #include <eepp/ui/uibackground.hpp>
 #include <eepp/ui/uiborder.hpp>
-#include <eepp/ui/uievent.hpp>
-#include <eepp/ui/uieventkey.hpp>
-#include <eepp/ui/uieventmouse.hpp>
-#include <eepp/ui/uimessage.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/ui/uiskinsimple.hpp>
 #include <eepp/ui/uiskincomplex.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
-#include <eepp/ui/uicontrol.hpp>
-#include <eepp/ui/uidragablecontrol.hpp>
-#include <eepp/ui/uicontrolanim.hpp>
+#include <eepp/ui/uinode.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uitouchdragablewidget.hpp>
 #include <eepp/ui/uiimage.hpp>
-#include <eepp/ui/uisubtexture.hpp>
+#include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextinputpassword.hpp>

@@ -3,11 +3,14 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/texture.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
+
+#include <eepp/system/clock.hpp>
+using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
-/** @brief The scroll parallax renders a SubTexture to the screen from a position and a size specified. If the size is bigger than the SubTexture, the SubTexture is rendered as a repeated SubTexture until it covers all the size of the parallax, adding movement to more than one Scroll Parallax will generate the ilusion of depth.
+/** @brief The scroll parallax renders a TextureRegion to the screen from a position and a size specified. If the size is bigger than the TextureRegion, the TextureRegion is rendered as a repeated TextureRegion until it covers all the size of the parallax, adding movement to more than one Scroll Parallax will generate the ilusion of depth.
 **	More info in wikipedia: http://en.wikipedia.org/wiki/Parallax_scrolling
 */
 class EE_API ScrollParallax {
@@ -17,16 +20,16 @@ class EE_API ScrollParallax {
 		~ScrollParallax();
 
 		/** Constructor that create's the Scroll Parallax
-		* @param SubTexture The SubTexture to Draw
+		* @param TextureRegion The TextureRegion to Draw
 		* @param Position The position of the parallax
 		* @param Size The size of the parallax
 		* @param Speed Speed of movement ( in Pixels Per Second )
 		* @param Color The Texture Color
 		* @param Blend The Blend Mode ( default BlendAlpha ) */
-		ScrollParallax( Graphics::SubTexture * subTexture, const Vector2f& position = Vector2f(), const Sizef& size = Sizef(), const Vector2f& speed = Vector2f(), const Color& color = Color::White, const BlendMode& Blend = BlendAlpha );
+		ScrollParallax( Graphics::TextureRegion * TextureRegion, const Vector2f& position = Vector2f(), const Sizef& size = Sizef(), const Vector2f& speed = Vector2f(), const Color& color = Color::White, const BlendMode& Blend = BlendAlpha );
 
 		/** Create's the Scroll Parallax
-		* @param SubTexture The SubTexture to Draw
+		* @param TextureRegion The TextureRegion to Draw
 		* @param Position The position of the parallax
 		* @param Size The size of the parallax
 		* @param Speed Speed of movement ( in Pixels Per Second )
@@ -34,7 +37,7 @@ class EE_API ScrollParallax {
 		* @param Blend The Blend Mode ( default BlendAlpha )
 		* @return True if success
 		*/
-		bool create( Graphics::SubTexture * subTexture, const Vector2f& position = Vector2f(), const Sizef& size = Sizef(), const Vector2f& speed = Vector2f(), const Color& color = Color::White, const BlendMode& Blend = BlendAlpha );
+		bool create( Graphics::TextureRegion * TextureRegion, const Vector2f& position = Vector2f(), const Sizef& size = Sizef(), const Vector2f& speed = Vector2f(), const Color& color = Color::White, const BlendMode& Blend = BlendAlpha );
 
 		/** Set the parallax texture color. */
 		void setColor( const Color& Color ) { mColor = Color; }
@@ -65,11 +68,11 @@ class EE_API ScrollParallax {
 		/** @return The parallax position */
 		const Vector2f& getPosition() const;
 		
-		/** @return The SubTexture used for the parallax.*/
-		Graphics::SubTexture * getSubTexture() const;
+		/** @return The TextureRegion used for the parallax.*/
+		Graphics::TextureRegion * getTextureRegion() const;
 		
-		/** Set Change the SubTexture used for the parallax. */
-		void setSubTexture( Graphics::SubTexture * subTexture );
+		/** Set Change the TextureRegion used for the parallax. */
+		void setTextureRegion( Graphics::TextureRegion * TextureRegion );
 		
 		/** Set the parallax speed movement. */
 		void setSpeed( const Vector2f& speed );
@@ -77,7 +80,7 @@ class EE_API ScrollParallax {
 		/** @return The parallax movement speed. */
 		const Vector2f& getSpeed() const;
 	private:
-		Graphics::SubTexture * 		mSubTexture;
+		Graphics::TextureRegion * 		mTextureRegion;
 		BlendMode		mBlend;
 		Color				mColor;
 		Vector2f			mInitPos;
@@ -90,7 +93,7 @@ class EE_API ScrollParallax {
 		Rectf				mAABB;
 		Sizef				mRealSize;
 		
-		void setSubTexture();
+		void setTextureRegion();
 		
 		void setAABB();
 };

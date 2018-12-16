@@ -1,8 +1,7 @@
 #include <eepp/ui/uiradiobutton.hpp>
-#include <eepp/ui/uimanager.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/text.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -17,14 +16,14 @@ UIRadioButton::UIRadioButton() :
 	mActive( false ),
 	mTextSeparation( 4 )
 {
-	mActiveButton 	= UIControlAnim::New();
+	mActiveButton 	= UINode::New();
 	mActiveButton->setVisible( false );
 	mActiveButton->setEnabled( true );
 	mActiveButton->setParent( this );
 	mActiveButton->setPosition( 0, 0 );
 	mActiveButton->setSize( 16, 16 );
 
-	mInactiveButton = UIControlAnim::New();
+	mInactiveButton = UINode::New();
 	mInactiveButton->setVisible( true );
 	mInactiveButton->setEnabled( true );
 	mInactiveButton->setParent( this );
@@ -81,10 +80,27 @@ void UIRadioButton::onThemeLoaded() {
 
 void UIRadioButton::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
+		if ( mDpSize.getWidth() == 0 ) {
+			setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() + mTextSeparation + mRealPadding.Left + mRealPadding.Right );
+		}
+
+		if ( mDpSize.getHeight() == 0 ) {
+			setInternalHeight( mActiveButton->getSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+		}
+
 		mActiveButton->centerVertical();
 		mInactiveButton->centerVertical();
+	}
 
-		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() );
+	if ( mLayoutWidthRules == WRAP_CONTENT ) {
+		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right + mActiveButton->getRealSize().getWidth() + mTextSeparation );
+	}
+
+	if ( mLayoutHeightRules == WRAP_CONTENT ) {
+		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mRealPadding.Top + mRealPadding.Bottom );
+
+		mActiveButton->centerVertical();
+		mInactiveButton->centerVertical();
 	}
 }
 
@@ -95,15 +111,17 @@ void UIRadioButton::onSizeChange() {
 	mInactiveButton->centerVertical();
 }
 
-Uint32 UIRadioButton::onMessage( const UIMessage * Msg ) {
+Uint32 UIRadioButton::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
-		case UIMessage::Click: {
+		case NodeMessage::Click: {
 			if ( Msg->getFlags() & EE_BUTTON_LMASK ) {
 				switchState();
 			}
 
-			if ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) {
-				sendMouseEvent( UIEvent::MouseClick, UIManager::instance()->getMousePos(), UIManager::instance()->getPressTrigger() );
+			if ( NULL != getEventDispatcher() ) {
+				if ( Msg->getSender() == mActiveButton || Msg->getSender() == mInactiveButton ) {
+					sendMouseEvent( Event::MouseClick, getEventDispatcher()->getMousePos(), getEventDispatcher()->getPressTrigger() );
+				}
 			}
 
 			return 1;
@@ -137,7 +155,7 @@ void UIRadioButton::setActive( const bool& active ) {
 	}
 
 	if ( active && NULL != mParentCtrl ) {
-		UIControl * tChild = mParentCtrl->getFirstChild();
+		Node * tChild = mParentCtrl->getFirstChild();
 
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
@@ -149,14 +167,14 @@ void UIRadioButton::setActive( const bool& active ) {
 				}
 			}
 
-			tChild = tChild->getNextControl();
+			tChild = tChild->getNextNode();
 		}
 	}
 }
 
 bool UIRadioButton::checkActives() {
 	if ( NULL != mParentCtrl ) {
-		UIControl * tChild = mParentCtrl->getFirstChild();
+		Node * tChild = mParentCtrl->getFirstChild();
 
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
@@ -168,7 +186,7 @@ bool UIRadioButton::checkActives() {
 				}
 			}
 
-			tChild = tChild->getNextControl();
+			tChild = tChild->getNextNode();
 		}
 	}
 
@@ -179,7 +197,7 @@ void UIRadioButton::autoActivate() {
 	eeASSERT( NULL != mParentCtrl );
 
 	if ( NULL != mParentCtrl ) {
-		UIControl * tChild = mParentCtrl->getFirstChild();
+		Node * tChild = mParentCtrl->getFirstChild();
 
 		while ( NULL != tChild ) {
 			if ( tChild->isType( UI_TYPE_RADIOBUTTON ) ) {
@@ -192,7 +210,7 @@ void UIRadioButton::autoActivate() {
 				}
 			}
 
-			tChild = tChild->getNextControl();
+			tChild = tChild->getNextNode();
 		}
 	}
 
@@ -207,14 +225,20 @@ void UIRadioButton::onPaddingChange() {
 	mActiveButton->setPosition( mPadding.Left, mActiveButton->getPosition().y );
 	mInactiveButton->setPosition( mPadding.Left, mInactiveButton->getPosition().y );
 
-	mRealPadding.Left = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPxI( mTextSeparation  );
+	UITextView::onPaddingChange();
 }
 
-UIControlAnim * UIRadioButton::getActiveButton() const {
+void UIRadioButton::alignFix() {
+	UITextView::alignFix();
+
+	mRealAlignOffset.x = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+}
+
+UINode * UIRadioButton::getActiveButton() const {
 	return mActiveButton;
 }
 
-UIControlAnim * UIRadioButton::getInactiveButton() const {
+UINode * UIRadioButton::getInactiveButton() const {
 	return mInactiveButton;
 }
 
@@ -228,24 +252,19 @@ void UIRadioButton::setTextSeparation(const Int32 & textSeparation) {
 	setPadding( getPadding() );
 }
 
-void UIRadioButton::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+bool UIRadioButton::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
-
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "selected" == name || "active" == name ) {
-			setActive( ait->as_bool() );
-		}
+	if ( "selected" == name || "active" == name ) {
+		setActive( attribute.asBool() );
+	} else {
+		return UITextView::setAttribute( attribute );
 	}
 
-	endPropertiesTransaction();
+	return true;
 }
 
-Uint32 UIRadioButton::onKeyDown( const UIEventKey& Event ) {
+Uint32 UIRadioButton::onKeyDown( const KeyEvent& Event ) {
 	if ( Event.getKeyCode() == KEY_SPACE ) {
 		if ( Sys::getTicks() - mLastTick > 250 ) {
 			mLastTick = Sys::getTicks();

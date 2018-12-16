@@ -6,13 +6,13 @@
 
 namespace EE { namespace UI {
 
-class UIControl;
+class UINode;
 
 class EE_API UIBackground {
 	public:
-		static UIBackground * New( UIControl * control );
+		static UIBackground * New( UINode * control );
 
-		UIBackground( UIControl * control );
+		explicit UIBackground( UINode * control );
 
 		~UIBackground();
 
@@ -42,7 +42,7 @@ class EE_API UIBackground {
 
 	protected:
 		std::vector<Color>	mColor;
-		UIControl *			mControl;
+		UINode *			mControl;
 		BlendMode		mBlendMode;
 		unsigned int		mCorners;
 		Drawable *			mDrawable;

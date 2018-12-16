@@ -1,7 +1,7 @@
 #ifndef EE_GRAPHICS_CRENDERERGLES2_HPP
 #define EE_GRAPHICS_CRENDERERGLES2_HPP
 
-#include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/graphics/renderer/rendererglshader.hpp>
 
 #ifdef EE_GL3_ENABLED
 
@@ -19,7 +19,7 @@ namespace Private {
 class MatrixStack;
 }
 
-class EE_API RendererGLES2 : public Renderer {
+class EE_API RendererGLES2 : public RendererGLShader {
 	public:
 		RendererGLES2();
 
@@ -35,29 +35,9 @@ class EE_API RendererGLES2 : public Renderer {
 
 		float pointSize();
 
-		void pushMatrix();
-
-		void popMatrix();
-
-		void loadIdentity();
-
 		void disable ( unsigned int cap );
 
 		void enable( unsigned int cap );
-
-		void translatef( float x, float y, float z );
-
-		void rotatef( float angle, float x, float y, float z );
-
-		void scalef( float x, float y, float z );
-
-		void matrixMode (unsigned int mode);
-
-		void ortho ( float left, float right, float bottom, float top, float zNear, float zFar );
-
-		void lookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ );
-
-		void perspective ( float fovy, float aspect, float zNear, float zFar );
 
 		void enableClientState( unsigned int array );
 
@@ -83,51 +63,29 @@ class EE_API RendererGLES2 : public Renderer {
 
 		void clip2DPlaneDisable();
 
-		void multMatrixf ( const float *m );
-
 		void clipPlane( unsigned int plane, const double *equation );
-
-		void loadMatrixf( const float *m );
-
-		void frustum( float left, float right, float bottom, float top, float near_val, float far_val );
-
-		void getCurrentMatrix( unsigned int mode, float * m );
-
-		unsigned int getCurrentMatrixMode();
 
 		std::string getBaseVertexShader();
 
-		int project( float objx, float objy, float objz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *winx, float *winy, float *winz );
-
-		int unProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz );
-
 		void reloadCurrentShader();
 	protected:
-		Private::MatrixStack *	mStack;
-		int					mProjectionMatrix_id;	// cpu-side hook to shader uniform
-		int					mModelViewMatrix_id;	// cpu-side hook to shader uniform
-		unsigned int					mCurrentMode;
 		ShaderProgram *		mShaders[ EEGLES2_SHADERS_COUNT ];
-		ShaderProgram *		mCurShader;
 		int					mAttribsLoc[ EEGL_ARRAY_STATES_COUNT ];
 		int					mAttribsLocStates[ EEGL_ARRAY_STATES_COUNT ];
 		int					mPlanes[ EE_MAX_PLANES ];
 		int					mPlanesStates[ EE_MAX_PLANES ];
-		ShaderProgram *		mShaderPrev;
-		Int32					mTexActive;
+		Int32				mTexActive;
 		int					mTexActiveLoc;
 		int					mClippingEnabledLoc;
-		float					mPointSize;
+		float				mPointSize;
 		int					mTextureUnits[ EE_MAX_TEXTURE_UNITS ];
 		int					mTextureUnitsStates[ EE_MAX_TEXTURE_UNITS ];
 		int					mCurActiveTex;
-		Uint8					mClippingEnabled;
-		Uint8					mPointSpriteEnabled;
-		bool					mLoaded;
-		bool					mCurShaderLocal;
-		std::string				mBaseVertexShader;
-
-		void updateMatrix();
+		Uint8				mClippingEnabled;
+		Uint8				mPointSpriteEnabled;
+		bool				mLoaded;
+		bool				mCurShaderLocal;
+		std::string			mBaseVertexShader;
 
 		void planeStateCheck( bool tryEnable );
 

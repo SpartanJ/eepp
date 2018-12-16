@@ -96,8 +96,8 @@ IpAddress IpAddress::getPublicAddress(Time timeout) {
 	// Here we get the web page from http://www.sfml-dev.org/ip-provider.php
 	// and parse the result to extract our IP address
 	// (not very hard: the web page contains only our IP address).
-	Http server("www.sfml-dev.org");
-	Http::Request request("/ip-provider.php", Http::Request::Get);
+	Http server("ip.ensoft-dev.com");
+	Http::Request request("/", Http::Request::Get);
 	Http::Response page = server.sendRequest(request, timeout);
 	if (page.getStatus() == Http::Response::Ok)
 		return IpAddress(page.getBody());
@@ -138,7 +138,8 @@ void IpAddress::resolve(const std::string& address) {
 			std::memset(&hints, 0, sizeof(hints));
 			hints.ai_family = AF_INET;
 			addrinfo* result = NULL;
-			if (getaddrinfo(address.c_str(), NULL, &hints, &result) == 0)
+			int res = getaddrinfo(address.c_str(), NULL, &hints, &result);
+			if (res == 0)
 			{
 				if (result)
 				{
@@ -147,6 +148,10 @@ void IpAddress::resolve(const std::string& address) {
 					mAddress = ip;
 					mValid = true;
 				}
+			}
+			else
+			{
+				eePRINTL( "getaddrinfo on \"%s\": %s", address.c_str(), gai_strerror(res) );
 			}
 		}
 	}

@@ -1,6 +1,5 @@
 #include <eepp/ui/uitablecell.hpp>
 #include <eepp/ui/uitable.hpp>
-#include <eepp/ui/uimanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -15,11 +14,13 @@ UITableCell::UITableCell() :
 }
 
 UITableCell::~UITableCell() {
-	if ( UIManager::instance()->getFocusControl() == this )
-		mParentCtrl->setFocus();
+	if ( NULL != getEventDispatcher() ) {
+		if ( getEventDispatcher()->getFocusControl() == this )
+			mParentCtrl->setFocus();
 
-	if ( UIManager::instance()->getOverControl() == this )
-		UIManager::instance()->setOverControl( mParentCtrl );
+		if ( getEventDispatcher()->getOverControl() == this )
+			getEventDispatcher()->setOverControl( mParentCtrl );
+	}
 }
 
 void UITableCell::setTheme( UITheme * Theme ) {
@@ -32,7 +33,7 @@ UITable * UITableCell::gridParent() const {
 	return reinterpret_cast<UITable*> ( mParentCtrl->getParent() );
 }
 
-void UITableCell::setCell( const Uint32& CollumnIndex, UIControl * Ctrl ) {
+void UITableCell::setCell( const Uint32& CollumnIndex, UINode * Ctrl ) {
 	eeASSERT( CollumnIndex < gridParent()->getCollumnsCount() );
 
 	UITable * P = gridParent();
@@ -52,7 +53,7 @@ void UITableCell::setCell( const Uint32& CollumnIndex, UIControl * Ctrl ) {
 	Ctrl->setEnabled( true );
 }
 
-UIControl * UITableCell::getCell( const Uint32& CollumnIndex ) const {
+UINode * UITableCell::getCell( const Uint32& CollumnIndex ) const {
 	eeASSERT( CollumnIndex < gridParent()->getCollumnsCount() );
 
 	return mCells[ CollumnIndex ];
@@ -69,17 +70,17 @@ void UITableCell::fixCell() {
 	}
 }
 
-void UITableCell::update() {
-	if ( mEnabled && mVisible ) {
+void UITableCell::update( const Time& time ) {
+	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
 		UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
-		Uint32 Flags				= UIManager::instance()->getInput()->getClickTrigger();
+		Uint32 Flags				= getEventDispatcher()->getClickTrigger();
 
 		if ( NULL != MyParent && MyParent->getAlpha() != mAlpha ) {
 			setAlpha( MyParent->getAlpha() );
 
 			for ( Uint32 i = 0; i < mCells.size(); i++ ) {
-				if ( NULL != mCells[i] && mCells[i]->isAnimated() ) {
-					reinterpret_cast<UIControlAnim*>( mCells[i] )->setAlpha( MyParent->getAlpha() );
+				if ( NULL != mCells[i] ) {
+					mCells[i]->setAlpha( MyParent->getAlpha() );
 				}
 			}
 		}
@@ -91,7 +92,7 @@ void UITableCell::update() {
 		}
 	}
 
-	UIWidget::update();
+	UIWidget::update( time );
 }
 
 void UITableCell::select() {
@@ -101,11 +102,11 @@ void UITableCell::select() {
 		if ( NULL != MyParent->getItemSelected() )
 			MyParent->getItemSelected()->unselect();
 
-		bool wasSelected = 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
+		bool wasSelected = 0 != ( mNodeFlags & NODE_FLAG_SELECTED );
 
 		setSkinState( UISkinState::StateSelected );
 
-		mControlFlags |= UI_CTRL_FLAG_SELECTED;
+		mNodeFlags |= NODE_FLAG_SELECTED;
 
 		MyParent->mSelected = MyParent->getItemIndex( this );
 
@@ -116,43 +117,43 @@ void UITableCell::select() {
 }
 
 void UITableCell::unselect() {
-	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
-		mControlFlags &= ~UI_CTRL_FLAG_SELECTED;
+	if ( mNodeFlags & NODE_FLAG_SELECTED )
+		mNodeFlags &= ~NODE_FLAG_SELECTED;
 
 	setSkinState( UISkinState::StateNormal );
 }
 
 bool UITableCell::isSelected() const {
-	return 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
+	return 0 != ( mNodeFlags & NODE_FLAG_SELECTED );
 }
 
 Uint32 UITableCell::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	UIControl::onMouseExit( Pos, Flags );
+	UINode::onMouseExit( Pos, Flags );
 
-	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
+	if ( mNodeFlags & NODE_FLAG_SELECTED )
 		setSkinState( UISkinState::StateSelected );
 
 	return 1;
 }
 
-Uint32 UITableCell::onMessage( const UIMessage * Msg ) {
+Uint32 UITableCell::onMessage( const NodeMessage * Msg ) {
 	switch( Msg->getMsg() ) {
-		case UIMessage::MouseEnter:
+		case NodeMessage::MouseEnter:
 		{
 			onMouseEnter( Vector2i(), Msg->getFlags() );
 			break;
 		}
-		case UIMessage::MouseExit:
+		case NodeMessage::MouseExit:
 		{
 			onMouseExit( Vector2i(), Msg->getFlags() );
 			break;
 		}
-		case UIMessage::Click:
+		case NodeMessage::Click:
 		{
 			if ( Msg->getFlags() & EE_BUTTONS_LRM ) {
 				select();
 
-				UIMessage tMsg( this, UIMessage::CellClicked, Msg->getFlags() );
+				NodeMessage tMsg( this, NodeMessage::CellClicked, Msg->getFlags() );
 
 				messagePost( &tMsg );
 

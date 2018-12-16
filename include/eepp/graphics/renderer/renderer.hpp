@@ -230,6 +230,8 @@ class EE_API Renderer {
 		unsigned int checkFramebufferStatus( unsigned int target );
 
 		void discardFramebuffer( unsigned int target, int numAttachments, const unsigned int* attachments );
+
+		void * getProcAddress( std::string proc );
 	protected:
 		static Renderer * sSingleton;
 
@@ -241,7 +243,6 @@ class EE_API Renderer {
 		Uint32	mExtensions;
 		Uint32	mStateFlags;
 		bool	mQuadsSupported;
-		bool	mBlendEnabled;
 		int		mQuadVertexs;
 		float mLineWidth;
 		unsigned int	mCurVAO;
@@ -249,8 +250,6 @@ class EE_API Renderer {
 		ClippingMask * mClippingMask;
 	private:
 		void writeExtension( Uint8 Pos, Uint32 BitWrite );
-
-		void * getProcAddress( std::string proc );
 };
 
 extern EE_API Renderer * GLi;

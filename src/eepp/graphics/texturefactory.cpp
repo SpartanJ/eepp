@@ -3,23 +3,28 @@
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/texture.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
-#include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
-#include <eepp/helper/jpeg-compressor/jpge.h>
+#include <eepp/system/filesystem.hpp>
+#include <SOIL2/src/SOIL2/stb_image.h>
+#include <SOIL2/src/SOIL2/SOIL2.h>
+#include <jpeg-compressor/jpge.h>
 
 namespace EE { namespace Graphics {
 
 SINGLETON_DECLARE_IMPLEMENTATION(TextureFactory)
 
 TextureFactory::TextureFactory() :
-	mLastBlend(BlendAlpha),
 	mMemSize(0),
+	mLastCoordinateType( Texture::CoordinateType::Normalized ),
 	mErasing(false)
 {
 	mTextures.clear();
 	mTextures.push_back( NULL );
 
 	memset( &mCurrentTexture[0], 0, EE_MAX_TEXTURE_UNITS );
+}
+
+const Texture::CoordinateType & TextureFactory::getLastCoordinateType() const {
+	return mLastCoordinateType;
 }
 
 TextureFactory::~TextureFactory() {
@@ -37,26 +42,30 @@ Uint32 TextureFactory::loadFromPixels( const unsigned char * Pixels, const unsig
 	return myTex.getId();
 }
 
-Uint32 TextureFactory::loadFromPack( Pack* Pack, const std::string& FilePackPath, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy  ) {
+Uint32 TextureFactory::loadFromPack( Pack* Pack, const std::string& FilePackPath, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const Image::FormatConfiguration& imageformatConfiguration ) {
 	TextureLoader myTex( Pack, FilePackPath, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
+	myTex.setFormatConfiguration( imageformatConfiguration );
 	myTex.load();
 	return myTex.getId();
 }
 
-Uint32 TextureFactory::loadFromMemory( const unsigned char * ImagePtr, const unsigned int& Size, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+Uint32 TextureFactory::loadFromMemory( const unsigned char * ImagePtr, const unsigned int& Size, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const Image::FormatConfiguration& imageformatConfiguration ) {
 	TextureLoader myTex( ImagePtr, Size, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
+	myTex.setFormatConfiguration( imageformatConfiguration );
 	myTex.load();
 	return myTex.getId();
 }
 
-Uint32 TextureFactory::loadFromStream( IOStream& Stream, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+Uint32 TextureFactory::loadFromStream( IOStream& Stream, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const Image::FormatConfiguration& imageformatConfiguration ) {
 	TextureLoader myTex( Stream, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
+	myTex.setFormatConfiguration( imageformatConfiguration );
 	myTex.load();
 	return myTex.getId();
 }
 
-Uint32 TextureFactory::loadFromFile( const std::string& Filepath, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+Uint32 TextureFactory::loadFromFile( const std::string& Filepath, const bool& Mipmap, const Texture::ClampMode& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const Image::FormatConfiguration& imageformatConfiguration ) {
 	TextureLoader myTex( Filepath, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
+	myTex.setFormatConfiguration( imageformatConfiguration );
 	myTex.load();
 	return myTex.getId();
 }
@@ -103,22 +112,52 @@ Uint32 TextureFactory::findFreeSlot() {
 	return (Uint32)mTextures.size() - 1;
 }
 
-void TextureFactory::bind( const Texture* Tex, const Uint32& TextureUnit ) {
-	if( NULL != Tex && mCurrentTexture[ TextureUnit ] != (Int32)Tex->getHandle() ) {
-		if ( TextureUnit && GLi->isExtension( EEGL_ARB_multitexture ) )
-			setActiveTextureUnit( TextureUnit );
+void TextureFactory::bind( const Texture* texture, Texture::CoordinateType coordinateType, const Uint32& TextureUnit, const bool& forceRebind ) {
+	if( NULL != texture ) {
+		if ( mCurrentTexture[ TextureUnit ] != (Int32)texture->getHandle() || forceRebind ) {
+			if ( TextureUnit && GLi->isExtension( EEGL_ARB_multitexture ) )
+				setActiveTextureUnit( TextureUnit );
 
-		GLi->bindTexture( GL_TEXTURE_2D, Tex->getHandle() );
+			GLi->bindTexture( GL_TEXTURE_2D, texture->getHandle() );
 
-		mCurrentTexture[ TextureUnit ] = Tex->getHandle();
+			mCurrentTexture[ TextureUnit ] = texture->getHandle();
 
-		if ( TextureUnit && GLi->isExtension( EEGL_ARB_multitexture ) )
-			setActiveTextureUnit( 0 );
+			if ( TextureUnit && GLi->isExtension( EEGL_ARB_multitexture ) )
+				setActiveTextureUnit( 0 );
+		}
+
+		if ( coordinateType == Texture::CoordinateType::Pixels ) {
+			GLfloat matrix[16] = {1.f, 0.f, 0.f, 0.f,
+								  0.f, 1.f, 0.f, 0.f,
+								  0.f, 0.f, 1.f, 0.f,
+								  0.f, 0.f, 0.f, 1.f};
+
+			matrix[0] = 1.f / const_cast<Texture*>( texture )->getPixelSize().x;
+			matrix[5] = 1.f / const_cast<Texture*>( texture )->getPixelSize().y;
+
+			GLi->matrixMode(GL_TEXTURE);
+			GLi->loadMatrixf(matrix);
+			GLi->matrixMode(GL_MODELVIEW);
+
+			mLastCoordinateType = coordinateType;
+
+			return;
+		}
+	} else {
+		mCurrentTexture[ TextureUnit ] = 0;
+	}
+
+	if ( Texture::CoordinateType::Normalized != mLastCoordinateType ) {
+		mLastCoordinateType = coordinateType;
+
+		GLi->matrixMode(GL_TEXTURE);
+		GLi->loadIdentity();
+		GLi->matrixMode(GL_MODELVIEW);
 	}
 }
 
-void TextureFactory::bind( const Uint32& TexId, const Uint32& TextureUnit ) {
-	bind( getTexture( TexId ), TextureUnit );
+void TextureFactory::bind( const Uint32& TexId, Texture::CoordinateType coordinateType, const Uint32& textureUnit, const bool& forceRebind ) {
+	bind( getTexture( TexId ), coordinateType, textureUnit, forceRebind );
 }
 
 void TextureFactory::unloadTextures() {
@@ -235,20 +274,6 @@ unsigned int TextureFactory::getValidTextureSize( const unsigned int& Size ) {
 		return Size;
 	else
 		return Math::nextPowOfTwo(Size);
-}
-
-bool TextureFactory::saveImage(const std::string& filepath, const Image::SaveType & Format, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const unsigned char* data ) {
-	bool Res;
-
-	if ( Image::SaveType::SAVE_TYPE_JPG != Format ) {
-		Res = 0 != SOIL_save_image ( filepath.c_str(), Format, Width, Height, Channels, data );
-	} else {
-		jpge::params params;
-		params.m_quality = Image::jpegQuality();
-		Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), Width, Height, Channels, data, params);
-	}
-
-	return Res;
 }
 
 bool TextureFactory::existsId( const Uint32& TexId ) {

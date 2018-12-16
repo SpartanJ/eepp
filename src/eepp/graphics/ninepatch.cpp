@@ -1,5 +1,6 @@
 #include <eepp/graphics/ninepatch.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -20,7 +21,7 @@ NinePatch::NinePatch(const Uint32& TexId, int left, int top, int right, int bott
 	}
 }
 
-NinePatch::NinePatch( SubTexture * subTexture, int left, int top, int right, int bottom, const std::string& name ):
+NinePatch::NinePatch(TextureRegion * textureRegion, int left, int top, int right, int bottom, const std::string& name ):
 	DrawableResource( Drawable::NINEPATCH, name ),
 	mRect( left, top, right, bottom ),
 	mPixelDensity(1)
@@ -30,19 +31,19 @@ NinePatch::NinePatch( SubTexture * subTexture, int left, int top, int right, int
 
 	Texture * tex;
 
-	if ( NULL != subTexture && ( tex = subTexture->getTexture() ) != NULL ) {
-		mPixelDensity = subTexture->getPixelDensity();
+	if ( NULL != textureRegion && ( tex = textureRegion->getTexture() ) != NULL ) {
+		mPixelDensity = textureRegion->getPixelDensity();
 
-		Rect r( subTexture->getSrcRect() );
+		Rect r( textureRegion->getSrcRect() );
 
 		mSize = r.getSize();
 
 		createFromTexture( tex->getId(), left, top, right, bottom );
 
 		for ( int i = 0; i  < SideCount; i++ ) {
-			SubTexture * side = static_cast<SubTexture*>( mDrawable[i] );
+			TextureRegion * side = static_cast<TextureRegion*>( mDrawable[i] );
 
-			side->setPixelDensity( subTexture->getPixelDensity() );
+			side->setPixelDensity( textureRegion->getPixelDensity() );
 
 			Rect sideRect = side->getSrcRect();
 
@@ -95,22 +96,22 @@ void NinePatch::draw( const Vector2f& position, const Sizef& size ) {
 	}
 }
 
-SubTexture * NinePatch::getSubTexture( const int& side ) {
+TextureRegion * NinePatch::getTextureRegion( const int& side ) {
 	if ( side < SideCount )
 		return mDrawable[ side ];
 	return NULL;
 }
 
 void NinePatch::createFromTexture(const Uint32 & TexId, int left, int top, int right, int bottom) {
-	mDrawable[ Left ] = eeNew( SubTexture, ( TexId, Rect( 0, top, left, mSize.getHeight() - bottom ) ) );
-	mDrawable[ Right ] = eeNew( SubTexture, ( TexId, Rect( mSize.getWidth() - right, top, mSize.getWidth(), mSize.getHeight() - bottom ) ) );
-	mDrawable[ Down ] = eeNew( SubTexture, ( TexId, Rect( left, mSize.getHeight() - bottom, mSize.getWidth() - right, mSize.getHeight() ) ) );
-	mDrawable[ Up ] = eeNew( SubTexture, ( TexId, Rect( left, 0, mSize.getWidth() - right, top ) ) );
-	mDrawable[ UpLeft ] = eeNew( SubTexture, ( TexId, Rect( 0, 0, left, top ) ) );
-	mDrawable[ UpRight] = eeNew( SubTexture, ( TexId, Rect( mSize.getWidth() - right, 0, mSize.getWidth(), top ) ) );
-	mDrawable[ DownLeft] = eeNew( SubTexture, ( TexId, Rect( 0, mSize.getHeight() - bottom, left, mSize.getHeight() ) ) );
-	mDrawable[ DownRight ] = eeNew( SubTexture, ( TexId, Rect( mSize.getWidth() - right, mSize.getHeight() - bottom, mSize.getWidth(), mSize.getHeight() ) ) );
-	mDrawable[ Center ] = eeNew( SubTexture, ( TexId, Rect( left, top, mSize.getWidth() - right, mSize.getHeight() - bottom ) ) );
+	mDrawable[ Left ] = eeNew( TextureRegion, ( TexId, Rect( 0, top, left, mSize.getHeight() - bottom ) ) );
+	mDrawable[ Right ] = eeNew( TextureRegion, ( TexId, Rect( mSize.getWidth() - right, top, mSize.getWidth(), mSize.getHeight() - bottom ) ) );
+	mDrawable[ Down ] = eeNew( TextureRegion, ( TexId, Rect( left, mSize.getHeight() - bottom, mSize.getWidth() - right, mSize.getHeight() ) ) );
+	mDrawable[ Up ] = eeNew( TextureRegion, ( TexId, Rect( left, 0, mSize.getWidth() - right, top ) ) );
+	mDrawable[ UpLeft ] = eeNew( TextureRegion, ( TexId, Rect( 0, 0, left, top ) ) );
+	mDrawable[ UpRight] = eeNew( TextureRegion, ( TexId, Rect( mSize.getWidth() - right, 0, mSize.getWidth(), top ) ) );
+	mDrawable[ DownLeft] = eeNew( TextureRegion, ( TexId, Rect( 0, mSize.getHeight() - bottom, left, mSize.getHeight() ) ) );
+	mDrawable[ DownRight ] = eeNew( TextureRegion, ( TexId, Rect( mSize.getWidth() - right, mSize.getHeight() - bottom, mSize.getWidth(), mSize.getHeight() ) ) );
+	mDrawable[ Center ] = eeNew( TextureRegion, ( TexId, Rect( left, top, mSize.getWidth() - right, mSize.getHeight() - bottom ) ) );
 
 	mRect = Rect( left, top, right, bottom );
 

@@ -1,5 +1,5 @@
 #include <eepp/ui/uigridlayout.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 	
@@ -106,15 +106,6 @@ UIGridLayout * UIGridLayout::setRowWeight(const Float & rowWeight) {
 	return this;
 }
 
-Rect UIGridLayout::getPadding() const {
-	return mPadding;
-}
-
-void UIGridLayout::setPadding(const Rect & padding) {
-	mPadding = padding;
-	pack();
-}
-
 void UIGridLayout::onSizeChange() {
 	pack();
 	UIWidget::onSizeChange();
@@ -125,13 +116,18 @@ void UIGridLayout::onChildCountChange() {
 	UIWidget::onChildCountChange();
 }
 
-void UIGridLayout::onParentSizeChange(const Vector2i & SizeChange) {
+void UIGridLayout::onPaddingChange() {
+	pack();
+	UILayout::onPaddingChange();
+}
+
+void UIGridLayout::onParentSizeChange(const Vector2f& SizeChange) {
 	pack();
 	UIWidget::onParentSizeChange( SizeChange );
 }
 
 void UIGridLayout::pack() {
-	Sizei oldSize( mSize );
+	Sizef oldSize( mDpSize );
 
 	//setInternalPosition( Vector2i( mLayoutMargin.Left, mLayoutMargin.Top ) );
 
@@ -143,30 +139,32 @@ void UIGridLayout::pack() {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
 	}
 
-	UIControl * ChildLoop = mChild;
+	Node * ChildLoop = mChild;
 
-	Vector2i pos(mPadding.Left,mPadding.Top);
-	Sizei targetSize( getTargetElementSize() );
+	Vector2f pos(mPadding.Left,mPadding.Top);
+	Sizef targetSize( getTargetElementSize() );
 
 	if ( getHorizontalAlign() == UI_HALIGN_RIGHT )
-		pos.x = mSize.getWidth() - mPadding.Right;
+		pos.x = mDpSize.getWidth() - mPadding.Right;
 
 	bool usedLastRow = true;
+
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
 			UIWidget * widget = static_cast<UIWidget*>( ChildLoop );
 			usedLastRow = true;
 
 			if ( widget->getLayoutWeight() != 0.f )
-				targetSize.x = widget->getLayoutWeight() * ( mSize.getWidth() - mPadding.Left - mPadding.Right );
+				targetSize.x = widget->getLayoutWeight() * ( mDpSize.getWidth() - mPadding.Left - mPadding.Right );
 
+			widget->setLayoutSizeRules( FIXED, FIXED );
 			widget->setSize( targetSize );
 			widget->setPosition( pos );
 
 			pos.x += getHorizontalAlign() == UI_HALIGN_RIGHT ? -targetSize.getWidth() : targetSize.getWidth();
 
-			if ( pos.x < mPadding.Left || pos.x + targetSize.x > mSize.getWidth() - mPadding.Right || pos.x + targetSize.x + mSpan.x > mSize.getWidth() - mPadding.Right ) {
-				pos.x = getHorizontalAlign() == UI_HALIGN_RIGHT ? mSize.getWidth() - mPadding.Right : mPadding.Left;
+			if ( pos.x < mPadding.Left || pos.x + targetSize.x > mDpSize.getWidth() - mPadding.Right || pos.x + targetSize.x + mSpan.x > mDpSize.getWidth() - mPadding.Right ) {
+				pos.x = getHorizontalAlign() == UI_HALIGN_RIGHT ? mDpSize.getWidth() - mPadding.Right : mPadding.Left;
 
 				pos.y += targetSize.getHeight() + mSpan.y;
 				usedLastRow = false;
@@ -175,23 +173,23 @@ void UIGridLayout::pack() {
 			}
 		}
 
-		ChildLoop = ChildLoop->getNextControl();
+		ChildLoop = ChildLoop->getNextNode();
 	}
 
 	if ( getLayoutHeightRules() == WRAP_CONTENT ) {
-		setInternalHeight( pos.y + ( usedLastRow ? targetSize.getHeight() : 0 ) );
+		setInternalHeight( pos.y + ( usedLastRow ? targetSize.getHeight() : 0 ) + mPadding.Bottom );
 	}
 
-	if ( oldSize != mSize ) {
+	if ( oldSize != mDpSize ) {
 		notifyLayoutAttrChangeParent();
 	}
 
 	invalidateDraw();
 }
 
-Uint32 UIGridLayout::onMessage(const UIMessage * Msg) {
+Uint32 UIGridLayout::onMessage(const NodeMessage * Msg) {
 	switch( Msg->getMsg() ) {
-		case UIMessage::LayoutAttributeChange:
+		case NodeMessage::LayoutAttributeChange:
 		{
 			pack();
 			break;
@@ -201,59 +199,43 @@ Uint32 UIGridLayout::onMessage(const UIMessage * Msg) {
 	return 0;
 }
 
-Sizei UIGridLayout::getTargetElementSize() {
-	return Sizei( mColumnMode == Size ? mColumnWidth : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getWidth() : mSize.getWidth() ) - mPadding.Left - mPadding.Right ) * mColumnWeight,
-				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getHeight() : mSize.getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
+Sizef UIGridLayout::getTargetElementSize() {
+	return Sizef( mColumnMode == Size ? mColumnWidth : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getWidth() : mDpSize.getWidth() ) - mPadding.Left - mPadding.Right ) * mColumnWeight,
+				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getHeight() : mDpSize.getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
 }
 
-void UIGridLayout::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+bool UIGridLayout::setAttribute( const NodeAttribute &attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
-
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "columnspan" == name ) {
-			setSpan( Sizei( ait->as_int(), mSpan.y ) );
-		} else if ( "rowspan" == name ) {
-			setSpan( Sizei( mSpan.x, ait->as_int() ) );
-		} else if ( "span" == name ) {
-			setSpan( Sizei( ait->as_int(), ait->as_int() ) );
-		} else if ( "columnmode" == name ) {
-			std::string val( ait->as_string() );
-			String::toLowerInPlace( val );
-			setColumnMode( "size" == val ? Size : Weight );
-		} else if ( "rowmode" == name ) {
-			std::string val( ait->as_string() );
-			String::toLowerInPlace( val );
-			setRowMode( "size" == val ? Size : Weight );
-		} else if ( "columnweight" == name ) {
-			setColumnWeight( ait->as_float() );
-		} else if ( "columnwidth" == name ) {
-			setColumnWidth( ait->as_int() );
-		} else if ( "rowweight" == name ) {
-			setRowWeight( ait->as_float() );
-		} else if ( "rowheight" == name ) {
-			setRowHeight( ait->as_int() );
-		} else if ( "padding" == name ) {
-			int val = PixelDensity::toDpFromStringI( ait->as_string() );
-			setPadding( Rect( val, val, val, val ) );
-		} else if ( "paddingleft" == name ) {
-			setPadding( Rect( PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
-		} else if ( "paddingright" == name ) {
-			setPadding( Rect( mPadding.Left, mPadding.Top, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Bottom ) );
-		} else if ( "paddingtop" == name ) {
-			setPadding( Rect( mPadding.Left, PixelDensity::toDpFromStringI( ait->as_string() ), mPadding.Right, mPadding.Bottom ) );
-		} else if ( "paddingbottom" == name ) {
-			setPadding( Rect( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
-		} else if ( "reversedraw" == name ) {
-			setReverseDraw( ait->as_bool() );
-		}
+	if ( "columnspan" == name ) {
+		setSpan( Sizei( attribute.asInt(), mSpan.y ) );
+	} else if ( "rowspan" == name ) {
+		setSpan( Sizei( mSpan.x, attribute.asInt() ) );
+	} else if ( "span" == name ) {
+		setSpan( Sizei( attribute.asInt(), attribute.asInt() ) );
+	} else if ( "columnmode" == name ) {
+		std::string val( attribute.asString() );
+		String::toLowerInPlace( val );
+		setColumnMode( "size" == val ? Size : Weight );
+	} else if ( "rowmode" == name ) {
+		std::string val( attribute.asString() );
+		String::toLowerInPlace( val );
+		setRowMode( "size" == val ? Size : Weight );
+	} else if ( "columnweight" == name ) {
+		setColumnWeight( attribute.asFloat() );
+	} else if ( "columnwidth" == name ) {
+		setColumnWidth( attribute.asInt() );
+	} else if ( "rowweight" == name ) {
+		setRowWeight( attribute.asFloat() );
+	} else if ( "rowheight" == name ) {
+		setRowHeight( attribute.asInt() );
+	} else if ( "reversedraw" == name ) {
+		setReverseDraw( attribute.asBool() );
+	} else {
+		return UILayout::setAttribute( attribute );
 	}
 
-	endPropertiesTransaction();
+	return true;
 }
 
 }} 

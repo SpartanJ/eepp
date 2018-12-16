@@ -10,7 +10,7 @@ namespace EE { namespace System {
 /** @brief The Pack Manager keep track of the instanciated Packs.
 	It's used to find files from any open pack.
 */
-class EE_API PackManager : public Container<Pack> {
+class EE_API PackManager : protected Container<Pack> {
 	SINGLETON_DECLARE_HEADERS(PackManager)
 
 	public:
@@ -36,6 +36,8 @@ class EE_API PackManager : public Container<Pack> {
 		*/
 		void setFallbackToPacks( const bool& fallback );
 	protected:
+		friend class Pack;
+
 		bool	mFallback;
 
 		PackManager();

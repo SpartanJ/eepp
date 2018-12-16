@@ -1,4 +1,5 @@
 #include <eepp/system/iostreammemory.hpp>
+#include <cstring>
 
 namespace EE { namespace System {
 
@@ -22,21 +23,15 @@ IOStreamMemory::~IOStreamMemory() {
 }
 
 ios_size IOStreamMemory::read( char * data, ios_size size ) {
-	if ( mPos + size <= mSize ) {
-		memcpy( data, mReadPtr + mPos, size );
+	Int64 endPosition = mPos + size;
+	Int64 count = endPosition <= mSize ? size : mSize - mPos;
 
-		mPos += size;
-
-		return size;
-	} else if ( mPos != mSize ) {
-		memcpy( data, mReadPtr + mPos, mSize - mPos );
-
-		mPos = mSize;
-
-		return size;
+	if ( count > 0 ) {
+		memcpy( data, mReadPtr + mPos, static_cast<std::size_t>( count ) );
+		mPos += count;
 	}
 
-	return 0;
+	return count;
 }
 
 ios_size IOStreamMemory::write( const char * data, ios_size size ) {
@@ -50,8 +45,7 @@ ios_size IOStreamMemory::write( const char * data, ios_size size ) {
 }
 
 ios_size IOStreamMemory::seek( ios_size position ) {
-	if ( position < mSize )
-		mPos = position;
+	mPos = ( position < mSize ) ? position : mSize;
 
 	return mPos;
 }

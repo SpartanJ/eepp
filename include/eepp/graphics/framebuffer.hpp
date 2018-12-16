@@ -3,7 +3,7 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/texture.hpp>
-#include <eepp/window/view.hpp>
+#include <eepp/graphics/view.hpp>
 
 namespace EE { namespace Window { class Window; } }
 
@@ -108,7 +108,6 @@ class EE_API FrameBuffer {
 		Texture *	mTexture;
 		ColorAf	mClearColor;
 		View		mView;
-		View 		mPrevView;
 		float		mProjMat[16];
 		float		mModelViewMat[16];
 

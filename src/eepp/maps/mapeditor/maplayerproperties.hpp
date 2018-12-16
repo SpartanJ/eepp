@@ -16,7 +16,7 @@ class MapEditor;
 
 class EE_API MapLayerProperties {
 	public:
-		typedef cb::Callback0<void> RefreshLayerListCb;
+		typedef std::function<void()> RefreshLayerListCb;
 
 		MapLayerProperties( MapLayer * Map, RefreshLayerListCb Cb = RefreshLayerListCb() );
 
@@ -30,15 +30,15 @@ class EE_API MapLayerProperties {
 		UITextInput *		mUIInput;
 		RefreshLayerListCb	mRefreshCb;
 
-		void onWindowClose( const UIEvent * Event );
+		void onWindowClose( const Event * Event );
 
-		void onCancelClick( const UIEvent * Event );
+		void onCancelClick( const Event * Event );
 
-		void onOKClick( const UIEvent * Event );
+		void onOKClick( const Event * Event );
 
-		void onAddCellClick( const UIEvent * Event );
+		void onAddCellClick( const Event * Event );
 
-		void onRemoveCellClick( const UIEvent * Event );
+		void onRemoveCellClick( const Event * Event );
 
 		void createGridElems();
 

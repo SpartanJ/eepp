@@ -5,9 +5,11 @@
 
 namespace EE { namespace Graphics { namespace Private {
 
+#pragma pack(push, 1)
+
 #define HDR_NAME_SIZE 64
 
-typedef struct sSubTextureHdrSN {
+typedef struct sTextureRegionHdrSN {
 	char	Name[ HDR_NAME_SIZE ];
 	Uint64	Date;
 	Int32	X;
@@ -22,15 +24,15 @@ typedef struct sSubTextureHdrSN {
 	Int32	DestHeight;
 	Uint32	Flags;
 	Uint32	PixelDensity;
-} sSubTextureHdr;
+} sTextureRegionHdr;
 
-#define HDR_SUBTEXTURE_FLAG_FLIPED 					( 1 << 0 )
+#define HDR_TEXTUREREGION_FLAG_FLIPED 					( 1 << 0 )
 
 typedef struct sTextureHdrS {
 	char	Name[ HDR_NAME_SIZE ];
 	Uint32	ResourceID;
 	Uint32	Size;
-	Int32	SubTextureCount;
+	Int32	TextureRegionCount;
 } sTextureHdr;
 
 typedef struct sTextureAtlasHdrSN {
@@ -43,15 +45,19 @@ typedef struct sTextureAtlasHdrSN {
 	Int32	Height;
 	Uint32	PixelBorder;
 	Uint32	Flags;
-	char	Reserved[16];
+	char	TextureFilter;
+	char	Reserved[15];
 } sTextureAtlasHdr;
 
 #define HDR_TEXTURE_ATLAS_ALLOW_FLIPPING		( 1 << 0 )
 #define HDR_TEXTURE_ATLAS_REMOVE_EXTENSION		( 1 << 1 )
 #define HDR_TEXTURE_ATLAS_POW_OF_TWO			( 1 << 2 )
+#define HDR_TEXTURE_ATLAS_SCALABLE_SVG			( 1 << 3 )
 
 #define EE_TEXTURE_ATLAS_MAGIC		( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'T' << 16 ) | ( 'A' << 24 ) )
 #define EE_TEXTURE_ATLAS_EXTENSION ".eta"
+
+#pragma pack(pop)
 
 }}}
 

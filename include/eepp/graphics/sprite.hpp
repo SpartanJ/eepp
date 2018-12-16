@@ -3,8 +3,11 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/texturefactory.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/textureatlas.hpp>
+
+#include <eepp/system/time.hpp>
+using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
@@ -12,7 +15,7 @@ namespace EE { namespace Graphics {
 class EE_API Sprite : public Drawable {
 	public:
 		/// Event ID - Sprite - User Data
-		typedef cb::Callback3< void, Uint32, Sprite *, void * > SpriteCallback;
+		typedef std::function<void( Uint32, Sprite *, void * )> SpriteCallback;
 
 		/** @brief SpriteEvents The events that can be reported by the Sprite */
 		enum SpriteEvents {
@@ -30,20 +33,20 @@ class EE_API Sprite : public Drawable {
 		* @param name First part of the sub texture name
 		* @param extension Extension of the sub texture name ( if have one, otherwise is empty )
 		* @param SearchInTextureAtlas If you want only to search in a especific atlas ( NULL if you want to search in all atlases )
-		* @note Texture atlases saves the SubTextures names without extension by default.
-		* @see TextureAtlasManager::GetSubTexturesByPattern
+		* @note Texture atlases saves the TextureRegions names without extension by default.
+		* @see TextureAtlasManager::GetTextureRegionsByPattern
 		*/
 		Sprite( const std::string& name, const std::string& extension = "", TextureAtlas * SearchInTextureAtlas = NULL );
 
-		/** Creates a Sprite from a SubTexture
-		**	@param SubTexture The subtexture to use */
-		Sprite( SubTexture * SubTexture );
+		/** Creates a Sprite from a TextureRegion
+		**	@param TextureRegion The TextureRegion to use */
+		Sprite( TextureRegion * TextureRegion );
 
-		/** Creates a Sprite instance that holds a new SubTexture from a texture already loaded.
-		*	@param TexId The texture Id used to create the SubTexture
-		*	@param DestSize The destination size of the SubTexture created
-		*	@param Offset The offset added to the position of the frame ( the SubTexture )
-		*	@param TexSector The sector of the texture used by the SubTexture to be rendered
+		/** Creates a Sprite instance that holds a new TextureRegion from a texture already loaded.
+		*	@param TexId The texture Id used to create the TextureRegion
+		*	@param DestSize The destination size of the TextureRegion created
+		*	@param Offset The offset added to the position of the frame ( the TextureRegion )
+		*	@param TexSector The sector of the texture used by the TextureRegion to be rendered
 		*/
 		Sprite( const Uint32& TexId, const Sizef &DestSize = Sizef(0,0), const Vector2i &offset = Vector2i(0,0), const Rect& TexSector = Rect(0,0,0,0) );
 
@@ -88,7 +91,7 @@ class EE_API Sprite : public Drawable {
 		*/
 		void setSize( const Sizef& size, const unsigned int& FrameNum, const unsigned int& SubFrame );
 
-		/** Set the current SubTexture Size ( destination size ) */
+		/** Set the current TextureRegion Size ( destination size ) */
 		void setSize( const Sizef& size );
 
 		/** @return the Frame Number Sprite Size
@@ -162,15 +165,15 @@ class EE_API Sprite : public Drawable {
 		void disableVertexColors();
 
 		/** Creates an static sprite (no animation)
-		* @param SubTexture The sprite SubTexture
+		* @param TextureRegion The sprite TextureRegion
 		* @return True if success
 		*/
-		bool createStatic( SubTexture * SubTexture );
+		bool createStatic( TextureRegion * TextureRegion );
 
-		/** Creates an static sprite (no animation). It creates a new SubTexture.
+		/** Creates an static sprite (no animation). It creates a new TextureRegion.
 		* @param TexId The internal Texture Id
-		* @param DestSize The destination size of the SubTexture created
-		* @param Offset The offset added to the position of the frame ( the SubTexture )
+		* @param DestSize The destination size of the TextureRegion created
+		* @param Offset The offset added to the position of the frame ( the TextureRegion )
 		* @param TexSector The texture sector to be rendered ( default all the texture )
 		* @return True if success
 		*/
@@ -191,20 +194,20 @@ class EE_API Sprite : public Drawable {
 		unsigned int addFrame( const Uint32& TexId, const Sizef& DestSize = Sizef(0,0), const Vector2i& offset = Vector2i(0,0), const Rect& TexSector = Rect(0,0,0,0) );
 
 		/** Add a frame to the sprite (on the current sub frame)
-		* @param SubTexture The SubTexture used in the frame
+		* @param TextureRegion The TextureRegion used in the frame
 		* @return The frame position or 0 if fails
 		*/
-		unsigned int addFrame( SubTexture * SubTexture );
+		unsigned int addFrame( TextureRegion * TextureRegion );
 
-		/** Add a vector of SubTexture as an animation.
-		* @param SubTextures The Frames
+		/** Add a vector of TextureRegion as an animation.
+		* @param TextureRegions The Frames
 		*/
-		bool addFrames( const std::vector<SubTexture*> SubTextures );
+		bool addFrames( const std::vector<TextureRegion*> TextureRegions );
 
-		/** @see TextureAtlasManager::GetSubTexturesByPattern */
+		/** @see TextureAtlasManager::GetTextureRegionsByPattern */
 		bool addFramesByPattern( const std::string& name, const std::string& extension = "", TextureAtlas * SearchInTextureAtlas = NULL );
 
-		bool addFramesByPatternId( const Uint32& SubTextureId, const std::string& extension, TextureAtlas * SearchInTextureAtlas );
+		bool addFramesByPatternId( const Uint32& TextureRegionId, const std::string& extension, TextureAtlas * SearchInTextureAtlas );
 
 		/** Add a frame on an specific subframe to the sprite
 		* @param TexId The internal Texture Id
@@ -218,12 +221,12 @@ class EE_API Sprite : public Drawable {
 		bool addSubFrame( const Uint32& TexId, const unsigned int& NumFrame, const unsigned int& NumSubFrame, const Sizef& DestSize = Sizef(0,0), const Vector2i& offset = Vector2i(0,0), const Rect& TexSector = Rect(0,0,0,0) );
 
 		/** Add a frame on an specific subframe to the sprite
-		* @param SubTexture The SubTexture used in the frame
+		* @param TextureRegion The TextureRegion used in the frame
 		* @param NumFrame The Frame Number
 		* @param NumSubFrame The Sub Frame Number
 		* @return True if success
 		*/
-		bool addSubFrame( SubTexture * SubTexture, const unsigned int& NumFrame, const unsigned int& NumSubFrame );
+		bool addSubFrame( TextureRegion * TextureRegion, const unsigned int& NumFrame, const unsigned int& NumSubFrame );
 
 		/** Draw the sprite to the screen */
 		void draw();
@@ -271,14 +274,14 @@ class EE_API Sprite : public Drawable {
 		/** Will set Reverse active and set the first frame as the last frame */
 		void setReverseFromStart();
 
-		/** @return The Current SubTexture */
-		SubTexture * getCurrentSubTexture();
+		/** @return The Current TextureRegion */
+		TextureRegion * getCurrentTextureRegion();
 
-		/** @return The SubTexture Frame from the current sub frame */
-		SubTexture * getSubTexture( const unsigned int& frame );
+		/** @return The TextureRegion Frame from the current sub frame */
+		TextureRegion * getTextureRegion( const unsigned int& frame );
 
-		/** @return The SubTexture Frame from the SubFrame */
-		SubTexture * getSubTexture( const unsigned int& frame, const unsigned int& SubFrame );
+		/** @return The TextureRegion Frame from the SubFrame */
+		TextureRegion * getTextureRegion( const unsigned int& frame, const unsigned int& SubFrame );
 
 		/** Start playing from
 		** @param GoTo Frame that goes from 1 to Number of Frames
@@ -343,7 +346,7 @@ class EE_API Sprite : public Drawable {
 
 		class Frame {
 			public:
-				std::vector<SubTexture *> Spr;
+				std::vector<TextureRegion *> Spr;
 		};
 		std::vector<Frame> mFrames;
 

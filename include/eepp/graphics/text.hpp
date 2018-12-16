@@ -116,6 +116,8 @@ class EE_API Text {
 		* @param MaxWidth The Max Width posible
 		*/
 		void shrinkText( const Uint32& MaxWidth );
+
+		void invalidateColors();
 	protected:
 		struct VertexCoords {
 			Vector2f texCoords;
@@ -158,9 +160,9 @@ class EE_API Text {
 		/** Force to cache the width of the current text */
 		void cacheWidth();
 
-		static void addLine(std::vector<VertexCoords>& vertice, Float lineLength, Float lineTop, Float offset, Float thickness, Float outlineThickness, Sizei textureSize, Int32 centerDiffX);
+		static void addLine(std::vector<VertexCoords>& vertice, Float lineLength, Float lineTop, Float offset, Float thickness, Float outlineThickness, Int32 centerDiffX);
 
-		static void addGlyphQuad(std::vector<VertexCoords>& vertices, Vector2f position, const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness, Sizei textureSize, Int32 centerDiffX);
+		static void addGlyphQuad(std::vector<VertexCoords>& vertices, Vector2f position, const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness, Int32 centerDiffX);
 
 		Uint32 getTotalVertices();
 };

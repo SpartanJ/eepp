@@ -2,7 +2,6 @@
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/sys.hpp>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <climits>
 #include <list>
 #include <algorithm>
@@ -15,6 +14,8 @@
 		#define NOMINMAX
 	#endif
 	#include <windows.h>
+#else
+	#include <unistd.h>
 #endif
 
 #ifndef EE_COMPILER_MSVC
@@ -23,6 +24,16 @@
 	#include <direct.h>
 	#ifndef S_ISDIR
 	#define S_ISDIR(mode)  (((mode) & S_IFMT) == S_IFDIR)
+	#endif
+#endif
+
+#if defined( EE_PLATFORM_POSIX )
+	#if EE_PLATFORM != EE_PLATFORM_ANDROID
+		#include <sys/statvfs.h>
+	#else
+		#include <sys/vfs.h>
+		#define statvfs statfs
+		#define fstatvfs fstatfs
 	#endif
 #endif
 
@@ -38,14 +49,14 @@ std::string FileSystem::getOSSlash() {
 
 bool FileSystem::fileGet( const std::string& path, SafeDataPointer& data ) {
 	if ( fileExists( path ) ) {
-		IOStreamFile fs ( path , std::ios::in | std::ios::binary );
+		IOStreamFile fs ( path  );
 
-		eeSAFE_DELETE( data.Data );
+		eeSAFE_DELETE( data.data );
 
-		data.DataSize	= fileSize( path );
-		data.Data		= eeNewArray( Uint8, ( data.DataSize ) );
+		data.size	= fileSize( path );
+		data.data		= eeNewArray( Uint8, ( data.size ) );
 
-		fs.read( reinterpret_cast<char*> ( data.Data ), data.DataSize  );
+		fs.read( reinterpret_cast<char*> ( data.data ), data.size  );
 
 		return true;
 	}
@@ -55,7 +66,7 @@ bool FileSystem::fileGet( const std::string& path, SafeDataPointer& data ) {
 
 bool FileSystem::fileGet( const std::string& path, std::vector<Uint8>& data ) {
 	if ( fileExists( path ) ) {
-		IOStreamFile fs ( path, std::ios::in | std::ios::binary );
+		IOStreamFile fs ( path );
 		Uint32 fsize = fileSize( path );
 
 		data.clear();
@@ -78,12 +89,12 @@ bool FileSystem::fileCopy( const std::string& src, const std::string& dst ) {
 		Int64	copysize	= 0;
 
 		SafeDataPointer data;
-		data.DataSize	= (Uint32)allocate;
-		data.Data		= eeNewArray( Uint8, ( data.DataSize ) );
-		char * buff		= (char*)data.Data;
+		data.size	= (Uint32)allocate;
+		data.data		= eeNewArray( Uint8, ( data.size ) );
+		char * buff		= (char*)data.data;
 
-		IOStreamFile in( src, std::ios::binary | std::ios::in );
-		IOStreamFile out( dst, std::ios::binary | std::ios::out );
+		IOStreamFile in( src, "rb" );
+		IOStreamFile out( dst, "wb" );
 
 		if ( in.isOpen() && out.isOpen() && size > 0 ) {
 			do {
@@ -144,7 +155,7 @@ void FileSystem::filePathRemoveCurrentWorkingDirectory( std::string& path ) {
 }
 
 bool FileSystem::fileWrite( const std::string& filepath, const Uint8* data, const Uint32& dataSize ) {
-	IOStreamFile fs( filepath, std::ios::out | std::ios::binary );
+	IOStreamFile fs( filepath, "wb" );
 
 	if ( fs.isOpen() ) {
 		if ( dataSize ) {
@@ -201,9 +212,7 @@ std::string FileSystem::removeLastFolderFromPath( std::string path ) {
 		if ( pos2 != pos ) {
 			sstr = path.substr(0,pos) + getOSSlash();
 		} else {
-			if ( pos == pos2 ) {
-				sstr = path.substr(0,pos2+1);
-			}
+			sstr = path.substr(0,pos2+1);
 		}
 
 		if ( sstr.size() ) {
@@ -357,10 +366,10 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 
 		std::list<String>::iterator it;
 
-		for ( it = folders.begin(); it != folders.end(); it++ )
+		for ( it = folders.begin(); it != folders.end(); ++it )
 			files.push_back( *it );
 
-		for ( it = file.begin(); it != file.end(); it++ )
+		for ( it = file.begin(); it != file.end(); ++it )
 			files.push_back( *it );
 	}
 
@@ -468,10 +477,10 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path, co
 
 		std::list<String>::iterator it;
 
-		for ( it = folders.begin(); it != folders.end(); it++ )
+		for ( it = folders.begin(); it != folders.end(); ++it )
 			files.push_back( *it );
 
-		for ( it = file.begin(); it != file.end(); it++ )
+		for ( it = file.begin(); it != file.end(); ++it )
 			files.push_back( *it );
 	}
 
@@ -516,12 +525,12 @@ std::string FileSystem::sizeToString( const Int64& Size ) {
 }
 
 bool FileSystem::changeWorkingDirectory( const std::string & path ) {
-	int res = -1;
+	int res;
 #ifdef EE_COMPILER_MSVC
 	#ifdef UNICODE
-	res = _wchdir( String::fromUtf8( path.c_str() ).toWideString() );
+	res = _wchdir( String::fromUtf8( path.c_str() ).toWideString().c_str() );
 	#else
-	res = _chdir( String::fromUtf8( path.c_str() ).toAnsiString() );
+	res = _chdir( String::fromUtf8( path.c_str() ).toAnsiString().c_str() );
 	#endif
 #else
 	res = chdir( path.c_str() );
@@ -542,6 +551,32 @@ std::string FileSystem::getCurrentWorkingDirectory() {
 	char dir[PATH_MAX + 1];
 	getcwd( dir, PATH_MAX + 1 );
 	return std::string( dir );
+#endif
+}
+
+Int64 FileSystem::getDiskFreeSpace(const std::string& path) {
+#if defined( EE_PLATFORM_POSIX )
+	struct statvfs data;
+	statvfs(path.c_str(),  &data);
+	#if EE_PLATFORM != EE_PLATFORM_MACOSX
+	return (Int64)data.f_bsize * (Int64)data.f_bfree;
+	#else
+	return (Int64)data.f_frsize * (Int64)data.f_bfree;
+	#endif
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+	Int64 AvailableBytes;
+	Int64 TotalBytes;
+	Int64 FreeBytes;
+	#ifdef UNICODE
+	GetDiskFreeSpaceEx((LPCWSTR)path.c_str(),(PULARGE_INTEGER) &AvailableBytes,
+	#else
+	GetDiskFreeSpaceEx(path.c_str(),(PULARGE_INTEGER) &AvailableBytes,
+	#endif
+	(PULARGE_INTEGER) &TotalBytes, (PULARGE_INTEGER) &FreeBytes);
+
+	return FreeBytes;
+#else
+	return -1;
 #endif
 }
 

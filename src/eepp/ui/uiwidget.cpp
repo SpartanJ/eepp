@@ -1,7 +1,8 @@
 #include <eepp/ui/uiwidget.hpp>
-#include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <eepp/scene/scenenode.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -10,7 +11,7 @@ UIWidget * UIWidget::New() {
 }
 
 UIWidget::UIWidget() :
-	UIControlAnim(),
+	UINode(),
 	mTheme( NULL ),
 	mTooltip( NULL ),
 	mMinControlSize(),
@@ -20,9 +21,9 @@ UIWidget::UIWidget() :
 	mLayoutHeightRules(WRAP_CONTENT),
 	mLayoutPositionRule(NONE),
 	mLayoutPositionRuleWidget(NULL),
-	mPropertiesTransactionCount(0)
+	mAttributesTransactionCount(0)
 {
-	mControlFlags |= UI_CTRL_FLAG_WIDGET;
+	mNodeFlags |= NODE_FLAG_WIDGET;
 
 	updateAnchorsDistances();
 }
@@ -36,12 +37,12 @@ Uint32 UIWidget::getType() const {
 }
 
 bool UIWidget::isType( const Uint32& type ) const {
-	return UIWidget::getType() == type ? true : UIControlAnim::isType( type );
+	return UIWidget::getType() == type ? true : UINode::isType( type );
 }
 
 void UIWidget::updateAnchorsDistances() {
 	if ( NULL != mParentCtrl ) {
-		mDistToBorder	= Rect( mRealPos.x, mRealPos.y, mParentCtrl->getRealSize().x - ( mRealPos.x + mRealSize.x ), mParentCtrl->getRealSize().y - ( mRealPos.y + mRealSize.y ) );
+		mDistToBorder	= Rect( mPosition.x, mPosition.y, mParentCtrl->getRealSize().x - ( mPosition.x + mSize.x ), mParentCtrl->getRealSize().y - ( mPosition.y + mSize.y ) );
 	}
 }
 
@@ -52,7 +53,6 @@ Rect UIWidget::getLayoutMargin() const {
 UIWidget * UIWidget::setLayoutMargin(const Rect & margin) {
 	if ( mLayoutMargin != margin ) {
 		mLayoutMargin = margin;
-		mRealMargin = PixelDensity::dpToPxI( margin );
 		notifyLayoutAttrChange();
 	}
 
@@ -140,37 +140,41 @@ LayoutPositionRules UIWidget::getLayoutPositionRule() const {
 	return mLayoutPositionRule;
 }
 
-void UIWidget::update() {
-	if ( mVisible && NULL != mTooltip && mTooltip->getText().size() ) {
+void UIWidget::update( const Time& time ) {
+	if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
 		if ( isMouseOverMeOrChilds() ) {
-			UIManager * uiManager = UIManager::instance();
+			EventDispatcher * eventDispatcher = getEventDispatcher();
+
+			if ( NULL == eventDispatcher )
+				return;
+
 			UIThemeManager * themeManager = UIThemeManager::instance();
 
-			Vector2i Pos = uiManager->getMousePos();
+			Vector2f Pos = eventDispatcher->getMousePosf();
 			Pos.x += themeManager->getCursorSize().x;
 			Pos.y += themeManager->getCursorSize().y;
 
-			if ( Pos.x + mTooltip->getRealSize().getWidth() > uiManager->getMainControl()->getRealSize().getWidth() ) {
-				Pos.x = uiManager->getMousePos().x - mTooltip->getRealSize().getWidth();
+			if ( Pos.x + mTooltip->getRealSize().getWidth() > eventDispatcher->getSceneNode()->getRealSize().getWidth() ) {
+				Pos.x = eventDispatcher->getMousePos().x - mTooltip->getRealSize().getWidth();
 			}
 
-			if ( Pos.y + mTooltip->getRealSize().getHeight() > uiManager->getMainControl()->getRealSize().getHeight() ) {
-				Pos.y = uiManager->getMousePos().y - mTooltip->getRealSize().getHeight();
+			if ( Pos.y + mTooltip->getRealSize().getHeight() > eventDispatcher->getSceneNode()->getRealSize().getHeight() ) {
+				Pos.y = eventDispatcher->getMousePos().y - mTooltip->getRealSize().getHeight();
 			}
 
 			if ( Time::Zero == themeManager->getTooltipTimeToShow() ) {
 				if ( !mTooltip->isVisible() || themeManager->getTooltipFollowMouse() )
-					mTooltip->setPosition( PixelDensity::pxToDpI( Pos ) );
+					mTooltip->setPosition( PixelDensity::pxToDp( Pos ) );
 
 				mTooltip->show();
 			} else {
 				if ( -1.f != mTooltip->getTooltipTime().asMilliseconds() ) {
-					mTooltip->addTooltipTime( getElapsed() );
+					mTooltip->addTooltipTime( time );
 				}
 
 				if ( mTooltip->getTooltipTime() >= themeManager->getTooltipTimeToShow() ) {
 					if ( mTooltip->getTooltipTime().asMilliseconds() != -1.f ) {
-						mTooltip->setPosition( PixelDensity::pxToDpI( Pos ) );
+						mTooltip->setPosition( PixelDensity::pxToDp( Pos ) );
 
 						mTooltip->show();
 
@@ -180,7 +184,7 @@ void UIWidget::update() {
 			}
 
 			if ( themeManager->getTooltipFollowMouse() ) {
-				mTooltip->setPosition( PixelDensity::pxToDpI( Pos ) );
+				mTooltip->setPosition( PixelDensity::pxToDp( Pos ) );
 			}
 		} else {
 			mTooltip->setTooltipTime( Milliseconds( 0.f ) );
@@ -190,7 +194,7 @@ void UIWidget::update() {
 		}
 	}
 
-	UIControlAnim::update();
+	UINode::update( time );
 }
 
 void UIWidget::createTooltip() {
@@ -227,8 +231,8 @@ void UIWidget::tooltipRemove() {
 	mTooltip = NULL;
 }
 
-UIControl * UIWidget::setSize( const Sizei& size ) {
-	Sizei s( size );
+Node * UIWidget::setSize( const Sizef& size ) {
+	Sizef s( size );
 
 	if ( s.x < mMinControlSize.x )
 		s.x = mMinControlSize.x;
@@ -236,10 +240,10 @@ UIControl * UIWidget::setSize( const Sizei& size ) {
 	if ( s.y < mMinControlSize.y )
 		s.y = mMinControlSize.y;
 
-	return UIControlAnim::setSize( s );
+	return UINode::setSize( s );
 }
 
-UIControl * UIWidget::setFlags(const Uint32 & flags) {
+UINode * UIWidget::setFlags(const Uint32 & flags) {
 	if ( flags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) {
 		updateAnchorsDistances();
 	}
@@ -248,15 +252,15 @@ UIControl * UIWidget::setFlags(const Uint32 & flags) {
 		onAutoSize();
 	}
 
-	return UIControlAnim::setFlags( flags );
+	return UINode::setFlags( flags );
 }
 
-UIControl * UIWidget::unsetFlags(const Uint32 & flags) {
+UINode * UIWidget::unsetFlags(const Uint32 & flags) {
 	if ( flags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) {
 		updateAnchorsDistances();
 	}
 
-	return UIControlAnim::unsetFlags( flags );
+	return UINode::unsetFlags( flags );
 }
 
 UIWidget * UIWidget::setAnchors(const Uint32 & flags) {
@@ -271,36 +275,40 @@ void UIWidget::setTheme( UITheme * Theme ) {
 	invalidateDraw();
 }
 
-UIControl * UIWidget::setThemeSkin( const std::string& skinName ) {
+UINode * UIWidget::setThemeSkin( const std::string& skinName ) {
 	return setThemeSkin( NULL != mTheme ? mTheme : UIThemeManager::instance()->getDefaultTheme(), skinName );
 }
 
-UIControl * UIWidget::setThemeSkin( UITheme * Theme, const std::string& skinName ) {
-	return UIControl::setThemeSkin( Theme, skinName );
+UINode * UIWidget::setThemeSkin( UITheme * Theme, const std::string& skinName ) {
+	return UINode::setThemeSkin( Theme, skinName );
 }
 
-UIControl * UIWidget::setSize( const Int32& Width, const Int32& Height ) {
-	return UIControlAnim::setSize( Width, Height );
+Node * UIWidget::setSize( const Float& Width, const Float& Height ) {
+	return UINode::setSize( Width, Height );
 }
 
-const Sizei& UIWidget::getSize() {
-	return UIControlAnim::getSize();
+const Sizef& UIWidget::getSize() {
+	return UINode::getSize();
 }
 
-void UIWidget::onParentSizeChange( const Vector2i& SizeChange ) {
+UITooltip * UIWidget::getTooltip() {
+	return mTooltip;
+}
+
+void UIWidget::onParentSizeChange( const Vector2f& SizeChange ) {
 	updateAnchors( SizeChange );
-	UIControlAnim::onParentSizeChange( SizeChange );
+	UINode::onParentSizeChange( SizeChange );
 }
 
 void UIWidget::onPositionChange() {
 	updateAnchorsDistances();
-	UIControlAnim::onPositionChange();
+	UINode::onPositionChange();
 }
 
 void UIWidget::onVisibilityChange() {
 	updateAnchorsDistances();
 	notifyLayoutAttrChange();
-	UIControlAnim::onVisibilityChange();
+	UINode::onVisibilityChange();
 }
 
 void UIWidget::onAutoSize() {
@@ -310,32 +318,32 @@ void UIWidget::onWidgetCreated() {
 }
 
 void UIWidget::notifyLayoutAttrChange() {
-	if ( 0 == mPropertiesTransactionCount ) {
-		UIMessage msg( this, UIMessage::LayoutAttributeChange );
+	if ( 0 == mAttributesTransactionCount ) {
+		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
 		messagePost( &msg );
 	}
 }
 
 void UIWidget::notifyLayoutAttrChangeParent() {
-	if ( 0 == mPropertiesTransactionCount && NULL != mParentCtrl ) {
-		UIMessage msg( this, UIMessage::LayoutAttributeChange );
+	if ( 0 == mAttributesTransactionCount && NULL != mParentCtrl ) {
+		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
 		mParentCtrl->messagePost( &msg );
 	}
 }
 
-void UIWidget::updateAnchors( const Vector2i& SizeChange ) {
+void UIWidget::updateAnchors( const Vector2f& SizeChange ) {
 	if ( !( mFlags & ( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) )
 		return;
 
-	Sizei newSize( mSize );
+	Sizef newSize( mDpSize );
 
 	if ( !( mFlags & UI_ANCHOR_LEFT ) ) {
-		setInternalPosition( Vector2i( mPos.x += SizeChange.x, mPos.y ) );
+		setInternalPosition( Vector2f( mDpPos.x += SizeChange.x, mDpPos.y ) );
 	}
 
 	if ( mFlags & UI_ANCHOR_RIGHT ) {
 		if ( NULL != mParentCtrl ) {
-			newSize.x = mParentCtrl->getSize().getWidth() - mPos.x - PixelDensity::pxToDpI( mDistToBorder.Right );
+			newSize.x = mParentCtrl->getSize().getWidth() - mDpPos.x - PixelDensity::pxToDpI( mDistToBorder.Right );
 
 			if ( newSize.x < mMinControlSize.getWidth() )
 				newSize.x = mMinControlSize.getWidth();
@@ -343,28 +351,28 @@ void UIWidget::updateAnchors( const Vector2i& SizeChange ) {
 	}
 
 	if ( !( mFlags & UI_ANCHOR_TOP ) ) {
-		setInternalPosition( Vector2i( mPos.x, mPos.y += SizeChange.y ) );
+		setInternalPosition( Vector2f( mDpPos.x, mDpPos.y += SizeChange.y ) );
 	}
 
 	if ( mFlags & UI_ANCHOR_BOTTOM ) {
 		if ( NULL != mParentCtrl ) {
-			newSize.y = mParentCtrl->getSize().y - mPos.y - PixelDensity::pxToDpI( mDistToBorder.Bottom );
+			newSize.y = mParentCtrl->getSize().y - mDpPos.y - PixelDensity::pxToDpI( mDistToBorder.Bottom );
 
 			if ( newSize.y < mMinControlSize.getHeight() )
 				newSize.y = mMinControlSize.getHeight();
 		}
 	}
 
-	if ( newSize != mSize )
+	if ( newSize != mDpSize )
 		setSize( newSize );
 }
 
 void UIWidget::alignAgainstLayout() {
-	Vector2i pos = mPos;
+	Vector2f pos = mDpPos;
 
 	switch ( fontHAlignGet( mLayoutGravity ) ) {
 		case UI_HALIGN_CENTER:
-			pos.x = ( getParent()->getSize().getWidth() - mSize.getWidth() ) / 2;
+			pos.x = ( getParent()->getSize().getWidth() - mDpSize.getWidth() ) / 2;
 			break;
 		case UI_HALIGN_RIGHT:
 			pos.x = getParent()->getSize().getWidth() - mLayoutMargin.Right;
@@ -376,7 +384,7 @@ void UIWidget::alignAgainstLayout() {
 
 	switch ( fontVAlignGet( mLayoutGravity ) ) {
 		case UI_VALIGN_CENTER:
-			pos.y = ( getParent()->getSize().getHeight() - mSize.getHeight() ) / 2;
+			pos.y = ( getParent()->getSize().getHeight() - mDpSize.getHeight() ) / 2;
 			break;
 		case UI_VALIGN_BOTTOM:
 			pos.y = getParent()->getSize().getHeight() - mLayoutMargin.Bottom;
@@ -389,14 +397,34 @@ void UIWidget::alignAgainstLayout() {
 	setInternalPosition( pos );
 }
 
-void UIWidget::beginPropertiesTransaction() {
-	mPropertiesTransactionCount++;
+const Rectf& UIWidget::getPadding() const {
+	return mPadding;
 }
 
-void UIWidget::endPropertiesTransaction() {
-	mPropertiesTransactionCount--;
+UIWidget * UIWidget::setPadding(const Rectf& padding) {
+	if ( padding != mPadding ) {
+		mPadding = padding;
+		mRealPadding = PixelDensity::dpToPx( mPadding );
+		onAutoSize();
+		onPaddingChange();
+		notifyLayoutAttrChange();
+	}
 
-	if ( 0 == mPropertiesTransactionCount ) {
+	return this;
+}
+
+void UIWidget::onPaddingChange() {
+	invalidateDraw();
+}
+
+void UIWidget::beginAttributesTransaction() {
+	mAttributesTransactionCount++;
+}
+
+void UIWidget::endAttributesTransaction() {
+	mAttributesTransactionCount--;
+
+	if ( 0 == mAttributesTransactionCount ) {
 		notifyLayoutAttrChange();
 	}
 }
@@ -440,220 +468,268 @@ static BlendMode toBlendMode( std::string val ) {
 	return blendMode;
 }
 
-void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
-	beginPropertiesTransaction();
+bool UIWidget::setAttribute( const std::string& name, const std::string& value ) {
+	return setAttribute( NodeAttribute( name, value ) );
+}
 
-	std::string skinName;
+bool UIWidget::setAttribute(const NodeAttribute & attribute) {
+	std::string name = attribute.getName();
 
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
+	bool attributeSet = true;
 
-		if ( "id" == name ) {
-			setId( ait->value() );
-		} else if ( "x" == name ) {
-			setInternalPosition( Vector2i( PixelDensity::toDpFromStringI( ait->as_string() ), mPos.y ) );
-		} else if ( "y" == name ) {
-			setInternalPosition( Vector2i( mPos.x, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
-		} else if ( "width" == name ) {
-			setInternalWidth( PixelDensity::toDpFromStringI( ait->as_string() ) );
-			notifyLayoutAttrChange();
-		} else if ( "height" == name ) {
-			setInternalHeight( PixelDensity::toDpFromStringI( ait->as_string() ) );
-			notifyLayoutAttrChange();
-		} else if ( "backgroundcolor" == name ) {
-			setBackgroundFillEnabled( true )->setColor( Color::fromString( ait->as_string() ) );
-		} else if ( "bordercolor" == name ) {
-			setBorderEnabled( true )->setColor( Color::fromString( ait->as_string() ) );
-		} else if ( "borderwidth" == name ) {
-			setBorderEnabled( true )->setWidth( PixelDensity::toDpFromStringI( ait->as_string("1") ) );
-		} else if ( "background" == name ) {
-			Drawable * res = NULL;
+	if ( "id" == name ) {
+		setId( attribute.value() );
+	} else if ( "x" == name ) {
+		setInternalPosition( Vector2f( PixelDensity::toDpFromString( attribute.asString() ), mDpPos.y ) );
+	} else if ( "y" == name ) {
+		setInternalPosition( Vector2f( mDpPos.x, PixelDensity::toDpFromString( attribute.asString() ) ) );
+	} else if ( "width" == name ) {
+		setInternalWidth( PixelDensity::toDpFromStringI( attribute.asString() ) );
+		notifyLayoutAttrChange();
+	} else if ( "height" == name ) {
+		setInternalHeight( PixelDensity::toDpFromStringI( attribute.asString() ) );
+		notifyLayoutAttrChange();
+	} else if ( "background" == name ) {
+		Drawable * res = NULL;
 
-			if ( NULL != ( res = DrawableSearcher::searchByName( ait->as_string() ) ) ) {
-				setBackgroundFillEnabled( true )->setDrawable( res, res->getDrawableType() == Drawable::SPRITE );
-			}
-		} else if ( "visible" == name ) {
-			setVisible( ait->as_bool() );
-		} else if ( "enabled" == name ) {
-			setEnabled( ait->as_bool() );
-		} else if ( "theme" == name ) {
-			setThemeByName( ait->as_string() );
+		const std::string attributeName( attribute.asString() );
 
-			if ( !skinName.empty() )
-				setThemeSkin( skinName );
-		} else if ( "skin" == name ) {
-			skinName = ait->as_string();
-			setThemeSkin( skinName );
-		} else if ( "gravity" == name ) {
-			std::string gravity = ait->as_string();
-			String::toLowerInPlace( gravity );
-			std::vector<std::string> strings = String::split( gravity, '|' );
-
-			if ( strings.size() ) {
-				for ( std::size_t i = 0; i < strings.size(); i++ ) {
-					std::string cur = strings[i];
-					String::toLowerInPlace( cur );
-
-					if ( "left" == cur )
-						setHorizontalAlign( UI_HALIGN_LEFT );
-					else if ( "right" == cur )
-						setHorizontalAlign( UI_HALIGN_RIGHT );
-					else if ( "center_horizontal" == cur )
-						setHorizontalAlign( UI_HALIGN_CENTER );
-					else if ( "top" == cur )
-						setVerticalAlign( UI_VALIGN_TOP );
-					else if ( "bottom" == cur )
-						setVerticalAlign( UI_VALIGN_BOTTOM );
-					else if ( "center_vertical" == cur ) {
-						setVerticalAlign( UI_VALIGN_CENTER );
-					} else if ( "center" == cur ) {
-						setHorizontalAlign( UI_HALIGN_CENTER );
-						setVerticalAlign( UI_VALIGN_CENTER );
-					}
-				}
-
-				notifyLayoutAttrChange();
-			}
-		} else if ( "flags" == name ) {
-			std::string flags = ait->as_string();
-			String::toLowerInPlace( flags );
-			std::vector<std::string> strings = String::split( flags, '|' );
-
-			if ( strings.size() ) {
-				for ( std::size_t i = 0; i < strings.size(); i++ ) {
-					std::string cur = strings[i];
-					String::toLowerInPlace( cur );
-
-					if ( "auto_size" == cur || "autosize" == cur ) {
-						setFlags( UI_AUTO_SIZE );
-						notifyLayoutAttrChange();
-					} else if ( "clip" == cur ) {
-						setFlags( UI_CLIP_ENABLE );
-					} else if ( "word_wrap" == cur || "wordwrap" == cur ) {
-						setFlags( UI_WORD_WRAP );
-					} else if ( "multi" == cur ) {
-						setFlags(  UI_MULTI_SELECT );
-					} else if ( "auto_padding" == cur || "autopadding" == cur ) {
-						setFlags( UI_AUTO_PADDING );
-						notifyLayoutAttrChange();
-					} else if ( "reportsizechangetochilds" == cur || "report_size_change_to_childs" == cur ) {
-						setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
-					}
-				}
-			}
-		} else if ( "layout_margin" == name ) {
-			int val = PixelDensity::toDpFromStringI( ait->as_string() );
-			setLayoutMargin( Rect( val, val, val, val ) );
-		} else if ( "layout_marginleft" == name ) {
-			setLayoutMargin( Rect( PixelDensity::toDpFromStringI( ait->as_string() ), mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) );
-		} else if ( "layout_marginright" == name ) {
-			setLayoutMargin( Rect( mLayoutMargin.Left, mLayoutMargin.Top, PixelDensity::toDpFromStringI( ait->as_string() ), mLayoutMargin.Bottom ) );
-		} else if ( "layout_margintop" == name ) {
-			setLayoutMargin( Rect( mLayoutMargin.Left, PixelDensity::toDpFromStringI( ait->as_string() ), mLayoutMargin.Right, mLayoutMargin.Bottom ) );
-		} else if ( "layout_marginbottom" == name ) {
-			setLayoutMargin( Rect( mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, PixelDensity::toDpFromStringI( ait->as_string() ) ) );
-		} else if ( "tooltip" == name ) {
-			setTooltipText( ait->as_string() );
-		} else if ( "layout_weight" == name ) {
-			setLayoutWeight( ait->as_float() );
-		} else if ( "layout_gravity" == name ) {
-			std::string gravityStr = ait->as_string();
-			String::toLowerInPlace( gravityStr );
-			std::vector<std::string> strings = String::split( gravityStr, '|' );
-			Uint32 gravity = 0;
-
-			if ( strings.size() ) {
-				for ( std::size_t i = 0; i < strings.size(); i++ ) {
-					std::string cur = strings[i];
-					String::toLowerInPlace( cur );
-
-					if ( "left" == cur )
-						gravity |= UI_HALIGN_LEFT;
-					else if ( "right" == cur )
-						gravity |= UI_HALIGN_RIGHT;
-					else if ( "center_horizontal" == cur )
-						gravity |= UI_HALIGN_CENTER;
-					else if ( "top" == cur )
-						gravity |= UI_VALIGN_TOP;
-					else if ( "bottom" == cur )
-						gravity |= UI_VALIGN_BOTTOM;
-					else if ( "center_vertical" == cur ) {
-						gravity |= UI_VALIGN_CENTER;
-					} else if ( "center" == cur ) {
-						gravity |= UI_VALIGN_CENTER | UI_HALIGN_CENTER;
-					}
-				}
-
-				setLayoutGravity( gravity );
-			}
-		} else if ( "layout_width" == name ) {
-			std::string val = ait->as_string();
-			String::toLowerInPlace( val );
-
-			if ( "match_parent" == val ) {
-				setLayoutWidthRules( MATCH_PARENT );
-			} else if ( "wrap_content" == val ) {
-				setLayoutWidthRules( WRAP_CONTENT );
-			} else if ( "fixed" == val ) {
-				setLayoutWidthRules( FIXED );
-			} else {
-				setLayoutWidthRules( FIXED );
-				setInternalWidth( PixelDensity::toDpFromStringI( val ) );
-				onSizeChange();
-			}
-		} else if ( "layout_height" == name ) {
-			std::string val = ait->as_string();
-			String::toLowerInPlace( val );
-
-			if ( "match_parent" == val ) {
-				setLayoutHeightRules( MATCH_PARENT );
-			} else if ( "wrap_content" == val ) {
-				setLayoutHeightRules( WRAP_CONTENT );
-			} else if ( "fixed" == val ) {
-				setLayoutHeightRules( FIXED );
-			} else {
-				setLayoutHeightRules( FIXED );
-				setInternalHeight( PixelDensity::toDpFromStringI( val ) );
-				onSizeChange();
-			}
-		} else if ( String::startsWith( name, "layout_to_" ) || String::startsWith( name, "layoutto" ) ) {
-			LayoutPositionRules rule = NONE;
-			if ( "layout_to_left_of" == name || "layouttoleftof" == name ) rule = LEFT_OF;
-			else if ( "layout_to_right_of" == name || "layouttorightof" == name ) rule = RIGHT_OF;
-			else if ( "layout_to_top_of" == name || "layouttotopof" == name ) rule = TOP_OF;
-			else if ( "layout_to_bottom_of" == name || "layouttobottomof" == name ) rule = BOTTOM_OF;
-
-			std::string id = ait->as_string();
-
-			UIControl * control = getParent()->find( id );
-
-			if ( NULL != control && control->isWidget() ) {
-				UIWidget * widget = static_cast<UIWidget*>( control );
-
-				setLayoutPositionRule( rule, widget );
-			}
-		} else if ( "clip" == name ) {
-			if ( ait->as_bool() )
-				setFlags( UI_CLIP_ENABLE );
-			else
-				unsetFlags( UI_CLIP_ENABLE );
-		} else if ( "rotation" == name ) {
-			setRotation( ait->as_float() );
-		} else if ( "scale" == name ) {
-			setScale( ait->as_float() );
-		} else if ( "rotationoriginpoint" == name ) {
-			setRotationOriginPoint( toOriginPoint( ait->as_string() ) );
-		} else if ( "scaleoriginpoint" == name ) {
-			setScaleOriginPoint( toOriginPoint( ait->as_string() ) );
-		} else if ( "blendmode" == name ) {
-			setBlendMode( toBlendMode( ait->as_string() ) );
-		} else if ( "backgroundblendmode" == name ) {
-			setBackgroundFillEnabled( true )->setBlendMode( toBlendMode( ait->as_string() ) );
+		if ( String::startsWith( attributeName, "#" ) ) {
+			setBackgroundColor( Color::fromString( attribute.asString() ) );
+		} else if ( NULL != ( res = DrawableSearcher::searchByName( attributeName ) ) ) {
+			setBackgroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
 		}
+	} else if ( "backgroundcolor" == name ) {
+		setBackgroundColor( Color::fromString( attribute.asString() ) );
+	} else if ( "backgroundblendmode" == name ) {
+		setBackgroundBlendMode( toBlendMode( attribute.asString() ) );
+	} else if ( "foreground" == name ) {
+		Drawable * res = NULL;
+
+		const std::string attributeName( attribute.asString() );
+
+		if ( String::startsWith( attributeName, "#" ) ) {
+			setForegroundColor( Color::fromString( attribute.asString() ) );
+		} else if ( NULL != ( res = DrawableSearcher::searchByName( attributeName ) ) ) {
+			setForegroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
+		}
+	} else if ( "foregroundcolor" == name ) {
+		setForegroundColor( Color::fromString( attribute.asString() ) );
+	} else if ( "foregroundblendmode" == name ) {
+		setForegroundBlendMode( toBlendMode( attribute.asString() ) );
+	} else if ( "foregroundcorners" == name ) {
+		setForegroundCorners( attribute.asUint() );
+	} else if ( "bordercolor" == name ) {
+		setBorderColor( Color::fromString( attribute.asString() ) );
+	} else if ( "borderwidth" == name ) {
+		setBorderWidth( PixelDensity::toDpFromStringI( attribute.asString("1") ) );
+	} else if ( "bordercorners" == name || "backgroundcorners" == name ) {
+		setBackgroundCorners( attribute.asUint() );
+	} else if ( "visible" == name ) {
+		setVisible( attribute.asBool() );
+	} else if ( "enabled" == name ) {
+		setEnabled( attribute.asBool() );
+	} else if ( "theme" == name ) {
+		setThemeByName( attribute.asString() );
+
+		if ( !mSkinName.empty() )
+			setThemeSkin( mSkinName );
+	} else if ( "skin" == name ) {
+		mSkinName = attribute.asString();
+		setThemeSkin( mSkinName );
+	} else if ( "gravity" == name ) {
+		std::string gravity = attribute.asString();
+		String::toLowerInPlace( gravity );
+		std::vector<std::string> strings = String::split( gravity, '|' );
+
+		if ( strings.size() ) {
+			for ( std::size_t i = 0; i < strings.size(); i++ ) {
+				std::string cur = strings[i];
+				String::toLowerInPlace( cur );
+
+				if ( "left" == cur )
+					setHorizontalAlign( UI_HALIGN_LEFT );
+				else if ( "right" == cur )
+					setHorizontalAlign( UI_HALIGN_RIGHT );
+				else if ( "center_horizontal" == cur )
+					setHorizontalAlign( UI_HALIGN_CENTER );
+				else if ( "top" == cur )
+					setVerticalAlign( UI_VALIGN_TOP );
+				else if ( "bottom" == cur )
+					setVerticalAlign( UI_VALIGN_BOTTOM );
+				else if ( "center_vertical" == cur ) {
+					setVerticalAlign( UI_VALIGN_CENTER );
+				} else if ( "center" == cur ) {
+					setHorizontalAlign( UI_HALIGN_CENTER );
+					setVerticalAlign( UI_VALIGN_CENTER );
+				}
+			}
+
+			notifyLayoutAttrChange();
+		}
+	} else if ( "flags" == name ) {
+		std::string flags = attribute.asString();
+		String::toLowerInPlace( flags );
+		std::vector<std::string> strings = String::split( flags, '|' );
+
+		if ( strings.size() ) {
+			for ( std::size_t i = 0; i < strings.size(); i++ ) {
+				std::string cur = strings[i];
+				String::toLowerInPlace( cur );
+
+				if ( "auto_size" == cur || "autosize" == cur ) {
+					setFlags( UI_AUTO_SIZE );
+					notifyLayoutAttrChange();
+				} else if ( "clip" == cur ) {
+					clipEnable();
+				} else if ( "word_wrap" == cur || "wordwrap" == cur ) {
+					setFlags( UI_WORD_WRAP );
+				} else if ( "multi" == cur ) {
+					setFlags(  UI_MULTI_SELECT );
+				} else if ( "auto_padding" == cur || "autopadding" == cur ) {
+					setFlags( UI_AUTO_PADDING );
+					notifyLayoutAttrChange();
+				} else if ( "reportsizechangetochilds" == cur || "report_size_change_to_childs" == cur ) {
+					enableReportSizeChangeToChilds();
+				}
+			}
+		}
+	} else if ( "layout_margin" == name ) {
+		int val = PixelDensity::toDpFromStringI( attribute.asString() );
+		setLayoutMargin( Rect( val, val, val, val ) );
+	} else if ( "layout_marginleft" == name ) {
+		setLayoutMargin( Rect( PixelDensity::toDpFromStringI( attribute.asString() ), mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) );
+	} else if ( "layout_marginright" == name ) {
+		setLayoutMargin( Rect( mLayoutMargin.Left, mLayoutMargin.Top, PixelDensity::toDpFromStringI( attribute.asString() ), mLayoutMargin.Bottom ) );
+	} else if ( "layout_margintop" == name ) {
+		setLayoutMargin( Rect( mLayoutMargin.Left, PixelDensity::toDpFromStringI( attribute.asString() ), mLayoutMargin.Right, mLayoutMargin.Bottom ) );
+	} else if ( "layout_marginbottom" == name ) {
+		setLayoutMargin( Rect( mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, PixelDensity::toDpFromStringI( attribute.asString() ) ) );
+	} else if ( "tooltip" == name ) {
+		setTooltipText( attribute.asString() );
+	} else if ( "layout_weight" == name ) {
+		setLayoutWeight( attribute.asFloat() );
+	} else if ( "layout_gravity" == name ) {
+		std::string gravityStr = attribute.asString();
+		String::toLowerInPlace( gravityStr );
+		std::vector<std::string> strings = String::split( gravityStr, '|' );
+		Uint32 gravity = 0;
+
+		if ( strings.size() ) {
+			for ( std::size_t i = 0; i < strings.size(); i++ ) {
+				std::string cur = strings[i];
+				String::toLowerInPlace( cur );
+
+				if ( "left" == cur )
+					gravity |= UI_HALIGN_LEFT;
+				else if ( "right" == cur )
+					gravity |= UI_HALIGN_RIGHT;
+				else if ( "center_horizontal" == cur )
+					gravity |= UI_HALIGN_CENTER;
+				else if ( "top" == cur )
+					gravity |= UI_VALIGN_TOP;
+				else if ( "bottom" == cur )
+					gravity |= UI_VALIGN_BOTTOM;
+				else if ( "center_vertical" == cur ) {
+					gravity |= UI_VALIGN_CENTER;
+				} else if ( "center" == cur ) {
+					gravity |= UI_VALIGN_CENTER | UI_HALIGN_CENTER;
+				}
+			}
+
+			setLayoutGravity( gravity );
+		}
+	} else if ( "layout_width" == name ) {
+		std::string val = attribute.asString();
+		String::toLowerInPlace( val );
+
+		if ( "match_parent" == val ) {
+			setLayoutWidthRules( MATCH_PARENT );
+		} else if ( "wrap_content" == val ) {
+			setLayoutWidthRules( WRAP_CONTENT );
+		} else if ( "fixed" == val ) {
+			setLayoutWidthRules( FIXED );
+			unsetFlags( UI_AUTO_SIZE );
+		} else {
+			unsetFlags( UI_AUTO_SIZE );
+			setLayoutWidthRules( FIXED );
+			setInternalWidth( PixelDensity::toDpFromStringI( val ) );
+			onSizeChange();
+		}
+	} else if ( "layout_height" == name ) {
+		std::string val = attribute.asString();
+		String::toLowerInPlace( val );
+
+		if ( "match_parent" == val ) {
+			setLayoutHeightRules( MATCH_PARENT );
+		} else if ( "wrap_content" == val ) {
+			setLayoutHeightRules( WRAP_CONTENT );
+		} else if ( "fixed" == val ) {
+			setLayoutHeightRules( FIXED );
+			unsetFlags( UI_AUTO_SIZE );
+		} else {
+			unsetFlags( UI_AUTO_SIZE );
+			setLayoutHeightRules( FIXED );
+			setInternalHeight( PixelDensity::toDpFromStringI( val ) );
+			onSizeChange();
+		}
+	} else if ( String::startsWith( name, "layout_to_" ) || String::startsWith( name, "layoutto" ) ) {
+		LayoutPositionRules rule = NONE;
+		if ( "layout_to_left_of" == name || "layouttoleftof" == name ) rule = LEFT_OF;
+		else if ( "layout_to_right_of" == name || "layouttorightof" == name ) rule = RIGHT_OF;
+		else if ( "layout_to_top_of" == name || "layouttotopof" == name ) rule = TOP_OF;
+		else if ( "layout_to_bottom_of" == name || "layouttobottomof" == name ) rule = BOTTOM_OF;
+
+		std::string id = attribute.asString();
+
+		Node * control = getParent()->find( id );
+
+		if ( NULL != control && control->isWidget() ) {
+			UIWidget * widget = static_cast<UIWidget*>( control );
+
+			setLayoutPositionRule( rule, widget );
+		}
+	} else if ( "clip" == name ) {
+		if ( attribute.asBool() )
+			clipEnable();
+		else
+			clipDisable();
+	} else if ( "rotation" == name ) {
+		setRotation( attribute.asFloat() );
+	} else if ( "scale" == name ) {
+		setScale( attribute.asFloat() );
+	} else if ( "rotationoriginpoint" == name ) {
+		setRotationOriginPoint( toOriginPoint( attribute.asString() ) );
+	} else if ( "scaleoriginpoint" == name ) {
+		setScaleOriginPoint( toOriginPoint( attribute.asString() ) );
+	} else if ( "blendmode" == name ) {
+		setBlendMode( toBlendMode( attribute.asString() ) );
+	} else if ( "padding" == name ) {
+		int val = PixelDensity::toDpFromStringI( attribute.asString() );
+		setPadding( Rectf( val, val, val, val ) );
+	} else if ( "paddingleft" == name ) {
+		setPadding( Rectf( PixelDensity::toDpFromString( attribute.asString() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
+	} else if ( "paddingright" == name ) {
+		setPadding( Rectf( mPadding.Left, mPadding.Top, PixelDensity::toDpFromString( attribute.asString() ), mPadding.Bottom ) );
+	} else if ( "paddingtop" == name ) {
+		setPadding( Rectf( mPadding.Left, PixelDensity::toDpFromString( attribute.asString() ), mPadding.Right, mPadding.Bottom ) );
+	} else if ( "paddingbottom" == name ) {
+		setPadding( Rectf( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromString( attribute.asString() ) ) );
+	} else {
+		attributeSet = false;
 	}
 
-	endPropertiesTransaction();
+	return attributeSet;
+}
+
+void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
+	beginAttributesTransaction();
+
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		setAttribute( ait->name(), ait->value() );
+	}
+
+	endAttributesTransaction();
 }
 
 }}

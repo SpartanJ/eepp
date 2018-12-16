@@ -4,7 +4,8 @@
 #include <eepp/graphics/renderer/renderergl3.hpp>
 #include <eepp/graphics/renderer/renderergl3cp.hpp>
 #include <eepp/graphics/renderer/renderergles2.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
+#include <eepp/system/sys.hpp>
+#include <SOIL2/src/SOIL2/SOIL2.h>
 
 namespace EE { namespace Graphics {
 
@@ -128,7 +129,6 @@ Renderer::Renderer() :
 	mExtensions(0),
 	mStateFlags( 1 << RSF_LINE_SMOOTH ),
 	mQuadsSupported( true ),
-	mBlendEnabled( false ),
 	mQuadVertexs( 4 ),
 	mLineWidth( 1 ),
 	mCurVAO( 0 ),
@@ -343,38 +343,10 @@ void Renderer::viewport( int x, int y, int width, int height ) {
 }
 
 void Renderer::disable ( unsigned int cap ) {
-	switch ( cap )
-	{
-		case GL_BLEND:
-		{
-			if ( !mBlendEnabled ) {
-				return;
-			}
-
-			mBlendEnabled = false;
-
-			break;
-		}
-	}
-
 	glDisable( cap );
 }
 
 void Renderer::enable( unsigned int cap ) {
-	switch ( cap )
-	{
-		case GL_BLEND:
-		{
-			if ( mBlendEnabled ) {
-				return;
-			}
-
-			mBlendEnabled = true;
-
-			break;
-		}
-	}
-
 	glEnable( cap );
 }
 

@@ -31,6 +31,8 @@ eephysics*
 eestrobe*
 eeiv*
 eehttp-request*
+eepp-TextureAtlasEditor*
+eepp-UIEditor*
 ee.tag
 log.log
 external_projects.lua
@@ -40,10 +42,12 @@ external_projects.lua
 .*\.DS_Store$
 .*.pdb$
 syntax: glob
-src/eepp/helper/SDL2/include/SDL2
+src/thirdparty/SDL2/include/SDL2
 projects/ios/eepp.app/assets
 projects/ios/eepp.app/eepp
 bin/libeepp-debug.dylib
 bin/libeepp.dylib
 *.iml
 .idea
+eepp.kdev4
+bin/eepp-MapEditor*

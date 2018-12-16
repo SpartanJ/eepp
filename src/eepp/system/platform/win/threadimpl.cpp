@@ -1,5 +1,6 @@
 #include <eepp/system/platform/win/threadimpl.hpp>
 #include <eepp/system/thread.hpp>
+#include <eepp/core/debug.hpp>
 #include <iostream>
 
 namespace EE { namespace System { namespace Platform {

@@ -14,20 +14,20 @@ GameObjectVirtual::GameObjectVirtual( Uint32 DataId, MapLayer * Layer, const Uin
 	mDataId( DataId ),
 	mPos( Pos ),
 	mLayer( NULL ),
-	mSubTexture( NULL )
+	mTextureRegion( NULL )
 {
 }
 
-GameObjectVirtual::GameObjectVirtual( SubTexture * SubTexture, MapLayer * Layer, const Uint32& Flags, Uint32 Type, const Vector2f& Pos ) :
+GameObjectVirtual::GameObjectVirtual( TextureRegion * TextureRegion, MapLayer * Layer, const Uint32& Flags, Uint32 Type, const Vector2f& Pos ) :
 	GameObject( Flags, Layer ),
 	mType( Type ),
 	mDataId( 0 ),
 	mPos( Pos ),
 	mLayer( Layer ),
-	mSubTexture( SubTexture )
+	mTextureRegion( TextureRegion )
 {
-	if ( NULL != SubTexture )
-		mDataId = SubTexture->getId();
+	if ( NULL != TextureRegion )
+		mDataId = TextureRegion->getId();
 }
 
 GameObjectVirtual::~GameObjectVirtual() {
@@ -46,8 +46,8 @@ Uint32 GameObjectVirtual::getRealType() const {
 }
 
 Sizei GameObjectVirtual::getSize() {
-	if ( NULL != mSubTexture )
-		return Sizei( (Int32)mSubTexture->getDestSize().x, (Int32)mSubTexture->getDestSize().y );
+	if ( NULL != mTextureRegion )
+		return Sizei( (Int32)mTextureRegion->getDestSize().x, (Int32)mTextureRegion->getDestSize().y );
 
 	if ( NULL != mLayer )
 		return mLayer->getMap()->getTileSize();
@@ -56,7 +56,7 @@ Sizei GameObjectVirtual::getSize() {
 }
 
 void GameObjectVirtual::draw() {
-	if ( NULL != mSubTexture ) {
+	if ( NULL != mTextureRegion ) {
 		if ( mLayer->getMap()->getLightsEnabled() && mLayer->getLightsEnabled() ) {
 			MapLightManager * LM = mLayer->getMap()->getLightManager();
 
@@ -64,7 +64,7 @@ void GameObjectVirtual::draw() {
 				Vector2i Tile = reinterpret_cast<TileMapLayer*> ( mLayer )->getCurrentTile();
 
 				if ( LM->isByVertex() ) {
-					mSubTexture->draw(
+					mTextureRegion->draw(
 						mPos.x,
 						mPos.y,
 						getRotation(),
@@ -77,28 +77,28 @@ void GameObjectVirtual::draw() {
 						getRenderModeFromFlags()
 					);
 				} else {
-					mSubTexture->draw( mPos.x, mPos.y, *LM->getTileColor( Tile ), getRotation(), Vector2f::One, getBlendModeFromFlags(), getRenderModeFromFlags() );
+					mTextureRegion->draw( mPos.x, mPos.y, *LM->getTileColor( Tile ), getRotation(), Vector2f::One, getBlendModeFromFlags(), getRenderModeFromFlags() );
 				}
 			} else {
 				if ( LM->isByVertex() ) {
-					mSubTexture->draw(
+					mTextureRegion->draw(
 						mPos.x,
 						mPos.y,
 						getRotation(),
 						Vector2f::One,
 						LM->getColorFromPos( Vector2f( mPos.x, mPos.y ) ),
-						LM->getColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->getDestSize().y ) ),
-						LM->getColorFromPos( Vector2f( mPos.x + mSubTexture->getDestSize().x, mPos.y + mSubTexture->getDestSize().y ) ),
-						LM->getColorFromPos( Vector2f( mPos.x + mSubTexture->getDestSize().x, mPos.y ) ),
+						LM->getColorFromPos( Vector2f( mPos.x, mPos.y + mTextureRegion->getDestSize().y ) ),
+						LM->getColorFromPos( Vector2f( mPos.x + mTextureRegion->getDestSize().x, mPos.y + mTextureRegion->getDestSize().y ) ),
+						LM->getColorFromPos( Vector2f( mPos.x + mTextureRegion->getDestSize().x, mPos.y ) ),
 						getBlendModeFromFlags(),
 						getRenderModeFromFlags()
 					);
 				} else {
-					mSubTexture->draw( mPos.x, mPos.y, LM->getColorFromPos( Vector2f( mPos.x, mPos.y ) ), getRotation(), Vector2f::One, BlendAlpha, getRenderModeFromFlags() );
+					mTextureRegion->draw( mPos.x, mPos.y, LM->getColorFromPos( Vector2f( mPos.x, mPos.y ) ), getRotation(), Vector2f::One, BlendAlpha, getRenderModeFromFlags() );
 				}
 			}
 		} else {
-			mSubTexture->draw( mPos.x, mPos.y, Color::White, getRotation(), Vector2f::One, getBlendModeFromFlags(), getRenderModeFromFlags() );
+			mTextureRegion->draw( mPos.x, mPos.y, Color::White, getRotation(), Vector2f::One, getBlendModeFromFlags(), getRenderModeFromFlags() );
 		}
 	} else {
 		Primitives P;

@@ -51,13 +51,13 @@ bool ResourceLoader::clear( const bool& ClearObjectsLoaded ) {
 
 		std::list<ObjectLoader *>::iterator it;
 
-		for ( it = mObjs.begin(); it != mObjs.end(); it++ )
+		for ( it = mObjs.begin(); it != mObjs.end(); ++it )
 			eeSAFE_DELETE( *it );
 
 		mObjs.clear();
 
 		if ( ClearObjectsLoaded ) {
-			for ( it = mObjsLoaded.begin(); it != mObjsLoaded.end(); it++ )
+			for ( it = mObjsLoaded.begin(); it != mObjsLoaded.end(); ++it )
 				eeSAFE_DELETE( *it );
 
 			mObjsLoaded.clear();
@@ -70,7 +70,7 @@ bool ResourceLoader::clear( const bool& ClearObjectsLoaded ) {
 }
 
 void ResourceLoader::load( ResLoadCallback Cb ) {
-	if ( Cb.IsSet() )
+	if ( Cb )
 		mLoadCbs.push_back( Cb );
 
 	load();
@@ -90,7 +90,7 @@ void ResourceLoader::load() {
 
 	Uint32 count = 0;
 
-	for ( it = mObjs.begin(); it != mObjs.end(); it++ ) {
+	for ( it = mObjs.begin(); it != mObjs.end(); ++it ) {
 		Obj = (*it);
 
 		if ( NULL != Obj ) {
@@ -121,7 +121,7 @@ void ResourceLoader::load() {
 		}
 	}
 
-	for ( it = ObjsErase.begin(); it != ObjsErase.end(); it++ ) {
+	for ( it = ObjsErase.begin(); it != ObjsErase.end(); ++it ) {
 		Obj = (*it);
 		mObjs.remove( Obj );
 		mObjsLoaded.push_back( Obj );
@@ -140,7 +140,7 @@ void ResourceLoader::unload() {
 	if ( mLoaded ) {
 		std::list<ObjectLoader *>::iterator it;
 
-		for ( it = mObjs.begin(); it != mObjs.end(); it++ ) {
+		for ( it = mObjs.begin(); it != mObjs.end(); ++it ) {
 			(*it)->unload();
 		}
 
@@ -163,7 +163,7 @@ void ResourceLoader::setLoaded() {
 	if ( mLoadCbs.size() ) {
 		std::list<ResLoadCallback>::iterator it;
 
-		for ( it = mLoadCbs.begin(); it != mLoadCbs.end(); it++ ) {
+		for ( it = mLoadCbs.begin(); it != mLoadCbs.end(); ++it ) {
 			(*it)( this );
 		}
 

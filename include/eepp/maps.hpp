@@ -3,8 +3,8 @@
 
 #include <eepp/maps/maplight.hpp>
 #include <eepp/maps/gameobject.hpp>
-#include <eepp/maps/gameobjectsubtexture.hpp>
-#include <eepp/maps/gameobjectsubtextureex.hpp>
+#include <eepp/maps/gameobjecttextureregion.hpp>
+#include <eepp/maps/gameobjecttextureregionex.hpp>
 #include <eepp/maps/gameobjectsprite.hpp>
 #include <eepp/maps/maplayer.hpp>
 #include <eepp/maps/tilemaplayer.hpp>

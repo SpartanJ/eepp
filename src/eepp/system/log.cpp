@@ -1,5 +1,6 @@
 #include <eepp/system/log.hpp>
 #include <cstdarg>
+#include <iostream>
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	#include <android/log.h>
@@ -88,7 +89,7 @@ void Log::openFS() {
 	if ( NULL == mFS ) {
 		std::string str = mFilePath + "log.log";
 
-		mFS = eeNew( IOStreamFile, ( str, std::ios::app | std::ios::out | std::ios::binary ) );
+		mFS = eeNew( IOStreamFile, ( str, "a" ) );
 	}
 }
 
@@ -189,7 +190,7 @@ void Log::removeLogReader( LogReaderInterface * reader ) {
 }
 
 void Log::writeToReaders( std::string& text ) {
-	for ( std::list<LogReaderInterface*>::iterator it = mReaders.begin(); it != mReaders.end(); it++ ) {
+	for ( std::list<LogReaderInterface*>::iterator it = mReaders.begin(); it != mReaders.end(); ++it ) {
 		(*it)->writeLog( text );
 	}
 }

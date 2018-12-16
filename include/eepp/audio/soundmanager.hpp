@@ -1,7 +1,6 @@
-#ifndef EE_AUDIOTSOUNDMANAGER_H
-#define EE_AUDIOTSOUNDMANAGER_H
+#ifndef EE_AUDIOT_SOUNDMANAGER_H
+#define EE_AUDIOT_SOUNDMANAGER_H
 
-#include <eepp/audio/base.hpp>
 #include <eepp/audio/sound.hpp>
 #include <eepp/audio/soundbuffer.hpp>
 
@@ -42,7 +41,7 @@ class tSoundManager {
 
 		/** Play the sound. This method will open a new channel if the channel seted for the sound is already playing.
 		**	@param id The sound id to play */
-		void play( const T& id );
+		Sound * play( const T& id );
 
 		/** Remove a sound from the sound manager.
 		**	@param id The sound id to remove */
@@ -161,7 +160,7 @@ Sound& tSoundManager<T>::operator[] ( const T& id ) {
 }
 
 template <typename T>
-void tSoundManager<T>::play( const T& id ) {
+Sound * tSoundManager<T>::play( const T& id ) {
 	typename std::map<T, sSound>::iterator it = tSounds.find( id );
 
 	if ( it != tSounds.end() ) {
@@ -170,16 +169,19 @@ void tSoundManager<T>::play( const T& id ) {
 
 		for ( Uint32 i = 0; i < tSize; i++ ) {
 			// If there is a free slot, use it.
-			if ( tSound->Snd[i].getState() != Sound::Playing ) {
+			if ( tSound->Snd[i].getStatus() != Sound::Playing ) {
 				tSound->Snd[i].play();
-				return;
+				return &tSound->Snd[i];
 			}
 		}
 
 		// Otherwise create a new one and play it.
 		tSound->Snd.push_back( Sound( tSound->Buf ) );
 		tSound->Snd[ tSize ].play();
+		return &tSound->Snd[ tSize ];
 	}
+
+	return NULL;
 }
 
 template <typename T>

@@ -1,6 +1,6 @@
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -15,19 +15,20 @@ UIScrollView::UIScrollView() :
 	mHScrollMode( UI_SCROLLBAR_AUTO ),
 	mVScroll( UIScrollBar::New( UI_VERTICAL ) ),
 	mHScroll( UIScrollBar::New( UI_HORIZONTAL ) ),
-	mContainer( UIControlAnim::New() ),
+	mContainer( UINode::New() ),
 	mScrollView( NULL ),
 	mSizeChangeCb( 0 )
 {
-	setFlags( UI_REPORT_SIZE_CHANGE_TO_CHILDS );
+	enableReportSizeChangeToChilds();
 
 	mVScroll->setParent( this );
 	mHScroll->setParent( this );
 	mContainer->setParent( this );
-	mContainer->setFlags( UI_CLIP_ENABLE | UI_REPORT_SIZE_CHANGE_TO_CHILDS );
+	mContainer->clipEnable();
+	mContainer->enableReportSizeChangeToChilds();
 
-	mVScroll->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIScrollView::onValueChangeCb ) );
-	mHScroll->addEventListener( UIEvent::OnValueChange, cb::Make1( this, &UIScrollView::onValueChangeCb ) );
+	mVScroll->addEventListener( Event::OnValueChange, cb::Make1( this, &UIScrollView::onValueChangeCb ) );
+	mHScroll->addEventListener( Event::OnValueChange, cb::Make1( this, &UIScrollView::onValueChangeCb ) );
 
 	applyDefaultTheme();
 }
@@ -51,12 +52,12 @@ void UIScrollView::onAlphaChange() {
 	mHScroll->setAlpha( mAlpha );
 	mContainer->setAlpha( mAlpha );
 
-	if ( NULL != mScrollView && mScrollView->isAnimated() )
-		reinterpret_cast<UIControlAnim*>( mScrollView )->setAlpha( mAlpha );
+	if ( NULL != mScrollView )
+		mScrollView->setAlpha( mAlpha );
 }
 
 void UIScrollView::onChildCountChange() {
-	UIControl * child = mChild;
+	Node * child = mChild;
 	bool found = false;
 
 	while ( NULL != child ) {
@@ -65,7 +66,7 @@ void UIScrollView::onChildCountChange() {
 			break;
 		}
 
-		child = child->getNextControl();
+		child = child->getNextNode();
 	}
 
 	if ( found ) {
@@ -78,10 +79,15 @@ void UIScrollView::onChildCountChange() {
 
 		child->setParent( mContainer );
 		mScrollView = child;
-		mSizeChangeCb = mScrollView->addEventListener( UIEvent::OnSizeChange, cb::Make1( this, &UIScrollView::onScrollViewSizeChange ) );
+		mSizeChangeCb = mScrollView->addEventListener( Event::OnSizeChange, cb::Make1( this, &UIScrollView::onScrollViewSizeChange ) );
 
 		containerUpdate();
 	}
+}
+
+void UIScrollView::onPaddingChange() {
+	containerUpdate();
+	UIWidget::onPaddingChange();
 }
 
 void UIScrollView::setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
@@ -125,7 +131,7 @@ UIScrollBar * UIScrollView::getHorizontalScrollBar() const {
 	return mHScroll;
 }
 
-UIControlAnim * UIScrollView::getContainer() const {
+UINode * UIScrollView::getContainer() const {
 	return mContainer;
 }
 
@@ -133,7 +139,7 @@ void UIScrollView::containerUpdate() {
 	if ( NULL == mScrollView )
 		return;
 
-	Sizei size = mSize;
+	Sizef size = mDpSize - mPadding;
 
 	if ( Exclusive == mViewType ) {
 		if ( mVScroll->isVisible() )
@@ -143,6 +149,7 @@ void UIScrollView::containerUpdate() {
 			size.y -= mHScroll->getSize().getHeight();
 	}
 
+	mContainer->setPosition( mPadding.Left, mPadding.Top );
 	mContainer->setSize( size );
 
 	if ( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) {
@@ -171,11 +178,11 @@ void UIScrollView::containerUpdate() {
 		mVScroll->setEnabled( visible );
 	}
 
-	mVScroll->setPosition( mSize.getWidth() - mVScroll->getSize().getWidth(), 0 );
-	mHScroll->setPosition( 0, mSize.getHeight() - mHScroll->getSize().getHeight() );
+	mVScroll->setPosition( mDpSize.getWidth() - mVScroll->getSize().getWidth() - mPadding.Right, mPadding.Top );
+	mHScroll->setPosition( mPadding.Left, mDpSize.getHeight() - mHScroll->getSize().getHeight() - mPadding.Bottom );
 
-	mVScroll->setSize( mVScroll->getSize().getWidth(), mSize.getHeight() );
-	mHScroll->setSize( mSize.getWidth() - ( mVScroll->isVisible() ? mVScroll->getSize().getWidth() : 0 ), mHScroll->getSize().getHeight() );
+	mVScroll->setSize( mVScroll->getSize().getWidth(), mDpSize.getHeight() - mPadding.Top - mPadding.Bottom );
+	mHScroll->setSize( mDpSize.getWidth() - mPadding.Left - mPadding.Right - ( mVScroll->isVisible() ? mVScroll->getSize().getWidth() : 0 ), mHScroll->getSize().getHeight() );
 
 	if ( mVScroll->isVisible() && 0 != mScrollView->getSize().getHeight() )
 		mVScroll->setPageStep( (Float)mContainer->getSize().getHeight() / (Float)mScrollView->getSize().getHeight() );
@@ -188,21 +195,27 @@ void UIScrollView::containerUpdate() {
 }
 
 void UIScrollView::updateScroll() {
+	if ( NULL == mScrollView )
+		return;
+
 	mScrollView->setPosition(
-		mHScroll->isVisible() ? -( mHScroll->getSlider()->getValue() * eemax( 0, mScrollView->getSize().getWidth() - mSize.getWidth() ) ) : 0 ,
-		mVScroll->isVisible() ? -( mVScroll->getSlider()->getValue() * eemax( 0, mScrollView->getSize().getHeight() - mSize.getHeight() ) ) : 0
+		mHScroll->isVisible() ? -( mHScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getWidth() - mDpSize.getWidth() ) ) : 0.f ,
+		mVScroll->isVisible() ? -( mVScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getHeight() - mDpSize.getHeight() ) ) : 0.f
 	);
 }
 
-void UIScrollView::onValueChangeCb( const UIEvent * Event ) {
+void UIScrollView::onValueChangeCb( const Event * Event ) {
 	updateScroll();
 }
 
-void UIScrollView::onScrollViewSizeChange(const UIEvent * Event) {
+void UIScrollView::onScrollViewSizeChange(const Event * Event) {
 	containerUpdate();
 }
 
 void UIScrollView::onTouchDragValueChange( Vector2f diff ) {
+	if ( NULL == mScrollView )
+		return;
+
 	if ( mVScroll->isEnabled() && 0 != mScrollView->getSize().getHeight() )
 		mVScroll->setValue( mVScroll->getValue() + ( -diff.y / (Float)( mScrollView->getSize().getHeight() ) ) );
 
@@ -212,53 +225,48 @@ void UIScrollView::onTouchDragValueChange( Vector2f diff ) {
 
 bool UIScrollView::isTouchOverAllowedChilds() {
 	bool ret = mViewType == Exclusive ? !mVScroll->isMouseOverMeOrChilds() && !mHScroll->isMouseOverMeOrChilds() : true;
-	return isMouseOverMeOrChilds() && mScrollView->isMouseOver() && ret;
+	return isMouseOverMeOrChilds() && mScrollView->isMouseOverMeOrChilds() && ret;
 }
 
-void UIScrollView::loadFromXmlNode( const pugi::xml_node& node ) {
-	beginPropertiesTransaction();
+bool UIScrollView::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UITouchDragableWidget::loadFromXmlNode( node );
+	if ( "type" == name ) {
+		std::string val( attribute.asString() );
+		String::toLowerInPlace( val );
 
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
+		if ( "inclusive" == val ) setViewType( Inclusive );
+		else if ( "exclusive" == val ) setViewType( Exclusive );
+	} else if ( "vscroll_mode" == name ) {
+		std::string val( attribute.asString() );
+		String::toLowerInPlace( val );
 
-		if ( "type" == name ) {
-			std::string val( ait->as_string() );
-			String::toLowerInPlace( val );
+		if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+		else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+		else if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
+	} else if ( "hscroll_mode" == name ) {
+		std::string val( attribute.asString() );
+		String::toLowerInPlace( val );
 
-			if ( "inclusive" == val ) setViewType( Inclusive );
-			else if ( "exclusive" == val ) setViewType( Exclusive );
-		} else if ( "vscroll_mode" == name ) {
-			std::string val( ait->as_string() );
-			String::toLowerInPlace( val );
+		if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+		else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
+		else if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
+	} else if ( "scrollbartype" == name ) {
+		std::string val( attribute.asString() );
+		String::toLowerInPlace( val );
 
-			if ( "on" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "off" == val ) setVerticalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
-		} else if ( "hscroll_mode" == name ) {
-			std::string val( ait->as_string() );
-			String::toLowerInPlace( val );
-
-			if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
-			else if ( "auto" == val ) setHorizontalScrollMode( UI_SCROLLBAR_AUTO );
-		} else if ( "scrollbartype" == name ) {
-			std::string val( ait->as_string() );
-			String::toLowerInPlace( val );
-
-			if ( "nobuttons" == val ) {
-				mVScroll->setScrollBarType( UIScrollBar::NoButtons );
-				mHScroll->setScrollBarType( UIScrollBar::NoButtons );
-			} else if ( "twobuttons" == val ) {
-				mVScroll->setScrollBarType( UIScrollBar::TwoButtons );
-				mHScroll->setScrollBarType( UIScrollBar::NoButtons );
-			}
+		if ( "nobuttons" == val ) {
+			mVScroll->setScrollBarType( UIScrollBar::NoButtons );
+			mHScroll->setScrollBarType( UIScrollBar::NoButtons );
+		} else if ( "twobuttons" == val ) {
+			mVScroll->setScrollBarType( UIScrollBar::TwoButtons );
+			mHScroll->setScrollBarType( UIScrollBar::NoButtons );
 		}
+	} else {
+		return UITouchDragableWidget::setAttribute( attribute );
 	}
 
-	endPropertiesTransaction();
+	return true;
 }
 
 }}

@@ -96,6 +96,10 @@ class Vector2 {
 
 		Vector2<T> floor();
 
+		Vector2<Float> asFloat();
+
+		Vector2<int> asInt();
+
 		T x;
 		T y;
 	private:
@@ -427,6 +431,17 @@ Vector2<T> Vector2<T>::ceil() {
 template <typename T>
 Vector2<T> Vector2<T>::floor() {
 	return Vector2<T>( eefloor( x ), eefloor( y ) );
+}
+
+
+template <typename T>
+Vector2<Float> Vector2<T>::asFloat() {
+	return Vector2<Float>( x, y );
+}
+
+template <typename T>
+Vector2<int> Vector2<T>::asInt() {
+	return Vector2<int>( x, y );
 }
 
 template <typename T>

@@ -2,6 +2,7 @@
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 
 #include <ft2build.h>
@@ -33,11 +34,17 @@ namespace {
 
 namespace EE { namespace Graphics {
 
-FontTrueType * FontTrueType::New( const std::string FontName ) {
+FontTrueType * FontTrueType::New( const std::string& FontName ) {
 	return eeNew( FontTrueType, ( FontName ) );
 }
 
-FontTrueType::FontTrueType( const std::string FontName ) :
+FontTrueType * FontTrueType::New( const std::string& FontName, const std::string& filename) {
+	FontTrueType * fontTrueType = New( FontName );
+	fontTrueType->loadFromFile( filename );
+	return fontTrueType;
+}
+
+FontTrueType::FontTrueType( const std::string& FontName ) :
 	Font( FONT_TYPE_TTF, FontName ),
 	mLibrary  (NULL),
 	mFace     (NULL),
@@ -235,7 +242,7 @@ bool FontTrueType::loadFromPack( Pack * pack, std::string filePackPath ) {
 	mMemCopy.clear();
 
 	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, mMemCopy ) ) {
-		Ret = loadFromMemory( mMemCopy.Data, mMemCopy.DataSize );
+		Ret = loadFromMemory( mMemCopy.data, mMemCopy.size );
 	}
 
 	return Ret;
@@ -463,7 +470,7 @@ Glyph FontTrueType::loadGlyph(Uint32 codePoint, unsigned int characterSize, bool
 			FT_Stroker stroker = static_cast<FT_Stroker>(mStroker);
 
 			FT_Stroker_Set(stroker, static_cast<FT_Fixed>(outlineThickness * static_cast<Float>(1 << 6)), FT_STROKER_LINECAP_ROUND, FT_STROKER_LINEJOIN_ROUND, 0);
-			FT_Glyph_Stroke(&glyphDesc, stroker, false);
+			FT_Glyph_Stroke(&glyphDesc, stroker, true);
 		}
 	}
 
@@ -679,7 +686,7 @@ FontTrueType::Page::Page() :
 			image.setPixel(x, y, Color(255, 255, 255, 255));
 
 	// Create the texture
-	Uint32 texId = TextureFactory::instance()->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(), image.getChannels(), false, Texture::ClampMode::CLAMP_TO_EDGE, false, true );
+	Uint32 texId = TextureFactory::instance()->loadFromPixels( image.getPixelsPtr(), image.getWidth(), image.getHeight(), image.getChannels(), false, Texture::ClampMode::ClampToEdge, false, true );
 	texture = TextureFactory::instance()->getTexture( texId );
 }
 

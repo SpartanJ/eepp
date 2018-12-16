@@ -12,8 +12,11 @@ using namespace EE::System;
 
 #include <eepp/graphics/rendermode.hpp>
 
+struct NSVGimage;
+
 namespace EE { namespace System {
 class Pack;
+class IOStream;
 }}
 
 namespace EE { namespace Graphics {
@@ -61,11 +64,33 @@ class EE_API Image {
 			SAVE_TYPE_JPG		= 4
 		};
 
-		/** @return The current Jpeg save quality */
-		static Uint32 jpegQuality();
+		class FormatConfiguration
+		{
+			public:
+				FormatConfiguration() :
+					mSvgScale(1.f),
+					mJpegSaveQuality(85)
+				{}
 
-		/** Set the save quality of Jpeg files ( between 0 and 100 )  */
-		static void jpegQuality( Uint32 level );
+				/** @return The current Jpeg save quality */
+				const Uint32& jpegSaveQuality() const { return mJpegSaveQuality; }
+
+				/** Set the save quality of Jpeg files ( between 0 and 100 )  */
+				void jpegSaveQuality( Uint32 level ) {
+					level = eemin<Uint32>( level, 100 );
+					mJpegSaveQuality = level;
+				}
+
+				/** @return The current SVG default scale */
+				const Float& svgScale() const { return mSvgScale; }
+
+				/** Set the SVG default scale */
+				void svgScale( Float scale ) { mSvgScale = scale; }
+
+			protected:
+				Float mSvgScale;
+				Uint32 mJpegSaveQuality;
+		};
 
 		/** @return The File Extension of a Save Type */
 		static std::string saveTypeToExtension( const Int32& Format );
@@ -82,7 +107,7 @@ class EE_API Image {
 		* @param height the var to store the image height
 		* @param channels the var to store the image channels count
 		*/
-		static bool getInfo( const std::string& path, int * width, int * height, int * channels );
+		static bool getInfo( const std::string& path, int * width, int * height, int * channels, const FormatConfiguration& imageFormatConfiguration = FormatConfiguration() );
 
 		/** @return True if the file is a valid image ( reads the file header to know if the file is an image file format supported )
 		* @param path the image path
@@ -100,7 +125,7 @@ class EE_API Image {
 		Image();
 
 		/** Copy a image data to create the new image */
-		Image( Graphics::Image * image );
+		explicit Image( Graphics::Image * image );
 
 		/** Use an existing image ( and appropriates the data passed ) */
 		Image( Uint8* data, const unsigned int& width, const unsigned int& height, const unsigned int& channels );
@@ -114,15 +139,29 @@ class EE_API Image {
 		/** Load an image from path
 		* @param Path The path to the file.
 		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
+		* @param formatConfiguration Set the format configuration if needed
 		*/
-		Image( std::string Path, const unsigned int& forceChannels = 0 );
+		Image( std::string Path, const unsigned int& forceChannels = 0, const FormatConfiguration& formatConfiguration = FormatConfiguration() );
+
+		/** Load a compressed image from memory
+		* @param imageData The image data
+		* @param imageDataSize The image size
+		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
+		*/
+		Image( const Uint8* imageData, const unsigned int& imageDataSize, const unsigned int& forceChannels = 0, const FormatConfiguration& formatConfiguration = FormatConfiguration() );
 
 		/** Load an image from pack
 		* @param Pack The pack file to use to load the image.
 		* @param FilePackPath The path of the file inside the pack file.
 		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
 		*/
-		Image( Pack * Pack, std::string FilePackPath, const unsigned int& forceChannels = 0 );
+		Image( Pack * Pack, std::string FilePackPath, const unsigned int& forceChannels = 0, const FormatConfiguration& formatConfiguration = FormatConfiguration() );
+
+		/** Load an image from stream
+		* @param stream The stream to read the image
+		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
+		*/
+		Image( IOStream& stream, const unsigned int& forceChannels = 0, const FormatConfiguration& formatConfiguration = FormatConfiguration() );
 
 		virtual ~Image();
 
@@ -218,9 +257,13 @@ class EE_API Image {
 
 		/** Overload the assigment operator to ensure the image copy */
 		Graphics::Image& operator =(const Image& right);
-	protected:
-		static Uint32 sJpegQuality;
 
+		/** Set the image format configuration */
+		void setImageFormatConfiguration( const FormatConfiguration& imageFormatConfiguration );
+
+		/** @return The image format configuration */
+		const FormatConfiguration& getImageFormatConfiguration() const;
+	protected:
 		Uint8 *			mPixels;
 		unsigned int 	mWidth;
 		unsigned int 	mHeight;
@@ -228,10 +271,13 @@ class EE_API Image {
 		Uint32			mSize;
 		bool			mAvoidFree;
 		bool			mLoadedFromStbi;
+		FormatConfiguration mFormatConfiguration;
 
 		void 			allocate( const Uint32& size, Color DefaultColor = Color(0,0,0,0), bool memsetData = true );
 
 		void			loadFromPack( Pack * Pack, const std::string& FilePackPath );
+
+		void			svgLoad( NSVGimage * image );
 };
 
 }}

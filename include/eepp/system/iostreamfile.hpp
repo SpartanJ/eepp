@@ -2,8 +2,6 @@
 #define EE_SYSTEMCIOSTREAMFILE_HPP
 
 #include <eepp/system/iostream.hpp>
-#include <iostream>
-#include <fstream>
 
 namespace EE { namespace System {
 
@@ -14,7 +12,7 @@ class EE_API IOStreamFile : public IOStream {
 		**	@param path File to open from path
 		**	@param mode The open mode that it will be used for the file ( default read-binary )
 		**/
-		IOStreamFile( const std::string& path, std::ios_base::openmode mode = std::ios::in | std::ios::binary );
+		IOStreamFile(const std::string& path, const char * modes = "rb" );
 
 		virtual ~IOStreamFile();
 
@@ -34,7 +32,7 @@ class EE_API IOStreamFile : public IOStream {
 		** This effectively means that all unwritten characters in the buffer are written to its controlled output sequence as soon as possible. */
 		void flush();
 	protected:
-		std::fstream	mFS;
+		std::FILE*		mFS;
 		ios_size		mSize;
 };
 

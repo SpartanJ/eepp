@@ -34,12 +34,13 @@ std::string PlatformHelperSDL2::getApkPath() {
 	if ( "" == apkPath ) {
 		jmethodID mid;
 		jobject context;
-		jobject fileObject;
+		jstring fileObject;
 		const char *path;
 
 		JNIEnv *env = (JNIEnv*)getJNIEnv();
 
-		jclass ActivityClass = env->GetObjectClass((jobject)getActivity());
+		jobject activity = (jobject)getActivity();
+		jclass ActivityClass = env->GetObjectClass(activity);
 
 		// context = SDLActivity.getContext();
 		mid = env->GetStaticMethodID(ActivityClass,"getContext","()Landroid/content/Context;");
@@ -49,12 +50,16 @@ std::string PlatformHelperSDL2::getApkPath() {
 		// fileObj = context.getFilesDir();
 		mid = env->GetMethodID(env->GetObjectClass(context),"getPackageCodePath", "()Ljava/lang/String;");
 
-		fileObject = env->CallObjectMethod(context, mid);
+		fileObject = (jstring)env->CallObjectMethod(context, mid);
 
 		jboolean isCopy;
-		path = env->GetStringUTFChars((jstring)fileObject, &isCopy);
+		path = env->GetStringUTFChars(fileObject, &isCopy);
 
 		apkPath = std::string( path );
+
+		env->ReleaseStringUTFChars(fileObject, path);
+		env->DeleteLocalRef(activity);
+		env->DeleteLocalRef(ActivityClass);
 	}
 
 	return apkPath;

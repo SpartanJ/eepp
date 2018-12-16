@@ -19,7 +19,7 @@ class EE_API UILoader : public UIWidget {
 
 		virtual void draw();
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		UILoader * setOutlineThickness( const Float& thickness );
 
@@ -49,7 +49,7 @@ class EE_API UILoader : public UIWidget {
 
 		UILoader * setAnimationSpeed( const Float& animationSpeed );
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node);
+		virtual bool setAttribute( const NodeAttribute& attribute );
 
 		Float getArcStartAngle() const;
 
@@ -68,7 +68,11 @@ class EE_API UILoader : public UIWidget {
 		IntPtr mOp;
 		bool mIndeterminate;
 
+		virtual void onAutoSize();
+
 		virtual void onSizeChange();
+
+		virtual void onPaddingChange();
 };
 
 }}

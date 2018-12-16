@@ -21,7 +21,7 @@ Pack * PackManager::exists( std::string& path ) {
 
 	std::list<Pack*>::iterator it;
 
-	for ( it = mResources.begin(); it != mResources.end(); it++ ) {
+	for ( it = mResources.begin(); it != mResources.end(); ++it ) {
 		if ( -1 != (*it)->exists( tpath ) ) {
 			if ( path.size() != tpath.size() ) {
 				path = tpath;
@@ -37,7 +37,7 @@ Pack * PackManager::exists( std::string& path ) {
 Pack * PackManager::getPackByPath( std::string path ) {
 	std::list<Pack*>::iterator it;
 
-	for ( it = mResources.begin(); it != mResources.end(); it++ ) {
+	for ( it = mResources.begin(); it != mResources.end(); ++it ) {
 		if ( path == (*it)->getPackPath() ) {
 			return (*it);
 		}

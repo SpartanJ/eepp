@@ -38,18 +38,18 @@ const char * EEGL3_PLANES_NAME[] = {
 	"dgl_ClipPlane[5]"
 };
 
-const GLchar * EEGL3_SHADER_BASE_VS =
-#include "shaders/basegl3.vert"
+#ifdef EE_GLES2
+const GLchar * GL3_SHADER_HEAD = "precision mediump float;\nprecision lowp int;\n";
+#else
+const GLchar * GL3_SHADER_HEAD = "#version 120\n";
+#endif
 
-const GLchar * EEGL3_SHADER_BASE_FS =
-#include "shaders/basegl3.frag"
+#include "shaders/basegl3.vert.h"
+
+#include "shaders/basegl3.frag.h"
 
 RendererGL3::RendererGL3() :
-	mProjectionMatrix_id(0),
-	mModelViewMatrix_id(0),
-	mCurrentMode(0),
-	mCurShader(NULL),
-	mShaderPrev(NULL),
+	RendererGLShader(),
 	mTexActive(1),
 	mTexActiveLoc(-1),
 	mPointSpriteLoc(-1),
@@ -62,16 +62,10 @@ RendererGL3::RendererGL3() :
 	mQuadsSupported		= false;
 	mQuadVertexs		= 6;
 #endif
-
-	mStack = eeNew( MatrixStack, () );
-	mStack->mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
-	mStack->mModelViewMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
-
 	Renderer::enable( GL_VERTEX_PROGRAM_POINT_SIZE );
 }
 
 RendererGL3::~RendererGL3() {
-	eeSAFE_DELETE( mStack );
 }
 
 EEGL_version RendererGL3::version() {
@@ -88,8 +82,11 @@ void RendererGL3::init() {
 
 		Renderer::init();
 
-		std::string vs( EEGL3_SHADER_BASE_VS );
-		std::string fs( EEGL3_SHADER_BASE_FS );
+		std::string vs( GL3_SHADER_HEAD );
+		std::string fs( GL3_SHADER_HEAD );
+
+		vs += EEGL3_SHADER_BASE_VS;
+		fs += EEGL3_SHADER_BASE_FS;
 
 		mBaseVertexShader = vs;
 
@@ -169,6 +166,7 @@ void RendererGL3::setShader( ShaderProgram * Shader ) {
 	mCurShader				= Shader;
 	mProjectionMatrix_id	= mCurShader->getUniformLocation( "dgl_ProjectionMatrix" );
 	mModelViewMatrix_id		= mCurShader->getUniformLocation( "dgl_ModelViewMatrix" );
+	mTextureMatrix_id		= mCurShader->getUniformLocation( "dgl_TextureMatrix" );
 	mTexActiveLoc			= mCurShader->getUniformLocation( "dgl_TexActive" );
 	mPointSpriteLoc			= mCurShader->getUniformLocation( "dgl_PointSpriteActive" );
 	mClippingEnabledLoc		= mCurShader->getUniformLocation( "dgl_ClippingEnabled" );
@@ -201,6 +199,8 @@ void RendererGL3::setShader( ShaderProgram * Shader ) {
 
 	unsigned int CM = mCurrentMode;
 
+	matrixMode( GL_TEXTURE );
+	updateMatrix();
 	matrixMode( GL_PROJECTION );
 	updateMatrix();
 	matrixMode( GL_MODELVIEW );
@@ -424,127 +424,6 @@ void RendererGL3::planeStateCheck( bool tryEnable ) {
 	}
 }
 
-void RendererGL3::updateMatrix() {
-	switch ( mCurrentMode ) {
-		case GL_PROJECTION:
-		{
-			if ( -1 != mProjectionMatrix_id ) {
-				mCurShader->setUniformMatrix( mProjectionMatrix_id, &mStack->mProjectionMatrix.top()[0][0] );
-			}
-
-			break;
-		}
-		case GL_MODELVIEW:
-		{
-			if ( -1 != mModelViewMatrix_id ) {
-				mCurShader->setUniformMatrix( mModelViewMatrix_id, &mStack->mModelViewMatrix.top()[0][0] );
-			}
-
-			break;
-		}
-	}
-}
-
-void RendererGL3::pushMatrix() {
-	mStack->mCurMatrix->push( mStack->mCurMatrix->top() );
-	updateMatrix();
-}
-
-void RendererGL3::popMatrix() {
-	mStack->mCurMatrix->pop();
-	updateMatrix();
-}
-
-void RendererGL3::loadIdentity() {
-	mStack->mCurMatrix->top() = glm::mat4(1.0);
-	updateMatrix();
-}
-
-void RendererGL3::multMatrixf ( const float * m ) {
-	mStack->mCurMatrix->top() *= toGLMmat4( m );
-	updateMatrix();
-}
-
-void RendererGL3::translatef( float x, float y, float z ) {
-	mStack->mCurMatrix->top() *= glm::translate( glm::vec3( x, y, z ) );
-	updateMatrix();
-}
-
-void RendererGL3::rotatef( float angle, float x, float y, float z ) {
-	mStack->mCurMatrix->top() *= glm::rotate( angle, glm::vec3( x, y, z ) );
-	updateMatrix();
-}
-
-void RendererGL3::scalef( float x, float y, float z ) {
-	mStack->mCurMatrix->top() *= glm::scale( glm::vec3( x, y, z ) );
-	updateMatrix();
-}
-
-void RendererGL3::ortho( float left, float right, float bottom, float top, float zNear, float zFar ) {
-	mStack->mCurMatrix->top() *= glm::ortho( left, right, bottom, top , zNear, zFar );
-	updateMatrix();
-}
-
-void RendererGL3::lookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ ) {
-	mStack->mCurMatrix->top() *= glm::lookAt( glm::vec3(eyeX, eyeY, eyeZ), glm::vec3(centerX, centerY, centerZ), glm::vec3(upX, upY, upZ) );
-	updateMatrix();
-}
-
-void RendererGL3::perspective ( float fovy, float aspect, float zNear, float zFar ) {
-	mStack->mCurMatrix->top() *= glm::perspective( fovy, aspect, zNear, zFar );
-	updateMatrix();
-}
-
-void RendererGL3::loadMatrixf( const float * m ) {
-	mStack->mCurMatrix->top() = toGLMmat4( m );
-	updateMatrix();
-}
-
-void RendererGL3::frustum( float left, float right, float bottom, float top, float near_val, float far_val ) {
-	mStack->mCurMatrix->top() *= glm::frustum( left, right, bottom, top, near_val, far_val );
-	updateMatrix();
-}
-
-void RendererGL3::getCurrentMatrix( unsigned int mode, float * m ) {
-	switch ( mode ) {
-		case GL_PROJECTION:
-		case GL_PROJECTION_MATRIX:
-		{
-			fromGLMmat4( mStack->mProjectionMatrix.top(), m );
-			break;
-		}
-		case GL_MODELVIEW:
-		case GL_MODELVIEW_MATRIX:
-		{
-			fromGLMmat4( mStack->mModelViewMatrix.top(), m );
-			break;
-		}
-	}
-}
-
-unsigned int RendererGL3::getCurrentMatrixMode() {
-	return mCurrentMode;
-}
-
-void RendererGL3::matrixMode(unsigned int mode) {
-	mCurrentMode = mode;
-
-	switch ( mCurrentMode ) {
-		case GL_PROJECTION:
-		case GL_PROJECTION_MATRIX:
-		{
-			mStack->mCurMatrix = &mStack->mProjectionMatrix;
-			break;
-		}
-		case GL_MODELVIEW:
-		case GL_MODELVIEW_MATRIX:
-		{
-			mStack->mCurMatrix = &mStack->mModelViewMatrix;
-			break;
-		}
-	}
-}
-
 void RendererGL3::clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	Rectf r( x, y, x + Width, y + Height );
 
@@ -616,36 +495,6 @@ void RendererGL3::clientActiveTexture( unsigned int texture ) {
 
 std::string RendererGL3::getBaseVertexShader() {
 	return mBaseVertexShader;
-}
-
-int RendererGL3::project( float objx, float objy, float objz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *winx, float *winy, float *winz ) {
-	glm::vec3 tv3( glm::project( glm::vec3( objx, objy, objz ), toGLMmat4( modelMatrix ), toGLMmat4( projMatrix ), glm::vec4( viewport[0], viewport[1], viewport[2], viewport[3] ) ) );
-
-	if ( NULL != winx )
-		*winx = tv3.x;
-
-	if ( NULL != winy )
-		*winy = tv3.y;
-
-	if ( NULL != winz )
-		*winz = tv3.z;
-
-	return GL_TRUE;
-}
-
-int RendererGL3::unProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz ) {
-	glm::vec3 tv3( glm::unProject( glm::vec3( winx, winy, winz ), toGLMmat4( modelMatrix ), toGLMmat4( projMatrix ), glm::vec4( viewport[0], viewport[1], viewport[2], viewport[3] ) ) );
-
-	if ( NULL != objx )
-		*objx = tv3.x;
-
-	if ( NULL != objy )
-		*objy = tv3.y;
-
-	if ( NULL != objz )
-		*objz = tv3.z;
-
-	return GL_TRUE;
 }
 
 }}

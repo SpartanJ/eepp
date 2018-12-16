@@ -28,7 +28,7 @@ UITabWidgetStyleConfig UIThemeDefault::getTabWidgetStyleConfig() {
 	tabWidgetStyleConfig.TabSeparation = -1;
 	tabWidgetStyleConfig.FontSelectedColor = Color( 255, 255, 255, 255 );
 	tabWidgetStyleConfig.DrawLineBelowTabs = true;
-	tabWidgetStyleConfig.LineBelowTabsColor = Color( 0, 0, 0, 255 );
+	tabWidgetStyleConfig.LineBelowTabsColor = Color( "#2f3030" );
 	tabWidgetStyleConfig.LineBelowTabsYOffset = -1;
 	return tabWidgetStyleConfig;
 }
@@ -75,7 +75,7 @@ UISliderStyleConfig UIThemeDefault::getSliderStyleConfig() {
 UITooltipStyleConfig UIThemeDefault::getTooltipStyleConfig() {
 	UITooltipStyleConfig tooltipStyleConfig = UITheme::getTooltipStyleConfig();
 	tooltipStyleConfig.FontColor = Color( 0, 0, 0, 255 );
-	tooltipStyleConfig.Padding = Rect( 4, 6, 4, 6 );
+	tooltipStyleConfig.Padding = Rectf( 4, 6, 4, 6 );
 	return tooltipStyleConfig;
 }
 

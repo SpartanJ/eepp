@@ -15,18 +15,33 @@ Interpolation2d::Interpolation2d() :
 	mCurPoint(0),
 	mCurTime(Time::Zero),
 	mSpeed(1.3f),
-	mOnPathEndCallback(NULL),
-	mOnStepCallback(NULL)
+	mOnPathEndCallback(),
+	mOnStepCallback()
+{
+}
+
+Interpolation2d::Interpolation2d( std::vector<Point2d> points ) :
+	mData(0),
+	mType(Ease::Linear),
+	mEnable(false),
+	mUpdate(true),
+	mLoop(false),
+	mEnded(false),
+	mTotDist(0.f),
+	mCurPoint(0),
+	mCurTime(Time::Zero),
+	mSpeed(1.3f),
+	mPoints(points),
+	mOnPathEndCallback(),
+	mOnStepCallback()
 {
 }
 
 Interpolation2d::~Interpolation2d() {
 }
 
-Interpolation2d& Interpolation2d::start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback ) {
+Interpolation2d& Interpolation2d::start() {
 	mEnable				= true;
-	mOnPathEndCallback	= PathEndCallback;
-	mOnStepCallback		= StepCallback;
 
 	if ( mPoints.size() ) {
 		mActP = &mPoints[ 0 ];
@@ -39,6 +54,13 @@ Interpolation2d& Interpolation2d::start( OnPathEndCallback PathEndCallback, OnSt
 		mEnable = false;
 	}
 
+	return *this;
+}
+
+Interpolation2d& Interpolation2d::start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback ) {
+	start();
+	mOnPathEndCallback	= PathEndCallback;
+	mOnStepCallback		= StepCallback;
 	return *this;
 }
 
@@ -65,8 +87,8 @@ Interpolation2d& Interpolation2d::reset() {
 	mCurTime = Time::Zero;
 	mUpdate = true;
 	mEnded = false;
-	mOnPathEndCallback = NULL;
-	mOnStepCallback = NULL;
+	mOnPathEndCallback = OnPathEndCallback();
+	mOnStepCallback = OnStepCallback();
 
 	if ( mPoints.size() )
 		mCurPos = mPoints[0].p;
@@ -179,26 +201,26 @@ void Interpolation2d::update( const Time& Elapsed ) {
 			if ( mCurPoint + 1 < mPoints.size() ) {
 				mNexP = &mPoints[ mCurPoint + 1 ];
 
-				if ( mOnStepCallback.IsSet() )
+				if ( mOnStepCallback )
 					mOnStepCallback(*this);
 			} else {
-				if ( mOnStepCallback.IsSet() )
+				if ( mOnStepCallback )
 					mOnStepCallback(*this);
 
 				if ( mLoop ) {
 					mNexP = &mPoints[ 0 ];
 
-					if ( mOnPathEndCallback.IsSet() )
+					if ( mOnPathEndCallback )
 						mOnPathEndCallback(*this);
 				} else {
 					mEnable = false;
 					mEnded = true;
 
-					if ( mOnPathEndCallback.IsSet() ) {
+					if ( mOnPathEndCallback ) {
 						mOnPathEndCallback(*this);
 
 						if ( !mEnable )
-							mOnPathEndCallback.Reset();
+							mOnPathEndCallback = nullptr;
 					}
 					return;
 				}
@@ -293,6 +315,16 @@ const Uint32& Interpolation2d::getCurrentPositionIndex() const {
 
 const std::vector<Point2d>& Interpolation2d::getPoints() const {
 	return mPoints;
+}
+
+std::vector<Point2d> Interpolation2d::getReversePoints() {
+	std::vector<Point2d> reversed;
+
+	for ( auto it = mPoints.rbegin(); it != mPoints.rend(); ++it ) {
+		reversed.push_back( *it );
+	}
+
+	return reversed;
 }
 
 const Float& Interpolation2d::getSpeed() const {

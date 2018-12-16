@@ -28,15 +28,15 @@ class EE_API TileMap {
 	public:
 		typedef std::map<std::string, std::string>	PropertiesMap;
 		typedef std::list<std::string>				GOTypesList;		//! Special object types used in this map
-		typedef cb::Callback4< GameObject *, const Uint32&, const Uint32&, MapLayer *, const Uint32&>		CreateGOCb;
-		typedef cb::Callback0<void>	MapDrawCb;
-		typedef cb::Callback0<void> MapUpdateCb;
+		typedef std::function< GameObject *( const Uint32&, const Uint32&, MapLayer *, const Uint32& )>		CreateGOCb;
+		typedef std::function<void()>	MapDrawCb;
+		typedef std::function<void()> MapUpdateCb;
 
 		TileMap();
 
 		virtual ~TileMap();
 
-		virtual void create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags = 0, Sizei viewSize = Sizei( 800, 600 ), EE::Window::Window * Window = NULL );
+		virtual void create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags = 0, Sizef viewSize = Sizef( 800, 600 ), EE::Window::Window * Window = NULL );
 
 		virtual MapLayer * addLayer( Uint32 Type, Uint32 flags, std::string name );
 
@@ -72,9 +72,9 @@ class EE_API TileMap {
 
 		const Uint32& getMaxLayers() const;
 
-		const Sizei& getViewSize() const;
+		const Sizef& getViewSize() const;
 
-		void setViewSize( const Sizei& viewSize );
+		void setViewSize( const Sizef& viewSize );
 
 		const Vector2f& getOffset() const;
 
@@ -136,7 +136,11 @@ class EE_API TileMap {
 
 		Vector2i getMouseTilePosCoords();
 
+		Vector2f getMouseTilePosCoordsf();
+
 		Vector2i getTileCoords( const Vector2i& TilePos );
+
+		Vector2f getTileCoords( const Vector2f& TilePos );
 
 		const Vector2i& getRealMouseTilePos() const;
 
@@ -251,7 +255,7 @@ class EE_API TileMap {
 		Sizei			mSize;
 		Sizei			mPixelSize;
 		Sizei			mTileSize;
-		Sizei			mViewSize;
+		Sizef			mViewSize;
 		Vector2f		mOffset;
 		Vector2i		mScreenPos;
 		Vector2i		mStartTile;

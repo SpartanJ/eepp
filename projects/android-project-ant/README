@@ -1,3 +1,0 @@
-Create a symbolic link to the assets folder in this current folder ( call assets.sh or ln -s ../../assets ./assets )
-
-If you are in Windows and you don't know how to make the symbolic link, just copy & paste the assets folder.

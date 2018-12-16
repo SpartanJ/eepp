@@ -2,8 +2,9 @@
 #define EE_WINDOWCWINDOW_HPP
 
 #include <eepp/window/base.hpp>
-#include <eepp/window/view.hpp>
+#include <eepp/graphics/view.hpp>
 #include <eepp/graphics/image.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 
 namespace EE { namespace Window {
 
@@ -150,7 +151,8 @@ class DisplayMode {
 
 class EE_API Window {
 	public:
-		typedef cb::Callback1<void, Window*>			WindowResizeCallback;
+		typedef std::function<void( Window* )>			WindowResizeCallback;
+		typedef std::function<bool( Window* )>			WindowRequestCloseCallback;
 
 		Window( WindowSettings Settings, ContextSettings Context, Clipboard * Clipboard, Input * Input, CursorManager * CursorManager );
 		
@@ -217,6 +219,9 @@ class EE_API Window {
 		/** @return The window size */
 		virtual Sizei getSize();
 
+		/** @return The window center point */
+		Vector2f getCenter();
+
 		/** @return The resolutions that support the video card */
 		virtual std::vector<DisplayMode> getDisplayModes() const = 0;
 
@@ -264,7 +269,10 @@ class EE_API Window {
 		virtual const Sizei& getDesktopResolution();
 
 		/** Center the window to the desktop ( if windowed ) */
-		virtual void centerToScreen();
+		virtual void centerToDisplay();
+
+		/** @return The window borders size */
+		virtual Rect getBorderSize();
 
 		/** @return If the aplication is running returns true ( If you Init correctly the window and is running ). */
 		bool isRunning() const;
@@ -278,7 +286,7 @@ class EE_API Window {
 		/** Set the current active view
 		@param View New view to use (pass GetDefaultView() to set the default view)
 		*/
-		void setView( const View& View );
+		void setView( const View& view, bool forceRefresh = false );
 
 		/** Get the current view */
 		const View& getView() const;
@@ -287,13 +295,19 @@ class EE_API Window {
 		const View& getDefaultView() const;
 
 		/** This will set the default rendering states and view to render in 2D mode */
-		void setup2D( const bool& KeepView = false );
+		void setup2D( const bool& KeepView = true );
 
 		/** Set a new 2D projection matrix */
 		void set2DProjection( const Uint32& Width, const Uint32& Height );
 
+		/** Set a new projection matrix */
+		void setProjection( const Transform& transform );
+
 		/** Set the current Viewport ( and creates a new ortho proyection if needed ) */
-		void setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix = true );
+		void setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
+
+		/** @return The viewport in pixels of the view */
+		Rect getViewport(const View& view);
 
 		/** Set the window background color */
 		void setClearColor( const RGB& Color );
@@ -404,6 +418,18 @@ class EE_API Window {
 		**	@param func The main loop function
 		**	@param fps The desired FPS ( 0 = infinite ) */
 		void runMainLoop( void (*func)(), int fps = 0 );
+
+		virtual int getCurrentDisplayIndex();
+
+		Vector2f mapPixelToCoords(const Vector2i & point);
+
+		Vector2f mapPixelToCoords(const Vector2i & point, const View & view);
+
+		Vector2i mapCoordsToPixel(const Vector2f & point);
+
+		Vector2i mapCoordsToPixel(const Vector2f & point, const View & view);
+
+		void setCloseRequestCallback( const WindowRequestCloseCallback& closeRequestCallback );
 	protected:
 		friend class Engine;
 		friend class Input;
@@ -417,6 +443,7 @@ class EE_API Window {
 		const View * mCurrentView;
 		Uint32 mNumCallBacks;
 		std::map<Uint32, WindowResizeCallback> mCallbacks;
+		WindowRequestCloseCallback mCloseRequestCallback;
 		
 		class FrameData {
 			public:
@@ -471,11 +498,11 @@ class EE_API Window {
 
 		void getElapsedTime();
 
-		void viewCheckUpdate();
-
 		void logSuccessfulInit( const std::string& BackendName );
 
 		void logFailureInit( const std::string& ClassName, const std::string& BackendName );
+
+		void onCloseRequest();
 };
 
 }}

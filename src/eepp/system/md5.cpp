@@ -322,7 +322,7 @@ MD5::Result MD5::fromStream( IOStream & stream ) {
 }
 
 MD5::Result MD5::fromFile( std::string path ) {
-	IOStreamFile file( path, std::ios::in | std::ios::binary );
+	IOStreamFile file( path );
 	return fromStream( file );
 }
 

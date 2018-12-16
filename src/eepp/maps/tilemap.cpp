@@ -1,7 +1,7 @@
 #include <eepp/maps/tilemap.hpp>
 #include <eepp/maps/gameobjectvirtual.hpp>
-#include <eepp/maps/gameobjectsubtexture.hpp>
-#include <eepp/maps/gameobjectsubtextureex.hpp>
+#include <eepp/maps/gameobjecttextureregion.hpp>
+#include <eepp/maps/gameobjecttextureregionex.hpp>
 #include <eepp/maps/gameobjectsprite.hpp>
 #include <eepp/maps/gameobjectobject.hpp>
 #include <eepp/maps/gameobjectpolygon.hpp>
@@ -10,6 +10,7 @@
 #include <eepp/maps/mapobjectlayer.hpp>
 
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/graphics/renderer/opengl.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/primitives.hpp>
@@ -60,7 +61,7 @@ void TileMap::reset() {
 	mFlags	= 0;
 	mMaxLayers	= 0;
 	mMouseOver = false;
-	mViewSize = Sizei( 800, 600 );
+	mViewSize = Sizef( 800, 600 );
 	mBaseColor = Color( 255, 255, 255, 255 );
 }
 
@@ -84,7 +85,7 @@ void TileMap::deleteLayers() {
 	mLayerCount = 0;
 }
 
-void TileMap::create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags, Sizei viewSize, EE::Window::Window * Window ) {
+void TileMap::create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags, Sizef viewSize, EE::Window::Window * Window ) {
 	reset();
 
 	mWindow		= Window;
@@ -147,7 +148,7 @@ void TileMap::createEmptyTile() {
 			Img.getHeight(),
 			Img.getChannels(),
 			true,
-			Texture::ClampMode::CLAMP_TO_EDGE,
+			Texture::ClampMode::ClampToEdge,
 			false,
 			false,
 			tileName
@@ -240,7 +241,7 @@ void TileMap::draw() {
 
 	mouseOverDraw();
 
-	if ( mDrawCb.IsSet() )
+	if ( mDrawCb )
 		mDrawCb();
 
 	GlobalBatchRenderer::instance()->draw();
@@ -447,11 +448,11 @@ void TileMap::update() {
 	for ( Uint32 i = 0; i < mLayerCount; i++ )
 		mLayers[i]->update( mWindow->getElapsed() );
 
-	if ( mUpdateCb.IsSet() )
+	if ( mUpdateCb )
 		mUpdateCb();
 }
 
-const Sizei& TileMap::getViewSize() const {
+const Sizef& TileMap::getViewSize() const {
 	return mViewSize;
 }
 
@@ -475,11 +476,19 @@ Vector2i TileMap::getMouseTilePosCoords() {
 	return getTileCoords( getMouseTilePos() );
 }
 
+Vector2f TileMap::getMouseTilePosCoordsf() {
+	return getTileCoords( Vector2f( getMouseTilePos().x, getMouseTilePos().y ) );
+}
+
 Vector2i TileMap::getTileCoords( const Vector2i& TilePos ) {
 	return ( TilePos * mTileSize );
 }
 
-void TileMap::setViewSize( const Sizei& viewSize ) {
+Vector2f TileMap::getTileCoords( const Vector2f& TilePos ) {
+	return ( TilePos * Vector2f( mTileSize.x, mTileSize.y ) );
+}
+
+void TileMap::setViewSize( const Sizef& viewSize ) {
 	mViewSize = viewSize;
 
 	clamp();
@@ -597,21 +606,21 @@ GameObjectPolyData& TileMap::getPolyObjData( Uint32 Id ) {
 
 GameObject * TileMap::createGameObject( const Uint32& Type, const Uint32& Flags, MapLayer * Layer, const Uint32& DataId ) {
 	switch ( Type ) {
-		case GAMEOBJECT_TYPE_SUBTEXTURE:
+		case GAMEOBJECT_TYPE_TEXTUREREGION:
 		{
-			GameObjectSubTexture * tSubTexture = eeNew( GameObjectSubTexture, ( Flags, Layer ) );
+			GameObjectTextureRegion * tTextureRegion = eeNew( GameObjectTextureRegion, ( Flags, Layer ) );
 
-			tSubTexture->setDataId( DataId );
+			tTextureRegion->setDataId( DataId );
 
-			return tSubTexture;
+			return tTextureRegion;
 		}
-		case GAMEOBJECT_TYPE_SUBTEXTUREEX:
+		case GAMEOBJECT_TYPE_TEXTUREREGIONEX:
 		{
-			GameObjectSubTextureEx * tSubTextureEx = eeNew( GameObjectSubTextureEx, ( Flags, Layer ) );
+			GameObjectTextureRegionEx * tTextureRegionEx = eeNew( GameObjectTextureRegionEx, ( Flags, Layer ) );
 
-			tSubTextureEx->setDataId( DataId );
+			tTextureRegionEx->setDataId( DataId );
 
-			return tSubTextureEx;
+			return tTextureRegionEx;
 		}
 		case GAMEOBJECT_TYPE_SPRITE:
 		{
@@ -647,14 +656,14 @@ GameObject * TileMap::createGameObject( const Uint32& Type, const Uint32& Flags,
 		}
 		default:
 		{
-			if ( mCreateGOCb.IsSet() ) {
+			if ( mCreateGOCb ) {
 				return mCreateGOCb( Type, Flags, Layer, DataId );
 			} else {
 				GameObjectVirtual * tVirtual;
-				SubTexture * tIsSubTexture = TextureAtlasManager::instance()->getSubTextureById( DataId );
+				TextureRegion * tIsTextureRegion = TextureAtlasManager::instance()->getTextureRegionById( DataId );
 
-				if ( NULL != tIsSubTexture ) {
-					tVirtual = eeNew( GameObjectVirtual, ( tIsSubTexture, Layer, Flags, Type ) );
+				if ( NULL != tIsTextureRegion ) {
+					tVirtual = eeNew( GameObjectVirtual, ( tIsTextureRegion, Layer, Flags, Type ) );
 				} else {
 					tVirtual = eeNew( GameObjectVirtual, ( DataId, Layer, Flags, Type ) );
 				}
@@ -836,7 +845,15 @@ bool TileMap::loadFromStream( IOStream& IOS ) {
 					if ( NULL == TextureAtlasManager::instance()->getByName( sgname ) ) {
 						TextureAtlasLoader * tgl = eeNew( TextureAtlasLoader, () );
 
-						tgl->loadFromFile( Sys::getProcessPath() + TextureAtlases[i] );
+						if ( !VirtualFileSystem::instance()->fileExists( TextureAtlases[i] ) && !FileSystem::fileExists( TextureAtlases[i] ) ) {
+							std::string path( FileSystem::fileRemoveFileName( mPath ) );
+
+							if ( FileSystem::fileExists( path + TextureAtlases[i] ) || VirtualFileSystem::instance()->fileExists( path + TextureAtlases[i] ) ) {
+								TextureAtlases[i] = path + TextureAtlases[i];
+							}
+						}
+
+						tgl->loadFromFile( TextureAtlases[i] );
 
 						eeSAFE_DELETE( tgl );
 					}
@@ -1038,7 +1055,7 @@ bool TileMap::loadFromFile( const std::string& path ) {
 	if ( FileSystem::fileExists( path ) ) {
 		mPath = path;
 
-		IOStreamFile IOS( mPath, std::ios::in | std::ios::binary );
+		IOStreamFile IOS( mPath );
 
 		return loadFromStream( IOS );
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
@@ -1046,7 +1063,6 @@ bool TileMap::loadFromFile( const std::string& path ) {
 		Pack * tPack = PackManager::instance()->exists( tPath ) ;
 
 		if ( NULL != tPack ) {
-			mPath = tPath;
 			return loadFromPack( tPack, tPath );
 		}
 	}
@@ -1060,7 +1076,9 @@ bool TileMap::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 
 		Pack->extractFileToMemory( FilePackPath, PData );
 
-		return loadFromMemory( reinterpret_cast<const char*> ( PData.Data ), PData.DataSize );
+		mPath = FilePackPath;
+
+		return loadFromMemory( reinterpret_cast<const char*> ( PData.data ), PData.size );
 	}
 
 	return false;
@@ -1102,7 +1120,7 @@ void TileMap::saveToStream( IOStream& IOS ) {
 		IOS.write( (const char*)&MapHdr, sizeof(sMapHdr) );
 
 		//! Writes the properties of the map
-		for ( TileMap::PropertiesMap::iterator it = mProperties.begin(); it != mProperties.end(); it++ ) {
+		for ( TileMap::PropertiesMap::iterator it = mProperties.begin(); it != mProperties.end(); ++it ) {
 			sPropertyHdr tProp;
 
 			memset( tProp.Name, 0, MAP_PROPERTY_SIZE );
@@ -1120,13 +1138,17 @@ void TileMap::saveToStream( IOStream& IOS ) {
 
 			memset( tSG.Path, 0, MAP_TEXTUREATLAS_PATH_SIZE );
 
+			if ( !mPath.empty() && String::startsWith( TextureAtlases[i], FileSystem::fileRemoveFileName( mPath ) ) ) {
+				TextureAtlases[i] = TextureAtlases[i].substr( FileSystem::fileRemoveFileName( mPath ).size() );
+			}
+
 			String::strCopy( tSG.Path, TextureAtlases[i].c_str(), MAP_TEXTUREATLAS_PATH_SIZE );
 
 			IOS.write( (const char*)&tSG, sizeof(sMapTextureAtlas) );
 		}
 
 		//! Writes the names of the virtual object types created in the map editor
-		for ( GOTypesList::iterator votit = mObjTypes.begin(); votit != mObjTypes.end(); votit++ ) {
+		for ( GOTypesList::iterator votit = mObjTypes.begin(); votit != mObjTypes.end(); ++votit ) {
 			sVirtualObj tVObjH;
 
 			memset( tVObjH.Name, 0, MAP_PROPERTY_SIZE );
@@ -1163,7 +1185,7 @@ void TileMap::saveToStream( IOStream& IOS ) {
 			IOS.write( (const char*)&tLayerH, sizeof(sLayerHdr) );
 
 			//! Writes the properties of the current layer
-			for ( MapLayer::PropertiesMap::iterator lit = tLayerProp.begin(); lit != tLayerProp.end(); lit++ ) {
+			for ( MapLayer::PropertiesMap::iterator lit = tLayerProp.begin(); lit != tLayerProp.end(); ++lit ) {
 				sPropertyHdr tProp;
 
 				memset( tProp.Name, 0, MAP_PROPERTY_SIZE );
@@ -1231,7 +1253,7 @@ void TileMap::saveToStream( IOStream& IOS ) {
 
 							sMapTileGOHdr tTGOHdr;
 
-							//! The DataId should be the SubTexture hash name ( at least in the cases of type SubTexture, SubTextureEx and Sprite.
+							//! The DataId should be the TextureRegion hash name ( at least in the cases of type TextureRegion, TextureRegionEx and Sprite.
 							tTGOHdr.Id		= tObj->getDataId();
 
 							//! If the object type is virtual, means that the real type is stored elsewhere.
@@ -1263,12 +1285,12 @@ void TileMap::saveToStream( IOStream& IOS ) {
 
 				MapObjectLayer::ObjList ObjList = tOLayer->getObjectList();
 
-				for ( MapObjectLayer::ObjList::iterator MapObjIt = ObjList.begin(); MapObjIt != ObjList.end(); MapObjIt++ ) {
+				for ( MapObjectLayer::ObjList::iterator MapObjIt = ObjList.begin(); MapObjIt != ObjList.end(); ++MapObjIt ) {
 					tObj = (*MapObjIt);
 
 					sMapObjGOHdr tOGOHdr;
 
-					//! The DataId should be the SubTexture hash name ( at least in the cases of type SubTexture, SubTextureEx and Sprite.
+					//! The DataId should be the TextureRegion hash name ( at least in the cases of type TextureRegion, TextureRegionEx and Sprite.
 					//! And for the Poly Obj should be an arbitrary value assigned by the map on the moment of creation
 					tOGOHdr.Id		= tObj->getDataId();
 
@@ -1312,7 +1334,7 @@ void TileMap::saveToStream( IOStream& IOS ) {
 						IOS.write( (const char*)&tObjObjHdr, sizeof(sMapObjObjHdr) );
 
 						//! Writes the properties of the current polygon object
-						for ( GameObjectObject::PropertiesMap::iterator ooit = tObjObjProp.begin(); ooit != tObjObjProp.end(); ooit++ ) {
+						for ( GameObjectObject::PropertiesMap::iterator ooit = tObjObjProp.begin(); ooit != tObjObjProp.end(); ++ooit ) {
 							sPropertyHdr tProp;
 
 							memset( tProp.Name, 0, MAP_PROPERTY_SIZE );
@@ -1340,7 +1362,7 @@ void TileMap::saveToStream( IOStream& IOS ) {
 		if ( MapHdr.LightsCount && NULL != mLightManager ) {
 			MapLightManager::LightsList& Lights = mLightManager->getLights();
 
-			for ( MapLightManager::LightsList::iterator LightsIt = Lights.begin(); LightsIt != Lights.end(); LightsIt++ ) {
+			for ( MapLightManager::LightsList::iterator LightsIt = Lights.begin(); LightsIt != Lights.end(); ++LightsIt ) {
 				MapLight * Light = (*LightsIt);
 
 				sMapLightHdr tLightHdr;
@@ -1359,11 +1381,11 @@ void TileMap::saveToStream( IOStream& IOS ) {
 
 void TileMap::saveToFile( const std::string& path ) {
 	if ( !FileSystem::isDirectory( path ) ) {
-		IOStreamFile IOS( path, std::ios::out | std::ios::binary );
+		mPath = path;
+
+		IOStreamFile IOS( path, "wb" );
 
 		saveToStream( IOS );
-
-		mPath = path;
 	}
 }
 
@@ -1377,7 +1399,7 @@ std::vector<std::string> TileMap::getTextureAtlases() {
 	Uint32 Restricted1 = String::hash( std::string( "global" ) );
 	Uint32 Restricted2 = String::hash( UI::UIThemeManager::instance()->getDefaultTheme()->getTextureAtlas()->getName() );
 
-	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
+	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); ++it ) {
 		if ( (*it)->getId() != Restricted1 && (*it)->getId() != Restricted2 )
 			items.push_back( (*it)->getPath() );
 	}

@@ -1,5 +1,5 @@
 #include <eepp/ui/uilinearlayout.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace  EE { namespace UI {
 
@@ -19,7 +19,7 @@ UILinearLayout::UILinearLayout() :
 	UILayout(),
 	mOrientation( UI_VERTICAL )
 {
-	setFlags( UI_CLIP_ENABLE );
+	clipEnable();
 }
 
 Uint32 UILinearLayout::getType() const {
@@ -49,7 +49,7 @@ void UILinearLayout::onSizeChange() {
 	pack();
 }
 
-void UILinearLayout::onParentSizeChange( const Vector2i& SizeChange ) {
+void UILinearLayout::onParentSizeChange( const Vector2f& SizeChange ) {
 	UILayout::onParentChange();
 	pack();
 }
@@ -60,7 +60,7 @@ void UILinearLayout::onChildCountChange() {
 }
 
 void UILinearLayout::pack() {
-	setInternalPosition( Vector2i( mLayoutMargin.Left, mLayoutMargin.Top ) );
+	setInternalPosition( Vector2f( mLayoutMargin.Left, mLayoutMargin.Top ) );
 
 	if ( mOrientation == UI_VERTICAL )
 		packVertical();
@@ -77,7 +77,7 @@ void UILinearLayout::packVertical() {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
 	}
 
-	UIControl * ChildLoop = mChild;
+	Node * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
@@ -95,7 +95,7 @@ void UILinearLayout::packVertical() {
 				}
 				case MATCH_PARENT:
 				{
-					int w = mSize.getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right;
+					int w = mDpSize.getWidth() - widget->getLayoutMargin().Left - widget->getLayoutMargin().Right - mPadding.Left - mPadding.Right;
 
 					if ( widget->getSize().getWidth() != w )
 						widget->setSize( w, widget->getSize().getHeight() );
@@ -108,15 +108,16 @@ void UILinearLayout::packVertical() {
 				}
 			}
 
-			if ( widget->getLayoutHeightRules() == MATCH_PARENT && widget->getLayoutWeight() == 0 && widget->getSize().getHeight() != mSize.getHeight() ) {
-				widget->setSize( widget->getSize().getWidth(), mSize.getHeight() );
+			if ( widget->getLayoutHeightRules() == MATCH_PARENT && widget->getLayoutWeight() == 0 &&
+				 widget->getSize().getHeight() != mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom ) {
+				widget->setSize( widget->getSize().getWidth(), mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom );
 			}
 		}
 
-		ChildLoop = ChildLoop->getNextControl();
+		ChildLoop = ChildLoop->getNextNode();
 	}
 
-	Int32 curY = 0;
+	Int32 curY = mPadding.Top;
 	Int32 maxX = 0;
 	Sizei freeSize = getTotalUsedSize();
 
@@ -129,10 +130,11 @@ void UILinearLayout::packVertical() {
 
 			curY += margin.Top;
 
-			Vector2i pos( 0, curY );
+			Vector2f pos( mPadding.Left, curY );
 
 			if ( widget->getLayoutWeight() != 0 ) {
-				Int32 totSize = ( getLayoutHeightRules() == MATCH_PARENT ) ? mSize.getHeight() : getParent()->getSize().getHeight() - mLayoutMargin.Bottom - mLayoutMargin.Top;
+				Int32 totSize = ( getLayoutHeightRules() == MATCH_PARENT ) ? mDpSize.getHeight() - mPadding.Top - mPadding.Bottom :
+																			 getParent()->getSize().getHeight() - mLayoutMargin.Bottom - mLayoutMargin.Top - mPadding.Top - mPadding.Bottom;
 				Float size = (Float)( totSize - freeSize.getHeight() ) * widget->getLayoutWeight();
 
 				widget->setSize( widget->getSize().getWidth(), (Int32)size );
@@ -140,14 +142,14 @@ void UILinearLayout::packVertical() {
 
 			switch ( fontHAlignGet( widget->getLayoutGravity() ) ) {
 				case UI_HALIGN_CENTER:
-					pos.x = ( mSize.getWidth() - widget->getSize().getWidth() ) / 2;
+					pos.x = ( mDpSize.getWidth() - mPadding.Left - mPadding.Right - widget->getSize().getWidth() ) / 2;
 					break;
 				case UI_HALIGN_RIGHT:
-					pos.x = mSize.getWidth() - widget->getSize().getWidth() - widget->getLayoutMargin().Right;
+					pos.x = mDpSize.getWidth() - mPadding.Left - mPadding.Right - widget->getSize().getWidth() - widget->getLayoutMargin().Right;
 					break;
 				case UI_HALIGN_LEFT:
 				default:
-					pos.x = widget->getLayoutMargin().Left;
+					pos.x = widget->getLayoutMargin().Left + mPadding.Left;
 					break;
 			}
 
@@ -158,22 +160,24 @@ void UILinearLayout::packVertical() {
 			maxX = eemax( maxX, (Int32)( widget->getSize().getWidth() + widget->getLayoutMargin().Left + widget->getLayoutMargin().Right ) );
 		}
 
-		ChildLoop = ChildLoop->getNextControl();
+		ChildLoop = ChildLoop->getNextNode();
 	}
 
 	if ( getLayoutHeightRules() == WRAP_CONTENT ) {
-		if ( curY != mSize.getHeight() ) {
+		curY += mPadding.Bottom;
+
+		if ( curY != mDpSize.getHeight() ) {
 			setInternalHeight( curY );
 			notifyLayoutAttrChangeParent();
 		}
 	} else if ( getLayoutHeightRules() == MATCH_PARENT ) {
 		int h = getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom;
 
-		if ( h != mSize.getHeight() )
+		if ( h != mDpSize.getHeight() )
 			setInternalHeight( h );
 	}
 
-	if ( getLayoutWidthRules() == WRAP_CONTENT && mSize.getWidth() != maxX ) {
+	if ( getLayoutWidthRules() == WRAP_CONTENT && mDpSize.getWidth() != maxX ) {
 		setInternalWidth( maxX );
 		packVertical();
 		notifyLayoutAttrChangeParent();
@@ -191,7 +195,7 @@ void UILinearLayout::packHorizontal() {
 		setInternalHeight( getParent()->getSize().getHeight() - mLayoutMargin.Top - mLayoutMargin.Bottom );
 	}
 
-	UIControl * ChildLoop = mChild;
+	Node * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->isWidget() ) {
@@ -209,7 +213,7 @@ void UILinearLayout::packHorizontal() {
 				}
 				case MATCH_PARENT:
 				{
-					int h = mSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom;
+					int h = mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom;
 
 					if ( h != widget->getSize().getHeight() )
 						widget->setSize( widget->getSize().getWidth(), h );
@@ -222,15 +226,16 @@ void UILinearLayout::packHorizontal() {
 				}
 			}
 
-			if ( widget->getLayoutWidthRules() == MATCH_PARENT && widget->getLayoutWeight() == 0 && widget->getSize().getWidth() != mSize.getWidth() ) {
-				widget->setSize( mSize.getWidth(), widget->getSize().getWidth() );
+			if ( widget->getLayoutWidthRules() == MATCH_PARENT && widget->getLayoutWeight() == 0 &&
+				 widget->getSize().getWidth() != mDpSize.getWidth() - widget->getLayoutMargin().Left  - widget->getLayoutMargin().Top - mPadding.Left - mPadding.Right ) {
+				widget->setSize( mDpSize.getWidth(), widget->getSize().getWidth() - widget->getLayoutMargin().Left  - widget->getLayoutMargin().Top - mPadding.Left - mPadding.Right );
 			}
 		}
 
-		ChildLoop = ChildLoop->getNextControl();
+		ChildLoop = ChildLoop->getNextNode();
 	}
 
-	Int32 curX = 0;
+	Int32 curX = mPadding.Left;
 	Int32 maxY = 0;
 	Sizei freeSize = getTotalUsedSize();
 
@@ -243,10 +248,11 @@ void UILinearLayout::packHorizontal() {
 
 			curX += margin.Left;
 
-			Vector2i pos( curX, 0 );
+			Vector2f pos( curX, mPadding.Top );
 
 			if ( widget->getLayoutWeight() != 0 ) {
-				Int32 totSize = ( getLayoutWidthRules() == MATCH_PARENT ) ? mSize.getWidth() : getParent()->getSize().getWidth() - mLayoutMargin.Right - mLayoutMargin.Left;
+				Int32 totSize = ( getLayoutWidthRules() == MATCH_PARENT ) ? mDpSize.getWidth() - mPadding.Left - mPadding.Right :
+																			getParent()->getSize().getWidth() - mLayoutMargin.Right - mLayoutMargin.Left - mPadding.Left - mPadding.Right;
 				Float size = (Float)( totSize - freeSize.getWidth() ) * widget->getLayoutWeight();
 
 				widget->setSize( (Int32)size, widget->getSize().getHeight() );
@@ -254,14 +260,14 @@ void UILinearLayout::packHorizontal() {
 
 			switch ( fontVAlignGet( widget->getLayoutGravity() ) ) {
 				case UI_VALIGN_CENTER:
-					pos.y = ( mSize.getHeight() - widget->getSize().getHeight() ) / 2;
+					pos.y = ( mDpSize.getHeight() - mPadding.Top - mPadding.Bottom - widget->getSize().getHeight() ) / 2;
 					break;
 				case UI_VALIGN_BOTTOM:
-					pos.y = mSize.getHeight() - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom;
+					pos.y = mDpSize.getHeight() - mPadding.Top - mPadding.Bottom - widget->getSize().getHeight() - widget->getLayoutMargin().Bottom;
 					break;
 				case UI_VALIGN_TOP:
 				default:
-					pos.y = widget->getLayoutMargin().Top;
+					pos.y = widget->getLayoutMargin().Top + mPadding.Top;
 					break;
 			}
 
@@ -272,22 +278,24 @@ void UILinearLayout::packHorizontal() {
 			maxY = eemax( maxY, (Int32)( widget->getSize().getHeight() + widget->getLayoutMargin().Top + widget->getLayoutMargin().Bottom ) );
 		}
 
-		ChildLoop = ChildLoop->getNextControl();
+		ChildLoop = ChildLoop->getNextNode();
 	}
 
 	if ( getLayoutWidthRules() == WRAP_CONTENT ) {
-		if ( curX != mSize.getWidth() ) {
+		curX += mPadding.Right;
+
+		if ( curX != mDpSize.getWidth() ) {
 			setInternalWidth( curX );
 			notifyLayoutAttrChangeParent();
 		}
 	} else if ( getLayoutWidthRules() == MATCH_PARENT ) {
 		int w = getParent()->getSize().getWidth() - mLayoutMargin.Left - mLayoutMargin.Right;
 
-		if ( w != mSize.getWidth() )
+		if ( w != mDpSize.getWidth() )
 			setInternalWidth( w );
 	}
 
-	if ( getLayoutHeightRules() == WRAP_CONTENT && mSize.getHeight() != maxY ) {
+	if ( getLayoutHeightRules() == WRAP_CONTENT && mDpSize.getHeight() != maxY ) {
 		setInternalHeight( maxY );
 		packHorizontal();
 		notifyLayoutAttrChangeParent();
@@ -297,7 +305,7 @@ void UILinearLayout::packHorizontal() {
 }
 
 Sizei UILinearLayout::getTotalUsedSize() {
-	UIControl * ChildLoop = mChild;
+	Node * ChildLoop = mChild;
 	Sizei size( 0, 0 );
 
 	while ( NULL != ChildLoop ) {
@@ -322,38 +330,33 @@ Sizei UILinearLayout::getTotalUsedSize() {
 			}
 		}
 
-		ChildLoop = ChildLoop->getNextControl();
+		ChildLoop = ChildLoop->getNextNode();
 	}
 
 	return size;
 }
 
-void UILinearLayout::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+bool UILinearLayout::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UIWidget::loadFromXmlNode( node );
+	if ( "orientation" == name ) {
+		std::string val = attribute.asString();
+		String::toLowerInPlace( val );
 
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "orientation" == name ) {
-			std::string val = ait->as_string();
-			String::toLowerInPlace( val );
-
-			if ( "horizontal" == val )
-				setOrientation( UI_HORIZONTAL );
-			else if ( "vertical" == val )
-				setOrientation( UI_VERTICAL );
-		}
+		if ( "horizontal" == val )
+			setOrientation( UI_HORIZONTAL );
+		else if ( "vertical" == val )
+			setOrientation( UI_VERTICAL );
+	} else {
+		return UILayout::setAttribute( attribute );
 	}
 
-	endPropertiesTransaction();
+	return true;
 }
 
-Uint32 UILinearLayout::onMessage(const UIMessage * Msg) {
+Uint32 UILinearLayout::onMessage(const NodeMessage * Msg) {
 	switch( Msg->getMsg() ) {
-		case UIMessage::LayoutAttributeChange:
+		case NodeMessage::LayoutAttributeChange:
 		{
 			pack();
 			break;

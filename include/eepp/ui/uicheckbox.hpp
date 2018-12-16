@@ -24,18 +24,18 @@ class EE_API UICheckBox : public UITextView {
 
 		void setActive( const bool& active );
 
-		UIControlAnim * getActiveButton() const;
+		UINode * getActiveButton() const;
 
-		UIControlAnim * getInactiveButton() const;
+		UINode * getInactiveButton() const;
 
 		Int32 getTextSeparation() const;
 
 		void setTextSeparation(const Int32 & textSeparation);
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
-		UIControlAnim *	mActiveButton;
-		UIControlAnim *	mInactiveButton;
+		UINode *	mActiveButton;
+		UINode *	mInactiveButton;
 		bool			mActive;
 		Uint32			mLastTick;
 		Int32			mTextSeparation;
@@ -46,15 +46,17 @@ class EE_API UICheckBox : public UITextView {
 
 		virtual void onAlphaChange();
 
-		virtual Uint32 onKeyDown( const UIEventKey& Event );
+		virtual Uint32 onKeyDown( const KeyEvent& Event );
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		virtual void onThemeLoaded();
 
 		virtual void onAutoSize();
 
 		virtual void onPaddingChange();
+
+		virtual void alignFix();
 };
 
 }}

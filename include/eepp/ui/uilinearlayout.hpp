@@ -25,15 +25,15 @@ class EE_API UILinearLayout : public UILayout {
 
 		UILinearLayout * add( UIWidget * widget );
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		UI_ORIENTATION mOrientation;
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		virtual void onSizeChange();
 
-		virtual void onParentSizeChange( const Vector2i& SizeChange );
+		virtual void onParentSizeChange( const Vector2f& SizeChange );
 
 		virtual void onChildCountChange();
 

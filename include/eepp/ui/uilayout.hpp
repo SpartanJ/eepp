@@ -7,6 +7,8 @@ namespace EE { namespace UI {
 
 class EE_API UILayout : public UIWidget {
 	public:
+		static UILayout * New();
+
 		UILayout();
 
 		virtual Uint32 getType() const;

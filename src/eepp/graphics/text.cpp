@@ -4,6 +4,7 @@
 #include <eepp/graphics/renderer/opengl.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 #include <algorithm>
 #include <cmath>
 
@@ -474,6 +475,10 @@ void Text::shrinkText( const Uint32& MaxWidth ) {
 	mColorsNeedUpdate = true;
 }
 
+void Text::invalidateColors() {
+	mColorsNeedUpdate = true;
+}
+
 Rectf Text::getLocalBounds() {
 	ensureGeometryUpdate();
 
@@ -489,7 +494,7 @@ Float Text::getTextWidth() {
 Float Text::getTextHeight() {
 	cacheWidth();
 
-	return mFont->getLineSpacing(mRealCharacterSize) * ( 0 == mNumLines ? 1 : mNumLines );
+	return NULL != mFont ? mFont->getLineSpacing(mRealCharacterSize) * ( 0 == mNumLines ? 1 : mNumLines ) : 0;
 }
 
 void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const Float & Rotation, BlendMode Effect, const OriginPoint& rotationCenter, const OriginPoint& scaleCenter) {
@@ -503,12 +508,10 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 			return;
 
 		GlobalBatchRenderer::instance()->draw();
-		TextureFactory::instance()->bind( mFont->getTexture(mRealCharacterSize) );
+		TextureFactory::instance()->bind( mFont->getTexture(mRealCharacterSize), Texture::CoordinateType::Pixels );
 		BlendMode::setMode( Effect );
 
 		if ( mStyle & Shadow ) {
-			Uint32 f = mStyle;
-
 			mStyle &= ~Shadow;
 
 			Color Col = getFillColor();
@@ -528,7 +531,7 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 
 			draw( X + pd, Y + pd, Scale, Rotation, Effect );
 
-			mStyle = f;
+			mStyle |= Shadow;
 
 			setFillColor( Col );
 			mColors.assign( mColors.size(), getFillColor() );
@@ -596,16 +599,9 @@ void Text::draw(const Float & X, const Float & Y, const Vector2f & Scale, const 
 void Text::ensureGeometryUpdate() {
 	cacheWidth();
 
-	Sizei textureSize = mFont->getTexture(mRealCharacterSize)->getPixelSize();
-
-	if ( textureSize != mTextureSize )
-		mGeometryNeedUpdate = true;
-
 	// Do nothing, if geometry has not changed
 	if (!mGeometryNeedUpdate)
 		return;
-
-	mTextureSize = textureSize;
 
 	// Mark geometry as updated
 	mGeometryNeedUpdate = false;
@@ -669,18 +665,18 @@ void Text::ensureGeometryUpdate() {
 
 		// If we're using the underlined style and there's a new line, draw a line
 		if (underlined && (curChar == L'\n')) {
-			addLine(mVertices, x, y, underlineOffset, underlineThickness, 0, textureSize, centerDiffX);
+			addLine(mVertices, x, y, underlineOffset, underlineThickness, 0, centerDiffX);
 
 			if (mOutlineThickness != 0)
-				addLine(mOutlineVertices, x, y, underlineOffset, underlineThickness, mOutlineThickness, textureSize, centerDiffX);
+				addLine(mOutlineVertices, x, y, underlineOffset, underlineThickness, mOutlineThickness, centerDiffX);
 		}
 
 		// If we're using the strike through style and there's a new line, draw a line across all characters
 		if (strikeThrough && (curChar == L'\n')) {
-			addLine(mVertices, x, y, strikeThroughOffset, underlineThickness, 0, textureSize, centerDiffX);
+			addLine(mVertices, x, y, strikeThroughOffset, underlineThickness, 0, centerDiffX);
 
 			if (mOutlineThickness != 0)
-				addLine(mOutlineVertices, x, y, strikeThroughOffset, underlineThickness, mOutlineThickness, textureSize, centerDiffX);
+				addLine(mOutlineVertices, x, y, strikeThroughOffset, underlineThickness, mOutlineThickness, centerDiffX);
 		}
 
 		if ( curChar == L'\n' ) {
@@ -728,7 +724,7 @@ void Text::ensureGeometryUpdate() {
 			Float bottom = glyph.bounds.Top  + glyph.bounds.Bottom;
 
 			// Add the outline glyph to the vertices
-			addGlyphQuad(mOutlineVertices, Vector2f(x, y), glyph, italic, mOutlineThickness, textureSize, centerDiffX);
+			addGlyphQuad(mOutlineVertices, Vector2f(x, y), glyph, italic, mOutlineThickness, centerDiffX);
 
 			// Update the current bounds with the outlined glyph bounds
 			minX = std::min(minX, x + left   - italic * bottom - mOutlineThickness);
@@ -741,7 +737,7 @@ void Text::ensureGeometryUpdate() {
 		const Glyph& glyph = mFont->getGlyph(curChar, mRealCharacterSize, bold);
 
 		// Add the glyph to the vertices
-		addGlyphQuad(mVertices, Vector2f(x, y), glyph, italic, 0, textureSize, centerDiffX);
+		addGlyphQuad(mVertices, Vector2f(x, y), glyph, italic, 0, centerDiffX);
 
 		// Update the current bounds with the non outlined glyph bounds
 		if (mOutlineThickness == 0) {
@@ -762,18 +758,18 @@ void Text::ensureGeometryUpdate() {
 
 	// If we're using the underlined style, add the last line
 	if (underlined && (x > 0)) {
-		addLine(mVertices, x, y, underlineOffset, underlineThickness, 0, textureSize, centerDiffX);
+		addLine(mVertices, x, y, underlineOffset, underlineThickness, 0, centerDiffX);
 
 		if (mOutlineThickness != 0)
-			addLine(mOutlineVertices, x, y, underlineOffset, underlineThickness, mOutlineThickness, textureSize, centerDiffX);
+			addLine(mOutlineVertices, x, y, underlineOffset, underlineThickness, mOutlineThickness, centerDiffX);
 	}
 
 	// If we're using the strike through style, add the last line across all characters
 	if (strikeThrough && (x > 0)) {
-		addLine(mVertices, x, y, strikeThroughOffset, underlineThickness, 0, textureSize, centerDiffX);
+		addLine(mVertices, x, y, strikeThroughOffset, underlineThickness, 0, centerDiffX);
 
 		if (mOutlineThickness != 0)
-			addLine(mOutlineVertices, x, y, strikeThroughOffset, underlineThickness, mOutlineThickness, textureSize, centerDiffX);
+			addLine(mOutlineVertices, x, y, strikeThroughOffset, underlineThickness, mOutlineThickness, centerDiffX);
 	}
 
 	// Update the bounding rectangle
@@ -781,9 +777,6 @@ void Text::ensureGeometryUpdate() {
 	mBounds.Top = minY;
 	mBounds.Right = maxX - minX;
 	mBounds.Bottom = maxY - minY;
-
-	if ( mFont->getTexture(mRealCharacterSize)->getPixelSize() != mTextureSize )
-		ensureGeometryUpdate();
 }
 
 void Text::ensureColorUpdate() {
@@ -878,7 +871,6 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 		Int32 rpos	= from;
 		Int32 lpos	= 0;
 		Uint32 i;
-		Uint32 qsize = sizeof(Color) * GLi->quadVertexs();
 		String::StringBaseType curChar;
 
 		// Spaces, new lines and tabs are not rendered, and not counted as a color
@@ -913,20 +905,22 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 					rpos--;
 
 					if ( '\n' == curChar) {
-						if ( underlined ) {
-							memcpy( &(mColors[ rpos * GLi->quadVertexs() ]), &colors[0], qsize );
-							rpos++;
+						if ( underlined || strikeThrough ) {
+							for ( int i = 0; i < GLi->quadVertexs(); i++ )
+								mColors[ rpos * GLi->quadVertexs() + i ] = colors[i];
 						}
 
-						if ( strikeThrough ) {
-							memcpy( &(mColors[ rpos * GLi->quadVertexs() ]), &colors[0], qsize );
+						if ( underlined )
 							rpos++;
-						}
+
+						if ( strikeThrough )
+							rpos++;
 					}
 				}
 			}
 
-			memcpy( &(mColors[ lpos * GLi->quadVertexs() ]), &colors[0], qsize );
+			for ( int i = 0; i < GLi->quadVertexs(); i++ )
+				mColors[ lpos * GLi->quadVertexs() + i ] = colors[i];
 		}
 
 		if ( rto == s ) {
@@ -934,29 +928,33 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 				lpos++;
 				Uint32 pos = lpos * GLi->quadVertexs();
 
-				if ( pos < mColors.size() )
-					memcpy( &(mColors[ lpos * GLi->quadVertexs() ]), &colors[0], qsize );
+				if ( pos < mColors.size() ) {
+					for ( int i = 0; i < GLi->quadVertexs(); i++ )
+						mColors[ lpos * GLi->quadVertexs() + i ] = colors[i];
+				}
 			}
 
 			if ( strikeThrough ) {
 				lpos++;
 				Uint32 pos = lpos * GLi->quadVertexs();
 
-				if ( pos < mColors.size() )
-					memcpy( &(mColors[ lpos * GLi->quadVertexs() ]), &colors[0], qsize );
+				if ( pos < mColors.size() ) {
+					for ( int i = 0; i < GLi->quadVertexs(); i++ )
+						mColors[ lpos * GLi->quadVertexs() + i ] = colors[i];
+				}
 			}
 		}
 	}
 }
 
 // Add an underline or strikethrough line to the vertex array
-void Text::addLine(std::vector<VertexCoords>& vertices, Float lineLength, Float lineTop, Float offset, Float thickness, Float outlineThickness, Sizei textureSize, Int32 centerDiffX) {
+void Text::addLine(std::vector<VertexCoords>& vertices, Float lineLength, Float lineTop, Float offset, Float thickness, Float outlineThickness, Int32 centerDiffX) {
 	Float top = std::floor(lineTop + offset - (thickness / 2) + 0.5f);
 	Float bottom = top + std::floor(thickness + 0.5f);
 	Float u1 = 0;
 	Float v1 = 0;
-	Float u2 = 1 / (Float)textureSize.getWidth();
-	Float v2 = 1 / (Float)textureSize.getHeight();
+	Float u2 = 1;
+	Float v2 = 1;
 	VertexCoords vc;
 
 	if ( GLi->quadsSupported() ) {
@@ -1023,16 +1021,16 @@ void Text::addLine(std::vector<VertexCoords>& vertices, Float lineLength, Float 
 }
 
 // Add a glyph quad to the vertex array
-void Text::addGlyphQuad(std::vector<VertexCoords>& vertices, Vector2f position, const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness, Sizei textureSize, Int32 centerDiffX) {
+void Text::addGlyphQuad(std::vector<VertexCoords>& vertices, Vector2f position, const EE::Graphics::Glyph& glyph, Float italic, Float outlineThickness, Int32 centerDiffX) {
 	Float left		= glyph.bounds.Left;
 	Float top		= glyph.bounds.Top;
 	Float right		= glyph.bounds.Left + glyph.bounds.Right;
 	Float bottom	= glyph.bounds.Top  + glyph.bounds.Bottom;
 
-	Float u1 = static_cast<Float>(glyph.textureRect.Left) / (Float)textureSize.getWidth();
-	Float v1 = static_cast<Float>(glyph.textureRect.Top) / (Float)textureSize.getHeight();
-	Float u2 = static_cast<Float>(glyph.textureRect.Left + glyph.textureRect.Right) / (Float)textureSize.getWidth();
-	Float v2 = static_cast<Float>(glyph.textureRect.Top  + glyph.textureRect.Bottom) / (Float)textureSize.getHeight();
+	Float u1 = static_cast<Float>(glyph.textureRect.Left);
+	Float v1 = static_cast<Float>(glyph.textureRect.Top);
+	Float u2 = static_cast<Float>(glyph.textureRect.Left + glyph.textureRect.Right);
+	Float v2 = static_cast<Float>(glyph.textureRect.Top  + glyph.textureRect.Bottom);
 	VertexCoords vc;
 
 	if ( GLi->quadsSupported() ) {

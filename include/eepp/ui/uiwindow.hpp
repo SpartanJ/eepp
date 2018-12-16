@@ -11,6 +11,8 @@ class FrameBuffer;
 
 namespace EE { namespace UI {
 
+class UISceneNode;
+
 class EE_API UIWindow : public UIWidget {
 	public:
 		enum WindowBaseContainerType {
@@ -33,33 +35,33 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		virtual UIControl * setSize( const Sizei& size );
+		virtual UINode * setSize( const Sizef& size );
 
-		UIControl * setSize( const Int32& Width, const Int32& Height );
+		UINode * setSize( const Float& Width, const Float& Height );
 
-		UIWindow * setSizeWithDecoration( const Int32& Width, const Int32& Height );
+		UIWindow * setSizeWithDecoration( const Float& Width, const Float& Height );
 
-		UIWindow * setSizeWithDecoration( const Sizei& size );
+		UIWindow * setSizeWithDecoration( const Sizef& size );
 
-		const Sizei& getSize();
+		const Sizef& getSize();
 
 		virtual void setTheme( UITheme * Theme );
 
-		virtual Uint32 onMessage( const UIMessage *Msg );
+		virtual Uint32 onMessage( const NodeMessage *Msg );
 
 		UIWidget * getContainer() const;
 
-		UIControlAnim * getButtonClose() const;
+		UINode * getButtonClose() const;
 
-		UIControlAnim * getButtonMaximize() const;
+		UINode * getButtonMaximize() const;
 
-		UIControlAnim * getButtonMinimize() const;
+		UINode * getButtonMinimize() const;
 
 		virtual bool show();
 
 		virtual bool hide();
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		virtual void closeWindow();
 
@@ -97,15 +99,17 @@ class EE_API UIWindow : public UIWidget {
 
 		UIWindow * setStyleConfig(const UIWindowStyleConfig & styleConfig);
 
-		UIWindow * setMinWindowSize( Sizei size );
+		UIWindow * setMinWindowSize( Sizef size );
 
-		UIWindow * setMinWindowSize( const Int32& width, const Int32& height );
+		UIWindow * setMinWindowSize( const Float& width, const Float& height );
 
-		const Sizei& getMinWindowSize();
+		const Sizef& getMinWindowSize();
 
 		bool ownsFrameBuffer();
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
+
+		virtual bool setAttribute( const NodeAttribute& attribute );
 
 		virtual void internalDraw();
 
@@ -114,6 +118,8 @@ class EE_API UIWindow : public UIWidget {
 		bool invalidated();
 
 		FrameBuffer * getFrameBuffer() const;
+
+		virtual bool isDrawInvalidator();
 	protected:
 		class KeyboardShortcut {
 			public:
@@ -150,28 +156,24 @@ class EE_API UIWindow : public UIWidget {
 
 		FrameBuffer * mFrameBuffer;
 		UIWindowStyleConfig	mStyleConfig;
-		UIControlAnim *	mWindowDecoration;
-		UIControlAnim *	mBorderLeft;
-		UIControlAnim *	mBorderRight;
-		UIControlAnim *	mBorderBottom;
+		UINode *	mWindowDecoration;
+		UINode *	mBorderLeft;
+		UINode *	mBorderRight;
+		UINode *	mBorderBottom;
 		UIWidget *	mContainer;
 
-		UIControlAnim *	mButtonClose;
-		UIControlAnim *	mButtonMinimize;
-		UIControlAnim *	mButtonMaximize;
+		UINode *	mButtonClose;
+		UINode *	mButtonMinimize;
+		UINode *	mButtonMaximize;
 		UITextView *		mTitle;
 
 		UIWidget *	mModalCtrl;
 
-		Vector2i			mNonMaxPos;
-		Sizei				mNonMaxSize;
+		Vector2f			mNonMaxPos;
+		Sizef				mNonMaxSize;
 		UI_RESIZE_TYPE		mResizeType;
-		Vector2i			mResizePos;
+		Vector2f			mResizePos;
 		KeyboardShortcuts	mKbShortcuts;
-
-		Uint32				mCloseListener;
-		Uint32				mMaximizeListener;
-		Uint32				mMinimizeListener;
 
 		bool				mFrameBufferBound;
 
@@ -181,25 +183,17 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual void onChildCountChange();
 
-		virtual Uint32 onKeyDown( const UIEventKey &Event );
+		virtual Uint32 onKeyDown( const KeyEvent &Event );
 
 		virtual void matrixSet();
 
 		virtual void matrixUnset();
 
-		void onButtonCloseClick( const UIEvent * Event );
-
-		void onButtonMaximizeClick( const UIEvent * Event );
-
-		void onButtonMinimizeClick( const UIEvent * Event );
-
-		void onContainerPosChange( const UIEvent * Event );
-
 		void fixChildsSize();
 
-		void doResize( const UIMessage * Msg );
+		void doResize( const NodeMessage * Msg );
 
-		void decideResizeType( UIControl * Control );
+		void decideResizeType( Node * Control );
 
 		void tryResize( const UI_RESIZE_TYPE& getType );
 
@@ -207,9 +201,9 @@ class EE_API UIWindow : public UIWidget {
 
 		void updateResize();
 
-		void internalSize( Sizei size );
+		void internalSize( Sizef size );
 
-		void internalSize( const Int32& w, const Int32& h );
+		void internalSize( const Float& w, const Float& h );
 
 		void calcMinWinSize();
 
@@ -241,11 +235,17 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual void drawShadow();
 
+		virtual void onPaddingChange();
+
 		virtual void preDraw();
 
 		virtual void postDraw();
 
-		Sizei getFrameBufferSize();
+		virtual Sizei getFrameBufferSize();
+
+		UISceneNode * getUISceneNode();
+
+		void onContainerPositionChange(const Event * Event);
 };
 
 }}

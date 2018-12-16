@@ -189,14 +189,13 @@ bool UISkinComplex::stateExists( const Uint32 & state ) {
 	return NULL != mDrawable[ state ];
 }
 
-Sizei UISkinComplex::getSideSize( const Uint32& State, const Uint32& Side ) {
+Sizef UISkinComplex::getSideSize( const Uint32& State, const Uint32& Side ) {
 	eeASSERT ( State < UISkinState::StateCount && Side < UISkinComplex::SideCount );
 
 	if ( NULL != mDrawable[ State ][ Side ] ) {
-		Sizef ns( mDrawable[ State ][ Side ]->getSize() );
-		return Sizei( (Int32)ns.x, (Int32)ns.y );
+		return mDrawable[ State ][ Side ]->getSize();
 	}
-	return Sizei();
+	return Sizef();
 }
 
 void UISkinComplex::stateNormalToState( const Uint32& State ) {
@@ -213,7 +212,8 @@ UISkinComplex * UISkinComplex::clone( const std::string& NewName, const bool& Co
 	if ( CopyColorsState ) {
 		SkinC->mColorDefault = mColorDefault;
 
-		memcpy( &SkinC->mColor[0], &mColor[0], UISkinState::StateCount * sizeof(Color) );
+		for ( size_t i = 0; i < UISkinState::StateCount; i++ )
+			SkinC->mColor[i] = mColor[i];
 	}
 
 	memcpy( &SkinC->mDrawable[0], &mDrawable[0], UISkinState::StateCount * SideCount * sizeof(Drawable*) );
@@ -225,18 +225,18 @@ UISkin * UISkinComplex::clone() {
 	return clone( mName, true );
 }
 
-Sizei UISkinComplex::getSize( const Uint32 & state ) {
+Sizef UISkinComplex::getSize( const Uint32 & state ) {
 	return mSize[ state ];
 }
 
-Rect UISkinComplex::getBorderSize(const Uint32 & state) {
+Rectf UISkinComplex::getBorderSize(const Uint32 & state) {
 	return mBorderSize[ state ];
 }
 
 void UISkinComplex::cacheSize() {
 	for ( Int32 state = UISkinState::StateNormal; state < UISkinState::StateCount; state++ ) {
-		Int32 w = 0;
-		Int32 h = 0;
+		Float w = 0;
+		Float h = 0;
 
 		Drawable * tDrawable = mDrawable[ state ][ Center ];
 
@@ -273,7 +273,7 @@ void UISkinComplex::cacheSize() {
 			mBorderSize[ state ].Right = tDrawable->getSize().x;
 		}
 
-		mSize[ state ] = Sizei( w, h );
+		mSize[ state ] = Sizef( w, h );
 	}
 }
 

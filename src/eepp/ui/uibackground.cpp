@@ -1,16 +1,16 @@
 #include <eepp/ui/uibackground.hpp>
-#include <eepp/ui/uicontrol.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/graphics/primitives.hpp>
 
 using namespace EE::Graphics;
 
 namespace EE { namespace UI {
 
-UIBackground * UIBackground::New( UIControl * control ) {
+UIBackground * UIBackground::New( UINode * control ) {
 	return eeNew( UIBackground, ( control ) );
 }
 
-UIBackground::UIBackground( UIControl * control ) :
+UIBackground::UIBackground( UINode * control ) :
 	mControl( control ),
 	mBlendMode( BlendAlpha ),
 	mCorners(0),

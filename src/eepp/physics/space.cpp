@@ -32,15 +32,15 @@ Space::~Space() {
 	cpSpaceFree( mSpace );
 
 	std::list<Constraint*>::iterator itc = mConstraints.begin();
-	for ( ; itc != mConstraints.end(); itc++ )
+	for ( ; itc != mConstraints.end(); ++itc )
 		cpSAFE_DELETE( *itc );
 
 	std::list<Shape*>::iterator its = mShapes.begin();
-	for ( ; its != mShapes.end(); its++ )
+	for ( ; its != mShapes.end(); ++its )
 		cpSAFE_DELETE( *its );
 
 	std::list<Body*>::iterator itb = mBodys.begin();
-	for ( ; itb != mBodys.end(); itb++ )
+	for ( ; itb != mBodys.end(); ++itb )
 		cpSAFE_DELETE( *itb );
 
 	mStatiBody->mBody = NULL; // The body has been released by cpSpaceFree( mSpace )
@@ -423,12 +423,12 @@ cpBool Space::onCollisionBegin( Arbiter * arb, void * data ) {
 		std::map< cpHashValue, CollisionHandler >::iterator it = mCollisions.find( hash );
 		CollisionHandler handler = static_cast<CollisionHandler>( it->second );
 
-		if ( it != mCollisions.end() && handler.begin.IsSet() ) {
+		if ( it != mCollisions.end() && handler.begin ) {
 			return handler.begin( arb, this, handler.data );
 		}
 	//}
 
-	if ( mCollisionsDefault.begin.IsSet() ) {
+	if ( mCollisionsDefault.begin ) {
 		return mCollisionsDefault.begin( arb, this, mCollisionsDefault.data );
 	}
 
@@ -442,12 +442,12 @@ cpBool Space::onCollisionPreSolve( Arbiter * arb, void * data ) {
 		std::map< cpHashValue, CollisionHandler >::iterator it = mCollisions.find( hash );
 		CollisionHandler handler = static_cast<CollisionHandler>( it->second );
 
-		if ( it != mCollisions.end() && handler.preSolve.IsSet() ) {
+		if ( it != mCollisions.end() && handler.preSolve ) {
 			return handler.preSolve( arb, this, handler.data );
 		}
 	//}
 
-	if ( mCollisionsDefault.preSolve.IsSet() ) {
+	if ( mCollisionsDefault.preSolve ) {
 		return mCollisionsDefault.preSolve( arb, this, mCollisionsDefault.data );
 	}
 
@@ -461,13 +461,13 @@ void Space::onCollisionPostSolve( Arbiter * arb, void * data ) {
 		std::map< cpHashValue, CollisionHandler >::iterator it = mCollisions.find( hash );
 		CollisionHandler handler = static_cast<CollisionHandler>( it->second );
 
-		if ( it != mCollisions.end() && handler.postSolve.IsSet() ) {
+		if ( it != mCollisions.end() && handler.postSolve ) {
 			handler.postSolve( arb, this, handler.data );
 			return;
 		}
 	//}
 
-	if ( mCollisionsDefault.begin.IsSet() ) {
+	if ( mCollisionsDefault.begin ) {
 		mCollisionsDefault.postSolve( arb, this, mCollisionsDefault.data );
 	}
 }
@@ -479,13 +479,13 @@ void Space::onCollisionSeparate( Arbiter * arb, void * data ) {
 		std::map< cpHashValue, CollisionHandler >::iterator it = mCollisions.find( hash );
 		CollisionHandler handler = static_cast<CollisionHandler>( it->second );
 
-		if ( it != mCollisions.end() && handler.separate.IsSet() ) {
+		if ( it != mCollisions.end() && handler.separate ) {
 			handler.separate( arb, this, handler.data );
 			return;
 		}
 	//}
 
-	if ( mCollisionsDefault.begin.IsSet() ) {
+	if ( mCollisionsDefault.begin ) {
 		mCollisionsDefault.separate( arb, this, mCollisionsDefault.data );
 	}
 }
@@ -493,7 +493,7 @@ void Space::onCollisionSeparate( Arbiter * arb, void * data ) {
 void Space::onPostStepCallback( void * obj, void * data ) {
 	PostStepCallbackCont * Cb = reinterpret_cast<PostStepCallbackCont *> ( data );
 
-	if ( Cb->Callback.IsSet() ) {
+	if ( Cb->Callback ) {
 		Cb->Callback( this, obj, Cb->Data );
 	}
 
@@ -502,19 +502,19 @@ void Space::onPostStepCallback( void * obj, void * data ) {
 }
 
 void Space::onBBQuery( Shape * shape, BBQuery * query ) {
-	if ( query->Func.IsSet() ) {
+	if ( query->Func ) {
 		query->Func( shape, query->Data );
 	}
 }
 
 void Space::onSegmentQuery( Shape * shape, cpFloat t, cVect n , SegmentQuery * query ) {
-	if ( query->Func.IsSet() ) {
+	if ( query->Func ) {
 		query->Func( shape, t, n, query->Data );
 	}
 }
 
 void Space::onPointQuery( Shape * shape, PointQuery * query ) {
-	if ( query->Func.IsSet() ) {
+	if ( query->Func ) {
 		query->Func( shape, query->Data );
 	}
 }
@@ -522,10 +522,10 @@ void Space::onPointQuery( Shape * shape, PointQuery * query ) {
 void Space::addCollisionHandler( const CollisionHandler& handler ) {
 	cpHashValue hash = CP_HASH_PAIR( handler.a, handler.b );
 
-	cpCollisionBeginFunc		f1 = ( handler.begin.IsSet() )		?	&RecieverCollisionBeginFunc		: NULL;
-	cpCollisionPreSolveFunc		f2 = ( handler.preSolve.IsSet() )	?	&RecieverCollisionPreSolveFunc	: NULL;
-	cpCollisionPostSolveFunc	f3 = ( handler.postSolve.IsSet() )	?	&RecieverCollisionPostSolve		: NULL;
-	cpCollisionSeparateFunc		f4 = ( handler.separate.IsSet() )	?	&RecieverCollisionSeparateFunc	: NULL;
+	cpCollisionBeginFunc		f1 = ( handler.begin )		?	&RecieverCollisionBeginFunc		: NULL;
+	cpCollisionPreSolveFunc		f2 = ( handler.preSolve )	?	&RecieverCollisionPreSolveFunc	: NULL;
+	cpCollisionPostSolveFunc	f3 = ( handler.postSolve )	?	&RecieverCollisionPostSolve		: NULL;
+	cpCollisionSeparateFunc		f4 = ( handler.separate )	?	&RecieverCollisionSeparateFunc	: NULL;
 
 	cpSpaceAddCollisionHandler( mSpace, handler.a, handler.b, f1, f2, f3, f4, (void*)hash );
 
@@ -540,10 +540,10 @@ void Space::removeCollisionHandler( cpCollisionType a, cpCollisionType b ) {
 }
 
 void Space::setDefaultCollisionHandler( const CollisionHandler& handler ) {
-	cpCollisionBeginFunc		f1 = ( handler.begin.IsSet() )		?	&RecieverCollisionBeginFunc		: NULL;
-	cpCollisionPreSolveFunc		f2 = ( handler.preSolve.IsSet() )	?	&RecieverCollisionPreSolveFunc	: NULL;
-	cpCollisionPostSolveFunc	f3 = ( handler.postSolve.IsSet() )	?	&RecieverCollisionPostSolve		: NULL;
-	cpCollisionSeparateFunc		f4 = ( handler.separate.IsSet() )	?	&RecieverCollisionSeparateFunc	: NULL;
+	cpCollisionBeginFunc		f1 = ( handler.begin )		?	&RecieverCollisionBeginFunc		: NULL;
+	cpCollisionPreSolveFunc		f2 = ( handler.preSolve )	?	&RecieverCollisionPreSolveFunc	: NULL;
+	cpCollisionPostSolveFunc	f3 = ( handler.postSolve )	?	&RecieverCollisionPostSolve		: NULL;
+	cpCollisionSeparateFunc		f4 = ( handler.separate )	?	&RecieverCollisionSeparateFunc	: NULL;
 
 	cpSpaceSetDefaultCollisionHandler( mSpace, f1, f2, f3, f4, NULL );
 
@@ -614,7 +614,7 @@ void Space::eachBody( BodyIteratorFunc Func, void * data ) {
 }
 
 void Space::onEachBody( Body * Body, BodyIterator * it ) {
-	if ( it->Func.IsSet() ) {
+	if ( it->Func ) {
 		it->Func( it->Space, Body, it->Data );
 	}
 }
@@ -630,7 +630,7 @@ void Space::eachShape( ShapeIteratorFunc Func, void * data ) {
 }
 
 void Space::onEachShape( Shape * Shape, ShapeIterator * it ) {
-	if ( it->Func.IsSet() ) {
+	if ( it->Func ) {
 		it->Func( it->Space, Shape, it->Data );
 	}
 }

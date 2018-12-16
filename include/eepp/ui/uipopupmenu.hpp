@@ -25,7 +25,7 @@ class EE_API UIPopUpMenu : public UIMenu {
 	protected:
 		virtual void onWidgetFocusLoss();
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		#ifdef EE_PLATFORM_TOUCH
 		Clock mTE;

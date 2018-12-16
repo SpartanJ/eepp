@@ -1,6 +1,6 @@
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
@@ -37,7 +37,7 @@ bool UILoader::isType( const Uint32& type ) const {
 void UILoader::draw() {
 	UIWidget::draw();
 
-	Rectf rect( mScreenPosf, Sizef( mRealSize.x, mRealSize.y ) );
+	Rectf rect( Vector2f( mScreenPosi.x, mScreenPosi.y ), Sizef( (int)mSize.x, (int)mSize.y ) );
 	mArc.setPosition( rect.getCenter() );
 	mCircle.setPosition( rect.getCenter() );
 
@@ -52,23 +52,27 @@ void UILoader::draw() {
 	clippingMask->stencilMaskDisable();
 }
 
-void UILoader::update() {
-	UIWidget::update();
+void UILoader::update( const Time& time ) {
+	UIWidget::update( time );
+
+	invalidateDraw();
 
 	if ( mIndeterminate ) {
-		mArcAngle += getElapsed().asMilliseconds() * mAnimationSpeed * mOp;
-		mArcStartAngle += getElapsed().asMilliseconds() * (mAnimationSpeed*1.5f);
+		mArcAngle += time.asMilliseconds() * mAnimationSpeed * mOp;
+		mArcStartAngle += time.asMilliseconds() * (mAnimationSpeed*1.5f);
 
 		if ( mOp == 1 && mArcAngle > 340 ) {
 			mOp = -1;
+			mArcAngle = 340;
 		} else if ( mOp == -1 && mArcAngle < 20 ) {
 			mOp = 1;
+			mArcAngle = 20;
 		}
 
 		mArc.setArcAngle( mArcAngle );
 		mArc.setArcStartAngle( mArcStartAngle );
 	} else {
-		mArcStartAngle += getElapsed().asMilliseconds() * (mAnimationSpeed*1.5f);
+		mArcStartAngle += time.asMilliseconds() * (mAnimationSpeed*1.5f);
 		mArc.setArcStartAngle( mArcStartAngle );
 	}
 }
@@ -108,7 +112,33 @@ const Color& UILoader::getFillColor() const {
 
 void UILoader::onSizeChange() {
 	if ( mRadius == 0 ) {
-		setRadius( eemin( mSize.x, mSize.y ) / 2.f );
+		setRadius( eemin( mDpSize.x - mPadding.Left - mPadding.Right, mDpSize.y - mPadding.Top - mPadding.Bottom ) / 2.f );
+	}
+}
+
+void UILoader::onPaddingChange() {
+	mRadius = 0;
+
+	onSizeChange();
+
+	UIWidget::onPaddingChange();
+}
+
+void UILoader::onAutoSize() {
+	if ( mLayoutWidthRules == WRAP_CONTENT || mLayoutHeightRules == WRAP_CONTENT ) {
+		Sizef minSize( mDpSize );
+
+		if ( mLayoutWidthRules == WRAP_CONTENT ) {
+			minSize.x = eemax( minSize.x, 64.f );
+		}
+
+		if ( mLayoutHeightRules == WRAP_CONTENT ) {
+			minSize.y = eemax( minSize.y, 64.f );
+		}
+
+		setSize( minSize );
+
+		onSizeChange();
 	}
 }
 
@@ -154,6 +184,32 @@ UILoader * UILoader::setAnimationSpeed( const Float& animationSpeed ) {
 	return this;
 }
 
+bool UILoader::setAttribute( const NodeAttribute& attribute ) {
+	std::string name = attribute.getName();
+
+	if ( "indeterminate" == name ) {
+		setIndeterminate( attribute.asBool() );
+	} else if ( "maxprogress" == name ) {
+		setMaxProgress( attribute.asFloat() );
+	} else if ( "progress" == name ) {
+		setProgress( attribute.asFloat() );
+	} else if ( "fillcolor" == name ) {
+		setFillColor( Color::fromString( attribute.asString() ) );
+	} else if ( "radius" == name ) {
+		setRadius( attribute.asFloat() );
+	} else if ( "outlinethickness" == name ) {
+		setOutlineThickness( attribute.asFloat() );
+	} else if ( "animationspeed" == name ) {
+		setAnimationSpeed( attribute.asFloat() );
+	} else if ( "arcstartangle" == name ) {
+		setArcStartAngle( attribute.asFloat() );
+	} else {
+		return UIWidget::setAttribute( attribute );
+	}
+
+	return true;
+}
+
 Float UILoader::getArcStartAngle() const {
 	return mArcStartAngle;
 }
@@ -161,37 +217,6 @@ Float UILoader::getArcStartAngle() const {
 UILoader * UILoader::setArcStartAngle( const Float& arcStartAngle ) {
 	mArcStartAngle = arcStartAngle;
 	return this;
-}
-
-void UILoader::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
-
-	UIWidget::loadFromXmlNode( node );
-
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "indeterminate" == name ) {
-			setIndeterminate( ait->as_bool() );
-		} else if ( "maxprogress" == name ) {
-			setMaxProgress( ait->as_float() );
-		} else if ( "progress" == name ) {
-			setProgress( ait->as_float() );
-		} else if ( "fillcolor" == name ) {
-			setFillColor( Color::fromString( ait->as_string() ) );
-		} else if ( "radius" == name ) {
-			setRadius( ait->as_float() );
-		} else if ( "outlinethickness" == name ) {
-			setOutlineThickness( ait->as_float() );
-		} else if ( "animationspeed" == name ) {
-			setAnimationSpeed( ait->as_float() );
-		} else if ( "arcstartangle" == name ) {
-			setArcStartAngle( ait->as_float() );
-		}
-	}
-
-	endPropertiesTransaction();
 }
 
 }}

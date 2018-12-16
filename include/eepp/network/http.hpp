@@ -10,10 +10,14 @@
 #include <eepp/system/thread.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/lock.hpp>
-#include <eepp/helper/PlusCallback/callback.hpp>
+#include <eepp/thirdparty/PlusCallback/callback.hpp>
 #include <map>
 #include <string>
 #include <list>
+
+namespace EE { namespace System {
+class IOStream;
+}}
 
 using namespace EE::System;
 
@@ -42,7 +46,7 @@ class EE_API Http : NonCopyable {
 			**  @param body   Content of the request's body
 			**  @param validateCertificate Enables certificate validation for https request
 			**  @param validateHostname Enables hostname validation for https request */
-			Request(const std::string& uri = "/", Method method = Get, const std::string& body = "", bool validateCertificate = false, bool validateHostname = false );
+			Request(const std::string& uri = "/", Method method = Get, const std::string& body = "", bool validateCertificate = true, bool validateHostname = true );
 
 			/** @brief Set the value of a field
 			**  The field is created if it doesn't exist. The name of
@@ -128,6 +132,9 @@ class EE_API Http : NonCopyable {
 		class EE_API Response {
 			public:
 
+			// Types
+			typedef std::map<std::string, std::string> FieldTable;
+
 			/** @brief Enumerate all the valid status codes for a response */
 			enum Status {
 				// 2xx: success
@@ -167,6 +174,8 @@ class EE_API Http : NonCopyable {
 			/** @brief Default constructor
 			**  Constructs an empty response. */
 			Response();
+
+			FieldTable getHeaders();
 
 			/** @brief Get the value of a field
 			**  If the field @a field is not found in the response header,
@@ -217,9 +226,6 @@ class EE_API Http : NonCopyable {
 			**  @param in String stream containing the header values */
 			void parseFields(std::istream &in);
 
-			// Types
-			typedef std::map<std::string, std::string> FieldTable;
-
 			// Member data
 			FieldTable		mFields;		///< Fields of the header
 			Status			mStatus;		///< Status code
@@ -259,7 +265,7 @@ class EE_API Http : NonCopyable {
 		void setHost(const std::string& host, unsigned short port = 0, bool useSSL = false);
 
 		/** @brief Send a HTTP request and return the server's response.
-		**  You must have a valid host before sending a request (see SetHost).
+		**  You must have a valid host before sending a request (see setHost).
 		**  Any missing mandatory header field in the request will be added
 		**  with an appropriate value.
 		**  Warning: this function waits for the server's response and may
@@ -272,13 +278,46 @@ class EE_API Http : NonCopyable {
 		**  @return Server's response */
 		Response sendRequest(const Request& request, Time timeout = Time::Zero);
 
+		/** @brief Send a HTTP request and writes the server's response to a IOStream file.
+		**  You must have a valid host before sending a request (see setHost).
+		**  Any missing mandatory header field in the request will be added
+		**  with an appropriate value.
+		**  Warning: this function waits for the server's response and may
+		**  not return instantly; use a thread if you don't want to block your
+		**  application, or use a timeout to limit the time to wait. A value
+		**  of Time::Zero means that the client will use the system defaut timeout
+		**  (which is usually pretty long).
+		**  @param request Request to send
+		**  @param timeout Maximum time to wait
+		**  @return Server's response */
+		Response downloadRequest(const Request& request, IOStream& writeTo, Time timeout = Time::Zero);
+
+		/** @brief Send a HTTP request and writes the server's response to a file system path.
+		**  You must have a valid host before sending a request (see setHost).
+		**  Any missing mandatory header field in the request will be added
+		**  with an appropriate value.
+		**  Warning: this function waits for the server's response and may
+		**  not return instantly; use a thread if you don't want to block your
+		**  application, or use a timeout to limit the time to wait. A value
+		**  of Time::Zero means that the client will use the system defaut timeout
+		**  (which is usually pretty long).
+		**  @param request Request to send
+		**  @param timeout Maximum time to wait
+		**  @return Server's response */
+		Response downloadRequest(const Request& request, std::string writePath, Time timeout = Time::Zero);
+
 		/** Definition of the async callback response */
-		typedef cb::Callback3<void, const Http&, Http::Request&, Http::Response&>		AsyncResponseCallback;
+		typedef std::function<void( const Http&, Http::Request&, Http::Response& )>		AsyncResponseCallback;
 
 		/** @brief Sends the request and creates a new thread, when got the response informs the result to the callback.
 		**	This function does not lock the caller thread.
 		**  @see SendRequest */
 		void sendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, Time timeout = Time::Zero );
+
+		/** @brief Sends the request and creates a new thread, when got the response informs the result to the callback.
+		**	This function does not lock the caller thread.
+		**  @see SendRequest */
+		void downloadAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, IOStream& writeTo, Time timeout = Time::Zero );
 
 		/** @return The host address */
 		const IpAddress& getHost() const;
@@ -293,6 +332,12 @@ class EE_API Http : NonCopyable {
 			public:
 				AsyncRequest( Http * http, AsyncResponseCallback cb, Http::Request request, Time timeout );
 
+				AsyncRequest( Http * http, AsyncResponseCallback cb, Http::Request request, IOStream& writeTo, Time timeout );
+
+				AsyncRequest( Http * http, AsyncResponseCallback cb, Http::Request request, std::string writePath, Time timeout );
+
+				~AsyncRequest();
+
 				void run();
 			protected:
 				friend class Http;
@@ -301,6 +346,9 @@ class EE_API Http : NonCopyable {
 				Http::Request			mRequest;
 				Time					mTimeout;
 				bool					mRunning;
+				bool					mStreamed;
+				bool					mStreamOwned;
+				IOStream *				mStream;
 		};
 		friend class AsyncRequest;
 		ThreadLocalPtr<TcpSocket>		mConnection;	///< Connection to the host
@@ -312,6 +360,8 @@ class EE_API Http : NonCopyable {
 		bool							mIsSSL;
 
 		void removeOldThreads();
+
+		Request prepareFields(const Http::Request& request);
 };
 
 }}

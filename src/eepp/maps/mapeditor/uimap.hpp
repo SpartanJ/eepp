@@ -30,12 +30,12 @@ class EE_API UIMap : public UIWindow {
 			INSERT_POLYLINE
 		};
 
-		typedef cb::Callback1<void, MapLight *> LightSelectCb;
-		typedef cb::Callback1<void, MapLight *> LightRadiusChangeCb;
-		typedef cb::Callback2<void, Uint32, Polygon2f> ObjAddCb;
-		typedef cb::Callback2<UIMessageBox*, const String&, const String&> AlertCb;
-		typedef cb::Callback0<void> OnMapLoadCb;
-		typedef cb::Callback0<void> UpdateScrollCb;
+		typedef std::function<void( MapLight * )> LightSelectCb;
+		typedef std::function<void( MapLight * )> LightRadiusChangeCb;
+		typedef std::function<void( Uint32, Polygon2f )> ObjAddCb;
+		typedef std::function<UIMessageBox*( const String&, const String& )> AlertCb;
+		typedef std::function<void()> OnMapLoadCb;
+		typedef std::function<void()> UpdateScrollCb;
 
 		UIMap( UITheme * Theme, TileMap * Map = NULL );
 
@@ -43,7 +43,7 @@ class EE_API UIMap : public UIWindow {
 
 		virtual void draw();
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		TileMap * Map() const;
 
@@ -133,7 +133,7 @@ class EE_API UIMap : public UIWindow {
 
 		UpdateScrollCb		mUpdateScrollCb;
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		virtual Uint32 onMouseMove( const Vector2i& getPosition, const Uint32 flags );
 
@@ -143,9 +143,9 @@ class EE_API UIMap : public UIWindow {
 
 		virtual void onAlphaChange();
 
-		virtual Uint32 onDrag( const Vector2i& getPosition );
+		virtual Uint32 onDrag( const Vector2f& Pos );
 
-		void objItemClick( const UIEvent * Event );
+		void objItemClick( const Event * Event );
 
 		void mapDraw();
 

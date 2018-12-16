@@ -11,7 +11,7 @@ class EE_API UITouchDragableWidget : public UIWidget {
 		
 		UITouchDragableWidget();
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		virtual Uint32 getType() const;
 
@@ -29,7 +29,7 @@ class EE_API UITouchDragableWidget : public UIWidget {
 
 		UITouchDragableWidget * setTouchDragDeceleration( const Vector2f& touchDragDeceleration );
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		Vector2f mTouchDragPoint;
 		Vector2f mTouchDragAcceleration;

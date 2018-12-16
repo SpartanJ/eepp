@@ -5,7 +5,6 @@
 #include <eepp/window/windowcontext.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/inputtextbuffer.hpp>
-#include <eepp/window/view.hpp>
 #include <eepp/window/window.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/cursor.hpp>

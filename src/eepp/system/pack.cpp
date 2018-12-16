@@ -1,5 +1,6 @@
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/virtualfilesystem.hpp>
 
 namespace EE { namespace System {
 
@@ -16,6 +17,14 @@ Pack::~Pack() {
 
 bool Pack::isOpen() const {
 	return mIsOpen;
+}
+
+void Pack::onPackOpened() {
+	VirtualFileSystem::instance()->onResourceAdd( this );
+}
+
+void Pack::onPackClosed() {
+	VirtualFileSystem::instance()->onResourceRemove( this );
 }
 
 }}

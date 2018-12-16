@@ -23,7 +23,7 @@ void ObjectLoader::load() {
 }
 
 void ObjectLoader::load( ObjLoadCallback Cb ) {
-	if ( Cb.IsSet() ) {
+	if ( Cb ) {
 		mLoadCbs.push_back( Cb );
 	}
 
@@ -73,7 +73,7 @@ void ObjectLoader::setLoaded() {
 	if ( mLoadCbs.size() ) {
 		std::list<ObjLoadCallback>::iterator it;
 
-		for ( it = mLoadCbs.begin(); it != mLoadCbs.end(); it++ ) {
+		for ( it = mLoadCbs.begin(); it != mLoadCbs.end(); ++it ) {
 			(*it)( this );
 		}
 

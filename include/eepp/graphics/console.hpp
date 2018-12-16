@@ -17,7 +17,7 @@ namespace EE { namespace Graphics {
 class EE_API Console : protected LogReaderInterface {
 	public:
 		//! The Console Callback return a vector of parameters ( String )
-		typedef cb::Callback1<void, const std::vector < String >& > ConsoleCallback;
+		typedef std::function<void( const std::vector < String >& )> ConsoleCallback;
 
 		/** Instances the console but doesn't create it, you must call Create to initialize the console. */
 		Console( EE::Window::Window * window = NULL );

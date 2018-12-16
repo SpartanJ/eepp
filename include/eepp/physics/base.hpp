@@ -2,7 +2,7 @@
 #define EE_PHYSICS_BASE
 
 //! Chipmunk includes
-#include <eepp/helper/chipmunk/chipmunk_private.h>
+#include <eepp/thirdparty/chipmunk/chipmunk_private.h>
 
 //! EE includes needed for the wrapper, all templates, so it will be easy to port this.
 

@@ -11,20 +11,20 @@ namespace EE { namespace Maps { namespace Private {
 
 class EE_API UIGOTypeNew {
 	public:
-		UIGOTypeNew( cb::Callback2<void, std::string, Uint32> Cb );
+		UIGOTypeNew(std::function<void(std::string, Uint32)> Cb );
 
 		virtual ~UIGOTypeNew();
 	protected:
 		UITheme *			mUITheme;
 		UIWindow *			mUIWindow;
 		UITextInput *		mUIInput;
-		cb::Callback2<void, std::string, Uint32>	mCb;
+		std::function<void( std::string, Uint32 )>	mCb;
 
-		void onWindowClose( const UIEvent * Event );
+		void onWindowClose( const Event * Event );
 
-		void onCancelClick( const UIEvent * Event );
+		void onCancelClick( const Event * Event );
 
-		void onOKClick( const UIEvent * Event );
+		void onOKClick( const Event * Event );
 };
 
 }}}

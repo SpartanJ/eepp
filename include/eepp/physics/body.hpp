@@ -11,11 +11,11 @@ class Arbiter;
 
 class CP_API Body {
 	public:
-		typedef cb::Callback3<void, Body *, Shape *, void * >			ShapeIteratorFunc;
-		typedef cb::Callback3<void, Body *, Constraint *, void *>		ConstraintIteratorFunc;
-		typedef cb::Callback3<void, Body *, Arbiter *, void *>		ArbiterIteratorFunc;
-		typedef cb::Callback4<void, Body *, cVect, cpFloat, cpFloat>	BodyVelocityFunc;
-		typedef cb::Callback2<void, Body *, cpFloat>					BodyPositionFunc;
+		typedef std::function<void( Body *, Shape *, void * )>			ShapeIteratorFunc;
+		typedef std::function<void( Body *, Constraint *, void *)>		ConstraintIteratorFunc;
+		typedef std::function<void( Body *, Arbiter *, void *)>		ArbiterIteratorFunc;
+		typedef std::function<void( Body *, cVect, cpFloat, cpFloat)>	BodyVelocityFunc;
+		typedef std::function<void( Body *, cpFloat )>					BodyPositionFunc;
 
 		class ShapeIterator {
 			public:

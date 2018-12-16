@@ -2,8 +2,6 @@
 
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 
-#include <AGL/agl.h>
-
 #include <eepp/window/platform/osx/osximpl.hpp>
 
 namespace EE { namespace Window { namespace Platform {
@@ -39,7 +37,6 @@ void OSXImpl::moveWindow( int left, int top ) {
 }
 
 void OSXImpl::setContext( eeWindowContex Context ) {
-	aglSetCurrentContext( Context );
 }
 
 Vector2i OSXImpl::getPosition() {
@@ -74,7 +71,7 @@ void OSXImpl::restoreCursor() {
 }
 
 eeWindowContex OSXImpl::getWindowContext() {
-	return aglGetCurrentContext();
+	return NULL;
 }
 
 }}}

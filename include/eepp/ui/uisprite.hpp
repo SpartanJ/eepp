@@ -5,7 +5,7 @@
 
 namespace EE { namespace Graphics {
 class Sprite;
-class SubTexture;
+class TextureRegion;
 }}
 
 namespace EE { namespace UI {
@@ -24,7 +24,7 @@ class EE_API UISprite : public UIWidget {
 
 		virtual void draw();
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		virtual void setAlpha( const Float& alpha );
 
@@ -40,25 +40,25 @@ class EE_API UISprite : public UIWidget {
 
 		void setRenderMode( const RenderMode& render );
 
-		const Vector2i& getAlignOffset() const;
+		const Vector2f& getAlignOffset() const;
 
 		void setDeallocSprite( const bool& dealloc );
 
 		bool getDeallocSprite();
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		Graphics::Sprite * 	mSprite;
-		RenderMode 		mRender;
-		Vector2i			mAlignOffset;
-		SubTexture *		mSubTextureLast;
+		RenderMode			mRender;
+		Vector2f			mAlignOffset;
+		TextureRegion *		mTextureRegionLast;
 		bool				mDealloc;
 
 		void updateSize();
 
 		void autoAlign();
 
-		void checkSubTextureUpdate();
+		void checkTextureRegionUpdate();
 
 		virtual void onSizeChange();
 

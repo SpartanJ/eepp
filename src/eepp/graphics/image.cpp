@@ -3,12 +3,19 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/image_helper.h>
-#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
-#include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
-#include <eepp/helper/jpeg-compressor/jpge.h>
-#include <eepp/helper/imageresampler/resampler.h>
+#include <eepp/graphics/pixeldensity.hpp>
+#include <SOIL2/src/SOIL2/image_helper.h>
+#include <SOIL2/src/SOIL2/stb_image.h>
+#include <SOIL2/src/SOIL2/SOIL2.h>
+#include <jpeg-compressor/jpge.h>
+#include <eepp/graphics/stbi_iocb.hpp>
+#include <imageresampler/resampler.h>
 #include <algorithm>
+
+#define NANOSVG_IMPLEMENTATION
+#include <nanosvg/nanosvg.h>
+#define NANOSVGRAST_IMPLEMENTATION
+#include <nanosvg/nanosvgrast.h>
 
 namespace EE { namespace Graphics {
 
@@ -150,15 +157,35 @@ static unsigned char * resample_image( unsigned char* pSrc_image, int src_width,
 	return dst_image;
 }
 
-Uint32 Image::sJpegQuality = 85;
-
-Uint32 Image::jpegQuality() {
-	return sJpegQuality;
+static bool svg_test( const std::string& path ) {
+	return FileSystem::fileExtension( path ) == "svg";
 }
 
-void Image::jpegQuality( Uint32 level ) {
-	level = eemin<Uint32>( level, 100 );
-	sJpegQuality = level;
+static bool svg_test_from_memory( const Uint8 * imageData, const unsigned int & imageDataSize ) {
+	return imageDataSize > 5 && (
+				( imageData[0] == '<' && imageData[1] == 's' && imageData[2] == 'v' && imageData[3] == 'g' ) ||
+				( imageData[0] == '<' && imageData[1] == '?' && imageData[2] == 'x' && imageData[3] == 'm' && imageData[4] == 'l' )
+	);
+}
+
+static bool svg_test_from_stream( IOStream& stream ) {
+	if ( stream.isOpen() ) {
+		std::string str;
+		str.resize( 5 );
+
+		stream.seek( 0 );
+
+		stream.read( (char*)&str[0], 5 );
+
+		String::toLowerInPlace( str );
+
+		if (	( str[0] == '<' && str[1] == 's' && str[2] == 'v' && str[3] == 'g' ) ||
+				( str[0] == '<' && str[1] == '?' && str[2] == 'x' && str[3] == 'm' && str[4] == 'l' ) ) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 std::string Image::saveTypeToExtension( const Int32& Format ) {
@@ -201,10 +228,22 @@ Image::PixelFormat Image::channelsToPixelFormat( const Uint32& channels ) {
 	return pf;
 }
 
-bool Image::getInfo( const std::string& path, int * width, int * height, int * channels ) {
+bool Image::getInfo( const std::string& path, int * width, int * height, int * channels, const FormatConfiguration& imageFormatConfiguration ) {
 	bool res = stbi_info( path.c_str(), width, height, channels ) != 0;
 
-	if ( !res && PackManager::instance()->isFallbackToPacksActive() ) {
+	if ( !res && svg_test( path ) ) {
+		NSVGimage * image = nsvgParseFromFile( path.c_str(), "px", 96.0f );
+
+		if ( NULL != image ) {
+			*width = image->width * imageFormatConfiguration.svgScale();
+			*height = image->height * imageFormatConfiguration.svgScale();
+			*channels = 4;
+
+			nsvgDelete( image );
+
+			res = true;
+		}
+	} else if ( !res && PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string npath( path );
 		Pack * tPack = PackManager::instance()->exists( npath );
 
@@ -213,7 +252,25 @@ bool Image::getInfo( const std::string& path, int * width, int * height, int * c
 
 			tPack->extractFileToMemory( npath, PData );
 
-			res = 0 != stbi_info_from_memory( PData.Data, PData.DataSize, width, height, channels );
+			res = 0 != stbi_info_from_memory( PData.data, PData.size, width, height, channels );
+
+			if ( !res && svg_test_from_memory( PData.data, PData.size ) ) {
+				SafeDataPointer data( PData.size + 1 );
+				memcpy( data.data, PData.data, PData.size );
+				data.data[PData.size] = '\0';
+
+				NSVGimage * image = nsvgParse( (char*)data.data, "px", 96.0f );
+
+				if ( NULL != image ) {
+					*width = image->width * imageFormatConfiguration.svgScale();
+					*height = image->height * imageFormatConfiguration.svgScale();
+					*channels = 4;
+
+					nsvgDelete( image );
+
+					res = true;
+				}
+			}
 		}
 	}
 
@@ -221,7 +278,7 @@ bool Image::getInfo( const std::string& path, int * width, int * height, int * c
 }
 
 bool Image::isImage( const std::string& path ) {
-	return STBI_unknown != stbi_test( path.c_str() );
+	return STBI_unknown != stbi_test( path.c_str() ) || svg_test( path );
 }
 
 bool Image::isImageExtension( const std::string& path ) {
@@ -238,7 +295,8 @@ bool Image::isImageExtension( const std::string& path ) {
 		 Ext == "hdr" ||
 		 Ext == "pic" ||
 		 Ext == "pvr" ||
-		 Ext == "pkm"
+		 Ext == "pkm" ||
+		 Ext == "svg"
 	);
 }
 
@@ -304,14 +362,15 @@ Image::Image( Uint8* data, const unsigned int& Width, const unsigned int& Height
 {
 }
 
-Image::Image( std::string Path, const unsigned int& forceChannels ) :
+Image::Image( std::string Path, const unsigned int& forceChannels, const FormatConfiguration& formatConfiguration ) :
 	mPixels(NULL),
 	mWidth(0),
 	mHeight(0),
 	mChannels(forceChannels),
 	mSize(0),
 	mAvoidFree(false),
-	mLoadedFromStbi(false)
+	mLoadedFromStbi(false),
+	mFormatConfiguration(formatConfiguration)
 {
 	int w, h, c;
 	Pack * tPack = NULL;
@@ -332,6 +391,8 @@ Image::Image( std::string Path, const unsigned int& forceChannels ) :
 		mSize	= mWidth * mHeight * mChannels;
 
 		mLoadedFromStbi = true;
+	} else if ( svg_test( Path ) ) {
+		svgLoad( nsvgParseFromFile( Path.c_str(), "px", 96.0f ) );
 	} else if ( PackManager::instance()->isFallbackToPacksActive() && NULL != ( tPack = PackManager::instance()->exists( Path ) ) ) {
 		loadFromPack( tPack, Path );
 	} else {
@@ -345,31 +406,77 @@ Image::Image( std::string Path, const unsigned int& forceChannels ) :
 	}
 }
 
-Image::Image( Pack * Pack, std::string FilePackPath, const unsigned int& forceChannels ) :
+Image::Image( const Uint8 * imageData, const unsigned int & imageDataSize, const unsigned int & forceChannels, const FormatConfiguration& formatConfiguration ) :
 	mPixels(NULL),
 	mWidth(0),
 	mHeight(0),
 	mChannels(forceChannels),
 	mSize(0),
 	mAvoidFree(false),
-	mLoadedFromStbi(false)
+	mLoadedFromStbi(false),
+	mFormatConfiguration(formatConfiguration)
+{
+	int w, h, c;
+	Uint8 * data = stbi_load_from_memory( imageData, imageDataSize, &w, &h, &c, mChannels );
+
+	if ( NULL != data ) {
+		mPixels		= data;
+		mWidth		= (unsigned int)w;
+		mHeight		= (unsigned int)h;
+
+		if ( STBI_default == mChannels )
+			mChannels	= (unsigned int)c;
+
+		mSize	= mWidth * mHeight * mChannels;
+
+		mLoadedFromStbi = true;
+	} else if ( svg_test_from_memory( imageData, imageDataSize ) ) {
+		SafeDataPointer data( imageDataSize + 1 );
+		memcpy( data.data, imageData, imageDataSize );
+		data.data[imageDataSize] = '\0';
+		svgLoad( nsvgParse( (char*)data.data, "px", 96.0f ) );
+	} else {
+		std::string reason = ".";
+
+		if ( NULL != stbi_failure_reason() ) {
+			reason = ", reason: " + std::string( stbi_failure_reason() );
+		}
+
+		eePRINTL( "Failed to load image from memory. Reason: %s", reason.c_str() );
+	}
+}
+
+Image::Image( Pack * Pack, std::string FilePackPath, const unsigned int& forceChannels, const FormatConfiguration& formatConfiguration ) :
+	mPixels(NULL),
+	mWidth(0),
+	mHeight(0),
+	mChannels(forceChannels),
+	mSize(0),
+	mAvoidFree(false),
+	mLoadedFromStbi(false),
+	mFormatConfiguration(formatConfiguration)
 {
 	loadFromPack( Pack, FilePackPath );
 }
 
-Image::~Image() {
-	if ( !mAvoidFree )
-		clearCache();
-}
-
-void Image::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
-	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( FilePackPath ) ) {
-		SafeDataPointer PData;
-
-		Pack->extractFileToMemory( FilePackPath, PData );
+Image::Image( IOStream & stream, const unsigned int& forceChannels, const FormatConfiguration& formatConfiguration ) :
+	mPixels(NULL),
+	mWidth(0),
+	mHeight(0),
+	mChannels(forceChannels),
+	mSize(0),
+	mAvoidFree(false),
+	mLoadedFromStbi(false),
+	mFormatConfiguration(formatConfiguration)
+{
+	if ( stream.isOpen() ) {
+		stbi_io_callbacks callbacks;
+		callbacks.read = &IOCb::read;
+		callbacks.skip = &IOCb::skip;
+		callbacks.eof  = &IOCb::eof;
 
 		int w, h, c;
-		Uint8 * data = stbi_load_from_memory( PData.Data, PData.DataSize, &w, &h, &c, mChannels );
+		Uint8 * data = stbi_load_from_callbacks( &callbacks, &stream, &w, &h, &c, mChannels );
 
 		if ( NULL != data ) {
 			mPixels		= data;
@@ -382,8 +489,86 @@ void Image::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 			mSize	= mWidth * mHeight * mChannels;
 
 			mLoadedFromStbi = true;
+		} else if ( svg_test_from_stream( stream ) ) {
+			SafeDataPointer data( stream.getSize() + 1 );
+
+			stream.seek( 0 );
+			stream.read( (char*)data.data, data.size - 1 );
+
+			data.data[data.size - 1] = '\0';
+
+			svgLoad( nsvgParse( (char*)data.data, "px", 96.0f ) );
 		} else {
-			eePRINTL( "Failed to load image %s. Reason: %s", stbi_failure_reason(), FilePackPath.c_str() );
+			eePRINTL( "Failed to load image. Reason: %s", stbi_failure_reason() );
+		}
+	} else {
+		eePRINTL( "Failed to load image from stream." );
+	}
+}
+
+Image::~Image() {
+	if ( !mAvoidFree )
+		clearCache();
+}
+
+void Image::svgLoad( NSVGimage * image ) {
+	if (image == NULL)
+		return;
+
+	NSVGrasterizer *rast = NULL;
+	unsigned char* img = NULL;
+	int w, h;
+
+	w = (int)image->width * mFormatConfiguration.svgScale();
+	h = (int)image->height * mFormatConfiguration.svgScale();
+
+	rast = nsvgCreateRasterizer();
+
+	if (rast != NULL) {
+		img = (unsigned char*)malloc(w*h*4);
+
+		if (img != NULL) {
+			nsvgRasterize(rast, image, 0, 0, mFormatConfiguration.svgScale(), img, w, h, w * 4);
+
+			mPixels = img;
+			mWidth = w;
+			mHeight = h;
+			mChannels = 4;
+			mLoadedFromStbi = true;
+		}
+	}
+
+	nsvgDeleteRasterizer(rast);
+	nsvgDelete(image);
+}
+
+void Image::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
+	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( FilePackPath ) ) {
+		SafeDataPointer PData;
+
+		Pack->extractFileToMemory( FilePackPath, PData );
+
+		int w, h, c;
+		Uint8 * data = stbi_load_from_memory( PData.data, PData.size, &w, &h, &c, mChannels );
+
+		if ( NULL != data ) {
+			mPixels		= data;
+			mWidth		= (unsigned int)w;
+			mHeight		= (unsigned int)h;
+
+			if ( STBI_default == mChannels )
+				mChannels	= (unsigned int)c;
+
+			mSize	= mWidth * mHeight * mChannels;
+
+			mLoadedFromStbi = true;
+		} else if ( svg_test_from_memory( PData.data, PData.size ) ) {
+			SafeDataPointer data( PData.size + 1 );
+			memcpy( data.data, PData.data, PData.size );
+			data.data[PData.size] = '\0';
+			svgLoad( nsvgParse( (char*)data.data, "px", 96.0f ) );
+		} else {
+			eePRINTL( "Failed to load image %s. Reason: %s", FilePackPath.c_str(), stbi_failure_reason() );
 		}
 	} else {
 		eePRINTL( "Failed to load image %s from pack.", FilePackPath.c_str() );
@@ -405,7 +590,7 @@ const Uint8* Image::getPixelsPtr() {
 Color Image::getPixel( const unsigned int& x, const unsigned int& y ) {
 	eeASSERT( !( mPixels == NULL || x > mWidth || y > mHeight ) );
 	Color dst;
-	memcpy( &dst, &mPixels[ ( ( x + y * mWidth ) * mChannels ) ], mChannels );
+	memcpy( (void*)&dst, &mPixels[ ( ( x + y * mWidth ) * mChannels ) ], mChannels );
 	return dst;
 }
 
@@ -491,7 +676,7 @@ bool Image::saveToFile(const std::string& filepath, const SaveType & Format ) {
 			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, (Int32)mWidth, (Int32)mHeight, mChannels, getPixelsPtr() ) );
 		} else {
 			jpge::params params;
-			params.m_quality = jpegQuality();
+			params.m_quality = mFormatConfiguration.jpegSaveQuality();
 			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), mWidth, mHeight, mChannels, getPixelsPtr(), params);
 		}
 	}
@@ -707,6 +892,14 @@ Graphics::Image &Image::operator =(const Image &right) {
 	}
 
 	return *this;
+}
+
+void Image::setImageFormatConfiguration( const Image::FormatConfiguration& imageFormatConfiguration ) {
+	mFormatConfiguration = imageFormatConfiguration;
+}
+
+const Image::FormatConfiguration &Image::getImageFormatConfiguration() const {
+	return mFormatConfiguration;
 }
 
 }}

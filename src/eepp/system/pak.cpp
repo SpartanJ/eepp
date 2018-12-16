@@ -1,6 +1,7 @@
 #include <eepp/system/pak.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/iostreampak.hpp>
 
 namespace EE { namespace System {
 
@@ -28,7 +29,7 @@ bool Pak::create( const std::string& path ) {
 
 		eeSAFE_DELETE( mPak.fs );
 
-		mPak.fs = eeNew( IOStreamFile, ( path , std::ios::out | std::ios::binary ) ); // Open the PAK file
+		mPak.fs = eeNew( IOStreamFile, ( path , "wb" ) ); // Open the PAK file
 
 		mPak.fs->write( reinterpret_cast<const char*> (&Pak.header), sizeof(Pak.header) );
 
@@ -50,7 +51,7 @@ bool Pak::open( const std::string& path ) {
 
 		eeSAFE_DELETE( mPak.fs );
 
-		mPak.fs = eeNew( IOStreamFile, ( path , std::ios::in | std::ios::out | std::ios::binary ) ); // Open the PAK file
+		mPak.fs = eeNew( IOStreamFile, ( path , "rwb" ) ); // Open the PAK file
 
 		mPak.fs->read( reinterpret_cast<char*> (&mPak.header), sizeof(pakHeader) ); // Read the PAK header
 
@@ -69,6 +70,8 @@ bool Pak::open( const std::string& path ) {
 
 			mIsOpen = true;
 
+			onPackOpened();
+
 			return true;
 		}
 	}
@@ -83,6 +86,8 @@ bool Pak::close() {
 		mPakFiles.clear();
 
 		mIsOpen = false;
+
+		onPackClosed();
 
 		return true;
 	}
@@ -127,7 +132,7 @@ bool Pak::extractFile( const std::string& path , const std::string& dest ) {
 		SafeDataPointer data;
 
 		if ( extractFileToMemory( path, data ) ) {
-			FileSystem::fileWrite( path, data.Data, data.DataSize );
+			FileSystem::fileWrite( path, data.data, data.size );
 		}
 
 		Ret = true;
@@ -176,11 +181,11 @@ bool Pak::extractFileToMemory( const std::string& path, SafeDataPointer& data ) 
 	Int32 Pos = exists( path );
 
 	if ( Pos != -1 ) {
-		data.DataSize	= mPakFiles[Pos].file_length;
-		data.Data		= eeNewArray( Uint8, ( data.DataSize ) );
+		data.size	= mPakFiles[Pos].file_length;
+		data.data		= eeNewArray( Uint8, ( data.size ) );
 
 		mPak.fs->seek( mPakFiles[Pos].file_position );
-		mPak.fs->read( reinterpret_cast<char*> ( data.Data ), mPakFiles[Pos].file_length );
+		mPak.fs->read( reinterpret_cast<char*> ( data.data ), mPakFiles[Pos].file_length );
 
 		Ret = true;
 	}
@@ -274,11 +279,11 @@ bool Pak::addFile( const std::string& path, const std::string& inpack ) {
 
 	FileSystem::fileGet( path, file );
 
-	return addFile( file.Data, file.DataSize, inpack );
+	return addFile( file.data, file.size, inpack );
 }
 
 bool Pak::addFiles( std::map<std::string, std::string> paths ) {
-	for( std::map<std::string, std::string>::iterator itr = paths.begin(); itr != paths.end(); itr++)
+	for( std::map<std::string, std::string>::iterator itr = paths.begin(); itr != paths.end(); ++itr )
 		if ( !addFile( itr->first, itr->second ) )
 			return false;
 	return true;
@@ -297,7 +302,6 @@ bool Pak::eraseFiles( const std::vector<std::string>& paths ) {
 	Uint32 total_offset = 0, i = 0;
 	pakFile nPf;
 	std::vector<pakEntry> uEntry;
-	bool Remove;
 
 	for ( i = 0; i < paths.size(); i++ ) {
 		Ex = exists( paths[i] );
@@ -309,10 +313,10 @@ bool Pak::eraseFiles( const std::vector<std::string>& paths ) {
 
 	nPf.pakPath = std::string ( mPak.pakPath + ".new" );
 
-	nPf.fs = eeNew( IOStreamFile, ( nPf.pakPath.c_str() , std::ios::out | std::ios::binary ) );
+	nPf.fs = eeNew( IOStreamFile, ( nPf.pakPath.c_str() , "wb" ) );
 
 	for ( i = 0; i < mPakFiles.size(); i++ ) {
-		Remove = false;
+		bool Remove = false;
 
 		for ( Uint32 u = 0; u < files.size(); u++ ) {
 			if ( files[u] == static_cast<Int32>(i) )
@@ -372,6 +376,18 @@ bool Pak::isOpen() const {
 
 std::string Pak::getPackPath() {
 	return mPak.pakPath;
+}
+
+IOStream * Pak::getFileStream(const std::string & path) {
+	return eeNew( IOStreamPak, ( this, path ) );
+}
+
+Pak::pakEntry Pak::getPackEntry( Uint32 index ) {
+	if ( isOpen() && index < mPakFiles.size() ) {
+		return mPakFiles[index];
+	}
+
+	return pakEntry();
 }
 
 }}

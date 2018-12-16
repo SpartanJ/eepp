@@ -1,5 +1,7 @@
 #include <eepp/network/http.hpp>
 #include <eepp/network/ssl/sslsocket.hpp>
+#include <eepp/system/iostream.hpp>
+#include <eepp/system/iostreamfile.hpp>
 #include <cctype>
 #include <algorithm>
 #include <iterator>
@@ -106,6 +108,10 @@ Http::Response::Response() :
 	mMajorVersion(0),
 	mMinorVersion(0)
 {
+}
+
+Http::Response::FieldTable Http::Response::getHeaders() {
+	return mFields;
 }
 
 const std::string& Http::Response::getField(const std::string& field) const {
@@ -240,11 +246,11 @@ Http::~Http() {
 	std::list<AsyncRequest*>::iterator itt;
 
 	// First we wait to finish any request pending
-	for ( itt = mThreads.begin(); itt != mThreads.end(); itt++ ) {
+	for ( itt = mThreads.begin(); itt != mThreads.end(); ++itt ) {
 		(*itt)->wait();
 	}
 
-	for ( itt = mThreads.begin(); itt != mThreads.end(); itt++ ) {
+	for ( itt = mThreads.begin(); itt != mThreads.end(); ++itt ) {
 		eeDelete( *itt );
 	}
 
@@ -299,33 +305,7 @@ Http::Response Http::sendRequest(const Http::Request& request, Time timeout) {
 	}
 
 	// First make sure that the request is valid -- add missing mandatory fields
-	Request toSend(request);
-
-	if (!toSend.hasField("From")) {
-		toSend.setField("From", "user@eepp.com.ar");
-	}
-
-	if (!toSend.hasField("User-Agent")) {
-		toSend.setField("User-Agent", "eepp-network");
-	}
-
-	if (!toSend.hasField("Host")) {
-		toSend.setField("Host", mHostName);
-	}
-
-	if (!toSend.hasField("Content-Length")) {
-		std::ostringstream out;
-		out << toSend.mBody.size();
-		toSend.setField("Content-Length", out.str());
-	}
-
-	if ((toSend.mMethod == Request::Post) && !toSend.hasField("Content-Type")) {
-		toSend.setField("Content-Type", "application/x-www-form-urlencoded");
-	}
-
-	if ((toSend.mMajorVersion * 10 + toSend.mMinorVersion >= 11) && !toSend.hasField("Connection")) {
-		toSend.setField("Connection", "close");
-	}
+	Request toSend(prepareFields(request));
 
 	// Prepare the response
 	Response received;
@@ -359,19 +339,166 @@ Http::Response Http::sendRequest(const Http::Request& request, Time timeout) {
 	return received;
 }
 
+
+Http::Response Http::downloadRequest(const Http::Request & request, IOStream & writeTo, Time timeout) {
+	if ( 0 == mHost.toInteger() ) {
+		return Response();
+	}
+
+	if ( NULL == mConnection ) {
+		TcpSocket * Conn	= mIsSSL ? eeNew( SSLSocket, ( mHostName, request.getValidateCertificate(), request.getValidateHostname() ) ) : eeNew( TcpSocket, () );
+		mConnection			= Conn;
+	}
+
+	Request toSend(prepareFields(request));
+	Response received;
+
+	if (mConnection->connect(mHost, mPort, timeout) == Socket::Done) {
+		std::string requestStr = toSend.prepare();
+
+		if (!requestStr.empty()) {
+			if (mConnection->send(requestStr.c_str(), requestStr.size()) == Socket::Done) {
+				int isnheader = 0;
+				size_t len = 0;
+				char * eol; // end of line
+				char * bol; // beginning of line
+				std::size_t size = 0;
+				size_t bufferSize = 1024;
+				char buffer[bufferSize+1];
+				std::string header;
+
+				while (mConnection->receive(buffer, bufferSize, size) == Socket::Done) {
+					if ( isnheader != 0 )
+						writeTo.write( buffer, size );
+
+					if ( isnheader == 0 ) {
+						// calculate combined length of unprocessed data and new data
+						len += size;
+
+						// NULL terminate buffer for string functions
+						buffer[len] = '\0';
+
+						// checks if the header break happened to be the first line of the buffer
+						if ( !( strncmp( buffer, "\r\n", 2 ) ) ) {
+							if (len > 2)
+								writeTo.write(buffer, (len-2));
+
+							continue;
+						}
+
+						if ( !( strncmp( buffer, "\n", 1 ) ) ) {
+							if ( len > 1 )
+								writeTo.write(buffer, (len-1));
+
+							continue;
+						}
+
+						// process each line in buffer looking for header break
+						bol = buffer;
+
+						while( ( eol = strchr( bol, '\n') ) != NULL ) {
+							// update bol based upon the value of eol
+							bol = eol + 1;
+
+							// test if end of headers has been reached
+							if ( ( !( strncmp( bol, "\r\n", 2 ) ) ) || ( ! ( strncmp( bol, "\n", 1) ) ) ) {
+								// note that end of headers has been reached
+								isnheader = 1;
+
+								// update the value of bol to reflect the beginning of the line
+								// immediately after the headers
+								if ( bol[0] != '\n' )
+									bol += 1;
+
+								bol += 1;
+
+								// calculate the amount of data remaining in the buffer
+								len = len - ( bol - buffer );
+
+								// write remaining data to FILE stream
+								if ( len > 0 )
+									writeTo.write( bol, len );
+
+								header.append( buffer, ( bol - buffer ) );
+
+								// reset length of left over data to zero and continue processing
+								// non-header information
+								len = 0;
+							}
+						}
+
+						if ( isnheader == 0 ) {
+							header.append( buffer, ( bol - buffer ) );
+						}
+					}
+				}
+
+				if ( !header.empty() )
+					received.parse(header);
+			}
+		}
+
+		// Close the connection
+		mConnection->disconnect();
+	}
+
+	return received;
+}
+
+Http::Response Http::downloadRequest(const Http::Request & request, std::string writePath, Time timeout) {
+	IOStreamFile file( writePath, "wb" );
+	return downloadRequest( request, file, timeout );
+}
+
 Http::AsyncRequest::AsyncRequest(Http *http, AsyncResponseCallback cb, Http::Request request, Time timeout) :
 	mHttp( http ),
 	mCb( cb ),
 	mRequest( request ),
 	mTimeout( timeout ),
-	mRunning( true )
+	mRunning( true ),
+	mStreamed( false ),
+	mStreamOwned( false ),
+	mStream(NULL)
 {
 }
 
+Http::AsyncRequest::AsyncRequest(Http * http, Http::AsyncResponseCallback cb, Http::Request request, IOStream & writeTo, Time timeout) :
+	mHttp( http ),
+	mCb( cb ),
+	mRequest( request ),
+	mTimeout( timeout ),
+	mRunning( true ),
+	mStreamed( true ),
+	mStreamOwned( false ),
+	mStream( &writeTo )
+{
+}
+
+Http::AsyncRequest::AsyncRequest(Http * http, Http::AsyncResponseCallback cb, Http::Request request, std::string writePath, Time timeout) :
+	mHttp( http ),
+	mCb( cb ),
+	mRequest( request ),
+	mTimeout( timeout ),
+	mRunning( true ),
+	mStreamed( true ),
+	mStreamOwned( true ),
+	mStream( eeNew( IOStreamFile, ( writePath, "wb" ) ) )
+{
+}
+
+Http::AsyncRequest::~AsyncRequest() {
+	if ( mStreamOwned )
+		eeSAFE_DELETE( mStream );
+}
+
 void Http::AsyncRequest::run() {
-	Http::Response response = mHttp->sendRequest( mRequest, mTimeout );
+	Http::Response response = mStreamed ? mHttp->downloadRequest( mRequest, *mStream, mTimeout ) : mHttp->sendRequest( mRequest, mTimeout );
 
 	mCb( *mHttp, mRequest, response );
+
+	if ( mStreamed && mStreamOwned ) {
+		eeSAFE_DELETE( mStream );
+	}
 
 	// The Async Request destroys the socket used to create the request
 	TcpSocket * tcp = mHttp->mConnection;
@@ -386,7 +513,7 @@ void Http::removeOldThreads() {
 
 	std::list<AsyncRequest*>::iterator it = mThreads.begin();
 
-	for ( ; it != mThreads.end(); it++ ) {
+	for ( ; it != mThreads.end(); ++it ) {
 		AsyncRequest * ar = (*it);
 
 		if ( !ar->mRunning ) {
@@ -399,12 +526,57 @@ void Http::removeOldThreads() {
 		}
 	}
 
-	for ( it = remove.begin(); it != remove.end(); it++ ) {
+	for ( it = remove.begin(); it != remove.end(); ++it ) {
 		mThreads.remove( (*it) );
 	}
 }
 
+Http::Request Http::prepareFields(const Http::Request & request) {
+	Request toSend(request);
+
+	if (!toSend.hasField("From")) {
+		toSend.setField("From", "user@eepp.com.ar");
+	}
+
+	if (!toSend.hasField("User-Agent")) {
+		toSend.setField("User-Agent", "eepp-network");
+	}
+
+	if (!toSend.hasField("Host")) {
+		toSend.setField("Host", mHostName);
+	}
+
+	if (!toSend.hasField("Content-Length")) {
+		std::ostringstream out;
+		out << toSend.mBody.size();
+		toSend.setField("Content-Length", out.str());
+	}
+
+	if ((toSend.mMethod == Request::Post) && !toSend.hasField("Content-Type")) {
+		toSend.setField("Content-Type", "application/x-www-form-urlencoded");
+	}
+
+	if ((toSend.mMajorVersion * 10 + toSend.mMinorVersion >= 11) && !toSend.hasField("Connection")) {
+		toSend.setField("Connection", "close");
+	}
+
+	return toSend;
+}
+
 void Http::sendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, Time timeout ) {
+	AsyncRequest * thread = eeNew( AsyncRequest, ( this, cb, request, timeout ) );
+
+	thread->launch();
+
+	// Clean old threads
+	Lock l( mThreadsMutex );
+
+	removeOldThreads();
+
+	mThreads.push_back( thread );
+}
+
+void Http::downloadAsyncRequest(Http::AsyncResponseCallback cb, const Http::Request & request, IOStream & writeTo, Time timeout) {
 	AsyncRequest * thread = eeNew( AsyncRequest, ( this, cb, request, timeout ) );
 
 	thread->launch();

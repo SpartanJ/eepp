@@ -6,8 +6,11 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/lock.hpp>
+#include <eepp/window/engine.hpp>
+
 
 using namespace EE::System;
+using namespace EE::Window;
 
 namespace EE {
 
@@ -89,6 +92,8 @@ void MemoryManager::showResults() {
 		Log::destroySingleton();
 		EE::PrintDebugInLog = false;
 	}
+
+	Engine::destroySingleton();
 
 	eePRINTL("\n|--Memory Manager Report-------------------------------------|");
 	eePRINTL("|");

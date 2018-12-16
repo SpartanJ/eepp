@@ -6,7 +6,7 @@ To understand the conceptos of space, body, shapes, etc you can read the
 Chipmunk documentation:
 http://chipmunk-physics.net/release/ChipmunkLatest-Docs/
 */
-typedef cb::Callback0<void> SceneCb;
+typedef std::function<void()> SceneCb;
 
 struct physicDemo {
 	SceneCb init;
@@ -327,7 +327,7 @@ void demo3Create() {
 	handler.separate	= cb::Make3( &blockerSeparate );
 	mSpace->addCollisionHandler( handler );
 
-	handler.Reset(); // Reset all the values and the callbacks ( set the callbacks as !IsSet()
+	handler.reset(); // Reset all the values and the callbacks ( set the callbacks as !IsSet()
 
 	handler.a			= CATCH_SENSOR_TYPE;
 	handler.b			= BALL_TYPE;

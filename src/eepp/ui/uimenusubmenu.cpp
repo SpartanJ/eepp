@@ -1,6 +1,6 @@
 #include <eepp/ui/uimenusubmenu.hpp>
 #include <eepp/ui/uimenu.hpp>
-#include <eepp/ui/uimanager.hpp>
+#include <eepp/scene/scenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -17,7 +17,7 @@ UIMenuSubMenu::UIMenuSubMenu() :
 	mCbId( 0 ),
 	mCbId2( 0 )
 {
-	mArrow = UIControlAnim::New();
+	mArrow = UINode::New();
 	mArrow->setParent( this );
 	mArrow->setFlags( UI_AUTO_SIZE );
 	mArrow->setVisible( true );
@@ -49,7 +49,7 @@ void UIMenuSubMenu::setTheme( UITheme * Theme ) {
 void UIMenuSubMenu::onSizeChange() {
 	UIMenuItem::onSizeChange();
 
-	mArrow->setPosition( getParent()->getSize().getWidth() - mArrow->getSize().getWidth() - PixelDensity::dpToPxI( 1 ), 0 );
+	mArrow->setPosition( getParent()->getSize().getWidth() - mArrow->getSize().getWidth() - PixelDensity::dpToPx( 1 ), 0 );
 	mArrow->centerVertical();
 }
 
@@ -74,8 +74,8 @@ void UIMenuSubMenu::setSubMenu( UIMenu * SubMenu ) {
 	mSubMenu = SubMenu;
 
 	if ( NULL != mSubMenu ) {
-		mCbId	= mSubMenu->addEventListener( UIEvent::OnEnabledChange, cb::Make1( this, &UIMenuSubMenu::onSubMenuFocusLoss ) );
-		mCbId2	= mSubMenu->addEventListener( UIEvent::OnHideByClick, cb::Make1( this, &UIMenuSubMenu::onHideByClick ) );
+		mCbId	= mSubMenu->addEventListener( Event::OnEnabledChange, cb::Make1( this, &UIMenuSubMenu::onSubMenuFocusLoss ) );
+		mCbId2	= mSubMenu->addEventListener( Event::OnHideByClick, cb::Make1( this, &UIMenuSubMenu::onHideByClick ) );
 	}
 }
 
@@ -86,8 +86,8 @@ UIMenu * UIMenuSubMenu::getSubMenu() const {
 Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
 	UIMenuItem::onMouseMove( Pos, Flags );
 
-	if ( NULL != mSubMenu && !mSubMenu->isVisible() ) {
-		mTimeOver += getElapsed().asMilliseconds();
+	if ( NULL != mSceneNode && NULL != mSubMenu && !mSubMenu->isVisible() ) {
+		mTimeOver += mSceneNode->getElapsed().asMilliseconds();
 
 		if ( mTimeOver >= mMaxTime ) {
 			showSubMenu();
@@ -100,14 +100,14 @@ Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
 void UIMenuSubMenu::showSubMenu() {
 	mSubMenu->setParent( getParent()->getParent() );
 
-	Vector2i Pos = this->getRealPosition();
-	controlToScreen( Pos );
-	Pos.x += mRealSize.getWidth() + reinterpret_cast<UIMenu*> ( getParent() )->getPadding().Right;
+	Vector2f Pos = getRealPosition();
+	nodeToWorldTranslation( Pos );
+	Pos.x += mSize.getWidth() + reinterpret_cast<UIMenu*> ( getParent() )->getPadding().Right;
 
 	UIMenu::fixMenuPos( Pos, mSubMenu, reinterpret_cast<UIMenu*> ( getParent() ), this );
 
-	mSubMenu->getParent()->worldToControl( Pos );
-	mSubMenu->setPosition( Pos );
+	mSubMenu->getParent()->worldToNode( Pos );
+	mSubMenu->setPixelsPosition( Pos );
 
 	if ( !mSubMenu->isVisible() ) {
 		mSubMenu->show();
@@ -122,15 +122,17 @@ Uint32 UIMenuSubMenu::onMouseExit( const Vector2i &Pos, const Uint32 Flags ) {
 	return 1;
 }
 
-UIControl * UIMenuSubMenu::getArrow() const {
+UINode * UIMenuSubMenu::getArrow() const {
 	return mArrow;
 }
 
-void UIMenuSubMenu::onSubMenuFocusLoss( const UIEvent * Event ) {
-	UIControl * FocusCtrl = UIManager::instance()->getFocusControl();
+void UIMenuSubMenu::onSubMenuFocusLoss( const Event * Event ) {
+	if ( NULL != getEventDispatcher() ) {
+		Node * FocusCtrl = getEventDispatcher()->getFocusControl();
 
-	if ( getParent() != FocusCtrl && !getParent()->isParentOf( FocusCtrl ) ) {
-		getParent()->setFocus();
+		if ( getParent() != FocusCtrl && !getParent()->isParentOf( FocusCtrl ) ) {
+			getParent()->setFocus();
+		}
 	}
 
 	if ( mSubMenu->mClickHide ) {
@@ -140,7 +142,7 @@ void UIMenuSubMenu::onSubMenuFocusLoss( const UIEvent * Event ) {
 	}
 }
 
-void UIMenuSubMenu::onHideByClick( const UIEvent * Event ) {
+void UIMenuSubMenu::onHideByClick( const Event * Event ) {
 	UIMenu * tMenu = reinterpret_cast<UIMenu *>( getParent() );
 
 	tMenu->mClickHide = true;

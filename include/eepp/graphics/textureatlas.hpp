@@ -2,52 +2,54 @@
 #define EE_GRAPHICSCTEXTUREATLAS_H
 
 #include <eepp/graphics/base.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
+#include <eepp/system/resourcemanager.hpp>
+using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
 /** @brief The texture atlas class represents a large image containing a collection of sub-images, or "atlas" which contains many smaller sub-images.
 * The texture atlas in eepp can represent more than one texture or image, but the common use should be a image with sub-images.
 * More information about Texture Atlases: http://en.wikipedia.org/wiki/Texture_atlas */
-class EE_API TextureAtlas : public ResourceManager<SubTexture> {
+class EE_API TextureAtlas : public ResourceManager<TextureRegion> {
 	public:
 		/** Creates a new texture atlas with the given name. */
 		TextureAtlas( const std::string& name = "" );
 
 		~TextureAtlas();
 
-		/** Adds a SubTexture to the Texture Atlas */
-		SubTexture * add( SubTexture * subTexture );
+		/** Adds a TextureRegion to the Texture Atlas */
+		TextureRegion * add( TextureRegion * textureRegion );
 
-		/** Creates and add to the texture atlas a SubTexture from a Texture. It will use the full Texture as a SubTexture.
+		/** Creates and add to the texture atlas a TextureRegion from a Texture. It will use the full Texture as a TextureRegion.
 		*	@param TexId The texture id
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture * add( const Uint32& TexId, const std::string& Name = "" );
+		TextureRegion * add( const Uint32& TexId, const std::string& Name = "" );
 
-		/** Creates and add to the texture atlas a SubTexture of the indicated part of the texture.
+		/** Creates and add to the texture atlas a TextureRegion of the indicated part of the texture.
 		*	@param TexId The texture id
-		*	@param SrcRect The texture part that will be used as the SubTexture.
+		*	@param SrcRect The texture part that will be used as the TextureRegion.
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture * add( const Uint32& TexId, const Rect& SrcRect, const std::string& Name = "" );
+		TextureRegion * add( const Uint32& TexId, const Rect& SrcRect, const std::string& Name = "" );
 
-		/** Creates and add to the texture atlas a SubTexture of the indicated part of the texture.
+		/** Creates and add to the texture atlas a TextureRegion of the indicated part of the texture.
 		*	@param TexId The texture id
-		*	@param SrcRect The texture part that will be used as the SubTexture.
-		*	@param DestSize The destination size that the SubTexture will have when rendered.
+		*	@param SrcRect The texture part that will be used as the TextureRegion.
+		*	@param DestSize The destination size that the TextureRegion will have when rendered.
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture * add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& Name = "" );
+		TextureRegion * add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& Name = "" );
 
-		/** Creates and add to the texture atlas a SubTexture of the indicated part of the texture.
+		/** Creates and add to the texture atlas a TextureRegion of the indicated part of the texture.
 		*	@param TexId The texture id
-		*	@param SrcRect The texture part that will be used as the SubTexture.
-		*	@param DestSize The destination size that the SubTexture will have when rendered.
+		*	@param SrcRect The texture part that will be used as the TextureRegion.
+		*	@param DestSize The destination size that the TextureRegion will have when rendered.
 		*	@param Offset The offset that will be added to the position passed when any Draw call is used.
 		*	@param Name The texture name ( if any )
 		*/
-		SubTexture * add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i& Offset, const std::string& Name = "" );
+		TextureRegion * add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i& Offset, const std::string& Name = "" );
 
 		/** @return The texture atlas name. */
 		const std::string& getName() const;
@@ -64,12 +66,12 @@ class EE_API TextureAtlas : public ResourceManager<SubTexture> {
 		/** @return The texture atlas Id. The Id is the String::hash of the texture atlas name. */
 		const Uint32& getId() const;
 		
-		/** @return The number of SubTextures inside the texture atlas. */
+		/** @return The number of TextureRegions inside the texture atlas. */
 		Uint32 getCount();
 
 		/** @return The texture that corresponds to the texture atlas.
 		* @param texnum The texture index. A texture atlas can use more than one texture, so it can be 0 to GetTexturesLoadedCount(). Usually a texture atlas corresponds to only one texture, so the texture index is 0.
-		* @note Some texture atlases could not have any texture, since you can use it as a container of SubTextures from any texture. \n
+		* @note Some texture atlases could not have any texture, since you can use it as a container of TextureRegions from any texture. \n
 		* The texture atlases loaded from a file always will be linked to a texture. \n
 		* The Global Texture Atlas for example doesn't have any texture linked to it.
 		*/

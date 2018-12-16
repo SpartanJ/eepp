@@ -1,7 +1,8 @@
 #ifndef EE_UIUIWIDGET_HPP
 #define EE_UIUIWIDGET_HPP
 
-#include <eepp/ui/uicontrolanim.hpp>
+#include <eepp/scene/nodeattribute.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitooltip.hpp>
 
 namespace pugi {
@@ -10,7 +11,7 @@ class xml_node;
 
 namespace EE { namespace UI {
 
-class EE_API UIWidget : public UIControlAnim {
+class EE_API UIWidget : public UINode {
 	public:
 		static UIWidget * New();
 
@@ -22,25 +23,25 @@ class EE_API UIWidget : public UIControlAnim {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		virtual void update();
+		virtual void update( const Time& time );
 
-		virtual UIControl * setSize( const Sizei& size );
+		virtual Node * setSize( const Sizef& size );
 
-		virtual UIControl * setFlags( const Uint32& flags );
+		virtual UINode * setFlags( const Uint32& flags );
 
-		virtual UIControl * unsetFlags( const Uint32& flags );
+		virtual UINode * unsetFlags( const Uint32& flags );
 
 		virtual UIWidget * setAnchors( const Uint32& flags );
 
 		virtual void setTheme( UITheme * Theme );
 
-		virtual UIControl * setThemeSkin( const std::string& skinName );
+		virtual UINode * setThemeSkin( const std::string& skinName );
 
-		virtual UIControl * setThemeSkin( UITheme * Theme, const std::string& skinName );
+		virtual UINode * setThemeSkin( UITheme * Theme, const std::string& skinName );
 
-		UIControl * setSize( const Int32& Width, const Int32& Height );
+		virtual Node * setSize( const Float& Width, const Float& Height );
 
-		const Sizei& getSize();
+		const Sizef& getSize();
 
 		UITooltip * getTooltip();
 
@@ -85,26 +86,37 @@ class EE_API UIWidget : public UIControlAnim {
 		void notifyLayoutAttrChange();
 
 		void notifyLayoutAttrChangeParent();
+
+		bool setAttribute( const std::string& name, const std::string& value );
+
+		virtual bool setAttribute( const NodeAttribute& attribute );
+
+		const Rectf& getPadding() const;
+
+		UIWidget * setPadding(const Rectf& padding);
 	protected:
 		friend class UIManager;
+		friend class UISceneNode;
 
 		UITheme *	mTheme;
 		UITooltip *	mTooltip;
-		Sizei		mMinControlSize;
+		Sizef		mMinControlSize;
 		Rect		mDistToBorder;
 		Rect		mLayoutMargin;
-		Rect		mRealMargin;
+		Rectf		mPadding;
+		Rectf		mRealPadding;
 		Float		mLayoutWeight;
 		Uint32		mLayoutGravity;
 		LayoutSizeRules mLayoutWidthRules;
 		LayoutSizeRules mLayoutHeightRules;
 		LayoutPositionRules mLayoutPositionRule;
 		UIWidget * mLayoutPositionRuleWidget;
-		int	mPropertiesTransactionCount;
+		int	mAttributesTransactionCount;
+		std::string mSkinName;
 
 		void createTooltip();
 
-		virtual void onParentSizeChange( const Vector2i& SizeChange );
+		virtual void onParentSizeChange( const Vector2f& SizeChange );
 
 		virtual void onPositionChange();
 
@@ -114,11 +126,13 @@ class EE_API UIWidget : public UIControlAnim {
 
 		virtual void onWidgetCreated();
 
-		void beginPropertiesTransaction();
+		virtual void onPaddingChange();
 
-		void endPropertiesTransaction();
+		void beginAttributesTransaction();
 
-		void updateAnchors( const Vector2i & SizeChange );
+		void endAttributesTransaction();
+
+		void updateAnchors( const Vector2f & SizeChange );
 
 		void alignAgainstLayout();
 };

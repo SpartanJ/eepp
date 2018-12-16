@@ -1,7 +1,7 @@
 #ifndef EE_UICPROGRESSBAR_HPP
 #define EE_UICPROGRESSBAR_HPP
 
-#include <eepp/ui/uicontrolanim.hpp>
+#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/graphics/scrollparallax.hpp>
 
@@ -31,7 +31,7 @@ class EE_API UIProgressBar : public UIWidget {
 
 		virtual void draw();
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		void setMovementSpeed( const Vector2f& Speed );
 
@@ -51,7 +51,7 @@ class EE_API UIProgressBar : public UIWidget {
 		
 		UITextView * getTextBox() const;
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		UIProgressBarStyleConfig mStyleConfig;
 		Float				mProgress;

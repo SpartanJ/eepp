@@ -1,111 +1,161 @@
 #include <eepp/audio/audiodevice.hpp>
-#include <eepp/audio/audiolistener.hpp>
-#include <eepp/audio/openal.hpp>
+#include <eepp/audio/alcheck.hpp>
+#include <eepp/audio/listener.hpp>
+#include <eepp/core/core.hpp>
+#include <memory>
 
-namespace EE { namespace Audio {
+namespace
+{
+	ALCdevice*  audioDevice  = NULL;
+	ALCcontext* audioContext = NULL;
 
-ALCdevice *		mDevice = NULL;
-ALCcontext *	mContext = NULL;
-
-AudioDevice::AudioDevice() {
-	printInfo();
-
-	// Create the device
-	mDevice = alcOpenDevice( NULL );
-
-	if ( mDevice ) {
-		mContext = alcCreateContext( mDevice, NULL );
-
-		if ( mContext ) {
-			// Set the context as the current one (we'll only need one)
-			alcMakeContextCurrent( mContext );
-
-			// Initialize the listener, located at the origin and looking along the Z axis
-			#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-			ALCheck( alListenerf( AL_GAIN, 1.f ) );
-			#endif
-
-			float Position[] = {0.f, 0.f, 0.f};
-			ALCheck( alListenerfv( AL_POSITION, Position ) );
-
-			float Orientation[] = {0.f, 0.f, -1.f, 0.f, 1.f, 0.f};
-			ALCheck( alListenerfv( AL_ORIENTATION, Orientation ) );
-
-			std::string log( "OpenAL current device:\n" );
-			log += "\t" + std::string( (const char *)alcGetString(mDevice, ALC_DEVICE_SPECIFIER) );
-			eePRINTL( log.c_str() );
-		} else {
-			eePRINTL("Failed to create the audio context");
-		}
-	} else {
-		eePRINTL("Failed to open the audio device");
-	}
+	float		listenerVolume = 100.f;
+	Vector3f listenerPosition (0.f, 0.f, 0.f);
+	Vector3f listenerDirection(0.f, 0.f, -1.f);
+	Vector3f listenerUpVector (0.f, 1.f, 0.f);
 }
 
-void AudioDevice::printInfo() {
-	std::string log( "OpenAL devices detected:\n" );
+namespace EE { namespace Audio { namespace Private {
 
-	if ( alcIsExtensionPresent( NULL, (const ALCchar *) "ALC_ENUMERATION_EXT" ) == AL_TRUE ) {
-		const char *s = (const char *) alcGetString(NULL, ALC_DEVICE_SPECIFIER);
+AudioDevice::AudioDevice() {
+	// Create the device
+	audioDevice = alcOpenDevice(NULL);
 
-		while (*s != '\0') {
-			log += "\t" + std::string( s ) + "\n";
-			while (*s++ != '\0');
+	if (audioDevice) {
+		// Create the context
+		audioContext = alcCreateContext(audioDevice, NULL);
+
+		if (audioContext) {
+			// Set the context as the current one (we'll only need one)
+			alcMakeContextCurrent(audioContext);
+
+			// Apply the listener properties the user might have set
+			float orientation[] = {listenerDirection.x,
+								   listenerDirection.y,
+								   listenerDirection.z,
+								   listenerUpVector.x,
+								   listenerUpVector.y,
+								   listenerUpVector.z};
+			alCheck(alListenerf(AL_GAIN, listenerVolume * 0.01f));
+			alCheck(alListener3f(AL_POSITION, listenerPosition.x, listenerPosition.y, listenerPosition.z));
+			alCheck(alListenerfv(AL_ORIENTATION, orientation));
+		} else {
+			eePRINTL( "Failed to create the audio context" );
 		}
 	} else {
-		log += "OpenAL device enumeration isn't available.";
+		eePRINTL( "Failed to open the audio device" );
 	}
-
-	log += "OpenAL default device:\n";
-	log += "\t" + std::string( (const char *)alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER) );
-
-	eePRINTL( log.c_str() );
 }
 
 AudioDevice::~AudioDevice() {
 	// Destroy the context
-	alcMakeContextCurrent( NULL );
-
-	if ( mContext )
-		alcDestroyContext( mContext );
+	alcMakeContextCurrent(NULL);
+	if (audioContext)
+		alcDestroyContext(audioContext);
 
 	// Destroy the device
-	if ( mDevice )
-		alcCloseDevice( mDevice );
+	if (audioDevice)
+		alcCloseDevice(audioDevice);
 }
 
-bool AudioDevice::isExtensionSupported( const std::string& extension ) {
-	EnsureALInit();
+bool AudioDevice::isExtensionSupported(const std::string& extension) {
+	// Create a temporary audio device in case none exists yet.
+	// This device will not be used in this function and merely
+	// makes sure there is a valid OpenAL device for extension
+	// queries if none has been created yet.
+	bool ret = false;
 
-	if ( ( extension.length() > 2 ) && ( extension.substr(0, 3) == "ALC" ) )
-		return alcIsExtensionPresent( mDevice, extension.c_str() ) != AL_FALSE;
+	AudioDevice * device = NULL;
+	if (!audioDevice)
+		device = eeNew( AudioDevice, () );
+
+	if ((extension.length() > 2) && (extension.substr(0, 3) == "ALC"))
+		ret = alcIsExtensionPresent(audioDevice, extension.c_str()) != AL_FALSE;
 	else
-		return alIsExtensionPresent( extension.c_str() ) != AL_FALSE;
+		ret = alIsExtensionPresent(extension.c_str()) != AL_FALSE;
+
+	eeSAFE_DELETE( device );
+
+	return ret;
 }
 
-int AudioDevice::getFormatFromChannelCount( unsigned int ChannelCount ) {
-	EnsureALInit();
+int AudioDevice::getFormatFromChannelCount(unsigned int channelCount) {
+	// Create a temporary audio device in case none exists yet.
+	// This device will not be used in this function and merely
+	// makes sure there is a valid OpenAL device for format
+	// queries if none has been created yet.
+	AudioDevice * device = NULL;
+	if (!audioDevice)
+		device = eeNew( AudioDevice, () );
 
+	// Find the good format according to the number of channels
 	int format = 0;
-
-	switch ( ChannelCount ) {
-		case 1 : format = AL_FORMAT_MONO16;						break;
-		case 2 : format = AL_FORMAT_STEREO16;					break;
-		case 4 : format = alGetEnumValue("AL_FORMAT_QUAD16");	break;
-		case 6 : format = alGetEnumValue("AL_FORMAT_51CHN16");	break;
-		case 7 : format = alGetEnumValue("AL_FORMAT_61CHN16");	break;
-		case 8 : format = alGetEnumValue("AL_FORMAT_71CHN16");	break;
-		default: format = 0;
+	switch (channelCount)
+	{
+		case 1:  format = AL_FORMAT_MONO16;					break;
+		case 2:  format = AL_FORMAT_STEREO16;				  break;
+		case 4:  format = alGetEnumValue("AL_FORMAT_QUAD16");  break;
+		case 6:  format = alGetEnumValue("AL_FORMAT_51CHN16"); break;
+		case 7:  format = alGetEnumValue("AL_FORMAT_61CHN16"); break;
+		case 8:  format = alGetEnumValue("AL_FORMAT_71CHN16"); break;
+		default: format = 0;								   break;
 	}
 
-	if ( -1 == format )
+	// Fixes a bug on OS X
+	if (format == -1)
 		format = 0;
+
+	eeSAFE_DELETE( device );
 
 	return format;
 }
 
-bool AudioDevice::isAvailable() {
-	return NULL != mDevice && NULL != mContext;
+void AudioDevice::setGlobalVolume(float volume) {
+	if (audioContext)
+		alCheck(alListenerf(AL_GAIN, volume * 0.01f));
+
+	listenerVolume = volume;
 }
 
-}}
+float AudioDevice::getGlobalVolume() {
+	return listenerVolume;
+}
+
+void AudioDevice::setPosition(const Vector3f& position) {
+	if (audioContext)
+		alCheck(alListener3f(AL_POSITION, position.x, position.y, position.z));
+
+	listenerPosition = position;
+}
+
+Vector3f AudioDevice::getPosition() {
+	return listenerPosition;
+}
+
+void AudioDevice::setDirection(const Vector3f& direction) {
+	if (audioContext) {
+		float orientation[] = {direction.x, direction.y, direction.z, listenerUpVector.x, listenerUpVector.y, listenerUpVector.z};
+		alCheck(alListenerfv(AL_ORIENTATION, orientation));
+	}
+
+	listenerDirection = direction;
+}
+
+Vector3f AudioDevice::getDirection() {
+	return listenerDirection;
+}
+
+void AudioDevice::setUpVector(const Vector3f& upVector) {
+	if (audioContext) {
+		float orientation[] = {listenerDirection.x, listenerDirection.y, listenerDirection.z, upVector.x, upVector.y, upVector.z};
+		alCheck(alListenerfv(AL_ORIENTATION, orientation));
+	}
+
+	listenerUpVector = upVector;
+}
+
+Vector3f AudioDevice::getUpVector() {
+	return listenerUpVector;
+}
+
+}}}

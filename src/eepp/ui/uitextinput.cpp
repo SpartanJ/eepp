@@ -1,11 +1,11 @@
 #include <eepp/ui/uitextinput.hpp>
-#include <eepp/ui/uimanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/text.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -19,7 +19,8 @@ UITextInput::UITextInput() :
 	mAllowEditing( true ),
 	mShowingWait( true )
 {
-	setFlags( UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED );
+	setFlags( UI_AUTO_PADDING | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED );
+	clipEnable();
 
 	mTextBuffer.start();
 	mTextBuffer.setActive( false );
@@ -41,12 +42,12 @@ bool UITextInput::isType( const Uint32& type ) const {
 	return UITextInput::getType() == type ? true : UITextView::isType( type );
 }
 
-void UITextInput::update() {
-	if ( isMouseOverMeOrChilds() ) {
-		UIManager::instance()->setCursor( EE_CURSOR_IBEAM );
+void UITextInput::update( const Time& time ) {
+	if ( isMouseOverMeOrChilds() && NULL != mSceneNode ) {
+		mSceneNode->setCursor( EE_CURSOR_IBEAM );
 	}
 
-	UITextView::update();
+	UITextView::update( time );
 
 	if ( mTextBuffer.changedSinceLastUpdate() ) {
 		Vector2f offSet = mRealAlignOffset;
@@ -78,11 +79,11 @@ void UITextInput::update() {
 		onCursorPosChange();
 	}
 
-	updateWaitingCursor();
+	updateWaitingCursor( time );
 }
 
 void UITextInput::onCursorPosChange() {
-	sendCommonEvent( UIEvent::OnCursorPosChange );
+	sendCommonEvent( Event::OnCursorPosChange );
 	invalidateDraw();
 }
 
@@ -96,22 +97,22 @@ void UITextInput::drawWaitingCursor() {
 		Primitives P;
 		P.setColor( mFontStyleConfig.FontColor );
 
-		Float CurPosX = mScreenPos.x + mRealAlignOffset.x + mCurPos.x + PixelDensity::dpToPxI( 1.f ) + mRealPadding.Left;
+		Float CurPosX = eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + PixelDensity::dpToPx( 1.f ) + mRealPadding.Left );
 		Float CurPosY = mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mRealPadding.Top;
 
-		if ( CurPosX > (Float)mScreenPos.x + (Float)mRealSize.x )
-			CurPosX = (Float)mScreenPos.x + (Float)mRealSize.x;
+		if ( CurPosX > (Float)mScreenPos.x + (Float)mSize.x )
+			CurPosX = (Float)mScreenPos.x + (Float)mSize.x;
 
-		P.drawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->getFont()->getLineSpacing( mTextCache->getCharacterSizePx() ) ) ) );
+		P.drawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->getFont()->getFontHeight( mTextCache->getCharacterSizePx() ) ) ) );
 
 		if ( disableSmooth )
 			GLi->lineSmooth( true );
 	}
 }
 
-void UITextInput::updateWaitingCursor() {
+void UITextInput::updateWaitingCursor( const Time& time ) {
 	if ( mVisible && mTextBuffer.isActive() && mTextBuffer.isFreeEditingEnabled() ) {
-		mWaitCursorTime += getElapsed().asMilliseconds();
+		mWaitCursorTime += time.asMilliseconds();
 
 		if ( mWaitCursorTime >= 500.f ) {
 			mShowingWait = !mShowingWait;
@@ -128,7 +129,7 @@ void UITextInput::draw() {
 }
 
 Uint32 UITextInput::onFocus() {
-	UIControlAnim::onFocus();
+	UINode::onFocus();
 
 	if ( mAllowEditing ) {
 		mTextBuffer.setActive( true );
@@ -145,7 +146,7 @@ Uint32 UITextInput::onFocusLoss() {
 }
 
 Uint32 UITextInput::onPressEnter() {
-	sendCommonEvent( UIEvent::OnPressEnter );
+	sendCommonEvent( Event::OnPressEnter );
 	return 0;
 }
 
@@ -182,8 +183,8 @@ void UITextInput::alignFix() {
 		if ( !mTextBuffer.setSupportNewLine() ) {
 			if ( tX < 0.f )
 				mRealAlignOffset.x = -( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
-			else if ( tX > mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right )
-				mRealAlignOffset.x = mRealSize.getWidth() - mRealPadding.Left - mRealPadding.Right - ( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
+			else if ( tX > mSize.getWidth() - mRealPadding.Left - mRealPadding.Right )
+				mRealAlignOffset.x = mSize.getWidth() - mRealPadding.Left - mRealPadding.Right - ( mRealAlignOffset.x + ( tW - mRealAlignOffset.x ) );
 		}
 	}
 }
@@ -208,8 +209,13 @@ void UITextInput::onThemeLoaded() {
 }
 
 void UITextInput::onAutoSize() {
-	if ( ( mFlags & UI_AUTO_SIZE ) && 0 == mSize.getHeight() ) {
-		setSize( mSize.x, getSkinSize().getHeight() );
+	if ( ( mFlags & UI_AUTO_SIZE ) && 0 == mDpSize.getHeight() ) {
+		setSize( mDpSize.x, getSkinSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+	}
+
+	if ( mLayoutHeightRules == WRAP_CONTENT ) {
+		int minHeight = eemax<int>( mTextCache->getTextHeight(), PixelDensity::dpToPxI( getSkinSize().getHeight() ) );
+		setInternalPixelsHeight( minHeight + mRealPadding.Top + mRealPadding.Bottom );
 	}
 }
 
@@ -265,11 +271,11 @@ void UITextInput::updateText() {
 
 Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTON_LMASK ) {
-		Vector2i controlPos( Pos );
-		worldToControl( controlPos );
-		controlPos = PixelDensity::dpToPxI( controlPos ) - Vector2i( (Int32)mRealAlignOffset.x, (Int32)mRealAlignOffset.y );
+		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
+		worldToNode( controlPos );
+		controlPos = PixelDensity::dpToPx( controlPos ) - mRealAlignOffset;
 
-		Int32 curPos = mTextCache->findCharacterFromPos( controlPos );
+		Int32 curPos = mTextCache->findCharacterFromPos( Vector2i( controlPos.x, controlPos.y ) );
 
 		if ( -1 != curPos ) {
 			mTextBuffer.setCursorPos( curPos );
@@ -292,9 +298,10 @@ Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags 
 }
 
 Uint32 UITextInput::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	UIControl::onMouseExit( Pos, Flags );
+	UINode::onMouseExit( Pos, Flags );
 
-	UIManager::instance()->setCursor( EE_CURSOR_ARROW );
+	if ( NULL != mSceneNode )
+		mSceneNode->setCursor( EE_CURSOR_ARROW );
 
 	return 1;
 }
@@ -337,31 +344,40 @@ bool UITextInput::isFreeEditingEnabled() {
 	return mTextBuffer.isFreeEditingEnabled();
 }
 
-void UITextInput::loadFromXmlNode(const pugi::xml_node & node) {
-	beginPropertiesTransaction();
+bool UITextInput::setAttribute( const NodeAttribute& attribute ) {
+	const std::string& name = attribute.getName();
 
-	UITextView::loadFromXmlNode( node );
-
-	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		std::string name = ait->name();
-		String::toLowerInPlace( name );
-
-		if ( "text" == name ) {
-			setText( UIManager::instance()->getTranslatorString( ait->as_string() ) );
-		} else if ( "allowediting" == name ) {
-			setAllowEditing( ait->as_bool() );
-		} else if ( "maxlength" == name ) {
-			setMaxLength( ait->as_uint() );
-		} else if ( "freeediting" == name ) {
-			setFreeEditing( ait->as_bool() );
-		} else if ( "onlynumbers" == name ) {
-			getInputTextBuffer()->setAllowOnlyNumbers( ait->as_bool(), getInputTextBuffer()->dotsInNumbersAllowed() );
-		} else if ( "allowdot" == name ) {
-			getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), ait->as_bool() );
+	if ( "text" == name ) {
+		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
+			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
 		}
+	} else if ( "allowediting" == name ) {
+		setAllowEditing( attribute.asBool() );
+	} else if ( "maxlength" == name ) {
+		setMaxLength( attribute.asUint() );
+	} else if ( "freeediting" == name ) {
+		setFreeEditing( attribute.asBool() );
+	} else if ( "onlynumbers" == name ) {
+		getInputTextBuffer()->setAllowOnlyNumbers( attribute.asBool(), getInputTextBuffer()->dotsInNumbersAllowed() );
+	} else if ( "allowdot" == name ) {
+		getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), attribute.asBool() );
+	} else {
+		return UITextView::setAttribute( attribute );
 	}
 
-	endPropertiesTransaction();
+	return true;
+}
+
+UIWidget * UITextInput::setPadding( const Rectf& padding ) {
+	Rectf autoPadding;
+
+	if ( mFlags & UI_AUTO_PADDING ) {
+		autoPadding = makePadding( true, true, false, false );
+	}
+
+	UITextView::setPadding( autoPadding + padding );
+
+	return this;
 }
 
 }}

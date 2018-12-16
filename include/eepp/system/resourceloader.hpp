@@ -1,7 +1,6 @@
 #ifndef EE_SYSTEMCRESOURCELOADER
 #define EE_SYSTEMCRESOURCELOADER
 
-#include <eepp/system/base.hpp>
 #include <eepp/system/objectloader.hpp>
 
 namespace EE { namespace System {
@@ -11,7 +10,7 @@ namespace EE { namespace System {
 /** @brief A simple resource loader that can load a batch of resources synchronously or asynchronously */
 class EE_API ResourceLoader {
 	public:
-		typedef cb::Callback1<void, ResourceLoader *> ResLoadCallback;
+		typedef std::function<void( ResourceLoader * )> ResLoadCallback;
 
 		/** @param MaxThreads Set the maximun simultaneous threads to load resources, THREADS_AUTO will use the cpu number of cores. */
 		ResourceLoader( const Uint32& MaxThreads = THREADS_AUTO );

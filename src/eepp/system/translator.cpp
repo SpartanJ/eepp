@@ -6,7 +6,7 @@
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/iostream.hpp>
-#include <eepp/helper/pugixml/pugixml.hpp>
+#include <pugixml/pugixml.hpp>
 
 namespace  EE { namespace System {
 
@@ -114,11 +114,11 @@ void Translator::loadFromStream( IOStream& stream, std::string lang ) {
 		return;
 
 	ios_size bufferSize = stream.getSize();
-	SafeDataPointer safeDataPointer( eeNewArray( Uint8, bufferSize ), bufferSize );
-	stream.read( reinterpret_cast<char*>( safeDataPointer.Data ), safeDataPointer.DataSize );
+	SafeDataPointer safeDataPointer( bufferSize );
+	stream.read( reinterpret_cast<char*>( safeDataPointer.data ), safeDataPointer.size );
 
 	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_buffer( safeDataPointer.Data, safeDataPointer.DataSize );
+	pugi::xml_parse_result result = doc.load_buffer( safeDataPointer.data, safeDataPointer.size );
 
 	if ( result ) {
 		loadNodes( doc.first_child(), lang );
@@ -135,7 +135,7 @@ void Translator::loadFromPack( Pack * pack, const std::string& FilePackPath, std
 	if ( pack->isOpen() && pack->extractFileToMemory( FilePackPath, PData ) ) {
 		lang = lang.size() == 2 ? lang : FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( FilePackPath ) );
 
-		loadFromMemory( PData.Data, PData.DataSize, lang );
+		loadFromMemory( PData.data, PData.size, lang );
 	}
 }
 
@@ -173,7 +173,7 @@ String Translator::getStringf( const char * key, ... ) {
 
 	const char * format = str.c_str();
 
-	int n, size = 256;
+	int size = 256;
 	std::string tstr( size, '\0' );
 
 	va_list args;
@@ -181,7 +181,7 @@ String Translator::getStringf( const char * key, ... ) {
 	while (1) {
 		va_start( args, key );
 
-		n = vsnprintf( &tstr[0], size, format, args );
+		int n = vsnprintf( &tstr[0], size, format, args );
 
 		if ( n > -1 && n < size ) {
 			tstr.resize( n );
@@ -206,7 +206,7 @@ void Translator::setLanguageFromLocale( std::locale locale ) {
 	std::string name = locale.name();
 
 	if ( "C" == name ) {
-		#ifdef EE_SUPPORT_EXCEPTIONS
+		#if defined( EE_SUPPORT_EXCEPTIONS ) && EE_PLATFORM != EE_PLATFORM_WIN
 		try {
 			const char * loc = setlocale( LC_ALL, "" );
 			locale = std::locale( loc );

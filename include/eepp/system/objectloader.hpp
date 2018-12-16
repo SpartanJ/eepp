@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEMCOBJECTLOADER
 #define EE_SYSTEMCOBJECTLOADER
 
-#include <eepp/system/base.hpp>
+#include <eepp/core.hpp>
 #include <eepp/system/thread.hpp>
 #include <list>
 
@@ -10,7 +10,7 @@ namespace EE { namespace System {
 /** @brief Base class that defines resources to be loaded in synchronous or asynchronous mode. */
 class EE_API ObjectLoader : protected Thread {
 	public:
-		typedef cb::Callback1<void, ObjectLoader *> ObjLoadCallback;
+		typedef std::function<void( ObjectLoader * )> ObjLoadCallback;
 
 		/** @brief LoaderType Definition of the Object Loaders implemented by the engine. */
 		enum ObjLoaderType {

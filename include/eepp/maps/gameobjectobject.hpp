@@ -3,7 +3,7 @@
 
 #include <eepp/maps/base.hpp>
 #include <eepp/maps/gameobject.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Maps {

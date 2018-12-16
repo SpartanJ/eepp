@@ -1,5 +1,9 @@
 #include <eepp/ee.hpp>
 
+#include <eepp/audio/sound.hpp>
+#include <eepp/audio/soundbuffer.hpp>
+#include <eepp/audio/music.hpp>
+
 EE::Window::Window * win = NULL;
 
 void mainLoop()
@@ -23,7 +27,7 @@ void mainLoop()
 	}
 
 	// Draw a circle
-	p.drawCircle( Vector2f( win->getWidth() * 0.5f, win->getHeight() * 0.5f ), 200, 60 );
+	p.drawCircle( win->getCenter(), 200, 60 );
 
 	// Draw frame
 	win->display();
@@ -44,7 +48,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// This is the application loop, it will loop until the window is closed.
 		// This is only a requirement if you want to support Emscripten builds ( WebGL + Canvas ).
 		// This is the same as, except for Emscripten.
-		// while ( win->Running() )
+		// while ( win->isRunning() )
 		// {
 		//		MainLoop();
 		// }

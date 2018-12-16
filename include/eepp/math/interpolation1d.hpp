@@ -25,11 +25,13 @@ class EE_API Interpolation1d {
 	public:
 		Interpolation1d();
 
+		Interpolation1d( std::vector<Point1d> points );
+
 		~Interpolation1d();
 
-		typedef cb::Callback1<void,Interpolation1d&> OnPathEndCallback;
+		typedef std::function<void(Interpolation1d&)> OnPathEndCallback;
 
-		typedef cb::Callback1<void,Interpolation1d&> OnStepCallback;
+		typedef std::function<void(Interpolation1d&)> OnStepCallback;
 
 		/** Add a new point */
 		Interpolation1d& add( const Float& pos, const Time& Time = Time::Zero );
@@ -47,7 +49,10 @@ class EE_API Interpolation1d {
 		Interpolation1d& waitAndAdd( const Float& pos, const Time& waitTime, const Time& addTime );
 
 		/** Start the animation */
-		Interpolation1d& start( OnPathEndCallback PathEndCallback = OnPathEndCallback(), OnStepCallback StepCallback = OnStepCallback() );
+		Interpolation1d& start();
+
+		/** Start the animation */
+		Interpolation1d& start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback = OnStepCallback() );
 
 		/** Stop the animation */
 		Interpolation1d& stop();
@@ -95,6 +100,9 @@ class EE_API Interpolation1d {
 
 		/** @return the vector of points */
 		const std::vector<Point1d>& getPoints() const;
+
+		/** @return the vector of points reversed */
+		std::vector<Point1d> getReversePoints();
 
 		/** @return The Current Node */
 		Point1d* getCurrentActual() const;

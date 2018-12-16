@@ -2,6 +2,7 @@
 #define EE_GRAPHICSPRIVATECTEXTUREPACKERTEX
 
 #include <eepp/graphics/base.hpp>
+#include <eepp/graphics/image.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -11,7 +12,7 @@ namespace Private {
 
 class TexturePackerTex {
 	public:
-		TexturePackerTex( const std::string& name );
+		TexturePackerTex(const std::string& name , const Image::FormatConfiguration& imageFormatConfiguration );
 
 		TexturePackerTex( EE::Graphics::Image * Img, const std::string& name );
 

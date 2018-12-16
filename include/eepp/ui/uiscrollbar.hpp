@@ -47,17 +47,17 @@ class EE_API UIScrollBar : public UIWidget {
 
 		bool isVertical() const;
 
-		virtual void update();
+		virtual void update( const Time& time );
 
 		UISlider * getSlider() const;
 
-		UIControlAnim * getButtonUp() const;
+		UINode * getButtonUp() const;
 
-		UIControlAnim * getButtonDown() const;
+		UINode * getButtonDown() const;
 
 		UI_ORIENTATION getOrientation() const;
 
-		UIControl * setOrientation( const UI_ORIENTATION & orientation );
+		UINode * setOrientation( const UI_ORIENTATION & orientation );
 
 		ScrollBarType getScrollBarType() const;
 
@@ -67,13 +67,12 @@ class EE_API UIScrollBar : public UIWidget {
 
 		void setExpandBackground( bool expandBackground );
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
-
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		ScrollBarType	mScrollBarType;
 		UISlider * 		mSlider;
-		UIControlAnim *	mBtnUp;
-		UIControlAnim * mBtnDown;
+		UINode *	mBtnUp;
+		UINode * mBtnDown;
 
 		virtual void onSizeChange();
 
@@ -81,11 +80,13 @@ class EE_API UIScrollBar : public UIWidget {
 
 		void adjustChilds();
 
-		void onValueChangeCb( const UIEvent * Event );
+		void onValueChangeCb( const Event * Event );
 
 		virtual void onAlphaChange();
 
-		virtual Uint32 onMessage( const UIMessage * Msg );
+		virtual Uint32 onMessage( const NodeMessage * Msg );
+
+		virtual void onPaddingChange();
 
 		void manageClick( const Uint32& flags );
 };

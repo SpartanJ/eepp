@@ -3,6 +3,9 @@
 
 #include <eepp/graphics/base.hpp>
 
+#include <eepp/system/color.hpp>
+using namespace EE::System;
+
 namespace EE { namespace Graphics {
 
 /** @brief A simple particle class used by the particle system.

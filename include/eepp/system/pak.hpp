@@ -1,7 +1,6 @@
 #ifndef EE_SYSTEMCPAK_HPP
 #define EE_SYSTEMCPAK_HPP
 
-#include <eepp/system/base.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/iostreamfile.hpp>
 
@@ -67,9 +66,11 @@ class EE_API Pak : public Pack {
 
 		/** @return The file path of the opened package */
 		std::string getPackPath();
-	protected:
 
-	private:
+		IOStream * getFileStream( const std::string& path );
+	protected:
+		friend class IOStreamPak;
+
 		typedef struct pakheader_t {
 			char head[4];		//! Header of the file ( default: 'PACK' )
 			Uint32 dir_offset; 	//! Offset to the first pakEntry on the pakFile
@@ -91,6 +92,8 @@ class EE_API Pak : public Pack {
 
 		pakFile					mPak;
 		std::vector<pakEntry>	mPakFiles;
+
+		pakEntry getPackEntry( Uint32 index );
 };
 
 }}

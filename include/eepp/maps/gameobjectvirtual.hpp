@@ -3,7 +3,7 @@
 
 #include <eepp/maps/base.hpp>
 #include <eepp/maps/gameobject.hpp>
-#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textureregion.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Maps {
@@ -14,7 +14,7 @@ class EE_API GameObjectVirtual : public GameObject {
 	public:
 		GameObjectVirtual( Uint32 getDataId, MapLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const Vector2f& Pos = Vector2f() );
 
-		GameObjectVirtual( SubTexture * SubTexture, MapLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const Vector2f& Pos = Vector2f() );
+		GameObjectVirtual( TextureRegion * TextureRegion, MapLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const Vector2f& Pos = Vector2f() );
 
 		virtual ~GameObjectVirtual();
 
@@ -42,7 +42,7 @@ class EE_API GameObjectVirtual : public GameObject {
 		Uint32		mDataId;
 		Vector2f	mPos;
 		MapLayer *	mLayer;
-		SubTexture *	mSubTexture;
+		TextureRegion *	mTextureRegion;
 };
 
 }}

@@ -62,7 +62,8 @@ UISkinSimple * UISkinSimple::clone( const std::string& NewName, const bool& Copy
 	if ( CopyColorsState ) {
 		SkinS->mColorDefault = mColorDefault;
 
-		memcpy( &SkinS->mColor[0], &mColor[0], UISkinState::StateCount * sizeof(Color) );
+		for ( size_t i = 0; i < UISkinState::StateCount; i++ )
+			SkinS->mColor[i] = mColor[i];
 	}
 
 	memcpy( &SkinS->mDrawable[0], &mDrawable[0], UISkinState::StateCount * sizeof(Drawable*) );
@@ -74,27 +75,26 @@ UISkin * UISkinSimple::clone() {
 	return clone( mName, true );
 }
 
-Sizei UISkinSimple::getSize( const Uint32 & state ) {
+Sizef UISkinSimple::getSize( const Uint32 & state ) {
 	if ( NULL != mDrawable[ state ] ) {
-		Sizef s( mDrawable[ state ]->getSize() );
-		return Sizei( (Int32)s.x, (Int32)s.y );
+		return mDrawable[ state ]->getSize();
 	}
 
-	return Sizei();
+	return Sizef();
 }
 
-Rect UISkinSimple::getBorderSize( const Uint32 & state ) {
+Rectf UISkinSimple::getBorderSize( const Uint32 & state ) {
 	if ( NULL != mDrawable[ state ] && mDrawable[ state ]->getDrawableType() == Drawable::NINEPATCH ) {
 		NinePatch * ninePatch( static_cast<NinePatch*>( mDrawable[ state ] ) );
-		SubTexture * stl( ninePatch->getSubTexture( NinePatch::Left ) );
-		SubTexture * str( ninePatch->getSubTexture( NinePatch::Right ) );
-		SubTexture * stt( ninePatch->getSubTexture( NinePatch::Up ) );
-		SubTexture * stb( ninePatch->getSubTexture( NinePatch::Down ) );
-		Rect size( stl->getSize().getWidth(), stt->getSize().getHeight(), str->getSize().getWidth(), stb->getSize().getHeight() );
+		TextureRegion * stl( ninePatch->getTextureRegion( NinePatch::Left ) );
+		TextureRegion * str( ninePatch->getTextureRegion( NinePatch::Right ) );
+		TextureRegion * stt( ninePatch->getTextureRegion( NinePatch::Up ) );
+		TextureRegion * stb( ninePatch->getTextureRegion( NinePatch::Down ) );
+		Rectf size( stl->getPxSize().getWidth(), stt->getPxSize().getHeight(), str->getPxSize().getWidth(), stb->getPxSize().getHeight() );
 		return size;
 	}
 
-	return Rect();
+	return Rectf();
 }
 
 }}

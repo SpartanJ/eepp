@@ -137,8 +137,8 @@ if _OPTIONS.platform then
 	premake.gcc.platforms['Native'] = premake.gcc.platforms[_OPTIONS.platform]
 end
 
-newoption { trigger = "with-ssl", description = "Enables SSL support for the Network module ( requires OpenSSL )." }
-newoption { trigger = "with-libsndfile", description = "Build with libsndfile support." }
+newoption { trigger = "with-ssl", description = "Enables SSL support for the Network module ( by default uses mbedtls. )" }
+newoption { trigger = "with-openssl", description = "Enables OpenSSL support ( and disables mbedtls backend )." }
 newoption { trigger = "with-static-freetype", description = "Build freetype as a static library." }
 newoption { trigger = "with-static-eepp", description = "Force to build the demos and tests with eepp compiled statically" }
 newoption { trigger = "with-static-backend", description = "It will try to compile the library with a static backend (only for gcc and mingw).\n\t\t\t\tThe backend should be placed in libs/your_platform/libYourBackend.a" }
@@ -281,14 +281,14 @@ static_backends = { }
 backend_selected = false
 
 function build_base_configuration( package_name )
-	includedirs { "src/eepp/helper/zlib" }
+	includedirs { "src/thirdparty/zlib" }
 
 	if not os.is("windows") then
 		buildoptions{ "-fPIC" }
 	end
 
 	if is_vs() then
-		includedirs { "src/eepp/helper/libzip/vs" }
+		includedirs { "src/thirdparty/libzip/vs" }
 	end
 
 	configuration "debug"
@@ -472,7 +472,7 @@ function generate_os_links()
 	elseif os.is_real("mingw32") then
 		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32", "ws2_32", "winmm" } )
 	elseif os.is_real("macosx") then
-		multiple_insert( os_links, { "OpenGL.framework", "OpenAL.framework", "CoreFoundation.framework", "AGL.framework" } )
+		multiple_insert( os_links, { "OpenGL.framework", "OpenAL.framework", "CoreFoundation.framework" } )
 	elseif os.is_real("freebsd") then
 		multiple_insert( os_links, { "rt", "pthread", "X11", "openal", "GL", "Xcursor" } )
 	elseif os.is_real("haiku") then
@@ -513,12 +513,16 @@ function add_static_links()
 	links { "SOIL2-static",
 			"chipmunk-static",
 			"libzip-static",
-			"stb_vorbis-static",
 			"jpeg-compressor-static",
 			"zlib-static",
 			"imageresampler-static",
-			"pugixml-static"
+			"pugixml-static",
+			"vorbis-static"
 	}
+
+	if _OPTIONS["with-ssl"] and not _OPTIONS["with-openssl"] then
+		links { "mbedtls-static" }
+	end
 	
 	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
 		links{ "glew-static" }
@@ -605,11 +609,11 @@ function set_ios_config()
 		linkoptions { sysroot_ver }
 		libdirs { framework_libs_path }
 		linkoptions { " -F" .. framework_path .. " -L" .. framework_libs_path .. " -isysroot " .. sysroot_path }
-		includedirs { "src/eepp/helper/SDL2/include" }
+		includedirs { "src/thirdparty/SDL2/include" }
 	end
 	
 	if _OPTIONS.platform == "ios-cross-arm7" or _OPTIONS.platform == "ios-cross-x86" then
-		includedirs { "src/eepp/helper/SDL2/include" }
+		includedirs { "src/thirdparty/SDL2/include" }
 	end
 end
 
@@ -664,22 +668,31 @@ end
 function check_ssl_support()
 	if _OPTIONS["with-ssl"] then
 		print("Enabled SSL support")
-		if os.is("windows") then
-			table.insert( link_list, get_backend_link_name( "libssl" ) )
-			table.insert( link_list, get_backend_link_name( "libcrypto" ) )
+
+		if _OPTIONS["with-openssl"] then
+			if os.is("windows") then
+				table.insert( link_list, get_backend_link_name( "libssl" ) )
+				table.insert( link_list, get_backend_link_name( "libcrypto" ) )
+			else
+				table.insert( link_list, get_backend_link_name( "ssl" ) )
+				table.insert( link_list, get_backend_link_name( "crypto" ) )
+			end
+
+			files { "src/eepp/network/ssl/backend/openssl/*.cpp" }
+
+			defines { "EE_OPENSSL" }
 		else
-			table.insert( link_list, get_backend_link_name( "ssl" ) )
-			table.insert( link_list, get_backend_link_name( "crypto" ) )
+			files { "src/eepp/network/ssl/backend/mbedtls/*.cpp" }
+
+			defines { "EE_MBEDTLS" }
 		end
-		
-		files { "src/eepp/network/ssl/backend/openssl/*.cpp" }
-		
-		defines { "EE_SSL_SUPPORT", "EE_OPENSSL" }
+
+		defines { "EE_SSL_SUPPORT" }
 	end
 end
 
 function build_eepp( build_name )
-	includedirs { "include", "src", "src/eepp/helper/freetype2/include", "src/eepp/helper/zlib" }
+	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include", "src/thirdparty/mbedtls/include" }
 	
 	set_ios_config()
 	set_xcode_config()
@@ -687,7 +700,7 @@ function build_eepp( build_name )
 	add_static_links()
 
 	if is_vs() then
-		includedirs { "src/eepp/helper/libzip/vs" }
+		includedirs { "src/thirdparty/libzip/vs" }
 	end
 
 	if not is_vs() then
@@ -712,7 +725,10 @@ function build_eepp( build_name )
 			"src/eepp/window/platform/null/*.cpp",
 			"src/eepp/network/*.cpp",
 			"src/eepp/network/ssl/*.cpp",
+			"src/eepp/scene/*.cpp",
+			"src/eepp/scene/actions/*.cpp",
 			"src/eepp/ui/*.cpp",
+			"src/eepp/ui/actions/*.cpp",
 			"src/eepp/ui/tools/*.cpp",
 			"src/eepp/physics/*.cpp",
 			"src/eepp/physics/constraints/*.cpp",
@@ -727,18 +743,7 @@ function build_eepp( build_name )
 	if not _OPTIONS["with-static-freetype"] and os_findlib("freetype") then
 		table.insert( link_list, get_backend_link_name( "freetype" ) )
 	end
-	
-	if _OPTIONS["with-libsndfile"] then
-		print("Enabled libsndfile")
-		defines { "EE_LIBSNDFILE_ENABLED" }
-		
-		if os.is("windows") then
-			table.insert( link_list, "libsndfile-1" )
-		else
-			table.insert( link_list, "sndfile" )
-		end
-	end
-	
+
 	multiple_insert( link_list, os_links )
 
 	links { link_list }
@@ -795,9 +800,9 @@ solution "eepp"
 			language "C"
 		end
 
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/SOIL2/src/SOIL2/*.c" }
-		includedirs { "include/eepp/helper/SOIL2" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/SOIL2/src/SOIL2/*.c" }
+		includedirs { "src/thirdparty/SOIL2" }
 		build_base_configuration( "SOIL2" )
 
 	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
@@ -805,50 +810,61 @@ solution "eepp"
 			kind "StaticLib"
 			language "C"
 			defines { "GLEW_NO_GLU", "GLEW_STATIC" }
-			set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-			files { "src/eepp/helper/glew/*.c" }
-			includedirs { "include/eepp/helper/glew" }
+			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+			files { "src/thirdparty/glew/*.c" }
+			includedirs { "include/thirdparty/glew" }
 			build_base_configuration( "glew" )
 	end
-	
+
+	if _OPTIONS["with-ssl"] and not _OPTIONS["with-openssl"] then
+		project "mbedtls-static"
+			kind "StaticLib"
+			language "C"
+			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+			includedirs { "src/thirdparty/mbedtls/include/" }
+			files { "src/thirdparty/mbedtls/library/*.c" }
+			build_base_cpp_configuration( "mbedtls" )
+	end
+
+	project "vorbis-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		includedirs { "src/thirdparty/libvorbis/lib/", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include" }
+		files { "src/thirdparty/libogg/**.c", "src/thirdparty/libvorbis/**.c" }
+		build_base_cpp_configuration( "vorbis" )
+
 	project "pugixml-static"
 		kind "StaticLib"
 		language "C++"
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/pugixml/*.cpp" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/pugixml/*.cpp" }
 		build_base_cpp_configuration( "pugixml" )
 
 	project "zlib-static"
 		kind "StaticLib"
 		language "C"
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/zlib/*.c" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/zlib/*.c" }
 		build_base_configuration( "zlib" )
 
 	project "libzip-static"
 		kind "StaticLib"
 		language "C"
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/libzip/*.c" }
-		includedirs { "src/eepp/helper/zlib" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/libzip/*.c" }
+		includedirs { "src/thirdparty/zlib" }
 		build_base_configuration( "libzip" )
 
 	project "freetype-static"
 		kind "StaticLib"
 		language "C"
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		defines { "FT2_BUILD_LIBRARY" }
-		files { "src/eepp/helper/freetype2/src/**.c" }
-		includedirs { "src/eepp/helper/freetype2/include" }
+		files { "src/thirdparty/freetype2/src/**.c" }
+		includedirs { "src/thirdparty/freetype2/include" }
 		build_base_configuration( "freetype" )
 	
-	project "stb_vorbis-static"
-		kind "StaticLib"
-		language "C"
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/stb_vorbis/*.c" }
-		build_base_configuration( "stb_vorbis" )
-		
 	project "chipmunk-static"
 		kind "StaticLib"
 
@@ -859,24 +875,50 @@ solution "eepp"
 			language "C"
 		end
 
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/chipmunk/*.c", "src/eepp/helper/chipmunk/constraints/*.c" }
-		includedirs { "include/eepp/helper/chipmunk" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/chipmunk/*.c", "src/thirdparty/chipmunk/constraints/*.c" }
+		includedirs { "include/eepp/thirdparty/chipmunk" }
 		build_base_configuration( "chipmunk" )
 
 	project "jpeg-compressor-static"
 		kind "StaticLib"
 		language "C++"
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/jpeg-compressor/*.cpp" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/jpeg-compressor/*.cpp" }
 		build_base_cpp_configuration( "jpeg-compressor" )
 
 	project "imageresampler-static"
 		kind "StaticLib"
 		language "C++"
-		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/imageresampler/*.cpp" }
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/imageresampler/*.cpp" }
 		build_base_cpp_configuration( "imageresampler" )
+
+	project "efsw-static"
+		kind "StaticLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		includedirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
+		
+		if os.is("windows") then
+			osfiles = "src/thirdparty/efsw/src/efsw/platform/win/*.cpp"
+		else
+			osfiles = "src/thirdparty/efsw/src/efsw/platform/posix/*.cpp"
+		end
+		
+		files { "src/thirdparty/efsw/src/efsw/*.cpp", osfiles }
+		
+		if os.is("windows") then
+			excludes { "src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
+		elseif os.is("linux") then
+			excludes { "src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/WatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
+		elseif os.is("macosx") then
+			excludes { "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/WatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp" }
+		elseif os.is("freebsd") then
+			excludes { "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/WatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
+		end
+		
+		build_base_cpp_configuration( "efsw" )
 
 	project "eepp-main"
 		kind "StaticLib"
@@ -951,6 +993,32 @@ solution "eepp"
 		files { "src/examples/http_request/*.cpp" }
 		build_link_configuration( "eehttp-request", true )
 
+	-- Tools
+	project "eepp-textureatlaseditor"
+		set_kind()
+		language "C++"
+		files { "src/tools/textureatlaseditor/*.cpp" }
+		build_link_configuration( "eepp-TextureAtlasEditor", true )
+
+	project "eepp-mapeditor"
+		set_kind()
+		language "C++"
+		files { "src/tools/mapeditor/*.cpp" }
+		build_link_configuration( "eepp-MapEditor", true )
+		
+	project "eepp-uieditor"
+		set_kind()
+		language "C++"
+		includedirs { "src/thirdparty/efsw/include", "src/thirdparty" }
+		
+		if not os.is("windows") and not os.is("haiku") then
+			links { "pthread" }
+		end
+		
+		links { "efsw-static", "pugixml-static" }
+		files { "src/tools/uieditor/*.cpp" }
+		build_link_configuration( "eepp-UIEditor", true )
+		
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")
 end

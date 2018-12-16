@@ -1,11 +1,11 @@
 #ifndef EE_UICUISLIDERBUTTON_HPP
 #define EE_UICUISLIDERBUTTON_HPP
 
-#include <eepp/ui/uicontrolanim.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI { namespace Private {
 
-class EE_API UISliderButton : public UIControlAnim {
+class EE_API UISliderButton : public UIWidget {
 	public:
 		static UISliderButton * New();
 

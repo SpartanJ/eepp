@@ -4,6 +4,9 @@
 #include <eepp/graphics/renderer/renderergl3.hpp>
 #include <eepp/graphics/renderer/renderergl3cp.hpp>
 #include <eepp/graphics/renderer/renderergles2.hpp>
+#include <eepp/system/packmanager.hpp>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/log.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -31,7 +34,7 @@ Shader::Shader( const Uint32& Type, const std::string& Filename ) {
 
 		FileSystem::fileGet( Filename, PData );
 
-		setSource( (const char*)PData.Data, PData.DataSize );
+		setSource( (const char*)PData.data, PData.size );
 	} else {
 		std::string tPath = Filename;
 		Pack * tPack = NULL;
@@ -41,7 +44,7 @@ Shader::Shader( const Uint32& Type, const std::string& Filename ) {
 
 			tPack->extractFileToMemory( tPath, PData );
 
-			setSource( reinterpret_cast<char*> ( PData.Data ), PData.DataSize );
+			setSource( reinterpret_cast<char*> ( PData.data ), PData.size );
 		} else {
 			eePRINTL( "Couldn't open shader object: %s", Filename.c_str() );
 		}
@@ -68,7 +71,7 @@ Shader::Shader( const Uint32& Type, Pack * Pack, const std::string& Filename ) {
 	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( Filename ) ) {
 		Pack->extractFileToMemory( Filename, PData );
 
-		setSource( reinterpret_cast<char*> ( PData.Data ), PData.DataSize );
+		setSource( reinterpret_cast<char*> ( PData.data ), PData.size );
 	}
 
 	compile();

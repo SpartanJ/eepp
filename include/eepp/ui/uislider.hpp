@@ -38,11 +38,11 @@ class EE_API UISlider : public UIWidget {
 
 		bool isVertical() const;
 
-		virtual void update();
+		virtual void update( const Time& time );
 
-		UIControl * getBackSlider() const;
+		UINode * getBackSlider() const;
 
-		UIDragableControl * getSliderButton() const;
+		UINode * getSliderButton() const;
 
 		void adjustChilds();
 
@@ -64,13 +64,15 @@ class EE_API UISlider : public UIWidget {
 
 		void setPageStep( const Float & pageStep );
 
-		virtual void loadFromXmlNode( const pugi::xml_node& node );
+		virtual bool setAttribute( const NodeAttribute& attribute );
+
+		Sizef getMinimumSize();
 	protected:
 		friend class Private::UISliderButton;
 
 		UI_ORIENTATION		mOrientation;
 		UISliderStyleConfig	mStyleConfig;
-		UIControlAnim *		mBackSlider;
+		UINode *		mBackSlider;
 		Private::UISliderButton * 	mSlider;
 		Float				mMinValue;
 		Float				mMaxValue;
@@ -82,11 +84,15 @@ class EE_API UISlider : public UIWidget {
 
 		Uint32				mLastTickMove;
 
+		virtual void onAutoSize();
+
 		virtual void onSizeChange();
+
+		virtual void onPaddingChange();
 
 		void fixSliderPos();
 
-		virtual Uint32 onKeyDown( const UIEventKey &Event );
+		virtual Uint32 onKeyDown( const KeyEvent &Event );
 		
 		virtual void onAlphaChange();
 };

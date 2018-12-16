@@ -385,7 +385,7 @@ void InputTextBuffer::update( InputEvent* Event ) {
 							setChangedSinceLastUpdate( true );
 						}
 
-						if ( mEnterCall.IsSet() )
+						if ( mEnterCall )
 							mEnterCall();
 
 					} else if ( c == KEY_LEFT ) {
@@ -489,7 +489,7 @@ void InputTextBuffer::update( InputEvent* Event ) {
 					if ( setSupportNewLine() && canAdd() )
 						mText += '\n';
 
-					if ( mEnterCall.IsSet() )
+					if ( mEnterCall )
 						mEnterCall();
 				}
 			}

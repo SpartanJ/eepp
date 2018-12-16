@@ -209,7 +209,7 @@ Ftp::Response Ftp::download(const std::string& remoteFile, const std::string& lo
 	return response;
 }
 
-Ftp::Response Ftp::upload(const std::string& localFile, const std::string& remotePath, TransferMode mode) {
+Ftp::Response Ftp::upload(const std::string& localFile, const std::string& remotePath, TransferMode mode, bool append) {
 	// Get the contents of the file to send
 	std::ifstream file(localFile.c_str(), std::ios_base::binary);
 	if (!file)
@@ -231,7 +231,7 @@ Ftp::Response Ftp::upload(const std::string& localFile, const std::string& remot
 	Response response = data.Open(mode);
 	if (response.isOk()) {
 		// Tell the server to start the transfer
-		response = sendCommand("STOR", path + filename);
+		response = sendCommand(append ? "APPE" : "STOR", path + filename);
 		if (response.isOk()) {
 			// Send the file data
 			data.Send(file);

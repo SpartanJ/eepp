@@ -1,7 +1,9 @@
 #ifndef EE_SYSTEM_FILESYSTEM_HPP
 #define EE_SYSTEM_FILESYSTEM_HPP
 
-#include <eepp/system/base.hpp>
+#include <string>
+#include <vector>
+#include <eepp/core.hpp>
 #include <eepp/system/safedatapointer.hpp>
 
 namespace EE { namespace System {
@@ -105,6 +107,9 @@ class EE_API FileSystem {
 
 		/** Removes the current working directory from a path */
 		static void filePathRemoveCurrentWorkingDirectory(std::string & path);
+
+		/** @return Returns free disk space for a given path in bytes */
+		static Int64 getDiskFreeSpace(const std::string& path);
 };
 
 }}

@@ -1,5 +1,6 @@
 #include <eepp/ui/uimenucheckbox.hpp>
 #include <eepp/ui/uimenu.hpp>
+#include <eepp/ui/uitheme.hpp>
 
 namespace EE { namespace UI {
 
@@ -80,7 +81,7 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 
 		if ( !Menu->checkControlSize( this ) ) {
 			if ( NULL != getIcon()->getDrawable() ) {
-				setPadding( Rect( 0, 0, 0, 0 ) );
+				setPadding( Rectf( 0, 0, 0, 0 ) );
 			}
 		}
 
