@@ -25,7 +25,7 @@
 			<TextView layout_width="wrap_content" layout_height="wrap_content" text="testing margin" textSize="24dp" padding="12dp" backgroundColor="#242424" layout_gravity="top|right" layout_margin="12dp" />
 			<TextView id="tm" layout_width="wrap_content" layout_height="wrap_content" text="testing margin" textSize="24dp" backgroundColor="#242424" layout_gravity="bottom|left" layout_margin="12dp" />
 			<TextView id="tmp" layout_width="wrap_content" layout_height="wrap_content" text="testing margin padding" textSize="24dp" backgroundColor="#242424" layout_gravity="bottom|right" layout_margin="12dp" padding="12dp" />
-			<Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" fillColor="#999" />
+			<Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" fillColor="#999" padding="44dp" outlinethickness="8dp" />
 
 			<Sprite layout_width="96dp" layout_height="96dp" src="bn" padding="8dp" backgroundColor="#888" gravity="center" layout_marginTop="56dp" gravity="right|bottom" />
 			<TextureRegion layout_width="96dp" layout_height="96dp" src="bn01" padding="8dp" backgroundColor="#787" gravity="center" layout_marginTop="162dp" gravity="right|bottom" />

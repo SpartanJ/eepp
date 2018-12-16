@@ -68,7 +68,11 @@ class EE_API UILoader : public UIWidget {
 		IntPtr mOp;
 		bool mIndeterminate;
 
+		virtual void onAutoSize();
+
 		virtual void onSizeChange();
+
+		virtual void onPaddingChange();
 };
 
 }}
