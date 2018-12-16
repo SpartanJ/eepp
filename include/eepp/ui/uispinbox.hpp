@@ -75,6 +75,8 @@ class EE_API UISpinBox : public UIWidget {
 		virtual void onPositionChange();
 		
 		virtual void onAlphaChange();
+
+		virtual void onPaddingChange();
 };
 
 }}

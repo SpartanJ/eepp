@@ -17,6 +17,8 @@ UIScrollBar::UIScrollBar( const UI_ORIENTATION& orientation ) :
 {
 	mFlags |= UI_AUTO_SIZE;
 
+	setLayoutSizeRules( FIXED, FIXED );
+
 	mBtnDown	= UINode::New();
 	mBtnUp		= UINode::New();
 	mBtnUp->setParent( this );
@@ -303,7 +305,7 @@ void UIScrollBar::setExpandBackground( bool expandBackground ) {
 	adjustChilds();
 }
 
-bool UIScrollBar::setAttribute(const NodeAttribute & attribute) {
+bool UIScrollBar::setAttribute( const NodeAttribute & attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "orientation" == name ) {
@@ -324,11 +326,15 @@ bool UIScrollBar::setAttribute(const NodeAttribute & attribute) {
 		setClickStep( attribute.asFloat() );
 	} else if ( "pagestep" == name ) {
 		setPageStep( attribute.asFloat() );
-	} else if ( "scrollbartype" == name || "scrollbar_type" == name ) {
+	} else if ( "scrollbartype" == name ) {
 		std::string val = attribute.asString();
 		String::toLowerInPlace( val );
 
-			setScrollBarType( val == "nobuttons" || val == "mobile" || val == "simple" ? NoButtons : TwoButtons );
+		if ( "nobuttons" == val ) {
+			setScrollBarType( NoButtons );
+		} else if ( "twobuttons" == val ) {
+			setScrollBarType( TwoButtons );
+		}
 	} else {
 		return UIWidget::setAttribute( attribute );
 	}

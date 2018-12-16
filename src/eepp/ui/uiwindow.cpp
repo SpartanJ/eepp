@@ -69,6 +69,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 	mContainer->clipEnable();
 	mContainer->enableReportSizeChangeToChilds();
 	mContainer->setSize( mDpSize );
+	mContainer->addEventListener( Event::OnPositionChange, cb::Make1( this, &UIWindow::onContainerPositionChange ) );
 
 	updateWinFlags();
 
@@ -89,6 +90,19 @@ UIWindow::~UIWindow() {
 	onClose();
 
 	eeSAFE_DELETE( mFrameBuffer );
+}
+
+void UIWindow::onContainerPositionChange( const Event * Event ) {
+	if ( NULL == mContainer )
+		return;
+
+	Vector2f PosDiff = mContainer->getPosition() - Vector2f( NULL != mBorderLeft ? mBorderLeft->getSize().getWidth() + mPadding.Left : mPadding.Left, NULL != mWindowDecoration ? mWindowDecoration->getSize().getHeight() + mPadding.Top : mPadding.Top );
+
+	if ( PosDiff.x != 0 || PosDiff.y != 0 ) {
+		mContainer->setPosition( NULL != mBorderLeft ? mBorderLeft->getSize().getWidth() : 0, NULL != mWindowDecoration ? mWindowDecoration->getSize().getHeight() : 0 );
+
+		setPosition( mDpPos + PosDiff );
+	}
 }
 
 void UIWindow::updateWinFlags() {

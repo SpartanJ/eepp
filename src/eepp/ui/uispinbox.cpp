@@ -86,17 +86,21 @@ void UISpinBox::adjustChilds() {
 	}
 
 	if ( ( mFlags & UI_AUTO_SIZE ) || mDpSize.getHeight() < mInput->getSize().getHeight() ) {
-		setInternalHeight( mInput->getSkinSize().getHeight() );
+		setInternalHeight( mInput->getSize().getHeight() );
 	}
 
 	mInput->centerVertical();
 
-	mPushUp->setPosition( mDpSize.getWidth() - mPushUp->getSize().getWidth(), mInput->getPosition().y );
-	mPushDown->setPosition( mDpSize.getWidth() - mPushDown->getSize().getWidth(), mInput->getPosition().y + mPushUp->getSize().getHeight() );
+	int posY = ( mDpSize.getHeight() - mPushUp->getSize().getHeight() - mPushDown->getSize().getHeight() ) / 2;
+
+	mPushUp->setPosition( mDpSize.getWidth() - mPushUp->getSize().getWidth(), posY );
+	mPushDown->setPosition( mDpSize.getWidth() - mPushDown->getSize().getWidth(), posY + mPushUp->getSize().getHeight() );
 }
 
 void UISpinBox::setPadding( const Rectf& padding ) {
 	mInput->setPadding( padding );
+
+	UIWidget::setPadding( padding );
 }
 
 const Rectf& UISpinBox::getPadding() const {
@@ -262,6 +266,11 @@ void UISpinBox::onAlphaChange() {
 	mInput->setAlpha( mAlpha );
 	mPushUp->setAlpha( mAlpha );
 	mPushDown->setAlpha( mAlpha );
+}
+
+void UISpinBox::onPaddingChange() {
+	adjustChilds();
+	UIWidget::onPaddingChange();
 }
 
 bool UISpinBox::setAttribute( const NodeAttribute& attribute ) {

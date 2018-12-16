@@ -26,16 +26,18 @@
 			<TextView id="tm" layout_width="wrap_content" layout_height="wrap_content" text="testing margin" textSize="24dp" backgroundColor="#242424" layout_gravity="bottom|left" layout_margin="12dp" />
 			<TextView id="tmp" layout_width="wrap_content" layout_height="wrap_content" text="testing margin padding" textSize="24dp" backgroundColor="#242424" layout_gravity="bottom|right" layout_margin="12dp" padding="12dp" />
 			<Loader layout_width="350dp" layout_height="350dp" layout_gravity="center" fillColor="#999" />
-			<!--
-			     <Sprite layout_width="96dp" layout_height="96dp" src="bn" padding="8dp" backgroundColor="#888" gravity="center" layout_marginTop="56dp" gravity="right|bottom" />
-			     <TextureRegion layout_width="96dp" layout_height="96dp" src="bn01" padding="8dp" backgroundColor="#787" gravity="center" layout_marginTop="162dp" gravity="right|bottom" />
-			-->
+
+			<Sprite layout_width="96dp" layout_height="96dp" src="bn" padding="8dp" backgroundColor="#888" gravity="center" layout_marginTop="56dp" gravity="right|bottom" />
+			<TextureRegion layout_width="96dp" layout_height="96dp" src="bn01" padding="8dp" backgroundColor="#787" gravity="center" layout_marginTop="162dp" gravity="right|bottom" />
+
 			<PushButton layout_width="wrap_content" layout_height="wrap_content" text="testing padding" layout_gravity="bottom|right" gravity="center" padding="8dp" layout_to_top_of="tmp" />
 			<PushButton text="OK!" textSize="16dp" icon="ok" layout_gravity="left|bottom" gravity="center" layout_width="wrap_content" layout_height="wrap_content" layout_marginBottom="8dp" padding="8dp" layout_to_top_of="tm" />
 			
 			<Slider id="slider" halfslider="true" layout_width="200dp" layout_height="wrap_content" padding="32dp" background="#555" layout_to_bottom_of="el1" />
 			
-			<ScrollBar orientation="horizontal" layout_width="200dp" layout_height="wrap_content" padding="8dp" background="#12345666" layout_to_bottom_of="slider" />
+			<ScrollBar id="scrollbar" orientation="horizontal" layout_width="200dp" layout_height="wrap_content" padding="8dp" background="#12345666" layout_to_bottom_of="slider" />
+
+			<SpinBox id="spinbox" layout_width="200dp" layout_height="wrap_content" padding="8dp" background="#54345666" layout_to_bottom_of="scrollbar" />
 		</RelativeLayout>
 	</vbox>
 </hbox>
