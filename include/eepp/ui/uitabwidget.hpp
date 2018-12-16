@@ -154,6 +154,8 @@ class EE_API UITabWidget : public UIWidget {
 
 		virtual void onChildCountChange();
 
+		virtual void onPaddingChange();
+
 		void setTabSelected( UITab * Tab );
 
 		void setTabContainerSize();
