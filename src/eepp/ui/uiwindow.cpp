@@ -69,7 +69,6 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleC
 	mContainer->clipEnable();
 	mContainer->enableReportSizeChangeToChilds();
 	mContainer->setSize( mDpSize );
-	mContainer->addEventListener( Event::OnPositionChange, cb::Make1( this, &UIWindow::onContainerPositionChange ) );
 
 	updateWinFlags();
 
@@ -328,6 +327,12 @@ void UIWindow::drawShadow() {
 	}
 }
 
+void UIWindow::onPaddingChange() {
+	fixChildsSize();
+
+	UIWidget::onPaddingChange();
+}
+
 Sizei UIWindow::getFrameBufferSize() {
 	return isResizeable() && (Node*)this != mSceneNode ? Sizei( Math::nextPowOfTwo( (int)mSize.getWidth() ), Math::nextPowOfTwo( (int)mSize.getHeight() ) ) : mSize.ceil().asInt();
 }
@@ -403,19 +408,6 @@ Uint32 UIWindow::getType() const {
 
 bool UIWindow::isType( const Uint32& type ) const {
 	return UIWindow::getType() == type ? true : UIWidget::isType( type );
-}
-
-void UIWindow::onContainerPositionChange( const Event * Event ) {
-	if ( NULL == mContainer )
-		return;
-
-	Vector2f PosDiff = mContainer->getPosition() - Vector2f( NULL != mBorderLeft ? mBorderLeft->getSize().getWidth() : 0, NULL != mWindowDecoration ? mWindowDecoration->getSize().getHeight() : 0 );
-
-	if ( PosDiff.x != 0 || PosDiff.y != 0 ) {
-		mContainer->setPosition( NULL != mBorderLeft ? mBorderLeft->getSize().getWidth() : 0, NULL != mWindowDecoration ? mWindowDecoration->getSize().getHeight() : 0 );
-
-		setPosition( mDpPos + PosDiff );
-	}
 }
 
 void UIWindow::closeWindow() {
@@ -578,7 +570,8 @@ void UIWindow::fixChildsSize() {
 	}
 
 	if ( NULL == mWindowDecoration && NULL != mContainer ) {
-		mContainer->setPixelsSize( mSize );
+		mContainer->setPixelsSize( mSize - mRealPadding );
+		mContainer->setPosition( mRealPadding.Left, mRealPadding.Top );
 		return;
 	}
 
@@ -610,9 +603,9 @@ void UIWindow::fixChildsSize() {
 	mBorderRight->setPixelsPosition( mSize.getWidth() - mBorderRight->getRealSize().getWidth(), mWindowDecoration->getRealSize().getHeight() );
 	mBorderBottom->setPixelsPosition( 0, mWindowDecoration->getRealSize().getHeight() + mBorderLeft->getRealSize().getHeight() );
 
-	mContainer->setPixelsPosition( mBorderLeft->getRealSize().getWidth(), mWindowDecoration->getRealSize().getHeight() );
-	mContainer->setPixelsSize( mSize.getWidth() - mBorderLeft->getRealSize().getWidth() - mBorderRight->getRealSize().getWidth(),
-							   mSize.getHeight() - mWindowDecoration->getRealSize().getHeight() - mBorderBottom->getRealSize().getHeight() );
+	mContainer->setPixelsPosition( mBorderLeft->getRealSize().getWidth() + mRealPadding.Left, mWindowDecoration->getRealSize().getHeight() + mRealPadding.Top );
+	mContainer->setPixelsSize( mSize.getWidth() - mBorderLeft->getRealSize().getWidth() - mBorderRight->getRealSize().getWidth() - mRealPadding.Left - mRealPadding.Right,
+							   mSize.getHeight() - mWindowDecoration->getRealSize().getHeight() - mBorderBottom->getRealSize().getHeight() - mRealPadding.Top - mRealPadding.Bottom );
 
 	Uint32 yPos;
 	Vector2f posFix( PixelDensity::dpToPx( Vector2f( mStyleConfig.ButtonsPositionFixer.x, mStyleConfig.ButtonsPositionFixer.y ) ) );

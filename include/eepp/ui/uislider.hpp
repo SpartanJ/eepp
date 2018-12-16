@@ -65,6 +65,8 @@ class EE_API UISlider : public UIWidget {
 		void setPageStep( const Float & pageStep );
 
 		virtual bool setAttribute( const NodeAttribute& attribute );
+
+		Sizef getMinimumSize();
 	protected:
 		friend class Private::UISliderButton;
 
@@ -82,7 +84,11 @@ class EE_API UISlider : public UIWidget {
 
 		Uint32				mLastTickMove;
 
+		virtual void onAutoSize();
+
 		virtual void onSizeChange();
+
+		virtual void onPaddingChange();
 
 		void fixSliderPos();
 

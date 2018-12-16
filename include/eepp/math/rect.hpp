@@ -183,9 +183,22 @@ tRECT<T>& operator /(tRECT<T>& R, Y X) {
 }
 
 template <typename T>
-tRECT<T>::tRECT(T left, T top, T right, T bottom) {
-	Left = left; Right = right; Top = top; Bottom = bottom;
+Vector2<T> operator -(Vector2<T> X, const tRECT<T>& R) {
+	return Vector2<T>(X.x - R.Left - R.Right, X.y - R.Top - R.Bottom);
 }
+
+template <typename T>
+Vector2<T> operator +(Vector2<T> X, const tRECT<T>& R) {
+	return Vector2<T>(X.x + R.Left + R.Right, X.y + R.Top + R.Bottom);
+}
+
+template <typename T>
+tRECT<T>::tRECT(T left, T top, T right, T bottom) :
+	Left(left),
+	Right(right),
+	Top(top),
+	Bottom(bottom)
+{}
 
 template <typename T>
 tRECT<T> tRECT<T>::copy() {
@@ -193,12 +206,12 @@ tRECT<T> tRECT<T>::copy() {
 }
 
 template <typename T>
-tRECT<T>::tRECT( const Vector2<T>& Pos, const tSize<T>& Size ) {
-	Left = Pos.x;
-	Top = Pos.y;
-	Right = Left + Size.getWidth();
-	Bottom = Top + Size.getHeight();
-}
+tRECT<T>::tRECT( const Vector2<T>& Pos, const tSize<T>& Size ) :
+	Left( Pos.x ),
+	Right( Pos.x + Size.getWidth() ),
+	Top( Pos.y ),
+	Bottom( Pos.y + Size.getHeight() )
+{}
 
 template <typename T>
 tRECT<T>::tRECT() : Left(0), Right(0), Top(0), Bottom(0) {}

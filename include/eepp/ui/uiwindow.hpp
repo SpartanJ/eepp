@@ -189,8 +189,6 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual void matrixUnset();
 
-		void onContainerPositionChange( const Event * Event );
-
 		void fixChildsSize();
 
 		void doResize( const NodeMessage * Msg );
@@ -236,6 +234,8 @@ class EE_API UIWindow : public UIWidget {
 		void drawHighlightInvalidation();
 
 		virtual void drawShadow();
+
+		virtual void onPaddingChange();
 
 		virtual void preDraw();
 
