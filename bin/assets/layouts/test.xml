@@ -1,5 +1,5 @@
 <vbox layout_width="match_parent" layout_height="match_parent">
-	<TabWidget layout_width="match_parent" layout_height="match_parent" paddingLeft="8dp" paddingRight="8dp" paddingBottom="8dp" paddingTop="20dp">
+	<TabWidget layout_width="match_parent" layout_height="match_parent" paddingLeft="8dp" paddingRight="8dp" paddingBottom="8dp" paddingTop="20dp" backgroundColor="#656565">
 		<hbox id="test_1" layout_width="match_parent" layout_height="match_parent">
 			<vbox id="lvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" backgroundColor="#222" padding="12dp">
 				<TextView layout_width="wrap_content" layout_height="wrap_content" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#333" />
@@ -20,7 +20,7 @@
 				</ComboBox>
 				<TextView layout_width="match_parent" layout_height="wrap_content" text="testing match_parent" layout_marginTop="8dp" textSize="24dp" backgroundColor="#333" gravity="center" />
 			</vbox>
-			<vbox id="rvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" backgroundColor="#323232" layout_marginTop="20dp" padding="12dp">
+			<vbox id="rvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" backgroundColor="#323232" padding="12dp">
 				<RelativeLayout id="rrl" layout_width="match_parent" layout_height="match_parent" backgroundColor="#999" padding="24dp">
 					<TextView layout_width="match_parent" layout_height="match_parent" text="testing match_parent" textSize="24dp" padding="12dp" backgroundColor="#333" gravity="center" />
 					<TextView id="el1" layout_width="wrap_content" layout_height="wrap_content" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#242424" />
@@ -46,10 +46,10 @@
 			</vbox>
 		</hbox>
 		<hbox id="test_2" layout_width="match_parent" layout_height="match_parent">
-		
+			<TextView layout_width="match_parent" layout_height="match_parent" text="Hello World!" gravity="center" background="#333" textSize="24dp" />
 		</hbox>
 		
-		<Tab name="Test 1" owns="test_1" />
-		<Tab name="Test 2" owns="test_2" />
+		<Tab name="Padding Test" owns="test_1" />
+		<Tab name="Tabs Test" owns="test_2" />
 	</TabWidget>
 </vbox>
