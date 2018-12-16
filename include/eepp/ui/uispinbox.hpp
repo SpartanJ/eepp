@@ -56,7 +56,7 @@ class EE_API UISpinBox : public UIWidget {
 
 		bool dotsInNumbersAllowed();
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		UITextInput * 		mInput;
 		UINode * 	mPushUp;
@@ -75,6 +75,8 @@ class EE_API UISpinBox : public UIWidget {
 		virtual void onPositionChange();
 		
 		virtual void onAlphaChange();
+
+		virtual void onPaddingChange();
 };
 
 }}

@@ -651,14 +651,14 @@ void EETest::createNewUI() {
 	loader->setBackgroundFillEnabled( true )->setColor( 0xCCCCCCCC );
 
 	UIRadioButton * ctrl = UIRadioButton::New();
-	ctrl->setPosition( 50, 100 )->setSize( 200, 32 )->setParent( container );
+	ctrl->setLayoutSizeRules( FIXED, FIXED )->setPosition( 50, 100 )->setSize( 200, 32 )->setParent( container );
 	ctrl->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	ctrl->setBorderEnabled( true )->setColor( 0x66666666 );
 	ctrl->setText( "Happy RadioButon :)" );
 	ctrl->setFontColor( Color::Black );
 
 	UICheckBox * cbox = UICheckBox::New();
-	cbox->setPosition( 50, 164 )->setSize( 200, 32 )->setParent( container );
+	cbox->setLayoutSizeRules( FIXED, FIXED )->setPosition( 50, 164 )->setSize( 200, 32 )->setParent( container );
 	cbox->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
 	cbox->setBorderEnabled( true )->setColor( 0x66666666 );
 	cbox->setText( "Happy CheckBox :)" );
@@ -848,35 +848,35 @@ void EETest::createNewUI() {
 
 	win2->show();
 
-	SceneManager::instance()->getUISceneNode()->loadLayoutFromString(
-		"<window layout_width='300dp' layout_height='300dp' winflags='default|maximize'>"
-		"	<LinearLayout id='testlayout' orientation='vertical' layout_width='match_parent' layout_height='match_parent' layout_margin='8dp'>"
-		"		<TextView text='Hello World!' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' backgroundColor='black' />"
-		"		<PushButton text='OK!' textSize='16dp' icon='ok' gravity='center' layout_gravity='center_horizontal' layout_width='match_parent' layout_height='wrap_content' />"
-		"		<Image src='thecircle' layout_width='match_parent' layout_height='32dp' flags='clip' />"
-		"		<Sprite src='gn' />"
-		"		<TextInput text='test' layout_width='match_parent' layout_height='wrap_content' />"
-		"		<DropDownList layout_width='match_parent' layout_height='wrap_content' selectedIndex='0'>"
-		"			<item>Test Item</item>"
-		"			<item>@string/test_item</item>"
-		"		</DropDownList>"
-		"		<ListBox layout_width='match_parent' layout_height='match_parent' layout_weight='1'>"
-		"			<item>Hello!</item>"
-		"			<item>World!</item>"
-		"		</ListBox>"
-		"	</LinearLayout>"
-		"</window>"
-	);
+	SceneManager::instance()->getUISceneNode()->loadLayoutFromString( R"xml(
+		<window layout_width="300dp" layout_height="300dp" winflags="default|maximize">
+			<LinearLayout id="testlayout" orientation="vertical" layout_width="match_parent" layout_height="match_parent" layout_margin="8dp">
+				<TextView text="Hello World!" gravity="center" layout_gravity="center_horizontal" layout_width="match_parent" layout_height="wrap_content" backgroundColor="black" />
+				<PushButton text="OK!" textSize="16dp" icon="ok" gravity="center" layout_gravity="center_horizontal" layout_width="match_parent" layout_height="wrap_content" />
+				<Image src="thecircle" layout_width="match_parent" layout_height="32dp" flags="clip" />
+				<Sprite src="gn" />
+				<TextInput text="test" layout_width="match_parent" layout_height="wrap_content" />
+				<DropDownList layout_width="match_parent" layout_height="wrap_content" selectedIndex="0">
+					<item>Test Item</item>
+					<item>@string/test_item</item>
+				</DropDownList>
+				<ListBox layout_width="match_parent" layout_height="match_parent" layout_weight="1">
+					<item>Hello!</item>
+					<item>World!</item>
+				</ListBox>
+			</LinearLayout>
+		</window>
+	)xml" );
 
-	SceneManager::instance()->getUISceneNode()->loadLayoutFromString(
-		"<window layout_width='800dp' layout_height='600dp' winflags='default|maximize'>"
-		"	<LinearLayout layout_width='match_parent' layout_height='match_parent'>"
-		"		<ScrollView layout_width='match_parent' layout_height='match_parent' touchdrag='true'>"
-		"			<GridLayout columnMode='size' rowMode='size' columnWidth='200dp' rowHeight='200dp' layout_width='match_parent' layout_height='wrap_content' id='gridlayout' clip='false' />"
-		"		</ScrollView>"
-		"	</LinearLayout>"
-		"</window>"
-	);
+	SceneManager::instance()->getUISceneNode()->loadLayoutFromString( R"xml(
+		<window layout_width="800dp" layout_height="600dp" winflags="default|maximize">
+			<LinearLayout layout_width="match_parent" layout_height="match_parent">
+				<ScrollView layout_width="match_parent" layout_height="match_parent" touchdrag="true">
+					<GridLayout columnMode="size" rowMode="size" columnWidth="200dp" rowHeight="200dp" layout_width="match_parent" layout_height="wrap_content" id="gridlayout" clip="false" />
+				</ScrollView>
+			</LinearLayout>
+		</window>
+	)xml" );
 
 	UIGridLayout * gridLayout = NULL;
 	SceneManager::instance()->getUISceneNode()->bind( "gridlayout", gridLayout );
@@ -980,7 +980,7 @@ void EETest::createDecoratedWindow() {
 	UIPopUpMenu * PopMenu = UIPopUpMenu::New();
 	PopMenu->add( "Hide Border" );
 	PopMenu->add( "Close" );
-	PopMenu->addEventListener( Event::OnItemClicked, cb::Make1<void, const Event*>( []( const Event * Event ) {
+	PopMenu->addEventListener( Event::OnItemClicked, []( const Event * Event ) {
 		if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 
@@ -1010,7 +1010,7 @@ void EETest::createDecoratedWindow() {
 		} else if ( "Close" == txt ) {
 			win->closeFadeOut( Milliseconds(250) );
 		}
-	} ) );
+	} );
 
 	UIPopUpMenu * PopMenu2 = UIPopUpMenu::New();
 	PopMenu2->add( "Bla" );

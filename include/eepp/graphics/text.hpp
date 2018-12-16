@@ -116,6 +116,8 @@ class EE_API Text {
 		* @param MaxWidth The Max Width posible
 		*/
 		void shrinkText( const Uint32& MaxWidth );
+
+		void invalidateColors();
 	protected:
 		struct VertexCoords {
 			Vector2f texCoords;

@@ -85,6 +85,11 @@ void UIScrollView::onChildCountChange() {
 	}
 }
 
+void UIScrollView::onPaddingChange() {
+	containerUpdate();
+	UIWidget::onPaddingChange();
+}
+
 void UIScrollView::setVerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 	if ( Mode != mVScrollMode ) {
 		mVScrollMode = Mode;
@@ -134,7 +139,7 @@ void UIScrollView::containerUpdate() {
 	if ( NULL == mScrollView )
 		return;
 
-	Sizef size = mDpSize;
+	Sizef size = mDpSize - mPadding;
 
 	if ( Exclusive == mViewType ) {
 		if ( mVScroll->isVisible() )
@@ -144,6 +149,7 @@ void UIScrollView::containerUpdate() {
 			size.y -= mHScroll->getSize().getHeight();
 	}
 
+	mContainer->setPosition( mPadding.Left, mPadding.Top );
 	mContainer->setSize( size );
 
 	if ( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) {
@@ -172,11 +178,11 @@ void UIScrollView::containerUpdate() {
 		mVScroll->setEnabled( visible );
 	}
 
-	mVScroll->setPosition( mDpSize.getWidth() - mVScroll->getSize().getWidth(), 0 );
-	mHScroll->setPosition( 0, mDpSize.getHeight() - mHScroll->getSize().getHeight() );
+	mVScroll->setPosition( mDpSize.getWidth() - mVScroll->getSize().getWidth() - mPadding.Right, mPadding.Top );
+	mHScroll->setPosition( mPadding.Left, mDpSize.getHeight() - mHScroll->getSize().getHeight() - mPadding.Bottom );
 
-	mVScroll->setSize( mVScroll->getSize().getWidth(), mDpSize.getHeight() );
-	mHScroll->setSize( mDpSize.getWidth() - ( mVScroll->isVisible() ? mVScroll->getSize().getWidth() : 0 ), mHScroll->getSize().getHeight() );
+	mVScroll->setSize( mVScroll->getSize().getWidth(), mDpSize.getHeight() - mPadding.Top - mPadding.Bottom );
+	mHScroll->setSize( mDpSize.getWidth() - mPadding.Left - mPadding.Right - ( mVScroll->isVisible() ? mVScroll->getSize().getWidth() : 0 ), mHScroll->getSize().getHeight() );
 
 	if ( mVScroll->isVisible() && 0 != mScrollView->getSize().getHeight() )
 		mVScroll->setPageStep( (Float)mContainer->getSize().getHeight() / (Float)mScrollView->getSize().getHeight() );
@@ -222,7 +228,7 @@ bool UIScrollView::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds() && mScrollView->isMouseOverMeOrChilds() && ret;
 }
 
-void UIScrollView::setAttribute( const NodeAttribute& attribute ) {
+bool UIScrollView::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "type" == name ) {
@@ -257,8 +263,10 @@ void UIScrollView::setAttribute( const NodeAttribute& attribute ) {
 			mHScroll->setScrollBarType( UIScrollBar::NoButtons );
 		}
 	} else {
-		UITouchDragableWidget::setAttribute( attribute );
+		return UITouchDragableWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 }}

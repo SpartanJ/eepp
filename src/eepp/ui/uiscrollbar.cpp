@@ -17,6 +17,8 @@ UIScrollBar::UIScrollBar( const UI_ORIENTATION& orientation ) :
 {
 	mFlags |= UI_AUTO_SIZE;
 
+	setLayoutSizeRules( FIXED, FIXED );
+
 	mBtnDown	= UINode::New();
 	mBtnUp		= UINode::New();
 	mBtnUp->setParent( this );
@@ -67,9 +69,7 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 		mBtnDown->setThemeSkin( Theme, "vscrollbar_btndown" );
 	}
 
-	UISkin * tSkin = NULL;
-
-	tSkin = mBtnUp->getSkin();
+	UISkin * tSkin = mBtnUp->getSkin();
 
 	if ( NULL != tSkin ) {
 		mBtnUp->setSize( tSkin->getSize() );
@@ -87,10 +87,11 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 }
 
 void UIScrollBar::onAutoSize() {
+	Sizef size;
 	UISkin * tSkin = mSlider->getBackSlider()->getSkin();
 
 	if ( NULL != tSkin ) {
-		Sizef size = tSkin->getSize();
+		size = tSkin->getSize();
 
 		mMinControlSize = PixelDensity::pxToDp( size );
 
@@ -107,7 +108,7 @@ void UIScrollBar::onAutoSize() {
 		UISkin * tSkin = mSlider->getSliderButton()->getSkin();
 
 		if ( NULL != tSkin ) {
-			Sizef size = tSkin->getSize();
+			size = tSkin->getSize();
 
 			if ( mFlags & UI_AUTO_SIZE ) {
 				if ( mSlider->isVertical() ) {
@@ -116,6 +117,26 @@ void UIScrollBar::onAutoSize() {
 					setSize( mDpSize.getWidth(), size.getHeight() );
 				}
 			}
+		}
+	}
+
+	if ( mLayoutWidthRules == WRAP_CONTENT || mLayoutHeightRules == WRAP_CONTENT ) {
+		Sizef size =  PixelDensity::dpToPx( mSlider->getMinimumSize() ) + mRealPadding;
+
+		if (  mScrollBarType == TwoButtons ) {
+			if ( mSlider->isVertical() ) {
+				size.y += mBtnDown->getRealSize().getHeight() + mBtnUp->getRealSize().getHeight();
+			} else {
+				size.x += mBtnDown->getRealSize().getWidth() + mBtnUp->getRealSize().getWidth();
+			}
+		}
+
+		if ( mLayoutWidthRules == WRAP_CONTENT ) {
+			setInternalPixelsWidth( size.getWidth() );
+		}
+
+		if ( mLayoutHeightRules == WRAP_CONTENT ) {
+			setInternalPixelsHeight( size.getHeight() );
 		}
 	}
 }
@@ -140,9 +161,9 @@ void UIScrollBar::adjustChilds() {
 			mBtnUp->setVisible( false )->setEnabled( false );
 
 			if ( !isVertical() ) {
-				mSlider->setSize( mDpSize )->setPosition( 0, 0 )->centerVertical();
+				mSlider->setSize( mDpSize - mPadding )->setPosition( mPadding.Left, mPadding.Top )->centerVertical();
 			} else {
-				mSlider->setSize( mDpSize )->setPosition( 0, 0 )->centerHorizontal();
+				mSlider->setSize( mDpSize - mPadding )->setPosition( mPadding.Left, mPadding.Top )->centerHorizontal();
 			}
 
 			break;
@@ -154,17 +175,19 @@ void UIScrollBar::adjustChilds() {
 			mBtnUp->setVisible( true )->setEnabled( true );
 
 			if ( !isVertical() ) {
-				mBtnDown->setPosition( mDpSize.getWidth() - mBtnDown->getSize().getWidth(), 0 );
-				mSlider->setSize( mDpSize.getWidth() - mBtnDown->getSize().getWidth() - mBtnUp->getSize().getWidth(), mDpSize.getHeight() );
-				mSlider->setPosition( mBtnUp->getSize().getWidth(), 0 );
+				mBtnUp->setPosition( mPadding.Left, mPadding.Top );
+				mBtnDown->setPosition( mDpSize.getWidth() - mBtnDown->getSize().getWidth() - mPadding.Right, mPadding.Top );
+				mSlider->setSize( mDpSize.getWidth() - mBtnDown->getSize().getWidth() - mBtnUp->getSize().getWidth() - mPadding.Left - mPadding.Bottom, mDpSize.getHeight() );
+				mSlider->setPosition( mPadding.Left + mBtnUp->getSize().getWidth(), mPadding.Top );
 
 				mBtnDown->centerVertical();
 				mBtnUp->centerVertical();
 				mSlider->centerVertical();
 			} else {
-				mBtnDown->setPosition( 0, mDpSize.getHeight() - mBtnDown->getSize().getHeight() );
-				mSlider->setSize( mDpSize.getWidth(), mDpSize.getHeight() - mBtnDown->getSize().getHeight() - mBtnUp->getSize().getHeight() );
-				mSlider->setPosition( 0, mBtnUp->getSize().getHeight() );
+				mBtnUp->setPosition( mPadding.Left, mPadding.Top );
+				mBtnDown->setPosition( mPadding.Left, mDpSize.getHeight() - mBtnDown->getSize().getHeight() - mPadding.Bottom );
+				mSlider->setSize( mDpSize.getWidth(), mDpSize.getHeight() - mBtnDown->getSize().getHeight() - mBtnUp->getSize().getHeight() - mPadding.Top - mPadding.Bottom );
+				mSlider->setPosition( mPadding.Left, mBtnUp->getSize().getHeight() + mPadding.Top );
 
 				mBtnDown->centerHorizontal();
 				mBtnUp->centerHorizontal();
@@ -282,10 +305,41 @@ void UIScrollBar::setExpandBackground( bool expandBackground ) {
 	adjustChilds();
 }
 
-void UIScrollBar::setAttribute(const NodeAttribute & attribute) {
-	UIScrollBar::setAttribute( attribute );
+bool UIScrollBar::setAttribute( const NodeAttribute & attribute ) {
+	const std::string& name = attribute.getName();
 
-	mSlider->setAttribute( attribute );
+	if ( "orientation" == name ) {
+		std::string val = attribute.asString();
+		String::toLowerInPlace( val );
+
+		if ( "horizontal" == val )
+			setOrientation( UI_HORIZONTAL );
+		else if ( "vertical" == val )
+			setOrientation( UI_VERTICAL );
+	} else if ( "minvalue" == name ) {
+		setMinValue( attribute.asFloat() );
+	} else if ( "maxvalue" == name ) {
+		setMaxValue( attribute.asFloat() );
+	} else if ( "value" == name ) {
+		setValue( attribute.asFloat() );
+	} else if ( "clickstep" == name ) {
+		setClickStep( attribute.asFloat() );
+	} else if ( "pagestep" == name ) {
+		setPageStep( attribute.asFloat() );
+	} else if ( "scrollbartype" == name ) {
+		std::string val = attribute.asString();
+		String::toLowerInPlace( val );
+
+		if ( "nobuttons" == val ) {
+			setScrollBarType( NoButtons );
+		} else if ( "twobuttons" == val ) {
+			setScrollBarType( TwoButtons );
+		}
+	} else {
+		return UIWidget::setAttribute( attribute );
+	}
+
+	return true;
 }
 
 UIScrollBar::ScrollBarType UIScrollBar::getScrollBarType() const {
@@ -318,6 +372,11 @@ void UIScrollBar::onAlphaChange() {
 	mSlider->setAlpha( mAlpha );
 	mBtnUp->setAlpha( mAlpha );
 	mBtnDown->setAlpha( mAlpha );
+}
+
+void UIScrollBar::onPaddingChange() {
+	adjustChilds();
+	UIWidget::onPaddingChange();
 }
 
 }}

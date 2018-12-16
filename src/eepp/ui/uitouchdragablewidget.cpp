@@ -135,7 +135,7 @@ bool UITouchDragableWidget::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds();
 }
 
-void UITouchDragableWidget::setAttribute( const NodeAttribute& attribute ) {
+bool UITouchDragableWidget::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "touchdrag" == name ) {
@@ -143,8 +143,10 @@ void UITouchDragableWidget::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "touchdragdeceleration" == name ) {
 		setTouchDragDeceleration( Vector2f( attribute.asFloat(), attribute.asFloat() ) );
 	} else {
-		UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 }}

@@ -55,14 +55,18 @@ void UILoader::draw() {
 void UILoader::update( const Time& time ) {
 	UIWidget::update( time );
 
+	invalidateDraw();
+
 	if ( mIndeterminate ) {
 		mArcAngle += time.asMilliseconds() * mAnimationSpeed * mOp;
 		mArcStartAngle += time.asMilliseconds() * (mAnimationSpeed*1.5f);
 
 		if ( mOp == 1 && mArcAngle > 340 ) {
 			mOp = -1;
+			mArcAngle = 340;
 		} else if ( mOp == -1 && mArcAngle < 20 ) {
 			mOp = 1;
+			mArcAngle = 20;
 		}
 
 		mArc.setArcAngle( mArcAngle );
@@ -108,7 +112,33 @@ const Color& UILoader::getFillColor() const {
 
 void UILoader::onSizeChange() {
 	if ( mRadius == 0 ) {
-		setRadius( eemin( mDpSize.x, mDpSize.y ) / 2.f );
+		setRadius( eemin( mDpSize.x - mPadding.Left - mPadding.Right, mDpSize.y - mPadding.Top - mPadding.Bottom ) / 2.f );
+	}
+}
+
+void UILoader::onPaddingChange() {
+	mRadius = 0;
+
+	onSizeChange();
+
+	UIWidget::onPaddingChange();
+}
+
+void UILoader::onAutoSize() {
+	if ( mLayoutWidthRules == WRAP_CONTENT || mLayoutHeightRules == WRAP_CONTENT ) {
+		Sizef minSize( mDpSize );
+
+		if ( mLayoutWidthRules == WRAP_CONTENT ) {
+			minSize.x = eemax( minSize.x, 64.f );
+		}
+
+		if ( mLayoutHeightRules == WRAP_CONTENT ) {
+			minSize.y = eemax( minSize.y, 64.f );
+		}
+
+		setSize( minSize );
+
+		onSizeChange();
 	}
 }
 
@@ -154,7 +184,7 @@ UILoader * UILoader::setAnimationSpeed( const Float& animationSpeed ) {
 	return this;
 }
 
-void UILoader::setAttribute( const NodeAttribute& attribute ) {
+bool UILoader::setAttribute( const NodeAttribute& attribute ) {
 	std::string name = attribute.getName();
 
 	if ( "indeterminate" == name ) {
@@ -174,8 +204,10 @@ void UILoader::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "arcstartangle" == name ) {
 		setArcStartAngle( attribute.asFloat() );
 	} else {
-		UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 Float UILoader::getArcStartAngle() const {

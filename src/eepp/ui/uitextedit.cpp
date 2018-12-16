@@ -23,9 +23,10 @@ UITextEdit::UITextEdit() :
 	clipEnable();
 
 	mTextInput	= UITextInput::New();
+	mTextInput->setLayoutSizeRules( LayoutSizeRules::FIXED, LayoutSizeRules::FIXED );
 	mTextInput->setParent( this );
 	mTextInput->setFlags( UI_TEXT_SELECTION_ENABLED | UI_TEXT_SELECTION_ENABLED | UI_VALIGN_TOP );
-	mTextInput->unsetFlags( UI_VALIGN_CENTER );
+	mTextInput->unsetFlags( UI_VALIGN_CENTER | UI_AUTO_SIZE );
 	mTextInput->clipDisable();
 	mTextInput->getInputTextBuffer()->isNewLineEnabled( true );
 	mTextInput->setVisible( true );
@@ -89,7 +90,7 @@ void UITextEdit::onSizeChange() {
 	mHScrollBar->setSize( mDpSize.getWidth(), mHScrollBar->getSize().getHeight() );
 	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), mDpSize.getHeight() );
 
-	mTextInput->setPosition( PixelDensity::pxToDp( mContainerPadding.Left ), PixelDensity::pxToDp( mContainerPadding.Top ) );
+	mTextInput->setPixelsPosition( mContainerPadding.Left, mContainerPadding.Top );
 
 	onInputSizeChange( NULL );
 
@@ -104,6 +105,16 @@ void UITextEdit::onParentSizeChange( const Vector2f& SizeChange ) {
 	UIWidget::onParentSizeChange( SizeChange );
 
 	onInputSizeChange( NULL );
+}
+
+void UITextEdit::onPaddingChange() {
+	autoPadding();
+
+	mContainerPadding += mRealPadding;
+
+	onSizeChange();
+
+	UIWidget::onPaddingChange();
 }
 
 void UITextEdit::onAlphaChange() {
@@ -243,7 +254,7 @@ void UITextEdit::scrollbarsSet() {
 
 void UITextEdit::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mContainerPadding = makePadding();
+		mContainerPadding = PixelDensity::dpToPx( makePadding() );
 	}
 }
 
@@ -447,8 +458,10 @@ void UITextEdit::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
 	}
 }
 
-void UITextEdit::setAttribute( const NodeAttribute &attribute ) {
+bool UITextEdit::setAttribute( const NodeAttribute &attribute ) {
 	const std::string& name = attribute.getName();
+
+	bool attributeSet = true;
 
 	if ( "text" == name ) {
 		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() ) {
@@ -467,10 +480,13 @@ void UITextEdit::setAttribute( const NodeAttribute &attribute ) {
 		else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
 		else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
 	} else {
-		UIWidget::setAttribute( attribute );
+		attributeSet = UIWidget::setAttribute( attribute );
 	}
 
-	mTextInput->setAttribute( attribute );
+	if ( !attributeSet && ( String::startsWith( name, "text" ) || String::startsWith( name, "font" ) ) )
+		mTextInput->setAttribute( attribute );
+
+	return attributeSet;
 }
 
 }}

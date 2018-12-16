@@ -11,7 +11,7 @@ class EE_API UIBorder {
 	public:
 		static UIBorder * New( UINode * control );
 
-		UIBorder( UINode * control );
+		explicit UIBorder( UINode * control );
 
 		const Color& getColor() const;
 

@@ -14,9 +14,9 @@ namespace EE { namespace Graphics {
 
 class EE_API FontTrueType : public Font {
 	public:
-		static FontTrueType * New( const std::string FontName );
+		static FontTrueType * New( const std::string& FontName );
 
-		static FontTrueType * New( const std::string FontName, const std::string& filename );
+		static FontTrueType * New( const std::string& FontName, const std::string& filename );
 
 		~FontTrueType();
 
@@ -46,7 +46,7 @@ class EE_API FontTrueType : public Font {
 
 		FontTrueType& operator =(const FontTrueType& right);
 	protected:
-		FontTrueType(const std::string FontName);
+		explicit FontTrueType( const std::string& FontName );
 
 		struct Row
 		{

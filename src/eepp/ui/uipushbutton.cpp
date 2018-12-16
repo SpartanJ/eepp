@@ -1,7 +1,7 @@
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/graphics/text.hpp>
 #include <pugixml/pugixml.hpp>
-#include <eepp/graphics/globaltextureatlas.hpp>
+#include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 
@@ -34,8 +34,10 @@ UIPushButton::UIPushButton() :
 
 	mIcon = UIImage::New();
 	mIcon->setParent( this );
+	mIcon->setLayoutSizeRules( FIXED, FIXED );
 	mIcon->setFlags( GfxFlags );
 	mIcon->unsetFlags( UI_AUTO_SIZE );
+	mIcon->setScaleType( UIScaleType::FitInside );
 
 	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
 		mIcon->setSize( mStyleConfig.IconMinSize.asFloat() );
@@ -45,7 +47,7 @@ UIPushButton::UIPushButton() :
 	mIcon->setEnabled( false );
 
 	mTextBox = UITextView::New();
-	mTextBox->setLayoutSizeRules( FIXED, FIXED );
+	mTextBox->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT );
 	mTextBox->setParent( this );
 	mTextBox->setVisible( true );
 	mTextBox->setEnabled( false );
@@ -70,55 +72,96 @@ bool UIPushButton::isType( const Uint32& type ) const {
 	return UIPushButton::getType() == type ? true : UIWidget::isType( type );
 }
 
-void UIPushButton::onSizeChange() {	
-	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() && 0 == mDpSize.getHeight() ) {
+void UIPushButton::onAutoSize() {
+	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() ) {
 		setInternalHeight( getSkinSize().getHeight() );
 	}
 
-	if ( ( mFlags & UI_AUTO_SIZE ) ) {
-		Int32 txtW = NULL != mTextBox ? PixelDensity::pxToDpI( mTextBox->getTextWidth() ) : 0;
-		Int32 minSize = txtW + ( NULL != mIcon ? mIcon->getSize().getWidth() : 0 )
-						+ mStyleConfig.IconHorizontalMargin + mTextBox->getPadding().Left + mTextBox->getPadding().Right +
-						(  NULL != getSkin() ? getSkin()->getBorderSize().Left + getSkin()->getBorderSize().Right : 0 );
+	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() && ( 0 == mDpSize.getHeight() || mLayoutHeightRules == WRAP_CONTENT ) ) {
+		Float h = eemax<Float>( PixelDensity::dpToPx( getSkinSize().getHeight() ), mTextBox->getTextHeight() );
 
-		if ( minSize > mDpSize.getWidth() ) {
-			setInternalWidth( minSize );
+		setInternalPixelsHeight( h + mRealPadding.Top + mRealPadding.Bottom );
+	}
+
+	if ( ( mFlags & UI_AUTO_SIZE ) || mLayoutWidthRules == WRAP_CONTENT ) {
+		Int32 txtW = NULL != mTextBox ? mTextBox->getTextWidth() : 0;
+
+		Int32 minSize = txtW +
+						( NULL != mIcon ? mIcon->getRealSize().getWidth() : 0 ) +
+						PixelDensity::dpToPxI( mStyleConfig.IconHorizontalMargin ) + mRealPadding.Left + mRealPadding.Right +
+						( NULL != getSkin() ? PixelDensity::dpToPxI( getSkin()->getBorderSize().Left + getSkin()->getBorderSize().Right ) : 0 );
+
+		if ( minSize > mSize.getWidth() ) {
+			setInternalPixelsWidth( minSize );
 		}
 	}
+}
 
-	if ( NULL != mTextBox ) {
-		mTextBox->setSize( mDpSize );
-		mTextBox->setPosition( 0, 0 );
+void UIPushButton::onPaddingChange() {
+	onSizeChange();
+
+	UIWidget::onPaddingChange();
+}
+
+void UIPushButton::onSizeChange() {
+	onAutoSize();
+
+	Rectf autoPadding;
+
+	if ( mFlags & UI_AUTO_PADDING ) {
+		autoPadding = makePadding( true, true, true, true );
 	}
 
-	mIcon->setPosition( mStyleConfig.IconHorizontalMargin, 0 );
+	if ( mRealPadding.Top > autoPadding.Top ) autoPadding.Top = mRealPadding.Top;
+	if ( mRealPadding.Bottom > autoPadding.Bottom ) autoPadding.Bottom = mRealPadding.Bottom;
+	if ( mRealPadding.Left > autoPadding.Left ) autoPadding.Left = mRealPadding.Left;
+	if ( mRealPadding.Right > autoPadding.Right ) autoPadding.Right = mRealPadding.Right;
+
+	mIcon->setPixelsPosition( autoPadding.Left + mStyleConfig.IconHorizontalMargin, 0 );
 	mIcon->centerVertical();
 
 	if ( NULL != mTextBox ) {
+		Vector2f position;
+
+		switch ( fontVAlignGet( getFlags() ) ) {
+			case UI_VALIGN_CENTER:
+				position.y = ( mSize.getHeight() - mTextBox->getRealSize().getHeight() ) / 2;
+				break;
+			case UI_VALIGN_BOTTOM:
+				position.y = mSize.y - mTextBox->getRealSize().getHeight() - autoPadding.Bottom;
+				break;
+			case UI_VALIGN_TOP:
+				position.y = autoPadding.Top;
+				break;
+		}
+
 		switch ( fontHAlignGet( getFlags() ) ) {
-			case UI_HALIGN_LEFT:
-				mTextBox->setPosition( mIcon->getPosition().x + mIcon->getSize().getWidth(), 0 );
-				mTextBox->setSize( mDpSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth(), mDpSize.getHeight() );
+			case UI_HALIGN_RIGHT:
+				position.x = mSize.getWidth() - mTextBox->getRealSize().getWidth() - autoPadding.Right;
 				break;
 			case UI_HALIGN_CENTER:
-				if ( NULL != mIcon->getDrawable() ) {
-					Uint32 iconPos = mIcon->getPosition().x + mIcon->getSize().getWidth();
-					Uint32 txtOff = mTextBox->getPosition().x + mTextBox->getAlignOffset().x;
+				position.x = ( mSize.getWidth() - mTextBox->getRealSize().getWidth() ) / 2;
 
-					if ( iconPos >= txtOff) {
+				if ( NULL != mIcon->getDrawable() ) {
+					Uint32 iconPos = mIcon->getRealPosition().x + mIcon->getRealSize().getWidth();
+
+					if ( iconPos >= position.x ) {
 						Float px = PixelDensity::dpToPx(1);
 
-						mTextBox->setPosition( iconPos + px, mTextBox->getPosition().y );
-
-						mTextBox->setSize( mDpSize.getWidth() - mIcon->getPosition().x - mIcon->getSize().getWidth() - px, mDpSize.getHeight() );
+						position.x = iconPos + px;
 					}
 				}
 
 				break;
+			case UI_HALIGN_LEFT:
+				position.x = mIcon->getRealPosition().x + mIcon->getRealSize().getWidth();
+				break;
 		}
+
+		mTextBox->setPixelsPosition( position );
 	}
 
-	if ( NULL != mTextBox && 0 == mTextBox->getText().size() ) {
+	if ( NULL != mTextBox && mTextBox->getText().empty() ) {
 		mIcon->center();
 	}
 }
@@ -139,21 +182,9 @@ void UIPushButton::onThemeLoaded() {
 		mStyleConfig.IconHorizontalMargin = RMargin.Left;
 	}
 
-	if ( ( mFlags & UI_AUTO_SIZE ) && NULL != getSkin() ) {
-		setInternalHeight( getSkinSize().getHeight() );
-	}
-
-	autoPadding();
-
-	onSizeChange();
+	onAutoSize();
 
 	UIWidget::onThemeLoaded();
-}
-
-void UIPushButton::autoPadding() {
-	if ( mFlags & UI_AUTO_PADDING ) {
-		mTextBox->setPadding( makePadding( true, false, true, false ) );
-	}
 }
 
 UIPushButton * UIPushButton::setIcon( Drawable * Icon ) {
@@ -174,14 +205,6 @@ UIPushButton * UIPushButton::setText( const String& text ) {
 
 const String& UIPushButton::getText() {
 	return mTextBox->getText();
-}
-
-void UIPushButton::setPadding( const Rectf& padding ) {
-	mTextBox->setPadding( padding );
-}
-
-const Rectf& UIPushButton::getPadding() const {
-	return mTextBox->getPadding();
 }
 
 void UIPushButton::setIconHorizontalMargin( Int32 margin ) {
@@ -213,8 +236,6 @@ void UIPushButton::onAlphaChange() {
 }
 
 void UIPushButton::onStateChange() {
-	UIWidget::onStateChange();
-
 	if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
 		mTextBox->setFontColor( mStyleConfig.FontOverColor );
 	} else {
@@ -222,6 +243,8 @@ void UIPushButton::onStateChange() {
 	}
 
 	mTextBox->setAlpha( mAlpha );
+
+	UIWidget::onStateChange();
 }
 
 void UIPushButton::onAlignChange() {
@@ -344,8 +367,10 @@ void UIPushButton::setStyleConfig(const UIPushButtonStyleConfig & styleConfig) {
 	onStateChange();
 }
 
-void UIPushButton::setAttribute( const NodeAttribute& attribute ) {
+bool UIPushButton::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
+
+	bool attributeSet = true;
 
 	if ( "text" == name ) {
 		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
@@ -358,15 +383,17 @@ void UIPushButton::setAttribute( const NodeAttribute& attribute ) {
 
 		if ( NULL != mTheme && NULL != ( icon = mTheme->getIconByName( val ) ) ) {
 			setIcon( icon );
-		} else if ( NULL != ( icon = GlobalTextureAtlas::instance()->getByName( val ) ) ) {
+		} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
 			setIcon( icon );
 		}
 	} else {
-		UIWidget::setAttribute( attribute );
+		attributeSet = UIWidget::setAttribute( attribute );
 	}
 
-	mTextBox->setAttribute( attribute );
-	mTextBox->setLayoutSizeRules( FIXED, FIXED );
+	if ( !attributeSet && ( String::startsWith( name, "text" ) || String::startsWith( name, "font" ) ) )
+		mTextBox->setAttribute( attribute );
+
+	return attributeSet;
 }
 
 }}

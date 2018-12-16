@@ -106,15 +106,6 @@ UIGridLayout * UIGridLayout::setRowWeight(const Float & rowWeight) {
 	return this;
 }
 
-Rect UIGridLayout::getPadding() const {
-	return mPadding;
-}
-
-void UIGridLayout::setPadding(const Rect & padding) {
-	mPadding = padding;
-	pack();
-}
-
 void UIGridLayout::onSizeChange() {
 	pack();
 	UIWidget::onSizeChange();
@@ -123,6 +114,11 @@ void UIGridLayout::onSizeChange() {
 void UIGridLayout::onChildCountChange() {
 	pack();
 	UIWidget::onChildCountChange();
+}
+
+void UIGridLayout::onPaddingChange() {
+	pack();
+	UILayout::onPaddingChange();
 }
 
 void UIGridLayout::onParentSizeChange(const Vector2f& SizeChange) {
@@ -152,6 +148,7 @@ void UIGridLayout::pack() {
 		pos.x = mDpSize.getWidth() - mPadding.Right;
 
 	bool usedLastRow = true;
+
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->isWidget() && ChildLoop->isVisible() ) {
 			UIWidget * widget = static_cast<UIWidget*>( ChildLoop );
@@ -160,6 +157,7 @@ void UIGridLayout::pack() {
 			if ( widget->getLayoutWeight() != 0.f )
 				targetSize.x = widget->getLayoutWeight() * ( mDpSize.getWidth() - mPadding.Left - mPadding.Right );
 
+			widget->setLayoutSizeRules( FIXED, FIXED );
 			widget->setSize( targetSize );
 			widget->setPosition( pos );
 
@@ -179,7 +177,7 @@ void UIGridLayout::pack() {
 	}
 
 	if ( getLayoutHeightRules() == WRAP_CONTENT ) {
-		setInternalHeight( pos.y + ( usedLastRow ? targetSize.getHeight() : 0 ) );
+		setInternalHeight( pos.y + ( usedLastRow ? targetSize.getHeight() : 0 ) + mPadding.Bottom );
 	}
 
 	if ( oldSize != mDpSize ) {
@@ -206,7 +204,7 @@ Sizef UIGridLayout::getTargetElementSize() {
 				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getHeight() : mDpSize.getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
 }
 
-void UIGridLayout::setAttribute( const NodeAttribute &attribute ) {
+bool UIGridLayout::setAttribute( const NodeAttribute &attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "columnspan" == name ) {
@@ -231,22 +229,13 @@ void UIGridLayout::setAttribute( const NodeAttribute &attribute ) {
 		setRowWeight( attribute.asFloat() );
 	} else if ( "rowheight" == name ) {
 		setRowHeight( attribute.asInt() );
-	} else if ( "padding" == name ) {
-		int val = PixelDensity::toDpFromStringI( attribute.asString() );
-		setPadding( Rect( val, val, val, val ) );
-	} else if ( "paddingleft" == name ) {
-		setPadding( Rect( PixelDensity::toDpFromStringI( attribute.asString() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
-	} else if ( "paddingright" == name ) {
-		setPadding( Rect( mPadding.Left, mPadding.Top, PixelDensity::toDpFromStringI( attribute.asString() ), mPadding.Bottom ) );
-	} else if ( "paddingtop" == name ) {
-		setPadding( Rect( mPadding.Left, PixelDensity::toDpFromStringI( attribute.asString() ), mPadding.Right, mPadding.Bottom ) );
-	} else if ( "paddingbottom" == name ) {
-		setPadding( Rect( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromStringI( attribute.asString() ) ) );
 	} else if ( "reversedraw" == name ) {
 		setReverseDraw( attribute.asBool() );
 	} else {
-		UILayout::setAttribute( attribute );
+		return UILayout::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 }} 

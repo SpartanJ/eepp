@@ -76,11 +76,7 @@ class EE_API UITextView : public UIWidget {
 
 		UITooltipStyleConfig getFontStyleConfig() const;
 
-		const Rectf& getPadding() const;
-
-		UITextView * setPadding(const Rectf& padding);
-
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		Text *		mTextCache;
 		String			mString;
@@ -89,8 +85,6 @@ class EE_API UITextView : public UIWidget {
 		Vector2f 		mRealAlignOffset;
 		Int32			mSelCurInit;
 		Int32			mSelCurEnd;
-		Rectf		mPadding;
-		Rectf		mRealPadding;
 		struct SelPosCache
 		{
 			SelPosCache( Vector2f ip, Vector2f ep ) :
@@ -104,6 +98,7 @@ class EE_API UITextView : public UIWidget {
 		std::vector<SelPosCache> mSelPosCache;
 		Int32		mLastSelCurInit;
 		Int32		mLastSelCurEnd;
+		Int32		mFontLineCenter;
 		bool		mSelecting;
 
 		virtual void drawSelection(Text * textCache);
@@ -119,8 +114,6 @@ class EE_API UITextView : public UIWidget {
 		virtual void onTextChanged();
 
 		virtual void onFontChanged();
-
-		virtual void onPaddingChange();
 
 		virtual Uint32 onFocusLoss();
 
@@ -139,6 +132,10 @@ class EE_API UITextView : public UIWidget {
 		virtual Int32 selCurEnd();
 
 		virtual void onAlignChange();
+
+		virtual void onSelectionChange();
+
+		const Int32& getFontLineCenter();
 
 		void recalculate();
 

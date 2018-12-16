@@ -29,10 +29,6 @@ class EE_API UIPushButton : public UIWidget {
 
 		virtual const String& getText();
 
-		void setPadding( const Rectf& padding );
-
-		const Rectf& getPadding() const;
-
 		void setIconHorizontalMargin( Int32 margin );
 
 		const Int32& getIconHorizontalMargin() const;
@@ -75,15 +71,13 @@ class EE_API UIPushButton : public UIWidget {
 
 		void setStyleConfig(const UIPushButtonStyleConfig & styleConfig);
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		UIPushButtonStyleConfig mStyleConfig;
 		UIImage * 	mIcon;
 		UITextView * 	mTextBox;
 
 		virtual void onSizeChange();
-
-		void autoPadding();
 
 		virtual void onAlphaChange();
 
@@ -92,6 +86,10 @@ class EE_API UIPushButton : public UIWidget {
 		virtual void onAlignChange();
 
 		virtual void onThemeLoaded();
+
+		virtual void onAutoSize();
+
+		virtual void onPaddingChange();
 
 		virtual Uint32 onKeyDown( const KeyEvent& Event );
 

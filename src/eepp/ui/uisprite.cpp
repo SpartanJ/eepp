@@ -126,10 +126,20 @@ void UISprite::setRenderMode( const RenderMode& render ) {
 }
 
 void UISprite::updateSize() {
-	if ( mFlags & UI_AUTO_SIZE ) {
-		if ( NULL != mSprite ) {
+	if ( NULL != mSprite ) {
+		if ( mFlags & UI_AUTO_SIZE ) {
 			if ( NULL != mSprite->getCurrentTextureRegion() && mSprite->getCurrentTextureRegion()->getDpSize().asFloat() != mDpSize )
 				setSize( mSprite->getCurrentTextureRegion()->getDpSize().asFloat() );
+		}
+
+		if ( NULL != mSprite->getCurrentTextureRegion() ) {
+			if ( mLayoutWidthRules == WRAP_CONTENT ) {
+				setInternalPixelsWidth( mSprite->getCurrentTextureRegion()->getPxSize().getWidth() + mRealPadding.Left + mRealPadding.Right );
+			}
+
+			if ( mLayoutHeightRules == WRAP_CONTENT ) {
+				setInternalPixelsHeight( mSprite->getCurrentTextureRegion()->getPxSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+			}
 		}
 	}
 }
@@ -141,19 +151,19 @@ void UISprite::autoAlign() {
 	TextureRegion * tTextureRegion = mSprite->getCurrentTextureRegion();
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mDpSize.getWidth() / 2 - tTextureRegion->getDpSize().getWidth() / 2;
+		mAlignOffset.x = ( mSize.getWidth() - tTextureRegion->getPxSize().getWidth() ) / 2;
 	} else if ( fontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mDpSize.getWidth() - tTextureRegion->getDpSize().getWidth();
+		mAlignOffset.x =  mSize.getWidth() - tTextureRegion->getPxSize().getWidth() - mRealPadding.Right;
 	} else {
-		mAlignOffset.x = 0;
+		mAlignOffset.x = mRealPadding.Left;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mDpSize.getHeight() / 2 - tTextureRegion->getDpSize().getHeight() / 2;
+		mAlignOffset.y = ( mSize.getHeight() - tTextureRegion->getPxSize().getHeight() ) / 2;
 	} else if ( fontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mDpSize.getHeight() - tTextureRegion->getDpSize().getHeight();
+		mAlignOffset.y = mSize.getHeight() - tTextureRegion->getPxSize().getHeight() - mRealPadding.Bottom;
 	} else {
-		mAlignOffset.y = 0;
+		mAlignOffset.y = mRealPadding.Top;
 	}
 }
 
@@ -175,7 +185,7 @@ void UISprite::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
-void UISprite::setAttribute( const NodeAttribute& attribute ) {
+bool UISprite::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "src" == name ) {
@@ -186,8 +196,10 @@ void UISprite::setAttribute( const NodeAttribute& attribute ) {
 			setSprite( eeNew( Sprite, ( val ) ) );
 		}
 	} else {
-		UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 }}

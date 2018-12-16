@@ -98,7 +98,7 @@ void UIListBox::setTheme( UITheme * Theme ) {
 
 void UIListBox::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mContainerPadding = makePadding();
+		mContainerPadding = PixelDensity::dpToPx( makePadding() );
 	}
 }
 
@@ -300,6 +300,11 @@ void UIListBox::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
+void UIListBox::onPaddingChange() {
+	containerResize();
+	updateScroll();
+}
+
 void UIListBox::setRowHeight() {
 	Uint32 tOldRowHeight = mRowHeight;
 
@@ -400,12 +405,14 @@ void UIListBox::itemUpdateSize( UIListBoxItem * Item ) {
 }
 
 void UIListBox::containerResize() {
-	mContainer->setPosition( mContainerPadding.Left, mContainerPadding.Top );
+	Rectf padding = mContainerPadding + mRealPadding;
+
+	mContainer->setPixelsPosition( padding.Left, padding.Top );
 
 	if( mHScrollBar->isVisible() )
-		mContainer->setSize( mDpSize.getWidth() - mContainerPadding.Right - mContainerPadding.Left, mDpSize.getHeight() - mContainerPadding.Top - mHScrollBar->getSize().getHeight() );
+		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left, mSize.getHeight() - padding.Top - mHScrollBar->getRealSize().getHeight() );
 	else
-		mContainer->setSize( mDpSize.getWidth() - mContainerPadding.Right - mContainerPadding.Left, mDpSize.getHeight() - mContainerPadding.Bottom - mContainerPadding.Top );
+		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left, mSize.getHeight() - padding.Bottom - padding.Top );
 }
 
 void UIListBox::createItemIndex( const Uint32& i ) {
@@ -747,17 +754,8 @@ Graphics::Font * UIListBox::getFont() const {
 	return mFontStyleConfig.Font;
 }
 
-void UIListBox::setContainerPadding( const Rectf& Padding ) {
-	if ( Padding != mContainerPadding ) {
-		mContainerPadding = Padding;
-
-		containerResize();
-		updateScroll();
-	}
-}
-
-const Rectf& UIListBox::getContainerPadding() const {
-	return mContainerPadding;
+Rectf UIListBox::getContainerPadding() const {
+	return PixelDensity::pxToDp( mContainerPadding + mPadding );
 }
 
 void UIListBox::setSmoothScroll( const bool& soft ) {
@@ -985,7 +983,7 @@ void UIListBox::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
 	setFontColor( mFontStyleConfig.FontColor );
 }
 
-void UIListBox::setAttribute( const NodeAttribute& attribute ) {
+bool UIListBox::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "rowheight" == name ) {
@@ -1005,17 +1003,6 @@ void UIListBox::setAttribute( const NodeAttribute& attribute ) {
 
 		if ( NULL != font )
 			setFont( font );
-	} else if ( "padding" == name ) {
-		int val = attribute.asInt();
-		setContainerPadding( Rectf( val, val, val, val ) );
-	} else if ( "paddingleft" == name ) {
-		setContainerPadding( Rectf( attribute.asInt(), mContainerPadding.Top, mContainerPadding.Right, mContainerPadding.Bottom ) );
-	} else if ( "paddingright" == name ) {
-		setContainerPadding( Rectf( mContainerPadding.Left, mContainerPadding.Top, attribute.asInt(), mContainerPadding.Bottom ) );
-	} else if ( "paddingtop" == name ) {
-		setContainerPadding( Rectf( mContainerPadding.Left, attribute.asInt(), mContainerPadding.Right, mContainerPadding.Bottom ) );
-	} else if ( "paddingbottom" == name ) {
-		setContainerPadding( Rectf( mContainerPadding.Left, mContainerPadding.Top, mContainerPadding.Right, attribute.asInt() ) );
 	} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {
 		std::string val = attribute.asString();
 		if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );
@@ -1042,14 +1029,24 @@ void UIListBox::setAttribute( const NodeAttribute& attribute ) {
 			mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
 		}
 	} else {
-		UITouchDragableWidget::setAttribute( attribute );
+		return UITouchDragableWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 void UIListBox::loadFromXmlNode(const pugi::xml_node & node) {
 	beginAttributesTransaction();
 
 	UITouchDragableWidget::loadFromXmlNode( node );
+
+	loadItemsFromXmlNode( node );
+
+	endAttributesTransaction();
+}
+
+void UIListBox::loadItemsFromXmlNode( const pugi::xml_node& node ) {
+	beginAttributesTransaction();
 
 	std::vector<String> items;
 	for ( pugi::xml_node item = node.child("item"); item; item = item.next_sibling("item") ) {

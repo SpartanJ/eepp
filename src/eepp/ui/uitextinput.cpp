@@ -97,13 +97,13 @@ void UITextInput::drawWaitingCursor() {
 		Primitives P;
 		P.setColor( mFontStyleConfig.FontColor );
 
-		Float CurPosX = mScreenPos.x + mRealAlignOffset.x + mCurPos.x + PixelDensity::dpToPx( 1.f ) + mRealPadding.Left;
+		Float CurPosX = eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + PixelDensity::dpToPx( 1.f ) + mRealPadding.Left );
 		Float CurPosY = mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mRealPadding.Top;
 
 		if ( CurPosX > (Float)mScreenPos.x + (Float)mSize.x )
 			CurPosX = (Float)mScreenPos.x + (Float)mSize.x;
 
-		P.drawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->getFont()->getLineSpacing( mTextCache->getCharacterSizePx() ) ) ) );
+		P.drawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->getFont()->getFontHeight( mTextCache->getCharacterSizePx() ) ) ) );
 
 		if ( disableSmooth )
 			GLi->lineSmooth( true );
@@ -210,7 +210,12 @@ void UITextInput::onThemeLoaded() {
 
 void UITextInput::onAutoSize() {
 	if ( ( mFlags & UI_AUTO_SIZE ) && 0 == mDpSize.getHeight() ) {
-		setSize( mDpSize.x, getSkinSize().getHeight() );
+		setSize( mDpSize.x, getSkinSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+	}
+
+	if ( mLayoutHeightRules == WRAP_CONTENT ) {
+		int minHeight = eemax<int>( mTextCache->getTextHeight(), PixelDensity::dpToPxI( getSkinSize().getHeight() ) );
+		setInternalPixelsHeight( minHeight + mRealPadding.Top + mRealPadding.Bottom );
 	}
 }
 
@@ -339,7 +344,7 @@ bool UITextInput::isFreeEditingEnabled() {
 	return mTextBuffer.isFreeEditingEnabled();
 }
 
-void UITextInput::setAttribute( const NodeAttribute& attribute ) {
+bool UITextInput::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "text" == name ) {
@@ -357,8 +362,22 @@ void UITextInput::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "allowdot" == name ) {
 		getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), attribute.asBool() );
 	} else {
-		UITextView::setAttribute( attribute );
+		return UITextView::setAttribute( attribute );
 	}
+
+	return true;
+}
+
+UIWidget * UITextInput::setPadding( const Rectf& padding ) {
+	Rectf autoPadding;
+
+	if ( mFlags & UI_AUTO_PADDING ) {
+		autoPadding = makePadding( true, true, false, false );
+	}
+
+	UITextView::setPadding( autoPadding + padding );
+
+	return this;
 }
 
 }}

@@ -93,6 +93,11 @@ void UISlider::onSizeChange() {
 	adjustChilds();
 }
 
+void UISlider::onPaddingChange() {
+	adjustChilds();
+	UIWidget::onPaddingChange();
+}
+
 void UISlider::adjustChilds() {
 	UISkin * tSkin = NULL;
 
@@ -129,24 +134,24 @@ void UISlider::adjustChilds() {
 			Float Height;
 
 			if ( mStyleConfig.ExpandBackground )
-				Height = mDpSize.getHeight();
+				Height = mDpSize.getHeight() - mPadding.Top - mPadding.Bottom;
 			else
 				Height = tSkin->getSize().getHeight();
 
 			if ( mStyleConfig.AllowHalfSliderOut )
-				mBackSlider->setSize( Sizef( mDpSize.getWidth() - mSlider->getSize().getWidth(), Height ) );
+				mBackSlider->setSize( Sizef( mDpSize.getWidth() - mSlider->getSize().getWidth() - mPadding.Left - mPadding.Right, Height ) );
 			else
-				mBackSlider->setSize( Sizef( mDpSize.getWidth(), Height ) );
+				mBackSlider->setSize( Sizef( mDpSize.getWidth() - mPadding.Left - mPadding.Right, Height ) );
 		} else {
 			Float Width;
 
 			if ( mStyleConfig.ExpandBackground )
-				Width = mDpSize.getWidth();
+				Width = mDpSize.getWidth() - mPadding.Left - mPadding.Right;
 			else
 				Width = tSkin->getSize().getWidth();
 
 			if ( mStyleConfig.AllowHalfSliderOut )
-				mBackSlider->setSize( Sizef( Width, mDpSize.getHeight() - mSlider->getSize().getHeight() ) );
+				mBackSlider->setSize( Sizef( Width, mDpSize.getHeight() - mSlider->getSize().getHeight() - mPadding.Top - mPadding.Bottom ) );
 			else
 				mBackSlider->setSize( Sizef( Width, mDpSize.getHeight() ) );
 		}
@@ -164,44 +169,44 @@ void UISlider::fixSliderPos() {
 		if ( UI_HORIZONTAL == mOrientation ) {
 			mSlider->setPosition( mSlider->getPosition().x, 0 );
 
-			if ( mSlider->getPosition().x < 0 )
-				mSlider->setPosition( 0, 0 );
+			if ( mSlider->getPosition().x < mPadding.Left )
+				mSlider->setPosition( mPadding.Left, 0 );
 
 			if ( mStyleConfig.AllowHalfSliderOut ) {
-				if ( mSlider->getPosition().x > mBackSlider->getSize().getWidth() )
-					mSlider->setPosition( mBackSlider->getSize().getWidth(), 0 );
+				if ( mSlider->getPosition().x > mBackSlider->getSize().getWidth() + mPadding.Left  )
+					mSlider->setPosition( mBackSlider->getSize().getWidth() + mPadding.Left, 0 );
 			} else {
-				if ( mSlider->getPosition().x > mBackSlider->getSize().getWidth() - mSlider->getSize().getWidth() )
-					mSlider->setPosition( mBackSlider->getSize().getWidth() - mSlider->getSize().getWidth(), 0 );
+				if ( mSlider->getPosition().x > mBackSlider->getSize().getWidth() - mSlider->getSize().getWidth() + mPadding.Left )
+					mSlider->setPosition( mBackSlider->getSize().getWidth() - mSlider->getSize().getWidth() + mPadding.Left, 0 );
 			}
 
 			mSlider->centerVertical();
 
 			if ( mStyleConfig.AllowHalfSliderOut )
-				setValue( mMinValue + (Float)mSlider->getPosition().x * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getWidth() );
+				setValue( mMinValue + ( mSlider->getPosition().x - mPadding.Left ) * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getWidth() );
 			else
-				setValue( mMinValue + (Float)mSlider->getPosition().x * ( mMaxValue - mMinValue ) / ( (Float)mDpSize.getWidth() - mSlider->getSize().getWidth() ) );
+				setValue( mMinValue + ( mSlider->getPosition().x - mPadding.Left ) * ( mMaxValue - mMinValue ) / ( (Float)mDpSize.getWidth() - mSlider->getSize().getWidth() ) );
 		} else {
 			mSlider->setPosition( 0, mSlider->getPosition().y );
 
-			if ( mSlider->getPosition().y < 0 )
-				mSlider->setPosition( 0, 0 );
+			if ( mSlider->getPosition().y < mPadding.Top )
+				mSlider->setPosition( 0, mPadding.Top );
 
 			if ( mStyleConfig.AllowHalfSliderOut ) {
-				if ( mSlider->getPosition().y > mBackSlider->getSize().getHeight() )
-					mSlider->setPosition( 0, mBackSlider->getSize().getHeight() );
+				if ( mSlider->getPosition().y > mBackSlider->getSize().getHeight() + mPadding.Top )
+					mSlider->setPosition( 0, mBackSlider->getSize().getHeight() + mPadding.Top );
 			} else {
-				if ( mSlider->getPosition().y > mBackSlider->getSize().getHeight() - mSlider->getSize().getHeight() ) {
-					mSlider->setPosition( 0, mBackSlider->getSize().getHeight() - mSlider->getSize().getHeight() );
+				if ( mSlider->getPosition().y > mBackSlider->getSize().getHeight() - mSlider->getSize().getHeight() + mPadding.Top ) {
+					mSlider->setPosition( 0, mBackSlider->getSize().getHeight() - mSlider->getSize().getHeight() + mPadding.Top );
 				}
 			}
 
 			mSlider->centerHorizontal();
 
 			if ( mStyleConfig.AllowHalfSliderOut )
-				setValue( mMinValue + (Float)mSlider->getPosition().y * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getHeight() );
+				setValue( mMinValue + ( mSlider->getPosition().y - mPadding.Top ) * ( mMaxValue - mMinValue ) / (Float)mBackSlider->getSize().getHeight() );
 			else
-				setValue( mMinValue + (Float)mSlider->getPosition().y * ( mMaxValue - mMinValue ) / ( (Float)mDpSize.getHeight() - mSlider->getSize().getHeight() ) );
+				setValue( mMinValue + ( mSlider->getPosition().y - mPadding.Top ) * ( mMaxValue - mMinValue ) / ( (Float)mDpSize.getHeight() - mSlider->getSize().getHeight() ) );
 		}
 
 		mOnPosChange = false;
@@ -222,14 +227,14 @@ void UISlider::setValue( Float Val ) {
 
 			if ( UI_HORIZONTAL == mOrientation ) {
 				if ( mStyleConfig.AllowHalfSliderOut )
-					mSlider->setPosition( (Int32)( (Float)mBackSlider->getSize().getWidth() * Percent ), mSlider->getPosition().y );
+					mSlider->setPosition( mPadding.Left + (Int32)( (Float)mBackSlider->getSize().getWidth() * Percent ), mSlider->getPosition().y );
 				else
-					mSlider->setPosition( (Int32)( ( (Float)mDpSize.getWidth() - mSlider->getSize().getWidth() ) * Percent ), mSlider->getPosition().y );
+					mSlider->setPosition( mPadding.Left + (Int32)( ( (Float)mDpSize.getWidth() - mPadding.Left - mPadding.Top - mSlider->getSize().getWidth() ) * Percent ), mSlider->getPosition().y );
 			} else {
 				if ( mStyleConfig.AllowHalfSliderOut )
-					mSlider->setPosition( mSlider->getPosition().x, (Int32)( (Float)mBackSlider->getSize().getHeight() * Percent ) );
+					mSlider->setPosition( mSlider->getPosition().x, mPadding.Top + (Int32)( (Float)mBackSlider->getSize().getHeight() * Percent ) );
 				else
-					mSlider->setPosition( mSlider->getPosition().x, (Int32)( ( (Float)mDpSize.getHeight() - mSlider->getSize().getHeight() ) * Percent ) );
+					mSlider->setPosition( mSlider->getPosition().x, mPadding.Top + (Int32)( ( (Float)mDpSize.getHeight() - mPadding.Top - mPadding.Bottom - mSlider->getSize().getHeight() ) * Percent ) );
 			}
 
 			mOnPosChange = false;
@@ -402,7 +407,7 @@ void UISlider::onAlphaChange() {
 	mSlider->setAlpha( mAlpha );
 }
 
-void UISlider::setAttribute( const NodeAttribute& attribute ) {
+bool UISlider::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "orientation" == name ) {
@@ -423,8 +428,36 @@ void UISlider::setAttribute( const NodeAttribute& attribute ) {
 		setClickStep( attribute.asFloat() );
 	} else if ( "pagestep" == name ) {
 		setPageStep( attribute.asFloat() );
+	} else if ( "halfslider" == name ) {
+		setAllowHalfSliderOut( attribute.asBool() );
 	} else {
-		UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute );
+	}
+
+	return true;
+}
+
+Sizef UISlider::getMinimumSize() {
+	Float w = eemax( mBackSlider->getSkinSize().getWidth(), mSlider->getSkinSize().getWidth() );
+	Float h = eemax( mBackSlider->getSkinSize().getHeight(), mSlider->getSkinSize().getHeight() );
+	return Sizef( w + ( mStyleConfig.AllowHalfSliderOut ? w : 0 ) + mPadding.Left + mPadding.Right, h + mPadding.Top + mPadding.Bottom );
+}
+
+void UISlider::onAutoSize() {
+	if ( mLayoutWidthRules == WRAP_CONTENT || mLayoutHeightRules == WRAP_CONTENT ) {
+		Sizef total( getMinimumSize() );
+
+		total = PixelDensity::dpToPx( total );
+
+		if ( mLayoutWidthRules == WRAP_CONTENT ) {
+			setInternalPixelsWidth( total.getWidth() );
+		}
+
+		if ( mLayoutHeightRules == WRAP_CONTENT ) {
+			setInternalPixelsHeight( total.getHeight() );
+		}
+
+		adjustChilds();
 	}
 }
 

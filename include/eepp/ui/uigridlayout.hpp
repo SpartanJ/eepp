@@ -49,13 +49,8 @@ class EE_API UIGridLayout : public UILayout {
 
 		UIGridLayout * setRowWeight(const Float & rowWeight);
 
-		Rect getPadding() const;
-
-		void setPadding(const Rect & padding);
-
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
-		Rect mPadding;
 		Sizei mSpan;
 		ElementMode mColumnMode;
 		ElementMode mRowMode;
@@ -67,6 +62,8 @@ class EE_API UIGridLayout : public UILayout {
 		virtual void onSizeChange();
 		
 		virtual void onChildCountChange();
+
+		virtual void onPaddingChange();
 		
 		virtual void onParentSizeChange( const Vector2f& SizeChange );
 

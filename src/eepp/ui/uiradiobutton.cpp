@@ -80,10 +80,27 @@ void UIRadioButton::onThemeLoaded() {
 
 void UIRadioButton::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
+		if ( mDpSize.getWidth() == 0 ) {
+			setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() + mTextSeparation + mRealPadding.Left + mRealPadding.Right );
+		}
+
+		if ( mDpSize.getHeight() == 0 ) {
+			setInternalHeight( mActiveButton->getSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+		}
+
 		mActiveButton->centerVertical();
 		mInactiveButton->centerVertical();
+	}
 
-		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() );
+	if ( mLayoutWidthRules == WRAP_CONTENT ) {
+		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right + mActiveButton->getRealSize().getWidth() + mTextSeparation );
+	}
+
+	if ( mLayoutHeightRules == WRAP_CONTENT ) {
+		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mRealPadding.Top + mRealPadding.Bottom );
+
+		mActiveButton->centerVertical();
+		mInactiveButton->centerVertical();
 	}
 }
 
@@ -208,7 +225,13 @@ void UIRadioButton::onPaddingChange() {
 	mActiveButton->setPosition( mPadding.Left, mActiveButton->getPosition().y );
 	mInactiveButton->setPosition( mPadding.Left, mInactiveButton->getPosition().y );
 
-	mRealPadding.Left = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPx( mTextSeparation  );
+	UITextView::onPaddingChange();
+}
+
+void UIRadioButton::alignFix() {
+	UITextView::alignFix();
+
+	mRealAlignOffset.x = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
 }
 
 UINode * UIRadioButton::getActiveButton() const {
@@ -229,14 +252,16 @@ void UIRadioButton::setTextSeparation(const Int32 & textSeparation) {
 	setPadding( getPadding() );
 }
 
-void UIRadioButton::setAttribute( const NodeAttribute& attribute ) {
+bool UIRadioButton::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "selected" == name || "active" == name ) {
 		setActive( attribute.asBool() );
 	} else {
-		UITextView::setAttribute( attribute );
+		return UITextView::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 Uint32 UIRadioButton::onKeyDown( const KeyEvent& Event ) {

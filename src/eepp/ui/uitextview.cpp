@@ -20,6 +20,7 @@ UITextView::UITextView() :
 	mSelCurEnd( -1 ),
 	mLastSelCurInit( -1 ),
 	mLastSelCurEnd( -1 ),
+	mFontLineCenter( 0 ),
 	mSelecting( false )
 {
 	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
@@ -65,7 +66,7 @@ void UITextView::draw() {
 			}
 
 			mTextCache->setAlign( getFlags() );
-			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left, (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
+			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mRealPadding.Left, mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mRealPadding.Top, Vector2f::One, 0.f, getBlendMode() );
 
 			if ( isClipped() ) {
 				clipSmartDisable();
@@ -252,36 +253,36 @@ void UITextView::onAutoSize() {
 	}
 
 	if ( mLayoutWidthRules == WRAP_CONTENT ) {
-		setInternalPixelsWidth( (int)mTextCache->getTextWidth() );
+		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right );
 	}
 
 	if ( mLayoutHeightRules == WRAP_CONTENT ) {
-		setInternalPixelsHeight( (int)mTextCache->getTextHeight() );
+		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mRealPadding.Top + mRealPadding.Bottom );
 	}
 }
 
 void UITextView::alignFix() {
 	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mRealAlignOffset.x = (Float)( (Int32)( mSize.x / 2 - mTextCache->getTextWidth() / 2 ) );
+			mRealAlignOffset.x = (Float)( (Int32)( ( mSize.x - mRealPadding.Left - mRealPadding.Right ) / 2 - mTextCache->getTextWidth() / 2 ) );
 			break;
 		case UI_HALIGN_RIGHT:
-			mRealAlignOffset.x = ( (Float)mSize.x - (Float)mTextCache->getTextWidth() );
+			mRealAlignOffset.x = ( (Float)mSize.x - mRealPadding.Left - mRealPadding.Right - (Float)mTextCache->getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
-			mRealAlignOffset.x = 0.f;
+			mRealAlignOffset.x = 0;
 			break;
 	}
 
 	switch ( fontVAlignGet( getFlags() ) ) {
 		case UI_VALIGN_CENTER:
-			mRealAlignOffset.y = (Float)( (Int32)( mSize.y / 2 - mTextCache->getTextHeight() / 2 ) ) - 1;
+			mRealAlignOffset.y = (Float)( (Int32)( ( mSize.y - mRealPadding.Top - mRealPadding.Bottom ) / 2 - mTextCache->getTextHeight() / 2 ) ) - 1;
 			break;
 		case UI_VALIGN_BOTTOM:
-			mRealAlignOffset.y = ( (Float)mSize.y - (Float)mTextCache->getTextHeight() );
+			mRealAlignOffset.y = ( (Float)mSize.y - mRealPadding.Top - mRealPadding.Bottom - (Float)mTextCache->getTextHeight() );
 			break;
 		case UI_VALIGN_TOP:
-			mRealAlignOffset.y = 0.f;
+			mRealAlignOffset.y = 0;
 			break;
 	}
 
@@ -293,6 +294,8 @@ Uint32 UITextView::onFocusLoss() {
 
 	selCurInit( -1 );
 	selCurEnd( -1 );
+	onSelectionChange();
+
 	return 1;
 }
 
@@ -350,6 +353,7 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags )
 
 			selCurInit( tSelCurInit );
 			selCurEnd( tSelCurEnd );
+			onSelectionChange();
 
 			mSelecting = false;
 		}
@@ -363,6 +367,7 @@ Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 		if ( selCurInit() == selCurEnd() ) {
 			selCurInit( -1 );
 			selCurEnd( -1 );
+			onSelectionChange();
 		}
 
 		mSelecting = false;
@@ -386,6 +391,8 @@ Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 			} else {
 				selCurEnd( curPos );
 			}
+
+			onSelectionChange();
 		}
 
 		mSelecting = true;
@@ -430,7 +437,7 @@ void UITextView::drawSelection( Text * textCache ) {
 		if ( mSelPosCache.size() ) {
 			Primitives P;
 			P.setColor( mFontStyleConfig.FontSelectionBackColor );
-			Float vspace = textCache->getFont()->getLineSpacing( textCache->getCharacterSizePx() );
+			Float vspace = textCache->getFont()->getFontHeight( textCache->getCharacterSizePx() );
 
 			for ( size_t i = 0; i < mSelPosCache.size(); i++ ) {
 				initPos = mSelPosCache[i].initPos;
@@ -481,7 +488,26 @@ void UITextView::onAlignChange() {
 	alignFix();
 }
 
+void UITextView::onSelectionChange() {
+	mTextCache->invalidateColors();
+
+	if ( selCurInit() != selCurEnd() ) {
+		mTextCache->setFillColor( mFontStyleConfig.getFontSelectedColor(), eemin<Int32>( selCurInit(), selCurEnd() ), eemax<Int32>( selCurInit(), selCurEnd() ) - 1 );
+	} else {
+		mTextCache->setFillColor( mFontStyleConfig.getFontColor() );
+	}
+
+	invalidateDraw();
+}
+
+const Int32 &UITextView::getFontLineCenter() {
+	return mFontLineCenter;
+}
+
 void UITextView::recalculate() {
+	int fontHeight = mTextCache->getCharacterSizePx();
+	mFontLineCenter = eefloor((Float)( ( mTextCache->getFont()->getLineSpacing(fontHeight) - fontHeight ) / 2 ));
+
 	autoShrink();
 	onAutoSize();
 	alignFix();
@@ -491,6 +517,7 @@ void UITextView::recalculate() {
 void UITextView::resetSelCache() {
 	mLastSelCurInit = mLastSelCurEnd = -1;
 	invalidateDraw();
+	onSelectionChange();
 }
 
 void UITextView::setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig ) {
@@ -505,26 +532,7 @@ void UITextView::setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig
 	setOutlineColor( mFontStyleConfig.getOutlineColor() );
 }
 
-const Rectf& UITextView::getPadding() const {
-	return mPadding;
-}
-
-UITextView * UITextView::setPadding(const Rectf& padding) {
-	if ( padding != mPadding ) {
-		mPadding = padding;
-		mRealPadding = PixelDensity::dpToPx( mPadding );
-		onPaddingChange();
-		notifyLayoutAttrChange();
-	}
-
-	return this;
-}
-
-void UITextView::onPaddingChange() {
-	invalidateDraw();
-}
-
-void UITextView::setAttribute( const NodeAttribute& attribute ) {
+bool UITextView::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "text" == name ) {
@@ -580,20 +588,13 @@ void UITextView::setAttribute( const NodeAttribute& attribute ) {
 		setOutlineThickness( PixelDensity::toDpFromString( attribute.asString() ) );
 	} else if ( "fontoutlinecolor" == name ) {
 		setOutlineColor( Color::fromString( attribute.asString() ) );
-	} else if ( "padding" == name ) {
-		int val = PixelDensity::toDpFromStringI( attribute.asString() );
-		setPadding( Rectf( val, val, val, val ) );
-	} else if ( "paddingleft" == name ) {
-		setPadding( Rectf( PixelDensity::toDpFromString( attribute.asString() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
-	} else if ( "paddingright" == name ) {
-		setPadding( Rectf( mPadding.Left, mPadding.Top, PixelDensity::toDpFromString( attribute.asString() ), mPadding.Bottom ) );
-	} else if ( "paddingtop" == name ) {
-		setPadding( Rectf( mPadding.Left, PixelDensity::toDpFromString( attribute.asString() ), mPadding.Right, mPadding.Bottom ) );
-	} else if ( "paddingbottom" == name ) {
-		setPadding( Rectf( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromString( attribute.asString() ) ) );
+	} else if ( "textselection" == name ) {
+		mFlags|= UI_TEXT_SELECTION_ENABLED;
 	} else {
-		UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 }}

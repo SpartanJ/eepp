@@ -87,9 +87,13 @@ class EE_API UIWidget : public UINode {
 
 		void notifyLayoutAttrChangeParent();
 
-		void setAttribute( const std::string& name, const std::string& value );
+		bool setAttribute( const std::string& name, const std::string& value );
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
+
+		const Rectf& getPadding() const;
+
+		UIWidget * setPadding(const Rectf& padding);
 	protected:
 		friend class UIManager;
 		friend class UISceneNode;
@@ -99,7 +103,8 @@ class EE_API UIWidget : public UINode {
 		Sizef		mMinControlSize;
 		Rect		mDistToBorder;
 		Rect		mLayoutMargin;
-		Rectf		mRealMargin;
+		Rectf		mPadding;
+		Rectf		mRealPadding;
 		Float		mLayoutWeight;
 		Uint32		mLayoutGravity;
 		LayoutSizeRules mLayoutWidthRules;
@@ -120,6 +125,8 @@ class EE_API UIWidget : public UINode {
 		virtual void onAutoSize();
 
 		virtual void onWidgetCreated();
+
+		virtual void onPaddingChange();
 
 		void beginAttributesTransaction();
 

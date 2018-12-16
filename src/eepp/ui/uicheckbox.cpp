@@ -81,17 +81,29 @@ void UICheckBox::onThemeLoaded() {
 void UICheckBox::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( mDpSize.getWidth() == 0 ) {
-			setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() + mTextSeparation );
+			setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() + mTextSeparation + mRealPadding.Left + mRealPadding.Right );
 		}
 
 		if ( mDpSize.getHeight() == 0 ) {
-			setInternalHeight( mActiveButton->getSize().getHeight() );
+			setInternalHeight( mActiveButton->getSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
 		}
 
 		mActiveButton->centerVertical();
 		mInactiveButton->centerVertical();
 	}
+
+	if ( mLayoutWidthRules == WRAP_CONTENT ) {
+		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right + mActiveButton->getRealSize().getWidth() + mTextSeparation );
+	}
+
+	if ( mLayoutHeightRules == WRAP_CONTENT ) {
+		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mRealPadding.Top + mRealPadding.Bottom );
+
+		mActiveButton->centerVertical();
+		mInactiveButton->centerVertical();
+	}
 }
+
 
 void UICheckBox::onSizeChange() {
 	UITextView::onSizeChange();
@@ -146,7 +158,13 @@ void UICheckBox::onPaddingChange() {
 	mActiveButton->setPosition( mPadding.Left, mActiveButton->getPosition().y );
 	mInactiveButton->setPosition( mPadding.Left, mInactiveButton->getPosition().y );
 
-	mRealPadding.Left = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+	UITextView::onPaddingChange();
+}
+
+void UICheckBox::alignFix() {
+	UITextView::alignFix();
+
+	mRealAlignOffset.x = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
 }
 
 UINode * UICheckBox::getActiveButton() const {
@@ -167,14 +185,16 @@ void UICheckBox::setTextSeparation(const Int32 & textSeparation) {
 	setPadding( getPadding() );
 }
 
-void UICheckBox::setAttribute( const NodeAttribute& attribute ) {
+bool UICheckBox::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "selected" == name || "active" == name ) {
 		setActive( attribute.asBool() );
 	} else {
-		UITextView::setAttribute( attribute );
+		return UITextView::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 Uint32 UICheckBox::onKeyDown( const KeyEvent& Event ) {

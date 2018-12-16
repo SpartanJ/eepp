@@ -109,7 +109,7 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 
 		virtual void internalDraw();
 
@@ -189,8 +189,6 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual void matrixUnset();
 
-		void onContainerPositionChange( const Event * Event );
-
 		void fixChildsSize();
 
 		void doResize( const NodeMessage * Msg );
@@ -237,6 +235,8 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual void drawShadow();
 
+		virtual void onPaddingChange();
+
 		virtual void preDraw();
 
 		virtual void postDraw();
@@ -244,6 +244,8 @@ class EE_API UIWindow : public UIWidget {
 		virtual Sizei getFrameBufferSize();
 
 		UISceneNode * getUISceneNode();
+
+		void onContainerPositionChange(const Event * Event);
 };
 
 }}

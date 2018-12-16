@@ -12,7 +12,7 @@ class EE_API UIBackground {
 	public:
 		static UIBackground * New( UINode * control );
 
-		UIBackground( UINode * control );
+		explicit UIBackground( UINode * control );
 
 		~UIBackground();
 

@@ -2,6 +2,7 @@
 #include <eepp/graphics/textureregion.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
+#include <eepp/graphics/textureatlasmanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -51,9 +52,17 @@ UITextureRegion * UITextureRegion::setTextureRegion( Graphics::TextureRegion * T
 }
 
 void UITextureRegion::onAutoSize() {
-	if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == mDpSize ) {
-		if ( NULL != mTextureRegion ) {
+	if ( NULL != mTextureRegion ) {
+		if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == mDpSize ) {
 			setSize( mTextureRegion->getDpSize().asFloat() );
+		}
+
+		if ( mLayoutWidthRules == WRAP_CONTENT ) {
+			setInternalPixelsWidth( mTextureRegion->getPxSize().getWidth() + mRealPadding.Left + mRealPadding.Right );
+		}
+
+		if ( mLayoutHeightRules == WRAP_CONTENT ) {
+			setInternalPixelsHeight( mTextureRegion->getPxSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
 		}
 	}
 }
@@ -68,7 +77,7 @@ void UITextureRegion::draw() {
 
 			if ( mScaleType == UIScaleType::Expand ) {
 				mTextureRegion->setOffset( Vector2i( 0, 0 ) );
-				mTextureRegion->setDestSize( Vector2f( (int)mSize.x, (int)mSize.y ) );
+				mTextureRegion->setDestSize( Vector2f( (int)mSize.x - mRealPadding.Left - mRealPadding.Right, (int)mSize.y - mRealPadding.Top - mRealPadding.Bottom ) );
 
 				autoAlign();
 
@@ -78,8 +87,8 @@ void UITextureRegion::draw() {
 				mTextureRegion->setOffset( Vector2i( 0, 0 ) );
 
 				Sizei pxSize = mTextureRegion->getPxSize();
-				Float Scale1 = mSize.x / (Float)pxSize.x;
-				Float Scale2 = mSize.y / (Float)pxSize.y;
+				Float Scale1 = ( mSize.x - mRealPadding.Left - mRealPadding.Right ) / (Float)pxSize.x;
+				Float Scale2 = ( mSize.y - mRealPadding.Top - mRealPadding.Bottom ) / (Float)pxSize.y;
 
 				if ( Scale1 < 1 || Scale2 < 1 ) {
 					if ( Scale2 < Scale1 )
@@ -152,19 +161,19 @@ void UITextureRegion::autoAlign() {
 		return;
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.getWidth() / 2 - mTextureRegion->getDestSize().x / 2;
+		mAlignOffset.x = ( mSize.getWidth() - mTextureRegion->getDestSize().x ) / 2;
 	} else if ( fontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.getWidth() - mTextureRegion->getDestSize().x;
+		mAlignOffset.x =  mSize.getWidth() - mTextureRegion->getDestSize().x - mRealPadding.Right;
 	} else {
-		mAlignOffset.x = 0;
+		mAlignOffset.x = mRealPadding.Left;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.getHeight() / 2 - mTextureRegion->getDestSize().y / 2;
+		mAlignOffset.y = ( mSize.getHeight() - mTextureRegion->getDestSize().y ) / 2;
 	} else if ( fontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.getHeight() - mTextureRegion->getDestSize().y;
+		mAlignOffset.y = mSize.getHeight() - mTextureRegion->getDestSize().y - mRealPadding.Bottom;
 	} else {
-		mAlignOffset.y = 0;
+		mAlignOffset.y = mRealPadding.Top;
 	}
 }
 
@@ -183,13 +192,13 @@ const Vector2f& UITextureRegion::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-void UITextureRegion::setAttribute( const NodeAttribute& attribute ) {
+bool UITextureRegion::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "src" == name || "textureregion" == name || "subtexture" == name ) {
-		DrawableResource * res = NULL;
+		Drawable * res = NULL;
 
-		if ( NULL != ( res = GlobalTextureAtlas::instance()->getByName( attribute.asString() ) ) && res->getDrawableType() == Drawable::TEXTUREREGION ) {
+		if ( NULL != ( res = TextureAtlasManager::instance()->getTextureRegionByName( attribute.asString() ) ) && res->getDrawableType() == Drawable::TEXTUREREGION ) {
 			setTextureRegion( static_cast<TextureRegion*>( res ) );
 		}
 	} else if ( "scaletype" == name ) {
@@ -206,8 +215,10 @@ void UITextureRegion::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "tint" == name ) {
 		setColor( Color::fromString( attribute.asString() ) );
 	} else {
-		UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute );
 	}
+
+	return true;
 }
 
 Uint32 UITextureRegion::getScaleType() const {

@@ -49,7 +49,7 @@ class EE_API UITextEdit : public UIWidget {
 
 		void setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig);
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		UITextInput *		mTextInput;
 		UIScrollBar *		mHScrollBar;
@@ -64,6 +64,8 @@ class EE_API UITextEdit : public UIWidget {
 		virtual void onAlphaChange();
 
 		virtual void onParentSizeChange( const Vector2f& SizeChange );
+
+		virtual void onPaddingChange();
 
 		void onVScrollValueChange( const Event * Event );
 

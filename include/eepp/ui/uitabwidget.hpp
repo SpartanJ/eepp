@@ -135,7 +135,7 @@ class EE_API UITabWidget : public UIWidget {
 
 		void setStyleConfig(const UITabWidgetStyleConfig & styleConfig);
 
-		virtual void setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		friend class UITab;
 
@@ -153,6 +153,8 @@ class EE_API UITabWidget : public UIWidget {
 		virtual void onSizeChange();
 
 		virtual void onChildCountChange();
+
+		virtual void onPaddingChange();
 
 		void setTabSelected( UITab * Tab );
 

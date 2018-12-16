@@ -171,8 +171,9 @@ void UIWinMenu::refreshButtons() {
 		UISelectButton * pbut	= it->first;
 		UITextView * tbox		= pbut->getTextBox();
 
+		pbut->setLayoutSizeRules( FIXED, FIXED );
 		pbut->setStyleConfig( mStyleConfig );
-		pbut->setSize( PixelDensity::pxToDpI( tbox->getTextWidth() ) + mStyleConfig.ButtonMargin, getSize().getHeight() );
+		pbut->setPixelsSize( tbox->getTextWidth() + PixelDensity::dpToPx( mStyleConfig.ButtonMargin ), getRealSize().getHeight() );
 		pbut->setPosition( xpos, ycenter );
 
 		xpos += pbut->getSize().getWidth() + mStyleConfig.MarginBetweenButtons;

@@ -72,6 +72,10 @@ void UIDropDownList::autoSizeControl() {
 	if ( ( mFlags & UI_AUTO_SIZE || 0 == mDpSize.getHeight() ) && 0 != getSkinSize().getHeight() ) {
 		setSize( mDpSize.x, getSkinSize().getHeight() );
 	}
+
+	if ( mLayoutHeightRules == WRAP_CONTENT ) {
+		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) + mRealPadding.Top + mRealPadding.Bottom );
+	}
 }
 
 void UIDropDownList::onThemeLoaded() {
@@ -85,6 +89,7 @@ void UIDropDownList::setFriendControl( UINode * friendCtrl ) {
 }
 
 void UIDropDownList::onAutoSize() {
+	autoSizeControl();
 }
 
 UIListBox * UIDropDownList::getListBox() const {
@@ -265,7 +270,7 @@ void UIDropDownList::destroyListBox() {
 	}
 }
 
-void UIDropDownList::setAttribute( const NodeAttribute& attribute ) {
+bool UIDropDownList::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "popuptomaincontrol" == name ) {
@@ -273,10 +278,10 @@ void UIDropDownList::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "maxnumvisibleitems" == name ) {
 		setMaxNumVisibleItems( attribute.asUint() );
 	} else {
-		UITextInput::setAttribute( attribute );
+		return UITextInput::setAttribute( attribute );
 	}
 
-	mListBox->setAttribute( attribute );
+	return true;
 }
 
 void UIDropDownList::loadFromXmlNode(const pugi::xml_node & node) {
@@ -284,7 +289,13 @@ void UIDropDownList::loadFromXmlNode(const pugi::xml_node & node) {
 
 	UITextInput::loadFromXmlNode( node );
 
-	mListBox->loadFromXmlNode( node );
+	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
+		if ( String::startsWith( std::string( ait->name() ), "listbox_" ) ) {
+			mListBox->setAttribute( NodeAttribute( std::string( ait->name() + 8 ), ait->value() ) );
+		}
+	}
+
+	mListBox->loadItemsFromXmlNode( node );
 
 	endAttributesTransaction();
 }
