@@ -57,6 +57,8 @@ class EE_API UIScrollView : public UITouchDragableWidget {
 
 		virtual void onChildCountChange();
 
+		virtual void onPaddingChange();
+
 		void onValueChangeCb( const Event * Event );
 
 		void onScrollViewSizeChange( const Event * Event );
