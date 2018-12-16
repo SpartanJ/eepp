@@ -65,6 +65,8 @@ class EE_API UITextEdit : public UIWidget {
 
 		virtual void onParentSizeChange( const Vector2f& SizeChange );
 
+		virtual void onPaddingChange();
+
 		void onVScrollValueChange( const Event * Event );
 
 		void onHScrollValueChange( const Event * Event );

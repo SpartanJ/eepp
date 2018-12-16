@@ -90,7 +90,7 @@ void UITextEdit::onSizeChange() {
 	mHScrollBar->setSize( mDpSize.getWidth(), mHScrollBar->getSize().getHeight() );
 	mVScrollBar->setSize( mVScrollBar->getSize().getWidth(), mDpSize.getHeight() );
 
-	mTextInput->setPosition( PixelDensity::pxToDp( mContainerPadding.Left ), PixelDensity::pxToDp( mContainerPadding.Top ) );
+	mTextInput->setPixelsPosition( mContainerPadding.Left, mContainerPadding.Top );
 
 	onInputSizeChange( NULL );
 
@@ -105,6 +105,16 @@ void UITextEdit::onParentSizeChange( const Vector2f& SizeChange ) {
 	UIWidget::onParentSizeChange( SizeChange );
 
 	onInputSizeChange( NULL );
+}
+
+void UITextEdit::onPaddingChange() {
+	autoPadding();
+
+	mContainerPadding += mRealPadding;
+
+	onSizeChange();
+
+	UIWidget::onPaddingChange();
 }
 
 void UITextEdit::onAlphaChange() {
@@ -244,7 +254,7 @@ void UITextEdit::scrollbarsSet() {
 
 void UITextEdit::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		mContainerPadding = makePadding();
+		mContainerPadding = PixelDensity::dpToPx( makePadding() );
 	}
 }
 
@@ -473,7 +483,8 @@ bool UITextEdit::setAttribute( const NodeAttribute &attribute ) {
 		attributeSet = UIWidget::setAttribute( attribute );
 	}
 
-	mTextInput->setAttribute( attribute );
+	if ( !attributeSet && ( String::startsWith( name, "text" ) || String::startsWith( name, "font" ) ) )
+		mTextInput->setAttribute( attribute );
 
 	return attributeSet;
 }
