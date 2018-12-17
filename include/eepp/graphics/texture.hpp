@@ -243,6 +243,8 @@ class EE_API Texture : public Image, public Drawable, private NonCopyable {
 
 		void draw(const Vector2f & position, const Sizef & size);
 
+		virtual bool isStateful() { return false; }
+
 		/** Set the texture factory internal id of the texture */
 		void setId( const Uint32& id );
 

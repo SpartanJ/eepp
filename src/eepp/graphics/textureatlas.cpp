@@ -37,19 +37,19 @@ TextureRegion * TextureAtlas::add( TextureRegion * textureRegion ) {
 }
 
 TextureRegion * TextureAtlas::add( const Uint32& TexId, const std::string& Name ) {
-	return add( eeNew( TextureRegion, ( TexId, Name ) ) );
+	return add( TextureRegion::New( TexId, Name ) );
 }
 
 TextureRegion * TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const std::string& Name ) {
-	return add( eeNew( TextureRegion, ( TexId, SrcRect, Name ) ) );
+	return add( TextureRegion::New( TexId, SrcRect, Name ) );
 }
 
 TextureRegion * TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const std::string& Name ) {
-	return add( eeNew ( TextureRegion, ( TexId, SrcRect, DestSize, Name ) ) );
+	return add( TextureRegion::New( TexId, SrcRect, DestSize, Name ) );
 }
 
 TextureRegion * TextureAtlas::add( const Uint32& TexId, const Rect& SrcRect, const Sizef& DestSize, const Vector2i& Offset, const std::string& Name ) {
-	return add( eeNew ( TextureRegion, ( TexId, SrcRect, DestSize, Offset, Name ) ) );
+	return add( TextureRegion::New( TexId, SrcRect, DestSize, Offset, Name ) );
 }
 
 Uint32 TextureAtlas::getCount() {

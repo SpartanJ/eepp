@@ -8,6 +8,8 @@ namespace EE { namespace Graphics {
 
 class EE_API ConvexShapeDrawable : public PrimitiveDrawable {
 	public:
+		static ConvexShapeDrawable * New();
+
 		ConvexShapeDrawable();
 
 		virtual Sizef getSize();
@@ -17,6 +19,8 @@ class EE_API ConvexShapeDrawable : public PrimitiveDrawable {
 		virtual void draw( const Vector2f& position );
 
 		virtual void draw( const Vector2f& position, const Sizef& size );
+
+		virtual bool isStateful() { return false; }
 
 		void setPolygon( const Polygon2f& polygon );
 

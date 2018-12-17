@@ -8,6 +8,8 @@ namespace EE { namespace Graphics {
 
 class EE_API DrawableGroup : public Drawable {
 	public:
+		static DrawableGroup * New();
+
 		DrawableGroup();
 
 		virtual ~DrawableGroup();
@@ -19,6 +21,8 @@ class EE_API DrawableGroup : public Drawable {
 		virtual void draw( const Vector2f& position );
 
 		virtual void draw( const Vector2f& position, const Sizef& size );
+
+		virtual bool isStateful() { return false; }
 
 		void clearDrawables();
 		

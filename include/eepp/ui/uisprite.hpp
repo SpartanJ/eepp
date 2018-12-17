@@ -42,7 +42,7 @@ class EE_API UISprite : public UIWidget {
 
 		const Vector2f& getAlignOffset() const;
 
-		void setDeallocSprite( const bool& dealloc );
+		void setIsSpriteOwner( const bool& dealloc );
 
 		bool getDeallocSprite();
 

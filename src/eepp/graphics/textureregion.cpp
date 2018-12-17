@@ -10,6 +10,26 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
+TextureRegion * TextureRegion::New() {
+	return eeNew( TextureRegion, () );
+}
+
+TextureRegion * TextureRegion::New( const Uint32& TexId, const std::string& name ) {
+	return eeNew( TextureRegion, ( TexId, name ) );
+}
+
+TextureRegion * TextureRegion::New( const Uint32& TexId, const Rect& srcRect, const std::string& name ) {
+	return eeNew( TextureRegion, ( TexId, srcRect, name ) );
+}
+
+TextureRegion * TextureRegion::New( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const std::string& name) {
+	return eeNew( TextureRegion, ( TexId, srcRect, destSize, name ) );
+}
+
+TextureRegion * TextureRegion::New( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const Vector2i& offset, const std::string& name ) {
+	return eeNew( TextureRegion, ( TexId, srcRect, destSize, offset, name ) );
+}
+
 TextureRegion::TextureRegion() :
 	DrawableResource( Drawable::TEXTUREREGION ),
 	mPixels(NULL),

@@ -103,6 +103,8 @@
 ../../include/eepp/graphics/shaderprogram.hpp
 ../../include/eepp/graphics/shaderprogrammanager.hpp
 ../../include/eepp/graphics/sprite.hpp
+../../include/eepp/graphics/statefuldrawable.hpp
+../../include/eepp/graphics/statelistdrawable.hpp
 ../../include/eepp/graphics/text.hpp
 ../../include/eepp/graphics/texture.hpp
 ../../include/eepp/graphics/textureatlas.hpp
@@ -499,6 +501,7 @@
 ../../src/eepp/graphics/shaderprogram.cpp
 ../../src/eepp/graphics/shaderprogrammanager.cpp
 ../../src/eepp/graphics/sprite.cpp
+../../src/eepp/graphics/statelistdrawable.cpp
 ../../src/eepp/graphics/stbi_iocb.hpp
 ../../src/eepp/graphics/stbi_iocb.hpp
 ../../src/eepp/graphics/text.cpp

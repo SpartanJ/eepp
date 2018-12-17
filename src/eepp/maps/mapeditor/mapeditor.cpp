@@ -1250,13 +1250,13 @@ GameObject * MapEditor::createGameObject() {
 
 		if ( mChkAnim->isActive() ) {
 
-			Sprite * tAnimSprite = eeNew( Sprite, ( String::removeNumbersAtEnd( mGfxPreview->getTextureRegion()->getName() ) ) );
+			Sprite * tAnimSprite = Sprite::New( String::removeNumbersAtEnd( mGfxPreview->getTextureRegion()->getName() ) );
 			tObj = eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, tAnimSprite ) );
 			tAnimSprite->setAutoAnimate( false );
 
 		} else {
 
-			Sprite * tStatiSprite = eeNew( Sprite, ( mGfxPreview->getTextureRegion() ) );
+			Sprite * tStatiSprite = Sprite::New( mGfxPreview->getTextureRegion() );
 			tObj = eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, tStatiSprite ) );
 
 		}

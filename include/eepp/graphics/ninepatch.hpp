@@ -22,6 +22,10 @@ class EE_API NinePatch : public DrawableResource {
 			SideCount
 		};
 
+		static NinePatch * New( const Uint32& TexId, int left, int top, int right, int bottom, const Float& pixelDensity = 1, const std::string& name = "" );
+
+		static NinePatch * New( TextureRegion * textureRegion, int left, int top, int right, int bottom, const std::string& name = "" );
+
 		NinePatch( const Uint32& TexId, int left, int top, int right, int bottom, const Float& pixelDensity = 1, const std::string& name = "" );
 		
 		NinePatch( TextureRegion * textureRegion, int left, int top, int right, int bottom, const std::string& name = "" );
@@ -35,6 +39,8 @@ class EE_API NinePatch : public DrawableResource {
 		virtual void draw( const Vector2f& position );
 
 		virtual void draw( const Vector2f& position, const Sizef& size );
+
+		virtual bool isStateful() { return false; }
 
 		TextureRegion *	getTextureRegion( const int& side );
 	protected:

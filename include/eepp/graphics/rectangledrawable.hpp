@@ -8,6 +8,10 @@ namespace EE { namespace Graphics {
 
 class EE_API RectangleDrawable : public PrimitiveDrawable {
 	public:
+		static RectangleDrawable * New();
+
+		static RectangleDrawable * New( const Vector2f& position, const Sizef& size );
+
 		RectangleDrawable();
 
 		RectangleDrawable( const Vector2f& position, const Sizef& size );
@@ -19,6 +23,8 @@ class EE_API RectangleDrawable : public PrimitiveDrawable {
 		virtual void draw( const Vector2f& position );
 
 		virtual void draw( const Vector2f& position, const Sizef& size );
+
+		virtual bool isStateful() { return false; }
 
 		Float getRotation() const;
 

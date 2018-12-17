@@ -8,3 +8,5 @@
 ../../include/eepp/audio
 /usr/include/freetype2/
 ../../bin/assets/layouts
+../../include/eepp/graphics
+../../src/eepp/graphics

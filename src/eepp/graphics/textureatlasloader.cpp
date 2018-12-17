@@ -246,7 +246,7 @@ void TextureAtlasLoader::createTextureRegions() {
 
 					Rect tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
 
-					TextureRegion * tTextureRegion = eeNew( TextureRegion, ( tTex->getId(), tRect, Sizef( (Float)tSh->DestWidth, (Float)tSh->DestHeight ), Vector2i( tSh->OffsetX, tSh->OffsetY ), TextureRegionName ) );
+					TextureRegion * tTextureRegion = TextureRegion::New( tTex->getId(), tRect, Sizef( (Float)tSh->DestWidth, (Float)tSh->DestHeight ), Vector2i( tSh->OffsetX, tSh->OffsetY ), TextureRegionName );
 
 					tTextureRegion->setPixelDensity( PixelDensity::toFloat( tSh->PixelDensity ) );
 					//if ( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPED )

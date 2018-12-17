@@ -10,6 +10,22 @@ using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
+Sprite * Sprite::New() {
+	return eeNew( Sprite, () );
+}
+
+Sprite * Sprite::New( const std::string& name, const std::string& extension, TextureAtlas * SearchInTextureAtlas ) {
+	return eeNew( Sprite, ( name, extension, SearchInTextureAtlas ) );
+}
+
+Sprite * Sprite::New( TextureRegion * TextureRegion ) {
+	return eeNew( Sprite, ( TextureRegion ) );
+}
+
+Sprite * Sprite::New( const Uint32& TexId, const Sizef &DestSize, const Vector2i &offset, const Rect& TexSector ) {
+	return eeNew( Sprite, ( TexId, DestSize, offset, TexSector ) );
+}
+
 Sprite::Sprite() :
 	Drawable( Drawable::SPRITE ),
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
@@ -435,7 +451,7 @@ bool Sprite::addSubFrame(const Uint32& TexId, const unsigned int& NumFrame, cons
 		return false;
 
 	Texture * Tex = TextureFactory::instance()->getTexture( TexId );
-	TextureRegion * S = GlobalTextureAtlas::instance()->add( eeNew( TextureRegion, () ) );
+	TextureRegion * S = GlobalTextureAtlas::instance()->add( TextureRegion::New() );
 
 	S->setTextureId( TexId );
 

@@ -375,10 +375,10 @@ void EETest::createBaseUI() {
 
 	UISprite * sprite = UISprite::New();
 	sprite->setFlags( UI_AUTO_SIZE );
-	sprite->setSprite( eeNew( Sprite, ( "gn" ) ) );
+	sprite->setSprite( Sprite::New( "gn" ) );
 	sprite->setParent( C );
 	sprite->setPosition( 160, 100 );
-	sprite->setDeallocSprite( true );
+	sprite->setIsSpriteOwner( true );
 
 	UITextView * Text = UITextView::New();
 	Text->setLayoutSizeRules( FIXED, FIXED )->setHorizontalAlign( UI_HALIGN_RIGHT )->setVerticalAlign( UI_VALIGN_TOP )->setParent( C )->setEnabled( false )->setSize( 320, 240 );
@@ -1337,8 +1337,8 @@ void EETest::loadTextures() {
 	mBlindy.addFramesByPattern( "rn" );
 	mBlindy.setPosition( Vector2f( 320.f, 0.f ) );
 
-	mBoxSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( TextureRegion, ( TN[3], "ilmare" ) ) ) ) );
-	mCircleSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( TextureRegion, ( TN[1], "thecircle" ) ) ) ) );
+	mBoxSprite = Sprite::New( GlobalTextureAtlas::instance()->add( TextureRegion::New( TN[3], "ilmare" ) ) );
+	mCircleSprite = Sprite::New( GlobalTextureAtlas::instance()->add( TextureRegion::New( TN[1], "thecircle" ) ) );
 
 	eePRINTL( "Textures loading time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
@@ -1618,26 +1618,26 @@ void EETest::screen5() {
 	Color col( 0x000000CC );
 
 	if ( drawableGroup.getDrawableCount() == 0 ) {
-		ArcDrawable * arc = eeNew( ArcDrawable, () );
+		ArcDrawable * arc = ArcDrawable::New();
 		arc->setPosition( Vector2f( 60, 60 ) );
 		arc->setArcStartAngle( 90 );
 		arc->setArcAngle( 180 );
 		arc->setRadius( 60 );
 		arc->setColor( col );
 
-		RectangleDrawable * rect = eeNew( RectangleDrawable, () );
+		RectangleDrawable * rect = RectangleDrawable::New();
 		rect->setPosition( Vector2f( 0, 60 ) );
 		rect->setSize( Sizef( 120, 60 ) );
 		rect->setColor( col );
 
-		ArcDrawable * arc2 = eeNew( ArcDrawable, () );
+		ArcDrawable * arc2 = ArcDrawable::New();
 		arc2->setPosition( Vector2f( 60, 120 ) );
 		arc2->setArcStartAngle( -90 );
 		arc2->setArcAngle( 180 );
 		arc2->setRadius( 60 );
 		arc2->setColor( col );
 
-		ConvexShapeDrawable * poly = eeNew( ConvexShapeDrawable, () );
+		ConvexShapeDrawable * poly = ConvexShapeDrawable::New();
 		poly->setPosition( Vector2f( 60, 90 ) );
 		poly->addPoint( Vector2f( -10, -10 ) );
 		poly->addPoint( Vector2f( -10, 10 ) );

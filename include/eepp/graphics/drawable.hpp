@@ -21,6 +21,7 @@ class EE_API Drawable {
 			CONVEXSHAPE,
 			GROUP,
 			NINEPATCH,
+			STATELIST,
 			CUSTOM
 		};
 
@@ -33,6 +34,8 @@ class EE_API Drawable {
 		virtual void draw( const Vector2f& position ) = 0;
 
 		virtual void draw( const Vector2f& position, const Sizef& size ) = 0;
+
+		virtual bool isStateful() = 0;
 
 		void setAlpha( Uint8 alpha );
 

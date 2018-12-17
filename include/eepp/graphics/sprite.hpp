@@ -25,6 +25,14 @@ class EE_API Sprite : public Drawable {
 			SPRITE_EVENT_USER			// User Events
 		};
 
+		static Sprite * New();
+
+		static Sprite * New( const std::string& name, const std::string& extension = "", TextureAtlas * SearchInTextureAtlas = NULL );
+
+		static Sprite * New( TextureRegion * TextureRegion );
+
+		static Sprite * New( const Uint32& TexId, const Sizef &DestSize = Sizef(0,0), const Vector2i &offset = Vector2i(0,0), const Rect& TexSector = Rect(0,0,0,0) );
+
 		/** Instanciate an empty sprite */
 		Sprite();
 
@@ -240,6 +248,8 @@ class EE_API Sprite : public Drawable {
 		void draw(const Vector2f & position);
 
 		void draw(const Vector2f & position, const Sizef & size);
+
+		virtual bool isStateful() { return false; }
 
 		/** Set the number of repetitions of the animation. Any number below 0 the animation will loop. */
 		void setRepetitions( const int& Repeations );

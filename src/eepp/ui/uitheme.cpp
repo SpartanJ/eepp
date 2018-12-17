@@ -98,7 +98,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 
 				elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
 
-				NinePatchManager::instance()->add( eeNew( NinePatch, ( TextureRegion, l, t, r, b, realName ) ) );
+				NinePatchManager::instance()->add( NinePatch::New( TextureRegion, l, t, r, b, realName ) );
 			} else {
 				std::vector<std::string> nameParts = String::split( name, '_' );
 
@@ -154,7 +154,7 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 
 		if ( !FileSystem::isDirectory( fpath ) ) {
 			if ( String::startsWith( name, sAbbrIcon ) ) {
-				tSG->add( eeNew( TextureRegion, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
+				tSG->add( TextureRegion::New( TextureFactory::instance()->loadFromFile( fpath ), name ) );
 			} else if ( String::startsWith( name, sAbbr ) ) {
 				std::vector<std::string> dotParts = String::split( name, '.' );
 
@@ -183,7 +183,7 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 
 					elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
 
-					NinePatchManager::instance()->add( eeNew( NinePatch, ( TextureFactory::instance()->loadFromFile( fpath ), l, t, r, b, pixelDensity, realName ) ) );
+					NinePatchManager::instance()->add( NinePatch::New( TextureFactory::instance()->loadFromFile( fpath ), l, t, r, b, pixelDensity, realName ) );
 				} else {
 					std::vector<std::string> nameParts = String::split( name, '_' );
 
@@ -194,11 +194,11 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 						if ( UISkin::isStateName( nameParts[ lPart ] ) ) {
 							elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
 
-							tSG->add( eeNew( TextureRegion, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
+							tSG->add( TextureRegion::New( TextureFactory::instance()->loadFromFile( fpath ), name ) );
 						} else if ( UISkin::isStateName( nameParts[ llPart ] ) && UISkinComplex::isSideSuffix( nameParts[ lPart ] ) ) {
 							elemFound[ elemNameFromSkinComplex( nameParts ) ] = true;
 
-							tSG->add( eeNew( TextureRegion, ( TextureFactory::instance()->loadFromFile( fpath ), name ) ) );
+							tSG->add( TextureRegion::New( TextureFactory::instance()->loadFromFile( fpath ), name ) );
 						}
 					}
 				}

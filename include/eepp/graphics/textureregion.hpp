@@ -11,6 +11,16 @@ namespace EE { namespace Graphics {
 /** @brief A TextureRegion is a part of a texture that represent an sprite.*/
 class EE_API TextureRegion : public DrawableResource {
 	public:
+		static TextureRegion * New();
+
+		static TextureRegion * New( const Uint32& TexId, const std::string& name = "" );
+
+		static TextureRegion * New( const Uint32& TexId, const Rect& srcRect, const std::string& name = "" );
+
+		static TextureRegion * New( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const std::string& name = "" );
+
+		static TextureRegion * New( const Uint32& TexId, const Rect& srcRect, const Sizef& destSize, const Vector2i& offset, const std::string& name = "" );
+
 		/** Creates an empty TextureRegion */
 		TextureRegion();
 
@@ -83,6 +93,8 @@ class EE_API TextureRegion : public DrawableResource {
 		virtual void draw( const Vector2f& position );
 
 		virtual void draw(const Vector2f& position, const Sizef & size );
+
+		virtual bool isStateful() { return false; }
 
 		/** @return The texture instance used by the TextureRegion. */
 		Graphics::Texture * getTexture();
