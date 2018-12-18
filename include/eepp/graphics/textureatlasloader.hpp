@@ -19,6 +19,16 @@ class EE_API TextureAtlasLoader {
 	public:
 		typedef std::function<void( TextureAtlasLoader * )> GLLoadCallback;
 
+		static TextureAtlasLoader * New();
+
+		static TextureAtlasLoader * New( const std::string& TextureAtlasPath, const bool& threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
+
+		static TextureAtlasLoader * New( const Uint8* Data, const Uint32& DataSize, const std::string& TextureAtlasName, const bool& threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
+
+		static TextureAtlasLoader * New( Pack * Pack, const std::string& FilePackPath, const bool& threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
+
+		static TextureAtlasLoader * New( IOStream& IOS, const bool& threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
+
 		/** Creates an empty loader. The texture atlas can be loaded callin any Load* function. */
 		TextureAtlasLoader();
 

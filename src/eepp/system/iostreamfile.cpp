@@ -1,6 +1,11 @@
 #include <eepp/system/iostreamfile.hpp>
+#include <eepp/core/memorymanager.hpp>
 
 namespace EE { namespace System {
+
+IOStreamFile * IOStreamFile::New( const std::string& path, const char * modes ) {
+	return eeNew( IOStreamFile, ( path, modes ) );
+}
 
 IOStreamFile::IOStreamFile( const std::string& path, const char * modes ) :
 	mFS(NULL),

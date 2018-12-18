@@ -6,6 +6,10 @@
 
 namespace EE { namespace System {
 
+Zip * Zip::New() {
+	return eeNew( Zip, () );
+}
+
 Zip::Zip() :
 	mZip(NULL)
 {

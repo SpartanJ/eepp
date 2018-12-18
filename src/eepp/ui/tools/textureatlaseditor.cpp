@@ -303,7 +303,7 @@ void TextureAtlasEditor::onTextureAtlasCreate( TexturePacker * TexPacker ) {
 
 	std::string FPath( FileSystem::fileRemoveExtension( mTexturePacker->getFilepath() + EE_TEXTURE_ATLAS_EXTENSION ) );
 
-	mTextureAtlasLoader = eeNew( TextureAtlasLoader, ( FPath, true, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) ) );
+	mTextureAtlasLoader = TextureAtlasLoader::New( FPath, true, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
 }
 
 void TextureAtlasEditor::updateControls() {
@@ -404,7 +404,7 @@ void TextureAtlasEditor::openTextureAtlas( const Event * Event ) {
 	threaded = false;
 	#endif
 
-	mTextureAtlasLoader = eeNew( TextureAtlasLoader, ( CDL->getFullPath(), threaded, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) ) );
+	mTextureAtlasLoader = TextureAtlasLoader::New( CDL->getFullPath(), threaded, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
 }
 
 void TextureAtlasEditor::onTextureAtlasLoaded( TextureAtlasLoader * TGLoader ) {

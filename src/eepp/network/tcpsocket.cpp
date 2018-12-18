@@ -25,6 +25,10 @@ namespace
 
 namespace EE { namespace Network {
 
+TcpSocket * TcpSocket::New() {
+	return eeNew( TcpSocket, ( ) );
+}
+
 TcpSocket::TcpSocket() :
 	Socket(Tcp)
 {

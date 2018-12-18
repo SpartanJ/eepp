@@ -108,6 +108,10 @@ bool SSLSocket::isSupported() {
 #endif
 }
 
+SSLSocket * SSLSocket::New( std::string hostname, bool validateCertificate, bool validateHostname ) {
+	return eeNew( SSLSocket, ( hostname, validateCertificate, validateHostname ) );
+}
+
 SSLSocket::SSLSocket( std::string hostname , bool validateCertificate, bool validateHostname ) :
 #ifdef EE_MBEDTLS
 	mImpl( eeNew( MbedTLSSocket, ( this ) ) ),

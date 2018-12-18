@@ -300,7 +300,7 @@ Http::Response Http::sendRequest(const Http::Request& request, Time timeout) {
 	}
 
 	if ( NULL == mConnection ) {
-		TcpSocket * Conn	= mIsSSL ? eeNew( SSLSocket, ( mHostName, request.getValidateCertificate(), request.getValidateHostname() ) ) : eeNew( TcpSocket, () );
+		TcpSocket * Conn	= mIsSSL ? SSLSocket::New( mHostName, request.getValidateCertificate(), request.getValidateHostname() ) : TcpSocket::New();
 		mConnection			= Conn;
 	}
 
@@ -346,7 +346,7 @@ Http::Response Http::downloadRequest(const Http::Request & request, IOStream & w
 	}
 
 	if ( NULL == mConnection ) {
-		TcpSocket * Conn	= mIsSSL ? eeNew( SSLSocket, ( mHostName, request.getValidateCertificate(), request.getValidateHostname() ) ) : eeNew( TcpSocket, () );
+		TcpSocket * Conn	= mIsSSL ? SSLSocket::New( mHostName, request.getValidateCertificate(), request.getValidateHostname() ) : TcpSocket::New();
 		mConnection			= Conn;
 	}
 
@@ -482,7 +482,7 @@ Http::AsyncRequest::AsyncRequest(Http * http, Http::AsyncResponseCallback cb, Ht
 	mRunning( true ),
 	mStreamed( true ),
 	mStreamOwned( true ),
-	mStream( eeNew( IOStreamFile, ( writePath, "wb" ) ) )
+	mStream( IOStreamFile::New( writePath, "wb" ) )
 {
 }
 

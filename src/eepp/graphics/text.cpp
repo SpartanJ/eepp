@@ -10,6 +10,18 @@
 
 namespace EE { namespace Graphics {
 
+Text * Text::New() {
+	return eeNew( Text, () );
+}
+
+Text * Text::New( const String& string, Font * font, unsigned int characterSize ) {
+	return eeNew( Text, ( string, font, characterSize ) );
+}
+
+Text * Text::New( Font * font, unsigned int characterSize ) {
+	return  eeNew( Text, ( font, characterSize ) );
+}
+
 Text::Text() :
 	mString(),
 	mFont(NULL),

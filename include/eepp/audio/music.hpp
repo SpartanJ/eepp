@@ -49,6 +49,8 @@ class EE_API Music : public SoundStream
 		// Define the relevant Span types
 		typedef Span<Time> TimeSpan;
 
+		static Music * New();
+
 		Music();
 
 		~Music();

@@ -12,7 +12,7 @@ UITextInputPassword *UITextInputPassword::New() {
 UITextInputPassword::UITextInputPassword() :
 	UITextInput()
 {
-	mPassCache = eeNew( Text, () );
+	mPassCache = Text::New();
 	setFontStyleConfig( mFontStyleConfig );
 
 	alignFix();

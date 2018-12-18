@@ -25,7 +25,7 @@ UITextView::UITextView() :
 {
 	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 
-	mTextCache = eeNew( Text, () );
+	mTextCache = Text::New();
 	mTextCache->setFont( mFontStyleConfig.Font );
 	mTextCache->setCharacterSize( mFontStyleConfig.CharacterSize );
 	mTextCache->setStyle( mFontStyleConfig.Style );

@@ -122,6 +122,24 @@ class EE_API Image {
 		/** @return The last failure image loading/info reason */
 		static std::string getLastFailureReason();
 
+		static Image * New();
+
+		static Image * New( Graphics::Image * image );
+
+		static Image * New( Uint8* data, const unsigned int& width, const unsigned int& height, const unsigned int& channels );
+
+		static Image * New( const Uint8* data, const unsigned int& width, const unsigned int& height, const unsigned int& channels );
+
+		static Image * New( const Uint32& width, const Uint32& height, const Uint32& channels, const Color& DefaultColor = Color(0,0,0,0), const bool& initWithDefaultColor = true );
+
+		static Image * New( std::string Path, const unsigned int& forceChannels = 0, const FormatConfiguration& formatConfiguration = FormatConfiguration() );
+
+		static Image * New( const Uint8* imageData, const unsigned int& imageDataSize, const unsigned int& forceChannels = 0, const FormatConfiguration& formatConfiguration = FormatConfiguration() );
+
+		static Image * New( Pack * Pack, std::string FilePackPath, const unsigned int& forceChannels = 0, const FormatConfiguration& formatConfiguration = FormatConfiguration() );
+
+		static Image * New( IOStream& stream, const unsigned int& forceChannels = 0, const FormatConfiguration& formatConfiguration = FormatConfiguration() );
+
 		Image();
 
 		/** Copy a image data to create the new image */

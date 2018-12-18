@@ -53,7 +53,7 @@ Engine::Engine() :
 	mDisplayManager( NULL )
 {
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-	mZip = eeNew( Zip, () );
+	mZip = Zip::New();
 	mZip->open( getPlatformHelper()->getApkPath() );
 
 	FileSystem::changeWorkingDirectory( getPlatformHelper()->getExternalStoragePath() );

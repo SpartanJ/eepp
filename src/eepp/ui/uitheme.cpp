@@ -138,7 +138,7 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 	if ( !FileSystem::isDirectory( RPath ) )
 		return NULL;
 
-	Graphics::TextureAtlas * tSG = eeNew( Graphics::TextureAtlas, ( tTheme->getAbbr() ) );
+	Graphics::TextureAtlas * tSG = Graphics::TextureAtlas::New( tTheme->getAbbr() );
 
 	tTheme->setTextureAtlas( tSG );
 

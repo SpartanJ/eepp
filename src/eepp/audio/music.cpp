@@ -9,6 +9,10 @@
 
 namespace EE { namespace Audio {
 
+Music * Music::New() {
+	return eeNew( Music, () );
+}
+
 Music::Music() :
 	mFile	  (),
 	mLoopSpan  (0, 0)

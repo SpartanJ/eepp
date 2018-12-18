@@ -10,6 +10,8 @@ namespace EE { namespace System {
 /** @brief Zip files package manager. */
 class EE_API Zip : public Pack {
 	public:
+		static Zip * New();
+
 		Zip();
 
 		~Zip();

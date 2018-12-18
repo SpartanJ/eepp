@@ -12,6 +12,8 @@ class Zip;
 /** @brief An implementation for a zip file steam */
 class EE_API IOStreamZip: public IOStream {
 	public:
+		static IOStreamZip * New( Zip * pack, const std::string& path );
+
 		/** @brief Open a file from a zip file
 		**	@param pack Pack to open from path
 		**	@param path Path of the file in the pack file

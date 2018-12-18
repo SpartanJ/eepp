@@ -2,6 +2,10 @@
 
 namespace EE { namespace Graphics {
 
+TextureAtlas * TextureAtlas::New( const std::string & name ) {
+	return eeNew( TextureAtlas, ( name ) );
+}
+
 TextureAtlas::TextureAtlas( const std::string& name ) :
 	ResourceManager<TextureRegion> ( true )
 {

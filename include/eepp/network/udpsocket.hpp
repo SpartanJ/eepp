@@ -19,6 +19,8 @@ class EE_API UdpSocket : public Socket {
 		MaxDatagramSize = 65507 ///< The maximum number of bytes that can be sent in a single UDP datagram
 	};
 
+	static UdpSocket * New();
+
 	/** @brief Default constructor */
 	UdpSocket();
 

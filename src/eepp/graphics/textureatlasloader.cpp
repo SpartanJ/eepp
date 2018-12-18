@@ -13,6 +13,26 @@ namespace EE { namespace Graphics {
 
 using namespace Private;
 
+TextureAtlasLoader * TextureAtlasLoader::New() {
+	return eeNew( TextureAtlasLoader, ( ) );
+}
+
+TextureAtlasLoader * TextureAtlasLoader::New( const std::string& TextureAtlasPath, const bool& threaded, GLLoadCallback LoadCallback ) {
+	return eeNew( TextureAtlasLoader, ( TextureAtlasPath, threaded, LoadCallback ) );
+}
+
+TextureAtlasLoader * TextureAtlasLoader::New( const Uint8* Data, const Uint32& DataSize, const std::string& TextureAtlasName, const bool& threaded, GLLoadCallback LoadCallback ) {
+	return eeNew( TextureAtlasLoader, ( Data, DataSize, TextureAtlasName, threaded, LoadCallback ) );
+}
+
+TextureAtlasLoader * TextureAtlasLoader::New( Pack * Pack, const std::string& FilePackPath, const bool& threaded, GLLoadCallback LoadCallback ) {
+	return eeNew( TextureAtlasLoader, ( Pack, FilePackPath, threaded, LoadCallback ) );
+}
+
+TextureAtlasLoader * TextureAtlasLoader::New( IOStream& IOS, const bool& threaded, GLLoadCallback LoadCallback ) {
+	return eeNew( TextureAtlasLoader, ( IOS, threaded, LoadCallback ) );
+}
+
 TextureAtlasLoader::TextureAtlasLoader() :
 	mThreaded(false),
 	mLoaded(false),
@@ -128,9 +148,9 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 
 				if ( !mSkipResourceLoad && NULL == tTex ) {
 					if ( NULL != mPack ) {
-						mRL.add( eeNew( TextureLoader, ( mPack, path ) ) );
+						mRL.add( TextureLoader::New( mPack, path ) );
 					} else {
-						mRL.add( eeNew( TextureLoader, ( path ) ) );
+						mRL.add( TextureLoader::New( path ) );
 					}
 				}
 
@@ -226,7 +246,7 @@ void TextureAtlasLoader::createTextureRegions() {
 
 				IsAlreadyLoaded = true;
 			} else {
-				mTextureAtlas = eeNew( TextureAtlas, ( name ) );
+				mTextureAtlas = TextureAtlas::New( name );
 
 				mTextureAtlas->setPath( etapath );
 

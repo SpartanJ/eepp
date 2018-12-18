@@ -179,7 +179,7 @@ void EETest::init() {
 		createShaders();
 
 		if ( mMusEnabled ) {
-			Mus = eeNew( Music, () );
+			Mus = Music::New();
 
 			if ( Mus->openFromFile( MyPath + "sounds/music.ogg" ) ) {
 				Mus->setLoop( true );
@@ -259,8 +259,8 @@ void EETest::createUIThemeTextureAtlas() {
 void EETest::loadFonts() {
 	mFTE.restart();
 
-	mFontLoader.add( eeNew( FontTrueTypeLoader, ( "NotoSans-Regular", MyPath + "fonts/NotoSans-Regular.ttf" ) ) );
-	mFontLoader.add( eeNew( FontTrueTypeLoader, ( "DejaVuSansMono", MyPath + "fonts/DejaVuSansMono.ttf" ) ) );
+	mFontLoader.add( FontTrueTypeLoader::New( "NotoSans-Regular", MyPath + "fonts/NotoSans-Regular.ttf" ) );
+	mFontLoader.add( FontTrueTypeLoader::New( "DejaVuSansMono", MyPath + "fonts/DejaVuSansMono.ttf" ) );
 
 	mFontLoader.load( cb::Make1( this, &EETest::onFontLoaded ) );
 }
@@ -914,7 +914,7 @@ void EETest::createMapEditor() {
 	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
-	mMapEditor = eeNew( MapEditor, ( tWin, cb::Make0( this, &EETest::onMapEditorClose ) ) );
+	mMapEditor = MapEditor::New( tWin, cb::Make0( this, &EETest::onMapEditorClose ) );
 	tWin->center();
 	tWin->show();
 }
@@ -931,7 +931,7 @@ void EETest::createETGEditor() {
 	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
-	mETGEditor = eeNew ( Tools::TextureAtlasEditor, ( tWin, cb::Make0( this, &EETest::onETGEditorClose ) ) );
+	mETGEditor = Tools::TextureAtlasEditor::New( tWin, cb::Make0( this, &EETest::onETGEditorClose ) );
 	tWin->center();
 	tWin->show();
 }
@@ -1232,7 +1232,7 @@ void EETest::loadTextures() {
 	Engine::instance()->enableSharedGLContext();
 	#endif
 
-	PakTest = eeNew( Zip, () );
+	PakTest = Zip::New();
 	PakTest->open( MyPath + "test.zip" );
 
 	std::vector<std::string> files = PakTest->getFileList();
@@ -1241,12 +1241,12 @@ void EETest::loadTextures() {
 		std::string name( files[i] );
 
 		if ( "jpg" == FileSystem::fileExtension( name ) ) {
-			mResLoad.add( eeNew( TextureLoader, ( PakTest, name ) ) );
+			mResLoad.add( TextureLoader::New( PakTest, name ) );
 		}
 	}
 	#endif
 
-	mResLoad.add( eeNew( SoundLoader, ( &SndMng, "mysound", MyPath + "sounds/sound.ogg" ) ) );
+	mResLoad.add( SoundLoader::New( &SndMng, "mysound", MyPath + "sounds/sound.ogg" ) );
 
 	mResLoad.load( cb::Make1( this, &EETest::onTextureLoaded ) );
 
@@ -1332,7 +1332,7 @@ void EETest::loadTextures() {
 	CL2.addFrame(TN[0], Sizef(96, 96) );
 	CL2.setColor( Color( 255, 255, 255, 255 ) );
 
-	mTGL = eeNew( TextureAtlasLoader, ( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
+	mTGL = TextureAtlasLoader::New( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION );
 
 	mBlindy.addFramesByPattern( "rn" );
 	mBlindy.setPosition( Vector2f( 320.f, 0.f ) );

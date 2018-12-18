@@ -15,6 +15,8 @@ class Packet;
 class EE_API TcpSocket : public Socket {
 	public:
 
+	static TcpSocket * New();
+
 	/** @brief Default constructor */
 	TcpSocket();
 

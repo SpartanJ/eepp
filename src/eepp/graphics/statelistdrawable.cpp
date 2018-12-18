@@ -48,14 +48,16 @@ bool StateListDrawable::isStateful() {
 }
 
 StatefulDrawable * StateListDrawable::setState( int state ) {
-	mCurrentState = state;
+	if ( state != mCurrentState ) {
+		mCurrentState = state;
 
-	auto it = mDrawables.find( state );
+		auto it = mDrawables.find( state );
 
-	if ( it != mDrawables.end() ) {
-		mCurrentDrawable = it->second;
-	} else {
-		mCurrentDrawable = NULL;
+		if ( it != mDrawables.end() ) {
+			mCurrentDrawable = it->second;
+		} else {
+			mCurrentDrawable = NULL;
+		}
 	}
 
 	return this;

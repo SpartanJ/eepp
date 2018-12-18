@@ -17,7 +17,7 @@ UITooltip::UITooltip() :
 {
 	setFlags( UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
 
-	mTextCache = eeNew( Text, () );
+	mTextCache = Text::New();
 
 	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
 

@@ -6,6 +6,10 @@
 
 namespace EE { namespace Network {
 
+UdpSocket * UdpSocket::New() {
+	return eeNew( UdpSocket, ( ) );
+}
+
 UdpSocket::UdpSocket() :
 	Socket  (Udp),
 	mBuffer(MaxDatagramSize)
