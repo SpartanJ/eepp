@@ -382,7 +382,7 @@ bool UIMenu::hide() {
 	setVisible( false );
 
 	if ( NULL != mItemSelected )
-		mItemSelected->setSkinState( UISkinState::StateNormal );
+		mItemSelected->unsetSkinState( UISkinState::StateSelected );
 
 	mItemSelected		= NULL;
 	mItemSelectedIndex	= eeINDEX_NOT_FOUND;
@@ -399,7 +399,7 @@ void UIMenu::setItemSelected( UINode * Item ) {
 				tMenu->getSubMenu()->hide();
 		}
 
-		mItemSelected->setSkinState( UISkinState::StateNormal );
+		mItemSelected->unsetSkinState( UISkinState::StateSelected );
 	}
 
 	if ( NULL != Item )

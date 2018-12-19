@@ -120,7 +120,7 @@ void UITableCell::unselect() {
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
 		mNodeFlags &= ~NODE_FLAG_SELECTED;
 
-	setSkinState( UISkinState::StateNormal );
+	unsetSkinState( UISkinState::StateSelected);
 }
 
 bool UITableCell::isSelected() const {
@@ -174,8 +174,8 @@ void UITableCell::onAutoSize() {
 void UITableCell::onStateChange() {
 	UIWidget::onStateChange();
 
-	if ( isSelected() && mSkinState->getState() != UISkinState::StateSelected ) {
-		setSkinState( UISkinState::StateSelected );
+	if ( isSelected() && !( mSkinState->getState() & UISkinState::StateSelected ) ) {
+		setSkinState( UISkinState::StateSelected, false );
 	}
 }
 

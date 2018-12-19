@@ -140,7 +140,9 @@ class EE_API UINode : public Node {
 
 		void removeSkin();
 
-		void setSkinState( const Uint32& State );
+		void setSkinState( const Uint32& State, bool emitEvent = true );
+
+		void unsetSkinState( const Uint32& State, bool emitEvent = true );
 
 		Sizef getSkinSize();
 
@@ -242,13 +244,13 @@ class EE_API UINode : public Node {
 
 		virtual Uint32 onFocus();
 
+		virtual Uint32 onFocusLoss();
+
 		void checkClose();
 
 		virtual void internalDraw();
 
 		virtual void onWidgetFocusLoss();
-
-		void setPrevSkinState();
 
 		void writeFlag( const Uint32& Flag, const Uint32& Val );
 

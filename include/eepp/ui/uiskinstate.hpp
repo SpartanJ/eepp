@@ -10,13 +10,12 @@ class UISkin;
 class EE_API UISkinState {
 	public:
 		enum UISkinStates {
-			StateNormal = 0,
-			StateFocus,
-			StateSelected,
-			StateMouseEnter,
-			StateMouseExit,
-			StateMouseDown,
-			StateCount
+			StateNormal		= 0,
+			StateFocus		= 1,
+			StateSelected	= 2,
+			StateHover		= 3,
+			StatePressed	= 4,
+			StateCount		= 5
 		};
 
 		static UISkinState * New( UISkin * skin );
@@ -29,27 +28,23 @@ class EE_API UISkinState {
 
 		void setState( const Uint32& State );
 
+		void unsetState( const Uint32& State );
+
 		UISkin * getSkin() const;
 
 		void draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha );
 
 		bool stateExists( const Uint32& State );
 
-		const Uint32& getPrevState() const;
+		Uint32 getCurrentState() const;
 	protected:
 		friend class UINode;
 
 		UISkin * 	mSkin;
-		Uint32 		mCurState;
-		Uint32		mLastState;
+		Uint32 		mState;
+		Uint32		mCurrentState;
 
-		void stateBack( const Uint32& State );
-
-		void setPrevState();
-
-		void setStateTypeSimple( const Uint32& State );
-
-		void setStateTypeDefault( const Uint32& State );
+		void updateState();
 };
 
 }}

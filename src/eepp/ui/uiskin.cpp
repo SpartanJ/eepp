@@ -8,7 +8,6 @@ const char * UISkinStatesNames[] = {
 	"focus",
 	"selected",
 	"menter",
-	"mexit",
 	"mdown"
 };
 
@@ -32,13 +31,6 @@ UISkin::UISkin( const std::string& name, const Uint32& Type ) :
 	mNameHash( String::hash( mName ) ),
 	mTheme(NULL)
 {
-	Color tColor( 255, 255, 255, 255 );
-
-	mColorDefault	= tColor.getValue();
-
-	for ( Int32 i = 0; i < UISkinState::StateCount; i++ ) {
-		mColor[ i ] = tColor;
-	}
 }
 
 UISkin::~UISkin() {
@@ -46,20 +38,6 @@ UISkin::~UISkin() {
 
 Sizef UISkin::getSize() {
 	return getSize( UISkinState::StateNormal );
-}
-
-void UISkin::setColor( const Uint32& State, const Color& Color ) {
-	eeASSERT ( State < UISkinState::StateCount );
-
-	BitOp::writeBitKey( &mColorDefault, State, 0 );
-
-	mColor[ State ] = Color;
-}
-
-const Color& UISkin::getColor( const Uint32& State ) const {
-	eeASSERT ( State < UISkinState::StateCount );
-
-	return mColor[ State ];
 }
 
 const std::string& UISkin::getName() const {
@@ -94,10 +72,6 @@ const Uint32& UISkin::getType() const {
 
 Rectf UISkin::getBorderSize() {
 	return getBorderSize( UISkinState::StateNormal );
-}
-
-bool UISkin::getColorDefault( const Uint32& State ) {
-	return BitOp::readBitKey( &mColorDefault, State );
 }
 
 }}

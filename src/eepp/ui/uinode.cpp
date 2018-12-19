@@ -254,7 +254,7 @@ void UINode::drawBox() {
 void UINode::drawSkin() {
 	if ( NULL != mSkinState ) {
 		if ( mFlags & UI_SKIN_KEEP_SIZE_ON_DRAW ) {
-			Sizef rSize = PixelDensity::dpToPx( mSkinState->getSkin()->getSize( mSkinState->getState() ) );
+			Sizef rSize = PixelDensity::dpToPx( mSkinState->getSkin()->getSize( mSkinState->getCurrentState() ) );
 			Sizef diff = ( mSize - rSize ) * 0.5f;
 
 			mSkinState->draw( mScreenPosi.x + eefloor(diff.x), mScreenPosi.y + eefloor(diff.y), eefloor(rSize.getWidth()), eefloor(rSize.getHeight()), (Uint32)mAlpha );
@@ -313,7 +313,7 @@ Uint32 UINode::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 		mDragPoint = Vector2f( Pos.x, Pos.y );
 	}
 
-	setSkinState( UISkinState::StateMouseDown );
+	setSkinState( UISkinState::StatePressed );
 
 	return Node::onMouseDown( Pos, Flags );
 }
@@ -323,7 +323,7 @@ Uint32 UINode::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
 		setDragging( false );
 	}
 
-	setPrevSkinState();
+	unsetSkinState( UISkinState::StatePressed );
 
 	return Node::onMouseUp( Pos, Flags );
 }
@@ -597,7 +597,7 @@ UINode * UINode::setSkin( UISkin * skin ) {
 		if ( NULL != mSkinState && mSkinState->getSkin() == skin )
 			return this;
 
-		Uint32 InitialState = UISkinState::StateNormal;
+		Uint32 InitialState = 1 << UISkinState::StateNormal;
 
 		if ( NULL != mSkinState ) {
 			InitialState = mSkinState->getState();
@@ -632,19 +632,21 @@ void UINode::onAlignChange() {
 	invalidateDraw();
 }
 
-void UINode::setSkinState( const Uint32& State ) {
+void UINode::setSkinState(const Uint32& State , bool emitEvent) {
 	if ( NULL != mSkinState ) {
 		mSkinState->setState( State );
 
-		onStateChange();
+		if ( emitEvent )
+			onStateChange();
 	}
 }
 
-void UINode::setPrevSkinState() {
+void UINode::unsetSkinState(const Uint32& State , bool emitEvent) {
 	if ( NULL != mSkinState ) {
-		mSkinState->setPrevState();
+		mSkinState->unsetState( State );
 
-		onStateChange();
+		if ( emitEvent )
+			onStateChange();
 	}
 }
 
@@ -793,13 +795,13 @@ Uint32 UINode::onDragStop( const Vector2i& Pos ) {
 }
 
 Uint32 UINode::onMouseEnter(const Vector2i & position, const Uint32 flags) {
-	setSkinState( UISkinState::StateMouseEnter );
+	setSkinState( UISkinState::StateHover );
 
 	return Node::onMouseEnter( position, flags );
 }
 
 Uint32 UINode::onMouseExit(const Vector2i & position, const Uint32 flags) {
-	setSkinState( UISkinState::StateMouseExit );
+	unsetSkinState( UISkinState::StateHover );
 
 	return Node::onMouseExit( position, flags );
 }
@@ -968,6 +970,12 @@ Uint32 UINode::onFocus() {
 	setSkinState( UISkinState::StateFocus );
 
 	return Node::onFocus();
+}
+
+Uint32 UINode::onFocusLoss() {
+	unsetSkinState( UISkinState::StateFocus );
+
+	return Node::onFocusLoss();
 }
 
 }}

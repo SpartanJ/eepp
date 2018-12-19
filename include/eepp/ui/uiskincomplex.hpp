@@ -43,7 +43,7 @@ class EE_API UISkinComplex : public UISkin {
 
 		Sizef getSideSize( const Uint32& State, const Uint32& Side );
 
-		UISkinComplex * clone( const std::string& NewName, const bool& CopyColorsState = true );
+		UISkinComplex * clone( const std::string& NewNamee );
 
 		virtual UISkin * clone();
 
@@ -57,8 +57,6 @@ class EE_API UISkinComplex : public UISkin {
 		Rectf		mBorderSize[ UISkinState::StateCount ];
 
 		void cacheSize();
-
-		void stateNormalToState( const Uint32& State );
 };
 
 }}

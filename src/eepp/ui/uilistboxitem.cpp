@@ -111,7 +111,7 @@ void UIListBoxItem::unselect() {
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
 		mNodeFlags &= ~NODE_FLAG_SELECTED;
 
-	setSkinState( UISkinState::StateNormal );
+	unsetSkinState( UISkinState::StateSelected );
 }
 
 bool UIListBoxItem::isSelected() const {
@@ -122,12 +122,12 @@ void UIListBoxItem::onStateChange() {
 	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( getParent()->getParent() );
 
 	if ( isSelected() && mSkinState->getState() != UISkinState::StateSelected ) {
-		setSkinState( UISkinState::StateSelected );
+		setSkinState( UISkinState::StateSelected, false );
 	}
 
-	if ( mSkinState->getState() == UISkinState::StateSelected ) {
+	if ( mSkinState->getState() & UISkinState::StateSelected ) {
 		setFontColor( LBParent->getFontSelectedColor() );
-	} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
+	} else if ( mSkinState->getState() & UISkinState::StateHover ) {
 		setFontColor( LBParent->getFontOverColor() );
 	} else {
 		setFontColor( LBParent->getFontColor() );

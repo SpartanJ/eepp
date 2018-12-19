@@ -26,14 +26,8 @@ void UISkinSimple::draw( const Float& X, const Float& Y, const Float& Width, con
 		return;
 
 	Drawable * tDrawable = mDrawable[ State ];
-	mTempColor	= mColor[ State ];
 
 	if ( NULL != tDrawable ) {
-		if ( mTempColor.a != Alpha ) {
-			mTempColor.a = (Uint8)( (Float)mTempColor.a * ( (Float)Alpha / 255.f ) );
-		}
-
-		tDrawable->setColor( mTempColor );
 		tDrawable->draw( Vector2f( X, Y ), Sizef( Width, Height ) );
 		tDrawable->clearColor();
 	}
@@ -51,20 +45,8 @@ bool UISkinSimple::stateExists( const Uint32 & state ) {
 	return NULL != mDrawable[ state ];
 }
 
-void UISkinSimple::stateNormalToState( const Uint32& State ) {
-	if ( NULL == mDrawable[ State ] )
-		mDrawable[ State ] = mDrawable[ UISkinState::StateNormal ];
-}
-
-UISkinSimple * UISkinSimple::clone( const std::string& NewName, const bool& CopyColorsState ) {
+UISkinSimple * UISkinSimple::clone( const std::string& NewName ) {
 	UISkinSimple * SkinS = UISkinSimple::New( NewName );
-
-	if ( CopyColorsState ) {
-		SkinS->mColorDefault = mColorDefault;
-
-		for ( size_t i = 0; i < UISkinState::StateCount; i++ )
-			SkinS->mColor[i] = mColor[i];
-	}
 
 	memcpy( &SkinS->mDrawable[0], &mDrawable[0], UISkinState::StateCount * sizeof(Drawable*) );
 
@@ -72,7 +54,7 @@ UISkinSimple * UISkinSimple::clone( const std::string& NewName, const bool& Copy
 }
 
 UISkin * UISkinSimple::clone() {
-	return clone( mName, true );
+	return clone( mName );
 }
 
 Sizef UISkinSimple::getSize( const Uint32 & state ) {

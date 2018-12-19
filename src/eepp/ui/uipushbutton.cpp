@@ -236,7 +236,7 @@ void UIPushButton::onAlphaChange() {
 }
 
 void UIPushButton::onStateChange() {
-	if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
+	if ( mSkinState->getState() & UISkinState::StateHover ) {
 		mTextBox->setFontColor( mStyleConfig.FontOverColor );
 	} else {
 		mTextBox->setFontColor( mStyleConfig.FontColor );
@@ -260,7 +260,7 @@ Uint32 UIPushButton::onKeyDown( const KeyEvent& Event ) {
 		messagePost( &Msg );
 		onMouseClick( Vector2i(0,0), EE_BUTTON_LMASK );
 
-		setSkinState( UISkinState::StateMouseDown );
+		setSkinState( UISkinState::StatePressed );
 	}
 
 	return UIWidget::onKeyDown( Event );
@@ -268,7 +268,7 @@ Uint32 UIPushButton::onKeyDown( const KeyEvent& Event ) {
 
 Uint32 UIPushButton::onKeyUp( const KeyEvent& Event ) {
 	if ( Event.getKeyCode() == KEY_RETURN ) {
-		setPrevSkinState();
+		unsetSkinState( UISkinState::StatePressed );
 	}
 
 	return UIWidget::onKeyUp( Event );

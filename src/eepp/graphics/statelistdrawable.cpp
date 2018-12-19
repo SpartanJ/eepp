@@ -47,7 +47,7 @@ bool StateListDrawable::isStateful() {
 	return true;
 }
 
-StatefulDrawable * StateListDrawable::setState( int state ) {
+StatefulDrawable * StateListDrawable::setState( Uint32 state ) {
 	if ( state != mCurrentState ) {
 		mCurrentState = state;
 
@@ -63,16 +63,16 @@ StatefulDrawable * StateListDrawable::setState( int state ) {
 	return this;
 }
 
-const int& StateListDrawable::getState() const {
+const Uint32& StateListDrawable::getState() const {
 	return mCurrentState;
 }
 
-StateListDrawable * StateListDrawable::setStateDrawable(int state, Drawable * drawable) {
+StateListDrawable * StateListDrawable::setStateDrawable(Uint32 state, Drawable * drawable) {
 	mDrawables[ state ] = drawable;
 	return this;
 }
 
-bool StateListDrawable::hasDrawableState( int state ) {
+bool StateListDrawable::hasDrawableState(Uint32 state ) {
 	return mDrawables.find( state ) != mDrawables.end();
 }
 

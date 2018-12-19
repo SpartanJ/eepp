@@ -10,6 +10,8 @@ using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
+class StatefulDrawable;
+
 class EE_API Drawable {
 	public:
 		enum Type {
@@ -60,6 +62,8 @@ class EE_API Drawable {
 		const Vector2f& getPosition() const;
 
 		void setPosition( const Vector2f& position );
+
+		StatefulDrawable * asStatefulDrawable();
 	protected:
 		Type mDrawableType;
 		Color mColor;

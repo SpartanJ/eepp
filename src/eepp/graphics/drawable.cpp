@@ -1,4 +1,6 @@
 #include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/statefuldrawable.hpp>
+#include <eepp/core/debug.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -85,6 +87,11 @@ void Drawable::setPosition( const Vector2f& position ) {
 		mPosition = position;
 		onPositionChange();
 	}
+}
+
+StatefulDrawable * Drawable::asStatefulDrawable() {
+	eeASSERT( isStateful() );
+	return static_cast<StatefulDrawable*>( this );
 }
 
 void Drawable::onAlphaChange() {

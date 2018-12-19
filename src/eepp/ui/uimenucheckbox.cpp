@@ -55,10 +55,10 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 			if ( NULL == mIcon->getSkin() || mIcon->getSkin()->getName() != mSkinActive->getName() )
 				mIcon->setSkin( mSkinActive );
 
-			if ( mSkinState->getState() == UISkinState::StateSelected )
-				mIcon->setSkinState( UISkinState::StateMouseEnter );
+			if ( mSkinState->getState() & UISkinState::StateSelected )
+				mIcon->setSkinState( UISkinState::StateHover );
 			else
-				mIcon->setSkinState( UISkinState::StateNormal );
+				mIcon->unsetSkinState( UISkinState::StateHover );
 		} else {
 			mIcon->removeSkin();
 		}
@@ -67,10 +67,10 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 			if ( NULL == mIcon->getSkin() || mIcon->getSkin()->getName() != mSkinInactive->getName() )
 				mIcon->setSkin( mSkinInactive );
 
-			if ( mSkinState->getState() == UISkinState::StateSelected )
-				mIcon->setSkinState( UISkinState::StateMouseEnter );
+			if ( mSkinState->getState() & UISkinState::StateSelected )
+				mIcon->setSkinState( UISkinState::StateHover );
 			else
-				mIcon->setSkinState( UISkinState::StateNormal );
+				mIcon->unsetSkinState( UISkinState::StateHover );
 		} else {
 			mIcon->removeSkin();
 		}

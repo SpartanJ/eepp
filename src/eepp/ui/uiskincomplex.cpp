@@ -49,12 +49,6 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 	if ( 0 == Alpha )
 		return;
 
-	mTempColor		= mColor[ State ];
-
-	if ( mTempColor.a != Alpha ) {
-		mTempColor.a = (Uint8)( (Float)mTempColor.a * ( (Float)Alpha / 255.f ) );
-	}
-
 	Drawable * tDrawable = mDrawable[ State ][ UpLeft ];
 
 	Sizef uls;
@@ -62,9 +56,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 	if ( NULL != tDrawable ) {
 		uls = DRAWABLE_PX_SIZE;
 
-		tDrawable->setColor( mTempColor );
 		tDrawable->draw( Vector2f( X, Y ), uls );
-		tDrawable->clearColor();
 	}
 
 	tDrawable = mDrawable[ State ][ DownLeft ];
@@ -74,9 +66,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 	if ( NULL != tDrawable ) {
 		dls = DRAWABLE_PX_SIZE;
 
-		tDrawable->setColor( mTempColor );
 		tDrawable->draw( Vector2f( X, Y + Height - dls.getHeight() ), dls );
-		tDrawable->clearColor();
 	}
 
 	tDrawable = mDrawable[ State ][ UpRight ];
@@ -86,9 +76,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 	if ( NULL != tDrawable ) {
 		urs = DRAWABLE_PX_SIZE;
 
-		tDrawable->setColor( mTempColor );
 		tDrawable->draw( Vector2f( X + Width - urs.getWidth() , Y ), urs );
-		tDrawable->clearColor();
 	}
 
 	tDrawable = mDrawable[ State ][ DownRight ];
@@ -98,9 +86,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 	if ( NULL != tDrawable ) {
 		drs = DRAWABLE_PX_SIZE;
 
-		tDrawable->setColor( mTempColor );
 		tDrawable->draw( Vector2f( X + Width - drs.getWidth(), Y + Height - drs.getHeight() ), drs );
-		tDrawable->clearColor();
 	}
 
 	tDrawable = mDrawable[ State ][ Left ];
@@ -109,9 +95,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 		Sizef dpxs( DRAWABLE_PX_SIZE );
 		Sizef ns( dpxs.getWidth(), Height - uls.getHeight() - dls.getHeight() );
 
-		tDrawable->setColor( mTempColor );
 		tDrawable->draw( Vector2f( X, Y + uls.getHeight() ), ns );
-		tDrawable->clearColor();
 
 		if ( uls.getWidth() == 0 )
 			uls.x = dpxs.getWidth();
@@ -123,9 +107,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 		Sizef dpxs( DRAWABLE_PX_SIZE );
 		Sizef ns( Width - uls.getWidth() - urs.getWidth(), dpxs.getHeight() );
 
-		tDrawable->setColor( mTempColor );
 		tDrawable->draw( Vector2f( X + uls.getWidth(), Y ), ns );
-		tDrawable->clearColor();
 
 		if ( urs.getHeight() == 0 )
 			urs.y = dpxs.getHeight();
@@ -144,9 +126,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 
 		Sizef ns( dpxs.x, Height - urs.getHeight() - drs.getHeight() );
 
-		tDrawable->setColor( mTempColor );
 		tDrawable->draw( Vector2f( X + Width - dpxs.getWidth(), Y + urs.getHeight() ), ns );
-		tDrawable->clearColor();
 	}
 
 	tDrawable = mDrawable[ State ][ Down ];
@@ -155,9 +135,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 		Sizef dpxs( DRAWABLE_PX_SIZE );
 		Sizef ns( Width - dls.getWidth() - drs.getWidth(), dpxs.getHeight() );
 
-		tDrawable->setColor( mTempColor );
 		tDrawable->draw( Vector2f( X + dls.getWidth(), Y + Height - dpxs.getHeight() ), ns );
-		tDrawable->clearColor();
 
 		if ( dls.getHeight() == 0 && drs.getHeight() == 0 )
 			dls.setHeight( dpxs.getHeight() );
@@ -168,9 +146,7 @@ void UISkinComplex::draw( const Float& X, const Float& Y, const Float& Width, co
 	if ( NULL != tDrawable ) {
 		Sizef ns( Width - uls.getWidth() - urs.getWidth(), Height - uls.getHeight() - dls.getHeight() );
 
-		tDrawable->setColor( mTempColor );
 		tDrawable->draw( Vector2f( X + uls.getWidth(), Y + uls.getHeight() ), ns );
-		tDrawable->clearColor();
 	}
 }
 
@@ -198,23 +174,8 @@ Sizef UISkinComplex::getSideSize( const Uint32& State, const Uint32& Side ) {
 	return Sizef();
 }
 
-void UISkinComplex::stateNormalToState( const Uint32& State ) {
-	if ( NULL == mDrawable[ State ][ Center ] ) {
-		for ( Uint32 Side = 0; Side < SideCount; Side++ ) {
-			mDrawable[ State ][ Side ] = mDrawable[ UISkinState::StateNormal ][ Side ];
-		}
-	}
-}
-
-UISkinComplex * UISkinComplex::clone( const std::string& NewName, const bool& CopyColorsState ) {
+UISkinComplex * UISkinComplex::clone( const std::string& NewName ) {
 	UISkinComplex * SkinC = UISkinComplex::New( NewName );
-
-	if ( CopyColorsState ) {
-		SkinC->mColorDefault = mColorDefault;
-
-		for ( size_t i = 0; i < UISkinState::StateCount; i++ )
-			SkinC->mColor[i] = mColor[i];
-	}
 
 	memcpy( &SkinC->mDrawable[0], &mDrawable[0], UISkinState::StateCount * SideCount * sizeof(Drawable*) );
 
@@ -222,7 +183,7 @@ UISkinComplex * UISkinComplex::clone( const std::string& NewName, const bool& Co
 }
 
 UISkin * UISkinComplex::clone() {
-	return clone( mName, true );
+	return clone( mName );
 }
 
 Sizef UISkinComplex::getSize( const Uint32 & state ) {

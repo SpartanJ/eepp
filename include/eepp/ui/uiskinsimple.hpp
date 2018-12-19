@@ -24,7 +24,7 @@ class EE_API UISkinSimple : public UISkin {
 
 		bool stateExists( const Uint32& state );
 
-		UISkinSimple * clone( const std::string& NewName, const bool& CopyColorsState = true );
+		UISkinSimple * clone( const std::string& NewName );
 
 		virtual UISkin * clone();
 
@@ -34,8 +34,6 @@ class EE_API UISkinSimple : public UISkin {
 	protected:
 		Drawable * 	mDrawable[ UISkinState::StateCount ];
 		Color		mTempColor;
-
-		void stateNormalToState( const Uint32& State );
 };
 
 }}

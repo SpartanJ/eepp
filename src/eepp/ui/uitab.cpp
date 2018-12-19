@@ -82,7 +82,7 @@ void UITab::onStateChange() {
 	UITabWidget * tTabW = getTabWidget();
 
 	if ( NULL != tTabW && NULL != mSkinState ) {
-		Int32 skinSize = getSkinSize( getSkin(), mSkinState->getState() ).getHeight();
+		Int32 skinSize = getSkinSize( getSkin(), mSkinState->getCurrentState() ).getHeight();
 
 		if ( 0 == skinSize ) {
 			skinSize = getSkinSize().getHeight();
@@ -90,9 +90,9 @@ void UITab::onStateChange() {
 
 		setSize( mDpSize.getWidth(), skinSize );
 
-		if ( mSkinState->getState() == UISkinState::StateSelected ) {
+		if ( mSkinState->getState() & UISkinState::StateSelected ) {
 			mTextBox->setFontColor( tTabW->getFontSelectedColor() );
-		} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
+		} else if ( mSkinState->getState() & UISkinState::StateHover ) {
 			mTextBox->setFontColor( tTabW->getFontOverColor() );
 		} else {
 			mTextBox->setFontColor( tTabW->getFontColor() );

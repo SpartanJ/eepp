@@ -22,13 +22,13 @@ class EE_API StateListDrawable : StatefulDrawable {
 
 		virtual bool isStateful();
 
-		virtual StatefulDrawable * setState( int state );
+		virtual StatefulDrawable * setState( Uint32 state );
 
-		virtual const int& getState() const;
+		virtual const Uint32& getState() const;
 
-		virtual StateListDrawable * setStateDrawable( int state, Drawable * drawable );
+		virtual StateListDrawable * setStateDrawable( Uint32 state, Drawable * drawable );
 
-		bool hasDrawableState( int state );
+		bool hasDrawableState( Uint32 state );
 
 		void setIsDrawableOwner( const bool& isOwner );
 
@@ -37,9 +37,9 @@ class EE_API StateListDrawable : StatefulDrawable {
 		void clearDrawables();
 	protected:
 		bool mDrawableOwner;
-		int mCurrentState;
+		Uint32 mCurrentState;
 		Drawable * mCurrentDrawable;
-		std::map<int,Drawable*> mDrawables;
+		std::map<Uint32,Drawable*> mDrawables;
 };
 
 }}
