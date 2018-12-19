@@ -28,6 +28,7 @@ void UISkinSimple::draw( const Float& X, const Float& Y, const Float& Width, con
 	Drawable * tDrawable = mDrawable[ State ];
 
 	if ( NULL != tDrawable ) {
+		tDrawable->setAlpha( Alpha );
 		tDrawable->draw( Vector2f( X, Y ), Sizef( Width, Height ) );
 		tDrawable->clearColor();
 	}
