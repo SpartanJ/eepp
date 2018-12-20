@@ -15,7 +15,8 @@ class EE_API UISkinState {
 			StateSelected	= 2,
 			StateHover		= 3,
 			StatePressed	= 4,
-			StateCount		= 5
+			StateDisabled	= 5,
+			StateCount		= 6
 		};
 
 		static UISkinState * New( UISkin * skin );

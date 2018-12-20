@@ -7,8 +7,9 @@ const char * UISkinStatesNames[] = {
 	"normal",
 	"focus",
 	"selected",
-	"menter",
-	"mdown"
+	"hover",
+	"pressed",
+	"disabled"
 };
 
 const char * UISkin::getSkinStateName( const Uint32& State ) {
