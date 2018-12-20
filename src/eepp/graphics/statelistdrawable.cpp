@@ -43,8 +43,10 @@ void StateListDrawable::draw( const Vector2f& position ) {
 }
 
 void StateListDrawable::draw( const Vector2f & position, const Sizef & size ) {
-	if ( NULL != mCurrentDrawable )
+	if ( NULL != mCurrentDrawable ) {
+		mCurrentDrawable->setAlpha( getAlpha() );
 		mCurrentDrawable->draw( position, size );
+	}
 }
 
 bool StateListDrawable::isStateful() {
@@ -52,7 +54,7 @@ bool StateListDrawable::isStateful() {
 }
 
 StatefulDrawable * StateListDrawable::setState( Uint32 state ) {
-	if ( state != mCurrentState ) {
+	if ( state != mCurrentState || mCurrentDrawable == NULL ) {
 		mCurrentState = state;
 
 		auto it = mDrawables.find( state );
@@ -73,6 +75,10 @@ const Uint32& StateListDrawable::getState() const {
 
 StateListDrawable * StateListDrawable::setStateDrawable(Uint32 state, Drawable * drawable) {
 	mDrawables[ state ] = drawable;
+
+	if ( state == mCurrentState )
+		setState( state );
+
 	return this;
 }
 

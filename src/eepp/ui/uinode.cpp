@@ -252,7 +252,7 @@ void UINode::drawBox() {
 void UINode::drawSkin() {
 	if ( NULL != mSkinState ) {
 		if ( mFlags & UI_SKIN_KEEP_SIZE_ON_DRAW ) {
-			Sizef rSize = PixelDensity::dpToPx( mSkinState->getSkin()->getSize( mSkinState->getCurrentState() ) );
+			Sizef rSize = PixelDensity::dpToPx( getSkinSize( getSkin(), mSkinState->getCurrentState() ) );
 			Sizef diff = ( mSize - rSize ) * 0.5f;
 
 			mSkinState->draw( mScreenPosi.x + eefloor(diff.x), mScreenPosi.y + eefloor(diff.y), eefloor(rSize.getWidth()), eefloor(rSize.getHeight()), (Uint32)mAlpha );
@@ -595,7 +595,7 @@ UINode * UINode::setSkin( UISkin * skin ) {
 		if ( NULL != mSkinState && mSkinState->getSkin() == skin )
 			return this;
 
-		Uint32 InitialState = 1 << UISkinState::StateNormal;
+		Uint32 InitialState = 1;
 
 		if ( NULL != mSkinState ) {
 			InitialState = mSkinState->getState();
@@ -634,8 +634,11 @@ void UINode::setSkinState(const Uint32& State , bool emitEvent) {
 	if ( NULL != mSkinState ) {
 		mSkinState->setState( State );
 
-		if ( emitEvent )
+		if ( emitEvent ) {
 			onStateChange();
+		} else {
+			invalidateDraw();
+		}
 	}
 }
 
@@ -643,8 +646,11 @@ void UINode::unsetSkinState(const Uint32& State , bool emitEvent) {
 	if ( NULL != mSkinState ) {
 		mSkinState->unsetState( State );
 
-		if ( emitEvent )
+		if ( emitEvent ) {
 			onStateChange();
+		} else {
+			invalidateDraw();
+		}
 	}
 }
 
@@ -687,7 +693,7 @@ Rectf UINode::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBot
 
 	if ( mFlags & UI_AUTO_PADDING || SkipFlags ) {
 		if ( NULL != mSkinState && NULL != mSkinState->getSkin() ) {
-			Rectf rPadding = mSkinState->getSkin()->getBorderSize( UISkinState::StateNormal );
+			Rectf rPadding = mSkinState->getSkin()->getBorderSize( 1 << UISkinState::StateNormal );
 
 			if ( PadLeft ) {
 				tPadding.Left = rPadding.Left;
@@ -712,7 +718,7 @@ Rectf UINode::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBot
 
 Sizef UINode::getSkinSize( UISkin * Skin, const Uint32& State ) {
 	if ( NULL != Skin ) {
-		return Skin->getSize( State );
+		return Skin->getSize( 1 << State );
 	}
 
 	return Sizef::Zero;
@@ -800,6 +806,7 @@ Uint32 UINode::onMouseEnter(const Vector2i & position, const Uint32 flags) {
 
 Uint32 UINode::onMouseExit(const Vector2i & position, const Uint32 flags) {
 	unsetSkinState( UISkinState::StateHover );
+	unsetSkinState( UISkinState::StatePressed );
 
 	return Node::onMouseExit( position, flags );
 }

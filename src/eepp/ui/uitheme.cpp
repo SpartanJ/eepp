@@ -1,5 +1,4 @@
 #include <eepp/ui/uitheme.hpp>
-#include <eepp/ui/uiskinsimple.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/drawable.hpp>
@@ -9,11 +8,12 @@
 #include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/ninepatch.hpp>
 #include <eepp/graphics/ninepatchmanager.hpp>
+#include <eepp/graphics/statelistdrawable.hpp>
 #include <eepp/system/filesystem.hpp>
 
 namespace EE { namespace UI {
 
-static std::string elemNameFromSkinSimple( const std::vector<std::string>& nameParts ) {
+static std::string elemNameFromSkin( const std::vector<std::string>& nameParts ) {
 	std::string str;
 	int lPart = (int)nameParts.size() - 1;
 
@@ -47,7 +47,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 	std::list<TextureRegion*>& resources = TextureAtlas->getResources();
 	std::list<TextureRegion*>::iterator it;
 	std::string sAbbr( tTheme->getAbbr() + "_" );
-	std::vector<std::string> elemFound;
+	std::map<std::string, UISkin*> skins;
 
 	for ( it = resources.begin(); it != resources.end(); ++it ) {
 		TextureRegion* TextureRegion = *it;
@@ -80,9 +80,17 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 					String::fromString<int>( b, srcRect[3] );
 				}
 
-				elemFound.push_back( elemNameFromSkinSimple( nameParts ) );
+				std::string skinName( elemNameFromSkin( nameParts ) );
 
-				NinePatchManager::instance()->add( NinePatch::New( TextureRegion, l, t, r, b, realName ) );
+				Drawable * drawable = NinePatchManager::instance()->add( NinePatch::New( TextureRegion, l, t, r, b, realName ) );
+
+				if ( skins.find( skinName ) == skins.end() )
+					skins[ skinName ] = tTheme->add( UISkin::New( skinName ) );
+
+				int stateNum = UISkin::getStateNumber( nameParts[ nameParts.size() - 1 ] );
+
+				if ( -1 != stateNum )
+					skins[ skinName ]->setStateDrawable( 1 << stateNum, drawable );
 			} else {
 				std::vector<std::string> nameParts = String::split( name, '_' );
 
@@ -90,15 +98,18 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 					int lPart = nameParts.size() - 1;
 
 					if ( UISkin::isStateName( nameParts[ lPart ] ) ) {
-						elemFound.push_back( elemNameFromSkinSimple( nameParts ) );
+						std::string skinName( elemNameFromSkin( nameParts ) );
+						int stateNum = UISkin::getStateNumber( nameParts[ lPart ] );
+
+						if ( skins.find( skinName ) == skins.end() )
+							skins[ skinName ] = tTheme->add( UISkin::New( skinName ) );
+
+						if ( -1 != stateNum )
+							skins[ skinName ]->setStateDrawable( 1 << stateNum, TextureRegion );
 					}
 				}
 			}
 		}
-	}
-
-	for ( auto it = elemFound.begin(); it != elemFound.end(); ++it ) {
-		tTheme->add( UISkinSimple::New( *it ) );
 	}
 
 	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from TextureAtlas )", TE.getElapsed().asMilliseconds() );
@@ -124,7 +135,7 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 	std::vector<std::string>::iterator it;
 	std::string sAbbr( tTheme->getAbbr() + "_" );
 	std::string sAbbrIcon( tTheme->getAbbr() + "_icon_" );
-	std::vector<std::string> elemFound;
+	std::map<std::string, UISkin*> skins;
 
 	for ( it = resources.begin(); it != resources.end(); ++it ) {
 		std::string fpath( RPath + (*it) );
@@ -159,9 +170,17 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 						String::fromString<int>( b, srcRect[3] );
 					}
 
-					elemFound.push_back( elemNameFromSkinSimple( nameParts ) );
+					std::string skinName( elemNameFromSkin( nameParts ) );
 
-					NinePatchManager::instance()->add( NinePatch::New( TextureFactory::instance()->loadFromFile( fpath ), l, t, r, b, pixelDensity, realName ) );
+					Drawable * drawable = NinePatchManager::instance()->add( NinePatch::New( TextureFactory::instance()->loadFromFile( fpath ), l, t, r, b, pixelDensity, realName ) );
+
+					if ( skins.find( skinName ) == skins.end() )
+						skins[ skinName ] = tTheme->add( UISkin::New( skinName ) );
+
+					int stateNum = UISkin::getStateNumber( nameParts[ nameParts.size() - 1 ] );
+
+					if ( -1 != stateNum )
+						skins[ skinName ]->setStateDrawable( 1 << stateNum, drawable );
 				} else {
 					std::vector<std::string> nameParts = String::split( name, '_' );
 
@@ -169,9 +188,16 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 						int lPart = nameParts.size() - 1;
 
 						if ( UISkin::isStateName( nameParts[ lPart ] ) ) {
-							elemFound.push_back( elemNameFromSkinSimple( nameParts ) );
+							TextureRegion * textureRegion = tSG->add( TextureRegion::New( TextureFactory::instance()->loadFromFile( fpath ), name ) );
 
-							tSG->add( TextureRegion::New( TextureFactory::instance()->loadFromFile( fpath ), name ) );
+							std::string skinName( elemNameFromSkin( nameParts ) );
+							int stateNum = UISkin::getStateNumber( nameParts[ lPart ] );
+
+							if ( skins.find( skinName ) == skins.end() )
+								skins[ skinName ] = tTheme->add( UISkin::New( skinName ) );
+
+							if ( -1 != stateNum )
+								skins[ skinName ]->setStateDrawable( 1 << stateNum, textureRegion );
 						}
 					}
 				}
@@ -183,10 +209,6 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 		TextureAtlasManager::instance()->add( tSG );
 	else
 		eeSAFE_DELETE( tSG );
-
-	for ( auto it = elemFound.begin(); it != elemFound.end(); ++it ) {
-		tTheme->add( UISkinSimple::New( *it ) );
-	}
 
 	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from path )", TE.getElapsed().asMilliseconds() );
 

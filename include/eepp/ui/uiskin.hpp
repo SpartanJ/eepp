@@ -3,37 +3,29 @@
 
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uiskinstate.hpp>
+#include <eepp/graphics/statelistdrawable.hpp>
 
 namespace EE { namespace UI {
 
 class UITheme;
 
-class EE_API UISkin {
+class EE_API UISkin : public StateListDrawable {
 	public:
-		enum UISkinType {
-			SkinSimple,
-			SkinTypeCount
-		};
-
 		static const char * getSkinStateName( const Uint32& State );
+
+		static int getStateNumber(const std::string & State);
 
 		static bool isStateName( const std::string& State );
 
-		UISkin( const std::string& name, const Uint32& Type );
+		static UISkin * New( const std::string& name );
+
+		explicit UISkin( const std::string& name );
 
 		virtual ~UISkin();
 
-		virtual void draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State ) = 0;
-
-		virtual void setSkin( const Uint32& State ) = 0;
-
-		virtual Sizef getSize( const Uint32& state ) = 0;
+		virtual Sizef getSize( const Uint32& state );
 
 		virtual Sizef getSize();
-
-		virtual bool stateExists( const Uint32& State ) = 0;
-
-		virtual void setSkins();
 
 		const std::string& getName() const;
 
@@ -45,18 +37,16 @@ class EE_API UISkin {
 
 		void setTheme( UITheme * theme );
 
-		virtual UISkin * clone() = 0;
+		virtual UISkin * clone();
 
-		const Uint32& getType() const;
+		virtual UISkin * clone( const std::string& NewName );
 
-		virtual Rectf getBorderSize( const Uint32 & state ) = 0;
+		virtual Rectf getBorderSize( const Uint32 & state );
 
 		virtual Rectf getBorderSize();
 	protected:
-		friend class UIControl;
 		friend class UISkinState;
 
-		Uint32		mType;
 		std::string mName;
 		Uint32		mNameHash;
 		UITheme * 	mTheme;

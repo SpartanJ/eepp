@@ -150,7 +150,7 @@ void UIWinMenu::refreshButtons() {
 			skin = tbut->getSkin();
 
 			if ( NULL != skin ) {
-				th = skin->getSize( UISkinState::StateSelected ).getHeight();
+				th = skin->getSize( 1 << UISkinState::StateSelected ).getHeight();
 
 				switch ( VAlignGet( getFlags() ) ) {
 					case UI_VALIGN_CENTER:

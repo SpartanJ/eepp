@@ -6,7 +6,7 @@
 
 namespace EE { namespace Graphics {
 
-class EE_API StateListDrawable : StatefulDrawable {
+class EE_API StateListDrawable : public StatefulDrawable {
 	public:
 		static StateListDrawable * New();
 

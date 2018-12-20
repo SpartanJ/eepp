@@ -19,8 +19,11 @@ UISkinState::~UISkinState() {
 }
 
 void UISkinState::draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha ) {
-	if ( NULL != mSkin )
-		mSkin->draw( X, Y, Width, Height, Alpha, mCurrentState );
+	if ( NULL != mSkin ) {
+		mSkin->setState( 1 << mCurrentState );
+		mSkin->setAlpha( Alpha );
+		mSkin->draw( Vector2f( X, Y ), Sizef( Width, Height ) );
+	}
 }
 
 const Uint32& UISkinState::getState() const {
@@ -48,7 +51,7 @@ UISkin * UISkinState::getSkin() const {
 }
 
 bool UISkinState::stateExists( const Uint32& State ) {
-	return mSkin->stateExists( State );
+	return mSkin->hasDrawableState( 1 << State );
 }
 
 Uint32 UISkinState::getCurrentState() const {
