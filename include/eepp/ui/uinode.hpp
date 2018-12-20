@@ -166,37 +166,7 @@ class EE_API UINode : public Node {
 
 		const Uint32& getDragButton() const;
 
-		bool isAnimating();
-
-		Interpolation1d * startAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& alphaChilds = true, const Ease::Interpolation& type = Ease::Linear, Interpolation1d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
-
-		Interpolation2d * startScaleAnim( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
-
-		Interpolation2d * startScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
-
-		Interpolation2d * startTranslation( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
-
-		Interpolation1d * startRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation1d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
-
-		Interpolation1d * startAlphaAnim( const Float& To, const Time& TotalTime, const bool& alphaChilds = true, const Ease::Interpolation& type = Ease::Linear, Interpolation1d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
-
-		Interpolation2d * startScaleAnim( const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
-
-		Interpolation2d * startScaleAnim( const Float& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
-
-		Interpolation2d * startTranslation( const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation2d::OnPathEndCallback PathEndCallback = Interpolation2d::OnPathEndCallback() );
-
-		Interpolation1d * startRotation( const Float& To, const Time& TotalTime, const Ease::Interpolation& type = Ease::Linear, Interpolation1d::OnPathEndCallback PathEndCallback = Interpolation1d::OnPathEndCallback() );
-
-		Interpolation1d * createFadeIn( const Time& Time, const bool& alphaChilds = true, const Ease::Interpolation& type = Ease::Linear );
-
-		Interpolation1d * createFadeOut( const Time& Time, const bool& alphaChilds = true, const Ease::Interpolation& type = Ease::Linear );
-
-		Interpolation1d * closeFadeOut( const Time& Time, const bool& alphaChilds = true, const Ease::Interpolation& type = Ease::Linear );
-
-		Interpolation1d * disableFadeOut( const Time & Time, const bool& alphaChilds = true, const Ease::Interpolation& type = Ease::Linear );
-
-		bool isFadingOut();
+		bool isActionManagerActive();
 
 		virtual void setFocus();
 	protected:

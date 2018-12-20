@@ -205,8 +205,11 @@
 ../../include/eepp/scene/actionmanager.hpp
 ../../include/eepp/scene/actions/actioninterpolation1d.hpp
 ../../include/eepp/scene/actions/actioninterpolation2d.hpp
+../../include/eepp/scene/actions/actions.hpp
 ../../include/eepp/scene/actions/close.hpp
 ../../include/eepp/scene/actions/delay.hpp
+../../include/eepp/scene/actions/disable.hpp
+../../include/eepp/scene/actions/enable.hpp
 ../../include/eepp/scene/actions/fade.hpp
 ../../include/eepp/scene/actions/marginmove.hpp
 ../../include/eepp/scene/actions/move.hpp
@@ -214,6 +217,7 @@
 ../../include/eepp/scene/actions/scale.hpp
 ../../include/eepp/scene/actions/sequence.hpp
 ../../include/eepp/scene/actions/spawn.hpp
+../../include/eepp/scene/actions/visible.hpp
 ../../include/eepp/scene/event.hpp
 ../../include/eepp/scene/eventdispatcher.hpp
 ../../include/eepp/scene/keyevent.hpp
@@ -616,6 +620,8 @@
 ../../src/eepp/scene/actions/actioninterpolation2d.cpp
 ../../src/eepp/scene/actions/close.cpp
 ../../src/eepp/scene/actions/delay.cpp
+../../src/eepp/scene/actions/disable.cpp
+../../src/eepp/scene/actions/enable.cpp
 ../../src/eepp/scene/actions/fade.cpp
 ../../src/eepp/scene/actions/marginmove.cpp
 ../../src/eepp/scene/actions/move.cpp
@@ -623,6 +629,7 @@
 ../../src/eepp/scene/actions/scale.cpp
 ../../src/eepp/scene/actions/sequence.cpp
 ../../src/eepp/scene/actions/spawn.cpp
+../../src/eepp/scene/actions/visible.cpp
 ../../src/eepp/scene/event.cpp
 ../../src/eepp/scene/eventdispatcher.cpp
 ../../src/eepp/scene/keyevent.cpp

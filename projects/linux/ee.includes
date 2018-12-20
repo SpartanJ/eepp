@@ -7,6 +7,5 @@
 ../../src/eepp/audio
 ../../include/eepp/audio
 /usr/include/freetype2/
-../../bin/assets/layouts
-../../include/eepp/graphics
-../../src/eepp/graphics
+../../include/eepp/scene/actions
+../../src/eepp/scene/actions

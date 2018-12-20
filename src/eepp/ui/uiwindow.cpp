@@ -12,6 +12,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/scene/actions/actions.hpp>
 
 namespace EE { namespace UI {
 
@@ -442,7 +443,7 @@ void UIWindow::closeWindow() {
 	}
 
 	if ( Time::Zero != UIThemeManager::instance()->getControlsFadeOutTime() )
-		closeFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
+		runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ), Actions::Close::New() ) );
 	else
 		close();
 }
@@ -977,7 +978,7 @@ bool UIWindow::show() {
 
 		setFocus();
 
-		startAlphaAnim( mStyleConfig.BaseAlpha == getAlpha() ? 0.f : mAlpha, mStyleConfig.BaseAlpha, UIThemeManager::instance()->getControlsFadeInTime() );
+		runAction( Actions::Fade::New( mStyleConfig.BaseAlpha == getAlpha() ? 0.f : mAlpha, mStyleConfig.BaseAlpha, UIThemeManager::instance()->getControlsFadeOutTime() ) );
 
 		if ( isModal() ) {
 			createModalControl();
@@ -998,7 +999,7 @@ bool UIWindow::show() {
 bool UIWindow::hide() {
 	if ( isVisible() ) {
 		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-			disableFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
+			runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ), Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
 		} else {
 			setEnabled( false );
 			setVisible( false );

@@ -2,6 +2,7 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/scene/actions/actions.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -227,13 +228,16 @@ void UIDropDownList::show() {
 	mListBox->setVisible( true );
 
 	if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-		mListBox->startAlphaAnim( 255.f == mListBox->getAlpha() ? 0.f : mListBox->getAlpha(), 255.f, UIThemeManager::instance()->getControlsFadeInTime() );
+		mListBox->runAction( Actions::Sequence::New(
+								 Actions::Fade::New( 255.f == mListBox->getAlpha() ? 0.f : mListBox->getAlpha(), 255.f, UIThemeManager::instance()->getControlsFadeOutTime() ),
+								 Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
 	}
 }
 
 void UIDropDownList::hide() {
 	if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-		mListBox->disableFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
+		mListBox->runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ),
+													 Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
 	} else {
 		mListBox->setEnabled( false );
 		mListBox->setVisible( false );

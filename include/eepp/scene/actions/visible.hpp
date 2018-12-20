@@ -1,14 +1,14 @@
-#ifndef EE_SCENE_ACTION_CLOSE_HPP
-#define EE_SCENE_ACTION_CLOSE_HPP
+#ifndef EE_SCENE_ACTION_VISIBLE_HPP
+#define EE_SCENE_ACTION_VISIBLE_HPP
 
 #include <eepp/scene/actions/delay.hpp>
 
 namespace EE { namespace Scene { namespace Actions {
 
-class EE_API Close : public Delay {
+class EE_API Visible : public Delay {
 	public:
-		static Close * New( const Time& time = Seconds(0) );
-		
+		static Visible * New( bool visible, const Time& time = Seconds(0) );
+
 		void update( const Time& time ) override;
 
 		Action * clone() const override;
@@ -16,12 +16,14 @@ class EE_API Close : public Delay {
 		Action * reverse() const override;
 
 	protected:
-		explicit Close( const Time& time );
+		bool mVisible;
+
+		explicit Visible( bool visible, const Time& time );
 
 		void onStart() override;
-		
+
 };
 
-}}} 
+}}}
 
 #endif

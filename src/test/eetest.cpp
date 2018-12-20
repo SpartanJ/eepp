@@ -951,13 +951,13 @@ void EETest::createCommonDialog() {
 static void onWinDragStart( const Event * event ) {
 	UINode * ctrl = static_cast<UINode*>( event->getNode() );
 	UIWindow * window = ctrl->isType(UI_TYPE_WINDOW) ? static_cast<UIWindow*>( ctrl ) : static_cast<UIWindow*>( ctrl->getWindowContainer()->getParent() );
-	window->startAlphaAnim( window->getAlpha(), 100, Seconds(0.2f) );
+	window->runAction( Actions::Fade::New( window->getAlpha(), 100, Seconds(0.2f) ) );
 }
 
 static void onWinDragStop( const Event * event ) {
 	UINode * ctrl = static_cast<UINode*>( event->getNode() );
 	UIWindow * window = ctrl->isType(UI_TYPE_WINDOW) ? static_cast<UIWindow*>( ctrl ) : static_cast<UIWindow*>( ctrl->getWindowContainer()->getParent() );
-	window->startAlphaAnim( window->getAlpha(), 255, Seconds(0.2f) );
+	window->runAction( Actions::Fade::New( window->getAlpha(), 255, Seconds(0.2f) ) );
 }
 
 void EETest::createDecoratedWindow() {
@@ -1008,7 +1008,7 @@ void EETest::createDecoratedWindow() {
 			win->setWinFlags( win->getWinFlags() & ~UI_WIN_NO_BORDER );
 			menuItem->setText( "Hide Border" );
 		} else if ( "Close" == txt ) {
-			win->closeFadeOut( Milliseconds(250) );
+			win->closeWindow();
 		}
 	} );
 
@@ -1094,13 +1094,20 @@ void EETest::onItemClick( const Event * Event ) {
 
 		if ( Chk->isActive() ) {
 			if ( C->getScale() == 1.f ) C->setScale( 0.f );
-			C->startScaleAnim( C->getScale(), Vector2f::One, Milliseconds( 500.f ), Ease::SineOut );
-			C->startAlphaAnim( C->getAlpha(), 255.f, Milliseconds( 500.f ) );
-			C->startRotation( 0, 360, Milliseconds( 500.f ), Ease::SineOut );
+
+			C->runAction( Actions::Spawn::New(
+					Actions::Scale::New( C->getScale(), Vector2f::One, Milliseconds( 500.f ), Ease::SineOut ),
+					Actions::Fade::New( C->getAlpha(), 255.f, Milliseconds( 500.f ) ),
+					Actions::Rotate::New( 0, 360, Milliseconds( 500.f ), Ease::SineOut )
+				)
+			);
 		} else {
-			C->startScaleAnim( C->getScale(), Vector2f::Zero, Milliseconds( 500.f ), Ease::SineIn );
-			C->disableFadeOut( Milliseconds( 500.f ) );
-			C->startRotation( 0, 360, Milliseconds( 500.f ), Ease::SineIn );
+			C->runAction( Actions::Spawn::New(
+					Actions::Scale::New( C->getScale(), Vector2f::Zero, Milliseconds( 500.f ), Ease::SineIn ),
+					Actions::Sequence::New( Actions::FadeOut::New( Milliseconds( 500 ) ), Actions::Disable::New() ),
+					Actions::Rotate::New( 0, 360, Milliseconds( 500.f ), Ease::SineIn )
+			  )
+			);
 		}
 	} else if ( "Show Window 2" == txt ) {
 		if ( NULL == mUIWindow ) {
@@ -1168,12 +1175,13 @@ void EETest::onButtonClick( const Event * event ) {
 		UIImage * Gfx = UIImage::New();
 		Gfx->setDrawable( mTheme->getIconByName( "ok" ) );
 		Gfx->setEnabled( false );
-		Gfx->runAction( Sequence::New( Scale::New( Vector2f(1.f,1.f), Vector2f(2.f,2.f), Seconds( 0.5f ) ),
-									   Scale::New( Vector2f(2.f,2.f), Vector2f(1.f,1.f), Seconds( 0.5f ) )
+
+		Gfx->runAction( Spawn::New(
+							Move::New( Vector2f( Math::randi( 0, mWindow->getWidth() ), -64 ), Vector2f( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ), Milliseconds( 2500 ) ),
+							Rotate::New( 0.f, 2500.f, Milliseconds( 2500 ) ),
+							Sequence::New( Scale::New( Vector2f(1.f,1.f), Vector2f(2.f,2.f), Seconds( 0.5f ) ), Scale::New( Vector2f(2.f,2.f), Vector2f(1.f,1.f), Seconds( 0.5f ) ) ),
+							Sequence::New( FadeOut::New( Milliseconds( 3500 ) ), Close::New() )
 						) );
-		Gfx->startRotation( 0.f, 2500.f, Milliseconds( 2500 ) );
-		Gfx->startTranslation( Vector2f( Math::randi( 0, mWindow->getWidth() ), -64 ), Vector2f( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ), Milliseconds( 2500 ) );
-		Gfx->closeFadeOut( Milliseconds( 3500 ) );
 	}
 }
 

@@ -2,6 +2,7 @@
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/scene/actions/actions.hpp>
 
 namespace EE { namespace UI {
 
@@ -72,7 +73,8 @@ void UITooltip::show() {
 		setVisible( true );
 
 		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-			startAlphaAnim( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->getControlsFadeInTime() );
+			runAction( Actions::Sequence::New( Actions::Fade::New( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->getControlsFadeOutTime() ),
+											   Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
 		}
 	}
 }
@@ -80,7 +82,7 @@ void UITooltip::show() {
 void UITooltip::hide() {
 	if ( isVisible() ) {
 		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-			disableFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
+			runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ), Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
 		} else {
 			setVisible( false );
 		}
