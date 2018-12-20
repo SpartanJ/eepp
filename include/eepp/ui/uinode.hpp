@@ -5,6 +5,7 @@
 #include <eepp/ui/uihelper.hpp>
 #include <eepp/ui/uibackground.hpp>
 #include <eepp/ui/uiborder.hpp>
+#include <eepp/ui/uistate.hpp>
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/scene/node.hpp>
 
@@ -140,9 +141,9 @@ class EE_API UINode : public Node {
 
 		void removeSkin();
 
-		void setSkinState( const Uint32& State, bool emitEvent = true );
+		void pushState( const Uint32& State, bool emitEvent = true );
 
-		void unsetSkinState( const Uint32& State, bool emitEvent = true );
+		void popState( const Uint32& State, bool emitEvent = true );
 
 		Sizef getSkinSize();
 
@@ -173,7 +174,7 @@ class EE_API UINode : public Node {
 		Vector2f		mDpPos;
 		Sizef			mDpSize;
 		Uint32			mFlags;
-		UISkinState *	mSkinState;
+		UIState *		mSkinState;
 		UIBackground *	mBackground;
 		UIBackground *	mForeground;
 		UIBorder *		mBorder;
@@ -187,6 +188,8 @@ class EE_API UINode : public Node {
 		virtual Uint32 onValueChange();
 
 		virtual void onStateChange();
+
+		virtual void onEnabledChange();
 
 		virtual void onAlignChange();
 
@@ -226,7 +229,7 @@ class EE_API UINode : public Node {
 
 		Rectf makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
 
-		Sizef getSkinSize( UISkin * Skin, const Uint32& State = UISkinState::StateNormal );
+		Sizef getSkinSize( UISkin * Skin, const Uint32& State = UIState::StateNormal );
 
 		void drawHighlightFocus();
 

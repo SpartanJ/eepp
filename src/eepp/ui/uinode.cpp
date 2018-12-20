@@ -1,7 +1,7 @@
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uiskinstate.hpp>
+#include <eepp/ui/uistate.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/textureregion.hpp>
@@ -311,7 +311,7 @@ Uint32 UINode::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 		mDragPoint = Vector2f( Pos.x, Pos.y );
 	}
 
-	setSkinState( UISkinState::StatePressed );
+	pushState( UIState::StatePressed );
 
 	return Node::onMouseDown( Pos, Flags );
 }
@@ -321,7 +321,7 @@ Uint32 UINode::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
 		setDragging( false );
 	}
 
-	unsetSkinState( UISkinState::StatePressed );
+	popState( UIState::StatePressed );
 
 	return Node::onMouseUp( Pos, Flags );
 }
@@ -583,7 +583,7 @@ UINode * UINode::setSkin( const UISkin& Skin ) {
 
 	UISkin * SkinCopy = const_cast<UISkin*>( &Skin )->clone();
 
-	mSkinState = UISkinState::New( SkinCopy );
+	mSkinState = UIState::New( SkinCopy );
 
 	onThemeLoaded();
 
@@ -595,7 +595,7 @@ UINode * UINode::setSkin( UISkin * skin ) {
 		if ( NULL != mSkinState && mSkinState->getSkin() == skin )
 			return this;
 
-		Uint32 InitialState = 1;
+		Uint32 InitialState = 1 << UIState::StateNormal;
 
 		if ( NULL != mSkinState ) {
 			InitialState = mSkinState->getState();
@@ -603,7 +603,7 @@ UINode * UINode::setSkin( UISkin * skin ) {
 
 		removeSkin();
 
-		mSkinState = UISkinState::New( skin );
+		mSkinState = UIState::New( skin );
 		mSkinState->setState( InitialState );
 
 		onThemeLoaded();
@@ -626,13 +626,24 @@ void UINode::onStateChange() {
 	invalidateDraw();
 }
 
+void UINode::onEnabledChange() {
+	if ( !mEnabled ) {
+		pushState( UIState::StateDisabled );
+	} else if ( NULL != mSkinState && ( mSkinState->getState() & ( 1 << UIState::StateDisabled ) ) ) {
+		popState( UIState::StateDisabled );
+	}
+
+	Node::onEnabledChange();
+
+}
+
 void UINode::onAlignChange() {
 	invalidateDraw();
 }
 
-void UINode::setSkinState(const Uint32& State , bool emitEvent) {
+void UINode::pushState(const Uint32& State , bool emitEvent) {
 	if ( NULL != mSkinState ) {
-		mSkinState->setState( State );
+		mSkinState->pushState( State );
 
 		if ( emitEvent ) {
 			onStateChange();
@@ -642,9 +653,9 @@ void UINode::setSkinState(const Uint32& State , bool emitEvent) {
 	}
 }
 
-void UINode::unsetSkinState(const Uint32& State , bool emitEvent) {
+void UINode::popState(const Uint32& State , bool emitEvent) {
 	if ( NULL != mSkinState ) {
-		mSkinState->unsetState( State );
+		mSkinState->popState( State );
 
 		if ( emitEvent ) {
 			onStateChange();
@@ -693,7 +704,7 @@ Rectf UINode::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBot
 
 	if ( mFlags & UI_AUTO_PADDING || SkipFlags ) {
 		if ( NULL != mSkinState && NULL != mSkinState->getSkin() ) {
-			Rectf rPadding = mSkinState->getSkin()->getBorderSize( 1 << UISkinState::StateNormal );
+			Rectf rPadding = mSkinState->getSkin()->getBorderSize( 1 << UIState::StateNormal );
 
 			if ( PadLeft ) {
 				tPadding.Left = rPadding.Left;
@@ -799,14 +810,14 @@ Uint32 UINode::onDragStop( const Vector2i& Pos ) {
 }
 
 Uint32 UINode::onMouseEnter(const Vector2i & position, const Uint32 flags) {
-	setSkinState( UISkinState::StateHover );
+	pushState( UIState::StateHover );
 
 	return Node::onMouseEnter( position, flags );
 }
 
 Uint32 UINode::onMouseExit(const Vector2i & position, const Uint32 flags) {
-	unsetSkinState( UISkinState::StateHover );
-	unsetSkinState( UISkinState::StatePressed );
+	popState( UIState::StateHover );
+	popState( UIState::StatePressed );
 
 	return Node::onMouseExit( position, flags );
 }
@@ -865,13 +876,13 @@ void UINode::setFocus() {
 }
 
 Uint32 UINode::onFocus() {
-	setSkinState( UISkinState::StateFocus );
+	pushState( UIState::StateFocus );
 
 	return Node::onFocus();
 }
 
 Uint32 UINode::onFocusLoss() {
-	unsetSkinState( UISkinState::StateFocus );
+	popState( UIState::StateFocus );
 
 	return Node::onFocusLoss();
 }

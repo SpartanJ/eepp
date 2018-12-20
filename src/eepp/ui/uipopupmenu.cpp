@@ -63,7 +63,7 @@ bool UIPopUpMenu::hide() {
 	if ( isVisible() ) {
 		if ( !isActionManagerActive() ) {
 			if ( NULL != mItemSelected )
-				mItemSelected->unsetSkinState( UISkinState::StateSelected );
+				mItemSelected->popState( UIState::StateSelected );
 
 			mItemSelected		= NULL;
 			mItemSelectedIndex	= eeINDEX_NOT_FOUND;

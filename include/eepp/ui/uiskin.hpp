@@ -2,7 +2,6 @@
 #define EE_UICUISKIN_HPP
 
 #include <eepp/ui/base.hpp>
-#include <eepp/ui/uiskinstate.hpp>
 #include <eepp/graphics/statelistdrawable.hpp>
 
 namespace EE { namespace UI {
@@ -11,12 +10,6 @@ class UITheme;
 
 class EE_API UISkin : public StateListDrawable {
 	public:
-		static const char * getSkinStateName( const Uint32& State );
-
-		static int getStateNumber(const std::string & State);
-
-		static bool isStateName( const std::string& State );
-
 		static UISkin * New( const std::string& name );
 
 		explicit UISkin( const std::string& name );
@@ -45,8 +38,6 @@ class EE_API UISkin : public StateListDrawable {
 
 		virtual Rectf getBorderSize();
 	protected:
-		friend class UISkinState;
-
 		std::string mName;
 		Uint32		mNameHash;
 		UITheme * 	mTheme;

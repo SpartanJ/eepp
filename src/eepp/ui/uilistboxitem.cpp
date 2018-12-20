@@ -57,7 +57,7 @@ void UIListBoxItem::select() {
 
 	if ( LBParent->isMultiSelect() ) {
 		if ( !wasSelected ) {
-			setSkinState( UISkinState::StateSelected );
+			pushState( UIState::StateSelected );
 
 			mNodeFlags |= NODE_FLAG_SELECTED;
 
@@ -70,7 +70,7 @@ void UIListBoxItem::select() {
 			LBParent->mSelected.remove( LBParent->getItemIndex( this ) );
 		}
 	} else {
-		setSkinState( UISkinState::StateSelected );
+		pushState( UIState::StateSelected );
 
 		mNodeFlags |= NODE_FLAG_SELECTED;
 
@@ -102,7 +102,7 @@ Uint32 UIListBoxItem::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 	UINode::onMouseExit( Pos, Flags );
 
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
-		setSkinState( UISkinState::StateSelected );
+		pushState( UIState::StateSelected );
 
 	return 1;
 }
@@ -111,7 +111,7 @@ void UIListBoxItem::unselect() {
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
 		mNodeFlags &= ~NODE_FLAG_SELECTED;
 
-	unsetSkinState( UISkinState::StateSelected );
+	popState( UIState::StateSelected );
 }
 
 bool UIListBoxItem::isSelected() const {
@@ -121,13 +121,13 @@ bool UIListBoxItem::isSelected() const {
 void UIListBoxItem::onStateChange() {
 	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( getParent()->getParent() );
 
-	if ( isSelected() && mSkinState->getState() != UISkinState::StateSelected ) {
-		setSkinState( UISkinState::StateSelected, false );
+	if ( isSelected() && mSkinState->getState() != UIState::StateSelected ) {
+		pushState( UIState::StateSelected, false );
 	}
 
-	if ( mSkinState->getState() & UISkinState::StateSelected ) {
+	if ( mSkinState->getState() & UIState::StateSelected ) {
 		setFontColor( LBParent->getFontSelectedColor() );
-	} else if ( mSkinState->getState() & UISkinState::StateHover ) {
+	} else if ( mSkinState->getState() & UIState::StateHover ) {
 		setFontColor( LBParent->getFontOverColor() );
 	} else {
 		setFontColor( LBParent->getFontColor() );

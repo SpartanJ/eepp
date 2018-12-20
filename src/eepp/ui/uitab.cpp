@@ -90,9 +90,9 @@ void UITab::onStateChange() {
 
 		setSize( mDpSize.getWidth(), skinSize );
 
-		if ( mSkinState->getState() & UISkinState::StateSelected ) {
+		if ( mSkinState->getState() & UIState::StateSelected ) {
 			mTextBox->setFontColor( tTabW->getFontSelectedColor() );
-		} else if ( mSkinState->getState() & UISkinState::StateHover ) {
+		} else if ( mSkinState->getState() & UIState::StateHover ) {
 			mTextBox->setFontColor( tTabW->getFontOverColor() );
 		} else {
 			mTextBox->setFontColor( tTabW->getFontColor() );

@@ -1,5 +1,6 @@
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uistate.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/textureatlas.hpp>
@@ -87,7 +88,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 				if ( skins.find( skinName ) == skins.end() )
 					skins[ skinName ] = tTheme->add( UISkin::New( skinName ) );
 
-				int stateNum = UISkin::getStateNumber( nameParts[ nameParts.size() - 1 ] );
+				int stateNum = UIState::getStateNumber( nameParts[ nameParts.size() - 1 ] );
 
 				if ( -1 != stateNum )
 					skins[ skinName ]->setStateDrawable( 1 << stateNum, drawable );
@@ -97,9 +98,9 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 				if ( nameParts.size() >= 3 ) {
 					int lPart = nameParts.size() - 1;
 
-					if ( UISkin::isStateName( nameParts[ lPart ] ) ) {
+					if ( UIState::isStateName( nameParts[ lPart ] ) ) {
 						std::string skinName( elemNameFromSkin( nameParts ) );
-						int stateNum = UISkin::getStateNumber( nameParts[ lPart ] );
+						int stateNum = UIState::getStateNumber( nameParts[ lPart ] );
 
 						if ( skins.find( skinName ) == skins.end() )
 							skins[ skinName ] = tTheme->add( UISkin::New( skinName ) );
@@ -177,7 +178,7 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 					if ( skins.find( skinName ) == skins.end() )
 						skins[ skinName ] = tTheme->add( UISkin::New( skinName ) );
 
-					int stateNum = UISkin::getStateNumber( nameParts[ nameParts.size() - 1 ] );
+					int stateNum = UIState::getStateNumber( nameParts[ nameParts.size() - 1 ] );
 
 					if ( -1 != stateNum )
 						skins[ skinName ]->setStateDrawable( 1 << stateNum, drawable );
@@ -187,11 +188,11 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 					if ( nameParts.size() >= 3 ) {
 						int lPart = nameParts.size() - 1;
 
-						if ( UISkin::isStateName( nameParts[ lPart ] ) ) {
+						if ( UIState::isStateName( nameParts[ lPart ] ) ) {
 							TextureRegion * textureRegion = tSG->add( TextureRegion::New( TextureFactory::instance()->loadFromFile( fpath ), name ) );
 
 							std::string skinName( elemNameFromSkin( nameParts ) );
-							int stateNum = UISkin::getStateNumber( nameParts[ lPart ] );
+							int stateNum = UIState::getStateNumber( nameParts[ lPart ] );
 
 							if ( skins.find( skinName ) == skins.end() )
 								skins[ skinName ] = tTheme->add( UISkin::New( skinName ) );

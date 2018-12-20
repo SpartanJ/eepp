@@ -104,7 +104,7 @@ void UITableCell::select() {
 
 		bool wasSelected = 0 != ( mNodeFlags & NODE_FLAG_SELECTED );
 
-		setSkinState( UISkinState::StateSelected );
+		pushState( UIState::StateSelected );
 
 		mNodeFlags |= NODE_FLAG_SELECTED;
 
@@ -120,7 +120,7 @@ void UITableCell::unselect() {
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
 		mNodeFlags &= ~NODE_FLAG_SELECTED;
 
-	unsetSkinState( UISkinState::StateSelected);
+	popState( UIState::StateSelected);
 }
 
 bool UITableCell::isSelected() const {
@@ -131,7 +131,7 @@ Uint32 UITableCell::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 	UINode::onMouseExit( Pos, Flags );
 
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
-		setSkinState( UISkinState::StateSelected );
+		pushState( UIState::StateSelected );
 
 	return 1;
 }
@@ -174,8 +174,8 @@ void UITableCell::onAutoSize() {
 void UITableCell::onStateChange() {
 	UIWidget::onStateChange();
 
-	if ( isSelected() && !( mSkinState->getState() & UISkinState::StateSelected ) ) {
-		setSkinState( UISkinState::StateSelected, false );
+	if ( isSelected() && !( mSkinState->getState() & UIState::StateSelected ) ) {
+		pushState( UIState::StateSelected, false );
 	}
 }
 

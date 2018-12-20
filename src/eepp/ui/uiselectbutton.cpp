@@ -27,7 +27,7 @@ bool UISelectButton::isType( const Uint32& type ) const {
 void UISelectButton::select() {
 	bool wasSelected = selected();
 
-	setSkinState( UISkinState::StateSelected );
+	pushState( UIState::StateSelected );
 
 	mNodeFlags |= NODE_FLAG_SELECTED;
 
@@ -41,7 +41,7 @@ void UISelectButton::unselect() {
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
 		mNodeFlags &= ~NODE_FLAG_SELECTED;
 
-	unsetSkinState( UISkinState::StateSelected );
+	popState( UIState::StateSelected );
 }
 
 bool UISelectButton::selected() const {
@@ -52,24 +52,24 @@ void UISelectButton::onStateChange() {
 	if ( NULL == mSkinState )
 		return;
 
-	if ( !( mSkinState->getState() & UISkinState::StateSelected ) && selected() && mSkinState->stateExists( UISkinState::StateSelected ) ) {
-		setSkinState( UISkinState::StateSelected, false );
+	if ( !( mSkinState->getState() & UIState::StateSelected ) && selected() && mSkinState->stateExists( UIState::StateSelected ) ) {
+		pushState( UIState::StateSelected, false );
 	}
 
 	if ( getParent()->isType( UI_TYPE_WINMENU ) ) {
 		UIWinMenu * Menu = reinterpret_cast<UIWinMenu*> ( getParent() );
 
-		if ( mSkinState->getState() & UISkinState::StateSelected ) {
+		if ( mSkinState->getState() & UIState::StateSelected ) {
 			getTextBox()->setFontColor( Menu->getStyleConfig().getFontSelectedColor() );
-		} else if ( mSkinState->getState() & UISkinState::StateHover ) {
+		} else if ( mSkinState->getState() & UIState::StateHover ) {
 			getTextBox()->setFontColor( Menu->getStyleConfig().getFontOverColor() );
 		} else {
 			getTextBox()->setFontColor( Menu->getStyleConfig().getFontColor() );
 		}
 	} else {
-		if ( mSkinState->getState() & UISkinState::StateSelected ) {
+		if ( mSkinState->getState() & UIState::StateSelected ) {
 			getTextBox()->setFontColor( mStyleConfig.FontSelectedColor );
-		} else if ( mSkinState->getState() & UISkinState::StateHover ) {
+		} else if ( mSkinState->getState() & UIState::StateHover ) {
 			getTextBox()->setFontColor( mStyleConfig.FontOverColor );
 		} else {
 			getTextBox()->setFontColor( mStyleConfig.FontColor );

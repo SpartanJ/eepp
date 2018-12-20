@@ -70,7 +70,7 @@ void UIProgressBar::draw() {
 
 	for ( int y = -1; y < numTiles.y; y++ ) {
 		for ( int x = -1; x < numTiles.x; x++ ) {
-			mFillerSkin->setState( 1 << UISkinState::StateNormal );
+			mFillerSkin->setState( 1 << UIState::StateNormal );
 			mFillerSkin->draw( Vector2f( (Int32)mOffset.x + mScreenPosi.x + fillerPadding.Left + x * rSize.getWidth(), mOffset.y + mScreenPosi.y + fillerPadding.Top + y * rSize.getHeight() ), Sizef( rSize.getWidth(), rSize.getHeight() ) );
 		}
 	}

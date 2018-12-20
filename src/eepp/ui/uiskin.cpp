@@ -1,4 +1,5 @@
 #include <eepp/ui/uiskin.hpp>
+#include <eepp/ui/uistate.hpp>
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/ninepatch.hpp>
 
@@ -6,39 +7,6 @@ namespace EE { namespace UI {
 
 UISkin * UISkin::New( const std::string& name ) {
 	return eeNew( UISkin, ( name ) );
-}
-
-const char * UISkinStatesNames[] = {
-	"normal",
-	"focus",
-	"selected",
-	"hover",
-	"pressed",
-	"disabled"
-};
-
-const char * UISkin::getSkinStateName( const Uint32& State ) {
-	return UISkinStatesNames[ State ];
-}
-
-int UISkin::getStateNumber( const std::string& State ) {
-	for ( int i = 0; i < UISkinState::StateCount; i++ ) {
-		if ( State == UISkinStatesNames[i] ) {
-			return i;
-		}
-	}
-
-	return -1;
-}
-
-bool UISkin::isStateName( const std::string& State ) {
-	for ( int i = 0; i < UISkinState::StateCount; i++ ) {
-		if ( State == UISkinStatesNames[i] ) {
-			return true;
-		}
-	}
-
-	return false;
 }
 
 UISkin::UISkin( const std::string& name ) :
@@ -52,7 +20,7 @@ UISkin::~UISkin() {
 }
 
 Sizef UISkin::getSize() {
-	return getSize( 1 << UISkinState::StateNormal );
+	return getSize( 1 << UIState::StateNormal );
 }
 
 const std::string& UISkin::getName() const {
@@ -77,7 +45,7 @@ void UISkin::setTheme( UITheme * theme ) {
 }
 
 Rectf UISkin::getBorderSize() {
-	return getBorderSize( 1 << UISkinState::StateNormal );
+	return getBorderSize( 1 << UIState::StateNormal );
 }
 
 UISkin * UISkin::clone( const std::string& NewName ) {

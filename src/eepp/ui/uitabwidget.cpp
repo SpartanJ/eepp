@@ -62,7 +62,7 @@ void UITabWidget::setTheme( UITheme * Theme ) {
 
 		if ( NULL != tSkin ) {
 			Sizef tSize1		= getSkinSize( tSkin );
-			Sizef tSize2		= getSkinSize( tSkin, UISkinState::StateSelected );
+			Sizef tSize2		= getSkinSize( tSkin, UIState::StateSelected );
 
 			mStyleConfig.TabWidgetHeight	= eemax( tSize1.getHeight(), tSize2.getHeight() );
 

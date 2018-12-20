@@ -1,5 +1,5 @@
-#ifndef EE_UICUISKINSTATE_HPP
-#define EE_UICUISKINSTATE_HPP
+#ifndef EE_UI_UISTATE_HPP
+#define EE_UI_UISTATE_HPP
 
 #include <eepp/ui/base.hpp>
 
@@ -7,9 +7,9 @@ namespace EE { namespace UI {
 
 class UISkin;
 
-class EE_API UISkinState {
+class EE_API UIState {
 	public:
-		enum UISkinStates {
+		enum UIStates {
 			StateNormal		= 0,
 			StateFocus		= 1,
 			StateSelected	= 2,
@@ -19,17 +19,25 @@ class EE_API UISkinState {
 			StateCount		= 6
 		};
 
-		static UISkinState * New( UISkin * skin );
+		static const char * getSkinStateName( const Uint32& State );
 
-		explicit UISkinState( UISkin * Skin );
+		static int getStateNumber(const std::string & State);
 
-		~UISkinState();
+		static bool isStateName( const std::string& State );
+
+		static UIState * New( UISkin * skin );
+
+		explicit UIState( UISkin * Skin );
+
+		~UIState();
 
 		const Uint32& getState() const;
 
 		void setState( const Uint32& State );
 
-		void unsetState( const Uint32& State );
+		void pushState( const Uint32& State );
+
+		void popState( const Uint32& State );
 
 		UISkin * getSkin() const;
 
