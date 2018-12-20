@@ -261,6 +261,8 @@ void UIWindow::updateWinFlags() {
 		fixChildsSize();
 	}
 
+	updateDrawInvalidator( true );
+
 	if ( isModal() ) {
 		createModalControl();
 	}

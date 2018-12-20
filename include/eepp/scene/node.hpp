@@ -468,7 +468,7 @@ class EE_API Node : public Transformable {
 
 		SceneNode * findSceneNode();
 
-		void updateDrawInvalidator();
+		void updateDrawInvalidator( bool force = false );
 };
 
 }}

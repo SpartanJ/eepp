@@ -194,10 +194,10 @@ Node * Node::getParent() const {
 	return mParentCtrl;
 }
 
-void Node::updateDrawInvalidator() {
+void Node::updateDrawInvalidator( bool force ) {
 	mNodeDrawInvalidator = getDrawInvalidator();
 
-	if ( NULL != mChild && mChild->mNodeDrawInvalidator != mNodeDrawInvalidator ) {
+	if ( NULL != mChild && ( mChild->mNodeDrawInvalidator != mNodeDrawInvalidator || force ) ) {
 		Node * ChildLoop = mChild;
 
 		while ( NULL != ChildLoop ) {
