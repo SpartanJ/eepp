@@ -21,7 +21,7 @@ class EE_API UISkinState {
 
 		static UISkinState * New( UISkin * skin );
 
-		UISkinState( UISkin * Skin );
+		explicit UISkinState( UISkin * Skin );
 
 		~UISkinState();
 

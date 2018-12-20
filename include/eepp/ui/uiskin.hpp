@@ -12,7 +12,6 @@ class EE_API UISkin {
 	public:
 		enum UISkinType {
 			SkinSimple,
-			SkinComplex,
 			SkinTypeCount
 		};
 

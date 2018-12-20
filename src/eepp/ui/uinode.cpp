@@ -2,8 +2,6 @@
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uiwindow.hpp>
 #include <eepp/ui/uiskinstate.hpp>
-#include <eepp/ui/uiskinsimple.hpp>
-#include <eepp/ui/uiskincomplex.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/textureregion.hpp>

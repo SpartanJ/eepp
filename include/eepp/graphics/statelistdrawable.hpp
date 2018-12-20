@@ -8,6 +8,8 @@ namespace EE { namespace Graphics {
 
 class EE_API StateListDrawable : StatefulDrawable {
 	public:
+		static StateListDrawable * New();
+
 		StateListDrawable();
 
 		virtual ~StateListDrawable();

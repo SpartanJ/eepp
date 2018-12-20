@@ -14,7 +14,7 @@ class EE_API UISkinSimple : public UISkin {
 	public:
 		static UISkinSimple * New( const std::string& name );
 
-		UISkinSimple( const std::string& name );
+		explicit UISkinSimple( const std::string& name );
 
 		virtual ~UISkinSimple();
 

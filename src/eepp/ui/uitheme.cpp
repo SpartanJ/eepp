@@ -1,6 +1,5 @@
 #include <eepp/ui/uitheme.hpp>
 #include <eepp/ui/uiskinsimple.hpp>
-#include <eepp/ui/uiskincomplex.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/drawable.hpp>
@@ -17,21 +16,6 @@ namespace EE { namespace UI {
 static std::string elemNameFromSkinSimple( const std::vector<std::string>& nameParts ) {
 	std::string str;
 	int lPart = (int)nameParts.size() - 1;
-
-	for ( int i = 0; i < lPart; i++ ) {
-		str += nameParts[i];
-
-		if ( i != lPart - 1 ) {
-			str += "_";
-		}
-	}
-
-	return str;
-}
-
-static std::string elemNameFromSkinComplex( const std::vector<std::string>& nameParts ) {
-	std::string str;
-	int lPart = (int)nameParts.size() - 2;
 
 	for ( int i = 0; i < lPart; i++ ) {
 		str += nameParts[i];
@@ -63,7 +47,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 	std::list<TextureRegion*>& resources = TextureAtlas->getResources();
 	std::list<TextureRegion*>::iterator it;
 	std::string sAbbr( tTheme->getAbbr() + "_" );
-	std::map<std::string, bool> elemFound;
+	std::vector<std::string> elemFound;
 
 	for ( it = resources.begin(); it != resources.end(); ++it ) {
 		TextureRegion* TextureRegion = *it;
@@ -96,7 +80,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 					String::fromString<int>( b, srcRect[3] );
 				}
 
-				elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
+				elemFound.push_back( elemNameFromSkinSimple( nameParts ) );
 
 				NinePatchManager::instance()->add( NinePatch::New( TextureRegion, l, t, r, b, realName ) );
 			} else {
@@ -104,23 +88,17 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 
 				if ( nameParts.size() >= 3 ) {
 					int lPart = nameParts.size() - 1;
-					int llPart = nameParts.size() - 2;
 
 					if ( UISkin::isStateName( nameParts[ lPart ] ) ) {
-						elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
-					} else if ( UISkin::isStateName( nameParts[ llPart ] ) && UISkinComplex::isSideSuffix( nameParts[ lPart ] ) ) {
-						elemFound[ elemNameFromSkinComplex( nameParts ) ] = true;
+						elemFound.push_back( elemNameFromSkinSimple( nameParts ) );
 					}
 				}
 			}
 		}
 	}
 
-	for ( std::map<std::string, bool>::iterator it = elemFound.begin(); it != elemFound.end(); ++it ) {
-		if ( it->second )
-			tTheme->add( UISkinComplex::New( it->first ) );
-		else
-			tTheme->add( UISkinSimple::New( it->first ) );
+	for ( auto it = elemFound.begin(); it != elemFound.end(); ++it ) {
+		tTheme->add( UISkinSimple::New( *it ) );
 	}
 
 	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from TextureAtlas )", TE.getElapsed().asMilliseconds() );
@@ -146,7 +124,7 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 	std::vector<std::string>::iterator it;
 	std::string sAbbr( tTheme->getAbbr() + "_" );
 	std::string sAbbrIcon( tTheme->getAbbr() + "_icon_" );
-	std::map<std::string, bool> elemFound;
+	std::vector<std::string> elemFound;
 
 	for ( it = resources.begin(); it != resources.end(); ++it ) {
 		std::string fpath( RPath + (*it) );
@@ -181,7 +159,7 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 						String::fromString<int>( b, srcRect[3] );
 					}
 
-					elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
+					elemFound.push_back( elemNameFromSkinSimple( nameParts ) );
 
 					NinePatchManager::instance()->add( NinePatch::New( TextureFactory::instance()->loadFromFile( fpath ), l, t, r, b, pixelDensity, realName ) );
 				} else {
@@ -189,14 +167,9 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 
 					if ( nameParts.size() >= 3 ) {
 						int lPart = nameParts.size() - 1;
-						int llPart = nameParts.size() - 2;
 
 						if ( UISkin::isStateName( nameParts[ lPart ] ) ) {
-							elemFound[ elemNameFromSkinSimple( nameParts ) ] = false;
-
-							tSG->add( TextureRegion::New( TextureFactory::instance()->loadFromFile( fpath ), name ) );
-						} else if ( UISkin::isStateName( nameParts[ llPart ] ) && UISkinComplex::isSideSuffix( nameParts[ lPart ] ) ) {
-							elemFound[ elemNameFromSkinComplex( nameParts ) ] = true;
+							elemFound.push_back( elemNameFromSkinSimple( nameParts ) );
 
 							tSG->add( TextureRegion::New( TextureFactory::instance()->loadFromFile( fpath ), name ) );
 						}
@@ -211,11 +184,8 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 	else
 		eeSAFE_DELETE( tSG );
 
-	for ( std::map<std::string, bool>::iterator it = elemFound.begin(); it != elemFound.end(); ++it ) {
-		if ( it->second )
-			tTheme->add( UISkinComplex::New( it->first ) );
-		else
-			tTheme->add( UISkinSimple::New( it->first ) );
+	for ( auto it = elemFound.begin(); it != elemFound.end(); ++it ) {
+		tTheme->add( UISkinSimple::New( *it ) );
 	}
 
 	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from path )", TE.getElapsed().asMilliseconds() );

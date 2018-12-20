@@ -3,6 +3,10 @@
 
 namespace EE { namespace Graphics {
 
+StateListDrawable *StateListDrawable::New() {
+	return eeNew( StateListDrawable, ( ) );
+}
+
 StateListDrawable::StateListDrawable() :
 	StatefulDrawable( STATELIST ),
 	mDrawableOwner( false ),
