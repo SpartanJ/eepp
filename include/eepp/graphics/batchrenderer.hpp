@@ -28,6 +28,10 @@ struct eeVertex {
 /** @brief A batch rendering class. */
 class EE_API BatchRenderer {
 	public:
+		static BatchRenderer * New();
+
+		static BatchRenderer * New( const unsigned int& Prealloc );
+
 		BatchRenderer();
 
 		virtual ~BatchRenderer();

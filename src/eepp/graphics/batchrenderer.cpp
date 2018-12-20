@@ -6,6 +6,14 @@
 
 namespace EE { namespace Graphics {
 
+BatchRenderer * BatchRenderer::New() {
+	return eeNew( BatchRenderer, ( ) );
+}
+
+BatchRenderer * BatchRenderer::New( const unsigned int& Prealloc ) {
+	return eeNew( BatchRenderer, ( Prealloc ) );
+}
+
 BatchRenderer::BatchRenderer() :
 	mVertex( NULL ),
 	mVertexSize( 0 ),
