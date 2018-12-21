@@ -362,7 +362,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 			   ->setParent( mSGCont )->setSize( Width, Width )
 			   ->setPosition( 0, mTextureRegionList->getPosition().y + mTextureRegionList->getSize().getHeight() + 4 );
 
-	mGfxPreview->setBorderEnabled( true )->setColor( Color( 0, 0, 0, 200 ) );
+	mGfxPreview->setBorderColor( Color( 0, 0, 0, 200 ) );
 
 	mDICont = UIWidget::New();
 	mDICont->setParent( mTextureRegionCont )->setPosition( TAB_CONT_X_DIST, mChkDI->getPosition().y + mChkDI->getSize().getHeight() + 8 );

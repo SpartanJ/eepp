@@ -643,14 +643,14 @@ void EETest::createNewUI() {
 	UIRadioButton * ctrl = UIRadioButton::New();
 	ctrl->setLayoutSizeRules( FIXED, FIXED )->setPosition( 50, 100 )->setSize( 200, 32 )->setParent( container );
 	ctrl->setBackgroundColor( 0x33333333 );
-	ctrl->setBorderEnabled( true )->setColor( 0x66666666 );
+	ctrl->setBorderColor( 0x66666666 );
 	ctrl->setText( "Happy RadioButon :)" );
 	ctrl->setFontColor( Color::Black );
 
 	UICheckBox * cbox = UICheckBox::New();
 	cbox->setLayoutSizeRules( FIXED, FIXED )->setPosition( 50, 164 )->setSize( 200, 32 )->setParent( container );
 	cbox->setBackgroundColor( 0x33333333 );
-	cbox->setBorderEnabled( true )->setColor( 0x66666666 );
+	cbox->setBorderColor( 0x66666666 );
 	cbox->setText( "Happy CheckBox :)" );
 	cbox->setFontColor( Color::Black );
 

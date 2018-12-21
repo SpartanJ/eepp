@@ -3,7 +3,6 @@
 
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uihelper.hpp>
-#include <eepp/ui/uiborder.hpp>
 #include <eepp/ui/uistate.hpp>
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/scene/node.hpp>
@@ -112,9 +111,13 @@ class EE_API UINode : public Node {
 
 		UINode * setForegroundCorners( const unsigned int& corners );
 
-		UIBorder * setBorderEnabled( bool enabled );
+		UISkin * setBorderEnabled( bool enabled );
+
+		UINode * setBorderColor( const Uint32 & state, const Color& color );
 
 		UINode * setBorderColor( const Color& color );
+
+		UINode * setBorderWidth( const Uint32 & state, const unsigned int& width );
 
 		UINode * setBorderWidth( const unsigned int& width );
 
@@ -130,7 +133,7 @@ class EE_API UINode : public Node {
 
 		UISkin * getForeground();
 
-		UIBorder * getBorder();
+		UISkin * getBorder();
 
 		void setThemeByName( const std::string& Theme );
 
@@ -186,7 +189,7 @@ class EE_API UINode : public Node {
 		UIState *		mSkinState;
 		UIState *		mBackgroundState;
 		UIState *		mForegroundState;
-		UIBorder *		mBorder;
+		UIState *		mBorderState;
 		Vector2f		mDragPoint;
 		Uint32			mDragButton;
 
