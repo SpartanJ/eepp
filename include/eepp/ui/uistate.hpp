@@ -10,13 +10,23 @@ class UISkin;
 class EE_API UIState {
 	public:
 		enum UIStates {
-			StateNormal		= 0,
-			StateFocus		= 1,
-			StateSelected	= 2,
-			StateHover		= 3,
-			StatePressed	= 4,
-			StateDisabled	= 5,
-			StateCount		= 6
+			StateNormal     = 0,
+			StateFocus      = 1,
+			StateSelected   = 2,
+			StateHover      = 3,
+			StatePressed    = 4,
+			StateDisabled   = 5,
+			StateCount      = 6
+		};
+
+		enum UIStatesFlags {
+			StateFlagNormal     = 1 << StateNormal,
+			StateFlagFocus	    = 1 << StateFocus,
+			StateFlagSelected   = 1 << StateSelected,
+			StateFlagHover      = 1 << StateHover,
+			StateFlagPressed    = 1 << StatePressed,
+			StateFlagDisabled   = 1 << StateDisabled,
+			StateFlagCount      = StateCount
 		};
 
 		static const char * getSkinStateName( const Uint32& State );

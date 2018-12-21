@@ -105,18 +105,18 @@ void UISlider::adjustChilds() {
 
 	if ( NULL != tSkin ) {
 		if ( mPageStep == 0 ) {
-			mSlider->setSize( tSkin->getSize() );
+			mSlider->setSize( tSkin->getSize( UIState::StateFlagNormal ) );
 		} else {
 			Float percent = ( mPageStep / ( mMaxValue - mMinValue ) );
 
 			if ( UI_HORIZONTAL == mOrientation ) {
-				Float size = eemax( ( (Float)mDpSize.getWidth() * percent ), tSkin->getSize().getWidth() );
+				Float size = eemax( ( (Float)mDpSize.getWidth() * percent ), tSkin->getSize( UIState::StateFlagNormal ).getWidth() );
 
-				mSlider->setSize( size, tSkin->getSize().getHeight() );
+				mSlider->setSize( size, tSkin->getSize( UIState::StateFlagNormal ).getHeight() );
 			} else {
-				Float size = eemax( ( (Float)mDpSize.getHeight() * percent ), tSkin->getSize().getHeight() );
+				Float size = eemax( ( (Float)mDpSize.getHeight() * percent ), tSkin->getSize( UIState::StateFlagNormal ).getHeight() );
 
-				mSlider->setSize( tSkin->getSize().getWidth(), size );
+				mSlider->setSize( tSkin->getSize( UIState::StateFlagNormal ).getWidth(), size );
 			}
 		}
 
@@ -136,7 +136,7 @@ void UISlider::adjustChilds() {
 			if ( mStyleConfig.ExpandBackground )
 				Height = mDpSize.getHeight() - mPadding.Top - mPadding.Bottom;
 			else
-				Height = tSkin->getSize().getHeight();
+				Height = tSkin->getSize( UIState::StateFlagNormal ).getHeight();
 
 			if ( mStyleConfig.AllowHalfSliderOut )
 				mBackSlider->setSize( Sizef( mDpSize.getWidth() - mSlider->getSize().getWidth() - mPadding.Left - mPadding.Right, Height ) );
@@ -148,7 +148,7 @@ void UISlider::adjustChilds() {
 			if ( mStyleConfig.ExpandBackground )
 				Width = mDpSize.getWidth() - mPadding.Left - mPadding.Right;
 			else
-				Width = tSkin->getSize().getWidth();
+				Width = tSkin->getSize( UIState::StateFlagNormal ).getWidth();
 
 			if ( mStyleConfig.AllowHalfSliderOut )
 				mBackSlider->setSize( Sizef( Width, mDpSize.getHeight() - mSlider->getSize().getHeight() - mPadding.Top - mPadding.Bottom ) );

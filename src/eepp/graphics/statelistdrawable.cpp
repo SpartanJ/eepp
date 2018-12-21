@@ -3,12 +3,20 @@
 
 namespace EE { namespace Graphics {
 
-StateListDrawable *StateListDrawable::New() {
-	return eeNew( StateListDrawable, ( ) );
+StateListDrawable * StateListDrawable::New( const std::string& name) {
+	return eeNew( StateListDrawable, ( name ) );
 }
 
-StateListDrawable::StateListDrawable() :
-	StatefulDrawable( STATELIST ),
+StateListDrawable::StateListDrawable( Type type, const std::string& name ) :
+	StatefulDrawable( type, name ),
+	mDrawableOwner( false ),
+	mCurrentState( 0 ),
+	mCurrentDrawable( NULL )
+{
+}
+
+StateListDrawable::StateListDrawable( const std::string& name ) :
+	StatefulDrawable( STATELIST, name ),
 	mDrawableOwner( false ),
 	mCurrentState( 0 ),
 	mCurrentDrawable( NULL )
@@ -32,6 +40,16 @@ void StateListDrawable::clearDrawables() {
 
 Sizef StateListDrawable::getSize() {
 	return NULL != mCurrentDrawable ? mCurrentDrawable->getSize() : Sizef();
+}
+
+Sizef StateListDrawable::getSize( const Uint32& state ) {
+	auto it = mDrawables.find( state );
+
+	if ( it != mDrawables.end() ) {
+		return it->second->getSize();
+	}
+
+	return Sizef();
 }
 
 void StateListDrawable::draw() {
@@ -74,10 +92,12 @@ const Uint32& StateListDrawable::getState() const {
 }
 
 StateListDrawable * StateListDrawable::setStateDrawable(Uint32 state, Drawable * drawable) {
-	mDrawables[ state ] = drawable;
+	if ( NULL != drawable ) {
+		mDrawables[ state ] = drawable;
 
-	if ( state == mCurrentState )
-		setState( state );
+		if ( state == mCurrentState )
+			setState( state );
+	}
 
 	return this;
 }

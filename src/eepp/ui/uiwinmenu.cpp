@@ -51,8 +51,8 @@ void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	Button->setVisible( true );
 	Button->setEnabled( true );
 
-	if ( NULL != mSkinState && NULL != mSkinState->getSkin() )
-		Button->setThemeSkin( mSkinState->getSkin()->getTheme(), "winmenubutton" );
+	if ( NULL != mTheme )
+		Button->setThemeSkin( mTheme, "winmenubutton" );
 
 	Menu->setVisible( false );
 	Menu->setEnabled( false );
@@ -142,7 +142,7 @@ void UIWinMenu::refreshButtons() {
 	UISkin * skin = getSkin();
 
 	if ( NULL != skin ) {
-		h = skin->getSize().getHeight();
+		h = skin->getSize( UIState::StateFlagNormal ).getHeight();
 
 		if ( mButtons.begin() != mButtons.end() ) {
 			UISelectButton * tbut = mButtons.begin()->first;
@@ -150,7 +150,7 @@ void UIWinMenu::refreshButtons() {
 			skin = tbut->getSkin();
 
 			if ( NULL != skin ) {
-				th = skin->getSize( 1 << UIState::StateSelected ).getHeight();
+				th = skin->getSize( UIState::StateFlagSelected ).getHeight();
 
 				switch ( VAlignGet( getFlags() ) ) {
 					case UI_VALIGN_CENTER:

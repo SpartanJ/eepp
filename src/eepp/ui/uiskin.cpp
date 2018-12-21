@@ -10,47 +10,30 @@ UISkin * UISkin::New( const std::string& name ) {
 }
 
 UISkin::UISkin( const std::string& name ) :
-	mName( name ),
-	mNameHash( String::hash( mName ) ),
-	mTheme(NULL)
-{
-}
+	StateListDrawable( SKIN, name )
+{}
 
 UISkin::~UISkin() {
 }
 
 Sizef UISkin::getSize() {
-	return getSize( 1 << UIState::StateNormal );
+	return getSize( UIState::StateFlagNormal );
 }
 
-const std::string& UISkin::getName() const {
-	return mName;
-}
-
-void UISkin::setName( const std::string& name ) {
-	mName = name;
-	mNameHash = String::hash( mName );
-}
-
-const Uint32& UISkin::getId() const {
-	return mNameHash;
-}
-
-UITheme * UISkin::getTheme() const {
-	return mTheme;
-}
-
-void UISkin::setTheme( UITheme * theme ) {
-	mTheme = theme;
-}
-
-Rectf UISkin::getBorderSize() {
-	return getBorderSize( 1 << UIState::StateNormal );
+Sizef UISkin::getSize( const Uint32 & state ) {
+	return StateListDrawable::getSize( state );
 }
 
 UISkin * UISkin::clone( const std::string& NewName ) {
 	UISkin * SkinS = UISkin::New( NewName );
 
+	if ( !mDrawableOwner ) {
+		SkinS->mColor = mColor;
+		SkinS->mPosition = mPosition;
+		SkinS->mDrawables = mDrawables;
+		SkinS->mCurrentState = mCurrentState;
+		SkinS->mCurrentDrawable = mCurrentDrawable;
+	}
 
 	return SkinS;
 }
@@ -59,16 +42,12 @@ UISkin * UISkin::clone() {
 	return clone( mName );
 }
 
-Sizef UISkin::getSize( const Uint32 & state ) {
-	if ( NULL != mDrawables[ state ] ) {
-		return mDrawables[ state ]->getSize();
-	}
-
-	return Sizef();
+Rectf UISkin::getBorderSize() {
+	return getBorderSize( UIState::StateFlagNormal );
 }
 
 Rectf UISkin::getBorderSize( const Uint32 & state ) {
-	if ( NULL != mDrawables[ state ] && mDrawables[ state ]->getDrawableType() == EE::Graphics::Drawable::Type::NINEPATCH ) {
+	if ( hasDrawableState( state ) && mDrawables[ state ]->getDrawableType() == EE::Graphics::Drawable::Type::NINEPATCH ) {
 		NinePatch * ninePatch( static_cast<NinePatch*>( mDrawables[ state ] ) );
 		TextureRegion * stl( ninePatch->getTextureRegion( NinePatch::Left ) );
 		TextureRegion * str( ninePatch->getTextureRegion( NinePatch::Right ) );

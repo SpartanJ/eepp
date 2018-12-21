@@ -174,8 +174,8 @@ void UIPushButton::setTheme( UITheme * Theme ) {
 }
 
 void UIPushButton::onThemeLoaded() {
-	if ( NULL != mTextBox && NULL == mTextBox->getFont() && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() )
-		mTextBox->setFont( mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() );
+	if ( NULL != mTheme )
+		mTextBox->setFont( mTheme->getFontStyleConfig().getFont() );
 
 	if ( mNodeFlags & NODE_FLAG_FREE_USE ) {
 		Rectf RMargin = makePadding( true, false, false, false, true );

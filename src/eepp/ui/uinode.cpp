@@ -595,7 +595,7 @@ UINode * UINode::setSkin( UISkin * skin ) {
 		if ( NULL != mSkinState && mSkinState->getSkin() == skin )
 			return this;
 
-		Uint32 InitialState = 1 << UIState::StateNormal;
+		Uint32 InitialState = UIState::StateFlagNormal;
 
 		if ( NULL != mSkinState ) {
 			InitialState = mSkinState->getState();
@@ -629,7 +629,7 @@ void UINode::onStateChange() {
 void UINode::onEnabledChange() {
 	if ( !mEnabled ) {
 		pushState( UIState::StateDisabled );
-	} else if ( NULL != mSkinState && ( mSkinState->getState() & ( 1 << UIState::StateDisabled ) ) ) {
+	} else if ( NULL != mSkinState && ( mSkinState->getState() & UIState::StateFlagDisabled ) ) {
 		popState( UIState::StateDisabled );
 	}
 
@@ -704,7 +704,7 @@ Rectf UINode::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBot
 
 	if ( mFlags & UI_AUTO_PADDING || SkipFlags ) {
 		if ( NULL != mSkinState && NULL != mSkinState->getSkin() ) {
-			Rectf rPadding = mSkinState->getSkin()->getBorderSize( 1 << UIState::StateNormal );
+			Rectf rPadding = mSkinState->getSkin()->getBorderSize();
 
 			if ( PadLeft ) {
 				tPadding.Left = rPadding.Left;
@@ -737,7 +737,7 @@ Sizef UINode::getSkinSize( UISkin * Skin, const Uint32& State ) {
 
 Sizef UINode::getSkinSize() {
 	if ( NULL != getSkin() ) {
-		return getSkin()->getSize();
+		return getSkin()->getSize( UIState::StateFlagNormal );
 	}
 
 	return Sizef::Zero;

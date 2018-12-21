@@ -24,6 +24,7 @@ class EE_API Drawable {
 			GROUP,
 			NINEPATCH,
 			STATELIST,
+			SKIN,
 			CUSTOM
 		};
 

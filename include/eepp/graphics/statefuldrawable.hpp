@@ -1,13 +1,15 @@
 #ifndef EE_GRAPHICS_STATEFULDRAWABLE_HPP
 #define EE_GRAPHICS_STATEFULDRAWABLE_HPP
 
-#include <eepp/graphics/drawable.hpp>
+#include <eepp/graphics/drawableresource.hpp>
 
 namespace EE { namespace Graphics {
 
-class EE_API StatefulDrawable : public Drawable {
+class EE_API StatefulDrawable : public DrawableResource {
 	public:
-		StatefulDrawable( Type drawableType ) : Drawable( drawableType ) {}
+		StatefulDrawable( Type drawableType ) : DrawableResource( drawableType ) {}
+
+		StatefulDrawable( Type drawableType, const std::string& name ) : DrawableResource( drawableType, name ) {}
 
 		virtual StatefulDrawable * setState( Uint32 state ) = 0;
 

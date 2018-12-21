@@ -8,13 +8,15 @@ namespace EE { namespace Graphics {
 
 class EE_API StateListDrawable : public StatefulDrawable {
 	public:
-		static StateListDrawable * New();
+		static StateListDrawable * New( const std::string& name = "" );
 
-		StateListDrawable();
+		explicit StateListDrawable( const std::string& name = "" );
 
 		virtual ~StateListDrawable();
 
 		virtual Sizef getSize();
+
+		virtual Sizef getSize( const Uint32& state );
 
 		virtual void draw();
 
@@ -42,6 +44,9 @@ class EE_API StateListDrawable : public StatefulDrawable {
 		Uint32 mCurrentState;
 		Drawable * mCurrentDrawable;
 		std::map<Uint32,Drawable*> mDrawables;
+
+		StateListDrawable( Type type, const std::string& name = "" );
+
 };
 
 }}

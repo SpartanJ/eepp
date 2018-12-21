@@ -21,7 +21,7 @@ class EE_API DrawableResource : public Drawable
 		std::string mName;
 		Uint32		mId;
 
-		DrawableResource( Type drawableType );
+		explicit DrawableResource( Type drawableType );
 
 		DrawableResource( Type drawableType, const std::string& name );
 

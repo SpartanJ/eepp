@@ -61,20 +61,18 @@ bool UIPopUpMenu::show() {
 
 bool UIPopUpMenu::hide() {
 	if ( isVisible() ) {
-		if ( !isActionManagerActive() ) {
-			if ( NULL != mItemSelected )
-				mItemSelected->popState( UIState::StateSelected );
+		if ( NULL != mItemSelected )
+			mItemSelected->popState( UIState::StateSelected );
 
-			mItemSelected		= NULL;
-			mItemSelectedIndex	= eeINDEX_NOT_FOUND;
+		mItemSelected		= NULL;
+		mItemSelectedIndex	= eeINDEX_NOT_FOUND;
 
-			if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-				runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ),
-												   Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
-			} else {
-				setEnabled( false );
-				setVisible( false );
-			}
+		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
+			runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ),
+											   Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
+		} else {
+			setEnabled( false );
+			setVisible( false );
 		}
 
 		return true;

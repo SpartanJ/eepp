@@ -56,13 +56,13 @@ void UIProgressBar::draw() {
 	Float Height = (Float)mSize.getHeight();
 
 	if ( !mStyleConfig.VerticalExpand )
-		Height = (Float)mFillerSkin->getSize().getHeight();
+		Height = (Float)mFillerSkin->getSize( UIState::StateFlagNormal ).getHeight();
 
 	if ( Height > mSize.getHeight() )
 		Height = mSize.getHeight();
 
 	Sizef fSize( ( ( mSize.getWidth() - fillerPadding.Left - fillerPadding.Right ) * mProgress ) / mTotalSteps, Height - fillerPadding.Top - fillerPadding.Bottom );
-	Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize() ) );
+	Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize( UIState::StateFlagNormal ) ) );
 	Sizei numTiles( (Int32)eeceil( (Float)fSize.getWidth() / (Float)rSize.getWidth() + 2 ),
 				(Int32)eeceil( (Float)fSize.getHeight() / (Float)rSize.getHeight() ) + 2 );
 
@@ -70,7 +70,7 @@ void UIProgressBar::draw() {
 
 	for ( int y = -1; y < numTiles.y; y++ ) {
 		for ( int x = -1; x < numTiles.x; x++ ) {
-			mFillerSkin->setState( 1 << UIState::StateNormal );
+			mFillerSkin->setState( UIState::StateFlagNormal );
 			mFillerSkin->draw( Vector2f( (Int32)mOffset.x + mScreenPosi.x + fillerPadding.Left + x * rSize.getWidth(), mOffset.y + mScreenPosi.y + fillerPadding.Top + y * rSize.getHeight() ), Sizef( rSize.getWidth(), rSize.getHeight() ) );
 		}
 	}
@@ -88,7 +88,7 @@ void UIProgressBar::update( const Time& time ) {
 
 	mOffset += mStyleConfig.MovementSpeed * (Float)( time.asSeconds() );
 
-	Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize() ) );
+	Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize( UIState::StateFlagNormal ) ) );
 
 	if ( mOffset.x > rSize.getWidth() || mOffset.x < -rSize.getWidth() )
 		mOffset.x = 0.f;

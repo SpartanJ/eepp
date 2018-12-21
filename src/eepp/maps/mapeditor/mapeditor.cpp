@@ -495,11 +495,11 @@ void MapEditor::createUIMap() {
 	Int32 ScrollV = 16;
 
 	if ( NULL != HScrollSkin ) {
-		ScrollH = HScrollSkin->getSize().getHeight();
+		ScrollH = HScrollSkin->getSize( UIState::StateFlagNormal ).getHeight();
 	}
 
 	if ( NULL != VScrollSkin ) {
-		ScrollV = VScrollSkin->getSize().getHeight();
+		ScrollV = VScrollSkin->getSize( UIState::StateFlagNormal ).getHeight();
 	}
 
 	mUIMap = UIMap::New( mTheme );

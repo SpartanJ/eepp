@@ -263,8 +263,6 @@ const std::string& UITheme::getAbbr() const {
 }
 
 UISkin * UITheme::add( UISkin * Resource ) {
-	Resource->setTheme( this );
-
 	return ResourceManager<UISkin>::add( Resource );
 }
 
