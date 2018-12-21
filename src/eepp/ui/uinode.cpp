@@ -5,6 +5,7 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/textureregion.hpp>
+#include <eepp/graphics/rectangledrawable.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/font.hpp>
@@ -29,8 +30,8 @@ UINode::UINode() :
 	Node(),
 	mFlags( UI_CONTROL_DEFAULT_FLAGS ),
 	mSkinState( NULL ),
-	mBackground( NULL ),
-	mForeground( NULL ),
+	mBackgroundState( NULL ),
+	mForegroundState( NULL ),
 	mBorder( NULL ),
 	mDragButton( EE_BUTTON_LMASK )
 {
@@ -43,7 +44,14 @@ UINode::UINode() :
 UINode::~UINode() {
 	removeSkin();
 
-	eeSAFE_DELETE( mBackground );
+	if ( NULL != mBackgroundState && NULL != mBackgroundState->getSkin() )
+		eeDelete( mBackgroundState->getSkin() );
+
+	if ( NULL != mForegroundState && NULL != mForegroundState->getSkin() )
+		eeDelete( mForegroundState->getSkin() );
+
+	eeSAFE_DELETE( mBackgroundState );
+	eeSAFE_DELETE( mForegroundState );
 	eeSAFE_DELETE( mBorder );
 }
 
@@ -364,68 +372,138 @@ UINode * UINode::setGravity( Uint32 hvalign ) {
 	return this;
 }
 
-UIBackground * UINode::setBackgroundFillEnabled( bool enabled ) {
+UISkin * UINode::setBackgroundFillEnabled( bool enabled ) {
 	writeFlag( UI_FILL_BACKGROUND, enabled ? 1 : 0 );
 
-	if ( enabled && NULL == mBackground ) {
-		mBackground = UIBackground::New( this );
+	if ( enabled && NULL == mBackgroundState ) {
+		getBackground();
 	}
 
 	invalidateDraw();
 
-	return mBackground;
+	return mBackgroundState->getSkin();
+}
+
+UINode * UINode::setBackgroundDrawable( const Uint32& state, Drawable * drawable, bool ownIt ) {
+	setBackgroundFillEnabled( true )->setStateDrawable( state, drawable, ownIt );
+	return this;
 }
 
 UINode * UINode::setBackgroundDrawable( Drawable * drawable, bool ownIt ) {
-	setBackgroundFillEnabled( true )->setDrawable( drawable, ownIt );
+	return setBackgroundDrawable( UIState::StateFlagNormal, drawable, ownIt );
+}
+
+UINode * UINode::setBackgroundColor( const Uint32 & state, const Color& color ) {
+	UISkin * background = setBackgroundFillEnabled( true );
+
+	Drawable * stateDrawable = background->getStateDrawable( state );
+
+	if ( NULL == stateDrawable ) {
+		RectangleDrawable * colorDrawable = RectangleDrawable::New();
+
+		colorDrawable->setColor( color );
+
+		setBackgroundDrawable( state, colorDrawable, true );
+	} else {
+		stateDrawable->setColor( color );
+	}
+
 	return this;
 }
 
 UINode * UINode::setBackgroundColor( const Color& color ) {
-	setBackgroundFillEnabled( true )->setColor( color );
+	return setBackgroundColor( UIState::StateFlagNormal, color );
+}
+
+UINode * UINode::setBackgroundCorners( const Uint32 & state, const unsigned int& corners ) {
+	UISkin * background = setBackgroundFillEnabled( true );
+
+	Drawable * stateDrawable = background->getStateDrawable( state );
+
+	if ( NULL == stateDrawable ) {
+		setBackgroundColor( state, Color::Black );
+
+		stateDrawable = background->getStateDrawable( state );
+	}
+
+	if ( stateDrawable->getDrawableType() == Drawable::RECTANGLE ) {
+		RectangleDrawable * rectangleDrawable = static_cast<RectangleDrawable*>( stateDrawable );
+
+		rectangleDrawable->setCorners( corners );
+	}
+
 	return this;
 }
 
 UINode * UINode::setBackgroundCorners( const unsigned int& corners ) {
-	setBackgroundFillEnabled( true )->setCorners( corners );
-	return this;
+	return setBackgroundCorners( UIState::StateFlagNormal, corners );
 }
 
-UINode * UINode::setBackgroundBlendMode( const BlendMode& blendMode ) {
-	setBackgroundFillEnabled( true )->setBlendMode( blendMode );
-	return this;
-}
-
-UIBackground * UINode::setForegroundFillEnabled( bool enabled ) {
+UISkin * UINode::setForegroundFillEnabled( bool enabled ) {
 	writeFlag( UI_FILL_FOREGROUND, enabled ? 1 : 0 );
 
-	if ( enabled && NULL == mForeground ) {
-		mForeground = UIBackground::New( this );
+	if ( enabled && NULL == mForegroundState ) {
+		getForeground();
 	}
 
 	invalidateDraw();
 
-	return mForeground;
+	return mForegroundState->getSkin();
+}
+
+UINode * UINode::setForegroundDrawable( const Uint32 & state, Drawable * drawable, bool ownIt ) {
+	setForegroundFillEnabled( true )->setStateDrawable( state, drawable, ownIt );
+	return this;
 }
 
 UINode * UINode::setForegroundDrawable( Drawable * drawable, bool ownIt ) {
-	setForegroundFillEnabled( true )->setDrawable( drawable, ownIt );
+	return setForegroundDrawable( UIState::StateFlagNormal, drawable, ownIt );
+}
+
+UINode * UINode::setForegroundColor( const Uint32 & state, const Color& color ) {
+	UISkin * foreground = setForegroundFillEnabled( true );
+
+	Drawable * stateDrawable = foreground->getStateDrawable( state );
+
+	if ( NULL == stateDrawable ) {
+		RectangleDrawable * colorDrawable = RectangleDrawable::New();
+
+		colorDrawable->setColor( color );
+
+		setForegroundDrawable( state, colorDrawable, true );
+	} else {
+		stateDrawable->setColor( color );
+	}
+
 	return this;
 }
 
 UINode * UINode::setForegroundColor( const Color& color ) {
-	setForegroundFillEnabled( true )->setColor( color );
+	return setForegroundColor( UIState::StateFlagNormal, color );
+}
+
+UINode * UINode::setForegroundCorners( const Uint32& state, const unsigned int& corners ) {
+	UISkin * foreground = setForegroundFillEnabled( true );
+
+	Drawable * stateDrawable = foreground->getStateDrawable( state );
+
+	if ( NULL == stateDrawable ) {
+		setForegroundColor( state, Color::Black );
+
+		stateDrawable = foreground->getStateDrawable( state );
+	}
+
+	if ( stateDrawable->getDrawableType() == Drawable::RECTANGLE ) {
+		RectangleDrawable * rectangleDrawable = static_cast<RectangleDrawable*>( stateDrawable );
+
+		rectangleDrawable->setCorners( corners );
+	}
+
 	return this;
 }
 
 UINode * UINode::setForegroundCorners( const unsigned int& corners ) {
-	setForegroundFillEnabled( true )->setCorners( corners );
-	return this;
-}
-
-UINode * UINode::setForegroundBlendMode( const BlendMode& blendMode ) {
-	setForegroundFillEnabled( true )->setBlendMode( blendMode );
-	return this;
+	return setForegroundCorners( UIState::StateFlagNormal, corners );
 }
 
 UIBorder * UINode::setBorderEnabled( bool enabled ) {
@@ -434,8 +512,8 @@ UIBorder * UINode::setBorderEnabled( bool enabled ) {
 	if ( enabled && NULL == mBorder ) {
 		mBorder = UIBorder::New( this );
 
-		if ( NULL == mBackground ) {
-			mBackground = UIBackground::New( this );
+		if ( NULL == mBackgroundState ) {
+			getBackground();
 		}
 	}
 
@@ -459,10 +537,10 @@ const Uint32& UINode::getFlags() const {
 }
 
 UINode * UINode::setFlags( const Uint32& flags ) {
-	if ( NULL == mBackground && ( flags & UI_FILL_BACKGROUND ) )
+	if ( NULL == mBackgroundState && ( flags & UI_FILL_BACKGROUND ) )
 		setBackgroundFillEnabled( true );
 
-	if ( NULL == mForeground && ( flags & UI_FILL_FOREGROUND ) )
+	if ( NULL == mForegroundState && ( flags & UI_FILL_FOREGROUND ) )
 		setForegroundFillEnabled( true );
 
 	if ( NULL == mBorder && ( flags & UI_BORDER ) )
@@ -494,20 +572,28 @@ UINode *UINode::resetFlags( Uint32 newFlags ) {
 }
 
 void UINode::drawBackground() {
-	if ( mFlags & UI_FILL_BACKGROUND ) {
-		mBackground->draw( getScreenBounds(), mAlpha );
+	if ( ( mFlags & UI_FILL_BACKGROUND ) && NULL != mBackgroundState ) {
+		mBackgroundState->draw( mScreenPosi.x, mScreenPosi.y, eefloor(mSize.getWidth()), eefloor(mSize.getHeight()), (Uint32)mAlpha );
 	}
 }
 
 void UINode::drawForeground() {
-	if ( mFlags & UI_FILL_FOREGROUND ) {
-		mForeground->draw( getScreenBounds(), mAlpha );
+	if ( ( mFlags & UI_FILL_FOREGROUND ) && NULL != mForegroundState ) {
+		mForegroundState->draw( mScreenPosi.x, mScreenPosi.y, eefloor(mSize.getWidth()), eefloor(mSize.getHeight()), (Uint32)mAlpha );
 	}
 }
 
 void UINode::drawBorder() {
 	if ( mFlags & UI_BORDER ) {
-		mBorder->draw( getScreenBounds(), mAlpha, mBackground->getCorners() );
+		if ( NULL != mBackgroundState && NULL != mBackgroundState->getSkin() ) {
+			Drawable * stateDrawable = mBackgroundState->getSkin()->getStateDrawable( mBackgroundState->getState() );
+
+			if ( NULL != stateDrawable && stateDrawable->getDrawableType() == Drawable::RECTANGLE ) {
+				RectangleDrawable * drawable = static_cast<RectangleDrawable*>( stateDrawable );
+
+				mBorder->draw( getScreenBounds(), mAlpha, drawable->getCorners() );
+			}
+		}
 	}
 }
 
@@ -540,12 +626,20 @@ void UINode::internalDraw() {
 	}
 }
 
-UIBackground * UINode::getBackground() {
-	if ( NULL == mBackground ) {
-		mBackground = UIBackground::New( this );
+UISkin * UINode::getBackground() {
+	if ( NULL == mBackgroundState ) {
+		mBackgroundState = UIState::New( UISkin::New() );
 	}
 
-	return mBackground;
+	return mBackgroundState->getSkin();
+}
+
+UISkin * UINode::getForeground() {
+	if ( NULL == mForegroundState ) {
+		mForegroundState = UIState::New( UISkin::New() );
+	}
+
+	return mForegroundState->getSkin();
 }
 
 UIBorder * UINode::getBorder() {
@@ -629,12 +723,11 @@ void UINode::onStateChange() {
 void UINode::onEnabledChange() {
 	if ( !mEnabled ) {
 		pushState( UIState::StateDisabled );
-	} else if ( NULL != mSkinState && ( mSkinState->getState() & UIState::StateFlagDisabled ) ) {
+	} else {
 		popState( UIState::StateDisabled );
 	}
 
 	Node::onEnabledChange();
-
 }
 
 void UINode::onAlignChange() {
@@ -642,26 +735,36 @@ void UINode::onAlignChange() {
 }
 
 void UINode::pushState(const Uint32& State , bool emitEvent) {
-	if ( NULL != mSkinState ) {
+	if ( NULL != mSkinState )
 		mSkinState->pushState( State );
 
-		if ( emitEvent ) {
-			onStateChange();
-		} else {
-			invalidateDraw();
-		}
+	if ( NULL != mBackgroundState )
+		mBackgroundState->pushState( State );
+
+	if ( NULL != mForegroundState )
+		mForegroundState->pushState( State );
+
+	if ( emitEvent ) {
+		onStateChange();
+	} else {
+		invalidateDraw();
 	}
 }
 
 void UINode::popState(const Uint32& State , bool emitEvent) {
-	if ( NULL != mSkinState ) {
+	if ( NULL != mSkinState )
 		mSkinState->popState( State );
 
-		if ( emitEvent ) {
-			onStateChange();
-		} else {
-			invalidateDraw();
-		}
+	if ( NULL != mBackgroundState )
+		mBackgroundState->popState( State );
+
+	if ( NULL != mForegroundState )
+		mForegroundState->popState( State );
+
+	if ( emitEvent ) {
+		onStateChange();
+	} else {
+		invalidateDraw();
 	}
 }
 

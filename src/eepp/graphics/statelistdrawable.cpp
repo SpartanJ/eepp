@@ -9,7 +9,6 @@ StateListDrawable * StateListDrawable::New( const std::string& name) {
 
 StateListDrawable::StateListDrawable( Type type, const std::string& name ) :
 	StatefulDrawable( type, name ),
-	mDrawableOwner( false ),
 	mCurrentState( 0 ),
 	mCurrentDrawable( NULL )
 {
@@ -17,7 +16,6 @@ StateListDrawable::StateListDrawable( Type type, const std::string& name ) :
 
 StateListDrawable::StateListDrawable( const std::string& name ) :
 	StatefulDrawable( STATELIST, name ),
-	mDrawableOwner( false ),
 	mCurrentState( 0 ),
 	mCurrentDrawable( NULL )
 {
@@ -28,11 +26,11 @@ StateListDrawable::~StateListDrawable() {
 }
 
 void StateListDrawable::clearDrawables() {
-	if ( mDrawableOwner ) {
-		for ( auto it = mDrawables.begin(); it != mDrawables.end(); ++it ) {
-			Drawable * drawable = it->second;
+	for ( auto it = mDrawables.begin(); it != mDrawables.end(); ++it ) {
+		Drawable * drawable = it->second;
+
+		if ( mDrawablesOwnership[ drawable ] )
 			eeSAFE_DELETE( drawable );
-		}
 	}
 
 	mDrawables.clear();
@@ -62,8 +60,18 @@ void StateListDrawable::draw( const Vector2f& position ) {
 
 void StateListDrawable::draw( const Vector2f & position, const Sizef & size ) {
 	if ( NULL != mCurrentDrawable ) {
-		mCurrentDrawable->setAlpha( getAlpha() );
-		mCurrentDrawable->draw( position, size );
+		if ( mColor.a != 255 || mCurrentDrawable->getAlpha() != 255 ) {
+			Color color = mCurrentDrawable->getColor();
+			Uint8 tempAlpha = static_cast<Uint8>( mColor.a * color.a / 255.f );
+
+			mCurrentDrawable->setAlpha( tempAlpha );
+
+			mCurrentDrawable->draw( position, size );
+
+			mCurrentDrawable->setColor( color );
+		} else {
+			mCurrentDrawable->draw( position, size );
+		}
 	}
 }
 
@@ -91,9 +99,20 @@ const Uint32& StateListDrawable::getState() const {
 	return mCurrentState;
 }
 
-StateListDrawable * StateListDrawable::setStateDrawable(Uint32 state, Drawable * drawable) {
+Drawable * StateListDrawable::getStateDrawable( const Uint32& state ) {
+	if ( hasDrawableState( state ) )
+		return mDrawables[ state ];
+
+	return NULL;
+}
+
+StateListDrawable * StateListDrawable::setStateDrawable( const Uint32 & state, Drawable * drawable, bool ownIt ) {
 	if ( NULL != drawable ) {
 		mDrawables[ state ] = drawable;
+		mDrawablesOwnership[ drawable ] = ownIt;
+
+		if ( hasDrawableStateColor( state ) )
+			drawable->setColor( mDrawableColors[ state ] );
 
 		if ( state == mCurrentState )
 			setState( state );
@@ -102,16 +121,59 @@ StateListDrawable * StateListDrawable::setStateDrawable(Uint32 state, Drawable *
 	return this;
 }
 
+Sizef StateListDrawable::getStateSize( const Uint32& state ) {
+	if ( hasDrawableState( state ) )
+		return mDrawables[ state ]->getSize();
+
+	return Sizef::Zero;
+}
+
+StateListDrawable * StateListDrawable::setStateColor( const Uint32& state, const Color & color ) {
+	mDrawableColors[ state ] = color;
+
+	if ( hasDrawableState( state ) )
+		mDrawables[ state ]->setColor( color );
+
+	return this;
+}
+
+Color StateListDrawable::getStateColor( const Uint32& state ) {
+	if ( hasDrawableStateColor( state ) )
+		return mDrawableColors[ state ];
+
+	return Color::Transparent;
+}
+
+StateListDrawable * StateListDrawable::setStateAlpha( const Uint32& state, const Uint8& alpha ) {
+	if ( hasDrawableState( state ) ) {
+		mDrawables[ state ]->setAlpha( alpha );
+	}
+
+	return this;
+}
+
+Uint8 StateListDrawable::getStateAlpha( const Uint32& state ) {
+	if ( hasDrawableState( state ) )
+		return mDrawables[ state ]->getAlpha();
+
+	return 255;
+}
+
 bool StateListDrawable::hasDrawableState(Uint32 state ) {
 	return mDrawables.find( state ) != mDrawables.end();
 }
 
-void StateListDrawable::setIsDrawableOwner(const bool & isOwner) {
-	mDrawableOwner = isOwner;
+bool StateListDrawable::hasDrawableStateColor(Uint32 state ) {
+	return mDrawableColors.find( state ) != mDrawableColors.end();
 }
 
-const bool &StateListDrawable::isDrawableOwner() const {
-	return mDrawableOwner;
+void StateListDrawable::onColorFilterChange() {
+	for ( auto it = mDrawables.begin(); it != mDrawables.end(); ++it ) {
+		Drawable * drawable = it->second;
+
+		drawable->setColor( mColor );
+	}
+
 }
 
 }}

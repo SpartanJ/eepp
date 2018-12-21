@@ -295,7 +295,6 @@
 ../../include/eepp/ui.hpp
 ../../include/eepp/ui/marginmove/scale.hpp
 ../../include/eepp/ui/tools/textureatlaseditor.hpp
-../../include/eepp/ui/uibackground.hpp
 ../../include/eepp/ui/uiborder.hpp
 ../../include/eepp/ui/uicheckbox.hpp
 ../../include/eepp/ui/uicombobox.hpp
@@ -697,7 +696,6 @@
 ../../src/eepp/ui/tools/textureatlasnew.hpp
 ../../src/eepp/ui/tools/textureatlastextureregioneditor.cpp
 ../../src/eepp/ui/tools/textureatlastextureregioneditor.hpp
-../../src/eepp/ui/uibackground.cpp
 ../../src/eepp/ui/uiborder.cpp
 ../../src/eepp/ui/uicheckbox.cpp
 ../../src/eepp/ui/uicombobox.cpp

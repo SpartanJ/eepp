@@ -370,7 +370,7 @@ void TextureAtlasEditor::onTextureRegionChange( const Event * Event ) {
 				UITextureRegion * curImage = static_cast<UITextureRegion*>( node );
 
 				if ( curImage->getTextureRegion() == mCurTextureRegion ) {
-					curImage->setBackgroundFillEnabled( true )->setColor( Color( "#00000033" ) );
+					curImage->setBackgroundColor( Color( "#00000033" ) );
 				} else {
 					curImage->setBackgroundFillEnabled( false );
 				}

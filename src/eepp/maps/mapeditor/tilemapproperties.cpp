@@ -46,7 +46,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 		mUIBaseColor->setParent( mUIWindow->getContainer() );
 		mUIBaseColor->setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 		mUIBaseColor->setSize( 64, 64 );
-		mUIBaseColor->getBackground()->setColor( mMap->getBaseColor() );
+		mUIBaseColor->setBackgroundColor( mMap->getBaseColor() );
 		mUIBaseColor->getBorder()->setColor( Color( 100, 100, 100, 200 ) );
 
 		Txt = createTextBox( "Red Color:", mUIWindow->getContainer(), Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
@@ -142,7 +142,7 @@ TileMapProperties::~TileMapProperties() {
 void TileMapProperties::onRedChange( const Event * Event ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.r = (Uint8)mUIRedSlider->getValue();
-	mUIBaseColor->getBackground()->setColor( Col );
+	mUIBaseColor->setBackgroundColor( Col );
 	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
 
 	Color MapCol = mMap->getBaseColor();
@@ -153,7 +153,7 @@ void TileMapProperties::onRedChange( const Event * Event ) {
 void TileMapProperties::onGreenChange( const Event * Event ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.g = (Uint8)mUIGreenSlider->getValue();
-	mUIBaseColor->getBackground()->setColor( Col );
+	mUIBaseColor->setBackgroundColor( Col );
 	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
 
 	Color MapCol = mMap->getBaseColor();
@@ -164,7 +164,7 @@ void TileMapProperties::onGreenChange( const Event * Event ) {
 void TileMapProperties::onBlueChange( const Event * Event ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.b = (Uint8)mUIBlueSlider->getValue();
-	mUIBaseColor->getBackground()->setColor( Col );
+	mUIBaseColor->setBackgroundColor( Col );
 	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
 
 	Color MapCol = mMap->getBaseColor();

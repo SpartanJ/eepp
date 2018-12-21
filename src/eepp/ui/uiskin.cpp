@@ -27,13 +27,12 @@ Sizef UISkin::getSize( const Uint32 & state ) {
 UISkin * UISkin::clone( const std::string& NewName ) {
 	UISkin * SkinS = UISkin::New( NewName );
 
-	if ( !mDrawableOwner ) {
-		SkinS->mColor = mColor;
-		SkinS->mPosition = mPosition;
-		SkinS->mDrawables = mDrawables;
-		SkinS->mCurrentState = mCurrentState;
-		SkinS->mCurrentDrawable = mCurrentDrawable;
-	}
+	SkinS->mColor = mColor;
+	SkinS->mPosition = mPosition;
+	SkinS->mDrawables = mDrawables;
+	SkinS->mCurrentState = mCurrentState;
+	SkinS->mCurrentDrawable = mCurrentDrawable;
+	SkinS->mDrawablesOwnership = mDrawablesOwnership;
 
 	return SkinS;
 }

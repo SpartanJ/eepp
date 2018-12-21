@@ -55,7 +55,7 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 			if ( NULL == mIcon->getSkin() || mIcon->getSkin()->getName() != mSkinActive->getName() )
 				mIcon->setSkin( mSkinActive );
 
-			if ( mSkinState->getState() & UIState::StateSelected )
+			if ( mSkinState->getState() & UIState::StateFlagSelected )
 				mIcon->pushState( UIState::StateHover );
 			else
 				mIcon->popState( UIState::StateHover );
@@ -67,7 +67,7 @@ void UIMenuCheckBox::setActive( const bool& active ) {
 			if ( NULL == mIcon->getSkin() || mIcon->getSkin()->getName() != mSkinInactive->getName() )
 				mIcon->setSkin( mSkinInactive );
 
-			if ( mSkinState->getState() & UIState::StateSelected )
+			if ( mSkinState->getState() & UIState::StateFlagSelected )
 				mIcon->pushState( UIState::StateHover );
 			else
 				mIcon->popState( UIState::StateHover );

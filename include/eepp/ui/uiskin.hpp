@@ -10,9 +10,9 @@ class UITheme;
 
 class EE_API UISkin : public StateListDrawable {
 	public:
-		static UISkin * New( const std::string& name );
+		static UISkin * New( const std::string& name = "" );
 
-		explicit UISkin( const std::string& name );
+		explicit UISkin( const std::string& name = "" );
 
 		virtual ~UISkin();
 

@@ -14,7 +14,7 @@ class UIBlurredWindow : public UIWindow {
 			return eeNew( UIBlurredWindow, ( blurShader ) );
 		}
 
-		UIBlurredWindow( ShaderProgram * blurShader ) :
+		explicit UIBlurredWindow( ShaderProgram * blurShader ) :
 			UIWindow(),
 			mBlurShader( blurShader ),
 			mFboBlur( NULL )
@@ -489,20 +489,10 @@ void EETest::createBaseUI() {
 
 	UIWidget * w = UIWidget::New();
 	w->setParent( C )->setSize( 20, 20 )->setPosition( 260, 130 );
-	w->setBackgroundFillEnabled( true )->setColor( Color::Green );
+	w->setBackgroundColor( Color::Green );
 	w->setRotation( 45 );
-
-	w->addEventListener( Event::MouseEnter, [] ( const Event* event ) {
-		static_cast<UIWidget*>( event->getNode() )->getBackground()->setColor( Color::Yellow );
-	} );
-
-	w->addEventListener( Event::MouseExit, [] ( const Event* event ) {
-		static_cast<UIWidget*>( event->getNode() )->getBackground()->setColor( Color::Green );
-	} );
-
-	w->addEventListener( Event::MouseClick, [] ( const Event* event ) {
-		static_cast<UIWidget*>( event->getNode() )->getBackground()->setColor( Color::Red );
-	} );
+	w->setBackgroundColor( UIState::StateFlagHover, Color::Yellow );
+	w->setBackgroundColor( UIState::StateFlagPressed, Color::Red );
 
 	C = reinterpret_cast<UINode*> ( C->getParent() );
 
@@ -648,25 +638,25 @@ void EETest::createNewUI() {
 			->setPosition( 800, 0 )
 			->setSize( 100, 100 )
 			->setParent( container );
-	loader->setBackgroundFillEnabled( true )->setColor( 0xCCCCCCCC );
+	loader->setBackgroundColor( 0xCCCCCCCC );
 
 	UIRadioButton * ctrl = UIRadioButton::New();
 	ctrl->setLayoutSizeRules( FIXED, FIXED )->setPosition( 50, 100 )->setSize( 200, 32 )->setParent( container );
-	ctrl->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
+	ctrl->setBackgroundColor( 0x33333333 );
 	ctrl->setBorderEnabled( true )->setColor( 0x66666666 );
 	ctrl->setText( "Happy RadioButon :)" );
 	ctrl->setFontColor( Color::Black );
 
 	UICheckBox * cbox = UICheckBox::New();
 	cbox->setLayoutSizeRules( FIXED, FIXED )->setPosition( 50, 164 )->setSize( 200, 32 )->setParent( container );
-	cbox->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
+	cbox->setBackgroundColor( 0x33333333 );
 	cbox->setBorderEnabled( true )->setColor( 0x66666666 );
 	cbox->setText( "Happy CheckBox :)" );
 	cbox->setFontColor( Color::Black );
 
 	UIImage * gfx = UIImage::New();
 	gfx->setPosition( 50, 140 )->setSize( 16, 16 )->setParent( container );
-	gfx->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
+	gfx->setBackgroundColor( 0x33333333 );
 	gfx->setDrawable( mTheme->getIconByName( "ok" ) );
 
 	UISlider * slider = UISlider::New();
@@ -796,12 +786,12 @@ void EETest::createNewUI() {
 	layPar->setLayoutMargin( Rect( 10, 10, 10, 10 ) );
 	layPar->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT );
 	layPar->setLayoutGravity( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
-	layPar->setBackgroundFillEnabled( true )->setColor( 0x999999FF );
+	layPar->setBackgroundColor( 0x999999FF );
 
 	UILinearLayout * lay = UILinearLayout::NewVertical();
 	lay->setLayoutGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
 	lay->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT );
-	lay->setBackgroundFillEnabled( true )->setColor( 0x333333FF );
+	lay->setBackgroundColor( 0x333333FF );
 	lay->setLayoutWeight( 0.7f );
 
 	UITextView::New()->setText( "Text on test 1" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )->setParent( lay );
@@ -814,7 +804,7 @@ void EETest::createNewUI() {
 	UILinearLayout * lay2 = UILinearLayout::NewVertical();
 	lay2->setLayoutGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
 	lay2->setLayoutSizeRules( FIXED, WRAP_CONTENT );
-	lay2->setBackgroundFillEnabled( true )->setColor( Color::Black );
+	lay2->setBackgroundColor( Color::Black );
 	lay2->setLayoutWeight( 0.3f );
 
 	UIPushButton::New()->setText( "PushButton" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutGravity( UI_VALIGN_CENTER )->setParent( lay2 );
@@ -838,7 +828,7 @@ void EETest::createNewUI() {
 	rlay->setParent( win2 );
 	rlay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
 	rlay->setLayoutMargin( Rect( 16, 16, 16, 16 ) );
-	rlay->setBackgroundFillEnabled( true )->setColor( 0x333333CC );
+	rlay->setBackgroundColor( 0x333333CC );
 
 	UIPushButton * ofBut = UIPushButton::New();
 	ofBut->setText( "OK" )->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )->setLayoutMargin( Rect( 0, 0, 16, 16 ) )->setParent( rlay );
@@ -893,8 +883,7 @@ void EETest::createNewUI() {
 						->setEnabled( false )
 						->setParent( gridLayout );
 
-				img->setBackgroundFillEnabled( true )
-						->setColor( Color::fromPointer( textures[i] ) );
+				img->setBackgroundColor( Color::fromPointer( textures[i] ) );
 			}
 		}
 	}

@@ -125,9 +125,9 @@ void UIListBoxItem::onStateChange() {
 		pushState( UIState::StateSelected, false );
 	}
 
-	if ( mSkinState->getState() & UIState::StateSelected ) {
+	if ( mSkinState->getState() & UIState::StateFlagSelected ) {
 		setFontColor( LBParent->getFontSelectedColor() );
-	} else if ( mSkinState->getState() & UIState::StateHover ) {
+	} else if ( mSkinState->getState() & UIState::StateFlagHover ) {
 		setFontColor( LBParent->getFontOverColor() );
 	} else {
 		setFontColor( LBParent->getFontColor() );

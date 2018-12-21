@@ -30,23 +30,35 @@ class EE_API StateListDrawable : public StatefulDrawable {
 
 		virtual const Uint32& getState() const;
 
-		virtual StateListDrawable * setStateDrawable( Uint32 state, Drawable * drawable );
+		virtual Drawable * getStateDrawable( const Uint32& state );
+
+		virtual StateListDrawable * setStateDrawable( const Uint32& state, Drawable * drawable, bool ownIt = false );
+
+		virtual Sizef getStateSize( const Uint32& state );
+
+		virtual StateListDrawable * setStateColor( const Uint32& state, const Color& color );
+
+		virtual Color getStateColor( const Uint32& state );
+
+		virtual StateListDrawable * setStateAlpha( const Uint32& state, const Uint8& alpha );
+
+		virtual Uint8 getStateAlpha( const Uint32& state );
 
 		bool hasDrawableState( Uint32 state );
 
-		void setIsDrawableOwner( const bool& isOwner );
-
-		const bool& isDrawableOwner() const;
+		bool hasDrawableStateColor( Uint32 state );
 
 		void clearDrawables();
 	protected:
-		bool mDrawableOwner;
 		Uint32 mCurrentState;
 		Drawable * mCurrentDrawable;
 		std::map<Uint32,Drawable*> mDrawables;
+		std::map<Drawable*,bool> mDrawablesOwnership;
+		std::map<Uint32, Color> mDrawableColors;
 
 		StateListDrawable( Type type, const std::string& name = "" );
 
+		virtual void onColorFilterChange();
 };
 
 }}

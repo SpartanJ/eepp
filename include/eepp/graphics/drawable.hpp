@@ -46,7 +46,7 @@ class EE_API Drawable {
 
 		void setColor( const Color& color );
 
-		const Color& getColor() const;
+		Color getColor() const;
 
 		void setColorFilter( const Color& color );
 

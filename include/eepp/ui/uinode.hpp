@@ -3,7 +3,6 @@
 
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uihelper.hpp>
-#include <eepp/ui/uibackground.hpp>
 #include <eepp/ui/uiborder.hpp>
 #include <eepp/ui/uistate.hpp>
 #include <eepp/ui/uiskin.hpp>
@@ -85,25 +84,33 @@ class EE_API UINode : public Node {
 
 		UINode * setGravity( Uint32 hvalign );
 
-		UIBackground * setBackgroundFillEnabled( bool enabled );
+		UISkin * setBackgroundFillEnabled( bool enabled );
+
+		UINode * setBackgroundDrawable( const Uint32 & state, Drawable * drawable , bool ownIt = false );
 
 		UINode * setBackgroundDrawable( Drawable * drawable , bool ownIt = false );
 
+		UINode * setBackgroundColor( const Uint32 & state, const Color& color );
+
 		UINode * setBackgroundColor( const Color& color );
+
+		UINode * setBackgroundCorners( const Uint32 & state, const unsigned int& corners );
 
 		UINode * setBackgroundCorners( const unsigned int& corners );
 
-		UINode * setBackgroundBlendMode( const BlendMode& blendMode );
+		UISkin * setForegroundFillEnabled( bool enabled );
 
-		UIBackground * setForegroundFillEnabled( bool enabled );
+		UINode * setForegroundDrawable( const Uint32 & state, Drawable * drawable , bool ownIt = false );
 
 		UINode * setForegroundDrawable( Drawable * drawable , bool ownIt = false );
 
+		UINode * setForegroundColor( const Uint32 & state, const Color& color );
+
 		UINode * setForegroundColor( const Color& color );
 
-		UINode * setForegroundCorners( const unsigned int& corners );
+		UINode * setForegroundCorners( const Uint32 & state, const unsigned int& corners );
 
-		UINode * setForegroundBlendMode( const BlendMode& blendMode );
+		UINode * setForegroundCorners( const unsigned int& corners );
 
 		UIBorder * setBorderEnabled( bool enabled );
 
@@ -119,7 +126,9 @@ class EE_API UINode : public Node {
 
 		virtual UINode * resetFlags( Uint32 newFlags = 0 );
 
-		UIBackground * getBackground();
+		UISkin * getBackground();
+
+		UISkin * getForeground();
 
 		UIBorder * getBorder();
 
@@ -175,8 +184,8 @@ class EE_API UINode : public Node {
 		Sizef			mDpSize;
 		Uint32			mFlags;
 		UIState *		mSkinState;
-		UIBackground *	mBackground;
-		UIBackground *	mForeground;
+		UIState *		mBackgroundState;
+		UIState *		mForegroundState;
 		UIBorder *		mBorder;
 		Vector2f		mDragPoint;
 		Uint32			mDragButton;

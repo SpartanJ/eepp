@@ -52,31 +52,33 @@ void UISelectButton::onStateChange() {
 	if ( NULL == mSkinState )
 		return;
 
-	if ( !( mSkinState->getState() & UIState::StateSelected ) && selected() && mSkinState->stateExists( UIState::StateSelected ) ) {
+	if ( !( mSkinState->getState() & UIState::StateFlagSelected ) && selected() && mSkinState->stateExists( UIState::StateSelected ) ) {
 		pushState( UIState::StateSelected, false );
 	}
 
 	if ( getParent()->isType( UI_TYPE_WINMENU ) ) {
 		UIWinMenu * Menu = reinterpret_cast<UIWinMenu*> ( getParent() );
 
-		if ( mSkinState->getState() & UIState::StateSelected ) {
+		if ( mSkinState->getState() & UIState::StateFlagSelected ) {
 			getTextBox()->setFontColor( Menu->getStyleConfig().getFontSelectedColor() );
-		} else if ( mSkinState->getState() & UIState::StateHover ) {
+		} else if ( mSkinState->getState() & UIState::StateFlagHover ) {
 			getTextBox()->setFontColor( Menu->getStyleConfig().getFontOverColor() );
 		} else {
 			getTextBox()->setFontColor( Menu->getStyleConfig().getFontColor() );
 		}
 	} else {
-		if ( mSkinState->getState() & UIState::StateSelected ) {
+		if ( mSkinState->getState() & UIState::StateFlagSelected ) {
 			getTextBox()->setFontColor( mStyleConfig.FontSelectedColor );
-		} else if ( mSkinState->getState() & UIState::StateHover ) {
+		} else if ( mSkinState->getState() & UIState::StateFlagHover ) {
 			getTextBox()->setFontColor( mStyleConfig.FontOverColor );
 		} else {
 			getTextBox()->setFontColor( mStyleConfig.FontColor );
 		}
 	}
 
-	UIPushButton::onStateChange();
+	mTextBox->setAlpha( mAlpha );
+
+	UIWidget::onStateChange();
 }
 
 void UISelectButton::setFontSelectedColor(const Color & color) {

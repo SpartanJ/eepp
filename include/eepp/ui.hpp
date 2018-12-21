@@ -1,7 +1,6 @@
 #ifndef EEPP_UI_HPP
 #define EEPP_UI_HPP
 
-#include <eepp/ui/uibackground.hpp>
 #include <eepp/ui/uiborder.hpp>
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/ui/uitheme.hpp>

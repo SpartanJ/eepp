@@ -501,8 +501,6 @@ bool UIWidget::setAttribute(const NodeAttribute & attribute) {
 		}
 	} else if ( "backgroundcolor" == name ) {
 		setBackgroundColor( Color::fromString( attribute.asString() ) );
-	} else if ( "backgroundblendmode" == name ) {
-		setBackgroundBlendMode( toBlendMode( attribute.asString() ) );
 	} else if ( "foreground" == name ) {
 		Drawable * res = NULL;
 
@@ -515,8 +513,6 @@ bool UIWidget::setAttribute(const NodeAttribute & attribute) {
 		}
 	} else if ( "foregroundcolor" == name ) {
 		setForegroundColor( Color::fromString( attribute.asString() ) );
-	} else if ( "foregroundblendmode" == name ) {
-		setForegroundBlendMode( toBlendMode( attribute.asString() ) );
 	} else if ( "foregroundcorners" == name ) {
 		setForegroundCorners( attribute.asUint() );
 	} else if ( "bordercolor" == name ) {

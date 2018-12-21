@@ -50,6 +50,11 @@ void RectangleDrawable::draw(const Vector2f & position, const Sizef & size) {
 		mNeedsUpdate = true;
 	}
 
+	if ( position != mPosition ) {
+		mPosition = position;
+		mNeedsUpdate = true;
+	}
+
 	if ( mCorners == 0 ) {
 		if ( mUsingRectColors ) {
 			drawRectangle( Rectf( mPosition, mSize ), mRectColors.TopLeft, mRectColors.BottomLeft, mRectColors.BottomRight, mRectColors.TopRight, mRotation, mScale );

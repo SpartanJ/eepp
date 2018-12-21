@@ -31,7 +31,7 @@ void Drawable::setColor(const Color & color) {
 	onAlphaChange();
 }
 
-const Color& Drawable::getColor() const {
+Color Drawable::getColor() const {
 	return mColor;
 }
 

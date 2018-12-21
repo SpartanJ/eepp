@@ -44,9 +44,9 @@ void UIMenuItem::onStateChange() {
 	if ( NULL == mSkinState )
 		return;
 
-	if ( mSkinState->getState() & UIState::StateSelected ) {
+	if ( mSkinState->getState() & UIState::StateFlagSelected ) {
 		mTextBox->setFontColor( tMenu->getFontStyleConfig().getFontSelectedColor() );
-	} else if ( mSkinState->getState() & UIState::StateHover ) {
+	} else if ( mSkinState->getState() & UIState::StateFlagHover ) {
 		mTextBox->setFontColor( tMenu->getFontStyleConfig().getFontOverColor() );
 	} else {
 		mTextBox->setFontColor( tMenu->getFontStyleConfig().getFontColor() );

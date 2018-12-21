@@ -236,7 +236,7 @@ void UIPushButton::onAlphaChange() {
 }
 
 void UIPushButton::onStateChange() {
-	if ( mSkinState->getState() & UIState::StateHover ) {
+	if ( mSkinState->getState() & UIState::StateFlagHover ) {
 		mTextBox->setFontColor( mStyleConfig.FontOverColor );
 	} else {
 		mTextBox->setFontColor( mStyleConfig.FontColor );
