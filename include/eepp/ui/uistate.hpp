@@ -39,11 +39,9 @@ class EE_API UIState {
 
 		static bool isStateName( const std::string& State );
 
-		static UIState * New( UISkin * skin );
+		UIState();
 
-		explicit UIState( UISkin * Skin );
-
-		~UIState();
+		virtual ~UIState();
 
 		const Uint32& getState() const;
 
@@ -53,17 +51,10 @@ class EE_API UIState {
 
 		void popState( const Uint32& State );
 
-		UISkin * getSkin() const;
-
-		void draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha );
-
-		bool stateExists( const Uint32& State );
+		virtual bool stateExists( const Uint32& State ) = 0;
 
 		Uint32 getCurrentState() const;
 	protected:
-		friend class UINode;
-
-		UISkin * 	mSkin;
 		Uint32 		mState;
 		Uint32		mCurrentState;
 

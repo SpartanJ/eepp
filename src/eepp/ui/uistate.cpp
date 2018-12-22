@@ -49,27 +49,13 @@ bool UIState::isStateName( const std::string& State ) {
 	return false;
 }
 
-UIState * UIState::New( UISkin * skin ) {
-	return eeNew( UIState, (  skin ) );
-}
-
-UIState::UIState( UISkin * Skin ) :
-	mSkin( Skin ),
+UIState::UIState() :
 	mState(StateFlagNormal),
 	mCurrentState(StateFlagNormal)
 {
-	eeASSERT( NULL != mSkin );
 }
 
 UIState::~UIState() {
-}
-
-void UIState::draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha ) {
-	if ( NULL != mSkin ) {
-		mSkin->setState( mCurrentState );
-		mSkin->setAlpha( Alpha );
-		mSkin->draw( Vector2f( X, Y ), Sizef( Width, Height ) );
-	}
 }
 
 const Uint32& UIState::getState() const {
@@ -100,14 +86,6 @@ void UIState::popState(const Uint32 & State) {
 	}
 }
 
-UISkin * UIState::getSkin() const {
-	return mSkin;
-}
-
-bool UIState::stateExists( const Uint32& State ) {
-	return mSkin->hasDrawableState( State );
-}
-
 Uint32 UIState::getCurrentState() const {
 	return mCurrentState;
 }
@@ -126,4 +104,3 @@ void UIState::updateState() {
 }
 
 }}
-

@@ -399,10 +399,9 @@ void UISlider::onAlphaChange() {
 	mSlider->setAlpha( mAlpha );
 }
 
-Uint32 UISlider::onMessage(const NodeMessage * Msg)
-{
+Uint32 UISlider::onMessage(const NodeMessage * Msg) {
 	switch ( Msg->getMsg() ) {
-		case NodeMessage::Click:
+		case NodeMessage::MouseUp:
 		{
 			manageClick( Msg->getFlags() );
 			return 1;

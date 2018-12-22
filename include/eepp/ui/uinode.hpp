@@ -5,8 +5,12 @@
 #include <eepp/ui/uihelper.hpp>
 #include <eepp/ui/uistate.hpp>
 #include <eepp/ui/uiskin.hpp>
+#include <eepp/ui/uiskinstate.hpp>
 #include <eepp/scene/node.hpp>
 
+namespace EE { namespace Graphics {
+class Drawable;
+}}
 namespace EE { namespace Scene {
 class Action;
 class ActionManager;
@@ -16,6 +20,8 @@ using namespace EE::Scene;
 namespace EE { namespace UI {
 
 class UITheme;
+class UISkin;
+class UISkinState;
 
 class EE_API UINode : public Node {
 	public:
@@ -184,10 +190,10 @@ class EE_API UINode : public Node {
 		Vector2f		mDpPos;
 		Sizef			mDpSize;
 		Uint32			mFlags;
-		UIState *		mSkinState;
-		UIState *		mBackgroundState;
-		UIState *		mForegroundState;
-		UIState *		mBorderState;
+		UISkinState *	mSkinState;
+		UISkinState *	mBackgroundState;
+		UISkinState *	mForegroundState;
+		UISkinState *	mBorderState;
 		Vector2f		mDragPoint;
 		Uint32			mDragButton;
 

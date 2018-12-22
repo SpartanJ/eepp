@@ -19,6 +19,8 @@
 #include <eepp/scene/actions/move.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiskin.hpp>
+#include <eepp/ui/uiskinstate.hpp>
 
 namespace EE { namespace UI {
 
@@ -679,7 +681,7 @@ void UINode::internalDraw() {
 
 UISkin * UINode::getBackground() {
 	if ( NULL == mBackgroundState ) {
-		mBackgroundState = UIState::New( UISkin::New() );
+		mBackgroundState = UISkinState::New( UISkin::New() );
 	}
 
 	return mBackgroundState->getSkin();
@@ -687,7 +689,7 @@ UISkin * UINode::getBackground() {
 
 UISkin * UINode::getForeground() {
 	if ( NULL == mForegroundState ) {
-		mForegroundState = UIState::New( UISkin::New() );
+		mForegroundState = UISkinState::New( UISkin::New() );
 	}
 
 	return mForegroundState->getSkin();
@@ -695,7 +697,7 @@ UISkin * UINode::getForeground() {
 
 UISkin * UINode::getBorder() {
 	if ( NULL == mBorderState ) {
-		mBorderState = UIState::New( UISkin::New() );
+		mBorderState = UISkinState::New( UISkin::New() );
 	}
 
 	return mBorderState->getSkin();
@@ -728,7 +730,7 @@ UINode * UINode::setSkin( const UISkin& Skin ) {
 
 	UISkin * SkinCopy = const_cast<UISkin*>( &Skin )->clone();
 
-	mSkinState = UIState::New( SkinCopy );
+	mSkinState = UISkinState::New( SkinCopy );
 
 	onThemeLoaded();
 
@@ -748,7 +750,7 @@ UINode * UINode::setSkin( UISkin * skin ) {
 
 		removeSkin();
 
-		mSkinState = UIState::New( skin );
+		mSkinState = UISkinState::New( skin );
 		mSkinState->setState( InitialState );
 
 		onThemeLoaded();
@@ -955,16 +957,16 @@ void UINode::setDragPoint( const Vector2f& Point ) {
 	mDragPoint = Point;
 }
 
-Uint32 UINode::onDrag( const Vector2f& Pos ) {
+Uint32 UINode::onDrag( const Vector2f& ) {
 	return 1;
 }
 
-Uint32 UINode::onDragStart( const Vector2i& Pos ) {
+Uint32 UINode::onDragStart( const Vector2i& ) {
 	sendCommonEvent( Event::OnDragStart );
 	return 1;
 }
 
-Uint32 UINode::onDragStop( const Vector2i& Pos ) {
+Uint32 UINode::onDragStop( const Vector2i& ) {
 	sendCommonEvent( Event::OnDragStop );
 	return 1;
 }

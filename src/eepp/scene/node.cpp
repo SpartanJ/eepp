@@ -98,7 +98,7 @@ void Node::messagePost( const NodeMessage * Msg ) {
 	}
 }
 
-Uint32 Node::onMessage( const NodeMessage * Msg ) {
+Uint32 Node::onMessage( const NodeMessage * ) {
 	return 0;
 }
 
@@ -970,7 +970,7 @@ void Node::writeCtrlFlag( const Uint32& Flag, const Uint32& Val ) {
 	BitOp::setBitFlagValue( &mNodeFlags, Flag, Val );
 }
 
-void Node::onParentSizeChange( const Vector2f& SizeChange ) {
+void Node::onParentSizeChange( const Vector2f& ) {
 	sendCommonEvent( Event::OnParentSizeChange );
 	invalidateDraw();
 }

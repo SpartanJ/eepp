@@ -8,3 +8,5 @@
 ../../include/eepp/audio
 /usr/include/freetype2/
 
+../../include/eepp/ui
+../../src/eepp/ui
