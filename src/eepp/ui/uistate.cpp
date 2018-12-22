@@ -105,7 +105,7 @@ UISkin * UIState::getSkin() const {
 }
 
 bool UIState::stateExists( const Uint32& State ) {
-	return mSkin->hasDrawableState( 1 << State );
+	return mSkin->hasDrawableState( State );
 }
 
 Uint32 UIState::getCurrentState() const {
@@ -115,7 +115,7 @@ Uint32 UIState::getCurrentState() const {
 void UIState::updateState() {
 	for ( int i = StateFlagCount - 1; i >= 0; i-- ) {
 		if ( ( mState & UIStateFlags[i] ) == UIStateFlags[i] ) {
-			if ( mSkin->hasDrawableState( UIStateFlags[i] ) ) {
+			if ( stateExists( UIStateFlags[i] ) ) {
 				mCurrentState = UIStateFlags[i];
 				return;
 			}

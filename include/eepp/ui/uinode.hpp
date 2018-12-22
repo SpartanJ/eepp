@@ -179,8 +179,6 @@ class EE_API UINode : public Node {
 
 		const Uint32& getDragButton() const;
 
-		bool isActionManagerActive();
-
 		virtual void setFocus();
 	protected:
 		Vector2f		mDpPos;

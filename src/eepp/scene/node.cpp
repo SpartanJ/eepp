@@ -27,13 +27,13 @@ Node::Node() :
 	mNumCallBacks( 0 ),
 	mVisible( true ),
 	mEnabled( true ),
-	mAlpha(255.f),
-	mActionManager(NULL)
+	mAlpha(255.f)
 {
 }
 
 Node::~Node() {
-	eeSAFE_DELETE( mActionManager );
+	if ( NULL != mSceneNode && mSceneNode != this && NULL != mSceneNode->getActionManager() )
+		mSceneNode->getActionManager()->removeAllActionsFromTarget( this );
 
 	childDeleteAll();
 
@@ -42,7 +42,7 @@ Node::~Node() {
 
 	EventDispatcher * eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
 
-	if ( NULL != mSceneNode && NULL != eventDispatcher ) {
+	if ( NULL != eventDispatcher ) {
 		if ( eventDispatcher->getFocusControl() == this && mSceneNode != this ) {
 			eventDispatcher->setFocusControl( mSceneNode );
 		}
@@ -261,13 +261,6 @@ void Node::draw() {
 }
 
 void Node::update( const Time& time ) {
-	if ( NULL != mActionManager ) {
-		mActionManager->update( time );
-
-		if ( mActionManager->isEmpty() )
-			eeSAFE_DELETE( mActionManager );
-	}
-
 	Node * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
@@ -1216,13 +1209,10 @@ void Node::setChildsAlpha( const Float &alpha ) {
 }
 
 ActionManager * Node::getActionManager() {
-	if ( NULL == mActionManager )
-		mActionManager = eeNew( ActionManager, () );
-
-	return mActionManager;
+	return mSceneNode->getActionManager();
 }
 
-void Node::runAction( Action * action ) {
+Node * Node::runAction( Action * action ) {
 	if ( NULL != action ) {
 		action->setTarget( this );
 
@@ -1230,6 +1220,8 @@ void Node::runAction( Action * action ) {
 
 		getActionManager()->addAction( action );
 	}
+
+	return this;
 }
 
 Transform Node::getLocalTransform() {

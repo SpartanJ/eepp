@@ -1021,10 +1021,6 @@ const Uint32& UINode::getDragButton() const {
 	return mDragButton;
 }
 
-bool UINode::isActionManagerActive() {
-	return NULL != mActionManager && !mActionManager->isEmpty();
-}
-
 void UINode::onWidgetFocusLoss() {
 	sendCommonEvent( Event::OnWidgetFocusLoss );
 	invalidateDraw();

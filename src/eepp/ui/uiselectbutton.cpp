@@ -49,10 +49,12 @@ bool UISelectButton::selected() const {
 }
 
 void UISelectButton::onStateChange() {
+	UIWidget::onStateChange();
+
 	if ( NULL == mSkinState )
 		return;
 
-	if ( !( mSkinState->getState() & UIState::StateFlagSelected ) && selected() && mSkinState->stateExists( UIState::StateSelected ) ) {
+	if ( !( mSkinState->getState() & UIState::StateFlagSelected ) && selected() ) {
 		pushState( UIState::StateSelected, false );
 	}
 
@@ -77,8 +79,6 @@ void UISelectButton::onStateChange() {
 	}
 
 	mTextBox->setAlpha( mAlpha );
-
-	UIWidget::onStateChange();
 }
 
 void UISelectButton::setFontSelectedColor(const Color & color) {

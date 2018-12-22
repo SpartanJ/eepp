@@ -356,6 +356,9 @@ static std::vector<String> getTestStringArr() {
 void EETest::createBaseUI() {
 	std::vector<String> str = getTestStringArr();
 
+	// ActionManager test
+	UINode::New()->setSize(10,10)->runAction( Actions::Fade::New( 0, 255, Seconds(5) ) )->close();
+
 	/**/
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );

@@ -261,7 +261,7 @@ class EE_API Node : public Transformable {
 
 		ActionManager * getActionManager();
 
-		void runAction( Action * action );
+		Node * runAction( Action * action );
 
 		Transform getLocalTransform();
 
@@ -347,8 +347,6 @@ class EE_API Node : public Transformable {
 		OriginPoint			mRotationOriginPoint;
 		OriginPoint			mScaleOriginPoint;
 		Float				mAlpha;
-
-		ActionManager *		mActionManager;
 
 		virtual Uint32 onMessage( const NodeMessage * Msg );
 
