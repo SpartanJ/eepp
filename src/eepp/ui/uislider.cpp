@@ -286,14 +286,6 @@ bool UISlider::isVertical() const {
 	return mOrientation == UI_VERTICAL;
 }
 
-void UISlider::update( const Time& time ) {
-	UINode::update( time );
-
-	if ( NULL != getEventDispatcher() && ( isMouseOver() || mBackSlider->isMouseOver() || mSlider->isMouseOver() ) ) {
-		manageClick( getEventDispatcher()->getClickTrigger() );
-	}
-}
-
 Uint32 UISlider::onKeyDown( const KeyEvent &Event ) {
 	if ( Sys::getTicks() - mLastTickMove > 100 ) {
 		if ( Event.getKeyCode() == KEY_DOWN ) {
@@ -405,6 +397,19 @@ void UISlider::onAlphaChange() {
 	
 	mBackSlider->setAlpha( mAlpha );
 	mSlider->setAlpha( mAlpha );
+}
+
+Uint32 UISlider::onMessage(const NodeMessage * Msg)
+{
+	switch ( Msg->getMsg() ) {
+		case NodeMessage::Click:
+		{
+			manageClick( Msg->getFlags() );
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
 bool UISlider::setAttribute( const NodeAttribute& attribute ) {

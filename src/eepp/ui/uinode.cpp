@@ -319,6 +319,10 @@ void UINode::update( const Time& time ) {
 Uint32 UINode::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( NULL != getEventDispatcher() && !( getEventDispatcher()->getLastPressTrigger() & mDragButton ) && ( Flags & mDragButton ) && isDragEnabled() && !isDragging() ) {
 		setDragging( true );
+
+		if ( NULL != getEventDispatcher() )
+			getEventDispatcher()->setControlDragging( true );
+
 		mDragPoint = Vector2f( Pos.x, Pos.y );
 	}
 
@@ -330,6 +334,9 @@ Uint32 UINode::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 Uint32 UINode::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( isDragEnabled() && isDragging() && ( Flags & mDragButton ) ) {
 		setDragging( false );
+
+		if ( NULL != getEventDispatcher() )
+			getEventDispatcher()->setControlDragging( false );
 	}
 
 	popState( UIState::StatePressed );

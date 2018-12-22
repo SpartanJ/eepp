@@ -38,8 +38,6 @@ class EE_API UISlider : public UIWidget {
 
 		bool isVertical() const;
 
-		virtual void update( const Time& time );
-
 		UINode * getBackSlider() const;
 
 		UINode * getSliderButton() const;
@@ -95,6 +93,8 @@ class EE_API UISlider : public UIWidget {
 		virtual Uint32 onKeyDown( const KeyEvent &Event );
 		
 		virtual void onAlphaChange();
+
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 };
 
 }}
