@@ -22,8 +22,6 @@ class EE_API UITableCell : public UIWidget {
 
 		UINode * getCell( const Uint32& CollumnIndex ) const;
 
-		virtual void update( const Time& time );
-
 		bool isSelected() const;
 
 		void unselect();
@@ -46,6 +44,8 @@ class EE_API UITableCell : public UIWidget {
 		virtual void onStateChange();
 
 		virtual void onParentChange();
+
+		virtual void onAlphaChange();
 
 		virtual void onAutoSize();
 };

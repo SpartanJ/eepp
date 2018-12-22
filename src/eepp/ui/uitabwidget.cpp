@@ -577,6 +577,7 @@ void UITabWidget::remove( const Uint32& Index ) {
 
 	if ( mTabs[ Index ] == mTabSelected ) {
 		mTabSelected->getControlOwned()->setVisible( false );
+		mTabSelected->getControlOwned()->setEnabled( false );
 	}
 
 	eeSAFE_DELETE( mTabs[ Index ] );
@@ -648,8 +649,10 @@ void UITabWidget::setTabSelected( UITab * Tab ) {
 	if ( NULL != mTabSelected ) {
 		mTabSelected->unselect();
 
-		if ( NULL != mTabSelected->getControlOwned() )
+		if ( NULL != mTabSelected->getControlOwned() ) {
 			mTabSelected->getControlOwned()->setVisible( false );
+			mTabSelected->getControlOwned()->setEnabled( false );
+		}
 	}
 
 	if ( NULL != Tab ) {
@@ -676,6 +679,7 @@ void UITabWidget::refreshControlOwned( UITab * tab ) {
 	if ( NULL != tab && NULL != tab->getControlOwned() ) {
 		tab->getControlOwned()->setParent( mCtrlContainer );
 		tab->getControlOwned()->setVisible( tab == mTabSelected );
+		tab->getControlOwned()->setEnabled( tab == mTabSelected );
 		tab->getControlOwned()->setSize( mCtrlContainer->getSize() );
 		tab->getControlOwned()->setPosition( 0, 0 );
 	}

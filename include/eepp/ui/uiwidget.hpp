@@ -23,8 +23,6 @@ class EE_API UIWidget : public UINode {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		virtual void update( const Time& time );
-
 		virtual Node * setSize( const Sizef& size );
 
 		virtual UINode * setFlags( const Uint32& flags );
@@ -115,6 +113,10 @@ class EE_API UIWidget : public UINode {
 		std::string mSkinName;
 
 		void createTooltip();
+
+		virtual Uint32 onMouseMove( const Vector2i& Pos, const Uint32 Flags );
+
+		virtual Uint32 onMouseExit( const Vector2i& Pos, const Uint32 Flags );
 
 		virtual void onParentSizeChange( const Vector2f& SizeChange );
 

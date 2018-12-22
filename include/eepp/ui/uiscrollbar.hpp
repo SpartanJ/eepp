@@ -47,8 +47,6 @@ class EE_API UIScrollBar : public UIWidget {
 
 		bool isVertical() const;
 
-		virtual void update( const Time& time );
-
 		UISlider * getSlider() const;
 
 		UINode * getButtonUp() const;
@@ -87,8 +85,6 @@ class EE_API UIScrollBar : public UIWidget {
 		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		virtual void onPaddingChange();
-
-		void manageClick( const Uint32& flags );
 };
 
 }}

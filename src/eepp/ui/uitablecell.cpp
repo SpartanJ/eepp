@@ -70,31 +70,6 @@ void UITableCell::fixCell() {
 	}
 }
 
-void UITableCell::update( const Time& time ) {
-	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
-		UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
-		Uint32 Flags				= getEventDispatcher()->getClickTrigger();
-
-		if ( NULL != MyParent && MyParent->getAlpha() != mAlpha ) {
-			setAlpha( MyParent->getAlpha() );
-
-			for ( Uint32 i = 0; i < mCells.size(); i++ ) {
-				if ( NULL != mCells[i] ) {
-					mCells[i]->setAlpha( MyParent->getAlpha() );
-				}
-			}
-		}
-
-		if ( isMouseOverMeOrChilds() ) {
-			if ( ( Flags & EE_BUTTONS_WUWD ) && MyParent->getVerticalScrollBar()->isVisible() ) {
-				MyParent->getVerticalScrollBar()->getSlider()->manageClick( Flags );
-			}
-		}
-	}
-
-	UIWidget::update( time );
-}
-
 void UITableCell::select() {
 	UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
 
@@ -159,6 +134,18 @@ Uint32 UITableCell::onMessage( const NodeMessage * Msg ) {
 
 				return 1;
 			}
+
+			break;
+		}
+		case NodeMessage::MouseUp:
+		{
+			UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
+
+			if ( ( Msg->getFlags() & EE_BUTTONS_WUWD ) && MyParent->getVerticalScrollBar()->isVisible() ) {
+				MyParent->getVerticalScrollBar()->getSlider()->manageClick( Msg->getFlags() );
+			}
+
+			break;
 		}
 	}
 
@@ -182,6 +169,22 @@ void UITableCell::onStateChange() {
 void UITableCell::onParentChange() {
 	if ( NULL != getParent() && NULL != gridParent() )
 		mCells.resize( gridParent()->getCollumnsCount(), NULL );
+}
+
+void UITableCell::onAlphaChange() {
+	if ( mEnabled && mVisible ) {
+		UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
+
+		if ( NULL != MyParent && MyParent->getAlpha() != mAlpha ) {
+			setAlpha( MyParent->getAlpha() );
+
+			for ( Uint32 i = 0; i < mCells.size(); i++ ) {
+				if ( NULL != mCells[i] ) {
+					mCells[i]->setAlpha( MyParent->getAlpha() );
+				}
+			}
+		}
+	}
 }
 
 }}

@@ -73,7 +73,7 @@ Uint32 UITab::onMouseClick( const Vector2i &Pos, const Uint32 Flags ) {
 		}
 	}
 
-	return 1;
+	return UISelectButton::onMouseClick( Pos, Flags );
 }
 
 void UITab::onStateChange() {
@@ -148,34 +148,6 @@ void UITab::onAutoSize() {
 	}
 }
 
-void UITab::update( const Time& time ) {
-	UISelectButton::update( time );
-
-	if ( mEnabled && mVisible ) {
-		if ( NULL == mControlOwned && !mOwnedName.empty() ) {
-			setOwnedControl();
-		}
-
-		if ( isMouseOver() ) {
-			UITabWidget * tTabW	= getTabWidget();
-
-			if ( NULL != tTabW && NULL != getEventDispatcher() ) {
-				Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
-
-				if ( Flags & EE_BUTTONS_WUWD ) {
-					if ( Flags & EE_BUTTON_WUMASK ) {
-						tTabW->selectPrev();
-					} else if ( Flags & EE_BUTTON_WDMASK ) {
-						tTabW->selectNext();
-					}
-				} else if ( tTabW->getTabsClosable() && ( Flags & EE_BUTTON_MMASK ) ) {
-					tTabW->remove( this );
-				}
-			}
-		}
-	}
-}
-
 bool UITab::setAttribute( const NodeAttribute& attribute ) {
 	std::string name = attribute.getName();
 
@@ -190,6 +162,30 @@ bool UITab::setAttribute( const NodeAttribute& attribute ) {
 	}
 
 	return true;
+}
+
+Uint32 UITab::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
+	if ( mEnabled && mVisible ) {
+		if ( NULL == mControlOwned && !mOwnedName.empty() ) {
+			setOwnedControl();
+		}
+
+		UITabWidget * tTabW	= getTabWidget();
+
+		if ( NULL != tTabW ) {
+			if ( Flags & EE_BUTTONS_WUWD ) {
+				if ( Flags & EE_BUTTON_WUMASK ) {
+					tTabW->selectPrev();
+				} else if ( Flags & EE_BUTTON_WDMASK ) {
+					tTabW->selectNext();
+				}
+			} else if ( tTabW->getTabsClosable() && ( Flags & EE_BUTTON_MMASK ) ) {
+				tTabW->remove( this );
+			}
+		}
+	}
+
+	return UISelectButton::onMouseUp( Pos, Flags );
 }
 
 void UITab::setOwnedControl() {

@@ -199,23 +199,6 @@ void UIScrollBar::adjustChilds() {
 	}
 }
 
-void UIScrollBar::update( const Time& time ) {
-	UINode::update( time );
-
-	if ( NULL != getEventDispatcher() && ( mBtnUp->isMouseOver() || mBtnDown->isMouseOver() ) ) {
-		manageClick( getEventDispatcher()->getClickTrigger() );
-	}
-}
-
-void UIScrollBar::manageClick( const Uint32& Flags ) {
-	if ( Flags & EE_BUTTONS_WUWD ) {
-		if ( Flags & EE_BUTTON_WUMASK )
-			mSlider->setValue( getValue() + getClickStep() );
-		else
-			mSlider->setValue( getValue() - getClickStep() );
-	}
-}
-
 Uint32 UIScrollBar::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::Click:

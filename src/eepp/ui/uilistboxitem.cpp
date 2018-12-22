@@ -40,6 +40,18 @@ void UIListBoxItem::setTheme( UITheme * Theme ) {
 	setThemeSkin( Theme, "listboxitem" );
 }
 
+Uint32 UIListBoxItem::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
+	if ( mEnabled && mVisible ) {
+		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( getParent()->getParent() );
+
+		if ( Flags & EE_BUTTONS_WUWD && LBParent->getVerticalScrollBar()->isVisible() ) {
+			LBParent->getVerticalScrollBar()->getSlider()->manageClick( Flags );
+		}
+	}
+
+	return UITextView::onMouseUp( Pos, Flags );
+}
+
 Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTONS_LRM ) {
 		reinterpret_cast<UIListBox*> ( getParent()->getParent() )->itemClicked( this );
@@ -47,7 +59,7 @@ Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 		select();
 	}
 
-	return 1;
+	return UITextView::onMouseClick( Pos, Flags );
 }
 
 void UIListBoxItem::select() {
@@ -79,21 +91,6 @@ void UIListBoxItem::select() {
 
 		if ( !wasSelected ) {
 			LBParent->onSelected();
-		}
-	}
-}
-
-void UIListBoxItem::update( const Time& time ) {
-	UITextView::update( time );
-
-	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
-		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( getParent()->getParent() );
-		Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
-
-		if ( isMouseOver() ) {
-			if ( Flags & EE_BUTTONS_WUWD && LBParent->getVerticalScrollBar()->isVisible() ) {
-				LBParent->getVerticalScrollBar()->getSlider()->manageClick( Flags );
-			}
 		}
 	}
 }
