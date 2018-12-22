@@ -72,13 +72,13 @@ void UIScrollBar::setTheme( UITheme * Theme ) {
 	UISkin * tSkin = mBtnUp->getSkin();
 
 	if ( NULL != tSkin ) {
-		mBtnUp->setSize( tSkin->getSize( UIState::StateFlagNormal ) );
+		mBtnUp->setSize( tSkin->getSize() );
 	}
 
 	tSkin = mBtnDown->getSkin();
 
 	if ( NULL != tSkin ) {
-		mBtnDown->setSize( tSkin->getSize( UIState::StateFlagNormal ) );
+		mBtnDown->setSize( tSkin->getSize() );
 	}
 
 	adjustChilds();
@@ -91,7 +91,7 @@ void UIScrollBar::onAutoSize() {
 	UISkin * tSkin = mSlider->getBackSlider()->getSkin();
 
 	if ( NULL != tSkin ) {
-		size = tSkin->getSize( UIState::StateFlagNormal );
+		size = tSkin->getSize();
 
 		mMinControlSize = PixelDensity::pxToDp( size );
 
@@ -108,7 +108,7 @@ void UIScrollBar::onAutoSize() {
 		UISkin * tSkin = mSlider->getSliderButton()->getSkin();
 
 		if ( NULL != tSkin ) {
-			size = tSkin->getSize( UIState::StateFlagNormal );
+			size = tSkin->getSize();
 
 			if ( mFlags & UI_AUTO_SIZE ) {
 				if ( mSlider->isVertical() ) {

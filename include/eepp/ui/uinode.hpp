@@ -241,7 +241,7 @@ class EE_API UINode : public Node {
 
 		Rectf makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
 
-		Sizef getSkinSize( UISkin * Skin, const Uint32& State = UIState::StateNormal );
+		Sizef getSkinSize( UISkin * Skin, const Uint32& State = UIState::StateFlagNormal );
 
 		void drawHighlightFocus();
 

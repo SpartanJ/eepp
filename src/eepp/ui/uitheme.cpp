@@ -91,7 +91,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 				int stateNum = UIState::getStateNumber( nameParts[ nameParts.size() - 1 ] );
 
 				if ( -1 != stateNum )
-					skins[ skinName ]->setStateDrawable( 1 << stateNum, drawable );
+					skins[ skinName ]->setStateDrawable( stateNum, drawable );
 			} else {
 				std::vector<std::string> nameParts = String::split( name, '_' );
 
@@ -106,7 +106,7 @@ UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 							skins[ skinName ] = tTheme->add( UISkin::New( skinName ) );
 
 						if ( -1 != stateNum )
-							skins[ skinName ]->setStateDrawable( 1 << stateNum, TextureRegion );
+							skins[ skinName ]->setStateDrawable( stateNum, TextureRegion );
 					}
 				}
 			}
@@ -181,7 +181,7 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 					int stateNum = UIState::getStateNumber( nameParts[ nameParts.size() - 1 ] );
 
 					if ( -1 != stateNum )
-						skins[ skinName ]->setStateDrawable( 1 << stateNum, drawable );
+						skins[ skinName ]->setStateDrawable( stateNum, drawable );
 				} else {
 					std::vector<std::string> nameParts = String::split( name, '_' );
 
@@ -198,7 +198,7 @@ UITheme * UITheme::loadFromDirectroy( UITheme * tTheme, const std::string& Path 
 								skins[ skinName ] = tTheme->add( UISkin::New( skinName ) );
 
 							if ( -1 != stateNum )
-								skins[ skinName ]->setStateDrawable( 1 << stateNum, textureRegion );
+								skins[ skinName ]->setStateDrawable( stateNum, textureRegion );
 						}
 					}
 				}

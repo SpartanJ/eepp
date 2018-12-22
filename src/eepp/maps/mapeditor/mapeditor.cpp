@@ -358,6 +358,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 
 	mGfxPreview = UITextureRegion::New();
 	mGfxPreview->setScaleType( UIScaleType::FitInside )
+			   ->setLayoutSizeRules( FIXED, FIXED )
 			   ->resetFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP )
 			   ->setParent( mSGCont )->setSize( Width, Width )
 			   ->setPosition( 0, mTextureRegionList->getPosition().y + mTextureRegionList->getSize().getHeight() + 4 );
@@ -495,11 +496,11 @@ void MapEditor::createUIMap() {
 	Int32 ScrollV = 16;
 
 	if ( NULL != HScrollSkin ) {
-		ScrollH = HScrollSkin->getSize( UIState::StateFlagNormal ).getHeight();
+		ScrollH = HScrollSkin->getSize().getHeight();
 	}
 
 	if ( NULL != VScrollSkin ) {
-		ScrollV = VScrollSkin->getSize( UIState::StateFlagNormal ).getHeight();
+		ScrollV = VScrollSkin->getSize().getHeight();
 	}
 
 	mUIMap = UIMap::New( mTheme );

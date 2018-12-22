@@ -384,7 +384,7 @@ UISkin * UINode::setBackgroundFillEnabled( bool enabled ) {
 
 	invalidateDraw();
 
-	return mBackgroundState->getSkin();
+	return NULL != mBackgroundState ? mBackgroundState->getSkin() : NULL;
 }
 
 UINode * UINode::setBackgroundDrawable( const Uint32& state, Drawable * drawable, bool ownIt ) {
@@ -451,7 +451,7 @@ UISkin * UINode::setForegroundFillEnabled( bool enabled ) {
 
 	invalidateDraw();
 
-	return mForegroundState->getSkin();
+	return NULL != mForegroundState ? mForegroundState->getSkin() : NULL;
 }
 
 UINode * UINode::setForegroundDrawable( const Uint32 & state, Drawable * drawable, bool ownIt ) {
@@ -522,7 +522,7 @@ UISkin * UINode::setBorderEnabled( bool enabled ) {
 
 	invalidateDraw();
 
-	return mBorderState->getSkin();
+	return NULL != mBorderState ? mBorderState->getSkin() : NULL;
 }
 
 UINode * UINode::setBorderColor( const Uint32& state, const Color& color ) {
@@ -626,8 +626,8 @@ void UINode::drawForeground() {
 void UINode::drawBorder() {
 	if ( ( mFlags & UI_BORDER ) && NULL != mBorderState ) {
 		if ( NULL != mBorderState->getSkin() && NULL != mBackgroundState && NULL != mBackgroundState->getSkin() ) {
-			Drawable * drawable = mBorderState->getSkin()->getStateDrawable( 1 << mBorderState->getCurrentState() );
-			Drawable * backDrawable = mBackgroundState->getSkin()->getStateDrawable( 1 << mBorderState->getCurrentState() );
+			Drawable * drawable = mBorderState->getSkin()->getStateDrawable( mBorderState->getCurrentState() );
+			Drawable * backDrawable = mBackgroundState->getSkin()->getStateDrawable( mBorderState->getCurrentState() );
 
 			if ( NULL != backDrawable && NULL != drawable && backDrawable->getDrawableType() == Drawable::RECTANGLE && drawable->getDrawableType() == Drawable::RECTANGLE ) {
 				RectangleDrawable * borderDrawable = static_cast<RectangleDrawable*>( drawable );
@@ -882,7 +882,7 @@ Rectf UINode::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBot
 
 Sizef UINode::getSkinSize( UISkin * Skin, const Uint32& State ) {
 	if ( NULL != Skin ) {
-		return Skin->getSize( 1 << State );
+		return Skin->getSize( State );
 	}
 
 	return Sizef::Zero;
@@ -890,7 +890,7 @@ Sizef UINode::getSkinSize( UISkin * Skin, const Uint32& State ) {
 
 Sizef UINode::getSkinSize() {
 	if ( NULL != getSkin() ) {
-		return getSkin()->getSize( UIState::StateFlagNormal );
+		return getSkin()->getSize();
 	}
 
 	return Sizef::Zero;

@@ -11,7 +11,9 @@ UISkin * UISkin::New( const std::string& name ) {
 
 UISkin::UISkin( const std::string& name ) :
 	StateListDrawable( SKIN, name )
-{}
+{
+	mCurrentState = UIState::StateFlagNormal;
+}
 
 UISkin::~UISkin() {
 }

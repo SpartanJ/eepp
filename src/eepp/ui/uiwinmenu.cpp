@@ -142,7 +142,7 @@ void UIWinMenu::refreshButtons() {
 	UISkin * skin = getSkin();
 
 	if ( NULL != skin ) {
-		h = skin->getSize( UIState::StateFlagNormal ).getHeight();
+		h = skin->getSize().getHeight();
 
 		if ( mButtons.begin() != mButtons.end() ) {
 			UISelectButton * tbut = mButtons.begin()->first;

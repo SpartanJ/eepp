@@ -60,14 +60,14 @@ void UICheckBox::onThemeLoaded() {
 	UISkin * tSkin = mActiveButton->getSkin();
 
 	if ( tSkin ) {
-		mActiveButton->setSize( tSkin->getSize( UIState::StateFlagNormal ) );
+		mActiveButton->setSize( tSkin->getSize() );
 		mActiveButton->centerVertical();
 	}
 
 	tSkin = mInactiveButton->getSkin();
 
 	if ( NULL != tSkin ) {
-		mInactiveButton->setSize( tSkin->getSize( UIState::StateFlagNormal ) );
+		mInactiveButton->setSize( tSkin->getSize() );
 		mInactiveButton->centerVertical();
 	}
 

@@ -9,7 +9,20 @@ static const char * UIStatesNames[] = {
 	"selected",
 	"hover",
 	"pressed",
+	"selectedhover",
+	"selectedpressed",
 	"disabled"
+};
+
+static const Uint32 UIStateFlags[] = {
+	UIState::StateFlagNormal,
+	UIState::StateFlagFocus,
+	UIState::StateFlagSelected,
+	UIState::StateFlagHover,
+	UIState::StateFlagPressed,
+	UIState::StateFlagSelectedHover,
+	UIState::StateFlagSelectedPressed,
+	UIState::StateFlagDisabled
 };
 
 const char * UIState::getSkinStateName( const Uint32& State ) {
@@ -19,7 +32,7 @@ const char * UIState::getSkinStateName( const Uint32& State ) {
 int UIState::getStateNumber( const std::string& State ) {
 	for ( int i = 0; i < UIState::StateCount; i++ ) {
 		if ( State == UIStatesNames[i] ) {
-			return i;
+			return UIStateFlags[i];
 		}
 	}
 
@@ -42,8 +55,8 @@ UIState * UIState::New( UISkin * skin ) {
 
 UIState::UIState( UISkin * Skin ) :
 	mSkin( Skin ),
-	mState(1 << StateNormal),
-	mCurrentState(StateNormal)
+	mState(StateFlagNormal),
+	mCurrentState(StateFlagNormal)
 {
 	eeASSERT( NULL != mSkin );
 }
@@ -53,7 +66,7 @@ UIState::~UIState() {
 
 void UIState::draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha ) {
 	if ( NULL != mSkin ) {
-		mSkin->setState( 1 << mCurrentState );
+		mSkin->setState( mCurrentState );
 		mSkin->setAlpha( Alpha );
 		mSkin->draw( Vector2f( X, Y ), Sizef( Width, Height ) );
 	}
@@ -100,14 +113,16 @@ Uint32 UIState::getCurrentState() const {
 }
 
 void UIState::updateState() {
-	for ( int i = StateCount - 1; i >= 0; i-- ) {
-		if ( ( mState & ( 1 << i ) ) && stateExists( i ) ) {
-			mCurrentState = i;
-			return;
+	for ( int i = StateFlagCount - 1; i >= 0; i-- ) {
+		if ( ( mState & UIStateFlags[i] ) == UIStateFlags[i] ) {
+			if ( mSkin->hasDrawableState( UIStateFlags[i] ) ) {
+				mCurrentState = UIStateFlags[i];
+				return;
+			}
 		}
 	}
 
-	mCurrentState = 0;
+	mCurrentState = StateFlagNormal;
 }
 
 }}

@@ -66,13 +66,13 @@ void UISpinBox::setTheme( UITheme * Theme ) {
 	tSkin = mPushUp->getSkin();
 
 	if ( NULL != tSkin ) {
-		mPushUp->setSize( tSkin->getSize( UIState::StateFlagNormal ) );
+		mPushUp->setSize( tSkin->getSize() );
 	}
 
 	tSkin = mPushDown->getSkin();
 
 	if ( NULL != tSkin ) {
-		mPushDown->setSize( tSkin->getSize( UIState::StateFlagNormal ) );
+		mPushDown->setSize( tSkin->getSize() );
 	}
 
 	adjustChilds();
