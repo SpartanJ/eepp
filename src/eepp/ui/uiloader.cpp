@@ -194,7 +194,7 @@ bool UILoader::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "progress" == name ) {
 		setProgress( attribute.asFloat() );
 	} else if ( "fillcolor" == name ) {
-		setFillColor( Color::fromString( attribute.asString() ) );
+		setFillColor( attribute.asColor() );
 	} else if ( "radius" == name ) {
 		setRadius( attribute.asFloat() );
 	} else if ( "outlinethickness" == name ) {

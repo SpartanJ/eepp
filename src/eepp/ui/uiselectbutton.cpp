@@ -93,7 +93,7 @@ bool UISelectButton::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "textselectedcolor" == name ) {
-		setFontSelectedColor( Color::fromString( attribute.asString() ) );
+		setFontSelectedColor( attribute.asColor() );
 	} else {
 		return UIPushButton::setAttribute( attribute );
 	}

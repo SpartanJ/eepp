@@ -207,7 +207,7 @@ bool UIImage::setAttribute( const NodeAttribute& attribute ) {
 			setScaleType( UIScaleType::None );
 		}
 	} else if ( "tint" == name ) {
-		setColor( Color::fromString( attribute.asString() ) );
+		setColor( attribute.asColor() );
 	} else {
 		return UIWidget::setAttribute( attribute );
 	}

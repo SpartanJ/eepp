@@ -376,7 +376,7 @@ bool UIPushButton::setAttribute( const NodeAttribute& attribute ) {
 		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
 	} else if ( "textovercolor" == name ) {
-		setFontOverColor( Color::fromString( attribute.asString() ) );
+		setFontOverColor( attribute.asColor() );
 	} else if ( "icon" == name ) {
 		std::string val = attribute.asString();
 		Drawable * icon = NULL;

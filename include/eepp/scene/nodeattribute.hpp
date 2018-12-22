@@ -3,6 +3,13 @@
 
 #include <string>
 #include <eepp/core/string.hpp>
+#include <eepp/system/color.hpp>
+#include <eepp/math/originpoint.hpp>
+#include <eepp/graphics/blendmode.hpp>
+
+using namespace EE::System;
+using namespace EE::Math;
+using namespace EE::Graphics;
 
 namespace EE { namespace Scene {
 
@@ -42,6 +49,15 @@ class NodeAttribute {
 
 		bool asBool( bool defaultValue = false ) const;
 
+		Color asColor() const;
+
+		Float asDpDimension( const std::string& defaultValue = "" ) const;
+
+		int asDpDimensionI( const std::string& defaultValue = "" ) const;
+
+		OriginPoint asOriginPoint() const;
+
+		BlendMode asBlendMode() const;
 	protected:
 		std::string mName;
 		std::string mValue;

@@ -433,45 +433,6 @@ void UIWidget::endAttributesTransaction() {
 	}
 }
 
-static OriginPoint toOriginPoint( std::string val ) {
-	String::toLowerInPlace( val );
-
-	if ( "center" == val ) {
-		return OriginPoint::OriginCenter;
-	} else if ( "topleft" == val ) {
-		return OriginPoint::OriginTopLeft;
-	} else {
-		std::vector<std::string> parts = String::split( val, ',' );
-
-		if ( parts.size() == 2 ) {
-			Float x = 0;
-			Float y = 0;
-
-			bool Res1 = String::fromString<Float>( x, parts[0] );
-			bool Res2 = String::fromString<Float>( y, parts[1] );
-
-			if ( Res1 && Res2 ) {
-				return OriginPoint( x, y );
-			}
-		}
-	}
-
-	return OriginPoint::OriginCenter;
-}
-
-static BlendMode toBlendMode( std::string val ) {
-	String::toLowerInPlace( val );
-
-	BlendMode blendMode;
-
-	if ( val == "add" ) blendMode = BlendAdd;
-	else if ( val == "alpha" ) blendMode = BlendAlpha;
-	else if ( val == "multiply" ) blendMode = BlendMultiply;
-	else if ( val == "none" ) blendMode = BlendNone;
-
-	return blendMode;
-}
-
 bool UIWidget::setAttribute( const std::string& name, const std::string& value ) {
 	return setAttribute( NodeAttribute( name, value ) );
 }
@@ -484,14 +445,14 @@ bool UIWidget::setAttribute(const NodeAttribute & attribute) {
 	if ( "id" == name ) {
 		setId( attribute.value() );
 	} else if ( "x" == name ) {
-		setInternalPosition( Vector2f( PixelDensity::toDpFromString( attribute.asString() ), mDpPos.y ) );
+		setInternalPosition( Vector2f( attribute.asDpDimension(), mDpPos.y ) );
 	} else if ( "y" == name ) {
-		setInternalPosition( Vector2f( mDpPos.x, PixelDensity::toDpFromString( attribute.asString() ) ) );
+		setInternalPosition( Vector2f( mDpPos.x, attribute.asDpDimension() ) );
 	} else if ( "width" == name ) {
-		setInternalWidth( PixelDensity::toDpFromStringI( attribute.asString() ) );
+		setInternalWidth( attribute.asDpDimensionI() );
 		notifyLayoutAttrChange();
 	} else if ( "height" == name ) {
-		setInternalHeight( PixelDensity::toDpFromStringI( attribute.asString() ) );
+		setInternalHeight( attribute.asDpDimensionI() );
 		notifyLayoutAttrChange();
 	} else if ( "background" == name ) {
 		Drawable * res = NULL;
@@ -499,30 +460,30 @@ bool UIWidget::setAttribute(const NodeAttribute & attribute) {
 		const std::string attributeName( attribute.asString() );
 
 		if ( String::startsWith( attributeName, "#" ) ) {
-			setBackgroundColor( Color::fromString( attribute.asString() ) );
+			setBackgroundColor( attribute.asColor() );
 		} else if ( NULL != ( res = DrawableSearcher::searchByName( attributeName ) ) ) {
 			setBackgroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
 		}
 	} else if ( "backgroundcolor" == name ) {
-		setBackgroundColor( Color::fromString( attribute.asString() ) );
+		setBackgroundColor( attribute.asColor() );
 	} else if ( "foreground" == name ) {
 		Drawable * res = NULL;
 
 		const std::string attributeName( attribute.asString() );
 
 		if ( String::startsWith( attributeName, "#" ) ) {
-			setForegroundColor( Color::fromString( attribute.asString() ) );
+			setForegroundColor( attribute.asColor() );
 		} else if ( NULL != ( res = DrawableSearcher::searchByName( attributeName ) ) ) {
 			setForegroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
 		}
 	} else if ( "foregroundcolor" == name ) {
-		setForegroundColor( Color::fromString( attribute.asString() ) );
+		setForegroundColor( attribute.asColor() );
 	} else if ( "foregroundcorners" == name ) {
 		setForegroundCorners( attribute.asUint() );
 	} else if ( "bordercolor" == name ) {
-		setBorderColor( Color::fromString( attribute.asString() ) );
+		setBorderColor( attribute.asColor() );
 	} else if ( "borderwidth" == name ) {
-		setBorderWidth( PixelDensity::toDpFromStringI( attribute.asString("1") ) );
+		setBorderWidth( attribute.asDpDimensionI("1") );
 	} else if ( "bordercorners" == name || "backgroundcorners" == name ) {
 		setBackgroundCorners( attribute.asUint() );
 	} else if ( "visible" == name ) {
@@ -595,16 +556,16 @@ bool UIWidget::setAttribute(const NodeAttribute & attribute) {
 			}
 		}
 	} else if ( "layout_margin" == name ) {
-		int val = PixelDensity::toDpFromStringI( attribute.asString() );
+		int val = attribute.asDpDimensionI();
 		setLayoutMargin( Rect( val, val, val, val ) );
 	} else if ( "layout_marginleft" == name ) {
-		setLayoutMargin( Rect( PixelDensity::toDpFromStringI( attribute.asString() ), mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) );
+		setLayoutMargin( Rect( attribute.asDpDimensionI(), mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) );
 	} else if ( "layout_marginright" == name ) {
-		setLayoutMargin( Rect( mLayoutMargin.Left, mLayoutMargin.Top, PixelDensity::toDpFromStringI( attribute.asString() ), mLayoutMargin.Bottom ) );
+		setLayoutMargin( Rect( mLayoutMargin.Left, mLayoutMargin.Top, attribute.asDpDimensionI(), mLayoutMargin.Bottom ) );
 	} else if ( "layout_margintop" == name ) {
-		setLayoutMargin( Rect( mLayoutMargin.Left, PixelDensity::toDpFromStringI( attribute.asString() ), mLayoutMargin.Right, mLayoutMargin.Bottom ) );
+		setLayoutMargin( Rect( mLayoutMargin.Left, attribute.asDpDimensionI(), mLayoutMargin.Right, mLayoutMargin.Bottom ) );
 	} else if ( "layout_marginbottom" == name ) {
-		setLayoutMargin( Rect( mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, PixelDensity::toDpFromStringI( attribute.asString() ) ) );
+		setLayoutMargin( Rect( mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, attribute.asDpDimensionI() ) );
 	} else if ( "tooltip" == name ) {
 		setTooltipText( attribute.asString() );
 	} else if ( "layout_weight" == name ) {
@@ -699,22 +660,22 @@ bool UIWidget::setAttribute(const NodeAttribute & attribute) {
 	} else if ( "scale" == name ) {
 		setScale( attribute.asFloat() );
 	} else if ( "rotationoriginpoint" == name ) {
-		setRotationOriginPoint( toOriginPoint( attribute.asString() ) );
+		setRotationOriginPoint( attribute.asOriginPoint() );
 	} else if ( "scaleoriginpoint" == name ) {
-		setScaleOriginPoint( toOriginPoint( attribute.asString() ) );
+		setScaleOriginPoint( attribute.asOriginPoint() );
 	} else if ( "blendmode" == name ) {
-		setBlendMode( toBlendMode( attribute.asString() ) );
+		setBlendMode( attribute.asBlendMode() );
 	} else if ( "padding" == name ) {
-		int val = PixelDensity::toDpFromStringI( attribute.asString() );
+		int val = attribute.asDpDimensionI();
 		setPadding( Rectf( val, val, val, val ) );
 	} else if ( "paddingleft" == name ) {
-		setPadding( Rectf( PixelDensity::toDpFromString( attribute.asString() ), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
+		setPadding( Rectf( attribute.asDpDimension(), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
 	} else if ( "paddingright" == name ) {
-		setPadding( Rectf( mPadding.Left, mPadding.Top, PixelDensity::toDpFromString( attribute.asString() ), mPadding.Bottom ) );
+		setPadding( Rectf( mPadding.Left, mPadding.Top, attribute.asDpDimension(), mPadding.Bottom ) );
 	} else if ( "paddingtop" == name ) {
-		setPadding( Rectf( mPadding.Left, PixelDensity::toDpFromString( attribute.asString() ), mPadding.Right, mPadding.Bottom ) );
+		setPadding( Rectf( mPadding.Left, attribute.asDpDimension(), mPadding.Right, mPadding.Bottom ) );
 	} else if ( "paddingbottom" == name ) {
-		setPadding( Rectf( mPadding.Left, mPadding.Top, mPadding.Right, PixelDensity::toDpFromString( attribute.asString() ) ) );
+		setPadding( Rectf( mPadding.Left, mPadding.Top, mPadding.Right, attribute.asDpDimension() ) );
 	} else {
 		attributeSet = false;
 	}

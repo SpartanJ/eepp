@@ -1,4 +1,5 @@
 #include <eepp/scene/nodeattribute.hpp>
+#include <eepp/graphics/pixeldensity.hpp>
 
 namespace EE { namespace Scene {
 
@@ -64,6 +65,65 @@ bool NodeAttribute::asBool( bool defaultValue ) const {
 
 	// 1*, t* (true), T* (True), y* (yes), Y* (YES)
 	return (first == '1' || first == 't' || first == 'T' || first == 'y' || first == 'Y');
+}
+
+Color NodeAttribute::asColor() const {
+	return Color::fromString( mValue );
+}
+
+Float NodeAttribute::asDpDimension( const std::string& defaultValue ) const {
+	return Graphics::PixelDensity::toDpFromString( asString( defaultValue ) );
+}
+
+int NodeAttribute::asDpDimensionI( const std::string& defaultValue ) const {
+	return Graphics::PixelDensity::toDpFromStringI( asString( defaultValue ) );
+}
+
+static OriginPoint toOriginPoint( std::string val ) {
+	String::toLowerInPlace( val );
+
+	if ( "center" == val ) {
+		return OriginPoint::OriginCenter;
+	} else if ( "topleft" == val ) {
+		return OriginPoint::OriginTopLeft;
+	} else {
+		std::vector<std::string> parts = String::split( val, ',' );
+
+		if ( parts.size() == 2 ) {
+			Float x = 0;
+			Float y = 0;
+
+			bool Res1 = String::fromString<Float>( x, parts[0] );
+			bool Res2 = String::fromString<Float>( y, parts[1] );
+
+			if ( Res1 && Res2 ) {
+				return OriginPoint( x, y );
+			}
+		}
+	}
+
+	return OriginPoint::OriginCenter;
+}
+
+static BlendMode toBlendMode( std::string val ) {
+	String::toLowerInPlace( val );
+
+	BlendMode blendMode;
+
+	if ( val == "add" ) blendMode = BlendAdd;
+	else if ( val == "alpha" ) blendMode = BlendAlpha;
+	else if ( val == "multiply" ) blendMode = BlendMultiply;
+	else if ( val == "none" ) blendMode = BlendNone;
+
+	return blendMode;
+}
+
+OriginPoint NodeAttribute::asOriginPoint() const {
+	return toOriginPoint( mValue );
+}
+
+BlendMode NodeAttribute::asBlendMode() const {
+	return toBlendMode( mValue );
 }
 
 }}

@@ -190,20 +190,20 @@ bool UITabWidget::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
 	if ( "textcolor" == name ) {
-		setFontColor( Color::fromString( attribute.asString() ) );
+		setFontColor( attribute.asColor() );
 	} else if ( "textshadowcolor" == name ) {
-		setFontShadowColor( Color::fromString( attribute.asString() ) );
+		setFontShadowColor( attribute.asColor() );
 	} else if ( "textovercolor" == name ) {
-		setFontOverColor( Color::fromString( attribute.asString() ) );
+		setFontOverColor( attribute.asColor() );
 	} else if ( "textselectedcolor" == name ) {
-		setFontSelectedColor( Color::fromString( attribute.asString() ) );
+		setFontSelectedColor( attribute.asColor() );
 	} else if ( "fontfamily" == name || "fontname" == name ) {
 		Font * font = FontManager::instance()->getByName( attribute.asString() );
 
 		if ( NULL != font )
 			setFont( font );
 	} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
-		setCharacterSize( PixelDensity::toDpFromStringI( attribute.asString() ) );
+		setCharacterSize( attribute.asDpDimensionI() );
 	} else if ( "textstyle" == name || "fontstyle" == name ) {
 		std::string valStr = attribute.asString();
 		String::toLowerInPlace( valStr );
@@ -230,9 +230,9 @@ bool UITabWidget::setAttribute( const NodeAttribute& attribute ) {
 			setFontStyle( flags );
 		}
 	} else if ( "fontoutlinethickness" == name ) {
-		setOutlineThickness( PixelDensity::toDpFromString( attribute.asString() ) );
+		setOutlineThickness( attribute.asDpDimension() );
 	} else if ( "fontoutlinecolor" == name ) {
-		setOutlineColor( Color::fromString( attribute.asString() ) );
+		setOutlineColor( attribute.asColor() );
 	} else if ( "maxtextlength" == name ) {
 		setMaxTextLength( attribute.asUint(1) );
 	} else if ( "mintabwidth" == name ) {
@@ -246,7 +246,7 @@ bool UITabWidget::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "drawlinebelowtabs" == name ) {
 		setDrawLineBelowTabs( attribute.asBool() );
 	} else if ( "linebelowtabscolor" == name ) {
-		setLineBelowTabsColor( Color::fromString( attribute.asString() ) );
+		setLineBelowTabsColor( attribute.asColor() );
 	} else if ( "linebelowtabsyoffset" == name ) {
 		setLineBelowTabsYOffset( attribute.asInt() );
 	} else {
