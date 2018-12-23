@@ -421,7 +421,7 @@ void Renderer::blitFrameBuffer( int srcX0, int srcY0, int srcX1, int srcY1, int 
 	   eeglBlitFramebufferEXT = (pglBlitFramebufferEXT)getProcAddress( "glBlitFramebufferEXT" );
 
    if ( NULL != eeglBlitFramebufferEXT )
-	   eeglBlitFramebufferEXT( srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter );
+	   eeglBlitFramebufferEXT( srcX0, srcY1, srcX1, srcY0, dstX0, dstY0, dstX1, dstY1, mask, filter );
 }
 
 void Renderer::setShader( ShaderProgram * Shader ) {
