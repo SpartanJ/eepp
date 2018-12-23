@@ -259,7 +259,7 @@ void FrameBufferFBO::draw( const Vector2f & position, const Sizef & size ) {
 		GLi->bindFramebuffer(GL_READ_FRAMEBUFFER, mFrameBuffer);
 		GLi->bindFramebuffer(GL_DRAW_FRAMEBUFFER, mLastFB);
 
-		glBlitFramebufferEXT( 0, 0, (Int32)mSize.getWidth(), (Int32)mSize.getHeight(),
+		GLi->blitFrameBuffer( 0, 0, (Int32)mSize.getWidth(), (Int32)mSize.getHeight(),
 						   position.x, position.y, position.x + size.x, position.y + size.y,
 						   GL_COLOR_BUFFER_BIT, GL_LINEAR );
 	}
@@ -275,7 +275,7 @@ void FrameBufferFBO::draw( Rect src, Rect dst ) {
 		GLi->bindFramebuffer(GL_READ_FRAMEBUFFER, mFrameBuffer);
 		GLi->bindFramebuffer(GL_DRAW_FRAMEBUFFER, mLastFB);
 
-		glBlitFramebufferEXT( src.Left, 0 == mLastFB ? src.Bottom : src.Top, src.Right, 0 == mLastFB ? src.Top : src.Bottom,
+		GLi->blitFrameBuffer( src.Left, 0 == mLastFB ? src.Bottom : src.Top, src.Right, 0 == mLastFB ? src.Top : src.Bottom,
 						   dst.Left, dst.Top, dst.Right, dst.Bottom,
 						   GL_COLOR_BUFFER_BIT, GL_LINEAR );
 

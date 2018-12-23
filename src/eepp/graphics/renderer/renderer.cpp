@@ -27,6 +27,7 @@ typedef void (APIENTRY * pglBindRenderbuffer) (GLenum target, GLuint renderbuffe
 typedef void (APIENTRY * pglBlendFuncSeparate) (GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha);
 typedef void (APIENTRY * pglDiscardFramebufferEXT) (GLenum target, GLsizei numAttachments, const GLenum* attachments);
 typedef void (APIENTRY * pglBlendEquationSeparate) (GLenum modeRGB, GLenum modeAlpha);
+typedef void (APIENTRY * pglBlitFramebufferEXT) (GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
 
 Renderer * GLi = NULL;
 
@@ -411,6 +412,16 @@ void Renderer::blendEquationSeparate( unsigned int modeRGB, unsigned int modeAlp
 
 	if ( NULL != eeglBlendEquationSeparate )
 		eeglBlendEquationSeparate( modeRGB, modeAlpha );
+}
+
+void Renderer::blitFrameBuffer( int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, unsigned int mask, unsigned int filter ) {
+   static pglBlitFramebufferEXT eeglBlitFramebufferEXT = NULL;
+
+   if ( NULL == eeglBlitFramebufferEXT )
+	   eeglBlitFramebufferEXT = (pglBlitFramebufferEXT)getProcAddress( "glBlitFramebufferEXT" );
+
+   if ( NULL != eeglBlitFramebufferEXT )
+	   eeglBlitFramebufferEXT( srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter );
 }
 
 void Renderer::setShader( ShaderProgram * Shader ) {
