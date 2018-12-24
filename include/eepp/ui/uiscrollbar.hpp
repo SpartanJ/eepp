@@ -13,9 +13,13 @@ class EE_API UIScrollBar : public UIWidget {
 			NoButtons
 		};
 
-		static UIScrollBar * New( const UI_ORIENTATION & orientation = UI_VERTICAL );
+		static UIScrollBar * New();
 
-		UIScrollBar( const UI_ORIENTATION& orientation = UI_VERTICAL );
+		static UIScrollBar * NewHorizontal();
+
+		static UIScrollBar * NewVertical();
+
+		explicit UIScrollBar( const UI_ORIENTATION& orientation = UI_VERTICAL );
 
 		virtual ~UIScrollBar();
 

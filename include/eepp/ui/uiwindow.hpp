@@ -21,13 +21,13 @@ class EE_API UIWindow : public UIWidget {
 			RELATIVE_LAYOUT
 		};
 
-		static UIWindow * New( WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig );
+		static UIWindow * NewOpt( WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig );
 
-		static UIWindow * New( WindowBaseContainerType type = SIMPLE_LAYOUT );
+		static UIWindow * New();
 
-		UIWindow( WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig );
+		explicit UIWindow( WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig );
 
-		UIWindow( WindowBaseContainerType type = SIMPLE_LAYOUT );
+		explicit UIWindow( WindowBaseContainerType type = SIMPLE_LAYOUT );
 
 		virtual ~UIWindow();
 

@@ -3,8 +3,16 @@
 
 namespace EE { namespace UI {
 
-UIScrollBar * UIScrollBar::New( const UI_ORIENTATION& orientation ) {
-	return eeNew( UIScrollBar, ( orientation ) );
+UIScrollBar * UIScrollBar::New() {
+	return eeNew( UIScrollBar, ( UI_VERTICAL ) );
+}
+
+UIScrollBar * UIScrollBar::NewHorizontal() {
+	return eeNew( UIScrollBar, ( UI_HORIZONTAL ) );
+}
+
+UIScrollBar * UIScrollBar::NewVertical() {
+	return eeNew( UIScrollBar, ( UI_VERTICAL ) );
 }
 
 UIScrollBar::UIScrollBar( const UI_ORIENTATION& orientation ) :

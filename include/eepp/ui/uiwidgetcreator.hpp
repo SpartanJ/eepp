@@ -31,6 +31,8 @@ class EE_API UIWidgetCreator {
 		static RegisteredWidgetCallbackMap registeredWidget;
 
 		static WidgetCallbackMap widgetCallback;
+
+		static void createBaseWidgetList();
 };
 
 }}

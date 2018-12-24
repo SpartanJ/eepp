@@ -195,7 +195,7 @@ const Vector2f& UITextureRegion::getAlignOffset() const {
 bool UITextureRegion::setAttribute( const NodeAttribute& attribute ) {
 	const std::string& name = attribute.getName();
 
-	if ( "src" == name || "textureregion" == name || "subtexture" == name ) {
+	if ( "src" == name || "textureregion" == name ) {
 		Drawable * res = NULL;
 
 		if ( NULL != ( res = TextureAtlasManager::instance()->getTextureRegionByName( attribute.asString() ) ) && res->getDrawableType() == Drawable::TEXTUREREGION ) {

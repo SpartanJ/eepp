@@ -13,8 +13,8 @@ UIScrollView::UIScrollView() :
 	mViewType( Exclusive ),
 	mVScrollMode( UI_SCROLLBAR_AUTO ),
 	mHScrollMode( UI_SCROLLBAR_AUTO ),
-	mVScroll( UIScrollBar::New( UI_VERTICAL ) ),
-	mHScroll( UIScrollBar::New( UI_HORIZONTAL ) ),
+	mVScroll( UIScrollBar::NewVertical() ),
+	mHScroll( UIScrollBar::NewHorizontal() ),
 	mContainer( UINode::New() ),
 	mScrollView( NULL ),
 	mSizeChangeCb( 0 )

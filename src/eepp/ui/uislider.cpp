@@ -5,8 +5,16 @@
 
 namespace EE { namespace UI {
 
-UISlider * UISlider::New( const UI_ORIENTATION& orientation ) {
-	return eeNew( UISlider, ( orientation ) );
+UISlider * UISlider::New() {
+	return eeNew( UISlider, ( UI_VERTICAL ) );
+}
+
+UISlider * UISlider::NewVertical() {
+	return eeNew( UISlider, ( UI_VERTICAL ) );
+}
+
+UISlider * UISlider::NewHorizontal() {
+	return eeNew( UISlider, ( UI_HORIZONTAL ) );
 }
 
 UISlider::UISlider( const UI_ORIENTATION& orientation ) :

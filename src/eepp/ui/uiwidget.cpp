@@ -666,7 +666,7 @@ bool UIWidget::setAttribute(const NodeAttribute & attribute) {
 	} else if ( "blendmode" == name ) {
 		setBlendMode( attribute.asBlendMode() );
 	} else if ( "padding" == name ) {
-		int val = attribute.asDpDimensionI();
+		int val = attribute.asDpDimension();
 		setPadding( Rectf( val, val, val, val ) );
 	} else if ( "paddingleft" == name ) {
 		setPadding( Rectf( attribute.asDpDimension(), mPadding.Top, mPadding.Right, mPadding.Bottom ) );

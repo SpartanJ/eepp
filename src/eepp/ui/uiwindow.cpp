@@ -16,12 +16,12 @@
 
 namespace EE { namespace UI {
 
-UIWindow * UIWindow::New( UIWindow::WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig ) {
+UIWindow * UIWindow::NewOpt( UIWindow::WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig ) {
 	return eeNew( UIWindow, ( type, windowStyleConfig ) );
 }
 
-UIWindow * UIWindow::New( UIWindow::WindowBaseContainerType type ) {
-	return eeNew( UIWindow, ( type ) );
+UIWindow * UIWindow::New() {
+	return eeNew( UIWindow, ( SIMPLE_LAYOUT ) );
 }
 
 UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) :

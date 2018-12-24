@@ -2,6 +2,7 @@
 #define EE_NODEATTRIBUTE_HPP
 
 #include <string>
+#include <eepp/math/rect.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/system/color.hpp>
 #include <eepp/math/originpoint.hpp>
@@ -15,6 +16,25 @@ namespace EE { namespace Scene {
 
 class NodeAttribute {
 	public:
+		enum AttributeType
+		{
+			TypeString,
+			TypeInt,
+			TypeUint,
+			TypeDouble,
+			TypeFloat,
+			TypeLongLong,
+			TypeULongLong,
+			TypeBoolean,
+			TypeDimension,
+			TypeDimensionInt,
+			TypeOriginPoint,
+			TypeBlendMode,
+			TypeVector,
+			TypeRect,
+			TypeRectf
+		};
+
 		NodeAttribute( std::string name, std::string value );
 
 		std::string getName() const;
@@ -58,6 +78,12 @@ class NodeAttribute {
 		OriginPoint asOriginPoint() const;
 
 		BlendMode asBlendMode() const;
+
+		Vector2f asVector( const Vector2f& defaultValue = Vector2f::Zero );
+
+		Rect asRect( const Rect& defaultValue = Rect() );
+
+		Rectf asRectf( const Rectf& defaultValue = Rectf() );
 	protected:
 		std::string mName;
 		std::string mValue;
