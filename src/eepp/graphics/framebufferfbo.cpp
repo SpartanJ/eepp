@@ -283,6 +283,10 @@ void FrameBufferFBO::draw( Rect src, Rect dst ) {
 	}
 }
 
+bool FrameBufferFBO::created() const {
+	return mFrameBuffer != 0;
+}
+
 const Int32 &FrameBufferFBO::getFrameBufferId() const {
 	return mFrameBuffer;
 }

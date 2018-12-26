@@ -23,6 +23,7 @@ FrameBuffer::FrameBuffer( EE::Window::Window * window  ) :
 	mWindow( window ),
 	mSize(0,0),
 	mChannels(4),
+	mId(0),
 	mHasColorBuffer(false),
 	mHasDepthBuffer(false),
 	mHasStencilBuffer(false),

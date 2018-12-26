@@ -211,6 +211,11 @@ void SceneNode::createFrameBuffer() {
 	if ( fboSize.getWidth() < 1 ) fboSize.setWidth(1);
 	if ( fboSize.getHeight() < 1 ) fboSize.setHeight(1);
 	mFrameBuffer = FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight(), true, false, false, 4, mWindow );
+
+	// Frame buffer failed to create?
+	if ( !mFrameBuffer->created() ) {
+		eeSAFE_DELETE( mFrameBuffer );
+	}
 }
 
 void SceneNode::drawFrameBuffer() {

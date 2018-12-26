@@ -96,6 +96,9 @@ class EE_API FrameBuffer {
 
 		/** @return The hash id from its name */
 		const Uint32& getId() const;
+
+		/** @return If the frame buffer was created */
+		virtual bool created() const = 0;
 	protected:
 		EE::Window::Window *	mWindow;
 		Sizei		mSize;
