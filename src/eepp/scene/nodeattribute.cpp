@@ -1,9 +1,32 @@
 #include <eepp/scene/nodeattribute.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
+#include <algorithm>
 
 using namespace EE::Graphics;
 
 namespace EE { namespace Scene {
+
+NodeAttribute::Info::Info( NodeAttribute::AttributeType type, const std::string& name ) :
+	type( type ),
+	names( { name } )
+{}
+
+NodeAttribute::Info::Info( AttributeType type, const std::vector<std::string>& names ) :
+	type( type ),
+	names( names )
+{}
+
+bool NodeAttribute::Info::isName( const std::string& name ) {
+	return std::find(names.begin(), names.end(), name) != names.end();
+}
+
+const NodeAttribute::AttributeType& NodeAttribute::Info::getType() const {
+	return type;
+}
+
+const std::vector<std::string>& NodeAttribute::Info::getNames() const {
+	return names;
+}
 
 NodeAttribute::NodeAttribute( std::string name, std::string value ) :
 	mName( String::toLower( name ) ),

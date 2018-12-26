@@ -117,4 +117,8 @@ bool UIWidgetCreator::isWidgetRegistered( std::string widgetName ) {
 	return registeredWidget.find( String::toLower( widgetName ) ) != registeredWidget.end();
 }
 
+const UIWidgetCreator::RegisteredWidgetCallbackMap& UIWidgetCreator::getRegisteredWidgets() {
+	return registeredWidget;
+}
+
 }}

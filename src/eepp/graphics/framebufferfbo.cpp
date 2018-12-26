@@ -95,7 +95,7 @@ bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool Ste
 	mFrameBuffer = static_cast<Int32>( frameBuffer );
 
 	if ( !mFrameBuffer ) {
-		eePRINT("FrameBufferFBO::create: Failed to created FrameBuffer Object");
+		eePRINTL("FrameBufferFBO::create: Failed to created FrameBuffer Object");
 		return false;
 	}
 
@@ -109,7 +109,7 @@ bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool Ste
 		mDepthBuffer = static_cast<unsigned int>(depth);
 
 		if ( !mDepthBuffer ) {
-			eePRINT("FrameBufferFBO::create: Failed to created Depth Buffer");
+			eePRINTL("FrameBufferFBO::create: Failed to created Depth Buffer");
 			return false;
 		}
 
@@ -129,7 +129,7 @@ bool FrameBufferFBO::create( const Uint32& Width, const Uint32& Height, bool Ste
 		mStencilBuffer = static_cast<Uint32>(stencil);
 
 		if (!mStencilBuffer) {
-			eePRINT("FrameBufferFBO::create: Failed to created Stencil Buffer");
+			eePRINTL("FrameBufferFBO::create: Failed to created Stencil Buffer");
 			return false;
 		}
 

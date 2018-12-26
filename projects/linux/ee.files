@@ -333,6 +333,7 @@
 ../../include/eepp/ui/uispinbox.hpp
 ../../include/eepp/ui/uisprite.hpp
 ../../include/eepp/ui/uistate.hpp
+../../include/eepp/ui/uistyle.hpp
 ../../include/eepp/ui/uitab.hpp
 ../../include/eepp/ui/uitablecell.hpp
 ../../include/eepp/ui/uitable.hpp
@@ -732,6 +733,7 @@
 ../../src/eepp/ui/uispinbox.cpp
 ../../src/eepp/ui/uisprite.cpp
 ../../src/eepp/ui/uistate.cpp
+../../src/eepp/ui/uistyle.cpp
 ../../src/eepp/ui/uitab.cpp
 ../../src/eepp/ui/uitablecell.cpp
 ../../src/eepp/ui/uitable.cpp

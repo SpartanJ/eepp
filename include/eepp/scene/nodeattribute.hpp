@@ -35,6 +35,24 @@ class NodeAttribute {
 			TypeRectf
 		};
 
+		class Info
+		{
+			public:
+				Info( AttributeType type, const std::string& name );
+
+				Info( AttributeType type, const std::vector<std::string>& names );
+
+				bool isName( const std::string& name );
+
+				const AttributeType& getType() const;
+
+				const std::vector<std::string>& getNames() const;
+			protected:
+				AttributeType type;
+
+				std::vector<std::string> names;
+		};
+
 		NodeAttribute( std::string name, std::string value );
 
 		std::string getName() const;
