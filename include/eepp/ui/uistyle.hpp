@@ -16,12 +16,15 @@ class EE_API UIStyle : public UIState {
 
 		virtual ~UIStyle();
 
-		bool stateExists( const Uint32& State );
+		bool stateExists( const Uint32& state );
+
+		void addAttribute( int state, NodeAttribute attribute );
 	protected:
-		std::map<int, std::map<std::string, NodeAttribute> > states;;
+		typedef std::map<std::string, NodeAttribute> AttributesMap;
+
+		std::map<int, AttributesMap> mStates;
 };
 
 }}
-
 
 #endif

@@ -729,6 +729,7 @@ function build_eepp( build_name )
 			"src/eepp/scene/actions/*.cpp",
 			"src/eepp/ui/*.cpp",
 			"src/eepp/ui/actions/*.cpp",
+			"src/eepp/ui/css/*.cpp",
 			"src/eepp/ui/tools/*.cpp",
 			"src/eepp/physics/*.cpp",
 			"src/eepp/physics/constraints/*.cpp",

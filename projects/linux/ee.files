@@ -293,6 +293,7 @@
 ../../include/eepp/thirdparty/PlusCallback/callback.hpp
 ../../include/eepp/ui/base.hpp
 ../../include/eepp/ui.hpp
+../../include/eepp/ui/css/stylesheetparser.hpp
 ../../include/eepp/ui/marginmove/scale.hpp
 ../../include/eepp/ui/tools/textureatlaseditor.hpp
 ../../include/eepp/ui/uicheckbox.hpp
@@ -692,6 +693,7 @@
 ../../src/eepp/system/translator.cpp
 ../../src/eepp/system/virtualfilesystem.cpp
 ../../src/eepp/system/zip.cpp
+../../src/eepp/ui/css/stylesheetparser.cpp
 ../../src/eepp/ui/tools/textureatlaseditor.cpp
 ../../src/eepp/ui/tools/textureatlasnew.cpp
 ../../src/eepp/ui/tools/textureatlasnew.hpp

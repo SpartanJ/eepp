@@ -53,6 +53,8 @@ class NodeAttribute {
 				std::vector<std::string> names;
 		};
 
+		NodeAttribute();
+
 		NodeAttribute( std::string name, std::string value );
 
 		std::string getName() const;

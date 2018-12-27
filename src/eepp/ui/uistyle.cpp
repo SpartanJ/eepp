@@ -14,8 +14,12 @@ UIStyle::~UIStyle()
 {
 }
 
-bool UIStyle::stateExists( const EE::Uint32 & State ) {
+bool UIStyle::stateExists( const EE::Uint32 &  ) {
 	return false;
+}
+
+void UIStyle::addAttribute(int state, NodeAttribute attribute) {
+	mStates[ state ][ attribute.getName() ] = attribute;
 }
 
 }}

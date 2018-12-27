@@ -28,6 +28,9 @@ const std::vector<std::string>& NodeAttribute::Info::getNames() const {
 	return names;
 }
 
+NodeAttribute::NodeAttribute()
+{}
+
 NodeAttribute::NodeAttribute( std::string name, std::string value ) :
 	mName( String::toLower( name ) ),
 	mValue( value )
