@@ -150,10 +150,9 @@ void SceneNode::onSizeChange() {
 void SceneNode::addToCloseQueue( Node * Ctrl ) {
 	eeASSERT( NULL != Ctrl );
 
-	std::vector<Node*>::iterator it;
 	Node * itCtrl = NULL;
 
-	for ( it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
+	for ( auto it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 		itCtrl = *it;
 
 		if ( NULL != itCtrl && itCtrl->isParentOf( Ctrl ) ) {
@@ -164,9 +163,9 @@ void SceneNode::addToCloseQueue( Node * Ctrl ) {
 		}
 	}
 
-	std::vector< std::vector<Node*>::iterator > itEraseList;
+	std::vector< CloseList::iterator > itEraseList;
 
-	for ( it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
+	for ( auto it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 		itCtrl = *it;
 
 		if ( NULL != itCtrl && Ctrl->isParentOf( itCtrl ) ) {

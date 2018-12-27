@@ -103,12 +103,13 @@ class EE_API SceneNode : public Node {
 		ActionManager * getActionManager() const;
 	protected:
 		friend class Node;
+		typedef std::list<Node*> CloseList;
 
 		EE::Window::Window * mWindow;
 		ActionManager * mActionManager;
 		FrameBuffer * mFrameBuffer;
 		EventDispatcher * mEventDispatcher;
-		std::vector<Node*>	mCloseList;
+		CloseList	mCloseList;
 		bool mFrameBufferBound;
 		bool mUseInvalidation;
 		bool mUseGlobalCursors;
