@@ -5,6 +5,10 @@
 
 namespace EE { namespace System {
 
+Pak * Pak::New() {
+	return eeNew( Pak, ( ) );
+}
+
 Pak::Pak() :
 	Pack()
 {
@@ -29,7 +33,7 @@ bool Pak::create( const std::string& path ) {
 
 		eeSAFE_DELETE( mPak.fs );
 
-		mPak.fs = eeNew( IOStreamFile, ( path , "wb" ) ); // Open the PAK file
+		mPak.fs = IOStreamFile::New( path , "wb" ); // Open the PAK file
 
 		mPak.fs->write( reinterpret_cast<const char*> (&Pak.header), sizeof(Pak.header) );
 
@@ -51,7 +55,7 @@ bool Pak::open( const std::string& path ) {
 
 		eeSAFE_DELETE( mPak.fs );
 
-		mPak.fs = eeNew( IOStreamFile, ( path , "rwb" ) ); // Open the PAK file
+		mPak.fs = IOStreamFile::New( path , "rwb" ); // Open the PAK file
 
 		mPak.fs->read( reinterpret_cast<char*> (&mPak.header), sizeof(pakHeader) ); // Read the PAK header
 
@@ -313,7 +317,7 @@ bool Pak::eraseFiles( const std::vector<std::string>& paths ) {
 
 	nPf.pakPath = std::string ( mPak.pakPath + ".new" );
 
-	nPf.fs = eeNew( IOStreamFile, ( nPf.pakPath.c_str() , "wb" ) );
+	nPf.fs = IOStreamFile::New( nPf.pakPath.c_str() , "wb" );
 
 	for ( i = 0; i < mPakFiles.size(); i++ ) {
 		bool Remove = false;

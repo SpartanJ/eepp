@@ -5,6 +5,10 @@
 
 namespace EE { namespace System {
 
+IOStreamZip * IOStreamZip::New( Zip * pack, const std::string& path ) {
+	return eeNew( IOStreamZip, ( pack, path ) );
+}
+
 IOStreamZip::IOStreamZip( Zip * pack, const std::string& path ) :
 	mPath( path ),
 	mZip( pack->getZip() ),

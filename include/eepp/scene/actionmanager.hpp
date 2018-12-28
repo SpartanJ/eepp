@@ -9,9 +9,12 @@ using namespace EE::System;
 namespace EE { namespace Scene {
 
 class Action;
+class Node;
 
 class EE_API ActionManager {
 	public:
+		static ActionManager * New();
+
 		ActionManager();
 
 		~ActionManager();
@@ -23,6 +26,8 @@ class EE_API ActionManager {
 		void removeActionByTag( const Uint32& tag );
 
 		void removeAction( Action * action );
+
+		void removeAllActionsFromTarget( Node * target );
 
 		void update( const Time& time );
 

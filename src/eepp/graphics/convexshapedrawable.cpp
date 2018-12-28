@@ -3,6 +3,10 @@
 
 namespace EE { namespace Graphics {
 
+ConvexShapeDrawable * ConvexShapeDrawable::New() {
+	return eeNew( ConvexShapeDrawable, () );
+}
+
 ConvexShapeDrawable::ConvexShapeDrawable() :
 	PrimitiveDrawable( Drawable::CONVEXSHAPE )
 {

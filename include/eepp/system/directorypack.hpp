@@ -8,6 +8,8 @@ namespace EE { namespace System {
 /** @brief A local file system directory. */
 class EE_API DirectoryPack : public Pack {
 	public:
+		static DirectoryPack * New();
+
 		DirectoryPack();
 
 		~DirectoryPack();

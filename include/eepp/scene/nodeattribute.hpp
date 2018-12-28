@@ -2,12 +2,59 @@
 #define EE_NODEATTRIBUTE_HPP
 
 #include <string>
+#include <eepp/math/rect.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/system/color.hpp>
+#include <eepp/math/originpoint.hpp>
+#include <eepp/graphics/blendmode.hpp>
+
+using namespace EE::System;
+using namespace EE::Math;
+using namespace EE::Graphics;
 
 namespace EE { namespace Scene {
 
 class NodeAttribute {
 	public:
+		enum AttributeType
+		{
+			TypeString,
+			TypeInt,
+			TypeUint,
+			TypeDouble,
+			TypeFloat,
+			TypeLongLong,
+			TypeULongLong,
+			TypeBoolean,
+			TypeDimension,
+			TypeDimensionInt,
+			TypeOriginPoint,
+			TypeBlendMode,
+			TypeVector,
+			TypeRect,
+			TypeRectf
+		};
+
+		class Info
+		{
+			public:
+				Info( AttributeType type, const std::string& name );
+
+				Info( AttributeType type, const std::vector<std::string>& names );
+
+				bool isName( const std::string& name );
+
+				const AttributeType& getType() const;
+
+				const std::vector<std::string>& getNames() const;
+			protected:
+				AttributeType type;
+
+				std::vector<std::string> names;
+		};
+
+		NodeAttribute();
+
 		NodeAttribute( std::string name, std::string value );
 
 		std::string getName() const;
@@ -42,6 +89,21 @@ class NodeAttribute {
 
 		bool asBool( bool defaultValue = false ) const;
 
+		Color asColor() const;
+
+		Float asDpDimension( const std::string& defaultValue = "" ) const;
+
+		int asDpDimensionI( const std::string& defaultValue = "" ) const;
+
+		OriginPoint asOriginPoint() const;
+
+		BlendMode asBlendMode() const;
+
+		Vector2f asVector( const Vector2f& defaultValue = Vector2f::Zero );
+
+		Rect asRect( const Rect& defaultValue = Rect() );
+
+		Rectf asRectf( const Rectf& defaultValue = Rectf() );
 	protected:
 		std::string mName;
 		std::string mValue;

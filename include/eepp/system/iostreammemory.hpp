@@ -8,6 +8,10 @@ namespace EE { namespace System {
 /** @brief Implementation of a memory stream file */
 class EE_API IOStreamMemory : public IOStream {
 	public:
+		static IOStreamMemory * New( const char * data, ios_size size );
+
+		static IOStreamMemory * New( char * data, ios_size size );
+
 		/** @brief Use the data buffer for reading
 		**	@param data The buffer to read from
 		**	@param size The size of the buffer

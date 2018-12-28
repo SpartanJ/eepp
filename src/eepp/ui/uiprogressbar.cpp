@@ -70,7 +70,7 @@ void UIProgressBar::draw() {
 
 	for ( int y = -1; y < numTiles.y; y++ ) {
 		for ( int x = -1; x < numTiles.x; x++ ) {
-			mFillerSkin->draw( (Int32)mOffset.x + mScreenPosi.x + fillerPadding.Left + x * rSize.getWidth(), mOffset.y + mScreenPosi.y + fillerPadding.Top + y * rSize.getHeight(), rSize.getWidth(), rSize.getHeight(), 255, UISkinState::StateNormal );
+			mFillerSkin->draw( Vector2f( (Int32)mOffset.x + mScreenPosi.x + fillerPadding.Left + x * rSize.getWidth(), mOffset.y + mScreenPosi.y + fillerPadding.Top + y * rSize.getHeight() ), Sizef( rSize.getWidth(), rSize.getHeight() ) );
 		}
 	}
 
@@ -225,16 +225,16 @@ bool UIProgressBar::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "displaypercent" == name ) {
 		setDisplayPercent( attribute.asBool() );
 	} else if ( "fillerpadding" == name ) {
-		Float val = PixelDensity::toDpFromString( attribute.asString() );
+		Float val = attribute.asDpDimension();
 		setFillerPadding( Rectf( val, val, val, val ) );
 	} else if ( "fillerpaddingleft" == name ) {
-		setFillerPadding( Rectf( PixelDensity::toDpFromString( attribute.asString() ), mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
+		setFillerPadding( Rectf( attribute.asDpDimension(), mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
 	} else if ( "fillerpaddingright" == name ) {
-		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, PixelDensity::toDpFromString( attribute.asString() ), mStyleConfig.FillerPadding.Bottom ) );
+		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, attribute.asDpDimension(), mStyleConfig.FillerPadding.Bottom ) );
 	} else if ( "fillerpaddingtop" == name ) {
-		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, PixelDensity::toDpFromString( attribute.asString() ), mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
+		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, attribute.asDpDimension(), mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
 	} else if ( "fillerpaddingbottom" == name ) {
-		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, PixelDensity::toDpFromString( attribute.asString() ) ) );
+		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, attribute.asDpDimension() ) );
 	} else {
 		return UIWidget::setAttribute( attribute );
 	}

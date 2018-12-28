@@ -2,6 +2,7 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/scene/actions/actions.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -94,6 +95,24 @@ void UIDropDownList::onAutoSize() {
 
 UIListBox * UIDropDownList::getListBox() const {
 	return mListBox;
+}
+
+Uint32 UIDropDownList::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
+	if ( mEnabled && mVisible && isMouseOver() ) {
+		if ( Flags & EE_BUTTONS_WUWD ) {
+			if ( Flags & EE_BUTTON_WUMASK ) {
+				mListBox->selectPrev();
+			} else if ( Flags & EE_BUTTON_WDMASK ) {
+				if ( mListBox->getItemSelectedIndex() != eeINDEX_NOT_FOUND ) {
+					mListBox->selectNext();
+				} else {
+					mListBox->setSelected( 0 );
+				}
+			}
+		}
+	}
+
+	return UITextInput::onMouseUp( Pos, Flags );
 }
 
 Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
@@ -227,35 +246,20 @@ void UIDropDownList::show() {
 	mListBox->setVisible( true );
 
 	if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-		mListBox->startAlphaAnim( 255.f == mListBox->getAlpha() ? 0.f : mListBox->getAlpha(), 255.f, UIThemeManager::instance()->getControlsFadeInTime() );
+		mListBox->runAction( Actions::Sequence::New(
+								 Actions::Fade::New( 255.f == mListBox->getAlpha() ? 0.f : mListBox->getAlpha(), 255.f, UIThemeManager::instance()->getControlsFadeOutTime() ),
+								 Actions::Spawn::New( Actions::Enable::New(), Actions::Visible::New( true ) ) ) );
 	}
 }
 
 void UIDropDownList::hide() {
 	if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-		mListBox->disableFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
+		mListBox->runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ),
+													 Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
 	} else {
 		mListBox->setEnabled( false );
 		mListBox->setVisible( false );
 	}
-}
-
-void UIDropDownList::update( const Time& time ) {
-	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
-		if ( isMouseOver() ) {
-			Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
-
-			if ( Flags & EE_BUTTONS_WUWD ) {
-				if ( Flags & EE_BUTTON_WUMASK ) {
-					mListBox->selectPrev();
-				} else if ( Flags & EE_BUTTON_WDMASK ) {
-					mListBox->selectNext();
-				}
-			}
-		}
-	}
-
-	UITextInput::update( time );
 }
 
 Uint32 UIDropDownList::onKeyDown( const KeyEvent &Event ) {

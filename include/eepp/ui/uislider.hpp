@@ -8,7 +8,11 @@ namespace EE { namespace UI {
 
 class EE_API UISlider : public UIWidget {
 	public:
-		static UISlider * New( const UI_ORIENTATION& orientation = UI_HORIZONTAL );
+		static UISlider * New();
+
+		static UISlider * NewVertical();
+
+		static UISlider * NewHorizontal();
 
 		UISlider( const UI_ORIENTATION& orientation = UI_HORIZONTAL );
 
@@ -37,8 +41,6 @@ class EE_API UISlider : public UIWidget {
 		const Float& getClickStep() const;
 
 		bool isVertical() const;
-
-		virtual void update( const Time& time );
 
 		UINode * getBackSlider() const;
 
@@ -95,6 +97,8 @@ class EE_API UISlider : public UIWidget {
 		virtual Uint32 onKeyDown( const KeyEvent &Event );
 		
 		virtual void onAlphaChange();
+
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 };
 
 }}

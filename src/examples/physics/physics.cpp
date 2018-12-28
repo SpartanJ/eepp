@@ -27,7 +27,7 @@ Constraint * mMouseJoint;
 
 void createJointAndBody() {
 	mMouseJoint	= NULL;
-	mMouseBody	= eeNew( Body, ( INFINITY, INFINITY ) );
+	mMouseBody	= Body::New( INFINITY, INFINITY );
 }
 
 EE::Window::Window * mWindow;

@@ -99,13 +99,17 @@ class EE_API SceneNode : public Node {
 		void setCursor( EE_CURSOR_TYPE cursor );
 
 		virtual bool isDrawInvalidator();
+
+		ActionManager * getActionManager() const;
 	protected:
 		friend class Node;
+		typedef std::list<Node*> CloseList;
 
 		EE::Window::Window * mWindow;
+		ActionManager * mActionManager;
 		FrameBuffer * mFrameBuffer;
 		EventDispatcher * mEventDispatcher;
-		std::list<Node*>	mCloseList;
+		CloseList	mCloseList;
 		bool mFrameBufferBound;
 		bool mUseInvalidation;
 		bool mUseGlobalCursors;

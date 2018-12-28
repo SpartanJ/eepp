@@ -989,15 +989,15 @@ bool UIListBox::setAttribute( const NodeAttribute& attribute ) {
 	if ( "rowheight" == name ) {
 		setRowHeight( attribute.asInt() );
 	} else if ( "textcolor" == name ) {
-		setFontColor( Color::fromString( attribute.asString() ) );
+		setFontColor( attribute.asColor() );
 	} else if ( "textshadowcolor" == name ) {
-		mFontStyleConfig.ShadowColor = ( Color::fromString( attribute.asString() ) );
+		mFontStyleConfig.ShadowColor = ( attribute.asColor() );
 	} else if ( "textovercolor" == name ) {
-		setFontOverColor( Color::fromString( attribute.asString() ) );
+		setFontOverColor( attribute.asColor() );
 	} else if ( "textselectedcolor" == name ) {
-		setFontSelectedColor( Color::fromString( attribute.asString() ) );
+		setFontSelectedColor( attribute.asColor() );
 	} else if ( "textselectionbackcolor" == name ) {
-		mFontStyleConfig.FontSelectionBackColor = ( Color::fromString( attribute.asString() ) );
+		mFontStyleConfig.FontSelectionBackColor = ( attribute.asColor() );
 	} else if ( "fontfamily" == name || "fontname" == name ) {
 		Font * font = FontManager::instance()->getByName( attribute.asString() );
 

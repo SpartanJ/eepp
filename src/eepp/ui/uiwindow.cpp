@@ -12,15 +12,16 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/scene/actions/actions.hpp>
 
 namespace EE { namespace UI {
 
-UIWindow * UIWindow::New( UIWindow::WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig ) {
+UIWindow * UIWindow::NewOpt( UIWindow::WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig ) {
 	return eeNew( UIWindow, ( type, windowStyleConfig ) );
 }
 
-UIWindow * UIWindow::New( UIWindow::WindowBaseContainerType type ) {
-	return eeNew( UIWindow, ( type ) );
+UIWindow * UIWindow::New() {
+	return eeNew( UIWindow, ( SIMPLE_LAYOUT ) );
 }
 
 UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) :
@@ -261,6 +262,8 @@ void UIWindow::updateWinFlags() {
 		fixChildsSize();
 	}
 
+	updateDrawInvalidator( true );
+
 	if ( isModal() ) {
 		createModalControl();
 	}
@@ -276,6 +279,11 @@ void UIWindow::createFrameBuffer() {
 	if ( fboSize.getWidth() < 1 ) fboSize.setWidth(1);
 	if ( fboSize.getHeight() < 1 ) fboSize.setHeight(1);
 	mFrameBuffer = FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight(), true, false, ( mStyleConfig.WinFlags & UI_WIN_COLOR_BUFFER ) ? true : false );
+
+	// Frame buffer failed to create?
+	if ( !mFrameBuffer->created() ) {
+		eeSAFE_DELETE( mFrameBuffer );
+	}
 }
 
 void UIWindow::drawFrameBuffer() {
@@ -440,7 +448,7 @@ void UIWindow::closeWindow() {
 	}
 
 	if ( Time::Zero != UIThemeManager::instance()->getControlsFadeOutTime() )
-		closeFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
+		runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ), Actions::Close::New() ) );
 	else
 		close();
 }
@@ -975,7 +983,7 @@ bool UIWindow::show() {
 
 		setFocus();
 
-		startAlphaAnim( mStyleConfig.BaseAlpha == getAlpha() ? 0.f : mAlpha, mStyleConfig.BaseAlpha, UIThemeManager::instance()->getControlsFadeInTime() );
+		runAction( Actions::Fade::New( mStyleConfig.BaseAlpha == getAlpha() ? 0.f : mAlpha, mStyleConfig.BaseAlpha, UIThemeManager::instance()->getControlsFadeOutTime() ) );
 
 		if ( isModal() ) {
 			createModalControl();
@@ -996,7 +1004,7 @@ bool UIWindow::show() {
 bool UIWindow::hide() {
 	if ( isVisible() ) {
 		if ( UIThemeManager::instance()->getDefaultEffectsEnabled() ) {
-			disableFadeOut( UIThemeManager::instance()->getControlsFadeOutTime() );
+			runAction( Actions::Sequence::New( Actions::FadeOut::New( UIThemeManager::instance()->getControlsFadeOutTime() ), Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
 		} else {
 			setEnabled( false );
 			setVisible( false );

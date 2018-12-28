@@ -18,6 +18,8 @@ class EE_API SSLSocket : public TcpSocket {
 		/** @return True when the library was compiled with SSL support. */
 		static bool isSupported();
 
+		static SSLSocket * New( std::string hostname, bool validateCertificate, bool validateHostname );
+
 		SSLSocket( std::string hostname, bool validateCertificate, bool validateHostname );
 
 		virtual ~SSLSocket();

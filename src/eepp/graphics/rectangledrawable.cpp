@@ -4,6 +4,14 @@
 
 namespace EE { namespace Graphics {
 
+RectangleDrawable * RectangleDrawable::New() {
+	return eeNew( RectangleDrawable, () );
+}
+
+RectangleDrawable * RectangleDrawable::New( const Vector2f& position, const Sizef& size ) {
+	return eeNew( RectangleDrawable, ( position, size ) );
+}
+
 RectangleDrawable::RectangleDrawable() :
 	PrimitiveDrawable( Drawable::RECTANGLE ),
 	mRotation( 0 ),
@@ -39,6 +47,11 @@ void RectangleDrawable::draw(const Vector2f & position) {
 void RectangleDrawable::draw(const Vector2f & position, const Sizef & size) {
 	if ( size != mSize ) {
 		mSize = size;
+		mNeedsUpdate = true;
+	}
+
+	if ( position != mPosition ) {
+		mPosition = position;
 		mNeedsUpdate = true;
 	}
 

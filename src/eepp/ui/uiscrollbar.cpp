@@ -3,8 +3,16 @@
 
 namespace EE { namespace UI {
 
-UIScrollBar * UIScrollBar::New( const UI_ORIENTATION& orientation ) {
-	return eeNew( UIScrollBar, ( orientation ) );
+UIScrollBar * UIScrollBar::New() {
+	return eeNew( UIScrollBar, ( UI_VERTICAL ) );
+}
+
+UIScrollBar * UIScrollBar::NewHorizontal() {
+	return eeNew( UIScrollBar, ( UI_HORIZONTAL ) );
+}
+
+UIScrollBar * UIScrollBar::NewVertical() {
+	return eeNew( UIScrollBar, ( UI_VERTICAL ) );
 }
 
 UIScrollBar::UIScrollBar( const UI_ORIENTATION& orientation ) :
@@ -196,23 +204,6 @@ void UIScrollBar::adjustChilds() {
 
 			break;
 		}
-	}
-}
-
-void UIScrollBar::update( const Time& time ) {
-	UINode::update( time );
-
-	if ( NULL != getEventDispatcher() && ( mBtnUp->isMouseOver() || mBtnDown->isMouseOver() ) ) {
-		manageClick( getEventDispatcher()->getClickTrigger() );
-	}
-}
-
-void UIScrollBar::manageClick( const Uint32& Flags ) {
-	if ( Flags & EE_BUTTONS_WUWD ) {
-		if ( Flags & EE_BUTTON_WUMASK )
-			mSlider->setValue( getValue() + getClickStep() );
-		else
-			mSlider->setValue( getValue() - getClickStep() );
 	}
 }
 

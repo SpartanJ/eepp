@@ -27,6 +27,8 @@ class EE_API FrameBufferFBO : public FrameBuffer {
 
 		void draw( Rect src, Rect dst );
 
+		bool created() const;
+
 		const Int32& getFrameBufferId() const;
 
 		static bool isSupported();

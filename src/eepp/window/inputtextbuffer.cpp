@@ -4,6 +4,14 @@
 
 namespace EE { namespace Window {
 
+InputTextBuffer * InputTextBuffer::New( const bool& active, const bool& newLineEnabled, const bool& freeEditing, EE::Window::Window * window, const Uint32& maxLength ) {
+	return eeNew( InputTextBuffer, ( active, newLineEnabled, freeEditing, window, maxLength ) );
+}
+
+InputTextBuffer * InputTextBuffer::New( EE::Window::Window * window ) {
+	return eeNew( InputTextBuffer, ( window ) );
+}
+
 InputTextBuffer::InputTextBuffer( const bool& active, const bool& newLineEnabled, const bool& freeEditing, EE::Window::Window * window, const Uint32& maxLength ) :
 	mWindow( window ),
 	mFlags(0),

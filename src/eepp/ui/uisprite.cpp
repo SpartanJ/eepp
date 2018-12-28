@@ -171,7 +171,7 @@ const Vector2f& UISprite::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-void UISprite::setDeallocSprite( const bool& dealloc ) {
+void UISprite::setIsSpriteOwner( const bool& dealloc ) {
 	writeCtrlFlag( NODE_FLAG_FREE_USE, dealloc ? 1 : 0 );
 }
 
@@ -192,8 +192,8 @@ bool UISprite::setAttribute( const NodeAttribute& attribute ) {
 		std::string val = attribute.asString();
 
 		if ( val.size() ) {
-			setDeallocSprite( true );
-			setSprite( eeNew( Sprite, ( val ) ) );
+			setIsSpriteOwner( true );
+			setSprite( Sprite::New( val ) );
 		}
 	} else {
 		return UIWidget::setAttribute( attribute );

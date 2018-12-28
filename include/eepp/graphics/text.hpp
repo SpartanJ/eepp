@@ -19,6 +19,12 @@ class EE_API Text {
 			Shadow			= 1 << 4  ///< Draw a shadow below the text
 		};
 
+		static Text * New();
+
+		static Text * New(const String& string, Font * font, unsigned int characterSize = 30);
+
+		static Text * New(Font * font, unsigned int characterSize = 30);
+
 		Text();
 
 		Text(const String& string, Font * font, unsigned int characterSize = 30);

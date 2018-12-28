@@ -4,6 +4,10 @@
 
 namespace EE { namespace Graphics {
 
+DrawableGroup * DrawableGroup::New() {
+	return eeNew( DrawableGroup, () );
+}
+
 DrawableGroup::DrawableGroup() :
 	Drawable( Drawable::GROUP ),
 	mNeedsUpdate(true),
@@ -46,13 +50,11 @@ void DrawableGroup::setClipEnabled(bool clipEnabled) {
 	mClipEnabled = clipEnabled;
 }
 
-bool DrawableGroup::isDrawableOwner() const
-{
+bool DrawableGroup::isDrawableOwner() const {
 	return mDrawableOwner;
 }
 
-void DrawableGroup::setDrawableOwner(bool drawableOwner)
-{
+void DrawableGroup::setDrawableOwner(bool drawableOwner) {
 	mDrawableOwner = drawableOwner;
 }
 

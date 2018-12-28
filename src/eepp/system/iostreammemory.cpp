@@ -1,7 +1,16 @@
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/core/memorymanager.hpp>
 #include <cstring>
 
 namespace EE { namespace System {
+
+IOStreamMemory * IOStreamMemory::New( const char * data, ios_size size ) {
+	return eeNew( IOStreamMemory, ( data, size ) );
+}
+
+IOStreamMemory * IOStreamMemory::New( char * data, ios_size size ) {
+	return eeNew( IOStreamMemory, ( data, size ) );
+}
 
 IOStreamMemory::IOStreamMemory( const char * data, ios_size size ) :
 	mReadPtr( data ),

@@ -31,8 +31,6 @@ class EE_API UITextEdit : public UIWidget {
 
 		UIScrollBar * getVScrollBar() const;
 
-		virtual void update( const Time& time );
-
 		void setAllowEditing( const bool& allow );
 
 		const bool& isEditingAllowed() const;
@@ -66,6 +64,8 @@ class EE_API UITextEdit : public UIWidget {
 		virtual void onParentSizeChange( const Vector2f& SizeChange );
 
 		virtual void onPaddingChange();
+
+		virtual Uint32 onMessage( const NodeMessage * Msg );
 
 		void onVScrollValueChange( const Event * Event );
 

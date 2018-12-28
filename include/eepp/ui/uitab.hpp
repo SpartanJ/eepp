@@ -29,12 +29,12 @@ class EE_API UITab : public UISelectButton {
 
 		virtual UIPushButton * setText( const String& text );
 
-		virtual void update( const Time& time );
-
 		virtual bool setAttribute( const NodeAttribute& attribute );
 	protected:
 		Node * mControlOwned;
 		std::string mOwnedName;
+
+		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32 flags );
 
 		virtual Uint32 onMouseClick( const Vector2i &position, const Uint32 flags );
 

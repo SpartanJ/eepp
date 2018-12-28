@@ -159,7 +159,7 @@ void TextureAtlasNew::textureAtlasSave( const Event * Event ) {
 		Texture::TextureFilter textureFilter = mTextureFilter->getText() == "Nearest" ? Texture::TextureFilter::Nearest : Texture::TextureFilter::Linear;
 
 		if ( Res1 && Res2 ) {
-			TexturePacker * texturePacker = eeNew( TexturePacker, ( w, h, PixelDensity::fromString( mPixelDensity->getText() ), false, false, b, textureFilter ) );
+			TexturePacker * texturePacker = TexturePacker::New( w, h, PixelDensity::fromString( mPixelDensity->getText() ), false, false, b, textureFilter );
 
 			texturePacker->addTexturesPath( mTGPath->getText() );
 

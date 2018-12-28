@@ -22,8 +22,6 @@ class EE_API UIDropDownList : public UITextInput {
 
 		UIListBox * getListBox() const;
 
-		virtual void update( const Time& time );
-
 		void showList();
 
 		bool getPopUpToMainControl() const;
@@ -55,6 +53,8 @@ class EE_API UIDropDownList : public UITextInput {
 		virtual void show();
 
 		virtual void hide();
+
+		Uint32 onMouseUp( const Vector2i& position, const Uint32 flags );
 
 		Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
 

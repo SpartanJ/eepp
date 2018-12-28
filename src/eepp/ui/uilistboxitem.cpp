@@ -40,6 +40,18 @@ void UIListBoxItem::setTheme( UITheme * Theme ) {
 	setThemeSkin( Theme, "listboxitem" );
 }
 
+Uint32 UIListBoxItem::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
+	if ( mEnabled && mVisible ) {
+		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( getParent()->getParent() );
+
+		if ( Flags & EE_BUTTONS_WUWD && LBParent->getVerticalScrollBar()->isVisible() ) {
+			LBParent->getVerticalScrollBar()->getSlider()->manageClick( Flags );
+		}
+	}
+
+	return UITextView::onMouseUp( Pos, Flags );
+}
+
 Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTONS_LRM ) {
 		reinterpret_cast<UIListBox*> ( getParent()->getParent() )->itemClicked( this );
@@ -47,7 +59,7 @@ Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 		select();
 	}
 
-	return 1;
+	return UITextView::onMouseClick( Pos, Flags );
 }
 
 void UIListBoxItem::select() {
@@ -57,7 +69,7 @@ void UIListBoxItem::select() {
 
 	if ( LBParent->isMultiSelect() ) {
 		if ( !wasSelected ) {
-			setSkinState( UISkinState::StateSelected );
+			pushState( UIState::StateSelected );
 
 			mNodeFlags |= NODE_FLAG_SELECTED;
 
@@ -70,7 +82,7 @@ void UIListBoxItem::select() {
 			LBParent->mSelected.remove( LBParent->getItemIndex( this ) );
 		}
 	} else {
-		setSkinState( UISkinState::StateSelected );
+		pushState( UIState::StateSelected );
 
 		mNodeFlags |= NODE_FLAG_SELECTED;
 
@@ -83,26 +95,11 @@ void UIListBoxItem::select() {
 	}
 }
 
-void UIListBoxItem::update( const Time& time ) {
-	UITextView::update( time );
-
-	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
-		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( getParent()->getParent() );
-		Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
-
-		if ( isMouseOver() ) {
-			if ( Flags & EE_BUTTONS_WUWD && LBParent->getVerticalScrollBar()->isVisible() ) {
-				LBParent->getVerticalScrollBar()->getSlider()->manageClick( Flags );
-			}
-		}
-	}
-}
-
 Uint32 UIListBoxItem::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 	UINode::onMouseExit( Pos, Flags );
 
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
-		setSkinState( UISkinState::StateSelected );
+		pushState( UIState::StateSelected );
 
 	return 1;
 }
@@ -111,7 +108,7 @@ void UIListBoxItem::unselect() {
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
 		mNodeFlags &= ~NODE_FLAG_SELECTED;
 
-	setSkinState( UISkinState::StateNormal );
+	popState( UIState::StateSelected );
 }
 
 bool UIListBoxItem::isSelected() const {
@@ -121,13 +118,13 @@ bool UIListBoxItem::isSelected() const {
 void UIListBoxItem::onStateChange() {
 	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( getParent()->getParent() );
 
-	if ( isSelected() && mSkinState->getState() != UISkinState::StateSelected ) {
-		setSkinState( UISkinState::StateSelected );
+	if ( isSelected() && mSkinState->getState() != UIState::StateSelected ) {
+		pushState( UIState::StateSelected, false );
 	}
 
-	if ( mSkinState->getState() == UISkinState::StateSelected ) {
+	if ( mSkinState->getState() & UIState::StateFlagSelected ) {
 		setFontColor( LBParent->getFontSelectedColor() );
-	} else if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
+	} else if ( mSkinState->getState() & UIState::StateFlagHover ) {
 		setFontColor( LBParent->getFontOverColor() );
 	} else {
 		setFontColor( LBParent->getFontColor() );

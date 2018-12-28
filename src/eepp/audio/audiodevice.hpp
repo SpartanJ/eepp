@@ -16,6 +16,8 @@ namespace EE { namespace Audio { namespace Private {
 ////////////////////////////////////////////////////////////
 class AudioDevice {
 	public:
+		static AudioDevice * New();
+
 		AudioDevice();
 
 		~AudioDevice();

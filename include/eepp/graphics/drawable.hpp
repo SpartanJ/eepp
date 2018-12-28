@@ -10,6 +10,8 @@ using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
+class StatefulDrawable;
+
 class EE_API Drawable {
 	public:
 		enum Type {
@@ -21,6 +23,8 @@ class EE_API Drawable {
 			CONVEXSHAPE,
 			GROUP,
 			NINEPATCH,
+			STATELIST,
+			SKIN,
 			CUSTOM
 		};
 
@@ -34,13 +38,15 @@ class EE_API Drawable {
 
 		virtual void draw( const Vector2f& position, const Sizef& size ) = 0;
 
+		virtual bool isStateful() = 0;
+
 		void setAlpha( Uint8 alpha );
 
 		const Uint8& getAlpha();
 
 		void setColor( const Color& color );
 
-		const Color& getColor() const;
+		Color getColor() const;
 
 		void setColorFilter( const Color& color );
 
@@ -57,6 +63,8 @@ class EE_API Drawable {
 		const Vector2f& getPosition() const;
 
 		void setPosition( const Vector2f& position );
+
+		StatefulDrawable * asStatefulDrawable();
 	protected:
 		Type mDrawableType;
 		Color mColor;

@@ -39,8 +39,6 @@ void EventDispatcher::inputCallback( InputEvent * Event ) {
 			break;
 		case InputEvent::KeyDown:
 			sendKeyDown( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
-
-			//checkTabPress( Event->key.keysym.sym );
 			break;
 		case InputEvent::SysWM:
 		case InputEvent::VideoResize:
@@ -101,8 +99,10 @@ void EventDispatcher::update( const Time& elapsed ) {
 				// And the Click would be received by the new focused control instead of the real one
 				Node * lastFocusControl = mFocusControl;
 
-				lastFocusControl->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
-				sendMsg( lastFocusControl, NodeMessage::MouseUp, mInput->getReleaseTrigger() );
+				if ( NULL != mOverControl ) {
+					mOverControl->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
+					sendMsg( mOverControl, NodeMessage::MouseUp, mInput->getReleaseTrigger() );
+				}
 
 				if ( mInput->getClickTrigger() ) {
 					sendMsg( lastFocusControl, NodeMessage::Click, mInput->getClickTrigger() );

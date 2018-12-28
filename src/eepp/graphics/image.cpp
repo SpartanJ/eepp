@@ -188,6 +188,42 @@ static bool svg_test_from_stream( IOStream& stream ) {
 	return false;
 }
 
+Image * Image::New() {
+	return eeNew( Image, () );
+}
+
+Image * Image::New( Graphics::Image * image ) {
+	return eeNew( Image, ( image ) );
+}
+
+Image * Image::New( Uint8* data, const unsigned int& width, const unsigned int& height, const unsigned int& channels ) {
+	return eeNew( Image, ( data, width, height, channels ) );
+}
+
+Image * Image::New( const Uint8* data, const unsigned int& width, const unsigned int& height, const unsigned int& channels ) {
+	return eeNew( Image, ( data, width, height, channels ) );
+}
+
+Image * Image::New( const Uint32& width, const Uint32& height, const Uint32& channels, const Color& DefaultColor, const bool& initWithDefaultColor )  {
+	return eeNew( Image, ( width, height, channels, DefaultColor, initWithDefaultColor ) );
+}
+
+Image * Image::New( std::string Path, const unsigned int& forceChannels, const FormatConfiguration& formatConfiguration ) {
+	return eeNew( Image, ( Path, forceChannels, formatConfiguration ) );
+}
+
+Image * Image::New( const Uint8* imageData, const unsigned int& imageDataSize, const unsigned int& forceChannels, const FormatConfiguration& formatConfiguration ) {
+	return eeNew( Image, ( imageData, imageDataSize, forceChannels, formatConfiguration ) );
+}
+
+Image * Image::New( Pack * Pack, std::string FilePackPath, const unsigned int& forceChannels, const FormatConfiguration& formatConfiguration ) {
+	return eeNew( Image, ( Pack, FilePackPath, forceChannels, formatConfiguration ) );
+}
+
+Image * Image::New( IOStream& stream, const unsigned int& forceChannels, const FormatConfiguration& formatConfiguration ) {
+	return eeNew( Image, ( stream, forceChannels, formatConfiguration ) );
+}
+
 std::string Image::saveTypeToExtension( const Int32& Format ) {
 	switch( Format ) {
 		case Image::SaveType::SAVE_TYPE_TGA: return "tga";
@@ -818,7 +854,7 @@ Graphics::Image * Image::thumbnail( const Uint32& maxWidth, const Uint32& maxHei
 
 Graphics::Image * Image::crop( Rect rect ) {
 	if ( rect.Left >= 0 && rect.Right <= (Int32)mWidth && rect.Top >= 0 && rect.Bottom <= (Int32)mHeight ) {
-		Image * img = eeNew( Image, ( rect.getSize().getWidth(), rect.getSize().getHeight(), mChannels ) );
+		Image * img = Image::New( rect.getSize().getWidth(), rect.getSize().getHeight(), mChannels );
 
 		// Copy per row
 		for ( unsigned int ty = 0; ty < img->mHeight; ty++ ) {

@@ -16,6 +16,16 @@ namespace EE { namespace Graphics {
 */
 class EE_API TextureLoader : public ObjectLoader {
 	public:
+		static TextureLoader * New( IOStream& Stream, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+
+		static TextureLoader * New( const std::string& filepath, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+
+		static TextureLoader * New( const unsigned char * ImagePtr, const unsigned int& Size, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+
+		static TextureLoader * New( Pack * Pack, const std::string& FilePackPath, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+
+		static TextureLoader * New( const unsigned char * Pixels, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
+
 		/** Load a Texture from stream
 		* @param Stream The io stream instance
 		* @param Mipmap Use mipmaps?

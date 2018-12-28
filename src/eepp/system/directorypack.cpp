@@ -4,6 +4,10 @@
 
 namespace EE { namespace System {
 
+DirectoryPack * DirectoryPack::New() {
+	return eeNew( DirectoryPack, ( ) );
+}
+
 DirectoryPack::DirectoryPack() {}
 
 DirectoryPack::~DirectoryPack() {}

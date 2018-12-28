@@ -13,6 +13,8 @@ namespace EE { namespace Graphics {
 * More information about Texture Atlases: http://en.wikipedia.org/wiki/Texture_atlas */
 class EE_API TextureAtlas : public ResourceManager<TextureRegion> {
 	public:
+		static TextureAtlas * New( const std::string& name = "" );
+
 		/** Creates a new texture atlas with the given name. */
 		TextureAtlas( const std::string& name = "" );
 

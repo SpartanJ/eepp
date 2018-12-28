@@ -7,7 +7,7 @@ namespace EE { namespace Scene { namespace Actions {
 
 class EE_API Close : public Delay {
 	public:
-		static Close * New( const Time& time );
+		static Close * New( const Time& time = Seconds(0) );
 		
 		void update( const Time& time ) override;
 
@@ -16,7 +16,7 @@ class EE_API Close : public Delay {
 		Action * reverse() const override;
 
 	protected:
-		Close( const Time& time );
+		explicit Close( const Time& time );
 
 		void onStart() override;
 		

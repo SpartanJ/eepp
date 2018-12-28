@@ -70,31 +70,6 @@ void UITableCell::fixCell() {
 	}
 }
 
-void UITableCell::update( const Time& time ) {
-	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
-		UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
-		Uint32 Flags				= getEventDispatcher()->getClickTrigger();
-
-		if ( NULL != MyParent && MyParent->getAlpha() != mAlpha ) {
-			setAlpha( MyParent->getAlpha() );
-
-			for ( Uint32 i = 0; i < mCells.size(); i++ ) {
-				if ( NULL != mCells[i] ) {
-					mCells[i]->setAlpha( MyParent->getAlpha() );
-				}
-			}
-		}
-
-		if ( isMouseOverMeOrChilds() ) {
-			if ( ( Flags & EE_BUTTONS_WUWD ) && MyParent->getVerticalScrollBar()->isVisible() ) {
-				MyParent->getVerticalScrollBar()->getSlider()->manageClick( Flags );
-			}
-		}
-	}
-
-	UIWidget::update( time );
-}
-
 void UITableCell::select() {
 	UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
 
@@ -104,7 +79,7 @@ void UITableCell::select() {
 
 		bool wasSelected = 0 != ( mNodeFlags & NODE_FLAG_SELECTED );
 
-		setSkinState( UISkinState::StateSelected );
+		pushState( UIState::StateSelected );
 
 		mNodeFlags |= NODE_FLAG_SELECTED;
 
@@ -120,7 +95,7 @@ void UITableCell::unselect() {
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
 		mNodeFlags &= ~NODE_FLAG_SELECTED;
 
-	setSkinState( UISkinState::StateNormal );
+	popState( UIState::StateSelected);
 }
 
 bool UITableCell::isSelected() const {
@@ -131,7 +106,7 @@ Uint32 UITableCell::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 	UINode::onMouseExit( Pos, Flags );
 
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
-		setSkinState( UISkinState::StateSelected );
+		pushState( UIState::StateSelected );
 
 	return 1;
 }
@@ -159,6 +134,18 @@ Uint32 UITableCell::onMessage( const NodeMessage * Msg ) {
 
 				return 1;
 			}
+
+			break;
+		}
+		case NodeMessage::MouseUp:
+		{
+			UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
+
+			if ( ( Msg->getFlags() & EE_BUTTONS_WUWD ) && MyParent->getVerticalScrollBar()->isVisible() ) {
+				MyParent->getVerticalScrollBar()->getSlider()->manageClick( Msg->getFlags() );
+			}
+
+			break;
 		}
 	}
 
@@ -174,14 +161,30 @@ void UITableCell::onAutoSize() {
 void UITableCell::onStateChange() {
 	UIWidget::onStateChange();
 
-	if ( isSelected() && mSkinState->getState() != UISkinState::StateSelected ) {
-		setSkinState( UISkinState::StateSelected );
+	if ( isSelected() && !( mSkinState->getState() & UIState::StateFlagSelected ) ) {
+		pushState( UIState::StateSelected, false );
 	}
 }
 
 void UITableCell::onParentChange() {
 	if ( NULL != getParent() && NULL != gridParent() )
 		mCells.resize( gridParent()->getCollumnsCount(), NULL );
+}
+
+void UITableCell::onAlphaChange() {
+	if ( mEnabled && mVisible ) {
+		UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
+
+		if ( NULL != MyParent && MyParent->getAlpha() != mAlpha ) {
+			setAlpha( MyParent->getAlpha() );
+
+			for ( Uint32 i = 0; i < mCells.size(); i++ ) {
+				if ( NULL != mCells[i] ) {
+					mCells[i]->setAlpha( MyParent->getAlpha() );
+				}
+			}
+		}
+	}
 }
 
 }}

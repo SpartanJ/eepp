@@ -6,6 +6,7 @@
 #include <eepp/graphics/textureregion.hpp>
 #include <eepp/graphics/framebuffer.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/scene/actionmanager.hpp>
 #include <algorithm>
 
 namespace EE { namespace Scene {
@@ -17,6 +18,7 @@ SceneNode * SceneNode::New( EE::Window::Window * window ) {
 SceneNode::SceneNode( EE::Window::Window * window ) :
 	Node(),
 	mWindow( window ),
+	mActionManager( ActionManager::New() ),
 	mFrameBuffer( NULL ),
 	mEventDispatcher( NULL ),
 	mFrameBufferBound( false ),
@@ -52,6 +54,8 @@ SceneNode::~SceneNode() {
 	}
 
 	onClose();
+
+	eeSAFE_DELETE( mActionManager );
 
 	eeSAFE_DELETE( mEventDispatcher );
 
@@ -117,15 +121,17 @@ void SceneNode::draw() {
 	GlobalBatchRenderer::instance()->draw();
 }
 
-void SceneNode::update( const Time& elapsed ) {
-	mElapsed = elapsed;
+void SceneNode::update( const Time& time ) {
+	mElapsed = time;
 
 	if ( NULL != mEventDispatcher )
-		mEventDispatcher->update( elapsed );
+		mEventDispatcher->update( time );
+
+	mActionManager->update( time );
 
 	checkClose();
 
-	Node::update( elapsed );
+	Node::update( time );
 }
 
 void SceneNode::onSizeChange() {
@@ -144,10 +150,9 @@ void SceneNode::onSizeChange() {
 void SceneNode::addToCloseQueue( Node * Ctrl ) {
 	eeASSERT( NULL != Ctrl );
 
-	std::list<Node*>::iterator it;
 	Node * itCtrl = NULL;
 
-	for ( it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
+	for ( auto it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 		itCtrl = *it;
 
 		if ( NULL != itCtrl && itCtrl->isParentOf( Ctrl ) ) {
@@ -158,9 +163,9 @@ void SceneNode::addToCloseQueue( Node * Ctrl ) {
 		}
 	}
 
-	std::list< std::list<Node*>::iterator > itEraseList;
+	std::vector< CloseList::iterator > itEraseList;
 
-	for ( it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
+	for ( auto it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 		itCtrl = *it;
 
 		if ( NULL != itCtrl && Ctrl->isParentOf( itCtrl ) ) {
@@ -175,9 +180,7 @@ void SceneNode::addToCloseQueue( Node * Ctrl ) {
 
 	// We delete all the controls that don't need to be deleted
 	// because of the new added control to the queue
-	std::list< std::list<Node*>::iterator >::iterator ite;
-
-	for ( ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
+	for ( auto ite = itEraseList.begin(); ite != itEraseList.end(); ++ite ) {
 		mCloseList.erase( *ite );
 	}
 
@@ -188,7 +191,7 @@ void SceneNode::addToCloseQueue( Node * Ctrl ) {
 
 void SceneNode::checkClose() {
 	if ( !mCloseList.empty() ) {
-		for ( std::list<Node*>::iterator it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
+		for ( auto it = mCloseList.begin(); it != mCloseList.end(); ++it ) {
 			eeDelete( *it );
 		}
 
@@ -207,6 +210,11 @@ void SceneNode::createFrameBuffer() {
 	if ( fboSize.getWidth() < 1 ) fboSize.setWidth(1);
 	if ( fboSize.getHeight() < 1 ) fboSize.setHeight(1);
 	mFrameBuffer = FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight(), true, false, false, 4, mWindow );
+
+	// Frame buffer failed to create?
+	if ( !mFrameBuffer->created() ) {
+		eeSAFE_DELETE( mFrameBuffer );
+	}
 }
 
 void SceneNode::drawFrameBuffer() {
@@ -390,6 +398,11 @@ void SceneNode::setCursor( EE_CURSOR_TYPE cursor ) {
 
 bool SceneNode::isDrawInvalidator() {
 	return true;
+}
+
+ActionManager * SceneNode::getActionManager() const
+{
+	return mActionManager;
 }
 
 void SceneNode::preDraw() {

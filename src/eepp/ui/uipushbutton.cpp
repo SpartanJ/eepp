@@ -174,8 +174,8 @@ void UIPushButton::setTheme( UITheme * Theme ) {
 }
 
 void UIPushButton::onThemeLoaded() {
-	if ( NULL != mTextBox && NULL == mTextBox->getFont() && NULL != mSkinState && NULL != mSkinState->getSkin() && NULL != mSkinState->getSkin()->getTheme() && NULL != mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() )
-		mTextBox->setFont( mSkinState->getSkin()->getTheme()->getFontStyleConfig().getFont() );
+	if ( NULL != mTheme )
+		mTextBox->setFont( mTheme->getFontStyleConfig().getFont() );
 
 	if ( mNodeFlags & NODE_FLAG_FREE_USE ) {
 		Rectf RMargin = makePadding( true, false, false, false, true );
@@ -236,7 +236,7 @@ void UIPushButton::onAlphaChange() {
 }
 
 void UIPushButton::onStateChange() {
-	if ( mSkinState->getState() == UISkinState::StateMouseEnter ) {
+	if ( mSkinState->getState() & UIState::StateFlagHover ) {
 		mTextBox->setFontColor( mStyleConfig.FontOverColor );
 	} else {
 		mTextBox->setFontColor( mStyleConfig.FontColor );
@@ -260,7 +260,7 @@ Uint32 UIPushButton::onKeyDown( const KeyEvent& Event ) {
 		messagePost( &Msg );
 		onMouseClick( Vector2i(0,0), EE_BUTTON_LMASK );
 
-		setSkinState( UISkinState::StateMouseDown );
+		pushState( UIState::StatePressed );
 	}
 
 	return UIWidget::onKeyDown( Event );
@@ -268,7 +268,7 @@ Uint32 UIPushButton::onKeyDown( const KeyEvent& Event ) {
 
 Uint32 UIPushButton::onKeyUp( const KeyEvent& Event ) {
 	if ( Event.getKeyCode() == KEY_RETURN ) {
-		setPrevSkinState();
+		popState( UIState::StatePressed );
 	}
 
 	return UIWidget::onKeyUp( Event );
@@ -376,7 +376,7 @@ bool UIPushButton::setAttribute( const NodeAttribute& attribute ) {
 		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
 	} else if ( "textovercolor" == name ) {
-		setFontOverColor( Color::fromString( attribute.asString() ) );
+		setFontOverColor( attribute.asColor() );
 	} else if ( "icon" == name ) {
 		std::string val = attribute.asString();
 		Drawable * icon = NULL;

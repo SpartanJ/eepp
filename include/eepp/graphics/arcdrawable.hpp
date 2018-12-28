@@ -8,6 +8,10 @@ namespace EE { namespace Graphics {
 
 class EE_API ArcDrawable : public PrimitiveDrawable {
 	public:
+		static ArcDrawable * New();
+
+		static ArcDrawable * New( const Float& radius, Uint32 segmentsCount = 64, const Float& arcAngle = 360.f , const Float& arcStartAngle = 0.f );
+
 		ArcDrawable();
 
 		ArcDrawable( const Float& radius, Uint32 segmentsCount = 64, const Float& arcAngle = 360.f , const Float& arcStartAngle = 0.f );
@@ -19,6 +23,8 @@ class EE_API ArcDrawable : public PrimitiveDrawable {
 		virtual void draw( const Vector2f& position );
 
 		virtual void draw( const Vector2f& position, const Sizef& size );
+
+		virtual bool isStateful() { return false; }
 
 		Float getRadius() const;
 

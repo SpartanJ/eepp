@@ -4,6 +4,15 @@
 
 namespace EE { namespace Graphics {
 
+
+NinePatch * NinePatch::New( const Uint32& TexId, int left, int top, int right, int bottom, const Float& pixelDensity, const std::string& name ) {
+	return eeNew( NinePatch, ( TexId, left, top, right, bottom, pixelDensity, name ) );
+}
+
+NinePatch * NinePatch::New( TextureRegion * textureRegion, int left, int top, int right, int bottom, const std::string& name ) {
+	return eeNew( NinePatch, ( textureRegion, left, top, right, bottom, name ) );
+}
+
 NinePatch::NinePatch(const Uint32& TexId, int left, int top, int right, int bottom, const Float & pixelDensity, const std::string& name ) :
 	DrawableResource( Drawable::NINEPATCH, name ),
 	mRect( left, top, right, bottom ),
@@ -103,15 +112,15 @@ TextureRegion * NinePatch::getTextureRegion( const int& side ) {
 }
 
 void NinePatch::createFromTexture(const Uint32 & TexId, int left, int top, int right, int bottom) {
-	mDrawable[ Left ] = eeNew( TextureRegion, ( TexId, Rect( 0, top, left, mSize.getHeight() - bottom ) ) );
-	mDrawable[ Right ] = eeNew( TextureRegion, ( TexId, Rect( mSize.getWidth() - right, top, mSize.getWidth(), mSize.getHeight() - bottom ) ) );
-	mDrawable[ Down ] = eeNew( TextureRegion, ( TexId, Rect( left, mSize.getHeight() - bottom, mSize.getWidth() - right, mSize.getHeight() ) ) );
-	mDrawable[ Up ] = eeNew( TextureRegion, ( TexId, Rect( left, 0, mSize.getWidth() - right, top ) ) );
-	mDrawable[ UpLeft ] = eeNew( TextureRegion, ( TexId, Rect( 0, 0, left, top ) ) );
-	mDrawable[ UpRight] = eeNew( TextureRegion, ( TexId, Rect( mSize.getWidth() - right, 0, mSize.getWidth(), top ) ) );
-	mDrawable[ DownLeft] = eeNew( TextureRegion, ( TexId, Rect( 0, mSize.getHeight() - bottom, left, mSize.getHeight() ) ) );
-	mDrawable[ DownRight ] = eeNew( TextureRegion, ( TexId, Rect( mSize.getWidth() - right, mSize.getHeight() - bottom, mSize.getWidth(), mSize.getHeight() ) ) );
-	mDrawable[ Center ] = eeNew( TextureRegion, ( TexId, Rect( left, top, mSize.getWidth() - right, mSize.getHeight() - bottom ) ) );
+	mDrawable[ Left ] = TextureRegion::New( TexId, Rect( 0, top, left, mSize.getHeight() - bottom ) );
+	mDrawable[ Right ] = TextureRegion::New( TexId, Rect( mSize.getWidth() - right, top, mSize.getWidth(), mSize.getHeight() - bottom ) );
+	mDrawable[ Down ] = TextureRegion::New( TexId, Rect( left, mSize.getHeight() - bottom, mSize.getWidth() - right, mSize.getHeight() ) );
+	mDrawable[ Up ] = TextureRegion::New( TexId, Rect( left, 0, mSize.getWidth() - right, top ) );
+	mDrawable[ UpLeft ] = TextureRegion::New( TexId, Rect( 0, 0, left, top ) );
+	mDrawable[ UpRight] = TextureRegion::New( TexId, Rect( mSize.getWidth() - right, 0, mSize.getWidth(), top ) );
+	mDrawable[ DownLeft] = TextureRegion::New( TexId, Rect( 0, mSize.getHeight() - bottom, left, mSize.getHeight() ) );
+	mDrawable[ DownRight ] = TextureRegion::New( TexId, Rect( mSize.getWidth() - right, mSize.getHeight() - bottom, mSize.getWidth(), mSize.getHeight() ) );
+	mDrawable[ Center ] = TextureRegion::New( TexId, Rect( left, top, mSize.getWidth() - right, mSize.getHeight() - bottom ) );
 
 	mRect = Rect( left, top, right, bottom );
 

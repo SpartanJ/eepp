@@ -303,7 +303,7 @@ void TextureAtlasEditor::onTextureAtlasCreate( TexturePacker * TexPacker ) {
 
 	std::string FPath( FileSystem::fileRemoveExtension( mTexturePacker->getFilepath() + EE_TEXTURE_ATLAS_EXTENSION ) );
 
-	mTextureAtlasLoader = eeNew( TextureAtlasLoader, ( FPath, true, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) ) );
+	mTextureAtlasLoader = TextureAtlasLoader::New( FPath, true, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
 }
 
 void TextureAtlasEditor::updateControls() {
@@ -370,7 +370,7 @@ void TextureAtlasEditor::onTextureRegionChange( const Event * Event ) {
 				UITextureRegion * curImage = static_cast<UITextureRegion*>( node );
 
 				if ( curImage->getTextureRegion() == mCurTextureRegion ) {
-					curImage->setBackgroundFillEnabled( true )->setColor( Color( "#00000033" ) );
+					curImage->setBackgroundColor( Color( "#00000033" ) );
 				} else {
 					curImage->setBackgroundFillEnabled( false );
 				}
@@ -404,7 +404,7 @@ void TextureAtlasEditor::openTextureAtlas( const Event * Event ) {
 	threaded = false;
 	#endif
 
-	mTextureAtlasLoader = eeNew( TextureAtlasLoader, ( CDL->getFullPath(), threaded, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) ) );
+	mTextureAtlasLoader = TextureAtlasLoader::New( CDL->getFullPath(), threaded, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
 }
 
 void TextureAtlasEditor::onTextureAtlasLoaded( TextureAtlasLoader * TGLoader ) {

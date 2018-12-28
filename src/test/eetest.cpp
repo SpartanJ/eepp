@@ -14,7 +14,7 @@ class UIBlurredWindow : public UIWindow {
 			return eeNew( UIBlurredWindow, ( blurShader ) );
 		}
 
-		UIBlurredWindow( ShaderProgram * blurShader ) :
+		explicit UIBlurredWindow( ShaderProgram * blurShader ) :
 			UIWindow(),
 			mBlurShader( blurShader ),
 			mFboBlur( NULL )
@@ -179,7 +179,7 @@ void EETest::init() {
 		createShaders();
 
 		if ( mMusEnabled ) {
-			Mus = eeNew( Music, () );
+			Mus = Music::New();
 
 			if ( Mus->openFromFile( MyPath + "sounds/music.ogg" ) ) {
 				Mus->setLoop( true );
@@ -259,8 +259,8 @@ void EETest::createUIThemeTextureAtlas() {
 void EETest::loadFonts() {
 	mFTE.restart();
 
-	mFontLoader.add( eeNew( FontTrueTypeLoader, ( "NotoSans-Regular", MyPath + "fonts/NotoSans-Regular.ttf" ) ) );
-	mFontLoader.add( eeNew( FontTrueTypeLoader, ( "DejaVuSansMono", MyPath + "fonts/DejaVuSansMono.ttf" ) ) );
+	mFontLoader.add( FontTrueTypeLoader::New( "NotoSans-Regular", MyPath + "fonts/NotoSans-Regular.ttf" ) );
+	mFontLoader.add( FontTrueTypeLoader::New( "DejaVuSansMono", MyPath + "fonts/DejaVuSansMono.ttf" ) );
 
 	mFontLoader.load( cb::Make1( this, &EETest::onFontLoaded ) );
 }
@@ -356,6 +356,9 @@ static std::vector<String> getTestStringArr() {
 void EETest::createBaseUI() {
 	std::vector<String> str = getTestStringArr();
 
+	// ActionManager test
+	UINode::New()->setSize(10,10)->runAction( Actions::Fade::New( 0, 255, Seconds(5) ) )->close();
+
 	/**/
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
@@ -375,10 +378,10 @@ void EETest::createBaseUI() {
 
 	UISprite * sprite = UISprite::New();
 	sprite->setFlags( UI_AUTO_SIZE );
-	sprite->setSprite( eeNew( Sprite, ( "gn" ) ) );
+	sprite->setSprite( Sprite::New( "gn" ) );
 	sprite->setParent( C );
 	sprite->setPosition( 160, 100 );
-	sprite->setDeallocSprite( true );
+	sprite->setIsSpriteOwner( true );
 
 	UITextView * Text = UITextView::New();
 	Text->setLayoutSizeRules( FIXED, FIXED )->setHorizontalAlign( UI_HALIGN_RIGHT )->setVerticalAlign( UI_VALIGN_TOP )->setParent( C )->setEnabled( false )->setSize( 320, 240 );
@@ -489,20 +492,10 @@ void EETest::createBaseUI() {
 
 	UIWidget * w = UIWidget::New();
 	w->setParent( C )->setSize( 20, 20 )->setPosition( 260, 130 );
-	w->setBackgroundFillEnabled( true )->setColor( Color::Green );
+	w->setBackgroundColor( Color::Green );
 	w->setRotation( 45 );
-
-	w->addEventListener( Event::MouseEnter, [] ( const Event* event ) {
-		static_cast<UIWidget*>( event->getNode() )->getBackground()->setColor( Color::Yellow );
-	} );
-
-	w->addEventListener( Event::MouseExit, [] ( const Event* event ) {
-		static_cast<UIWidget*>( event->getNode() )->getBackground()->setColor( Color::Green );
-	} );
-
-	w->addEventListener( Event::MouseClick, [] ( const Event* event ) {
-		static_cast<UIWidget*>( event->getNode() )->getBackground()->setColor( Color::Red );
-	} );
+	w->setBackgroundColor( UIState::StateFlagHover, Color::Yellow );
+	w->setBackgroundColor( UIState::StateFlagPressed, Color::Red );
 
 	C = reinterpret_cast<UINode*> ( C->getParent() );
 
@@ -648,25 +641,25 @@ void EETest::createNewUI() {
 			->setPosition( 800, 0 )
 			->setSize( 100, 100 )
 			->setParent( container );
-	loader->setBackgroundFillEnabled( true )->setColor( 0xCCCCCCCC );
+	loader->setBackgroundColor( 0xCCCCCCCC );
 
 	UIRadioButton * ctrl = UIRadioButton::New();
 	ctrl->setLayoutSizeRules( FIXED, FIXED )->setPosition( 50, 100 )->setSize( 200, 32 )->setParent( container );
-	ctrl->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
-	ctrl->setBorderEnabled( true )->setColor( 0x66666666 );
+	ctrl->setBackgroundColor( 0x33333333 );
+	ctrl->setBorderColor( 0x66666666 );
 	ctrl->setText( "Happy RadioButon :)" );
 	ctrl->setFontColor( Color::Black );
 
 	UICheckBox * cbox = UICheckBox::New();
 	cbox->setLayoutSizeRules( FIXED, FIXED )->setPosition( 50, 164 )->setSize( 200, 32 )->setParent( container );
-	cbox->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
-	cbox->setBorderEnabled( true )->setColor( 0x66666666 );
+	cbox->setBackgroundColor( 0x33333333 );
+	cbox->setBorderColor( 0x66666666 );
 	cbox->setText( "Happy CheckBox :)" );
 	cbox->setFontColor( Color::Black );
 
 	UIImage * gfx = UIImage::New();
 	gfx->setPosition( 50, 140 )->setSize( 16, 16 )->setParent( container );
-	gfx->setBackgroundFillEnabled( true )->setColor( 0x33333333 );
+	gfx->setBackgroundColor( 0x33333333 );
 	gfx->setDrawable( mTheme->getIconByName( "ok" ) );
 
 	UISlider * slider = UISlider::New();
@@ -796,12 +789,12 @@ void EETest::createNewUI() {
 	layPar->setLayoutMargin( Rect( 10, 10, 10, 10 ) );
 	layPar->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT );
 	layPar->setLayoutGravity( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
-	layPar->setBackgroundFillEnabled( true )->setColor( 0x999999FF );
+	layPar->setBackgroundColor( 0x999999FF );
 
 	UILinearLayout * lay = UILinearLayout::NewVertical();
 	lay->setLayoutGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
 	lay->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT );
-	lay->setBackgroundFillEnabled( true )->setColor( 0x333333FF );
+	lay->setBackgroundColor( 0x333333FF );
 	lay->setLayoutWeight( 0.7f );
 
 	UITextView::New()->setText( "Text on test 1" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT )->setParent( lay );
@@ -814,7 +807,7 @@ void EETest::createNewUI() {
 	UILinearLayout * lay2 = UILinearLayout::NewVertical();
 	lay2->setLayoutGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
 	lay2->setLayoutSizeRules( FIXED, WRAP_CONTENT );
-	lay2->setBackgroundFillEnabled( true )->setColor( Color::Black );
+	lay2->setBackgroundColor( Color::Black );
 	lay2->setLayoutWeight( 0.3f );
 
 	UIPushButton::New()->setText( "PushButton" )->setLayoutMargin( Rect( 10, 10, 10, 10 ) )->setLayoutSizeRules( MATCH_PARENT, WRAP_CONTENT )->setLayoutGravity( UI_VALIGN_CENTER )->setParent( lay2 );
@@ -838,7 +831,7 @@ void EETest::createNewUI() {
 	rlay->setParent( win2 );
 	rlay->setLayoutSizeRules( MATCH_PARENT, MATCH_PARENT );
 	rlay->setLayoutMargin( Rect( 16, 16, 16, 16 ) );
-	rlay->setBackgroundFillEnabled( true )->setColor( 0x333333CC );
+	rlay->setBackgroundColor( 0x333333CC );
 
 	UIPushButton * ofBut = UIPushButton::New();
 	ofBut->setText( "OK" )->setLayoutGravity( UI_VALIGN_BOTTOM | UI_HALIGN_RIGHT )->setLayoutMargin( Rect( 0, 0, 16, 16 ) )->setParent( rlay );
@@ -893,8 +886,7 @@ void EETest::createNewUI() {
 						->setEnabled( false )
 						->setParent( gridLayout );
 
-				img->setBackgroundFillEnabled( true )
-						->setColor( Color::fromPointer( textures[i] ) );
+				img->setBackgroundColor( Color::fromPointer( textures[i] ) );
 			}
 		}
 	}
@@ -914,7 +906,7 @@ void EETest::createMapEditor() {
 	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
-	mMapEditor = eeNew( MapEditor, ( tWin, cb::Make0( this, &EETest::onMapEditorClose ) ) );
+	mMapEditor = MapEditor::New( tWin, cb::Make0( this, &EETest::onMapEditorClose ) );
 	tWin->center();
 	tWin->show();
 }
@@ -931,7 +923,7 @@ void EETest::createETGEditor() {
 	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
 
-	mETGEditor = eeNew ( Tools::TextureAtlasEditor, ( tWin, cb::Make0( this, &EETest::onETGEditorClose ) ) );
+	mETGEditor = Tools::TextureAtlasEditor::New( tWin, cb::Make0( this, &EETest::onETGEditorClose ) );
 	tWin->center();
 	tWin->show();
 }
@@ -951,13 +943,13 @@ void EETest::createCommonDialog() {
 static void onWinDragStart( const Event * event ) {
 	UINode * ctrl = static_cast<UINode*>( event->getNode() );
 	UIWindow * window = ctrl->isType(UI_TYPE_WINDOW) ? static_cast<UIWindow*>( ctrl ) : static_cast<UIWindow*>( ctrl->getWindowContainer()->getParent() );
-	window->startAlphaAnim( window->getAlpha(), 100, Seconds(0.2f) );
+	window->runAction( Actions::Fade::New( window->getAlpha(), 100, Seconds(0.2f) ) );
 }
 
 static void onWinDragStop( const Event * event ) {
 	UINode * ctrl = static_cast<UINode*>( event->getNode() );
 	UIWindow * window = ctrl->isType(UI_TYPE_WINDOW) ? static_cast<UIWindow*>( ctrl ) : static_cast<UIWindow*>( ctrl->getWindowContainer()->getParent() );
-	window->startAlphaAnim( window->getAlpha(), 255, Seconds(0.2f) );
+	window->runAction( Actions::Fade::New( window->getAlpha(), 255, Seconds(0.2f) ) );
 }
 
 void EETest::createDecoratedWindow() {
@@ -1008,7 +1000,7 @@ void EETest::createDecoratedWindow() {
 			win->setWinFlags( win->getWinFlags() & ~UI_WIN_NO_BORDER );
 			menuItem->setText( "Hide Border" );
 		} else if ( "Close" == txt ) {
-			win->closeFadeOut( Milliseconds(250) );
+			win->closeWindow();
 		}
 	} );
 
@@ -1094,13 +1086,20 @@ void EETest::onItemClick( const Event * Event ) {
 
 		if ( Chk->isActive() ) {
 			if ( C->getScale() == 1.f ) C->setScale( 0.f );
-			C->startScaleAnim( C->getScale(), Vector2f::One, Milliseconds( 500.f ), Ease::SineOut );
-			C->startAlphaAnim( C->getAlpha(), 255.f, Milliseconds( 500.f ) );
-			C->startRotation( 0, 360, Milliseconds( 500.f ), Ease::SineOut );
+
+			C->runAction( Actions::Spawn::New(
+					Actions::Scale::New( C->getScale(), Vector2f::One, Milliseconds( 500.f ), Ease::SineOut ),
+					Actions::Fade::New( C->getAlpha(), 255.f, Milliseconds( 500.f ) ),
+					Actions::Rotate::New( 0, 360, Milliseconds( 500.f ), Ease::SineOut )
+				)
+			);
 		} else {
-			C->startScaleAnim( C->getScale(), Vector2f::Zero, Milliseconds( 500.f ), Ease::SineIn );
-			C->disableFadeOut( Milliseconds( 500.f ) );
-			C->startRotation( 0, 360, Milliseconds( 500.f ), Ease::SineIn );
+			C->runAction( Actions::Spawn::New(
+					Actions::Scale::New( C->getScale(), Vector2f::Zero, Milliseconds( 500.f ), Ease::SineIn ),
+					Actions::Sequence::New( Actions::FadeOut::New( Milliseconds( 500 ) ), Actions::Disable::New() ),
+					Actions::Rotate::New( 0, 360, Milliseconds( 500.f ), Ease::SineIn )
+			  )
+			);
 		}
 	} else if ( "Show Window 2" == txt ) {
 		if ( NULL == mUIWindow ) {
@@ -1168,12 +1167,13 @@ void EETest::onButtonClick( const Event * event ) {
 		UIImage * Gfx = UIImage::New();
 		Gfx->setDrawable( mTheme->getIconByName( "ok" ) );
 		Gfx->setEnabled( false );
-		Gfx->runAction( Sequence::New( Scale::New( Vector2f(1.f,1.f), Vector2f(2.f,2.f), Seconds( 0.5f ) ),
-									   Scale::New( Vector2f(2.f,2.f), Vector2f(1.f,1.f), Seconds( 0.5f ) )
+
+		Gfx->runAction( Spawn::New(
+							Move::New( Vector2f( Math::randi( 0, mWindow->getWidth() ), -64 ), Vector2f( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ), Milliseconds( 2500 ) ),
+							Rotate::New( 0.f, 2500.f, Milliseconds( 2500 ) ),
+							Sequence::New( Scale::New( Vector2f(1.f,1.f), Vector2f(2.f,2.f), Seconds( 0.5f ) ), Scale::New( Vector2f(2.f,2.f), Vector2f(1.f,1.f), Seconds( 0.5f ) ) ),
+							Sequence::New( FadeOut::New( Milliseconds( 3500 ) ), Close::New() )
 						) );
-		Gfx->startRotation( 0.f, 2500.f, Milliseconds( 2500 ) );
-		Gfx->startTranslation( Vector2f( Math::randi( 0, mWindow->getWidth() ), -64 ), Vector2f( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ), Milliseconds( 2500 ) );
-		Gfx->closeFadeOut( Milliseconds( 3500 ) );
 	}
 }
 
@@ -1232,7 +1232,7 @@ void EETest::loadTextures() {
 	Engine::instance()->enableSharedGLContext();
 	#endif
 
-	PakTest = eeNew( Zip, () );
+	PakTest = Zip::New();
 	PakTest->open( MyPath + "test.zip" );
 
 	std::vector<std::string> files = PakTest->getFileList();
@@ -1241,12 +1241,12 @@ void EETest::loadTextures() {
 		std::string name( files[i] );
 
 		if ( "jpg" == FileSystem::fileExtension( name ) ) {
-			mResLoad.add( eeNew( TextureLoader, ( PakTest, name ) ) );
+			mResLoad.add( TextureLoader::New( PakTest, name ) );
 		}
 	}
 	#endif
 
-	mResLoad.add( eeNew( SoundLoader, ( &SndMng, "mysound", MyPath + "sounds/sound.ogg" ) ) );
+	mResLoad.add( SoundLoader::New( &SndMng, "mysound", MyPath + "sounds/sound.ogg" ) );
 
 	mResLoad.load( cb::Make1( this, &EETest::onTextureLoaded ) );
 
@@ -1332,13 +1332,13 @@ void EETest::loadTextures() {
 	CL2.addFrame(TN[0], Sizef(96, 96) );
 	CL2.setColor( Color( 255, 255, 255, 255 ) );
 
-	mTGL = eeNew( TextureAtlasLoader, ( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
+	mTGL = TextureAtlasLoader::New( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION );
 
 	mBlindy.addFramesByPattern( "rn" );
 	mBlindy.setPosition( Vector2f( 320.f, 0.f ) );
 
-	mBoxSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( TextureRegion, ( TN[3], "ilmare" ) ) ) ) );
-	mCircleSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( TextureRegion, ( TN[1], "thecircle" ) ) ) ) );
+	mBoxSprite = Sprite::New( GlobalTextureAtlas::instance()->add( TextureRegion::New( TN[3], "ilmare" ) ) );
+	mCircleSprite = Sprite::New( GlobalTextureAtlas::instance()->add( TextureRegion::New( TN[1], "thecircle" ) ) );
 
 	eePRINTL( "Textures loading time: %4.3f ms.", TE.getElapsed().asMilliseconds() );
 
@@ -1618,26 +1618,26 @@ void EETest::screen5() {
 	Color col( 0x000000CC );
 
 	if ( drawableGroup.getDrawableCount() == 0 ) {
-		ArcDrawable * arc = eeNew( ArcDrawable, () );
+		ArcDrawable * arc = ArcDrawable::New();
 		arc->setPosition( Vector2f( 60, 60 ) );
 		arc->setArcStartAngle( 90 );
 		arc->setArcAngle( 180 );
 		arc->setRadius( 60 );
 		arc->setColor( col );
 
-		RectangleDrawable * rect = eeNew( RectangleDrawable, () );
+		RectangleDrawable * rect = RectangleDrawable::New();
 		rect->setPosition( Vector2f( 0, 60 ) );
 		rect->setSize( Sizef( 120, 60 ) );
 		rect->setColor( col );
 
-		ArcDrawable * arc2 = eeNew( ArcDrawable, () );
+		ArcDrawable * arc2 = ArcDrawable::New();
 		arc2->setPosition( Vector2f( 60, 120 ) );
 		arc2->setArcStartAngle( -90 );
 		arc2->setArcAngle( 180 );
 		arc2->setRadius( 60 );
 		arc2->setColor( col );
 
-		ConvexShapeDrawable * poly = eeNew( ConvexShapeDrawable, () );
+		ConvexShapeDrawable * poly = ConvexShapeDrawable::New();
 		poly->setPosition( Vector2f( 60, 90 ) );
 		poly->addPoint( Vector2f( -10, -10 ) );
 		poly->addPoint( Vector2f( -10, 10 ) );

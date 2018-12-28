@@ -9,7 +9,10 @@ namespace EE { namespace System {
 /** @brief Quake 2 PAK handler */
 class EE_API Pak : public Pack {
 	public:
+		static Pak * New();
+
 		Pak();
+
 		~Pak();
 
 		/** Creates a new pakFile */

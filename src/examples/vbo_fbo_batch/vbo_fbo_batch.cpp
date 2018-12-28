@@ -9,7 +9,7 @@ FrameBuffer * FBO		= NULL;
 // Controls that the rendering is only done when is needed, preventing redundant OpenGL API calls
 // Usually the user will not need to use this class manually, since eepp controls this internally.
 // The engine uses the singleton class GlobalBatchRenderer instance to render textures and primitives.
-BatchRenderer * Batch = eeNew( BatchRenderer, () );
+BatchRenderer * Batch = BatchRenderer::New();
 
 Float ang = 0, scale = 1;
 bool side = false;

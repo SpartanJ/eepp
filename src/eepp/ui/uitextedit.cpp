@@ -258,12 +258,12 @@ void UITextEdit::autoPadding() {
 	}
 }
 
-void UITextEdit::onVScrollValueChange( const Event * Event ) {
+void UITextEdit::onVScrollValueChange( const Event * ) {
 	if ( !mSkipValueChange )
 		fixScroll();
 }
 
-void UITextEdit::onHScrollValueChange( const Event * Event ) {
+void UITextEdit::onHScrollValueChange( const Event * ) {
 	if ( !mSkipValueChange )
 		fixScroll();
 }
@@ -347,7 +347,7 @@ void UITextEdit::onInputSizeChange( const Event * Event ) {
 	fixScrollToCursor();
 }
 
-void UITextEdit::onCursorPosChange( const Event * Event ) {
+void UITextEdit::onCursorPosChange( const Event * ) {
 	fixScrollToCursor();
 }
 
@@ -404,15 +404,20 @@ void UITextEdit::shrinkText( const Uint32& Width ) {
 	}
 }
 
-void UITextEdit::update( const Time& time ) {
-	UIWidget::update( time );
+Uint32 UITextEdit::onMessage(const NodeMessage * Msg) {
+	switch ( Msg->getMsg() ) {
+		case NodeMessage::MouseUp:
+		{
+			if ( NULL != getEventDispatcher() && mTextInput->isEnabled() && mTextInput->isVisible() && mTextInput->isMouseOver() && mVScrollBar->isVisible() ) {
+				if ( Msg->getFlags() & EE_BUTTONS_WUWD )
+					mVScrollBar->getSlider()->manageClick( Msg->getFlags() );
+			}
 
-	if ( NULL != getEventDispatcher() && mTextInput->isEnabled() && mTextInput->isVisible() && mTextInput->isMouseOver() && mVScrollBar->isVisible() ) {
-		Uint32 Flags 			= getEventDispatcher()->getClickTrigger();
-
-		if ( Flags & EE_BUTTONS_WUWD )
-			mVScrollBar->getSlider()->manageClick( Flags );
+			return 1;
+		}
 	}
+
+	return 0;
 }
 
 void UITextEdit::setAllowEditing( const bool& allow ) {

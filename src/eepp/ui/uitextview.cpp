@@ -25,7 +25,7 @@ UITextView::UITextView() :
 {
 	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 
-	mTextCache = eeNew( Text, () );
+	mTextCache = Text::New();
 	mTextCache->setFont( mFontStyleConfig.Font );
 	mTextCache->setCharacterSize( mFontStyleConfig.CharacterSize );
 	mTextCache->setStyle( mFontStyleConfig.Style );
@@ -539,22 +539,22 @@ bool UITextView::setAttribute( const NodeAttribute& attribute ) {
 		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
 	} else if ( "textcolor" == name ) {
-		setFontColor( Color::fromString( attribute.asString() ) );
+		setFontColor( attribute.asColor() );
 	} else if ( "textshadowcolor" == name ) {
-		setFontShadowColor( Color::fromString( attribute.asString() ) );
+		setFontShadowColor( attribute.asColor() );
 	} else if ( "textovercolor" == name ) {
-		mFontStyleConfig.FontOverColor = Color::fromString( attribute.asString() );
+		mFontStyleConfig.FontOverColor = attribute.asColor();
 	} else if ( "textselectedcolor" == name ) {
-		mFontStyleConfig.FontSelectedColor = Color::fromString( attribute.asString() );
+		mFontStyleConfig.FontSelectedColor = attribute.asColor();
 	} else if ( "textselectionbackcolor" == name ) {
-		setSelectionBackColor( Color::fromString( attribute.asString() ) );
+		setSelectionBackColor( attribute.asColor() );
 	} else if ( "fontfamily" == name || "fontname" == name ) {
 		Font * font = FontManager::instance()->getByName( attribute.asString() );
 
 		if ( NULL != font )
 			setFont( font );
 	} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
-		setCharacterSize( PixelDensity::toDpFromStringI( attribute.asString() ) );
+		setCharacterSize( attribute.asDpDimensionI() );
 	} else if ( "textstyle" == name || "fontstyle" == name ) {
 		std::string valStr = attribute.asString();
 		String::toLowerInPlace( valStr );
@@ -585,9 +585,9 @@ bool UITextView::setAttribute( const NodeAttribute& attribute ) {
 			setFontStyle( flags );
 		}
 	} else if ( "fontoutlinethickness" == name ) {
-		setOutlineThickness( PixelDensity::toDpFromString( attribute.asString() ) );
+		setOutlineThickness( attribute.asDpDimension() );
 	} else if ( "fontoutlinecolor" == name ) {
-		setOutlineColor( Color::fromString( attribute.asString() ) );
+		setOutlineColor( attribute.asColor() );
 	} else if ( "textselection" == name ) {
 		mFlags|= UI_TEXT_SELECTION_ENABLED;
 	} else {

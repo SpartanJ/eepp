@@ -13,7 +13,7 @@ static Drawable * getSprite( const std::string& sprite ) {
 	std::vector<TextureRegion*> tTextureRegionVec = TextureAtlasManager::instance()->getTextureRegionsByPattern( sprite );
 
 	if ( tTextureRegionVec.size() ) {
-		Sprite * tSprite = eeNew( Graphics::Sprite, () );
+		Sprite * tSprite = Graphics::Sprite::New();
 		tSprite->createAnimation();
 		tSprite->addFrames( tTextureRegionVec );
 
@@ -43,7 +43,7 @@ Drawable * DrawableSearcher::searchByName( const std::string& name ) {
 
 	if ( name.size() ) {
 		if ( name[0] == '@' ) {
-			if ( String::startsWith( name, "@textureregion/" ) || String::startsWith( name, "@subtexture/" ) ) {
+			if ( String::startsWith( name, "@textureregion/" ) ) {
 				drawable = TextureAtlasManager::instance()->getTextureRegionByName( name.substr( 12 ) );
 			} else if ( String::startsWith( name, "@image/" ) ) {
 				drawable = TextureFactory::instance()->getByName( name.substr( 7 ) );
