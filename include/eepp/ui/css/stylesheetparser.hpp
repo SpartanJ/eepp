@@ -13,15 +13,23 @@
 using namespace EE;
 using namespace EE::System;
 
+namespace EE { namespace System {
+class Pack;
+}}
+
 namespace EE { namespace UI { namespace CSS {
 
-class StyleSheetParser {
+class EE_API StyleSheetParser {
 	public:
 		StyleSheetParser();
 
 		bool loadFromStream( IOStream& stream );
 
 		bool loadFromFile( const std::string& file );
+
+		bool loadFromMemory( const Uint8* RAWData, const Uint32& size );
+
+		bool loadFromPack( Pack * pack, std::string filePackPath );
 
 		void print();
 

@@ -2,14 +2,57 @@
 #include <eepp/ui/css/stylesheetselectorparser.hpp>
 #include <eepp/ui/css/stylesheetpropertiesparser.hpp>
 #include <eepp/system/iostreamfile.hpp>
+#include <eepp/system/iostreammemory.hpp>
+#include <eepp/system/pack.hpp>
+#include <eepp/system/packmanager.hpp>
+#include <eepp/system/filesystem.hpp>
+
+using namespace EE::System;
 
 namespace EE { namespace UI { namespace CSS {
 
 StyleSheetParser::StyleSheetParser() {
 }
 
-bool StyleSheetParser::loadFromFile( const std::string& file ) {
-	IOStreamFile stream( file );
+bool StyleSheetParser::loadFromStream( IOStream& stream ) {
+	mCSS.resize( stream.getSize(), '\0' );
+	stream.read( &mCSS[0], stream.getSize() );
+	return parse();
+}
+
+bool StyleSheetParser::loadFromFile( const std::string& filename ) {
+	if ( !FileSystem::fileExists( filename ) && PackManager::instance()->isFallbackToPacksActive() ) {
+		std::string path( filename );
+		Pack * pack = PackManager::instance()->exists( path );
+
+		if ( NULL != pack ) {
+			return loadFromPack( pack, path );
+		}
+
+		return false;
+	}
+
+	IOStreamFile stream( filename );
+	return loadFromStream( stream );
+}
+
+bool StyleSheetParser::loadFromPack( Pack * pack, std::string filePackPath ) {
+	if ( NULL == pack )
+		return false;
+
+	bool Ret = false;
+
+	SafeDataPointer PData;
+
+	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, PData ) ) {
+		Ret = loadFromMemory( PData.data, PData.size );
+	}
+
+	return Ret;
+}
+
+bool StyleSheetParser::loadFromMemory( const Uint8* RAWData, const Uint32& size ) {
+	IOStreamMemory stream( (const char*)RAWData, size );
 	return loadFromStream( stream );
 }
 
@@ -141,12 +184,6 @@ int StyleSheetParser::readProperty( ReadState& rs, std::size_t pos, std::string&
 	}
 
 	return pos;
-}
-
-bool StyleSheetParser::loadFromStream( IOStream& stream ) {
-	mCSS.resize( stream.getSize(), '\0' );
-	stream.read( &mCSS[0], stream.getSize() );
-	return parse();
 }
 
 }}}

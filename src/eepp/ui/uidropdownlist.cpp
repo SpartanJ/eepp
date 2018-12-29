@@ -12,7 +12,7 @@ UIDropDownList * UIDropDownList::New() {
 }
 
 UIDropDownList::UIDropDownList() :
-	UITextInput(),
+	UITextInput( "dropdownlist" ),
 	mListBox( NULL ),
 	mFriendCtrl( NULL )
 {
@@ -274,7 +274,7 @@ void UIDropDownList::destroyListBox() {
 	}
 }
 
-bool UIDropDownList::setAttribute( const NodeAttribute& attribute ) {
+bool UIDropDownList::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "popuptomaincontrol" == name ) {
@@ -282,7 +282,7 @@ bool UIDropDownList::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "maxnumvisibleitems" == name ) {
 		setMaxNumVisibleItems( attribute.asUint() );
 	} else {
-		return UITextInput::setAttribute( attribute );
+		return UITextInput::setAttribute( attribute, state );
 	}
 
 	return true;

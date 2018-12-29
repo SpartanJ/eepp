@@ -8,7 +8,7 @@ UIComboBox * UIComboBox::New() {
 }
 
 UIComboBox::UIComboBox() :
-	UIWidget(),
+	UIWidget( "combobox" ),
 	mDropDownList( NULL ),
 	mButton( NULL )
 {

@@ -18,7 +18,7 @@ UISlider * UISlider::NewHorizontal() {
 }
 
 UISlider::UISlider( const UI_ORIENTATION& orientation ) :
-	UIWidget(),
+	UIWidget( "slider" ),
 	mOrientation( orientation ),
 	mBackSlider( NULL ),
 	mSlider( NULL ),
@@ -419,7 +419,7 @@ Uint32 UISlider::onMessage(const NodeMessage * Msg) {
 	return 0;
 }
 
-bool UISlider::setAttribute( const NodeAttribute& attribute ) {
+bool UISlider::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "orientation" == name ) {
@@ -443,7 +443,7 @@ bool UISlider::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "halfslider" == name ) {
 		setAllowHalfSliderOut( attribute.asBool() );
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;

@@ -7,7 +7,7 @@ UIRelativeLayout * UIRelativeLayout::New() {
 }
 
 UIRelativeLayout::UIRelativeLayout() :
-	UILayout()
+	UILayout( "relativelayout" )
 {
 }
 

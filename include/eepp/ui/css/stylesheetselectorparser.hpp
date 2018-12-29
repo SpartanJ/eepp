@@ -5,7 +5,7 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-class StyleSheetSelectorParser {
+class EE_API StyleSheetSelectorParser {
 	public:
 		StyleSheetSelectorParser();
 

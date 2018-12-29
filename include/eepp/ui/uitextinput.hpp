@@ -47,7 +47,7 @@ class EE_API UITextInput : public UITextView {
 
 		bool isFreeEditingEnabled();
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 
 		virtual UIWidget * setPadding(const Rectf& padding);
 	protected:
@@ -57,6 +57,8 @@ class EE_API UITextInput : public UITextView {
 		int				mCursorPos;
 		bool			mAllowEditing;
 		bool			mShowingWait;
+
+		UITextInput( const std::string& tag );
 
 		void resetWaitCursor();
 

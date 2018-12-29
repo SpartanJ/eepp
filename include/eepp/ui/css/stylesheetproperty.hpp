@@ -3,10 +3,11 @@
 
 #include <string>
 #include <map>
+#include <eepp/config.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
-class StyleSheetProperty {
+class EE_API StyleSheetProperty {
 	public:
 		StyleSheetProperty();
 
@@ -14,6 +15,7 @@ class StyleSheetProperty {
 
 		std::string name;
 		std::string value;
+		Uint32 specificity;
 };
 
 typedef std::map<std::string, StyleSheetProperty> StyleSheetProperties;

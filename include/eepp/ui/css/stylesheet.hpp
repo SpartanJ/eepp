@@ -5,13 +5,17 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-class StyleSheet {
+class StyleSheetElement;
+
+class EE_API StyleSheet {
 	public:
 		StyleSheet();
 
 		void addNode( StyleSheetNode node );
 
-		StyleSheetProperties find( const std::string& tagName = "", const std::string& id = "", const std::vector<std::string>& classes = {}, const std::string& pseudoClass = "" );
+		bool isEmpty() const;
+
+		StyleSheetProperties getElementProperties( StyleSheetElement * element, const std::string& pseudoClass = "" );
 
 		std::vector<StyleSheetNode> nodes;
 };

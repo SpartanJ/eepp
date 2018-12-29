@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace CSS {
 
 
 StyleSheetSelector::StyleSheetSelector( const std::string& selectorName ) :
-	name( selectorName ),
+	name( String::toLower( selectorName ) ),
 	specificity(0)
 {
 	auto parts = String::split( name, ' ' );

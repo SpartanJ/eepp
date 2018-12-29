@@ -1,6 +1,7 @@
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/stylesheetelement.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -10,9 +11,13 @@ void StyleSheet::addNode( StyleSheetNode node ) {
 	nodes.push_back( node );
 }
 
-StyleSheetProperties StyleSheet::find( const std::string& tagName, const std::string& id, const std::vector<std::string>& classes, const std::string& pseudoClass ) {
+bool StyleSheet::isEmpty() const {
+	return nodes.empty();
+}
+
+StyleSheetProperties StyleSheet::getElementProperties( StyleSheetElement * element, const std::string& pseudoClass ) {
 	StyleSheetProperties propertiesSelected;
-	Uint32 lastSpecificity = -1;
+	Uint32 lastSpecificity = 0;
 
 	for ( auto it = nodes.begin(); it != nodes.end(); ++it ) {
 		StyleSheetNode& node = *it;
@@ -20,17 +25,17 @@ StyleSheetProperties StyleSheet::find( const std::string& tagName, const std::st
 
 		Uint32 flags = 0;
 
-		if ( selector.hasTagName() && !tagName.empty() && selector.getTagName() == tagName ) {
+		if ( selector.hasTagName() && !element->getStyleSheetTag().empty() && selector.getTagName() == element->getStyleSheetTag() ) {
 			flags |= StyleSheetSelector::TagName;
 		}
 
-		if ( selector.hasId() && !id.empty() && selector.getId() == id ) {
+		if ( selector.hasId() && !element->getStyleSheetId().empty() && selector.getId() == element->getStyleSheetId() ) {
 			flags |= StyleSheetSelector::Id;
 		}
 
-		if ( selector.hasClasses() && !classes.empty() ) {
+		if ( selector.hasClasses() && !element->getStyleSheetClasses().empty() ) {
 			bool hasClasses = true;
-			for ( auto cit = classes.begin(); cit != classes.end(); ++cit ) {
+			for ( auto cit = element->getStyleSheetClasses().begin(); cit != element->getStyleSheetClasses().end(); ++cit ) {
 				if ( !selector.hasClass( *cit ) ) {
 					hasClasses = false;
 					break;
@@ -47,7 +52,9 @@ StyleSheetProperties StyleSheet::find( const std::string& tagName, const std::st
 		}
 
 		if ( flags == selector.getRequiredFlags() && selector.getSpecificity() > lastSpecificity ) {
-			propertiesSelected = node.properties;
+			for ( auto pit = node.properties.begin(); pit != node.properties.end(); ++pit )
+				propertiesSelected[ pit->second.name ] = pit->second;
+
 			lastSpecificity = selector.getSpecificity();
 		}
 	}

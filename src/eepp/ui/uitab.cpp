@@ -10,7 +10,7 @@ UITab *UITab::New() {
 }
 
 UITab::UITab() :
-	UISelectButton(),
+	UISelectButton( "tab" ),
 	mControlOwned( NULL )
 {
 	applyDefaultTheme();
@@ -148,7 +148,7 @@ void UITab::onAutoSize() {
 	}
 }
 
-bool UITab::setAttribute( const NodeAttribute& attribute ) {
+bool UITab::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	std::string name = attribute.getName();
 
 	if ( "name" == name || "text" == name ) {
@@ -158,7 +158,7 @@ bool UITab::setAttribute( const NodeAttribute& attribute ) {
 		mOwnedName = attribute.asString();
 		setOwnedControl();
 	} else {
-		return UISelectButton::setAttribute( attribute );
+		return UISelectButton::setAttribute( attribute, state );
 	}
 
 	return true;

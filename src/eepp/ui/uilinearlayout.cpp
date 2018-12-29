@@ -16,7 +16,7 @@ UILinearLayout * UILinearLayout::NewHorizontal() {
 }
 
 UILinearLayout::UILinearLayout() :
-	UILayout(),
+	UILayout( "linearlayout" ),
 	mOrientation( UI_VERTICAL )
 {
 	clipEnable();
@@ -336,7 +336,7 @@ Sizei UILinearLayout::getTotalUsedSize() {
 	return size;
 }
 
-bool UILinearLayout::setAttribute( const NodeAttribute& attribute ) {
+bool UILinearLayout::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "orientation" == name ) {
@@ -348,7 +348,7 @@ bool UILinearLayout::setAttribute( const NodeAttribute& attribute ) {
 		else if ( "vertical" == val )
 			setOrientation( UI_VERTICAL );
 	} else {
-		return UILayout::setAttribute( attribute );
+		return UILayout::setAttribute( attribute, state );
 	}
 
 	return true;

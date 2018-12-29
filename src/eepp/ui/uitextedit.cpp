@@ -11,7 +11,7 @@ UITextEdit * UITextEdit::New() {
 }
 
 UITextEdit::UITextEdit() :
-	UIWidget(),
+	UIWidget( "textedit" ),
 	mTextInput( NULL ),
 	mHScrollBar( NULL ),
 	mVScrollBar( NULL ),
@@ -463,7 +463,7 @@ void UITextEdit::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
 	}
 }
 
-bool UITextEdit::setAttribute( const NodeAttribute &attribute ) {
+bool UITextEdit::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	bool attributeSet = true;
@@ -485,11 +485,11 @@ bool UITextEdit::setAttribute( const NodeAttribute &attribute ) {
 		else if ( "on" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_ON );
 		else if ( "off" == val ) setHorizontalScrollMode( UI_SCROLLBAR_ALWAYS_OFF );
 	} else {
-		attributeSet = UIWidget::setAttribute( attribute );
+		attributeSet = UIWidget::setAttribute( attribute, state );
 	}
 
 	if ( !attributeSet && ( String::startsWith( name, "text" ) || String::startsWith( name, "font" ) ) )
-		mTextInput->setAttribute( attribute );
+		mTextInput->setAttribute( attribute, state );
 
 	return attributeSet;
 }

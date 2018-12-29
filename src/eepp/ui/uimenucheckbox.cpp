@@ -9,7 +9,7 @@ UIMenuCheckBox * UIMenuCheckBox::New() {
 }
 
 UIMenuCheckBox::UIMenuCheckBox() :
-	UIMenuItem(),
+	UIMenuItem( "menucheckbox" ),
 	mActive( false ),
 	mSkinActive( NULL ),
 	mSkinInactive( NULL )

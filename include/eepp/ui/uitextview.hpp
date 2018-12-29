@@ -76,7 +76,7 @@ class EE_API UITextView : public UIWidget {
 
 		UITooltipStyleConfig getFontStyleConfig() const;
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		Text *		mTextCache;
 		String			mString;
@@ -100,6 +100,8 @@ class EE_API UITextView : public UIWidget {
 		Int32		mLastSelCurEnd;
 		Int32		mFontLineCenter;
 		bool		mSelecting;
+
+		UITextView( const std::string& tag );
 
 		virtual void drawSelection(Text * textCache);
 

@@ -1,8 +1,10 @@
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
-#include <eepp/scene/scenenode.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <pugixml/pugixml.hpp>
+#include <algorithm>
 
 namespace EE { namespace UI {
 
@@ -10,9 +12,11 @@ UIWidget * UIWidget::New() {
 	return eeNew( UIWidget, () );
 }
 
-UIWidget::UIWidget() :
+UIWidget::UIWidget( const std::string & tag ) :
 	UINode(),
+	mTag( tag ),
 	mTheme( NULL ),
+	mStyle( NULL ),
 	mTooltip( NULL ),
 	mMinControlSize(),
 	mLayoutWeight(0),
@@ -26,9 +30,18 @@ UIWidget::UIWidget() :
 	mNodeFlags |= NODE_FLAG_WIDGET;
 
 	updateAnchorsDistances();
+
+	if ( getSceneNode()->isUISceneNode() && static_cast<UISceneNode*>( getSceneNode() )->hasStyleSheet() )
+		mStyle = UIStyle::New( this );
+}
+
+UIWidget::UIWidget() :
+	UIWidget( "widget" )
+{
 }
 
 UIWidget::~UIWidget() {
+	eeSAFE_DELETE( mStyle );
 	eeSAFE_DELETE( mTooltip );
 }
 
@@ -417,6 +430,77 @@ UIWidget * UIWidget::setPadding(const Rectf& padding) {
 	return this;
 }
 
+const std::string &UIWidget::getStyleSheetId() const {
+	return mId;
+}
+
+const std::string& UIWidget::getStyleSheetTag() const {
+	return mTag;
+}
+
+const std::vector<std::string> &UIWidget::getStyleSheetClasses() const {
+	return mClasses;
+}
+
+CSS::StyleSheetElement * UIWidget::getStyleSheetParentElement() {
+	return NULL != mParentCtrl && mParentCtrl->isWidget() ? reinterpret_cast<CSS::StyleSheetElement*>( mParentCtrl ) : NULL;
+}
+
+void UIWidget::addClass( const std::string& cls ) {
+	if ( !containsClass( cls ) )
+		mClasses.push_back( cls );
+}
+
+void UIWidget::removeClass( const std::string& cls ) {
+	mClasses.erase( std::find( mClasses.begin(), mClasses.end(), cls ) );
+}
+
+bool UIWidget::containsClass( const std::string& cls ) {
+	return std::find( mClasses.begin(), mClasses.end(), cls ) != mClasses.end();
+}
+
+void UIWidget::setElementTag( const std::string& tag ) {
+	mTag = tag;
+}
+
+const std::string& UIWidget::getElementTag() const {
+	return mTag;
+}
+
+void UIWidget::pushState( const Uint32& State, bool emitEvent ) {
+	if ( NULL != mStyle )
+		mStyle->pushState( State );
+
+	UINode::pushState( State, emitEvent );
+}
+
+void UIWidget::popState( const Uint32& State, bool emitEvent ) {
+	if ( NULL != mStyle )
+		mStyle->popState( State );
+
+	UINode::popState( State, emitEvent );
+}
+
+void UIWidget::reloadStyle() {
+	if ( NULL == mStyle && getSceneNode()->isUISceneNode() && static_cast<UISceneNode*>( getSceneNode() )->hasStyleSheet() )
+		mStyle = UIStyle::New( this );
+
+	if ( NULL != mStyle ) {
+		mStyle->load();
+
+		if ( NULL != mChild ) {
+			Node * ChildLoop = mChild;
+
+			while ( NULL != ChildLoop ) {
+				if ( ChildLoop->isWidget() )
+					static_cast<UIWidget*>( ChildLoop )->reloadStyle();
+
+				ChildLoop = ChildLoop->getNextNode();
+			}
+		}
+	}
+}
+
 void UIWidget::onPaddingChange() {
 	invalidateDraw();
 }
@@ -433,11 +517,11 @@ void UIWidget::endAttributesTransaction() {
 	}
 }
 
-bool UIWidget::setAttribute( const std::string& name, const std::string& value ) {
-	return setAttribute( NodeAttribute( name, value ) );
+bool UIWidget::setAttribute( const std::string& name, const std::string& value, const Uint32& state ) {
+	return setAttribute( NodeAttribute( name, value ), state );
 }
 
-bool UIWidget::setAttribute(const NodeAttribute & attribute) {
+bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	std::string name = attribute.getName();
 
 	bool attributeSet = true;
@@ -460,32 +544,32 @@ bool UIWidget::setAttribute(const NodeAttribute & attribute) {
 		const std::string attributeName( attribute.asString() );
 
 		if ( String::startsWith( attributeName, "#" ) ) {
-			setBackgroundColor( attribute.asColor() );
+			setBackgroundColor( state, attribute.asColor() );
 		} else if ( NULL != ( res = DrawableSearcher::searchByName( attributeName ) ) ) {
-			setBackgroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
+			setBackgroundDrawable( state, res, res->getDrawableType() == Drawable::SPRITE );
 		}
 	} else if ( "backgroundcolor" == name ) {
-		setBackgroundColor( attribute.asColor() );
+		setBackgroundColor( state, attribute.asColor() );
 	} else if ( "foreground" == name ) {
 		Drawable * res = NULL;
 
 		const std::string attributeName( attribute.asString() );
 
 		if ( String::startsWith( attributeName, "#" ) ) {
-			setForegroundColor( attribute.asColor() );
+			setForegroundColor( state, attribute.asColor() );
 		} else if ( NULL != ( res = DrawableSearcher::searchByName( attributeName ) ) ) {
-			setForegroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
+			setForegroundDrawable( state, res, res->getDrawableType() == Drawable::SPRITE );
 		}
 	} else if ( "foregroundcolor" == name ) {
-		setForegroundColor( attribute.asColor() );
+		setForegroundColor( state, attribute.asColor() );
 	} else if ( "foregroundcorners" == name ) {
-		setForegroundCorners( attribute.asUint() );
+		setForegroundCorners( state, attribute.asUint() );
 	} else if ( "bordercolor" == name ) {
-		setBorderColor( attribute.asColor() );
+		setBorderColor( state, attribute.asColor() );
 	} else if ( "borderwidth" == name ) {
-		setBorderWidth( attribute.asDpDimensionI("1") );
+		setBorderWidth( state, attribute.asDpDimensionI("1") );
 	} else if ( "bordercorners" == name || "backgroundcorners" == name ) {
-		setBackgroundCorners( attribute.asUint() );
+		setBackgroundCorners( state, attribute.asUint() );
 	} else if ( "visible" == name ) {
 		setVisible( attribute.asBool() );
 	} else if ( "enabled" == name ) {

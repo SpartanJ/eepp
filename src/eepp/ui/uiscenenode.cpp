@@ -24,7 +24,7 @@ UISceneNode::UISceneNode( EE::Window::Window * window ) :
 	resizeControl( mWindow );
 }
 
-void UISceneNode::resizeControl( EE::Window::Window * win ) {
+void UISceneNode::resizeControl( EE::Window::Window * ) {
 	setSize( (Float)mWindow->getWidth() / PixelDensity::getPixelDensity(), (Float)mWindow->getHeight() / PixelDensity::getPixelDensity() );
 	sendMsg( this, NodeMessage::WindowResize );
 }
@@ -96,6 +96,29 @@ UIWidget * UISceneNode::loadLayoutNodes( pugi::xml_node node, Node * parent ) {
 	}
 
 	return firstWidget;
+}
+
+void UISceneNode::setStyleSheet(CSS::StyleSheet styleSheet) {
+	mStyleSheet = styleSheet;
+
+	if ( NULL != mChild ) {
+		Node * ChildLoop = mChild;
+
+		while ( NULL != ChildLoop ) {
+			if ( ChildLoop->isWidget() )
+				static_cast<UIWidget*>( ChildLoop )->reloadStyle();
+
+			ChildLoop = ChildLoop->getNextNode();
+		}
+	}
+}
+
+CSS::StyleSheet& UISceneNode::getStyleSheet() {
+	return mStyleSheet;
+}
+
+bool UISceneNode::hasStyleSheet() {
+	return !mStyleSheet.isEmpty();
 }
 
 UIWidget * UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node * parent ) {

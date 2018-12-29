@@ -10,7 +10,7 @@ UIProgressBar *UIProgressBar::New() {
 }
 
 UIProgressBar::UIProgressBar() :
-	UIWidget(),
+	UIWidget( "progressbar" ),
 	mProgress( 0.f ),
 	mTotalSteps( 100.f ),
 	mFillerSkin( NULL )
@@ -213,7 +213,7 @@ UITextView * UIProgressBar::getTextBox() const {
 	return mTextBox;
 }
 
-bool UIProgressBar::setAttribute( const NodeAttribute& attribute ) {
+bool UIProgressBar::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "totalsteps" == name ) {
@@ -236,7 +236,7 @@ bool UIProgressBar::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "fillerpaddingbottom" == name ) {
 		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, attribute.asDpDimension() ) );
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;

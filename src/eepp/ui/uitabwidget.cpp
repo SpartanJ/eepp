@@ -12,7 +12,7 @@ UITabWidget * UITabWidget::New() {
 }
 
 UITabWidget::UITabWidget() :
-	UIWidget(),
+	UIWidget( "tabwidget" ),
 	mTabSelected( NULL ),
 	mTabSelectedIndex( eeINDEX_NOT_FOUND )
 {
@@ -186,7 +186,7 @@ void UITabWidget::setStyleConfig(const UITabWidgetStyleConfig & styleConfig) {
 	orderTabs();
 }
 
-bool UITabWidget::setAttribute( const NodeAttribute& attribute ) {
+bool UITabWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "textcolor" == name ) {
@@ -250,7 +250,7 @@ bool UITabWidget::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "linebelowtabsyoffset" == name ) {
 		setLineBelowTabsYOffset( attribute.asInt() );
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;

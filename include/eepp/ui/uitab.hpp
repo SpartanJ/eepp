@@ -29,7 +29,7 @@ class EE_API UITab : public UISelectButton {
 
 		virtual UIPushButton * setText( const String& text );
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		Node * mControlOwned;
 		std::string mOwnedName;

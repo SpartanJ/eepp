@@ -6,7 +6,7 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-class StyleSheetNode {
+class EE_API StyleSheetNode {
 	public:
 		explicit StyleSheetNode( const std::string& selector, const StyleSheetProperties& properties );
 

@@ -10,7 +10,7 @@ UIRadioButton * UIRadioButton::New() {
 }
 
 UIRadioButton::UIRadioButton() :
-	UITextView(),
+	UITextView( "radiobutton" ),
 	mActiveButton(NULL),
 	mInactiveButton(NULL),
 	mActive( false ),
@@ -252,13 +252,13 @@ void UIRadioButton::setTextSeparation(const Int32 & textSeparation) {
 	setPadding( getPadding() );
 }
 
-bool UIRadioButton::setAttribute( const NodeAttribute& attribute ) {
+bool UIRadioButton::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "selected" == name || "active" == name ) {
 		setActive( attribute.asBool() );
 	} else {
-		return UITextView::setAttribute( attribute );
+		return UITextView::setAttribute( attribute, state );
 	}
 
 	return true;

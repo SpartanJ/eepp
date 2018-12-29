@@ -13,7 +13,7 @@ UIMenu *UIMenu::New() {
 }
 
 UIMenu::UIMenu() :
-	UIWidget(),
+	UIWidget( "menu" ),
 	mMaxWidth( 0 ),
 	mNextPosY( 0 ),
 	mBiggestIcon( 0 ),

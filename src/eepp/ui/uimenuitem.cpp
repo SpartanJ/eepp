@@ -7,11 +7,15 @@ UIMenuItem * UIMenuItem::New() {
 	return eeNew( UIMenuItem, () );
 }
 
-UIMenuItem::UIMenuItem() :
-	UIPushButton()
+UIMenuItem::UIMenuItem( const std::string& tag ) :
+	UIPushButton( tag )
 {
 	applyDefaultTheme();
 }
+
+UIMenuItem::UIMenuItem() :
+	UIMenuItem( "menuitem" )
+{}
 
 UIMenuItem::~UIMenuItem() {
 }

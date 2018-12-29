@@ -16,7 +16,7 @@ UIListBox * UIListBox::New() {
 }
 
 UIListBox::UIListBox() :
-	UITouchDragableWidget(),
+	UITouchDragableWidget( "listbox" ),
 	mRowHeight(0),
 	mVScrollMode( UI_SCROLLBAR_AUTO ),
 	mHScrollMode( UI_SCROLLBAR_AUTO ),
@@ -983,7 +983,7 @@ void UIListBox::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
 	setFontColor( mFontStyleConfig.FontColor );
 }
 
-bool UIListBox::setAttribute( const NodeAttribute& attribute ) {
+bool UIListBox::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "rowheight" == name ) {
@@ -1029,7 +1029,7 @@ bool UIListBox::setAttribute( const NodeAttribute& attribute ) {
 			mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
 		}
 	} else {
-		return UITouchDragableWidget::setAttribute( attribute );
+		return UITouchDragableWidget::setAttribute( attribute, state );
 	}
 
 	return true;

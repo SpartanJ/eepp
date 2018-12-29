@@ -25,7 +25,7 @@ static const Uint32 UIStateFlags[] = {
 	UIState::StateFlagDisabled
 };
 
-const char * UIState::getSkinStateName( const Uint32& State ) {
+const char * UIState::getStateName( const Uint32& State ) {
 	return UIStatesNames[ State ];
 }
 
@@ -95,12 +95,22 @@ void UIState::updateState() {
 		if ( ( mState & UIStateFlags[i] ) == UIStateFlags[i] ) {
 			if ( stateExists( UIStateFlags[i] ) ) {
 				mCurrentState = UIStateFlags[i];
+				onStateChange();
 				return;
 			}
 		}
 	}
 
+	Uint32 currentState = mCurrentState;
+
 	mCurrentState = StateFlagNormal;
+
+	if ( currentState != StateFlagNormal ) {
+		onStateChange();
+	}
+}
+
+void UIState::onStateChange() {
 }
 
 }}

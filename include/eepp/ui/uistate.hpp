@@ -33,7 +33,7 @@ class EE_API UIState {
 			StateFlagCount            = StateCount
 		};
 
-		static const char * getSkinStateName( const Uint32& State );
+		static const char * getStateName( const Uint32& State );
 
 		static int getStateNumber(const std::string & State);
 
@@ -59,6 +59,8 @@ class EE_API UIState {
 		Uint32		mCurrentState;
 
 		void updateState();
+
+		virtual void onStateChange();
 };
 
 }}

@@ -7,9 +7,13 @@ UITouchDragableWidget * UITouchDragableWidget::New() {
 	return eeNew( UITouchDragableWidget, () );
 }
 
-UITouchDragableWidget::UITouchDragableWidget() :
-	UIWidget(),
+UITouchDragableWidget::UITouchDragableWidget( const std::string& tag ) :
+	UIWidget( tag ),
 	mTouchDragDeceleration( 5.f, 5.f )
+{}
+
+UITouchDragableWidget::UITouchDragableWidget() :
+	UITouchDragableWidget( "touchdragablewidget" )
 {}
 
 Uint32 UITouchDragableWidget::getType() const {
@@ -136,7 +140,7 @@ bool UITouchDragableWidget::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds();
 }
 
-bool UITouchDragableWidget::setAttribute( const NodeAttribute& attribute ) {
+bool UITouchDragableWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "touchdrag" == name ) {
@@ -144,7 +148,7 @@ bool UITouchDragableWidget::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "touchdragdeceleration" == name ) {
 		setTouchDragDeceleration( Vector2f( attribute.asFloat(), attribute.asFloat() ) );
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;

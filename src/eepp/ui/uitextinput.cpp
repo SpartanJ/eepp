@@ -13,8 +13,8 @@ UITextInput * UITextInput::New() {
 	return eeNew( UITextInput, () );
 }
 
-UITextInput::UITextInput() :
-	UITextView(),
+UITextInput::UITextInput( const std::string& tag ) :
+	UITextView( tag ),
 	mCursorPos(0),
 	mAllowEditing( true ),
 	mShowingWait( true )
@@ -30,6 +30,10 @@ UITextInput::UITextInput() :
 
 	applyDefaultTheme();
 }
+
+UITextInput::UITextInput() :
+	UITextInput( "textinput" )
+{}
 
 UITextInput::~UITextInput() {
 }
@@ -344,7 +348,7 @@ bool UITextInput::isFreeEditingEnabled() {
 	return mTextBuffer.isFreeEditingEnabled();
 }
 
-bool UITextInput::setAttribute( const NodeAttribute& attribute ) {
+bool UITextInput::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "text" == name ) {
@@ -362,7 +366,7 @@ bool UITextInput::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "allowdot" == name ) {
 		getInputTextBuffer()->setAllowOnlyNumbers( getInputTextBuffer()->onlyNumbersAllowed(), attribute.asBool() );
 	} else {
-		return UITextView::setAttribute( attribute );
+		return UITextView::setAttribute( attribute, state );
 	}
 
 	return true;

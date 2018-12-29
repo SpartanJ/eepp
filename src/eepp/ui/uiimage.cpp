@@ -11,7 +11,7 @@ UIImage * UIImage::New() {
 }
 
 UIImage::UIImage() :
-	UIWidget(),
+	UIWidget( "image" ),
 	mScaleType( UIScaleType::None ),
 	mDrawable( NULL ),
 	mColor(),
@@ -183,7 +183,7 @@ const Vector2f& UIImage::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-bool UIImage::setAttribute( const NodeAttribute& attribute ) {
+bool UIImage::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "src" == name ) {
@@ -209,7 +209,7 @@ bool UIImage::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "tint" == name ) {
 		setColor( attribute.asColor() );
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;

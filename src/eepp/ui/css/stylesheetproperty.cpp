@@ -7,7 +7,7 @@ StyleSheetProperty::StyleSheetProperty()
 {}
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value ) :
-	name( String::trim( name ) ),
+	name( String::toLower( String::trim( name ) ) ),
 	value( String::trim( value ) )
 {}
 

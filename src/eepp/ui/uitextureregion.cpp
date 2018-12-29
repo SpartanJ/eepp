@@ -11,7 +11,7 @@ UITextureRegion * UITextureRegion::New() {
 }
 
 UITextureRegion::UITextureRegion() :
-	UIWidget(),
+	UIWidget( "textureregion" ),
 	mTextureRegion( NULL ),
 	mColor(),
 	mRender( RENDER_NORMAL ),
@@ -192,7 +192,7 @@ const Vector2f& UITextureRegion::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-bool UITextureRegion::setAttribute( const NodeAttribute& attribute ) {
+bool UITextureRegion::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "src" == name || "textureregion" == name ) {
@@ -215,7 +215,7 @@ bool UITextureRegion::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "tint" == name ) {
 		setColor( attribute.asColor() );
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;

@@ -71,11 +71,13 @@ class EE_API UIPushButton : public UIWidget {
 
 		void setStyleConfig(const UIPushButtonStyleConfig & styleConfig);
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		UIPushButtonStyleConfig mStyleConfig;
 		UIImage * 	mIcon;
 		UITextView * 	mTextBox;
+
+		UIPushButton( const std::string& tag );
 
 		virtual void onSizeChange();
 

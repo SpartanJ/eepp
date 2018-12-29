@@ -11,8 +11,8 @@ UIPushButton * UIPushButton::New() {
 	return eeNew( UIPushButton, () );
 }
 
-UIPushButton::UIPushButton() :
-	UIWidget(),
+UIPushButton::UIPushButton( const std::string& tag ) :
+	UIWidget( tag ),
 	mIcon( NULL ),
 	mTextBox( NULL )
 {
@@ -60,6 +60,10 @@ UIPushButton::UIPushButton() :
 
 	applyDefaultTheme();
 }
+
+UIPushButton::UIPushButton() :
+	UIPushButton( "pushbutton" )
+{}
 
 UIPushButton::~UIPushButton() {
 }
@@ -367,7 +371,7 @@ void UIPushButton::setStyleConfig(const UIPushButtonStyleConfig & styleConfig) {
 	onStateChange();
 }
 
-bool UIPushButton::setAttribute( const NodeAttribute& attribute ) {
+bool UIPushButton::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	bool attributeSet = true;
@@ -387,7 +391,7 @@ bool UIPushButton::setAttribute( const NodeAttribute& attribute ) {
 			setIcon( icon );
 		}
 	} else {
-		attributeSet = UIWidget::setAttribute( attribute );
+		attributeSet = UIWidget::setAttribute( attribute, state );
 	}
 
 	if ( !attributeSet && ( String::startsWith( name, "text" ) || String::startsWith( name, "font" ) ) )

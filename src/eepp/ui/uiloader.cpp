@@ -9,7 +9,7 @@ UILoader * UILoader::New() {
 }
 
 UILoader::UILoader() :
-	UIWidget(),
+	UIWidget( "loader" ),
 	mRadius(0),
 	mOutlineThickness( PixelDensity::dpToPx(8) ),
 	mColor( Color::Green ),
@@ -184,7 +184,7 @@ UILoader * UILoader::setAnimationSpeed( const Float& animationSpeed ) {
 	return this;
 }
 
-bool UILoader::setAttribute( const NodeAttribute& attribute ) {
+bool UILoader::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	std::string name = attribute.getName();
 
 	if ( "indeterminate" == name ) {
@@ -204,7 +204,7 @@ bool UILoader::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "arcstartangle" == name ) {
 		setArcStartAngle( attribute.asFloat() );
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;

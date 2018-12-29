@@ -47,7 +47,15 @@
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 
 #include <eepp/ui/uithemedefault.hpp>
-
 #include <eepp/ui/uiwidgetcreator.hpp>
+
+#include <eepp/ui/css/stylesheet.hpp>
+#include <eepp/ui/css/stylesheetelement.hpp>
+#include <eepp/ui/css/stylesheetnode.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
+#include <eepp/ui/css/stylesheetselector.hpp>
+#include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/stylesheetselectorparser.hpp>
+#include <eepp/ui/css/stylesheetpropertiesparser.hpp>
 
 #endif

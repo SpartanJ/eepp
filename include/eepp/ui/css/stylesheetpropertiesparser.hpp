@@ -8,7 +8,7 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-class StyleSheetPropertiesParser {
+class EE_API StyleSheetPropertiesParser {
 	public:
 		StyleSheetPropertiesParser();
 

@@ -12,7 +12,7 @@ UIWinMenu * UIWinMenu::New() {
 }
 
 UIWinMenu::UIWinMenu() :
-	UIWidget(),
+	UIWidget( "winmenu" ),
 	mCurrentMenu( NULL )
 {
 	if ( !(mFlags & UI_ANCHOR_RIGHT) )

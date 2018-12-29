@@ -27,8 +27,10 @@ class EE_API UISelectButton : public UIPushButton {
 
 		const Color& getFontSelectedColor() const;
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
+		UISelectButton( const std::string& tag );
+
 		virtual void onStateChange();
 };
 

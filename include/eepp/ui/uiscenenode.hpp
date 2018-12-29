@@ -3,6 +3,7 @@
 
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/system/translator.hpp>
+#include <eepp/ui/css/stylesheet.hpp>
 
 namespace EE { namespace UI {
 
@@ -13,7 +14,7 @@ class EE_API UISceneNode : public SceneNode {
 	public:
 		static UISceneNode * New( EE::Window::Window * window = NULL );
 
-		UISceneNode( EE::Window::Window * window = NULL );
+		explicit UISceneNode( EE::Window::Window * window = NULL );
 
 		virtual Node * setSize( const Sizef& size );
 
@@ -41,12 +42,18 @@ class EE_API UISceneNode : public SceneNode {
 
 		UIWidget * loadLayoutNodes( pugi::xml_node node, Node * parent );
 
+		void setStyleSheet( CSS::StyleSheet styleSheet );
+
+		CSS::StyleSheet& getStyleSheet();
+
+		bool hasStyleSheet();
 	protected:
 		friend class EE::UI::UIWindow;
 		Sizef				mDpSize;
 		Uint32				mFlags;
 		Translator			mTranslator;
 		std::list<UIWindow*> mWindowsList;
+		CSS::StyleSheet mStyleSheet;
 
 		virtual void resizeControl( EE::Window::Window * win );
 
@@ -60,9 +67,7 @@ class EE_API UISceneNode : public SceneNode {
 
 		bool				windowExists( UIWindow * win );
 
-
 		virtual void setInternalSize(const Sizef& size );
-
 };
 
 }}

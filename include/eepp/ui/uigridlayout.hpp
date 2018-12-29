@@ -49,7 +49,7 @@ class EE_API UIGridLayout : public UILayout {
 
 		UIGridLayout * setRowWeight(const Float & rowWeight);
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		Sizei mSpan;
 		ElementMode mColumnMode;

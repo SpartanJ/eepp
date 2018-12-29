@@ -8,7 +8,7 @@ UITable * UITable::New() {
 }
 
 UITable::UITable() :
-	UITouchDragableWidget(),
+	UITouchDragableWidget( "table" ),
 	mContainerPadding(),
 	mContainer( NULL ),
 	mVScrollBar( NULL ),
@@ -617,7 +617,7 @@ bool UITable::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds() && !mVScrollBar->isMouseOverMeOrChilds() && !mHScrollBar->isMouseOverMeOrChilds();
 }
 
-bool UITable::setAttribute( const NodeAttribute& attribute ) {
+bool UITable::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "rowheight" == name ) {
@@ -644,7 +644,7 @@ bool UITable::setAttribute( const NodeAttribute& attribute ) {
 			mHScrollBar->setScrollBarType( UIScrollBar::NoButtons );
 		}
 	} else {
-		return UITouchDragableWidget::setAttribute( attribute );
+		return UITouchDragableWidget::setAttribute( attribute, state );
 	}
 
 	return true;

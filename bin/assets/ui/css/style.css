@@ -1,0 +1,12 @@
+
+PushButton {
+	foregroundColor: #66666666;
+}
+
+PushButton:hover {
+	foregroundColor: #66FF6666;
+}
+
+PushButton:pressed {
+	foregroundColor: #FF666666;
+}

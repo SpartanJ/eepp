@@ -16,7 +16,7 @@ UIScrollBar * UIScrollBar::NewVertical() {
 }
 
 UIScrollBar::UIScrollBar( const UI_ORIENTATION& orientation ) :
-	UIWidget(),
+	UIWidget( "scrollbar" ),
 #ifdef EE_PLATFORM_TOUCH
 	mScrollBarType( NoButtons )
 #else
@@ -296,7 +296,7 @@ void UIScrollBar::setExpandBackground( bool expandBackground ) {
 	adjustChilds();
 }
 
-bool UIScrollBar::setAttribute( const NodeAttribute & attribute ) {
+bool UIScrollBar::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "orientation" == name ) {
@@ -327,7 +327,7 @@ bool UIScrollBar::setAttribute( const NodeAttribute & attribute ) {
 			setScrollBarType( TwoButtons );
 		}
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;

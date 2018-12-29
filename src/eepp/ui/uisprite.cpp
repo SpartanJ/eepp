@@ -10,7 +10,7 @@ UISprite * UISprite::New() {
 }
 
 UISprite::UISprite() :
-	UIWidget(),
+	UIWidget( "sprite" ),
 	mSprite( NULL ),
 	mRender( RENDER_NORMAL ),
 	mAlignOffset(0,0),
@@ -185,7 +185,7 @@ void UISprite::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
-bool UISprite::setAttribute( const NodeAttribute& attribute ) {
+bool UISprite::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "src" == name ) {
@@ -196,7 +196,7 @@ bool UISprite::setAttribute( const NodeAttribute& attribute ) {
 			setSprite( Sprite::New( val ) );
 		}
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;

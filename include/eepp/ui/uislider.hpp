@@ -66,7 +66,7 @@ class EE_API UISlider : public UIWidget {
 
 		void setPageStep( const Float & pageStep );
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 
 		Sizef getMinimumSize();
 	protected:

@@ -9,7 +9,7 @@ UISpinBox * UISpinBox::New() {
 }
 
 UISpinBox::UISpinBox() :
-	UIWidget(),
+	UIWidget( "spinbox" ),
 	mMinValue( 0.f ),
 	mMaxValue( 1024.f ),
 	mValue( 0 ),
@@ -273,7 +273,7 @@ void UISpinBox::onPaddingChange() {
 	UIWidget::onPaddingChange();
 }
 
-bool UISpinBox::setAttribute( const NodeAttribute& attribute ) {
+bool UISpinBox::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	bool attributeSet = true;
@@ -287,7 +287,7 @@ bool UISpinBox::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "clickstep" == name ) {
 		setClickStep(attribute.asFloat() );
 	} else {
-		attributeSet = UIWidget::setAttribute( attribute );
+		attributeSet = UIWidget::setAttribute( attribute, state );
 	}
 
 	mInput->setAttribute( attribute );

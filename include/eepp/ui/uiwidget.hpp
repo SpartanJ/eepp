@@ -4,6 +4,7 @@
 #include <eepp/scene/nodeattribute.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitooltip.hpp>
+#include <eepp/ui/css/stylesheetelement.hpp>
 
 namespace pugi {
 class xml_node;
@@ -11,7 +12,9 @@ class xml_node;
 
 namespace EE { namespace UI {
 
-class EE_API UIWidget : public UINode {
+class UIStyle;
+
+class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 	public:
 		static UIWidget * New();
 
@@ -85,18 +88,44 @@ class EE_API UIWidget : public UINode {
 
 		void notifyLayoutAttrChangeParent();
 
-		bool setAttribute( const std::string& name, const std::string& value );
+		bool setAttribute( const std::string& name, const std::string& value, const Uint32& state = UIState::StateFlagNormal );
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 
 		const Rectf& getPadding() const;
 
 		UIWidget * setPadding(const Rectf& padding);
+
+		const std::string& getStyleSheetTag() const;
+
+		const std::string& getStyleSheetId() const;
+
+		const std::vector<std::string>& getStyleSheetClasses() const;
+
+		StyleSheetElement * getStyleSheetParentElement();
+
+		void addClass( const std::string& cls );
+
+		void removeClass( const std::string& cls );
+
+		bool containsClass( const std::string& cls );
+
+		void setElementTag( const std::string& tag );
+
+		const std::string& getElementTag() const;
+
+		virtual void pushState( const Uint32& State, bool emitEvent = true );
+
+		virtual void popState( const Uint32& State, bool emitEvent = true );
+
+		void reloadStyle();
 	protected:
 		friend class UIManager;
 		friend class UISceneNode;
 
+		std::string mTag;
 		UITheme *	mTheme;
+		UIStyle *	mStyle;
 		UITooltip *	mTooltip;
 		Sizef		mMinControlSize;
 		Rect		mDistToBorder;
@@ -111,6 +140,9 @@ class EE_API UIWidget : public UINode {
 		UIWidget * mLayoutPositionRuleWidget;
 		int	mAttributesTransactionCount;
 		std::string mSkinName;
+		std::vector<std::string> mClasses;
+
+		explicit UIWidget( const std::string& tag );
 
 		void createTooltip();
 

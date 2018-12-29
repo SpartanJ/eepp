@@ -9,7 +9,7 @@ UIScrollView * UIScrollView::New() {
 }
 
 UIScrollView::UIScrollView() :
-	UITouchDragableWidget(),
+	UITouchDragableWidget( "scrollview" ),
 	mViewType( Exclusive ),
 	mVScrollMode( UI_SCROLLBAR_AUTO ),
 	mHScrollMode( UI_SCROLLBAR_AUTO ),
@@ -228,7 +228,7 @@ bool UIScrollView::isTouchOverAllowedChilds() {
 	return isMouseOverMeOrChilds() && mScrollView->isMouseOverMeOrChilds() && ret;
 }
 
-bool UIScrollView::setAttribute( const NodeAttribute& attribute ) {
+bool UIScrollView::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "type" == name ) {
@@ -263,7 +263,7 @@ bool UIScrollView::setAttribute( const NodeAttribute& attribute ) {
 			mHScroll->setScrollBarType( UIScrollBar::NoButtons );
 		}
 	} else {
-		return UITouchDragableWidget::setAttribute( attribute );
+		return UITouchDragableWidget::setAttribute( attribute, state );
 	}
 
 	return true;

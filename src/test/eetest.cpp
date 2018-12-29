@@ -599,6 +599,12 @@ void EETest::createUI() {
 
 	sceneNode->setTranslator( mTranslator );
 
+	CSS::StyleSheetParser styleSheetParser;
+
+	if ( styleSheetParser.loadFromFile( MyPath + "ui/css/style.css" ) ) {
+		sceneNode->setStyleSheet( styleSheetParser.getStyleSheet() );
+	}
+
 	SceneManager::instance()->add( sceneNode );
 
 	eePRINTL("Node size: %d", sizeof(Node));

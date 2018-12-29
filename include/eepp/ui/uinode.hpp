@@ -159,9 +159,9 @@ class EE_API UINode : public Node {
 
 		void removeSkin();
 
-		void pushState( const Uint32& State, bool emitEvent = true );
+		virtual void pushState( const Uint32& State, bool emitEvent = true );
 
-		void popState( const Uint32& State, bool emitEvent = true );
+		virtual void popState( const Uint32& State, bool emitEvent = true );
 
 		Sizef getSkinSize();
 

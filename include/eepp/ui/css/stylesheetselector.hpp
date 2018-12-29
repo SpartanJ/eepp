@@ -5,7 +5,7 @@
 
 namespace EE { namespace UI { namespace CSS {
 
-class StyleSheetSelector {
+class EE_API StyleSheetSelector {
 	public:
 		enum SelectorType {
 			TagName = 1 << 0,
@@ -18,7 +18,7 @@ class StyleSheetSelector {
 			SpecificityId = 1000000,
 			SpecificityClass = 100000,
 			SpecificityTag = 10000,
-			SpecificityPseudoClass = 0
+			SpecificityPseudoClass = 100
 		};
 
 		explicit StyleSheetSelector( const std::string& selectorName );

@@ -14,6 +14,9 @@ class EE_API UILayout : public UIWidget {
 		virtual Uint32 getType() const;
 
 		virtual bool isType( const Uint32& type ) const;
+	protected:
+		UILayout( const std::string& tag );
+
 };
 
 }}

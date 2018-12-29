@@ -10,7 +10,7 @@ UICheckBox * UICheckBox::New() {
 }
 
 UICheckBox::UICheckBox() :
-	UITextView(),
+	UITextView( "checkbox" ),
 	mActive( false ),
 	mTextSeparation( 4 )
 {
@@ -185,13 +185,13 @@ void UICheckBox::setTextSeparation(const Int32 & textSeparation) {
 	setPadding( getPadding() );
 }
 
-bool UICheckBox::setAttribute( const NodeAttribute& attribute ) {
+bool UICheckBox::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "selected" == name || "active" == name ) {
 		setActive( attribute.asBool() );
 	} else {
-		return UITextView::setAttribute( attribute );
+		return UITextView::setAttribute( attribute, state );
 	}
 
 	return true;

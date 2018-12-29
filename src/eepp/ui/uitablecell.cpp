@@ -8,7 +8,7 @@ UITableCell * UITableCell::New() {
 }
 
 UITableCell::UITableCell() :
-	UIWidget()
+	UIWidget( "tablecell" )
 {
 	applyDefaultTheme();
 }

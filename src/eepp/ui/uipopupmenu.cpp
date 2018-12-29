@@ -12,6 +12,7 @@ UIPopUpMenu * UIPopUpMenu::New() {
 UIPopUpMenu::UIPopUpMenu() :
 	UIMenu()
 {
+	setElementTag( "popupmenu" );
 	setVisible( false );
 	setEnabled( false );
 	applyDefaultTheme();

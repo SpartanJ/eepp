@@ -29,7 +29,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) :
 {}
 
 UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig ) :
-	UIWidget(),
+	UIWidget( "window" ),
 	mFrameBuffer( NULL ),
 	mStyleConfig( windowStyleConfig ),
 	mWindowDecoration( NULL ),
@@ -1412,7 +1412,7 @@ void UIWindow::resizeCursor() {
 	}
 }
 
-bool UIWindow::setAttribute( const NodeAttribute& attribute ) {
+bool UIWindow::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "width" == name ) {
@@ -1453,7 +1453,7 @@ bool UIWindow::setAttribute( const NodeAttribute& attribute ) {
 			setWinFlags( winflags );
 		}
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;

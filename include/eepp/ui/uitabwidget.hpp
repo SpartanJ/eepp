@@ -135,7 +135,7 @@ class EE_API UITabWidget : public UIWidget {
 
 		void setStyleConfig(const UITabWidgetStyleConfig & styleConfig);
 
-		virtual bool setAttribute( const NodeAttribute& attribute );
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		friend class UITab;
 

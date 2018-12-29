@@ -7,7 +7,12 @@ UILayout * UILayout::New() {
 }
 
 UILayout::UILayout() :
-	UIWidget()
+	UIWidget( "layout" )
+{
+}
+
+UILayout::UILayout( const std::string& tag ) :
+	UIWidget( tag )
 {
 }
 

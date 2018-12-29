@@ -13,8 +13,8 @@ UITextView * UITextView::New() {
 	return eeNew( UITextView, () );
 }
 
-UITextView::UITextView() :
-	UIWidget(),
+UITextView::UITextView( const std::string& tag ) :
+	UIWidget( tag ),
 	mRealAlignOffset( 0.f, 0.f ),
 	mSelCurInit( -1 ),
 	mSelCurEnd( -1 ),
@@ -36,6 +36,10 @@ UITextView::UITextView() :
 
 	alignFix();
 }
+
+UITextView::UITextView() :
+	UITextView( "textview" )
+{}
 
 UITextView::~UITextView() {
 	eeSAFE_DELETE( mTextCache );
@@ -532,7 +536,7 @@ void UITextView::setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig
 	setOutlineColor( mFontStyleConfig.getOutlineColor() );
 }
 
-bool UITextView::setAttribute( const NodeAttribute& attribute ) {
+bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "text" == name ) {
@@ -591,7 +595,7 @@ bool UITextView::setAttribute( const NodeAttribute& attribute ) {
 	} else if ( "textselection" == name ) {
 		mFlags|= UI_TEXT_SELECTION_ENABLED;
 	} else {
-		return UIWidget::setAttribute( attribute );
+		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;
