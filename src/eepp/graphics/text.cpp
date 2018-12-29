@@ -388,9 +388,7 @@ void Text::getWidthInfo( std::vector<Float>& LinesWidth, Float& CachedWidth, int
 		if ( CharID == '\n' ) {
 			Lines++;
 
-			Float lWidth = ( CharID == '\t' ) ? glyph.advance * 4.f : glyph.advance;
-
-			LinesWidth.push_back( Width - lWidth );
+			LinesWidth.push_back( Width - glyph.advance );
 
 			Width = 0;
 
@@ -905,7 +903,7 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 			}
 		}
 
-		for ( Uint32 i = from; i < rto; i++ ) {
+		for ( i = from; i < rto; i++ ) {
 			curChar = mString[i];
 
 			lpos	= rpos;
@@ -918,8 +916,8 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 
 					if ( '\n' == curChar) {
 						if ( underlined || strikeThrough ) {
-							for ( int i = 0; i < GLi->quadVertexs(); i++ )
-								mColors[ rpos * GLi->quadVertexs() + i ] = colors[i];
+							for ( int v = 0; v < GLi->quadVertexs(); v++ )
+								mColors[ rpos * GLi->quadVertexs() + v ] = colors[v];
 						}
 
 						if ( underlined )
@@ -931,8 +929,8 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 				}
 			}
 
-			for ( int i = 0; i < GLi->quadVertexs(); i++ )
-				mColors[ lpos * GLi->quadVertexs() + i ] = colors[i];
+			for ( int v = 0; v < GLi->quadVertexs(); v++ )
+				mColors[ lpos * GLi->quadVertexs() + v ] = colors[v];
 		}
 
 		if ( rto == s ) {
@@ -941,8 +939,8 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 				Uint32 pos = lpos * GLi->quadVertexs();
 
 				if ( pos < mColors.size() ) {
-					for ( int i = 0; i < GLi->quadVertexs(); i++ )
-						mColors[ lpos * GLi->quadVertexs() + i ] = colors[i];
+					for ( int v = 0; v < GLi->quadVertexs(); v++ )
+						mColors[ lpos * GLi->quadVertexs() + v ] = colors[v];
 				}
 			}
 
@@ -951,8 +949,8 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 				Uint32 pos = lpos * GLi->quadVertexs();
 
 				if ( pos < mColors.size() ) {
-					for ( int i = 0; i < GLi->quadVertexs(); i++ )
-						mColors[ lpos * GLi->quadVertexs() + i ] = colors[i];
+					for ( int v = 0; v < GLi->quadVertexs(); v++ )
+						mColors[ lpos * GLi->quadVertexs() + v ] = colors[v];
 				}
 			}
 		}
