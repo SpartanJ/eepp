@@ -14,14 +14,9 @@ using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
-struct eeTexCoord {
-	Float u;
-	Float v;
-};
-
 struct eeVertex {
 	Vector2f pos;
-	eeTexCoord tex;
+	Vector2f tex;
 	Color color;
 };
 
@@ -123,8 +118,11 @@ class EE_API BatchRenderer {
 		/** Set the texture sector to be rendered */
 		void pointSetTexCoord(const Float & x, const Float & y);
 
-		/** Add to the batch a point ( this will change your batch rendering method to PRIMITIVE_POINTS, so if you were using another one will Draw all the batched vertexs first ) */
+		/** Adds to the batch a point */
 		void batchPoint( const Float& x, const Float& y, const PrimitiveType& primitiveType = PRIMITIVE_POINTS );
+
+		/** Adds to the batch a point list */
+		void batchPointList( const std::vector<eeVertex>& points, const PrimitiveType& primitiveType = PRIMITIVE_POINTS );
 
 		/** This will set as the default batch rendering to PRIMITIVE_LINES. And will reset the line color to ColorA(255,255,255,255). */
 		void linesBegin();
@@ -251,7 +249,7 @@ class EE_API BatchRenderer {
 		const Texture *		mTexture;
 		BlendMode			mBlend;
 
-		eeTexCoord			mTexCoord[4];
+		Vector2f			mTexCoord[4];
 		Color				mVerColor[4];
 
 		PrimitiveType		mCurrentMode;

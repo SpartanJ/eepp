@@ -155,7 +155,7 @@ void BatchRenderer::flush() {
 	}
 
 	GLi->vertexPointer	( 2, GL_FP				, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] )												, alloc		);
-	GLi->colorPointer	( 4, GL_UNSIGNED_BYTE	, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(Vector2f) + sizeof(eeTexCoord)	, alloc		);
+	GLi->colorPointer	( 4, GL_UNSIGNED_BYTE	, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(Vector2f) + sizeof(Vector2f)	, alloc		);
 
 	if ( !GLi->quadsSupported() ) {
 		if ( PRIMITIVE_QUADS == mCurrentMode ) {
@@ -457,18 +457,18 @@ void BatchRenderer::quadsSetColorFree( const Color& Color0, const Color& Color1,
 }
 
 void BatchRenderer::quadsSetTexCoord( const Float& tl_u, const Float& tl_v, const Float& br_u, const Float& br_v ) {
-	mTexCoord[0].u = tl_u;	mTexCoord[1].u = tl_u;
-	mTexCoord[0].v = tl_v;	mTexCoord[1].v = br_v;
+	mTexCoord[0].x = tl_u;	mTexCoord[1].x = tl_u;
+	mTexCoord[0].y = tl_v;	mTexCoord[1].y = br_v;
 
-	mTexCoord[2].u = br_u;	mTexCoord[3].u = br_u;
-	mTexCoord[2].v = br_v;	mTexCoord[3].v = tl_v;
+	mTexCoord[2].x = br_u;	mTexCoord[3].x = br_u;
+	mTexCoord[2].y = br_v;	mTexCoord[3].y = tl_v;
 }
 
 void BatchRenderer::quadsSetTexCoordFree( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2, const Float& x3, const Float& y3 ) {
-	mTexCoord[0].u = x0; mTexCoord[0].v = y0;
-	mTexCoord[1].u = x1; mTexCoord[1].v = y1;
-	mTexCoord[2].u = x2; mTexCoord[2].v = y2;
-	mTexCoord[3].u = x3; mTexCoord[3].v = y3;
+	mTexCoord[0].x = x0; mTexCoord[0].y = y0;
+	mTexCoord[1].x = x1; mTexCoord[1].y = y1;
+	mTexCoord[2].x = x2; mTexCoord[2].y = y2;
+	mTexCoord[3].x = x3; mTexCoord[3].y = y3;
 }
 
 void BatchRenderer::rotate( const Vector2f& center, Vector2f* point, const Float& angle ) {
@@ -491,7 +491,7 @@ void BatchRenderer::pointSetColor( const Color& color ) {
 }
 
 void BatchRenderer::pointSetTexCoord( const Float& x, const Float& y ) {
-	mTexCoord[0].u = x; mTexCoord[0].v = y;
+	mTexCoord[0].x = x; mTexCoord[0].y = y;
 }
 
 void BatchRenderer::batchPoint( const Float& x, const Float& y , const PrimitiveType & primitiveType ) {
@@ -507,6 +507,16 @@ void BatchRenderer::batchPoint( const Float& x, const Float& y , const Primitive
 	mTVertex->color = mVerColor[0];
 
 	addVertexs(1);
+}
+
+void BatchRenderer::batchPointList( const std::vector<eeVertex> & points, const PrimitiveType & primitiveType ) {
+	setDrawMode( primitiveType, mForceBlendMode );
+
+	unsigned int curNumVertex = mNumVertex;
+
+	addVertexs(points.size());
+
+	memcpy( (void*)&mVertex[ curNumVertex ], (void*)&points[0], sizeof(eeVertex) * points.size() );
 }
 
 void BatchRenderer::linesBegin() {
@@ -675,9 +685,9 @@ void BatchRenderer::triangleFanSetColorFree( const Color& Color0, const Color& C
 }
 
 void BatchRenderer::triangleFanSetTexCoord( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 ) {
-	mTexCoord[0].u = x0; mTexCoord[0].v = y0;
-	mTexCoord[1].u = x1; mTexCoord[1].v = y1;
-	mTexCoord[2].u = x2; mTexCoord[2].v = y2;
+	mTexCoord[0].x = x0; mTexCoord[0].y = y0;
+	mTexCoord[1].x = x1; mTexCoord[1].y = y1;
+	mTexCoord[2].x = x2; mTexCoord[2].y = y2;
 }
 
 void BatchRenderer::batchTriangleFan( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 ) {
@@ -738,9 +748,9 @@ void BatchRenderer::trianglesSetColorFree( const Color& Color0, const Color& Col
 }
 
 void BatchRenderer::trianglesSetTexCoord( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 ) {
-	mTexCoord[0].u = x0; mTexCoord[0].v = y0;
-	mTexCoord[1].u = x1; mTexCoord[1].v = y1;
-	mTexCoord[2].u = x2; mTexCoord[2].v = y2;
+	mTexCoord[0].x = x0; mTexCoord[0].y = y0;
+	mTexCoord[1].x = x1; mTexCoord[1].y = y1;
+	mTexCoord[2].x = x2; mTexCoord[2].y = y2;
 }
 
 void BatchRenderer::batchTriangle( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 ) {
