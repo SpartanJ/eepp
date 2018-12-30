@@ -18,7 +18,8 @@ class EE_API StyleSheetSelector {
 			SpecificityId = 1000000,
 			SpecificityClass = 100000,
 			SpecificityTag = 10000,
-			SpecificityPseudoClass = 100
+			SpecificityPseudoClass = 100,
+			SpecificityGlobal = 1
 		};
 
 		explicit StyleSheetSelector( const std::string& selectorName );

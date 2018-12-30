@@ -40,8 +40,6 @@ void UIStyle::load() {
 			addStyleSheetProperties( StateFlagSelectedHover, styleSheet.getElementProperties( mWidget, "selectedhover" ) );
 			addStyleSheetProperties( StateFlagSelectedPressed, styleSheet.getElementProperties( mWidget, "selectedpressed" ) );
 			addStyleSheetProperties( StateFlagDisabled, styleSheet.getElementProperties( mWidget, "disabled" ) );
-
-			onStateChange();
 		}
 	}
 }
@@ -63,7 +61,7 @@ void UIStyle::onStateChange() {
 		for ( auto it = attrs.begin(); it != attrs.end(); ++it ) {
 			NodeAttribute& nodeAttr = it->second;
 
-			mWidget->setAttribute( nodeAttr );
+			mWidget->setAttribute( nodeAttr, mCurrentState );
 		}
 	}
 }

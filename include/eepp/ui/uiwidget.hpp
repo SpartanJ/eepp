@@ -162,6 +162,8 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		virtual void onPaddingChange();
 
+		virtual void onThemeLoaded();
+
 		void beginAttributesTransaction();
 
 		void endAttributesTransaction();

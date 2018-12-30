@@ -505,6 +505,11 @@ void UIWidget::onPaddingChange() {
 	invalidateDraw();
 }
 
+void UIWidget::onThemeLoaded() {
+	if ( NULL != mStyle )
+		mStyle->onStateChange();
+}
+
 void UIWidget::beginAttributesTransaction() {
 	mAttributesTransactionCount++;
 }

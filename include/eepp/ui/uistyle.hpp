@@ -24,6 +24,8 @@ class EE_API UIStyle : public UIState {
 		void addAttribute( int state, NodeAttribute attribute );
 
 		void load();
+
+		void onStateChange();
 	protected:
 		typedef std::map<std::string, NodeAttribute> AttributesMap;
 
@@ -31,8 +33,6 @@ class EE_API UIStyle : public UIState {
 		std::map<int, AttributesMap> mStates;
 
 		void addStyleSheetProperties( int state, const CSS::StyleSheetProperties& properties );
-
-		void onStateChange();
 };
 
 }}

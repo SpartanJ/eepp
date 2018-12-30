@@ -68,6 +68,8 @@ void StyleSheetSelector::parseSelector( const std::string& selector ) {
 			} else if ( selector[0] == '#' ) {
 				id = rselector.substr(1);
 				specificity += SpecificityId;
+			} else if ( selector[0] == '*' ) {
+				specificity += SpecificityGlobal;
 			} else {
 				tagName = rselector;
 				specificity += SpecificityTag;

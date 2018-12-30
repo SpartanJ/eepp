@@ -99,11 +99,13 @@ class NodeAttribute {
 
 		BlendMode asBlendMode() const;
 
-		Vector2f asVector( const Vector2f& defaultValue = Vector2f::Zero );
+		Vector2f asVector2f( const Vector2f& defaultValue = Vector2f::Zero ) const;
 
-		Rect asRect( const Rect& defaultValue = Rect() );
+		Vector2i asVector2i( const Vector2i& defaultValue = Vector2i::Zero ) const;
 
-		Rectf asRectf( const Rectf& defaultValue = Rectf() );
+		Rect asRect( const Rect& defaultValue = Rect() ) const;
+
+		Rectf asRectf( const Rectf& defaultValue = Rectf() ) const;
 	protected:
 		std::string mName;
 		std::string mValue;

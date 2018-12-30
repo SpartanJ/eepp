@@ -329,4 +329,8 @@ UIFontStyleConfig UITheme::getFontStyleConfig() const {
 	return mFontStyleConfig;
 }
 
+Font *UITheme::getDefaultFont() const {
+	return mFontStyleConfig.Font;
+}
+
 }}

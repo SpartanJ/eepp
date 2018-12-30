@@ -55,6 +55,8 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		UIFontStyleConfig getFontStyleConfig() const;
 
+		Font * getDefaultFont() const;
+
 		void setFontStyleConfig(UIFontStyleConfig fontConfig);
 
 		virtual UITabWidgetStyleConfig getTabWidgetStyleConfig();

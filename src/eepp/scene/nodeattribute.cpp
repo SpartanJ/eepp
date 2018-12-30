@@ -154,7 +154,7 @@ BlendMode NodeAttribute::asBlendMode() const {
 	return toBlendMode( mValue );
 }
 
-Vector2f NodeAttribute::asVector( const Vector2f & defaultValue ) {
+Vector2f NodeAttribute::asVector2f( const Vector2f & defaultValue ) const {
 	if ( !mValue.empty() && mValue.find( "," ) != std::string::npos ) {
 		Vector2f vector;
 		auto xySplit = String::split( mValue, ',', true );
@@ -172,7 +172,25 @@ Vector2f NodeAttribute::asVector( const Vector2f & defaultValue ) {
 	return defaultValue;
 }
 
-Rect NodeAttribute::asRect( const Rect& defaultValue ) {
+Vector2i NodeAttribute::asVector2i( const Vector2i & defaultValue ) const {
+	if ( !mValue.empty() && mValue.find( "," ) != std::string::npos ) {
+		Vector2i vector;
+		auto xySplit = String::split( mValue, ',', true );
+
+		if ( xySplit.size() == 2 ) {
+			int val;
+
+			vector.x = String::fromString<int>( val, xySplit[0] ) ? val : defaultValue.x;
+			vector.y = String::fromString<int>( val, xySplit[1] ) ? val : defaultValue.y;
+
+			return vector;
+		}
+	}
+
+	return defaultValue;
+}
+
+Rect NodeAttribute::asRect( const Rect& defaultValue ) const {
 	if ( !mValue.empty() && mValue.find( " " ) != std::string::npos ) {
 		Rect rect( defaultValue );
 
@@ -200,7 +218,7 @@ Rect NodeAttribute::asRect( const Rect& defaultValue ) {
 	return defaultValue;
 }
 
-Rectf NodeAttribute::asRectf( const Rectf& defaultValue ) {
+Rectf NodeAttribute::asRectf( const Rectf& defaultValue ) const {
 	if ( !mValue.empty() && mValue.find( " " ) != std::string::npos ) {
 		Rectf rect( defaultValue );
 
