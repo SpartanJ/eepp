@@ -7,21 +7,50 @@ namespace EE { namespace UI { namespace CSS {
 
 StyleSheet::StyleSheet() {}
 
-void StyleSheet::addNode( StyleSheetNode node ) {
-	nodes.push_back( node );
+void StyleSheet::addNode( const StyleSheetNode& node ) {
+	mNodes[ node.getSelector().getName() ] = node;
+}
+
+void StyleSheet::combineNode( const StyleSheetNode& node ) {
+	auto nodeIt = mNodes.find( node.getSelector().getName() );
+
+	if ( nodeIt == mNodes.end() ) {
+		addNode( node );
+	} else {
+		auto currentNode = nodeIt->second;
+
+		if ( node.getSelector().getSpecificity() > currentNode.getSelector().getSpecificity() ) {
+			for ( auto pit = node.getProperties().begin(); pit != node.getProperties().end(); ++pit )
+				currentNode.setProperty( pit->second );
+		}
+	}
 }
 
 bool StyleSheet::isEmpty() const {
-	return nodes.empty();
+	return mNodes.empty();
+}
+
+void StyleSheet::print() {
+	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
+		StyleSheetNode& style = it->second;
+
+		style.print();
+	}
+}
+
+void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
+	for ( auto it = styleSheet.getNodes().begin(); it != styleSheet.getNodes().end(); ++it ) {
+		addNode( it->second );
+	}
 }
 
 StyleSheetProperties StyleSheet::getElementProperties( StyleSheetElement * element, const std::string& pseudoClass ) {
 	StyleSheetProperties propertiesSelected;
 	Uint32 lastSpecificity = 0;
 
-	for ( auto it = nodes.begin(); it != nodes.end(); ++it ) {
-		StyleSheetNode& node = *it;
-		StyleSheetSelector& selector = node.selector;
+	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
+		StyleSheetNode& node = it->second;
+		const StyleSheetSelector& selector = node.getSelector();
 
 		Uint32 flags = 0;
 
@@ -47,19 +76,27 @@ StyleSheetProperties StyleSheet::getElementProperties( StyleSheetElement * eleme
 			}
 		}
 
-		if ( selector.hasPseudoClass() && !pseudoClass.empty() && selector.getPseudoClass() == pseudoClass ) {
+		if ( selector.isGlobal() ) {
+			if ( !pseudoClass.empty() ) {
+				flags |= StyleSheetSelector::PseudoClass;
+			}
+		} else if ( selector.hasPseudoClass() && !pseudoClass.empty() && selector.getPseudoClass() == pseudoClass ) {
 			flags |= StyleSheetSelector::PseudoClass;
 		}
 
 		if ( flags == selector.getRequiredFlags() && selector.getSpecificity() > lastSpecificity ) {
-			for ( auto pit = node.properties.begin(); pit != node.properties.end(); ++pit )
-				propertiesSelected[ pit->second.name ] = pit->second;
+			for ( auto pit = node.getProperties().begin(); pit != node.getProperties().end(); ++pit )
+				propertiesSelected[ pit->second.getName() ] = pit->second;
 
 			lastSpecificity = selector.getSpecificity();
 		}
 	}
 
 	return propertiesSelected;
+}
+
+const StyleSheet::StyleSheetNodeList& StyleSheet::getNodes() const {
+	return mNodes;
 }
 
 }}}

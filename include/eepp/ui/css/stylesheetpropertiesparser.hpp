@@ -16,7 +16,8 @@ class EE_API StyleSheetPropertiesParser {
 
 		void print();
 
-		StyleSheetProperties properties;
+		const StyleSheetProperties& getProperties() const;
+
 	protected:
 		enum ReadState {
 			ReadingPropertyName,
@@ -26,6 +27,8 @@ class EE_API StyleSheetPropertiesParser {
 		};
 
 		ReadState prevRs;
+
+		StyleSheetProperties mProperties;
 
 		void parse( std::string propsstr );
 

@@ -96,6 +96,8 @@ void UIMessageBox::setTheme( UITheme * Theme ) {
 			mButtonCancel->setIcon( CancelIcon );
 		}
 	}
+
+	onThemeLoaded();
 }
 
 Uint32 UIMessageBox::onMessage( const NodeMessage * Msg ) {

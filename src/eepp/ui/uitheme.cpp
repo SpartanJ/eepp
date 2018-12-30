@@ -220,7 +220,7 @@ UITheme * UITheme::loadFromDirectroy( const std::string& Path, const std::string
 	return loadFromDirectroy( UITheme::New( Name, NameAbbr ), Path, pixelDensity );
 }
 
-UITheme * UITheme::loadFromTextureAtlas( Graphics::TextureAtlas * TextureAtlas, const std::string& Name, const std::string NameAbbr ) {
+UITheme * UITheme::loadFromTextureAtlas( Graphics::TextureAtlas * TextureAtlas, const std::string& Name, const std::string & NameAbbr ) {
 	return loadFromTextureAtlas( UITheme::New( Name, NameAbbr ), TextureAtlas );
 }
 
@@ -289,18 +289,6 @@ void UITheme::setFontStyleConfig(UIFontStyleConfig fontConfig) {
 	mFontStyleConfig = fontConfig;
 }
 
-UITabWidgetStyleConfig UITheme::getTabWidgetStyleConfig() {
-	return UITabWidgetStyleConfig( getFontStyleConfig() );
-}
-
-UIProgressBarStyleConfig UITheme::getProgressBarStyleConfig() {
-	return UIProgressBarStyleConfig( getFontStyleConfig() );;
-}
-
-UIWinMenuStyleConfig UITheme::getWinMenuStyleConfig() {
-	return UIWinMenuStyleConfig( getFontStyleConfig() );
-}
-
 UIDropDownListStyleConfig UITheme::getDropDownListStyleConfig() {
 	return UIDropDownListStyleConfig( getFontStyleConfig() );
 }
@@ -309,20 +297,20 @@ UIWindowStyleConfig UITheme::getWindowStyleConfig() {
 	return UIWindowStyleConfig( getFontStyleConfig() );
 }
 
-UIMenuStyleConfig UITheme::getMenuStyleConfig() {
-	return UIMenuStyleConfig( getFontStyleConfig() );
-}
-
 UIPushButtonStyleConfig UITheme::getPushButtonStyleConfig() {
 	return UIPushButtonStyleConfig( getFontStyleConfig() );
 }
 
-UISliderStyleConfig UITheme::getSliderStyleConfig() {
-	return UISliderStyleConfig();
-}
-
 UITooltipStyleConfig UITheme::getTooltipStyleConfig() {
 	return UITooltipStyleConfig( getFontStyleConfig() );
+}
+
+const CSS::StyleSheet& UITheme::getStyleSheet() const {
+	return mStyleSheet;
+}
+
+void UITheme::setStyleSheet(const CSS::StyleSheet & styleSheet) {
+	mStyleSheet = styleSheet;
 }
 
 UIFontStyleConfig UITheme::getFontStyleConfig() const {

@@ -107,6 +107,12 @@ int NodeAttribute::asDpDimensionI( const std::string& defaultValue ) const {
 	return PixelDensity::toDpFromStringI( asString( defaultValue ) );
 }
 
+Uint32 NodeAttribute::asDpDimensionUint( const std::string& defaultValue ) const {
+	int attrInt = asDpDimensionI( defaultValue );
+
+	return attrInt >= 0 ? attrInt : 0;
+}
+
 static OriginPoint toOriginPoint( std::string val ) {
 	String::toLowerInPlace( val );
 

@@ -58,8 +58,6 @@ class EE_API UIMenu : public UIWidget {
 
 		virtual bool hide();
 
-		const Rectf& getPadding() const;
-
 		Uint32 getMinRightMargin() const;
 
 		void setMinRightMargin(const Uint32 & minRightMargin);
@@ -69,6 +67,8 @@ class EE_API UIMenu : public UIWidget {
 		void setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig);
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
+
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		friend class UIMenuItem;
 		friend class UIMenuCheckBox;

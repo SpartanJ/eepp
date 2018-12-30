@@ -95,6 +95,8 @@ class NodeAttribute {
 
 		int asDpDimensionI( const std::string& defaultValue = "" ) const;
 
+		Uint32 asDpDimensionUint( const std::string& defaultValue = "" ) const;
+
 		OriginPoint asOriginPoint() const;
 
 		BlendMode asBlendMode() const;

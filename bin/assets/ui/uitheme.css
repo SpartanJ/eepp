@@ -1,0 +1,56 @@
+/* Global rules */
+* {
+	textSize: 12dp;
+	textColor: #E6E6E6FF;
+	textShadowColor: #32323296;
+	textSelectedColor: #000;
+	textSelectionBackColor: #969696FF;
+}
+
+TabWidget {
+	tabSeparation: -1dp;
+	drawLineBelowTabs: true;
+	lineBelowTabsColor: #2f3030;
+	lineBelowTabsYOffset: -1dp;
+}
+
+Tab:selected,
+Tab:hover,
+Tab:pressed {
+	textColor: #FFF;
+}
+
+ProgressBar {
+	displayPercent: true;
+	verticalExpand: true;
+	fillerPadding: 2dp;
+	movementSpeed: 32, 0;
+}
+
+WinMenu {
+	buttonMargin: 12dp;
+}
+
+Menu, 
+PopUpMenu {
+	textColor: #E6E6E6FF;
+	minWidth: 100dp;
+	minSpaceForIcons: 24dp;
+	minRightMargin: 8dp;
+}
+
+Menu:hover, 
+PopUpMenu:hover,
+MenuItem:hover,
+MenuCheckBox:hover,
+MenuSubMenu:hover {
+	textColor: #FFF;
+}
+
+Slider { 
+	halfSlider: true;
+}
+
+ScrollBar {
+	expandBackground: true;
+}

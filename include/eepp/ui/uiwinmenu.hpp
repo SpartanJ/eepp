@@ -34,9 +34,23 @@ class EE_API UIWinMenu : public UIWidget {
 
 		void setMarginBetweenButtons(const Uint32 & marginBetweenButtons);
 
+		Uint32 getButtonMargin() const;
+
+		void setButtonMargin( const Uint32& buttonMargin );
+
+		Uint32 getMenuHeight() const;
+
+		void setMenuHeight( const Uint32& menuHeight );
+
+		Uint32 getFirstButtonMargin() const;
+
+		void setFirstButtonMargin( const Uint32& buttonMargin );
+
 		UIWinMenuStyleConfig getStyleConfig() const;
 
 		void setStyleConfig(const UIWinMenuStyleConfig & styleConfig);
+
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 	protected:
@@ -63,6 +77,8 @@ class EE_API UIWinMenu : public UIWidget {
 		void unselectButtons();
 
 		void destroyMenues();
+
+		void autoHeight();
 };
 
 }}

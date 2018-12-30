@@ -460,7 +460,11 @@ bool UIWidget::containsClass( const std::string& cls ) {
 }
 
 void UIWidget::setElementTag( const std::string& tag ) {
-	mTag = tag;
+	if ( mTag != tag ) {
+		mTag = tag;
+
+		reloadStyle( false );
+	}
 }
 
 const std::string& UIWidget::getElementTag() const {
@@ -481,14 +485,14 @@ void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 	UINode::popState( State, emitEvent );
 }
 
-void UIWidget::reloadStyle() {
+void UIWidget::reloadStyle( const bool& reloadChilds ) {
 	if ( NULL == mStyle && getSceneNode()->isUISceneNode() && static_cast<UISceneNode*>( getSceneNode() )->hasStyleSheet() )
 		mStyle = UIStyle::New( this );
 
 	if ( NULL != mStyle ) {
 		mStyle->load();
 
-		if ( NULL != mChild ) {
+		if ( NULL != mChild && reloadChilds ) {
 			Node * ChildLoop = mChild;
 
 			while ( NULL != ChildLoop ) {

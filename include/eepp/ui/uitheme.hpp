@@ -5,6 +5,7 @@
 #include <eepp/ui/uithemeconfig.hpp>
 #include <eepp/ui/uihelper.hpp>
 #include <eepp/ui/uiskin.hpp>
+#include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/system/resourcemanager.hpp>
 
 namespace EE { namespace Graphics {
@@ -27,9 +28,9 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		static UITheme * loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtlas * getTextureAtlas );
 
-		static UITheme * loadFromDirectroy( UITheme * tTheme, const std::string& Path, const Float& pixelDensity = 1 );
+		static UITheme * loadFromTextureAtlas( Graphics::TextureAtlas * getTextureAtlas, const std::string& Name, const std::string& NameAbbr );
 
-		static UITheme * loadFromTextureAtlas( Graphics::TextureAtlas * getTextureAtlas, const std::string& Name, const std::string NameAbbr );
+		static UITheme * loadFromDirectroy( UITheme * tTheme, const std::string& Path, const Float& pixelDensity = 1 );
 
 		static UITheme * loadFromDirectroy( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const Float& pixelDensity = 1 );
 
@@ -59,29 +60,24 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		void setFontStyleConfig(UIFontStyleConfig fontConfig);
 
-		virtual UITabWidgetStyleConfig getTabWidgetStyleConfig();
-
-		virtual UIProgressBarStyleConfig getProgressBarStyleConfig();
-
-		virtual UIWinMenuStyleConfig getWinMenuStyleConfig();
-
 		virtual UIDropDownListStyleConfig getDropDownListStyleConfig();
 
 		virtual UIWindowStyleConfig getWindowStyleConfig();
 
-		virtual UIMenuStyleConfig getMenuStyleConfig();
-
 		virtual UIPushButtonStyleConfig getPushButtonStyleConfig();
 
-		virtual UISliderStyleConfig getSliderStyleConfig();
-
 		virtual UITooltipStyleConfig getTooltipStyleConfig();
+
+		const CSS::StyleSheet& getStyleSheet() const;
+
+		void setStyleSheet(const CSS::StyleSheet & styleSheet);
 	protected:
 		std::string				mName;
 		Uint32					mNameHash;
 		std::string				mAbbr;
 		Graphics::TextureAtlas *mTextureAtlas;
 		UIFontStyleConfig		mFontStyleConfig;
+		CSS::StyleSheet			mStyleSheet;
 
 		void setTextureAtlas( Graphics::TextureAtlas * SG );
 };

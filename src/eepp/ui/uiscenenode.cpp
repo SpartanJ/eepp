@@ -98,9 +98,27 @@ UIWidget * UISceneNode::loadLayoutNodes( pugi::xml_node node, Node * parent ) {
 	return firstWidget;
 }
 
-void UISceneNode::setStyleSheet(CSS::StyleSheet styleSheet) {
+void UISceneNode::setStyleSheet( const CSS::StyleSheet& styleSheet ) {
 	mStyleSheet = styleSheet;
 
+	reloadStyle();
+}
+
+void UISceneNode::combineStyleSheet(const CSS::StyleSheet & styleSheet) {
+	mStyleSheet.combineStyleSheet( styleSheet );
+
+	reloadStyle();
+}
+
+CSS::StyleSheet& UISceneNode::getStyleSheet() {
+	return mStyleSheet;
+}
+
+bool UISceneNode::hasStyleSheet() {
+	return !mStyleSheet.isEmpty();
+}
+
+void UISceneNode::reloadStyle() {
 	if ( NULL != mChild ) {
 		Node * ChildLoop = mChild;
 
@@ -111,14 +129,6 @@ void UISceneNode::setStyleSheet(CSS::StyleSheet styleSheet) {
 			ChildLoop = ChildLoop->getNextNode();
 		}
 	}
-}
-
-CSS::StyleSheet& UISceneNode::getStyleSheet() {
-	return mStyleSheet;
-}
-
-bool UISceneNode::hasStyleSheet() {
-	return !mStyleSheet.isEmpty();
 }
 
 UIWidget * UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node * parent ) {

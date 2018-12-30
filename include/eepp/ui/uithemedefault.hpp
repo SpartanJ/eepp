@@ -11,17 +11,7 @@ class EE_API UIThemeDefault : public UITheme {
 
 		UIThemeDefault( const std::string& name, const std::string& abbr, Graphics::Font * defaultFont = NULL );
 
-		UITabWidgetStyleConfig getTabWidgetStyleConfig();
-
-		UIProgressBarStyleConfig getProgressBarStyleConfig();
-
-		UIWinMenuStyleConfig getWinMenuStyleConfig();
-
 		UIWindowStyleConfig getWindowStyleConfig();
-
-		UIMenuStyleConfig getMenuStyleConfig();
-
-		UISliderStyleConfig getSliderStyleConfig();
 
 		UITooltipStyleConfig getTooltipStyleConfig();
 };

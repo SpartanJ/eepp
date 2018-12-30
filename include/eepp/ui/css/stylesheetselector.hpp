@@ -22,9 +22,11 @@ class EE_API StyleSheetSelector {
 			SpecificityGlobal = 1
 		};
 
+		StyleSheetSelector();
+
 		explicit StyleSheetSelector( const std::string& selectorName );
 
-		Uint32 getRequiredFlags();
+		Uint32 getRequiredFlags() const;
 
 		const std::string& getName() const;
 
@@ -32,28 +34,31 @@ class EE_API StyleSheetSelector {
 
 		const std::string getId() const;
 
-		const std::vector<std::string> getClasses() const;
+		const std::vector<std::string>& getClasses() const;
 
 		const std::string& getPseudoClass() const;
 
-		bool hasTagName();
+		bool hasTagName() const;
 
-		bool hasId();
+		bool hasId() const;
 
-		bool hasClasses();
+		bool hasClasses() const;
 
-		bool hasClass( std::string cls );
+		bool hasClass( std::string cls ) const;
 
-		bool hasPseudoClass();
+		bool hasPseudoClass() const;
 
-		Uint32 getSpecificity();
+		bool isGlobal() const;
+
+		const Uint32& getSpecificity() const;
 	protected:
-		std::string name;
-		std::string tagName;
-		std::string id;
-		std::vector<std::string> classes;
-		std::string pseudoClass;
-		Uint32 specificity;
+		std::string mName;
+		std::string mTagName;
+		std::string mId;
+		std::vector<std::string> mClasses;
+		std::string mPseudoClass;
+		Uint32 mSpecificity;
+		bool mGlobal;
 
 		void parseSelector( const std::string& selector );
 };

@@ -17,17 +17,11 @@ UIProgressBar::UIProgressBar() :
 {
 	setFlags( UI_AUTO_PADDING | UI_AUTO_SIZE );
 
-	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
-
 	mTextBox = UITextView::New();
+	mTextBox->setElementTag( "progressbartext" );
 	mTextBox->setHorizontalAlign( UI_HALIGN_CENTER );
 	mTextBox->setParent( this );
 	mTextBox->setEnabled( false );
-
-	if ( NULL != Theme ) {
-		mStyleConfig = Theme->getProgressBarStyleConfig();
-		mTextBox->setFontStyleConfig( mStyleConfig );
-	}
 
 	updateTextBox();
 
@@ -235,6 +229,8 @@ bool UIProgressBar::setAttribute( const NodeAttribute& attribute, const Uint32& 
 		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, attribute.asDpDimension(), mStyleConfig.FillerPadding.Right, mStyleConfig.FillerPadding.Bottom ) );
 	} else if ( "fillerpaddingbottom" == name ) {
 		setFillerPadding( Rectf( mStyleConfig.FillerPadding.Left, mStyleConfig.FillerPadding.Top, mStyleConfig.FillerPadding.Right, attribute.asDpDimension() ) );
+	} else if ( "movementspeed" == name ) {
+		setMovementSpeed( attribute.asVector2f() );
 	} else {
 		return UIWidget::setAttribute( attribute, state );
 	}

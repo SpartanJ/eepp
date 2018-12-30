@@ -8,12 +8,20 @@ namespace EE { namespace UI { namespace CSS {
 
 class EE_API StyleSheetNode {
 	public:
+		StyleSheetNode();
+
 		explicit StyleSheetNode( const std::string& selector, const StyleSheetProperties& properties );
 
 		void print();
 
-		StyleSheetSelector selector;
-		StyleSheetProperties properties;
+		const StyleSheetSelector& getSelector() const;
+
+		const StyleSheetProperties& getProperties() const;
+
+		void setProperty( const StyleSheetProperty& property );
+	protected:
+		StyleSheetSelector mSelector;
+		StyleSheetProperties mProperties;
 };
 
 }}}

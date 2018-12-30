@@ -3,21 +3,36 @@
 
 namespace EE { namespace UI { namespace CSS {
 
+StyleSheetNode::StyleSheetNode()
+{}
+
 StyleSheetNode::StyleSheetNode( const std::string& selector, const StyleSheetProperties& properties ) :
-	selector( selector ),
-	properties( properties )
+	mSelector( selector ),
+	mProperties( properties )
 {}
 
 void StyleSheetNode::print() {
-	std::cout << selector.getName() << " {" << std::endl;
+	std::cout << mSelector.getName() << " {" << std::endl;
 
-	for ( StyleSheetProperties::iterator it = properties.begin(); it != properties.end(); ++it ) {
+	for ( StyleSheetProperties::iterator it = mProperties.begin(); it != mProperties.end(); ++it ) {
 		StyleSheetProperty& prop = it->second;
 
-		std::cout << "\t" << prop.name << ": " << prop.value << ";" << std::endl;
+		std::cout << "\t" << prop.getName() << ": " << prop.getValue() << ";" << std::endl;
 	}
 
 	std::cout << "}" << std::endl;
+}
+
+const StyleSheetSelector &StyleSheetNode::getSelector() const {
+	return mSelector;
+}
+
+const StyleSheetProperties &StyleSheetNode::getProperties() const {
+	return mProperties;
+}
+
+void StyleSheetNode::setProperty( const StyleSheetProperty & property ) {
+	mProperties[ property.getName() ] = property;
 }
 
 }}}

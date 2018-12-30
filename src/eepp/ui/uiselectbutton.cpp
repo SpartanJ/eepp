@@ -61,26 +61,6 @@ void UISelectButton::onStateChange() {
 		pushState( UIState::StateSelected, false );
 	}
 
-	if ( getParent()->isType( UI_TYPE_WINMENU ) ) {
-		UIWinMenu * Menu = reinterpret_cast<UIWinMenu*> ( getParent() );
-
-		if ( mSkinState->getState() & UIState::StateFlagSelected ) {
-			getTextBox()->setFontColor( Menu->getStyleConfig().getFontSelectedColor() );
-		} else if ( mSkinState->getState() & UIState::StateFlagHover ) {
-			getTextBox()->setFontColor( Menu->getStyleConfig().getFontOverColor() );
-		} else {
-			getTextBox()->setFontColor( Menu->getStyleConfig().getFontColor() );
-		}
-	} else {
-		if ( mSkinState->getState() & UIState::StateFlagSelected ) {
-			getTextBox()->setFontColor( mStyleConfig.FontSelectedColor );
-		} else if ( mSkinState->getState() & UIState::StateFlagHover ) {
-			getTextBox()->setFontColor( mStyleConfig.FontOverColor );
-		} else {
-			getTextBox()->setFontColor( mStyleConfig.FontColor );
-		}
-	}
-
 	mTextBox->setAlpha( mAlpha );
 }
 

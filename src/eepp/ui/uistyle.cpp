@@ -26,6 +26,8 @@ void UIStyle::addAttribute( int state, NodeAttribute attribute ) {
 }
 
 void UIStyle::load() {
+	mStates.clear();
+
 	UISceneNode * uiSceneNode = mWidget->getSceneNode()->isUISceneNode() ? static_cast<UISceneNode*>( mWidget->getSceneNode() ) : NULL;
 
 	if ( NULL != uiSceneNode ) {
@@ -49,7 +51,7 @@ void UIStyle::addStyleSheetProperties( int state, const CSS::StyleSheetPropertie
 		for ( auto it = properties.begin(); it != properties.end(); ++it ) {
 			CSS::StyleSheetProperty property = it->second;
 
-			addAttribute( state, NodeAttribute( property.name, property.value ) );
+			addAttribute( state, NodeAttribute( property.getName(), property.getValue() ) );
 		}
 	}
 }

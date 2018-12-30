@@ -98,7 +98,7 @@ void UITable::setDefaultCollumnsWidth() {
 	updateCells();
 }
 
-void UITable::onScrollValueChange( const Event * Event ) {
+void UITable::onScrollValueChange( const Event * ) {
 	updateScroll( true );
 }
 
@@ -110,6 +110,8 @@ void UITable::setTheme( UITheme * Theme ) {
 	autoPadding();
 
 	onSizeChange();
+
+	onThemeLoaded();
 }
 
 void UITable::autoPadding() {

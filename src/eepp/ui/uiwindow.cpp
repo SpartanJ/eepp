@@ -93,7 +93,7 @@ UIWindow::~UIWindow() {
 	eeSAFE_DELETE( mFrameBuffer );
 }
 
-void UIWindow::onContainerPositionChange( const Event * Event ) {
+void UIWindow::onContainerPositionChange( const Event * ) {
 	if ( NULL == mContainer )
 		return;
 
@@ -490,6 +490,7 @@ void UIWindow::setTheme( UITheme * Theme ) {
 	}
 
 	fixChildsSize();
+	onThemeLoaded();
 }
 
 void UIWindow::calcMinWinSize() {
@@ -1131,7 +1132,7 @@ void UIWindow::maximize() {
 	}
 }
 
-Uint32 UIWindow::onMouseDoubleClick( const Vector2i &Pos, const Uint32 Flags ) {
+Uint32 UIWindow::onMouseDoubleClick( const Vector2i &, const Uint32 Flags ) {
 	if ( isResizeable() && ( NULL != mButtonMaximize ) && ( Flags & EE_BUTTON_LMASK ) ) {
 		maximize();
 
@@ -1425,6 +1426,13 @@ bool UIWindow::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		unsigned int val = attribute.asUint();
 		if ( val <= 255 )
 			setBaseAlpha( (Uint8)val );
+	} else if ( "titlefontcolor" == name ) {
+		mStyleConfig.TitleFontColor = attribute.asColor();
+		if ( NULL != mTitle )
+			setTitle( mTitle->getText() );
+	} else if ( "buttonpositionfixer" == name ) {
+		mStyleConfig.ButtonsPositionFixer = attribute.asVector2i();
+		fixChildsSize();
 	} else if ( "winflags" == name ) {
 		std::string flagsStr = attribute.asString();
 		String::toLowerInPlace( flagsStr );

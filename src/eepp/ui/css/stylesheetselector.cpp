@@ -3,19 +3,24 @@
 
 namespace EE { namespace UI { namespace CSS {
 
+StyleSheetSelector::StyleSheetSelector() :
+	mSpecificity(0),
+	mGlobal(false)
+{}
 
 StyleSheetSelector::StyleSheetSelector( const std::string& selectorName ) :
-	name( String::toLower( selectorName ) ),
-	specificity(0)
+	mName( String::toLower( selectorName ) ),
+	mSpecificity(0),
+	mGlobal(false)
 {
-	auto parts = String::split( name, ' ' );
+	auto parts = String::split( mName, ' ' );
 
 	for ( auto it = parts.begin(); it != parts.end(); ++it ) {
 		parseSelector( *it );
 	}
 }
 
-Uint32 StyleSheetSelector::getRequiredFlags() {
+Uint32 StyleSheetSelector::getRequiredFlags() const {
 	Uint32 flags = 0;
 
 	if ( hasTagName() )
@@ -33,27 +38,51 @@ Uint32 StyleSheetSelector::getRequiredFlags() {
 	return flags;
 }
 
-const std::string& StyleSheetSelector::getName() const { return name; };
+const std::string& StyleSheetSelector::getName() const {
+	return mName;
+};
 
-const std::string& StyleSheetSelector::getTagName() const { return tagName; }
+const std::string& StyleSheetSelector::getTagName() const {
+	return mTagName;
+}
 
-const std::string StyleSheetSelector::getId() const { return id; }
+const std::string StyleSheetSelector::getId() const {
+	return mId;
+}
 
-const std::vector<std::string> StyleSheetSelector::getClasses() const { return classes; }
+const std::vector<std::string> & StyleSheetSelector::getClasses() const {
+	return mClasses;
+}
 
-const std::string& StyleSheetSelector::getPseudoClass() const { return pseudoClass; };
+const std::string& StyleSheetSelector::getPseudoClass() const {
+	return mPseudoClass;
+};
 
-bool StyleSheetSelector::hasTagName() { return !tagName.empty(); }
+bool StyleSheetSelector::hasTagName() const {
+	return !mTagName.empty();
+}
 
-bool StyleSheetSelector::hasId() { return !id.empty(); }
+bool StyleSheetSelector::hasId() const {
+	return !mId.empty();
+}
 
-bool StyleSheetSelector::hasClasses() { return !classes.empty(); }
+bool StyleSheetSelector::hasClasses() const {
+	return !mClasses.empty();
+}
 
-bool StyleSheetSelector::hasClass( std::string cls ) { return std::find(classes.begin(), classes.end(), cls) != classes.end(); }
+bool StyleSheetSelector::hasClass( std::string cls ) const {
+	return std::find(mClasses.begin(), mClasses.end(), cls) != mClasses.end();
+}
 
-bool StyleSheetSelector::hasPseudoClass() { return !pseudoClass.empty(); }
+bool StyleSheetSelector::hasPseudoClass() const {
+	return !mPseudoClass.empty();
+}
 
-Uint32 StyleSheetSelector::getSpecificity() { return specificity; }
+bool StyleSheetSelector::isGlobal() const {
+	return mGlobal;
+}
+
+const Uint32& StyleSheetSelector::getSpecificity() const { return mSpecificity; }
 
 void StyleSheetSelector::parseSelector( const std::string& selector ) {
 	auto selPseudo = String::split( selector, ':' );
@@ -63,22 +92,23 @@ void StyleSheetSelector::parseSelector( const std::string& selector ) {
 
 		if ( !rselector.empty() ) {
 			if ( rselector[0] == '.' ) {
-				classes.push_back( rselector.substr(1) );
-				specificity += SpecificityClass;
+				mClasses.push_back( rselector.substr(1) );
+				mSpecificity += SpecificityClass;
 			} else if ( selector[0] == '#' ) {
-				id = rselector.substr(1);
-				specificity += SpecificityId;
+				mId = rselector.substr(1);
+				mSpecificity += SpecificityId;
 			} else if ( selector[0] == '*' ) {
-				specificity += SpecificityGlobal;
+				mSpecificity += SpecificityGlobal;
+				mGlobal = true;
 			} else {
-				tagName = rselector;
-				specificity += SpecificityTag;
+				mTagName = rselector;
+				mSpecificity += SpecificityTag;
 			}
 		}
 
 		if ( selPseudo.size() > 1 ) {
-			pseudoClass = selPseudo[1];
-			specificity += SpecificityPseudoClass;
+			mPseudoClass = selPseudo[1];
+			mSpecificity += SpecificityPseudoClass;
 		}
 	}
 }

@@ -124,6 +124,8 @@ void UICommonDialog::setTheme( UITheme * Theme ) {
 		mButtonUp->setText( "" );
 		mButtonUp->setIcon( Icon );
 	}
+
+	onThemeLoaded();
 }
 
 void UICommonDialog::refreshFolder() {

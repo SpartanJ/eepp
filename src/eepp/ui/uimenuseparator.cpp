@@ -31,6 +31,8 @@ void UIMenuSeparator::setTheme( UITheme * Theme ) {
 	if ( NULL != getSkin() ) {
 		setSize( Sizef( mDpSize.getWidth(), getSkinSize().getHeight() ) );
 	}
+
+	onThemeLoaded();
 }
 
 }}

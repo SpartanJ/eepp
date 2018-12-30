@@ -599,12 +599,6 @@ void EETest::createUI() {
 
 	sceneNode->setTranslator( mTranslator );
 
-	CSS::StyleSheetParser styleSheetParser;
-
-	if ( styleSheetParser.loadFromFile( MyPath + "ui/css/style.css" ) ) {
-		sceneNode->setStyleSheet( styleSheetParser.getStyleSheet() );
-	}
-
 	SceneManager::instance()->add( sceneNode );
 
 	eePRINTL("Node size: %d", sizeof(Node));
@@ -613,6 +607,14 @@ void EETest::createUI() {
 
 	TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
 	mTheme = UITheme::loadFromTextureAtlas( UIThemeDefault::New( mThemeName, mThemeName ), TextureAtlasManager::instance()->getByName( mThemeName ) );
+
+	CSS::StyleSheetParser styleSheetParser;
+
+	if ( styleSheetParser.loadFromFile( MyPath + "ui/uitheme.css" ) ) {
+		mTheme->setStyleSheet( styleSheetParser.getStyleSheet() );
+
+		sceneNode->combineStyleSheet( mTheme->getStyleSheet() );
+	}
 
 	UIThemeManager::instance()->add( mTheme );
 	UIThemeManager::instance()->setDefaultEffectsEnabled( true );

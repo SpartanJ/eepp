@@ -4,6 +4,7 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <pugixml/pugixml.hpp>
+#include <eepp/ui/uistyle.hpp>
 
 namespace EE { namespace UI {
 
@@ -21,7 +22,7 @@ UITabWidget::UITabWidget() :
 	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL != Theme ) {
-		mStyleConfig = Theme->getTabWidgetStyleConfig();
+		mStyleConfig.Font = Theme->getDefaultFont();
 	}
 
 	mTabContainer = UIWidget::New();
@@ -248,7 +249,9 @@ bool UITabWidget::setAttribute( const NodeAttribute& attribute, const Uint32& st
 	} else if ( "linebelowtabscolor" == name ) {
 		setLineBelowTabsColor( attribute.asColor() );
 	} else if ( "linebelowtabsyoffset" == name ) {
-		setLineBelowTabsYOffset( attribute.asInt() );
+		setLineBelowTabsYOffset( attribute.asDpDimensionI() );
+	} else if ( "tabseparation" == name ) {
+		setTabSeparation( attribute.asDpDimensionI() );
 	} else {
 		return UIWidget::setAttribute( attribute, state );
 	}
@@ -655,11 +658,7 @@ void UITabWidget::setTabSelected( UITab * Tab ) {
 		}
 	}
 
-	if ( NULL != Tab ) {
-		Tab->select();
-	} else {
-		return;
-	}
+	Tab->select();
 
 	Uint32 TabIndex		= getTabIndex( Tab );
 

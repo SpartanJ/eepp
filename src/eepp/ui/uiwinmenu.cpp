@@ -21,7 +21,7 @@ UIWinMenu::UIWinMenu() :
 	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
 
 	if ( NULL != theme )
-		mStyleConfig = theme->getWinMenuStyleConfig();
+		mStyleConfig.Font = theme->getDefaultFont();
 
 	onParentChange();
 
@@ -73,13 +73,8 @@ void UIWinMenu::setTheme( UITheme * Theme ) {
 		it->first->setThemeSkin( Theme, "winmenubutton" );
 	}
 
-	if ( 0 == mStyleConfig.MenuHeight && NULL != getSkin() ) {
-		mStyleConfig.MenuHeight = getSkinSize().getHeight();
-
-		setSize( getParent()->getSize().getWidth(), mStyleConfig.MenuHeight );
-
-		updateAnchorsDistances();
-	}
+	autoHeight();
+	onThemeLoaded();
 }
 
 void UIWinMenu::removeMenuButton( const String& ButtonText ) {
@@ -126,6 +121,15 @@ void UIWinMenu::setMarginBetweenButtons(const Uint32 & marginBetweenButtons) {
 	refreshButtons();
 }
 
+Uint32 UIWinMenu::getButtonMargin() const {
+	return mStyleConfig.ButtonMargin;
+}
+
+void UIWinMenu::setButtonMargin( const Uint32& buttonMargin ) {
+	mStyleConfig.ButtonMargin = buttonMargin;
+	refreshButtons();
+}
+
 UIWinMenuStyleConfig UIWinMenu::getStyleConfig() const {
 	return mStyleConfig;
 }
@@ -133,6 +137,49 @@ UIWinMenuStyleConfig UIWinMenu::getStyleConfig() const {
 void UIWinMenu::setStyleConfig(const UIWinMenuStyleConfig & styleConfig) {
 	mStyleConfig = styleConfig;
 	refreshButtons();
+}
+
+Uint32 UIWinMenu::getMenuHeight() const {
+	return mStyleConfig.MenuHeight;
+}
+
+void UIWinMenu::setMenuHeight( const Uint32& menuHeight ) {
+	mStyleConfig.MenuHeight = menuHeight;
+
+	if ( 0 != mStyleConfig.MenuHeight ) {
+		setSize( getParent()->getSize().getWidth(), mStyleConfig.MenuHeight );
+	} else {
+		autoHeight();
+	}
+
+	refreshButtons();
+}
+
+Uint32 UIWinMenu::getFirstButtonMargin() const {
+	return mStyleConfig.FirstButtonMargin;
+}
+
+void UIWinMenu::setFirstButtonMargin( const Uint32& buttonMargin ) {
+	mStyleConfig.FirstButtonMargin = buttonMargin;
+	refreshButtons();
+}
+
+bool UIWinMenu::setAttribute( const NodeAttribute& attribute, const Uint32 & state ) {
+	const std::string& name = attribute.getName();
+
+	if ( "marginbetweenbuttons" == name ) {
+		setMarginBetweenButtons( attribute.asDpDimensionUint() );
+	} else if ( "buttonmargin" == name ) {
+		setButtonMargin( attribute.asDpDimensionUint() );
+	} else if ( "menuheight" == name ) {
+		setMenuHeight( attribute.asDpDimensionUint() );
+	} else if ( "firstbuttonmargin" == name ) {
+		setFirstButtonMargin( attribute.asDpDimensionUint() );
+	} else {
+		return UIWidget::setAttribute( attribute, state );
+	}
+
+	return true;
 }
 
 void UIWinMenu::refreshButtons() {
@@ -274,7 +321,7 @@ bool UIWinMenu::isPopUpMenuChild( Node * Ctrl ) {
 	return false;
 }
 
-void UIWinMenu::onMenuFocusLoss( const Event * Event ) {
+void UIWinMenu::onMenuFocusLoss( const Event * ) {
 	Node * FocusCtrl = getEventDispatcher()->getFocusControl();
 
 	if ( !isParentOf( FocusCtrl ) && !isPopUpMenuChild( FocusCtrl ) ) {
@@ -299,6 +346,16 @@ void UIWinMenu::destroyMenues() {
 		for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 			it->second->close();
 		}
+	}
+}
+
+void UIWinMenu::autoHeight() {
+	if ( 0 == mStyleConfig.MenuHeight && NULL != getSkin() ) {
+		mStyleConfig.MenuHeight = getSkinSize().getHeight();
+
+		setSize( getParent()->getSize().getWidth(), mStyleConfig.MenuHeight );
+
+		updateAnchorsDistances();
 	}
 }
 

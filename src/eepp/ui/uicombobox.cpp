@@ -59,6 +59,8 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 	}
 
 	updateControls();
+
+	onThemeLoaded();
 }
 
 UIListBox * UIComboBox::getListBox() {

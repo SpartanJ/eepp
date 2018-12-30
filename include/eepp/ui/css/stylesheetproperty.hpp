@@ -13,9 +13,15 @@ class EE_API StyleSheetProperty {
 
 		explicit StyleSheetProperty( const std::string& name, const std::string& value );
 
-		std::string name;
-		std::string value;
-		Uint32 specificity;
+		const std::string& getName() const;
+
+		const std::string& getValue() const;
+
+		const Uint32& getSpecificity() const;
+	protected:
+		std::string mName;
+		std::string mValue;
+		Uint32 mSpecificity;
 };
 
 typedef std::map<std::string, StyleSheetProperty> StyleSheetProperties;

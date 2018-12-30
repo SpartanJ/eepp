@@ -94,6 +94,8 @@ void UIListBox::setTheme( UITheme * Theme ) {
 	autoPadding();
 
 	onSizeChange();
+
+	onThemeLoaded();
 }
 
 void UIListBox::autoPadding() {
@@ -715,8 +717,10 @@ Uint32 UIListBox::getItemIndex( const String& Text ) {
 void UIListBox::setFontColor( const Color& Color ) {
 	mFontStyleConfig.FontColor = Color;
 
-	for ( Uint32 i = 0; i < mItems.size(); i++ )
-		mItems[i]->setFontColor( mFontStyleConfig.FontColor );
+	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
+		if ( NULL != mItems[i] )
+			mItems[i]->setFontColor( mFontStyleConfig.FontColor );
+	}
 }
 
 const Color& UIListBox::getFontColor() const {

@@ -58,6 +58,7 @@ void UITooltip::setTheme( UITheme * Theme ) {
 	setThemeSkin( Theme, "tooltip" );
 
 	autoPadding();
+	onThemeLoaded();
 }
 
 void UITooltip::autoPadding() {

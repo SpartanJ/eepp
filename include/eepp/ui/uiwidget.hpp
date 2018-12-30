@@ -118,7 +118,7 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		virtual void popState( const Uint32& State, bool emitEvent = true );
 
-		void reloadStyle();
+		void reloadStyle( const bool& reloadChilds = true );
 	protected:
 		friend class UIManager;
 		friend class UISceneNode;

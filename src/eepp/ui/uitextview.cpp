@@ -324,6 +324,8 @@ void UITextView::setTheme( UITheme * Theme ) {
 	if ( NULL == mTextCache->getFont() && NULL != Theme->getFontStyleConfig().getFont() ) {
 		mTextCache->setFont( Theme->getFontStyleConfig().getFont() );
 	}
+
+	onThemeLoaded();
 }
 
 Float UITextView::getTextWidth() {

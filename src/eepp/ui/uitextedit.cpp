@@ -81,6 +81,7 @@ void UITextEdit::setTheme( UITheme * Theme ) {
 	autoPadding();
 
 	onSizeChange();
+	onThemeLoaded();
 }
 
 void UITextEdit::onSizeChange() {
