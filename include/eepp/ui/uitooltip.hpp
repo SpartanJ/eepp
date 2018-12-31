@@ -1,8 +1,7 @@
 #ifndef EE_UICUITOOLTIP_HPP
 #define EE_UICUITOOLTIP_HPP
 
-#include <eepp/ui/uinode.hpp>
-#include <eepp/ui/uithemeconfig.hpp>
+#include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace Graphics {
 class Text;
@@ -10,7 +9,7 @@ class Text;
 
 namespace EE { namespace UI {
 
-class EE_API UITooltip : public UINode {
+class EE_API UITooltip : public UIWidget {
 	public:
 		static UITooltip * New();
 
@@ -29,8 +28,6 @@ class EE_API UITooltip : public UINode {
 		void hide();
 
 		virtual void draw();
-
-		virtual void setAlpha( const Float& alpha );
 
 		Graphics::Font * getFont() const;
 
@@ -79,6 +76,24 @@ class EE_API UITooltip : public UINode {
 		UITooltipStyleConfig getStyleConfig() const;
 
 		void setStyleConfig(const UITooltipStyleConfig & styleConfig);
+
+		Uint32 getCharacterSize() const;
+
+		UITooltip * setCharacterSize( const Uint32& characterSize );
+
+		UITooltip * setFontStyle( const Uint32 & fontStyle );
+
+		const Uint32& getFontStyle() const;
+
+		const Float& getOutlineThickness() const;
+
+		UITooltip * setOutlineThickness( const Float& outlineThickness );
+
+		const Color& getOutlineColor() const;
+
+		UITooltip * setOutlineColor( const Color& outlineColor );
+
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		Text *	mTextCache;
 		UITooltipStyleConfig mStyleConfig;
@@ -86,6 +101,8 @@ class EE_API UITooltip : public UINode {
 		Rectf		mRealPadding;
 		Time		mTooltipTime;
 		UINode *	mTooltipOf;
+
+		virtual void onAlphaChange();
 
 		virtual void onSizeChange();
 

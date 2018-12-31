@@ -1,6 +1,7 @@
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitooltip.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <pugixml/pugixml.hpp>

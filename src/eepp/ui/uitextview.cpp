@@ -13,6 +13,10 @@ UITextView * UITextView::New() {
 	return eeNew( UITextView, () );
 }
 
+UITextView * UITextView::NewWithTag( const std::string& tag ) {
+	return eeNew( UITextView, ( tag ) );
+}
+
 UITextView::UITextView( const std::string& tag ) :
 	UIWidget( tag ),
 	mRealAlignOffset( 0.f, 0.f ),
@@ -94,7 +98,7 @@ UITextView * UITextView::setFont( Graphics::Font * font ) {
 	return this;
 }
 
-Uint32 UITextView::getCharacterSize() {
+Uint32 UITextView::getCharacterSize() const {
 	return mTextCache->getCharacterSize();
 }
 

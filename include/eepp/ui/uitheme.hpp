@@ -62,11 +62,7 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		virtual UIDropDownListStyleConfig getDropDownListStyleConfig();
 
-		virtual UIWindowStyleConfig getWindowStyleConfig();
-
 		virtual UIPushButtonStyleConfig getPushButtonStyleConfig();
-
-		virtual UITooltipStyleConfig getTooltipStyleConfig();
 
 		const CSS::StyleSheet& getStyleSheet() const;
 

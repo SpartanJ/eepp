@@ -144,7 +144,6 @@ class UIWindowStyleConfig : public UIFontStyleConfig {
 		Vector2i	ButtonsPositionFixer;
 		Uint32		ButtonsSeparation = 4;
 		Int32		MinCornerDistance = 24;
-		Color		TitleFontColor = Color( 255, 255, 255, 255 );
 		Uint8		BaseAlpha = 255;
 		bool		DecorationAutoSize = true;
 		bool		BorderAutoSize = true;

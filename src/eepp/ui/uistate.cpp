@@ -94,9 +94,11 @@ void UIState::updateState() {
 	for ( int i = StateFlagCount - 1; i >= 0; i-- ) {
 		if ( ( mState & UIStateFlags[i] ) == UIStateFlags[i] ) {
 			if ( stateExists( UIStateFlags[i] ) ) {
-				mCurrentState = UIStateFlags[i];
-				onStateChange();
-				return;
+				if ( mCurrentState != UIStateFlags[i] ) {
+					mCurrentState = UIStateFlags[i];
+					onStateChange();
+					return;
+				}
 			}
 		}
 	}

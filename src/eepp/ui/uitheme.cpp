@@ -293,16 +293,8 @@ UIDropDownListStyleConfig UITheme::getDropDownListStyleConfig() {
 	return UIDropDownListStyleConfig( getFontStyleConfig() );
 }
 
-UIWindowStyleConfig UITheme::getWindowStyleConfig() {
-	return UIWindowStyleConfig( getFontStyleConfig() );
-}
-
 UIPushButtonStyleConfig UITheme::getPushButtonStyleConfig() {
 	return UIPushButtonStyleConfig( getFontStyleConfig() );
-}
-
-UITooltipStyleConfig UITheme::getTooltipStyleConfig() {
-	return UITooltipStyleConfig( getFontStyleConfig() );
 }
 
 const CSS::StyleSheet& UITheme::getStyleSheet() const {

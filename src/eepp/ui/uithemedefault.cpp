@@ -23,19 +23,4 @@ UIThemeDefault::UIThemeDefault( const std::string& name, const std::string& Abbr
 	mFontStyleConfig.FontSelectionBackColor = Color( 150, 150, 150, 255 );
 }
 
-UIWindowStyleConfig UIThemeDefault::getWindowStyleConfig() {
-	UIWindowStyleConfig windowStyleConfig = UITheme::getWindowStyleConfig();
-	windowStyleConfig.WinFlags |= UI_WIN_SHADOW;
-	windowStyleConfig.ButtonsPositionFixer.x = -2;
-	windowStyleConfig.TitleFontColor = Color( 230, 230, 230, 255 );
-	return windowStyleConfig;
-}
-
-UITooltipStyleConfig UIThemeDefault::getTooltipStyleConfig() {
-	UITooltipStyleConfig tooltipStyleConfig = UITheme::getTooltipStyleConfig();
-	tooltipStyleConfig.FontColor = Color( 0, 0, 0, 255 );
-	tooltipStyleConfig.Padding = Rectf( 4, 6, 4, 6 );
-	return tooltipStyleConfig;
-}
-
 }}

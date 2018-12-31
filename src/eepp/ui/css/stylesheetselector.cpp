@@ -82,34 +82,70 @@ bool StyleSheetSelector::isGlobal() const {
 	return mGlobal;
 }
 
-const Uint32& StyleSheetSelector::getSpecificity() const { return mSpecificity; }
+const Uint32& StyleSheetSelector::getSpecificity() const {
+	return mSpecificity;
+}
 
-void StyleSheetSelector::parseSelector( const std::string& selector ) {
-	auto selPseudo = String::split( selector, ':' );
+static void splitSelectorPseudoClass( const std::string& selector, std::string& realSelector, std::string& realPseudoClass ) {
+	if ( !selector.empty() ) {
+		bool lastWasColon = false;
 
-	if ( !selPseudo.empty() ) {
-		std::string rselector( selPseudo[0] );
+		for ( int i = (Int32)selector.size() - 1; i >= 0; i-- ) {
+			char curChar = selector[i];
 
-		if ( !rselector.empty() ) {
-			if ( rselector[0] == '.' ) {
-				mClasses.push_back( rselector.substr(1) );
-				mSpecificity += SpecificityClass;
-			} else if ( selector[0] == '#' ) {
-				mId = rselector.substr(1);
-				mSpecificity += SpecificityId;
-			} else if ( selector[0] == '*' ) {
-				mSpecificity += SpecificityGlobal;
-				mGlobal = true;
-			} else {
-				mTagName = rselector;
-				mSpecificity += SpecificityTag;
+			if ( lastWasColon ) {
+				if ( ':' == curChar ) {
+					// no pseudo class
+					realSelector = selector;
+				} else {
+					if ( i+2 <= (int)selector.size() ) {
+						realSelector = selector.substr(0,i+1);
+						realPseudoClass = selector.substr(i+2);
+					} else {
+						realSelector = selector;
+					}
+				}
+
+				return;
+			} else if ( ':' == curChar ) {
+				lastWasColon = true;
 			}
 		}
 
-		if ( selPseudo.size() > 1 ) {
-			mPseudoClass = selPseudo[1];
-			mSpecificity += SpecificityPseudoClass;
+		if ( lastWasColon ) {
+			if ( selector.size() > 1 )
+				realPseudoClass = selector.substr(1);
+		} else {
+			realSelector = selector;
 		}
+	}
+}
+
+void StyleSheetSelector::parseSelector( const std::string& selector ) {
+	std::string realSelector = "";
+	std::string realPseudoClass = "";
+
+	splitSelectorPseudoClass( selector, realSelector, realPseudoClass );
+
+	if ( !realSelector.empty() ) {
+		if ( realSelector[0] == '.' ) {
+			mClasses.push_back( realSelector.substr(1) );
+			mSpecificity += SpecificityClass;
+		} else if ( selector[0] == '#' ) {
+			mId = realSelector.substr(1);
+			mSpecificity += SpecificityId;
+		} else if ( realSelector[0] == '*' ) {
+			mSpecificity += SpecificityGlobal;
+			mGlobal = true;
+		} else {
+			mTagName = realSelector;
+			mSpecificity += SpecificityTag;
+		}
+	}
+
+	if ( !realPseudoClass.empty() ) {
+		mPseudoClass = realPseudoClass;
+		mSpecificity += SpecificityPseudoClass;
 	}
 }
 

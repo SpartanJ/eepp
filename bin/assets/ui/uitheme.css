@@ -7,17 +7,17 @@
 	textSelectionBackColor: #969696FF;
 }
 
+Tab:selected,
+Tab:hover,
+Tab:pressed {
+	textColor: #FFF;
+}
+
 TabWidget {
 	tabSeparation: -1dp;
 	drawLineBelowTabs: true;
 	lineBelowTabsColor: #2f3030;
 	lineBelowTabsYOffset: -1dp;
-}
-
-Tab:selected,
-Tab:hover,
-Tab:pressed {
-	textColor: #FFF;
 }
 
 ProgressBar {
@@ -53,4 +53,19 @@ Slider {
 
 ScrollBar {
 	expandBackground: true;
+}
+
+Window {
+	winFlags: default|shadow;
+	buttonsPositionFixer: -2, 0;
+}
+
+Window::title {
+	textColor: #E6E6E6FF;
+	textStyle: shadow;
+}
+
+Tooltip {
+	padding: 8dp;
+	textColor: black;
 }

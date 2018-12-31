@@ -10,10 +10,6 @@ class EE_API UIThemeDefault : public UITheme {
 		static UIThemeDefault * New( const std::string& name, const std::string& abbr, Graphics::Font * defaultFont = NULL );
 
 		UIThemeDefault( const std::string& name, const std::string& abbr, Graphics::Font * defaultFont = NULL );
-
-		UIWindowStyleConfig getWindowStyleConfig();
-
-		UITooltipStyleConfig getTooltipStyleConfig();
 };
 
 }}

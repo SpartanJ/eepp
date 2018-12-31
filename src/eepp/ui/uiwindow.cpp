@@ -25,7 +25,7 @@ UIWindow * UIWindow::New() {
 }
 
 UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) :
-	UIWindow( type, NULL != UIThemeManager::instance()->getDefaultTheme() ? UIThemeManager::instance()->getDefaultTheme()->getWindowStyleConfig() : UIWindowStyleConfig() )
+	UIWindow( type, UIWindowStyleConfig() )
 {}
 
 UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig ) :
@@ -1073,20 +1073,12 @@ const Uint8& UIWindow::getBaseAlpha() const {
 
 void UIWindow::setTitle( const String& text ) {
 	if ( NULL == mTitle ) {
-		mTitle = UITextView::New();
+		mTitle = UITextView::NewWithTag( "window::title" );
 		mTitle->setLayoutSizeRules( FIXED, FIXED );
 		mTitle->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		mTitle->setParent( this );
 		mTitle->setHorizontalAlign( getHorizontalAlign() );
 		mTitle->setVerticalAlign( getVerticalAlign() );
-		mTitle->setFontColor( mStyleConfig.TitleFontColor );
-
-		if ( mStyleConfig.Style & Text::Shadow ) {
-			UIFontStyleConfig fsc = mTitle->getFontStyleConfig();
-			fsc.Style |= Text::Shadow;
-			mTitle->setFontStyleConfig( fsc );
-		}
-
 		mTitle->setEnabled( false );
 		mTitle->setVisible( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) );
 	}
@@ -1426,10 +1418,6 @@ bool UIWindow::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		unsigned int val = attribute.asUint();
 		if ( val <= 255 )
 			setBaseAlpha( (Uint8)val );
-	} else if ( "titlefontcolor" == name ) {
-		mStyleConfig.TitleFontColor = attribute.asColor();
-		if ( NULL != mTitle )
-			setTitle( mTitle->getText() );
 	} else if ( "buttonpositionfixer" == name ) {
 		mStyleConfig.ButtonsPositionFixer = attribute.asVector2i();
 		fixChildsSize();
@@ -1460,6 +1448,26 @@ bool UIWindow::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 			setWinFlags( winflags );
 		}
+	} else if ( "decorationsize" == name ) {
+		mStyleConfig.DecorationSize = attribute.asSizei();
+		fixChildsSize();
+	} else if ( "bordersize" == name ) {
+		mStyleConfig.BorderSize = attribute.asSizei();
+		fixChildsSize();
+	} else if ( "minwindowsize" == name ) {
+		mStyleConfig.MinWindowSize = attribute.asSizef();
+		fixChildsSize();
+	} else if ( "buttonsseparation" == name ) {
+		mStyleConfig.ButtonsSeparation = attribute.asUint();
+		fixChildsSize();
+	} else if ( "mincornerdistance" == name ) {
+		mStyleConfig.MinCornerDistance = attribute.asInt();
+	} else if ( "decorationautosize" == name ) {
+		mStyleConfig.DecorationAutoSize = attribute.asBool();
+		fixChildsSize();
+	} else if ( "borderautosize" == name ) {
+		mStyleConfig.BorderAutoSize = attribute.asBool();
+		fixChildsSize();
 	} else {
 		return UIWidget::setAttribute( attribute, state );
 	}

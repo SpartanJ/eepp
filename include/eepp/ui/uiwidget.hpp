@@ -3,8 +3,8 @@
 
 #include <eepp/scene/nodeattribute.hpp>
 #include <eepp/ui/uinode.hpp>
-#include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/css/stylesheetelement.hpp>
+#include <eepp/ui/uithemeconfig.hpp>
 
 namespace pugi {
 class xml_node;
@@ -12,6 +12,7 @@ class xml_node;
 
 namespace EE { namespace UI {
 
+class UITooltip;
 class UIStyle;
 
 class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
