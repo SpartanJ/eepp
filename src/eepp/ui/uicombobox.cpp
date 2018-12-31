@@ -31,6 +31,7 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 
 	if ( NULL == mDropDownList ) {
 		mDropDownList = UIDropDownList::New();
+		mDropDownList->setFriendControl( this );
 		mDropDownList->setParent( this );
 		mDropDownList->setVisible( true );
 		mDropDownList->setEnabled( true );
@@ -39,7 +40,7 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 	}
 
 	if ( NULL == mButton ) {
-		mButton = UINode::New();
+		mButton = UIWidget::NewWithTag( "combobox::button" );
 		mButton->setParent( this );
 		mButton->setVisible( true );
 		mButton->setEnabled( true );

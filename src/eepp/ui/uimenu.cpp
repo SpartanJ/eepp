@@ -24,8 +24,6 @@ UIMenu::UIMenu() :
 {
 	mFlags |= UI_AUTO_SIZE;
 
-	mStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
-
 	onSizeChange();
 
 	applyDefaultTheme();
@@ -64,7 +62,8 @@ UIMenuItem * UIMenu::createMenuItem( const String& Text, Drawable * Icon ) {
 	UIMenuItem * tCtrl 	= UIMenuItem::New();
 	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
 	tCtrl->setParent( this );
-	tCtrl->setStyleConfig( styleConfig );
+	//tCtrl->setStyleConfig( styleConfig );
+	tCtrl->setIconMinimumSize( styleConfig.IconMinSize );
 	tCtrl->setIcon( Icon );
 	tCtrl->setText( Text );
 
@@ -82,7 +81,8 @@ UIMenuCheckBox * UIMenu::createMenuCheckBox( const String& Text, const bool &Act
 	UIMenuCheckBox * tCtrl 	= UIMenuCheckBox::New();
 	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
 	tCtrl->setParent( this );
-	tCtrl->setStyleConfig( styleConfig );
+	//tCtrl->setStyleConfig( styleConfig );
+	tCtrl->setIconMinimumSize( styleConfig.IconMinSize );
 	tCtrl->setText( Text );
 
 	if ( Active )
@@ -102,7 +102,8 @@ UIMenuSubMenu * UIMenu::createSubMenu( const String& Text, Drawable * Icon, UIMe
 	UIMenuSubMenu * tCtrl 	= UIMenuSubMenu::New();
 	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
 	tCtrl->setParent( this );
-	tCtrl->setStyleConfig( styleConfig );
+	//tCtrl->setStyleConfig( styleConfig );
+	tCtrl->setIconMinimumSize( styleConfig.IconMinSize );
 	tCtrl->setIcon( Icon );
 	tCtrl->setText( Text );
 	tCtrl->setSubMenu( SubMenu );
@@ -523,10 +524,6 @@ UITooltipStyleConfig UIMenu::getFontStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UIMenu::setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig) {
-	mStyleConfig = fontStyleConfig;
-}
-
 static Drawable * getIconDrawable( const std::string& name ) {
 	Drawable * iconDrawable = NULL;
 	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
@@ -591,14 +588,31 @@ bool UIMenu::setAttribute(const NodeAttribute & attribute, const Uint32 & state)
 	} else if ( "minrightmargin" == name ) {
 		setMinRightMargin( attribute.asDpDimensionUint() );
 	} else if ( "minspaceforicons" == name ) {
-		mStyleConfig.MinSpaceForIcons = attribute.asDpDimensionUint();
-		mBiggestIcon = eemax( mBiggestIcon, mStyleConfig.MinSpaceForIcons );
-		rePosControls();
+		setMinSpaceForIcons( attribute.asDpDimensionUint() );
 	} else {
 		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;
+}
+
+void UIMenu::setMinSpaceForIcons(const Uint32 & minSpaceForIcons) {
+	//if ( minSpaceForIcons != mStyleConfig.MinSpaceForIcons )
+	{
+		mStyleConfig.MinSpaceForIcons = minSpaceForIcons;
+		mBiggestIcon = eemax( mBiggestIcon, mStyleConfig.MinSpaceForIcons );
+
+		for ( Uint32 i = 0; i < mItems.size(); i++ ) {
+			if ( mItems[i]->isType( UI_TYPE_MENUITEM ) ) {
+				UIMenuItem * menuItem = static_cast<UIMenuItem*>( mItems[i] );
+
+				menuItem->setIconMinimumSize( Sizei( minSpaceForIcons, minSpaceForIcons ) );
+			}
+		}
+
+		rePosControls();
+		resizeControls();
+	}
 }
 
 void UIMenu::fixMenuPos( Vector2f& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSubMenu * SubMenu ) {

@@ -60,10 +60,6 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		void setFontStyleConfig(UIFontStyleConfig fontConfig);
 
-		virtual UIDropDownListStyleConfig getDropDownListStyleConfig();
-
-		virtual UIPushButtonStyleConfig getPushButtonStyleConfig();
-
 		const CSS::StyleSheet& getStyleSheet() const;
 
 		void setStyleSheet(const CSS::StyleSheet & styleSheet);

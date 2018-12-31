@@ -191,7 +191,7 @@ void UICommonDialog::openSaveClick() {
 	}
 }
 
-void UICommonDialog::onPressFileEnter( const Event * Event ) {
+void UICommonDialog::onPressFileEnter( const Event * ) {
 	openSaveClick();
 }
 
@@ -301,7 +301,7 @@ void UICommonDialog::open() {
 	}
 }
 
-void UICommonDialog::onPressEnter( const Event * Event ) {
+void UICommonDialog::onPressEnter( const Event * ) {
 	if ( FileSystem::isDirectory( mPath->getText() ) ) {
 		std::string tpath = mPath->getText();
 		FileSystem::dirPathAddSlashAtEnd( tpath );

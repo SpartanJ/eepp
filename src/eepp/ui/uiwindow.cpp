@@ -370,7 +370,7 @@ void UIWindow::createModalControl() {
 		return;
 
 	if ( NULL == mModalCtrl ) {
-		mModalCtrl = UIWidget::New();
+		mModalCtrl = UIWidget::NewWithTag( "window::modaldialog" );
 		mModalCtrl->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		mModalCtrl->setParent( Ctrl )->setPosition(0,0)->setSize( Ctrl->getSize() );
 		mModalCtrl->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
@@ -1418,7 +1418,7 @@ bool UIWindow::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		unsigned int val = attribute.asUint();
 		if ( val <= 255 )
 			setBaseAlpha( (Uint8)val );
-	} else if ( "buttonpositionfixer" == name ) {
+	} else if ( "buttonspositionfixer" == name ) {
 		mStyleConfig.ButtonsPositionFixer = attribute.asVector2i();
 		fixChildsSize();
 	} else if ( "winflags" == name ) {
@@ -1446,7 +1446,9 @@ bool UIWindow::setAttribute( const NodeAttribute& attribute, const Uint32& state
 				else if ( "colorbuffer"== cur ) winflags |= UI_WIN_COLOR_BUFFER;
 			}
 
-			setWinFlags( winflags );
+			/// @TODO: FIX ME
+			mStyleConfig.WinFlags |= winflags;
+			updateWinFlags();
 		}
 	} else if ( "decorationsize" == name ) {
 		mStyleConfig.DecorationSize = attribute.asSizei();

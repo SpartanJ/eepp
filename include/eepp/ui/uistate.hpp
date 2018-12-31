@@ -37,6 +37,8 @@ class EE_API UIState {
 
 		static int getStateNumber(const std::string & State);
 
+		static const Uint32& getStateFlag( const Uint32& stateIndex );
+
 		static bool isStateName( const std::string& State );
 
 		UIState();
@@ -58,7 +60,7 @@ class EE_API UIState {
 		Uint32 		mState;
 		Uint32		mCurrentState;
 
-		void updateState();
+		virtual void updateState() = 0;
 
 		virtual void onStateChange();
 };

@@ -53,42 +53,6 @@ class EE_API UITabWidget : public UIWidget {
 
 		virtual void draw();
 
-		Font * getFont() const;
-
-		void setFont(Font * font);
-
-		Color getFontColor() const;
-
-		void setFontColor(const Color & fontColor);
-
-		Color getFontShadowColor() const;
-
-		void setFontShadowColor(const Color & fontShadowColor);
-
-		Color getFontOverColor() const;
-
-		void setFontOverColor(const Color & fontOverColor);
-
-		Color getFontSelectedColor() const;
-
-		void setFontSelectedColor(const Color & fontSelectedColor);
-
-		Uint32 getCharacterSize();
-
-		void setCharacterSize(const Uint32 & characterSize);
-
-		const Uint32& getFontStyle() const;
-
-		UITabWidget * setFontStyle( const Uint32& fontStyle );
-
-		const Float & getOutlineThickness() const;
-
-		UITabWidget * setOutlineThickness( const Float& outlineThickness );
-
-		const Color& getOutlineColor() const;
-
-		UITabWidget * setOutlineColor( const Color& outlineColor );
-
 		Int32 getTabSeparation() const;
 
 		void setTabSeparation(const Int32 & tabSeparation);
@@ -128,8 +92,6 @@ class EE_API UITabWidget : public UIWidget {
 		void setLineBelowTabsYOffset(const Int32 & lineBelowTabsYOffset);
 
 		UITooltipStyleConfig getFontStyleConfig() const;
-
-		void setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig);
 
 		UITabWidgetStyleConfig getStyleConfig() const;
 

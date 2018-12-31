@@ -26,7 +26,7 @@ UIThemeManager *  UIThemeManager::setDefaultFont( Font * Font ) {
 	mFont = Font;
 
 	if ( NULL != mThemeDefault ) {
-		UITooltipStyleConfig fontStyleConfig = mThemeDefault->getFontStyleConfig();
+		UIFontStyleConfig fontStyleConfig = mThemeDefault->getFontStyleConfig();
 
 		if ( NULL == fontStyleConfig.getFont() && NULL != mFont ) {
 			fontStyleConfig.Font = mFont;
@@ -132,14 +132,6 @@ UIThemeManager *  UIThemeManager::setCursorSize( const Sizei& Size ) {
 
 const Sizei& UIThemeManager::getCursorSize() const {
 	return mCursorSize;
-}
-
-UIFontStyleConfig UIThemeManager::getDefaultFontStyleConfig() {
-	if ( NULL != getDefaultTheme() ) {
-		return getDefaultTheme()->getFontStyleConfig();
-	}
-
-	return UIFontStyleConfig();
 }
 
 }}

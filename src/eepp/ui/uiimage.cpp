@@ -10,8 +10,12 @@ UIImage * UIImage::New() {
 	return eeNew( UIImage, () );
 }
 
-UIImage::UIImage() :
-	UIWidget( "image" ),
+UIImage *UIImage::NewWithTag( const std::string& tag ) {
+	return eeNew( UIImage, ( tag ) );
+}
+
+UIImage::UIImage( const std::string& tag ) :
+	UIWidget( tag ),
 	mScaleType( UIScaleType::None ),
 	mDrawable( NULL ),
 	mColor(),
@@ -22,6 +26,10 @@ UIImage::UIImage() :
 
 	onAutoSize();
 }
+
+UIImage::UIImage() :
+	UIImage( "image" )
+{}
 
 UIImage::~UIImage() {
 	safeDeleteDrawable();

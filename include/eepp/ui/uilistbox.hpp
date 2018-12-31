@@ -15,6 +15,10 @@ class EE_API UIListBox : public UITouchDragableWidget {
 
 		UIListBox();
 
+		static UIListBox * NewWithTag( const std::string& tag );
+
+		UIListBox( const std::string& tag );
+
 		virtual ~UIListBox();
 
 		virtual Uint32 getType() const;
@@ -106,8 +110,6 @@ class EE_API UIListBox : public UITouchDragableWidget {
 		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
 
 		UIFontStyleConfig getFontStyleConfig() const;
-
-		void setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig);
 
 		void loadFromXmlNode(const pugi::xml_node & node);
 

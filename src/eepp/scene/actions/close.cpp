@@ -7,7 +7,7 @@ Close * Close::New(const Time & time) {
 	return eeNew( Close, ( time ) );
 }
 
-void Close::update(const Time & time) {
+void Close::update(const Time &) {
 	if ( NULL != mNode && isDone() ) {
 		mNode->close();
 	}

@@ -13,6 +13,10 @@ UIWidget * UIWidget::New() {
 	return eeNew( UIWidget, () );
 }
 
+UIWidget * UIWidget::NewWithTag( const std::string& tag ) {
+	return eeNew( UIWidget, ( tag ) );
+}
+
 UIWidget::UIWidget( const std::string & tag ) :
 	UINode(),
 	mTag( tag ),
@@ -415,6 +419,11 @@ void UIWidget::alignAgainstLayout() {
 	setInternalPosition( pos );
 }
 
+void UIWidget::reportStyleStateChange() {
+	if ( NULL != mStyle )
+		mStyle->onStateChange();
+}
+
 const Rectf& UIWidget::getPadding() const {
 	return mPadding;
 }
@@ -511,8 +520,7 @@ void UIWidget::onPaddingChange() {
 }
 
 void UIWidget::onThemeLoaded() {
-	if ( NULL != mStyle )
-		mStyle->onStateChange();
+	reportStyleStateChange();
 }
 
 void UIWidget::beginAttributesTransaction() {

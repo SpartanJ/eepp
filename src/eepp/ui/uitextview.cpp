@@ -27,18 +27,24 @@ UITextView::UITextView( const std::string& tag ) :
 	mFontLineCenter( 0 ),
 	mSelecting( false )
 {
-	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
-
 	mTextCache = Text::New();
-	mTextCache->setFont( mFontStyleConfig.Font );
-	mTextCache->setCharacterSize( mFontStyleConfig.CharacterSize );
-	mTextCache->setStyle( mFontStyleConfig.Style );
-	mTextCache->setFillColor( mFontStyleConfig.FontColor );
-	mTextCache->setShadowColor( mFontStyleConfig.ShadowColor );
-	mTextCache->setOutlineThickness( mFontStyleConfig.OutlineThickness );
-	mTextCache->setOutlineColor( mFontStyleConfig.OutlineColor );
+
+	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
+
+	if ( NULL != theme ) {
+		mFontStyleConfig.Font = theme->getDefaultFont();
+	}
+
+	if ( NULL == getFont() ) {
+		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
+			setFont( UIThemeManager::instance()->getDefaultFont() );
+		else
+			eePRINTL( "UITextView::UITextView : Created a without a defined font." );
+	}
 
 	alignFix();
+
+	applyDefaultTheme();
 }
 
 UITextView::UITextView() :
@@ -325,10 +331,6 @@ void UITextView::onFontChanged() {
 void UITextView::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
-	if ( NULL == mTextCache->getFont() && NULL != Theme->getFontStyleConfig().getFont() ) {
-		mTextCache->setFont( Theme->getFontStyleConfig().getFont() );
-	}
-
 	onThemeLoaded();
 }
 
@@ -528,18 +530,6 @@ void UITextView::resetSelCache() {
 	mLastSelCurInit = mLastSelCurEnd = -1;
 	invalidateDraw();
 	onSelectionChange();
-}
-
-void UITextView::setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig ) {
-	mFontStyleConfig = fontStyleConfig;
-
-	setFont( mFontStyleConfig.getFont() );
-	setFontColor( mFontStyleConfig.getFontColor() );
-	setCharacterSize( mFontStyleConfig.getFontCharacterSize() );
-	setFontShadowColor( mFontStyleConfig.getFontShadowColor() );
-	setFontStyle( mFontStyleConfig.getFontStyle() );
-	setOutlineThickness( mFontStyleConfig.getOutlineThickness() );
-	setOutlineColor( mFontStyleConfig.getOutlineColor() );
 }
 
 bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {

@@ -22,6 +22,8 @@ class EE_API UISkinState : public UIState {
 		bool stateExists( const Uint32& State );
 	protected:
 		UISkin * mSkin;
+
+		void updateState();
 };
 
 }}

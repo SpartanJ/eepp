@@ -19,6 +19,8 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 	public:
 		static UIWidget * New();
 
+		static UIWidget * NewWithTag( const std::string& tag );
+
 		UIWidget();
 
 		virtual ~UIWidget();
@@ -172,6 +174,8 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		void updateAnchors( const Vector2f & SizeChange );
 
 		void alignAgainstLayout();
+
+		void reportStyleStateChange();
 };
 
 }}

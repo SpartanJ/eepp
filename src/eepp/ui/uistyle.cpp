@@ -68,4 +68,26 @@ void UIStyle::onStateChange() {
 	}
 }
 
+void UIStyle::updateState() {
+	for ( int i = StateFlagCount - 1; i >= 0; i-- ) {
+		if ( ( mState & getStateFlag(i) ) == getStateFlag(i) ) {
+			if ( stateExists( getStateFlag(i) ) ) {
+				if ( mCurrentState != getStateFlag(i) ) {
+					mCurrentState = getStateFlag(i);
+					onStateChange();
+					return;
+				}
+			}
+		}
+	}
+
+	Uint32 currentState = mCurrentState;
+
+	mCurrentState = StateFlagNormal;
+
+	if ( currentState != StateFlagNormal ) {
+		onStateChange();
+	}
+}
+
 }}

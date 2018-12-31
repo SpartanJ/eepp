@@ -77,8 +77,6 @@ class EE_API UITextView : public UIWidget {
 
 		bool isTextSelectionEnabled() const;
 
-		virtual void setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig );
-
 		UITooltipStyleConfig getFontStyleConfig() const;
 
 		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );

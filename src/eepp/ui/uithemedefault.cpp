@@ -16,11 +16,6 @@ UIThemeDefault * UIThemeDefault::New( const std::string & name, const std::strin
 UIThemeDefault::UIThemeDefault( const std::string& name, const std::string& Abbr, Graphics::Font * defaultFont ) :
 	UITheme( name, Abbr, defaultFont )
 {
-	mFontStyleConfig.CharacterSize = 12;
-	mFontStyleConfig.FontColor = Color( 230, 230, 230, 255 );
-	mFontStyleConfig.FontOverColor = mFontStyleConfig.FontSelectedColor = Color( 255, 255, 255, 255 );
-	mFontStyleConfig.ShadowColor = Color( 50, 50, 50, 150 );
-	mFontStyleConfig.FontSelectionBackColor = Color( 150, 150, 150, 255 );
 }
 
 }}

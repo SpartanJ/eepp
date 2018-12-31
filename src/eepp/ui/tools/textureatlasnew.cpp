@@ -139,7 +139,7 @@ void TextureAtlasNew::cancelClick( const Event * event ) {
 	}
 }
 
-void TextureAtlasNew::windowClose( const Event * Event ) {
+void TextureAtlasNew::windowClose( const Event * ) {
 	eeDelete( this );
 }
 

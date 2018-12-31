@@ -67,7 +67,9 @@ class EE_API UIPushButton : public UIWidget {
 
 		UIPushButton * setOutlineColor( const Color& outlineColor );
 
-		UITooltipStyleConfig getStyleConfig() const;
+		UIFontStyleConfig getStyleConfig() const;
+
+		void setIconMinimumSize( const Sizei& minIconSize );
 
 		void setStyleConfig(const UIPushButtonStyleConfig & styleConfig);
 
@@ -96,6 +98,8 @@ class EE_API UIPushButton : public UIWidget {
 		virtual Uint32 onKeyDown( const KeyEvent& Event );
 
 		virtual Uint32 onKeyUp( const KeyEvent& Event );
+
+		void autoIconHorizontalMargin();
 };
 
 }}

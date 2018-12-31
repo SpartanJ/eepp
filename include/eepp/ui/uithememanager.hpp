@@ -53,8 +53,6 @@ class EE_API UIThemeManager : public ResourceManager<UITheme> {
 		UIThemeManager * setCursorSize( const Sizei& Size );
 
 		const Sizei& getCursorSize() const;
-
-		UIFontStyleConfig getDefaultFontStyleConfig();
 	protected:
 		Font *				mFont;
 		UITheme * 			mThemeDefault;

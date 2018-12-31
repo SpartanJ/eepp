@@ -15,8 +15,12 @@ UIListBox * UIListBox::New() {
 	return eeNew( UIListBox, () );
 }
 
-UIListBox::UIListBox() :
-	UITouchDragableWidget( "listbox" ),
+UIListBox * UIListBox::NewWithTag( const std::string& tag ) {
+	return eeNew( UIListBox, ( tag ) );
+}
+
+UIListBox::UIListBox( const std::string& tag ) :
+	UITouchDragableWidget( tag ),
 	mRowHeight(0),
 	mVScrollMode( UI_SCROLLBAR_AUTO ),
 	mHScrollMode( UI_SCROLLBAR_AUTO ),
@@ -36,8 +40,6 @@ UIListBox::UIListBox() :
 	mSmoothScroll( true )
 {
 	setFlags( UI_AUTO_PADDING );
-
-	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
 
 	mContainer = eeNew( UIItemContainer<UIListBox>, () );
 	mContainer->setParent( this );
@@ -71,6 +73,10 @@ UIListBox::UIListBox() :
 
 	setRowHeight();
 }
+
+UIListBox::UIListBox() :
+	UIListBox( "listbox" )
+{}
 
 UIListBox::~UIListBox() {
 }
@@ -174,7 +180,6 @@ UIListBoxItem * UIListBox::createListBoxItem( const String& Name ) {
 	tItem->setParent( mContainer );
 	tItem->setTheme( mTheme );
 	tItem->setHorizontalAlign( UI_HALIGN_LEFT )->setVerticalAlign( UI_VALIGN_CENTER );
-	tItem->setFontStyleConfig( mFontStyleConfig );
 	tItem->setText( Name );
 
 	return tItem;
@@ -272,11 +277,11 @@ Uint32 UIListBox::getListBoxItemIndex( UIListBoxItem * Item ) {
 	return eeINDEX_NOT_FOUND;
 }
 
-void UIListBox::onScrollValueChange( const Event * Event ) {
+void UIListBox::onScrollValueChange( const Event * ) {
 	updateScroll( true );
 }
 
-void UIListBox::onHScrollValueChange( const Event * Event ) {
+void UIListBox::onHScrollValueChange( const Event * ) {
 	updateScroll( true );
 }
 
@@ -313,15 +318,10 @@ void UIListBox::setRowHeight() {
 	if ( 0 == mRowHeight ) {
 		Uint32 FontSize = PixelDensity::dpToPxI( 12 );
 
-		UITheme * theme = NULL != mTheme ? mTheme : UIThemeManager::instance()->getDefaultTheme();
-
-		if ( NULL != theme )
-			FontSize = theme->getFontStyleConfig().getFont()->getFontHeight( PixelDensity::dpToPxI( UIThemeManager::instance()->getDefaultFontStyleConfig().CharacterSize ) );
-
 		if ( NULL != mFontStyleConfig.getFont() )
 			FontSize = mFontStyleConfig.getFont()->getFontHeight( PixelDensity::dpToPxI( mFontStyleConfig.CharacterSize ) );
 
-		mRowHeight = (Uint32)PixelDensity::pxToDpI( FontSize ) + 4;
+		mRowHeight = (Uint32)PixelDensity::pxToDpI( FontSize ) + 8;
 	}
 
 	if ( tOldRowHeight != mRowHeight ) {
@@ -356,6 +356,9 @@ bool UIListBox::isTouchOverAllowedChilds() {
 }
 
 void UIListBox::findMaxWidth() {
+	if ( NULL == mFontStyleConfig.Font )
+		return;
+
 	Uint32 size = (Uint32)mItems.size();
 	Int32 width;
 	Text textCache( mFontStyleConfig.Font, mFontStyleConfig.CharacterSize );
@@ -978,13 +981,6 @@ const UI_SCROLLBAR_MODE& UIListBox::getHorizontalScrollMode() {
 
 UIFontStyleConfig UIListBox::getFontStyleConfig() const {
 	return mFontStyleConfig;
-}
-
-void UIListBox::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
-	mFontStyleConfig = fontStyleConfig;
-
-	setFont( mFontStyleConfig.Font );
-	setFontColor( mFontStyleConfig.FontColor );
 }
 
 bool UIListBox::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {

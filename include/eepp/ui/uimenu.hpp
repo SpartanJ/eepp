@@ -64,8 +64,6 @@ class EE_API UIMenu : public UIWidget {
 
 		UITooltipStyleConfig getFontStyleConfig() const;
 
-		void setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig);
-
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 
 		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
@@ -119,6 +117,8 @@ class EE_API UIMenu : public UIWidget {
 		void nextSel();
 
 		void trySelect( UINode * Ctrl, bool Up );
+
+		void setMinSpaceForIcons( const Uint32& minSpaceForIcons );
 };
 
 }}

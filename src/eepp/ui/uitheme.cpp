@@ -289,14 +289,6 @@ void UITheme::setFontStyleConfig(UIFontStyleConfig fontConfig) {
 	mFontStyleConfig = fontConfig;
 }
 
-UIDropDownListStyleConfig UITheme::getDropDownListStyleConfig() {
-	return UIDropDownListStyleConfig( getFontStyleConfig() );
-}
-
-UIPushButtonStyleConfig UITheme::getPushButtonStyleConfig() {
-	return UIPushButtonStyleConfig( getFontStyleConfig() );
-}
-
 const CSS::StyleSheet& UITheme::getStyleSheet() const {
 	return mStyleSheet;
 }

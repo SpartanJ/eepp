@@ -458,12 +458,6 @@ UIFontStyleConfig UITextEdit::getFontStyleConfig() const {
 	return mTextInput->getFontStyleConfig();
 }
 
-void UITextEdit::setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig) {
-	if ( NULL != mTextInput ) {
-		mTextInput->setFontStyleConfig( fontStyleConfig );
-	}
-}
-
 bool UITextEdit::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 

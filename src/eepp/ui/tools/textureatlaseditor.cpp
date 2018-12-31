@@ -14,7 +14,7 @@
 
 namespace EE { namespace UI { namespace Tools {
 
-UIWidget * TextureAtlasEditor::createTextureAtlasTextureRegionEditor( std::string name ) {
+UIWidget * TextureAtlasEditor::createTextureAtlasTextureRegionEditor( std::string ) {
 	mTextureRegionEditor = TextureAtlasTextureRegionEditor::New( this );
 	return mTextureRegionEditor;
 }
@@ -211,21 +211,21 @@ void TextureAtlasEditor::onHBOffset( const Event * Event ) {
 	}
 }
 
-void TextureAtlasEditor::onOffXChange( const Event * Event ) {
+void TextureAtlasEditor::onOffXChange( const Event * ) {
 	if ( NULL != mCurTextureRegion ) {
 		mCurTextureRegion->setOffset( Vector2i( (Int32)mSpinOffX->getValue(), mCurTextureRegion->getOffset().y ) );
 		mEdited = true;
 	}
 }
 
-void TextureAtlasEditor::onOffYChange( const Event * Event ) {
+void TextureAtlasEditor::onOffYChange( const Event * ) {
 	if ( NULL != mCurTextureRegion ) {
 		mCurTextureRegion->setOffset( Vector2i( mCurTextureRegion->getOffset().x, (Int32)mSpinOffY->getValue() ) );
 		mEdited = true;
 	}
 }
 
-void TextureAtlasEditor::onDestWChange( const Event * Event ) {
+void TextureAtlasEditor::onDestWChange( const Event * ) {
 	if ( NULL != mCurTextureRegion ) {
 		mCurTextureRegion->setOriDestSize( Sizef( (Int32)mSpinDestW->getValue(), mCurTextureRegion->getDpSize().y ) );
 		mTextureRegionEditor->getGfx()->setSize( (Int32)mSpinDestW->getValue(), mTextureRegionEditor->getGfx()->getSize().getHeight() );
@@ -233,7 +233,7 @@ void TextureAtlasEditor::onDestWChange( const Event * Event ) {
 	}
 }
 
-void TextureAtlasEditor::onDestHChange( const Event * Event ) {
+void TextureAtlasEditor::onDestHChange( const Event * ) {
 	if ( NULL != mCurTextureRegion ) {
 		mCurTextureRegion->setOriDestSize( Sizef( mCurTextureRegion->getDpSize().x, (Int32)mSpinDestH->getValue() ) );
 		mTextureRegionEditor->getGfx()->setSize( mTextureRegionEditor->getGfx()->getSize().getWidth(), (Int32)mSpinDestH->getValue() );
@@ -241,7 +241,7 @@ void TextureAtlasEditor::onDestHChange( const Event * Event ) {
 	}
 }
 
-void TextureAtlasEditor::windowClose( const Event * Event ) {
+void TextureAtlasEditor::windowClose( const Event * ) {
 	if ( mCloseCb )
 		mCloseCb();
 
@@ -286,7 +286,7 @@ void TextureAtlasEditor::fileMenuClick( const Event * Event ) {
 	}
 }
 
-void TextureAtlasEditor::onTextureFilterChange( const Event * Event ) {
+void TextureAtlasEditor::onTextureFilterChange( const Event * ) {
 	if ( NULL == mTextureAtlasLoader || NULL == mTextureAtlasLoader->getTextureAtlas() || !mTextureAtlasLoader->isLoaded() )
 		return;
 
@@ -407,19 +407,19 @@ void TextureAtlasEditor::openTextureAtlas( const Event * Event ) {
 	mTextureAtlasLoader = TextureAtlasLoader::New( CDL->getFullPath(), threaded, cb::Make1( this, &TextureAtlasEditor::onTextureAtlasLoaded ) );
 }
 
-void TextureAtlasEditor::onTextureAtlasLoaded( TextureAtlasLoader * TGLoader ) {
+void TextureAtlasEditor::onTextureAtlasLoaded( TextureAtlasLoader * ) {
 	if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->isLoaded() ) {
 		updateControls();
 	}
 }
 
-void TextureAtlasEditor::saveTextureAtlas( const Event * Event ) {
+void TextureAtlasEditor::saveTextureAtlas( const Event * ) {
 	if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->isLoaded() ) {
 		mTextureAtlasLoader->updateTextureAtlas();
 	}
 }
 
-void TextureAtlasEditor::onTextureAtlasClose( const Event * Event ) {
+void TextureAtlasEditor::onTextureAtlasClose( const Event * ) {
 	eeSAFE_DELETE( mTextureAtlasLoader );
 	mTextureRegionList->clear();
 	mSpinOffX->setValue( 0 );

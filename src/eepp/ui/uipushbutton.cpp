@@ -16,12 +16,6 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 	mIcon( NULL ),
 	mTextBox( NULL )
 {
-	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != theme ) {
-		mStyleConfig = theme->getPushButtonStyleConfig();
-	}
-
 	mFlags |= ( UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 
 	Uint32 GfxFlags;
@@ -32,7 +26,7 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 		GfxFlags = UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER;
 	}
 
-	mIcon = UIImage::New();
+	mIcon = UIImage::NewWithTag( "pushbutton::image" );
 	mIcon->setParent( this );
 	mIcon->setLayoutSizeRules( FIXED, FIXED );
 	mIcon->setFlags( GfxFlags );
@@ -46,7 +40,7 @@ UIPushButton::UIPushButton( const std::string& tag ) :
 	mIcon->setVisible( true );
 	mIcon->setEnabled( false );
 
-	mTextBox = UITextView::New();
+	mTextBox = UITextView::NewWithTag( "pushbutton::text" );
 	mTextBox->setLayoutSizeRules( WRAP_CONTENT, WRAP_CONTENT );
 	mTextBox->setParent( this );
 	mTextBox->setVisible( true );
@@ -178,13 +172,7 @@ void UIPushButton::setTheme( UITheme * Theme ) {
 }
 
 void UIPushButton::onThemeLoaded() {
-	if ( NULL != mTheme )
-		mTextBox->setFont( mTheme->getFontStyleConfig().getFont() );
-
-	if ( mNodeFlags & NODE_FLAG_FREE_USE ) {
-		Rectf RMargin = makePadding( true, false, false, false, true );
-		mStyleConfig.IconHorizontalMargin = RMargin.Left;
-	}
+	autoIconHorizontalMargin();
 
 	onAutoSize();
 
@@ -271,6 +259,13 @@ Uint32 UIPushButton::onKeyUp( const KeyEvent& Event ) {
 
 	return UIWidget::onKeyUp( Event );
 }
+
+void UIPushButton::autoIconHorizontalMargin() {
+	if ( mNodeFlags & NODE_FLAG_FREE_USE ) {
+		Rectf RMargin = makePadding( true, false, false, false, true );
+		setIconHorizontalMargin( RMargin.Left );
+	}
+}
 const Color& UIPushButton::getFontColor() const {
 	return mStyleConfig.FontColor;
 }
@@ -345,23 +340,28 @@ UIPushButton * UIPushButton::setFontStyle(const Uint32 & fontStyle) {
 	return this;
 }
 
-UITooltipStyleConfig UIPushButton::getStyleConfig() const {
+UIFontStyleConfig UIPushButton::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UIPushButton::setStyleConfig(const UIPushButtonStyleConfig & styleConfig) {
-	mStyleConfig = styleConfig;
-	mTextBox->setFontStyleConfig( styleConfig );
+void UIPushButton::setIconMinimumSize( const Sizei & minIconSize ) {
+	if ( minIconSize != mStyleConfig.IconMinSize ) {
+		mStyleConfig.IconMinSize = minIconSize;
 
-	if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
-		Sizef minSize( eemax( mDpSize.x, (Float)mStyleConfig.IconMinSize.x ), eemax( mDpSize.y, (Float)mStyleConfig.IconMinSize.y ) );
+		if ( mStyleConfig.IconMinSize.x != 0 && mStyleConfig.IconMinSize.y != 0 ) {
+			Sizef minSize( eemax( mDpSize.x, (Float)mStyleConfig.IconMinSize.x ), eemax( mDpSize.y, (Float)mStyleConfig.IconMinSize.y ) );
 
-		if ( minSize != mDpSize ) {
-			mIcon->setSize( minSize );
-			onSizeChange();
+			if ( minSize != mDpSize ) {
+				mIcon->setSize( minSize );
+				onSizeChange();
+			}
 		}
 	}
+}
 
+void UIPushButton::setStyleConfig(const UIPushButtonStyleConfig & styleConfig) {
+	setIconMinimumSize( styleConfig.IconMinSize );
+	mStyleConfig = styleConfig;
 	onStateChange();
 }
 
@@ -384,7 +384,17 @@ bool UIPushButton::setAttribute( const NodeAttribute& attribute, const Uint32& s
 		} else if ( NULL != ( icon = DrawableSearcher::searchByName( val ) ) ) {
 			setIcon( icon );
 		}
+	} else if ( "iconminsize" == name ) {
+		setIconMinimumSize( attribute.asSizei() );
+	} else if ( "iconhorizontalmargin" == name ) {
+		setIconHorizontalMargin( attribute.asInt() );
+	} else if ( "iconautomargin" == name ) {
+		mStyleConfig.IconAutoMargin = attribute.asBool();
+
+		if ( mStyleConfig.IconAutoMargin )
+			mNodeFlags |= NODE_FLAG_FREE_USE;
 	} else {
+
 		attributeSet = UIWidget::setAttribute( attribute, state );
 	}
 

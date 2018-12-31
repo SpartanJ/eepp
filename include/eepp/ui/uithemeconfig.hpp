@@ -66,7 +66,7 @@ class UITabWidgetStyleConfig : public UIFontStyleConfig {
 	public:
 		UITabWidgetStyleConfig() {}
 
-		UITabWidgetStyleConfig( UIFontStyleConfig fontStyleConfig ) :
+		explicit UITabWidgetStyleConfig( UIFontStyleConfig fontStyleConfig ) :
 			UIFontStyleConfig( fontStyleConfig )
 		{}
 
@@ -115,7 +115,7 @@ class UIDropDownListStyleConfig : public UIFontStyleConfig {
 	public:
 		UIDropDownListStyleConfig() {}
 
-		UIDropDownListStyleConfig( UIFontStyleConfig fontStyleConfig ) :
+		explicit UIDropDownListStyleConfig( UIFontStyleConfig fontStyleConfig ) :
 			UIFontStyleConfig( fontStyleConfig )
 		{}
 

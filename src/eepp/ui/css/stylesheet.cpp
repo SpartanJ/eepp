@@ -80,7 +80,10 @@ StyleSheetProperties StyleSheet::getElementProperties( StyleSheetElement * eleme
 			if ( !pseudoClass.empty() ) {
 				flags |= StyleSheetSelector::PseudoClass;
 			}
-		} else if ( selector.hasPseudoClass() && !pseudoClass.empty() && selector.getPseudoClass() == pseudoClass ) {
+		} else if ( selector.hasPseudoClass() ) {
+			if ( !pseudoClass.empty() && selector.getPseudoClass() == pseudoClass )
+				flags |= StyleSheetSelector::PseudoClass;
+		} else if ( !selector.hasPseudoClass() && !pseudoClass.empty() ) {
 			flags |= StyleSheetSelector::PseudoClass;
 		}
 

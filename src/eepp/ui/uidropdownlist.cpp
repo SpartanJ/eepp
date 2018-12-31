@@ -20,17 +20,11 @@ UIDropDownList::UIDropDownList() :
 	setFlags( UI_AUTO_SIZE | UI_AUTO_PADDING );
 	unsetFlags( UI_TEXT_SELECTION_ENABLED );
 
-	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != theme ) {
-		mStyleConfig = theme->getDropDownListStyleConfig();
-	}
-
 	setAllowEditing( false );
 
 	applyDefaultTheme();
 
-	mListBox = UIListBox::New();
+	mListBox = UIListBox::NewWithTag( "dropdownlist::listbox" );
 	mListBox->setSize( mDpSize.getWidth(), mStyleConfig.MaxNumVisibleItems * mDpSize.getHeight() );
 	mListBox->setEnabled( false );
 	mListBox->setVisible( false );
@@ -200,11 +194,11 @@ UIDropDownListStyleConfig UIDropDownList::getStyleConfig() const {
 void UIDropDownList::setStyleConfig(const UIDropDownListStyleConfig & styleConfig) {
 	mStyleConfig = styleConfig;
 
-	mListBox->setFontStyleConfig( mStyleConfig );
 	setMaxNumVisibleItems( mStyleConfig.MaxNumVisibleItems );
+	setPopUpToMainControl( mStyleConfig.PopUpToMainControl );
 }
 
-void UIDropDownList::onControlClear( const Event * Event ) {
+void UIDropDownList::onControlClear( const Event * ) {
 	setText( "" );
 }
 
@@ -215,7 +209,7 @@ void UIDropDownList::onItemKeyDown( const Event * Event ) {
 		onItemClicked( Event );
 }
 
-void UIDropDownList::onListBoxFocusLoss( const Event * Event ) {
+void UIDropDownList::onListBoxFocusLoss( const Event * ) {
 	if ( NULL == getEventDispatcher() )
 		return;
 
@@ -227,12 +221,12 @@ void UIDropDownList::onListBoxFocusLoss( const Event * Event ) {
 	}
 }
 
-void UIDropDownList::onItemClicked( const Event * Event ) {
+void UIDropDownList::onItemClicked( const Event * ) {
 	hide();
 	setFocus();
 }
 
-void UIDropDownList::onItemSelected( const Event * Event ) {
+void UIDropDownList::onItemSelected( const Event * ) {
 	setText( mListBox->getItemSelectedText() );
 
 	NodeMessage Msg( this, NodeMessage::Selected, mListBox->getItemSelectedIndex() );

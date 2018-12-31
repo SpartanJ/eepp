@@ -108,7 +108,7 @@ void Text::setString(const String& string) {
 }
 
 void Text::setFont(Font * font) {
-	if (mFont != font) {
+	if ( NULL != font && mFont != font) {
 		mFont = font;
 
 		mRealCharacterSize = PixelDensity::dpToPxI( mCharacterSize );

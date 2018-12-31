@@ -128,8 +128,6 @@ Text *UITextInputPassword::getPassCache() const {
 }
 
 void UITextInputPassword::setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig) {
-	UITextInput::setFontStyleConfig( fontStyleConfig );
-
 	mPassCache->setCharacterSize( mFontStyleConfig.CharacterSize );
 	mPassCache->setFont( mFontStyleConfig.getFont() );
 	mPassCache->setFillColor( mFontStyleConfig.getFontColor() );

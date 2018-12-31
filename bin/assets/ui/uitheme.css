@@ -17,7 +17,7 @@ TabWidget {
 	tabSeparation: -1dp;
 	drawLineBelowTabs: true;
 	lineBelowTabsColor: #2f3030;
-	lineBelowTabsYOffset: -1dp;
+	lineBelowTabsYOffset: 0dp;
 }
 
 ProgressBar {
@@ -31,7 +31,7 @@ WinMenu {
 	buttonMargin: 12dp;
 }
 
-Menu, 
+Menu,
 PopUpMenu {
 	textColor: #E6E6E6FF;
 	minWidth: 100dp;
@@ -56,7 +56,7 @@ ScrollBar {
 }
 
 Window {
-	winFlags: default|shadow;
+	winFlags: shadow;
 	buttonsPositionFixer: -2, 0;
 }
 

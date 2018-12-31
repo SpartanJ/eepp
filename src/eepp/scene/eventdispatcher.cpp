@@ -50,7 +50,7 @@ void EventDispatcher::inputCallback( InputEvent * Event ) {
 	}
 }
 
-void EventDispatcher::update( const Time& elapsed ) {
+void EventDispatcher::update( const Time& ) {
 	bool wasDraggingControl = mControlDragging;
 
 	mMousePos = mInput->getMousePosFromView( mWindow->getDefaultView() );

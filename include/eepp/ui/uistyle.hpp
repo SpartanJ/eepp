@@ -32,6 +32,8 @@ class EE_API UIStyle : public UIState {
 		UIWidget * mWidget;
 		std::map<int, AttributesMap> mStates;
 
+		void updateState();
+
 		void addStyleSheetProperties( int state, const CSS::StyleSheetProperties& properties );
 };
 
