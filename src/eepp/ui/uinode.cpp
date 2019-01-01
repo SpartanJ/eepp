@@ -295,7 +295,7 @@ void UINode::update( const Time& time ) {
 			return;
 		}
 
-		Vector2f Pos( eventDispatcher->getMousePosf() );
+		Vector2f Pos( eefloor( eventDispatcher->getMousePosf().x ), eefloor( eventDispatcher->getMousePosf().y ) );
 
 		if ( mDragPoint != Pos && ( std::abs( mDragPoint.x - Pos.x ) > 1.f || std::abs( mDragPoint.y - Pos.y ) > 1.f ) ) {
 			if ( onDrag( Pos ) ) {
