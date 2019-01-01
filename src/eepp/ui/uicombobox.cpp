@@ -31,8 +31,8 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 
 	if ( NULL == mDropDownList ) {
 		mDropDownList = UIDropDownList::New();
-		mDropDownList->setFriendControl( this );
 		mDropDownList->setParent( this );
+		mDropDownList->setFriendControl( this );
 		mDropDownList->setVisible( true );
 		mDropDownList->setEnabled( true );
 		mDropDownList->setAllowEditing( true );

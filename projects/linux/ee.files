@@ -353,7 +353,6 @@
 ../../include/eepp/ui/uitextureregion.hpp
 ../../include/eepp/ui/uitextview.hpp
 ../../include/eepp/ui/uithemeconfig.hpp
-../../include/eepp/ui/uithemedefault.hpp
 ../../include/eepp/ui/uitheme.hpp
 ../../include/eepp/ui/uithememanager.hpp
 ../../include/eepp/ui/uitooltip.hpp
@@ -760,7 +759,6 @@
 ../../src/eepp/ui/uitextureregion.cpp
 ../../src/eepp/ui/uitextview.cpp
 ../../src/eepp/ui/uitheme.cpp
-../../src/eepp/ui/uithemedefault.cpp
 ../../src/eepp/ui/uithememanager.cpp
 ../../src/eepp/ui/uitooltip.cpp
 ../../src/eepp/ui/uitouchdragablewidget.cpp

@@ -60,10 +60,16 @@ void UIStyle::onStateChange() {
 	if ( NULL != mWidget && stateExists( mCurrentState ) ) {
 		AttributesMap& attrs = mStates[ mCurrentState ];
 
-		for ( auto it = attrs.begin(); it != attrs.end(); ++it ) {
-			NodeAttribute& nodeAttr = it->second;
+		if ( !attrs.empty() ) {
+			mWidget->beginAttributesTransaction();
 
-			mWidget->setAttribute( nodeAttr, mCurrentState );
+			for ( auto it = attrs.begin(); it != attrs.end(); ++it ) {
+				NodeAttribute& nodeAttr = it->second;
+
+				mWidget->setAttribute( nodeAttr, mCurrentState );
+			}
+
+			mWidget->endAttributesTransaction();
 		}
 	}
 }

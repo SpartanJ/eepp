@@ -603,18 +603,10 @@ void EETest::createUI() {
 
 	eePRINTL("Node size: %d", sizeof(Node));
 	eePRINTL("UINode size: %d", sizeof(UINode));
-	//mTheme = UITheme::loadFromDirectory( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
 
-	TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
-	mTheme = UITheme::loadFromTextureAtlas( UIThemeDefault::New( mThemeName, mThemeName ), TextureAtlasManager::instance()->getByName( mThemeName ) );
+	mTheme = UITheme::load( mThemeName, mThemeName, MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION, TTF, MyPath + "ui/uitheme.css" );
 
-	CSS::StyleSheetParser styleSheetParser;
-
-	if ( styleSheetParser.loadFromFile( MyPath + "ui/uitheme.css" ) ) {
-		mTheme->setStyleSheet( styleSheetParser.getStyleSheet() );
-
-		sceneNode->combineStyleSheet( mTheme->getStyleSheet() );
-	}
+	sceneNode->combineStyleSheet( mTheme->getStyleSheet() );
 
 	UIThemeManager::instance()->add( mTheme );
 	UIThemeManager::instance()->setDefaultEffectsEnabled( true );

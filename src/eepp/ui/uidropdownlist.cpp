@@ -123,7 +123,7 @@ Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 void UIDropDownList::showList() {
 	if ( !mListBox->isVisible() ) {
 		if ( !mStyleConfig.PopUpToMainControl )
-			mListBox->setParent( NULL != mFriendCtrl ? mFriendCtrl->getParent() : getWindowContainer() );
+			mListBox->setParent( getWindowContainer() );
 		else
 			mListBox->setParent( mSceneNode );
 
@@ -134,8 +134,6 @@ void UIDropDownList::showList() {
 		if ( mStyleConfig.PopUpToMainControl ) {
 			getParent()->nodeToWorld( Pos );
 			Pos = PixelDensity::pxToDp( Pos );
-		} else if ( NULL != mFriendCtrl ) {
-			Pos = Vector2f( mFriendCtrl->getPosition().x, mFriendCtrl->getPosition().y + mFriendCtrl->getSize().getHeight() );
 		} else {
 			Node * ParentLoop = getParent();
 			Node * rp = getWindowContainer();

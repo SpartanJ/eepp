@@ -25,13 +25,8 @@ UIThemeManager::~UIThemeManager() {
 UIThemeManager *  UIThemeManager::setDefaultFont( Font * Font ) {
 	mFont = Font;
 
-	if ( NULL != mThemeDefault ) {
-		UIFontStyleConfig fontStyleConfig = mThemeDefault->getFontStyleConfig();
-
-		if ( NULL == fontStyleConfig.getFont() && NULL != mFont ) {
-			fontStyleConfig.Font = mFont;
-			mThemeDefault->setFontStyleConfig( fontStyleConfig );
-		}
+	if ( NULL != mFont && NULL != mThemeDefault && NULL == mThemeDefault->getDefaultFont() ) {
+		mThemeDefault->setDefaultFont( mFont );
 	}
 
 	return this;
@@ -44,13 +39,8 @@ Font * UIThemeManager::getDefaultFont() const {
 UIThemeManager *  UIThemeManager::setDefaultTheme( UITheme * Theme ) {
 	mThemeDefault = Theme;
 
-	if ( NULL != mThemeDefault ) {
-		UITooltipStyleConfig fontStyleConfig = mThemeDefault->getFontStyleConfig();
-
-		if ( NULL == fontStyleConfig.getFont() && NULL != mFont ) {
-			fontStyleConfig.Font = mFont;
-			mThemeDefault->setFontStyleConfig( fontStyleConfig );
-		}
+	if ( NULL != mThemeDefault && NULL == mThemeDefault->getDefaultFont() ) {
+		setDefaultFont( mFont );
 	}
 	return this;
 }

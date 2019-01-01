@@ -11,6 +11,8 @@
 #include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/statelistdrawable.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/graphics/textureatlasloader.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
 
 namespace EE { namespace UI {
 
@@ -31,6 +33,19 @@ static std::string elemNameFromSkin( const std::vector<std::string>& nameParts )
 
 UITheme * UITheme::New( const std::string & name, const std::string & abbr, Font * defaultFont ) {
 	return eeNew( UITheme, ( name, abbr, defaultFont ) );
+}
+
+UITheme * UITheme::load( const std::string & name, const std::string & abbr, const std::string & textureAtlasPath, Font * defaultFont, const std::string & styleSheetPath ) {
+	UITheme * theme = UITheme::New( name, abbr, defaultFont );
+	TextureAtlasLoader tgl( textureAtlasPath );
+
+	CSS::StyleSheetParser styleSheetParser;
+
+	if ( styleSheetParser.loadFromFile( styleSheetPath ) ) {
+		theme->setStyleSheet( styleSheetParser.getStyleSheet() );
+	}
+
+	return loadFromTextureAtlas( theme, tgl.getTextureAtlas() );
 }
 
 UITheme * UITheme::loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtlas * TextureAtlas ) {
@@ -229,16 +244,9 @@ UITheme::UITheme(const std::string& name, const std::string& Abbr, Graphics::Fon
 	mName( name ),
 	mNameHash( String::hash( mName ) ),
 	mAbbr( Abbr ),
-	mTextureAtlas( NULL )
+	mTextureAtlas( NULL ),
+	mDefaultFont( defaultFont )
 {
-	mFontStyleConfig.Font = defaultFont;
-	mFontStyleConfig.ShadowColor = Color( 255, 255, 255, 200 );
-	mFontStyleConfig.FontColor = mFontStyleConfig.FontOverColor = mFontStyleConfig.FontSelectedColor = Color( 0, 0, 0, 255 );
-	mFontStyleConfig.FontSelectionBackColor = Color( 150, 150, 150, 255 );
-
-	if ( NULL == defaultFont ) {
-		mFontStyleConfig.Font = UIThemeManager::instance()->getDefaultFont();
-	}
 }
 
 UITheme::~UITheme() {
@@ -285,10 +293,6 @@ UISkin * UITheme::getSkin(const std::string & controlName) {
 	return getByName( mAbbr + "_" + controlName );
 }
 
-void UITheme::setFontStyleConfig(UIFontStyleConfig fontConfig) {
-	mFontStyleConfig = fontConfig;
-}
-
 const CSS::StyleSheet& UITheme::getStyleSheet() const {
 	return mStyleSheet;
 }
@@ -297,12 +301,12 @@ void UITheme::setStyleSheet(const CSS::StyleSheet & styleSheet) {
 	mStyleSheet = styleSheet;
 }
 
-UIFontStyleConfig UITheme::getFontStyleConfig() const {
-	return mFontStyleConfig;
+Font * UITheme::getDefaultFont() const {
+	return mDefaultFont;
 }
 
-Font *UITheme::getDefaultFont() const {
-	return mFontStyleConfig.Font;
+void UITheme::setDefaultFont( Font * font ) {
+	mDefaultFont = font;
 }
 
 }}

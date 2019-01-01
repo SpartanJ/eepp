@@ -91,7 +91,7 @@ class UpdateListener : public efsw::FileWatchListener {
 	public:
 		UpdateListener() {}
 
-		void handleFileAction( efsw::WatchID watchid, const std::string& dir, const std::string& filename, efsw::Action action, std::string oldFilename = "" ) {
+		void handleFileAction( efsw::WatchID, const std::string& dir, const std::string& filename, efsw::Action action, std::string ) {
 			if ( action == efsw::Actions::Modified ) {
 				if ( dir + filename == currentLayout ) {
 					updateLayout = true;
@@ -267,7 +267,7 @@ void updateRecentProjects() {
 	}
 }
 
-void resizeCb(EE::Window::Window * window) {
+void resizeCb(EE::Window::Window *) {
 	Float scaleW = (Float)uiSceneNode->getSize().getWidth() / (Float)uiContainer->getSize().getWidth();
 	Float scaleH = (Float)uiSceneNode->getSize().getHeight() / (Float)uiContainer->getSize().getHeight();
 
@@ -307,9 +307,9 @@ static void loadUITheme( std::string themePath ) {
 
 	std::string name( FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( themePath ) ) );
 
-	UITheme * theme = UITheme::loadFromTextureAtlas( UIThemeDefault::New( name, name ), TextureAtlasManager::instance()->getByName( name ) );
+	UITheme * uitheme = UITheme::loadFromTextureAtlas( UITheme::New( name, name ), TextureAtlasManager::instance()->getByName( name ) );
 
-	UIThemeManager::instance()->setDefaultTheme( theme )->add( theme );
+	UIThemeManager::instance()->setDefaultTheme( uitheme )->add( uitheme );
 }
 
 void onLayoutSelected( const Event * event ) {
@@ -410,9 +410,9 @@ static void loadProjectNodes( pugi::xml_node node ) {
 
 			if ( !widgetNode.empty() ) {
 				for ( pugi::xml_node cwNode = widgetNode.child("customWidget"); cwNode; cwNode= cwNode.next_sibling("customWidget") ) {
-					std::string name( cwNode.attribute( "name" ).as_string() );
+					std::string wname( cwNode.attribute( "name" ).as_string() );
 					std::string replacement( cwNode.attribute( "replacement" ).as_string() );
-					widgetRegistered[ String::toLower( name ) ] = replacement;
+					widgetRegistered[ String::toLower( wname ) ] = replacement;
 				}
 
 				for ( auto it = widgetRegistered.begin(); it != widgetRegistered.end(); ++it ) {
@@ -527,14 +527,14 @@ void closeProject() {
 	unloadImages();
 }
 
-bool onCloseRequestCallback( EE::Window::Window * w ) {
+bool onCloseRequestCallback( EE::Window::Window * ) {
 	UITheme * prevTheme = UIThemeManager::instance()->getDefaultTheme();
 	UIThemeManager::instance()->setDefaultTheme( theme );
 
 	MsgBox = UIMessageBox::New( MSGBOX_OKCANCEL, "Do you really want to close the current file?\nAll changes will be lost." );
 	MsgBox->setTheme( theme );
-	MsgBox->addEventListener( Event::MsgBoxConfirmClick, cb::Make1<void, const Event*>( []( const Event * event ) { window->close(); } ) );
-	MsgBox->addEventListener( Event::OnClose, cb::Make1<void, const Event*>( []( const Event * event ) { MsgBox = NULL; } ) );
+	MsgBox->addEventListener( Event::MsgBoxConfirmClick, cb::Make1<void, const Event*>( []( const Event * ) { window->close(); } ) );
+	MsgBox->addEventListener( Event::OnClose, cb::Make1<void, const Event*>( []( const Event * ) { MsgBox = NULL; } ) );
 	MsgBox->setTitle( "Close Editor?" );
 	MsgBox->center();
 	MsgBox->show();
@@ -679,6 +679,8 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		uiSceneNode = UISceneNode::New();
 		SceneManager::instance()->add( uiSceneNode );
 
+		uiSceneNode->setDrawDebugData( true );
+
 		uiSceneNode->enableDrawInvalidation();
 
 		{
@@ -686,11 +688,11 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 			if ( PixelDensity::getPixelDensity() >= 1.5f ) pd = "1.5x";
 			else if ( PixelDensity::getPixelDensity() >= 2.f ) pd = "2x";
 
-			TextureAtlasLoader tgl( "assets/ui/uitheme" + pd + ".eta" );
-
-			theme = UITheme::loadFromTextureAtlas( UIThemeDefault::New( "uitheme" + pd, "uitheme" + pd ), TextureAtlasManager::instance()->getByName( "uitheme" + pd ) );
-
 			FontTrueType * font = FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+
+			theme = UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta", font, "assets/ui/uitheme.css" );
+
+			uiSceneNode->combineStyleSheet( theme->getStyleSheet() );
 
 			UIThemeManager::instance()->setDefaultEffectsEnabled( true )->setDefaultTheme( theme )->setDefaultFont( font )->add( theme );
 		}

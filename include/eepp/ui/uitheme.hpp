@@ -26,6 +26,8 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		static UITheme * New( const std::string& name, const std::string& abbr, Graphics::Font * defaultFont = NULL );
 
+		static UITheme * load( const std::string& name, const std::string& abbr, const std::string& textureAtlasPath, Graphics::Font * defaultFont, const std::string& styleSheetPath );
+
 		static UITheme * loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtlas * getTextureAtlas );
 
 		static UITheme * loadFromTextureAtlas( Graphics::TextureAtlas * getTextureAtlas, const std::string& Name, const std::string& NameAbbr );
@@ -54,11 +56,9 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		UISkin * getSkin( const std::string& controlName );
 
-		UIFontStyleConfig getFontStyleConfig() const;
-
 		Font * getDefaultFont() const;
 
-		void setFontStyleConfig(UIFontStyleConfig fontConfig);
+		void setDefaultFont( Font * font );
 
 		const CSS::StyleSheet& getStyleSheet() const;
 
@@ -68,7 +68,7 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 		Uint32					mNameHash;
 		std::string				mAbbr;
 		Graphics::TextureAtlas *mTextureAtlas;
-		UIFontStyleConfig		mFontStyleConfig;
+		Font *					mDefaultFont;
 		CSS::StyleSheet			mStyleSheet;
 
 		void setTextureAtlas( Graphics::TextureAtlas * SG );

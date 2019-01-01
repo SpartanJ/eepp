@@ -122,6 +122,10 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		virtual void popState( const Uint32& State, bool emitEvent = true );
 
 		void reloadStyle( const bool& reloadChilds = true );
+
+		void beginAttributesTransaction();
+
+		void endAttributesTransaction();
 	protected:
 		friend class UIManager;
 		friend class UISceneNode;
@@ -166,10 +170,6 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		virtual void onPaddingChange();
 
 		virtual void onThemeLoaded();
-
-		void beginAttributesTransaction();
-
-		void endAttributesTransaction();
 
 		void updateAnchors( const Vector2f & SizeChange );
 
