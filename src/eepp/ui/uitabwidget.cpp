@@ -19,12 +19,6 @@ UITabWidget::UITabWidget() :
 {
 	setHorizontalAlign( UI_HALIGN_CENTER );
 
-	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != Theme ) {
-		mStyleConfig.Font = Theme->getDefaultFont();
-	}
-
 	mTabContainer = UIWidget::New();
 	mTabContainer->setPixelsSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight )
 			->setParent( this )->setPosition( 0, 0 );
@@ -112,15 +106,11 @@ void UITabWidget::draw() {
 	}
 }
 
-UITooltipStyleConfig UITabWidget::getFontStyleConfig() const {
-	return UITooltipStyleConfig( mStyleConfig );
-}
-
-UITabWidgetStyleConfig UITabWidget::getStyleConfig() const {
+const UITabWidget::StyleConfig& UITabWidget::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UITabWidget::setStyleConfig(const UITabWidgetStyleConfig & styleConfig) {
+void UITabWidget::setStyleConfig(const StyleConfig & styleConfig) {
 	Uint32		tabWidgetHeight = mStyleConfig.TabWidgetHeight;
 	mStyleConfig = styleConfig;
 	mStyleConfig.TabWidgetHeight = tabWidgetHeight;
@@ -321,7 +311,6 @@ UITab * UITabWidget::createTab( const String& Text, UINode * CtrlOwned, Drawable
 	UITab * tCtrl 	= UITab::New();
 	tCtrl->setParent( mTabContainer );
 	tCtrl->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE );
-	tCtrl->setStyleConfig( mStyleConfig );
 	tCtrl->setIcon( Icon );
 	tCtrl->setText( Text );
 	tCtrl->setVisible( true );

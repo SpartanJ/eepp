@@ -18,11 +18,6 @@ UIWinMenu::UIWinMenu() :
 	if ( !(mFlags & UI_ANCHOR_RIGHT) )
 		mFlags |= UI_ANCHOR_RIGHT;
 
-	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != theme )
-		mStyleConfig.Font = theme->getDefaultFont();
-
 	onParentChange();
 
 	applyDefaultTheme();
@@ -43,9 +38,7 @@ bool UIWinMenu::isType( const Uint32& type ) const {
 void UIWinMenu::addMenuButton( const String& ButtonText, UIPopUpMenu * Menu ) {
 	eeASSERT( NULL != Menu );
 
-	UISelectButton * Button = UISelectButton::New();
-
-	Button->setStyleConfig( mStyleConfig );
+	UISelectButton * Button = UISelectButton::NewWithTag( "winmenu::button" );
 	Button->setParent( this );
 	Button->setText( ButtonText );
 	Button->setVisible( true );
@@ -130,11 +123,11 @@ void UIWinMenu::setButtonMargin( const Uint32& buttonMargin ) {
 	refreshButtons();
 }
 
-UIWinMenuStyleConfig UIWinMenu::getStyleConfig() const {
+const UIWinMenu::StyleConfig& UIWinMenu::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UIWinMenu::setStyleConfig(const UIWinMenuStyleConfig & styleConfig) {
+void UIWinMenu::setStyleConfig(const StyleConfig & styleConfig) {
 	mStyleConfig = styleConfig;
 	refreshButtons();
 }
@@ -219,7 +212,6 @@ void UIWinMenu::refreshButtons() {
 		UITextView * tbox		= pbut->getTextBox();
 
 		pbut->setLayoutSizeRules( FIXED, FIXED );
-		pbut->setStyleConfig( mStyleConfig );
 		pbut->setPixelsSize( tbox->getTextWidth() + PixelDensity::dpToPx( mStyleConfig.ButtonMargin ), getRealSize().getHeight() );
 		pbut->setPosition( xpos, ycenter );
 

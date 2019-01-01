@@ -4,7 +4,6 @@
 #include <eepp/scene/nodeattribute.hpp>
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/css/stylesheetelement.hpp>
-#include <eepp/ui/uithemeconfig.hpp>
 
 namespace pugi {
 class xml_node;

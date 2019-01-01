@@ -8,7 +8,7 @@ UIListBoxItem * UIListBoxItem::New() {
 }
 
 UIListBoxItem::UIListBoxItem() :
-	UITextView( "listboxitem" )
+	UITextView( "listbox::item" )
 {
 	setLayoutSizeRules( FIXED, FIXED );
 	applyDefaultTheme();

@@ -9,6 +9,21 @@ namespace EE { namespace UI {
 
 class EE_API UITabWidget : public UIWidget {
 	public:
+		class StyleConfig {
+			public:
+				Int32		TabSeparation = 0;
+				Uint32		MaxTextLength = 30;
+				Uint32		TabWidgetHeight = 0;
+				Uint32		TabTextAlign = ( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
+				Uint32		MinTabWidth = 32;
+				Uint32		MaxTabWidth = 300;
+				bool		TabsClosable = false;
+				bool		SpecialBorderTabs = false; //! Indicates if the periferical tabs ( the left and right border tab ) are different from the central tabs.
+				bool		DrawLineBelowTabs = false;
+				Color		LineBelowTabsColor;
+				Int32		LineBelowTabsYOffset = 0;
+		};
+
 		static UITabWidget * New();
 
 		UITabWidget();
@@ -91,11 +106,9 @@ class EE_API UITabWidget : public UIWidget {
 
 		void setLineBelowTabsYOffset(const Int32 & lineBelowTabsYOffset);
 
-		UITooltipStyleConfig getFontStyleConfig() const;
+		const StyleConfig & getStyleConfig() const;
 
-		UITabWidgetStyleConfig getStyleConfig() const;
-
-		void setStyleConfig(const UITabWidgetStyleConfig & styleConfig);
+		void setStyleConfig(const StyleConfig & styleConfig);
 
 		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
@@ -103,7 +116,7 @@ class EE_API UITabWidget : public UIWidget {
 
 		UIWidget *		mCtrlContainer;
 		UIWidget *		mTabContainer;
-		UITabWidgetStyleConfig	mStyleConfig;
+		StyleConfig	mStyleConfig;
 		std::deque<UITab*>		mTabs;
 		UITab *					mTabSelected;
 		Uint32					mTabSelectedIndex;

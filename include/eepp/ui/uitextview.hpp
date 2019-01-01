@@ -2,7 +2,7 @@
 #define EE_UICUITEXTBOX_H
 
 #include <eepp/ui/uiwidget.hpp>
-#include <eepp/ui/uithemeconfig.hpp>
+#include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/graphics/text.hpp>
 
 namespace EE { namespace UI {
@@ -77,13 +77,13 @@ class EE_API UITextView : public UIWidget {
 
 		bool isTextSelectionEnabled() const;
 
-		UITooltipStyleConfig getFontStyleConfig() const;
+		const UIFontStyleConfig & getFontStyleConfig() const;
 
 		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		Text *		mTextCache;
 		String			mString;
-		UITooltipStyleConfig mFontStyleConfig;
+		UIFontStyleConfig mFontStyleConfig;
 		Vector2f 		mAlignOffset;
 		Vector2f 		mRealAlignOffset;
 		Int32			mSelCurInit;

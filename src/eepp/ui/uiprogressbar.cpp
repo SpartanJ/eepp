@@ -238,6 +238,10 @@ bool UIProgressBar::setAttribute( const NodeAttribute& attribute, const Uint32& 
 	return true;
 }
 
+const UIProgressBar::StyleConfig & UIProgressBar::getStyleConfig() const {
+	return mStyleConfig;
+}
+
 void UIProgressBar::onAlphaChange() {
 	UINode::onAlphaChange();
 	

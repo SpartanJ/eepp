@@ -7,12 +7,6 @@
 	textSelectionBackColor: #969696FF;
 }
 
-Tab:selected,
-Tab:hover,
-Tab:pressed {
-	textColor: #FFF;
-}
-
 TabWidget {
 	tabSeparation: -1dp;
 	drawLineBelowTabs: true;
@@ -43,7 +37,11 @@ Menu:hover,
 PopUpMenu:hover,
 MenuItem:hover,
 MenuCheckBox:hover,
-MenuSubMenu:hover {
+MenuSubMenu:hover,
+ListBox::item:hover,
+Tab:selected,
+Tab:hover,
+Tab:pressed {
 	textColor: #FFF;
 }
 

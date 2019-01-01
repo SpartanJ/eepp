@@ -201,28 +201,28 @@ UIMapNew::UIMapNew( UIMap * Map, std::function<void()> NewMapCb, bool ResizeMap 
 UIMapNew::~UIMapNew() {
 }
 
-void UIMapNew::onRedChange( const Event * Event ) {
+void UIMapNew::onRedChange( const Event * ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.r = (Uint8)mUIRedSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
 	mUIRedTxt->setText( String::toStr( (Int32)mUIRedSlider->getValue() ) );
 }
 
-void UIMapNew::onGreenChange( const Event * Event ) {
+void UIMapNew::onGreenChange( const Event * ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.g = (Uint8)mUIGreenSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
 	mUIGreenTxt->setText( String::toStr( (Uint32)mUIGreenSlider->getValue() ) );
 }
 
-void UIMapNew::onBlueChange( const Event * Event ) {
+void UIMapNew::onBlueChange( const Event * ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.b = (Uint8)mUIBlueSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
 	mUIBlueTxt->setText( String::toStr( (Uint32)mUIBlueSlider->getValue() ) );
 }
 
-void UIMapNew::onOKClick( const Event * Event ) {
+void UIMapNew::onOKClick( const Event * ) {
 	Int32 w = static_cast<Int32>( mUIMapWidth->getValue() );
 	Int32 h = static_cast<Int32>( mUIMapHeight->getValue() );
 	Int32 tw = static_cast<Int32>( mUIMapTWidth->getValue() );
@@ -272,11 +272,11 @@ void UIMapNew::onOKClick( const Event * Event ) {
 	mUIWindow->closeWindow();
 }
 
-void UIMapNew::onCancelClick( const Event * Event ) {
+void UIMapNew::onCancelClick( const Event * ) {
 	mUIWindow->closeWindow();
 }
 
-void UIMapNew::onWindowClose( const Event * Event ) {
+void UIMapNew::onWindowClose( const Event * ) {
 	eeDelete( this );
 }
 

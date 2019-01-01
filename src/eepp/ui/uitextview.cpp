@@ -1,11 +1,12 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/text.hpp>
+#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <pugixml/pugixml.hpp>
-#include <eepp/graphics/fontmanager.hpp>
-#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -469,7 +470,7 @@ bool UITextView::isTextSelectionEnabled() const {
 	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
 }
 
-UITooltipStyleConfig UITextView::getFontStyleConfig() const {
+const UIFontStyleConfig& UITextView::getFontStyleConfig() const {
 	return mFontStyleConfig;
 }
 
@@ -542,8 +543,6 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 		setFontColor( attribute.asColor() );
 	} else if ( "textshadowcolor" == name ) {
 		setFontShadowColor( attribute.asColor() );
-	} else if ( "textovercolor" == name ) {
-		mFontStyleConfig.FontOverColor = attribute.asColor();
 	} else if ( "textselectedcolor" == name ) {
 		mFontStyleConfig.FontSelectedColor = attribute.asColor();
 	} else if ( "textselectionbackcolor" == name ) {

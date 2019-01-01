@@ -12,6 +12,15 @@ namespace EE { namespace UI {
 
 class EE_API UIMenu : public UIWidget {
 	public:
+		class StyleConfig {
+			public:
+				Rectf Padding = Rectf(0, 0, 0, 0);
+				Uint32 MinWidth = 0;
+				Uint32 MinSpaceForIcons = 0;
+				Uint32 MinRightMargin = 0;
+
+		};
+
 		static UIMenu * New();
 
 		static void fixMenuPos( Vector2f& position, UIMenu * Menu, UIMenu * parent = NULL, UIMenuSubMenu * SubMenu = NULL );
@@ -62,7 +71,7 @@ class EE_API UIMenu : public UIWidget {
 
 		void setMinRightMargin(const Uint32 & minRightMargin);
 
-		UITooltipStyleConfig getFontStyleConfig() const;
+		const StyleConfig& getStyleConfig() const;
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
 
@@ -73,7 +82,7 @@ class EE_API UIMenu : public UIWidget {
 		friend class UIMenuSubMenu;
 
 		std::deque<UINode *> mItems;
-		UIMenuStyleConfig		mStyleConfig;
+		StyleConfig			mStyleConfig;
 		Uint32				mMaxWidth;
 		Uint32				mNextPosY;
 		Uint32				mBiggestIcon;

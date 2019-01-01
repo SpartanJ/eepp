@@ -196,11 +196,10 @@ Uint32 UIListBox::removeListBoxItem( UIListBoxItem * Item ) {
 void UIListBox::removeListBoxItems( std::vector<Uint32> ItemsIndex ) {
 	if ( ItemsIndex.size() && eeINDEX_NOT_FOUND != ItemsIndex[0] ) {
 		std::vector<UIListBoxItem*> ItemsCpy;
-		bool erase;
 		mTexts.clear();
 
 		for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-			erase = false;
+			bool erase = false;
 
 			for ( Uint32 z = 0; z < ItemsIndex.size(); z++ ) {
 				if ( ItemsIndex[z] == i ) {
@@ -730,14 +729,6 @@ const Color& UIListBox::getFontColor() const {
 	return mFontStyleConfig.FontColor;
 }
 
-void UIListBox::setFontOverColor( const Color& Color ) {
-	mFontStyleConfig.FontOverColor = Color;
-}
-
-const Color& UIListBox::getFontOverColor() const {
-	return mFontStyleConfig.FontOverColor;
-}
-
 void UIListBox::setFontSelectedColor( const Color& Color ) {
 	mFontStyleConfig.FontSelectedColor = Color;
 }
@@ -992,8 +983,6 @@ bool UIListBox::setAttribute( const NodeAttribute& attribute, const Uint32& stat
 		setFontColor( attribute.asColor() );
 	} else if ( "textshadowcolor" == name ) {
 		mFontStyleConfig.ShadowColor = ( attribute.asColor() );
-	} else if ( "textovercolor" == name ) {
-		setFontOverColor( attribute.asColor() );
 	} else if ( "textselectedcolor" == name ) {
 		setFontSelectedColor( attribute.asColor() );
 	} else if ( "textselectionbackcolor" == name ) {

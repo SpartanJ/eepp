@@ -1,5 +1,6 @@
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/font.hpp>
 #include <pugixml/pugixml.hpp>
@@ -25,7 +26,7 @@ UITextEdit::UITextEdit() :
 	mTextInput	= UITextInput::New();
 	mTextInput->setLayoutSizeRules( LayoutSizeRules::FIXED, LayoutSizeRules::FIXED );
 	mTextInput->setParent( this );
-	mTextInput->setFlags( UI_TEXT_SELECTION_ENABLED | UI_TEXT_SELECTION_ENABLED | UI_VALIGN_TOP );
+	mTextInput->setFlags( UI_TEXT_SELECTION_ENABLED | UI_VALIGN_TOP );
 	mTextInput->unsetFlags( UI_VALIGN_CENTER | UI_AUTO_SIZE );
 	mTextInput->clipDisable();
 	mTextInput->getInputTextBuffer()->isNewLineEnabled( true );

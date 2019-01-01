@@ -16,7 +16,7 @@
 
 namespace EE { namespace UI {
 
-UIWindow * UIWindow::NewOpt( UIWindow::WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig ) {
+UIWindow * UIWindow::NewOpt( UIWindow::WindowBaseContainerType type, const StyleConfig& windowStyleConfig ) {
 	return eeNew( UIWindow, ( type, windowStyleConfig ) );
 }
 
@@ -25,10 +25,10 @@ UIWindow * UIWindow::New() {
 }
 
 UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) :
-	UIWindow( type, UIWindowStyleConfig() )
+	UIWindow( type, StyleConfig() )
 {}
 
-UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig ) :
+UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& windowStyleConfig ) :
 	UIWidget( "window" ),
 	mFrameBuffer( NULL ),
 	mStyleConfig( windowStyleConfig ),
@@ -1310,11 +1310,11 @@ UIWindow * UIWindow::setWinFlags(const Uint32 & winFlags) {
 	return this;
 }
 
-UIWindowStyleConfig UIWindow::getStyleConfig() const {
+const UIWindow::StyleConfig& UIWindow::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-UIWindow * UIWindow::setStyleConfig(const UIWindowStyleConfig & styleConfig) {
+UIWindow * UIWindow::setStyleConfig(const StyleConfig & styleConfig) {
 	mStyleConfig = styleConfig;
 
 	updateWinFlags();

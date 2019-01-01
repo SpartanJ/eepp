@@ -17,7 +17,7 @@ class EE_API UIListBox : public UITouchDragableWidget {
 
 		static UIListBox * NewWithTag( const std::string& tag );
 
-		UIListBox( const std::string& tag );
+		explicit UIListBox( const std::string& tag );
 
 		virtual ~UIListBox();
 
@@ -68,10 +68,6 @@ class EE_API UIListBox : public UITouchDragableWidget {
 		void setFontColor( const Color& Color );
 
 		const Color& getFontColor() const;
-
-		void setFontOverColor( const Color& Color );
-
-		const Color& getFontOverColor() const;
 
 		void setFontSelectedColor( const Color& Color );
 

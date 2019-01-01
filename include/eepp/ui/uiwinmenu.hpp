@@ -10,6 +10,14 @@ namespace EE { namespace UI {
 
 class EE_API UIWinMenu : public UIWidget {
 	public:
+		class StyleConfig {
+			public:
+				Uint32 MarginBetweenButtons = 0;
+				Uint32 ButtonMargin = 4;
+				Uint32 MenuHeight = 0;
+				Uint32 FirstButtonMargin = 1;
+		};
+
 		static UIWinMenu * New();
 
 		UIWinMenu();
@@ -46,9 +54,9 @@ class EE_API UIWinMenu : public UIWidget {
 
 		void setFirstButtonMargin( const Uint32& buttonMargin );
 
-		UIWinMenuStyleConfig getStyleConfig() const;
+		const StyleConfig& getStyleConfig() const;
 
-		void setStyleConfig(const UIWinMenuStyleConfig & styleConfig);
+		void setStyleConfig(const StyleConfig & styleConfig);
 
 		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 
@@ -56,7 +64,7 @@ class EE_API UIWinMenu : public UIWidget {
 	protected:
 		typedef std::list< std::pair< UISelectButton *, UIPopUpMenu * > > WinMenuList;
 
-		UIWinMenuStyleConfig mStyleConfig;
+		StyleConfig mStyleConfig;
 		UIPopUpMenu *	mCurrentMenu;
 		WinMenuList		mButtons;
 

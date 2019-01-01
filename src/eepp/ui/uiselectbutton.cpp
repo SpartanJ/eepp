@@ -8,6 +8,10 @@ UISelectButton * UISelectButton::New() {
 	return eeNew( UISelectButton, () );
 }
 
+UISelectButton * UISelectButton::NewWithTag( const std::string& tag ) {
+	return eeNew( UISelectButton, ( tag ) );
+}
+
 UISelectButton::UISelectButton( const std::string& tag ) :
 	UIPushButton( tag )
 {}
@@ -62,26 +66,6 @@ void UISelectButton::onStateChange() {
 	}
 
 	mTextBox->setAlpha( mAlpha );
-}
-
-void UISelectButton::setFontSelectedColor(const Color & color) {
-	mStyleConfig.FontSelectedColor = color;
-}
-
-const Color &UISelectButton::getFontSelectedColor() const {
-	return mStyleConfig.FontSelectedColor;
-}
-
-bool UISelectButton::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
-
-	if ( "textselectedcolor" == name ) {
-		setFontSelectedColor( attribute.asColor() );
-	} else {
-		return UIPushButton::setAttribute( attribute, state );
-	}
-
-	return true;
 }
 
 }}

@@ -2,7 +2,7 @@
 #define EE_UICUITHEME_HPP
 
 #include <eepp/ui/base.hpp>
-#include <eepp/ui/uithemeconfig.hpp>
+#include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uihelper.hpp>
 #include <eepp/ui/uiskin.hpp>
 #include <eepp/ui/css/stylesheet.hpp>

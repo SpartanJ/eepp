@@ -56,14 +56,10 @@ void UIMenu::onThemeLoaded() {
 }
 
 UIMenuItem * UIMenu::createMenuItem( const String& Text, Drawable * Icon ) {
-	UIPushButtonStyleConfig styleConfig( mStyleConfig );
-	styleConfig.IconMinSize = Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
-
 	UIMenuItem * tCtrl 	= UIMenuItem::New();
 	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
 	tCtrl->setParent( this );
-	//tCtrl->setStyleConfig( styleConfig );
-	tCtrl->setIconMinimumSize( styleConfig.IconMinSize );
+	tCtrl->setIconMinimumSize( Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons ) );
 	tCtrl->setIcon( Icon );
 	tCtrl->setText( Text );
 
@@ -75,14 +71,10 @@ Uint32 UIMenu::add( const String& Text, Drawable * Icon ) {
 }
 
 UIMenuCheckBox * UIMenu::createMenuCheckBox( const String& Text, const bool &Active ) {
-	UIPushButtonStyleConfig styleConfig( mStyleConfig );
-	styleConfig.IconMinSize = Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
-
 	UIMenuCheckBox * tCtrl 	= UIMenuCheckBox::New();
 	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
 	tCtrl->setParent( this );
-	//tCtrl->setStyleConfig( styleConfig );
-	tCtrl->setIconMinimumSize( styleConfig.IconMinSize );
+	tCtrl->setIconMinimumSize( Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons ) );
 	tCtrl->setText( Text );
 
 	if ( Active )
@@ -96,14 +88,10 @@ Uint32 UIMenu::addCheckBox( const String& Text, const bool& Active ) {
 }
 
 UIMenuSubMenu * UIMenu::createSubMenu( const String& Text, Drawable * Icon, UIMenu * SubMenu ) {
-	UIPushButtonStyleConfig styleConfig( mStyleConfig );
-	styleConfig.IconMinSize = Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons );
-
 	UIMenuSubMenu * tCtrl 	= UIMenuSubMenu::New();
 	tCtrl->setHorizontalAlign( UI_HALIGN_LEFT );
 	tCtrl->setParent( this );
-	//tCtrl->setStyleConfig( styleConfig );
-	tCtrl->setIconMinimumSize( styleConfig.IconMinSize );
+	tCtrl->setIconMinimumSize( Sizei( mStyleConfig.MinSpaceForIcons, mStyleConfig.MinSpaceForIcons ) );
 	tCtrl->setIcon( Icon );
 	tCtrl->setText( Text );
 	tCtrl->setSubMenu( SubMenu );
@@ -520,7 +508,7 @@ void UIMenu::setMinRightMargin(const Uint32 & minRightMargin) {
 	rePosControls();
 }
 
-UITooltipStyleConfig UIMenu::getFontStyleConfig() const {
+const UIMenu::StyleConfig& UIMenu::getStyleConfig() const {
 	return mStyleConfig;
 }
 

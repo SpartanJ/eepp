@@ -9,7 +9,11 @@ class EE_API UISelectButton : public UIPushButton {
 	public:
 		static UISelectButton * New();
 
+		static UISelectButton * NewWithTag(const std::string & tag);
+
 		UISelectButton();
+
+		explicit UISelectButton( const std::string& tag );
 
 		virtual ~UISelectButton();
 
@@ -22,15 +26,7 @@ class EE_API UISelectButton : public UIPushButton {
 		virtual void unselect();
 
 		virtual void select();
-
-		void setFontSelectedColor( const Color& color );
-
-		const Color& getFontSelectedColor() const;
-
-		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
-		UISelectButton( const std::string& tag );
-
 		virtual void onStateChange();
 };
 

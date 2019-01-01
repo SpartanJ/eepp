@@ -2,9 +2,11 @@
 #define EE_UICUITOOLTIP_HPP
 
 #include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uifontstyleconfig.hpp>
 
 namespace EE { namespace Graphics {
 class Text;
+class Font;
 }}
 
 namespace EE { namespace UI {
@@ -49,10 +51,6 @@ class EE_API UITooltip : public UIWidget {
 
 		virtual void onFontChanged();
 
-		virtual void setPadding( const Rectf& padding );
-
-		const Rectf& getPadding() const;
-
 		Text * getTextCache();
 
 		Float getTextWidth();
@@ -73,9 +71,9 @@ class EE_API UITooltip : public UIWidget {
 
 		void setTooltipOf(UINode * tooltipOf);
 
-		UITooltipStyleConfig getStyleConfig() const;
+		const UIFontStyleConfig & getFontStyleConfig() const;
 
-		void setStyleConfig(const UITooltipStyleConfig & styleConfig);
+		void setFontStyleConfig(const UIFontStyleConfig & styleConfig);
 
 		Uint32 getCharacterSize() const;
 
@@ -96,7 +94,7 @@ class EE_API UITooltip : public UIWidget {
 		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		Text *	mTextCache;
-		UITooltipStyleConfig mStyleConfig;
+		UIFontStyleConfig mStyleConfig;
 		Vector2f 	mAlignOffset;
 		Rectf		mRealPadding;
 		Time		mTooltipTime;

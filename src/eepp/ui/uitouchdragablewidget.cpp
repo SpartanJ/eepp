@@ -133,7 +133,7 @@ void UITouchDragableWidget::update( const Time& time ) {
 	UIWidget::update( time );
 }
 
-void UITouchDragableWidget::onTouchDragValueChange( Vector2f diff )
+void UITouchDragableWidget::onTouchDragValueChange( Vector2f )
 {}
 
 bool UITouchDragableWidget::isTouchOverAllowedChilds() {

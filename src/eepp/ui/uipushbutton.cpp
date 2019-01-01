@@ -212,14 +212,6 @@ UITextView * UIPushButton::getTextBox() const {
 	return mTextBox;
 }
 
-void UIPushButton::setFont(Font * font) {
-	mTextBox->setFont( font );
-}
-
-Font * UIPushButton::getFont() {
-	return mTextBox->getFont();
-}
-
 void UIPushButton::onAlphaChange() {
 	UIWidget::onAlphaChange();
 
@@ -266,81 +258,8 @@ void UIPushButton::autoIconHorizontalMargin() {
 		setIconHorizontalMargin( RMargin.Left );
 	}
 }
-const Color& UIPushButton::getFontColor() const {
-	return mStyleConfig.FontColor;
-}
 
-void UIPushButton::setFontColor( const Color& color ) {
-	mStyleConfig.FontColor = color;
-	onStateChange();
-}
-
-const Color& UIPushButton::getFontOverColor() const {
-	return mStyleConfig.FontOverColor;
-}
-
-void UIPushButton::setFontOverColor( const Color& color ) {
-	mStyleConfig.FontOverColor = color;
-	onStateChange();
-}
-
-const Color& UIPushButton::getFontShadowColor() const {
-	return mTextBox->getFontShadowColor();
-}
-
-void UIPushButton::setFontShadowColor( const Color& color ) {
-	mTextBox->setFontShadowColor( color );
-}
-
-Uint32 UIPushButton::getCharacterSize() {
-	return mTextBox->getCharacterSize();
-}
-
-void UIPushButton::setCharacterSize(const Uint32 & characterSize) {
-	mTextBox->setCharacterSize( characterSize );
-	onSizeChange();
-}
-
-const Uint32 &UIPushButton::getFontStyle() const {
-	return mStyleConfig.Style;
-}
-
-const Float &UIPushButton::getOutlineThickness() const {
-	return mStyleConfig.OutlineThickness;
-}
-
-UIPushButton * UIPushButton::setOutlineThickness( const Float & outlineThickness ) {
-	if ( mStyleConfig.OutlineThickness != outlineThickness ) {
-		mTextBox->setOutlineThickness( outlineThickness );
-		mStyleConfig.OutlineThickness = outlineThickness;
-	}
-
-	return this;
-}
-
-const Color &UIPushButton::getOutlineColor() const {
-	return mStyleConfig.OutlineColor;
-}
-
-UIPushButton * UIPushButton::setOutlineColor(const Color & outlineColor) {
-	if ( mStyleConfig.OutlineColor != outlineColor ) {
-		mTextBox->setOutlineColor( outlineColor );
-		mStyleConfig.OutlineColor = outlineColor;
-	}
-
-	return this;
-}
-
-UIPushButton * UIPushButton::setFontStyle(const Uint32 & fontStyle) {
-	if ( mStyleConfig.Style != fontStyle ) {
-		mTextBox->setFontStyle( fontStyle );
-		mStyleConfig.Style = fontStyle;
-	}
-
-	return this;
-}
-
-UIFontStyleConfig UIPushButton::getStyleConfig() const {
+const UIPushButton::StyleConfig& UIPushButton::getStyleConfig() const {
 	return mStyleConfig;
 }
 
@@ -359,7 +278,7 @@ void UIPushButton::setIconMinimumSize( const Sizei & minIconSize ) {
 	}
 }
 
-void UIPushButton::setStyleConfig(const UIPushButtonStyleConfig & styleConfig) {
+void UIPushButton::setStyleConfig(const StyleConfig & styleConfig) {
 	setIconMinimumSize( styleConfig.IconMinSize );
 	mStyleConfig = styleConfig;
 	onStateChange();
@@ -373,8 +292,6 @@ bool UIPushButton::setAttribute( const NodeAttribute& attribute, const Uint32& s
 	if ( "text" == name ) {
 		if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 			setText( static_cast<UISceneNode*>( mSceneNode )->getTranslatorString( attribute.asString() ) );
-	} else if ( "textovercolor" == name ) {
-		setFontOverColor( attribute.asColor() );
 	} else if ( "icon" == name ) {
 		std::string val = attribute.asString();
 		Drawable * icon = NULL;
