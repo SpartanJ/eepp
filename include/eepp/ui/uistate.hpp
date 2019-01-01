@@ -53,7 +53,7 @@ class EE_API UIState {
 
 		void popState( const Uint32& State );
 
-		virtual bool stateExists( const Uint32& State ) = 0;
+		virtual bool stateExists( const Uint32& State ) const = 0;
 
 		Uint32 getCurrentState() const;
 	protected:

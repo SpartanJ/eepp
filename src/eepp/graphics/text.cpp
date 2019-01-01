@@ -859,6 +859,7 @@ void Text::setStyleConfig( const FontStyleConfig& styleConfig ) {
 	setStyle( styleConfig.Style );
 	setOutlineThickness( styleConfig.OutlineThickness );
 	setOutlineColor( styleConfig.OutlineColor );
+	setShadowColor( styleConfig.ShadowColor );
 }
 
 void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {

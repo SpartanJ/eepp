@@ -120,6 +120,8 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		virtual void popState( const Uint32& State, bool emitEvent = true );
 
+		const UIStyle * getUIStyle() const;
+
 		void reloadStyle( const bool& reloadChilds = true );
 
 		void beginAttributesTransaction();

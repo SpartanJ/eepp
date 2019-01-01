@@ -1,5 +1,7 @@
 #include <eepp/scene/nodeattribute.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/graphics/text.hpp>
+#include <eepp/ui/uihelper.hpp>
 #include <algorithm>
 
 using namespace EE::Graphics;
@@ -35,6 +37,10 @@ NodeAttribute::NodeAttribute( std::string name, std::string value ) :
 	mName( String::toLower( name ) ),
 	mValue( value )
 {}
+
+bool NodeAttribute::isEmpty() const {
+	return mName.empty();
+}
 
 std::string NodeAttribute::getName() const {
 	return mName;
@@ -256,6 +262,35 @@ Rectf NodeAttribute::asRectf( const Rectf& defaultValue ) const {
 	}
 
 	return rect;
+}
+
+Uint32 NodeAttribute::asFontStyle() const {
+	std::string valStr = asString();
+	String::toLowerInPlace( valStr );
+	std::vector<std::string> strings = String::split( valStr, '|' );
+	Uint32 flags = Text::Regular;
+
+	if ( strings.size() ) {
+		for ( std::size_t i = 0; i < strings.size(); i++ ) {
+			std::string cur = strings[i];
+			String::toLowerInPlace( cur );
+
+			if ( "underlined" == cur || "underline" == cur )
+				flags |= Text::Underlined;
+			else if ( "bold" == cur )
+				flags |= Text::Bold;
+			else if ( "italic" == cur )
+				flags |= Text::Italic;
+			else if ( "strikethrough" == cur )
+				flags |= Text::StrikeThrough;
+			else if ( "shadowed" == cur || "shadow" == cur )
+				flags |= Text::Shadow;
+			else if ( "wordwrap" == cur )
+				flags |= UI::UI_WORD_WRAP;
+		}
+	}
+
+	return flags;
 }
 
 }}

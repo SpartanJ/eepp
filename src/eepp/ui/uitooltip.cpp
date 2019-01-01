@@ -107,7 +107,7 @@ Graphics::Font * UITooltip::getFont() const {
 }
 
 void UITooltip::setFont( Graphics::Font * font ) {
-	if ( mTextCache->getFont() != font ) {
+	if ( NULL != font && mTextCache->getFont() != font ) {
 		mTextCache->setFont( font );
 		autoPadding();
 		onAutoSize();
@@ -335,37 +335,11 @@ bool UITooltip::setAttribute( const NodeAttribute& attribute, const Uint32& stat
 	} else if ( "textshadowcolor" == name ) {
 		setFontShadowColor( attribute.asColor() );
 	} else if ( "fontfamily" == name || "fontname" == name ) {
-		Font * font = FontManager::instance()->getByName( attribute.asString() );
-
-		if ( NULL != font )
-			setFont( font );
+		setFont( FontManager::instance()->getByName( attribute.asString() ) );
 	} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
 		setCharacterSize( attribute.asDpDimensionI() );
 	} else if ( "textstyle" == name || "fontstyle" == name ) {
-		std::string valStr = attribute.asString();
-		String::toLowerInPlace( valStr );
-		std::vector<std::string> strings = String::split( valStr, '|' );
-		Uint32 flags = Text::Regular;
-
-		if ( strings.size() ) {
-			for ( std::size_t i = 0; i < strings.size(); i++ ) {
-				std::string cur = strings[i];
-				String::toLowerInPlace( cur );
-
-				if ( "underlined" == cur || "underline" == cur )
-					flags |= Text::Underlined;
-				else if ( "bold" == cur )
-					flags |= Text::Bold;
-				else if ( "italic" == cur )
-					flags |= Text::Italic;
-				else if ( "strikethrough" == cur )
-					flags |= Text::StrikeThrough;
-				else if ( "shadowed" == cur || "shadow" == cur )
-					flags |= Text::Shadow;
-			}
-
-			setFontStyle( flags );
-		}
+		setFontStyle( attribute.asFontStyle() );
 	} else if ( "fontoutlinethickness" == name ) {
 		setOutlineThickness( attribute.asDpDimension() );
 	} else if ( "fontoutlinecolor" == name ) {

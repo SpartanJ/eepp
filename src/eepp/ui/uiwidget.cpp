@@ -495,6 +495,10 @@ void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 	UINode::popState( State, emitEvent );
 }
 
+const UIStyle * UIWidget::getUIStyle() const {
+	return mStyle;
+}
+
 void UIWidget::reloadStyle( const bool& reloadChilds ) {
 	if ( NULL == mStyle && getSceneNode()->isUISceneNode() && static_cast<UISceneNode*>( getSceneNode() )->hasStyleSheet() )
 		mStyle = UIStyle::New( this );

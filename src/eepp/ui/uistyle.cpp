@@ -1,6 +1,8 @@
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uithememanager.hpp>
+#include <eepp/graphics/fontmanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -17,7 +19,7 @@ UIStyle::UIStyle( UIWidget * widget ) :
 UIStyle::~UIStyle()
 {}
 
-bool UIStyle::stateExists( const EE::Uint32 & state  ) {
+bool UIStyle::stateExists( const EE::Uint32 & state  ) const {
 	return mStates.find( state ) != mStates.end();
 }
 
@@ -72,6 +74,86 @@ void UIStyle::onStateChange() {
 			mWidget->endAttributesTransaction();
 		}
 	}
+}
+
+NodeAttribute UIStyle::getAttribute( const Uint32& state, std::vector<std::string> attributeNames ) const {
+	if ( !attributeNames.empty() && stateExists( state ) ) {
+		const AttributesMap& attributesMap = mStates.at( state );
+
+		for ( size_t i = 0; i < attributeNames.size(); i++ ) {
+			const std::string& name = attributeNames[i];
+			auto attributeFound = attributesMap.find( name );
+
+			if ( attributeFound != attributesMap.end() ) {
+				return attributeFound->second;
+			}
+
+		}
+	}
+
+	return NodeAttribute();
+}
+
+Font * UIStyle::getFontFamily( const Uint32& state ) const {
+	NodeAttribute attribute = getAttribute( state, { "fontfamily", "fontname" } );
+
+	if ( !attribute.isEmpty() ) {
+		return FontManager::instance()->getByName( attribute.asString() );
+	}
+
+	return UIThemeManager::instance()->getDefaultFont();
+}
+
+int UIStyle::getFontCharacterSize(const Uint32& state, const int& defaultValue ) const {
+	NodeAttribute attribute = getAttribute( state, { "textsize", "fontsize", "charactersize" } );
+
+	if ( !attribute.isEmpty() ) {
+		return attribute.asDpDimensionI();
+	}
+
+	return defaultValue;
+}
+
+Color UIStyle::getTextColor( const Uint32& state ) const {
+	NodeAttribute attribute = getAttribute( state, { "textcolor" } );
+
+	return attribute.isEmpty() ? Color::White : attribute.asColor();
+}
+
+Color UIStyle::getTextShadowColor( const Uint32& state ) const {
+	NodeAttribute attribute = getAttribute( state, { "textshadowcolor" } );
+
+	return attribute.isEmpty() ? Color::Black : attribute.asColor();
+}
+
+Uint32 UIStyle::getTextStyle( const Uint32& state ) const {
+	NodeAttribute attribute = getAttribute( state, { "textstyle" } );
+
+	return attribute.isEmpty() ? 0 : attribute.asFontStyle();
+}
+
+Float UIStyle::getFontOutlineThickness( const Uint32& state ) const {
+	NodeAttribute attribute = getAttribute( state, { "fontoutlinethickness" } );
+
+	return attribute.isEmpty() ? 0.f : attribute.asFloat();
+}
+
+Color UIStyle::getFontOutlineColor( const Uint32& state ) const {
+	NodeAttribute attribute = getAttribute( state, { "fontoutlinecolor" } );
+
+	return attribute.isEmpty() ? Color::White : attribute.asColor();
+}
+
+FontStyleConfig UIStyle::getFontStyleConfig( const Uint32& state ) const {
+	FontStyleConfig fontStyleConfig;
+	fontStyleConfig.Font = getFontFamily( state );
+	fontStyleConfig.CharacterSize = getFontCharacterSize( state );
+	fontStyleConfig.Style = getTextStyle( state );
+	fontStyleConfig.FontColor = getTextColor( state );
+	fontStyleConfig.ShadowColor = getTextShadowColor( state );
+	fontStyleConfig.OutlineColor = getFontOutlineColor( state );
+	fontStyleConfig.OutlineThickness = getFontOutlineThickness( state );
+	return fontStyleConfig;
 }
 
 void UIStyle::updateState() {

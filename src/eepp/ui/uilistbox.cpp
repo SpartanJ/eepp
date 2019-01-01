@@ -8,6 +8,7 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
 
 namespace EE { namespace UI {
 
@@ -66,6 +67,12 @@ UIListBox::UIListBox( const std::string& tag ) :
 
 	mVScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UIListBox::onScrollValueChange ) );
 	mHScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &UIListBox::onHScrollValueChange ) );
+
+	mDummyItem = createListBoxItem( "" );
+	mDummyItem->setSize(0,0);
+	mDummyItem->setParent( this );
+	mDummyItem->setVisible( false );
+	mDummyItem->setEnabled( false );
 
 	setSmoothScroll( true );
 
@@ -156,9 +163,13 @@ Uint32 UIListBox::addListBoxItem( const String& text ) {
 	mTexts.push_back( text );
 	mItems.push_back( NULL );
 
-	if ( NULL != mFontStyleConfig.Font ) {
-		Text textCache( mFontStyleConfig.Font, mFontStyleConfig.CharacterSize );
+	const UIFontStyleConfig& fontStyleConfig = mDummyItem->getFontStyleConfig();
+
+	if ( NULL != fontStyleConfig.getFont() ) {
+		Text textCache;
+		textCache.setStyleConfig( fontStyleConfig );
 		textCache.setString( text );
+
 		Uint32 twidth = textCache.getTextWidth();
 
 		if ( twidth > mMaxTextWidth ) {
@@ -317,10 +328,12 @@ void UIListBox::setRowHeight() {
 	if ( 0 == mRowHeight ) {
 		Uint32 FontSize = PixelDensity::dpToPxI( 12 );
 
-		if ( NULL != mFontStyleConfig.getFont() )
-			FontSize = mFontStyleConfig.getFont()->getFontHeight( PixelDensity::dpToPxI( mFontStyleConfig.CharacterSize ) );
+		const FontStyleConfig& fontStyleConfig = mDummyItem->getFontStyleConfig();
 
-		mRowHeight = (Uint32)PixelDensity::pxToDpI( FontSize ) + 8;
+		if ( NULL != fontStyleConfig.getFont() )
+			FontSize = fontStyleConfig.getFont()->getFontHeight( PixelDensity::dpToPxI( fontStyleConfig.getFontCharacterSize() ) );
+
+		mRowHeight = (Uint32)PixelDensity::pxToDpI( FontSize ) + 4;
 	}
 
 	if ( tOldRowHeight != mRowHeight ) {
@@ -355,12 +368,15 @@ bool UIListBox::isTouchOverAllowedChilds() {
 }
 
 void UIListBox::findMaxWidth() {
-	if ( NULL == mFontStyleConfig.Font )
+	const FontStyleConfig& fontStyleConfig = mDummyItem->getFontStyleConfig();
+
+	if ( NULL == fontStyleConfig.getFont() )
 		return;
 
 	Uint32 size = (Uint32)mItems.size();
 	Int32 width;
-	Text textCache( mFontStyleConfig.Font, mFontStyleConfig.CharacterSize );
+	Text textCache;
+	textCache.setStyleConfig( fontStyleConfig );
 
 	mMaxTextWidth = 0;
 
@@ -716,42 +732,6 @@ Uint32 UIListBox::getItemIndex( const String& Text ) {
 	return eeINDEX_NOT_FOUND;
 }
 
-void UIListBox::setFontColor( const Color& Color ) {
-	mFontStyleConfig.FontColor = Color;
-
-	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-		if ( NULL != mItems[i] )
-			mItems[i]->setFontColor( mFontStyleConfig.FontColor );
-	}
-}
-
-const Color& UIListBox::getFontColor() const {
-	return mFontStyleConfig.FontColor;
-}
-
-void UIListBox::setFontSelectedColor( const Color& Color ) {
-	mFontStyleConfig.FontSelectedColor = Color;
-}
-
-const Color& UIListBox::getFontSelectedColor() const {
-	return mFontStyleConfig.FontSelectedColor;
-}
-
-void UIListBox::setFont( Graphics::Font * Font ) {
-	mFontStyleConfig.Font = Font;
-
-	for ( Uint32 i = 0; i < mItems.size(); i++ )
-		mItems[i]->setFont( mFontStyleConfig.Font );
-
-	findMaxWidth();
-	updateListBoxItemsSize();
-	updateScroll();
-}
-
-Graphics::Font * UIListBox::getFont() const {
-	return mFontStyleConfig.Font;
-}
-
 Rectf UIListBox::getContainerPadding() const {
 	return PixelDensity::pxToDp( mContainerPadding + mPadding );
 }
@@ -970,28 +950,11 @@ const UI_SCROLLBAR_MODE& UIListBox::getHorizontalScrollMode() {
 	return mHScrollMode;
 }
 
-UIFontStyleConfig UIListBox::getFontStyleConfig() const {
-	return mFontStyleConfig;
-}
-
 bool UIListBox::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
 	if ( "rowheight" == name ) {
 		setRowHeight( attribute.asInt() );
-	} else if ( "textcolor" == name ) {
-		setFontColor( attribute.asColor() );
-	} else if ( "textshadowcolor" == name ) {
-		mFontStyleConfig.ShadowColor = ( attribute.asColor() );
-	} else if ( "textselectedcolor" == name ) {
-		setFontSelectedColor( attribute.asColor() );
-	} else if ( "textselectionbackcolor" == name ) {
-		mFontStyleConfig.FontSelectionBackColor = ( attribute.asColor() );
-	} else if ( "fontfamily" == name || "fontname" == name ) {
-		Font * font = FontManager::instance()->getByName( attribute.asString() );
-
-		if ( NULL != font )
-			setFont( font );
 	} else if ( "verticalscrollmode" == name || "vscrollmode" == name ) {
 		std::string val = attribute.asString();
 		if ( "auto" == val ) setVerticalScrollMode( UI_SCROLLBAR_AUTO );

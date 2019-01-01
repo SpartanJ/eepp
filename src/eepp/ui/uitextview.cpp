@@ -95,7 +95,7 @@ Graphics::Font * UITextView::getFont() const {
 }
 
 UITextView * UITextView::setFont( Graphics::Font * font ) {
-	if ( mTextCache->getFont() != font ) {
+	if ( NULL != font && mTextCache->getFont() != font ) {
 		mTextCache->setFont( font );
 		recalculate();
 		onFontChanged();
@@ -548,41 +548,20 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 	} else if ( "textselectionbackcolor" == name ) {
 		setSelectionBackColor( attribute.asColor() );
 	} else if ( "fontfamily" == name || "fontname" == name ) {
-		Font * font = FontManager::instance()->getByName( attribute.asString() );
-
-		if ( NULL != font )
-			setFont( font );
+		setFont( FontManager::instance()->getByName( attribute.asString() ) );
 	} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
 		setCharacterSize( attribute.asDpDimensionI() );
 	} else if ( "textstyle" == name || "fontstyle" == name ) {
-		std::string valStr = attribute.asString();
-		String::toLowerInPlace( valStr );
-		std::vector<std::string> strings = String::split( valStr, '|' );
-		Uint32 flags = Text::Regular;
+		Uint32 flags = attribute.asFontStyle();
 
-		if ( strings.size() ) {
-			for ( std::size_t i = 0; i < strings.size(); i++ ) {
-				std::string cur = strings[i];
-				String::toLowerInPlace( cur );
-
-				if ( "underlined" == cur || "underline" == cur )
-					flags |= Text::Underlined;
-				else if ( "bold" == cur )
-					flags |= Text::Bold;
-				else if ( "italic" == cur )
-					flags |= Text::Italic;
-				else if ( "strikethrough" == cur )
-					flags |= Text::StrikeThrough;
-				else if ( "shadowed" == cur || "shadow" == cur )
-					flags |= Text::Shadow;
-				else if ( "wordwrap" == cur ) {
-					mFlags |= UI_WORD_WRAP;
-					autoShrink();
-				}
-			}
-
-			setFontStyle( flags );
+		if ( flags & UI_WORD_WRAP ) {
+			mFlags |= UI_WORD_WRAP;
+			flags &= ~ UI_WORD_WRAP;
+			autoShrink();
 		}
+
+		setFontStyle( flags );
+
 	} else if ( "fontoutlinethickness" == name ) {
 		setOutlineThickness( attribute.asDpDimension() );
 	} else if ( "fontoutlinecolor" == name ) {

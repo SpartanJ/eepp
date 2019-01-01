@@ -21,7 +21,7 @@ UISkin * UISkinState::getSkin() const {
 	return mSkin;
 }
 
-bool UISkinState::stateExists( const Uint32& State ) {
+bool UISkinState::stateExists( const Uint32& State ) const {
 	return mSkin->hasDrawableState( State );
 }
 

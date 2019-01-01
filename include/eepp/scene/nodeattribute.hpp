@@ -57,6 +57,8 @@ class NodeAttribute {
 
 		NodeAttribute( std::string name, std::string value );
 
+		bool isEmpty() const;
+
 		std::string getName() const;
 
 		void setName(const std::string & name);
@@ -112,6 +114,8 @@ class NodeAttribute {
 		Rect asRect( const Rect& defaultValue = Rect() ) const;
 
 		Rectf asRectf( const Rectf& defaultValue = Rectf() ) const;
+
+		Uint32 asFontStyle() const;
 	protected:
 		std::string mName;
 		std::string mValue;
