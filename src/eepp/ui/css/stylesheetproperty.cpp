@@ -23,4 +23,8 @@ const Uint32 &StyleSheetProperty::getSpecificity() const {
 	return mSpecificity;
 }
 
+void StyleSheetProperty::setSpecificity( const Uint32 & specificity ) {
+	mSpecificity = specificity;
+}
+
 }}}

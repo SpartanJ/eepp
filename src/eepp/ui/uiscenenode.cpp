@@ -91,7 +91,9 @@ UIWidget * UISceneNode::loadLayoutNodes( pugi::xml_node node, Node * parent ) {
 				loadLayoutNodes( widget.first_child(), uiwidget );
 			}
 
+			uiwidget->reloadStyle( false );
 			uiwidget->onWidgetCreated();
+
 		}
 	}
 

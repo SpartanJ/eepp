@@ -18,6 +18,8 @@ class EE_API StyleSheetProperty {
 		const std::string& getValue() const;
 
 		const Uint32& getSpecificity() const;
+
+		void setSpecificity( const Uint32& specificity );
 	protected:
 		std::string mName;
 		std::string mValue;

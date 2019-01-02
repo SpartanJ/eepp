@@ -104,7 +104,11 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		const std::vector<std::string>& getStyleSheetClasses() const;
 
-		StyleSheetElement * getStyleSheetParentElement();
+		StyleSheetElement * getStyleSheetParentElement() const;
+
+		StyleSheetElement * getStyleSheetPreviousSiblingElement() const;
+
+		StyleSheetElement * getStyleSheetNextSiblingElement() const;
 
 		void addClass( const std::string& cls );
 

@@ -9,7 +9,10 @@ StyleSheetNode::StyleSheetNode()
 StyleSheetNode::StyleSheetNode( const std::string& selector, const StyleSheetProperties& properties ) :
 	mSelector( selector ),
 	mProperties( properties )
-{}
+{
+	for ( auto it = mProperties.begin(); it != mProperties.end(); ++it )
+		it->second.setSpecificity( mSelector.getSpecificity() );
+}
 
 void StyleSheetNode::print() {
 	std::cout << mSelector.getName() << " {" << std::endl;

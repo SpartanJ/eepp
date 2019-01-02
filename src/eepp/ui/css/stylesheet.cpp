@@ -44,58 +44,30 @@ void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
 	}
 }
 
-StyleSheetProperties StyleSheet::getElementProperties( StyleSheetElement * element, const std::string& pseudoClass ) {
-	StyleSheetProperties propertiesSelected;
-	Uint32 lastSpecificity = 0;
+StyleSheet::StyleSheetPseudoClassProperties StyleSheet::getElementProperties( StyleSheetElement * element ) {
+	StyleSheetPseudoClassProperties propertiesSelectedByPseudoClass;
+	int c = 0;
+	if ( element->getStyleSheetId() == "lvbox" ) {
+		c++;
+	}
 
 	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
 		StyleSheetNode& node = it->second;
 		const StyleSheetSelector& selector = node.getSelector();
 
-		Uint32 flags = 0;
+		if ( selector.matches( element ) ) {
+			for ( auto pit = node.getProperties().begin(); pit != node.getProperties().end(); ++pit ) {
+				StyleSheetProperties& pseudoClassProperties = propertiesSelectedByPseudoClass[selector.getPseudoClass()];
+				auto it = pseudoClassProperties.find( pit->second.getName() );
 
-		if ( selector.hasTagName() && !element->getStyleSheetTag().empty() && selector.getTagName() == element->getStyleSheetTag() ) {
-			flags |= StyleSheetSelector::TagName;
-		}
-
-		if ( selector.hasId() && !element->getStyleSheetId().empty() && selector.getId() == element->getStyleSheetId() ) {
-			flags |= StyleSheetSelector::Id;
-		}
-
-		if ( selector.hasClasses() && !element->getStyleSheetClasses().empty() ) {
-			bool hasClasses = true;
-			for ( auto cit = element->getStyleSheetClasses().begin(); cit != element->getStyleSheetClasses().end(); ++cit ) {
-				if ( !selector.hasClass( *cit ) ) {
-					hasClasses = false;
-					break;
+				if ( it == pseudoClassProperties.end() || pit->second.getSpecificity() >= it->second.getSpecificity() ) {
+					pseudoClassProperties[ pit->second.getName() ] = pit->second;
 				}
 			}
-
-			if ( hasClasses ) {
-				flags |= StyleSheetSelector::Class;
-			}
-		}
-
-		if ( selector.isGlobal() ) {
-			if ( !pseudoClass.empty() ) {
-				flags |= StyleSheetSelector::PseudoClass;
-			}
-		} else if ( selector.hasPseudoClass() ) {
-			if ( !pseudoClass.empty() && selector.getPseudoClass() == pseudoClass )
-				flags |= StyleSheetSelector::PseudoClass;
-		} else if ( !selector.hasPseudoClass() && !pseudoClass.empty() ) {
-			flags |= StyleSheetSelector::PseudoClass;
-		}
-
-		if ( flags == selector.getRequiredFlags() && selector.getSpecificity() > lastSpecificity ) {
-			for ( auto pit = node.getProperties().begin(); pit != node.getProperties().end(); ++pit )
-				propertiesSelected[ pit->second.getName() ] = pit->second;
-
-			lastSpecificity = selector.getSpecificity();
 		}
 	}
 
-	return propertiesSelected;
+	return propertiesSelectedByPseudoClass;
 }
 
 const StyleSheet::StyleSheetNodeList& StyleSheet::getNodes() const {

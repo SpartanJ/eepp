@@ -452,8 +452,16 @@ const std::vector<std::string> &UIWidget::getStyleSheetClasses() const {
 	return mClasses;
 }
 
-CSS::StyleSheetElement * UIWidget::getStyleSheetParentElement() {
-	return NULL != mParentCtrl && mParentCtrl->isWidget() ? reinterpret_cast<CSS::StyleSheetElement*>( mParentCtrl ) : NULL;
+CSS::StyleSheetElement * UIWidget::getStyleSheetParentElement() const {
+	return NULL != mParentCtrl && mParentCtrl->isWidget() ? dynamic_cast<CSS::StyleSheetElement*>( mParentCtrl ) : NULL;
+}
+
+CSS::StyleSheetElement * UIWidget::getStyleSheetPreviousSiblingElement() const {
+	return NULL != mPrev && mPrev->isWidget() ? dynamic_cast<CSS::StyleSheetElement*>( mPrev ) : NULL;
+}
+
+CSS::StyleSheetElement * UIWidget::getStyleSheetNextSiblingElement() const {
+	return NULL != mNext && mNext->isWidget() ? dynamic_cast<CSS::StyleSheetElement*>( mNext ) : NULL;
 }
 
 void UIWidget::addClass( const std::string& cls ) {
@@ -505,6 +513,7 @@ void UIWidget::reloadStyle( const bool& reloadChilds ) {
 
 	if ( NULL != mStyle ) {
 		mStyle->load();
+		mStyle->onStateChange();
 
 		if ( NULL != mChild && reloadChilds ) {
 			Node * ChildLoop = mChild;

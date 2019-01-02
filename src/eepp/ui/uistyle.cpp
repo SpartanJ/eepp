@@ -4,6 +4,7 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 
+
 namespace EE { namespace UI {
 
 UIStyle * EE::UI::UIStyle::New( UIWidget * widget ) {
@@ -36,14 +37,18 @@ void UIStyle::load() {
 		CSS::StyleSheet& styleSheet = uiSceneNode->getStyleSheet();
 
 		if ( !styleSheet.isEmpty() ) {
-			addStyleSheetProperties( StateFlagNormal, styleSheet.getElementProperties( mWidget, "" ) );
-			addStyleSheetProperties( StateFlagFocus, styleSheet.getElementProperties( mWidget, "focus" ) );
-			addStyleSheetProperties( StateFlagSelected, styleSheet.getElementProperties( mWidget, "selected" ) );
-			addStyleSheetProperties( StateFlagHover, styleSheet.getElementProperties( mWidget, "hover" ) );
-			addStyleSheetProperties( StateFlagPressed, styleSheet.getElementProperties( mWidget, "pressed" ) );
-			addStyleSheetProperties( StateFlagSelectedHover, styleSheet.getElementProperties( mWidget, "selectedhover" ) );
-			addStyleSheetProperties( StateFlagSelectedPressed, styleSheet.getElementProperties( mWidget, "selectedpressed" ) );
-			addStyleSheetProperties( StateFlagDisabled, styleSheet.getElementProperties( mWidget, "disabled" ) );
+			CSS::StyleSheet::StyleSheetPseudoClassProperties propertiesByPseudoClass = styleSheet.getElementProperties( mWidget );
+
+			if ( !propertiesByPseudoClass.empty() ) {
+				Uint32 stateFlag;
+
+				for ( auto it = propertiesByPseudoClass.begin(); it != propertiesByPseudoClass.end(); ++it ) {
+					stateFlag = getStateFlagFromName( it->first );
+
+					if ( eeINDEX_NOT_FOUND != stateFlag )
+						addStyleSheetProperties( stateFlag, it->second );
+				}
+			}
 		}
 	}
 }

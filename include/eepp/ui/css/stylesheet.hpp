@@ -10,6 +10,8 @@ class StyleSheetElement;
 class EE_API StyleSheet {
 	public:
 		typedef std::map<std::string, StyleSheetNode> StyleSheetNodeList;
+		typedef std::map<std::string,StyleSheetProperties> StyleSheetPseudoClassProperties;
+
 		StyleSheet();
 
 		void addNode( const StyleSheetNode& node );
@@ -22,7 +24,7 @@ class EE_API StyleSheet {
 
 		void combineStyleSheet( const StyleSheet& styleSheet );
 
-		StyleSheetProperties getElementProperties( StyleSheetElement * element, const std::string& pseudoClass = "" );
+		StyleSheetPseudoClassProperties getElementProperties( StyleSheetElement * element );
 
 		const StyleSheetNodeList& getNodes() const;
 	protected:

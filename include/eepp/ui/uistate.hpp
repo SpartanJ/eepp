@@ -39,6 +39,8 @@ class EE_API UIState {
 
 		static const Uint32& getStateFlag( const Uint32& stateIndex );
 
+		static Uint32 getStateFlagFromName( const std::string& name );
+
 		static bool isStateName( const std::string& State );
 
 		UIState();

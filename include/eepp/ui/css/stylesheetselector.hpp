@@ -43,62 +43,47 @@ class EE_API StyleSheetSelector {
 		class SelectorRule {
 			public:
 				SelectorRule( const std::string& selectorFragment, PatternMatch patternMatch );
+
 				void pushSelectorTypeIdentifier( SelectoryTypeIdentifier selectorTypeIdentifier, std::string name );
+
 				void parseFragment( const std::string& selectorFragment );
-				void match( StyleSheetElement * element );
+
+				const PatternMatch& getPatternMatch() const { return patternMatch; }
+
 				const int& getSpecificity() const { return specificity; }
+
+				bool matches( StyleSheetElement * element ) const;
+
+				bool hasClass( const std::string& cls ) const;
 
 				int specificity;
 				PatternMatch patternMatch;
 				std::string tagName;
 				std::string id;
 				std::vector<std::string> classes;
+				Uint32 requirementFlags;
 		};
 
 		StyleSheetSelector();
 
 		explicit StyleSheetSelector( const std::string& selectorName );
 
-		Uint32 getRequiredFlags() const;
-
 		const std::string& getName() const;
-
-		const std::string& getTagName() const;
-
-		const std::string getId() const;
-
-		const std::vector<std::string>& getClasses() const;
 
 		const std::string& getPseudoClass() const;
 
-		bool hasTagName() const;
-
-		bool hasId() const;
-
-		bool hasClasses() const;
-
-		bool hasClass( std::string cls ) const;
-
-		bool hasPseudoClass() const;
-
-		bool isGlobal() const;
-
 		const Uint32& getSpecificity() const;
+
+		bool matches( StyleSheetElement * element ) const;
 	protected:
 		std::string mName;
-		std::string mTagName;
-		std::string mId;
-		std::vector<std::string> mClasses;
 		std::string mPseudoClass;
 		Uint32 mSpecificity;
-		bool mGlobal;
 		std::vector<SelectorRule> mSelectorRules;
 
 		void addSelectorRule(std::string& buffer, PatternMatch& curPatternMatch, const PatternMatch & newPatternMatch );
 
 		void parseSelector( const std::string& selector );
-
-		void realParseSelector( const std::string& selector );
 };
 
 }}}

@@ -43,6 +43,18 @@ const Uint32& UIState::getStateFlag( const Uint32& stateIndex ) {
 	return UIStateFlags[ stateIndex ];
 }
 
+Uint32 UIState::getStateFlagFromName( const std::string& name ) {
+	if ( name.empty() )
+		return UIStateFlags[0];
+
+	for ( size_t i = 0; i < eeARRAY_SIZE(UIStatesNames); i++ ) {
+		if ( UIStatesNames[i] == name )
+			return UIStateFlags[i];
+	}
+
+	return eeINDEX_NOT_FOUND;
+}
+
 bool UIState::isStateName( const std::string& State ) {
 	for ( int i = 0; i < UIState::StateCount; i++ ) {
 		if ( State == UIStatesNames[i] ) {

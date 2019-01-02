@@ -41,7 +41,8 @@ static void splitSelectorPseudoClass( const std::string& selector, std::string& 
 
 StyleSheetSelector::SelectorRule::SelectorRule( const std::string& selectorFragment, StyleSheetSelector::PatternMatch patternMatch ) :
 	specificity(0),
-	patternMatch( patternMatch )
+	patternMatch( patternMatch ),
+	requirementFlags(0)
 {
 	parseFragment( selectorFragment );
 }
@@ -106,123 +107,73 @@ void StyleSheetSelector::SelectorRule::parseFragment( const std::string& selecto
 	if ( !buffer.empty() ) {
 		pushSelectorTypeIdentifier( curSelectorType, buffer );
 	}
+
+	if ( !tagName.empty() )
+		requirementFlags |= StyleSheetSelector::TagName;
+
+	if ( !id.empty() )
+		requirementFlags |= StyleSheetSelector::Id;
+
+	if ( !classes.empty() )
+		requirementFlags |= StyleSheetSelector::Class;
 }
 
-void StyleSheetSelector::SelectorRule::match( StyleSheetElement * ) {
+bool StyleSheetSelector::SelectorRule::hasClass( const std::string& cls ) const {
+	return std::find(classes.begin(), classes.end(), cls) != classes.end();
+}
 
+bool StyleSheetSelector::SelectorRule::matches( StyleSheetElement * element ) const {
+	Uint32 flags = 0;
+
+	if ( tagName == "*" )
+		return true;
+
+	if ( !tagName.empty() && !element->getStyleSheetTag().empty() && tagName == element->getStyleSheetTag() ) {
+		flags |= StyleSheetSelector::TagName;
+	}
+
+	if ( !id.empty() && !element->getStyleSheetId().empty() && id == element->getStyleSheetId() ) {
+		flags |= StyleSheetSelector::Id;
+	}
+
+	if ( !classes.empty() && !element->getStyleSheetClasses().empty() ) {
+		bool hasClasses = true;
+		for ( auto cit = element->getStyleSheetClasses().begin(); cit != element->getStyleSheetClasses().end(); ++cit ) {
+			if ( !hasClass( *cit ) ) {
+				hasClasses = false;
+				break;
+			}
+		}
+
+		if ( hasClasses ) {
+			flags |= StyleSheetSelector::Class;
+		}
+	}
+
+	return requirementFlags == flags;
 }
 
 StyleSheetSelector::StyleSheetSelector() :
-	mSpecificity(0),
-	mGlobal(false)
+	mSpecificity(0)
 {}
 
 StyleSheetSelector::StyleSheetSelector( const std::string& selectorName ) :
 	mName( String::toLower( selectorName ) ),
-	mSpecificity(0),
-	mGlobal(false)
+	mSpecificity(0)
 {
-	//realParseSelector( mName );
-
-	auto parts = String::split( mName, ' ' );
-
-	for ( auto it = parts.begin(); it != parts.end(); ++it ) {
-		parseSelector( *it );
-	}
+	parseSelector( mName );
 }
 
-Uint32 StyleSheetSelector::getRequiredFlags() const {
-	Uint32 flags = 0;
-
-	if ( hasTagName() )
-		flags |= TagName;
-
-	if ( hasId() )
-		flags |= Id;
-
-	if ( hasClasses() )
-		flags |= Class;
-
-	if ( hasPseudoClass() )
-		flags |= PseudoClass;
-
-	return flags;
-}
-
-const std::string& StyleSheetSelector::getName() const {
+const std::string &StyleSheetSelector::getName() const {
 	return mName;
-};
-
-const std::string& StyleSheetSelector::getTagName() const {
-	return mTagName;
-}
-
-const std::string StyleSheetSelector::getId() const {
-	return mId;
-}
-
-const std::vector<std::string> & StyleSheetSelector::getClasses() const {
-	return mClasses;
 }
 
 const std::string& StyleSheetSelector::getPseudoClass() const {
 	return mPseudoClass;
 };
 
-bool StyleSheetSelector::hasTagName() const {
-	return !mTagName.empty();
-}
-
-bool StyleSheetSelector::hasId() const {
-	return !mId.empty();
-}
-
-bool StyleSheetSelector::hasClasses() const {
-	return !mClasses.empty();
-}
-
-bool StyleSheetSelector::hasClass( std::string cls ) const {
-	return std::find(mClasses.begin(), mClasses.end(), cls) != mClasses.end();
-}
-
-bool StyleSheetSelector::hasPseudoClass() const {
-	return !mPseudoClass.empty();
-}
-
-bool StyleSheetSelector::isGlobal() const {
-	return mGlobal;
-}
-
 const Uint32& StyleSheetSelector::getSpecificity() const {
 	return mSpecificity;
-}
-
-void StyleSheetSelector::parseSelector( const std::string& selector ) {
-	std::string realSelector = "";
-	std::string realPseudoClass = "";
-
-	splitSelectorPseudoClass( selector, realSelector, realPseudoClass );
-
-	if ( !realSelector.empty() ) {
-		if ( realSelector[0] == '.' ) {
-			mClasses.push_back( realSelector.substr(1) );
-			mSpecificity += SpecificityClass;
-		} else if ( selector[0] == '#' ) {
-			mId = realSelector.substr(1);
-			mSpecificity += SpecificityId;
-		} else if ( realSelector[0] == '*' ) {
-			mSpecificity += SpecificityGlobal;
-			mGlobal = true;
-		} else {
-			mTagName = realSelector;
-			mSpecificity += SpecificityTag;
-		}
-	}
-
-	if ( !realPseudoClass.empty() ) {
-		mPseudoClass = realPseudoClass;
-		mSpecificity += SpecificityPseudoClass;
-	}
 }
 
 void removeExtraSpaces( std::string& string ) {
@@ -242,7 +193,7 @@ void StyleSheetSelector::addSelectorRule(std::string& buffer, PatternMatch& curP
 	mSpecificity += selectorRule.getSpecificity();
 }
 
-void StyleSheetSelector::realParseSelector( const std::string& selectorString ) {
+void StyleSheetSelector::parseSelector( const std::string& selectorString ) {
 	if ( !selectorString.empty() ) {
 		std::string selector = "";
 
@@ -286,6 +237,95 @@ void StyleSheetSelector::realParseSelector( const std::string& selectorString ) 
 			buffer.clear();
 		}
 	}
+}
+
+bool StyleSheetSelector::matches( StyleSheetElement * element ) const {
+	if ( mSelectorRules.empty() )
+		return false;
+
+	StyleSheetElement * curElement = element;
+
+	for ( size_t i = 0; i < mSelectorRules.size(); i++ ) {
+		const SelectorRule& selectorRule = mSelectorRules[i];
+
+		switch ( selectorRule.getPatternMatch() ) {
+			case ANY:
+			{
+				if ( !selectorRule.matches( curElement ) )
+					return false;
+
+				break; // continue evaluating
+			}
+			case DESCENDANT:
+			{
+				bool foundDescendant = false;
+
+				curElement = curElement->getStyleSheetParentElement();
+
+				while ( NULL != curElement && !foundDescendant ) {
+					if  ( selectorRule.matches( curElement ) ) {
+						foundDescendant = true;
+					} else {
+						curElement = curElement->getStyleSheetParentElement();
+					}
+				}
+
+				if ( !foundDescendant )
+					return false;
+
+				break; // continue evaluating
+			}
+			case CHILD:
+			{
+				curElement = curElement->getStyleSheetParentElement();
+
+				if ( NULL == curElement || !selectorRule.matches( curElement ) )
+					return false;
+
+				break; // continue evaluating
+			}
+			case DIRECT_SIBLING:
+			{
+				curElement = curElement->getStyleSheetPreviousSiblingElement();
+
+				if ( NULL == curElement || !selectorRule.matches( curElement ) )
+					return false;
+
+				break; // continue evaluating
+			}
+			case SIBLING:
+			{
+				bool foundSibling = false;
+				StyleSheetElement * prevSibling = curElement->getStyleSheetNextSiblingElement();
+				StyleSheetElement * nextSibling = curElement->getStyleSheetNextSiblingElement();
+
+				while ( NULL != prevSibling && !foundSibling ) {
+					if ( selectorRule.matches( prevSibling ) ) {
+						foundSibling = true;
+					} else {
+						prevSibling = prevSibling->getStyleSheetPreviousSiblingElement();
+					}
+				}
+
+				if ( !foundSibling ) {
+					while ( NULL != nextSibling && !foundSibling ) {
+						if ( selectorRule.matches( nextSibling ) ) {
+							foundSibling = true;
+						} else {
+							nextSibling = nextSibling->getStyleSheetNextSiblingElement();
+						}
+					}
+				}
+
+				if ( !foundSibling )
+					return false;
+
+				break; // continue evaluating
+			}
+		}
+	}
+
+	return true;
 }
 
 }}}
