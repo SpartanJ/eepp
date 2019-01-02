@@ -5,6 +5,8 @@
 
 namespace EE { namespace UI { namespace CSS {
 
+class StyleSheetElement;
+
 class EE_API StyleSheetSelector {
 	public:
 		enum SelectorType {
@@ -20,6 +22,37 @@ class EE_API StyleSheetSelector {
 			SpecificityTag = 10000,
 			SpecificityPseudoClass = 100,
 			SpecificityGlobal = 1
+		};
+
+		enum PatternMatch {
+			ANY = '*',
+			DESCENDANT = ' ',
+			CHILD = '>',
+			DIRECT_SIBLING = '+',
+			SIBLING = '~'
+		};
+
+		enum SelectoryTypeIdentifier {
+			TAG = 0,
+			CLASS = '.',
+			ID = '#',
+			PSEUDO_CLASS = ':',
+			STRUCTURAL_PSEUDO_CLASS = ':'
+		};
+
+		class SelectorRule {
+			public:
+				SelectorRule( const std::string& selectorFragment, PatternMatch patternMatch );
+				void pushSelectorTypeIdentifier( SelectoryTypeIdentifier selectorTypeIdentifier, std::string name );
+				void parseFragment( const std::string& selectorFragment );
+				void match( StyleSheetElement * element );
+				const int& getSpecificity() const { return specificity; }
+
+				int specificity;
+				PatternMatch patternMatch;
+				std::string tagName;
+				std::string id;
+				std::vector<std::string> classes;
 		};
 
 		StyleSheetSelector();
@@ -59,8 +92,13 @@ class EE_API StyleSheetSelector {
 		std::string mPseudoClass;
 		Uint32 mSpecificity;
 		bool mGlobal;
+		std::vector<SelectorRule> mSelectorRules;
+
+		void addSelectorRule(std::string& buffer, PatternMatch& curPatternMatch, const PatternMatch & newPatternMatch );
 
 		void parseSelector( const std::string& selector );
+
+		void realParseSelector( const std::string& selector );
 };
 
 }}}
