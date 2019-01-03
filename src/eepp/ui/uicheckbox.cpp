@@ -104,7 +104,6 @@ void UICheckBox::onAutoSize() {
 	}
 }
 
-
 void UICheckBox::onSizeChange() {
 	UITextView::onSizeChange();
 
@@ -164,7 +163,19 @@ void UICheckBox::onPaddingChange() {
 void UICheckBox::alignFix() {
 	UITextView::alignFix();
 
-	mRealAlignOffset.x = mActiveButton->getRealPosition().x + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+	switch ( fontHAlignGet( getFlags() ) ) {
+		case UI_HALIGN_CENTER:
+			mRealAlignOffset.x = (Float)( (Int32)( ( mSize.x - mRealPadding.Left - mRealPadding.Right - mTextCache->getTextWidth() - mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPx( mTextSeparation ) ) / 2.f ) ) + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+			break;
+		case UI_HALIGN_RIGHT:
+			mRealAlignOffset.x = ( (Float)mSize.x - mRealPadding.Left - mRealPadding.Right - (Float)mTextCache->getTextWidth() );
+			break;
+		case UI_HALIGN_LEFT:
+			mRealAlignOffset.x = mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+			break;
+	}
+
+	mAlignOffset = PixelDensity::pxToDp( mRealAlignOffset );
 }
 
 UINode * UICheckBox::getActiveButton() const {
