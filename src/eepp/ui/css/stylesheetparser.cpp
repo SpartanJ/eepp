@@ -57,11 +57,7 @@ bool StyleSheetParser::loadFromMemory( const Uint8* RAWData, const Uint32& size 
 }
 
 void StyleSheetParser::print() {
-	for ( auto it = mStyleSheet.nodes.begin(); it != mStyleSheet.nodes.end(); ++it ) {
-		StyleSheetNode& style = *it;
-
-		style.print();
-	}
+	mStyleSheet.print();
 
 	std::cout << "Comments: " << std::endl;
 
@@ -167,7 +163,7 @@ int StyleSheetParser::readProperty( ReadState& rs, std::size_t pos, std::string&
 
 			if ( !selectorParse.selectors.empty() ) {
 				for ( auto it = selectorParse.selectors.begin(); it != selectorParse.selectors.end(); ++it ) {
-					StyleSheetNode node( selectorName, propertiesParse.properties );
+					StyleSheetNode node( it->getName(), propertiesParse.getProperties() );
 
 					mStyleSheet.addNode( node );
 				}

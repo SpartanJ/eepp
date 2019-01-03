@@ -27,6 +27,8 @@ void UITableCell::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
 	setThemeSkin( Theme, "gridcell" );
+
+	onThemeLoaded();
 }
 
 UITable * UITableCell::gridParent() const {

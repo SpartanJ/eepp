@@ -190,6 +190,7 @@ class EE_API UINode : public Node {
 		Vector2f		mDpPos;
 		Sizef			mDpSize;
 		Uint32			mFlags;
+		Uint32			mState;
 		UISkinState *	mSkinState;
 		UISkinState *	mBackgroundState;
 		UISkinState *	mForegroundState;

@@ -1,11 +1,16 @@
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
 
 UISelectButton * UISelectButton::New() {
 	return eeNew( UISelectButton, () );
+}
+
+UISelectButton * UISelectButton::NewWithTag( const std::string& tag ) {
+	return eeNew( UISelectButton, ( tag ) );
 }
 
 UISelectButton::UISelectButton( const std::string& tag ) :
@@ -28,7 +33,7 @@ bool UISelectButton::isType( const Uint32& type ) const {
 }
 
 void UISelectButton::select() {
-	bool wasSelected = selected();
+	bool wasSelected = isSelected();
 
 	pushState( UIState::StateSelected );
 
@@ -47,7 +52,7 @@ void UISelectButton::unselect() {
 	popState( UIState::StateSelected );
 }
 
-bool UISelectButton::selected() const {
+bool UISelectButton::isSelected() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_SELECTED );
 }
 
@@ -57,51 +62,11 @@ void UISelectButton::onStateChange() {
 	if ( NULL == mSkinState )
 		return;
 
-	if ( !( mSkinState->getState() & UIState::StateFlagSelected ) && selected() ) {
+	if ( !( mSkinState->getState() & UIState::StateFlagSelected ) && isSelected() ) {
 		pushState( UIState::StateSelected, false );
 	}
 
-	if ( getParent()->isType( UI_TYPE_WINMENU ) ) {
-		UIWinMenu * Menu = reinterpret_cast<UIWinMenu*> ( getParent() );
-
-		if ( mSkinState->getState() & UIState::StateFlagSelected ) {
-			getTextBox()->setFontColor( Menu->getStyleConfig().getFontSelectedColor() );
-		} else if ( mSkinState->getState() & UIState::StateFlagHover ) {
-			getTextBox()->setFontColor( Menu->getStyleConfig().getFontOverColor() );
-		} else {
-			getTextBox()->setFontColor( Menu->getStyleConfig().getFontColor() );
-		}
-	} else {
-		if ( mSkinState->getState() & UIState::StateFlagSelected ) {
-			getTextBox()->setFontColor( mStyleConfig.FontSelectedColor );
-		} else if ( mSkinState->getState() & UIState::StateFlagHover ) {
-			getTextBox()->setFontColor( mStyleConfig.FontOverColor );
-		} else {
-			getTextBox()->setFontColor( mStyleConfig.FontColor );
-		}
-	}
-
 	mTextBox->setAlpha( mAlpha );
-}
-
-void UISelectButton::setFontSelectedColor(const Color & color) {
-	mStyleConfig.FontSelectedColor = color;
-}
-
-const Color &UISelectButton::getFontSelectedColor() const {
-	return mStyleConfig.FontSelectedColor;
-}
-
-bool UISelectButton::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	const std::string& name = attribute.getName();
-
-	if ( "textselectedcolor" == name ) {
-		setFontSelectedColor( attribute.asColor() );
-	} else {
-		return UIPushButton::setAttribute( attribute, state );
-	}
-
-	return true;
 }
 
 }}

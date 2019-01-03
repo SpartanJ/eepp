@@ -2,6 +2,7 @@
 #define EE_UICUITEXTBOX_H
 
 #include <eepp/ui/uiwidget.hpp>
+#include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/graphics/text.hpp>
 
 namespace EE { namespace UI {
@@ -10,7 +11,11 @@ class EE_API UITextView : public UIWidget {
 	public:
 		static UITextView * New();
 
+		static UITextView * NewWithTag( const std::string& tag );
+
 		UITextView();
+
+		explicit UITextView( const std::string& tag );
 
 		virtual ~UITextView();
 
@@ -26,7 +31,7 @@ class EE_API UITextView : public UIWidget {
 
 		UITextView * setFont( Graphics::Font * font );
 
-		Uint32 getCharacterSize();
+		Uint32 getCharacterSize() const;
 
 		UITextView * setCharacterSize( const Uint32& characterSize );
 
@@ -72,15 +77,15 @@ class EE_API UITextView : public UIWidget {
 
 		bool isTextSelectionEnabled() const;
 
-		virtual void setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig );
+		const UIFontStyleConfig & getFontStyleConfig() const;
 
-		UITooltipStyleConfig getFontStyleConfig() const;
+		void setFontStyleConfig( const UIFontStyleConfig& fontStyleConfig );
 
 		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		Text *		mTextCache;
 		String			mString;
-		UITooltipStyleConfig mFontStyleConfig;
+		UIFontStyleConfig mFontStyleConfig;
 		Vector2f 		mAlignOffset;
 		Vector2f 		mRealAlignOffset;
 		Int32			mSelCurInit;
@@ -100,8 +105,6 @@ class EE_API UITextView : public UIWidget {
 		Int32		mLastSelCurEnd;
 		Int32		mFontLineCenter;
 		bool		mSelecting;
-
-		UITextView( const std::string& tag );
 
 		virtual void drawSelection(Text * textCache);
 

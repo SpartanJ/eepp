@@ -29,12 +29,6 @@ UISlider::UISlider( const UI_ORIENTATION& orientation ) :
 	mPageStep( 0 ),
 	mOnPosChange( false )
 {
-	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != theme ) {
-		mStyleConfig = theme->getSliderStyleConfig();
-	}
-
 	Sizef bgSize;
 
 	if ( UI_HORIZONTAL == mOrientation )
@@ -94,6 +88,8 @@ void UISlider::setTheme( UITheme * Theme ) {
 	adjustChilds();
 
 	setValue( mValue );
+
+	onThemeLoaded();
 }
 
 void UISlider::onSizeChange() {
@@ -361,11 +357,13 @@ bool UISlider::getAllowHalfSliderOut() const {
 }
 
 void UISlider::setAllowHalfSliderOut( bool allowHalfSliderOut ) {
-	mStyleConfig.AllowHalfSliderOut = allowHalfSliderOut;
+	if ( mStyleConfig.AllowHalfSliderOut != allowHalfSliderOut ) {
+		mStyleConfig.AllowHalfSliderOut = allowHalfSliderOut;
 
-	adjustChilds();
+		adjustChilds();
 
-	setValue( mValue );
+		setValue( mValue );
+	}
 }
 
 bool UISlider::getExpandBackground() const {
@@ -373,11 +371,13 @@ bool UISlider::getExpandBackground() const {
 }
 
 void UISlider::setExpandBackground( bool expandBackground ) {
-	mStyleConfig.ExpandBackground = expandBackground;
+	if ( mStyleConfig.ExpandBackground != expandBackground ) {
+		mStyleConfig.ExpandBackground = expandBackground;
 
-	adjustChilds();
+		adjustChilds();
 
-	setValue( mValue );
+		setValue( mValue );
+	}
 }
 
 Float UISlider::getPageStep() const {
@@ -442,6 +442,8 @@ bool UISlider::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		setPageStep( attribute.asFloat() );
 	} else if ( "halfslider" == name ) {
 		setAllowHalfSliderOut( attribute.asBool() );
+	} else if ( "expandbackground" == name ) {
+		setExpandBackground( attribute.asBool() );
 	} else {
 		return UIWidget::setAttribute( attribute, state );
 	}

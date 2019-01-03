@@ -5,15 +5,16 @@
 
 namespace EE { namespace UI {
 
-UITextInputPassword *UITextInputPassword::New() {
+UITextInputPassword * UITextInputPassword::New() {
 	return eeNew( UITextInputPassword, () );
 }
 
 UITextInputPassword::UITextInputPassword() :
-	UITextInput()
+	UITextInput( "textinputpassword" )
 {
 	mPassCache = Text::New();
-	setFontStyleConfig( mFontStyleConfig );
+
+	updateFontStyleConfig();
 
 	alignFix();
 }
@@ -127,13 +128,16 @@ Text *UITextInputPassword::getPassCache() const {
 	return mPassCache;
 }
 
-void UITextInputPassword::setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig) {
-	UITextInput::setFontStyleConfig( fontStyleConfig );
-
+void UITextInputPassword::updateFontStyleConfig() {
 	mPassCache->setCharacterSize( mFontStyleConfig.CharacterSize );
 	mPassCache->setFont( mFontStyleConfig.getFont() );
 	mPassCache->setFillColor( mFontStyleConfig.getFontColor() );
 	mPassCache->setShadowColor( mFontStyleConfig.getFontShadowColor() );
+}
+
+void UITextInputPassword::onStateChange() {
+	updateFontStyleConfig();
+	UITextInput::onStateChange();
 }
 
 const String& UITextInputPassword::getText() {

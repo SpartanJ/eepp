@@ -32,6 +32,8 @@ class EE_API SceneManager : public Container<SceneNode> {
 		bool isShootingDown() const;
 
 		UISceneNode * getUISceneNode();
+
+		void setCurrentUISceneNode( UISceneNode * uiSceneNode );
 	protected:
 		Clock mClock;
 		UISceneNode * mUISceneNode;

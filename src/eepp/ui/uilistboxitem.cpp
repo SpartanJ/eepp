@@ -8,7 +8,7 @@ UIListBoxItem * UIListBoxItem::New() {
 }
 
 UIListBoxItem::UIListBoxItem() :
-	UITextView( "listboxitem" )
+	UITextView( "listbox::item" )
 {
 	setLayoutSizeRules( FIXED, FIXED );
 	applyDefaultTheme();
@@ -38,6 +38,8 @@ void UIListBoxItem::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
 	setThemeSkin( Theme, "listboxitem" );
+
+	onThemeLoaded();
 }
 
 Uint32 UIListBoxItem::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
@@ -116,18 +118,8 @@ bool UIListBoxItem::isSelected() const {
 }
 
 void UIListBoxItem::onStateChange() {
-	UIListBox * LBParent = reinterpret_cast<UIListBox*> ( getParent()->getParent() );
-
 	if ( isSelected() && mSkinState->getState() != UIState::StateSelected ) {
 		pushState( UIState::StateSelected, false );
-	}
-
-	if ( mSkinState->getState() & UIState::StateFlagSelected ) {
-		setFontColor( LBParent->getFontSelectedColor() );
-	} else if ( mSkinState->getState() & UIState::StateFlagHover ) {
-		setFontColor( LBParent->getFontOverColor() );
-	} else {
-		setFontColor( LBParent->getFontColor() );
 	}
 
 	UITextView::onStateChange();

@@ -39,6 +39,22 @@ int UIState::getStateNumber( const std::string& State ) {
 	return -1;
 }
 
+const Uint32& UIState::getStateFlag( const Uint32& stateIndex ) {
+	return UIStateFlags[ stateIndex ];
+}
+
+Uint32 UIState::getStateFlagFromName( const std::string& name ) {
+	if ( name.empty() )
+		return UIStateFlags[0];
+
+	for ( size_t i = 0; i < eeARRAY_SIZE(UIStatesNames); i++ ) {
+		if ( UIStatesNames[i] == name )
+			return UIStateFlags[i];
+	}
+
+	return eeINDEX_NOT_FOUND;
+}
+
 bool UIState::isStateName( const std::string& State ) {
 	for ( int i = 0; i < UIState::StateCount; i++ ) {
 		if ( State == UIStatesNames[i] ) {
@@ -88,26 +104,6 @@ void UIState::popState(const Uint32 & State) {
 
 Uint32 UIState::getCurrentState() const {
 	return mCurrentState;
-}
-
-void UIState::updateState() {
-	for ( int i = StateFlagCount - 1; i >= 0; i-- ) {
-		if ( ( mState & UIStateFlags[i] ) == UIStateFlags[i] ) {
-			if ( stateExists( UIStateFlags[i] ) ) {
-				mCurrentState = UIStateFlags[i];
-				onStateChange();
-				return;
-			}
-		}
-	}
-
-	Uint32 currentState = mCurrentState;
-
-	mCurrentState = StateFlagNormal;
-
-	if ( currentState != StateFlagNormal ) {
-		onStateChange();
-	}
 }
 
 void UIState::onStateChange() {

@@ -12,6 +12,15 @@ namespace EE { namespace UI {
 
 class EE_API UIMenu : public UIWidget {
 	public:
+		class StyleConfig {
+			public:
+				Rectf Padding = Rectf(0, 0, 0, 0);
+				Uint32 MinWidth = 0;
+				Uint32 MinSpaceForIcons = 0;
+				Uint32 MinRightMargin = 0;
+
+		};
+
 		static UIMenu * New();
 
 		static void fixMenuPos( Vector2f& position, UIMenu * Menu, UIMenu * parent = NULL, UIMenuSubMenu * SubMenu = NULL );
@@ -58,24 +67,22 @@ class EE_API UIMenu : public UIWidget {
 
 		virtual bool hide();
 
-		const Rectf& getPadding() const;
-
 		Uint32 getMinRightMargin() const;
 
 		void setMinRightMargin(const Uint32 & minRightMargin);
 
-		UITooltipStyleConfig getFontStyleConfig() const;
-
-		void setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig);
+		const StyleConfig& getStyleConfig() const;
 
 		virtual void loadFromXmlNode( const pugi::xml_node& node );
+
+		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		friend class UIMenuItem;
 		friend class UIMenuCheckBox;
 		friend class UIMenuSubMenu;
 
 		std::deque<UINode *> mItems;
-		UIMenuStyleConfig		mStyleConfig;
+		StyleConfig			mStyleConfig;
 		Uint32				mMaxWidth;
 		Uint32				mNextPosY;
 		Uint32				mBiggestIcon;
@@ -119,6 +126,8 @@ class EE_API UIMenu : public UIWidget {
 		void nextSel();
 
 		void trySelect( UINode * Ctrl, bool Up );
+
+		void setMinSpaceForIcons( const Uint32& minSpaceForIcons );
 };
 
 }}

@@ -4,6 +4,7 @@
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <pugixml/pugixml.hpp>
+#include <eepp/ui/uistyle.hpp>
 
 namespace EE { namespace UI {
 
@@ -17,12 +18,6 @@ UITabWidget::UITabWidget() :
 	mTabSelectedIndex( eeINDEX_NOT_FOUND )
 {
 	setHorizontalAlign( UI_HALIGN_CENTER );
-
-	UITheme * Theme = UIThemeManager::instance()->getDefaultTheme();
-
-	if ( NULL != Theme ) {
-		mStyleConfig = Theme->getTabWidgetStyleConfig();
-	}
 
 	mTabContainer = UIWidget::New();
 	mTabContainer->setPixelsSize( mSize.getWidth(), mStyleConfig.TabWidgetHeight )
@@ -111,73 +106,11 @@ void UITabWidget::draw() {
 	}
 }
 
-UITooltipStyleConfig UITabWidget::getFontStyleConfig() const {
-	return UITooltipStyleConfig( mStyleConfig );
-}
-
-void UITabWidget::setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig) {
-	mStyleConfig.updateStyleConfig( fontStyleConfig );
-}
-
-UITabWidgetStyleConfig UITabWidget::getStyleConfig() const {
+const UITabWidget::StyleConfig& UITabWidget::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-const Uint32 &UITabWidget::getFontStyle() const {
-	return mStyleConfig.Style;
-}
-
-const Float &UITabWidget::getOutlineThickness() const {
-	return mStyleConfig.OutlineThickness;
-}
-
-UITabWidget * UITabWidget::setOutlineThickness( const Float & outlineThickness ) {
-	if ( mStyleConfig.OutlineThickness != outlineThickness ) {
-		mStyleConfig.OutlineThickness = outlineThickness;
-
-		if ( mTabs.size() > 0 ) {
-			for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-				((UITab*)mTabs[ i ])->setOutlineThickness( outlineThickness );
-			}
-		}
-	}
-
-	return this;
-}
-
-const Color &UITabWidget::getOutlineColor() const {
-	return mStyleConfig.OutlineColor;
-}
-
-UITabWidget * UITabWidget::setOutlineColor(const Color & outlineColor) {
-	if ( mStyleConfig.OutlineColor != outlineColor ) {
-		mStyleConfig.OutlineColor = outlineColor;
-
-		if ( mTabs.size() > 0 ) {
-			for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-				((UITab*)mTabs[ i ])->setOutlineColor( outlineColor );
-			}
-		}
-	}
-
-	return this;
-}
-
-UITabWidget * UITabWidget::setFontStyle(const Uint32 & fontStyle) {
-	if ( mStyleConfig.Style != fontStyle ) {
-		mStyleConfig.Style = fontStyle;
-
-		if ( mTabs.size() > 0 ) {
-			for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-				((UITab*)mTabs[ i ])->setFontStyle( fontStyle );
-			}
-		}
-	}
-
-	return this;
-}
-
-void UITabWidget::setStyleConfig(const UITabWidgetStyleConfig & styleConfig) {
+void UITabWidget::setStyleConfig(const StyleConfig & styleConfig) {
 	Uint32		tabWidgetHeight = mStyleConfig.TabWidgetHeight;
 	mStyleConfig = styleConfig;
 	mStyleConfig.TabWidgetHeight = tabWidgetHeight;
@@ -189,51 +122,7 @@ void UITabWidget::setStyleConfig(const UITabWidgetStyleConfig & styleConfig) {
 bool UITabWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
-	if ( "textcolor" == name ) {
-		setFontColor( attribute.asColor() );
-	} else if ( "textshadowcolor" == name ) {
-		setFontShadowColor( attribute.asColor() );
-	} else if ( "textovercolor" == name ) {
-		setFontOverColor( attribute.asColor() );
-	} else if ( "textselectedcolor" == name ) {
-		setFontSelectedColor( attribute.asColor() );
-	} else if ( "fontfamily" == name || "fontname" == name ) {
-		Font * font = FontManager::instance()->getByName( attribute.asString() );
-
-		if ( NULL != font )
-			setFont( font );
-	} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
-		setCharacterSize( attribute.asDpDimensionI() );
-	} else if ( "textstyle" == name || "fontstyle" == name ) {
-		std::string valStr = attribute.asString();
-		String::toLowerInPlace( valStr );
-		std::vector<std::string> strings = String::split( valStr, '|' );
-		Uint32 flags = Text::Regular;
-
-		if ( strings.size() ) {
-			for ( std::size_t i = 0; i < strings.size(); i++ ) {
-				std::string cur = strings[i];
-				String::toLowerInPlace( cur );
-
-				if ( "underlined" == cur || "underline" == cur )
-					flags |= Text::Underlined;
-				else if ( "bold" == cur )
-					flags |= Text::Bold;
-				else if ( "italic" == cur )
-					flags |= Text::Italic;
-				else if ( "strikethrough" == cur )
-					flags |= Text::StrikeThrough;
-				else if ( "shadowed" == cur || "shadow" == cur )
-					flags |= Text::Shadow;
-			}
-
-			setFontStyle( flags );
-		}
-	} else if ( "fontoutlinethickness" == name ) {
-		setOutlineThickness( attribute.asDpDimension() );
-	} else if ( "fontoutlinecolor" == name ) {
-		setOutlineColor( attribute.asColor() );
-	} else if ( "maxtextlength" == name ) {
+	if ( "maxtextlength" == name ) {
 		setMaxTextLength( attribute.asUint(1) );
 	} else if ( "mintabwidth" == name ) {
 		setMinTabWidth( attribute.asUint(1) );
@@ -248,96 +137,14 @@ bool UITabWidget::setAttribute( const NodeAttribute& attribute, const Uint32& st
 	} else if ( "linebelowtabscolor" == name ) {
 		setLineBelowTabsColor( attribute.asColor() );
 	} else if ( "linebelowtabsyoffset" == name ) {
-		setLineBelowTabsYOffset( attribute.asInt() );
+		setLineBelowTabsYOffset( attribute.asDpDimensionI() );
+	} else if ( "tabseparation" == name ) {
+		setTabSeparation( attribute.asDpDimensionI() );
 	} else {
 		return UIWidget::setAttribute( attribute, state );
 	}
 
 	return true;
-}
-
-Font * UITabWidget::getFont() const {
-	return mStyleConfig.Font;
-}
-
-void UITabWidget::setFont(Font * font) {
-	mStyleConfig.Font = font;
-
-	if ( mTabs.size() > 0 ) {
-		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setFont( mStyleConfig.Font );
-		}
-	}
-}
-
-Color UITabWidget::getFontColor() const {
-	return mStyleConfig.FontColor;
-}
-
-void UITabWidget::setFontColor(const Color & fontColor) {
-	mStyleConfig.FontColor = fontColor;
-
-	if ( mTabs.size() > 0 ) {
-		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setFontColor( mStyleConfig.FontColor );
-		}
-	}
-}
-
-Color UITabWidget::getFontShadowColor() const {
-	return mStyleConfig.ShadowColor;
-}
-
-void UITabWidget::setFontShadowColor(const Color & fontShadowColor) {
-	mStyleConfig.ShadowColor = fontShadowColor;
-
-	if ( mTabs.size() > 0 ) {
-		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setFontShadowColor( mStyleConfig.ShadowColor );
-		}
-	}
-}
-
-Color UITabWidget::getFontOverColor() const {
-	return mStyleConfig.FontOverColor;
-}
-
-void UITabWidget::setFontOverColor(const Color & fontOverColor) {
-	mStyleConfig.FontOverColor = fontOverColor;
-
-	if ( mTabs.size() > 0 ) {
-		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setFontOverColor( mStyleConfig.FontOverColor );
-		}
-	}
-}
-
-Color UITabWidget::getFontSelectedColor() const {
-	return mStyleConfig.FontSelectedColor;
-}
-
-void UITabWidget::setFontSelectedColor(const Color & fontSelectedColor) {
-	mStyleConfig.FontSelectedColor = fontSelectedColor;
-
-	if ( mTabs.size() > 0 ) {
-		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setFontSelectedColor( mStyleConfig.FontSelectedColor );
-		}
-	}
-}
-
-Uint32 UITabWidget::getCharacterSize() {
-	return mStyleConfig.CharacterSize;
-}
-
-void UITabWidget::setCharacterSize( const Uint32& characterSize ) {
-	mStyleConfig.CharacterSize = characterSize;
-
-	if ( mTabs.size() > 0 ) {
-		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			((UITab*)mTabs[ i ])->setCharacterSize( mStyleConfig.CharacterSize );
-		}
-	}
 }
 
 Int32 UITabWidget::getTabSeparation() const {
@@ -504,7 +311,6 @@ UITab * UITabWidget::createTab( const String& Text, UINode * CtrlOwned, Drawable
 	UITab * tCtrl 	= UITab::New();
 	tCtrl->setParent( mTabContainer );
 	tCtrl->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE );
-	tCtrl->setStyleConfig( mStyleConfig );
 	tCtrl->setIcon( Icon );
 	tCtrl->setText( Text );
 	tCtrl->setVisible( true );
@@ -655,11 +461,7 @@ void UITabWidget::setTabSelected( UITab * Tab ) {
 		}
 	}
 
-	if ( NULL != Tab ) {
-		Tab->select();
-	} else {
-		return;
-	}
+	Tab->select();
 
 	Uint32 TabIndex		= getTabIndex( Tab );
 

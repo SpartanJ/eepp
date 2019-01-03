@@ -10,6 +10,10 @@ StyleSheetPropertiesParser::StyleSheetPropertiesParser( const std::string& props
 	if ( !props.empty() ) {
 		parse( propsstr );
 	}
+}
+
+const StyleSheetProperties & StyleSheetPropertiesParser::getProperties() const {
+	return mProperties;
 };
 
 void StyleSheetPropertiesParser::parse( std::string propsstr ) {
@@ -85,7 +89,7 @@ int StyleSheetPropertiesParser::readPropertyValue(StyleSheetPropertiesParser::Re
 		if ( str[pos] == ';' ) {
 			rs = ReadingPropertyName;
 
-			properties[ propName ] = StyleSheetProperty( propName, buffer );
+			mProperties[ propName ] = StyleSheetProperty( propName, buffer );
 
 			return pos + 1;
 		}
@@ -98,7 +102,7 @@ int StyleSheetPropertiesParser::readPropertyValue(StyleSheetPropertiesParser::Re
 		if ( pos == str.size() ) {
 			rs = ReadingPropertyName;
 
-			properties[ propName ] = StyleSheetProperty( propName, buffer );
+			mProperties[ propName ] = StyleSheetProperty( propName, buffer );
 
 			return pos + 1;
 		}

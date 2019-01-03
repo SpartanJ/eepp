@@ -5,6 +5,8 @@
 
 namespace EE { namespace UI { namespace CSS {
 
+class StyleSheetElement;
+
 class EE_API StyleSheetSelector {
 	public:
 		enum SelectorType {
@@ -22,38 +24,64 @@ class EE_API StyleSheetSelector {
 			SpecificityGlobal = 1
 		};
 
-		explicit StyleSheetSelector( const std::string& selectorName );
+		enum PatternMatch {
+			ANY = '*',
+			DESCENDANT = ' ',
+			CHILD = '>',
+			DIRECT_SIBLING = '+',
+			SIBLING = '~'
+		};
 
-		Uint32 getRequiredFlags();
+		enum SelectoryTypeIdentifier {
+			TAG = 0,
+			CLASS = '.',
+			ID = '#',
+			PSEUDO_CLASS = ':',
+			STRUCTURAL_PSEUDO_CLASS = ':'
+		};
+
+		class SelectorRule {
+			public:
+				SelectorRule( const std::string& selectorFragment, PatternMatch patternMatch );
+
+				void pushSelectorTypeIdentifier( SelectoryTypeIdentifier selectorTypeIdentifier, std::string name );
+
+				void parseFragment( const std::string& selectorFragment );
+
+				const PatternMatch& getPatternMatch() const { return patternMatch; }
+
+				const int& getSpecificity() const { return specificity; }
+
+				bool matches( StyleSheetElement * element ) const;
+
+				bool hasClass( const std::string& cls ) const;
+
+				int specificity;
+				PatternMatch patternMatch;
+				std::string tagName;
+				std::string id;
+				std::vector<std::string> classes;
+				Uint32 requirementFlags;
+		};
+
+		StyleSheetSelector();
+
+		explicit StyleSheetSelector( const std::string& selectorName );
 
 		const std::string& getName() const;
 
-		const std::string& getTagName() const;
-
-		const std::string getId() const;
-
-		const std::vector<std::string> getClasses() const;
-
 		const std::string& getPseudoClass() const;
 
-		bool hasTagName();
+		const Uint32& getSpecificity() const;
 
-		bool hasId();
-
-		bool hasClasses();
-
-		bool hasClass( std::string cls );
-
-		bool hasPseudoClass();
-
-		Uint32 getSpecificity();
+		bool matches( StyleSheetElement * element ) const;
 	protected:
-		std::string name;
-		std::string tagName;
-		std::string id;
-		std::vector<std::string> classes;
-		std::string pseudoClass;
-		Uint32 specificity;
+		std::string mName;
+		std::string mPseudoClass;
+		Uint32 mSpecificity;
+		std::vector<SelectorRule> mSelectorRules;
+
+		void addSelectorRule(std::string& buffer, PatternMatch& curPatternMatch, const PatternMatch & newPatternMatch );
 
 		void parseSelector( const std::string& selector );
 };

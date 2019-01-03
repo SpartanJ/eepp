@@ -49,7 +49,7 @@ void UILinearLayout::onSizeChange() {
 	pack();
 }
 
-void UILinearLayout::onParentSizeChange( const Vector2f& SizeChange ) {
+void UILinearLayout::onParentSizeChange( const Vector2f& ) {
 	UILayout::onParentChange();
 	pack();
 }

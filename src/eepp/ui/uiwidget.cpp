@@ -1,6 +1,7 @@
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uitooltip.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <pugixml/pugixml.hpp>
@@ -10,6 +11,10 @@ namespace EE { namespace UI {
 
 UIWidget * UIWidget::New() {
 	return eeNew( UIWidget, () );
+}
+
+UIWidget * UIWidget::NewWithTag( const std::string& tag ) {
+	return eeNew( UIWidget, ( tag ) );
 }
 
 UIWidget::UIWidget( const std::string & tag ) :
@@ -414,6 +419,11 @@ void UIWidget::alignAgainstLayout() {
 	setInternalPosition( pos );
 }
 
+void UIWidget::reportStyleStateChange() {
+	if ( NULL != mStyle )
+		mStyle->onStateChange();
+}
+
 const Rectf& UIWidget::getPadding() const {
 	return mPadding;
 }
@@ -442,8 +452,16 @@ const std::vector<std::string> &UIWidget::getStyleSheetClasses() const {
 	return mClasses;
 }
 
-CSS::StyleSheetElement * UIWidget::getStyleSheetParentElement() {
-	return NULL != mParentCtrl && mParentCtrl->isWidget() ? reinterpret_cast<CSS::StyleSheetElement*>( mParentCtrl ) : NULL;
+CSS::StyleSheetElement * UIWidget::getStyleSheetParentElement() const {
+	return NULL != mParentCtrl && mParentCtrl->isWidget() ? dynamic_cast<CSS::StyleSheetElement*>( mParentCtrl ) : NULL;
+}
+
+CSS::StyleSheetElement * UIWidget::getStyleSheetPreviousSiblingElement() const {
+	return NULL != mPrev && mPrev->isWidget() ? dynamic_cast<CSS::StyleSheetElement*>( mPrev ) : NULL;
+}
+
+CSS::StyleSheetElement * UIWidget::getStyleSheetNextSiblingElement() const {
+	return NULL != mNext && mNext->isWidget() ? dynamic_cast<CSS::StyleSheetElement*>( mNext ) : NULL;
 }
 
 void UIWidget::addClass( const std::string& cls ) {
@@ -460,7 +478,11 @@ bool UIWidget::containsClass( const std::string& cls ) {
 }
 
 void UIWidget::setElementTag( const std::string& tag ) {
-	mTag = tag;
+	if ( mTag != tag ) {
+		mTag = tag;
+
+		reloadStyle( false );
+	}
 }
 
 const std::string& UIWidget::getElementTag() const {
@@ -481,14 +503,21 @@ void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 	UINode::popState( State, emitEvent );
 }
 
-void UIWidget::reloadStyle() {
-	if ( NULL == mStyle && getSceneNode()->isUISceneNode() && static_cast<UISceneNode*>( getSceneNode() )->hasStyleSheet() )
+const UIStyle * UIWidget::getUIStyle() const {
+	return mStyle;
+}
+
+void UIWidget::reloadStyle( const bool& reloadChilds ) {
+	if ( NULL == mStyle && getSceneNode()->isUISceneNode() && static_cast<UISceneNode*>( getSceneNode() )->hasStyleSheet() ) {
 		mStyle = UIStyle::New( this );
+		mStyle->setState( mState );
+	}
 
 	if ( NULL != mStyle ) {
 		mStyle->load();
+		mStyle->onStateChange();
 
-		if ( NULL != mChild ) {
+		if ( NULL != mChild && reloadChilds ) {
 			Node * ChildLoop = mChild;
 
 			while ( NULL != ChildLoop ) {
@@ -506,8 +535,7 @@ void UIWidget::onPaddingChange() {
 }
 
 void UIWidget::onThemeLoaded() {
-	if ( NULL != mStyle )
-		mStyle->onStateChange();
+	reportStyleStateChange();
 }
 
 void UIWidget::beginAttributesTransaction() {

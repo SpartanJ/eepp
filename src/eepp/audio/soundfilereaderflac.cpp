@@ -64,7 +64,7 @@ bool SoundFileReaderFlac::open(IOStream& stream, Info& info) {
 
 void SoundFileReaderFlac::seek(Uint64 sampleOffset) {
 	if ( mFlac ) {
-		drflac_seek_to_sample( mFlac, sampleOffset );
+		drflac_seek_to_pcm_frame( mFlac, sampleOffset );
 	}
 }
 
@@ -75,7 +75,7 @@ Uint64 SoundFileReaderFlac::read(Int16* samples, Uint64 maxCount) {
 
 	while (count < maxCount) {
 		int samplesToRead = static_cast<int>(maxCount - count);
-		long samplesRead = drflac_read_s16( mFlac, samplesToRead, samples );
+		long samplesRead = drflac_read_pcm_frames_s16( mFlac, samplesToRead, samples );
 
 		if (samplesRead > 0) {
 			count += samplesRead;

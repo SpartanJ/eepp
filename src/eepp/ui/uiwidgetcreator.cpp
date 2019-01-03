@@ -39,9 +39,7 @@ UIWidgetCreator::RegisteredWidgetCallbackMap UIWidgetCreator::registeredWidget =
 void UIWidgetCreator::createBaseWidgetList() {
 	if ( registeredWidget.empty() ) {
 		registeredWidget["widget"] = UIWidget::New;
-		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["linearlayout"] = UILinearLayout::NewVertical;
-		registeredWidget["vbox"] = UILinearLayout::NewVertical;
 		registeredWidget["relativelayout"] = UIRelativeLayout::New;
 		registeredWidget["textview"] = UITextView::New;
 		registeredWidget["pushbutton"] = UIPushButton::New;
@@ -63,9 +61,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["tabwidget"] = UITabWidget::New;
 		registeredWidget["textedit"] = UITextEdit::New;
 		registeredWidget["textinput"] = UITextInput::New;
-		registeredWidget["input"] = UITextInput::New;
 		registeredWidget["textinputpassword"] = UITextInputPassword::New;
-		registeredWidget["inputpassword"] = UITextInputPassword::New;
 		registeredWidget["loader"] = UILoader::New;
 		registeredWidget["selectbutton"] = UISelectButton::New;
 		registeredWidget["window"] = UIWindow::New;
@@ -74,6 +70,11 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["touchdragable"] = UITouchDragableWidget::New;
 		registeredWidget["gridlayout"] = UIGridLayout::New;
 		registeredWidget["layout"] = UILayout::New;
+
+		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
+		registeredWidget["vbox"] = UILinearLayout::NewVertical;
+		registeredWidget["input"] = UITextInput::New;
+		registeredWidget["inputpassword"] = UITextInputPassword::New;
 	}
 }
 

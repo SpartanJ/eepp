@@ -46,7 +46,6 @@
 #include <eepp/ui/uigridlayout.hpp>
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 
-#include <eepp/ui/uithemedefault.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 
 #include <eepp/ui/css/stylesheet.hpp>

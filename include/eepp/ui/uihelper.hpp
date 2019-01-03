@@ -151,6 +151,15 @@ enum LayoutPositionRules {
 	BOTTOM_OF
 };
 
+class UIScaleType {
+	public:
+		enum Type {
+			None,
+			Expand,
+			FitInside
+		};
+};
+
 static const Uint32 UI_CONTROL_DEFAULT_ALIGN = UI_HALIGN_LEFT | UI_VALIGN_CENTER;
 
 static const Uint32 UI_CONTROL_ALIGN_CENTER = UI_HALIGN_CENTER | UI_VALIGN_CENTER;

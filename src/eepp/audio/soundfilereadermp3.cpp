@@ -61,7 +61,7 @@ bool SoundFileReaderMp3::open(IOStream& stream, Info& info) {
 
 void SoundFileReaderMp3::seek(Uint64 sampleOffset) {
 	if ( mMp3 ) {
-		drmp3_seek_to_frame( mMp3, sampleOffset / mChannelCount );
+		drmp3_seek_to_pcm_frame( mMp3, sampleOffset / mChannelCount );
 	}
 }
 
@@ -74,7 +74,7 @@ Uint64 SoundFileReaderMp3::read(Int16* samples, Uint64 maxCount) {
 		int frames = samplesToRead / mChannelCount;
 		float rSamples[samplesToRead];
 
-		long framesRead = drmp3_read_f32( mMp3, frames, rSamples );
+		long framesRead = drmp3_read_pcm_frames_f32( mMp3, frames, rSamples );
 
 		if (framesRead > 0) {
 			long samplesRead = framesRead * mChannelCount;

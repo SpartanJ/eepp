@@ -3,7 +3,6 @@
 
 #include <eepp/scene/nodeattribute.hpp>
 #include <eepp/ui/uinode.hpp>
-#include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/css/stylesheetelement.hpp>
 
 namespace pugi {
@@ -12,11 +11,14 @@ class xml_node;
 
 namespace EE { namespace UI {
 
+class UITooltip;
 class UIStyle;
 
 class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 	public:
 		static UIWidget * New();
+
+		static UIWidget * NewWithTag( const std::string& tag );
 
 		UIWidget();
 
@@ -102,7 +104,11 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		const std::vector<std::string>& getStyleSheetClasses() const;
 
-		StyleSheetElement * getStyleSheetParentElement();
+		StyleSheetElement * getStyleSheetParentElement() const;
+
+		StyleSheetElement * getStyleSheetPreviousSiblingElement() const;
+
+		StyleSheetElement * getStyleSheetNextSiblingElement() const;
 
 		void addClass( const std::string& cls );
 
@@ -118,7 +124,13 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		virtual void popState( const Uint32& State, bool emitEvent = true );
 
-		void reloadStyle();
+		const UIStyle * getUIStyle() const;
+
+		void reloadStyle( const bool& reloadChilds = true );
+
+		void beginAttributesTransaction();
+
+		void endAttributesTransaction();
 	protected:
 		friend class UIManager;
 		friend class UISceneNode;
@@ -164,13 +176,11 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		virtual void onThemeLoaded();
 
-		void beginAttributesTransaction();
-
-		void endAttributesTransaction();
-
 		void updateAnchors( const Vector2f & SizeChange );
 
 		void alignAgainstLayout();
+
+		void reportStyleStateChange();
 };
 
 }}

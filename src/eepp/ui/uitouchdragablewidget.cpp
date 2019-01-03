@@ -13,7 +13,7 @@ UITouchDragableWidget::UITouchDragableWidget( const std::string& tag ) :
 {}
 
 UITouchDragableWidget::UITouchDragableWidget() :
-	UITouchDragableWidget( "touchdragablewidget" )
+	UITouchDragableWidget( "touchdragable" )
 {}
 
 Uint32 UITouchDragableWidget::getType() const {
@@ -133,7 +133,7 @@ void UITouchDragableWidget::update( const Time& time ) {
 	UIWidget::update( time );
 }
 
-void UITouchDragableWidget::onTouchDragValueChange( Vector2f diff )
+void UITouchDragableWidget::onTouchDragValueChange( Vector2f )
 {}
 
 bool UITouchDragableWidget::isTouchOverAllowedChilds() {

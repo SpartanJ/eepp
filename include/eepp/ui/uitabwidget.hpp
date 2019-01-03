@@ -9,6 +9,21 @@ namespace EE { namespace UI {
 
 class EE_API UITabWidget : public UIWidget {
 	public:
+		class StyleConfig {
+			public:
+				Int32		TabSeparation = 0;
+				Uint32		MaxTextLength = 30;
+				Uint32		TabWidgetHeight = 0;
+				Uint32		TabTextAlign = ( UI_HALIGN_CENTER | UI_VALIGN_CENTER );
+				Uint32		MinTabWidth = 32;
+				Uint32		MaxTabWidth = 300;
+				bool		TabsClosable = false;
+				bool		SpecialBorderTabs = false; //! Indicates if the periferical tabs ( the left and right border tab ) are different from the central tabs.
+				bool		DrawLineBelowTabs = false;
+				Color		LineBelowTabsColor;
+				Int32		LineBelowTabsYOffset = 0;
+		};
+
 		static UITabWidget * New();
 
 		UITabWidget();
@@ -53,42 +68,6 @@ class EE_API UITabWidget : public UIWidget {
 
 		virtual void draw();
 
-		Font * getFont() const;
-
-		void setFont(Font * font);
-
-		Color getFontColor() const;
-
-		void setFontColor(const Color & fontColor);
-
-		Color getFontShadowColor() const;
-
-		void setFontShadowColor(const Color & fontShadowColor);
-
-		Color getFontOverColor() const;
-
-		void setFontOverColor(const Color & fontOverColor);
-
-		Color getFontSelectedColor() const;
-
-		void setFontSelectedColor(const Color & fontSelectedColor);
-
-		Uint32 getCharacterSize();
-
-		void setCharacterSize(const Uint32 & characterSize);
-
-		const Uint32& getFontStyle() const;
-
-		UITabWidget * setFontStyle( const Uint32& fontStyle );
-
-		const Float & getOutlineThickness() const;
-
-		UITabWidget * setOutlineThickness( const Float& outlineThickness );
-
-		const Color& getOutlineColor() const;
-
-		UITabWidget * setOutlineColor( const Color& outlineColor );
-
 		Int32 getTabSeparation() const;
 
 		void setTabSeparation(const Int32 & tabSeparation);
@@ -127,13 +106,9 @@ class EE_API UITabWidget : public UIWidget {
 
 		void setLineBelowTabsYOffset(const Int32 & lineBelowTabsYOffset);
 
-		UITooltipStyleConfig getFontStyleConfig() const;
+		const StyleConfig & getStyleConfig() const;
 
-		void setFontStyleConfig(const UITooltipStyleConfig & fontStyleConfig);
-
-		UITabWidgetStyleConfig getStyleConfig() const;
-
-		void setStyleConfig(const UITabWidgetStyleConfig & styleConfig);
+		void setStyleConfig(const StyleConfig & styleConfig);
 
 		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
@@ -141,7 +116,7 @@ class EE_API UITabWidget : public UIWidget {
 
 		UIWidget *		mCtrlContainer;
 		UIWidget *		mTabContainer;
-		UITabWidgetStyleConfig	mStyleConfig;
+		StyleConfig	mStyleConfig;
 		std::deque<UITab*>		mTabs;
 		UITab *					mTabSelected;
 		Uint32					mTabSelectedIndex;

@@ -13,6 +13,9 @@ UITab::UITab() :
 	UISelectButton( "tab" ),
 	mControlOwned( NULL )
 {
+	mTextBox->setElementTag( "tab::text" );
+	mIcon->setElementTag( "tab::icon" );
+
 	applyDefaultTheme();
 }
 
@@ -89,14 +92,6 @@ void UITab::onStateChange() {
 		}
 
 		setSize( mDpSize.getWidth(), skinSize );
-
-		if ( mSkinState->getState() & UIState::StateFlagSelected ) {
-			mTextBox->setFontColor( tTabW->getFontSelectedColor() );
-		} else if ( mSkinState->getState() & UIState::StateFlagHover ) {
-			mTextBox->setFontColor( tTabW->getFontOverColor() );
-		} else {
-			mTextBox->setFontColor( tTabW->getFontColor() );
-		}
 	}
 }
 

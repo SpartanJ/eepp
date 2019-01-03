@@ -15,17 +15,37 @@ class UISceneNode;
 
 class EE_API UIWindow : public UIWidget {
 	public:
+		class StyleConfig {
+			public:
+				StyleConfig() {}
+
+				StyleConfig( Uint32 winFlags ) :
+					WinFlags( winFlags )
+				{}
+
+				Uint32		WinFlags = UI_WIN_DEFAULT_FLAGS;
+				Sizei		DecorationSize;
+				Sizei		BorderSize;
+				Sizef		MinWindowSize;
+				Vector2i	ButtonsPositionFixer;
+				Uint32		ButtonsSeparation = 4;
+				Int32		MinCornerDistance = 24;
+				Uint8		BaseAlpha = 255;
+				bool		DecorationAutoSize = true;
+				bool		BorderAutoSize = true;
+		};
+
 		enum WindowBaseContainerType {
 			SIMPLE_LAYOUT,
 			LINEAR_LAYOUT,
 			RELATIVE_LAYOUT
 		};
 
-		static UIWindow * NewOpt( WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig );
+		static UIWindow * NewOpt( WindowBaseContainerType type, const StyleConfig& windowStyleConfig );
 
 		static UIWindow * New();
 
-		explicit UIWindow( WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig );
+		explicit UIWindow( WindowBaseContainerType type, const StyleConfig& windowStyleConfig );
 
 		explicit UIWindow( WindowBaseContainerType type = SIMPLE_LAYOUT );
 
@@ -95,9 +115,9 @@ class EE_API UIWindow : public UIWidget {
 
 		UIWindow * setWinFlags(const Uint32 & winFlags);
 
-		UIWindowStyleConfig getStyleConfig() const;
+		const StyleConfig& getStyleConfig() const;
 
-		UIWindow * setStyleConfig(const UIWindowStyleConfig & styleConfig);
+		UIWindow * setStyleConfig(const StyleConfig & styleConfig);
 
 		UIWindow * setMinWindowSize( Sizef size );
 
@@ -155,7 +175,7 @@ class EE_API UIWindow : public UIWidget {
 		};
 
 		FrameBuffer * mFrameBuffer;
-		UIWindowStyleConfig	mStyleConfig;
+		StyleConfig	mStyleConfig;
 		UINode *	mWindowDecoration;
 		UINode *	mBorderLeft;
 		UINode *	mBorderRight;

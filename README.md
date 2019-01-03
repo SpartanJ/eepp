@@ -224,7 +224,7 @@ UITextView::New()->setText(  "Text  on  test  1"  )
 
 **How can i learn to use the library?**
 ----------------------------------------------
-This is the current big issue with the library. Since i'm solo working, it's really difficult keep up the documentation updated. But i'll work to improve that in the near future. For the moment you have two options: build the documentation and read code examples. The documentation is not complete but most modules are documented. Sadly not the UI module ( the biggest one ), but it's easy to get along with the examples. The library is supper easy to use, but is king of big, so, knowing about everything i'll take time. I you're interested you can contact me anytime. 
+This is the current big issue with the library. Since i'm solo working, it's really difficult keep up the documentation updated. But i'll work to improve that in the near future. For the moment you have two options: build the documentation and read code examples. The documentation is not complete but most modules are documented. Sadly not the UI module ( the biggest one ), but it's easy to get along with the examples. The library is supper easy to use, but is kind of big, so, knowing about everything i'll take time. I you're interested you can contact me anytime. 
 
 **How to build it?**
 ------------------------

@@ -16,7 +16,7 @@
 
 namespace EE { namespace UI {
 
-UIWindow * UIWindow::NewOpt( UIWindow::WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig ) {
+UIWindow * UIWindow::NewOpt( UIWindow::WindowBaseContainerType type, const StyleConfig& windowStyleConfig ) {
 	return eeNew( UIWindow, ( type, windowStyleConfig ) );
 }
 
@@ -25,10 +25,10 @@ UIWindow * UIWindow::New() {
 }
 
 UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) :
-	UIWindow( type, NULL != UIThemeManager::instance()->getDefaultTheme() ? UIThemeManager::instance()->getDefaultTheme()->getWindowStyleConfig() : UIWindowStyleConfig() )
+	UIWindow( type, StyleConfig() )
 {}
 
-UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const UIWindowStyleConfig& windowStyleConfig ) :
+UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& windowStyleConfig ) :
 	UIWidget( "window" ),
 	mFrameBuffer( NULL ),
 	mStyleConfig( windowStyleConfig ),
@@ -93,7 +93,7 @@ UIWindow::~UIWindow() {
 	eeSAFE_DELETE( mFrameBuffer );
 }
 
-void UIWindow::onContainerPositionChange( const Event * Event ) {
+void UIWindow::onContainerPositionChange( const Event * ) {
 	if ( NULL == mContainer )
 		return;
 
@@ -370,7 +370,7 @@ void UIWindow::createModalControl() {
 		return;
 
 	if ( NULL == mModalCtrl ) {
-		mModalCtrl = UIWidget::New();
+		mModalCtrl = UIWidget::NewWithTag( "window::modaldialog" );
 		mModalCtrl->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		mModalCtrl->setParent( Ctrl )->setPosition(0,0)->setSize( Ctrl->getSize() );
 		mModalCtrl->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
@@ -490,6 +490,7 @@ void UIWindow::setTheme( UITheme * Theme ) {
 	}
 
 	fixChildsSize();
+	onThemeLoaded();
 }
 
 void UIWindow::calcMinWinSize() {
@@ -1072,20 +1073,12 @@ const Uint8& UIWindow::getBaseAlpha() const {
 
 void UIWindow::setTitle( const String& text ) {
 	if ( NULL == mTitle ) {
-		mTitle = UITextView::New();
+		mTitle = UITextView::NewWithTag( "window::title" );
 		mTitle->setLayoutSizeRules( FIXED, FIXED );
 		mTitle->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		mTitle->setParent( this );
 		mTitle->setHorizontalAlign( getHorizontalAlign() );
 		mTitle->setVerticalAlign( getVerticalAlign() );
-		mTitle->setFontColor( mStyleConfig.TitleFontColor );
-
-		if ( mStyleConfig.Style & Text::Shadow ) {
-			UIFontStyleConfig fsc = mTitle->getFontStyleConfig();
-			fsc.Style |= Text::Shadow;
-			mTitle->setFontStyleConfig( fsc );
-		}
-
 		mTitle->setEnabled( false );
 		mTitle->setVisible( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) );
 	}
@@ -1131,7 +1124,7 @@ void UIWindow::maximize() {
 	}
 }
 
-Uint32 UIWindow::onMouseDoubleClick( const Vector2i &Pos, const Uint32 Flags ) {
+Uint32 UIWindow::onMouseDoubleClick( const Vector2i &, const Uint32 Flags ) {
 	if ( isResizeable() && ( NULL != mButtonMaximize ) && ( Flags & EE_BUTTON_LMASK ) ) {
 		maximize();
 
@@ -1317,11 +1310,11 @@ UIWindow * UIWindow::setWinFlags(const Uint32 & winFlags) {
 	return this;
 }
 
-UIWindowStyleConfig UIWindow::getStyleConfig() const {
+const UIWindow::StyleConfig& UIWindow::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-UIWindow * UIWindow::setStyleConfig(const UIWindowStyleConfig & styleConfig) {
+UIWindow * UIWindow::setStyleConfig(const StyleConfig & styleConfig) {
 	mStyleConfig = styleConfig;
 
 	updateWinFlags();
@@ -1425,6 +1418,9 @@ bool UIWindow::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		unsigned int val = attribute.asUint();
 		if ( val <= 255 )
 			setBaseAlpha( (Uint8)val );
+	} else if ( "buttonspositionfixer" == name ) {
+		mStyleConfig.ButtonsPositionFixer = attribute.asVector2i();
+		fixChildsSize();
 	} else if ( "winflags" == name ) {
 		std::string flagsStr = attribute.asString();
 		String::toLowerInPlace( flagsStr );
@@ -1450,8 +1446,30 @@ bool UIWindow::setAttribute( const NodeAttribute& attribute, const Uint32& state
 				else if ( "colorbuffer"== cur ) winflags |= UI_WIN_COLOR_BUFFER;
 			}
 
-			setWinFlags( winflags );
+			/// @TODO: FIX ME
+			mStyleConfig.WinFlags |= winflags;
+			updateWinFlags();
 		}
+	} else if ( "decorationsize" == name ) {
+		mStyleConfig.DecorationSize = attribute.asSizei();
+		fixChildsSize();
+	} else if ( "bordersize" == name ) {
+		mStyleConfig.BorderSize = attribute.asSizei();
+		fixChildsSize();
+	} else if ( "minwindowsize" == name ) {
+		mStyleConfig.MinWindowSize = attribute.asSizef();
+		fixChildsSize();
+	} else if ( "buttonsseparation" == name ) {
+		mStyleConfig.ButtonsSeparation = attribute.asUint();
+		fixChildsSize();
+	} else if ( "mincornerdistance" == name ) {
+		mStyleConfig.MinCornerDistance = attribute.asInt();
+	} else if ( "decorationautosize" == name ) {
+		mStyleConfig.DecorationAutoSize = attribute.asBool();
+		fixChildsSize();
+	} else if ( "borderautosize" == name ) {
+		mStyleConfig.BorderAutoSize = attribute.asBool();
+		fixChildsSize();
 	} else {
 		return UIWidget::setAttribute( attribute, state );
 	}

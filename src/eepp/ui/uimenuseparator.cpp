@@ -8,7 +8,7 @@ UIMenuSeparator * UIMenuSeparator::New() {
 }
 
 UIMenuSeparator::UIMenuSeparator() :
-	UIWidget( "menuseparator" )
+	UIWidget( "menu::separator" )
 {
 	applyDefaultTheme();
 }
@@ -31,6 +31,8 @@ void UIMenuSeparator::setTheme( UITheme * Theme ) {
 	if ( NULL != getSkin() ) {
 		setSize( Sizef( mDpSize.getWidth(), getSkinSize().getHeight() ) );
 	}
+
+	onThemeLoaded();
 }
 
 }}

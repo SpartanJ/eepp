@@ -139,7 +139,7 @@ TileMapProperties::TileMapProperties( TileMap * Map ) :
 TileMapProperties::~TileMapProperties() {
 }
 
-void TileMapProperties::onRedChange( const Event * Event ) {
+void TileMapProperties::onRedChange( const Event * ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.r = (Uint8)mUIRedSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
@@ -150,7 +150,7 @@ void TileMapProperties::onRedChange( const Event * Event ) {
 	mMap->setBaseColor( MapCol );
 }
 
-void TileMapProperties::onGreenChange( const Event * Event ) {
+void TileMapProperties::onGreenChange( const Event * ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.g = (Uint8)mUIGreenSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
@@ -161,7 +161,7 @@ void TileMapProperties::onGreenChange( const Event * Event ) {
 	mMap->setBaseColor( MapCol );
 }
 
-void TileMapProperties::onBlueChange( const Event * Event ) {
+void TileMapProperties::onBlueChange( const Event * ) {
 	Color Col = mUIBaseColor->getBackground()->getColor();
 	Col.b = (Uint8)mUIBlueSlider->getValue();
 	mUIBaseColor->setBackgroundColor( Col );
@@ -204,21 +204,21 @@ void TileMapProperties::loadProperties() {
 	}
 }
 
-void TileMapProperties::onOKClick( const Event * Event ) {
+void TileMapProperties::onOKClick( const Event * ) {
 	saveProperties();
 
 	mUIWindow->closeWindow();
 }
 
-void TileMapProperties::onCancelClick( const Event * Event ) {
+void TileMapProperties::onCancelClick( const Event * ) {
 	mUIWindow->closeWindow();
 }
 
-void TileMapProperties::onWindowClose( const Event * Event ) {
+void TileMapProperties::onWindowClose( const Event * ) {
 	eeDelete( this );
 }
 
-void TileMapProperties::onAddCellClick( const Event * Event ) {
+void TileMapProperties::onAddCellClick( const Event * ) {
 	mGenGrid->add( createCell() );
 
 	Uint32 Index = mGenGrid->getItemSelectedIndex();
@@ -228,7 +228,7 @@ void TileMapProperties::onAddCellClick( const Event * Event ) {
 	}
 }
 
-void TileMapProperties::onRemoveCellClick( const Event * Event ) {
+void TileMapProperties::onRemoveCellClick( const Event * ) {
 	Uint32 Index = mGenGrid->getItemSelectedIndex();
 
 	if ( eeINDEX_NOT_FOUND != Index ) {

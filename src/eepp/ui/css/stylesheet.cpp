@@ -7,59 +7,71 @@ namespace EE { namespace UI { namespace CSS {
 
 StyleSheet::StyleSheet() {}
 
-void StyleSheet::addNode( StyleSheetNode node ) {
-	nodes.push_back( node );
+void StyleSheet::addNode( const StyleSheetNode& node ) {
+	mNodes[ node.getSelector().getName() ] = node;
+}
+
+void StyleSheet::combineNode( const StyleSheetNode& node ) {
+	auto nodeIt = mNodes.find( node.getSelector().getName() );
+
+	if ( nodeIt == mNodes.end() ) {
+		addNode( node );
+	} else {
+		auto currentNode = nodeIt->second;
+
+		if ( node.getSelector().getSpecificity() > currentNode.getSelector().getSpecificity() ) {
+			for ( auto pit = node.getProperties().begin(); pit != node.getProperties().end(); ++pit )
+				currentNode.setProperty( pit->second );
+		}
+	}
 }
 
 bool StyleSheet::isEmpty() const {
-	return nodes.empty();
+	return mNodes.empty();
 }
 
-StyleSheetProperties StyleSheet::getElementProperties( StyleSheetElement * element, const std::string& pseudoClass ) {
-	StyleSheetProperties propertiesSelected;
-	Uint32 lastSpecificity = 0;
+void StyleSheet::print() {
+	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
+		StyleSheetNode& style = it->second;
 
-	for ( auto it = nodes.begin(); it != nodes.end(); ++it ) {
-		StyleSheetNode& node = *it;
-		StyleSheetSelector& selector = node.selector;
+		style.print();
+	}
+}
 
-		Uint32 flags = 0;
+void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
+	for ( auto it = styleSheet.getNodes().begin(); it != styleSheet.getNodes().end(); ++it ) {
+		addNode( it->second );
+	}
+}
 
-		if ( selector.hasTagName() && !element->getStyleSheetTag().empty() && selector.getTagName() == element->getStyleSheetTag() ) {
-			flags |= StyleSheetSelector::TagName;
-		}
+StyleSheet::StyleSheetPseudoClassProperties StyleSheet::getElementProperties( StyleSheetElement * element ) {
+	StyleSheetPseudoClassProperties propertiesSelectedByPseudoClass;
+	int c = 0;
+	if ( element->getStyleSheetId() == "lvbox" ) {
+		c++;
+	}
 
-		if ( selector.hasId() && !element->getStyleSheetId().empty() && selector.getId() == element->getStyleSheetId() ) {
-			flags |= StyleSheetSelector::Id;
-		}
+	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
+		StyleSheetNode& node = it->second;
+		const StyleSheetSelector& selector = node.getSelector();
 
-		if ( selector.hasClasses() && !element->getStyleSheetClasses().empty() ) {
-			bool hasClasses = true;
-			for ( auto cit = element->getStyleSheetClasses().begin(); cit != element->getStyleSheetClasses().end(); ++cit ) {
-				if ( !selector.hasClass( *cit ) ) {
-					hasClasses = false;
-					break;
+		if ( selector.matches( element ) ) {
+			for ( auto pit = node.getProperties().begin(); pit != node.getProperties().end(); ++pit ) {
+				StyleSheetProperties& pseudoClassProperties = propertiesSelectedByPseudoClass[selector.getPseudoClass()];
+				auto it = pseudoClassProperties.find( pit->second.getName() );
+
+				if ( it == pseudoClassProperties.end() || pit->second.getSpecificity() >= it->second.getSpecificity() ) {
+					pseudoClassProperties[ pit->second.getName() ] = pit->second;
 				}
 			}
-
-			if ( hasClasses ) {
-				flags |= StyleSheetSelector::Class;
-			}
-		}
-
-		if ( selector.hasPseudoClass() && !pseudoClass.empty() && selector.getPseudoClass() == pseudoClass ) {
-			flags |= StyleSheetSelector::PseudoClass;
-		}
-
-		if ( flags == selector.getRequiredFlags() && selector.getSpecificity() > lastSpecificity ) {
-			for ( auto pit = node.properties.begin(); pit != node.properties.end(); ++pit )
-				propertiesSelected[ pit->second.name ] = pit->second;
-
-			lastSpecificity = selector.getSpecificity();
 		}
 	}
 
-	return propertiesSelected;
+	return propertiesSelectedByPseudoClass;
+}
+
+const StyleSheet::StyleSheetNodeList& StyleSheet::getNodes() const {
+	return mNodes;
 }
 
 }}}

@@ -258,7 +258,7 @@ bool Window::takeScreenshot(std::string filepath, const Image::SaveType & Format
 	if ( CreateNewFile ) { // Search if file path is given, and if have and extension
 		bool find = false;
 		Int32 FileNum = 1;
-		std::string TmpPath = filepath, Ext;
+		std::string TmpPath = filepath;
 
 		if ( !FileSystem::isDirectory( filepath ) )
 			FileSystem::makeDir( filepath );

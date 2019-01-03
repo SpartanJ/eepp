@@ -362,7 +362,7 @@ void EETest::createBaseUI() {
 	/**/
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
-	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
+	UIWindow::StyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizef( 530, 405 );
 	windowStyleConfig.BaseAlpha = 200;
@@ -599,20 +599,14 @@ void EETest::createUI() {
 
 	sceneNode->setTranslator( mTranslator );
 
-	CSS::StyleSheetParser styleSheetParser;
-
-	if ( styleSheetParser.loadFromFile( MyPath + "ui/css/style.css" ) ) {
-		sceneNode->setStyleSheet( styleSheetParser.getStyleSheet() );
-	}
-
 	SceneManager::instance()->add( sceneNode );
 
 	eePRINTL("Node size: %d", sizeof(Node));
 	eePRINTL("UINode size: %d", sizeof(UINode));
-	//mTheme = UITheme::loadFromDirectory( UIThemeDefault::New( mThemeName, mThemeName ), MyPath + "ui/" + mThemeName + "/" );
 
-	TextureAtlasLoader tgl( MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION );
-	mTheme = UITheme::loadFromTextureAtlas( UIThemeDefault::New( mThemeName, mThemeName ), TextureAtlasManager::instance()->getByName( mThemeName ) );
+	mTheme = UITheme::load( mThemeName, mThemeName, MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION, TTF, MyPath + "ui/uitheme.css" );
+
+	sceneNode->combineStyleSheet( mTheme->getStyleSheet() );
 
 	UIThemeManager::instance()->add( mTheme );
 	UIThemeManager::instance()->setDefaultEffectsEnabled( true );
@@ -907,7 +901,7 @@ void EETest::createMapEditor() {
 
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
-	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
+	UIWindow::StyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );
@@ -924,7 +918,7 @@ void EETest::onMapEditorClose() {
 void EETest::createETGEditor() {
 	UIWindow * tWin = UIWindow::New();
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
-	UIWindowStyleConfig windowStyleConfig = tWin->getStyleConfig();
+	UIWindow::StyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizef( 1024, 768 );
 	tWin->setStyleConfig( windowStyleConfig );

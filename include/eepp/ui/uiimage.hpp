@@ -9,7 +9,11 @@ class EE_API UIImage : public UIWidget {
 	public:
 		static UIImage * New();
 
+		static UIImage * NewWithTag( const std::string& tag );
+
 		UIImage();
+
+		explicit UIImage( const std::string& tag );
 
 		virtual ~UIImage();
 

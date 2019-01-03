@@ -57,6 +57,8 @@ class NodeAttribute {
 
 		NodeAttribute( std::string name, std::string value );
 
+		bool isEmpty() const;
+
 		std::string getName() const;
 
 		void setName(const std::string & name);
@@ -95,6 +97,8 @@ class NodeAttribute {
 
 		int asDpDimensionI( const std::string& defaultValue = "" ) const;
 
+		Uint32 asDpDimensionUint( const std::string& defaultValue = "" ) const;
+
 		OriginPoint asOriginPoint() const;
 
 		BlendMode asBlendMode() const;
@@ -103,9 +107,15 @@ class NodeAttribute {
 
 		Vector2i asVector2i( const Vector2i& defaultValue = Vector2i::Zero ) const;
 
+		Sizef asSizef( const Sizef& defaultValue = Sizef::Zero ) const;
+
+		Sizei asSizei( const Sizei& defaultValue = Sizei::Zero ) const;
+
 		Rect asRect( const Rect& defaultValue = Rect() ) const;
 
 		Rectf asRectf( const Rectf& defaultValue = Rectf() ) const;
+
+		Uint32 asFontStyle() const;
 	protected:
 		std::string mName;
 		std::string mValue;

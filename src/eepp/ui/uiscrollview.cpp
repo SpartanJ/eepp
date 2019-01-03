@@ -204,11 +204,11 @@ void UIScrollView::updateScroll() {
 	);
 }
 
-void UIScrollView::onValueChangeCb( const Event * Event ) {
+void UIScrollView::onValueChangeCb( const Event * ) {
 	updateScroll();
 }
 
-void UIScrollView::onScrollViewSizeChange(const Event * Event) {
+void UIScrollView::onScrollViewSizeChange(const Event *) {
 	containerUpdate();
 }
 

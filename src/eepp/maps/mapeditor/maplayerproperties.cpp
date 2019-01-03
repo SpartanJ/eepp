@@ -138,7 +138,7 @@ void MapLayerProperties::loadProperties() {
 	}
 }
 
-void MapLayerProperties::onOKClick( const Event * Event ) {
+void MapLayerProperties::onOKClick( const Event * ) {
 	saveProperties();
 
 	mLayer->setName( mUIInput->getText().toUtf8() );
@@ -150,15 +150,15 @@ void MapLayerProperties::onOKClick( const Event * Event ) {
 	mUIWindow->closeWindow();
 }
 
-void MapLayerProperties::onCancelClick( const Event * Event ) {
+void MapLayerProperties::onCancelClick( const Event * ) {
 	mUIWindow->closeWindow();
 }
 
-void MapLayerProperties::onWindowClose( const Event * Event ) {
+void MapLayerProperties::onWindowClose( const Event * ) {
 	eeDelete( this );
 }
 
-void MapLayerProperties::onAddCellClick( const Event * Event ) {
+void MapLayerProperties::onAddCellClick( const Event * ) {
 	mGenGrid->add( createCell() );
 
 	Uint32 Index = mGenGrid->getItemSelectedIndex();
@@ -168,7 +168,7 @@ void MapLayerProperties::onAddCellClick( const Event * Event ) {
 	}
 }
 
-void MapLayerProperties::onRemoveCellClick( const Event * Event ) {
+void MapLayerProperties::onRemoveCellClick( const Event * ) {
 	Uint32 Index = mGenGrid->getItemSelectedIndex();
 
 	if ( eeINDEX_NOT_FOUND != Index ) {

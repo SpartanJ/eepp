@@ -42,7 +42,9 @@ class EE_API UISceneNode : public SceneNode {
 
 		UIWidget * loadLayoutNodes( pugi::xml_node node, Node * parent );
 
-		void setStyleSheet( CSS::StyleSheet styleSheet );
+		void setStyleSheet( const CSS::StyleSheet& styleSheet );
+
+		void combineStyleSheet( const CSS::StyleSheet& styleSheet );
 
 		CSS::StyleSheet& getStyleSheet();
 
@@ -68,6 +70,8 @@ class EE_API UISceneNode : public SceneNode {
 		bool				windowExists( UIWindow * win );
 
 		virtual void setInternalSize(const Sizef& size );
+
+		void reloadStyle();
 };
 
 }}

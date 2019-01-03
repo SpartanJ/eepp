@@ -1,11 +1,11 @@
 #ifndef EE_UICUITEXTEDIT_HPP
 #define EE_UICUITEXTEDIT_HPP
 
-#include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uitextinput.hpp>
-#include <eepp/ui/uiscrollbar.hpp>
 
 namespace EE { namespace UI {
+
+class UIScrollBar;
 
 class EE_API UITextEdit : public UIWidget {
 	public:
@@ -44,8 +44,6 @@ class EE_API UITextEdit : public UIWidget {
 		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
 
 		UIFontStyleConfig getFontStyleConfig() const;
-
-		void setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig);
 
 		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:

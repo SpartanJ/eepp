@@ -8,6 +8,12 @@ namespace EE { namespace UI {
 
 class EE_API UIDropDownList : public UITextInput {
 	public:
+		class StyleConfig {
+			public:
+				Uint32 MaxNumVisibleItems = 10;
+				bool PopUpToMainControl = false;
+		};
+
 		static UIDropDownList * New();
 
 		UIDropDownList();
@@ -32,9 +38,9 @@ class EE_API UIDropDownList : public UITextInput {
 
 		void setMaxNumVisibleItems(const Uint32 & maxNumVisibleItems);
 
-		UIDropDownListStyleConfig getStyleConfig() const;
+		const StyleConfig& getStyleConfig() const;
 
-		void setStyleConfig(const UIDropDownListStyleConfig & styleConfig);
+		void setStyleConfig(const StyleConfig & styleConfig);
 
 		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 
@@ -42,7 +48,7 @@ class EE_API UIDropDownList : public UITextInput {
 	protected:
 		friend class UIComboBox;
 
-		UIDropDownListStyleConfig mStyleConfig;
+		StyleConfig		mStyleConfig;
 		UIListBox *		mListBox;
 		UINode *		mFriendCtrl;
 

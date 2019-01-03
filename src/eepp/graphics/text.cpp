@@ -108,7 +108,7 @@ void Text::setString(const String& string) {
 }
 
 void Text::setFont(Font * font) {
-	if (mFont != font) {
+	if ( NULL != font && mFont != font) {
 		mFont = font;
 
 		mRealCharacterSize = PixelDensity::dpToPxI( mCharacterSize );
@@ -859,6 +859,7 @@ void Text::setStyleConfig( const FontStyleConfig& styleConfig ) {
 	setStyle( styleConfig.Style );
 	setOutlineThickness( styleConfig.OutlineThickness );
 	setOutlineColor( styleConfig.OutlineColor );
+	setShadowColor( styleConfig.ShadowColor );
 }
 
 void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {

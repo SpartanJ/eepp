@@ -55,7 +55,7 @@ UIGOTypeNew::~UIGOTypeNew() {
 
 }
 
-void UIGOTypeNew::onOKClick( const Event * Event ) {
+void UIGOTypeNew::onOKClick( const Event * ) {
 	if ( mUIInput->getText().size() ) {
 		if ( mCb )
 			mCb( mUIInput->getText().toUtf8(), String::hash( mUIInput->getText().toUtf8() ) );
@@ -64,11 +64,11 @@ void UIGOTypeNew::onOKClick( const Event * Event ) {
 	mUIWindow->closeWindow();
 }
 
-void UIGOTypeNew::onCancelClick( const Event * Event ) {
+void UIGOTypeNew::onCancelClick( const Event * ) {
 	mUIWindow->closeWindow();
 }
 
-void UIGOTypeNew::onWindowClose( const Event * Event ) {
+void UIGOTypeNew::onWindowClose( const Event * ) {
 	eeDelete( this );
 }
 

@@ -32,6 +32,7 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 	if ( NULL == mDropDownList ) {
 		mDropDownList = UIDropDownList::New();
 		mDropDownList->setParent( this );
+		mDropDownList->setFriendControl( this );
 		mDropDownList->setVisible( true );
 		mDropDownList->setEnabled( true );
 		mDropDownList->setAllowEditing( true );
@@ -39,7 +40,7 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 	}
 
 	if ( NULL == mButton ) {
-		mButton = UINode::New();
+		mButton = UIWidget::NewWithTag( "combobox::button" );
 		mButton->setParent( this );
 		mButton->setVisible( true );
 		mButton->setEnabled( true );
@@ -59,6 +60,8 @@ void UIComboBox::setTheme( UITheme * Theme ) {
 	}
 
 	updateControls();
+
+	onThemeLoaded();
 }
 
 UIListBox * UIComboBox::getListBox() {

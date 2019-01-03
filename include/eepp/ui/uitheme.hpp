@@ -2,9 +2,10 @@
 #define EE_UICUITHEME_HPP
 
 #include <eepp/ui/base.hpp>
-#include <eepp/ui/uithemeconfig.hpp>
+#include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uihelper.hpp>
 #include <eepp/ui/uiskin.hpp>
+#include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/system/resourcemanager.hpp>
 
 namespace EE { namespace Graphics {
@@ -25,11 +26,13 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		static UITheme * New( const std::string& name, const std::string& abbr, Graphics::Font * defaultFont = NULL );
 
+		static UITheme * load( const std::string& name, const std::string& abbr, const std::string& textureAtlasPath, Graphics::Font * defaultFont, const std::string& styleSheetPath );
+
 		static UITheme * loadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtlas * getTextureAtlas );
 
-		static UITheme * loadFromDirectroy( UITheme * tTheme, const std::string& Path, const Float& pixelDensity = 1 );
+		static UITheme * loadFromTextureAtlas( Graphics::TextureAtlas * getTextureAtlas, const std::string& Name, const std::string& NameAbbr );
 
-		static UITheme * loadFromTextureAtlas( Graphics::TextureAtlas * getTextureAtlas, const std::string& Name, const std::string NameAbbr );
+		static UITheme * loadFromDirectroy( UITheme * tTheme, const std::string& Path, const Float& pixelDensity = 1 );
 
 		static UITheme * loadFromDirectroy( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const Float& pixelDensity = 1 );
 
@@ -53,35 +56,20 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		UISkin * getSkin( const std::string& controlName );
 
-		UIFontStyleConfig getFontStyleConfig() const;
-
 		Font * getDefaultFont() const;
 
-		void setFontStyleConfig(UIFontStyleConfig fontConfig);
+		void setDefaultFont( Font * font );
 
-		virtual UITabWidgetStyleConfig getTabWidgetStyleConfig();
+		const CSS::StyleSheet& getStyleSheet() const;
 
-		virtual UIProgressBarStyleConfig getProgressBarStyleConfig();
-
-		virtual UIWinMenuStyleConfig getWinMenuStyleConfig();
-
-		virtual UIDropDownListStyleConfig getDropDownListStyleConfig();
-
-		virtual UIWindowStyleConfig getWindowStyleConfig();
-
-		virtual UIMenuStyleConfig getMenuStyleConfig();
-
-		virtual UIPushButtonStyleConfig getPushButtonStyleConfig();
-
-		virtual UISliderStyleConfig getSliderStyleConfig();
-
-		virtual UITooltipStyleConfig getTooltipStyleConfig();
+		void setStyleSheet(const CSS::StyleSheet & styleSheet);
 	protected:
 		std::string				mName;
 		Uint32					mNameHash;
 		std::string				mAbbr;
 		Graphics::TextureAtlas *mTextureAtlas;
-		UIFontStyleConfig		mFontStyleConfig;
+		Font *					mDefaultFont;
+		CSS::StyleSheet			mStyleSheet;
 
 		void setTextureAtlas( Graphics::TextureAtlas * SG );
 };

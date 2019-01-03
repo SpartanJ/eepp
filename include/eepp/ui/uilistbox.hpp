@@ -15,6 +15,10 @@ class EE_API UIListBox : public UITouchDragableWidget {
 
 		UIListBox();
 
+		static UIListBox * NewWithTag( const std::string& tag );
+
+		explicit UIListBox( const std::string& tag );
+
 		virtual ~UIListBox();
 
 		virtual Uint32 getType() const;
@@ -61,22 +65,6 @@ class EE_API UIListBox : public UITouchDragableWidget {
 
 		std::list<UIListBoxItem *> getItemsSelected();
 
-		void setFontColor( const Color& Color );
-
-		const Color& getFontColor() const;
-
-		void setFontOverColor( const Color& Color );
-
-		const Color& getFontOverColor() const;
-
-		void setFontSelectedColor( const Color& Color );
-
-		const Color& getFontSelectedColor() const;
-
-		void setFont( Graphics::Font * font );
-
-		Graphics::Font * getFont() const;
-
 		Rectf getContainerPadding() const;
 
 		void setSmoothScroll( const bool& soft );
@@ -105,10 +93,6 @@ class EE_API UIListBox : public UITouchDragableWidget {
 
 		const UI_SCROLLBAR_MODE& getHorizontalScrollMode();
 
-		UIFontStyleConfig getFontStyleConfig() const;
-
-		void setFontStyleConfig(const UIFontStyleConfig & fontStyleConfig);
-
 		void loadFromXmlNode(const pugi::xml_node & node);
 
 		void loadItemsFromXmlNode(const pugi::xml_node & node);
@@ -119,7 +103,6 @@ class EE_API UIListBox : public UITouchDragableWidget {
 		friend class UIItemContainer<UIListBox>;
 		friend class UIDropDownList;
 
-		UIFontStyleConfig		mFontStyleConfig;
 		Uint32 				mRowHeight;
 		UI_SCROLLBAR_MODE	mVScrollMode;
 		UI_SCROLLBAR_MODE	mHScrollMode;
@@ -134,7 +117,7 @@ class EE_API UIListBox : public UITouchDragableWidget {
 		Int32 				mHScrollInit;
 		Int32 				mItemsNotVisible;
 		Uint32				mLastTickMove;
-
+		UIListBoxItem *		mDummyItem;
 		Uint32				mVisibleFirst;
 		Uint32				mVisibleLast;
 

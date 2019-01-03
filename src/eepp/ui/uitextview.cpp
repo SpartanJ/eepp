@@ -1,16 +1,21 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/text.hpp>
+#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <pugixml/pugixml.hpp>
-#include <eepp/graphics/fontmanager.hpp>
-#include <eepp/ui/uiscenenode.hpp>
 
 namespace EE { namespace UI {
 
 UITextView * UITextView::New() {
 	return eeNew( UITextView, () );
+}
+
+UITextView * UITextView::NewWithTag( const std::string& tag ) {
+	return eeNew( UITextView, ( tag ) );
 }
 
 UITextView::UITextView( const std::string& tag ) :
@@ -23,18 +28,24 @@ UITextView::UITextView( const std::string& tag ) :
 	mFontLineCenter( 0 ),
 	mSelecting( false )
 {
-	mFontStyleConfig = UIThemeManager::instance()->getDefaultFontStyleConfig();
-
 	mTextCache = Text::New();
-	mTextCache->setFont( mFontStyleConfig.Font );
-	mTextCache->setCharacterSize( mFontStyleConfig.CharacterSize );
-	mTextCache->setStyle( mFontStyleConfig.Style );
-	mTextCache->setFillColor( mFontStyleConfig.FontColor );
-	mTextCache->setShadowColor( mFontStyleConfig.ShadowColor );
-	mTextCache->setOutlineThickness( mFontStyleConfig.OutlineThickness );
-	mTextCache->setOutlineColor( mFontStyleConfig.OutlineColor );
+
+	UITheme * theme = UIThemeManager::instance()->getDefaultTheme();
+
+	if ( NULL != theme ) {
+		mFontStyleConfig.Font = theme->getDefaultFont();
+	}
+
+	if ( NULL == getFont() ) {
+		if ( NULL != UIThemeManager::instance()->getDefaultFont() )
+			setFont( UIThemeManager::instance()->getDefaultFont() );
+		else
+			eePRINTL( "UITextView::UITextView : Created a without a defined font." );
+	}
 
 	alignFix();
+
+	applyDefaultTheme();
 }
 
 UITextView::UITextView() :
@@ -84,7 +95,7 @@ Graphics::Font * UITextView::getFont() const {
 }
 
 UITextView * UITextView::setFont( Graphics::Font * font ) {
-	if ( mTextCache->getFont() != font ) {
+	if ( NULL != font && mTextCache->getFont() != font ) {
 		mTextCache->setFont( font );
 		recalculate();
 		onFontChanged();
@@ -94,7 +105,7 @@ UITextView * UITextView::setFont( Graphics::Font * font ) {
 	return this;
 }
 
-Uint32 UITextView::getCharacterSize() {
+Uint32 UITextView::getCharacterSize() const {
 	return mTextCache->getCharacterSize();
 }
 
@@ -321,9 +332,7 @@ void UITextView::onFontChanged() {
 void UITextView::setTheme( UITheme * Theme ) {
 	UIWidget::setTheme( Theme );
 
-	if ( NULL == mTextCache->getFont() && NULL != Theme->getFontStyleConfig().getFont() ) {
-		mTextCache->setFont( Theme->getFontStyleConfig().getFont() );
-	}
+	onThemeLoaded();
 }
 
 Float UITextView::getTextWidth() {
@@ -461,8 +470,19 @@ bool UITextView::isTextSelectionEnabled() const {
 	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
 }
 
-UITooltipStyleConfig UITextView::getFontStyleConfig() const {
+const UIFontStyleConfig& UITextView::getFontStyleConfig() const {
 	return mFontStyleConfig;
+}
+
+void UITextView::setFontStyleConfig( const UIFontStyleConfig& fontStyleConfig ) {
+	mFontStyleConfig = fontStyleConfig;
+	setFont( fontStyleConfig.getFont() );
+	setCharacterSize( fontStyleConfig.getFontCharacterSize() );
+	setFontColor( fontStyleConfig.getFontColor() );
+	setFontShadowColor( fontStyleConfig.getFontShadowColor() );
+	setOutlineThickness( fontStyleConfig.getOutlineThickness() );
+	setOutlineColor( fontStyleConfig.getOutlineColor() );
+	setFontStyle( fontStyleConfig.getFontStyle() );
 }
 
 void UITextView::selCurInit( const Int32& init ) {
@@ -524,18 +544,6 @@ void UITextView::resetSelCache() {
 	onSelectionChange();
 }
 
-void UITextView::setFontStyleConfig( const UITooltipStyleConfig& fontStyleConfig ) {
-	mFontStyleConfig = fontStyleConfig;
-
-	setFont( mFontStyleConfig.getFont() );
-	setFontColor( mFontStyleConfig.getFontColor() );
-	setCharacterSize( mFontStyleConfig.getFontCharacterSize() );
-	setFontShadowColor( mFontStyleConfig.getFontShadowColor() );
-	setFontStyle( mFontStyleConfig.getFontStyle() );
-	setOutlineThickness( mFontStyleConfig.getOutlineThickness() );
-	setOutlineColor( mFontStyleConfig.getOutlineColor() );
-}
-
 bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
 
@@ -546,48 +554,25 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 		setFontColor( attribute.asColor() );
 	} else if ( "textshadowcolor" == name ) {
 		setFontShadowColor( attribute.asColor() );
-	} else if ( "textovercolor" == name ) {
-		mFontStyleConfig.FontOverColor = attribute.asColor();
 	} else if ( "textselectedcolor" == name ) {
 		mFontStyleConfig.FontSelectedColor = attribute.asColor();
 	} else if ( "textselectionbackcolor" == name ) {
 		setSelectionBackColor( attribute.asColor() );
 	} else if ( "fontfamily" == name || "fontname" == name ) {
-		Font * font = FontManager::instance()->getByName( attribute.asString() );
-
-		if ( NULL != font )
-			setFont( font );
+		setFont( FontManager::instance()->getByName( attribute.asString() ) );
 	} else if ( "textsize" == name || "fontsize" == name || "charactersize" == name ) {
 		setCharacterSize( attribute.asDpDimensionI() );
 	} else if ( "textstyle" == name || "fontstyle" == name ) {
-		std::string valStr = attribute.asString();
-		String::toLowerInPlace( valStr );
-		std::vector<std::string> strings = String::split( valStr, '|' );
-		Uint32 flags = Text::Regular;
+		Uint32 flags = attribute.asFontStyle();
 
-		if ( strings.size() ) {
-			for ( std::size_t i = 0; i < strings.size(); i++ ) {
-				std::string cur = strings[i];
-				String::toLowerInPlace( cur );
-
-				if ( "underlined" == cur || "underline" == cur )
-					flags |= Text::Underlined;
-				else if ( "bold" == cur )
-					flags |= Text::Bold;
-				else if ( "italic" == cur )
-					flags |= Text::Italic;
-				else if ( "strikethrough" == cur )
-					flags |= Text::StrikeThrough;
-				else if ( "shadowed" == cur || "shadow" == cur )
-					flags |= Text::Shadow;
-				else if ( "wordwrap" == cur ) {
-					mFlags |= UI_WORD_WRAP;
-					autoShrink();
-				}
-			}
-
-			setFontStyle( flags );
+		if ( flags & UI_WORD_WRAP ) {
+			mFlags |= UI_WORD_WRAP;
+			flags &= ~ UI_WORD_WRAP;
+			autoShrink();
 		}
+
+		setFontStyle( flags );
+
 	} else if ( "fontoutlinethickness" == name ) {
 		setOutlineThickness( attribute.asDpDimension() );
 	} else if ( "fontoutlinecolor" == name ) {

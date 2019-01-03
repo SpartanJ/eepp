@@ -19,9 +19,11 @@ class EE_API UISkinState : public UIState {
 
 		void draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha );
 
-		bool stateExists( const Uint32& State );
+		bool stateExists( const Uint32& State ) const;
 	protected:
 		UISkin * mSkin;
+
+		void updateState();
 };
 
 }}

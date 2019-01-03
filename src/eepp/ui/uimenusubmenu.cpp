@@ -9,7 +9,7 @@ UIMenuSubMenu * UIMenuSubMenu::New() {
 }
 
 UIMenuSubMenu::UIMenuSubMenu() :
-	UIMenuItem( "menusubmenu" ),
+	UIMenuItem( "menu::submenu" ),
 	mSubMenu( NULL ),
 	mArrow( NULL ),
 	mTimeOver( 0.f ),
@@ -44,6 +44,8 @@ void UIMenuSubMenu::setTheme( UITheme * Theme ) {
 	mArrow->setSize( mArrow->getSkinSize() );
 
 	onStateChange();
+
+	onThemeLoaded();
 }
 
 void UIMenuSubMenu::onSizeChange() {
@@ -126,7 +128,7 @@ UINode * UIMenuSubMenu::getArrow() const {
 	return mArrow;
 }
 
-void UIMenuSubMenu::onSubMenuFocusLoss( const Event * Event ) {
+void UIMenuSubMenu::onSubMenuFocusLoss( const Event * ) {
 	if ( NULL != getEventDispatcher() ) {
 		Node * FocusCtrl = getEventDispatcher()->getFocusControl();
 
@@ -142,7 +144,7 @@ void UIMenuSubMenu::onSubMenuFocusLoss( const Event * Event ) {
 	}
 }
 
-void UIMenuSubMenu::onHideByClick( const Event * Event ) {
+void UIMenuSubMenu::onHideByClick( const Event * ) {
 	UIMenu * tMenu = reinterpret_cast<UIMenu *>( getParent() );
 
 	tMenu->mClickHide = true;

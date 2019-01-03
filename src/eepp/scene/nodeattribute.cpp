@@ -1,5 +1,7 @@
 #include <eepp/scene/nodeattribute.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/graphics/text.hpp>
+#include <eepp/ui/uihelper.hpp>
 #include <algorithm>
 
 using namespace EE::Graphics;
@@ -35,6 +37,10 @@ NodeAttribute::NodeAttribute( std::string name, std::string value ) :
 	mName( String::toLower( name ) ),
 	mValue( value )
 {}
+
+bool NodeAttribute::isEmpty() const {
+	return mName.empty();
+}
 
 std::string NodeAttribute::getName() const {
 	return mName;
@@ -105,6 +111,12 @@ Float NodeAttribute::asDpDimension( const std::string& defaultValue ) const {
 
 int NodeAttribute::asDpDimensionI( const std::string& defaultValue ) const {
 	return PixelDensity::toDpFromStringI( asString( defaultValue ) );
+}
+
+Uint32 NodeAttribute::asDpDimensionUint( const std::string& defaultValue ) const {
+	int attrInt = asDpDimensionI( defaultValue );
+
+	return attrInt >= 0 ? attrInt : 0;
 }
 
 static OriginPoint toOriginPoint( std::string val ) {
@@ -190,6 +202,14 @@ Vector2i NodeAttribute::asVector2i( const Vector2i & defaultValue ) const {
 	return defaultValue;
 }
 
+Sizef NodeAttribute::asSizef( const Sizef& defaultValue ) const {
+	return Sizef( asVector2f( defaultValue ) );
+}
+
+Sizei NodeAttribute::asSizei( const Sizei& defaultValue ) const {
+	return Sizei( asVector2i( defaultValue ) );
+}
+
 Rect NodeAttribute::asRect( const Rect& defaultValue ) const {
 	if ( !mValue.empty() && mValue.find( " " ) != std::string::npos ) {
 		Rect rect( defaultValue );
@@ -219,9 +239,9 @@ Rect NodeAttribute::asRect( const Rect& defaultValue ) const {
 }
 
 Rectf NodeAttribute::asRectf( const Rectf& defaultValue ) const {
-	if ( !mValue.empty() && mValue.find( " " ) != std::string::npos ) {
-		Rectf rect( defaultValue );
+	Rectf rect( defaultValue );
 
+	if ( !mValue.empty() && mValue.find( " " ) != std::string::npos ) {
 		auto ltrbSplit = String::split( mValue, ' ', true );
 
 		if ( ltrbSplit.size() == 4 ) {
@@ -236,14 +256,41 @@ Rectf NodeAttribute::asRectf( const Rectf& defaultValue ) const {
 		} else if ( ltrbSplit.size() == 2 ) {
 			rect.Left = PixelDensity::toDpFromString( ltrbSplit[0] );
 			rect.Top = PixelDensity::toDpFromString( ltrbSplit[1] );
-		} else if ( ltrbSplit.size() == 1 ) {
-			rect.Left = rect.Top = rect.Right = rect.Bottom = PixelDensity::toDpFromString( ltrbSplit[0] );
 		}
-
-		return rect;
+	} else if ( !mValue.empty() ) {
+		rect.Left = rect.Top = rect.Right = rect.Bottom = PixelDensity::toDpFromString( mValue );
 	}
 
-	return defaultValue;
+	return rect;
+}
+
+Uint32 NodeAttribute::asFontStyle() const {
+	std::string valStr = asString();
+	String::toLowerInPlace( valStr );
+	std::vector<std::string> strings = String::split( valStr, '|' );
+	Uint32 flags = Text::Regular;
+
+	if ( strings.size() ) {
+		for ( std::size_t i = 0; i < strings.size(); i++ ) {
+			std::string cur = strings[i];
+			String::toLowerInPlace( cur );
+
+			if ( "underlined" == cur || "underline" == cur )
+				flags |= Text::Underlined;
+			else if ( "bold" == cur )
+				flags |= Text::Bold;
+			else if ( "italic" == cur )
+				flags |= Text::Italic;
+			else if ( "strikethrough" == cur )
+				flags |= Text::StrikeThrough;
+			else if ( "shadowed" == cur || "shadow" == cur )
+				flags |= Text::Shadow;
+			else if ( "wordwrap" == cur )
+				flags |= UI::UI_WORD_WRAP;
+		}
+	}
+
+	return flags;
 }
 
 }}

@@ -76,6 +76,7 @@ void UISpinBox::setTheme( UITheme * Theme ) {
 	}
 
 	adjustChilds();
+	onThemeLoaded();
 }
 
 void UISpinBox::adjustChilds() {
