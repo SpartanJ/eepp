@@ -474,6 +474,17 @@ const UIFontStyleConfig& UITextView::getFontStyleConfig() const {
 	return mFontStyleConfig;
 }
 
+void UITextView::setFontStyleConfig( const UIFontStyleConfig& fontStyleConfig ) {
+	mFontStyleConfig = fontStyleConfig;
+	setFont( fontStyleConfig.getFont() );
+	setCharacterSize( fontStyleConfig.getFontCharacterSize() );
+	setFontColor( fontStyleConfig.getFontColor() );
+	setFontShadowColor( fontStyleConfig.getFontShadowColor() );
+	setOutlineThickness( fontStyleConfig.getOutlineThickness() );
+	setOutlineColor( fontStyleConfig.getOutlineColor() );
+	setFontStyle( fontStyleConfig.getFontStyle() );
+}
+
 void UITextView::selCurInit( const Int32& init ) {
 	if ( mSelCurInit != init ) {
 		mSelCurInit = init;

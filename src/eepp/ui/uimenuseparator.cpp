@@ -8,7 +8,7 @@ UIMenuSeparator * UIMenuSeparator::New() {
 }
 
 UIMenuSeparator::UIMenuSeparator() :
-	UIWidget( "menuseparator" )
+	UIWidget( "menu::separator" )
 {
 	applyDefaultTheme();
 }

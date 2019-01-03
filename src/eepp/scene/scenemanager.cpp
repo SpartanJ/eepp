@@ -63,4 +63,8 @@ UISceneNode * SceneManager::getUISceneNode() {
 	return mUISceneNode;
 }
 
+void SceneManager::setCurrentUISceneNode( UISceneNode * uiSceneNode ) {
+	mUISceneNode = uiSceneNode;
+}
+
 }}

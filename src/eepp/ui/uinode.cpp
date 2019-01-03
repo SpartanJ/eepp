@@ -31,6 +31,7 @@ UINode * UINode::New() {
 UINode::UINode() :
 	Node(),
 	mFlags( UI_CONTROL_DEFAULT_FLAGS ),
+	mState(0),
 	mSkinState( NULL ),
 	mBackgroundState( NULL ),
 	mForegroundState( NULL ),
@@ -788,6 +789,8 @@ void UINode::onAlignChange() {
 }
 
 void UINode::pushState(const Uint32& State , bool emitEvent) {
+	mState |= 1 << State;
+
 	if ( NULL != mSkinState )
 		mSkinState->pushState( State );
 
@@ -808,6 +811,8 @@ void UINode::pushState(const Uint32& State , bool emitEvent) {
 }
 
 void UINode::popState(const Uint32& State , bool emitEvent) {
+	mState &= ~( 1 << State );
+
 	if ( NULL != mSkinState )
 		mSkinState->popState( State );
 

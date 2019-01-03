@@ -9,7 +9,7 @@ UIMenuSubMenu * UIMenuSubMenu::New() {
 }
 
 UIMenuSubMenu::UIMenuSubMenu() :
-	UIMenuItem( "menusubmenu" ),
+	UIMenuItem( "menu::submenu" ),
 	mSubMenu( NULL ),
 	mArrow( NULL ),
 	mTimeOver( 0.f ),

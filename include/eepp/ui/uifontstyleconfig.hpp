@@ -31,6 +31,10 @@ class UIFontStyleConfig : public FontStyleConfig {
 
 		UIFontStyleConfig() : FontStyleConfig() {}
 
+		UIFontStyleConfig( const FontStyleConfig& fontStyleConfig ) :
+			FontStyleConfig( fontStyleConfig )
+		{}
+
 		UIFontStyleConfig( const UIFontStyleConfig& fontStyleConfig ) :
 			FontStyleConfig( fontStyleConfig ),
 			FontSelectedColor( fontStyleConfig.FontSelectedColor ),

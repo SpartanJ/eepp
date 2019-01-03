@@ -14,7 +14,7 @@ UIMenuItem::UIMenuItem( const std::string& tag ) :
 }
 
 UIMenuItem::UIMenuItem() :
-	UIMenuItem( "menuitem" )
+	UIMenuItem( "menu::item" )
 {}
 
 UIMenuItem::~UIMenuItem() {

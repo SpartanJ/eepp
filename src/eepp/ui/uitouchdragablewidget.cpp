@@ -13,7 +13,7 @@ UITouchDragableWidget::UITouchDragableWidget( const std::string& tag ) :
 {}
 
 UITouchDragableWidget::UITouchDragableWidget() :
-	UITouchDragableWidget( "touchdragablewidget" )
+	UITouchDragableWidget( "touchdragable" )
 {}
 
 Uint32 UITouchDragableWidget::getType() const {

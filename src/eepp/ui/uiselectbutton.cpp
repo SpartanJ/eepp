@@ -1,5 +1,6 @@
 #include <eepp/ui/uiselectbutton.hpp>
 #include <eepp/ui/uiwinmenu.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -32,7 +33,7 @@ bool UISelectButton::isType( const Uint32& type ) const {
 }
 
 void UISelectButton::select() {
-	bool wasSelected = selected();
+	bool wasSelected = isSelected();
 
 	pushState( UIState::StateSelected );
 
@@ -51,7 +52,7 @@ void UISelectButton::unselect() {
 	popState( UIState::StateSelected );
 }
 
-bool UISelectButton::selected() const {
+bool UISelectButton::isSelected() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_SELECTED );
 }
 
@@ -61,7 +62,7 @@ void UISelectButton::onStateChange() {
 	if ( NULL == mSkinState )
 		return;
 
-	if ( !( mSkinState->getState() & UIState::StateFlagSelected ) && selected() ) {
+	if ( !( mSkinState->getState() & UIState::StateFlagSelected ) && isSelected() ) {
 		pushState( UIState::StateSelected, false );
 	}
 

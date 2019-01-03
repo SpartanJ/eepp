@@ -79,6 +79,8 @@ class EE_API UITextView : public UIWidget {
 
 		const UIFontStyleConfig & getFontStyleConfig() const;
 
+		void setFontStyleConfig( const UIFontStyleConfig& fontStyleConfig );
+
 		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
 		Text *		mTextCache;

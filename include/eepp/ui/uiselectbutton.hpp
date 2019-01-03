@@ -21,7 +21,7 @@ class EE_API UISelectButton : public UIPushButton {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		virtual bool selected() const;
+		virtual bool isSelected() const;
 
 		virtual void unselect();
 

@@ -43,9 +43,13 @@ UITheme * theme = NULL;
 UIWidget * uiContainer = NULL;
 UIWinMenu * uiWinMenu = NULL;
 UISceneNode * uiSceneNode = NULL;
+UISceneNode * appUiSceneNode = NULL;
 std::string currentLayout;
+std::string currentStyleSheet;
 bool updateLayout = false;
+bool updateStyleSheet = false;
 Clock waitClock;
+Clock cssWaitClock;
 efsw::WatchID watch = 0;
 std::map<std::string, std::string> widgetRegistered;
 std::string basePath;
@@ -96,6 +100,9 @@ class UpdateListener : public efsw::FileWatchListener {
 				if ( dir + filename == currentLayout ) {
 					updateLayout = true;
 					waitClock.restart();
+				} else if ( dir + filename == currentStyleSheet ) {
+					updateStyleSheet = true;
+					cssWaitClock.restart();
 				}
 			}
 		}
@@ -205,6 +212,16 @@ static void loadLayoutsFromFolder( std::string folderPath ) {
 	}
 }
 
+static void loadStyleSheet( std::string cssPath ) {
+	CSS::StyleSheetParser parser;
+
+	if ( NULL != uiSceneNode && parser.loadFromFile( cssPath ) ) {
+		uiSceneNode->setStyleSheet( parser.getStyleSheet() );
+
+		currentStyleSheet = cssPath;
+	}
+}
+
 static void loadLayout( std::string file ) {
 	if ( watch != 0 ) {
 		fileWatcher->removeWatch( watch );
@@ -227,6 +244,14 @@ static void refreshLayout() {
 	}
 
 	updateLayout = false;
+}
+
+static void refreshStyleSheet() {
+	if ( !currentStyleSheet.empty() && FileSystem::fileExists( currentStyleSheet ) && uiContainer != NULL ) {
+		loadStyleSheet( currentStyleSheet );
+	}
+
+	updateStyleSheet = false;
 }
 
 void onRecentProjectClick( const Event * event ) {
@@ -517,6 +542,7 @@ void loadProject( std::string projectPath ) {
 
 void closeProject() {
 	currentLayout = "";
+	currentStyleSheet = "";
 	uiContainer->childsCloseAll();
 
 	layouts.clear();
@@ -572,9 +598,13 @@ void mainLoop() {
 		refreshLayout();
 	}
 
+	if ( updateStyleSheet && cssWaitClock.getElapsedTime().asMilliseconds() > 250.f ) {
+		refreshStyleSheet();
+	}
+
 	SceneManager::instance()->update();
 
-	if ( SceneManager::instance()->getUISceneNode()->invalidated() ) {
+	if ( appUiSceneNode->invalidated() || uiSceneNode->invalidated() ) {
 		window->clear();
 
 		SceneManager::instance()->draw();
@@ -595,6 +625,12 @@ void fontPathOpen( const Event * event ) {
 	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( event->getNode() );
 
 	loadFontsFromFolder( CDL->getFullPath() );
+}
+
+void styleSheetPathOpen( const Event * event ) {
+	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( event->getNode() );
+
+	loadStyleSheet( CDL->getFullPath() );
 }
 
 void layoutOpen( const Event * event ) {
@@ -654,6 +690,14 @@ void fileMenuClick( const Event * event ) {
 		TGDialog->addEventListener( Event::OpenFile, cb::Make1( fontPathOpen ) );
 		TGDialog->center();
 		TGDialog->show();
+	} else if ( "Load style sheet from path..." == txt ) {
+		UICommonDialog * TGDialog = UICommonDialog::New( UI_CDL_DEFAULT_FLAGS, "*.css" );
+		TGDialog->setTheme( theme );
+		TGDialog->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+		TGDialog->setTitle( "Open style sheet from path..." );
+		TGDialog->addEventListener( Event::OpenFile, cb::Make1( styleSheetPathOpen ) );
+		TGDialog->center();
+		TGDialog->show();
 	}
 
 	UIThemeManager::instance()->setDefaultTheme( prevTheme );
@@ -679,29 +723,27 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		uiSceneNode = UISceneNode::New();
 		SceneManager::instance()->add( uiSceneNode );
 
-		uiSceneNode->setDrawDebugData( true );
+		appUiSceneNode = UISceneNode::New();
+		SceneManager::instance()->add( appUiSceneNode );
 
+		appUiSceneNode->enableDrawInvalidation();
 		uiSceneNode->enableDrawInvalidation();
 
-		{
-			std::string pd;
-			if ( PixelDensity::getPixelDensity() >= 1.5f ) pd = "1.5x";
-			else if ( PixelDensity::getPixelDensity() >= 2.f ) pd = "2x";
+		std::string pd;
+		if ( PixelDensity::getPixelDensity() >= 1.5f ) pd = "1.5x";
+		else if ( PixelDensity::getPixelDensity() >= 2.f ) pd = "2x";
 
-			FontTrueType * font = FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+		FontTrueType * font = FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
 
-			theme = UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta", font, "assets/ui/uitheme.css" );
+		theme = UITheme::load( "uitheme" + pd, "uitheme" + pd, "assets/ui/uitheme" + pd + ".eta", font, "assets/ui/uitheme.css" );
 
-			uiSceneNode->combineStyleSheet( theme->getStyleSheet() );
+		appUiSceneNode->combineStyleSheet( theme->getStyleSheet() );
 
-			UIThemeManager::instance()->setDefaultEffectsEnabled( true )->setDefaultTheme( theme )->setDefaultFont( font )->add( theme );
-		}
+		UIThemeManager::instance()->setDefaultEffectsEnabled( true )->setDefaultTheme( theme )->setDefaultFont( font )->add( theme );
 
 		loadConfig();
 
-		uiContainer = UIWidget::New();
-		uiContainer->setId( "appContainer" )->setSize( uiSceneNode->getSize() );
-		uiContainer->clipDisable();
+		SceneManager::instance()->setCurrentUISceneNode( appUiSceneNode );
 
 		uiWinMenu = UIWinMenu::New();
 
@@ -722,8 +764,16 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		uiResourceMenu->add( "Load images from path...", theme->getIconByName( "document-open" ) );
 		uiResourceMenu->addSeparator();
 		uiResourceMenu->add( "Load fonts from path...", theme->getIconByName( "document-open" ) );
+		uiResourceMenu->addSeparator();
+		uiResourceMenu->add( "Load style sheet from path...", theme->getIconByName( "document-open" ) );
 		uiWinMenu->addMenuButton( "Resources", uiResourceMenu );
 		uiResourceMenu->addEventListener( Event::OnItemClicked, cb::Make1( fileMenuClick ) );
+
+		SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
+
+		uiContainer = UIWidget::New();
+		uiContainer->setId( "appContainer" )->setSize( uiSceneNode->getSize() );
+		uiContainer->clipDisable();
 
 		updateRecentProjects();
 
@@ -732,6 +782,10 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		window->pushResizeCallback( cb::Make1( resizeCb ) );
 
 		if ( argc >= 2 ) {
+			if ( argc >= 3 ) {
+				loadStyleSheet( argv[2] );
+			}
+
 			loadLayout( argv[1] );
 		}
 

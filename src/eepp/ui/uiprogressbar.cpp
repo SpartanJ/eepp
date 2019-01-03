@@ -18,7 +18,7 @@ UIProgressBar::UIProgressBar() :
 	setFlags( UI_AUTO_PADDING | UI_AUTO_SIZE );
 
 	mTextBox = UITextView::New();
-	mTextBox->setElementTag( "progressbartext" );
+	mTextBox->setElementTag( "progressbar::text" );
 	mTextBox->setHorizontalAlign( UI_HALIGN_CENTER );
 	mTextBox->setParent( this );
 	mTextBox->setEnabled( false );

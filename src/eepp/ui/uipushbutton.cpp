@@ -311,7 +311,6 @@ bool UIPushButton::setAttribute( const NodeAttribute& attribute, const Uint32& s
 		if ( mStyleConfig.IconAutoMargin )
 			mNodeFlags |= NODE_FLAG_FREE_USE;
 	} else {
-
 		attributeSet = UIWidget::setAttribute( attribute, state );
 	}
 

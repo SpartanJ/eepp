@@ -5,12 +5,12 @@
 
 namespace EE { namespace UI {
 
-UITextInputPassword *UITextInputPassword::New() {
+UITextInputPassword * UITextInputPassword::New() {
 	return eeNew( UITextInputPassword, () );
 }
 
 UITextInputPassword::UITextInputPassword() :
-	UITextInput()
+	UITextInput( "textinputpassword" )
 {
 	mPassCache = Text::New();
 

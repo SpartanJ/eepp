@@ -168,8 +168,9 @@ void UIStyle::updateState() {
 				if ( mCurrentState != getStateFlag(i) ) {
 					mCurrentState = getStateFlag(i);
 					onStateChange();
-					return;
 				}
+
+				return;
 			}
 		}
 	}

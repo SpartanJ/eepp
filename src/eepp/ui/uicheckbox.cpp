@@ -33,7 +33,6 @@ UICheckBox::UICheckBox() :
 	applyDefaultTheme();
 }
 
-
 UICheckBox::~UICheckBox() {
 }
 
