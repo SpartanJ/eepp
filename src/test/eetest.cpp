@@ -551,7 +551,7 @@ void EETest::createBaseUI() {
 	SG->add( butTex->getId(), "button-te_normal" );
 	SG->add( TF->loadFromFile( MyPath + "sprites/button-te_mdown.png" ), "button-te_mdown" );
 
-	UISkinSimple nSkin( "button-te" );
+	UISkin nSkin( "button-te" );
 	Sizef screenSize = SceneManager::instance()->getUISceneNode()->getSize();
 
 	mShowMenu = UIPushButton::New();

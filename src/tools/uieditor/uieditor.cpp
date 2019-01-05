@@ -128,34 +128,13 @@ void unloadFonts() {
 }
 
 static bool isFont( const std::string& path ) {
-	std::string mPath = path;
-
-	if ( path.size() >= 4 ) {
-		std::string File = mPath.substr( mPath.find_last_of("/\\") + 1 );
-		std::string Ext = File.substr( File.find_last_of(".") + 1 );
-		String::toLowerInPlace( Ext );
-
-		if ( Ext == "ttf" || Ext == "otf" || Ext == "wolff" )
-			return true;
-	}
-
-	return false;
+	std::string ext = FileSystem::fileExtension( path );
+	return ext == "ttf" || ext == "otf" || ext == "wolff";
 }
 
 static bool isXML( const std::string& path ) {
-	std::string mPath = path;
-
-	if ( path.size() >= 4 ) {
-		std::string File = mPath.substr( mPath.find_last_of("/\\") + 1 );
-		std::string Ext = File.substr( File.find_last_of(".") + 1 );
-		String::toLowerInPlace( Ext );
-
-		if ( Ext == "xml" ) return true;
-	}
-
-	return false;
+	return FileSystem::fileExtension( path ) == "xml";
 }
-
 
 static void loadImage( std::string path ) {
 	std::string filename( FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( path ) ) );
