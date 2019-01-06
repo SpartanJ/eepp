@@ -305,4 +305,20 @@ Uint32 NodeAttribute::asFontStyle() const {
 	return flags;
 }
 
+Time NodeAttribute::asTime( const Time & defaultTime ) {
+	if ( !mValue.empty() ) {
+		if ( mValue[ mValue.size() -1 ] == 'm' ) {
+			return Milliseconds( asFloat() );
+		} else {
+			return Seconds( asFloat() );
+		}
+	}
+
+	return defaultTime;
+}
+
+Ease::Interpolation NodeAttribute::asInterpolation( const Ease::Interpolation& defaultInterpolation ) {
+	return Ease::fromName( mValue, defaultInterpolation );
+}
+
 }}

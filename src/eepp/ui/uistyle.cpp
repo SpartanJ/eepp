@@ -26,6 +26,12 @@ bool UIStyle::stateExists( const EE::Uint32 & state  ) const {
 
 void UIStyle::addAttribute( int state, NodeAttribute attribute ) {
 	mStates[ state ][ attribute.getName() ] = attribute;
+
+	if ( String::startsWith( attribute.getName(), "transition" ) ) {
+		mTransitionAttributes[ state ].push_back( attribute );
+
+		parseTransitions( state );
+	}
 }
 
 void UIStyle::load() {
@@ -53,7 +59,7 @@ void UIStyle::load() {
 	}
 }
 
-void UIStyle::addStyleSheetProperties( int state, const CSS::StyleSheetProperties& properties ) {
+void UIStyle::addStyleSheetProperties(const Uint32 & state, const CSS::StyleSheetProperties& properties ) {
 	if ( !properties.empty() ) {
 		for ( auto it = properties.begin(); it != properties.end(); ++it ) {
 			CSS::StyleSheetProperty property = it->second;
@@ -63,8 +69,37 @@ void UIStyle::addStyleSheetProperties( int state, const CSS::StyleSheetPropertie
 	}
 }
 
-void UIStyle::addStyleSheetProperty( int state, const CSS::StyleSheetProperty& property ) {
+void UIStyle::addStyleSheetProperty( const Uint32& state, const CSS::StyleSheetProperty& property ) {
 	addAttribute( state, NodeAttribute( property.getName(), property.getValue() ) );
+}
+
+bool UIStyle::hasTransition( const Uint32& state, const std::string& propertyName ) {
+	bool ret = mTransitions.find( state ) != mTransitions.end() && mTransitions[ state ].find( propertyName ) != mTransitions[ state ].end();
+
+	// When transitions are declared without state are global
+	if ( state != StateFlagNormal ) {
+		ret = mTransitions.find( StateFlagNormal ) != mTransitions.end() && mTransitions[ StateFlagNormal ].find( propertyName ) != mTransitions[ state ].end();
+	}
+
+	return ret;
+}
+
+UIStyle::TransitionInfo UIStyle::getTransition( const Uint32& state, const std::string& propertyName ) {
+	if ( mTransitions.find( state ) != mTransitions.end() ) {
+		auto propertyTransitionIt = mTransitions[ state ].find( propertyName );
+
+		if ( propertyTransitionIt != mTransitions[ state ].end() ) {
+			return propertyTransitionIt->second;
+		} else if ( mTransitions.find( StateFlagNormal ) != mTransitions.end() ) {
+			propertyTransitionIt = mTransitions[ StateFlagNormal ].find( propertyName );
+
+			if ( propertyTransitionIt != mTransitions[ state ].end() ) {
+				return propertyTransitionIt->second;
+			}
+		}
+	}
+
+	return TransitionInfo();
 }
 
 void UIStyle::onStateChange() {
@@ -185,6 +220,121 @@ void UIStyle::updateState() {
 
 	if ( currentState != StateFlagNormal ) {
 		onStateChange();
+	}
+}
+
+void UIStyle::parseTransitions( const Uint32& state ) {
+	std::vector<std::string> properties;
+	std::vector<Time> durations;
+	std::vector<Time> delays;
+	std::vector<Ease::Interpolation> timingFunctions;
+	TransitionsMap transitions;
+
+	if ( mTransitionAttributes.find( state ) == mTransitionAttributes.end() )
+		return;
+
+	auto transitionAttributes = mTransitionAttributes[ state ];
+
+	for ( auto it = transitionAttributes.begin(); it != transitionAttributes.end(); ++it ) {
+		NodeAttribute& attr = *it;
+		if ( attr.getName() == "transition" ) {
+			auto strTransitions = String::split( attr.getValue(), ',' );
+
+			for ( auto tit = strTransitions.begin(); tit != strTransitions.end(); ++tit ) {
+				auto strTransition = String::trim( *tit );
+				auto splitTransition = String::split( strTransition, ' ' );
+
+				if ( !splitTransition.empty() ) {
+					TransitionInfo transitionInfo;
+
+					if ( splitTransition.size() >= 2 ) {
+						std::string property  = splitTransition[0];
+						Time duration = NodeAttribute( attr.getName(), splitTransition[1] ).asTime();
+
+						transitionInfo.property = property;
+						transitionInfo.duration = duration;
+
+						if ( splitTransition.size() >= 3 ) {
+							transitionInfo.timingFunction = Ease::fromName( splitTransition[2] );
+
+							if (  transitionInfo.timingFunction == Ease::Linear && splitTransition[2] != "linear" && splitTransition.size() == 3 ) {
+								transitionInfo.delay = NodeAttribute( attr.getName(), splitTransition[2] ).asTime();
+							} else if ( splitTransition.size() >= 4 ) {
+								transitionInfo.delay = NodeAttribute( attr.getName(), splitTransition[3] ).asTime();
+							}
+						}
+
+						transitions[ transitionInfo.getProperty() ] = transitionInfo;
+					}
+				}
+			}
+		} else if ( attr.getName() == "transitionduration" || attr.getName() == "transition-duration" ) {
+			auto strDurations = String::split( attr.getValue(), ',' );
+
+			for ( auto dit = strDurations.begin(); dit != strDurations.end(); ++dit ) {
+				std::string duration( String::trim( *dit ) );
+
+				durations.push_back( NodeAttribute( attr.getName(), duration ).asTime() );
+			}
+		} else if ( attr.getName() == "transitiondelay" || attr.getName() == "transition-delay" ) {
+			auto strDelays = String::split( attr.getValue(), ',' );
+
+			for ( auto dit = strDelays.begin(); dit != strDelays.end(); ++dit ) {
+				std::string delay( String::trim( *dit ) );
+
+				delays.push_back( NodeAttribute( attr.getName(), delay ).asTime() );
+			}
+		} else if ( attr.getName() == "transitiontimingfunction" || attr.getName() == "transition-timing-function" ) {
+			auto strTimingFuncs = String::split( attr.getValue(), ',' );
+
+			for ( auto dit = strTimingFuncs.begin(); dit != strTimingFuncs.end(); ++dit ) {
+				std::string timingFunction( String::trim( *dit ) );
+
+				timingFunctions.push_back( Ease::fromName( timingFunction ) );
+			}
+		} else if ( attr.getName() == "transitionproperty" || attr.getName() == "transition-property" ) {
+			auto strProperties = String::split( attr.getValue(), ',' );
+
+			for ( auto dit = strProperties.begin(); dit != strProperties.end(); ++dit ) {
+				std::string property( String::trim( *dit ) );
+
+				properties.push_back( property );
+			}
+		}
+	}
+
+	if ( properties.empty() ) {
+		if ( !transitions.empty() )
+			mTransitions[ state ] = transitions;
+
+		return;
+	}
+
+	for ( size_t i = 0; i < properties.size(); i++ ) {
+		const std::string& property = properties.at( i );
+		TransitionInfo transitionInfo;
+
+		transitionInfo.property = property;
+
+		if ( durations.size() < i ) {
+			transitionInfo.duration = durations[i];
+		} else if ( !durations.empty() ) {
+			transitionInfo.duration = durations[0];
+		}
+
+		if ( delays.size() < i ) {
+			transitionInfo.delay = delays[i];
+		} else if ( !delays.empty() ) {
+			transitionInfo.delay = delays[0];
+		}
+
+		if ( timingFunctions.size() < i ) {
+			transitionInfo.timingFunction = timingFunctions[i];
+		} else if ( !delays.empty() ) {
+			transitionInfo.timingFunction = timingFunctions[0];
+		}
+
+		mTransitions[ state ][ property ] = transitionInfo;
 	}
 }
 

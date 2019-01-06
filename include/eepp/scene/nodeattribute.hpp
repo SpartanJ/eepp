@@ -4,8 +4,10 @@
 #include <string>
 #include <eepp/math/rect.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/system/time.hpp>
 #include <eepp/system/color.hpp>
 #include <eepp/math/originpoint.hpp>
+#include <eepp/math/ease.hpp>
 #include <eepp/graphics/blendmode.hpp>
 
 using namespace EE::System;
@@ -116,6 +118,10 @@ class NodeAttribute {
 		Rectf asRectf( const Rectf& defaultValue = Rectf() ) const;
 
 		Uint32 asFontStyle() const;
+
+		Time asTime( const Time& defaultTime = Seconds(0) );
+
+		Ease::Interpolation asInterpolation( const Ease::Interpolation& defaultInterpolation = Ease::Linear );
 	protected:
 		std::string mName;
 		std::string mValue;

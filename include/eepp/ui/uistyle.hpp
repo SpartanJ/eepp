@@ -5,6 +5,7 @@
 #include <eepp/scene/nodeattribute.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
+#include <eepp/math/ease.hpp>
 
 using namespace EE::Scene;
 
@@ -18,6 +19,27 @@ class UIWidget;
 
 class EE_API UIStyle : public UIState {
 	public:
+		class TransitionInfo
+		{
+			public:
+				TransitionInfo() :
+					timingFunction( Ease::Linear )
+				{}
+
+				const std::string& getProperty() const { return property; }
+
+				Ease::Interpolation getTimingFunction() const { return timingFunction; }
+
+				const Time& getDelay() const { return delay; };
+
+				const Time& getDuration() const { return duration; }
+
+				std::string property;
+				Ease::Interpolation timingFunction;
+				Time delay;
+				Time duration;
+		};
+
 		static UIStyle * New( UIWidget * widget );
 
 		explicit UIStyle( UIWidget * widget );
@@ -50,16 +72,25 @@ class EE_API UIStyle : public UIState {
 
 		NodeAttribute getAttribute( const Uint32& state, std::vector<std::string> attributeNames ) const;
 
-		void addStyleSheetProperties( int state, const CSS::StyleSheetProperties& properties );
+		void addStyleSheetProperties( const Uint32& state, const CSS::StyleSheetProperties& properties );
 
-		void addStyleSheetProperty( int state, const CSS::StyleSheetProperty& property );
+		void addStyleSheetProperty( const Uint32& state, const CSS::StyleSheetProperty& property );
+
+		bool hasTransition( const Uint32& state, const std::string& propertyName );
+
+		TransitionInfo getTransition( const Uint32& state, const std::string& propertyName );
 	protected:
 		typedef std::map<std::string, NodeAttribute> AttributesMap;
+		typedef std::map<std::string, TransitionInfo> TransitionsMap;
 
 		UIWidget * mWidget;
-		std::map<int, AttributesMap> mStates;
+		std::map<Uint32, AttributesMap> mStates;
+		std::map<Uint32, TransitionsMap> mTransitions;
+		std::map<Uint32, std::vector<NodeAttribute>> mTransitionAttributes;
 
 		void updateState();
+
+		void parseTransitions( const Uint32& state );
 };
 
 }}

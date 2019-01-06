@@ -790,7 +790,19 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "rotation" == name ) {
 		setRotation( attribute.asFloat() );
 	} else if ( "scale" == name ) {
-		setScale( attribute.asVector2f() );
+		/*if ( NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
+			Action * action = NULL;
+
+			if ( Time::Zero == transitionInfo.delay ) {
+				action = Actions::Scale::New( mScale, mStyle->getAttribute( state, { attribute.getName() } ).asVector2f(), transitionInfo.duration, transitionInfo.timingFunction );
+			}
+
+			if ( NULL != action )
+				runAction( action );
+		} else {*/
+			setScale( attribute.asVector2f() );
+		//}
 	} else if ( "rotationoriginpoint" == name ) {
 		setRotationOriginPoint( attribute.asOriginPoint() );
 	} else if ( "scaleoriginpoint" == name ) {
