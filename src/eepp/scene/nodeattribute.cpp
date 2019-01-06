@@ -167,7 +167,7 @@ BlendMode NodeAttribute::asBlendMode() const {
 }
 
 Vector2f NodeAttribute::asVector2f( const Vector2f & defaultValue ) const {
-	if ( !mValue.empty() && mValue.find( "," ) != std::string::npos ) {
+	if ( !mValue.empty() ) {
 		Vector2f vector;
 		auto xySplit = String::split( mValue, ',', true );
 
@@ -178,6 +178,12 @@ Vector2f NodeAttribute::asVector2f( const Vector2f & defaultValue ) const {
 			vector.y = String::fromString<Float>( val, xySplit[1] ) ? val : defaultValue.y;
 
 			return vector;
+		} else if ( xySplit.size() == 1 ) {
+			Float val;
+
+			vector.x = vector.y = String::fromString<Float>( val, xySplit[0] ) ? val : defaultValue.x;
+
+			return vector;
 		}
 	}
 
@@ -185,7 +191,7 @@ Vector2f NodeAttribute::asVector2f( const Vector2f & defaultValue ) const {
 }
 
 Vector2i NodeAttribute::asVector2i( const Vector2i & defaultValue ) const {
-	if ( !mValue.empty() && mValue.find( "," ) != std::string::npos ) {
+	if ( !mValue.empty() ) {
 		Vector2i vector;
 		auto xySplit = String::split( mValue, ',', true );
 
@@ -194,6 +200,12 @@ Vector2i NodeAttribute::asVector2i( const Vector2i & defaultValue ) const {
 
 			vector.x = String::fromString<int>( val, xySplit[0] ) ? val : defaultValue.x;
 			vector.y = String::fromString<int>( val, xySplit[1] ) ? val : defaultValue.y;
+
+			return vector;
+		} else if ( xySplit.size() == 1 ) {
+			int val;
+
+			vector.x = vector.y = String::fromString<int>( val, xySplit[0] ) ? val : defaultValue.x;
 
 			return vector;
 		}
@@ -211,7 +223,7 @@ Sizei NodeAttribute::asSizei( const Sizei& defaultValue ) const {
 }
 
 Rect NodeAttribute::asRect( const Rect& defaultValue ) const {
-	if ( !mValue.empty() && mValue.find( " " ) != std::string::npos ) {
+	if ( !mValue.empty() ) {
 		Rect rect( defaultValue );
 
 		auto ltrbSplit = String::split( mValue, ' ', true );
@@ -241,7 +253,7 @@ Rect NodeAttribute::asRect( const Rect& defaultValue ) const {
 Rectf NodeAttribute::asRectf( const Rectf& defaultValue ) const {
 	Rectf rect( defaultValue );
 
-	if ( !mValue.empty() && mValue.find( " " ) != std::string::npos ) {
+	if ( !mValue.empty() ) {
 		auto ltrbSplit = String::split( mValue, ' ', true );
 
 		if ( ltrbSplit.size() == 4 ) {
@@ -256,9 +268,9 @@ Rectf NodeAttribute::asRectf( const Rectf& defaultValue ) const {
 		} else if ( ltrbSplit.size() == 2 ) {
 			rect.Left = PixelDensity::toDpFromString( ltrbSplit[0] );
 			rect.Top = PixelDensity::toDpFromString( ltrbSplit[1] );
+		} else if ( ltrbSplit.size() == 1 ) {
+			rect.Left = rect.Top = rect.Right = rect.Bottom = PixelDensity::toDpFromString( mValue );
 		}
-	} else if ( !mValue.empty() ) {
-		rect.Left = rect.Top = rect.Right = rect.Bottom = PixelDensity::toDpFromString( mValue );
 	}
 
 	return rect;

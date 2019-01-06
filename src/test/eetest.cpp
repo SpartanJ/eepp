@@ -265,7 +265,7 @@ void EETest::loadFonts() {
 	mFontLoader.load( cb::Make1( this, &EETest::onFontLoaded ) );
 }
 
-void EETest::onFontLoaded( ResourceLoader * ObjLoaded ) {
+void EETest::onFontLoaded( ResourceLoader * ) {
 	TTF		= FontManager::instance()->getByName( "NotoSans-Regular" );
 	Font * DBSM	= FontManager::instance()->getByName( "DejaVuSansMono" );
 
@@ -603,6 +603,7 @@ void EETest::createUI() {
 
 	eePRINTL("Node size: %d", sizeof(Node));
 	eePRINTL("UINode size: %d", sizeof(UINode));
+	eePRINTL("UIWidget size: %d", sizeof(UIWidget));
 
 	mTheme = UITheme::load( mThemeName, mThemeName, MyPath + "ui/" + mThemeName + EE_TEXTURE_ATLAS_EXTENSION, TTF, MyPath + "ui/uitheme.css" );
 
@@ -1047,7 +1048,7 @@ void EETest::createDecoratedWindow() {
 	TabWidget->add( "TextBox", txtBox );
 }
 
-void EETest::onCloseClick( const Event * Event ) {
+void EETest::onCloseClick( const Event * ) {
 	mUIWindow = NULL;
 }
 
@@ -1122,7 +1123,7 @@ void EETest::onItemClick( const Event * Event ) {
 	}
 }
 
-void EETest::onValueChange( const Event * Event ) {
+void EETest::onValueChange( const Event * ) {
 	mTextBoxValue->setText( "Scroll Value:\n" + String::toStr( mScrollBar->getValue() ) );
 
 	mProgressBar->setProgress( mScrollBar->getValue() * 100.f );
@@ -1205,7 +1206,7 @@ void EETest::cmdSetPartsNum ( const std::vector < String >& params ) {
 	}
 }
 
-void EETest::onTextureLoaded( ResourceLoader * ResLoaded ) {
+void EETest::onTextureLoaded( ResourceLoader * ) {
 	SndMng.play( "mysound" );
 }
 
@@ -1280,8 +1281,6 @@ void EETest::loadTextures() {
 		#endif
 	}
 
-	int w, h;
-
 	for ( Int32 my = 0; my < 4; my++ )
 		for( Int32 mx = 0; mx < 8; mx++ )
 			SP.addFrame( TN[4], Sizef( 0, 0 ), Vector2i( 0, 0 ), Rect( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
@@ -1298,8 +1297,8 @@ void EETest::loadTextures() {
 	Texture * Tex = TNP[2];
 
 	if ( NULL != Tex && Tex->lock() ) {
-		w = (int)Tex->getWidth();
-		h = (int)Tex->getHeight();
+		int w = (int)Tex->getWidth();
+		int h = (int)Tex->getHeight();
 
 		for ( y = 0; y < h; y++) {
 			for ( x = 0; x < w; x++) {
@@ -2021,7 +2020,7 @@ void EETest::particles() {
 		PS[i].draw();
 }
 
-#define GRABABLE_MASK_BIT (1<<31)
+#define GRABABLE_MASK_BIT (1u<<31u)
 #define NOT_GRABABLE_MASK (~GRABABLE_MASK_BIT)
 
 void EETest::createJointAndBody() {
@@ -2113,27 +2112,27 @@ void EETest::demo1Destroy() {
 	eeSAFE_DELETE( mSpace );
 }
 
-cpBool EETest::blockerBegin( Arbiter *arb, Space *space, void *unused ) {
+cpBool EETest::blockerBegin( Arbiter * arb, Space *, void * ) {
 	Shape * a, * b;
 	arb->getShapes( &a, &b );
 
-	Emitter *emitter = (Emitter *) a->getData();
+	Emitter * emitter = reinterpret_cast<Emitter*>(a->getData());
 
 	emitter->blocked++;
 
 	return cpFalse; // Return values from sensors callbacks are ignored,
 }
 
-void EETest::blockerSeparate( Arbiter *arb, Space * space, void *unused ) {
+void EETest::blockerSeparate( Arbiter * arb, Space *, void * ) {
 	Shape * a, * b;
 	arb->getShapes( &a, &b );
 
-	Emitter *emitter = (Emitter *) a->getData();
+	Emitter * emitter = reinterpret_cast<Emitter*>(a->getData());
 
 	emitter->blocked--;
 }
 
-void EETest::postStepRemove( Space *space, void * tshape, void * unused ) {
+void EETest::postStepRemove( Space *, void * tshape, void * ) {
 	Shape * shape = reinterpret_cast<Shape*>( tshape );
 
 	#ifndef EE_PLATFORM_TOUCH
@@ -2155,11 +2154,11 @@ void EETest::postStepRemove( Space *space, void * tshape, void * unused ) {
 	Shape::Free( shape, true );
 }
 
-cpBool EETest::catcherBarBegin(Arbiter *arb, Physics::Space *space, void *unused) {
+cpBool EETest::catcherBarBegin(Arbiter *arb, Physics::Space *, void *) {
 	Shape * a, * b;
 	arb->getShapes( &a, &b );
 
-	Emitter *emitter = (Emitter *) a->getData();
+	Emitter * emitter = reinterpret_cast<Emitter*>(a->getData());
 
 	emitter->queue++;
 
@@ -2348,7 +2347,7 @@ void EETest::end() {
 
 }
 
-EE_MAIN_FUNC int main (int argc, char * argv []) {
+EE_MAIN_FUNC int main (int , char *  []) {
 	Demo_Test::EETest * Test = eeNew( Demo_Test::EETest, () );
 
 	Test->process();

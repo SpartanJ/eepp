@@ -63,6 +63,10 @@ void UIStyle::addStyleSheetProperties( int state, const CSS::StyleSheetPropertie
 	}
 }
 
+void UIStyle::addStyleSheetProperty( int state, const CSS::StyleSheetProperty& property ) {
+	addAttribute( state, NodeAttribute( property.getName(), property.getValue() ) );
+}
+
 void UIStyle::onStateChange() {
 	if ( NULL != mWidget && stateExists( mCurrentState ) ) {
 		AttributesMap& attrs = mStates[ mCurrentState ];

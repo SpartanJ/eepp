@@ -200,7 +200,7 @@ class EE_API Node : public Transformable {
 
 		std::string getId() const;
 
-		Node * setId( const std::string & id );
+		virtual Node * setId( const std::string & id );
 
 		Uint32 getIdHash() const;
 

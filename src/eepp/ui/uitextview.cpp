@@ -447,7 +447,7 @@ void UITextView::drawSelection( Text * textCache ) {
 			} while ( end != lastEnd );
 		}
 
-		if ( mSelPosCache.size() ) {
+		if ( !mSelPosCache.empty() ) {
 			Primitives P;
 			P.setColor( mFontStyleConfig.FontSelectionBackColor );
 			Float vspace = textCache->getFont()->getFontHeight( textCache->getCharacterSizePx() );

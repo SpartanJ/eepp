@@ -15,18 +15,18 @@ UISpinBox::UISpinBox() :
 	mValue( 0 ),
 	mClickStep( 1.f )
 {
-	mInput	= UITextInput::New();
+	mInput	= UITextInput::NewWithTag( "spinbox::input" );
 	mInput->setVisible( true );
 	mInput->setEnabled( true );
 	mInput->setParent( this );
 
-	mPushUp	= UINode::New();
+	mPushUp	= UIWidget::NewWithTag( "spinbox::btnup" );
 	mPushUp->setVisible( true );
 	mPushUp->setEnabled( true );
 	mPushUp->setParent( this );
 	mPushUp->setSize( 16, 16 );
 
-	mPushDown = UINode::New();
+	mPushDown = UIWidget::NewWithTag( "spinbox::btndown" );
 	mPushDown->setVisible( true );
 	mPushDown->setEnabled( true );
 	mPushDown->setParent( this );

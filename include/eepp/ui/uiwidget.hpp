@@ -44,6 +44,8 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		virtual Node * setSize( const Float& Width, const Float& Height );
 
+		virtual Node * setId( const std::string & id );
+
 		const Sizef& getSize();
 
 		UITooltip * getTooltip();

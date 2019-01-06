@@ -36,7 +36,7 @@ UISlider::UISlider( const UI_ORIENTATION& orientation ) :
 	else
 		bgSize = Sizef( 8, mDpSize.getHeight() - 16 );
 
-	mBackSlider = UINode::New();
+	mBackSlider = UIWidget::NewWithTag( "slider::back" );
 	mBackSlider->setParent( this );
 	mBackSlider->setVisible( true );
 	mBackSlider->setEnabled( true );

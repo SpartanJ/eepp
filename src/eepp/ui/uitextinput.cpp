@@ -13,6 +13,10 @@ UITextInput * UITextInput::New() {
 	return eeNew( UITextInput, () );
 }
 
+UITextInput * UITextInput::NewWithTag( const std::string& tag ) {
+	return eeNew( UITextInput, ( tag ) );
+}
+
 UITextInput::UITextInput( const std::string& tag ) :
 	UITextView( tag ),
 	mCursorPos(0),

@@ -4,6 +4,7 @@
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/scene/actions/actions.hpp>
 #include <pugixml/pugixml.hpp>
 #include <algorithm>
 
@@ -309,6 +310,14 @@ Node * UIWidget::setSize( const Float& Width, const Float& Height ) {
 	return UINode::setSize( Width, Height );
 }
 
+Node * UIWidget::setId( const std::string& id ) {
+	Node::setId( id );
+
+	reloadStyle( false );
+
+	return this;
+}
+
 const Sizef& UIWidget::getSize() {
 	return UINode::getSize();
 }
@@ -465,12 +474,19 @@ CSS::StyleSheetElement * UIWidget::getStyleSheetNextSiblingElement() const {
 }
 
 void UIWidget::addClass( const std::string& cls ) {
-	if ( !containsClass( cls ) )
+	if ( !containsClass( cls ) ) {
 		mClasses.push_back( cls );
+
+		reloadStyle( false );
+	}
 }
 
 void UIWidget::removeClass( const std::string& cls ) {
-	mClasses.erase( std::find( mClasses.begin(), mClasses.end(), cls ) );
+	if ( containsClass( cls ) ) {
+		mClasses.erase( std::find( mClasses.begin(), mClasses.end(), cls ) );
+
+		reloadStyle( false );
+	}
 }
 
 bool UIWidget::containsClass( const std::string& cls ) {
@@ -673,8 +689,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			}
 		}
 	} else if ( "layout_margin" == name ) {
-		int val = attribute.asDpDimensionI();
-		setLayoutMargin( Rect( val, val, val, val ) );
+		setLayoutMargin( attribute.asRect() );
 	} else if ( "layout_marginleft" == name ) {
 		setLayoutMargin( Rect( attribute.asDpDimensionI(), mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) );
 	} else if ( "layout_marginright" == name ) {
@@ -775,7 +790,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "rotation" == name ) {
 		setRotation( attribute.asFloat() );
 	} else if ( "scale" == name ) {
-		setScale( attribute.asFloat() );
+		setScale( attribute.asVector2f() );
 	} else if ( "rotationoriginpoint" == name ) {
 		setRotationOriginPoint( attribute.asOriginPoint() );
 	} else if ( "scaleoriginpoint" == name ) {
@@ -783,8 +798,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "blendmode" == name ) {
 		setBlendMode( attribute.asBlendMode() );
 	} else if ( "padding" == name ) {
-		int val = attribute.asDpDimension();
-		setPadding( Rectf( val, val, val, val ) );
+		setPadding( attribute.asRectf() );
 	} else if ( "paddingleft" == name ) {
 		setPadding( Rectf( attribute.asDpDimension(), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
 	} else if ( "paddingright" == name ) {

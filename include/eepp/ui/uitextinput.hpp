@@ -11,7 +11,11 @@ class EE_API UITextInput : public UITextView {
 	public:
 		static UITextInput * New();
 
+		static UITextInput * NewWithTag( const std::string& tag );
+
 		UITextInput();
+
+		explicit UITextInput( const std::string& tag );
 
 		virtual ~UITextInput();
 
@@ -57,9 +61,6 @@ class EE_API UITextInput : public UITextView {
 		int				mCursorPos;
 		bool			mAllowEditing;
 		bool			mShowingWait;
-
-		UITextInput( const std::string& tag );
-
 		void resetWaitCursor();
 
 		virtual void alignFix();

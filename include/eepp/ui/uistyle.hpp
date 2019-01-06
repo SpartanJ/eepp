@@ -49,6 +49,10 @@ class EE_API UIStyle : public UIState {
 		FontStyleConfig getFontStyleConfig( const Uint32& state = StateFlagNormal ) const;
 
 		NodeAttribute getAttribute( const Uint32& state, std::vector<std::string> attributeNames ) const;
+
+		void addStyleSheetProperties( int state, const CSS::StyleSheetProperties& properties );
+
+		void addStyleSheetProperty( int state, const CSS::StyleSheetProperty& property );
 	protected:
 		typedef std::map<std::string, NodeAttribute> AttributesMap;
 
@@ -56,8 +60,6 @@ class EE_API UIStyle : public UIState {
 		std::map<int, AttributesMap> mStates;
 
 		void updateState();
-
-		void addStyleSheetProperties( int state, const CSS::StyleSheetProperties& properties );
 };
 
 }}

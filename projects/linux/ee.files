@@ -1,4 +1,5 @@
 ../../bin/assets/ee.ini
+../../bin/assets/layouts/test.css
 ../../bin/assets/layouts/test.xml
 ../../bin/assets/ui/uitheme.css
 ../../external_projects.lua
