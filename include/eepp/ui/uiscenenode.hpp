@@ -49,6 +49,8 @@ class EE_API UISceneNode : public SceneNode {
 		CSS::StyleSheet& getStyleSheet();
 
 		bool hasStyleSheet();
+
+		const bool& isLoading() const;
 	protected:
 		friend class EE::UI::UIWindow;
 		Sizef				mDpSize;
@@ -56,6 +58,7 @@ class EE_API UISceneNode : public SceneNode {
 		Translator			mTranslator;
 		std::list<UIWindow*> mWindowsList;
 		CSS::StyleSheet mStyleSheet;
+		bool				mIsLoading;
 
 		virtual void resizeControl( EE::Window::Window * win );
 

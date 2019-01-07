@@ -200,11 +200,10 @@ const Color& UITextView::getFontColor() const {
 }
 
 UITextView * UITextView::setFontColor( const Color& color ) {
-	if ( mFontStyleConfig.FontColor != color ) {
-		mFontStyleConfig.FontColor = color;
-		mTextCache->setFillColor( color );
-
-		setAlpha( color.a );
+	Color newColor( color.r, color.g, color.b, mAlpha );
+	if ( mFontStyleConfig.FontColor != newColor ) {
+		mFontStyleConfig.FontColor = newColor;
+		mTextCache->setFillColor( newColor );
 	}
 
 	return this;

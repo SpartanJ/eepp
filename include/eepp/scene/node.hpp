@@ -301,7 +301,7 @@ class EE_API Node : public Transformable {
 
 		void writeCtrlFlag( const Uint32& Flag, const Uint32& Val );
 
-		SceneNode * getSceneNode();
+		SceneNode * getSceneNode() const;
 
 		EventDispatcher * getEventDispatcher();
 

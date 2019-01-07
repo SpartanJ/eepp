@@ -1014,7 +1014,7 @@ void Node::invalidateDraw() {
 	}
 }
 
-SceneNode * Node::getSceneNode() {
+SceneNode * Node::getSceneNode() const {
 	return mSceneNode;
 }
 

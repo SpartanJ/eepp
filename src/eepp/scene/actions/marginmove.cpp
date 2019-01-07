@@ -95,7 +95,7 @@ void MarginMove::onStart() {
 	}
 }
 
-void MarginMove::onUpdate( const Time& time ) {
+void MarginMove::onUpdate( const Time& ) {
 	if ( NULL != mNode && mNode->isWidget() ) {
 		static_cast<UIWidget*>( mNode )->setLayoutMargin(
 											Rect( mInterpolationLeft.getPosition(),

@@ -216,6 +216,7 @@
 ../../include/eepp/scene/actions/fade.hpp
 ../../include/eepp/scene/actions/marginmove.hpp
 ../../include/eepp/scene/actions/move.hpp
+../../include/eepp/scene/actions/paddingtransition.hpp
 ../../include/eepp/scene/actions/rotate.hpp
 ../../include/eepp/scene/actions/scale.hpp
 ../../include/eepp/scene/actions/sequence.hpp
@@ -637,6 +638,7 @@
 ../../src/eepp/scene/actions/fade.cpp
 ../../src/eepp/scene/actions/marginmove.cpp
 ../../src/eepp/scene/actions/move.cpp
+../../src/eepp/scene/actions/paddingtransition.cpp
 ../../src/eepp/scene/actions/rotate.cpp
 ../../src/eepp/scene/actions/scale.cpp
 ../../src/eepp/scene/actions/sequence.cpp

@@ -15,7 +15,8 @@ UISceneNode * UISceneNode::New( EE::Window::Window * window ) {
 }
 
 UISceneNode::UISceneNode( EE::Window::Window * window ) :
-	SceneNode( window )
+	SceneNode( window ),
+	mIsLoading( false )
 {
 	mNodeFlags |= NODE_FLAG_UISCENENODE | NODE_FLAG_OVER_FIND_ALLOWED;
 
@@ -71,6 +72,7 @@ bool UISceneNode::windowExists( UIWindow * win ) {
 }
 
 UIWidget * UISceneNode::loadLayoutNodes( pugi::xml_node node, Node * parent ) {
+	mIsLoading = true;
 	UIWidget * firstWidget = NULL;
 
 	if ( NULL == parent )
@@ -93,9 +95,10 @@ UIWidget * UISceneNode::loadLayoutNodes( pugi::xml_node node, Node * parent ) {
 
 			uiwidget->reloadStyle( false );
 			uiwidget->onWidgetCreated();
-
 		}
 	}
+
+	mIsLoading = false;
 
 	return firstWidget;
 }
@@ -253,6 +256,10 @@ const Sizef &UISceneNode::getSize() {
 
 const Sizef &UISceneNode::getRealSize() {
 	return mSize;
+}
+
+const bool& UISceneNode::isLoading() const {
+	return mIsLoading;
 }
 
 }}

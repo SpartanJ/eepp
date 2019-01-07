@@ -70,12 +70,23 @@ Tooltip {
 #tpad {
 	scale: 1;
 	rotation: 0;
-	layout_margin: 0;
-	transition: scale 0.25s, rotation 0.25s 0.25s, layout_margin 0.25s;
+	transition: scale 0.25s, rotation 0.25s 0.25s;
 }
 
 #tpad:hover {
 	scale: 1.1;
-	rotation: 3;
-	layout_margin: 8dp 0 0 0;
+	rotation: -3;
+}
+
+#tpad2 {
+	layout_marginLeft: 0;
+	padding: 24dp;
+	opacity: 0.5;
+	transition: all 0.25s;
+}
+
+#tpad2:hover {
+	layout_marginLeft: 8dp;
+	padding: 28dp;
+	opacity: 1;
 }

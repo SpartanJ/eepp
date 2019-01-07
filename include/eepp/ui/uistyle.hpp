@@ -70,7 +70,9 @@ class EE_API UIStyle : public UIState {
 
 		FontStyleConfig getFontStyleConfig( const Uint32& state = StateFlagNormal ) const;
 
-		NodeAttribute getAttribute( const Uint32& state, std::vector<std::string> attributeNames ) const;
+		NodeAttribute getAttribute( const Uint32& state, const std::string& attributeName ) const;
+
+		NodeAttribute getAttributeFromNames( const Uint32& state, const std::vector<std::string>& attributeNames ) const;
 
 		void addStyleSheetProperties( const Uint32& state, const CSS::StyleSheetProperties& properties );
 

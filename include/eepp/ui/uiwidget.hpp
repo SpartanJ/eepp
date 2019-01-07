@@ -183,6 +183,8 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		void alignAgainstLayout();
 
 		void reportStyleStateChange();
+
+		bool isSceneNodeLoading() const;
 };
 
 }}

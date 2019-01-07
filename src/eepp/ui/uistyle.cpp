@@ -36,6 +36,8 @@ void UIStyle::addAttribute( int state, NodeAttribute attribute ) {
 
 void UIStyle::load() {
 	mStates.clear();
+	mTransitions.clear();
+	mTransitionAttributes.clear();
 
 	UISceneNode * uiSceneNode = mWidget->getSceneNode()->isUISceneNode() ? static_cast<UISceneNode*>( mWidget->getSceneNode() ) : NULL;
 
@@ -74,11 +76,17 @@ void UIStyle::addStyleSheetProperty( const Uint32& state, const CSS::StyleSheetP
 }
 
 bool UIStyle::hasTransition( const Uint32& state, const std::string& propertyName ) {
-	bool ret = mTransitions.find( state ) != mTransitions.end() && mTransitions[ state ].find( propertyName ) != mTransitions[ state ].end();
+	bool ret = mTransitions.find( state ) != mTransitions.end() &&
+			( mTransitions[ state ].find( propertyName ) != mTransitions[ state ].end() ||
+			  mTransitions[ state ].find( "all" ) != mTransitions[ state ].end()
+			);
 
 	// When transitions are declared without state are global
 	if ( !ret && state != StateFlagNormal ) {
-		ret = mTransitions.find( StateFlagNormal ) != mTransitions.end() && mTransitions[ StateFlagNormal ].find( propertyName ) != mTransitions[ StateFlagNormal ].end();
+		ret = mTransitions.find( StateFlagNormal ) != mTransitions.end() && (
+			  mTransitions[ StateFlagNormal ].find( propertyName ) != mTransitions[ StateFlagNormal ].end() ||
+			  mTransitions[ StateFlagNormal ].find( "all" ) != mTransitions[ StateFlagNormal ].end()
+		);
 	}
 
 	return ret;
@@ -90,12 +98,24 @@ UIStyle::TransitionInfo UIStyle::getTransition( const Uint32& state, const std::
 
 		if ( propertyTransitionIt != mTransitions[ state ].end() ) {
 			return propertyTransitionIt->second;
+		} else if ( ( propertyTransitionIt = mTransitions[ state ].find( "all" ) ) != mTransitions[ state ].end() ) {
+			return propertyTransitionIt->second;
 		} else if ( mTransitions.find( StateFlagNormal ) != mTransitions.end() ) {
 			propertyTransitionIt = mTransitions[ StateFlagNormal ].find( propertyName );
 
 			if ( propertyTransitionIt != mTransitions[ StateFlagNormal ].end() ) {
 				return propertyTransitionIt->second;
+			} else if ( ( propertyTransitionIt = mTransitions[ StateFlagNormal ].find( "all" ) ) != mTransitions[ state ].end() ) {
+				return propertyTransitionIt->second;
 			}
+		}
+	} else if ( mTransitions.find( StateFlagNormal ) != mTransitions.end() ) {
+		auto propertyTransitionIt = mTransitions[ StateFlagNormal ].find( propertyName );
+
+		if ( propertyTransitionIt != mTransitions[ StateFlagNormal ].end() ) {
+			return propertyTransitionIt->second;
+		} else if ( ( propertyTransitionIt = mTransitions[ StateFlagNormal ].find( "all" ) ) != mTransitions[ state ].end() ) {
+			return propertyTransitionIt->second;
 		}
 	}
 
@@ -120,7 +140,22 @@ void UIStyle::onStateChange() {
 	}
 }
 
-NodeAttribute UIStyle::getAttribute( const Uint32& state, std::vector<std::string> attributeNames ) const {
+
+NodeAttribute UIStyle::getAttribute( const Uint32& state, const std::string& attributeName ) const {
+	if ( !attributeName.empty() && stateExists( state ) ) {
+		const AttributesMap& attributesMap = mStates.at( state );
+
+		auto attributeFound = attributesMap.find( attributeName );
+
+		if ( attributeFound != attributesMap.end() ) {
+			return attributeFound->second;
+		}
+	}
+
+	return NodeAttribute();
+}
+
+NodeAttribute UIStyle::getAttributeFromNames( const Uint32& state, const std::vector<std::string>& attributeNames ) const {
 	if ( !attributeNames.empty() && stateExists( state ) ) {
 		const AttributesMap& attributesMap = mStates.at( state );
 
@@ -139,7 +174,7 @@ NodeAttribute UIStyle::getAttribute( const Uint32& state, std::vector<std::strin
 }
 
 Font * UIStyle::getFontFamily( const Uint32& state ) const {
-	NodeAttribute attribute = getAttribute( state, { "fontfamily", "fontname" } );
+	NodeAttribute attribute = getAttributeFromNames( state, { "fontfamily", "fontname" } );
 
 	if ( !attribute.isEmpty() ) {
 		return FontManager::instance()->getByName( attribute.asString() );
@@ -149,7 +184,7 @@ Font * UIStyle::getFontFamily( const Uint32& state ) const {
 }
 
 int UIStyle::getFontCharacterSize(const Uint32& state, const int& defaultValue ) const {
-	NodeAttribute attribute = getAttribute( state, { "textsize", "fontsize", "charactersize" } );
+	NodeAttribute attribute = getAttributeFromNames( state, { "textsize", "fontsize", "charactersize" } );
 
 	if ( !attribute.isEmpty() ) {
 		return attribute.asDpDimensionI();
@@ -159,31 +194,31 @@ int UIStyle::getFontCharacterSize(const Uint32& state, const int& defaultValue )
 }
 
 Color UIStyle::getTextColor( const Uint32& state ) const {
-	NodeAttribute attribute = getAttribute( state, { "textcolor" } );
+	NodeAttribute attribute = getAttribute( state, "textcolor" );
 
 	return attribute.isEmpty() ? Color::White : attribute.asColor();
 }
 
 Color UIStyle::getTextShadowColor( const Uint32& state ) const {
-	NodeAttribute attribute = getAttribute( state, { "textshadowcolor" } );
+	NodeAttribute attribute = getAttribute( state, "textshadowcolor" );
 
 	return attribute.isEmpty() ? Color::Black : attribute.asColor();
 }
 
 Uint32 UIStyle::getTextStyle( const Uint32& state ) const {
-	NodeAttribute attribute = getAttribute( state, { "textstyle" } );
+	NodeAttribute attribute = getAttribute( state, "textstyle" );
 
 	return attribute.isEmpty() ? 0 : attribute.asFontStyle();
 }
 
 Float UIStyle::getFontOutlineThickness( const Uint32& state ) const {
-	NodeAttribute attribute = getAttribute( state, { "fontoutlinethickness" } );
+	NodeAttribute attribute = getAttribute( state, "fontoutlinethickness" );
 
 	return attribute.isEmpty() ? 0.f : attribute.asFloat();
 }
 
 Color UIStyle::getFontOutlineColor( const Uint32& state ) const {
-	NodeAttribute attribute = getAttribute( state, { "fontoutlinecolor" } );
+	NodeAttribute attribute = getAttribute( state, "fontoutlinecolor" );
 
 	return attribute.isEmpty() ? Color::White : attribute.asColor();
 }
@@ -248,19 +283,21 @@ void UIStyle::parseTransitions( const Uint32& state ) {
 					TransitionInfo transitionInfo;
 
 					if ( splitTransition.size() >= 2 ) {
-						std::string property  = splitTransition[0];
-						Time duration = NodeAttribute( attr.getName(), splitTransition[1] ).asTime();
+						std::string property  = String::trim( splitTransition[0] );
+						String::toLowerInPlace( property );
+
+						Time duration = NodeAttribute( attr.getName(), String::toLower( splitTransition[1] ) ).asTime();
 
 						transitionInfo.property = property;
 						transitionInfo.duration = duration;
 
 						if ( splitTransition.size() >= 3 ) {
-							transitionInfo.timingFunction = Ease::fromName( splitTransition[2] );
+							transitionInfo.timingFunction = Ease::fromName( String::toLower( splitTransition[2] ) );
 
 							if (  transitionInfo.timingFunction == Ease::Linear && splitTransition[2] != "linear" && splitTransition.size() == 3 ) {
-								transitionInfo.delay = NodeAttribute( attr.getName(), splitTransition[2] ).asTime();
+								transitionInfo.delay = NodeAttribute( attr.getName(), String::toLower( splitTransition[2] ) ).asTime();
 							} else if ( splitTransition.size() >= 4 ) {
-								transitionInfo.delay = NodeAttribute( attr.getName(), splitTransition[3] ).asTime();
+								transitionInfo.delay = NodeAttribute( attr.getName(), String::toLower( splitTransition[3] ) ).asTime();
 							}
 						}
 
@@ -273,7 +310,7 @@ void UIStyle::parseTransitions( const Uint32& state ) {
 
 			for ( auto dit = strDurations.begin(); dit != strDurations.end(); ++dit ) {
 				std::string duration( String::trim( *dit ) );
-
+				String::toLowerInPlace( duration );
 				durations.push_back( NodeAttribute( attr.getName(), duration ).asTime() );
 			}
 		} else if ( attr.getName() == "transitiondelay" || attr.getName() == "transition-delay" ) {
@@ -281,7 +318,7 @@ void UIStyle::parseTransitions( const Uint32& state ) {
 
 			for ( auto dit = strDelays.begin(); dit != strDelays.end(); ++dit ) {
 				std::string delay( String::trim( *dit ) );
-
+				String::toLowerInPlace( delay );
 				delays.push_back( NodeAttribute( attr.getName(), delay ).asTime() );
 			}
 		} else if ( attr.getName() == "transitiontimingfunction" || attr.getName() == "transition-timing-function" ) {
@@ -289,7 +326,7 @@ void UIStyle::parseTransitions( const Uint32& state ) {
 
 			for ( auto dit = strTimingFuncs.begin(); dit != strTimingFuncs.end(); ++dit ) {
 				std::string timingFunction( String::trim( *dit ) );
-
+				String::toLowerInPlace( timingFunction );
 				timingFunctions.push_back( Ease::fromName( timingFunction ) );
 			}
 		} else if ( attr.getName() == "transitionproperty" || attr.getName() == "transition-property" ) {
@@ -297,7 +334,7 @@ void UIStyle::parseTransitions( const Uint32& state ) {
 
 			for ( auto dit = strProperties.begin(); dit != strProperties.end(); ++dit ) {
 				std::string property( String::trim( *dit ) );
-
+				String::toLowerInPlace( property );
 				properties.push_back( property );
 			}
 		}

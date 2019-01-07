@@ -433,6 +433,10 @@ void UIWidget::reportStyleStateChange() {
 		mStyle->onStateChange();
 }
 
+bool UIWidget::isSceneNodeLoading() const {
+	return getSceneNode()->isUISceneNode() ? static_cast<UISceneNode*>( getSceneNode() )->isLoading() : false;
+}
+
 const Rectf& UIWidget::getPadding() const {
 	return mPadding;
 }
@@ -582,9 +586,11 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "y" == name ) {
 		setInternalPosition( Vector2f( mDpPos.x, attribute.asDpDimension() ) );
 	} else if ( "width" == name ) {
+		setLayoutWidthRules( FIXED );
 		setInternalWidth( attribute.asDpDimensionI() );
 		notifyLayoutAttrChange();
 	} else if ( "height" == name ) {
+		setLayoutHeightRules( FIXED );
 		setInternalHeight( attribute.asDpDimensionI() );
 		notifyLayoutAttrChange();
 	} else if ( "background" == name ) {
@@ -702,7 +708,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		else if ( "layout_marginbottom" == name )
 			margin = Rect( mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, attribute.asDpDimensionI() );
 
-		if ( NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Action * action = Actions::MarginMove::New( mLayoutMargin, margin, transitionInfo.duration, transitionInfo.timingFunction );
 
@@ -803,9 +809,9 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		else
 			clipDisable();
 	} else if ( "rotation" == name ) {
-		if ( NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
-			Float newRotation( mStyle->getAttribute( state, { attribute.getName() } ).asFloat() );
+			Float newRotation( mStyle->getAttribute( state, attribute.getName() ).asFloat() );
 			Action * action = Actions::Rotate::New( mRotation, newRotation, transitionInfo.duration, transitionInfo.timingFunction );
 
 			if ( Time::Zero != transitionInfo.delay )
@@ -816,9 +822,9 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setRotation( attribute.asFloat() );
 		}
 	} else if ( "scale" == name ) {
-		if ( NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
-			Vector2f newScale( mStyle->getAttribute( state, { attribute.getName() } ).asVector2f() );
+			Vector2f newScale( mStyle->getAttribute( state, attribute.getName() ).asVector2f() );
 			Action * action = Actions::Scale::New( mScale, newScale, transitionInfo.duration, transitionInfo.timingFunction );
 
 			if ( Time::Zero != transitionInfo.delay )
@@ -834,16 +840,46 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		setScaleOriginPoint( attribute.asOriginPoint() );
 	} else if ( "blendmode" == name ) {
 		setBlendMode( attribute.asBlendMode() );
-	} else if ( "padding" == name ) {
-		setPadding( attribute.asRectf() );
-	} else if ( "paddingleft" == name ) {
-		setPadding( Rectf( attribute.asDpDimension(), mPadding.Top, mPadding.Right, mPadding.Bottom ) );
-	} else if ( "paddingright" == name ) {
-		setPadding( Rectf( mPadding.Left, mPadding.Top, attribute.asDpDimension(), mPadding.Bottom ) );
-	} else if ( "paddingtop" == name ) {
-		setPadding( Rectf( mPadding.Left, attribute.asDpDimension(), mPadding.Right, mPadding.Bottom ) );
-	} else if ( "paddingbottom" == name ) {
-		setPadding( Rectf( mPadding.Left, mPadding.Top, mPadding.Right, attribute.asDpDimension() ) );
+	} else if ( String::startsWith( name, "padding" ) ) {
+		Rectf padding;
+
+		if ( "padding" == name )
+			padding = ( attribute.asRectf() );
+		else if ( "paddingleft" == name )
+			padding = Rectf( attribute.asDpDimension(), mPadding.Top, mPadding.Right, mPadding.Bottom );
+		else if ( "paddingright" == name )
+			padding = Rectf( mPadding.Left, mPadding.Top, attribute.asDpDimension(), mPadding.Bottom );
+		else if ( "paddingtop" == name )
+			padding = Rectf( mPadding.Left, attribute.asDpDimension(), mPadding.Right, mPadding.Bottom );
+		else if ( "paddingbottom" == name )
+			padding = Rectf( mPadding.Left, mPadding.Top, mPadding.Right, attribute.asDpDimension() );
+
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
+			Action * action = Actions::PaddingTransition::New( mPadding, padding, transitionInfo.duration, transitionInfo.timingFunction );
+
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
+
+			runAction( action );
+		} else {
+			setPadding( padding );
+		}
+	} else if ( "opacity" == name ) {
+		Float alpha = eemin( attribute.asFloat() * 255.f, 255.f );
+
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
+			Action * action = Actions::Fade::New( mAlpha, alpha, transitionInfo.duration, transitionInfo.timingFunction );
+
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
+
+			runAction( action );
+		} else {
+			setAlpha( alpha );
+			setChildsAlpha( alpha );
+		}
 	} else {
 		attributeSet = false;
 	}

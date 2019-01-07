@@ -21,7 +21,7 @@ class EE_API MarginMove : public Action {
 
 		bool isDone() override;
 
-		Action * clone() const override;
+		virtual Action * clone() const override;
 
 		Action * reverse() const override;
 
@@ -46,8 +46,8 @@ class EE_API MarginMove : public Action {
 
 		void onStart() override;
 
-		void onUpdate( const Time& time ) override;
-	private:
+		virtual void onUpdate( const Time& time ) override;
+
 		MarginMove();
 
 		Interpolation1d mInterpolationLeft;

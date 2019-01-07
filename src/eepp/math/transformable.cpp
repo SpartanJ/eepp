@@ -27,9 +27,6 @@ void Transformable::setPosition(const Vector2f& position) {
 
 void Transformable::setRotation(float angle) {
 	mRotation = static_cast<float>(fmod(angle, 360));
-	if (mRotation < 0)
-		mRotation += 360.f;
-
 	mTransformNeedUpdate = true;
 	mInverseTransformNeedUpdate = true;
 }
