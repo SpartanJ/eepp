@@ -210,6 +210,7 @@
 ../../include/eepp/scene/actions/actioninterpolation2d.hpp
 ../../include/eepp/scene/actions/actions.hpp
 ../../include/eepp/scene/actions/close.hpp
+../../include/eepp/scene/actions/colorinterpolation.hpp
 ../../include/eepp/scene/actions/delay.hpp
 ../../include/eepp/scene/actions/disable.hpp
 ../../include/eepp/scene/actions/enable.hpp
@@ -632,6 +633,7 @@
 ../../src/eepp/scene/actions/actioninterpolation1d.cpp
 ../../src/eepp/scene/actions/actioninterpolation2d.cpp
 ../../src/eepp/scene/actions/close.cpp
+../../src/eepp/scene/actions/colorinterpolation.cpp
 ../../src/eepp/scene/actions/delay.cpp
 ../../src/eepp/scene/actions/disable.cpp
 ../../src/eepp/scene/actions/enable.cpp

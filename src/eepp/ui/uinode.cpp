@@ -31,7 +31,7 @@ UINode * UINode::New() {
 UINode::UINode() :
 	Node(),
 	mFlags( UI_CONTROL_DEFAULT_FLAGS ),
-	mState(0),
+	mState(UIState::StateFlagNormal),
 	mSkinState( NULL ),
 	mBackgroundState( NULL ),
 	mForegroundState( NULL ),
@@ -424,6 +424,24 @@ UINode * UINode::setBackgroundColor( const Uint32 & state, const Color& color ) 
 	return this;
 }
 
+Color UINode::getBackgroundColor() {
+	return getBackgroundColor( mState );
+}
+
+Color UINode::getBackgroundColor( const Uint32 & state ) {
+	UISkin * background = setBackgroundFillEnabled( true );
+
+	Drawable * stateDrawable = background->getStateDrawable( state );
+
+	if ( NULL == stateDrawable ) {
+		RectangleDrawable * colorDrawable = RectangleDrawable::New();
+
+		return colorDrawable->getColor();
+	} else {
+		return stateDrawable->getColor();
+	}
+}
+
 UINode * UINode::setBackgroundColor( const Color& color ) {
 	return setBackgroundColor( UIState::StateFlagNormal, color );
 }
@@ -471,6 +489,24 @@ UINode * UINode::setForegroundDrawable( const Uint32 & state, Drawable * drawabl
 
 UINode * UINode::setForegroundDrawable( Drawable * drawable, bool ownIt ) {
 	return setForegroundDrawable( UIState::StateFlagNormal, drawable, ownIt );
+}
+
+Color UINode::getForegroundColor() {
+	return getForegroundColor( mState );
+}
+
+Color UINode::getForegroundColor( const Uint32 & state ) {
+	UISkin * foreground = setForegroundFillEnabled( true );
+
+	Drawable * stateDrawable = foreground->getStateDrawable( state );
+
+	if ( NULL == stateDrawable ) {
+		RectangleDrawable * colorDrawable = RectangleDrawable::New();
+
+		return colorDrawable->getColor();
+	} else {
+		return stateDrawable->getColor();
+	}
 }
 
 UINode * UINode::setForegroundColor( const Uint32 & state, const Color& color ) {
@@ -555,6 +591,25 @@ UINode * UINode::setBorderColor( const Uint32& state, const Color& color ) {
 
 UINode * UINode::setBorderColor( const Color& color ) {
 	return setBorderColor( UIState::StateFlagNormal, color );
+}
+
+Color UINode::getBorderColor() {
+	return getBorderColor( mState );
+}
+
+Color UINode::getBorderColor( const Uint32 & state ) {
+	UISkin * border = setBorderEnabled( true );
+
+	Drawable * stateDrawable = border->getStateDrawable( state );
+
+	if ( NULL == stateDrawable ) {
+		RectangleDrawable * borderDrawable = RectangleDrawable::New();
+		borderDrawable->setFillMode( PrimitiveFillMode::DRAW_LINE );
+
+		return borderDrawable->getColor();
+	} else {
+		return stateDrawable->getColor();
+	}
 }
 
 UINode * UINode::setBorderWidth( const Uint32& state, const unsigned int& width ) {

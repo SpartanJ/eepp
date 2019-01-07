@@ -570,6 +570,14 @@ void UIWidget::endAttributesTransaction() {
 	}
 }
 
+const Uint32& UIWidget::getStyleState() const {
+	return NULL != mStyle ? mStyle->getCurrentState() : mState;
+}
+
+const Uint32& UIWidget::getStylePreviousState() const {
+	return NULL != mStyle ? mStyle->getPreviousState() : mState;
+}
+
 bool UIWidget::setAttribute( const std::string& name, const std::string& value, const Uint32& state ) {
 	return setAttribute( NodeAttribute( name, value ), state );
 }
@@ -604,7 +612,21 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setBackgroundDrawable( state, res, res->getDrawableType() == Drawable::SPRITE );
 		}
 	} else if ( "backgroundcolor" == name ) {
-		setBackgroundColor( state, attribute.asColor() );
+		Color color = attribute.asColor();
+
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
+			Color start( getBackgroundColor( getStylePreviousState() ) );
+
+			Action * action = Actions::ColorInterpolation::New( start, color, false, transitionInfo.duration, transitionInfo.timingFunction, Actions::ColorInterpolation::Background );
+
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
+
+			runAction( action );
+		} else {
+			setBackgroundColor( state, color );
+		}
 	} else if ( "foreground" == name ) {
 		Drawable * res = NULL;
 
@@ -616,11 +638,39 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setForegroundDrawable( state, res, res->getDrawableType() == Drawable::SPRITE );
 		}
 	} else if ( "foregroundcolor" == name ) {
-		setForegroundColor( state, attribute.asColor() );
+		Color color = attribute.asColor();
+
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
+			Color start( getForegroundColor( getStylePreviousState() ) );
+
+			Action * action = Actions::ColorInterpolation::New( start, color, false, transitionInfo.duration, transitionInfo.timingFunction, Actions::ColorInterpolation::Foreground );
+
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
+
+			runAction( action );
+		} else {
+			setForegroundColor( state, color );
+		}
 	} else if ( "foregroundcorners" == name ) {
 		setForegroundCorners( state, attribute.asUint() );
 	} else if ( "bordercolor" == name ) {
-		setBorderColor( state, attribute.asColor() );
+		Color color = attribute.asColor();
+
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
+			Color start( getBorderColor( getStylePreviousState() ) );
+
+			Action * action = Actions::ColorInterpolation::New( start, color, false, transitionInfo.duration, transitionInfo.timingFunction, Actions::ColorInterpolation::Border );
+
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
+
+			runAction( action );
+		} else {
+			setBorderColor( state, color );
+		}
 	} else if ( "borderwidth" == name ) {
 		setBorderWidth( state, attribute.asDpDimensionI("1") );
 	} else if ( "bordercorners" == name || "backgroundcorners" == name ) {

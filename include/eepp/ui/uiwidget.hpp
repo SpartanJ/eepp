@@ -133,6 +133,10 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		void beginAttributesTransaction();
 
 		void endAttributesTransaction();
+
+		const Uint32& getStyleState() const;
+
+		const Uint32& getStylePreviousState() const;
 	protected:
 		friend class UIManager;
 		friend class UISceneNode;

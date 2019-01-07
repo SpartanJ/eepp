@@ -81,7 +81,8 @@ Tooltip {
 #tpad2 {
 	layout_marginLeft: 0;
 	padding: 24dp;
-	opacity: 0.5;
+	opacity: 0.8;
+	backgroundColor: #333;
 	transition: all 0.25s;
 }
 
@@ -89,4 +90,5 @@ Tooltip {
 	layout_marginLeft: 8dp;
 	padding: 28dp;
 	opacity: 1;
+	backgroundColor: #656;
 }

@@ -67,7 +67,8 @@ bool UIState::isStateName( const std::string& State ) {
 
 UIState::UIState() :
 	mState(StateFlagNormal),
-	mCurrentState(StateFlagNormal)
+	mCurrentState(StateFlagNormal),
+	mPreviousState(StateFlagNormal)
 {
 }
 
@@ -102,8 +103,12 @@ void UIState::popState(const Uint32 & State) {
 	}
 }
 
-Uint32 UIState::getCurrentState() const {
+const Uint32& UIState::getCurrentState() const {
 	return mCurrentState;
+}
+
+const Uint32 &UIState::getPreviousState() const {
+	return mPreviousState;
 }
 
 void UIState::onStateChange() {

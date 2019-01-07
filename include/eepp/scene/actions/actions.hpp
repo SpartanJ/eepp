@@ -15,6 +15,7 @@
 #include <eepp/scene/actions/close.hpp>
 #include <eepp/scene/actions/disable.hpp>
 #include <eepp/scene/actions/visible.hpp>
+#include <eepp/scene/actions/colorinterpolation.hpp>
 
 #endif
 

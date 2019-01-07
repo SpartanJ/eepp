@@ -240,6 +240,7 @@ void UIStyle::updateState() {
 		if ( ( mState & getStateFlag(i) ) == getStateFlag(i) ) {
 			if ( stateExists( getStateFlag(i) ) ) {
 				if ( mCurrentState != getStateFlag(i) ) {
+					mPreviousState = mCurrentState;
 					mCurrentState = getStateFlag(i);
 					onStateChange();
 				}

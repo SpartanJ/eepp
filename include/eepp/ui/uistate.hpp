@@ -57,10 +57,13 @@ class EE_API UIState {
 
 		virtual bool stateExists( const Uint32& State ) const = 0;
 
-		Uint32 getCurrentState() const;
+		const Uint32& getCurrentState() const;
+
+		const Uint32& getPreviousState() const;
 	protected:
 		Uint32 		mState;
 		Uint32		mCurrentState;
+		Uint32		mPreviousState;
 
 		virtual void updateState() = 0;
 

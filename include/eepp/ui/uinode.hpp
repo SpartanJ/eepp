@@ -99,6 +99,10 @@ class EE_API UINode : public Node {
 
 		UINode * setBackgroundColor( const Color& color );
 
+		Color getBackgroundColor( const Uint32 & state );
+
+		Color getBackgroundColor();
+
 		UINode * setBackgroundCorners( const Uint32 & state, const unsigned int& corners );
 
 		UINode * setBackgroundCorners( const unsigned int& corners );
@@ -113,6 +117,10 @@ class EE_API UINode : public Node {
 
 		UINode * setForegroundColor( const Color& color );
 
+		Color getForegroundColor( const Uint32 & state );
+
+		Color getForegroundColor();
+
 		UINode * setForegroundCorners( const Uint32 & state, const unsigned int& corners );
 
 		UINode * setForegroundCorners( const unsigned int& corners );
@@ -122,6 +130,10 @@ class EE_API UINode : public Node {
 		UINode * setBorderColor( const Uint32 & state, const Color& color );
 
 		UINode * setBorderColor( const Color& color );
+
+		Color getBorderColor( const Uint32 & state );
+
+		Color getBorderColor();
 
 		UINode * setBorderWidth( const Uint32 & state, const unsigned int& width );
 

@@ -37,6 +37,7 @@ void UISkinState::updateState() {
 	for ( int i = StateFlagCount - 1; i >= 0; i-- ) {
 		if ( ( mState & getStateFlag(i) ) == getStateFlag(i) ) {
 			if ( stateExists( getStateFlag(i) ) ) {
+				mPreviousState = mCurrentState;
 				mCurrentState = getStateFlag(i);
 				onStateChange();
 				return;
