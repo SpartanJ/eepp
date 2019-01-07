@@ -69,9 +69,11 @@ Tooltip {
 
 #tpad {
 	scale: 1;
+	rotation: 0;
+	transition: scale 0.25s, rotation 0.25s;
 }
 
 #tpad:hover {
 	scale: 1.1;
-	transition: scale 0.25s;
+	rotation: 3;
 }
