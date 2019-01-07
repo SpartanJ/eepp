@@ -78,7 +78,7 @@ bool UIStyle::hasTransition( const Uint32& state, const std::string& propertyNam
 
 	// When transitions are declared without state are global
 	if ( !ret && state != StateFlagNormal ) {
-		ret = mTransitions.find( StateFlagNormal ) != mTransitions.end() && mTransitions[ StateFlagNormal ].find( propertyName ) != mTransitions[ state ].end();
+		ret = mTransitions.find( StateFlagNormal ) != mTransitions.end() && mTransitions[ StateFlagNormal ].find( propertyName ) != mTransitions[ StateFlagNormal ].end();
 	}
 
 	return ret;
@@ -93,7 +93,7 @@ UIStyle::TransitionInfo UIStyle::getTransition( const Uint32& state, const std::
 		} else if ( mTransitions.find( StateFlagNormal ) != mTransitions.end() ) {
 			propertyTransitionIt = mTransitions[ StateFlagNormal ].find( propertyName );
 
-			if ( propertyTransitionIt != mTransitions[ state ].end() ) {
+			if ( propertyTransitionIt != mTransitions[ StateFlagNormal ].end() ) {
 				return propertyTransitionIt->second;
 			}
 		}

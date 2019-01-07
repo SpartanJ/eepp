@@ -688,16 +688,31 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 				}
 			}
 		}
-	} else if ( "layout_margin" == name ) {
-		setLayoutMargin( attribute.asRect() );
-	} else if ( "layout_marginleft" == name ) {
-		setLayoutMargin( Rect( attribute.asDpDimensionI(), mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) );
-	} else if ( "layout_marginright" == name ) {
-		setLayoutMargin( Rect( mLayoutMargin.Left, mLayoutMargin.Top, attribute.asDpDimensionI(), mLayoutMargin.Bottom ) );
-	} else if ( "layout_margintop" == name ) {
-		setLayoutMargin( Rect( mLayoutMargin.Left, attribute.asDpDimensionI(), mLayoutMargin.Right, mLayoutMargin.Bottom ) );
-	} else if ( "layout_marginbottom" == name ) {
-		setLayoutMargin( Rect( mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, attribute.asDpDimensionI() ) );
+	} else if ( String::startsWith( name, "layout_margin" ) ) {
+		Rect margin;
+
+		if ( "layout_margin" == name )
+			margin = attribute.asRect();
+		else if ( "layout_marginleft" == name )
+			margin = Rect( attribute.asDpDimensionI(), mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom );
+		else if ( "layout_marginright" == name )
+			margin = Rect( mLayoutMargin.Left, mLayoutMargin.Top, attribute.asDpDimensionI(), mLayoutMargin.Bottom );
+		else if ( "layout_margintop" == name )
+			margin = Rect( mLayoutMargin.Left, attribute.asDpDimensionI(), mLayoutMargin.Right, mLayoutMargin.Bottom );
+		else if ( "layout_marginbottom" == name )
+			margin = Rect( mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, attribute.asDpDimensionI() );
+
+		if ( NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
+			Action * action = Actions::MarginMove::New( mLayoutMargin, margin, transitionInfo.duration, transitionInfo.timingFunction );
+
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
+
+			runAction( action );
+		} else {
+			setLayoutMargin( margin );
+		}
 	} else if ( "tooltip" == name ) {
 		setTooltipText( attribute.asString() );
 	} else if ( "layout_weight" == name ) {
@@ -791,14 +806,12 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		if ( NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Float newRotation( mStyle->getAttribute( state, { attribute.getName() } ).asFloat() );
-			Action * action = NULL;
+			Action * action = Actions::Rotate::New( mRotation, newRotation, transitionInfo.duration, transitionInfo.timingFunction );
 
-			if ( Time::Zero == transitionInfo.delay ) {
-				action = Actions::Rotate::New( mRotation, newRotation, transitionInfo.duration, transitionInfo.timingFunction );
-			}
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
 
-			if ( NULL != action )
-				runAction( action );
+			runAction( action );
 		} else {
 			setRotation( attribute.asFloat() );
 		}
@@ -806,14 +819,12 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		if ( NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Vector2f newScale( mStyle->getAttribute( state, { attribute.getName() } ).asVector2f() );
-			Action * action = NULL;
+			Action * action = Actions::Scale::New( mScale, newScale, transitionInfo.duration, transitionInfo.timingFunction );
 
-			if ( Time::Zero == transitionInfo.delay ) {
-				action = Actions::Scale::New( mScale, newScale, transitionInfo.duration, transitionInfo.timingFunction );
-			}
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
 
-			if ( NULL != action )
-				runAction( action );
+			runAction( action );
 		} else {
 			setScale( attribute.asVector2f() );
 		}
