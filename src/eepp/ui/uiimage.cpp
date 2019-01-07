@@ -66,7 +66,7 @@ UIImage * UIImage::setDrawable( Drawable * drawable ) {
 void UIImage::onAutoSize() {
 	if ( NULL != mDrawable ) {
 		if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == mDpSize ) {
-			setSize( mDrawable->getSize() );
+			setInternalSize( mDrawable->getSize() );
 		}
 
 		if ( mLayoutWidthRules == WRAP_CONTENT ) {

@@ -60,21 +60,13 @@ void UIDropDownList::setTheme( UITheme * Theme ) {
 void UIDropDownList::onSizeChange() {
 	UIWidget::onSizeChange();
 
-	autoSizeControl();
-}
-
-void UIDropDownList::autoSizeControl() {
-	if ( mLayoutHeightRules == WRAP_CONTENT ) {
-		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) + mRealPadding.Top + mRealPadding.Bottom );
-	} else if ( ( mFlags & UI_AUTO_SIZE || 0 == mDpSize.getHeight() ) && 0 != getSkinSize().getHeight() ) {
-		setSize( mDpSize.x, getSkinSize().getHeight() );
-	}
+	onAutoSize();
 }
 
 void UIDropDownList::onThemeLoaded() {
 	autoPadding();
 
-	autoSizeControl();
+	onAutoSize();
 }
 
 void UIDropDownList::setFriendControl( UINode * friendCtrl ) {
@@ -82,7 +74,11 @@ void UIDropDownList::setFriendControl( UINode * friendCtrl ) {
 }
 
 void UIDropDownList::onAutoSize() {
-	autoSizeControl();
+	if ( mLayoutHeightRules == WRAP_CONTENT ) {
+		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) + mRealPadding.Top + mRealPadding.Bottom );
+	} else if ( ( mFlags & UI_AUTO_SIZE || 0 == mDpSize.getHeight() ) && 0 != getSkinSize().getHeight() ) {
+		setInternalHeight( getSkinSize().getHeight() );
+	}
 }
 
 UIListBox * UIDropDownList::getListBox() const {

@@ -154,10 +154,10 @@ void UITooltip::setFontShadowColor( const Color& color ) {
 
 void UITooltip::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		setPixelsSize(
+		setInternalPixelsSize( Sizef(
 			(int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right,
 			(int)mTextCache->getTextHeight() + mRealPadding.Top + mRealPadding.Bottom
-		);
+		) );
 	}
 }
 

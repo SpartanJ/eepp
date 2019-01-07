@@ -157,7 +157,7 @@ Uint32 UITableCell::onMessage( const NodeMessage * Msg ) {
 void UITableCell::onAutoSize() {
 	UITable * MyParent 	= reinterpret_cast<UITable*> ( getParent()->getParent() );
 
-	setSize( MyParent->mTotalWidth, MyParent->mRowHeight );
+	setInternalSize( Sizef( MyParent->mTotalWidth, MyParent->mRowHeight ) );
 }
 
 void UITableCell::onStateChange() {

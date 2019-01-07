@@ -73,6 +73,8 @@ class EE_API UILoader : public UIWidget {
 		virtual void onSizeChange();
 
 		virtual void onPaddingChange();
+
+		void updateRadius();
 };
 
 }}

@@ -111,9 +111,9 @@ const Color& UILoader::getFillColor() const {
 }
 
 void UILoader::onSizeChange() {
-	if ( mRadius == 0 ) {
-		setRadius( eemin( mDpSize.x - mPadding.Left - mPadding.Right, mDpSize.y - mPadding.Top - mPadding.Bottom ) / 2.f );
-	}
+	UIWidget::onSizeChange();
+
+	updateRadius();
 }
 
 void UILoader::onPaddingChange() {
@@ -122,6 +122,12 @@ void UILoader::onPaddingChange() {
 	onSizeChange();
 
 	UIWidget::onPaddingChange();
+}
+
+void UILoader::updateRadius() {
+	if ( mRadius == 0 ) {
+		setRadius( eemin( mDpSize.x - mPadding.Left - mPadding.Right, mDpSize.y - mPadding.Top - mPadding.Bottom ) / 2.f );
+	}
 }
 
 void UILoader::onAutoSize() {
@@ -136,9 +142,9 @@ void UILoader::onAutoSize() {
 			minSize.y = eemax( minSize.y, 64.f );
 		}
 
-		setSize( minSize );
+		setInternalSize( minSize );
 
-		onSizeChange();
+		updateRadius();
 	}
 }
 

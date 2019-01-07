@@ -63,6 +63,7 @@ void UITab::setTheme( UITheme * Theme ) {
 	UINode::setThemeSkin( Theme, tabPos );
 
 	onThemeLoaded();
+	onStateChange();
 }
 
 Uint32 UITab::onMouseClick( const Vector2i &Pos, const Uint32 Flags ) {
@@ -139,7 +140,7 @@ void UITab::onAutoSize() {
 			w = eemin( w, tTabW->getMaxTabWidth() );
 		}
 
-		setSize( w, mDpSize.getHeight() );
+		setInternalWidth( w );
 	}
 }
 

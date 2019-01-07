@@ -96,7 +96,6 @@ class EE_API UITooltip : public UIWidget {
 		Text *	mTextCache;
 		UIFontStyleConfig mStyleConfig;
 		Vector2f 	mAlignOffset;
-		Rectf		mRealPadding;
 		Time		mTooltipTime;
 		UINode *	mTooltipOf;
 

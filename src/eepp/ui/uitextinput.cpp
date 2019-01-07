@@ -218,7 +218,7 @@ void UITextInput::onThemeLoaded() {
 
 void UITextInput::onAutoSize() {
 	if ( ( mFlags & UI_AUTO_SIZE ) && 0 == mDpSize.getHeight() ) {
-		setSize( mDpSize.x, getSkinSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) + mRealPadding.Top + mRealPadding.Bottom );
 	}
 
 	if ( mLayoutHeightRules == WRAP_CONTENT ) {

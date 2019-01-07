@@ -1,7 +1,5 @@
 #include <eepp/scene/actions/resizeheight.hpp>
 #include <eepp/scene/node.hpp>
-#include <eepp/ui/uiwidget.hpp>
-using namespace EE::UI;
 
 namespace EE { namespace Scene { namespace Actions {
 
@@ -23,11 +21,6 @@ void ResizeHeight::onStart() {
 void ResizeHeight::onUpdate( const Time& ) {
 	if ( NULL != mNode ) {
 		mNode->setSize( mNode->getSize().getWidth(), mInterpolation.getPosition() );
-
-		/** TODO: Remove this when onSizeChange notifyLayoutAttrChange calls is enabled */
-		if ( mNode->isWidget() ) {
-			static_cast<UIWidget*>( mNode )->notifyLayoutAttrChange();
-		}
 	}
 }
 

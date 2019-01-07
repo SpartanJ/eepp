@@ -1,6 +1,7 @@
 ../../bin/assets/ee.ini
 ../../bin/assets/layouts/test.css
 ../../bin/assets/layouts/test.xml
+../../bin/assets/layouts/test_widgets.xml
 ../../bin/assets/ui/uitheme.css
 ../../external_projects.lua
 ../../include/eepp/audio/alresource.hpp

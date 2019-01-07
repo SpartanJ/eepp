@@ -343,9 +343,8 @@ void UIWidget::onVisibilityChange() {
 }
 
 void UIWidget::onSizeChange() {
-	/** TODO: Fix this. notifyLayoutAttrChange should be called but UI_AUTO_SIZE generates a resize recursion */
-	//notifyLayoutAttrChange();
 	UINode::onSizeChange();
+	notifyLayoutAttrChange();
 }
 
 void UIWidget::onAutoSize() {

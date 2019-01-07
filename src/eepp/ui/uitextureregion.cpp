@@ -54,15 +54,20 @@ UITextureRegion * UITextureRegion::setTextureRegion( Graphics::TextureRegion * T
 void UITextureRegion::onAutoSize() {
 	if ( NULL != mTextureRegion ) {
 		if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == mDpSize ) {
-			setSize( mTextureRegion->getDpSize().asFloat() );
+			setInternalSize( mTextureRegion->getDpSize().asFloat() );
+			autoAlign();
 		}
 
-		if ( mLayoutWidthRules == WRAP_CONTENT ) {
-			setInternalPixelsWidth( mTextureRegion->getPxSize().getWidth() + mRealPadding.Left + mRealPadding.Right );
-		}
+		if ( mLayoutWidthRules == WRAP_CONTENT || mLayoutHeightRules == WRAP_CONTENT ) {
+			if ( mLayoutWidthRules == WRAP_CONTENT ) {
+				setInternalPixelsWidth( mTextureRegion->getPxSize().getWidth() + mRealPadding.Left + mRealPadding.Right );
+			}
 
-		if ( mLayoutHeightRules == WRAP_CONTENT ) {
-			setInternalPixelsHeight( mTextureRegion->getPxSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+			if ( mLayoutHeightRules == WRAP_CONTENT ) {
+				setInternalPixelsHeight( mTextureRegion->getPxSize().getHeight() + mRealPadding.Top + mRealPadding.Bottom );
+			}
+
+			autoAlign();
 		}
 	}
 }
