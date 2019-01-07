@@ -15,7 +15,10 @@
 #include <eepp/scene/actions/close.hpp>
 #include <eepp/scene/actions/disable.hpp>
 #include <eepp/scene/actions/visible.hpp>
-#include <eepp/scene/actions/colorinterpolation.hpp>
+#include <eepp/scene/actions/tint.hpp>
+#include <eepp/scene/actions/resize.hpp>
+#include <eepp/scene/actions/resizewidth.hpp>
+#include <eepp/scene/actions/resizeheight.hpp>
 
 #endif
 

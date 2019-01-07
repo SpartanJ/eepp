@@ -15,12 +15,10 @@ Scale::Scale( const Vector2f & start, const Vector2f & end, const Time& duration
 }
 
 void Scale::onStart() {
-	if ( NULL != mNode ) {
-		mNode->setScale( mInterpolation.getPosition() );
-	}
+	onUpdate( Time::Zero );
 }
 
-void Scale::onUpdate( const Time& time ) {
+void Scale::onUpdate( const Time& ) {
 	if ( NULL != mNode ) {
 		mNode->setScale( mInterpolation.getPosition() );
 	}

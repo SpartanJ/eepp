@@ -174,6 +174,8 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		virtual void onVisibilityChange();
 
+		virtual void onSizeChange();
+
 		virtual void onAutoSize();
 
 		virtual void onWidgetCreated();

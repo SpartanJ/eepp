@@ -271,7 +271,7 @@ UINode * UIWidget::setFlags(const Uint32 & flags) {
 		updateAnchorsDistances();
 	}
 
-	if ( flags & UI_AUTO_SIZE ) {
+	if ( !( mFlags & UI_AUTO_SIZE ) && ( flags & UI_AUTO_SIZE ) ) {
 		onAutoSize();
 	}
 
@@ -340,6 +340,12 @@ void UIWidget::onVisibilityChange() {
 	updateAnchorsDistances();
 	notifyLayoutAttrChange();
 	UINode::onVisibilityChange();
+}
+
+void UIWidget::onSizeChange() {
+	/** TODO: Fix this. notifyLayoutAttrChange should be called but UI_AUTO_SIZE generates a resize recursion */
+	//notifyLayoutAttrChange();
+	UINode::onSizeChange();
 }
 
 void UIWidget::onAutoSize() {
@@ -594,13 +600,41 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "y" == name ) {
 		setInternalPosition( Vector2f( mDpPos.x, attribute.asDpDimension() ) );
 	} else if ( "width" == name ) {
-		setLayoutWidthRules( FIXED );
-		setInternalWidth( attribute.asDpDimensionI() );
-		notifyLayoutAttrChange();
+		Float newWidth = attribute.asDpDimensionI();
+
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
+			Float start( getSize().getWidth() );
+
+			Action * action = Actions::ResizeWidth::New( start, newWidth, transitionInfo.duration, transitionInfo.timingFunction );
+
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
+
+			runAction( action );
+		} else {
+			setLayoutWidthRules( FIXED );
+			setInternalWidth( newWidth );
+			notifyLayoutAttrChange();
+		}
 	} else if ( "height" == name ) {
-		setLayoutHeightRules( FIXED );
-		setInternalHeight( attribute.asDpDimensionI() );
-		notifyLayoutAttrChange();
+		Float newHeight = attribute.asDpDimensionI();
+
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
+			Float start( getSize().getHeight() );
+
+			Action * action = Actions::ResizeHeight::New( start, newHeight, transitionInfo.duration, transitionInfo.timingFunction );
+
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
+
+			runAction( action );
+		} else {
+			setLayoutHeightRules( FIXED );
+			setInternalHeight( newHeight );
+			notifyLayoutAttrChange();
+		}
 	} else if ( "background" == name ) {
 		Drawable * res = NULL;
 
@@ -618,7 +652,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Color start( getBackgroundColor( getStylePreviousState() ) );
 
-			Action * action = Actions::ColorInterpolation::New( start, color, false, transitionInfo.duration, transitionInfo.timingFunction, Actions::ColorInterpolation::Background );
+			Action * action = Actions::Tint::New( start, color, false, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Background );
 
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
@@ -644,7 +678,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Color start( getForegroundColor( getStylePreviousState() ) );
 
-			Action * action = Actions::ColorInterpolation::New( start, color, false, transitionInfo.duration, transitionInfo.timingFunction, Actions::ColorInterpolation::Foreground );
+			Action * action = Actions::Tint::New( start, color, false, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Foreground );
 
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
@@ -662,7 +696,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Color start( getBorderColor( getStylePreviousState() ) );
 
-			Action * action = Actions::ColorInterpolation::New( start, color, false, transitionInfo.duration, transitionInfo.timingFunction, Actions::ColorInterpolation::Border );
+			Action * action = Actions::Tint::New( start, color, false, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Border );
 
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );

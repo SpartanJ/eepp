@@ -51,8 +51,6 @@
 				STATE:	I've binded some classes with lua+luabind and is awesome, but... luabind is bloated ( and for my needs it's the only good option ), and adds A LOT of compile time.
 						squirrel+sqrat almost does everything i need, but it have some bugs that seems to be unfixable ( none enum parameters, char parameters segfaults, no constructor overloading ).
 
-	@todo Support UI Theming from scripts or XML.
-
 	@todo Add some kind of support for TMX map files ( Tiles Map Editor ).
 
 	@todo Pathfinding and AI helpers ( A*, FSM ).

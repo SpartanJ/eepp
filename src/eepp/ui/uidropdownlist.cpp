@@ -64,12 +64,10 @@ void UIDropDownList::onSizeChange() {
 }
 
 void UIDropDownList::autoSizeControl() {
-	if ( ( mFlags & UI_AUTO_SIZE || 0 == mDpSize.getHeight() ) && 0 != getSkinSize().getHeight() ) {
-		setSize( mDpSize.x, getSkinSize().getHeight() );
-	}
-
 	if ( mLayoutHeightRules == WRAP_CONTENT ) {
 		setInternalPixelsHeight( PixelDensity::dpToPxI( getSkinSize().getHeight() ) + mRealPadding.Top + mRealPadding.Bottom );
+	} else if ( ( mFlags & UI_AUTO_SIZE || 0 == mDpSize.getHeight() ) && 0 != getSkinSize().getHeight() ) {
+		setSize( mDpSize.x, getSkinSize().getHeight() );
 	}
 }
 

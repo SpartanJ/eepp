@@ -1,50 +1,50 @@
-#include <eepp/scene/actions/colorinterpolation.hpp>
+#include <eepp/scene/actions/tint.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <eepp/ui/uitextview.hpp>
 using namespace EE::UI;
 
 namespace EE { namespace Scene { namespace Actions {
 
-ColorInterpolation * ColorInterpolation::New( const Color& start, const Color& end, const bool& interpolateAlpha, const Time& duration, const Ease::Interpolation& type, const ColorInterpolationType& colorInterpolationType ) {
-	return eeNew( ColorInterpolation, ( start, end, interpolateAlpha, duration, type, colorInterpolationType ) );
+Tint * Tint::New( const Color& start, const Color& end, const bool& interpolateAlpha, const Time& duration, const Ease::Interpolation& type, const TintType& colorInterpolationType ) {
+	return eeNew( Tint, ( start, end, interpolateAlpha, duration, type, colorInterpolationType ) );
 }
 
-ColorInterpolation::ColorInterpolation()
+Tint::Tint()
 {}
 
-Interpolation1d ColorInterpolation::getInterpolationA() const {
+Interpolation1d Tint::getInterpolationA() const {
 	return mInterpolationA;
 }
 
-void ColorInterpolation::setInterpolationA(const Interpolation1d & interpolationA) {
+void Tint::setInterpolationA(const Interpolation1d & interpolationA) {
 	mInterpolationA = interpolationA;
 }
 
-Interpolation1d ColorInterpolation::getInterpolationB() const {
+Interpolation1d Tint::getInterpolationB() const {
 	return mInterpolationB;
 }
 
-void ColorInterpolation::setInterpolationB(const Interpolation1d& interpolationB) {
+void Tint::setInterpolationB(const Interpolation1d& interpolationB) {
 	mInterpolationB = interpolationB;
 }
 
-Interpolation1d ColorInterpolation::getInterpolationG() const {
+Interpolation1d Tint::getInterpolationG() const {
 	return mInterpolationG;
 }
 
-void ColorInterpolation::setInterpolationG(const Interpolation1d & interpolationG) {
+void Tint::setInterpolationG(const Interpolation1d & interpolationG) {
 	mInterpolationG = interpolationG;
 }
 
-Interpolation1d ColorInterpolation::getInterpolationR() const {
+Interpolation1d Tint::getInterpolationR() const {
 	return mInterpolationR;
 }
 
-void ColorInterpolation::setInterpolationR(const Interpolation1d & interpolationR) {
+void Tint::setInterpolationR(const Interpolation1d & interpolationR) {
 	mInterpolationR = interpolationR;
 }
 
-ColorInterpolation::ColorInterpolation( const Color& start, const Color & end, const bool& interpolateAlpha, const Time& duration, const Ease::Interpolation& type, const ColorInterpolationType& colorInterpolationType ) :
+Tint::Tint( const Color& start, const Color & end, const bool& interpolateAlpha, const Time& duration, const Ease::Interpolation& type, const TintType& colorInterpolationType ) :
 	mColorInterpolationType( colorInterpolationType ),
 	mInterpolateAlpha( interpolateAlpha )
 {
@@ -56,7 +56,7 @@ ColorInterpolation::ColorInterpolation( const Color& start, const Color & end, c
 		mInterpolationA.clear().add( start.a, duration ).add( end.a ).setType( type );
 }
 
-void ColorInterpolation::start() {
+void Tint::start() {
 	mInterpolationR.start();
 	mInterpolationG.start();
 	mInterpolationB.start();
@@ -69,7 +69,7 @@ void ColorInterpolation::start() {
 	sendEvent( ActionType::OnStart );
 }
 
-void ColorInterpolation::stop() {
+void Tint::stop() {
 	mInterpolationR.stop();
 	mInterpolationG.stop();
 	mInterpolationB.stop();
@@ -82,7 +82,7 @@ void ColorInterpolation::stop() {
 	sendEvent( ActionType::OnStop );
 }
 
-void ColorInterpolation::update( const Time& time ) {
+void Tint::update( const Time& time ) {
 	mInterpolationR.update( time );
 	mInterpolationG.update( time );
 	mInterpolationB.update( time );
@@ -91,7 +91,7 @@ void ColorInterpolation::update( const Time& time ) {
 	onUpdate( time );
 }
 
-bool ColorInterpolation::isDone() {
+bool Tint::isDone() {
 	return mInterpolationR.ended() &&
 			mInterpolationG.ended() &&
 			mInterpolationB.ended() && (
@@ -100,14 +100,14 @@ bool ColorInterpolation::isDone() {
 }
 
 
-void ColorInterpolation::onStart() {
+void Tint::onStart() {
 	if ( NULL != mNode && mNode->isWidget() ) {
 		onUpdate( Time::Zero );
 	}
 }
 
-Action * ColorInterpolation::clone() const {
-	ColorInterpolation * action = eeNew( ColorInterpolation, () );
+Action * Tint::clone() const {
+	Tint * action = eeNew( Tint, () );
 	action->setInterpolationR( mInterpolationR );
 	action->setInterpolationG( mInterpolationG );
 	action->setInterpolationB( mInterpolationB );
@@ -115,11 +115,11 @@ Action * ColorInterpolation::clone() const {
 	return action;
 }
 
-Action * ColorInterpolation::reverse() const {
+Action * Tint::reverse() const {
 	return NULL;
 }
 
-void ColorInterpolation::onUpdate( const Time& ) {
+void Tint::onUpdate( const Time& ) {
 	if ( NULL != mNode && mNode->isWidget() ) {
 		UIWidget * widget = static_cast<UIWidget*>( mNode );
 

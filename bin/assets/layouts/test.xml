@@ -7,7 +7,7 @@
 				<CheckBox layout_width="wrap_content" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#333" />
 				<RadioButton layout_width="wrap_content" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#333" />
 				<TextInput layout_width="300dp" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="24dp" padding="24dp" />
-				<Image layout_width="wrap_content" layout_height="wrap_content" src="file://assets/tiles/1.png" backgroundColor="#444" layout_marginTop="8dp" scaleType="fit_inside" padding="8dp" />
+				<Image id="tres" layout_width="32dp" layout_height="32dp" src="file://assets/tiles/1.png" backgroundColor="#444" layout_marginTop="8dp" scaleType="fit_inside" padding="8dp" />
 				<DropDownList layout_width="300dp" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="16dp" padding="8dp">
 					<item>Test</item>
 					<item>Test 2</item>

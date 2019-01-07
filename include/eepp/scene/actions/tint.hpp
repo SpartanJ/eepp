@@ -10,9 +10,9 @@ using namespace EE::Math;
 
 namespace EE { namespace Scene { namespace Actions {
 
-class EE_API ColorInterpolation : public Action {
+class EE_API Tint : public Action {
 	public:
-		enum ColorInterpolationType {
+		enum TintType {
 			Background,
 			Foreground,
 			Skin,
@@ -20,7 +20,7 @@ class EE_API ColorInterpolation : public Action {
 			Text
 		};
 
-		static ColorInterpolation * New( const Color& start, const Color& end, const bool& interpolateAlpha, const Time& duration, const Ease::Interpolation& type = Ease::Linear, const ColorInterpolationType& colorInterpolationType = Background );
+		static Tint * New( const Color& start, const Color& end, const bool& interpolateAlpha, const Time& duration, const Ease::Interpolation& type = Ease::Linear, const TintType& colorInterpolationType = Background );
 
 		void start() override;
 
@@ -50,19 +50,19 @@ class EE_API ColorInterpolation : public Action {
 
 		void setInterpolationA(const Interpolation1d & interpolationA);
 	protected:
-		ColorInterpolation( const Color& start, const Color& end, const bool& interpolateAlpha, const Time & duration, const Ease::Interpolation & type, const ColorInterpolationType& colorInterpolationType );
+		Tint( const Color& start, const Color& end, const bool& interpolateAlpha, const Time & duration, const Ease::Interpolation & type, const TintType& colorInterpolationType );
 
 		void onStart() override;
 
 		virtual void onUpdate( const Time& time ) override;
 
-		ColorInterpolation();
+		Tint();
 
 		Interpolation1d mInterpolationR;
 		Interpolation1d mInterpolationG;
 		Interpolation1d mInterpolationB;
 		Interpolation1d mInterpolationA;
-		ColorInterpolationType mColorInterpolationType;
+		TintType mColorInterpolationType;
 		bool mInterpolateAlpha;
 };
 

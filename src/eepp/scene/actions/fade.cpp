@@ -32,7 +32,7 @@ void Fade::onStart() {
 	}
 }
 
-void Fade::onUpdate( const Time& time ) {
+void Fade::onUpdate( const Time& ) {
 	if ( NULL != mNode ) {
 		mNode->setAlpha( mInterpolation.getPosition() );
 	}

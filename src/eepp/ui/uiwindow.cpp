@@ -1446,7 +1446,7 @@ bool UIWindow::setAttribute( const NodeAttribute& attribute, const Uint32& state
 				else if ( "colorbuffer"== cur ) winflags |= UI_WIN_COLOR_BUFFER;
 			}
 
-			/// @TODO: FIX ME
+			/// TODO: WinFlags should replace old winFlags
 			mStyleConfig.WinFlags |= winflags;
 			updateWinFlags();
 		}

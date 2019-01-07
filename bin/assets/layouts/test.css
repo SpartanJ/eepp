@@ -92,3 +92,14 @@ Tooltip {
 	opacity: 1;
 	backgroundColor: #656;
 }
+
+#tres {
+	width: 32dp;
+	height: 32dp;
+	transition: all 0.25s;
+}
+
+#tres:hover {
+	width: 128dp;
+	height: 48dp;
+}
