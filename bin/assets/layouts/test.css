@@ -68,14 +68,17 @@ Tooltip {
 }
 
 #tpad {
-	scale: 1;
-	rotation: 0;
-	transition: scale 0.25s, rotation 0.25s 0.25s;
+/*	scale: 1;*/
+/*	rotation: 0;*/
+	borderWidth: 2dp;
+/*	borderColor: #66666666;*/
+	transition: scale 0.25s, rotation 0.25s 0.25s, borderColor 0.25;
 }
 
 #tpad:hover {
 	scale: 1.1;
 	rotation: -3;
+	borderColor: #99999999;
 }
 
 #tpad2 {
@@ -94,8 +97,8 @@ Tooltip {
 }
 
 #tres {
-	width: 32dp;
-	height: 32dp;
+/*	width: 32dp;
+	height: 32dp;*/
 	transition: all 0.25s;
 }
 

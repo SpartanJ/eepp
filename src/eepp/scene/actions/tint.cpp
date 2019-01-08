@@ -160,7 +160,7 @@ void Tint::onUpdate( const Time& ) {
 			}
 			case Border:
 			{
-				widget->setBorderColor( widget->getStyleState(),
+				widget->setBorderColor(
 						Color( mInterpolationR.getPosition(),
 							  mInterpolationG.getPosition(),
 							  mInterpolationB.getPosition(),

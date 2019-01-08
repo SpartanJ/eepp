@@ -395,7 +395,7 @@ void MapEditor::createLighContainer() {
 	mUIBaseColor->setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 	mUIBaseColor->setSize( 58, 64 );
 	mUIBaseColor->setBackgroundColor( Color(255,255,255,255) );
-	mUIBaseColor->getBorder()->setColor( Color( 100, 100, 100, 200 ) );
+	mUIBaseColor->setBorderColor( Color( 100, 100, 100, 200 ) );
 
 	Txt = createTextBox( "R:", mLightCont, Sizef(), Vector2f( mUIBaseColor->getPosition().x + mUIBaseColor->getSize().getWidth() + 4, mUIBaseColor->getPosition().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, Text::Shadow );
 

@@ -155,6 +155,15 @@ NodeAttribute UIStyle::getAttribute( const Uint32& state, const std::string& att
 	return NodeAttribute();
 }
 
+bool UIStyle::hasAttribute(const Uint32 & state, const std::string & attributeName) const {
+	if ( !attributeName.empty() && stateExists( state ) ) {
+		const AttributesMap& attributesMap = mStates.at( state );
+		return attributesMap.find( attributeName ) != attributesMap.end();
+	}
+
+	return false;
+}
+
 NodeAttribute UIStyle::getAttributeFromNames( const Uint32& state, const std::vector<std::string>& attributeNames ) const {
 	if ( !attributeNames.empty() && stateExists( state ) ) {
 		const AttributesMap& attributesMap = mStates.at( state );

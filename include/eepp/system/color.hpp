@@ -219,6 +219,8 @@ class EE_API Color : public tColor<Uint8>
 
 		Colorf toHsl();
 
+		std::string toHexString();
+
 		static Color fromHsl( const Colorf& hsl );
 
 		/** Blend a source color to destination color */

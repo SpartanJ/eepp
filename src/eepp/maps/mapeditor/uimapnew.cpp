@@ -135,7 +135,7 @@ UIMapNew::UIMapNew( UIMap * Map, std::function<void()> NewMapCb, bool ResizeMap 
 
 	mUIBaseColor = UIWidget::New();
 	mUIBaseColor->setFlags( UI_FILL_BACKGROUND | UI_BORDER );
-	mUIBaseColor->getBorder()->setColor( Color( 100, 100, 100, 200 ) );
+	mUIBaseColor->setBorderColor( Color( 100, 100, 100, 200 ) );
 	mUIBaseColor->setBackgroundColor( ResizeMap ? mUIMap->Map()->getBaseColor() : Color( 255, 255, 255, 255 ) );
 	mUIBaseColor->setParent( mUIWindow->getContainer() )->setPosition( Txt->getPosition().x, Txt->getPosition().y + Txt->getSize().getHeight() + 4 )->setSize( 64, 64 );
 

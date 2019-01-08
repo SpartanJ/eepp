@@ -10,7 +10,9 @@
 
 namespace EE { namespace Graphics {
 class Drawable;
+class RectangleDrawable;
 }}
+
 namespace EE { namespace Scene {
 class Action;
 class ActionManager;
@@ -125,17 +127,11 @@ class EE_API UINode : public Node {
 
 		UINode * setForegroundCorners( const unsigned int& corners );
 
-		UISkin * setBorderEnabled( bool enabled );
-
-		UINode * setBorderColor( const Uint32 & state, const Color& color );
+		RectangleDrawable * setBorderEnabled( bool enabled );
 
 		UINode * setBorderColor( const Color& color );
 
-		Color getBorderColor( const Uint32 & state );
-
 		Color getBorderColor();
-
-		UINode * setBorderWidth( const Uint32 & state, const unsigned int& width );
 
 		UINode * setBorderWidth( const unsigned int& width );
 
@@ -151,7 +147,7 @@ class EE_API UINode : public Node {
 
 		UISkin * getForeground();
 
-		UISkin * getBorder();
+		RectangleDrawable * getBorder();
 
 		void setThemeByName( const std::string& Theme );
 
@@ -206,7 +202,7 @@ class EE_API UINode : public Node {
 		UISkinState *	mSkinState;
 		UISkinState *	mBackgroundState;
 		UISkinState *	mForegroundState;
-		UISkinState *	mBorderState;
+		RectangleDrawable *	mBorder;
 		Vector2f		mDragPoint;
 		Uint32			mDragButton;
 

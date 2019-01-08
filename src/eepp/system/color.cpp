@@ -3,6 +3,7 @@
 #include <eepp/math/math.hpp>
 #include <cstdlib>
 #include <ctype.h>
+#include <iomanip>
 
 namespace EE { namespace System {
 
@@ -223,6 +224,12 @@ Colorf Color::toHsl() {
 	hsl.hsl.a = a;
 
 	return hsl;
+}
+
+std::string Color::toHexString() {
+	std::stringstream stream;
+	stream << "#" << std::setfill ('0') << std::setw(sizeof(Color)*2) << std::hex << getValue();
+	return stream.str();
 }
 
 static Float hue2rgb( Float p, Float q, Float t) {

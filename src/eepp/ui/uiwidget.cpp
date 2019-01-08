@@ -587,8 +587,14 @@ bool UIWidget::setAttribute( const std::string& name, const std::string& value, 
 	return setAttribute( NodeAttribute( name, value ), state );
 }
 
+#define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED ) \
+	NodeAttribute oldAttribute = mStyle->getAttribute( UIState::StateFlagNormal, attribute.getName() ); \
+	if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) \
+		mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), ATTR_FORMATED ) ); \
+
+
 bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
-	std::string name = attribute.getName();
+	const std::string& name = attribute.getName();
 
 	bool attributeSet = true;
 
@@ -599,11 +605,15 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "y" == name ) {
 		setInternalPosition( Vector2f( mDpPos.x, attribute.asDpDimension() ) );
 	} else if ( "width" == name ) {
+		setLayoutWidthRules( FIXED );
+
 		Float newWidth = attribute.asDpDimensionI();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Float start( getSize().getWidth() );
+
+			SAVE_NORMAL_STATE_ATTR( String::strFormated( "%.2f", mDpSize.getWidth() ) );
 
 			Action * action = Actions::ResizeWidth::New( start, newWidth, transitionInfo.duration, transitionInfo.timingFunction );
 
@@ -612,16 +622,19 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 			runAction( action );
 		} else {
-			setLayoutWidthRules( FIXED );
 			setInternalWidth( newWidth );
 			notifyLayoutAttrChange();
 		}
 	} else if ( "height" == name ) {
+		setLayoutHeightRules( FIXED );
+
 		Float newHeight = attribute.asDpDimensionI();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Float start( getSize().getHeight() );
+
+			SAVE_NORMAL_STATE_ATTR( String::strFormated( "%.2f", mDpSize.getHeight() ) );
 
 			Action * action = Actions::ResizeHeight::New( start, newHeight, transitionInfo.duration, transitionInfo.timingFunction );
 
@@ -630,7 +643,6 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 			runAction( action );
 		} else {
-			setLayoutHeightRules( FIXED );
 			setInternalHeight( newHeight );
 			notifyLayoutAttrChange();
 		}
@@ -693,7 +705,9 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
-			Color start( getBorderColor( getStylePreviousState() ) );
+			Color start( getBorderColor() );
+
+			SAVE_NORMAL_STATE_ATTR( start.toHexString() )
 
 			Action * action = Actions::Tint::New( start, color, false, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Border );
 
@@ -702,10 +716,10 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 			runAction( action );
 		} else {
-			setBorderColor( state, color );
+			setBorderColor( color );
 		}
 	} else if ( "borderwidth" == name ) {
-		setBorderWidth( state, attribute.asDpDimensionI("1") );
+		setBorderWidth( attribute.asDpDimensionI("1") );
 	} else if ( "bordercorners" == name || "backgroundcorners" == name ) {
 		setBackgroundCorners( state, attribute.asUint() );
 	} else if ( "visible" == name ) {
@@ -794,6 +808,20 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Action * action = Actions::MarginMove::New( mLayoutMargin, margin, transitionInfo.duration, transitionInfo.timingFunction );
+
+			NodeAttribute oldAttribute = mStyle->getAttribute( UIState::StateFlagNormal, attribute.getName() );
+			if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) {
+				if ( "layout_margin" == name )
+					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::strFormated( "%d %d %d %d", mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) ) );
+				else if ( "layout_marginleft" == name )
+					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::strFormated( "%d", mLayoutMargin.Left ) ) );
+				else if ( "layout_marginright" == name )
+					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::strFormated( "%d", mLayoutMargin.Right ) ) );
+				else if ( "layout_margintop" == name )
+					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::strFormated( "%d", mLayoutMargin.Top ) ) );
+				else if ( "layout_marginbottom" == name )
+					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::strFormated( "%d", mLayoutMargin.Bottom ) ) );
+			}
 
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
@@ -897,6 +925,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			Float newRotation( mStyle->getAttribute( state, attribute.getName() ).asFloat() );
 			Action * action = Actions::Rotate::New( mRotation, newRotation, transitionInfo.duration, transitionInfo.timingFunction );
 
+			SAVE_NORMAL_STATE_ATTR( String::strFormated( "%2.f", mRotation ) )
+
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
 
@@ -909,6 +939,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Vector2f newScale( mStyle->getAttribute( state, attribute.getName() ).asVector2f() );
 			Action * action = Actions::Scale::New( mScale, newScale, transitionInfo.duration, transitionInfo.timingFunction );
+
+			SAVE_NORMAL_STATE_ATTR( String::strFormated( "%2.f, %2.f", mScale.x, mScale.y ) )
 
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
@@ -941,6 +973,20 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Action * action = Actions::PaddingTransition::New( mPadding, padding, transitionInfo.duration, transitionInfo.timingFunction );
 
+			NodeAttribute oldAttribute = mStyle->getAttribute( UIState::StateFlagNormal, attribute.getName() );
+			if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) {
+				if ( "padding" == name )
+					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::strFormated( "%2.f %2.f %2.f %2.f", mPadding.Left, mPadding.Top, mPadding.Right, mPadding.Bottom ) ) );
+				else if ( "paddingleft" == name )
+					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::strFormated( "%2.f", mPadding.Left ) ) );
+				else if ( "paddingright" == name )
+					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::strFormated( "%2.f", mPadding.Right ) ) );
+				else if ( "paddingtop" == name )
+					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::strFormated( "%2.f", mPadding.Top ) ) );
+				else if ( "paddingbottom" == name )
+					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::strFormated( "%2.f", mPadding.Bottom ) ) );
+			}
+
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
 
@@ -954,6 +1000,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Action * action = Actions::Fade::New( mAlpha, alpha, transitionInfo.duration, transitionInfo.timingFunction );
+
+			SAVE_NORMAL_STATE_ATTR( String::strFormated( "%2.f", mAlpha ) )
 
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
