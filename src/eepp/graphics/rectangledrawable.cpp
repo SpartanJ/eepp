@@ -40,7 +40,7 @@ void RectangleDrawable::draw() {
 	draw( mPosition );
 }
 
-void RectangleDrawable::draw(const Vector2f & position) {
+void RectangleDrawable::draw(const Vector2f &) {
 	draw( mPosition, mSize );
 }
 

@@ -308,14 +308,14 @@ bool IniFile::setValue ( std::string const keyname, std::string const valuename,
 bool IniFile::setValueI ( std::string const keyname, std::string const valuename, int const value, bool create ) {
 	char svalue[MAX_VALUEDATA];
 
-	String::strFormat( svalue, MAX_VALUEDATA, "%d", value );
+	String::formatBuffer( svalue, MAX_VALUEDATA, "%d", value );
 	return setValue ( keyname, valuename, svalue, create );
 }
 
 bool IniFile::setValueF ( std::string const keyname, std::string const valuename, double const value, bool create ) {
 	char svalue[MAX_VALUEDATA];
 
-	String::strFormat ( svalue, MAX_VALUEDATA, "%f", value );
+	String::formatBuffer ( svalue, MAX_VALUEDATA, "%f", value );
 	return setValue ( keyname, valuename, svalue, create );
 }
 
@@ -354,7 +354,7 @@ std::string IniFile::getValue ( std::string const keyname, std::string const val
 int IniFile::getValueI ( std::string const keyname, std::string const valuename, int const defValue ) const {
 	char svalue[MAX_VALUEDATA];
 
-	String::strFormat ( svalue, MAX_VALUEDATA, "%d", defValue );
+	String::formatBuffer ( svalue, MAX_VALUEDATA, "%d", defValue );
 	return atoi ( getValue ( keyname, valuename, svalue ).c_str() );
 }
 
@@ -367,7 +367,7 @@ bool IniFile::getValueB(const std::string keyname, const std::string valuename, 
 double IniFile::getValueF ( std::string const keyname, std::string const valuename, double const defValue ) const {
 	char svalue[MAX_VALUEDATA];
 
-	String::strFormat ( svalue, MAX_VALUEDATA, "%f", defValue );
+	String::formatBuffer ( svalue, MAX_VALUEDATA, "%f", defValue );
 	return atof ( getValue ( keyname, valuename, svalue ).c_str() );
 }
 

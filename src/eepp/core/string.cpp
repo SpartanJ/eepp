@@ -220,7 +220,7 @@ void String::insertChar( String& str, const unsigned int& pos, const Uint32& tch
 	str.insert( str.begin() + pos, tchar );
 }
 
-void String::strFormat( char * Buffer, int BufferSize, const char * format, ... ) {
+void String::formatBuffer( char * Buffer, int BufferSize, const char * format, ... ) {
 	va_list	args;
 	va_start( args, format );
 #ifdef EE_COMPILER_MSVC
@@ -231,7 +231,7 @@ void String::strFormat( char * Buffer, int BufferSize, const char * format, ... 
 	va_end( args );
 }
 
-std::string String::strFormated( const char * format, ... ) {
+std::string String::format( const char * format, ... ) {
 	int n, size = 256;
 	std::string tstr( size, '\0' );
 

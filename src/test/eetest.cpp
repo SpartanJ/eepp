@@ -1663,7 +1663,7 @@ void EETest::render() {
 	if ( Sys::getTicks() - lasttick >= 50 ) {
 		lasttick = Sys::getTicks();
 		#ifdef EE_DEBUG
-		mInfo = String::strFormated( "EE - FPS: %d Frame Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
+		mInfo = String::format( "EE - FPS: %d Frame Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
 							mWindow->getFPS(),
 							et.asMilliseconds(),
 							(Int32)Mouse.x,

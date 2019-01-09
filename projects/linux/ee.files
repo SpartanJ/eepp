@@ -219,6 +219,7 @@
 ../../include/eepp/scene/actions/move.hpp
 ../../include/eepp/scene/actions/paddingtransition.hpp
 ../../include/eepp/scene/actions/resize.hpp
+../../include/eepp/scene/actions/resizeborderradius.hpp
 ../../include/eepp/scene/actions/resizeheight.hpp
 ../../include/eepp/scene/actions/resizewidth.hpp
 ../../include/eepp/scene/actions/rotate.hpp
@@ -645,6 +646,7 @@
 ../../src/eepp/scene/actions/move.cpp
 ../../src/eepp/scene/actions/paddingtransition.cpp
 ../../src/eepp/scene/actions/resize.cpp
+../../src/eepp/scene/actions/resizeborderradius.cpp
 ../../src/eepp/scene/actions/resizeheight.cpp
 ../../src/eepp/scene/actions/resizewidth.cpp
 ../../src/eepp/scene/actions/rotate.cpp

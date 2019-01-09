@@ -19,6 +19,7 @@
 #include <eepp/scene/actions/resize.hpp>
 #include <eepp/scene/actions/resizewidth.hpp>
 #include <eepp/scene/actions/resizeheight.hpp>
+#include <eepp/scene/actions/resizeborderradius.hpp>
 
 #endif
 

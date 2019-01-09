@@ -235,7 +235,7 @@ void UINode::drawDebugData() {
 			UIWidget * me = static_cast<UIWidget*>( this );
 
 			if ( NULL != getEventDispatcher() && getEventDispatcher()->getOverControl() == this ) {
-				String text( String::strFormated( "X: %2.4f Y: %2.4f\nW: %2.4f H: %2.4f", mDpPos.x, mDpPos.y, mDpSize.x, mDpSize.y ) );
+				String text( String::format( "X: %2.4f Y: %2.4f\nW: %2.4f H: %2.4f", mDpPos.x, mDpPos.y, mDpSize.x, mDpSize.y ) );
 
 				if ( !mId.empty() ) {
 					text = "ID: " + mId + "\n" + text;
@@ -432,7 +432,7 @@ UINode * UINode::setBackgroundColor( const Color& color ) {
 	return setBackgroundColor( UIState::StateFlagNormal, color );
 }
 
-UINode * UINode::setBackgroundCorners( const Uint32 & state, const unsigned int& corners ) {
+UINode * UINode::setBorderRadius( const Uint32 & state, const unsigned int& corners ) {
 	UISkin * background = setBackgroundFillEnabled( true );
 
 	Drawable * stateDrawable = background->getStateDrawable( state );
@@ -452,8 +452,28 @@ UINode * UINode::setBackgroundCorners( const Uint32 & state, const unsigned int&
 	return this;
 }
 
-UINode * UINode::setBackgroundCorners( const unsigned int& corners ) {
-	return setBackgroundCorners( UIState::StateFlagNormal, corners );
+Uint32 UINode::getBorderRadius( const Uint32& state ) {
+	if ( NULL != mBackgroundState && NULL != mBackgroundState->getSkin() ) {
+		Drawable * stateDrawable = mBackgroundState->getSkin()->getStateDrawable( state );
+
+		if ( NULL != stateDrawable ) {
+			if ( stateDrawable->getDrawableType() == Drawable::RECTANGLE ) {
+				RectangleDrawable * rectangleDrawable = static_cast<RectangleDrawable*>( stateDrawable );
+
+				return rectangleDrawable->getCorners();
+			}
+		}
+	}
+
+	return 0;
+}
+
+Uint32 UINode::getBorderRadius() {
+	return getBorderRadius( UIState::StateFlagNormal );
+}
+
+UINode * UINode::setBorderRadius( const unsigned int& corners ) {
+	return setBorderRadius( UIState::StateFlagNormal, corners );
 }
 
 UISkin * UINode::setForegroundFillEnabled( bool enabled ) {
@@ -506,7 +526,7 @@ UINode * UINode::setForegroundColor( const Color& color ) {
 	return setForegroundColor( UIState::StateFlagNormal, color );
 }
 
-UINode * UINode::setForegroundCorners( const Uint32& state, const unsigned int& corners ) {
+UINode * UINode::setForegroundRadius( const Uint32& state, const unsigned int& corners ) {
 	UISkin * foreground = setForegroundFillEnabled( true );
 
 	Drawable * stateDrawable = foreground->getStateDrawable( state );
@@ -526,8 +546,8 @@ UINode * UINode::setForegroundCorners( const Uint32& state, const unsigned int& 
 	return this;
 }
 
-UINode * UINode::setForegroundCorners( const unsigned int& corners ) {
-	return setForegroundCorners( UIState::StateFlagNormal, corners );
+UINode * UINode::setForegroundRadius( const unsigned int& corners ) {
+	return setForegroundRadius( UIState::StateFlagNormal, corners );
 }
 
 RectangleDrawable * UINode::setBorderEnabled( bool enabled ) {

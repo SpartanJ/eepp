@@ -259,7 +259,7 @@ std::string WindowSDL::getVersion() {
 
 	SDL_GetVersion( &ver );
 
-	return String::strFormated( "SDL %d.%d.%d", ver.major, ver.minor, ver.patch );
+	return String::format( "SDL %d.%d.%d", ver.major, ver.minor, ver.patch );
 }
 
 void WindowSDL::createPlatform() {

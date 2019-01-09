@@ -173,7 +173,7 @@ class EE_API String {
 	}
 
 	/** Returning a std::string from a formated string */
-	static std::string strFormated( const char* format, ... )
+	static std::string format( const char* format, ... )
 	#ifdef __GNUC__
 		/* This attribute is nice: it even works through gettext invokation. For
 		   example, gcc will complain that StrFormat(_("%s"), 42) is ill-formed. */
@@ -182,7 +182,7 @@ class EE_API String {
 	;
 
 	/** Format a char buffer */
-	static void strFormat( char * Buffer, int BufferSize, const char * format, ... );
+	static void formatBuffer( char * Buffer, int BufferSize, const char * format, ... );
 
 	/** @brief Construct from an UTF-8 string to UTF-32 according
 	** @param utf8String UTF-8 string to convert

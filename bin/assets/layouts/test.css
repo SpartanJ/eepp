@@ -71,8 +71,8 @@ Tooltip {
 	borderWidth: 2dp;
 	borderColor: #66666666;
 	backgroundColor: #33FF3333;
-	backgroundCorners: 12;
-	transition: scale 0.25s, rotation 0.25s 0.25s, borderColor 0.25s, backgroundColor 0.25s;
+	borderRadius: 12;
+	transition: scale 0.25s, rotation 0.25s 0.25s, borderColor 0.25s, backgroundColor 0.25s, borderRadius 0.25s;
 }
 
 #tpad:hover {
@@ -80,7 +80,7 @@ Tooltip {
 	rotation: -3;
 	backgroundColor: #FF333333;
 	borderColor: #99999999;
-	backgroundCorners: 12;
+	borderRadius: 4;
 }
 
 #tpad2 {
@@ -95,6 +95,7 @@ Tooltip {
 	layout_marginLeft: 8dp;
 	padding: 28dp;
 	opacity: 1;
+	borderRadius: 24;
 	backgroundColor: #656;
 }
 

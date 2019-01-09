@@ -105,9 +105,13 @@ class EE_API UINode : public Node {
 
 		Color getBackgroundColor();
 
-		UINode * setBackgroundCorners( const Uint32 & state, const unsigned int& corners );
+		UINode * setBorderRadius( const Uint32 & state, const unsigned int& corners );
 
-		UINode * setBackgroundCorners( const unsigned int& corners );
+		UINode * setBorderRadius( const unsigned int& corners );
+
+		Uint32 getBorderRadius( const Uint32& state );
+
+		Uint32 getBorderRadius();
 
 		UISkin * setForegroundFillEnabled( bool enabled );
 
@@ -123,9 +127,9 @@ class EE_API UINode : public Node {
 
 		Color getForegroundColor();
 
-		UINode * setForegroundCorners( const Uint32 & state, const unsigned int& corners );
+		UINode * setForegroundRadius( const Uint32 & state, const unsigned int& corners );
 
-		UINode * setForegroundCorners( const unsigned int& corners );
+		UINode * setForegroundRadius( const unsigned int& corners );
 
 		RectangleDrawable * setBorderEnabled( bool enabled );
 

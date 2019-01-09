@@ -266,7 +266,7 @@ bool Window::takeScreenshot(std::string filepath, const Image::SaveType & Format
 		Ext = "." + Image::saveTypeToExtension( Format );
 
 		while ( !find && FileNum < 10000 ) {
-			TmpPath = String::strFormated( "%s%05d%s", filepath.c_str(), FileNum, Ext.c_str() );
+			TmpPath = String::format( "%s%05d%s", filepath.c_str(), FileNum, Ext.c_str() );
 
 			FileNum++;
 
