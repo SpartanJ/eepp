@@ -8,12 +8,12 @@ namespace EE { namespace Scene { namespace Actions {
 class EE_API PaddingTransition : public MarginMove {
 	public:
 
-		static PaddingTransition * New( const Rectf& start, const Rectf& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear );
+		static PaddingTransition * New( const Rectf& start, const Rectf& end, const Time& duration, const Ease::Interpolation& type = Ease::Linear, const Uint32& interpolateFlag = InterpolateFlag::All );
 
 		Action * clone() const override;
 
 	protected:
-		PaddingTransition( const Rectf& start, const Rectf& end, const Time & duration, const Ease::Interpolation & type );
+		PaddingTransition( const Rectf& start, const Rectf& end, const Time & duration, const Ease::Interpolation & type, const Uint32& interpolateFlag );
 
 		void onUpdate( const Time& time ) override;
 	private:

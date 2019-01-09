@@ -67,7 +67,12 @@ Tooltip {
 	textColor: black;
 }
 
-#tpad {
+#lvbox > * {
+	layout_marginTop: 8dp;
+}
+
+#lvbox > #tpad {
+	layout_marginTop: 0dp;
 	borderWidth: 2dp;
 	borderColor: #66666666;
 	backgroundColor: #33FF3333;
@@ -75,7 +80,7 @@ Tooltip {
 	transition: scale 0.25s, rotation 0.25s 0.25s, borderColor 0.25s, backgroundColor 0.25s, borderRadius 0.25s;
 }
 
-#tpad:hover {
+#lvbox > #tpad:hover {
 	scale: 1.1;
 	rotation: -3;
 	backgroundColor: #FF333333;

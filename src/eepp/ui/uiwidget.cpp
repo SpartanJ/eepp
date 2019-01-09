@@ -861,21 +861,28 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		}
 	} else if ( String::startsWith( name, "layout_margin" ) ) {
 		Rect margin;
+		Uint32 marginFlag = 0;
 
-		if ( "layout_margin" == name )
+		if ( "layout_margin" == name ) {
 			margin = attribute.asRect();
-		else if ( "layout_marginleft" == name )
+			marginFlag = Actions::MarginMove::All;
+		} else if ( "layout_marginleft" == name ) {
 			margin = Rect( attribute.asDpDimensionI(), mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom );
-		else if ( "layout_marginright" == name )
+			marginFlag = Actions::MarginMove::Left;
+		} else if ( "layout_marginright" == name ) {
 			margin = Rect( mLayoutMargin.Left, mLayoutMargin.Top, attribute.asDpDimensionI(), mLayoutMargin.Bottom );
-		else if ( "layout_margintop" == name )
+			marginFlag = Actions::MarginMove::Right;
+		} else if ( "layout_margintop" == name ) {
 			margin = Rect( mLayoutMargin.Left, attribute.asDpDimensionI(), mLayoutMargin.Right, mLayoutMargin.Bottom );
-		else if ( "layout_marginbottom" == name )
+			marginFlag = Actions::MarginMove::Top;
+		} else if ( "layout_marginbottom" == name ) {
 			margin = Rect( mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, attribute.asDpDimensionI() );
+			marginFlag = Actions::MarginMove::Bottom;
+		}
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
-			Action * action = Actions::MarginMove::New( mLayoutMargin, margin, transitionInfo.duration, transitionInfo.timingFunction );
+			Action * action = Actions::MarginMove::New( mLayoutMargin, margin, transitionInfo.duration, transitionInfo.timingFunction, marginFlag );
 
 			NodeAttribute oldAttribute = mStyle->getAttribute( UIState::StateFlagNormal, attribute.getName() );
 			if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) {
@@ -1025,21 +1032,28 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		setBlendMode( attribute.asBlendMode() );
 	} else if ( String::startsWith( name, "padding" ) ) {
 		Rectf padding;
+		Uint32 paddingFlag = 0;
 
-		if ( "padding" == name )
+		if ( "padding" == name ) {
 			padding = ( attribute.asRectf() );
-		else if ( "paddingleft" == name )
+			paddingFlag = Actions::PaddingTransition::All;
+		} else if ( "paddingleft" == name ) {
 			padding = Rectf( attribute.asDpDimension(), mPadding.Top, mPadding.Right, mPadding.Bottom );
-		else if ( "paddingright" == name )
+			paddingFlag = Actions::PaddingTransition::Left;
+		} else if ( "paddingright" == name ) {
 			padding = Rectf( mPadding.Left, mPadding.Top, attribute.asDpDimension(), mPadding.Bottom );
-		else if ( "paddingtop" == name )
+			paddingFlag = Actions::PaddingTransition::Right;
+		} else if ( "paddingtop" == name ) {
 			padding = Rectf( mPadding.Left, attribute.asDpDimension(), mPadding.Right, mPadding.Bottom );
-		else if ( "paddingbottom" == name )
+			paddingFlag = Actions::PaddingTransition::Top;
+		} else if ( "paddingbottom" == name ) {
 			padding = Rectf( mPadding.Left, mPadding.Top, mPadding.Right, attribute.asDpDimension() );
+			paddingFlag = Actions::PaddingTransition::Bottom;
+		}
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
-			Action * action = Actions::PaddingTransition::New( mPadding, padding, transitionInfo.duration, transitionInfo.timingFunction );
+			Action * action = Actions::PaddingTransition::New( mPadding, padding, transitionInfo.duration, transitionInfo.timingFunction, paddingFlag );
 
 			NodeAttribute oldAttribute = mStyle->getAttribute( UIState::StateFlagNormal, attribute.getName() );
 			if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) {
