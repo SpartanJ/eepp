@@ -601,9 +601,45 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	if ( "id" == name ) {
 		setId( attribute.value() );
 	} else if ( "x" == name ) {
-		setInternalPosition( Vector2f( attribute.asDpDimension(), mDpPos.y ) );
+		setLayoutWidthRules( FIXED );
+
+		Float newX = attribute.asDpDimensionI();
+
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
+
+			SAVE_NORMAL_STATE_ATTR( String::strFormated( "%.2f", mDpSize.getWidth() ) );
+
+			Action * action = Actions::MoveCoordinate::New( getPosition().x, newX, transitionInfo.duration, transitionInfo.timingFunction, Actions::MoveCoordinate::CoordinateX );
+
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
+
+			runAction( action );
+		} else {
+			setInternalPosition( Vector2f( newX, mDpPos.y ) );
+			notifyLayoutAttrChange();
+		}
 	} else if ( "y" == name ) {
-		setInternalPosition( Vector2f( mDpPos.x, attribute.asDpDimension() ) );
+		setLayoutWidthRules( FIXED );
+
+		Float newY = attribute.asDpDimensionI();
+
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
+
+			SAVE_NORMAL_STATE_ATTR( String::strFormated( "%.2f", mDpSize.getWidth() ) );
+
+			Action * action = Actions::MoveCoordinate::New( getPosition().y, newY, transitionInfo.duration, transitionInfo.timingFunction, Actions::MoveCoordinate::CoordinateY );
+
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
+
+			runAction( action );
+		} else {
+			setInternalPosition( Vector2f( mDpPos.x, newY ) );
+			notifyLayoutAttrChange();
+		}
 	} else if ( "width" == name ) {
 		setLayoutWidthRules( FIXED );
 
@@ -611,11 +647,10 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
-			Float start( getSize().getWidth() );
 
 			SAVE_NORMAL_STATE_ATTR( String::strFormated( "%.2f", mDpSize.getWidth() ) );
 
-			Action * action = Actions::ResizeWidth::New( start, newWidth, transitionInfo.duration, transitionInfo.timingFunction );
+			Action * action = Actions::ResizeWidth::New( getSize().getWidth(), newWidth, transitionInfo.duration, transitionInfo.timingFunction );
 
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
@@ -632,11 +667,10 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
-			Float start( getSize().getHeight() );
 
 			SAVE_NORMAL_STATE_ATTR( String::strFormated( "%.2f", mDpSize.getHeight() ) );
 
-			Action * action = Actions::ResizeHeight::New( start, newHeight, transitionInfo.duration, transitionInfo.timingFunction );
+			Action * action = Actions::ResizeHeight::New( getSize().getHeight(), newHeight, transitionInfo.duration, transitionInfo.timingFunction );
 
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
@@ -663,7 +697,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Color start( getBackgroundColor( getStylePreviousState() ) );
 
-			Action * action = Actions::Tint::New( start, color, false, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Background );
+			Action * action = Actions::Tint::New( start, color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Background );
 
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
@@ -689,7 +723,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Color start( getForegroundColor( getStylePreviousState() ) );
 
-			Action * action = Actions::Tint::New( start, color, false, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Foreground );
+			Action * action = Actions::Tint::New( start, color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Foreground );
 
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
@@ -734,6 +768,24 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "skin" == name ) {
 		mSkinName = attribute.asString();
 		setThemeSkin( mSkinName );
+	} else if ( "skincolor" == name ) {
+		Color color = attribute.asColor();
+
+		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
+			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
+			Color start( getSkinColor( getStylePreviousState() ) );
+
+			SAVE_NORMAL_STATE_ATTR( start.toHexString() )
+
+			Action * action = Actions::Tint::New( start, color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Skin );
+
+			if ( Time::Zero != transitionInfo.delay )
+				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
+
+			runAction( action );
+		} else {
+			setSkinColor( state, color );
+		}
 	} else if ( "gravity" == name ) {
 		std::string gravity = attribute.asString();
 		String::toLowerInPlace( gravity );

@@ -2,7 +2,7 @@
 	<TabWidget layout_width="match_parent" layout_height="match_parent" paddingLeft="8dp" paddingRight="8dp" paddingBottom="8dp" paddingTop="20dp" backgroundColor="#656565">
 		<hbox id="test_1" layout_width="match_parent" layout_height="match_parent">
 			<vbox id="lvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" backgroundColor="#222" padding="12dp">
-				<TextView id="tpad" layout_width="wrap_content" layout_height="wrap_content" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#333" backgroundCorners="12" borderColor="#66666666" borderWidth="2dp" />
+				<TextView id="tpad" layout_width="wrap_content" layout_height="wrap_content" text="testing padding" textSize="24dp" padding="12dp" />
 				<TextView id="tpad2" layout_width="wrap_content" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="24dp" backgroundColor="#333" gravity="center" />
 				<CheckBox layout_width="wrap_content" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#333" />
 				<RadioButton layout_width="wrap_content" layout_height="wrap_content" layout_marginTop="8dp" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#333" />
@@ -33,7 +33,7 @@
 					<TextureRegion layout_width="96dp" layout_height="96dp" src="bn01" padding="8dp" backgroundColor="#787" gravity="center" layout_marginTop="162dp" gravity="right|bottom" />
 
 					<PushButton layout_width="wrap_content" layout_height="wrap_content" text="testing padding" layout_gravity="bottom|right" gravity="center" padding="8dp" layout_to_top_of="tmp" />
-					<PushButton text="OK!" textSize="16dp" icon="ok" layout_gravity="left|bottom" gravity="center" layout_width="wrap_content" layout_height="wrap_content" layout_marginBottom="8dp" padding="8dp" layout_to_top_of="tm" />
+					<PushButton id="pbut" text="OK!" textSize="16dp" icon="ok" layout_gravity="left|bottom" gravity="center" layout_width="wrap_content" layout_height="wrap_content" layout_marginBottom="8dp" padding="8dp" layout_to_top_of="tm" />
 					
 					<Slider id="slider" orientation="horizontal" halfslider="true" layout_width="200dp" layout_height="wrap_content" padding="32dp" background="#555" layout_to_bottom_of="el1" />
 					

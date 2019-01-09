@@ -148,14 +148,13 @@ void Tint::onUpdate( const Time& ) {
 			}
 			case Skin:
 			{
-				/*
 				widget->setSkinColor( widget->getStyleState(),
 						Color( mInterpolationR.getPosition(),
 							  mInterpolationG.getPosition(),
 							  mInterpolationB.getPosition(),
 							  mInterpolateAlpha ? mInterpolationA.getPosition() : 255
 				) );
-				*/
+
 				break;
 			}
 			case Border:

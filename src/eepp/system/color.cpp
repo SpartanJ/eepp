@@ -226,7 +226,7 @@ Colorf Color::toHsl() {
 	return hsl;
 }
 
-std::string Color::toHexString() {
+std::string Color::toHexString() const {
 	std::stringstream stream;
 	stream << "#" << std::setfill ('0') << std::setw(sizeof(Color)*2) << std::hex << getValue();
 	return stream.str();

@@ -219,7 +219,7 @@ class EE_API Color : public tColor<Uint8>
 
 		Colorf toHsl();
 
-		std::string toHexString();
+		std::string toHexString() const;
 
 		static Color fromHsl( const Colorf& hsl );
 

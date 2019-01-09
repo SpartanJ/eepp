@@ -165,6 +165,14 @@ class EE_API UINode : public Node {
 
 		UINode * setSkin( UISkin * skin );
 
+		UINode * setSkinColor( const Uint32& state, const Color& color );
+
+		UINode * setSkinColor( const Color& color );
+
+		Color getSkinColor( const Uint32& state );
+
+		Color getSkinColor();
+
 		void removeSkin();
 
 		virtual void pushState( const Uint32& State, bool emitEvent = true );

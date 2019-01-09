@@ -26,9 +26,11 @@ const Uint8& Drawable::getAlpha() {
 }
 
 void Drawable::setColor(const Color & color) {
-	mColor = color;
-	onColorFilterChange();
-	onAlphaChange();
+	if ( mColor != color ) {
+		mColor = color;
+		onColorFilterChange();
+		onAlphaChange();
+	}
 }
 
 Color Drawable::getColor() const {

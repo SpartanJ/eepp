@@ -408,15 +408,11 @@ UINode * UINode::setBackgroundColor( const Uint32 & state, const Color& color ) 
 
 	Drawable * stateDrawable = background->getStateDrawable( state );
 
-	if ( NULL == stateDrawable ) {
-		RectangleDrawable * colorDrawable = RectangleDrawable::New();
+	if ( NULL == stateDrawable )
+		setBackgroundDrawable( state, RectangleDrawable::New(), true );
 
-		colorDrawable->setColor( color );
-
-		setBackgroundDrawable( state, colorDrawable, true );
-	} else {
-		stateDrawable->setColor( color );
-	}
+	if ( NULL != mBackgroundState )
+		mBackgroundState->setStateColor( state, color );
 
 	return this;
 }
@@ -426,17 +422,10 @@ Color UINode::getBackgroundColor() {
 }
 
 Color UINode::getBackgroundColor( const Uint32 & state ) {
-	UISkin * background = setBackgroundFillEnabled( true );
+	if ( NULL != mBackgroundState )
+		return mBackgroundState->getStateColor( state );
 
-	Drawable * stateDrawable = background->getStateDrawable( state );
-
-	if ( NULL == stateDrawable ) {
-		RectangleDrawable * colorDrawable = RectangleDrawable::New();
-
-		return colorDrawable->getColor();
-	} else {
-		return stateDrawable->getColor();
-	}
+	return Color::White;
 }
 
 UINode * UINode::setBackgroundColor( const Color& color ) {
@@ -493,17 +482,10 @@ Color UINode::getForegroundColor() {
 }
 
 Color UINode::getForegroundColor( const Uint32 & state ) {
-	UISkin * foreground = setForegroundFillEnabled( true );
+	if ( NULL != mForegroundState )
+		return mForegroundState->getStateColor( state );
 
-	Drawable * stateDrawable = foreground->getStateDrawable( state );
-
-	if ( NULL == stateDrawable ) {
-		RectangleDrawable * colorDrawable = RectangleDrawable::New();
-
-		return colorDrawable->getColor();
-	} else {
-		return stateDrawable->getColor();
-	}
+	return Color::White;
 }
 
 UINode * UINode::setForegroundColor( const Uint32 & state, const Color& color ) {
@@ -511,15 +493,11 @@ UINode * UINode::setForegroundColor( const Uint32 & state, const Color& color ) 
 
 	Drawable * stateDrawable = foreground->getStateDrawable( state );
 
-	if ( NULL == stateDrawable ) {
-		RectangleDrawable * colorDrawable = RectangleDrawable::New();
+	if ( NULL == stateDrawable )
+		setForegroundDrawable( state, RectangleDrawable::New(), true );
 
-		colorDrawable->setColor( color );
-
-		setForegroundDrawable( state, colorDrawable, true );
-	} else {
-		stateDrawable->setColor( color );
-	}
+	if ( NULL != mForegroundState )
+		mForegroundState->setStateColor( state, color );
 
 	return this;
 }
@@ -761,6 +739,28 @@ UINode * UINode::setSkin( UISkin * skin ) {
 	}
 
 	return this;
+}
+
+UINode * UINode::setSkinColor( const Uint32& state, const Color& color ) {
+	if ( NULL != mSkinState  )
+		mSkinState->setStateColor( state, color );
+
+	return this;
+}
+
+UINode * UINode::setSkinColor( const Color& color ) {
+	return setSkinColor( UIState::StateFlagNormal, color );
+}
+
+Color UINode::getSkinColor( const Uint32& state ) {
+	if ( NULL != mSkinState )
+		return mSkinState->getStateColor( state );
+
+	return Color::White;
+}
+
+Color UINode::getSkinColor() {
+	return getSkinColor( UIState::StateFlagNormal );
 }
 
 void UINode::removeSkin() {
