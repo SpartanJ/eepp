@@ -483,8 +483,22 @@ CSS::StyleSheetElement * UIWidget::getStyleSheetNextSiblingElement() const {
 }
 
 void UIWidget::addClass( const std::string& cls ) {
-	if ( !containsClass( cls ) ) {
+	if ( !cls.empty() && !containsClass( cls ) ) {
 		mClasses.push_back( cls );
+
+		reloadStyle( false );
+	}
+}
+
+void UIWidget::addClasses( const std::vector<std::string>& classes ) {
+	if ( !classes.empty() ) {
+		for ( auto cit = classes.begin(); cit != classes.end(); ++cit ) {
+			const std::string& cls = *cit;
+
+			if ( !cls.empty() && !containsClass( cls ) ) {
+				mClasses.push_back( cls );
+			}
+		}
 
 		reloadStyle( false );
 	}
@@ -600,6 +614,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 	if ( "id" == name ) {
 		setId( attribute.value() );
+	} else if ( "class" == name ) {
+		addClasses( String::split( attribute.getValue(), ' ' ) );
 	} else if ( "x" == name ) {
 		setLayoutWidthRules( FIXED );
 
@@ -683,11 +699,9 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "background" == name ) {
 		Drawable * res = NULL;
 
-		const std::string attributeName( attribute.asString() );
-
-		if ( String::startsWith( attributeName, "#" ) ) {
-			setBackgroundColor( state, attribute.asColor() );
-		} else if ( NULL != ( res = DrawableSearcher::searchByName( attributeName ) ) ) {
+		if ( String::startsWith( name, "#" ) ) {
+			setAttribute( NodeAttribute( "backgroundcolor", attribute.getValue() ) );
+		} else if ( NULL != ( res = DrawableSearcher::searchByName( name ) ) ) {
 			setBackgroundDrawable( state, res, res->getDrawableType() == Drawable::SPRITE );
 		}
 	} else if ( "backgroundcolor" == name ) {
@@ -709,11 +723,9 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "foreground" == name ) {
 		Drawable * res = NULL;
 
-		const std::string attributeName( attribute.asString() );
-
-		if ( String::startsWith( attributeName, "#" ) ) {
-			setForegroundColor( state, attribute.asColor() );
-		} else if ( NULL != ( res = DrawableSearcher::searchByName( attributeName ) ) ) {
+		if ( String::startsWith( name, "#" ) ) {
+			setAttribute( NodeAttribute( "foregroundcolor", attribute.getValue() ) );
+		} else if ( NULL != ( res = DrawableSearcher::searchByName( attribute.getValue() ) ) ) {
 			setForegroundDrawable( state, res, res->getDrawableType() == Drawable::SPRITE );
 		}
 	} else if ( "foregroundcolor" == name ) {

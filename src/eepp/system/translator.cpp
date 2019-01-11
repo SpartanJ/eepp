@@ -139,7 +139,7 @@ void Translator::loadFromPack( Pack * pack, const std::string& FilePackPath, std
 	}
 }
 
-String Translator::getString( const std::string& key ) {
+String Translator::getString( const std::string& key, const String& defaultValue ) {
 	StringLocaleDictionary::iterator lang = mDictionary.find( mCurrentLanguage );
 
 	if ( lang != mDictionary.end() ) {
@@ -162,7 +162,7 @@ String Translator::getString( const std::string& key ) {
 		}
 	}
 
-	return String();
+	return defaultValue;
 }
 
 String Translator::getStringf( const char * key, ... ) {

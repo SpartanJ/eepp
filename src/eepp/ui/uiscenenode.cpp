@@ -34,7 +34,7 @@ void UISceneNode::setTranslator( Translator translator ) {
 	mTranslator = translator;
 }
 
-String UISceneNode::getTranslatorString(const std::string & str) {
+String UISceneNode::getTranslatorString( const std::string& str ) {
 	if ( String::startsWith( str, "@string/" ) ) {
 		String tstr = mTranslator.getString( str.substr( 8 ) );
 
@@ -43,6 +43,17 @@ String UISceneNode::getTranslatorString(const std::string & str) {
 	}
 
 	return String( str );
+}
+
+String UISceneNode::getTranslatorString( const std::string& str, const String& defaultValue ) {
+	if ( String::startsWith( str, "@string/" ) ) {
+		String tstr = mTranslator.getString( str.substr( 8 ) );
+
+		if ( !tstr.empty() )
+			return tstr;
+	}
+
+	return defaultValue;
 }
 
 void UISceneNode::setFocusLastWindow( UIWindow * window ) {

@@ -114,6 +114,8 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		void addClass( const std::string& cls );
 
+		void addClasses( const std::vector<std::string>& classes );
+
 		void removeClass( const std::string& cls );
 
 		bool containsClass( const std::string& cls );
