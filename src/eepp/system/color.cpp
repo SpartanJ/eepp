@@ -316,7 +316,7 @@ Color Color::fromString( std::string str ) {
 		else if ( "maroon" == str )			return Color::Maroon;
 		else if ( "olive" == str )			return Color::Olive;
 		else if ( "officegreen" == str )	return Color::OfficeGreen;
-		else if (  "purple" == str )		return Color::Purple;
+		else if ( "purple" == str )			return Color::Purple;
 		else if ( "teal" == str )			return Color::Teal;
 		else if ( "navy" == str )			return Color::Navy;
 	}
@@ -332,6 +332,35 @@ Color Color::fromString( std::string str ) {
 		str += "FF";
 
 	return Color( std::strtoul( str.c_str(), NULL, 16 ) );
+}
+
+bool Color::isColorString( std::string str ) {
+	if ( str.empty() )
+		return false;
+
+	if (  str[0] == '#' )
+		return true;
+
+	String::toLowerInPlace( str );
+	if ( "transparent" == str )			return true;
+	else if ( "white" == str )			return true;
+	else if ( "black" == str )			return true;
+	else if ( "red" == str )			return true;
+	else if ( "green" == str )			return true;
+	else if ( "blue" == str )			return true;
+	else if ( "yellow" == str )			return true;
+	else if ( "cyan" == str )			return true;
+	else if ( "magenta" == str )		return true;
+	else if ( "silver" == str )			return true;
+	else if ( "gray" == str )			return true;
+	else if ( "maroon" == str )			return true;
+	else if ( "olive" == str )			return true;
+	else if ( "officegreen" == str )	return true;
+	else if ( "purple" == str )			return true;
+	else if ( "teal" == str )			return true;
+	else if ( "navy" == str )			return true;
+
+	return false;
 }
 
 }}

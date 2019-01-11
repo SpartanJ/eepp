@@ -108,6 +108,15 @@ Drawable * StateListDrawable::getStateDrawable( const Uint32& state ) {
 
 StateListDrawable * StateListDrawable::setStateDrawable( const Uint32 & state, Drawable * drawable, bool ownIt ) {
 	if ( NULL != drawable ) {
+		if ( hasDrawableState( state ) && mDrawablesOwnership[ mDrawables[ state ] ] ) {
+
+			if ( mCurrentDrawable ==  mDrawables[ state ] )
+				mCurrentDrawable = NULL;
+
+			mDrawablesOwnership.erase( mDrawables[ state ] );
+			eeDelete( mDrawables[ state ]  );
+		}
+
 		mDrawables[ state ] = drawable;
 		mDrawablesOwnership[ drawable ] = ownIt;
 
@@ -159,11 +168,11 @@ Uint8 StateListDrawable::getStateAlpha( const Uint32& state ) {
 	return 255;
 }
 
-bool StateListDrawable::hasDrawableState(Uint32 state ) {
+bool StateListDrawable::hasDrawableState( const Uint32& state ) const {
 	return mDrawables.find( state ) != mDrawables.end();
 }
 
-bool StateListDrawable::hasDrawableStateColor(Uint32 state ) {
+bool StateListDrawable::hasDrawableStateColor( const Uint32& state ) const  {
 	return mDrawableColors.find( state ) != mDrawableColors.end();
 }
 

@@ -37,8 +37,7 @@ class NodeAttribute {
 			TypeRectf
 		};
 
-		class Info
-		{
+		class Info {
 			public:
 				Info( AttributeType type, const std::string& name );
 
@@ -53,6 +52,23 @@ class NodeAttribute {
 				AttributeType type;
 
 				std::vector<std::string> names;
+		};
+
+		class FunctionType {
+			public:
+				static FunctionType parse( const std::string& function );
+
+				FunctionType( const std::string& name, const std::vector<std::string>& parameters );
+
+				const std::string& getName() const;
+
+				const std::vector<std::string> getParameters() const;
+
+				bool isEmpty() const;
+			protected:
+				std::string name;
+
+				std::vector<std::string> parameters;
 		};
 
 		NodeAttribute();

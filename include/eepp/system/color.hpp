@@ -235,6 +235,8 @@ class EE_API Color : public tColor<Uint8>
 
 		static Color fromString( std::string str );
 
+		static bool isColorString( std::string str );
+
 		static const Color Transparent;
 		static const Color White;
 		static const Color Black;
@@ -276,8 +278,29 @@ public:
 	Color toColor();
 };
 
-class RectColors {
+class EE_API RectColors {
 	public:
+		RectColors() :
+			TopLeft( Color::White ),
+			TopRight( Color::White ),
+			BottomLeft( Color::White ),
+			BottomRight( Color::White )
+		{}
+
+		RectColors( const Color& color ) :
+			TopLeft( color ),
+			TopRight( color ),
+			BottomLeft( color ),
+			BottomRight( color )
+		{}
+
+		RectColors( const Color& topLeft, const Color& topRight, const Color& bottomLeft, const Color& bottomRight ) :
+			TopLeft( topLeft ),
+			TopRight( topRight ),
+			BottomLeft( bottomLeft ),
+			BottomRight( bottomRight )
+		{}
+
 		Color TopLeft;
 		Color TopRight;
 		Color BottomLeft;

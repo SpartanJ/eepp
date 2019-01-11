@@ -76,6 +76,7 @@ Tooltip {
 	borderWidth: 2dp;
 	borderColor: #66666666;
 	backgroundColor: #33FF3333;
+	backgroundImage: linear-gradient( #8c8886, #585857 );
 	borderRadius: 12;
 	transition: scale 0.25s, rotation 0.25s 0.25s, borderColor 0.25s, backgroundColor 0.25s, borderRadius 0.25s;
 }
@@ -102,6 +103,26 @@ Tooltip {
 	opacity: 1;
 	borderRadius: 24;
 	backgroundColor: #656;
+}
+
+#tpad3 {
+	borderWidth: 2dp;
+	borderColor: #1e2021d7;
+	backgroundImage: linear-gradient( #797a79, #585857 );
+	borderRadius: 3;
+	padding: 12dp;
+	transition: all 0.25;
+}
+
+#tpad3:hover {
+	backgroundImage: linear-gradient( #9c9d9b, #5b5b5a );
+	borderColor: #1d1f1fd7;
+	borderRadius: 3;
+}
+
+#tpad3:pressed {
+	backgroundImage: linear-gradient( #4e4f4d, #414141 );
+	borderColor: #222320d7;
 }
 
 #tres {

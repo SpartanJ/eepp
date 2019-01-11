@@ -4,6 +4,7 @@
 			<vbox id="lvbox" layout_width="match_parent" layout_weight="0.5" layout_height="match_parent" backgroundColor="#222" padding="12dp">
 				<TextView id="tpad" layout_width="wrap_content" layout_height="wrap_content" text="testing padding" textSize="24dp" padding="12dp" />
 				<TextView id="tpad2" layout_width="wrap_content" layout_height="wrap_content" text="testing padding" textSize="24dp" backgroundColor="#333" gravity="center" />
+				<TextView id="tpad3" layout_width="wrap_content" layout_height="wrap_content" text="testing things" />
 				<CheckBox layout_width="wrap_content" layout_height="wrap_content" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#333" />
 				<RadioButton layout_width="wrap_content" layout_height="wrap_content" text="testing padding" textSize="24dp" padding="12dp" backgroundColor="#333" />
 				<TextInput layout_width="300dp" layout_height="wrap_content" text="testing padding" textSize="24dp" padding="24dp" />

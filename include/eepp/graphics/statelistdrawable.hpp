@@ -44,9 +44,9 @@ class EE_API StateListDrawable : public StatefulDrawable {
 
 		virtual Uint8 getStateAlpha( const Uint32& state );
 
-		bool hasDrawableState( Uint32 state );
+		bool hasDrawableState(const Uint32 & state ) const;
 
-		bool hasDrawableStateColor( Uint32 state );
+		bool hasDrawableStateColor(const Uint32 & state ) const;
 
 		void clearDrawables();
 	protected:
