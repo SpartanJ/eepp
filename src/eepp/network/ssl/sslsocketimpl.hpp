@@ -5,7 +5,7 @@
 
 namespace EE { namespace Network { namespace SSL {
 
-class SSLSocketImpl {
+class EE_API SSLSocketImpl {
 	public:
 		SSLSocketImpl( SSLSocket * socket ) :
 			mSSLSocket( socket )

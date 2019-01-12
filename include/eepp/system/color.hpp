@@ -4,6 +4,9 @@
 #include <eepp/config.hpp>
 #include <eepp/system/bitop.hpp>
 #include <string>
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#undef RGB
+#endif
 
 namespace EE { namespace System {
 
@@ -261,21 +264,21 @@ typedef tColor<Float>		ColorAf;
 
 //! @brief Small class to help in some color operations
 class EE_API RGB : public tRGB<Uint8> {
-public:
-	RGB();
+	public:
+		RGB();
 
-	/** Creates an RGB color from each component.
-	**	@param r Red component
-	**	@param g Green component
-	**	@param b Blue component
-	*/
-	RGB( Uint8 r, Uint8 g, Uint8 b );
+		/** Creates an RGB color from each component.
+		**	@param r Red component
+		**	@param g Green component
+		**	@param b Blue component
+		*/
+		RGB( Uint8 r, Uint8 g, Uint8 b );
 
-	RGB( const tRGB<Uint8>& color );
+		RGB( const tRGB<Uint8>& color );
 
-	RGB( Uint32 Col );
+		RGB( Uint32 Col );
 
-	Color toColor();
+		Color toColor();
 };
 
 class EE_API RectColors {

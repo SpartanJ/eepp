@@ -1346,7 +1346,7 @@ void Node::sendParentSizeChange( const Vector2f& SizeChange ) {
 }
 
 bool Node::reportSizeChangeToChilds() {
-	return mNodeFlags & NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS;
+	return 0 != ( mNodeFlags & NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS );
 }
 
 void Node::enableReportSizeChangeToChilds() {

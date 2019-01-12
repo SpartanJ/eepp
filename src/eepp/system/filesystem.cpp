@@ -540,7 +540,7 @@ bool FileSystem::changeWorkingDirectory( const std::string & path ) {
 
 std::string FileSystem::getCurrentWorkingDirectory() {
 #ifdef EE_COMPILER_MSVC
-	#if defined( UNICODE ) AND !defined( EE_NO_WIDECHAR )
+	#if defined( UNICODE ) && !defined( EE_NO_WIDECHAR )
 	wchar_t dir[_MAX_PATH];
 	return ( 0 != GetCurrentDirectoryW( _MAX_PATH, dir ) ) ? String( dir )::toUtf8() : std::string();
 	#else

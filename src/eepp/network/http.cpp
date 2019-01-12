@@ -363,7 +363,7 @@ Http::Response Http::downloadRequest(const Http::Request & request, IOStream & w
 				char * eol; // end of line
 				char * bol; // beginning of line
 				std::size_t size = 0;
-				size_t bufferSize = 1024;
+				const size_t bufferSize = 1024;
 				char buffer[bufferSize+1];
 				std::string header;
 

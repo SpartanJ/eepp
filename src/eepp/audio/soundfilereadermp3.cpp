@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cctype>
 #include <eepp/audio/mp3info.hpp>
+#include <eepp/system/safedatapointer.hpp>
 
 static size_t drmp3_func_read(void* data, void* ptr, size_t size) {
 	IOStream* stream = static_cast<IOStream*>(data);
@@ -70,9 +71,9 @@ Uint64 SoundFileReaderMp3::read(Int16* samples, Uint64 maxCount) {
 
 	Uint64 count = 0;
 	while (count < maxCount) {
-		int samplesToRead = static_cast<int>(maxCount - count);
+		const int samplesToRead = static_cast<int>(maxCount - count);
 		int frames = samplesToRead / mChannelCount;
-		float rSamples[samplesToRead];
+		float * rSamples = eeNewArray( float, samplesToRead );
 
 		long framesRead = drmp3_read_pcm_frames_f32( mMp3, frames, rSamples );
 
@@ -85,12 +86,17 @@ Uint64 SoundFileReaderMp3::read(Int16* samples, Uint64 maxCount) {
 			count += samplesRead;
 			samples += samplesRead;
 
-			if ( framesRead != frames )
+			if (framesRead != frames) {
+				eeSAFE_DELETE(rSamples);
 				break;
+			}
 		} else {
 			// error or end of file
+			eeSAFE_DELETE(rSamples);
 			break;
 		}
+
+		eeSAFE_DELETE(rSamples);
 	}
 
 	return count;
