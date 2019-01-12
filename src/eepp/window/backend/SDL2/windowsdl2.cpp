@@ -84,10 +84,8 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	mWindow.Flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
 
-	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	#if SDL_VERSION_ATLEAST(2,0,1)
 	mWindow.Flags |= SDL_WINDOW_ALLOW_HIGHDPI;
-	#endif
 	#endif
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::Resize ) {
@@ -352,7 +350,7 @@ void WindowSDL::onWindowResize( Uint32 Width, Uint32 Height ) {
 	mWindow.WindowConfig.Height	= Height;
 	mWindow.WindowSize = Sizei( Width, Height );
 
-	mDefaultView.reset( Rectf( 0, 0, Width, Height ) );
+	mDefaultView.reset( Rectf( 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height ) );
 
 	setup2D( false );
 

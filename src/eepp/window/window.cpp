@@ -553,7 +553,7 @@ bool Window::isTextInputActive() {
 void Window::stopTextInput() {
 }
 
-void Window::setTextInputRect( Rect& rect ) {
+void Window::setTextInputRect( Rect& ) {
 }
 
 bool Window::hasScreenKeyboardSupport()
