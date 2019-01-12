@@ -113,6 +113,8 @@ Tooltip {
 	borderRadius: 3;
 	padding: 12dp;
 	transition: all 0.25;
+	textStyle: shadow;
+	textColor: white;
 }
 
 #tpad3:hover {
@@ -120,12 +122,14 @@ Tooltip {
 	borderColor: #1d1f1fd7;
 	borderRadius: 3;
 	cursor: hand;
+	textShadowColor: black;
+	padding: 18dp 12dp 100dp 12dp;
 }
 
 #tpad3:pressed {
 	backgroundImage: linear-gradient( #4e4f4d, #414141 );
 	borderColor: #222320d7;
-	cursor: hand;
+	padding: 22dp 12dp 120dp 12dp;
 }
 
 #tres {

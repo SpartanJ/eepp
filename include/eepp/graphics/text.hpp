@@ -19,6 +19,10 @@ class EE_API Text {
 			Shadow			= 1 << 4  ///< Draw a shadow below the text
 		};
 
+		static std::string styleFlagToString( const Uint32& flags );
+
+		static Uint32 stringToStyleFlag( const std::string& str );
+
 		static Text * New();
 
 		static Text * New(const String& string, Font * font, unsigned int characterSize = 30);

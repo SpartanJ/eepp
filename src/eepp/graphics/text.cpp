@@ -10,6 +10,62 @@
 
 namespace EE { namespace Graphics {
 
+std::string Text::styleFlagToString( const Uint32& flags ) {
+	std::string str;
+
+	if ( flags & Bold )
+		str += "bold";
+
+	if ( flags & Italic ) {
+		str += ( str.empty() ? "" : "|" );
+		str += "italic";
+	}
+
+	if ( flags & Underlined ) {
+		str += ( str.empty() ? "" : "|" );
+		str += "underline";
+	}
+
+	if ( flags & StrikeThrough ) {
+		str += ( str.empty() ? "" : "|" );
+		str += "strikethrough";
+	}
+
+	if ( flags & Shadow ) {
+		str += ( str.empty() ? "" : "|" );
+		str += "shadow";
+	}
+
+	return str;
+}
+
+Uint32 Text::stringToStyleFlag( const std::string& str ) {
+	std::string valStr = str;
+	String::toLowerInPlace( valStr );
+	std::vector<std::string> strings = String::split( valStr, '|' );
+	Uint32 flags = Text::Regular;
+
+	if ( strings.size() ) {
+		for ( std::size_t i = 0; i < strings.size(); i++ ) {
+			std::string cur = strings[i];
+			String::toLowerInPlace( cur );
+
+			if ( "underlined" == cur || "underline" == cur )
+				flags |= Text::Underlined;
+			else if ( "bold" == cur )
+				flags |= Text::Bold;
+			else if ( "italic" == cur )
+				flags |= Text::Italic;
+			else if ( "strikethrough" == cur )
+				flags |= Text::StrikeThrough;
+			else if ( "shadowed" == cur || "shadow" == cur )
+				flags |= Text::Shadow;
+		}
+	}
+
+	return flags;
+}
+
 Text * Text::New() {
 	return eeNew( Text, () );
 }

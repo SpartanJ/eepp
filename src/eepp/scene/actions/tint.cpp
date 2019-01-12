@@ -181,6 +181,32 @@ void Tint::onUpdate( const Time& ) {
 
 				break;
 			}
+			case TextShadow:
+			{
+				if ( widget->isType( UI_TYPE_TEXTVIEW ) ) {
+					UITextView * textView = static_cast<UITextView*>( widget );
+
+					textView->setFontShadowColor( Color( mInterpolationR.getPosition(),
+												   mInterpolationG.getPosition(),
+												   mInterpolationB.getPosition(),
+												   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ) );
+				}
+
+				break;
+			}
+			case TextOutline:
+			{
+				if ( widget->isType( UI_TYPE_TEXTVIEW ) ) {
+					UITextView * textView = static_cast<UITextView*>( widget );
+
+					textView->setOutlineColor( Color( mInterpolationR.getPosition(),
+												   mInterpolationG.getPosition(),
+												   mInterpolationB.getPosition(),
+												   mInterpolateAlpha ? mInterpolationA.getPosition() : 255 ) );
+				}
+
+				break;
+			}
 		}
 	}
 }

@@ -25,8 +25,6 @@ class EE_API UITextView : public UIWidget {
 
 		virtual void draw();
 
-		virtual void setAlpha( const Float& alpha );
-
 		Graphics::Font * getFont() const;
 
 		UITextView * setFont( Graphics::Font * font );
@@ -119,6 +117,8 @@ class EE_API UITextView : public UIWidget {
 		virtual void onTextChanged();
 
 		virtual void onFontChanged();
+
+		virtual void onAlphaChange();
 
 		virtual Uint32 onFocusLoss();
 

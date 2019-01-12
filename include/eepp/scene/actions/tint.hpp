@@ -17,7 +17,9 @@ class EE_API Tint : public Action {
 			Foreground,
 			Skin,
 			Border,
-			Text
+			Text,
+			TextShadow,
+			TextOutline
 		};
 
 		static Tint * New( const Color& start, const Color& end, const bool& interpolateAlpha, const Time& duration, const Ease::Interpolation& type = Ease::Linear, const TintType& colorInterpolationType = Background );
