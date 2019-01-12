@@ -2,6 +2,8 @@
 
 #ifdef EE_BACKEND_SDL2
 
+#include <eepp/graphics/image.hpp>
+
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 CursorSDL::CursorSDL( Texture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :

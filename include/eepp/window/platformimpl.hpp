@@ -8,7 +8,7 @@ using namespace EE::Math;
 
 #include <eepp/window/windowhandle.hpp>
 #include <eepp/window/windowcontext.hpp>
-#include <eepp/window/cursorhelper.hpp>
+#include <eepp/window/cursor.hpp>
 
 namespace EE {
 
@@ -100,7 +100,7 @@ class PlatformImpl {
 		virtual void setMouseCursor( Cursor * cursor ) = 0;
 
 		/** Set the cursor using a system cursor */
-		virtual void setSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) = 0;
+		virtual void setSystemMouseCursor( Cursor::SysType syscursor ) = 0;
 
 		/** Force to reset the state of the current seted cursor */
 		virtual void restoreCursor() = 0;

@@ -1320,9 +1320,9 @@ void EETest::loadTextures() {
 	CursorManager * CurMan = mWindow->getCursorManager();
 	CurMan->setVisible( false );
 	CurMan->setVisible( true );
-	CurMan->set( EE::Window::SYS_CURSOR_HAND );
-	CurMan->setGlobalCursor( EE_CURSOR_ARROW, CurMan->add( CurMan->create( CursorP[0], Vector2i( 1, 1 ), "cursor_special" ) ) );
-	CurMan->set( EE_CURSOR_ARROW );
+	CurMan->set( Cursor::SysHand );
+	CurMan->setGlobalCursor( Cursor::Arrow, CurMan->add( CurMan->create( CursorP[0], Vector2i( 1, 1 ), "cursor_special" ) ) );
+	CurMan->set( Cursor::Arrow );
 
 	CL1.addFrame( TN[2] );
 	CL1.setPosition( Vector2f( 500, 400 ) );

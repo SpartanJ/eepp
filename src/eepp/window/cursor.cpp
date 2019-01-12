@@ -1,4 +1,6 @@
 #include <eepp/window/cursor.hpp>
+#include <eepp/graphics/image.hpp>
+#include <eepp/graphics/texture.hpp>
 
 namespace EE { namespace Window {
 
@@ -52,6 +54,23 @@ Cursor::~Cursor() {
 
 const Vector2i& Cursor::getHotSpot() const {
 	return mHotSpot;
+}
+
+Cursor::Type Cursor::fromName( std::string name ) {
+	String::toLowerInPlace( name );
+	if ( "arrow" == name )			return Arrow;
+	if ( "hand" == name )			return Hand;
+	if ( "ibream" == name )			return IBeam;
+	if ( "wait" == name )			return Wait;
+	if ( "crosshair" == name )		return Crosshair;
+	if ( "waitarrow" == name )		return WaitArrow;
+	if ( "sizenwse" == name )		return SizeNWSE;
+	if ( "sizenesw" == name )		return SizeNESW;
+	if ( "sizewe" == name )			return SizeWE;
+	if ( "sizens" == name )			return SizeNS;
+	if ( "sizeall" == name )		return SizeAll;
+	if ( "nocursor" == name )		return NoCursor;
+	return Arrow;
 }
 
 const Uint32& Cursor::getId() const {

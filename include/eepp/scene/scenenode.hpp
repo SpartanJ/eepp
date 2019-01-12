@@ -2,7 +2,7 @@
 #define EE_SCENENODE_HPP
 
 #include <eepp/scene/node.hpp>
-#include <eepp/window/cursorhelper.hpp>
+#include <eepp/window/cursor.hpp>
 #include <eepp/system/translator.hpp>
 
 namespace EE { namespace Graphics {
@@ -96,7 +96,7 @@ class EE_API SceneNode : public Node {
 
 		const bool& getUseGlobalCursors();
 
-		void setCursor( EE_CURSOR_TYPE cursor );
+		void setCursor( Cursor::Type cursor );
 
 		virtual bool isDrawInvalidator();
 

@@ -5,7 +5,7 @@ namespace EE { namespace Window {
 CursorManager::CursorManager( EE::Window::Window * window ) :
 	mWindow( window ),
 	mCurrent( NULL ),
-	mSysCursor( SYS_CURSOR_NONE ),
+	mSysCursor( Cursor::SysCursorNone ),
 	mCursors(),
 	mCurSysCursor( false ),
 	mVisible( true )
@@ -72,25 +72,25 @@ void CursorManager::setById( const Uint32& id ) {
 	}
 }
 
-void CursorManager::setGlobalCursor( EE_CURSOR_TYPE cursor, Cursor * fromCursor ) {
-	if ( cursor < EE_CURSOR_COUNT ) {
-		mGlobalCursors[ cursor ].SysCur	= SYS_CURSOR_NONE;
+void CursorManager::setGlobalCursor( Cursor::Type cursor, Cursor * fromCursor ) {
+	if ( cursor < Cursor::CursorCount ) {
+		mGlobalCursors[ cursor ].SysCur	= Cursor::SysCursorNone;
 		mGlobalCursors[ cursor ].Cur	= fromCursor;
 	}
 }
 
-void CursorManager::setGlobalCursor( EE_CURSOR_TYPE cursor, EE_SYSTEM_CURSOR fromCursor ) {
-	if ( cursor < EE_CURSOR_COUNT ) {
+void CursorManager::setGlobalCursor( Cursor::Type cursor, Cursor::SysType fromCursor ) {
+	if ( cursor < Cursor::CursorCount ) {
 		mGlobalCursors[ cursor ].SysCur	= fromCursor;
 		mGlobalCursors[ cursor ].Cur	= NULL;
 	}
 }
 
-void CursorManager::set( EE_CURSOR_TYPE cursor ) {
-	if ( cursor < EE_CURSOR_COUNT ) {
+void CursorManager::set( Cursor::Type cursor ) {
+	if ( cursor < Cursor::CursorCount ) {
 		GlobalCursor& Cursor = mGlobalCursors[ cursor ];
 
-		if ( SYS_CURSOR_NONE != Cursor.SysCur ) {
+		if ( Cursor::SysCursorNone != Cursor.SysCur ) {
 			set( Cursor.SysCur );
 		} else if ( NULL != Cursor.Cur ) {
 			set( Cursor.Cur );
@@ -106,7 +106,7 @@ Cursor * CursorManager::getCurrent() const {
 	return mCurrent;
 }
 
-EE_SYSTEM_CURSOR CursorManager::getCurrentSysCursor() const {
+Cursor::SysType CursorManager::getCurrentSysCursor() const {
 	return mSysCursor;
 }
 
@@ -115,8 +115,8 @@ bool CursorManager::currentIsSysCursor() const {
 }
 
 void CursorManager::initGlobalCursors() {
-	for ( int i = 0; i < EE_CURSOR_COUNT; i++ ) {
-		mGlobalCursors[ i ].SysCur = static_cast<EE_SYSTEM_CURSOR>( i );
+	for ( int i = 0; i < Cursor::CursorCount; i++ ) {
+		mGlobalCursors[ i ].SysCur = static_cast<Cursor::SysType>( i );
 	}
 }
 

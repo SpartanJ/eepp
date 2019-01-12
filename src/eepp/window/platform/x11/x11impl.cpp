@@ -264,22 +264,22 @@ void X11Impl::restoreCursor() {
 	}
 }
 
-void X11Impl::setSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
+void X11Impl::setSystemMouseCursor( Cursor::SysType syscursor ) {
 	unsigned int cursor_shape;
 
 	switch ( syscursor ) {
-		case SYS_CURSOR_ARROW:		cursor_shape = XC_arrow; break;
-		case SYS_CURSOR_WAIT:		cursor_shape = XC_watch; break;
-		case SYS_CURSOR_WAITARROW:	cursor_shape = XC_watch; break;
-		case SYS_CURSOR_IBEAM:		cursor_shape = XC_xterm; break;
-		case SYS_CURSOR_SIZEALL:	cursor_shape = XC_fleur; break;
-		case SYS_CURSOR_SIZENWSE:	cursor_shape = XC_fleur; break;
-		case SYS_CURSOR_SIZENESW:	cursor_shape = XC_fleur; break;
-		case SYS_CURSOR_SIZEWE:		cursor_shape = XC_sb_h_double_arrow; break;
-		case SYS_CURSOR_SIZENS:		cursor_shape = XC_sb_v_double_arrow; break;
-		case SYS_CURSOR_CROSSHAIR:	cursor_shape = XC_tcross; break;
-		case SYS_CURSOR_HAND:		cursor_shape = XC_hand2; break;
-		case SYS_CURSOR_NO:			cursor_shape = XC_pirate; break;
+		case Cursor::SysArrow:		cursor_shape = XC_arrow; break;
+		case Cursor::SysWait:		cursor_shape = XC_watch; break;
+		case Cursor::SysWaitArrow:	cursor_shape = XC_watch; break;
+		case Cursor::SysIBeam:		cursor_shape = XC_xterm; break;
+		case Cursor::SysSizeAll:	cursor_shape = XC_fleur; break;
+		case Cursor::SysSizeNWSE:	cursor_shape = XC_fleur; break;
+		case Cursor::SysSizeNESW:	cursor_shape = XC_fleur; break;
+		case Cursor::SysSizeWE:		cursor_shape = XC_sb_h_double_arrow; break;
+		case Cursor::SysSizeNS:		cursor_shape = XC_sb_v_double_arrow; break;
+		case Cursor::SysCrosshair:	cursor_shape = XC_tcross; break;
+		case Cursor::SysHand:		cursor_shape = XC_hand2; break;
+		case Cursor::SysNoCursor:	cursor_shape = XC_pirate; break;
 		default:					return;
 	}
 

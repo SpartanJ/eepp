@@ -46,6 +46,7 @@ Tab:pressed {
 
 Slider { 
 	halfSlider: true;
+	backgroundColor: #555;
 }
 
 ScrollBar {
@@ -118,11 +119,13 @@ Tooltip {
 	backgroundImage: linear-gradient( #9c9d9b, #5b5b5a );
 	borderColor: #1d1f1fd7;
 	borderRadius: 3;
+	cursor: hand;
 }
 
 #tpad3:pressed {
 	backgroundImage: linear-gradient( #4e4f4d, #414141 );
 	borderColor: #222320d7;
+	cursor: hand;
 }
 
 #tres {

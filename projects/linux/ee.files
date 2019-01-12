@@ -372,7 +372,6 @@
 ../../include/eepp/version.hpp
 ../../include/eepp/window/base.hpp
 ../../include/eepp/window/clipboard.hpp
-../../include/eepp/window/cursorhelper.hpp
 ../../include/eepp/window/cursor.hpp
 ../../include/eepp/window/cursormanager.hpp
 ../../include/eepp/window/displaymanager.hpp

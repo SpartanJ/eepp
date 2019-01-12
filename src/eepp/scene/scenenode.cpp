@@ -390,7 +390,7 @@ const bool& SceneNode::getUseGlobalCursors() {
 	return mUseGlobalCursors;
 }
 
-void SceneNode::setCursor( EE_CURSOR_TYPE cursor ) {
+void SceneNode::setCursor( Cursor::Type cursor ) {
 	if ( mUseGlobalCursors ) {
 		mWindow->getCursorManager()->set( cursor );
 	}

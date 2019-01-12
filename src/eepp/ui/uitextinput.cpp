@@ -52,7 +52,7 @@ bool UITextInput::isType( const Uint32& type ) const {
 
 void UITextInput::update( const Time& time ) {
 	if ( isMouseOverMeOrChilds() && NULL != mSceneNode ) {
-		mSceneNode->setCursor( EE_CURSOR_IBEAM );
+		mSceneNode->setCursor( Cursor::IBeam );
 	}
 
 	UITextView::update( time );
@@ -309,7 +309,7 @@ Uint32 UITextInput::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 	UINode::onMouseExit( Pos, Flags );
 
 	if ( NULL != mSceneNode )
-		mSceneNode->setCursor( EE_CURSOR_ARROW );
+		mSceneNode->setCursor( Cursor::Arrow );
 
 	return 1;
 }

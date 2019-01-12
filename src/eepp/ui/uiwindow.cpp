@@ -689,13 +689,13 @@ Uint32 UIWindow::onMessage( const NodeMessage * Msg ) {
 		case NodeMessage::MouseExit:
 		{
 			if ( getUISceneNode() != NULL )
-				getUISceneNode()->setCursor( EE_CURSOR_ARROW );
+				getUISceneNode()->setCursor( Cursor::Arrow );
 			break;
 		}
 		case NodeMessage::DragStart:
 		{
 			if ( getUISceneNode() != NULL )
-				getUISceneNode()->setCursor( EE_CURSOR_HAND );
+				getUISceneNode()->setCursor( Cursor::Hand );
 
 			toFront();
 
@@ -704,7 +704,7 @@ Uint32 UIWindow::onMessage( const NodeMessage * Msg ) {
 		case NodeMessage::DragStop:
 		{
 			if ( getUISceneNode() != NULL )
-				getUISceneNode()->setCursor( EE_CURSOR_ARROW );
+				getUISceneNode()->setCursor( Cursor::Arrow );
 			break;
 		}
 		case NodeMessage::Click:
@@ -1368,39 +1368,39 @@ void UIWindow::resizeCursor() {
 
 	if ( Control == this ) {
 		if ( Pos.x <= mBorderLeft->getSize().getWidth() ) {
-			sceneNode->setCursor( EE_CURSOR_SIZENWSE ); // RESIZE_TOPLEFT
+			sceneNode->setCursor( Cursor::SizeNWSE ); // RESIZE_TOPLEFT
 		} else if ( Pos.x >= ( mDpSize.getWidth() - mBorderRight->getSize().getWidth() ) ) {
-			sceneNode->setCursor( EE_CURSOR_SIZENESW ); // RESIZE_TOPRIGHT
+			sceneNode->setCursor( Cursor::SizeNESW ); // RESIZE_TOPRIGHT
 		} else if ( Pos.y <= mBorderBottom->getSize().getHeight() ) {
 			if ( Pos.x < mStyleConfig.MinCornerDistance ) {
-				sceneNode->setCursor( EE_CURSOR_SIZENWSE ); // RESIZE_TOPLEFT
+				sceneNode->setCursor( Cursor::SizeNWSE ); // RESIZE_TOPLEFT
 			} else if ( Pos.x > mDpSize.getWidth() - mStyleConfig.MinCornerDistance ) {
-				sceneNode->setCursor( EE_CURSOR_SIZENESW ); // RESIZE_TOPRIGHT
+				sceneNode->setCursor( Cursor::SizeNESW ); // RESIZE_TOPRIGHT
 			} else {
-				sceneNode->setCursor( EE_CURSOR_SIZENS ); // RESIZE_TOP
+				sceneNode->setCursor( Cursor::SizeNS ); // RESIZE_TOP
 			}
 		} else if ( !( eventDispatcher->getPressTrigger() & EE_BUTTON_LMASK ) ) {
-			sceneNode->setCursor( EE_CURSOR_ARROW );
+			sceneNode->setCursor( Cursor::Arrow );
 		}
 	} else if ( Control == mBorderBottom ) {
 		if ( Pos.x < mStyleConfig.MinCornerDistance ) {
-			sceneNode->setCursor( EE_CURSOR_SIZENESW ); // RESIZE_LEFTBOTTOM
+			sceneNode->setCursor( Cursor::SizeNESW ); // RESIZE_LEFTBOTTOM
 		} else if ( Pos.x > mDpSize.getWidth() - mStyleConfig.MinCornerDistance ) {
-			sceneNode->setCursor( EE_CURSOR_SIZENWSE ); // RESIZE_RIGHTBOTTOM
+			sceneNode->setCursor( Cursor::SizeNWSE ); // RESIZE_RIGHTBOTTOM
 		} else {
-			sceneNode->setCursor( EE_CURSOR_SIZENS ); // RESIZE_BOTTOM
+			sceneNode->setCursor( Cursor::SizeNS ); // RESIZE_BOTTOM
 		}
 	} else if ( Control == mBorderLeft )  {
 		if ( Pos.y >= mDpSize.getHeight() - mStyleConfig.MinCornerDistance ) {
-			sceneNode->setCursor( EE_CURSOR_SIZENESW ); // RESIZE_LEFTBOTTOM
+			sceneNode->setCursor( Cursor::SizeNESW ); // RESIZE_LEFTBOTTOM
 		} else {
-			sceneNode->setCursor( EE_CURSOR_SIZEWE ); // RESIZE_LEFT
+			sceneNode->setCursor( Cursor::SizeWE ); // RESIZE_LEFT
 		}
 	} else if ( Control == mBorderRight ) {
 		if ( Pos.y >= mDpSize.getHeight() - mStyleConfig.MinCornerDistance ) {
-			sceneNode->setCursor( EE_CURSOR_SIZENWSE ); // RESIZE_RIGHTBOTTOM
+			sceneNode->setCursor( Cursor::SizeNWSE ); // RESIZE_RIGHTBOTTOM
 		} else {
-			sceneNode->setCursor( EE_CURSOR_SIZEWE ); // RESIZE_RIGHT
+			sceneNode->setCursor( Cursor::SizeWE ); // RESIZE_RIGHT
 		}
 	}
 }

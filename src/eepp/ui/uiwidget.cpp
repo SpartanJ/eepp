@@ -1146,6 +1146,9 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setAlpha( alpha );
 			setChildsAlpha( alpha );
 		}
+	} else if ( "cursor" == name ) {
+		SAVE_NORMAL_STATE_ATTR( "arrow" );
+		mSceneNode->setCursor( Cursor::fromName( attribute.getValue() ) );
 	} else {
 		attributeSet = false;
 	}

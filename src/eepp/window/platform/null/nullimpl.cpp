@@ -60,7 +60,7 @@ Cursor * NullImpl::createMouseCursor( const std::string& path, const Vector2i& h
 void NullImpl::setMouseCursor( Cursor * cursor ) {
 }
 
-void NullImpl::setSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
+void NullImpl::setSystemMouseCursor( Cursor::SysType syscursor ) {
 }
 
 void NullImpl::restoreCursor() {
