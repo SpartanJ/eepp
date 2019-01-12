@@ -95,6 +95,8 @@ class UpdateListener : public efsw::FileWatchListener {
 	public:
 		UpdateListener() {}
 
+		virtual ~UpdateListener() {};
+
 		void handleFileAction( efsw::WatchID, const std::string& dir, const std::string& filename, efsw::Action action, std::string ) {
 			if ( action == efsw::Actions::Modified ) {
 				if ( dir + filename == currentLayout ) {
@@ -766,6 +768,11 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 			}
 
 			loadLayout( argv[1] );
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+		} else {
+			loadStyleSheet( "assets/layouts/test.css" );
+			loadLayout( "assets/layouts/test.xml" );
+#endif
 		}
 
 		window->runMainLoop( &mainLoop );
