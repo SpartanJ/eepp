@@ -1673,7 +1673,7 @@ void EETest::render() {
 							FileSystem::sizeToString( (Uint32)MemoryManager::getPeakMemoryUsage() ).c_str()
 						);
 		#else
-		mInfo = String::strFormated( "EE - FPS: %d Elapsed Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s",
+		mInfo = String::format( "EE - FPS: %d Elapsed Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s",
 							mWindow->getFPS(),
 							et.asMilliseconds(),
 							(Int32)Mouse.x,
