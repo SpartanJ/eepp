@@ -23,7 +23,7 @@ UIWidget::UIWidget( const std::string & tag ) :
 	UINode(),
 	mTag( tag ),
 	mTheme( NULL ),
-	mStyle( NULL ),
+	mStyle( UIStyle::New( this ) ),
 	mTooltip( NULL ),
 	mMinControlSize(),
 	mLayoutWeight(0),
@@ -37,9 +37,6 @@ UIWidget::UIWidget( const std::string & tag ) :
 	mNodeFlags |= NODE_FLAG_WIDGET;
 
 	updateAnchorsDistances();
-
-	if ( getSceneNode()->isUISceneNode() && static_cast<UISceneNode*>( getSceneNode() )->hasStyleSheet() )
-		mStyle = UIStyle::New( this );
 }
 
 UIWidget::UIWidget() :
