@@ -155,7 +155,7 @@ const Sizef& Node::getSize() const {
 }
 
 const Sizef& Node::getPixelsSize() const {
-	return getSize();
+	return mSize;
 }
 
 Node * Node::setVisible( const bool& visible ) {

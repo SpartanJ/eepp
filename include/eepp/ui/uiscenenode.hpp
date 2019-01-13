@@ -20,9 +20,7 @@ class EE_API UISceneNode : public SceneNode {
 
 		virtual Node * setSize( const Float& Width, const Float& Height );
 
-		const Sizef& getSize();
-
-		virtual const Sizef& getPixelsSize();
+		const Sizef& getSize() const;
 
 		void setTranslator( Translator translator );
 

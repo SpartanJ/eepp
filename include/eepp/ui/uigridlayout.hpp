@@ -69,7 +69,7 @@ class EE_API UIGridLayout : public UILayout {
 
 		virtual Uint32 onMessage( const NodeMessage * Msg );
 
-		Sizef getTargetElementSize();
+		Sizef getTargetElementSize() const;
 
 		void pack();
 };

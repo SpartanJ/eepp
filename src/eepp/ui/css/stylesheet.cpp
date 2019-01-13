@@ -46,10 +46,6 @@ void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
 
 StyleSheet::StyleSheetPseudoClassProperties StyleSheet::getElementProperties( StyleSheetElement * element ) {
 	StyleSheetPseudoClassProperties propertiesSelectedByPseudoClass;
-	int c = 0;
-	if ( element->getStyleSheetId() == "lvbox" ) {
-		c++;
-	}
 
 	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
 		StyleSheetNode& node = it->second;
@@ -58,9 +54,9 @@ StyleSheet::StyleSheetPseudoClassProperties StyleSheet::getElementProperties( St
 		if ( selector.matches( element ) ) {
 			for ( auto pit = node.getProperties().begin(); pit != node.getProperties().end(); ++pit ) {
 				StyleSheetProperties& pseudoClassProperties = propertiesSelectedByPseudoClass[selector.getPseudoClass()];
-				auto it = pseudoClassProperties.find( pit->second.getName() );
+				auto pcit = pseudoClassProperties.find( pit->second.getName() );
 
-				if ( it == pseudoClassProperties.end() || pit->second.getSpecificity() >= it->second.getSpecificity() ) {
+				if ( pcit == pseudoClassProperties.end() || pit->second.getSpecificity() >= pcit->second.getSpecificity() ) {
 					pseudoClassProperties[ pit->second.getName() ] = pit->second;
 				}
 			}

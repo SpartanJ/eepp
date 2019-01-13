@@ -203,10 +203,6 @@ const Sizef& UINode::getSize() const {
 	return mDpSize;
 }
 
-const Sizef& UINode::getPixelsSize() const {
-	return mSize;
-}
-
 void UINode::drawHighlightFocus() {
 	if ( NULL != getEventDispatcher() && mSceneNode->getHighlightFocus() && getEventDispatcher()->getFocusControl() == this ) {
 		Primitives P;

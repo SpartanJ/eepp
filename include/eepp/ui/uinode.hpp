@@ -73,8 +73,6 @@ class EE_API UINode : public Node {
 
 		const Sizef& getSize() const;
 
-		virtual const Sizef& getPixelsSize() const;
-
 		Rect getRect() const;
 
 		virtual void draw();

@@ -97,7 +97,7 @@ class EE_API Node : public Transformable {
 
 		virtual const Sizef& getSize() const;
 
-		virtual const Sizef& getPixelsSize() const;
+		const Sizef& getPixelsSize() const;
 
 		Node * setVisible( const bool& visible );
 

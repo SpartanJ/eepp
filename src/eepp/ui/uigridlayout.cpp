@@ -199,7 +199,7 @@ Uint32 UIGridLayout::onMessage(const NodeMessage * Msg) {
 	return 0;
 }
 
-Sizef UIGridLayout::getTargetElementSize() {
+Sizef UIGridLayout::getTargetElementSize() const {
 	return Sizef( mColumnMode == Size ? mColumnWidth : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getWidth() : mDpSize.getWidth() ) - mPadding.Left - mPadding.Right ) * mColumnWeight,
 				  mRowMode == Size ? mRowHeight : ( ( getLayoutHeightRules() == WRAP_CONTENT ? getParent()->getSize().getHeight() : mDpSize.getHeight() ) - mPadding.Top - mPadding.Bottom ) * mRowWeight );
 }

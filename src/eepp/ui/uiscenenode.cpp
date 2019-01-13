@@ -261,12 +261,8 @@ Node * UISceneNode::setSize(const Float & Width, const Float & Height) {
 	return setSize( Vector2f( Width, Height ) );
 }
 
-const Sizef &UISceneNode::getSize() {
+const Sizef &UISceneNode::getSize() const {
 	return mDpSize;
-}
-
-const Sizef &UISceneNode::getPixelsSize() {
-	return mSize;
 }
 
 const bool& UISceneNode::isLoading() const {
