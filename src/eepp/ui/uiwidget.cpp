@@ -700,7 +700,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "background" == name ) {
 		Drawable * res = NULL;
 
-		if ( String::startsWith( name, "#" ) ) {
+		if ( String::startsWith( attribute.getValue(), "#" ) ) {
 			setAttribute( NodeAttribute( "backgroundcolor", attribute.getValue() ) );
 		} else if ( NULL != ( res = DrawableSearcher::searchByName( name ) ) ) {
 			setBackgroundDrawable( state, res, res->getDrawableType() == Drawable::SPRITE );
@@ -764,7 +764,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "foreground" == name ) {
 		Drawable * res = NULL;
 
-		if ( String::startsWith( name, "#" ) ) {
+		if ( String::startsWith( attribute.getValue(), "#" ) ) {
 			setAttribute( NodeAttribute( "foregroundcolor", attribute.getValue() ) );
 		} else if ( NULL != ( res = DrawableSearcher::searchByName( attribute.getValue() ) ) ) {
 			setForegroundDrawable( state, res, res->getDrawableType() == Drawable::SPRITE );
