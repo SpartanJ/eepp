@@ -146,12 +146,12 @@ void UITable::containerResize() {
 	mContainer->setPosition( padding.Left, padding.Top );
 
 	if( mHScrollBar->isVisible() )
-		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left, mSize.getHeight() - padding.Top - mHScrollBar->getRealSize().getHeight() );
+		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left, mSize.getHeight() - padding.Top - mHScrollBar->getPixelsSize().getHeight() );
 	else
 		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left, mSize.getHeight() - padding.Bottom - padding.Top );
 
 	if ( mVScrollBar->isVisible() )
-		mContainer->setPixelsSize( mContainer->getRealSize().getWidth() - mVScrollBar->getRealSize().getWidth(), mContainer->getRealSize().getHeight() );
+		mContainer->setPixelsSize( mContainer->getPixelsSize().getWidth() - mVScrollBar->getPixelsSize().getWidth(), mContainer->getPixelsSize().getHeight() );
 
 	setDefaultCollumnsWidth();
 }
@@ -205,10 +205,10 @@ void UITable::updateHScroll() {
 }
 
 void UITable::setHScrollStep() {
-	Float width = (Float)mContainer->getRealSize().getWidth();
+	Float width = (Float)mContainer->getPixelsSize().getWidth();
 
 	if ( ( mItemsNotVisible > 0 && UI_SCROLLBAR_AUTO == mVScrollMode ) || UI_SCROLLBAR_ALWAYS_ON == mVScrollMode )
-		width -= mVScrollBar->getRealSize().getWidth();
+		width -= mVScrollBar->getPixelsSize().getWidth();
 
 	Float maxWidth = 0;
 

@@ -136,9 +136,9 @@ void UIScrollBar::onAutoSize() {
 
 		if (  mScrollBarType == TwoButtons ) {
 			if ( mSlider->isVertical() ) {
-				size.y += mBtnDown->getRealSize().getHeight() + mBtnUp->getRealSize().getHeight();
+				size.y += mBtnDown->getPixelsSize().getHeight() + mBtnUp->getPixelsSize().getHeight();
 			} else {
-				size.x += mBtnDown->getRealSize().getWidth() + mBtnUp->getRealSize().getWidth();
+				size.x += mBtnDown->getPixelsSize().getWidth() + mBtnUp->getPixelsSize().getWidth();
 			}
 		}
 

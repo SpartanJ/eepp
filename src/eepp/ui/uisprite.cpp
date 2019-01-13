@@ -172,7 +172,7 @@ const Vector2f& UISprite::getAlignOffset() const {
 }
 
 void UISprite::setIsSpriteOwner( const bool& dealloc ) {
-	writeCtrlFlag( NODE_FLAG_FREE_USE, dealloc ? 1 : 0 );
+	writeNodeFlag( NODE_FLAG_FREE_USE, dealloc ? 1 : 0 );
 }
 
 bool UISprite::getDeallocSprite() {

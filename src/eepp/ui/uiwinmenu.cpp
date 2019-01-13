@@ -212,7 +212,7 @@ void UIWinMenu::refreshButtons() {
 		UITextView * tbox		= pbut->getTextBox();
 
 		pbut->setLayoutSizeRules( FIXED, FIXED );
-		pbut->setPixelsSize( tbox->getTextWidth() + PixelDensity::dpToPx( mStyleConfig.ButtonMargin ), getRealSize().getHeight() );
+		pbut->setPixelsSize( tbox->getTextWidth() + PixelDensity::dpToPx( mStyleConfig.ButtonMargin ), getPixelsSize().getHeight() );
 		pbut->setPosition( xpos, ycenter );
 
 		xpos += pbut->getSize().getWidth() + mStyleConfig.MarginBetweenButtons;

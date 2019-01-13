@@ -68,7 +68,7 @@ const Vector2f& Transformable::getPosition() const {
 	return mPosition;
 }
 
-float Transformable::getRotation() const {
+const float& Transformable::getRotation() const {
 	return mRotation;
 }
 

@@ -139,7 +139,7 @@ class EE_API UIWindow : public UIWidget {
 
 		FrameBuffer * getFrameBuffer() const;
 
-		virtual bool isDrawInvalidator();
+		virtual bool isDrawInvalidator() const;
 	protected:
 		class KeyboardShortcut {
 			public:

@@ -62,7 +62,7 @@ bool UIWidget::isType( const Uint32& type ) const {
 
 void UIWidget::updateAnchorsDistances() {
 	if ( NULL != mParentCtrl ) {
-		mDistToBorder	= Rect( mPosition.x, mPosition.y, mParentCtrl->getRealSize().x - ( mPosition.x + mSize.x ), mParentCtrl->getRealSize().y - ( mPosition.y + mSize.y ) );
+		mDistToBorder	= Rect( mPosition.x, mPosition.y, mParentCtrl->getPixelsSize().x - ( mPosition.x + mSize.x ), mParentCtrl->getPixelsSize().y - ( mPosition.y + mSize.y ) );
 	}
 }
 
@@ -182,12 +182,12 @@ Uint32 UIWidget::onMouseMove( const Vector2i & Pos, const Uint32 Flags ) {
 		Pos.x += themeManager->getCursorSize().x;
 		Pos.y += themeManager->getCursorSize().y;
 
-		if ( Pos.x + mTooltip->getRealSize().getWidth() > eventDispatcher->getSceneNode()->getRealSize().getWidth() ) {
-			Pos.x = eventDispatcher->getMousePos().x - mTooltip->getRealSize().getWidth();
+		if ( Pos.x + mTooltip->getPixelsSize().getWidth() > eventDispatcher->getSceneNode()->getPixelsSize().getWidth() ) {
+			Pos.x = eventDispatcher->getMousePos().x - mTooltip->getPixelsSize().getWidth();
 		}
 
-		if ( Pos.y + mTooltip->getRealSize().getHeight() > eventDispatcher->getSceneNode()->getRealSize().getHeight() ) {
-			Pos.y = eventDispatcher->getMousePos().y - mTooltip->getRealSize().getHeight();
+		if ( Pos.y + mTooltip->getPixelsSize().getHeight() > eventDispatcher->getSceneNode()->getPixelsSize().getHeight() ) {
+			Pos.y = eventDispatcher->getMousePos().y - mTooltip->getPixelsSize().getHeight();
 		}
 
 		if ( Time::Zero == themeManager->getTooltipTimeToShow() ) {

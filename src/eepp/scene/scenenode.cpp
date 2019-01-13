@@ -70,7 +70,7 @@ void SceneNode::enableFrameBuffer() {
 void SceneNode::disableFrameBuffer() {
 	eeSAFE_DELETE( mFrameBuffer );
 
-	writeCtrlFlag( NODE_FLAG_FRAME_BUFFER, 0 );
+	writeNodeFlag( NODE_FLAG_FRAME_BUFFER, 0 );
 }
 
 bool SceneNode::ownsFrameBuffer() const {
@@ -113,7 +113,7 @@ void SceneNode::draw() {
 
 		postDraw();
 
-		writeCtrlFlag( NODE_FLAG_VIEW_DIRTY, 0 );
+		writeNodeFlag( NODE_FLAG_VIEW_DIRTY, 0 );
 	}
 
 	mWindow->setView( prevView );
@@ -204,7 +204,7 @@ Sizei SceneNode::getFrameBufferSize() {
 }
 
 void SceneNode::createFrameBuffer() {
-	writeCtrlFlag( NODE_FLAG_FRAME_BUFFER, 1 );
+	writeNodeFlag( NODE_FLAG_FRAME_BUFFER, 1 );
 	eeSAFE_DELETE( mFrameBuffer );
 	Sizei fboSize( getFrameBufferSize() );
 	if ( fboSize.getWidth() < 1 ) fboSize.setWidth(1);
@@ -283,19 +283,9 @@ void SceneNode::sendMsg( Node * Ctrl, const Uint32& Msg, const Uint32& Flags ) {
 	Ctrl->messagePost( &tMsg );
 }
 
-void SceneNode::resizeControl( EE::Window::Window * win ) {
+void SceneNode::resizeControl( EE::Window::Window * ) {
 	setSize( (Float)mWindow->getWidth() , (Float)mWindow->getHeight() );
 	sendMsg( this, NodeMessage::WindowResize );
-}
-
-void SceneNode::invalidate() {
-	if ( mVisible && mAlpha != 0.f ) {
-		writeCtrlFlag( NODE_FLAG_VIEW_DIRTY, 1 );
-	}
-}
-
-bool SceneNode::invalidated() {
-	return 0 != ( mNodeFlags & NODE_FLAG_VIEW_DIRTY );
 }
 
 FrameBuffer * SceneNode::getFrameBuffer() const {
@@ -396,7 +386,7 @@ void SceneNode::setCursor( Cursor::Type cursor ) {
 	}
 }
 
-bool SceneNode::isDrawInvalidator() {
+bool SceneNode::isDrawInvalidator() const {
 	return true;
 }
 

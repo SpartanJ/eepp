@@ -65,7 +65,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	}
 
 	mContainer->setLayoutSizeRules( FIXED, FIXED );
-	mContainer->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
+	mContainer->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 	mContainer->setParent( this );
 	mContainer->clipEnable();
 	mContainer->enableReportSizeChangeToChilds();
@@ -109,7 +109,7 @@ void UIWindow::onContainerPositionChange( const Event * ) {
 void UIWindow::updateWinFlags() {
 	bool needsUpdate = false;
 
-	writeCtrlFlag( NODE_FLAG_FRAME_BUFFER, ( mStyleConfig.WinFlags & UI_WIN_FRAME_BUFFER ) ? 1 : 0 );
+	writeNodeFlag( NODE_FLAG_FRAME_BUFFER, ( mStyleConfig.WinFlags & UI_WIN_FRAME_BUFFER ) ? 1 : 0 );
 
 	if ( ( mStyleConfig.WinFlags & UI_WIN_FRAME_BUFFER ) ) {
 		if ( NULL == mFrameBuffer )
@@ -127,7 +127,7 @@ void UIWindow::updateWinFlags() {
 	if ( !( mStyleConfig.WinFlags & UI_WIN_NO_BORDER ) ) {
 		if ( NULL == mWindowDecoration ) {
 			mWindowDecoration = UINode::New();
-			mWindowDecoration->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
+			mWindowDecoration->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
 		mWindowDecoration->setParent( this );
@@ -136,7 +136,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( NULL == mBorderLeft ) {
 			mBorderLeft		= UINode::New();
-			mBorderLeft->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
+			mBorderLeft->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
 		mBorderLeft->setParent( this );
@@ -145,7 +145,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( NULL == mBorderRight ) {
 			mBorderRight	= UINode::New();
-			mBorderRight->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
+			mBorderRight->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
 		mBorderRight->setParent( this );
@@ -154,7 +154,7 @@ void UIWindow::updateWinFlags() {
 
 		if ( NULL == mBorderBottom ) {
 			mBorderBottom	= UINode::New();
-			mBorderBottom->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
+			mBorderBottom->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		}
 
 		mBorderBottom->setParent( this );
@@ -164,7 +164,7 @@ void UIWindow::updateWinFlags() {
 		if ( mStyleConfig.WinFlags & UI_WIN_CLOSE_BUTTON ) {
 			if ( NULL == mButtonClose ) {
 				mButtonClose = UINode::New();
-				mButtonClose->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
+				mButtonClose->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 				needsUpdate = true;
 			}
 
@@ -179,7 +179,7 @@ void UIWindow::updateWinFlags() {
 		if ( isMaximizable() ) {
 			if ( NULL == mButtonMaximize ) {
 				mButtonMaximize = UINode::New();
-				mButtonMaximize->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
+				mButtonMaximize->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 				needsUpdate = true;
 			}
 
@@ -194,7 +194,7 @@ void UIWindow::updateWinFlags() {
 		if ( mStyleConfig.WinFlags & UI_WIN_MINIMIZE_BUTTON ) {
 			if ( NULL == mButtonMinimize ) {
 				mButtonMinimize = UINode::New();
-				mButtonMinimize->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
+				mButtonMinimize->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 				needsUpdate = true;
 			}
 
@@ -371,7 +371,7 @@ void UIWindow::createModalControl() {
 
 	if ( NULL == mModalCtrl ) {
 		mModalCtrl = UIWidget::NewWithTag( "window::modaldialog" );
-		mModalCtrl->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
+		mModalCtrl->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		mModalCtrl->setParent( Ctrl )->setPosition(0,0)->setSize( Ctrl->getSize() );
 		mModalCtrl->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	} else {
@@ -397,7 +397,7 @@ void UIWindow::enableByModal() {
 				 CtrlChild->getNodeFlags() & NODE_FLAG_DISABLED_BY_NODE )
 			{
 				CtrlChild->setEnabled( true );
-				CtrlChild->writeCtrlFlag( NODE_FLAG_DISABLED_BY_NODE, 0 );
+				CtrlChild->writeNodeFlag( NODE_FLAG_DISABLED_BY_NODE, 0 );
 			}
 
 			CtrlChild = CtrlChild->getNextNode();
@@ -416,7 +416,7 @@ void UIWindow::disableByModal() {
 				 CtrlChild->isEnabled() )
 			{
 				CtrlChild->setEnabled( false );
-				CtrlChild->writeCtrlFlag( NODE_FLAG_DISABLED_BY_NODE, 1 );
+				CtrlChild->writeNodeFlag( NODE_FLAG_DISABLED_BY_NODE, 1 );
 			}
 
 			CtrlChild = CtrlChild->getNextNode();
@@ -612,7 +612,7 @@ void UIWindow::fixChildsSize() {
 		mBorderBottom->setPixelsSize( mSize.getWidth(), PixelDensity::dpToPx( mStyleConfig.BorderSize.getHeight() ) );
 	}
 
-	Uint32 BorderHeight = mSize.getHeight() - PixelDensity::dpToPx( decoSize.getHeight() ) - mBorderBottom->getRealSize().getHeight();
+	Uint32 BorderHeight = mSize.getHeight() - PixelDensity::dpToPx( decoSize.getHeight() ) - mBorderBottom->getPixelsSize().getHeight();
 
 	if ( mStyleConfig.BorderAutoSize ) {
 		mBorderLeft->setPixelsSize( PixelDensity::dpToPx( mBorderLeft->getSkinSize().getWidth() ), BorderHeight );
@@ -622,43 +622,43 @@ void UIWindow::fixChildsSize() {
 		mBorderRight->setPixelsSize( PixelDensity::dpToPx( mStyleConfig.BorderSize.getWidth() ), BorderHeight );
 	}
 
-	mBorderLeft->setPixelsPosition( 0, mWindowDecoration->getRealSize().getHeight() );
-	mBorderRight->setPixelsPosition( mSize.getWidth() - mBorderRight->getRealSize().getWidth(), mWindowDecoration->getRealSize().getHeight() );
-	mBorderBottom->setPixelsPosition( 0, mWindowDecoration->getRealSize().getHeight() + mBorderLeft->getRealSize().getHeight() );
+	mBorderLeft->setPixelsPosition( 0, mWindowDecoration->getPixelsSize().getHeight() );
+	mBorderRight->setPixelsPosition( mSize.getWidth() - mBorderRight->getPixelsSize().getWidth(), mWindowDecoration->getPixelsSize().getHeight() );
+	mBorderBottom->setPixelsPosition( 0, mWindowDecoration->getPixelsSize().getHeight() + mBorderLeft->getPixelsSize().getHeight() );
 
-	mContainer->setPixelsPosition( mBorderLeft->getRealSize().getWidth() + mRealPadding.Left, mWindowDecoration->getRealSize().getHeight() + mRealPadding.Top );
-	mContainer->setPixelsSize( mSize.getWidth() - mBorderLeft->getRealSize().getWidth() - mBorderRight->getRealSize().getWidth() - mRealPadding.Left - mRealPadding.Right,
-							   mSize.getHeight() - mWindowDecoration->getRealSize().getHeight() - mBorderBottom->getRealSize().getHeight() - mRealPadding.Top - mRealPadding.Bottom );
+	mContainer->setPixelsPosition( mBorderLeft->getPixelsSize().getWidth() + mRealPadding.Left, mWindowDecoration->getPixelsSize().getHeight() + mRealPadding.Top );
+	mContainer->setPixelsSize( mSize.getWidth() - mBorderLeft->getPixelsSize().getWidth() - mBorderRight->getPixelsSize().getWidth() - mRealPadding.Left - mRealPadding.Right,
+							   mSize.getHeight() - mWindowDecoration->getPixelsSize().getHeight() - mBorderBottom->getPixelsSize().getHeight() - mRealPadding.Top - mRealPadding.Bottom );
 
 	Uint32 yPos;
 	Vector2f posFix( PixelDensity::dpToPx( Vector2f( mStyleConfig.ButtonsPositionFixer.x, mStyleConfig.ButtonsPositionFixer.y ) ) );
 
 	if ( NULL != mButtonClose ) {
-		yPos = mWindowDecoration->getRealSize().getHeight() / 2 - mButtonClose->getRealSize().getHeight() / 2 + posFix.y;
+		yPos = mWindowDecoration->getPixelsSize().getHeight() / 2 - mButtonClose->getPixelsSize().getHeight() / 2 + posFix.y;
 
-		mButtonClose->setPixelsPosition( mWindowDecoration->getRealSize().getWidth() - mBorderRight->getRealSize().getWidth() - mButtonClose->getRealSize().getWidth() + posFix.x, yPos );
+		mButtonClose->setPixelsPosition( mWindowDecoration->getPixelsSize().getWidth() - mBorderRight->getPixelsSize().getWidth() - mButtonClose->getPixelsSize().getWidth() + posFix.x, yPos );
 	}
 
 	if ( NULL != mButtonMaximize ) {
-		yPos = mWindowDecoration->getRealSize().getHeight() / 2 - mButtonMaximize->getRealSize().getHeight() / 2 + posFix.y;
+		yPos = mWindowDecoration->getPixelsSize().getHeight() / 2 - mButtonMaximize->getPixelsSize().getHeight() / 2 + posFix.y;
 
 		if ( NULL != mButtonClose ) {
-			mButtonMaximize->setPixelsPosition( mButtonClose->getRealPosition().x - PixelDensity::dpToPx( mStyleConfig.ButtonsSeparation ) - mButtonMaximize->getRealSize().getWidth(), yPos );
+			mButtonMaximize->setPixelsPosition( mButtonClose->getPixelsPosition().x - PixelDensity::dpToPx( mStyleConfig.ButtonsSeparation ) - mButtonMaximize->getPixelsSize().getWidth(), yPos );
 		} else {
-			mButtonMaximize->setPixelsPosition( mWindowDecoration->getRealSize().getWidth() - mBorderRight->getRealSize().getWidth() - mButtonMaximize->getRealSize().getWidth() + posFix.x, yPos );
+			mButtonMaximize->setPixelsPosition( mWindowDecoration->getPixelsSize().getWidth() - mBorderRight->getPixelsSize().getWidth() - mButtonMaximize->getPixelsSize().getWidth() + posFix.x, yPos );
 		}
 	}
 
 	if ( NULL != mButtonMinimize ) {
-		yPos = mWindowDecoration->getRealSize().getHeight() / 2 - mButtonMinimize->getRealSize().getHeight() / 2 + posFix.y;
+		yPos = mWindowDecoration->getPixelsSize().getHeight() / 2 - mButtonMinimize->getPixelsSize().getHeight() / 2 + posFix.y;
 
 		if ( NULL != mButtonMaximize ) {
-			mButtonMinimize->setPixelsPosition( mButtonMaximize->getRealPosition().x - PixelDensity::dpToPx( mStyleConfig.ButtonsSeparation ) - mButtonMinimize->getRealSize().getWidth(), yPos );
+			mButtonMinimize->setPixelsPosition( mButtonMaximize->getPixelsPosition().x - PixelDensity::dpToPx( mStyleConfig.ButtonsSeparation ) - mButtonMinimize->getPixelsSize().getWidth(), yPos );
 		} else {
 			if ( NULL != mButtonClose ) {
-				mButtonMinimize->setPixelsPosition( mButtonClose->getRealPosition().x - PixelDensity::dpToPx( mStyleConfig.ButtonsSeparation ) - mButtonMinimize->getRealSize().getWidth(), yPos );
+				mButtonMinimize->setPixelsPosition( mButtonClose->getPixelsPosition().x - PixelDensity::dpToPx( mStyleConfig.ButtonsSeparation ) - mButtonMinimize->getPixelsSize().getWidth(), yPos );
 			} else {
-				mButtonMinimize->setPixelsPosition( mWindowDecoration->getRealSize().getWidth() - mBorderRight->getRealSize().getWidth() - mButtonMinimize->getRealSize().getWidth() + posFix.x, yPos );
+				mButtonMinimize->setPixelsPosition( mWindowDecoration->getPixelsSize().getWidth() - mBorderRight->getPixelsSize().getWidth() - mButtonMinimize->getPixelsSize().getWidth() + posFix.x, yPos );
 			}
 		}
 	}
@@ -1075,7 +1075,7 @@ void UIWindow::setTitle( const String& text ) {
 	if ( NULL == mTitle ) {
 		mTitle = UITextView::NewWithTag( "window::title" );
 		mTitle->setLayoutSizeRules( FIXED, FIXED );
-		mTitle->writeCtrlFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
+		mTitle->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 		mTitle->setParent( this );
 		mTitle->setHorizontalAlign( getHorizontalAlign() );
 		mTitle->setVerticalAlign( getVerticalAlign() );
@@ -1120,7 +1120,7 @@ void UIWindow::maximize() {
 		mNonMaxSize = mSize;
 
 		setPosition( 0, 0 );
-		internalSize( Ctrl->getRealSize() );
+		internalSize( Ctrl->getPixelsSize() );
 	}
 }
 
@@ -1176,13 +1176,13 @@ void UIWindow::internalDraw() {
 
 		drawHighlightInvalidation();
 
-		writeCtrlFlag( NODE_FLAG_VIEW_DIRTY, 0 );
+		writeNodeFlag( NODE_FLAG_VIEW_DIRTY, 0 );
 	}
 }
 
 void UIWindow::invalidate() {
 	if ( mVisible && mAlpha != 0.f ) {
-		writeCtrlFlag( NODE_FLAG_VIEW_DIRTY, 1 );
+		writeNodeFlag( NODE_FLAG_VIEW_DIRTY, 1 );
 
 		if ( NULL != mSceneNode )
 			mSceneNode->invalidate();
@@ -1193,7 +1193,7 @@ FrameBuffer * UIWindow::getFrameBuffer() const {
 	return mFrameBuffer;
 }
 
-bool UIWindow::isDrawInvalidator() {
+bool UIWindow::isDrawInvalidator() const {
 	return NULL != mFrameBuffer;
 }
 

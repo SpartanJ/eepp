@@ -102,7 +102,7 @@ Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
 void UIMenuSubMenu::showSubMenu() {
 	mSubMenu->setParent( getParent()->getParent() );
 
-	Vector2f Pos = getRealPosition();
+	Vector2f Pos = getPixelsPosition();
 	nodeToWorldTranslation( Pos );
 	Pos.x += mSize.getWidth() + reinterpret_cast<UIMenu*> ( getParent() )->getPadding().Right;
 

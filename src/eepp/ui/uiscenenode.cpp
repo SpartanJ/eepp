@@ -265,7 +265,7 @@ const Sizef &UISceneNode::getSize() {
 	return mDpSize;
 }
 
-const Sizef &UISceneNode::getRealSize() {
+const Sizef &UISceneNode::getPixelsSize() {
 	return mSize;
 }
 

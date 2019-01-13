@@ -38,7 +38,7 @@ bool UITouchDragableWidget::isTouchDragging() const {
 }
 
 UITouchDragableWidget * UITouchDragableWidget::setTouchDragging( const bool& dragging ) {
-	writeCtrlFlag( NODE_FLAG_TOUCH_DRAGGING, true == dragging );
+	writeNodeFlag( NODE_FLAG_TOUCH_DRAGGING, true == dragging );
 	return this;
 }
 

@@ -303,7 +303,7 @@ void UIListBox::onSizeChange() {
 	mHScrollBar->setSize( mDpSize.getWidth() - mVScrollBar->getSize().getWidth() + mHScrollPadding.Right, mHScrollBar->getSize().getHeight() + mHScrollPadding.Bottom );
 
 	if ( mContainer->isClipped() && UI_SCROLLBAR_AUTO == mHScrollMode ) {
-		if ( (Int32)mMaxTextWidth <= mContainer->getRealSize().getWidth() ) {
+		if ( (Int32)mMaxTextWidth <= mContainer->getPixelsSize().getWidth() ) {
 			mHScrollBar->setVisible( false );
 			mHScrollBar->setEnabled( false );
 			mHScrollInit = 0;
@@ -343,10 +343,10 @@ void UIListBox::setRowHeight() {
 }
 
 void UIListBox::setHScrollStep() {
-	Float width = (Float)mContainer->getRealSize().getWidth();
+	Float width = (Float)mContainer->getPixelsSize().getWidth();
 
 	if ( ( mItemsNotVisible > 0 && UI_SCROLLBAR_AUTO == mVScrollMode ) || UI_SCROLLBAR_ALWAYS_ON == mVScrollMode )
-		width -= mVScrollBar->getRealSize().getWidth();
+		width -= mVScrollBar->getPixelsSize().getWidth();
 
 	Float stepVal = width / (Float)mMaxTextWidth;
 
@@ -430,7 +430,7 @@ void UIListBox::containerResize() {
 	mContainer->setPixelsPosition( padding.Left, padding.Top );
 
 	if( mHScrollBar->isVisible() )
-		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left, mSize.getHeight() - padding.Top - mHScrollBar->getRealSize().getHeight() );
+		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left, mSize.getHeight() - padding.Top - mHScrollBar->getPixelsSize().getHeight() );
 	else
 		mContainer->setPixelsSize( mSize.getWidth() - padding.Right - padding.Left, mSize.getHeight() - padding.Bottom - padding.Top );
 }
@@ -487,8 +487,8 @@ void UIListBox::updateScroll( bool FromScrollChange ) {
 	}
 
 	if ( Clipped && ( UI_SCROLLBAR_AUTO == mHScrollMode || UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) ) {
-		if ( ( mVScrollBar->isVisible() && mContainer->getRealSize().getWidth() - mVScrollBar->getRealSize().getWidth() < (Int32)mMaxTextWidth ) ||
-			( !mVScrollBar->isVisible() && mContainer->getRealSize().getWidth() < (Int32)mMaxTextWidth ) ) {
+		if ( ( mVScrollBar->isVisible() && mContainer->getPixelsSize().getWidth() - mVScrollBar->getPixelsSize().getWidth() < (Int32)mMaxTextWidth ) ||
+			( !mVScrollBar->isVisible() && mContainer->getPixelsSize().getWidth() < (Int32)mMaxTextWidth ) ) {
 				mHScrollBar->setVisible( true );
 				mHScrollBar->setEnabled( true );
 

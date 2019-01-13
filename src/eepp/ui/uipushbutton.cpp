@@ -85,7 +85,7 @@ void UIPushButton::onAutoSize() {
 		Int32 txtW = NULL != mTextBox ? mTextBox->getTextWidth() : 0;
 
 		Int32 minSize = txtW +
-						( NULL != mIcon ? mIcon->getRealSize().getWidth() : 0 ) +
+						( NULL != mIcon ? mIcon->getPixelsSize().getWidth() : 0 ) +
 						PixelDensity::dpToPxI( mStyleConfig.IconHorizontalMargin ) + mRealPadding.Left + mRealPadding.Right +
 						( NULL != getSkin() ? PixelDensity::dpToPxI( getSkin()->getBorderSize().Left + getSkin()->getBorderSize().Right ) : 0 );
 
@@ -123,10 +123,10 @@ void UIPushButton::onSizeChange() {
 
 		switch ( fontVAlignGet( getFlags() ) ) {
 			case UI_VALIGN_CENTER:
-				position.y = ( mSize.getHeight() - mTextBox->getRealSize().getHeight() ) / 2;
+				position.y = ( mSize.getHeight() - mTextBox->getPixelsSize().getHeight() ) / 2;
 				break;
 			case UI_VALIGN_BOTTOM:
-				position.y = mSize.y - mTextBox->getRealSize().getHeight() - autoPadding.Bottom;
+				position.y = mSize.y - mTextBox->getPixelsSize().getHeight() - autoPadding.Bottom;
 				break;
 			case UI_VALIGN_TOP:
 				position.y = autoPadding.Top;
@@ -135,13 +135,13 @@ void UIPushButton::onSizeChange() {
 
 		switch ( fontHAlignGet( getFlags() ) ) {
 			case UI_HALIGN_RIGHT:
-				position.x = mSize.getWidth() - mTextBox->getRealSize().getWidth() - autoPadding.Right;
+				position.x = mSize.getWidth() - mTextBox->getPixelsSize().getWidth() - autoPadding.Right;
 				break;
 			case UI_HALIGN_CENTER:
-				position.x = ( mSize.getWidth() - mTextBox->getRealSize().getWidth() ) / 2;
+				position.x = ( mSize.getWidth() - mTextBox->getPixelsSize().getWidth() ) / 2;
 
 				if ( NULL != mIcon->getDrawable() ) {
-					Uint32 iconPos = mIcon->getRealPosition().x + mIcon->getRealSize().getWidth();
+					Uint32 iconPos = mIcon->getPixelsPosition().x + mIcon->getPixelsSize().getWidth();
 
 					if ( iconPos >= position.x ) {
 						Float px = PixelDensity::dpToPx(1);
@@ -152,7 +152,7 @@ void UIPushButton::onSizeChange() {
 
 				break;
 			case UI_HALIGN_LEFT:
-				position.x = mIcon->getRealPosition().x + mIcon->getRealSize().getWidth();
+				position.x = mIcon->getPixelsPosition().x + mIcon->getPixelsSize().getWidth();
 				break;
 		}
 

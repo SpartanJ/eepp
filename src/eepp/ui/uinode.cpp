@@ -64,7 +64,7 @@ void UINode::worldToNodeTranslation( Vector2f& Pos ) const {
 	Pos -= mPosition;
 
 	while ( NULL != ParentLoop ) {
-		const Vector2f& ParentPos = ParentLoop->isUINode() ? static_cast<UINode*>( ParentLoop )->getRealPosition() : ParentLoop->getPosition();
+		const Vector2f& ParentPos = ParentLoop->isUINode() ? static_cast<UINode*>( ParentLoop )->getPixelsPosition() : ParentLoop->getPosition();
 
 		Pos -= ParentPos;
 
@@ -76,7 +76,7 @@ void UINode::nodeToWorldTranslation( Vector2f& Pos ) const {
 	Node * ParentLoop = mParentCtrl;
 
 	while ( NULL != ParentLoop ) {
-		const Vector2f& ParentPos = ParentLoop->isUINode() ? static_cast<UINode*>( ParentLoop )->getRealPosition() : ParentLoop->getPosition();
+		const Vector2f& ParentPos = ParentLoop->isUINode() ? static_cast<UINode*>( ParentLoop )->getPixelsPosition() : ParentLoop->getPosition();
 
 		Pos += ParentPos;
 
@@ -127,7 +127,7 @@ const Vector2f& UINode::getPosition() const {
 	return mDpPos;
 }
 
-const Vector2f &UINode::getRealPosition() const {
+const Vector2f &UINode::getPixelsPosition() const {
 	return mPosition;
 }
 
@@ -199,11 +199,11 @@ Rect UINode::getRect() const {
 	return Rect( Vector2i( mDpPos.x, mDpPos.y ), Sizei( mDpSize.x, mDpSize.y ) );
 }
 
-const Sizef& UINode::getSize() {
+const Sizef& UINode::getSize() const {
 	return mDpSize;
 }
 
-const Sizef& UINode::getRealSize() {
+const Sizef& UINode::getPixelsSize() const {
 	return mSize;
 }
 
@@ -417,11 +417,11 @@ UINode * UINode::setBackgroundColor( const Uint32 & state, const Color& color ) 
 	return this;
 }
 
-Color UINode::getBackgroundColor() {
+Color UINode::getBackgroundColor() const {
 	return getBackgroundColor( mState );
 }
 
-Color UINode::getBackgroundColor( const Uint32 & state ) {
+Color UINode::getBackgroundColor( const Uint32 & state ) const {
 	if ( NULL != mBackgroundState )
 		return mBackgroundState->getStateColor( state );
 
@@ -452,7 +452,7 @@ UINode * UINode::setBorderRadius( const Uint32 & state, const unsigned int& corn
 	return this;
 }
 
-Uint32 UINode::getBorderRadius( const Uint32& state ) {
+Uint32 UINode::getBorderRadius( const Uint32& state ) const {
 	if ( NULL != mBackgroundState && NULL != mBackgroundState->getSkin() ) {
 		Drawable * stateDrawable = mBackgroundState->getSkin()->getStateDrawable( state );
 
@@ -468,7 +468,7 @@ Uint32 UINode::getBorderRadius( const Uint32& state ) {
 	return 0;
 }
 
-Uint32 UINode::getBorderRadius() {
+Uint32 UINode::getBorderRadius() const {
 	return getBorderRadius( UIState::StateFlagNormal );
 }
 
@@ -497,11 +497,11 @@ UINode * UINode::setForegroundDrawable( Drawable * drawable, bool ownIt ) {
 	return setForegroundDrawable( UIState::StateFlagNormal, drawable, ownIt );
 }
 
-Color UINode::getForegroundColor() {
+Color UINode::getForegroundColor() const {
 	return getForegroundColor( mState );
 }
 
-Color UINode::getForegroundColor( const Uint32 & state ) {
+Color UINode::getForegroundColor( const Uint32 & state ) const {
 	if ( NULL != mForegroundState )
 		return mForegroundState->getStateColor( state );
 
@@ -728,7 +728,7 @@ UINode * UINode::setThemeSkin( UITheme * Theme, const std::string& skinName ) {
 UINode * UINode::setSkin( const UISkin& Skin ) {
 	removeSkin();
 
-	writeCtrlFlag( NODE_FLAG_SKIN_OWNER, 1 );
+	writeNodeFlag( NODE_FLAG_SKIN_OWNER, 1 );
 
 	UISkin * SkinCopy = const_cast<UISkin*>( &Skin )->clone();
 
@@ -772,14 +772,14 @@ UINode * UINode::setSkinColor( const Color& color ) {
 	return setSkinColor( UIState::StateFlagNormal, color );
 }
 
-Color UINode::getSkinColor( const Uint32& state ) {
+Color UINode::getSkinColor( const Uint32& state ) const {
 	if ( NULL != mSkinState )
 		return mSkinState->getStateColor( state );
 
 	return Color::White;
 }
 
-Color UINode::getSkinColor() {
+Color UINode::getSkinColor() const {
 	return getSkinColor( UIState::StateFlagNormal );
 }
 
@@ -863,7 +863,7 @@ void UINode::setThemeToChilds( UITheme * Theme ) {
 	}
 }
 
-UISkin * UINode::getSkin() {
+UISkin * UINode::getSkin() const {
 	if ( NULL != mSkinState )
 		return mSkinState->getSkin();
 
@@ -911,7 +911,7 @@ Rectf UINode::makePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBot
 	return PixelDensity::pxToDp( tPadding );
 }
 
-Sizef UINode::getSkinSize( UISkin * Skin, const Uint32& State ) {
+Sizef UINode::getSkinSize( UISkin * Skin, const Uint32& State ) const {
 	if ( NULL != Skin ) {
 		return Skin->getSize( State );
 	}
@@ -919,7 +919,7 @@ Sizef UINode::getSkinSize( UISkin * Skin, const Uint32& State ) {
 	return Sizef::Zero;
 }
 
-Sizef UINode::getSkinSize() {
+Sizef UINode::getSkinSize() const {
 	if ( NULL != getSkin() ) {
 		return getSkin()->getSize();
 	}
@@ -935,32 +935,32 @@ void UINode::onChildCountChange() {
 	invalidateDraw();
 }
 
-void UINode::worldToNode( Vector2i& pos ) {
+void UINode::worldToNode( Vector2i& pos ) const {
 	Vector2f toPos( convertToNodeSpace( Vector2f( pos.x, pos.y ) ) );
 	pos = Vector2i( toPos.x  / PixelDensity::getPixelDensity(), toPos.y / PixelDensity::getPixelDensity() );
 }
 
-void UINode::nodeToWorld( Vector2i& pos ) {
+void UINode::nodeToWorld( Vector2i& pos ) const {
 	Vector2f toPos( convertToWorldSpace( Vector2f( pos.x * PixelDensity::getPixelDensity(), pos.y * PixelDensity::getPixelDensity() ) ) );
 	pos = Vector2i( toPos.x, toPos.y );
 }
 
-void UINode::worldToNode( Vector2f& pos ) {
+void UINode::worldToNode( Vector2f& pos ) const {
 	Vector2f toPos( convertToNodeSpace( pos ) );
 	pos = Vector2f( toPos.x  / PixelDensity::getPixelDensity(), toPos.y / PixelDensity::getPixelDensity() );
 }
 
-void UINode::nodeToWorld( Vector2f& pos ) {
+void UINode::nodeToWorld( Vector2f& pos ) const {
 	Vector2f toPos( convertToWorldSpace( Vector2f( pos.x * PixelDensity::getPixelDensity(), pos.y * PixelDensity::getPixelDensity() ) ) );
 	pos = Vector2f( toPos.x, toPos.y );
 }
 
-Node * UINode::getWindowContainer() {
-	Node * Ctrl = this;
+Node * UINode::getWindowContainer() const {
+	const Node * Ctrl = this;
 
 	while ( Ctrl != NULL ) {
 		if ( Ctrl->isType( UI_TYPE_WINDOW ) ) {
-			return static_cast<UIWindow*>( Ctrl )->getContainer();
+			return static_cast<const UIWindow*>( Ctrl )->getContainer();
 		} else if ( mSceneNode == Ctrl ) {
 			return mSceneNode;
 		}
@@ -1022,7 +1022,7 @@ void UINode::setDragging( const bool& dragging ) {
 	if ( NULL == getEventDispatcher() )
 		return;
 
-	writeCtrlFlag( NODE_FLAG_DRAGGING, dragging );
+	writeNodeFlag( NODE_FLAG_DRAGGING, dragging );
 
 	if ( dragging ) {
 		NodeMessage tMsg( this, NodeMessage::DragStart, 0 );

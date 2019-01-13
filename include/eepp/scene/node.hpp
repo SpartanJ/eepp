@@ -73,13 +73,13 @@ class EE_API Node : public Transformable {
 
 		virtual void nodeToWorldTranslation( Vector2f& position ) const;
 
-		virtual void worldToNode( Vector2i& pos );
+		virtual void worldToNode( Vector2i& pos ) const;
 
-		virtual void nodeToWorld( Vector2i& pos );
+		virtual void nodeToWorld( Vector2i& pos ) const;
 
-		virtual void worldToNode( Vector2f& pos );
+		virtual void worldToNode( Vector2f& pos ) const;
 
-		virtual void nodeToWorld( Vector2f& pos );
+		virtual void nodeToWorld( Vector2f& pos ) const;
 
 		virtual Uint32 getType() const;
 
@@ -95,9 +95,9 @@ class EE_API Node : public Transformable {
 
 		Node * setSize( const Float& Width, const Float& Height );
 
-		virtual const Sizef& getSize();
+		virtual const Sizef& getSize() const;
 
-		virtual const Sizef& getRealSize();
+		virtual const Sizef& getPixelsSize() const;
 
 		Node * setVisible( const bool& visible );
 
@@ -133,7 +133,7 @@ class EE_API Node : public Transformable {
 
 		Node * setBlendMode( const BlendMode& blend );
 
-		BlendMode getBlendMode();
+		const BlendMode& getBlendMode() const;
 
 		void toFront();
 
@@ -146,35 +146,35 @@ class EE_API Node : public Transformable {
 		/** Use it at your own risk */
 		void setNodeFlags( const Uint32& flags );
 
-		Uint32 isSceneNode();
+		Uint32 isSceneNode() const;
 
-		Uint32 isUISceneNode();
+		Uint32 isUISceneNode() const;
 
-		Uint32 isUINode();
+		Uint32 isUINode() const;
 
-		Uint32 isWidget();
+		Uint32 isWidget() const;
 
-		Uint32 isWindow();
+		Uint32 isWindow() const;
 
-		Uint32 isClipped();
+		Uint32 isClipped() const;
 
-		Uint32 isRotated();
+		Uint32 isRotated() const;
 
-		Uint32 isScaled();
+		Uint32 isScaled() const;
 
-		Uint32 isFrameBuffer();
+		Uint32 isFrameBuffer() const;
 
-		bool isMouseOver();
+		bool isMouseOver() const;
 
-		bool isMouseOverMeOrChilds();
+		bool isMouseOverMeOrChilds() const;
 
-		bool isMeOrParentTreeRotated();
+		bool isMeOrParentTreeRotated() const;
 
-		bool isMeOrParentTreeScaled();
+		bool isMeOrParentTreeScaled() const;
 
-		bool isMeOrParentTreeScaledOrRotated();
+		bool isMeOrParentTreeScaledOrRotated() const;
 
-		bool isMeOrParentTreeScaledOrRotatedOrFrameBuffer();
+		bool isMeOrParentTreeScaledOrRotatedOrFrameBuffer() const;
 
 		Uint32 addEventListener( const Uint32& EventType, const EventCallback& Callback );
 
@@ -188,7 +188,7 @@ class EE_API Node : public Transformable {
 
 		const Rectf& getWorldBounds();
 
-		bool isParentOf( Node * Ctrl );
+		bool isParentOf( Node * Ctrl ) const;
 
 		void sendEvent( const Event * Event );
 
@@ -204,10 +204,10 @@ class EE_API Node : public Transformable {
 
 		Uint32 getIdHash() const;
 
-		Node * find( const std::string& id );
+		Node * find( const std::string& id ) const;
 
 		template<typename T>
-		T * find( const std::string& id )
+		T * find( const std::string& id ) const
 		{
 			return reinterpret_cast<T*>( find( id ) );
 		}
@@ -233,7 +233,7 @@ class EE_API Node : public Transformable {
 
 		void setRotationOriginPoint( const OriginPoint& center );
 
-		Vector2f getRotationCenter();
+		Vector2f getRotationCenter() const;
 
 		void setScale( const Vector2f& scale );
 
@@ -245,7 +245,7 @@ class EE_API Node : public Transformable {
 
 		void setScaleOriginPoint( const OriginPoint& center );
 
-		Vector2f getScaleCenter();
+		Vector2f getScaleCenter() const;
 
 		virtual void setScale(float factorX, float factorY);
 
@@ -259,29 +259,29 @@ class EE_API Node : public Transformable {
 
 		virtual void setChildsAlpha( const Float& alpha );
 
-		ActionManager * getActionManager();
+		ActionManager * getActionManager() const;
 
 		Node * runAction( Action * action );
 
-		Transform getLocalTransform();
+		Transform getLocalTransform() const;
 
-		Transform getGlobalTransform();
+		Transform getGlobalTransform() const;
 
-		Transform getNodeToWorldTransform();
+		Transform getNodeToWorldTransform() const;
 
-		Transform getWorldToNodeTransform();
+		Transform getWorldToNodeTransform() const;
 
-		Vector2f convertToNodeSpace(const Vector2f& worldPoint);
+		Vector2f convertToNodeSpace(const Vector2f& worldPoint) const;
 
-		Vector2f convertToWorldSpace(const Vector2f& nodePoint);
+		Vector2f convertToWorldSpace(const Vector2f& nodePoint) const;
 
-		Rectf getLocalBounds();
+		Rectf getLocalBounds() const;
 
 		bool hasFocus() const;
 
 		virtual void setFocus();
 
-		Node * getNextWidget();
+		Node * getNextWidget() const;
 
 		void enableReportSizeChangeToChilds();
 
@@ -299,17 +299,17 @@ class EE_API Node : public Transformable {
 
 		Node * clipDisable();
 
-		void writeCtrlFlag( const Uint32& Flag, const Uint32& Val );
+		void writeNodeFlag( const Uint32& Flag, const Uint32& Val );
 
 		SceneNode * getSceneNode() const;
 
-		EventDispatcher * getEventDispatcher();
+		EventDispatcher * getEventDispatcher() const;
 
-		virtual bool isDrawInvalidator();
+		virtual bool isDrawInvalidator() const;
 
-		virtual bool invalidated();
+		bool invalidated() const;
 
-		virtual void invalidate();
+		void invalidate();
 
 		Uint32 childCount() const;
 
@@ -448,7 +448,7 @@ class EE_API Node : public Transformable {
 
 		Color getColor( const Color& Col );
 
-		Node * findIdHash( const Uint32& idHash );
+		Node * findIdHash( const Uint32& idHash ) const;
 
 		void updateOriginPoint();
 

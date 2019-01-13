@@ -90,15 +90,15 @@ void UITabWidget::draw() {
 		if ( smooth ) GLi->lineSmooth( false );
 
 		Primitives P;
-		Vector2f p1( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
-		Vector2f p2( mScreenPos.x + mTabContainer->getRealPosition().x, p1.y );
+		Vector2f p1( mScreenPos.x + mRealPadding.Left, mScreenPos.y + mRealPadding.Top + mTabContainer->getPixelsSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
+		Vector2f p2( mScreenPos.x + mTabContainer->getPixelsPosition().x, p1.y );
 
 		P.setLineWidth( PixelDensity::dpToPx( 1 ) );
 		P.setColor( Color( mStyleConfig.LineBelowTabsColor, mAlpha ) );
 		P.drawLine( Line2f( Vector2f( (int)p1.x, (int)p1.y ), Vector2f( (int)p2.x, (int)p2.y ) ) );
 
-		Vector2f p3( mScreenPos.x + mTabContainer->getRealPosition().x + mTabContainer->getRealSize().getWidth(), mScreenPos.y + mRealPadding.Top + mTabContainer->getRealSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
-		Vector2f p4( mScreenPos.x + mRealPadding.Left + mCtrlContainer->getRealSize().getWidth(), p3.y );
+		Vector2f p3( mScreenPos.x + mTabContainer->getPixelsPosition().x + mTabContainer->getPixelsSize().getWidth(), mScreenPos.y + mRealPadding.Top + mTabContainer->getPixelsSize().getHeight() + mStyleConfig.LineBelowTabsYOffset );
+		Vector2f p4( mScreenPos.x + mRealPadding.Left + mCtrlContainer->getPixelsSize().getWidth(), p3.y );
 
 		P.drawLine( Line2f( Vector2f( (int)p3.x, (int)p3.y ), Vector2f( (int)p4.x, (int)p4.y ) ) );
 
@@ -238,7 +238,7 @@ void UITabWidget::setTabContainerSize() {
 
 	if ( mTabs.size() > 0 ) {
 		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
-			s += mTabs[i]->getRealSize().getWidth() + mStyleConfig.TabSeparation;
+			s += mTabs[i]->getPixelsSize().getWidth() + mStyleConfig.TabSeparation;
 		}
 
 		s -= mStyleConfig.TabSeparation;

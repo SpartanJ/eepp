@@ -53,12 +53,12 @@ void TextureAtlasTextureRegionEditor::draw() {
 }
 
 void TextureAtlasTextureRegionEditor::update( const Time& time ) {
-	Vector2f Pos = mDrag->getRealPosition();
+	Vector2f Pos = mDrag->getPixelsPosition();
 
 	UIWidget::update( time );
 
-	if ( NULL != mGfx->getTextureRegion() && mDrag->isDragEnabled() && mDrag->isDragging() && Pos != mDrag->getRealPosition() ) {
-		Vector2f Diff = -( Pos - mDrag->getRealPosition() );
+	if ( NULL != mGfx->getTextureRegion() && mDrag->isDragEnabled() && mDrag->isDragging() && Pos != mDrag->getPixelsPosition() ) {
+		Vector2f Diff = -( Pos - mDrag->getPixelsPosition() );
 
 		Diff = PixelDensity::pxToDp( Diff );
 

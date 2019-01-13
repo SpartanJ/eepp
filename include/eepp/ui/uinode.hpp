@@ -39,13 +39,13 @@ class EE_API UINode : public Node {
 
 		void nodeToWorldTranslation( Vector2f& position ) const;
 
-		void worldToNode( Vector2i& pos );
+		void worldToNode( Vector2i& pos ) const;
 
-		void nodeToWorld( Vector2i& pos );
+		void nodeToWorld( Vector2i& pos ) const;
 
-		void worldToNode( Vector2f& pos );
+		void worldToNode( Vector2f& pos ) const;
 
-		void nodeToWorld( Vector2f& pos );
+		void nodeToWorld( Vector2f& pos ) const;
 
 		virtual Uint32 getType() const;
 
@@ -61,7 +61,7 @@ class EE_API UINode : public Node {
 
 		const Vector2f& getPosition() const;
 
-		const Vector2f& getRealPosition() const;
+		const Vector2f& getPixelsPosition() const;
 
 		virtual Node * setSize( const Sizef& size );
 
@@ -71,9 +71,9 @@ class EE_API UINode : public Node {
 
 		UINode * setPixelsSize( const Float& x, const Float& y );
 
-		const Sizef& getSize();
+		const Sizef& getSize() const;
 
-		virtual const Sizef& getRealSize();
+		virtual const Sizef& getPixelsSize() const;
 
 		Rect getRect() const;
 
@@ -101,17 +101,17 @@ class EE_API UINode : public Node {
 
 		UINode * setBackgroundColor( const Color& color );
 
-		Color getBackgroundColor( const Uint32 & state );
+		Color getBackgroundColor( const Uint32 & state ) const;
 
-		Color getBackgroundColor();
+		Color getBackgroundColor() const;
 
 		UINode * setBorderRadius( const Uint32 & state, const unsigned int& corners );
 
 		UINode * setBorderRadius( const unsigned int& corners );
 
-		Uint32 getBorderRadius( const Uint32& state );
+		Uint32 getBorderRadius( const Uint32& state ) const;
 
-		Uint32 getBorderRadius();
+		Uint32 getBorderRadius() const;
 
 		UISkin * setForegroundFillEnabled( bool enabled );
 
@@ -123,9 +123,9 @@ class EE_API UINode : public Node {
 
 		UINode * setForegroundColor( const Color& color );
 
-		Color getForegroundColor( const Uint32 & state );
+		Color getForegroundColor( const Uint32 & state ) const;
 
-		Color getForegroundColor();
+		Color getForegroundColor() const;
 
 		UINode * setForegroundRadius( const Uint32 & state, const unsigned int& corners );
 
@@ -163,7 +163,7 @@ class EE_API UINode : public Node {
 
 		void setThemeToChilds( UITheme * Theme );
 
-		UISkin * getSkin();
+		UISkin * getSkin() const;
 
 		virtual UINode * setSkin( const UISkin& Skin );
 
@@ -173,9 +173,9 @@ class EE_API UINode : public Node {
 
 		UINode * setSkinColor( const Color& color );
 
-		Color getSkinColor( const Uint32& state );
+		Color getSkinColor( const Uint32& state )const;
 
-		Color getSkinColor();
+		Color getSkinColor() const;
 
 		void removeSkin();
 
@@ -183,11 +183,11 @@ class EE_API UINode : public Node {
 
 		virtual void popState( const Uint32& State, bool emitEvent = true );
 
-		Sizef getSkinSize();
+		Sizef getSkinSize() const;
 
 		void applyDefaultTheme();
 
-		Node * getWindowContainer();
+		Node * getWindowContainer() const;
 
 		bool isDragging() const;
 
@@ -266,7 +266,7 @@ class EE_API UINode : public Node {
 
 		Rectf makePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
 
-		Sizef getSkinSize( UISkin * Skin, const Uint32& State = UIState::StateFlagNormal );
+		Sizef getSkinSize( UISkin * Skin, const Uint32& State = UIState::StateFlagNormal ) const;
 
 		void drawHighlightFocus();
 

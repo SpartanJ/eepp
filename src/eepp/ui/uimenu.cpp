@@ -117,8 +117,8 @@ bool UIMenu::checkControlSize( UINode * Control, const bool& Resize ) {
 
 				UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( tItem );
 
-				if ( textWidth + PixelDensity::dpToPxI( mBiggestIcon ) + tMenu->getArrow()->getRealSize().getWidth() + PixelDensity::dpToPxI( mStyleConfig.MinRightMargin ) > (Int32)mMaxWidth ) {
-					mMaxWidth = textWidth + mRealPadding.Left + mRealPadding.Right + PixelDensity::dpToPxI( mBiggestIcon + mStyleConfig.MinRightMargin ) + tMenu->getArrow()->getRealSize().getWidth();
+				if ( textWidth + PixelDensity::dpToPxI( mBiggestIcon ) + tMenu->getArrow()->getPixelsSize().getWidth() + PixelDensity::dpToPxI( mStyleConfig.MinRightMargin ) > (Int32)mMaxWidth ) {
+					mMaxWidth = textWidth + mRealPadding.Left + mRealPadding.Right + PixelDensity::dpToPxI( mBiggestIcon + mStyleConfig.MinRightMargin ) + tMenu->getArrow()->getPixelsSize().getWidth();
 
 					if ( Resize ) {
 						resizeControls();
@@ -127,8 +127,8 @@ bool UIMenu::checkControlSize( UINode * Control, const bool& Resize ) {
 					}
 				}
 			} else {
-				if ( Control->getRealSize().getWidth() > (Int32)mMaxWidth ) {
-					mMaxWidth = Control->getRealSize().getWidth();
+				if ( Control->getPixelsSize().getWidth() > (Int32)mMaxWidth ) {
+					mMaxWidth = Control->getPixelsSize().getWidth();
 
 					if ( Resize ) {
 						resizeControls();
@@ -153,7 +153,7 @@ Uint32 UIMenu::add( UINode * Control ) {
 
 	Control->setPixelsPosition( mRealPadding.Left, mRealPadding.Top + mNextPosY );
 
-	mNextPosY += Control->getRealSize().getHeight();
+	mNextPosY += Control->getPixelsSize().getHeight();
 
 	mItems.push_back( Control );
 
@@ -163,7 +163,7 @@ Uint32 UIMenu::add( UINode * Control ) {
 }
 
 void UIMenu::setControlSize( UINode * Control, const Uint32& ) {
-	Control->setPixelsSize( mSize.getWidth(), Control->getRealSize().getHeight() );
+	Control->setPixelsSize( mSize.getWidth(), Control->getPixelsSize().getHeight() );
 }
 
 Uint32 UIMenu::addSeparator() {
@@ -172,7 +172,7 @@ Uint32 UIMenu::addSeparator() {
 	Control->setPixelsPosition( mRealPadding.Left, mRealPadding.Top + mNextPosY );
 	Control->setPixelsSize( mSize.getWidth() - mRealPadding.Left - mRealPadding.Right, PixelDensity::dpToPxI( Control->getSkinSize().getHeight() ) );
 
-	mNextPosY += Control->getRealSize().getHeight();
+	mNextPosY += Control->getPixelsSize().getHeight();
 
 	mItems.push_back( Control );
 
@@ -338,7 +338,7 @@ void UIMenu::rePosControls() {
 
 		ctrl->setPixelsPosition( mRealPadding.Left, mRealPadding.Top + mNextPosY );
 
-		mNextPosY += ctrl->getRealSize().getHeight();
+		mNextPosY += ctrl->getPixelsSize().getHeight();
 	}
 
 	resizeMe();
@@ -609,60 +609,60 @@ void UIMenu::fixMenuPos( Vector2f& Pos, UIMenu * Menu, UIMenu * Parent, UIMenuSu
 	if ( NULL == sceneNode )
 		return;
 
-	Rectf qScreen( 0.f, 0.f, sceneNode->getRealSize().getWidth(), sceneNode->getRealSize().getHeight() );
-	Rectf qPos( Pos.x, Pos.y, Pos.x + Menu->getRealSize().getWidth(), Pos.y + Menu->getRealSize().getHeight() );
+	Rectf qScreen( 0.f, 0.f, sceneNode->getPixelsSize().getWidth(), sceneNode->getPixelsSize().getHeight() );
+	Rectf qPos( Pos.x, Pos.y, Pos.x + Menu->getPixelsSize().getWidth(), Pos.y + Menu->getPixelsSize().getHeight() );
 
 	if ( NULL != Parent && NULL != SubMenu ) {
-		Vector2f sPos = SubMenu->getRealPosition();
+		Vector2f sPos = SubMenu->getPixelsPosition();
 		SubMenu->nodeToWorldTranslation( sPos );
 
-		Vector2f pPos = Parent->getRealPosition();
+		Vector2f pPos = Parent->getPixelsPosition();
 		Parent->nodeToWorldTranslation( pPos );
 
-		Rectf qParent( pPos.x, pPos.y, pPos.x + Parent->getRealSize().getWidth(), pPos.y + Parent->getRealSize().getHeight() );
+		Rectf qParent( pPos.x, pPos.y, pPos.x + Parent->getPixelsSize().getWidth(), pPos.y + Parent->getPixelsSize().getHeight() );
 
 		Pos.x		= qParent.Right;
 		Pos.y		= sPos.y;
 		qPos.Left	= Pos.x;
-		qPos.Right	= qPos.Left + Menu->getRealSize().getWidth();
+		qPos.Right	= qPos.Left + Menu->getPixelsSize().getWidth();
 		qPos.Top	= Pos.y;
-		qPos.Bottom	= qPos.Top + Menu->getRealSize().getHeight();
+		qPos.Bottom	= qPos.Top + Menu->getPixelsSize().getHeight();
 
 		if ( !qScreen.contains( qPos ) ) {
-			Pos.y		= sPos.y + SubMenu->getRealSize().getHeight() - Menu->getRealSize().getHeight();
+			Pos.y		= sPos.y + SubMenu->getPixelsSize().getHeight() - Menu->getPixelsSize().getHeight();
 			qPos.Top	= Pos.y;
-			qPos.Bottom	= qPos.Top + Menu->getRealSize().getHeight();
+			qPos.Bottom	= qPos.Top + Menu->getPixelsSize().getHeight();
 
 			if ( !qScreen.contains( qPos ) ) {
-				Pos.x 		= qParent.Left - Menu->getRealSize().getWidth();
+				Pos.x 		= qParent.Left - Menu->getPixelsSize().getWidth();
 				Pos.y 		= sPos.y;
 				qPos.Left	= Pos.x;
-				qPos.Right	= qPos.Left + Menu->getRealSize().getWidth();
+				qPos.Right	= qPos.Left + Menu->getPixelsSize().getWidth();
 				qPos.Top	= Pos.y;
-				qPos.Bottom	= qPos.Top + Menu->getRealSize().getHeight();
+				qPos.Bottom	= qPos.Top + Menu->getPixelsSize().getHeight();
 
 				if ( !qScreen.contains( qPos ) ) {
-					Pos.y		= sPos.y + SubMenu->getRealSize().getHeight() - Menu->getRealSize().getHeight();
+					Pos.y		= sPos.y + SubMenu->getPixelsSize().getHeight() - Menu->getPixelsSize().getHeight();
 					qPos.Top	= Pos.y;
-					qPos.Bottom	= qPos.Top + Menu->getRealSize().getHeight();
+					qPos.Bottom	= qPos.Top + Menu->getPixelsSize().getHeight();
 				}
 			}
 		}
 	} else {
 		if ( !qScreen.contains( qPos ) ) {
-			Pos.y		-= Menu->getRealSize().getHeight();
-			qPos.Top	-= Menu->getRealSize().getHeight();
-			qPos.Bottom	-= Menu->getRealSize().getHeight();
+			Pos.y		-= Menu->getPixelsSize().getHeight();
+			qPos.Top	-= Menu->getPixelsSize().getHeight();
+			qPos.Bottom	-= Menu->getPixelsSize().getHeight();
 
 			if ( !qScreen.contains( qPos ) ) {
-				Pos.x		-= Menu->getRealSize().getWidth();
-				qPos.Left	-= Menu->getRealSize().getWidth();
-				qPos.Right	-= Menu->getRealSize().getWidth();
+				Pos.x		-= Menu->getPixelsSize().getWidth();
+				qPos.Left	-= Menu->getPixelsSize().getWidth();
+				qPos.Right	-= Menu->getPixelsSize().getWidth();
 
 				if ( !qScreen.contains( qPos ) ) {
-					Pos.y		+= Menu->getRealSize().getHeight();
-					qPos.Top	+= Menu->getRealSize().getHeight();
-					qPos.Bottom	+= Menu->getRealSize().getHeight();
+					Pos.y		+= Menu->getPixelsSize().getHeight();
+					qPos.Top	+= Menu->getPixelsSize().getHeight();
+					qPos.Bottom	+= Menu->getPixelsSize().getHeight();
 				}
 			}
 		}

@@ -40,10 +40,6 @@ class EE_API SceneNode : public Node {
 
 		virtual void update( const Time& elapsed );
 
-		bool invalidated();
-
-		void invalidate();
-
 		void enableDrawInvalidation();
 
 		void disableDrawInvalidation();
@@ -98,7 +94,7 @@ class EE_API SceneNode : public Node {
 
 		void setCursor( Cursor::Type cursor );
 
-		virtual bool isDrawInvalidator();
+		virtual bool isDrawInvalidator() const;
 
 		ActionManager * getActionManager() const;
 	protected:

@@ -80,7 +80,7 @@ void UICheckBox::onThemeLoaded() {
 void UICheckBox::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( mDpSize.getWidth() == 0 ) {
-			setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getRealSize().getWidth() + mTextSeparation + mRealPadding.Left + mRealPadding.Right );
+			setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mActiveButton->getPixelsSize().getWidth() + mTextSeparation + mRealPadding.Left + mRealPadding.Right );
 		}
 
 		if ( mDpSize.getHeight() == 0 ) {
@@ -92,7 +92,7 @@ void UICheckBox::onAutoSize() {
 	}
 
 	if ( mLayoutWidthRules == WRAP_CONTENT ) {
-		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right + mActiveButton->getRealSize().getWidth() + mTextSeparation );
+		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mRealPadding.Left + mRealPadding.Right + mActiveButton->getPixelsSize().getWidth() + mTextSeparation );
 	}
 
 	if ( mLayoutHeightRules == WRAP_CONTENT ) {
@@ -164,13 +164,13 @@ void UICheckBox::alignFix() {
 
 	switch ( fontHAlignGet( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
-			mRealAlignOffset.x = (Float)( (Int32)( ( mSize.x - mRealPadding.Left - mRealPadding.Right - mTextCache->getTextWidth() - mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPx( mTextSeparation ) ) / 2.f ) ) + mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+			mRealAlignOffset.x = (Float)( (Int32)( ( mSize.x - mRealPadding.Left - mRealPadding.Right - mTextCache->getTextWidth() - mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation ) ) / 2.f ) ) + mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
 			break;
 		case UI_HALIGN_RIGHT:
 			mRealAlignOffset.x = ( (Float)mSize.x - mRealPadding.Left - mRealPadding.Right - (Float)mTextCache->getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
-			mRealAlignOffset.x = mActiveButton->getRealSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
+			mRealAlignOffset.x = mActiveButton->getPixelsSize().getWidth() + PixelDensity::dpToPx( mTextSeparation );
 			break;
 	}
 
