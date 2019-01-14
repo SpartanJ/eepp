@@ -125,8 +125,8 @@ class EE_API SceneNode : public Node {
 		Color mHighlightOverColor;
 		Color mHighlightInvalidationColor;
 		Time mElapsed;
-		std::vector<Node*>	mScheduledUpdate;
-		std::vector<Node*>	mScheduledUpdateRemove;
+		std::list<Node*>	mScheduledUpdate;
+		std::list<Node*>	mScheduledUpdateRemove;
 
 		virtual void onSizeChange();
 

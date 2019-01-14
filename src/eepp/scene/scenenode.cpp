@@ -36,7 +36,6 @@ SceneNode::SceneNode( EE::Window::Window * window ) :
 {
 	mNodeFlags |= NODE_FLAG_SCENENODE;
 	mSceneNode = this;
-	mScheduledUpdate.reserve(100);
 
 	enableReportSizeChangeToChilds();
 
@@ -134,7 +133,7 @@ void SceneNode::update( const Time& time ) {
 
 	if ( !mScheduledUpdateRemove.empty() ) {
 		for ( auto it = mScheduledUpdateRemove.begin(); it != mScheduledUpdateRemove.end(); ++it )
-			mScheduledUpdate.erase( std::remove( mScheduledUpdate.begin(), mScheduledUpdate.end(), (*it) ), mScheduledUpdate.end() );
+			mScheduledUpdate.remove( *it );
 
 		mScheduledUpdateRemove.clear();
 	}
