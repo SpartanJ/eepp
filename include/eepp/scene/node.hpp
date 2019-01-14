@@ -121,6 +121,8 @@ class EE_API Node : public Transformable {
 
 		virtual void update( const Time& time );
 
+		virtual void scheduledUpdate( const Time& time );
+
 		Node * getNextNode() const;
 
 		Node * getPrevNode() const;
@@ -367,6 +369,8 @@ class EE_API Node : public Transformable {
 		virtual Uint32 onMouseEnter( const Vector2i& position, const Uint32 flags );
 
 		virtual Uint32 onMouseExit( const Vector2i& position, const Uint32 flags );
+
+		virtual Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
 
 		virtual void onClose();
 

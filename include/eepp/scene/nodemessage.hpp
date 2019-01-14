@@ -17,6 +17,7 @@ class EE_API NodeMessage {
 			MouseExit,
 			MouseDown,
 			MouseUp,
+			MouseMove,
 			WindowResize,
 			Focus,
 			FocusLoss,

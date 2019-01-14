@@ -23,7 +23,7 @@ class EE_API UITextInput : public UITextView {
 
 		virtual bool isType( const Uint32& type ) const;
 
-		virtual void update( const Time& time );
+		virtual void scheduledUpdate( const Time& time );
 
 		virtual void draw();
 

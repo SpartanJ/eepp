@@ -1,4 +1,5 @@
 #include <eepp/ui/uitouchdragablewidget.hpp>
+#include <eepp/scene/scenenode.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -10,11 +11,19 @@ UITouchDragableWidget * UITouchDragableWidget::New() {
 UITouchDragableWidget::UITouchDragableWidget( const std::string& tag ) :
 	UIWidget( tag ),
 	mTouchDragDeceleration( 5.f, 5.f )
-{}
+{
+	if ( NULL != mSceneNode )
+		mSceneNode->subscribeScheduledUpdate( this );
+}
 
 UITouchDragableWidget::UITouchDragableWidget() :
 	UITouchDragableWidget( "touchdragable" )
 {}
+
+UITouchDragableWidget::~UITouchDragableWidget() {
+	if ( NULL != mSceneNode )
+		mSceneNode->unsubscribeScheduledUpdate( this );
+}
 
 Uint32 UITouchDragableWidget::getType() const {
 	return UI_TYPE_TOUCH_DRAGABLE_WIDGET;
@@ -51,7 +60,14 @@ UITouchDragableWidget * UITouchDragableWidget::setTouchDragDeceleration( const V
 	return this;
 }
 
-void UITouchDragableWidget::update( const Time& time ) {
+void UITouchDragableWidget::onTouchDragValueChange( Vector2f )
+{}
+
+bool UITouchDragableWidget::isTouchOverAllowedChilds() {
+	return isMouseOverMeOrChilds();
+}
+
+void UITouchDragableWidget::scheduledUpdate( const Time& time ) {
 	if ( mEnabled && mVisible && NULL != getEventDispatcher() ) {
 		if ( isTouchDragEnabled() ) {
 			EventDispatcher * eventDispatcher = getEventDispatcher();
@@ -61,7 +77,7 @@ void UITouchDragableWidget::update( const Time& time ) {
 				// Mouse Not Down
 				if ( !( Press & EE_BUTTON_LMASK ) ) {
 					setTouchDragging( false );
-					eventDispatcher->setControlDragging( false );
+					eventDispatcher->setNodeDragging( NULL );
 					return;
 				}
 
@@ -78,16 +94,16 @@ void UITouchDragableWidget::update( const Time& time ) {
 
 					mTouchDragPoint = Pos;
 
-					eventDispatcher->setControlDragging( true );
+					eventDispatcher->setNodeDragging( this );
 				} else {
 					mTouchDragAcceleration -= elapsed * mTouchDragDeceleration;
 				}
 			} else {
 				// Mouse Down
 				if ( Press & EE_BUTTON_LMASK ) {
-					if ( isTouchOverAllowedChilds() && !eventDispatcher->isControlDragging() ) {
+					if ( isTouchOverAllowedChilds() && !eventDispatcher->isNodeDragging() ) {
 						setTouchDragging( true );
-						eventDispatcher->setControlDragging( true );
+						eventDispatcher->setNodeDragging( this );
 
 						mTouchDragPoint			= Vector2f( eventDispatcher->getMousePos().x, eventDispatcher->getMousePos().y );
 						mTouchDragAcceleration	= Vector2f(0,0);
@@ -96,7 +112,7 @@ void UITouchDragableWidget::update( const Time& time ) {
 
 				// Deaccelerate
 				if ( mTouchDragAcceleration.x != 0 || mTouchDragAcceleration.y != 0 ) {
-					Float ms = time.asSeconds();
+					Float ms = eventDispatcher->getLastFrameTime().asSeconds();
 
 					if ( 0 != mTouchDragAcceleration.x ) {
 						bool wasPositiveX = mTouchDragAcceleration.x >= 0;
@@ -129,15 +145,6 @@ void UITouchDragableWidget::update( const Time& time ) {
 			}
 		}
 	}
-
-	UIWidget::update( time );
-}
-
-void UITouchDragableWidget::onTouchDragValueChange( Vector2f )
-{}
-
-bool UITouchDragableWidget::isTouchOverAllowedChilds() {
-	return isMouseOverMeOrChilds();
 }
 
 bool UITouchDragableWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {

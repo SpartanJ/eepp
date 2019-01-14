@@ -44,6 +44,9 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	mResizeType( RESIZE_NONE ),
 	mFrameBufferBound( false )
 {
+	if ( NULL != mSceneNode )
+		mSceneNode->subscribeScheduledUpdate( this );
+
 	mNodeFlags |= NODE_FLAG_WINDOW | NODE_FLAG_VIEW_DIRTY;
 
 	setHorizontalAlign( UI_HALIGN_CENTER );
@@ -80,6 +83,9 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 }
 
 UIWindow::~UIWindow() {
+	if ( NULL != mSceneNode )
+		mSceneNode->unsubscribeScheduledUpdate( this );
+
 	if ( NULL != getUISceneNode() && !SceneManager::instance()->isShootingDown() ) {
 		getUISceneNode()->windowRemove( this );
 
@@ -953,10 +959,8 @@ void UIWindow::internalSize( Sizef Size ) {
 	}
 }
 
-void UIWindow::update( const Time& time ) {
+void UIWindow::scheduledUpdate( const Time& ) {
 	resizeCursor();
-
-	UIWidget::update( time );
 
 	updateResize();
 }

@@ -148,19 +148,16 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow * AttatchTo, const TGEditorClos
 		mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
 	} else {
 		mUIContainer->addEventListener( Event::OnClose, cb::Make1( this, &TextureAtlasEditor::windowClose ) );
-		static_cast<UINode*>( mUIContainer->find("texture_atlas_editor_root") )->setThemeSkin( mTheme, "winback" );
+		mUIContainer->find<UINode>("texture_atlas_editor_root")->setThemeSkin( mTheme, "winback" );
 	}
 
 	mTGEU = eeNew( UITGEUpdater, ( this ) );
+	mTGEU->setParent( mUIContainer );
 }
 
 TextureAtlasEditor::~TextureAtlasEditor() {
 	eeSAFE_DELETE( mTexturePacker );
 	eeSAFE_DELETE( mTextureAtlasLoader );
-
-	if ( !SceneManager::instance()->isShootingDown() ) {
-		mTGEU->close();
-	}
 }
 
 void TextureAtlasEditor::onResetDestSize( const Event * event ) {

@@ -81,7 +81,7 @@ class EE_API UIWindow : public UIWidget {
 
 		virtual bool hide();
 
-		virtual void update( const Time& time );
+		virtual void scheduledUpdate( const Time& time );
 
 		virtual void closeWindow();
 

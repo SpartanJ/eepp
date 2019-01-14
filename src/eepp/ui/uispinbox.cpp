@@ -1,5 +1,6 @@
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/graphics/textureregion.hpp>
+#include <eepp/scene/scenenode.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -15,6 +16,9 @@ UISpinBox::UISpinBox() :
 	mValue( 0 ),
 	mClickStep( 1.f )
 {
+	if ( NULL != mSceneNode )
+		mSceneNode->subscribeScheduledUpdate( this );
+
 	mInput	= UITextInput::NewWithTag( "spinbox::input" );
 	mInput->setVisible( true );
 	mInput->setEnabled( true );
@@ -42,6 +46,8 @@ UISpinBox::UISpinBox() :
 }
 
 UISpinBox::~UISpinBox() {
+	if ( NULL != mSceneNode )
+		mSceneNode->unsubscribeScheduledUpdate( this );
 }
 
 Uint32 UISpinBox::getType() const {
@@ -213,12 +219,8 @@ const Float& UISpinBox::getMaxValue() const {
 	return mMaxValue;
 }
 
-void UISpinBox::update( const Time& time ) {
-	bool Changed = mInput->getInputTextBuffer()->changedSinceLastUpdate();
-
-	UINode::update( time );
-
-	if ( Changed ) {
+void UISpinBox::scheduledUpdate( const Time& ) {
+	if ( mInput->getInputTextBuffer()->changedSinceLastUpdate() ) {
 		if ( !mInput->getText().size() ) {
 			setValue( 0 );
 		} else {

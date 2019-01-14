@@ -1,6 +1,7 @@
 #include <eepp/ui/tools/textureatlastextureregioneditor.hpp>
 #include <eepp/ui/tools/textureatlaseditor.hpp>
 #include <eepp/graphics/primitives.hpp>
+#include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace UI { namespace Tools {
@@ -17,6 +18,9 @@ TextureAtlasTextureRegionEditor::TextureAtlasTextureRegionEditor( TextureAtlasEd
 	if ( NULL == UIThemeManager::instance()->getDefaultTheme() ) {
 		return;
 	}
+
+	if ( NULL != mSceneNode )
+		mSceneNode->subscribeScheduledUpdate( this );
 
 	mTheme = UIThemeManager::instance()->getDefaultTheme();
 
@@ -37,6 +41,8 @@ TextureAtlasTextureRegionEditor::TextureAtlasTextureRegionEditor( TextureAtlasEd
 }
 
 TextureAtlasTextureRegionEditor::~TextureAtlasTextureRegionEditor() {
+	if ( NULL != mSceneNode )
+		mSceneNode->unsubscribeScheduledUpdate( this );
 }
 
 void TextureAtlasTextureRegionEditor::draw() {
@@ -52,10 +58,8 @@ void TextureAtlasTextureRegionEditor::draw() {
 	P.drawLine( Line2f( Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y ), Vector2f( mScreenPos.x + uiCenterPx.x, mScreenPos.y + mSize.getHeight() ) ) );
 }
 
-void TextureAtlasTextureRegionEditor::update( const Time& time ) {
+void TextureAtlasTextureRegionEditor::scheduledUpdate( const Time& ) {
 	Vector2f Pos = mDrag->getPixelsPosition();
-
-	UIWidget::update( time );
 
 	if ( NULL != mGfx->getTextureRegion() && mDrag->isDragEnabled() && mDrag->isDragging() && Pos != mDrag->getPixelsPosition() ) {
 		Vector2f Diff = -( Pos - mDrag->getPixelsPosition() );

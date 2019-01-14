@@ -1,5 +1,6 @@
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/scene/scenenode.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 
@@ -15,6 +16,9 @@ UIProgressBar::UIProgressBar() :
 	mTotalSteps( 100.f ),
 	mFillerSkin( NULL )
 {
+	if ( NULL != mSceneNode )
+		mSceneNode->subscribeScheduledUpdate( this );
+
 	setFlags( UI_AUTO_PADDING | UI_AUTO_SIZE );
 
 	mTextBox = UITextView::NewWithTag( "progressbar::text" );
@@ -28,6 +32,8 @@ UIProgressBar::UIProgressBar() :
 }
 
 UIProgressBar::~UIProgressBar() {
+	if ( NULL != mSceneNode )
+		mSceneNode->unsubscribeScheduledUpdate( this );
 }
 
 Uint32 UIProgressBar::getType() const {
@@ -70,9 +76,7 @@ void UIProgressBar::draw() {
 	clipSmartDisable();
 }
 
-void UIProgressBar::update( const Time& time ) {
-	UINode::update( time );
-
+void UIProgressBar::scheduledUpdate( const Time& time ) {
 	if ( NULL == mFillerSkin )
 		return;
 

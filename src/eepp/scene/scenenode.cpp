@@ -36,6 +36,7 @@ SceneNode::SceneNode( EE::Window::Window * window ) :
 {
 	mNodeFlags |= NODE_FLAG_SCENENODE;
 	mSceneNode = this;
+	mScheduledUpdate.reserve(100);
 
 	enableReportSizeChangeToChilds();
 
@@ -130,6 +131,18 @@ void SceneNode::update( const Time& time ) {
 	mActionManager->update( time );
 
 	checkClose();
+
+	if ( !mScheduledUpdateRemove.empty() ) {
+		for ( auto it = mScheduledUpdateRemove.begin(); it != mScheduledUpdateRemove.end(); ++it )
+			mScheduledUpdate.erase( std::remove( mScheduledUpdate.begin(), mScheduledUpdate.end(), (*it) ), mScheduledUpdate.end() );
+
+		mScheduledUpdateRemove.clear();
+	}
+
+	if ( !mScheduledUpdate.empty() ) {
+		for ( auto it = mScheduledUpdate.begin(); it != mScheduledUpdate.end(); ++it )
+			(*it)->scheduledUpdate( time );
+	}
 
 	Node::update( time );
 }
@@ -390,8 +403,7 @@ bool SceneNode::isDrawInvalidator() const {
 	return true;
 }
 
-ActionManager * SceneNode::getActionManager() const
-{
+ActionManager * SceneNode::getActionManager() const {
 	return mActionManager;
 }
 
@@ -399,6 +411,18 @@ void SceneNode::preDraw() {
 }
 
 void SceneNode::postDraw() {
+}
+
+void SceneNode::subscribeScheduledUpdate( Node * node ) {
+	mScheduledUpdate.push_back( node );
+}
+
+void SceneNode::unsubscribeScheduledUpdate( Node * node ) {
+	mScheduledUpdateRemove.push_back( node );
+}
+
+bool SceneNode::isSubscribedForScheduledUpdate( Node * node ) {
+	return std::find( mScheduledUpdate.begin(), mScheduledUpdate.end(), node ) != mScheduledUpdate.end();
 }
 
 }}

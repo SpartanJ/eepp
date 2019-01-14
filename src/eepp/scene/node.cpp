@@ -126,6 +126,9 @@ void Node::setInternalSize( const Sizef& size ) {
 	invalidateDraw();
 }
 
+void Node::scheduledUpdate( const Time& ) {
+}
+
 Node * Node::setSize( const Sizef & Size ) {
 	if ( Size != mSize ) {
 		Vector2f sizeChange( Size.x - mSize.x, Size.y - mSize.y );
@@ -337,6 +340,10 @@ Uint32 Node::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 
 	sendMouseEvent( Event::MouseExit, Pos, Flags );
 
+	return 1;
+}
+
+Uint32 Node::onCalculateDrag( const Vector2f&, const Uint32& ) {
 	return 1;
 }
 

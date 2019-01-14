@@ -23,6 +23,9 @@ UITextInput::UITextInput( const std::string& tag ) :
 	mAllowEditing( true ),
 	mShowingWait( true )
 {
+	if ( NULL != mSceneNode )
+		mSceneNode->subscribeScheduledUpdate( this );
+
 	setFlags( UI_AUTO_PADDING | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED );
 	clipEnable();
 
@@ -40,6 +43,8 @@ UITextInput::UITextInput() :
 {}
 
 UITextInput::~UITextInput() {
+	if ( NULL != mSceneNode )
+		mSceneNode->unsubscribeScheduledUpdate( this );
 }
 
 Uint32 UITextInput::getType() const {
@@ -50,12 +55,10 @@ bool UITextInput::isType( const Uint32& type ) const {
 	return UITextInput::getType() == type ? true : UITextView::isType( type );
 }
 
-void UITextInput::update( const Time& time ) {
+void UITextInput::scheduledUpdate( const Time& time ) {
 	if ( isMouseOverMeOrChilds() && NULL != mSceneNode ) {
 		mSceneNode->setCursor( Cursor::IBeam );
 	}
-
-	UITextView::update( time );
 
 	if ( mTextBuffer.changedSinceLastUpdate() ) {
 		Vector2f offSet = mRealAlignOffset;

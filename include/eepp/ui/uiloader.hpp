@@ -13,13 +13,15 @@ class EE_API UILoader : public UIWidget {
 
 		UILoader();
 
+		~UILoader();
+
 		virtual Uint32 getType() const;
 
 		virtual bool isType( const Uint32& type ) const;
 
 		virtual void draw();
 
-		virtual void update( const Time& time );
+		virtual void scheduledUpdate( const Time& time );
 
 		UILoader * setOutlineThickness( const Float& thickness );
 

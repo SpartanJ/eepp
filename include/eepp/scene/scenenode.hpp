@@ -97,6 +97,12 @@ class EE_API SceneNode : public Node {
 		virtual bool isDrawInvalidator() const;
 
 		ActionManager * getActionManager() const;
+
+		void subscribeScheduledUpdate( Node * node );
+
+		void unsubscribeScheduledUpdate( Node * node );
+
+		bool isSubscribedForScheduledUpdate( Node * node );
 	protected:
 		friend class Node;
 		typedef std::list<Node*> CloseList;
@@ -119,6 +125,8 @@ class EE_API SceneNode : public Node {
 		Color mHighlightOverColor;
 		Color mHighlightInvalidationColor;
 		Time mElapsed;
+		std::vector<Node*>	mScheduledUpdate;
+		std::vector<Node*>	mScheduledUpdateRemove;
 
 		virtual void onSizeChange();
 

@@ -1,5 +1,6 @@
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/scene/scenenode.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -21,9 +22,17 @@ UILoader::UILoader() :
 	mOp(1),
 	mIndeterminate(true)
 {
+	if ( NULL != mSceneNode )
+		mSceneNode->subscribeScheduledUpdate( this );
+
 	mArc.setFillMode( DRAW_FILL );
 	mCircle.setFillMode( DRAW_FILL );
 	setFillColor( mColor );
+}
+
+UILoader::~UILoader() {
+	if ( NULL != mSceneNode )
+		mSceneNode->unsubscribeScheduledUpdate( this );
 }
 
 Uint32 UILoader::getType() const {
@@ -52,9 +61,7 @@ void UILoader::draw() {
 	clippingMask->stencilMaskDisable();
 }
 
-void UILoader::update( const Time& time ) {
-	UIWidget::update( time );
-
+void UILoader::scheduledUpdate( const Time& time ) {
 	invalidateDraw();
 
 	if ( mIndeterminate ) {

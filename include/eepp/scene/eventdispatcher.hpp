@@ -6,6 +6,7 @@
 using namespace EE::System;
 #include <eepp/math/vector2.hpp>
 using namespace EE::Math;
+#include <vector>
 
 namespace EE { namespace Window {
 class Input;
@@ -63,9 +64,9 @@ class EE_API EventDispatcher {
 
 		const Uint32 & getDoubleClickTrigger() const;
 
-		void setControlDragging( bool dragging );
+		void setNodeDragging( Node * dragging );
 
-		const bool& isControlDragging() const;
+		bool isNodeDragging() const;
 
 		Vector2i getMousePos();
 
@@ -76,6 +77,8 @@ class EE_API EventDispatcher {
 		Vector2f getLastMousePos();
 
 		SceneNode * getSceneNode() const;
+
+		const Time& getLastFrameTime() const;
 	protected:
 		EE::Window::Window *mWindow;
 		Input *				mInput;
@@ -90,7 +93,8 @@ class EE_API EventDispatcher {
 		Vector2i			mMouseDownPos;
 		Int32 				mCbId;
 		bool 				mFirstPress;
-		bool				mControlDragging;
+		Node *				mNodeDragging;
+		Time				mElapsed;
 
 		virtual void inputCallback( InputEvent * Event );
 };

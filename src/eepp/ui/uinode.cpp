@@ -279,45 +279,12 @@ void UINode::draw() {
 	}
 }
 
-void UINode::update( const Time& time ) {
-	if ( isDragEnabled() && isDragging() && NULL != getEventDispatcher() ) {
-		EventDispatcher * eventDispatcher = getEventDispatcher();
-
-		if ( !( eventDispatcher->getPressTrigger() & mDragButton ) ) {
-			setDragging( false );
-			eventDispatcher->setControlDragging( false );
-			return;
-		}
-
-		Vector2f Pos( eefloor( eventDispatcher->getMousePosf().x ), eefloor( eventDispatcher->getMousePosf().y ) );
-
-		if ( mDragPoint != Pos && ( std::abs( mDragPoint.x - Pos.x ) > 1.f || std::abs( mDragPoint.y - Pos.y ) > 1.f ) ) {
-			if ( onDrag( Pos ) ) {
-				Sizef dragDiff;
-
-				dragDiff.x = (Float)( mDragPoint.x - Pos.x );
-				dragDiff.y = (Float)( mDragPoint.y - Pos.y );
-
-				setPixelsPosition( mPosition - dragDiff );
-
-				mDragPoint = Pos;
-
-				onPositionChange();
-
-				eventDispatcher->setControlDragging( true );
-			}
-		}
-	}
-
-	Node::update( time );
-}
-
 Uint32 UINode::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
-	if ( NULL != getEventDispatcher() && !( getEventDispatcher()->getLastPressTrigger() & mDragButton ) && ( Flags & mDragButton ) && isDragEnabled() && !isDragging() ) {
+	if ( NULL != getEventDispatcher() && !getEventDispatcher()->isNodeDragging() && !( getEventDispatcher()->getLastPressTrigger() & mDragButton ) && ( Flags & mDragButton ) && isDragEnabled() && !isDragging() ) {
 		setDragging( true );
 
 		if ( NULL != getEventDispatcher() )
-			getEventDispatcher()->setControlDragging( true );
+			getEventDispatcher()->setNodeDragging( this );
 
 		mDragPoint = Vector2f( Pos.x, Pos.y );
 	}
@@ -332,12 +299,45 @@ Uint32 UINode::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
 		setDragging( false );
 
 		if ( NULL != getEventDispatcher() )
-			getEventDispatcher()->setControlDragging( false );
+			getEventDispatcher()->setNodeDragging( NULL );
 	}
 
 	popState( UIState::StatePressed );
 
 	return Node::onMouseUp( Pos, Flags );
+}
+
+Uint32 UINode::onCalculateDrag( const Vector2f& position, const Uint32& flags ) {
+	if ( isDragEnabled() && isDragging() && NULL != getEventDispatcher() ) {
+		EventDispatcher * eventDispatcher = getEventDispatcher();
+
+		if ( !( flags/*press trigger*/ & mDragButton ) ) {
+			setDragging( false );
+			eventDispatcher->setNodeDragging( NULL );
+			return 1;
+		}
+
+		Vector2f Pos( eefloor( position.x ), eefloor( position.y ) );
+
+		if ( mDragPoint != Pos && ( std::abs( mDragPoint.x - Pos.x ) > 1.f || std::abs( mDragPoint.y - Pos.y ) > 1.f ) ) {
+			if ( onDrag( Pos, flags ) ) {
+				Sizef dragDiff;
+
+				dragDiff.x = (Float)( mDragPoint.x - Pos.x );
+				dragDiff.y = (Float)( mDragPoint.y - Pos.y );
+
+				setPixelsPosition( mPosition - dragDiff );
+
+				mDragPoint = Pos;
+
+				onPositionChange();
+
+				eventDispatcher->setNodeDragging( this );
+			}
+		}
+	}
+
+	return 1;
 }
 
 Uint32 UINode::onValueChange() {
@@ -975,7 +975,7 @@ void UINode::setDragPoint( const Vector2f& Point ) {
 	mDragPoint = Point;
 }
 
-Uint32 UINode::onDrag( const Vector2f& ) {
+Uint32 UINode::onDrag( const Vector2f& , const Uint32& ) {
 	return 1;
 }
 

@@ -1,5 +1,6 @@
 #include <eepp/ui/uisprite.hpp>
 #include <eepp/graphics/sprite.hpp>
+#include <eepp/scene/scenenode.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/graphics/globaltextureatlas.hpp>
 
@@ -16,9 +17,14 @@ UISprite::UISprite() :
 	mAlignOffset(0,0),
 	mTextureRegionLast(NULL)
 {
+	if ( NULL != mSceneNode )
+		mSceneNode->subscribeScheduledUpdate( this );
 }
 
 UISprite::~UISprite() {
+	if ( NULL != mSceneNode )
+		mSceneNode->unsubscribeScheduledUpdate( this );
+
 	if ( deallocSprite() )
 		eeSAFE_DELETE( mSprite );
 }
@@ -70,9 +76,7 @@ void UISprite::draw() {
 	}
 }
 
-void UISprite::update( const Time& time ) {
-	UIWidget::update( time );
-
+void UISprite::scheduledUpdate( const Time& time ) {
 	if ( NULL != mSprite ) {
 		TextureRegion * textureRegion = mSprite->getCurrentTextureRegion();
 

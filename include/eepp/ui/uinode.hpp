@@ -77,8 +77,6 @@ class EE_API UINode : public Node {
 
 		virtual void draw();
 
-		virtual void update( const Time& time );
-
 		Uint32 getHorizontalAlign() const;
 
 		UINode * setHorizontalAlign( Uint32 halign );
@@ -240,7 +238,9 @@ class EE_API UINode : public Node {
 
 		virtual void onChildCountChange();
 
-		virtual Uint32 onDrag( const Vector2f& position );
+		virtual Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
+
+		virtual Uint32 onDrag( const Vector2f& position, const Uint32& flags );
 
 		virtual Uint32 onDragStart( const Vector2i& position );
 

@@ -11,7 +11,7 @@ class EE_API UITouchDragableWidget : public UIWidget {
 		
 		UITouchDragableWidget();
 
-		virtual void update( const Time& time );
+		~UITouchDragableWidget();
 
 		virtual Uint32 getType() const;
 
@@ -40,6 +40,8 @@ class EE_API UITouchDragableWidget : public UIWidget {
 		virtual void onTouchDragValueChange( Vector2f diff );
 
 		virtual bool isTouchOverAllowedChilds();
+
+		virtual void scheduledUpdate( const Time& time );
 };
 
 }}

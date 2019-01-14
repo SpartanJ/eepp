@@ -20,7 +20,7 @@ class EE_API TextureAtlasTextureRegionEditor : public UIWidget {
 
 		virtual void draw();
 
-		virtual void update( const Time& time );
+		virtual void scheduledUpdate( const Time& time );
 
 		Graphics::TextureRegion * getTextureRegion() const;
 
