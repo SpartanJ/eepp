@@ -25,7 +25,22 @@ bool UIStyle::stateExists( const EE::Uint32 & state  ) const {
 }
 
 void UIStyle::addAttribute( int state, NodeAttribute attribute ) {
-	mStates[ state ][ attribute.getName() ] = attribute;
+	if ( attribute.getName() == "padding" ) {
+		Rectf rect(  attribute.asRectf() );
+		mStates[ state ][ "paddingleft" ] = NodeAttribute( "paddingleft", String::toStr( rect.Left ) );
+		mStates[ state ][ "paddingright" ] = NodeAttribute( "paddingright", String::toStr( rect.Right ) );
+		mStates[ state ][ "paddingtop" ] = NodeAttribute( "paddingtop", String::toStr( rect.Top ) );
+		mStates[ state ][ "paddingbottom" ] = NodeAttribute( "paddingbottom", String::toStr( rect.Bottom ) );
+	} else if ( attribute.getName() == "layout_margin" ) {
+		Rect rect(  attribute.asRect() );
+		mStates[ state ][ "layout_marginleft" ] = NodeAttribute( "layout_marginleft", String::toStr( rect.Left ) );
+		mStates[ state ][ "layout_marginright" ] = NodeAttribute( "layout_marginright", String::toStr( rect.Right ) );
+		mStates[ state ][ "layout_margintop" ] = NodeAttribute( "layout_margintop", String::toStr( rect.Top ) );
+		mStates[ state ][ "layout_marginbottom" ] = NodeAttribute( "layout_marginbottom", String::toStr( rect.Bottom ) );
+	} else {
+		mStates[ state ][ attribute.getName() ] = attribute;
+	}
+
 
 	if ( String::startsWith( attribute.getName(), "transition" ) ) {
 		mTransitionAttributes[ state ].push_back( attribute );

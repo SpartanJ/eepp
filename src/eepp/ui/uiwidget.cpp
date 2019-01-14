@@ -804,7 +804,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		}
 	} else if ( "borderwidth" == name ) {
 		setBorderWidth( attribute.asDpDimensionI("1") );
-	} else if ( "borderradius" == name || "backgroundcorners" == name ) {
+	} else if ( "borderradius" == name ) {
 		Uint32 borderRadius = attribute.asUint();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
@@ -936,15 +936,16 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 			NodeAttribute oldAttribute = mStyle->getAttribute( UIState::StateFlagNormal, attribute.getName() );
 			if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) {
-				if ( "layout_margin" == name )
-					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%d %d %d %d", mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) ) );
-				else if ( "layout_marginleft" == name )
+				if ( "layout_marginleft" == name || "layout_margin" == name )
 					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%d", mLayoutMargin.Left ) ) );
-				else if ( "layout_marginright" == name )
+
+				if ( "layout_marginright" == name || "layout_margin" == name )
 					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%d", mLayoutMargin.Right ) ) );
-				else if ( "layout_margintop" == name )
+
+				if ( "layout_margintop" == name || "layout_margin" == name )
 					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%d", mLayoutMargin.Top ) ) );
-				else if ( "layout_marginbottom" == name )
+
+				if ( "layout_marginbottom" == name || "layout_margin" == name )
 					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%d", mLayoutMargin.Bottom ) ) );
 			}
 
@@ -1107,15 +1108,16 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 			NodeAttribute oldAttribute = mStyle->getAttribute( UIState::StateFlagNormal, attribute.getName() );
 			if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) {
-				if ( "padding" == name )
-					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%2.f %2.f %2.f %2.f", mPadding.Left, mPadding.Top, mPadding.Right, mPadding.Bottom ) ) );
-				else if ( "paddingleft" == name )
+				if ( "paddingleft" == name || "padding" == name )
 					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%2.f", mPadding.Left ) ) );
-				else if ( "paddingright" == name )
+
+				if ( "paddingright" == name || "padding" == name )
 					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%2.f", mPadding.Right ) ) );
-				else if ( "paddingtop" == name )
+
+				if ( "paddingtop" == name || "padding" == name )
 					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%2.f", mPadding.Top ) ) );
-				else if ( "paddingbottom" == name )
+
+				if ( "paddingbottom" == name || "padding" == name )
 					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%2.f", mPadding.Bottom ) ) );
 			}
 
