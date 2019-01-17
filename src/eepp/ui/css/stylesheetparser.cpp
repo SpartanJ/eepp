@@ -66,6 +66,13 @@ void StyleSheetParser::print() {
 	}
 }
 
+bool StyleSheetParser::loadFromString( const std::string& str ) {
+	if ( str.empty() )
+		return false;
+
+	return loadFromMemory( (const Uint8*)&str[0], str.size() );
+}
+
 StyleSheet &StyleSheetParser::getStyleSheet() {
 	return mStyleSheet;
 }

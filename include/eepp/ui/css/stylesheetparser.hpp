@@ -31,6 +31,8 @@ class EE_API StyleSheetParser {
 
 		bool loadFromPack( Pack * pack, std::string filePackPath );
 
+		bool loadFromString( const std::string& str );
+
 		void print();
 
 		StyleSheet& getStyleSheet();
