@@ -107,8 +107,10 @@ void EventDispatcher::update( const Time& time ) {
 				Node * lastFocusControl = mFocusControl;
 
 				if ( NULL != mOverControl ) {
-					mOverControl->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
-					sendMsg( mOverControl, NodeMessage::MouseUp, mInput->getReleaseTrigger() );
+					getOverControl()->onMouseUp( mMousePosi, mInput->getReleaseTrigger() );
+
+					if ( NULL != getOverControl() )
+						sendMsg( getOverControl(), NodeMessage::MouseUp, mInput->getReleaseTrigger() );
 				}
 
 				if ( mInput->getClickTrigger() ) {

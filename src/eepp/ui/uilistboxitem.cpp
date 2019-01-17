@@ -43,15 +43,18 @@ void UIListBoxItem::setTheme( UITheme * Theme ) {
 }
 
 Uint32 UIListBoxItem::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
+	UITextView::onMouseUp( Pos, Flags );
+
 	if ( mEnabled && mVisible ) {
 		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( getParent()->getParent() );
 
 		if ( Flags & EE_BUTTONS_WUWD && LBParent->getVerticalScrollBar()->isVisible() ) {
+			// Manage click can delete _this_
 			LBParent->getVerticalScrollBar()->getSlider()->manageClick( Flags );
 		}
 	}
 
-	return UITextView::onMouseUp( Pos, Flags );
+	return 1;
 }
 
 Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
