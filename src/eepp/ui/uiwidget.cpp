@@ -699,7 +699,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 		if ( String::startsWith( attribute.getValue(), "#" ) ) {
 			setAttribute( NodeAttribute( "backgroundcolor", attribute.getValue() ) );
-		} else if ( NULL != ( res = DrawableSearcher::searchByName( name ) ) ) {
+		} else if ( NULL != ( res = DrawableSearcher::searchByName( attribute.getValue() ) ) ) {
 			setBackgroundDrawable( state, res, res->getDrawableType() == Drawable::SPRITE );
 		}
 	} else if ( "backgroundcolor" == name ) {
@@ -897,8 +897,6 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 					notifyLayoutAttrChange();
 				} else if ( "clip" == cur ) {
 					clipEnable();
-				} else if ( "word_wrap" == cur || "wordwrap" == cur ) {
-					setFlags( UI_WORD_WRAP );
 				} else if ( "multi" == cur ) {
 					setFlags(  UI_MULTI_SELECT );
 				} else if ( "auto_padding" == cur || "autopadding" == cur ) {

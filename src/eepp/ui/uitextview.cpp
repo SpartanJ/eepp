@@ -620,7 +620,13 @@ bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& sta
 		}
 
 		setFontStyle( flags );
+	} else if ( "wordwrap" == name || "word_wrap" == name ) {
+		if ( attribute.asBool() )
+			mFlags |= UI_WORD_WRAP;
+		else
+			mFlags &= ~UI_WORD_WRAP;
 
+		autoShrink();
 	} else if ( "fontoutlinethickness" == name ) {
 		SAVE_NORMAL_STATE_ATTR( String::toStr( PixelDensity::dpToPx( getOutlineThickness() ) ) )
 

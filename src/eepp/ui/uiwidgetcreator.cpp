@@ -32,12 +32,14 @@
 
 namespace  EE { namespace UI {
 
+static bool sBaseListCreated = false;
+
 UIWidgetCreator::WidgetCallbackMap UIWidgetCreator::widgetCallback = UIWidgetCreator::WidgetCallbackMap();
 
 UIWidgetCreator::RegisteredWidgetCallbackMap UIWidgetCreator::registeredWidget = UIWidgetCreator::RegisteredWidgetCallbackMap();
 
 void UIWidgetCreator::createBaseWidgetList() {
-	if ( registeredWidget.empty() ) {
+	if ( !sBaseListCreated ) {
 		registeredWidget["widget"] = UIWidget::New;
 		registeredWidget["linearlayout"] = UILinearLayout::NewVertical;
 		registeredWidget["relativelayout"] = UIRelativeLayout::New;
@@ -75,6 +77,8 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;
 		registeredWidget["input"] = UITextInput::New;
 		registeredWidget["inputpassword"] = UITextInputPassword::New;
+
+		sBaseListCreated = true;
 	}
 }
 
