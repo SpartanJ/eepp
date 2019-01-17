@@ -40,11 +40,10 @@ class EE_API TextureAtlasEditor {
 					UINode(),
 					mTGEditor( TGEditor )
 				{
-					getSceneNode()->subscribeScheduledUpdate( this );
+					subscribeScheduledUpdate();
 				}
 
 				~UITGEUpdater() {
-					getSceneNode()->unsubscribeScheduledUpdate( this );
 				}
 
 				virtual void scheduledUpdate( const Time& ) { mTGEditor->update(); }

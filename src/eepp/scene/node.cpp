@@ -35,6 +35,9 @@ Node::~Node() {
 	if ( NULL != mSceneNode && mSceneNode != this && NULL != mSceneNode->getActionManager() )
 		mSceneNode->getActionManager()->removeAllActionsFromTarget( this );
 
+	if ( NULL != mSceneNode && ( mNodeFlags & NODE_FLAG_SCHEDULED_UPDATE ) )
+		mSceneNode->unsubscribeScheduledUpdate( this );
+
 	childDeleteAll();
 
 	if ( NULL != mParentCtrl )
@@ -209,6 +212,24 @@ void Node::updateDrawInvalidator( bool force ) {
 			ChildLoop = ChildLoop->mNext;
 		}
 	}
+}
+
+void Node::subscribeScheduledUpdate() {
+	if ( NULL != mSceneNode ) {
+		mSceneNode->subscribeScheduledUpdate( this );
+		writeNodeFlag( NODE_FLAG_SCHEDULED_UPDATE, 1 );
+	}
+}
+
+void Node::unsubscribeScheduledUpdate() {
+	if ( NULL != mSceneNode ) {
+		mSceneNode->unsubscribeScheduledUpdate( this );
+		writeNodeFlag( NODE_FLAG_SCHEDULED_UPDATE, 0 );
+	}
+}
+
+bool Node::isSubscribedForScheduledUpdate() {
+	return 0 != ( mNodeFlags & NODE_FLAG_SCHEDULED_UPDATE );
 }
 
 Node * Node::setParent( Node * parent ) {
@@ -755,6 +776,7 @@ Node * Node::overFind( const Vector2f& Point ) {
 
 		if ( mWorldBounds.contains( Point ) && mPoly.pointInside( Point ) ) {
 			writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
+			mSceneNode->addMouseOverNode( this );
 
 			Node * ChildLoop = mChildLast;
 

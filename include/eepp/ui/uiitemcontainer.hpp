@@ -2,6 +2,7 @@
 #define EE_UITUIITEMCONTAINER_HPP
 
 #include <eepp/ui/uinode.hpp>
+#include <eepp/scene/scenenode.hpp>
 
 namespace EE { namespace UI {
 
@@ -64,6 +65,7 @@ Node * UIItemContainer<TContainer>::overFind( const Vector2f& Point ) {
 
 		if ( mWorldBounds.contains( Point ) && mPoly.pointInside( Point ) ) {
 			writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
+			mSceneNode->addMouseOverNode( this );
 
 			for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ ) {
 				if ( NULL != tParent->mItems[i] ) {

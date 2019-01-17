@@ -29,6 +29,7 @@ using namespace EE::Scene;
 namespace EE { namespace Scene {
 
 enum NODE_FLAGS_VALUES {
+	NODE_FLAG_SCHEDULED_UPDATE					= (1<<0),
 	NODE_FLAG_VIEW_DIRTY						= (1<<1),
 	NODE_FLAG_POSITION_DIRTY					= (1<<2),
 	NODE_FLAG_POLYGON_DIRTY						= (1<<3),
@@ -469,6 +470,12 @@ class EE_API Node : public Transformable {
 		SceneNode * findSceneNode();
 
 		void updateDrawInvalidator( bool force = false );
+
+		void subscribeScheduledUpdate();
+
+		void unsubscribeScheduledUpdate();
+
+		bool isSubscribedForScheduledUpdate();
 };
 
 }}

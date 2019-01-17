@@ -23,8 +23,7 @@ UITextInput::UITextInput( const std::string& tag ) :
 	mAllowEditing( true ),
 	mShowingWait( true )
 {
-	if ( NULL != mSceneNode )
-		mSceneNode->subscribeScheduledUpdate( this );
+	subscribeScheduledUpdate();
 
 	setFlags( UI_AUTO_PADDING | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED );
 	clipEnable();
@@ -43,8 +42,6 @@ UITextInput::UITextInput() :
 {}
 
 UITextInput::~UITextInput() {
-	if ( NULL != mSceneNode )
-		mSceneNode->unsubscribeScheduledUpdate( this );
 }
 
 Uint32 UITextInput::getType() const {

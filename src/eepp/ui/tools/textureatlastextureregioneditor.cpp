@@ -19,8 +19,7 @@ TextureAtlasTextureRegionEditor::TextureAtlasTextureRegionEditor( TextureAtlasEd
 		return;
 	}
 
-	if ( NULL != mSceneNode )
-		mSceneNode->subscribeScheduledUpdate( this );
+	subscribeScheduledUpdate();
 
 	mTheme = UIThemeManager::instance()->getDefaultTheme();
 
@@ -41,8 +40,6 @@ TextureAtlasTextureRegionEditor::TextureAtlasTextureRegionEditor( TextureAtlasEd
 }
 
 TextureAtlasTextureRegionEditor::~TextureAtlasTextureRegionEditor() {
-	if ( NULL != mSceneNode )
-		mSceneNode->unsubscribeScheduledUpdate( this );
 }
 
 void TextureAtlasTextureRegionEditor::draw() {

@@ -18,6 +18,9 @@ UISceneNode::UISceneNode( EE::Window::Window * window ) :
 	SceneNode( window ),
 	mIsLoading( false )
 {
+	// Update only UI elements that requires it.
+	setUpdateAllChilds( false );
+
 	mNodeFlags |= NODE_FLAG_UISCENENODE | NODE_FLAG_OVER_FIND_ALLOWED;
 
 	setEventDispatcher( UIEventDispatcher::New( this ) );

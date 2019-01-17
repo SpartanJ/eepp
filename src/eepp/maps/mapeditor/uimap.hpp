@@ -43,7 +43,7 @@ class EE_API UIMap : public UIWindow {
 
 		virtual void draw();
 
-		virtual void update( const Time& time );
+		virtual void scheduledUpdate( const Time& time );
 
 		TileMap * Map() const;
 

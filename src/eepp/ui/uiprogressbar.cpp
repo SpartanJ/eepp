@@ -16,8 +16,7 @@ UIProgressBar::UIProgressBar() :
 	mTotalSteps( 100.f ),
 	mFillerSkin( NULL )
 {
-	if ( NULL != mSceneNode )
-		mSceneNode->subscribeScheduledUpdate( this );
+	subscribeScheduledUpdate();
 
 	setFlags( UI_AUTO_PADDING | UI_AUTO_SIZE );
 
@@ -32,8 +31,6 @@ UIProgressBar::UIProgressBar() :
 }
 
 UIProgressBar::~UIProgressBar() {
-	if ( NULL != mSceneNode )
-		mSceneNode->unsubscribeScheduledUpdate( this );
 }
 
 Uint32 UIProgressBar::getType() const {

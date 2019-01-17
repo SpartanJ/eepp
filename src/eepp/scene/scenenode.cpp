@@ -24,6 +24,7 @@ SceneNode::SceneNode( EE::Window::Window * window ) :
 	mFrameBufferBound( false ),
 	mUseInvalidation( false ),
 	mUseGlobalCursors( true ),
+	mUpdateAllChilds( true ),
 	mResizeCb( -1 ),
 	mDrawDebugData( false ),
 	mDrawBoxes( false ),
@@ -143,7 +144,14 @@ void SceneNode::update( const Time& time ) {
 			(*it)->scheduledUpdate( time );
 	}
 
-	Node::update( time );
+	if ( mUpdateAllChilds ) {
+		Node::update( time );
+	} else {
+		for ( auto it = mMouseOverNodes.begin(); it != mMouseOverNodes.end(); ++it )
+			(*it)->writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
+	}
+
+	mMouseOverNodes.clear();
 }
 
 void SceneNode::onSizeChange() {
@@ -422,6 +430,22 @@ void SceneNode::unsubscribeScheduledUpdate( Node * node ) {
 
 bool SceneNode::isSubscribedForScheduledUpdate( Node * node ) {
 	return std::find( mScheduledUpdate.begin(), mScheduledUpdate.end(), node ) != mScheduledUpdate.end();
+}
+
+void SceneNode::addMouseOverNode( Node * node ) {
+	mMouseOverNodes.push_back( node );
+}
+
+void SceneNode::removeMouseOverNode(Node * node) {
+	mMouseOverNodes.remove( node );
+}
+
+const bool& SceneNode::getUpdateAllChilds() const {
+	return mUpdateAllChilds;
+}
+
+void SceneNode::setUpdateAllChilds( const bool& updateAllChilds ) {
+	mUpdateAllChilds = updateAllChilds;
 }
 
 }}

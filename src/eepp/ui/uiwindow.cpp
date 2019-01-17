@@ -44,8 +44,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	mResizeType( RESIZE_NONE ),
 	mFrameBufferBound( false )
 {
-	if ( NULL != mSceneNode )
-		mSceneNode->subscribeScheduledUpdate( this );
+	subscribeScheduledUpdate();
 
 	mNodeFlags |= NODE_FLAG_WINDOW | NODE_FLAG_VIEW_DIRTY;
 
@@ -83,9 +82,6 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 }
 
 UIWindow::~UIWindow() {
-	if ( NULL != mSceneNode )
-		mSceneNode->unsubscribeScheduledUpdate( this );
-
 	if ( NULL != getUISceneNode() && !SceneManager::instance()->isShootingDown() ) {
 		getUISceneNode()->windowRemove( this );
 

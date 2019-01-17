@@ -12,8 +12,7 @@ UITouchDragableWidget::UITouchDragableWidget( const std::string& tag ) :
 	UIWidget( tag ),
 	mTouchDragDeceleration( 5.f, 5.f )
 {
-	if ( NULL != mSceneNode )
-		mSceneNode->subscribeScheduledUpdate( this );
+	subscribeScheduledUpdate();
 }
 
 UITouchDragableWidget::UITouchDragableWidget() :
@@ -21,8 +20,6 @@ UITouchDragableWidget::UITouchDragableWidget() :
 {}
 
 UITouchDragableWidget::~UITouchDragableWidget() {
-	if ( NULL != mSceneNode )
-		mSceneNode->unsubscribeScheduledUpdate( this );
 }
 
 Uint32 UITouchDragableWidget::getType() const {

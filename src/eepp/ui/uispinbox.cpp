@@ -16,8 +16,7 @@ UISpinBox::UISpinBox() :
 	mValue( 0 ),
 	mClickStep( 1.f )
 {
-	if ( NULL != mSceneNode )
-		mSceneNode->subscribeScheduledUpdate( this );
+	subscribeScheduledUpdate();
 
 	mInput	= UITextInput::NewWithTag( "spinbox::input" );
 	mInput->setVisible( true );
@@ -46,8 +45,6 @@ UISpinBox::UISpinBox() :
 }
 
 UISpinBox::~UISpinBox() {
-	if ( NULL != mSceneNode )
-		mSceneNode->unsubscribeScheduledUpdate( this );
 }
 
 Uint32 UISpinBox::getType() const {

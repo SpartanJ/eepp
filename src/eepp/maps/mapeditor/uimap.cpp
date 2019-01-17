@@ -29,6 +29,8 @@ UIMap::UIMap( UITheme * Theme, TileMap * Map ) :
 	mSelPoint( false ),
 	mTileBox( NULL )
 {
+	subscribeScheduledUpdate();
+
 	if ( NULL == Map ) {
 		mMap = eeNew( TileMap, () );
 	}
@@ -99,8 +101,8 @@ void UIMap::updateScreenPos() {
 	}
 }
 
-void UIMap::update( const Time& time ) {
-	UIWindow::update( time );
+void UIMap::scheduledUpdate( const Time& time ) {
+	UIWindow::scheduledUpdate( time );
 
 	if ( NULL != mMap ) {
 		invalidate();

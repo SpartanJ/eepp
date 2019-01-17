@@ -103,6 +103,14 @@ class EE_API SceneNode : public Node {
 		void unsubscribeScheduledUpdate( Node * node );
 
 		bool isSubscribedForScheduledUpdate( Node * node );
+
+		void addMouseOverNode( Node * node );
+
+		void removeMouseOverNode( Node * node );
+
+		const bool& getUpdateAllChilds() const;
+
+		void setUpdateAllChilds( const bool& updateAllChilds );
 	protected:
 		friend class Node;
 		typedef std::list<Node*> CloseList;
@@ -115,6 +123,7 @@ class EE_API SceneNode : public Node {
 		bool mFrameBufferBound;
 		bool mUseInvalidation;
 		bool mUseGlobalCursors;
+		bool mUpdateAllChilds;
 		Int32 mResizeCb;
 		bool mDrawDebugData;
 		bool mDrawBoxes;
@@ -127,6 +136,7 @@ class EE_API SceneNode : public Node {
 		Time mElapsed;
 		std::list<Node*>	mScheduledUpdate;
 		std::list<Node*>	mScheduledUpdateRemove;
+		std::list<Node*>	mMouseOverNodes;
 
 		virtual void onSizeChange();
 

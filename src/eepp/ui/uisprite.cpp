@@ -17,14 +17,10 @@ UISprite::UISprite() :
 	mAlignOffset(0,0),
 	mTextureRegionLast(NULL)
 {
-	if ( NULL != mSceneNode )
-		mSceneNode->subscribeScheduledUpdate( this );
+	subscribeScheduledUpdate();
 }
 
 UISprite::~UISprite() {
-	if ( NULL != mSceneNode )
-		mSceneNode->unsubscribeScheduledUpdate( this );
-
 	if ( deallocSprite() )
 		eeSAFE_DELETE( mSprite );
 }

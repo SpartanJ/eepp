@@ -22,8 +22,7 @@ UILoader::UILoader() :
 	mOp(1),
 	mIndeterminate(true)
 {
-	if ( NULL != mSceneNode )
-		mSceneNode->subscribeScheduledUpdate( this );
+	subscribeScheduledUpdate();
 
 	mArc.setFillMode( DRAW_FILL );
 	mCircle.setFillMode( DRAW_FILL );
@@ -31,8 +30,6 @@ UILoader::UILoader() :
 }
 
 UILoader::~UILoader() {
-	if ( NULL != mSceneNode )
-		mSceneNode->unsubscribeScheduledUpdate( this );
 }
 
 Uint32 UILoader::getType() const {
