@@ -43,9 +43,9 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 		Uint32		mCbId;
 		Uint32		mCbId2;
 
-		virtual Uint32 onMouseExit( const Vector2i &position, const Uint32 flags );
+		virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseMove( const Vector2i &position, const Uint32 getFlags );
+		virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 
 		virtual void onStateChange();
 

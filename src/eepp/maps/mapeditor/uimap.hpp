@@ -135,7 +135,7 @@ class EE_API UIMap : public UIWindow {
 
 		virtual Uint32 onMessage( const NodeMessage * Msg );
 
-		virtual Uint32 onMouseMove( const Vector2i& getPosition, const Uint32 flags );
+		virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 
 		virtual void onSizeChange();
 

@@ -337,7 +337,7 @@ void UIMap::onSizeChange() {
 	UIWindow::onSizeChange();
 }
 
-Uint32 UIMap::onMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UIMap::onMouseMove( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( NULL != mMap ) {
 		if ( EDITING_LIGHT == mEditingMode && NULL != mAddLight ) {
 			mAddLight->setPosition( mMap->getMouseMapPosf() );

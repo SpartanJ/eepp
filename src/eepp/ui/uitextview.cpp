@@ -358,7 +358,7 @@ const Vector2f& UITextView::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( controlPos );
@@ -382,7 +382,7 @@ Uint32 UITextView::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags )
 	return UIWidget::onMouseDoubleClick( Pos, Flags );
 }
 
-Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		if ( selCurInit() == selCurEnd() ) {
 			selCurInit( -1 );
@@ -396,7 +396,7 @@ Uint32 UITextView::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	return UIWidget::onMouseClick( Pos, Flags );
 }
 
-Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITextView::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && getEventDispatcher()->getDownControl() == this ) {
 		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( controlPos );

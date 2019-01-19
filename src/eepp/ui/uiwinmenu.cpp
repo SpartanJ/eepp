@@ -222,7 +222,7 @@ void UIWinMenu::refreshButtons() {
 Uint32 UIWinMenu::onMessage( const NodeMessage * Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::MouseUp:
-		case NodeMessage::MouseEnter:
+		case NodeMessage::MouseOver:
 		{
 			if ( Msg->getSender()->isType( UI_TYPE_SELECTBUTTON ) ) {
 				UISelectButton * tbut	= reinterpret_cast<UISelectButton*> ( Msg->getSender() );
@@ -231,7 +231,7 @@ Uint32 UIWinMenu::onMessage( const NodeMessage * Msg ) {
 				Vector2f pos( tbut->getPosition().x, tbut->getPosition().y + tbut->getSize().getHeight() );
 				tpop->setPosition( pos );
 
-				if ( Msg->getMsg() == NodeMessage::MouseEnter ) {
+				if ( Msg->getMsg() == NodeMessage::MouseOver ) {
 					if ( NULL != mCurrentMenu ) {
 						mCurrentMenu = tpop;
 

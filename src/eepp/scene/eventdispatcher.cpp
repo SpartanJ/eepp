@@ -62,15 +62,15 @@ void EventDispatcher::update( const Time& time ) {
 
 	if ( pOver != mOverControl ) {
 		if ( NULL != mOverControl ) {
-			mOverControl->onMouseExit( mMousePosi, 0 );
-			sendMsg( mOverControl, NodeMessage::MouseExit );
+			mOverControl->onMouseLeave( mMousePosi, 0 );
+			sendMsg( mOverControl, NodeMessage::MouseLeave );
 		}
 
 		mOverControl = pOver;
 
 		if ( NULL != mOverControl ) {
-			mOverControl->onMouseEnter( mMousePosi, 0 );
-			sendMsg( mOverControl, NodeMessage::MouseEnter );
+			mOverControl->onMouseOver( mMousePosi, 0 );
+			sendMsg( mOverControl, NodeMessage::MouseOver );
 		}
 	} else {
 		if ( NULL != mOverControl ) {

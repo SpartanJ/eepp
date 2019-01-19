@@ -73,30 +73,25 @@ Uint64 SoundFileReaderMp3::read(Int16* samples, Uint64 maxCount) {
 	while (count < maxCount) {
 		const int samplesToRead = static_cast<int>(maxCount - count);
 		int frames = samplesToRead / mChannelCount;
-		float * rSamples = eeNewArray( float, samplesToRead );
+		TSafeDataPointer<float> rSamples( samplesToRead );
 
-		long framesRead = drmp3_read_pcm_frames_f32( mMp3, frames, rSamples );
+		long framesRead = drmp3_read_pcm_frames_f32( mMp3, frames, rSamples.data );
 
 		if (framesRead > 0) {
 			long samplesRead = framesRead * mChannelCount;
 
 			for ( int i = 0; i < samplesRead; i++ )
-				samples[i] = rSamples[i] * 32768.f;
+				samples[i] = rSamples.data[i] * 32768.f;
 
 			count += samplesRead;
 			samples += samplesRead;
 
-			if (framesRead != frames) {
-				eeSAFE_DELETE(rSamples);
+			if (framesRead != frames)
 				break;
-			}
 		} else {
 			// error or end of file
-			eeSAFE_DELETE(rSamples);
 			break;
 		}
-
-		eeSAFE_DELETE(rSamples);
 	}
 
 	return count;

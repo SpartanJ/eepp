@@ -85,7 +85,7 @@ UIListBox * UIDropDownList::getListBox() const {
 	return mListBox;
 }
 
-Uint32 UIDropDownList::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UIDropDownList::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( mEnabled && mVisible && isMouseOver() ) {
 		if ( Flags & EE_BUTTONS_WUWD ) {
 			if ( Flags & EE_BUTTON_WUMASK ) {
@@ -103,7 +103,7 @@ Uint32 UIDropDownList::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
 	return UITextInput::onMouseUp( Pos, Flags );
 }
 
-Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( ( Flags & EE_BUTTON_LMASK ) && NULL == mFriendCtrl )
 		showList();
 

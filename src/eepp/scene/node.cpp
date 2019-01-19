@@ -315,22 +315,22 @@ Uint32 Node::onKeyUp( const KeyEvent& Event ) {
 	return 0;
 }
 
-Uint32 Node::onMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 Node::onMouseMove( const Vector2i& Pos, const Uint32& Flags ) {
 	sendMouseEvent( Event::MouseMove, Pos, Flags );
 	return 1;
 }
 
-Uint32 Node::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 Node::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
 	sendMouseEvent( Event::MouseDown, Pos, Flags );
 	return 1;
 }
 
-Uint32 Node::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 Node::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 	sendMouseEvent( Event::MouseUp, Pos, Flags );
 	return 1;
 }
 
-Uint32 Node::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 Node::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	sendMouseEvent( Event::MouseClick, Pos, Flags );
 	return 1;
 }
@@ -343,23 +343,39 @@ bool Node::isMouseOverMeOrChilds() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER_ME_OR_CHILD );
 }
 
-Uint32 Node::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 Node::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
 	sendMouseEvent( Event::MouseDoubleClick, Pos, Flags );
 	return 1;
 }
 
-Uint32 Node::onMouseEnter( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 Node::onMouseOver( const Vector2i& Pos, const Uint32& Flags ) {
+	Node * parent = mParentCtrl;
+
+	while ( NULL != parent ) {
+		parent->onMouseOver( Pos, Flags );
+
+		parent = parent->getParent();
+	}
+
 	writeNodeFlag( NODE_FLAG_MOUSEOVER, 1 );
 
-	sendMouseEvent( Event::MouseEnter, Pos, Flags );
+	sendMouseEvent( Event::MouseOver, Pos, Flags );
 
 	return 1;
 }
 
-Uint32 Node::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 Node::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
+	Node * parent = mParentCtrl;
+
+	while ( NULL != parent ) {
+		parent->onMouseLeave( Pos, Flags );
+
+		parent = parent->getParent();
+	}
+
 	writeNodeFlag( NODE_FLAG_MOUSEOVER, 0 );
 
-	sendMouseEvent( Event::MouseExit, Pos, Flags );
+	sendMouseEvent( Event::MouseLeave, Pos, Flags );
 
 	return 1;
 }

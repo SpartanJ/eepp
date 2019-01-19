@@ -42,7 +42,7 @@ void UIListBoxItem::setTheme( UITheme * Theme ) {
 	onThemeLoaded();
 }
 
-Uint32 UIListBoxItem::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UIListBoxItem::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 	UITextView::onMouseUp( Pos, Flags );
 
 	if ( mEnabled && mVisible ) {
@@ -57,7 +57,7 @@ Uint32 UIListBoxItem::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
 	return 1;
 }
 
-Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UIListBoxItem::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( Flags & EE_BUTTONS_LRM ) {
 		reinterpret_cast<UIListBox*> ( getParent()->getParent() )->itemClicked( this );
 
@@ -100,8 +100,8 @@ void UIListBoxItem::select() {
 	}
 }
 
-Uint32 UIListBoxItem::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	UINode::onMouseExit( Pos, Flags );
+Uint32 UIListBoxItem::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
+	UINode::onMouseLeave( Pos, Flags );
 
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
 		pushState( UIState::StateSelected );

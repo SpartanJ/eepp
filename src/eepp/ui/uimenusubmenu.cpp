@@ -85,7 +85,7 @@ UIMenu * UIMenuSubMenu::getSubMenu() const {
 	return mSubMenu;
 }
 
-Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
+Uint32 UIMenuSubMenu::onMouseMove( const Vector2i &Pos, const Uint32& Flags ) {
 	UIMenuItem::onMouseMove( Pos, Flags );
 
 	if ( NULL != mSceneNode && NULL != mSubMenu && !mSubMenu->isVisible() ) {
@@ -116,8 +116,8 @@ void UIMenuSubMenu::showSubMenu() {
 	}
 }
 
-Uint32 UIMenuSubMenu::onMouseExit( const Vector2i &Pos, const Uint32 Flags ) {
-	UIMenuItem::onMouseExit( Pos, Flags );
+Uint32 UIMenuSubMenu::onMouseLeave( const Vector2i &Pos, const Uint32& Flags ) {
+	UIMenuItem::onMouseLeave( Pos, Flags );
 
 	mTimeOver = 0;
 

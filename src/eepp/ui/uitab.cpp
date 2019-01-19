@@ -66,7 +66,7 @@ void UITab::setTheme( UITheme * Theme ) {
 	onStateChange();
 }
 
-Uint32 UITab::onMouseClick( const Vector2i &Pos, const Uint32 Flags ) {
+Uint32 UITab::onMouseClick( const Vector2i &Pos, const Uint32& Flags ) {
 	UISelectButton::onMouseClick( Pos, Flags );
 
 	UITabWidget * tTabW = getTabWidget();
@@ -160,7 +160,7 @@ bool UITab::setAttribute( const NodeAttribute& attribute, const Uint32& state ) 
 	return true;
 }
 
-Uint32 UITab::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITab::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( mEnabled && mVisible ) {
 		if ( NULL == mControlOwned && !mOwnedName.empty() ) {
 			setOwnedControl();

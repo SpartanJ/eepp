@@ -60,9 +60,9 @@ class EE_API UIDropDownList : public UITextInput {
 
 		virtual void hide();
 
-		Uint32 onMouseUp( const Vector2i& position, const Uint32 flags );
+		Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
-		Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
+		Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
 		virtual void onItemClicked( const Event * Event );
 

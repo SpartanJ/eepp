@@ -104,8 +104,8 @@ bool UITableCell::isSelected() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_SELECTED );
 }
 
-Uint32 UITableCell::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	UINode::onMouseExit( Pos, Flags );
+Uint32 UITableCell::onMouseLeave( const Vector2i& Pos, const Uint32 Flags ) {
+	UINode::onMouseLeave( Pos, Flags );
 
 	if ( mNodeFlags & NODE_FLAG_SELECTED )
 		pushState( UIState::StateSelected );
@@ -115,16 +115,6 @@ Uint32 UITableCell::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 
 Uint32 UITableCell::onMessage( const NodeMessage * Msg ) {
 	switch( Msg->getMsg() ) {
-		case NodeMessage::MouseEnter:
-		{
-			onMouseEnter( Vector2i(), Msg->getFlags() );
-			break;
-		}
-		case NodeMessage::MouseExit:
-		{
-			onMouseExit( Vector2i(), Msg->getFlags() );
-			break;
-		}
 		case NodeMessage::Click:
 		{
 			if ( Msg->getFlags() & EE_BUTTONS_LRM ) {

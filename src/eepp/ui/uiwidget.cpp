@@ -166,7 +166,7 @@ void UIWidget::createTooltip() {
 	mTooltip->setTooltipOf( this );
 }
 
-Uint32 UIWidget::onMouseMove( const Vector2i & Pos, const Uint32 Flags ) {
+Uint32 UIWidget::onMouseMove( const Vector2i & Pos, const Uint32& Flags ) {
 	if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
 		EventDispatcher * eventDispatcher = getEventDispatcher();
 
@@ -216,7 +216,7 @@ Uint32 UIWidget::onMouseMove( const Vector2i & Pos, const Uint32 Flags ) {
 	return UINode::onMouseMove( Pos, Flags );
 }
 
-Uint32 UIWidget::onMouseExit( const Vector2i & Pos, const Uint32 Flags ) {
+Uint32 UIWidget::onMouseLeave( const Vector2i & Pos, const Uint32& Flags ) {
 	if ( mVisible && NULL != mTooltip && !mTooltip->getText().empty() ) {
 		mTooltip->setTooltipTime( Milliseconds( 0.f ) );
 
@@ -224,7 +224,7 @@ Uint32 UIWidget::onMouseExit( const Vector2i & Pos, const Uint32 Flags ) {
 			mTooltip->hide();
 	}
 
-	return UINode::onMouseExit( Pos, Flags );
+	return UINode::onMouseLeave( Pos, Flags );
 }
 
 UIWidget * UIWidget::setTooltipText( const String& Text ) {

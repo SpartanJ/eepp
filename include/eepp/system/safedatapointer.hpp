@@ -2,29 +2,66 @@
 #define EE_SYSTEM_SAFEDATAPOINTER
 
 #include <eepp/config.hpp>
+#include <eepp/core/memorymanager.hpp>
+#include <cstddef>
 
 namespace EE { namespace System {
 
 /** @brief Keep a pointer and release it in the SafeDataPointer destructor */
-class EE_API SafeDataPointer {
+template <typename T>
+class TSafeDataPointer {
 	public:
-		SafeDataPointer();
+		TSafeDataPointer();
 
-		SafeDataPointer( Uint32 size );
+		TSafeDataPointer( Uint32 size );
 
-		SafeDataPointer( Uint8 * data, Uint32 size );
+		TSafeDataPointer( T * data, Uint32 size );
 
 		/** @brief The destructor deletes the buffer */
-		~SafeDataPointer();
+		~TSafeDataPointer();
 
 		void clear();
 
 		/** Pointer to the buffer */
-		Uint8 * data;
+		T * data;
 
 		/** Buffer size */
 		Uint32	size;
 };
+
+
+template <typename T>
+TSafeDataPointer<T>::TSafeDataPointer() :
+	data( NULL ),
+	size( 0 )
+{
+}
+
+template <typename T>
+TSafeDataPointer<T>::TSafeDataPointer( Uint32 size ) :
+	data( eeNewArray( T, size ) ),
+	size( size )
+{
+}
+
+template <typename T>
+TSafeDataPointer<T>::TSafeDataPointer( T * data, Uint32 size ) :
+	data( data ),
+	size( size )
+{
+}
+
+template <typename T>
+TSafeDataPointer<T>::~TSafeDataPointer() {
+	clear();
+}
+
+template <typename T>
+void TSafeDataPointer<T>::clear() {
+	eeSAFE_DELETE_ARRAY( data );
+}
+
+typedef TSafeDataPointer<Uint8> SafeDataPointer;
 
 }}
 

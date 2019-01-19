@@ -449,17 +449,15 @@ void InputTextBuffer::update( InputEvent* Event ) {
 						if ( c == KEY_HOME ) {
 							if ( 0 != mPromptPos ) {
 								for ( Int32 i = (Int32)mPromptPos - 1; i >= 0; i-- )  {
-									if ( i >= 0 ) {
-										if ( mText[i] == '\n' ) {
-											mPromptPos = i + 1;
-											autoPrompt( false );
-											break;
-										}
+									if ( mText[i] == '\n' ) {
+										mPromptPos = i + 1;
+										autoPrompt( false );
+										break;
+									}
 
-										if ( i == 0 ) {
-											mPromptPos = 0;
-											autoPrompt( false );
-										}
+									if ( i == 0 ) {
+										mPromptPos = 0;
+										autoPrompt( false );
 									}
 								}
 							}

@@ -688,7 +688,7 @@ Uint32 UIWindow::onMessage( const NodeMessage * Msg ) {
 
 			break;
 		}
-		case NodeMessage::MouseExit:
+		case NodeMessage::MouseLeave:
 		{
 			if ( getUISceneNode() != NULL )
 				getUISceneNode()->setCursor( Cursor::Arrow );

@@ -277,7 +277,7 @@ void UITextInput::shrinkText( const Uint32& MaxWidth ) {
 void UITextInput::updateText() {
 }
 
-Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( Flags & EE_BUTTON_LMASK ) {
 		Vector2f controlPos( Vector2f( Pos.x, Pos.y ) );
 		worldToNode( controlPos );
@@ -294,7 +294,7 @@ Uint32 UITextInput::onMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	return UITextView::onMouseClick( Pos, Flags );
 }
 
-Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
 	UITextView::onMouseDoubleClick( Pos, Flags );
 
 	if ( isTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && selCurEnd() != -1 ) {
@@ -305,8 +305,8 @@ Uint32 UITextInput::onMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags 
 	return 1;
 }
 
-Uint32 UITextInput::onMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
-	UINode::onMouseExit( Pos, Flags );
+Uint32 UITextInput::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
+	UINode::onMouseLeave( Pos, Flags );
 
 	if ( NULL != mSceneNode )
 		mSceneNode->setCursor( Cursor::Arrow );

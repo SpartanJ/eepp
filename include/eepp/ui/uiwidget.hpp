@@ -166,9 +166,9 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		void createTooltip();
 
-		virtual Uint32 onMouseMove( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseMove( const Vector2i& Pos, const Uint32& Flags );
 
-		virtual Uint32 onMouseExit( const Vector2i& Pos, const Uint32 Flags );
+		virtual Uint32 onMouseLeave( const Vector2i& Pos, const Uint32& Flags );
 
 		virtual void onParentSizeChange( const Vector2f& SizeChange );
 

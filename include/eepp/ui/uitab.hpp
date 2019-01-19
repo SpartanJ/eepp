@@ -34,9 +34,9 @@ class EE_API UITab : public UISelectButton {
 		Node * mControlOwned;
 		std::string mOwnedName;
 
-		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseClick( const Vector2i &position, const Uint32 flags );
+		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
 		virtual void onStateChange();
 

@@ -705,7 +705,6 @@
 ../../src/eepp/system/platform/win/threadlocalimpl.hpp
 ../../src/eepp/system/rc4.cpp
 ../../src/eepp/system/resourceloader.cpp
-../../src/eepp/system/safedatapointer.cpp
 ../../src/eepp/system/sys.cpp
 ../../src/eepp/system/thread.cpp
 ../../src/eepp/system/threadlocal.cpp

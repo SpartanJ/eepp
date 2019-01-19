@@ -357,19 +357,19 @@ class EE_API Node : public Transformable {
 
 		virtual Uint32 onKeyUp( const KeyEvent& Event );
 
-		virtual Uint32 onMouseMove( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseMove( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseEnter( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseOver( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseExit( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
 
 		virtual Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags );
 

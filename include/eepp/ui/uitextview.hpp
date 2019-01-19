@@ -122,11 +122,11 @@ class EE_API UITextView : public UIWidget {
 
 		virtual Uint32 onFocusLoss();
 
-		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
 
-		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 
 		virtual void selCurInit( const Int32& init );
 

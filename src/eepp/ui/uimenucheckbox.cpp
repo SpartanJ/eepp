@@ -93,7 +93,7 @@ void UIMenuCheckBox::switchActive() {
 	setActive( !mActive );
 }
 
-Uint32 UIMenuCheckBox::onMouseUp( const Vector2i &Pos, const Uint32 Flags ) {
+Uint32 UIMenuCheckBox::onMouseUp( const Vector2i &Pos, const Uint32& Flags ) {
 	UIMenuItem::onMouseUp( Pos, Flags );
 
 	if ( getParent()->isVisible() && ( Flags & EE_BUTTONS_LRM ) )

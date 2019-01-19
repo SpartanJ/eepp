@@ -279,7 +279,7 @@ void UINode::draw() {
 	}
 }
 
-Uint32 UINode::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UINode::onMouseDown( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( NULL != getEventDispatcher() && !getEventDispatcher()->isNodeDragging() && !( getEventDispatcher()->getLastPressTrigger() & mDragButton ) && ( Flags & mDragButton ) && isDragEnabled() && !isDragging() ) {
 		setDragging( true );
 
@@ -294,7 +294,7 @@ Uint32 UINode::onMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 	return Node::onMouseDown( Pos, Flags );
 }
 
-Uint32 UINode::onMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UINode::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 	if ( isDragEnabled() && isDragging() && ( Flags & mDragButton ) ) {
 		setDragging( false );
 
@@ -989,17 +989,17 @@ Uint32 UINode::onDragStop( const Vector2i& ) {
 	return 1;
 }
 
-Uint32 UINode::onMouseEnter(const Vector2i & position, const Uint32 flags) {
+Uint32 UINode::onMouseOver(const Vector2i& position, const Uint32& flags) {
 	pushState( UIState::StateHover );
 
-	return Node::onMouseEnter( position, flags );
+	return Node::onMouseOver( position, flags );
 }
 
-Uint32 UINode::onMouseExit(const Vector2i & position, const Uint32 flags) {
+Uint32 UINode::onMouseLeave(const Vector2i& position, const Uint32& flags) {
 	popState( UIState::StateHover );
 	popState( UIState::StatePressed );
 
-	return Node::onMouseExit( position, flags );
+	return Node::onMouseLeave( position, flags );
 }
 
 bool UINode::isDragEnabled() const {
