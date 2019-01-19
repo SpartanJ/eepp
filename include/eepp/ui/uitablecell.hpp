@@ -39,7 +39,7 @@ class EE_API UITableCell : public UIWidget {
 
 		void fixCell();
 
-		virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32 flags );
+		virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
 
 		virtual void onStateChange();
 

@@ -22,7 +22,6 @@ namespace EE { namespace Scene {
 class Action;
 class ActionManager;
 class SceneNode;
-class NodeDrawInvalidator;
 }}
 using namespace EE::Scene;
 

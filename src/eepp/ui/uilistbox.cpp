@@ -240,8 +240,8 @@ void UIListBox::removeListBoxItems( std::vector<Uint32> ItemsIndex ) {
 
 		mItems = ItemsCpy;
 
-		updateScroll();
 		findMaxWidth();
+		updateScroll();
 		updateListBoxItemsSize();
 	}
 }

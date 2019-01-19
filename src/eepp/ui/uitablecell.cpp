@@ -104,7 +104,7 @@ bool UITableCell::isSelected() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_SELECTED );
 }
 
-Uint32 UITableCell::onMouseLeave( const Vector2i& Pos, const Uint32 Flags ) {
+Uint32 UITableCell::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
 	UINode::onMouseLeave( Pos, Flags );
 
 	if ( mNodeFlags & NODE_FLAG_SELECTED )

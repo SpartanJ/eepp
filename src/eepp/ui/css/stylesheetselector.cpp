@@ -296,7 +296,7 @@ bool StyleSheetSelector::matches( StyleSheetElement * element ) const {
 			case SIBLING:
 			{
 				bool foundSibling = false;
-				StyleSheetElement * prevSibling = curElement->getStyleSheetNextSiblingElement();
+				StyleSheetElement * prevSibling = curElement->getStyleSheetPreviousSiblingElement();
 				StyleSheetElement * nextSibling = curElement->getStyleSheetNextSiblingElement();
 
 				while ( NULL != prevSibling && !foundSibling ) {
