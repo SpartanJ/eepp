@@ -347,6 +347,8 @@ void onLayoutSelected( const Event * event ) {
 void refreshLayoutList() {
 	if ( NULL == uiWinMenu ) return;
 
+	SceneManager::instance()->setCurrentUISceneNode( appUiSceneNode );
+
 	if ( layouts.size() > 0 ) {
 		UIPopUpMenu * uiLayoutsMenu = NULL;
 
@@ -371,6 +373,8 @@ void refreshLayoutList() {
 	} else if ( uiWinMenu->getButton( "Layouts" ) == NULL ) {
 		uiWinMenu->removeMenuButton( "Layouts" );
 	}
+
+	SceneManager::instance()->setCurrentUISceneNode( uiSceneNode );
 }
 
 static void loadProjectNodes( pugi::xml_node node ) {
@@ -525,6 +529,7 @@ void closeProject() {
 	currentLayout = "";
 	currentStyleSheet = "";
 	uiContainer->childsCloseAll();
+	uiSceneNode->setStyleSheet( CSS::StyleSheet() );
 
 	layouts.clear();
 
