@@ -25,6 +25,7 @@ Project files are created by hand for the moment, and they shuld look like this 
 	<layout width="1920" height="1080">
 		<path>layout</path>
 	</layout>
+	<stylesheet path="style.css" />
 </uiproject>
 
 basepath is optional, otherwise it will take the base path from the xml file itself ( it xml is in /home/project.xml, basepath it going to be /home )
@@ -46,6 +47,7 @@ UISceneNode * uiSceneNode = NULL;
 UISceneNode * appUiSceneNode = NULL;
 std::string currentLayout;
 std::string currentStyleSheet;
+bool layoutExpanded = true;
 bool updateLayout = false;
 bool updateStyleSheet = false;
 Clock waitClock;
@@ -136,6 +138,10 @@ static bool isFont( const std::string& path ) {
 
 static bool isXML( const std::string& path ) {
 	return FileSystem::fileExtension( path ) == "xml";
+}
+
+static bool isCSS( const std::string& path ) {
+	return FileSystem::fileExtension( path ) == "css";
 }
 
 static void loadImage( std::string path ) {
@@ -274,14 +280,21 @@ void updateRecentProjects() {
 }
 
 void resizeCb(EE::Window::Window *) {
-	Float scaleW = (Float)uiSceneNode->getSize().getWidth() / (Float)uiContainer->getSize().getWidth();
-	Float scaleH = (Float)uiSceneNode->getSize().getHeight() / (Float)uiContainer->getSize().getHeight();
+	if ( layoutExpanded ) {
+		uiContainer->setSize( uiSceneNode->getSize() );
+	} else {
+		Float scaleW = (Float)uiSceneNode->getSize().getWidth() / (Float)uiContainer->getSize().getWidth();
+		Float scaleH = (Float)uiSceneNode->getSize().getHeight() / (Float)uiContainer->getSize().getHeight();
 
-	uiContainer->setScale( scaleW < scaleH ? scaleW : scaleH );
-	uiContainer->center();
+		uiContainer->setScale( scaleW < scaleH ? scaleW : scaleH );
+		uiContainer->center();
+	}
 }
 
 void resizeWindowToLayout() {
+	if ( layoutExpanded )
+		return;
+
 	Sizef size( uiContainer->getSize() );
 	Rect borderSize( window->getBorderSize() );
 	Sizei displayMode = Engine::instance()->getDisplayManager()->getDisplayIndex( window->getCurrentDisplayIndex() )->getUsableBounds().getSize();
@@ -442,6 +455,16 @@ static void loadProjectNodes( pugi::xml_node node ) {
 				}
 			}
 
+			pugi::xml_node styleSheetNode = resources.child( "stylesheet" );
+
+			if ( !styleSheetNode.empty() ) {
+				std::string cssPath( styleSheetNode.attribute( "path" ).as_string() );
+
+				if ( isCSS( cssPath ) && FileSystem::fileExists( cssPath ) ) {
+					loadStyleSheet( cssPath );
+				}
+			}
+
 			pugi::xml_node layoutNode = resources.child( "layout" );
 
 			if ( !layoutNode.empty() ) {
@@ -452,9 +475,13 @@ static void loadProjectNodes( pugi::xml_node node ) {
 				Float height = layoutNode.attribute( "height" ).as_float();
 
 				if ( 0.f != width && 0.f != height ) {
+					layoutExpanded = false;
 					uiContainer->setSize( width, height );
-					resizeCb( window );
+				} else {
+					layoutExpanded = true;
 				}
+
+				resizeCb( window );
 
 				layouts.clear();
 
@@ -760,6 +787,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		uiContainer = UIWidget::New();
 		uiContainer->setId( "appContainer" )->setSize( uiSceneNode->getSize() );
 		uiContainer->clipDisable();
+		uiContainer->enableReportSizeChangeToChilds();
 
 		updateRecentProjects();
 
