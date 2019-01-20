@@ -131,6 +131,9 @@ void UITextEdit::fixScroll() {
 	int Width	= mSize.getWidth()	- mContainerPadding.Left - mContainerPadding.Right;
 	int Height	= mSize.getHeight()	- mContainerPadding.Top	- mContainerPadding.Bottom;
 
+	if ( mVScrollBar->isVisible() )
+		Width -= mVScrollBar->getPixelsSize().getWidth();
+
 	if ( mHScrollBar->isVisible() )
 		Height -= mHScrollBar->getPixelsSize().getHeight();
 
@@ -172,7 +175,7 @@ void UITextEdit::scrollbarsSet() {
 		}
 		case UI_SCROLLBAR_AUTO:
 		{
-			if ( mTextInput->getTextWidth() > mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right ) {
+			if ( mTextInput->getPixelsSize().getWidth() > mSize.getWidth() - mContainerPadding.Left - mContainerPadding.Right ) {
 				mHScrollBar->setVisible( true );
 				mHScrollBar->setEnabled( true );
 			} else {
@@ -295,6 +298,9 @@ void UITextEdit::setText( const String& Txt ) {
 }
 
 void UITextEdit::onInputSizeChange( const Event * Event ) {
+	if ( mNodeFlags & NODE_FLAG_FREE_USE )
+		return;
+
 	int Width	= mSize.getWidth()	- mContainerPadding.Left - mContainerPadding.Right;
 	int Height	= mSize.getHeight()	- mContainerPadding.Top	- mContainerPadding.Bottom;
 
@@ -309,10 +315,21 @@ void UITextEdit::onInputSizeChange( const Event * Event ) {
 	if ( mHScrollBar->isVisible() )
 		Height	-= mHScrollBar->getPixelsSize().getHeight();
 
-	if ( mVScrollBar->isVisible() )
-		Width	-= mVScrollBar->getPixelsSize().getWidth();
+	String text( mTextInput->getInputTextBuffer()->getBuffer() );
 
 	shrinkText( Width );
+
+	if ( mTextInput->getTextHeight() > Height ) {
+		Width	-= mVScrollBar->getPixelsSize().getWidth();
+
+		mNodeFlags |= NODE_FLAG_FREE_USE;
+		mTextInput->setText( text );
+		mNodeFlags &= ~NODE_FLAG_FREE_USE;
+
+		shrinkText( Width );
+
+		scrollbarsSet();
+	}
 
 	if ( ( mFlags & UI_WORD_WRAP ) && mTextInput->getTextHeight() < Height ) {
 		mVScrollBar->setVisible( false );
