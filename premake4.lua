@@ -193,7 +193,7 @@ function os.is_real( os_name )
 	return os.get_real() == os_name
 end
 
-if os.is_real("haiku") then
+if os.is_real("haiku") and not os.is64bit() then
 	premake.gcc.cc = "gcc-x86"
 	premake.gcc.cxx = "g++-x86"
 	premake.gcc.ar = "ar-x86"
