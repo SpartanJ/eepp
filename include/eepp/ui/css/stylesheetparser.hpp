@@ -3,9 +3,6 @@
 
 #include <eepp/core/string.hpp>
 #include <eepp/system/iostream.hpp>
-#include <eepp/ui/css/stylesheetselector.hpp>
-#include <eepp/ui/css/stylesheetproperty.hpp>
-#include <eepp/ui/css/stylesheetnode.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <string>
 #include <map>

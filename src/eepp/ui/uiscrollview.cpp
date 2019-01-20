@@ -199,8 +199,8 @@ void UIScrollView::updateScroll() {
 		return;
 
 	mScrollView->setPosition(
-		mHScroll->isVisible() ? -( mHScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getWidth() - mDpSize.getWidth() ) ) : 0.f ,
-		mVScroll->isVisible() ? -( mVScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getHeight() - mDpSize.getHeight() ) ) : 0.f
+		mHScroll->isVisible() ? -static_cast<int>( mHScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getWidth() - mDpSize.getWidth() ) ) : 0.f ,
+		mVScroll->isVisible() ? -static_cast<int>( mVScroll->getSlider()->getValue() * eemax( 0.f, mScrollView->getSize().getHeight() - mDpSize.getHeight() ) ) : 0.f
 	);
 }
 

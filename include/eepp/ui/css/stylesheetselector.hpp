@@ -34,6 +34,7 @@ class EE_API StyleSheetSelector {
 
 		enum SelectoryTypeIdentifier {
 			TAG = 0,
+			GLOBAL = '*',
 			CLASS = '.',
 			ID = '#',
 			PSEUDO_CLASS = ':',
@@ -56,11 +57,21 @@ class EE_API StyleSheetSelector {
 
 				bool hasClass( const std::string& cls ) const;
 
+				bool hasPseudoClasses() const;
+
+				const std::vector<std::string>& getPseudoClasses() const;
+
+				bool hasStructuralPseudoClasses() const;
+
+				const std::vector<std::string>& getStructuralPseudoClasses() const;
+
 				int specificity;
 				PatternMatch patternMatch;
 				std::string tagName;
 				std::string id;
 				std::vector<std::string> classes;
+				std::vector<std::string> pseudoClasses;
+				std::vector<std::string> structuralPseudoClasses;
 				Uint32 requirementFlags;
 		};
 
@@ -83,7 +94,7 @@ class EE_API StyleSheetSelector {
 
 		void addSelectorRule(std::string& buffer, PatternMatch& curPatternMatch, const PatternMatch & newPatternMatch );
 
-		void parseSelector( const std::string& selector );
+		void parseSelector( std::string selector );
 };
 
 }}}

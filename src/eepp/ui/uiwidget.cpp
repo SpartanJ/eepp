@@ -316,7 +316,7 @@ Node * UIWidget::setId( const std::string& id ) {
 	return this;
 }
 
-const Sizef& UIWidget::getSize() {
+const Sizef& UIWidget::getSize() const {
 	return UINode::getSize();
 }
 
