@@ -310,6 +310,7 @@
 ../../include/eepp/ui/css/stylesheetproperty.hpp
 ../../include/eepp/ui/css/stylesheetselector.hpp
 ../../include/eepp/ui/css/stylesheetselectorparser.hpp
+../../include/eepp/ui/css/stylesheetselectorrule.hpp
 ../../include/eepp/ui/marginmove/scale.hpp
 ../../include/eepp/ui/tools/textureatlaseditor.hpp
 ../../include/eepp/ui/uicheckbox.hpp
@@ -719,6 +720,7 @@
 ../../src/eepp/ui/css/stylesheetproperty.cpp
 ../../src/eepp/ui/css/stylesheetselector.cpp
 ../../src/eepp/ui/css/stylesheetselectorparser.cpp
+../../src/eepp/ui/css/stylesheetselectorrule.cpp
 ../../src/eepp/ui/tools/textureatlaseditor.cpp
 ../../src/eepp/ui/tools/textureatlasnew.cpp
 ../../src/eepp/ui/tools/textureatlasnew.hpp

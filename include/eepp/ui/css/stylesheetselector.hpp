@@ -2,6 +2,7 @@
 #define EE_UI_CSS_STYLESHEETSELECTOR_HPP
 
 #include <eepp/core.hpp>
+#include <eepp/ui/css/stylesheetselectorrule.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -9,72 +10,6 @@ class StyleSheetElement;
 
 class EE_API StyleSheetSelector {
 	public:
-		enum SelectorType {
-			TagName = 1 << 0,
-			Id = 1 << 1,
-			Class = 1 << 2,
-			PseudoClass = 1 << 3
-		};
-
-		enum SpecificityVal {
-			SpecificityId = 1000000,
-			SpecificityClass = 100000,
-			SpecificityTag = 10000,
-			SpecificityPseudoClass = 100,
-			SpecificityGlobal = 1
-		};
-
-		enum PatternMatch {
-			ANY = '*',
-			DESCENDANT = ' ',
-			CHILD = '>',
-			DIRECT_SIBLING = '+',
-			SIBLING = '~'
-		};
-
-		enum SelectoryTypeIdentifier {
-			TAG = 0,
-			GLOBAL = '*',
-			CLASS = '.',
-			ID = '#',
-			PSEUDO_CLASS = ':',
-			STRUCTURAL_PSEUDO_CLASS = ':'
-		};
-
-		class SelectorRule {
-			public:
-				SelectorRule( const std::string& selectorFragment, PatternMatch patternMatch );
-
-				void pushSelectorTypeIdentifier( SelectoryTypeIdentifier selectorTypeIdentifier, std::string name );
-
-				void parseFragment( const std::string& selectorFragment );
-
-				const PatternMatch& getPatternMatch() const { return patternMatch; }
-
-				const int& getSpecificity() const { return specificity; }
-
-				bool matches( StyleSheetElement * element ) const;
-
-				bool hasClass( const std::string& cls ) const;
-
-				bool hasPseudoClasses() const;
-
-				const std::vector<std::string>& getPseudoClasses() const;
-
-				bool hasStructuralPseudoClasses() const;
-
-				const std::vector<std::string>& getStructuralPseudoClasses() const;
-
-				int specificity;
-				PatternMatch patternMatch;
-				std::string tagName;
-				std::string id;
-				std::vector<std::string> classes;
-				std::vector<std::string> pseudoClasses;
-				std::vector<std::string> structuralPseudoClasses;
-				Uint32 requirementFlags;
-		};
-
 		StyleSheetSelector();
 
 		explicit StyleSheetSelector( const std::string& selectorName );
@@ -86,13 +21,16 @@ class EE_API StyleSheetSelector {
 		const Uint32& getSpecificity() const;
 
 		bool matches( StyleSheetElement * element ) const;
+
+		const bool& isCacheable() const;
 	protected:
 		std::string mName;
 		std::string mPseudoClass;
 		Uint32 mSpecificity;
-		std::vector<SelectorRule> mSelectorRules;
+		std::vector<StyleSheetSelectorRule> mSelectorRules;
+		bool mCacheable;
 
-		void addSelectorRule(std::string& buffer, PatternMatch& curPatternMatch, const PatternMatch & newPatternMatch );
+		void addSelectorRule(std::string& buffer, StyleSheetSelectorRule::PatternMatch& curPatternMatch, const StyleSheetSelectorRule::PatternMatch & newPatternMatch );
 
 		void parseSelector( std::string selector );
 };

@@ -20,6 +20,8 @@ class EE_API StyleSheetElement {
 		virtual StyleSheetElement * getStyleSheetPreviousSiblingElement() const = 0;
 
 		virtual StyleSheetElement * getStyleSheetNextSiblingElement() const = 0;
+
+		virtual const std::vector<std::string>& getStyleSheetPseudoClasses() const = 0;
 };
 }}}
 

@@ -480,6 +480,31 @@ CSS::StyleSheetElement * UIWidget::getStyleSheetNextSiblingElement() const {
 	return NULL != mNext && mNext->isWidget() ? dynamic_cast<CSS::StyleSheetElement*>( mNext ) : NULL;
 }
 
+const std::vector<std::string> &UIWidget::getStyleSheetPseudoClasses() const {
+	return mPseudoClasses;
+}
+
+void UIWidget::updatePseudoClasses() {
+	mPseudoClasses.clear();
+
+	if ( mState & UIState::StateFlagHover )
+		mPseudoClasses.push_back( "hover" );
+
+	if ( mState & UIState::StateFlagFocus )
+		mPseudoClasses.push_back( "focus" );
+
+	if ( mState & UIState::StateFlagSelected )
+		mPseudoClasses.push_back( "selected" );
+
+	if ( mState & UIState::StateFlagPressed )
+		mPseudoClasses.push_back( "pressed" );
+
+	if ( mState & UIState::StateFlagDisabled )
+		mPseudoClasses.push_back( "disabled" );
+
+	invalidateDraw();
+}
+
 void UIWidget::addClass( const std::string& cls ) {
 	if ( !cls.empty() && !containsClass( cls ) ) {
 		mClasses.push_back( cls );
@@ -528,19 +553,29 @@ const std::string& UIWidget::getElementTag() const {
 
 void UIWidget::pushState( const Uint32& State, bool emitEvent ) {
 	if ( !( mState & ( 1 << State ) ) ) {
-		if ( NULL != mStyle )
-			mStyle->pushState( State );
+		UINode::pushState( State, false );
 
-		UINode::pushState( State, emitEvent );
+		if ( NULL != mStyle ) {
+			mStyle->pushState( State );
+			updatePseudoClasses();
+		}
+
+		if ( emitEvent )
+			onStateChange();
 	}
 }
 
 void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 	if ( mState & ( 1 << State ) ) {
-		if ( NULL != mStyle )
-			mStyle->popState( State );
+		UINode::popState( State, false );
 
-		UINode::popState( State, emitEvent );
+		if ( NULL != mStyle ) {
+			mStyle->popState( State );
+			updatePseudoClasses();
+		}
+
+		if ( emitEvent )
+			onStateChange();
 	}
 }
 
@@ -556,7 +591,7 @@ void UIWidget::reloadStyle( const bool& reloadChilds ) {
 
 	if ( NULL != mStyle ) {
 		mStyle->load();
-		mStyle->onStateChange();
+		reportStyleStateChange();
 
 		if ( NULL != mChild && reloadChilds ) {
 			Node * ChildLoop = mChild;

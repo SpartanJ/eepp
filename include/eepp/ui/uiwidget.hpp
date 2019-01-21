@@ -112,6 +112,8 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		StyleSheetElement * getStyleSheetNextSiblingElement() const;
 
+		const std::vector<std::string>& getStyleSheetPseudoClasses() const;
+
 		void addClass( const std::string& cls );
 
 		void addClasses( const std::vector<std::string>& classes );
@@ -161,8 +163,11 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		int	mAttributesTransactionCount;
 		std::string mSkinName;
 		std::vector<std::string> mClasses;
+		std::vector<std::string> mPseudoClasses;
 
 		explicit UIWidget( const std::string& tag );
+
+		void updatePseudoClasses();
 
 		void createTooltip();
 
