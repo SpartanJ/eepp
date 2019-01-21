@@ -349,33 +349,29 @@ Uint32 Node::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 Uint32 Node::onMouseOver( const Vector2i& Pos, const Uint32& Flags ) {
-	Node * parent = mParentCtrl;
-
-	while ( NULL != parent ) {
-		parent->onMouseOver( Pos, Flags );
-
-		parent = parent->getParent();
-	}
+	if ( NULL != mParentCtrl )
+		mParentCtrl->onMouseOver( Pos, Flags );
 
 	writeNodeFlag( NODE_FLAG_MOUSEOVER, 1 );
 
-	sendMouseEvent( Event::MouseOver, Pos, Flags );
+	EventDispatcher * eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
+
+	if ( NULL != eventDispatcher && eventDispatcher->getOverControl() == this )
+		sendMouseEvent( Event::MouseOver, Pos, Flags );
 
 	return 1;
 }
 
 Uint32 Node::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
-	Node * parent = mParentCtrl;
-
-	while ( NULL != parent ) {
-		parent->onMouseLeave( Pos, Flags );
-
-		parent = parent->getParent();
-	}
+	if ( NULL != mParentCtrl )
+		mParentCtrl->onMouseLeave( Pos, Flags );
 
 	writeNodeFlag( NODE_FLAG_MOUSEOVER, 0 );
 
-	sendMouseEvent( Event::MouseLeave, Pos, Flags );
+	EventDispatcher * eventDispatcher = NULL != mSceneNode ? mSceneNode->getEventDispatcher() : NULL;
+
+	if ( NULL != eventDispatcher && eventDispatcher->getOverControl() == this )
+		sendMouseEvent( Event::MouseLeave, Pos, Flags );
 
 	return 1;
 }

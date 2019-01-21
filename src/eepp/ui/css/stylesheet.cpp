@@ -40,7 +40,7 @@ void StyleSheet::print() {
 
 void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
 	for ( auto it = styleSheet.getNodes().begin(); it != styleSheet.getNodes().end(); ++it ) {
-		addNode( it->second );
+		combineNode( it->second );
 	}
 }
 

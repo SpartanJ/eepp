@@ -808,40 +808,44 @@ void UINode::onAlignChange() {
 }
 
 void UINode::pushState(const Uint32& State , bool emitEvent) {
-	mState |= 1 << State;
+	if ( !( mState & ( 1 << State ) ) ) {
+		mState |= 1 << State;
 
-	if ( NULL != mSkinState )
-		mSkinState->pushState( State );
+		if ( NULL != mSkinState )
+			mSkinState->pushState( State );
 
-	if ( NULL != mBackgroundState )
-		mBackgroundState->pushState( State );
+		if ( NULL != mBackgroundState )
+			mBackgroundState->pushState( State );
 
-	if ( NULL != mForegroundState )
-		mForegroundState->pushState( State );
+		if ( NULL != mForegroundState )
+			mForegroundState->pushState( State );
 
-	if ( emitEvent ) {
-		onStateChange();
-	} else {
-		invalidateDraw();
+		if ( emitEvent ) {
+			onStateChange();
+		} else {
+			invalidateDraw();
+		}
 	}
 }
 
 void UINode::popState(const Uint32& State , bool emitEvent) {
-	mState &= ~( 1 << State );
+	if ( mState & ( 1 << State ) ) {
+		mState &= ~( 1 << State );
 
-	if ( NULL != mSkinState )
-		mSkinState->popState( State );
+		if ( NULL != mSkinState )
+			mSkinState->popState( State );
 
-	if ( NULL != mBackgroundState )
-		mBackgroundState->popState( State );
+		if ( NULL != mBackgroundState )
+			mBackgroundState->popState( State );
 
-	if ( NULL != mForegroundState )
-		mForegroundState->popState( State );
+		if ( NULL != mForegroundState )
+			mForegroundState->popState( State );
 
-	if ( emitEvent ) {
-		onStateChange();
-	} else {
-		invalidateDraw();
+		if ( emitEvent ) {
+			onStateChange();
+		} else {
+			invalidateDraw();
+		}
 	}
 }
 
@@ -990,16 +994,20 @@ Uint32 UINode::onDragStop( const Vector2i& ) {
 }
 
 Uint32 UINode::onMouseOver(const Vector2i& position, const Uint32& flags) {
+	Node::onMouseOver( position, flags );
+
 	pushState( UIState::StateHover );
 
-	return Node::onMouseOver( position, flags );
+	return 1;
 }
 
 Uint32 UINode::onMouseLeave(const Vector2i& position, const Uint32& flags) {
+	Node::onMouseLeave( position, flags );
+
 	popState( UIState::StateHover );
 	popState( UIState::StatePressed );
 
-	return Node::onMouseLeave( position, flags );
+	return 1;
 }
 
 bool UINode::isDragEnabled() const {
