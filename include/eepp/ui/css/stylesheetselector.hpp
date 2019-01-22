@@ -20,7 +20,7 @@ class EE_API StyleSheetSelector {
 
 		const Uint32& getSpecificity() const;
 
-		bool matches( StyleSheetElement * element ) const;
+		bool select( StyleSheetElement * element, const bool& applyPseudo = true ) const;
 
 		const bool& isCacheable() const;
 	protected:

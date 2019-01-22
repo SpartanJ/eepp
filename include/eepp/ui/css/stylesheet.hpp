@@ -1,7 +1,7 @@
 #ifndef EE_UI_CSS_STYLESHEET_HPP
 #define EE_UI_CSS_STYLESHEET_HPP
 
-#include <eepp/ui/css/stylesheetnode.hpp>
+#include <eepp/ui/css/stylesheetstyle.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -9,14 +9,15 @@ class StyleSheetElement;
 
 class EE_API StyleSheet {
 	public:
-		typedef std::map<std::string, StyleSheetNode> StyleSheetNodeList;
+		typedef std::map<std::string, StyleSheetStyle> StyleSheetStyleList;
+		typedef std::vector<StyleSheetStyle> StyleSheetStyleVector;
 		typedef std::map<std::string,StyleSheetProperties> StyleSheetPseudoClassProperties;
 
 		StyleSheet();
 
-		void addNode( const StyleSheetNode& node );
+		void addStyle( const StyleSheetStyle& node );
 
-		void combineNode( const StyleSheetNode& node );
+		void combineStyle( const StyleSheetStyle& node );
 
 		bool isEmpty() const;
 
@@ -24,11 +25,13 @@ class EE_API StyleSheet {
 
 		void combineStyleSheet( const StyleSheet& styleSheet );
 
-		StyleSheetPseudoClassProperties getElementProperties( StyleSheetElement * element );
+		StyleSheetPseudoClassProperties getElementPropertiesByState( StyleSheetElement * element );
 
-		const StyleSheetNodeList& getNodes() const;
+		StyleSheetStyleVector getElementStyles( StyleSheetElement * element );
+
+		const StyleSheetStyleList& getStyles() const;
 	protected:
-		StyleSheetNodeList mNodes;
+		StyleSheetStyleList mNodes;
 };
 
 }}}

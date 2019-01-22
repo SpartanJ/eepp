@@ -60,7 +60,7 @@ void UIStyle::load() {
 		CSS::StyleSheet& styleSheet = uiSceneNode->getStyleSheet();
 
 		if ( !styleSheet.isEmpty() ) {
-			CSS::StyleSheet::StyleSheetPseudoClassProperties propertiesByPseudoClass = styleSheet.getElementProperties( mWidget );
+			CSS::StyleSheet::StyleSheetPseudoClassProperties propertiesByPseudoClass = styleSheet.getElementPropertiesByState( mWidget );
 
 			if ( !propertiesByPseudoClass.empty() ) {
 				Uint32 stateFlag;

@@ -1,12 +1,12 @@
-#include <eepp/ui/css/stylesheetnode.hpp>
+#include <eepp/ui/css/stylesheetstyle.hpp>
 #include <iostream>
 
 namespace EE { namespace UI { namespace CSS {
 
-StyleSheetNode::StyleSheetNode()
+StyleSheetStyle::StyleSheetStyle()
 {}
 
-StyleSheetNode::StyleSheetNode( const std::string& selector, const StyleSheetProperties& properties ) :
+StyleSheetStyle::StyleSheetStyle( const std::string& selector, const StyleSheetProperties& properties ) :
 	mSelector( selector ),
 	mProperties( properties )
 {
@@ -14,7 +14,7 @@ StyleSheetNode::StyleSheetNode( const std::string& selector, const StyleSheetPro
 		it->second.setSpecificity( mSelector.getSpecificity() );
 }
 
-void StyleSheetNode::print() {
+void StyleSheetStyle::print() {
 	std::cout << mSelector.getName() << " {" << std::endl;
 
 	for ( StyleSheetProperties::iterator it = mProperties.begin(); it != mProperties.end(); ++it ) {
@@ -26,15 +26,15 @@ void StyleSheetNode::print() {
 	std::cout << "}" << std::endl;
 }
 
-const StyleSheetSelector &StyleSheetNode::getSelector() const {
+const StyleSheetSelector &StyleSheetStyle::getSelector() const {
 	return mSelector;
 }
 
-const StyleSheetProperties &StyleSheetNode::getProperties() const {
+const StyleSheetProperties &StyleSheetStyle::getProperties() const {
 	return mProperties;
 }
 
-void StyleSheetNode::setProperty( const StyleSheetProperty & property ) {
+void StyleSheetStyle::setProperty( const StyleSheetProperty & property ) {
 	mProperties[ property.getName() ] = property;
 }
 

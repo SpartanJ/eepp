@@ -105,7 +105,7 @@ const bool &StyleSheetSelector::isCacheable() const {
 	return mCacheable;
 }
 
-bool StyleSheetSelector::matches( StyleSheetElement * element ) const {
+bool StyleSheetSelector::select( StyleSheetElement * element , const bool& applyPseudo ) const {
 	if ( mSelectorRules.empty() )
 		return false;
 
@@ -117,7 +117,7 @@ bool StyleSheetSelector::matches( StyleSheetElement * element ) const {
 		switch ( selectorRule.getPatternMatch() ) {
 			case StyleSheetSelectorRule::ANY:
 			{
-				if ( !selectorRule.matches( curElement ) )
+				if ( !selectorRule.matches( curElement, applyPseudo ) )
 					return false;
 
 				break; // continue evaluating
@@ -129,7 +129,7 @@ bool StyleSheetSelector::matches( StyleSheetElement * element ) const {
 				curElement = curElement->getStyleSheetParentElement();
 
 				while ( NULL != curElement && !foundDescendant ) {
-					if  ( selectorRule.matches( curElement ) ) {
+					if  ( selectorRule.matches( curElement, applyPseudo ) ) {
 						foundDescendant = true;
 					} else {
 						curElement = curElement->getStyleSheetParentElement();
@@ -145,7 +145,7 @@ bool StyleSheetSelector::matches( StyleSheetElement * element ) const {
 			{
 				curElement = curElement->getStyleSheetParentElement();
 
-				if ( NULL == curElement || !selectorRule.matches( curElement ) )
+				if ( NULL == curElement || !selectorRule.matches( curElement, applyPseudo ) )
 					return false;
 
 				break; // continue evaluating
@@ -154,7 +154,7 @@ bool StyleSheetSelector::matches( StyleSheetElement * element ) const {
 			{
 				curElement = curElement->getStyleSheetPreviousSiblingElement();
 
-				if ( NULL == curElement || !selectorRule.matches( curElement ) )
+				if ( NULL == curElement || !selectorRule.matches( curElement, applyPseudo ) )
 					return false;
 
 				break; // continue evaluating
@@ -166,7 +166,7 @@ bool StyleSheetSelector::matches( StyleSheetElement * element ) const {
 				StyleSheetElement * nextSibling = curElement->getStyleSheetNextSiblingElement();
 
 				while ( NULL != prevSibling && !foundSibling ) {
-					if ( selectorRule.matches( prevSibling ) ) {
+					if ( selectorRule.matches( prevSibling, applyPseudo ) ) {
 						foundSibling = true;
 					} else {
 						prevSibling = prevSibling->getStyleSheetPreviousSiblingElement();
@@ -175,7 +175,7 @@ bool StyleSheetSelector::matches( StyleSheetElement * element ) const {
 
 				if ( !foundSibling ) {
 					while ( NULL != nextSibling && !foundSibling ) {
-						if ( selectorRule.matches( nextSibling ) ) {
+						if ( selectorRule.matches( nextSibling, applyPseudo ) ) {
 							foundSibling = true;
 						} else {
 							nextSibling = nextSibling->getStyleSheetNextSiblingElement();

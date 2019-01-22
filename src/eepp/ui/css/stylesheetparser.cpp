@@ -170,9 +170,9 @@ int StyleSheetParser::readProperty( ReadState& rs, std::size_t pos, std::string&
 
 			if ( !selectorParse.selectors.empty() ) {
 				for ( auto it = selectorParse.selectors.begin(); it != selectorParse.selectors.end(); ++it ) {
-					StyleSheetNode node( it->getName(), propertiesParse.getProperties() );
+					StyleSheetStyle node( it->getName(), propertiesParse.getProperties() );
 
-					mStyleSheet.addNode( node );
+					mStyleSheet.addStyle( node );
 				}
 			}
 

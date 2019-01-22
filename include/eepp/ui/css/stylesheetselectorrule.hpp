@@ -51,7 +51,7 @@ class StyleSheetSelectorRule {
 
 		const int& getSpecificity() const { return mSpecificity; }
 
-		bool matches( StyleSheetElement * element ) const;
+		bool matches( StyleSheetElement * element , const bool& applyPseudo = true ) const;
 
 		bool hasClass( const std::string& cls ) const;
 

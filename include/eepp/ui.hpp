@@ -50,7 +50,7 @@
 
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/css/stylesheetelement.hpp>
-#include <eepp/ui/css/stylesheetnode.hpp>
+#include <eepp/ui/css/stylesheetstyle.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>

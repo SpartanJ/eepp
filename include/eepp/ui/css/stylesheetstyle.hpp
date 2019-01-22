@@ -1,16 +1,16 @@
-#ifndef EE_UI_CSS_STYLESHEETNODE_HPP
-#define EE_UI_CSS_STYLESHEETNODE_HPP
+#ifndef EE_UI_CSS_STYLESHEETSTYLE_HPP
+#define EE_UI_CSS_STYLESHEETSTYLE_HPP
 
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 
 namespace EE { namespace UI { namespace CSS {
 
-class EE_API StyleSheetNode {
+class EE_API StyleSheetStyle {
 	public:
-		StyleSheetNode();
+		StyleSheetStyle();
 
-		explicit StyleSheetNode( const std::string& selector, const StyleSheetProperties& properties );
+		explicit StyleSheetStyle( const std::string& selector, const StyleSheetProperties& properties );
 
 		void print();
 

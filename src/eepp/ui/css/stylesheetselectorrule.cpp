@@ -190,7 +190,7 @@ void StyleSheetSelectorRule::parseFragment( const std::string& selectorFragment 
 		mRequirementFlags |= Class;
 
 	if ( !mPseudoClasses.empty() ) {
-		//requirementFlags |= PseudoClass;
+		mRequirementFlags |= PseudoClass;
 
 		for ( auto it = mPseudoClasses.begin(); it != mPseudoClasses.end(); ++it ) {
 			mSpecificity += SpecificityPseudoClass;
@@ -226,7 +226,7 @@ bool StyleSheetSelectorRule::hasStructuralPseudoClass( const std::string& cls ) 
 	return std::find(mStructuralPseudoClasses.begin(), mStructuralPseudoClasses.end(), cls) != mStructuralPseudoClasses.end();
 }
 
-bool StyleSheetSelectorRule::matches( StyleSheetElement * element ) const {
+bool StyleSheetSelectorRule::matches( StyleSheetElement * element, const bool& applyPseudo ) const {
 	Uint32 flags = 0;
 
 	if ( mTagName == "*" )
@@ -254,26 +254,29 @@ bool StyleSheetSelectorRule::matches( StyleSheetElement * element ) const {
 		}
 	}
 
-	/*if ( pseudoClasses.empty() && !element->getStyleSheetPseudoClasses().empty() ) {
-		flags |= PseudoClass;
-	} else if ( !pseudoClasses.empty() && !element->getStyleSheetPseudoClasses().empty() ) {
-		bool hasPseudoClasses = false;
-		const std::vector<std::string>& elPseudoClasses = element->getStyleSheetPseudoClasses();
+	if ( applyPseudo ) {
+		if ( mPseudoClasses.empty() && !element->getStyleSheetPseudoClasses().empty() ) {
+			flags |= PseudoClass;
+		} else if ( !mPseudoClasses.empty() && !element->getStyleSheetPseudoClasses().empty() ) {
+			bool hasPseudoClasses = false;
+			const std::vector<std::string>& elPseudoClasses = element->getStyleSheetPseudoClasses();
 
-		for ( auto cit = elPseudoClasses.begin(); cit != elPseudoClasses.end(); ++cit ) {
-			if ( hasPseudoClass( *cit ) ) {
-				hasPseudoClasses = true;
-				break;
+			for ( auto cit = elPseudoClasses.begin(); cit != elPseudoClasses.end(); ++cit ) {
+				if ( hasPseudoClass( *cit ) ) {
+					hasPseudoClasses = true;
+					break;
+				}
+			}
+
+			if ( hasPseudoClasses ) {
+				flags |= PseudoClass;
 			}
 		}
 
-		if ( hasPseudoClasses ) {
-			flags |= PseudoClass;
-		}
-	}*/
+		return mRequirementFlags == flags;
+	}
 
-	return mRequirementFlags == flags;
+	return ( mRequirementFlags & ~PseudoClass ) == flags;
 }
-
 
 }}}

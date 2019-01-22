@@ -7,15 +7,15 @@ namespace EE { namespace UI { namespace CSS {
 
 StyleSheet::StyleSheet() {}
 
-void StyleSheet::addNode( const StyleSheetNode& node ) {
+void StyleSheet::addStyle( const StyleSheetStyle& node ) {
 	mNodes[ node.getSelector().getName() ] = node;
 }
 
-void StyleSheet::combineNode( const StyleSheetNode& node ) {
+void StyleSheet::combineStyle( const StyleSheetStyle& node ) {
 	auto nodeIt = mNodes.find( node.getSelector().getName() );
 
 	if ( nodeIt == mNodes.end() ) {
-		addNode( node );
+		addStyle( node );
 	} else {
 		auto currentNode = nodeIt->second;
 
@@ -32,26 +32,26 @@ bool StyleSheet::isEmpty() const {
 
 void StyleSheet::print() {
 	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
-		StyleSheetNode& style = it->second;
+		StyleSheetStyle& style = it->second;
 
 		style.print();
 	}
 }
 
 void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
-	for ( auto it = styleSheet.getNodes().begin(); it != styleSheet.getNodes().end(); ++it ) {
-		combineNode( it->second );
+	for ( auto it = styleSheet.getStyles().begin(); it != styleSheet.getStyles().end(); ++it ) {
+		combineStyle( it->second );
 	}
 }
 
-StyleSheet::StyleSheetPseudoClassProperties StyleSheet::getElementProperties( StyleSheetElement * element ) {
+StyleSheet::StyleSheetPseudoClassProperties StyleSheet::getElementPropertiesByState( StyleSheetElement * element ) {
 	StyleSheetPseudoClassProperties propertiesSelectedByPseudoClass;
 
 	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
-		StyleSheetNode& node = it->second;
+		StyleSheetStyle& node = it->second;
 		const StyleSheetSelector& selector = node.getSelector();
 
-		if ( selector.matches( element ) ) {
+		if ( selector.isCacheable() && selector.select( element, false ) ) {
 			for ( auto pit = node.getProperties().begin(); pit != node.getProperties().end(); ++pit ) {
 				StyleSheetProperties& pseudoClassProperties = propertiesSelectedByPseudoClass[selector.getPseudoClass()];
 				auto pcit = pseudoClassProperties.find( pit->second.getName() );
@@ -66,7 +66,22 @@ StyleSheet::StyleSheetPseudoClassProperties StyleSheet::getElementProperties( St
 	return propertiesSelectedByPseudoClass;
 }
 
-const StyleSheet::StyleSheetNodeList& StyleSheet::getNodes() const {
+StyleSheet::StyleSheetStyleVector StyleSheet::getElementStyles( StyleSheetElement * element ) {
+	StyleSheetStyleVector styles;
+
+	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
+		StyleSheetStyle& node = it->second;
+		const StyleSheetSelector& selector = node.getSelector();
+
+		if ( selector.select( element, false ) ) {
+			styles.push_back( node );
+		}
+	}
+
+	return styles;
+}
+
+const StyleSheet::StyleSheetStyleList& StyleSheet::getStyles() const {
 	return mNodes;
 }
 
