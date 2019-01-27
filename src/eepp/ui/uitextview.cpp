@@ -524,9 +524,13 @@ void UITextView::onSelectionChange() {
 	mTextCache->invalidateColors();
 
 	if ( selCurInit() != selCurEnd() ) {
-		mTextCache->setFillColor( mFontStyleConfig.getFontSelectedColor(), eemin<Int32>( selCurInit(), selCurEnd() ), eemax<Int32>( selCurInit(), selCurEnd() ) - 1 );
+		Color color( mFontStyleConfig.getFontSelectedColor() );
+		color.a =  mFontStyleConfig.getFontSelectedColor().a * mAlpha / 255.f;
+		mTextCache->setFillColor( color, eemin<Int32>( selCurInit(), selCurEnd() ), eemax<Int32>( selCurInit(), selCurEnd() ) - 1 );
 	} else {
-		mTextCache->setFillColor( mFontStyleConfig.getFontColor() );
+		Color color( mFontStyleConfig.getFontColor() );
+		color.a =  mFontStyleConfig.getFontColor().a * mAlpha / 255.f;
+		mTextCache->setFillColor( color );
 	}
 
 	invalidateDraw();

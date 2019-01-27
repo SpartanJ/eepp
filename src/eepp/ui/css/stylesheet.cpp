@@ -81,6 +81,36 @@ StyleSheetStyleVector StyleSheet::getElementStyles( StyleSheetElement * element 
 	return styles;
 }
 
+StyleSheetStyleVector StyleSheet::getCacheableElementStyles( StyleSheetElement * element, const bool& applyPseudo ) {
+	StyleSheetStyleVector styles;
+
+	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
+		StyleSheetStyle& node = it->second;
+		const StyleSheetSelector& selector = node.getSelector();
+
+		if ( selector.isCacheable() && selector.select( element, applyPseudo ) ) {
+			styles.push_back( node );
+		}
+	}
+
+	return styles;
+}
+
+StyleSheetStyleVector StyleSheet::getNoncacheableElementStyles( StyleSheetElement * element, const bool& applyPseudo ) {
+	StyleSheetStyleVector styles;
+
+	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
+		StyleSheetStyle& node = it->second;
+		const StyleSheetSelector& selector = node.getSelector();
+
+		if ( !selector.isCacheable() && selector.select( element, applyPseudo ) ) {
+			styles.push_back( node );
+		}
+	}
+
+	return styles;
+}
+
 const StyleSheetStyleList& StyleSheet::getStyles() const {
 	return mNodes;
 }
