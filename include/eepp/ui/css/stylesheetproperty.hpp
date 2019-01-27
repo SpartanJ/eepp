@@ -27,7 +27,6 @@ class EE_API StyleSheetProperty {
 };
 
 typedef std::map<std::string, StyleSheetProperty> StyleSheetProperties;
-typedef std::map<std::string, StyleSheetProperty> PropertiesDictionary;
 
 }}}
 

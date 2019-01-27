@@ -66,7 +66,7 @@ StyleSheet::StyleSheetPseudoClassProperties StyleSheet::getElementPropertiesBySt
 	return propertiesSelectedByPseudoClass;
 }
 
-StyleSheet::StyleSheetStyleVector StyleSheet::getElementStyles( StyleSheetElement * element ) {
+StyleSheetStyleVector StyleSheet::getElementStyles( StyleSheetElement * element ) {
 	StyleSheetStyleVector styles;
 
 	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
@@ -81,7 +81,7 @@ StyleSheet::StyleSheetStyleVector StyleSheet::getElementStyles( StyleSheetElemen
 	return styles;
 }
 
-const StyleSheet::StyleSheetStyleList& StyleSheet::getStyles() const {
+const StyleSheetStyleList& StyleSheet::getStyles() const {
 	return mNodes;
 }
 

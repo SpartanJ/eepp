@@ -9,8 +9,6 @@ class StyleSheetElement;
 
 class EE_API StyleSheet {
 	public:
-		typedef std::map<std::string, StyleSheetStyle> StyleSheetStyleList;
-		typedef std::vector<StyleSheetStyle> StyleSheetStyleVector;
 		typedef std::map<std::string,StyleSheetProperties> StyleSheetPseudoClassProperties;
 
 		StyleSheet();

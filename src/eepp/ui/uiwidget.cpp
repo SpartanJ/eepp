@@ -556,8 +556,8 @@ void UIWidget::pushState( const Uint32& State, bool emitEvent ) {
 		UINode::pushState( State, false );
 
 		if ( NULL != mStyle ) {
-			mStyle->pushState( State );
 			updatePseudoClasses();
+			mStyle->pushState( State );
 		}
 
 		if ( emitEvent )
@@ -570,8 +570,8 @@ void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 		UINode::popState( State, false );
 
 		if ( NULL != mStyle ) {
-			mStyle->popState( State );
 			updatePseudoClasses();
+			mStyle->popState( State );
 		}
 
 		if ( emitEvent )
@@ -579,7 +579,7 @@ void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 	}
 }
 
-const UIStyle * UIWidget::getUIStyle() const {
+UIStyle * UIWidget::getUIStyle() const {
 	return mStyle;
 }
 

@@ -24,6 +24,21 @@ class EE_API StyleSheetStyle {
 		StyleSheetProperties mProperties;
 };
 
+class EE_API StyleSheetStyleUsed {
+	public:
+		StyleSheetStyle style;
+		bool used;
+
+		StyleSheetStyleUsed( StyleSheetStyle style, bool used ) :
+			style( style ),
+			used( used )
+		{}
+};
+
+typedef std::map<std::string, StyleSheetStyle> StyleSheetStyleList;
+typedef std::vector<StyleSheetStyle> StyleSheetStyleVector;
+typedef std::vector<StyleSheetStyleUsed> StyleSheetStyleUsedVector;
+
 }}}
 
 #endif
