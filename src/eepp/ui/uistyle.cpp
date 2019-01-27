@@ -51,6 +51,7 @@ void UIStyle::addStyleSheetProperty( const Uint32& state, const StyleSheetProper
 
 void UIStyle::load() {
 	mStates.clear();
+	mNoncacheableStyles.clear();
 	mTransitions.clear();
 	mTransitionAttributes.clear();
 
@@ -72,6 +73,8 @@ void UIStyle::load() {
 						addStyleSheetProperties( stateFlag, it->second );
 				}
 			}
+
+			mNoncacheableStyles = styleSheet.getNoncacheableElementStyles( mWidget );
 		}
 	}
 }
@@ -134,18 +137,42 @@ UIStyle::TransitionInfo UIStyle::getTransition( const Uint32& state, const std::
 }
 
 void UIStyle::onStateChange() {
-	if ( NULL != mWidget && stateExists( mCurrentState ) ) {
-		auto& attrs = mStates[ mCurrentState ];
+	if ( NULL != mWidget ) {
+		StyleSheetProperties properties;
 
-		if ( !attrs.empty() ) {
-			mWidget->beginAttributesTransaction();
+		auto& props = mStates[ mCurrentState ];
 
-			for ( auto& nodeAttr : attrs ) {
-				mWidget->setAttribute( NodeAttribute( nodeAttr.second.getName(), nodeAttr.second.getValue() ), mCurrentState );
+		for ( auto& prop : props ) {
+			auto& property = prop.second;
+			auto it = properties.find( property.getName() );
+
+			if ( it == properties.end() || property.getSpecificity() >= it->second.getSpecificity() ) {
+				properties[ property.getName() ] = property;
 			}
-
-			mWidget->endAttributesTransaction();
 		}
+
+		for ( auto& style : mNoncacheableStyles ) {
+			if ( style.getSelector().select( mWidget ) ) {
+				for ( auto& prop : style.getProperties() ) {
+					auto& property = prop.second;
+					auto it = properties.find( property.getName() );
+
+					if ( it == properties.end() || property.getSpecificity() >= it->second.getSpecificity() ) {
+						properties[ property.getName() ] = property;
+					}
+				}
+			}
+		}
+
+		mWidget->beginAttributesTransaction();
+
+		for ( auto& prop : properties ) {
+			auto& property = prop.second;
+
+			mWidget->setAttribute( property.getName(), property.getValue(), mCurrentState );
+		}
+
+		mWidget->endAttributesTransaction();
 	}
 }
 

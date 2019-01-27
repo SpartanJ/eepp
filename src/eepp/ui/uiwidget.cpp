@@ -554,31 +554,27 @@ const std::string& UIWidget::getElementTag() const {
 
 void UIWidget::pushState( const Uint32& State, bool emitEvent ) {
 	if ( !( mState & ( 1 << State ) ) ) {
-		UINode::pushState( State, false );
-
 		if ( NULL != mStyle ) {
 			updatePseudoClasses();
 			mStyle->pushState( State );
 		}
 
-		if ( emitEvent )
-			onStateChange();
+		UINode::pushState( State, emitEvent );
 	}
 }
 
 void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 	if ( mState & ( 1 << State ) ) {
-		UINode::popState( State, false );
-
 		if ( NULL != mStyle ) {
 			updatePseudoClasses();
 			mStyle->popState( State );
 		}
 
-		if ( emitEvent )
-			onStateChange();
+		UINode::popState( State, emitEvent );
 	}
 }
+
+
 
 UIStyle * UIWidget::getUIStyle() const {
 	return mStyle;

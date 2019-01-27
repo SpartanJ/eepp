@@ -4,6 +4,7 @@
 #include <eepp/ui/uistate.hpp>
 #include <eepp/scene/nodeattribute.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
+#include <eepp/ui/css/stylesheetstyle.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
 #include <eepp/math/ease.hpp>
 
@@ -74,6 +75,7 @@ class EE_API UIStyle : public UIState {
 		std::map<Uint32, CSS::StyleSheetProperties> mStates;
 		std::map<Uint32, TransitionsMap> mTransitions;
 		std::map<Uint32, std::vector<CSS::StyleSheetProperty>> mTransitionAttributes;
+		CSS::StyleSheetStyleVector mNoncacheableStyles;
 
 		void updateState();
 
