@@ -4,6 +4,7 @@
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 
+using namespace EE::UI::CSS;
 
 namespace EE { namespace UI {
 
@@ -24,23 +25,22 @@ bool UIStyle::stateExists( const EE::Uint32 & state  ) const {
 	return mStates.find( state ) != mStates.end();
 }
 
-void UIStyle::addAttribute( int state, NodeAttribute attribute ) {
+void UIStyle::addStyleSheetProperty( const Uint32& state, const StyleSheetProperty& attribute ) {
 	if ( attribute.getName() == "padding" ) {
-		Rectf rect(  attribute.asRectf() );
-		mStates[ state ][ "paddingleft" ] = NodeAttribute( "paddingleft", String::toStr( rect.Left ) );
-		mStates[ state ][ "paddingright" ] = NodeAttribute( "paddingright", String::toStr( rect.Right ) );
-		mStates[ state ][ "paddingtop" ] = NodeAttribute( "paddingtop", String::toStr( rect.Top ) );
-		mStates[ state ][ "paddingbottom" ] = NodeAttribute( "paddingbottom", String::toStr( rect.Bottom ) );
+		Rectf rect(  NodeAttribute( attribute.getName(), attribute.getValue() ).asRectf() );
+		mStates[ state ][ "paddingleft" ] = StyleSheetProperty( "paddingleft", String::toStr( rect.Left ), attribute.getSpecificity() );
+		mStates[ state ][ "paddingright" ] = StyleSheetProperty( "paddingright", String::toStr( rect.Right ), attribute.getSpecificity() );
+		mStates[ state ][ "paddingtop" ] = StyleSheetProperty( "paddingtop", String::toStr( rect.Top ), attribute.getSpecificity() );
+		mStates[ state ][ "paddingbottom" ] = StyleSheetProperty( "paddingbottom", String::toStr( rect.Bottom ), attribute.getSpecificity() );
 	} else if ( attribute.getName() == "layout_margin" ) {
-		Rect rect(  attribute.asRect() );
-		mStates[ state ][ "layout_marginleft" ] = NodeAttribute( "layout_marginleft", String::toStr( rect.Left ) );
-		mStates[ state ][ "layout_marginright" ] = NodeAttribute( "layout_marginright", String::toStr( rect.Right ) );
-		mStates[ state ][ "layout_margintop" ] = NodeAttribute( "layout_margintop", String::toStr( rect.Top ) );
-		mStates[ state ][ "layout_marginbottom" ] = NodeAttribute( "layout_marginbottom", String::toStr( rect.Bottom ) );
+		Rect rect(  NodeAttribute( attribute.getName(), attribute.getValue() ).asRect() );
+		mStates[ state ][ "layout_marginleft" ] = StyleSheetProperty( "layout_marginleft", String::toStr( rect.Left ), attribute.getSpecificity() );
+		mStates[ state ][ "layout_marginright" ] = StyleSheetProperty( "layout_marginright", String::toStr( rect.Right ), attribute.getSpecificity() );
+		mStates[ state ][ "layout_margintop" ] = StyleSheetProperty( "layout_margintop", String::toStr( rect.Top ), attribute.getSpecificity() );
+		mStates[ state ][ "layout_marginbottom" ] = StyleSheetProperty( "layout_marginbottom", String::toStr( rect.Bottom ), attribute.getSpecificity() );
 	} else {
 		mStates[ state ][ attribute.getName() ] = attribute;
 	}
-
 
 	if ( String::startsWith( attribute.getName(), "transition" ) ) {
 		mTransitionAttributes[ state ].push_back( attribute );
@@ -81,13 +81,9 @@ void UIStyle::addStyleSheetProperties(const Uint32 & state, const CSS::StyleShee
 		for ( auto it = properties.begin(); it != properties.end(); ++it ) {
 			CSS::StyleSheetProperty property = it->second;
 
-			addAttribute( state, NodeAttribute( property.getName(), property.getValue() ) );
+			addStyleSheetProperty( state, property );
 		}
 	}
-}
-
-void UIStyle::addStyleSheetProperty( const Uint32& state, const CSS::StyleSheetProperty& property ) {
-	addAttribute( state, NodeAttribute( property.getName(), property.getValue() ) );
 }
 
 bool UIStyle::hasTransition( const Uint32& state, const std::string& propertyName ) {
@@ -139,15 +135,13 @@ UIStyle::TransitionInfo UIStyle::getTransition( const Uint32& state, const std::
 
 void UIStyle::onStateChange() {
 	if ( NULL != mWidget && stateExists( mCurrentState ) ) {
-		AttributesMap& attrs = mStates[ mCurrentState ];
+		auto& attrs = mStates[ mCurrentState ];
 
 		if ( !attrs.empty() ) {
 			mWidget->beginAttributesTransaction();
 
-			for ( auto it = attrs.begin(); it != attrs.end(); ++it ) {
-				NodeAttribute& nodeAttr = it->second;
-
-				mWidget->setAttribute( nodeAttr, mCurrentState );
+			for ( auto& nodeAttr : attrs ) {
+				mWidget->setAttribute( NodeAttribute( nodeAttr.second.getName(), nodeAttr.second.getValue() ), mCurrentState );
 			}
 
 			mWidget->endAttributesTransaction();
@@ -155,10 +149,9 @@ void UIStyle::onStateChange() {
 	}
 }
 
-
-NodeAttribute UIStyle::getAttribute( const Uint32& state, const std::string& attributeName ) const {
+StyleSheetProperty UIStyle::getStyleSheetProperty( const Uint32& state, const std::string& attributeName ) const {
 	if ( !attributeName.empty() && stateExists( state ) ) {
-		const AttributesMap& attributesMap = mStates.at( state );
+		auto& attributesMap = mStates.at( state );
 
 		auto attributeFound = attributesMap.find( attributeName );
 
@@ -167,24 +160,15 @@ NodeAttribute UIStyle::getAttribute( const Uint32& state, const std::string& att
 		}
 	}
 
-	return NodeAttribute();
+	return StyleSheetProperty();
 }
 
-bool UIStyle::hasAttribute(const Uint32 & state, const std::string & attributeName) const {
-	if ( !attributeName.empty() && stateExists( state ) ) {
-		const AttributesMap& attributesMap = mStates.at( state );
-		return attributesMap.find( attributeName ) != attributesMap.end();
-	}
+StyleSheetProperty UIStyle::getStyleSheetPropertyFromNames( const Uint32& state, const std::vector<std::string>& propertiesNames ) const {
+	if ( !propertiesNames.empty() && stateExists( state ) ) {
+		auto& attributesMap = mStates.at( state );
 
-	return false;
-}
-
-NodeAttribute UIStyle::getAttributeFromNames( const Uint32& state, const std::vector<std::string>& attributeNames ) const {
-	if ( !attributeNames.empty() && stateExists( state ) ) {
-		const AttributesMap& attributesMap = mStates.at( state );
-
-		for ( size_t i = 0; i < attributeNames.size(); i++ ) {
-			const std::string& name = attributeNames[i];
+		for ( size_t i = 0; i < propertiesNames.size(); i++ ) {
+			const std::string& name = propertiesNames[i];
 			auto attributeFound = attributesMap.find( name );
 
 			if ( attributeFound != attributesMap.end() ) {
@@ -194,69 +178,21 @@ NodeAttribute UIStyle::getAttributeFromNames( const Uint32& state, const std::ve
 		}
 	}
 
-	return NodeAttribute();
+	return StyleSheetProperty();
 }
 
-Font * UIStyle::getFontFamily( const Uint32& state ) const {
-	NodeAttribute attribute = getAttributeFromNames( state, { "fontfamily", "fontname" } );
+NodeAttribute UIStyle::getNodeAttribute( const Uint32& state, const std::string& attributeName ) const {
+	StyleSheetProperty property( getStyleSheetProperty( state, attributeName ) );
+	return NodeAttribute( property.getName(), property.getValue() );
+}
 
-	if ( !attribute.isEmpty() ) {
-		return FontManager::instance()->getByName( attribute.asString() );
+bool UIStyle::hasStyleSheetProperty( const Uint32 & state, const std::string& propertyName ) const {
+	if ( !propertyName.empty() && stateExists( state ) ) {
+		auto& attributesMap = mStates.at( state );
+		return attributesMap.find( propertyName ) != attributesMap.end();
 	}
 
-	return UIThemeManager::instance()->getDefaultFont();
-}
-
-int UIStyle::getFontCharacterSize(const Uint32& state, const int& defaultValue ) const {
-	NodeAttribute attribute = getAttributeFromNames( state, { "textsize", "fontsize", "charactersize" } );
-
-	if ( !attribute.isEmpty() ) {
-		return attribute.asDpDimensionI();
-	}
-
-	return defaultValue;
-}
-
-Color UIStyle::getTextColor( const Uint32& state ) const {
-	NodeAttribute attribute = getAttribute( state, "textcolor" );
-
-	return attribute.isEmpty() ? Color::White : attribute.asColor();
-}
-
-Color UIStyle::getTextShadowColor( const Uint32& state ) const {
-	NodeAttribute attribute = getAttribute( state, "textshadowcolor" );
-
-	return attribute.isEmpty() ? Color::Black : attribute.asColor();
-}
-
-Uint32 UIStyle::getTextStyle( const Uint32& state ) const {
-	NodeAttribute attribute = getAttribute( state, "textstyle" );
-
-	return attribute.isEmpty() ? 0 : attribute.asFontStyle();
-}
-
-Float UIStyle::getFontOutlineThickness( const Uint32& state ) const {
-	NodeAttribute attribute = getAttribute( state, "fontoutlinethickness" );
-
-	return attribute.isEmpty() ? 0.f : attribute.asFloat();
-}
-
-Color UIStyle::getFontOutlineColor( const Uint32& state ) const {
-	NodeAttribute attribute = getAttribute( state, "fontoutlinecolor" );
-
-	return attribute.isEmpty() ? Color::White : attribute.asColor();
-}
-
-FontStyleConfig UIStyle::getFontStyleConfig( const Uint32& state ) const {
-	FontStyleConfig fontStyleConfig;
-	fontStyleConfig.Font = getFontFamily( state );
-	fontStyleConfig.CharacterSize = getFontCharacterSize( state );
-	fontStyleConfig.Style = getTextStyle( state );
-	fontStyleConfig.FontColor = getTextColor( state );
-	fontStyleConfig.ShadowColor = getTextShadowColor( state );
-	fontStyleConfig.OutlineColor = getFontOutlineColor( state );
-	fontStyleConfig.OutlineThickness = getFontOutlineThickness( state );
-	return fontStyleConfig;
+	return false;
 }
 
 void UIStyle::updateState() {
@@ -295,8 +231,7 @@ void UIStyle::parseTransitions( const Uint32& state ) {
 
 	auto transitionAttributes = mTransitionAttributes[ state ];
 
-	for ( auto it = transitionAttributes.begin(); it != transitionAttributes.end(); ++it ) {
-		NodeAttribute& attr = *it;
+	for ( auto& attr : transitionAttributes ) {
 		if ( attr.getName() == "transition" ) {
 			auto strTransitions = String::split( attr.getValue(), ',' );
 

@@ -7,6 +7,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/scene/actions/actions.hpp>
 #include <pugixml/pugixml.hpp>
+#include <eepp/ui/css/stylesheetproperty.hpp>
 #include <algorithm>
 
 namespace EE { namespace UI {
@@ -639,10 +640,9 @@ bool UIWidget::setAttribute( const std::string& name, const std::string& value, 
 }
 
 #define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED ) \
-	NodeAttribute oldAttribute = mStyle->getAttribute( UIState::StateFlagNormal, attribute.getName() ); \
+	CSS::StyleSheetProperty oldAttribute = mStyle->getStyleSheetProperty( UIState::StateFlagNormal, attribute.getName() ); \
 	if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) \
-		mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), ATTR_FORMATED ) ); \
-
+		mStyle->addStyleSheetProperty( UIState::StateFlagNormal, CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
 
 bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
@@ -971,19 +971,19 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Action * action = Actions::MarginMove::New( mLayoutMargin, margin, transitionInfo.duration, transitionInfo.timingFunction, marginFlag );
 
-			NodeAttribute oldAttribute = mStyle->getAttribute( UIState::StateFlagNormal, attribute.getName() );
+			CSS::StyleSheetProperty oldAttribute = mStyle->getStyleSheetProperty( UIState::StateFlagNormal, attribute.getName() );
 			if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) {
 				if ( "layout_marginleft" == name || "layout_margin" == name )
-					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%d", mLayoutMargin.Left ) ) );
+					mStyle->addStyleSheetProperty( UIState::StateFlagNormal, CSS::StyleSheetProperty( attribute.getName(), String::format( "%d", mLayoutMargin.Left ) ) );
 
 				if ( "layout_marginright" == name || "layout_margin" == name )
-					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%d", mLayoutMargin.Right ) ) );
+					mStyle->addStyleSheetProperty( UIState::StateFlagNormal, CSS::StyleSheetProperty( attribute.getName(), String::format( "%d", mLayoutMargin.Right ) ) );
 
 				if ( "layout_margintop" == name || "layout_margin" == name )
-					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%d", mLayoutMargin.Top ) ) );
+					mStyle->addStyleSheetProperty( UIState::StateFlagNormal, CSS::StyleSheetProperty( attribute.getName(), String::format( "%d", mLayoutMargin.Top ) ) );
 
 				if ( "layout_marginbottom" == name || "layout_margin" == name )
-					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%d", mLayoutMargin.Bottom ) ) );
+					mStyle->addStyleSheetProperty( UIState::StateFlagNormal, CSS::StyleSheetProperty( attribute.getName(), String::format( "%d", mLayoutMargin.Bottom ) ) );
 			}
 
 			if ( Time::Zero != transitionInfo.delay )
@@ -1085,7 +1085,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "rotation" == name ) {
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
-			Float newRotation( mStyle->getAttribute( state, attribute.getName() ).asFloat() );
+			Float newRotation( mStyle->getNodeAttribute( state, attribute.getName() ).asFloat() );
 			Action * action = Actions::Rotate::New( mRotation, newRotation, transitionInfo.duration, transitionInfo.timingFunction );
 
 			SAVE_NORMAL_STATE_ATTR( String::format( "%2.f", mRotation ) )
@@ -1100,7 +1100,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "scale" == name ) {
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
-			Vector2f newScale( mStyle->getAttribute( state, attribute.getName() ).asVector2f() );
+			Vector2f newScale( mStyle->getNodeAttribute( state, attribute.getName() ).asVector2f() );
 			Action * action = Actions::Scale::New( mScale, newScale, transitionInfo.duration, transitionInfo.timingFunction );
 
 			SAVE_NORMAL_STATE_ATTR( String::format( "%2.f, %2.f", mScale.x, mScale.y ) )
@@ -1143,19 +1143,19 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Action * action = Actions::PaddingTransition::New( mPadding, padding, transitionInfo.duration, transitionInfo.timingFunction, paddingFlag );
 
-			NodeAttribute oldAttribute = mStyle->getAttribute( UIState::StateFlagNormal, attribute.getName() );
+			CSS::StyleSheetProperty oldAttribute = mStyle->getStyleSheetProperty( UIState::StateFlagNormal, attribute.getName() );
 			if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) {
 				if ( "paddingleft" == name || "padding" == name )
-					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%2.f", mPadding.Left ) ) );
+					mStyle->addStyleSheetProperty( UIState::StateFlagNormal, CSS::StyleSheetProperty( attribute.getName(), String::format( "%2.f", mPadding.Left ) ) );
 
 				if ( "paddingright" == name || "padding" == name )
-					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%2.f", mPadding.Right ) ) );
+					mStyle->addStyleSheetProperty( UIState::StateFlagNormal, CSS::StyleSheetProperty( attribute.getName(), String::format( "%2.f", mPadding.Right ) ) );
 
 				if ( "paddingtop" == name || "padding" == name )
-					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%2.f", mPadding.Top ) ) );
+					mStyle->addStyleSheetProperty( UIState::StateFlagNormal, CSS::StyleSheetProperty( attribute.getName(), String::format( "%2.f", mPadding.Top ) ) );
 
 				if ( "paddingbottom" == name || "padding" == name )
-					mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), String::format( "%2.f", mPadding.Bottom ) ) );
+					mStyle->addStyleSheetProperty( UIState::StateFlagNormal, CSS::StyleSheetProperty( attribute.getName(), String::format( "%2.f", mPadding.Bottom ) ) );
 			}
 
 			if ( Time::Zero != transitionInfo.delay )

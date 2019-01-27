@@ -9,6 +9,7 @@
 #include <eepp/window/clipboard.hpp>
 #include <eepp/scene/actions/actions.hpp>
 #include <pugixml/pugixml.hpp>
+#include <eepp/ui/css/stylesheetproperty.hpp>
 
 namespace EE { namespace UI {
 
@@ -552,9 +553,9 @@ void UITextView::resetSelCache() {
 }
 
 #define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED ) \
-	NodeAttribute oldAttribute = mStyle->getAttribute( UIState::StateFlagNormal, attribute.getName() ); \
+	CSS::StyleSheetProperty oldAttribute = mStyle->getStyleSheetProperty( UIState::StateFlagNormal, attribute.getName() ); \
 	if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) \
-		mStyle->addAttribute( UIState::StateFlagNormal, NodeAttribute( attribute.getName(), ATTR_FORMATED ) ); \
+		mStyle->addStyleSheetProperty( UIState::StateFlagNormal, CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
 
 bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();

@@ -48,33 +48,17 @@ class EE_API UIStyle : public UIState {
 
 		bool stateExists( const Uint32& state ) const;
 
-		void addAttribute( int state, NodeAttribute attribute );
-
 		void load();
 
 		void onStateChange();
 
-		Font * getFontFamily( const Uint32& state = StateFlagNormal ) const;
+		CSS::StyleSheetProperty getStyleSheetProperty( const Uint32& state, const std::string& attributeName ) const;
 
-		int getFontCharacterSize( const Uint32& state = StateFlagNormal, const int& defaultValue = 12 ) const;
+		CSS::StyleSheetProperty getStyleSheetPropertyFromNames( const Uint32& state, const std::vector<std::string>& propertiesNames ) const;
 
-		Color getTextColor( const Uint32& state = StateFlagNormal ) const;
+		NodeAttribute getNodeAttribute( const Uint32& state, const std::string& attributeName ) const;
 
-		Color getTextShadowColor( const Uint32& state = StateFlagNormal ) const;
-
-		Uint32 getTextStyle( const Uint32& state = StateFlagNormal ) const;
-
-		Float getFontOutlineThickness( const Uint32& state = StateFlagNormal ) const;
-
-		Color getFontOutlineColor( const Uint32& state = StateFlagNormal ) const;
-
-		FontStyleConfig getFontStyleConfig( const Uint32& state = StateFlagNormal ) const;
-
-		NodeAttribute getAttribute( const Uint32& state, const std::string& attributeName ) const;
-
-		bool hasAttribute( const Uint32& state, const std::string& attributeName ) const;
-
-		NodeAttribute getAttributeFromNames( const Uint32& state, const std::vector<std::string>& attributeNames ) const;
+		bool hasStyleSheetProperty( const Uint32& state, const std::string& propertyName ) const;
 
 		void addStyleSheetProperties( const Uint32& state, const CSS::StyleSheetProperties& properties );
 
@@ -84,13 +68,12 @@ class EE_API UIStyle : public UIState {
 
 		TransitionInfo getTransition( const Uint32& state, const std::string& propertyName );
 	protected:
-		typedef std::map<std::string, NodeAttribute> AttributesMap;
 		typedef std::map<std::string, TransitionInfo> TransitionsMap;
 
 		UIWidget * mWidget;
-		std::map<Uint32, AttributesMap> mStates;
+		std::map<Uint32, CSS::StyleSheetProperties> mStates;
 		std::map<Uint32, TransitionsMap> mTransitions;
-		std::map<Uint32, std::vector<NodeAttribute>> mTransitionAttributes;
+		std::map<Uint32, std::vector<CSS::StyleSheetProperty>> mTransitionAttributes;
 
 		void updateState();
 

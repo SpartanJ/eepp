@@ -13,6 +13,8 @@ class EE_API StyleSheetProperty {
 
 		explicit StyleSheetProperty( const std::string& name, const std::string& value );
 
+		explicit StyleSheetProperty( const std::string& name, const std::string& value, const Uint32& specificity );
+
 		const std::string& getName() const;
 
 		const std::string& getValue() const;
@@ -20,6 +22,12 @@ class EE_API StyleSheetProperty {
 		const Uint32& getSpecificity() const;
 
 		void setSpecificity( const Uint32& specificity );
+
+		bool isEmpty() const;
+
+		void setName(const std::string & name);
+
+		void setValue(const std::string & value);
 	protected:
 		std::string mName;
 		std::string mValue;

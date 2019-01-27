@@ -105,7 +105,7 @@ const bool &StyleSheetSelector::isCacheable() const {
 	return mCacheable;
 }
 
-bool StyleSheetSelector::select( StyleSheetElement * element , const bool& applyPseudo ) const {
+bool StyleSheetSelector::select( StyleSheetElement * element, const bool& applyPseudo ) const {
 	if ( mSelectorRules.empty() )
 		return false;
 

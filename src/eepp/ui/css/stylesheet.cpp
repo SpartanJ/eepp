@@ -66,14 +66,14 @@ StyleSheet::StyleSheetPseudoClassProperties StyleSheet::getElementPropertiesBySt
 	return propertiesSelectedByPseudoClass;
 }
 
-StyleSheetStyleVector StyleSheet::getElementStyles( StyleSheetElement * element ) {
+StyleSheetStyleVector StyleSheet::getElementStyles( StyleSheetElement * element , const bool& applyPseudo ) {
 	StyleSheetStyleVector styles;
 
 	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
 		StyleSheetStyle& node = it->second;
 		const StyleSheetSelector& selector = node.getSelector();
 
-		if ( selector.select( element, false ) ) {
+		if ( selector.select( element, applyPseudo ) ) {
 			styles.push_back( node );
 		}
 	}
