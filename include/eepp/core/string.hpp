@@ -55,10 +55,10 @@ class EE_API String {
 	static const std::size_t InvalidPos; ///< Represents an invalid position in the string
 
 	/** @return string hash */
-	static Uint32 hash( const Uint8 * str );
+	static constexpr Uint32 hash( const Uint8 * str );
 
 	/** @return string hash */
-	static Uint32 hash( const char * str );
+	static constexpr Uint32 hash( const char * str );
 
 	/** @return string hash */
 	static Uint32 hash( const std::string& str );
@@ -67,13 +67,13 @@ class EE_API String {
 	static Uint32 hash( const String& str );
 
 	/** @return If the value passed is a character */
-	static bool isCharacter( const int& mValue );
+	static bool isCharacter( const int& value );
 
 	/** @return If the value passed is a number */
-	static bool isNumber( const int& mValue, bool AllowDot = false );
+	static bool isNumber( const int& value, bool AllowDot = false );
 
 	/** @return If the value passed is a letter */
-	static bool isLetter( const int& mValue );
+	static bool isLetter( const int& value );
 
 	/** Split a String and hold it on a vector */
 	static std::vector < String > split( const String& str, const Uint32& splitchar = '\n', const bool& pushEmptyString = false );

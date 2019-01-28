@@ -355,9 +355,11 @@ UI_ORIENTATION UIScrollBar::getOrientation() const {
 }
 
 UINode * UIScrollBar::setOrientation( const UI_ORIENTATION & orientation ) {
-	mSlider->setOrientation( orientation );
+	if ( mSlider->getOrientation() != orientation ) {
+		mSlider->setOrientation( orientation );
 
-	applyDefaultTheme();
+		applyDefaultTheme();
+	}
 
 	return this;
 }

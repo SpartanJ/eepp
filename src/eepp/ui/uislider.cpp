@@ -345,9 +345,11 @@ UI_ORIENTATION UISlider::getOrientation() const {
 }
 
 UISlider * UISlider::setOrientation( const UI_ORIENTATION & orientation ) {
-	mOrientation = orientation;
+	if ( orientation != mOrientation ) {
+		mOrientation = orientation;
 
-	applyDefaultTheme();
+		applyDefaultTheme();
+	}
 
 	return this;
 }

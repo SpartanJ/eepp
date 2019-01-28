@@ -636,9 +636,11 @@ bool UIWidget::setAttribute( const std::string& name, const std::string& value, 
 }
 
 #define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED ) \
+	if ( state != UIState::StateFlagNormal ) { \
 	CSS::StyleSheetProperty oldAttribute = mStyle->getStyleSheetProperty( UIState::StateFlagNormal, attribute.getName() ); \
 	if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) \
 		mStyle->addStyleSheetProperty( UIState::StateFlagNormal, CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
+	} \
 
 bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
@@ -650,14 +652,14 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "class" == name ) {
 		addClasses( String::split( attribute.getValue(), ' ' ) );
 	} else if ( "x" == name ) {
+		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", mDpSize.getWidth() ) );
+
 		setLayoutWidthRules( FIXED );
 
 		Float newX = attribute.asDpDimensionI();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
-
-			SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", mDpSize.getWidth() ) );
 
 			Action * action = Actions::MoveCoordinate::New( getPosition().x, newX, transitionInfo.duration, transitionInfo.timingFunction, Actions::MoveCoordinate::CoordinateX );
 
@@ -670,14 +672,14 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			notifyLayoutAttrChange();
 		}
 	} else if ( "y" == name ) {
+		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", mDpSize.getWidth() ) );
+
 		setLayoutWidthRules( FIXED );
 
 		Float newY = attribute.asDpDimensionI();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
-
-			SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", mDpSize.getWidth() ) );
 
 			Action * action = Actions::MoveCoordinate::New( getPosition().y, newY, transitionInfo.duration, transitionInfo.timingFunction, Actions::MoveCoordinate::CoordinateY );
 
@@ -690,14 +692,14 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			notifyLayoutAttrChange();
 		}
 	} else if ( "width" == name ) {
+		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", mDpSize.getWidth() ) );
+
 		setLayoutWidthRules( FIXED );
 
 		Float newWidth = attribute.asDpDimensionI();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
-
-			SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", mDpSize.getWidth() ) );
 
 			Action * action = Actions::ResizeWidth::New( getSize().getWidth(), newWidth, transitionInfo.duration, transitionInfo.timingFunction );
 
@@ -710,14 +712,14 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			notifyLayoutAttrChange();
 		}
 	} else if ( "height" == name ) {
+		SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", mDpSize.getHeight() ) );
+
 		setLayoutHeightRules( FIXED );
 
 		Float newHeight = attribute.asDpDimensionI();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
-
-			SAVE_NORMAL_STATE_ATTR( String::format( "%.2f", mDpSize.getHeight() ) );
 
 			Action * action = Actions::ResizeHeight::New( getSize().getHeight(), newHeight, transitionInfo.duration, transitionInfo.timingFunction );
 
@@ -820,13 +822,13 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "foregroundradius" == name ) {
 		setForegroundRadius( state, attribute.asUint() );
 	} else if ( "bordercolor" == name ) {
+		SAVE_NORMAL_STATE_ATTR( getBorderColor().toHexString() )
+
 		Color color = attribute.asColor();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Color start( getBorderColor() );
-
-			SAVE_NORMAL_STATE_ATTR( start.toHexString() )
 
 			Action * action = Actions::Tint::New( start, color, false, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Border );
 
@@ -840,13 +842,13 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "borderwidth" == name ) {
 		setBorderWidth( attribute.asDpDimensionI("1") );
 	} else if ( "borderradius" == name ) {
+		SAVE_NORMAL_STATE_ATTR( String::format( "%d", getBorderRadius( getStylePreviousState() ) ) );
+
 		Uint32 borderRadius = attribute.asUint();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Uint32 start( getBorderRadius( getStylePreviousState() ) );
-
-			SAVE_NORMAL_STATE_ATTR( String::format( "%d", start ) );
 
 			Action * action = Actions::ResizeBorderRadius::New( start, borderRadius, transitionInfo.duration, transitionInfo.timingFunction );
 
@@ -870,13 +872,13 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		mSkinName = attribute.asString();
 		setThemeSkin( mSkinName );
 	} else if ( "skincolor" == name ) {
+		SAVE_NORMAL_STATE_ATTR( getSkinColor( getStylePreviousState() ).toHexString() )
+
 		Color color = attribute.asColor();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Color start( getSkinColor( getStylePreviousState() ) );
-
-			SAVE_NORMAL_STATE_ATTR( start.toHexString() )
 
 			Action * action = Actions::Tint::New( start, color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Skin );
 
@@ -1079,12 +1081,12 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		else
 			clipDisable();
 	} else if ( "rotation" == name ) {
+		SAVE_NORMAL_STATE_ATTR( String::format( "%2.f", mRotation ) )
+
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Float newRotation( mStyle->getNodeAttribute( state, attribute.getName() ).asFloat() );
 			Action * action = Actions::Rotate::New( mRotation, newRotation, transitionInfo.duration, transitionInfo.timingFunction );
-
-			SAVE_NORMAL_STATE_ATTR( String::format( "%2.f", mRotation ) )
 
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
@@ -1094,12 +1096,12 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setRotation( attribute.asFloat() );
 		}
 	} else if ( "scale" == name ) {
+		SAVE_NORMAL_STATE_ATTR( String::format( "%2.f, %2.f", mScale.x, mScale.y ) )
+
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Vector2f newScale( mStyle->getNodeAttribute( state, attribute.getName() ).asVector2f() );
 			Action * action = Actions::Scale::New( mScale, newScale, transitionInfo.duration, transitionInfo.timingFunction );
-
-			SAVE_NORMAL_STATE_ATTR( String::format( "%2.f, %2.f", mScale.x, mScale.y ) )
 
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
@@ -1162,13 +1164,13 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setPadding( padding );
 		}
 	} else if ( "opacity" == name ) {
+		SAVE_NORMAL_STATE_ATTR( String::format( "%2.f", mAlpha ) )
+
 		Float alpha = eemin( attribute.asFloat() * 255.f, 255.f );
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( state, attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( state, attribute.getName() ) );
 			Action * action = Actions::Fade::New( mAlpha, alpha, transitionInfo.duration, transitionInfo.timingFunction );
-
-			SAVE_NORMAL_STATE_ATTR( String::format( "%2.f", mAlpha ) )
 
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );

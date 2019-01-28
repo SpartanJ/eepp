@@ -372,7 +372,7 @@ function build_link_configuration( package_name, use_ee_icon )
 	end
 
 	if not is_vs() then
-		buildoptions{ "-std=c++11" }
+		buildoptions{ "-std=c++14" }
 	end
 
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then
