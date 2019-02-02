@@ -12,7 +12,8 @@ StyleSheetProperty::StyleSheetProperty()
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value ) :
 	mName( String::toLower( String::trim( name ) ) ),
-	mValue( String::trim( value ) )
+	mValue( String::trim( value ) ),
+	mSpecificity( 0 )
 {}
 
 StyleSheetProperty::StyleSheetProperty( const std::string & name, const std::string& value, const Uint32 & specificity ) :

@@ -89,41 +89,23 @@ class EE_API UINode : public Node {
 
 		UISkin * setBackgroundFillEnabled( bool enabled );
 
-		UINode * setBackgroundDrawable( const Uint32 & state, Drawable * drawable , bool ownIt = false );
-
 		UINode * setBackgroundDrawable( Drawable * drawable , bool ownIt = false );
-
-		UINode * setBackgroundColor( const Uint32 & state, const Color& color );
 
 		UINode * setBackgroundColor( const Color& color );
 
-		Color getBackgroundColor( const Uint32 & state ) const;
-
 		Color getBackgroundColor() const;
 
-		UINode * setBorderRadius( const Uint32 & state, const unsigned int& corners );
-
 		UINode * setBorderRadius( const unsigned int& corners );
-
-		Uint32 getBorderRadius( const Uint32& state ) const;
 
 		Uint32 getBorderRadius() const;
 
 		UISkin * setForegroundFillEnabled( bool enabled );
 
-		UINode * setForegroundDrawable( const Uint32 & state, Drawable * drawable , bool ownIt = false );
-
 		UINode * setForegroundDrawable( Drawable * drawable , bool ownIt = false );
-
-		UINode * setForegroundColor( const Uint32 & state, const Color& color );
 
 		UINode * setForegroundColor( const Color& color );
 
-		Color getForegroundColor( const Uint32 & state ) const;
-
 		Color getForegroundColor() const;
-
-		UINode * setForegroundRadius( const Uint32 & state, const unsigned int& corners );
 
 		UINode * setForegroundRadius( const unsigned int& corners );
 

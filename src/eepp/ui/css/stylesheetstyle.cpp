@@ -34,6 +34,15 @@ const StyleSheetProperties &StyleSheetStyle::getProperties() const {
 	return mProperties;
 }
 
+StyleSheetProperty StyleSheetStyle::getPropertyByName( const std::string& name ) const {
+	auto it = mProperties.find( name );
+
+	if ( it != mProperties.end() )
+		return it->second;
+
+	return StyleSheetProperty();
+}
+
 void StyleSheetStyle::setProperty( const StyleSheetProperty & property ) {
 	mProperties[ property.getName() ] = property;
 }

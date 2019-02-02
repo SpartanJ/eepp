@@ -57,7 +57,7 @@ class StyleSheetSelectorRule {
 
 		bool hasPseudoClasses() const;
 
-		bool hasPseudoClass(const std::string & cls) const;
+		bool hasPseudoClass(const std::string& cls) const;
 
 		const std::vector<std::string>& getPseudoClasses() const;
 

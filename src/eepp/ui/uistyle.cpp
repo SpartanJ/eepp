@@ -21,39 +21,31 @@ UIStyle::UIStyle( UIWidget * widget ) :
 UIStyle::~UIStyle()
 {}
 
-bool UIStyle::stateExists( const EE::Uint32 & state  ) const {
-	return mStates.find( state ) != mStates.end();
+bool UIStyle::stateExists( const EE::Uint32&  ) const {
+	//return mStates.find( state ) != mStates.end();
+	return true;
 }
 
-void UIStyle::addStyleSheetProperty( const Uint32& state, const StyleSheetProperty& attribute ) {
-	if ( attribute.getName() == "padding" ) {
+void UIStyle::addStyleSheetProperty( const StyleSheetProperty& attribute ) {
+	/*if ( attribute.getName() == "padding" ) {
 		Rectf rect(  NodeAttribute( attribute.getName(), attribute.getValue() ).asRectf() );
-		mStates[ state ][ "paddingleft" ] = StyleSheetProperty( "paddingleft", String::toStr( rect.Left ), attribute.getSpecificity() );
-		mStates[ state ][ "paddingright" ] = StyleSheetProperty( "paddingright", String::toStr( rect.Right ), attribute.getSpecificity() );
-		mStates[ state ][ "paddingtop" ] = StyleSheetProperty( "paddingtop", String::toStr( rect.Top ), attribute.getSpecificity() );
-		mStates[ state ][ "paddingbottom" ] = StyleSheetProperty( "paddingbottom", String::toStr( rect.Bottom ), attribute.getSpecificity() );
+		mElementStyle.setProperty( StyleSheetProperty( "paddingleft", String::toStr( rect.Left ), attribute.getSpecificity() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "paddingright", String::toStr( rect.Right ), attribute.getSpecificity() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "paddingtop", String::toStr( rect.Top ), attribute.getSpecificity() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "paddingbottom", String::toStr( rect.Bottom ), attribute.getSpecificity() ) );
 	} else if ( attribute.getName() == "layout_margin" ) {
 		Rect rect(  NodeAttribute( attribute.getName(), attribute.getValue() ).asRect() );
-		mStates[ state ][ "layout_marginleft" ] = StyleSheetProperty( "layout_marginleft", String::toStr( rect.Left ), attribute.getSpecificity() );
-		mStates[ state ][ "layout_marginright" ] = StyleSheetProperty( "layout_marginright", String::toStr( rect.Right ), attribute.getSpecificity() );
-		mStates[ state ][ "layout_margintop" ] = StyleSheetProperty( "layout_margintop", String::toStr( rect.Top ), attribute.getSpecificity() );
-		mStates[ state ][ "layout_marginbottom" ] = StyleSheetProperty( "layout_marginbottom", String::toStr( rect.Bottom ), attribute.getSpecificity() );
-	} else {
-		mStates[ state ][ attribute.getName() ] = attribute;
-	}
-
-	if ( String::startsWith( attribute.getName(), "transition" ) ) {
-		mTransitionAttributes[ state ].push_back( attribute );
-
-		parseTransitions( state );
+		mElementStyle.setProperty( StyleSheetProperty( "layout_marginleft", String::toStr( rect.Left ), attribute.getSpecificity() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "layout_marginright", String::toStr( rect.Right ), attribute.getSpecificity() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "layout_margintop", String::toStr( rect.Top ), attribute.getSpecificity() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "layout_marginbottom", String::toStr( rect.Bottom ), attribute.getSpecificity() ) );
+	} else*/ {
+		mElementStyle.setProperty( attribute );
 	}
 }
 
 void UIStyle::load() {
-	mStates.clear();
 	mNoncacheableStyles.clear();
-	mTransitions.clear();
-	mTransitionAttributes.clear();
 
 	UISceneNode * uiSceneNode = mWidget->getSceneNode()->isUISceneNode() ? static_cast<UISceneNode*>( mWidget->getSceneNode() ) : NULL;
 
@@ -61,76 +53,33 @@ void UIStyle::load() {
 		CSS::StyleSheet& styleSheet = uiSceneNode->getStyleSheet();
 
 		if ( !styleSheet.isEmpty() ) {
-			CSS::StyleSheet::StyleSheetPseudoClassProperties propertiesByPseudoClass = styleSheet.getElementPropertiesByState( mWidget );
-
-			if ( !propertiesByPseudoClass.empty() ) {
-				Uint32 stateFlag;
-
-				for ( auto it = propertiesByPseudoClass.begin(); it != propertiesByPseudoClass.end(); ++it ) {
-					stateFlag = getStateFlagFromName( it->first );
-
-					if ( eeINDEX_NOT_FOUND != stateFlag )
-						addStyleSheetProperties( stateFlag, it->second );
-				}
-			}
-
+			mCacheableStyles = styleSheet.getCacheableElementStyles( mWidget );
 			mNoncacheableStyles = styleSheet.getNoncacheableElementStyles( mWidget );
 		}
 	}
 }
 
-void UIStyle::addStyleSheetProperties(const Uint32 & state, const CSS::StyleSheetProperties& properties ) {
+void UIStyle::addStyleSheetProperties( const CSS::StyleSheetProperties& properties ) {
 	if ( !properties.empty() ) {
 		for ( auto it = properties.begin(); it != properties.end(); ++it ) {
 			CSS::StyleSheetProperty property = it->second;
 
-			addStyleSheetProperty( state, property );
+			addStyleSheetProperty( property );
 		}
 	}
 }
 
-bool UIStyle::hasTransition( const Uint32& state, const std::string& propertyName ) {
-	bool ret = mTransitions.find( state ) != mTransitions.end() &&
-			( mTransitions[ state ].find( propertyName ) != mTransitions[ state ].end() ||
-			  mTransitions[ state ].find( "all" ) != mTransitions[ state ].end()
-			);
-
-	// When transitions are declared without state are global
-	if ( !ret && state != StateFlagNormal ) {
-		ret = mTransitions.find( StateFlagNormal ) != mTransitions.end() && (
-			  mTransitions[ StateFlagNormal ].find( propertyName ) != mTransitions[ StateFlagNormal ].end() ||
-			  mTransitions[ StateFlagNormal ].find( "all" ) != mTransitions[ StateFlagNormal ].end()
-		);
-	}
-
-	return ret;
+bool UIStyle::hasTransition( const std::string& propertyName ) {
+	return mTransitions.find( propertyName ) != mTransitions.end() || mTransitions.find( "all" ) != mTransitions.end();
 }
 
-UIStyle::TransitionInfo UIStyle::getTransition( const Uint32& state, const std::string& propertyName ) {
-	if ( mTransitions.find( state ) != mTransitions.end() ) {
-		auto propertyTransitionIt = mTransitions[ state ].find( propertyName );
+UIStyle::TransitionInfo UIStyle::getTransition( const std::string& propertyName ) {
+	auto propertyTransitionIt = mTransitions.find( propertyName );
 
-		if ( propertyTransitionIt != mTransitions[ state ].end() ) {
-			return propertyTransitionIt->second;
-		} else if ( ( propertyTransitionIt = mTransitions[ state ].find( "all" ) ) != mTransitions[ state ].end() ) {
-			return propertyTransitionIt->second;
-		} else if ( mTransitions.find( StateFlagNormal ) != mTransitions.end() ) {
-			propertyTransitionIt = mTransitions[ StateFlagNormal ].find( propertyName );
-
-			if ( propertyTransitionIt != mTransitions[ StateFlagNormal ].end() ) {
-				return propertyTransitionIt->second;
-			} else if ( ( propertyTransitionIt = mTransitions[ StateFlagNormal ].find( "all" ) ) != mTransitions[ state ].end() ) {
-				return propertyTransitionIt->second;
-			}
-		}
-	} else if ( mTransitions.find( StateFlagNormal ) != mTransitions.end() ) {
-		auto propertyTransitionIt = mTransitions[ StateFlagNormal ].find( propertyName );
-
-		if ( propertyTransitionIt != mTransitions[ StateFlagNormal ].end() ) {
-			return propertyTransitionIt->second;
-		} else if ( ( propertyTransitionIt = mTransitions[ StateFlagNormal ].find( "all" ) ) != mTransitions[ state ].end() ) {
-			return propertyTransitionIt->second;
-		}
+	if ( propertyTransitionIt != mTransitions.end() ) {
+		return propertyTransitionIt->second;
+	} else if ( ( propertyTransitionIt = mTransitions.find( "all" ) ) != mTransitions.end() ) {
+		return propertyTransitionIt->second;
 	}
 
 	return TransitionInfo();
@@ -138,16 +87,36 @@ UIStyle::TransitionInfo UIStyle::getTransition( const Uint32& state, const std::
 
 void UIStyle::onStateChange() {
 	if ( NULL != mWidget ) {
-		StyleSheetProperties properties;
+		mProperties.clear();
+		mTransitionAttributes.clear();
 
-		auto& props = mStates[ mCurrentState ];
+		if ( mElementStyle.getSelector().select( mWidget ) ) {
+			for ( auto& prop : mElementStyle.getProperties() ) {
+				auto& property = prop.second;
+				auto it = mProperties.find( property.getName() );
 
-		for ( auto& prop : props ) {
-			auto& property = prop.second;
-			auto it = properties.find( property.getName() );
+				if ( it == mProperties.end() || property.getSpecificity() >= it->second.getSpecificity() ) {
+					mProperties[ property.getName() ] = property;
 
-			if ( it == properties.end() || property.getSpecificity() >= it->second.getSpecificity() ) {
-				properties[ property.getName() ] = property;
+					if ( String::startsWith( property.getName(), "transition" ) )
+						mTransitionAttributes.push_back( property );
+				}
+			}
+		}
+
+		for ( auto& style : mCacheableStyles ) {
+			if ( style.getSelector().select( mWidget ) ) {
+				for ( auto& prop : style.getProperties() ) {
+					auto& property = prop.second;
+					auto it = mProperties.find( property.getName() );
+
+					if ( it == mProperties.end() || property.getSpecificity() >= it->second.getSpecificity() ) {
+						mProperties[ property.getName() ] = property;
+
+						if ( String::startsWith( property.getName(), "transition" ) )
+							mTransitionAttributes.push_back( property );
+					}
+				}
 			}
 		}
 
@@ -155,18 +124,23 @@ void UIStyle::onStateChange() {
 			if ( style.getSelector().select( mWidget ) ) {
 				for ( auto& prop : style.getProperties() ) {
 					auto& property = prop.second;
-					auto it = properties.find( property.getName() );
+					auto it = mProperties.find( property.getName() );
 
-					if ( it == properties.end() || property.getSpecificity() >= it->second.getSpecificity() ) {
-						properties[ property.getName() ] = property;
+					if ( it == mProperties.end() || property.getSpecificity() >= it->second.getSpecificity() ) {
+						mProperties[ property.getName() ] = property;
+
+						if ( String::startsWith( property.getName(), "transition" ) )
+							mTransitionAttributes.push_back( property );
 					}
 				}
 			}
 		}
 
+		parseTransitions();
+
 		mWidget->beginAttributesTransaction();
 
-		for ( auto& prop : properties ) {
+		for ( auto& prop : mProperties ) {
 			auto& property = prop.second;
 
 			mWidget->setAttribute( property.getName(), property.getValue(), mCurrentState );
@@ -176,50 +150,40 @@ void UIStyle::onStateChange() {
 	}
 }
 
-StyleSheetProperty UIStyle::getStyleSheetProperty( const Uint32& state, const std::string& attributeName ) const {
-	if ( !attributeName.empty() && stateExists( state ) ) {
-		auto& attributesMap = mStates.at( state );
+StyleSheetProperty UIStyle::getStatelessStyleSheetProperty( const std::string& propertyName ) const {
+	if ( !propertyName.empty() ) {
+		if  ( !mElementStyle.getSelector().hasPseudoClasses() ) {
+			StyleSheetProperty property = mElementStyle.getPropertyByName( propertyName );
 
-		auto attributeFound = attributesMap.find( attributeName );
-
-		if ( attributeFound != attributesMap.end() ) {
-			return attributeFound->second;
+			if ( !property.isEmpty() )
+				return property;
 		}
-	}
 
-	return StyleSheetProperty();
-}
+		for ( const StyleSheetStyle& style : mCacheableStyles ) {
+			if  ( !style.getSelector().hasPseudoClasses() ) {
+				StyleSheetProperty property = style.getPropertyByName( propertyName );
 
-StyleSheetProperty UIStyle::getStyleSheetPropertyFromNames( const Uint32& state, const std::vector<std::string>& propertiesNames ) const {
-	if ( !propertiesNames.empty() && stateExists( state ) ) {
-		auto& attributesMap = mStates.at( state );
-
-		for ( size_t i = 0; i < propertiesNames.size(); i++ ) {
-			const std::string& name = propertiesNames[i];
-			auto attributeFound = attributesMap.find( name );
-
-			if ( attributeFound != attributesMap.end() ) {
-				return attributeFound->second;
+				if ( !property.isEmpty() )
+					return property;
 			}
-
 		}
 	}
 
 	return StyleSheetProperty();
 }
 
-NodeAttribute UIStyle::getNodeAttribute( const Uint32& state, const std::string& attributeName ) const {
-	StyleSheetProperty property( getStyleSheetProperty( state, attributeName ) );
-	return NodeAttribute( property.getName(), property.getValue() );
+StyleSheetProperty UIStyle::getStyleSheetProperty( const std::string& propertyName ) const {
+	auto propertyIt = mProperties.find( propertyName );
+
+	if ( propertyIt != mProperties.end() )
+		return propertyIt->second;
+
+	return StyleSheetProperty();
 }
 
-bool UIStyle::hasStyleSheetProperty( const Uint32 & state, const std::string& propertyName ) const {
-	if ( !propertyName.empty() && stateExists( state ) ) {
-		auto& attributesMap = mStates.at( state );
-		return attributesMap.find( propertyName ) != attributesMap.end();
-	}
-
-	return false;
+NodeAttribute UIStyle::getNodeAttribute( const std::string& attributeName ) const {
+	StyleSheetProperty property( getStyleSheetProperty( attributeName ) );
+	return NodeAttribute( property.getName(), property.getValue() );
 }
 
 void UIStyle::updateState() {
@@ -229,36 +193,23 @@ void UIStyle::updateState() {
 				if ( mCurrentState != getStateFlag(i) ) {
 					mPreviousState = mCurrentState;
 					mCurrentState = getStateFlag(i);
-					onStateChange();
+					break;
 				}
-
-				return;
 			}
 		}
 	}
 
-	Uint32 currentState = mCurrentState;
-
-	mCurrentState = StateFlagNormal;
-
-	if ( currentState != StateFlagNormal ) {
-		onStateChange();
-	}
+	onStateChange();
 }
 
-void UIStyle::parseTransitions( const Uint32& state ) {
+void UIStyle::parseTransitions() {
 	std::vector<std::string> properties;
 	std::vector<Time> durations;
 	std::vector<Time> delays;
 	std::vector<Ease::Interpolation> timingFunctions;
 	TransitionsMap transitions;
 
-	if ( mTransitionAttributes.find( state ) == mTransitionAttributes.end() )
-		return;
-
-	auto transitionAttributes = mTransitionAttributes[ state ];
-
-	for ( auto& attr : transitionAttributes ) {
+	for ( auto& attr : mTransitionAttributes ) {
 		if ( attr.getName() == "transition" ) {
 			auto strTransitions = String::split( attr.getValue(), ',' );
 
@@ -329,7 +280,7 @@ void UIStyle::parseTransitions( const Uint32& state ) {
 
 	if ( properties.empty() ) {
 		if ( !transitions.empty() )
-			mTransitions[ state ] = transitions;
+			mTransitions = transitions;
 
 		return;
 	}
@@ -358,7 +309,7 @@ void UIStyle::parseTransitions( const Uint32& state ) {
 			transitionInfo.timingFunction = timingFunctions[0];
 		}
 
-		mTransitions[ state ][ property ] = transitionInfo;
+		mTransitions[ property ] = transitionInfo;
 	}
 }
 

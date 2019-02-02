@@ -4,9 +4,12 @@
 namespace EE { namespace UI { namespace CSS {
 
 StyleSheetSelector::StyleSheetSelector() :
+	mName( "*" ),
 	mSpecificity(0),
 	mCacheable(true)
-{}
+{
+	parseSelector( mName );
+}
 
 StyleSheetSelector::StyleSheetSelector( const std::string& selectorName ) :
 	mName( String::toLower( selectorName ) ),
@@ -103,6 +106,14 @@ void StyleSheetSelector::parseSelector( std::string selector ) {
 
 const bool &StyleSheetSelector::isCacheable() const {
 	return mCacheable;
+}
+
+bool StyleSheetSelector::hasPseudoClass( const std::string& cls ) const {
+	return mSelectorRules.empty() ? false : ( cls.empty() ? true : mSelectorRules[0].hasPseudoClass( cls ) );
+}
+
+bool StyleSheetSelector::hasPseudoClasses() const {
+	return mSelectorRules.empty() || mSelectorRules[0].hasPseudoClasses();
 }
 
 bool StyleSheetSelector::select( StyleSheetElement * element, const bool& applyPseudo ) const {

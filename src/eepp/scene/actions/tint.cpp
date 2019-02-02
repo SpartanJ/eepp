@@ -126,7 +126,7 @@ void Tint::onUpdate( const Time& ) {
 		switch ( mColorInterpolationType ) {
 			case Background:
 			{
-				widget->setBackgroundColor( widget->getStyleState(),
+				widget->setBackgroundColor(
 						Color( mInterpolationR.getPosition(),
 							  mInterpolationG.getPosition(),
 							  mInterpolationB.getPosition(),
@@ -137,7 +137,7 @@ void Tint::onUpdate( const Time& ) {
 			}
 			case Foreground:
 			{
-				widget->setForegroundColor( widget->getStyleState(),
+				widget->setForegroundColor(
 						Color( mInterpolationR.getPosition(),
 							  mInterpolationG.getPosition(),
 							  mInterpolationB.getPosition(),

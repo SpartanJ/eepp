@@ -39,6 +39,16 @@ int UIState::getStateNumber( const std::string& State ) {
 	return -1;
 }
 
+const char * UIState::getStateNameFromStateFlag( const Uint32& stateFlag ) {
+	for ( int i = 0; i < UIState::StateCount; i++ ) {
+		if ( stateFlag == UIStateFlags[i] ) {
+			return UIStatesNames[i];
+		}
+	}
+
+	return NULL;
+}
+
 const Uint32& UIState::getStateFlag( const Uint32& stateIndex ) {
 	return UIStateFlags[ stateIndex ];
 }

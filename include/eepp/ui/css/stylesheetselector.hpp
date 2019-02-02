@@ -23,6 +23,10 @@ class EE_API StyleSheetSelector {
 		bool select( StyleSheetElement * element, const bool& applyPseudo = true ) const;
 
 		const bool& isCacheable() const;
+
+		bool hasPseudoClass(const std::string& cls) const;
+
+		bool hasPseudoClasses() const;
 	protected:
 		std::string mName;
 		std::string mPseudoClass;

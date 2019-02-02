@@ -255,9 +255,7 @@ bool StyleSheetSelectorRule::matches( StyleSheetElement * element, const bool& a
 	}
 
 	if ( applyPseudo ) {
-		if ( mPseudoClasses.empty() && !element->getStyleSheetPseudoClasses().empty() ) {
-			flags |= PseudoClass;
-		} else if ( !mPseudoClasses.empty() && !element->getStyleSheetPseudoClasses().empty() ) {
+		if ( !mPseudoClasses.empty() && !element->getStyleSheetPseudoClasses().empty() ) {
 			bool hasPseudoClasses = false;
 			const std::vector<std::string>& elPseudoClasses = element->getStyleSheetPseudoClasses();
 

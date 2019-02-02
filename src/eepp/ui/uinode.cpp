@@ -390,53 +390,41 @@ UISkin * UINode::setBackgroundFillEnabled( bool enabled ) {
 	return NULL != mBackgroundState ? mBackgroundState->getSkin() : NULL;
 }
 
-UINode * UINode::setBackgroundDrawable( const Uint32& state, Drawable * drawable, bool ownIt ) {
-	setBackgroundFillEnabled( true )->setStateDrawable( state, drawable, ownIt );
+UINode * UINode::setBackgroundDrawable( Drawable * drawable, bool ownIt ) {
+	setBackgroundFillEnabled( true )->setStateDrawable( UIState::StateFlagNormal, drawable, ownIt );
 	return this;
 }
 
-UINode * UINode::setBackgroundDrawable( Drawable * drawable, bool ownIt ) {
-	return setBackgroundDrawable( UIState::StateFlagNormal, drawable, ownIt );
-}
-
-UINode * UINode::setBackgroundColor( const Uint32 & state, const Color& color ) {
+UINode * UINode::setBackgroundColor( const Color& color ) {
 	UISkin * background = setBackgroundFillEnabled( true );
 
-	Drawable * stateDrawable = background->getStateDrawable( state );
+	Drawable * stateDrawable = background->getStateDrawable( UIState::StateFlagNormal );
 
 	if ( NULL == stateDrawable )
-		setBackgroundDrawable( state, RectangleDrawable::New(), true );
+		setBackgroundDrawable( RectangleDrawable::New(), true );
 
 	if ( NULL != mBackgroundState )
-		mBackgroundState->setStateColor( state, color );
+		mBackgroundState->setStateColor( UIState::StateFlagNormal, color );
 
 	return this;
 }
 
 Color UINode::getBackgroundColor() const {
-	return getBackgroundColor( mState );
-}
-
-Color UINode::getBackgroundColor( const Uint32 & state ) const {
 	if ( NULL != mBackgroundState )
-		return mBackgroundState->getStateColor( state );
+		return mBackgroundState->getStateColor( UIState::StateFlagNormal );
 
-	return Color::White;
+	return Color::Transparent;
 }
 
-UINode * UINode::setBackgroundColor( const Color& color ) {
-	return setBackgroundColor( UIState::StateFlagNormal, color );
-}
-
-UINode * UINode::setBorderRadius( const Uint32 & state, const unsigned int& corners ) {
+UINode * UINode::setBorderRadius( const unsigned int& corners ) {
 	UISkin * background = setBackgroundFillEnabled( true );
 
-	Drawable * stateDrawable = background->getStateDrawable( state );
+	Drawable * stateDrawable = background->getStateDrawable( UIState::StateFlagNormal );
 
 	if ( NULL == stateDrawable ) {
-		setBackgroundColor( state, Color::Black );
+		setBackgroundColor( Color::Black );
 
-		stateDrawable = background->getStateDrawable( state );
+		stateDrawable = background->getStateDrawable( UIState::StateFlagNormal );
 	}
 
 	if ( stateDrawable->getDrawableType() == Drawable::RECTANGLE ) {
@@ -448,9 +436,9 @@ UINode * UINode::setBorderRadius( const Uint32 & state, const unsigned int& corn
 	return this;
 }
 
-Uint32 UINode::getBorderRadius( const Uint32& state ) const {
+Uint32 UINode::getBorderRadius() const {
 	if ( NULL != mBackgroundState && NULL != mBackgroundState->getSkin() ) {
-		Drawable * stateDrawable = mBackgroundState->getSkin()->getStateDrawable( state );
+		Drawable * stateDrawable = mBackgroundState->getSkin()->getStateDrawable( UIState::StateFlagNormal );
 
 		if ( NULL != stateDrawable ) {
 			if ( stateDrawable->getDrawableType() == Drawable::RECTANGLE ) {
@@ -462,14 +450,6 @@ Uint32 UINode::getBorderRadius( const Uint32& state ) const {
 	}
 
 	return 0;
-}
-
-Uint32 UINode::getBorderRadius() const {
-	return getBorderRadius( UIState::StateFlagNormal );
-}
-
-UINode * UINode::setBorderRadius( const unsigned int& corners ) {
-	return setBorderRadius( UIState::StateFlagNormal, corners );
 }
 
 UISkin * UINode::setForegroundFillEnabled( bool enabled ) {
@@ -484,53 +464,41 @@ UISkin * UINode::setForegroundFillEnabled( bool enabled ) {
 	return NULL != mForegroundState ? mForegroundState->getSkin() : NULL;
 }
 
-UINode * UINode::setForegroundDrawable( const Uint32 & state, Drawable * drawable, bool ownIt ) {
-	setForegroundFillEnabled( true )->setStateDrawable( state, drawable, ownIt );
-	return this;
-}
-
 UINode * UINode::setForegroundDrawable( Drawable * drawable, bool ownIt ) {
-	return setForegroundDrawable( UIState::StateFlagNormal, drawable, ownIt );
+	setForegroundFillEnabled( true )->setStateDrawable( UIState::StateFlagNormal, drawable, ownIt );
+	return this;
 }
 
 Color UINode::getForegroundColor() const {
-	return getForegroundColor( mState );
-}
-
-Color UINode::getForegroundColor( const Uint32 & state ) const {
 	if ( NULL != mForegroundState )
-		return mForegroundState->getStateColor( state );
+		return mForegroundState->getStateColor( UIState::StateFlagNormal );
 
-	return Color::White;
+	return Color::Transparent;
 }
 
-UINode * UINode::setForegroundColor( const Uint32 & state, const Color& color ) {
+UINode * UINode::setForegroundColor( const Color& color ) {
 	UISkin * foreground = setForegroundFillEnabled( true );
 
-	Drawable * stateDrawable = foreground->getStateDrawable( state );
+	Drawable * stateDrawable = foreground->getStateDrawable( UIState::StateFlagNormal );
 
 	if ( NULL == stateDrawable )
-		setForegroundDrawable( state, RectangleDrawable::New(), true );
+		setForegroundDrawable( RectangleDrawable::New(), true );
 
 	if ( NULL != mForegroundState )
-		mForegroundState->setStateColor( state, color );
+		mForegroundState->setStateColor( UIState::StateFlagNormal, color );
 
 	return this;
 }
 
-UINode * UINode::setForegroundColor( const Color& color ) {
-	return setForegroundColor( UIState::StateFlagNormal, color );
-}
-
-UINode * UINode::setForegroundRadius( const Uint32& state, const unsigned int& corners ) {
+UINode * UINode::setForegroundRadius( const unsigned int& corners ) {
 	UISkin * foreground = setForegroundFillEnabled( true );
 
-	Drawable * stateDrawable = foreground->getStateDrawable( state );
+	Drawable * stateDrawable = foreground->getStateDrawable( UIState::StateFlagNormal );
 
 	if ( NULL == stateDrawable ) {
-		setForegroundColor( state, Color::Black );
+		setForegroundColor( Color::Black );
 
-		stateDrawable = foreground->getStateDrawable( state );
+		stateDrawable = foreground->getStateDrawable( UIState::StateFlagNormal );
 	}
 
 	if ( stateDrawable->getDrawableType() == Drawable::RECTANGLE ) {
@@ -540,10 +508,6 @@ UINode * UINode::setForegroundRadius( const Uint32& state, const unsigned int& c
 	}
 
 	return this;
-}
-
-UINode * UINode::setForegroundRadius( const unsigned int& corners ) {
-	return setForegroundRadius( UIState::StateFlagNormal, corners );
 }
 
 RectangleDrawable * UINode::setBorderEnabled( bool enabled ) {

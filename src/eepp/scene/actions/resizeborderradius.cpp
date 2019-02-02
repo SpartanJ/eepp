@@ -24,7 +24,7 @@ void ResizeBorderRadius::onUpdate( const Time& ) {
 	if ( NULL != mNode && mNode->isWidget() ) {
 		UIWidget * widget = static_cast<UIWidget*>( mNode );
 
-		widget->setBorderRadius( widget->getStyleState(), mInterpolation.getPosition() );
+		widget->setBorderRadius( mInterpolation.getPosition() );
 	}
 }
 
