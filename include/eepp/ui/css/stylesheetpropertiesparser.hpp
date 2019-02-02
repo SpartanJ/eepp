@@ -26,7 +26,7 @@ class EE_API StyleSheetPropertiesParser {
 			ReadingComment
 		};
 
-		ReadState prevRs;
+		ReadState mPrevRs;
 
 		StyleSheetProperties mProperties;
 
@@ -39,6 +39,8 @@ class EE_API StyleSheetPropertiesParser {
 		int readComment( ReadState& rs, std::size_t pos, std::string& buffer, const std::string& str );
 
 		int readValueUrl( ReadState& rs, std::size_t pos, std::string& buffer, const std::string& str );
+
+		void addProperty( const std::string& name, std::string value );
 };
 
 }}}

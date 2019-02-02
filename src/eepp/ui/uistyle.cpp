@@ -22,12 +22,11 @@ UIStyle::~UIStyle()
 {}
 
 bool UIStyle::stateExists( const EE::Uint32&  ) const {
-	//return mStates.find( state ) != mStates.end();
 	return true;
 }
 
 void UIStyle::addStyleSheetProperty( const StyleSheetProperty& attribute ) {
-	/*if ( attribute.getName() == "padding" ) {
+	if ( attribute.getName() == "padding" ) {
 		Rectf rect(  NodeAttribute( attribute.getName(), attribute.getValue() ).asRectf() );
 		mElementStyle.setProperty( StyleSheetProperty( "paddingleft", String::toStr( rect.Left ), attribute.getSpecificity() ) );
 		mElementStyle.setProperty( StyleSheetProperty( "paddingright", String::toStr( rect.Right ), attribute.getSpecificity() ) );
@@ -39,12 +38,13 @@ void UIStyle::addStyleSheetProperty( const StyleSheetProperty& attribute ) {
 		mElementStyle.setProperty( StyleSheetProperty( "layout_marginright", String::toStr( rect.Right ), attribute.getSpecificity() ) );
 		mElementStyle.setProperty( StyleSheetProperty( "layout_margintop", String::toStr( rect.Top ), attribute.getSpecificity() ) );
 		mElementStyle.setProperty( StyleSheetProperty( "layout_marginbottom", String::toStr( rect.Bottom ), attribute.getSpecificity() ) );
-	} else*/ {
+	} else {
 		mElementStyle.setProperty( attribute );
 	}
 }
 
 void UIStyle::load() {
+	mCacheableStyles.clear();
 	mNoncacheableStyles.clear();
 
 	UISceneNode * uiSceneNode = mWidget->getSceneNode()->isUISceneNode() ? static_cast<UISceneNode*>( mWidget->getSceneNode() ) : NULL;

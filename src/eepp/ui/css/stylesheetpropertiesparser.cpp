@@ -1,4 +1,9 @@
 #include <eepp/ui/css/stylesheetpropertiesparser.hpp>
+#include <eepp/math/rect.hpp>
+#include <eepp/scene/nodeattribute.hpp>
+
+using namespace EE::UI;
+using namespace EE::Scene;
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -18,7 +23,7 @@ const StyleSheetProperties & StyleSheetPropertiesParser::getProperties() const {
 
 void StyleSheetPropertiesParser::parse( std::string propsstr ) {
 	ReadState rs = ReadingPropertyName;
-	prevRs = rs;
+	mPrevRs = rs;
 	std::size_t pos = 0;
 	std::string buffer;
 
@@ -45,7 +50,7 @@ void StyleSheetPropertiesParser::parse( std::string propsstr ) {
 }
 
 int StyleSheetPropertiesParser::readPropertyName(StyleSheetPropertiesParser::ReadState & rs, std::size_t pos, std::string & buffer, const std::string& str) {
-	prevRs = rs;
+	mPrevRs = rs;
 	buffer.clear();
 
 	while ( pos < str.size() ) {
@@ -73,7 +78,7 @@ int StyleSheetPropertiesParser::readPropertyValue(StyleSheetPropertiesParser::Re
 
 	buffer.clear();
 
-	prevRs = rs;
+	mPrevRs = rs;
 
 	while ( pos < str.size() ) {
 		if ( str[pos] == '/' && str.size() > pos + 1 && str[pos+1] == '*' ) {
@@ -89,7 +94,7 @@ int StyleSheetPropertiesParser::readPropertyValue(StyleSheetPropertiesParser::Re
 		if ( str[pos] == ';' ) {
 			rs = ReadingPropertyName;
 
-			mProperties[ propName ] = StyleSheetProperty( propName, buffer );
+			addProperty( propName, buffer );
 
 			return pos + 1;
 		}
@@ -102,7 +107,7 @@ int StyleSheetPropertiesParser::readPropertyValue(StyleSheetPropertiesParser::Re
 		if ( pos == str.size() ) {
 			rs = ReadingPropertyName;
 
-			mProperties[ propName ] = StyleSheetProperty( propName, buffer );
+			addProperty( propName, buffer );
 
 			return pos + 1;
 		}
@@ -116,7 +121,7 @@ int StyleSheetPropertiesParser::readComment(StyleSheetPropertiesParser::ReadStat
 
 	while ( pos < str.size() ) {
 		if ( str[pos] == '*' && str.size() > pos + 1 && str[pos+1] == '/' ) {
-			rs = prevRs;
+			rs = mPrevRs;
 			return pos + 2;
 		}
 
@@ -159,4 +164,25 @@ int StyleSheetPropertiesParser::readValueUrl(StyleSheetPropertiesParser::ReadSta
 	return pos;
 }
 
+void StyleSheetPropertiesParser::addProperty( const std::string& name, std::string value ) {
+	if ( name == "padding" ) {
+		value = String::toLower( String::trim( value ) );
+		Rectf rect( NodeAttribute( name, value ).asRectf() );
+		mProperties[ "paddingleft" ] = StyleSheetProperty( "paddingleft", String::toStr( rect.Left ) );
+		mProperties[ "paddingright" ] = StyleSheetProperty( "paddingright", String::toStr( rect.Right ) );
+		mProperties[ "paddingtop" ] = StyleSheetProperty( "paddingtop", String::toStr( rect.Top ) );
+		mProperties[ "paddingbottom" ] = StyleSheetProperty( "paddingbottom", String::toStr( rect.Bottom ) );
+	} else if ( name == "layout_margin" ) {
+		value = String::toLower( String::trim( value ) );
+		Rect rect( NodeAttribute( name, value ).asRect() );
+		mProperties[ "layout_marginleft" ] = StyleSheetProperty( "layout_marginleft", String::toStr( rect.Left ) );
+		mProperties[ "layout_marginright" ] = StyleSheetProperty( "layout_marginright", String::toStr( rect.Right ) );
+		mProperties[ "layout_margintop" ] = StyleSheetProperty( "layout_margintop", String::toStr( rect.Top ) );
+		mProperties[ "layout_marginbottom" ] = StyleSheetProperty( "layout_marginbottom", String::toStr( rect.Bottom ) );
+	} else {
+		mProperties[ name ] = StyleSheetProperty( name, value );
+	}
+}
+
 }}}
+
