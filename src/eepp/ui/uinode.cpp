@@ -417,37 +417,28 @@ Color UINode::getBackgroundColor() const {
 }
 
 UINode * UINode::setBorderRadius( const unsigned int& corners ) {
+	setBorderEnabled( true )->setCorners( corners );
+
 	UISkin * background = setBackgroundFillEnabled( true );
 
 	Drawable * stateDrawable = background->getStateDrawable( UIState::StateFlagNormal );
 
 	if ( NULL == stateDrawable ) {
-		setBackgroundColor( Color::Black );
+		setBackgroundColor( Color::Transparent );
 
 		stateDrawable = background->getStateDrawable( UIState::StateFlagNormal );
 	}
 
 	if ( stateDrawable->getDrawableType() == Drawable::RECTANGLE ) {
-		RectangleDrawable * rectangleDrawable = static_cast<RectangleDrawable*>( stateDrawable );
-
-		rectangleDrawable->setCorners( corners );
+		static_cast<RectangleDrawable*>( stateDrawable )->setCorners( corners );
 	}
 
 	return this;
 }
 
 Uint32 UINode::getBorderRadius() const {
-	if ( NULL != mBackgroundState && NULL != mBackgroundState->getSkin() ) {
-		Drawable * stateDrawable = mBackgroundState->getSkin()->getStateDrawable( UIState::StateFlagNormal );
-
-		if ( NULL != stateDrawable ) {
-			if ( stateDrawable->getDrawableType() == Drawable::RECTANGLE ) {
-				RectangleDrawable * rectangleDrawable = static_cast<RectangleDrawable*>( stateDrawable );
-
-				return rectangleDrawable->getCorners();
-			}
-		}
-	}
+	if ( NULL != mBorder )
+		return mBorder->getCorners();
 
 	return 0;
 }
@@ -574,7 +565,7 @@ UINode * UINode::unsetFlags(const Uint32 & flags) {
 	return this;
 }
 
-UINode *UINode::resetFlags( Uint32 newFlags ) {
+UINode * UINode::resetFlags( Uint32 newFlags ) {
 	mFlags = newFlags;
 	return this;
 }
@@ -593,18 +584,8 @@ void UINode::drawForeground() {
 
 void UINode::drawBorder() {
 	if ( ( mFlags & UI_BORDER ) && NULL != mBorder ) {
-		if ( NULL != mBorder && NULL != mBackgroundState && NULL != mBackgroundState->getSkin() ) {
-			Drawable * backDrawable = mBackgroundState->getSkin()->getStateDrawable( mBackgroundState->getCurrentState() );
-
-			if ( NULL != backDrawable && backDrawable->getDrawableType() == Drawable::RECTANGLE ) {
-				RectangleDrawable * backgroundDrawable = static_cast<RectangleDrawable*>( backDrawable );
-
-				getBorder()->setCorners( backgroundDrawable->getCorners() );
-			}
-		}
-
 		Uint8 alpha = mBorder->getAlpha();
-		mBorder->setAlpha( eemax<Uint32>( mAlpha * alpha / 255.f, 255 ) );
+		mBorder->setAlpha( eemin<Uint32>( mAlpha * alpha / 255.f, 255 ) );
 		mBorder->draw( Vector2f( mScreenPosi.x, mScreenPosi.y ), Sizef( eefloor(mSize.getWidth()), eefloor(mSize.getHeight()) ) );
 		mBorder->setAlpha( alpha );
 	}
@@ -658,6 +639,7 @@ UISkin * UINode::getForeground() {
 RectangleDrawable * UINode::getBorder() {
 	if ( NULL == mBorder ) {
 		mBorder = RectangleDrawable::New();
+		mBorder->setColor( Color::Transparent );
 		mBorder->setFillMode( PrimitiveFillMode::DRAW_LINE );
 		mBorder->setLineWidth( PixelDensity::dpToPx(1) );
 	}
