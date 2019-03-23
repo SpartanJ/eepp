@@ -63,7 +63,7 @@ class EE_API UIWindow : public UIWidget {
 
 		UIWindow * setSizeWithDecoration( const Sizef& size );
 
-		const Sizef& getSize();
+		const Sizef& getSize() const;
 
 		virtual void setTheme( UITheme * Theme );
 
@@ -229,7 +229,7 @@ class EE_API UIWindow : public UIWidget {
 
 		void fixTitleSize();
 
-		Uint32 onMouseDoubleClick( const Vector2i &position, const Uint32 flags );
+		Uint32 onMouseDoubleClick( const Vector2i &position, const Uint32& flags );
 
 		void checkShortcuts( const Uint32& KeyCode, const Uint32& Mod );
 

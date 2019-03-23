@@ -585,7 +585,7 @@ UIWindow *UIWindow::setSizeWithDecoration( const Sizef & size ) {
 	return this;
 }
 
-const Sizef& UIWindow::getSize() {
+const Sizef& UIWindow::getSize() const {
 	return UIWidget::getSize();
 }
 
@@ -1124,7 +1124,7 @@ void UIWindow::maximize() {
 	}
 }
 
-Uint32 UIWindow::onMouseDoubleClick( const Vector2i &, const Uint32 Flags ) {
+Uint32 UIWindow::onMouseDoubleClick( const Vector2i &, const Uint32 & Flags ) {
 	if ( isResizeable() && ( NULL != mButtonMaximize ) && ( Flags & EE_BUTTON_LMASK ) ) {
 		maximize();
 
