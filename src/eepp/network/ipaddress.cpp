@@ -96,7 +96,7 @@ IpAddress IpAddress::getPublicAddress(Time timeout) {
 	// Here we get the web page from http://www.sfml-dev.org/ip-provider.php
 	// and parse the result to extract our IP address
 	// (not very hard: the web page contains only our IP address).
-	Http server("ip.ensoft-dev.com");
+	Http server("ip.ensoft.dev");
 	Http::Request request("/", Http::Request::Get);
 	Http::Response page = server.sendRequest(request, timeout);
 	if (page.getStatus() == Http::Response::Ok)

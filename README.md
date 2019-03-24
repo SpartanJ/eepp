@@ -180,11 +180,11 @@ Module based on the SFML implementation.
 
 **UI Screenshots:**
 --------------------
-![Map Editor](https://web.ensoft-dev.com/eepp/screenshots/eepp1.png)
+![Map Editor](https://web.ensoft.dev/eepp/screenshots/eepp1.png)
 
-![UI Elements with 2x pixel density](https://web.ensoft-dev.com/eepp/screenshots/eepp2.png)
+![UI Elements with 2x pixel density](https://web.ensoft.dev/eepp/screenshots/eepp2.png)
 
-![Texture Atlas Editor with 1.5x pixel density](https://web.ensoft-dev.com/eepp/screenshots/eepp3.png)
+![Texture Atlas Editor with 1.5x pixel density](https://web.ensoft.dev/eepp/screenshots/eepp3.png)
 
 **UI Layout XML example:**
 --------------------
