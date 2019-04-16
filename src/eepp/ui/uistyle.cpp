@@ -61,10 +61,8 @@ void UIStyle::load() {
 
 void UIStyle::addStyleSheetProperties( const CSS::StyleSheetProperties& properties ) {
 	if ( !properties.empty() ) {
-		for ( auto it = properties.begin(); it != properties.end(); ++it ) {
-			CSS::StyleSheetProperty property = it->second;
-
-			addStyleSheetProperty( property );
+		for ( const auto& it : properties ) {
+			addStyleSheetProperty( it.second );
 		}
 	}
 }
@@ -85,63 +83,43 @@ UIStyle::TransitionInfo UIStyle::getTransition( const std::string& propertyName 
 	return TransitionInfo();
 }
 
+void UIStyle::tryApplyStyle( const StyleSheetStyle& style ) {
+	if ( style.getSelector().select( mWidget ) ) {
+		for ( const auto& prop : style.getProperties() ) {
+			const StyleSheetProperty& property = prop.second;
+			const auto& it = mProperties.find( property.getName() );
+
+			if ( it == mProperties.end() || property.getSpecificity() >= it->second.getSpecificity() ) {
+				mProperties[ property.getName() ] = property;
+
+				if ( String::startsWith( property.getName(), "transition" ) )
+					mTransitionAttributes.push_back( property );
+			}
+		}
+	}
+}
+
 void UIStyle::onStateChange() {
 	if ( NULL != mWidget ) {
 		mProperties.clear();
 		mTransitionAttributes.clear();
 
-		if ( mElementStyle.getSelector().select( mWidget ) ) {
-			for ( auto& prop : mElementStyle.getProperties() ) {
-				auto& property = prop.second;
-				auto it = mProperties.find( property.getName() );
-
-				if ( it == mProperties.end() || property.getSpecificity() >= it->second.getSpecificity() ) {
-					mProperties[ property.getName() ] = property;
-
-					if ( String::startsWith( property.getName(), "transition" ) )
-						mTransitionAttributes.push_back( property );
-				}
-			}
-		}
+		tryApplyStyle( mElementStyle );
 
 		for ( auto& style : mCacheableStyles ) {
-			if ( style.getSelector().select( mWidget ) ) {
-				for ( auto& prop : style.getProperties() ) {
-					auto& property = prop.second;
-					auto it = mProperties.find( property.getName() );
-
-					if ( it == mProperties.end() || property.getSpecificity() >= it->second.getSpecificity() ) {
-						mProperties[ property.getName() ] = property;
-
-						if ( String::startsWith( property.getName(), "transition" ) )
-							mTransitionAttributes.push_back( property );
-					}
-				}
-			}
+			tryApplyStyle( style );
 		}
 
 		for ( auto& style : mNoncacheableStyles ) {
-			if ( style.getSelector().select( mWidget ) ) {
-				for ( auto& prop : style.getProperties() ) {
-					auto& property = prop.second;
-					auto it = mProperties.find( property.getName() );
-
-					if ( it == mProperties.end() || property.getSpecificity() >= it->second.getSpecificity() ) {
-						mProperties[ property.getName() ] = property;
-
-						if ( String::startsWith( property.getName(), "transition" ) )
-							mTransitionAttributes.push_back( property );
-					}
-				}
-			}
+			tryApplyStyle( style );
 		}
 
 		parseTransitions();
 
 		mWidget->beginAttributesTransaction();
 
-		for ( auto& prop : mProperties ) {
-			auto& property = prop.second;
+		for ( const auto& prop : mProperties ) {
+			const StyleSheetProperty& property = prop.second;
 
 			mWidget->setAttribute( property.getName(), property.getValue(), mCurrentState );
 		}

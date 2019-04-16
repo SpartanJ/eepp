@@ -31,7 +31,7 @@ class EE_API UIStyle : public UIState {
 
 				Ease::Interpolation getTimingFunction() const { return timingFunction; }
 
-				const Time& getDelay() const { return delay; };
+				const Time& getDelay() const { return delay; }
 
 				const Time& getDuration() const { return duration; }
 
@@ -76,6 +76,8 @@ class EE_API UIStyle : public UIState {
 		CSS::StyleSheetProperties mProperties;
 		std::vector<CSS::StyleSheetProperty> mTransitionAttributes;
 		TransitionsMap mTransitions;
+
+		void tryApplyStyle( const CSS::StyleSheetStyle& style );
 
 		void updateState();
 

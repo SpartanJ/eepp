@@ -25,13 +25,14 @@ const std::string &StyleSheetSelector::getName() const {
 
 const std::string& StyleSheetSelector::getPseudoClass() const {
 	return mPseudoClass;
-};
+}
 
 const Uint32& StyleSheetSelector::getSpecificity() const {
 	return mSpecificity;
 }
 
 void removeExtraSpaces( std::string& string ) {
+	// @TODO: Optimize this
 	string = String::trim( string );
 	String::replaceAll( string, "   ", " " );
 	String::replaceAll( string, "  ", " " );

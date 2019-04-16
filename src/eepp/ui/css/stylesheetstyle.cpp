@@ -26,11 +26,11 @@ void StyleSheetStyle::print() {
 	std::cout << "}" << std::endl;
 }
 
-const StyleSheetSelector &StyleSheetStyle::getSelector() const {
+const StyleSheetSelector& StyleSheetStyle::getSelector() const {
 	return mSelector;
 }
 
-const StyleSheetProperties &StyleSheetStyle::getProperties() const {
+const StyleSheetProperties& StyleSheetStyle::getProperties() const {
 	return mProperties;
 }
 

@@ -20,8 +20,8 @@ void StyleSheet::combineStyle( const StyleSheetStyle& node ) {
 		auto currentNode = nodeIt->second;
 
 		if ( node.getSelector().getSpecificity() > currentNode.getSelector().getSpecificity() ) {
-			for ( auto pit = node.getProperties().begin(); pit != node.getProperties().end(); ++pit )
-				currentNode.setProperty( pit->second );
+			for ( auto& pit : node.getProperties() )
+				currentNode.setProperty( pit.second );
 		}
 	}
 }
@@ -31,33 +31,35 @@ bool StyleSheet::isEmpty() const {
 }
 
 void StyleSheet::print() {
-	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
-		StyleSheetStyle& style = it->second;
+	for ( auto& it : mNodes ) {
+		StyleSheetStyle& style = it.second;
 
 		style.print();
 	}
 }
 
 void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
-	for ( auto it = styleSheet.getStyles().begin(); it != styleSheet.getStyles().end(); ++it ) {
-		combineStyle( it->second );
+	for ( auto& it : styleSheet.getStyles() ) {
+		combineStyle( it.second );
 	}
 }
 
 StyleSheet::StyleSheetPseudoClassProperties StyleSheet::getElementPropertiesByState( StyleSheetElement * element ) {
 	StyleSheetPseudoClassProperties propertiesSelectedByPseudoClass;
 
-	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
-		StyleSheetStyle& node = it->second;
+	for ( const auto& it : mNodes ) {
+		const StyleSheetStyle& node = it.second;
 		const StyleSheetSelector& selector = node.getSelector();
 
 		if ( selector.isCacheable() && selector.select( element, false ) ) {
-			for ( auto pit = node.getProperties().begin(); pit != node.getProperties().end(); ++pit ) {
+			for ( const auto& pit : node.getProperties() ) {
 				StyleSheetProperties& pseudoClassProperties = propertiesSelectedByPseudoClass[selector.getPseudoClass()];
-				auto pcit = pseudoClassProperties.find( pit->second.getName() );
+				const StyleSheetProperty& property = pit.second;
+				const auto& pcit = pseudoClassProperties.find( property.getName() );
+				const StyleSheetProperty& propertyRight = pcit->second;
 
-				if ( pcit == pseudoClassProperties.end() || pit->second.getSpecificity() >= pcit->second.getSpecificity() ) {
-					pseudoClassProperties[ pit->second.getName() ] = pit->second;
+				if ( pcit == pseudoClassProperties.end() || property.getSpecificity() >= propertyRight.getSpecificity() ) {
+					pseudoClassProperties[ property.getName() ] = property;
 				}
 			}
 		}
@@ -69,8 +71,8 @@ StyleSheet::StyleSheetPseudoClassProperties StyleSheet::getElementPropertiesBySt
 StyleSheetStyleVector StyleSheet::getElementStyles( StyleSheetElement * element , const bool& applyPseudo ) {
 	StyleSheetStyleVector styles;
 
-	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
-		StyleSheetStyle& node = it->second;
+	for ( const auto& it : mNodes ) {
+		const StyleSheetStyle& node = it.second;
 		const StyleSheetSelector& selector = node.getSelector();
 
 		if ( selector.select( element, applyPseudo ) ) {
@@ -84,8 +86,8 @@ StyleSheetStyleVector StyleSheet::getElementStyles( StyleSheetElement * element 
 StyleSheetStyleVector StyleSheet::getCacheableElementStyles( StyleSheetElement * element, const bool& applyPseudo ) {
 	StyleSheetStyleVector styles;
 
-	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
-		StyleSheetStyle& node = it->second;
+	for ( const auto& it : mNodes ) {
+		const StyleSheetStyle& node = it.second;
 		const StyleSheetSelector& selector = node.getSelector();
 
 		if ( selector.isCacheable() && selector.select( element, applyPseudo ) ) {
@@ -99,8 +101,8 @@ StyleSheetStyleVector StyleSheet::getCacheableElementStyles( StyleSheetElement *
 StyleSheetStyleVector StyleSheet::getNoncacheableElementStyles( StyleSheetElement * element, const bool& applyPseudo ) {
 	StyleSheetStyleVector styles;
 
-	for ( auto it = mNodes.begin(); it != mNodes.end(); ++it ) {
-		StyleSheetStyle& node = it->second;
+	for ( const auto& it : mNodes ) {
+		const StyleSheetStyle& node = it.second;
 		const StyleSheetSelector& selector = node.getSelector();
 
 		if ( !selector.isCacheable() && selector.select( element, applyPseudo ) ) {
