@@ -42,7 +42,7 @@ Entropia Engine++
   * Animated Sprites.
 
   * Texture Atlas support ( automatic creation and update of the texture atlas, editor included ).
-  
+
   * Clipping Masks ( stencil, scissors, planes )
 
   * Nine Patch resizable bitmaps support.
@@ -63,7 +63,7 @@ Entropia Engine++
   * Color hardware cursors ( SDL 2 fully supported, partial support with SFML ).
 
   * Display Manager
-  
+
   * Joystick support.
 
 
@@ -77,7 +77,7 @@ Entropia Engine++
 -------------------
 
   * Full OOP chipmunk physics wrapper.
- 
+
 
 **System Module:**
 ------------------
@@ -103,7 +103,7 @@ Entropia Engine++
 ----------------
 
   * General purpose functions and templates ( vector, quad, polygon, etc ).
-  
+
   * Interpolation classes with easing.
 
   * Some minor math utilities, include Mersenne Twister random number generator implementation, perlin noise and more.
@@ -114,9 +114,9 @@ Entropia Engine++
   * Web Requests with HTTP client, with **SSL support** ( provided by mbedtls or openssl ).
 
   * Asynchronous http requests.
-  
+
   * File Transfers with FTP client.
-  
+
   * TCP and UDP sockets.
 
 Module based on the SFML implementation.
@@ -133,7 +133,7 @@ Module based on the SFML implementation.
   * Node Message system.
 
   * Programmable actions for nodes ( fade, rotate, move, scale, etc ).
-  
+
 
 **UI Module:**
 --------------
@@ -141,19 +141,19 @@ Module based on the SFML implementation.
   * Base controls to manage the game objects as nodes, with all basic input interaction events ( clicks, keypress, mouser over, focus, etc ).
 
   * Fully featured UI system, animation support, scaling, rotating, clipping, events, messages, etc.
- 
+
   * Themes and skins support.
 
   * Pixel density support ( scaling of UI elements defined by the pixel density of the screen ).
-  
+
   * All the basic controls are implemented ( button, textbox, combobox, inputbox, menu, listbox, scrollbars, etc ).
 
   * Draw invalidation support. It can be used to make real apps, with low resource usage ( only redraws when needed ).
-  
+
   * Layout system similar to Android layouts ( LinearLayout, RelativeLayout, GridLayout ).
-  
+
   * Advanced features as text selection and key bindings.
-  
+
   * Load layouts from XMLs
 
 
@@ -224,7 +224,7 @@ UITextView::New()->setText(  "Text  on  test  1"  )
 
 **How can i learn to use the library?**
 ----------------------------------------------
-This is the current big issue with the library. Since i'm solo working, it's really difficult keep up the documentation updated. But i'll work to improve that in the near future. For the moment you have two options: build the documentation and read code examples. The documentation is not complete but most modules are documented. Sadly not the UI module ( the biggest one ), but it's easy to get along with the examples. The library is supper easy to use, but is kind of big, so, knowing about everything i'll take time. I you're interested you can contact me anytime. 
+This is the current big issue with the library. Since i'm solo working, it's really difficult keep up the documentation updated. But i'll work to improve that in the near future. For the moment you have two options: build the documentation and read code examples. The documentation is not complete but most modules are documented. Sadly not the UI module ( the biggest one ), but it's easy to get along with the examples. The library is supper easy to use, but is kind of big, so, knowing about everything i'll take time. I you're interested you can contact me anytime.
 
 **How to build it?**
 ------------------------
@@ -249,7 +249,7 @@ That's it. That will build the whole project.
 
 **_Windows_**
 
-You have two options: build with *Visual Studio* or with *mingw*. 
+You have two options: build with *Visual Studio* or with *mingw*.
 To build with any of both options first you will need to build the project files with [premake4](https://premake.github.io/download.html). Then add the premake4.exe file to any of the executable paths defined in `PATH` ( or add one ).
 
 For *Visual Studio*:
@@ -274,7 +274,7 @@ Then you will need the prebuild binaries and development libraries of [*SDL2*](h
 For a CLI build you can use the `projects/osx/make.sh` script, that generates the *Makefiles* and builds the project, also fix the dylibs generated.
 
 For *XCode* :
-`premake4.exe --with-ssl --with-static-freetype xcode4`
+`premake4 --with-ssl --with-static-freetype xcode4`
 
 And open the XCode project generated in `make/osx/`
 
@@ -353,8 +353,8 @@ Rebuild the map editor with undo/redo support ( or deprecate it in favor of TMX,
   * The [FreeType Project](https://www.freetype.org/freetype2/docsindex.html)
 
   *  And  a  **lot**  more  people!
-  
-  
+
+
 **Code License**
 --------------------
 [MIT License](http://www.opensource.org/licenses/mit-license.php)
