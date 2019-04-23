@@ -1,5 +1,6 @@
 #include <eepp/network/http.hpp>
 #include <eepp/network/ssl/sslsocket.hpp>
+#include <eepp/network/uri.hpp>
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <cctype>
@@ -12,9 +13,11 @@ using namespace EE::Network::SSL;
 
 namespace EE { namespace Network {
 
-Http::Request::Request(const std::string& uri, Method method, const std::string& body, bool validateCertificate, bool validateHostname ) :
+Http::Request::Request(const std::string& uri, Method method, const std::string& body, bool validateCertificate, bool validateHostname , bool followRedirect) :
 	mValidateCertificate( validateCertificate ),
-	mValidateHostname( validateHostname )
+	mValidateHostname( validateHostname ),
+	mFollowRedirect( followRedirect ),
+	mRedirectionCount( 0 )
 {
 	setMethod(method);
 	setUri(uri);
@@ -65,6 +68,14 @@ const bool &Http::Request::getValidateHostname() const {
 
 void Http::Request::setValidateHostname(bool enable) {
 	mValidateHostname = enable;
+}
+
+const bool &Http::Request::getFollowRedirect() const {
+	return mFollowRedirect;
+}
+
+void Http::Request::setFollowRedirect(bool follow) {
+	mFollowRedirect = follow;
 }
 
 std::string Http::Request::prepare() const {
@@ -261,6 +272,8 @@ Http::~Http() {
 }
 
 void Http::setHost(const std::string& host, unsigned short port, bool useSSL) {
+	bool sameHost( host == mHostName && port == mPort && useSSL == mIsSSL );
+
 	// Check the protocol
 	if (String::toLower(host.substr(0, 7)) == "http://") {
 		// HTTP protocol
@@ -292,6 +305,15 @@ void Http::setHost(const std::string& host, unsigned short port, bool useSSL) {
 		mHostName.erase(mHostName.size() - 1);
 
 	mHost = IpAddress(mHostName);
+
+	// If the new host is different to the last set host
+	// and there's an open connection to the host, we close
+	// the old connection to prepare a new one.
+	if ( !sameHost && NULL != mConnection ) {
+		TcpSocket * tcp = mConnection;
+		eeSAFE_DELETE( tcp );
+		mConnection = NULL;
+	}
 }
 
 Http::Response Http::sendRequest(const Http::Request& request, Time timeout) {
@@ -334,6 +356,26 @@ Http::Response Http::sendRequest(const Http::Request& request, Time timeout) {
 
 		// Close the connection
 		mConnection->disconnect();
+	}
+
+	// If a redirection is requested, and requests follows redirections,
+	// send a new request to the redirection location.
+	if ( ( received.getStatus() == Response::MovedPermanently || received.getStatus() == Response::MovedTemporarily ) &&
+		 request.getFollowRedirect() ) {
+
+		const_cast<Http::Request&>( request ).mRedirectionCount++;
+
+		// Only continue redirecting if less than 10 redirections were done
+		if ( request.mRedirectionCount < 10 ) {
+			std::string location(received.getField("location"));
+			URI uri(location);
+
+			setHost( uri.getHost(), uri.getPort(), uri.getScheme() == "https" ? true : false );
+			Http::Request newRequest(request);
+			newRequest.setUri( uri.getPathEtc() );
+
+			return sendRequest( request, timeout );
+		}
 	}
 
 	return received;
@@ -576,8 +618,8 @@ void Http::sendAsyncRequest( AsyncResponseCallback cb, const Http::Request& requ
 	mThreads.push_back( thread );
 }
 
-void Http::downloadAsyncRequest(Http::AsyncResponseCallback cb, const Http::Request & request, IOStream & writeTo, Time timeout) {
-	AsyncRequest * thread = eeNew( AsyncRequest, ( this, cb, request, timeout ) );
+void Http::downloadAsyncRequest(Http::AsyncResponseCallback cb, const Http::Request& request, IOStream& writeTo, Time timeout) {
+	AsyncRequest * thread = eeNew( AsyncRequest, ( this, cb, request, writeTo, timeout ) );
 
 	thread->launch();
 

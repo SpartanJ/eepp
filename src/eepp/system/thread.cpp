@@ -47,7 +47,7 @@ Uint32 Thread::getId() {
 }
 
 void Thread::run() {
-	mEntryPoint->Run();
+	mEntryPoint->run();
 }
 
 }}
