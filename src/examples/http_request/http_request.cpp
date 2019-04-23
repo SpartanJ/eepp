@@ -40,29 +40,29 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 			http.setHost( uri.getHost(), uri.getPort() );
 
 			// Set the path and query parts for the request
-			request.setUri( uri.getPathAndQuery() );
-		}
+			request.setUri( uri.getPathEtc() );
 
-		// Send the request
-		Http::Response response = http.sendRequest(request);
+			// Send the request
+			Http::Response response = http.sendRequest(request);
 
-		// Check the status code and display the result
-		Http::Response::Status status = response.getStatus();
+			// Check the status code and display the result
+			Http::Response::Status status = response.getStatus();
 
-		if ( status == Http::Response::Ok ) {
-			Http::Response::FieldTable headers = response.getHeaders();
+			if ( status == Http::Response::Ok ) {
+				Http::Response::FieldTable headers = response.getHeaders();
 
-			std::cout << "Headers: " << std::endl;
+				std::cout << "Headers: " << std::endl;
 
-			for ( auto head = headers.begin(); head != headers.end(); ++head ) {
-				std::cout << "\t" << head->first << ": " << head->second << std::endl;
+				for ( auto head = headers.begin(); head != headers.end(); ++head ) {
+					std::cout << "\t" << head->first << ": " << head->second << std::endl;
+				}
+
+				std::cout << std::endl << "Body: " << std::endl;
+
+				std::cout << response.getBody() << std::endl;
+			} else {
+				std::cout << "Error " << status << std::endl;
 			}
-
-			std::cout << std::endl << "Body: " << std::endl;
-
-			std::cout << response.getBody() << std::endl;
-		} else {
-			std::cout << "Error " << status << std::endl;
 		}
 	}
 

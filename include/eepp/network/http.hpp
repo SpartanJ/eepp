@@ -45,8 +45,10 @@ class EE_API Http : NonCopyable {
 			**  @param method Method to use for the request
 			**  @param body   Content of the request's body
 			**  @param validateCertificate Enables certificate validation for https request
-			**  @param validateHostname Enables hostname validation for https request */
-			Request(const std::string& uri = "/", Method method = Get, const std::string& body = "", bool validateCertificate = true, bool validateHostname = true );
+			**  @param validateHostname Enables hostname validation for https request
+			**  @param followRedirect Allow follor redirects to the request.
+			*/
+			Request(const std::string& uri = "/", Method method = Get, const std::string& body = "", bool validateCertificate = true, bool validateHostname = true, bool followRedirect = true);
 
 			/** @brief Set the value of a field
 			**  The field is created if it doesn't exist. The name of
@@ -99,6 +101,12 @@ class EE_API Http : NonCopyable {
 
 			/** Enable/disable SSL hostname validation */
 			void setValidateHostname( bool enable );
+
+			/** @return If requests follow redirects */
+			const bool& getFollowRedirect() const;
+
+			/** Enables/Disables follow redirects */
+			void setFollowRedirect( bool follow );
 		private:
 			friend class Http;
 
@@ -126,6 +134,8 @@ class EE_API Http : NonCopyable {
 			std::string		mBody;					///< Body of the request
 			bool			mValidateCertificate;	///< Validates the SSL certificate in case of an HTTPS request
 			bool			mValidateHostname;		///< Validates the hostname in case of an HTTPS request
+			bool			mFollowRedirect;		///< Follows redirect response codes
+			unsigned int	mRedirectionCount;		///< Number of redirections followed by the request
 		};
 
 		/** @brief Define a HTTP response */

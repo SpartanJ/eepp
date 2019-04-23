@@ -127,7 +127,7 @@ namespace Private {
 struct ThreadFunc
 {
 	virtual ~ThreadFunc() {}
-	virtual void Run() = 0;
+	virtual void run() = 0;
 };
 
 // Specialization using a functor (including free functions) with no argument
@@ -135,7 +135,7 @@ template <typename T>
 struct ThreadFunctor : ThreadFunc
 {
 	ThreadFunctor(T functor) : mFunctor(functor) {}
-	virtual void Run() {mFunctor();}
+	virtual void run() {mFunctor();}
 	T mFunctor;
 };
 
@@ -144,7 +144,7 @@ template <typename F, typename A>
 struct ThreadFunctorWithArg : ThreadFunc
 {
 	ThreadFunctorWithArg(F function, A arg) : mFunction(function), mArg(arg) {}
-	virtual void Run() {mFunction(mArg);}
+	virtual void run() {mFunction(mArg);}
 	F mFunction;
 	A mArg;
 };
@@ -154,7 +154,7 @@ template <typename C>
 struct ThreadMemberFunc : ThreadFunc
 {
 	ThreadMemberFunc(void(C::*function)(), C* object) : mFunction(function), mObject(object) {}
-	virtual void Run() {(mObject->*mFunction)();}
+	virtual void run() {(mObject->*mFunction)();}
 	void(C::*mFunction)();
 	C* mObject;
 };
