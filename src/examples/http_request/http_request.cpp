@@ -1,15 +1,4 @@
 #include <eepp/ee.hpp>
-#include <iostream>
-
-void AsyncRequestCallback( const Http& http, Http::Request& request, Http::Response& response ) {
-	std::cout << "Got response from request: " << http.getHostName() << request.getUri() << std::endl;
-
-	if ( response.getStatus() == Http::Response::Ok ) {
-		std::cout << response.getBody() << std::endl;
-	} else {
-		std::cout << "Error " << response.getStatus() << std::endl;
-	}
-}
 
 EE_MAIN_FUNC int main (int argc, char * argv []) {
 	{
@@ -18,7 +7,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		Http::Request request;
 
 		if ( argc < 2 ) {
-			// We'll work on http://en.wikipedia.org
+			// We'll work on en.wikipedia.org
 			if ( SSLSocket::isSupported() ) {
 				http.setHost("https://en.wikipedia.org");
 			} else {
@@ -31,7 +20,15 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 			// Creates an async http request
 			Http::Request asyncRequest( "/wiki/" + Version::getCodename() );
 
-			http.sendAsyncRequest( cb::Make3( AsyncRequestCallback ), asyncRequest, Seconds( 5 ) );
+			http.sendAsyncRequest([]( const Http& http, Http::Request& request, Http::Response& response ) {
+				std::cout << "Got response from request: " << http.getHostName() << request.getUri() << std::endl;
+
+				if ( response.getStatus() == Http::Response::Ok ) {
+					std::cout << response.getBody() << std::endl;
+				} else {
+					std::cout << "Error " << response.getStatus() << std::endl;
+				}
+			}, asyncRequest, Seconds( 5 ) );
 		} else {
 			// If the user provided the URI, creates an instance of URI to parse it.
 			URI uri( argv[1] );
