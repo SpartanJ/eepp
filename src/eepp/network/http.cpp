@@ -86,10 +86,12 @@ std::string Http::Request::prepare() const {
 	switch (mMethod) {
 		default :
 		case Get:		method = "GET";  break;
-		case Post:		method = "POST"; break;
 		case Head:		method = "HEAD"; break;
+		case Post:		method = "POST"; break;
 		case Put:		method = "PUT"; break;
 		case Delete:	method = "DELETE"; break;
+		case Options:	method = "OPTIONS"; break;
+		case Patch:		method = "PATCH"; break;
 	}
 
 	// Write the first line containing the request type
@@ -367,22 +369,19 @@ Http::Response Http::sendRequest(const Http::Request& request, Time timeout) {
 
 		// Only continue redirecting if less than 10 redirections were done
 		if ( request.mRedirectionCount < 10 ) {
-			std::string location(received.getField("location"));
-			URI uri(location);
-
-			setHost( uri.getHost(), uri.getPort(), uri.getScheme() == "https" ? true : false );
-			Http::Request newRequest(request);
+			std::string location( received.getField("location") );
+			URI uri( location );
+			Http http( uri.getHost(), uri.getPort(), uri.getScheme() == "https" ? true : false );
+			Http::Request newRequest( request );
 			newRequest.setUri( uri.getPathEtc() );
-
-			return sendRequest( request, timeout );
+			return http.sendRequest( request, timeout );
 		}
 	}
 
 	return received;
 }
 
-
-Http::Response Http::downloadRequest(const Http::Request & request, IOStream & writeTo, Time timeout) {
+Http::Response Http::downloadRequest(const Http::Request& request, IOStream& writeTo, Time timeout) {
 	if ( 0 == mHost.toInteger() ) {
 		return Response();
 	}
@@ -475,8 +474,31 @@ Http::Response Http::downloadRequest(const Http::Request & request, IOStream & w
 					}
 				}
 
-				if ( !header.empty() )
+				if ( !header.empty() ) {
 					received.parse(header);
+
+					// If a redirection is requested, and requests follows redirections,
+					// send a new request to the redirection location.
+					if ( ( received.getStatus() == Response::MovedPermanently || received.getStatus() == Response::MovedTemporarily ) &&
+						 request.getFollowRedirect() ) {
+
+						const_cast<Http::Request&>( request ).mRedirectionCount++;
+
+						// Only continue redirecting if less than 10 redirections were done
+						if ( request.mRedirectionCount < 10 ) {
+							std::string location( received.getField("location") );
+							URI uri( location );
+							Http http( uri.getHost(), uri.getPort(), uri.getScheme() == "https" ? true : false );
+							Http::Request newRequest( request );
+							newRequest.setUri( uri.getPathEtc() );
+
+							// Close the connection
+							mConnection->disconnect();
+
+							return http.downloadRequest( request, writeTo, timeout );
+						}
+					}
+				}
 			}
 		}
 
@@ -576,10 +598,6 @@ void Http::removeOldThreads() {
 Http::Request Http::prepareFields(const Http::Request & request) {
 	Request toSend(request);
 
-	if (!toSend.hasField("From")) {
-		toSend.setField("From", "user@eepp.com.ar");
-	}
-
 	if (!toSend.hasField("User-Agent")) {
 		toSend.setField("User-Agent", "eepp-network");
 	}
@@ -620,6 +638,19 @@ void Http::sendAsyncRequest( AsyncResponseCallback cb, const Http::Request& requ
 
 void Http::downloadAsyncRequest(Http::AsyncResponseCallback cb, const Http::Request& request, IOStream& writeTo, Time timeout) {
 	AsyncRequest * thread = eeNew( AsyncRequest, ( this, cb, request, writeTo, timeout ) );
+
+	thread->launch();
+
+	// Clean old threads
+	Lock l( mThreadsMutex );
+
+	removeOldThreads();
+
+	mThreads.push_back( thread );
+}
+
+void Http::downloadAsyncRequest(Http::AsyncResponseCallback cb, const Http::Request& request, std::string writePath, Time timeout) {
+	AsyncRequest * thread = eeNew( AsyncRequest, ( this, cb, request, writePath, timeout ) );
 
 	thread->launch();
 

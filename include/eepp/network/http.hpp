@@ -31,11 +31,13 @@ class EE_API Http : NonCopyable {
 			public :
 			/** @brief Enumerate the available HTTP methods for a request */
 			enum Method {
-				Get,	///< Request in get mode, standard method to retrieve a page
-				Post,	///< Request in post mode, usually to send data to a page
-				Head,	///< Request a page's header only
-				Put,	///< Request in put mode, useful for a REST API
-				Delete	///< Request in delete mode, useful for a REST API
+				Get,     ///< The GET method requests a representation of the specified resource. Requests using GET should only retrieve data.
+				Head,    ///< Request a page's header only
+				Post,    ///< The POST method is used to submit an entity to the specified resource, often causing a change in state or side effects on the server.
+				Put,     ///< The PUT method replaces all current representations of the target resource with the request payload.
+				Delete,  ///< The DELETE method deletes the specified resource.
+				Options, ///< The OPTIONS method is used to describe the communication options for the target resource.
+				Patch    ///< The PATCH method is used to apply partial modifications to a resource.
 			};
 
 			/** @brief Default constructor
@@ -248,7 +250,7 @@ class EE_API Http : NonCopyable {
 		Http();
 
 		/** @brief Construct the HTTP client with the target host
-		**  This is equivalent to calling SetHost(host, port).
+		**  This is equivalent to calling setHost(host, port).
 		**  The port has a default value of 0, which means that the
 		**  HTTP client will use the right port according to the
 		**  protocol used (80 for HTTP, 443 for HTTPS). You should
@@ -321,13 +323,18 @@ class EE_API Http : NonCopyable {
 
 		/** @brief Sends the request and creates a new thread, when got the response informs the result to the callback.
 		**	This function does not lock the caller thread.
-		**  @see SendRequest */
+		**  @see sendRequest */
 		void sendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, Time timeout = Time::Zero );
 
 		/** @brief Sends the request and creates a new thread, when got the response informs the result to the callback.
 		**	This function does not lock the caller thread.
-		**  @see SendRequest */
+		**  @see downloadRequest */
 		void downloadAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, IOStream& writeTo, Time timeout = Time::Zero );
+
+		/** @brief Sends the request and creates a new thread, when got the response informs the result to the callback.
+		**	This function does not lock the caller thread.
+		**  @see downloadRequest */
+		void downloadAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, std::string writePath, Time timeout = Time::Zero );
 
 		/** @return The host address */
 		const IpAddress& getHost() const;
