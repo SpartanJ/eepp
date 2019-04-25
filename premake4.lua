@@ -992,6 +992,7 @@ solution "eepp"
 		kind "ConsoleApp"
 		language "C++"
 		files { "src/examples/http_request/*.cpp" }
+		includedirs { "src/thirdparty" }
 		build_link_configuration( "eehttp-request", true )
 
 	-- Tools
