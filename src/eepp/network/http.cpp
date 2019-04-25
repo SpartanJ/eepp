@@ -225,7 +225,8 @@ void Http::Response::parse(const std::string& data) {
 
 			// Copy the actual content data
 			std::istreambuf_iterator<char> it(in);
-			for (std::size_t i = 0; i < length; i++)
+			std::istreambuf_iterator<char> itEnd;
+			for (std::size_t i = 0; ((i < length) && (it != itEnd)); i++)
 				mBody.push_back(*it++);
 		}
 
