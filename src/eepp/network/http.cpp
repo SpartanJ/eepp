@@ -17,6 +17,7 @@ Http::Request::Request(const std::string& uri, Method method, const std::string&
 	mValidateCertificate( validateCertificate ),
 	mValidateHostname( validateHostname ),
 	mFollowRedirect( followRedirect ),
+	mCancel( false ),
 	mRedirectionCount( 0 )
 {
 	setMethod(method);
@@ -76,6 +77,22 @@ const bool &Http::Request::getFollowRedirect() const {
 
 void Http::Request::setFollowRedirect(bool follow) {
 	mFollowRedirect = follow;
+}
+
+void Http::Request::setProgressCallback(const Http::Request::ProgressCallback& progressCallback) {
+	mProgressCallback = progressCallback;
+}
+
+const Http::Request::ProgressCallback& Http::Request::getProgressCallback() const {
+	return mProgressCallback;
+}
+
+void Http::Request::cancel() {
+	mCancel = true;
+}
+
+const bool &Http::Request::isCancelled() const {
+	return mCancel;
 }
 
 std::string Http::Request::prepare() const {
@@ -365,7 +382,7 @@ Http::Response Http::sendRequest(const Http::Request& request, Time timeout) {
 	if ( ( received.getStatus() == Response::MovedPermanently || received.getStatus() == Response::MovedTemporarily ) &&
 		 request.getFollowRedirect() ) {
 
-		const_cast<Http::Request&>( request ).mRedirectionCount++;
+		request.mRedirectionCount++;
 
 		// Only continue redirecting if less than 10 redirections were done
 		if ( request.mRedirectionCount < 10 ) {
@@ -378,7 +395,7 @@ Http::Response Http::sendRequest(const Http::Request& request, Time timeout) {
 		}
 	}
 
-	return received;
+	return std::move(received);
 }
 
 Http::Response Http::downloadRequest(const Http::Request& request, IOStream& writeTo, Time timeout) {
@@ -391,26 +408,49 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 		mConnection			= Conn;
 	}
 
+	// First make sure that the request is valid -- add missing mandatory fields
 	Request toSend(prepareFields(request));
+
+	// Prepare the response
 	Response received;
 
+	// Connect the socket to the host
 	if (mConnection->connect(mHost, mPort, timeout) == Socket::Done) {
+		// Convert the request to string and send it through the connected socket
 		std::string requestStr = toSend.prepare();
 
 		if (!requestStr.empty()) {
+			// Send it through the socket
 			if (mConnection->send(requestStr.c_str(), requestStr.size()) == Socket::Done) {
+				// Wait for the server's response
 				int isnheader = 0;
-				size_t len = 0;
+				std::size_t currentTotalBytes = 0;
+				std::size_t len = 0;
 				char * eol; // end of line
 				char * bol; // beginning of line
 				std::size_t size = 0;
-				const size_t bufferSize = 1024;
+				const std::size_t bufferSize = 1024;
 				char buffer[bufferSize+1];
 				std::string header;
 
-				while (mConnection->receive(buffer, bufferSize, size) == Socket::Done) {
-					if ( isnheader != 0 )
+				while (!request.isCancelled() && mConnection->receive(buffer, bufferSize, size) == Socket::Done) {
+					if ( isnheader != 0 ) {
+						currentTotalBytes += size;
 						writeTo.write( buffer, size );
+
+						if ( request.getProgressCallback() ) {
+							std::size_t length = 0;
+
+							if ( !received.getField("content-length").empty() ) {
+								String::fromString( length, received.getField("content-length") );
+							}
+
+							if ( !request.getProgressCallback()( *this, request, length, currentTotalBytes ) ) {
+								request.mCancel = true;
+								break;
+							}
+						}
+					}
 
 					if ( isnheader == 0 ) {
 						// calculate combined length of unprocessed data and new data
@@ -421,15 +461,19 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 
 						// checks if the header break happened to be the first line of the buffer
 						if ( !( strncmp( buffer, "\r\n", 2 ) ) ) {
-							if (len > 2)
+							if (len > 2) {
+								currentTotalBytes += (len-2);
 								writeTo.write(buffer, (len-2));
+							}
 
 							continue;
 						}
 
 						if ( !( strncmp( buffer, "\n", 1 ) ) ) {
-							if ( len > 1 )
+							if ( len > 1 ) {
+								currentTotalBytes += (len-1);
 								writeTo.write(buffer, (len-1));
+							}
 
 							continue;
 						}
@@ -457,45 +501,48 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 								len = len - ( bol - buffer );
 
 								// write remaining data to FILE stream
-								if ( len > 0 )
+								if ( len > 0 ) {
+									currentTotalBytes += len;
 									writeTo.write( bol, len );
+								}
 
 								header.append( buffer, ( bol - buffer ) );
 
 								// reset length of left over data to zero and continue processing
 								// non-header information
 								len = 0;
+
+								if ( !header.empty() ) {
+									// Build the Response object from the received data
+									received.parse(header);
+
+									// If a redirection is requested, and requests follows redirections,
+									// send a new request to the redirection location.
+									if ( ( received.getStatus() == Response::MovedPermanently || received.getStatus() == Response::MovedTemporarily ) &&
+										 request.getFollowRedirect() ) {
+
+										request.mRedirectionCount++;
+
+										// Only continue redirecting if less than 10 redirections were done
+										if ( request.mRedirectionCount < 10 ) {
+											std::string location( received.getField("location") );
+											URI uri( location );
+											Http http( uri.getHost(), uri.getPort(), uri.getScheme() == "https" ? true : false );
+											Http::Request newRequest( request );
+											newRequest.setUri( uri.getPathEtc() );
+
+											// Close the connection
+											mConnection->disconnect();
+
+											return http.downloadRequest( request, writeTo, timeout );
+										}
+									}
+								}
 							}
 						}
 
 						if ( isnheader == 0 ) {
 							header.append( buffer, ( bol - buffer ) );
-						}
-					}
-				}
-
-				if ( !header.empty() ) {
-					received.parse(header);
-
-					// If a redirection is requested, and requests follows redirections,
-					// send a new request to the redirection location.
-					if ( ( received.getStatus() == Response::MovedPermanently || received.getStatus() == Response::MovedTemporarily ) &&
-						 request.getFollowRedirect() ) {
-
-						const_cast<Http::Request&>( request ).mRedirectionCount++;
-
-						// Only continue redirecting if less than 10 redirections were done
-						if ( request.mRedirectionCount < 10 ) {
-							std::string location( received.getField("location") );
-							URI uri( location );
-							Http http( uri.getHost(), uri.getPort(), uri.getScheme() == "https" ? true : false );
-							Http::Request newRequest( request );
-							newRequest.setUri( uri.getPathEtc() );
-
-							// Close the connection
-							mConnection->disconnect();
-
-							return http.downloadRequest( request, writeTo, timeout );
 						}
 					}
 				}
@@ -506,7 +553,7 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 		mConnection->disconnect();
 	}
 
-	return received;
+	return std::move(received);
 }
 
 Http::Response Http::downloadRequest(const Http::Request & request, std::string writePath, Time timeout) {
@@ -595,7 +642,7 @@ void Http::removeOldThreads() {
 	}
 }
 
-Http::Request Http::prepareFields(const Http::Request & request) {
+Http::Request Http::prepareFields(const Http::Request& request) {
 	Request toSend(request);
 
 	if (!toSend.hasField("User-Agent")) {
@@ -620,7 +667,7 @@ Http::Request Http::prepareFields(const Http::Request & request) {
 		toSend.setField("Connection", "close");
 	}
 
-	return toSend;
+	return std::move(toSend);
 }
 
 void Http::sendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, Time timeout ) {

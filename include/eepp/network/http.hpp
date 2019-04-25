@@ -109,6 +109,27 @@ class EE_API Http : NonCopyable {
 
 			/** Enables/Disables follow redirects */
 			void setFollowRedirect( bool follow );
+
+			/** Definition of the current progress callback
+			 * @param http The http client
+			 * @param request The http request
+			 * @param totalBytes The total bytes of the document / files ( only available if Content-Length is returned, otherwise is 0 )
+			 * @param currentBytes Current received total bytes
+			 * @return True if continue the request, false will cancel the current request.
+			*/
+			typedef std::function<bool( const Http& http, const Http::Request& request, std::size_t totalBytes, std::size_t currentBytes )>		ProgressCallback;
+
+			/** Sets a progress callback */
+			void setProgressCallback( const ProgressCallback& progressCallback );
+
+			/** Get the progress callback */
+			const ProgressCallback& getProgressCallback() const;
+
+			/** Cancels the current request if being processed */
+			void cancel();
+
+			/** @return True if the current request was cancelled */
+			const bool& isCancelled() const;
 		private:
 			friend class Http;
 
@@ -128,16 +149,18 @@ class EE_API Http : NonCopyable {
 			typedef std::map<std::string, std::string> FieldTable;
 
 			// Member data
-			FieldTable		mFields;				///< Fields of the header associated to their value
-			Method			mMethod;				///< Method to use for the request
-			std::string		mUri;					///< Target URI of the request
-			unsigned int	mMajorVersion;			///< Major HTTP version
-			unsigned int	mMinorVersion;			///< Minor HTTP version
-			std::string		mBody;					///< Body of the request
-			bool			mValidateCertificate;	///< Validates the SSL certificate in case of an HTTPS request
-			bool			mValidateHostname;		///< Validates the hostname in case of an HTTPS request
-			bool			mFollowRedirect;		///< Follows redirect response codes
-			unsigned int	mRedirectionCount;		///< Number of redirections followed by the request
+			FieldTable            mFields;              ///< Fields of the header associated to their value
+			Method                mMethod;              ///< Method to use for the request
+			std::string           mUri;                 ///< Target URI of the request
+			unsigned int          mMajorVersion;        ///< Major HTTP version
+			unsigned int          mMinorVersion;        ///< Minor HTTP version
+			std::string           mBody;                ///< Body of the request
+			bool                  mValidateCertificate; ///< Validates the SSL certificate in case of an HTTPS request
+			bool                  mValidateHostname;    ///< Validates the hostname in case of an HTTPS request
+			bool                  mFollowRedirect;      ///< Follows redirect response codes
+			mutable bool          mCancel;              ///< Cancel state of current request
+			ProgressCallback      mProgressCallback;    ///< Progress callback
+			mutable unsigned int  mRedirectionCount;    ///< Number of redirections followed by the request
 		};
 
 		/** @brief Define a HTTP response */

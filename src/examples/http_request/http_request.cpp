@@ -1,12 +1,23 @@
 #include <eepp/ee.hpp>
 #include <args/args.hxx>
 
+void printResponseHeaders( Http::Response& response ) {
+	Http::Response::FieldTable headers = response.getHeaders();
+
+	std::cout << "\r\nHeaders: " << std::endl;
+
+	for ( auto&& head : headers ) {
+		std::cout << "\t" << head.first << ": " << head.second << std::endl;
+	}
+}
+
 EE_MAIN_FUNC int main (int argc, char * argv []) {
 	args::ArgumentParser parser("HTTP request program example");
 	args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
 	args::ValueFlag<std::string> output(parser, "file",  "Write to file instead of stdout", {'o', "output"} );
+	args::Flag head(parser, "head", "Show document info", {'I',"head"} );
+	args::Flag progress(parser, "progress", "Show current progress of a download", {'p',"progress"} );
 	args::Positional<std::string> url(parser, "url", "The url to request");
-	args::Flag verbose(parser, "verbose", "Prints the request response headers", {'v',"verbose"} );
 
 	try {
 		parser.ParseCLI(argc, argv);
@@ -73,14 +84,8 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 				Http::Response::Status status = response.getStatus();
 
 				if ( status == Http::Response::Ok ) {
-					if ( verbose ) {
-						Http::Response::FieldTable headers = response.getHeaders();
-
-						std::cout << "Headers: " << std::endl;
-
-						for ( auto&& head : headers ) {
-							std::cout << "\t" << head.first << ": " << head.second << std::endl;
-						}
+					if ( head ) {
+						printResponseHeaders(response);
 
 						std::cout << std::endl << "Body: " << std::endl;
 					}
@@ -90,12 +95,23 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 					std::cout << "Error " << status << std::endl;
 				}
 			} else {
-				http.downloadRequest(request, output.Get(), Seconds(5));
+				if ( progress ) {
+					request.setProgressCallback( []( const Http& http, const Http::Request& request, size_t totalBytes, size_t currentBytes ) {
+						std::cout << "\rDownloaded " << FileSystem::sizeToString( currentBytes ).c_str() << " of " << FileSystem::sizeToString( totalBytes ).c_str() << "          ";
+						std::cout << std::flush;
+						return true;
+					});
+				}
+
+				Http::Response response = http.downloadRequest(request, output.Get(), Seconds(5));
+
+				if ( head )
+					printResponseHeaders(response);
 			}
 		}
 	}
 
-	if ( verbose )
+	if ( head )
 		MemoryManager::showResults();
 
 	return EXIT_SUCCESS;
