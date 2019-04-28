@@ -10,6 +10,7 @@
 #include <eepp/system/thread.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/lock.hpp>
+#include <eepp/network/uri.hpp>
 #include <eepp/thirdparty/PlusCallback/callback.hpp>
 #include <map>
 #include <string>
@@ -37,7 +38,8 @@ class EE_API Http : NonCopyable {
 				Put,     ///< The PUT method replaces all current representations of the target resource with the request payload.
 				Delete,  ///< The DELETE method deletes the specified resource.
 				Options, ///< The OPTIONS method is used to describe the communication options for the target resource.
-				Patch    ///< The PATCH method is used to apply partial modifications to a resource.
+				Patch,   ///< The PATCH method is used to apply partial modifications to a resource.
+				Connect  ///< The CONNECT method starts two-way communications with the requested resource. It can be used to open a tunnel.
 			};
 
 			/** @return Method from a method name string. */
@@ -133,6 +135,15 @@ class EE_API Http : NonCopyable {
 			/** Set the maximun number of redirects allowed if follow redirect is enabled. */
 			void setMaxRedirects( unsigned int maxRedirects );
 
+			/** Sets the request proxy */
+			void setProxy( const URI& uri );
+
+			/** @return The request proxy */
+			const URI& getProxy() const;
+
+			/** @return Is a proxy is need to be used */
+			bool isProxied() const;
+
 			/** Definition of the current progress callback
 			 * @param http The http client
 			 * @param request The http request
@@ -160,7 +171,7 @@ class EE_API Http : NonCopyable {
 			**  This is used internally by Http before sending the
 			**  request to the web server.
 			**  @return String containing the request, ready to be sent */
-			std::string prepare() const;
+			std::string prepare(const Http& http) const;
 
 			// Types
 			typedef std::map<std::string, std::string> FieldTable;
@@ -179,6 +190,7 @@ class EE_API Http : NonCopyable {
 			ProgressCallback      mProgressCallback;    ///< Progress callback
 			unsigned int          mMaxRedirections;     ///< Maximun number of redirections allowed
 			mutable unsigned int  mRedirectionCount;    ///< Number of redirections followed by the request
+			URI                   mProxy;               ///< Proxy information
 		};
 
 		/** @brief Define a HTTP response */
@@ -223,6 +235,9 @@ class EE_API Http : NonCopyable {
 				InvalidResponse		= 1000, ///< Response is not a valid HTTP one
 				ConnectionFailed	= 1001  ///< Connection with server failed
 			};
+
+			/** @return The status string */
+			static const char * statusToString( const Status& status );
 
 			/** @brief Default constructor
 			**  Constructs an empty response. */
@@ -388,6 +403,12 @@ class EE_API Http : NonCopyable {
 
 		/** @return The host port */
 		const unsigned short& getPort() const;
+
+		/** @return If the HTTP client uses SSL/TLS */
+		const bool& isSSL() const;
+
+		/** @return The URI from the schema + hostname + port */
+		URI getURI() const;
 	private:
 		class AsyncRequest : public Thread {
 			public:
@@ -411,6 +432,7 @@ class EE_API Http : NonCopyable {
 				bool					mStreamOwned;
 				IOStream *				mStream;
 		};
+
 		friend class AsyncRequest;
 		ThreadLocalPtr<TcpSocket>		mConnection;	///< Connection to the host
 		IpAddress						mHost;			///< Web host address
@@ -419,6 +441,9 @@ class EE_API Http : NonCopyable {
 		std::list<AsyncRequest*>		mThreads;
 		Mutex							mThreadsMutex;
 		bool							mIsSSL;
+		URI								mProxy;
+
+		Http(const std::string& host, unsigned short port, bool useSSL, URI proxy);
 
 		void removeOldThreads();
 

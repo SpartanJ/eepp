@@ -5,11 +5,13 @@
 void printResponseHeaders( Http::Response& response ) {
 	Http::Response::FieldTable headers = response.getHeaders();
 
-	std::cout << "\r\nHeaders: " << std::endl;
+	std::cout << "HTTP/" << response.getMajorHttpVersion() << "." << response.getMinorHttpVersion() << " " << response.getStatus() << " " << Http::Response::statusToString( response.getStatus() ) << std::endl;
 
 	for ( auto&& head : headers ) {
-		std::cout << "\t" << head.first << ": " << head.second << std::endl;
+		std::cout << head.first << ": " << head.second << std::endl;
 	}
+
+	std::cout << std::endl;
 }
 
 EE_MAIN_FUNC int main (int argc, char * argv []) {
@@ -17,14 +19,16 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 	args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
 	args::ValueFlag<std::string> postData(parser, "data", "HTTP POST data", {'d', "data"});
 	args::ValueFlagList<std::string> headers(parser, "header", "Pass custom header(s) to server", {'H', "header"});
-	args::Flag head(parser, "head", "Show document info", {'I',"head"});
+	args::Flag includeHead(parser, "include", "Include protocol response headers in the output", {'i',"include"});
 	args::Flag insecure(parser, "insecure", "Allow insecure server connections when using SSL", {'k',"insecure"});
 	args::Flag location(parser, "location", "Follow redirects", {'L',"location"});
 	args::ValueFlag<unsigned int> maxRedirs(parser, "max-redirs",  "Maximum number of redirects allowed", {"max-redirs"});
 	args::ValueFlag<std::string> output(parser, "file",  "Write to file instead of stdout", {'o', "output"});
+	args::ValueFlag<std::string> proxy(parser, "proxy",  "[protocol://]host[:port] Use this proxy", {'x', "proxy"});
 	args::Flag progress(parser, "progress", "Show current progress of a download", {'p',"progress"});
+	args::Flag verbose(parser, "verbose", "Make the operation more talkative", {'v',"verbose"});
 	args::ValueFlag<std::string> requestMethod(parser, "request", "Specify request command to use", {'X', "request"});
-	args::Positional<std::string> url(parser, "url", "The url to request");
+	args::Positional<std::string> url(parser, "URL", "The URL to request");
 
 	try {
 		parser.ParseCLI(argc, argv);
@@ -127,6 +131,11 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 				request.setMaxRedirects(maxRedirs.Get());
 			}
 
+			// Set the proxy for the request
+			if ( proxy ) {
+				request.setProxy( URI( proxy.Get() ) );
+			}
+
 			if ( !output ) {
 				// Send the request
 				Http::Response response = http.sendRequest(request);
@@ -134,16 +143,14 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 				// Check the status code and display the result
 				Http::Response::Status status = response.getStatus();
 
+				if ( includeHead )
+					printResponseHeaders(response);
+
 				if ( status == Http::Response::Ok ) {
-					if ( head ) {
-						printResponseHeaders(response);
-
-						std::cout << std::endl << "Body: " << std::endl;
-					}
-
 					std::cout << response.getBody() << std::endl;
 				} else {
 					std::cout << "Error " << status << std::endl << response.getStatusDescription() << std::endl;
+					std::cout << response.getBody() << std::endl;
 				}
 			} else {
 				std::string path( output.Get() );
@@ -171,13 +178,13 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 				// Download the request response into a file
 				Http::Response response = http.downloadRequest(request, path, Seconds(5));
 
-				if ( head )
+				if ( includeHead )
 					printResponseHeaders(response);
 			}
 		}
 	}
 
-	if ( head )
+	if ( verbose )
 		MemoryManager::showResults();
 
 	return EXIT_SUCCESS;

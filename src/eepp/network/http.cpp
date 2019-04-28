@@ -64,6 +64,8 @@ Http::Request::Method Http::Request::methodFromString( std::string methodString 
 		return Method::Options;
 	} else if ( "patch" == methodString ) {
 		return Method::Patch;
+	} else if ( "connect" == methodString ) {
+		return Method::Connect;
 	} else {
 		return Method::Get;
 	}
@@ -144,6 +146,18 @@ void Http::Request::setMaxRedirects(unsigned int maxRedirects) {
 	mMaxRedirections = maxRedirects;
 }
 
+void Http::Request::setProxy(const URI& uri) {
+	mProxy = uri;
+}
+
+const URI& Http::Request::getProxy() const {
+	return mProxy;
+}
+
+bool Http::Request::isProxied() const {
+	return !mProxy.empty();
+}
+
 void Http::Request::setProgressCallback(const Http::Request::ProgressCallback& progressCallback) {
 	mProgressCallback = progressCallback;
 }
@@ -160,7 +174,7 @@ const bool &Http::Request::isCancelled() const {
 	return mCancel;
 }
 
-std::string Http::Request::prepare() const {
+std::string Http::Request::prepare(const Http& http) const {
 	std::ostringstream out;
 
 	// Convert the method to its string representation
@@ -174,10 +188,18 @@ std::string Http::Request::prepare() const {
 		case Delete:	method = "DELETE"; break;
 		case Options:	method = "OPTIONS"; break;
 		case Patch:		method = "PATCH"; break;
+		case Connect:	method = "CONNECT"; break;
 	}
 
 	// Write the first line containing the request type
-	out << method << " " << mUri << " ";
+	if ( mProxy.empty() ) {
+		out << method << " " << mUri << " ";
+	} else {
+		URI uri = http.getURI();
+		uri.setPathEtc( mUri );
+		out << method << " " << uri.toString() << " ";
+	}
+
 	out << "HTTP/" << mMajorVersion << "." << mMinorVersion << "\r\n";
 
 	// Write fields
@@ -205,6 +227,44 @@ const std::string& Http::Request::getField(const std::string& field) const {
 	} else {
 		static const std::string empty = "";
 		return empty;
+	}
+}
+
+const char * Http::Response::statusToString( const Http::Response::Status& status ) {
+	switch ( status ) {
+		// 2xx: success
+		case Ok: return "OK";
+		case Created: return "Created";
+		case Accepted: return "Accepted";
+		case NoContent: return "No Content";
+		case ResetContent: return "Reset Content";
+		case PartialContent: return "Partial Content";
+
+		// 3xx: redirection
+		case MultipleChoices: return "Multiple Choices";
+		case MovedPermanently: return "Moved Permanently";
+		case MovedTemporarily: return "Moved Temporarily";
+		case NotModified: return "Not Modified";
+
+		// 4xx: client error
+		case BadRequest: return "BadRequest";
+		case Unauthorized: return "Unauthorized";
+		case Forbidden: return "Forbidden";
+		case NotFound: return "Not Found";
+		case RangeNotSatisfiable: return "Range Not Satisfiable";
+
+		// 5xx: server error
+		case InternalServerError: return "Internal Server Error";
+		case NotImplemented: return "Not Implemented";
+		case BadGateway: return "Bad Gateway";
+		case ServiceNotAvailable: return "Service Not Available";
+		case GatewayTimeout: return "Gateway Timeout";
+		case VersionNotSupported: return "Version Not Supported";
+
+		// 10xx: Custom codes
+		case InvalidResponse: return "Invalid Response";
+		case ConnectionFailed: return "Connection Failed";
+		default: return "";
 	}
 }
 
@@ -358,6 +418,15 @@ Http::Http(const std::string& host, unsigned short port, bool useSSL) :
 	setHost(host, port, useSSL);
 }
 
+Http::Http(const std::string & host, unsigned short port, bool useSSL, URI proxy) :
+	mConnection( NULL ),
+	mHostName(host),
+	mPort(port),
+	mProxy(proxy)
+{
+	setHost(host, port, useSSL);
+}
+
 Http::~Http() {
 	std::list<AsyncRequest*>::iterator itt;
 
@@ -409,7 +478,12 @@ void Http::setHost(const std::string& host, unsigned short port, bool useSSL) {
 	if (!mHostName.empty() && (*mHostName.rbegin() == '/'))
 		mHostName.erase(mHostName.size() - 1);
 
-	mHost = IpAddress(mHostName);
+	if ( !mProxy.empty() ) {
+		mHost = IpAddress(mProxy.getHost());
+		sameHost = false;
+	} else {
+		mHost = IpAddress(mHostName);
+	}
 
 	// If the new host is different to the last set host
 	// and there's an open connection to the host, we close
@@ -429,12 +503,19 @@ Http::Response Http::sendRequest(const Http::Request& request, Time timeout) {
 }
 
 Http::Response Http::downloadRequest(const Http::Request& request, IOStream& writeTo, Time timeout) {
+	if ( mProxy.empty() && request.isProxied() ) {
+		Http http( mHostName, mPort, mIsSSL, request.getProxy() );
+		return http.downloadRequest( request, writeTo, timeout );
+	}
+
 	if ( 0 == mHost.toInteger() ) {
 		return Response();
 	}
 
 	if ( NULL == mConnection ) {
-		TcpSocket * Conn	= mIsSSL ? SSLSocket::New( mHostName, request.getValidateCertificate(), request.getValidateHostname() ) : TcpSocket::New();
+		TcpSocket * Conn	= ( mProxy.empty() ? mIsSSL : ( SSLSocket::isSupported() && mProxy.getScheme() == "https" ) ) ?
+								  SSLSocket::New( mHostName, request.getValidateCertificate(), request.getValidateHostname() ) :
+								  TcpSocket::New();
 		mConnection			= Conn;
 	}
 
@@ -445,9 +526,9 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 	Response received;
 
 	// Connect the socket to the host
-	if (mConnection->connect(mHost, mPort, timeout) == Socket::Done) {
+	if (mConnection->connect(mHost, mProxy.empty() ? mPort : mProxy.getPort(), timeout) == Socket::Done) {
 		// Convert the request to string and send it through the connected socket
-		std::string requestStr = toSend.prepare();
+		std::string requestStr = toSend.prepare(*this);
 
 		if (!requestStr.empty()) {
 			// Send it through the socket
@@ -743,6 +824,12 @@ Http::Request Http::prepareFields(const Http::Request& request) {
 		toSend.setField("Connection", "close");
 	}
 
+	if (!mProxy.empty()) {
+		toSend.setField("Accept", "*/*");
+
+		toSend.setField("Proxy-connection", "close");
+	}
+
 	return std::move(toSend);
 }
 
@@ -795,6 +882,14 @@ const std::string &Http::getHostName() const {
 
 const unsigned short& Http::getPort() const {
 	return mPort;
+}
+
+const bool& Http::isSSL() const {
+	return mIsSSL;
+}
+
+URI Http::getURI() const {
+	return URI( String::format( "%s://%s:%d", mIsSSL ? "https" : "http", mHostName.c_str(), mPort ) );
 }
 
 }}
