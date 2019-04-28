@@ -64,8 +64,24 @@ Http::Request::Method Http::Request::methodFromString( std::string methodString 
 		return Method::Options;
 	} else if ( "patch" == methodString ) {
 		return Method::Patch;
+	} else if ( "connect" == methodString ) {
+		return Method::Connect;
 	} else {
 		return Method::Get;
+	}
+}
+
+std::string Http::Request::methodToString(const Http::Request::Method& method) {
+	switch (method) {
+		default :
+		case Get:		return "GET";
+		case Head:		return "HEAD";
+		case Post:		return "POST";
+		case Put:		return "PUT";
+		case Delete:	return "DELETE";
+		case Options:	return "OPTIONS";
+		case Patch:		return "PATCH";
+		case Connect:	return "CONNECT";
 	}
 }
 
@@ -160,24 +176,43 @@ const bool &Http::Request::isCancelled() const {
 	return mCancel;
 }
 
-std::string Http::Request::prepare() const {
+std::string Http::Request::prepareTunnel(const Http& http) {
+	std::ostringstream out;
+
+	setMethod( Connect );
+
+	std::string method = methodToString( mMethod );
+
+	out << method << " " << http.getHostName() << ":" << http.getPort() << " ";
+	out << "HTTP/" << mMajorVersion << "." << mMinorVersion << "\r\n";
+
+	setField( "Host", String::format( "%s:%d", http.getHostName().c_str(), http.getPort() ) );
+	setField( "Proxy-Connection", "Keep-Alive" );
+	setField( "User-Agent", "eepp-network" );
+
+	for (FieldTable::const_iterator i = mFields.begin(); i != mFields.end(); ++i)
+		out << i->first << ": " << i->second << "\r\n";
+
+	out << "\r\n";
+
+	return out.str();
+}
+
+std::string Http::Request::prepare(const Http& http) const {
 	std::ostringstream out;
 
 	// Convert the method to its string representation
-	std::string method;
-	switch (mMethod) {
-		default :
-		case Get:		method = "GET";  break;
-		case Head:		method = "HEAD"; break;
-		case Post:		method = "POST"; break;
-		case Put:		method = "PUT"; break;
-		case Delete:	method = "DELETE"; break;
-		case Options:	method = "OPTIONS"; break;
-		case Patch:		method = "PATCH"; break;
-	}
+	std::string method = methodToString( mMethod );
 
 	// Write the first line containing the request type
-	out << method << " " << mUri << " ";
+	if ( http.getProxy().empty() ) {
+		out << method << " " << mUri << " ";
+	} else {
+		URI uri = http.getURI();
+		uri.setPathEtc( mUri );
+		out << method << " " << uri.toString() << " ";
+	}
+
 	out << "HTTP/" << mMajorVersion << "." << mMinorVersion << "\r\n";
 
 	// Write fields
@@ -205,6 +240,44 @@ const std::string& Http::Request::getField(const std::string& field) const {
 	} else {
 		static const std::string empty = "";
 		return empty;
+	}
+}
+
+const char * Http::Response::statusToString( const Http::Response::Status& status ) {
+	switch ( status ) {
+		// 2xx: success
+		case Ok: return "OK";
+		case Created: return "Created";
+		case Accepted: return "Accepted";
+		case NoContent: return "No Content";
+		case ResetContent: return "Reset Content";
+		case PartialContent: return "Partial Content";
+
+		// 3xx: redirection
+		case MultipleChoices: return "Multiple Choices";
+		case MovedPermanently: return "Moved Permanently";
+		case MovedTemporarily: return "Moved Temporarily";
+		case NotModified: return "Not Modified";
+
+		// 4xx: client error
+		case BadRequest: return "BadRequest";
+		case Unauthorized: return "Unauthorized";
+		case Forbidden: return "Forbidden";
+		case NotFound: return "Not Found";
+		case RangeNotSatisfiable: return "Range Not Satisfiable";
+
+		// 5xx: server error
+		case InternalServerError: return "Internal Server Error";
+		case NotImplemented: return "Not Implemented";
+		case BadGateway: return "Bad Gateway";
+		case ServiceNotAvailable: return "Service Not Available";
+		case GatewayTimeout: return "Gateway Timeout";
+		case VersionNotSupported: return "Version Not Supported";
+
+		// 10xx: Custom codes
+		case InvalidResponse: return "Invalid Response";
+		case ConnectionFailed: return "Connection Failed";
+		default: return "";
 	}
 }
 
@@ -351,11 +424,14 @@ Http::Http() :
 {
 }
 
-Http::Http(const std::string& host, unsigned short port, bool useSSL) :
+Http::Http(const std::string & host, unsigned short port, bool useSSL, URI proxy) :
 	mConnection( NULL ),
-	mIsSSL( false )
+	mHostName(host),
+	mPort(port),
+	mIsSSL( useSSL ),
+	mProxy(proxy)
 {
-	setHost(host, port, useSSL);
+	setHost(host, port, useSSL, proxy);
 }
 
 Http::~Http() {
@@ -371,12 +447,14 @@ Http::~Http() {
 	}
 
 	// Then we destroy the last open connection
-	TcpSocket * tcp = mConnection;
+	HttpConnection * connection = mConnection;
 
-	eeSAFE_DELETE( tcp );
+	eeSAFE_DELETE( connection );
 }
 
-void Http::setHost(const std::string& host, unsigned short port, bool useSSL) {
+void Http::setHost(const std::string& host, unsigned short port, bool useSSL, URI proxy) {
+	mProxy = proxy;
+
 	bool sameHost( host == mHostName && port == mPort && useSSL == mIsSSL );
 
 	// Check the protocol
@@ -409,14 +487,19 @@ void Http::setHost(const std::string& host, unsigned short port, bool useSSL) {
 	if (!mHostName.empty() && (*mHostName.rbegin() == '/'))
 		mHostName.erase(mHostName.size() - 1);
 
-	mHost = IpAddress(mHostName);
+	if ( !mProxy.empty() ) {
+		mHost = IpAddress(mProxy.getHost());
+		sameHost = false;
+	} else {
+		mHost = IpAddress(mHostName);
+	}
 
 	// If the new host is different to the last set host
 	// and there's an open connection to the host, we close
 	// the old connection to prepare a new one.
 	if ( !sameHost && NULL != mConnection ) {
-		TcpSocket * tcp = mConnection;
-		eeSAFE_DELETE( tcp );
+		HttpConnection * connection = mConnection;
+		eeSAFE_DELETE( connection );
 		mConnection = NULL;
 	}
 }
@@ -434,8 +517,27 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 	}
 
 	if ( NULL == mConnection ) {
-		TcpSocket * Conn	= mIsSSL ? SSLSocket::New( mHostName, request.getValidateCertificate(), request.getValidateHostname() ) : TcpSocket::New();
-		mConnection			= Conn;
+		HttpConnection * connection = eeNew( HttpConnection, () );
+		TcpSocket * socket = NULL;
+
+		// If the http client is proxied and the end host use SSL
+		// We need to create an HTTP Tunnel against the proxy server
+		if ( isProxied() && mIsSSL && SSLSocket::isSupported() ) {
+			socket	= SSLSocket::New( mHostName, request.getValidateCertificate(), request.getValidateHostname() );
+
+			connection->setSSL( true );
+		} else {
+			bool isSSL = !isProxied() ? mIsSSL : ( SSLSocket::isSupported() && mProxy.getScheme() == "https" );
+
+			socket	= isSSL ? SSLSocket::New( mHostName, request.getValidateCertificate(), request.getValidateHostname() ) :
+							  TcpSocket::New();
+
+			connection->setSSL( isSSL );
+		}
+
+		connection->setSocket( socket );
+
+		mConnection			= connection;
 	}
 
 	// First make sure that the request is valid -- add missing mandatory fields
@@ -444,14 +546,77 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 	// Prepare the response
 	Response received;
 
+	// If not connected, try to connect to the server
+	if ( !mConnection->isConnected() ) {
+		// We need to create an HTTP Tunnel?
+		if ( isProxied() && mIsSSL && SSLSocket::isSupported() ) {
+			SSLSocket * sslSocket = reinterpret_cast<SSLSocket*>( mConnection->getSocket() );
+
+			// For an HTTP Tunnel first we need to connect to the proxy server ( without TLS )
+			if (sslSocket->tcpConnect( mHost, mProxy.getPort(), timeout ) != Socket::Done) {
+				return std::move(received);
+			} else {
+				mConnection->setConnected(true);
+			}
+		} else {
+			if (mConnection->getSocket()->connect(mHost, mProxy.empty() ? mPort : mProxy.getPort(), timeout) != Socket::Done) {
+				return std::move(received);
+			} else {
+				mConnection->setConnected(true);
+			}
+		}
+	}
+
 	// Connect the socket to the host
-	if (mConnection->connect(mHost, mPort, timeout) == Socket::Done) {
+	if (mConnection->isConnected()) {
+		// Create a HTTP Tunnel for SSL connections if not ready
+		if ( isProxied() && mIsSSL && !mConnection->isTunneled() ) {
+			// Create the HTTP Tunnel request
+			Request tunnelRequest;
+			std::string tunnelStr = tunnelRequest.prepareTunnel(*this);
+
+			SSLSocket * sslSocket = reinterpret_cast<SSLSocket*>( mConnection->getSocket() );
+			std::size_t sent;
+
+			// Send the request
+			if (sslSocket->tcpSend(tunnelStr.c_str(), tunnelStr.size(), sent) == Socket::Done) {
+				const std::size_t bufferSize = 1024;
+				char buffer[bufferSize+1];
+				std::size_t readed = 0;
+
+				// Get the proxy server response
+				if (sslSocket->tcpReceive(buffer, bufferSize, readed) == Socket::Done) {
+					// Parse the HTTP Tunnel request response
+					Response tunnelResponse;
+					std::string header;
+					header.append( buffer, readed );
+					tunnelResponse.parse(header);
+
+					if ( tunnelResponse.getStatus() == Response::Ok ) {
+						// Stablish the SSL connection if the response is positive
+						if (sslSocket->sslConnect( mHost, mProxy.getPort(), timeout ) != Socket::Done) {
+							return std::move(received);
+						}
+					} else {
+						return std::move(tunnelResponse);
+					}
+				} else {
+					return std::move(received);
+				}
+
+				mConnection->setTunneled(true);
+				mConnection->setKeepAlive(true);
+			}
+		}
+
 		// Convert the request to string and send it through the connected socket
-		std::string requestStr = toSend.prepare();
+		std::string requestStr = toSend.prepare(*this);
 
 		if (!requestStr.empty()) {
+			Socket::Status status;
+
 			// Send it through the socket
-			if (mConnection->send(requestStr.c_str(), requestStr.size()) == Socket::Done) {
+			if (mConnection->getSocket()->send(requestStr.c_str(), requestStr.size()) == Socket::Done) {
 				// Wait for the server's response
 				bool isnheader = false;
 				std::size_t currentTotalBytes = 0;
@@ -466,7 +631,7 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 				bool newFileBuffer = false;
 				bool chunked = false;
 
-				while (!request.isCancelled() && mConnection->receive(buffer, bufferSize, readed) == Socket::Done) {
+				while (!request.isCancelled() && ( status = mConnection->getSocket()->receive(buffer, bufferSize, readed) ) == Socket::Done) {
 					if ( !isnheader ) {
 						// calculate combined length of unprocessed data and new data
 						len += readed;
@@ -540,6 +705,11 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 										fileBuffer.clear();
 									}
 
+									if ( received.getField("connection") == "closed" ) {
+										mConnection->setConnected(false);
+										mConnection->setTunneled(false);
+									}
+
 									// If a redirection is requested, and requests follows redirections,
 									// send a new request to the redirection location.
 									if ( ( received.getStatus() == Response::MovedPermanently || received.getStatus() == Response::MovedTemporarily ) &&
@@ -554,7 +724,8 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 											newRequest.setUri( uri.getPathEtc() );
 
 											// Close the connection
-											mConnection->disconnect();
+											if ( !mConnection->isKeepAlive() )
+												mConnection->disconnect();
 
 											request.mRedirectionCount++;
 
@@ -622,11 +793,20 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 						}
 					}
 				}
+
+				if ( status == Socket::Status::Disconnected ) {
+					mConnection->setConnected(false);
+					mConnection->setTunneled(false);
+				}
+			} else {
+				mConnection->setConnected(false);
+				mConnection->setTunneled(false);
 			}
 		}
 
 		// Close the connection
-		mConnection->disconnect();
+		if ( !mConnection->isKeepAlive() )
+			mConnection->disconnect();
 	}
 
 	return std::move(received);
@@ -688,8 +868,8 @@ void Http::AsyncRequest::run() {
 	}
 
 	// The Async Request destroys the socket used to create the request
-	TcpSocket * tcp = mHttp->mConnection;
-	eeSAFE_DELETE( tcp );
+	HttpConnection * connection = mHttp->mConnection;
+	eeSAFE_DELETE( connection );
 	mHttp->mConnection = NULL;
 
 	mRunning = false;
@@ -743,7 +923,29 @@ Http::Request Http::prepareFields(const Http::Request& request) {
 		toSend.setField("Connection", "close");
 	}
 
+	if (!mProxy.empty()) {
+		toSend.setField("Accept", "*/*");
+
+		if ( mIsSSL ) {
+			toSend.setField("Proxy-connection", "keep-alive");
+		} else {
+			toSend.setField("Proxy-connection", "close");
+		}
+	}
+
 	return std::move(toSend);
+}
+
+void Http::setProxy(const URI& uri) {
+	setHost( mHostName, mPort, mIsSSL, uri );
+}
+
+const URI& Http::getProxy() const {
+	return mProxy;
+}
+
+bool Http::isProxied() const {
+	return !mProxy.empty();
 }
 
 void Http::sendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, Time timeout ) {
@@ -785,16 +987,90 @@ void Http::downloadAsyncRequest(Http::AsyncResponseCallback cb, const Http::Requ
 	mThreads.push_back( thread );
 }
 
-const IpAddress &Http::getHost() const {
+const IpAddress& Http::getHost() const {
 	return mHost;
 }
 
-const std::string &Http::getHostName() const {
+const std::string& Http::getHostName() const {
 	return mHostName;
 }
 
 const unsigned short& Http::getPort() const {
 	return mPort;
+}
+
+const bool& Http::isSSL() const {
+	return mIsSSL;
+}
+
+URI Http::getURI() const {
+	return URI( String::format( "%s://%s:%d", mIsSSL ? "https" : "http", mHostName.c_str(), mPort ) );
+}
+
+Http::HttpConnection::HttpConnection() :
+	mSocket(NULL),
+	mIsConnected(false),
+	mIsTunneled(false),
+	mIsSSL(false),
+	mIsKeepAlive(false)
+{}
+
+Http::HttpConnection::HttpConnection(TcpSocket * socket) :
+	mSocket( socket ),
+	mIsConnected( false ),
+	mIsTunneled( false ),
+	mIsSSL( false )
+{}
+
+Http::HttpConnection::~HttpConnection() {
+	eeSAFE_DELETE(mSocket);
+}
+
+void Http::HttpConnection::setSocket(TcpSocket * socket) {
+	mSocket = socket;
+}
+
+TcpSocket *Http::HttpConnection::getSocket() const {
+	return mSocket;
+}
+
+void Http::HttpConnection::disconnect() {
+	if ( NULL != mSocket )
+		mSocket->disconnect();
+
+	mIsConnected = false;
+}
+
+const bool &Http::HttpConnection::isConnected() const {
+	return mIsConnected;
+}
+
+void Http::HttpConnection::setConnected(const bool & connected) {
+	mIsConnected = connected;
+}
+
+const bool &Http::HttpConnection::isTunneled() const {
+	return mIsTunneled;
+}
+
+void Http::HttpConnection::setTunneled(const bool & tunneled) {
+	mIsTunneled = tunneled;
+}
+
+const bool &Http::HttpConnection::isSSL() const {
+	return mIsSSL;
+}
+
+void Http::HttpConnection::setSSL(const bool & ssl) {
+	mIsSSL = ssl;
+}
+
+const bool &Http::HttpConnection::isKeepAlive() const {
+	return mIsKeepAlive;
+}
+
+void Http::HttpConnection::setKeepAlive(const bool & isKeepAlive) {
+	mIsKeepAlive = isKeepAlive;
 }
 
 }}

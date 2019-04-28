@@ -72,7 +72,7 @@ int MbedTLSSocket::bio_send(void *ctx, const unsigned char *buf, size_t len) {
 	MbedTLSSocket *sp = (MbedTLSSocket *)ctx;
 
 	size_t sent;
-	Socket::Status err = sp->mSSLSocket->tcp_send((const void*)buf, len, sent);
+	Socket::Status err = sp->mSSLSocket->tcpSend((const void*)buf, len, sent);
 
 	if (err != Socket::Done) {
 		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
@@ -90,7 +90,7 @@ int MbedTLSSocket::bio_recv(void *ctx, unsigned char *buf, size_t len) {
 	MbedTLSSocket *sp = (MbedTLSSocket *)ctx;
 
 	size_t got;
-	Socket::Status err = sp->mSSLSocket->tcp_receive(buf, len, got);
+	Socket::Status err = sp->mSSLSocket->tcpReceive(buf, len, got);
 
 	if (err != Socket::Done) {
 		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;

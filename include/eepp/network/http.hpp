@@ -10,6 +10,7 @@
 #include <eepp/system/thread.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/lock.hpp>
+#include <eepp/network/uri.hpp>
 #include <eepp/thirdparty/PlusCallback/callback.hpp>
 #include <map>
 #include <string>
@@ -37,11 +38,15 @@ class EE_API Http : NonCopyable {
 				Put,     ///< The PUT method replaces all current representations of the target resource with the request payload.
 				Delete,  ///< The DELETE method deletes the specified resource.
 				Options, ///< The OPTIONS method is used to describe the communication options for the target resource.
-				Patch    ///< The PATCH method is used to apply partial modifications to a resource.
+				Patch,   ///< The PATCH method is used to apply partial modifications to a resource.
+				Connect  ///< The CONNECT method starts two-way communications with the requested resource. It can be used to open a tunnel.
 			};
 
 			/** @return Method from a method name string. */
 			static Method methodFromString( std::string methodString );
+
+			/** @return The method string from a method */
+			static std::string methodToString( const Method& method );
 
 			/** @brief Default constructor
 			**  This constructor creates a GET request, with the root
@@ -153,14 +158,18 @@ class EE_API Http : NonCopyable {
 
 			/** @return True if the current request was cancelled */
 			const bool& isCancelled() const;
-		private:
+
+			private:
 			friend class Http;
 
 			/** @brief Prepare the final request to send to the server
 			**  This is used internally by Http before sending the
 			**  request to the web server.
 			**  @return String containing the request, ready to be sent */
-			std::string prepare() const;
+			std::string prepare(const Http& http) const;
+
+			/** Prepares a http tunnel request */
+			std::string prepareTunnel(const Http& http);
 
 			// Types
 			typedef std::map<std::string, std::string> FieldTable;
@@ -179,6 +188,7 @@ class EE_API Http : NonCopyable {
 			ProgressCallback      mProgressCallback;    ///< Progress callback
 			unsigned int          mMaxRedirections;     ///< Maximun number of redirections allowed
 			mutable unsigned int  mRedirectionCount;    ///< Number of redirections followed by the request
+			URI                   mProxy;               ///< Proxy information
 		};
 
 		/** @brief Define a HTTP response */
@@ -223,6 +233,9 @@ class EE_API Http : NonCopyable {
 				InvalidResponse		= 1000, ///< Response is not a valid HTTP one
 				ConnectionFailed	= 1001  ///< Connection with server failed
 			};
+
+			/** @return The status string */
+			static const char * statusToString( const Status& status );
 
 			/** @brief Default constructor
 			**  Constructs an empty response. */
@@ -302,8 +315,10 @@ class EE_API Http : NonCopyable {
 		**  than the standard one, or use an unknown protocol.
 		**  @param host Web server to connect to
 		**  @param port Port to use for connection
-		**	@param useSSL force the SSL usage ( if compiled with the support of it ). If the host starts with https:// it will use it by default. */
-		Http(const std::string& host, unsigned short port = 0, bool useSSL = false);
+		**  @param useSSL force the SSL usage ( if compiled with the support of it ). If the host starts with https:// it will use it by default.
+		**  @param proxy Set an http proxy for the host connection
+		*/
+		Http(const std::string& host, unsigned short port = 0, bool useSSL = false, URI proxy = URI());
 
 		~Http();
 
@@ -317,8 +332,10 @@ class EE_API Http : NonCopyable {
 		**  than the standard one, or use an unknown protocol.
 		**  @param host Web server to connect to
 		**  @param port Port to use for connection
-		**	@param useSSL force the SSL usage ( if compiled with the support of it ). If the host starts with https:// it will use it by default. */
-		void setHost(const std::string& host, unsigned short port = 0, bool useSSL = false);
+		**	@param useSSL force the SSL usage ( if compiled with the support of it ). If the host starts with https:// it will use it by default.
+		**	@param proxy Set an http proxy for the host connection
+		*/
+		void setHost(const std::string& host, unsigned short port = 0, bool useSSL = false, URI proxy = URI());
 
 		/** @brief Send a HTTP request and return the server's response.
 		**  You must have a valid host before sending a request (see setHost).
@@ -388,6 +405,21 @@ class EE_API Http : NonCopyable {
 
 		/** @return The host port */
 		const unsigned short& getPort() const;
+
+		/** @return If the HTTP client uses SSL/TLS */
+		const bool& isSSL() const;
+
+		/** @return The URI from the schema + hostname + port */
+		URI getURI() const;
+
+		/** Sets the request proxy */
+		void setProxy( const URI& uri );
+
+		/** @return The request proxy */
+		const URI& getProxy() const;
+
+		/** @return Is a proxy is need to be used */
+		bool isProxied() const;
 	private:
 		class AsyncRequest : public Thread {
 			public:
@@ -411,14 +443,53 @@ class EE_API Http : NonCopyable {
 				bool					mStreamOwned;
 				IOStream *				mStream;
 		};
+
+		class HttpConnection {
+			public:
+				HttpConnection();
+
+				HttpConnection( TcpSocket * socket );
+
+				~HttpConnection();
+
+				void setSocket( TcpSocket * socket );
+
+				TcpSocket * getSocket() const;
+
+				void disconnect();
+
+				const bool& isConnected() const;
+
+				void setConnected( const bool& connected );
+
+				const bool& isTunneled() const;
+
+				void setTunneled( const bool& tunneled );
+
+				const bool& isSSL() const;
+
+				void setSSL( const bool& ssl );
+
+				const bool& isKeepAlive() const;
+
+				void setKeepAlive( const bool& isKeepAlive );
+			protected:
+				TcpSocket * mSocket;
+				bool mIsConnected;
+				bool mIsTunneled;
+				bool mIsSSL;
+				bool mIsKeepAlive;
+		};
+
 		friend class AsyncRequest;
-		ThreadLocalPtr<TcpSocket>		mConnection;	///< Connection to the host
+		ThreadLocalPtr<HttpConnection>	mConnection;	///< Connection to the host
 		IpAddress						mHost;			///< Web host address
 		std::string						mHostName;		///< Web host name
 		unsigned short					mPort;			///< Port used for connection with host
 		std::list<AsyncRequest*>		mThreads;
 		Mutex							mThreadsMutex;
 		bool							mIsSSL;
+		URI								mProxy;
 
 		void removeOldThreads();
 

@@ -134,16 +134,17 @@ SSLSocket::~SSLSocket() {
 Socket::Status SSLSocket::connect( const IpAddress& remoteAddress, unsigned short remotePort, Time timeout ) {
 	Status status = Socket::Disconnected;
 	
-	if ( ( status = TcpSocket::connect( remoteAddress, remotePort, timeout ) ) == Socket::Done ) {
-		status = mImpl->connect( remoteAddress, remotePort, timeout );
+	if ( ( status = tcpConnect( remoteAddress, remotePort, timeout ) ) == Socket::Done ) {
+		status = sslConnect( remoteAddress, remotePort, timeout );
 	}
 	
 	return status;
 }
 
 void SSLSocket::disconnect() {
-	mImpl->disconnect();
-	TcpSocket::disconnect();
+	sslDisconnect();
+
+	tcpDisconnect();
 }
 
 Socket::Status SSLSocket::send(const void* data, std::size_t size) {
@@ -162,11 +163,27 @@ Socket::Status SSLSocket::receive(Packet& packet) {
 	return TcpSocket::receive( packet );
 }
 
-Socket::Status SSLSocket::tcp_receive(void * data, std::size_t size, std::size_t & received) {
+Socket::Status SSLSocket::sslConnect(const IpAddress & remoteAddress, unsigned short remotePort, Time timeout) {
+	return mImpl->connect( remoteAddress, remotePort, timeout );
+}
+
+void SSLSocket::sslDisconnect() {
+	mImpl->disconnect();
+}
+
+Socket::Status SSLSocket::tcpConnect(const IpAddress & remoteAddress, unsigned short remotePort, Time timeout) {
+	return TcpSocket::connect( remoteAddress, remotePort, timeout );
+}
+
+void SSLSocket::tcpDisconnect() {
+	TcpSocket::disconnect();
+}
+
+Socket::Status SSLSocket::tcpReceive(void * data, std::size_t size, std::size_t & received) {
 	return TcpSocket::receive( data, size, received );
 }
 
-Socket::Status SSLSocket::tcp_send(const void * data, std::size_t size, std::size_t & sent) {
+Socket::Status SSLSocket::tcpSend(const void * data, std::size_t size, std::size_t & sent) {
 	return TcpSocket::send( data, size, sent );
 }
 
