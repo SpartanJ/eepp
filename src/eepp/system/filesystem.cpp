@@ -580,4 +580,24 @@ Int64 FileSystem::getDiskFreeSpace(const std::string& path) {
 #endif
 }
 
+std::string FileSystem::fileGetNumberedFileNameFromPath(std::string directoryPath, const std::string& fileName, const std::string& separator, const std::string& fileExtension) {
+	Uint32 fileNum = 1;
+	std::string fileNumName;
+
+	if ( FileSystem::isDirectory( directoryPath ) ) {
+		dirPathAddSlashAtEnd( directoryPath );
+
+		while ( fileNum < 10000 ) {
+			fileNumName = String::format( std::string( "%s" + separator + "%d%s" ).c_str(), fileName.c_str(), fileNum,  fileExtension.empty() ? "" : std::string( "." + fileExtension ).c_str() );
+
+			if ( !FileSystem::fileExists( directoryPath + fileNumName ) )
+				return fileNumName;
+
+			fileNum++;
+		}
+	}
+
+	return "";
+}
+
 }}

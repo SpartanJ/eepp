@@ -1,6 +1,7 @@
 #include <eepp/ee.hpp>
 #include <args/args.hxx>
 
+// Prints the response headers
 void printResponseHeaders( Http::Response& response ) {
 	Http::Response::FieldTable headers = response.getHeaders();
 
@@ -18,6 +19,8 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 	args::ValueFlagList<std::string> headers(parser, "header", "Pass custom header(s) to server", {'H', "header"});
 	args::Flag head(parser, "head", "Show document info", {'I',"head"});
 	args::Flag insecure(parser, "insecure", "Allow insecure server connections when using SSL", {'k',"insecure"});
+	args::Flag location(parser, "location", "Follow redirects", {'L',"location"});
+	args::ValueFlag<unsigned int> maxRedirs(parser, "max-redirs",  "Maximum number of redirects allowed", {"max-redirs"});
 	args::ValueFlag<std::string> output(parser, "file",  "Write to file instead of stdout", {'o', "output"});
 	args::Flag progress(parser, "progress", "Show current progress of a download", {'p',"progress"});
 	args::ValueFlag<std::string> requestMethod(parser, "request", "Specify request command to use", {'X', "request"});
@@ -67,9 +70,10 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 				}
 			}, asyncRequest, Seconds( 5 ) );
 		} else {
-			// If the user provided the URI, creates an instance of URI to parse it.
+			// If the user provided the URL, creates an instance of URI to parse it.
 			URI uri( url.Get() );
 
+			// If no scheme provided asume HTTP
 			if ( uri.getScheme().empty() ) {
 				uri = URI( "http://" + url.Get() );
 			}
@@ -106,6 +110,23 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 				request.setBody( postData.Get() );
 			}
 
+			// If progress requested print a progress on screen
+			if ( progress ) {
+				request.setProgressCallback( []( const Http&, const Http::Request&, size_t totalBytes, size_t currentBytes ) {
+					std::cout << "\rDownloaded " << FileSystem::sizeToString( currentBytes ).c_str() << " of " << FileSystem::sizeToString( totalBytes ).c_str() << "          ";
+					std::cout << std::flush;
+					return true;
+				});
+			}
+
+			// Set follow redirect
+			request.setFollowRedirect(location.Get());
+
+			// Set the maximun number of redirects
+			if ( maxRedirs ) {
+				request.setMaxRedirects(maxRedirs.Get());
+			}
+
 			if ( !output ) {
 				// Send the request
 				Http::Response response = http.sendRequest(request);
@@ -125,15 +146,30 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 					std::cout << "Error " << status << std::endl << response.getStatusDescription() << std::endl;
 				}
 			} else {
-				if ( progress ) {
-					request.setProgressCallback( []( const Http&, const Http::Request&, size_t totalBytes, size_t currentBytes ) {
-						std::cout << "\rDownloaded " << FileSystem::sizeToString( currentBytes ).c_str() << " of " << FileSystem::sizeToString( totalBytes ).c_str() << "          ";
-						std::cout << std::flush;
-						return true;
-					});
+				std::string path( output.Get() );
+
+				// If output path is a directory guess a file name
+				if ( FileSystem::isDirectory( path ) ) {
+					std::string lastPathSegment = uri.getLastPathSegment();
+
+					// If there's a path end segment
+					if ( !lastPathSegment.empty() ) {
+						FileSystem::dirPathAddSlashAtEnd( path );
+
+						// Save with the path end segment name
+						if ( !FileSystem::fileExists( path + lastPathSegment ) ) {
+							path += lastPathSegment;
+						} else {
+							path += FileSystem::fileGetNumberedFileNameFromPath( path, lastPathSegment );
+						}
+					} else {
+						// Create a file name if no name found
+						path += FileSystem::fileGetNumberedFileNameFromPath( path, "eepp-network-file", "-" );
+					}
 				}
 
-				Http::Response response = http.downloadRequest(request, output.Get(), Seconds(5));
+				// Download the request response into a file
+				Http::Response response = http.downloadRequest(request, path, Seconds(5));
 
 				if ( head )
 					printResponseHeaders(response);

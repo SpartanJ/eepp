@@ -411,6 +411,17 @@ void URI::getPathSegments(std::vector<std::string>& segments) {
 	getPathSegments(mPath, segments);
 }
 
+std::string URI::getLastPathSegment() {
+	std::vector<std::string> segments;
+	getPathSegments( segments );
+
+	if ( !segments.empty() ) {
+		return segments[ segments.size() - 1 ];
+	}
+
+	return "";
+}
+
 void URI::getPathSegments(const std::string& path, std::vector<std::string>& segments) {
 	std::string::const_iterator it  = path.begin();
 	std::string::const_iterator end = path.end();

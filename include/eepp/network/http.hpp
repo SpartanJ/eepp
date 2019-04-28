@@ -127,6 +127,12 @@ class EE_API Http : NonCopyable {
 			/** Enables/Disables follow redirects */
 			void setFollowRedirect( bool follow );
 
+			/** @return The maximun number of redirects allowd if follow redirect is enabled. */
+			const unsigned int& getMaxRedirects() const;
+
+			/** Set the maximun number of redirects allowed if follow redirect is enabled. */
+			void setMaxRedirects( unsigned int maxRedirects );
+
 			/** Definition of the current progress callback
 			 * @param http The http client
 			 * @param request The http request
@@ -171,6 +177,7 @@ class EE_API Http : NonCopyable {
 			bool                  mFollowRedirect;      ///< Follows redirect response codes
 			mutable bool          mCancel;              ///< Cancel state of current request
 			ProgressCallback      mProgressCallback;    ///< Progress callback
+			unsigned int          mMaxRedirections;     ///< Maximun number of redirections allowed
 			mutable unsigned int  mRedirectionCount;    ///< Number of redirections followed by the request
 		};
 

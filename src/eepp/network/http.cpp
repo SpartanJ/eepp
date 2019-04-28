@@ -13,6 +13,40 @@ using namespace EE::Network::SSL;
 
 namespace EE { namespace Network {
 
+namespace {
+
+class IOFakeStreamString : public IOStream {
+	public:
+		ios_size read( char * data, ios_size size ) override {
+			return 0;
+		}
+
+		ios_size write( const char * data, ios_size size ) override {
+			mStream.append( data, size );
+			return std::move(size);
+		}
+
+		ios_size seek( ios_size position ) override {
+			return 0;
+		}
+
+		ios_size tell() override {
+			return getSize();
+		}
+
+		ios_size getSize() override {
+			return mStream.size();
+		}
+
+		bool isOpen() override {
+			return true;
+		}
+
+		std::string mStream;
+};
+
+}
+
 Http::Request::Method Http::Request::methodFromString( std::string methodString ) {
 	String::toLowerInPlace(methodString);
 
@@ -40,11 +74,12 @@ Http::Request::Request(const std::string& uri, Method method, const std::string&
 	mValidateHostname( validateHostname ),
 	mFollowRedirect( followRedirect ),
 	mCancel( false ),
+	mMaxRedirections( 10 ),
 	mRedirectionCount( 0 )
 {
 	setMethod(method);
 	setUri(uri);
-	setHttpVersion(1, 0);
+	setHttpVersion(1, 1);
 	setBody(body);
 }
 
@@ -99,6 +134,14 @@ const bool &Http::Request::getFollowRedirect() const {
 
 void Http::Request::setFollowRedirect(bool follow) {
 	mFollowRedirect = follow;
+}
+
+const unsigned int& Http::Request::getMaxRedirects() const {
+	return mMaxRedirections;
+}
+
+void Http::Request::setMaxRedirects(unsigned int maxRedirects) {
+	mMaxRedirections = maxRedirects;
 }
 
 void Http::Request::setProgressCallback(const Http::Request::ProgressCallback& progressCallback) {
@@ -277,35 +320,7 @@ void Http::Response::parse(const std::string& data) {
 	// Parse the other lines, which contain fields, one by one
 	parseFields(in);
 
-	// Finally extract the body
 	mBody.clear();
-
-	// Determine whether the transfer is chunked
-	if (String::toLower(getField("transfer-encoding")) != "chunked") {
-		// Not chunked - everything at once
-		std::copy(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>(), std::back_inserter(mBody));
-	} else {
-		// Chunked - have to read chunk by chunk
-		std::size_t length;
-
-		// Read all chunks, identified by a chunk-size not being 0
-		while (in >> std::hex >> length) {
-			// Drop the rest of the line (chunk-extension)
-			in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-			// Copy the actual content data
-			std::istreambuf_iterator<char> it(in);
-			std::istreambuf_iterator<char> itEnd;
-			for (std::size_t i = 0; ((i < length) && (it != itEnd)); i++)
-				mBody.push_back(*it++);
-		}
-
-		// Drop the rest of the line (chunk-extension)
-		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-		// Read all trailers (if present)
-		parseFields(in);
-	}
 }
 
 void Http::Response::parseFields(std::istream &in) {
@@ -407,66 +422,10 @@ void Http::setHost(const std::string& host, unsigned short port, bool useSSL) {
 }
 
 Http::Response Http::sendRequest(const Http::Request& request, Time timeout) {
-	if ( 0 == mHost.toInteger() ) {
-		return Response();
-	}
-
-	if ( NULL == mConnection ) {
-		TcpSocket * Conn	= mIsSSL ? SSLSocket::New( mHostName, request.getValidateCertificate(), request.getValidateHostname() ) : TcpSocket::New();
-		mConnection			= Conn;
-	}
-
-	// First make sure that the request is valid -- add missing mandatory fields
-	Request toSend(prepareFields(request));
-
-	// Prepare the response
-	Response received;
-
-	// Connect the socket to the host
-	if (mConnection->connect(mHost, mPort, timeout) == Socket::Done) {
-		// Convert the request to string and send it through the connected socket
-		std::string requestStr = toSend.prepare();
-
-		if (!requestStr.empty()) {
-			// Send it through the socket
-			if (mConnection->send(requestStr.c_str(), requestStr.size()) == Socket::Done) {
-				// Wait for the server's response
-				std::string receivedStr;
-				std::size_t size = 0;
-				char buffer[1024];
-
-				while (mConnection->receive(buffer, sizeof(buffer), size) == Socket::Done) {
-					receivedStr.append(buffer, buffer + size);
-				}
-
-				// Build the Response object from the received data
-				received.parse(receivedStr);
-			}
-		}
-
-		// Close the connection
-		mConnection->disconnect();
-	}
-
-	// If a redirection is requested, and requests follows redirections,
-	// send a new request to the redirection location.
-	if ( ( received.getStatus() == Response::MovedPermanently || received.getStatus() == Response::MovedTemporarily ) &&
-		 request.getFollowRedirect() ) {
-
-		request.mRedirectionCount++;
-
-		// Only continue redirecting if less than 10 redirections were done
-		if ( request.mRedirectionCount < 10 ) {
-			std::string location( received.getField("location") );
-			URI uri( location );
-			Http http( uri.getHost(), uri.getPort(), uri.getScheme() == "https" ? true : false );
-			Http::Request newRequest( request );
-			newRequest.setUri( uri.getPathEtc() );
-			return http.sendRequest( request, timeout );
-		}
-	}
-
-	return std::move(received);
+	IOFakeStreamString stream;
+	Response response = downloadRequest( request, stream, timeout );
+	response.mBody = std::move(stream.mStream);
+	return std::move(response);
 }
 
 Http::Response Http::downloadRequest(const Http::Request& request, IOStream& writeTo, Time timeout) {
@@ -494,38 +453,41 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 			// Send it through the socket
 			if (mConnection->send(requestStr.c_str(), requestStr.size()) == Socket::Done) {
 				// Wait for the server's response
-				int isnheader = 0;
+				bool isnheader = false;
 				std::size_t currentTotalBytes = 0;
 				std::size_t len = 0;
 				char * eol; // end of line
 				char * bol; // beginning of line
-				std::size_t size = 0;
+				std::size_t readed = 0;
 				const std::size_t bufferSize = 1024;
 				char buffer[bufferSize+1];
 				std::string header;
+				std::string fileBuffer;
+				bool newFileBuffer = false;
+				bool chunked = false;
 
-				while (!request.isCancelled() && mConnection->receive(buffer, bufferSize, size) == Socket::Done) {
-					if ( isnheader == 0 ) {
+				while (!request.isCancelled() && mConnection->receive(buffer, bufferSize, readed) == Socket::Done) {
+					if ( !isnheader ) {
 						// calculate combined length of unprocessed data and new data
-						len += size;
+						len += readed;
 
 						// NULL terminate buffer for string functions
 						buffer[len] = '\0';
 
 						// checks if the header break happened to be the first line of the buffer
-						if ( !( strncmp( buffer, "\r\n", 2 ) ) ) {
+						if ( 0 == strncmp( buffer, "\r\n", 2 ) ) {
 							if (len > 2) {
 								currentTotalBytes += (len-2);
-								writeTo.write(buffer, (len-2));
+								fileBuffer.append(buffer, buffer + (len-2));
 							}
 
 							continue;
 						}
 
-						if ( !( strncmp( buffer, "\n", 1 ) ) ) {
+						if ( 0 == strncmp( buffer, "\n", 1 ) ) {
 							if ( len > 1 ) {
 								currentTotalBytes += (len-1);
-								writeTo.write(buffer, (len-1));
+								fileBuffer.append(buffer, buffer + (len-1));
 							}
 
 							continue;
@@ -534,14 +496,14 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 						// process each line in buffer looking for header break
 						bol = buffer;
 
-						while( ( eol = strchr( bol, '\n') ) != NULL ) {
+						while( !isnheader && ( eol = strchr( bol, '\n') ) != NULL ) {
 							// update bol based upon the value of eol
 							bol = eol + 1;
 
 							// test if end of headers has been reached
-							if ( ( !( strncmp( bol, "\r\n", 2 ) ) ) || ( ! ( strncmp( bol, "\n", 1) ) ) ) {
+							if ( 0 == strncmp( bol, "\r\n", 2 ) || 0 == strncmp( bol, "\n", 1) ) {
 								// note that end of headers has been reached
-								isnheader = 1;
+								isnheader = true;
 
 								// update the value of bol to reflect the beginning of the line
 								// immediately after the headers
@@ -551,12 +513,12 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 								bol += 1;
 
 								// calculate the amount of data remaining in the buffer
-								len = size - ( bol - buffer );
+								len = readed - ( bol - buffer );
 
 								// write remaining data to FILE stream
 								if ( len > 0 ) {
 									currentTotalBytes += len;
-									writeTo.write( bol, len );
+									fileBuffer.append(bol, bol + len);
 								}
 
 								header.append( buffer, ( bol - buffer ) );
@@ -569,15 +531,22 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 									// Build the Response object from the received data
 									received.parse(header);
 
+									// Check if the response is chunked
+									chunked = received.getField("transfer-encoding") == "chunked";
+
+									// If is not chunked just save the file buffer and clear it
+									if ( !chunked && !fileBuffer.empty() ) {
+										writeTo.write( &fileBuffer[0], fileBuffer.size() );
+										fileBuffer.clear();
+									}
+
 									// If a redirection is requested, and requests follows redirections,
 									// send a new request to the redirection location.
 									if ( ( received.getStatus() == Response::MovedPermanently || received.getStatus() == Response::MovedTemporarily ) &&
 										 request.getFollowRedirect() ) {
 
-										request.mRedirectionCount++;
-
 										// Only continue redirecting if less than 10 redirections were done
-										if ( request.mRedirectionCount < 10 ) {
+										if ( request.mRedirectionCount < request.getMaxRedirects() ) {
 											std::string location( received.getField("location") );
 											URI uri( location );
 											Http http( uri.getHost(), uri.getPort(), uri.getScheme() == "https" ? true : false );
@@ -587,6 +556,8 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 											// Close the connection
 											mConnection->disconnect();
 
+											request.mRedirectionCount++;
+
 											return http.downloadRequest( request, writeTo, timeout );
 										}
 									}
@@ -594,12 +565,48 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 							}
 						}
 
-						if ( isnheader == 0 ) {
+						if ( !isnheader ) {
 							header.append( buffer, ( bol - buffer ) );
 						}
 					} else {
-						currentTotalBytes += size;
-						writeTo.write( buffer, size );
+						currentTotalBytes += readed;
+
+						if ( chunked ) {
+							fileBuffer.append( buffer, buffer + readed );
+
+							if ( newFileBuffer ) {
+								if ( fileBuffer.substr( 0, 2 ) == "\r\n" ) {
+									fileBuffer = fileBuffer.substr( 2 );
+								}
+
+								newFileBuffer = false;
+							}
+
+							std::string::size_type lenEnd = fileBuffer.find_first_of("\r\n");
+
+							if ( lenEnd != std::string::npos ) {
+								std::string::size_type firstCharPos = lenEnd + 2;
+								unsigned long length;
+								bool res = String::fromString<unsigned long>( length, fileBuffer.substr(0, lenEnd), std::hex );
+
+								if ( res && length ) {
+									if ( fileBuffer.size() - firstCharPos >= length ) {
+										writeTo.write( &fileBuffer[firstCharPos], length );
+										fileBuffer = fileBuffer.substr( firstCharPos + length );
+										newFileBuffer = true;
+
+										// Check if already have the \r\n of the next length in the buffer
+										if ( !fileBuffer.empty() && fileBuffer.substr( 0, 2 ) == "\r\n" ) {
+											// Remove it to be able to read the next length
+											fileBuffer = fileBuffer.substr( 2 );
+											newFileBuffer = false;
+										}
+									}
+								}
+							}
+						} else {
+							writeTo.write( buffer, readed );
+						}
 
 						if ( request.getProgressCallback() ) {
 							std::size_t length = 0;

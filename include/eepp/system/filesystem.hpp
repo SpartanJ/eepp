@@ -110,6 +110,13 @@ class EE_API FileSystem {
 
 		/** @return Returns free disk space for a given path in bytes */
 		static Int64 getDiskFreeSpace(const std::string& path);
+
+		/** Creates a file name available for the directory path.
+		* @example For file name "file-name-" will search the first available name
+		* in the file system starting from file-name-1, file-name-2, and so on.
+		* @return The file name found, otherwise empty string if error.
+		*/
+		static std::string fileGetNumberedFileNameFromPath( std::string directoryPath, const std::string& fileName, const std::string& separator = ".", const std::string& fileExtension = "" );
 };
 
 }}
