@@ -133,7 +133,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 
 			// Set the proxy for the request
 			if ( proxy ) {
-				request.setProxy( URI( proxy.Get() ) );
+				http.setProxy( URI( proxy.Get() ) );
 			}
 
 			if ( !output ) {

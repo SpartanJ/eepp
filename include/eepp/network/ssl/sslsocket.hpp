@@ -36,15 +36,22 @@ class EE_API SSLSocket : public TcpSocket {
 
 		Status receive(Packet& packet);
 
+		Status sslConnect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero);
+
+		void sslDisconnect();
+
+		Status tcpConnect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero);
+
+		void tcpDisconnect();
+
+		Status tcpReceive(void* data, std::size_t size, std::size_t& received);
+
+		Status tcpSend(const void* data, std::size_t size, std::size_t& sent);
 	protected:
 		friend class SSLSocketImpl;
 		friend class OpenSSLSocket;
 		friend class MbedTLSSocket;
 
-		Status tcp_receive(void* data, std::size_t size, std::size_t& received);
-
-		Status tcp_send(const void* data, std::size_t size, std::size_t& sent);
-		
 		SSLSocketImpl *			mImpl;
 		std::string				mHostName;
 		bool					mValidateCertificate;

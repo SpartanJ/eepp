@@ -45,6 +45,9 @@ class EE_API Http : NonCopyable {
 			/** @return Method from a method name string. */
 			static Method methodFromString( std::string methodString );
 
+			/** @return The method string from a method */
+			static std::string methodToString( const Method& method );
+
 			/** @brief Default constructor
 			**  This constructor creates a GET request, with the root
 			**  URI ("/") and an empty body.
@@ -135,15 +138,6 @@ class EE_API Http : NonCopyable {
 			/** Set the maximun number of redirects allowed if follow redirect is enabled. */
 			void setMaxRedirects( unsigned int maxRedirects );
 
-			/** Sets the request proxy */
-			void setProxy( const URI& uri );
-
-			/** @return The request proxy */
-			const URI& getProxy() const;
-
-			/** @return Is a proxy is need to be used */
-			bool isProxied() const;
-
 			/** Definition of the current progress callback
 			 * @param http The http client
 			 * @param request The http request
@@ -164,7 +158,8 @@ class EE_API Http : NonCopyable {
 
 			/** @return True if the current request was cancelled */
 			const bool& isCancelled() const;
-		private:
+
+			private:
 			friend class Http;
 
 			/** @brief Prepare the final request to send to the server
@@ -172,6 +167,9 @@ class EE_API Http : NonCopyable {
 			**  request to the web server.
 			**  @return String containing the request, ready to be sent */
 			std::string prepare(const Http& http) const;
+
+			/** Prepares a http tunnel request */
+			std::string prepareTunnel(const Http& http);
 
 			// Types
 			typedef std::map<std::string, std::string> FieldTable;
@@ -317,8 +315,10 @@ class EE_API Http : NonCopyable {
 		**  than the standard one, or use an unknown protocol.
 		**  @param host Web server to connect to
 		**  @param port Port to use for connection
-		**	@param useSSL force the SSL usage ( if compiled with the support of it ). If the host starts with https:// it will use it by default. */
-		Http(const std::string& host, unsigned short port = 0, bool useSSL = false);
+		**  @param useSSL force the SSL usage ( if compiled with the support of it ). If the host starts with https:// it will use it by default.
+		**  @param proxy Set an http proxy for the host connection
+		*/
+		Http(const std::string& host, unsigned short port = 0, bool useSSL = false, URI proxy = URI());
 
 		~Http();
 
@@ -332,8 +332,10 @@ class EE_API Http : NonCopyable {
 		**  than the standard one, or use an unknown protocol.
 		**  @param host Web server to connect to
 		**  @param port Port to use for connection
-		**	@param useSSL force the SSL usage ( if compiled with the support of it ). If the host starts with https:// it will use it by default. */
-		void setHost(const std::string& host, unsigned short port = 0, bool useSSL = false);
+		**	@param useSSL force the SSL usage ( if compiled with the support of it ). If the host starts with https:// it will use it by default.
+		**	@param proxy Set an http proxy for the host connection
+		*/
+		void setHost(const std::string& host, unsigned short port = 0, bool useSSL = false, URI proxy = URI());
 
 		/** @brief Send a HTTP request and return the server's response.
 		**  You must have a valid host before sending a request (see setHost).
@@ -409,6 +411,15 @@ class EE_API Http : NonCopyable {
 
 		/** @return The URI from the schema + hostname + port */
 		URI getURI() const;
+
+		/** Sets the request proxy */
+		void setProxy( const URI& uri );
+
+		/** @return The request proxy */
+		const URI& getProxy() const;
+
+		/** @return Is a proxy is need to be used */
+		bool isProxied() const;
 	private:
 		class AsyncRequest : public Thread {
 			public:
@@ -433,8 +444,45 @@ class EE_API Http : NonCopyable {
 				IOStream *				mStream;
 		};
 
+		class HttpConnection {
+			public:
+				HttpConnection();
+
+				HttpConnection( TcpSocket * socket );
+
+				~HttpConnection();
+
+				void setSocket( TcpSocket * socket );
+
+				TcpSocket * getSocket() const;
+
+				void disconnect();
+
+				const bool& isConnected() const;
+
+				void setConnected( const bool& connected );
+
+				const bool& isTunneled() const;
+
+				void setTunneled( const bool& tunneled );
+
+				const bool& isSSL() const;
+
+				void setSSL( const bool& ssl );
+
+				const bool& isKeepAlive() const;
+
+				void setKeepAlive( const bool& isKeepAlive );
+			protected:
+				TcpSocket * mSocket;
+				bool mIsConnected;
+				bool mIsTunneled;
+				bool mIsSSL;
+				bool mIsKeepAlive;
+		};
+
 		friend class AsyncRequest;
-		ThreadLocalPtr<TcpSocket>		mConnection;	///< Connection to the host
+		ThreadLocalPtr<HttpConnection>	mConnection;	///< Connection to the host
 		IpAddress						mHost;			///< Web host address
 		std::string						mHostName;		///< Web host name
 		unsigned short					mPort;			///< Port used for connection with host
@@ -442,8 +490,6 @@ class EE_API Http : NonCopyable {
 		Mutex							mThreadsMutex;
 		bool							mIsSSL;
 		URI								mProxy;
-
-		Http(const std::string& host, unsigned short port, bool useSSL, URI proxy);
 
 		void removeOldThreads();
 
