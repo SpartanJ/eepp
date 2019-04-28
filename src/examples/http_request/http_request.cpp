@@ -14,9 +14,13 @@ void printResponseHeaders( Http::Response& response ) {
 EE_MAIN_FUNC int main (int argc, char * argv []) {
 	args::ArgumentParser parser("HTTP request program example");
 	args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
-	args::ValueFlag<std::string> output(parser, "file",  "Write to file instead of stdout", {'o', "output"} );
-	args::Flag head(parser, "head", "Show document info", {'I',"head"} );
-	args::Flag progress(parser, "progress", "Show current progress of a download", {'p',"progress"} );
+	args::ValueFlag<std::string> postData(parser, "data", "HTTP POST data", {'d', "data"});
+	args::ValueFlagList<std::string> headers(parser, "header", "Pass custom header(s) to server", {'H', "header"});
+	args::Flag head(parser, "head", "Show document info", {'I',"head"});
+	args::Flag insecure(parser, "insecure", "Allow insecure server connections when using SSL", {'k',"insecure"});
+	args::ValueFlag<std::string> output(parser, "file",  "Write to file instead of stdout", {'o', "output"});
+	args::Flag progress(parser, "progress", "Show current progress of a download", {'p',"progress"});
+	args::ValueFlag<std::string> requestMethod(parser, "request", "Specify request command to use", {'X', "request"});
 	args::Positional<std::string> url(parser, "url", "The url to request");
 
 	try {
@@ -70,11 +74,37 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 				uri = URI( "http://" + url.Get() );
 			}
 
+			// Allow insecure connections if requested
+			if ( insecure ) {
+				request.setValidateCertificate(false);
+				request.setValidateHostname(false);
+			}
+
 			// Set the host and port from the URI
 			http.setHost( uri.getHost(), uri.getPort() );
 
 			// Set the path and query parts for the request
 			request.setUri( uri.getPathEtc() );
+
+			// Set the headers
+			for ( const std::string& header : args::get(headers) ) {
+				std::string::size_type pos = header.find_first_of( ':' );
+				if ( std::string::npos != pos ) {
+					std::string key( header.substr( 0, pos ) );
+					std::string val( String::trim( header.substr( pos + 1 ) ) );
+					request.setField(key, val);
+				}
+			}
+
+			// Set the request method
+			if ( requestMethod ) {
+				request.setMethod( Http::Request::methodFromString( requestMethod.Get() ) );
+			}
+
+			// Set the post data / body
+			if ( postData ) {
+				request.setBody( postData.Get() );
+			}
 
 			if ( !output ) {
 				// Send the request
@@ -92,11 +122,11 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 
 					std::cout << response.getBody() << std::endl;
 				} else {
-					std::cout << "Error " << status << std::endl;
+					std::cout << "Error " << status << std::endl << response.getStatusDescription() << std::endl;
 				}
 			} else {
 				if ( progress ) {
-					request.setProgressCallback( []( const Http& http, const Http::Request& request, size_t totalBytes, size_t currentBytes ) {
+					request.setProgressCallback( []( const Http&, const Http::Request&, size_t totalBytes, size_t currentBytes ) {
 						std::cout << "\rDownloaded " << FileSystem::sizeToString( currentBytes ).c_str() << " of " << FileSystem::sizeToString( totalBytes ).c_str() << "          ";
 						std::cout << std::flush;
 						return true;

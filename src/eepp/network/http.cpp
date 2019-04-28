@@ -13,6 +13,28 @@ using namespace EE::Network::SSL;
 
 namespace EE { namespace Network {
 
+Http::Request::Method Http::Request::methodFromString( std::string methodString ) {
+	String::toLowerInPlace(methodString);
+
+	if ( "get" == methodString ) {
+		return Method::Get;
+	} else if ( "head" == methodString ) {
+		return Method::Head;
+	} else if ( "post" == methodString ) {
+		return Method::Post;
+	} else if ( "put" == methodString ) {
+		return Method::Put;
+	} else if ( "delete" == methodString ) {
+		return Method::Delete;
+	} else if ( "options" == methodString ) {
+		return Method::Options;
+	} else if ( "patch" == methodString ) {
+		return Method::Patch;
+	} else {
+		return Method::Get;
+	}
+}
+
 Http::Request::Request(const std::string& uri, Method method, const std::string& body, bool validateCertificate, bool validateHostname , bool followRedirect) :
 	mValidateCertificate( validateCertificate ),
 	mValidateHostname( validateHostname ),
@@ -133,6 +155,16 @@ bool Http::Request::hasField(const std::string& field) const {
 	return mFields.find(String::toLower(field)) != mFields.end();
 }
 
+const std::string& Http::Request::getField(const std::string& field) const {
+	FieldTable::const_iterator it = mFields.find(String::toLower(field));
+	if (it != mFields.end()) {
+		return it->second;
+	} else {
+		static const std::string empty = "";
+		return empty;
+	}
+}
+
 Http::Response::Response() :
 	mStatus	  (ConnectionFailed),
 	mMajorVersion(0),
@@ -156,6 +188,44 @@ const std::string& Http::Response::getField(const std::string& field) const {
 
 Http::Response::Status Http::Response::getStatus() const {
 	return mStatus;
+}
+
+const char * Http::Response::getStatusDescription() const {
+	switch ( mStatus ) {
+		// 2xx: success
+		case Ok: return "Successfull";
+		case Created: return "The resource has successfully been created";
+		case Accepted: return "The request has been accepted, but will be processed later by the server";
+		case NoContent: return "The server didn't send any data in return";
+		case ResetContent: return "The server informs the client that it should clear the view (form) that caused the request to be sent";
+		case PartialContent: return "The server has sent a part of the resource, as a response to a partial GET request";
+
+		// 3xx: redirection
+		case MultipleChoices: return "The requested page can be accessed from several locations";
+		case MovedPermanently: return "The requested page has permanently moved to a new location";
+		case MovedTemporarily: return "The requested page has temporarily moved to a new location";
+		case NotModified: return "For conditionnal requests, means the requested page hasn't changed and doesn't need to be refreshed";
+
+		// 4xx: client error
+		case BadRequest: return "The server couldn't understand the request (syntax error)";
+		case Unauthorized: return "The requested page needs an authentification to be accessed";
+		case Forbidden: return "The requested page cannot be accessed at all, even with authentification";
+		case NotFound: return "The requested page doesn't exist";
+		case RangeNotSatisfiable: return "The server can't satisfy the partial GET request (with a \"Range\" header field)";
+
+		// 5xx: server error
+		case InternalServerError: return "The server encountered an unexpected error";
+		case NotImplemented: return "The server doesn't implement a requested feature";
+		case BadGateway: return "The gateway server has received an error from the source server";
+		case ServiceNotAvailable: return "The server is temporarily unavailable (overloaded, in maintenance, ...)";
+		case GatewayTimeout: return "The gateway server couldn't receive a response from the source server";
+		case VersionNotSupported: return "The server doesn't support the requested HTTP version";
+
+		// 10xx: Custom codes
+		case InvalidResponse: return "Response is not a valid HTTP one";
+		case ConnectionFailed: return "Connection with server failed";
+		default: return "Unknown response status";
+	}
 }
 
 unsigned int Http::Response::getMajorHttpVersion() const {
@@ -435,24 +505,6 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 				std::string header;
 
 				while (!request.isCancelled() && mConnection->receive(buffer, bufferSize, size) == Socket::Done) {
-					if ( isnheader != 0 ) {
-						currentTotalBytes += size;
-						writeTo.write( buffer, size );
-
-						if ( request.getProgressCallback() ) {
-							std::size_t length = 0;
-
-							if ( !received.getField("content-length").empty() ) {
-								String::fromString( length, received.getField("content-length") );
-							}
-
-							if ( !request.getProgressCallback()( *this, request, length, currentTotalBytes ) ) {
-								request.mCancel = true;
-								break;
-							}
-						}
-					}
-
 					if ( isnheader == 0 ) {
 						// calculate combined length of unprocessed data and new data
 						len += size;
@@ -499,7 +551,7 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 								bol += 1;
 
 								// calculate the amount of data remaining in the buffer
-								len = len - ( bol - buffer );
+								len = size - ( bol - buffer );
 
 								// write remaining data to FILE stream
 								if ( len > 0 ) {
@@ -544,6 +596,22 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 
 						if ( isnheader == 0 ) {
 							header.append( buffer, ( bol - buffer ) );
+						}
+					} else {
+						currentTotalBytes += size;
+						writeTo.write( buffer, size );
+
+						if ( request.getProgressCallback() ) {
+							std::size_t length = 0;
+
+							if ( !received.getField("content-length").empty() ) {
+								String::fromString( length, received.getField("content-length") );
+							}
+
+							if ( !request.getProgressCallback()( *this, request, length, currentTotalBytes ) ) {
+								request.mCancel = true;
+								break;
+							}
 						}
 					}
 				}

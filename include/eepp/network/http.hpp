@@ -40,6 +40,9 @@ class EE_API Http : NonCopyable {
 				Patch    ///< The PATCH method is used to apply partial modifications to a resource.
 			};
 
+			/** @return Method from a method name string. */
+			static Method methodFromString( std::string methodString );
+
 			/** @brief Default constructor
 			**  This constructor creates a GET request, with the root
 			**  URI ("/") and an empty body.
@@ -61,6 +64,20 @@ class EE_API Http : NonCopyable {
 			**  @param field Name of the field to set
 			**  @param value Value of the field */
 			void setField(const std::string& field, const std::string& value);
+
+			/** @brief Check if the request defines a field
+			**  This function uses case-insensitive comparisons.
+			**  @param field Name of the field to test
+			**  @return True if the field exists, false otherwise */
+			bool hasField(const std::string& field) const;
+
+			/** @brief Get the value of a field
+			**  If the field @a field is not found in the response header,
+			**  the empty string is returned. This function uses
+			**  case-insensitive comparisons.
+			**  @param field Name of the field to get
+			**  @return Value of the field, or empty string if not found */
+			const std::string& getField(const std::string& field) const;
 
 			/** @brief Set the request method
 			**  See the Method enumeration for a complete list of all
@@ -138,12 +155,6 @@ class EE_API Http : NonCopyable {
 			**  request to the web server.
 			**  @return String containing the request, ready to be sent */
 			std::string prepare() const;
-
-			/** @brief Check if the request defines a field
-			**  This function uses case-insensitive comparisons.
-			**  @param field Name of the field to test
-			**  @return True if the field exists, false otherwise */
-			bool hasField(const std::string& field) const;
 
 			// Types
 			typedef std::map<std::string, std::string> FieldTable;
@@ -227,6 +238,9 @@ class EE_API Http : NonCopyable {
 			**  enumeration).
 			**  @return Status code of the response */
 			Status getStatus() const;
+
+			/** @brief Get the response status description */
+			const char * getStatusDescription() const;
 
 			/** @brief Get the major HTTP version number of the response
 			**  @return Major HTTP version number

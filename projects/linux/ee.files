@@ -143,7 +143,6 @@
 ../../include/eepp/maps/mapobjectlayer.hpp
 ../../include/eepp/maps/tilemap.hpp
 ../../include/eepp/maps/tilemaplayer.hpp
-../../include/eepp/math/base.hpp
 ../../include/eepp/math/ease.hpp
 ../../include/eepp/math/easing.hpp
 ../../include/eepp/math.hpp

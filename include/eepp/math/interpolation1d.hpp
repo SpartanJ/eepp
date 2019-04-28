@@ -1,7 +1,8 @@
 #ifndef EE_MATHCINTERPOLATION_H
 #define EE_MATHCINTERPOLATION_H
 
-#include <eepp/math/base.hpp>
+#include <eepp/core.hpp>
+#include <eepp/math/ease.hpp>
 #include <eepp/system/time.hpp>
 #include <vector>
 
