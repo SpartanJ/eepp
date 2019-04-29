@@ -13,6 +13,8 @@ using namespace EE::Network::SSL;
 
 namespace EE { namespace Network {
 
+#define PACKET_BUFFER_SIZE (16384)
+
 namespace {
 
 class IOFakeStreamString : public IOStream {
@@ -580,12 +582,11 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 
 			// Send the request
 			if (sslSocket->tcpSend(tunnelStr.c_str(), tunnelStr.size(), sent) == Socket::Done) {
-				const std::size_t bufferSize = 1024;
-				char buffer[bufferSize+1];
+				char buffer[PACKET_BUFFER_SIZE+1];
 				std::size_t readed = 0;
 
 				// Get the proxy server response
-				if (sslSocket->tcpReceive(buffer, bufferSize, readed) == Socket::Done) {
+				if (sslSocket->tcpReceive(buffer, PACKET_BUFFER_SIZE, readed) == Socket::Done) {
 					// Parse the HTTP Tunnel request response
 					Response tunnelResponse;
 					std::string header;
@@ -624,14 +625,13 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 				char * eol; // end of line
 				char * bol; // beginning of line
 				std::size_t readed = 0;
-				const std::size_t bufferSize = 1024;
-				char buffer[bufferSize+1];
+				char buffer[PACKET_BUFFER_SIZE+1];
 				std::string header;
 				std::string fileBuffer;
 				bool newFileBuffer = false;
 				bool chunked = false;
 
-				while (!request.isCancelled() && ( status = mConnection->getSocket()->receive(buffer, bufferSize, readed) ) == Socket::Done) {
+				while (!request.isCancelled() && ( status = mConnection->getSocket()->receive(buffer, PACKET_BUFFER_SIZE, readed) ) == Socket::Done) {
 					if ( !isnheader ) {
 						// calculate combined length of unprocessed data and new data
 						len += readed;
