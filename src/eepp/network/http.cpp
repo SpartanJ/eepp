@@ -589,8 +589,8 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 				std::size_t currentTotalBytes = 0;
 				std::size_t len = 0;
 				std::size_t readed = 0;
-				char * eol; // end of line
-				char * bol; // beginning of line
+				char * eol = NULL; // end of line
+				char * bol = NULL; // beginning of line
 				char buffer[PACKET_BUFFER_SIZE+1];
 				std::string headerBuffer;
 				std::string chunkBuffer;
@@ -605,35 +605,18 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 				std::size_t contentLength = 0;
 
 				while (!request.isCancelled() && ( status = mConnection->getSocket()->receive(buffer, PACKET_BUFFER_SIZE, readed) ) == Socket::Done) {
+					char * readBuffer = buffer;
+
 					// If we didn't receive the header yet, we will try to find the end of the header
 					if ( !isnheader ) {
 						// calculate combined length of unprocessed data and new data
 						len += readed;
 
 						// NULL terminate buffer for string functions
-						buffer[len] = '\0';
-
-						// checks if the header break happened to be the first line of the buffer
-						if ( 0 == strncmp( buffer, "\r\n", 2 ) ) {
-							if (len > 2) {
-								currentTotalBytes += (len-2);
-								chunkBuffer.append(buffer, buffer + (len-2));
-							}
-
-							continue;
-						}
-
-						if ( 0 == strncmp( buffer, "\n", 1 ) ) {
-							if ( len > 1 ) {
-								currentTotalBytes += (len-1);
-								chunkBuffer.append(buffer, buffer + (len-1));
-							}
-
-							continue;
-						}
+						readBuffer[len] = '\0';
 
 						// process each line in buffer looking for header break
-						bol = buffer;
+						bol = readBuffer;
 
 						while( !isnheader && ( eol = strchr( bol, '\n') ) != NULL ) {
 							// update bol based upon the value of eol
@@ -652,25 +635,14 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 								bol += 1;
 
 								// calculate the amount of data remaining in the buffer
-								len = readed - ( bol - buffer );
+								len = readed - ( bol - readBuffer );
 
-								// write remaining data to FILE stream
-								if ( len > 0 ) {
-									currentTotalBytes += len;
-									chunkBuffer.append(bol, bol + len);
-								}
-
-								headerBuffer.append( buffer, ( bol - buffer ) );
-
-								// reset length of left over data to zero and continue processing
-								// non-header information
-								len = 0;
+								// Fill the header buffer
+								headerBuffer.append( readBuffer, ( bol - readBuffer ) );
 
 								if ( !headerBuffer.empty() ) {
 									// Build the Response object from the received data
 									received.parse(headerBuffer);
-
-									headerBuffer.clear();
 
 									// Check if the response is chunked
 									chunked = received.getField("transfer-encoding") == "chunked";
@@ -721,87 +693,124 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 										}
 									}
 
-									// If is not chunked just save the file buffer and clear it
-									if ( !chunked && !chunkBuffer.empty() ) {
-										fileBuffer.write( &chunkBuffer[0], chunkBuffer.size() );
-										chunkBuffer.clear();
+									// Move the readBuffer to the starting point
+									// of the file buffer
+									if ( len > 0 ) {
+										readBuffer = bol;
+										readed = len;
+									} else {
+										readed = 0;
 									}
 
-									if ( chunked )
-										readed = 0;
+									headerBuffer.clear();
 								}
 							}
 						}
 
 						if ( !isnheader ) {
-							headerBuffer.append( buffer, ( bol - buffer ) );
+							headerBuffer.append( readBuffer, ( bol - readBuffer ) );
 						}
 					}
 
 					if ( isnheader ) {
 						currentTotalBytes += readed;
 
-						if ( chunked && readed ) {
-							// If the chunk reading ended we just add the buffer received as a header
-							// Otherwise we process the buffer data as chunk
-							if ( !chunkEnded ) {
-								// Keep a chunk buffer until the end of chunk is found
-								chunkBuffer.append( buffer, buffer + readed );
+						if ( chunked ) {
+							if ( readed > 0 ) {
+								// If the chunk reading ended we just add the buffer received as a header
+								// Otherwise we process the buffer data as chunk
+								if ( !chunkEnded ) {
+									// Keep a chunk buffer until the end of chunk is found
+									chunkBuffer.append( readBuffer, readBuffer + readed );
 
-								// If the new chunk starts with \r\n and the last removed chunk
-								// did not contain the trailing \r\n, we remove it to detect
-								// correctly the next length data
-								if ( chunkNewBuffer ) {
-									if ( chunkBuffer.substr( 0, 2 ) == "\r\n" ) {
-										chunkBuffer = chunkBuffer.substr( 2 );
+									// If the new chunk starts with \r\n and the last removed chunk
+									// did not contain the trailing \r\n, we remove it to detect
+									// correctly the next length data
+									if ( chunkNewBuffer ) {
+										if ( chunkBuffer.substr( 0, 2 ) == "\r\n" ) {
+											chunkBuffer = chunkBuffer.substr( 2 );
+										}
+
+										chunkNewBuffer = false;
 									}
 
-									chunkNewBuffer = false;
-								}
+									bool retry;
 
-								// Check for the first \r\n to find the end of the length definition
-								std::string::size_type lenEnd = chunkBuffer.find_first_of("\r\n");
+									do {
+										retry = false;
 
-								if ( lenEnd != std::string::npos ) {
-									std::string::size_type firstCharPos = lenEnd + 2;
-									unsigned long length;
+										// Check for the first \r\n to find the end of the length definition
+										std::string::size_type lenEnd = chunkBuffer.find_first_of("\r\n");
 
-									// Get the length of the chunk
-									bool res = String::fromString( length, chunkBuffer.substr(0, lenEnd), std::hex );
+										if ( lenEnd != std::string::npos ) {
+											std::string::size_type firstCharPos = lenEnd + 2;
+											unsigned long length;
 
-									// If the length is solved...
-									if ( res ) {
-										// And it's bigger than 0, means that there are more chunks
-										if ( length > 0 ) {
-											// Check if the chunk buffer size at least equals to the length reported
-											if ( chunkBuffer.size() - firstCharPos >= length ) {
-												// In that case write the chunk to the file buffer
-												fileBuffer.write( &chunkBuffer[firstCharPos], length );
+											// Get the length of the chunk
+											bool res = String::fromString( length, chunkBuffer.substr(0, lenEnd), std::hex );
 
-												// And keep the remaining not completed chunk
-												chunkBuffer = chunkBuffer.substr( firstCharPos + length );
-												chunkNewBuffer = true;
+											// If the length is solved...
+											if ( res ) {
+												// And it's bigger than 0, means that there are more chunks
+												if ( length > 0 ) {
+													// Check if the chunk buffer size at least equals to the length reported
+													if ( chunkBuffer.size() - firstCharPos >= length ) {
+														// In that case write the chunk to the file buffer
+														fileBuffer.write( &chunkBuffer[firstCharPos], length );
 
-												// Check if already have the \r\n of the next length in the buffer
-												if ( !chunkBuffer.empty() && chunkBuffer.substr( 0, 2 ) == "\r\n" ) {
-													// Remove it to be able to read the next length
-													chunkBuffer = chunkBuffer.substr( 2 );
-													chunkNewBuffer = false;
+														// And keep the remaining not completed chunk
+														chunkBuffer = chunkBuffer.substr( firstCharPos + length );
+
+														// Check if already have the \r\n of the next length in the buffer
+														if ( !chunkBuffer.empty() ) {
+															std::size_t pos = 0;
+
+															// Remove al the \r\n remaining
+															while ( pos < chunkBuffer.size() && 0 == strncmp( &chunkBuffer[pos], "\r\n", 2 ) ) {
+																pos += 2;
+															}
+
+															if ( pos > 0 ) {
+																// Remove it to be able to read the next length
+																chunkBuffer = chunkBuffer.substr( pos );
+															}
+
+															// If still the chunk is not empty it could be another chunk
+															// already received, so we check that retrying
+															if ( !chunkBuffer.empty() ) {
+																std::string::size_type lenEnd = chunkBuffer.find_first_of("\r\n");
+
+																if ( lenEnd != std::string::npos ) {
+																	bool res = String::fromString( length, chunkBuffer.substr(0, lenEnd), std::hex );
+
+																	if ( res && length > 0 ) {
+																		retry = true;
+																	}
+																}
+															}
+														}
+
+														// If the next chunk received starts with \r\n it's because
+														// it's part of the chunk size information, so we need to flag it
+														// to remove it
+														chunkNewBuffer = true;
+													}
+												} else {
+													// If the value is 0 means that the data ended
+													// But after this we can receive extra headers
+													chunkEnded = true;
+													chunkBuffer.clear();
 												}
 											}
-										} else {
-											// If the value is 0 means that the data ended
-											// But after this we can receive extra headers
-											chunkEnded = true;
 										}
-									}
+									} while ( retry );
+								} else {
+									headerBuffer.append( readBuffer, readBuffer + readed );
 								}
-							} else {
-								headerBuffer.append( buffer, buffer + readed );
 							}
-						} else {
+						} else if ( readed > 0 ) {
 							// If not chunked just write into the file buffer
-							fileBuffer.write( buffer, readed );
+							fileBuffer.write( readBuffer, readed );
 						}
 
 						if ( compressed ) {
