@@ -38,7 +38,7 @@ CursorX11::CursorX11( const std::string& path, const Vector2i& hotspot, const st
 
 CursorX11::~CursorX11() {
 	if ( None != mCursor )
-		XFreeCursor( getPlatform()->GetDisplay(), mCursor );
+		XFreeCursor( getPlatform()->getDisplay(), mCursor );
 }
 
 void CursorX11::create() {
@@ -65,11 +65,11 @@ void CursorX11::create() {
 	image->xhot = mHotSpot.x;
 	image->yhot = mHotSpot.y;
 
-	getPlatform()->Lock();
+	getPlatform()->lock();
 
-	mCursor = XcursorImageLoadCursor( getPlatform()->GetDisplay(), image );
+	mCursor = XcursorImageLoadCursor( getPlatform()->getDisplay(), image );
 
-	getPlatform()->Unlock();
+	getPlatform()->unlock();
 
 	XcursorImageDestroy( image );
 }

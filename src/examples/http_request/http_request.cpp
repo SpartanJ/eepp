@@ -17,6 +17,7 @@ void printResponseHeaders( Http::Response& response ) {
 EE_MAIN_FUNC int main (int argc, char * argv []) {
 	args::ArgumentParser parser("HTTP request program example");
 	args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
+	args::Flag compressed(parser, "compressed", "Request compressed response", {"compressed"});
 	args::ValueFlag<std::string> postData(parser, "data", "HTTP POST data", {'d', "data"});
 	args::ValueFlagList<std::string> headers(parser, "header", "Pass custom header(s) to server", {'H', "header"});
 	args::Flag includeHead(parser, "include", "Include protocol response headers in the output", {'i',"include"});
@@ -136,6 +137,11 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 				http.setProxy( URI( proxy.Get() ) );
 			}
 
+			// Request a compressed response
+			if ( compressed ) {
+				request.setCompressedResponse( true );
+			}
+
 			if ( !output ) {
 				// Send the request
 				Http::Response response = http.sendRequest(request);
@@ -147,21 +153,22 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 					printResponseHeaders(response);
 
 				if ( status == Http::Response::Ok ) {
-					std::cout << response.getBody() << std::endl;
+					std::cout << response.getBody();
 				} else {
 					std::cout << "Error " << status << std::endl << response.getStatusDescription() << std::endl;
-					std::cout << response.getBody() << std::endl;
+					std::cout << response.getBody();
 				}
 			} else {
 				std::string path( output.Get() );
 
 				// If output path is a directory guess a file name
 				if ( FileSystem::isDirectory( path ) ) {
+					FileSystem::dirPathAddSlashAtEnd( path );
+
 					std::string lastPathSegment = uri.getLastPathSegment();
 
 					// If there's a path end segment
 					if ( !lastPathSegment.empty() ) {
-						FileSystem::dirPathAddSlashAtEnd( path );
 
 						// Save with the path end segment name
 						if ( !FileSystem::fileExists( path + lastPathSegment ) ) {

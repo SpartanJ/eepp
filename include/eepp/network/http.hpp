@@ -57,8 +57,9 @@ class EE_API Http : NonCopyable {
 			**  @param validateCertificate Enables certificate validation for https request
 			**  @param validateHostname Enables hostname validation for https request
 			**  @param followRedirect Allow follor redirects to the request.
+			**  @param compressedResponse Set if the requested response should be compressed ( if available )
 			*/
-			Request(const std::string& uri = "/", Method method = Get, const std::string& body = "", bool validateCertificate = true, bool validateHostname = true, bool followRedirect = true);
+			Request(const std::string& uri = "/", Method method = Get, const std::string& body = "", bool validateCertificate = true, bool validateHostname = true, bool followRedirect = true, bool compressedResponse = false);
 
 			/** @brief Set the value of a field
 			**  The field is created if it doesn't exist. The name of
@@ -159,6 +160,15 @@ class EE_API Http : NonCopyable {
 			/** @return True if the current request was cancelled */
 			const bool& isCancelled() const;
 
+			/** @return If requests a compressed response */
+			const bool& isCompressedResponse() const;
+
+			/** Set to request a compressed response from the server
+			**  The returned response will be automatically decompressed
+			**  by the client.
+			*/
+			void setCompressedResponse(const bool& compressedResponse);
+
 			private:
 			friend class Http;
 
@@ -184,6 +194,7 @@ class EE_API Http : NonCopyable {
 			bool                  mValidateCertificate; ///< Validates the SSL certificate in case of an HTTPS request
 			bool                  mValidateHostname;    ///< Validates the hostname in case of an HTTPS request
 			bool                  mFollowRedirect;      ///< Follows redirect response codes
+			bool                  mCompressedResponse;  ///< Request comrpessed response
 			mutable bool          mCancel;              ///< Cancel state of current request
 			ProgressCallback      mProgressCallback;    ///< Progress callback
 			unsigned int          mMaxRedirections;     ///< Maximun number of redirections allowed

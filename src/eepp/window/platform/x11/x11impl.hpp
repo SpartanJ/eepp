@@ -54,11 +54,11 @@ class X11Impl : public PlatformImpl {
 
 		void restoreCursor();
 
-		eeWindowHandle GetDisplay() const;
+		eeWindowHandle getDisplay() const;
 
-		void Lock();
+		void lock();
 
-		void Unlock();
+		void unlock();
 
 		eeWindowContex getWindowContext();
 	protected:

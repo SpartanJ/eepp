@@ -241,6 +241,7 @@
 ../../include/eepp/system/bitop.hpp
 ../../include/eepp/system/clock.hpp
 ../../include/eepp/system/color.hpp
+../../include/eepp/system/compression.hpp
 ../../include/eepp/system/condition.hpp
 ../../include/eepp/system/container.hpp
 ../../include/eepp/system/directorypack.hpp
@@ -249,8 +250,10 @@
 ../../include/eepp/system/inifile.hpp
 ../../include/eepp/system/iostreamfile.hpp
 ../../include/eepp/system/iostream.hpp
+../../include/eepp/system/iostreaminflate.hpp
 ../../include/eepp/system/iostreammemory.hpp
 ../../include/eepp/system/iostreampak.hpp
+../../include/eepp/system/iostreamstring.hpp
 ../../include/eepp/system/iostreamzip.hpp
 ../../include/eepp/system/lock.hpp
 ../../include/eepp/system/log.hpp
@@ -666,13 +669,16 @@
 ../../src/eepp/system/base64.cpp
 ../../src/eepp/system/clock.cpp
 ../../src/eepp/system/color.cpp
+../../src/eepp/system/compression.cpp
 ../../src/eepp/system/condition.cpp
 ../../src/eepp/system/directorypack.cpp
 ../../src/eepp/system/filesystem.cpp
 ../../src/eepp/system/inifile.cpp
 ../../src/eepp/system/iostreamfile.cpp
+../../src/eepp/system/iostreaminflate.cpp
 ../../src/eepp/system/iostreammemory.cpp
 ../../src/eepp/system/iostreampak.cpp
+../../src/eepp/system/iostreamstring.cpp
 ../../src/eepp/system/iostreamzip.cpp
 ../../src/eepp/system/lock.cpp
 ../../src/eepp/system/log.cpp

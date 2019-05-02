@@ -3,6 +3,9 @@
 #include <eepp/network/uri.hpp>
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/iostreamfile.hpp>
+#include <eepp/system/iostreaminflate.hpp>
+#include <eepp/system/iostreamstring.hpp>
+#include <eepp/system/compression.hpp>
 #include <cctype>
 #include <algorithm>
 #include <iterator>
@@ -15,62 +18,17 @@ namespace EE { namespace Network {
 
 #define PACKET_BUFFER_SIZE (16384)
 
-namespace {
-
-class IOFakeStreamString : public IOStream {
-	public:
-		ios_size read( char * data, ios_size size ) override {
-			return 0;
-		}
-
-		ios_size write( const char * data, ios_size size ) override {
-			mStream.append( data, size );
-			return std::move(size);
-		}
-
-		ios_size seek( ios_size position ) override {
-			return 0;
-		}
-
-		ios_size tell() override {
-			return getSize();
-		}
-
-		ios_size getSize() override {
-			return mStream.size();
-		}
-
-		bool isOpen() override {
-			return true;
-		}
-
-		std::string mStream;
-};
-
-}
-
 Http::Request::Method Http::Request::methodFromString( std::string methodString ) {
 	String::toLowerInPlace(methodString);
-
-	if ( "get" == methodString ) {
-		return Method::Get;
-	} else if ( "head" == methodString ) {
-		return Method::Head;
-	} else if ( "post" == methodString ) {
-		return Method::Post;
-	} else if ( "put" == methodString ) {
-		return Method::Put;
-	} else if ( "delete" == methodString ) {
-		return Method::Delete;
-	} else if ( "options" == methodString ) {
-		return Method::Options;
-	} else if ( "patch" == methodString ) {
-		return Method::Patch;
-	} else if ( "connect" == methodString ) {
-		return Method::Connect;
-	} else {
-		return Method::Get;
-	}
+	if ( "get" == methodString ) return Method::Get;
+	else if ( "head" == methodString ) return Method::Head;
+	else if ( "post" == methodString ) return Method::Post;
+	else if ( "put" == methodString ) return Method::Put;
+	else if ( "delete" == methodString ) return Method::Delete;
+	else if ( "options" == methodString ) return Method::Options;
+	else if ( "patch" == methodString ) return Method::Patch;
+	else if ( "connect" == methodString ) return Method::Connect;
+	else return Method::Get;
 }
 
 std::string Http::Request::methodToString(const Http::Request::Method& method) {
@@ -87,10 +45,11 @@ std::string Http::Request::methodToString(const Http::Request::Method& method) {
 	}
 }
 
-Http::Request::Request(const std::string& uri, Method method, const std::string& body, bool validateCertificate, bool validateHostname , bool followRedirect) :
+Http::Request::Request(const std::string& uri, Method method, const std::string& body, bool validateCertificate, bool validateHostname , bool followRedirect, bool compressedResponse) :
 	mValidateCertificate( validateCertificate ),
 	mValidateHostname( validateHostname ),
 	mFollowRedirect( followRedirect ),
+	mCompressedResponse( compressedResponse ),
 	mCancel( false ),
 	mMaxRedirections( 10 ),
 	mRedirectionCount( 0 )
@@ -198,6 +157,14 @@ std::string Http::Request::prepareTunnel(const Http& http) {
 	out << "\r\n";
 
 	return out.str();
+}
+
+const bool& Http::Request::isCompressedResponse() const {
+	return mCompressedResponse;
+}
+
+void Http::Request::setCompressedResponse(const bool& compressedResponse) {
+	mCompressedResponse = compressedResponse;
 }
 
 std::string Http::Request::prepare(const Http& http) const {
@@ -440,12 +407,12 @@ Http::~Http() {
 	std::list<AsyncRequest*>::iterator itt;
 
 	// First we wait to finish any request pending
-	for ( itt = mThreads.begin(); itt != mThreads.end(); ++itt ) {
-		(*itt)->wait();
+	for ( auto&& itt : mThreads ) {
+		itt->wait();
 	}
 
-	for ( itt = mThreads.begin(); itt != mThreads.end(); ++itt ) {
-		eeDelete( *itt );
+	for ( auto&& itt : mThreads ) {
+		eeDelete( itt );
 	}
 
 	// Then we destroy the last open connection
@@ -507,10 +474,10 @@ void Http::setHost(const std::string& host, unsigned short port, bool useSSL, UR
 }
 
 Http::Response Http::sendRequest(const Http::Request& request, Time timeout) {
-	IOFakeStreamString stream;
+	IOStreamString stream;
 	Response response = downloadRequest( request, stream, timeout );
-	response.mBody = std::move(stream.mStream);
-	return std::move(response);
+	response.mBody = stream.getStream();
+	return response;
 }
 
 Http::Response Http::downloadRequest(const Http::Request& request, IOStream& writeTo, Time timeout) {
@@ -556,13 +523,13 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 
 			// For an HTTP Tunnel first we need to connect to the proxy server ( without TLS )
 			if (sslSocket->tcpConnect( mHost, mProxy.getPort(), timeout ) != Socket::Done) {
-				return std::move(received);
+				return received;
 			} else {
 				mConnection->setConnected(true);
 			}
 		} else {
 			if (mConnection->getSocket()->connect(mHost, mProxy.empty() ? mPort : mProxy.getPort(), timeout) != Socket::Done) {
-				return std::move(received);
+				return received;
 			} else {
 				mConnection->setConnected(true);
 			}
@@ -596,13 +563,13 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 					if ( tunnelResponse.getStatus() == Response::Ok ) {
 						// Stablish the SSL connection if the response is positive
 						if (sslSocket->sslConnect( mHost, mProxy.getPort(), timeout ) != Socket::Done) {
-							return std::move(received);
+							return received;
 						}
 					} else {
-						return std::move(tunnelResponse);
+						return tunnelResponse;
 					}
 				} else {
-					return std::move(received);
+					return received;
 				}
 
 				mConnection->setTunneled(true);
@@ -619,19 +586,26 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 			// Send it through the socket
 			if (mConnection->getSocket()->send(requestStr.c_str(), requestStr.size()) == Socket::Done) {
 				// Wait for the server's response
-				bool isnheader = false;
 				std::size_t currentTotalBytes = 0;
 				std::size_t len = 0;
+				std::size_t readed = 0;
 				char * eol; // end of line
 				char * bol; // beginning of line
-				std::size_t readed = 0;
 				char buffer[PACKET_BUFFER_SIZE+1];
-				std::string header;
-				std::string fileBuffer;
-				bool newFileBuffer = false;
+				std::string headerBuffer;
+				std::string chunkBuffer;
+				IOStreamString fileBuffer;
+				bool isnheader = false;
 				bool chunked = false;
+				bool chunkNewBuffer = false;
+				bool chunkEnded = false;
+				bool compressed = false;
+				IOStreamInflate * inflateStream = NULL;
+				ios_size inflateChunkSize = 0;
+				std::size_t contentLength = 0;
 
 				while (!request.isCancelled() && ( status = mConnection->getSocket()->receive(buffer, PACKET_BUFFER_SIZE, readed) ) == Socket::Done) {
+					// If we didn't receive the header yet, we will try to find the end of the header
 					if ( !isnheader ) {
 						// calculate combined length of unprocessed data and new data
 						len += readed;
@@ -643,7 +617,7 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 						if ( 0 == strncmp( buffer, "\r\n", 2 ) ) {
 							if (len > 2) {
 								currentTotalBytes += (len-2);
-								fileBuffer.append(buffer, buffer + (len-2));
+								chunkBuffer.append(buffer, buffer + (len-2));
 							}
 
 							continue;
@@ -652,7 +626,7 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 						if ( 0 == strncmp( buffer, "\n", 1 ) ) {
 							if ( len > 1 ) {
 								currentTotalBytes += (len-1);
-								fileBuffer.append(buffer, buffer + (len-1));
+								chunkBuffer.append(buffer, buffer + (len-1));
 							}
 
 							continue;
@@ -683,26 +657,40 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 								// write remaining data to FILE stream
 								if ( len > 0 ) {
 									currentTotalBytes += len;
-									fileBuffer.append(bol, bol + len);
+									chunkBuffer.append(bol, bol + len);
 								}
 
-								header.append( buffer, ( bol - buffer ) );
+								headerBuffer.append( buffer, ( bol - buffer ) );
 
 								// reset length of left over data to zero and continue processing
 								// non-header information
 								len = 0;
 
-								if ( !header.empty() ) {
+								if ( !headerBuffer.empty() ) {
 									// Build the Response object from the received data
-									received.parse(header);
+									received.parse(headerBuffer);
+
+									headerBuffer.clear();
 
 									// Check if the response is chunked
 									chunked = received.getField("transfer-encoding") == "chunked";
 
-									// If is not chunked just save the file buffer and clear it
-									if ( !chunked && !fileBuffer.empty() ) {
-										writeTo.write( &fileBuffer[0], fileBuffer.size() );
-										fileBuffer.clear();
+									// Check if the content is compressed
+									std::string encoding( received.getField("content-encoding") );
+									compressed = encoding == "gzip" || encoding == "deflate";
+
+									if ( compressed ) {
+										Compression::Mode compressionMode = "gzip" == encoding ? Compression::MODE_GZIP : Compression::MODE_DEFLATE;
+
+										inflateChunkSize = Compression::getModeDefaultChunkSize( compressionMode );
+
+										inflateStream = IOStreamInflate::New( writeTo, compressionMode );
+									}
+
+									// Get the content length
+									if ( !received.getField("content-length").empty() ) {
+										if ( !String::fromString( contentLength, received.getField("content-length") ) )
+											contentLength = 0;
 									}
 
 									if ( received.getField("connection") == "closed" ) {
@@ -732,61 +720,108 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 											return http.downloadRequest( request, writeTo, timeout );
 										}
 									}
+
+									// If is not chunked just save the file buffer and clear it
+									if ( !chunked && !chunkBuffer.empty() ) {
+										fileBuffer.write( &chunkBuffer[0], chunkBuffer.size() );
+										chunkBuffer.clear();
+									}
 								}
 							}
 						}
 
 						if ( !isnheader ) {
-							header.append( buffer, ( bol - buffer ) );
+							headerBuffer.append( buffer, ( bol - buffer ) );
 						}
 					} else {
 						currentTotalBytes += readed;
 
 						if ( chunked ) {
-							fileBuffer.append( buffer, buffer + readed );
+							// If the chunk reading ended we just add the buffer received as a header
+							// Otherwise we process the buffer data as chunk
+							if ( !chunkEnded ) {
+								// Keep a chunk buffer until the end of chunk is found
+								chunkBuffer.append( buffer, buffer + readed );
 
-							if ( newFileBuffer ) {
-								if ( fileBuffer.substr( 0, 2 ) == "\r\n" ) {
-									fileBuffer = fileBuffer.substr( 2 );
+								// If the new chunk starts with \r\n and the last removed chunk
+								// did not contain the trailing \r\n, we remove it to detect
+								// correctly the next length data
+								if ( chunkNewBuffer ) {
+									if ( chunkBuffer.substr( 0, 2 ) == "\r\n" ) {
+										chunkBuffer = chunkBuffer.substr( 2 );
+									}
+
+									chunkNewBuffer = false;
 								}
 
-								newFileBuffer = false;
-							}
+								// Check for the first \r\n to find the end of the length definition
+								std::string::size_type lenEnd = chunkBuffer.find_first_of("\r\n");
 
-							std::string::size_type lenEnd = fileBuffer.find_first_of("\r\n");
+								if ( lenEnd != std::string::npos ) {
+									std::string::size_type firstCharPos = lenEnd + 2;
+									unsigned long length;
 
-							if ( lenEnd != std::string::npos ) {
-								std::string::size_type firstCharPos = lenEnd + 2;
-								unsigned long length;
-								bool res = String::fromString<unsigned long>( length, fileBuffer.substr(0, lenEnd), std::hex );
+									// Get the length of the chunk
+									bool res = String::fromString( length, chunkBuffer.substr(0, lenEnd), std::hex );
 
-								if ( res && length ) {
-									if ( fileBuffer.size() - firstCharPos >= length ) {
-										writeTo.write( &fileBuffer[firstCharPos], length );
-										fileBuffer = fileBuffer.substr( firstCharPos + length );
-										newFileBuffer = true;
+									// If the length is solved...
+									if ( res ) {
+										// And it's bigger than 0, means that there are more chunks
+										if ( length > 0 ) {
+											// Check if the chunk buffer size at least equals to the length reported
+											if ( chunkBuffer.size() - firstCharPos >= length ) {
+												// In that case write the chunk to the file buffer
+												fileBuffer.write( &chunkBuffer[firstCharPos], length );
 
-										// Check if already have the \r\n of the next length in the buffer
-										if ( !fileBuffer.empty() && fileBuffer.substr( 0, 2 ) == "\r\n" ) {
-											// Remove it to be able to read the next length
-											fileBuffer = fileBuffer.substr( 2 );
-											newFileBuffer = false;
+												// And keep the remaining not completed chunk
+												chunkBuffer = chunkBuffer.substr( firstCharPos + length );
+												chunkNewBuffer = true;
+
+												// Check if already have the \r\n of the next length in the buffer
+												if ( !chunkBuffer.empty() && chunkBuffer.substr( 0, 2 ) == "\r\n" ) {
+													// Remove it to be able to read the next length
+													chunkBuffer = chunkBuffer.substr( 2 );
+													chunkNewBuffer = false;
+												}
+											}
+										} else {
+											// If the value is 0 means that the data ended
+											// But after this we can receive extra headers
+											chunkEnded = true;
 										}
 									}
 								}
+							} else {
+								headerBuffer.append( buffer, buffer + readed );
 							}
 						} else {
-							writeTo.write( buffer, readed );
+							// If not chunked just write into the file buffer
+							fileBuffer.write( buffer, readed );
+						}
+
+						if ( compressed ) {
+							if ( fileBuffer.getSize() - inflateChunkSize >= 0 ) {
+								inflateStream->write( fileBuffer.getStreamPointer(), inflateChunkSize );
+
+								IOStreamString newFileBuffer;
+
+								fileBuffer.seek(inflateChunkSize);
+
+								std::size_t trailing = fileBuffer.getSize() - inflateChunkSize;
+
+								if ( trailing > 0 )
+									newFileBuffer.write( fileBuffer.getPositionPointer(), trailing );
+
+								fileBuffer = newFileBuffer;
+							}
+						} else {
+							fileBuffer.seek(0);
+							writeTo.write( fileBuffer.getPositionPointer(), fileBuffer.getSize() );
+							fileBuffer.clear();
 						}
 
 						if ( request.getProgressCallback() ) {
-							std::size_t length = 0;
-
-							if ( !received.getField("content-length").empty() ) {
-								String::fromString( length, received.getField("content-length") );
-							}
-
-							if ( !request.getProgressCallback()( *this, request, length, currentTotalBytes ) ) {
+							if ( !request.getProgressCallback()( *this, request, contentLength, currentTotalBytes ) ) {
 								request.mCancel = true;
 								break;
 							}
@@ -794,10 +829,21 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 					}
 				}
 
+				if ( !headerBuffer.empty() ) {
+					std::istringstream in(headerBuffer);
+					received.parseFields(in);
+				}
+
+				if ( compressed && fileBuffer.getSize() > 0 ) {
+					inflateStream->write( fileBuffer.getStreamPointer(), fileBuffer.getSize() );
+				}
+
 				if ( status == Socket::Status::Disconnected ) {
 					mConnection->setConnected(false);
 					mConnection->setTunneled(false);
 				}
+
+				eeSAFE_DELETE( inflateStream );
 			} else {
 				mConnection->setConnected(false);
 				mConnection->setTunneled(false);
@@ -809,11 +855,11 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 			mConnection->disconnect();
 	}
 
-	return std::move(received);
+	return received;
 }
 
 Http::Response Http::downloadRequest(const Http::Request & request, std::string writePath, Time timeout) {
-	IOStreamFile file( writePath, "wb" );
+	IOStreamFile file( writePath, "wb+" );
 	return downloadRequest( request, file, timeout );
 }
 
@@ -901,13 +947,11 @@ void Http::removeOldThreads() {
 Http::Request Http::prepareFields(const Http::Request& request) {
 	Request toSend(request);
 
-	if (!toSend.hasField("User-Agent")) {
+	if (!toSend.hasField("User-Agent"))
 		toSend.setField("User-Agent", "eepp-network");
-	}
 
-	if (!toSend.hasField("Host")) {
+	if (!toSend.hasField("Host"))
 		toSend.setField("Host", mHostName);
-	}
 
 	if (!toSend.hasField("Content-Length")) {
 		std::ostringstream out;
@@ -915,13 +959,11 @@ Http::Request Http::prepareFields(const Http::Request& request) {
 		toSend.setField("Content-Length", out.str());
 	}
 
-	if ((toSend.mMethod == Request::Post) && !toSend.hasField("Content-Type")) {
+	if ((toSend.mMethod == Request::Post) && !toSend.hasField("Content-Type"))
 		toSend.setField("Content-Type", "application/x-www-form-urlencoded");
-	}
 
-	if ((toSend.mMajorVersion * 10 + toSend.mMinorVersion >= 11) && !toSend.hasField("Connection")) {
+	if ((toSend.mMajorVersion * 10 + toSend.mMinorVersion >= 11) && !toSend.hasField("Connection"))
 		toSend.setField("Connection", "close");
-	}
 
 	if (!mProxy.empty()) {
 		toSend.setField("Accept", "*/*");
@@ -933,7 +975,10 @@ Http::Request Http::prepareFields(const Http::Request& request) {
 		}
 	}
 
-	return std::move(toSend);
+	if ( request.isCompressedResponse() )
+		toSend.setField("Accept-Encoding", "gzip, deflate");
+
+	return toSend;
 }
 
 void Http::setProxy(const URI& uri) {
