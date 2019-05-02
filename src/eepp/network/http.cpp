@@ -726,6 +726,9 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 										fileBuffer.write( &chunkBuffer[0], chunkBuffer.size() );
 										chunkBuffer.clear();
 									}
+
+									if ( chunked )
+										readed = 0;
 								}
 							}
 						}
@@ -733,10 +736,12 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 						if ( !isnheader ) {
 							headerBuffer.append( buffer, ( bol - buffer ) );
 						}
-					} else {
+					}
+
+					if ( isnheader ) {
 						currentTotalBytes += readed;
 
-						if ( chunked ) {
+						if ( chunked && readed ) {
 							// If the chunk reading ended we just add the buffer received as a header
 							// Otherwise we process the buffer data as chunk
 							if ( !chunkEnded ) {
