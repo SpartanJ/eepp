@@ -35,15 +35,15 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		parser.ParseCLI(argc, argv);
 	} catch (const args::Help&) {
 		std::cout << parser;
-		return 0;
+		return EXIT_SUCCESS;
 	} catch (const args::ParseError& e) {
 		std::cerr << e.what() << std::endl;
 		std::cerr << parser;
-		return 1;
+		return EXIT_FAILURE;
 	} catch (args::ValidationError& e) {
 		std::cerr << e.what() << std::endl;
 		std::cerr << parser;
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	{
@@ -59,10 +59,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 				http.setHost("http://en.wikipedia.org");
 			}
 
-			// Prepare a request to get the wikipedia main page
-			request.setUri("/wiki/Main_Page");
-
-			// Creates an async http request
+			// Creates an async http request and set the path requested
 			Http::Request asyncRequest( "/wiki/" + Version::getCodename() );
 
 			http.sendAsyncRequest([]( const Http& http, Http::Request& request, Http::Response& response ) {

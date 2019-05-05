@@ -21,7 +21,7 @@ Compression::Status Compression::compress(IOStream& dst, IOStream& src, Compress
 		case MODE_GZIP:
 		{
 			int ret, flush;
-			unsigned have;
+			ios_size have;
 			z_stream strm = {};
 			char in[DEFLATE_CHUNK_SIZE];
 			char out[DEFLATE_CHUNK_SIZE];

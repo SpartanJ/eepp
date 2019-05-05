@@ -11,7 +11,6 @@
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/network/uri.hpp>
-#include <eepp/thirdparty/PlusCallback/callback.hpp>
 #include <map>
 #include <string>
 #include <list>
