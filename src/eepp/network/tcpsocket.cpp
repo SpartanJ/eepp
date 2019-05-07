@@ -316,6 +316,18 @@ Socket::Status TcpSocket::receive(Packet& packet) {
 	return Done;
 }
 
+void TcpSocket::setSendTimeout(SocketHandle sock, const Time& timeout) {
+	if (getHandle() != Private::SocketImpl::invalidSocket()) {
+		Private::SocketImpl::setSendTimeout(getHandle(), timeout);
+	}
+}
+
+void TcpSocket::setReceiveTimeout(SocketHandle sock, const Time& timeout) {
+	if (getHandle() != Private::SocketImpl::invalidSocket()) {
+		Private::SocketImpl::setReceiveTimeout(getHandle(), timeout);
+	}
+}
+
 TcpSocket::PendingPacket::PendingPacket() :
 	Size		(0),
 	SizeReceived(0),

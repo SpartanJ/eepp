@@ -113,6 +113,14 @@ class EE_API TcpSocket : public Socket {
 	**  @see Send */
 	virtual Status receive(Packet& packet);
 
+	/** Set the send timeout. Only callable after connect ( after the socket
+	 ** has been initialized ). */
+	void setSendTimeout(SocketHandle sock, const Time& timeout);
+
+	/** Set the receive timeout Only callable after connect ( after the socket
+	 ** has been initialized ). */
+	void setReceiveTimeout(SocketHandle sock, const Time& timeout);
+
 	private:
 
 	friend class TcpListener;
