@@ -33,6 +33,8 @@ class EE_API IOStreamFile : public IOStream {
 		/** @brief Synchronizes the buffer associated with the stream to its controlled output sequence.
 		** This effectively means that all unwritten characters in the buffer are written to its controlled output sequence as soon as possible. */
 		void flush();
+
+		void close();
 	protected:
 		std::FILE*		mFS;
 		ios_size		mSize;

@@ -35,6 +35,7 @@
 #include <eepp/system/iostreampak.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/iostreaminflate.hpp>
+#include <eepp/system/iostreamdeflate.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 
 #endif

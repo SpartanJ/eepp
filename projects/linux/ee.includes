@@ -5,7 +5,3 @@
 ../../src/thirdparty/efsw/include
 ../../src/thirdparty/libvorbis/include
 /usr/include/freetype2/
-
-../../include/eepp/ui
-../../src/eepp/ui
-../../bin/assets/layouts
