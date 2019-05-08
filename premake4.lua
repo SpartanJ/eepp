@@ -145,8 +145,8 @@ newoption { trigger = "with-static-backend", description = "It will try to compi
 newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
 newoption { trigger = "use-frameworks", description = "In Mac OS X it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link agains SDL2.framework." }
-newoption { 
-	trigger = "with-backend", 
+newoption {
+	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
 	allowed = {
 		{ "SDL2",  "SDL2 (default and recommended)" },
@@ -167,21 +167,21 @@ function explode(div,str)
 end
 
 function os.get_real()
-	if 	_OPTIONS.platform == "ios-arm7" or 
+	if 	_OPTIONS.platform == "ios-arm7" or
 		_OPTIONS.platform == "ios-x86" or
 		_OPTIONS.platform == "ios-cross-arm7" or
 		_OPTIONS.platform == "ios-cross-x86" then
 		return "ios"
 	end
-	
+
 	if _OPTIONS.platform == "android-arm7" then
 		return "android"
 	end
-	
+
 	if 	_OPTIONS.platform == "mingw32" then
 		return _OPTIONS.platform
 	end
-	
+
 	if 	_OPTIONS.platform == "emscripten" then
 		return _OPTIONS.platform
 	end
@@ -229,7 +229,7 @@ end
 function os_findlib( name )
 	if os.is_real("macosx") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
 		local path = "/Library/Frameworks/" .. name .. ".framework"
-		
+
 		if os.isdir( path ) then
 			return path
 		end
@@ -241,12 +241,12 @@ end
 function get_backend_link_name( name )
 	if os.is_real("macosx") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
 		local fname = name .. ".framework"
-		
+
 		if os_findlib( name ) then -- Search for the framework
 			return fname
 		end
 	end
-	
+
 	return name
 end
 
@@ -254,7 +254,7 @@ function string.starts(String,Start)
 	if ( _ACTION ) then
 		return string.sub(String,1,string.len(Start))==Start
 	end
-	
+
 	return false
 end
 
@@ -315,7 +315,7 @@ function build_base_cpp_configuration( package_name )
 	if not os.is("windows") then
 		buildoptions{ "-fPIC" }
 	end
-	
+
 	set_ios_config()
 	set_xcode_config()
 
@@ -364,7 +364,7 @@ function build_link_configuration( package_name, use_ee_icon )
 	includedirs { "include" }
 
 	local extension = "";
-	
+
 	if package_name == "eepp" then
 		defines { "EE_EXPORTS" }
 	elseif package_name == "eepp-static" then
@@ -384,13 +384,13 @@ function build_link_configuration( package_name, use_ee_icon )
 			add_static_links()
 			links { link_list }
 		end
-		
-		if os.is("windows") and not is_vs() then	
+
+		if os.is("windows") and not is_vs() then
 			if ( true == use_ee_icon ) then
 				linkoptions { "../../bin/assets/icon/ee.res" }
 			end
 		end
-		
+
 		if os.is_real("emscripten") then
 			extension = ".html"
 
@@ -403,11 +403,11 @@ function build_link_configuration( package_name, use_ee_icon )
 				linkoptions { "--preload-file assets/" }
 			end
 		end
-		
+
 		if _OPTIONS.platform == "ios-cross-arm7" then
 			extension = ".ios"
 		end
-		
+
 		if _OPTIONS.platform == "ios-cross-x86" then
 			extension = ".x86.ios"
 		end
@@ -440,10 +440,10 @@ function build_link_configuration( package_name, use_ee_icon )
 		fix_shared_lib_linking_path( package_name, "libeepp" )
 
 		targetname ( package_name .. extension )
-		
+
 	configuration "windows"
 		add_cross_config_links()
-	
+
 	configuration "emscripten"
 		linkoptions{ "-O2 -s TOTAL_MEMORY=67108864 -s ASM_JS=1 -s VERBOSE=1 -s DISABLE_EXCEPTION_CATCHING=0 -s USE_SDL=2 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s FULL_ES3=1 -s \"BINARYEN_TRAP_MODE='clamp'\"" }
 		buildoptions { "-fno-strict-aliasing -O2 -s USE_SDL=2 -s PRECISE_F32=1" }
@@ -463,7 +463,7 @@ end
 function generate_os_links()
 	if os.is_real("linux") then
 		multiple_insert( os_links, { "rt", "pthread", "X11", "openal", "GL", "Xcursor" } )
-		
+
 		if _OPTIONS["with-static-eepp"] then
 			table.insert( os_links, "dl" )
 		end
@@ -488,28 +488,28 @@ function parse_args()
 	if _OPTIONS["with-gles2"] then
 		defines { "EE_GLES2", "SOIL_GLES2" }
 	end
-	
+
 	if _OPTIONS["with-gles1"] then
 		defines { "EE_GLES1", "SOIL_GLES1" }
-	end	
+	end
 end
 
 function add_static_links()
 	-- The linking order DOES matter
 	-- Expose the symbols that need one static library AFTER adding that static lib
-	
+
 	-- Add static backends
 	if next(static_backends) ~= nil then
 		for _, value in pairs( static_backends ) do
 			linkoptions { value }
 		end
 	end
-	
+
 	if _OPTIONS["with-static-freetype"] or not os_findlib("freetype") then
 		print("Enabled static freetype")
 		links { "freetype-static" }
 	end
-	
+
 	links { "SOIL2-static",
 			"chipmunk-static",
 			"libzip-static",
@@ -523,7 +523,7 @@ function add_static_links()
 	if _OPTIONS["with-ssl"] and not _OPTIONS["with-openssl"] then
 		links { "mbedtls-static" }
 	end
-	
+
 	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
 		links{ "glew-static" }
 	end
@@ -544,7 +544,7 @@ function add_sdl2()
 	print("Using SDL2 backend");
 	files { "src/eepp/window/backend/SDL2/*.cpp" }
 	defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_2" }
-	
+
 	if not can_add_static_backend("SDL2") then
 		table.insert( link_list, get_backend_link_name( "SDL2" ) )
 	else
@@ -556,7 +556,7 @@ function add_sfml()
 	print("Using SFML backend");
 	files { "src/eepp/window/backend/SFML/*.cpp" }
 	defines { "EE_BACKEND_SFML_ACTIVE" }
-	
+
 	if not can_add_static_backend("SFML") then
 		table.insert( link_list, get_backend_link_name( "sfml-system" ) )
 		table.insert( link_list, get_backend_link_name( "sfml-window" ) )
@@ -577,13 +577,13 @@ end
 function set_ios_config()
 	if _OPTIONS.platform == "ios-arm7" or _OPTIONS.platform == "ios-x86" then
 		local err = false
-		
+
 		if nil == os.getenv("TOOLCHAINPATH") then
 			print("You must set TOOLCHAINPATH enviroment variable.")
 			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/")
 			err = true
 		end
-		
+
 		if nil == os.getenv("SYSROOTPATH") then
 			print("You must set SYSROOTPATH enviroment variable.")
 			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS5.0.sdk")
@@ -595,7 +595,7 @@ function set_ios_config()
 			print("\tExample: 5.0")
 			err = true
 		end
-		
+
 		if err then
 			os.exit(1)
 		end
@@ -604,14 +604,14 @@ function set_ios_config()
 		local framework_path = sysroot_path .. "/System/Library/Frameworks"
 		local framework_libs_path = framework_path .. "/usr/lib"
 		local sysroot_ver = " -miphoneos-version-min=" .. os.getenv("IOSVERSION") .. " -isysroot " .. sysroot_path
-		
+
 		buildoptions { sysroot_ver .. " -I" .. sysroot_path .. "/usr/include" }
 		linkoptions { sysroot_ver }
 		libdirs { framework_libs_path }
 		linkoptions { " -F" .. framework_path .. " -L" .. framework_libs_path .. " -isysroot " .. sysroot_path }
 		includedirs { "src/thirdparty/SDL2/include" }
 	end
-	
+
 	if _OPTIONS.platform == "ios-cross-arm7" or _OPTIONS.platform == "ios-cross-x86" then
 		includedirs { "src/thirdparty/SDL2/include" }
 	end
@@ -625,7 +625,7 @@ function backend_is( name, libname )
 	if next(backends) == nil then
 		backends = string.explode(_OPTIONS["with-backend"],",")
 	end
-	
+
 	local backend_sel = table.contains( backends, name )
 
 	local ret_val = os_findlib( libname ) and backend_sel
@@ -641,7 +641,7 @@ function backend_is( name, libname )
 	return ret_val
 end
 
-function select_backend()	
+function select_backend()
 	if backend_is("SDL2", "SDL2") then
 		print("Selected SDL2")
 		add_sdl2()
@@ -693,10 +693,10 @@ end
 
 function build_eepp( build_name )
 	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include", "src/thirdparty/mbedtls/include" }
-	
+
 	set_ios_config()
 	set_xcode_config()
-	
+
 	add_static_links()
 
 	if is_vs() then
@@ -725,6 +725,7 @@ function build_eepp( build_name )
 			"src/eepp/window/platform/null/*.cpp",
 			"src/eepp/network/*.cpp",
 			"src/eepp/network/ssl/*.cpp",
+			"src/eepp/network/http/*.cpp",
 			"src/eepp/scene/*.cpp",
 			"src/eepp/scene/actions/*.cpp",
 			"src/eepp/ui/*.cpp",
@@ -736,11 +737,11 @@ function build_eepp( build_name )
 			"src/eepp/maps/*.cpp",
 			"src/eepp/maps/mapeditor/*.cpp"
 	}
-	
+
 	check_ssl_support()
-	
+
 	select_backend()
-	
+
 	if not _OPTIONS["with-static-freetype"] and os_findlib("freetype") then
 		table.insert( link_list, get_backend_link_name( "freetype" ) )
 	end
@@ -748,19 +749,19 @@ function build_eepp( build_name )
 	multiple_insert( link_list, os_links )
 
 	links { link_list }
-	
+
 	build_link_configuration( build_name )
 
 	configuration "windows"
 		files { "src/eepp/window/platform/win/*.cpp" }
 		add_cross_config_links()
-	
+
 	configuration "linux"
 		files { "src/eepp/window/platform/x11/*.cpp" }
-	
+
 	configuration "macosx"
 		files { "src/eepp/window/platform/osx/*.cpp" }
-		
+
 	configuration "emscripten"
 		if _OPTIONS["force-gles1"] then
 			defines{ "EE_GLES1_DEFAULT" }
@@ -776,7 +777,7 @@ function set_targetdir( dir )
 end
 
 solution "eepp"
-	
+
 	targetdir("./bin/")
 	configurations { "debug", "release" }
 
@@ -865,7 +866,7 @@ solution "eepp"
 		files { "src/thirdparty/freetype2/src/**.c" }
 		includedirs { "src/thirdparty/freetype2/include" }
 		build_base_configuration( "freetype" )
-	
+
 	project "chipmunk-static"
 		kind "StaticLib"
 
@@ -900,15 +901,15 @@ solution "eepp"
 		language "C++"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
-		
+
 		if os.is("windows") then
 			osfiles = "src/thirdparty/efsw/src/efsw/platform/win/*.cpp"
 		else
 			osfiles = "src/thirdparty/efsw/src/efsw/platform/posix/*.cpp"
 		end
-		
+
 		files { "src/thirdparty/efsw/src/efsw/*.cpp", osfiles }
-		
+
 		if os.is("windows") then
 			excludes { "src/thirdparty/efsw/src/efsw/WatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherKqueue.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
 		elseif os.is("linux") then
@@ -918,7 +919,7 @@ solution "eepp"
 		elseif os.is("freebsd") then
 			excludes { "src/thirdparty/efsw/src/efsw/WatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/WatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/WatcherFSEvents.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherInotify.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherWin32.cpp", "src/thirdparty/efsw/src/efsw/FileWatcherFSEvents.cpp" }
 		end
-		
+
 		build_base_cpp_configuration( "efsw" )
 
 	project "eepp-main"
@@ -932,7 +933,7 @@ solution "eepp"
 		language "C++"
 		set_targetdir("libs/" .. os.get_real() .. "/")
 		build_eepp( "eepp-static" )
-	
+
 	project "eepp-shared"
 		kind "SharedLib"
 		language "C++"
@@ -1007,20 +1008,20 @@ solution "eepp"
 		language "C++"
 		files { "src/tools/mapeditor/*.cpp" }
 		build_link_configuration( "eepp-MapEditor", true )
-		
+
 	project "eepp-uieditor"
 		set_kind()
 		language "C++"
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty" }
-		
+
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }
 		end
-		
+
 		links { "efsw-static", "pugixml-static" }
 		files { "src/tools/uieditor/*.cpp" }
 		build_link_configuration( "eepp-UIEditor", true )
-		
+
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")
 end

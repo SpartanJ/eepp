@@ -24,17 +24,17 @@ class EE_API IOStreamDeflate : public IOStream {
 
 		virtual ~IOStreamDeflate();
 
-		ios_size read( char * data, ios_size size );
+		virtual ios_size read( char * data, ios_size size );
 
-		ios_size write( const char * data, ios_size size );
+		virtual ios_size write( const char * data, ios_size size );
 
-		ios_size seek( ios_size position );
+		virtual ios_size seek( ios_size position );
 
-		ios_size tell();
+		virtual ios_size tell();
 
-		ios_size getSize();
+		virtual ios_size getSize();
 
-		bool isOpen();
+		virtual bool isOpen();
 
 		const Compression::Mode& getMode() const;
 	protected:

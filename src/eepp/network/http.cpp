@@ -6,6 +6,7 @@
 #include <eepp/system/iostreaminflate.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/compression.hpp>
+#include <eepp/network/http/httpstreamchunked.hpp>
 #include <cctype>
 #include <algorithm>
 #include <iterator>
@@ -13,6 +14,7 @@
 #include <limits>
 
 using namespace EE::Network::SSL;
+using namespace EE::Network::Private;
 
 namespace EE { namespace Network {
 
@@ -592,17 +594,14 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 				char * eol = NULL; // end of line
 				char * bol = NULL; // beginning of line
 				char buffer[PACKET_BUFFER_SIZE+1];
-				std::string headerBuffer;
-				std::string chunkBuffer;
-				IOStreamString fileBuffer;
 				bool isnheader = false;
 				bool chunked = false;
-				bool chunkNewBuffer = false;
-				bool chunkEnded = false;
 				bool compressed = false;
-				IOStreamInflate * inflateStream = NULL;
-				ios_size inflateChunkSize = 0;
 				std::size_t contentLength = 0;
+				std::string headerBuffer;
+				HttpStreamChunked * chunkedStream = NULL;
+				IOStreamInflate * inflateStream = NULL;
+				IOStream * bufferStream = NULL;
 
 				while (!request.isCancelled() && ( status = mConnection->getSocket()->receive(buffer, PACKET_BUFFER_SIZE, readed) ) == Socket::Done) {
 					char * readBuffer = buffer;
@@ -654,10 +653,15 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 									if ( compressed ) {
 										Compression::Mode compressionMode = "gzip" == encoding ? Compression::MODE_GZIP : Compression::MODE_DEFLATE;
 
-										inflateChunkSize = Compression::getModeDefaultChunkSize( compressionMode );
-
 										inflateStream = IOStreamInflate::New( writeTo, compressionMode );
 									}
+
+									IOStream& writeToStream = compressed ? *inflateStream : writeTo;
+
+									if ( chunked )
+										chunkedStream = eeNew( HttpStreamChunked, ( writeToStream ) );
+
+									bufferStream = chunked ? chunkedStream : ( compressed ? inflateStream : &writeTo );
 
 									// Get the content length
 									if ( !received.getField("content-length").empty() ) {
@@ -689,6 +693,8 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 
 											request.mRedirectionCount++;
 
+											eeSAFE_DELETE( chunkedStream );
+											eeSAFE_DELETE( inflateStream );
 											return http.downloadRequest( request, writeTo, timeout );
 										}
 									}
@@ -715,124 +721,8 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 					if ( isnheader ) {
 						currentTotalBytes += readed;
 
-						if ( chunked ) {
-							if ( readed > 0 ) {
-								// If the chunk reading ended we just add the buffer received as a header
-								// Otherwise we process the buffer data as chunk
-								if ( !chunkEnded ) {
-									// Keep a chunk buffer until the end of chunk is found
-									chunkBuffer.append( readBuffer, readBuffer + readed );
-
-									// If the new chunk starts with \r\n and the last removed chunk
-									// did not contain the trailing \r\n, we remove it to detect
-									// correctly the next length data
-									if ( chunkNewBuffer ) {
-										if ( chunkBuffer.substr( 0, 2 ) == "\r\n" ) {
-											chunkBuffer = chunkBuffer.substr( 2 );
-										}
-
-										chunkNewBuffer = false;
-									}
-
-									bool retry;
-
-									do {
-										retry = false;
-
-										// Check for the first \r\n to find the end of the length definition
-										std::string::size_type lenEnd = chunkBuffer.find_first_of("\r\n");
-
-										if ( lenEnd != std::string::npos ) {
-											std::string::size_type firstCharPos = lenEnd + 2;
-											unsigned long length;
-
-											// Get the length of the chunk
-											bool res = String::fromString( length, chunkBuffer.substr(0, lenEnd), std::hex );
-
-											// If the length is solved...
-											if ( res ) {
-												// And it's bigger than 0, means that there are more chunks
-												if ( length > 0 ) {
-													// Check if the chunk buffer size at least equals to the length reported
-													if ( chunkBuffer.size() - firstCharPos >= length ) {
-														// In that case write the chunk to the file buffer
-														fileBuffer.write( &chunkBuffer[firstCharPos], length );
-
-														// And keep the remaining not completed chunk
-														chunkBuffer = chunkBuffer.substr( firstCharPos + length );
-
-														// Check if already have the \r\n of the next length in the buffer
-														if ( !chunkBuffer.empty() ) {
-															std::size_t pos = 0;
-
-															// Remove al the \r\n remaining
-															while ( pos < chunkBuffer.size() && 0 == strncmp( &chunkBuffer[pos], "\r\n", 2 ) ) {
-																pos += 2;
-															}
-
-															if ( pos > 0 ) {
-																// Remove it to be able to read the next length
-																chunkBuffer = chunkBuffer.substr( pos );
-															}
-
-															// If still the chunk is not empty it could be another chunk
-															// already received, so we check that retrying
-															if ( !chunkBuffer.empty() ) {
-																std::string::size_type lenEnd = chunkBuffer.find_first_of("\r\n");
-
-																if ( lenEnd != std::string::npos ) {
-																	bool res = String::fromString( length, chunkBuffer.substr(0, lenEnd), std::hex );
-
-																	if ( res && length > 0 ) {
-																		retry = true;
-																	}
-																}
-															}
-														}
-
-														// If the next chunk received starts with \r\n it's because
-														// it's part of the chunk size information, so we need to flag it
-														// to remove it
-														chunkNewBuffer = true;
-													}
-												} else {
-													// If the value is 0 means that the data ended
-													// But after this we can receive extra headers
-													chunkEnded = true;
-													chunkBuffer.clear();
-												}
-											}
-										}
-									} while ( retry );
-								} else {
-									headerBuffer.append( readBuffer, readBuffer + readed );
-								}
-							}
-						} else if ( readed > 0 ) {
-							// If not chunked just write into the file buffer
-							fileBuffer.write( readBuffer, readed );
-						}
-
-						if ( compressed ) {
-							if ( fileBuffer.getSize() - inflateChunkSize >= 0 ) {
-								inflateStream->write( fileBuffer.getStreamPointer(), inflateChunkSize );
-
-								IOStreamString newFileBuffer;
-
-								fileBuffer.seek(inflateChunkSize);
-
-								std::size_t trailing = fileBuffer.getSize() - inflateChunkSize;
-
-								if ( trailing > 0 )
-									newFileBuffer.write( fileBuffer.getPositionPointer(), trailing );
-
-								fileBuffer = newFileBuffer;
-							}
-						} else {
-							fileBuffer.seek(0);
-							writeTo.write( fileBuffer.getPositionPointer(), fileBuffer.getSize() );
-							fileBuffer.clear();
-						}
+						if ( readed > 0 )
+							bufferStream->write( readBuffer, readed );
 
 						if ( request.getProgressCallback() ) {
 							if ( !request.getProgressCallback()( *this, request, contentLength, currentTotalBytes ) ) {
@@ -843,13 +733,13 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 					}
 				}
 
+				if ( chunked && NULL != chunkedStream && !chunkedStream->getHeaderBuffer().empty() ) {
+					headerBuffer.append( chunkedStream->getHeaderBuffer() );
+				}
+
 				if ( !headerBuffer.empty() ) {
 					std::istringstream in(headerBuffer);
 					received.parseFields(in);
-				}
-
-				if ( compressed && fileBuffer.getSize() > 0 ) {
-					inflateStream->write( fileBuffer.getStreamPointer(), fileBuffer.getSize() );
 				}
 
 				if ( status == Socket::Status::Disconnected ) {
@@ -857,6 +747,7 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 					mConnection->setTunneled(false);
 				}
 
+				eeSAFE_DELETE( chunkedStream );
 				eeSAFE_DELETE( inflateStream );
 			} else {
 				mConnection->setConnected(false);

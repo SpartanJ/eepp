@@ -591,6 +591,8 @@
 ../../src/eepp/math/transform.cpp
 ../../src/eepp/network/ftp.cpp
 ../../src/eepp/network/http.cpp
+../../src/eepp/network/http/httpstreamchunked.cpp
+../../src/eepp/network/http/httpstreamchunked.hpp
 ../../src/eepp/network/ipaddress.cpp
 ../../src/eepp/network/packet.cpp
 ../../src/eepp/network/platform/platformimpl.hpp
