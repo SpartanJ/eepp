@@ -730,6 +730,14 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 								break;
 							}
 						}
+
+						// If the response is compressed and the stream ended means that we received
+						// the message. So we can skip the socket receive call.
+						if ( ( compressed && NULL != inflateStream && !inflateStream->isOpen() ) ||
+							 ( contentLength > 0 && contentLength == currentTotalBytes )
+						) {
+							break;
+						}
 					}
 				}
 

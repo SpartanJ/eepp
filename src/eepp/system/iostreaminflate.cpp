@@ -106,10 +106,9 @@ ios_size IOStreamInflate::write(const char * buffer, ios_size length) {
 		int rc = inflate(&zstr, Z_NO_FLUSH);
 
 		if (rc == Z_STREAM_END) {
-			ios_size ret = mStream.write( (const char*)mBuffer.data, mBuffer.size - zstr.avail_out);
+			length = mStream.write( (const char*)mBuffer.data, mBuffer.size - zstr.avail_out);
 
-			if (ret == 0)
-				return 0;
+			mLocalStream->state = rc;
 
 			break;
 		}
@@ -156,7 +155,7 @@ ios_size IOStreamInflate::getSize() {
 }
 
 bool IOStreamInflate::isOpen() {
-	return mStream.isOpen();
+	return mStream.isOpen() && mLocalStream->state != Z_STREAM_END;
 }
 
 const Compression::Mode& IOStreamInflate::getMode() const {
