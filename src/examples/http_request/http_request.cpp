@@ -115,9 +115,11 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 
 			// If progress requested print a progress on screen
 			if ( progress ) {
-				request.setProgressCallback( []( const Http&, const Http::Request&, size_t totalBytes, size_t currentBytes ) {
-					std::cout << "\rDownloaded " << FileSystem::sizeToString( currentBytes ).c_str() << " of " << FileSystem::sizeToString( totalBytes ).c_str() << "          ";
-					std::cout << std::flush;
+				request.setProgressCallback( []( const Http&, const Http::Request&, const Http::Response&, const Http::Request::Status& status, size_t totalBytes, size_t currentBytes ) {
+					if ( status == Http::Request::ContentReceived ) {
+						std::cout << "\rDownloaded " << FileSystem::sizeToString( currentBytes ).c_str() << " of " << FileSystem::sizeToString( totalBytes ).c_str() << "          ";
+						std::cout << std::flush;
+					}
 					return true;
 				});
 			}

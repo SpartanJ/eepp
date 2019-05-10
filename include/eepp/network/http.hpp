@@ -26,188 +26,6 @@ namespace EE { namespace Network {
 /** @brief A HTTP client */
 class EE_API Http : NonCopyable {
 	public :
-		/** @brief Define a HTTP request */
-		class EE_API Request {
-			public :
-			/** @brief Enumerate the available HTTP methods for a request */
-			enum Method {
-				Get,     ///< The GET method requests a representation of the specified resource. Requests using GET should only retrieve data.
-				Head,    ///< Request a page's header only
-				Post,    ///< The POST method is used to submit an entity to the specified resource, often causing a change in state or side effects on the server.
-				Put,     ///< The PUT method replaces all current representations of the target resource with the request payload.
-				Delete,  ///< The DELETE method deletes the specified resource.
-				Options, ///< The OPTIONS method is used to describe the communication options for the target resource.
-				Patch,   ///< The PATCH method is used to apply partial modifications to a resource.
-				Connect  ///< The CONNECT method starts two-way communications with the requested resource. It can be used to open a tunnel.
-			};
-
-			/** @return Method from a method name string. */
-			static Method methodFromString( std::string methodString );
-
-			/** @return The method string from a method */
-			static std::string methodToString( const Method& method );
-
-			/** @brief Default constructor
-			**  This constructor creates a GET request, with the root
-			**  URI ("/") and an empty body.
-			**  @param uri	Target URI
-			**  @param method Method to use for the request
-			**  @param body   Content of the request's body
-			**  @param validateCertificate Enables certificate validation for https request
-			**  @param validateHostname Enables hostname validation for https request
-			**  @param followRedirect Allow follor redirects to the request.
-			**  @param compressedResponse Set if the requested response should be compressed ( if available )
-			*/
-			Request(const std::string& uri = "/", Method method = Get, const std::string& body = "", bool validateCertificate = true, bool validateHostname = true, bool followRedirect = true, bool compressedResponse = false);
-
-			/** @brief Set the value of a field
-			**  The field is created if it doesn't exist. The name of
-			**  the field is case insensitive.
-			**  By default, a request doesn't contain any field (but the
-			**  mandatory fields are added later by the HTTP client when
-			**  sending the request).
-			**  @param field Name of the field to set
-			**  @param value Value of the field */
-			void setField(const std::string& field, const std::string& value);
-
-			/** @brief Check if the request defines a field
-			**  This function uses case-insensitive comparisons.
-			**  @param field Name of the field to test
-			**  @return True if the field exists, false otherwise */
-			bool hasField(const std::string& field) const;
-
-			/** @brief Get the value of a field
-			**  If the field @a field is not found in the response header,
-			**  the empty string is returned. This function uses
-			**  case-insensitive comparisons.
-			**  @param field Name of the field to get
-			**  @return Value of the field, or empty string if not found */
-			const std::string& getField(const std::string& field) const;
-
-			/** @brief Set the request method
-			**  See the Method enumeration for a complete list of all
-			**  the availale methods.
-			**  The method is Http::Request::Get by default.
-			**  @param method Method to use for the request */
-			void setMethod(Method method);
-
-			/** @brief Set the requested URI
-			**  The URI is the resource (usually a web page or a file)
-			**  that you want to get or post.
-			**  The URI is "/" (the root page) by default.
-			**  @param uri URI to request, relative to the host */
-			void setUri(const std::string& uri);
-
-			/** @brief Set the HTTP version for the request
-			**  The HTTP version is 1.0 by default.
-			**  @param major Major HTTP version number
-			**  @param minor Minor HTTP version number */
-			void setHttpVersion(unsigned int major, unsigned int minor);
-
-			/** @brief Set the body of the request
-			**  The body of a request is optional and only makes sense
-			**  for POST requests. It is ignored for all other methods.
-			**  The body is empty by default.
-			**  @param body Content of the body */
-			void setBody(const std::string& body);
-
-			/** @return The request Uri */
-			const std::string& getUri() const;
-
-			/** @return If SSL certificate validation is enabled */
-			const bool& getValidateCertificate() const;
-
-			/** Enable/disable SSL certificate validation */
-			void setValidateCertificate( bool enable );
-
-			/** @return If SSL hostname validation is enabled */
-			const bool& getValidateHostname() const;
-
-			/** Enable/disable SSL hostname validation */
-			void setValidateHostname( bool enable );
-
-			/** @return If requests follow redirects */
-			const bool& getFollowRedirect() const;
-
-			/** Enables/Disables follow redirects */
-			void setFollowRedirect( bool follow );
-
-			/** @return The maximun number of redirects allowd if follow redirect is enabled. */
-			const unsigned int& getMaxRedirects() const;
-
-			/** Set the maximun number of redirects allowed if follow redirect is enabled. */
-			void setMaxRedirects( unsigned int maxRedirects );
-
-			/** Definition of the current progress callback
-			 * @param http The http client
-			 * @param request The http request
-			 * @param totalBytes The total bytes of the document / files ( only available if Content-Length is returned, otherwise is 0 )
-			 * @param currentBytes Current received total bytes
-			 * @return True if continue the request, false will cancel the current request.
-			*/
-			typedef std::function<bool( const Http& http, const Http::Request& request, std::size_t totalBytes, std::size_t currentBytes )>		ProgressCallback;
-
-			/** Sets a progress callback */
-			void setProgressCallback( const ProgressCallback& progressCallback );
-
-			/** Get the progress callback */
-			const ProgressCallback& getProgressCallback() const;
-
-			/** Cancels the current request if being processed */
-			void cancel();
-
-			/** @return True if the current request was cancelled */
-			const bool& isCancelled() const;
-
-			/** @return If requests a compressed response */
-			const bool& isCompressedResponse() const;
-
-			/** Set to request a compressed response from the server
-			**  The returned response will be automatically decompressed
-			**  by the client.
-			*/
-			void setCompressedResponse(const bool& compressedResponse);
-
-			/** Resumes download if a file is already present */
-			void setContinue(const bool& resume);
-
-			/** @return If must continue a download previously started. */
-			const bool& isContinue() const;
-
-			private:
-			friend class Http;
-
-			/** @brief Prepare the final request to send to the server
-			**  This is used internally by Http before sending the
-			**  request to the web server.
-			**  @return String containing the request, ready to be sent */
-			std::string prepare(const Http& http) const;
-
-			/** Prepares a http tunnel request */
-			std::string prepareTunnel(const Http& http);
-
-			// Types
-			typedef std::map<std::string, std::string> FieldTable;
-
-			// Member data
-			FieldTable            mFields;              ///< Fields of the header associated to their value
-			Method                mMethod;              ///< Method to use for the request
-			std::string           mUri;                 ///< Target URI of the request
-			unsigned int          mMajorVersion;        ///< Major HTTP version
-			unsigned int          mMinorVersion;        ///< Minor HTTP version
-			std::string           mBody;                ///< Body of the request
-			bool                  mValidateCertificate; ///< Validates the SSL certificate in case of an HTTPS request
-			bool                  mValidateHostname;    ///< Validates the hostname in case of an HTTPS request
-			bool                  mFollowRedirect;      ///< Follows redirect response codes
-			bool                  mCompressedResponse;  ///< Request comrpessed response
-			bool                  mContinue;            ///< Resume download
-			mutable bool          mCancel;              ///< Cancel state of current request
-			ProgressCallback      mProgressCallback;    ///< Progress callback
-			unsigned int          mMaxRedirections;     ///< Maximun number of redirections allowed
-			mutable unsigned int  mRedirectionCount;    ///< Number of redirections followed by the request
-			URI                   mProxy;               ///< Proxy information
-		};
-
 		/** @brief Define a HTTP response */
 		class EE_API Response {
 			public:
@@ -321,6 +139,197 @@ class EE_API Http : NonCopyable {
 			unsigned int	mMajorVersion;	///< Major HTTP version
 			unsigned int	mMinorVersion;	///< Minor HTTP version
 			std::string		mBody;			///< Body of the response
+		};
+
+		/** @brief Define a HTTP request */
+		class EE_API Request {
+			public :
+			/** @brief Enumerate the available HTTP methods for a request */
+			enum Method {
+				Get,     ///< The GET method requests a representation of the specified resource. Requests using GET should only retrieve data.
+				Head,    ///< Request a page's header only
+				Post,    ///< The POST method is used to submit an entity to the specified resource, often causing a change in state or side effects on the server.
+				Put,     ///< The PUT method replaces all current representations of the target resource with the request payload.
+				Delete,  ///< The DELETE method deletes the specified resource.
+				Options, ///< The OPTIONS method is used to describe the communication options for the target resource.
+				Patch,   ///< The PATCH method is used to apply partial modifications to a resource.
+				Connect  ///< The CONNECT method starts two-way communications with the requested resource. It can be used to open a tunnel.
+			};
+
+			/** @brief Enumerate the available states for a request */
+			enum Status {
+				Connected,       ///< Connected to server.
+				Sent,            ///< Request sent to the server.
+				HeaderReceived,  ///< Header received.
+				ContentReceived  ///< Content received.
+			};
+
+			/** @return Method from a method name string. */
+			static Method methodFromString( std::string methodString );
+
+			/** @return The method string from a method */
+			static std::string methodToString( const Method& method );
+
+			/** @brief Default constructor
+			**  This constructor creates a GET request, with the root
+			**  URI ("/") and an empty body.
+			**  @param uri	Target URI
+			**  @param method Method to use for the request
+			**  @param body   Content of the request's body
+			**  @param validateCertificate Enables certificate validation for https request
+			**  @param validateHostname Enables hostname validation for https request
+			**  @param followRedirect Allow follor redirects to the request.
+			**  @param compressedResponse Set if the requested response should be compressed ( if available )
+			*/
+			Request(const std::string& uri = "/", Method method = Get, const std::string& body = "", bool validateCertificate = true, bool validateHostname = true, bool followRedirect = true, bool compressedResponse = false);
+
+			/** @brief Set the value of a field
+			**  The field is created if it doesn't exist. The name of
+			**  the field is case insensitive.
+			**  By default, a request doesn't contain any field (but the
+			**  mandatory fields are added later by the HTTP client when
+			**  sending the request).
+			**  @param field Name of the field to set
+			**  @param value Value of the field */
+			void setField(const std::string& field, const std::string& value);
+
+			/** @brief Check if the request defines a field
+			**  This function uses case-insensitive comparisons.
+			**  @param field Name of the field to test
+			**  @return True if the field exists, false otherwise */
+			bool hasField(const std::string& field) const;
+
+			/** @brief Get the value of a field
+			**  If the field @a field is not found in the response header,
+			**  the empty string is returned. This function uses
+			**  case-insensitive comparisons.
+			**  @param field Name of the field to get
+			**  @return Value of the field, or empty string if not found */
+			const std::string& getField(const std::string& field) const;
+
+			/** @brief Set the request method
+			**  See the Method enumeration for a complete list of all
+			**  the availale methods.
+			**  The method is Http::Request::Get by default.
+			**  @param method Method to use for the request */
+			void setMethod(Method method);
+
+			/** @brief Set the requested URI
+			**  The URI is the resource (usually a web page or a file)
+			**  that you want to get or post.
+			**  The URI is "/" (the root page) by default.
+			**  @param uri URI to request, relative to the host */
+			void setUri(const std::string& uri);
+
+			/** @brief Set the HTTP version for the request
+			**  The HTTP version is 1.0 by default.
+			**  @param major Major HTTP version number
+			**  @param minor Minor HTTP version number */
+			void setHttpVersion(unsigned int major, unsigned int minor);
+
+			/** @brief Set the body of the request
+			**  The body of a request is optional and only makes sense
+			**  for POST requests. It is ignored for all other methods.
+			**  The body is empty by default.
+			**  @param body Content of the body */
+			void setBody(const std::string& body);
+
+			/** @return The request Uri */
+			const std::string& getUri() const;
+
+			/** @return If SSL certificate validation is enabled */
+			const bool& getValidateCertificate() const;
+
+			/** Enable/disable SSL certificate validation */
+			void setValidateCertificate( bool enable );
+
+			/** @return If SSL hostname validation is enabled */
+			const bool& getValidateHostname() const;
+
+			/** Enable/disable SSL hostname validation */
+			void setValidateHostname( bool enable );
+
+			/** @return If requests follow redirects */
+			const bool& getFollowRedirect() const;
+
+			/** Enables/Disables follow redirects */
+			void setFollowRedirect( bool follow );
+
+			/** @return The maximun number of redirects allowd if follow redirect is enabled. */
+			const unsigned int& getMaxRedirects() const;
+
+			/** Set the maximun number of redirects allowed if follow redirect is enabled. */
+			void setMaxRedirects( unsigned int maxRedirects );
+
+			/** Definition of the current progress callback
+			 * @param http The http client
+			 * @param request The http request
+			 * @param status The status of the progress event
+			 * @param totalBytes The total bytes of the document / files ( only available if Content-Length is returned, otherwise is 0 )
+			 * @param currentBytes Current received total bytes
+			 * @return True if continue the request, false will cancel the current request.
+			*/
+			typedef std::function<bool( const Http& http, const Http::Request& request, const Http::Response& response, const Status& status, std::size_t totalBytes, std::size_t currentBytes )>		ProgressCallback;
+
+			/** Sets a progress callback */
+			void setProgressCallback( const ProgressCallback& progressCallback );
+
+			/** Get the progress callback */
+			const ProgressCallback& getProgressCallback() const;
+
+			/** Cancels the current request if being processed */
+			void cancel();
+
+			/** @return True if the current request was cancelled */
+			const bool& isCancelled() const;
+
+			/** @return If requests a compressed response */
+			const bool& isCompressedResponse() const;
+
+			/** Set to request a compressed response from the server
+			**  The returned response will be automatically decompressed
+			**  by the client.
+			*/
+			void setCompressedResponse(const bool& compressedResponse);
+
+			/** Resumes download if a file is already present */
+			void setContinue(const bool& resume);
+
+			/** @return If must continue a download previously started. */
+			const bool& isContinue() const;
+
+			private:
+			friend class Http;
+
+			/** @brief Prepare the final request to send to the server
+			**  This is used internally by Http before sending the
+			**  request to the web server.
+			**  @return String containing the request, ready to be sent */
+			std::string prepare(const Http& http) const;
+
+			/** Prepares a http tunnel request */
+			std::string prepareTunnel(const Http& http);
+
+			// Types
+			typedef std::map<std::string, std::string> FieldTable;
+
+			// Member data
+			FieldTable            mFields;              ///< Fields of the header associated to their value
+			Method                mMethod;              ///< Method to use for the request
+			std::string           mUri;                 ///< Target URI of the request
+			unsigned int          mMajorVersion;        ///< Major HTTP version
+			unsigned int          mMinorVersion;        ///< Minor HTTP version
+			std::string           mBody;                ///< Body of the request
+			bool                  mValidateCertificate; ///< Validates the SSL certificate in case of an HTTPS request
+			bool                  mValidateHostname;    ///< Validates the hostname in case of an HTTPS request
+			bool                  mFollowRedirect;      ///< Follows redirect response codes
+			bool                  mCompressedResponse;  ///< Request comrpessed response
+			bool                  mContinue;            ///< Resume download
+			mutable bool          mCancel;              ///< Cancel state of current request
+			ProgressCallback      mProgressCallback;    ///< Progress callback
+			unsigned int          mMaxRedirections;     ///< Maximun number of redirections allowed
+			mutable unsigned int  mRedirectionCount;    ///< Number of redirections followed by the request
+			URI                   mProxy;               ///< Proxy information
 		};
 
 		/** @brief Default constructor */

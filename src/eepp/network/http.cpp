@@ -491,8 +491,14 @@ void Http::setHost(const std::string& host, unsigned short port, bool useSSL, UR
 Http::Response Http::sendRequest(const Http::Request& request, Time timeout) {
 	IOStreamString stream;
 	Response response = downloadRequest( request, stream, timeout );
-	response.mBody = stream.getStream();
+	response.mBody = std::move(stream.getStream());
 	return response;
+}
+
+static bool sendProgress( const Http& http, const Http::Request& request, const Http::Response& response, const Http::Request::Status& status, const std::size_t& totalBytes, const std::size_t& currentBytes ) {
+	if ( request.getProgressCallback() )
+		return request.getProgressCallback()( http, request, response, status, totalBytes, currentBytes );
+	return true;
 }
 
 Http::Response Http::downloadRequest(const Http::Request& request, IOStream& writeTo, Time timeout) {
@@ -548,6 +554,11 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 			} else {
 				mConnection->setConnected(true);
 			}
+		}
+
+		if ( mConnection->isConnected() && !sendProgress( *this, request, received, Request::Connected, 0, 0 ) ) {
+			mConnection->disconnect();
+			return received;
 		}
 	}
 
@@ -627,6 +638,10 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 
 			// Send it through the socket
 			if (mConnection->getSocket()->send(requestStr.c_str(), requestStr.size()) == Socket::Done) {
+				if ( !sendProgress( *this, request, received, Request::Sent, 0, 0 ) ) {
+					request.mCancel = true;
+				}
+
 				// Wait for the server's response
 				std::size_t currentTotalBytes = 0;
 				std::size_t len = 0;
@@ -739,6 +754,10 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 										}
 									}
 
+									if ( !sendProgress( *this, request, received, Request::HeaderReceived, contentLength, 0 ) ) {
+										request.mCancel = true;
+									}
+
 									// Move the readBuffer to the starting point
 									// of the file buffer
 									if ( len > 0 ) {
@@ -764,11 +783,9 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 						if ( readed > 0 )
 							bufferStream->write( readBuffer, readed );
 
-						if ( request.getProgressCallback() ) {
-							if ( !request.getProgressCallback()( *this, request, contentLength, currentTotalBytes ) ) {
-								request.mCancel = true;
-								break;
-							}
+						if ( !sendProgress( *this, request, received, Request::ContentReceived, contentLength, currentTotalBytes ) ) {
+							request.mCancel = true;
+							break;
 						}
 
 						// If the response is compressed and the stream ended means that we received
