@@ -168,6 +168,12 @@ class EE_API Http : NonCopyable {
 			*/
 			void setCompressedResponse(const bool& compressedResponse);
 
+			/** Resumes download if a file is already present */
+			void setContinue(const bool& resume);
+
+			/** @return If must continue a download previously started. */
+			const bool& isContinue() const;
+
 			private:
 			friend class Http;
 
@@ -194,6 +200,7 @@ class EE_API Http : NonCopyable {
 			bool                  mValidateHostname;    ///< Validates the hostname in case of an HTTPS request
 			bool                  mFollowRedirect;      ///< Follows redirect response codes
 			bool                  mCompressedResponse;  ///< Request comrpessed response
+			bool                  mContinue;            ///< Resume download
 			mutable bool          mCancel;              ///< Cancel state of current request
 			ProgressCallback      mProgressCallback;    ///< Progress callback
 			unsigned int          mMaxRedirections;     ///< Maximun number of redirections allowed
@@ -260,6 +267,9 @@ class EE_API Http : NonCopyable {
 			**  @param field Name of the field to get
 			**  @return Value of the field, or empty string if not found */
 			const std::string& getField(const std::string& field) const;
+
+			/** @return If the field is found in the response headers. */
+			bool hasField(const std::string& field) const;
 
 			/** @brief Get the response status code
 			**  The status code should be the first thing to be checked

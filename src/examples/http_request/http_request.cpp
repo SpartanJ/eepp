@@ -17,6 +17,7 @@ void printResponseHeaders( Http::Response& response ) {
 EE_MAIN_FUNC int main (int argc, char * argv []) {
 	args::ArgumentParser parser("HTTP request program example");
 	args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
+	args::Flag resume(parser, "continue", "Resume getting a partially-downloaded file", {'c',"continue"});
 	args::Flag compressed(parser, "compressed", "Request compressed response", {"compressed"});
 	args::ValueFlag<std::string> postData(parser, "data", "HTTP POST data", {'d', "data"});
 	args::ValueFlagList<std::string> headers(parser, "header", "Pass custom header(s) to server", {'H', "header"});
@@ -130,13 +131,21 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 			}
 
 			// Set the proxy for the request
-			if ( proxy ) {
+			char * http_proxy = getenv( "http_proxy" );
+			if (  !proxy && NULL != http_proxy ) {
+				http.setProxy( URI( http_proxy ) );
+			} else if ( proxy ) {
 				http.setProxy( URI( proxy.Get() ) );
 			}
 
 			// Request a compressed response
 			if ( compressed ) {
 				request.setCompressedResponse( true );
+			}
+
+			// Resume existing download
+			if ( resume ) {
+				request.setContinue( true );
 			}
 
 			if ( !output ) {

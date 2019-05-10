@@ -52,6 +52,7 @@ Http::Request::Request(const std::string& uri, Method method, const std::string&
 	mValidateHostname( validateHostname ),
 	mFollowRedirect( followRedirect ),
 	mCompressedResponse( compressedResponse ),
+	mContinue( false ),
 	mCancel( false ),
 	mMaxRedirections( 10 ),
 	mRedirectionCount( 0 )
@@ -159,6 +160,14 @@ std::string Http::Request::prepareTunnel(const Http& http) {
 	out << "\r\n";
 
 	return out.str();
+}
+
+void Http::Request::setContinue(const bool& resume) {
+	mContinue = resume;
+}
+
+const bool& Http::Request::isContinue() const {
+	return mContinue;
 }
 
 const bool& Http::Request::isCompressedResponse() const {
@@ -271,6 +280,10 @@ const std::string& Http::Response::getField(const std::string& field) const {
 		static const std::string empty = "";
 		return empty;
 	}
+}
+
+bool Http::Response::hasField(const std::string & field) const {
+	return mFields.find(String::toLower(field)) != mFields.end();
 }
 
 Http::Response::Status Http::Response::getStatus() const {
@@ -579,6 +592,33 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 			}
 		}
 
+		if ( request.isContinue() ) {
+			std::size_t continueLength = writeTo.getSize();
+
+			if ( continueLength > 0 ) {
+				IOStreamString responseHeadBody;
+				Request requestHead = request;
+				requestHead.setContinue( false );
+				requestHead.setMethod( Request::Head );
+				Response responseHead = downloadRequest( requestHead, responseHeadBody );
+				std::size_t contentLength = 0;
+
+				if ( responseHead.hasField("Accept-Ranges") &&
+					 responseHead.hasField("Content-Length") &&
+					 String::fromString( contentLength, responseHead.getField("Content-Length") )  &&
+					 contentLength > 0 &&
+					 continueLength < contentLength
+					)
+				{
+					writeTo.seek( continueLength );
+					Request newRequest( request );
+					newRequest.setContinue( false );
+					newRequest.setField( "Range", String::format( "bytes=%lu-%lu", continueLength, contentLength ) );
+					return downloadRequest( newRequest, writeTo, timeout );
+				}
+			}
+		}
+
 		// Convert the request to string and send it through the connected socket
 		std::string requestStr = toSend.prepare(*this);
 
@@ -771,8 +811,8 @@ Http::Response Http::downloadRequest(const Http::Request& request, IOStream& wri
 	return received;
 }
 
-Http::Response Http::downloadRequest(const Http::Request & request, std::string writePath, Time timeout) {
-	IOStreamFile file( writePath, "wb+" );
+Http::Response Http::downloadRequest(const Http::Request& request, std::string writePath, Time timeout) {
+	IOStreamFile file( writePath, request.isContinue() ? "ab+" : "wb+" );
 	return downloadRequest( request, file, timeout );
 }
 
