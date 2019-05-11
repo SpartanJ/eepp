@@ -42,10 +42,10 @@ ios_size IOStreamInflate::read(char * buffer, ios_size length) {
 		ios_size n = 0;
 
 		if ( mStream.isOpen()) {
-			n = mStream.read((char*)mBuffer.data, mBuffer.size);
+			n = mStream.read((char*)mBuffer.get(), mBuffer.length());
 		}
 
-		zstr.next_in   = (unsigned char*) mBuffer.data;
+		zstr.next_in   = (unsigned char*) mBuffer.get();
 		zstr.avail_in  = n;
 	}
 
@@ -78,11 +78,11 @@ ios_size IOStreamInflate::read(char * buffer, ios_size length) {
 			ios_size n = 0;
 
 			if (mStream.isOpen()) {
-				n = mStream.read((char*)mBuffer.data, mBuffer.size);
+				n = mStream.read((char*)mBuffer.get(), mBuffer.length());
 			}
 
 			if (n > 0) {
-				zstr.next_in  = (unsigned char*) mBuffer.data;
+				zstr.next_in  = (unsigned char*) mBuffer.get();
 				zstr.avail_in = n;
 			} else {
 				return length - zstr.avail_out;
@@ -99,14 +99,14 @@ ios_size IOStreamInflate::write(const char * buffer, ios_size length) {
 
 	zstr.next_in   = (unsigned char*) buffer;
 	zstr.avail_in  = length;
-	zstr.next_out  = mBuffer.data;
-	zstr.avail_out = mBuffer.size;
+	zstr.next_out  = mBuffer.get();
+	zstr.avail_out = mBuffer.length();
 
 	for (;;) {
 		int rc = inflate(&zstr, Z_NO_FLUSH);
 
 		if (rc == Z_STREAM_END) {
-			length = mStream.write( (const char*)mBuffer.data, mBuffer.size - zstr.avail_out);
+			length = mStream.write( (const char*)mBuffer.get(), mBuffer.length() - zstr.avail_out);
 
 			mLocalStream->state = rc;
 
@@ -117,23 +117,23 @@ ios_size IOStreamInflate::write(const char * buffer, ios_size length) {
 			return 0;
 
 		if (zstr.avail_out == 0) {
-			ios_size ret = mStream.write( (const char*)mBuffer.data, mBuffer.size);
+			ios_size ret = mStream.write( (const char*)mBuffer.get(), mBuffer.length());
 
 			if (ret == 0)
 				return 0;
 
-			zstr.next_out  = (unsigned char*) mBuffer.data;
-			zstr.avail_out = mBuffer.size;
+			zstr.next_out  = (unsigned char*) mBuffer.get();
+			zstr.avail_out = mBuffer.length();
 		}
 
 		if (zstr.avail_in == 0) {
-			ios_size ret = mStream.write( (const char*)mBuffer.data, mBuffer.size - zstr.avail_out);
+			ios_size ret = mStream.write( (const char*)mBuffer.get(), mBuffer.length() - zstr.avail_out);
 
 			if (ret == 0)
 				return 0;
 
-			zstr.next_out  = (unsigned char*) mBuffer.data;
-			zstr.avail_out = mBuffer.size;
+			zstr.next_out  = (unsigned char*) mBuffer.get();
+			zstr.avail_out = mBuffer.length();
 
 			break;
 		}

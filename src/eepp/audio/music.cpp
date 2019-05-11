@@ -81,7 +81,7 @@ bool Music::openFromStream(IOStream& stream) {
 
 bool Music::openFromPack(Pack * pack, const std::string & filePackPath) {
 	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, mData ) )
-		return openFromMemory( reinterpret_cast<const char*> ( mData.data ), mData.size );
+		return openFromMemory( reinterpret_cast<const char*> ( mData.get() ), mData.length() );
 
 	return false;
 }

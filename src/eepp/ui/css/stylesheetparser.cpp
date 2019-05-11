@@ -42,10 +42,10 @@ bool StyleSheetParser::loadFromPack( Pack * pack, std::string filePackPath ) {
 
 	bool Ret = false;
 
-	SafeDataPointer PData;
+	ScopedBuffer buffer;
 
-	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, PData ) ) {
-		Ret = loadFromMemory( PData.data, PData.size );
+	if ( pack->isOpen() && pack->extractFileToMemory( filePackPath, buffer ) ) {
+		Ret = loadFromMemory( buffer.get(), buffer.length() );
 	}
 
 	return Ret;

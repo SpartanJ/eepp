@@ -259,7 +259,7 @@ void UIMenu::insert( UINode * Control, const Uint32& Index ) {
 
 bool UIMenu::isSubMenu( Node * Ctrl ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-		if ( mItems[i]->isType( UI_TYPE_MENUSUBMENU ) ) {
+		if ( NULL != mItems[i] && mItems[i]->isType( UI_TYPE_MENUSUBMENU ) ) {
 			UIMenuSubMenu * tMenu = reinterpret_cast<UIMenuSubMenu*> ( mItems[i] );
 
 			if ( tMenu->getSubMenu() == Ctrl )

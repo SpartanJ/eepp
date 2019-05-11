@@ -80,11 +80,11 @@ bool Zip::close() {
 }
 
 bool Zip::addFile( const std::string& path, const std::string& inpack ) {
-	SafeDataPointer file;
+	ScopedBuffer file;
 
 	FileSystem::fileGet( path, file );
 
-	return addFile( file.data, file.size, inpack );
+	return addFile( file.get(), file.length(), inpack );
 }
 
 bool Zip::addFile( const Uint8 * data, const Uint32& dataSize, const std::string& inpack ) {
@@ -148,12 +148,12 @@ bool Zip::extractFile( const std::string& path , const std::string& dest ) {
 
 	bool Ret;
 
-	SafeDataPointer data;
+	ScopedBuffer data;
 
 	Ret = extractFileToMemory( path, data );
 
 	if ( Ret )
-		FileSystem::fileWrite( dest, data.data, data.size );
+		FileSystem::fileWrite( dest, data.get(), data.length() );
 
 	unlock();
 
@@ -194,7 +194,7 @@ bool Zip::extractFileToMemory( const std::string& path, std::vector<Uint8>& data
 	return Ret;
 }
 
-bool Zip::extractFileToMemory( const std::string& path, SafeDataPointer& data ) {
+bool Zip::extractFileToMemory( const std::string& path, ScopedBuffer& data ) {
 	lock();
 
 	bool Ret = false;
@@ -210,10 +210,9 @@ bool Zip::extractFileToMemory( const std::string& path, SafeDataPointer& data ) 
 			struct zip_file * zf = zip_fopen_index( mZip, zs.index, 0 );
 
 			if ( NULL != zf ) {
-				data.size	= (Uint32)zs.size;
-				data.data		= eeNewArray( Uint8, ( data.size ) );
+				data.reset( zs.size );
 
-				Result = (Int32)zip_fread( zf, (void*)data.data, data.size );
+				Result = (Int32)zip_fread( zf, (void*)data.get(), data.length() );
 
 				zip_fclose(zf);
 

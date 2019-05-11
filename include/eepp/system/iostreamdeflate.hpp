@@ -2,7 +2,7 @@
 #define EE_SYSTEM_IOSTREAMDEFLATE_HPP
 
 #include <eepp/system/iostream.hpp>
-#include <eepp/system/safedatapointer.hpp>
+#include <eepp/system/scopedbuffer.hpp>
 #include <eepp/system/compression.hpp>
 
 namespace EE { namespace System {
@@ -40,7 +40,7 @@ class EE_API IOStreamDeflate : public IOStream {
 	protected:
 		IOStream& mStream;
 		Compression::Mode mMode;
-		SafeDataPointer mBuffer;
+		ScopedBuffer mBuffer;
 		LocalStreamData * mLocalStream;
 };
 

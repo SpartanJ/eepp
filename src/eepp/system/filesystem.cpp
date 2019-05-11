@@ -47,16 +47,13 @@ std::string FileSystem::getOSSlash() {
 	#endif
 }
 
-bool FileSystem::fileGet( const std::string& path, SafeDataPointer& data ) {
+bool FileSystem::fileGet( const std::string& path, ScopedBuffer& data ) {
 	if ( fileExists( path ) ) {
 		IOStreamFile fs ( path  );
 
-		eeSAFE_DELETE( data.data );
+		data.reset( fileSize( path ) );
 
-		data.size	= fileSize( path );
-		data.data		= eeNewArray( Uint8, ( data.size ) );
-
-		fs.read( reinterpret_cast<char*> ( data.data ), data.size  );
+		fs.read( reinterpret_cast<char*> ( data.get() ), data.length()  );
 
 		return true;
 	}
@@ -88,10 +85,8 @@ bool FileSystem::fileCopy( const std::string& src, const std::string& dst ) {
 		Int64	allocate	= ( size < chunksize ) ? size : chunksize;
 		Int64	copysize	= 0;
 
-		SafeDataPointer data;
-		data.size	= (Uint32)allocate;
-		data.data		= eeNewArray( Uint8, ( data.size ) );
-		char * buff		= (char*)data.data;
+		TScopedBuffer<char> data( allocate );
+		char * buff		= data.get();
 
 		IOStreamFile in( src, "rb" );
 		IOStreamFile out( dst, "wb" );
@@ -105,7 +100,7 @@ bool FileSystem::fileCopy( const std::string& src, const std::string& dst ) {
 				}
 
 				in.read		( &buff[0], copysize );
-				out.write	( (const char*)&buff[0], copysize );
+				out.write	( &buff[0], copysize );
 
 				size_left -= copysize;
 			} while ( size_left > 0 );

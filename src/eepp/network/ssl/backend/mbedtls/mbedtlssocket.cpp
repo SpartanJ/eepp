@@ -14,7 +14,7 @@ bool MbedTLSSocket::init() {
 	mbedtls_x509_crt_init(&sCACert);
 
 	//! Load the certificates and config
-	SafeDataPointer data;
+	ScopedBuffer data;
 
 	if ( FileSystem::fileExists( SSLSocket::CertificatesPath ) ) {
 		FileSystem::fileGet( SSLSocket::CertificatesPath, data );
@@ -28,12 +28,12 @@ bool MbedTLSSocket::init() {
 		}
 	}
 
-	if ( data.size > 0 ) {
-		SafeDataPointer dataZeroEnded( data.size + 1 );
-		memcpy( dataZeroEnded.data, data.data, data.size );
-		dataZeroEnded.data[ data.size ] = '\0';
+	if ( data.length() > 0 ) {
+		ScopedBuffer dataZeroEnded( data.length() + 1 );
+		memcpy( dataZeroEnded.get(), data.get(), data.length() );
+		dataZeroEnded[ data.length() ] = '\0';
 
-		int err = mbedtls_x509_crt_parse( &sCACert, (const unsigned char*)dataZeroEnded.data, dataZeroEnded.size );
+		int err = mbedtls_x509_crt_parse( &sCACert, (const unsigned char*)dataZeroEnded.get(), dataZeroEnded.length() );
 
 		if ( err != 0 ) {
 			char errStr[ 1024 ];

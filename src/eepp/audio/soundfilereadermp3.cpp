@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <cctype>
 #include <eepp/audio/mp3info.hpp>
-#include <eepp/system/safedatapointer.hpp>
+#include <eepp/system/scopedbuffer.hpp>
 
 static size_t drmp3_func_read(void* data, void* ptr, size_t size) {
 	IOStream* stream = static_cast<IOStream*>(data);
@@ -73,15 +73,15 @@ Uint64 SoundFileReaderMp3::read(Int16* samples, Uint64 maxCount) {
 	while (count < maxCount) {
 		const int samplesToRead = static_cast<int>(maxCount - count);
 		int frames = samplesToRead / mChannelCount;
-		TSafeDataPointer<float> rSamples( samplesToRead );
+		TScopedBuffer<float> rSamples( samplesToRead );
 
-		long framesRead = drmp3_read_pcm_frames_f32( mMp3, frames, rSamples.data );
+		long framesRead = drmp3_read_pcm_frames_f32( mMp3, frames, rSamples.get() );
 
 		if (framesRead > 0) {
 			long samplesRead = framesRead * mChannelCount;
 
 			for ( int i = 0; i < samplesRead; i++ )
-				samples[i] = rSamples.data[i] * 32768.f;
+				samples[i] = rSamples[i] * 32768.f;
 
 			count += samplesRead;
 			samples += samplesRead;

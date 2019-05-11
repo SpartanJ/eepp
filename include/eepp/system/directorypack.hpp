@@ -52,7 +52,7 @@ class EE_API DirectoryPack : public Pack {
 		bool extractFileToMemory( const std::string& path, std::vector<Uint8>& data );
 
 		/** Extract a file to memory from the pakFile */
-		bool extractFileToMemory( const std::string& path, SafeDataPointer& data );
+		bool extractFileToMemory( const std::string& path, ScopedBuffer& data );
 
 		/** Check if a file exists in the pack file and return the number of the file, otherwise return -1. */
 		Int32 exists( const std::string& path );

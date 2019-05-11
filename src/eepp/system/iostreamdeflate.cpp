@@ -38,24 +38,24 @@ IOStreamDeflate::~IOStreamDeflate() {
 
 			if (rc != Z_OK && rc != Z_STREAM_END) return;
 
-			mStream.write((char*)mBuffer.data, mBuffer.size - zstr.avail_out);
+			mStream.write((char*)mBuffer.get(), mBuffer.length() - zstr.avail_out);
 
 			if (!mStream.isOpen()) return;
 
-			zstr.next_out  = (unsigned char*) mBuffer.data;
-			zstr.avail_out = mBuffer.size;
+			zstr.next_out  = (unsigned char*) mBuffer.get();
+			zstr.avail_out = mBuffer.length();
 
 			while (rc != Z_STREAM_END) {
 				rc = deflate(&zstr, Z_FINISH);
 
 				if (rc != Z_OK && rc != Z_STREAM_END) return;
 
-				mStream.write((char*)mBuffer.data, mBuffer.size - zstr.avail_out);
+				mStream.write((char*)mBuffer.get(), mBuffer.length() - zstr.avail_out);
 
 				if (!mStream.isOpen()) return;
 
-				zstr.next_out  = (unsigned char*) mBuffer.data;
-				zstr.avail_out = mBuffer.size;
+				zstr.next_out  = (unsigned char*) mBuffer.get();
+				zstr.avail_out = mBuffer.length();
 			}
 		}
 	}
@@ -77,11 +77,11 @@ ios_size IOStreamDeflate::read(char * buffer, ios_size length) {
 		ios_size n = 0;
 
 		if ( mStream.isOpen()) {
-			n = mStream.read((char*)mBuffer.data, mBuffer.size);
+			n = mStream.read((char*)mBuffer.get(), mBuffer.length());
 		}
 
 		if (n > 0) {
-			zstr.next_in   = (unsigned char*) mBuffer.data;
+			zstr.next_in   = (unsigned char*) mBuffer.get();
 			zstr.avail_in  = n;
 		} else {
 			zstr.next_in   = NULL;
@@ -110,11 +110,11 @@ ios_size IOStreamDeflate::read(char * buffer, ios_size length) {
 			ios_size n = 0;
 
 			if (mStream.isOpen()) {
-				n = mStream.read((char*)mBuffer.data, mBuffer.size);
+				n = mStream.read((char*)mBuffer.get(), mBuffer.length());
 			}
 
 			if (n > 0) {
-				zstr.next_in  = (unsigned char*) mBuffer.data;
+				zstr.next_in  = (unsigned char*) mBuffer.get();
 				zstr.avail_in = n;
 			} else {
 				zstr.next_in   = NULL;
@@ -135,8 +135,8 @@ ios_size IOStreamDeflate::write(const char * buffer, ios_size length) {
 
 	zstr.next_in   = (unsigned char*) buffer;
 	zstr.avail_in  = length;
-	zstr.next_out  = mBuffer.data;
-	zstr.avail_out = mBuffer.size;
+	zstr.next_out  = mBuffer.get();
+	zstr.avail_out = mBuffer.length();
 
 	for (;;) {
 		int rc = deflate(&zstr, Z_NO_FLUSH);
@@ -145,23 +145,23 @@ ios_size IOStreamDeflate::write(const char * buffer, ios_size length) {
 			return 0;
 
 		if (zstr.avail_out == 0) {
-			ios_size ret = mStream.write( (const char*)mBuffer.data, mBuffer.size);
+			ios_size ret = mStream.write( (const char*)mBuffer.get(), mBuffer.length());
 
 			if (ret == 0)
 				return 0;
 
-			zstr.next_out  = (unsigned char*) mBuffer.data;
-			zstr.avail_out = mBuffer.size;
+			zstr.next_out  = (unsigned char*) mBuffer.get();
+			zstr.avail_out = mBuffer.length();
 		}
 
 		if (zstr.avail_in == 0) {
-			ios_size ret = mStream.write( (const char*)mBuffer.data, mBuffer.size - zstr.avail_out);
+			ios_size ret = mStream.write( (const char*)mBuffer.get(), mBuffer.length() - zstr.avail_out);
 
 			if (ret == 0)
 				return 0;
 
-			zstr.next_out  = (unsigned char*) mBuffer.data;
-			zstr.avail_out = mBuffer.size;
+			zstr.next_out  = (unsigned char*) mBuffer.get();
+			zstr.avail_out = mBuffer.length();
 
 			break;
 		}

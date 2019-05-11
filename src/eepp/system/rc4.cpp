@@ -72,13 +72,13 @@ bool RC4::encryptFile( const std::string& SourceFile, const std::string& DestFil
 	if ( !FileSystem::fileExists( SourceFile ) )
 		return false;
 
-	SafeDataPointer data;
+	ScopedBuffer data;
 
 	FileSystem::fileGet( SourceFile, data );
 
-	encryptByte( data.data, data.size );
+	encryptByte( data.get(), data.length() );
 
-	FileSystem::fileWrite( DestFile, data.data, data.size );
+	FileSystem::fileWrite( DestFile, data.get(), data.length() );
 
 	return true;
 }

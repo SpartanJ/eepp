@@ -6,7 +6,7 @@
 #include <eepp/audio/inputsoundfile.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/system/time.hpp>
-#include <eepp/system/safedatapointer.hpp>
+#include <eepp/system/scopedbuffer.hpp>
 #include <string>
 #include <vector>
 
@@ -239,7 +239,7 @@ class EE_API Music : public SoundStream
 		std::vector<Int16> mSamples;  ///< Temporary buffer of samples
 		Mutex mMutex;	///< Mutex protecting the data
 		Span<Uint64> mLoopSpan; ///< Loop Range Specifier
-		SafeDataPointer	mData;
+		ScopedBuffer	mData;
 };
 
 }}

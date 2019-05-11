@@ -1,5 +1,5 @@
 #include <eepp/system/compression.hpp>
-#include <eepp/system/safedatapointer.hpp>
+#include <eepp/system/scopedbuffer.hpp>
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/core/debug.hpp>
 
@@ -102,15 +102,15 @@ Compression::Status Compression::decompress(IOStream& dst, IOStream& src, Mode m
 		case MODE_DEFLATE:
 		case MODE_GZIP:
 		{
-			SafeDataPointer buffer( DEFLATE_CHUNK_SIZE );
-			SafeDataPointer bufferDst( DEFLATE_CHUNK_SIZE );
+			ScopedBuffer buffer( DEFLATE_CHUNK_SIZE );
+			ScopedBuffer bufferDst( DEFLATE_CHUNK_SIZE );
 
 			src.seek( 0 );
 
 			int windowBits = mode == Compression::MODE_DEFLATE ? MAX_WBITS : MAX_WBITS | 16;
 
 			z_stream strm = {};
-			strm.next_in = buffer.data;
+			strm.next_in = buffer.get();
 
 			int err = inflateInit2(&strm, windowBits);
 			if (err != Z_OK)
@@ -123,14 +123,14 @@ Compression::Status Compression::decompress(IOStream& dst, IOStream& src, Mode m
 			Uint32 totalRead = 0;
 
 			while ( totalRead < totalSize ) {
-				bytesRead = src.read( (char*)buffer.data, buffer.size );
+				bytesRead = src.read( (char*)buffer.get(), buffer.length() );
 
 				strm.avail_in = bytesRead;
-				strm.next_in = buffer.data;
+				strm.next_in = buffer.get();
 
 				do {
-					strm.avail_out = bufferDst.size;
-					strm.next_out = bufferDst.data;
+					strm.avail_out = bufferDst.length();
+					strm.next_out = bufferDst.get();
 					zlibStatus = inflate(&strm, Z_NO_FLUSH);
 
 					switch (zlibStatus) {
@@ -143,9 +143,9 @@ Compression::Status Compression::decompress(IOStream& dst, IOStream& src, Mode m
 							return (Status)zlibStatus;
 					}
 
-					have = bufferDst.size- strm.avail_out;
+					have = bufferDst.length()- strm.avail_out;
 
-					dst.write( (const char*)bufferDst.data, have );
+					dst.write( (const char*)bufferDst.get(), have );
 				} while (strm.avail_out == 0);
 
 				totalRead += bytesRead;

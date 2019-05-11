@@ -193,11 +193,11 @@ void TextureAtlasLoader::loadFromPack( Pack * Pack, const std::string& FilePackP
 	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( FilePackPath ) ) {
 		mPack = Pack;
 
-		SafeDataPointer PData;
+		ScopedBuffer buffer;
 
-		Pack->extractFileToMemory( FilePackPath, PData );
+		Pack->extractFileToMemory( FilePackPath, buffer );
 
-		loadFromMemory( reinterpret_cast<const Uint8*> ( PData.data ), PData.size, FilePackPath );
+		loadFromMemory( buffer.get(), buffer.length(), FilePackPath );
 	}
 }
 

@@ -30,21 +30,21 @@ Shader::Shader( const Uint32& Type, const std::string& Filename ) {
 	mFilename = FileSystem::fileNameFromPath( Filename );
 
 	if ( FileSystem::fileExists( Filename ) ) {
-		SafeDataPointer PData;
+		ScopedBuffer buffer;
 
-		FileSystem::fileGet( Filename, PData );
+		FileSystem::fileGet( Filename, buffer );
 
-		setSource( (const char*)PData.data, PData.size );
+		setSource( (const char*)buffer.get(), buffer.length() );
 	} else {
 		std::string tPath = Filename;
 		Pack * tPack = NULL;
 
 		if ( PackManager::instance()->isFallbackToPacksActive() && NULL != ( tPack = PackManager::instance()->exists( tPath ) ) ) {
-			SafeDataPointer PData;
+			ScopedBuffer buffer;
 
-			tPack->extractFileToMemory( tPath, PData );
+			tPack->extractFileToMemory( tPath, buffer );
 
-			setSource( reinterpret_cast<char*> ( PData.data ), PData.size );
+			setSource( reinterpret_cast<char*> ( buffer.get() ), buffer.length() );
 		} else {
 			eePRINTL( "Couldn't open shader object: %s", Filename.c_str() );
 		}
@@ -62,16 +62,16 @@ Shader::Shader( const Uint32& Type, const char * Data, const Uint32& DataSize ) 
 }
 
 Shader::Shader( const Uint32& Type, Pack * Pack, const std::string& Filename ) {
-	SafeDataPointer PData;
+	ScopedBuffer buffer;
 
 	Init( Type );
 
 	mFilename = FileSystem::fileNameFromPath( Filename );
 
 	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( Filename ) ) {
-		Pack->extractFileToMemory( Filename, PData );
+		Pack->extractFileToMemory( Filename, buffer );
 
-		setSource( reinterpret_cast<char*> ( PData.data ), PData.size );
+		setSource( reinterpret_cast<char*> ( buffer.get() ), buffer.length() );
 	}
 
 	compile();
