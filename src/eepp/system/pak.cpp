@@ -133,10 +133,10 @@ bool Pak::extractFile( const std::string& path , const std::string& dest ) {
 	Int32 Pos = exists( path );
 
 	if ( Pos != -1 ) {
-		SafeDataPointer data;
+		ScopedBuffer data;
 
 		if ( extractFileToMemory( path, data ) ) {
-			FileSystem::fileWrite( path, data.data, data.size );
+			FileSystem::fileWrite( path, data.get(), data.length() );
 		}
 
 		Ret = true;
@@ -173,7 +173,7 @@ bool Pak::extractFileToMemory( const std::string& path, std::vector<Uint8>& data
 	return Ret;
 }
 
-bool Pak::extractFileToMemory( const std::string& path, SafeDataPointer& data ) {
+bool Pak::extractFileToMemory( const std::string& path, ScopedBuffer& data ) {
 	if ( NULL == mPak.fs || !mPak.fs->isOpen() ) {
 		return false;
 	}
@@ -185,11 +185,10 @@ bool Pak::extractFileToMemory( const std::string& path, SafeDataPointer& data ) 
 	Int32 Pos = exists( path );
 
 	if ( Pos != -1 ) {
-		data.size	= mPakFiles[Pos].file_length;
-		data.data		= eeNewArray( Uint8, ( data.size ) );
+		data.reset( mPakFiles[Pos].file_length );
 
 		mPak.fs->seek( mPakFiles[Pos].file_position );
-		mPak.fs->read( reinterpret_cast<char*> ( data.data ), mPakFiles[Pos].file_length );
+		mPak.fs->read( reinterpret_cast<char*> ( data.get() ), data.length() );
 
 		Ret = true;
 	}
@@ -279,11 +278,11 @@ bool Pak::addFile( const std::string& path, const std::string& inpack ) {
 	if ( path.size() > 56 )
 		return false;
 
-	SafeDataPointer file;
+	ScopedBuffer file;
 
 	FileSystem::fileGet( path, file );
 
-	return addFile( file.data, file.size, inpack );
+	return addFile( file.get(), file.length(), inpack );
 }
 
 bool Pak::addFiles( std::map<std::string, std::string> paths ) {

@@ -40,18 +40,18 @@ X11Impl::~X11Impl() {
 }
 
 void X11Impl::minimizeWindow() {
-	Lock();
+	lock();
 
 	XIconifyWindow( mDisplay, mX11Window, 0 );
 
 	XFlush( mDisplay );
 
-	Unlock();
+	unlock();
 }
 
 void X11Impl::maximizeWindow() {
 	// coded by Rafał Maj, idea from Måns Rullgård http://tinyurl.com/68mvk3
-	Lock();
+	lock();
 
 	XEvent xev;
 	Atom wm_state =  XAtom( "_NET_WM_STATE" );
@@ -71,11 +71,11 @@ void X11Impl::maximizeWindow() {
 
 	XFlush(mDisplay);
 
-	Unlock();
+	unlock();
 }
 
 bool X11Impl::isWindowMaximized() {
-	Lock();
+	lock();
 
 	//bool minimized = false;
 	bool maximizedhorz = false;
@@ -117,7 +117,7 @@ bool X11Impl::isWindowMaximized() {
 
 	XFlush(mDisplay);
 
-	Unlock();
+	unlock();
 
 	if( maximizedhorz && maximizedvert ) {
 		return true;
@@ -127,45 +127,45 @@ bool X11Impl::isWindowMaximized() {
 }
 
 void X11Impl::hideWindow() {
-	Lock();
+	lock();
 
 	XUnmapWindow( mDisplay, mX11Window );
 
-	Unlock();
+	unlock();
 }
 
 void X11Impl::raiseWindow() {
-	Lock();
+	lock();
 
 	XRaiseWindow( mDisplay, mX11Window );
 
-	Unlock();
+	unlock();
 }
 
 void X11Impl::showWindow() {
-	Lock();
+	lock();
 
 	XMapRaised( mDisplay, mX11Window );
 
-	Unlock();
+	unlock();
 }
 
 void X11Impl::moveWindow( int left, int top ) {
-	Lock();
+	lock();
 
 	XMoveWindow( mDisplay, mX11Window, left, top );
 
 	XFlush( mDisplay );
 
-	Unlock();
+	unlock();
 }
 
 void X11Impl::setContext( eeWindowContex Context ) {
-	Lock();
+	lock();
 
 	glXMakeCurrent( mDisplay, mX11Window, Context );
 
-	Unlock();
+	unlock();
 }
 
 Vector2i X11Impl::getPosition() {
@@ -181,20 +181,20 @@ void X11Impl::showMouseCursor() {
 	if ( !mCursorHidden )
 	  return;
 
-	Lock();
+	lock();
 
 	XDefineCursor( mDisplay, mMainWindow, mCursorCurrent );
 
 	mCursorHidden = false;
 
-	Unlock();
+	unlock();
 }
 
 void X11Impl::hideMouseCursor() {
 	if ( mCursorHidden )
 		return;
 
-	Lock();
+	lock();
 
 	if ( mCursorInvisible == None ) {
 		unsigned long gcmask;
@@ -225,7 +225,7 @@ void X11Impl::hideMouseCursor() {
 
 	mCursorHidden = true;
 
-	Unlock();
+	unlock();
 }
 
 Cursor * X11Impl::createMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
@@ -244,21 +244,21 @@ void X11Impl::setMouseCursor( Cursor * cursor ) {
 	mCursorCurrent = reinterpret_cast<CursorX11*>( cursor )->GetCursor();
 
 	if ( !mCursorHidden ) {
-		Lock();
+		lock();
 
 		XDefineCursor( mDisplay, mMainWindow,  mCursorCurrent );
 
-		Unlock();
+		unlock();
 	}
 }
 
 void X11Impl::restoreCursor() {
 	if ( !mCursorHidden ) {
-		Lock();
+		lock();
 
 		XDefineCursor( mDisplay, mMainWindow,  mCursorCurrent );
 
-		Unlock();
+		unlock();
 	} else {
 		hideMouseCursor();
 	}
@@ -287,7 +287,7 @@ void X11Impl::setSystemMouseCursor( Cursor::SysType syscursor ) {
 		XFreeCursor( mDisplay, mCursorSystemLast );
 	}
 
-	Lock();
+	lock();
 
 	mCursorCurrent		= XCreateFontCursor( mDisplay, cursor_shape );
 	mCursorSystemLast	= mCursorCurrent;
@@ -296,19 +296,19 @@ void X11Impl::setSystemMouseCursor( Cursor::SysType syscursor ) {
 		XDefineCursor( mDisplay, mMainWindow, mCursorCurrent );
 	}
 
-	Unlock();
+	unlock();
 }
 
-eeWindowHandle X11Impl::GetDisplay() const {
+eeWindowHandle X11Impl::getDisplay() const {
 	return mDisplay;
 }
 
-void X11Impl::Lock() {
+void X11Impl::lock() {
 	if ( NULL != mLock )
 		mLock();
 }
 
-void X11Impl::Unlock() {
+void X11Impl::unlock() {
 	if ( NULL != mUnlock )
 		mUnlock();
 }

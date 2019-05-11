@@ -47,6 +47,12 @@ class SocketImpl {
 		/** Get the last socket error status
 		**  @return Status corresponding to the last socket error */
 		static Socket::Status getErrorStatus();
+
+		/** Set the send timeout */
+		static void setSendTimeout(SocketHandle sock, const Time& timeout);
+
+		/** Set the receive timeout */
+		static void setReceiveTimeout(SocketHandle sock, const Time& timeout);
 };
 
 }}}

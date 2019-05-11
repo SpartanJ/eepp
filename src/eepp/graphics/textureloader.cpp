@@ -278,11 +278,11 @@ void TextureLoader::loadFromFile() {
 }
 
 void TextureLoader::loadFromPack() {
-	SafeDataPointer PData;
+	ScopedBuffer buffer;
 
-	if ( NULL != mPack && mPack->isOpen() && mPack->extractFileToMemory( mFilepath, PData ) ) {
-		mImagePtr	= PData.data;
-		mSize		= PData.size;
+	if ( NULL != mPack && mPack->isOpen() && mPack->extractFileToMemory( mFilepath, buffer ) ) {
+		mImagePtr	= buffer.get();
+		mSize		= buffer.length();
 
 		loadFromMemory();
 	}

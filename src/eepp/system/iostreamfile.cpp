@@ -15,9 +15,7 @@ IOStreamFile::IOStreamFile( const std::string& path, const char * modes ) :
 }
 
 IOStreamFile::~IOStreamFile() {
-	if ( isOpen() ) {
-		std::fclose(mFS);
-	}
+	close();
 }
 
 ios_size IOStreamFile::read( char * data, ios_size size ) {
@@ -78,6 +76,14 @@ bool IOStreamFile::isOpen() {
 void IOStreamFile::flush() {
 	if ( mFS )
 		std::fflush( mFS );
+}
+
+void IOStreamFile::close() {
+	if ( isOpen() ) {
+		std::fclose(mFS);
+
+		mFS = NULL;
+	}
 }
 
 }}

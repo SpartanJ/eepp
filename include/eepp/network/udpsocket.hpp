@@ -98,6 +98,14 @@ class EE_API UdpSocket : public Socket {
 	**  @return Status code
 	**  @see Send */
 	Status receive(Packet& packet, IpAddress& remoteAddress, unsigned short& remotePort);
+
+	/** Set the send timeout. Only callable after bind ( after the socket
+	 ** has been initialized ). */
+	void setSendTimeout(SocketHandle sock, const Time& timeout);
+
+	/** Set the receive timeout Only callable after bind ( after the socket
+	 ** has been initialized ). */
+	void setReceiveTimeout(SocketHandle sock, const Time& timeout);
 private:
 	// Member data
 	std::vector<char> mBuffer; ///< Temporary buffer holding the received data in Receive(Packet)

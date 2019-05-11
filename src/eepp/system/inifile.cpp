@@ -56,11 +56,11 @@ IniFile::IniFile( IOStream& stream, const bool& shouldReadFile ) :
 
 bool IniFile::loadFromPack( Pack * Pack, std::string iniPackPath ) {
 	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( iniPackPath ) ) {
-		SafeDataPointer PData;
+		ScopedBuffer buffer;
 
-		Pack->extractFileToMemory( iniPackPath, PData );
+		Pack->extractFileToMemory( iniPackPath, buffer );
 
-		return loadFromMemory( PData.data, PData.size );
+		return loadFromMemory( buffer.get(), buffer.length() );
 	}
 
 	return false;

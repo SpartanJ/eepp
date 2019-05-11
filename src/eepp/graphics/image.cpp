@@ -284,18 +284,18 @@ bool Image::getInfo( const std::string& path, int * width, int * height, int * c
 		Pack * tPack = PackManager::instance()->exists( npath );
 
 		if ( NULL != tPack ) {
-			SafeDataPointer PData;
+			ScopedBuffer buffer;
 
-			tPack->extractFileToMemory( npath, PData );
+			tPack->extractFileToMemory( npath, buffer );
 
-			res = 0 != stbi_info_from_memory( PData.data, PData.size, width, height, channels );
+			res = 0 != stbi_info_from_memory( buffer.get(), buffer.length(), width, height, channels );
 
-			if ( !res && svg_test_from_memory( PData.data, PData.size ) ) {
-				SafeDataPointer data( PData.size + 1 );
-				memcpy( data.data, PData.data, PData.size );
-				data.data[PData.size] = '\0';
+			if ( !res && svg_test_from_memory( buffer.get(), buffer.length() ) ) {
+				ScopedBuffer data( buffer.length() + 1 );
+				memcpy( data.get(), buffer.get(), buffer.length() );
+				data[buffer.length()] = '\0';
 
-				NSVGimage * image = nsvgParse( (char*)data.data, "px", 96.0f );
+				NSVGimage * image = nsvgParse( (char*)data.get(), "px", 96.0f );
 
 				if ( NULL != image ) {
 					*width = image->width * imageFormatConfiguration.svgScale();
@@ -467,10 +467,10 @@ Image::Image( const Uint8 * imageData, const unsigned int & imageDataSize, const
 
 		mLoadedFromStbi = true;
 	} else if ( svg_test_from_memory( imageData, imageDataSize ) ) {
-		SafeDataPointer data( imageDataSize + 1 );
-		memcpy( data.data, imageData, imageDataSize );
-		data.data[imageDataSize] = '\0';
-		svgLoad( nsvgParse( (char*)data.data, "px", 96.0f ) );
+		ScopedBuffer data( imageDataSize + 1 );
+		memcpy( data.get(), imageData, imageDataSize );
+		data[imageDataSize] = '\0';
+		svgLoad( nsvgParse( (char*)data.get(), "px", 96.0f ) );
 	} else {
 		std::string reason = ".";
 
@@ -526,14 +526,14 @@ Image::Image( IOStream & stream, const unsigned int& forceChannels, const Format
 
 			mLoadedFromStbi = true;
 		} else if ( svg_test_from_stream( stream ) ) {
-			SafeDataPointer data( stream.getSize() + 1 );
+			ScopedBuffer data( stream.getSize() + 1 );
 
 			stream.seek( 0 );
-			stream.read( (char*)data.data, data.size - 1 );
+			stream.read( (char*)data.get(), data.length() - 1 );
 
-			data.data[data.size - 1] = '\0';
+			data[data.length() - 1] = '\0';
 
-			svgLoad( nsvgParse( (char*)data.data, "px", 96.0f ) );
+			svgLoad( nsvgParse( (char*)data.get(), "px", 96.0f ) );
 		} else {
 			eePRINTL( "Failed to load image. Reason: %s", stbi_failure_reason() );
 		}
@@ -580,12 +580,12 @@ void Image::svgLoad( NSVGimage * image ) {
 
 void Image::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( FilePackPath ) ) {
-		SafeDataPointer PData;
+		ScopedBuffer buffer;
 
-		Pack->extractFileToMemory( FilePackPath, PData );
+		Pack->extractFileToMemory( FilePackPath, buffer );
 
 		int w, h, c;
-		Uint8 * data = stbi_load_from_memory( PData.data, PData.size, &w, &h, &c, mChannels );
+		Uint8 * data = stbi_load_from_memory( buffer.get(), buffer.length(), &w, &h, &c, mChannels );
 
 		if ( NULL != data ) {
 			mPixels		= data;
@@ -598,11 +598,11 @@ void Image::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 			mSize	= mWidth * mHeight * mChannels;
 
 			mLoadedFromStbi = true;
-		} else if ( svg_test_from_memory( PData.data, PData.size ) ) {
-			SafeDataPointer data( PData.size + 1 );
-			memcpy( data.data, PData.data, PData.size );
-			data.data[PData.size] = '\0';
-			svgLoad( nsvgParse( (char*)data.data, "px", 96.0f ) );
+		} else if ( svg_test_from_memory( buffer.get(), buffer.length() ) ) {
+			ScopedBuffer data( buffer.length() + 1 );
+			memcpy( data.get(), buffer.get(), buffer.length() );
+			data[buffer.length()] = '\0';
+			svgLoad( nsvgParse( (char*)data.get(), "px", 96.0f ) );
 		} else {
 			eePRINTL( "Failed to load image %s. Reason: %s", FilePackPath.c_str(), stbi_failure_reason() );
 		}

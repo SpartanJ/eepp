@@ -209,11 +209,11 @@ UIWidget * UISceneNode::loadLayoutFromStream( IOStream& stream, Node * parent ) 
 		return NULL;
 
 	ios_size bufferSize = stream.getSize();
-	SafeDataPointer safeDataPointer( eeNewArray( Uint8, bufferSize ), bufferSize );
-	stream.read( reinterpret_cast<char*>( safeDataPointer.data ), safeDataPointer.size );
+	TScopedBuffer<char> scopedBuffer( bufferSize );
+	stream.read( scopedBuffer.get(), scopedBuffer.length() );
 
 	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_buffer( safeDataPointer.data, safeDataPointer.size );
+	pugi::xml_parse_result result = doc.load_buffer( scopedBuffer.get(), scopedBuffer.length() );
 
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this );
@@ -227,10 +227,10 @@ UIWidget * UISceneNode::loadLayoutFromStream( IOStream& stream, Node * parent ) 
 }
 
 UIWidget * UISceneNode::loadLayoutFromPack( Pack * pack, const std::string& FilePackPath, Node * parent ) {
-	SafeDataPointer PData;
+	ScopedBuffer buffer;
 
-	if ( pack->isOpen() && pack->extractFileToMemory( FilePackPath, PData ) ) {
-		return loadLayoutFromMemory( PData.data, PData.size, parent );
+	if ( pack->isOpen() && pack->extractFileToMemory( FilePackPath, buffer ) ) {
+		return loadLayoutFromMemory( buffer.get(), buffer.length(), parent );
 	}
 
 	return NULL;

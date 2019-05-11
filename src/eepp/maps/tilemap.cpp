@@ -1072,13 +1072,13 @@ bool TileMap::loadFromFile( const std::string& path ) {
 
 bool TileMap::loadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( FilePackPath ) ) {
-		SafeDataPointer PData;
+		ScopedBuffer buffer;
 
-		Pack->extractFileToMemory( FilePackPath, PData );
+		Pack->extractFileToMemory( FilePackPath, buffer );
 
 		mPath = FilePackPath;
 
-		return loadFromMemory( reinterpret_cast<const char*> ( PData.data ), PData.size );
+		return loadFromMemory( reinterpret_cast<const char*> ( buffer.get() ), buffer.length() );
 	}
 
 	return false;
