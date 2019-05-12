@@ -412,10 +412,6 @@ Image::Image( std::string Path, const unsigned int& forceChannels, const FormatC
 	Pack * tPack = NULL;
 	Uint8 * data = stbi_load( Path.c_str(), &w, &h, &c, mChannels );
 
-	if ( NULL == data ) {
-		data = stbi_load( ( Sys::getProcessPath() + Path ).c_str(), &w, &h, &c, mChannels );
-	}
-
 	if ( NULL != data ) {
 		mPixels		= data;
 		mWidth		= (unsigned int)w;
@@ -432,13 +428,7 @@ Image::Image( std::string Path, const unsigned int& forceChannels, const FormatC
 	} else if ( PackManager::instance()->isFallbackToPacksActive() && NULL != ( tPack = PackManager::instance()->exists( Path ) ) ) {
 		loadFromPack( tPack, Path );
 	} else {
-		std::string reason = ".";
-
-		if ( NULL != stbi_failure_reason() ) {
-			reason = ", reason: " + std::string( stbi_failure_reason() );
-		}
-
-		eePRINTL( "Failed to load image %s. Reason: %s", Path.c_str(), reason.c_str() );
+		eePRINTL( "Failed to load image %s. Reason: %s", Path.c_str(), stbi_failure_reason() );
 	}
 }
 

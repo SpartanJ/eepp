@@ -471,7 +471,8 @@ void TextureLoader::loadFromPixels() {
 			mPixels = NULL;
 		} else {
 			if ( NULL != stbi_failure_reason() ) {
-				eePRINTL( stbi_failure_reason() );
+				if ( TEX_LT_PATH != mLoadType )
+					eePRINTL( stbi_failure_reason() );
 			} else {
 				std::string failText( "Texture " + mFilepath + " failed to load" );
 
