@@ -365,7 +365,7 @@ const std::string& NodeAttribute::FunctionType::getName() const {
 	return name;
 }
 
-const std::vector<std::string> NodeAttribute::FunctionType::getParameters() const {
+const std::vector<std::string>& NodeAttribute::FunctionType::getParameters() const {
 	return parameters;
 }
 

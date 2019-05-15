@@ -62,7 +62,7 @@ class NodeAttribute {
 
 				const std::string& getName() const;
 
-				const std::vector<std::string> getParameters() const;
+				const std::vector<std::string>& getParameters() const;
 
 				bool isEmpty() const;
 			protected:

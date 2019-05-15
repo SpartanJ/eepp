@@ -791,31 +791,33 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 				RectangleDrawable * drawable = RectangleDrawable::New();
 				RectColors rectColors;
 
-				if ( Color::isColorString( functionType.getParameters().at(0) ) ) {
-					rectColors.TopLeft = rectColors.TopRight = Color::fromString( functionType.getParameters().at(0) );
-					rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( functionType.getParameters().at(1) );
-				} else if ( functionType.getParameters().size() >= 3 ) {
-					std::string direction = functionType.getParameters().at(0);
+				const std::vector<std::string>& params( functionType.getParameters() );
+
+				if ( Color::isColorString( params.at(0) ) ) {
+					rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(0) );
+					rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(1) );
+				} else if ( params.size() >= 3 ) {
+					std::string direction = params.at(0);
 					String::toLowerInPlace( direction );
 
 					if ( direction == "to bottom" ) {
-						rectColors.TopLeft = rectColors.TopRight = Color::fromString( functionType.getParameters().at(1) );
-						rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( functionType.getParameters().at(2) );
+						rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(1) );
+						rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(2) );
 					} else if ( direction == "to left" ) {
-						rectColors.TopLeft = rectColors.BottomLeft = Color::fromString( functionType.getParameters().at(2) );
-						rectColors.TopRight = rectColors.BottomRight = Color::fromString( functionType.getParameters().at(1) );
+						rectColors.TopLeft = rectColors.BottomLeft = Color::fromString( params.at(2) );
+						rectColors.TopRight = rectColors.BottomRight = Color::fromString( params.at(1) );
 					} else if ( direction == "to right" ) {
-						rectColors.TopLeft = rectColors.BottomLeft = Color::fromString( functionType.getParameters().at(1) );
-						rectColors.TopRight = rectColors.BottomRight = Color::fromString( functionType.getParameters().at(2) );
+						rectColors.TopLeft = rectColors.BottomLeft = Color::fromString( params.at(1) );
+						rectColors.TopRight = rectColors.BottomRight = Color::fromString( params.at(2) );
 					} else if ( direction == "to top" ) {
-						rectColors.TopLeft = rectColors.TopRight = Color::fromString( functionType.getParameters().at(2) );
-						rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( functionType.getParameters().at(1) );
+						rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(2) );
+						rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(1) );
 					} else {
-						rectColors.TopLeft = rectColors.TopRight = Color::fromString( functionType.getParameters().at(1) );
-						rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( functionType.getParameters().at(2) );
+						rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at(1) );
+						rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(2) );
 					}
 				} else {
-					return setAttribute( "backgroundcolor", functionType.getParameters().at(0) );
+					return setAttribute( "backgroundcolor", params.at(0) );
 				}
 
 				drawable->setRectColors( rectColors );
@@ -826,7 +828,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "foreground" == name ) {
 		Drawable * res = NULL;
 
-		if ( String::startsWith( attribute.getValue(), "#" ) ) {
+		if ( Color::isColorString( attribute.getValue() ) ) {
 			setAttribute( NodeAttribute( "foregroundcolor", attribute.getValue() ) );
 		} else if ( NULL != ( res = DrawableSearcher::searchByName( attribute.getValue() ) ) ) {
 			setForegroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
