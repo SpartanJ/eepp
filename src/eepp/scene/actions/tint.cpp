@@ -148,7 +148,7 @@ void Tint::onUpdate( const Time& ) {
 			}
 			case Skin:
 			{
-				widget->setSkinColor( widget->getStyleState(),
+				widget->setSkinColor(
 						Color( mInterpolationR.getPosition(),
 							  mInterpolationG.getPosition(),
 							  mInterpolationB.getPosition(),

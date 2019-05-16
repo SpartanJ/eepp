@@ -36,7 +36,8 @@ UINode::UINode() :
 	mBackgroundState( NULL ),
 	mForegroundState( NULL ),
 	mBorder( NULL ),
-	mDragButton( EE_BUTTON_LMASK )
+	mDragButton( EE_BUTTON_LMASK ),
+	mSkinColor( Color::White )
 {
 	mNodeFlags |= NODE_FLAG_UINODE | NODE_FLAG_OVER_FIND_ALLOWED;
 
@@ -258,6 +259,8 @@ void UINode::drawBox() {
 
 void UINode::drawSkin() {
 	if ( NULL != mSkinState ) {
+		mSkinState->setStateColor( mSkinState->getCurrentState(), mSkinColor );
+
 		if ( mFlags & UI_SKIN_KEEP_SIZE_ON_DRAW ) {
 			Sizef rSize = PixelDensity::dpToPx( getSkinSize( getSkin(), mSkinState->getCurrentState() ) );
 			Sizef diff = ( mSize - rSize ) * 0.5f;
@@ -703,26 +706,13 @@ UINode * UINode::setSkin( UISkin * skin ) {
 	return this;
 }
 
-UINode * UINode::setSkinColor( const Uint32& state, const Color& color ) {
-	if ( NULL != mSkinState  )
-		mSkinState->setStateColor( state, color );
-
+UINode * UINode::setSkinColor( const Color& color ) {
+	mSkinColor = color;
 	return this;
 }
 
-UINode * UINode::setSkinColor( const Color& color ) {
-	return setSkinColor( UIState::StateFlagNormal, color );
-}
-
-Color UINode::getSkinColor( const Uint32& state ) const {
-	if ( NULL != mSkinState )
-		return mSkinState->getStateColor( state );
-
-	return Color::White;
-}
-
-Color UINode::getSkinColor() const {
-	return getSkinColor( UIState::StateFlagNormal );
+const Color& UINode::getSkinColor() const {
+	return mSkinColor;
 }
 
 void UINode::removeSkin() {

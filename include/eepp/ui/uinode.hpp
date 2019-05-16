@@ -147,13 +147,9 @@ class EE_API UINode : public Node {
 
 		UINode * setSkin( UISkin * skin );
 
-		UINode * setSkinColor( const Uint32& state, const Color& color );
-
 		UINode * setSkinColor( const Color& color );
 
-		Color getSkinColor( const Uint32& state )const;
-
-		Color getSkinColor() const;
+		const Color& getSkinColor() const;
 
 		void removeSkin();
 
@@ -195,6 +191,7 @@ class EE_API UINode : public Node {
 		RectangleDrawable *	mBorder;
 		Vector2f		mDragPoint;
 		Uint32			mDragButton;
+		Color			mSkinColor;
 
 		virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 

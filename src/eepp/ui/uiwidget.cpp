@@ -559,12 +559,6 @@ void UIWidget::pushState( const Uint32& State, bool emitEvent ) {
 		if ( NULL != mSkinState )
 			mSkinState->pushState( State );
 
-		/*if ( NULL != mBackgroundState )
-			mBackgroundState->pushState( State );
-
-		if ( NULL != mForegroundState )
-			mForegroundState->pushState( State );*/
-
 		if ( NULL != mStyle ) {
 			updatePseudoClasses();
 			mStyle->pushState( State );
@@ -584,12 +578,6 @@ void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 
 		if ( NULL != mSkinState )
 			mSkinState->popState( State );
-
-		/*if ( NULL != mBackgroundState )
-			mBackgroundState->popState( State );
-
-		if ( NULL != mForegroundState )
-			mForegroundState->popState( State );*/
 
 		if ( NULL != mStyle ) {
 			updatePseudoClasses();
@@ -768,6 +756,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setBackgroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
 		}
 	} else if ( "backgroundcolor" == name ) {
+		SAVE_NORMAL_STATE_ATTR( getBackgroundColor().toHexString() );
+
 		Color color = attribute.asColor();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
@@ -834,6 +824,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setForegroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
 		}
 	} else if ( "foregroundcolor" == name ) {
+		SAVE_NORMAL_STATE_ATTR( getForegroundColor().toHexString() );
+
 		Color color = attribute.asColor();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
@@ -902,13 +894,13 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		mSkinName = attribute.asString();
 		setThemeSkin( mSkinName );
 	} else if ( "skincolor" == name ) {
-		SAVE_NORMAL_STATE_ATTR( getSkinColor( getStylePreviousState() ).toHexString() )
+		SAVE_NORMAL_STATE_ATTR( getSkinColor().toHexString() );
 
 		Color color = attribute.asColor();
 
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
-			Color start( getSkinColor( getStylePreviousState() ) );
+			Color start( getSkinColor() );
 
 			Action * action = Actions::Tint::New( start, color, true, transitionInfo.duration, transitionInfo.timingFunction, Actions::Tint::Skin );
 
@@ -917,7 +909,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 			runAction( action );
 		} else {
-			setSkinColor( state, color );
+			setSkinColor( color );
 		}
 	} else if ( "gravity" == name ) {
 		std::string gravity = attribute.asString();

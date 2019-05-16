@@ -94,7 +94,7 @@ Tooltip {
 	layout_marginLeft: 0;
 	padding: 24dp;
 	opacity: 0.8;
-	backgroundColor: #333;
+/*	backgroundColor: #333;*/
 	transition: all 0.25s;
 }
 
