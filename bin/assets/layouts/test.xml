@@ -47,7 +47,9 @@
 			</vbox>
 		</hbox>
 		<hbox id="test_2" layout_width="match_parent" layout_height="match_parent">
-			<TextView layout_width="match_parent" layout_height="match_parent" text="Hello World!" gravity="center" background="#333" textSize="24dp" borderRadius="128" />
+			<RelativeLayout id="rtest" layout_width="match_parent" layout_height="match_parent">
+					<TextView id="rttv" layout_width="wrap_content" layout_height="wrap_content" text="Hello World!" layout_gravity="center" />
+			</RelativeLayout>
 		</hbox>
 		
 		<Tab name="Padding Test" owns="test_1" />

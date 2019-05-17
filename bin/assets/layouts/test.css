@@ -150,3 +150,24 @@ Tooltip {
 #pbut:hover {
 	skinColor: #66ff44;
 }
+
+
+#rtest {
+	padding: 8dp;
+	background: #221122;
+}
+
+#rttv {
+	background:#333;
+	textSize: 24dp;
+	borderRadius: 8;
+}
+
+#rttv:hover {
+	background:#666;
+	textColor: #333;
+}
+
+#rtest:hover #rttv {
+	background:#005522;
+}

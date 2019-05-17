@@ -215,7 +215,7 @@ void UILinearLayout::packHorizontal() {
 				{
 					int h = mDpSize.getHeight() - widget->getLayoutMargin().Top - widget->getLayoutMargin().Bottom - mPadding.Top - mPadding.Bottom;
 
-					if ( h != widget->getSize().getHeight() )
+					if ( h != (int)widget->getSize().getHeight() )
 						widget->setSize( widget->getSize().getWidth(), h );
 
 					break;

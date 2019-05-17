@@ -29,7 +29,7 @@ UISceneNode::UISceneNode( EE::Window::Window * window ) :
 }
 
 void UISceneNode::resizeControl( EE::Window::Window * ) {
-	setSize( (Float)mWindow->getWidth() / PixelDensity::getPixelDensity(), (Float)mWindow->getHeight() / PixelDensity::getPixelDensity() );
+	setSize( eefloor( mWindow->getWidth() / PixelDensity::getPixelDensity() ), eefloor(mWindow->getHeight() / PixelDensity::getPixelDensity()) );
 	sendMsg( this, NodeMessage::WindowResize );
 }
 
