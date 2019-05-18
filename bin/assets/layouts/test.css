@@ -157,13 +157,13 @@ Tooltip {
 	background: #221122;
 }
 
-#rttv {
+#rtest #rttv {
 	background:#333;
 	textSize: 24dp;
 	borderRadius: 8;
 }
 
-#rttv:hover {
+#rtest #rttv:hover {
 	background:#666;
 	textColor: #333;
 }
