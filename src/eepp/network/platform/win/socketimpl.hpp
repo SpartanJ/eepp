@@ -5,6 +5,8 @@
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
+#include <eepp/system/time.hpp>
+
 #ifdef _WIN32_WINDOWS
 	#undef _WIN32_WINDOWS
 #endif
@@ -16,6 +18,8 @@
 #include <eepp/network/socket.hpp>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+
+using namespace EE::System;
 
 namespace EE { namespace Network { namespace Private {
 
