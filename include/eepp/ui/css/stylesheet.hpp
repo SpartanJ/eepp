@@ -27,10 +27,6 @@ class EE_API StyleSheet {
 
 		StyleSheetStyleVector getElementStyles( StyleSheetElement * element, const bool& applyPseudo = false );
 
-		StyleSheetStyleVector getCacheableElementStyles( StyleSheetElement * element, const bool& applyPseudo = false );
-
-		StyleSheetStyleVector getNoncacheableElementStyles( StyleSheetElement * element, const bool& applyPseudo = false );
-
 		const StyleSheetStyleList& getStyles() const;
 	protected:
 		StyleSheetStyleList mNodes;

@@ -8,7 +8,7 @@ using namespace EE::UI::CSS;
 
 namespace EE { namespace UI {
 
-UIStyle * EE::UI::UIStyle::New( UIWidget * widget ) {
+UIStyle * UIStyle::New( UIWidget * widget ) {
 	return eeNew( UIStyle, ( widget ) );
 }
 
@@ -53,8 +53,17 @@ void UIStyle::load() {
 		CSS::StyleSheet& styleSheet = uiSceneNode->getStyleSheet();
 
 		if ( !styleSheet.isEmpty() ) {
-			mCacheableStyles = styleSheet.getCacheableElementStyles( mWidget );
-			mNoncacheableStyles = styleSheet.getNoncacheableElementStyles( mWidget );
+			StyleSheetStyleVector styles = styleSheet.getElementStyles( mWidget );
+
+			for ( auto& style : styles ) {
+				const StyleSheetSelector& selector = style.getSelector();
+
+				if ( selector.isCacheable() ) {
+					mCacheableStyles.push_back( style );
+				} else {
+					mNoncacheableStyles.push_back( style );
+				}
+			}
 		}
 	}
 }
