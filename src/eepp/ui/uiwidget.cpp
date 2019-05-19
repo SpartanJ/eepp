@@ -24,7 +24,7 @@ UIWidget::UIWidget( const std::string & tag ) :
 	UINode(),
 	mTag( tag ),
 	mTheme( NULL ),
-	mStyle( UIStyle::New( this ) ),
+	mStyle( NULL ),
 	mTooltip( NULL ),
 	mMinControlSize(),
 	mLayoutWeight(0),
@@ -312,7 +312,7 @@ Node * UIWidget::setSize( const Float& Width, const Float& Height ) {
 Node * UIWidget::setId( const std::string& id ) {
 	Node::setId( id );
 
-	reloadStyle( false );
+	reloadStyle( true );
 
 	return this;
 }
@@ -510,7 +510,7 @@ void UIWidget::addClass( const std::string& cls ) {
 	if ( !cls.empty() && !containsClass( cls ) ) {
 		mClasses.push_back( cls );
 
-		reloadStyle( false );
+		reloadStyle( true );
 	}
 }
 
@@ -524,7 +524,7 @@ void UIWidget::addClasses( const std::vector<std::string>& classes ) {
 			}
 		}
 
-		reloadStyle( false );
+		reloadStyle( true );
 	}
 }
 
@@ -532,7 +532,7 @@ void UIWidget::removeClass( const std::string& cls ) {
 	if ( containsClass( cls ) ) {
 		mClasses.erase( std::find( mClasses.begin(), mClasses.end(), cls ) );
 
-		reloadStyle( false );
+		reloadStyle( true );
 	}
 }
 
@@ -544,7 +544,7 @@ void UIWidget::setElementTag( const std::string& tag ) {
 	if ( mTag != tag ) {
 		mTag = tag;
 
-		reloadStyle( false );
+		reloadStyle( true );
 	}
 }
 
@@ -611,7 +611,7 @@ void UIWidget::reloadStyle( const bool& reloadChilds ) {
 
 			while ( NULL != ChildLoop ) {
 				if ( ChildLoop->isWidget() )
-					static_cast<UIWidget*>( ChildLoop )->reloadStyle();
+					static_cast<UIWidget*>( ChildLoop )->reloadStyle( reloadChilds );
 
 				ChildLoop = ChildLoop->getNextNode();
 			}
@@ -625,6 +625,10 @@ void UIWidget::onPaddingChange() {
 
 void UIWidget::onThemeLoaded() {
 	reportStyleStateChange();
+}
+
+void UIWidget::onParentChange() {
+	reloadStyle( true );
 }
 
 void UIWidget::beginAttributesTransaction() {
@@ -750,7 +754,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "background" == name ) {
 		Drawable * res = NULL;
 
-		if ( String::startsWith( attribute.getValue(), "#" ) ) {
+		if ( Color::isColorString( attribute.getValue() ) ) {
 			setAttribute( NodeAttribute( "backgroundcolor", attribute.getValue() ) );
 		} else if ( NULL != ( res = DrawableSearcher::searchByName( attribute.getValue() ) ) ) {
 			setBackgroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );

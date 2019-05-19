@@ -206,4 +206,113 @@ bool StyleSheetSelector::select( StyleSheetElement * element, const bool& applyP
 	return true;
 }
 
+std::vector<StyleSheetElement*> StyleSheetSelector::getRelatedElements( StyleSheetElement * element, const bool& applyPseudo ) const {
+	static std::vector<StyleSheetElement*> EMPTY_ELEMENTS;
+	std::vector<StyleSheetElement*> elements;
+	if ( mSelectorRules.empty() )
+		return elements;
+
+	StyleSheetElement * curElement = element;
+
+	for ( size_t i = 0; i < mSelectorRules.size(); i++ ) {
+		const StyleSheetSelectorRule& selectorRule = mSelectorRules[i];
+
+		switch ( selectorRule.getPatternMatch() ) {
+			case StyleSheetSelectorRule::ANY:
+			{
+				if ( !selectorRule.matches( curElement, applyPseudo ) )
+					return EMPTY_ELEMENTS;
+
+				break; // continue evaluating
+			}
+			case StyleSheetSelectorRule::DESCENDANT:
+			{
+				bool foundDescendant = false;
+
+				curElement = curElement->getStyleSheetParentElement();
+
+				while ( NULL != curElement && !foundDescendant ) {
+					if  ( selectorRule.matches( curElement, applyPseudo ) ) {
+						foundDescendant = true;
+					} else {
+						curElement = curElement->getStyleSheetParentElement();
+					}
+				}
+
+				if ( !foundDescendant )
+					return EMPTY_ELEMENTS;
+
+				if ( 0 != i && ( selectorRule.hasPseudoClasses() || selectorRule.hasStructuralPseudoClasses() ) ) {
+					elements.push_back( curElement );
+				}
+
+				break; // continue evaluating
+			}
+			case StyleSheetSelectorRule::CHILD:
+			{
+				curElement = curElement->getStyleSheetParentElement();
+
+				if ( NULL == curElement || !selectorRule.matches( curElement, applyPseudo ) )
+					return EMPTY_ELEMENTS;
+
+				if ( 0 != i && ( selectorRule.hasPseudoClasses() || selectorRule.hasStructuralPseudoClasses() ) ) {
+					elements.push_back( curElement );
+				}
+
+				break; // continue evaluating
+			}
+			case StyleSheetSelectorRule::DIRECT_SIBLING:
+			{
+				curElement = curElement->getStyleSheetPreviousSiblingElement();
+
+				if ( NULL == curElement || !selectorRule.matches( curElement, applyPseudo ) )
+					return EMPTY_ELEMENTS;
+
+				if ( 0 != i && ( selectorRule.hasPseudoClasses() || selectorRule.hasStructuralPseudoClasses() ) ) {
+					elements.push_back( curElement );
+				}
+
+				break; // continue evaluating
+			}
+			case StyleSheetSelectorRule::SIBLING:
+			{
+				bool foundSibling = false;
+				StyleSheetElement * prevSibling = curElement->getStyleSheetPreviousSiblingElement();
+				StyleSheetElement * nextSibling = curElement->getStyleSheetNextSiblingElement();
+
+				while ( NULL != prevSibling && !foundSibling ) {
+					if ( selectorRule.matches( prevSibling, applyPseudo ) ) {
+						foundSibling = true;
+						curElement = prevSibling;
+					} else {
+						prevSibling = prevSibling->getStyleSheetPreviousSiblingElement();
+					}
+				}
+
+				if ( !foundSibling ) {
+					while ( NULL != nextSibling && !foundSibling ) {
+						if ( selectorRule.matches( nextSibling, applyPseudo ) ) {
+							foundSibling = true;
+							curElement = nextSibling;
+						} else {
+							nextSibling = nextSibling->getStyleSheetNextSiblingElement();
+						}
+					}
+				}
+
+				if ( !foundSibling )
+					return EMPTY_ELEMENTS;
+
+				if ( 0 != i && ( selectorRule.hasPseudoClasses() || selectorRule.hasStructuralPseudoClasses() ) ) {
+					elements.push_back( curElement );
+				}
+
+				break; // continue evaluating
+			}
+		}
+	}
+
+	return elements;
+}
+
 }}}

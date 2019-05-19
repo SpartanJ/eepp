@@ -7,23 +7,25 @@
 
 namespace EE { namespace System {
 
-const Color Color::Transparent = Color(0,0,0,0);
-const Color Color::White = Color(255,255,255);
-const Color Color::Black = Color(0,0,0);
-const Color Color::Red = Color(255,0,0);
-const Color Color::Green = Color(0,255,0);
-const Color Color::Blue = Color(0,0,255);
-const Color Color::Yellow = Color(255,255,0);
-const Color Color::Cyan = Color(0,255,255);
-const Color Color::Magenta = Color(255,0,255);
-const Color Color::Silver = Color(192,0,192);
-const Color Color::Gray = Color(128,128,128);
-const Color Color::Maroon = Color(128,0,0);
-const Color Color::Olive = Color(128,128,0);
-const Color Color::OfficeGreen = Color(0,128,0);
-const Color Color::Purple = Color(128,0,128);
-const Color Color::Teal = Color(0,128,128);
-const Color Color::Navy = Color(0,0,128);
+// @TODO: Support all CSS3 color keywords.
+// Reference: https://www.w3.org/TR/2018/REC-css-color-3-20180619/
+const Color Color::Transparent = Color(0x00000000);
+const Color Color::Black = Color(0x000000FF);
+const Color Color::Silver = Color(0xC0C0C0FF);
+const Color Color::Gray = Color(0x808080FF);
+const Color Color::White = Color(0xFFFFFFFF);
+const Color Color::Maroon = Color(0x800000FF);
+const Color Color::Red = Color(0xFF0000FF);
+const Color Color::Purple = Color(0x800080FF);
+const Color Color::Fuchsia = Color(0xFF00FFFF);
+const Color Color::Green = Color(0x008000FF);
+const Color Color::Lime = Color(0x00FF00FF);
+const Color Color::Olive = Color(0x808000FF);
+const Color Color::Yellow = Color(0xFFFF00FF);
+const Color Color::Navy = Color(0x000080FF);
+const Color Color::Blue = Color(0x0000FFFF);
+const Color Color::Teal = Color(0x008080FF);
+const Color Color::Aqua = Color(0x00FFFFFF);
 
 RGB::RGB() : tRGB<Uint8>()
 {
@@ -303,22 +305,22 @@ Color Color::fromString( std::string str ) {
 	} else if ( size >= 3 && isalpha( str[0] ) && isalpha( str[1] ) && isalpha( str[2] ) ) {
 		String::toLowerInPlace( str );
 		if ( "transparent" == str )			return Color::Transparent;
-		else if ( "white" == str )			return Color::White;
 		else if ( "black" == str )			return Color::Black;
-		else if ( "red" == str )			return Color::Red;
-		else if ( "green" == str )			return Color::Green;
-		else if ( "blue" == str )			return Color::Blue;
-		else if ( "yellow" == str )			return Color::Yellow;
-		else if ( "cyan" == str )			return Color::Cyan;
-		else if ( "magenta" == str )		return Color::Magenta;
 		else if ( "silver" == str )			return Color::Silver;
 		else if ( "gray" == str )			return Color::Gray;
+		else if ( "white" == str )			return Color::White;
 		else if ( "maroon" == str )			return Color::Maroon;
-		else if ( "olive" == str )			return Color::Olive;
-		else if ( "officegreen" == str )	return Color::OfficeGreen;
+		else if ( "red" == str )			return Color::Red;
 		else if ( "purple" == str )			return Color::Purple;
-		else if ( "teal" == str )			return Color::Teal;
+		else if ( "fuchsia" == str )		return Color::Fuchsia;
+		else if ( "green" == str )			return Color::Green;
+		else if ( "lime" == str )			return Color::Lime;
+		else if ( "olive" == str )			return Color::Olive;
+		else if ( "yellow" == str )			return Color::Yellow;
 		else if ( "navy" == str )			return Color::Navy;
+		else if ( "blue" == str )			return Color::Blue;
+		else if ( "teal" == str )			return Color::Teal;
+		else if ( "aqua" == str )			return Color::Aqua;
 	}
 
 	if ( size < 6 ) {
@@ -343,22 +345,22 @@ bool Color::isColorString( std::string str ) {
 
 	String::toLowerInPlace( str );
 	if ( "transparent" == str )			return true;
-	else if ( "white" == str )			return true;
 	else if ( "black" == str )			return true;
-	else if ( "red" == str )			return true;
-	else if ( "green" == str )			return true;
-	else if ( "blue" == str )			return true;
-	else if ( "yellow" == str )			return true;
-	else if ( "cyan" == str )			return true;
-	else if ( "magenta" == str )		return true;
 	else if ( "silver" == str )			return true;
 	else if ( "gray" == str )			return true;
+	else if ( "white" == str )			return true;
 	else if ( "maroon" == str )			return true;
-	else if ( "olive" == str )			return true;
-	else if ( "officegreen" == str )	return true;
+	else if ( "red" == str )			return true;
 	else if ( "purple" == str )			return true;
-	else if ( "teal" == str )			return true;
+	else if ( "fuchsia" == str )		return true;
+	else if ( "green" == str )			return true;
+	else if ( "lime" == str )			return true;
+	else if ( "olive" == str )			return true;
+	else if ( "yellow" == str )			return true;
 	else if ( "navy" == str )			return true;
+	else if ( "blue" == str )			return true;
+	else if ( "teal" == str )			return true;
+	else if ( "aqua" == str )			return true;
 
 	return false;
 }

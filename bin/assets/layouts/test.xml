@@ -51,8 +51,16 @@
 					<TextView id="rttv" layout_width="wrap_content" layout_height="wrap_content" text="Hello World!" layout_gravity="center" />
 			</RelativeLayout>
 		</hbox>
+		<hbox id="test_3" layout_width="match_parent" layout_height="match_parent">
+			<RelativeLayout class="rooter" layout_width="300dp" layout_height="300dp">
+				<RelativeLayout class="outer" layout_width="100dp" layout_height="100dp">
+					<RelativeLayout class="inner" layout_width="50dp" layout_height="50dp"></RelativeLayout>
+				</RelativeLayout>
+			</RelativeLayout>
+		</hbox>
 		
 		<Tab name="Padding Test" owns="test_1" />
 		<Tab name="Tabs Test" owns="test_2" />
+		<Tab name="Cascade Test" owns="test_3" />
 	</TabWidget>
 </vbox>

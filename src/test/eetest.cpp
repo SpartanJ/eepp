@@ -1394,7 +1394,7 @@ void EETest::screen2() {
 	polygon.rotate( ang , polygon.getBounds().getCenter() );
 	shape.setPolygon( polygon );
 	shape.setPosition( Vector2f( 150, 150 ));
-	shape.setColor( Color::Magenta );
+	shape.setColor( Color::Fuchsia );
 	shape.setAlpha( 100 );
 	shape.draw();
 

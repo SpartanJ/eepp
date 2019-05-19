@@ -7,6 +7,8 @@
 #include <eepp/ui/css/stylesheetstyle.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
 #include <eepp/math/ease.hpp>
+#include <set>
+#include <functional>
 
 using namespace EE::Scene;
 
@@ -76,12 +78,26 @@ class EE_API UIStyle : public UIState {
 		CSS::StyleSheetProperties mProperties;
 		std::vector<CSS::StyleSheetProperty> mTransitionAttributes;
 		TransitionsMap mTransitions;
+		std::set<UIWidget*> mRelatedWidgets;
+		std::set<UIWidget*> mSubscribedWidgets;
 
 		void tryApplyStyle( const CSS::StyleSheetStyle& style );
 
 		void updateState();
 
 		void parseTransitions();
+
+		void subscribeNonCacheableStyles();
+
+		void unsubscribeNonCacheableStyles();
+
+		void subscribeRelated( UIWidget * widget );
+
+		void unsubscribeRelated( UIWidget * widget );
+
+		void removeFromSubscribedWidgets( UIWidget * widget );
+
+		void removeRelatedWidgets();
 };
 
 }}

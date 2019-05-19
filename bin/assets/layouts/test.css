@@ -151,23 +151,65 @@ Tooltip {
 	skinColor: #66ff44;
 }
 
-
-#rtest {
+#test_2 > #rtest {
 	padding: 8dp;
 	background: #221122;
 }
 
-#rtest #rttv {
-	background:#333;
+#test_2 > #rtest #rttv {
+	background: #333;
 	textSize: 24dp;
 	borderRadius: 8;
+	padding: 8dp;
+	transition: all 0.125s;
 }
 
-#rtest #rttv:hover {
-	background:#666;
+#test_2 > #rtest #rttv:hover {
+	background: #666;
+}
+
+#test_2 > #rtest:hover #rttv {
+	background: #005522;
+}
+
+#test_2 > #rtest:hover #rttv:hover {
+	background: #008822;
+}
+
+#test_2 > #rtest:hover #rttv:pressed {
+	background: lime;
 	textColor: #333;
 }
 
-#rtest:hover #rttv {
-	background:#005522;
+#test_3 {
+	background: #221122;
 }
+
+#test_3 > .rooter {
+	background: red;
+}
+
+#test_3 > .rooter .outer {
+	background: blue;
+}
+
+#test_3 > .rooter:hover .outer {
+	background: green;
+}
+
+#test_3 > .rooter:hover .outer:hover {
+	background: yellow;
+}
+
+#test_3 > .rooter .inner {
+	background: #123456;
+}
+
+#test_3 > .rooter:hover .outer:hover .inner {
+	background: #DABA22;
+}
+
+#test_3 > .rooter:hover .outer:hover .inner:hover {
+	background: #CCC;
+}
+

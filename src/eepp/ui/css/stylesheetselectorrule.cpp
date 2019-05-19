@@ -242,8 +242,8 @@ bool StyleSheetSelectorRule::matches( StyleSheetElement * element, const bool& a
 
 	if ( !mClasses.empty() && !element->getStyleSheetClasses().empty() ) {
 		bool hasClasses = true;
-		for ( auto cit = element->getStyleSheetClasses().begin(); cit != element->getStyleSheetClasses().end(); ++cit ) {
-			if ( !hasClass( *cit ) ) {
+		for ( const auto& cls : element->getStyleSheetClasses() ) {
+			if ( !hasClass( cls ) ) {
 				hasClasses = false;
 				break;
 			}
@@ -259,8 +259,8 @@ bool StyleSheetSelectorRule::matches( StyleSheetElement * element, const bool& a
 			bool hasPseudoClasses = false;
 			const std::vector<std::string>& elPseudoClasses = element->getStyleSheetPseudoClasses();
 
-			for ( auto cit = elPseudoClasses.begin(); cit != elPseudoClasses.end(); ++cit ) {
-				if ( hasPseudoClass( *cit ) ) {
+			for ( const auto& cls : elPseudoClasses ) {
+				if ( hasPseudoClass( cls ) ) {
 					hasPseudoClasses = true;
 					break;
 				}

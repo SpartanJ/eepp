@@ -18,8 +18,10 @@ UIStyle::UIStyle( UIWidget * widget ) :
 	load();
 }
 
-UIStyle::~UIStyle()
-{}
+UIStyle::~UIStyle() {
+	removeRelatedWidgets();
+	unsubscribeNonCacheableStyles();
+}
 
 bool UIStyle::stateExists( const EE::Uint32&  ) const {
 	return true;
@@ -44,6 +46,8 @@ void UIStyle::addStyleSheetProperty( const StyleSheetProperty& attribute ) {
 }
 
 void UIStyle::load() {
+	unsubscribeNonCacheableStyles();
+
 	mCacheableStyles.clear();
 	mNoncacheableStyles.clear();
 
@@ -64,6 +68,8 @@ void UIStyle::load() {
 					mNoncacheableStyles.push_back( style );
 				}
 			}
+
+			subscribeNonCacheableStyles();
 		}
 	}
 }
@@ -90,6 +96,14 @@ UIStyle::TransitionInfo UIStyle::getTransition( const std::string& propertyName 
 	}
 
 	return TransitionInfo();
+}
+
+void UIStyle::subscribeRelated( UIWidget * widget ) {
+	mRelatedWidgets.insert( widget );
+}
+
+void UIStyle::unsubscribeRelated( UIWidget * widget ) {
+	mRelatedWidgets.erase( widget );
 }
 
 void UIStyle::tryApplyStyle( const StyleSheetStyle& style ) {
@@ -134,6 +148,12 @@ void UIStyle::onStateChange() {
 		}
 
 		mWidget->endAttributesTransaction();
+
+		for ( auto& related : mRelatedWidgets ) {
+			if ( NULL != related->getUIStyle() ) {
+				related->getUIStyle()->onStateChange();
+			}
+		}
 	}
 }
 
@@ -187,6 +207,48 @@ void UIStyle::updateState() {
 	}
 
 	onStateChange();
+}
+
+void UIStyle::subscribeNonCacheableStyles() {
+	for ( auto& style : mNoncacheableStyles ) {
+		std::vector<CSS::StyleSheetElement*> elements = style.getSelector().getRelatedElements( mWidget, false );
+
+		if ( !elements.empty() ) {
+			for ( auto& element : elements ) {
+				UIWidget * widget = dynamic_cast<UIWidget*>( element );
+
+				if ( NULL != widget && NULL != widget->getUIStyle() ) {
+					widget->getUIStyle()->subscribeRelated( mWidget );
+
+					mSubscribedWidgets.insert( widget );
+				}
+			}
+		}
+	}
+}
+
+void UIStyle::unsubscribeNonCacheableStyles() {
+	for ( auto& widget : mSubscribedWidgets ) {
+		if ( NULL != widget->getUIStyle() ) {
+			widget->getUIStyle()->unsubscribeRelated( mWidget );
+		}
+	}
+
+	mSubscribedWidgets.clear();
+}
+
+void UIStyle::removeFromSubscribedWidgets( UIWidget * widget ) {
+	mSubscribedWidgets.erase( widget );
+}
+
+void UIStyle::removeRelatedWidgets() {
+	for ( auto& widget : mRelatedWidgets ) {
+		if ( NULL != widget->getUIStyle() ) {
+			widget->getUIStyle()->removeFromSubscribedWidgets( mWidget );
+		}
+	}
+
+	mRelatedWidgets.clear();
 }
 
 void UIStyle::parseTransitions() {

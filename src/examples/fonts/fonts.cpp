@@ -94,7 +94,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		text4.setFillColor( Color::Black );
 
 		fontSprite = FontSprite::New( "alagard" ); // Alagard - Hewett Tsoi ( https://www.dafont.com/alagard.font )
-		fontSprite->loadFromFile( "assets/fonts/custom_alagard.png", Color::Magenta, 32, -4 );
+		fontSprite->loadFromFile( "assets/fonts/custom_alagard.png", Color::Fuchsia, 32, -4 );
 
 		text5.setFont( fontSprite );
 		text5.setString( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );

@@ -191,6 +191,8 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 
 		virtual void onThemeLoaded();
 
+		virtual void onParentChange();
+
 		void updateAnchors( const Vector2f & SizeChange );
 
 		void alignAgainstLayout();
