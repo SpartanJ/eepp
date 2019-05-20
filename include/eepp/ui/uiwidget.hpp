@@ -200,6 +200,16 @@ class EE_API UIWidget : public UINode, public CSS::StyleSheetElement {
 		void reportStyleStateChange();
 
 		bool isSceneNodeLoading() const;
+
+		std::string getLayoutWidthRulesString() const;
+
+		std::string getLayoutHeightRulesString() const;
+
+		std::string getLayoutGravityString() const;
+
+		std::string getGravityString() const;
+
+		std::string getFlagsString() const;
 };
 
 }}

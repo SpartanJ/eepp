@@ -657,10 +657,10 @@ bool UIWidget::setAttribute( const std::string& name, const std::string& value, 
 
 #define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED ) \
 	if ( state != UIState::StateFlagNormal ) { \
-	CSS::StyleSheetProperty oldAttribute = mStyle->getStatelessStyleSheetProperty( attribute.getName() ); \
-	if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) \
-		mStyle->addStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
-	} \
+		CSS::StyleSheetProperty oldAttribute = mStyle->getStatelessStyleSheetProperty( attribute.getName() ); \
+		if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) \
+			mStyle->addStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
+	}
 
 bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();
@@ -779,6 +779,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		}
 	} else if ( "backgroundimage" == name ) {
 		NodeAttribute::FunctionType functionType = NodeAttribute::FunctionType::parse( attribute.getValue() );
+		Drawable * res = NULL;
 
 		if ( !functionType.isEmpty() ) {
 			if ( functionType.getName() == "linear-gradient" && functionType.getParameters().size() >= 2 ) {
@@ -818,6 +819,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 				setBackgroundDrawable( drawable, true );
 			}
+		} else if ( NULL != ( res = DrawableSearcher::searchByName( attribute.getValue() ) ) ) {
+			setBackgroundDrawable( res, res->getDrawableType() == Drawable::SPRITE );
 		}
 	} else if ( "foreground" == name ) {
 		Drawable * res = NULL;
@@ -846,6 +849,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setForegroundColor( color );
 		}
 	} else if ( "foregroundradius" == name ) {
+		SAVE_NORMAL_STATE_ATTR( String::toStr( getForegroundRadius() ) );
+
 		setForegroundRadius( attribute.asUint() );
 	} else if ( "bordercolor" == name ) {
 		SAVE_NORMAL_STATE_ATTR( getBorderColor().toHexString() )
@@ -866,6 +871,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setBorderColor( color );
 		}
 	} else if ( "borderwidth" == name ) {
+		SAVE_NORMAL_STATE_ATTR( String::toStr( getBorderWidth() ) );
+
 		setBorderWidth( attribute.asDpDimensionI("1") );
 	} else if ( "borderradius" == name ) {
 		SAVE_NORMAL_STATE_ATTR( String::format( "%d", getBorderRadius() ) );
@@ -886,15 +893,23 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setBorderRadius( attribute.asUint() );
 		}
 	} else if ( "visible" == name ) {
+		SAVE_NORMAL_STATE_ATTR( isVisible() ? "true" : "false" );
+
 		setVisible( attribute.asBool() );
 	} else if ( "enabled" == name ) {
+		SAVE_NORMAL_STATE_ATTR( isEnabled() ? "true" : "false" );
+
 		setEnabled( attribute.asBool() );
 	} else if ( "theme" == name ) {
+		if ( NULL != mTheme )
+			SAVE_NORMAL_STATE_ATTR( mTheme->getName() );
+
 		setThemeByName( attribute.asString() );
 
 		if ( !mSkinName.empty() )
 			setThemeSkin( mSkinName );
 	} else if ( "skin" == name ) {
+		SAVE_NORMAL_STATE_ATTR( mSkinName );
 		mSkinName = attribute.asString();
 		setThemeSkin( mSkinName );
 	} else if ( "skincolor" == name ) {
@@ -946,6 +961,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			notifyLayoutAttrChange();
 		}
 	} else if ( "flags" == name ) {
+		SAVE_NORMAL_STATE_ATTR( getFlagsString() );
+
 		std::string flags = attribute.asString();
 		String::toLowerInPlace( flags );
 		std::vector<std::string> strings = String::split( flags, '|' );
@@ -971,6 +988,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			}
 		}
 	} else if ( String::startsWith( name, "layout_margin" ) ) {
+		SAVE_NORMAL_STATE_ATTR( String::format( "%d %d %d %d", mLayoutMargin.Left, mLayoutMargin.Top, mLayoutMargin.Right, mLayoutMargin.Bottom ) );
+
 		Rect margin;
 		Uint32 marginFlag = 0;
 
@@ -1020,8 +1039,12 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 	} else if ( "tooltip" == name ) {
 		setTooltipText( attribute.asString() );
 	} else if ( "layout_weight" == name ) {
+		SAVE_NORMAL_STATE_ATTR( String::toStr( getLayoutWeight() ) );
+
 		setLayoutWeight( attribute.asFloat() );
 	} else if ( "layout_gravity" == name ) {
+		SAVE_NORMAL_STATE_ATTR( getLayoutGravityString() );
+
 		std::string gravityStr = attribute.asString();
 		String::toLowerInPlace( gravityStr );
 		std::vector<std::string> strings = String::split( gravityStr, '|' );
@@ -1052,6 +1075,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setLayoutGravity( gravity );
 		}
 	} else if ( "layout_width" == name ) {
+		SAVE_NORMAL_STATE_ATTR( getLayoutWidthRulesString() );
+
 		std::string val = attribute.asString();
 		String::toLowerInPlace( val );
 
@@ -1069,6 +1094,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			onSizeChange();
 		}
 	} else if ( "layout_height" == name ) {
+		SAVE_NORMAL_STATE_ATTR( getLayoutHeightRulesString() );
+
 		std::string val = attribute.asString();
 		String::toLowerInPlace( val );
 
@@ -1086,6 +1113,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			onSizeChange();
 		}
 	} else if ( String::startsWith( name, "layout_to_" ) || String::startsWith( name, "layoutto" ) ) {
+		// @TODO: SAVE_NORMAL_STATE_ATTR
+
 		LayoutPositionRules rule = NONE;
 		if ( "layout_to_left_of" == name || "layouttoleftof" == name ) rule = LEFT_OF;
 		else if ( "layout_to_right_of" == name || "layouttorightof" == name ) rule = RIGHT_OF;
@@ -1102,6 +1131,8 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setLayoutPositionRule( rule, widget );
 		}
 	} else if ( "clip" == name ) {
+		SAVE_NORMAL_STATE_ATTR( isClipped() ? "true" : "false" );
+
 		if ( attribute.asBool() )
 			clipEnable();
 		else
@@ -1137,18 +1168,23 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 			setScale( attribute.asVector2f() );
 		}
 	} else if ( "rotationoriginpoint" == name ) {
+		SAVE_NORMAL_STATE_ATTR( getRotationOriginPoint().toString() );
+
 		setRotationOriginPoint( attribute.asOriginPoint() );
 	} else if ( "scaleoriginpoint" == name ) {
+		SAVE_NORMAL_STATE_ATTR( getScaleOriginPoint().toString() );
+
 		setScaleOriginPoint( attribute.asOriginPoint() );
 	} else if ( "blendmode" == name ) {
+		// @TODO: SAVE_NORMAL_STATE_ATTR
 		setBlendMode( attribute.asBlendMode() );
 	} else if ( String::startsWith( name, "padding" ) ) {
+		SAVE_NORMAL_STATE_ATTR( String::format( "%2.f %2.f %2.f %2.f", mPadding.Left, mPadding.Top, mPadding.Right, mPadding.Bottom ) );
+
 		Rectf padding;
 		Uint32 paddingFlag = 0;
 
 		if ( "padding" == name ) {
-			SAVE_NORMAL_STATE_ATTR( String::format( "%2.f %2.f %2.f %2.f", mPadding.Left, mPadding.Top, mPadding.Right, mPadding.Bottom ) )
-
 			padding = ( attribute.asRectf() );
 			paddingFlag = Actions::PaddingTransition::All;
 		} else if ( "paddingleft" == name ) {
@@ -1210,6 +1246,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		}
 	} else if ( "cursor" == name ) {
 		SAVE_NORMAL_STATE_ATTR( "arrow" );
+
 		mSceneNode->setCursor( Cursor::fromName( attribute.getValue() ) );
 	} else {
 		attributeSet = false;
@@ -1226,6 +1263,64 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 	}
 
 	endAttributesTransaction();
+}
+
+std::string UIWidget::getLayoutWidthRulesString() const {
+	LayoutSizeRules rules = getLayoutWidthRules();
+
+	if ( rules == LayoutSizeRules::MATCH_PARENT ) return "match_parent";
+	else if ( rules == LayoutSizeRules::WRAP_CONTENT ) return "wrap_content";
+	return String::toStr( getSize().getHeight() ) + "dp";
+}
+
+std::string UIWidget::getLayoutHeightRulesString() const {
+	LayoutSizeRules rules = getLayoutHeightRules();
+
+	if ( rules == LayoutSizeRules::MATCH_PARENT ) return "match_parent";
+	else if ( rules == LayoutSizeRules::WRAP_CONTENT ) return "wrap_content";
+	return String::toStr( getSize().getHeight() ) + "dp";
+}
+
+static std::string getGravityStringFromUint( const Uint32& gravity ) {
+	std::vector<std::string> gravec;
+
+	if ( HAlignGet( gravity ) == UI_HALIGN_RIGHT ) {
+		gravec.push_back( "right" );
+	} else if ( HAlignGet( gravity ) == UI_HALIGN_CENTER ) {
+		gravec.push_back( "center_horizontal" );
+	} else {
+		gravec.push_back( "left" );
+	}
+
+	if ( VAlignGet( gravity ) == UI_VALIGN_BOTTOM ) {
+		gravec.push_back( "bottom" );
+	} else if ( VAlignGet( gravity ) == UI_VALIGN_CENTER ) {
+		gravec.push_back( "center_vertical" );
+	} else {
+		gravec.push_back( "top" );
+	}
+
+	return String::join( gravec, '|' );
+}
+
+std::string UIWidget::getLayoutGravityString() const {
+	return getGravityStringFromUint( getLayoutGravity() );
+}
+
+std::string UIWidget::getGravityString() const {
+	return getGravityStringFromUint( getHorizontalAlign() | getVerticalAlign() );
+}
+
+std::string UIWidget::getFlagsString() const {
+	std::vector<std::string> flagvec;
+
+	if ( mFlags & UI_AUTO_SIZE ) flagvec.push_back( "autosize" );
+	if ( mFlags & UI_MULTI_SELECT ) flagvec.push_back( "multi" );
+	if ( mFlags & UI_AUTO_PADDING ) flagvec.push_back( "autopadding" );
+	if ( reportSizeChangeToChilds() ) flagvec.push_back( "reportsizechangetochilds" );
+	if ( isClipped() ) flagvec.push_back( "clip" );
+
+	return String::join( flagvec, '|' );
 }
 
 }}

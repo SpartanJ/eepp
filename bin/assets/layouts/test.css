@@ -207,9 +207,31 @@ Tooltip {
 
 #test_3 > .rooter:hover .outer:hover .inner {
 	background: #DABA22;
+	layout_marginLeft: 16dp;
 }
 
 #test_3 > .rooter:hover .outer:hover .inner:hover {
 	background: #CCC;
 }
 
+#test_4 {
+	backgroundColor: #221122;
+}
+
+#test_4 > RelativeLayout {
+	backgroundColor: #331133;
+	padding: 8dp;
+}
+
+#test_4 > RelativeLayout:hover {
+	backgroundColor: #442244;
+}
+
+#test_4 > RelativeLayout > TextView {
+	transition: all 0.125s;
+/*	layout_marginLeft: 0dp;*/
+}
+
+#test_4 > RelativeLayout:hover > TextView {
+	layout_marginLeft: 8dp;
+}

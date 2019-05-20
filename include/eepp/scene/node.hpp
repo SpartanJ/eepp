@@ -289,7 +289,7 @@ class EE_API Node : public Transformable {
 
 		void disableReportSizeChangeToChilds();
 
-		bool reportSizeChangeToChilds();
+		bool reportSizeChangeToChilds() const;
 
 		void centerHorizontal();
 

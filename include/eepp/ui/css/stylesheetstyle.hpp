@@ -21,6 +21,8 @@ class EE_API StyleSheetStyle {
 		StyleSheetProperty getPropertyByName( const std::string& name ) const;
 
 		void setProperty( const StyleSheetProperty& property );
+
+		void clearProperties();
 	protected:
 		StyleSheetSelector mSelector;
 		StyleSheetProperties mProperties;

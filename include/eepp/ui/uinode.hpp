@@ -109,6 +109,8 @@ class EE_API UINode : public Node {
 
 		UINode * setForegroundRadius( const unsigned int& corners );
 
+		Uint32 getForegroundRadius() const;
+
 		RectangleDrawable * setBorderEnabled( bool enabled );
 
 		UINode * setBorderColor( const Color& color );
@@ -116,6 +118,8 @@ class EE_API UINode : public Node {
 		Color getBorderColor();
 
 		UINode * setBorderWidth( const unsigned int& width );
+
+		Float getBorderWidth() const;
 
 		const Uint32& getFlags() const;
 

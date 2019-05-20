@@ -47,4 +47,8 @@ void StyleSheetStyle::setProperty( const StyleSheetProperty & property ) {
 	mProperties[ property.getName() ] = property;
 }
 
+void StyleSheetStyle::clearProperties() {
+	mProperties.clear();
+}
+
 }}}

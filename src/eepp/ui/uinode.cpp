@@ -504,6 +504,20 @@ UINode * UINode::setForegroundRadius( const unsigned int& corners ) {
 	return this;
 }
 
+Uint32 UINode::getForegroundRadius() const {
+	if ( NULL != mForegroundState && NULL != mForegroundState->getSkin() ) {
+		Drawable * stateDrawable = mForegroundState->getSkin()->getStateDrawable( UIState::StateFlagNormal );
+
+		if ( stateDrawable->getDrawableType() == Drawable::RECTANGLE ) {
+			RectangleDrawable * rectangleDrawable = static_cast<RectangleDrawable*>( stateDrawable );
+
+			return rectangleDrawable->getCorners();
+		}
+	}
+
+	return 0;
+}
+
 RectangleDrawable * UINode::setBorderEnabled( bool enabled ) {
 	writeFlag( UI_BORDER, enabled ? 1 : 0 );
 
@@ -532,6 +546,10 @@ Color UINode::getBorderColor() {
 UINode * UINode::setBorderWidth( const unsigned int& width ) {
 	setBorderEnabled( true )->setLineWidth( width );
 	return this;
+}
+
+Float UINode::getBorderWidth() const {
+	return NULL != mBorder ? mBorder->getLineWidth() : 1.f;
 }
 
 const Uint32& UINode::getFlags() const {
