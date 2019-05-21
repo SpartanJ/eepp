@@ -33,13 +33,18 @@ const std::vector<std::string>& NodeAttribute::Info::getNames() const {
 NodeAttribute::NodeAttribute()
 {}
 
-NodeAttribute::NodeAttribute( std::string name, std::string value ) :
+NodeAttribute::NodeAttribute( std::string name, std::string value, bool isVolatile ) :
 	mName( String::toLower( name ) ),
-	mValue( value )
+	mValue( value ),
+	mVolatile( isVolatile )
 {}
 
 bool NodeAttribute::isEmpty() const {
 	return mName.empty();
+}
+
+bool NodeAttribute::isVolatile() const {
+	return mVolatile;
 }
 
 std::string NodeAttribute::getName() const {

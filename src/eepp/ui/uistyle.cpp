@@ -30,16 +30,16 @@ bool UIStyle::stateExists( const EE::Uint32&  ) const {
 void UIStyle::addStyleSheetProperty( const StyleSheetProperty& attribute ) {
 	if ( attribute.getName() == "padding" ) {
 		Rectf rect(  NodeAttribute( attribute.getName(), attribute.getValue() ).asRectf() );
-		mElementStyle.setProperty( StyleSheetProperty( "paddingleft", String::toStr( rect.Left ), attribute.getSpecificity() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "paddingright", String::toStr( rect.Right ), attribute.getSpecificity() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "paddingtop", String::toStr( rect.Top ), attribute.getSpecificity() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "paddingbottom", String::toStr( rect.Bottom ), attribute.getSpecificity() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "paddingleft", String::toStr( rect.Left ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "paddingright", String::toStr( rect.Right ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "paddingtop", String::toStr( rect.Top ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "paddingbottom", String::toStr( rect.Bottom ), attribute.getSpecificity(), attribute.isVolatile() ) );
 	} else if ( attribute.getName() == "layout_margin" ) {
 		Rect rect(  NodeAttribute( attribute.getName(), attribute.getValue() ).asRect() );
-		mElementStyle.setProperty( StyleSheetProperty( "layout_marginleft", String::toStr( rect.Left ), attribute.getSpecificity() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "layout_marginright", String::toStr( rect.Right ), attribute.getSpecificity() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "layout_margintop", String::toStr( rect.Top ), attribute.getSpecificity() ) );
-		mElementStyle.setProperty( StyleSheetProperty( "layout_marginbottom", String::toStr( rect.Bottom ), attribute.getSpecificity() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "layout_marginleft", String::toStr( rect.Left ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "layout_marginright", String::toStr( rect.Right ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "layout_margintop", String::toStr( rect.Top ), attribute.getSpecificity(), attribute.isVolatile() ) );
+		mElementStyle.setProperty( StyleSheetProperty( "layout_marginbottom", String::toStr( rect.Bottom ), attribute.getSpecificity(), attribute.isVolatile() ) );
 	} else {
 		mElementStyle.setProperty( attribute );
 	}
@@ -144,7 +144,7 @@ void UIStyle::onStateChange() {
 		for ( const auto& prop : mProperties ) {
 			const StyleSheetProperty& property = prop.second;
 
-			mWidget->setAttribute( property.getName(), property.getValue(), mCurrentState );
+			mWidget->setAttribute( NodeAttribute( property.getName(), property.getValue(), property.isVolatile() ), mCurrentState );
 		}
 
 		mWidget->endAttributesTransaction();

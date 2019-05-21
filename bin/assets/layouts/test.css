@@ -191,6 +191,7 @@ Tooltip {
 
 #test_3 > .rooter .outer {
 	background: blue;
+	transition: all 0.125s;
 }
 
 #test_3 > .rooter:hover .outer {
@@ -203,6 +204,7 @@ Tooltip {
 
 #test_3 > .rooter .inner {
 	background: #123456;
+	transition: all 0.125s;
 }
 
 #test_3 > .rooter:hover .outer:hover .inner {
@@ -221,15 +223,16 @@ Tooltip {
 #test_4 > RelativeLayout {
 	backgroundColor: #331133;
 	padding: 8dp;
+	transition: all 0.125s;
 }
 
 #test_4 > RelativeLayout:hover {
 	backgroundColor: #442244;
+	cursor: hand;
 }
 
 #test_4 > RelativeLayout > TextView {
 	transition: all 0.125s;
-/*	layout_marginLeft: 0dp;*/
 }
 
 #test_4 > RelativeLayout:hover > TextView {

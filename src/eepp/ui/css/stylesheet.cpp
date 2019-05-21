@@ -2,6 +2,7 @@
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetelement.hpp>
+#include <iostream>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -34,7 +35,7 @@ void StyleSheet::print() {
 	for ( auto& it : mNodes ) {
 		StyleSheetStyle& style = it.second;
 
-		style.print();
+		std::cout << style.build();
 	}
 }
 
@@ -42,30 +43,6 @@ void StyleSheet::combineStyleSheet( const StyleSheet& styleSheet ) {
 	for ( auto& it : styleSheet.getStyles() ) {
 		combineStyle( it.second );
 	}
-}
-
-StyleSheet::StyleSheetPseudoClassProperties StyleSheet::getElementPropertiesByState( StyleSheetElement * element ) {
-	StyleSheetPseudoClassProperties propertiesSelectedByPseudoClass;
-
-	for ( const auto& it : mNodes ) {
-		const StyleSheetStyle& node = it.second;
-		const StyleSheetSelector& selector = node.getSelector();
-
-		if ( selector.isCacheable() && selector.select( element, false ) ) {
-			for ( const auto& pit : node.getProperties() ) {
-				StyleSheetProperties& pseudoClassProperties = propertiesSelectedByPseudoClass[selector.getPseudoClass()];
-				const StyleSheetProperty& property = pit.second;
-				const auto& pcit = pseudoClassProperties.find( property.getName() );
-				const StyleSheetProperty& propertyRight = pcit->second;
-
-				if ( pcit == pseudoClassProperties.end() || property.getSpecificity() >= propertyRight.getSpecificity() ) {
-					pseudoClassProperties[ property.getName() ] = property;
-				}
-			}
-		}
-	}
-
-	return propertiesSelectedByPseudoClass;
 }
 
 StyleSheetStyleVector StyleSheet::getElementStyles( StyleSheetElement * element , const bool& applyPseudo ) {

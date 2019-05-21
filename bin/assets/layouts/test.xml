@@ -59,9 +59,14 @@
 			</RelativeLayout>
 		</hbox>
 		<vbox id="test_4" layout_width="match_parent" layout_height="match_parent">
-			<RelativeLayout layout_width="match_parent" layout_height="32dp">
-				<TextView layout_width="wrap_content" layout_height="wrap_content" text="Test Text" />
-			</RelativeLayout>
+			<RelativeLayout layout_width="match_parent" layout_height="32dp"><TextView layout_width="wrap_content" layout_height="wrap_content" text="Test Text" /></RelativeLayout>
+			<RelativeLayout layout_width="match_parent" layout_height="32dp"><TextView layout_width="wrap_content" layout_height="wrap_content" text="Test Text" /></RelativeLayout>
+			<RelativeLayout layout_width="match_parent" layout_height="32dp"><TextView layout_width="wrap_content" layout_height="wrap_content" text="Test Text" /></RelativeLayout>
+			<RelativeLayout layout_width="match_parent" layout_height="32dp"><TextView layout_width="wrap_content" layout_height="wrap_content" text="Test Text" /></RelativeLayout>
+			<RelativeLayout layout_width="match_parent" layout_height="32dp"><TextView layout_width="wrap_content" layout_height="wrap_content" text="Test Text" /></RelativeLayout>
+			<RelativeLayout layout_width="match_parent" layout_height="32dp"><TextView layout_width="wrap_content" layout_height="wrap_content" text="Test Text" /></RelativeLayout>
+			<RelativeLayout layout_width="match_parent" layout_height="32dp"><TextView layout_width="wrap_content" layout_height="wrap_content" text="Test Text" /></RelativeLayout>
+			<RelativeLayout layout_width="match_parent" layout_height="32dp"><TextView layout_width="wrap_content" layout_height="wrap_content" text="Test Text" /></RelativeLayout>
 		</vbox>
 		
 		<Tab name="Padding Test" owns="test_1" />

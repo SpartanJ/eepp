@@ -73,9 +73,11 @@ class NodeAttribute {
 
 		NodeAttribute();
 
-		NodeAttribute( std::string name, std::string value );
+		NodeAttribute( std::string name, std::string value, bool isVolatile = false );
 
 		bool isEmpty() const;
+
+		bool isVolatile() const;
 
 		std::string getName() const;
 
@@ -141,6 +143,7 @@ class NodeAttribute {
 	protected:
 		std::string mName;
 		std::string mValue;
+		bool mVolatile;
 };
 
 }}

@@ -652,14 +652,15 @@ const Uint32& UIWidget::getStylePreviousState() const {
 }
 
 bool UIWidget::setAttribute( const std::string& name, const std::string& value, const Uint32& state ) {
-	return setAttribute( NodeAttribute( name, value ), state );
+	return setAttribute( NodeAttribute( name, value, false ), state );
 }
 
 #define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED ) \
-	if ( state != UIState::StateFlagNormal ) { \
+	if ( state != UIState::StateFlagNormal || ( state == UIState::StateFlagNormal && attribute.isVolatile() ) ) { \
 		CSS::StyleSheetProperty oldAttribute = mStyle->getStatelessStyleSheetProperty( attribute.getName() ); \
-		if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) \
+		if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) { \
 			mStyle->addStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
+		} \
 	}
 
 bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
@@ -901,8 +902,9 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 
 		setEnabled( attribute.asBool() );
 	} else if ( "theme" == name ) {
-		if ( NULL != mTheme )
+		if ( NULL != mTheme ) {
 			SAVE_NORMAL_STATE_ATTR( mTheme->getName() );
+		}
 
 		setThemeByName( attribute.asString() );
 
@@ -1013,21 +1015,6 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
 			Action * action = Actions::MarginMove::New( mLayoutMargin, margin, transitionInfo.duration, transitionInfo.timingFunction, marginFlag );
-
-			CSS::StyleSheetProperty oldAttribute = mStyle->getStatelessStyleSheetProperty( attribute.getName() );
-			if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) {
-				if ( "layout_marginleft" == name || "layout_margin" == name )
-					mStyle->addStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), String::format( "%d", mLayoutMargin.Left ) ) );
-
-				if ( "layout_marginright" == name || "layout_margin" == name )
-					mStyle->addStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), String::format( "%d", mLayoutMargin.Right ) ) );
-
-				if ( "layout_margintop" == name || "layout_margin" == name )
-					mStyle->addStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), String::format( "%d", mLayoutMargin.Top ) ) );
-
-				if ( "layout_marginbottom" == name || "layout_margin" == name )
-					mStyle->addStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), String::format( "%d", mLayoutMargin.Bottom ) ) );
-			}
 
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );
@@ -1204,21 +1191,6 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 		if ( !isSceneNodeLoading() && NULL != mStyle && mStyle->hasTransition( attribute.getName() ) ) {
 			UIStyle::TransitionInfo transitionInfo( mStyle->getTransition( attribute.getName() ) );
 			Action * action = Actions::PaddingTransition::New( mPadding, padding, transitionInfo.duration, transitionInfo.timingFunction, paddingFlag );
-
-			CSS::StyleSheetProperty oldAttribute = mStyle->getStatelessStyleSheetProperty( attribute.getName() );
-			if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) {
-				if ( "paddingleft" == name || "padding" == name )
-					mStyle->addStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), String::format( "%2.f", mPadding.Left ) ) );
-
-				if ( "paddingright" == name || "padding" == name )
-					mStyle->addStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), String::format( "%2.f", mPadding.Right ) ) );
-
-				if ( "paddingtop" == name || "padding" == name )
-					mStyle->addStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), String::format( "%2.f", mPadding.Top ) ) );
-
-				if ( "paddingbottom" == name || "padding" == name )
-					mStyle->addStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), String::format( "%2.f", mPadding.Bottom ) ) );
-			}
 
 			if ( Time::Zero != transitionInfo.delay )
 				action = Actions::Sequence::New( Actions::Delay::New( transitionInfo.delay ), action );

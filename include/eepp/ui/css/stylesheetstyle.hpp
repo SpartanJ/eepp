@@ -12,7 +12,7 @@ class EE_API StyleSheetStyle {
 
 		explicit StyleSheetStyle( const std::string& selector, const StyleSheetProperties& properties );
 
-		void print();
+		std::string build();
 
 		const StyleSheetSelector& getSelector() const;
 
@@ -28,20 +28,8 @@ class EE_API StyleSheetStyle {
 		StyleSheetProperties mProperties;
 };
 
-class EE_API StyleSheetStyleUsed {
-	public:
-		StyleSheetStyle style;
-		bool used;
-
-		StyleSheetStyleUsed( StyleSheetStyle style, bool used ) :
-			style( style ),
-			used( used )
-		{}
-};
-
 typedef std::map<std::string, StyleSheetStyle> StyleSheetStyleList;
 typedef std::vector<StyleSheetStyle> StyleSheetStyleVector;
-typedef std::vector<StyleSheetStyleUsed> StyleSheetStyleUsedVector;
 
 }}}
 
