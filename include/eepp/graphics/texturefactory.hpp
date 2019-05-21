@@ -26,9 +26,10 @@ class EE_API TextureFactory : protected Mutex {
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
+		* @param FileName A filename to recognize the texture.
 		* @return Internal Texture Id
 		*/
-		Uint32 createEmptyTexture( const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels = 4, const Color& DefaultColor = Color(0,0,0,255), const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 createEmptyTexture( const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels = 4, const Color& DefaultColor = Color(0,0,0,255), const bool& Mipmap = false, const Texture::ClampMode& ClampMode = Texture::ClampMode::ClampToEdge, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& Filename = std::string("") );
 
 		/** Loads a RAW Texture from Memory
 		* @param Pixels The Texture array
