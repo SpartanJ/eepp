@@ -620,6 +620,7 @@ void UIWidget::reloadStyle( const bool& reloadChilds ) {
 }
 
 void UIWidget::onPaddingChange() {
+	sendCommonEvent( Event::OnPaddingChange );
 	invalidateDraw();
 }
 

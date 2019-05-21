@@ -52,6 +52,7 @@ class EE_API Event {
 			OnClose, // Warning: Only some controls will report this event.
 			OnDragStart,
 			OnDragStop,
+			OnPaddingChange,
 			UserEvent,
 			NoEvent = eeINDEX_NOT_FOUND
 		};
