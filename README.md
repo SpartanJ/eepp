@@ -113,11 +113,15 @@ Entropia Engine++
 ------------------
   * Web Requests with HTTP client, with **SSL support** ( provided by mbedtls or openssl ).
 
-  * Asynchronous http requests.
+  * Asynchronous HTTP requests.
 
   * File Transfers with FTP client.
 
   * TCP and UDP sockets.
+
+  * HTTP Content-Encoding and Transfer-Encoding support.
+
+  * HTTP Proxy Support.
 
 Module based on the SFML implementation.
 
@@ -155,6 +159,8 @@ Module based on the SFML implementation.
   * Advanced features as text selection and key bindings.
 
   * Load layouts from XMLs
+
+  * Styling with CSS like format
 
 
 **Maps Module:**
