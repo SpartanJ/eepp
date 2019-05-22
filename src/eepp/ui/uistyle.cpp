@@ -27,7 +27,7 @@ bool UIStyle::stateExists( const EE::Uint32&  ) const {
 	return true;
 }
 
-void UIStyle::addStyleSheetProperty( const StyleSheetProperty& attribute ) {
+void UIStyle::setStyleSheetProperty( const StyleSheetProperty& attribute ) {
 	if ( attribute.getName() == "padding" ) {
 		Rectf rect(  NodeAttribute( attribute.getName(), attribute.getValue() ).asRectf() );
 		mElementStyle.setProperty( StyleSheetProperty( "paddingleft", String::toStr( rect.Left ), attribute.getSpecificity(), attribute.isVolatile() ) );
@@ -74,10 +74,10 @@ void UIStyle::load() {
 	}
 }
 
-void UIStyle::addStyleSheetProperties( const CSS::StyleSheetProperties& properties ) {
+void UIStyle::setStyleSheetProperties( const CSS::StyleSheetProperties& properties ) {
 	if ( !properties.empty() ) {
 		for ( const auto& it : properties ) {
-			addStyleSheetProperty( it.second );
+			setStyleSheetProperty( it.second );
 		}
 	}
 }

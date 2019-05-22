@@ -6,6 +6,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <pugixml/pugixml.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
 #include <algorithm>
 
 namespace EE { namespace UI {
@@ -123,10 +124,24 @@ void UISceneNode::setStyleSheet( const CSS::StyleSheet& styleSheet ) {
 	reloadStyle();
 }
 
-void UISceneNode::combineStyleSheet(const CSS::StyleSheet & styleSheet) {
+void UISceneNode::setStyleSheet( const std::string& inlineStyleSheet ) {
+	CSS::StyleSheetParser parser;
+
+	if ( parser.loadFromString( inlineStyleSheet ) )
+		setStyleSheet( parser.getStyleSheet() );
+}
+
+void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet ) {
 	mStyleSheet.combineStyleSheet( styleSheet );
 
 	reloadStyle();
+}
+
+void UISceneNode::combineStyleSheet( const std::string& inlineStyleSheet ) {
+	CSS::StyleSheetParser parser;
+
+	if ( parser.loadFromString( inlineStyleSheet ) )
+		combineStyleSheet( parser.getStyleSheet() );
 }
 
 CSS::StyleSheet& UISceneNode::getStyleSheet() {

@@ -38,7 +38,7 @@ class EE_API UIScrollView : public UITouchDragableWidget {
 
 		UIScrollBar * getHorizontalScrollBar() const;
 
-		UINode * getContainer() const;
+		UIWidget * getContainer() const;
 
 		virtual bool setAttribute( const NodeAttribute& attribute, const Uint32& state = UIState::StateFlagNormal );
 	protected:
@@ -47,7 +47,7 @@ class EE_API UIScrollView : public UITouchDragableWidget {
 		UI_SCROLLBAR_MODE mHScrollMode;
 		UIScrollBar * mVScroll;
 		UIScrollBar * mHScroll;
-		UINode * mContainer;
+		UIWidget * mContainer;
 		Node * mScrollView;
 		Uint32 mSizeChangeCb;
 

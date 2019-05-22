@@ -57,6 +57,9 @@ UINode::~UINode() {
 	eeSAFE_DELETE( mBackgroundState );
 	eeSAFE_DELETE( mForegroundState );
 	eeSAFE_DELETE( mBorder );
+
+	if ( isDragging() )
+		getEventDispatcher()->setNodeDragging( NULL );
 }
 
 void UINode::worldToNodeTranslation( Vector2f& Pos ) const {

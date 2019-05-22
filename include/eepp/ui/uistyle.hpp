@@ -61,9 +61,9 @@ class EE_API UIStyle : public UIState {
 
 		NodeAttribute getNodeAttribute(const std::string& attributeName ) const;
 
-		void addStyleSheetProperties( const CSS::StyleSheetProperties& properties );
+		void setStyleSheetProperties( const CSS::StyleSheetProperties& properties );
 
-		void addStyleSheetProperty( const CSS::StyleSheetProperty& property );
+		void setStyleSheetProperty( const CSS::StyleSheetProperty& property );
 
 		bool hasTransition( const std::string& propertyName );
 

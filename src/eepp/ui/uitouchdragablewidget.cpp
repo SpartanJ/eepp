@@ -20,6 +20,8 @@ UITouchDragableWidget::UITouchDragableWidget() :
 {}
 
 UITouchDragableWidget::~UITouchDragableWidget() {
+	if ( isTouchDragging() )
+		getEventDispatcher()->setNodeDragging( NULL );
 }
 
 Uint32 UITouchDragableWidget::getType() const {

@@ -557,11 +557,12 @@ void UITextView::resetSelCache() {
 }
 
 #define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED ) \
-	if ( state != UIState::StateFlagNormal ) { \
-	CSS::StyleSheetProperty oldAttribute = mStyle->getStatelessStyleSheetProperty( attribute.getName() ); \
-	if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) \
-		mStyle->addStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
-	} \
+	if ( state != UIState::StateFlagNormal || ( state == UIState::StateFlagNormal && attribute.isVolatile() ) ) { \
+		CSS::StyleSheetProperty oldAttribute = mStyle->getStatelessStyleSheetProperty( attribute.getName() ); \
+		if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) { \
+			mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
+		} \
+	}
 
 bool UITextView::setAttribute( const NodeAttribute& attribute, const Uint32& state ) {
 	const std::string& name = attribute.getName();

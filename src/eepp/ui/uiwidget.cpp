@@ -652,15 +652,16 @@ const Uint32& UIWidget::getStylePreviousState() const {
 	return NULL != mStyle ? mStyle->getPreviousState() : mState;
 }
 
-bool UIWidget::setAttribute( const std::string& name, const std::string& value, const Uint32& state ) {
-	return setAttribute( NodeAttribute( name, value, false ), state );
+void UIWidget::setStyleSheetProperty( const std::string& name, const std::string& value, const Uint32& specificity ) {
+	if ( mStyle != NULL )
+		mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( name, value, specificity ) );
 }
 
 #define SAVE_NORMAL_STATE_ATTR( ATTR_FORMATED ) \
 	if ( state != UIState::StateFlagNormal || ( state == UIState::StateFlagNormal && attribute.isVolatile() ) ) { \
 		CSS::StyleSheetProperty oldAttribute = mStyle->getStatelessStyleSheetProperty( attribute.getName() ); \
 		if ( oldAttribute.isEmpty() && mStyle->getPreviousState() == UIState::StateFlagNormal ) { \
-			mStyle->addStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
+			mStyle->setStyleSheetProperty( CSS::StyleSheetProperty( attribute.getName(), ATTR_FORMATED ) ); \
 		} \
 	}
 
@@ -814,7 +815,7 @@ bool UIWidget::setAttribute( const NodeAttribute& attribute, const Uint32& state
 						rectColors.BottomLeft = rectColors.BottomRight = Color::fromString( params.at(2) );
 					}
 				} else {
-					return setAttribute( "backgroundcolor", params.at(0) );
+					return setAttribute( NodeAttribute( "backgroundcolor", params.at(0) ) );
 				}
 
 				drawable->setRectColors( rectColors );
@@ -1232,7 +1233,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginAttributesTransaction();
 
 	for (pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end(); ++ait) {
-		setAttribute( ait->name(), ait->value() );
+		setAttribute( NodeAttribute( ait->name(), ait->value() ) );
 	}
 
 	endAttributesTransaction();
